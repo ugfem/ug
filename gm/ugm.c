@@ -548,7 +548,7 @@ NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
   if (pn == NULL)
     return(NULL);
   SONNODE(FatherNode) = pn;
-  if (NOOFNODE(theVertex)<NOOFNODEMAX-1)
+  if (NOOFNODE(theVertex)<NOOFNODEMAX)
     INCNOOFNODE(theVertex);
   else
     ASSERT(0);
@@ -2283,6 +2283,11 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
     PrintErrorMessage('E',"CreateMultiGrid","format not found");
     return(NULL);
   }
+
+        #ifdef ModelP
+  if (me == 0) heapSize += 10000000;
+        #endif
+
 
   /* allocate multigrid envitem */
   theMG = MakeMGItem(MultigridName);
