@@ -101,6 +101,8 @@ typedef struct
   AMG_MATRIX *A;
   AMG_VECTOR *x,*b;
 
+  INT AMG_Build_failed;
+
 } NP_AMG;
 
 /****************************************************************************/
@@ -348,7 +350,8 @@ else
   /*AMG_PrintMatrix(theAMGC->A,"Matrix");*/
 
   /* call algebraic multigrid solver */
-  if (AMG_Build(&theAMGC->sc,&theAMGC->cc,theAMGC->A)!=AMG_OK) goto exit;
+  if (AMG_Build(&theAMGC->sc,&theAMGC->cc,theAMGC->A)!=AMG_OK) theAMGC->AMG_Build_failed=1;
+  theAMGC->AMG_Build_failed=0;
   CSTOP(ti,ii);
   if (theAMGC->sc.verbose>0)
     UserWriteF("AMG : L=%2d BUILD=%10.4lg\n",level,ti);
@@ -448,6 +451,12 @@ static INT AMGSolver (NP_LINEAR_SOLVER *theNP, INT level,
   theGrid = GRID_ON_LEVEL(theMG,level);
   theAMGC->sc.red_factor=reduction[0];
   theAMGC->sc.dnorm_min=abslimit[0];
+
+  if (theAMGC->AMG_Build_failed)
+  {
+    dset(NP_MG(theNP),level,level,ALL_VECTORS,x,0.0);
+    return (0);
+  }
 
   bl = 0;
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
