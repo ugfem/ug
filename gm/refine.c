@@ -122,7 +122,7 @@
 
 #define REF_TYPE_CHANGES(e)                     ((REFINE(e)!=MARK(e)) || \
                                                  (REFINECLASS(e)!=MARKCLASS(e)))
-#define IS_TO_REFINE(e)                         (MARK(theElement)!=NO_REFINEMENT)
+#define MARKED(e)                                       (MARK(theElement)!=NO_REFINEMENT)
 
 /* green marked elements were NEWGREEN is true are refined without rule */
 #define NEWGREEN(e)                                     (TAG(e)==HEXAHEDRON || TAG(e)== PRISM || \
@@ -1198,6 +1198,8 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
                 #endif
 
                 #ifdef __THREEDIM__
+    /*  old style				*/
+    assert(0);
   case (TETRAHEDRON) :
     SonList[0] = SON(theElement,0);
 
@@ -1693,7 +1695,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
     theElementContext[i] = NULL;
 
   /* is element to refine */
-  if (!IS_TO_REFINE(theElement)) return(GM_OK);
+  if (!MARKED(theElement)) return(GM_OK);
 
   Mark = MARK(theElement);
 
@@ -1959,6 +1961,75 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
   return(GM_OK);
 }
 
+#ifdef UNCOMMENT
+static int NodeContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementContext)
+{
+  NODE *theNode, **MidNodes, **CenterNode;
+  EDGE *theEdge;
+  INT i,Corner0, Corner1;
+        #ifdef __THREEDIM__
+  NODE **SideNodes;
+  NODE *theNode0, *theNode1;
+        #endif
+
+  /* reset context */
+  for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)
+    theElementContext[i] = NULL;
+
+  /* is element to refine */
+  if (!REFINED(theElement)) return(GM_OK);
+
+  /* get corner nodes */
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+  {
+    theNode = CORNER(theElement,i);
+    theElementContext[i] = SONNODE(theNode);
+  }
+
+  /* check for midpoint nodes */
+  MidNodes = theElementContext+CORNERS_OF_ELEM(theElement);
+  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+  {
+    Corner0 = CORNER_OF_EDGE(theElement,i,0);
+    Corner1 = CORNER_OF_EDGE(theElement,i,1);
+
+    theEdge = GetEdge(CORNER(theElement,Corner0),
+                      CORNER(theElement,Corner1));
+    ASSERT(theEdge != NULL);
+
+    MidNodes[i] = MIDNODE(theEdge);
+  }
+
+        #ifdef __THREEDIM__
+  SideNodes = theElementContext+CORNERS_OF_ELEM(theElement)+
+              EDGES_OF_ELEM(theElement);
+  for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+  {
+    /* no side nodes for triangular sides yet */
+    if (CORNERS_OF_SIDE(theElement,i) == 3) continue;
+
+    /* check for side node */
+    theNode = NULL;
+    theNode0 = MidNodes[EDGE_OF_SIDE(theElement,i,0)];
+    theNode1 = MidNodes[EDGE_OF_SIDE(theElement,i,2)];
+    if (theNode0 != NULL && theNode1 != NULL)
+      theNode = GetSideNode(theElement,theNode0,theNode1,i);
+
+    SideNodes[i] = theNode;
+
+  }
+        #endif
+
+  /* check for center node */
+  CenterNode = MidNodes+CENTER_NODE_INDEX(theElement);
+  /*	TODO: to implement
+          CenterNode[0] = GetCenterNode(theGrid,theElement); */
+  assert(0);
+
+  return(GM_OK);
+}
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* Function:  UnrefineElement												*/
@@ -2210,6 +2281,7 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
   }
 
   case GREEN_CLASS :
+  case RED_CLASS :
   {
     /* determine sonnodes of side */
     NODE *SideNodes[MAX_SIDE_NODES];
@@ -2376,28 +2448,28 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
     break;
   }
 
-  case RED_CLASS :
-  {
-    SONDATA *sondata;
-
-    /* TODO: this does not work for ghostelements sons */
-    /*			for (i=0; i<NSONS(theElement); i++) */
-    for (i=0; SonList[i]!=NULL; i++)
+    /* this is the old style */
+    /*          case RED_CLASS:  */
+    if (0)
     {
-      sondata = SON_OF_RULE(MARK2RULEADR(theElement,
-                                         MARK(theElement)),i);
+      SONDATA *sondata;
 
-      for (j=0; j<SIDES_OF_ELEM(SonList[i]); j++)
-        if (SON_NB(sondata,j) == FATHER_SIDE_OFFSET+side)
-        {
-          SonSides[nsons] = j;
-          SonList[nsons] = SonList[i];
-          nsons ++;
-        }
+      for (i=0; SonList[i]!=NULL; i++)
+      {
+        sondata = SON_OF_RULE(MARK2RULEADR(theElement,
+                                           MARK(theElement)),i);
+
+        for (j=0; j<SIDES_OF_ELEM(SonList[i]); j++)
+          if (SON_NB(sondata,j) == FATHER_SIDE_OFFSET+side)
+          {
+            SonSides[nsons] = j;
+            SonList[nsons] = SonList[i];
+            nsons ++;
+          }
+      }
+      *Sons_of_Side = nsons;
+      break;
     }
-    *Sons_of_Side = nsons;
-    break;
-  }
 
   default :
     RETURN(GM_FATAL);
@@ -2654,6 +2726,34 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
   if (Sons_of_NbSide<Sons_of_Side) Sons_of_Side = Sons_of_NbSide;
         #endif
 
+        #ifdef Debug
+  /* check whether both sort table match exactly */
+  for (i=0; i<Sons_of_Side; i++)
+  {
+    COMPARE_RECORD *Entry, *NbEntry;
+    INT j;
+
+    Entry = ElemSortTable[i];
+    NbEntry = NbSortTable[i];
+
+    if (Entry->nodes != NbEntry->nodes)
+    {
+      printf("Connect_Sons_of_ElementSide(): ERROR Sorttables[%d]"\
+             " eNodes=%d nbNodes=%d\n",i,Entry->nodes,NbEntry->nodes);
+      assert(0);
+    }
+    for (j=0; j<Entry->nodes; j++)
+      if (Entry->nodeptr[j] != NbEntry->nodeptr[j])
+      {
+        printf("Connect_Sons_of_ElementSide(): "
+               "ERROR Sorttables[%d][%d]"\
+               " eNodePtr=%x nbNodePtr=%x\n",
+               i,j,Entry->nodeptr[j],NbEntry->nodeptr[j]);
+        assert(0);
+      }
+  }
+        #endif
+
   IFDEBUG(gm,4)
   INT i,j;
 
@@ -2680,17 +2780,6 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
 
     Entry = ElemSortTable[i];
     NbEntry = NbSortTable[i];
-
-    if (Entry->nodes != NbEntry->nodes)
-      UserWriteF("Connect_Sons_of_ElementSide(): ERROR Sorttables[%d]"\
-                 " eNodes=%d nbNodes=%d\n",i,Entry->nodes,NbEntry->nodes);
-    for (j=0; j<Entry->nodes; j++)
-      if (Entry->nodeptr[j] != NbEntry->nodeptr[j])
-        UserWriteF("Connect_Sons_of_ElementSide(): "
-                   "ERROR Sorttables[%d][%d]"\
-                   " eNodePtr=%x nbNodePtr=%x\n",
-                   i,j,Entry->nodeptr[j],NbEntry->nodeptr[j]);
-    UserWriteF("\n");
 
     if (NBELEM(Entry->elem,Entry->side)!=NbEntry->elem)
     {
@@ -3700,7 +3789,7 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 #       endif
 
   /* is something to do ? */
-  if (!IS_TO_REFINE(theElement)) return(GM_OK);
+  if (!MARKED(theElement)) return(GM_OK);
 
   for (i=0; i<MAX_SONS; i++) SonList[i] = SonList2[i] = NULL;
 
@@ -3964,7 +4053,7 @@ static int RefineGrid (GRID *theGrid)
       /* TODO: delete special debug */ PRINTELEMID(-2)
 
       /* is something to do ? */
-      if (IS_TO_REFINE(theElement))
+      if (MARKED(theElement))
         switch (MARKCLASS(theElement))
         {
         case (RED_CLASS) :
