@@ -550,19 +550,12 @@ static DOUBLE_VECTOR EE3D_PartMidPoint;
 static COORD_POINT 	FN3D_MousePos;
 
 /*---------- working variables of 'NW_NodesEval2D' -------------------------*/
-static long NE_IDColor; 		/* color of node ID's                       */
-static long NE_BndMarkerColor;	/* color of bnd marks						*/
-static long NE_CornerMarkerColor;/* color of corner marks					*/
-static long NE_InnerMarkerColor;/* color of inner marks 					*/
-static INT NE_EvalNodeID;		/* 1 if to evaluate 						*/
-static INT NE_EvalInnerNode;	/* 1 if to evaluate 						*/
-static INT NE_EvalBndNode;		/* 1 if to evaluate 						*/
-static short NE_InnerMarker;	/* marker for inner nodes					*/
-static short NE_BndMarker;		/* marker for bnd nodes 					*/
-static short NE_CornerMarker;	/* marker for corner nodes 					*/
-static short NE_InnerMarkerSize;/* markersize for inner nodes				*/
-static short NE_BndMarkerSize;	/* markersize for bnd nodes 				*/
-static short NE_CornerMarkerSize;/* markersize for corner nodes 			*/
+static long  NE_IDColor; 		/* color of node ID's                       */
+static INT   NE_EvalNodeID;		/* 1 if to evaluate 						*/
+static INT   NE_EvalNode;		/* 1 if to evaluate 						*/
+static long  NE_MarkerColor[3];	/* color of node marks						*/
+static short NE_Marker[3];		/* marker for inner nodes					*/
+static short NE_MarkerSize[3];	/* markersize for inner nodes				*/
 static NODE *NE_Node;			/* node for insert node work				*/
 
 /*---------- working variables of 'EW_MarkElement2D' -----------------------*/
@@ -5033,9 +5026,8 @@ static INT PlotMatrixEntry (
 	char valtext[16],*p;
 	
 	Color = (long)(MAT_factor*value+MAT_offset);
+	Color = MAX(Color,WOP_OutputDevice->spectrumStart);
 	Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
-	if (Color<WOP_OutputDevice->spectrumStart)
-		return (0);
 	
 	/* draw */
 	DO_2c(*DOhandle) = DO_POLYGON; DO_inc(*DOhandle) 
@@ -6358,26 +6350,18 @@ static INT NW_PreProcess_PlotNodes2D (PICTURE *thePicture, WORK *theWork)
 	theMG  = PO_MG(PIC_PO(thePicture));
 	
 	NE_IDColor					= theOD->black;
-	NE_BndMarkerColor			= theOD->red;
-	NE_CornerMarkerColor		= theOD->red;
-	NE_InnerMarkerColor 		= theOD->red;
-	NE_InnerMarker				= FILLED_CIRCLE_MARKER;
-	NE_BndMarker				= FILLED_SQUARE_MARKER;
-	NE_CornerMarker				= FILLED_RHOMBUS_MARKER;
-	NE_InnerMarkerSize			= 4;
-	NE_BndMarkerSize			= 4;
-	NE_CornerMarkerSize			= 4;
+	NE_MarkerColor[0]			= theOD->green;
+	NE_MarkerColor[1]			= theOD->blue;
+	NE_MarkerColor[2]			= theOD->red;
+	NE_Marker[0]				= FILLED_RHOMBUS_MARKER;
+	NE_Marker[1]				= FILLED_SQUARE_MARKER;
+	NE_Marker[2]				= FILLED_CIRCLE_MARKER;
+	NE_MarkerSize[0]			= 4;
+	NE_MarkerSize[1]			= 4;
+	NE_MarkerSize[2]			= 4;
 	
-	NE_EvalNodeID				= 0;
-	NE_EvalInnerNode			= 0;
-	NE_EvalBndNode				= 0;
-	if (theGpo->PlotNodeID == YES)
-		NE_EvalNodeID			= 1;
-	if (theGpo->PlotNodes == YES)
-	{
-		NE_EvalInnerNode		= 1;
-		NE_EvalBndNode			= 1;
-	}
+	NE_EvalNodeID				= (theGpo->PlotNodeID == YES);
+	NE_EvalNode					= (theGpo->PlotNodes == YES);
 	
 	/* mark nodes */
 	switch (theGpo->WhichElem)
@@ -7930,39 +7914,17 @@ static INT EW_ElementBdryEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 
 static INT NW_NodesEval2D (NODE *theNode, DRAWINGOBJ *theDO)
 {
-	if (OBJT(MYVERTEX(theNode))==BVOBJ)
+	INT mv=MOVE(MYVERTEX(theNode));
+	
+	if (NE_EvalNode)
 	{
-		/* plot marks of boundary nodes */
-		if (NE_EvalBndNode)
-		{
-			DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
-			DO_2c(theDO) = 1; DO_inc(theDO) 
-			if (MOVE(MYVERTEX(theNode)))
-			{
-				DO_2l(theDO) = NE_BndMarkerColor; DO_inc(theDO);
-				DO_2s(theDO) = NE_BndMarker; DO_inc(theDO);
-				DO_2s(theDO) = NE_BndMarkerSize; DO_inc(theDO);
-			}
-			else
-			{
-				DO_2l(theDO) = NE_CornerMarkerColor; DO_inc(theDO);
-				DO_2s(theDO) = NE_CornerMarker; DO_inc(theDO);
-				DO_2s(theDO) = NE_CornerMarkerSize; DO_inc(theDO);
-			}
-			V2_COPY(CVECT(MYVERTEX(theNode)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
-		}
+		DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
+		DO_2c(theDO) = 1; DO_inc(theDO)
+		DO_2l(theDO) = NE_MarkerColor[mv]; DO_inc(theDO);
+		DO_2s(theDO) = NE_Marker[mv]; DO_inc(theDO);
+		DO_2s(theDO) = NE_MarkerSize[mv]; DO_inc(theDO);
+		V2_COPY(CVECT(MYVERTEX(theNode)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
 	}
-	else
-		/* plot marks of inner nodes */
-		if (NE_EvalInnerNode)
-		{
-			DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
-			DO_2c(theDO) = 1; DO_inc(theDO) 
-			DO_2l(theDO) = NE_InnerMarkerColor; DO_inc(theDO);
-			DO_2s(theDO) = NE_InnerMarker; DO_inc(theDO);
-			DO_2s(theDO) = NE_InnerMarkerSize; DO_inc(theDO);
-			V2_COPY(CVECT(MYVERTEX(theNode)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
-		}
 	
 	/* plot node ID */
 	if (NE_EvalNodeID)
@@ -7994,39 +7956,17 @@ static INT NW_NodesEval2D (NODE *theNode, DRAWINGOBJ *theDO)
 
 static INT EXT_NodesEval2D (DRAWINGOBJ *theDO, INT *end)
 {
-	if (OBJT(MYVERTEX(NE_Node))==BVOBJ)
+	INT mv=MOVE(MYVERTEX(NE_Node));
+	
+	if (NE_EvalNode)
 	{
-		/* plot marks of boundary nodes */
-		if (NE_EvalBndNode)
-		{
-			DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
-			DO_2c(theDO) = 1; DO_inc(theDO) 
-			if (MOVE(MYVERTEX(NE_Node)))
-			{
-				DO_2l(theDO) = NE_BndMarkerColor; DO_inc(theDO);
-				DO_2s(theDO) = NE_BndMarker; DO_inc(theDO);
-				DO_2s(theDO) = NE_BndMarkerSize; DO_inc(theDO);
-			}
-			else
-			{
-				DO_2l(theDO) = NE_CornerMarkerColor; DO_inc(theDO);
-				DO_2s(theDO) = NE_CornerMarker; DO_inc(theDO);
-				DO_2s(theDO) = NE_CornerMarkerSize; DO_inc(theDO);
-			}
-			V2_COPY(CVECT(MYVERTEX(NE_Node)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
-		}
+		DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
+		DO_2c(theDO) = 1; DO_inc(theDO)
+		DO_2l(theDO) = NE_MarkerColor[mv]; DO_inc(theDO);
+		DO_2s(theDO) = NE_Marker[mv]; DO_inc(theDO);
+		DO_2s(theDO) = NE_MarkerSize[mv]; DO_inc(theDO);
+		V2_COPY(CVECT(MYVERTEX(NE_Node)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
 	}
-	else
-		/* plot marks of inner nodes */
-		if (NE_EvalInnerNode)
-		{
-			DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
-			DO_2c(theDO) = 1; DO_inc(theDO) 
-			DO_2l(theDO) = NE_InnerMarkerColor; DO_inc(theDO);
-			DO_2s(theDO) = NE_InnerMarker; DO_inc(theDO);
-			DO_2s(theDO) = NE_InnerMarkerSize; DO_inc(theDO);
-			V2_COPY(CVECT(MYVERTEX(NE_Node)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
-		}
 	
 	/* plot node ID */
 	if (NE_EvalNodeID)
