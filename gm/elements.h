@@ -48,6 +48,7 @@ namespace UG3d {
 #endif
 #endif
 
+
 /** \brief Number of different element types    */
 #define TAGS 8
 
@@ -59,6 +60,12 @@ extern INT evector_offset[TAGS];
 extern INT svector_offset[TAGS];
 extern INT side_offset[TAGS];
 extern INT data_offset[TAGS];
+
+/* the element descriptions are also globally available, these are pointers ! */
+extern GENERAL_ELEMENT *element_descriptors[TAGS];
+extern GENERAL_ELEMENT *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
+extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
+
 
 /****************************************************************************/
 /*                                                                          */

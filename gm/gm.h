@@ -2596,10 +2596,8 @@ typedef struct {
   /* ... the refinement rules should be placed here later */
 } GENERAL_ELEMENT;
 
-/* the element descriptions are also globally available, these are pointers ! */
-extern GENERAL_ELEMENT *element_descriptors[TAGS];
-extern GENERAL_ELEMENT *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
-extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
+/* TODO: move this to include section, when other general element stuff is separated */
+#include "elements.h"
 
 /****************************************************************************/
 /*                                                                          */
