@@ -295,6 +295,20 @@ INT NPLocalAssembleDisplay (NP_LOCAL_ASSEMBLE *np)
   return(0);
 }
 
+INT NPLocalAssemblePostMatrix (NP_LOCAL_ASSEMBLE *theNP, INT level,
+                               VECDATA_DESC *x,
+                               VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  INT lev;
+
+  for (lev=0; lev<=level; lev++)
+    AssembleDirichletBoundary(GRID_ON_LEVEL(theNP->assemble.base.mg,lev),
+                              A,x,b);
+  UserWrite(" [d]");
+
+  return(0);
+}
+
 static INT AssemblePreProcess (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
                                VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
 {
@@ -366,6 +380,7 @@ static INT Assemble (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
       UserWriteF("(PostMatrix failed, error code %d\n",result[0]);
       return (1);
     }
+  UserWrite("\n");
 
   return(0);
 }
@@ -382,20 +397,6 @@ static INT AssemblePostProcess (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
       return (1);
     }
   UserWrite("\n");
-
-  return(0);
-}
-
-INT NPLocalAssemblePostProcess (NP_LOCAL_ASSEMBLE *theNP, INT level,
-                                VECDATA_DESC *x,
-                                VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
-{
-  INT lev;
-
-  for (lev=0; lev<=level; lev++)
-    AssembleDirichletBoundary(GRID_ON_LEVEL(theNP->assemble.base.mg,lev),
-                              A,x,b);
-  UserWrite(" [d]");
 
   return(0);
 }

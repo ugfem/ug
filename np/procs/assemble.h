@@ -198,9 +198,9 @@ INT NPLocalAssembleInit (NP_LOCAL_ASSEMBLE *theNP, INT argc , char **argv);
 INT NPLocalAssembleDisplay (NP_LOCAL_ASSEMBLE *theNP);
 
 /* modification of the matrix for Dirichlet values */
-INT NPLocalAssemblePostProcess (NP_LOCAL_ASSEMBLE *theNP, INT level,
-                                VECDATA_DESC *x,
-                                VECDATA_DESC *b, MATDATA_DESC *A, INT *result);
+INT NPLocalAssemblePostMatrix (NP_LOCAL_ASSEMBLE *theNP, INT level,
+                               VECDATA_DESC *x,
+                               VECDATA_DESC *b, MATDATA_DESC *A, INT *result);
 
 /* generic construction of NP_ASSEMBLE from NP_LOCAL_ASSEMBLE */
 INT NPLocalAssembleConstruct (NP_ASSEMBLE *theNP);
