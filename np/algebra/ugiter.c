@@ -486,7 +486,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
     /* rhs */
     for (i=0; i<n; i++)
       s[i] = VVALUE(vec,dcomp[i]);
-    for (ctype=0; ctype<=NVECTYPES; ctype++)
+    for (ctype=0; ctype<NVECTYPES; ctype++)
       if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
         switch (MAT_RCKIND(M,rtype,ctype))
         {
