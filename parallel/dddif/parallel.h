@@ -108,6 +108,7 @@ enum HandlerSets
 #define EHGHOST(e)                                              (DDD_InfoPriority(PARHDRE(e))==PrioGhost)
 #define EGID(e)                                                 DDD_InfoGlobalId(PARHDRE(e))
 #define EPROCLIST(e)                                    DDD_InfoProcList(PARHDRE(e))
+#define EPROCPRIO(e,p)                                  DDD_InfoProcPrio(PARHDRE(e),p)
 #define ENCOPIES(e)                                             DDD_InfoNCopies(PARHDRE(e))
 #define EATTR(e)                                                DDD_InfoAttr(PARHDRE(e))
 #define XFEREDELETE(e)                                  DDD_XferDeleteObj(PARHDRE(e))
@@ -125,6 +126,7 @@ enum HandlerSets
 #define HGHOST(e)                                               (DDD_InfoPriority(PARHDR(e))==PrioGhost)
 #define GID(e)                                                  DDD_InfoGlobalId(PARHDR(e))
 #define PROCLIST(e)                                             DDD_InfoProcList(PARHDR(e))
+#define PROCPRIO(e,p)                                   DDD_InfoProcPrio(PARHDR(e),p)
 #define NCOPIES(e)                                              DDD_InfoNCopies(PARHDR(e))
 #define ATTR(e)                                                 DDD_InfoAttr(PARHDR(e))
 #define XFERDELETE(e)                                   DDD_XferDeleteObj(PARHDR(e))
@@ -248,14 +250,14 @@ extern DDD_CTRL dddctrl;
 #ifdef ModelP
 
 /* from initddd.c */
-int  InitParallel (void);
-int  ExitParallel (void);
-void InitDDDTypes (void);
-void InitCurrMG (MULTIGRID *);
+int             InitParallel    (void);
+int             ExitParallel    (void);
+void    InitDDDTypes    (void);
+void    InitCurrMG              (MULTIGRID *);
 
 /* from debugger.c */
-void ddd_pstat (char *);
-void ddd_DisplayContext (void);
+void    ddd_pstat                       (char *);
+void    ddd_DisplayContext      (void);
 
 /* from test.c */
 void ddd_test (char *argv, MULTIGRID *theMG);
@@ -268,21 +270,24 @@ DDD_TYPE        NFatherObjType  (DDD_OBJ obj, DDD_OBJ ref);
 int BalanceGridRCB (MULTIGRID *, int);
 
 /* from gridcons.c */
-void    SetOverlapPriorities            (GRID *theGrid);
+INT             SetBorderPriorities                     (GRID *theGrid);
 void    ConstructConsistentGrid         (GRID *theGrid);
 INT             CheckInterfaces                         (GRID *theGrid);
 void    SetGhostObjectPriorities    (GRID *theGrid);
 
 /* from trans.c */
-int TransferGridFromLevel (MULTIGRID *theMG, INT level);
-void AMGAgglomerate(MULTIGRID *theMG);
+int             TransferGridFromLevel           (MULTIGRID *theMG, INT level);
+void    AMGAgglomerate                          (MULTIGRID *theMG);
 
 /* from identify.c */
-INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel);
+void    IdentifyInit                                    (MULTIGRID *theMG);
+void    IdentifyExit                                    (void);
+INT             Identify_Objects_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT i);
+INT             IdentifyGridLevels                              (MULTIGRID *theMG, INT FromLevel, INT ToLevel);
 
 /* form memmgr.c */
-void memmgr_Init (void);
-void memmgr_Report (void);
+void    memmgr_Init             (void);
+void    memmgr_Report   (void);
 
 #endif /* ModelP */
 #endif /* __PARALLEL_H__ */
