@@ -3293,7 +3293,7 @@ ELEMENT *FindFather (VERTEX *theVertex)
 		if (OBJT(theVertex) == BVOBJ)
 			return(theElement);
 
-	#ifndef ModelP
+	#ifdef TOPNODE
     if (OBJT(theElement)==BEOBJ)
     {
         for (theNode=TOPNODE(theVertex);theNode!=0;theNode=NFATHER(theNode))
