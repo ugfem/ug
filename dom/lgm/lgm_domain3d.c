@@ -76,7 +76,7 @@ static INT LGM_DEBUG = 0;
 static INT SAVE_SURFACE;
 static INT SURFACE_ADAPT;
 static DOUBLE LINE_DISTANCE = 0.05;
-#define SMALL_FAK 1e-8
+#define SMALL_FAK 1e-6
 DOUBLE SMALL;
 static INT VAR_H = 1;
 #define SMALL1 1e-8
@@ -1719,6 +1719,47 @@ static INT Surface_Plane(LGM_SURFACE *theSurface)
     return(0);
 }
 
+
+static INT Read_Line(HEAP *Heap, LGM_LINE *theLine, INT MarkKey, char name[12])
+{
+  char buff[5];
+  INT d,i, j, id, buflen;
+  FILE *stream;
+  DOUBLE local[3], global[3];
+  LINEPOINT *help;
+  char buffer[256];
+
+  buflen = 256;
+  stream = fopen(name,"r+");
+  if (stream==NULL)
+  {
+    printf("%s\n", "cannot open file");
+    return(1);
+  }
+
+  fscanf(stream, "%d\n",&d);
+  LGM_LINE_NPOINT(theLine) = d;
+  for(i=0; i<LGM_LINE_NPOINT(theLine); i++)
+    fscanf(stream, "%lf %lf %lf\n",LGM_LINE_POINT(theLine,i)->position[0],
+           LGM_LINE_POINT(theLine,i)->position[1],
+           LGM_LINE_POINT(theLine,i)->position[2]);
+
+  fscanf(stream, "%d\n",&d);
+  LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(theLine)) = d;
+  help = LGM_LINEDISCNEW_START(LGM_LINE_LINEDISCNEW(theLine));
+  for(i=0; i<LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(theLine)); i++)
+  {
+    help = (LINEPOINT*)GetTmpMem(Heap,sizeof(LINEPOINT), MarkKey);
+    fscanf(stream, "%lf %lf %lf\n",global[0],global[1],global[2]);
+    Line_Local2GlobalNew(theLine,global,help->local);
+    help = help->next;
+  }
+
+  fclose(stream);
+
+  return(0);
+}
+
 static INT Read_Surface(HEAP *Heap, LGM_SURFACE *theSurface, INT MarkKey, char name[12])
 {
   char buff[5];
@@ -2001,7 +2042,7 @@ static INT Generate_Basis_Mesh(LGM_DOMAIN *theDomain, DOUBLE h, HEAP *Heap, INT 
     stream = fopen(name,"r+");
     if (stream==NULL)
     {
-      fclose(stream);
+      /* fclose(stream); */
       printf("%s\n", "xy_Surface not triangulated, do now");
 
       if (DiscretizeSurface(Heap,xy_Surface,NULL,h,NULL,0,D,MarkKey))
@@ -2418,8 +2459,8 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
       return(NULL);
     if (LGM_DEBUG)
       PrintLineInfo(theLine);
-    /*		if(SAVE_SURFACE)
-                            Write_Line(theLine);*/
+    if(SAVE_SURFACE)
+      Write_Line(theLine);
   }
 
   /* discretize surfaces */
@@ -2470,7 +2511,7 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
       stream = fopen(name,"r+");
       if (stream==NULL)
       {
-        fclose(stream);
+        /* fclose(stream); */
         printf("%s %d %s\n", "Surface ", LGM_SURFACE_ID(theSurface), "not triangulated, do now");
 
         if (DiscretizeSurface(Heap,theSurface,mesh,h,pointlist,norp, D,MarkKey))
@@ -5299,14 +5340,16 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   DOUBLE loc1[2], loc2[2], loc3[2], local[2], slocal[2], nv[3];
   DOUBLE globalp0[3],globalp1[3],globalp2[3], globalp3[3], global[3], globalnew[3];
   DOUBLE small, sp, d, min_d, l, l1;
-  DOUBLE A[3], B[3], BNDP_NV[3], Surface_NV[3];
   DOUBLE p0[3], p1[3], p2[3], m1[3], m2[3], m3[3], area, g[3];
+  DOUBLE A[3], B[3], BNDP_NV[3], Surface_NV[3];
   INT mi;
 
   small = 0.000001;
 
   if(n!=3 && n!=4)
+  {
     return(NULL);
+  }
 
   theBndP1 = BNDP2LGM(aBndP[0]);
   theBndP2 = BNDP2LGM(aBndP[1]);
@@ -5318,10 +5361,13 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   BNDP_Global(aBndP[2],globalp2);
   if (n==4) BNDP_Global(aBndP[3],globalp3);
 
-  /*	printf("%s\n", "bnds");
+  /*
+          printf("%s\n", "THEbnds");
           printf("%lf %lf %lf\n", globalp0[0], globalp0[1], globalp0[2]);
           printf("%lf %lf %lf\n", globalp1[0], globalp1[1], globalp1[2]);
-          printf("%lf %lf %lf\n", globalp2[0], globalp2[1], globalp2[2]);	*/
+          printf("%lf %lf %lf\n", globalp2[0], globalp2[1], globalp2[2]);
+          printf("%lf %lf %lf\n", globalp3[0], globalp3[1], globalp3[2]);
+   */
 
   A[0] = globalp2[0] - globalp0[0];
   A[1] = globalp2[1] - globalp0[1];
@@ -5420,8 +5466,15 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
             }
           }
 
-  if(count==0) return(NULL);
-  if(count>1 && n==4) return(NULL);
+  if (count==0) return(NULL);
+  if (0)
+    if(count>1 && n==4)
+    {
+      /* why should the returning of a null pointer make sense (s.l. 011011) */
+      /* for quadrilateral sides */
+      UserWriteF("return 2 n %d count %d",n,count);
+      return(NULL);
+    }
 
   if(count>1)
   {
@@ -5463,7 +5516,6 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 
   if (count==0)
   {
-    assert(0);
     return (NULL);
   }
 
@@ -5745,6 +5797,58 @@ static INT Count_Common_Lines(LGM_BNDP *theBndP1, LGM_BNDP *theBndP2, LGM_SURFAC
 }
 
 /* domain interface function: for description see domain.h */
+BNDP *BNDP_InsertBndP (HEAP *Heap, BVP *aBVP, double *global)
+{
+  LGM_DOMAIN *theDomain;
+  LGM_SURFACE *theSurface;
+  LGM_LINE *theLine;
+  int i,id, nline, nsurf;
+  double local[2], left, right;
+  LGM_BNDP *theBndP;
+
+  theDomain = BVP2LGM(aBVP);
+
+  UserWriteF("B %lf %lf %lf\n", global[0],global[1],global[2]);
+
+  nline = 0;
+  for (theLine=FirstLine(theDomain); theLine!=NULL; theLine=NextLine(theDomain))
+  {
+    Line_Global2Local(theLine,global,local);
+
+    if (*local >= 0.0)
+    {
+      UserWriteF("	L %d %f\n", LGM_LINE_ID(theLine),(FLOAT)*local);
+      nline++;
+    }
+  }
+
+  for (theSurface=FirstSurface(theDomain); theSurface!=NULL; theSurface=NextSurface(theDomain))
+  {
+    INT mi;
+    DOUBLE d,nv[3],globalnew[3];
+
+    V_DIM_CLEAR(nv);
+    mi = GetLocalKoord(theSurface,global,local, nv);
+    if(mi!=-1)
+    {
+      Surface_Local2Global(theSurface, globalnew, local);
+      d = sqrt((global[0]-globalnew[0])*(global[0]-globalnew[0])
+               +    (global[1]-globalnew[1])*(global[1]-globalnew[1])
+               +    (global[2]-globalnew[2])*(global[2]-globalnew[2]));
+      if(d<SMALL)
+      {
+        UserWriteF("	S %d %d %f %f\n",
+                   LGM_SURFACE_ID(theSurface),
+                   mi,(FLOAT)(local[0]-(DOUBLE)mi),(FLOAT)(local[1]-(DOUBLE)mi));
+      }
+    }
+  }
+  UserWriteF(";\n");
+
+  return (NULL);
+}
+
+/* domain interface function: for description see domain.h */
 BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 {
   LGM_BNDP *theBndP1, *theBndP2, *theBndP;
@@ -5799,6 +5903,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
         {
           /* line not cyclic */
                                         #ifdef NO_PROJECT
+
           if( (E_Distance(LGM_BNDP_LINE_GLOBALRIGHT(theBndP1, i), globalp2)<SMALL)
               ||  (E_Distance(LGM_BNDP_LINE_GLOBALLEFT (theBndP2, j), globalp1)<SMALL)
               ||  (E_Distance(LGM_BNDP_LINE_GLOBALLEFT (theBndP1, i), globalp2)<SMALL)
