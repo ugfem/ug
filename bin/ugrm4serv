@@ -70,6 +70,13 @@ then
 	cp ${UGROOT}/doc/refmanualI.ps.gz .
 	cp ${UGROOT}/doc/refmanualII.ps.gz .
 	mv ../UG $1
+	if test $# -ge 2 
+	then
+		if test "$2" = "CVS"
+		then
+			find  $1 -name "CVS" -exec rm -r {} \;
+		fi
+	fi
 	tar cvf $1.tar $1
 	gzip $1.tar
 	mv $1 ../UG
@@ -78,10 +85,3 @@ then
     cd ..
 fi
 
-if test $# -ge 2 
-then
-	if test "$2" = "CVS"
-	then
-		find  ${UGROOT}/../ -name "CVS" -exec rm -r {} \;
-	fi
-fi
