@@ -287,7 +287,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   return (theDomain);
 }
 
-INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh, INT MarkKey)
+INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomain, INT MarkKey)
 {
   /* if impossible to read mesh, return 1 */
   if (ReadMesh==NULL) return (1);
@@ -457,11 +457,9 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     if ((SurfacePtrList[i]=(LGM_SURFACE*)GetFreelistMemory(theHeap,size)) == NULL)
       return (NULL);
 
-    if ((LGM_SURFACE_FPOINT(SurfacePtrList[i])=
-           (LGM_POINT*)GetFreelistMemory(theHeap,sizeof(LGM_POINT)*lgm_sizes.Surf_nPoint[i])) == NULL)
+    if ((LGM_SURFACE_FPOINT(SurfacePtrList[i])=(LGM_POINT*)GetFreelistMemory(theHeap,sizeof(LGM_POINT)*lgm_sizes.Surf_nPoint[i])) == NULL)
       return (NULL);
-    if ((LGM_SURFACE_FTRIANGLE(SurfacePtrList[i])
-           =(LGM_TRIANGLE*)GetFreelistMemory(theHeap,sizeof(LGM_TRIANGLE)*lgm_sizes.Surf_nTriangle[i])) == NULL)
+    if ((LGM_SURFACE_FTRIANGLE(SurfacePtrList[i]) =(LGM_TRIANGLE*)GetFreelistMemory(theHeap,sizeof(LGM_TRIANGLE)*lgm_sizes.Surf_nTriangle[i])) == NULL)
       return (NULL);
 
     theSurfaceInfo.nPoint = lgm_sizes.Surf_nPoint[i];
@@ -598,10 +596,17 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   return (theDomain);
 }
 
-INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh, INT MarkKey)
+INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomain, INT MarkKey)
 {
   LGM_MESH_INFO lgm_mesh_info;
   INT i;
+  /*new variables*/
+  INT size,j,the__id;
+  LGM_SURFACE *helppointer;
+  LGM_SURFACE *theSurface;
+  INT lauf,k;
+  INT lfv;
+  LGM_LINE *theLine;
 
   /* if impossible to read mesh, return 1 */
   if (ReadMesh==NULL) return (1);
@@ -610,27 +615,119 @@ INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh, INT MarkKey)
   if ((*ReadMesh)(theHeap,&lgm_mesh_info,MarkKey)) return (1);
 
   /* copy mesh_info to mesh and create BNDPs */
-  assert(0); /* not compilable for T3D/T3E sine data types don't match */
-  /*
-      theMesh->nBndP                    = lgm_mesh_info.nBndP;
-      theMesh->nInnP                     = lgm_mesh_info.nInnP;
-      theMesh->Position                 = lgm_mesh_info.InnPosition;
-      theMesh->nSubDomains              = lgm_mesh_info.nSubDomains;
-      theMesh->nSides                   = lgm_mesh_info.nSides;
-      theMesh->Side_corners             = lgm_mesh_info.Side_corners;
-          theMesh->Side_corner_ids          = lgm_mesh_info.Side_corner_ids;
-      theMesh->nElements                = lgm_mesh_info.nElements;
-      theMesh->Element_corners          = lgm_mesh_info.Element_corners;
-      theMesh->Element_corner_ids       = lgm_mesh_info.Element_corner_ids;
-      theMesh->nbElements               = lgm_mesh_info.nbElements;
-      for (i=0; i<lgm_mesh_info.nBndP; i++)
-      {
-          theMesh->theBndPs[i] = NULL;
-      }
-      theMesh->ElemSideOnBnd            = NULL;
-   */
+  theMesh->nBndP                    = lgm_mesh_info.nBndP;
+  theMesh->nInnP                     = lgm_mesh_info.nInnP;
+  theMesh->Position                 = lgm_mesh_info.InnPosition;
 
-  return (1);
+  /* for all innerpoints */
+  for(lauf=0; lauf<theMesh->nInnP; lauf++)
+  {
+    for(k=0; k<3; k++)
+    {
+      ((theMesh->Position)[lauf])[k] = ((lgm_mesh_info.InnPosition)[lauf])[k];
+    }
+  }
+  theMesh->nSubDomains              = lgm_mesh_info.nSubDomains;
+  theMesh->nSides                   = lgm_mesh_info.nSides;
+  theMesh->Side_corners             = lgm_mesh_info.Side_corners;
+  theMesh->Side_corner_ids          = lgm_mesh_info.Side_corner_ids;
+  theMesh->nElements                = lgm_mesh_info.nElements;
+  theMesh->Element_corners          = lgm_mesh_info.Element_corners;
+  theMesh->Element_corner_ids       = lgm_mesh_info.Element_corner_ids;
+  theMesh->nbElements               = lgm_mesh_info.nbElements;
+  theMesh->VertexLevel   = NULL;
+  theMesh->ElementLevel  = NULL;
+  theMesh->ElemSideOnBnd            = lgm_mesh_info.Element_SideOnBnd;
+
+  /*concerning boundary points ...*/
+  theMesh->theBndPs = (BNDP**)GetTmpMem(theHeap,sizeof(LGM_BNDP*)*((lgm_mesh_info.nBndP)+1),MarkKey);
+  if (theMesh->theBndPs == NULL)
+    return (1);
+
+  for (i=0; i<lgm_mesh_info.nBndP; i++)
+  {
+    size = sizeof(LGM_BNDP);
+    theMesh->theBndPs[i] = (BNDP*)GetFreelistMemory(theHeap,size);
+    if(theMesh->theBndPs[i]==NULL) return(1);
+
+    /* add Number of Surfaces of the BoundaryPoint */
+    LGM_BNDP_N((LGM_BNDP*)(theMesh->theBndPs[i])) = (lgm_mesh_info.BndP_nSurf)[i];
+
+    /*NEU ,BndPLineRel . . . */
+    LGM_BNDP_NLINE((LGM_BNDP*)(theMesh->theBndPs[i])) = (lgm_mesh_info.BndP_nLine)[i];
+
+    /*get memory for BNDPS-Part*/
+    size = ((lgm_mesh_info.BndP_nSurf)[i])*sizeof(struct lgm_bndp_surf);
+    LGM_BNDP_SURFACEPTR((LGM_BNDP*)(theMesh->theBndPs[i])) =  (LGM_BNDP_PSURFACE*)GetFreelistMemory(theHeap,size);
+
+    /*NEU  BndPLineRel . . . */
+    size = ((lgm_mesh_info.BndP_nLine)[i])*sizeof(struct lgm_bndp_line);
+    LGM_BNDP_LINEPTR((LGM_BNDP*)(theMesh->theBndPs[i])) =  (LGM_BNDP_PLINE*)GetFreelistMemory(theHeap,size);
+
+    /*add Surfaces, add TrianglesAndlocalCoordinates  . . .*/
+    /*for all boundarypoint_surfaces*/
+    for(j=0; j < (lgm_mesh_info.BndP_nSurf)[i]; j++)
+    {
+      /* add local coordinates . . . */
+      /*the macro: LGM_BNDP_LOCAL(p,i)	((p)->Surf[(i)].local)*/
+      /*size = 2;*//*number of local coordinates*/
+
+      /* add Surfaces  . . . */
+      /*the macro: LGM_BNDP_SURFACES(p,i)	((p)->Surf[(i)]) */
+      the__id = ((lgm_mesh_info.BndP_SurfID)[i])[j];
+      theSurface = FirstSurface(theDomain);
+      while(LGM_SURFACE_ID(theSurface) != the__id)
+      {
+        theSurface=NextSurface(theDomain);
+        if(theSurface == NULL)
+        {
+          return(1);
+        }
+      }
+      if(the__id != LGM_SURFACE_ID(theSurface))
+      {
+        return(1);
+      }
+      LGM_BNDP_SURFACE((LGM_BNDP*)(theMesh->theBndPs[i]),j) = theSurface;
+
+      /* add the local coordinates: thereby triangleId is added*/
+      (LGM_BNDP_LOCAL((LGM_BNDP*)(theMesh->theBndPs[i]),j))[0] = ((lgm_mesh_info.BndP_Cor_TriaID)[i])[j] +  (((lgm_mesh_info.BndP_lcoord)[i])[j])[0];
+      (LGM_BNDP_LOCAL((LGM_BNDP*)(theMesh->theBndPs[i]),j))[1] = ((lgm_mesh_info.BndP_Cor_TriaID)[i])[j] +  (((lgm_mesh_info.BndP_lcoord)[i])[j])[1];
+    }
+
+    /*add LineIDs, And localCoordinates of the bndp_line_relations . . .*/
+    /*for all boundarypoint_lines*/
+    for(j=0; j < (lgm_mesh_info.BndP_nLine)[i]; j++)
+    {
+      the__id = ((lgm_mesh_info.BndP_LineID)[i])[j];
+      theLine = FirstLine(theDomain);
+      while(LGM_LINE_ID(theLine) != the__id)
+      {
+        theLine=NextLine(theDomain);
+        if(theLine == NULL)
+        {
+          PrintErrorMessage('E',"LGM_LoadMesh"," did not find the line with the__id in the loop <for all boundarypoint_lines>");
+          return(1);
+        }
+      }
+      if(the__id != LGM_LINE_ID(theLine))
+      {
+        PrintErrorMessage('E',"LGM_LoadMesh"," the found line does not have the ID <the__id> in the loop <for all boundarypoint_lines>");
+        return(1);
+      }
+
+      /* Line in lgm_meshstructure  ... */
+      LGM_BNDP_LINE((LGM_BNDP*)(theMesh->theBndPs[i]),j) = theLine;
+
+      /* add the local coordinates */
+      LGM_BNDP_LINE_LEFT((LGM_BNDP*)(theMesh->theBndPs[i]),j) = ((lgm_mesh_info.BndP_lcoord_left)[i])[j];
+      LGM_BNDP_LINE_RIGHT((LGM_BNDP*)(theMesh->theBndPs[i]),j) = ((lgm_mesh_info.BndP_lcoord_right)[i])[j];
+
+    }
+
+  }
+
+  return (0);
 }
 
 #endif

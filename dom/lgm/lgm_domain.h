@@ -264,6 +264,9 @@
 #define LGM_BNDP_N(p)                                           ((p)->nsurf)
 #define LGM_BNDP_SURFACES(p,i)                          ((p)->Surf[(i)])
 #define LGM_BNDP_SURFACE(p,i)                           ((p)->Surf[(i)].theSurf)
+#define LGM_BNDP_SURFACEPTR(p)                          ((p)->Surf)
+#define LGM_BNDP_LINEPTR(p)                                     ((p)->Line)
+
 #define LGM_BNDP_LOCAL(p,i)                                     ((p)->Surf[(i)].local)
 #define LGM_BNDP_SURFACE_GSURFACE(p)            ((p).theSurf)
 #define LGM_BNDP_SURFACE_LOCAL(p)                       ((p).local)
@@ -627,6 +630,13 @@ typedef struct Domain3d
 /* function declarations													*/
 /*																			*/
 /****************************************************************************/
+
+#if (LGM_DIM==3)
+LGM_SURFACE                     *FirstSurface           (LGM_DOMAIN *theDomain);
+LGM_SURFACE                     *NextSurface            (LGM_DOMAIN *theDomain);
+LGM_LINE                                *FirstLine                      (LGM_DOMAIN *theDomain);
+LGM_LINE                                *NextLine                       (LGM_DOMAIN *theDomain);
+#endif
 
 #ifndef Grape
 LGM_PROBLEM     *CreateProblem                  (char *name, InitProcPtr config, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[]);

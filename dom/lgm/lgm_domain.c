@@ -234,7 +234,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
   if (SetDomainSize(theDomain)) return (NULL);
 
   /* set mesh with nothing */
-  if (LGM_LoadMesh(Heap,Mesh,MarkKey))
+  if (LGM_LoadMesh(Heap,Mesh,theDomain,MarkKey))
   {
     Mesh->nBndP             = 0;
     Mesh->nInnP             = 0;

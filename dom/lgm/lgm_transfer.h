@@ -196,18 +196,23 @@ struct lgm_mesh_info {
 
   int nBndP;                         /* nb. of boundary points              */
   int *BndP_nSurf;                   /* nb. of surfaces per bound. point    */
+  int *BndP_nLine;                       /* nb. of lines per bound. point    */
   int **BndP_SurfID;                 /* id of each surface                  */
+  int **BndP_LineID;                     /* id of each line                  */
   int **BndP_Cor_TriaID;                 /* id of corr. triangle of each surface*/
   float ***BndP_lcoord;              /* local coord of BndP on each surface */
+  float **BndP_lcoord_left;              /* left local coord of BndP on each line */
+  float **BndP_lcoord_right;             /* right local coord of BndP on each line */
   float **BndPosition;                           /* list of boundary points	            */
   int nInnP;                         /* nb. of inner nodes                  */
-  float **InnPosition;               /* positions of inner nodes            */
+  double **InnPosition;               /* positions of inner nodes            */
   int nSubDomains;                   /* nb. of subdomains                   */
   int *nSides;                       /* nb. of boundary sides per subdomain */
   int **Side_corners;                /* nb. of side corners                 */
   int ***Side_corner_ids;                /* corner ids                          */
   int *nElements;                    /* nb. of element corners              */
   int **Element_corners;             /* nb. of element corners              */
+  int **Element_SideOnBnd;               /* used bitwise: sides on bnd for elem */
   int ***Element_corner_ids;         /* nb. of side corners                 */
   int ***nbElements;                 /* nb. of side corners                 */
 };

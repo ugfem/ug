@@ -66,8 +66,10 @@
 #define T 1
 #define F 0
 
-#define NUOFCLMS 60
-#define NU_SFCES_BNDP 6
+#define NUOFCLMS 70
+#define NU_SFCES_BNDP 9
+/*LINE_NEU*/
+#define NU_LINES_BNDP 7
 
 #define FALS 0
 #define TRU 1
@@ -5056,6 +5058,7 @@ INT GetMemAndFillNewPlz(SFPL_TYP **anfang,SFPL_TYP **rechtesMuster,SF_TYP *theSu
 	
 	
 	/*Probe: Ist der neue Polylinezyklus wirklich zyklisch ?*/
+	/* concerning cyclic Polylines see also file <zyklische_Polylines> on Dirk Mac */
 	/*erste oder zweite LI_NDID der ersten Line muss einen Gemeinsamen besitzen mit
 	  der ersten oder zweiten LI_NDID der letzten Line sein . . .*/
 	last_Line_of_idl2 = PL_LINES(SFPL_PL(idl2));
@@ -7696,7 +7699,8 @@ int LGM_ANSYS_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_in
     
     domain_info->Dimension = 3;
 	
-    domain_info->Convex = 0;
+    /*domain_info->Convex = 0; temoraer abgeaendert 200198*/
+    domain_info->Convex = 1;
     
     domain_info->nSubDomain = NMB_OF_SBDMS(DomainInfo_Pointer);
     
@@ -8152,6 +8156,12 @@ int LGM_ANSYS_ReadLines (int which_plline, LGM_LINE_INFO *line_info)
 	line_info->point[0] = LI_NDID1(PL_LINES_LINE(pllyln));	
 	/*weise KnotenIDs der gefundenen Polyline zu*/
 	/*... laufe dazu ueber die Polylineteilstreckenzuege ...*/
+	/*Der Fall der zyklischen Polyline ist von C.Tapp bisher nicht beruecksichtigt
+	  Ich uebergeb in diesm speziellen Fall einen Punkt zweimal
+	  d.h. am Anfang und am Ende,; ausserdem ist PL_NMB_OF_POINTS dann um 1 zu gross
+	  in Zukunft: sollte lgm-Domain so ueberarbeitet werden, 
+	  dass die Pl-Struktur hiefuer ein Flag besitzt.*/
+	/* concerning cyclic Polylines see also file <zyklische_Polylines> on Dirk Mac */
 	for(i=1; i<PL_NMB_OF_POINTS(plyln); i++)
 	{
 		if(pllyln != NULL)
@@ -8277,7 +8287,7 @@ int FillPositionInformations(LGM_MESH_INFO *theMesh)
 	/* wenn ueberhaupt innere Knoten existieren ... */
 	if(statistik[0] >0)
 	{
-		if ((theMesh->InnPosition = GetTmpMem(theHeap,(statistik[0])*sizeof(DOUBLE*), ANS_MarkKey)) == NULL) 	
+		if ((theMesh->InnPosition = GetTmpMem(theHeap,(statistik[0])*sizeof(double*), ANS_MarkKey)) == NULL) 	
 		{ 
 			PrintErrorMessage('E',"FillPositionInformations"," ERROR: No memory for theMesh->InnPosition");
 			return(1);
@@ -8287,7 +8297,7 @@ int FillPositionInformations(LGM_MESH_INFO *theMesh)
 	/* Uebergabe der Koordinatenwerte der InnerPoints mit den IDs m,m+1,m+2,...n */
 	for(innpindex=0; innpindex<statistik[0]; innpindex++)
 	{
-		if (((theMesh->InnPosition)[innpindex]= GetTmpMem(theHeap,(DIMENSION)*sizeof(DOUBLE), ANS_MarkKey)) == NULL) 
+		if (((theMesh->InnPosition)[innpindex]= GetTmpMem(theHeap,(DIMENSION)*sizeof(double), ANS_MarkKey)) == NULL) 
 		{ 
 			PrintErrorMessage('E',"FillPositionInformations"," ERROR: No memory for (theMesh->InnPosition)[innpindex]");
 			return(1);
@@ -8644,13 +8654,13 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
 	SD_TYP *sbd;
 	int nmbofsides,sides_zaehler,elems_zaehler, stelle, stelle2,help;
 	SFC_TYP *sd_sfc;
-	int lf,elem_lf; 
+	int lf,elem_lf,lfv; 
 	/*int ug_lgm_id_minus_1*/
 	int ug_sd_offs[3];
 	/*only for debugging */
 	int hilfszaehler;	
 	/* bestimme Nmbofsides Info aus den bestehenden Austauschstrukturen*/
-	nmbofsides = 0;sides_zaehler =0;elems_zaehler=0;;
+	nmbofsides = 0;sides_zaehler =0;elems_zaehler=0;
 	/*ug_lgm_id_minus_1 = ug_lgm_id -1;*/
 	sbd = EXCHNG_TYP2_ROOT_SBD(ExchangeVar_2_Pointer);
 	while (SD_NAME(sbd) != SbdName)
@@ -8673,7 +8683,11 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
 		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Side_corners)[ug_lgm_id]");
 		return(1);
 	}
-	memset(((theMesh->Side_corners)[ug_lgm_id]),CORNERS_OF_BND_SIDE,(nmbofsides)*sizeof(INT));/*hier immer 3 da Tetraederseiten gemeint sind*/
+/*	memset(((theMesh->Side_corners)[ug_lgm_id]),CORNERS_OF_BND_SIDE,(nmbofsides)*sizeof(INT));hier immer 3 da Tetraederseiten gemeint sind*/
+	for(lfv=0; lfv< nmbofsides; lfv++)
+	{
+		((theMesh->Side_corners)[ug_lgm_id])[lfv] =  CORNERS_OF_BND_SIDE;
+	}
 	
 	if(((theMesh->Side_corner_ids)[ug_lgm_id] = GetTmpMem(theHeap,(nmbofsides)*sizeof(INT*), ANS_MarkKey)) == NULL)
 	{ 
@@ -8696,7 +8710,18 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
 		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Element_corners)[ug_lgm_id]");
 		return(1);
 	}
-	memset(((theMesh->Element_corners)[ug_lgm_id]),CORNERS_OF_ELEMENT,(nmbOfTetrhdrOfThisSbd)*sizeof(INT));/*hier immer 3 da Tetraederseiten gemeint sind*/
+/*	memset(((theMesh->Element_corners)[ug_lgm_id]),CORNERS_OF_ELEMENT,(nmbOfTetrhdrOfThisSbd)*sizeof(INT)); hier immer 4 da Tetraederseiten gemeint sind*/
+	for (lfv=0; lfv < nmbOfTetrhdrOfThisSbd; lfv++)
+	{
+		((theMesh->Element_corners)[ug_lgm_id])[lfv] = CORNERS_OF_ELEMENT;
+	}
+	if(((theMesh->Element_SideOnBnd)[ug_lgm_id] = GetTmpMem(theHeap,(nmbOfTetrhdrOfThisSbd)*sizeof(INT), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Element_SideOnBnd)[ug_lgm_id]");
+		return(1);
+	}
+	memset(((theMesh->Element_SideOnBnd)[ug_lgm_id]),0,(nmbOfTetrhdrOfThisSbd)*sizeof(INT));/*hier zunaechst 0; d.h. keine BndSide*/
+	/*die Boundarysides muessen noch bitweise gesetzt werden; aber wo  ... TODO  GOON HERE ...*/
 
 	if(((theMesh->Element_corner_ids)[ug_lgm_id] = GetTmpMem(theHeap,(nmbOfTetrhdrOfThisSbd)*sizeof(INT*), ANS_MarkKey)) == NULL)
 	{ 
@@ -8732,7 +8757,6 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
 				stelle++;
 			}
 			
-			elems_zaehler++;
 			
 			/*wenn überhaupt ein Boundaryelement...*/
 			if(elemflag_array[elem_lf] > 0)
@@ -8743,15 +8767,32 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
 				for(lf = 0; lf < 4; lf++)
 				{
 					if(el_array[stelle] < 0) /*wenn das Element bzgl. dieser Seite an eine Boundary angrenzt ... */
+										     /* die Seitenindizes beziehen sich dabei auf die UG-TetraederSideNummerierung
+										        d.h. Side0:021; Side1:123; Side2:032; Side3:013 
+										        Diese UG-Nummerierung wurde bei der Zuweisung in FindElNeighbours beruecksichtigt*/
 					{
 						/*SideCorners von dieser Side eintragen*/
+									/* zusaetzlich an dieser Stelle: Update der bitweise gesetzten
+									   Komponente theMesh->Element_SideOnBnd . . .
+									   wird hier in der switch-Auswahl gesetzt.*/
 						switch (lf) 
 						{
 							/*die folgenden Zuw. beziehen sich auf UG, nicht auf ANSYS !*/
-							case 0: ug_sd_offs[0] = 0; ug_sd_offs[1] = 2; ug_sd_offs[2] = 1; break;
-							case 1: ug_sd_offs[0] = 1; ug_sd_offs[1] = 2; ug_sd_offs[2] = 3; break;
-							case 2: ug_sd_offs[0] = 0; ug_sd_offs[1] = 3; ug_sd_offs[2] = 2; break;
+							case 0: ug_sd_offs[0] = 0; ug_sd_offs[1] = 2; ug_sd_offs[2] = 1; 
+									/*estes Bit wird gesetzt fuer Side 0 . . . */
+									((theMesh->Element_SideOnBnd)[ug_lgm_id])[elems_zaehler] += 1; 
+									break;
+							case 1: ug_sd_offs[0] = 1; ug_sd_offs[1] = 2; ug_sd_offs[2] = 3; 
+									/*zweites  Bit wird gesetzt fuer Side 1 . . . */
+									((theMesh->Element_SideOnBnd)[ug_lgm_id])[elems_zaehler] += 2; 
+									break;
+							case 2: ug_sd_offs[0] = 0; ug_sd_offs[1] = 3; ug_sd_offs[2] = 2; 
+									/*drittes  Bit wird gesetzt fuer Side 2 . . . */
+									((theMesh->Element_SideOnBnd)[ug_lgm_id])[elems_zaehler] += 4; 
+									break;
 							case 3: ug_sd_offs[0] = 0; ug_sd_offs[1] = 1; ug_sd_offs[2] = 3;
+									/*viertes  Bit wird gesetzt fuer Side 3 . . . */
+									((theMesh->Element_SideOnBnd)[ug_lgm_id])[elems_zaehler] += 8; 
 						}/*"switch (lf)"*/	
 						for (help=0; help<3; help++)/*ueber die 3 sidenodeIDs*/
 						{
@@ -8768,6 +8809,7 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
 					return(1);
 					}
 			} 
+			elems_zaehler++;	
 		}
 	}
 	/*Probe:*/
@@ -8895,16 +8937,16 @@ int FillBndPointInformations(LGM_MESH_INFO *theMesh, int *bnd_pnt_srfc, int *bnd
 			switch (bnd_pnt_case[stelle]) 
 			{
 				case 0: 
-					(((theMesh->BndP_lcoord)[b])[s])[0] = 0.0;
-					(((theMesh->BndP_lcoord)[b])[s])[1] = 0.0;
-					break;
-				case 1: 
 					(((theMesh->BndP_lcoord)[b])[s])[0] = 1.0;
 					(((theMesh->BndP_lcoord)[b])[s])[1] = 0.0;
 					break;
-				case 2: 
+				case 1: 
 					(((theMesh->BndP_lcoord)[b])[s])[0] = 0.0;
 					(((theMesh->BndP_lcoord)[b])[s])[1] = 1.0;
+					break;
+				case 2: 
+					(((theMesh->BndP_lcoord)[b])[s])[0] = 0.0;
+					(((theMesh->BndP_lcoord)[b])[s])[1] = 0.0;
 					break;
 				default:	
 					PrintErrorMessage('E',"FillBndPointInformations","kein Standardfall <0,1,2> bzgl.lok. Koords");
@@ -9114,6 +9156,664 @@ int	EvalBndPointInformations(LGM_MESH_INFO *theMesh)
 
 
 
+/****************************************************************************/
+/*
+BndPoint_Line_Alloc_Mem - allocates mem for the  BNDP-Line-Part
+   
+   SYNOPSIS:
+   int BndPoint_Line_Alloc_Mem(LGM_MESH_INFO *theMesh, int *boundary_point_line_counter)
+
+   PARAMETERS:
+.  theMesh - mesh structure which will be filled.
+.  boundary_point_line_counter - includes number of lines of each BNDP.
+   
+   DESCRIPTION:
+   allokiert und initiailisierSpeicher fuer die BndP->linekomponenten
+   int *BndP_nLine, int **BndP_LineID, float **BndP_lcoord_left und float **BndP_lcoord_right
+   int *BndP_nLine wird dabei aus boundary_point_line_counter heraus gefuellt. 
+   
+   RETURN VALUE:
+   INT
+.n      0 if ok 
+.n      1 if read error.						
+   
+   SEE ALSO:
+ */
+/****************************************************************************/
+int BndPoint_Line_Alloc_Mem(LGM_MESH_INFO *theMesh, int *boundary_point_line_counter)
+{
+	int b;
+	float float_help;
+	int hlp;
+	
+	if((theMesh->BndP_nLine = GetTmpMem(theHeap,statistik[1]*sizeof(INT), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"BndPoint_Line_Alloc_Mem"," ERROR: No memory for theMesh->BndP_nLine !!!");
+		return(1);
+	}
+	
+	if((theMesh->BndP_LineID = GetTmpMem(theHeap,statistik[1]*sizeof(INT*), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"BndPoint_Line_Alloc_Mem"," ERROR: No memory for theMesh->BndP_LineID !!!");
+		return(1);
+	}
+	
+	if((theMesh->BndP_lcoord_left = GetTmpMem(theHeap,statistik[1]*sizeof(float*), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"BndPoint_Line_Alloc_Mem"," ERROR: No memory for theMesh->BndP_lcoord_left !!!");
+		return(1);
+	}
+
+	if((theMesh->BndP_lcoord_right = GetTmpMem(theHeap,statistik[1]*sizeof(float*), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"BndPoint_Line_Alloc_Mem"," ERROR: No memory for theMesh->BndP_lcoord_right !!!");
+		return(1);
+	}
+
+    for(b = 0; b < statistik[1]; b++)
+    {
+	    /* Line-Anzahl je BndP setzen */
+    	(theMesh->BndP_nLine)[b] = boundary_point_line_counter[b];
+    	
+    	/*Speicher anlegen fuer LineIDs und lokale Kordinaten*/
+	    /* TOASK: Gibt GetTmpMem NULL zurueck,wenn zweiter Parameter == 0 ?  
+	       Antwort: JA ! siehe in low->heaps.c->GetMem*/
+    	/*****************************************************/
+	    /* Speicher holen für int *BndP_LineID */
+		if (boundary_point_line_counter[b] != 0)
+		{
+		if(((theMesh->BndP_LineID)[b] = GetTmpMem(theHeap,(boundary_point_line_counter[b])*sizeof(INT), ANS_MarkKey)) == NULL)
+		{ 
+			PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for <theMesh->BndP_LineID>[b] !!!");
+			return(1);
+		}
+			memset((theMesh->BndP_LineID)[b],-1,(boundary_point_line_counter[b])*sizeof(INT));/*-1 da LineIDs von 0 bis .. gehen*/
+		}
+		else 
+		{
+			(theMesh->BndP_LineID)[b] = NULL;
+		}			
+		
+		if (boundary_point_line_counter[b] != 0)
+		{
+		if(((theMesh->BndP_lcoord_left)[b] = GetTmpMem(theHeap,(boundary_point_line_counter[b])*sizeof(float), ANS_MarkKey)) == NULL)
+		{ 
+			PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for <theMesh->BndP_lcoord_left>[b] !!!");
+			return(1);
+		}
+			/*Iint mit -2.0 da lok. LNkoords von 1.0, 0.0, 1.0, 2.0, ... gehen*/
+			float_help = -2.0;
+			for (hlp=0; hlp<boundary_point_line_counter[b]; hlp++)
+			{
+				((theMesh->BndP_lcoord_left)[b])[hlp] = float_help;
+			}
+}
+		else
+		{
+			(theMesh->BndP_lcoord_left)[b] = NULL;	
+		}
+			
+		if (boundary_point_line_counter[b] != 0)
+		{
+		if(((theMesh->BndP_lcoord_right)[b] = GetTmpMem(theHeap,(boundary_point_line_counter[b])*sizeof(float), ANS_MarkKey)) == NULL)
+		{ 
+			PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for <theMesh->BndP_lcoord_right>[b] !!!");
+			return(1);
+		}
+			/*Iint mit -2.0 da lok. LNkoords von 1.0, 0.0, 1.0, 2.0, ... gehen*/
+			float_help = -2.0;
+			for (hlp=0; hlp<boundary_point_line_counter[b]; hlp++)
+			{
+				((theMesh->BndP_lcoord_right)[b])[hlp] = float_help;
+				}
+    	}
+	else
+	{
+		(theMesh->BndP_lcoord_right)[b] = NULL;
+	}
+    }
+
+	return(0);
+} /* of BndPoint_Line_Alloc_Mem*/
+
+
+
+
+/****************************************************************************/
+/*
+Put_BndPLineRelation_In_theMesh - fills a  BNDP-LINE-Relation of the lgmExchangestructure
+   
+   SYNOPSIS:
+   int Put_BndPLineRelation_In_theMesh(LGM_MESH_INFO *theMesh, int BndP_UG_ID, int Line_ID, float linkelokkoord, float rechtelokkoord)
+
+   PARAMETERS:
+.  theMesh - mesh structure which will be filled.
+.  BndP_UG_ID - the correct id of the oundaryPoint.
+.  Line_ID - the correspondug PoylylineID.
+.  linkelokkoord - left loc coord of this BndP-Polyline-Relation.
+.  rechtelokkoord - right loc coord of this BndP-Polyline-Relation.
+   
+   DESCRIPTION:
+   traegt eine spezielle Bndp_Line_Relation in die Meshstruktur ein
+   und prueft zuvor auf ausreichenden vorbereiteten Speicheplatz ab.
+   
+   RETURN VALUE:
+   INT
+.n      0 if ok 
+.n      1 if read error.						
+   
+   SEE ALSO:
+ */
+/****************************************************************************/
+int Put_BndPLineRelation_In_theMesh(LGM_MESH_INFO *theMesh, int BndP_UG_ID, int Line_ID, float linkelokkoord, float rechtelokkoord)
+{
+	int freie_stelle;
+	
+	freie_stelle = 0;
+	
+	if((theMesh->BndP_LineID)[BndP_UG_ID] == NULL)
+	{
+		PrintErrorMessage('E',"Put_BndPLineRelation_In_theMesh"," ERROR: No memory prepared for <theMesh->BndP_LineID>[BndP_UG_ID]!!!");
+		return(1);
+	}
+
+	/*suche erste freie Einfuegestelle*/
+	while( ((theMesh->BndP_LineID)[BndP_UG_ID])[freie_stelle] != -1) /*solange schon was eingefuegt wurde*/
+	{
+		freie_stelle++;
+		if( freie_stelle == (theMesh->BndP_nLine)[BndP_UG_ID] )
+		{
+			PrintErrorMessage('E',"Put_BndPLineRelation_In_theMesh"," ERROR: <theMesh->BndP_LineID>[] already full!!!");
+			return(1);
+		}
+	}
+	
+	/*zusaetzliche Checkfunktion kann spaeter evtl. geloescht werden:*/
+	/*several tests . . .*/
+	if((theMesh->BndP_lcoord_left)[BndP_UG_ID] == NULL)
+	{
+		PrintErrorMessage('E',"Put_BndPLineRelation_In_theMesh"," ERROR: No memory prepared for <theMesh->BndP_lcoord_left>[BndP_UG_ID]!!!");
+		return(1);
+	}
+	if((theMesh->BndP_lcoord_right)[BndP_UG_ID] == NULL)
+	{
+		PrintErrorMessage('E',"Put_BndPLineRelation_In_theMesh"," ERROR: No memory prepared for <theMesh->BndP_lcoord_right>[BndP_UG_ID]!!!");
+		return(1);
+	}
+	if(((theMesh->BndP_lcoord_left)[BndP_UG_ID])[freie_stelle] != -2.0)
+	{
+		PrintErrorMessage('E',"Put_BndPLineRelation_In_theMesh"," <<theMesh->BndP_lcoord_left>[BndP_UG_ID]>[freie_stelle] != -2.0>!!!");
+		return(1);
+	}
+	if(freie_stelle > 0)
+	{
+		if(((theMesh->BndP_lcoord_left)[BndP_UG_ID])[freie_stelle-1] == -2.0)
+		{
+			PrintErrorMessage('E',"Put_BndPLineRelation_In_theMesh"," <<theMesh->BndP_lcoord_left>[BndP_UG_ID]>[freie_stelle-1] == -2.0>!!!");
+			return(1);
+		}
+	}
+	if(((theMesh->BndP_lcoord_right)[BndP_UG_ID])[freie_stelle] != -2.0)
+	{
+		PrintErrorMessage('E',"Put_BndPLineRelation_In_theMesh"," <<theMesh->BndP_lcoord_right>[BndP_UG_ID]>[freie_stelle] != -2.0>!!!");
+		return(1);
+	}
+	if(freie_stelle > 0)
+	{
+		if(((theMesh->BndP_lcoord_right)[BndP_UG_ID])[freie_stelle-1] == -2.0)
+		{
+			PrintErrorMessage('E',"Put_BndPLineRelation_In_theMesh"," <<theMesh->BndP_lcoord_right>[BndP_UG_ID]>[freie_stelle-1] == -2.0>!!!");
+			return(1);
+		}
+	}
+	/* . . . end of several tests which may be deleted later on*/
+	
+	/*wenn bis hier her gekommen und alle OK ==> Einfuegestelle gefunden := freie_stelle*/
+	/* !!! FILL IN ...*/
+	((theMesh->BndP_LineID)[BndP_UG_ID])[freie_stelle] = Line_ID;
+	((theMesh->BndP_lcoord_left)[BndP_UG_ID])[freie_stelle] = linkelokkoord;
+	((theMesh->BndP_lcoord_right)[BndP_UG_ID])[freie_stelle] = rechtelokkoord;
+		
+
+	return(0);
+}/*von Put_BndPLineRelation_In_theMesh*/
+
+
+
+
+/****************************************************************************/
+/*
+Prepair_BndPointLineRelations_fortheMesh - fills the  BNDP-LINE-Part of the lgmExchangestructure
+   
+   SYNOPSIS:
+   int Prepair_BndPointLineRelations_fortheMesh(LGM_MESH_INFO *theMesh)
+
+   PARAMETERS:
+.  theMesh - mesh structure which will be filled.
+   
+   DESCRIPTION:
+   laeuft ueber alle Lines bestimmt dabei die Bndp_Line_Relationen und uebergibt
+   diese dann an Put_BndPLineRelation_In_theMesh
+   
+   RETURN VALUE:
+   INT
+.n      0 if ok 
+.n      1 if read error.						
+   
+   SEE ALSO:
+ */
+/****************************************************************************/
+int Prepair_BndPointLineRelations_fortheMesh(LGM_MESH_INFO *theMesh)
+{
+	PL_TYP *Line;
+	int Plyln_ID;
+	PL_LINE_TYP *pllyln, *pllyln_last;
+	int i, der_erste_Point_der_Line, die_Point_ID;
+	int BndP_UG_ID, Line_ID;
+	float linkelokkoord;
+	float rechtelokkoord;
+	int Stop;
+
+	/* TODO zweiter Lauf über die Lines
+	  dies'mal werden die Mesh->substuctures gesetzt*/
+	Line = EXCHNG_TYP2_ROOT_PLY(ExchangeVar_2_Pointer); 
+	for (Plyln_ID = 0; Plyln_ID < NMB_OF_PLINES(DomainInfo_Pointer); Plyln_ID++)
+	{
+		/*just for debugging - kann später gelöscht werden*/
+		if (Line == NULL)
+		{
+			PrintErrorMessage('E',"Prepair_BndPointLineRelations_fortheMesh","Line-Laufpointer is NULL !!");
+			return (1);
+		}
+		
+		/*Laufe über die bereits sortierten Points jeder Line*/
+		pllyln = PL_LINES(Line);
+		/*die erste KnotenID der Polyline ...*/
+		der_erste_Point_der_Line = LI_NDID1(PL_LINES_LINE(pllyln));
+		Stop = PL_NMB_OF_POINTS(Line) - 2;	
+		/*der erste Point und die beiden letzten PL-Lines werden
+		gesondert behandelt,
+		da der zyklische Fall auftreten kann
+		die letzten beiden PL-Lines ==> d.h. die letzten beiden Points
+		da ja immer der zeite genommen wird
+		Folgende Faelle muessen unterschieden werden koennen:
+		<ab>,<bc>,<cd>,<de> von <ab>,<bc>,<cd>,<da>
+		man benoetigt alo stets die letzten beiden PL-Lines gesondert.*/
+	/* concerning cyclic Polylines see also file <zyklische_Polylines> on Dirk Mac */
+
+		/*weise KnotenIDs der gefundenen Polyline zu*/
+		/*... laufe dazu ueber die Polylineteilstreckenzuege ...*/
+		/*Der Fall der zyklischen Polyline ist von C.Tapp bisher nicht beruecksichtigt
+		  Ich uebergeb in diesm speziellen Fall einen Punkt zweimal
+		  d.h. am Anfang und am Ende,; ausserdem ist PL_NMB_OF_POINTS dann um 1 zu gross
+		  in Zukunft: sollte lgm-Domain so ueberarbeitet werden, 
+		  dass die PL-Struktur hiefuer ein Flag besitzt.*/
+	/* concerning cyclic Polylines see also file <zyklische_Polylines> on Dirk Mac */
+		for(i=1; i<Stop; i++)
+		{
+				if(pllyln != NULL)
+				{
+					die_Point_ID = LI_NDID2(PL_LINES_LINE(pllyln));	
+						/*jetzt immer den zweiten Knoten nehmen, da ja die 
+						Anzahl der Points einer Polyline um 1 groesser ist
+						als die Anzahl der PL-LineSegmente derselbigen ...*/
+						
+					/*BndPoint-Line-Relation fuer Eintrag in Mesh vorbereiten*/
+		 			BndP_UG_ID = die_Point_ID;
+		 			Line_ID = Plyln_ID;
+		 			linkelokkoord = -1.0 + (float) i;
+		 			rechtelokkoord = 1.0 + (float) i;
+		 			/*Subfunktionsaufruf*/
+					if (Put_BndPLineRelation_In_theMesh(theMesh, BndP_UG_ID, Line_ID, linkelokkoord, rechtelokkoord) != 0) 
+					{
+						PrintErrorMessage('E',"Prepair_BndPointLineRelations_fortheMesh->Put_BndPLineRelation_In_theMesh","execution failed");
+						return (1);
+					}
+				  
+				    pllyln = PL_LINES_NXT(pllyln);
+			    }
+			    else
+			    {
+					UserWrite("ERROR: in Prepair_BndPointLineRelations_fortheMesh: PolylineLine is missing Case1!!");
+					return (1);
+			    }
+		}/*Ende von for<i=1; i<Stop; i++>*/
+		
+		if(pllyln == NULL)
+		{
+			UserWrite("ERROR: in Prepair_BndPointLineRelations_fortheMesh: PolylineLine is missing Case2!!");
+			return (1);
+		}
+
+
+		/*gesonderte Betrachtung des ersten Points und der letzten beiden PL-Lines*/
+		if(PL_NMB_OF_POINTS(Line) ==  2)
+		{
+			/*Fall1 Polyline besteht aus nur einer PL-Line*/
+			
+			/*Polyline muss mind. aus zwei versc. Points bestehen:*/
+			if ( LI_NDID1(PL_LINES_LINE(pllyln)) == LI_NDID2(PL_LINES_LINE(pllyln)) )
+			{
+				UserWrite("ERROR: in Prepair_BndPointLineRelations_fortheMesh: only 1 PolylineLine with 2 identical nodes , cyclic ");
+				return (1);
+			}
+				
+			/*BndPoint-Line-Relation fuer Eintrag in Mesh vorbereiten*/
+ 			
+ 			/*der erste*/
+ 			BndP_UG_ID = LI_NDID1(PL_LINES_LINE(pllyln));
+ 			Line_ID = Plyln_ID;
+ 			linkelokkoord = -1.0;
+ 			rechtelokkoord = 1.0;
+		 	/*Subfunktionsaufruf*/
+			if (Put_BndPLineRelation_In_theMesh(theMesh, BndP_UG_ID, Line_ID, linkelokkoord, rechtelokkoord) != 0) 
+			{
+				PrintErrorMessage('E',"Prepair_BndPointLineRelations_fortheMesh->Put_BndPLineRelation_In_theMesh","execution failed");
+				return (1);
+			}
+
+ 			/*der zweite*/
+ 			BndP_UG_ID = LI_NDID2(PL_LINES_LINE(pllyln));
+ 			Line_ID = Plyln_ID;
+ 			linkelokkoord = 0.0;
+ 			rechtelokkoord = 1234567890.0;
+		 	/*Subfunktionsaufruf*/
+			if (Put_BndPLineRelation_In_theMesh(theMesh, BndP_UG_ID, Line_ID, linkelokkoord, rechtelokkoord) != 0) 
+			{
+				PrintErrorMessage('E',"Prepair_BndPointLineRelations_fortheMesh->Put_BndPLineRelation_In_theMesh","execution failed");
+				return (1);
+			}
+ 			
+		}
+		else
+		{
+			/* pllyln ist nun die vorletzte PL-Line*/
+			
+			/*die letzte PL-Line:*/
+			pllyln_last = PL_LINES_NXT(pllyln);
+			if(pllyln_last == NULL)
+			{
+				UserWrite("ERROR: in Prepair_BndPointLineRelations_fortheMesh: PolylineLine is missing Case3 pllyln_last!!");
+				return (1);
+			}
+			
+			/*TOCHECK: Liegt eine zyklische Polyline vor:*/
+			/* concerning cyclic Polylines see also file <zyklische_Polylines> on Dirk Mac */
+			if( LI_NDID2(PL_LINES_LINE(pllyln_last)) == der_erste_Point_der_Line)
+			{
+				/*Fall2: Spezialfall : <zyklische Polyline>*/
+				/* concerning cyclic Polylines see also file <zyklische_Polylines> on Dirk Mac */
+				
+				/*BndPoint-Line-Relation fuer Eintrag in Mesh vorbereiten*/
+	
+	 			/*der erste*/
+	 			BndP_UG_ID = der_erste_Point_der_Line;
+	 			Line_ID = Plyln_ID;
+	 			linkelokkoord = -2.0 + (float) PL_NMB_OF_POINTS(Line);
+	 			rechtelokkoord = 1.0;
+			 	/*Subfunktionsaufruf*/
+				if (Put_BndPLineRelation_In_theMesh(theMesh, BndP_UG_ID, Line_ID, linkelokkoord, rechtelokkoord) != 0) 
+				{
+					PrintErrorMessage('E',"Prepair_BndPointLineRelations_fortheMesh->Put_BndPLineRelation_In_theMesh","execution failed");
+					return (1);
+				}
+	
+	 			/*der letzte*/
+	 			BndP_UG_ID = LI_NDID2(PL_LINES_LINE(pllyln));
+	 			Line_ID = Plyln_ID;
+	 			linkelokkoord = -3.0 + (float) PL_NMB_OF_POINTS(Line);
+	 			rechtelokkoord = 0.0;
+			 	/*Subfunktionsaufruf*/
+				if (Put_BndPLineRelation_In_theMesh(theMesh, BndP_UG_ID, Line_ID, linkelokkoord, rechtelokkoord) != 0) 
+				{
+					PrintErrorMessage('E',"Prepair_BndPointLineRelations_fortheMesh->Put_BndPLineRelation_In_theMesh","execution failed");
+					return (1);
+				}
+
+			}
+			else
+			{
+				/*Fall3: Normalfall*/
+				
+				/*BndPoint-Line-Relation fuer Eintrag in Mesh vorbereiten*/
+
+	 			/*der erste*/
+	 			BndP_UG_ID = der_erste_Point_der_Line;
+	 			Line_ID = Plyln_ID;
+	 			linkelokkoord = -1.0;
+	 			rechtelokkoord = 1.0;
+			 	/*Subfunktionsaufruf*/
+				if (Put_BndPLineRelation_In_theMesh(theMesh, BndP_UG_ID, Line_ID, linkelokkoord, rechtelokkoord) != 0) 
+				{
+					PrintErrorMessage('E',"Prepair_BndPointLineRelations_fortheMesh->Put_BndPLineRelation_In_theMesh","execution failed");
+					return (1);
+				}
+	
+	 			/*der letzte*/
+	 			BndP_UG_ID = LI_NDID2(PL_LINES_LINE(pllyln_last));
+	 			Line_ID = Plyln_ID;
+	 			linkelokkoord = -2.0 + (float) PL_NMB_OF_POINTS(Line);
+	 			rechtelokkoord = 1234567890.0;
+			 	/*Subfunktionsaufruf*/
+				if (Put_BndPLineRelation_In_theMesh(theMesh, BndP_UG_ID, Line_ID, linkelokkoord, rechtelokkoord) != 0) 
+				{
+					PrintErrorMessage('E',"Prepair_BndPointLineRelations_fortheMesh->Put_BndPLineRelation_In_theMesh","execution failed");
+					return (1);
+				}
+	
+	 			/*der vorletzte*/
+	 			BndP_UG_ID = LI_NDID2(PL_LINES_LINE(pllyln));
+	 			Line_ID = Plyln_ID;
+	 			linkelokkoord = -3.0 + (float) PL_NMB_OF_POINTS(Line);
+	 			rechtelokkoord = -1.0 + (float) PL_NMB_OF_POINTS(Line);
+			 	/*Subfunktionsaufruf*/
+				if (Put_BndPLineRelation_In_theMesh(theMesh, BndP_UG_ID, Line_ID, linkelokkoord, rechtelokkoord) != 0) 
+				{
+					PrintErrorMessage('E',"Prepair_BndPointLineRelations_fortheMesh->Put_BndPLineRelation_In_theMesh","execution failed");
+					return (1);
+				}
+			}
+
+		}
+		
+		
+		Line = PL_NXT(Line);		
+	}/*vom zweiten Lauf über die Lines*/
+	
+	return(0);
+}/*von Prepair_BndPointLineRelations_fortheMesh*/
+
+
+
+
+/****************************************************************************/
+/*
+EvalBndPoint_Line_Informations - reads necessary line-informations for boundary points
+   
+   SYNOPSIS:
+   int	EvalBndPoint_Line_Informations(LGM_MESH_INFO *theMesh)
+
+   PARAMETERS:
+.  theMesh - mesh structure which will be filled.
+   
+   DESCRIPTION:
+   reads necessary line-informations for boundary points
+   dazu werden zunaechst in einem Lauf ueber alle existierenden Lines
+   die Anzahl der Lines fuer jeden einzelnen BndPoint berechnet
+   Danach wird mit dieser Information, abgelegt im array boundary_point_line_counter,
+   die Funktion BndPoint_Line_Alloc_Mem aufgerufen, die unter der Adresse theMesh
+   den notwendigen Speicher sowie die notwendigen Stukturen bereitstellt.
+   Abschliessend wird dieser allokierte Speicherbereich in der Funktion 
+   Prepair_BndPointLineRelations_fortheMesh, mit Hilfe eines zweiten Laufs ueber alle Lines
+   gefuellt. 
+   
+   RETURN VALUE:
+   INT
+.n      0 if ok 
+.n      1 if read error.						
+   
+   SEE ALSO:
+ */
+/****************************************************************************/
+int	EvalBndPoint_Line_Informations(LGM_MESH_INFO *theMesh)
+{
+	int *boundary_point_line_counter;/*zählt Anzahl Lines pro BndP*/
+	PL_TYP *Line;
+	int Plyln_ID;
+	PL_LINE_TYP *pllyln, *pllyln_last;
+	int i, der_erste_Point_der_Line, die_Point_ID;
+	int Stop;
+	
+	/* Fetch Memory ...*/
+	boundary_point_line_counter = GetTmpMem(theHeap,statistik[1]*sizeof(int),ANS_MarkKey);
+	if ( boundary_point_line_counter == NULL ) 
+	{ 
+		PrintErrorMessage('E',"ansys2lgm"," ERROR: No memory for boundary_point_line_counter in EvalBndPoint_Line_Informations ");
+		return(1);
+	}
+	memset(boundary_point_line_counter,0,(statistik[1])*sizeof(int));
+	
+	
+	/*erster Lauf über die Lines: boundary_point_line_counter inkrementieren*/
+	Line = EXCHNG_TYP2_ROOT_PLY(ExchangeVar_2_Pointer); 
+	for (Plyln_ID = 0; Plyln_ID < NMB_OF_PLINES(DomainInfo_Pointer); Plyln_ID++)
+	{
+		/*just for debugging - kann später gelöscht werden*/
+		if (Line == NULL)
+		{
+			PrintErrorMessage('E',"EvalBndPoint_Line_Informations","Line-Laufpointer is NULL !!");
+			return (1);
+		}
+		
+		/*Laufe über die bereits sortierten Points jeder Line*/
+		pllyln = PL_LINES(Line);
+		/*die erste KnotenID der Polyline ...*/
+		der_erste_Point_der_Line = LI_NDID1(PL_LINES_LINE(pllyln));
+		Stop = PL_NMB_OF_POINTS(Line) - 2;	
+		/*der erste Point und die beiden letzten PL-Lines werden
+		gesondert behandelt,
+		da der zyklische Fall auftreten kann
+		die letzten beiden PL-Lines ==> d.h. die letzten beiden Points
+		da ja immer der zweite genommen wird
+		Folgende Faelle muessen unterschieden werden koennen:
+		<ab>,<bc>,<cd>,<de> von <ab>,<bc>,<cd>,<da>
+		man benoetigt alo stets die letzten beiden PL-Lines gesondert.*/
+		/* concerning cyclic Polylines see also file <zyklische_Polylines> on Dirk Mac */
+
+		/*weise KnotenIDs der gefundenen Polyline zu*/
+		/*... laufe dazu ueber die Polylineteilstreckenzuege ...*/
+		/*Der Fall der zyklischen Polyline ist von C.Tapp bisher nicht beruecksichtigt
+		  Ich uebergeb in diesm speziellen Fall einen Punkt zweimal
+		  d.h. am Anfang und am Ende,; ausserdem ist PL_NMB_OF_POINTS dann um 1 zu gross
+		  in Zukunft: sollte lgm-Domain so ueberarbeitet werden, 
+		  dass die PL-Struktur hiefuer ein Flag besitzt.*/
+		/* concerning cyclic Polylines see also file <zyklische_Polylines> on Dirk Mac */
+		for(i=1; i<Stop; i++)
+		{
+				if(pllyln != NULL)
+				{
+					die_Point_ID = LI_NDID2(PL_LINES_LINE(pllyln));	
+						/*jetzt immer den zweiten Knoten nehmen, da ja die 
+						Anzahl der Points einer Polyline um 1 groesser ist
+						als die Anzahl der PL-LineSegmente derselbigen ...*/
+						
+					/*boundary_point_line_counter inkrementieren,*/
+		 			boundary_point_line_counter[die_Point_ID] ++;
+				  
+				    pllyln = PL_LINES_NXT(pllyln);
+			    }
+			    else
+			    {
+					UserWrite("ERROR: in EvalBndPoint_Line_Informations: PolylineLine is missing Case1!!");
+					return (1);
+			    }
+		}/*Ende von for .. <Stop*/
+		
+		if(pllyln == NULL)
+		{
+			UserWrite("ERROR: in EvalBndPoint_Line_Informations: PolylineLine is missing Case2!!");
+			return (1);
+		}
+
+
+		/*gesonderte Betrachtung des ersten Points und der letzten beiden PL-Lines*/
+		if(PL_NMB_OF_POINTS(Line) ==  2)
+		{
+			/*Fall1 Polyline besteht aus nur einer PL-Line*/
+			
+			/*Polyline muss mind. aus zwei versc. Points bestehen:*/
+			if ( LI_NDID1(PL_LINES_LINE(pllyln)) == LI_NDID2(PL_LINES_LINE(pllyln)) )
+			{
+				UserWrite("ERROR: in EvalBndPoint_Line_Informations: only 1 PolylineLine with 2 identical nodes , cyclic ");
+				return (1);
+			}
+				
+			/*boundary_point_line_counter inkrementieren,*/
+		 	boundary_point_line_counter[LI_NDID1(PL_LINES_LINE(pllyln))] ++;/*erster*/
+		 	boundary_point_line_counter[LI_NDID2(PL_LINES_LINE(pllyln))] ++;/*letzter*/
+ 			
+		}
+		else
+		{
+			/* pllyln ist nun die vorletzte PL-Line*/
+			
+			/*die letzte PL-Line:*/
+			pllyln_last = PL_LINES_NXT(pllyln);
+			if(pllyln_last == NULL)
+			{
+				UserWrite("ERROR: in EvalBndPoint_Line_Informations: PolylineLine is missing Case3 pllyln_last!!");
+				return (1);
+			}
+			
+			/*TOCHECK: Liegt eine zyklische Polyline vor:*/
+			/* concerning cyclic Polylines see also file <zyklische_Polylines> on Dirk Mac */
+			if( LI_NDID2(PL_LINES_LINE(pllyln_last)) == der_erste_Point_der_Line)
+			{
+				/*Fall2: Spezialfall : <zyklische Polyline>*/
+				/* concerning cyclic Polylines see also file <zyklische_Polylines> on Dirk Mac */
+				
+				/*boundary_point_line_counter*/
+		 		boundary_point_line_counter[der_erste_Point_der_Line] ++;/*erster*/
+		 		boundary_point_line_counter[LI_NDID2(PL_LINES_LINE(pllyln))] ++;/*letzter*/
+
+			}
+			else
+			{
+				/*Fall3: Normalfall*/
+				
+				/*boundary_point_line_counter */
+
+		 		boundary_point_line_counter[der_erste_Point_der_Line] ++;/*erster*/
+		 		boundary_point_line_counter[LI_NDID2(PL_LINES_LINE(pllyln_last))] ++;/*letzter*/
+		 		boundary_point_line_counter[LI_NDID2(PL_LINES_LINE(pllyln))] ++;/*vorletzter*/
+			}
+
+		}
+		
+		
+		Line = PL_NXT(Line);		
+	}/*vom ersten Lauf über die Lines*/
+
+
+	/* Nun kann mit den Informationen in boundary_point_line_counter Speicher geholt werden*/
+	if (BndPoint_Line_Alloc_Mem(theMesh, boundary_point_line_counter) != 0) 
+	{
+		PrintErrorMessage('E',"EvalBndPoint_Line_Informations->BndPoint_Line_Alloc_Mem","execution failed");
+		return (1);
+	}
+
+	/* Nun können die neuen Komponenten von Mesh bzw. lgm_mesh_info gefüllt werden: */
+	if (Prepair_BndPointLineRelations_fortheMesh(theMesh) != 0) 
+	{
+		PrintErrorMessage('E',"EvalBndPoint_Line_Informations->Prepair_BndPointLineRelations_fortheMesh","execution failed");
+		return (1);
+	}
+
+	return(0);
+}/*Ende von EvalBndPoint_Line_Informations*/
+
+
+
 
 /****************************************************************************/
 /*
@@ -9209,6 +9909,12 @@ int LGM_ANSYS_ReadMesh (HEAP *Heappointer, LGM_MESH_INFO *theMesh, int MarkKey) 
 	if((theMesh->Element_corners = GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int*), ANS_MarkKey)) == NULL)
 	{ 
 		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->Element_corners !!!");
+		return(1);
+	}
+	/*allocate array for Element_SideOnBnd*/
+	if((theMesh->Element_SideOnBnd = GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int*), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->Element_SideOnBnd !!!");
 		return(1);
 	}
 	/*allocate array for Element_corner_ids*/
@@ -9308,7 +10014,15 @@ int LGM_ANSYS_ReadMesh (HEAP *Heappointer, LGM_MESH_INFO *theMesh, int MarkKey) 
 		return (1);
 	}
 	
-    UserWrite("ERROR: in LGM_ANSYS_ReadMesh: return1, da not finshed yet\n");
-    return (1);
+	if (EvalBndPoint_Line_Informations(theMesh) != 0) 
+	{
+		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh/EvalBndPoint_Line_Informations","execution failed");
+		return (1);
+	}
+	
+	
+	return(0);	
+/*    UserWrite("ERROR: in LGM_ANSYS_ReadMesh: return1, da not finshed yet\n");
+    return (1);*/
     /* TODO  BoundaryPoints !!! DIRKS NEU return 0  !!!*/
 }

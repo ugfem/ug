@@ -81,7 +81,7 @@
 /****************************************************************************/
 
 LGM_DOMAIN *LGM_LoadDomain      (char *filename, char *name, HEAP *theHeap, INT DomainVarID, INT MarkKey);
-INT                     LGM_LoadMesh    (HEAP *theHeap, MESH *theMesh, INT MarkKey);
+INT                     LGM_LoadMesh    (HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomain, INT MarkKey);
 INT                     InitLGMLoad             (void);
 
 #endif

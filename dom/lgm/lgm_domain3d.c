@@ -122,7 +122,7 @@ static INT ResetSurfaceFlags (LGM_DOMAIN *theDomain)
   return (0);
 }
 
-static LGM_SURFACE *FirstSurface (LGM_DOMAIN *theDomain)
+LGM_SURFACE *FirstSurface (LGM_DOMAIN *theDomain)
 {
   LGM_SURFACE *theSurface;
 
@@ -159,7 +159,7 @@ static LGM_SURFACE *helpNextSurface (LGM_DOMAIN *theDomain)
   return (NULL);
 }
 
-static LGM_SURFACE *NextSurface (LGM_DOMAIN *theDomain)
+LGM_SURFACE *NextSurface (LGM_DOMAIN *theDomain)
 {
   LGM_SURFACE *theSurface;
 
@@ -199,7 +199,7 @@ static INT ResetLineFlags (LGM_DOMAIN *theDomain)
   return (0);
 }
 
-static LGM_LINE *FirstLine (LGM_DOMAIN *theDomain)
+LGM_LINE *FirstLine (LGM_DOMAIN *theDomain)
 {
   LGM_LINE *theLine;
 
@@ -247,7 +247,7 @@ static LGM_LINE *helpNextLine (LGM_DOMAIN *theDomain)
   return (NULL);
 }
 
-static LGM_LINE *NextLine (LGM_DOMAIN *theDomain)
+LGM_LINE *NextLine (LGM_DOMAIN *theDomain)
 {
   LGM_LINE *theLine;
 
