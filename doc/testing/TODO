@@ -51,7 +51,6 @@
 		status: - konqueror date jump does not work
 				    month jump does not work
 			- netscape6 month jump does not work
-
 *	15. handling of DartTestfile for applications
 *		new file in UG/ with name DartTestFiles
 *		this allow to switch on and off application tests
@@ -71,7 +70,6 @@
 *		5. -e lib -c <lib:<testnames>>
 *	18. Extensions to multiple basis libs
 *		<ECFS> = <LIB1:<CFS1>...<LIBN><CFSN>>
-
 20040405:
 *	18. not DONE
 20040504:
@@ -94,7 +92,6 @@
 *	23. DONE
 *	24. DONE
 *	25. DONE
-
 20040523:
 *	26. DONE
 20040525:
@@ -109,8 +106,37 @@
 *	28. DONE
 *	30 .DONE
 20040608:
-	31. repair parallel startup
-	32. Why NA for TUTOR-tutor1-Linux-2.­4.­26-g ???
-	33. Full Coverage Info for applications cd,tutor from all directories!!!
-	34. Extension of DartTestFiles by TestCase filename
-	35. new architectures PCCPP, PCICPP
+*	31. repair parallel startup
+*	32. Why NA for TUTOR-tutor1-Linux-2.­4.­26-g ???
+*	33. Full Coverage Info for applications cd,tutor from all directories!!!
+*	34. Extension of DartTestFiles by TestCase filename
+*	35. new architectures PCCPP, PCICPP
+20040612:
+*	31. DONE
+*	34. DONE
+*	35. DONE
+*	36. check why parallel startup still doesn't work
+20040615:
+*	37. COURSE assembler Warnings detected as errors?
+*	38. Enable doxygen
+20040620:
+*	32. DONE
+*	33. DONE
+20040627:
+*	36. DONE
+*	37. DONE
+*	38. DONE
+20040630:
+*	39. extend Build.tcl exception list to supress assembler warnings (COURSE)
+	40. create a patch for using Dart with UG
+	41. link generation for doxygen docu
+*	42. check for validity of test cases: cd =LGM, tutor=STD !!!
+*	43. set the nightly start time
+20040701:
+*	43. DONE
+20040702:
+*	39. DONE
+*	42. DONE
+20040916:
+	44. doxy docu for UG/tutor
+	45. implement delete strategy
