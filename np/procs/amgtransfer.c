@@ -843,6 +843,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       if ((result[0]=(np->SetupCG)(theGrid,A,NULL /* preliminary!! */,
                                    np->CMtype))!=0)
         REP_ERR_RETURN(result[0]);
+
       if (np->MarkKeep!=NULL) {
         UnmarkAll(newGrid,NULL,0.0,0);
         if ((result[0]=(np->MarkKeep)(newGrid,A,np->thetaK,np->compK))!=0)
@@ -880,7 +881,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         AMGAgglomerate(theMG);
         PRINTDEBUG(np,1,("%d: amg_collect\n",me));
         l_amgmatrix_collect(newGrid,A);
-        np->agglevel = level;
+        np->agglevel = level-1;
         PRINTDEBUG(np,1,("%3d: Coarse Grid agglomeration"
                          " on level %d due to aggLimit criterion\n",
                          me,level-1));
@@ -918,6 +919,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       if ((result[0]=(np->SetupCG)(GRID_ON_LEVEL(theMG,level),A,NULL /* preliminary!! */,
                                    np->CMtype))!=0)
         REP_ERR_RETURN(result[0]);
+
       if (np->display == PCR_FULL_DISPLAY)
         UserWriteF(" [%d:g]",level);
                         #ifdef ModelP
@@ -928,11 +930,11 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                          me,level-1));
       }
                         #endif
-
     }
     if (np->display == PCR_FULL_DISPLAY)
       UserWriteF("\n");
   }
+  /*	Set_AMG_Vecskipflags(theMG,x);*/
   for (level=tl; level >= theMG->bottomLevel; level--)
     if (AssembleDirichletBoundary (GRID_ON_LEVEL(theMG,level),A,x,b)) {
       result[0]=1;
