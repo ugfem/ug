@@ -52,14 +52,23 @@
 /*																			*/
 /****************************************************************************/
 
+/* macros for merge new priority with objects existing one */
+/* valid only for all types of ghost priorities            */
+#define PRIO_CALC(e) ((USED(e) && THEFLAG(e)) ? PrioVHGhost :             \
+                      (THEFLAG(e)) ? PrioVGhost : (USED(e)) ?           \
+                      PrioGhost : (assert(0),0))
+
+/* macros for setting object priorities with related objects */
 /* macros for setting object priorities with related objects */
 #define NODE_PRIORITY_SET(g,n,prio)                                          \
-  /* set priorities of node */                                     \
-  SETPRIO(n,prio);                                                 \
+  {                                                                    \
+    /* set priorities of node */                                     \
+    SETPRIO(n,prio);                                                 \
                                                                              \
-  if (VEC_DEF_IN_OBJ_OF_GRID(g,NODEVEC))                           \
-    if (NVECTOR(n) != NULL)                                      \
-      SETPRIO(NVECTOR(n),prio);
+    if (VEC_DEF_IN_OBJ_OF_GRID(g,NODEVEC))                           \
+      if (NVECTOR(n) != NULL)                                      \
+        SETPRIO(NVECTOR(n),prio);                                \
+  }
 
 #ifdef __TWODIM__
 #define PRIO_SET_EDGE(e,prio)
@@ -69,13 +78,15 @@
 #endif
 
 #define EDGE_PRIORITY_SET(g,e,prio)                                          \
-  /* set priorities of node for 3D */                              \
-  PRIO_SET_EDGE(e,prio)                                            \
+  {                                                                    \
+    /* set priorities of node for 3D */                              \
+    PRIO_SET_EDGE(e,prio)                                            \
                                                                              \
-  /* set priority of edge vector */                                \
-  if (VEC_DEF_IN_OBJ_OF_GRID(g,EDGEVEC))                           \
-    if (EDVECTOR(e) != NULL)                                     \
-      SETPRIO(EDVECTOR(e),prio);
+    /* set priority of edge vector */                                \
+    if (VEC_DEF_IN_OBJ_OF_GRID(g,EDGEVEC))                           \
+      if (EDVECTOR(e) != NULL)                                     \
+        SETPRIO(EDVECTOR(e),prio);                               \
+  }
 
 #define CHECK_OBJECT_PRIO(o,prio,master,ghost,id,s)                          \
   if (USED(o)==1 && ! master (o))                                          \
@@ -199,62 +210,144 @@ static int ComputeEdgeBorderPrios (DDD_OBJ obj)
 
 void SetGhostObjectPriorities (GRID *theGrid)
 {
-  ELEMENT *theElement;
+  ELEMENT *theElement,*theNeighbor,*SonList[MAX_SONS];
   NODE    *theNode;
   EDGE    *theEdge;
-  INT i,prio,*proclist;
+  VECTOR  *theVector;
+  INT i,prio,*proclist,hghost,vghost;
 
-  /* reset USED flag for nodes of ghostelements */
+  /* reset USED flag for objects of ghostelements */
   for (theElement=PFIRSTELEMENT(theGrid);
        theElement!=NULL;
        theElement=SUCCE(theElement))
   {
-    SETUSED(theElement,0);
+    SETUSED(theElement,0); SETTHEFLAG(theElement,0);
     for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     {
       theNode = CORNER(theElement,i);
-      SETUSED(theNode,0);
+      SETUSED(theNode,0); SETTHEFLAG(theNode,0);
     }
     for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     {
       theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
                         CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
       ASSERT(theEdge != NULL);
-      SETUSED(theEdge,0);
+      SETUSED(theEdge,0); SETTHEFLAG(theEdge,0);
     }
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+      {
+        theVector = SVECTOR(theElement,i);
+        SETUSED(theVector,0); SETTHEFLAG(theVector,0);
+      }
   }
 
-  /* reset USED flag for nodes of master elements */
-  for (theElement=FIRSTELEMENT(theGrid);
+  /* set FLAG for objects of vertical overlap */
+  for (theElement=PFIRSTELEMENT(theGrid);
+       theElement!=NULL;
+       theElement=SUCCE(theElement))
+  {
+    if (PARTITION(theElement) == me) continue;
+
+    /* check for horizontal ghost */
+    hghost = 0;
+    for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+    {
+      theNeighbor = NBELEM(theElement,i);
+      if (theNeighbor == NULL) continue;
+
+      if (PARTITION(theNeighbor) == me)
+      {
+        hghost = 1;
+        break;
+      }
+    }
+
+    /* check for vertical ghost */
+    vghost = 0;
+    GetAllSons(theElement,SonList);
+    for (i=0; SonList[i]!=NULL; i++)
+    {
+      if (PARTITION(SonList[i]) == me)
+      {
+        vghost = 1;
+        break;
+      }
+    }
+
+    if (vghost) SETTHEFLAG(theElement,1);
+    if (hghost) SETUSED(theElement,1);
+    for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+    {
+      theNode = CORNER(theElement,i);
+      if (vghost) SETTHEFLAG(theNode,1);
+      if (hghost) SETUSED(theNode,1);
+    }
+    for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+    {
+      theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
+                        CORNER_OF_EDGE_PTR(theElement,i,1));
+      ASSERT(theEdge != NULL);
+      if (vghost) SETTHEFLAG(theEdge,1);
+      if (hghost) SETUSED(theEdge,1);
+    }
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+      {
+        theVector = SVECTOR(theElement,i);
+        if (vghost) SETTHEFLAG(theVector,1);
+        if (hghost) SETUSED(theVector,1);
+      }
+  }
+
+  /* set USED flag for objects of master elements */
+  /* reset FLAG for objects of master elements  */
+  for (theElement=PFIRSTELEMENT(theGrid);
        theElement!=NULL;
        theElement=SUCCE(theElement))
   {
     if (PARTITION(theElement) != me) continue;
 
-    SETUSED(theElement,1);
+    SETUSED(theElement,0); SETTHEFLAG(theElement,0);
     for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     {
       theNode = CORNER(theElement,i);
-      SETUSED(theNode,1);
+      SETUSED(theNode,0); SETTHEFLAG(theNode,0);
     }
     for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     {
-      theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
-                        CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
+      theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
+                        CORNER_OF_EDGE_PTR(theElement,i,1));
       ASSERT(theEdge != NULL);
-      SETUSED(theEdge,1);
+      SETUSED(theEdge,0); SETTHEFLAG(theEdge,0);
     }
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+      {
+        theVector = SVECTOR(theElement,i);
+        SETUSED(theVector,0); SETTHEFLAG(theVector,0);
+      }
   }
 
-  /* set node priorities for ghostelements */
+  /* set object priorities for ghostelements */
   for (theElement=PFIRSTELEMENT(theGrid);
        theElement!=NULL;
        theElement=SUCCE(theElement))
   {
-    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
+    if (PARTITION(theElement) == me) continue;
+
+    if (USED(theElement) || THEFLAG(theElement))
     {
-      if (USED(theElement) == 0)
-        SETPRIO(EVECTOR(theElement),PrioGhost);
+      prio = PRIO_CALC(theElement);
+      PRINTDEBUG(gm,1,("SetGhostObjectPriorities(): e=" EID_FMTX " new prio=%d\n",
+                       EID_PRTX(theElement),prio))
+      SETEPRIO(theElement,prio);
+
+      if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
+      {
+        theVector = EVECTOR(theElement);
+        SETPRIO(theVector,prio);
+      }
     }
 
     for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -262,14 +355,14 @@ void SetGhostObjectPriorities (GRID *theGrid)
       theNode = CORNER(theElement,i);
 
       /* check if its a master node */
-      if (USED(theNode) == 0)
+      if (USED(theNode) || THEFLAG(theNode))
       {
         PRINTDEBUG(dddif,3,(PFMT " dddif_SetGhostObjectPriorities():"
                             " downgrade node=" ID_FMTX " from=%d to PrioGhost\n",
                             me,ID_PRTX(theNode),prio));
 
         /* set node priorities of node to ghost */
-        NODE_PRIORITY_SET(theGrid,theNode,PrioGhost)
+        NODE_PRIORITY_SET(theGrid,theNode,PRIO_CALC(theNode))
       }
     }
 
@@ -284,33 +377,24 @@ void SetGhostObjectPriorities (GRID *theGrid)
                           CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
         ASSERT(theEdge != NULL);
 
-        if (USED(theEdge) == 0)
+        if (USED(theEdge) || THEFLAG(theEdge))
         {
           PRINTDEBUG(dddif,3,(PFMT " dddif_SetGhostObjectPriorities():"
                               " downgrade edge=" EDID_FMTX " from=%d to PrioGhost\n",
                               me,EDID_PRTX(theEdge),prio));
 
-          EDGE_PRIORITY_SET(theGrid,theEdge,PrioGhost);
+          EDGE_PRIORITY_SET(theGrid,theEdge,PRIO_CALC(theEdge));
         }
       }
 
                         #ifdef __THREEDIM__
-      /* if one of the side nodes is a ghost node */
-      /* then its a ghost side vector             */
+      /* if one(all) of the side nodes is (are) a hghost (vghost) node   */
+      /* then its a hghost (vghost) side vector                          */
       if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
         for (i=0; i<SIDES_OF_ELEM(theElement); i++)
         {
-          INT j;
-
-          for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
-          {
-            if (USED(theNode) == 0)
-            {
-              /* set side vector priority */
-              SETPRIO(SVECTOR(theElement,i),PrioGhost);
-              break;
-            }
-          }
+          if (USED(theVector) || THEFLAG(theVector))
+            SETPRIO(theVector,PRIO_CALC(theVector));
         }
                         #endif
     }
