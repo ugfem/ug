@@ -10,24 +10,23 @@
 # include configuration and all makefile macro definitions
 include ../ug.conf
 
-
 # path for the arch-module and the ppif/ddd-sources
 ARCH_DIR = ../arch
 PPIF_DIR = ppif
 PPIF = $(MODEL)
 
-
 # path for the ppif and ddd libraries
 LIBDIR = ../lib
 
-
-
+# object files for both dimensions
+OBJECTS = initparallel.o
 
 ####################################################################
 
 # $(CHACO) is set to ON or OFF in ug.conf
 
-all: include DDDIF DDDOBJ ppif_all $(CHACO)
+all: include DDDIF DDDOBJ ppif_all $(CHACO) $(OBJECTS)
+	make -f Makefile.parallel $(UG_LIB)
 
 include:
 	ln -s ../include include
@@ -45,6 +44,18 @@ ON:
 OFF:
 	echo "no chaco"
 
+init: $(OBJECTS)
+	make -f Makefile.parallel $(UG_LIB)
+
+$(UG_LIB): $(OBJECTS)
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
+
+ar:
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
+
+.c.o:
+	$(ARCH_CC) $(UG_CFLAGS) $<
+
 ####################################################################
 
 
@@ -52,6 +63,7 @@ clean: ppif_clean
 	cd dddif; make -f Makefile.dddif clean; cd ..;
 	cd dddobj; make -f Makefile.dddobj clean; cd ..;
 	cd chaco; make -f Makefile.chaco clean; cd ..;
+	rm -f $OBJECTS;
 
 
 ####################################################################
