@@ -9,8 +9,8 @@
 # include configuration and all makefile macro definitions
 include ../ug.conf
 
-OBJECTS = uginterface.o initui.o cmdint.o cmdline.o \
-		  commands.o helpmsg.o avs.o tecplot.o mmio.o 
+OBJECTS = uginterface.o initui.o cmdint.o cmdline.o dataexplorer.o\
+		  commands.o helpmsg.o avs.o tecplot.o mmio.o
 
 $(UG_LIB) : $(OBJECTS) Makefile.ui
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)

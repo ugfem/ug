@@ -45,6 +45,7 @@
 #include "mmio.h"
 #include "tecplot.h"
 #include "avs.h"
+#include "dataexplorer.h"
 
 /* own header */
 #include "initui.h"
@@ -152,6 +153,13 @@ INT InitUi ()
 
   /* avs output */
   if ((err=InitAVS())!=0)
+  {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* DataExplorer output */
+  if ((err=InitDataExplorer())!=0)
   {
     SetHiWrd(err,__LINE__);
     return (err);
