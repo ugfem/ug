@@ -782,6 +782,7 @@ static INT InsertBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *insertBV, BLOCKVECT
     if (theBV==NULL)
     {
       BVSUCC(insertBV) = GFIRSTBV(theGrid);
+      BVPRED(GFIRSTBV(theGrid)) = insertBV;
       GFIRSTBV(theGrid) = insertBV;
       BVPRED(insertBV) = NULL;
 
@@ -791,6 +792,7 @@ static INT InsertBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *insertBV, BLOCKVECT
         SUCCVC(BVENDVECTOR(insertBV)) = BVFIRSTVECTOR(BVSUCC(insertBV));
         PREDVC(BVFIRSTVECTOR(BVSUCC(insertBV))) = BVENDVECTOR(insertBV);
         BVENDVECTOR(insertBV) = BVFIRSTVECTOR(BVSUCC(insertBV));
+        FIRSTVECTOR(theGrid) = BVFIRSTVECTOR(insertBV);
       }
     }
     else
@@ -4160,22 +4162,14 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     for (theBV=GLASTBV(theGrid); BVPRED(theBV)!=NULL; theBV=BVPRED(theBV))
     {
       takeOut = BVPRED(theBV);
-      GetBVNumber(takeOut,nb,0);
-      GetBVNumberInGrid(theGrid,nb);
 
       if (BVNUMBER(takeOut)%3==2)
       {
         if (CutBlockvector_l0(theGrid,takeOut,YES))
           return (1);
 
-        GetBVNumber(takeOut,nb,1);
-        GetBVNumberInGrid(theGrid,nb);
-
         if (InsertBlockvector_l0(theGrid,takeOut,NULL,0,YES))
           return (1);
-
-        GetBVNumber(takeOut,nb,0);
-        GetBVNumberInGrid(theGrid,nb);
 
         theBV = BVSUCC(theBV);
       }
@@ -4207,6 +4201,24 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     }
 
     Release(theHeap,FROM_TOP);
+  }
+  else if (mode==GM_CCFFLL)
+  {
+    for (theBV=GFIRSTBV(theGrid); BVSUCC(theBV)!=NULL; theBV=BVSUCC(theBV))
+    {
+      takeOut = BVSUCC(theBV);
+
+      if (BVNUMBER(takeOut)%3==2)
+      {
+        if (CutBlockvector_l0(theGrid,takeOut,YES))
+          return (1);
+
+        if (InsertBlockvector_l0(theGrid,takeOut,NULL,1,YES))
+          return (1);
+
+        theBV = BVPRED(theBV);
+      }
+    }
   }
 
 
@@ -4287,7 +4299,10 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT 
   DependencyProcPtr DependencyProc;
 
   /* check mode */
-  if ((mode!=GM_FCFCLL)&&(mode!=GM_FFLLCC)&&(mode!=GM_FFLCLC)) return(GM_ERROR);
+  if ((mode!=GM_FCFCLL)&&
+      (mode!=GM_FFLLCC)&&
+      (mode!=GM_FFLCLC)&&
+      (mode!=GM_CCFFLL)) return(GM_ERROR);
 
   /* current level */
   currlevel = theMG->currentLevel;
@@ -4337,6 +4352,10 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT 
   {
     theGrid = theMG->grids[i];
     if ((*DependencyProc)(theGrid,dep_options)) return(GM_ERROR);
+  }
+  for (i=baselevel; i<=currlevel; i++)
+  {
+    theGrid = theMG->grids[i];
     if (OrderVectorAlgebraic(theGrid,mode,PutSkipFirst,SkipPat)) return(GM_ERROR);
   }
 
@@ -5035,12 +5054,14 @@ INT MoveVector (GRID *theGrid, VECTOR *moveVector, VECTOR *destVector, INT after
       SUCCVC(moveVector) = theGrid->firstVector;
       PREDVC(moveVector) = NULL;
       theGrid->firstVector = moveVector;
+      if (SUCCVC(moveVector)!=NULL) PREDVC(SUCCVC(moveVector)) = moveVector;
     }
     else
     {
       SUCCVC(moveVector) = NULL;
       PREDVC(moveVector) = theGrid->lastVector;
       theGrid->lastVector = moveVector;
+      if (PREDVC(moveVector)!=NULL) SUCCVC(PREDVC(moveVector)) = moveVector;
     }
   }
 
