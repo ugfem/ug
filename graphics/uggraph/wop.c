@@ -20480,7 +20480,7 @@ static void MarkElementsIsosurfaceCuts(MULTIGRID *theMG,
 					SETUSED(CORNER(theElement, j), 1);
 					LocalCornerCoordinates(DIM,TAG(theElement),j,LocalCoord);
 					value = (*Isosurface3D_EvalFct)
-                                            (theElement,(const DOUBLE**)CornersOfElem,LocalCoord);
+						(theElement,(const DOUBLE**)CornersOfElem,LocalCoord);
 					if (value < Isosurface3D_lambda)
 						SETTHEFLAG(CORNER(theElement, j), 0);
 					else
@@ -20716,7 +20716,7 @@ static INT EW_Isosurface3D_FR(ELEMENT *theElement, DRAWINGOBJ *theDO)
 			SETUSED(CORNER(theElement,i),1);
 			LocalCornerCoordinates(DIM,TAG(theElement),i,LocalCoord);
 			value = (*Isosurface3D_EvalFct)
-                            (theElement,(const DOUBLE**)CornersOfElem,LocalCoord);
+				(theElement,(const DOUBLE**)CornersOfElem,LocalCoord);
 			DO_2c(theDO) = DO_RANGE; DO_inc(theDO);
 			DO_2C(theDO) = value; DO_inc(theDO);
 			DO_2C(theDO) = value; DO_inc(theDO);
