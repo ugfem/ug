@@ -12,7 +12,8 @@ include ../../../ug.conf
 
 FILES.c= eigenvec2.c eigenvec3.c inertial.c \
 		inertial1d.c inertial2d.c \
-		inertial3d.c make_subgeom.c
+		inertial3d.c make_subgeom.c \
+		rcb.c rcb2d.c rcb3d.c
 
 FILES.o=	$(FILES.c:.c=.o) 
 

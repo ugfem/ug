@@ -14,7 +14,7 @@
 int nsets_glob;         /* total number of sets to partition into */
 
 void recurse(graph, nvtxs, nedges, ndims, ndims_tot, hop_mtx, vwsqrt, spec,
-	inert, KL, mediantype, mkconnected, solver_flag,
+	inert, rcb, KL, mediantype, mkconnected, solver_flag,
 	coarse_flag, vmax, eigtol, igeom, coords, assignment, goal,
         scatt, randm, lin, assigned, xlen, ylen)
 struct vtx_data **graph;	/* data structure for graph */
@@ -26,6 +26,7 @@ short (*hop_mtx)[MAXSETS];	/* between-set hop cost for KL */
 double *vwsqrt;			/* sqrt of vertex weights (length nvtxs+1) */
 int spec;			/* run spectral global decomposition? */
 int inert;			/* run inertial global decomposition? */
+int rcb;			/* run coordinate global decomposition? */
 int KL;				/* run Kernighan-Lin local optimization? */
 int mediantype;			/* method for partitioning eigenvector */
 int mkconnected;		/* check for connectivity & add phantom edges? */
@@ -146,7 +147,7 @@ int ylen;			/* y length of sub processor array */
 	}
 
    /* Perform a single division step. */
-   divide(graph, nvtxs, nedges, ndims, vwsqrt, spec, inert, KL, mediantype,
+   divide(graph, nvtxs, nedges, ndims, vwsqrt, spec, inert, rcb, KL, mediantype,
 	  mkconnected, solver_flag, coarse_flag, vmax, eigtol, hop_mtx, igeom,
 	  coords, assignment, merged_goal, scatt, randm, lin, part_type);
    if (!MEM_OK) return;
@@ -218,7 +219,7 @@ int ylen;			/* y length of sub processor array */
       }
 
       subcoords = NULL;
-      if (inert) {
+      if (inert || rcb) {
 	 subcoords = (float **) (MEM_OK = smalloc((unsigned)3*sizeof(float *));
      if (!MEM_OK) return;
 	 subcoords[0] = subcoords[1] = subcoords[2] = NULL;
@@ -305,7 +306,7 @@ int ylen;			/* y length of sub processor array */
 	 /* Condense the relevant vertex weight array. */
          if (using_vwgts) make_subvector(vwsqrt, subvwsqrt, subnvtxs, loc2glob);
 
-	 if (inert) make_subgeom(igeom, coords, subcoords, subnvtxs, loc2glob);
+	 if (inert || rcb) make_subgeom(igeom, coords, subcoords, subnvtxs, loc2glob);
 
 	if (ARCH_GOAL==0)
 	{
@@ -316,7 +317,7 @@ int ylen;			/* y length of sub processor array */
 		subassigned = (set<<ndims_tot)|assigned;
 	}
          recurse(subgraph, subnvtxs, subnedges, sub_ndims, ndims_tot+ndims, hop_mtx,
-		 subvwsqrt, spec, inert, KL, mediantype, mkconnected, solver_flag, coarse_flag, vmax, eigtol, igeom, subcoords,
+		 subvwsqrt, spec, inert, rcb, KL, mediantype, mkconnected, solver_flag, coarse_flag, vmax, eigtol, igeom, subcoords,
 		 subassign, subgoal, scatt, randm, lin, subassigned,
 		 xlens[set],ylens[set]);
 

@@ -18,7 +18,7 @@ double DOUBLE_EPSILON;		/* machine precision */
 double DOUBLE_MAX;		/* largest double precision value */
 
 
-int balance(graph, nvtxs, nedges, ndims, nsets_tot, using_vwgts, spec, inert,
+int balance(graph, nvtxs, nedges, ndims, nsets_tot, using_vwgts, spec, inert, rcb,
        KL, mediantype, mkconnected, solver_flag, coarse_flag, vmax,
        eigtol, seed, igeom, coords, assignment, goal, scatt, randm, lin,
        graphname, geomname, assignname, outfile, dimx, dimy)
@@ -30,6 +30,7 @@ int nsets_tot;			/* total number of sets to divide into */
 int using_vwgts;		/* are vertex weights being used? */
 int spec;			/* run spectral global decomposition? */
 int inert;			/* run inertial method global decomposition? */
+int rcb;			/* run coordinate method global decomposition? */
 int KL;				/* run Kernighan-Lin local optimization? */
 int mediantype;			/* method for partitioning eigenvector */
 int mkconnected;		/* check for connectivity & add phantom edges? */
@@ -84,7 +85,7 @@ int dimy;				/* y dimension of processor array */
    /* Check the input for inconsistencies. */
    if (CHECK_INPUT) {
       time = seconds();
-      flag = check_input(graph, nvtxs, nedges, spec, inert, KL,
+      flag = check_input(graph, nvtxs, nedges, spec, inert, rcb, KL,
 	 mediantype, solver_flag, coarse_flag, vmax, 1, 2,
 	 igeom, coords, scatt, randm, lin, graphname);
       check_input_time = seconds() - time;
@@ -142,7 +143,7 @@ int dimy;				/* y dimension of processor array */
 
    graph2 = graph;
    if (inert && !KL && !using_vwgts) graph2 = NULL;
-   recurse(graph2, nvtxs, nedges, ndims, 0, hop_mtx, vwsqrt, spec, inert,
+   recurse(graph2, nvtxs, nedges, ndims, 0, hop_mtx, vwsqrt, spec, inert, rcb,
          KL, mediantype, mkconnected, solver_flag, coarse_flag,
          vmax, eigtol, igeom, coords, assignment, goal, scatt, randm, lin, 0, 
          dimx, dimy);

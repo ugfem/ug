@@ -29,6 +29,7 @@ FILES.c=	main/interface.c User_params.c \
 		inertial/eigenvec2.c inertial/eigenvec3.c inertial/inertial.c \
 		inertial/inertial1d.c inertial/inertial2d.c \
 		inertial/inertial3d.c inertial/make_subgeom.c \
+		inertial/rcb.c inertial/rcb2d.c inertial/rcb3d.c \
 		klspiff/buckets.c klspiff/bilistops.c klspiff/coarsen_kl.c \
 		klspiff/coarsen1_kl.c klspiff/kl_init.c klspiff/kl_output.c \
 		klspiff/klspiff.c klspiff/make_kl_list.c \

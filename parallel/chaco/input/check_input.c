@@ -11,7 +11,7 @@
 #include "../main/structs.h"
 
 /* Check input parameters and graph for consistency. */
-int check_input(graph, nvtxs, nedges, spec, inert, KL, mediantype,
+int check_input(graph, nvtxs, nedges, spec, inert, rcb, KL, mediantype,
                 solver_flag, coarse_flag, vmax, ndims, ndims_tot, igeom, coords,
                 scatt, randm, lin, graphname)
 struct vtx_data **graph;        /* linked lists of vertex data */
@@ -19,6 +19,7 @@ int nvtxs;                      /* number of vertices */
 int nedges;                     /* number of edges */
 int spec;                       /* invoke spectral method? */
 int inert;                      /* invoke inertial method? */
+int rcb;                        /* invoke coordinate method? */
 int KL;                         /* invoke Kernighan-Lin? */
 int mediantype;                 /* median-finding option for spec */
 int solver_flag;                /* type of eigensolver */
@@ -27,7 +28,7 @@ int vmax;                       /* smallest acceptable coarsened nvtxs */
 int ndims;                      /* partitioning level */
 int ndims_tot;                  /* total number of cuts to make */
 int igeom;                      /* geometric dimension for inertial method */
-float **coords;                 /* coordinates for inertial method */
+float **coords;                 /* coordinates for inertial/rcb method */
 int scatt;                      /* use scattered global partitioner? */
 int randm;                      /* use randm global partitioner? */
 int lin;                        /* use linear global partitioner? */
@@ -58,6 +59,7 @@ char *graphname;                /* graph input file name */
   nmethods = 0;
   if (spec) ++nmethods;
   if (inert) ++nmethods;
+  if (rcb) ++nmethods;
   if (scatt) ++nmethods;
   if (randm) ++nmethods;
   if (lin) ++nmethods;
@@ -110,7 +112,7 @@ char *graphname;                /* graph input file name */
     }
   }
 
-  if (inert) {
+  if (inert || rcb) {
     if (igeom < 1 || igeom > 3) {
       {char buf[150]; sprintf(buf,"Geometry must be 1-, 2- or 3-dimensional for inertial method\n");UserWrite(buf);}
       flag = FALSE;
@@ -147,7 +149,7 @@ char *graphname;                /* graph input file name */
   else {
     /* Only allowed if simple or inertial w/o KL and no weights. */
     flag_graph = TRUE;
-    if ((!inert & !scatt & !randm & !lin) || KL) {
+    if ((!inert & !rcb & !scatt & !randm & !lin) || KL) {
       {char buf[150]; sprintf(buf,"No graph input.  Only allowed for inertial method without KL.\n");UserWrite(buf);}
       flag_graph = FALSE;
     }

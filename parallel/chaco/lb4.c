@@ -54,6 +54,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 
 #include "compiler.h"
 /* #include "ugtypes2.h" */
@@ -66,6 +67,7 @@
 #include "ppif.h"
 /* #include "ugxfer.h" */
 /* #include "ugrefine.h" */
+#include "debug.h"
 #include "refine.h"
 #include "rm.h"
 #include "cmdint.h"
@@ -83,7 +85,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-#define MAXCLUSTERS         5000       /* max number of clusters           */
+#define MAXCLUSTERS         10000       /* max number of clusters           */
 #define MAXSETS             16          /* max number of cluster sets       */
 
 #define SMALL_COORD         1.0E-5      /* resolution when comparing COORDs */
@@ -346,9 +348,18 @@ static int check_condition_from_refinement (ELEMENT *e)
 
 	/* if one of the sons is copy or irregular, it must be       */
 	/* with its father.                                          */
-	for (i=0; i<NSONS(e); i++)
-		if (SON(e,i)!=NULL)
-			if (ECLASS(SON(e,i))!=RED_CLASS) return(1);
+	{
+		ELEMENT *SonList[MAX_SONS];
+
+		if (GetSons(e,SonList)!= GM_OK) assert(0);
+		for (i=0; i<NSONS(e); i++)
+		{
+			if (SonList[i]!=NULL)
+				if (ECLASS(SonList[i])!=RED_CLASS) return(1);
+			else
+				break;
+		}
+	}
 
 	return(0);
 } 
@@ -421,39 +432,45 @@ static int Clustering (MULTIGRID *mg, int minlevel, int cluster_depth, int thres
 			}
 			
 			/* assign the sons of e to clusters */
-			for (i=0; i<NSONS(e); i++)
 			{
-				s = SON(e,i);
-				if (s==NULL) continue;
-				if (!(DDD_InfoPriority(PARHDRE(s))==PrioMaster)) continue;
+				ELEMENT *SonList[MAX_SONS];
 
-				/* if condition implied by refinement algorithm is true */
-				/* put s in same cluster as e.                          */
-				if (check_condition_from_refinement(s))
+				if (GetSons(e,SonList)!= GM_OK) assert(0);
+
+				for (i=0; i<NSONS(e); i++)
 				{
-					SET_MY_CLUSTER(s,c);
-					continue;
-				}
+					s = SonList[i];
+					if (s==NULL) break;
+					if (!(DDD_InfoPriority(PARHDRE(s))==PrioMaster)) continue;
 
-				/* if max depth of a cluster is not reached, */
-				/* put s in same cluster as e.               */
-				if (LEVEL(s)-(c->minlevel)<=cluster_depth)
-				{
-					SET_MY_CLUSTER(s,c);
-					continue;
-				}
+					/* if condition implied by refinement algorithm is true */
+					/* put s in same cluster as e.                          */
+					if (check_condition_from_refinement(s))
+					{
+						SET_MY_CLUSTER(s,c);
+						continue;
+					}
 
-				/* if son has not enough descendents to build its own cluster,*/
-				/* put s in same cluster as e.                                */
-				if (DESCENDENTS(s)<threshold)
-				{
-					SET_MY_CLUSTER(s,c);
-					continue;
-				}
+					/* if max depth of a cluster is not reached, */
+					/* put s in same cluster as e.               */
+					if (LEVEL(s)-(c->minlevel)<=cluster_depth)
+					{
+						SET_MY_CLUSTER(s,c);
+						continue;
+					}
 
-				/* if none of the above is true, the cluster pointer in s  */
-				/* remains NULL. Therefore a new cluster will be allocated */
-				/* for s.                                                  */
+					/* if son has not enough descendents to build its own cluster,*/
+					/* put s in same cluster as e.                                */
+					if (DESCENDENTS(s)<threshold)
+					{
+						SET_MY_CLUSTER(s,c);
+						continue;
+					}
+
+					/* if none of the above is true, the cluster pointer in s  */
+					/* remains NULL. Therefore a new cluster will be allocated */
+					/* for s.                                                  */
+				}
 			}
 		}
 	}
@@ -997,7 +1014,7 @@ static void reset_timers (void)
 	extern double probe_time, pause_time;
 	extern double rqi_symmlq_time, refine_time;
 	extern double kl_total_time, kl_init_time, nway_kl_time;
-	extern double inertial_time, inertial_axis_time, median_time;
+	extern double inertial_time, rcb_time, inertial_axis_time, median_time;
 
 	input_time = partition_time = reformat_time = 0;
 	check_input_time = count_time = print_assign_time = 0;
@@ -1015,7 +1032,7 @@ static void reset_timers (void)
 
 	kl_total_time = kl_init_time = nway_kl_time = 0;
 
-	inertial_time = inertial_axis_time = median_time = 0;
+	inertial_time = rcb_time = inertial_axis_time = median_time = 0;
 }
 
 static int balance_ccptm (MULTIGRID *mg, int Const, int strategy, int eigen, 
@@ -1434,8 +1451,21 @@ static void recursive_set_dest (ELEMENT *e, CLUSTER *c, ELEMENT **elements,
 	SET_MY_CLUSTER(e,NULL);
 	
 	/* process sons of e recursively */
-	for (i=0; i<NSONS(e); i++)
-		if (SON(e,i)!=NULL) recursive_set_dest(SON(e,i),c,elements,ne);
+	{
+		ELEMENT *SonList[MAX_SONS];
+
+		if (GetSons(e,SonList) != GM_OK) assert(0);
+
+		for (i=0; i<NSONS(e); i++)
+		{
+			ELEMENT *s = SonList[i];
+			
+			if (s!=NULL)
+				recursive_set_dest(s,c,elements,ne);
+			else
+				break;
+		}
+	}
 }
 	
 static int SetDestinations (MULTIGRID *mg, int minlevel, ELEMENT **elements, 
@@ -1606,6 +1636,9 @@ stage1: /* compute total number of clusters or error */
 	/* transfer load */
 	/* error = LoadTransfer(mg,ne,elements,element_limit,channel_limit,iter);*/
 
+/*
+	TransferGridFromLevel(mg,minlevel);
+*/
 	TransferGridFromCoarse(mg);
 
 mem_err: /* if memory error has occured leave everything unchanged */

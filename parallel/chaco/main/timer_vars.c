@@ -42,5 +42,6 @@ double kl_init_time = 0;
 double nway_kl_time = 0;
 
 double inertial_time = 0;
+double rcb_time = 0;
 double inertial_axis_time = 0;
 double median_time = 0;

@@ -208,6 +208,7 @@ int interface (CLUSTER **clusters, int nvtxs, short *assign, double *goal,
 	int ndims;                   /* dimension of recursive partitioning */
    	int spec;                    /* run spectral global decomposition? */
    	int inert;                   /* run inertial global decomposition? */
+   	int rcb;                     /* run coordinate global decomposition? */
    	int KL;                      /* run Kernighan-Lin local optimization? */
    	long seed;                   /* for random graph mutations */
    	int mediantype;              /* method for partitioning eigenvector */
@@ -303,6 +304,11 @@ int interface (CLUSTER **clusters, int nvtxs, short *assign, double *goal,
 		inert = TRUE;
 		fingeom = NULL;
 	}
+	else if (glob_method == 0)
+	{
+		rcb = TRUE;
+		fingeom = NULL;
+	}
 	else if (glob_method == 2) 
 	{ 
 		spec = TRUE;
@@ -371,7 +377,7 @@ int interface (CLUSTER **clusters, int nvtxs, short *assign, double *goal,
 	else 
 		assignptr = NULL;
 
-	if (inert)
+	if (inert || rcb)
 	{
 
 		/* begin part of Chaco's input_geom */
@@ -535,7 +541,7 @@ int interface (CLUSTER **clusters, int nvtxs, short *assign, double *goal,
 	reformat_graph(clusters,graph,nvtxs,&nedges,glob2loc,loc2glob,using_ewgts);
 
 	flag = balance(graph, nvtxs, nedges, ndims, nsets_tot, using_vwgts, spec, 
-				inert, KL, mediantype, mkconnected, solver_flag, coarse_flag,
+				inert, rcb, KL, mediantype, mkconnected, solver_flag, coarse_flag,
 				vmax, eigtol, seed, igeom, coords, assignment, goal, scatt, 
 				randm, lin, graphname, geomname, assignname, outfile,dimx,dimy); 
 	if (!MEM_OK) return;
@@ -585,6 +591,7 @@ void do_timing(FILE *outfile)
    extern double print_assign_time;
    
    extern double inertial_time;
+   extern double rcb_time;
    extern double inertial_axis_time;
    extern double median_time;
 
@@ -687,6 +694,12 @@ void do_timing(FILE *outfile)
 	    if (print2file) fprintf(outfile, "  other %g\n", other_time);
 	 }
       }
+      if (rcb_time != 0) {
+         if (rcb_time != 0) {
+	   {char buf[150]; sprintf(buf,"\nRcb time: %g sec.\n", rcb_time);UserWrite(buf);}
+	    if (print2file) fprintf(outfile, "\nRcb time: %g sec.\n", rcb_time);
+	 }
+	  }
 
       if (kl_total_time != 0) {
          if (kl_total_time != 0) {

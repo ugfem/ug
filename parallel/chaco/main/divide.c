@@ -11,7 +11,7 @@
 #include "../main/structs.h"
 
 
-void divide(graph, nvtxs, nedges, ndims, vwsqrt, spec, inert, KL, 
+void divide(graph, nvtxs, nedges, ndims, vwsqrt, spec, inert, rcb, KL, 
        mediantype, mkconnected, solver_flag, coarse_flag, vmax, eigtol,
        hop_mtx, igeom, coords, assignment, goal, scatt, randm, lin, part_type)
 struct vtx_data **graph;	/* graph data structure */
@@ -21,6 +21,7 @@ int ndims;			/* number of eigenvectors (2^d sets) */
 double *vwsqrt;			/* sqrt of vertex weights (length nvtxs+1) */
 int spec;			/* run spectral global decomposition? */
 int inert;			/* run inertial global decomposition? */
+int rcb;			/* run coordinate global decomposition? */
 int KL;				/* run Kernighan-Lin local optimization? */
 int mediantype;			/* method for partitioning eigenvector */
 int mkconnected;		/* check connectivity & add phantom edges? */
@@ -57,7 +58,7 @@ int part_type;
    int simple_type;		/* which type of simple partitioning to use */
    
    void make_connected(), print_connected(), coarsen_kl(), eigensolve();
-   void assign(), make_unconnected(), inertial(), klspiff(), simple_part();
+   void assign(), make_unconnected(), inertial(), rcb(), klspiff(), simple_part();
    double find_maxdeg();
 
    using_vwgts = (vwsqrt != NULL);
@@ -243,6 +244,11 @@ extern int DEBUG_GRAPH;
    }
    else if (inert) {
       inertial(graph, nvtxs, ndims, igeom, coords, assignment, goal, 
+	           using_vwgts, part_type);
+      if (!MEM_OK) return;
+   }
+   else if (rcb) {
+      rcb(graph, nvtxs, ndims, igeom, coords, assignment, goal, 
 	           using_vwgts, part_type);
       if (!MEM_OK) return;
    }
