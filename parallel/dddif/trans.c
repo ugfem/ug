@@ -100,14 +100,14 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 void AMGAgglomerate(MULTIGRID *theMG)
 {
-  INT level;
+  INT level,Size;
   GRID    *theGrid;
   VECTOR  *theVector;
 
   level = BOTTOMLEVEL(theMG);
   if (level >= 0)
   {
-    UserWriteF("AMGAgglomerate(): no amg level found\n");
+    UserWriteF("AMGAgglomerate(): no amg level found, current bottom level is %d\n", level);
     return;
   }
   theGrid = GRID_ON_LEVEL(theMG,level);
@@ -115,7 +115,9 @@ void AMGAgglomerate(MULTIGRID *theMG)
   DDD_XferBegin();
   for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
   {
-    XFERCOPY(theVector,master,PrioMaster);
+    Size = sizeof(VECTOR)-sizeof(DOUBLE)
+           +FMT_S_VEC_TP(MGFORMAT(theMG),VTYPE(theVector));
+    XFERCOPYX(theVector,master,PrioMaster,Size);
     SETPRIO(theVector,PrioVGhost);
   }
   DDD_XferEnd();
