@@ -339,7 +339,7 @@ MVALUES *GetMatrixValuePlotProc (const char *name)
    D*/
 /****************************************************************************/
 
-static INT PreprocessNodeIndex (MULTIGRID *theMG)
+static INT PreprocessNodeIndex (const char *name, MULTIGRID *theMG)
 {
   INT i, index;
   VECTOR *theVector;
@@ -516,11 +516,9 @@ INT InitPlotproc ()
   theElemVectorVarID = GetNewEnvVarID();
 
   /* install general plot procs */
-        #ifdef __THREEDIM__
         #ifdef __NODEDATA__
   if (CreateElementValuePlotProc("nindex",PreprocessNodeIndex,NodeIndex)==NULL) return(1);
   if (CreateElementVectorPlotProc("gradnindex",PreprocessNodeIndex,GradNodeIndex,DIM)==NULL) return(1);
-        #endif
         #endif
 
 
