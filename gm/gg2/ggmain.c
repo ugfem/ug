@@ -188,6 +188,7 @@ INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
   VSEGMENT *vs0,*vs1;
   PATCH *thePatch;
   COORD *global,*global0,*global1,*lambda0,*lambda1,lambda[DIM-1];
+  COORD_VECTOR global2;
   DOUBLE diff,step,gstep0,gstep1;
   INT i,j,k,m,ncorners,found;
   CoeffProcPtr MeshSize;
@@ -232,7 +233,10 @@ INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
             found++;
             global1 = CVECT(Vertex[j]);
             lambda1 = PVECT(vs1);
-            V_DIM_EUKLIDNORM_OF_DIFF(global0,global1,diff);
+            lambda[0] = 0.5 * lambda0[0] + 0.5 * lambda1[0];
+            Patch_local2global(thePatch,lambda,global2);
+            V_DIM_EUKLIDNORM_OF_DIFF(global0,global2,diff);
+            diff *= 2;
             if (MeshSize == NULL)
             {
               m = (INT) diff / h_global;
@@ -240,11 +244,11 @@ INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
                 if (m < 3)
                   m = 3;
               if (m>0)
-                step = (lambda1 - lambda0) / m;
+                step = (lambda1[0] - lambda0[0]) / m;
               lambda[0] = lambda0[0];
               for (k=1; k<m; k++)
               {
-                lambda0[0] += step;
+                lambda[0] += step;
                 if (InsertBoundaryNodeFromPatch (theMG,
                                                  thePatch,lambda))
                   return(1);
@@ -2262,13 +2266,25 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
     NeighborSide[i] = theElementContext->Neighbourside[i];
   }
 
+
+  /*	i++
+            ID(Neighbor[i])*/
+
+
   InsertElement (MYMG(theGrid),n,Node,NULL);
+
 
   /* TODO: repair this:
      InsertElement (MYMG(theGrid),n,Node,Neighbor); */
 
   theElement = theGrid->elements;
   theElementContext->thenewElement = theElement;
+
+  /*
+          i++
+            ID(NBELEM(theElement,i) oder NULL*/
+
+
 
   /* plot */
 
