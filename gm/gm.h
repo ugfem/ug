@@ -1162,7 +1162,7 @@ extern CONTROL_ENTRY
 /* general query macros */
 
 /* dynamic control words */
-#define _DEBUG_CW_
+#undefine _DEBUG_CW_
 #if (defined _DEBUG_CW_) && !(defined __COMPILE_CW__)
 /* map cw read/write to functions */
         #define CW_READ(p,ce)                                   ReadCW(p,ce)
