@@ -257,6 +257,7 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
   bdf->dt = bdf->dtstart;
   bdf->step = 0;
   bdf->t_0 = 0.0;       /* we always start with t = 0 ! */
+  bdf->t_m1 = - bdf->dt;
 
   /* set initial values and boundary conditions in y_0 */
   *res = 1;
