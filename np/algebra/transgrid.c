@@ -1547,7 +1547,7 @@ INT NS_DIM_PREFIX InterpolateNewVectorsByMatrix (GRID *FineGrid, const VECDATA_D
  */
 /****************************************************************************/
 
-INT ClearGhostMatrix (GRID *g, MATDATA_DESC *Mat)
+INT NS_DIM_PREFIX ClearGhostMatrix (GRID *g, MATDATA_DESC *Mat)
 {
   VECTOR *v,*w;
   MATRIX *m;

@@ -404,7 +404,7 @@ static void InheritPartition (ELEMENT *e)
  */
 /****************************************************************************/
 
-int BalanceGridRCB (MULTIGRID *theMG, int level)
+int NS_PREFIX BalanceGridRCB (MULTIGRID *theMG, int level)
 {
   HEAP *theHeap = theMG->theHeap;
   GRID *theGrid = GRID_ON_LEVEL(theMG,level);       /* balance grid of level */
