@@ -969,9 +969,9 @@ void PrintHostMessage (char *s)
   printf("%s",s);
 }
 
-float CurrentTime (void)
+double CurrentTime (void)
 {
-  return(((float)(clock())/((float)CLOCKS_PER_SEC)));
+  return(((double)(clock())/((double)CLOCKS_PER_SEC)));
 }
 
 int Distance (int p, int q)
