@@ -692,6 +692,7 @@ NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
   theVertex = MYVERTEX(FatherNode);
   MYVERTEX(pn) = theVertex;
   TOPNODE(theVertex) = pn;
+  SETNTYPE(pn,CORNER_NODE);
 
   return(pn);
 }
@@ -2217,8 +2218,20 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
   for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
   {
     theNode = CORNER(theElement,j);
-    if (START(theNode) == NULL)
+    if (START(theNode) == NULL) {
+      if (NTYPE(theNode)==MID_NODE) {
+        ELEMENT *father;
+
+        father = EFATHER(theElement);
+        theEdge = GetEdge(CORNER(father,
+                                 CORNER_OF_EDGE(father,ONEDGE(MYVERTEX(theNode)),0)),
+                          CORNER(father,
+                                 CORNER_OF_EDGE(father,ONEDGE(MYVERTEX(theNode)),1)));
+        MIDNODE(theEdge) = NULL;
+      }
+
       DisposeNode(theGrid,theNode);
+    }
   }
 
   /* dispose matrices from element-vector */
@@ -3883,7 +3896,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList)
   SETNSONS(theElement,0);
   SET_SON(theElement,0,NULL);
   SET_EFATHER(theElement,NULL);
-  SETECLASS(theElement,RED);
+  SETECLASS(theElement,RED_CLASS);
 
   /* create connection to other elements. ATTENTION: this function is O(n)*/
   if (InsertedElementCreateConnection(theGrid,theElement))
@@ -4811,9 +4824,9 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
         #endif
   PATCH_DESC thePatchDesc;
 
-  if (ECLASS(theElement)==YELLOW_CLASS) strcpy(etype,"COPY ");
-  if (ECLASS(theElement)==GREEN_CLASS) strcpy(etype,"IRREG");
-  if (ECLASS(theElement)==RED_CLASS) strcpy(etype,"REGUL");
+  if (ECLASS(theElement)==YELLOW_CLASS) strcpy(etype,"YELLOW ");
+  if (ECLASS(theElement)==GREEN_CLASS) strcpy(etype,"GREEN  ");
+  if (ECLASS(theElement)==RED_CLASS) strcpy(etype,"RED    ");
   sprintf(buffer,"ELEMID=%9ld %5s CTRL=%8lx CTRL2=%8lx REFINE=%2d MARK=%2d LEVEL=%2d",(long)ID(theElement),etype,
           (long)CTRL(theElement),(long)FLAG(theElement),REFINE(theElement),MARK(theElement),LEVEL(theElement));
   UserWrite(buffer);
