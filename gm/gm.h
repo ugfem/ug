@@ -2488,9 +2488,9 @@ enum GM_OBJECTS {
 #define EDVECTOR(p) ((p)->vector)
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* macros for elements                                                                                                          */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* macros for elements                                                      */
+/*                                                                          */
 /****************************************************************************/
 
 /* TAG values */
@@ -2551,23 +2551,25 @@ enum GM_OBJECTS {
 /* the general element concept */
 /*******************************/
 
-/* this structure contains all topological properties of an element and more .. */
+/** \brief This structure contains all topological properties
+    of an element and more ..
+ */
 typedef struct {
-  INT tag;                                                                      /* element type to be defined       */
+  INT tag;                           /**< Element type to be defined       */
 
   /* the following parameters determine size of refs array in element */
-  INT max_sons_of_elem;                                         /* max number of sons for this type */
-  INT sides_of_elem;                                                    /* how many sides ?                                     */
-  INT corners_of_elem;                                          /* how many corners ?                           */
+  INT max_sons_of_elem;              /**< Max number of sons for this type */
+  INT sides_of_elem;                 /**< How many sides ?                 */
+  INT corners_of_elem;               /**< How many corners ?               */
 
   /* local geometric description of the element */
-  DOUBLE_VECTOR local_corner[MAX_CORNERS_OF_ELEM];                      /* local coordinates of the corners of the element */
+  DOUBLE_VECTOR local_corner[MAX_CORNERS_OF_ELEM];                /**< Local coordinates of the corners of the element */
 
   /* more size parameters */
-  INT edges_of_elem;                                                    /* how many edges ?                                     */
-  INT edges_of_side[MAX_SIDES_OF_ELEM];         /* number of edges for each side        */
-  INT corners_of_side[MAX_SIDES_OF_ELEM];       /* number of corners for each side  */
-  INT corners_of_edge;                                          /* is always 2 !                                        */
+  INT edges_of_elem;                 /**< How many edges ?         */
+  INT edges_of_side[MAX_SIDES_OF_ELEM];     /**< Number of edges for each side        */
+  INT corners_of_side[MAX_SIDES_OF_ELEM];   /**< Number of corners for each side  */
+  INT corners_of_edge;                                      /**< Is always 2 !         */
 
   /* index computations */
   /* Within each element sides, edges, corners are numbered in some way.      */
@@ -2579,9 +2581,9 @@ typedef struct {
   INT corner_of_edge[MAX_EDGES_OF_ELEM][MAX_CORNERS_OF_EDGE];
 
   /* the following parameters are derived from data above */
-  INT mapped_inner_objt;                                        /* tag to objt mapping for free list*/
-  INT mapped_bnd_objt;                                          /* tag to objt mapping for free list*/
-  INT inner_size, bnd_size;                                     /* size in bytes used for alloc     */
+  INT mapped_inner_objt;                                    /* tag to objt mapping for free list*/
+  INT mapped_bnd_objt;                                      /* tag to objt mapping for free list*/
+  INT inner_size, bnd_size;                                 /* size in bytes used for alloc     */
   INT edge_with_corners[MAX_CORNERS_OF_ELEM][MAX_CORNERS_OF_ELEM];
   INT side_with_edge[MAX_EDGES_OF_ELEM][MAX_SIDES_OF_EDGE];
   INT corner_of_side_inv[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_ELEM];
@@ -2596,31 +2598,19 @@ typedef struct {
   /* ... the refinement rules should be placed here later */
 } GENERAL_ELEMENT;
 
-/* these are the offsets into the variable length pointer array of the element */
-#ifndef __cplusplus
-extern INT n_offset[TAGS];
-extern INT father_offset[TAGS];
-extern INT sons_offset[TAGS];
-extern INT nb_offset[TAGS];
-extern INT evector_offset[TAGS];
-extern INT svector_offset[TAGS];
-extern INT side_offset[TAGS];
-extern INT data_offset[TAGS];
-#endif
-
 /* the element descriptions are also globally available, these are pointers ! */
 extern GENERAL_ELEMENT *element_descriptors[TAGS];
 extern GENERAL_ELEMENT *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
 extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* macros for element descriptors                                                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* macros for element descriptors                                           */
+/*                                                                          */
 /****************************************************************************/
 
-/* macros to access element descriptors by element pointers             */
-
+/** @name Macros to access element descriptors by element pointers             */
+/*@{*/
 #define SIDES_OF_ELEM(p)                (element_descriptors[TAG(p)]->sides_of_elem)
 #define EDGES_OF_ELEM(p)                (element_descriptors[TAG(p)]->edges_of_elem)
 #define CORNERS_OF_ELEM(p)              (element_descriptors[TAG(p)]->corners_of_elem)
@@ -2675,9 +2665,11 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define EDGE_ON_BND(p,i) (SIDE_ON_BND(p,SIDE_WITH_EDGE(p,i,0)) || \
                           SIDE_ON_BND(p,SIDE_WITH_EDGE(p,i,1)))
 #endif
+/*@}*/
 
 /* use the following macros to assign values, since definition  */
-/* above is no proper lvalue.                                                                   */
+/* above is no proper lvalue.
+   /*@{*/*/
 #define SET_CORNER(p,i,q)       ((p)->ge.refs[n_offset[TAG(p)]+(i)] = q)
 #define SET_EFATHER(p,q)        ((p)->ge.refs[father_offset[TAG(p)]] = q)
 #define SET_SON(p,i,q)          ((p)->ge.refs[sons_offset[TAG(p)]+(i)] = q)
@@ -2690,16 +2682,16 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 
 #define SideBndCond(t,side,l,v,type)  BNDS_BndCond(ELEM_BNDS(t,side),l,NULL,v,type)
 #define Vertex_BndCond(p,w,i,v,t)     BNDP_BndCond(V_BNDP(p),w,i,NULL,v,t)
+/*@}*/
 
-
-/* macros to access corner pointers directly */
-
+/** @name Macros to access corner pointers directly */
+/*@{*/
 #define CORNER_OF_EDGE_PTR(e,i,j)               (CORNER(e,CORNER_OF_EDGE(e,i,j)))
 #define CORNER_OF_SIDE_PTR(e,i,j)               (CORNER(e,CORNER_OF_SIDE(e,i,j)))
+/*@}*/
 
-
-/* macros to access element descriptors by element tags */
-
+/** @name Macros to access element descriptors by element tags */
+/*@{*/
 #define INNER_SIZE_TAG(t)                       (element_descriptors[t]->inner_size)
 #define BND_SIZE_TAG(t)                         (element_descriptors[t]->bnd_size)
 #define MAPPED_INNER_OBJT_TAG(t)                (element_descriptors[t]->mapped_inner_objt)
@@ -2729,10 +2721,10 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define OPPOSITE_EDGE_TAG(t,e)              (element_descriptors[t]->opposite_edge[(e)])
 #define SIDE_OPP_TO_CORNER_TAG(t,c)             (element_descriptors[t]->side_opp_to_corner[(c)])
 #define EDGE_OF_CORNER_TAG(t,c,e)               (element_descriptors[t]->edge_of_corner[(c)][(e)])
+/*@}*/
 
-
-/* macros to access reference descriptors by number of element corners  */
-
+/** @name  Macros to access reference descriptors by number of element corners  */
+/*@{*/
 #define SIDES_OF_REF(n)                   (reference_descriptors[n]->sides_of_elem)
 #define EDGES_OF_REF(n)                   (reference_descriptors[n]->edges_of_elem)
 #define CORNERS_OF_REF(n)                 (reference_descriptors[n]->corners_of_elem)
@@ -2752,11 +2744,12 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define OPPOSITE_EDGE_REF(n,e)            (reference_descriptors[n]->opposite_edge[(e)])
 #define SIDE_OPP_TO_CORNER_REF(n,c)       (reference_descriptors[n]->side_opp_to_corner[(c)])
 #define EDGE_OF_CORNER_REF(n,c,e)         (reference_descriptors[n]->edge_of_corner[(c)][(e)])
+/*@}*/
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* macros for grids                                                                                                             */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* macros for grids                                                         */
+/*                                                                          */
 /****************************************************************************/
 
 /* control word offset */
@@ -2890,9 +2883,9 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define NDATA_DEF_IN_GRID(p)   (GFORMAT(p)->nodedata)
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* macros for multigrids                                                                                                        */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* macros for multigrids                                                    */
+/*                                                                          */
 /****************************************************************************/
 
 /* control word offset */
@@ -2945,9 +2938,9 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define MG_MARK_KEY(p)              ((p)->MarkKey)
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* macros for formats                                                                                                           */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* macros for formats                                                       */
+/*                                                                          */
 /****************************************************************************/
 
 #define FMT_ELEM_DATA(f)                                ((f)->elementdata)
@@ -2982,24 +2975,25 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define FMT_SET_N2T(f,c,t)                              ((f)->n2t[(c)-FROM_VTNAME] = t)
 #define FMT_T2N(f,t)                                    (((f)->t2n[t]))
 
-/* constants for USED flags of objects */
-#define MG_ELEMUSED     1
-#define MG_NODEUSED     2
-#define MG_EDGEUSED     4
-#define MG_VERTEXUSED   8
-#define MG_VECTORUSED   16
-#define MG_MATRIXUSED   32
+/** \brief Constants for USED flags of objects */
+enum {MG_ELEMUSED =    1,
+      MG_NODEUSED =    2,
+      MG_EDGEUSED =    4,
+      MG_VERTEXUSED =   8,
+      MG_VECTORUSED =  16,
+      MG_MATRIXUSED =  32}
+
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* declaration of exported global variables                                                                     */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* declaration of exported global variables                                 */
+/*                                                                          */
 /****************************************************************************/
 
 /* predefined blockvector description formats */
 extern const BV_DESC_FORMAT DH_bvdf;            /* bvdf for domain halfening    */
 extern const BV_DESC_FORMAT one_level_bvdf;     /* bvdf for only 1 blocklevel   */
-extern const BV_DESC_FORMAT two_level_bvdf;     /* bvdf for 2 blocklevels               */
+extern const BV_DESC_FORMAT two_level_bvdf;     /* bvdf for 2 blocklevels       */
 extern const BV_DESC_FORMAT three_level_bvdf;   /* bvdf for 3 blocklevels       */
 
 #if defined ModelP && defined __OVERLAP2__
@@ -3012,20 +3006,19 @@ extern INT ce_NO_DELETE_OVERLAP2;
 /*                                                                          */
 /****************************************************************************/
 
-/** @name Return values for functions returning an INT. The usual rule is: 0 ok, >0 error */
-/*@{*/
-#define GM_OK                                           0
-#define GM_ERROR                                        1
-#define GM_FILEOPEN_ERROR                       2
-#define GM_RULE_WITH_ORIENTATION        3
-#define GM_RULE_WITHOUT_ORIENTATION 4
-#define GM_OUT_OF_MEM                           5
-#define GM_OUT_OF_RANGE                         6
-#define GM_NOT_FOUND                            7
-#define GM_INCONSISTANCY                        8
-#define GM_COARSE_NOT_FIXED                     9
-#define GM_FATAL                                        999
-/*@}*/
+/** \brief Return values for functions returning an INT. The usual rule is: 0 ok, >0 error */
+enum {GM_OK                       = 0,
+      GM_ERROR                    = 1,
+      GM_FILEOPEN_ERROR           = 2,
+      GM_RULE_WITH_ORIENTATION    = 3,
+      GM_RULE_WITHOUT_ORIENTATION = 4,
+      GM_OUT_OF_MEM               = 5,
+      GM_OUT_OF_RANGE             = 6,
+      GM_NOT_FOUND                = 7,
+      GM_INCONSISTANCY            = 8,
+      GM_COARSE_NOT_FIXED         = 9,
+      GM_FATAL                    = 999};
+
 
 /** @name Some constants passed as parameters */
 /*@{*/
