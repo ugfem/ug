@@ -100,6 +100,24 @@ then
 	scalar3d)
 		cd $UGROOT/../scalar/appl3d;
 		;;
+	ns)
+		cd $UGROOT/../ns/pclib;
+		;;
+	ns2d)
+		cd $UGROOT/../ns/appl2d;
+		;;
+	fe)
+		cd $UGROOT/../fe/appl;
+		;;
+	sc)
+		cd $UGROOT/../sc/pclib;
+		;;
+	sc2d)
+		cd $UGROOT/../sc/appl2d;
+		;;
+	sc3d)
+		cd $UGROOT/../sc/appl3d;
+		;;
 	tools)
 		cd $UGROOT/tools;
 		;;
