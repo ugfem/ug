@@ -99,6 +99,34 @@ LGM_PROBLEM *CreateProblem (char *name, InitProcPtr init, DomainSizeConfig domco
   LGM_PROBLEM_CONFIG(newProblem)          = NULL;
   LGM_PROBLEM_DOMCONFIG(newProblem)       = domconfig;
   LGM_PROBLEM_BNDCOND(newProblem)         = BndCond;
+  LGM_PROBLEM_INNERBNDCOND(newProblem)= NULL;
+  LGM_PROBLEM_NCOEFF(newProblem)          = numOfCoefficients;
+  LGM_PROBLEM_NUSERF(newProblem)          = numOfUserFct;
+  for (i=0; i<numOfCoefficients; i++) LGM_PROBLEM_SETCOEFF(newProblem,i,coeffs[i]);
+  for (i=0; i<numOfUserFct; i++) LGM_PROBLEM_SETUSERF(newProblem,i,userfct[i]);
+
+  UserWrite("lgm_problem "); UserWrite(name); UserWrite(" installed\n");
+
+  return (newProblem);
+}
+
+LGM_PROBLEM *CreateProblemWithInnerBCs (char *name, InitProcPtr init, DomainSizeConfig domconfig, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[])
+{
+  LGM_PROBLEM *newProblem;
+  int i;
+
+  if (ChangeEnvDir("/LGM_PROBLEM")==NULL) return(NULL);
+
+  /* allocate new problem structure */
+  newProblem = (LGM_PROBLEM *) MakeEnvItem (name,theProblemVarID,sizeof(LGM_PROBLEM)+(numOfCoefficients+numOfUserFct-1)*sizeof(void*));
+  if (newProblem==NULL) return(NULL);
+
+  /* fill in data */
+  LGM_PROBLEM_INIT(newProblem)            = init;
+  LGM_PROBLEM_CONFIG(newProblem)          = NULL;
+  LGM_PROBLEM_DOMCONFIG(newProblem)       = domconfig;
+  LGM_PROBLEM_BNDCOND(newProblem)         = BndCond;
+  LGM_PROBLEM_INNERBNDCOND(newProblem)= InnerBndCond;
   LGM_PROBLEM_NCOEFF(newProblem)          = numOfCoefficients;
   LGM_PROBLEM_NUSERF(newProblem)          = numOfUserFct;
   for (i=0; i<numOfCoefficients; i++) LGM_PROBLEM_SETCOEFF(newProblem,i,coeffs[i]);
@@ -165,7 +193,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
 {
   LGM_DOMAIN *theDomain;
   LGM_PROBLEM *theProblem;
-  BndCondProcPtr BndCond;
+  BndCondProcPtr BndCond,InnerBndCond;
   INT i,nSubDom,conf_df_problem;
   char **argv;
 
@@ -224,7 +252,8 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
 
     /* set boundary conditions */
     BndCond = LGM_PROBLEM_BNDCOND(theProblem);
-    if (SetBoundaryCondition(theDomain,BndCond)) return (NULL);
+    InnerBndCond = LGM_PROBLEM_INNERBNDCOND(theProblem);
+    if (SetBoundaryCondition(theDomain,BndCond,InnerBndCond)) return (NULL);
   }
 
   /* set bounding sphere */
