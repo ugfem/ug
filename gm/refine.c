@@ -4799,7 +4799,7 @@ static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContex
 /*																			*/
 /* Function:  RefineGrid													*/
 /*																			*/
-/* Purpose:   refine one level of the grid									*/
+/* Purpose:   refine one level of the multigrid								*/
 /*																			*/
 /* Param:	  GRID *theGrid: grid level to refine							*/
 /*																			*/
@@ -4845,6 +4845,15 @@ static int RefineGrid (GRID *theGrid)
 
 			if (UnrefineElement(UpGrid,theElement))				RETURN(GM_FATAL);
 
+			#ifdef ModelP
+			/* dispose hghost elements with EFATHER==NULL */
+			if (EHGHOST(theElement) && COARSEN(theElement))
+			{
+				DisposeElement(theGrid,theElement,TRUE);
+				theElement = NULL;
+			}
+			#endif
+
 			if (EMASTER(theElement))
 			{
 				if (UpdateContext(UpGrid,theElement,theContext)!=0)	RETURN(GM_FATAL);
@@ -4874,16 +4883,32 @@ static int RefineGrid (GRID *theGrid)
 			SETGLOBALGSTATUS(UpGrid);
 			RESETMGSTATUS(MYMG(UpGrid));
 		}
-		else if (USED(theElement) == 0)
+		else 
 		{
-			/* count not updated green refinements */ 
-			No_Green_Update++;
+			#ifdef ModelP
+			/* dispose hghost elements with EFATHER==NULL */
+			if (EHGHOST(theElement) && COARSEN(theElement))
+			{
+				DisposeElement(theGrid,theElement,TRUE);
+				theElement = NULL;
+			}
+			#endif
+
+			if (USED(theElement) == 0)
+			{
+				/* count not updated green refinements */ 
+				No_Green_Update++;
+			}
 		}
 
-		/* count green marks */
-		if (MARKCLASS(theElement) == GREEN_CLASS)	Green_Marks++;
+		if (theElement != NULL)
+		{
+			/* count green marks */
+			if (MARKCLASS(theElement) == GREEN_CLASS)	Green_Marks++;
 
-		SETCOARSEN(theElement,0);
+			/* reset coarse flag */
+			SETCOARSEN(theElement,0);
+		}
 	}
 
 	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),("END RefineGrid(%d):\n",GLEVEL(theGrid)),"");
