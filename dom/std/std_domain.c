@@ -1621,7 +1621,7 @@ INT GenerateBnodes (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
       {
         ps = (BND_PS *)GetFreelistMemory(Heap,sizeof(BND_PS));
         if (ps == NULL)
-          return(NULL);
+          return(0);
         ps->n = 1;
         bndp[n] = (BNDP *)ps;
         ps->patch_id = i;
@@ -1752,7 +1752,7 @@ INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
       {
         ps = (BND_PS *)GetFreelistMemory(Heap,sizeof(BND_PS));
         if (ps == NULL)
-          return(NULL);
+          return(0);
         ps->n = 1;
         bndp[n] = (BNDP *)ps;
         ps->patch_id = i;
@@ -2041,7 +2041,7 @@ static INT TriangulatePatch (HEAP *Heap, PATCH *p, BNDP **bndp,
       {
         ps = (BND_PS *)GetFreelistMemory(Heap,sizeof(BND_PS));
         if (ps == NULL)
-          return(NULL);
+          return(0);
         ps->n = 1;
         ps->patch_id = PATCH_ID(p);
         lambda = i * step;
