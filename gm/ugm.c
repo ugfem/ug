@@ -1095,22 +1095,37 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
   DOUBLE *x[MAX_CORNERS_OF_ELEM];
 
   /* check if moved side nodes exist */
+  CORNER_COORDINATES(theElement,n,x);
   moved = 0;
-  if (OBJT(theElement) == BEOBJ)
-    for (j=0; j<EDGES_OF_ELEM(theElement); j++)
-    {
+  if (OBJT(theElement) == BEOBJ) {
+    for (j=0; j<EDGES_OF_ELEM(theElement); j++) {
       theEdge=GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)),
                       CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)));
       ASSERT(theEdge != NULL);
       theNode = MIDNODE(theEdge);
       if (theNode == NULL)
         VertexOnEdge[j] = NULL;
-      else
-      {
+      else {
         VertexOnEdge[j] = MYVERTEX(theNode);
         moved += MOVED(VertexOnEdge[j]);
       }
     }
+    if (moved == 1) {
+      for (j=0; j<EDGES_OF_ELEM(theElement); j++)
+        if (MOVED(VertexOnEdge[j])) break;
+      theVertex = VertexOnEdge[OPPOSITE_EDGE(theElement,j)];
+      if (theVertex != NULL) {
+        V_DIM_LINCOMB(0.5,CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)))),
+                      0.5,CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)))),
+                      diff);
+        V_DIM_LINCOMB(1.0,CVECT(VertexOnEdge[j]),-1.0,diff,diff);
+        global = CVECT(theVertex);
+        V_DIM_LINCOMB(1.0,global,0.5,diff,global);
+        SETMOVED(VertexOnEdge[OPPOSITE_EDGE(theElement,j)],1);
+        UG_GlobalToLocal(n,(const DOUBLE **)x,global,LCVECT(theVertex));
+      }
+    }
+  }
 
   theVertex = CreateInnerVertex(theGrid);
   if (theVertex==NULL)
@@ -1124,7 +1139,6 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
     DisposeVertex(theGrid,theVertex);
     return(NULL);
   }
-  CORNER_COORDINATES(theElement,n,x);
   global = CVECT(theVertex);
   local = LCVECT(theVertex);
   V_DIM_CLEAR(local);
