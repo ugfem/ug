@@ -32,9 +32,14 @@ sub out
 	}
 	return $ret;
 }
+sub set
+{
+	print IN "set $_[0]\n";
+    return split /[=\s]+/,out(0);
+}
 sub ug
 {
-	my ($ret,$i,$cmd,$print,$command);
+	my ($i,$cmd,$print,$command,$ui);
 	if (@_<=0) 
 	{
 		die "ERROR: provide ug command\n";
@@ -48,29 +53,18 @@ sub ug
 	}
 	SWITCH:
 	{
-		# start
-		if ($command eq "start")
+		# command 'set'
+		if ($command eq "set")
 		{
 			if(@_!=2)
-        	{   
-        	    die "ERROR: provide program name with 'start'\n";
-        	} 
-        	open2(*OUT,*IN,"$_[1] -perl");
-			last SWITCH;
-		}
-	
-		# command 'ug' execution
-		if ($command eq "ug")
-        {
-			if(@_!=2)
-            {
-                die "ERROR: command 'ug' must come with one argument\n\n";
+            {   
+                die "ERROR: provide one option with 'set'\n";
             }
-			submit "$_[1]\n";
-			last SWITCH;
+			print IN "set $_[1]\n";
+			return split /[=\s]+/,out($print);
 		}
 
-		# end
+		# command 'end'
 		if ($command eq "end")
 		{
 			if(@_!=1)
@@ -83,6 +77,31 @@ sub ug
 			return;
 		}
 
+		# command 'start'
+		if ($command eq "start")
+		{
+			if(@_<2 || @_>3 || (@_==3 && $_[2] ne "x") || $_[1]=~/-ui/)
+        	{   
+        	    die 'ERROR: usage: ug("start", "<program>" [,"x"]);'."\n";
+        	} 
+			
+			if (@_==2)	{$ui="-ui cn";}
+			if (@_==3)	{$ui="-ui c";}
+        	open2(*OUT,*IN,"$_[1] $ui -perl");
+			return out($print);
+		}
+	
+		# command 'ug' 
+		if ($command eq "ug")
+        {
+			if(@_!=2)
+            {
+                die "ERROR: command 'ug' must come with one argument\n\n";
+            }
+			submit "$_[1]\n";
+			return out($print);
+		}
+
 		# std command
 		if (@_%2==1) {$cmd="$command "; $i=1;}
 		else {$cmd="$command $_[1] "; $i=2;}
@@ -92,8 +111,8 @@ sub ug
 		}
 		$cmd.="\n";
 		submit $cmd;
+		return wantarray ? (out($print),set($command)) : out($print);
 	}
-	return out($print);
 }
 
 1;
