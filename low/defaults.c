@@ -233,13 +233,18 @@ static INT GetPathedUGRCValue (const char *path, const char *name, char *value, 
   strcpy(full_path,path);
   AppendTrailingSlash(full_path);
   strcat(full_path,UGRC_NAME);
+
+  PRINTDEBUG(low,2,("GetPathedUGRCValue: trying: '%s'\n",full_path));
   if (filetype(full_path)==FT_FILE)
   {
     *err = GetLocalizedDefaultValue(full_path,name,value);
     return 0;
   }
   else
+  {
+    PRINTDEBUG(low,2,("GetPathedUGRCValue: could not stat: '%s'\n",full_path));
     return COULD_NOT_STAT;
+  }
 }
 
 INT GetDefaultValue (const char *filename, const char *name, char *value)
@@ -252,6 +257,8 @@ INT GetDefaultValue (const char *filename, const char *name, char *value)
   else
     already_called = TRUE;
         #endif
+
+  PRINTDEBUG(low,2,("GetDefaultValue\n"));
 
   if (strchr(filename,'/')!=NULL)
   {
