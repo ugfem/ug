@@ -318,9 +318,12 @@ INT l_jac (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
 
     /* solve Diag(M)v=d */
     for (vec=first_vec; vec!= NULL; vec=SUCCVC(vec))
-      if ((VDATATYPE(vec)&mask) && (VCLASS(vec)>=ACTIVE_CLASS) )
-        VVALUE(vec,vc) = VVALUE(vec,dc)/MVALUE(VSTART(vec),mc);
-
+      if (VDATATYPE(vec)&mask) {
+        if (VCLASS(vec) < ACTIVE_CLASS)
+          VVALUE(vec,vc) = 0.0;
+        else
+          VVALUE(vec,vc) = VVALUE(vec,dc)/MVALUE(VSTART(vec),mc);
+      }
     return (NUM_OK);
   }
 
@@ -330,8 +333,14 @@ INT l_jac (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
       n     = VD_NCMPS_IN_TYPE(v,rtype);
       vcomp = VD_CMPPTR_OF_TYPE(v,rtype);
       dcomp = VD_CMPPTR_OF_TYPE(d,rtype);
-      L_VLOOP__TYPE_CLASS(vec,first_vec,rtype,ACTIVE_CLASS)
+      L_VLOOP__TYPE_CLASS(vec,first_vec,rtype,EVERY_CLASS)
       {
+        if (VCLASS(vec) < ACTIVE_CLASS) {
+          for (i=0; i<n; i++)
+            VVALUE(vec,vcomp[i]) = 0.0;
+          continue;
+        }
+
         /* rhs */
         for (i=0; i<n; i++)
           s[i] = VVALUE(vec,dcomp[i]);
