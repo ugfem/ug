@@ -105,6 +105,25 @@ typedef struct
 
 } NP_CG;
 
+typedef struct
+{
+  NP_LINEAR_SOLVER ls;
+
+  NP_ITER *Iter;
+
+  INT maxiter;
+  INT baselevel;
+  INT display;
+  INT restart;
+
+  VEC_SCALAR rho;
+  VECDATA_DESC *p;
+  VECDATA_DESC *h1;
+  VECDATA_DESC *h2;
+  VECDATA_DESC *h3;
+
+} NP_CR;
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
@@ -382,10 +401,7 @@ static INT LinearResiduum (NP_LINEAR_SOLVER *theNP, INT bl, INT level,
   return(0);
 }
 
-static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
-                         VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                         VEC_SCALAR abslimit, VEC_SCALAR reduction,
-                         LRESULT *lresult)
+static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, VEC_SCALAR abslimit, VEC_SCALAR reduction, LRESULT *lresult)
 {
   NP_LS *np;
   VEC_SCALAR defect2reach;
@@ -405,8 +421,7 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
   if (np->Update == NULL) NP_RETURN(1,lresult->error_code);
   if (AllocVDFromVD(theNP->base.mg,bl,level,x,&np->c)) NP_RETURN(1,lresult->error_code);
   if (np->Prepare != NULL)
-    if ((*np->Prepare)(np,level,x,&lresult->error_code))
-      REP_ERR_RETURN (1);
+    if ((*np->Prepare)(np,level,x,&lresult->error_code)) REP_ERR_RETURN (1);
 
   /* print defect */
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
@@ -423,18 +438,14 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
   for (i=0; i<np->maxiter; i++)
   {
     if (lresult->converged) break;
-    if (l_dset(GRID_ON_LEVEL(theNP->base.mg,level),np->c,EVERY_CLASS,0.0)
-        != NUM_OK) NP_RETURN(1,lresult->error_code);
-    if ((*np->Iter->Iter)(np->Iter,level,np->c,b,A,&lresult->error_code))
-      REP_ERR_RETURN (1);
-    if ((*np->Update)(np,level,x,np->c,b,A,&lresult->error_code))
-      REP_ERR_RETURN (1);
-    if (LinearResiduum(theNP,bl,level,x,b,A,lresult))
-      REP_ERR_RETURN(1);
+    if (l_dset(GRID_ON_LEVEL(theNP->base.mg,level),np->c,EVERY_CLASS,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+    if ((*np->Iter->Iter)(np->Iter,level,np->c,b,A,&lresult->error_code)) REP_ERR_RETURN (1);
+    if ((*np->Update)(np,level,x,np->c,b,A,&lresult->error_code)) REP_ERR_RETURN (1);
+    if (LinearResiduum(theNP,bl,level,x,b,A,lresult)) REP_ERR_RETURN(1);
     if (np->display > PCR_NO_DISPLAY)
       if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE)) NP_RETURN(1,lresult->error_code);
-    if (sc_cmp(lresult->last_defect,abslimit,b) ||
-        sc_cmp(lresult->last_defect,defect2reach,b)) {
+    if (sc_cmp(lresult->last_defect,abslimit,b) || sc_cmp(lresult->last_defect,defect2reach,b))
+    {
       lresult->converged = 1;
       lresult->number_of_linear_iterations=i+1;
       break;
@@ -444,7 +455,8 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
   if (np->Close != NULL)
     if ((*np->Close)(np,level,&lresult->error_code))
       REP_ERR_RETURN (1);
-  if (np->display > PCR_NO_DISPLAY) {
+  if (np->display > PCR_NO_DISPLAY)
+  {
     if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) NP_RETURN(1,lresult->error_code);
     if (PostPCR(PrintID,":ls:avg")) NP_RETURN(1,lresult->error_code);
     if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1))) NP_RETURN(1,lresult->error_code);
@@ -699,6 +711,236 @@ static INT CGConstruct (NP_BASE *theNP)
 }
 
 /****************************************************************************/
+/*D
+   cr - numproc for the conjugate residuum method
+
+   DESCRIPTION:
+   This numproc executes a conjugate residuum step. It is preconditioned
+   by an iteration numproc, e. g. a multi grid cycle or a smoother.
+
+   .vb
+   npinit [$x <sol>] [$b <rhs>] [$A <mat>]
+       [$p <condir>] [$h1 <help1>] [$h2 <help2>]
+       $I <iteration> [$d {full|red|no}]
+   .ve
+
+   .  $c~<sol> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $P~<iteration> - preconditioner
+   .  $d - display modus
+
+   'npexecute <name> [$i] [$d] [$r] [$s] [$p]'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+
+   EXAMPLE:
+   .vb
+   npcreate pre $c ilu;           npinit pre;
+   npcreate post $c ilu;          npinit post;
+   npcreate base $c ilu;          npinit base $n 3;
+   npcreate basesolver $c cg;     npinit basesolver $red 0.001 $I base;
+   npcreate transfer $c transfer; npinit transfer;
+   npcreate lmgc $c lmgc;         npinit lmgc $S pre post basesolver $T transfer;
+   npcreate mgs $c cr;            npinit mgs $A MAT $x sol $b rhs
+                                          $red 0.00001 $I lmgc $d full;
+   .ve
+   D*/
+/****************************************************************************/
+
+static INT CRInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_CR *np;
+
+  np = (NP_CR *) theNP;
+  np->p = ReadArgvVecDesc(theNP->mg,"p",argc,argv);
+  np->h1 = ReadArgvVecDesc(theNP->mg,"h1",argc,argv);
+  np->h2 = ReadArgvVecDesc(theNP->mg,"h2",argc,argv);
+  np->h3 = ReadArgvVecDesc(theNP->mg,"h3",argc,argv);
+  if (ReadArgvINT("m",&(np->maxiter),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (ReadArgvINT("r",&(np->restart),argc,argv))
+    np->restart = 0;
+  if (np->restart<0) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  np->display = ReadArgvDisplay(argc,argv);
+  np->Iter = (NP_ITER *) ReadArgvNumProc(theNP->mg,"I",ITER_CLASS_NAME,argc,argv);
+  if (np->Iter == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  np->baselevel = 0;
+
+  return (NPLinearSolverInit(&np->ls,argc,argv));
+}
+
+static INT CRDisplay (NP_BASE *theNP)
+{
+  NP_CR *np;
+
+  np = (NP_CR *) theNP;
+  NPLinearSolverDisplay(&np->ls);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"m",(int)np->maxiter);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"r",(int)np->restart);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)np->baselevel);
+  if (np->Iter != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"Iter",ENVITEM_NAME(np->Iter));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"Iter","---");
+  if (np->display == PCR_NO_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
+  else if (np->display == PCR_RED_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
+  else if (np->display == PCR_FULL_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
+  if (np->p != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"p",ENVITEM_NAME(np->p));
+  if (np->h1 != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"h1",ENVITEM_NAME(np->h1));
+  if (np->h2 != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"h2",ENVITEM_NAME(np->h2));
+  if (np->h3 != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"h3",ENVITEM_NAME(np->h3));
+
+  return (0);
+}
+
+static INT CRPreProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+  NP_CR *np;
+  INT i;
+
+  np = (NP_CR *) theNP;
+  if (np->Iter->PreProcess != NULL)
+    if ((*np->Iter->PreProcess)(np->Iter,level,x,b,A,baselevel,result)) REP_ERR_RETURN(1);
+  np->baselevel = MIN(*baselevel,level);
+
+  if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->p)) NP_RETURN(1,result[0]);
+  if (a_dset(np->ls.base.mg,np->baselevel,level,np->p,EVERY_CLASS,0.0)!= NUM_OK) NP_RETURN(1,result[0]);
+  for (i=0; i<VD_NCOMP(x); i++) np->rho[i] = 0.0;
+
+  return(0);
+}
+
+static INT CRPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  NP_CR *np;
+
+  np = (NP_CR *) theNP;
+  FreeVD(np->ls.base.mg,np->baselevel,level,np->p);
+
+  if (np->Iter->PostProcess == NULL) return(0);
+  return((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result));
+
+  return(0);
+}
+
+static INT CRSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, VEC_SCALAR abslimit, VEC_SCALAR reduction, LRESULT *lresult)
+{
+  NP_CR *np;
+  VEC_SCALAR defect2reach,t_scal;
+  INT i,j,bl,PrintID;
+  char text[DISPLAY_WIDTH+4];
+  DOUBLE s,t;
+
+  /* store passed reduction and abslimit */
+  for (i=0; i<VD_NCOMP(x); i++)
+  {
+    NPLS_red(theNP)[i] = reduction[i];
+    NPLS_abs(theNP)[i] = abslimit[i];
+  }
+
+  /* prepare */
+  np = (NP_CR *) theNP;
+  bl = np->baselevel;
+  if (np->Iter->Iter == NULL) NP_RETURN(1,lresult->error_code);
+  if (AllocVDFromVD(theNP->base.mg,bl,level,x,&np->h1)) NP_RETURN(1,lresult->error_code);
+  if (AllocVDFromVD(theNP->base.mg,bl,level,x,&np->h2)) NP_RETURN(1,lresult->error_code);
+  if (AllocVDFromVD(theNP->base.mg,bl,level,x,&np->h3)) NP_RETURN(1,lresult->error_code);
+
+  /* print defect */
+  CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
+  if (np->display > PCR_NO_DISPLAY) if (PreparePCR(x,np->display,text,&PrintID)) NP_RETURN(1,lresult->error_code);
+  for (i=0; i<VD_NCOMP(x); i++)
+    lresult->first_defect[i] = lresult->last_defect[i];
+  if (sc_mul_check(defect2reach,lresult->first_defect,reduction,b)) NP_RETURN(1,lresult->error_code);
+  if (np->display > PCR_NO_DISPLAY) if (DoPCR(PrintID,lresult->first_defect,PCR_CRATE)) NP_RETURN(1,lresult->error_code);
+  if (sc_cmp(lresult->first_defect,abslimit,b)) lresult->converged = 1;
+  else lresult->converged = 0;
+  lresult->number_of_linear_iterations = 0;
+
+  if (s_dcopy(theNP->base.mg,np->baselevel,level,np->h1,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+  if (s_dset(theNP->base.mg,np->baselevel,level,np->p,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+  if ((*np->Iter->Iter)(np->Iter,level,np->p,np->h1,A,&lresult->error_code)) REP_ERR_RETURN (1);
+  for (i=0; i<np->maxiter; i++)
+  {
+    if (lresult->converged) break;
+
+    /* update x, b */
+    if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->h1,A,np->p,EVERY_CLASS)) REP_ERR_RETURN (1);
+    if (s_dset(theNP->base.mg,np->baselevel,level,np->h2,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+    if ((*np->Iter->Iter)(np->Iter,level,np->h2,np->h1,A,&lresult->error_code)) REP_ERR_RETURN (1);
+    if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->h1,A,np->p,EVERY_CLASS)) REP_ERR_RETURN (1);
+    if (s_ddot (theNP->base.mg,np->baselevel,level,np->h1,np->h2,t_scal)!=NUM_OK) REP_ERR_RETURN (1);
+    s=0.0; for (j=0; j<VD_NCOMP(x); j++) s += t_scal[j];
+    if (s_ddot (theNP->base.mg,np->baselevel,level,b,np->h2,t_scal)!=NUM_OK) REP_ERR_RETURN (1);
+    t=0.0; for (j=0; j<VD_NCOMP(x); j++) t += t_scal[j];
+    for (j=0; j<VD_NCOMP(x); j++) t_scal[j] = t/s;
+    if (s_daxpy (theNP->base.mg,np->baselevel,level,x,t_scal,np->p)!= NUM_OK) REP_ERR_RETURN (1);
+    for (j=0; j<VD_NCOMP(x); j++) t_scal[j] = -t_scal[j];
+    if (s_daxpy (theNP->base.mg,np->baselevel,level,b,t_scal,np->h1)!= NUM_OK) REP_ERR_RETURN (1);
+
+    /* update p */
+    if (np->restart>0 && i%np->restart==0)
+    {
+      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->h1,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (s_dset(theNP->base.mg,np->baselevel,level,np->p,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if ((*np->Iter->Iter)(np->Iter,level,np->p,np->h1,A,&lresult->error_code)) REP_ERR_RETURN (1);
+    }
+    else
+    {
+      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->h1,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (s_dset(theNP->base.mg,np->baselevel,level,np->h3,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if ((*np->Iter->Iter)(np->Iter,level,np->h3,np->h1,A,&lresult->error_code)) REP_ERR_RETURN (1);
+      if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->h1,A,np->h3,EVERY_CLASS)) REP_ERR_RETURN (1);
+      if (s_ddot (theNP->base.mg,np->baselevel,level,np->h1,np->h2,t_scal)!=NUM_OK) REP_ERR_RETURN (1);
+      t=0.0; for (j=0; j<VD_NCOMP(x); j++) t += t_scal[j];
+      for (j=0; j<VD_NCOMP(x); j++) np->rho[j] = -t/s;
+      if (s_dscale(theNP->base.mg,np->baselevel,level,np->p,np->rho)) REP_ERR_RETURN (1);
+      if (s_daxpy (theNP->base.mg,np->baselevel,level,np->p,Factor_One,np->h3)!= NUM_OK) REP_ERR_RETURN (1);
+    }
+
+    /* redisuum */
+    if (LinearResiduum(theNP,bl,level,x,b,A,lresult)) REP_ERR_RETURN (1);
+    if (np->display > PCR_NO_DISPLAY)
+      if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE)) NP_RETURN(1,lresult->error_code);
+    if (sc_cmp(lresult->last_defect,abslimit,b) || sc_cmp(lresult->last_defect,defect2reach,b))
+    {
+      lresult->converged = 1;
+      lresult->number_of_linear_iterations=i+1;
+      break;
+    }
+  }
+  FreeVD(theNP->base.mg,bl,level,np->h1);
+  FreeVD(theNP->base.mg,bl,level,np->h2);
+  FreeVD(theNP->base.mg,bl,level,np->h3);
+  if (np->display > PCR_NO_DISPLAY)
+  {
+    if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) NP_RETURN(1,lresult->error_code);
+    if (PostPCR(PrintID,":ls:avg")) NP_RETURN(1,lresult->error_code);
+    if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1))) NP_RETURN(1,lresult->error_code);
+  }
+
+  return (0);
+}
+
+static INT CRConstruct (NP_BASE *theNP)
+{
+  NP_CR *np;
+
+  theNP->Init = CRInit;
+  theNP->Display = CRDisplay;
+  theNP->Execute = NPLinearSolverExecute;
+
+  np = (NP_CR *) theNP;
+  np->ls.PreProcess = CRPreProcess;
+  np->ls.Defect = LinearDefect;
+  np->ls.Residuum = LinearResiduum;
+  np->ls.Solver = CRSolver;
+  np->ls.PostProcess = CRPostProcess;
+
+  return(0);
+}
+
+/****************************************************************************/
 /*
    InitLinearSolver	- Init this file
 
@@ -725,6 +967,8 @@ INT InitLinearSolver ()
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".ls",sizeof(NP_LS),LSConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".cg",sizeof(NP_CG),CGConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".cr",sizeof(NP_CR),CRConstruct))
     REP_ERR_RETURN (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
