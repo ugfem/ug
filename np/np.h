@@ -156,17 +156,109 @@ INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x);
 INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
 INT l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A);
 INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
+INT l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A);
 int DDD_InfoPrioCopies (DDD_HDR hdr);
 #endif
 
-/* blas level 1 (vector operations) */
-INT l_dset                      (GRID *g,                                               const VECDATA_DESC *x, INT xclass, DOUBLE a);
-INT a_dset                      (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE a);
-INT s_dset                      (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     DOUBLE a);
 
-INT l_dcopy             (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y);
-INT a_dcopy             (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y);
-INT s_dcopy             (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const VECDATA_DESC *y);
+/* modus for blas routines                                                  */
+#define ON_SURFACE      -1      /* class on surface                                     */
+#define ALL_VECTORS      0      /* all vectors                                          */
+
+/* blas level 1 (vector operations) */
+
+INT dset           (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    DOUBLE a);
+INT dcopy          (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    VECDATA_DESC *y);
+INT dscale         (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    DOUBLE a);
+INT dscalex        (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    DOUBLE *a);
+INT dadd           (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    VECDATA_DESC *y);
+INT dsub           (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    VECDATA_DESC *y);
+INT daxpy          (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    DOUBLE a, VECDATA_DESC *y);
+INT daxpyx         (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    DOUBLE *a, VECDATA_DESC *y);
+INT ddot           (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    VECDATA_DESC *y, DOUBLE *a);
+INT ddotx          (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    VECDATA_DESC *y, DOUBLE *a);
+INT dnrm2          (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    DOUBLE *a);
+INT dnrm2x         (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    DOUBLE *a);
+
+
+
+
+/* for compatibility only */
+
+#define l_dset(g,x,xclass,a)               dset(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,a)
+#define a_dset(mg,fl,tl,x,xclass,a)        dset(mg,fl,tl,ALL_VECTORS,x,a)
+#define s_dset(mg,fl,tl,x,a)               dset(mg,fl,tl,ON_SURFACE,x,a)
+
+#define l_dcopy(g,x,xclass,y)              dcopy(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,y)
+#define a_dcopy(mg,fl,tl,x,xclass,y)       dcopy(mg,fl,tl,ALL_VECTORS,x,y)
+#define s_dcopy(mg,fl,tl,x,y)              dcopy(mg,fl,tl,ON_SURFACE,x,y)
+
+#define l_dscale(g,x,xclass,a)             dscalex(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,a)
+#define a_dscale(mg,fl,tl,x,xclass,a)      dscalex(mg,fl,tl,ALL_VECTORS,x,a)
+#define s_dscale(mg,fl,tl,x,a)             dscalex(mg,fl,tl,ON_SURFACE,x,a)
+
+#define l_daxpy(g,x,xclass,a,y)            daxpyx(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,a,y)
+#define a_daxpy(mg,fl,tl,x,xclass,a,y)     daxpyx(mg,fl,tl,ALL_VECTORS,x,a,y)
+#define s_daxpy(mg,fl,tl,x,a,y)            daxpyx(mg,fl,tl,ON_SURFACE,x,a,y)
+
+#define l_ddot(g,x,xclass,y,a)             ddotx(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,y,a)
+#define a_ddot(mg,fl,tl,x,xclass,y,a)      ddotx(mg,fl,tl,ALL_VECTORS,x,y,a)
+#define s_ddot(mg,fl,tl,x,y,a)             ddotx(mg,fl,tl,ON_SURFACE,x,y,a)
+
+#define l_ddot_sv(g,x,xclass,y,b,a)        ddot(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,y,a)
+#define a_ddot_sv(mg,fl,tl,x,xclass,y,b,a) ddot(mg,fl,tl,ALL_VECTORS,x,y,a)
+#define s_ddot_sv(mg,fl,tl,x,y,b,a)        ddot(mg,fl,tl,ON_SURFACE,x,y,a)
+
+#define l_eunorm(g,x,xclass,a)             dnrm2x(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,a)
+#define a_eunorm(mg,fl,tl,x,xclass,a)      dnrm2x(mg,fl,tl,ALL_VECTORS,x,a)
+#define s_eunorm(mg,fl,tl,x,a)             dnrm2x(mg,fl,tl,ON_SURFACE,x,a)
+
+
+
+/* old style **********************
+
+   INT l_dset			(GRID *g,						const VECDATA_DESC *x, INT xclass, DOUBLE a);
+   INT a_dset			(MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE a);
+   INT s_dset			(MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,			   DOUBLE a);
+
+   INT l_dscale		(GRID *g,						const VECDATA_DESC *x, INT xclass, const DOUBLE *a);
+   INT a_dscale        (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const DOUBLE *a);
+   INT s_dscale        (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE *a);
+
+   INT l_ddot			(const GRID *g,						  const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
+   INT a_ddot			(const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
+   INT s_ddot			(const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,			 const VECDATA_DESC *y, DOUBLE *sp);
+
+   INT l_dcopy          (GRID *g,						const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y);
+   INT a_dcopy          (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y);
+   INT s_dcopy          (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,			   const VECDATA_DESC *y);
+
+   INT l_daxpy          (GRID *g,						const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
+   INT a_daxpy          (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
+   INT s_daxpy          (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,			   const DOUBLE *a, const VECDATA_DESC *y);
+
+   INT l_eunorm                 (const GRID *g,                                           const VECDATA_DESC *x, INT xclass, DOUBLE *eu);
+   INT a_eunorm                 (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE *eu);
+   INT s_eunorm                 (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                      DOUBLE *eu);
+
+   INT l_ddot_sv                (const GRID *g,						  const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv);
+   INT s_ddot_sv                (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv);
+
+ **************************** old style */
+
+
 
 INT l_dsetnonskip       (GRID *g,                                               const VECDATA_DESC *x, INT xclass, DOUBLE a);
 INT a_dsetnonskip       (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE a);
@@ -179,30 +271,11 @@ INT l_dsetrandom2       (GRID *g,                                               
 
 INT l_dsetfunc          (GRID *g,                                               const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFunc);
 
-INT l_dscale            (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const DOUBLE *a);
-INT a_dscale        (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const DOUBLE *a);
-INT s_dscale        (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE *a);
-
-INT l_daxpy             (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
-INT a_daxpy             (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
-INT s_daxpy             (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const DOUBLE *a, const VECDATA_DESC *y);
-
 INT l_dxdy                      (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
 INT a_dxdy                      (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
 INT s_dxdy                      (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const DOUBLE *a, const VECDATA_DESC *y);
 
-INT l_ddot                      (const GRID *g,                                           const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
-INT l_ddot_sv           (const GRID *g,                                           const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv);
-INT a_ddot                      (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
-INT s_ddot                      (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const VECDATA_DESC *y, DOUBLE *sp);
-INT s_ddot_sv           (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv);
-
 INT l_mean                      (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *sp);
-
-
-INT l_eunorm            (const GRID *g,                                           const VECDATA_DESC *x, INT xclass, DOUBLE *eu);
-INT a_eunorm            (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE *eu);
-INT s_eunorm            (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                      DOUBLE *eu);
 
 /* blas level 1 (BLOCKVECTOR operations) on one gridlevel */
 INT dsetB                       (                                  const BLOCKVECTOR *bv,                                                         const VECDATA_DESC *x, INT xclass, DOUBLE a);
