@@ -37,7 +37,9 @@
 #include "general.h"
 #include "misc.h"
 #include "defaults.h"
+#ifdef ModelP
 #include "ppif.h"
+#endif
 
 
 /****************************************************************************/
