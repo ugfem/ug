@@ -3356,7 +3356,8 @@ static INT SelectionListCommand (INT argc, char **argv)
 static INT VMListCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  INT i,fl,tl,fromV,toV,res,mode,dataopt,matrixopt;
+  INT i,fl,tl,fromV,toV,res,mode,dataopt,matrixopt,vclass,vnclass;
+  SYMBOL *sym;
 
   /* following variables: keep type for sscanf */
   long f,t;
@@ -3366,6 +3367,31 @@ static INT VMListCommand (INT argc, char **argv)
   {
     PrintErrorMessage('E',"vmlist","no open multigrid");
     return (CMDERRORCODE);
+  }
+
+  if (ReadArgvINT("vclass",&vclass,argc,argv))
+    vclass = 3;
+  if (ReadArgvINT("vnclass",&vnclass,argc,argv))
+    vnclass = 3;
+
+  if ((sym = ReadVecSymbolOfFormat(ENVITEM_NAME(MGFORMAT(theMG)),
+                                   "vmlist",argc,argv))!=NULL)
+  {
+    if (ReadArgvOption("I",argc,argv))
+      PrintIMatrix(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
+                   SYM_VEC_DESC(sym),vclass,vnclass);
+    else
+      PrintVector(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
+                  SYM_VEC_DESC(sym),vclass,vnclass);
+    return(OKCODE);
+  }
+
+  if ((sym = ReadMatSymbolOfFormat(ENVITEM_NAME(MGFORMAT(theMG)),
+                                   "vmlist",argc,argv))!=NULL)
+  {
+    PrintMatrix(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
+                SYM_MAT_DESC(sym),vclass,vnclass);
+    return(OKCODE);
   }
 
   /* check options */
@@ -4289,7 +4315,7 @@ static INT RefineCommand (INT argc, char **argv)
    This command marks elements with refinement type,
    calling the function 'MarkForRefinement'.
 
-   'mark [$h | {[<rule> [<side>]] [$a | $i <Id> | $s]} | $c]'
+   'mark [$h | {[<rule> [<side>]] [$a | $i <Id> | $s]} | $c] [$pos <x y [z]>]'
 
    .  <rule>                 - specify a refinement rule ("red" is default)
    .  <side>                 - has to be specified if the corresponding rule can be applied in several orientations
@@ -4337,11 +4363,60 @@ static INT MarkCommand (INT argc, char **argv)
   ELEMENT *theElement;
   char rulename[32];
   INT i,j,l,mode,rv,Rule;
+  COORD_VECTOR global;
   long nmarked;
 
   /* following variables: keep type for sscanf */
   int id,idfrom,idto,Side;
+  float x,y,z;
 
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"mark","no open multigrid");
+    return (CMDERRORCODE);
+  }
+
+  if (ReadArgvOption("c",argc, argv))
+  {
+    for (i=0; i<=TOPLEVEL(theMG); i++)
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+          MarkForRefinement(theElement,NO_REFINEMENT,0);
+
+    UserWrite("all refinement marks removed\n");
+
+    return(OKCODE);
+  }
+
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='p')
+    {
+#ifdef __TWODIMM__
+      if (sscanf(argv[i],"pos %f %f %f",&x,&y) != 2)
+        return (CMDERRORCODE);
+      global[0] = x;
+      global[1] = y;
+#endif
+
+#ifdef __THREEDIMM__
+      if (sscanf(argv[i],"pos %f %f %f",&x,&y,&z) != 3)
+        return (CMDERRORCODE);
+      global[0] = x;
+      global[1] = y;
+      global[2] = z;
+#endif
+
+      theElement = FindElementOnSurface(theMG,global);
+      if (theElement == NULL)
+        return(PARAMERRORCODE);
+      MarkForRefinement(theElement,RED,1);
+
+      UserWriteF("element %d marked for refinement\n",ID(theElement));
+
+      return (OKCODE);
+    }
 
   /* first check help option */
   for (i=1; i<argc; i++)
