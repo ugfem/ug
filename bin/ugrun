@@ -44,6 +44,9 @@ case $MODEL in
 		echo isub -sz $PROC   $1;
 		isub -sz $PROC   $1;
         ;;
+	SEQ)
+		$1;
+        ;;
     *)
         echo "MODEL $MODEL not supported";
         exit 1;
