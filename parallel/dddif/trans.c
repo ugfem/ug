@@ -70,6 +70,10 @@ enum GhostCmds { GC_Keep, GC_ToMaster, GC_Delete };
                BND_SIZE_TAG(TAG(elem)) :   \
                INNER_SIZE_TAG(TAG(elem)));  }
 
+#ifdef DDD_PRIO_ENV
+#undef DDD_PrioritySet
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -649,7 +653,7 @@ static int XferGridWithOverlap (GRID *theGrid)
     {
       if (NSONS(theElement) > 0)
       {
-        if (GetAllSons(theElement,SonList) != 0) return;
+        if (GetAllSons(theElement,SonList) != 0) assert(0);
         i = 0;
         while (SonList[i] != NULL)
         {
