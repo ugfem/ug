@@ -6273,10 +6273,10 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
    INT KeyForObject( SELECTION_OBJECT *obj );
 
    PARAMETERS:
-   .  obj - geometric object which from the key is needed (can be one of ELEMENT, NODE or VECTOR)
+   .  obj - geometric object which from the key is needed (can be one of VERTEX, ELEMENT, NODE or VECTOR)
 
    DESCRIPTION:
-   This function calculates an (hopefully) unique key for
+   This function calculates an (hopefully) unique key for VERTEX,
    ELEMENT, NODE and VECTOR typed objects.
 
    The heuristic is: calculate a 2D/3D position for the geometric object and
@@ -6285,7 +6285,7 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
    the sigificant digits and adding the level number.
 
    SEE ALSO:
-   ELEMENT, NODE, VECTOR
+   VERTEX, ELEMENT, NODE, VECTOR
 
    RETURN VALUE:
    INT - the resulting key
@@ -6299,6 +6299,10 @@ INT KeyForObject( SELECTION_OBJECT *obj )
 
   switch( OBJT(obj) )
   {
+  case BVOBJ :
+  case IVOBJ :                  /* both together cover all vertex types */
+    return LEVEL(obj)+COORDINATE_TO_KEY(CVECT((VERTEX*)obj),&dummy);
+
   case BEOBJ :
   case IEOBJ :                  /* both together cover all element types */
     CalculateCenterOfMass( (ELEMENT*)obj, coord );

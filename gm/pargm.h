@@ -201,7 +201,7 @@ enum Priorities
 #define VID_PRTE(x) ((long)ID(x)),VXGID(x),VXPRIO(x)
 #define VID_FMTX    ID_FMTX "/%d"
 #define VID_FFMTX   ID_FFMTX "/%d"
-#define VID_PRTX(x) x,((long)ID(x)),VXGID(x),VXPRIO(x),LEVEL(x)
+#define VID_PRTX(x)     KeyForObject((SELECTION_OBJECT *)x),((long)ID(x)),VXGID(x),VXPRIO(x),LEVEL(x)
 
 #define EID_FMT     ID_FMT
 #define EID_FFMT    ID_FFMT
