@@ -109,6 +109,7 @@ typedef struct
   INT force_iteration;                  /* if 1 at least 1 iteration is carried out     */
   /* if 2 maxit iteration are carried out and     */
   /* newton exits without error                   */
+  INT linearMode;
 
   /* and XDATA_DESCs */
   MATDATA_DESC *J;                              /* the Matrix to be solved						*/
@@ -531,6 +532,8 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
       res->error_code = __LINE__;
     }
 
+
+
     /* if linear solver did not converge, return here */
     if (!lr.converged && newton->force_iteration!=2) {
       UserWrite("\nLinear solver did not converge in Newton method\n");
@@ -571,6 +574,14 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
         if (FreeVD(mg,0,level,newton->s)) REP_ERR_RETURN(1);
         goto exit2;
       }
+
+      /* if linear problem: use result of linear solver ! */
+      if (newton->linearMode)
+      {
+        for (i=0; i<n_unk; i++) defect[i] = lr.last_defect[i];
+        error = 0;
+      }
+      else
       if (NonLinearDefect(mg,level,FALSE,x,newton,ass,defect,&error)!=0)
       {
         res->error_code = __LINE__;
@@ -775,6 +786,9 @@ static INT NewtonInit (NP_BASE *base, INT argc, char **argv)
   if ((newton->maxLineSearch<0)||(newton->maxLineSearch>=MAX_LINE_SEARCH)) {
     PrintErrorMessageF('E',"NewtonInit","maxLineSearch < %d",(int)MAX_LINE_SEARCH);
     REP_ERR_RETURN(NP_NOT_ACTIVE);
+  }
+  if (ReadArgvINT("linmode",&(newton->linearMode),argc,argv)) {
+    newton->linearMode = 0;
   }
   if (ReadArgvINT("line",&(newton->lineSearch),argc,argv)) {
     newton->lineSearch = 0;
