@@ -300,7 +300,7 @@ COUPLING *AddCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
   COUPLING        *cp, *cp2;
   DDD_HDR oldObj;
   int objIndex;
-  int freeCplIdx = NCPL_GET;
+  int freeCplIdx = NCpl_Get;
 
   assert(proc!=me);
 
@@ -353,7 +353,7 @@ COUPLING *AddCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
     IdxCplList(objIndex) = NULL;
     IdxNCpl(objIndex) = 0;
 
-    NCPL_INCREMENT;
+    NCpl_Increment;
   }
   else
   {
@@ -486,7 +486,7 @@ void DelCoupling (DDD_HDR hdr, DDD_PROC proc)
 
   objIndex = OBJ_INDEX(hdr);
 
-  if (objIndex<NCPL_GET)
+  if (objIndex<NCpl_Get)
   {
     for(cpl=IdxCplList(objIndex), cplLast=NULL; cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
@@ -511,26 +511,26 @@ void DelCoupling (DDD_HDR hdr, DDD_PROC proc)
 
         if (IdxNCpl(objIndex)==0)
         {
-          NCPL_DECREMENT;
+          NCpl_Decrement;
 
                                         #ifdef WithFullObjectTable
-          OBJ_INDEX(hdr) = NCPL_GET;
-          OBJ_INDEX(ddd_ObjTable[NCPL_GET]) = objIndex;
-          ddd_ObjTable[objIndex] = ddd_ObjTable[NCPL_GET];
-          ddd_ObjTable[NCPL_GET] = hdr;
+          OBJ_INDEX(hdr) = NCpl_Get;
+          OBJ_INDEX(ddd_ObjTable[NCpl_Get]) = objIndex;
+          ddd_ObjTable[objIndex] = ddd_ObjTable[NCpl_Get];
+          ddd_ObjTable[NCpl_Get] = hdr;
                                         #else
           /* we will not register objects without coupling,
              so we have to forget about hdr and mark it as local. */
-          ddd_nObjs--; assert(ddd_nObjs==NCPL_GET);
+          ddd_nObjs--; assert(ddd_nObjs==NCpl_Get);
 
-          ddd_ObjTable[objIndex] = ddd_ObjTable[NCPL_GET];
-          OBJ_INDEX(ddd_ObjTable[NCPL_GET]) = objIndex;
+          ddd_ObjTable[objIndex] = ddd_ObjTable[NCpl_Get];
+          OBJ_INDEX(ddd_ObjTable[NCpl_Get]) = objIndex;
 
           MarkHdrLocal(hdr);
                                         #endif
 
-          IdxCplList(objIndex) = IdxCplList(NCPL_GET);
-          IdxNCpl(objIndex) = IdxNCpl(NCPL_GET);
+          IdxCplList(objIndex) = IdxCplList(NCpl_Get);
+          IdxNCpl(objIndex) = IdxNCpl(NCpl_Get);
         }
         break;
       }
@@ -605,7 +605,7 @@ localIBuffer[1] = OBJ_PRIO(hdr);
 i=2;
 
 /* append descriptions of foreign copies */
-if (objIndex<NCPL_GET)
+if (objIndex<NCpl_Get)
 {
   for(cpl=IdxCplList(objIndex); cpl!=NULL; cpl=CPL_NEXT(cpl), i+=2) {
     localIBuffer[i]   = cpl->proc;
@@ -642,7 +642,7 @@ DDD_PROC DDD_InfoProcPrio (DDD_HDR hdr, DDD_PRIO prio)
   int objIndex = OBJ_INDEX(hdr);
 
   /* append descriptions of foreign copies */
-  if (objIndex<NCPL_GET)
+  if (objIndex<NCpl_Get)
   {
     for(cpl=IdxCplList(objIndex); cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
@@ -700,10 +700,10 @@ void DDD_InfoCoupling (DDD_HDR hdr)
   int objIndex = OBJ_INDEX(hdr);
 
   sprintf(cBuffer, "%4d: InfoCoupling for object %07x (%05d/%05d)\n",
-          me, OBJ_GID(hdr), objIndex, NCPL_GET);
+          me, OBJ_GID(hdr), objIndex, NCpl_Get);
   DDD_PrintLine(cBuffer);
 
-  if (objIndex<NCPL_GET)
+  if (objIndex<NCpl_Get)
   {
     for(cpl=IdxCplList(objIndex); cpl!=NULL; cpl=CPL_NEXT(cpl))
     {

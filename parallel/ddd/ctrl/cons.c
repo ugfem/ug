@@ -287,7 +287,7 @@ static int ConsCheckGlobalCpl (void)
 
 
   /* count overall number of couplings */
-  for(i=0, lenCplBuf=0; i<NCPL_GET; i++)
+  for(i=0, lenCplBuf=0; i<NCpl_Get; i++)
     lenCplBuf += IdxNCpl(i);
 
   /* get storage for messages */
@@ -298,14 +298,14 @@ static int ConsCheckGlobalCpl (void)
            AllocTmp(lenCplBuf*sizeof(CONS_INFO));
                 #endif
 
-  if (cplBuf==NULL)
+  if (cplBuf==NULL && lenCplBuf!=0)
   {
     DDD_PrintError('E', 9901, STR_NOMEM " in ConsCheckGlobalCpl");
     return(-1);
   }
 
   /* copy CONS_INFOs into message buffer */
-  for(i=0, j=0; i<NCPL_GET; i++)
+  for(i=0, j=0; i<NCpl_Get; i++)
   {
     for(cpl=IdxCplList(i); cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
@@ -329,7 +329,8 @@ static int ConsCheckGlobalCpl (void)
   assert(j==lenCplBuf);
 
   /* sort couplings */
-  qsort(cplBuf, lenCplBuf, sizeof(CONS_INFO), sort_CplBufDest);
+  if (lenCplBuf>1)
+    qsort(cplBuf, lenCplBuf, sizeof(CONS_INFO), sort_CplBufDest);
 
   /* accumulate messages (one for each partner); inform receivers */
   nSendMsgs = ConsBuildMsgInfos(cplBuf, lenCplBuf, &sendMsgs);
@@ -492,7 +493,7 @@ static int Cons2CheckGlobalCpl (void)
   DDD_HDR      *locObjs = NULL;
 
   /* count overall number of couplings */
-  for(i=0, lenCplBuf=0; i<NCPL_GET; i++)
+  for(i=0, lenCplBuf=0; i<NCpl_Get; i++)
     lenCplBuf += (IdxNCpl(i) * (IdxNCpl(i)+1));
 
   /* get storage for messages */
@@ -503,14 +504,14 @@ static int Cons2CheckGlobalCpl (void)
            AllocTmp(lenCplBuf*sizeof(CONS_INFO));
                 #endif
 
-  if (cplBuf==NULL)
+  if (cplBuf==NULL && lenCplBuf!=0)
   {
     DDD_PrintError('E', 9902, STR_NOMEM " in Cons2CheckGlobalCpl");
     return(-1);
   }
 
   /* copy CONS_INFOs into message buffer */
-  for(i=0, j=0; i<NCPL_GET; i++)
+  for(i=0, j=0; i<NCpl_Get; i++)
   {
     for(cpl=IdxCplList(i); cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
@@ -535,7 +536,8 @@ static int Cons2CheckGlobalCpl (void)
   assert(j==lenCplBuf);
 
   /* sort couplings */
-  qsort(cplBuf, lenCplBuf, sizeof(CONS_INFO), sort_CplBufDest);
+  if (lenCplBuf>1)
+    qsort(cplBuf, lenCplBuf, sizeof(CONS_INFO), sort_CplBufDest);
 
   /* accumulate messages (one for each partner); inform receivers */
   nSendMsgs = ConsBuildMsgInfos(cplBuf, lenCplBuf, &sendMsgs);

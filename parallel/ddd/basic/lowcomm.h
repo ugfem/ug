@@ -20,7 +20,7 @@
 /****************************************************************************/
 
 /* RCS_ID
-   $Header: /hosts/dom/cvs/ddd/src/dddi.h,v 1.5 1997/07/24 15:49:05 birken Exp
+   $Header: /hosts/dom/cvs/ddd/src/dddi.h,v 1.6 1997/07/24 15:49:05 birken Exp
    $
  */
 
@@ -77,7 +77,7 @@ typedef void (*FreeFunc)(void *);
 
 /* lowcomm.c */
 void  LC_Init (AllocFunc,FreeFunc);
-void  LC_Exit ();
+void  LC_Exit (void);
 
 void  LC_SetMemMgr (AllocFunc,FreeFunc,AllocFunc,FreeFunc);
 

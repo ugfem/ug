@@ -653,7 +653,7 @@ void DDD_XferEnd (void)
   /* unpack messages */
   STAT_RESET;
   XferUnpack(recvMsgs, nRecvMsgs,
-             localCplObjs, NCPL_GET,
+             localCplObjs, NCpl_Get,
              arrayXISetPrio,
              arrayXIDelObj, nXIDelObj,
              arrayXICopyObj,
@@ -698,7 +698,7 @@ void DDD_XferEnd (void)
   CommunicateCplMsgs(arrayXIDelCpl, remXIDelCpl,
                      arrayXIModCpl, remXIModCpl,
                      arrayXIAddCpl, nXIAddCpl,
-                     localCplObjs, NCPL_GET);
+                     localCplObjs, NCpl_Get);
   STAT_TIMER(T_XFER_CPLMSG);
 
 

@@ -45,6 +45,10 @@
 #define __DDDI_H__
 
 #include <limits.h>
+#ifndef MAXINT
+#include <math.h>
+#endif
+
 #include <assert.h>
 
 #ifndef __COMPILER__
@@ -474,14 +478,14 @@ extern VChannelPtr *theTopology;
 
 /* increment/decrement number of coupled objects */
 /*
-   #define NCPL_INCREMENT    { ddd_nCpls++; printf("%4d: nCpls++ now %d, %s:%d\n",me,ddd_nCpls,__FILE__,__LINE__); }
-   #define NCPL_DECREMENT    { ddd_nCpls--; printf("%4d: nCpls-- now %d, %s:%d\n",me,ddd_nCpls,__FILE__,__LINE__); }
+   #define NCpl_Increment    { ddd_nCpls++; printf("%4d: nCpls++ now %d, %s:%d\n",me,ddd_nCpls,__FILE__,__LINE__); }
+   #define NCpl_Decrement    { ddd_nCpls--; printf("%4d: nCpls-- now %d, %s:%d\n",me,ddd_nCpls,__FILE__,__LINE__); }
  */
-#define NCPL_INCREMENT    ddd_nCpls++;
-#define NCPL_DECREMENT    ddd_nCpls--;
+#define NCpl_Increment    ddd_nCpls++;
+#define NCpl_Decrement    ddd_nCpls--;
 
-#define NCPL_GET          ddd_nCpls
-#define NCPL_INIT         ddd_nCpls=0
+#define NCpl_Get          ddd_nCpls
+#define NCpl_Init         ddd_nCpls=0
 
 
 /* DDD_HDR may be invalid */
@@ -525,7 +529,7 @@ extern VChannelPtr *theTopology;
    #define HdrPtr   DDD_ObjPtr
 
 
-   #define CallHandler(o,hname)     ((*o)->Handler ## hname)
+   #define CallHandler(desc,o,hname)     ((*o)->Handler ## hname)
 
  */
 

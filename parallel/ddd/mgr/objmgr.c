@@ -141,17 +141,17 @@ DDD_HDR *LocalCoupledObjectsList (void)
 {
   DDD_HDR   *locObjs;
 
-  if (NCPL_GET==0)
+  if (NCpl_Get==0)
     return(NULL);
 
-  locObjs = (DDD_HDR *) AllocTmp(NCPL_GET*sizeof(DDD_HDR));
+  locObjs = (DDD_HDR *) AllocTmp(NCpl_Get*sizeof(DDD_HDR));
   if (locObjs==NULL) {
     DDD_PrintError('E', 2211, STR_NOMEM " in LocalCoupledObjectsList");
     return(NULL);
   }
 
-  memcpy(locObjs, ddd_ObjTable, NCPL_GET*sizeof(DDD_HDR));
-  qsort(locObjs, NCPL_GET, sizeof(DDD_HDR), sort_ObjListGID);
+  memcpy(locObjs, ddd_ObjTable, NCpl_Get*sizeof(DDD_HDR));
+  qsort(locObjs, NCpl_Get, sizeof(DDD_HDR), sort_ObjListGID);
 
   return(locObjs);
 }
@@ -609,7 +609,7 @@ if (xfer_active)
 
 objIndex = OBJ_INDEX(hdr);
 
-if (objIndex<NCPL_GET)
+if (objIndex<NCpl_Get)
 {
   /* this is an object with couplings */
   cpl = IdxCplList(objIndex);
@@ -628,24 +628,24 @@ if (objIndex<NCPL_GET)
     }
   }
 
-  NCPL_DECREMENT;
+  NCpl_Decrement;
   ddd_nObjs--;
 
   /* fill slot of deleted obj with last cpl-obj */
-  ddd_ObjTable[objIndex] = ddd_ObjTable[NCPL_GET];
-  IdxCplList(objIndex) = IdxCplList(NCPL_GET);
-  IdxNCpl(objIndex) = IdxNCpl(NCPL_GET);
+  ddd_ObjTable[objIndex] = ddd_ObjTable[NCpl_Get];
+  IdxCplList(objIndex) = IdxCplList(NCpl_Get);
+  IdxNCpl(objIndex) = IdxNCpl(NCpl_Get);
   OBJ_INDEX(ddd_ObjTable[objIndex]) = objIndex;
 
                 #ifdef WithFullObjectTable
   /* fill slot of last cpl-obj with last obj */
-  if (NCPL_GET<ddd_nObjs)
+  if (NCpl_Get<ddd_nObjs)
   {
-    ddd_ObjTable[NCPL_GET] = ddd_ObjTable[ddd_nObjs];
-    OBJ_INDEX(ddd_ObjTable[NCPL_GET]) = NCPL_GET;
+    ddd_ObjTable[NCpl_Get] = ddd_ObjTable[ddd_nObjs];
+    OBJ_INDEX(ddd_ObjTable[NCpl_Get]) = NCpl_Get;
   }
                 #else
-  assert(NCPL_GET==ddd_nObjs);
+  assert(NCpl_Get==ddd_nObjs);
                 #endif
 
   /* dispose all couplings */
@@ -842,7 +842,7 @@ void DDD_HdrConstructorCopy (DDD_HDR newhdr, DDD_PRIO prio)
   ddd_nObjs++;
         #else
   MarkHdrLocal(newhdr);
-  assert(ddd_nObjs==NCPL_GET);
+  assert(ddd_nObjs==NCpl_Get);
         #endif
 
   /* init LDATA components. GDATA components will be copied elsewhere */
@@ -893,12 +893,12 @@ void DDD_HdrConstructorMove (DDD_HDR newhdr, DDD_HDR oldhdr)
         #ifdef WithFullObjectTable
   ddd_ObjTable[objIndex] = newhdr;
         #else
-  if (objIndex<NCPL_GET)
+  if (objIndex<NCpl_Get)
     ddd_ObjTable[objIndex] = newhdr;
         #endif
 
   /* change pointers from couplings to object */
-  if (objIndex<NCPL_GET)
+  if (objIndex<NCpl_Get)
   {
     COUPLING *cpl = IdxCplList(objIndex);
 

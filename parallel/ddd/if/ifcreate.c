@@ -315,7 +315,7 @@ static COUPLING ** IFCollectStdCouplings (void)
 
   /* collect couplings */
   n=0;
-  for(index=0; index<NCPL_GET; index++)
+  for(index=0; index<NCpl_Get; index++)
   {
     COUPLING  *cpl;
 
@@ -362,7 +362,7 @@ static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
 
     /* collect relevant couplings into tmpcpl array */
     n=0;
-    for(index=0; index<NCPL_GET; index++)
+    for(index=0; index<NCpl_Get; index++)
     {
       /* determine whether object belongs to IF */
       if ((1<<OBJ_TYPE(ddd_ObjTable[index])) & theIF[ifId].maskO)

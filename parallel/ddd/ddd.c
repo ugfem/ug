@@ -210,7 +210,7 @@ DDD_Library::DDD_Library (int *argcp, char ***argvp)
 
   /* reset all global counters */
   ddd_nObjs  = 0;
-  NCPL_INIT;
+  NCpl_Init;
   nCplItems  = 0;
 
   /* set options on default values */
@@ -333,7 +333,7 @@ void DDD_Library::Status (void)
   DDD_PrintLine(cBuffer);
 
   sprintf(cBuffer, "|     nObjs   = %8d  nCpls   = %8d  nCplItems = %8d\n",
-          ddd_nObjs, NCPL_GET, nCplItems);
+          ddd_nObjs, NCpl_Get, nCplItems);
   DDD_PrintLine(cBuffer);
   DDD_PrintLine("|\n|     Timeouts:\n");
   sprintf(cBuffer, "|        IFComm:  %12ld\n", (unsigned long)MAX_TRIES);
