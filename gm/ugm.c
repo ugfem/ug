@@ -589,6 +589,8 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
       Father = NULL;
   SETNFATHER(pn,Father);
   SETNTYPE(pn,NodeType);
+  SETNCLASS(pn,3),
+  SETNNCLASS(pn,0);
   if (OBJT(vertex) == BVOBJ)
     SETNSUBDOM(pn,0);
   else if (VFATHER(vertex) != NULL)
@@ -3996,8 +3998,12 @@ INT DisposeMultiGrid (MULTIGRID *theMG)
 {
   INT level;
 
+        #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  if (DisposeBottomHeapTmpMemory(theMG)) REP_ERR_RETURN(1);
+        #else
   if (DisposeAMGLevels(theMG))
     RETURN(1);
+        #endif
 
         #ifdef ModelP
   /* tell DDD that we will 'inconsistently' delete objects.
@@ -8440,14 +8446,14 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
     /*
        #endif
      */
-    UserWriteF(" key=%d\n", KeyForObject((KEY_OBJECT *)theElement) );
   }
   if (nbopt)
   {
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
       if (NBELEM(theElement,i)!=NULL)
       {
-        UserWriteF("    NB%d=%ld ",i,(long)ID(NBELEM(theElement,i)));
+        UserWriteF("    NB%d=" EID_FMTX ,
+                   i,EID_PRTX(NBELEM(theElement,i)));
       }
     UserWrite("\n");
   }
@@ -9014,7 +9020,7 @@ INT AddNodeToSelection (MULTIGRID *theMG, NODE *theNode)
 
   if (SELECTIONSIZE(theMG)!=0)
   {
-    if (SELECTIONMODE(theMG)!=nodeSelection) RETURN(GM_ERROR);
+    if (SELECTIONMODE(theMG)!=nodeSelection) return(GM_ERROR);
   }
   else SELECTIONMODE(theMG) = nodeSelection;
 
@@ -9028,7 +9034,7 @@ INT AddNodeToSelection (MULTIGRID *theMG, NODE *theNode)
       return(GM_OK);
     }
 
-  if (SELECTIONSIZE(theMG)>=MAXSELECTION) RETURN(GM_ERROR);
+  if (SELECTIONSIZE(theMG)>=MAXSELECTION) return(GM_ERROR);
 
   SELECTIONOBJECT(theMG,SELECTIONSIZE(theMG)) = g;
   SELECTIONSIZE(theMG)++;
@@ -9065,7 +9071,7 @@ INT AddElementToSelection (MULTIGRID *theMG, ELEMENT *theElement)
 
   if (SELECTIONSIZE(theMG)!=0)
   {
-    if (SELECTIONMODE(theMG)!=elementSelection) RETURN(GM_ERROR);
+    if (SELECTIONMODE(theMG)!=elementSelection) return(GM_ERROR);
   }
   else SELECTIONMODE(theMG) = elementSelection;
 
@@ -9080,7 +9086,7 @@ INT AddElementToSelection (MULTIGRID *theMG, ELEMENT *theElement)
     }
 
   if (SELECTIONSIZE(theMG)>=MAXSELECTION)
-    RETURN(GM_ERROR);
+    return(GM_ERROR);
 
   SELECTIONOBJECT(theMG,SELECTIONSIZE(theMG)) = g;
   SELECTIONSIZE(theMG)++;
@@ -9116,7 +9122,7 @@ INT AddVectorToSelection (MULTIGRID *theMG, VECTOR *theVector)
 
   if (SELECTIONSIZE(theMG)!=0)
   {
-    if (SELECTIONMODE(theMG)!=vectorSelection) RETURN(GM_ERROR);
+    if (SELECTIONMODE(theMG)!=vectorSelection) return(GM_ERROR);
   }
   else SELECTIONMODE(theMG) = vectorSelection;
 
@@ -9130,7 +9136,7 @@ INT AddVectorToSelection (MULTIGRID *theMG, VECTOR *theVector)
       return(GM_OK);
     }
 
-  if (SELECTIONSIZE(theMG)>=MAXSELECTION) RETURN(GM_ERROR);
+  if (SELECTIONSIZE(theMG)>=MAXSELECTION) return(GM_ERROR);
 
   SELECTIONOBJECT(theMG,SELECTIONSIZE(theMG)) = g;
   SELECTIONSIZE(theMG)++;
@@ -9165,9 +9171,9 @@ INT RemoveNodeFromSelection (MULTIGRID *theMG, NODE *theNode)
 
   if (SELECTIONSIZE(theMG)>0)
   {
-    if (SELECTIONMODE(theMG)!=nodeSelection) RETURN(GM_ERROR);
+    if (SELECTIONMODE(theMG)!=nodeSelection) return(GM_ERROR);
   }
-  else RETURN(GM_ERROR);
+  else return(GM_ERROR);
 
   g = (SELECTION_OBJECT *) theNode;
   found = 0;
@@ -9178,7 +9184,7 @@ INT RemoveNodeFromSelection (MULTIGRID *theMG, NODE *theNode)
       break;
     }
 
-  if (!found) RETURN(GM_ERROR);
+  if (!found) return(GM_ERROR);
 
   for (j=i+1; j<SELECTIONSIZE(theMG); j++)
     SELECTIONOBJECT(theMG,j-1) = SELECTIONOBJECT(theMG,j);
@@ -9216,9 +9222,9 @@ INT RemoveElementFromSelection (MULTIGRID *theMG, ELEMENT *theElement)
 
   if (SELECTIONSIZE(theMG)>0)
   {
-    if (SELECTIONMODE(theMG)!=elementSelection) RETURN(GM_ERROR);
+    if (SELECTIONMODE(theMG)!=elementSelection) return(GM_ERROR);
   }
-  else RETURN(GM_ERROR);
+  else return(GM_ERROR);
 
   g = (SELECTION_OBJECT *) theElement;
   found = 0;
@@ -9229,7 +9235,7 @@ INT RemoveElementFromSelection (MULTIGRID *theMG, ELEMENT *theElement)
       break;
     }
 
-  if (!found) RETURN(GM_ERROR);
+  if (!found) return(GM_ERROR);
 
   for (j=i+1; j<SELECTIONSIZE(theMG); j++)
     SELECTIONOBJECT(theMG,j-1) = SELECTIONOBJECT(theMG,j);
@@ -9266,9 +9272,9 @@ INT RemoveVectorFromSelection (MULTIGRID *theMG, VECTOR *theVector)
 
   if (SELECTIONSIZE(theMG)>0)
   {
-    if (SELECTIONMODE(theMG)!=vectorSelection) RETURN(GM_ERROR);
+    if (SELECTIONMODE(theMG)!=vectorSelection) return(GM_ERROR);
   }
-  else RETURN(GM_ERROR);
+  else return(GM_ERROR);
 
   g = (SELECTION_OBJECT *) theVector;
   found = 0;
@@ -9279,7 +9285,7 @@ INT RemoveVectorFromSelection (MULTIGRID *theMG, VECTOR *theVector)
       break;
     }
 
-  if (!found) RETURN(GM_ERROR);
+  if (!found) return(GM_ERROR);
 
   for (j=i+1; j<SELECTIONSIZE(theMG); j++)
     SELECTIONOBJECT(theMG,j-1) = SELECTIONOBJECT(theMG,j);
@@ -9527,6 +9533,490 @@ BLOCK_DESC      *GetMGUDBlockDescriptor (BLOCK_ID id)
 VIRT_HEAP_MGMT *GetGenMGUDM()
 {
   return (theGenMGUDM);
+}
+
+/****************************************************************************/
+/*D
+   MaxNodeClass - Returns highest Node class of a dof on next level
+
+   SYNOPSIS:
+   static INT MaxNodeClass (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - pointer to a element
+
+   DECRIPTION:
+   This function returns highest 'NCLASS' of a Node associated with the
+   element.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+static INT MaxNodeClass (ELEMENT *theElement)
+{
+  INT m = 0;
+  INT i;
+
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++) {
+    INT c = NCLASS(CORNER(theElement,i));
+
+    m = MAX(m,c);
+  }
+
+  return (m);
+}
+
+/****************************************************************************/
+/*D
+   MaxNextNodeClass - Returns highest Node class of a dof on next level
+
+   SYNOPSIS:
+   INT MaxNextNodeClass (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - pointer to a element
+
+   DECRIPTION:
+   This function returns highest 'NNCLASS' of a Node associated with the
+   element.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT MaxNextNodeClass (ELEMENT *theElement)
+{
+  INT m = 0;
+  INT i;
+
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++) {
+    INT c = NNCLASS(CORNER(theElement,i));
+
+    m = MAX(m,c);
+  }
+
+  return (m);
+}
+
+/****************************************************************************/
+/*D
+   MinNodeClass - Returns minimal Node class of a dof on next level
+
+   SYNOPSIS:
+   INT MinNodeClass (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - pointer to a element
+
+   DECRIPTION:
+   This function returns highest 'NNCLASS' of a Node associated with the
+   element.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT MinNodeClass (ELEMENT *theElement)
+{
+  INT m = 3;
+  INT i;
+
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++) {
+    INT c = NCLASS(CORNER(theElement,i));
+
+    m = MIN(m,c);
+  }
+
+  return (m);
+}
+
+/****************************************************************************/
+/*D
+   MinNextNodeClass - Returns minimal Node class of a dof on next level
+
+   SYNOPSIS:
+   INT MinNextNodeClass (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - pointer to a element
+
+   DECRIPTION:
+   This function returns highest 'NNCLASS' of a Node associated with the
+   element.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT MinNextNodeClass (ELEMENT *theElement)
+{
+  INT m = 3;
+  INT i;
+
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++) {
+    INT c = NNCLASS(CORNER(theElement,i));
+
+    m = MIN(m,c);
+  }
+
+  return (m);
+}
+
+/****************************************************************************/
+/*D
+   SeedNodeClasses - Initialize node classes
+
+   SYNOPSIS:
+   INT SeedNodeClasses (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theGrid - given grid
+   .  theElement - given element
+
+   DESCRIPTION:
+   Initialize Node class in all nodes associated with given element with 3.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT SeedNodeClasses (ELEMENT *theElement)
+{
+  INT i;
+
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+    SETNCLASS(CORNER(theElement,i),3);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   ClearNodeClasses - Reset node classes
+
+   SYNOPSIS:
+   INT ClearNodeClasses (GRID *theGrid);
+
+   PARAMETERS:
+   .  theGrid - pointer to grid
+
+   DESCRIPTION:
+   Reset all node classes in all nodes of given grid to 0.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT ClearNodeClasses (GRID *theGrid)
+{
+  NODE *theNode;
+
+  /* reset class of each Node to 0 */
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCVC(theNode))
+    SETNCLASS(theNode,0);
+
+  return(0);
+}
+/****************************************************************************/
+/*D
+   PropagateNodeClasses - Compute Node classes after initialization
+
+   SYNOPSIS:
+   INT PropagateNodeClasses (GRID *theGrid);
+
+   PARAMETERS:
+   .  theGrid - pointer to grid
+
+   DESCRIPTION:
+   After Node classes have been reset and initialized, this function
+   now computes the class 2 and class 1 Nodes.
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occured
+   D*/
+/****************************************************************************/
+
+#ifdef ModelP
+static int Gather_NodeClass (DDD_OBJ obj, void *data)
+{
+  NODE *theNode = (NODE *)obj;
+
+  ((INT *)data)[0] = NCLASS(theNode);
+
+  return(0);
+}
+
+static int Scatter_NodeClass (DDD_OBJ obj, void *data)
+{
+  NODE *theNode = (NODE *)obj;
+
+  SETNCLASS(theNode,MAX(NCLASS(theNode),((INT *)data)[0]));
+
+  return(0);
+}
+
+static int Scatter_GhostNodeClass (DDD_OBJ obj, void *data)
+{
+  NODE *theNode = (NODE *)obj;
+
+  SETNCLASS(theNode,((INT *)data)[0]);
+
+  return(0);
+}
+#endif
+
+static INT PropagateNodeClass (GRID *theGrid, INT nclass)
+{
+  ELEMENT *theElement;
+  INT i;
+
+  for (theElement=FIRSTELEMENT(theGrid);
+       theElement!= NULL; theElement = SUCCE(theElement))
+    if (MaxNodeClass(theElement) == nclass)
+      for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+      {
+        NODE *theNode = CORNER(theElement,i);
+
+        if (NCLASS(theNode) < nclass)
+          SETNCLASS(theNode,nclass-1);
+      }
+  /* only for this values valid */
+  ASSERT(nclass==3 || nclass==2);
+
+  return(0);
+}
+
+INT PropagateNodeClasses (GRID *theGrid)
+{
+  NODE *theNode;
+  MATRIX *theMatrix;
+
+    #ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateNodeClasses():"
+                   " 1. communication on level %d\n",me,GLEVEL(theGrid)))
+  /* exchange NCLASS of Nodes */
+  DDD_IFAExchange(BorderNodeSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_NodeClass, Scatter_NodeClass);
+    #endif
+
+  /* set Node classes in the algebraic neighborhood to 2 */
+  if (PropagateNodeClass(theGrid,3)) REP_ERR_RETURN(1);
+
+    #ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateNodeClasses(): 2. communication\n",
+                   me))
+  /* exchange NCLASS of Nodes */
+  DDD_IFAExchange(BorderNodeSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_NodeClass, Scatter_NodeClass);
+    #endif
+
+  /* set Node classes in the algebraic neighborhood to 1 */
+  if (PropagateNodeClass(theGrid,2)) REP_ERR_RETURN(1);
+
+    #ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateNodeClasses(): 3. communication\n",
+                   me))
+  /* exchange NCLASS of Nodes */
+  DDD_IFAExchange(BorderNodeSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_NodeClass, Scatter_NodeClass);
+  /* send NCLASS to ghosts */
+  DDD_IFAOneway(NodeIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+                Gather_NodeClass, Scatter_GhostNodeClass);
+    #endif
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   ClearNextNodeClasses - Reset class of the Nodes on the next level
+
+   SYNOPSIS:
+   INT ClearNextNodeClasses (GRID *theGrid);
+
+   PARAMETERS:
+   .  theGrid - pointer to grid
+
+   DESCRIPTION:
+   This function clears NNCLASS flag in all Nodes. This is the first step to
+   compute the class of the dofs on the *NEXT* level, which
+   is also the basis for determining copies.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT ClearNextNodeClasses (GRID *theGrid)
+{
+  NODE *theNode;
+
+  /* reset class of each Node to 0 */
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCVC(theNode))
+    SETNNCLASS(theNode,0);
+
+  /* now the refinement algorithm will initialize the class 3 Nodes   */
+  /* on the *NEXT* level.                                                                               */
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   SeedNextNodeClasses - Set 'NNCLASS' in all Nodes associated with element
+
+   SYNOPSIS:
+   INT SeedNextNodeClasses (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - pointer to element
+
+   DESCRIPTION:
+   Set 'NNCLASS' in all nodes associated with the element to 3.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT SeedNextNodeClasses (ELEMENT *theElement)
+{
+  INT i;
+
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+    SETNNCLASS(CORNER(theElement,i),3);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   PropagateNextNodeClasses - Compute 'NNCLASS' in all Nodes of a grid level
+
+   SYNOPSIS:
+   INT PropagateNextNodeClasses (GRID *theGrid);
+
+   PARAMETERS:
+   .  theGrid - pointer to grid
+
+   DESCRIPTION:
+   Computes values of 'NNCLASS' field in all nodes after seed.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured
+   D*/
+/****************************************************************************/
+
+#ifdef ModelP
+static int Gather_NextNodeClass (DDD_OBJ obj, void *data)
+{
+  NODE *theNode = (NODE *)obj;
+
+  ((INT *)data)[0] = NNCLASS(theNode);
+
+  return(GM_OK);
+}
+
+static int Scatter_NextNodeClass (DDD_OBJ obj, void *data)
+{
+  NODE *theNode = (NODE *)obj;
+
+  SETNNCLASS(theNode,MAX(NNCLASS(theNode),((INT *)data)[0]));
+
+  return(GM_OK);
+}
+
+static int Scatter_GhostNextNodeClass (DDD_OBJ obj, void *data)
+{
+  NODE *theNode = (NODE *)obj;
+
+  SETNNCLASS(theNode,((INT *)data)[0]);
+
+  return(GM_OK);
+}
+#endif
+
+static INT PropagateNextNodeClass (GRID *theGrid, INT nnclass)
+{
+  ELEMENT *theElement;
+  INT i;
+
+  for (theElement=FIRSTELEMENT(theGrid);
+       theElement!= NULL; theElement = SUCCE(theElement))
+    if (MaxNextNodeClass(theElement) == nnclass)
+      for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+      {
+        NODE *theNode = CORNER(theElement,i);
+
+        if (NNCLASS(theNode) < nnclass)
+          SETNNCLASS(theNode,nnclass-1);
+      }
+  /* only for this values valid */
+  ASSERT(nnclass==3 || nnclass==2);
+
+  return(0);
+}
+
+INT PropagateNextNodeClasses (GRID *theGrid)
+{
+  NODE *theNode;
+  MATRIX *theMatrix;
+
+    #ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextNodeClasses(): 1. communication\n",me))
+  /* exchange NNCLASS of Nodes */
+  DDD_IFAExchange(BorderNodeSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_NextNodeClass, Scatter_NextNodeClass);
+    #endif
+
+  if (PropagateNextNodeClass(theGrid,3)) REP_ERR_RETURN(1);
+
+    #ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextNodeClasses(): 2. communication\n",me))
+  /* exchange NNCLASS of Nodes */
+  DDD_IFAExchange(BorderNodeSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_NextNodeClass, Scatter_NextNodeClass);
+    #endif
+
+  if (PropagateNextNodeClass(theGrid,2)) REP_ERR_RETURN(1);
+
+    #ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextNodeClasses(): 3. communication\n",me))
+  /* exchange NNCLASS of Nodes */
+  DDD_IFAExchange(BorderNodeSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_NextNodeClass, Scatter_NextNodeClass);
+  /* send NNCLASSn to ghosts */
+  DDD_IFAOneway(NodeIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+                Gather_NextNodeClass, Scatter_GhostNextNodeClass);
+    #endif
+
+  return(0);
 }
 
 /****************************************************************************/
