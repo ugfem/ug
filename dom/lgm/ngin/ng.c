@@ -528,7 +528,7 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
   if (theMesh->BndP_lcoord_left==NULL) NG_HEAPFAULT;
   theMesh->BndP_lcoord_right=(float**)NG_MALLOC(Heap,n_bn*sizeof(float*),MarkKey);
   if (theMesh->BndP_lcoord_right==NULL) NG_HEAPFAULT;
-  theMesh->BndPosition=(float**)NG_MALLOC(Heap,n_bn*sizeof(float*),MarkKey);
+  theMesh->BndPosition=(double**)NG_MALLOC(Heap,n_bn*sizeof(double*),MarkKey);
   if (theMesh->BndPosition==NULL) NG_HEAPFAULT;
   theMesh->nbElements=NULL;
   theMesh->Element_SideOnBnd=NULL;
