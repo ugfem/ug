@@ -76,7 +76,7 @@
 #define MAT_MASTER_CONS       2
 
 /* special REP_ERR_RETURN macro */
-#define NP_RETURN(err,intvar)           {intvar = 1; REP_ERR_RETURN(err);}
+#define NP_RETURN(err,intvar)           {intvar = __LINE__; REP_ERR_RETURN(err);}
 
 /****************************************************************************/
 /*																			*/

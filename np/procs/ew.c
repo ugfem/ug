@@ -182,7 +182,7 @@ INT NPEWSolverInit (NP_EW_SOLVER *np, INT argc , char **argv)
         if (sscanf(token,"%d",&n) != 1) {
           n = 1;
           while (token!=NULL) {
-            np->ev[n++] = GetVecDataDescByName(np->base.mg,token);
+            np->ev[n] = GetVecDataDescByName(np->base.mg,token);
             if (np->ev[n] == NULL)
               np->ev[n] = CreateVecDescOfTemplate(np->base.mg,
                                                   token,NULL);
@@ -560,19 +560,20 @@ static INT Rayleigh (NP_EW_SOLVER *theNP, INT level,
   if (np->Quadratic) {
     if (AllocVDFromVD(theNP->base.mg,0,level,ev,&np->q))
       NP_RETURN(1,result[0]);
-    if (RayleighQuotientQ(theNP->base.mg,np->M,ev,np->r,np->t,
-                          np->q,a))
+    if (RayleighQuotientQ(theNP->base.mg,np->M,ev,np->r,np->t,np->q,a))
       NP_RETURN(1,result[0]);
     if (FreeVD(theNP->base.mg,0,level,np->q))
       NP_RETURN(1,result[0]);
   }
   else if (RayleighQuotient(theNP->base.mg,np->M,ev,np->r,np->t,a))
     NP_RETURN(1,result[0]);
+
+  PRINTDEBUG(np,1,("a0 %f a1 %f ",a[0],a[1]));
+
   if (a[1] <= ABS(a[0]) * VERY_SMALL)
     NP_RETURN(1,result[0]);
   *q = a[0] / a[1];
 
-  PRINTDEBUG(np,1,("a %f %f q %f\n",a[0],a[1],*q));
 
   return (0);
 }
@@ -596,7 +597,10 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
   if (Assemble->NLAssembleDefect == NULL) NP_RETURN(1,ewresult->error_code);
   i = 0;
   if (np->Neumann) {                   /* set ev[0] = 1 */
-    if (s_dset(theMG,bl,level,ev[0],1.0)) NP_RETURN(1,ewresult->error_code);
+    if (s_dset(theMG,bl,level,ev[0],1.0))
+      NP_RETURN(1,ewresult->error_code);
+    if (np->Neumann == 2)
+      SetUnsymmetric(theMG,bl,level,ev[0],EVERY_CLASS);
     if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,ev[0],np->r,np->M,
                                       &ewresult->error_code))
       return(1);
@@ -671,16 +675,18 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
           return(1);
       }
       else {
-        if (s_dset(theMG,0,level,np->t,0.0)) NP_RETURN(1,ewresult->error_code);
+        if (s_dset(theMG,0,level,np->t,0.0))
+          NP_RETURN(1,ewresult->error_code);
         if (s_dmatmul (theMG,0,level,np->t,np->M,ev[i],EVERY_CLASS)
             != NUM_OK) NP_RETURN(1,ewresult->error_code);
       }
-      if (Orthogonalize(theMG,level,i,ev,np->t,np->display)) NP_RETURN(1,ewresult->error_code);
+      if (Orthogonalize(theMG,level,i,ev,np->t,np->display))
+        NP_RETURN(1,ewresult->error_code);
       if (Rayleigh(&(np->ew),level,ev[i],Assemble,a,&rq,
                    &ewresult->error_code))
         return(1);
       for (j=0; j<VD_NCOMP(np->r); j++)
-        scal[j] = rq;
+        scal[j] = 1.0/rq;
       if (s_dscale(theMG,0,level,np->r,scal) != NUM_OK)
         NP_RETURN(1,ewresult->error_code);
       if (FreeVD(theMG,bl,level,np->t))
@@ -692,7 +698,7 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
         if (s_dcopy (theMG,bl,level,np->t,ev[i]) != NUM_OK)
           NP_RETURN(1,ewresult->error_code);
         for (j=0; j<VD_NCOMP(np->r); j++)
-          scal[j] = sqrt(rq);
+          scal[j] = 1.0/sqrt(rq);
         if (a_dscale(theMG,bl,level,np->t,EVERY_CLASS,scal) != NUM_OK)
           NP_RETURN(1,ewresult->error_code);
         if ((*np->LS->Defect)(np->LS,level,np->t,np->r,np->M,
@@ -747,21 +753,26 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
         for (j=0; j<VD_NCOMP(np->r); j++)
           scal[j] = 1.0 / sqrt(a[0]);
       }
-      if(a_dscale(theMG,bl,level,ev[i],EVERY_CLASS,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
-      if(a_dscale(theMG,bl,level,np->r,EVERY_CLASS,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
-      if(a_dscale(theMG,bl,level,np->t,EVERY_CLASS,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
+      if(a_dscale(theMG,bl,level,ev[i],EVERY_CLASS,scal) != NUM_OK)
+        NP_RETURN(1,ewresult->error_code);
+      if(a_dscale(theMG,bl,level,np->r,EVERY_CLASS,scal) != NUM_OK)
+        NP_RETURN(1,ewresult->error_code);
+      if(a_dscale(theMG,bl,level,np->t,EVERY_CLASS,scal) != NUM_OK)
+        NP_RETURN(1,ewresult->error_code);
       /* print defect */
-      if (RayleighDefect(theMG,np->r,np->t,rq,defect)) NP_RETURN(1,ewresult->error_code);
-      if (FreeVD(theMG,bl,level,np->t)) NP_RETURN(1,ewresult->error_code);
+      if (RayleighDefect(theMG,np->r,np->t,rq,defect))
+        NP_RETURN(1,ewresult->error_code);
+      if (FreeVD(theMG,bl,level,np->t))
+        NP_RETURN(1,ewresult->error_code);
       if (DoPCR(PrintID,defect,PCR_CRATE))
-        return(1);
+        NP_RETURN(1,ewresult->error_code);
     }
 
     /* print average and finish */
     if (DoPCR(PrintID,defect,PCR_AVERAGE))
-      return(1);
+      NP_RETURN(1,ewresult->error_code);
     if (PostPCR(PrintID,":ew:avg"))
-      return(1);
+      NP_RETURN(1,ewresult->error_code);
     ewresult->number_of_iterations[i] = iter + 1;
     ewresult->converged[i] = !(iter == np->maxiter);
     ew[i++] = rq;
@@ -833,8 +844,12 @@ static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
     np->Quadratic = 1;
   else
     np->Quadratic = 0;
-  if (ReadArgvOption("N",argc,argv))
-    np->Neumann = 1;
+  if (ReadArgvOption("N",argc,argv)) {
+    if (ReadArgvOption("S",argc,argv))
+      np->Neumann = 2;
+    else
+      np->Neumann = 1;
+  }
   else
     np->Neumann = 0;
   if (np->Neumann)
@@ -873,6 +888,8 @@ static INT EWDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"r",ENVITEM_NAME(np->r));
   if (np->t != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+  if (np->q != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"q",ENVITEM_NAME(np->q));
   if (np->M != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"M",ENVITEM_NAME(np->M));
   if (sc_disp(np->damp,np->r,"damp"))
@@ -902,12 +919,9 @@ static INT EWExecute (NP_BASE *theNP, INT argc , char **argv)
     PrintErrorMessage('E',"EWExecute","no assemble num proc");
     return (1);
   }
-  if (ReadArgvOption("a",argc,argv))
-    np->assemble = 1;
-  if (ReadArgvOption("i",argc,argv))
-    np->interpolate = 1;
-  if (ReadArgvOption("r",argc,argv))
-    np->reset = 1;
+  np->assemble = ReadArgvOption("a",argc,argv);
+  np->interpolate = ReadArgvOption("i",argc,argv);
+  np->reset = ReadArgvOption("r",argc,argv);
   if (np->reset && np->interpolate) {
     PrintErrorMessage('E',"EWExecute",
                       "Only one option $r or $i can be specified.\n");
