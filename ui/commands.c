@@ -2685,7 +2685,7 @@ static INT SaveCommand (INT argc, char **argv)
 static INT SaveDataCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  char FileName[NAMESIZE],VDName[NAMESIZE];
+  char FileName[NAMESIZE];
   VECDATA_DESC *theVDList[5];
   INT n;
 
@@ -2740,7 +2740,7 @@ static INT SaveDataCommand (INT argc, char **argv)
 static INT LoadDataCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  char FileName[NAMESIZE],VDName[NAMESIZE];
+  char FileName[NAMESIZE];
   VECDATA_DESC *theVDList[5];
   INT n;
 
@@ -4779,8 +4779,11 @@ static INT MarkCommand (INT argc, char **argv)
   char rulename[32];
   INT i,j,l,mode,rv,Rule;
   DOUBLE_VECTOR global;
-  DOUBLE x,y,z;
+  DOUBLE x,y;
   long nmarked;
+#       ifdef __THREEDIM__
+  DOUBLE z;
+#       endif
 
   /* following variables: keep type for sscanf */
   int id,idfrom,idto;
@@ -5170,7 +5173,7 @@ static INT FirstSurfaceLevel(MULTIGRID *theMG)
   return(-1);
 }
 
-INT SmoothGridCommand (INT argc, char **argv)
+static INT SmoothGridCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   GRID *theGrid;
@@ -5181,7 +5184,7 @@ INT SmoothGridCommand (INT argc, char **argv)
   LowLevelSet = FALSE;
   ForceLevelSet = FALSE;
   LimitLocDis = 0.3;
-  theMG = GetCurrentMultigrid();
+  theMG = currMG;
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"smoothgrid","no current multigrid");
@@ -5525,7 +5528,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
   return (OKCODE);
         #endif
 
-  theMG = GetCurrentMultigrid();
+  theMG = currMG;
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"lexorderv","no open multigrid");
@@ -5700,7 +5703,7 @@ static INT ShellOrderVectorsCommand (INT argc, char **argv)
 
   NO_OPTION_CHECK(argc,argv);
 
-  theMG = GetCurrentMultigrid();
+  theMG = currMG;
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"shellorderv","no open multigrid");
@@ -7106,7 +7109,7 @@ static INT CallGrapeCommand (INT argc, char **argv)
   MULTIGRID *theCurrMG;
 
   /* see if multigrid exists */
-  theCurrMG = GetCurrentMultigrid();
+  theCurrMG = currMG;
   if (theCurrMG==NULL)
   {
     UserWrite("cannot call grape without multigrid\n");
@@ -9528,7 +9531,7 @@ static INT ClearCommand (INT argc, char **argv)
   INT i,fl,tl,skip;
   float value;
 
-  theMG = GetCurrentMultigrid();
+  theMG = currMG;
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"clear","no current multigrid");
@@ -9608,7 +9611,7 @@ static INT CopyCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   VECDATA_DESC *from,*to;
 
-  theMG = GetCurrentMultigrid();
+  theMG = currMG;
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"copy","no current multigrid");
@@ -9677,7 +9680,7 @@ static INT HomotopyCommand (INT argc, char **argv)
   DOUBLE v[MAX_VEC_COMP];
   INT i;
 
-  theMG = GetCurrentMultigrid();
+  theMG = currMG;
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"homotopy","no current multigrid");
@@ -9749,7 +9752,7 @@ static INT InterpolateCommand (INT argc, char **argv)
 
   NO_OPTION_CHECK(argc,argv);
 
-  theMG = GetCurrentMultigrid();
+  theMG = currMG;
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"interpolate","no current multigrid");
@@ -9988,7 +9991,7 @@ static INT ExecuteNumProcCommand (INT argc, char **argv)
     }
   }
 
-  theMG = GetCurrentMultigrid();
+  theMG = currMG;
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
@@ -10255,6 +10258,8 @@ static INT SetCurrentNumProcCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
+#endif /* __NUMERICS__ */
+
 /****************************************************************************/
 /*D
         setpf -  command to change current settings of the data
@@ -10292,20 +10297,17 @@ static INT SetCurrentNumProcCommand (INT argc, char **argv)
 
 static INT SetPrintingFormatCommand (INT argc, char **argv)
 {
+  MULTIGRID *theMG;
   INT err;
-  char format[NAMESIZE];
 
-  if (sscanf(argv[0],"setpf %s",format)!=1)
+  theMG = currMG;
+  if (theMG==NULL)
   {
-    if (currMG==NULL)
-    {
-      PrintErrorMessage('E',"setpf","no format specified and no current mg");
-      return (PARAMERRORCODE);
-    }
-    strcpy(format,ENVITEM_NAME(MGFORMAT(currMG)));
+    PrintErrorMessage('E',"setpf","there is no current multigrid\n");
+    return (CMDERRORCODE);
   }
 
-  err = SetPrintingFormatCmd(format,argc,argv);
+  err = SetPrintingFormatCmd(theMG,argc,argv);
 
   switch (err)
   {
@@ -10340,8 +10342,6 @@ static INT ShowPrintingFormatCommand (INT argc, char **argv)
 
   return (OKCODE);
 }
-
-#endif /* __NUMERICS__ */
 
 /* see formats.c for the man page */
 
@@ -10441,7 +10441,7 @@ static INT ExecuteNumProcCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   INT err;
 
-  theMG = GetCurrentMultigrid();
+  theMG = currMG;
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
@@ -10506,7 +10506,7 @@ static INT NumProcDisplayCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   INT err;
 
-  theMG = GetCurrentMultigrid();
+  theMG = currMG;
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
@@ -10568,7 +10568,7 @@ static INT NumProcCreateCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   INT err;
 
-  theMG = GetCurrentMultigrid();
+  theMG = currMG;
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
@@ -10620,7 +10620,7 @@ static INT NumProcInitCommand (INT argc, char **argv)
   NP_BASE *theNumProc;
   MULTIGRID *theMG;
 
-  theMG = GetCurrentMultigrid();
+  theMG = currMG;
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"npinit","there is no current multigrid\n");
@@ -10697,7 +10697,7 @@ static INT SetCurrentNumProcCommand (INT argc, char **argv)
     PrintHelp("scnp",HELPITEM," (specify current NumProc name)");
     return(PARAMERRORCODE);
   }
-  theMG = GetCurrentMultigrid();
+  theMG = currMG;
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
@@ -10741,7 +10741,7 @@ static INT CreateVecDescCommand (INT argc, char **argv)
   char name[NAMESIZE];
 
   if (ReadArgvChar("m",name,argc,argv))
-    theMG = GetCurrentMultigrid();
+    theMG = currMG;
   else
     theMG = GetMultigrid(name);
   if (theMG==NULL) {
@@ -10779,7 +10779,7 @@ static INT CreateMatDescCommand (INT argc, char **argv)
   char name[NAMESIZE];
 
   if (ReadArgvChar("m",name,argc,argv))
-    theMG = GetCurrentMultigrid();
+    theMG = currMG;
   else
     theMG = GetMultigrid(name);
   if (theMG==NULL) {
@@ -10788,6 +10788,85 @@ static INT CreateMatDescCommand (INT argc, char **argv)
   }
   if (CreateMatDescCmd(theMG,argc,argv))
     return(CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   symlist - list contents of vector and matrix symbols
+
+   DESCRIPTION:
+   This command lists the contents of vector and matrix symbols.
+
+   'scnp <num proc name>'
+
+   . <num~proc~name> - name of an existing NumProc
+   D*/
+/****************************************************************************/
+
+static INT SymListCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  VECDATA_DESC *vd;
+  MATDATA_DESC *md;
+  char name[NAMESIZE];
+  INT res;
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"npinit","there is no current multigrid\n");
+    return (CMDERRORCODE);
+  }
+
+  if (argc!=2)
+  {
+    PrintErrorMessage('E',"symlist","specify one option with symlist");
+    return (PARAMERRORCODE);
+  }
+
+  switch (argv[1][0])
+  {
+  case 'V' :
+    res = sscanf(argv[1],"V %s",name);
+    if (res!=1)
+    {
+      /* print all vectors */
+      for (vd = GetFirstVector(theMG); vd != NULL; vd = GetNextVector(vd))
+        DisplayVecDataDesc(vd);
+      return (OKCODE);
+    }
+    for (vd = GetFirstVector(theMG); vd != NULL; vd = GetNextVector(vd))
+      if (strcmp(ENVITEM_NAME(vd),name)==0)
+      {
+        DisplayVecDataDesc(vd);
+        return (OKCODE);
+      }
+    break;
+
+  case 'M' :
+    res = sscanf(argv[1],"M %s",name);
+    if (res!=1)
+    {
+      /* print all matrices */
+      for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md))
+        DisplayMatDataDesc(md);
+      return (OKCODE);
+    }
+    for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md))
+      if (strcmp(ENVITEM_NAME(md),name)==0)
+      {
+        DisplayMatDataDesc(md);
+        return (OKCODE);
+      }
+    break;
+
+  default :
+    sprintf(buffer,"(invalid option '%s')",argv[1]);
+    PrintHelp("symlist",HELPITEM,buffer);
+    return (PARAMERRORCODE);
+  }
 
   return (OKCODE);
 }
@@ -11236,7 +11315,7 @@ static INT PTestCommand (INT argc, char **argv)
 {
   MULTIGRID *theCurrMG;
 
-  theCurrMG = GetCurrentMultigrid();
+  theMG = currMG;
   if (theCurrMG==NULL)
   {
     PrintErrorMessage('W',"mglist","no multigrid open\n");
@@ -11355,7 +11434,7 @@ static INT LB4Command (INT argc, char **argv)
   int iopt,i,res,copt;
   char buffer[100];
 
-  theMG = GetCurrentMultigrid();
+  theMG = currMG;
 
   if (procs==1) return(OKCODE);
 
@@ -12638,14 +12717,15 @@ INT InitCommands ()
 
   /* formats */
   if (CreateCommand("newformat",          CreateFormatCommand                             )==NULL) return (__LINE__);
+  if (CreateCommand("setpf",                      SetPrintingFormatCommand                )==NULL) return (__LINE__);
+  if (CreateCommand("showpf",             ShowPrintingFormatCommand               )==NULL) return (__LINE__);
 #ifdef __NP__
   if (CreateCommand("createvector",   CreateVecDescCommand            )==NULL) return (__LINE__);
   if (CreateCommand("creatematrix",   CreateMatDescCommand            )==NULL) return (__LINE__);
+  if (CreateCommand("symlist",            SymListCommand                      )==NULL) return (__LINE__);
 #endif /* __NP__ */
 
 #ifdef __NUMERICS__
-  if (CreateCommand("setpf",                      SetPrintingFormatCommand                )==NULL) return (__LINE__);
-  if (CreateCommand("showpf",             ShowPrintingFormatCommand               )==NULL) return (__LINE__);
   if (CreateCommand("nplist",                     NumProcListCommand                              )==NULL) return (__LINE__);
 #endif /* __NUMERICS__ */
 

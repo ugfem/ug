@@ -243,8 +243,9 @@ INT CheckHelp ()
   COMMAND *theCmd;
 #ifdef __NUMERICS__
   NP_TYPE *theNP;
+  char npname[NAMESIZE];
 #endif
-  char HelpItem[128],cmdname[NAMESIZE],npname[NAMESIZE],*s;
+  char HelpItem[128],cmdname[NAMESIZE],*s;
   int i,found,rv;
 
   /* loop commands */
