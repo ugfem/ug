@@ -165,9 +165,6 @@ INT ce_ELEMORD;
 #define ADJACENT(p, k)        (GR_LINK(p)[k]->adjacent)
 #endif
 
-/* Miscellaneous */
-#define MAXINT              2147483647
-
 /* pixel resolution for inserting boundary nodes */
 #define SMALLPIX 			4
 
@@ -211,6 +208,7 @@ typedef struct {
 	DOUBLE       zMax;
 } BE_DATA;
 
+#ifdef ModelP
 typedef struct {
 	INT          hisGap;
 	INT          cnt;
@@ -231,6 +229,7 @@ typedef struct {
 	INT          nGlobalSons;
 	SH_DATA      *SH_Data;
 } OS_DATA;
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -4440,11 +4439,6 @@ static INT FindRange2D (DRAWINGOBJ *q)
 			case DO_SURRPOLYGON:
 				DO_inc_SURRPOLYGON(q,2);
 				break;
-            #ifdef ModelP
-			case DO_END_TOKEN:
-				end = 1;
-				break;
-            #endif
 			default:
 				RETURN(1);
 		}
@@ -4539,11 +4533,6 @@ static INT FindRange3D (DRAWINGOBJ *q)
 			case DO_SURRPOLYGON:
 				DO_inc_SURRPOLYGON(q,3);
 				break;
-            #ifdef ModelP
-			case DO_END_TOKEN:
-				end = 1;
-				break;
-            #endif
 			default:
 				RETURN(1);
 		}
@@ -13360,8 +13349,8 @@ static INT OrderFathersNNS (MULTIGRID *mg, ELEMENT **table)
 	/* allocate arrays for z coordinates */
 	heap = mg->theHeap;
     Mark(heap, FROM_TOP);
-	OE_zMin = (COORD *)GetMem(heap, n*sizeof(COORD), FROM_TOP);
-	OE_zMax = (COORD *)GetMem(heap, n*sizeof(COORD), FROM_TOP);
+	OE_zMin = (DOUBLE *)GetMem(heap, n*sizeof(DOUBLE), FROM_TOP);
+	OE_zMax = (DOUBLE *)GetMem(heap, n*sizeof(DOUBLE), FROM_TOP);
 	if (OE_zMin == NULL || OE_zMax == NULL) {
 		Release(heap, FROM_TOP);
 		return 2;
@@ -14879,7 +14868,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 
 	/* check if multigrid is already ordered */
 	offset   = OFFSET_IN_MGUD(wopMGUDid);
-	myMGdata = (WOP_MG_DATA*) GEN_MGUD_ADR(theMG, offset);
+	myMGdata = (WOP_MG_DATA*) GEN_MGUD_ADR(mg, offset);
 	
 	if (myMGdata == NULL)
 		return 1;
@@ -14890,13 +14879,11 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 		SaveSettings(vo, myMGdata);
 	else if (!OE_force_ordering)
 	{
-		else if (SettingsEqual(vo, myMGdata))
+		if (SettingsEqual(vo, myMGdata))
 			if (ELEMORD(mg))
 				/* no ordering neccessary */
 				return 0;
-		else
-			/* save changed settings */
-			SaveSettings(vo, myMGdata);
+	}
 	
 	OE_force_ordering = FALSE;
 	
