@@ -94,6 +94,7 @@ typedef struct
   INT rep;                                                       /* for repeat solver after grid changed */
   INT Break;                                                     /* break after error estimator         */
   INT Continue;                                              /* continue after error estimator  */
+  INT copyall;                                               /* refine copy all                 */
   DOUBLE tstart;                                                 /* start time                          */
   DOUBLE dtstart;                                                /* time step to begin with			*/
   DOUBLE dtmin;                                                  /* smallest time step allowed		*/
@@ -471,15 +472,34 @@ Continue:
             for (i=0; i<=bdf->err_baselevel; i++)
               if (ClearMarksOnLevel(GRID_ON_LEVEL(mg,i),-1)!=GM_OK)
                 return(__LINE__);
-          if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL,GM_REFINE_PARALLEL,GM_REFINE_NOHEAPTEST) != GM_OK) NP_RETURN(1,res[0]);
+
+          if (bdf->copyall>=0) {
+            if (RefineMultiGrid(mg,GM_COPY_ALL,
+                                GM_REFINE_PARALLEL,
+                                GM_REFINE_NOHEAPTEST) != GM_OK)
+              NP_RETURN(1,res[0]);
+          }
+          else
+          if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL,
+                              GM_REFINE_PARALLEL,
+                              GM_REFINE_NOHEAPTEST) != GM_OK)
+            NP_RETURN(1,res[0]);
         }
-        if (level != TOPLEVEL(mg))
-        {
+        if (level != TOPLEVEL(mg)) {
+          if (level < TOPLEVEL(mg)) {
+            if (InterpolateVDAllocation(mg,bdf->y_m1))
+              NP_RETURN(1,res[0]);
+            if (InterpolateVDAllocation(mg,bdf->y_0))
+              NP_RETURN(1,res[0]);
+            if (InterpolateVDAllocation(mg,bdf->y_p1))
+              NP_RETURN(1,res[0]);
+            if (InterpolateVDAllocation(mg,bdf->b))
+              NP_RETURN(1,res[0]);
+          }
           level = TOPLEVEL(mg);
           mg_changed = 1;
         }
-        else
-        {
+        else {
           mg_changed = 0;
           for (i=0; i<=level; i++)
             if (GSTATUS(GRID_ON_LEVEL(mg,i)) & GRID_CHANGED)
@@ -760,6 +780,7 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
   }
   if (bdf->err_toplevel>=0 && bdf->err_baselevel>=0 && bdf->err_baselevel>bdf->err_toplevel) return(NP_NOT_ACTIVE);
 
+  bdf->copyall = ReadArgvOption("copyall",argc,argv);
 
   return (r);
 }
@@ -961,7 +982,6 @@ static INT BDFExecute (NP_BASE *theNP, INT argc , char **argv)
 /*			  else : error													*/
 /*																			*/
 /****************************************************************************/
-
 
 static INT BDFConstruct (NP_BASE *theNP)
 {
