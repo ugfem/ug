@@ -431,12 +431,12 @@ void MakeRefMarkandMarkClassConsistent (int level)
 
 INT CheckPartitioning (MULTIGRID *theMG)
 {
-	INT i,restrict;
+	INT i,_restrict_;
 	ELEMENT *theElement;
 	ELEMENT *theFather;
 	GRID	*theGrid;
 
-	restrict = 0;
+	_restrict_ = 0;
 
 	/* reset used flags */
 	for (i=TOPLEVEL(theMG); i>0; i--)
@@ -458,7 +458,7 @@ INT CheckPartitioning (MULTIGRID *theMG)
 				/* or is ghost -> partitioning must be restricted   */
 				if (!EMASTER(theFather))
 				{
-					restrict = 1;
+					_restrict_ = 1;
 					continue;
 				}
 
@@ -469,20 +469,20 @@ INT CheckPartitioning (MULTIGRID *theMG)
 					/* level 0 elements are not coarsened */
 					if (LEVEL(theFather)==0) continue;
 					if (!EMASTER(EFATHER(theFather)))
-						restrict = 1;
+						_restrict_ = 1;
 				}
 			}
 		}
 	}
 
-	restrict = UG_GlobalMaxINT(restrict); 
-	if (me==master && restrict==1)
+	_restrict_ = UG_GlobalMaxINT(_restrict_); 
+	if (me==master && _restrict_==1)
 	{
 		UserWriteF("CheckPartitioning(): partitioning is not valid for refinement\n");
 		UserWriteF("                     cleaning up ...\n");
 	}
 
-	return(restrict);
+	return(_restrict_);
 }
 
 static int Gather_ElementRestriction (DDD_OBJ obj, void *data)
