@@ -78,14 +78,18 @@ static char rcsid[] = "$Header$";
 
 
 /****************************************************************************/
-/*																			*/
-/* Function:  @                                                                                                                         */
-/*																			*/
-/* Purpose:                                                                                                                             */
-/*																			*/
-/* Input:																	*/
-/*																			*/
-/* Output:																	*/
-/*																			*/
-/*																			*/
+/*D
+   name - short_description
+
+   SYNOPSIS:
+
+   PARAMETERS:
+   .  par - meaning
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+
+   SEE ALSO:
+   D*/
 /****************************************************************************/
