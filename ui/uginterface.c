@@ -60,6 +60,7 @@
 #define POINTER                                 0               /* arrow tool can zoom pictures		*/
 #define DRAG                                    1               /* arrow tool can drag pictures		*/
 #define ZOOM                                    2               /* arrow tool can zoom pictures		*/
+#define N_ARROW_FUNCS                   3
 
 #define SEL_NODE                                0               /* hand tool can select nodes		*/
 #define SEL_VECTOR                              1               /* hand tool can select vectors		*/
@@ -92,13 +93,14 @@ static PICTURE *currPicture;
 
 static INT autoRefresh;                                 /* ON or OFF						*/
 
-static INT ArrowToolState=POINTER;              /* POINTER, ZOOM or DRAG			*/
-static INT MarkToolState=RED;                   /* NO_REFINEMENT, RED, BLUE, COPY	*/
-static INT HandToolState=SEL_NODE;              /* SEL_NODE, SEL_VECTOR				*/
+static char *ArrowToolFuncs[N_ARROW_FUNCS]={ "pointer",
+                                             "drag",
+                                             "zoom"};
 
 static INT theCmdKeyDirID;                              /* env ID for the /Cmd Key dir		*/
 static INT theCmdKeyVarID;                              /* env ID for the /Cmd Key dir		*/
 
+static INT MousePos[2]={-1,-1};
 static OUTPUTDEVICE *DefaultDevice;     /* our default ouput device             */
 
 /* RCS string */
@@ -133,6 +135,7 @@ INT SetCurrentPicture (PICTURE *thePicture)
     {
       DrawPictureFrame(currPicture,WOP_NOT_ACTIVE);
       InvalidateUgWindow(PIC_UGW(currPicture));
+      ResetToolBoxState(PIC_UGW(currPicture));
     }
     if (thePicture!=NULL)
     {
@@ -461,6 +464,118 @@ INT DelAllCmdKeys (void)
 }
 
 /****************************************************************************/
+/*D
+        DoInfoBox - print current info into infobox of active ugwindow
+
+        SYNOPSIS:
+        void DoInfoBox (WINDOWID win, INT mp[2])
+
+        PARAMETERS:
+   .    win - ugwindow
+   .    mp  - mouse position in window
+
+        DESCRIPTION:
+        If win contains the current picture the toolbox is valid.
+                Then either the mouse is
+                        inside the toolbox: print meaning of the tool that is pointed on
+                        inside the currpic: print dynamic info if available
+                        outside the currpic: print 'mouse out'
+        Else print '---'
+
+        RETURN VALUE:
+        none
+   D*/
+/****************************************************************************/
+
+static void DoInfoBox (WINDOWID win, INT mp[2])
+{
+  UGWINDOW *ugw;
+  PICTURE *thePic;
+  INT tool,state;
+  char buffer[128];
+
+  ugw = WinID2UgWindow(win);
+
+  if ((currPicture!=NULL) && (PIC_UGW(currPicture)==ugw))
+  {
+    /* curr pic is in active ugwindow */
+    if (WhichTool(win,mp,&tool))
+    {
+      /* mouse in toolbox */
+      if (UGW_BOXSTATE(ugw)!=tool)
+      {
+        /* print meaning of tool */
+        buffer[0] = '\0';
+        switch (tool)
+        {
+        case arrowTool :
+          strcpy(buffer,ArrowToolFuncs[(tool==UGW_CURRTOOL(ugw)) ? UGW_CURRFUNC(ugw) : 0]);
+          break;
+
+        default :
+          if (VO_STATUS(PIC_VO(currPicture)) == ACTIVE)
+          {
+            if (POH_NTOOLFUNC(PIC_POH(currPicture),tool)==0)
+              strcpy(buffer,"tool disabled");
+            else
+              strcpy(buffer,POH_TOOLNAME(PIC_POH(currPicture),tool,(tool==UGW_CURRTOOL(ugw)) ? UGW_CURRFUNC(ugw) : 0));
+          }
+        }
+        DrawInfoBox(win,buffer);
+        UGW_BOXSTATE(ugw) = tool;
+      }
+    }
+    else
+    {
+      /* mouse outside toolbox */
+      if (V2_ISEQUAL(MousePos,mp))
+        return;
+
+      /* print dynamic info */
+      V2_COPY(mp,MousePos);
+      thePic = Mouse2Picture(ugw,MousePos);
+      if (thePic==currPicture)
+      {
+        /* mouse in current picture */
+        if ((VO_STATUS(PIC_VO(currPicture)) == ACTIVE) && POH_DYNAMIC_INFO_AVAIL(PIC_POH(currPicture)))
+        {
+          if (POH_DYNAMIC_INFO(PIC_POH (currPicture))(currPicture,UGW_CURRTOOL(ugw),UGW_CURRFUNC(ugw),MousePos,buffer)==0)
+            state = MOUSE_IN_CURR_PIC;
+          else
+            state = STATIC_TEXT;
+          if (!((state==STATIC_TEXT) && (UGW_BOXSTATE(ugw)==STATIC_TEXT)))
+            DrawInfoBox(win,buffer);
+          UGW_BOXSTATE(ugw) = state;
+        }
+        else if (UGW_BOXSTATE(ugw)!=STATIC_TEXT)
+        {
+          sprintf(buffer,"no dynamic info");
+          DrawInfoBox(win,buffer);
+          UGW_BOXSTATE(ugw) = STATIC_TEXT;
+        }
+      }
+      else if (UGW_BOXSTATE(ugw)!=MOUSE_OUT_CURR_PIC)
+      {
+        /* mouse outside current picture */
+        sprintf(buffer,"mouse out");
+        UGW_BOXSTATE(ugw) = MOUSE_OUT_CURR_PIC;
+        DrawInfoBox(win,buffer);
+      }
+    }
+  }
+  else
+  {
+    /* no info available */
+    if (UGW_BOXSTATE(ugw)!=NO_INFO_AVAILABLE)
+    {
+      sprintf(buffer,"---");
+      DrawInfoBox(win,buffer);
+      UGW_BOXSTATE(ugw) = NO_INFO_AVAILABLE;
+    }
+  }
+}
+
+/****************************************************************************/
 /*																			*/
 /* Function:  PrintEvent													*/
 /*																			*/
@@ -610,8 +725,8 @@ static INT ProcessEvent (char *String, INT EventMask)
   DOUBLE qw, qh, scaling;
   UGWINDOW *theUgW;
   PICTURE *thePic;
-  INT WinID, MousePosition[2], UGW_LLL_old[2], UGW_LUR_old[2], Offset[2];
-  WORK theWork;
+  INT WinID, UGW_LLL_old[2], UGW_LUR_old[2], Offset[2];
+  static INT MousePosition[2];
 
   if (GetNextUGEvent(&theEvent,EventMask))
     return (PE_ERROR);
@@ -623,6 +738,12 @@ static INT ProcessEvent (char *String, INT EventMask)
   {
   case NO_EVENT :
     if (!(EventMask&PE_INTERRUPT))
+    {
+      /* update infobox */
+      if (theEvent.NoEvent.GraphWinActive!=0)
+        DoInfoBox(  theEvent.NoEvent.GraphWinActive,
+                    theEvent.NoEvent.Mouse);
+
       /* do current work (not if UserInterrupt is calling) */
       for (theUgW=GetFirstUgWindow(); theUgW!=NULL; theUgW=GetNextUgWindow(theUgW))
       {
@@ -641,6 +762,7 @@ static INT ProcessEvent (char *String, INT EventMask)
               else DrawPictureFrame(thePic,WOP_NOT_ACTIVE);
             }
       }
+    }
 
     if (theEvent.NoEvent.InterfaceEvent) return (PE_NOTHING1);
     return (PE_NOTHING2);
@@ -681,7 +803,8 @@ static INT ProcessEvent (char *String, INT EventMask)
     break;
   case DOC_ACTIVATE :
     WinID = theEvent.DocActivate.win;
-    SetCurrentUgWindow(WinID2UgWindow(WinID));
+    SetCurrentUgWindow(theUgW=WinID2UgWindow(WinID));
+    UGW_BOXSTATE(theUgW) = BOX_INVALID;
     if (currUgWindow == NULL) return (PE_OTHER);
     break;
   case DOC_DRAG :
@@ -737,68 +860,57 @@ static INT ProcessEvent (char *String, INT EventMask)
     WinID = theEvent.DocChangeTool.win;
     theUgW = WinID2UgWindow(WinID);
     if (UGW_CURRTOOL(theUgW)==theEvent.DocChangeTool.Tool)
+    {
+      /* select multiple function iff */
       switch (theEvent.DocChangeTool.Tool)
       {
       case arrowTool :
-        switch (ArrowToolState)
-        {
-        case POINTER :
-          SetToolName(arrowTool,"drag tool");
-          ArrowToolState = DRAG;
-          break;
-        case DRAG :
-          SetToolName(arrowTool,"zoom tool");
-          ArrowToolState = ZOOM;
-          break;
-        default :
-          SetToolName(arrowTool,arrowToolName);
-          ArrowToolState = POINTER;
-          break;
-        }
+        UGW_CURRFUNC(theUgW) = (UGW_CURRFUNC(theUgW)+1)%N_ARROW_FUNCS;
         break;
 
-      case gnoedelTool :
-        switch (MarkToolState)
-        {
-        case NO_REFINEMENT :
-          SetToolName(gnoedelTool,"mark red tool");
-          MarkToolState = RED;
-          break;
-        case RED :
-          SetToolName(gnoedelTool,"mark blue tool");
-          MarkToolState = BLUE;
-          break;
-        case BLUE :
-          SetToolName(gnoedelTool,"mark copy tool");
-          MarkToolState = COPY;
-          break;
-        case COPY :
-          SetToolName(gnoedelTool,"unmark tool");
-          MarkToolState = NO_REFINEMENT;
-          break;
-        }
-        break;
-
-      case handTool :
-        switch (HandToolState)
-        {
-        case SEL_NODE :
-          SetToolName(handTool,"select vec tool");
-          HandToolState = SEL_VECTOR;
-          break;
-        case SEL_VECTOR :
-          SetToolName(handTool,"select nd tool");
-          HandToolState = SEL_NODE;
-          break;
-        }
-        break;
+      default :
+        if ((currPicture!=NULL) && (PIC_UGW(currPicture)==theUgW))
+          if (VO_STATUS(PIC_VO(currPicture)) == ACTIVE)
+            /* viewed obj valid: increment tool func */
+            UGW_CURRFUNC(theUgW) = (UGW_CURRFUNC(theUgW)+1)%POH_NTOOLFUNC(PIC_POH(currPicture),UGW_CURRTOOL(theUgW));
       }
-    UGW_CURRTOOL(theUgW) = theEvent.DocChangeTool.Tool;
-    InvalidateUgWindow(theUgW);
-    if (PIC_UGW(currPicture)==theUgW)
-      UpdateUgWindow(theUgW,currPicture);
+    }
+    else if ((currPicture!=NULL) && (PIC_UGW(currPicture)==theUgW))
+    {
+      switch (theEvent.DocChangeTool.Tool)
+      {
+      case arrowTool :
+        UGW_CURRTOOL(theUgW) = theEvent.DocChangeTool.Tool;
+        break;
+
+      default :
+        /* are we allowed to change at all? */
+        if (VO_STATUS(PIC_VO(currPicture)) == ACTIVE)
+        {
+          if (POH_NTOOLFUNC(PIC_POH(currPicture),theEvent.DocChangeTool.Tool)>0)
+            UGW_CURRTOOL(theUgW) = theEvent.DocChangeTool.Tool;
+          else
+            PrintErrorMessage('W',"ProcessEvent","tool disabled");
+        }
+        else
+          PrintErrorMessage('W',"ProcessEvent","cannot change tool since viewed object not active");
+      }
+      if (UGW_CURRTOOL(theUgW)==theEvent.DocChangeTool.Tool)
+      {
+        /* tool has changed */
+        UGW_CURRFUNC(theUgW) = 0;
+        InvalidateUgWindow(theUgW);
+        if ((currPicture!=NULL) && (PIC_UGW(currPicture)==theUgW))
+          UpdateUgWindow(theUgW,currPicture);
+        else
+          UpdateUgWindow(theUgW,NULL);
+      }
+    }
     else
-      UpdateUgWindow(theUgW,NULL);
+      PrintErrorMessage('W',"ProcessEvent","cannot change tool since curr pic not in window");
+    UGW_BOXSTATE(theUgW) = BOX_INVALID;
+    DoInfoBox(  WinID,
+                theEvent.DocChangeTool.MousePosition);
     break;
   case DOC_CONTENTCLICK :
     WinID = theEvent.DocDrag.win;
@@ -815,7 +927,7 @@ static INT ProcessEvent (char *String, INT EventMask)
     switch (UGW_CURRTOOL(theUgW))
     {
     case arrowTool :
-      switch (ArrowToolState)
+      switch (UGW_CURRFUNC(theUgW))
       {
       case ZOOM :
         ZoomPicture(currPicture,MousePosition);
@@ -825,56 +937,14 @@ static INT ProcessEvent (char *String, INT EventMask)
         break;
       }
       break;
-    case crossTool :
-      W_ID(&theWork) = INSERTBNDNODE_WORK;
-      W_INSERTBNDNODE_WORK(&theWork)->PixelX = MousePosition[0];
-      W_INSERTBNDNODE_WORK(&theWork)->PixelY = MousePosition[1];
-      if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
-      break;
-    case choiceTool :
-      W_ID(&theWork) = MOVENODE_WORK;
-      W_MOVENODE_WORK(&theWork)->PixelX = MousePosition[0];
-      W_MOVENODE_WORK(&theWork)->PixelY = MousePosition[1];
-      if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
-      break;
-    case circleTool :
-      W_ID(&theWork) = INSERTNODE_WORK;
-      W_INSERTNODE_WORK(&theWork)->PixelX = MousePosition[0];
-      W_INSERTNODE_WORK(&theWork)->PixelY = MousePosition[1];
-      if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
-      break;
-    case handTool :
-      switch (HandToolState)
-      {
-      case SEL_NODE :
-        W_ID(&theWork) = SELECTNODE_WORK;
-        W_SELECTNODE_WORK(&theWork)->PixelX = MousePosition[0];
-        W_SELECTNODE_WORK(&theWork)->PixelY = MousePosition[1];
-        break;
-      case SEL_VECTOR :
-        W_ID(&theWork) = SELECTVECTOR_WORK;
-        W_SELECTVECTOR_WORK(&theWork)->PixelX = MousePosition[0];
-        W_SELECTVECTOR_WORK(&theWork)->PixelY = MousePosition[1];
-        break;
-      default :
-        return (PE_OTHER);
-      }
-      if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
-      break;
-    case heartTool :
-      W_ID(&theWork) = SELECTELEMENT_WORK;
-      W_SELECTELEMENT_WORK(&theWork)->PixelX = MousePosition[0];
-      W_SELECTELEMENT_WORK(&theWork)->PixelY = MousePosition[1];
-      if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
-      break;
-    case gnoedelTool :
-      W_ID(&theWork) = MARKELEMENT_WORK;
-      W_MARKELEMENT_WORK(&theWork)->PixelX = MousePosition[0];
-      W_MARKELEMENT_WORK(&theWork)->PixelY = MousePosition[1];
-      W_MARKELEMENT_WORK(&theWork)->rule   = MarkToolState;
-      if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
-      break;
     default :
+      if ((VO_STATUS(PIC_VO(currPicture)) == ACTIVE) && POH_CLICKACTION_AVAIL(PIC_POH(currPicture)))
+      {
+        if (POH_CLICKACTION(PIC_POH (currPicture))(currPicture,UGW_CURRTOOL(theUgW),UGW_CURRFUNC(theUgW),MousePosition)!=0)
+          return (PE_OTHER);
+      }
+      else
+        PrintErrorMessage('W',"ProcessEvent","viewed object is not active");
       break;
     }
     break;
@@ -883,6 +953,7 @@ static INT ProcessEvent (char *String, INT EventMask)
     theUgW = WinID2UgWindow(WinID);
     if (InvalidatePicturesOfUgWindow(theUgW)) return(PE_OTHER);
     InvalidateUgWindow(theUgW);
+    UGW_BOXSTATE(theUgW) = BOX_INVALID;
     for (thePic=GetFirstPicture(theUgW); thePic!=NULL; thePic=GetNextPicture(thePic))
       if (thePic==currPicture) DrawPictureFrame(thePic,WOP_ACTIVE);
       else DrawPictureFrame(thePic,WOP_NOT_ACTIVE);
