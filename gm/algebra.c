@@ -431,7 +431,10 @@ CONNECTION *CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to)
   /* is there already the desired connection ? */
   pc = GetConnection(from,to);
   if (pc != NULL)
+  {
+    SETCEXTRA(pc,0);
     return (pc);
+  }
 
   pc = GetFreeConnection(theMG,Diag,RootType,DestType);
   if (pc==NULL)
@@ -2298,6 +2301,7 @@ INT SeedVectorClasses (ELEMENT *theElement)
    .n     1 if error occured.
    D*/
 /****************************************************************************/
+
 INT ClearVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
@@ -2328,6 +2332,7 @@ INT ClearVectorClasses (GRID *theGrid)
    .n      1 if error occured
    D*/
 /****************************************************************************/
+
 INT PropagateVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
@@ -2337,14 +2342,16 @@ INT PropagateVectorClasses (GRID *theGrid)
   for (theVector=theGrid->firstVector; theVector!=NULL; theVector=SUCCVC(theVector))
     if ((VCLASS(theVector)==3)&&(VSTART(theVector)!=NULL))
       for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
-        if (VCLASS(MDEST(theMatrix))<3)
+        if ((VCLASS(MDEST(theMatrix))<3)&&
+            (CEXTRA(MMYCON(theMatrix))!=1))
           SETVCLASS(MDEST(theMatrix),2);
 
   /* set vector classes in the algebraic neighborhood to 1 */
   for (theVector=theGrid->firstVector; theVector!=NULL; theVector=SUCCVC(theVector))
     if ((VCLASS(theVector)==2)&&(VSTART(theVector)!=NULL))
       for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
-        if (VCLASS(MDEST(theMatrix))<2)
+        if ((VCLASS(MDEST(theMatrix))<2)&&
+            (CEXTRA(MMYCON(theMatrix))!=1))
           SETVCLASS(MDEST(theMatrix),1);
 
   return(0);
@@ -2455,14 +2462,16 @@ INT PropagateNextVectorClasses (GRID *theGrid)
   for (theVector=theGrid->firstVector; theVector!=NULL; theVector=SUCCVC(theVector))
     if ((VNCLASS(theVector)==3)&&(VSTART(theVector)!=NULL))
       for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
-        if (VNCLASS(MDEST(theMatrix))<3)
+        if ((VNCLASS(MDEST(theMatrix))<3)
+            &&(CEXTRA(MMYCON(theMatrix))!=1))
           SETVNCLASS(MDEST(theMatrix),2);
 
   /* set vector classes in the algebraic neighborhood to 1 */
   for (theVector=theGrid->firstVector; theVector!=NULL; theVector=SUCCVC(theVector))
     if ((VNCLASS(theVector)==2)&&(VSTART(theVector)!=NULL))
       for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
-        if (VNCLASS(MDEST(theMatrix))<2)
+        if ((VNCLASS(MDEST(theMatrix))<2)
+            &&(CEXTRA(MMYCON(theMatrix)) !=1))
           SETVNCLASS(MDEST(theMatrix),1);
 
   return(0);
