@@ -151,7 +151,7 @@ INT ReadArgvDOUBLE (const char *name, DOUBLE *a, INT argc, char **argv)
    .  argv - argument vector
 
    DESCRIPTION:
-   This function reads command strings and returns an integer value.
+   This function reads command strings and returns an integer value in 'j'.
 
    RETURN VALUE:
    INT
@@ -195,7 +195,7 @@ INT ReadArgvINT (const char *name, INT *j, INT argc, char **argv)
    .  argv - argument vector
 
    DESCRIPTION:
-   This function reads command strings and returns an integer value.
+   This function reads command strings and returns an string value in 'buffer'.
 
    RETURN VALUE:
    INT
