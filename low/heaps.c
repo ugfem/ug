@@ -566,7 +566,7 @@ INT PutFreelistMemory (HEAP *theHeap, void *object, INT size)
   INT i,j,k,l;
 
   memset(object,0,size);
-  ((int *)object)[1] = -1;
+  ((int *)object)[1] = -1;                      /* this is to check heap faults */
   ptr = (void **) object;
 
   /* 'ptr' will be set equal to 'object' but with different inter-		*/
