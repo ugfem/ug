@@ -153,7 +153,7 @@ INT                     DataTypeFilterVList                             (INT dt,
 INT                     GetVectorsOfDataTypesInObjects  (const ELEMENT *theElement, INT dt, INT obj, INT *cnt, VECTOR *VecList[]);
 INT                     PrepareGetBoundaryNeighbourVectors (GRID *theGrid, INT *MaxListLen);
 INT                     ResetGetBoundaryNeighbourVectors (void);
-INT                     GetBoundaryNeighbourVectors             (INT dt, INT obj, INT *cnt, VECTOR *VecList[], INT *end);
+INT                     GetBoundaryNeighbourVectors             (INT dt, INT obj, INT *cnt, VECTOR *VecList[]);
 INT                     FinishBoundaryNeighbourVectors  (void);
 INT             GetElementInfoFromSideVector    (const VECTOR *theVector, ELEMENT **Elements, INT *Sides);
 #ifdef ModelP

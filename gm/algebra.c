@@ -260,7 +260,7 @@ const BV_DESC_FORMAT three_level_bvdf =
 
 /* for LexOrderVectorsInGrid */
 static const INT *Order,*Sign;
-static INT SkipV;
+static INT SkipV,SignRad;
 static DOUBLE InvMeshSize;
 
 REP_ERR_FILE;
@@ -2303,20 +2303,21 @@ INT ResetGetBoundaryNeighbourVectors (void)
    D*/
 /****************************************************************************/
 
-INT GetBoundaryNeighbourVectors (INT dt, INT obj, INT *cnt, VECTOR *VecList[], INT *end)
+INT GetBoundaryNeighbourVectors (INT dt, INT obj, INT *cnt, VECTOR *VecList[])
 {
   VECTOR *vec;
 
   *cnt = 0;
-  *end = NO;
 
   if (GBNV_list==NULL)
     REP_ERR_RETURN(1);
 
-  vec = GBNV_list[GBNV_curr];
-
-  if (!(BITWISE_TYPE(VTYPE(vec)) & dt))
-    /* no further checks: nothing to do */
+  /* find next center vec matching data type */
+  for (vec=GBNV_list[GBNV_curr]; GBNV_curr<3*GBNV_n; GBNV_curr+=3, vec=GBNV_list[GBNV_curr])
+    if (BITWISE_TYPE(VTYPE(vec)) & dt)
+      break;
+  if (GBNV_curr>=3*GBNV_n)
+    /* no (more) vector found */
     return (0);
 
   if (VOTYPE(vec)!=NODEVEC)
@@ -2329,8 +2330,6 @@ INT GetBoundaryNeighbourVectors (INT dt, INT obj, INT *cnt, VECTOR *VecList[], I
 
   /* move on to next position */
   GBNV_curr += 3;
-  if (GBNV_curr>=3*GBNV_n)
-    *end = YES;
 
   return (0);
 }
@@ -4311,6 +4310,77 @@ static INT LexCompare (VECTOR **pvec1, VECTOR **pvec2)
   }
 }
 
+static INT PolarLexCompare (VECTOR **pvec1, VECTOR **pvec2)
+{
+  DOUBLE_VECTOR pv1,pv2;
+  DOUBLE norm1,norm2,s1,s2,c1,c2;
+  DOUBLE_VECTOR polar;
+
+  PRINTDEBUG(gm,1,("%d: LexCompare %4d %4d",
+                   me,VINDEX(*pvec1),VINDEX(*pvec2)));
+
+  if (SkipV)
+  {
+    PRINTDEBUG(gm,1,(" vecskip %4d %4d\n",
+                     VECSKIP(*pvec1),VECSKIP(*pvec2)));
+    if (VECSKIP(*pvec1) && !VECSKIP(*pvec2))
+      if (SkipV==GM_PUT_AT_BEGIN)
+        return (-1);
+      else
+        return ( 1);
+
+    if (VECSKIP(*pvec2) && !VECSKIP(*pvec1))
+      if (SkipV==GM_PUT_AT_BEGIN)
+        return ( 1);
+      else
+        return (-1);
+  }
+  VectorPosition(*pvec1,pv1);
+  VectorPosition(*pvec2,pv2);
+
+  /* first check if one pos is (0,0) */
+  V_DIM_EUKLIDNORM(pv1,norm1);
+  if (fabs(norm1)<=SMALL_C)
+    return (-SignRad);
+  V_DIM_EUKLIDNORM(pv2,norm2);
+  if (fabs(norm2)<=SMALL_C)
+    return ( SignRad);
+
+  /* determine radius difference polar[0] and polar angle difference polar[1] */
+
+  /* radial difference between pv1 and pv2 */
+  polar[0] = norm1-norm2;
+
+  /* sin and cos of polar angle between pv1 and unit x-vector */
+  V_DIM_SCALE(1./norm1,pv1);
+  V_DIM_SCALE(1./norm2,pv2);
+  V_DIM_SCALAR_PRODUCT(pv1,unit_vec[1],s1);
+  V_DIM_SCALAR_PRODUCT(pv2,unit_vec[1],s2);
+  if (s1*s2>=0)
+  {
+    V_DIM_SCALAR_PRODUCT(pv1,unit_vec[0],c1);
+    V_DIM_SCALAR_PRODUCT(pv2,unit_vec[0],c2);
+    polar[1] = (c1-c2);
+    if (s1==0)
+      polar[1] *= SIGNUM(s2);
+    else
+      polar[1] *= SIGNUM(s1);
+  }
+  else
+    polar[1] = s1-s2;
+
+  if (fabs(polar[Order[DIM-1]])<=ORDERRES)
+  {
+    if (polar[Order[DIM-2]]>0.0) return (-Sign[DIM-2]);
+    else return ( Sign[DIM-2]);
+  }
+  else
+  {
+    if (polar[Order[DIM-1]]>0.0) return (-Sign[DIM-1]);
+    else return ( Sign[DIM-1]);
+  }
+}
+
 static int MatrixCompare (MATRIX **MatHandle1, MATRIX **MatHandle2)
 {
   INT IND1,IND2;
@@ -4351,7 +4421,7 @@ static int MatrixCompare (MATRIX **MatHandle1, MATRIX **MatHandle2)
    D*/
 /****************************************************************************/
 
-INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT which, INT SpecSkipVecs, INT AlsoOrderMatrices)
+INT LexOrderVectorsInGrid (GRID *theGrid, INT mode, const INT *order, const INT *sign, INT which, INT SpecSkipVecs, INT AlsoOrderMatrices)
 {
   MULTIGRID *theMG;
   VECTOR **table,*theVec;
@@ -4399,8 +4469,21 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
   Order = order;
   Sign  = sign;
   SkipV = SpecSkipVecs;
-  qsort(table,entries,sizeof(*table),
-        (int (*)(const void *, const void *))LexCompare);
+
+  if (mode==OV_POLAR)
+  {
+    if (Order[0]==0)
+      SignRad = Sign[0];
+    else
+      SignRad = Sign[1];
+    qsort(table,entries,sizeof(*table),
+          (int (*)(const void *, const void *))PolarLexCompare);
+  }
+  else
+  {
+    qsort(table,entries,sizeof(*table),
+          (int (*)(const void *, const void *))LexCompare);
+  }
 
   for (i=0; i<entries; i++)
     GRID_UNLINK_VECTOR(theGrid,table[i]);
@@ -4702,95 +4785,56 @@ static INT OrderMatrices (VECTOR *vec, INT Sense)
 
 INT ShellOrderVectors (GRID *theGrid, VECTOR *seed)
 {
-  VECTOR handle;
-  VECTOR *next_out,*last_in;
-  VECTOR *theVector,*theNbVector,*succVector,*predVector;
-  MATRIX *theMatrix;
-  INT i,index,found;
+  FIFO myfifo;
+  void *buffer;
+  VECTOR **vlist;
+  VECTOR *theV;
+  MATRIX *theM;
+  HEAP *theHeap=MGHEAP(MYMG(theGrid));
+  INT i,n;
 
-  /****************************************************************************/
-  /*	init																	*/
-  /****************************************************************************/
+  /* count vectors */
+  n = 0;
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    n++;
 
-  /* init VCUSED */
-  found = FALSE;
-  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
-  {
-    SETVCUSED(theVector,0);
-    if (theVector==seed) found = TRUE;
-  }
-  if (!found)
-    return (1);
+  if (n == 0)
+    return(0);
 
-  /* in the sequel we use (and therefore destroy) the PREDVC-list for book keeping */
-
-  /* init pointers and push seed */
-  next_out = last_in = &handle;
-  PREDVC(last_in) = seed;
-  last_in = seed;
+  /* find new ordering */
+  MarkTmpMem(theHeap);
+  buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
+  vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
+  fifo_init(&myfifo,buffer,sizeof(VECTOR*)*n);
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    SETVCUSED(theV,0);
+  fifo_in(&myfifo,(void *)seed);
   SETVCUSED(seed,1);
-  PREDVC(last_in) = NULL;
-  VINDEX(seed) = index = 1;
-
-  for (next_out=PREDVC(next_out); next_out!=NULL; next_out=PREDVC(next_out))
+  i = 0;
+  while(!fifo_empty(&myfifo))
   {
+    theV = (VECTOR *)fifo_out(&myfifo);
+    vlist[i++] = theV;
+
                 #ifdef __TWODIM__
-    OrderMatrices(next_out,MATHPOS);
+    OrderMatrices(theV,MATHPOS);
                 #endif
 
-    /* push neighbours */
-    for (theMatrix=MNEXT(VSTART(next_out)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
-    {
-      if (CEXTRA(MMYCON(theMatrix))) continue;
-
-      theNbVector = MDEST(theMatrix);
-
-      if (VCUSED(theNbVector)) continue;
-
-      PREDVC(last_in) = theNbVector;
-      last_in = theNbVector;
-      PREDVC(last_in) = NULL;
-      SETVCUSED(theNbVector,1);
-      VINDEX(theNbVector) = ++index;
-    }
+    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+      if (!CEXTRA(MMYCON(theM)))
+        if (!VCUSED(MDEST(theM)))
+        {
+          fifo_in(&myfifo,(void *)MDEST(theM));
+          SETVCUSED(MDEST(theM),1);
+        }
   }
+  assert(i==n);
 
-  /* insert list one-by-one to LASTVECTOR list of grid */
-  LASTVECTOR(theGrid) = NULL;
-  for (theVector=PREDVC(&handle); theVector!=NULL; theVector=predVector)
-  {
-    predVector                      = PREDVC(theVector);
-    PREDVC(theVector)   = LASTVECTOR(theGrid);
-    LASTVECTOR(theGrid) = theVector;
-  }
+  /* reorder vector list in grid */
+  for (i=0; i<n; i++) GRID_UNLINK_VECTOR(theGrid,vlist[i]);
+  for (i=0; i<n; i++) GRID_LINK_VECTOR(theGrid,vlist[i],PrioMaster);
 
-  /* construct SUCCVC list */
-  succVector = NULL;
-  for (theVector=LASTVECTOR(theGrid); theVector!=NULL; theVector=PREDVC(theVector))
-  {
-    SUCCVC(theVector) = succVector;
-    succVector = theVector;
-  }
-  SFIRSTVECTOR(theGrid) = succVector;
-  PREDVC(succVector)   = NULL;
-
-  /* check # members of succ list */
-  i=0;
-  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector)) i++;
-  if (NVEC(theGrid) != i)
-  {
-    UserWrite("vectorstructure corrupted\n");
-    RETURN (1);
-  }
-
-  /* check # members of pred list */
-  i=0;
-  for (theVector=LASTVECTOR(theGrid); theVector!= NULL; theVector=PREDVC(theVector)) i++;
-  if (NVEC(theGrid) != i)
-  {
-    UserWrite("vectorstructure corrupted\n");
-    RETURN (1);
-  }
+  ReleaseTmpMem(theHeap);
 
   return (0);
 }
@@ -4917,6 +4961,8 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   INT nFIRST,nCUT,nLAST;
   INT up, down;
   HEAP *theHeap;
+
+  ASSERT(1);       /* see TODO below */
 
   /********************************************************************/
   /*	init				                                                                                        */
@@ -5130,6 +5176,8 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   UserWriteF("# %d cycles: %d cutted from %d\n",(int)cycle,(int)nCutTot,(int)NVEC(theGrid));
   a = POW((DOUBLE)NVEC(theGrid),(DOUBLE)(DIM-1)/(DOUBLE)DIM);     a = (DOUBLE)nCutTot/a;
   UserWriteF("# corr. to %6.2f hyp. planes\n",(float)a);
+
+  /* TODO: use dlmgr macros for lists after streamwise ordering */
 
   /* insert FIRST list one-by-one to LASTVECTOR list of grid */
   LASTVECTOR(theGrid) = NULL;
@@ -5532,6 +5580,8 @@ static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT verboselevel)
   INT bvn;
   char gen_label[3];
 
+  ASSERT(1);       /* see TODO below */
+
   gen_label[GM_GEN_FIRST] = 'F';
   gen_label[GM_GEN_LAST]  = 'L';
   gen_label[GM_GEN_CUT]   = 'C';
@@ -5852,6 +5902,8 @@ static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT verboselevel)
     nCutTot += nCUT;
 
   } while (nCUT>0);
+
+  /* TODO: use dlmgr macros for lists after streamwise ordering */
 
   /* insert FIRST list one-by-one to LASTVECTOR list of grid */
   LASTVECTOR(theGrid) = NULL;
