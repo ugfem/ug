@@ -79,6 +79,7 @@ INT InitFAMG (void);
 
 #include "famg_uginterface.h"
 #include "famg_misc.h"
+#include "famg_heap.h"
 
 #include "famg_grid.h" // nur fuer printm fuers debuggen. WEG!
 
@@ -1375,6 +1376,7 @@ static INT FAMGIterPostProcess (NP_ITER *theNP, INT level,
 	delete famg_interface.matrix;
 	
 	mg = NP_MG(theNP);
+	FAMGFreeHeap();
     ReleaseTmpMem(MGHEAP(mg),np->famg_mark_key); /* mark in PreProcess */
 
     return (0);
@@ -1486,14 +1488,16 @@ static INT FAMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 								   MATDATA_DESC *A, INT *result)
 {
 	MULTIGRID *theMG;
-	NP_AMG_TRANSFER *np;
+	NP_FAMG_TRANSFER *np;
 	INT level;
 
 	result[0]=0;
-	np = (NP_AMG_TRANSFER *) theNP;
+	np = (NP_FAMG_TRANSFER *) theNP;
 	theMG = NP_MG(theNP);
 
-	// release memory. TODO
+    ReleaseTmpMem(MGHEAP(theMG),np->famg_mark_key); /* mark in PreProcess */
+	FAMGFreeHeap();
+	// all memory released? TODO
 	
 	return 0;
 }

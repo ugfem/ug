@@ -33,14 +33,16 @@
 class FAMGHeap
 {
 public:
+  FAMGHeap(unsigned long );
+  ~FAMGHeap();
+
   void *GetMem(unsigned long, int);
   int Mark(int);
   int Release(int);
-  FAMGHeap(unsigned long );
-  ~FAMGHeap();
+  void PrintInfo();
 private:
   void *buffer;
-  unsigned long top, bottom;
+  unsigned long top, bottom, info_max_bottom, info_max_top, info_min_free, info_size;
   int ntop, nbottom;
   unsigned long topstack[FAMGMAXSTACK], bottomstack[FAMGMAXSTACK];
 };
@@ -59,6 +61,7 @@ private:
 /****************************************************************************/
 void *FAMGGetMem(unsigned long size, int mode);
 void FAMGSetHeap(FAMGHeap *ptr);
+void FAMGFreeHeap();
 FAMGHeap *FAMGGetHeap();
 int FAMGMarkHeap(int mode);
 int FAMGReleaseHeap(int mode);

@@ -858,6 +858,7 @@ int FAMGNode::Eliminate(FAMGGrid *grid)
     graph->UpdateNSons(NULL,palist,grid);
     graph->ClearPaList(palist);
     palist = NULL;
+	assert(minpl!=NULL);
     minpl->MarkParents(grid);
 
     if(grid->SaveCoeffs(GetVec(),minpl->GetNp(),minpl->GetPaPtr(),minpl->GetCoeff(),minpl->GetCoefft())) return 1;
