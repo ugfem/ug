@@ -1,5 +1,6 @@
-// -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
-// vi: set et ts=4 sw=2 sts=2:
+// NOTE: The current revision of this file was left untouched when the DUNE source files were reindented!
+// NOTE: It contained invalid syntax that could not be processed by uncrustify.
+
 /****************************************************************************/
 /*																			*/
 /* File:	  gridcons.c													*/
@@ -7,7 +8,7 @@
 /* Purpose:   basic functions for managing consistency of distributed grids */
 /*																			*/
 /* Author:	  Stefan Lang, Klaus Birken										*/
-/*			  Institut fuer Computeranwendungen III                                                 */
+/*			  Institut fuer Computeranwendungen III 						*/
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70550 Stuttgart												*/
@@ -15,9 +16,9 @@
 /*			  phone: 0049-(0)711-685-7003									*/
 /*			  fax  : 0049-(0)711-685-7000									*/
 /*																			*/
-/* History:   960906 kb  begin                                                                                          */
+/* History:   960906 kb  begin 												*/
 /*																			*/
-/* Remarks:                                                                                                                             */
+/* Remarks: 																*/
 /*																			*/
 /****************************************************************************/
 
@@ -27,7 +28,7 @@
 /*																			*/
 /* include files															*/
 /*			  system include files											*/
-/*			  application include files                                                                     */
+/*			  application include files 									*/
 /*																			*/
 /****************************************************************************/
 
@@ -55,20 +56,20 @@
 /* macros for merge new priority with objects existing one */
 /* valid only for all types of ghost priorities            */
 #define PRIO_CALC(e) ((USED(e) && THEFLAG(e)) ? PrioVHGhost :             \
-                      (THEFLAG(e)) ? PrioVGhost : (USED(e)) ?           \
-                      PrioHGhost : (assert(0),0))
+						(THEFLAG(e)) ? PrioVGhost : (USED(e)) ?           \
+						PrioHGhost : (assert(0),0))
 
 /* macros for setting object priorities with related objects */
 /* macros for setting object priorities with related objects */
 #define NODE_PRIORITY_SET(g,n,prio)                                          \
-  {                                                                    \
-    /* set priorities of node */                                     \
-    SETPRIO(n,prio);                                                 \
+		{                                                                    \
+			/* set priorities of node */                                     \
+			SETPRIO(n,prio);                                                 \
                                                                              \
-    if (VEC_DEF_IN_OBJ_OF_GRID(g,NODEVEC))                           \
-      if (NVECTOR(n) != NULL)                                      \
-        SETPRIO(NVECTOR(n),prio);                                \
-  }
+			if (VEC_DEF_IN_OBJ_OF_GRID(g,NODEVEC))                           \
+			    if (NVECTOR(n) != NULL)                                      \
+				    SETPRIO(NVECTOR(n),prio);                                \
+		}
 
 #ifdef __TWODIM__
 #define PRIO_SET_EDGE(e,prio)
@@ -78,23 +79,23 @@
 #endif
 
 #define EDGE_PRIORITY_SET(g,e,prio)                                          \
-  {                                                                    \
-    /* set priorities of node for 3D */                              \
-    PRIO_SET_EDGE(e,prio)                                            \
+		{                                                                    \
+			/* set priorities of node for 3D */                              \
+			PRIO_SET_EDGE(e,prio)                                            \
                                                                              \
-    /* set priority of edge vector */                                \
-    if (VEC_DEF_IN_OBJ_OF_GRID(g,EDGEVEC))                           \
-      if (EDVECTOR(e) != NULL)                                     \
-        SETPRIO(EDVECTOR(e),prio);                               \
-  }
+			/* set priority of edge vector */                                \
+			if (VEC_DEF_IN_OBJ_OF_GRID(g,EDGEVEC))                           \
+			    if (EDVECTOR(e) != NULL)                                     \
+				    SETPRIO(EDVECTOR(e),prio);                               \
+		}
 
 #define CHECK_OBJECT_PRIO(o,prio,master,ghost,id,s)                          \
-  if (USED(o)==1 && ! master (o))                                          \
-    UserWriteF("MASTER %s=" id ## _FMTX " has WRONG prio=%d\n",      \
-               s, id ## _PRTX(o),prio(o));                                  \
-  if (USED( o )==0 && ! ghost ( o ))                                       \
-    UserWriteF("GHOST %s=" id ## _FMTX " has WRONG prio=%d\n",       \
-               s, id ## _PRTX( o ),prio(o));
+	if (USED(o)==1 && ! master (o))                                          \
+			UserWriteF("MASTER %s=" id ## _FMTX " has WRONG prio=%d\n",      \
+				s, id ## _PRTX(o),prio(o));                                  \
+	if (USED( o )==0 && ! ghost ( o ))                                       \
+			UserWriteF("GHOST %s=" id ## _FMTX " has WRONG prio=%d\n",       \
+				s, id ## _PRTX( o ),prio(o));
 
 
 /****************************************************************************/
@@ -131,691 +132,717 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
 /*
-        for all PrioMaster-nodes with remote copies, set exactly one
-        to PrioMaster, the other copies to PrioBorder in order to establish
-        the BorderNodeIF. this is done for one grid.
- */
+	for all PrioMaster-nodes with remote copies, set exactly one
+	to PrioMaster, the other copies to PrioBorder in order to establish
+	the BorderNodeIF. this is done for one grid.
+*/
 
 
 static int ComputeNodeBorderPrios (DDD_OBJ obj)
 {
-  NODE    *node  = (NODE *)obj;
-  int     *plist = DDD_InfoProcList(PARHDR(node));
-  int i, min_proc = procs;
+	NODE    *node  = (NODE *)obj;
+	int     *plist = DDD_InfoProcList(PARHDR(node));
+	int      i, min_proc = procs;
 
-  /*
-          minimum processor number will get Master-node,
-          all others get Border-nodes
-   */
-  for(i=0; plist[i]>=0; i+=2)
-  {
-    if (plist[i+1]==PrioMaster && plist[i]<min_proc)
-      min_proc = plist[i];
-  }
+	/*
+		minimum processor number will get Master-node,
+		all others get Border-nodes
+	*/
+	for(i=0; plist[i]>=0; i+=2)
+	{
+		if (plist[i+1]==PrioMaster && plist[i]<min_proc)
+			min_proc = plist[i];
+	}
 
-  if (min_proc==procs)
-    return(0);
+	if (min_proc==procs)
+		return(0);
 
-  if (me!=min_proc)
-    SETPRIO(node, PrioBorder);
+	if (me!=min_proc)
+		SETPRIO(node, PrioBorder);
 }
 
 static int ComputeVectorBorderPrios (DDD_OBJ obj)
 {
-  VECTOR  *vector  = (VECTOR *)obj;
-  int     *plist = DDD_InfoProcList(PARHDR(vector));
-  int i, min_proc = procs;
+	VECTOR  *vector  = (VECTOR *)obj;
+	int     *plist = DDD_InfoProcList(PARHDR(vector));
+	int      i, min_proc = procs;
 
-  /*
-          minimum processor number will get Master-node,
-          all others get Border-nodes
-   */
-  for(i=0; plist[i]>=0; i+=2)
-  {
-    if (plist[i+1]==PrioMaster && plist[i]<min_proc)
-      min_proc = plist[i];
-  }
+	/*
+		minimum processor number will get Master-node,
+		all others get Border-nodes
+	*/
+	for(i=0; plist[i]>=0; i+=2)
+	{
+		if (plist[i+1]==PrioMaster && plist[i]<min_proc)
+			min_proc = plist[i];
+	}
 
-  if (min_proc==procs)
-    return(0);
+	if (min_proc==procs)
+		return(0);
 
-  if (me!=min_proc)
-    SETPRIO(vector, PrioBorder);
+	if (me!=min_proc)
+		SETPRIO(vector, PrioBorder);
 }
 
 #ifdef __THREEDIM__
 static int ComputeEdgeBorderPrios (DDD_OBJ obj)
 {
-  EDGE    *edge  =        (EDGE *)obj;
-  int             *plist =        DDD_InfoProcList(PARHDR(edge));
-  int i, min_proc     = procs;
+	EDGE	*edge  =	(EDGE *)obj;
+	int		*plist =	DDD_InfoProcList(PARHDR(edge));
+	int		i, min_proc	= procs;
 
-  /*
-          minimum processor number will get Master-node,
-          all others get Border-nodes
-   */
-  for(i=0; plist[i]>=0; i+=2)
-  {
-    if (plist[i+1]==PrioMaster && plist[i]<min_proc)
-      min_proc = plist[i];
-  }
+	/*
+		minimum processor number will get Master-node,
+		all others get Border-nodes
+	*/
+	for(i=0; plist[i]>=0; i+=2)
+	{
+		if (plist[i+1]==PrioMaster && plist[i]<min_proc)
+			min_proc = plist[i];
+	}
 
-  if (min_proc==procs)
-    return(0);
+	if (min_proc==procs)
+		return(0);
 
-  if (me!=min_proc)
-    SETPRIO(edge, PrioBorder);
+	if (me!=min_proc)
+		SETPRIO(edge, PrioBorder);
 }
 #endif
 
 void SetGhostObjectPriorities (GRID *theGrid)
 {
-  ELEMENT *theElement,*theNeighbor,*SonList[MAX_SONS];
-  NODE    *theNode;
-  EDGE    *theEdge;
-  VECTOR  *theVector;
-  INT i,prio,*proclist,hghost,vghost;
+	ELEMENT *theElement,*theNeighbor,*SonList[MAX_SONS];
+	NODE	*theNode;
+	EDGE	*theEdge;
+	VECTOR	*theVector;
+	INT 	i,prio,*proclist,hghost,vghost;
 
-  /* reset USED flag for objects of ghostelements */
-  for (theElement=PFIRSTELEMENT(theGrid);
-       theElement!=NULL;
-       theElement=SUCCE(theElement))
-  {
-    SETUSED(theElement,0); SETTHEFLAG(theElement,0);
-    for (i=0; i<EDGES_OF_ELEM(theElement); i++)
-    {
-      theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
-                        CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
-      ASSERT(theEdge != NULL);
-      SETUSED(theEdge,0); SETTHEFLAG(theEdge,0);
-    }
-    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
-      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-      {
-        theVector = SVECTOR(theElement,i);
-        SETUSED(theVector,0); SETTHEFLAG(theVector,0);
-      }
-  }
-  /* to reset also nodes which are at corners of the boundary */
-  /* reset nodes through the node list                        */
-  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-  {
-    SETUSED(theNode,0); SETTHEFLAG(theNode,0);
-    SETMODIFIED(theNode,0);
-  }
+	/* reset USED flag for objects of ghostelements */ 
+	for (theElement=PFIRSTELEMENT(theGrid);
+		 theElement!=NULL;
+		 theElement=SUCCE(theElement))
+	{
+		SETUSED(theElement,0); SETTHEFLAG(theElement,0);
+		for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+		{
+			theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
+							  CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
+			ASSERT(theEdge != NULL);
+			SETUSED(theEdge,0); SETTHEFLAG(theEdge,0);
+		}
+		if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+			{
+				theVector = SVECTOR(theElement,i);
+				SETUSED(theVector,0); SETTHEFLAG(theVector,0);
+			}
+	}
+	/* to reset also nodes which are at corners of the boundary */
+	/* reset nodes through the node list                        */
+	for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+	{
+		SETUSED(theNode,0); SETTHEFLAG(theNode,0);
+		SETMODIFIED(theNode,0);
+	}
 
-  /* set FLAG for objects of vertical overlap */
-  for (theElement=PFIRSTELEMENT(theGrid);
-       theElement!=NULL;
-       theElement=SUCCE(theElement))
-  {
-    if (PARTITION(theElement) == me) continue;
+	/* set FLAG for objects of vertical overlap */
+	for (theElement=PFIRSTELEMENT(theGrid);
+		 theElement!=NULL;
+		 theElement=SUCCE(theElement))
+	{
+		if (PARTITION(theElement) == me) continue;
 
-    /* check for horizontal ghost */
-    hghost = 0;
-    for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-    {
-      theNeighbor = NBELEM(theElement,i);
-      if (theNeighbor == NULL) continue;
+		/* check for horizontal ghost */
+		hghost = 0;
+		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+		{
+			theNeighbor = NBELEM(theElement,i);
+			if (theNeighbor == NULL) continue;
 
-      if (PARTITION(theNeighbor) == me)
-      {
-        hghost = 1;
-        break;
-      }
-    }
+			if (PARTITION(theNeighbor) == me)
+			{
+				hghost = 1;
+				break;
+			}
+		}
 
-    /* check for vertical ghost */
-    vghost = 0;
-    GetAllSons(theElement,SonList);
-    for (i=0; SonList[i]!=NULL; i++)
-    {
-      if (PARTITION(SonList[i]) == me)
-      {
-        vghost = 1;
-        break;
-      }
-    }
+		/* check for vertical ghost */
+		vghost = 0;
+		GetAllSons(theElement,SonList);
+		for (i=0; SonList[i]!=NULL; i++)
+		{
+			if (PARTITION(SonList[i]) == me)
+			{
+				vghost = 1;
+				break;
+			}
+		}
 
-    /* one or both of vghost and hghost should be true here   */
-    /* except for elements which will be disposed during Xfer */
+		/* one or both of vghost and hghost should be true here   */
+		/* except for elements which will be disposed during Xfer */
 
-    if (vghost) SETTHEFLAG(theElement,1);
-    if (hghost) SETUSED(theElement,1);
-    for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-    {
-      theNode = CORNER(theElement,i);
-      if (vghost) SETTHEFLAG(theNode,1);
-      if (hghost) SETUSED(theNode,1);
-    }
-    for (i=0; i<EDGES_OF_ELEM(theElement); i++)
-    {
-      theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
-                        CORNER_OF_EDGE_PTR(theElement,i,1));
-      ASSERT(theEdge != NULL);
-      if (vghost) SETTHEFLAG(theEdge,1);
-      if (hghost) SETUSED(theEdge,1);
-    }
-    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
-      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-      {
-        theVector = SVECTOR(theElement,i);
-        if (vghost) SETTHEFLAG(theVector,1);
-        if (hghost) SETUSED(theVector,1);
-      }
-  }
+		if (vghost) SETTHEFLAG(theElement,1);
+		if (hghost) SETUSED(theElement,1);
+		for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+		{
+			theNode = CORNER(theElement,i);
+			if (vghost) SETTHEFLAG(theNode,1);
+			if (hghost) SETUSED(theNode,1);
+		}
+		for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+		{
+			theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
+							  CORNER_OF_EDGE_PTR(theElement,i,1));
+			ASSERT(theEdge != NULL);
+			if (vghost) SETTHEFLAG(theEdge,1);
+			if (hghost) SETUSED(theEdge,1);
+		}
+		if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+			{
+				theVector = SVECTOR(theElement,i);
+				if (vghost) SETTHEFLAG(theVector,1);
+				if (hghost) SETUSED(theVector,1);
+			}
+	}
 
-  /* set USED flag for objects of master elements */
-  /* reset FLAG for objects of master elements  */
-  for (theElement=PFIRSTELEMENT(theGrid);
-       theElement!=NULL;
-       theElement=SUCCE(theElement))
-  {
-    if (PARTITION(theElement) != me) continue;
+	/* set USED flag for objects of master elements */
+	/* reset FLAG for objects of master elements  */
+	for (theElement=PFIRSTELEMENT(theGrid);
+		 theElement!=NULL;
+		 theElement=SUCCE(theElement))
+	{
+		if (PARTITION(theElement) != me) continue;
 
-    SETUSED(theElement,0); SETTHEFLAG(theElement,0);
-    for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-    {
-      theNode = CORNER(theElement,i);
-      SETUSED(theNode,0); SETTHEFLAG(theNode,0);
-      SETMODIFIED(theNode,1);
-    }
-    for (i=0; i<EDGES_OF_ELEM(theElement); i++)
-    {
-      theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
-                        CORNER_OF_EDGE_PTR(theElement,i,1));
-      ASSERT(theEdge != NULL);
-      SETUSED(theEdge,0); SETTHEFLAG(theEdge,0);
-    }
-    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
-      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-      {
-        theVector = SVECTOR(theElement,i);
-        SETUSED(theVector,0); SETTHEFLAG(theVector,0);
-      }
-  }
+		SETUSED(theElement,0); SETTHEFLAG(theElement,0);
+		for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+		{
+			theNode = CORNER(theElement,i);
+			SETUSED(theNode,0); SETTHEFLAG(theNode,0);
+			SETMODIFIED(theNode,1);
+		}
+		for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+		{
+			theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
+							  CORNER_OF_EDGE_PTR(theElement,i,1));
+			ASSERT(theEdge != NULL);
+			SETUSED(theEdge,0); SETTHEFLAG(theEdge,0);
+		}
+		if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+			{
+				theVector = SVECTOR(theElement,i);
+				SETUSED(theVector,0); SETTHEFLAG(theVector,0);
+			}
+	}
 
-  /* set object priorities for ghostelements */
-  for (theElement=PFIRSTELEMENT(theGrid);
-       theElement!=NULL;
-       theElement=SUCCE(theElement))
-  {
-    if (PARTITION(theElement) == me) continue;
+	/* set object priorities for ghostelements */
+	for (theElement=PFIRSTELEMENT(theGrid);
+		 theElement!=NULL;
+		 theElement=SUCCE(theElement))
+	{
+		if (PARTITION(theElement) == me) continue;
 
-    if (USED(theElement) || THEFLAG(theElement))
-    {
-      prio = PRIO_CALC(theElement);
-      PRINTDEBUG(gm,1,("SetGhostObjectPriorities(): e=" EID_FMTX " new prio=%d\n",
-                       EID_PRTX(theElement),prio))
-      SETEPRIO(theElement,prio);
+		if (USED(theElement) || THEFLAG(theElement))
+		{
+			prio = PRIO_CALC(theElement);
+			PRINTDEBUG(gm,1,("SetGhostObjectPriorities(): e=" EID_FMTX " new prio=%d\n",
+				EID_PRTX(theElement),prio))
+			SETEPRIO(theElement,prio);
 
-      if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
-      {
-        theVector = EVECTOR(theElement);
-        SETPRIO(theVector,prio);
-      }
-    }
+			if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
+			{
+				theVector = EVECTOR(theElement);
+				SETPRIO(theVector,prio);
+			}
+		}
 
-    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC) || DIM==3)
-    {
-      /* set edge priorities */
-      for (i=0; i<EDGES_OF_ELEM(theElement); i++)
-      {
+		if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC) || DIM==3)
+		{
+			/* set edge priorities */
+			for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+			{
 
-        theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
-                          CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
-        ASSERT(theEdge != NULL);
+				theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
+								  CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
+				ASSERT(theEdge != NULL);
 
-        if (USED(theEdge) || THEFLAG(theEdge))
-        {
-          PRINTDEBUG(dddif,3,(PFMT " dddif_SetGhostObjectPriorities():"
-                              " downgrade edge=" EDID_FMTX " from=%d to PrioHGhost\n",
-                              me,EDID_PRTX(theEdge),prio));
+				if (USED(theEdge) || THEFLAG(theEdge))
+				{
+					PRINTDEBUG(dddif,3,(PFMT " dddif_SetGhostObjectPriorities():"
+						" downgrade edge=" EDID_FMTX " from=%d to PrioHGhost\n",
+						me,EDID_PRTX(theEdge),prio)); 
 
-          EDGE_PRIORITY_SET(theGrid,theEdge,PRIO_CALC(theEdge));
-        }
-      }
+					EDGE_PRIORITY_SET(theGrid,theEdge,PRIO_CALC(theEdge));
+				}
+			}
 
-                        #ifdef __THREEDIM__
-      /* if one(all) of the side nodes is (are) a hghost (vghost) node   */
-      /* then its a hghost (vghost) side vector                          */
-      if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
-        for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-        {
-          if (USED(theVector) || THEFLAG(theVector))
-            SETPRIO(theVector,PRIO_CALC(theVector));
-        }
-                        #endif
-    }
-  }
-  /* to set also nodes which are at corners of the boundary   */
-  /* set them through the node list                           */
-  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-  {
-    /* check if its a master node */
-    if (USED(theNode) || THEFLAG(theNode))
-    {
-      PRINTDEBUG(dddif,3,(PFMT " dddif_SetGhostObjectPriorities():"
-                          " downgrade node=" ID_FMTX " from=%d to PrioHGhost\n",
-                          me,ID_PRTX(theNode),prio));
+			#ifdef __THREEDIM__
+			/* if one(all) of the side nodes is (are) a hghost (vghost) node   */
+			/* then its a hghost (vghost) side vector                          */
+			if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+				for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+				{
+					if (USED(theVector) || THEFLAG(theVector))
+						SETPRIO(theVector,PRIO_CALC(theVector));
+				}
+			#endif
+		}
+	}
+	/* to set also nodes which are at corners of the boundary   */
+	/* set them through the node list                           */
+	for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+	{
+		/* check if its a master node */
+		if (USED(theNode) || THEFLAG(theNode))
+		{
+			PRINTDEBUG(dddif,3,(PFMT " dddif_SetGhostObjectPriorities():"
+				" downgrade node=" ID_FMTX " from=%d to PrioHGhost\n",
+				me,ID_PRTX(theNode),prio)); 
 
-      /* set node priorities of node to ghost */
-      NODE_PRIORITY_SET(theGrid,theNode,PRIO_CALC(theNode))
-    }
-    else if (MODIFIED(theNode) == 0)
-    {
-      /* this is a node of the boundary without connection to master elements */
-      NODE_PRIORITY_SET(theGrid,theNode,PrioHGhost)
-    }
-  }
+			/* set node priorities of node to ghost */
+			NODE_PRIORITY_SET(theGrid,theNode,PRIO_CALC(theNode))
+		}
+		else if (MODIFIED(theNode) == 0)
+		{
+			/* this is a node of the boundary without connection to master elements */
+			NODE_PRIORITY_SET(theGrid,theNode,PrioHGhost)
+		}
+	}
 
 }
 
 
 INT SetBorderPriorities (GRID *theGrid)
 {
-  DDD_IFAExecLocal(BorderNodeSymmIF,GRID_ATTR(theGrid),
-                   ComputeNodeBorderPrios);
+	DDD_IFAExecLocal(BorderNodeSymmIF,GRID_ATTR(theGrid),
+		ComputeNodeBorderPrios);
 
-  DDD_IFAExecLocal(BorderVectorSymmIF,GRID_ATTR(theGrid),
-                   ComputeVectorBorderPrios);
+	DDD_IFAExecLocal(BorderVectorSymmIF,GRID_ATTR(theGrid),
+		ComputeVectorBorderPrios);
 
 #ifdef __THREEDIM__
-  DDD_IFAExecLocal(BorderEdgeSymmIF,GRID_ATTR(theGrid),
-                   ComputeEdgeBorderPrios);
+	DDD_IFAExecLocal(BorderEdgeSymmIF,GRID_ATTR(theGrid),
+		ComputeEdgeBorderPrios);
 #endif
 
-  return(GM_OK);
+	return(GM_OK);
 }
 
 INT SetGridBorderPriorities (GRID *theGrid)
 {
-  /* set border priorities on next higher level */
-  if (SetBorderPriorities(UPGRID(theGrid)) != GM_OK) return(GM_FATAL);
+	/* set border priorities on next higher level */
+	if (SetBorderPriorities(UPGRID(theGrid)) != GM_OK) return(GM_FATAL);
 
-  return(GM_OK);
+	return(GM_OK);
 }
 
 void ConstructConsistentGrid (GRID *theGrid)
 {
-  INT i,j,k,l,m,o;
-  DOUBLE fac,*local;
-  ELEMENT *theElement,*theFather,*theNb;
-  NODE    *theNode;
-  EDGE    *theEdge;
-  VERTEX  *theVertex;
+	INT		i,j,k,l,m,o;
+	DOUBLE  fac,*local;
+	ELEMENT *theElement,*theFather,*theNb;
+	NODE	*theNode;
+	EDGE	*theEdge;
+	VERTEX	*theVertex;
 
-  /* the setting of the priorities has to be done in two waves after */
-  /* completion of the grid transfer, since                          */
-  /* - decisions about vghost prio can only be done if all sons are  */
-  /*   available in SetGhostObjectPriorities()                       */
-  /* - setting of the border priorities can only be done if all      */
-  /*   ghost objects have their proper priority                      */
-  DDD_XferBegin();
-  SetGhostObjectPriorities(theGrid);
-  DDD_XferEnd();
-  DDD_XferBegin();
-  SetBorderPriorities(theGrid);
-  DDD_XferEnd();
+	/* the setting of the priorities has to be done in two waves after */
+	/* completion of the grid transfer, since                          */
+	/* - decisions about vghost prio can only be done if all sons are  */
+	/*   available in SetGhostObjectPriorities()                       */
+	/* - setting of the border priorities can only be done if all      */
+	/*   ghost objects have their proper priority                      */
+	DDD_XferBegin();
+	SetGhostObjectPriorities(theGrid);
+	DDD_XferEnd();
+	DDD_XferBegin();
+	SetBorderPriorities(theGrid);
+	DDD_XferEnd();
 
     #ifdef __TWODIM__
-  for (theVertex = PFIRSTVERTEX(theGrid); theVertex != NULL;
-       theVertex = SUCCV(theVertex))
-    if (OBJT(theVertex) == BVOBJ)
-      if (MOVED(theVertex))
-      {
-        INT n;
-        DOUBLE *x[MAX_CORNERS_OF_ELEM];
+	for (theVertex = PFIRSTVERTEX(theGrid); theVertex != NULL;
+		 theVertex = SUCCV(theVertex)) {
+	    if (VXGHOST(theVertex)) 
+		    VFATHER(theVertex) = NULL;
+		else if (OBJT(theVertex) == BVOBJ) 
+		    if (MOVED(theVertex))
+			{
+			    INT n;
+				DOUBLE *x[MAX_CORNERS_OF_ELEM];
+				
+				theElement = VFATHER(theVertex);
+				if (theElement == NULL) continue;
+				CORNER_COORDINATES(theElement,n,x);			
+				UG_GlobalToLocal(n,(const DOUBLE **)x,
+								 CVECT(theVertex),LCVECT(theVertex));
+			}
+	}
+	#endif
 
-        theElement = VFATHER(theVertex);
-        if (theElement == NULL) continue;
-        CORNER_COORDINATES(theElement,n,x);
-        UG_GlobalToLocal(n,(const DOUBLE **)x,
-                         CVECT(theVertex),LCVECT(theVertex));
-      }
+	/* reconstruct VFATHER pointers */
+	for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+	{
+		for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+		{
+			theNode = CORNER(theElement,i);
+			if (CORNERTYPE(theNode)) continue;
 
-        #endif
+			theVertex = MYVERTEX(theNode);
+			theFather = EFATHER(theElement);
 
-  /* reconstruct VFATHER pointers */
-  for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-  {
-    for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-    {
-      theNode = CORNER(theElement,i);
-      if (CORNERTYPE(theNode)) continue;
+/* this is too few for arbitrary load balancing, since 
+	VFATHER pointer may have changed (970828 s.l.)
+   			if (VFATHER(theVertex)==NULL || EPRIO(VFATHER(theVertex))==PrioHGhost)
+*/
+   			if (VFATHER(theVertex)==NULL || EPRIO(theFather)!=PrioHGhost)
+			{
+				switch (NTYPE(theNode))
+				{
+					case (MID_NODE):
+					{
+						INT             co0,co1;
 
-      theVertex = MYVERTEX(theNode);
-      theFather = EFATHER(theElement);
-
-      /* this is too few for arbitrary load balancing, since
-              VFATHER pointer may have changed (970828 s.l.)
-                              if (VFATHER(theVertex)==NULL || EPRIO(VFATHER(theVertex))==PrioHGhost)
-       */
-      if (VFATHER(theVertex)==NULL || EPRIO(theFather)!=PrioHGhost)
-      {
-        switch (NTYPE(theNode))
-        {
-        case (MID_NODE) :
-        {
-          INT co0,co1;
-
-          for (j=0; j<EDGES_OF_ELEM(theFather); j++)
-          {
-            theEdge = GetEdge(CORNER(theFather,CORNER_OF_EDGE(theFather,j,0)),
-                              CORNER(theFather,CORNER_OF_EDGE(theFather,j,1)));
-            if (MIDNODE(theEdge) == theNode) break;
-          }
-          /* here should be an assertion, but not in each situation the
-             midnode pointer is set (970829 s.l.)
-                                                          ASSERT(j<EDGES_OF_ELEM(theFather));
-           */
-          if (j>=EDGES_OF_ELEM(theFather))
-          {
-            PRINTDEBUG(dddif,0,("ConstructConsitentGrid(): WARN  vertex="
-                                VID_FMTX " recalculation of VFATHER impossible\n",
-                                VID_PRTX(theVertex)));
-            break;
-          }
+						for (j=0; j<EDGES_OF_ELEM(theFather); j++)
+						{
+							theEdge = GetEdge(CORNER(theFather,CORNER_OF_EDGE(theFather,j,0)),
+							                  CORNER(theFather,CORNER_OF_EDGE(theFather,j,1)));
+							if (MIDNODE(theEdge) == theNode) break;
+						}
+/* here should be an assertion, but not in each situation the 
+   midnode pointer is set (970829 s.l.)
+						ASSERT(j<EDGES_OF_ELEM(theFather));
+*/
+						if (j>=EDGES_OF_ELEM(theFather))
+						{
+						  for (j=0; j<EDGES_OF_ELEM(theFather); j++)
+							{
+							  theEdge = GetEdge(CORNER(theFather,CORNER_OF_EDGE(theFather,j,0)),
+												CORNER(theFather,CORNER_OF_EDGE(theFather,j,1)));
+							  if (theEdge->midnode != NULL)
+							  PRINTDEBUG(dddif,0,
+										 (PFMT " ConstructConsistentGrid(): elem=" EID_FMTX 
+										  " i=%d n1=" ID_FMTX " n2=" ID_FMTX " midnode= " ID_FMTX  "\n",
+										  me,theFather,EID_PRTX(theFather),j,
+										  ID_PRTX(NBNODE(LINK0(theEdge))),
+										  ID_PRTX(NBNODE(LINK1(theEdge))),
+										  ID_PRTX(theEdge->midnode)))
+							}
 
 
-          /* reconstruct local coordinates of vertex */
-          co0 = CORNER_OF_EDGE(theFather,j,0);
-          co1 = CORNER_OF_EDGE(theFather,j,1);
 
-          /* local coordinates have to be local towards pe */
-          V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theFather,co0),
-                        0.5, LOCAL_COORD_OF_ELEM(theFather,co1),
-                        LCVECT(theVertex));
-          SETONEDGE(theVertex,j);
-          break;
-        }
+							PRINTDEBUG(dddif,0,
+									   ("ConstructConsistentGrid(): WARN "
+										" theNode= " ID_FMTX 
+										" vertex= " VID_FMTX 
+										" recalculation of VFATHER impossible\n",
+										ID_PRTX(NBNODE(LINK0(theEdge))),
+										VID_PRTX(theVertex)));
+						  break;
+						}
 
-                                        #ifdef __THREEDIM__
-        case (SIDE_NODE) :
-          /* always compute new coords for this case! */
-          k =  GetSideIDFromScratch(theElement,theNode);
-          ASSERT(k < SIDES_OF_ELEM(theFather));
+							
+						/* reconstruct local coordinates of vertex */
+						co0 = CORNER_OF_EDGE(theFather,j,0);
+						co1 = CORNER_OF_EDGE(theFather,j,1);
 
-          SETONSIDE(theVertex,k);
+						/* local coordinates have to be local towards pe */
 
-          m = CORNERS_OF_SIDE(theFather,k);
-          local = LCVECT(theVertex);
-          fac = 1.0 / m;
-          V_DIM_CLEAR(local);
-          for (o=0; o<m; o++)
-          {
-            l = CORNER_OF_SIDE(theFather,k,o);
-            V_DIM_LINCOMB(1.0,local,1.0,
-                          LOCAL_COORD_OF_ELEM(theFather,l),local);
-          }
-          V_DIM_SCALE(fac,local);
 
-          theNb = NBELEM(theFather,k);
-          if (theNb != NULL)
-          {
-            for (j=0; j<SIDES_OF_ELEM(theNb); j++)
-            {
-              if (NBELEM(theNb,j) == theFather) break;
-            }
-            ASSERT(j < SIDES_OF_ELEM(theNb));
-            SETONNBSIDE(theVertex,j);
-          }
-          else SETONNBSIDE(theVertex,MAX_SIDES_OF_ELEM);
-          break;
+						V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theFather,co0),
+									  0.5, LOCAL_COORD_OF_ELEM(theFather,co1),
+									  LCVECT(theVertex));
+						SETONEDGE(theVertex,j);
 
-                                        #endif
-        case (CENTER_NODE) :
-        case (LEVEL_0_NODE) :
-          /* nothing to do */
-          break;
+						break;
+					}
 
-        case (CORNER_NODE) :
-        default :
-          assert(0);
-          break;
-        }
-        VFATHER(theVertex) = theFather;
+					#ifdef __THREEDIM__
+					case (SIDE_NODE):
+						/* always compute new coords for this case! */
+						k =  GetSideIDFromScratch(theElement,theNode);
+						ASSERT(k < SIDES_OF_ELEM(theFather));
 
-        if (OBJT(theVertex) == BVOBJ)
-          if (MOVED(theVertex)) {
-            INT n;
-            DOUBLE *x[MAX_CORNERS_OF_ELEM];
+						SETONSIDE(theVertex,k);
 
-            CORNER_COORDINATES(theFather,n,x);
-            UG_GlobalToLocal(n,(const DOUBLE **)x,
-                             CVECT(theVertex),LCVECT(theVertex));
-          }
-      }
-    }
-  }
+						m = CORNERS_OF_SIDE(theFather,k);
+						local = LCVECT(theVertex);
+						fac = 1.0 / m;
+						V_DIM_CLEAR(local);
+						for (o=0; o<m; o++)
+						{
+							l = CORNER_OF_SIDE(theFather,k,o);
+							V_DIM_LINCOMB(1.0,local,1.0,
+										  LOCAL_COORD_OF_ELEM(theFather,l),local);
+						}
+						V_DIM_SCALE(fac,local);
+
+						theNb = NBELEM(theFather,k);
+						if (theNb != NULL)
+						{
+							for (j=0; j<SIDES_OF_ELEM(theNb); j++)
+							{
+								if (NBELEM(theNb,j) == theFather) break;
+							}
+							ASSERT(j < SIDES_OF_ELEM(theNb));
+							SETONNBSIDE(theVertex,j);
+						}
+						else SETONNBSIDE(theVertex,MAX_SIDES_OF_ELEM);
+						break;
+
+					#endif
+					case (CENTER_NODE):
+					case (LEVEL_0_NODE):
+						/* nothing to do */
+						break;
+
+					case (CORNER_NODE):
+					default:
+						assert(0);
+						break;
+				}
+				VFATHER(theVertex) = theFather;
+
+				if (OBJT(theVertex) == BVOBJ) 
+				    if (MOVED(theVertex)) {
+					    INT n;
+						DOUBLE *x[MAX_CORNERS_OF_ELEM];
+				
+						CORNER_COORDINATES(theFather,n,x);			
+						UG_GlobalToLocal(n,(const DOUBLE **)x,
+										 CVECT(theVertex),LCVECT(theVertex));
+					}
+			}
+		}
+	}
 }
 
 INT CheckProcListCons (int *proclist, int uniqueTag)
 {
-  int nunique = 0;
+	int nunique = 0;
 
-  /* check uniqueness */
-  while (*proclist != -1)
-  {
-    if (*(proclist+1) == uniqueTag) nunique++;
-    proclist += 2;
-  }
+	/* check uniqueness */
+	while (*proclist != -1)
+	{
+		if (*(proclist+1) == uniqueTag) nunique++;
+		proclist += 2;
+	}
 
-  /* nunique must be 1 for master elements   */
-  /* nunique can  be 0/1 for (inner) nodes   */
-  /*   with PrioBorder/PrioMaster            */
-  return (nunique);
+	/* nunique must be 1 for master elements   */
+	/* nunique can  be 0/1 for (inner) nodes   */
+	/*   with PrioBorder/PrioMaster            */
+	return (nunique);
 }
 
 INT ListProcList (int *proclist, int uniqueTag)
 {
-  while (*proclist != -1)
-  {
-    if (*(proclist+1) == uniqueTag)
-      UserWriteF(" proc=%d",*proclist);
-    proclist += 2;
-  }
-  return(0);
+	while (*proclist != -1)
+	{
+		if (*(proclist+1) == uniqueTag)
+			UserWriteF(" proc=%d",*proclist);
+		proclist += 2;
+	}
+	return(0);
 }
 
 INT CheckVectorPrio (ELEMENT *theElement, VECTOR *theVector)
 {
-  INT nmaster;
+	INT nmaster;
 
-  /* check vector prio */
-  CHECK_OBJECT_PRIO(theVector,PRIO,MASTER,GHOST,ID,"Vector")
+	/* check vector prio */
+	CHECK_OBJECT_PRIO(theVector,PRIO,MASTER,GHOST,ID,"Vector")
 
-  /* master copy has to be unique */
-  if ((nmaster = CheckProcListCons(PROCLIST(theVector),PrioMaster)) > 1)
-  {
-    UserWriteF("NODE=" ID_FMTX " ERROR: master copy not unique, nmaster=%d:",
-               ID_PRTX(theVector),nmaster);
-    ListProcList(PROCLIST(theVector),PrioMaster);
-    UserWriteF("\n");
-  }
+	/* master copy has to be unique */
+	if ((nmaster = CheckProcListCons(PROCLIST(theVector),PrioMaster)) > 1)	
+	{
+		UserWriteF("NODE=" ID_FMTX " ERROR: master copy not unique, nmaster=%d:",
+			ID_PRTX(theVector),nmaster);
+		ListProcList(PROCLIST(theVector),PrioMaster);
+		UserWriteF("\n");
+	}
 
-  return(0);
+	return(0);
 }
 
 INT CheckNodePrio (ELEMENT *theElement, NODE *theNode)
 {
-  INT nmaster;
+	INT nmaster;
 
-  /* check node prio */
-  CHECK_OBJECT_PRIO(theNode,PRIO,MASTER,GHOST,ID,"NODE")
+	/* check node prio */
+	CHECK_OBJECT_PRIO(theNode,PRIO,MASTER,GHOST,ID,"NODE")
 
-  /* master copy has to be unique */
-  if ((nmaster = CheckProcListCons(PROCLIST(theNode),PrioMaster)) > 1)
-  {
-    UserWriteF("NODE=" ID_FMTX " ERROR: master copy not unique, nmaster=%d:",
-               ID_PRTX(theNode),nmaster);
-    ListProcList(PROCLIST(theNode),PrioMaster);
-    UserWriteF("\n");
-  }
+	/* master copy has to be unique */
+	if ((nmaster = CheckProcListCons(PROCLIST(theNode),PrioMaster)) > 1)	
+	{
+		UserWriteF("NODE=" ID_FMTX " ERROR: master copy not unique, nmaster=%d:",
+			ID_PRTX(theNode),nmaster);
+		ListProcList(PROCLIST(theNode),PrioMaster);
+		UserWriteF("\n");
+	}
 
-  if (dddctrl.nodeData)
-    CheckVectorPrio(theElement,NVECTOR(theNode));
+	if (dddctrl.nodeData)
+		CheckVectorPrio(theElement,NVECTOR(theNode));
 
-  return(0);
+	return(0);
 }
 
 
 INT CheckEdgePrio (ELEMENT *theElement, EDGE *theEdge)
 {
-  INT nmaster;
+	INT nmaster;
 
-        #ifdef __THREEDIM__
-  /* check edge prio */
-  CHECK_OBJECT_PRIO(theEdge,PRIO,MASTER,GHOST,ID,"EDGE")
+	#ifdef __THREEDIM__
+	/* check edge prio */
+	CHECK_OBJECT_PRIO(theEdge,PRIO,MASTER,GHOST,ID,"EDGE")
 
-  /* master copy has to be unique */
-  if ((nmaster = CheckProcListCons(PROCLIST(theEdge),PrioMaster)) > 1)
-  {
-    UserWriteF("EDGE=" EDID_FMTX " ERROR: master copy not unique, nmaster=%d:",
-               EDID_PRTX(theEdge),nmaster);
-    ListProcList(PROCLIST(theEdge),PrioMaster);
-    UserWriteF("\n");
-  }
-        #endif
+	/* master copy has to be unique */
+	if ((nmaster = CheckProcListCons(PROCLIST(theEdge),PrioMaster)) > 1)	
+	{
+		UserWriteF("EDGE=" EDID_FMTX " ERROR: master copy not unique, nmaster=%d:",
+			EDID_PRTX(theEdge),nmaster);
+		ListProcList(PROCLIST(theEdge),PrioMaster);
+		UserWriteF("\n");
+	}
+	#endif
 
-  if (dddctrl.edgeData)
-    CheckVectorPrio(theElement,EDVECTOR(theEdge));
+	if (dddctrl.edgeData)
+		CheckVectorPrio(theElement,EDVECTOR(theEdge));
 
-  return(0);
+	return(0);
 }
 
 INT CheckElementPrio (ELEMENT *theElement)
 {
-  INT i,nmaster,prio;
-  NODE    *theNode;
-  EDGE    *theEdge;
-  ELEMENT *SonList[MAX_SONS];
+	INT		i,nmaster,prio;
+	NODE	*theNode;
+	EDGE	*theEdge;
+	ELEMENT *SonList[MAX_SONS];
 
-  if (PARTITION(theElement)==me && !EMASTER(theElement))
-  {
-    UserWriteF(PFMT "#FATAL# MASTER ELEM=" EID_FMTX " has WRONG part=%d prio=%d\n",
-               me,EID_PRTX(theElement),PARTITION(theElement),EPRIO(theElement));
-  }
-  if (PARTITION(theElement)!=me && !EGHOST(theElement))
-  {
-    UserWriteF(PFMT "#FATAL# GHOST ELEM=" EID_FMTX " has WRONG part=%d prio=%d\n",
-               me,EID_PRTX(theElement),PARTITION(theElement),EPRIO(theElement));
+	if (PARTITION(theElement)==me && !EMASTER(theElement))
+	{
+		UserWriteF(PFMT "#FATAL# MASTER ELEM=" EID_FMTX " has WRONG part=%d prio=%d\n",
+			me,EID_PRTX(theElement),PARTITION(theElement),EPRIO(theElement));
+	}
+	if (PARTITION(theElement)!=me && !EGHOST(theElement))
+	{
+		UserWriteF(PFMT "#FATAL# GHOST ELEM=" EID_FMTX " has WRONG part=%d prio=%d\n",
+			me,EID_PRTX(theElement),PARTITION(theElement),EPRIO(theElement));
 
-    /* test ghost prio */
-    prio = 0;
-    for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-    {
-      if (EMASTER(NBELEM(theElement,i))) prio = PrioHGhost;
-    }
-    if (GetSons(theElement,SonList) != 0) RETURN(1);
-    if (SonList[0] != NULL) prio += PrioVGhost;
+		/* test ghost prio */
+		prio = 0;
+		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+		{
+			if (EMASTER(NBELEM(theElement,i))) prio = PrioHGhost; 
+		}
+		if (GetSons(theElement,SonList) != 0) RETURN(1);
+		if (SonList[0] != NULL) prio += PrioVGhost;
 
-    if (EPRIO(theElement) != prio)
-    {
-      UserWriteF(PFMT "ERROR GHOST ELEM=" EID_FMTX
-                 " has WRONG prio=%d should be prio=%d\n",
-                 me,EID_PRTX(theElement),EPRIO(theElement),prio);
-    }
-  }
+		if (EPRIO(theElement) != prio)
+		{
+			UserWriteF(PFMT "ERROR GHOST ELEM=" EID_FMTX 
+				" has WRONG prio=%d should be prio=%d\n",
+				me,EID_PRTX(theElement),EPRIO(theElement),prio);
+		}
+	}
 
-  /* check element prio */
-  CHECK_OBJECT_PRIO(theElement,EPRIO,EMASTER,EGHOST,EID,"ELEM")
+	/* check element prio */
+	CHECK_OBJECT_PRIO(theElement,EPRIO,EMASTER,EGHOST,EID,"ELEM")
 
-  if (dddctrl.elemData)
-    CheckVectorPrio(theElement,EVECTOR(theElement));
+	if (dddctrl.elemData)
+		CheckVectorPrio(theElement,EVECTOR(theElement));
 
-  if (dddctrl.sideData)
-  {
-    for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-      CheckVectorPrio(theElement,SVECTOR(theElement,i));
-  }
+	if (dddctrl.sideData)
+	{
+		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+			CheckVectorPrio(theElement,SVECTOR(theElement,i));
+	}
 
-  /* master copy has to be unique */
-  if ((nmaster = CheckProcListCons(EPROCLIST(theElement),PrioMaster)) != 1)
-  {
-    UserWriteF("ELEM=" EID_FMTX " ERROR: master copy not unique, nmaster:",
-               EID_PRTX(theElement),nmaster);
-    ListProcList(EPROCLIST(theElement),PrioMaster);
-    UserWriteF("\n");
-  }
+	/* master copy has to be unique */
+	if ((nmaster = CheckProcListCons(EPROCLIST(theElement),PrioMaster)) != 1)	
+	{
+		UserWriteF("ELEM=" EID_FMTX " ERROR: master copy not unique, nmaster:",
+			EID_PRTX(theElement),nmaster);
+		ListProcList(EPROCLIST(theElement),PrioMaster);
+		UserWriteF("\n");
+	}
 
-  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-  {
-    theNode = CORNER(theElement,i);
-    CheckNodePrio(theElement,theNode);
-  }
+	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+	{
+		theNode = CORNER(theElement,i);
+		CheckNodePrio(theElement,theNode);
+	}
 
-  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
-  {
-    theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
-                      CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
-    ASSERT(theEdge != NULL);
-    CheckEdgePrio(theElement,theEdge);
-  }
+	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+	{
+		theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
+						  CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
+		ASSERT(theEdge != NULL);
+		CheckEdgePrio(theElement,theEdge);
+	}
 
-  return (0);
+	return (0);
 }
 
 INT CheckInterfaces(GRID *theGrid)
 {
-  INT i,j;
-  ELEMENT *theElement;
-  NODE    *theNode;
-  EDGE    *theEdge;
-  VECTOR  *theVector;
-  int errors = 0;
+	INT		i,j;
+	ELEMENT	*theElement;
+	NODE	*theNode;
+	EDGE	*theEdge;
+	VECTOR	*theVector;
+	int		errors = 0;
 
-  /* reset USED flag of all grid objects  */
-  /* set USED flag of master grid objects */
-  for (j=0; j<2; j++)
-  {
-    for (theElement =(j==0 ? PFIRSTELEMENT(theGrid) : FIRSTELEMENT(theGrid));
-         theElement!=NULL;
-         theElement=SUCCE(theElement))
-    {
-      SETUSED(theElement,j);
-      if (dddctrl.elemData)
-        SETUSED(EVECTOR(theElement),j);
-      if (dddctrl.sideData)
-      {
-        for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-          SETUSED(SVECTOR(theElement,i),j);
-      }
+	/* reset USED flag of all grid objects  */
+	/* set USED flag of master grid objects */
+	for (j=0; j<2; j++)
+	{
+		for (theElement =(j==0 ? PFIRSTELEMENT(theGrid) : FIRSTELEMENT(theGrid)); 
+			 theElement!=NULL;
+			 theElement=SUCCE(theElement))
+		{
+			SETUSED(theElement,j);
+			if (dddctrl.elemData)
+				SETUSED(EVECTOR(theElement),j);
+			if (dddctrl.sideData)
+			{
+				for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+					SETUSED(SVECTOR(theElement,i),j);
+			}
 
-      for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-      {
-        theNode = CORNER(theElement,i);
-        SETUSED(theNode,j);
-        if (dddctrl.nodeData)
-          SETUSED(NVECTOR(theNode),j);
-        SETUSED(MYVERTEX(theNode),j);
-      }
+			for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+			{
+				theNode = CORNER(theElement,i);
+				SETUSED(theNode,j);
+				if (dddctrl.nodeData)
+					SETUSED(NVECTOR(theNode),j);
+				SETUSED(MYVERTEX(theNode),j);
+			}
 
-      for (i=0; i<EDGES_OF_ELEM(theElement); i++)
-      {
-        theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
-                          CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
-        ASSERT(theEdge != NULL);
-        SETUSED(theEdge,j);
-        if (dddctrl.edgeData)
-          SETUSED(EDVECTOR(theEdge),j);
-      }
-    }
-  }
+			for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+			{
+				theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
+								  CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
+				ASSERT(theEdge != NULL);
+				SETUSED(theEdge,j);
+				if (dddctrl.edgeData)
+					SETUSED(EDVECTOR(theEdge),j);
+			}
+		}
+	}
 
-  /* check validity of priorities */
-  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
-       theElement=SUCCE(theElement))
-  {
-    errors += CheckElementPrio(theElement);
-  }
+	/* check validity of priorities */
+	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
+		 theElement=SUCCE(theElement))
+	{
+		errors += CheckElementPrio(theElement);
+	}
 
-  /* check ddd interface consistency */
-  errors += DDD_ConsCheck();
+	/* check ddd interface consistency */
+	errors += DDD_ConsCheck();
 
-  return(errors);
+	return(errors);
 }
 
 /****************************************************************************/
 
 #endif
+
