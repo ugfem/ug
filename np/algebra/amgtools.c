@@ -1167,8 +1167,8 @@ INT CoarsenGreedyWithBndLoop (GRID *theGrid)
 
    SYNOPSIS:
    static INT bfs (FIFO *Fifo, VECTOR *theSeedVector,
-                                   long INT *nFine,long INT *nCoarse,
-                                   long INT *nIsolated)
+                                   INT *nFine, INT *nCoarse,
+                                   INT *nIsolated)
 
    PARAMETERS:
    .  Fifo - pointer to fifo data structure.
@@ -1194,8 +1194,8 @@ INT CoarsenGreedyWithBndLoop (GRID *theGrid)
 /****************************************************************************/
 
 static INT bfs (FIFO *Fifo, VECTOR *theSeedVector,
-                long INT *nFine,long INT *nCoarse,
-                long INT *nIsolated)
+                INT *nFine, INT *nCoarse,
+                INT *nIsolated)
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *mij,*mjk;
@@ -1313,13 +1313,13 @@ INT CoarsenBreadthFirst (GRID *theGrid)
   HEAP *theHeap;
   void *buffer;
   FIFO myFifo;
-  long INT fifosize;
+  INT fifosize;
   INT MarkKey;
 
   VECTOR *vi, *theSeedVector;
 
-  long INT nFine,nCoarse,nIsolated,nLabeled;
-  long INT nFinetotal, nCoarsetotal, nIsolatedtotal, nLabeledtotal;
+  INT nFine,nCoarse,nIsolated,nLabeled;
+  INT nFinetotal, nCoarsetotal, nIsolatedtotal, nLabeledtotal;
   INT nTraversals,error;
 
   nTraversals = nLabeledtotal = nFinetotal = nCoarsetotal = nIsolatedtotal = 0;
