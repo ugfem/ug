@@ -2277,7 +2277,10 @@ static INT CheckNewElement(FRONTLIST *theFL,  DOUBLE xt[3], DOUBLE yt[3])
       if (thecompFC==LASTFC(theFL))
         break;
       else
+      {
+        thecompFC=SUCCFC(thecompFC);
         continue;                               /* lines are parallel */
+      }
 
     if (fabs(xt[2]-xM)<SMALLDOUBLE)
     {
