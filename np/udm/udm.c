@@ -963,6 +963,50 @@ INT FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
 
 /****************************************************************************/
 /*D
+   InterpolateVDAllocation - dynamic vector allocation on new level
+
+   SYNOPSIS:
+   INT InterpolateVDAllocation (MULTIGRID *theMG, VECDATA_DESC *vd);
+
+   PARAMETERS:
+   .  theMG -  multigrid
+   .  vd - vector descriptor
+
+   DESCRIPTION:
+   This function allocates a vector on a new level.
+
+   RETURN VALUE:
+   INT
+   .n      NUM_OK if ok
+   .n      NUM_ERROR if error occurred
+ */
+/****************************************************************************/
+
+INT InterpolateVDAllocation (MULTIGRID *theMG, VECDATA_DESC *vd)
+{
+  GRID *theGrid;
+  INT j,tp,tl;
+
+  if (vd==NULL) return (NUM_OK);
+  if (VM_LOCKED(vd)) return (NUM_OK);
+  tl = TOPLEVEL(theMG);
+  if (tl < 1) return (NUM_OK);
+
+  PRINTDEBUG(np,1,(" InterpolateVDAllocation %s\n",ENVITEM_NAME(vd)));
+
+  theGrid = GRID_ON_LEVEL(theMG,tl);
+  for (tp=0; tp<NVECTYPES; tp++)
+    for (j=0; j<VD_NCMPS_IN_TYPE(vd,tp); j++) {
+      if (READ_DR_VEC_FLAG(theGrid,tp,VD_CMP_OF_TYPE(vd,tp,j)))
+        return(NUM_ERROR);
+      SET_DR_VEC_FLAG(theGrid,tp,VD_CMP_OF_TYPE(vd,tp,j));
+    }
+
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*D
    DisposeVD - remove VECDATA_DESC from objects of multigrid
 
    SYNOPSIS:

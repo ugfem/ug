@@ -300,6 +300,9 @@ INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
 INT FreeVD        (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *x);
 INT FreeMD        (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *A);
 
+/* interpolate allocation on new level */
+INT InterpolateVDAllocation (MULTIGRID *theMG, VECDATA_DESC *vd);
+
 /* disposing of vector and matrix descriptors */
 INT DisposeVD     (VECDATA_DESC *vd);
 INT DisposeMD     (MATDATA_DESC *md);
