@@ -89,15 +89,6 @@ INT InitParallel (int *argcp, char ***argvp)
 {
   INT err;
 
-  /* init ppif module */
-  if ((err=InitPPIF(argcp, argvp)) != PPIF_SUCCESS)
-  {
-    printf("ERROR in InitParallel while InitPPIF.\n");
-    printf ("aborting ug\n");
-
-    return (1);
-  }
-
   /* init ddd module */
   PRINTDEBUG(init,1,("%d:     InitParallel()...\n",me))
   if ((err=InitDDD())!=0)
