@@ -5799,7 +5799,7 @@ static INT MarkCommand (INT argc, char **argv)
     if (argv[i][0]=='h')
     {
       UserWrite("the following rules are available:\n");
-      for (j=0; j<NO_OF_RULES; j++)
+      for (j=0; j<NO_OF_RULES && myMR[j].RuleName!=NULL; j++)
       {
         UserWrite(myMR[j].RuleName);
         UserWrite("\n");
