@@ -2393,7 +2393,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     theSonElem[k] = NULL;
     if (Get_Sons_of_ElementSide (theElement,i,&Sons_of_Side,theSonElem,SonSides,0,1)) REP_ERR_RETURN(1);
 
-    if (Connect_Sons_of_ElementSide(UPGRID(theGrid),theElement,i,Sons_of_Side,theSonElem,SonSides,0,1)) REP_ERR_RETURN(1);
+    if (Connect_Sons_of_ElementSide(UPGRID(theGrid),theElement,i,Sons_of_Side,theSonElem,SonSides,1)) REP_ERR_RETURN(1);
   }
 
   /* connect to orphan-neighbors */
