@@ -2068,7 +2068,7 @@ static INT ConstructDiagSchurComplement (GRID *theGrid,
 
     if (vncomp > 0)
     {
-      SHORT *s = MD_MCMPPTR_OF_RT_CT(ppA,vtype,vtype);
+      SHORT *s = MD_MCMPPTR_OF_RT_CT(S,vtype,vtype);
       DOUBLE *sval = MVALUEPTR(VSTART(v),0);
       MATRIX *m;
 
@@ -2154,6 +2154,7 @@ static INT TSPreProcess  (NP_ITER *theNP, INT level,
     NP_RETURN(1,result[0]);
   /*	if (AssembleTotalDirichletBoundary(theGrid,A,x,b))
       NP_RETURN(1,result[0]); */
+
   if (np->diag) {
     if (ConstructDiagSchurComplement(theGrid,np->L,np->upA,np->puA,np->ppA,
                                      np->S,np->extra))
