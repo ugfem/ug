@@ -127,6 +127,7 @@ INT InitUg (int *argcp, char ***argvp)
     return (1);
   }
 
+
   /* init parallelization module */
         #ifdef ModelP
   PRINTDEBUG(init,1,("%d:     InitParallel()...\n",me))
@@ -139,8 +140,9 @@ INT InitUg (int *argcp, char ***argvp)
   }
     #endif
 
+
   /* init the devices module */
-  if ((err=InitDevices(*argcp,*argvp))!=0)
+  if ((err=InitDevices(argcp,*argvp))!=0)
   {
     printf("ERROR in InitUg while InitDevices (line %d): called routine line %d\n",
            (int) HiWrd(err), (int) LoWrd(err));
@@ -148,6 +150,8 @@ INT InitUg (int *argcp, char ***argvp)
 
     return (1);
   }
+
+
 
         #if (defined Debug && defined __MWCW__)
   if ((GetDefaultValue(DEFAULTSFILENAME,UGDEBUGRFILE,buffer)==0)
@@ -217,6 +221,7 @@ INT InitUg (int *argcp, char ***argvp)
 
     return (1);
   }
+
 
   return (0);
 }

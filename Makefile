@@ -13,6 +13,9 @@ include ug.conf
 MODULES = LOW DEV DOM GM NUMERICS GRAPHICS UI $(MODEL_TARGET)
 UGMODULES = LOW GM NUMERICS GRAPHICS UI $(MODEL_TARGET)
 
+# modules for ug server daemon
+UGDMODULES = LOW DEV 
+
 
 # local C compiler flags
 LCFLAGS = -I./include
@@ -31,6 +34,10 @@ all: include $(OBJECTS) $(MODULES)
 uglib: include $(OBJECTS) $(UGMODULES)
 	$(ARCH_AR) $(ARCH_ARFLAGS) lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
 	echo "libug compiled"
+
+UGD:  include $(UGDMODULES) ugd.o
+	$(UG_LINK) -o bin/ugd $(ARCH_LFLAGS) ugd.o lib/libdev.a lib/libug$(UG_LIBSUFFIX).a $(UG_LFLAGS)
+	echo "ugd compiled"
 
 
 ##############################################################################
