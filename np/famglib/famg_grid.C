@@ -40,7 +40,13 @@ extern "C"
 #ifdef ModelP
 #include "famg_coloring.h"
 
+#define CLEAROVERLAP3
+#if defined(CLEAROVERLAP3) && !defined(FAMG_CLEAREMPTY_PE)
+#error CLEAROVERLAP3 requires FAMG_CLEAREMPTY_PE
+#endif
+
 //#define EXTENDED_OUTPUT_FOR_DEBUG 
+//#define VECTOROUTPUTPR
 
 // nodes are only useful for debugging to have geometric positions 
 // of the vectors but aren't used for calculations.
@@ -79,6 +85,12 @@ extern "C"
 $Header$ 
 */
 
+#ifdef FAMG_CLEAREMPTY_PE
+INT FAMGXferDelMatComp;
+INT FAMGXferDelVecComp;
+GRID *MarkAndCleanParentsGrid;
+#endif
+
 #ifdef ModelP
 // forward declaration for ug functions 
 extern "C"{
@@ -88,7 +100,6 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
 }
 
 static int OverlapForLevel0;
-static int NrMasterForOverlap;
 static int* CopyPEBuffer = NULL;
 #endif
 
@@ -256,6 +267,37 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 	DOUBLE d1, d2, d3;
 #endif
 
+#ifdef VECTOROUTPUTPR
+	MATDATA_DESC *tmpACons = ((FAMGugMatrix*)GetConsMatrix())->GetMatDesc();
+	VECDATA_DESC *tmpcgdef = ((FAMGugVector)cgdefect).GetUgVecDesc();
+	VECDATA_DESC *tmpfgdef = ((FAMGugVector)fgdefect).GetUgVecDesc();
+	VECDATA_DESC *tmpfgsol = ((FAMGugVector)fgsolution).GetUgVecDesc();
+	FAMGugVector& t = *GetVector(FAMGTVA);
+	VECDATA_DESC *tmpt = t.GetUgVecDesc();
+
+	INT AConscomp = MD_SCALCMP(tmpACons);
+	INT cgdefcomp = VD_SCALCMP(tmpcgdef);
+	INT fgdefcomp = VD_SCALCMP(tmpfgdef);
+	INT fgsolcomp = VD_SCALCMP(tmpfgsol);
+	INT tcomp = VD_SCALCMP(tmpt);
+
+	cout<<me<<": Restriction ConsMat"<<endl;
+	prmGeom(GLEVEL(mygrid),AConscomp);
+	cout<<me<<": Restriction IMat"<<endl;
+	primGeom(GLEVEL(mygrid));
+	cout<<me<<": before JacobiSmoothFG fgsol"<<endl;
+	prvGeom(GLEVEL(mygrid),fgsolcomp);
+	cout<<me<<": before JacobiSmoothFG fgdef"<<endl;
+	prvGeom(GLEVEL(mygrid),fgdefcomp);
+	
+	t = fgdefect;
+	if (l_vector_consistent(mygrid,tmpt)!=NUM_OK) 
+		assert(0);
+	cout<<me<<": before JacobiSmoothFG consfgdef"<<endl;
+	prvGeom(GLEVEL(mygrid),tcomp);
+
+#endif
+
 #ifdef PROTOCOLNUMERIC
 	d1 = fgdefect*fgdefect;
     d2 = fgsolution*fgsolution;
@@ -272,9 +314,19 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 
 	// jacobi smoothing for the fine nodes
     fgsolution.JacobiSmoothFG( *GetConsMatrix(), fgdefect );
+
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": after JacobiSmoothFG before cons fgsol"<<endl;
+	prvGeom(GLEVEL(mygrid),fgsolcomp);
+#endif
+
 #ifdef ModelP
 	if (l_vector_consistent(mygrid,((FAMGugVector&)fgsolution).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": after JacobiSmoothFG after cons fgsol"<<endl;
+	prvGeom(GLEVEL(mygrid),fgsolcomp);
+#endif
 #endif
 	
 #ifdef PROTOCOLNUMERIC
@@ -297,6 +349,17 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 	fgglobsolution += fgsolution;
 #endif
 
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": after defect fgdef"<<endl;
+	prvGeom(GLEVEL(mygrid),fgdefcomp);
+	
+	t = fgdefect;
+	if (l_vector_consistent(mygrid,tmpt)!=NUM_OK) 
+		assert(0);
+	cout<<me<<": after defect consfgdef"<<endl;
+	prvGeom(GLEVEL(mygrid),tcomp);
+#endif
+
 #ifdef PROTOCOLNUMERIC
     d1 = fgdefect*fgdefect;
     d2 = fgsolution*fgsolution;
@@ -312,6 +375,16 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 #ifdef ModelP
 	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": after defect collect fgdef"<<endl;
+	prvGeom(GLEVEL(mygrid),fgdefcomp);
+	
+	t = fgdefect;
+	if (l_vector_consistent(mygrid,tmpt)!=NUM_OK) 
+		assert(0);
+	cout<<me<<": after defect collect consfgdef"<<endl;
+	prvGeom(GLEVEL(mygrid),tcomp);
+#endif
 #endif
 
     cgdefect = 0.0;
@@ -325,8 +398,17 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 				cgdefect[transfg->GetCol()] += transfg->GetRestriction() * fgdefect[fvec];
 		
 #ifdef ModelP
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": after defect after gridtransfer before collect cgdef"<<endl;
+	prvGeom(GLEVEL(DOWNGRID(mygrid)),cgdefcomp);
+#endif
 	if (l_vector_collectFromGhosts(DOWNGRID(mygrid),((FAMGugVector&)cgdefect).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
+#endif
+
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": after defect after gridtransfer cgdef"<<endl;
+	prvGeom(GLEVEL(DOWNGRID(mygrid)),cgdefcomp);
 #endif
 	
 #ifdef PROTOCOLNUMERIC
@@ -351,6 +433,29 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 	DOUBLE d1, d2, d3;
 #endif
 
+
+#ifdef VECTOROUTPUTPR
+	MATDATA_DESC *tmpACons = ((FAMGugMatrix*)GetConsMatrix())->GetMatDesc();
+	VECDATA_DESC *tmpfgdef = ((FAMGugVector)fgdefect).GetUgVecDesc();
+	VECDATA_DESC *tmpfgsol = ((FAMGugVector)fgsol).GetUgVecDesc();
+	VECDATA_DESC *tmpcgsol = ((FAMGugVector)cgsol).GetUgVecDesc();
+	VECDATA_DESC *tmpc = ((FAMGugVector*)c)->GetUgVecDesc();
+	FAMGugVector& t = *GetVector(FAMGTVA);
+	VECDATA_DESC *tmpt = t.GetUgVecDesc();
+
+	INT AConscomp = MD_SCALCMP(tmpACons);
+	INT fgdefcomp = VD_SCALCMP(tmpfgdef);
+	INT fgsolcomp = VD_SCALCMP(tmpfgsol);
+	INT cgsolcomp = VD_SCALCMP(tmpcgsol);
+	INT ccomp = VD_SCALCMP(tmpc);
+	INT tcomp = VD_SCALCMP(tmpt);
+
+	cout<<me<<": Prolongation ConsMat"<<endl;
+	prmGeom(GLEVEL(mygrid),AConscomp);
+	cout<<me<<": Prolongation IMat"<<endl;
+	primGeom(GLEVEL(mygrid));
+#endif
+
     #ifdef ModelP
 	// distribute master values to V(H)Ghosts
 	// Note: ghosts exist only on the baselevel and then only in case of coarsegrid agglomeration,
@@ -360,6 +465,11 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 		assert(0);
 	#endif        
 	
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": before prolo cgsol"<<endl;
+	prvGeom(GLEVEL(DOWNGRID(mygrid)),cgsolcomp);
+#endif
+
 #ifdef PROTOCOLNUMERIC
 	FAMGVector &cgdefect = *(cg->GetVector(FAMGDEFECT));
 	cgdefect = 1.0;
@@ -412,8 +522,25 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 		fgsol[fvec] = sum;
 	}
 #ifdef ModelP
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": after prolo before cons fgsol"<<endl;
+	prvGeom(GLEVEL(mygrid),fgsolcomp);
+#endif
 	if (l_force_consistence(mygrid,((FAMGugVector&)fgsol).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
+#endif
+
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": after prolo fgsol"<<endl;
+	prvGeom(GLEVEL(mygrid),fgsolcomp);
+	cout<<me<<": after prolo fgdef"<<endl;
+	prvGeom(GLEVEL(mygrid),fgdefcomp);
+	
+	t = fgdefect;
+	if (l_vector_consistent(mygrid,tmpt)!=NUM_OK) 
+		assert(0);
+	cout<<me<<": after prolo consfgdef"<<endl;
+	prvGeom(GLEVEL(mygrid),tcomp);
 #endif
 
 #ifdef PROTOCOLNUMERIC
@@ -430,7 +557,18 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 
 	// prepare defect for jacobi smoothing
 	Defect(fgdefect, fgdefect, fgsol);
+
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": after defect fgdef"<<endl;
+	prvGeom(GLEVEL(mygrid),fgdefcomp);
 	
+	t = fgdefect;
+	if (l_vector_consistent(mygrid,tmpt)!=NUM_OK) 
+		assert(0);
+	cout<<me<<": after defect consfgdef"<<endl;
+	prvGeom(GLEVEL(mygrid),tcomp);
+#endif
+
 #ifdef PROTOCOLNUMERIC
 	d1 = fgdefect*fgdefect;
     d2 = fgsol*fgsol;
@@ -454,14 +592,40 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
         // jacobi smoothing for the fine nodes
         fgsol.JacobiSmoothFG( *GetConsMatrix(), fgdefect );
         
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": after JacobiSmoothFG fgsol"<<endl;
+	prvGeom(GLEVEL(mygrid),fgsolcomp);
+#endif
+
         // correct defect
         Defect(fgdefect, fgdefect, fgsol);
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": after JacobiSmoothFG defect fgdef"<<endl;
+	prvGeom(GLEVEL(mygrid),fgdefcomp);
+	
+	t = fgdefect;
+	if (l_vector_consistent(mygrid,tmpt)!=NUM_OK) 
+		assert(0);
+	cout<<me<<": after JacobiSmoothFG defect consfgdef"<<endl;
+	prvGeom(GLEVEL(mygrid),tcomp);
+#endif
+
     }
     else
     {
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": before c update c"<<endl;
+	prvGeom(GLEVEL(mygrid),ccomp);
+#endif
+
         // famg as transfer
         (*c) += fgsol;
         //fgsol = 0.0; implicitly done by fgsol.JacobiSmoothFG
+
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": after c update c"<<endl;
+	prvGeom(GLEVEL(mygrid),ccomp);
+#endif
 
 #ifdef PROTOCOLNUMERIC
 		d1 = (*c)*(*c);
@@ -476,8 +640,17 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 		// jacobi smoothing for the fine nodes
         fgsol.JacobiSmoothFG( *GetConsMatrix(), fgdefect );
 #ifdef ModelP
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": after JacobiSmoothFG before cons fgsol"<<endl;
+	prvGeom(GLEVEL(mygrid),fgsolcomp);
+#endif
 		if (l_vector_consistent(mygrid,((FAMGugVector&)fgsol).GetUgVecDesc())!=NUM_OK) 
 			assert(0);
+#endif
+
+#ifdef VECTOROUTPUTPR
+	cout<<me<<": after JacobiSmoothFG fgsol"<<endl;
+	prvGeom(GLEVEL(mygrid),fgsolcomp);
 #endif
 
 #ifdef PROTOCOLNUMERIC
@@ -2084,13 +2257,23 @@ static int SendToMaster( DDD_OBJ obj)
 	DDD_PROC masterPe;
 	int *proclist, i, found, size;
 
+	#ifdef CLEAROVERLAP3
+	SETVCUSED(vec,0);
+	#endif
+
 	if( IS_FAMG_MASTER(vec) )
 	{
-		NrMasterForOverlap++;
+		//#ifdef FAMG_CLEAREMPTY_PE
+		//for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+		//	SETMUSED(mat,0);
+		//#endif
+	
 		return 0;		// we want only border vectors here
 	}
-
-	SETVCUSED(vec,1);	// set flag for all border 
+	
+	#ifdef CLEAROVERLAP3
+	SETVCFLAG(vec,0);
+	#endif
 
 	PRINTDEBUG(np,1,("%d: SendToMaster: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 	
@@ -2122,6 +2305,9 @@ static int SendToMaster( DDD_OBJ obj)
 		w = MDEST(mat);
 
 		PRINTDEBUG(np,1,("%d: SendToMaster %d:     -> "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(w)));
+		//#ifdef FAMG_CLEAREMPTY_PE
+		//SETMUSED(mat,0);
+		//#endif
 		TransferVector(w, masterPe);
 	}
 	
@@ -2137,13 +2323,12 @@ static int SendToOverlap1FULL( DDD_OBJ obj)
 	MATRIX *mat;
 	int dest_pe;
 	
-	SETVCUSED(vec,0);	// avoid setting the flag!
-
+#ifdef CLEAROVERLAP3
+#error CLEAROVERLAP3 incompatible with SendToOverlap1FULL
+#endif
+	
 	if( !IS_FAMG_MASTER(vec) )
-	{
-		NrMasterForOverlap++;
 		return 0;		// we want only border vectors here
-	}
 
 	PRINTDEBUG(np,1,("%d: SendToOverlap1: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 
@@ -2173,7 +2358,7 @@ static int SendToOverlap1( DDD_OBJ obj)
 	VECTOR *vec = (VECTOR *)obj, *w;
 	MATRIX *mat;
 	int *proclist_vec, *proclist_w, i, size, dest_pe, found, *destPE_vec_ptr;
-	
+
 	if( !IS_FAMG_MASTER(vec) )
 		return 0;		// we want only master vectors here
 
@@ -2273,54 +2458,128 @@ static inline int CountInterfaceLength(GRID *grid)
 */
 #endif
 
-static int ClearOverlap2( DDD_OBJ obj)
+#ifdef CLEAROVERLAP3
+inline void DeleteVectorFAMG(VECTOR *vec)
 {
-	VECTOR *vec = (VECTOR *)obj, *w;
 	MATRIX *mat;
-	int foundmaster;
+return;
 
-	if( IS_FAMG_MASTER(vec) || !VCUSED(vec) )
-		return 0;		// we want only unchecked border vectors here
+	PRINTDEBUG(dddif,4,(PFMT " DeleteVectorFAMG(): vec= " VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)))
 
-	PRINTDEBUG(np,1,("%d: ClearOverlap2: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
-
-	SETVCUSED( vec, 0 );	// mark border as checked
-
-	mat = VSTART(vec);
-	if( mat == NULL )
+	for(mat=VSTART(vec);mat!=NULL;mat=MNEXT(mat))
 	{
-		DDD_XferDeleteObj(PARHDR(vec));	// vec has no matrix entry -> is isolated -> delete
+		SETMUSED(mat,1);		// mark matrix entries for copying
+		SETMUSED(MADJ(mat),1);
+		PRINTDEBUG(dddif,4,(PFMT "             mat (-> " VINDEX_FMTX") val %g \n",me,VINDEX_PRTX(MDEST(mat)),MVALUE(mat,0)))
 	}
-	else
+	DDD_XferDeleteObj(PARHDR(vec));
+}
+
+static int MarkOverlap1( DDD_OBJ obj)
+{
+	VECTOR *vec = (VECTOR *)obj;
+
+	if( IS_FAMG_MASTER(vec) && !VCUSED(vec) )
 	{
-		foundmaster = 0;
-		for( mat=MNEXT(mat); mat!=NULL; mat=MNEXT(mat) )	// skip diag entry
+		SETVCUSED(vec,1);	// process only once
+
+		VECTOR *w;
+		MATRIX *mat=VSTART(vec);
+		if(mat!=NULL)
+			mat=MNEXT(mat);	// skip diag entry
+		for( ; mat!=NULL; mat=MNEXT(mat) )
 		{
 			w = MDEST(mat);
-			if( IS_FAMG_MASTER(w) )
-			{
-				foundmaster = 1;
-				break;
-			}
+			if( !IS_FAMG_MASTER(w) )
+				SETVCUSED(w,1);			// mark as R1 Border
 		}
-		if( !foundmaster )
-			DDD_XferDeleteObj(PARHDR(vec));	// delete border without master-neighbor
 	}
 
 	return 0;
 }
+
+static int MarkOverlap2( DDD_OBJ obj)
+{
+	VECTOR *vec = (VECTOR *)obj, *w;
+
+	if( !IS_FAMG_MASTER(vec) && VCUSED(vec) )
+	{											// is R1 Border
+		MATRIX *mat = VSTART(vec);
+		if(mat!=NULL)
+			mat=MNEXT(mat);	// skip diag
+		for( ; mat!=NULL; mat=MNEXT(mat) )
+		{
+			w = MDEST(mat);
+			if( !IS_FAMG_MASTER(w) && !VCUSED(w) )
+				SETVCFLAG(w,1);			// mark as R2 Border
+		}
+	}
+
+	return 0;
+}
+
+static int MarkAndCleanParents( DDD_OBJ obj)
+// is called for the next finer grid
+// a master vector needs all his parents on the coarser grid;
+// thus set flag to avoid deleting
+{
+	VECTOR *vec = (VECTOR *)obj;
+
+	if( IS_FAMG_MASTER(vec) )
+	{
+		MATRIX *mat = VISTART(vec);
+
+		PRINTDEBUG(np,2,("%d: MarkAndClean: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+		for( ; mat!=NULL; mat=MNEXT(mat) )	// traverse all parent vec on coarser level
+		{
+			PRINTDEBUG(np,2,("%d: MarkAndClean:    -> "VINDEX_FMTX"\n",me,VINDEX_PRTX(MDEST(mat))));
+			SETVCFLAG(MDEST(mat),1);
+		}
+	}
+	else
+	{
+		// a border needs no level-transfer-matrix entries
+		PRINTDEBUG(np,2,("%d: MarkAndClean: remove IMatrixlist "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+		DisposeIMatrixList( MarkAndCleanParentsGrid, vec);
+	}
+
+	return 0;
+}
+
+static int ClearOverlap3( DDD_OBJ obj)
+{
+	VECTOR *vec = (VECTOR *)obj;
+
+	if( IS_FAMG_MASTER(vec) || VCUSED(vec) || VCFLAG(vec) )
+		return 0;		// we want only unmarked border vectors here
+
+	PRINTDEBUG(np,1,("%d: ClearOverlap3: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+
+	SETVCUSED(vec,1);	// avoid multiple deleting; but inconsistent use of flags!
+	
+	DeleteVectorFAMG(vec);	// vec has no matrix entry -> is isolated -> delete
+
+	return 0;
+}
+#endif //CLEAROVERLAP3
 
 void FAMGGrid::ConstructOverlap()
 // extend the overlap as far as necessary; at least 2 links deep
 // the vectorlist will be renumbered
 {
 	VECTOR *vec;
-	INT i, mc = MD_SCALCMP(((FAMGugMatrix*)GetMatrix())->GetMatDesc());
+	INT i;
 	FAMGMatrixAlg *matrix_tmp;
 	MATRIX *mat;
 #ifdef XFERTIMING
 	int i1,i2, N1, N2;
 	double t1,t2,t22,t3;
+#endif
+
+#ifdef FAMG_CLEAREMPTY_PE
+	// set global variables for use in dddif/handler.c
+	FAMGXferDelMatComp = MD_SCALCMP(((FAMGugMatrix*)GetMatrix())->GetMatDesc());
+	FAMGXferDelVecComp = VD_SCALCMP(GetVector(FAMGDEFECT)->GetUgVecDesc());
 #endif
 
 	if(GLEVEL(mygrid)==0)
@@ -2346,28 +2605,121 @@ void FAMGGrid::ConstructOverlap()
 		abort();
 	}
 
+//int tmplevel = GLEVEL(mygrid);
+//MATDATA_DESC *tmpA = ((FAMGugMatrix*)GetMatrix())->GetMatDesc();
+//MATDATA_DESC *tmpACons = ((FAMGugMatrix*)GetConsMatrix())->GetMatDesc();
+//if (dmatcopy(MYMG(mygrid),tmplevel,tmplevel,ALL_VECTORS,tmpACons,tmpA) != NUM_OK) assert(0);
+//if (l_matrix_consistent(mygrid,tmpACons,MAT_CONS) != NUM_OK) assert(0);
+//cout<<me<<": vor Xfer"<<endl;
+//prv(tmplevel,FAMGXferDelVecComp); prm(tmplevel,MD_SCALCMP(tmpA)); prm(tmplevel,MD_SCALCMP(tmpACons));
+
 	DDD_XferBegin();
     #ifdef DDDOBJMGR
     DDD_ObjMgrBegin();
     #endif
-		NrMasterForOverlap = 0;
+
+		for( vec=PFIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec) )
+		{
+			MATRIX *mat;
+
+			for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+				SETMUSED(mat,0);
+		}
+
 		DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), SendToMaster );
 
+		#ifdef FAMG_CLEAREMPTY_PE
 		if( GLEVEL(mygrid)<0 && procs>1 )
 		{
-			if( NrMasterForOverlap==0 )
-			{	// delete all border (and ghost) if no more master vectors exist
-				for( vec=PFIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec) )
-				{
-					ASSERT(!IS_FAMG_MASTER(vec));
-					DDD_XferDeleteObj(PARHDR(vec));
+			if( NVEC_PRIO(mygrid,PrioMaster)==0 )
+			{	
+				if( NVEC_PRIO(mygrid,PrioBorder)!=0 )
+				{	// delete all border (and ghost) if no more master vectors exist
+					for( vec=PFIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec) )
+					{
+						ASSERT(!IS_FAMG_MASTER(vec));
+						DeleteVectorFAMG(vec);
+					}
 				}
 			}
+			#ifdef CLEAROVERLAP3
 			else
 			{
-				DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), ClearOverlap2 );
+				if( NVEC_PRIO(mygrid,PrioBorder)!=0 )
+				{
+					MarkAndCleanParentsGrid = UPGRID(mygrid);
+				
+					// clear border outside overlap 2
+
+					// if to few master are here, the following danger arises:
+					// a master is at the border of the core partition, but is not
+					// in the DDD interface (due to too sparse matrix)
+					// in this situations we must walk over the vector list (more
+					// expensive, because also master far away from the border
+					// must be vistited)
+					// the decision which of these two methods is to use, is made
+					// by the nr. of master vectors
+					if( NVEC_PRIO(mygrid,PrioMaster) > 1000 )
+					{
+						DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), MarkOverlap1 );
+					}
+					else
+					{
+						for( vec=FIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec) )
+						{
+							if( IS_FAMG_MASTER(vec) )
+							{
+								PRINTDEBUG(np,2,("%d: MarkOverlap1veclist: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+						        VECTOR *w;
+       							MATRIX *mat=VSTART(vec);
+     							if(mat!=NULL)
+            						mat=MNEXT(mat); // skip diag entry
+        						for( ; mat!=NULL; mat=MNEXT(mat) )
+        						{
+            						w = MDEST(mat);
+            						if( !IS_FAMG_MASTER(w) )
+                						SETVCUSED(w,1);         // mark as R1 Border
+        						}
+								
+							}
+						}
+					}
+					DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), MarkOverlap2 );
+					
+					if( NVEC_PRIO(MarkAndCleanParentsGrid,PrioMaster) > 1000 )
+					{
+						DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(MarkAndCleanParentsGrid), MarkAndCleanParents );
+					}
+					else
+					{
+						for( vec=FIRSTVECTOR(MarkAndCleanParentsGrid); vec!=NULL; vec=SUCCVC(vec) )
+						{
+							if( IS_FAMG_MASTER(vec) )
+							{
+								PRINTDEBUG(np,2,("%d: MarkAndCleanveclist: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+								MATRIX *mat = VISTART(vec);
+
+								for( ; mat!=NULL; mat=MNEXT(mat) )	// traverse all parent vec on coarser level
+								{
+									PRINTDEBUG(np,2,("%d: MarkAndCleanveclist:    -> "VINDEX_FMTX"\n",me,VINDEX_PRTX(MDEST(mat))));
+									SETVCFLAG(MDEST(mat),1);
+								}
+							}
+							else
+							{
+								// a border needs no level-transfer-matrix entries
+								PRINTDEBUG(np,2,("%d: MarkAndCleanveclist: remove IMatrixlist "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+								DisposeIMatrixList (MarkAndCleanParentsGrid,vec);
+							}
+						}
+					}					
+					
+					DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), ClearOverlap3 );
+				}
 			}
+			#endif
 		}
+		#endif
 
 #ifdef XFERTIMING
 	t1 = CURRENT_TIME;
@@ -2379,6 +2731,12 @@ void FAMGGrid::ConstructOverlap()
     #endif
 	DDD_XferEnd();
 	
+//if (dmatcopy(MYMG(mygrid),tmplevel,tmplevel,ALL_VECTORS,tmpACons,tmpA) != NUM_OK) assert(0);
+//if (l_matrix_consistent(mygrid,tmpACons,MAT_CONS) != NUM_OK) assert(0);
+//{int q=0;for( vec=PFIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec)) VINDEX(vec)=q++;}
+//cout<<me<<": nach 1. Xfer"<<endl;
+//prv(tmplevel,FAMGXferDelVecComp); prm(tmplevel,MD_SCALCMP(tmpA)); prm(tmplevel,MD_SCALCMP(tmpACons));
+
 #ifdef XFERTIMING
 	LocalNr=0;
 	DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), CountInterfaceLengthCB );
@@ -2468,6 +2826,12 @@ void FAMGGrid::ConstructOverlap()
 		DDD_XferEnd();
 
 	}
+
+//if (dmatcopy(MYMG(mygrid),tmplevel,tmplevel,ALL_VECTORS,tmpACons,tmpA) != NUM_OK) assert(0);
+//if (l_matrix_consistent(mygrid,tmpACons,MAT_CONS) != NUM_OK) assert(0);
+//{int q=0;for( vec=PFIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec)) VINDEX(vec)=q++;}
+//cout<<me<<": nach 2. Xfer"<<endl;
+//prv(tmplevel,FAMGXferDelVecComp); prm(tmplevel,MD_SCALCMP(tmpA)); prm(tmplevel,MD_SCALCMP(tmpACons));
 
 #ifdef XFERTIMING
 	cout <<me<<": Xfer lev="<<GLEVEL(mygrid)<<' '<<t2-t1<<' '<<t3-t22<<' '<<N1<<' '<<N2<<' '<<i1<<' '<<i2<<endl;
