@@ -1,0 +1,41 @@
+##############################################################################
+#                                                                            #
+#   Makefile for famglib             (UNIX version)                          #
+#                                                                            #
+#   created Aug 1997                                                         #
+#   modified 20 Aug 1997 Christian Wrobel                                    #
+#                                                                            #
+##############################################################################
+
+# include configuration and all makefile macro definitions
+include $(UGROOT)/ug.conf
+
+# path to library
+FAMGLIB      = ../lib/libfamg.a
+
+OBJECTS = heap.o misc.o matrix.o decomp.o transfer.o graph.o approx.o construct.o grid.o multigrid.o system.o uginterface.o
+
+
+# paths to include files
+
+
+$(FAMGLIB) : $(OBJECTS) Makefile.famg
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(FAMGLIB) $(OBJECTS) 
+
+.SUFFIXES: .o .c
+ 
+.C.o:
+	$(ARCH_C++) $(UG_C++FLAGS) -DUG_DRAW $<
+
+clean:
+	rm -f *.o
+	rm -f $(FAMGLIB)
+
+new:
+	rm -f $(FAMGLIB)
+	make
+
+extract:
+	$(ARCH_AR) $(ARCH_EXFLAGS) $(FAMGLIB) $(OBJECTS)
+
+xmc: extract $(FAMGLIB) clean

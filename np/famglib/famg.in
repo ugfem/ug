@@ -1,0 +1,29 @@
+# cmg inputfile
+solver bicgstab # bicgstab, linit, gmres
+presmoother fgs # fgs, bgs, sgs, ilut, jac
+postsmoother bgs # fgs, bgs, sgs, ilut, jac
+cgsmoother ilut # fgs, bgs, sgs, ilut, jac
+heap 10e+6
+nv 16
+gamma 1
+n1 0
+n2 1
+ilut 0.1
+cgilut 0.001
+cgnodes 10
+mincoarse 0.8
+conloops 1
+type 0
+stv 2
+tol 0.9
+sigma 0.1
+omegar 1.0
+omegal 1.0
+error1 0.05
+#error1 1e-20 
+error2 0.5   # 0.5 f"ur 2d  , 3.5 f"ur 3d
+maxit 50
+alimit 1e-14
+rlimit 1e-10
+divlimit 1e+40
+reduction 1.0
