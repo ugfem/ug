@@ -66,3 +66,29 @@ big sequential multigrid of the merged file(s) and the resulting
 error gives no hint towards increasing the heap size.
 
 
+UG/ug/gm:
+--------
+
+Q: How to use periodic boundary conditions with UG?
+
+A: To compile UG set in file UG/ug/gm/gm.h the define
+	#define __PERIODIC_BOUNDARY__
+Then fully (re)compile UG.
+To define periodic boundaries write an application function
+	PeriodicBoundaryInfoProcPtr PBI
+for its prototype see gm.h.
+This function must be provided to UG via a call to
+	INT SetPeriodicBoundaryInfoProcPtr (PeriodicBoundaryInfoProcPtr PBI);
+When you have readin/constructed the coarse grid. One script call to
+the command 
+	makeperiodic
+will modify the grid appropriately. From this point on all 
+functionality (adaption, solution) work transparently (without any
+further effort) in periodic mode.
+
+An example of periodidc usage is in course/appl/couplex2/couplex2.c
+the function 
+	Couplex2_PeriodicBoundaryInfo.
+In script file course/appl/couplex2/couplex2.scr you can see when
+"makeperiodic" is called. The SetPeriodicBoundaryInfoProcPtr call is
+done in the separate application command "setperiodic".
