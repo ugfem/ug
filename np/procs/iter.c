@@ -48,6 +48,7 @@
 #include "fifo.h"
 #include "evm.h"
 #include "misc.h"
+#include "ugstruct.h"
 
 #include "transfer.h"
 #include "ls.h"
@@ -1999,8 +2000,12 @@ static INT TSPostProcess (NP_ITER *theNP, INT level,
           (np->p_iter,level,x,b,A,result))
       REP_ERR_RETURN(1);
 
-  if ((np->display > PCR_NO_DISPLAY) && (TOPLEVEL(NP_MG(theNP)) == level))
-    UserWriteF("maximal number of inner iterations: %d\n",np->dc_max);
+  if (TOPLEVEL(NP_MG(theNP)) == level) {
+    if (np->display > PCR_NO_DISPLAY)
+      UserWriteF("maximal number of inner iterations: %d\n",np->dc_max);
+    if (SetStringValue(":iter:inner",(DOUBLE)np->dc_max))
+      NP_RETURN(1,result[0]);
+  }
 
   return(0);
 }
@@ -6074,6 +6079,8 @@ static INT CalibrateConstruct (NP_BASE *theNP)
 INT InitIter ()
 {
   INT i;
+
+  if (MakeStruct(":iter")) REP_ERR_RETURN(__LINE__);
 
   strcpy(LU_reg[REG_ALWAYS],      "always");
   strcpy(LU_reg[REG_NEVER],       "never");
