@@ -209,8 +209,18 @@ smooth <nIt> [$b]
 
 -lexorderv > vectors grid order sort
 lexorderv         # reorder the vectors on each mg-level lexicographically
-lexorderv ur|ul|dr|dl|ru|rd|lu|ld [$l <level>] [$m] [$s <|>|0]
-                           # where u=up, d=down, r=right, l=left
+lexorderv <directions> [$l <level>] [$m] [$s <|>|0]
+2D: <directions>           # 2 letters, one for each coordinate direction; the 
+                           # order of the letters determine the order of the
+                           # lexicographical ordering. The letters out of [rlud]:
+                           # x-axis: r=right (ascending), l=left  (descending)
+                           # y-axis: u=up    (ascending), d=down  (descending)
+3D: <directions>           # 3 letters, one for each coordinate direction; the 
+                           # order of the letters determine the order of the
+                           # lexicographical ordering. The letters out of [rlbfud]:
+                           # x-axis: r=right (ascending), l=left  (descending)
+                           # y-axis: b=back  (ascending), f=front (descending)
+                           # z-axis: u=up    (ascending), d=down  (descending)
     $l <level>             # order only level
     $m                     # also order the MATRIXs of each node in the same way
     $s <|>|0               # treatment of vectors with skip>0: put at begin, put at end
