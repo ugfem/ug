@@ -149,6 +149,7 @@ struct outputdevice {
 
   /* properties */
   long black;                                                   /* value for black										*/
+  long gray;                                /* value for gray                                       */
   long white;                                                   /* value for white										*/
   long red;                                                             /* value for red										*/
   long green;                                                   /* value for green										*/
@@ -172,6 +173,7 @@ struct outputdevice {
   void (*Polyline)(SHORT_POINT *, INT );                                        /* draw a polyline					*/
   void (*InversePolyline)(SHORT_POINT *, INT );                         /* draw an inverted polyline		*/
   void (*Polygon)(SHORT_POINT *, INT );                                         /* fill a polygon w. curr. col		*/
+  void (*ShadedPolygon)(SHORT_POINT *, INT, DOUBLE );           /* shade a polygon w. curr. col     */
   void (*InversePolygon)(SHORT_POINT *, INT );                          /* invert a polygon w. curr. col	*/
   void (*ErasePolygon)(SHORT_POINT *, INT );                            /* erase a polygon w. curr. col         */
   void (*Polymark)(short, SHORT_POINT *);                                       /* place markers					*/
