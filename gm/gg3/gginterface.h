@@ -49,4 +49,7 @@ int AddLinePoint (int id, double x, double y, double z);
 int AddLineSegment (int i1,int i2);
 int InitSurfaceNetgen (char *rulefilename);
 int StartSurfaceNetgen (double h,int smooth,int display);
+
+int Get_Local_h(double *in, double *out);
+int Get_h(double *in, double *out);
 #endif
