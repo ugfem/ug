@@ -32,7 +32,13 @@
 /****************************************************************************/
 
 
+/* maximum number of interfaces */
 #define MAX_IF                  20
+
+
+/* maximum length of interface description string */
+#define IF_NAMELEN      80
+
 
 
 enum CplDir {
@@ -40,6 +46,7 @@ enum CplDir {
   DirBA  =  0x02,
   DirABA =  DirAB|DirBA
 };
+
 
 
 
@@ -128,7 +135,11 @@ typedef struct if_def
   DDD_PRIO A[16];
   DDD_PRIO B[16];
 
+  /* data for efficiency tuning */
   int maskO;
+
+  /* data for nice user interaction */
+  char name[IF_NAMELEN+1];            /* string for interface identification */
 
 } IF_DEF;
 

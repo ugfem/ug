@@ -1,5 +1,25 @@
 ---------------------------
 
+CHANGES 1.7.4 -> 1.7.5
+
+---------------------------
+970128 kb
+added OPT_INFO_XFER.
+	- this runtime option shows additional (statistical)
+	  information during XferBegin/XferEnd. default is OPT_OFF.
+970128 kb
+changed interface display functions and added some output.
+	- DDD_IFDisplay now takes an argument DDD_IF in order
+	  to display only one interface.
+	- DDD_IFDisplayAll is a new function displaying all
+	  interfaces (formerly DDD_IFDisplay)
+	- DDD_IFSetName allows to define a textual description for
+	  interfaces, which is displayed by DDD_IFDisplay and
+	  DDD_IFDisplayAll.
+NOTE: this change requires renaming of function DDD_IFDisplay in
+all applications!
+---------------------------
+
 CHANGES 1.7.3 -> 1.7.4
 
 ---------------------------

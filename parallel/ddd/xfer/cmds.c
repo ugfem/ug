@@ -445,13 +445,14 @@ void DDD_XferEnd (void)
   localCplObjs = LocalCoupledObjectsList();
 
 
-#       ifndef __VERY_QUIET__
   if (obsolete>0) {
-    sprintf(cBuffer, "DDD MESG [%03d]: %4d from %4d xfer-cmds obsolete.\n",
-            me, obsolete, nXICopyObj+nXISetPrio+nXIDelObj);
-    DDD_PrintLine(cBuffer);
+    if (DDD_GetOption(OPT_INFO_XFER)==OPT_ON)
+    {
+      sprintf(cBuffer, "DDD MESG [%03d]: %4d from %4d xfer-cmds obsolete.\n",
+              me, obsolete, nXICopyObj+nXISetPrio+nXIDelObj);
+      DDD_PrintLine(cBuffer);
+    }
   }
-#       endif
 
   /*
           nothing more to do until incoming messages arrive

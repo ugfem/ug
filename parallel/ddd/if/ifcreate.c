@@ -583,6 +583,10 @@ DDD_IF orgDDD_IFDefine (
   if (nB>1) qsort(theIF[nIFs].B, nB, sizeof(DDD_PRIO), sort_int);
 
 
+  /* reset name string */
+  theIF[nIFs].name[0] = 0;
+
+
   /* compute hash tables for fast access */
   theIF[nIFs].maskO = 0;
   for(i=0; i<nO; i++)
@@ -608,9 +612,27 @@ void StdIFDefine()
 
   theIF[STD_INTERFACE].maskO = 0xffff;
 
+
+  /* reset name string */
+  theIF[nIFs].name[0] = 0;
+
+
   /* create initial interface state */
   theIF[STD_INTERFACE].ifHead = NULL;
   IFCreateFromScratch(STD_INTERFACE);
+}
+
+
+void DDD_IFSetName (DDD_IF ifId, char *name)
+{
+  /* ensure maximum length */
+  if (strlen(name) > IF_NAMELEN-1)
+  {
+    name[IF_NAMELEN-1] = 0;
+  }
+
+  /* copy name string */
+  strcpy(theIF[ifId].name, name);
 }
 
 
@@ -678,74 +700,106 @@ void DDD_InfoIFImpl (DDD_IF ifId)
 
 
 
-void DDD_IFDisplay (void)
+static void IFDisplay (DDD_IF i)
 {
   IF_PROC    *ifh;
   IF_ATTR    *ifr;
-  int i, j;
+  int j;
   char buf[50];
 
-  sprintf(cBuffer, "|\n| DDD_IFInfo for proc=%03d\n", me);
+  sprintf(cBuffer, "| IF %02d ", i);
+  if (i==STD_INTERFACE)
+  {
+    sprintf(buf, "including all (%08x)\n|       prio all to all\n",
+            theIF[i].maskO);
+    strcat(cBuffer, buf);
+  }
+  else
+  {
+    strcat(cBuffer, "including ");
+    for(j=0; j<theIF[i].nObjStruct; j++)
+    {
+      sprintf(buf, "%s ", theTypeDefs[theIF[i].O[j]].name);
+      strcat(cBuffer, buf);
+    }
+    sprintf(buf, "(%08x)\n|       prio ", theIF[i].maskO);
+    strcat(cBuffer, buf);
+
+    for(j=0; j<theIF[i].nPrioA; j++)
+    {
+      sprintf(buf, "%d ", theIF[i].A[j]);
+      strcat(cBuffer, buf);
+    }
+    strcat(cBuffer, "to ");
+    for(j=0; j<theIF[i].nPrioB; j++)
+    {
+      sprintf(buf, "%d ", theIF[i].B[j]);
+      strcat(cBuffer, buf);
+    }
+    strcat(cBuffer, "\n");
+  }
+  DDD_PrintLine(cBuffer);
+
+  if (theIF[i].name[0]!=0)
+  {
+    sprintf(cBuffer, "        '%s'\n", theIF[i].name);
+    DDD_PrintLine(cBuffer);
+  }
+
+  for(ifh=theIF[i].ifHead; ifh!=NULL; ifh=ifh->next)
+  {
+#       ifndef DebugShowAttr
+    sprintf(cBuffer, "|        %3d=%3d,%3d,%3d - %02d\n",
+            ifh->nItems, ifh->nAB, ifh->nBA, ifh->nABA, ifh->proc);
+    DDD_PrintLine(cBuffer);
+
+#       else
+    sprintf(cBuffer, "|        %3d=%3d,%3d,%3d - %02d - #a=%05d\n",
+            ifh->nItems, ifh->nAB, ifh->nBA, ifh->nABA,
+            ifh->proc, ifh->nAttrs);
+    DDD_PrintLine(cBuffer);
+
+    for (ifr=ifh->ifAttr; ifr!=NULL; ifr=ifr->next)
+    {
+      sprintf(cBuffer, "|      a %3d=%3d,%3d,%3d - %04d\n",
+              ifr->nItems, ifr->nAB, ifr->nBA, ifr->nABA, ifr->attr);
+      DDD_PrintLine(cBuffer);
+    }
+#       endif
+  }
+}
+
+
+#ifdef C_FRONTEND
+void DDD_IFDisplay (DDD_IF ifId)
+{
+#else
+void DDD_IFDisplay (DDD_IF *_ifId)
+{
+  DDD_IF ifId = *_ifId;
+#endif
+
+  sprintf(cBuffer, "|\n| DDD_IF-Info for proc=%03d\n", me);
+  DDD_PrintLine(cBuffer);
+
+  IFDisplay(ifId);
+
+  DDD_PrintLine("|\n");
+}
+
+
+void DDD_IFDisplayAll (void)
+{
+  int i;
+
+  sprintf(cBuffer, "|\n| DDD_IF-Info for proc=%03d (all)\n", me);
   DDD_PrintLine(cBuffer);
 
   for(i=0; i<nIFs; i++)
   {
-    sprintf(cBuffer, "| IF %02d ", i);
-    if (i==STD_INTERFACE)
-    {
-      sprintf(buf, "including all (%08x)\n|       prio all to all\n",
-              theIF[i].maskO);
-      strcat(cBuffer, buf);
-    }
-    else
-    {
-      strcat(cBuffer, "including ");
-      for(j=0; j<theIF[i].nObjStruct; j++)
-      {
-        sprintf(buf, "%s ", theTypeDefs[theIF[i].O[j]].name);
-        strcat(cBuffer, buf);
-      }
-      sprintf(buf, "(%08x)\n|       prio ", theIF[i].maskO);
-      strcat(cBuffer, buf);
-
-      for(j=0; j<theIF[i].nPrioA; j++)
-      {
-        sprintf(buf, "%d ", theIF[i].A[j]);
-        strcat(cBuffer, buf);
-      }
-      strcat(cBuffer, "to ");
-      for(j=0; j<theIF[i].nPrioB; j++)
-      {
-        sprintf(buf, "%d ", theIF[i].B[j]);
-        strcat(cBuffer, buf);
-      }
-      strcat(cBuffer, "\n");
-    }
-    DDD_PrintLine(cBuffer);
-
-    for(ifh=theIF[i].ifHead; ifh!=NULL; ifh=ifh->next)
-    {
-#               ifndef DebugShowAttr
-      sprintf(cBuffer, "|        %3d=%3d,%3d,%3d - %02d\n",
-              ifh->nItems, ifh->nAB, ifh->nBA, ifh->nABA, ifh->proc);
-      DDD_PrintLine(cBuffer);
-
-#               else
-      sprintf(cBuffer, "|        %3d=%3d,%3d,%3d - %02d - #a=%05d\n",
-              ifh->nItems, ifh->nAB, ifh->nBA, ifh->nABA,
-              ifh->proc, ifh->nAttrs);
-      DDD_PrintLine(cBuffer);
-
-      for (ifr=ifh->ifAttr; ifr!=NULL; ifr=ifr->next)
-      {
-        sprintf(cBuffer, "|      a %3d=%3d,%3d,%3d - %04d\n",
-                ifr->nItems, ifr->nAB, ifr->nBA, ifr->nABA, ifr->attr);
-        DDD_PrintLine(cBuffer);
-      }
-#               endif
-    }
-
+    IFDisplay(i);
   }
+
   DDD_PrintLine("|\n");
 }
 

@@ -44,7 +44,7 @@
 extern "C" {
 #endif
 
-#define DDD_VERSION    "1.7.4"
+#define DDD_VERSION    "1.7.5"
 
 
 /****************************************************************************/
@@ -129,6 +129,7 @@ enum OptionType {
   OPT_QUIET_CONSCHECK,             /* do ConsCheck in a quiet manner            */
   OPT_IDENTIFY_MODE,               /* one of the IDMODE_xxx constants           */
   OPT_WARNING_REF_COLLISION,       /* warning on collision in reference-localize*/
+  OPT_INFO_XFER,                   /* display some statistical info during xfer */
   OPT_END
 };
 
@@ -372,7 +373,9 @@ void     DDD_IdentifyObject (DDD_TYPE *, DDD_OBJ *, DDD_PROC *, DDD_TYPE *, DDD_
  */
 #ifdef C_FRONTEND
 DDD_IF   DDD_IFDefine (int, DDD_TYPE O[], int, DDD_PRIO A[], int, DDD_PRIO B[]);
-void     DDD_IFDisplay (void);
+void     DDD_IFSetName (DDD_IF, char *);
+void     DDD_IFDisplayAll (void);
+void     DDD_IFDisplay (DDD_IF);
 
 void     DDD_IFExchange   (DDD_IF,             size_t, ComProcPtr,ComProcPtr);
 void     DDD_IFOneway     (DDD_IF,         int,size_t, ComProcPtr,ComProcPtr);
@@ -391,7 +394,8 @@ void     DDD_IFAExecLocalX(DDD_IF,DDD_ATTR,            ExecProcXPtr);
 #else
 
 void     DDD_IFDefine (int *, DDD_TYPE *, int *, DDD_PRIO *, int *, DDD_PRIO *, DDD_IF *);
-void     DDD_IFDisplay (void);
+void     DDD_IFDisplayAll (void);
+void     DDD_IFDisplay (DDD_IF);
 
 void     DDD_IFExchange   (DDD_IF *,                 size_t *, ComProcPtr,ComProcPtr);
 void     DDD_IFOneway     (DDD_IF *,           int *,size_t *, ComProcPtr,ComProcPtr);
@@ -407,6 +411,7 @@ void     DDD_IFAOnewayX   (DDD_IF *,DDD_ATTR *,int *,size_t *, ComProcXPtr,ComPr
 void     DDD_IFAExecLocalX(DDD_IF *,DDD_ATTR *,                ExecProcXPtr);
 
 #define DDD_IFDefine     F77SYM(ddd_ifdefine,DDD_IFDEFINE)
+#define DDD_IFDisplayAll F77SYM(ddd_ifdisplayall,DDD_IFDISPLAYALL)
 #define DDD_IFDisplay    F77SYM(ddd_ifdisplay,DDD_IFDISPLAY)
 #define DDD_IFExchange   F77SYM(ddd_ifexchange,DDD_IFEXCHANGE)
 #define DDD_IFOneway     F77SYM(ddd_ifoneway,DDD_IFONEWAY)

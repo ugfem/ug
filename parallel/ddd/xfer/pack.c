@@ -537,12 +537,10 @@ static void XferPackSingleMsg (XFERMSG *msg)
 
 
   /*
-     #ifndef __VERY_QUIET__
      sprintf(cBuffer, "ITEMS 34=%d, 35=%d, 36=%d\n", actSym,  msg->nObjects,  actNewCpl);
      DDD_PrintDebug(cBuffer);
      sprintf(cBuffer, "COMPS 34=%d, 35=%d, 36=%d\n", n34,  n35,  n36);
      DDD_PrintDebug(cBuffer);
-     #endif
    */
 
 
