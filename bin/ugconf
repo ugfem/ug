@@ -75,7 +75,7 @@ PACKSUFFIX=Z
 
 grep_valid_entries()
 {
-	egrep '^[ ]*ARCH|^[ ]*MODEL|^[ ]*DIM|^[ ]*GRAPE|^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE' $1;
+	egrep '^[ ]*ARCH|^[ ]*MODEL |^[ ]*DIM|^[ ]*GRAPE|^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE' $1;
 }
 
 
