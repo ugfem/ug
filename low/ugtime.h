@@ -11,11 +11,13 @@
 #ifndef UG_UGTIME_H
 #define UG_UGTIME_H
 
+#include "config.h"
+
+#ifdef AUTOTOOLS_BUILD
+
 #ifndef UGLIB
 #error Internal UG-lib header, must not be used in applications!
 #endif
-
-#include "config.h"
 
 /* stolen from autoconf-docs */
 #if TIME_WITH_SYS_TIME
@@ -37,5 +39,17 @@
 /* !!! test for the time-functions */
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 #define CURRENT_TIME_LONG       CURRENT_TIME
+
+/* !! test for difftime */
+#define ARCH_DIFF_TIMER(x,y) (difftime((time_t)(x),(time_t)(y)))
+
+/* end of autoconf-part */
+
+#else
+
+/* use old header */
+#include "compiler.h"
+
+#endif
 
 #endif
