@@ -775,6 +775,65 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 
   return(theNode);
 }
+
+NODE *GetSideNode (ELEMENT *theElement, NODE *theNode0, NODE *theNode1, INT side)
+{
+  NODE *theNode=NULL;
+  LINK *theLink0,*theLink1;
+  INT l=0;
+
+  ASSERT(theNode0!=NULL || theNode1!=NULL);
+
+  /* search over one link list */
+  if (theNode0!=NULL || theNode1!=NULL) {
+    if (theNode0!=NULL)
+      theLink0 = START(theNode0);
+    if (theNode1!=NULL)
+      theLink0 = START(theNode1);
+
+    for ( ; theLink0!=NULL; theLink0=NEXT(theLink0)) {
+      if (NTYPE(NBNODE(theLink0)) == SIDE_NODE) {
+        theNode = NBNODE(theLink0);
+        if (VFATHER(MYVERTEX(theNode)) == theElement) {
+          if (ONSIDE(MYVERTEX(theNode)) == side)
+            break;
+        }
+        if (NBELEM(theElement,side)==VFATHER(MYVERTEX(theNode))) {
+          if (ONNBSIDE(MYVERTEX(theNode)) == side)
+            break;
+        }
+        theNode = NULL;
+      }
+    }
+  }
+
+  /* search over both link lists */
+  if (theNode0!=NULL && theNode1!=NULL)
+    for (theLink0=START(theNode0); theLink0!=NULL; theLink0=NEXT(theLink0)) {
+      for (theLink1=START(theNode1); theLink1!=NULL; theLink1=NEXT(theLink1))
+        if (NBNODE(theLink0) == NBNODE(theLink1)) {
+          if (NTYPE(NBNODE(theLink0)) == SIDE_NODE) {
+            theNode = NBNODE(theLink0);
+            if (VFATHER(MYVERTEX(theNode)) == theElement) {
+              if (ONSIDE(MYVERTEX(theNode)) == side)
+                break;
+            }
+            if (NBELEM(theElement,side)==VFATHER(MYVERTEX(theNode))) {
+              if (ONNBSIDE(MYVERTEX(theNode)) == side)
+                break;
+            }
+            theNode = NULL;
+          }
+        }
+      if (theNode != NULL) break;
+    }
+
+  ASSERT(theNode==NULL || NTYPE(theNode)==SIDE_NODE &&
+         (ONSIDE(MYVERTEX(theNode)) == side ||
+          ONNBSIDE(MYVERTEX(theNode)) == side));
+
+  return(theNode);
+}
 #endif /* __THREEDIM__ */
 
 /****************************************************************************/

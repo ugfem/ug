@@ -109,6 +109,8 @@ NODE        *CreateCenterNode       (GRID *theGrid, ELEMENT *theElement);
 
 #ifdef __THREEDIM__
 NODE            *CreateSideNode                 (GRID *theGrid, ELEMENT *theElement, INT side);
+NODE            *GetSideNode                    (ELEMENT *theElement, NODE *theNode0, NODE *theNode1, INT side);
+
 #endif
 
 #endif

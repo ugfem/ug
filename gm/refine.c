@@ -1554,6 +1554,9 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
         theNode1 = MidNodes[EDGE_OF_SIDE(theElement,i,2)];
         l = 0;
         if (theNode0 != NULL && theNode1 != NULL)
+          theNode = GetSideNode(theElement,theNode0,theNode1,i);
+
+        if (0) {
           for (theLink0=START(theNode0); theLink0!=NULL; theLink0=NEXT(theLink0)) {
             for (theLink1=START(theNode1); theLink1!=NULL; theLink1=NEXT(theLink1))
               if (NBNODE(theLink0) == NBNODE(theLink1)) {
@@ -1578,7 +1581,8 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
               break;
             }
           }
-        ASSERT(l==0 || l==1);
+          ASSERT(l==0 || l==1);
+        }
 
         SideNodes[i] = theNode;
       }
@@ -1784,6 +1788,10 @@ INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, NODE *SideNodes[
     l = 0;
 
     if (theNode0 != NULL && theNode1 != NULL)
+      if ((theNode = GetSideNode(theElement,theNode0,theNode1,side)) != NULL)
+        (*nodes)++;
+
+    if (0) {
       for (theLink0=START(theNode0); theLink0!=NULL; theLink0=NEXT(theLink0)) {
         for (theLink1=START(theNode1); theLink1!=NULL; theLink1=NEXT(theLink1))
           if (NBNODE(theLink0) == NBNODE(theLink1)) {
@@ -1795,7 +1803,8 @@ INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, NODE *SideNodes[
           }
         if (theNode != NULL) break;
       }
-    ASSERT(l==0 || (l==1 && NTYPE(theNode)==SIDE_NODE));
+      ASSERT(l==0 || (l==1 && NTYPE(theNode)==SIDE_NODE));
+    }
 
     SideNodes[ncorners+nedges] = theNode;
 
@@ -1908,7 +1917,7 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
       UserWriteF("son=%d\n",i);
       ENDDEBUG
 
-      /* sonside on side */
+      /* soncorners on side */
       for (j=0; j<CORNERS_OF_ELEM(SonList[i]); j++) {
         NODE *nd;
 
@@ -1929,7 +1938,7 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 
 
       IFDEBUG(gm,0)
-      if (n==3) assert(TAG(SonList[i])==TETRAHEDRON);
+      if (n==3) assert(TAG(SonList[i])!=HEXAHEDRON);
       if (n==4) assert(TAG(SonList[i])!=TETRAHEDRON);
       ENDDEBUG
 
@@ -2005,7 +2014,9 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
         }
         ENDDEBUG
 
-          SonSides[nsons] = sonside;
+        ASSERT(CORNERS_OF_SIDE(SonList[i],sonside) == n);
+
+        SonSides[nsons] = sonside;
         SonList[nsons] = SonList[i];
         nsons++;
       }
@@ -4351,10 +4362,11 @@ DisposeTopLevel(theMG);
   INT FromLevel = TOPLEVEL(theMG)-1;
   INT ToLevel = TOPLEVEL(theMG);
 
-  /* identify multiply created objects */
-  IdentifyGridLevels(theMG,FromLevel,ToLevel);
+  if (FromLevel>=0) {
 
-  if (0) {
+    /* identify multiply created objects */
+    IdentifyGridLevels(theMG,FromLevel,ToLevel);
+
     /* create one-element-overlapping for multigrid */
     CreateGridOverlap(theMG,FromLevel);
     ConnectNewOverlap(theMG,FromLevel);
