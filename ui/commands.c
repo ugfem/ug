@@ -3701,8 +3701,10 @@ static INT RuleListCommand (INT argc, char **argv)
 static INT VMListCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
+  GRID *theGrid;
   INT i,fl,tl,fromV,toV,res,mode,dataopt,matrixopt,vclass,vnclass;
-  SYMBOL *sym;
+  VECDATA_DESC *theVD;
+  MATDATA_DESC *theMD;
 
   /* following variables: keep type for sscanf */
   long f,t;
@@ -3721,34 +3723,29 @@ static INT VMListCommand (INT argc, char **argv)
     PrintErrorMessage('E',"vmlist","no open multigrid");
     return (CMDERRORCODE);
   }
+  theGrid = GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
 
   if (ReadArgvINT("vclass",&vclass,argc,argv))
     vclass = 3;
   if (ReadArgvINT("vnclass",&vnclass,argc,argv))
     vnclass = 3;
 
-  if ((sym = ReadVecSymbolOfFormat(ENVITEM_NAME(MGFORMAT(theMG)),
-                                   "vmlist",argc,argv))!=NULL)
-  {
+  theVD = ReadArgvVecDesc(theMG,"vmlist",argc,argv);
+  if (theVD != NULL) {
                 #ifdef __INTERPOLATION_MATRIX__
     if (ReadArgvOption("I",argc,argv))
-      PrintIMatrix(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
-                   SYM_VEC_DESC(sym),vclass,vnclass);
+      PrintIMatrix(theGrid,theVD,vclass,vnclass);
     else
-      PrintVector(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
-                  SYM_VEC_DESC(sym),vclass,vnclass);
+      PrintVector(theGrid,theVD,vclass,vnclass);
                 #else
-    PrintVector(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
-                SYM_VEC_DESC(sym),vclass,vnclass);
+    PrintVector(theGrid,theVD,vclass,vnclass);
         #endif
     return(OKCODE);
   }
 
-  if ((sym = ReadMatSymbolOfFormat(ENVITEM_NAME(MGFORMAT(theMG)),
-                                   "vmlist",argc,argv))!=NULL)
-  {
-    PrintMatrix(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
-                SYM_MAT_DESC(sym),vclass,vnclass);
+  theMD = ReadArgvMatDesc(theMG,"vmlist",argc,argv);
+  if (theMD != NULL) {
+    PrintMatrix(theGrid,theMD,vclass,vnclass);
     return(OKCODE);
   }
 
@@ -8655,9 +8652,11 @@ static INT TextFacCommand (INT argc, char **argv)
    .n                                        r  regular and up
    .n                                        a  all
 
-    'EScalar $e <ElemEvalProc> [$m {COLOR | CONTOURS_EQ}] [$f <fromValue>] [$t <toValue>] [$n <nContours>]'
+    'EScalar {$e <ElemEvalProc> | $s <symbol/>} [$m {COLOR | CONTOURS_EQ}]'
+            '[$f <fromValue>] [$t <toValue>] [$n <nContours>]'
 
    .    $e~<ElemEvalProc>               - name of element scalar evaluation procedure
+   .    $s~<symbol>                    - name of the symbol
    .    $d~<depth>                      - depth of plot
    .    $m~{COLOR|CONTOURS_EQ}        - mode: COLOR-plot or CONTOUR-plot
    .    $f~<fromValue>~$t~<toValue>     - range [fromValue,toValue]
@@ -9262,7 +9261,7 @@ static INT UpdateDocumentCommand (INT argc, char **argv)
 static INT ClearCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  SYMBOL *sym;
+  VECDATA_DESC *theVD;
   INT i,fl,tl,skip;
   float value;
 
@@ -9302,22 +9301,22 @@ static INT ClearCommand (INT argc, char **argv)
       return (PARAMERRORCODE);
     }
 
-  if ((sym = ReadVecSymbolOfFormat(ENVITEM_NAME(MGFORMAT(theMG)),
-                                   "clear",argc,argv))==NULL)
-  {
+  theVD = ReadArgvVecDesc(theMG,"clear",argc,argv);
+
+  if (theVD == NULL) {
     PrintErrorMessage('E',"clear","could not read symbol");
     return (PARAMERRORCODE);
   }
 
   if (skip)
   {
-    if (a_dsetnonskip(theMG,fl,tl,SYM_VEC_DESC(sym),EVERY_CLASS,value)
+    if (a_dsetnonskip(theMG,fl,tl,theVD,EVERY_CLASS,value)
         !=NUM_OK)
       return (CMDERRORCODE);
   }
   else
   {
-    if (a_dset(theMG,fl,tl,SYM_VEC_DESC(sym),EVERY_CLASS,value)!=NUM_OK)
+    if (a_dset(theMG,fl,tl,theVD,EVERY_CLASS,value)!=NUM_OK)
       return (CMDERRORCODE);
   }
 
@@ -9344,7 +9343,7 @@ static INT ClearCommand (INT argc, char **argv)
 static INT CopyCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  SYMBOL *from,*to;
+  VECDATA_DESC *from,*to;
 
   theMG = GetCurrentMultigrid();
   if (theMG==NULL)
@@ -9358,13 +9357,15 @@ static INT CopyCommand (INT argc, char **argv)
     PrintErrorMessage('E',"copy","specify exactly the f and t option");
     return(PARAMERRORCODE);
   }
-  if ((from=ReadVecSymbolOfFormat(ENVITEM_NAME(MGFORMAT(theMG)),"f",argc,argv))==NULL)
-  {
+
+  from = ReadArgvVecDesc(theMG,"f",argc,argv);
+  to = ReadArgvVecDesc(theMG,"t",argc,argv);
+
+  if (from == NULL) {
     PrintErrorMessage('E',"copy","could not read 'f' symbol");
     return (PARAMERRORCODE);
   }
-  if ((to=ReadVecSymbolOfFormat(ENVITEM_NAME(MGFORMAT(theMG)),"t",argc,argv))==NULL)
-  {
+  if (to == NULL) {
     PrintErrorMessage('E',"copy","could not read 't' symbol");
     return (PARAMERRORCODE);
   }
@@ -9372,13 +9373,90 @@ static INT CopyCommand (INT argc, char **argv)
   if (ReadArgvOption("a",argc,argv))
   {
     if (a_dcopy(theMG,0,CURRENTLEVEL(theMG),
-                SYM_VEC_DESC(to),EVERY_CLASS,SYM_VEC_DESC(from))!=NUM_OK)
+                to,EVERY_CLASS,from)!=NUM_OK)
       return (CMDERRORCODE);
   }
   else
   {
     if (l_dcopy(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
-                SYM_VEC_DESC(to),EVERY_CLASS,SYM_VEC_DESC(from))!=NUM_OK)
+                to,EVERY_CLASS,from)!=NUM_OK)
+      return (CMDERRORCODE);
+  }
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   homotopy - convex combination of two vector symbols
+
+   DESCRIPTION:
+
+   This command sets 'x := (1-v)*x + v*y'.
+
+   'homotopy $v <val> $x <x vec sym> $y <y vec sym> [$a]'
+
+   .  $v~<val>               - value
+   .  $x~<x~vec~sym>         - vector symbol
+   .  $y~<y~vec~sym>         - vector symbol
+   .  $a                     - all levels
+
+   EXAMPLE:
+   'homotopy $v 0.5 $x sol $y old;'
+   D*/
+/****************************************************************************/
+
+static INT HomotopyCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  VECDATA_DESC *x,*y;
+  DOUBLE mu;
+  DOUBLE v[MAX_VEC_COMP];
+  INT i;
+
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"homotopy","no current multigrid");
+    return(CMDERRORCODE);
+  }
+
+  x = ReadArgvVecDesc(theMG,"x",argc,argv);
+  if (x == NULL) {
+    PrintErrorMessage('E',"homotopy","could not read 'x' symbol");
+    return (PARAMERRORCODE);
+  }
+  y = ReadArgvVecDesc(theMG,"y",argc,argv);
+  if (y == NULL) {
+    PrintErrorMessage('E',"homotopy","could not read 'y' symbol");
+    return (PARAMERRORCODE);
+  }
+
+  if (ReadArgvDOUBLE("v",&mu,argc,argv))
+    return (PARAMERRORCODE);
+
+  if (ReadArgvOption("a",argc,argv))
+  {
+    for (i=0; i<VD_NCOMP(x); i++)
+      v[i] = 1.0 - mu;
+    if (a_dscale(theMG,0,CURRENTLEVEL(theMG),x,EVERY_CLASS,v)!=NUM_OK)
+      return (CMDERRORCODE);
+    for (i=0; i<VD_NCOMP(x); i++)
+      v[i] = mu;
+    if (a_daxpy(theMG,0,CURRENTLEVEL(theMG),x,EVERY_CLASS,v,y)!=NUM_OK)
+      return (CMDERRORCODE);
+  }
+  else
+  {
+    for (i=0; i<VD_NCOMP(x); i++)
+      v[i] = 1.0 - mu;
+    if (l_dscale(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
+                 x,EVERY_CLASS,v)!=NUM_OK)
+      return (CMDERRORCODE);
+    for (i=0; i<VD_NCOMP(x); i++)
+      v[i] = mu;
+    if (l_daxpy(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
+                x,EVERY_CLASS,v,y)!=NUM_OK)
       return (CMDERRORCODE);
   }
 
@@ -9403,7 +9481,7 @@ static INT CopyCommand (INT argc, char **argv)
 static INT InterpolateCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  SYMBOL *sym;
+  VECDATA_DESC *theVD;
   INT lev,currlev;
 
   NO_OPTION_CHECK(argc,argv);
@@ -9415,15 +9493,16 @@ static INT InterpolateCommand (INT argc, char **argv)
     return(CMDERRORCODE);
   }
 
-  if ((sym=ReadVecSymbolOfFormat(ENVITEM_NAME(MGFORMAT(theMG)),"interpolate",argc,argv))==NULL)
-  {
+  theVD = ReadArgvVecDesc(theMG,"interpolate",argc,argv);
+
+  if (theVD == NULL) {
     PrintErrorMessage('E',"interpolate","could not read symbol");
     return (PARAMERRORCODE);
   }
 
   currlev = CURRENTLEVEL(theMG);
   for (lev=1; lev<=currlev; lev++)
-    if (StandardInterpolateNewVectors(GRID_ON_LEVEL(theMG,lev),SYM_VEC_DESC(sym))!=NUM_OK)
+    if (StandardInterpolateNewVectors(GRID_ON_LEVEL(theMG,lev),theVD)!=NUM_OK)
       return (CMDERRORCODE);
 
   return (OKCODE);
@@ -12209,6 +12288,7 @@ INT InitCommands ()
   if (CreateCommand("symlist",            SymListCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("clear",                      ClearCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("copy",                       CopyCommand                                             )==NULL) return (__LINE__);
+  if (CreateCommand("homotopy",       HomotopyCommand                 )==NULL) return(__LINE__);
   if (CreateCommand("interpolate",        InterpolateCommand                              )==NULL) return (__LINE__);
 
   /* formats */
