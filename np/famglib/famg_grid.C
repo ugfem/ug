@@ -34,6 +34,8 @@
 
 #ifdef ModelP
 #include "famg_coloring.h"
+
+//#define EXTENDED_OUTPUT_FOR_DEBUG 
 #endif
 
 #ifdef USE_UG_DS
@@ -1760,7 +1762,11 @@ static FAMGGraph *Communication_Graph = NULL;
 static FAMGGrid *Communication_Grid = NULL;
 enum FAMG_MSG_TYPE {FAMG_TYPE_NONE, FAMG_TYPE_COARSE, FAMG_TYPE_FINE};
 
+#ifdef EXTENDED_OUTPUT_FOR_DEBUG
+static int Gather_NodeStatus (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+#else
 static int Gather_NodeStatus (DDD_OBJ obj, void *data)
+#endif
 {
 	VECTOR *vec = (VECTOR *)obj;
 	char *buffer = (char*)data;
@@ -1771,7 +1777,12 @@ static int Gather_NodeStatus (DDD_OBJ obj, void *data)
 	{
 		if( node->IsFGNode() )
 		{
+			#ifdef EXTENDED_OUTPUT_FOR_DEBUG
+			PRINTDEBUG(np,1,("%d: Gather_NodeStatus: Fine "VINDEX_FMTX" for PE %d with prio %d\n",me,VINDEX_PRTX(vec),proc, prio));
+			#else
 			PRINTDEBUG(np,1,("%d: Gather_NodeStatus: Fine "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+			#endif
+		
 			msgtype = FAMG_TYPE_FINE;
 			buffer += sizeof(msgtype);
 			
@@ -1801,7 +1812,12 @@ static int Gather_NodeStatus (DDD_OBJ obj, void *data)
 		}
 		else
 		{
+			#ifdef EXTENDED_OUTPUT_FOR_DEBUG
+			PRINTDEBUG(np,1,("%d: Gather_NodeStatus: Coarse "VINDEX_FMTX" for PE %d with prio %d\n",me,VINDEX_PRTX(vec),proc,prio));
+			#else
 			PRINTDEBUG(np,1,("%d: Gather_NodeStatus: Coarse "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+			#endif
+
 			assert(node->IsCGNode());
 			msgtype = FAMG_TYPE_COARSE;
 		}
@@ -1811,14 +1827,23 @@ static int Gather_NodeStatus (DDD_OBJ obj, void *data)
 	}
 	else
 	{	// the F/C status of the node has not changed
+		#ifdef EXTENDED_OUTPUT_FOR_DEBUG
+		PRINTDEBUG(np,1,("%d: Gather_NodeStatus: not changed "VINDEX_FMTX" for PE %d with prio %d\n",me,VINDEX_PRTX(vec),proc,prio));
+		#else
 		PRINTDEBUG(np,1,("%d: Gather_NodeStatus: not changed "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+		#endif
+		
 		msgtype = FAMG_TYPE_NONE;
 	}
 	
 	return 0;
 }
 
+#ifdef EXTENDED_OUTPUT_FOR_DEBUG
+static int Scatter_NodeStatus (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+#else
 static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
+#endif
 {
 	VECTOR *vec = (VECTOR *)obj;
 	char *buffer = (char*)data;
@@ -1827,7 +1852,12 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 
 	if( msgtype == FAMG_TYPE_NONE )
 	{
+		#ifdef EXTENDED_OUTPUT_FOR_DEBUG
+		PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: not changed from PE %d "VINDEX_FMTX"\n",me,proc,VINDEX_PRTX(vec)));
+		#else
 		PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: not changed "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+		#endif
+	
 		return 0;		// no info for me
 	}
 	
@@ -1839,12 +1869,22 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 		// check that the state of the node is consistent with the message
 		if( msgtype == FAMG_TYPE_COARSE )
 		{
+			#ifdef EXTENDED_OUTPUT_FOR_DEBUG
+			PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Coarse for already coarse "VINDEX_FMTX" from PE %d with prio %d\n",me,VINDEX_PRTX(vec),proc,prio));
+			#else
 			PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Coarse for already coarse "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+			#endif
+			
 			assert(node->IsCGNode());
 		}
 		else if( msgtype == FAMG_TYPE_FINE )
 		{
+			#ifdef EXTENDED_OUTPUT_FOR_DEBUG
+			PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Fine for already fine "VINDEX_FMTX" from PE %d with prio %d\n",me,VINDEX_PRTX(vec),proc,prio));
+			#else
 			PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Fine for already fine "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+			#endif
+		
 			assert(node->IsFGNode());
 			// check wether the parents are identical
 			MATRIX *imat;
@@ -1878,7 +1918,11 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 #endif
 	if( msgtype == FAMG_TYPE_COARSE )
 	{
+		#ifdef EXTENDED_OUTPUT_FOR_DEBUG
+		PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Coarse "VINDEX_FMTX" from PE %d with prio %d\n",me,VINDEX_PRTX(vec),proc,prio));
+		#else
 		PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Coarse "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+		#endif
 
 		// code from PaList::MarkParents
         Communication_Graph->Remove(node);
@@ -1897,8 +1941,11 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 		
 		np = *(int*)buffer;		// fetch number of parents from buffer
 		
+		#ifdef EXTENDED_OUTPUT_FOR_DEBUG
+	    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Fine "VINDEX_FMTX" %d parents from PE %d with prio %d\n",me,VINDEX_PRTX(vec), np, proc,prio));
+		#else
 	    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Fine "VINDEX_FMTX" %d parents\n",me,VINDEX_PRTX(vec), np));
-	    //PRINTDEBUG(np,1,("%d: Scatter_NodeStatus from %d with prio %d: Fine "VINDEX_FMTX" %d parents\n",me,proc,prio,VINDEX_PRTX(vec), np));
+		#endif
 		
 		// prepare array offsets into the buffer
 		DDD_GID *buffer_gid  = (DDD_GID *)((char*)data + CEIL(sizeof(msgtype)+sizeof(int))); // round up to achive alignment
@@ -1998,14 +2045,19 @@ void FAMGGrid::CommunicateNodeStatus()
 {
 	PRINTDEBUG(np,1,("%d: FAMGGrid::CommunicateNodeStatus\n",me));
 	Communication_Graph = GetGraph();	// set global variable to pass the graph to the Handlers
-	Communication_Grid = this;			// set global variable to pass the grid to the Handlers
+	Communication_Grid = this;		// set global variable to pass the grid to the Handlers
 	
 	int size = CEIL(sizeof(FAMG_MSG_TYPE) + sizeof(char)) + 
 				CEIL(FAMGMAXPARENTS * ( sizeof(DDD_GID)) + 2 * FAMGMAXPARENTS * sizeof(DOUBLE) );
 	size = CEIL(size);
 		
+	#ifdef EXTENDED_OUTPUT_FOR_DEBUG
+	DDD_IFAOnewayX( BorderVectorSymmIF, GRID_ATTR(mygrid), IF_FORWARD, size,
+					Gather_NodeStatus, Scatter_NodeStatus);
+	#else
 	DDD_IFAOneway( BorderVectorSymmIF, GRID_ATTR(mygrid), IF_FORWARD, size,
 					Gather_NodeStatus, Scatter_NodeStatus);
+	#endif
 	
 	DDD_IFAExecLocal( BorderVectorSymmIF, GRID_ATTR(mygrid), Local_ClearNodeFlag );
 }
