@@ -358,8 +358,11 @@ INT EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
     /* check sign */
     V_DIM_SUBTRACT(FVG_GCO(geo,j),FVG_GCO(geo,i),s);
     if (V_DIM_SCAL_PROD(s,SCVF_NORMAL(scvf))<0.0)
+    {
       UserWriteF("W: scvf normal w. edge negative e=%5d i=%2d j=%2d\n",
                  ID(e),i,j);
+      return(__LINE__);
+    }
     ENDDEBUG
   }
 
