@@ -61,8 +61,8 @@
 #define A_REASONABLE_NUMBER             100
 
 /* for SwapPartInterfaceData */
-#define SWAP_VEC_DATA(v,pf,pt)          {tmp = VVALUE(v,*pf); VVALUE(v,*pf) = VVALUE(v,*pt); VVALUE(v,*pf) = tmp;}
-#define SWAP_MAT_DATA(m,pf,pt)          {tmp = MVALUE(m,*pf); MVALUE(m,*pf) = MVALUE(m,*pt); MVALUE(m,*pf) = tmp;}
+#define SWAP_VEC_DATA(v,pf,pt)          {tmp = VVALUE(v,*pf); VVALUE(v,*pf) = VVALUE(v,*pt); VVALUE(v,*pt) = tmp;}
+#define SWAP_MAT_DATA(m,pf,pt)          {tmp = MVALUE(m,*pf); MVALUE(m,*pf) = MVALUE(m,*pt); MVALUE(m,*pt) = tmp;}
 
 /****************************************************************************/
 /*																			*/
@@ -1144,6 +1144,9 @@ INT VDinterfaceDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DE
         /* vd does not contain vds */
         REP_ERR_RETURN (1);
     }
+    else
+      /* no components here */
+      SubNCmp[tp] = 0;
 
   *vdi = CreateSubVecDesc(VD_MG(vd),NULL,SubNCmp,SubComp,SubName);
   if (*vdi == NULL)
@@ -1220,6 +1223,9 @@ INT VDinterfaceCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_
         /* vd does not contain vds */
         REP_ERR_RETURN (1);
     }
+    else
+      /* no components here */
+      SubNCmp[tp] = 0;
 
   *vdi = CreateSubVecDesc(VD_MG(vd),NULL,SubNCmp,SubComp,SubName);
   if (*vdi == NULL)
@@ -1230,21 +1236,23 @@ INT VDinterfaceCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_
 
 /****************************************************************************/
 /*D
-   VD_ncmps_in_otype - return number of comps in object if unique, -1 else
+   VD_ncmps_in_otype_mod - return number of comps in object if unique, -1 else
 
    SYNOPSIS:
-   INT VD_ncmps_in_otype (const VECDATA_DESC *vd, INT otype)
+   INT VD_ncmps_in_otype_mod (const VECDATA_DESC *vd, INT otype, INT mode)
 
    PARAMETERS:
    .  vd - data decsriptor
    .  otype - object type
+   .  mode - STRICT or NON_STRICT
 
    DESCRIPTION:
    This function checks whether the number of components described in 'otype'
    is the same for all vtypes using objects of 'otype' and returns it.
    If the number is not unique a -1 is returned.
    If not the whole domain is covered, a -2 is returned.
-   The uniqueness of comps is not checked here.
+   The uniqueness of comps is not checked here. If mode is STRICT vectors are
+   required in ALL vobjects of otype.
 
    CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
    are not defined at all!
@@ -1257,7 +1265,7 @@ INT VDinterfaceCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_
    D*/
 /****************************************************************************/
 
-INT VD_ncmps_in_otype (const VECDATA_DESC *vd, INT otype)
+INT VD_ncmps_in_otype_mod (const VECDATA_DESC *vd, INT otype, INT mode)
 {
   FORMAT *fmt;
   INT tp,otp,ncmp,parts,i,n;
@@ -1277,30 +1285,37 @@ INT VD_ncmps_in_otype (const VECDATA_DESC *vd, INT otype)
         parts |= FMT_T2P(fmt,tp);
       }
 
-  /* now check whether all parts are covered */
-  n = BVPD_NPARTS(MG_BVPD(VD_MG(vd)));
-  for (i=0; i<n; i++)
-    if (!(parts & (1<<i)))
-      REP_ERR_RETURN (-2);
+  if (mode==STRICT)
+  {
+    /* check whether all parts are covered */
+    n = BVPD_NPARTS(MG_BVPD(VD_MG(vd)));
+    for (i=0; i<n; i++)
+      if (!(parts & (1<<i)))
+        REP_ERR_RETURN (-2);
+  }
+  else if (mode!=NON_STRICT)
+    REP_ERR_RETURN (-3);
 
   return (ncmp);
 }
 
 /****************************************************************************/
 /*D
-   VD_cmp_of_otype - return comp in object if unique, -1 else
+   VD_cmp_of_otype_mod - return comp in object if unique, -1 else
 
    SYNOPSIS:
-   INT VD_cmp_of_otype (const VECDATA_DESC *vd, INT otype, INT i)
+   INT VD_cmp_of_otype_mod (const VECDATA_DESC *vd, INT otype, INT i, INT mode)
 
    PARAMETERS:
    .  vd - data decsriptor
    .  otype - object type
+   .  mode - STRICT or NON_STRICT
 
    DESCRIPTION:
    This function checks whether the offset of component i described in 'otype'
    is the same for all vtypes using objects of 'otype' and returns it.
-   If the offset is not unique a -1 is returned.
+   If the offset is not unique a -1 is returned. If mode is STRICT vectors are
+   required in ALL vobjects of otype.
 
    CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
    are not defined at all!
@@ -1312,7 +1327,7 @@ INT VD_ncmps_in_otype (const VECDATA_DESC *vd, INT otype)
    D*/
 /****************************************************************************/
 
-INT VD_cmp_of_otype (const VECDATA_DESC *vd, INT otype, INT i)
+INT VD_cmp_of_otype_mod (const VECDATA_DESC *vd, INT otype, INT i, INT mode)
 {
   FORMAT *fmt;
   INT tp,otp,ncmp,off,parts,j,n;
@@ -1341,31 +1356,38 @@ INT VD_cmp_of_otype (const VECDATA_DESC *vd, INT otype, INT i)
         parts |= FMT_T2P(fmt,tp);
       }
 
-  /* now check whether all parts are covered */
-  n = BVPD_NPARTS(MG_BVPD(VD_MG(vd)));
-  for (j=0; j<n; j++)
-    if (!(parts & (1<<j)))
-      REP_ERR_RETURN (-2);
+  if (mode==STRICT)
+  {
+    /* check whether all parts are covered */
+    n = BVPD_NPARTS(MG_BVPD(VD_MG(vd)));
+    for (j=0; j<n; j++)
+      if (!(parts & (1<<j)))
+        REP_ERR_RETURN (-2);
+  }
+  else if (mode!=NON_STRICT)
+    REP_ERR_RETURN (-3);
 
   return (off);
 }
 
 /****************************************************************************/
 /*D
-   VD_ncmp_cmpptr_of_otype - return comp in object if unique, -1 else
+   VD_ncmp_cmpptr_of_otype_mod - return comp in object if unique, -1 else
 
    SYNOPSIS:
-   INT VD_ncmp_cmpptr_of_otype (const VECDATA_DESC *vd, INT otype, INT *ncomp)
+   SHORT *VD_ncmp_cmpptr_of_otype_mod (const VECDATA_DESC *vd, INT otype, INT *ncomp, INT mode)
 
    PARAMETERS:
    .  vd - data decsriptor
    .  otype - object type
    .  ncomp - number of components (may be NULL)
+   .  mode - STRICT or NON_STRICT
 
    DESCRIPTION:
    This function checks whether all components described in 'otype'
    are the same for all vtypes using objects of 'otype' and returns a component pointer.
-   If the components are not unique a NULL is returned.
+   If the components are not unique a NULL is returned. If mode is STRICT vectors are
+   required in ALL vobjects of otype.
 
    CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
    are not defined at all!
@@ -1377,7 +1399,7 @@ INT VD_cmp_of_otype (const VECDATA_DESC *vd, INT otype, INT i)
    D*/
 /****************************************************************************/
 
-SHORT *VD_ncmp_cmpptr_of_otype (const VECDATA_DESC *vd, INT otype, INT *ncomp)
+SHORT *VD_ncmp_cmpptr_of_otype_mod (const VECDATA_DESC *vd, INT otype, INT *ncomp, INT mode)
 {
   FORMAT *fmt;
   SHORT *cptr;
@@ -1409,11 +1431,16 @@ SHORT *VD_ncmp_cmpptr_of_otype (const VECDATA_DESC *vd, INT otype, INT *ncomp)
         parts |= FMT_T2P(fmt,tp);
       }
 
-  /* now check whether all parts are covered */
-  n = BVPD_NPARTS(MG_BVPD(VD_MG(vd)));
-  for (i=0; i<n; i++)
-    if (!(parts & (1<<i)))
-      REP_ERR_RETURN (NULL);
+  if (mode==STRICT)
+  {
+    /* check whether all parts are covered */
+    n = BVPD_NPARTS(MG_BVPD(VD_MG(vd)));
+    for (i=0; i<n; i++)
+      if (!(parts & (1<<i)))
+        REP_ERR_RETURN (NULL);
+  }
+  else if (mode!=NON_STRICT)
+    REP_ERR_RETURN (NULL);
 
   if (ncomp!=NULL) *ncomp = ncmp;
 
@@ -2424,6 +2451,8 @@ INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DE
 
   k = 0;
   for (tp=0; tp<NMATTYPES; tp++)
+  {
+    SubRCmp[tp] = SubCCmp[tp] = 0;
     if (MD_ISDEF_IN_MTYPE(mds,tp))
     {
       if (!MD_ISDEF_IN_MTYPE(md,tp))
@@ -2447,18 +2476,13 @@ INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DE
         SubRCmp[tp] = MD_ROWS_IN_MTYPE(mds,tp);
         SubCCmp[tp] = MD_COLS_IN_MTYPE(mds,tp);
       }
-      else if (ns==n)
-      {
-        /* no components here */
-        SubRCmp[tp] = 0;
-        SubCCmp[tp] = 0;
-      }
-      else
+      else if (ns!=n)
         /* md does not contain mds */
         REP_ERR_RETURN (1);
     }
+  }
 
-  *mdi = CreateSubMatDesc(VD_MG(md),NULL,SubRCmp,SubCCmp,SubComp,SubName);
+  *mdi = CreateSubMatDesc(MD_MG(md),NULL,SubRCmp,SubCCmp,SubComp,SubName);
   if (*mdi == NULL)
     REP_ERR_RETURN (1);
 
@@ -2470,12 +2494,13 @@ INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DE
    MD_rows_in_ro_co - return number of row comps in row/col object if unique, -1 else
 
    SYNOPSIS:
-   INT MD_rows_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
+   INT MD_rows_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mode)
 
    PARAMETERS:
    .  md - data decsriptor
    .  rowobj - row object type
    .  colobj - col object type
+   .  mode - STRICT or NON_STRICT
 
    DESCRIPTION:
    This function checks whether the number of row components described in 'rowobj'/'colobj'
@@ -2483,6 +2508,7 @@ INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DE
    If the number is not unique a -1 is returned.
    If not the whole domain is covered, a -2 is returned.
    The uniqueness of comps is not checked here.
+   If mode is STRICT vectors are required in ALL vobjects of otype.
 
    CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
    are not defined at all!
@@ -2495,7 +2521,7 @@ INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DE
    D*/
 /****************************************************************************/
 
-INT MD_rows_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
+INT MD_rows_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mode)
 {
   FORMAT *fmt;
   INT rt,ct,rot,cot,nrow,src_parts,dst_parts,i,n;
@@ -2518,12 +2544,17 @@ INT MD_rows_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
           dst_parts |= FMT_T2P(fmt,ct);
         }
 
-  /* now check whether all parts are covered */
-  src_parts &= dst_parts;
-  n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
-  for (i=0; i<n; i++)
-    if (!(src_parts & (1<<i)))
-      REP_ERR_RETURN (-2);
+  if (mode==STRICT)
+  {
+    /* now check whether all parts are covered */
+    src_parts &= dst_parts;
+    n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
+    for (i=0; i<n; i++)
+      if (!(src_parts & (1<<i)))
+        REP_ERR_RETURN (-2);
+  }
+  else if (mode!=NON_STRICT)
+    REP_ERR_RETURN (NULL);
 
   return (nrow);
 }
@@ -2533,12 +2564,13 @@ INT MD_rows_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
    MD_cols_in_ro_co - return number of col comps in row/col object if unique, -1 else
 
    SYNOPSIS:
-   INT MD_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
+   INT MD_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mode)
 
    PARAMETERS:
    .  md - data decsriptor
    .  rowobj - row object type
    .  colobj - col object type
+   .  mode - STRICT or NON_STRICT
 
    DESCRIPTION:
    This function checks whether the number of col components described in 'rowobj'/'colobj'
@@ -2546,6 +2578,7 @@ INT MD_rows_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
    If the number is not unique a -1 is returned.
    If not the whole domain is covered, a -2 is returned.
    The uniqueness of comps is not checked here.
+   If mode is STRICT vectors are required in ALL vobjects of otype.
 
    CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
    are not defined at all!
@@ -2558,7 +2591,7 @@ INT MD_rows_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
    D*/
 /****************************************************************************/
 
-INT MD_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
+INT MD_cols_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mode)
 {
   FORMAT *fmt;
   INT rt,ct,rot,cot,ncol,src_parts,dst_parts,i,n;
@@ -2581,12 +2614,17 @@ INT MD_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
           dst_parts |= FMT_T2P(fmt,ct);
         }
 
-  /* now check whether all parts are covered */
-  src_parts &= dst_parts;
-  n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
-  for (i=0; i<n; i++)
-    if (!(src_parts & (1<<i)))
-      REP_ERR_RETURN (-2);
+  if (mode==STRICT)
+  {
+    /* now check whether all parts are covered */
+    src_parts &= dst_parts;
+    n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
+    for (i=0; i<n; i++)
+      if (!(src_parts & (1<<i)))
+        REP_ERR_RETURN (-2);
+  }
+  else if (mode!=NON_STRICT)
+    REP_ERR_RETURN (NULL);
 
   return (ncol);
 }
@@ -2596,7 +2634,7 @@ INT MD_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
    MD_rows_cols_in_ro_co - return number of row and col comps in row/col object if unique, -1 else
 
    SYNOPSIS:
-   INT MD_rows_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc)
+   INT MD_rows_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc, INT mode)
 
    PARAMETERS:
    .  md - data decsriptor
@@ -2604,6 +2642,7 @@ INT MD_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
    .  colobj - col object type
    .  nr - number of rows if unique, unchanged if error
    .  nc - number of cols if unique, unchanged if error
+   .  mode - STRICT or NON_STRICT
 
    DESCRIPTION:
    This function checks whether the number of row and col components described in 'rowobj'/'colobj'
@@ -2611,6 +2650,7 @@ INT MD_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
    If the number is not unique 1 is returned.
    If not the whole domain is covered, 2 is returned.
    The uniqueness of comps is not checked here.
+   If mode is STRICT vectors are required in ALL vobjects of otype.
 
    CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
    are not defined at all!
@@ -2623,7 +2663,7 @@ INT MD_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
    D*/
 /****************************************************************************/
 
-INT MD_rows_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc)
+INT MD_rows_cols_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc, INT mode)
 {
   FORMAT *fmt;
   INT rt,ct,rot,cot,nrow,ncol,src_parts,dst_parts,i,n;
@@ -2653,12 +2693,17 @@ INT MD_rows_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *
           dst_parts |= FMT_T2P(fmt,ct);
         }
 
-  /* now check whether all parts are covered */
-  src_parts &= dst_parts;
-  n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
-  for (i=0; i<n; i++)
-    if (!(src_parts & (1<<i)))
-      REP_ERR_RETURN (2);
+  if (mode==STRICT)
+  {
+    /* now check whether all parts are covered */
+    src_parts &= dst_parts;
+    n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
+    for (i=0; i<n; i++)
+      if (!(src_parts & (1<<i)))
+        REP_ERR_RETURN (2);
+  }
+  else if (mode!=NON_STRICT)
+    REP_ERR_RETURN (NULL);
 
   *nr = nrow;
   *nc = ncol;
@@ -2671,19 +2716,21 @@ INT MD_rows_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *
    MD_mcmp_of_ro_co - return comp in row/col object if unique, -1 else
 
    SYNOPSIS:
-   INT MD_mcmp_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i)
+   INT MD_mcmp_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i, INT mode)
 
    PARAMETERS:
    .  md - data decsriptor
    .  rowobj - row object type
    .  colobj - col object type
    .  i - component number
+   .  mode - STRICT or NON_STRICT
 
    DESCRIPTION:
    This function checks whether the offset of component number i described in 'rowobj'/'colobj'
    is the same for all mtypes using objects of 'rowobj'/'colobj' and returns it.
    If the offset is not unique a -1 is returned.
    If not the whole domain is covered, a -2 is returned.
+   If mode is STRICT vectors are required in ALL vobjects of otype.
 
    CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
    are not defined at all!
@@ -2696,7 +2743,7 @@ INT MD_rows_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *
    D*/
 /****************************************************************************/
 
-INT MD_mcmp_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i)
+INT MD_mcmp_of_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i, INT mode)
 {
   FORMAT *fmt;
   INT rt,ct,off,rot,cot,nrow,ncol,src_parts,dst_parts,j,n;
@@ -2731,12 +2778,17 @@ INT MD_mcmp_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i)
           dst_parts |= FMT_T2P(fmt,ct);
         }
 
-  /* now check whether all parts are covered */
-  src_parts &= dst_parts;
-  n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
-  for (j=0; j<n; j++)
-    if (!(src_parts & (1<<j)))
-      REP_ERR_RETURN (-2);
+  if (mode==STRICT)
+  {
+    /* now check whether all parts are covered */
+    src_parts &= dst_parts;
+    n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
+    for (j=0; j<n; j++)
+      if (!(src_parts & (1<<j)))
+        REP_ERR_RETURN (-2);
+  }
+  else if (mode!=NON_STRICT)
+    REP_ERR_RETURN (NULL);
 
   return (off);
 }
@@ -2746,7 +2798,7 @@ INT MD_mcmp_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i)
    MD_nr_nc_mcmpptr_of_ro_co - return comp ptr for row/col object if unique, NULL else
 
    SYNOPSIS:
-   SHORT *MD_nr_nc_mcmpptr_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc)
+   SHORT *MD_nr_nc_mcmpptr_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc, INT mode)
 
    PARAMETERS:
    .  md - data decsriptor
@@ -2754,11 +2806,13 @@ INT MD_mcmp_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i)
    .  colobj - col object type
    .  nr - number of rows (may be NULL)
    .  nc - number of cols (may be NULL)
+   .  mode - STRICT or NON_STRICT
 
    DESCRIPTION:
    This function checks whether all components described in 'rowobj'/'colobj'
    are the same for all mtypes using objects of 'rowobj'/'colobj' and returns a component pointer.
    If the components are not unique a NULL is returned.
+   If mode is STRICT vectors are required in ALL vobjects of otype.
 
    CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
    are not defined at all!
@@ -2771,7 +2825,7 @@ INT MD_mcmp_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i)
    D*/
 /****************************************************************************/
 
-SHORT *MD_nr_nc_mcmpptr_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc)
+SHORT *MD_nr_nc_mcmpptr_of_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc, INT mode)
 {
   FORMAT *fmt;
   SHORT *cptr;
@@ -2811,12 +2865,17 @@ SHORT *MD_nr_nc_mcmpptr_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj
           dst_parts |= FMT_T2P(fmt,ct);
         }
 
-  /* now check whether all parts are covered */
-  src_parts &= dst_parts;
-  n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
-  for (j=0; j<n; j++)
-    if (!(src_parts & (1<<j)))
-      REP_ERR_RETURN (NULL);
+  if (mode==STRICT)
+  {
+    /* now check whether all parts are covered */
+    src_parts &= dst_parts;
+    n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
+    for (j=0; j<n; j++)
+      if (!(src_parts & (1<<j)))
+        REP_ERR_RETURN (NULL);
+  }
+  else if (mode!=NON_STRICT)
+    REP_ERR_RETURN (NULL);
 
   if (nr!=NULL) *nr = nrow;
   if (nc!=NULL) *nc = ncol;
@@ -2942,6 +3001,8 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
     REP_ERR_RETURN(1);
   old_direction = direction;
 
+  fl = MAX(0,fl);
+
   if (SPID_NVD(spid)>0)
     mg = VD_MG(SPID_VD(spid,0));
   else if (SPID_NMD(spid)>0)
@@ -2960,6 +3021,7 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
   /* VECDATA_DESCs */
   /*****************/
 
+  tpn = -1;
   nn = ni = 0;
   for (tp=0; tp<NVECTYPES; tp++)
   {
@@ -3000,7 +3062,7 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
   for (tp=0; tp<NVECTYPES; tp++)
     if (nvn[tp])
     {
-      if (vcmp==NULL)
+      if (vcmp!=NULL)
         REP_ERR_RETURN(1);
       vcmp = vn+vnoffset[tp];
       nv   = nvn[tp];
@@ -3079,10 +3141,11 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
   for (tp=0; tp<NMATTYPES; tp++)
     if (nmn[tp])
     {
-      ASSERT(mcmp!=NULL);
+      ASSERT(mcmp==NULL);
       mcmp = mn+mnoffset[tp];
       nm   = nmn[tp];
-      ASSERT(tp==tpn*NVECTYPES+tpn);
+      if (tpn!=-1)
+        ASSERT(tp==tpn*NVECTYPES+tpn);
       tpn  = tp;
     }
 
@@ -3121,33 +3184,65 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
   /*********************************/
 
   consider_mat = (SPID_NMD(spid)>0);
-  for (lev=fl; lev<=tl; lev++)
-    for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!=NULL; vec=SUCCVC(vec))
-    {
-      rt = VTYPE(vec);
-      n  = nvi[rt];
-      if (n>0)
+  if (direction==SPID_FORTH)
+    for (lev=fl; lev<=tl; lev++)
+      for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!=NULL; vec=SUCCVC(vec))
       {
-        pn = vcmp;
-        pi = vi+vioffset[rt];
-        for (i=0; i<nv; i++,pi++,pn++)
-          SWAP_VEC_DATA(vec,pi,pn);
-      }
-      if (consider_mat)
-        for (mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
+        rt = VTYPE(vec);
+        n  = nvi[rt];
+        if (n>0)
         {
-          ct = VTYPE(MDEST(mat));
-          tp = MTP(rt,ct);
-          n  = nmi[tp];
-          if (n>0)
-          {
-            pn = mcmp;
-            pi = mi+mioffset[tp];
-            for (i=0; i<nm; i++,pi++,pn++)
-              SWAP_MAT_DATA(mat,pi,pn);
-          }
+          pn = vcmp;
+          pi = vi+vioffset[rt];
+          for (i=0; i<nv; i++,pi++,pn++)
+            SWAP_VEC_DATA(vec,pi,pn);
         }
-    }
+        if (consider_mat)
+          for (mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
+          {
+            ct = VTYPE(MDEST(mat));
+            tp = MTP(rt,ct);
+            n  = nmi[tp];
+            if (n>0)
+            {
+              pn = mcmp;
+              pi = mi+mioffset[tp];
+              for (i=0; i<nm; i++,pi++,pn++)
+                SWAP_MAT_DATA(mat,pi,pn);
+            }
+          }
+      }
+  else if (direction==SPID_BACK)
+    /* run swapping loops backwards */
+    for (lev=fl; lev<=tl; lev++)
+      for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!=NULL; vec=SUCCVC(vec))
+      {
+        rt = VTYPE(vec);
+        n  = nvi[rt];
+        if (n>0)
+        {
+          pn = vcmp+nv-1;
+          pi = vi+vioffset[rt]+nv-1;
+          for (i=nv-1; i>=0; i--,pi--,pn--)
+            SWAP_VEC_DATA(vec,pi,pn);
+        }
+        if (consider_mat)
+          for (mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
+          {
+            ct = VTYPE(MDEST(mat));
+            tp = MTP(rt,ct);
+            n  = nmi[tp];
+            if (n>0)
+            {
+              pn = mcmp+nm-1;
+              pi = mi+mioffset[tp]+nm-1;
+              for (i=nm-1; i>=0; i--,pi--,pn--)
+                SWAP_MAT_DATA(mat,pi,pn);
+            }
+          }
+      }
+  else
+    REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -3192,12 +3287,14 @@ INT SwapPartSkipflags (INT fl, INT tl, const VECDATA_DESC *vdg, const VECDATA_DE
   struct {
     INT len;                                            /* number of bits		*/
     INT shift;                                          /* shift in global desc	*/
-    INT bits;                                           /* mask for bits		*/
-    INT rest;                                           /* mask for rest		*/
+    unsigned INT bits;                          /* mask for bits		*/
+    unsigned INT rest;                          /* mask for rest		*/
   } sps[NVECTYPES],*p;
   INT i,j,n,tp,shift,cmpi,lev,skip,bits,rest;
 
   mg = VD_MG(vdg);
+
+  fl = MAX(0,fl);
 
   /* first compute mask, len and offset of vdi skipbits on interface */
   for (tp=0; tp<NVECTYPES; tp++)
@@ -3212,7 +3309,7 @@ INT SwapPartSkipflags (INT fl, INT tl, const VECDATA_DESC *vdg, const VECDATA_DE
       /* compute position of first vdi comp rel to vdg */
       cmpi = VD_CMP_OF_TYPE(vdi,tp,0);
       for (j=0; j<VD_NCMPS_IN_TYPE(vdg,tp); j++)
-        if (VD_CMP_OF_TYPE(vdg,tp,0)==cmpi)
+        if (VD_CMP_OF_TYPE(vdg,tp,j)==cmpi)
           break;
       ASSERT(j<VD_NCMPS_IN_TYPE(vdg,tp));
       shift = j;
@@ -3233,13 +3330,10 @@ INT SwapPartSkipflags (INT fl, INT tl, const VECDATA_DESC *vdg, const VECDATA_DE
       sps[tp].shift   = shift;
 
       sps[tp].bits    = POW2(n)-1;
-      sps[tp].rest    = ~sps[tp].bits;
-
       if (direction==SPID_FORTH)
-      {
         sps[tp].bits    = sps[tp].bits << shift;
-        sps[tp].rest    = sps[tp].rest << shift;
-      }
+
+      sps[tp].rest    = ~(sps[tp].bits);
     }
   }
 
@@ -3248,9 +3342,9 @@ INT SwapPartSkipflags (INT fl, INT tl, const VECDATA_DESC *vdg, const VECDATA_DE
   {
     for (lev=fl; lev<=tl; lev++)
       for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!=NULL; vec=SUCCVC(vec))
-        if (sps[tp].len)
+        if (sps[VTYPE(vec)].len)
         {
-          p = sps+tp;
+          p = sps+VTYPE(vec);
 
           skip = VECSKIP(vec);
           if (skip==0)
@@ -3264,9 +3358,9 @@ INT SwapPartSkipflags (INT fl, INT tl, const VECDATA_DESC *vdg, const VECDATA_DE
   {
     for (lev=fl; lev<=tl; lev++)
       for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!=NULL; vec=SUCCVC(vec))
-        if (sps[tp].len)
+        if (sps[VTYPE(vec)].len)
         {
-          p = sps+tp;
+          p = sps+VTYPE(vec);
 
           skip = VECSKIP(vec);
           if (skip==0)

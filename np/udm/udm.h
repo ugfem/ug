@@ -48,14 +48,18 @@
 #define NMATTYPES                               (MAXVECTORS*MAXVECTORS)
 #define MAX_SINGLE_VEC_COMP              9      /* max nb of comp in one TYPE                   */
 #define MAX_SINGLE_MAT_COMP             81      /* max nb of comp in one TYPE		    */
-#define MAX_VEC_COMP                     9      /* max nb of comp in one VECDATA_DESC	*/
-#define MAX_MAT_COMP                    81      /* max nb of comp in one VECDATA_DESC	*/
+#define MAX_VEC_COMP                    12      /* max nb of comp in one VECDATA_DESC	*/
+#define MAX_MAT_COMP               144  /* max nb of comp in one VECDATA_DESC	*/
 
 #define NVECOFFSETS                             (NVECTYPES+1)
 /* for offset component in VECDATA_DESC	*/
 #define NMATOFFSETS                             (NMATTYPES+1)
 
 #define DEFAULT_NAMES "uvwzpqrst"   /* of size MAX_VEC_COMP                 */
+
+/* defines for getting object type specific information from XXXDATA_DESCs	*/
+#define STRICT                  123
+#define NON_STRICT              124
 
 /* VECDATA_DESC */
 #define VD_MG(vd)                                                       ((vd)->mg)
@@ -316,25 +320,37 @@ INT SwapPartSkipflags           (INT fl, INT tl, const VECDATA_DESC *vdg, const 
  */
 
 /* vtypes and object types */
-INT             GetUniqueOTypeOfVType           (const FORMAT *fmt, INT vtype);
-INT             GetUniquePartOfVType            (const MULTIGRID *mg, INT vtype);
-INT             FillCompsForOType                       (const FORMAT *fmt, INT otype, INT n, SHORT cmps[]);
+INT             GetUniqueOTypeOfVType                                           (const FORMAT *fmt, INT vtype);
+INT             GetUniquePartOfVType                                            (const MULTIGRID *mg, INT vtype);
+INT             FillCompsForOType                                                       (const FORMAT *fmt, INT otype, INT n, SHORT cmps[]);
 
 /* VECDATA_DESCs and object type */
-INT             VD_ncmps_in_otype                       (const VECDATA_DESC *vd, INT otype);
-INT             VD_cmp_of_otype                         (const VECDATA_DESC *vd, INT otype, INT i);
-#define VD_cmpptr_of_otype(vd,ot)       VD_ncmp_cmpptr_of_otype(vd,ot,NULL)
-SHORT   *VD_ncmp_cmpptr_of_otype        (const VECDATA_DESC *vd, INT otype, INT *ncmp);
-INT             VDusesVOTypeOnly                        (const VECDATA_DESC *vd, INT votype);
+INT             VD_ncmps_in_otype_mod                                           (const VECDATA_DESC *vd, INT otype, INT mode);
+INT             VD_cmp_of_otype_mod                                                     (const VECDATA_DESC *vd, INT otype, INT i, INT mode);
+SHORT  *VD_ncmp_cmpptr_of_otype_mod                             (const VECDATA_DESC *vd, INT otype, INT *ncomp, INT mode);
+INT             VDusesVOTypeOnly                                                        (const VECDATA_DESC *vd, INT votype);
+
+#define VD_ncmps_in_otype(vd,ot)                                        VD_ncmps_in_otype_mod(vd,ot,STRICT)
+#define VD_cmp_of_otype(vd,ot,i)                                        VD_cmp_of_otype_mod(vd,ot,i,STRICT)
+#define VD_cmpptr_of_otype(vd,ot)                                       VD_ncmp_cmpptr_of_otype_mod(vd,ot,NULL,STRICT)
+#define VD_cmpptr_of_otype_mod(vd,ot,mo)                        VD_ncmp_cmpptr_of_otype_mod(vd,ot,NULL,mo)
+#define VD_ncmp_cmpptr_of_otype(vd,ot,nc)                       VD_ncmp_cmpptr_of_otype_mod(vd,ot,nc,STRICT)
 
 /* MATDATA_DESCs and object type */
-INT             MD_rows_in_ro_co                        (const MATDATA_DESC *md, INT rowobj, INT colobj);
-INT             MD_cols_in_ro_co                        (const MATDATA_DESC *md, INT rowobj, INT colobj);
-INT             MD_rows_cols_in_ro_co           (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc);
-INT             MD_mcmp_of_ro_co                        (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i);
-#define MD_mcmpptr_of_ro_co(md,ro,co)   MD_nr_nc_mcmpptr_of_ro_co(md,ro,co,NULL,NULL)
-SHORT   *MD_nr_nc_mcmpptr_of_ro_co      (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nrow, INT *ncol);
-INT             MDusesVOTypeOnly                        (const MATDATA_DESC *md, INT votype);
+INT             MD_rows_in_ro_co_mod                                            (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mode);
+INT             MD_cols_in_ro_co_mod                                            (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mode);
+INT             MD_rows_cols_in_ro_co_mod                                       (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc, INT mode);
+INT             MD_mcmp_of_ro_co_mod                                            (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i, INT mode);
+SHORT   *MD_nr_nc_mcmpptr_of_ro_co_mod                          (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nrow, INT *ncol, INT mode);
+INT             MDusesVOTypeOnly                                                        (const MATDATA_DESC *md, INT votype);
+
+#define MD_rows_in_ro_co(md,ro,co)                                      MD_rows_in_ro_co_mod(md,ro,co,STRICT)
+#define MD_cols_in_ro_co(md,ro,co)                                      MD_cols_in_ro_co_mod(md,ro,co,STRICT)
+#define MD_rows_cols_in_ro_co(md,ro,co,nr,nc)           MD_rows_cols_in_ro_co_mod(md,ro,co,nr,nc,STRICT)
+#define MD_mcmp_of_ro_co(md,ro,co,i)                            MD_mcmp_of_ro_co_mod(md,ro,co,i,STRICT)
+#define MD_mcmpptr_of_ro_co(md,ro,co)                           MD_nr_nc_mcmpptr_of_ro_co_mod(md,ro,co,NULL,NULL,STRICT)
+#define MD_mcmpptr_of_ro_co_mod(md,ro,co,mo)            MD_nr_nc_mcmpptr_of_ro_co_mod(md,ro,co,NULL,NULL,mo)
+#define MD_nr_nc_mcmpptr_of_ro_co(md,ro,co,nr,nc)       MD_nr_nc_mcmpptr_of_ro_co_mod(md,ro,co,nr,nc,STRICT)
 
 /* init user data manager */
 INT InitUserDataManager (void);
