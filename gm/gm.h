@@ -144,6 +144,8 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 #define BVDOWNTYPEVECTOR        0       /* symbolic value for BVDOWNTYPE */
 #define BVDOWNTYPEBV            1       /* symbolic value for BVDOWNTYPE */
 #define BVDOWNTYPEDIAG          2       /* symbolic value for BVDOWNTYPE */
+#define BV1DTV                  0       /* symbolic value for BVTVTYPE */
+#define BV2DTV                  1       /* symbolic value for BVTVTYPE */
 
 
 /* use of GSTATUS (for grids), use power of 2 */
@@ -1345,6 +1347,12 @@ extern CONTROL_ENTRY
 #define BVLEVEL(bv)                                             CW_READ_STATIC(bv,BVLEVEL_,BLOCKVECTOR_)
 #define SETBVLEVEL(bv,n)                                CW_WRITE_STATIC(bv,BVLEVEL_,BLOCKVECTOR_,n)
 
+#define BVTVTYPE_CE                                     81
+#define BVTVTYPE_SHIFT                                  6
+#define BVTVTYPE_LEN                                    1
+#define BVTVTYPE(bv)                                    CW_READ_STATIC(bv,BVTVTYPE_,BLOCKVECTOR_)
+#define SETBVTVTYPE(bv,n)                       CW_WRITE_STATIC(bv,BVTVTYPE_,BLOCKVECTOR_,n)
+
 /* access to members of struct blockvector */
 #define BVNUMBER(bv)                                    ((bv)->number)
 #define BVUSERDATA(bv)                                  ((bv)->user_data)
@@ -1372,6 +1380,7 @@ extern CONTROL_ENTRY
 #define ORD_LIN(n)                                              HiWrd(n)
 
 /* operations on struct block */
+#define BV_IS_EMPTY(bv)                                 (BVNUMBEROFVECTORS(bv)==0)
 #define BV_IS_LEAF_BV(bv)                               (BVDOWNTYPE(bv)==BVDOWNTYPEVECTOR)
 #define BV_IS_DIAG_BV(bv)                               (BVDOWNTYPE(bv)==BVDOWNTYPEDIAG)
 
