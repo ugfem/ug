@@ -8199,13 +8199,35 @@ static INT EXCopyMatrixFLOAT (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, I
   VECTOR *theV,*theW;
   MATRIX *theM;
   SHORT *comp;
+  SPARSE_MATRIX *sm;
 
         #ifdef ModelP
   if (FIRSTVECTOR(theGrid) == NULL)
     return(0);
         #endif
 
-  if (MD_IS_SCALAR(A))
+  if (MD_IS_SPARSE(A))
+  {
+    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    {
+      rindex = VINDEX(theV);
+      rtype = VTYPE(theV);
+      rcomp = VD_NCMPS_IN_TYPE(x,rtype);
+      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
+      {
+        theW = MDEST(theM);
+        cindex = VINDEX(theW);
+        ctype = VTYPE(theW);
+        sm = (MDIAG(theM)) ? A->sm[DMTP(rtype)] : A->sm[MTP(rtype,ctype)];
+        ccomp = VD_NCMPS_IN_TYPE(x,ctype);
+        for (i=0; i<rcomp; i++)
+          for (j=sm->row_start[i]; j<sm->row_start[i+1]; j++)
+            EX_MAT(Mat,bw,rindex+i,cindex+sm->col_ind[j])
+              = MVALUE(theM,sm->offset[j]);
+      }
+    }
+  }
+  else if (MD_IS_SCALAR(A))
   {
     ment = MD_SCALCMP(A);
     for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
@@ -8287,7 +8309,13 @@ static INT EXCopyMatrixFLOATback (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *
     return(0);
         #endif
 
-  if (MD_IS_SCALAR(A))
+  if (MD_IS_SPARSE(A))
+  {
+    PrintErrorMessage ('E', "ex",
+                       "No copy-back for sparse matrix blocks implemented");
+    return(__LINE__);
+  }
+  else if (MD_IS_SCALAR(A))
   {
     ment = MD_SCALCMP(A);
     for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
@@ -8364,13 +8392,35 @@ static INT EXCopyMatrixDOUBLE (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, 
   VECTOR *theV,*theW;
   MATRIX *theM;
   SHORT *comp;
+  SPARSE_MATRIX *sm;
 
         #ifdef ModelP
   if (FIRSTVECTOR(theGrid) == NULL)
     return(0);
         #endif
 
-  if (MD_IS_SCALAR(A))
+  if (MD_IS_SPARSE(A))
+  {
+    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    {
+      rindex = VINDEX(theV);
+      rtype = VTYPE(theV);
+      rcomp = VD_NCMPS_IN_TYPE(x,rtype);
+      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
+      {
+        theW = MDEST(theM);
+        cindex = VINDEX(theW);
+        ctype = VTYPE(theW);
+        sm = (MDIAG(theM)) ? A->sm[DMTP(rtype)] : A->sm[MTP(rtype,ctype)];
+        ccomp = VD_NCMPS_IN_TYPE(x,ctype);
+        for (i=0; i<rcomp; i++)
+          for (j=sm->row_start[i]; j<sm->row_start[i+1]; j++)
+            EX_MAT(Mat,bw,rindex+i,cindex+sm->col_ind[j])
+              = MVALUE(theM,sm->offset[j]);
+      }
+    }
+  }
+  else if (MD_IS_SCALAR(A))
   {
     ment = MD_SCALCMP(A);
     for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
@@ -8452,7 +8502,13 @@ static INT EXCopyMatrixDOUBLEback (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC 
     return(0);
         #endif
 
-  if (MD_IS_SCALAR(A))
+  if (MD_IS_SPARSE(A))
+  {
+    PrintErrorMessage ('E', "ex",
+                       "No copy-back for sparse matrix blocks implemented");
+    return(__LINE__);
+  }
+  else if (MD_IS_SCALAR(A))
   {
     ment = MD_SCALCMP(A);
     for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
