@@ -217,6 +217,8 @@ lexorderv ur|ul|dr|dl|ru|rd|lu|ld [$l <level>] [$m] [$s <|>|0]
     $m                     # also order the MATRIXs of each node in the same way
     $s <|>|0               # treatment of vectors with skip>0: put at begin, put at end
                            # or treat them like others (default)
+    $w [s][n]              # consider vectors with skipflag set (s) or not set (n) and append
+                           # the remaining ones to the lexicographically ordered list
 
 -orderv > vector matrix order sort
 orderv           # order the vectors of the current multigrid
@@ -302,6 +304,15 @@ slist [$d] [$b] [$n] [$v]
     $n                     # list also neighbours of each node/element
     $v                     # print extended info (verbose mode)
 
+-symlist > symbol user data vector matrix
+symlist        # list SYMBOL-contents
+symlist $s <sym-name> [<fmt>|*] $V [<fmt>|*] $M [<fmt>|*]
+    $s <sym-name> ...      # list SYMBOL with name ...
+    $V ...                 # list all VECTOR-SYMBOLs ...
+    $M ...                 # list all MATRIX-SYMBOLs ...
+    [<fmt>|*]              # ... of format <fmt>
+                           #     or of current multigrid (*)
+                           #     or of all formats (default)
 -vmlist > vector matrix grid multigrid info list
 vmlist           # print info for the specified vectors (possibly including associated matrix entries)
 vmlist $s | {$i <fromID> [<toID>]} [$m] [$d] [$a] [$l <f> <t>]
@@ -441,6 +452,12 @@ wplist           # list all windows with their pictures
 -clearpicture > window picture plot graphics
 clearpicture     # clear current picture
 
+-picframe > window picture plot graphics
+picframe         # toggle framing od pictures
+picframe 0|1
+    0                      # frame pictures
+    1                      # don't frame pictures
+
 -setview > window picture plot graphics
 setview          # specify or change the observer's view of the object of the current picture
     2D: setview [$i] [$t <x> <y>] [$x  <x> <y>]
@@ -579,6 +596,59 @@ refreshon        # pictures on the screen device will be updated instantaneously
 
 -refreshoff > view multigrid refreshon
 refreshoff       # pictures on the screen device will be updated ONLY explicitely
+
+-newformat > format multigrid user data symbols
+newformat        # create a user data format
+newformat <format_name> [$V <vec_size>: {<vec_sym_name>}+ [$comp <comp_names> {$sub <sub_sym_name> <comps>}*]]
+                        [$M <mat_size>: {<mat_sym_name>}+ [$comp <comp_names> {$sub <sub_sym_name> <matsizes+comps>}*]
+                        [$d <mtype> <depth>]
+  
+  $V            # enrol storage for vector data: the specified size per type is multiplied
+                # by the number of <vec_sym_name> specified. SYMBOLs are allocated with the
+                # specified names, also scalar SYMBOLs are allocated
+                
+     <vec_size> := {<tp><size> }+, where <tp> is a char of
+                                           n for NODE
+                                           k for EDGE
+                                           e for ELEM
+                                           s for SIDE (3D only)
+                   and <size> is a integer
+ 
+ 
+  $comp         # optionally specify names for the components
+     <comp_names> := one char per component of the symbol (without spaces)
+  
+  
+  $sub          # if comp names have been specified optionally specify sub symbols for
+                # each of the previously allocated symbols by sppecifying their comps
+  
+     <comps> := list of comps as specified in <comp_names>
+  
+  
+  $M            # enrol storage for matrix data: the specified size per type is multiplied
+                # by the number of <mat_sym_name> specified. SYMBOLs are allocated with the
+                # specified names, also scalar SYMBOLs are allocated
+                
+     <mat_size> := {<rtp><rsize>x<ctp><csize> }+, where r and c refer to rows and columns of the matrix
+ 
+ 
+  $comp         # optionally specify names for the components
+     <comp_names> := TWO chars per component of the symbol (without spaces)
+     
+     
+     <matsizes+comps> := {<rsize>x<csize> <comp_names>}+
+  
+  
+  $d <mtype> <depth>  # set connection depth (default 0)
+     
+     <mtype> := <rtp>x<ctp>
+
+-setpf > symbols format vmlist
+setpf            # set printing format in context with vmlist command
+setpf <format_name> [$V{0 | {+|-} {<vecsym_name>}+}]+ [$M{0 | {+|-} {<matsym_name>}+}]+
+
+-showpf > symbols format vmlist
+showpf           # show current printing format settings
 
 -
 ############################### numerical procedures #####################################
