@@ -308,10 +308,10 @@ fi
 
 # process arguments and edit ug.conf.new
 cp $UGROOT/ug.conf $UGROOT/ug.conf.new
-#while [ $# -gt 0 ]; do
-	edit_ugconf $UGROOT/ug.conf.new $1
-#	shift
-#done
+while [ $# -gt 0 ]; do
+	( edit_ugconf $UGROOT/ug.conf.new $1; )
+	shift;
+done
 
 # decide whether ug.conf has really been changed
 grep_valid_entries $UGROOT/ug.conf > $UGROOT/ug.conf.old.1
