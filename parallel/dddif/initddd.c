@@ -110,7 +110,8 @@ DDD_TYPE TypeBndS;
 DDD_IF ElementIF, ElementSymmIF, ElementVIF, ElementSymmVIF,
        ElementVHIF, ElementSymmVHIF;
 DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF;
-DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF,
+DDD_IF BorderVectorIF, BorderVectorSymmIF,
+       OuterVectorIF, OuterVectorSymmIF,
        VectorVIF, VectorVAllIF;
 DDD_IF VertexIF;
 #ifdef __THREEDIM__
@@ -700,10 +701,15 @@ static void ddd_IfInit (void)
   BorderVectorSymmIF = DDD_IFDefine(1,O,2,A,2,B);
   DDD_IFSetName(BorderVectorSymmIF, "BorderVectorSymmIF: Master/Border");
 
-  A[0] = PrioMaster;
+  A[0] = PrioMaster; A[1] = PrioBorder;
   B[0] = PrioGhost;
-  OuterVectorIF = DDD_IFDefine(1,O,1,A,1,B);
+  OuterVectorIF = DDD_IFDefine(1,O,2,A,1,B);
   DDD_IFSetName(OuterVectorIF, "OuterVectorIF: Master->Ghost");
+
+  A[0] = PrioMaster; A[1] = PrioBorder; A[2] = PrioGhost;
+  B[0] = PrioMaster; B[1] = PrioBorder; B[2] = PrioGhost;
+  OuterVectorSymmIF = DDD_IFDefine(1,O,3,A,3,B);
+  DDD_IFSetName(OuterVectorSymmIF, "OuterVectorSymmIF: Master/Border/Ghost");
 
   A[0] = PrioMaster;
   B[0] = PrioVGhost;
