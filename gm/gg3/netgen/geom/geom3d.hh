@@ -53,7 +53,7 @@ protected:
 public:
   Vec3d() { vx = vy = vz = 0; }
   Vec3d(double ax, double ay, double az) { vx = ax; vy = ay; vz = az; }
-  Vec3d(Vec3d & v2) { vx = v2.vx; vy = v2.vy; vz = v2.vz; }
+  Vec3d(const Vec3d & v2) { vx = v2.vx; vy = v2.vy; vz = v2.vz; }
 
   Vec3d & operator= (const Vec3d & v2)
   { vx = v2.vx; vy = v2.vy; vz = v2.vz; return *this; }
