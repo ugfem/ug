@@ -133,8 +133,6 @@ static void LocallyUniqueIDs (MULTIGRID *mg)
     for (vx=FIRSTVERTEX(grid); vx!=NULL; vx=SUCCV(vx))
       ID(vx) = nv++;
   }
-
-  mg->vertIdCounter = nv;         /* doesn't hurt :-) */
 }
 #endif
 
@@ -147,7 +145,7 @@ static void LocallyUniqueIDs (MULTIGRID *mg)
    grid functions in DataExplorer readable format to a file.
 
    'dataexplorer <filename> [$ns <nep> $s <vd>]* [$nv <nep> $s <vd>]*
-                                            [$es <eep> $s <vd>]* [$ev <eep> $s <vd>]*'
+                                            [$cs <eep> $s <vd>]* [$cv <eep> $s <vd>]*'
 
    .  $ns...			- plot function for scalar nodal values
    .  $nv...			- plot function for vector nodal values
@@ -382,19 +380,11 @@ static INT DataExplorerCommand (INT argc, char **argv)
   /* compute sizes				*/
   /********************************/
 
-  /* unmark vertices */
-  for (k=0; k<=TOPLEVEL(mg); k++)
-    for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
-      SETUSED(vx,0);
-
   /* count vertices */
   numVertices = 0;
   for (k=0; k<=TOPLEVEL(mg); k++)
-    for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx)) {
-      if (USED(vx)) continue;
-      SETUSED(vx,1);
+    for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
       numVertices++;
-    }
 
   /* count surface elements */
   numElements = 0;
@@ -420,7 +410,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
   /*	1. write vertex coordinates                                             */
   /****************************************************************/
 
-  sprintf(it,"\n#\n# positions:\n#\n");
+  sprintf(it,"\n#\n# positions\n#\n");
   strcpy(item+ic,it); ic+=strlen(it);
   sprintf(it,"object 1 class array type float rank 1 shape %d items %d"\
           " data follows\n", DIM, gnumVertices);
@@ -468,7 +458,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
   /*	2. write connections										*/
   /****************************************************************/
 
-  sprintf(it,"#\n# connections\n#\n");
+  sprintf(it,"\n#\n# connections\n#\n");
   strcpy(item+ic,it); ic+=strlen(it);
   pfile_master_puts(pf,item); ic=0;
   sprintf(it,"object 2 class array type int rank 1 shape %d items %d"\
@@ -565,7 +555,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
   strcpy(item+ic,it); ic+=strlen(it);
   pfile_master_puts(pf,item); ic=0;
 
-  /* not needed any longer ... */
+  /* delete map array */
   ReleaseTmpMem(heap, key);
 
   /****************************************************************/
@@ -757,11 +747,11 @@ static INT DataExplorerCommand (INT argc, char **argv)
     }
     pfile_sync(pf);
 
-    sprintf(it,"attribute \"dep\" string \"positions\"\n");
+    sprintf(it,"attribute \"dep\" string \"connections\"\n");
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"\nobject \"data %d\" class field\n", blocks++);
+    sprintf(it,"\nobject \"data%d\" class field\n", blocks);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
@@ -828,7 +818,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
-    sprintf(it,"\nobject \"data %d\" class field\n", blocks);
+    sprintf(it,"\nobject \"data%d\" class field\n", blocks);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
