@@ -10548,8 +10548,6 @@ static INT InitScreenSize (void)
 }
 
 
-
-#ifdef ModelP
 /** \brief Implementation of \ref lb. */
 INT
 #ifdef __cplusplus
@@ -10726,7 +10724,7 @@ LBCommand (INT argc, char **argv)
 }
 
 
-
+#ifdef ModelP
 /** \brief Implementation of \ref lbs. */
 static INT LBSCommand (INT argc, char **argv)
 {
