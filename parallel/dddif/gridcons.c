@@ -181,6 +181,7 @@ void ConstructConsistentGrid (GRID *theGrid)
 	/* make ghost neighborships symmetric (only for 3d)*/
 	for (theElement = PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 	{
+/* TODO: delete now done in ElementObjMkCons()
 		#ifdef __THREEDIM__
 		if (EVGHOST(theElement))
 		{
@@ -197,7 +198,8 @@ void ConstructConsistentGrid (GRID *theGrid)
 					SET_NBELEM(theElement,i,NULL);
 			}
 		}
-		#endif
+		#endif 
+*/
 
 		theFather = EFATHER(theElement);
 
