@@ -189,7 +189,8 @@ void ddd_HandlerInit (INT);
 int BalanceGridRCB (MULTIGRID *);
 
 /* from gridcons.c */
-void dddif_SetBorderPriorities (GRID *);
+void dddif_SetOverlapPriorities (GRID *);
+INT CheckInterfaces(GRID *theGrid);
 
 /* from transfer.c */
 int TransferGridFromCoarse (MULTIGRID *);

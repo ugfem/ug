@@ -477,7 +477,7 @@ static void ddd_DefineTypes (void)
 
   DDD_TypeDefine(TypeEdge, &e,
                  /* link 0 data */
-                 EL_GDATA,  ELDEF(e.links[0].control),
+                 EL_LDATA,  ELDEF(e.links[0].control),
                  EL_LDATA,  ELDEF(e.links[0].next),
                  EL_OBJPTR, ELDEF(e.links[0].nbnode), TypeNode,
 

@@ -165,7 +165,8 @@ static int Scatter_GhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pr
     break;
 
   case GC_ToMaster :
-    DDD_PrioritySet(PARHDRE(elem), PrioMaster);
+    /* not needed anymore. kb 9070108 */
+    /*DDD_PrioritySet(PARHDRE(elem), PrioMaster);*/
     break;
 
   case GC_Delete :
@@ -266,10 +267,18 @@ static void XferGridWithOverlap (GRID *theGrid)
 static void InheritPartitionBottomTop (ELEMENT *e)
 {
   int i;
+  ELEMENT *SonList[MAX_SONS];
+
+  if (GetSons(e,SonList) != GM_OK) assert(0);
+
+        #ifdef __TWODIM__
+  /* set property field to visulaize partition */
+  SETPROP(e,PARTITION(e)+1);
+        #endif
 
   for(i=0; i<SONS_OF_ELEM(e); i++)
   {
-    ELEMENT *son = SON(e,i);
+    ELEMENT *son = SonList[i];
     if (son==NULL) break;
 
     PARTITION(son) = PARTITION(e);
@@ -300,8 +309,10 @@ int TransferGridFromCoarse (MULTIGRID *theMG)
   UpdateGhostDests(theMG);
 
 
-  /* start physical transfer */
+  /* init transfer */
   ddd_HandlerInit(HSET_XFER);
+
+  /* start physical transfer */
   DDD_XferBegin();
 
   {
@@ -345,7 +356,7 @@ int TransferGridFromCoarse (MULTIGRID *theMG)
     for(g=TOPLEVEL(theMG); g>=0; g--)
     {
       GRID *grid = GRID_ON_LEVEL(theMG,g);
-      dddif_SetBorderPriorities(grid);
+      dddif_SetOverlapPriorities(grid);
     }
   }
 

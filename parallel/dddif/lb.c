@@ -18,9 +18,9 @@ RCSID("$Header$",UG_RCS_STRING)
 static int TransferGridComplete (MULTIGRID *theMG)
 {
   ELEMENT *e;
-  GRID *theGrid = GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
+  GRID *theGrid = GRID_ON_LEVEL(theMG,0);
 
-  /* assign elements */
+  /* assign elements of level 0 */
   if (me == master) {
     for (e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
       PARTITION(e) = 1;
@@ -38,15 +38,21 @@ static int TransferGridComplete (MULTIGRID *theMG)
 
   if (me==master) {
 
-    /* create element copies */
-    for(e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
-    {
-      /* create element copy */
-      DDD_XferCopyObjX(PARHDRE(e),
-                       PARTITION(e),
-                       0,
-                       (OBJT(e)==BEOBJ) ? BND_SIZE_TAG(TAG(e)) : INNER_SIZE_TAG(TAG(e))
-                       );
+    TransferGridFromCoarse(theMG);
+    if (0) {
+      /* create element copies */
+      for(e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
+      {
+        /* create element copy */
+        DDD_XferCopyObjX(PARHDRE(e),
+                         PARTITION(e),
+                         PrioMaster,
+                         (OBJT(e)==BEOBJ) ? BND_SIZE_TAG(TAG(e)) : INNER_SIZE_TAG(TAG(e))
+                         );
+
+        /* delete local copy */
+        DDD_XferDeleteObj(PARHDRE(e));
+      }
     }
   }
 
@@ -57,6 +63,33 @@ static int TransferGridComplete (MULTIGRID *theMG)
   return(0);
 }
 
+
+static int TransferGridToMaster (MULTIGRID *theMG)
+{
+  ELEMENT *e;
+  GRID *theGrid;
+
+  /* send all levels to master */
+  if (me!=master)
+  {
+    int l;
+
+    for (l=0; l<=TOPLEVEL(theMG); l++) {
+
+      theGrid = GRID_ON_LEVEL(theMG,l);
+
+      /* create element copies */
+      for(e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
+      {
+        PARTITION(e) = 0;
+      }
+    }
+  }
+
+  TransferGridFromCoarse(theMG);
+
+  return(0);
+}
 
 void ddd_test (int mode, MULTIGRID *theMG)
 {
@@ -71,6 +104,11 @@ void ddd_test (int mode, MULTIGRID *theMG)
   /* dies verschickt ein GRID komplett */
   case (1) :
     TransferGridComplete(theMG);
+    break;
+
+  /* dies verschickt ein verteiltes GRID zum master */
+  case (2) :
+    TransferGridToMaster(theMG);
     break;
 
   default : break;
