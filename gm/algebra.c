@@ -84,6 +84,10 @@
 #define BV_VERTICAL     0
 #define BV_HORIZONTAL   1
 
+/* for ordering of matrices */
+#define MATHPOS                 +1
+#define MATHNEG                 -1
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -3343,6 +3347,235 @@ static VECTOR *FeedbackVertexVectors (GRID *theGrid, VECTOR *LastVector, INT *nb
 
 /****************************************************************************/
 /*
+   OrderMatrices - reorder the matrix list of a vector in a circular order (2D only)
+
+   SYNOPSIS:
+   static INT OrderMatrices (VECTOR *vec, INT Sense)
+
+   PARAMETERS:
+   .  vec - order matrix list of this vector
+   .  sense - MATHPOS or MATHNEG
+
+   DESCRIPTION:
+   This function reorders the matrix list of a vector in a circular order (2D only).
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+#ifdef __TWODIM__
+
+static COORD_VECTOR mypos;
+static INT sense;
+
+static INT SensCompare (MATRIX **MatHandle1, MATRIX **MatHandle2)
+{
+  COORD dx1,dy1,dx2,dy2;
+  COORD_VECTOR pos1,pos2;
+
+  VectorPosition(MDEST(*MatHandle1),pos1);
+  VectorPosition(MDEST(*MatHandle2),pos2);
+  dx1 = pos1[0] - mypos[0];
+  dy1 = pos1[1] - mypos[1];
+  dx2 = pos2[0] - mypos[0];
+  dy2 = pos2[1] - mypos[1];
+
+  if (dy1>=0)
+  {
+    if (dy2<0)
+      return (-sense);
+
+    if ((dy1==0) && (dy2==0))
+    {
+      if (dx1>dx2)
+        return (-sense);
+      else
+        return (sense);
+    }
+
+    /* both neighbours in upper half plane */
+    if ((dy1*dx2-dx1*dy2)<0)
+      return (-sense);
+    else
+      return (sense);
+  }
+  else
+  {
+    if (dy2>=0)
+      return (sense);
+
+    /* both neighbours in lower half plane */
+    if ((dy1*dx2-dx1*dy2)<0)
+      return (-sense);
+    else
+      return (sense);
+  }
+}
+
+static INT OrderMatrices (VECTOR *vec, INT Sense)
+{
+  VECTOR *nbv;
+  MATRIX *mat,*MatList[MATTABLESIZE];
+  INT i,flag,condition1,condition2,start,nm;
+
+  /* fill matrices without diag into list */
+  for (nm=0, mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+  {
+    if (nm>=MATTABLESIZE)
+      return (1);
+
+    MatList[nm++] = mat;
+  }
+  VectorPosition(vec,mypos);
+
+  sense = Sense;
+  qsort(MatList,nm,sizeof(MATRIX*),(int (*)(const void *, const void *))SensCompare);
+
+  /* find 'begin' */
+  flag = FALSE;
+  for (start=0; start<nm; start++)
+  {
+    nbv = MDEST(MatList[start]);
+    condition1 = ((VCLASS(nbv)<ACTIVE_CLASS) || VCUSED(nbv));
+    condition2 = (condition1 || (OBJT(MYVERTEX((NODE*)VOBJECT(nbv)))==BVOBJ));
+    if (flag && !condition1)
+      break;
+    else if (condition2)
+      flag = TRUE;
+  }
+
+  /* establish pointer connections */
+  for (i=start; i<nm+start-1; i++)
+    MNEXT(MatList[i%nm]) = MatList[(i+1)%nm];
+  MNEXT(MatList[i%nm]) = NULL;
+  MNEXT(VSTART(vec)) = MatList[start%nm];
+
+  return (0);
+}
+
+#endif
+
+/****************************************************************************/
+/*
+   ShellOrderVectors	- Reorder double linked vector list by a shell algorithm
+
+   SYNOPSIS:
+   INT ShellOrderVectors (GRID *theGrid, VECTOR *seed)
+
+   PARAMETERS:
+   .  theGrid - pointer to grid
+   .  seed - start at this vector
+
+   DESCRIPTION:
+   This function reorders double linked vector list by a shell algorithm.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+INT ShellOrderVectors (GRID *theGrid, VECTOR *seed)
+{
+  VECTOR handle;
+  VECTOR *next_out,*last_in;
+  VECTOR *theVector,*theNbVector,*succVector,*predVector;
+  MATRIX *theMatrix;
+  INT i,index,found;
+
+  /****************************************************************************/
+  /*	init																	*/
+  /****************************************************************************/
+
+  /* init VCUSED */
+  found = FALSE;
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+  {
+    SETVCUSED(theVector,0);
+    if (theVector==seed) found = TRUE;
+  }
+  if (!found)
+    return (1);
+
+  /* in the sequel we use (and therefore destroy) the PREDVC-list for book keeping */
+
+  /* init pointers and push seed */
+  next_out = last_in = &handle;
+  PREDVC(last_in) = seed;
+  last_in = seed;
+  SETVCUSED(seed,1);
+  PREDVC(last_in) = NULL;
+  VINDEX(seed) = index = 1;
+
+  for (next_out=PREDVC(next_out); next_out!=NULL; next_out=PREDVC(next_out))
+  {
+                #ifdef __TWODIM__
+    OrderMatrices(next_out,MATHPOS);
+                #endif
+
+    /* push neighbours */
+    for (theMatrix=MNEXT(VSTART(next_out)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+    {
+      if (CEXTRA(MMYCON(theMatrix))) continue;
+
+      theNbVector = MDEST(theMatrix);
+
+      if (VCUSED(theNbVector)) continue;
+
+      PREDVC(last_in) = theNbVector;
+      last_in = theNbVector;
+      PREDVC(last_in) = NULL;
+      SETVCUSED(theNbVector,1);
+      VINDEX(theNbVector) = ++index;
+    }
+  }
+
+  /* insert list one-by-one to LASTVECTOR list of grid */
+  LASTVECTOR(theGrid) = NULL;
+  for (theVector=PREDVC(&handle); theVector!=NULL; theVector=predVector)
+  {
+    predVector                      = PREDVC(theVector);
+    PREDVC(theVector)   = LASTVECTOR(theGrid);
+    LASTVECTOR(theGrid) = theVector;
+  }
+
+  /* construct SUCCVC list */
+  succVector = NULL;
+  for (theVector=LASTVECTOR(theGrid); theVector!=NULL; theVector=PREDVC(theVector))
+  {
+    SUCCVC(theVector) = succVector;
+    succVector = theVector;
+  }
+  FIRSTVECTOR(theGrid) = succVector;
+  PREDVC(succVector)   = NULL;
+
+  /* check # members of succ list */
+  i=0;
+  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector)) i++;
+  if (NVEC(theGrid) != i)
+  {
+    UserWrite("vectorstructure corrupted\n");
+    return (1);
+  }
+
+  /* check # members of pred list */
+  i=0;
+  for (theVector=LASTVECTOR(theGrid); theVector!= NULL; theVector=PREDVC(theVector)) i++;
+  if (NVEC(theGrid) != i)
+  {
+    UserWrite("vectorstructure corrupted\n");
+    return (1);
+  }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
    OrderVectorAlgebraic	- Reorder double linked node list by a streamline ordering
 
    SYNOPSIS:
@@ -3388,11 +3621,12 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
 
     /* count upward and downward matrices */
     up = down = 0;
-    for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
-    {
-      if (MUP(theMatrix)) up++;
-      if (MDOWN(theMatrix)) down++;
-    }
+    if (VCLASS(theVector)==ACTIVE_CLASS)
+      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+      {
+        if (MUP(theMatrix)) up++;
+        if (MDOWN(theMatrix)) down++;
+      }
     SETVUP(theVector,up);
     SETVDOWN(theVector,down);
   }
@@ -3446,6 +3680,11 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     nFIRST = nLAST = 0;
 
     for (FIRST_next_out=PREDVC(FIRST_next_out); FIRST_next_out!=NULL; FIRST_next_out=PREDVC(FIRST_next_out))
+    {
+                        #ifdef __TWODIM__
+      OrderMatrices(FIRST_next_out,MATHPOS);
+                        #endif
+
       for (theMatrix=MNEXT(VSTART(FIRST_next_out)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
       {
         theNbVector = MDEST(theMatrix);
@@ -3470,27 +3709,32 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
             VINDEX(theNbVector) = 3*cycle;
           }
         }
-        if ((nCUT>0) && (mode==GM_FCFCLL))
-          /* we also have to push LAST vectors */
-          if (MUP(theMatrix))
+        /* we also have to push LAST vectors
+           this is for the cases
+                        (1) vectors have been pushed because of putSkipFirst
+                        (2) vectors have been pushed because VCLASS(theVector)!=ACTIVE_CLASS
+                        (3) vectors have been pushed because (nCUT>0) && (mode==GM_FCFCLL)
+           (the standard case remains unaffected) */
+        if (MUP(theMatrix))
+        {
+          k = VDOWN(theNbVector);
+          assert(k>0);                                                  /* if 0 is supposed to be VCUSED already */
+          SETVDOWN(theNbVector,--k);
+          if (k==0)
           {
-            k = VDOWN(theNbVector);
-            assert(k>0);                                                        /* if 0 is supposed to be VCUSED already */
-            SETVDOWN(theNbVector,--k);
-            if (k==0)
-            {
-              /* this vector has only matrices going up */
+            /* this vector has only matrices going up */
 
-              nLAST++;
-              /* append to last list */
-              PREDVC(LAST_last_in) = theNbVector;
-              LAST_last_in = theNbVector;
-              PREDVC(LAST_last_in) = NULL;
-              SETVCUSED(theNbVector,1);
-              VINDEX(theNbVector) = 3*cycle+1;
-            }
+            nLAST++;
+            /* append to last list */
+            PREDVC(LAST_last_in) = theNbVector;
+            LAST_last_in = theNbVector;
+            PREDVC(LAST_last_in) = NULL;
+            SETVCUSED(theNbVector,1);
+            VINDEX(theNbVector) = 3*cycle+1;
           }
+        }
       }
+    }
     FIRST_next_out = FIRST_last_in;
 
     UserWriteF("#first%d=%10d\n",(int)cycle,(int)nFIRST);
@@ -3500,6 +3744,11 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     /********************************************************************/
 
     for (LAST_next_out=PREDVC(LAST_next_out); LAST_next_out!=NULL; LAST_next_out=PREDVC(LAST_next_out))
+    {
+                        #ifdef __TWODIM__
+      OrderMatrices(LAST_next_out,MATHNEG);
+                        #endif
+
       for (theMatrix=MNEXT(VSTART(LAST_next_out)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
       {
         theNbVector = MDEST(theMatrix);
@@ -3522,6 +3771,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
           }
         }
       }
+    }
     LAST_next_out = LAST_last_in;
 
     UserWriteF("#last%d =%10d\n",(int)cycle,(int)nLAST);
@@ -3798,7 +4048,7 @@ static INT LexAlgDep (GRID *theGrid, const char *data)
         #ifdef __TWODIM__
   res = sscanf(data,expandfmt("%2[rlud]"),ord);
         #else
-  res = sscanf(data,expandfmt("%2[rlbfud]"),ord);
+  res = sscanf(data,expandfmt("%3[rlbfud]"),ord);
         #endif
   if (res!=1)
   {
