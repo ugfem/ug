@@ -32,7 +32,6 @@
 #include "switch.h"
 #include "gm.h"
 #include "ugm.h"
-#include "fvgeom.h"  /* TODO: move this! */
 
 #ifdef ModelP
 #include "parallel.h"
@@ -191,14 +190,14 @@ static GENERAL_ELEMENT def_hexahedron = {
 #endif
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*D
-   ProcessElementDescription - compute offsets and size for a given element type
+   PreProcessElementDescription - compute index fields for a given element type
 
    SYNOPSIS:
-   static INT ProcessElementDescription (GENERAL_ELEMENT *el);
+   static INT PreProcessElementDescription (GENERAL_ELEMENT *el);
 
    PARAMETERS:
    .  el - pointer to an element description
@@ -248,10 +247,13 @@ RCSID("$Header$",UG_RCS_STRING)
 
    DESCRIPTION:
    This function processes a topology description of an element type and computes
-   the appropriated sizes for memory allocation, offsets in the 'refs' array of the
-   'generic_element' and index mappings. Currently descriptions for triangles,
+   index mappings. Currently descriptions for triangles,
    quadrilaterals and tetrahedra are included. Hexahedral elements have been implemented
    in a prototype version.
+
+   CAUTION: The above data structure is filled UP TO appropriate sizes for memory allocation
+   as well as offsets in the 'refs' array of the 'generic_element'! For complete filling
+   you will have to call 'ProcessElementDescription'
 
    `Only the following components of the 'GENERAL_ELEMENT' structure must be provided.
    All other components are derived from the given information.`
@@ -275,7 +277,7 @@ RCSID("$Header$",UG_RCS_STRING)
 
    SEE ALSO:
 
-   'ELEMENT'.
+   'ELEMENT', 'ProcessElementDescription'.
 
    RETURN VALUE:
    INT
@@ -284,66 +286,15 @@ RCSID("$Header$",UG_RCS_STRING)
    D*/
 /****************************************************************************/
 
-static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
+static INT PreProcessElementDescription (GENERAL_ELEMENT *el)
 {
-  INT p_count, tag;
+  INT tag;
   INT i,j,k,l,n,from,to;
         #ifdef __THREEDIM__
   INT m,n1,n2;
         #endif
 
   tag = el->tag;
-  p_count = 0;
-
-  /* the corners */
-  n_offset[tag] = p_count; p_count += el->corners_of_elem;
-
-  /* the father */
-  father_offset[tag] = p_count; p_count++;
-
-  /* the sons */
-  sons_offset[tag] = 0;
-        #ifdef __TWODIM__
-  sons_offset[tag] = p_count; p_count += el->max_sons_of_elem;
-        #endif
-        #ifdef __THREEDIM__
-  sons_offset[tag] = p_count; p_count++;
-        #endif
-
-  /* the neighbors */
-  nb_offset[tag] = p_count; p_count += el->sides_of_elem;
-
-  /* element vector */
-  evector_offset[tag] = 0;
-  if (TYPE_DEF_IN_MG(theMG,ELEMVECTOR))
-  {
-    evector_offset[tag] = p_count;
-    p_count++;
-  }
-
-  /* side vector */
-  svector_offset[tag] = 0;
-        #ifdef __THREEDIM__
-  if (TYPE_DEF_IN_MG(theMG,SIDEVECTOR))
-  {
-    svector_offset[tag] = p_count;
-    p_count += el->sides_of_elem;
-  }
-        #endif
-
-  if (EDATA_DEF_IN_MG(theMG)) {
-    data_offset[tag] = p_count;
-    p_count++;
-  }
-
-  /* so far for an inner element */
-  el->inner_size = sizeof(struct generic_element) + (p_count-1)*sizeof(void *);
-
-  /* the element sides */
-  side_offset[tag] = p_count; p_count += el->sides_of_elem;
-
-  /* now the size of an element on the boundary */
-  el->bnd_size = sizeof(struct generic_element) + (p_count-1)*sizeof(void *);
 
   /* derive additional index fields */
 
@@ -779,7 +730,139 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
   element_descriptors[tag] = el;
   reference_descriptors[el->corners_of_elem] = el;
 
+  return(GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   ProcessElementDescription - compute offsets and size for a given element type
+
+   SYNOPSIS:
+   static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el);
+
+   PARAMETERS:
+   .  theMG - multigrid for format dependent pointer offsets in elements
+   .  el - pointer to an element description
+
+   STRUCTURES:
+   .vb
+   typedef struct {
+    INT tag;                                // element type to be defined
+
+    // the following parameters determine size of refs array in element
+    INT max_sons_of_elem;                   // max number of sons for this type
+    INT sides_of_elem;                      // how many sides ?
+    INT corners_of_elem;                    // how many corners ?
+
+    // more size parameters
+    INT edges_of_elem;                      // how many edges ?
+    INT edges_of_side[MAX_SIDES_OF_ELEM];   // number of edges for each side
+    INT corners_of_side[MAX_SIDES_OF_ELEM]; // number of corners for each side
+    INT corners_of_edge;                    // is always 2 !
+
+    // index computations
+    // Within each element sides, edges, corners are numbered in some way.
+    // Within each side the edges and corners are numbered, within the edge the
+    // corners are numbered. The following arrays map the local numbers within
+    // the side or edge to the numbering within the element.
+    INT edge_of_side[MAX_SIDES_OF_ELEM][MAX_EDGES_OF_SIDE];
+    INT corner_of_side[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_SIDE];
+    INT corner_of_edge[MAX_EDGES_OF_ELEM][MAX_CORNERS_OF_EDGE];
+
+    // the following parameters are derived from data above
+    INT mapped_inner_objt;                  // tag to objt mapping for free list
+    INT mapped_bnd_objt;                    // tag to objt mapping for free list
+    INT inner_size, bnd_size;               // size in bytes used for alloc
+    INT edge_with_corners[MAX_CORNERS_OF_ELEM][MAX_CORNERS_OF_ELEM];
+    INT side_with_edge[MAX_EDGES_OF_ELEM][MAX_SIDES_OF_EDGE];
+    INT corner_of_side_inv[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_ELEM];
+    INT edges_of_corner[MAX_CORNERS_OF_ELEM][MAX_EDGES_OF_ELEM];
+        INT corner_of_oppedge[MAX_EDGES_OF_ELEM][MAX_CORNERS_OF_EDGE];
+        INT corner_opp_to_side[MAX_SIDES_OF_ELEM];
+        INT opposite_edge[MAX_EDGES_OF_ELEM];
+        INT side_opp_to_corner[MAX_CORNERS_OF_ELEM];
+        INT edge_of_corner[MAX_CORNERS_OF_ELEM][MAX_EDGES_OF_ELEM];
+        INT edge_of_two_sides[MAX_SIDES_OF_ELEM][MAX_SIDES_OF_ELEM];
+
+   } GENERAL_ELEMENT;
+   .ve
+
+   DESCRIPTION:
+   This function processes a topology description of an element type and computes
+   the appropriate sizes for memory allocation and offsets in the 'refs' array of the
+   'generic_element'. All other data are fixed and do not depend on the multigrid or format.
+   Before calling this function 'PreProcessElementDescription' has to be called once
+   during initialization.
+
+   SEE ALSO:
+
+   'ELEMENT', 'PreProcessElementDescription'.
+
+   RETURN VALUE:
+   INT
+   .n    GM_OK if ok
+   .n    GM_ERROR if error occured.
+   D*/
+/****************************************************************************/
+
+static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
+{
+  INT p_count, tag;
+
+  tag = el->tag;
+  p_count = 0;
+
+  /* the corners */
+  n_offset[tag] = p_count; p_count += el->corners_of_elem;
+
+  /* the father */
+  father_offset[tag] = p_count; p_count++;
+
+  /* the sons */
+  sons_offset[tag] = 0;
+        #ifdef __TWODIM__
+  sons_offset[tag] = p_count; p_count += el->max_sons_of_elem;
+        #endif
+        #ifdef __THREEDIM__
+  sons_offset[tag] = p_count; p_count++;
+        #endif
+
+  /* the neighbors */
+  nb_offset[tag] = p_count; p_count += el->sides_of_elem;
+
+  /* element vector */
+  evector_offset[tag] = 0;
+  if (TYPE_DEF_IN_MG(theMG,ELEMVECTOR))
+  {
+    evector_offset[tag] = p_count;
+    p_count++;
+  }
+
+  /* side vector */
+  svector_offset[tag] = 0;
+        #ifdef __THREEDIM__
+  if (TYPE_DEF_IN_MG(theMG,SIDEVECTOR))
+  {
+    svector_offset[tag] = p_count;
+    p_count += el->sides_of_elem;
+  }
+        #endif
+
+  /* so far for an inner element */
+  el->inner_size = sizeof(struct generic_element) + (p_count-1)*sizeof(void *);
+
+  /* the element sides */
+  side_offset[tag] = p_count; p_count += el->sides_of_elem;
+
+  /* now the size of an element on the boundary */
+  el->bnd_size = sizeof(struct generic_element) + (p_count-1)*sizeof(void *);
+
   /* get a free object id for free list */
+  /* TODO: OBJT is always allocated when this functions is called but never released
+                   this will probably cause problems when several mgs are open: switching between
+                   them will lead to an overflow of the UsedOBJT variable in ugm.c
+     possible remedy: store element OBJT in mg and release when it is are closed. Also don't reallocate
+           them for a given mg */
   el->mapped_inner_objt = GetFreeOBJT();
   if (el->mapped_inner_objt < 0)
     return(GM_ERROR);
@@ -788,6 +871,49 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
     return(GM_ERROR);
 
   return(GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   PreInitElementTypes - pre-initialize general element data up to multigrid dependent stuff
+
+   SYNOPSIS:
+   INT PreInitElementTypes (void)
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+   This function pre-initializes the general element data up to multigrid dependent stuff.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR if error occured.
+   D*/
+/****************************************************************************/
+
+INT PreInitElementTypes (void)
+{
+  INT err;
+
+#ifdef __TWODIM__
+  err = PreProcessElementDescription(&def_triangle);
+  if (err!=GM_OK) return(err);
+  err = PreProcessElementDescription(&def_quadrilateral);
+  if (err!=GM_OK) return(err);
+#endif
+
+#ifdef __THREEDIM__
+  err = PreProcessElementDescription(&def_tetrahedron);
+  if (err!=GM_OK) return(err);
+  err = PreProcessElementDescription(&def_pyramid);
+  if (err!=GM_OK) return(err);
+  err = PreProcessElementDescription(&def_hexahedron);
+  if (err!=GM_OK) return(err);
+#endif
+
+  return (NULL);
 }
 
 /****************************************************************************/
@@ -841,13 +967,6 @@ INT InitElementTypes (MULTIGRID *theMG)
   InitCurrMG(theMG);
   InitDDDTypes();
 #endif
-
-  /* set interpolation point */
-  if ((err=InitFiniteVolumeGeom())!=0)
-  {
-    SetHiWrd(err,__LINE__);
-    return (err);
-  }
 
   return(GM_OK);
 }

@@ -34,6 +34,7 @@
 /*																			*/
 /****************************************************************************/
 
-INT InitElementTypes (MULTIGRID *theMG);
+INT PreInitElementTypes         (void);
+INT InitElementTypes            (MULTIGRID *theMG);
 
 #endif
