@@ -448,17 +448,29 @@ INT CheckPartitioning (MULTIGRID *theMG)
 			if (LEAFELEM(theElement))
 			{
 				theFather = theElement;
-				do
+				while (EMASTER(theFather) && ECLASS(theFather)!=RED_CLASS 
+					   && LEVEL(theFather)>0)
 				{
 					theFather = EFATHER(theFather);
 				}
-				while (EMASTER(theFather) && REFINECLASS(theFather)!=RED_CLASS 
-					   && LEVEL(theFather)>0);
 			
-				/* if father with red refine class does not exist */ 
-				/* or is ghost -> partitioning must be restricted */
+				/* if element with red element class does not exist */ 
+				/* or is ghost -> partitioning must be restricted   */
 				if (!EMASTER(theFather))
+				{
 					restrict = 1;
+					continue;
+				}
+
+				/* if element is marked for coarsening and father    */
+				/* of element is not master -> restriction is needed */
+				if (COARSEN(theFather))
+				{
+					/* level 0 elements are not coarsened */
+					if (LEVEL(theFather)==0) continue;
+					if (!EMASTER(EFATHER(theFather)))
+						restrict = 1;
+				}
 			}
 		}
 	}
@@ -537,9 +549,12 @@ static int Scatter_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, 
 	return(GM_OK);
 }
 
-INT RestrictPartitioning (MULTIGRID *theMG)
+#define NOTCOARSENED	0
+#define COARSENED		1
+
+INT RestrictPartitioning (MULTIGRID *theMG, INT coarse)
 {
-	INT i;
+	INT i,j;
 	ELEMENT *theElement;
 	ELEMENT *theFather;
 	ELEMENT *SonList[MAX_SONS];
@@ -567,12 +582,11 @@ INT RestrictPartitioning (MULTIGRID *theMG)
 			if (LEAFELEM(theElement) || USED(theElement))
 			{
 				theFather = theElement;
-				do
+				while (EMASTER(theFather) && ECLASS(theFather)!=RED_CLASS
+					   && LEVEL(theFather)>0)
 				{
 					theFather = EFATHER(theFather);
 				}
-				while (EMASTER(theFather) && REFINECLASS(theFather)!=RED_CLASS
-					   && LEVEL(theFather)>0);
 			
 				/* if father with red refine class is not master */ 
 				/* partitioning must be restricted                */
@@ -581,12 +595,23 @@ INT RestrictPartitioning (MULTIGRID *theMG)
 					/* the sons of father will be sent to partition of father */
 					SETUSED(theFather,1);
 				}
+
+				/* if element is marked for coarsening and father    */
+				/* of element is not master -> restriction is needed */
+				if (COARSEN(theFather))
+				{
+					/* level 0 elements are not coarsened */
+					if (LEVEL(theFather)==0) continue;
+					if (!EMASTER(EFATHER(theFather)))
+						SETUSED(EFATHER(theFather),1);
+				}
 			}
 		}
 		/* transfer restriction flags to master copies of father */
 		DDD_IFAOneway(ElementVHIF,GRID_ATTR(theGrid),IF_BACKWARD,sizeof(INT),
 			Gather_ElementRestriction, Scatter_ElementRestriction);
 	}
+
 
 	/* send restricted sons to partition of father */
 	for (i=0; i<=TOPLEVEL(theMG); i++)
@@ -604,14 +629,15 @@ INT RestrictPartitioning (MULTIGRID *theMG)
 
 			/* push partition to the sons */
 			GetAllSons(theElement,SonList);
-			for (i=0; SonList[i]!=NULL; i++)
+			for (j=0; SonList[j]!=NULL; j++)
 			{
-				SETUSED(SonList[i],1);
-				if (EMASTER(SonList[i]))
-					PARTITION(SonList[i]) = PARTITION(theElement);
+				SETUSED(SonList[j],1);
+				if (EMASTER(SonList[j]))
+					PARTITION(SonList[j]) = PARTITION(theElement);
 			}
 		}
 	}
+
 
 	if (TransferGrid(theMG) != 0) RETURN(GM_FATAL);
 
@@ -5213,7 +5239,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 if (0)
 		return(GM_OK);
 	}
-		if (RestrictPartitioning(theMG)) RETURN(GM_FATAL);
+#endif
 	/* set up information in refine_info */
 	if (TOPLEVEL(theMG) == 0)
 		SETREFINESTEP(REFINEINFO(theMG),0);
