@@ -1773,6 +1773,7 @@ INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
   VECTOR *v;
   DOUBLE_VECTOR pos;
   INT comp,ncomp,i,j;
+  INT info=FALSE;
 
   for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
   {
@@ -1781,11 +1782,20 @@ INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
     ncomp = VD_NCMPS_IN_TYPE(X,VTYPE(v));
     if (ncomp == 0) continue;
     comp = VD_CMP_OF_TYPE(X,VTYPE(v),0);
-    VectorPosition(v,pos);
-    i=0;
-    i += sprintf(buffer,"x=%5.2f y=%5.2f ",pos[0],pos[1]);
-    if (DIM == 3)
-      i += sprintf(buffer+i,"z=%5.2f ",pos[2]);
+    /* Check if there is an object associated with the vector. */
+    i = 0;
+    if (VOBJECT(v) != NULL) {
+      VectorPosition(v,pos);
+      i += sprintf(buffer,"x=%5.2f y=%5.2f ",pos[0],pos[1]);
+      if (DIM == 3)
+        i += sprintf(buffer+i,"z=%5.2f ",pos[2]);
+    }
+    else {
+      info = TRUE;
+      i += sprintf(buffer,"                ");
+      if (DIM == 3)
+        i += sprintf(buffer+i,"        ");
+    }
     for (j=0; j<ncomp; j++)
       i += sprintf(buffer+i,"u[%d]=%15.8lf ",j,VVALUE(v,comp+j));
     i += sprintf(buffer+i,"   cl %d %d sk ",VCLASS(v),VNCLASS(v));
@@ -1794,6 +1804,8 @@ INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
     i += sprintf(buffer+i,"n %d t %d o %d\n",VNEW(v),VTYPE(v),VOTYPE(v));
     UserWrite(buffer);
   }
+
+  if (info) UserWrite("NOTE: Geometrical information not available for some vectors.\n");
 
   return(NUM_OK);
 }
