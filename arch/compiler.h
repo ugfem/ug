@@ -423,7 +423,7 @@ extern "C" {
 
 /* basic types */
 #define SHORT  short
-#define INT    long     /* sizeof(int)==4, sizeof(INT)==8==sizeof(void *) */
+#define INT    long    /* sizeof(int) != sizeof(void *) !! */
 #define FLOAT  float
 #define DOUBLE double
 #define COORD  double
