@@ -1438,29 +1438,32 @@ EDGE *FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge)
   edge0 = edge1 = NULL;
 
   /* test whether theEdge lies above fatherEdge */
-  if (MIDNODE(fatherEdge) != NULL)
+  if (fatherEdge!=NULL)
   {
-    edge0 = GetEdge(MIDNODE(fatherEdge),SONNODE(NBNODE(LINK0(fatherEdge))));
-    edge1 = GetEdge(MIDNODE(fatherEdge),SONNODE(NBNODE(LINK1(fatherEdge))));
+    if (MIDNODE(fatherEdge)!=NULL)
+    {
+      edge0 = GetEdge(MIDNODE(fatherEdge),SONNODE(NBNODE(LINK0(fatherEdge))));
+      edge1 = GetEdge(MIDNODE(fatherEdge),SONNODE(NBNODE(LINK1(fatherEdge))));
+    }
+    else
+      edge0 = GetEdge(SONNODE(NBNODE(LINK0(fatherEdge))),
+                      SONNODE(NBNODE(LINK1(fatherEdge))));
+
+    IFDEBUG(dddif,5)
+    UserWriteF("%4d: fatherEdge=%x theEdge=%x edge0=%x edge1=%x\n",me,
+               fatherEdge,theEdge,edge0,edge1);
+    UserWriteF("%4d: Nodes[0]=%d Nodes[1]=%d\n",me,ID(Nodes[0]),ID(Nodes[1]));
+
+    UserWriteF("SideNodes\n");
+    for (i=0; i<MAX_SIDE_NODES; i++) UserWriteF(" %5d",i);
+    UserWriteF("\n");
+    for (i=0; i<MAX_SIDE_NODES; i++)
+      if (SideNodes[i]!=NULL) UserWriteF(" %5d",ID(SideNodes[i]));
+    UserWriteF("\n");
+    ENDDEBUG
+
+    assert(edge0==theEdge || edge1==theEdge);
   }
-  else
-    edge0 = GetEdge(SONNODE(NBNODE(LINK0(fatherEdge))),
-                    SONNODE(NBNODE(LINK1(fatherEdge))));
-
-  IFDEBUG(dddif,5)
-  UserWriteF("%4d: fatherEdge=%x theEdge=%x edge0=%x edge1=%x\n",me,
-             fatherEdge,theEdge,edge0,edge1);
-  UserWriteF("%4d: Nodes[0]=%d Nodes[1]=%d\n",me,ID(Nodes[0]),ID(Nodes[1]));
-
-  UserWriteF("SideNodes\n");
-  for (i=0; i<MAX_SIDE_NODES; i++) UserWriteF(" %5d",i);
-  UserWriteF("\n");
-  for (i=0; i<MAX_SIDE_NODES; i++)
-    if (SideNodes[i]!=NULL) UserWriteF(" %5d",ID(SideNodes[i]));
-  UserWriteF("\n");
-  ENDDEBUG
-
-  assert(edge0==theEdge || edge1==theEdge);
   ENDDEBUG
 
   return(fatherEdge);
@@ -6095,7 +6098,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
       default :                        assert(0);
       }
       /* count marks and closuresides */
-      if (LEAFELEM(theElement))
+      if (EstimateHere(theElement))
       {
         ELEMENT *MarkElement = ELEMENT_TO_MARK(theElement);
         INT marktype = GetRefinementMarkType(theElement);
