@@ -409,6 +409,6 @@ int             Write_PBndDesc          (int n, BNDP **BndPList);
 /* general functions */
 int     CloseMGFile                     (void);
 int     MGIO_Init                       (void);
-int             MGIO_dircreate          (char *filename);
+int             MGIO_dircreate          (char *filename, int rename);
 
 #endif

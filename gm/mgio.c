@@ -134,18 +134,42 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
+/****************************************************************************/
+/*D
+        MGIO_dircreate - create a directory for multigrid files
+
+   SYNOPSIS:
+   int MGIO_dircreate (char *filename, int rename);
+
+   PARAMETERS:
+   .  filename - name of directory
+   .  rename - renaming option
+
+   DESCRIPTION:
+   Create a directory with specified name incl. renaming option.
+   The considered path entry is "mgpaths".
+
+   RETURN VALUE:
+   int
+   .n    0 if ok
+   .n    1 when error occured.
+
+   SEE ALSO:
+   D*/
+/****************************************************************************/
+
 #ifdef __MGIO_USE_IN_UG__
-int MGIO_dircreate (char *filename)
+int MGIO_dircreate (char *filename, int rename)
 {
 
-  if (mgpathes_set) return(DirCreateUsingSearchPaths(filename,"mgpaths"));
-  else return(DirCreateUsingSearchPaths(filename,NULL));
+  if (mgpathes_set) return(DirCreateUsingSearchPaths_r(filename,"mgpaths",rename));
+  else return(DirCreateUsingSearchPaths_r(filename,NULL,rename));
 }
 #endif
 
 /****************************************************************************/
 /*D
-   MGIO_filetype - test for type of file
+   MGIO_filetype - test for type of multigrid file
 
    SYNOPSIS:
    INT MGIO_filetype (char *filename);
@@ -154,12 +178,14 @@ int MGIO_dircreate (char *filename)
    .  filename - name of file
 
    DESCRIPTION:
-   test for type of file with name filename in searching pathes if exist
+   Test for type of multigrid file with name filename in searching pathes if exist.
+   The considered path entry is "mgpaths".
 
    RETURN VALUE:
    int
    .n    FT_FILE if regular file
    .n    FT_DIR  if directory
+   .n    FT_LINK  if link and #define S_IFLNK
    .n    FT_UNKNOWN else
 
    SEE ALSO:
@@ -177,7 +203,7 @@ int MGIO_filetype (char *filename)
 
 /****************************************************************************/
 /*D
-   Read_OpenMGFile - opens file for reading
+   Read_OpenMGFile - opens multigrid file for reading
 
    SYNOPSIS:
    int Read_OpenMGFile (char *filename);
@@ -186,7 +212,8 @@ int MGIO_filetype (char *filename)
    .  filename - name of file
 
    DESCRIPTION:
-   opens a file with specified name for reading
+   Opens a multigrid file with specified name for reading.
+   The considered path entry is "mgpaths".
 
    RETURN VALUE:
    int
@@ -214,16 +241,18 @@ int Read_OpenMGFile (char *filename)
 
 /****************************************************************************/
 /*D
-        Write_OpenMGFile - opens file for reading
+        Write_OpenMGFile - opens multigrid file for writing
 
    SYNOPSIS:
-   int Write_OpenMGFile (char *filename);
+   int Write_OpenMGFile (char *filename, int rename);
 
    PARAMETERS:
    .  filename - name of file
+   .  rename - renaming option
 
    DESCRIPTION:
-   opens a file with specified name for writing
+   Opens a multigrid file with specified name for writing incl. renaming option.
+   The considered path entry is "mgpaths".
 
    RETURN VALUE:
    int
@@ -239,7 +268,7 @@ int Write_OpenMGFile (char *filename, int rename)
 
 #ifdef __MGIO_USE_IN_UG__
   if (mgpathes_set) stream = FileOpenUsingSearchPaths_r(filename,"w","mgpaths",rename);
-  else stream = fileopen(filename,"w");
+  else stream = fileopen_r(filename,"w",rename);
 #else
   stream = fopen(filename,"w");
 #endif
