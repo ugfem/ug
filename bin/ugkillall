@@ -17,24 +17,26 @@ then
 
 echo searching...
 
-if test `ps -edalf | grep $1 | grep -v grep | awk '{ print $4 }' -|wc -l` -eq 0
+if test `ps -edalf | grep $1 | grep -v grep | grep -v ugkillall | awk '{ print $4 }' -|wc -l` -eq 0
 then
-	echo "$0: no processes with name $1 found!";
-fi
-
-if test `ps -u $LOGNAME | grep $1 | grep -v grep | awk '{ print $4 }' -|wc -l` -eq 0
-then
-	echo "$0: no processes with name $1 found!";
-	exit 1;
+	if test `ps -u $LOGNAME | grep $1 | grep -v grep | grep -v ugkillall | awk '{ print $4 }' -|wc -l` -eq 0
+	then
+		echo "$0: no processes with name $1 found!";
+		exit 1;
+	fi
 fi
 
 # kill processes 
 echo killing processes:
 #echo `ps -edalf | grep $1 | grep -v grep `
-echo `ps -edalf | grep $1 | grep -v grep | awk '{ print $4 }' -`
-kill -9 `ps -edalf | grep $1 | grep -v grep | awk '{ print $4 }' -`
-echo `ps -u $LOGNAME | grep $1 | grep -v grep | awk '{ print $1 }' -`
-kill -9 `ps -u $LOGNAME | grep $1 | grep -v grep | awk '{ print $1 }' -`
+echo `ps -edalf | grep $1 | grep -v grep | grep -v ugkillall | awk '{ print $4 }' -`
+kill -9 `ps -edalf | grep $1 | grep -v grep | grep -v ugkillall | awk '{ print $4 }' -`
+
+if test `ps -u $LOGNAME | grep $1 | grep -v grep | grep -v ugkillall | awk '{ print $4 }' -|wc -l` -ne 0
+then
+	echo `ps -u $LOGNAME | grep $1 | grep -v grep | grep -v ugkillall | awk '{ print $1 }' -`
+	kill -9 `ps -u $LOGNAME | grep $1 | grep -v grep | grep -v ugkillall | awk '{ print $1 }' -`
+fi
 
 fi
 
