@@ -88,16 +88,20 @@ extern int UG_math_error;
 #endif
 
 /****************************************************************************/
-/*                                                                            */
+/*                                                                          */
 /* function declarations                                                    */
-/*                                                                            */
+/*                                                                          */
 /****************************************************************************/
 
 /* general routines */
-char       *StrTok                (char *s, const char *ct);
-char       *expandfmt            (const char *fmt);
+char       *StrTok              (char *s, const char *ct);
+char       *expandfmt           (const char *fmt);
 const char *strntok             (const char *str, const char *sep, int n, char *token);
-void        QSort                (void *base, INT n, INT size, int (*cmp)(const void *, const void *));
-void        SelectionSort        (void *base, INT n, INT size, int (*cmp)(const void *, const void *));
+void        QSort               (void *base, INT n, INT size, int (*cmp)(const void *, const void *));
+void        SelectionSort       (void *base, INT n, INT size, int (*cmp)(const void *, const void *));
+#ifdef __MWCW__
+/* this function is no external for the MetroWerks CodeWarrior: so just define it */
+int                     matherr                         (struct exception *x);
+#endif
 
 #endif
