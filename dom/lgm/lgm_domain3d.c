@@ -3617,7 +3617,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   LGM_SCALAR_PRODUCT(BNDP_NV, Surface_NV, sp);
 
 
-  if(sp>1)
+  if(sp>0.0)
     LGM_BNDS_N(theBndS) = n;
   else
     LGM_BNDS_N(theBndS) = -n;
