@@ -3831,7 +3831,7 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   }
   else
   {
-    global[DIM] = LGM_SURFACE_ID(theSurface);
+    new_global[DIM] = LGM_SURFACE_ID(theSurface);
     if ((*LGM_SURFACE_BNDCOND (theSurface))(new_global,value,type))
       return (1);
   }

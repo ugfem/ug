@@ -41,6 +41,7 @@ static INT lgmdomainpathes_set;
 static INT LGM_DEBUG = 0;
 static HEAP *theHeap;
 
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -58,6 +59,22 @@ static int SkipBTN (void)
 
   return (0);
 }
+
+
+static int SkipEOL (void)
+{
+  int c;
+
+  while (1)
+  {
+    c = fgetc(stream);
+    if (c==EOF) return (1);
+    if (c=='\n') break;
+  }
+
+  return (0);
+}
+
 
 static int ReadCommentLine (char *comment)
 {
@@ -94,7 +111,7 @@ static int ReadCommentLine (char *comment)
 /****************************************************************************/
 
 static int nSubdomain, nSurface, nLine, nPoint;
-static fpos_t filepos;
+static fpos_t filepos, UnitInfoFilepos;
 static fpos_t fileposline;
 static fpos_t filepossurface;
 
@@ -142,9 +159,15 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info)
   if (fscanf(stream,"convex = %d",&i)!=1) return (1);
   domain_info->Convex = i;
 
+  /* if comment: read Unit-Info */
+  if (ReadCommentLine("Unit-Info")) return (1);
+  if (SkipBTN()) return (1);
+  if (fgetpos(stream, &UnitInfoFilepos)) return (1);
+  while (fscanf(stream,"unit %d",&i)==1)
+    if (SkipEOL()) return (1);
+
   /* get number of subdomains, surfaces and lines */
-  if (SkipBTN())
-    return (1);
+  if (SkipBTN()) return (1);
   if (ReadCommentLine("Line-Info"))
     return (1);
   if (SkipBTN()) return (1);
@@ -363,7 +386,10 @@ int LGM_ReadLines (int dummy, LGM_LINE_INFO *line_info)
 
 int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
 {
-  int i,n,surface_i,i1,i2,i3;
+  int i,n,surface_i,i1,i2,i3,found,copy;
+  fpos_t filepos_tmp;
+  char buffer[256];
+
 
   /* read subdomain information */
   if (fsetpos(stream, &filepossurface))
@@ -421,6 +447,38 @@ int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
 
     surface_i++;
   }
+
+
+  /* scan Unit-Info */
+  if (fgetpos(stream, &filepos_tmp)) return (1);
+  if (fsetpos(stream, &UnitInfoFilepos)) return (1);
+  found = 0;
+  while(1)
+  {
+    copy = 0;
+    if (fscanf(stream,"%s",buffer)!=1) break;
+    if (strcmp(buffer,"unit")!=0) break;
+    while (fscanf(stream," %d",&i)==1)
+      if (i==subdom_i)
+      {
+        copy = 1;
+        found++;
+      }
+    if (fscanf(stream,"%s",buffer)!=1) return (1);
+    if (copy)
+      strcpy(subdom_info->Unit,buffer);
+  }
+  if (found<1)
+  {
+    UserWriteF("ERROR: subdomain %d references no unit\n",(int)subdom_i);
+    return (1);
+  }
+  if (found>1)
+  {
+    UserWriteF("ERROR: subdomain %d references more than 1 unit\n",(int)subdom_i);
+    return (1);
+  }
+  if (fsetpos(stream, &filepos_tmp)) return (1);
 
   return (0);
 }
