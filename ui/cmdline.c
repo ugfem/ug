@@ -11,7 +11,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de								*/
 /*																			*/
 /* History:   17.12.94 begin, ug version 3.0								*/
 /*																			*/
@@ -443,8 +443,8 @@ INT ExecCommand (char *cmdLine)
   error=(*commandItem->cmdProc)(optionCount,options);
   if (error==PARAMERRORCODE)
     UserWrite("ERROR: invalid parameters\n");
-  else if (error!=OKCODE)
-    UserWrite("ERROR in command\n");
+  if (error!=OKCODE && error!=QUITCODE)
+    UserWrite("ERROR in command execution\n");
 
   return(error);
 }
