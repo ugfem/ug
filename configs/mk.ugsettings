@@ -54,7 +54,8 @@ include $(UGROOT)/configs/mk.chaco.$(CHACO)
 UG_CFLAGS =	-c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 			$(ARCH_CFLAGS) $(PPIF_CFLAGS) $(MODEL_CFLAGS) \
 			$(ARCH_XINCLUDES) $(ENV_CFLAGS) \
-			$(RIF_CFLAGS) $(CHACO_CFLAGS)
+			$(RIF_CFLAGS) $(CHACO_CFLAGS) \
+			-I$(UGROOT)/include
 
 UG_C++FLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 			$(ARCH_C++FLAGS)
@@ -62,6 +63,12 @@ UG_C++FLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 UG_LFLAGS = $(ARCH_LFLAGS) $(PPIF_LFLAGS) $(MODEL_LFLAGS) $(GRAPE_LFLAGS) \
 			$(ARCH_XLIBS) $(ARCH_LIBS) $(ENV_LFLAGS) $(ARCH_PLIBS) \
 			$(NETGEN_LFLAGS) $(CHACO_LFLAGS)
+
+UG_LIBS   = $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a \
+			$(UGROOT)/lib/libdom$(UG_DOMSUFFIX).a \
+			$(UGROOT)/lib/libgrape$(GRAPE)$(DIM).a \
+			$(UGROOT)/lib/libgg$(DIM).a \
+			$(UGROOT)/lib/libdev.a
 
 UG_POSTLINK = $(ARCH_POSTLINK) ; ugbcheck
 
