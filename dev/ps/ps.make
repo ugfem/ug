@@ -28,11 +28,11 @@ OBJECTS = postscript.c.o
 LCFLAGS = -i ":::low" -i "::"
 
 # the main rule
-all Ÿ {OBJECTS} ps.make
+all ü {OBJECTS} ps.make
 	Lib -o ":::lib:libps.a" {OBJECTS}
 
 # compile all source files
-postscript.c.o Ÿ	postscript.c
+postscript.c.o ü	postscript.c
 	 C {COPTS} {LCFLAGS} postscript.c
 
 

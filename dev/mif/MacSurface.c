@@ -102,7 +102,7 @@ static short currentCurs = 128;                 /* resource id of current cursor
 static Rect dragRect;                                   /* rect where windows can be moved	*/
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
