@@ -30,13 +30,10 @@
 
 
 @ARGV==1 or die "usage: lgm2gnu <geometry>\n";
-$real='[+-]*\d+\.*\d*e[+-]\d+|[+-]*\d+\.\d*|\d+';
+$real='[+-]?\d+\.?\d*[eE]?[+-]?\d+|[+-]?\d*\.?\d+[eE]?[+-]?\d+|[+-]?\d+';
 $debug=0;
 
 # admin
-if (-e "gnu") {system("rm -r gnu");}
-system("mkdir gnu");
-
 if (-e "ng") {system("rm -r ng");}
 system("mkdir ng");
 

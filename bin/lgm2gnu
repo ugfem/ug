@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 @ARGV==1 or die "usage: lgm2gnu <geometry>\n";
-$real='[+-]*\d+\.*\d*e[+-]\d+|[+-]*\d+\.\d*|[+-]*\d+';
+my $real='[+-]?\d+\.?\d*[eE]?[+-]?\d+|[+-]?\d*\.?\d+[eE]?[+-]?\d+|[+-]?\d+';
 $debug=0;
 
 # admin
