@@ -420,7 +420,7 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 					for( pjs=transfer.GetFirstEntry(j_fg); pjs != NULL; pjs = pjs->GetNext())
 					{
 						pjs->GetColInVar(s_cg);
-						Mcg.AddEntry(Mfg[mij]*pjs->GetProlongation(), i_cg, j_cg);      // Mcf*P
+						Mcg.AddEntry(Mfg[mij]*pjs->GetProlongation(), i_cg, s_cg);      // Mcf*P
 					}
 				}
 			}
