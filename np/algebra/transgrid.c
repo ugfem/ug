@@ -419,7 +419,7 @@ INT StandardRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC
           if (VD_ISDEF_IN_TYPE(to,vtype))
             if (GetUniqueOTypeOfVType(fmt,vtype)<0)
               REP_ERR_RETURN(1)
-              if ((rv=StandardRestrictNodeVector(FineGrid,to,from,damp+offset[vtype]))!=NUM_OK)
+              if ((rv=StandardRestrictNodeVector(FineGrid,to,from,damp+offset[otype]))!=NUM_OK)
                 return (rv);
         break;
       case EDGEVEC :
@@ -486,7 +486,7 @@ INT StandardInterpolateCorrection (GRID *FineGrid, const VECDATA_DESC *to, const
           if (VD_ISDEF_IN_TYPE(to,vtype))
             if (GetUniqueOTypeOfVType(fmt,vtype)<0)
               REP_ERR_RETURN(1)
-              if ((rv=StandardIntCorNodeVector(FineGrid,to,from,damp+offset[vtype]))!=NUM_OK)
+              if ((rv=StandardIntCorNodeVector(FineGrid,to,from,damp+offset[otype]))!=NUM_OK)
                 return (rv);
         break;
       case EDGEVEC :
