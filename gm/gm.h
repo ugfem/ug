@@ -962,14 +962,14 @@ struct grid {
   DATA_STATUS data_status;          /* memory management for vectors|matrix */
                                     /* status for consistent and collect    */
   /* pointers */
-  union  element *elements[ELEMENTPRIOS];       /* pointer to first element     */
-  union  element *lastelement[ELEMENTPRIOS];       /* pointer to last element	*/
-  union  vertex *vertices[VERTEXPRIOS];         /* pointer to first vertex		*/
-  union  vertex *lastvertex[VERTEXPRIOS];       /* pointer to last vertex		*/
-  struct node *firstNode[NODEPRIOS];            /* pointer to first node			*/
-  struct node *lastNode[NODEPRIOS];             /* pointer to last node                         */
-  VECTOR *firstVector[VECTORPRIOS];             /* pointer to first vector			*/
-  VECTOR *lastVector[VECTORPRIOS];              /* pointer to last vector			*/
+  union  element *elements[ELEMENT_LISTPARTS];       /* pointer to first element*/
+  union  element *lastelement[ELEMENT_LISTPARTS];      /*pointer to last element*/
+  union  vertex *vertices[VERTEX_LISTPARTS];            /* pointer to first vertex	*/
+  union  vertex *lastvertex[VERTEX_LISTPARTS];      /* pointer to last vertex	*/
+  struct node *firstNode[NODE_LISTPARTS];       /* pointer to first node		*/
+  struct node *lastNode[NODE_LISTPARTS];        /* pointer to last node                 */
+  VECTOR *firstVector[VECTOR_LISTPARTS];        /* pointer to first vector		*/
+  VECTOR *lastVector[VECTOR_LISTPARTS];         /* pointer to last vector		*/
   BLOCKVECTOR *firstblockvector;        /* pointer to the first blockvector		*/
   BLOCKVECTOR *lastblockvector;         /* pointer to the last blockvector		*/
   struct grid *coarser, *finer;         /* coarser and finer grids				*/
