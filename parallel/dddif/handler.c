@@ -322,6 +322,9 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
   {
     MATRIX *mcopy = (MATRIX *)Data[i];
 
+    /* reset MNEXT */
+    MNEXT(mcopy) = NULL;
+
     if (MDEST(mcopy)==NULL)
     {
       /* destination vector is not on this processor  */
@@ -424,7 +427,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
 
             if (MOFFSET(mcopy))
             {
-              newm = (MATRIX *) ((char *)conn+MSIZE(mcopy));
+              newm =         (MATRIX *) ((char *)conn+MSIZE(mcopy));
               otherm = (MATRIX *) conn;
 
               PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v="
@@ -451,7 +454,19 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
           else
           {
             nconn++;
-            newm = MADJ(back);
+            /*
+               newm = MADJ(back);
+             */
+            if (MOFFSET(back))
+            {
+              newm = (MATRIX *) ((char *)back-MSIZE(mcopy));
+              SETMOFFSET(mcopy,0);
+            }
+            else
+            {
+              newm = (MATRIX *) ((char *)back+MSIZE(mcopy));
+              SETMOFFSET(mcopy,1);
+            }
 
             PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v="
                                 VINDEX_FMTX " back=%x newm=%x Size=%d vectoID="
@@ -484,6 +499,17 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
   /* enter matrix list at the beginning of existing list for this vector */
   /* ensure diagonal entry being at first position */
   if (nconn > 0)
+  {
+                #ifdef Debug
+    MATRIX *mat;
+    PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX():  v="
+                        VINDEX_FMTX "new matrices:\n",me,VINDEX_PRTX(vec)));
+    for (mat=first; mat!=NULL; mat=MNEXT(mat))
+    {
+      PRINTDEBUG(dddif,4,(PFMT "     mat=%x dest=" EID_FMTX "\n",me,mat,VINDEX_PRTX(MDEST(mat))));
+    }
+                #endif
+
     if (VSTART(vec)!=NULL)
     {
       MNEXT(last) = MNEXT(VSTART(vec));
@@ -491,9 +517,30 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
     }
     else
     {
-      MNEXT(last) = VSTART(vec);
+      MNEXT(last) = NULL;
       VSTART(vec) = first;
     }
+  }
+
+#ifdef Debug
+  {
+    MATRIX *mat=NULL;
+
+    for (mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
+    {
+      if (MDEST(mat) == MDEST(MADJ(mat)))
+      {
+        if (MDIAG(mat)) continue;
+
+        if (!MDIAG(mat))
+          PrintDebug(PFMT " VectorScatterConnX(): NOT DIAGONAL v="
+                     VINDEX_FMTX " conn=%x mat=%x Size=%d vectoID=" VINDEX_FMTX
+                     "\n",me,VINDEX_PRTX(vec),MMYCON(mat),mat,MSIZE(mat),
+                     VINDEX_PRTX(MDEST(mat)));
+      }
+    }
+  }
+#endif
 
   /* count new connections */
   NC(theGrid) += newconn;
