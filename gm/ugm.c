@@ -3676,7 +3676,7 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
                                         #endif
           if (!FindNeighborElement (theElement,i,&theNeighbor,&j))
             RETURN (1);
-          VOBJECT(theVector) = (geom_object*)theNeighbor;
+          VOBJECT(theVector) = (GEOM_OBJECT *)theNeighbor;
           SETVECTORSIDE(theVector,j);
           SETVCOUNT(SVECTOR(theElement,i),1);
         }
