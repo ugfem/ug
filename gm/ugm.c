@@ -798,6 +798,31 @@ NODE *GetSideNode (ELEMENT *theElement, NODE *theNode0, NODE *theNode1, INT side
 
 	ASSERT(theNode0!=NULL || theNode1!=NULL);
 
+	/* search over both link lists */
+	if (theNode0!=NULL && theNode1!=NULL) 
+		for (theLink0=START(theNode0); theLink0!=NULL; theLink0=NEXT(theLink0)) {
+			for (theLink1=START(theNode1); theLink1!=NULL; theLink1=NEXT(theLink1))
+				if (NBNODE(theLink0) == NBNODE(theLink1)) {
+					if (NTYPE(NBNODE(theLink0)) == SIDE_NODE) {
+						theNode = NBNODE(theLink0);
+						if (VFATHER(MYVERTEX(theNode)) == theElement) {
+							if (ONSIDE(MYVERTEX(theNode)) == side)
+								break;
+						}
+						if (NBELEM(theElement,side)==VFATHER(MYVERTEX(theNode))) {
+							if (ONNBSIDE(MYVERTEX(theNode)) == side)
+								break;
+						}
+						theNode = NULL;
+					}
+				}
+				if (theNode != NULL) 
+				    if (NTYPE(theNode)==SIDE_NODE && 
+						(ONSIDE(MYVERTEX(theNode)) == side ||
+						 ONNBSIDE(MYVERTEX(theNode)) == side))
+					return(theNode);
+			}
+
 	/* search over one link list */
 	if (theNode0!=NULL || theNode1!=NULL) {
 		if (theNode0!=NULL)
@@ -820,27 +845,6 @@ NODE *GetSideNode (ELEMENT *theElement, NODE *theNode0, NODE *theNode1, INT side
 			}
 		}
 	}
-
-	/* search over both link lists */
-	if (theNode0!=NULL && theNode1!=NULL)
-		for (theLink0=START(theNode0); theLink0!=NULL; theLink0=NEXT(theLink0)) {
-			for (theLink1=START(theNode1); theLink1!=NULL; theLink1=NEXT(theLink1))
-				if (NBNODE(theLink0) == NBNODE(theLink1)) {
-					if (NTYPE(NBNODE(theLink0)) == SIDE_NODE) {
-						theNode = NBNODE(theLink0);
-						if (VFATHER(MYVERTEX(theNode)) == theElement) {
-							if (ONSIDE(MYVERTEX(theNode)) == side)
-								break;
-						}
-						if (NBELEM(theElement,side)==VFATHER(MYVERTEX(theNode))) {
-							if (ONNBSIDE(MYVERTEX(theNode)) == side)
-								break;
-						}
-						theNode = NULL;
-					}
-				}
-				if (theNode != NULL) break;
-			}
 
 	ASSERT(theNode==NULL || NTYPE(theNode)==SIDE_NODE && 
 			(ONSIDE(MYVERTEX(theNode)) == side ||
