@@ -210,6 +210,7 @@ struct std_Patch {
 /*----------- typedef for structs ------------------------------------------*/
 
 /* typedefs */
+#undef DOMAIN
 typedef struct domain DOMAIN;
 typedef struct boundary_segment BOUNDARY_SEGMENT;
 typedef struct problem PROBLEM ;
