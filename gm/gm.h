@@ -39,7 +39,6 @@
 #ifndef __GM__
 #define __GM__
 
-#include <assert.h>
 #include <limits.h>
 
 #ifndef __COMPILER__
