@@ -84,7 +84,7 @@ static EXCHNG_TYP1 *ExchangeVar_1_Pointer;
 static EXCHNG_TYP2 ExchangeVar_2;
 static EXCHNG_TYP2 *ExchangeVar_2_Pointer;
 static INT SFE_p, LI_p	;
-static INT nmb_of_trias_of_sf; /*wird verwendet in Ansys2lgmCreateTriaNeighbourhoodsAndOrientations*/
+static INT nmb_of_trias_of_sf; /*wird verwendet in Ansys2lgmCreateTriaOrientations*/
 
 /*just for debugging*/
 SD_TYP *sd_global;
@@ -135,7 +135,7 @@ SD_TYP *sd_global;
 
 /*sowie deren Subfunktionen als Vergleichszahl*/
 							
-static INT zaehler;   /*wird verwendet in Ansys2lgmCreateTriaNeighbourhoodsAndOrientations
+static INT zaehler;   /*wird verwendet in Ansys2lgmCreateTriaOrientations
 			sowie deren Subfunktionen als Zaehler, bzw. Abbruchkriterium
 			dafuer, ob alle Triangles einer Surface schon einmal durchlaufen worden 
 				sind.*/							
@@ -2023,7 +2023,7 @@ SFE_KNOTEN_TYP *GetMemAndFillNewSFE(INT ii, INT jj, INT kk, INT id_4, DOUBLE ss)
 	SFE_ORIENTATION_FLAG(newsfemem) = F; /*benoetigt fuer Orientierung der Dreiecke / SFEs
 								T bedeutet Orientierung der SFE/DreiecksIDS
 								wurde ueberprueft.
-								siehe Ansys2lgmCreateTriaNeighbourhoodsAndOrientations
+								siehe Ansys2lgmCreateTriaOrientations
 								und Subfunctions*/
 	
 	return(newsfemem);
@@ -3070,106 +3070,6 @@ INT ConnectSfcTria(SF_TYP *sf, SFE_KNOTEN_TYP *sfeptr)
 
 
 
-/****************************************************************************/
-/*D
-   Ansys2lgmCreateSbdsSfcsTriaRelations - 
-
-   SYNOPSIS:
-   INT Ansys2lgmCreateSbdsSfcsTriaRelations()
-
-   PARAMETERS:
-.  xxx - bla bla bla bla
-.  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   laeuft ueber die gesamte SFE-Hashtabelle und erzeugt alle notwendigen
-   Subdomains und auch Surfaces sowie deren Verbindung bzw. Referenzierung.
-   Ferner wird bei diesem Durchlauf auch die Nachbarschaftsbeziehungen der Dreiecke erzeugt.
-   sowie ebenso die Surface-Triangle-Beziehung.
-      
-   RETURN VALUE:
-   INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
-/****************************************************************************/
-INT Ansys2lgmCreateSbdsSfcsTriaRelations()
-{
-	SFE_KNOTEN_TYP *sfeptr;
-	SF_TYP *sf;
-	SD_TYP *sd0, *sd1;
-	INT lff,rv;
-	
-	/*laeuft ueber die gesamte SFE-Hashtabelle*/
-	for(lff=0; lff < SFE_p; lff++) 
-	{
-		/*wenn an dieser Stelle ueberhaupt ein Eintrag erfolgte*/
-		if ((EXCHNG_TYP2_SFE_HASHTAB(ExchangeVar_2_Pointer))[lff] != NULL) 
-		{
-			sfeptr = (EXCHNG_TYP2_SFE_HASHTAB(ExchangeVar_2_Pointer))[lff];
-			
-			/*laufe ueber alle Eintraege an dieser Stelle der Hashtabelle*/
-			while(sfeptr != NULL) 
-			{
-				/* erzeuge Subdomain bzgl. des ersten Identifiers des SFEs*/
-				if((sd0 = CreateSD(sfeptr,0)) == NULL) 
-				{
-					PrintErrorMessage('E',"Ansys2lgmCreateSbdsSfcsTriaRelations"," Returnvalue from CreateSD was nil instead of subdomain pointer");
-					return (1);
-				}
-				
-				/* wenn das SFE gar keinen zweiten Identifier besitzt*/
-				if(SFE_IDF_1(sfeptr) == SEC_SFC_NAME_DEFAULT_VAL)
-				{
-					/* erzeuge Surface aus dem ersten Identifier*/
-					if ((sf = ConnectSdWithSfce(sfeptr,sd0,NULL)) == NULL) 
-					{
-						PrintErrorMessage('E',"Ansys2lgmCreateSbdsSfcsTriaRelations"," Returnvalue from CreateSF was NULL instead of a surface pointer");
-						return (1);
-					}
-					
-				}
-				
-				/*wenn es aber einen zweiten Identifier gibt ...*/
-				else 
-				{
-					/* erzeuge  auch  noch Subdomain bzgl. des zweiten Identifiers des SFEs*/
-					if((sd1 = CreateSD(sfeptr, 1)) == NULL)
-					{
-						PrintErrorMessage('E',"Ansys2lgmCreateSbdsSfcsTriaRelations"," Returnvalue from CreateSD was NULL instead of subdomain pointer");
-						return (1);
-					}
-					
-					/* erzeuge eine Surface aus beiden Identifiers*/
-					if ((sf = ConnectSdWithSfce(sfeptr,sd0,sd1)) == NULL) /*zweiter und dritter Parameter sind belegt.*/
-					{
-						PrintErrorMessage('E',"Ansys2lgmCreateSbdsSfcsTriaRelations"," Returnvalue from CreateSF was NULL instead of a surface pointer");
-						return (1);
-					}
-
-				}
-				
-				/* für beide Fälle (ein resp. zwei Identifier) muß Sfce-Tria sowie Neighbourhoodbez. aufgebaut werden:*/
-
-				/*Verbinde Surface sf mit SFE bzw. Triangle sfeptr*/
-				if( (rv = ConnectSfcTria(sf,sfeptr)) == 1)
-				{
-					PrintErrorMessage('E',"Ansys2lgmCreateSbdsSfcsTriaRelations"," Returnvalue of ConnectSfcTria was 1 Could not connect surface with SFE");
-					return (1);
-				}
-				
-				/*weiter gehts mit dem naechsten SFE Eintrag an dieser Stelle der SFE-Hashtabelle*/
-				sfeptr = SFE_NEXT(sfeptr);
-			}
-			
-		} /* von "if ((EXCHNG_TYP2_SFE_HASHTAB(ExchangeVar_2_Pointer))[lff] != NULL)" */ 
-		
-	} /*von for */
-
-	return (0);
-}
-
-
 
 /****************************************************************************/
 /*D
@@ -3344,253 +3244,24 @@ INT TriaNeighbourhood(SFE_KNOTEN_TYP *sfep)
 
 
 
-/****************************************************************************/
-/*D
-   ChangeOrientation - 	
-
-   SYNOPSIS:
-   INT ChangeOrientation(SFE_KNOTEN_TYP *dasSFE)
-
-   PARAMETERS:
-.  dasSFE - SFE, dessen Knotenreihenfolge korrigiert bzw. umgedreht werden muss 
-
-   DESCRIPTION:
-   dreht die Reihenfolge der NodeIDs vom OFD "dasSFE" um:
-   Dazu werden erster mit zweitem Node vertauscht sowie
-   zweiter mit drittem Node vertauscht
-   So ist alles umgedreht (siehe auch theoertische Ueberlegungen im Konzept)
-   		
-      
-   RETURN VALUE:
-   INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
-/****************************************************************************/
-INT ChangeOrientation(SFE_KNOTEN_TYP *dasSFE)
-{
-	INT merk_id;
-	SFE_KNOTEN_TYP *merk_SFEknoten;
-	
-	/*Vertauschung des ersten mit dem zweiten Knoten*/
-	merk_id = SFE_NDID1(dasSFE);
-	SFE_NDID1(dasSFE) = SFE_NDID2(dasSFE);
-	SFE_NDID2(dasSFE) = merk_id;
-	
-	/*Vertauschung des zweiten mit dem dritten Nachbarn*/
-	merk_SFEknoten = SFE_NGHB2(dasSFE);
-	SFE_NGHB2(dasSFE) = SFE_NGHB3(dasSFE);
-	SFE_NGHB3(dasSFE) = merk_SFEknoten;
-	
-	return(0);
-}
-
 
 
 /****************************************************************************/
 /*D
-   Ausrichtung - 	
+   Ansys2lgmCreateSbdsSfcsTriaRelations - 
 
    SYNOPSIS:
-   INT Ausrichtung(SFE_KNOTEN_TYP *Muster_SFE, SFE_KNOTEN_TYP *Nachbar_SFE, INT kante)
-
-   PARAMETERS:
-.  Muster_SFE - SFE, deren Knotenreihenfolge bereits stimmt 
-.  Nachbar_SFE - SFE, deren Knotenreihenfolge an die von Muster_SFE angepasst werden soll 
-.  kante - KantenID von Muster_SFE, bzgl. der die Nachbarschaft zu Nachbar_SFE besteht
-
-   DESCRIPTION:
-   Passt die KnotenIDReihenfolge des NachbarSFEs Nachbar_SFE an die KnReihenfolge
-   von Muster_SFE an.
-    
-   Die beiden Reihenfolgen muessen so beschaffen sein,
-   dass sie an dem gemeinsamen Streckenzug entgegengesetzte Richtung besitzen.
-   
-   Die Funktion sucht zunaechst die beiden Knoten beim Nachbarelement
-   und prueft dann, ob sie dort in gleicher oder umgekehrter Reihenfolge auftreten.
-   Bei gleicher Reihenfolge ist es noetig diese zu korrigieren. 
-   Dazu wird die Subfunktion "ChangeOrientation(..)" aufgerufen. 
-   
-   Fuer die Kantenreihenfolge eines Dreiecks mit den KnotenIDs i,j und k gilt
-   erste Kante von i nach j, zweite Kante von j nach k sowie dritte Kante von k nach i  
-   		
-      
-   RETURN VALUE:
-   INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
-/****************************************************************************/
-INT Ausrichtung(SFE_KNOTEN_TYP *Muster_SFE, SFE_KNOTEN_TYP *Nachbar_SFE, INT kante)
-{
-	INT ID_firstnode, ID_secndnode;
-	INT merki1, merki2, i;
-	INT rw;
-	
-	switch(kante)
-	{
-		case 0:		ID_firstnode = SFE_NDID1(Muster_SFE);
-				ID_secndnode = SFE_NDID2(Muster_SFE);
-				break;
-		case 1: 	ID_firstnode = SFE_NDID2(Muster_SFE);
-				ID_secndnode = SFE_NDID3(Muster_SFE);
-				break;
-		case 2: 	ID_firstnode = SFE_NDID3(Muster_SFE);
-				ID_secndnode = SFE_NDID1(Muster_SFE);
-				break;
-		default:	PrintErrorMessage('E',"Ausrichtung","got wrong Input-Value: kante != {0|1|2}");
-				return (1);
-	}
-	
-	/*die beiden KnotenIDs beim Nachbarn suchen*/
-	merki2 = -1; 
-	merki1 = -1;
-	for(i=0;i<3;i++)
-	{
-		if(SFE_NDID(Nachbar_SFE,i) == ID_secndnode)
-		{
-			merki2 = i;
-		}
-		else if(SFE_NDID(Nachbar_SFE,i) == ID_firstnode)
-		{
-			merki1 = i;
-		}
-	}
-	if((merki1 != -1) && (merki2 != -1))
-	{
-		/* Ist die NachfolgeKnotenID von ID_firstnode == ID_secndnode */
-		/* bzw.: Ist die Reihenfolge wieder genau identisch ?*/
-		if( ((merki1+1)%3) == merki2)
-		{
-			/*Die Reihenfolge muss aber immer andersherum sein ==> Aendern ...*/
-			if( (rw = ChangeOrientation(Nachbar_SFE)) == 1 )
-			{
-				PrintErrorMessage('E',"Ausrichtung","got ERROR from calling ChangeOrientation");
-				return (1);
-			}		
-		}
-	}
-	else
-	{
-		PrintErrorMessage('E',"Ausrichtung","die beiden SFEs sind ja gar keine Nachbarn");
-		return (1);
-	}
-	
-	return(0);
-}
-
-
-
-/****************************************************************************/
-/*D
-   TriangleIDOrientations - 	
-
-   SYNOPSIS:
-   INT TriangleIDOrientations(TRIANGLE_TYP *muster_tria)
-
-   PARAMETERS:
-.  Muster_SFE - SFE, das als Muster verwendet wird, dessen
-                 Umlaufrichtung also bereits stimmt 
-.  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   Diese rekursive Funktion durchlaeuft alle Dreiecke einer Surface
-   mit HIlfe der schon bestehenden Nachbarschaftsbeziehungen zwischen
-   den Dreiecken. Dabei wird nach jedem ueberprueften resp. ausgerich-
-   teten Dreieck die statische fuer die Funktion global verwendbare
-   Variable "zaehler" inkrementiert. Wenn dieser Zaehler den Wert der 
-   GesamtDreiecksAnzahl der betrachteten Surface erreicht, so wird die
-   Rekursionshierarchie mit return(FERTIG) auf dem schnellsten Wege abgebaut. 
-   		
-      
-   RETURN VALUE:
-   INT
-.n    FERTIG if alle Dreiecke einmal besucht bzw. 
-      static INT zaehler == static INT nmb_of_trias_of_sf
-.n    1 if error occured.
-D*/
-/****************************************************************************/
-INT TriangleIDOrientations(SFE_KNOTEN_TYP *Muster_SFE)
-{
-	SFE_KNOTEN_TYP *Nachbar_SFE;
-	INT kante; /*Laufvariable ueber die 3 Kanten eines Dreiecks*/
-	INT neubesetzt[3];
-	INT rv,rgbwrt;
-		
-	neubesetzt[0] = F; neubesetzt[1] = F; neubesetzt[2] = F;
-	
-	/* Laufe ueber die 3 Nachbarn von Muster_SFE */
-	for(kante = 0; kante < 3; kante++)
-	{
-		Nachbar_SFE =  SFE_NGHB(Muster_SFE,kante);
-		if(Nachbar_SFE != NULL)
-		{
-			/*natuerlich nur wenn diesewr Nachbar nicht schon orientiert wurde ...*/
-			if(SFE_ORIENTATION_FLAG(Nachbar_SFE) == F)
-			{
-				if((rv = Ausrichtung(Muster_SFE, Nachbar_SFE, kante)) == 1)
-				{
-					PrintErrorMessage('E',"TriangleIDOrientations"," Returnvalue of Ausrichtung was 1 ===> ERROR");
-					return (1);
-				}
-				
-				/*************************************************************/
-				/* Dieser Nachbar ist nun richtig orientiert, folglich . . . */
-				SFE_ORIENTATION_FLAG(Nachbar_SFE) = T;
-				zaehler ++;
-				neubesetzt[kante] = T;
-				if(zaehler == nmb_of_trias_of_sf)
-				{
-					return(FERTIG);
-				}
-				/*************************************************************/
-			}
-		}
-	} /* von for */
-	
-	/*weiterer Lauf ueber die 3 Nachbarn, um die RekursionsHierarchie etwas kleiner zu halten*/
-	for(kante = 0; kante < 3; kante++)
-	{
-		/*nur die soeben neu besetzten Dreiecke sind fuer einen Rekursionschritt interessant*/
-		if(neubesetzt[kante] == T)
-		{
-			rgbwrt = TriangleIDOrientations(SFE_NGHB(Muster_SFE,kante));
-			if(zaehler == nmb_of_trias_of_sf)
-			{
-				return(FERTIG);
-			}
-		}
-	} /* von for */
-	
-	return(FERTIG);
-	
-}
-
-
-
-/****************************************************************************/
-/*D
-   Ansys2lgmCreateTriaNeighbourhoodsAndOrientations - 	
-
-   SYNOPSIS:
-   INT Ansys2lgmCreateTriaNeighbourhoodsAndOrientations()
+   INT Ansys2lgmCreateSbdsSfcsTriaRelations()
 
    PARAMETERS:
 .  xxx - bla bla bla bla
 .  yyy - bla bla bla bla
 
    DESCRIPTION:
-   erzeugt Dreiecksnachbarschaften :
-	   d.h. jedes OFlaecDreieck einer Surface bzw jedem SFE werden die 3
-	   Nachbar SFES ermittelt und zugewiesen. 
-	   Liegt ein solches ObFlDr am Rand einer Surface,
-	   d.h es besitzt bzgl einer Kante kein Nachbarobfldreieck auf dieser
-	   Surface, dann erfolgt ein "NULL"-Eintrag.
-   erzeugt ferner Dreiecksorientierungen :
-   		d.h. die Reihenfolge der KnotenIds wird fuer alle Oberflaechendreiecke 
-   		so ausgerichtet, dass die "rechte Handregel" immer das selbe Ergebnis
-   		liefert.
-   		
+   laeuft ueber die gesamte SFE-Hashtabelle und erzeugt alle notwendigen
+   Subdomains und auch Surfaces sowie deren Verbindung bzw. Referenzierung.
+   Ferner wird bei diesem Durchlauf auch die Nachbarschaftsbeziehungen der Dreiecke erzeugt.
+   sowie ebenso die Surface-Triangle-Beziehung.
       
    RETURN VALUE:
    INT
@@ -3598,15 +3269,83 @@ INT TriangleIDOrientations(SFE_KNOTEN_TYP *Muster_SFE)
 .n    1 if error occured.
 D*/
 /****************************************************************************/
-INT Ansys2lgmCreateTriaNeighbourhoodsAndOrientations()
+INT Ansys2lgmCreateSbdsSfcsTriaRelations()
 {
-	SFE_KNOTEN_TYP *sfeptr, *firstOFD;
-	TRIANGLE_TYP *triangle;
-	INT lff;
+	SFE_KNOTEN_TYP *sfeptr;
+	SF_TYP *sf;
+	SD_TYP *sd0, *sd1;
+	INT lff,rv;
 	SF_TYP *sf_lfv;
-	INT rv;
+	TRIANGLE_TYP *triangle;
+	
+	/*laeuft ueber die gesamte SFE-Hashtabelle*/
+	for(lff=0; lff < SFE_p; lff++) 
+	{
+		/*wenn an dieser Stelle ueberhaupt ein Eintrag erfolgte*/
+		if ((EXCHNG_TYP2_SFE_HASHTAB(ExchangeVar_2_Pointer))[lff] != NULL) 
+		{
+			sfeptr = (EXCHNG_TYP2_SFE_HASHTAB(ExchangeVar_2_Pointer))[lff];
+			
+			/*laufe ueber alle Eintraege an dieser Stelle der Hashtabelle*/
+			while(sfeptr != NULL) 
+			{
+				/* erzeuge Subdomain bzgl. des ersten Identifiers des SFEs*/
+				if((sd0 = CreateSD(sfeptr,0)) == NULL) 
+				{
+					PrintErrorMessage('E',"Ansys2lgmCreateSbdsSfcsTriaRelations"," Returnvalue from CreateSD was nil instead of subdomain pointer");
+					return (1);
+				}
+				
+				/* wenn das SFE gar keinen zweiten Identifier besitzt*/
+				if(SFE_IDF_1(sfeptr) == SEC_SFC_NAME_DEFAULT_VAL)
+				{
+					/* erzeuge Surface aus dem ersten Identifier*/
+					if ((sf = ConnectSdWithSfce(sfeptr,sd0,NULL)) == NULL) 
+					{
+						PrintErrorMessage('E',"Ansys2lgmCreateSbdsSfcsTriaRelations"," Returnvalue from CreateSF was NULL instead of a surface pointer");
+						return (1);
+					}
+					
+				}
+				
+				/*wenn es aber einen zweiten Identifier gibt ...*/
+				else 
+				{
+					/* erzeuge  auch  noch Subdomain bzgl. des zweiten Identifiers des SFEs*/
+					if((sd1 = CreateSD(sfeptr, 1)) == NULL)
+					{
+						PrintErrorMessage('E',"Ansys2lgmCreateSbdsSfcsTriaRelations"," Returnvalue from CreateSD was NULL instead of subdomain pointer");
+						return (1);
+					}
+					
+					/* erzeuge eine Surface aus beiden Identifiers*/
+					if ((sf = ConnectSdWithSfce(sfeptr,sd0,sd1)) == NULL) /*zweiter und dritter Parameter sind belegt.*/
+					{
+						PrintErrorMessage('E',"Ansys2lgmCreateSbdsSfcsTriaRelations"," Returnvalue from CreateSF was NULL instead of a surface pointer");
+						return (1);
+					}
+
+				}
+				
+				/* für beide Fälle (ein resp. zwei Identifier) muß Sfce-Tria sowie Neighbourhoodbez. aufgebaut werden:*/
+
+				/*Verbinde Surface sf mit SFE bzw. Triangle sfeptr*/
+				if( (rv = ConnectSfcTria(sf,sfeptr)) == 1)
+				{
+					PrintErrorMessage('E',"Ansys2lgmCreateSbdsSfcsTriaRelations"," Returnvalue of ConnectSfcTria was 1 Could not connect surface with SFE");
+					return (1);
+				}
+				
+				/*weiter gehts mit dem naechsten SFE Eintrag an dieser Stelle der SFE-Hashtabelle*/
+				sfeptr = SFE_NEXT(sfeptr);
+			}
+			
+		} /* von "if ((EXCHNG_TYP2_SFE_HASHTAB(ExchangeVar_2_Pointer))[lff] != NULL)" */ 
+		
+	} /*von for */
 	
 	
+
   /****************************************
     Erzeugung der Dreiecksnachbarschaften
    ****************************************/
@@ -3634,297 +3373,11 @@ INT Ansys2lgmCreateTriaNeighbourhoodsAndOrientations()
 		sf_lfv = SF_NEXT(sf_lfv);
 	}/*von while*/
   /****************************************/
-  
 	
-  /****************************************
-    Pruefung der Dreiecksorientierungen  
-   ****************************************/
-	/*laufe ueber alle Surfaces und erzeuge einheitliche Richtungen der
-	  Triangles (d.h. der TriangleNodeIDReihenfolgen */
-	sf_lfv = EXCHNG_TYP2_ROOT_SFC(ExchangeVar_2_Pointer);
-	while(sf_lfv != NULL)
-	{
-		/*Anzahl der Dreiecke von dieser Surface der statischen Variable nmb_of_trias_of_sf
-		 zuweisen : */
-		 
-		nmb_of_trias_of_sf = SF_NMB_OF_TRIAS(sf_lfv);
-		firstOFD = TRIA_SFE_KN(SF_TRIAS(sf_lfv));
-		SFE_ORIENTATION_FLAG(firstOFD) = T;
-		zaehler = 1;
-		if((rv = TriangleIDOrientations(firstOFD)) != FERTIG)
-		{
-			PrintErrorMessage('E',"Ansys2lgmCreateTriaNeighbourhoodsAndOrientations"," Returnvalue of TriangleIDOrientations was not FERTIG - Problems with checking ID-Orientations");
-			return (1);
-		}
-		/*das erste der nmb_of_trias_of_sf Dreiecke wurde damit besucht -
-		  Deshalb wird jetzt zaehler auf 1 gesetzt
-		  Seine Richtung (Reihenfolge der KnotenIDs ist nun das Muster fuer alle anderen ...
-		  Jedes andere Dreieck muss nun einmal besucht werden und auf richtige Reihenfolge
-		  geprueft u. ggf. geaendert werden. Schluss ist wenn zaehler == nmb_of_trias_of_sf,
-		  da dann alle Dreiecke genau einmal gecheckt wurden. */
-		  
-		
-		sf_lfv = SF_NEXT(sf_lfv);
-	}/*von while*/
-  /****************************************/
-  
+	
+
+	return (0);
 }
-
-
-
-/****************************************************************************/
-/*D
-   EvalNmbOfPointsOfSfcs - 	
-
-   SYNOPSIS:
-   INT EvalNmbOfPointsOfSfcs()
-
-   PARAMETERS:
-.  xxx - bla bla bla bla
-.  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   laeuft ueber alle Surfaces und berechnet je Surface die Anzahl der Points,
-   dazu wird ein temporaeres Knotenfeld verwendet, bei dem fuer alle Knoten ein 
-   Integer reserviert ist. Fuer jede Surface laeuft die FUnktion ueber alle 
-   zugehoerigen Triangles und markiert im temp. Feld die zugeh. Knoten.
-   Bei jeder neuen Markierung der NumberofPoints-Zaehler der Surface inkrementiert.
-   
-      
-   RETURN VALUE:
-   INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
-/****************************************************************************/
-INT EvalNmbOfPointsOfSfcs()
-{
-	SF_TYP *lauf_sf;
-	TRIANGLE_TYP *lauf_tria;
-	INT *TempNodeArray;
-	INT index,i,n;
-	
-	lauf_sf = EXCHNG_TYP2_ROOT_SFC(ExchangeVar_2_Pointer);
-	
-	/*einmal fuer alle Surfaces ein temporaeres Hilfsfeld anlegen:*/
-	/*erster Eintrag steht fuer keienn Node*/
-	if ((TempNodeArray = GetTmpMem(theHeap,EXCHNG_TYP1_NMB_OF_BNDNDS(ExchangeVar_1_Pointer)*sizeof(INT)))==NULL) 
-	{
-		PrintErrorMessage('E',"EvalNmbOfPointsOfSfcs","  got no MEM for the TempNodeArray, see ansys2lgm.c");
-		return(1);
-	}
-	
-
-	/*laufe ueber alle Surfaces*/
-	while(lauf_sf != NULL)
-	{
-		/*fuer jede Surface das temporaere Hilfsfeld mit F initialisieren*/
-		for(i=0; i<EXCHNG_TYP1_NMB_OF_BNDNDS(ExchangeVar_1_Pointer); i++)
-		{
-			TempNodeArray[i] = F;
-		}
-		
-		/*laufe ueber alle Dreiecke*/
-		lauf_tria = SF_TRIAS(lauf_sf);
-		while(lauf_tria != NULL)
-		{
-			for(n=0; n<3; n++)
-			{
-				index = SFE_NDID(TRIA_SFE_KN(lauf_tria),n);
-				if(TempNodeArray[index] == F)
-				{
-					TempNodeArray[index] = T;
-					SF_NMB_OF_POINTS(lauf_sf) = SF_NMB_OF_POINTS(lauf_sf) + 1;
-				}
-			}
-			lauf_tria = TRIA_NEXT(lauf_tria);
-		}
-		lauf_sf = SF_NEXT(lauf_sf);
-	}
-	return(0);
-}
-
-
-
-/****************************************************************************/
-/*D
-   NachAussenOrientiert - 	
-
-   SYNOPSIS:
-   INT NachAussenOrientiert(INT i, INT j, INT k, INT v)
-
-   PARAMETERS:
-.  i,j,k - KnotenIDs in repraesentativer Reihenfolge fuer gesamte Surface
-		   seit dem Durchlauf der FUnktion TriangleIDOrientation()
-.  v - "v" wie vierte ID ==> Liegt dieser vierte Knoten auf der selben Seite,
-           wie die, auf die der Normalenvektor von i,j,k zeigt dann ist
-           "ijk"(genau in dieser Reihenfolge!) nicht nach aussen sondern nach
-           innen orientiert. Der Rueckgabewert ist also "F"
-
-   DESCRIPTION:
-   berechnet mit Spat- und Kreuzprodukt, ob die RechteHandRegel mit i, j und k
-   nach "aussen" zeigt. Zur Feststellung dient v. Dieses "v" liegt bzgl der von ijk
-   definierten Ebene "innen" 
-      
-   RETURN VALUE:
-   INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
-/****************************************************************************/
-INT NachAussenOrientiert(INT i, INT j, INT k, INT v)
-{
-	DOUBLE II[3],JJ[3],KK[3],VV[3];
-	DOUBLE A[3],B[3],C[3],V[3];
-	DOUBLE alpha,cos_alpha,Laenge_C,Laenge_V;
-	INT offs;
-	INT imal3,jmal3,kmal3,vmal3;
-
-	imal3 = i * 3;
-	jmal3 = j * 3;
-	kmal3 = k * 3;
-	vmal3 = v * 3;
-	
-	/* II[3],JJ[3],KK[3],VV[3] fuellen mit cadconvert-Feldern und den Parametern i,j,k und v*/
-	for(offs = 0; offs<3; offs++)
-	{
-		II[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[imal3+offs];
-		JJ[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[jmal3+offs];
-		KK[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[kmal3+offs];
-		VV[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[vmal3+offs];
-	}
-	
-	/*Berechnung des Vektors A von II nach JJ sowie  des Vektors B von JJ nach KK
-	  sowie  des Vektors V von II nach VV*/
-	A[0] = JJ[0] - II[0]; A[1] = JJ[1] - II[1]; A[2] = JJ[2] - II[2];
-	B[0] = KK[0] - JJ[0]; B[1] = KK[1] - JJ[1]; B[2] = KK[2] - JJ[2];
-	V[0] = VV[0] - II[0]; V[1] = VV[1] - II[1]; V[2] = VV[2] - II[2];
-	
-	/*Berechnung des auf A,B senkrechten Vekotors C mit Hilfe des Kreuzprodukts*/
-	C[0] = A[1]*B[2] - A[2]*B[1]; 
-	C[1] = A[2]*B[0] - A[0]*B[2]; 
-	C[2] = A[0]*B[1] - A[1]*B[0];
-	
-	/*Berechnung des Winkels zwischen C und V*/
-	Laenge_C = sqrt( C[0]*C[0] + C[1]*C[1] + C[2]*C[2] );
-	Laenge_V = sqrt( V[0]*V[0] + V[1]*V[1] + V[2]*V[2] );
-	/*alpha = acos( ( C[0]*V[0] + C[1]*V[1] + C[2]*V[2] ) / (Laenge_C) / (Laenge_V) );*/
-	cos_alpha = ( ( C[0]*V[0] + C[1]*V[1] + C[2]*V[2] ) / (Laenge_C) / (Laenge_V) );
-	
-	if(cos_alpha > 0.0)
-		return(F);
-	else
-		return(T);
-}
-
-
-
-/****************************************************************************/
-/*D
-   EvalLeftRightOfSfcs - 	
-
-   SYNOPSIS:
-   INT EvalLeftRightOfSfcs()
-
-   PARAMETERS:
-.  xxx - bla bla bla bla
-.  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   laeuft ueber alle Surfaces und weist diesen die SubdomainIds zu, die
-   "links" bzw. "rechts" liegen. Dazu verwendet es die vierteID,
-   die als Eingangsparameter kommt.
-   Für die eigentliche Links-RechtsBerechnung wird "NachAussenOrientiert(...)"
-   aufgerufen.
-      
-   RETURN VALUE:
-   INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
-/****************************************************************************/
-INT EvalLeftRightOfSfcs()
-{
-	INT rw;
-	SF_TYP *lauf_sf;
-	SFE_KNOTEN_TYP *sfe;
-	INT i,j,k,v;
-	
-	lauf_sf = EXCHNG_TYP2_ROOT_SFC(ExchangeVar_2_Pointer);
-	
-	/*laufe ueber alle Surfaces*/
-	while(lauf_sf != NULL)
-	{
-		/*man verwende den SFE-Pointer des ersten Triangles diese Surface lauf_sf*/
-		sfe = TRIA_SFE_KN(SF_TRIAS(lauf_sf));
-		
-		/*die IDs der Eckknoten in einer Reihenfolge, die fuer die gesamte Surface
-		  repraesentativ ist.*/
-		i = SFE_NDID1(sfe);
-		j = SFE_NDID2(sfe);
-		k = SFE_NDID3(sfe);
-		v = SFE_4ND_0(sfe);/*die vierte KnotenID bzgl. des ersten Identifiers*/
-		
-		/*Sind ijk so orientiert, dass die RechteHandregel aus der Subdomain raus zeigt,
-		  bzw. nicht (!)  in Richtung des vierten Knotens zeigt.*/
-		if(NachAussenOrientiert(i,j,k,v) == T)
-		{
-			SF_LEFT_SBD(lauf_sf) = (int) (floor(SFE_IDF_1(sfe)));/*RechtHndReg mit ijk zeigt nach "links" ind das 
-			                                        andere "linke-C.Tapp" Gebiet SFE_IDF_1(sfe)*/
-			SF_RIGHT_SBD(lauf_sf) = (int) (floor(SFE_IDF_0(sfe)));/*LinkHndReg mit ijk zeigt nach "rechts" in das "(r)echte"
-													 Gebiet SFE_IDF_0(sfe) selbst*/ 
-		}
-		else
-		{
-			SF_RIGHT_SBD(lauf_sf) = (int) (floor(SFE_IDF_1(sfe)));
-			SF_LEFT_SBD(lauf_sf) = (int) (floor(SFE_IDF_0(sfe)));
-		}
-		
-		lauf_sf = SF_NEXT(lauf_sf);
-	}
-	return(0);
-}
-
-
-/****************************************************************************/
-/*D
-   Ansys2lgmEvalSurfaceInformations - 	
-
-   SYNOPSIS:
-   INT Ansys2lgmEvalSurfaceInformations()
-
-   PARAMETERS:
-.  xxx - bla bla bla bla
-.  yyy - bla bla bla bla
-
-   DESCRIPTION:
-   ruft die beiden Funktionen EvalNmbOfPointsOfSfc und EvalLeftRightOfSfcs auf
-      
-   RETURN VALUE:
-   INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
-/****************************************************************************/
-INT Ansys2lgmEvalSurfaceInformations()
-{
-	INT rv;
-	
-	if ((rv = EvalNmbOfPointsOfSfcs()) != 0)
-	{
-		PrintErrorMessage('E',"Ansys2lgmEvalSurfaceInformations","ERR-Return-Val from EvalNmbOfPointsOfSfcs");
-		return (1);
-	}
-	if ((rv = EvalLeftRightOfSfcs())!= 0)
-	{
-		PrintErrorMessage('E',"Ansys2lgmEvalSurfaceInformations","ERR-Return-Val from EvalLeftRightOfSfcs");
-		return (1);
-	}
-
-	return(0);
-}
-
-
 
 
 /****************************************************************************/
@@ -4595,6 +4048,51 @@ INT ConnectPolylineWithSurfaces(PL_TYP *plptr)
 
 
 
+
+
+
+/****************************************************************************/
+/*D
+   PolylineSplit - 	
+
+   SYNOPSIS:
+   INT PolylineSplit(PL_LINE_TYP **anfang, PL_LINE_TYP **rechtesMuster, PL_TYP *Polyline, PL_LINE_TYP *idl2)
+
+   PARAMETERS:
+.  anfang - refeerence parameter - will be changed in fct.
+.  rechtesMuster - refeerence parameter - will be changed in fct.
+.  Polyline - the corresp. Polyline - pointer will be used to change polyline features
+.  idl2 - value parameter
+
+   DESCRIPTION:
+   This functions splits a polyline, which coud not be sorted by SortPolyline() !
+   The function will split the already sorted part of the polyline and create a new polyline
+   out of it. The remaining part wil be the old  Polyline with change features
+   
+   Idee:
+   ----- 
+   der bereits sortierte Teile der Polyline wird zu einer neuen Polyline gemacht.
+   Der verböleibende Teil wird upgedatet.
+    
+   
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT PolylineSplit(PL_LINE_TYP **anfang, PL_LINE_TYP **rechtesMuster, PL_TYP *Polyline, PL_LINE_TYP *idl2)
+{
+	PrintErrorMessage('E',"PolylineSplit","SortPolyline did not find a PartnerLine and PolylineSplit is not installed yet");
+	return (1);
+}
+
+
+
+
+
+
 /****************************************************************************/
 /*D
    SortPolyline - 	
@@ -4648,6 +4146,7 @@ INT SortPolyline(PL_TYP *Polyline)
 	INT predlinefound; /*Flag, das angibt, ob eine Partner- bzw. Vorgaengerline gefunden wurde.*/
 	INT succlinefound; /*Flag, das angibt, ob eine Partner- bzw. Nachfolgerline RECHTS gefunden wurde.*/
 	INT merkeID; 
+	INT rv;
 	
 		
 	
@@ -4712,8 +4211,11 @@ INT SortPolyline(PL_TYP *Polyline)
 			{
 				if(succlinefound == F)
 				{
-					PrintErrorMessage('E',"SortPolyline","Did not find a PartnerLine !!!");
-					return (1);
+					if((rv = PolylineSplit(&anfang,&rechtesMuster,Polyline,idl2)) == 1)
+					{
+						PrintErrorMessage('E',"PolylineSplit","returned ERROR");
+						return(1);
+					}
 				}
 				else /*ein RECHTER Nachfolger wurde gefunden*/
 				{
@@ -4929,13 +4431,599 @@ INT Ansys2lgmCreatePloylines()
 		}
 		else
 		{
-			PrintErrorMessage('E',"Ansys2lgmCreatePloylines","did receive SORTED-Message from SortPolyline");
+			PrintErrorMessage('E',"Ansys2lgmCreatePloylines","did not receive SORTED-Message from SortPolyline");
 			return (1);
 		}
 	}
 	
 	return(0);
 }
+
+
+
+
+/****************************************************************************/
+/*D
+   Ansys2lgmSurfaceDetecting - 	
+
+   SYNOPSIS:
+   INT Ansys2lgmSurfaceDetecting()
+
+   PARAMETERS:
+.  xxx - bla bla bla bla
+.  yyy - bla bla bla bla
+
+   DESCRIPTION:
+   bla bla
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT Ansys2lgmSurfaceDetecting()
+{
+	PrintErrorMessage('W',"Ansys2lgmSurfaceDetecting","is not implemented yet !");
+	return(0);
+}
+
+
+
+/****************************************************************************/
+/*D
+   ChangeOrientation - 	
+
+   SYNOPSIS:
+   INT ChangeOrientation(SFE_KNOTEN_TYP *dasSFE)
+
+   PARAMETERS:
+.  dasSFE - SFE, dessen Knotenreihenfolge korrigiert bzw. umgedreht werden muss 
+
+   DESCRIPTION:
+   dreht die Reihenfolge der NodeIDs vom OFD "dasSFE" um:
+   Dazu werden erster mit zweitem Node vertauscht sowie
+   zweiter mit drittem Node vertauscht
+   So ist alles umgedreht (siehe auch theoertische Ueberlegungen im Konzept)
+   		
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT ChangeOrientation(SFE_KNOTEN_TYP *dasSFE)
+{
+	INT merk_id;
+	SFE_KNOTEN_TYP *merk_SFEknoten;
+	
+	/*Vertauschung des ersten mit dem zweiten Knoten*/
+	merk_id = SFE_NDID1(dasSFE);
+	SFE_NDID1(dasSFE) = SFE_NDID2(dasSFE);
+	SFE_NDID2(dasSFE) = merk_id;
+	
+	/*Vertauschung des zweiten mit dem dritten Nachbarn*/
+	merk_SFEknoten = SFE_NGHB2(dasSFE);
+	SFE_NGHB2(dasSFE) = SFE_NGHB3(dasSFE);
+	SFE_NGHB3(dasSFE) = merk_SFEknoten;
+	
+	return(0);
+}
+
+
+
+/****************************************************************************/
+/*D
+   Ausrichtung - 	
+
+   SYNOPSIS:
+   INT Ausrichtung(SFE_KNOTEN_TYP *Muster_SFE, SFE_KNOTEN_TYP *Nachbar_SFE, INT kante)
+
+   PARAMETERS:
+.  Muster_SFE - SFE, deren Knotenreihenfolge bereits stimmt 
+.  Nachbar_SFE - SFE, deren Knotenreihenfolge an die von Muster_SFE angepasst werden soll 
+.  kante - KantenID von Muster_SFE, bzgl. der die Nachbarschaft zu Nachbar_SFE besteht
+
+   DESCRIPTION:
+   Passt die KnotenIDReihenfolge des NachbarSFEs Nachbar_SFE an die KnReihenfolge
+   von Muster_SFE an.
+    
+   Die beiden Reihenfolgen muessen so beschaffen sein,
+   dass sie an dem gemeinsamen Streckenzug entgegengesetzte Richtung besitzen.
+   
+   Die Funktion sucht zunaechst die beiden Knoten beim Nachbarelement
+   und prueft dann, ob sie dort in gleicher oder umgekehrter Reihenfolge auftreten.
+   Bei gleicher Reihenfolge ist es noetig diese zu korrigieren. 
+   Dazu wird die Subfunktion "ChangeOrientation(..)" aufgerufen. 
+   
+   Fuer die Kantenreihenfolge eines Dreiecks mit den KnotenIDs i,j und k gilt
+   erste Kante von i nach j, zweite Kante von j nach k sowie dritte Kante von k nach i  
+   		
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT Ausrichtung(SFE_KNOTEN_TYP *Muster_SFE, SFE_KNOTEN_TYP *Nachbar_SFE, INT kante)
+{
+	INT ID_firstnode, ID_secndnode;
+	INT merki1, merki2, i;
+	INT rw;
+	
+	switch(kante)
+	{
+		case 0:		ID_firstnode = SFE_NDID1(Muster_SFE);
+				ID_secndnode = SFE_NDID2(Muster_SFE);
+				break;
+		case 1: 	ID_firstnode = SFE_NDID2(Muster_SFE);
+				ID_secndnode = SFE_NDID3(Muster_SFE);
+				break;
+		case 2: 	ID_firstnode = SFE_NDID3(Muster_SFE);
+				ID_secndnode = SFE_NDID1(Muster_SFE);
+				break;
+		default:	PrintErrorMessage('E',"Ausrichtung","got wrong Input-Value: kante != {0|1|2}");
+				return (1);
+	}
+	
+	/*die beiden KnotenIDs beim Nachbarn suchen*/
+	merki2 = -1; 
+	merki1 = -1;
+	for(i=0;i<3;i++)
+	{
+		if(SFE_NDID(Nachbar_SFE,i) == ID_secndnode)
+		{
+			merki2 = i;
+		}
+		else if(SFE_NDID(Nachbar_SFE,i) == ID_firstnode)
+		{
+			merki1 = i;
+		}
+	}
+	if((merki1 != -1) && (merki2 != -1))
+	{
+		/* Ist die NachfolgeKnotenID von ID_firstnode == ID_secndnode */
+		/* bzw.: Ist die Reihenfolge wieder genau identisch ?*/
+		if( ((merki1+1)%3) == merki2)
+		{
+			/*Die Reihenfolge muss aber immer andersherum sein ==> Aendern ...*/
+			if( (rw = ChangeOrientation(Nachbar_SFE)) == 1 )
+			{
+				PrintErrorMessage('E',"Ausrichtung","got ERROR from calling ChangeOrientation");
+				return (1);
+			}		
+		}
+	}
+	else
+	{
+		PrintErrorMessage('E',"Ausrichtung","die beiden SFEs sind ja gar keine Nachbarn");
+		return (1);
+	}
+	
+	return(0);
+}
+
+
+
+/****************************************************************************/
+/*D
+   TriangleIDOrientations - 	
+
+   SYNOPSIS:
+   INT TriangleIDOrientations(TRIANGLE_TYP *muster_tria)
+
+   PARAMETERS:
+.  Muster_SFE - SFE, das als Muster verwendet wird, dessen
+                 Umlaufrichtung also bereits stimmt 
+.  yyy - bla bla bla bla
+
+   DESCRIPTION:
+   Diese rekursive Funktion durchlaeuft alle Dreiecke einer Surface
+   mit HIlfe der schon bestehenden Nachbarschaftsbeziehungen zwischen
+   den Dreiecken. Dabei wird nach jedem ueberprueften resp. ausgerich-
+   teten Dreieck die statische fuer die Funktion global verwendbare
+   Variable "zaehler" inkrementiert. Wenn dieser Zaehler den Wert der 
+   GesamtDreiecksAnzahl der betrachteten Surface erreicht, so wird die
+   Rekursionshierarchie mit return(FERTIG) auf dem schnellsten Wege abgebaut. 
+   		
+      
+   RETURN VALUE:
+   INT
+.n    FERTIG if alle Dreiecke einmal besucht bzw. 
+      static INT zaehler == static INT nmb_of_trias_of_sf
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT TriangleIDOrientations(SFE_KNOTEN_TYP *Muster_SFE)
+{
+	SFE_KNOTEN_TYP *Nachbar_SFE;
+	INT kante; /*Laufvariable ueber die 3 Kanten eines Dreiecks*/
+	INT neubesetzt[3];
+	INT rv,rgbwrt;
+		
+	neubesetzt[0] = F; neubesetzt[1] = F; neubesetzt[2] = F;
+	
+	/* Laufe ueber die 3 Nachbarn von Muster_SFE */
+	for(kante = 0; kante < 3; kante++)
+	{
+		Nachbar_SFE =  SFE_NGHB(Muster_SFE,kante);
+		if(Nachbar_SFE != NULL)
+		{
+			/*natuerlich nur wenn diesewr Nachbar nicht schon orientiert wurde ...*/
+			if(SFE_ORIENTATION_FLAG(Nachbar_SFE) == F)
+			{
+				if((rv = Ausrichtung(Muster_SFE, Nachbar_SFE, kante)) == 1)
+				{
+					PrintErrorMessage('E',"TriangleIDOrientations"," Returnvalue of Ausrichtung was 1 ===> ERROR");
+					return (1);
+				}
+				
+				/*************************************************************/
+				/* Dieser Nachbar ist nun richtig orientiert, folglich . . . */
+				SFE_ORIENTATION_FLAG(Nachbar_SFE) = T;
+				zaehler ++;
+				neubesetzt[kante] = T;
+				if(zaehler == nmb_of_trias_of_sf)
+				{
+					return(FERTIG);
+				}
+				/*************************************************************/
+			}
+		}
+	} /* von for */
+	
+	/*weiterer Lauf ueber die 3 Nachbarn, um die RekursionsHierarchie etwas kleiner zu halten*/
+	for(kante = 0; kante < 3; kante++)
+	{
+		/*nur die soeben neu besetzten Dreiecke sind fuer einen Rekursionschritt interessant*/
+		if(neubesetzt[kante] == T)
+		{
+			rgbwrt = TriangleIDOrientations(SFE_NGHB(Muster_SFE,kante));
+			if(zaehler == nmb_of_trias_of_sf)
+			{
+				return(FERTIG);
+			}
+		}
+	} /* von for */
+	
+	return(FERTIG);
+	
+}
+
+
+
+/****************************************************************************/
+/*D
+   Ansys2lgmCreateTriaOrientations - 	
+
+   SYNOPSIS:
+   INT Ansys2lgmCreateTriaOrientations()
+
+   PARAMETERS:
+.  xxx - bla bla bla bla
+.  yyy - bla bla bla bla
+
+   DESCRIPTION:
+   erzeugt Dreiecksnachbarschaften :
+	   d.h. jedes OFlaecDreieck einer Surface bzw jedem SFE werden die 3
+	   Nachbar SFES ermittelt und zugewiesen. 
+	   Liegt ein solches ObFlDr am Rand einer Surface,
+	   d.h es besitzt bzgl einer Kante kein Nachbarobfldreieck auf dieser
+	   Surface, dann erfolgt ein "NULL"-Eintrag.
+   erzeugt ferner Dreiecksorientierungen :
+   		d.h. die Reihenfolge der KnotenIds wird fuer alle Oberflaechendreiecke 
+   		so ausgerichtet, dass die "rechte Handregel" immer das selbe Ergebnis
+   		liefert.
+   		
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT Ansys2lgmCreateTriaOrientations()
+{
+	SFE_KNOTEN_TYP *sfeptr, *firstOFD;
+	TRIANGLE_TYP *triangle;
+	INT lff;
+	SF_TYP *sf_lfv;
+	INT rv;
+	
+	
+  
+	
+  /****************************************
+    Pruefung der Dreiecksorientierungen  
+   ****************************************/
+	/*laufe ueber alle Surfaces und erzeuge einheitliche Richtungen der
+	  Triangles (d.h. der TriangleNodeIDReihenfolgen */
+	sf_lfv = EXCHNG_TYP2_ROOT_SFC(ExchangeVar_2_Pointer);
+	while(sf_lfv != NULL)
+	{
+		/*Anzahl der Dreiecke von dieser Surface der statischen Variable nmb_of_trias_of_sf
+		 zuweisen : */
+		 
+		nmb_of_trias_of_sf = SF_NMB_OF_TRIAS(sf_lfv);
+		firstOFD = TRIA_SFE_KN(SF_TRIAS(sf_lfv));
+		SFE_ORIENTATION_FLAG(firstOFD) = T;
+		zaehler = 1;
+		if((rv = TriangleIDOrientations(firstOFD)) != FERTIG)
+		{
+			PrintErrorMessage('E',"Ansys2lgmCreateTriaOrientations"," Returnvalue of TriangleIDOrientations was not FERTIG - Problems with checking ID-Orientations");
+			return (1);
+		}
+		/*das erste der nmb_of_trias_of_sf Dreiecke wurde damit besucht -
+		  Deshalb wird jetzt zaehler auf 1 gesetzt
+		  Seine Richtung (Reihenfolge der KnotenIDs ist nun das Muster fuer alle anderen ...
+		  Jedes andere Dreieck muss nun einmal besucht werden und auf richtige Reihenfolge
+		  geprueft u. ggf. geaendert werden. Schluss ist wenn zaehler == nmb_of_trias_of_sf,
+		  da dann alle Dreiecke genau einmal gecheckt wurden. */
+		  
+		
+		sf_lfv = SF_NEXT(sf_lfv);
+	}/*von while*/
+  /****************************************/
+  
+}
+
+
+
+/****************************************************************************/
+/*D
+   EvalNmbOfPointsOfSfcs - 	
+
+   SYNOPSIS:
+   INT EvalNmbOfPointsOfSfcs()
+
+   PARAMETERS:
+.  xxx - bla bla bla bla
+.  yyy - bla bla bla bla
+
+   DESCRIPTION:
+   laeuft ueber alle Surfaces und berechnet je Surface die Anzahl der Points,
+   dazu wird ein temporaeres Knotenfeld verwendet, bei dem fuer alle Knoten ein 
+   Integer reserviert ist. Fuer jede Surface laeuft die FUnktion ueber alle 
+   zugehoerigen Triangles und markiert im temp. Feld die zugeh. Knoten.
+   Bei jeder neuen Markierung der NumberofPoints-Zaehler der Surface inkrementiert.
+   
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT EvalNmbOfPointsOfSfcs()
+{
+	SF_TYP *lauf_sf;
+	TRIANGLE_TYP *lauf_tria;
+	INT *TempNodeArray;
+	INT index,i,n;
+	
+	lauf_sf = EXCHNG_TYP2_ROOT_SFC(ExchangeVar_2_Pointer);
+	
+	/*einmal fuer alle Surfaces ein temporaeres Hilfsfeld anlegen:*/
+	/*erster Eintrag steht fuer keienn Node*/
+	if ((TempNodeArray = GetTmpMem(theHeap,EXCHNG_TYP1_NMB_OF_BNDNDS(ExchangeVar_1_Pointer)*sizeof(INT)))==NULL) 
+	{
+		PrintErrorMessage('E',"EvalNmbOfPointsOfSfcs","  got no MEM for the TempNodeArray, see ansys2lgm.c");
+		return(1);
+	}
+	
+
+	/*laufe ueber alle Surfaces*/
+	while(lauf_sf != NULL)
+	{
+		/*fuer jede Surface das temporaere Hilfsfeld mit F initialisieren*/
+		for(i=0; i<EXCHNG_TYP1_NMB_OF_BNDNDS(ExchangeVar_1_Pointer); i++)
+		{
+			TempNodeArray[i] = F;
+		}
+		
+		/*laufe ueber alle Dreiecke*/
+		lauf_tria = SF_TRIAS(lauf_sf);
+		while(lauf_tria != NULL)
+		{
+			for(n=0; n<3; n++)
+			{
+				index = SFE_NDID(TRIA_SFE_KN(lauf_tria),n);
+				if(TempNodeArray[index] == F)
+				{
+					TempNodeArray[index] = T;
+					SF_NMB_OF_POINTS(lauf_sf) = SF_NMB_OF_POINTS(lauf_sf) + 1;
+				}
+			}
+			lauf_tria = TRIA_NEXT(lauf_tria);
+		}
+		lauf_sf = SF_NEXT(lauf_sf);
+	}
+	return(0);
+}
+
+
+
+/****************************************************************************/
+/*D
+   NachAussenOrientiert - 	
+
+   SYNOPSIS:
+   INT NachAussenOrientiert(INT i, INT j, INT k, INT v)
+
+   PARAMETERS:
+.  i,j,k - KnotenIDs in repraesentativer Reihenfolge fuer gesamte Surface
+		   seit dem Durchlauf der FUnktion TriangleIDOrientation()
+.  v - "v" wie vierte ID ==> Liegt dieser vierte Knoten auf der selben Seite,
+           wie die, auf die der Normalenvektor von i,j,k zeigt dann ist
+           "ijk"(genau in dieser Reihenfolge!) nicht nach aussen sondern nach
+           innen orientiert. Der Rueckgabewert ist also "F"
+
+   DESCRIPTION:
+   berechnet mit Spat- und Kreuzprodukt, ob die RechteHandRegel mit i, j und k
+   nach "aussen" zeigt. Zur Feststellung dient v. Dieses "v" liegt bzgl der von ijk
+   definierten Ebene "innen" 
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT NachAussenOrientiert(INT i, INT j, INT k, INT v)
+{
+	DOUBLE II[3],JJ[3],KK[3],VV[3];
+	DOUBLE A[3],B[3],C[3],V[3];
+	DOUBLE alpha,cos_alpha,Laenge_C,Laenge_V;
+	INT offs;
+	INT imal3,jmal3,kmal3,vmal3;
+
+	imal3 = i * 3;
+	jmal3 = j * 3;
+	kmal3 = k * 3;
+	vmal3 = v * 3;
+	
+	/* II[3],JJ[3],KK[3],VV[3] fuellen mit cadconvert-Feldern und den Parametern i,j,k und v*/
+	for(offs = 0; offs<3; offs++)
+	{
+		II[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[imal3+offs];
+		JJ[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[jmal3+offs];
+		KK[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[kmal3+offs];
+		VV[offs] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[vmal3+offs];
+	}
+	
+	/*Berechnung des Vektors A von II nach JJ sowie  des Vektors B von JJ nach KK
+	  sowie  des Vektors V von II nach VV*/
+	A[0] = JJ[0] - II[0]; A[1] = JJ[1] - II[1]; A[2] = JJ[2] - II[2];
+	B[0] = KK[0] - JJ[0]; B[1] = KK[1] - JJ[1]; B[2] = KK[2] - JJ[2];
+	V[0] = VV[0] - II[0]; V[1] = VV[1] - II[1]; V[2] = VV[2] - II[2];
+	
+	/*Berechnung des auf A,B senkrechten Vekotors C mit Hilfe des Kreuzprodukts*/
+	C[0] = A[1]*B[2] - A[2]*B[1]; 
+	C[1] = A[2]*B[0] - A[0]*B[2]; 
+	C[2] = A[0]*B[1] - A[1]*B[0];
+	
+	/*Berechnung des Winkels zwischen C und V*/
+	Laenge_C = sqrt( C[0]*C[0] + C[1]*C[1] + C[2]*C[2] );
+	Laenge_V = sqrt( V[0]*V[0] + V[1]*V[1] + V[2]*V[2] );
+	/*alpha = acos( ( C[0]*V[0] + C[1]*V[1] + C[2]*V[2] ) / (Laenge_C) / (Laenge_V) );*/
+	cos_alpha = ( ( C[0]*V[0] + C[1]*V[1] + C[2]*V[2] ) / (Laenge_C) / (Laenge_V) );
+	
+	if(cos_alpha > 0.0)
+		return(F);
+	else
+		return(T);
+}
+
+
+
+/****************************************************************************/
+/*D
+   EvalLeftRightOfSfcs - 	
+
+   SYNOPSIS:
+   INT EvalLeftRightOfSfcs()
+
+   PARAMETERS:
+.  xxx - bla bla bla bla
+.  yyy - bla bla bla bla
+
+   DESCRIPTION:
+   laeuft ueber alle Surfaces und weist diesen die SubdomainIds zu, die
+   "links" bzw. "rechts" liegen. Dazu verwendet es die vierteID,
+   die als Eingangsparameter kommt.
+   Für die eigentliche Links-RechtsBerechnung wird "NachAussenOrientiert(...)"
+   aufgerufen.
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT EvalLeftRightOfSfcs()
+{
+	INT rw;
+	SF_TYP *lauf_sf;
+	SFE_KNOTEN_TYP *sfe;
+	INT i,j,k,v;
+	
+	lauf_sf = EXCHNG_TYP2_ROOT_SFC(ExchangeVar_2_Pointer);
+	
+	/*laufe ueber alle Surfaces*/
+	while(lauf_sf != NULL)
+	{
+		/*man verwende den SFE-Pointer des ersten Triangles diese Surface lauf_sf*/
+		sfe = TRIA_SFE_KN(SF_TRIAS(lauf_sf));
+		
+		/*die IDs der Eckknoten in einer Reihenfolge, die fuer die gesamte Surface
+		  repraesentativ ist.*/
+		i = SFE_NDID1(sfe);
+		j = SFE_NDID2(sfe);
+		k = SFE_NDID3(sfe);
+		v = SFE_4ND_0(sfe);/*die vierte KnotenID bzgl. des ersten Identifiers*/
+		
+		/*Sind ijk so orientiert, dass die RechteHandregel aus der Subdomain raus zeigt,
+		  bzw. nicht (!)  in Richtung des vierten Knotens zeigt.*/
+		if(NachAussenOrientiert(i,j,k,v) == T)
+		{
+			SF_LEFT_SBD(lauf_sf) = (int) (floor(SFE_IDF_1(sfe)));/*RechtHndReg mit ijk zeigt nach "links" ind das 
+			                                        andere "linke-C.Tapp" Gebiet SFE_IDF_1(sfe)*/
+			SF_RIGHT_SBD(lauf_sf) = (int) (floor(SFE_IDF_0(sfe)));/*LinkHndReg mit ijk zeigt nach "rechts" in das "(r)echte"
+													 Gebiet SFE_IDF_0(sfe) selbst*/ 
+		}
+		else
+		{
+			SF_RIGHT_SBD(lauf_sf) = (int) (floor(SFE_IDF_1(sfe)));
+			SF_LEFT_SBD(lauf_sf) = (int) (floor(SFE_IDF_0(sfe)));
+		}
+		
+		lauf_sf = SF_NEXT(lauf_sf);
+	}
+	return(0);
+}
+
+
+/****************************************************************************/
+/*D
+   Ansys2lgmEvalSurfaceInformations - 	
+
+   SYNOPSIS:
+   INT Ansys2lgmEvalSurfaceInformations()
+
+   PARAMETERS:
+.  xxx - bla bla bla bla
+.  yyy - bla bla bla bla
+
+   DESCRIPTION:
+   ruft die beiden Funktionen EvalNmbOfPointsOfSfc und EvalLeftRightOfSfcs auf
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT Ansys2lgmEvalSurfaceInformations()
+{
+	INT rv;
+	
+	if ((rv = EvalNmbOfPointsOfSfcs()) != 0)
+	{
+		PrintErrorMessage('E',"Ansys2lgmEvalSurfaceInformations","ERR-Return-Val from EvalNmbOfPointsOfSfcs");
+		return (1);
+	}
+	if ((rv = EvalLeftRightOfSfcs())!= 0)
+	{
+		PrintErrorMessage('E',"Ansys2lgmEvalSurfaceInformations","ERR-Return-Val from EvalLeftRightOfSfcs");
+		return (1);
+	}
+
+	return(0);
+}
+
+
 
 
 
@@ -5114,9 +5202,21 @@ INT Ansys2lgm  ()
 		return (1);
     }
 
-	if((rv = Ansys2lgmCreateTriaNeighbourhoodsAndOrientations()) == 1)
+	if((rv = Ansys2lgmCreatePloylines()) == 1)
     {
-		UserWrite("ERROR: in Ansys2lgm : Ansys2lgmCreateTriaNeighbourhoodsAndOrientations returns ERROR.");
+		UserWrite("ERROR: in Ansys2lgm : Ansys2lgmCreatePloylines returns ERROR.");
+		return (1);
+    }
+
+	if((rv = Ansys2lgmSurfaceDetecting()) == 1)
+    {
+		UserWrite("ERROR: in Ansys2lgm : Ansys2lgmSurfaceDetecting returns ERROR.");
+		return (1);
+    }
+
+	if((rv = Ansys2lgmCreateTriaOrientations()) == 1)
+    {
+		UserWrite("ERROR: in Ansys2lgm : Ansys2lgmCreateTriaOrientations returns ERROR.");
 		return (1);
     }
 
@@ -5126,11 +5226,6 @@ INT Ansys2lgm  ()
 		return (1);
     }
 
-	if((rv = Ansys2lgmCreatePloylines()) == 1)
-    {
-		UserWrite("ERROR: in Ansys2lgm : Ansys2lgmCreatePloylines returns ERROR.");
-		return (1);
-    }
 
 	if((rv = Ansys2lgmUpdateSbdmIDs()) == 1)
     {
