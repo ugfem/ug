@@ -481,6 +481,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
   register SHORT *tmpptr,*vcomp;
+  DOUBLE *wmat;
 
   PRINTDEBUG(np,1,("l_lgs: l=%d v=%s M=%s d=%s\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d)));
 
@@ -807,6 +808,7 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
   register SHORT *tmpptr,*vcomp;
+  DOUBLE *wmat;
 
   PRINTDEBUG(np,1,("l_ugs: l=%d v=%s M=%s d=%s\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d)));
 
@@ -1436,6 +1438,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
   register SHORT *tmpptr;
+  DOUBLE *wmat;
 
   PRINTDEBUG(np,1,("l_lsor: l=%d v=%s M=%s d=%s dmp=VS\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d)));
 
@@ -1653,6 +1656,7 @@ INT l_usor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
   DEFINE_MD_CMPS(m);
   register SHORT *tmpptr,*vcomp;
   const SHORT *offset = VD_OFFSETPTR(v);
+  DOUBLE *wmat;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -1865,6 +1869,7 @@ INT l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
   DEFINE_MD_CMPS(m);
   register SHORT *tmpptr,*vcomp;
   const SHORT *offset = VD_OFFSETPTR(v);
+  DOUBLE *wmat;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -2106,6 +2111,7 @@ INT l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
   register SHORT *tmpptr;
+  DOUBLE *wmat;
 
   PRINTDEBUG(np,1,("l_lsor_ld: l=%d v=%s M=%s d=%s dmp=VS\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d)));
 
