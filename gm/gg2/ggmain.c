@@ -2632,44 +2632,13 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
       found++;
   }
 
-  InsertElement (MYMG(theGrid),n,Node);
+  InsertElement (MYMG(theGrid),n,Node,NULL);
+
+  /* TODO: repair this:
+     InsertElement (MYMG(theGrid),n,Node,Neighbor); */
+
   theElement = theGrid->elements;
   theElementContext->thenewElement = theElement;
-
-
-  /* TODO: repair this */
-  return(0);
-
-
-
-
-  /* create element */
-  if (found>0)
-    theElement = CreateElement(theGrid,n,BEOBJ,Node,NULL);
-  else
-    theElement = CreateElement(theGrid,n,IEOBJ,Node,NULL);
-  if (theElement==NULL)
-  {
-    UserWrite("could not create element record\n");
-    return(1);
-  }
-  SETECLASS(theElement,REFINECLASS_LEN);
-
-  /* fill side data (if boundary element) */
-  if (OBJT(theElement)==BEOBJ)
-    for (i=0; i<n; i++)
-      SET_SIDE(theElement,i,theElemSide[i]);
-
-  /* fill element data */
-  for (i=0; i<n; i++)
-  {
-    SET_NBELEM(theElement,i, Neighbor[i]);
-    if (Neighbor[i]!=NULL)
-      SET_NBELEM(Neighbor[i],NeighborSide[i],theElement);
-  }
-
-  theElementContext->thenewElement = theElement;
-
 
   /* plot */
 
@@ -3374,12 +3343,6 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
   if (MGCreateConnection(theMG))
   {
     UserWrite("could not create connection in multigrid\n");
-    DisposeMultiGrid(theMG);
-    return(NULL);
-  }
-  if (MGSetVectorClasses(theMG))
-  {
-    UserWrite("cannot compute vector classes in multigrid\n");
     DisposeMultiGrid(theMG);
     return(NULL);
   }
