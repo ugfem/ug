@@ -76,10 +76,10 @@ void FAMGGrid::Restriction(FAMGGrid *cg) const
 	FAMGTransferEntry *transfg;
 	
 	// jacobi smoothing for the fine nodes
-	fgsolution.JacobiSmoothFG( *GetMatrix(), fgdefect );
+    fgsolution.JacobiSmoothFG( *GetMatrix(), fgdefect );
 	// correct defect
 	Defect();
-	
+
 	cgdefect = 0.0;
 	
 	FAMGVectorIter fiter(GetGridVector());
@@ -90,7 +90,7 @@ void FAMGGrid::Restriction(FAMGGrid *cg) const
     return;
 }
     
-void FAMGGrid::Prolongation(const FAMGGrid *cg)
+void FAMGGrid::Prolongation(const FAMGGrid *cg, FAMGVector *c = NULL)
 // adds the prolongued solution-update to the fine grid solution
 // including smoothing of fine nodes
 {
@@ -112,14 +112,31 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg)
 		fgsol[fvec] += sum;
 	}
 
-	// prepare defect for jacobi smoothing
+    
+// prepare defect for jacobi smoothing
 	Defect();
 	
-	// jacobi smoothing for the fine nodes
-	fgsol.JacobiSmoothFG( *GetMatrix(), fgdefect );
-	
-	// correct defect
-	Defect();
+	if(c == NULL)
+    {
+        // famg as solver
+
+        // jacobi smoothing for the fine nodes
+        fgsol.JacobiSmoothFG( *GetMatrix(), fgdefect );
+        
+        // correct defect
+        Defect();
+    }
+    else
+    {
+        // famg as transfer
+        (*c) += fgsol;
+        fgsol = 0.0;
+
+        // jacobi smoothing for the fine nodes
+        fgsol.JacobiSmoothFG( *GetMatrix(), fgdefect );
+
+        // defect is computed in ug (Lmgc)
+    }
 
 	return;
 }

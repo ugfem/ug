@@ -252,6 +252,7 @@ int FAMG_ProlongCorrection( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from
 
 	FAMGugVector fgsol(*(const FAMGugGridVector*)&fg.GetGridVector(),to);
 	FAMGugVector fgdef(*(const FAMGugGridVector*)&fg.GetGridVector(),smooth_def);
+	FAMGugVector c(*(const FAMGugGridVector*)&fg.GetGridVector(),from);
 	FAMGugVector cgsol(*(const FAMGugGridVector*)&cg.GetGridVector(),from);
 
 	// be sure not to use an out-dated pointer
@@ -266,7 +267,7 @@ int FAMG_ProlongCorrection( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from
 	fg.SetVector(FAMGRHS, &fgdef);		// rhs and defect are the same for smoothing/defect calculation 
 	cg.SetVector(FAMGUNKNOWN, &cgsol);
 	
-	fg.Prolongation(&cg);
+	fg.Prolongation(&cg,&c);
 	
 	return 0;
 }

@@ -65,7 +65,7 @@ public:
   void BGSSmooth();
   void ILUTSmooth();
   void JacobiSmoothFG();
-  void Prolongation(const FAMGGrid *cg);
+  void Prolongation(const FAMGGrid *cg, FAMGVector *c = NULL);
   void Restriction(FAMGGrid *cg) const;
   int ConstructTransfer();
   int AnalyseParents(int i);
