@@ -91,7 +91,9 @@
 #include "wop.h"
 #include "graph.h"
 #include "connectuggrape.h"
+#ifdef _COVISE
 #include "coviseif.h"
+#endif
 
 /* user interface module */
 #include "uginterface.h"
