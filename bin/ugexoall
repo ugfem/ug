@@ -2,7 +2,8 @@
 # start date: 031104 
 # author: Stefan Lang
 
-set help = "usage: ugexoall <modelname>"
+set this_script = "ugexoall"
+set help = "usage: ${this_script} <modelname>"
 
 if ( $#argv != 1 ) then
     echo "$help"
@@ -11,21 +12,84 @@ endif
 
 set model = $argv[1]
 
-echo $model;
+set cubit = "cubit-8.0.1"
+#set cubit = "cubit-8.1"
 
-# create cubit surface (lgm) and volume (ng) file
-cubit -nographics -batch -input ${model}_lgm.jou
-cubit -nographics -batch -input ${model}_ng.jou
+#set options =  "-nographics -batch -noecho -nobanner -information on -warning off"
+#set options =  "-nographics -batch -noecho -nobanner"
+set options =  "-batch"
+
+@ do_lgm = 1;
+@ do_ng = 1;
+@ pre_remove = 0;
+@ post_remove = 1;
+
+echo "${this_script}: working on model $model"
+
+########### remove files  ################
+if ($pre_remove == 1) then
+	rm -f cubit*.jou
+	rm -f ${model}_geom.log ${model}_usn.jou
+	rm -f ${model}_smesh.gen ${model}_smesh.asc
+	rm -f ${model}_vmesh.log ${model}_bss.jou
+	rm -f ${model}_vmesh.gen ${model}_vmesh.asc
+endif
+
+########### generate lgm file  ###############
+if ($do_lgm == 1) then
+
+# create list of geometry volumes/surfaces 
+# writes file ${model}.log
+$cubit ${options} -input ${model}_list.jou
+
+# set surface normal uniquely
+ugexo2lgm_usn ${model}_geom.log ${model}_usn.jou
+
+# create cubit surface mesh file
+$cubit ${options} -input ${model}_smesh.jou
 
 # transform into ascii
-ncdump ${model}_lgm.gen  > ${model}_lgm.gen.txt
-ncdump ${model}_ng.gen  > ${model}_ng.gen.txt
+ncdump ${model}_smesh.gen  > ${model}_smesh.asc
 
 # add info for surfaces left/right and volume ids
-ugexo2lgm_amd ${model}.log ${model}_lgm.gen.txt
+ugexo2lgm_amd ${model}_geom.log ${model}_smesh.asc
 
 # generate lgm file
-ugexo2lgm ${model}_lgm.gen.txt ${model}.lgm ${model}.map 
+ugexo2lgm ${model}_smesh.asc ${model}.lgm ${model}.map 
+
+else
+echo "${this_script}: no lgm file ${model}.lgm generation"
+endif
+
+########### generate ng file  ################
+if ($do_ng == 1) then
+
+# create cubit volume mesh file
+$cubit ${options} -input ${model}_vmeshpre.jou
+
+# generate cubit journal file to store both sidesets
+ugexo2ng_bss ${model}_vmesh.log  ${model}_bss.jou
+
+# store cubit volume mesh with both sidesets
+$cubit ${options} -input ${model}_vmesh.jou
+
+# transform into ascii
+ncdump ${model}_vmesh.gen  > ${model}_vmesh.asc
 
 # generate ng file
-ugexo2ng ${model}_ng.gen.txt ${model}.lgm ${model}.map ${model}.ng
+ugexo2ng ${model}_vmesh.asc ${model}.lgm ${model}.map ${model}.ng
+
+else
+echo "${this_script}: no ng file ${model}.ng generation"
+endif
+
+
+########### remove files  ################
+if ($post_remove == 1) then
+	rm -f ${model}_geom.log ${model}_usn.jou
+	rm -f ${model}_smesh.gen ${model}_smesh.asc
+	rm -f ${model}_vmesh.log ${model}_bss.jou
+	rm -f ${model}_vmesh.gen ${model}_vmesh.asc
+endif
+
+
