@@ -12677,9 +12677,9 @@ static void CalcViewableSidesOnGrid (GRID *theGrid)
 						SETVSIDES(theElement,VSIDES(theElement)&(~(1<<i)));
 					else
 						SETVSIDES(theElement,VSIDES(theElement)|(1<<i));
+				ASSERT(VIEWABLE(theElement,i) != VIEWABLE(theNeighbor,j));
 			}
-		}
-	
+		}	
 }
 
 /****************************************************************************/
@@ -12744,6 +12744,12 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 	/* create list */
 	while (ActualPosition<nsons)
 	{
+		if (LastShellBegin == NewShellBegin) {
+			UserWrite("OrderSons failed\n");
+			for (i=0; i<nsons; i++)
+				table[i] = SonList[i];
+			return(0);
+		}
 		/* create a new shell */
 		for (i=LastShellBegin; i<NewShellBegin; i++)
 		{
@@ -13889,13 +13895,17 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 	if (myMGdata->init==0)
 		/* not yet initialized */
 		SaveSettings(theViewedObj,myMGdata);
-	else if (SettingsEqual(theViewedObj,myMGdata))
-		/* no ordering neccessary */
-		return (0);
+	else if (SettingsEqual(theViewedObj,myMGdata)) {
+		if (OE_OrderStrategy < 3) 
+			return (0);
+	}
 	else
 		/* save changed settings */
 		SaveSettings(theViewedObj,myMGdata);
 	
+	if (OE_OrderStrategy > 2) 
+		OE_OrderStrategy -= 3;
+
 	/* inits */
 	OE_ViewedObj = theViewedObj;	
 		
