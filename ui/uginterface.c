@@ -42,10 +42,6 @@
 #include "cmdint.h"
 #include "debug.h"
 #include "general.h"
-#ifndef STDIF
-#include <X11/Xlib.h>
-#include "xmain.h"
-#endif
 
 /****************************************************************************/
 /*																			*/
