@@ -63,6 +63,9 @@
 
 #define MAXLEN_INFOSTRING               20
 
+#define KEY_COMMENT_SIZE                128
+#define KEY_COMMENT_LEN_STR             "127"
+
 /****************************************************************************/
 /*																			*/
 /* function declarations													*/
@@ -76,9 +79,9 @@ int ParExecCommand (char *s);
 INT                     InitUgInterface                                 (void);
 
 INT                     DelCmdKey                                               (char c);
-INT                     SetCmdKey                                               (char c, const char *String);
+INT                     SetCmdKey                                               (char c, const char *Comment, INT ShowBar, const char *String);
 INT                     DelAllCmdKeys                                   (void);
-INT                     ListCmdKeys                                     (void);
+INT                     ListCmdKeys                                     (INT Long);
 
 INT                     SetCurrentPicture                               (PICTURE *thePicture);
 PICTURE                 *GetCurrentPicture                              (void);

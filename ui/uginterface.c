@@ -83,6 +83,8 @@ typedef struct {
   ENVVAR v;
 
   /* cmd key specific stuff */
+  char Comment[KEY_COMMENT_SIZE];               /* comment string					*/
+  INT ShowBar;                                                  /* show bar before key in list		*/
   char CommandName[MAXCMDLEN];                  /* command associated with the name */
 
 } CMDKEY;
@@ -358,10 +360,12 @@ static INT DoCmdKey (char c, char *String)
         SetCmdKey - create a command key
 
         SYNOPSIS:
-        INT SetCmdKey (char c, const char *String)
+        INT SetCmdKey (char c, const char *Comment, INT ShowBar, const char *String)
 
         PARAMETERS:
    .   c - use this key in conjunction with the command key...
+   .   Comment - show comment in display (instead of String)
+   .   ShowBar - print hbar before key in listing
    .   String - ...to execute the command(s) specified here
 
         DESCRIPTION:
@@ -380,7 +384,7 @@ static INT DoCmdKey (char c, char *String)
    D*/
 /****************************************************************************/
 
-INT SetCmdKey (char c, const char *String)
+INT SetCmdKey (char c, const char *Comment, INT ShowBar, const char *String)
 {
   CMDKEY *theCmdKey;
   char theCmdKeyName[2];
@@ -400,7 +404,14 @@ INT SetCmdKey (char c, const char *String)
     if ((theCmdKey=(CMDKEY *)MakeEnvItem(theCmdKeyName,theCmdKeyVarID,sizeof(CMDKEY)))==NULL)
       return(1);
   }
+  if (Comment!=NULL)
+    strcpy(theCmdKey->Comment, (const char *)Comment);
+  else
+    theCmdKey->Comment[0] = '\0';
   strcpy(theCmdKey->CommandName, (const char *)String);
+
+  theCmdKey->ShowBar = ShowBar;
+
   return (0);
 }
 
@@ -478,7 +489,7 @@ INT DelCmdKey (char c)
    D*/
 /****************************************************************************/
 
-INT ListCmdKeys ()
+INT ListCmdKeys (INT Long)
 {
   CMDKEY *theCmdKey;
   ENVDIR *theDir;
@@ -490,10 +501,23 @@ INT ListCmdKeys ()
   if (theDir->down == NULL)
     return(0);
 
+  UserWrite("===============================================\n");
   UserWrite("key command\n");
   for (theCmdKey = (CMDKEY *) theDir->down; theCmdKey!=NULL; theCmdKey=(CMDKEY *) NEXT_ENVITEM(theCmdKey))
     if (ENVITEM_TYPE(theCmdKey) == theCmdKeyVarID)
-      UserWriteF(" %c  %s\n",ENVITEM_NAME(theCmdKey)[0],theCmdKey->CommandName);
+    {
+      if (theCmdKey->ShowBar)
+        UserWrite("-----------------------------------------------\n");
+      if (theCmdKey->Comment[0]!='\0')
+      {
+        UserWriteF(" %c  %s\n",ENVITEM_NAME(theCmdKey)[0],theCmdKey->Comment);
+        if (Long)
+          UserWriteF("    %s\n",theCmdKey->CommandName);
+      }
+      else
+        UserWriteF(" %c  %s\n",ENVITEM_NAME(theCmdKey)[0],theCmdKey->CommandName);
+    }
+  UserWrite("===============================================\n");
 
   return (0);
 }
@@ -863,7 +887,7 @@ static INT ProcessEvent (char *String, INT EventMask)
   case TERM_STRING :
     assert (strlen(theEvent.TermString.String) < INPUTBUFFERLEN);
     strcpy(String,(const char *)theEvent.TermString.String);
-    SetCmdKey('!',String);
+    SetCmdKey('!',NULL,YES,String);
     break;
   case DOC_GOAWAY :
     WinID = theEvent.DocGoAway.win;
