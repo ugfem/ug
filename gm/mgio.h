@@ -386,7 +386,7 @@ int     Read_Refinement         (MGIO_REFINEMENT *refinement, MGIO_RR_RULE *rr_r
 int             Read_BD_General         (MGIO_BD_GENERAL *bd_general);
 
 /* write functions */
-int             Write_OpenMGFile        (char *filename);
+int             Write_OpenMGFile        (char *filename, int rename);
 int             Write_MG_General        (MGIO_MG_GENERAL *mg_general);
 int             Write_GE_General        (MGIO_GE_GENERAL *ge_general);
 int             Write_GE_Elements       (int n, MGIO_GE_ELEMENT *ge_element);

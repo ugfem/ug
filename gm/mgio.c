@@ -234,11 +234,11 @@ int Read_OpenMGFile (char *filename)
    D*/
 /****************************************************************************/
 
-int Write_OpenMGFile (char *filename)
+int Write_OpenMGFile (char *filename, int rename)
 {
 
 #ifdef __MGIO_USE_IN_UG__
-  if (mgpathes_set) stream = FileOpenUsingSearchPaths(filename,"w","mgpaths");
+  if (mgpathes_set) stream = FileOpenUsingSearchPaths_r(filename,"w","mgpaths",rename);
   else stream = fileopen(filename,"w");
 #else
   stream = fopen(filename,"w");

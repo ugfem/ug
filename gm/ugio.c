@@ -1189,7 +1189,7 @@ static INT WriteElementParInfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO
 }
 #endif
 
-static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave)
+static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave, INT rename)
 {
   GRID *theGrid;
   NODE *theNode;
@@ -1310,7 +1310,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
     strcat(filename,buf);
   }
 #endif
-  if (Write_OpenMGFile (filename)) REP_ERR_RETURN(1);
+  if (Write_OpenMGFile (filename,(int)rename)) REP_ERR_RETURN(1);
 
   /* write general information */
   theBVP = MG_BVP(theMG);
@@ -1582,12 +1582,12 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   return (0);
 }
 
-INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave)
+INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave, INT rename)
 {
   /* check name convention */
   if (name==NULL || strcmp(name+strlen(name)-4,".scr")!=0)
   {
-    if (SaveMultiGrid_SPF (theMG,name,type,comment,autosave)) REP_ERR_RETURN(1);
+    if (SaveMultiGrid_SPF (theMG,name,type,comment,autosave,rename)) REP_ERR_RETURN(1);
   }
   else
   {
