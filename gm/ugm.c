@@ -1013,12 +1013,13 @@ EDGE *GetEdge (NODE *from, NODE *to)
    CreateEdge - Return pointer to a new edge structure
 
    SYNOPSIS:
-   static EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to);
+   EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to);
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
    .  from - starting node of new edge
    .  to - end node of new edge
+   .  with_vector - also create vector for edge (TRUE/FALSE)
 
    DESCRIPTION:
    This function returns a pointer to a new edge structure.
@@ -1030,7 +1031,8 @@ EDGE *GetEdge (NODE *from, NODE *to)
    D*/
 /****************************************************************************/
 
-static EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to)
+
+EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
 {
   EDGE *pe;
   LINK *link0,*link1;
@@ -1069,7 +1071,7 @@ static EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to)
   MIDNODE(pe) = NULL;
 
   /* create vector if */
-  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR) && with_vector)
   {
     if (CreateVector (theGrid,NULL,EDGEVECTOR,&pv))
     {
@@ -1188,9 +1190,10 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   for (i=0; i<EDGES_OF_ELEM(pe); i++)
     if (CreateEdge(theGrid,
                    nodes[CORNER_OF_EDGE(pe,i,0)],
-                   nodes[CORNER_OF_EDGE(pe,i,1)]) == NULL)
+                   nodes[CORNER_OF_EDGE(pe,i,1)],
+                   TRUE) == NULL)
     {
-      DisposeElement(theGrid,pe);
+      DisposeElement(theGrid,pe,TRUE);
       return(NULL);
     }
 
@@ -1199,7 +1202,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   {
     if (CreateVector (theGrid,NULL,ELEMVECTOR,&pv))
     {
-      DisposeElement (theGrid,pe);
+      DisposeElement (theGrid,pe,TRUE);
       return (NULL);
     }
     assert (pv != NULL);
@@ -1214,7 +1217,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
     {
       if (CreateVector (theGrid,NULL,SIDEVECTOR,&pv))
       {
-        DisposeElement (theGrid,pe);
+        DisposeElement (theGrid,pe,TRUE);
         return (NULL);
       }
       assert (pv != NULL);
@@ -2125,6 +2128,7 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
    PARAMETERS:
    .  theGrid - grid to remove from
    .  theElement - element to remove
+   .  dispose_connections - also dispose connections (TRUE/FALSE)
 
    DESCRIPTION:
    This function removes an element from the data structure and inserts it
@@ -2138,7 +2142,7 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
    D*/
 /****************************************************************************/
 
-INT DisposeElement (GRID *theGrid, ELEMENT *theElement)
+INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 {
   INT i,j,tag;
   VECTOR *theVector;
@@ -2199,10 +2203,25 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement)
   }
 
   /* dispose matrices from element-vector */
-  if (DisposeConnectionFromElement(theGrid,theElement))
-    RETURN(1);
+  if (dispose_connections)
+    if (DisposeConnectionFromElement(theGrid,theElement))
+      RETURN(1);
 
   /* reset neighbor pointers referencing element and dispose vectors in sides if */
+        #ifdef __TWODIM__
+  for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+  {
+    if (NBELEM(theElement,i)!=NULL) {
+      for (j=0; j<SIDES_OF_ELEM(NBELEM(theElement,i)); j++)
+        if (NBELEM(NBELEM(theElement,i),j)==theElement) {
+          SET_NBELEM(NBELEM(theElement,i),j,NULL);
+          break;
+        }
+      assert(j<SIDES_OF_ELEM(NBELEM(theElement,i)));
+    }
+  }
+        #endif
+
         #ifdef __THREEDIM__
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
@@ -4412,7 +4431,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
         SET_SIDE(theElement,i,CreateElementSide(theGrid));
         if (SIDE(theElement,i)==NULL)
         {
-          DisposeElement(theGrid,theElement);
+          DisposeElement(theGrid,theElement,TRUE);
           PrintErrorMessage('E',"InsertElement","cannot allocate element side");
           RETURN(GM_ERROR);
         }
@@ -4447,7 +4466,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
   if (InsertedElementCreateConnection(theGrid,theElement))
   {
     PrintErrorMessage('E',"InsertElement","could not create algebra connections");
-    DisposeElement (theGrid,theElement);
+    DisposeElement (theGrid,theElement,TRUE);
     RETURN(GM_ERROR);
   }
 
@@ -4583,7 +4602,7 @@ INT DeleteElement (MULTIGRID *theMG, ELEMENT *theElement) /* 3D VERSION */
   }
 
   /* delete element now */
-  DisposeElement(theGrid,theElement);
+  DisposeElement(theGrid,theElement,TRUE);
 
   return(GM_OK);
 }
@@ -5606,6 +5625,13 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
   ELEMENT *theElement;
   MATRIX *theMatrix;
   void *Data;
+  char par[20];
+        #ifdef ModelP
+  DDD_GID gid = DDD_InfoGlobalId(PARHDR(theVector));
+  sprintf(par, " GID=%08x", gid);
+        #else
+  par[0] = 0;        /* no additional output in sequential case */
+        #endif
 
   theFormat = MGFORMAT(theMG);
 
@@ -5613,29 +5639,30 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
   if (VTYPE(theVector)==NODEVECTOR)
   {
     theNode = (NODE*)VOBJECT(theVector);
-    sprintf(buffer,"NODE-V IND=%7ld nodeID=%7ld                VCLASS=%1d VNCLASS=%1d\n",VINDEX(theVector),ID(theNode),VCLASS(theVector),VNCLASS(theVector));
+    sprintf(buffer,"NODE-V IND=%7ld nodeID=%7ld                VCLASS=%1d VNCLASS=%1d%s\n",VINDEX(theVector),ID(theNode),VCLASS(theVector),VNCLASS(theVector),par);
     UserWrite(buffer);
   }
   if (VTYPE(theVector)==EDGEVECTOR)
   {
     theEdge = (EDGE*)VOBJECT(theVector);
-    sprintf(buffer,"EDGE-V IND=%7ld fromID=%7ld to__ID=%7ld VCLASS=%1d VNCLASS=%1d\n",VINDEX(theVector),ID(NBNODE(LINK0(theEdge))),ID(NBNODE(LINK1(theEdge))),VCLASS(theVector),VNCLASS(theVector));
+    sprintf(buffer,"EDGE-V IND=%7ld fromID=%7ld to__ID=%7ld VCLASS=%1d VNCLASS=%1d%s\n",VINDEX(theVector),ID(NBNODE(LINK0(theEdge))),ID(NBNODE(LINK1(theEdge))),VCLASS(theVector),VNCLASS(theVector),par);
     UserWrite(buffer);
   }
         #ifdef __THREEDIM__
   if (VTYPE(theVector)==SIDEVECTOR)
   {
     theElement = (ELEMENT*)VOBJECT(theVector);
-    sprintf(buffer,"SIDE-V IND=%7ld elemID=%ld                VCLASS=%1d VNCLASS=%1d\n",VINDEX(theVector),ID(theElement),VCLASS(theVector),VNCLASS(theVector));
+    sprintf(buffer,"SIDE-V IND=%7ld elemID=%ld                VCLASS=%1d VNCLASS=%1d%s\n",VINDEX(theVector),ID(theElement),VCLASS(theVector),VNCLASS(theVector),par);
     UserWrite(buffer);
   }
         #endif
   if (VTYPE(theVector)==ELEMVECTOR)
   {
     theElement = (ELEMENT*)VOBJECT(theVector);
-    sprintf(buffer,"ELEM-V IND=%7ld elemID=%ld                VCLASS=%1d VNCLASS=%1d\n",VINDEX(theVector),ID(theElement),VCLASS(theVector),VNCLASS(theVector));
+    sprintf(buffer,"ELEM-V IND=%7ld elemID=%ld                VCLASS=%1d VNCLASS=%1d%s\n",VINDEX(theVector),ID(theElement),VCLASS(theVector),VNCLASS(theVector),par);
     UserWrite(buffer);
   }
+
 
   /* print vector data if */
   if (dataopt && theFormat->PrintVector[VTYPE(theVector)]!=NULL)

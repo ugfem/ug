@@ -911,7 +911,7 @@ CONNECTION      *CreateExtraConnection  (GRID *theGrid, VECTOR *from, VECTOR *to
 
 INT DisposeVector (GRID *theGrid, VECTOR *theVector)
 {
-  MATRIX *theMatrix;
+  MATRIX *theMatrix, *next;
   INT Size;
 
   if (theVector == NULL)
@@ -920,9 +920,12 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
   HEAPFAULT(theVector);
 
   /* remove all connections concerning the vector */
-  for (theMatrix=VSTART(theVector); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+  for (theMatrix=VSTART(theVector); theMatrix!=NULL; theMatrix=next)
+  {
+    next = MNEXT(theMatrix);
     if (DisposeConnection(theGrid,MMYCON(theMatrix)))
       RETURN (1);
+  }
 
 #ifdef __INTERPOLATION_MATRIX__
   if (DisposeIMatrices(theGrid,VISTART(theVector)))

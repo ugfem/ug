@@ -92,6 +92,7 @@ VERTEX          *CreateBoundaryVertex   (GRID *theGrid, VERTEX *after);
 VERTEX          *CreateInnerVertex              (GRID *theGrid, VERTEX *after);
 VSEGMENT        *CreateVertexSegment    (GRID *theGrid, VERTEX *vertex);
 NODE            *CreateNode                     (GRID *theGrid, NODE *after);
+EDGE        *CreateEdge             (GRID *theGrid, NODE *from, NODE *to, INT with_vector);
 ELEMENT     *CreateElement          (GRID *theGrid, INT tag, INT objtype,
                                      NODE **nodes, ELEMENT *after);
 ELEMENTSIDE *CreateElementSide          (GRID *theGrid);
@@ -101,7 +102,7 @@ INT         CreateSonElementSide    (GRID *theGrid, ELEMENT *theElement,
 GRID            *CreateNewLevel                 (MULTIGRID *theMG);
 
 /* dispose basic objects */
-INT              DisposeElement                 (GRID *theGrid, ELEMENT *theElement);
+INT              DisposeElement                 (GRID *theGrid, ELEMENT *theElement, INT dispose_connections);
 INT              DisposeTopLevel                (MULTIGRID *theMG);
 
 /* miscellaneous */

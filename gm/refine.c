@@ -1749,7 +1749,7 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElemen
 			assert(0);
 			return(GM_FATAL);
 		} */
-		if (DisposeElement(theGrid,SonList[s])!=0) { assert(0); return(GM_FATAL);}
+		if (DisposeElement(theGrid,SonList[s],TRUE)!=0) { assert(0); return(GM_FATAL);}
 	}
 
 	SETNSONS(theElement,0);
