@@ -1,0 +1,52 @@
+#!/bin/sh 
+if test "$1" = "-help"
+then
+	echo "usage: $0";
+	echo "runs through all subdirectories of the current directory";
+	echo "purpose: exchange COORD to DOUBLE";
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+ROOTPWD=$PWD;
+COORDERROR=0;
+
+echo $0: working in dirtree $ROOTPWD;
+
+for i in . * */* */*/* */*/*/* */*/*/*/*
+do
+	if test -d $i -a ! -h $i
+	then
+		if test `basename $i` != "bin" -a `basename $i` != "include" -a `basename $i` != "doc" -a `basename $i` != "CVS"
+        then
+			cd $i
+			echo "current dir:" $i
+			for j in *.c *.h *.doc
+			do
+				if test "$j" != "*.c" -a "$j" != "*.h" -a "$j" != "*.doc"
+				then	
+					echo "checking $j"
+					grep COORD $j | grep -v COORDI | grep -v COORD_VECTOR | \
+					grep -v COORD_ 
+					if test `grep COORD $j | grep -v COORDI |\
+						grep -v COORD_VECTOR | grep -v COORD_ | wc -l` -ne 0
+					then
+						echo COORD ERROR in $j;
+						COORDERROR=1;
+					fi
+				fi
+			done
+            cd $ROOTPWD
+        fi
+	fi
+done
+
+if test $COORDERROR -ne 0
+then
+	echo $0 detected ERROR\(S\);
+fi
