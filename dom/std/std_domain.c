@@ -1112,9 +1112,9 @@ static INT M_BNDP_BndPDesc (BNDP *theBndP, INT *move, INT *part)
 
 static INT M_BNDP_BndEDesc (BNDP *theBndP0, BNDP *theBndP1, INT *part)
 {
-  printf("not implemented line %d\n",__LINE__);
+  *part = 0;
 
-  return(1);
+  return(0);
 }
 
 static BNDS* M_BNDP_CreateBndS (HEAP *Heap, BNDP **theBndP, INT n)
