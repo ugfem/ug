@@ -191,13 +191,13 @@ $Header$
 #define M2_INVERT(M,IM,det)                       \
 { DOUBLE invdet;                                  \
   det = (M)[0][0]*(M)[1][1]-(M)[1][0]*(M)[0][1];  \
-	if (ABS((det))<SMALL_D*SMALL_D)                 \
-		return(1);                                    \
+	if (ABS((det))<SMALL_D*SMALL_D) det= 0.;  \
+	else {                                      \
 	invdet = 1.0 / (det);                       \
 	(IM)[0][0] =  (M)[1][1]*invdet;             \
 	(IM)[1][0] = -(M)[1][0]*invdet;             \
 	(IM)[0][1] = -(M)[0][1]*invdet;             \
-	(IM)[1][1] =  (M)[0][0]*invdet;}
+	(IM)[1][1] =  (M)[0][0]*invdet;}}
 
 /* macros for vector operations */
 #define V3_LINCOMB(a,A,b,B,C)		   {(C)[0] = (a)*(A)[0] + (b)*(B)[0];\
