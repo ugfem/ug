@@ -84,6 +84,12 @@ struct np_transfer {
     VECDATA_DESC *,                              /* defect vector                   */
     MATDATA_DESC *,                              /* matrix                          */
     INT *);                                      /* result                          */
+  INT (*PreProcessSolution)
+    (struct np_transfer *,                   /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    VECDATA_DESC *,                              /* solution vector                 */
+    INT *);                                      /* result                          */
   INT (*PreProcessProject)
     (struct np_transfer *,                   /* pointer to (derived) object     */
     INT,                                         /* level                           */
@@ -137,8 +143,10 @@ struct np_transfer {
 typedef struct np_transfer NP_TRANSFER;
 
 typedef INT (*PreProcessTransferProcPtr)                                    \
-  (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *,       \
+  (NP_TRANSFER *, INT, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *,  \
   INT *, INT *);
+typedef INT (*PreProcessSolutionProcPtr)                                    \
+  (NP_TRANSFER *, INT, INT, VECDATA_DESC *, INT *, INT *);
 typedef INT (*InterpolateCorrectionProcPtr)                                 \
   (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, DOUBLE *, INT *);
 typedef INT (*RestrictDefectProcPtr)                                        \
@@ -155,6 +163,9 @@ typedef INT (*PostProcessTransferProcPtr)                                   \
 /* definition of exported functions											*/
 /*																			*/
 /****************************************************************************/
+
+INT MinimizeLevel (GRID *theGrid, VECDATA_DESC *c, VECDATA_DESC *b,
+                   MATDATA_DESC *A, VECDATA_DESC *t, INT display);
 
 /* generic init function for transfer num procs */
 INT NPTransferInit (NP_TRANSFER *theNP, INT argc , char **argv);

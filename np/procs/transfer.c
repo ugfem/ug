@@ -205,6 +205,22 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
+  if (ReadArgvOption("s",argc,argv)) {
+    if (np->PreProcessSolution == NULL) {
+      PrintErrorMessage('E',"NPTransferExecute","no PreProcessSolution");
+      return (1);
+    }
+    if (np->x == NULL) {
+      PrintErrorMessage('E',"NPTransferExecute","no vector x");
+      return (1);
+    }
+    if ((*np->PreProcessSolution)(np,0,level,np->x,&result)) {
+      UserWriteF("NPTransferExecute: PreProcessSolution failed, error code %d\n",
+                 result);
+      return (1);
+    }
+  }
+
   if (ReadArgvOption("R",argc,argv)) {
     if (np->RestrictDefect == NULL) {
       PrintErrorMessage('E',"NPTransferExecute","no RestrictDefect");
@@ -300,6 +316,48 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
       return (1);
     }
   }
+
+  return(0);
+}
+
+INT MinimizeLevel (GRID *theGrid, VECDATA_DESC *c, VECDATA_DESC *b,
+                   MATDATA_DESC *A, VECDATA_DESC *t, INT display)
+{
+  VEC_SCALAR scal;
+  DOUBLE a0,a1;
+  INT j,ncomp;
+
+  ncomp = VD_NCOMP(c);
+  if (l_dset(theGrid,t,EVERY_CLASS,0.0) != NUM_OK)
+    return(1);
+  if (l_dmatmul(theGrid,t,NEWDEF_CLASS,A,c,ACTIVE_CLASS) != NUM_OK)
+    return(1);
+    #ifdef ModelP
+  if (l_vector_collect(theGrid,t) != NUM_OK)
+    return (1);
+    #endif
+  if (l_ddot (theGrid,t,NEWDEF_CLASS,b,scal) != NUM_OK)
+    return(1);
+  a0 = 0.0;
+  for (j=0; j<ncomp; j++)
+    a0 += scal[j];
+  if (l_ddot (theGrid,t,NEWDEF_CLASS,t,scal) != NUM_OK)
+    return(1);
+  a1 = 0.0;
+  for (j=0; j<ncomp; j++)
+    a1 += scal[j];
+  if (a1 <= 0.0)
+    return(1);
+  if (display == PCR_FULL_DISPLAY)
+    UserWriteF("       min  %7.4lf\n",1+a0/a1);
+  for (j=0; j<ncomp; j++)
+    scal[j] = 1 + a0 / a1;
+  if (l_dscale (theGrid,c,ACTIVE_CLASS,scal))
+    return(1);
+  for (j=0; j<ncomp; j++)
+    scal[j] = - a0 / a1;
+  if (l_daxpy (theGrid,b,NEWDEF_CLASS,scal,t))
+    return(1);
 
   return(0);
 }
@@ -511,9 +569,6 @@ static INT AdaptCorrection (NP_TRANSFER *theNP, INT level,
 {
   NP_STANDARD_TRANSFER *np;
   GRID *theGrid;
-  VEC_SCALAR scal;
-  DOUBLE a0,a1;
-  INT j,ncomp;
 
   np = (NP_STANDARD_TRANSFER *) theNP;
   if (np->level) {
@@ -522,50 +577,11 @@ static INT AdaptCorrection (NP_TRANSFER *theNP, INT level,
       result[0] = __LINE__;
       return(1);
     }
-    ncomp = VD_NCOMP(c);
-    if (l_dset(theGrid,np->t,EVERY_CLASS,0.0) != NUM_OK) {
+    if (MinimizeLevel(theGrid,c,b,A,np->t,np->display)) {
       result[0] = __LINE__;
       return(1);
     }
-    if (l_dmatmul(theGrid,np->t,NEWDEF_CLASS,A,c,ACTIVE_CLASS) != NUM_OK) {
-      result[0] = __LINE__;
-      return(1);
-    }
-        #ifdef ModelP
-    if (l_vector_collect(theGrid,np->t) != NUM_OK) {
-      result[0] = __LINE__;
-      return (1);
-    }
-            #endif
-    if (l_ddot (theGrid,np->t,NEWDEF_CLASS,b,scal) != NUM_OK) {
-      result[0] = __LINE__;
-      return(1);
-    }
-    a0 = 0.0;
-    for (j=0; j<ncomp; j++)
-      a0 += scal[j];
-    if (l_ddot (theGrid,np->t,NEWDEF_CLASS,np->t,scal) != NUM_OK) {
-      result[0] = __LINE__;
-      return(1);
-    }
-    a1 = 0.0;
-    for (j=0; j<ncomp; j++)
-      a1 += scal[j];
-    if (a1 <= 0.0) {
-      result[0] = __LINE__;
-      return(1);
-    }
-    if (np->display == PCR_FULL_DISPLAY)
-      UserWriteF("       min  %7.4lf\n",1+a0/a1);
-    for (j=0; j<ncomp; j++)
-      scal[j] = 1 + a0 / a1;
-    if (l_dscale (theGrid,c,ACTIVE_CLASS,scal)) {
-      result[0] = __LINE__;
-      return(1);
-    }
-    for (j=0; j<ncomp; j++)
-      scal[j] = - a0 / a1;
-    if (l_daxpy (theGrid,b,NEWDEF_CLASS,scal,np->t)) {
+    if (FreeVD(theNP->base.mg,level,level,np->t)) {
       result[0] = __LINE__;
       return(1);
     }
@@ -592,6 +608,7 @@ static INT TransferConstruct (NP_BASE *theNP)
   np = (NP_TRANSFER *) theNP;
   np->PreProcess = TransferPreProcess;
   np->PreProcessProject = NULL;
+  np->PreProcessSolution = NULL;
   np->RestrictDefect = RestrictDefect;
   np->InterpolateCorrection = InterpolateCorrection;
   np->InterpolateNewVectors = InterpolateNewVectors;
