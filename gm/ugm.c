@@ -6945,7 +6945,7 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
 
   /* allocate fifo and init */
   theHeap = MYMG(theGrid)->theHeap;
-  buffer=(void *)GetTmpMem(theHeap,sizeof(ELEMENT*)*n,FROM_TOP);
+  buffer=(void *)GetTmpMem(theHeap,sizeof(ELEMENT*)*n);
   fifo_init(&myfifo,buffer,sizeof(ELEMENT*)*n);
   for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
     SETUSED(theElement,0);
@@ -6986,6 +6986,7 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
       fifo_in(&myfifo,(void *)theNeighbor);
     }
   }
+  ReleaseTmpMem(theHeap);
 
   return (0);
 }
