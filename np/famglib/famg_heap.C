@@ -44,19 +44,17 @@ FAMGHeap::~FAMGHeap()
 
 FAMGHeap::FAMGHeap(unsigned long size)
 {
+	ntop = nbottom = 0;
     size = FAMGCEIL(size);
     buffer = malloc(size);
+	bottom = (unsigned long) buffer;
     if(buffer == NULL)
     {
-         ostrstream ostr; ostr  << __FILE__ << ", line " << __LINE__ << ": can not allocate " << size << " byte." << endl;
-         FAMGError(ostr);
+		ostrstream ostr; ostr  << __FILE__ << ", line " << __LINE__ << ": can not allocate " << size << " byte." << endl;
+		FAMGError(ostr);
+		size = 0;	// induce error in the first GetMem
     }
-    else
-    {
-        ntop = nbottom = 0;
-        bottom = (unsigned long) buffer;
-        top = bottom + size;
-    }
+	top = bottom + size;
 }
 
 
@@ -72,6 +70,8 @@ void *FAMGHeap::GetMem(unsigned long size, int mode)
     size = FAMGCEIL(size);
     if (mode==FAMG_FROM_TOP)
     {
+		if (top<size)
+			return NULL;
         top -= size;
         if(top < bottom)
         {
@@ -84,6 +84,12 @@ void *FAMGHeap::GetMem(unsigned long size, int mode)
 	else 
     {
         ptr = (void *) bottom;
+		if ((bottom+size) < bottom)
+		{
+            ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": exeeds max. address for " << size << " byte." << endl;
+            FAMGError(ostr);
+            return(NULL);
+		}
         bottom += size;
         if(top < bottom) 
         {
