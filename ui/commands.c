@@ -247,7 +247,7 @@ static INT untitledCounter=0;                   /* counter for untitled multigri
 
 /* some variables to transfer info between QualityCommand and QualityElement*/
 static DOUBLE min,max,themin,themax,minangle,maxangle;
-static INT lessopt,greateropt;
+static INT lessopt,greateropt,selectopt;
 static char mintext[32],maxtext[32],minmaxtext[32];
 
 /* counters for windows and pictures */
@@ -4684,6 +4684,40 @@ static INT InsertInnerNodeCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
+static INT NGInsertInnerNodeCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  DOUBLE xc[DIM];
+  INT i;
+  static int n;
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
+  NO_OPTION_CHECK(argc,argv);
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"in","no open multigrid");
+    return (CMDERRORCODE);
+  }
+
+  UserWriteF("# IPoint %d\n",n);
+  n++;
+  UserWriteF("# %s\n",argv[0]);
+  if (sscanf(argv[0],"ngin %lf %lf %lf",xc,xc+1,xc+2)!=DIM)
+  {
+    PrintErrorMessageF('E',"in","specify %d coordinates for an inner node",(int)DIM);
+    return (PARAMERRORCODE);
+  }
+
+  UserWriteF("I %lf %lf %lf;\n",xc[0],xc[1],xc[2]);
+
+  return (OKCODE);
+}
+
 /****************************************************************************/
 /*D
    bn - insert a boundary node and vertex
@@ -4738,6 +4772,35 @@ static INT InsertBoundaryNodeCommand (INT argc, char **argv)
   InvalidateUgWindowsOfMG(theMG);
 
   return (OKCODE);
+}
+
+
+static INT NGInsertBoundaryNodeCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  BNDP *bndp;
+  static int i;
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"ngbn","no open multigrid");
+    return (CMDERRORCODE);
+  }
+
+  UserWriteF("# BPoint %d \n",i);
+  /* this works only for LGM domain and does no real insertion !!! */
+  bndp = BVP_InsertBndP (MGHEAP(theMG),MG_BVP(theMG),argc,argv);
+  if (bndp == NULL)
+  {
+    i++;
+    return (OKCODE);
+  }
+  return (CMDERRORCODE);
 }
 
 /****************************************************************************/
@@ -5234,6 +5297,119 @@ static INT InsertElementCommand (INT argc, char **argv)
 
   InvalidatePicturesOfMG(theMG);
   InvalidateUgWindowsOfMG(theMG);
+
+  return (OKCODE);
+}
+
+static INT NGInsertElementCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  char *token,*vstr;
+  INT i,bf,nNodes,Id[MAX_CORNERS_OF_ELEM];
+  static int n;
+
+  /* following variables: keep type for sscanf */
+  int id;
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"ngie","no open multigrid");
+    return (CMDERRORCODE);
+  }
+
+  /* set vstr after 'ngie' */
+  if ((vstr=strchr(argv[0],'e'))!=NULL)
+    ++vstr;
+  else
+    return (CMDERRORCODE);
+
+  UserWriteF("# %s\n",argv[0]);
+  UserWriteF("# element %d\n",n);
+  n++;
+  UserWriteF("E ");
+
+  /* we need the string split into tokens */
+  nNodes = bf = 0;
+  token = strtok(vstr,WHITESPACE);
+  i = 0;
+  while (token!=NULL)
+  {
+    /* separator for boundary faces */
+    if (strcmp(token,"F") == 0)
+    {
+      UserWriteF("\n");
+      bf = 1;
+      goto NEXTTOKEN;
+    }
+
+    /* read next boundary face */
+    if (bf > 0)
+    {
+
+      if (sscanf(token," %d",&id)!=1)
+      {
+        PrintErrorMessageF('E',"ngie","could not read the id of boundary face no %d",(int)bf);
+        return (PARAMERRORCODE);                                        /* too many items */
+      }
+      UserWriteF("	F");
+      switch (nNodes)
+      {
+      case 4 :
+      case 5 :
+      case 6 :
+        UserWriteF("ngie: elementtype = %d not implemented!\n",nNodes);
+        break;
+      case 8 :
+      {
+        INT n;
+        /* assert(id<SIDES_OF_ELEM_TAG(nNodes));*/
+
+        for (n=0; n<CORNERS_OF_SIDE_TAG(7,id); n++)
+        {
+          UserWriteF(" %d",Id[CORNER_OF_SIDE_TAG(7,id,n)]);
+        }
+        UserWriteF("\n");
+      }
+      break;
+      default :
+        assert(0);
+      }
+
+      bf++;
+      goto NEXTTOKEN;
+    }
+
+    /* read next node */
+    if (nNodes>=MAX_CORNERS_OF_ELEM)
+    {
+      PrintErrorMessageF('E',"ngie","specify at most %d id's",(int)MAX_CORNERS_OF_ELEM);
+      return (PARAMERRORCODE);                                  /* too many items */
+    }
+    if (sscanf(token," %d",&id)!=1)
+    {
+      PrintErrorMessageF('E',"ngie","could not read the id of corner no %d",(int)nNodes);
+      return (PARAMERRORCODE);                                  /* too many items */
+    }
+
+    /* first id is subdomain */
+    if (i > 0)
+    {
+      Id[nNodes] = id;
+      nNodes++;
+    }
+    UserWriteF(" %d",id);
+
+NEXTTOKEN:
+    token = strtok(NULL,WHITESPACE);
+    i++;
+  }
+
+  UserWriteF(";\n");
 
   return (OKCODE);
 }
@@ -7707,16 +7883,19 @@ INT QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
   {
     UserWrite(minmaxtext);
     ListElement(theMG,theElement,FALSE,FALSE,FALSE,FALSE);
+    if (selectopt) AddElementToSelection(theMG,theElement);
   }
   else if (lessopt && (min<themin))
   {
     UserWrite(mintext);
     ListElement(theMG,theElement,FALSE,FALSE,FALSE,FALSE);
+    if (selectopt) AddElementToSelection(theMG,theElement);
   }
   else if (greateropt && (max>themax))
   {
     UserWrite(maxtext);
     ListElement(theMG,theElement,FALSE,FALSE,FALSE,FALSE);
+    if (selectopt) AddElementToSelection(theMG,theElement);
   }
 
   return(0);
@@ -7741,7 +7920,7 @@ static INT QualityCommand (INT argc, char **argv)
   }
 
   /* check options */
-  lessopt = greateropt = mode = FALSE;
+  lessopt = greateropt = selectopt = mode = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -7805,6 +7984,11 @@ static INT QualityCommand (INT argc, char **argv)
         return (PARAMERRORCODE);
       }
       mode = DO_SELECTION;
+      break;
+
+    case 'S' :
+      selectopt = TRUE;
+      ClearSelection(theMG);
       break;
 
     default :
@@ -14657,11 +14841,14 @@ INT InitCommands ()
   if (CreateCommand("extracon",           ExtraConnectionCommand                  )==NULL) return (__LINE__);
   if (CreateCommand("check",                      CheckCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("in",                         InsertInnerNodeCommand                  )==NULL) return (__LINE__);
+  if (CreateCommand("ngin",                       NGInsertInnerNodeCommand                )==NULL) return (__LINE__);
   if (CreateCommand("bn",                         InsertBoundaryNodeCommand               )==NULL) return (__LINE__);
+  if (CreateCommand("ngbn",                       NGInsertBoundaryNodeCommand             )==NULL) return (__LINE__);
   if (CreateCommand("gn",                         InsertGlobalNodeCommand                 )==NULL) return (__LINE__);
   if (CreateCommand("deln",                       DeleteNodeCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("move",                       MoveNodeCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("ie",                         InsertElementCommand                    )==NULL) return (__LINE__);
+  if (CreateCommand("ngie",                       NGInsertElementCommand                  )==NULL) return (__LINE__);
   if (CreateCommand("dele",                       DeleteElementCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("refine",             AdaptCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("adapt",                      AdaptCommand                                    )==NULL) return (__LINE__);
