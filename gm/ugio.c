@@ -350,6 +350,9 @@ INT MGSetVectorClasses (MULTIGRID *theMG)
   GRID *theGrid;
   ELEMENT *theElement;
 
+  assert(0);    /* this function is corrupted (says Chr. Wieners) and should never be used */
+  /* TODO: remove this function */
+
   /* set vector classes */
   for (i=0; i<=TOPLEVEL(theMG); i++)
   {
