@@ -72,21 +72,26 @@ in order to save memory.a
 information that is different per level is stored here. E.g. geometric information 
 for a node e.g. is stored only once in a 'VERTEX' object. Several 'NODE' objects share
 share one 'VERTEX' if they are at the same position on different levels.
+
 . VERTEX - Geometric data of a 'NODE'. This contains x,y (,z), i.e global
 coordinates, the position in the coarser grid level (local coordinates) and
 boundary information if the node is on the boundary (see 'VSEGMENT').
+
 . VSEGMENT - A vertex can reside on several boundary segments, especially when
 internal boundaries are defined. Therefore it stores a list of 'VSEGMENT'
 structures, one for each position on a boundary segment.
+
 . LINK - The mesh structure implies a neighbor relationship on the 'NODE'
 objects (the `mesh graph`). 
 Since the mesh is unstructured a linked list must be used to provide
 references to all neighbors. The 'LINK' data type forms that list and each
 'LINK' object represents one neighbor.
+
 . EDGE - The 'LINK' structure represents a directed edge of the mesh graph from
 some node `a` to node `b`. The 'LINK' from node `b` to node `a` must always exist
 since the neighbor relation is symmetric and therefore the two 'LINK' objects
 are combined to form an 'EDGE' object.
+
 . GEOM_OBJECT - This is an union of 'ELEMENT', 'NODE' and 'EDGE', the basic
 geometric objects.
 . VECTOR - This structure is part of UGs sparse matrix data structure. Degrees
@@ -95,16 +100,20 @@ of freedom (and additional values) associated with `one geometric object`
 are stored in a 'VECTOR' object. In each 'VECTOR' starts a list of 'MATRIX' objects
 representing the rows of the global stiffness matrix corresponding to all
 degrees of freedom in the 'VECTOR'.
+
 . MATRIX - Contains all matrix entries coupling the degrees of freedom
 in two 'VECTOR' objects. 'MATRIX' objects always come in pairs connecting two
 'VECTOR' objects in both directions. The graph induced by the 'MATRIX'-'VECTOR'
 structure is completely independend from the mesh graph represented by the
 'LINK'-'NODE' structure.
+
 . CONNECTION - The two 'MATRIX' objects connecting two 'VECTOR' objects 
 are combined to a 'CONNECTION' object. This is similar to the combination of two
 'LINK' objects in an 'EDGE'.
+
 . GRID - All objects allocated on one grid level can be accessed via the
 'GRID' structure.
+
 . MULTIGRID - Several grid levels are combined to form a 'MULTIGRID' structure.
 It also provides access to the data structure parameters ('FORMAT'), the
 geometry ('DOMAIN') and the problem description ('PROBLEM'). The 'MULTIGRID'
@@ -167,11 +176,15 @@ Domains are created with the function 'CreateDomain'.
 
 . d - Makes the 'DOMAIN' an environment directory. 'd' stores also the name of
 the domain.
+
 . MidPoint,radius -  Defines a ball which should contain the domain. This information
 is used in the graphics module to initialize the view with a reasonable transformation.
+
 . numOfSegments -  Gives the number of 'BOUNDARY_SEGMENT' structures that
 will define the domain. 
+
 . numOfCorners - Number of corners defined by the domain.
+
 . domConvex - True, if the domain is convex.
 
 MACROS:
@@ -366,6 +379,7 @@ and 'CreateBoundarySegment'.
 . v - The 'BOUNDARY_SEGMENT' structure is an environment variable (see 'ENVIRONMENT'),
 therefore it has the 'ENVVAR' 'v' as its first component. 'v' stores also the
 name of the boundary segment.
+
 . left,right - Numbers of left and right subdomain. The right subdomain is where the
 normal vector of the curve points to in a right handed coordinate system. The TeX
 version of this page contains two figures for clarification. 
@@ -375,15 +389,20 @@ is as follows. Let the thumb point in direction of increasing values
 of the first parameter, let the index finger point in direction of
 increasing values of the second parameter, then the middle finger
 points to the right subdomain.  
+
 . id - Number of the boundary segment beginning with zero.
+
 . segType - Type of boundary segment. Currently only 'NON_PERIODIC' is
 allowed. Later periodic boundary segments will be implemented.
+
 . points - Mapping of local numbers of corners to global numbers. Remember, all
 global numbers of corners must be different. The local numbering scheme can
 be seen from the figures above.
+
 . resolution - Parameter indicating the curvature of the boundary segment. This is
 used mainly by the graphics module in order plot a boundary segment. For
 straight lines 1 is sufficient.
+
 . alpha,beta - Defines the parameter space. In 2D this is the interval
 [alpha[0],beta[0]], in 3D this is the rectangle 
 [alpha[0],beta[0]] x [alpha[1],beta[1]] (or a=alpha[0], b=beta[0],
@@ -391,6 +410,7 @@ c=alpha[1], d=beta[1] in the figure above.
 BndSegFunc - Pointer to a C function describing the mapping from parameter
 space to the `d`-space. This function must be of type 'BndSegFuncPtr'.
 (see below).
+
 . data - User defined pointer. This pointer is passed as the first
 argument to the 'BndSegFunc' of the segment. This pointer can be used
 to construct an interface to geometry data files, e.g. from a CAD system.
@@ -474,15 +494,19 @@ the function 'CreateProblem'.
 . d - The problem is an environment directory. This directory is a subdirectory
 of the domain where this problem corresponds to. 'd' also contains the
 name of the problem.
+
 . problemID - Problem class identification number. This number is used to determine
 that the problem description coincides with the pde solved by the
 problem class library.
+
 . ConfigProblem - Pointer to a user definable function that is executed when the 'reinit'
 command is given in the UG shell.
+
 . numOfCoeffFct,numOfUserFct - User definable coefficient functions come in two flavours.
 They are either of type 'CoeffProcPtr' or of type 'UserProcPtr'.
 'numOfCoeffFct' and 'numOfUserFct' give the number of functions of each type that
 make up the problem description. 
+
 . CU_ProcPtr - Array that stores the pointers to coefficient and user functions.
 Since access to this array is provided through macros (see below) the layout
 is not important. Note that this array is allocated dynamically to the desired length.
@@ -591,11 +615,14 @@ Boundary conditions are created with the function 'CreateBoundaryCondition'.
 . v - A 'BOUNDARY_CONDITION' is an environment variable which is stored
 in the directory given by the corresponding 'PROBLEM' object. 'v' stores
 also the name of the boundary condition.
+
 . id - Number of the corresponding boundary segment. Boundary segments
 and boundary conditions with the same id are accessible via a 'BNDSEGDESC'
 structure.
+
 . BndCond - Pointer to a function of type 'BndCondProcPtr' defining the
 boundary condition for a segment.
+
 . data - user definable pointer that is passed as first argument to 'BndCond'
 when it is called.
 
@@ -2949,27 +2976,44 @@ provided with UG.
 `In file 'gm.h'`
 
 . MAXLEVEL - Maximum number of grid levels allowed in 'MULTIGRID'.
+
 . MAXOBJECTS - Maximum number of different objects in free list.
+
 . MAXSELECTION - Size of the selection buffer in 'MULTIGRID'.
+
 . MAX_SIDES_OF_ELEM - Maximum number of sides of an element (of any type).
+
 . MAX_EDGES_OF_ELEM - Maximum number of edges of an element (of any type).
+
 . MAX_CORNERS_OF_ELEM - Maximum number of corners of an element (of any type).
+
 . MAX_EDGES_OF_SIDE - Maximum number of edges per side.
+
 . MAX_CORNERS_OF_SIDE - Maximum number of corners per side.
+
 . MAX_CORNERS_OF_EDGE - Maximum number of corners per edge (is always 2).
+
 . MAX_SIDES_OF_EDGE - In 3D two sides always have on edge in common.
+
 . MAX_SONS - Maximum number of sons per element.
+
 . MAX_SIDES_TOUCHING - Maximum number of sides on the next finer mesh that make up
 a side on the coarser mesh.
+
 . MAXMATRICES - Maximum number of 'MATRIX' types with different size.
+
 . MAXCONNECTIONS - Maximum number of different 'CONNECTION' types.
+
 . MSIZEMAX - Maximum size of a 'MATRIX' object in bytes.
+
 . NO_OF_ELEM_MAX - Maximum number of elements touching the same edge.
 
 `In file 'switch.h'`
 
 . DIM_MAX - Maximum space dimension (is 3).
+
 . DIM_OF_BND_MAX - Maximum dimension of boundary (is 'DIM_MAX-1').
+
 . MAXVECTORS - Maximum number of different 'VECTOR' types.
 
 D*/
