@@ -12,6 +12,7 @@
 /*            14 Sep 1993 pass argc, argv from main to InitPPIF             */
 /*            16 Sep 1993 async send/recv return msgid now                  */
 /*            951106 kb  changed parameters for InitPPIF()                  */
+/*            970213 kb  added C++ class interface                          */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -25,8 +26,45 @@
 
 #ifndef __PPIF__
 #define __PPIF__
+
+/****************************************************************************/
+/*                                                                          */
+/* settings for switching PPIF_FRONTEND_C/PPIF_FRONTEND_CPP/PPIF_FRONTEND_F */
+/*                                                                          */
+/****************************************************************************/
+
+
+/* check PPIF_FRONTEND-setting for plausibility */
+#if defined(PPIF_FRONTEND_C) && defined(PPIF_FRONTEND_CPP)
+#error PPIF Configuration Error: PPIF_FRONTEND_C and PPIF_FRONTEND_CPP are set.
+#endif
+
+#if defined(PPIF_FRONTEND_C) && defined(PPIF_FRONTEND_F)
+#error PPIF Configuration Error: PPIF_FRONTEND_C and PPIF_FRONTEND_F are set.
+#endif
+
+#if defined(PPIF_FRONTEND_CPP) && defined(PPIF_FRONTEND_F)
+#error PPIF Configuration Error: PPIF_FRONTEND_CPP and PPIF_FRONTEND_F are set.
+#endif
+
+
+
+/* default frontend is PPIF_FRONTEND_C */
+#ifndef PPIF_FRONTEND_C
+ #ifndef PPIF_FRONTEND_CPP
+  #ifndef PPIF_FRONTEND_F
+   #define PPIF_FRONTEND_C
+  #endif
+ #endif
+#endif
+
+
+
+
 #ifdef __cplusplus
+ #ifndef PPIF_FRONTEND_CPP
 extern "C" {
+ #endif
 #endif
 
 
@@ -85,6 +123,12 @@ extern int slvcnt[];                   /* number of processors in subtree       
 /*                                                                          */
 /****************************************************************************/
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /* initialization & shutdown */
 int         InitPPIF         (int *argcp, char ***argvp);
 int         ExitPPIF         (void);
@@ -129,4 +173,172 @@ int         pid_to_aid       (int p);
 #ifdef __cplusplus
 }
 #endif
+
+
+
+
+/****************************************************************************/
+
+#ifdef PPIF_FRONTEND_CPP
+class PPIF_Library
+{
+public:
+  // constructor/destructor
+  PPIF_Library (int* argc, char*** argv) {
+    ::InitPPIF(argc, argv);
+  }
+  ~PPIF_Library () {
+    ::ExitPPIF();
+  }
+
+  // tree oriented functions
+  int Broadcast (void *data, int size) {
+    return ::Broadcast(data, size);
+  }
+  int Concentrate (void *data, int size) {
+    return ::Concentrate(data, size);
+  }
+  int GetConcentrate (int slave, void *data, int size) {
+    return ::GetConcentrate(slave, data, size);
+  }
+  int Spread (int slave, void *data, int size) {
+    return ::Spread(slave, data, size);
+  }
+  int GetSpread (void *data, int size) {
+    return ::GetSpread(data, size);
+  }
+  int Synchronize (void) {
+    return ::Synchronize();
+  }
+
+  // synchronous communication
+  VChannelPtr ConnSync (int p, int id) {
+    return ::ConnSync(p, id);
+  }
+  int DiscSync (VChannelPtr vc) {
+    return ::DiscSync(vc);
+  }
+  int SendSync (VChannelPtr vc, void *data, int size) {
+    return ::SendSync(vc, data, size);
+  }
+  int RecvSync (VChannelPtr vc, void *data, int size) {
+    return ::RecvSync(vc, data, size);
+  }
+
+  // asynchronous communication
+  VChannelPtr ConnASync (int p, int id) {
+    return ::ConnASync(p, id);
+  }
+  int   DiscASync (VChannelPtr vc) {
+    return ::DiscASync(vc);
+  }
+  msgid SendASync (VChannelPtr vc, void *data, int size, int *error) {
+    return ::SendASync(vc, data, size, error);
+  }
+  msgid RecvASync (VChannelPtr vc, void *data, int size, int *error) {
+    return ::RecvASync(vc, data, size, error);
+  }
+  int InfoAConn (VChannelPtr vc) {
+    return ::InfoAConn(vc);
+  }
+  int InfoADisc (VChannelPtr vc) {
+    return ::InfoADisc(vc);
+  }
+  int InfoASend (VChannelPtr vc, msgid m) {
+    return ::InfoASend(vc, m);
+  }
+  int InfoARecv (VChannelPtr vc, msgid m) {
+    return ::InfoARecv(vc, m);
+  }
+
+  // random communication
+  int SendMail (int destId, int reqId, void *data, int size) {
+    return ::SendMail(destId, reqId, data, size);
+  }
+  int GetMail (int *sourceId, int *reqId, void *data, int *size) {
+    return ::GetMail(sourceId, reqId, data, size);
+  }
+
+  // miscellaneous
+  int    UsedSpace (void) {
+    return ::UsedSpace();
+  }
+  void   PrintHostMessage (char *s) {
+    ::PrintHostMessage(s);
+  }
+  double CurrentTime (void) {
+    return ::CurrentTime();
+  }
+  int    Distance (int p, int q) {
+    return ::Distance(p, q);
+  }
+  int    aid_to_pid (int x, int y, int z) {
+    return ::aid_to_pid(x, y, z);
+  }
+  int    pid_to_aid (int p) {
+    return ::pid_to_aid(p);
+  }
+};
+
+
+template<class T> void PPIF_ReduceSum (T * val)
+{
+  T tmp;
+  int l;
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,&tmp,sizeof(T));
+    *val = *val + tmp;
+  }
+  Concentrate(val, sizeof(T));
+  Broadcast(val, sizeof(T));
+}
+
+
+template<class T> void PPIF_ReduceMax (T * val)
+{
+  T tmp;
+  int l;
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,&tmp,sizeof(T));
+    if (tmp>*val)
+      *val = tmp;
+  }
+  Concentrate(val, sizeof(T));
+  Broadcast(val, sizeof(T));
+}
+
+
+template<class T> void PPIF_ReduceMin (T * val)
+{
+  T tmp;
+  int l;
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,&tmp,sizeof(T));
+    if (tmp<*val)
+      *val = tmp;
+  }
+  Concentrate(val, sizeof(T));
+  Broadcast(val, sizeof(T));
+}
+
+#endif
+
+
+/****************************************************************************/
+
+#ifdef __cplusplus
+ #ifndef PPIF_FRONTEND_CPP
+}
+ #endif
+#endif
+
+
+/****************************************************************************/
+
 #endif
