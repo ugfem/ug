@@ -10414,7 +10414,11 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
     /* count how many neighbor-sons are overlapped by SonElement */
     Count = 0;
     for (j=0; j<SIDES_OF_ELEM(SonElement); j++)
-      if (EFATHER(NBELEM(SonElement,j))==theElement && (!VIEWABLE(SonElement,j))) Count++;
+    {
+      NbElement = NBELEM(SonElement,j);
+      if (NbElement != NULL)
+        if (EFATHER(NbElement)==theElement && (!VIEWABLE(SonElement,j))) Count++;
+    }
     if (Count)
     {
       SETCOUNT(SonElement,Count);

@@ -1112,7 +1112,8 @@ static void GetCurrentContext (ELEMENT *theElement, NODE **theElementContext)
 			theNode = NULL;
 			theNode0 = theElementContext[EDGE_OF_SIDE(theElement,i,0)+CORNERS_OF_ELEM(theElement)];
 			theNode1 = theElementContext[EDGE_OF_SIDE(theElement,i,2)+CORNERS_OF_ELEM(theElement)];
-			for (theLink0=START(theNode0); theLink0!=NULL; theLink0=NEXT(theLink0)) {
+			if (theNode0 != NULL && theNode1 != NULL)
+			  for (theLink0=START(theNode0); theLink0!=NULL; theLink0=NEXT(theLink0)) {
 				for (theLink1=START(theNode1); theLink1!=NULL; theLink1=NEXT(theLink1)) 
 					if (NBNODE(theLink0) == NBNODE(theLink1)) {
 						IFDEBUG(gm,3)
@@ -1319,7 +1320,10 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 				toBisect = 1;
 		}
 		IFDEBUG(gm,2)
-		UserWriteF("\n    MidNodes[%d]: toBisect=%d ID(Corner0)=%d ID(Corner1)=%d ID(MidNode)=%d",i,toBisect,ID(CORNER(theElement,Corner0)),ID(CORNER(theElement,Corner1)),ID(MidNodes[i]));
+		if (MidNodes[i] == NULL)
+		  UserWriteF("\n    MidNodes[%d]: toBisect=%d ID(Corner0)=%d ID(Corner1)=%d",i,toBisect,ID(CORNER(theElement,Corner0)),ID(CORNER(theElement,Corner1)));
+		else
+		  UserWriteF("\n    MidNodes[%d]: toBisect=%d ID(Corner0)=%d ID(Corner1)=%d ID(MidNode)=%d",i,toBisect,ID(CORNER(theElement,Corner0)),ID(CORNER(theElement,Corner1)),ID(MidNodes[i]));
 		ENDDEBUG
 		if (toBisect)
 		{
@@ -1431,7 +1435,10 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 				}
 			}
 			IFDEBUG(gm,2)
-			UserWriteF("    SideNode[%d]: delete=%d create=%d old=%x oldID=%d",i,toDelete,toCreate,SideNodes[i],ID(SideNodes[i]));
+			if (SideNodes[i] == NULL)
+			  UserWriteF("    SideNode[%d]: delete=%d create=%d old=%x",i,toDelete,toCreate,SideNodes[i]);
+			else
+			  UserWriteF("    SideNode[%d]: delete=%d create=%d old=%x oldID=%d",i,toDelete,toCreate,SideNodes[i],ID(SideNodes[i]));
 			ENDDEBUG
 
 			if (toDelete)
@@ -1448,13 +1455,16 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 			if (toCreate)
 			{
 				theNeighbor = NBELEM(theElement,i);
+				if (theNeighbor != NULL)
+				  {
+					IFDEBUG(gm,3)
+					  UserWriteF("    ID(theNeighbor)=%d nbadr=%x:\n",ID(theNeighbor),theNeighbor);
+					ENDDEBUG
 
-				IFDEBUG(gm,3)
-				UserWriteF("    ID(theNeighbor)=%d nbadr=%x:\n",ID(theNeighbor),theNeighbor);
-				ENDDEBUG
+					  /* check whether node exists already */
+					  Refine = REFINE(theNeighbor);
+				  }
 
-				/* check whether node exists already */
-				Refine = REFINE(theNeighbor);
 				if (theNeighbor!=NULL && DIM==3 && TAG(theNeighbor)==HEXAHEDRON && 
 					MARKCLASS(theNeighbor)==GREEN && USED(theNeighbor)==0) {
 
@@ -1549,7 +1559,10 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 				}
 			}
 			IFDEBUG(gm,2)
-			UserWriteF(" new=%x newID=%d\n",SideNodes[i],ID(SideNodes[i]));
+			if (SideNodes[i] != NULL) 
+			  UserWriteF(" new=%x newID=%d\n",SideNodes[i],ID(SideNodes[i]));
+			else
+			  UserWriteF(" new=%x\n",SideNodes[i]);
 			ENDDEBUG
 		}
 	#endif
@@ -1792,7 +1805,9 @@ static int RefineGreenElement (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 	UserWriteF("         Element ID=%d actual CONTEXT is:\n",ID(theElement));
 	for (i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++) UserWriteF(" %3d",i);
 	UserWrite("\n");
-	for (i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++) UserWriteF(" %3d",ID(theContext[i]));
+	for (i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++) 
+	  if (theContext[i] != NULL)
+		UserWriteF(" %3d",ID(theContext[i]));
 	UserWrite("\n");
 	ENDDEBUG
 	IFDEBUG(gm,3)
@@ -2310,14 +2325,17 @@ static int RefineGreenElement (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 
 			k = l = 0;
 			IFDEBUG(gm,0)
-			for (j=0; j<CORNERS_OF_ELEM(sons[i].theSon); j++) {
-				for (m=0; m<CORNERS_OF_ELEM(sons[i].theSon); m++) {
-					if ((m!=j) && (sons[i].corners[j] == sons[i].corners[m] || 
-						 (ID(sons[i].corners[j]) == ID(sons[i].corners[m])))) {
-						 UserWriteF("     ERROR: son %d has equivalent corners %d=%d  ID=%d ID=%d adr=%x adr=%x\n",n,j,m,ID(sons[i].corners[j]),ID(sons[i].corners[m]),sons[i].corners[j],sons[i].corners[m]); 
-					}
-				}
-			}
+			for (j=0; j<CORNERS_OF_ELEM(sons[i].theSon); j++) 
+			  for (m=0; m<CORNERS_OF_ELEM(sons[i].theSon); m++) 
+				if (sons[i].corners[j] == NULL || sons[i].corners[m] == NULL)
+				  {
+					if ((m!=j) && (sons[i].corners[j] == sons[i].corners[m]))
+					  UserWriteF("     ERROR: son %d has equivalent corners %d=%d adr=%x adr=%x\n",n,j,m,sons[i].corners[j],sons[i].corners[m]); 
+				  }
+				else
+				  if ((m!=j) && (sons[i].corners[j] == sons[i].corners[m] || 
+					  (ID(sons[i].corners[j]) == ID(sons[i].corners[m])))) 
+					UserWriteF("     ERROR: son %d has equivalent corners %d=%d  ID=%d ID=%d adr=%x adr=%x\n",n,j,m,ID(sons[i].corners[j]),ID(sons[i].corners[m]),sons[i].corners[j],sons[i].corners[m]); 
 			ENDDEBUG
 
 			IFDEBUG(gm,2)
@@ -2331,7 +2349,8 @@ static int RefineGreenElement (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 					l ++;
 				}
 				IFDEBUG(gm,2)
-				UserWriteF(" %d",ID(sons[i].corners[j])); 
+				if (sons[i].corners[j] != NULL)
+				  UserWriteF(" %d",ID(sons[i].corners[j])); 
 				ENDDEBUG
 			}
 			IFDEBUG(gm,2)
@@ -3138,6 +3157,7 @@ static int RefineGrid (GRID *theGrid)
 				UserWriteF("%3d",i);
 			UserWrite("\n");
 			for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)  
+			  if (theContext[i] != NULL)
 				UserWriteF("%3d",ID(theContext[i]));
 			UserWrite("\n");
 			ENDDEBUG
@@ -3151,6 +3171,7 @@ static int RefineGrid (GRID *theGrid)
 				UserWriteF("%3d",i);
 			UserWrite("\n");
 			for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)  
+			  if (theContext[i] != NULL)
 				UserWriteF("%3d",ID(theContext[i]));
 			UserWrite("\n");
 			ENDDEBUG
@@ -3258,6 +3279,9 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
 		IFDEBUG(gm,1)
 		UserWriteF("End RestrictMarks(%d):\n",k-1);
 		for (theElement=theMG->grids[k-1]->elements; theElement!=NULL; theElement=SUCCE(theElement))
+		  if (k-1 == 0)
+			UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),ECLASS(theElement),REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),COARSEN(theElement));
+		  else
 			UserWriteF("EID=%d TAG=%d ECLASS=%d EFATHERID=%d RefineClass=%d MarkClass=%d Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),ECLASS(theElement),ID(EFATHER(theElement)),REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),COARSEN(theElement));
 		ENDDEBUG
 	#endif
@@ -3292,7 +3316,12 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
 			IFDEBUG(gm,1)
 			UserWriteF("End 2. CloseGrid(%d):\n",k);
 			for (theElement=theMG->grids[k]->elements; theElement!=NULL; theElement=SUCCE(theElement))
-				UserWriteF("EID=%d TAG=%d ECLASS=%d EFATHERID=%d RefineClass=%d MarkClass=%d Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),ECLASS(theElement),ID(EFATHER(theElement)),REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),COARSEN(theElement));
+			  {
+				if (k>0)
+				  UserWriteF("EID=%d TAG=%d ECLASS=%d EFATHERID=%d RefineClass=%d MarkClass=%d Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),ECLASS(theElement),ID(EFATHER(theElement)),REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),COARSEN(theElement));
+				else
+				  UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),ECLASS(theElement),REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),COARSEN(theElement));
+			  }
 			ENDDEBUG
 			ComputeCopies(theGrid);
 			/* by the neighborhood of elements were MARK != REFINE. 					 */
