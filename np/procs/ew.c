@@ -642,7 +642,7 @@ static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
                          INT *result)
 {
   NP_EW *np;
-  INT i,l,bl;
+  INT i,bl;
 
   np = (NP_EW *) theNP;
 

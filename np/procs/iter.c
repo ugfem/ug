@@ -715,7 +715,6 @@ static INT GSConstruct (NP_BASE *theNP)
 static INT BCGSSmootherInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_BCGSSMOOTHER *np;
-  INT i;
 
   np = (NP_BCGSSMOOTHER *) theNP;
 

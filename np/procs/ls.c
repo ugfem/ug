@@ -942,7 +942,6 @@ static INT CRDisplay (NP_BASE *theNP)
 static INT CRPreProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
 {
   NP_CR *np;
-  INT i;
 
   np = (NP_CR *) theNP;
   if (np->Iter!=NULL)
@@ -977,7 +976,7 @@ static INT CRPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, V
   return(0);
 }
 
-void PrintEunorm (MULTIGRID *theMG, VECDATA_DESC *v, char *name)
+static void PrintEunorm (MULTIGRID *theMG, VECDATA_DESC *v, char *name)
 {
   DOUBLE eu;
 
@@ -1188,7 +1187,6 @@ static INT CRConstruct (NP_BASE *theNP)
 static INT BCGInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_BCG *np;
-  INT i;
 
   np = (NP_BCG *) theNP;
   np->p  = ReadArgvVecDesc(theNP->mg,"p",argc,argv);
@@ -1228,7 +1226,6 @@ static INT BCGDisplay (NP_BASE *theNP)
 static INT BCGPreProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
 {
   NP_BCG *np;
-  INT i;
 
   np = (NP_BCG *) theNP;
 
@@ -1254,7 +1251,7 @@ static INT BCGPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, 
 static INT BCGSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, VEC_SCALAR abslimit, VEC_SCALAR reduction, LRESULT *lresult)
 {
   NP_BCG *np;
-  VEC_SCALAR defect2reach,scal,alpha,alpha_m,beta;
+  VEC_SCALAR defect2reach,alpha,alpha_m,beta;
   INT i,j,PrintID,restart;
   char text[DISPLAY_WIDTH+4];
   DOUBLE sigma,rbr_new;
@@ -1449,7 +1446,6 @@ static INT BCGSDisplay (NP_BASE *theNP)
 static INT BCGSPreProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
 {
   NP_BCGS *np;
-  INT i;
 
   np = (NP_BCGS *) theNP;
 
@@ -1714,7 +1710,6 @@ static INT BCGSConstruct (NP_BASE *theNP)
 static INT SQCGInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_SQCG *np;
-  INT i;
 
   np = (NP_SQCG *) theNP;
   np->r = ReadArgvVecDesc(theNP->mg,"r",argc,argv);
@@ -1754,7 +1749,6 @@ static INT SQCGDisplay (NP_BASE *theNP)
 static INT SQCGPreProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
 {
   NP_SQCG *np;
-  INT i;
 
   np = (NP_SQCG *) theNP;
 

@@ -295,7 +295,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   DOUBLE Factor[MAX_VEC_COMP];
   INT n_unk;
   INT i,k;
-  INT low,bl;
+  INT low;
   INT verygood,bad;
   NLRESULT nlresult;
   MULTIGRID *mg;

@@ -204,7 +204,7 @@ typedef struct
 static INT NonLinearDefect (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x, NP_NEWTON *newton, NP_NL_ASSEMBLE *ass, VEC_SCALAR defect)
 {
   LRESULT lr;                           /* result of linear solver				*/
-  INT i,bl,error,n_unk;
+  INT i,error,n_unk;
 
   n_unk = VD_NCOMP(x);
 
