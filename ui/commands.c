@@ -2769,7 +2769,7 @@ static INT RenumberMGCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (RenumberMultiGrid(theMG,NULL,NULL,NULL,NULL,NULL,NULL)!=GM_OK)
+  if (RenumberMultiGrid(theMG,NULL,NULL,NULL,NULL,NULL,NULL,NULL)!=GM_OK)
   {
     PrintErrorMessage('E',"renumber","renumbering of the mg failed");
     return (CMDERRORCODE);
@@ -5122,7 +5122,7 @@ static INT OrderNodesCommand (INT argc, char **argv)
     }
 
   /* first we renumber the multigrid (to have node-IDs coinciding with lists) */
-  if (RenumberMultiGrid(theMG,NULL,NULL,NULL,NULL,NULL,NULL)!=GM_OK)
+  if (RenumberMultiGrid(theMG,NULL,NULL,NULL,NULL,NULL,NULL,NULL)!=GM_OK)
   {
     PrintErrorMessage('E',"ordernodes","renumbering of the mg failed");
     return (CMDERRORCODE);
