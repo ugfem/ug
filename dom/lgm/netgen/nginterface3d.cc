@@ -39,7 +39,7 @@ static ARRAY<InputElement> geomelements;
 static int nbp;
 static Point3d tripoint;
 extern int yyparse ();
-
+static int error;
 static ARRAY<Point3d> points;
 static int write;
 static int DD;
@@ -58,6 +58,10 @@ static Vec3d n, t1, t2;
 static ARRAY<INDEX> locelements(0);
 Point3d gl_sp1,gl_sp2,gl_p1,gl_p2;
 
+void NewError (int dummy)
+{
+  error = 1;
+}
 
 surfacemeshing :: surfacemeshing (char * rulefilename)
 {
@@ -469,13 +473,13 @@ static int Cross_Check(int dummy)
 }
 
 
-void surfacemeshing :: Mesh (double gh)
+int surfacemeshing :: Mesh (double gh)
 {
   ARRAY<INDEX> pindex, lindex;
   ARRAY<int> delpoints, dellines;
   ARRAY<Element> locelements;
   int i, j, oldnp;
-  char found;
+  int found;
   INDEX globind;
   double in[5];
   static ARRAY<Point3d> locp;
@@ -508,6 +512,7 @@ void surfacemeshing :: Mesh (double gh)
     adfront->ugPrint(cout);
   }
 
+  error = 0;
   testmode = 0;
   //	meshthis = this;
 
@@ -518,7 +523,7 @@ void surfacemeshing :: Mesh (double gh)
   {
     //		adfront->Print(cout);
 
-    dist = 1.5;
+    dist = 0.1;
     do
     {
       locpoints.SetSize(0);
@@ -589,7 +594,27 @@ void surfacemeshing :: Mesh (double gh)
 
     found = GenerateTriangle (plainpoints, loclines, locelements,
                               dellines, h);
+    if(found==-1)
+    {
+      UserWriteF("\n");
+      UserWriteF("Error in Surface Triangulation !\n");
+      UserWriteF("Check the Input data at position: ");
+      UserWriteF("%f %f %f\n",(locpoints[loclines[1].I1()].X()+locpoints[loclines[1].I2()].X())/2,
+                 (locpoints[loclines[1].I1()].Y()+locpoints[loclines[1].I2()].Y())/2,
+                 (locpoints[loclines[1].I1()].Z()+locpoints[loclines[1].I2()].Z())/2);
+      UserWriteF("\n");
 
+      error = 1;
+      locpoints.SetSize(0);
+      loclines.SetSize(0);
+      pindex.SetSize(0);
+      lindex.SetSize(0);
+      delpoints.SetSize(0);
+      dellines.SetSize(0);
+      locelements.SetSize(0);
+      plainpoints.SetSize(0);
+      break;
+    }
     if (found)
     {
       //			adfront->Print(cout);
@@ -654,6 +679,7 @@ void surfacemeshing :: Mesh (double gh)
   }
 
   EndMesh ();
+  return(error);
 }
 
 #define Det(a)                                  ( - a[0] * a[4] * a[8]  \
@@ -906,7 +932,14 @@ int StartSurfaceNetgen (double h, int smooth, int display,int D)
   write = 0;
   DD = D;
 
-  meshing -> Mesh (h);
+  if(meshing -> Mesh (h)==1)
+  {
+    elements.SetSize(0);
+    points.SetSize(0);
+    geompoints.SetSize(0);
+    geomelements.SetSize(0);
+    return(1);
+  }
 
   Smooth_SurfaceMesh(points, elements, nbp, smooth);
 
@@ -958,7 +991,7 @@ int StartSurfaceNetgen (double h, int smooth, int display,int D)
   points.SetSize(0);
   geompoints.SetSize(0);
   geomelements.SetSize(0);
-  return 0;
+  return(0);
 }
 
 int c11(const Point3d & point, Point3d & returnpoint, Vec3d n)
@@ -1226,7 +1259,7 @@ int case1(const Point3d & ep1, Point3d & ep2)
   int i,j,triang[10][4],trnb, mi, nn1, nn2, np1, np2;
   double lam[3],prod,help;
   Point3d p,p0,p1,p2,inp,e1,e2;
-  Vec3d edge,geomedge,n0,n1,n2,np;
+  Vec3d edge,geomedge,n0,n1,n2,np,dummy;
   InputElement es;
   // Punkt liegt genau auf der Kante zwischen 2 Dreiecken
   // passiert fuer erkannte Kanten auf der Surface
@@ -1235,8 +1268,10 @@ int case1(const Point3d & ep1, Point3d & ep2)
   trnb = 0;
   inp = Center(ep1,ep2);
   p = inp;
-  // Projektion auf dei Surface faellt weg
-  // Project_Point2Surface(inp,p);
+  dummy.X() = 0.0;
+  dummy.Y() = 0.0;
+  dummy.Z() = 0.0;
+  Project_Point2Surface_2(inp,p,dummy);
 
   for(i=1; i<=geomelements.Size(); i++)
   {
@@ -1479,7 +1514,8 @@ int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh, doubl
   Point3d midp,midsp,ep0,ep1,ep2;
   Vec3d n0,n1,n2,np,front_vec, triang_direction,dist_vec1,dist_vec2,front_n,edge_n;
   int front_id, line_id;
-  double angle,help1,help2,nh,help,front;
+  double angle,help1,help2,nh;
+  //	double help,front;
 
   gl_sp1 = sp1;
   gl_sp2 = sp2;
@@ -1492,7 +1528,7 @@ int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh, doubl
   midsp = Center (sp1,sp2);
 
   nh = Dist(sp1,sp2);
-  front = Dist(sp1,sp2);
+  //	front = Dist(sp1,sp2);
   nh = xh;
   if(Dist (midp, midsp) > nh)
     return(0);
@@ -1530,7 +1566,7 @@ int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh, doubl
     if((dist_vec1*triang_direction<=0.0))
       return(0);
 
-    help = Project2Plane(midp,np,ep0,n0,n1,n2);
+    //		help = Project2Plane(midp,np,ep0,n0,n1,n2);
 
     if( (help1>dist*xh) || (help2>dist*xh) )
       return(0);
@@ -1538,9 +1574,9 @@ int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh, doubl
     angle = Calc_Angle(geomelements[front_id], geomelements[line_id]);
     if(angle>=3.1415*Triangle_Angle2/180)
       return(0);
-    if(front_id==line_id)
-      if(help > 0.3*front)
-        return(0);
+    /*		if(front_id==line_id)
+                            if(help > 0.3*front)
+                                    return(0);*/
 
   }
   return(1);

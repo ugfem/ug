@@ -125,6 +125,8 @@ static DOUBLE **xy_lcoord;
 static INT *xy_flag;
 static INT *xy_new_id;
 static INT *xy_element_id;
+static INT surface_error;
+static INT surf_err;
 
 static INT P_Dist(DOUBLE *p1, DOUBLE *p2)
 {
@@ -2252,6 +2254,7 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
   /* make MarkKey global */
   LGM_MarkKey = MarkKey;
 
+  surface_error = 0;
   old = 0;
   h = 0.0;
   D = 1;
@@ -2471,7 +2474,8 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
 
         if (DiscretizeSurface(Heap,theSurface,mesh,h,pointlist,norp, D,MarkKey))
           return(NULL);
-        Write_Surface(theSurface, name, name1);
+        if(!surf_err)
+          Write_Surface(theSurface, name, name1);
       }
       else
       {
@@ -2537,8 +2541,15 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
           }
         }
       }
-      if (LGM_DEBUG) printf("%s\n","huhu");
     }
+  }
+
+  if(surface_error)
+  {
+    UserWriteF("\n");
+    UserWriteF("Error in Surface Triangulation !\n");
+    UserWriteF("Check the Input Data !\n");
+    return(NULL);
   }
   /* discretize domain */
   if (DiscretizeDomain(Heap,theDomain,mesh,h, MarkKey))
@@ -3036,6 +3047,14 @@ INT Project2Surface(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUB
     }
   }
 
+  if( (lam[0]<0.0) || (lam[1]<0.0) )
+  {
+    if( (lam[0]<0.0) && (lam[0]>-SMALL) )
+      lam[0] = 0.0;
+    if( (lam[1]<0.0) && (lam[1]>-SMALL) )
+      lam[1] = 0.0;
+  }
+
   local[0] = lam[0] + mi;
   local[1] = lam[1] + mi;
 
@@ -3352,7 +3371,7 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
           if(local_right<12345677890.0)
             Line_Local2GlobalNew(theLine, global_right, local_right);
           else
-            global_left[0] = global_left[1] = global_left[2] = MAXFLOAT;
+            global_right[0] = global_right[1] = global_right[2] = MAXFLOAT;
           LGM_BNDP_LINE_GLOBALLEFT(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i])))[0] = global_left[0];
           LGM_BNDP_LINE_GLOBALLEFT(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i])))[1] = global_left[1];
           LGM_BNDP_LINE_GLOBALLEFT(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i])))[2] = global_left[2];
@@ -4683,6 +4702,7 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
   INT start_id, end_id, flag, all_used, nline_points, nlp;
   DOUBLE **line_points, **lcoord_lpoints;
 
+  surf_err = 0;
   ptrlst = (LGM_POINT**)GetTmpMem(Heap,(LGM_SURFACE_NPOINT(theSurface)+1)*sizeof(LGM_POINT*),MarkKey);
   if(ptrlst==NULL)
   {
@@ -5032,24 +5052,29 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
 
   UserWriteF("Triangulate surface %4d: ", LGM_SURFACE_ID(theSurface));
 
-  GenerateSurfaceGrid (Heap, MarkKey, theSurface, h, 5, 1, D);
-
-  j = 0;
-  for(i=0; i<nline_points; i++)
+  if(GenerateSurfaceGrid (Heap, MarkKey, theSurface, h, 5, 1, D))
   {
-    if((INT)lcoord_lpoints[i][0]!=-1)
-    {
-      LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,0) = lcoord_lpoints[i][0];
-      LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,1) = lcoord_lpoints[i][1];
-      j++;
-    }
+    surface_error = 1;
+    surf_err = 1;
   }
+  else
+  {
+    j = 0;
+    for(i=0; i<nline_points; i++)
+    {
+      if((INT)lcoord_lpoints[i][0]!=-1)
+      {
+        LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,0) = lcoord_lpoints[i][0];
+        LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,1) = lcoord_lpoints[i][1];
+        j++;
+      }
+    }
 
-  UserWriteF("\n");
-  UserWriteF(" Surface %4d: %4d Triangles\n",
-             LGM_SURFACE_ID(theSurface),
-             LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)));
-
+    UserWriteF("\n");
+    UserWriteF(" Surface %4d: %4d Triangles\n",
+               LGM_SURFACE_ID(theSurface),
+               LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)));
+  }
   return (0);
 }
 

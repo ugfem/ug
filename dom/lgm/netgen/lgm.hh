@@ -54,7 +54,7 @@ public:
   virtual ~surfacemeshing ();
 
   void LoadRules (char * filename);
-  void Mesh (double gh);
+  int Mesh (double gh);
 
   void ImproveMesh (ARRAY<Point3d> & points, const ARRAY<Element> & elements,
                     int improveedges, int numboundarypoints, double h, int steps, int err2);

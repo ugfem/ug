@@ -39,6 +39,7 @@
 #include "defaults.h"
 #include "general.h"
 #include "debug.h"
+#include "evm.h"
 #include "lgm_domain.h"
 #include "domain.h"
 
@@ -274,10 +275,57 @@ static INT Search_Neighbour_Triangle(INT dummy)
   return(0);
 }
 
+static DOUBLE Check_convex(LGM_SURFACE *theSurface, INT tr0, INT tr1, INT nr0, INT nr1)
+{
+  DOUBLE l1, l2, local[2];
+  DOUBLE s1[3], s2[3], s3[3], p0[3], p1[3], p2[3], p3[3], n[3], n1[3], scalarproduct1, scalarproduct2;
+  int i;
+
+
+  local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),tr0,0);
+  local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),tr0,1);
+  p0[0] = p0[1] = p0[2] = 0.0;
+  Surface_Local2Global(theSurface, p0, local);
+
+  local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),tr1,0);
+  local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),tr1,1);
+  p1[0] = p1[1] = p1[2] = 0.0;
+  Surface_Local2Global(theSurface, p1, local);
+
+  local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),nr0,0);
+  local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),nr0,1);
+  p2[0] = p2[1] = p2[2] = 0.0;
+  Surface_Local2Global(theSurface, p2, local);
+
+  local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),nr1,0);
+  local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),nr1,1);
+  p3[0] = p3[1] = p3[2] = 0.0;
+  Surface_Local2Global(theSurface, p3, local);
+
+  V3_SUBTRACT(p1, p0, s1);
+  V3_SUBTRACT(p3, p0, s2);
+  V3_SUBTRACT(p2, p1, s3);
+  V_DIM_VECTOR_PRODUCT(s1, s2, n);
+  V_DIM_VECTOR_PRODUCT(s1, n, n1);
+  V_DIM_SCALAR_PRODUCT(n1, s3, scalarproduct1);
+
+  V3_SUBTRACT(p3, p2, s1);
+  V3_SUBTRACT(p1, p2, s2);
+  V3_SUBTRACT(p0, p3, s3);
+  V_DIM_VECTOR_PRODUCT(s1, s2, n);
+  V_DIM_VECTOR_PRODUCT(s1, n, n1);
+  V_DIM_SCALAR_PRODUCT(n1, s3, scalarproduct2);
+
+  if((scalarproduct1<0)&&(scalarproduct2<0))
+    return(1);
+  else
+    return(0);
+}
+
 static INT Modify_Triangulation(INT dummy)
 {
   INT i, j, k, ntriangle, n, m, flag1, flag2, triangle, neighbour, help, id[4], tr_id[3], n_id[3], trn_id[3], nn_id[3];
-  INT *modify;
+  INT *modify, convex;
 
   ntriangle = LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface));
   modify = (INT *)GetTmpMem(Heap,ntriangle*sizeof(INT),LGM_MarkKey);
@@ -336,20 +384,6 @@ static INT Modify_Triangulation(INT dummy)
       }
       if((m==0)&&(modify[neighbour]==1))
       {
-        /*				printf("%d %d %d %d %d %d %d %d %d %d %d %d\n",
-                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 0),
-                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 1),
-                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 2),
-                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 0),
-                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 1),
-                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 2),
-                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 0),
-                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 1),
-                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 2),
-                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 0),
-                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 1),
-                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 2));*/
-
         for(k=0; k<3; k++)
         {
           tr_id[k] = LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, (flag1 + 2 + k)%3 );
@@ -357,36 +391,23 @@ static INT Modify_Triangulation(INT dummy)
           trn_id[k] = LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, (flag1 + 2 + k)%3 );
           nn_id[k] = LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, (flag2 + 2 + k)%3 );
         }
-        /*				printf("%d %d %d %d %d %d\n",tr_id[0],tr_id[1],tr_id[2],n_id[0],n_id[1],n_id[2]); */
-
-        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 0) = tr_id[0];
-        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 1) = tr_id[1];
-        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 2) = n_id[1];
-        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 0) = n_id[0];
-        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 1) = n_id[1];
-        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 2) = tr_id[1];
-        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 0) = -1;
-        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 1) = -1;
-        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 2) = -1;
-        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 0) = -1;
-        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 1) = -1;
-        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 2) = -1;
-
-        /*				printf("%d %d %d %d %d %d %d %d %d %d %d %d\n",
-                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 0),
-                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 1),
-                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 2),
-                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 0),
-                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 1),
-                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 2),
-                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 0),
-                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 1),
-                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 2),
-                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 0),
-                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 1),
-                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 2));*/
+        convex = Check_convex(theSurface, tr_id[0], tr_id[1], n_id[0],  n_id[1]);
+        if(convex)
+        {
+          LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 0) = tr_id[0];
+          LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 1) = tr_id[1];
+          LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 2) = n_id[1];
+          LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 0) = n_id[0];
+          LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 1) = n_id[1];
+          LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 2) = tr_id[1];
+          LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 0) = -1;
+          LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 1) = -1;
+          LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 2) = -1;
+          LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 0) = -1;
+          LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 1) = -1;
+          LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 2) = -1;
+        }
       }
-
     }
   }
 
