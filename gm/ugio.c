@@ -64,6 +64,7 @@
 #include "rm.h"
 #include "mgio.h"
 #include "fifo.h"
+#include "mgheapmgr.h"
 
 /* include refine because of macros accessed  */
 #include "refine.h"

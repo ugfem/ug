@@ -136,6 +136,7 @@ INT PutFreeObject_par (HEAP *theHeap, void *object, INT size, INT type);
 
 #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 void *GetMemoryForObjectNew (HEAP *theHeap, INT size, INT type);
+INT PutFreeObjectNew (HEAP *theHeap, void *object, INT size, INT type);
 #endif
 
 #endif

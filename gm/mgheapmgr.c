@@ -31,6 +31,7 @@
 #include "compiler.h"
 #include "heaps.h"
 #include "gm.h"
+#include "algebra.h"
 
 /****************************************************************************/
 /*																			*/
