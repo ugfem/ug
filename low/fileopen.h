@@ -89,6 +89,7 @@ INT                     DirWalk                                         (const c
 INT                     ReadSearchingPaths                      (const char *filename, const char *pathsvar);
 int                     DirCreateUsingSearchPaths       (const char *fname, const char *paths);
 FILE            *FileOpenUsingSearchPaths       (const char *fname, const char *mode, const char *pathsvar);
+FILE            *FileOpenUsingSearchPaths_r     (const char *fname, const char *mode, const char *pathsvar, int rename);
 FILE            *FileOpenUsingSearchPath        (const char *fname, const char *mode, const char *path);
 FILE            *FileOpenUsingSearchPath_r      (const char *fname, const char *mode, const char *path, int rename);
 int             FileTypeUsingSearchPaths        (const char *fname, const char *pathsvar);

@@ -660,6 +660,66 @@ FILE *FileOpenUsingSearchPaths (const char *fname, const char *mode, const char 
 
 /****************************************************************************/
 /*D
+        FileOpenUsingSearchPaths - open file searching in the directories specified
+                        in the environment item '/Paths/<paths>'
+
+        SYNOPSIS:
+        FILE *FileOpenUsingSearchPaths (const char *fname, const char *mode, const char *paths)
+
+    PARAMETERS:
+   .   fname - file name to be opened
+   .   mode - see ANSI-C 'fopen'
+   .   paths - try paths specified in the environment item '/Paths/<paths> which was
+                        set by --> 'ReadSearchingPaths'
+
+        DESCRIPTION:
+        The functions trys to open the file with 'filename' using one by one the
+        paths specified in the environment item '/Paths/<paths> which was
+        set by --> 'ReadSearchingPaths'. It is used in several places in ug (all paths
+        are read from the standard --> 'defaults' file)":"
+
+   .n   'srciptpaths' is used by the interpreter for script execution
+   .n   'gridpaths' is used by ugio to read grids from (they are stored in the
+   .n   first path
+
+        RETURN VALUE:
+        FILE *
+   .n   pointer to file opened, 'NULL' if error
+
+        SEE ALSO:
+        ReadSearchingPaths, fileopen
+   D*/
+/****************************************************************************/
+
+FILE *FileOpenUsingSearchPaths_r (const char *fname, const char *mode, const char *paths, int rename)
+{
+  PATHS *thePaths;
+  FILE *theFile;
+  char fullname[MAXPATHLENGTH];
+  INT i,fnamelen;
+
+  fnamelen = strlen(fname);
+
+  if ((thePaths=GetPaths(paths))==NULL)
+    return (NULL);
+
+  for (i=0; i<thePaths->nPaths; i++)
+  {
+    if (strlen(thePaths->path[i])+fnamelen>MAXPATHLENGTH)
+      return (NULL);
+
+    strcpy(fullname,thePaths->path[i]);
+    strcat(fullname,fname);
+
+    if ((theFile=fileopen_r(fullname,mode,rename))!=NULL)
+      return (theFile);
+  }
+
+  return (NULL);
+}
+
+/****************************************************************************/
+/*D
         FileOpenUsingSearchPath - try to open a file in the specified path
 
         SYNOPSIS:
