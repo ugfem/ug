@@ -604,7 +604,7 @@ INT a_outervector_consistent (MULTIGRID *mg, INT fl, INT tl,
                  Gather_VectorComp, Scatter_GhostVectorComp);
   else
     for (level=fl; level<=tl; level++)
-      DDD_IFAOneway(VectorAllIF,
+      DDD_IFAOneway(OuterVectorIF,
                     GRID_ATTR(GRID_ON_LEVEL(mg,level)), IF_FORWARD,
                     m * sizeof(DOUBLE),
                     Gather_VectorComp, Scatter_GhostVectorComp);
