@@ -1,0 +1,22 @@
+##############################################################################
+#																			 #
+#	Makefile for netgen								 #
+#																			 #
+#	created by Joachim												 #
+#																			 #
+##############################################################################
+
+default:
+	cd meshing; make; cd ..;
+	cd general; make; cd ..;
+	cd linalg;  make; cd ..;
+	cd geom;    make; cd ..;
+	cd opti;    make; cd ..;
+
+# clean up
+clean:
+	rm meshing/*.o;
+	rm general/*.o;
+	rm linalg/*.o;
+	rm geom/*.o;
+	rm opti/*.o;
