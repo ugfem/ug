@@ -1214,7 +1214,8 @@ static BNDS* M_BNDP_CreateBndS (HEAP *Heap, BNDP **theBndP, INT n)
 }
 
 #ifdef __THREEDIM__
-#define CYLINDER
+/*#define CYLINDER */
+#define BENCHMARK
 #endif
 
 static BNDP* M_BNDP_CreateBndP (HEAP *Heap, BNDP *theBndP0,
@@ -1244,6 +1245,22 @@ static BNDP* M_BNDP_CreateBndP (HEAP *Heap, BNDP *theBndP0,
     }
   }
         #endif
+    #ifdef BENCHMARK
+  {
+    DOUBLE r0 =  (p0->pos[0]-10)*(p0->pos[0]-10)+ p0->pos[1]* p0->pos[1];
+    DOUBLE r1 =  (p1->pos[0]-10)*(p1->pos[0]-10)+ p1->pos[1]* p1->pos[1];
+
+    if ((r1>0.01)&&(ABS(r1-r0) < 0.01))
+    {
+      DOUBLE r = (p->pos[0]-10)*(p->pos[0]-10)+ p->pos[1]* p->pos[1];
+      DOUBLE s = sqrt(r1/r);
+
+      p->pos[0] =  10 + s*(p->pos[0]-10);
+      p->pos[1] *= s;
+    }
+  }
+        #endif
+
   return((BNDP *)p);
 }
 
@@ -1344,6 +1361,36 @@ static INT M_BNDS_Global (BNDS *theBndS, DOUBLE *local, DOUBLE *global)
         DOUBLE s = sqrt(0.25*(r[0]+r[1]+r[2]+r[3])/q);
 
         global[0] *=  s;
+        global[1] *=  s;
+      }
+    }
+  }
+    #endif
+    #ifdef BENCHMARK
+  {
+    DOUBLE r[4];
+    INT flag = 1;
+
+    if (p->n != 4) return(0);
+    for (i=0; i<p->n; i++) {
+      r[i] = (p->p[i].pos[0]-10)*(p->p[i].pos[0]-10)
+             + p->p[i].pos[1]* p->p[i].pos[1];
+
+      if (i == 0) {
+        if (r[0] < 0.99) flag = 0;
+        if (r[0] > 1.01) flag = 0;
+      }
+      if (i > 0)
+        if (ABS(r[i] -r[0]) > 0.01) flag = 0;
+    }
+    if (flag)
+    {
+      DOUBLE q =  (global[0]-10)*(global[0]-10)+ global[1]*global[1];
+
+      if (q > 0.000001) {
+        DOUBLE s = sqrt(0.25*(r[0]+r[1]+r[2]+r[3])/q);
+
+        global[0] =  10 + s*(global[0]-10);
         global[1] *=  s;
       }
     }
