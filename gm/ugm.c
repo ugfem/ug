@@ -2284,10 +2284,6 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
     return(NULL);
   }
 
-        #ifdef ModelP
-  if (me == 0) heapSize += 10000000;
-        #endif
-
 
   /* allocate multigrid envitem */
   theMG = MakeMGItem(MultigridName);
