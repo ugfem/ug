@@ -1081,9 +1081,6 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
 			}
 		UG_GlobalToLocal(n,(const DOUBLE **)x,global,local);		
 		LOCAL_TO_GLOBAL(n,x,local,diff);
-
-		printf("diff %f %f\n",global[0]-diff[0],global[1]-diff[1]);
-
 		SETMOVED(theVertex,1);
 	}
 	VFATHER(theVertex) = theElement;
