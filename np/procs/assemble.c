@@ -319,11 +319,11 @@ static INT Assemble (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
   DOUBLE *mptr[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
   DOUBLE *sptr[MAX_NODAL_VALUES];
   DOUBLE *rptr[MAX_NODAL_VALUES];
-  INT i,j,l,m;
+  INT i,l,m;
 
   np = (NP_LOCAL_ASSEMBLE *) theNP;
   theMG = theNP->base.mg;
-  for (l=0; l<level; l++) {
+  for (l=0; l<=level; l++) {
     UserWriteF(" [%d:",l);
     theGrid = GRID_ON_LEVEL(theMG,l);
     if (l_dset(theGrid,b,EVERY_CLASS,0.0)!=NUM_OK) {
@@ -353,8 +353,8 @@ static INT Assemble (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
       for (i=0; i<m; i++) *sptr[i] = sol[i];
       if (OBJT(theElement) == BEOBJ)
         SetElementDirichletFlags(theElement,x,vecskip);
-      UserWrite("a]");
     }
+    UserWrite("a]");
   }
   if (theNP->AssembleSolution != NULL)
     if ((*theNP->AssembleSolution)(theNP,level,x,result)) {

@@ -176,9 +176,6 @@ static INT VectorPrintingFormat = 0x3;
 static INT MatrixPrintingFormat = 0xF;
 static INT PrintMatrixLine          = 0x3;
 
-/* user data block id */
-static BLOCK_ID nsrMGUDid;
-
 /* environment dir and var ids */
 static INT theNewFormatDirID;                   /* env type for NewFormat dir           */
 static INT theVecVarID;                                 /* env type for VEC_FORMAT vars         */
@@ -316,7 +313,7 @@ VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
   VECDATA_DESC *vd;
   VEC_FORMAT *vf;
   SUBVEC *subv;
-  INT i,type;
+  INT i;
   char buffer[NAMESIZE];
 
   if (template != NULL)
@@ -396,7 +393,7 @@ MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
   MATDATA_DESC *md;
   MAT_FORMAT *mf;
   SUBMAT *subm;
-  INT i,type;
+  INT i;
   char buffer[NAMESIZE];
 
   if (template != NULL)
@@ -534,7 +531,6 @@ INT CreateFormatCmd (INT argc, char **argv)
   FORMAT *newFormat;
   VectorDescriptor vd[MAXVECTORS];
   MatrixDescriptor md[MAXMATRICES];
-  ENVITEM *item;
   ENVDIR *dir;
   VEC_FORMAT *vf;
   MAT_FORMAT *mf;
@@ -769,7 +765,7 @@ INT CreateFormatCmd (INT argc, char **argv)
                             "double matrix type specification");
           return (1);
         }
-        RComps[mf,type] = nr;
+        RComps[type] = nr;
         CComps[type] = nc;
         token = strtok(NULL,BLANKS);
       }

@@ -475,7 +475,6 @@ MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, char *name,
 NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, char *name, char *class,
                           INT argc, char **argv)
 {
-  INT i;
   char value[VALUELEN];
 
   if (ReadArgvChar(name,value,argc,argv))

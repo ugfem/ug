@@ -48,8 +48,6 @@
 /*																			*/
 /****************************************************************************/
 
-#define DEFAULT_NAMES "uvwzpqrst"   /* of size MAX_VEC_COMP                 */
-
 /* DisplayModes for PrintConvergenceRate */
 #define PCR_NO_DISPLAY                  0
 #define PCR_RED_DISPLAY                 1

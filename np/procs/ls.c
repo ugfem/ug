@@ -265,7 +265,7 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
     if ((*np->Solver)(np,level,np->x,np->b,np->A,
                       np->reduction,np->abslimit,&lresult)) {
       UserWriteF("NPLinearSolverExecute: Solver failed, error code %d\n",
-                 result);
+                 lresult.error_code);
       return (1);
     }
   }

@@ -81,9 +81,6 @@
 /* general purpose text buffer */
 static char buffer[256];
 
-static char NoVecNames[MAX_VEC_COMP];
-static char NoMatNames[2*MAX_MAT_COMP];
-
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 

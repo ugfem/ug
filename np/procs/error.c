@@ -113,8 +113,6 @@ typedef struct {
 
 INT NPErrorInit (NP_ERROR *np, INT argc , char **argv)
 {
-  INT i;
-
   np->x = ReadArgvVecDesc(np->base.mg,"x",argc,argv);
   np->o = ReadArgvVecDesc(np->base.mg,"o",argc,argv);
 
@@ -141,7 +139,7 @@ INT NPErrorDisplay (NP_ERROR *np)
 INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_ERROR *np;
-  DOUBLE time,step;
+  DOUBLE Time,step;
   INT result,level;
 
   np = (NP_ERROR *) theNP;
@@ -164,7 +162,7 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadArgvOption("a",argc,argv)) {
+  if (ReadArgvOption("E",argc,argv)) {
     if (np->Error == NULL) {
       PrintErrorMessage('E',"NPErrorExecute","no PreProcess");
       return (1);
@@ -176,7 +174,7 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadArgvOption("t",argc,argv)) {
+  if (ReadArgvOption("T",argc,argv)) {
     if (np->TimeError == NULL) {
       PrintErrorMessage('E',"NPErrorExecute","no PreProcess");
       return (1);
@@ -185,7 +183,7 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPErrorExecute","no vector o");
       return (1);
     }
-    if (ReadArgvDOUBLE("t",&time,argc,argv)) {
+    if (ReadArgvDOUBLE("t",&Time,argc,argv)) {
       PrintErrorMessage('E',"NPErrorExecute","no time");
       return (1);
     }
@@ -193,7 +191,7 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPErrorExecute","no time step");
       return (1);
     }
-    if ((*np->TimeError)(np,level,time,&step,np->x,np->o,&result)) {
+    if ((*np->TimeError)(np,level,Time,&step,np->x,np->o,&result)) {
       UserWriteF("NPErrorExecute: PreProcess failed, error code %d\n",
                  result);
       return (1);

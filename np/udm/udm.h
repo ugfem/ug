@@ -50,6 +50,8 @@
 /* for offset component in VECDATA_DESC	*/
 #define NMATOFFSETS                             (NMATTYPES+1)
 
+#define DEFAULT_NAMES "uvwzpqrst"   /* of size MAX_VEC_COMP                 */
+
 /* VECDATA_DESC */
 #define VD_ISDEF_IN_TYPE(vd,tp)             (VD_NCMPS_IN_TYPE(vd,tp)>0)
 #define VD_NCMPPTR(vd)                              ((vd)->NCmpInType)

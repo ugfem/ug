@@ -218,7 +218,7 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
     MakeEnvItem("Vectors",VectorDirID,sizeof(ENVDIR));
     if (ChangeEnvDir("Vectors") == NULL) return (NULL);
   }
-  if (name == NULL)
+  if (name == "")
     if (GetNewVectorName(theMG,name)) return (NULL);
   ConstructVecOffsets(NCmpInType,offset);
   ncmp = offset[NVECTYPES];
@@ -268,9 +268,6 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, VECDATA_DESC *theVD,
   if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
   if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
   if (ChangeEnvDir("Vectors") == NULL) return (NULL);
-
-  if (name == NULL)
-    if (GetNewVectorName(theMG,name)) return (NULL);
   ConstructVecOffsets(NCmpInType,offset);
   ncmp = offset[NVECTYPES];
   offptr = VD_OFFSETPTR(theVD);
@@ -427,7 +424,7 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, char *name, char *compNames,
     MakeEnvItem("Matrices",MatrixDirID,sizeof(ENVDIR));
     if (ChangeEnvDir("Matrices") == NULL) return (NULL);
   }
-  if (name == NULL)
+  if (name == "")
     if (GetNewMatrixName(theMG,name)) return (NULL);
   ConstructMatOffsets(RowsInType,ColsInType,offset);
   ncmp = offset[NMATTYPES];
@@ -469,7 +466,7 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, MATDATA_DESC *theMD,
                                 SHORT *ColsInType, SHORT *Comps)
 {
   MATDATA_DESC *md;
-  SHORT offset[NVECOFFSETS],*Comp;
+  SHORT offset[NVECOFFSETS];
   SHORT *offptr;
   INT j,tp,ncmp,size;
 
@@ -479,9 +476,6 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, MATDATA_DESC *theMD,
   if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
   if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
   if (ChangeEnvDir("Matrices") == NULL) return (NULL);
-
-  if (name == NULL)
-    if (GetNewMatrixName(theMG,name)) return (NULL);
   ConstructMatOffsets(RowsInType,ColsInType,offset);
   ncmp = offset[NMATTYPES];
   offptr = MD_OFFSETPTR(theMD);
@@ -632,7 +626,6 @@ static INT AllocVecDesc (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
 INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
                    VECDATA_DESC *template_desc, VECDATA_DESC **new_desc)
 {
-  INT i,tp;
   VECDATA_DESC *vd;
 
   if (*new_desc == NULL) {
@@ -644,7 +637,7 @@ INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
         return(0);
       }
     }
-    *new_desc = CreateVecDesc(theMG,NULL,template_desc->compNames,
+    *new_desc = CreateVecDesc(theMG,"",template_desc->compNames,
                               template_desc->NCmpInType);
     if (*new_desc == NULL) return(1);
   }
@@ -782,7 +775,7 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
         return(0);
       }
     }
-    *new_desc = CreateMatDesc(theMG,NULL,NULL,RowsInType,ColsInType);
+    *new_desc = CreateMatDesc(theMG,"",NULL,RowsInType,ColsInType);
     if (*new_desc == NULL) return(1);
   }
 
@@ -817,7 +810,6 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
 INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
                    MATDATA_DESC *template_desc, MATDATA_DESC **new_desc)
 {
-  INT i,tp;
   MATDATA_DESC *md;
 
   if (*new_desc == NULL) {
@@ -830,7 +822,7 @@ INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
         return(0);
       }
     }
-    *new_desc = CreateMatDesc(theMG,NULL,template_desc->compNames,
+    *new_desc = CreateMatDesc(theMG,"",template_desc->compNames,
                               template_desc->RowsInType,
                               template_desc->ColsInType);
     if (*new_desc == NULL) return(1);
@@ -900,10 +892,20 @@ INT FreeMD (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *md)
 
 INT InitUserDataManager ()
 {
+  char *names;
+  INT i;
+
   MatrixDirID = GetNewEnvDirID();
   VectorDirID = GetNewEnvDirID();
   MatrixVarID = GetNewEnvVarID();
   VectorVarID = GetNewEnvVarID();
+
+  names = DEFAULT_NAMES;
+
+  for (i=0; i<MAX(MAX_VEC_COMP,strlen(DEFAULT_NAMES)); i++)
+    NoVecNames[i] = names[i];
+  for (i=0; i<2*MAX_MAT_COMP; i++)
+    NoMatNames[i] = ' ';
 
   return (0);
 }
