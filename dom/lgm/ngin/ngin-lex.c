@@ -782,7 +782,7 @@ do_action:      /* This label is used only to access EOF actions. */
     case 13 :
       YY_RULE_SETUP
 #line 59 "ngin-lex.l"
-      {yyerror(NULL);}
+      {ngerror(NULL);}
       YY_BREAK
     case 14 :
       YY_RULE_SETUP
@@ -1759,7 +1759,7 @@ void ngfree (void * ptr )
 
 
 
-int ngerror (int *line, char *text)
+int NP_Error (int *line, char *text)
 {
   *line=noline;
   strcpy(text,ngtext);

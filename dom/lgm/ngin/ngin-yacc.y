@@ -243,12 +243,12 @@ Id:
 %%
 
 
-yywrap (char *s)
+ngwrap (char *s)
 {
     return (1);
 }
 
-yyerror (char *s)
+ngerror (char *s)
 {
 	int line;
 	char text[128];

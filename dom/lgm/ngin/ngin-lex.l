@@ -56,11 +56,11 @@ KEY_TEND        	;
 {KEY_ELEM}			{return (ELEM);}
 {KEY_FACE}			{return (FACE);}
 {KEY_TEND}			{return (TEND);}
-.                   {yyerror(NULL);}
+.                   {ngerror(NULL);}
 
 %%
 
-int ngerror (int *line, char *text)
+int NP_Error (int *line, char *text)
 {
 	*line=noline;
 	strcpy(text,yytext);
