@@ -1178,7 +1178,7 @@ NODE *GetCenterNode (ELEMENT *theElement)
 /*			  NULL	: could not allocate									*/
 /*																			*/
 /****************************************************************************/
-
+/* #define MOVE_MIDNODE */
 NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex)
 {
   DOUBLE *global,*local;
@@ -4567,7 +4567,7 @@ INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda)
   LOCAL_TO_GLOBAL(n,x,lambda,newPos);
   V_DIM_COPY(CVECT(theVertex),oldPos);
   V_DIM_COPY(newPos,CVECT(theVertex));
-  theElement = FindFather(theVertex);
+  /*    theElement = FindFather(theVertex); */
   if (theElement == NULL) {
     PrintErrorMessage('W',"MoveCenterNode","cannot find father element");
     V_DIM_COPY(oldPos,CVECT(theVertex));
@@ -4749,7 +4749,10 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos, INT update)
   {
     V_DIM_COPY(CVECT(theVertex),oldPos);
     V_DIM_COPY(newPos,CVECT(theVertex));
-    theElement = FindFather(theVertex);
+    if (NTYPE(theNode) == CENTER_NODE)
+      theElement = VFATHER(theVertex);
+    else
+      theElement = FindFather(theVertex);
     if (theElement == NULL)
     {
       PrintErrorMessageF('W',"MoveNode",
