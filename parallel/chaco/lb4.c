@@ -607,8 +607,8 @@ static int ScatterClusterNumber (DDD_OBJ theCoupling, void *data)
 	if (DDD_InfoPriority(PARHDRE(theElement))==PrioMaster && cptr!=NULL)
 	{
 		if (cptr->root_element!=theElement) return(0);
-		while (cptr->edges[i]!=0 && i<SIDES_OF_ELEM(theElement)) i++;
-		if (i>=SIDES_OF_ELEM(theElement)) 
+		while (cptr->edges[i]!=0 && i<=SIDES_OF_ELEM(theElement)) i++;
+		if (i>SIDES_OF_ELEM(theElement)) 
 		{
 			sprintf(buffer,"ScatterClusterNumber: #neighbors=%d, i=%d", TAG(theElement),i);  
 			UserWrite(buffer);
