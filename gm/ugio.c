@@ -1781,11 +1781,12 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   }
 
   /* identify objects */
-  for (i=0; i<theRule->nsons; i++)
-  {
-    if (theSonList[i] != NULL)
-      Evaluate_pinfo(upGrid,theSonList[i],ref->pinfo+i);
-  }
+  if (MGIO_PARFILE)
+    for (i=0; i<theRule->nsons; i++)
+    {
+      if (theSonList[i] != NULL)
+        Evaluate_pinfo(upGrid,theSonList[i],ref->pinfo+i);
+    }
 
   /* set neighbor relation between sons */
   for (i=0; i<theRule->nsons; i++)
