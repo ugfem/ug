@@ -122,8 +122,7 @@ INT              DisposeAuxEdges                (GRID *theGrid);
 
 #ifdef __THREEDIM__
 INT          DisposeEdgesFromElement(GRID *theGrid, ELEMENT *theElement);
-INT          CheckParityOfElements      (MULTIGRID* theMG);
-NODE            *CreateSideNode                 (GRID *theGrid,ELEMENT *theElement,NODE *Node0, NODE *Node1,NODE *after);
+NODE            *CreateSideNode                 (GRID *theGrid, ELEMENT *theElement, INT side);
 #endif
 
 #endif
