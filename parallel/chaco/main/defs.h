@@ -21,9 +21,15 @@
 #define  QUAD_3   0
 #define  QUAD_4   3
 
+#ifndef max
 #define max(A, B)       ((A) > (B) ? (A) : (B))
+#endif
+#ifndef min
 #define min(A, B)       ((A) < (B) ? (A) : (B))
+#endif
+#ifndef sign
 #define sign(A)         ((A) <  0  ? -1  :  1)
+#endif
 #define absval(A)       ((A) <  0  ? -(A) : (A))
 #define TRUE            1
 #define FALSE           0
