@@ -94,9 +94,6 @@ typedef struct
   NP_ORDER order;
 
   INT comp;
-  char dep[32];
-  char mode[32];
-  char cut[32];
 
 } NP_ORDER_SO;
 
@@ -397,12 +394,7 @@ static INT OrderSOInit (NP_BASE *theNP, INT argc , char **argv)
   NP_ORDER_SO *np;
 
   np = (NP_ORDER_SO *) theNP;
-
-  if (ReadArgvINT("comp",&(np->comp),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
-  if (ReadArgvChar ("dep",np->dep,argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
-  if (ReadArgvChar ("mode",np->mode,argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
-  if (ReadArgvChar ("cut",np->cut,argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
-
+  if (ReadArgvINT ("comp",&(np->comp),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
 
   return (ORDER_Init(theNP,argc,argv));
 }
@@ -412,11 +404,7 @@ INT OrderSODisplay (NP_BASE *theNP)
   NP_ORDER_SO *np;
 
   np = (NP_ORDER_SO *) theNP;
-
   UserWriteF(DISPLAY_NP_FORMAT_SI,"comp",(int)np->comp);
-  UserWriteF(DISPLAY_NP_FORMAT_SS,"dep",np->dep);
-  UserWriteF(DISPLAY_NP_FORMAT_SS,"mode",np->mode);
-  UserWriteF(DISPLAY_NP_FORMAT_SS,"cut",np->cut);
 
   return (ORDER_Display(theNP));
 }
@@ -434,7 +422,7 @@ static INT MatrixDep_Adjoint (GRID *theGrid, MATDATA_DESC *A, INT comp)
     for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
     {
       offdiag = MVALUE(theM,comp) - MVALUE(MADJ(theM),comp);
-      if (diag*offdiag >= 0.0) SETMDOWN(theM,1);
+      if (diag*offdiag > 0.0) SETMDOWN(theM,1);
       else SETMDOWN(theM,0);
     }
   }
@@ -442,210 +430,14 @@ static INT MatrixDep_Adjoint (GRID *theGrid, MATDATA_DESC *A, INT comp)
   return (0);
 }
 
-/* static variables for mode DFCFCLL */
-static VECTOR **DFCFCLL_vlist;
-static INT DFCFCLL_MarkKey,DFCFCLL_f_nextout,DFCFCLL_f_nextin,DFCFCLL_l_nextout,DFCFCLL_l_nextin,DFCFCLL_f_inserted,DFCFCLL_l_inserted,DFCFCLL_n;
-
-static INT DFCFCLL_PutFirst (GRID *theGrid, VECTOR *theV)
-{
-  MATRIX *theM;
-
-  DFCFCLL_vlist[DFCFCLL_f_nextin++] = theV;
-  SETVCUSED(theV,1);
-  GRID_UNLINK_VECTOR(theGrid,theV);
-  for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-    if (MDOWN(theM) && VCUSED(MDEST(theM))==0)
-    {
-      assert(VUP(MDEST(theM))>0);
-      SETVUP(MDEST(theM),(VUP(MDEST(theM))-1));
-    }
-  DFCFCLL_f_inserted++;
-
-  return (0);
-}
-
-static INT DFCFCLL_PutLast (GRID *theGrid, VECTOR *theV)
-{
-  MATRIX *theM;
-
-  DFCFCLL_vlist[DFCFCLL_l_nextin--] = theV;
-  SETVCUSED(theV,1);
-  GRID_UNLINK_VECTOR(theGrid,theV);
-  for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-    if (MUP(theM) && VCUSED(MDEST(theM))==0)
-    {
-      assert(VDOWN(MDEST(theM))>0);
-      SETVDOWN(MDEST(theM),(VDOWN(MDEST(theM))-1));
-    }
-  DFCFCLL_l_inserted++;
-
-  return (0);
-}
-
-static INT DFCFCLL_ModePre (GRID *theGrid)
-{
-  HEAP *theHeap;
-  VECTOR *theV;
-  INT n;
-
-  /* count vectors and reset VCUSED */
-  for (theV=FIRSTVECTOR(theGrid),n=0; theV!=NULL; theV=SUCCVC(theV),n++)
-    SETVCUSED(theV,0);
-  DFCFCLL_n = n;
-
-  /* allocate list for vectors */
-  theHeap = MGHEAP(MYMG(theGrid));
-  MarkTmpMem(theHeap,&DFCFCLL_MarkKey);
-  DFCFCLL_vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n,DFCFCLL_MarkKey);
-
-  /* initialize vlist with first and last */
-  DFCFCLL_f_nextout = DFCFCLL_f_nextin = 0;
-  DFCFCLL_l_nextout = DFCFCLL_l_nextin = n-1;
-  DFCFCLL_f_inserted = DFCFCLL_l_inserted = 0;
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-  {
-    if (VUP(theV)==0)
-    {
-      if (DFCFCLL_PutFirst(theGrid,theV))
-        return (1);
-      continue;
-    }
-    if (VDOWN(theV)==0)
-    {
-      if (DFCFCLL_PutLast(theGrid,theV))
-        return (1);
-      continue;
-    }
-  }
-
-  return (0);
-}
-
-static INT DFCFCLL_Mode (GRID *theGrid, VECTOR ***c_list, INT *f_inserted, INT *l_inserted, INT *v_remaining)
-{
-  INT i;
-  MATRIX *theM;
-  VECTOR *theV;
-
-  /* fill in first */
-  for (i=DFCFCLL_f_nextout; i<DFCFCLL_f_nextin; i++)
-    for (theM=MNEXT(VSTART(DFCFCLL_vlist[i])); theM!=NULL; theM=MNEXT(theM))
-    {
-      theV = MDEST(theM);
-      if (VCUSED(theV)) continue;
-      if (VUP(theV)>0) continue;
-      if (DFCFCLL_PutFirst(theGrid,theV))
-        return (1);
-    }
-  *f_inserted = DFCFCLL_f_inserted; DFCFCLL_f_inserted = 0;
-
-  /* fill in last */
-  for (i=DFCFCLL_l_nextout; i>DFCFCLL_f_nextin; i--)
-    for (theM=MNEXT(VSTART(DFCFCLL_vlist[i])); theM!=NULL; theM=MNEXT(theM))
-    {
-      theV = MDEST(theM);
-      if (VCUSED(theV)) continue;
-      if (VDOWN(theV)>0) continue;
-      if (DFCFCLL_PutLast(theGrid,theV))
-        return (1);
-    }
-  *l_inserted = DFCFCLL_l_inserted; DFCFCLL_l_inserted = 0;
-
-  /* remaining vectors to order */
-  *v_remaining = DFCFCLL_l_nextin - DFCFCLL_f_nextin + 1;
-
-  return (0);
-}
-
-static INT DFCFCLL_ModePost (GRID *theGrid)
-{
-  HEAP *theHeap;
-  INT i;
-
-  for (i=0; i<DFCFCLL_n; i++)
-    GRID_LINK_VECTOR(theGrid,DFCFCLL_vlist[i],PRIO(DFCFCLL_vlist[i]));
-
-  theHeap = MGHEAP(MYMG(theGrid));
-  ReleaseTmpMem(theHeap,DFCFCLL_MarkKey);
-
-  return (0);
-}
-
-static INT Cut_CenterToBnd (GRID *theGrid, MATDATA_DESC *A, INT comp, VECTOR **c_list, INT *c_inserted)
-{
-  VECTOR *theV,*theStart;
-  MATRIX *theM;
-  DOUBLE min,max,asp;
-  INT i;
-  DOUBLE_VECTOR pos;
-
-  /* try to find center for start, i.e. a vector in the inner with minimum antisymmetric part */
-  theStart = NULL; min = 1e30;
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-  {
-    assert (VCUSED(theV));
-    asp = 0.0;
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-    {
-      asp += ABS(MVALUE(theM,comp) - MVALUE(MADJ(theM),comp));
-      if (VCUSED(MDEST(theM)))
-        break;
-    }
-    if (theM!=NULL) continue;
-
-    if (asp < min)
-    {
-      min = asp;
-      theStart = theV;
-    }
-  }
-
-  /* if there is no center take the leftmost vector */
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-  {
-    if (VectorPosition(theV,pos)) return (1);
-    if (pos[0]<min)
-    {
-      min = pos[0];
-      theStart = theV;
-    }
-  }
-  assert(theStart);
-
-  /* run in x-direction and fill in cut-vectors */
-  for (i=0; theStart!=NULL; theStart=theV)
-  {
-    c_list[i++] = theStart;
-    if (VectorPosition(theStart,pos)) return (1);
-    theV = NULL; max = pos[0];
-    for (theM=MNEXT(VSTART(theStart)); theM!=NULL; theM=MNEXT(theM))
-    {
-      if (VCUSED(MDEST(theM))) continue;
-      if (VectorPosition(MDEST(theM),pos)) return (1);
-      if (pos[0]>max)
-      {
-        max = pos[0];
-        theV = MDEST(theM);
-      }
-    }
-  }
-  *c_inserted = i;
-
-  return (0);
-}
-
 static INT OrderSO (NP_ORDER *theNP, INT level, MATDATA_DESC *A, INT *result)
 {
+  HEAP *theHeap;
   GRID *theGrid;
   NP_ORDER_SO *np;
-  VECTOR *theV,**vlist,**c_list;
+  VECTOR *theV,**vlist;
   MATRIX *theM;
-  INT i,comp,n,MarkKey,f_inserted,l_inserted,v_remaining,c_inserted;
-  MatDepProcPtr MatDepProc;
-  CutProcPtr CutProc;
-  ModePreProcPtr ModePreProc;
-  ModeProcPtr ModeProc;
-  ModePostProcPtr ModePostProc;
+  INT i,comp,n,MarkKey,nextin;
 
   np = (NP_ORDER_SO *) theNP;
   theGrid = NP_GRID(theNP,level);
@@ -653,52 +445,65 @@ static INT OrderSO (NP_ORDER *theNP, INT level, MATDATA_DESC *A, INT *result)
   if (A==NULL) return (1);
   comp = MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,np->comp);
 
-  /* configure */
-  if (strcmp(np->dep,"adj")==0) MatDepProc  = MatrixDep_Adjoint;
-  else return (1);
-  if (strcmp(np->mode,"dfcfcll")==0)
-  {
-    ModePreProc     = DFCFCLL_ModePre;
-    ModeProc        = DFCFCLL_Mode;
-    ModePostProc    = DFCFCLL_ModePost;
-  }
-  else return (1);
-  if (strcmp(np->cut,"ctb")==0) CutProc     = Cut_CenterToBnd;
-  else return (1);
-
   /* set matrix dependencies */
-  if ((*MatDepProc)(theGrid,A,comp)) return (1);
+  if (MatDepProc_Adjoint(theGrid,A,comp)) return (1);
 
   /* count matrix dependencies */
   for (theV=FIRSTVECTOR(theGrid),n=0; theV!=NULL; theV=SUCCVC(theV),n++)
   {
+    SETVCUSED(theV,0);
     SETVDOWN(theV,0);
     SETVUP(theV,0);
     for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
       if (MDOWN(theM))
       {
-        assert(0);
-        SETVDOWN(theV,(VDOWN(theV)+1));                       /* number of vectors depending on theV */
-        SETVUP(MDEST(theM),(VUP(MDEST(theM))+1));             /* number of vectors depending on theV */
+        SETVDOWN(theV,(VDOWN(theV)+1));                         /* number of vectors depending on theV */
       }
       else if (MDOWN(MADJ(theM)))
-        SETVUP(theV,(VUP(theV)+1));                 /* number of vectors theV depends on   */
+      {
+        SETVUP(theV,(VUP(theV)+1));                                     /* number of vectors theV depends on   */
+      }
+  }
+
+  /* allocate list for vectors */
+  theHeap = MGHEAP(MYMG(theGrid));
+  MarkTmpMem(theHeap,&MarkKey);
+  vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
+  assert(vlist!=NULL);
+
+  /* initialize vlist with first and last */
+  nextin = 0;
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    if (VUP(theV)==0)
+    {
+      vlist[nextin++] = theV;
+      SETVCUSED(theV,1);
+    }
+  if (nextin==0)
+  {
+    vlist[nextin++] = FIRSTVECTOR(theGrid);
+    SETVCUSED(FIRSTVECTOR(theGrid),1);
   }
 
   /* order */
-  if ((*ModePreProc)(theGrid)) return (1);
-  for (i=0;; i++)
+  for (i=0; i<nextin; i++)
   {
-    if ((*ModeProc)(theGrid,&c_list,&f_inserted,&l_inserted,&v_remaining)) return (1);
-    UserWriteF("%d: FIRST: %d\n",i,f_inserted);
-    UserWriteF("   LAST:  %d\n",f_inserted);
-    UserWriteF("   REM:   %d\n",v_remaining);
-
-    if (v_remaining==0) break;
-    if ((*CutProc)(theGrid,A,comp,c_list,&c_inserted)) return (1);
-    UserWriteF("   CUT:   %d\n",c_inserted);
+    theV = vlist[i];
+    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+    {
+      if (!VCUSED(MDEST(theM)) && MDOWN(theM))
+      {
+        vlist[nextin++] = MDEST(theM);
+        SETVCUSED(MDEST(theM),1);
+      }
+    }
   }
-  if ((*ModePostProc)(theGrid)) return (1);
+  assert(nextin==n);
+
+  /* postprocess */
+  for (i=0; i<n; i++)
+    GRID_LINK_VECTOR(theGrid,vlist[i],PRIO(vlist[i]));
+  ReleaseTmpMem(theHeap,MarkKey);
 
   return(0);
 }
@@ -741,7 +546,7 @@ INT InitOrder (void)
 {
   if (CreateClass(ORDER_CLASS_NAME ".lex",sizeof(NP_ORDER_LEX),OrderLex_Construct)) return (__LINE__);
   if (CreateClass(ORDER_CLASS_NAME ".bw",sizeof(NP_ORDER_BW),OrderBW_Construct)) return (__LINE__);
-  /*	if (CreateClass(ORDER_CLASS_NAME ".so",sizeof(NP_ORDER_SO),OrderSO_Construct))   return (__LINE__); */
+  if (CreateClass(ORDER_CLASS_NAME ".so",sizeof(NP_ORDER_SO),OrderSO_Construct)) return (__LINE__);
 
   return (0);
 }
