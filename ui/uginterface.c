@@ -102,7 +102,7 @@ static INT theCmdKeyVarID;                              /* env ID for the /Cmd K
 static OUTPUTDEVICE *DefaultDevice;     /* our default ouput device             */
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*D

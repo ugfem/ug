@@ -83,7 +83,7 @@ static char *options[MAXOPTIONS];               /* array of pointers to strings 
 static INT optionCount=0;                               /* number of options incl. cmd name */
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/

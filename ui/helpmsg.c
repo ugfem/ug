@@ -89,7 +89,7 @@ static FILE *HelpFile[MAXHELPFILES];    /* the help messages files			*/
 static int NHelpFiles;                                  /* no of open helpfiles                         */
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
