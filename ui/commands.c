@@ -8803,6 +8803,99 @@ static INT ClearCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   rand - assign a value to a symbolic vector
+
+   DESCRIPTION:
+   This function sets the random values of a grid function specified by a vec data descriptor.
+   The data descriptor is created if it doesn´t exist yet.
+
+   'rand <symbol name> [$a] [$s] [$f <value>] [$t <value>]'
+
+   .  $a         - from level 0 through current level (default: current level only)
+   .  $s         - set skip (Dirichlet) values to zero, default is no skip
+   .  $f~<value> - low bound of random range, default is 0
+   .  $t~<value> - upper bound of random range, default is 1
+
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, clear, set
+
+   SEE ALSO:
+   'cv', 'cm', 'copy'
+   D*/
+/****************************************************************************/
+
+static INT RandCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  GRID *g;
+  VECDATA_DESC *theVD;
+  INT i,fl,tl,skip;
+  float from_value,to_value;
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"rand","no current multigrid");
+    return(CMDERRORCODE);
+  }
+
+  /* check options */
+  fl = tl = CURRENTLEVEL(theMG);
+  skip = 0;
+  from_value = 0.0;
+  to_value = 1.0;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'a' :
+      fl = 0;
+      break;
+
+    case 's' :
+      skip = 1;
+      break;
+
+    case 'f' :
+      if (sscanf(argv[i],"f %f",&from_value)!=1)
+      {
+        PrintErrorMessage('E',"rand","could not read from value");
+        return(CMDERRORCODE);
+      }
+      break;
+
+    case 't' :
+      if (sscanf(argv[i],"t %f",&to_value)!=1)
+      {
+        PrintErrorMessage('E',"rand","could not read to value");
+        return(CMDERRORCODE);
+      }
+      break;
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintHelp("rand",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
+
+  theVD = ReadArgvVecDesc(theMG,"rand",argc,argv);
+
+  if (theVD == NULL)
+  {
+    PrintErrorMessage('E',"rand","could not read data descriptor");
+    return (PARAMERRORCODE);
+  }
+
+  for (i=fl; i<=tl; i++)
+  {
+    g = GRID_ON_LEVEL(theMG,i);
+    if (l_dsetrandom2(g,theVD,EVERY_CLASS,(DOUBLE)from_value,(DOUBLE)to_value,skip)) return (CMDERRORCODE);
+  }
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
    copy - copy from one vector symbol to another one
 
    DESCRIPTION:
@@ -11405,6 +11498,7 @@ INT InitCommands ()
 
   /* vectors and matrices */
   if (CreateCommand("clear",                      ClearCommand                                    )==NULL) return (__LINE__);
+  if (CreateCommand("rand",                       RandCommand                                             )==NULL) return (__LINE__);
   if (CreateCommand("copy",                       CopyCommand                                             )==NULL) return (__LINE__);
   if (CreateCommand("homotopy",       HomotopyCommand                 )==NULL) return(__LINE__);
   if (CreateCommand("interpolate",        InterpolateCommand                              )==NULL) return (__LINE__);
