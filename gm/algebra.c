@@ -512,10 +512,15 @@ INT CreateVector (GRID *theGrid, VECTOR *After, INT VectorType, VECTOR **VectorH
   SETVBUILDCON(pv,1);
   SETVNEW(pv,1);
   SETVCNEW(pv,1);
+
+    #ifdef __BLOCK_VECTOR_DESC__
   BVD_INIT( &VBVD( pv ) );
+    #endif
+
         #ifdef ModelP
   DDD_PrioritySet(PARHDR(pv),PrioVector);
         #endif
+
   pv->object = NULL;
   pv->index  = (long)theGrid->nVector;
   pv->skip   = 0;
@@ -975,7 +980,7 @@ INT DisposeBlockvector( GRID *theGrid, BLOCKVECTOR *bv )
    FreeBVList - Frees blockvector-list and all its sons
 
    SYNOPSIS:
-   void FreeBV( GRID *grid, BLOCKVECTOR *bv )
+   static void FreeBVList (GRID *grid, BLOCKVECTOR *bv);
 
    PARAMETERS:
    .  grid - the grid from which the blockvectors are to be removed
@@ -4254,6 +4259,10 @@ INT CreateBVStripe( GRID *grid, INT points, INT points_per_stripe )
   register INT i, j, nr_blocks;
   register VECTOR *v, *pred_v;
 
+        #ifndef __BLOCK_VECTOR_DESC__
+  return(1);
+        #endif
+
   /* number of blockvectors to be constructed */
   nr_blocks = ( points + points_per_stripe - 1) / points_per_stripe;
 
@@ -4291,12 +4300,16 @@ INT CreateBVStripe( GRID *grid, INT points, INT points_per_stripe )
        update the blockvector description for all vectors of this
        blockvector
      */
+
     for ( j = points_per_stripe; (j > 0) && (v != NULL); j-- )
     {
+            #ifdef __BLOCK_VECTOR_DESC__
       BVD_PUSH_ENTRY( &VBVD( v ), i, &one_level_bvdf );
+            #endif
       pred_v = v;
       v = SUCCVC( v );
     }
+
     BVLASTVECTOR( bv ) = pred_v;
     BVNUMBEROFVECTORS( bv ) = points_per_stripe - j;
   }
@@ -4362,6 +4375,10 @@ INT CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
   INT ret;
   register VECTOR *v, *end_v;
 
+    #ifndef __BLOCK_VECTOR_DESC__
+  return(1);
+    #endif
+
   /* create first block of the hierarchy */
   if ( CreateBlockvector( grid, &bv ) != GM_OK )
     return GM_OUT_OF_MEM;
@@ -4378,8 +4395,10 @@ INT CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
 
   /* set this global blockvector as the first stage of the hierarchy */
   end_v = SUCCVC(LASTVECTOR( grid ));
+    #ifdef __BLOCK_VECTOR_DESC__
   for ( v = FIRSTVECTOR( grid ); v != end_v; v = SUCCVC( v ) )
     BVD_PUSH_ENTRY( &VBVD( v ), 0, &DH_bvdf );
+    #endif
 
   if ( (ret = BlockHalfening( grid, bv, 0, 0, side, side, side, BV_VERTICAL, leaf_size )) != GM_OK )
   {
@@ -4443,6 +4462,10 @@ INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width
   register INT index, interface, nr_0, nr_1, nr_i;
   VECTOR *pred_first_vec, *succ_last_vec;
 
+    #ifndef __BLOCK_VECTOR_DESC__
+  return(1);
+    #endif
+
   /* create a double linked list of 3 blockvectors */
   v = BVFIRSTVECTOR( bv );
   end_v = BVENDVECTOR( bv );
@@ -4502,7 +4525,9 @@ INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width
       /* vector belongs to subdomain 0 */
       *v0 = v;
       v0 = &SUCCVC( v );
+                        #ifdef __BLOCK_VECTOR_DESC__
       BVD_PUSH_ENTRY( &VBVD( v ), 0, &DH_bvdf );
+            #endif
       nr_0++;
     }
     else if ( index > interface )
@@ -4510,7 +4535,9 @@ INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width
       /* vector belongs to subdomain 1 */
       *v1 = v;
       v1 = &SUCCVC( v );
+                        #ifdef __BLOCK_VECTOR_DESC__
       BVD_PUSH_ENTRY( &VBVD( v ), 1, &DH_bvdf );
+            #endif
       nr_1++;
     }
     else
@@ -4518,7 +4545,9 @@ INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width
       /* vector belongs to subdomain 2 (interface) */
       *vi = v;
       vi = &SUCCVC( v );
+                        #ifdef __BLOCK_VECTOR_DESC__
       BVD_PUSH_ENTRY( &VBVD( v ), 2, &DH_bvdf );
+            #endif
       nr_i++;
     }
 

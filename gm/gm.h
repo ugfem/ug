@@ -73,6 +73,9 @@
 /* if interpolation matrix is stored */
 #define __INTERPOLATION_MATRIX__
 
+/* if block vector descriptors are used
+ #define __BLOCK_VECTOR_DESC__ */
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -132,6 +135,7 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 /* constants for BLOCKVECTOR */
 #define BVDOWNTYPEVECTOR        0       /* symbolic value for BVDOWNTYPE */
 #define BVDOWNTYPEBV            1       /* symbolic value for BVDOWNTYPE */
+
 
 /* use of GSTATUS (for grids), use power of 2 */
 #define GRID_CHANGED                    1
@@ -270,11 +274,13 @@ struct vector {
   unsigned INT skip;                                    /* used bitwise to skip unknowns		*/
   struct matrix *start;                         /* implements matrix					*/
 
+    #ifdef __BLOCK_VECTOR_DESC__
   BV_DESC block_descr;                          /* membership to the blockvector levels	*/
+        #endif
 
-#ifdef __INTERPOLATION_MATRIX__
+    #ifdef __INTERPOLATION_MATRIX__
   struct matrix *istart;            /* implements interpolation matrix      */
-#endif
+    #endif
 
   /* user data */
   DOUBLE value[1];                                      /* array of doubles                                     */
@@ -1010,8 +1016,10 @@ extern CONTROL_ENTRY
 #define SETVUP(p,n)                             SetLoWrd(VINDEX(p),n)
 #define VDOWN(p)                                        HiWrd(VINDEX(p))
 #define SETVDOWN(p,n)                           SetHiWrd(VINDEX(p),n)
+#ifdef __BLOCK_VECTOR_DESC__
 #define VBVD(v)                                         ((v)->block_descr)
 #define VMATCH(v,bvd,bvdf)                      BVD_IS_SUB_BLOCK( &(v)->block_descr, bvd, bvdf )
+#endif
 
 /* user for nodes, edges and elements */
 #define CAST_NVECTOR(p)                         NVECTOR(p)
@@ -1909,7 +1917,6 @@ INT CreateBVDomainHalfening                     ( GRID *grid, INT side, INT leaf
 INT CreateBlockvector                           ( GRID *theGrid, BLOCKVECTOR **BVHandle );
 INT DisposeBlockvector                          ( GRID *theGrid, BLOCKVECTOR *bv );
 void FreeAllBV                                          ( GRID *grid );
-void FreeBVList                                         ( GRID *grid, BLOCKVECTOR *bv );
 
 /* algebraic connections */
 CONNECTION      *CreateExtraConnection  (GRID *theGrid, VECTOR *from, VECTOR *to);
