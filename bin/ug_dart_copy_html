@@ -1,0 +1,27 @@
+#!/bin/tcsh
+#
+# ug_dart_copy_html
+#
+# purpose: update the directories ".../public_html/.../Dashboard" and
+#          ".../public_html/.../Sites" that the web server may display
+#          the latest test results
+
+# set the "dash_root" and the "site_root" variable: that are the 
+# directories where the HTML files are created
+
+set TESTING_ROOT1 = $DART_HOME/Source/Server/UG/Testing/HTML/TestingResults/Sites/speedo;
+set TESTING_ROOT2 = $DART_HOME/Source/Server/UG/Testing/HTML/TestingResults/Dashboard;
+
+# set the "web" variable: that is the directory to be updated
+
+set WEB1 = $HOME/public_html/TestingResults/Sites/speedo;
+set WEB2 = $HOME/public_html/TestingResults/Dashboard;
+
+# update the directories
+
+cp -r -f  $TESTING_ROOT1/* $WEB1;
+cp -r -f  $TESTING_ROOT2/* $WEB2;
+
+# delete outdated Dahsboards
+
+ug_dart_manage_html.pl
