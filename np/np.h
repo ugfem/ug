@@ -54,7 +54,8 @@
 /****************************************************************************/
 
 /* if FF_PARALLEL_SIMULATION is defined, special functions from fe/ff are linked */
-/* #define FF_PARALLEL_SIMULATION */
+/*#define FF_PARALLEL_SIMULATION*/
+/*#define FF_ModelP*/		/* um temp. Verweise von np nach fe/ff fuer die Allgemeinheit auszublenden */
 
 /* return codes of the numerics routines									*/
 #define NUM_OK                                  0       /* everything ok						*/

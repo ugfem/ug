@@ -970,7 +970,7 @@ INT FFDecomp( DOUBLE wavenr,
       FFConstructTestvector_loc( bv_i, tv2_comp, wavenr+1.0, wavenr3D );
     }
 
-#if (defined ModelP) || (defined FF_PARALLEL_SIMULATION)
+#if (defined FF_ModelP) || (defined FF_PARALLEL_SIMULATION)
     if ( BVNUMBER(bv_i) == -100 )               /* lines */
     {
       /* construct FF filtered approximation of the leaf blocks of the schur complement */
