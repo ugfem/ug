@@ -159,6 +159,7 @@ typedef struct {
 
   BndCondProcPtr c;
   BndGeomProcPtr g;
+  INT *s2p;
 
 } GEOMETRY;
 

@@ -143,8 +143,7 @@ INT BVP_SetBVPDesc (BVP *theBVP, BVP_DESC *theBVPDesc)
   theBVPDesc->convex = FALSE;
   theBVPDesc->nSubDomains = G->sd;
   theBVPDesc->nDomainParts = 1;
-  for (i=0; i<=theBVPDesc->nSubDomains; i++)
-    theBVPDesc->s2p[i] = 0;
+  theBVPDesc->s2p = G->s2p;
   for (k=0; k<DIM; k++)
     theBVPDesc->midpoint[k] = 0.0;
   for (i=0; i<G->nP; i++)
@@ -280,22 +279,76 @@ INT BNDP_Dispose (HEAP *Heap, BNDP *theBndP)
 
 INT BNDP_SaveBndP (BNDP *theBndP)
 {
-  return(1);
+  BP *p = (BP *)theBndP;
+  INT j;
+  int iList[3];
+  double dList[DIM];
+
+  iList[0] = p->id;
+  iList[1] = p->segment;
+  iList[2] = p->property;
+  if (Bio_Write_mint(3,iList)) return (1);
+
+  for (j=0; j<DIM; j++)
+    dList[j] = p->x[j];
+  if (Bio_Write_mdouble(DIM,dList)) return (1);
+
+  return(0);
 }
 
 INT BNDP_SaveBndP_Ext (BNDP *theBndP)
 {
-  return(1);
+  BP *p = (BP *)theBndP;
+  INT j;
+  int iList[3];
+  double dList[DIM];
+
+  iList[0] = p->id;
+  iList[1] = p->segment;
+  iList[2] = p->property;
+  if (Bio_Write_mint(3,iList)) return (1);
+
+  for (j=0; j<DIM; j++)
+    dList[j] = p->x[j];
+  if (Bio_Write_mdouble(DIM,dList)) return (1);
+
+  return(0);
 }
 
 BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 {
-  return(NULL);
+  BP *p = (BP *) GetFreelistMemory(Heap,sizeof(BP));
+  INT j;
+  int iList[3];
+  double dList[DIM];
+
+  if (Bio_Read_mint(1,iList)) return (NULL);
+  p->id = iList[0];
+  p->segment = iList[0];
+  p->property = iList[0];
+  if (Bio_Read_mdouble(DIM,dList)) return (NULL);
+  for (j=0; j<DIM; j++)
+    p->x[j] = dList[j];
+
+  return((BNDP *)p);
 }
 
 BNDP *BNDP_LoadBndP_Ext (void)
 {
-  return(NULL);
+  BP *p = (BP *)malloc(sizeof(BP));
+  INT j;
+  int iList[3];
+  double dList[DIM];
+
+  if (Bio_Read_mint(1,iList)) return (NULL);
+  p->id = iList[0];
+  p->segment = iList[0];
+  p->property = iList[0];
+  if (Bio_Read_mdouble(DIM,dList)) return (NULL);
+  for (j=0; j<DIM; j++)
+    p->x[j] = dList[j];
+
+  return((BNDP *)p);
 }
 
 INT BNDS_Global (BNDS *theBndS, DOUBLE *local, DOUBLE *global)
@@ -404,6 +457,7 @@ static int ncfaces[9][6] = {
   {3,3,3,3,0,0},
   {4,3,3,3,3,0},
   {3,4,4,4,3,0},
+  {0,0,0,0,0,0},
   {4,4,4,4,4,4}
 };
 static int faces[9][6][4] = {
@@ -448,7 +502,7 @@ INT InitGeometry (HEAP *Heap, GEOMETRY *G)
 
           G->C[i].bs[j] = (BS *) GetFreelistMemory(Heap,sizeof(BS));
           ASSERT(G->C[i].bs[j] != NULL);
-          G->C[i].bs[j]->id = G->P[i].id;
+          G->C[i].bs[j]->id = G->F[G->C[i].F[j]].id;
           G->C[i].bs[j]->segment = G->C[i].S[j];
           G->C[i].bs[j]->property = G->S[G->C[i].S[j]].property;
           G->C[i].bs[j]->n = ncfaces[G->C[i].n][j];
