@@ -53,11 +53,9 @@
 /****************************************************************************/
 
 
-#define PROCSHIFT       8   /* This allows 256 Processors and 16*1024K objs */
-
-#define MakeUnique(n)  (((n)<<PROCSHIFT)+me)
-#define ProcFromId(n)  ((n)&((1<<PROCSHIFT)-1))
-#define CountFromId(n) (((n)-((n)&((1<<PROCSHIFT)-1)))>>PROCSHIFT)
+#define MakeUnique(n)  (((n)<<MAX_PROCBITS_IN_GID)+me)
+#define ProcFromId(n)  ((n)&((1<<MAX_PROCBITS_IN_GID)-1))
+#define CountFromId(n) (((n)-((n)&((1<<MAX_PROCBITS_IN_GID)-1)))>>MAX_PROCBITS_IN_GID)
 
 
 
@@ -350,6 +348,7 @@ void DDD_HdrConstructor (DDD_HDR hdr,DDD_TYPE typ,DDD_PRIO prio,DDD_ATTR attr)
     /* this is a fatal case. we cant register more objects here */
     DDD_PrintError('F', 2220, "no more objects in DDD_HdrConstructor");
     /* TODO one could try to expand the global tables here. */
+    HARD_EXIT;
   }
 
   /* insert into theObj array */
@@ -365,6 +364,15 @@ void DDD_HdrConstructor (DDD_HDR hdr,DDD_TYPE typ,DDD_PRIO prio,DDD_ATTR attr)
 
   /* create unique GID */
   OBJ_GID(hdr)   = MakeUnique(theIdCount++);
+
+  /* check overflow of global id numbering */
+  if (MakeUnique(theIdCount) <= MakeUnique(theIdCount-1))
+  {
+    /* TODO update docu */
+    DDD_PrintError('F', 2221, "global ID overflow DDD_HdrConstructor");
+    /* TODO one could try to renumber all objects here. */
+    HARD_EXIT;
+  }
 
 #       ifdef DebugCreation
   sprintf(cBuffer, "%4d: DDD_HdrConstructor(adr=%08x, "

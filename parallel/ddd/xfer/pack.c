@@ -249,7 +249,7 @@ static int GetDepData (char *data,
         desc->handler[HANDLER_XFERGATHER](obj,
                                           xa->addCnt, xa->addTyp, (void *)chunk);
 
-      if (xa->addTyp!=DDD_USER_DATA)
+      if (xa->addTyp<DDD_USER_DATA || xa->addTyp>DDD_USER_DATA_MAX)
       {
         /* insert pointers into symtab */
         descDep = &theTypeDefs[xa->addTyp];
@@ -294,7 +294,7 @@ static int GetDepData (char *data,
       for(i=0; i<xa->addCnt; i++)
       {
         /* insert pointers into symtab */
-        if (xa->addTyp!=DDD_USER_DATA)
+        if (xa->addTyp<DDD_USER_DATA || xa->addTyp>DDD_USER_DATA_MAX)
         {
           actSym += BuildSymTab(descDep,
                                 table1[i], &(theSymTab[actSym]));

@@ -379,7 +379,7 @@ static int ConsCheckDoubleObj (void)
 
 /****************************************************************************/
 /*                                                                          */
-/* Function:  ConsCheck                                                     */
+/* Function:  DDD_ConsCheck                                                 */
 /*                                                                          */
 /* Purpose:   check consistency of ddd structures                           */
 /*                                                                          */
@@ -419,7 +419,6 @@ int DDD_ConsCheck (void)
       DDD_PrintLine(cBuffer);
     }
   }
-
 
   return(total_errors);
 }

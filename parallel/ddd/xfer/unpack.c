@@ -352,7 +352,7 @@ static void PutDepData (char *data,
 
     if (addCnt>=0)
     {
-      if (addTyp!=DDD_USER_DATA)
+      if (addTyp<DDD_USER_DATA || addTyp>DDD_USER_DATA_MAX)
       {
         /* convert pointers using SymTab */
         descDep = &theTypeDefs[addTyp];
@@ -376,7 +376,7 @@ static void PutDepData (char *data,
       }
       else
       {
-        /* addType==DDD_USER_DATA ->
+        /* addType>=DDD_USER_DATA && addType <= DDD_USER_DATA_MAX ->
               scatter stream of bytes with len addCnt */
         curr = chunk + CEIL(addCnt);
       }
@@ -406,7 +406,7 @@ static void PutDepData (char *data,
         table[i] = ((INT)table[i])+adr;
 
         /* insert pointers into copy using SymTab */
-        if (addTyp!=DDD_USER_DATA)
+        if (addTyp<DDD_USER_DATA || addTyp>DDD_USER_DATA_MAX)
         {
           curr = table[i];
           if (descDep->nPointers>0)

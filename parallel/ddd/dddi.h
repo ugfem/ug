@@ -87,6 +87,7 @@
 
 #define MAX_TRIES 5000000    /* max. number of tries til timeout in IF-comm */
 
+#define MAX_PROCBITS_IN_GID 10  /* this allows 2^10 procs and 2^22 objects    */
 
 /* use maximum as default, if no Priomerge-matrix is available */
 #define PRIOMERGE_DEFAULT PRIOMERGE_MAXIMUM
@@ -97,6 +98,10 @@
 
 #define GID_INVALID -1       /* invalid global id */
 #define ERROR       -1       /* standard error indicator                    */
+
+
+/* maximum number of procs allowed (limited by GID construction) */
+#define MAX_PROCS   (1<<MAX_PROCBITS_IN_GID)
 
 
 /* types of virtual channels (for ppif interface) */
@@ -290,11 +295,15 @@ extern VChannelPtr *theTopology;
 
 #define YES     1
 #define ON      1
+#ifndef TRUE
 #define TRUE    1
+#endif
 
 #define NO      0
 #define OFF     0
+#ifndef FALSE
 #define FALSE   0
+#endif
 
 
 

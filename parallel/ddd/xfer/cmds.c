@@ -878,7 +878,7 @@ void DDD_XferAddData (int cnt, DDD_TYPE typ)
   xa->addTyp = typ;
   xa->sizes  = NULL;
 
-  if (typ!=DDD_USER_DATA)
+  if (typ<DDD_USER_DATA || typ>DDD_USER_DATA_MAX)
   {
     /* normal dependent object */
     descDepTyp =  &(theTypeDefs[typ]);
@@ -889,6 +889,7 @@ void DDD_XferAddData (int cnt, DDD_TYPE typ)
   else
   {
     /* stream of bytes, since V1.2 */
+    /* many streams, since V1.7.8 */
     xa->addLen       = cnt;
     xa->addNPointers = 0;
   }
@@ -915,7 +916,7 @@ void DDD_XferAddDataX (int cnt, DDD_TYPE typ, size_t *sizes)
   xa->addCnt = cnt;
   xa->addTyp = typ;
 
-  if (typ!=DDD_USER_DATA)
+  if (typ<DDD_USER_DATA || typ>DDD_USER_DATA_MAX)
   {
     /* copy sizes array */
     xa->sizes = (int *) AllocTmp(sizeof(int)*cnt);
@@ -934,6 +935,7 @@ void DDD_XferAddDataX (int cnt, DDD_TYPE typ, size_t *sizes)
   else
   {
     /* stream of bytes, since V1.2 */
+    /* many streams, since V1.7.8 */
     xa->addLen       = cnt;
     xa->addNPointers = 0;
   }

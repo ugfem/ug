@@ -44,7 +44,7 @@
 extern "C" {
 #endif
 
-#define DDD_VERSION    "1.7.7"
+#define DDD_VERSION    "1.7.8"
 
 
 /****************************************************************************/
@@ -182,7 +182,10 @@ enum IFConstants {
 /* DDD_TYPE DDD_USER_DATA: send stream of bytes with XferAddData */
 enum XferConstants {
   /* DDD_TYPE DDD_USER_DATA: send stream of bytes with XferAddData */
-  DDD_USER_DATA = 0x8000,
+  /* application may add small integers in order to get more
+     stream-of-byte channels, up to DDD_USER_DATA_MAX */
+  DDD_USER_DATA     = 0x4000,
+  DDD_USER_DATA_MAX = 0x4fff,
 
 
   /* additional parameter for MKCONS and XFERSCATTER handlers */
@@ -316,15 +319,81 @@ typedef int (*ComProcXPtr)(DDD_OBJ *, void *, DDD_PROC *, DDD_PRIO *);
 /****************************************************************************/
 
 
+#ifdef CPP_FRONTEND
+
+class DDD_Library
+{
+public:
+  DDD_Library (int *, char ***);
+  ~DDD_Library ();
+
+  void Status (void);
+  void SetOption (DDD_OPTION, int);
+
+  DDD_PROC InfoMe (void);
+  DDD_PROC InfoMaster (void);
+  DDD_PROC InfoProcs (void);
+
+  void LineOutRegister (void (*func)(char *s));
+
+  /* from TypeManager */
+  /* TODO, class DDD_Type?? */
+  DDD_TYPE TypeDeclare (char *name);
+  void TypeDefine (DDD_TYPE, ...);
+  void TypeDisplay (DDD_TYPE);
+  void HandlerRegister (DDD_TYPE, ...);
+  int InfoTypes (void);
+  int InfoHdrOffset (DDD_TYPE);
+
+  /* from PrioManager */
+  void PrioMergeDefault (DDD_TYPE, int);
+  void PrioMergeDefine (DDD_TYPE, DDD_PRIO, DDD_PRIO, DDD_PRIO);
+  DDD_PRIO PrioMerge (DDD_TYPE, DDD_PRIO, DDD_PRIO);
+  void PrioMergeDisplay (DDD_TYPE);
+
+
+  /* TODO some are missing here */
+
+  int ConsCheck (void);
+  void ListLocalObjects (void);
+  DDD_HDR SearchHdr (DDD_GID);
+};
+
+
+class DDD_Object
+{
+public:
+
+
+  /* object properties */
+  void PrioritySet (DDD_PRIO);
+  void AttrSet (DDD_ATTR);               /* this shouldn't be allowed */
+  int* InfoProcList (void);
+  DDD_PROC InfoProcPrio (DDD_PRIO);
+  int InfoIsLocal (void);
+  int InfoNCopies (void);
+};
+
+
+class DDD_Interface
+{};
+
+
+#endif
+
+
+
 /*
         General DDD Module
  */
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
 void     DDD_Init (int *argcp, char ***argvp);
 void     DDD_Exit (void);
 void     DDD_Status (void);
 void     DDD_SetOption (DDD_OPTION, int);
+#endif
 
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND)
 DDD_PROC DDD_InfoMe (void);
 DDD_PROC DDD_InfoMaster (void);
 DDD_PROC DDD_InfoProcs (void);
@@ -334,7 +403,9 @@ DDD_PROC DDD_InfoProcs (void);
 /*
         Redirect line-oriented output, new in V1.2
  */
+#if defined(C_FRONTEND)
 void     DDD_LineOutRegister (void (*func)(char *s));
+#endif
 
 
 /*
@@ -361,6 +432,11 @@ void     DDD_HandlerRegister (DDD_TYPE *, ...);
 int      DDD_InfoTypes (void);
 #endif
 
+void     DDD_PrioMergeDefault (DDD_TYPE, int);
+void     DDD_PrioMergeDefine (DDD_TYPE, DDD_PRIO, DDD_PRIO, DDD_PRIO);
+DDD_PRIO DDD_PrioMerge (DDD_TYPE, DDD_PRIO, DDD_PRIO);
+void     DDD_PrioMergeDisplay (DDD_TYPE);
+
 
 
 /*
@@ -368,10 +444,6 @@ int      DDD_InfoTypes (void);
  */
 void     DDD_PrioritySet (DDD_HDR, DDD_PRIO);
 void     DDD_AttrSet (DDD_HDR, DDD_ATTR); /* this shouldn't be allowed */
-void     DDD_PrioMergeDefault (DDD_TYPE, int);
-void     DDD_PrioMergeDefine (DDD_TYPE, DDD_PRIO, DDD_PRIO, DDD_PRIO);
-DDD_PRIO DDD_PrioMerge (DDD_TYPE, DDD_PRIO, DDD_PRIO);
-void     DDD_PrioMergeDisplay (DDD_TYPE);
 int  *   DDD_InfoProcList (DDD_HDR);
 DDD_PROC DDD_InfoProcPrio (DDD_HDR, DDD_PRIO);
 int      DDD_InfoIsLocal (DDD_HDR);

@@ -121,6 +121,12 @@ void DDD_Init (int *argcp, char ***argvp)
   /*
      printf("%4d: process_id=%d\n", me, getpid());
    */
+  /* check max. number of procs (limited by GID construction) */
+  if (procs>MAX_PROCS) {
+    DDD_PrintError('E', 1010,
+                   "too many processors, cannot construct global IDs in DDD_Init");
+    HARD_EXIT;
+  }
 
   /* compute size for general buffer */
   buffsize = (procs+1)*(sizeof(int)*BUFFER_SIZE_FACTOR);
@@ -133,7 +139,7 @@ void DDD_Init (int *argcp, char ***argvp)
   iBuffer = (int *)AllocFix(buffsize);
   if (iBuffer==NULL) {
     DDD_PrintError('E', 1000, "not enough memory in DDD_Init");
-    return;
+    HARD_EXIT;
   }
   /* overlay with other buffers */
   cBuffer = (char *)iBuffer;

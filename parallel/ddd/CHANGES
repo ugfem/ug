@@ -1,5 +1,26 @@
 ---------------------------
 
+CHANGES 1.7.7 -> 1.7.8
+
+---------------------------
+970205 kb
+added many USER_DATA streams feature.
+	- all IDs in interval [DDD_USER_DATA, DDD_USER_DATA_MAX] may
+	  be used for sending byte streams as AddData.
+970204 kb
+started with CPP_FRONTEND, designed some classes in ddd.h.
+970204 kb
+revision for global ID construction.
+	- the definition of MAX_PROCBITS_IN_GID has been moved to dddi.h.
+	  this gives the number of bits inside each global ID.
+	- the number of bits for the processor number inside the global ID
+	  is a limit for the maximum number of processors. now this number
+	  is checked in DDD_Init() with error message and exit.
+	- the overflow of global IDs is checked and DDD is exited with an
+	  error message. this will occur after 2^(32-MAX_PROCBITS_IN_GID) calls
+	  to DDD_HdrConstructor().
+---------------------------
+
 CHANGES 1.7.6 -> 1.7.7
 
 ---------------------------
