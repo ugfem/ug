@@ -896,6 +896,7 @@ static INT ProcessEvent (char *String, INT EventMask)
     else if (theEvent.TermCmdKey.CmdKey==INTERRUPT_CHAR)
       return (PE_INTERRUPT);
   case TERM_STRING :
+    if (strlen(theEvent.TermString.String) >= INPUTBUFFERLEN) break;
     assert (strlen(theEvent.TermString.String) < INPUTBUFFERLEN);
     strcpy(String,(const char *)theEvent.TermString.String);
     SetCmdKey('!',NULL,YES,String);
