@@ -55,6 +55,7 @@
 #include "fileopen.h"
 #include "ugenv.h"
 #include "debug.h"
+#include "general.h"
 
 /* devices module */
 #include "devices.h"
@@ -193,8 +194,8 @@ static char mintext[32],maxtext[32],minmaxtext[32];
 static INT wincounter=1;
 static INT piccounter=1;
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*D
@@ -1164,7 +1165,7 @@ static INT SetCommand (INT argc, char **argv)
 
   p = expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %255[\n -~]"));
         #endif
-  res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %4096[\n -~]")),name,buffer);
+  res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %4096[\n\t -~]")),name,buffer);
         #else
   res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %255[ -~]")),name,buffer);
         #endif /* ModelP */
