@@ -4209,7 +4209,7 @@ static INT VMListCommand (INT argc, char **argv)
             for (i=0; i<SELECTIONSIZE(theMG); i++)
               vlist[i] = (VECTOR *)SELECTIONOBJECT(theMG,i);
             vlist[SELECTIONSIZE(theMG)] = NULL;
-            PrintVectorListX(vlist,theVD,vclass,vnclass,UserWriteF);
+            PrintVectorListX((const VECTOR **)vlist,theVD,vclass,vnclass,UserWriteF);
             free(vlist);
           }
         }
@@ -10661,7 +10661,7 @@ static INT SetPaletteCommand (INT argc, char **argv)
    The data descriptor is created if it does not exist yet.
    It clears or assigns a constant value.
 
-   'clear <symbol name> [$a] [$u] [$v <value>]'
+   'clear <symbol name> [$a] [$u] [$v <value>] [$x] [$y] [$z]'
 
    .  $a         - from level 0 through current level (default: current level only)
    .  $s         - do not change skip (Dirichlet) values
@@ -10680,7 +10680,7 @@ static INT ClearCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   VECDATA_DESC *theVD;
   VECTOR *v;
-  INT i,fl,tl,n,skip;
+  INT i,l,fl,tl,n,skip,xflag,yflag,zflag;
   int j;
   double value;
 
@@ -10710,6 +10710,7 @@ static INT ClearCommand (INT argc, char **argv)
   /* check options */
   fl = tl = CURRENTLEVEL(theMG);
   skip = FALSE;
+  xflag = -1;
   value = 0.0;
   j = -1;
   for (i=1; i<argc; i++)
@@ -10721,6 +10722,18 @@ static INT ClearCommand (INT argc, char **argv)
 
     case 's' :
       skip = TRUE;
+      break;
+
+    case 'x' :
+      xflag = 0;
+      break;
+
+    case 'y' :
+      xflag = 1;
+      break;
+
+    case 'z' :
+      xflag = 2;
       break;
 
     case 'i' :
@@ -10754,6 +10767,19 @@ static INT ClearCommand (INT argc, char **argv)
       }
       j -= n;
     }
+    return (CMDERRORCODE);
+  }
+  if (xflag != -1) {
+    for (l=fl; l<=tl; l++)
+      for (v=FIRSTVECTOR(GRID_ON_LEVEL(theMG,l)); v!=NULL; v=SUCCVC(v))
+      {
+        DOUBLE_VECTOR pos;
+
+        if (VD_NCMPS_IN_TYPE(theVD,VTYPE(v)) == 0) continue;
+        if (VectorPosition(v,pos)) continue;
+        VVALUE(v,VD_CMP_OF_TYPE(theVD,VTYPE(v),0)) = pos[xflag];
+      }
+    return (OKCODE);
   }
   if (skip) {
     if (a_dsetnonskip(theMG,fl,tl,theVD,EVERY_CLASS,value)
@@ -11047,6 +11073,7 @@ static INT CopyCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   VECDATA_DESC *from,*to;
+  INT fl,tl;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -11054,7 +11081,7 @@ static INT CopyCommand (INT argc, char **argv)
     PrintErrorMessage('E',"copy","no current multigrid");
     return(CMDERRORCODE);
   }
-
+  fl = tl = CURRENTLEVEL(theMG);
   if (argc<3 || argc>4)
   {
     PrintErrorMessage('E',"copy","specify exactly the f and t option");
@@ -11073,18 +11100,134 @@ static INT CopyCommand (INT argc, char **argv)
     return (PARAMERRORCODE);
   }
 
-  if (ReadArgvOption("a",argc,argv))
+  if (ReadArgvOption("a",argc,argv)) fl = 0;
+
+  if (dcopy(theMG,fl,tl,ALL_VECTORS,from,to) != NUM_OK)
+    return (CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   add - add two vector symbols
+
+   DESCRIPTION:
+   This command adds two vectors (x = x + y).
+
+   'add $x <vec sym> $y <vec sym> [$a]'
+
+   .  $x~<vec~sym>      - vector symbol
+   .  $y~<vec~sym>      - vector symbol
+   .  $a                - all levels
+
+   EXAMPLE:
+   'add $x sol $y old;'
+
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, copy, set
+
+   SEE ALSO:
+   'cv', 'cm', 'clear', 'sub'
+   D*/
+/****************************************************************************/
+
+static INT AddCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  VECDATA_DESC *x,*y;
+  INT fl,tl;
+
+  theMG = currMG;
+  if (theMG==NULL)
   {
-    if (a_dcopy(theMG,0,CURRENTLEVEL(theMG),
-                to,EVERY_CLASS,from)!=NUM_OK)
-      return (CMDERRORCODE);
+    PrintErrorMessage('E',"copy","no current multigrid");
+    return(CMDERRORCODE);
   }
-  else
+  fl = tl = CURRENTLEVEL(theMG);
+  if (argc<3 || argc>4)
   {
-    if (l_dcopy(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
-                to,EVERY_CLASS,from)!=NUM_OK)
-      return (CMDERRORCODE);
+    PrintErrorMessage('E',"copy","specify exactly the f and t option");
+    return(PARAMERRORCODE);
   }
+
+  x = ReadArgvVecDesc(theMG,"x",argc,argv);
+  y = ReadArgvVecDesc(theMG,"y",argc,argv);
+
+  if (x == NULL) {
+    PrintErrorMessage('E',"copy","could not read 'f' symbol");
+    return (PARAMERRORCODE);
+  }
+  if (y == NULL) {
+    PrintErrorMessage('E',"copy","could not read 't' symbol");
+    return (PARAMERRORCODE);
+  }
+  if (ReadArgvOption("a",argc,argv)) fl = 0;
+
+  if (dadd(theMG,fl,tl,ALL_VECTORS,x,y) != NUM_OK)
+    return (CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   sub - subtract two vector symbols
+
+   DESCRIPTION:
+   This command subtracts two vectors (x = x - y).
+
+   'sub $x <vec sym> $y <vec sym> [$a]'
+
+   .  $x~<vec~sym>      - vector symbol
+   .  $y~<vec~sym>      - vector symbol
+   .  $a                - all levels
+
+   EXAMPLE:
+   'sub $x sol $y old;'
+
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, copy, set
+
+   SEE ALSO:
+   'cv', 'cm', 'clear', 'add'
+   D*/
+/****************************************************************************/
+
+static INT SubCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  VECDATA_DESC *x,*y;
+  INT fl,tl;
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"copy","no current multigrid");
+    return(CMDERRORCODE);
+  }
+  fl = tl = CURRENTLEVEL(theMG);
+  if (argc<3 || argc>4)
+  {
+    PrintErrorMessage('E',"copy","specify exactly the f and t option");
+    return(PARAMERRORCODE);
+  }
+
+  x = ReadArgvVecDesc(theMG,"x",argc,argv);
+  y = ReadArgvVecDesc(theMG,"y",argc,argv);
+
+  if (x == NULL) {
+    PrintErrorMessage('E',"copy","could not read 'f' symbol");
+    return (PARAMERRORCODE);
+  }
+  if (y == NULL) {
+    PrintErrorMessage('E',"copy","could not read 't' symbol");
+    return (PARAMERRORCODE);
+  }
+  if (ReadArgvOption("a",argc,argv)) fl = 0;
+
+  if (dsub(theMG,fl,tl,ALL_VECTORS,x,y) != NUM_OK)
+    return (CMDERRORCODE);
 
   return (OKCODE);
 }
@@ -14334,6 +14477,8 @@ INT InitCommands ()
 
   if (CreateCommand("rand",                       RandCommand                                             )==NULL) return (__LINE__);
   if (CreateCommand("copy",                       CopyCommand                                             )==NULL) return (__LINE__);
+  if (CreateCommand("add",                        AddCommand                                              )==NULL) return (__LINE__);
+  if (CreateCommand("sub",                        SubCommand                                              )==NULL) return (__LINE__);
   if (CreateCommand("homotopy",       HomotopyCommand                 )==NULL) return(__LINE__);
   if (CreateCommand("interpolate",        InterpolateCommand                              )==NULL) return (__LINE__);
 
