@@ -690,15 +690,33 @@ INT InitDevices (int *argcp, char **argv)
   if (me == master) {
     int l;
         #endif
+
   defaultOuputDevice = InitScreen(argcp,argv,&error);
   if (error) return(1);
 
         #ifdef ModelP
+  /* send number of command line arguments after InitScreen() */
+  Broadcast(argcp, sizeof(int));
+
   for (l=0; l<degree; l++)
     Spread(l,(void *)defaultOuputDevice,sizeof(OUTPUTDEVICE));
 }
 else {
-  int l;
+  int l, i, new_argc;
+
+  /* get number of command line arguments after InitScreen() */
+  Broadcast(&new_argc, sizeof(int));
+
+  /* if number has been reduced, remove first arg from command line */
+  while (new_argc<*argcp)
+  {
+    for(i=1; i < (*argcp)-1; i++)
+    {
+      argv[i] = argv[i+1];
+    }
+    if (*argcp > 1) (*argcp)--;
+  }
+
 
   defaultOuputDevice = malloc(sizeof(OUTPUTDEVICE));
   /* TODO:  set function pointers to NULL */
