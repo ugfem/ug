@@ -84,25 +84,25 @@ enum Priorities
 #define VERTEX_LISTPARTS                3
 
 /* define mapping from object priority to position in linked list */
-#define PRIO2LISTPART(listtype,prio) \
-  ((listtype == ELEMENT_LIST) ? ((prio == PrioHGhost) ? 0 :\
-                                 (prio == PrioVGhost) ? 0 : (prio == PrioVHGhost) ? 0 :\
-                                 (prio == PrioMaster) ? 1 : -1) :\
-   ((prio == PrioHGhost) ? 0 : (prio ==PrioVGhost) ? 0 :\
-      (prio == PrioVHGhost) ? 0 :\
+#define PRIO2LISTPART(listtype,prio)                                         \
+  ((listtype == ELEMENT_LIST) ? ((prio == PrioHGhost) ? 0 :                \
+                                 (prio == PrioVGhost) ? 0 : (prio == PrioVHGhost) ? 0 :               \
+                                 (prio == PrioMaster) ? 1 : -1) :                                 \
+   ((prio == PrioHGhost) ? 0 : (prio ==PrioVGhost) ? 0 :            \
+      (prio == PrioVHGhost) ? 0 :                                  \
       (prio == PrioBorder) ? 2 : (prio == PrioMaster) ? 2 : -1))
 
 /* define mapping from position in linked list to object priority */
 #define LISTPART2PRIO(listtype,listpart,prios)                               \
   {                                                                        \
     INT Entry;                                                           \
-    for (Entry=0; Entry<MAX_LISTPARTS; Entry++) prios[Entry] = -1;            \
+    for (Entry=0; Entry<MAX_LISTPARTS; Entry++) prios[Entry] = -1;       \
     Entry = 0;                                                           \
     if (listtype == ELEMENT_LIST)                                        \
     {                                                                    \
       if (listpart == 0)                                               \
       {                                                                \
-        prios[Entry++] = PrioHGhost;                                  \
+        prios[Entry++] = PrioHGhost;                                 \
         prios[Entry++] = PrioVGhost;                                 \
         prios[Entry++] = PrioVHGhost;                                \
       }                                                                \
@@ -112,7 +112,7 @@ enum Priorities
     {                                                                    \
       if (listpart == 0)                                               \
       {                                                                \
-        prios[Entry++] = PrioHGhost;                                  \
+        prios[Entry++] = PrioHGhost;                                 \
         prios[Entry++] = PrioVGhost;                                 \
         prios[Entry++] = PrioVHGhost;                                \
       }                                                                \
@@ -125,8 +125,8 @@ enum Priorities
   }
 
 /* define mapping from element priority to index in son array of father */
-#define PRIO2INDEX(prio) \
-  ((prio==PrioHGhost || prio==PrioVGhost || prio==PrioVHGhost) ? 1 : \
+#define PRIO2INDEX(prio)                                                     \
+  ((prio==PrioHGhost || prio==PrioVGhost || prio==PrioVHGhost) ? 1 :       \
    (prio == PrioMaster) ? 0 : -1)
 
 /* map pointer to structure onto a pointer to its DDD_HDR */
