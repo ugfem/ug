@@ -477,7 +477,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
   register SHORT i,j;
   register SHORT n,nc;
   register DOUBLE sum;
-  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
+  DOUBLE s[MAX_SINGLE_VEC_COMP],*vmat;
   DEFINE_VS_CMPS(s);
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
@@ -639,13 +639,12 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
         default :
           mcomp = MD_MCMPPTR_OF_RT_CT(M,rtype,ctype);
           wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
-          wmat  = VVALPTR(w);
           nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
               for (i=0; i<n; i++)
                 for (j=0; j<nc; j++)
-                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+                  s[i] -= MVALUE(mat, mcomp[i*nc+j]) * VVALUE(w, wcomp[j]);
         }
         #ifdef ModelP
     if (diag != NULL) {
@@ -798,7 +797,7 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
   register SHORT i,j;
   register SHORT n,nc;
   register DOUBLE sum;
-  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
+  DOUBLE s[MAX_SINGLE_VEC_COMP],*vmat;
   DEFINE_VS_CMPS(s);
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
@@ -959,13 +958,12 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
         default :
           mcomp = MD_MCMPPTR_OF_RT_CT(M,rtype,ctype);
           wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
-          wmat  = VVALPTR(w);
           nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
               for (i=0; i<n; i++)
                 for (j=0; j<nc; j++)
-                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * VVALUE(w, wcomp[j]);
         }
 
     /* solve */
@@ -1064,7 +1062,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
   register SHORT i,j;
   register SHORT n,nc;
   register DOUBLE sum;
-  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat;
+  DOUBLE s[MAX_SINGLE_VEC_COMP];
   DEFINE_VS_CMPS(s);
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
@@ -1238,13 +1236,12 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
           default :
             mcomp = MD_MCMPPTR_OF_RT_CT(M,rtype,ctype);
             wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
-            wmat  = VVALPTR(w);
             nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
             for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
               if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (V_BVNUMBER(w,maxBVmembers)<bvn))
                 for (i=0; i<n; i++)
                   for (j=0; j<nc; j++)
-                    s[i] += MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+                    s[i] += MVALUE(mat,mcomp[i*nc+j]) * VVALUE(w,wcomp[j]);
           }
       vcomp = VD_CMPPTR_OF_TYPE(v,rtype);
       for (i=0; i<n; i++)
@@ -1421,7 +1418,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
   register SHORT i,j;
   register SHORT n,nc;
   register DOUBLE sum,dmp;
-  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat;
+  DOUBLE s[MAX_SINGLE_VEC_COMP];
   const DOUBLE *tdmp;
   const SHORT *offset;
   DEFINE_VS_CMPS(s);
@@ -1590,13 +1587,12 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
         default :
           mcomp = MD_MCMPPTR_OF_RT_CT(M,rtype,ctype);
           wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
-          wmat  = VVALPTR(w);
           nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
               for (i=0; i<n; i++)
                 for (j=0; j<nc; j++)
-                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * VVALUE(w, wcomp[j]);
         }
 
     /* solve */
@@ -1624,7 +1620,7 @@ INT l_usor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
   register SHORT i,j;
   register SHORT n,nc;
   register DOUBLE sum;
-  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
+  DOUBLE s[MAX_SINGLE_VEC_COMP],*vmat;
   DEFINE_VS_CMPS(s);
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
@@ -1788,13 +1784,12 @@ INT l_usor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
         default :
           mcomp = MD_MCMPPTR_OF_RT_CT(M,rtype,ctype);
           wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
-          wmat  = VVALPTR(w);
           nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
               for (i=0; i<n; i++)
                 for (j=0; j<nc; j++)
-                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * VVALUE(w,wcomp[j]);
         }
 
     /* solve */
@@ -1822,7 +1817,7 @@ INT l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
   register SHORT i,j;
   register SHORT n,nc;
   register DOUBLE sum;
-  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
+  DOUBLE s[MAX_SINGLE_VEC_COMP],*vmat;
   DEFINE_VS_CMPS(s);
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
@@ -1986,13 +1981,12 @@ INT l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
         default :
           mcomp = MD_MCMPPTR_OF_RT_CT(M,rtype,ctype);
           wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
-          wmat  = VVALPTR(w);
           nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
               for (i=0; i<n; i++)
                 for (j=0; j<nc; j++)
-                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * VVALUE(w,wcomp[j]);
         }
 
     /* solve */
@@ -2049,7 +2043,7 @@ INT l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
   register SHORT i,j;
   register SHORT n,nc;
   register DOUBLE sum;
-  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat;
+  DOUBLE s[MAX_SINGLE_VEC_COMP];
   const SHORT *offset;
   DEFINE_VS_CMPS(s);
   DEFINE_VD_CMPS(cy);
@@ -2212,13 +2206,12 @@ INT l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
         default :
           mcomp = MD_MCMPPTR_OF_RT_CT(M,rtype,ctype);
           wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
-          wmat  = VVALPTR(w);
           nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
               for (i=0; i<n; i++)
                 for (j=0; j<nc; j++)
-                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * VVALUE(w,wcomp[j]);
         }
 
     /* solve */
