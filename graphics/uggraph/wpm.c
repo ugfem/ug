@@ -3640,9 +3640,8 @@ static INT InitVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
         break;
       if (fValue<3.)
       {
-        /* TODO (HRR 971010): replace this by {PrintErrorMessage(); ret =NOT_ACTIVE;} once all scripts are changed */
-        printf("ERROR: die Rasterweite von EVector in 2D muss in --> PIXELN <-- angegeben werden\n");
-        ASSERT(FALSE);
+        PrintErrorMessage('E',"EVector","die Rasterweite von EVector in 2D muss in --> PIXELN <-- angegeben werden");
+        ret = NOT_ACTIVE;
       }
       if (fValue>MIN(fabs(PIC_GLL(pic)[_X_]-PIC_GUR(pic)[_X_]),fabs(PIC_GLL(pic)[_Y_]-PIC_GUR(pic)[_Y_]))/2)
       {
