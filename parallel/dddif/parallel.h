@@ -93,6 +93,14 @@ enum HandlerSets
 /* undefine if old is wanted          */
 #define NEW_GRIDCONS_STYLE
 
+/* define DDD_PRIO_ENV to change priority using fast PrioBegin/End env. */
+/*
+   #define DDD_PRIO_ENV
+ */
+#ifdef DDD_PRIO_ENV
+#define DDD_PrioritySet(h,p) DDD_PrioChange(h,p)
+#endif
+
 /* macros for processor-synchronized output */
 #define SYNC_ALL   { int _p; for(_p=0; _p<procs; _p++) { \
                        Synchronize(); if(_p==me) {
