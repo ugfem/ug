@@ -850,8 +850,9 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
   INT i;
 
   currBVP = theBVP;
+    #ifdef ModelP
   SetBVPType(theBVP->type);
-
+        #endif
   STD_BVP_NDOMPART(theBVP) = 1;
   STD_BVP_NSUBDOM(theBVP) = 1;
   STD_BVP_S2P_PTR(theBVP) = (INT *)
@@ -2196,7 +2197,9 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
   if (theBVP == NULL)
     return(NULL);
   currBVP = theBVP;
+    #ifdef ModelP
   SetBVPType(theBVP->type);
+        #endif
 
   if (theBVP->type == BVP_MARC)
     return(Init_MarcBVP(theBVP,Heap,Mesh,MarkKey));
@@ -4901,7 +4904,9 @@ INT BNDP_SaveBndP (BNDP *BndP)
   return(0);
 }
 
-#define IO_MARC
+/*
+   #define IO_MARC
+ */
 
 INT BNDP_SaveBndP_Ext (BNDP *BndP)
 {
@@ -5009,17 +5014,6 @@ BNDP *BNDP_LoadBndP_Ext (void)
     if (Bio_Read_mdouble(DIM-1,dList)) return (NULL);
     for (j=0; j<DIM-1; j++)
       bp->local[i][j] = dList[j];
-  }
-  /* TODO: load free boundary points properly */
-  if (!PATCH_IS_FIXED(currBVP->patches[pid]))
-  {
-    /* store global coordinates */
-    BND_DATA(bp) = malloc(DIM*sizeof(DOUBLE));
-    if (BND_DATA(bp)==NULL)
-      return (NULL);
-
-    if (BndPointGlobal((BNDP *)bp,BND_DATA(bp)))
-      return (NULL);
   }
 
   return((BNDP *)bp);
