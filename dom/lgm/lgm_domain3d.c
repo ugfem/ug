@@ -1719,9 +1719,11 @@ static INT Surface_Plane(LGM_SURFACE *theSurface)
 static INT Read_Surface(HEAP *Heap, LGM_SURFACE *theSurface, INT MarkKey, char name[12])
 {
   char buff[5];
-  INT i, j, k, d, d1, d2, d3, buflen, a, b, dummy, mi;
+  INT i, j, k, buflen, a, b, dummy, mi;
+  int d, d1, d2, d3;
   FILE *stream;
-  DOUBLE local[3], global[3], local0, local1;
+  DOUBLE local[3], global[3];
+  double local0, local1;
   char buffer[256];
 
   buflen = 256;
