@@ -283,7 +283,7 @@ int interface (CLUSTER **clusters, int nvtxs, short *assign, double *goal,
 	else outfile = NULL;
 	
 	/* Initialize then set the flags */
-	scatt = randm = lin = inert = spec = KL = FALSE;
+	scatt = randm = lin = inert = rcb = spec = KL = FALSE;
 	coarse_flag = solver_flag = 0;
 
 	/* which partitioning strategy to use */
