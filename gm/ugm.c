@@ -2771,6 +2771,7 @@ INT DeleteNodeWithID (MULTIGRID *theMG, INT id)
 ELEMENT *FindFather (VERTEX *theVertex)
 {
   ELEMENT *theElement;
+  NODE *theNode;
   INT i;
 
   theElement = VFATHER(theVertex);
@@ -2789,29 +2790,34 @@ ELEMENT *FindFather (VERTEX *theVertex)
     if (OBJT(theVertex) == BVOBJ)
       return(theElement);
 
+  if (OBJT(theElement)==BEOBJ)
+  {
+    for (theNode=TOPNODE(theVertex); theNode!=0; theNode=NFATHER(theNode))
+      if (NTYPE(theNode)==CENTER_NODE) return(theElement);
+  }
+
   return(NULL);
 }
 
 /****************************************************************************/
 /*D
-   MoveMidNode - set new position for a midnode
+   RecreateBNDSofNode
 
    SYNOPSIS:
-   INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda);
+   static INT RecreateBNDSofNode(MULTIGRID *theMG, NODE *theNode)
 
    PARAMETERS:
-   .  theMG - pointer to multigrid
-   .  theNode - node to move
-   .  lambda - parameter on the edge
+   .  theMG - multigrid structure
+   .  theNode - node with new BNDP
 
    DESCRIPTION:
-   This function moves a given node to a new position. The complete
-   multigrid structure is moved hierachically, that all global coordinates
-   of nodes are updated in order to reflect the changes on coarser grids.
+   This function searches the boundary sides located at 'theNode' and recreate
+   the corresponding BNDSs of these sides.
+   It assumes that 'theNode' and the neighbour boundary nodes are in the same patch.
 
    RETURN VALUE:
    INT
-   .n   GM_OK when ok
+   .n   GM_OK if ok
    .n   GM_ERROR when error occured.
    D*/
 /****************************************************************************/
@@ -2877,6 +2883,30 @@ static INT RecreateBNDSofNode (MULTIGRID *theMG, NODE *theNode)
   }
   return(GM_OK);
 }
+
+/****************************************************************************/
+/*D
+   MoveMidNode - set new position for a midnode
+
+   SYNOPSIS:
+   INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda);
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+   .  theNode - node to move
+   .  lambda - parameter on the edge
+
+   DESCRIPTION:
+   This function moves a given node to a new position. The complete
+   multigrid structure is moved hierachically, that all global coordinates
+   of nodes are updated in order to reflect the changes on coarser grids.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK when ok
+   .n   GM_ERROR when error occured.
+   D*/
+/****************************************************************************/
 
 INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda)
 {
@@ -3108,6 +3138,7 @@ INT MoveSideNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda)
     if (diff > MAX_PAR_DIST) {
       SETMOVED(theVertex,1);
       CORNER_COORDINATES(theElement,n,x);
+      V_DIM_COPY(bnd_global,global);
       UG_GlobalToLocal(n,(const DOUBLE **)x,global,local);
     }
   }
@@ -3152,6 +3183,7 @@ INT MoveSideNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda)
 INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos)
 {
   VERTEX *theVertex;
+  EDGE *theEdge;
   ELEMENT *theElement;
   DOUBLE *x[MAX_CORNERS_OF_ELEM];
   DOUBLE_VECTOR oldPos;
@@ -3184,6 +3216,15 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos)
     {
       CORNER_COORDINATES(theElement,n,x);
       UG_GlobalToLocal(n,(const DOUBLE **)x,newPos,LCVECT(theVertex));
+      for (k=0; k<EDGES_OF_ELEM(theElement); k++) {
+        theEdge =
+          GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,k,0)),
+                  CORNER(theElement,CORNER_OF_EDGE(theElement,k,1)));
+        if (MIDNODE(theEdge) == theNode) {
+          SETONEDGE(theVertex,k);
+          break;
+        }
+      }
       VFATHER(theVertex) = theElement;
     }
   }
@@ -3203,10 +3244,96 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos)
   return(GM_OK);
 }
 
+/****************************************************************************/
+/*D
+   GetMidNodeParam - Get local position of a midnode on an edge
+
+   SYNOPSIS:
+   INT GetMidNodeParam (NODE * theNode, DOUBLE *lambda)
+
+   PARAMETERS:
+   .  theNode - midnode
+   .  lambda  - local coordinate of midnode w.r.t. the edge
+
+   DESCRIPTION:
+   This function gives the local coordinate of a midnode with respect to its edge
+   (0 < lambda < 1). The function is called by SmoothGrid and can only be applied
+   in 2D.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK when ok
+   .n   GM_ERROR when error occured.
+   D*/
+/****************************************************************************/
+
 INT GetMidNodeParam (NODE * theNode, DOUBLE *lambda)
 {
-  *lambda = 0.5;
-  return(0);
+
+  ELEMENT *theElement;
+  NODE *Node0,*Node1;
+  VERTEX *theVertex;
+  BNDS *bnds;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM],*global;
+  DOUBLE_VECTOR bnd_global, BndPoint0, BndPoint1;
+  DOUBLE diff, len0,len1, bndLambda[DIM_OF_BND], Lambda0, Lambda1, midLambda;
+  INT n,k,co0,co1,edge,iter,MaxIter;
+
+#ifdef __THREEDIM__
+  PrintErrorMessage('E',"GetMidNodeParam","3D not implemented yet");
+  return(GM_ERROR);
+#endif
+
+  if (NFATHER(theNode) != NULL) {
+    PrintErrorMessage('E',"GetMidNodeParam","node not a midnode");
+    return(GM_ERROR);
+  }
+  theVertex = MYVERTEX(theNode);
+  theElement = VFATHER(theVertex);
+
+  edge = ONEDGE(theVertex);
+  co0 = CORNER_OF_EDGE(theElement,edge,0);
+  co1 = CORNER_OF_EDGE(theElement,edge,1);
+  Node0 = CORNER(theElement,co0);
+  Node1 = CORNER(theElement,co1);
+
+  V_DIM_EUKLIDNORM_OF_DIFF(CVECT(theVertex),CVECT(MYVERTEX(Node0)),len0);
+  V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(Node1)),CVECT(MYVERTEX(Node0)),len1);
+  *lambda = len0/len1;
+
+  if (OBJT(theVertex)!=BVOBJ) return(GM_OK);
+
+  if (!MOVED(theVertex)) return(GM_OK);
+
+  bnds = ELEM_BNDS(theElement,edge);
+  Lambda0 = 0.;
+  Lambda1 = 1.;
+  iter=0;
+  MaxIter = 40;
+
+  global = CVECT(theVertex);
+  do
+  {
+    iter++;
+    midLambda = 0.5*(Lambda0+Lambda1);
+    bndLambda[0] = Lambda0;
+    BNDS_Global(bnds,bndLambda,BndPoint0);
+    bndLambda[0]= midLambda;
+    BNDS_Global(bnds,bndLambda,BndPoint1);
+    V_DIM_EUKLIDNORM_OF_DIFF(global,BndPoint0,len0);
+    V_DIM_EUKLIDNORM_OF_DIFF(BndPoint1,BndPoint0,len1);
+    if (len0<len1)
+      Lambda1 = midLambda;
+    else
+      Lambda0 = midLambda;
+  }
+  while (!V_DIM_ISEQUAL(BndPoint0,global) && iter<MaxIter);
+  *lambda = Lambda0;
+
+  if (iter > (MaxIter-2))
+    PrintErrorMessage('W',"GetMidNodeParam","could not determine lambda");
+
+  return(GM_OK);
 }
 
 /****************************************************************************/
