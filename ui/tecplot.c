@@ -180,7 +180,7 @@ static INT TecplotCommand (INT argc, char **argv)
   fprintf(stream,"VARIABLES = \"X\", \"Y\"");
   if (DIM==3) fprintf(stream,", \"Z\"");
   for (i=0; i<nv; i++)
-    fprintf(stream,", \"%s\"",ev_name[i]);
+    fprintf(stream,", \"%s\"",ev[i]->v.name);
   fprintf(stream,"\n");
 
   /********************************/
