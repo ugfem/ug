@@ -2999,18 +2999,17 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 
   if (ReadArgvOption("g",argc,argv))
   {
-    float fValue[3];
     DOUBLE resolution2;
-    double global[DIM];
+    /* double global[DIM]; extension to constant 3 components for sscanf; Ch. Wrobel 981002 */
+    double global[3];
 
     /* insert bn from global coordinates */
-    if (sscanf(argv[0],"bn %f %f %f",fValue,fValue+1,fValue+2) != DIM)
+    if (sscanf(argv[0],"bn %lf %lf %lf",global,global+1,global+2) != DIM)
     {
       PrintErrorMessageF('E',"BVP_InsertBndP","g option specified but could not scan\n"
                          "global coordinates from '%s'\n",argv[0]);
       return(NULL);
     }
-    V_DIM_COPY(fValue,global);
 
     if (ReadArgvDOUBLE("r",&resolution2,argc,argv)!=0)
       resolution2 = 1e-2;                       /* default */
