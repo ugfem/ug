@@ -78,11 +78,6 @@ START_UGDIM_NAMESPACE
 #define SP_LOCAL                                0       /* modify locally                                               */
 #define SP_GLOBAL                               1       /* modify globally                                              */
 
-#define OPTIONLEN                       32
-#define OPTIONLENSTR            "31"
-#define VALUELEN                        64
-#define VALUELENSTR                     "63"
-
 /* matrix consitency modes */
 #define MAT_DIAG_CONS         0
 #define MAT_CONS              1

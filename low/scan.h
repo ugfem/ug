@@ -57,6 +57,11 @@ START_UG_NAMESPACE
 /*                                                                                                                                                      */
 /****************************************************************************/
 
+#define OPTIONLEN                       32
+#define OPTIONLENSTR            "31"
+#define VALUELEN                        64
+#define VALUELENSTR                     "63"
+
 /****************************************************************************/
 /*                                                                                                                                                      */
 /* macros concerned with data descriptors and symbols                                           */
