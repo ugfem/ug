@@ -968,6 +968,9 @@ static INT GetFactor (OPERAND *result)
       {
         /* check wether a string variable or a struct is defined */
 
+        INT deref=FALSE;
+        char *p;
+
         c=SkipBlanks();
         if (c!='(')
         {
@@ -976,11 +979,24 @@ static INT GetFactor (OPERAND *result)
         }
         cmdPtr++;
 
+        c=SkipBlanks();
+        if (c=='@')
+        {
+          deref = TRUE;
+          cmdPtr++;
+        }
         GetToken(buffer);
+        p = buffer;
+        if (deref)
+          if ((p=GetStringVar(buffer))==NULL)
+          {
+            PrintErrorMessageF('E',"def","string var '%s' not found",buffer);
+            return(__LINE__);                                                   /* ( missing */
+          }
 
         /* check for string variable */
         newResult.ro.type  = NUMBERID;
-        newResult.ro.value = (GetStringVar(buffer)!=NULL);
+        newResult.ro.value = (GetStringVar(p)!=NULL);
 
         if (newResult.ro.value==0)
           /* check for struct */
@@ -2102,6 +2118,9 @@ static INT InterpretString (void)
 
     if (strcmp(buffer,"print")==0)
     {
+      INT oldmute=GetMuteLevel();
+      SetMuteLevel(0);
+
       c=(char) 0;
       do
       {
@@ -2154,6 +2173,7 @@ static INT InterpretString (void)
       }
       while (TRUE);
 
+      SetMuteLevel(oldmute);
       continue;
     }
 
@@ -2388,7 +2408,7 @@ static INT InterpretString (void)
                         #else
       error = ExecCommand(cmdBuffer);
                         #endif
-      if ((error!=QUITCODE) && dontexit)
+      if (dontexit && (error!=QUITCODE) && (error!=FATAL))
       {
         SetStringValue(":cmdstatus",error);
         error = DONE;
@@ -2399,7 +2419,6 @@ static INT InterpretString (void)
           SetMuteLevel(mutelevel=0);
         return(error);
       }
-
       continue;
     }
     else
