@@ -36,6 +36,18 @@
 #include "famg_coloring.h"
 
 //#define EXTENDED_OUTPUT_FOR_DEBUG 
+
+// nodes are only useful for debugging to have geometric positions 
+// of the vectors but aren't used for calculations.
+// In addition there can arise a dangerous situation:
+//		on coarser grids there may be Xfer'ed a vector and it's node.
+//		This node takes it's NODEVEC with, but due to the abuse of
+//		the nodes on AMG levels this NODEVEC may be on level 0.
+// 		Thus an already constructed grid gets changed which 
+//		leads to inconsistent data structures! 
+//		DON'T DO THIS ANYMORE!
+// Don't define FAMG_SEND_NODES
+//#define FAMG_SEND_NODES
 #endif
 
 #ifdef USE_UG_DS
@@ -1252,10 +1264,11 @@ int FAMGGrid::Reorder()
 
 #ifdef ModelP
 
-static void TransferVector( VECTOR *v, DDD_PROC dest_pe, DDD_PRIO dest_prio, int size )
+static inline void TransferVector( VECTOR *v, DDD_PROC dest_pe, DDD_PRIO dest_prio, int size )
 {	
 	DDD_XferCopyObjX(PARHDR(v), dest_pe, dest_prio, size);
 	
+#ifdef FAMG_SEND_NODES
 	/* for debugging purpose send the node too */
 	/* TODO: be sure that this isn't done for production runs */
 	IFDEBUG(np,0)
@@ -1270,6 +1283,7 @@ static void TransferVector( VECTOR *v, DDD_PROC dest_pe, DDD_PRIO dest_prio, int
 		else
 			assert(0); /* unrecognized vector type; extend code if necessary */	
 	ENDDEBUG
+#endif
 }
 
 static int SendToMaster( DDD_OBJ obj)
@@ -1303,9 +1317,9 @@ static int SendToMaster( DDD_OBJ obj)
 
 	// It seems to be necessary to send also the vec itself to let new 
 	// connection be constructed from both (vec and its neighbor)
+	PRINTDEBUG(np,1,("%d: SendToMaster %d: myself "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(vec)));
 	size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
 	TransferVector(vec, masterPe, PrioMaster, size);
-	PRINTDEBUG(np,1,("%d: SendToMaster %d: myself "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(vec)));
 	
 	for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
 	{
@@ -1323,9 +1337,9 @@ static int SendToMaster( DDD_OBJ obj)
 		
 		if( !found )	// if it has no copy send w to masterPe
 		{
+			PRINTDEBUG(np,1,("%d: SendToMaster %d:     -> "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(w)));
 			size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(w));
 			TransferVector(w, masterPe, PrioBorder, size);
-			PRINTDEBUG(np,1,("%d: SendToMaster %d:     -> "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(w)));
 		}
 		else
 			PRINTDEBUG(np,1,("%d: SendToMaster %d:     is "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(w)));
@@ -1374,19 +1388,19 @@ static int SendToOverlap1( DDD_OBJ obj)
 		
 		//temp weg if( !found )	// if it has no copy send vec
 			{
+				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,proclist_w[0],VINDEX_PRTX(w)));
 				size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
 				TransferVector(vec, proclist_w[0], PrioBorder, size);
 				// s.u. size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(w));
 				// wird unten mit gemacht DDD_XferCopyObjX(PARHDR(w), proclist_w[0], proclist_w[1], size);
-				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,proclist_w[0],VINDEX_PRTX(w)));
 			}
 
 			for( matw=VSTART(w); matw!=NULL; matw=MNEXT(matw) )
 			{
+				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,proclist_w[0],VINDEX_PRTX(wn)));
 				wn = MDEST(matw);
                 size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(wn));
 				TransferVector(wn, proclist_w[0], PrioBorder, size);
-				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,proclist_w[0],VINDEX_PRTX(wn)));
 			}
 		}
 	}
@@ -1408,7 +1422,9 @@ void FAMGGrid::ConstructOverlap()
 		DDD_XferBegin();
 		for( vec=PFIRSTVECTOR(mygrid); PRIO(vec) != PrioBorder && PRIO(vec) != PrioMaster; vec = SUCCVC(vec))
 		{
+			#ifdef FAMG_SEND_NODES
 			DDD_XferPrioChange( PARHDR((NODE*)VOBJECT(vec)), PrioBorder ); /* TODO: cancel this line; its only for beauty in checks */
+			#endif
 			DDD_XferPrioChange( PARHDR(vec), PrioBorder );
 		}
 		/* elements with old ghostprios cause errors in check; but that's ok */
