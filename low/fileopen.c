@@ -592,7 +592,7 @@ INT DirWalk (const char *dir, ProcessFileProc fcn)
 {
 
   /* encapsulate implementation dependent stuff for DirWalk */
-#if defined __HP__ || __SGI__ || __T3E__ || __PARAGON__ || __DEC__ || __SUN__ || __PC__
+#if defined __HP__ || __SGI__ || __T3E__ || __PARAGON__ || __DEC__ || __SUN__ || __PC__ || __LINUXPPC__
         #include <dirent.h>
   typedef struct dirent DIRENT;
         #define D_NAME(d)               ((d)->d_name)
