@@ -88,16 +88,16 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*
-   ConstructConsistentGrid - 
+   ConstructConsistentGridLevel - 
 
    SYNOPSIS:
-   void ConstructConsistentGrid (GRID *theGrid);
+   void ConstructConsistentGridLevel (GRID *theGrid);
 
    PARAMETERS:
 .  theGrid
 
    DESCRIPTION:
-   Provide a consistent grid. Do not call for a single grid level, but 
+   Provide a consistent grid level. Do not call for a single grid level, but 
    always for the whole multigrid from bottom to top, since otherwise
    consistency is not ensured!
 
@@ -106,7 +106,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 */
 /****************************************************************************/
 
-void ConstructConsistentGrid (GRID *theGrid)
+void ConstructConsistentGridLevel (GRID *theGrid)
 {
 	INT		i,j,k,l,m,o;
 	DOUBLE  fac,*local;
@@ -114,21 +114,6 @@ void ConstructConsistentGrid (GRID *theGrid)
 	NODE	*theNode;
 	EDGE	*theEdge;
 	VERTEX	*theVertex;
-
-	/* the setting of the priorities has to be done in two waves after */
-	/* completion of the grid transfer, since                          */
-	/* - decisions about vghost prio can only be done if all sons are  */
-	/*   available in SetGhostObjectPriorities()                       */
-	/* - setting of the border priorities can only be done if all      */
-	/*   ghost objects have their proper priority                      */
-
-	DDD_XferBegin();
-	SetGhostObjectPriorities(theGrid);
-	DDD_XferEnd();
-
-	DDD_XferBegin();
-	SetBorderPriorities(theGrid);
-	DDD_XferEnd();
 
 	/* this is the simplest fix for VFATHER zombies  */
 	/* just reset all VFATHER pointers and set them  */
@@ -326,6 +311,108 @@ void ConstructConsistentGrid (GRID *theGrid)
 			}
 		}
 	}
+}
+
+/****************************************************************************/
+/*
+   ConstructConsistentGrid - 
+
+   SYNOPSIS:
+   void ConstructConsistentGrid (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid
+
+   DESCRIPTION:
+   Provide a consistent grid level. Do not call for a single grid level, but 
+   always for the whole multigrid from bottom to top, since otherwise
+   consistency is not ensured!
+
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
+
+void ConstructConsistentGrid (GRID *theGrid)
+{
+	INT		i,j,k,l,m,o;
+	DOUBLE  fac,*local;
+	ELEMENT *theElement,*theFather,*theNb;
+	NODE	*theNode;
+	EDGE	*theEdge;
+	VERTEX	*theVertex;
+
+	/* the setting of the priorities has to be done in two waves after */
+	/* completion of the grid transfer, since                          */
+	/* - decisions about vghost prio can only be done if all sons are  */
+	/*   available in SetGhostObjectPriorities()                       */
+	/* - setting of the border priorities can only be done if all      */
+	/*   ghost objects have their proper priority                      */
+
+	DDD_XferBegin();
+	SetGhostObjectPriorities(theGrid);
+	DDD_XferEnd();
+
+	DDD_XferBegin();
+	SetBorderPriorities(theGrid);
+	DDD_XferEnd();
+
+	ConstructConsistentGridLevel(theGrid);
+}
+
+/****************************************************************************/
+/*
+   ConstructConsistentMultiGrid - 
+
+   SYNOPSIS:
+   void ConstructConsistentMultiGrid (MULTIGRID *theMG);
+
+   PARAMETERS:
+.  theMG
+
+   DESCRIPTION:
+   Provide a consistent multigrid.
+
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
+
+void ConstructConsistentMultiGrid (MULTIGRID *theMG)
+{
+	INT l;
+	GRID *theGrid;
+
+	/* this is done in three waves:   */
+	/* 1. set priorities of objects   */
+	/* 2. set border priorities       */
+	/* 3. repair grid inconsistencies */
+
+	/* 1. set priorities of objects   */
+	DDD_XferBegin();
+	for (l=0; l<=TOPLEVEL(theMG); l++)
+	{
+		GRID *theGrid = GRID_ON_LEVEL(theMG,l);
+		SetGhostObjectPriorities(theGrid);
+	}
+	DDD_XferEnd();
+
+	/* 2. set border priorities       */
+	DDD_XferBegin();
+	for (l=0; l<=TOPLEVEL(theMG); l++)
+	{
+		GRID *theGrid = GRID_ON_LEVEL(theMG,l);
+		SetBorderPriorities(theGrid);
+	}
+	DDD_XferEnd();
+
+	/* 3. repair grid inconsistencies */
+	for (l=0; l<=TOPLEVEL(theMG); l++)
+	{
+		GRID *theGrid = GRID_ON_LEVEL(theMG,l);
+		ConstructConsistentGridLevel(theGrid);
+	}
+
 }
 
 #endif
