@@ -49,6 +49,7 @@
 #include <Packages.h>
 #include <Files.h>
 #include <TextUtils.h>
+#include <ControlDefinitions.h>
 
 /* standard C library */
 #include <string.h>
