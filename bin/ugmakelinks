@@ -6,6 +6,18 @@ then
 	exit 1;
 fi
 
+
+# test for /bin/test  :-)
+if test -x /bin/test
+then
+	echo "ugmakelinks will use /bin/test for testing symbolic links"
+	TEST_WITH_LINKS=/bin/test
+else
+	echo "ugmakelinks will use test for testing symbolic links"
+	TEST_WITH_LINKS=test
+fi
+
+
 if test "x$UGROOT" = "x"
 then
 	echo "$0: to use $0 set shell environment variable UGROOT!";
@@ -23,7 +35,7 @@ mkdir include;
 
 for i in . * */* */*/* */*/*/* */*/*/*/*
 do
-	if /bin/test -d $i -a ! -h $i
+	if $TEST_WITH_LINKS  -d $i -a ! -h $i
 	then
 		if test "$i" != "include" -a `basename $i` != "doc" -a `basename $i` != "CVS"
 		then
@@ -34,7 +46,7 @@ do
 				if test "$j" != "*.h"
 				then
 					echo $j
-					if /bin/test -h $UGROOT/include/$j
+					if $TEST_WITH_LINKS  -h $UGROOT/include/$j
 					then	
 						echo "link for $i/$j already exists";
 					else
