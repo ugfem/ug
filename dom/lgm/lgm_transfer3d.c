@@ -55,7 +55,7 @@ static int SkipBTN (void)
   {
     c = fgetc(stream);
     if (c==EOF) return (1);
-    if (c!=' ' && c!='\n' && c!='\t' && c!=';') break;
+    if (c!=' ' && c!='\n' && c!='\r' && c!='\t' && c!=';') break;
   }
   if (ungetc(c,stream)==EOF) return (1);
 
@@ -72,6 +72,7 @@ static int SkipEOL (void)
     c = fgetc(stream);
     if (c==EOF) return (1);
     if (c=='\n') break;
+    if (c=='\r') break;
   }
 
   return (0);
