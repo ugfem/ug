@@ -908,6 +908,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   if (saved)
   {
     UserWriteF("WARNING: multigrid already saved as %s\n",MG_FILENAME(theMG));
+    return (0);
   }
 
   /* open file */
@@ -1455,6 +1456,11 @@ static INT IO_GridCons(MULTIGRID *theMG)
 
     /* spread nodetypes from master to its copies */
     if (SpreadGridNodeTypes(theGrid) != GM_OK) RETURN(GM_FATAL);
+
+#ifdef ModelP
+    /* repair parallel information */
+    ConstructConsistentGrid(theGrid);
+#endif
   }
 
   return(GM_OK);
@@ -1877,7 +1883,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     if (Bio_Read_mint(1,&foid))                                                                     {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
     vidlist = (int*)GetTmpMem(theHeap,non*sizeof(int));
     if (Bio_Read_mint(non,vidlist))                                                                 {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-    for (i=0; i<non; i++) printf("LoadMG(): vidList[%d]=%d\n",i,vidlist[i]);
+#ifdef Debug
+    for (i=0; i<non; i++) PRINTDEBUG(gm,1,("LoadMG(): vidList[%d]=%d\n",i,vidlist[i]));
+#endif
   }
   else
   {
@@ -1974,7 +1982,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
       for (j=0; j<Element_corner_uniq_subdom[i]; j++)
       {
         Element_corner_ids_uniq_subdom[i][j] = vidlist[cge->cornerid[j]-foid];
-        printf("LoadMultiGrid(): cg_elem=%d  cg_nid[%d]=%d foid=%d\n",i,j,cge->cornerid[j],foid);
+        PRINTDEBUG(gm,1,("LoadMultiGrid(): cg_elem=%d  cg_nid[%d]=%d foid=%d\n",i,j,cge->cornerid[j],foid));
       }
     else
       for (j=0; j<Element_corner_uniq_subdom[i]; j++)
