@@ -6060,6 +6060,10 @@ static INT CheckCommand (INT argc, char **argv)
       checknp = TRUE;
       break;
 
+    case 'w' :
+      PrintCW();
+      break;
+
     default :
       if (!checknp) {
         sprintf(buffer,"(invalid option '%s')",argv[i]);
