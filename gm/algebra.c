@@ -1138,7 +1138,8 @@ INT CreateElementList (GRID *theGrid, NODE *theNode, ELEMENT *theElement)
     if(pel->el==theElement)
       return(0);
 
-  pel = (ELEMENTLIST *)GetMemoryForObject(theGrid->mg,sizeof(ELEMENTLIST),-1);
+  pel = (ELEMENTLIST *)GetMemoryForObject(theGrid->mg,
+                                          sizeof(ELEMENTLIST),MAOBJ);
   if (pel == NULL)
     return(1);
 
@@ -1707,20 +1708,28 @@ INT DisposeConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
 INT DisposeConnectionsFromMultiGrid (MULTIGRID *theMG)
 {
   INT i;
-  GRID    *theGrid;
-  ELEMENT *theElement;
 
   for (i=0; i<=TOPLEVEL(theMG); i++)
   {
+    GRID *theGrid = GRID_ON_LEVEL(theMG,i);
+    ELEMENT *theElement;
+    NODE *theNode;
+
     theGrid = GRID_ON_LEVEL(theMG,i);
-    for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+    for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
+         theElement=SUCCE(theElement))
       if (DisposeConnectionsInNeighborhood(theGrid,theElement))
         REP_ERR_RETURN(1);
+
+    if (NELIST_DEF_IN_GRID(theGrid))
+      for (theNode = PFIRSTNODE(theGrid); theNode != NULL;
+           theNode = SUCCN(theNode))
+        if (DisposeElementList(theGrid,theNode))
+          REP_ERR_RETURN(1);
   }
 
   return(0);
 }
-
 
 INT     DisposeElementFromElementList (GRID *theGrid, NODE *theNode,
                                        ELEMENT *theElement)
@@ -1731,13 +1740,13 @@ INT     DisposeElementFromElementList (GRID *theGrid, NODE *theNode,
   if (pel == NULL) return(0);
   if (pel->el == theElement) {
     NDATA(theNode) = (void *) pel->next;
-    return(PutFreeObject(theGrid->mg,pel,sizeof(ELEMENTLIST),-1));
+    return(PutFreeObject(theGrid->mg,pel,sizeof(ELEMENTLIST),MAOBJ));
   }
   next = pel->next;
   while (next != NULL) {
     if (next->el == theElement) {
       pel->next = next->next;
-      return(PutFreeObject(theGrid->mg,next,sizeof(ELEMENTLIST),-1));
+      return(PutFreeObject(theGrid->mg,next,sizeof(ELEMENTLIST),MAOBJ));
     }
     pel = next;
     next = pel->next;
@@ -1753,10 +1762,11 @@ INT     DisposeElementList (GRID *theGrid, NODE *theNode)
   pel = NODE_ELEMENT_LIST(theNode);
   while (pel != NULL) {
     next = pel->next;
-    if (PutFreeObject(theGrid->mg,pel,sizeof(ELEMENTLIST),-1))
+    if (PutFreeObject(theGrid->mg,pel,sizeof(ELEMENTLIST),MAOBJ))
       return(1);
     pel = next;
   }
+  NDATA(theNode) = NULL;
 
   return(0);
 }
