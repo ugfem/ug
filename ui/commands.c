@@ -2501,7 +2501,7 @@ static INT NewCommand (INT argc, char **argv)
 static INT OpenCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  char Multigrid[NAMESIZE],File[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE];
+  char Multigrid[NAMESIZE],File[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE],type[NAMESIZE];
   char *theBVP,*theFormat,*theMGName;
   unsigned long heapSize;
   INT i;
@@ -2514,6 +2514,7 @@ static INT OpenCommand (INT argc, char **argv)
   }
 
   /* get problem, domain and format */
+  strcpy(type,"asc");
   theBVP = theFormat = theMGName = NULL;
   heapSize = 0;
   for (i=1; i<argc; i++)
@@ -2546,6 +2547,14 @@ static INT OpenCommand (INT argc, char **argv)
       theMGName = Multigrid;
       break;
 
+    case 't' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("t %",NAMELENSTR,"[ -~]")),type)!=1)
+      {
+        PrintHelp("open",HELPITEM," (cannot read type specification)");
+        return(PARAMERRORCODE);
+      }
+      break;
+
     case 'h' :
       if (sscanf(argv[i],"h %lu",&heapSize)!=1)
       {
@@ -2561,7 +2570,7 @@ static INT OpenCommand (INT argc, char **argv)
     }
 
   /* allocate the multigrid structure */
-  theMG = LoadMultiGrid(theMGName,File,theBVP,theFormat,heapSize);
+  theMG = LoadMultiGrid(theMGName,File,type,theBVP,theFormat,heapSize);
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"open","could not open multigrid");
@@ -2634,7 +2643,7 @@ static INT OpenCommand (INT argc, char **argv)
 static INT SaveCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  char Name[NAMESIZE],Comment[LONGSTRSIZE];
+  char Name[NAMESIZE],type[NAMESIZE],Comment[LONGSTRSIZE];
   INT i;
 
   theMG = currMG;
@@ -2650,6 +2659,7 @@ static INT SaveCommand (INT argc, char **argv)
 
   /* check options */
   strcpy(Comment,NO_COMMENT);
+  strcpy(type,"asc");
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -2661,13 +2671,21 @@ static INT SaveCommand (INT argc, char **argv)
       }
       break;
 
+    case 't' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("t %",NAMELENSTR,"[ -~]")),type)!=1)
+      {
+        PrintHelp("open",HELPITEM," (cannot read type specification)");
+        return(PARAMERRORCODE);
+      }
+      break;
+
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("save",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
 
-  if (SaveMultiGrid(theMG,Name,Comment)) return (PARAMERRORCODE);
+  if (SaveMultiGrid(theMG,Name,type,Comment)) return (PARAMERRORCODE);
 
   return(OKCODE);
 }
@@ -2729,17 +2747,68 @@ static INT ReadSaveDataInput (MULTIGRID *theMG, INT argc, char **argv, char *VDS
 static INT SaveDataCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  char FileName[NAMESIZE];
+  char FileName[NAMESIZE],type[NAMESIZE];
   VECDATA_DESC *theVDList[5];
   EVALUES *theEValues[5];
   EVECTOR *theEVector[5];
-  INT n,ret;
+  INT i,n,ret,number;
+  int iValue;
+  float fValue;
+  DOUBLE time;
 
   theMG = currMG;
   if (theMG==NULL) {PrintErrorMessage('E',"savedata","no open multigrid"); return (CMDERRORCODE);}
 
   /* scan filename */
   if (sscanf(argv[0],expandfmt(CONCAT3(" savedata %",NAMELENSTR,"[ -~]")),FileName)!=1) { PrintErrorMessage('E',"save","cannot read filename"); return (CMDERRORCODE);}
+
+  strcpy(type,"asc");
+  number = -1;
+  time = -1.0;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 't' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("t %",NAMELENSTR,"[ -~]")),type)!=1)
+      {
+        PrintHelp("open",HELPITEM," (cannot read type specification)");
+        return(PARAMERRORCODE);
+      }
+      break;
+
+    case 'n' :
+      if (sscanf(argv[i],"n %d",&iValue)!=1)
+      {
+        PrintHelp("savedata",HELPITEM," (cannot read number specification)");
+        return(PARAMERRORCODE);
+      }
+      number = iValue;
+      if (number<0 || number > 9999)
+      {
+        PrintHelp("savedata",HELPITEM," (number out of range [0,9999])");
+        return(PARAMERRORCODE);
+      }
+      break;
+
+    case 'T' :
+      if (sscanf(argv[i],"T %f",&fValue)!=1)
+      {
+        PrintHelp("savedata",HELPITEM," (cannot read TIME specification)");
+        return(PARAMERRORCODE);
+      }
+      time = fValue;
+      if (time<0.0)
+      {
+        PrintHelp("savedata",HELPITEM," (TIME out of range ]-inf, 0.0[)");
+        return(PARAMERRORCODE);
+      }
+      break;
+    }
+  if ((time<0.0 && number>=0) || (time>=0.0 && number<0))
+  {
+    PrintHelp("savedata",HELPITEM," (specify both or none the options 'n' and 'T')");
+    return(PARAMERRORCODE);
+  }
 
   /* get input */
   n=0;
@@ -2750,7 +2819,7 @@ static INT SaveDataCommand (INT argc, char **argv)
   ret = ReadSaveDataInput (theMG,argc,argv,"e",'E',theVDList+4,theEValues+4,theEVector+4);        if (ret) n++;
 
   if (n<=0) return (PARAMERRORCODE);
-  if (SaveData(theMG,FileName,n,theVDList,theEValues,theEVector)) return (PARAMERRORCODE);
+  if (SaveData(theMG,FileName,type,number,time,n,theVDList,theEValues,theEVector)) return (PARAMERRORCODE);
 
   return(OKCODE);
 }
@@ -2786,15 +2855,43 @@ static INT SaveDataCommand (INT argc, char **argv)
 static INT LoadDataCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  char FileName[NAMESIZE];
+  char FileName[NAMESIZE],type[NAMESIZE];
   VECDATA_DESC *theVDList[5];
-  INT i,m,n;
+  INT i,m,n,number;
+  int iValue;
 
   theMG = currMG;
   if (theMG==NULL) {PrintErrorMessage('E',"loaddata","no open multigrid"); return (CMDERRORCODE);}
 
   /* scan filename */
   if (sscanf(argv[0],expandfmt(CONCAT3(" loaddata %",NAMELENSTR,"[ -~]")),FileName)!=1) { PrintErrorMessage('E',"save","cannot read filename"); return (CMDERRORCODE);}
+
+  strcpy(type,"asc");
+  number = -1;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 't' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("t %",NAMELENSTR,"[ -~]")),type)!=1)
+      {
+        PrintHelp("open",HELPITEM," (cannot read type specification)");
+        return(PARAMERRORCODE);
+      }
+      break;
+
+    case 'n' :
+      if (sscanf(argv[i],"n %d",&iValue)!=1)
+      {
+        PrintHelp("savedata",HELPITEM," (cannot read number specification)");
+        return(PARAMERRORCODE);
+      }
+      number = iValue;
+      if (number<0 || number > 9999)
+      {
+        PrintHelp("savedata",HELPITEM," (number out of range [0,9999])");
+        return(PARAMERRORCODE);
+      }
+    }
 
   /* get vecdatadesc */
   n=0;
@@ -2810,7 +2907,7 @@ static INT LoadDataCommand (INT argc, char **argv)
       m = i+1;
 
   if (m<=0) return (PARAMERRORCODE);
-  if (LoadData(theMG,FileName,m,theVDList)) return (PARAMERRORCODE);
+  if (LoadData(theMG,FileName,type,number,m,theVDList)) return (PARAMERRORCODE);
 
   return(OKCODE);
 }
