@@ -216,7 +216,11 @@ INT GetNextUGEvent_CUI (EVENT *theEvent, INT EventMask)
   if (EventMask==TERM_CMDKEY) return(0);
 
   /* read in a string from the user and store it in event structure */
-  fgets(theEvent->TermString.String,INPUTBUFFERLEN,stdin);
+  if (fgets(theEvent->TermString.String,INPUTBUFFERLEN,stdin) == NULL) {
+    /* stop if input is at EOF */
+    theEvent->Type = TERM_GOAWAY;
+    return 0;
+  };
   theEvent->Type = TERM_STRING;
 
   /* ready */
