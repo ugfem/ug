@@ -79,20 +79,20 @@
 #define REP_ERR_RESET                   rep_err_count = 0;
 #define REP_ERR_FILE                    static char *this_file=__FILE__
 
-#define DEBUG_TIME_RESET        debug_time_count = 0;
+#define DEBUG_TIME_RESET        __debug_time_count = 0;
 #ifdef ModelP
-#define DEBUG_TIME_INC                                    \
-  { debug_time_line[debug_time_count] = __LINE__;          \
-    debug_time_file[debug_time_count] = this_file;         \
-    debug_time[debug_time_count] = CurrentTime();          \
-    debug_time_count = (debug_time_count+1)%DEBUG_TIME_MAX;}
+#define DEBUG_TIME_INC                                        \
+  { __debug_time_line[__debug_time_count] = __LINE__;          \
+    __debug_time_file[__debug_time_count] = this_file;         \
+    __debug_time[__debug_time_count] = CurrentTime();          \
+    __debug_time_count = (__debug_time_count+1)%DEBUG_TIME_MAX;}
 
 #else
-#define DEBUG_TIME_INC                                    \
-  { debug_time_line[debug_time_count] = __LINE__;          \
-    debug_time_file[debug_time_count] = this_file;         \
-    debug_time[debug_time_count] = (double)clock();        \
-    debug_time_count = (debug_time_count+1)%DEBUG_TIME_MAX;}
+#define DEBUG_TIME_INC                                        \
+  { __debug_time_line[__debug_time_count] = __LINE__;          \
+    __debug_time_file[__debug_time_count] = this_file;         \
+    __debug_time[__debug_time_count] = (double)clock();        \
+    __debug_time_count = (__debug_time_count+1)%DEBUG_TIME_MAX;}
 
 #endif
 #define DEBUG_TIME(n)           if (Debugtime >= n) DEBUG_TIME_INC
@@ -152,10 +152,10 @@ extern int rep_err_line[REP_ERR_MAX];
 extern const char  *rep_err_file[REP_ERR_MAX];
 
 /* for timings */
-extern int debug_time_count;
-extern double debug_time[DEBUG_TIME_MAX];
-extern int debug_time_line[DEBUG_TIME_MAX];
-extern const char  *debug_time_file[DEBUG_TIME_MAX];
+extern int __debug_time_count;
+extern double __debug_time[DEBUG_TIME_MAX];
+extern int __debug_time_line[DEBUG_TIME_MAX];
+extern const char  *__debug_time_file[DEBUG_TIME_MAX];
 
 #endif
 

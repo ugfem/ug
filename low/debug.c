@@ -85,10 +85,10 @@ int rep_err_line[REP_ERR_MAX];
 const char  *rep_err_file[REP_ERR_MAX];
 
 /* for timings */
-int debug_time_count;
-double debug_time[DEBUG_TIME_MAX];
-int debug_time_line[DEBUG_TIME_MAX];
-const char  *debug_time_file[DEBUG_TIME_MAX];
+int __debug_time_count;
+double __debug_time[DEBUG_TIME_MAX];
+int __debug_time_line[DEBUG_TIME_MAX];
+const char  *__debug_time_file[DEBUG_TIME_MAX];
 
 /* from dddif/ppif.h */
 extern int me, master;
