@@ -80,6 +80,10 @@ INT InitNumerics ()
   INT err;
 
   /* init procs */
+  if ((err=InitNumProcManager())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
   if ((err=InitTransfer())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
