@@ -78,6 +78,15 @@ struct tmp
   struct bndsegcond theBSC[1];
 };
 
+struct tmp2
+{
+  /* fields for environment directory */
+  ENVVAR v;
+
+  /* integer list */
+  INT used[1];
+};
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
@@ -638,7 +647,8 @@ BVP *CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
   BOUNDARY_SEGMENT *theSegment;
   BOUNDARY_CONDITION *theBndCond;
   struct tmp *theTmp;
-  INT i, j, n;
+  struct tmp2 *theTmp2;
+  INT i, j, n, maxSubDomains;
   char name[NAMESIZE];
 
   /* get domain and problem */
@@ -661,7 +671,6 @@ BVP *CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
   theBVP->numOfPatches    = theDomain->numOfSegments;
   theBVP->numOfCorners    = theDomain->numOfCorners;
   theBVP->domConvex               = theDomain->domConvex;
-  theBVP->numOfSubdomains = theDomain->numOfSubdomains;
 
   /* fill in data of problem */
   theBVP->problemID               = theProblem->problemID;
@@ -673,17 +682,21 @@ BVP *CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
 
   /* create patches */
   theTmp = (struct tmp *) MakeEnvItem ("tmp",theTmpVarID,sizeof(struct tmp)+(theBVP->numOfPatches-1)*sizeof(struct bndsegcond));
+  ENVITEM_LOCKED(theTmp) = 0;
   for (i=0; i<theBVP->numOfPatches; i++)
   {
     theTmp->theBSC[i].theBS = NULL;
     theTmp->theBSC[i].theBC = NULL;
   }
+  maxSubDomains = 0;
   for (theSegment=GetFirstBoundarySegment(theDomain); theSegment!=NULL; theSegment = GetNextBoundarySegment(theSegment))
   {
     i = theSegment->id;
     if ((i<0)||(i>=theBVP->numOfPatches)) return(NULL);
     if (theTmp->theBSC[i].theBS!=NULL) return (NULL);
     theTmp->theBSC[i].theBS = theSegment;
+    maxSubDomains = MAX(maxSubDomains,theSegment->left);
+    maxSubDomains = MAX(maxSubDomains,theSegment->right);
   }
   for (theBndCond=GetFirstBoundaryCondition(theProblem); theBndCond!=NULL; theBndCond = GetNextBoundaryCondition(theBndCond))
   {
@@ -700,6 +713,8 @@ BVP *CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
     theBndCond = theTmp->theBSC[i].theBC;
     strcpy(name,ENVITEM_NAME(theSegment)); strcat(name,".p");
     thePatch = (PATCH *) MakeEnvItem (name,thePatchVarID,sizeof(STD_PATCH));
+    ENVITEM_LOCKED(thePatch) = 1;
+
     if (thePatch == NULL) return (NULL);
 
     /* set domain part */
@@ -720,6 +735,25 @@ BVP *CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
     thePatch->BndCond               = theBndCond->BndCond;
     thePatch->bc_data               = theBndCond->data;
   }
+  if (RemoveEnvItem((ENVITEM *)theTmp)) return (NULL);
+  theTmp2 = (struct tmp2 *) MakeEnvItem ("tmp2",theTmpVarID,sizeof(struct tmp2)+maxSubDomains*sizeof(INT));
+  ENVITEM_LOCKED(theTmp2) = 0;
+  for (i=1; i<=maxSubDomains; i++)
+    theTmp2->used[i] = 0;
+  for (theSegment=GetFirstBoundarySegment(theDomain); theSegment!=NULL; theSegment = GetNextBoundarySegment(theSegment))
+  {
+    theTmp2->used[theSegment->left] = 1;
+    theTmp2->used[theSegment->right] = 1;
+  }
+  for (i=1; i<=maxSubDomains; i++)
+    if (!theTmp2->used[i])
+    {
+      UserWrite("number of subdomains not consistent\n");
+      if (RemoveEnvItem ((ENVITEM *)theTmp2)) return (NULL);
+      return (NULL);
+    }
+  if (RemoveEnvItem ((ENVITEM *)theTmp2)) return (NULL);
+  theBVP->numOfSubdomains = maxSubDomains;
 
   UserWrite("BVP "); UserWrite(BVPName); UserWrite(" installed\n");
 
