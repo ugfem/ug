@@ -84,6 +84,7 @@ typedef struct
   INT baselevel;
   INT display;
   INT Orthogonalize;
+  INT Quadratic;
   INT Neumann;
   INT assemble;
   INT interpolate;
@@ -93,6 +94,7 @@ typedef struct
 
   VECDATA_DESC *r;
   VECDATA_DESC *t;
+  VECDATA_DESC *q;
   MATDATA_DESC *M;
 
 } NP_EW;
@@ -354,6 +356,42 @@ static INT RayleighQuotient (MULTIGRID *theMG,
   return (0);
 }
 
+static INT RayleighQuotientQ (MULTIGRID *theMG,
+                              MATDATA_DESC *M, VECDATA_DESC *x,
+                              VECDATA_DESC *r, VECDATA_DESC *t,
+                              VECDATA_DESC *q, DOUBLE *a)
+{
+  VEC_SCALAR scal1,scal2;
+  INT i,bl,tl;
+
+  bl = 0;
+  tl = CURRENTLEVEL(theMG);
+
+  if (s_dset(theMG,bl,tl,t,0.0))
+    return(1);
+
+  if (s_dmatmul (theMG,bl,tl,q,M,x,EVERY_CLASS)!=NUM_OK)
+    return(1);
+
+  if (s_dmatmul (theMG,bl,tl,t,M,q,EVERY_CLASS)!=NUM_OK)
+    return(1);
+
+  if (s_ddot (theMG,bl,tl,t,x,scal1)!=NUM_OK)
+    return(1);
+
+  if (s_ddot (theMG,bl,tl,r,x,scal2)!=NUM_OK)
+    return(1);
+
+  a[0] = a[1] = 0.0;
+  for (i=0; i<VD_NCOMP(t); i++)
+  {
+    a[0] += scal1[i];
+    a[1] += scal2[i];
+  }
+
+  return (0);
+}
+
 static INT RayleighDefect (MULTIGRID *theMG, VECDATA_DESC *r,
                            VECDATA_DESC *t, DOUBLE rq, DOUBLE *defect)
 {
@@ -519,8 +557,19 @@ static INT Rayleigh (NP_EW_SOLVER *theNP, INT level,
   PrintVector(GRID_ON_LEVEL(theNP->base.mg,level),ev,3,3);
   ENDDEBUG
 
-  if (RayleighQuotient(theNP->base.mg,np->M,ev,np->r,np->t,a)) NP_RETURN(1,result[0]);
-  if (a[1] <= ABS(a[0]) * VERY_SMALL) NP_RETURN(1,result[0]);
+  if (np->Quadratic) {
+    if (AllocVDFromVD(theNP->base.mg,0,level,ev,&np->q))
+      NP_RETURN(1,result[0]);
+    if (RayleighQuotientQ(theNP->base.mg,np->M,ev,np->r,np->t,
+                          np->q,a))
+      NP_RETURN(1,result[0]);
+    if (FreeVD(theNP->base.mg,0,level,np->q))
+      NP_RETURN(1,result[0]);
+  }
+  else if (RayleighQuotient(theNP->base.mg,np->M,ev,np->r,np->t,a))
+    NP_RETURN(1,result[0]);
+  if (a[1] <= ABS(a[0]) * VERY_SMALL)
+    NP_RETURN(1,result[0]);
   *q = a[0] / a[1];
 
   PRINTDEBUG(np,1,("a %f %f q %f\n",a[0],a[1],*q));
@@ -594,14 +643,21 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
       for (j=0; j<VD_NCOMP(np->r); j++)
         scal[j] = 1.0 / sqrt(a[0]);
     }
-    if(a_dscale(theMG,bl,level,ev[i],EVERY_CLASS,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
-    if(a_dscale(theMG,bl,level,np->r,EVERY_CLASS,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
-    if(a_dscale(theMG,bl,level,np->t,EVERY_CLASS,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
+    if (a_dscale(theMG,bl,level,ev[i],EVERY_CLASS,scal) != NUM_OK)
+      NP_RETURN(1,ewresult->error_code);
+    if (a_dscale(theMG,bl,level,np->r,EVERY_CLASS,scal) != NUM_OK)
+      NP_RETURN(1,ewresult->error_code);
+    if (a_dscale(theMG,bl,level,np->t,EVERY_CLASS,scal) != NUM_OK)
+      NP_RETURN(1,ewresult->error_code);
     CenterInPattern(text,DISPLAY_WIDTH," inverse iteration ",'%',"\n");
-    if (PreparePCR(np->r,np->display,text,&PrintID)) NP_RETURN(1,ewresult->error_code);
-    if (RayleighDefect(theMG,np->r,np->t,rq,defect)) NP_RETURN(1,ewresult->error_code);
-    if (sc_mul(defect2reach,defect,reduction,np->t)) NP_RETURN(1,ewresult->error_code);
-    if (DoPCR(PrintID,defect,PCR_CRATE)) NP_RETURN(1,ewresult->error_code);
+    if (PreparePCR(np->r,np->display,text,&PrintID))
+      NP_RETURN(1,ewresult->error_code);
+    if (RayleighDefect(theMG,np->r,np->t,rq,defect))
+      NP_RETURN(1,ewresult->error_code);
+    if (sc_mul(defect2reach,defect,reduction,np->t))
+      NP_RETURN(1,ewresult->error_code);
+    if (DoPCR(PrintID,defect,PCR_CRATE))
+      NP_RETURN(1,ewresult->error_code);
     for (iter=0; iter<np->maxiter; iter++) {
       if (sc_cmp(defect,defect2reach,np->t))
         break;
@@ -625,21 +681,57 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
         return(1);
       for (j=0; j<VD_NCOMP(np->r); j++)
         scal[j] = rq;
-      if (s_dscale(theMG,0,level,np->r,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
-      if (FreeVD(theMG,bl,level,np->t)) NP_RETURN(1,ewresult->error_code);
+      if (s_dscale(theMG,0,level,np->r,scal) != NUM_OK)
+        NP_RETURN(1,ewresult->error_code);
+      if (FreeVD(theMG,bl,level,np->t))
+        NP_RETURN(1,ewresult->error_code);
       /* solve */
-      if ((*np->LS->Defect)(np->LS,level,ev[i],np->r,np->M,
-                            &ewresult->error_code))
-        return (1);
-      if ((*np->LS->Residuum)(np->LS,level,level,ev[i],np->r,np->M,
+      if (np->Quadratic) {
+        if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t))
+          NP_RETURN(1,ewresult->error_code);
+        if (s_dcopy (theMG,bl,level,np->t,ev[i]) != NUM_OK)
+          NP_RETURN(1,ewresult->error_code);
+        for (j=0; j<VD_NCOMP(np->r); j++)
+          scal[j] = sqrt(rq);
+        if (a_dscale(theMG,bl,level,np->t,EVERY_CLASS,scal) != NUM_OK)
+          NP_RETURN(1,ewresult->error_code);
+        if ((*np->LS->Defect)(np->LS,level,np->t,np->r,np->M,
+                              &ewresult->error_code))
+          return (1);
+        if ((*np->LS->Residuum)(np->LS,level,level,np->t,np->r,np->M,
+                                &ewresult->lresult[i]))
+          return (1);
+        if ((*np->LS->Solver)(np->LS,level,np->t,np->r,np->M,
+                              abslimit,reduction,
                               &ewresult->lresult[i]))
-        return (1);
-      if ((*np->LS->Solver)(np->LS,level,ev[i],np->r,np->M,
-                            abslimit,reduction,
-                            &ewresult->lresult[i]))
-        return (1);
-
-      if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t)) NP_RETURN(1,ewresult->error_code);
+          return (1);
+        if ((*np->LS->Defect)(np->LS,level,ev[i],np->t,np->M,
+                              &ewresult->error_code))
+          return (1);
+        if ((*np->LS->Residuum)(np->LS,level,level,ev[i],np->t,np->M,
+                                &ewresult->lresult[i]))
+          return (1);
+        if ((*np->LS->Solver)(np->LS,level,ev[i],np->t,np->M,
+                              abslimit,reduction,
+                              &ewresult->lresult[i]))
+          return (1);
+        if (FreeVD(theMG,bl,level,np->t))
+          NP_RETURN(1,ewresult->error_code);
+      }
+      else {
+        if ((*np->LS->Defect)(np->LS,level,ev[i],np->r,np->M,
+                              &ewresult->error_code))
+          return (1);
+        if ((*np->LS->Residuum)(np->LS,level,level,ev[i],np->r,np->M,
+                                &ewresult->lresult[i]))
+          return (1);
+        if ((*np->LS->Solver)(np->LS,level,ev[i],np->r,np->M,
+                              abslimit,reduction,
+                              &ewresult->lresult[i]))
+          return (1);
+      }
+      if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t))
+        NP_RETURN(1,ewresult->error_code);
       if (Rayleigh(&(np->ew),level,ev[i],Assemble,a,&rq,
                    &ewresult->error_code))
         return(1);
@@ -738,6 +830,10 @@ static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
     np->Orthogonalize = 1;
   else
     np->Orthogonalize = 0;
+  if (ReadArgvOption("Q",argc,argv))
+    np->Quadratic = 1;
+  else
+    np->Quadratic = 0;
   if (ReadArgvOption("N",argc,argv))
     np->Neumann = 1;
   else
@@ -782,6 +878,8 @@ static INT EWDisplay (NP_BASE *theNP)
     UserWrite("\nuse right hand side for orthogolization\n");
   else
     UserWrite("\nuse left hand side for orthogolization\n");
+  if (np->Quadratic)
+    UserWrite("\nuse quadratic stiffness matrix\n");
   if (np->Neumann)
     UserWrite("\nNeumann boundary\n");
 
