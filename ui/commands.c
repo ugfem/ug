@@ -1667,6 +1667,10 @@ static INT LogOnCommand (INT argc, char **argv)
                                 #endif
       break;
 
+    case 'f' :
+      CloseLogFile();
+      break;
+
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("logon",HELPITEM,buffer);
