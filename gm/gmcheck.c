@@ -299,7 +299,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 			{
 				nerrors++;	
                 #ifdef ModelP
-				if (EPRIO(theElement)==PrioHGhost) {
+				if (EGHOST(theElement)) {
 				    nerrors = 0;
 					IFDEBUG(gm,1)
 					    nerrors = 1;
@@ -770,18 +770,17 @@ if (0)
 				if (j >= EDGES_OF_ELEM(theFather)) 
 				{
 					#ifdef ModelP
-					if (EMASTER(theFather))
-					#endif
-						UserWriteF(PFMT "ELEM(" EID_FMTX ") ERROR MIDNODE=NULL"
-							" for mid node[%d]=" ID_FMTX "\n",
-							me,EID_PRTX(theFather),i,ID_PRTX(theNode));
-					#ifdef ModelP
-					else
+					if (EMASTER(theFather)) {
                         IFDEBUG(gm,1) 
 						UserWriteF(PFMT "ELEM(" EID_FMTX ") WARNING MIDNODE=NULL"
 							" for mid node[%d]" ID_FMTX "\n",
 							me,EID_PRTX(theFather),i,ID_PRTX(theNode));
 					    ENDDEBUG 
+					}
+					#else
+					UserWriteF(PFMT "ELEM(" EID_FMTX ") ERROR MIDNODE=NULL"
+							   " for mid node[%d]=" ID_FMTX "\n",
+							   me,EID_PRTX(theFather),i,ID_PRTX(theNode));
 					#endif
 				}
 			}
