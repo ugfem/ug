@@ -16,15 +16,15 @@ ARCH_TYPE     = __T3D__
 
 ARCH_MAKE     = make
 ARCH_CC       = cc
-ARCH_LINK     = /mpp/bin/mppld
+ARCH_LINK     = /opt/mpp/bin/mppld
 ARCH_F77      = cf77
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = true
 
-ARCH_LIBS     = -lc -lm
+ARCH_LIBS     = -L/opt/mpp/lib -lc -lm -ll
 
-ARCH_CFLAGS   = -I /usr/include/mpp -O   # -g 
+ARCH_CFLAGS   = -I /usr/include/mpp -g   # -g 
 #ARCH_CFLAGS  = -hinline3,scalar3
 #ARCH_CFLAGS  = -g
 #ARCH_CFLAGS  = -hinline2,scalar2
