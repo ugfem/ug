@@ -268,7 +268,7 @@
     }\
   }
 #else
-#define GRID_LINK_OBJECT(Grid,Object,OTYPE,PRED,SUCC)\
+#define GRID_LINK_OBJECT(Grid,Object,Prio,OTYPE,PRED,SUCC)\
   {\
     OTYPE *after;\
 \
