@@ -5163,7 +5163,7 @@
 			);
 			isa = PBXGroup;
 			name = arch;
-			path = "";
+			path = ../../arch;
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
