@@ -124,9 +124,9 @@ sub model_vmeshpre_jou
 	printf FILE "\n";
 
 	printf FILE "logging on file '%s_vmesh.log'\n",$model;
-	printf FILE "\n";
+ 	printf FILE "\n";
 
-	printf FILE "export genesis 'unit_vmesh.gen'\n";
+ 	printf FILE "export genesis 'unit_vmesh.gen'\n";
 
 	close(FILE);
 }
@@ -140,11 +140,11 @@ sub model_vmesh_jou
 	open(FILE, ">$filename") || die "can't open $filename\n";
 
 	printf FILE "# consistent geometry\n";
-	printf FILE "playback '%s_geom.jou'",$model;
+	printf FILE "playback '%s_geom.jou'\n",$model;
 	printf FILE "\n";
 
 	printf FILE "# set surface normal\n";
-	printf FILE "playback '%s_usn.jou'",$model;
+	printf FILE "playback '%s_usn.jou'\n",$model;
 	printf FILE "\n";
 
 	printf FILE "# volume meshing\n";
