@@ -320,7 +320,6 @@ void     DDD_TypeDefine (DDD_TYPE *, ...);
 void     DDD_TypeDisplay (DDD_TYPE *);
 void     DDD_HandlerRegister (DDD_TYPE *, ...);
 int      DDD_InfoTypes (void);
-int      DDD_InfoIsLocal (DDD_HDR);
 #endif
 
 
@@ -332,6 +331,8 @@ void     DDD_PrioritySet (DDD_HDR, DDD_PRIO);
 void     DDD_AttrSet (DDD_HDR, DDD_ATTR); /* this shouldn't be allowed */
 int  *   DDD_InfoProcList (DDD_HDR);
 DDD_PROC DDD_InfoProcPrio (DDD_HDR, DDD_PRIO);
+int      DDD_InfoIsLocal (DDD_HDR);
+int      DDD_InfoNCopies (DDD_HDR);
 
 #ifdef F_FRONTEND
 #define  DDD_InfoPriority    F77SYM(ddd_infopriority,DDD_INFOPRIORITY)

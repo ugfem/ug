@@ -37,6 +37,17 @@
 #include "xfer.h"
 
 
+
+/* TODO kb 961210
+   #define WANTED_NOCH_GENAUER_UNTERSUCHEN
+ */
+
+/* TODO kb 961210
+   #define MERGE_MODE_WEITERENTWICKELN
+ */
+
+
+
 #define DebugUnpack  5  /* off: 5 */
 
 /*#define DebugCouplingCons*/
@@ -746,7 +757,9 @@ static void UpdateCouplings (
             {
               if (hdr!=NULL)
                 AddCoupling(hdr, nc->dest, nc->prio);
+#ifdef WANTED_NOCH_GENAUER_UNTERSUCHEN
               else { printf("%4d: WANTED 3  %d/%d\n",me,nc->dest,nc->prio); }
+#endif
               iNC++;
             }
             else                                     /* destNO == destNC */
@@ -759,7 +772,9 @@ static void UpdateCouplings (
 
                 AddCoupling(hdr, nc->dest, prio);
               }
+#ifdef WANTED_NOCH_GENAUER_UNTERSUCHEN
               else { printf("%4d: WANTED 4  %d/%d/%d\n",me,nc->dest,no->prio,nc->prio); }
+#endif
               iNO++;
               iNC++;
             }
@@ -773,7 +788,9 @@ static void UpdateCouplings (
             {
               AddCoupling(itemsLCO[iLCO], nc->dest, nc->prio);
             }
+#ifdef WANTED_NOCH_GENAUER_UNTERSUCHEN
             else { printf("%4d: WANTED 5  %d/%d\n",me,nc->dest,nc->prio); }
+#endif
             iNC++;
           }
           else
@@ -786,7 +803,9 @@ static void UpdateCouplings (
               /* there is no DelObj-item */
               AddCoupling(no->hdr, no->dest, no->prio);
             }
+#ifdef WANTED_NOCH_GENAUER_UNTERSUCHEN
             else { printf("%4d: WANTED 6  %d/%d\n",me,nc->dest,no->prio); }
+#endif
             /*
                     else: object has been deleted, ->hdr is invalid
                     there is no need for AddCoupling here.
@@ -957,8 +976,10 @@ static void UnpackSingleMsg (LC_MSGHANDLE xm,
 
       if (desc->nPointers>0)
       {
+#ifdef MERGE_MODE_WEITERENTWICKELN
         printf("%4d: LocalizeObject in merge_mode, %08x prio %d\n",
                me, theObjTab[i].gid, theObjTab[i].prio);
+#endif
 
         /* execute Localize in merge_mode */
         /*

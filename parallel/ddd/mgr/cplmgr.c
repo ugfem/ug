@@ -426,9 +426,25 @@ DDD_PROC DDD_InfoProcPrio (DDD_HDR hdr, DDD_PRIO prio)
   return(procs);
 }
 
+
 int DDD_InfoIsLocal (DDD_HDR hdr)
 {
   return(! HAS_COUPLING(hdr));
+}
+
+
+int DDD_InfoNCopies (DDD_HDR hdr)
+{
+  COUPLING *cpl;
+  int n = 0;
+
+  if (HAS_COUPLING(hdr))
+  {
+    for(cpl=theCpl[OBJ_INDEX(hdr)]; cpl!=NULL; cpl=cpl->next)
+      n++;
+  }
+
+  return(n);
 }
 
 

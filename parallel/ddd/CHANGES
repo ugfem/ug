@@ -3,6 +3,10 @@
 CHANGES 1.6.9 -> 1.6.10
 
 ---------------------------
+961209 kb
+new function DDD_InfoNCopies().
+	- returns number of copies of a local object. The local object itself
+	  is not included.
 961128 kb
 integrated changes from F_FRONTEND branch.
 	- now F_FRONTEND is available with reference conversion,

@@ -22,7 +22,8 @@
 /*                                                                          */
 /****************************************************************************/
 
-#define DebugIdent 5  /* 10 is off */
+#define DebugIdent 10  /* 10 is off */
+
 
 
 
@@ -30,6 +31,8 @@
         in debuglevel DebugIdentCons, addititional data is sent with
         the identify-messages, in order to check the consistency of
         the identification tupels.
+
+        this is for configuring the debug actions only.
  */
 #define DebugIdentCons  8
 
@@ -144,8 +147,7 @@ typedef struct _IDENTINFO {
 
   /* information only for tupel_head */
   /* NOTE: other tupel-items MUST contain same information,
-     at least when they are switched to tupel_head during
-     SortTupelObjectItems() !
+     at least when they are switched to tupel_head during qsort!
    */
   int nObjIds;                    /* number of entries with typeID==ID_OBJECT */
   int loi;                        /* level of indirection */
@@ -482,6 +484,7 @@ static void SetLOI (IDENTINFO *ii, int loi)
 {
   ID_REFDBY *rby;
   IDENTINFO *head = ii->tupel_head;
+  int i;
 
   /*
      printf("%4d: %08x SetLOI(%d, %d)\n", me, ii->msg.gid, loi, ii->loi);
@@ -489,6 +492,11 @@ static void SetLOI (IDENTINFO *ii, int loi)
 
   /* set loi to maximum of current and new value */
   head->loi = MAX(loi, head->loi);
+  for(i=1; i<head->nObjIds; i++)
+  {
+    head[i].loi     = head->loi;
+    head[i].refd    = head->refd;
+  }
 
   /* primitive cycle detection */
   if (head->loi > 64)
@@ -673,92 +681,15 @@ static void TupelId (IDENTINFO *id, int nIds)
   {
     id[i].tupel      = tId;
     id[i].tupel_head = id;
+    id[i].nObjIds    = nObjIds;
   }
-}
-
-
-
-/*
-        reorder the section of a tupel's IdentifyObject entries.
-        assumption: the IdentifyObject-entries are already sorted according
-        to their id.object entry (ascending order).
-        the entry 'id' has been changed, therefore its position in the
-        IdentifyObject-section of the tupel could have changed.
-        find new position by linear search. avoid using qsort because the number
-        of entries will be small.
- */
-static void SortTupelObjectItems (IDENTINFO *id)
-{
-  IDENTINFO *head = id->tupel_head;
-  IDENTINFO bubble = *id;
-  int i, pos = id-head;
-
-  /* move down if necessary */
-  if (pos > 0)
-  {
-    /* backwards from id's position until tupel_head is reached */
-    for(i=pos; i>0; i--)
-    {
-      if (bubble.id.object>=head[i-1].id.object)
-      {
-        /* reached correct position, we are ready */
-        break;
-      }
-      else
-      {
-        /* otherwise bubble item down, bubble head[i-1] up */
-        head[i] = head[i-1];
-      }
-    }
-    if (i<pos)
-    {
-      /* insert bubble at gap */
-      head[i] = bubble;
-      pos = i;
-    }
-    if (i==0)
-    {
-      /* tupel_head has been moved up, copy tupel_head-data
-         to new tupel_head! */
-      head[0].nObjIds = head[1].nObjIds;
-      head[0].loi     = head[1].loi;
-      head[0].refd    = head[1].refd;
-      head[1].refd = NULL;                    /* refd-list anchor is moved to head! */
-    }
-  }
-  /* else:  id IS already tupel_head, we dont have to move down */
-
-  /* move up if necessary */
-  if (pos < head->nObjIds-1)
-  {
-    /* forward from id's position until last ID_OBJECT is reached */
-    for(i=pos; i< head->nObjIds-1; i++)
-    {
-      if (bubble.id.object<=head[i+1].id.object)
-      {
-        /* reached correct position, we are ready */
-        break;
-      }
-      else
-      {
-        /* otherwise bubble item up, bubble head[i+1] down */
-        head[i] = head[i+1];
-      }
-    }
-    if (i>pos)
-    {
-      /* insert bubble at gap */
-      head[i] = bubble;
-      pos = i;
-    }
-  }
-  /* else:  id IS already last item, we dont have to move up */
 }
 
 
 
 static int IdentifySort (IDENTINFO *id, int nIds,
-                         int nIdentObjs, MSGITEM *items_out, IDENTINFO ***indexmap_out)
+                         int nIdentObjs, MSGITEM *items_out, IDENTINFO ***indexmap_out,
+                         DDD_PROC dest)
 {
   IDENTINFO **idp;
   int i, j, last, nTupels;
@@ -840,6 +771,7 @@ static int IdentifySort (IDENTINFO *id, int nIds,
   do {
     while (j<nTupels && idp[i]->loi==idp[j]->loi)
     {
+      /* reorder because of changes in id.object */
       if (! keep_order_inside_tupel)
       {
         qsort(idp[j],
@@ -864,28 +796,18 @@ static int IdentifySort (IDENTINFO *id, int nIds,
         /* dont use gid of referenced object (because it
            will be known only after identification), but its
            position in the identification table instead! */
+
         /*
-           printf("%4d: loi=%d i=%d, %08x <- %08x\n",
-           me, idp[i]->loi, i, OBJ_GID(idp[i]->hdr), OBJ_GID(rby->by->hdr));
+           printf("%4d: insertRef dest=%d loi=%d i=%d, %08x <- %08x\n",
+           me, dest, idp[i]->loi, i, OBJ_GID(idp[i]->hdr), OBJ_GID(rby->by->hdr));
          */
+
 
         rby->by->id.object = i;
 
-        /* now the tupel value has been changed! */
-        if (! keep_order_inside_tupel)
-        {
-          /* if the ordering is not significant, we must reorder
-             the tupel here (i.e., for IDMODE_SETS).
-           */
-          /* NOTE: each tupel will be reordered for each reference,
-             although it would be enough to order it after the
-             last change from the above program line. we ignore
-             this here, because performance will not suffer
-             except for VERY complicated id tupels. */
-          /*
-                  SortTupelObjectItems(rby->by);
-           */
-        }
+        /* if the ordering is not significant, we must reorder
+           the tupel after this opration. (i.e., for IDMODE_SETS).
+         */
       }
 
       i++;
@@ -898,10 +820,23 @@ static int IdentifySort (IDENTINFO *id, int nIds,
   /* construct array which will be sent actually */
   for(j=0; j<nTupels; j++)
   {
+    /*
+       int k;
+     */
 #               if DebugIdent<=1
-    printf("%4d: msg_idx[%08x] = %5d, loi=%d\n",
-           me, idp[j]->msg.gid, j, idp[j]->loi);
+    printf("%4d: Ident dest=%d msg_idx[ %08x ] = %5d, loi=%d\n",
+           me, dest, idp[j]->msg.gid, j, idp[j]->loi);
 #               endif
+
+    /*
+       for(k=0;k<idp[j]->nObjIds;k++)
+       {
+            printf("%4d:               msg_idx %d %08x\n", me,
+                    k, idp[j]->tupel_head[k].id.object);
+       }
+     */
+
+
 
     items_out[j] = idp[j]->msg;
 
@@ -1075,7 +1010,8 @@ void DDD_IdentifyEnd (void)
     plist->entries = IdentifySort(plist->local_ids, plist->entries,
                                   plist->nIdentObjs,
                                   plist->msgout,   /* output: msgbuffer outgoing */
-                                  &plist->indexmap); /* output: mapping of indices to local_ids array */
+                                  &plist->indexmap, /* output: mapping of indices to local_ids array */
+                                  plist->proc);
 
 
 #               if DebugIdent<=5
@@ -1113,8 +1049,8 @@ void DDD_IdentifyEnd (void)
         for(i=0; i<plist->entries; i++, msgin++, msgout++)
         {
 #                                       if DebugIdent<=1
-          printf("%4d: identifying %08x with %08x to %08x\n", me,
-                 OBJ_GID((*msgout)->hdr), msgin->gid,
+          printf("%4d: identifying %08x with %08x/%d to %08x\n", me,
+                 OBJ_GID((*msgout)->hdr), msgin->gid, plist->proc,
                  MIN(OBJ_GID((*msgout)->hdr), msgin->gid));
 #                                       endif
 
@@ -1217,15 +1153,15 @@ static void IdentifyIdEntry (DDD_HDR hdr, ID_ENTRY *id, DDD_PROC proc)
   switch (id->msg.typeId)
   {
   case ID_NUMBER :
-    printf("%4d: IdentifyIdEntry %08x %4d %d\n", me, OBJ_GID(hdr), proc, id->msg.id.number);
+    printf("%4d: IdentifyIdEntry %08x %02d with %4d num %d\n", me, OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.number);
     break;
 
   case ID_STRING :
-    printf("%4d: IdentifyIdEntry %08x %4d %s\n", me, OBJ_GID(hdr), proc, id->msg.id.string);
+    printf("%4d: IdentifyIdEntry %08x %02d with %4d str %s\n", me, OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.string);
     break;
 
   case ID_OBJECT :
-    printf("%4d: IdentifyIdEntry %08x %4d %d\n", me, OBJ_GID(hdr), proc, id->msg.id.object);
+    printf("%4d: IdentifyIdEntry %08x %02d with %4d gid %08x\n", me, OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.object);
     break;
   }
 #       endif
