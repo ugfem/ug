@@ -110,7 +110,7 @@
 
 #define MAX_ELEM_VECTORS                (MAX_CORNERS_OF_ELEM+MAX_EDGES_OF_ELEM+1+MAX_SIDES_OF_ELEM)
 
-#define MAX_NDOF_MOD_32         1           /* max number of doubles in a vector or matrix mod 32 */
+#define MAX_NDOF_MOD_32         3           /* max number of doubles in a vector or matrix mod 32 */
 
 
 /* some useful variables */
@@ -1989,13 +1989,6 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define NELIST_DEF_IN_GRID(p)  ((p)->mg->theFormat->nodeelementlist)
 #define EDATA_DEF_IN_GRID(p)   ((p)->mg->theFormat->elementdata)
 #define NDATA_DEF_IN_GRID(p)   ((p)->mg->theFormat->nodedata)
-
-#define READ_DR_VEC_FLAG(p,vt,i)        READ_FLAG((p)->dr.VecReserv[vt][(i)/32],1<<((i)%32))
-#define READ_DR_MAT_FLAG(p,vt,i)        READ_FLAG((p)->dr.MatReserv[vt][(i)/32],1<<((i)%32))
-#define SET_DR_VEC_FLAG(p,vt,i)         SET_FLAG((p)->dr.VecReserv[vt][(i)/32],1<<((i)%32))
-#define SET_DR_MAT_FLAG(p,vt,i)         SET_FLAG((p)->dr.MatReserv[vt][(i)/32],1<<((i)%32))
-#define CLEAR_DR_VEC_FLAG(p,vt,i)       CLEAR_FLAG((p)->dr.VecReserv[vt][(i)/32],1<<((i)%32))
-#define CLEAR_DR_MAT_FLAG(p,vt,i)       CLEAR_FLAG((p)->dr.MatReserv[vt][(i)/32],1<<((i)%32))
 
 /****************************************************************************/
 /*																			*/
