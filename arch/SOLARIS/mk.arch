@@ -9,12 +9,13 @@
 #   -R/usr/local/X11/lib:/usr/openwin/lib   for  static linking of
 #                                           shared libraries (in parallel)
 #
-ARCH_TYPE     = __SUN__
+ARCH_TYPE     = __SOLARIS__
 
 ARCH_MAKE     = make
 ARCH_CC       = cc -Xa     # -X[a|c|s|t]  varying degrees of ANSI conformance
 ARCH_C++      = CC
-ARCH_LINK     = cc
+ARCH_F77      = f77 -g
+ARCH_LINK     = cc         # f77 if FORTRAN libraries needed
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = true
@@ -22,8 +23,8 @@ ARCH_POSTLINK = true
 ARCH_LIBS     = -lm -lc
 
 # -g           debug
-ARCH_CFLAGS   = -g
-ARCH_C++FLAGS = -g
+ARCH_CFLAGS   = -g -xs
+ARCH_C++FLAGS = -g -xs
 ARCH_LFLAGS   = -lnsl
 ARCH_ARFLAGS  = ru
 
