@@ -483,32 +483,6 @@ INT BNDS_Dispose (HEAP *Heap, BNDS *aBndS)
 }
 
 /****************************************************************************/
-/*D
-   BNDP_BndEDesc - set part for boundary edge
-
-   SYNOPSIS:
-   INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part);
-
-   PARAMETERS:
-   .  aBndP0, aBndP1 - endpoints of edge
-   .  part - part-info for edge
-
-   DESCRIPTION:
-   This function set part of edge on boundary
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
-INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
-{
-  return (1);
-}
-
-/****************************************************************************/
 /*
    InitDom - init for lgm-domain
 

@@ -5563,6 +5563,8 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
           }
         }
         theElement = InsertElement (theGrid,n,Nodes,NULL,NULL);
+        if (theElement==NULL) return (GM_ERROR);
+        SETSUBDOMAIN(theElement,j);
       }
   }
 
