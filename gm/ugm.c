@@ -9716,6 +9716,35 @@ INT MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
   return(error);
 }
 
+INT MinMaxEdge (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
+{
+  INT error,i,s1,s2,tag;
+  DOUBLE angle,*x[MAX_CORNERS_OF_SIDE],l,n1[DIM],n2[DIM],min,max;
+
+  error=GM_OK;
+  tag=TAG(theElement);
+
+  min = DBL_MAX;
+  max = DBL_MIN;
+  for (s1=0; s1<EDGES_OF_TAG(tag); s1++)
+  {
+
+    /* get corner coordinates of side and evaluate normal */
+    for (i=0; i<CORNERS_OF_EDGE; i++)
+      x[i]=CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE_TAG(tag,s1,i))));
+
+    V_DIM_EUKLIDNORM_OF_DIFF(x[0],x[1],l);
+
+    max = MAX(max,l);
+    min = MIN(min,l);
+
+  }
+  l = max/min;
+  /* UserWriteF("id=%d length=%lf max=%lf min=%lf\n",ID(theElement),l,max,min); */
+  *amax = MAX(*amax,l);
+  *amin = MIN(*amin,l);
+  return(error);
+}
 
 /****************************************************************************/
 /*D
