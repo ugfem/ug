@@ -58,6 +58,9 @@ GM: include
 NUMERICS: include
 	cd numerics; make -f Makefile.numerics; cd ..;
 
+NP: include
+	cd np; make -f Makefile.np; cd ..;
+
 GRAPHICS: include
 	cd graphics; make -f Makefile.graphics; cd ..;
 
