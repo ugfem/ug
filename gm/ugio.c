@@ -532,7 +532,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
   LINK *theLink;
   EDGE *theEdge;
   ELEMENTSIDE *theSide;
-  HEAP *theHeap;
+  HEAP *theHeap,*theUserHeap;
   MULTIGRID *theMG;
   BOUNDARY_SEGMENT *theSegment;
   BOUNDARY_CONDITION *theBndCond;
@@ -564,7 +564,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
   /* find version of ug file */
   if (fscanf(stream,">-version UG%ld-<",&version)!=1)
   {
-    PrintErrorMessage('E',"LoadMultiGrid","I think it's not an ug file\n");
+    PrintErrorMessage('E',"LoadMultiGrid","I think it's not an ug file");
     fclose(stream); return(NULL);
   }
   sprintf(buffer,"grid file ug version %ld\n",version);
@@ -592,17 +592,17 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
   else
   {
     dim = 2;
-    PrintErrorMessage('W',"LoadMultiGrid","That is an old ug file, save it to get an up to date version\n");
+    PrintErrorMessage('W',"LoadMultiGrid","That is an old ug file, save it to get an up to date version");
   }
   if (dim != DIM)
   {
-    PrintErrorMessage('W',"LoadMultiGrid","grid has wrong dimension\n");
+    PrintErrorMessage('W',"LoadMultiGrid","grid has wrong dimension");
     fclose(stream); return (NULL);
   }
 #ifdef __version23__
   if (version>23)
   {
-    PrintErrorMessage('W',"LoadMultiGrid","You can read only files with version <=2.3 with this application\n");
+    PrintErrorMessage('W',"LoadMultiGrid","You can read only files with version <=2.3 with this application");
     fclose(stream); return(NULL);
   }
 #endif
@@ -613,7 +613,12 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
 
   /* allocate the heap */
   theHeap = NewHeap(SIMPLE_HEAP, heapSize, malloc(heapSize));
-  if (theHeap==NULL) {DisposeMultiGrid(theMG); return(NULL);}
+  if (theHeap==NULL)
+  {
+    PrintErrorMessage('E',"LoadMultiGrid","could not allocate heap");
+    DisposeMultiGrid(theMG);
+    return(NULL);
+  }
 
 
   /* read multigrid info */
@@ -692,22 +697,20 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
   else
     GEN_MGUD(theMG) = NULL;
 
-  /* 2: individual user data space */
+  /* 2: user heap */
   ds = theFormat->sMultiGrid;
   if (ds!=0)
   {
-    INDIV_MGUDM(theMG) = (VIRT_HEAP_MGMT*) GetMem(theHeap,SIZEOF_VHM,FROM_BOTTOM);
-    if (INDIV_MGUDM(theMG)==NULL) {DisposeMultiGrid(theMG); fclose(stream); return(NULL);}
-    InitVirtualHeapManagement (INDIV_MGUDM(theMG),ds);
-    INDIV_MGUD(theMG) = GetMem(theHeap,ds,FROM_BOTTOM);
-    if (INDIV_MGUD(theMG)==NULL) {DisposeMultiGrid(theMG); fclose(stream); return(NULL);}
-    memset(INDIV_MGUD(theMG),0,ds);
+    theUserHeap = NewHeap(SIMPLE_HEAP, ds, GetMem(theHeap,ds,FROM_BOTTOM));
+    if (theUserHeap==NULL)
+    {
+      DisposeMultiGrid(theMG);
+      return(NULL);
+    }
+    MG_USER_HEAP(theMG) = theUserHeap;
   }
   else
-  {
-    INDIV_MGUDM(theMG) = NULL;
-    INDIV_MGUD(theMG)  = NULL;
-  }
+    MG_USER_HEAP(theMG) = NULL;
 
   /* domain, problem and format */
   theMG->theDomain = theDomain;
