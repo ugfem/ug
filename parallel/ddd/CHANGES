@@ -1,5 +1,14 @@
 ---------------------------
 
+CHANGES 1.8.14 -> 1.8.15
+
+---------------------------
+980316 kb
+new command DDD_XferObjIsResent().
+	- returns XFER_RESENT_TRUE for objects which will receive an additional
+	  copy during XferEnd() (sent by another processor).
+---------------------------
+
 CHANGES 1.8.13 -> 1.8.14
 
 ---------------------------

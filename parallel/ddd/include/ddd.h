@@ -48,7 +48,7 @@
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.14"
+#define DDD_VERSION    "1.8.15"
 
 
 /****************************************************************************/
@@ -237,10 +237,16 @@ enum XferConstants {
   XFER_NEW,
 
 
-  /* return value for DDD_XferObjIsPruned */
+  /* return value for DDD_XferIsPrunedDelete */
   XFER_PRUNED_TRUE = 0x9100,
   XFER_PRUNED_FALSE,
-  XFER_PRUNED_ERROR
+  XFER_PRUNED_ERROR,
+
+
+  /* return value for DDD_XferObjIsResent */
+  XFER_RESENT_TRUE = 0x9200,
+  XFER_RESENT_FALSE,
+  XFER_RESENT_ERROR
 };
 
 
@@ -1061,6 +1067,7 @@ int      DDD_XferWithAddData (void);
 void     DDD_XferAddData (int _FPTR, DDD_TYPE _FPTR);
 void     DDD_XferAddDataX (int _FPTR, DDD_TYPE _FPTR, size_t sizes[]);
 int      DDD_XferIsPrunedDelete (_OBJREF);
+int      DDD_XferObjIsResent (_OBJREF);
 #endif
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
 void     DDD_XferBegin (void);

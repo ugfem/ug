@@ -52,6 +52,9 @@
 
 
 
+#define SUPPORT_RESENT_FLAG
+
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */

@@ -323,6 +323,47 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
   qsort(unionGidTab, lenGidTab, sizeof(DDD_GID), sort_Gids);
 
 
+        #ifdef SUPPORT_RESENT_FLAG
+  {
+    DDD_HDR *localCplObjs = LocalCoupledObjectsList();
+    int iLCO, nLCO=NCpl_Get;
+
+    /* set RESENT flag for objects which will receive another copy */
+    iLCO=0;
+    for(k=0; k<lenGidTab; k++)
+    {
+      while (iLCO<nLCO &&
+             (OBJ_GID(localCplObjs[iLCO]) < unionGidTab[k]))
+      {
+        SET_OBJ_RESENT(localCplObjs[iLCO], 0);
+        iLCO++;
+      }
+
+      if (iLCO<nLCO && (OBJ_GID(localCplObjs[iLCO]) == unionGidTab[k]))
+      {
+        SET_OBJ_RESENT(localCplObjs[iLCO], 1);
+
+#                               if DebugCmdMsg<=1
+        printf("%4d: PruneDelCmds. %08x will be resent.\n", me, unionGidTab[k]);
+        fflush(stdout);
+#                               endif
+
+        iLCO++;
+      }
+    }
+
+    /* reset remaining objects' flags */
+    while (iLCO<nLCO)
+    {
+      SET_OBJ_RESENT(localCplObjs[iLCO], 0);
+      iLCO++;
+    }
+
+    FreeTmp(localCplObjs);
+  }
+        #endif
+
+
   k=0; jDC=0;
   for(iDC=0; iDC<nDC; iDC++)
   {
@@ -353,7 +394,6 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
   printf("%4d: PruneDelCmds. nPruned=%d/%d\n", me, nPruned, nDC);
   fflush(stdout);
 #       endif
-
 
 
   FreeTmp(unionGidTab);

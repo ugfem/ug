@@ -1405,6 +1405,57 @@ int DDD_XferIsPrunedDelete (DDD_HDR hdr)
 #endif
 
 
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  DDD_XferObjIsResent                                           */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+    Returns if an object will receive an additional copy.
+    If another processor issued a \funk{XferCopyObj} in order
+    to send a further copy of the given local object to the local
+    processor, this function will return XFER_RESENT_TRUE.
+    Otherwise this function will return XFER_RESENT_FALSE.
+    If an error condition occurs (e.g., when it is called at the
+    wrong time), the function returns XFER_RESENT_ERROR.
+
+    This function will only work with option OPT_XFER_PRUNE_DELETE
+    set to OPT_ON. Otherwise, there will be no kind of communication
+    to supply this information.
+
+   @param hdr   DDD local object which has to be deleted.
+   @return  one of XFER_RESENT_xxx
+ */
+
+#ifdef SUPPORT_RESENT_FLAG
+
+#ifdef C_FRONTEND
+int DDD_XferObjIsResent (DDD_HDR hdr)
+{
+  if (XferMode() != XMODE_BUSY)
+  {
+    return(XFER_RESENT_ERROR);
+  }
+
+  if (DDD_GetOption(OPT_XFER_PRUNE_DELETE)==OPT_OFF)
+  {
+    return(XFER_RESENT_ERROR);
+  }
+
+
+  if (OBJ_RESENT(hdr))
+    return(XFER_RESENT_TRUE);
+
+  return(XFER_RESENT_FALSE);
+}
+#endif
+
+#endif /* SUPPORT_RESENT_FLAG */
+
+
 /****************************************************************************/
 
 #undef _FADR

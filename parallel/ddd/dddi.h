@@ -408,6 +408,10 @@ extern VChannelPtr *theTopology;
 #define OBJ_PRUNED(c) (((int)((c)->flags))&MASK_OBJ_PRUNED)
 #define SET_OBJ_PRUNED(c,d) ((c)->flags) = (((c)->flags)&(~MASK_OBJ_PRUNED))|((d)&MASK_OBJ_PRUNED)
 
+#define MASK_OBJ_RESENT 0x00000002
+#define OBJ_RESENT(c) (((int)((c)->flags))&MASK_OBJ_RESENT)
+#define SET_OBJ_RESENT(c,d) ((c)->flags) = (((c)->flags)&(~MASK_OBJ_RESENT))|((d)&MASK_OBJ_RESENT)
+
 
 /* usage of flags in COUPLING */
 /* usage of 0x03 while interface-building, temporarily */
