@@ -60,6 +60,7 @@
 #include "ff_gen.h"
 #include "ff.h"
 #include "ugblas.h"
+#include "order.h"
 
 #ifdef USE_FAMG
 #include "ug-famg.h"
@@ -144,6 +145,7 @@ struct np_smoother {
 
   VEC_SCALAR damp;
   MATDATA_DESC *L;
+  NP_ORDER *Order;
 
     #ifdef ModelP
   INT cons_mode;
@@ -628,6 +630,7 @@ static INT SmootherInit (NP_BASE *theNP, INT argc , char **argv)
   for (i=0; i<MAX_VEC_COMP; i++) np->damp[i] = 1.0;
   sc_read(np->damp,NP_FMT(np),np->iter.b,"damp",argc,argv);
   np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
+  np->Order = (NP_ORDER*)ReadArgvNumProc(theNP->mg,"O",ORDER_CLASS_NAME,argc,argv);
     #ifdef ModelP
   if (ReadArgvOption("M",argc,argv))
     np->cons_mode = MAT_CONS;
@@ -649,6 +652,10 @@ static INT SmootherDisplay (NP_BASE *theNP)
   if (sc_disp(np->damp,np->iter.b,"damp")) REP_ERR_RETURN (1);
   if (np->L != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"L",ENVITEM_NAME(np->L));
+  if (np->Order != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"Order",ENVITEM_NAME(np->Order));
+  else
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"Order","---");
     #ifdef ModelP
   UserWriteF(DISPLAY_NP_FORMAT_SI,"cons_mode",(int)np->cons_mode);
         #endif
@@ -810,15 +817,17 @@ static INT GSPreProcess  (NP_ITER *theNP, INT level,
 {
   GRID *theGrid=NP_GRID(theNP,level);
 
-        #ifdef ModelP
   NP_SMOOTHER *np=(NP_SMOOTHER *) theNP;
 
+        #ifdef ModelP
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L))
     NP_RETURN(1,result[0]);
   if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
   if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
     NP_RETURN(1,result[0]);
         #endif
+  if (np->Order!=NULL)
+    if ((*np->Order->Order)(np->Order,level,A,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid))
     NP_RETURN(1,result[0]);
   *baselevel = level;
@@ -1147,10 +1156,9 @@ static INT SGSPreProcess  (NP_ITER *theNP, INT level,
                            MATDATA_DESC *A, INT *baselevel, INT *result)
 {
   GRID *theGrid=NP_GRID(theNP,level);
-
-        #ifdef ModelP
   NP_SMOOTHER *np=(NP_SMOOTHER *) theNP;
 
+        #ifdef ModelP
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L))
     NP_RETURN(1,result[0]);
   if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
@@ -1158,6 +1166,8 @@ static INT SGSPreProcess  (NP_ITER *theNP, INT level,
   if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
     NP_RETURN(1,result[0]);
         #endif
+  if (np->Order!=NULL)
+    if ((*np->Order->Order)(np->Order,level,A,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid))
     NP_RETURN(1,result[0]);
   *baselevel = level;
@@ -1420,6 +1430,8 @@ static INT PGSPreProcess  (NP_ITER *theNP, INT level,
   if (l_matrix_consistent(theGrid,np->smoother.L,MAT_CONS) != NUM_OK)
     NP_RETURN(1,result[0]);
         #endif
+  if (np->smoother.Order!=NULL)
+    if ((*np->smoother.Order->Order)(np->smoother.Order,level,A,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid))
     NP_RETURN(1,result[0]);
   *baselevel = level;
@@ -3441,6 +3453,8 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
 
   np = (NP_ILU *) theNP;
   theGrid = NP_GRID(theNP,level);
+  if (np->smoother.Order!=NULL)
+    if ((*np->smoother.Order->Order)(np->smoother.Order,level,A,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L))
     NP_RETURN(1,result[0]);
@@ -3544,6 +3558,8 @@ static INT FILUPreProcess (NP_ITER *theNP, INT level,
 
   np = (NP_ILU *) theNP;
   theGrid = NP_GRID(theNP,level);
+  if (np->smoother.Order!=NULL)
+    if ((*np->smoother.Order->Order)(np->smoother.Order,level,A,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
   if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
@@ -3658,6 +3674,8 @@ static INT THILUPreProcess (NP_ITER *theNP, INT level,
 
   np = (NP_THILU *) theNP;
   theGrid = NP_GRID(theNP,level);
+  if (np->smoother.Order!=NULL)
+    if ((*np->smoother.Order->Order)(np->smoother.Order,level,A,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
   if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
@@ -3778,6 +3796,8 @@ static INT SPILUPreProcess (NP_ITER *theNP, INT level,
 
   np = (NP_SPILU *) theNP;
   theGrid = NP_GRID(theNP,level);
+  if (np->smoother.Order!=NULL)
+    if ((*np->smoother.Order->Order)(np->smoother.Order,level,A,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocVDFromVD(NP_MG(theNP),level,level,x,&tmp)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
@@ -3853,6 +3873,8 @@ static INT ICPreProcess (NP_ITER *theNP, INT level,
 
   np = (NP_ILU *) theNP;
   theGrid = NP_GRID(theNP,level);
+  if (np->smoother.Order!=NULL)
+    if ((*np->smoother.Order->Order)(np->smoother.Order,level,A,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
   if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
@@ -3974,6 +3996,8 @@ static INT LUPreProcess (NP_ITER *theNP, INT level,
   np = (NP_LU *) theNP;
 
   theGrid = NP_GRID(theNP,level);
+  if (np->smoother.Order!=NULL)
+    if ((*np->smoother.Order->Order)(np->smoother.Order,level,A,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
   if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
