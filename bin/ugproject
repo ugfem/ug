@@ -75,14 +75,15 @@ fi
 
 # default
 
-ugclean all
-ugconf save
+# save ug.conf
+cp $UGROOT/ug.conf $UGROOT/ug.conf.tmp
 
+ugclean all
 ugconf 2
 ugconf NONETGEN
-ug2;
+( ug2 );
 ugmake dev
-appl2;
+( appl2 );
 
 ugconf 3
 if test "$1" = "netgen"
@@ -93,10 +94,12 @@ ugmake ug -i ifdef
 ugmake cda -i ifdef
 ugmake fem -i ifdef
 ugmake scalar -i clean
-ug3;
-appl3;
+( ug3 );
+( appl3 );
 
-ugconf restore
+# restore ug.conf
+mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+
 ugmake ug -i ifdef
 
 echo "simple, diff2da, ns2da, cd2d, cd3d, fem2d, fem3d, scalar2d, scalar3d created"
