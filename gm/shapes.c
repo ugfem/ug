@@ -564,11 +564,12 @@ INT GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
 					break;
 				  }
 			case PRISM:
-				sub1 = U0-U1+U3-U4;
-				sub2 = U0-U2+U3-U5;
-				GradRef[0] = U1-U0 + Mu * sub1; 
-				GradRef[1] = U3-U0 + Mu * sub2; 
-				GradRef[2] = U4-U0 + Xi * sub1 + Eta * sub2; 
+       case PRISM:
+ 	    	    sub1 = U0-U1-U3+U4;
+    	        sub2 = U0-U2-U3+U5;
+                GradRef[0] = U1-U0 + Mu * sub1;
+                GradRef[1] = U2-U0 + Mu * sub2;
+                GradRef[2] = U3-U0 + Xi * sub1 + Eta * sub2;
 				break;
 			case HEXAHEDRON:
 				sub1 = U0-U1+U2-U3;
