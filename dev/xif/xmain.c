@@ -125,6 +125,7 @@ int user_interface = XUI;                                       /* user interfac
 #else
 int user_interface = GUI;                                       /* user interface to open       */
 #endif
+int cui = 0;                                /* reset toggle for cui         */
 
 /****************************************************************************/
 /*																			*/
