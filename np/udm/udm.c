@@ -990,12 +990,12 @@ INT DisposeVD (VECDATA_DESC *vd)
 
   ENVITEM_LOCKED(vd) = 0;
 
-  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN (NULL);
-  if (ChangeEnvDir(ENVITEM_NAME(VD_MG(vd))) == NULL) REP_ERR_RETURN (NULL);
-  if (ChangeEnvDir("Vectors") == NULL) REP_ERR_RETURN (NULL);
+  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN (0);
+  if (ChangeEnvDir(ENVITEM_NAME(VD_MG(vd))) == NULL) REP_ERR_RETURN (0);
+  if (ChangeEnvDir("Vectors") == NULL) REP_ERR_RETURN (0);
 
   if (RemoveEnvItem((ENVITEM*)vd))
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN (0);
 
   return (0);
 }
@@ -2412,12 +2412,12 @@ INT DisposeMD (MATDATA_DESC *md)
 
   ENVITEM_LOCKED(md) = 0;
 
-  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN (NULL);
-  if (ChangeEnvDir(ENVITEM_NAME(VD_MG(md))) == NULL) REP_ERR_RETURN (NULL);
-  if (ChangeEnvDir("Matrices") == NULL) REP_ERR_RETURN (NULL);
+  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN (0);
+  if (ChangeEnvDir(ENVITEM_NAME(VD_MG(md))) == NULL) REP_ERR_RETURN (0);
+  if (ChangeEnvDir("Matrices") == NULL) REP_ERR_RETURN (0);
 
   if (RemoveEnvItem((ENVITEM*)md))
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN (0);
 
   return (0);
 }

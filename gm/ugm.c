@@ -4950,7 +4950,7 @@ static INT NdElPtrArray_GetMemAndCheckIDs(INT n, MULTIGRID *theMG, INT *h_ID, NO
             return(1);
           }
           /* Mustermemset(nodeflag_array,0,(statistik[0]+1)*sizeof(INT)); */
-          memset(MGNDELEMBLK(theMG,j),NULL,maxi);
+          memset(MGNDELEMBLK(theMG,j),0,maxi);
           j++;
         }
       }
