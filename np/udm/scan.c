@@ -975,7 +975,6 @@ INT sc_read (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name, INT argc
 
 INT sc_disp (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name)
 {
-  char buffer[64];
   INT i, n, j, k;
   const SHORT *offset;
 
@@ -1006,9 +1005,8 @@ INT sc_disp (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name)
     }
     for (j=0; j<offset[i+1]-offset[i]; j++)
     {
-      if (j) sprintf (buffer,"%s%-.4g",":",(double)x[n++]);
-      else sprintf (buffer,"%-.4g",(double)x[n++]);
-      UserWrite(buffer);
+      if (j) UserWriteF("%s%-.4g",":",(double)x[n++]);
+      else UserWriteF("%-.4g",(double)x[n++]);
     }
   }
   UserWrite("\n");

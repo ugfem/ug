@@ -32,6 +32,7 @@
 
 #include "bio.h"
 #include "dio.h"
+#include "ugstruct.h"
 
 #define __MGIO_USE_IN_UG__
 
@@ -337,7 +338,7 @@ int DIO_Init (void)
 {
 #ifdef __MGIO_USE_IN_UG__
 
-  INT error;
+  INT error=0;
 
   /* path to grid-dirs */
   datapaths_set = 0;

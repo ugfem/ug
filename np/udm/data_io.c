@@ -33,6 +33,7 @@
 #include "compiler.h"
 #include "heaps.h"
 #include "defaults.h"
+#include "ugstruct.h"
 #include "general.h"
 #include "debug.h"
 #include "devices.h"
@@ -278,7 +279,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   ELEMENT *theElement;
   const DOUBLE *x[MAX_CORNERS_OF_ELEM];
   DOUBLE value;
-  DOUBLE_VECTOR LocalCoord[MAX_CORNERS_OF_ELEM],vector;
+  DOUBLE_VECTOR vector;
   char FileName[NAMESIZE],NumberString[6];
 
   /* init */

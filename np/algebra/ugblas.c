@@ -5490,7 +5490,7 @@ INT l_dmatmul_minus_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, 
 .  yclass - vector class 
 
    DESCRIPTION:
-   This function computes times matrix with vector `x := M * y`.
+   This function computes times matrix with vector `x += M * y`.
    It runs over the surface of the grid, c. f. 'FINE_GRID_DOF' in 'gm.h'.
 
    RETURN VALUE:

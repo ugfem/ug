@@ -219,7 +219,7 @@ INT SetPrintingFormatCmd (const MULTIGRID *mg, INT argc, char **argv)
   VECDATA_DESC *vd;
   MATDATA_DESC *md;
   INT i,j,add,vec;
-  char *token,buffer[64];
+  char *token;
 
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -318,8 +318,7 @@ INT SetPrintingFormatCmd (const MULTIGRID *mg, INT argc, char **argv)
       break;
 
     default :
-      sprintf(buffer,"(invalid option '%s')",argv[i]);
-      PrintErrorMessage('E',"setpf",buffer);
+      PrintErrorMessageF('E',"setpf","(invalid option '%s')",argv[i]);
       REP_ERR_RETURN (1);
     }
 

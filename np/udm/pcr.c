@@ -149,20 +149,17 @@ INT GetStrINTinRange (const char *str, INT min, INT max, INT *value)
 
   if (sscanf(str,"%d",&iValue)!=1)
   {
-    sprintf(buffer,"could not scan INT value from string '%s'",str);
-    PrintErrorMessage('E',"GetStrINTinRange",buffer);
+    PrintErrorMessageF('E',"GetStrINTinRange","could not scan INT value from string '%s'",str);
     return(2);
   }
   if (iValue<min)
   {
-    sprintf(buffer,"value (%d) < min (%lg)",iValue,min);
-    PrintErrorMessage('E',"GetStrINTinRange",buffer);
+    PrintErrorMessageF('E',"GetStrINTinRange","value (%d) < min (%lg)",iValue,min);
     return(3);
   }
   if (iValue>max)
   {
-    sprintf(buffer,"value (%d) > max (%lg)",iValue,max);
-    PrintErrorMessage('E',"GetStrINTinRange",buffer);
+    PrintErrorMessageF('E',"GetStrINTinRange","value (%d) > max (%lg)",iValue,max);
     return(4);
   }
   *value = (INT) iValue;
@@ -190,20 +187,17 @@ INT GetStrDOUBLEinRange (const char *str, DOUBLE min, DOUBLE max, DOUBLE *value)
 
   if (sscanf(str,"%f",&fValue)!=1)
   {
-    sprintf(buffer,"could not scan DOUBLE value from string '%s'",str);
-    PrintErrorMessage('E',"GetStrDOUBLEinRange",buffer);
+    PrintErrorMessageF('E',"GetStrDOUBLEinRange","could not scan DOUBLE value from string '%s'",str);
     return(2);
   }
   if (fValue<min)
   {
-    sprintf(buffer,"value (%d) < min (%lg)",fValue,min);
-    PrintErrorMessage('E',"GetStrDOUBLEinRange",buffer);
+    PrintErrorMessageF('E',"GetStrDOUBLEinRange","value (%d) < min (%lg)",fValue,min);
     return(3);
   }
   if (fValue>max)
   {
-    sprintf(buffer,"value (%d) > max (%lg)",fValue,max);
-    PrintErrorMessage('E',"GetStrDOUBLEinRange",buffer);
+    PrintErrorMessageF('E',"GetStrDOUBLEinRange","value (%d) > max (%lg)",fValue,max);
     return(4);
   }
   *value = (DOUBLE) fValue;
@@ -448,13 +442,9 @@ INT DoPCR (INT ID, VEC_SCALAR Defect, INT PrintMode)
       if (PCR_DispMode[ID]==PCR_FULL_DISPLAY)
       {
         PCR_printed[ID] = TRUE;
-        sprintf(buffer," %-3d  %c: %-12.7e   %-12.7s\n",PCR_nb[ID],PCR_compNames[ID][0],Defect[0],"---");
-        UserWrite(buffer);
+        UserWriteF(" %-3d  %c: %-12.7e   %-12.7s\n",PCR_nb[ID],PCR_compNames[ID][0],Defect[0],"---");
         for (i=1; i<PCR_nComp[ID]; i++)
-        {
-          sprintf(buffer,"      %c: %-12.7e   %-12.7s\n",PCR_compNames[ID][i],Defect[i],"---");
-          UserWrite(buffer);
-        }
+          UserWriteF("      %c: %-12.7e   %-12.7s\n",PCR_compNames[ID][i],Defect[i],"---");
         if (PCR_nComp[ID]>1 && PrintMode==PCR_CRATE_SD)
           UserWriteF("   norm: %-12.7e   %-12.7s\n",s,"---");
         if (PCR_nComp[ID]>1) UserWrite("\n");
@@ -465,17 +455,15 @@ INT DoPCR (INT ID, VEC_SCALAR Defect, INT PrintMode)
       PCR_printed[ID] = TRUE;
       PrintHeaderIff(ID);
       if (PCR_OldDefect[ID][0]!=0.0)
-        sprintf(buffer," %-3d  %c: %-12.7e   %-12.7e\n",PCR_nb[ID],PCR_compNames[ID][0],Defect[0],Defect[0]/PCR_OldDefect[ID][0]);
+        UserWriteF(" %-3d  %c: %-12.7e   %-12.7e\n",PCR_nb[ID],PCR_compNames[ID][0],Defect[0],Defect[0]/PCR_OldDefect[ID][0]);
       else
-        sprintf(buffer," %-3d  %c: %-12.7e   %-12.7s\n",PCR_nb[ID],PCR_compNames[ID][0],Defect[0],"NaN");
-      UserWrite(buffer);
+        UserWriteF(" %-3d  %c: %-12.7e   %-12.7s\n",PCR_nb[ID],PCR_compNames[ID][0],Defect[0],"NaN");
       for (i=1; i<PCR_nComp[ID]; i++)
       {
         if (PCR_OldDefect[ID][i]!=0.0)
-          sprintf(buffer,"      %c: %-12.7e   %-12.7e\n",PCR_compNames[ID][i],Defect[i],Defect[i]/PCR_OldDefect[ID][i]);
+          UserWriteF("      %c: %-12.7e   %-12.7e\n",PCR_compNames[ID][i],Defect[i],Defect[i]/PCR_OldDefect[ID][i]);
         else
-          sprintf(buffer,"      %c: %-12.7e   %-12.7s\n",PCR_compNames[ID][i],Defect[i],"NaN");
-        UserWrite(buffer);
+          UserWriteF("      %c: %-12.7e   %-12.7s\n",PCR_compNames[ID][i],Defect[i],"NaN");
       }
       if (PCR_nComp[ID]>1 && PrintMode==PCR_CRATE_SD)
         UserWriteF("   norm: %-12.7e   %-12.7e\n",s,s/PCR_OldNorm[ID]);
@@ -493,17 +481,15 @@ INT DoPCR (INT ID, VEC_SCALAR Defect, INT PrintMode)
     PrintHeaderIff(ID);
     if (PCR_DispMode[ID]==PCR_FULL_DISPLAY) UserWrite("\n");
     if (PCR_InitDefect[ID][0]!=0.0)
-      sprintf(buffer," %-3d avg:  %c: %-12.7e   %-12.7e   %-12.7e\n",PCR_nb[ID]-1,PCR_compNames[ID][0],PCR_InitDefect[ID][0],Defect[0],POW(Defect[0]/PCR_InitDefect[ID][0],1.0/(PCR_nb[ID]-1)));
+      UserWriteF(" %-3d avg:  %c: %-12.7e   %-12.7e   %-12.7e\n",PCR_nb[ID]-1,PCR_compNames[ID][0],PCR_InitDefect[ID][0],Defect[0],POW(Defect[0]/PCR_InitDefect[ID][0],1.0/(PCR_nb[ID]-1)));
     else
-      sprintf(buffer," %-3d avg:  %c: %-12.7e   %-12.7e   %-12.7s\n",PCR_nb[ID]-1,PCR_compNames[ID][0],PCR_InitDefect[ID][0],Defect[0],"NaN");
-    UserWrite(buffer);
+      UserWriteF(" %-3d avg:  %c: %-12.7e   %-12.7e   %-12.7s\n",PCR_nb[ID]-1,PCR_compNames[ID][0],PCR_InitDefect[ID][0],Defect[0],"NaN");
     for (i=1; i<PCR_nComp[ID]; i++)
     {
       if (PCR_InitDefect[ID][i]!=0.0)
-        sprintf(buffer,"           %c: %-12.7e   %-12.7e   %-12.7e\n",PCR_compNames[ID][i],PCR_InitDefect[ID][i],Defect[i],POW(Defect[i]/PCR_InitDefect[ID][i],1.0/(PCR_nb[ID]-1)));
+        UserWriteF("           %c: %-12.7e   %-12.7e   %-12.7e\n",PCR_compNames[ID][i],PCR_InitDefect[ID][i],Defect[i],POW(Defect[i]/PCR_InitDefect[ID][i],1.0/(PCR_nb[ID]-1)));
       else
-        sprintf(buffer,"           %c: %-12.7e   %-12.7e   %-12.7s\n",PCR_compNames[ID][i],PCR_InitDefect[ID][i],Defect[i],"NaN");
-      UserWrite(buffer);
+        UserWriteF("           %c: %-12.7e   %-12.7e   %-12.7s\n",PCR_compNames[ID][i],PCR_InitDefect[ID][i],Defect[i],"NaN");
     }
     if (PCR_nComp[ID]>1 && PrintMode==PCR_AVERAGE_SD)
       UserWriteF("        norm: %-12.7e   %-12.7e   %-12.7e\n",PCR_InitNorm[ID],s,POW(s/PCR_InitNorm[ID],1.0/(PCR_nb[ID]-1)));

@@ -2179,7 +2179,6 @@ static INT LUPreProcess (NP_ITER *theNP, INT level,
   NP_SMOOTHER *np;
   GRID *theGrid;
   INT err;
-  char warn[255];
 
   np = (NP_SMOOTHER *) theNP;
 
@@ -2203,9 +2202,8 @@ static INT LUPreProcess (NP_ITER *theNP, INT level,
       }
     }
     if (err!=-VINDEX(LASTVECTOR(theGrid))) {
-      sprintf(warn,"decomp failed: IDX %ld on level %d",
-              -err,GLEVEL(theGrid));
-      PrintErrorMessage('E',"LUPreProcess",warn);
+      PrintErrorMessageF('E',"LUPreProcess","decomp failed: IDX %ld on level %d",
+                         -err,GLEVEL(theGrid));
       UserWriteF(" - LASTVECTOR has IDX %ld\n",
                  VINDEX(LASTVECTOR(theGrid)));
       NP_RETURN(1,result[0]);
@@ -2902,7 +2900,6 @@ static INT FFIter (NP_ITER *theNP, INT level,
   NP_FF *np;
   BV_DESC bvd;
   GRID *theGrid;
-  INT i,j;
   DOUBLE end_wave, wavenr, start_norm, new_norm;
 
 

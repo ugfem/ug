@@ -1920,12 +1920,11 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
   }
 
         #ifdef _LOCAL_DEBUG_
-  sprintf(buffer,"---- LEVEL %d ----\n",GLEVEL(FineGrid)); UserWrite(buffer);
+  UserWriteF("---- LEVEL %d ----\n",GLEVEL(FineGrid));
   for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {
-    sprintf(buffer,"*NODE (%12.4lg,%12.4lg) %ld\n",(DOUBLE)XC(MYVERTEX(theNode)),
-            (DOUBLE)YC(MYVERTEX(theNode)),ID(theNode));
-    UserWrite(buffer);
+    UserWriteF("*NODE (%12.4lg,%12.4lg) %ld\n",(DOUBLE)XC(MYVERTEX(theNode)),
+               (DOUBLE)YC(MYVERTEX(theNode)),ID(theNode));
 
     v = NVECTOR(theNode);
     for (im=VISTART(v); im!=NULL; im=MNEXT(im))
@@ -1934,13 +1933,10 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
       vecskip = VECSKIP(vc);
       for (i=0; i<ncomp; i++)
       {
-        sprintf(buffer," DEST (%12.4lg,%12.4lg) %5ld, ",
-                (DOUBLE)XC(MYVERTEX(VMYNODE(vc))),(DOUBLE)YC(MYVERTEX(VMYNODE(vc))),ID(VMYNODE(vc)));
-        UserWrite(buffer);
+        UserWriteF(" DEST (%12.4lg,%12.4lg) %5ld, ",
+                   (DOUBLE)XC(MYVERTEX(VMYNODE(vc))),(DOUBLE)YC(MYVERTEX(VMYNODE(vc))),ID(VMYNODE(vc)));
         for (k=0; k<ncomp*ncomp; k++)
-        {
-          sprintf(buffer," %12.4lE",MVALUE(im,k)); UserWrite(buffer);
-        }
+          UserWriteF(" %12.4lE",MVALUE(im,k));
         UserWrite("\n");
       }
     }

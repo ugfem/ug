@@ -423,9 +423,7 @@ static INT TransferInit (NP_BASE *theNP, INT argc , char **argv)
 
   if (ReadArgvOption("S",argc,argv))
     if (ReadArgvDOUBLE("S",&(np->cut),argc,argv))
-    {
       UserWrite("$S option not active!\n");
-    }
     else
     {
       np->mode = SCALEDMG_MODE;
@@ -488,7 +486,9 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT fl, INT tl,
   NP_STANDARD_TRANSFER *np;
   MULTIGRID *theMG;
   INT i,err;
+#       ifdef ModelP
   GRID *theGrid;
+#       endif
 
   np = (NP_STANDARD_TRANSFER *) theNP;
   theMG = theNP->base.mg;

@@ -32,6 +32,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 
 #include "compiler.h"
 #include "gm.h"          /* for data structure               */
@@ -765,11 +766,16 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
 
 void FFConstructTestvector( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, DOUBLE wavenr_3D )
 {
-  register DOUBLE hkpi, pos, plane_pos, tensor;
+  register DOUBLE hkpi, pos;
   register VECTOR *v, *end_v;
-  register BLOCKVECTOR *bv_i, *bv_end, *bv_glob_end;
-  INT length, plane_length;
+  register BLOCKVECTOR *bv_glob_end;
+  INT length;
+#       ifdef __THREEDIM__
+  register BLOCKVECTOR *bv_end,*bv_i;
+  register DOUBLE plane_pos, tensor;
   DOUBLE plane_hkpi;
+  INT plane_length;
+#       endif
 
   bv_glob_end = BVDOWNBVEND(bv);
   bv = BVDOWNBV(bv);
