@@ -469,8 +469,7 @@ Continue:
             if (GSTATUS(GRID_ON_LEVEL(mg,i)) & GRID_CHANGED)
               mg_changed = 1;
         }
-        if (mg_changed)
-        {
+        if (mg_changed) {
           k = level - 1;
           if (bdf->trans->PreProcessSolution != NULL)
             if ((*bdf->trans->PreProcessSolution)
@@ -490,17 +489,17 @@ Continue:
                   (bdf->trans,0,level,bdf->y_p1,res))
               NP_RETURN(1,res[0]);
           nlinterpolate--;
-          if(bdf->rep ==0)
-          {
+          if(bdf->rep ==0) {
             k = level;
             nlinterpolate = 0;
             if (nlsolve->PostProcess!=NULL)
-              if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
+              if ((*nlsolve->PostProcess)
+                    (nlsolve,k,bdf->y_p1,res))
                 NP_RETURN(1,res[0]);
           }
         }
-        else
-        {
+        else {
+          k = level;
           nlinterpolate = 0;
           if (nlsolve->PostProcess!=NULL)
             if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
