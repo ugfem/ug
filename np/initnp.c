@@ -205,5 +205,11 @@ INT InitNumerics ()
     return (err);
   }
 
+  /* init time-step numprocs */
+  if ((err=InitTStep())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
   return (0);
 }
