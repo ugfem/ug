@@ -203,7 +203,7 @@ INT MarkRelative(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta)
 /* Some routines marking strong connections  (!change for systems!)         */
 /****************************************************************************/
 
-INT SetupInitialList(GRID *theGrid, HEAP *theHeap, AVECTOR **initialSH, AVECTOR **initialEH)
+INT SetupInitialList(GRID *theGrid, HEAP *theHeap, AVECTOR **initialSH, AVECTOR **initialEH, INT MarkKey)
 {
   VECTOR *vect;
   AVECTOR *avect;
@@ -215,7 +215,7 @@ INT SetupInitialList(GRID *theGrid, HEAP *theHeap, AVECTOR **initialSH, AVECTOR 
     SETVCUSED(vect,0);
     SETVCCOARSE(vect,0);
 
-    if ((avect=(AVECTOR *) GetMem(theHeap,sizeof(AVECTOR),FROM_TOP))==NULL)
+    if ((avect=(AVECTOR *) GetTmpMem(theHeap,sizeof(AVECTOR),MarkKey))==NULL)
     {
       PrintErrorMessage('E',"SetupInitialList",
                         "could not allocate avector");
@@ -483,6 +483,7 @@ INT CoarsenRugeStueben(GRID *theGrid)
   AVECTOR *initialS,*initialE,*Ca,*Ce,*Da,*De,*Fa,*Fe,*Ta,*Te;
   AVECTOR *Ua[2*MAXNEIGHBORS+1],*Ue[2*MAXNEIGHBORS+1];
   MATRIX *mat,*mat2,*mat3;
+  INT MarkKey;
 
   theMG=MYMG(theGrid);
 
@@ -491,23 +492,23 @@ INT CoarsenRugeStueben(GRID *theGrid)
           special coarse grid choices. */
 
   theHeap=MGHEAP(theMG);
-  Mark(theHeap,FROM_TOP);
+  MarkTmpMem(theHeap,&MarkKey);
 
-  if ((error=SetupInitialList(theGrid,theHeap,&initialS,&initialE))!=DONE)
+  if ((error=SetupInitialList(theGrid,theHeap,&initialS,&initialE,MarkKey))!=DONE)
   {
-    Release(theHeap,FROM_TOP);
+    ReleaseTmpMem(theHeap,MarkKey);
     REP_ERR_RETURN(error);
   }
 
   if ((error=CountStrongNeighbors(initialS,&avNosN,&maxNeighbors))!=DONE)
   {
-    Release(theHeap,FROM_TOP);
+    ReleaseTmpMem(theHeap,MarkKey);
     REP_ERR_RETURN(error);
   }
 
   if (maxNeighbors>MAXNEIGHBORS)
   {
-    Release(theHeap,FROM_TOP);
+    ReleaseTmpMem(theHeap,MarkKey);
     REP_ERR_RETURN(1);
   }
 
@@ -517,7 +518,7 @@ INT CoarsenRugeStueben(GRID *theGrid)
 
   if ((error=DistributeInitialList(&initialS,&initialE,&Da,&De,Ua,Ue))!=DONE)
   {
-    Release(theHeap,FROM_TOP);
+    ReleaseTmpMem(theHeap,MarkKey);
     REP_ERR_RETURN(error);
   }
 
@@ -541,7 +542,7 @@ INT CoarsenRugeStueben(GRID *theGrid)
         {
           PrintErrorMessage('E',"CoarsenRugeStueben",
                             "G(A) is not symmetric");
-          Release(theHeap,FROM_TOP);
+          ReleaseTmpMem(theHeap,MarkKey);
           REP_ERR_RETURN(1);
         }
         if (STRONG(mat2))
@@ -661,7 +662,7 @@ INT CoarsenRugeStueben(GRID *theGrid)
     VISTART(vect)=NULL;             /* ==(AVECTOR *) VISTART(vect) */
   }
   error=GenerateNewGrid(theGrid);
-  Release(theHeap,FROM_TOP);
+  ReleaseTmpMem(theHeap,MarkKey);
   REP_ERR_RETURN(error);
 }
 
@@ -735,6 +736,7 @@ INT CoarsenAverage (GRID *theGrid)
   NODE *theNode;
   MATRIX *theM;
   HEAP *theHeap;
+  INT MarkKey;
   INT n,m,d,dmin,dmax;
 
   n = 0;
@@ -753,10 +755,10 @@ INT CoarsenAverage (GRID *theGrid)
   }
   PRINTDEBUG(np,3,("\ndmin %d\n",dmin));
   theHeap = MGHEAP(MYMG(theGrid));
-  MarkTmpMem(theHeap);
-  buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
+  MarkTmpMem(theHeap,&MarkKey);
+  buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
   if (buffer == NULL) {
-    ReleaseTmpMem(theHeap);
+    ReleaseTmpMem(theHeap,MarkKey);
     return(1);
   }
   fifo_init(&myfifo,buffer,sizeof(void *) * n);
@@ -853,7 +855,7 @@ INT CoarsenAverage (GRID *theGrid)
       PRINTDEBUG(np,3,("\n"));
     }
   }
-  ReleaseTmpMem(theHeap);
+  ReleaseTmpMem(theHeap,MarkKey);
         #ifdef ModelP
   l_vectorflag_consistent(theGrid);
   PRINTDEBUG(np,3,("%d: m %d\n",me,m));
@@ -936,6 +938,7 @@ static INT CoarsenAverage1 (GRID *theGrid)
   MATRIX *theM;
   HEAP *theHeap;
   INT n,m,d,dmin;
+  INT MarkKey;
         #ifdef ModelP
   INT p;
         #endif
@@ -963,10 +966,10 @@ static INT CoarsenAverage1 (GRID *theGrid)
   }
   PRINTDEBUG(np,3,("\ndmin %d\n",dmin));
   theHeap = MGHEAP(MYMG(theGrid));
-  MarkTmpMem(theHeap);
-  buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
+  MarkTmpMem(theHeap,&MarkKey);
+  buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
   if (buffer == NULL) {
-    ReleaseTmpMem(theHeap);
+    ReleaseTmpMem(theHeap,MarkKey);
         #ifdef ModelP
     for (p=me+1; p<procs; p++) {
       l_vectorflag_consistent1(theGrid);
@@ -1051,7 +1054,7 @@ static INT CoarsenAverage1 (GRID *theGrid)
       PRINTDEBUG(np,3,("\n"));
     }
   }
-  ReleaseTmpMem(theHeap);
+  ReleaseTmpMem(theHeap,MarkKey);
         #ifdef ModelP
   for (p=me+1; p<procs; p++) {
     l_vectorflag_consistent1(theGrid);
@@ -1177,34 +1180,35 @@ INT CoarsenVanek(GRID *theGrid)
   AVECTOR *avect,*avect2,*initialS,*initialE;
   AVECTOR *Da,*De,*Ua[2*MAXNEIGHBORS+1],*Ue[2*MAXNEIGHBORS+1];
   MATRIX *mat,*imat;
+  INT MarkKey;
 
   theMG=MYMG(theGrid);
   theHeap=MGHEAP(theMG);
-  Mark(theHeap,FROM_TOP);
+  MarkTmpMem(theHeap,&MarkKey);
 
-  if ((error=SetupInitialList(theGrid,theHeap,&initialS,&initialE))!=DONE)
+  if ((error=SetupInitialList(theGrid,theHeap,&initialS,&initialE,MarkKey))!=DONE)
   {
-    Release(theHeap,FROM_TOP);
+    ReleaseTmpMem(theHeap,MarkKey);
     REP_ERR_RETURN(error);
   }
 
   if ((error=CountStrongNeighbors(initialS,&avNosN,&maxNeighbors))!=DONE)
   {
-    Release(theHeap,FROM_TOP);
+    ReleaseTmpMem(theHeap,MarkKey);
     REP_ERR_RETURN(error);
   }
 
   if (maxNeighbors>MAXNEIGHBORS)
   {
     PrintErrorMessage('E',"CoarsenVanek","too many neighbors");
-    Release(theHeap,FROM_TOP);
+    ReleaseTmpMem(theHeap,MarkKey);
     REP_ERR_RETURN(1);
   }
 
   if ((newGrid=CreateNewLevelAMG(theMG))==NULL)
   {
     PrintErrorMessage('E',"CoarsenCommand","could not create new amg level");
-    Release(theHeap,FROM_TOP);
+    ReleaseTmpMem(theHeap,MarkKey);
     REP_ERR_RETURN(1);
   }
 
@@ -1214,7 +1218,7 @@ INT CoarsenVanek(GRID *theGrid)
 
   if ((error=DistributeInitialList(&initialS,&initialE,&Da,&De,Ua,Ue))!=DONE)
   {
-    Release(theHeap,FROM_TOP);
+    ReleaseTmpMem(theHeap,MarkKey);
     REP_ERR_RETURN(error);
   }
 
@@ -1227,7 +1231,7 @@ INT CoarsenVanek(GRID *theGrid)
   if ((error=GenerateClusters(Ua,Ue,theGrid,newGrid,
                               (INT)((avNosN+1.0)*0.66-1.0)))!=DONE)
   {
-    Release(theHeap,FROM_TOP);
+    ReleaseTmpMem(theHeap,MarkKey);
     REP_ERR_RETURN(error);
   }
 
@@ -1285,7 +1289,7 @@ INT CoarsenVanek(GRID *theGrid)
         {
           PrintErrorMessage('E',"CoarsenVanek",
                             "could not create interpolation matrix");
-          Release(theHeap,FROM_TOP);
+          ReleaseTmpMem(theHeap,MarkKey);
           REP_ERR_RETURN(1);
         }
 
@@ -1300,12 +1304,12 @@ INT CoarsenVanek(GRID *theGrid)
   /* third pass: go down to clusters of size zero */
   if ((error=GenerateClusters(Ua,Ue,theGrid,newGrid,0))!=DONE)
   {
-    Release(theHeap,FROM_TOP);
+    ReleaseTmpMem(theHeap,MarkKey);
     REP_ERR_RETURN(error);
   }
 
   /* we now don't need the heap anymore ... */
-  Release(theHeap,FROM_TOP);
+  ReleaseTmpMem(theHeap,MarkKey);
 
   return(DONE);
 }
@@ -1337,7 +1341,7 @@ static DOUBLE Dist (VECTOR *v, VECTOR *w)
 INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   INT ncomp,i,j,n,nmax;
-  DOUBLE s,sum;
+  DOUBLE s /*sum*/;
   GRID *newGrid;
   VECTOR *vect,*dest,*newVect;
   MATRIX *mat,*imat;
