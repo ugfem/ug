@@ -466,6 +466,7 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
   int i,j,error;
   char ngname[128];
   char *p;
+  char *tmp;
 
   /* init */
   ng_abort=0;
@@ -475,6 +476,12 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
 
   /* open file */
   strcpy(ngname,name);
+
+  /* check if ngname ends with '.lgm'.  If so, remove '.lgm' */
+  tmp = ngname + strlen(ngname) - 4;
+  if ( strcmp(tmp,".lgm")==0 )
+    ngname[strlen(ngname)-4] = '\0';
+
   strcat(ngname,".ng");
   NG_FOPEN(ngin,ngname);
   if (ngin==NULL) return (1);
