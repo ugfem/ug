@@ -43,7 +43,7 @@
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.1"
+#define DDD_VERSION    "1.8.2"
 
 
 /****************************************************************************/
@@ -255,12 +255,12 @@ typedef struct _DDD_HEADER
 /*
         new DDD types, used during access of DDD functional interface
  */
-typedef unsigned int DDD_TYPE;
-typedef unsigned int DDD_IF;
+typedef unsigned short DDD_TYPE;
+typedef unsigned short DDD_IF;
 typedef unsigned int DDD_GID;
-typedef unsigned int DDD_PROC;
-typedef unsigned int DDD_PRIO;
-typedef unsigned int DDD_ATTR;
+typedef unsigned short DDD_PROC;
+typedef unsigned short DDD_PRIO;
+typedef unsigned short DDD_ATTR;
 #ifdef CPP_FRONTEND
 typedef unsigned int DDD_INDEX;
 #endif

@@ -239,7 +239,7 @@ void IFDeleteAll (DDD_IF ifId)
 
 
 /* TODO  el-set relation, VERY inefficient! */
-static int is_elem (unsigned int el, int n, unsigned int *set)
+static int is_elem (DDD_PRIO el, int n, DDD_PRIO *set)
 {
   REGISTER int i;
 
@@ -1002,7 +1002,7 @@ if (ifId>=nIFs)
 {
   sprintf(cBuffer, "invalid IF %02d in DDD_IFInfoMemory", ifId);
   DDD_PrintError('W', 4051, cBuffer);
-  return;
+  HARD_EXIT;
 }
 
 return(IFInfoMemory(ifId));

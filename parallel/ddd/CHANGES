@@ -1,5 +1,14 @@
 ---------------------------
 
+CHANGES 1.8.1 -> 1.8.2
+
+---------------------------
+970304 kb
+increased size of notify buffer to 2*(n*(n-1)/2) (for message send/receive).
+970304 kb
+changed many DDD_xxx types to 'unsigned short' (formerly 'unsigned int')
+---------------------------
+
 CHANGES 1.8 -> 1.8.1
 
 ---------------------------
