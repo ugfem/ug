@@ -94,6 +94,13 @@
 #include "tool6"
 #include "shades.h"
 
+/* hack for C++ */
+#ifdef __cplusplus
+#define CLASS c_class
+#else
+#define CLASS class
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
@@ -103,7 +110,7 @@
 /* current context */
 static GraphWindow *gw;                                 /* active output					*/
 static XColor ctab[CSIZE];                              /* one static color table for all wi*/
-static ncolors=0;                                               /* number of entries used			*/
+static int ncolors=0;                                   /* number of entries used			*/
 static unsigned long pixels[CSIZE];     /* array to free color cells		*/
 static OUTPUTDEVICE *X11OutputDevice;   /* outputdevice that has been initi */
 static GraphWindow *windowList=NULL;    /* list of our windows				*/
@@ -663,7 +670,7 @@ static void MakeXImageData(void *buffer, void *data, INT len, int pad)
   unsigned long pixel;
   INT i;
 
-  p = buffer;
+  p = (unsigned char *)buffer;
   switch(pad)
   {
   case 8 :
@@ -675,12 +682,12 @@ static void MakeXImageData(void *buffer, void *data, INT len, int pad)
 
   case 16 :
     if (sizeof(*q1) == 2) {
-      q1 = data;
+      q1 = (unsigned short *)data;
       for (i=0; i<len; i++)
         *q1++ = ctab[*p++].pixel;
     }
     else {
-      q0 = data;
+      q0 = (unsigned char *)data;
 #ifdef __SWAPBYTES__
       for (i=0; i<len; i++) {
         pixel = ctab[*p++].pixel;
@@ -699,17 +706,17 @@ static void MakeXImageData(void *buffer, void *data, INT len, int pad)
 
   case 32 :
     if (sizeof(*q1) == 4) {
-      q1 = data;
+      q1 = (unsigned short *)data;
       for (i=0; i<len; i++)
         *q1++ = ctab[*p++].pixel;
     }
     else if (sizeof(*q2) == 4) {
-      q2 = data;
+      q2 = (unsigned int *)data;
       for (i=0; i<len; i++)
         *q2++ = ctab[*p++].pixel;
     }
     else {
-      q0 = data;
+      q0 = (unsigned char *)data;
 #ifdef __SWAPBYTES__
       for (i=0; i<len; i++) {
         pixel = ctab[*p++].pixel;
@@ -772,7 +779,7 @@ static void IFPlotPixelBuffer(void *buffer, void *data, INT len,
 
   /* create XImage structure and write image to the screen */
   image = XCreateImage(display, default_visual, default_depth, ZPixmap, 0,
-                       data, w, h, bitmap_pad, 0);
+                       (char*)data, w, h, bitmap_pad, 0);
   XPutImage(display, gw->win, gw->gc, image, 0, 0, x, y, w, h);
   if (!gw->backing_store)
     XPutImage(display, gw->pixmap, gw->gc, image, 0, 0, x, y, w, h);
@@ -817,7 +824,7 @@ static int get_component_shift(unsigned long mask)
 void InitXPort (OUTPUTDEVICE *thePort)
 {
   Colormap default_cmap;
-  int i,j,private;
+  int i,j,Private;
   unsigned short res,delta,max,r,g,b;
 
   if (ncolors!=0) return;
@@ -834,7 +841,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
   default_cmap =   DefaultColormap(display,screen_num);
 
   /* print display type */
-  switch (default_visual->class)
+  switch (default_visual->CLASS)
   {
   case PseudoColor :
     printf("visual=%s depth=%d\n","PseudoColor",default_depth);
@@ -860,7 +867,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
   }
 
   /* get info on pixel structure if true color */
-  if (true_color = (default_visual->class == TrueColor)) {
+  if (true_color = (default_visual->CLASS == TrueColor)) {
     red_mask   = default_visual->red_mask;
     green_mask = default_visual->green_mask;
     blue_mask  = default_visual->blue_mask;
@@ -902,7 +909,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
     printf("Using B&W color map\n");
   }
 
-  if ((default_depth>=6)&&(ncolors==0)&&((default_visual->class==GrayScale)||(default_visual->class==StaticGray)))
+  if ((default_depth>=6)&&(ncolors==0)&&((default_visual->CLASS==GrayScale)||(default_visual->CLASS==StaticGray)))
   {
     /* lets try 64 gray scale map */
     ncolors = 64;
@@ -937,7 +944,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
     if (ncolors>0) printf("Using 64 grayscale color map\n");
   }
 
-  if ((default_depth>=4)&&(ncolors==0)&&((default_visual->class==GrayScale)||(default_visual->class==StaticGray)))
+  if ((default_depth>=4)&&(ncolors==0)&&((default_visual->CLASS==GrayScale)||(default_visual->CLASS==StaticGray)))
   {
     /* lets try a 16 gray scale map */
     ncolors = 16;
@@ -1039,16 +1046,16 @@ void InitXPort (OUTPUTDEVICE *thePort)
     thePort->spectrumEnd = i-1;
 
     ncolors = i;
-    private = NO;
+    Private = NO;
 
     for (i=0; i<ncolors; i++)
       if (!XAllocColor(display, our_cmap, &ctab[i])) {
-        private = YES;
+        Private = YES;
         our_cmap = XCopyColormapAndFree(display, our_cmap);
         i--;                          /* allocate the color that failed again! */
       }
 
-    if (private)
+    if (Private)
       printf("Using private color map with %d entries\n",ncolors);
     else
       printf("Using default color map with %d entries\n",ncolors);
