@@ -1,12 +1,12 @@
 #!/bin/sh
 
 cd $UGROOT/../simple
-simple simple.scr
+time simple simple.scr
 cd $UGROOT/../diff2d/appl
-diff2da square.scr
-cd $UGROOT/../cd/appl
-cd3d cd.init
+time diff2da square.scr
+time cd $UGROOT/../cd/appl
+time cd3d cd.init
 cd $UGROOT/../fem/appl
-fem2d cook.scr
+time fem2d cook.scr
 cd $UGROOT/../ns2d/appl
-ns2da main.scr
+time ns2da main.scr
