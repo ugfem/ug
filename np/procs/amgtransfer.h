@@ -72,7 +72,7 @@ typedef struct {
   CLRESULT clres[MAXLEVEL];                 /* data for each level              */
 } CRESULT;
 
-typedef INT (*MarkConnectionsProcPtr)(GRID *, MATDATA_DESC *, DOUBLE);
+typedef INT (*MarkConnectionsProcPtr)(GRID *, MATDATA_DESC *, DOUBLE, INT);
 typedef INT (*CoarsenProcPtr)(GRID *);
 typedef INT (*SetupIRMatProcPtr)(GRID *, MATDATA_DESC *, MATDATA_DESC *);
 typedef INT (*SetupCGMatProcPtr)(GRID *, MATDATA_DESC *, MATDATA_DESC *, INT);
@@ -85,18 +85,25 @@ typedef struct
   INT AMGtype;                               /* type of AMG                     */
   MarkConnectionsProcPtr MarkStrong;         /* mark strong connections         */
   DOUBLE thetaS;                             /* parameter                       */
+  INT compS;                                 /* (vector) component to be used   */
 
   CoarsenProcPtr Coarsen;                    /* the coarsening routine          */
 
   SetupIRMatProcPtr SetupIR;                 /* setup interpolation/restriction */
 
   SetupCGMatProcPtr SetupCG;                 /* setup coarse grid matrix        */
+  INT CMtype;                                /* Bits 0:symm & 1:R=Inj & 2:P=Inj */
 
   MarkConnectionsProcPtr MarkKeep;           /* mark connections to keep        */
   DOUBLE thetaK;                             /* parameter                       */
+  INT compK;                                 /* (vector) component to be used   */
   INT sparsenFlag;                           /* if set, lump to diagonal        */
 
   INT reorderFlag;                           /* ordering of fine grid points    */
+
+  INT fgcstep;                                   /* do fine grid correction step in */
+  /* Reusken/Wagner scheme           */
+  VECDATA_DESC *p;                           /* for fgcstep                     */
 
   INT vectLimit;                             /* stop if vects<vectLimit         */
   INT matLimit;                              /* stop if matrices<matLimit       */
@@ -107,10 +114,11 @@ typedef struct
   INT aggLimit;                              /* agglomerate to one processor    */
   /* if level <= aggLimit            */
   INT agglevel;                          /* agglomerated bottom level       */
-  INT symmetric;                             /* symmetric stiffness matrix      */
 
   INT explicitFlag;                          /* clear only by npexecute         */
   INT hold;                                  /* no clear in postprocess         */
+
+  INT symmIR;                                /* internal: 1 if R=I^t, 0 else    */
 
 } NP_AMG_TRANSFER;
 
