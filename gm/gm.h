@@ -172,6 +172,12 @@
 /* if block vector descriptors are used*/
 #define __BLOCK_VECTOR_DESC__
 
+#ifdef ModelP
+/* This ensures that for each master node-vector all matrix-neighbors in link depth 2 are
+   at leat as a copy on the same processor and all connections are copied (even for ghosts) */
+/*#define __OVERLAP2__*/
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -965,6 +971,7 @@ struct grid {
 
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
+  INT attribut;                                         /* level + 32; needed for controll word check not detecting HEAPFAULT	*/
   INT status;                                           /* possible values see defines above	*/
   INT level;                                                    /* level of that grid					*/
   INT nVert[MAX_PRIOS];                         /* number of vertices					*/
@@ -1195,7 +1202,7 @@ extern CONTROL_ENTRY
 /* general query macros */
 
 /* dynamic control words */
-#undef _DEBUG_CW_
+/*#define _DEBUG_CW_*/
 #if (defined _DEBUG_CW_) && \
   !(defined __COMPILE_CW__)                             /* to avoid infinite recursion during ReadCW */
 
@@ -1948,6 +1955,12 @@ enum GM_OBJECTS {
 #define MODIFIED(p)                             CW_READ_STATIC(p,MODIFIED_,NODE_)
 #define SETMODIFIED(p,n)                        CW_WRITE_STATIC(p,MODIFIED_,NODE_,n)
 
+#if defined ModelP && defined __OVERLAP2__
+#define NO_DELETE_OVERLAP2_LEN                 1
+#define NO_DELETE_OVERLAP2(p)                  CW_READ(p,ce_NO_DELETE_OVERLAP2)
+#define SETNO_DELETE_OVERLAP2(p,n)             CW_WRITE(p,ce_NO_DELETE_OVERLAP2,n)
+#endif
+
 #define PREDN(p)                        ((p)->pred)
 #define SUCCN(p)                        ((p)->succ)
 #define START(p)                        ((p)->start)
@@ -2310,6 +2323,7 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define GRID_STATUS_OFFSET                              1
 
 #define GLEVEL(p)                                       ((p)->level)
+#define GATTR(p)                                        ((p)->attribut)
 #define GFORMAT(p)                                      MGFORMAT(MYMG(p))
 #define SETGLOBALGSTATUS(p)             ((p)->status=~0)
 #define GSTATUS(p,n)                            ((p)->status&(n))
@@ -2546,6 +2560,10 @@ extern const BV_DESC_FORMAT DH_bvdf;            /* bvdf for domain halfening	*/
 extern const BV_DESC_FORMAT one_level_bvdf;     /* bvdf for only 1 blocklevel	*/
 extern const BV_DESC_FORMAT two_level_bvdf;     /* bvdf for 2 blocklevels		*/
 extern const BV_DESC_FORMAT three_level_bvdf;   /* bvdf for 3 blocklevels	*/
+
+#if defined ModelP && defined __OVERLAP2__
+extern INT ce_NO_DELETE_OVERLAP2;
+#endif
 
 /****************************************************************************/
 /*																			*/

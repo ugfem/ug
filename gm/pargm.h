@@ -163,6 +163,8 @@ enum Priorities
 
 #endif
 
+#define GRID_ATTR(g) ((unsigned char) (GLEVEL(g)+32))
+#define ATTR_TO_GLEVEL(i) (i-32)
 
 
 /*

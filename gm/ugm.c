@@ -106,6 +106,10 @@
 /*																			*/
 /****************************************************************************/
 
+#if defined ModelP && defined __OVERLAP2__
+INT ce_NO_DELETE_OVERLAP2 = -1;
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
@@ -2452,10 +2456,10 @@ GRID *CreateNewLevel (MULTIGRID *theMG, INT algebraic)
   GRID *theGrid;
   INT l;
 
-  if (theMG->bottomLevel>theMG->topLevel && algebraic) return (NULL);
-  if (theMG->topLevel+1>=MAXLEVEL) return(NULL);
-  if (algebraic) l = theMG->bottomLevel-1;
-  else l = theMG->topLevel+1;
+  if (BOTTOMLEVEL(theMG)>TOPLEVEL(theMG) && algebraic) return (NULL);
+  if (TOPLEVEL(theMG)+1>=MAXLEVEL) return(NULL);
+  if (algebraic) l = BOTTOMLEVEL(theMG)-1;
+  else l = TOPLEVEL(theMG)+1;
 
   /* allocate grid object */
   theGrid = GetMemoryForObject(theMG,sizeof(GRID),GROBJ);
@@ -2464,16 +2468,17 @@ GRID *CreateNewLevel (MULTIGRID *theMG, INT algebraic)
   /* fill in data */
   CTRL(theGrid) = 0;
   SETOBJT(theGrid,GROBJ);
-  theGrid->level = l;
+  GLEVEL(theGrid) = l;
+  GATTR(theGrid) = GRID_ATTR(theGrid);
   NE(theGrid) = 0;
-  theGrid->nCon = 0;
+  NC(theGrid) = 0;
   /* other counters are init in INIT fcts below */
 
 #ifdef __INTERPOLATION_MATRIX__
-  theGrid->nIMat = 0;
+  NIMAT(theGrid) = 0;
 #endif
 
-  theGrid->status       = 0;
+  GSTATUS(theGrid,0);
   GRID_INIT_ELEMENT_LIST(theGrid);
   GRID_INIT_NODE_LIST(theGrid);
   GRID_INIT_VERTEX_LIST(theGrid);
@@ -2497,13 +2502,13 @@ GRID *CreateNewLevel (MULTIGRID *theMG, INT algebraic)
     DOWNGRID(theGrid) = NULL;
     DOWNGRID(GRID_ON_LEVEL(theMG,l+1)) = theGrid;
   }
-  theGrid->mg = theMG;
+  MYMG(theGrid) = theMG;
   GRID_ON_LEVEL(theMG,l) = theGrid;
-  if (algebraic) theMG->bottomLevel = l;
+  if (algebraic) BOTTOMLEVEL(theMG) = l;
   else
   {
-    theMG->topLevel = l;
-    theMG->currentLevel = l;
+    TOPLEVEL(theMG) = l;
+    CURRENTLEVEL(theMG) = l;
   }
 
   return(theGrid);
@@ -3472,6 +3477,14 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
   for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
   {
     theNode = CORNER(theElement,j);
+
+#ifdef __OVERLAP2__
+    if( ce_NO_DELETE_OVERLAP2 != -1 && NO_DELETE_OVERLAP2(theNode) )
+    {
+      continue;
+    }
+#endif
+
     if (START(theNode) == NULL)
     {
       if (NTYPE(theNode)==MID_NODE)
@@ -7071,7 +7084,7 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
 
 INT KeyForObject( KEY_OBJECT *obj )
 {
-  int dummy;            /* dummy variable */
+  int dummy,i;          /* dummy variable */
   DOUBLE_VECTOR coord;
 
   if (obj==NULL) return (-1);
@@ -7084,19 +7097,38 @@ INT KeyForObject( KEY_OBJECT *obj )
 
   /* element */
   case BEOBJ :
-  case IEOBJ :                  /* both together cover all element types */
+  case IEOBJ :     for (i=0; i<CORNERS_OF_ELEM((ELEMENT*)obj); i++)
+    {
+      if(CORNER((ELEMENT*)obj,i)==NULL)
+        return (-1);
+      if(MYVERTEX(CORNER((ELEMENT*)obj,i))==NULL)
+        return (-1);
+    }
+    /* both together cover all element types */
     CalculateCenterOfMass( (ELEMENT*)obj, coord );
     return LEVEL(obj)+COORDINATE_TO_KEY(coord,&dummy);
 
   /* node */
-  case NDOBJ :     return LEVEL(obj)+COORDINATE_TO_KEY(CVECT(MYVERTEX((NODE*)obj)),&dummy);
+  case NDOBJ :     if( MYVERTEX((NODE*)obj) == NULL )
+      return (-1);
+    return LEVEL(obj)+COORDINATE_TO_KEY(CVECT(MYVERTEX((NODE*)obj)),&dummy);
 
   /* vector */
-  case VEOBJ :     VectorPosition( (VECTOR*)obj, coord );
+  case VEOBJ :     if( VOBJECT((VECTOR*)obj) == NULL )
+      return (-1);
+    VectorPosition( (VECTOR*)obj, coord );
     return LEVEL(obj)+COORDINATE_TO_KEY(coord,&dummy);
 
   /* edge */
-  case EDOBJ :     V_DIM_CLEAR(coord);
+  case EDOBJ :     if( NBNODE(LINK0((EDGE*)obj)) == NULL )
+      return (-1);
+    if( MYVERTEX(NBNODE(LINK0((EDGE*)obj))) == NULL )
+      return (-1);
+    if( NBNODE(LINK1((EDGE*)obj)) == NULL )
+      return (-1);
+    if( MYVERTEX(NBNODE(LINK1((EDGE*)obj))) == NULL )
+      return (-1);
+    V_DIM_CLEAR(coord);
     /* sum of the coordinates of the 2 edge corners */
     V_DIM_ADD(coord,CVECT(MYVERTEX(NBNODE(LINK0((EDGE*)obj)))),coord);
     V_DIM_ADD(coord,CVECT(MYVERTEX(NBNODE(LINK1((EDGE*)obj)))),coord);
@@ -8530,6 +8562,11 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
     case NODEVEC :
     {
       theNode = (NODE*)VOBJECT(theVector);
+                                #ifdef __OVERLAP2__
+      if ( theNode == NULL )
+        UserWriteF("NODE-V NULL                ");
+      else
+                                #endif
       UserWriteF("NODE-V nodeID=" ID_FMTX
                  "                ",
                  ID_PRTX(theNode));

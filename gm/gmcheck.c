@@ -490,6 +490,7 @@ else						nerrors++;
 if (1) MIDNODE(FatherEdge) = theNode;
 else						nerrors++;
 #endif
+							/*nerrors++; temp. auskommentiert, um Reperaturwirkung wirklich nutzen zu koennen */
 						}
 					}
 				}
@@ -595,7 +596,7 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 			UserWriteF(PFMT "EID=" EID_FMTX " VID=" VID_FMTX 
 				" ERROR edgenumber of vertex wrong\n",
 				me,EID_PRTX(theElement),VID_PRTX(theVertex));
-			nerrors++;
+/*nerrors++;  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 		}
 		return(nerrors);	
 	}
@@ -1624,8 +1625,12 @@ static INT CheckGeometry (GRID *theGrid)
 	{
 		if (!USED(theNode))
 		{
+#ifdef __OVERLAP2__
+			UserWriteF("node=" ID_FMTX " has no element\n",ID_PRTX(theNode));
+#else
 			errors++;
 			UserWriteF("node=" ID_FMTX " is dead\n",ID_PRTX(theNode));
+#endif
 		}
 		else
 			SETUSED(theNode,0);

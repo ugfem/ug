@@ -2494,8 +2494,12 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
       assert(NodeList[i]!=NULL);
       assert(ID(NodeList[i]) == ref->newcornerid[r_index]);
     }
-    else
+    else {
+      if (theVertex != NULL)                                                    /* NEU Ch. Wieners */
+        /* if (!VXGHOST(theVertex)) */		/* NEU Ch. Wieners */
+        VFATHER(theVertex) = theElement;                                        /* NEU Ch. Wieners */
       NodeList[i] = CreateCenterNode(upGrid,theElement,theVertex);
+    }
     if (NodeList[i]==NULL) REP_ERR_RETURN(1);
     SETNTYPE(NodeList[i],CENTER_NODE);
     ID(NodeList[i]) = ref->newcornerid[r_index++];

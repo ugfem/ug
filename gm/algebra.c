@@ -3761,8 +3761,11 @@ INT CheckAlgebra (GRID *theGrid)
   }
 
   /* set flags in connections */
-  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
-       theVector=SUCCVC(theVector))
+#ifdef __OVERLAP2__
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+#else
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+#endif
   {
     MATRIX  *theMatrix;
 
@@ -3801,7 +3804,7 @@ INT CheckAlgebra (GRID *theGrid)
                    me, MDEST(Adj),VINDEX_PRTX(theVector));
       }
 
-                        #ifdef ModelP
+                        #if defined ModelP && !defined  __OVERLAP2__
       if (prio != PrioHGhost)
                         #endif
       if (MUSED(theMatrix)!=1 &&  !CEXTRA(MMYCON(theMatrix)))
@@ -3814,7 +3817,7 @@ INT CheckAlgebra (GRID *theGrid)
                    GLEVEL(theGrid),CEXTRA(MMYCON(theMatrix)));
       }
 
-                        #ifdef ModelP
+                        #if defined ModelP && !defined  __OVERLAP2__
       if (GHOSTPRIO(prio) && !CEXTRA(MMYCON(theMatrix)))
       {
         errors++;
@@ -3929,6 +3932,15 @@ INT VectorPosition (const VECTOR *theVector, DOUBLE *position)
         #endif
 
   ASSERT(theVector != NULL);
+
+        #ifdef __OVERLAP2__
+  if( VOBJECT(theVector) == NULL )
+  {
+    for (i=0; i<DIM; i++)
+      position[i] = -MAX_D;
+    return (0);
+  }
+        #endif
 
   switch (VOTYPE(theVector))
   {
