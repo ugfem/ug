@@ -173,6 +173,7 @@ INT MDmatchesVT                                                 (const MATDATA_D
 
 INT VDsubDescFromVT                                             (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, CONST_VECDATA_DESC_PTR *subvd);
 INT MDsubDescFromVT                                             (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CONST_MATDATA_DESC_PTR *submd);
+INT MDsubDescFromMT                                             (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, CONST_MATDATA_DESC_PTR *submd);
 
 INT CreateFormatCmd                                             (INT argc, char **argv);
 INT RemoveFormatWithSubs                                (const char *name);

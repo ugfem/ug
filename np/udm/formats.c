@@ -909,6 +909,73 @@ INT MDmatchesVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt)
 
 /****************************************************************************/
 /*D
+        MDsubDescFromMT - create a MATDATA_DESC as a sub descriptor from a matrix template
+
+        SYNOPSIS:
+        INT MDsubDescFromMT (const MATDATA_DESC *vd, const MAT_TEMPLATE *vt, INT sub, CONST_MATDATA_DESC_PTR *subvd)
+
+    PARAMETERS:
+   .   vd			- make a sub desc of this MATDATA_DESC
+   .   vt			- template containing sub descriptor
+   .   sub			- index of sub descriptor in template
+   .   subvd		- handle to created sub descriptor
+
+        DESCRIPTION:
+        This function creates a sub descriptor to a given MATDATA_DESC according to the given
+        sub descriptor of a matrix template.
+
+        RETURN VALUE:
+        INT
+   .n   0: ok
+   .n      n: if an error occured
+   D*/
+/****************************************************************************/
+
+INT MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, CONST_MATDATA_DESC_PTR *submd)
+{
+  FORMAT *fmt;
+  SUBMAT *subm;
+  SHORT SubComp[MAX_MAT_COMP];
+  const SHORT *offset,*Comp;
+  INT i,k,l,type,nc,nn,cmp;
+  char SubName[2*MAX_MAT_COMP];
+
+  if (!MDmatchesMT(md,mt))
+    REP_ERR_RETURN(1);
+
+  fmt = MGFORMAT(MD_MG(md));
+
+  subm = MT_SUB(mt,sub);
+  offset = MD_OFFSETPTR(md);
+  Comp = VM_COMPPTR(md);
+
+  /* compute sub components */
+  k = 0;
+  for (type=0; type<NMATTYPES; type++)
+  {
+    nc = SUBM_RCOMP(subm,type)*SUBM_CCOMP(subm,type);
+    nn = MD_NCMPS_IN_MTYPE(md,type);
+    for (i=0; i<nc; i++)
+    {
+      l = SUBM_COMP(subm,type,i);
+      if (l>=nn)
+        REP_ERR_RETURN (1);
+      cmp = offset[type]+l;
+      SubComp[k] = Comp[cmp];
+      SubName[2*k]   = MT_COMPNAME(mt,2*cmp);
+      SubName[2*k+1] = MT_COMPNAME(mt,2*cmp+1);
+      k++;
+    }
+  }
+  *submd = CreateSubMatDesc(MD_MG(md),NULL,SUBM_RCOMPS(subm),SUBM_CCOMPS(subm),SubComp,SubName);
+  if (*submd == NULL)
+    REP_ERR_RETURN (1);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
         MDsubDescFromVT - create a MATDATA_DESC as a sub descriptor from a vector template
 
         SYNOPSIS:
@@ -1000,13 +1067,16 @@ INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CO
         {$T <type specifier>}*
         {$V <dofs per type list>: <vector template name> <total needed>
                 [$comp <comp names>
-                        [$sub <sub name> <vector comp name list>]*]}+
+                        [$ident <comp identification>]
+                        [$sub <sub name> <vector comp name list>]*]
+        }+
         {{$M implicit(<vt>): <matrix template name> <total needed>
-                [$sub <sub name> <rows>x<cols> <matrix comp name list>]}
  |
-         {$M <matrix size list>: <matrix template name> <total needed>
-                [$comp <matrix comp names>
-                        [$sub <sub name> <rows>x<cols> <matrix comp name list>]]}}+
+         $M <matrix size list>: <matrix template name> <total needed>
+                [$comp <matrix comp names>]
+        }
+                [$sub <sub name> {<rows>x<cols> <matrix comp name list>} | {implicit(<vec sub name>/<vt>)}]
+        }+
     [$d <type name1>x<type name2><connection depth>]
     [$I <type name><mat_size>]
     [$NE]
@@ -1034,6 +1104,12 @@ INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CO
         Use comp-option following a V-option to specify component names:~
    .     <comp~names>				- string of single chracters, one per dof
 
+        Use ident-option following a comp-option to specify component identification:~
+   .     <comp~identification>		- string of single chracters, one per dof, multiple occurence
+                                                                        of a character will invoke identification of the resp.
+                                                                        components for the convergence test as well as output of
+                                                                        defect and defect-reduction in solvers
+
         Use sub-option(s) following a comp-option to define sub templates for
         vector templates:~
    .     <vector~comp~name~list>	- any combination of characters from <comp~names>
@@ -1047,6 +1123,10 @@ INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CO
    .     <matrix~comp~name>		- two characters referring to the component
                                                                         names of vt1/2 (which have to be given
                                                                         above!) indicating row and col
+
+        Alternatively specify sub-matrices by an implicit declaration deriving the sub-matrix
+        as tensor product of a sub-vector <vec sub name> for a certain vector template <vt>:~
+   .n    implicit(<vec~sub~name>/<vt>
 
         A second syntax for M-option(s) is still supported:~
    .     <matrix~size~list>		- {<matrix size> }+
