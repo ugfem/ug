@@ -62,6 +62,7 @@
 #include "ff.h"
 #include "ugblas.h"
 #include "order.h"
+#include "blocking.h"
 
 USING_UG_NAMESPACES
 
@@ -111,6 +112,25 @@ typedef struct
   INT reg;
   MATDATA_DESC *B;
 } NP_ILU_A;
+
+#define OBGS_MODE_NOT_INIT        0
+#define OBGS_JAC                  1
+#define OBGS_GS                   2
+#define OBGS_SGS                  3
+
+typedef struct
+{
+  NP_ITER iter;
+
+  VEC_SCALAR damp,omega;
+  NP_BLOCKING *blocking;
+  INT mode,optimizeBand;
+
+  DOUBLE *Vec[MAXLEVEL],**Mat[MAXLEVEL];
+  INT MarkKey[MAXLEVEL];
+  INT *bw[MAXLEVEL],*n_Mat[MAXLEVEL];
+  BLOCKING_STRUCTUR bs[MAXLEVEL];
+} NP_OBGS;
 
 /****************************************************************************/
 /*																			*/
@@ -546,6 +566,422 @@ static INT ILU_A_Construct (NP_BASE *theNP)
 }
 
 /****************************************************************************/
+/*D
+   obgs - numproc for OBGS smoother
+
+   DESCRIPTION:
+   This numproc executes an overlapping block Gauss-Seidel (type) smoother.
+
+   .vb
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>]
+       $damp <sc double list> $omega <double>;
+   .ve
+
+   .  $c~<cor> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $damp~<sc~double~list> - additional damping factors for each component
+   .  $omega~<double> - sor/ssor-local damping for each component
+
+   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
+   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
+
+   'npexecute <name> [$i] [$s] [$p];'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+   D*/
+/****************************************************************************/
+
+static INT OBGS_Init (NP_BASE *theNP, INT argc , char **argv)
+{
+  INT i;
+  NP_OBGS *np=(NP_OBGS *)theNP;
+  char buffer[128];
+
+  for (i=0; i<MAX_VEC_COMP; i++) np->damp[i]=1.0;
+  sc_read(np->damp,NP_FMT(np),np->iter.b,"damp",argc,argv);
+  for (i=0; i<MAX_VEC_COMP; i++) np->omega[i]=1.0;
+  sc_read(np->omega,NP_FMT(np),np->iter.b,"omega",argc,argv);
+  np->blocking=(NP_BLOCKING*)ReadArgvNumProc(theNP->mg,"B",BLOCKING_CLASS_NAME,argc,argv);
+  if (np->blocking==NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (ReadArgvChar("mode",buffer,argc,argv)) strcpy(buffer,"gs");
+  np->mode=OBGS_MODE_NOT_INIT;
+  if (strcmp(buffer,"jac")==0) np->mode=OBGS_JAC;
+  if (strcmp(buffer,"gs")==0) np->mode=OBGS_GS;
+  if (strcmp(buffer,"sgs")==0) np->mode=OBGS_SGS;
+  if (np->mode==OBGS_MODE_NOT_INIT) REP_ERR_RETURN (NP_NOT_ACTIVE);
+  if (ReadArgvINT ("o",&np->optimizeBand,argc,argv)) np->optimizeBand=1;
+
+  return (NPIterInit(&np->iter,argc,argv));
+}
+
+static INT OBGS_Display (NP_BASE *theNP)
+{
+  NP_OBGS *np=(NP_OBGS *)theNP;
+
+  NPIterDisplay(&np->iter);
+  UserWrite("configuration parameters:\n");
+  if (sc_disp(np->damp,np->iter.b,"damp")) REP_ERR_RETURN (1);
+  if (sc_disp(np->damp,np->iter.b,"omega")) REP_ERR_RETURN (1);
+  if (np->blocking!=NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"B",ENVITEM_NAME(np->blocking));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"B","---");
+  if (np->mode==OBGS_MODE_NOT_INIT) UserWriteF(DISPLAY_NP_FORMAT_SS,"mode","---");
+  if (np->mode==OBGS_JAC) UserWriteF(DISPLAY_NP_FORMAT_SS,"mode","jac");
+  if (np->mode==OBGS_GS) UserWriteF(DISPLAY_NP_FORMAT_SS,"mode","gs");
+  if (np->mode==OBGS_SGS) UserWriteF(DISPLAY_NP_FORMAT_SS,"mode","sgs");
+  UserWriteF(DISPLAY_NP_FORMAT_SS,"o",BOOL_2_YN(np->optimizeBand));
+
+  return (0);
+}
+
+static HEAP *OBGS_Heap;
+static INT OBGS_Key;
+static void *OBGS_GetMem (MEM n) {
+  return (GetTmpMem(OBGS_Heap,n,OBGS_Key));
+}
+
+static INT OBGS_PrintMatrix (DOUBLE *Mat, INT n, INT bw)
+{
+  INT i,j;
+  DOUBLE entry;
+
+  for (i=0; i<n; i++)
+  {
+    for (j=0; j<n; j++)
+    {
+      if (ABS(i-j)<=bw) entry=EX_MAT(Mat,bw,i,j);
+      else entry=0.0;
+      printf("%15.8e ",entry);
+    }
+    printf("\n");
+  }
+  printf("\n");
+
+  return(0);
+}
+
+static INT OBGS_PreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+  INT i,j,n,bl,max,max_comp_in_type,k,index,bw,rindex,rtype,rcomp,cindex,ctype,ccomp,nb_max,n_Mat,n_Mat_max,MarkKey,fifo_buffer_size;
+  SHORT *comp;
+  NP_OBGS *np=(NP_OBGS *)theNP;
+  GRID *theGrid=NP_GRID(theNP,level);
+  HEAP *theHeap=MGHEAP(NP_MG(theNP));
+  VECTOR *theV,*theW,**bv;
+  MATRIX *theM;
+  DOUBLE *Mat;
+  FIFO fifo;
+  void *fifo_buffer;
+
+  /* memory management */
+  if (MarkTmpMem(theHeap,&(np->MarkKey[level]))) REP_ERR_RETURN(1);
+  OBGS_Heap=theHeap; OBGS_Key=MarkKey=np->MarkKey[level];
+
+  /* preprocess blocking */
+  if (np->blocking==NULL) REP_ERR_RETURN(1);
+  if (np->blocking->PreProcess!=NULL)
+    if ((*np->blocking->PreProcess)(np->blocking,level,result)) REP_ERR_RETURN(1);
+
+  /* perform blocking */
+  if (np->blocking->Blocking!=NULL)
+    if ((*np->blocking->Blocking)(np->blocking,OBGS_GetMem,level,A,&(np->bs[level]),result)) REP_ERR_RETURN(1);
+
+  /* allocate vectors and matrices */
+  np->bw[level]=(INT *)GetTmpMem(theHeap,sizeof(INT)*np->bs[level].n,MarkKey);
+  np->n_Mat[level]=(INT *)GetTmpMem(theHeap,sizeof(INT)*np->bs[level].n,MarkKey);
+  np->Mat[level]=(DOUBLE **)GetTmpMem(theHeap,sizeof(DOUBLE *)*np->bs[level].n,MarkKey);
+  for (theV=FIRSTVECTOR(theGrid),max_comp_in_type=0; theV!=NULL; theV=SUCCVC(theV)) { SETVCUSED(theV,0); k=VD_NCMPS_IN_TYPE(x,VTYPE(theV)); max_comp_in_type=MAX(max_comp_in_type,k); }
+  if (np->optimizeBand)
+  {
+    max=0;
+    for (bl=0; bl<np->bs[level].n; bl++)
+      max=MAX(max,np->bs[level].nb[bl]);
+    fifo_buffer_size=max*sizeof(VECTOR*);
+    fifo_buffer=(void *)GetTmpMem(theHeap,fifo_buffer_size,MarkKey); assert(fifo_buffer!=NULL);
+  }
+  for (bl=n_Mat_max=0; bl<np->bs[level].n; bl++)
+  {
+    /* admin */
+    n=np->bs[level].nb[bl]; bv=np->bs[level].vb[bl];
+    for (i=0; i<n; i++) SETVCUSED(bv[i],1);
+
+    /* optimize band */
+    if (np->optimizeBand)
+    {
+      for (i=0; i<n; i++) SETVCFLAG(bv[i],0);
+      fifo_init(&fifo,fifo_buffer,fifo_buffer_size);
+      fifo_in(&fifo,(void *)bv[0]); SETVCFLAG(bv[0],1);
+      while(!fifo_empty(&fifo))
+      {
+        theV=(VECTOR *)fifo_out(&fifo);
+        for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+          if (!VCFLAG(MDEST(theM)) && VCUSED(MDEST(theM)))
+          {
+            fifo_in(&fifo,(void *)MDEST(theM)); SETVCFLAG(MDEST(theM),1);
+          }
+      }
+      fifo_in(&fifo,(void *)theV); SETVCFLAG(theV,0); i=0;
+      while(!fifo_empty(&fifo))
+      {
+        theV=(VECTOR *)fifo_out(&fifo);
+        bv[i++]=theV;
+        for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+          if (VCFLAG(MDEST(theM)) && VCUSED(MDEST(theM)))
+          {
+            fifo_in(&fifo,(void *)MDEST(theM)); SETVCFLAG(MDEST(theM),0);
+          }
+      }
+      assert(i==n);
+    }
+
+    /* get bandwidth */
+    for (i=1,VINDEX(bv[0])=0; i<n; i++) VINDEX(bv[i])=VINDEX(bv[i-1])+VD_NCMPS_IN_TYPE(x,VTYPE(bv[i-1]));
+    for (i=0,max=0; i<n; i++)
+    {
+      index=VINDEX(bv[i]);
+      for (theM=MNEXT(VSTART(bv[i])); theM!=NULL; theM=MNEXT(theM))
+        if (VCUSED(MDEST(theM)))
+        {
+          k=index-MDESTINDEX(theM);
+          k=ABS(k);
+          max=MAX(max,k);
+        }
+    }
+    bw=max+max_comp_in_type-1; n_Mat=VINDEX(bv[n-1])+VD_NCMPS_IN_TYPE(x,VTYPE(bv[n-1])); n_Mat_max=MAX(n_Mat_max,n_Mat);
+
+    /* get block matrices */
+    Mat=(DOUBLE*)GetTmpMem(theHeap,n_Mat*(2*bw+1)*sizeof(DOUBLE),MarkKey); assert(Mat!=NULL);
+    for (i=0; i<n_Mat*(2*bw+1); i++) Mat[i]=0.0;
+
+    /* set block matrix */
+    for (i=0; i<n; i++)
+    {
+      rindex = VINDEX(bv[i]);
+      rtype = VTYPE(bv[i]);
+      rcomp = VD_NCMPS_IN_TYPE(x,rtype);
+      for (theM=VSTART(bv[i]); theM!=NULL; theM=MNEXT(theM))
+      {
+        theW=MDEST(theM);
+        if (!VCUSED(theW)) continue;
+        cindex = VINDEX(theW);
+        ctype = VTYPE(theW);
+        ccomp = VD_NCMPS_IN_TYPE(x,ctype);
+        comp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
+        for (j=0; j<rcomp; j++)
+          for (k=0; k<ccomp; k++)
+            EX_MAT(Mat,bw,rindex+j,cindex+k) = MVALUE(theM,comp[j*ccomp+k]);
+      }
+    }
+
+    /* decompose matrix */
+    if (EXDecomposeMatrixDOUBLE(Mat,bw,n_Mat)) REP_ERR_RETURN(1);
+
+    /* admin */
+    np->bw[level][bl]=bw; np->Mat[level][bl]=Mat; np->n_Mat[level][bl]=n_Mat;
+    for (i=0; i<n; i++) SETVCUSED(bv[i],0);
+  }
+
+  /* allocate help vector */
+  np->Vec[level]=(DOUBLE *)GetTmpMem(theHeap,sizeof(DOUBLE)*n_Mat_max,MarkKey); assert(np->Vec[level]!=NULL);
+
+  *baselevel = level;
+
+  return (0);
+}
+
+static INT OBGS_Smoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  NP_OBGS *np=(NP_OBGS *)theNP;
+  VECTOR **bv,*theW;
+  SHORT *comp,*rcomp,*ccomp;
+  MATRIX *theM;
+  INT i,j,k,n,bl,bw,type,rtype,ctype,nccomp,nrcomp,n_Mat;
+  DOUBLE *Mat;
+  DOUBLE *vec=np->Vec[level];
+
+  /* reset correction */
+  if (dset(NP_MG(theNP),level,level,ALL_VECTORS,x,0.0)) REP_ERR_RETURN(1);
+
+  /* iterate */
+  if (np->mode==OBGS_JAC)
+  {
+    for (bl=0; bl<np->bs[level].n; bl++)
+    {
+      /* admin */
+      n=np->bs[level].nb[bl]; bv=np->bs[level].vb[bl]; Mat=np->Mat[level][bl]; bw=np->bw[level][bl]; n_Mat=np->n_Mat[level][bl];
+
+      /* copy b to vec */
+      for (i=j=0; i<n; i++)
+      {
+        type=VTYPE(bv[i]);
+        comp=VD_CMPPTR_OF_TYPE(b,type);
+        VINDEX(bv[i])=j;
+        for (k=0; k<VD_NCMPS_IN_TYPE(b,type); k++)
+          vec[j++]=VVALUE(bv[i],comp[k]);
+      }
+
+      /* apply inverse */
+      if (EXApplyLUDOUBLE(Mat,bw,n_Mat,vec)) REP_ERR_RETURN(1);
+
+      /* add correction to x */
+      for (i=j=0; i<n; i++)
+      {
+        type=VTYPE(bv[i]);
+        comp=VD_CMPPTR_OF_TYPE(x,type);
+        for (k=0; k<VD_NCMPS_IN_TYPE(b,type); k++)
+        {
+          vec[j]*=np->damp[k];
+          VVALUE(bv[i],comp[k])+=vec[j++];
+        }
+      }
+    }
+
+    /* update defect */
+    if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,x,np->damp)) NP_RETURN(1,result[0]);
+    if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,x)) NP_RETURN(1,result[0]);
+  }
+  if (np->mode==OBGS_GS || np->mode==OBGS_SGS)
+  {
+    for (bl=0; bl<np->bs[level].n; bl++)
+    {
+      /* admin */
+      n=np->bs[level].nb[bl]; bv=np->bs[level].vb[bl]; Mat=np->Mat[level][bl]; bw=np->bw[level][bl]; n_Mat=np->n_Mat[level][bl];
+
+      /* copy b to vec */
+      for (i=j=0; i<n; i++)
+      {
+        type=VTYPE(bv[i]);
+        comp=VD_CMPPTR_OF_TYPE(b,type);
+        VINDEX(bv[i])=j;
+        for (k=0; k<VD_NCMPS_IN_TYPE(b,type); k++)
+          vec[j++]=VVALUE(bv[i],comp[k]);
+      }
+
+      /* apply inverse */
+      if (EXApplyLUDOUBLE(Mat,bw,n_Mat,vec)) REP_ERR_RETURN(1);
+
+      /* add correction to x */
+      for (i=j=0; i<n; i++)
+      {
+        type=VTYPE(bv[i]);
+        comp=VD_CMPPTR_OF_TYPE(x,type);
+        for (k=0; k<VD_NCMPS_IN_TYPE(b,type); k++)
+        {
+          vec[j]*=np->omega[k];
+          VVALUE(bv[i],comp[k])+=vec[j++];
+        }
+      }
+
+      /* update defect */
+      for (i=0; i<n; i++)
+      {
+        ctype=VTYPE(bv[i]);
+        ccomp=VD_CMPPTR_OF_TYPE(x,ctype);
+        nccomp=VD_NCMPS_IN_TYPE(x,ctype);
+        for (theM=VSTART(bv[i]); theM!=NULL; theM=MNEXT(theM))
+        {
+          theW=MDEST(theM);
+          rtype = VTYPE(theW);
+          rcomp = VD_CMPPTR_OF_TYPE(b,rtype);
+          nrcomp=VD_NCMPS_IN_TYPE(b,rtype);
+          comp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
+          for (j=0; j<nccomp; j++)
+            for (k=0; k<nrcomp; k++)
+              VVALUE(theW,rcomp[k])-=MVALUE(MADJ(theM),comp[k*nccomp+j])*vec[VINDEX(bv[i])+j];
+        }
+      }
+    }
+  }
+  if (np->mode==OBGS_SGS)
+  {
+    for (bl=np->bs[level].n-1; bl>=0; bl--)
+    {
+      /* admin */
+      n=np->bs[level].nb[bl]; bv=np->bs[level].vb[bl]; Mat=np->Mat[level][bl]; bw=np->bw[level][bl]; n_Mat=np->n_Mat[level][bl];
+
+      /* copy b to vec */
+      for (i=j=0; i<n; i++)
+      {
+        type=VTYPE(bv[i]);
+        comp=VD_CMPPTR_OF_TYPE(b,type);
+        VINDEX(bv[i])=j;
+        for (k=0; k<VD_NCMPS_IN_TYPE(b,type); k++)
+          vec[j++]=VVALUE(bv[i],comp[k]);
+      }
+
+      /* apply inverse */
+      if (EXApplyLUDOUBLE(Mat,bw,n_Mat,vec)) REP_ERR_RETURN(1);
+
+      /* add correction to x */
+      for (i=j=0; i<n; i++)
+      {
+        type=VTYPE(bv[i]);
+        comp=VD_CMPPTR_OF_TYPE(x,type);
+        for (k=0; k<VD_NCMPS_IN_TYPE(b,type); k++)
+        {
+          vec[j]*=np->omega[k];
+          VVALUE(bv[i],comp[k])+=vec[j++];
+        }
+      }
+
+      /* update defect */
+      for (i=0; i<n; i++)
+      {
+        ctype=VTYPE(bv[i]);
+        ccomp=VD_CMPPTR_OF_TYPE(x,ctype);
+        nccomp=VD_NCMPS_IN_TYPE(x,ctype);
+        for (theM=VSTART(bv[i]); theM!=NULL; theM=MNEXT(theM))
+        {
+          theW=MDEST(theM);
+          rtype = VTYPE(theW);
+          rcomp = VD_CMPPTR_OF_TYPE(b,rtype);
+          nrcomp=VD_NCMPS_IN_TYPE(b,rtype);
+          comp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
+          for (j=0; j<nccomp; j++)
+            for (k=0; k<nrcomp; k++)
+              VVALUE(theW,rcomp[k])-=MVALUE(MADJ(theM),comp[k*nccomp+j])*vec[VINDEX(bv[i])+j];
+        }
+      }
+    }
+  }
+
+  return (0);
+}
+
+static INT OBGS_PostProcess (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  NP_OBGS *np=(NP_OBGS *)theNP;
+  HEAP *theHeap=MGHEAP(NP_MG(theNP));
+
+  if (np->blocking->PostProcess!=NULL)
+    if ((*np->blocking->PostProcess)(np->blocking,level,result)) REP_ERR_RETURN(1);
+
+  /* memory management */
+  ReleaseTmpMem(theHeap,np->MarkKey[level]);
+
+  return(0);
+}
+
+static INT OBGS_Construct (NP_BASE *theNP)
+{
+  NP_ITER *np;
+
+  theNP->Init=OBGS_Init;
+  theNP->Display=OBGS_Display;
+  theNP->Execute=NPIterExecute;
+
+  np=(NP_ITER *)theNP;
+  np->PreProcess=OBGS_PreProcess;
+  np->Iter=OBGS_Smoother;
+  np->PostProcess=OBGS_PostProcess;
+
+  return(0);
+}
+
+/****************************************************************************/
 /*
    InitIter_2	- Init this file
 
@@ -574,6 +1010,7 @@ INT NS_DIM_PREFIX InitIter_2 ()
   if (CreateClass(ITER_CLASS_NAME ".sora",sizeof(NP_SOR_A),SOR_A_Construct)) REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ssora",sizeof(NP_SSOR_A),SSOR_A_Construct)) REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ilua",sizeof(NP_ILU_A),ILU_A_Construct)) REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".obgs",sizeof(NP_OBGS),OBGS_Construct)) REP_ERR_RETURN (__LINE__);
 
   return (0);
 }
