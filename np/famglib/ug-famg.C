@@ -319,7 +319,6 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
             if( (!VSKIPME(vec,0)) &&  (VDATATYPE(vec)&bmask) && (FINE_GRID_DOF(vec)))
             {
 				assert(OBJT((VECTOR*)(vec->object))==VEOBJ);
-				assert(OBJT((VECTOR*)(w->object))==VEOBJ);
 				newmat = CreateConnection(amggrid,(VECTOR*)(vec->object), (VECTOR*)(vec->object));
 				if( newmat == NULL )
 				{
