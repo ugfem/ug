@@ -29,6 +29,376 @@
 </ul>
  
 
-\section chapter2 More Stuff
+\section chapter2 Overview of UGs data structures
+
+This page will give an overview of the data types defined in UG 
+that are used to represent meshes and geometries. All data types discussed here are 
+defined in the header file gm.h of the grid manager module.
+A description of the individual data types can be found in 
+seperate pages for each data type. UGs data structure is very flexible
+and covers two- and threedimensional elements and a general sparse
+matrix structure. You can have different numbers of degrees of freedom 
+in nodes, edges, sides
+and elements of a three-dimensional mesh. Therefore the data structure
+can be used e.g. also for non-conforming or mixed finite element discretizations.
+To structure the data you can group vectors by using BLOCKVECTORs; this
+yields blockmatrices too.
+
+UGs refinement module can refine and coarsen a given mesh structure. In
+order to do that it needs a complete description of the geometry of the
+domain. For full flexibility, the geometry is defined by patches, which are
+mappings from a d-1 dimensional parameter space to d dimensional euclidean space.
+
+If we imagine a three-dimensional mesh we can identify a hierarchy of 
+geometrical objects like `elements, sides, edges` and `nodes`.
+By element we mean just a simple geometric shape like
+a triangle, a quadrilateral, a tetrahedron or a hexahedron. In our notation the element
+does not include the number of degrees of freedom or the definition of the shape functions
+as it is common in the Finite Element context. A side is meant to be a face of an element, that
+is a d-1 dimensional object if we have a mesh in d dimensions (d=2,3). An edge is a connection
+of two nodes, i.~e. a one-dimensional object and a node is a point in space (as far as geometry
+is concerned). Note that in two space dimensions sides coincide with edges, or we can say that
+a side consists of one edge and two nodes in that case.
+
+The TeX version of this page contains a graphical representation of the data 
+structure.
+
+Size limitations of the data structure are described in a seperate page LIMITS.
+
+All data types have names with uppercase letters. Now we give a brief description
+of all data types for which a seperate page is provided.
+
+. DOMAIN - Structure that describes a two- or threedimensional domain.
+
+. BOUNDARY_SEGMENT - A DOMAIN is constructed from several BOUNDARY_SEGMENT objects.
+UG can handle also `internal` boundaries, e.g. for material interfaces.
+
+. PROBLEM - Stores references to user defined coefficient functions. The purpose
+of these functions depends on the problem class library. A problem corresponds 
+to a DOMAIN and provides a BOUNDARY_CONDITION for each BOUNDARY_SEGMENT
+besides the coefficient functions. There may be several problems defined on a domain.
+
+. BOUNDARY_CONDITION - For each BOUNDARY_SEGMENT a corresponding BOUNDARY_CONDITION
+object must be allocated.
+
+. FORMAT - This structure parametrizes the data structure. The format determines
+the layout of the sparse matrix data structure and how it is determined from
+the mesh data. 
+
+. ELEMENT - UGs data structure is element oriented, so this is the basic data
+type from which other objects can be reached locally. The variable element
+concept allows several element types (e.g. triangles and quadrilaterals) in one mesh.
+Elements give you access to the corresponding nodes and to neighboring elements.
+
+. NODE - Corners of the elements are described by the NODE structure. Only the
+information that is different per level is stored here. E.g. geometric information 
+for a node e.g. is stored only once in a VERTEX object. Several NODE objects share
+share one VERTEX if they are at the same position on different levels.
+
+. VERTEX - Geometric data of a NODE. This contains x,y (,z), i.e global
+coordinates, the position in the coarser grid level (local coordinates) and
+boundary information if the node is on the boundary (see VSEGMENT).
+
+. LINK - The mesh structure implies a neighbor relationship on the NODE
+objects (the `mesh graph`). 
+Since the mesh is unstructured a linked list must be used to provide
+references to all neighbors. The LINK data type forms that list and each
+LINK object represents one neighbor.
+
+. EDGE - The LINK structure represents a directed edge of the mesh graph from
+some node `a` to node `b`. The LINK from node `b` to node `a` must always exist
+since the neighbor relation is symmetric and therefore the two LINK objects
+are combined to form an (undirected) EDGE object.
+
+. SELECTION_OBJECT - This is an union of ELEMENT, NODE and VECTOR, the
+objects that can be selected by mouse or by the select command.
+
+. GEOM_OBJECT - This is an union of ELEMENT, NODE and EDGE, the basic
+geometric objects.
+
+. VECTOR - This structure is part of UGs sparse matrix data structure. Degrees
+of freedom (and additional values) associated with `one geometric object` 
+(ELEMENT, NODE, EDGE and also sides in 3D for which there is no extra data type)  
+are stored in a VECTOR object. In each VECTOR starts a list of MATRIX objects
+representing the rows of the global stiffness matrix corresponding to all
+degrees of freedom in the VECTOR.
+
+. MATRIX - Contains all matrix entries coupling the degrees of freedom
+in two VECTOR objects. MATRIX objects come in pairs connecting two
+VECTOR objects in both directions. If the VECTOR objects are identical (which is
+the case for diagonal entries) then there is only one MATRIX.
+The graph induced by the MATRIX-VECTOR
+structure is completely independent from the mesh graph represented by the
+LINK-NODE structure.
+
+. BLOCKVECTOR - Gives you the facility to structure a VECTOR-list. The
+VECTOR-list itself remains unchanged but additional data is inserted
+in the grid. The substructuring can be hierarchical. Each VECTOR sublist
+described by a BLOCKVECTOR can be processed by itself. Via the
+BLOCKVECTOR structure there is also a blockmatrix structure induced to
+the MATRIX structure but without any additional memory need.
+
+. CONNECTION - The two (or one, s.a.) MATRIX objects connecting two VECTOR objects
+are combined to a CONNECTION object. This is similar to the combination of two
+LINK objects in an EDGE.
+
+. GRID - All objects allocated on one grid level can be accessed via the
+GRID structure.
+
+. MULTIGRID - Several grid levels are combined to form a MULTIGRID structure.
+It also provides access to the data structure parameters (FORMAT), the
+geometry (DOMAIN) and the problem description (PROBLEM). The MULTIGRID
+structure is basically an environment item (see ENVIRONMENT). Several
+MULTIGRID objects can be handled simultaneously by the grid manager module.
+
+`IMPORTANT:` The access to all components of the data types is realized with
+macros. Through the use of macros the data structure can be changed without
+changing the code that uses it. 
+
+\sa
+
+LIMITS, all data types mentioned above.
+
+.p DataStructure.eps
+.cb
+Graphical representation of the data structure with references.
+.ce
+
+
+\section LIMITS Constants defining limitations of the data structure
+
+There are some constants defining limitations of the data structure.
+They are explained here. The actual value of the definition should
+be extracted from the source code via the uggrep shell script
+provided with UG.
+
+`In file gm.h`
+
+. MAXLEVEL - Maximum number of grid levels allowed in MULTIGRID.
+
+. MAXOBJECTS - Maximum number of different objects in free list.
+
+. MAXSELECTION - Size of the selection buffer in MULTIGRID.
+
+. MAX_SIDES_OF_ELEM - Maximum number of sides of an element (of any type).
+
+. MAX_EDGES_OF_ELEM - Maximum number of edges of an element (of any type).
+
+. MAX_CORNERS_OF_ELEM - Maximum number of corners of an element (of any type).
+
+. MAX_EDGES_OF_SIDE - Maximum number of edges per side.
+
+. MAX_CORNERS_OF_SIDE - Maximum number of corners per side.
+
+. MAX_CORNERS_OF_EDGE - Maximum number of corners per edge (is always 2).
+
+. MAX_SIDES_OF_EDGE - In 3D two sides always have on edge in common.
+
+. MAX_SONS - Maximum number of sons per element.
+
+. MAX_SIDES_TOUCHING - Maximum number of sides on the next finer mesh that make up
+a side on the coarser mesh.
+
+. MAXMATRICES - Maximum number of MATRIX types with different size.
+
+. MAXCONNECTIONS - Maximum number of different CONNECTION types.
+
+. MSIZEMAX - Maximum size of a MATRIX object in bytes.
+
+. NO_OF_ELEM_MAX - Maximum number of elements touching the same edge.
+
+`In file switch.h`
+
+. DIM_MAX - Maximum space dimension (is 3).
+
+. DIM_OF_BND_MAX - Maximum dimension of boundary (is DIM_MAX-1).
+
+. MAXVECTORS - Maximum number of different VECTOR types.
+
+\section REFINEMENT The interface to the grid refinement module
+
+The interface to the grid refinement will change in the near future.
+Therefore only a rudimentary documentation is provided.
+
+UGs local refinement capability is element oriented, i.e. the
+error estimator (part of the problem class) selects all or
+part of the elements for refinement. To that end the error
+estimator calls the function
+
+\verbatim
+INT MarkForRefinement (ELEMENT *theElement, INT rule, INT side);
+\endverbatim
+
+where rule is one of the following rules
+
+\verbatim
+NO_REFINEMENT
+COPY     
+RED    
+BLUE  
+BISECTION_1 
+BISECTION_2_Q 
+BISECTION_2_T1
+BISECTION_2_T2
+BISECTION_3 
+UNREFINE 
+\endverbatim
+
+and side is some orientation necessary for those rules
+that are not invariant under rotation (e.g. the edge to bisect).
+The RED rule selects standard isotropic refinement independent
+of the element type. Triangles are subdivided in four triangles
+by connecting the edge midpoints, quadrilaterals are subdivided
+by connecting edge midpoints with the centroid and tetrahedral
+elements are subdivided using the refinement strategy of J. Bey.
+For RED refinement the side information is arbitrary.
+
+The MarkForRefinement function may only be called for those elements
+where 
+
+\verbatim
+INT EstimateHere (ELEMENT *theElement);
+\endverbatim
+
+returns true. EstimateHere is true for the leave elements of the element
+hierarchy, i.e. those elements that are not further refined. Care
+must be taken when the estimator for an element needs also information
+on the solution in neighboring elements (see e.g. the implementation
+of the error estimator in the diff2d package). 
+
+After the desired elements have been tagged for refinement the refine
+of the UG command language is used to actually refine the elements.
+
+\subsection Example Example2
+
+The following function selects all (possible) elements in a MULTIGRID for refinement and
+returns the number of elements selected for refinement.
+
+\verbatim
+static INT MarkAll (MULTIGRID *theMG)
+{
+    GRID *theGrid;
+    ELEMENT *theElement;
+    int k,j;
+    INT cnt;
+
+    // get number of levels
+    j = TOPLEVEL(theMG);
+
+    // cnt will hold the number elements to be refined 
+    cnt = 0;
+
+    // mark elements
+    for (k=0; k<=j; k++)
+    {
+        theGrid = GRID_ON_LEVEL(theMG,k);
+        for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+            if (EstimateHere(theElement))
+            {
+                cnt++;
+                MarkForRefinement(theElement,RED,0);
+            }
+    }
+
+    // return cnt
+    return(cnt);
+}
+\endverbatim
+
+\sa
+
+MarkForRefinement(), EstimateHere(), refine()
+
+REFERENCES:
+
+[1] J. Bey: Tetrahedral Grid Refinement. To be published in Computing.
+
+[2] J. Bey: AGM^3D Manual. Technical Report, Universität Tübingen, 1994.
+
+[3] R.E. Bank, A.H. Sherman, A. Weiser: Refinement Algorithms and Data
+Structures for Regular Local Mesh Refinement. In: Scientific Computing,
+IMACS, North-Holland, Amsterdam, 1983.
+
+
+\section commands User commands for the UG shell script
+	
+	Commands are used on the shell or in a script to perform ug functions
+    and to pass parameters, e. g. 
+
+.n  'clear x $a $v 0'
+
+    resets 'x' on a specified value. The parameters are seperated by '$'.
+    Here, the first parameter follows after the command name,
+	the option '$a' performs this command on all levels and '$v'
+	specifies the value.
+	
+	All ug commands can be found in 'commands.c'. On the shell,
+	'help \<command\>' will give information on the command,
+	'checkhelp' prints a list of all commands where the help entry is 
+    missing.
+
+\subsection howto How to Create User Commands
+	To include a new command to `ug3` one has to provide a 
+	Command function. The Command function has a fixed form.
+	The fixed form in detail is described in the example below. 
+	The only purpose of the command function is to read the parameters
+    and to call the corresponding ug functions.
+	A command function has as arguments only the variables
+	'INT arg' and 'char **argv' to pass the parameters. 
+	The command function has to give back
+	'return' values, that means error codes, in a mode typical to `ug3`.
+	The possible and expected 'return' values are 'OKCODE',
+	'PARAMERRCODE' and 'CMDERRORCODE'.
+	Finally, the user has to enter the command function in an initialization 
+	process.
+	There the user has to include the new command with the 'CreateCommand' 
+	function.
+	
+\subsection Example
+	As guided example the embedding of the 'MakeStructCommand' is 
+	demonstrated step by step.	
+	
+\verbatim
+static INT MakeStructCommand (INT argc, char **argv)
+{	
+    INT res;
+    char name[LONGSTRSIZE];
+	
+    NO_OPTION_CHECK(argc,argv);
+	
+    res = sscanf(argv[0],expandfmt(CONCAT3(" ms %",LONGSTRLENSTR,
+	               "[0-9:.a-zA-Z_]")),name);
+    if (res!=1)
+    {
+        PrintHelp("ms",HELPITEM," (could not read name of struct)");
+        return(PARAMERRORCODE);
+    }
+	
+    if (MakeStruct(name)!=0)
+        return (CMDERRORCODE);
+    else
+        return (OKCODE);
+}
+\endverbatim
+
+\subsection Initialization
+	All commands have to be built with 'CreateCommand'. All ug commands 
+    are inizialized in 'commands.c', the problem specific commands 
+    can be created in the corresponding 'pclib'.
+	
+\verbatim
+INT InitCommands ()
+{
+    if (CreateCommand("ms",MakeStructCommand)==NULL) return (__LINE__);
+    ...
+    return(0);
+}
+\endverbatim
+
+ 	In this case, the name of the command is `ms`.
+
+ \sa
+	'interpreter', 'unixcommands'
+
 
  */

@@ -1,143 +1,3 @@
-/*D
-
-DATASTRUCTURE - Overview of UGs data structures
-
-DESCRIPTION:
-
-This page will give an overview of the data types defined in UG 
-that are used to represent meshes and geometries. All data types discussed here are 
-defined in the header file '/ug3/ug/gm/gm.h' of the grid manager module.
-A description of the individual data types can be found in 
-seperate pages for each data type. UGs data structure is very flexible
-and covers two- and threedimensional elements and a general sparse
-matrix structure. You can have different numbers of degrees of freedom 
-in nodes, edges, sides
-and elements of a three-dimensional mesh. Therefore the data structure
-can be used e.g. also for non-conforming or mixed finite element discretizations.
-To structure the data you can group vectors by using BLOCKVECTORs; this
-yields blockmatrices too.
-
-UGs refinement module can refine and coarsen a given mesh structure. In
-order to do that it needs a complete description of the geometry of the
-domain. For full flexibility, the geometry is defined by patches, which are
-mappings from a d-1 dimensional parameter space to d dimensional euclidean space.
-
-If we imagine a three-dimensional mesh we can identify a hierarchy of 
-geometrical objects like `elements, sides, edges` and `nodes`.
-By element we mean just a simple geometric shape like
-a triangle, a quadrilateral, a tetrahedron or a hexahedron. In our notation the element
-does not include the number of degrees of freedom or the definition of the shape functions
-as it is common in the Finite Element context. A side is meant to be a face of an element, that
-is a d-1 dimensional object if we have a mesh in d dimensions (d=2,3). An edge is a connection
-of two nodes, i.~e. a one-dimensional object and a node is a point in space (as far as geometry
-is concerned). Note that in two space dimensions sides coincide with edges, or we can say that
-a side consists of one edge and two nodes in that case.
-
-The TeX version of this page contains a graphical representation of the data 
-structure.
-
-Size limitations of the data structure are described in a seperate page LIMITS.
-
-All data types have names with uppercase letters. Now we give a brief description
-of all data types for which a seperate page is provided.
-
-. DOMAIN - Structure that describes a two- or threedimensional domain.
-
-. BOUNDARY_SEGMENT - A DOMAIN is constructed from several BOUNDARY_SEGMENT objects.
-UG can handle also `internal` boundaries, e.g. for material interfaces.
-
-. PROBLEM - Stores references to user defined coefficient functions. The purpose
-of these functions depends on the problem class library. A problem corresponds 
-to a DOMAIN and provides a BOUNDARY_CONDITION for each BOUNDARY_SEGMENT
-besides the coefficient functions. There may be several problems defined on a domain.
-
-. BOUNDARY_CONDITION - For each BOUNDARY_SEGMENT a corresponding BOUNDARY_CONDITION
-object must be allocated.
-
-. FORMAT - This structure parametrizes the data structure. The format determines
-the layout of the sparse matrix data structure and how it is determined from
-the mesh data. 
-
-. ELEMENT - UGs data structure is element oriented, so this is the basic data
-type from which other objects can be reached locally. The variable element
-concept allows several element types (e.g. triangles and quadrilaterals) in one mesh.
-Elements give you access to the corresponding nodes and to neighboring elements.
-
-. NODE - Corners of the elements are described by the NODE structure. Only the
-information that is different per level is stored here. E.g. geometric information 
-for a node e.g. is stored only once in a VERTEX object. Several NODE objects share
-share one VERTEX if they are at the same position on different levels.
-
-. VERTEX - Geometric data of a NODE. This contains x,y (,z), i.e global
-coordinates, the position in the coarser grid level (local coordinates) and
-boundary information if the node is on the boundary (see VSEGMENT).
-
-. LINK - The mesh structure implies a neighbor relationship on the NODE
-objects (the `mesh graph`). 
-Since the mesh is unstructured a linked list must be used to provide
-references to all neighbors. The LINK data type forms that list and each
-LINK object represents one neighbor.
-
-. EDGE - The LINK structure represents a directed edge of the mesh graph from
-some node `a` to node `b`. The LINK from node `b` to node `a` must always exist
-since the neighbor relation is symmetric and therefore the two LINK objects
-are combined to form an (undirected) EDGE object.
-
-. SELECTION_OBJECT - This is an union of ELEMENT, NODE and VECTOR, the
-objects that can be selected by mouse or by the select command.
-
-. GEOM_OBJECT - This is an union of ELEMENT, NODE and EDGE, the basic
-geometric objects.
-
-. VECTOR - This structure is part of UGs sparse matrix data structure. Degrees
-of freedom (and additional values) associated with `one geometric object` 
-(ELEMENT, NODE, EDGE and also sides in 3D for which there is no extra data type)  
-are stored in a VECTOR object. In each VECTOR starts a list of MATRIX objects
-representing the rows of the global stiffness matrix corresponding to all
-degrees of freedom in the VECTOR.
-
-. MATRIX - Contains all matrix entries coupling the degrees of freedom
-in two VECTOR objects. MATRIX objects come in pairs connecting two
-VECTOR objects in both directions. If the VECTOR objects are identical (which is
-the case for diagonal entries) then there is only one MATRIX.
-The graph induced by the MATRIX-VECTOR
-structure is completely independent from the mesh graph represented by the
-LINK-NODE structure.
-
-. BLOCKVECTOR - Gives you the facility to structure a VECTOR-list. The
-VECTOR-list itself remains unchanged but additional data is inserted
-in the grid. The substructuring can be hierarchical. Each VECTOR sublist
-described by a BLOCKVECTOR can be processed by itself. Via the
-BLOCKVECTOR structure there is also a blockmatrix structure induced to
-the MATRIX structure but without any additional memory need.
-
-. CONNECTION - The two (or one, s.a.) MATRIX objects connecting two VECTOR objects
-are combined to a CONNECTION object. This is similar to the combination of two
-LINK objects in an EDGE.
-
-. GRID - All objects allocated on one grid level can be accessed via the
-GRID structure.
-
-. MULTIGRID - Several grid levels are combined to form a MULTIGRID structure.
-It also provides access to the data structure parameters (FORMAT), the
-geometry (DOMAIN) and the problem description (PROBLEM). The MULTIGRID
-structure is basically an environment item (see ENVIRONMENT). Several
-MULTIGRID objects can be handled simultaneously by the grid manager module.
-
-`IMPORTANT:` The access to all components of the data types is realized with
-macros. Through the use of macros the data structure can be changed without
-changing the code that uses it. 
-
-\sa
-
-LIMITS, all data types mentioned above.
-
-.p DataStructure.eps
-.cb
-Graphical representation of the data structure with references.
-.ce
-
-D*/
 
 /** \struct domain
 
@@ -183,7 +43,7 @@ corners, two boundary segments and one subdomain (the domain itself).
 The following two functions of type BndSegFuncPtr define the
 mapping for the upper and lower half circle respectively.
 
-.vb
+\verbatim
 // circleBoundary maps [0.0,1.0] to the upper half circle
 static INT circleBoundaryUpper (void *data, DOUBLE *param, DOUBLE *result)
 {
@@ -221,13 +81,13 @@ static INT circleBoundaryLower (void *data, DOUBLE *param, DOUBLE *result)
     // return ok 
     return(0);
 }
-.ve
+\endverbatim
 
 The following function InitUnitCircle uses the functions
 CreateDomain and CreateBoundarySegment2D in order to create
 a domain and the list of boundary segments for that domain.
 
-.vb
+\verbatim
 static INT InitUnitCircle (void)
 {
     DOUBLE radius,MidPoint[2];
@@ -275,7 +135,7 @@ static INT InitUnitCircle (void)
     // return ok 
     return(0);
 }
-.ve
+\endverbatim
 
 For a 3D example see e.g. the application appl3d.
 
@@ -289,11 +149,11 @@ For a 3D example see e.g. the application appl3d.
 
 STRUCTURES:
 
-.vb
+\verbatim
 typedef INT (*BndSegFuncPtr) (void *,DOUBLE *,DOUBLE *);
 
 typedef struct boundary_segment BOUNDARY_SEGMENT;
-.ve
+\endverbatim
 
 DESCRIPTION:
 
@@ -304,14 +164,14 @@ The parameter space is an interval [a,b] in two dimensions or a rectangle
 [a,b]x[c,d] in three dimensional applications.
 
 `2D boundary segments`
-.vb
+\verbatim
       0        1
       +--------+     maps [a,b] to R x R
       a        b
-.ve
+\endverbatim
 
 `3D boundary segments`
-.vb
+\verbatim
     d +--------+     maps [a,b]x[c,d] to R x R x R
       |3      2|
       |        |
@@ -319,7 +179,7 @@ The parameter space is an interval [a,b] in two dimensions or a rectangle
       |0      1|
     c +--------+
       a        b
-.ve
+\endverbatim
 
 
 For all boundary segments the points in `d` dimensional space corresponding to the parameters
@@ -413,14 +273,14 @@ D*/
 
 STRUCTURES:
 
-.vb
+\verbatim
 typedef INT (*CoeffProcPtr) (DOUBLE *, DOUBLE *);
 typedef INT (*UserProcPtr) (DOUBLE *, DOUBLE *);
 typedef INT (*ConfigProcPtr) (INT argc, char **argv);
 
 
 typedef struct problem PROBLEM ;
-.ve
+\endverbatim
 
 DESCRIPTION:
 
@@ -457,36 +317,36 @@ a UG shell variable.
 
 MACROS:
 
-.vb
+\verbatim
 INT PROBLEMID (PROBLEM *p);
-.ve
+\endverbatim
 Extracts the problem identification number from a problem.
 
-.vb
+\verbatim
 ConfigProcPtr CONFIGFUNC (PROBLEM *p);
-.ve
+\endverbatim
 Returns a pointer to the configuration function of the problem.
 
-.vb
+\verbatim
 INT NUMCOEFF (PROBLEM *p); 
-.ve
+\endverbatim
 Returns the number of coefficient functions defined in the problem description.
 
-.vb
+\verbatim
 INT NUMUSERFCT (PROBLEM *p);
-.ve
+\endverbatim
 Returns the number of user functions in the problem description.
 
-.vb
+\verbatim
 CoeffProcPtr COEFFFUNC (PROBLEM *p,INT i); 
-.ve
+\endverbatim
 Returns a pointer to the i-th coefficient function of the problem.
 The meaning of coefficient function i is determined by the problem class
 library.
 
-.vb
+\verbatim
 UserProcPtr USERFUNC (PROBLEM *p,INT i);
-.ve
+\endverbatim
 Returns a pointer to the i-th user function of the problem.
 The meaning of user function i is determined by the problem class
 library.
@@ -505,7 +365,7 @@ BOUNDARY_CONDITION - Data type defining a boundary condition.
 
 STRUCTURES:
 
-.vb
+\verbatim
 typedef INT (*BndCondProcPtr) (void *, void *, DOUBLE *, DOUBLE *, INT *);
 
 struct bndcond {
@@ -520,7 +380,7 @@ struct bndcond {
 } ;
 
 typedef struct bndcond BOUNDARY_CONDITION ;
-.ve
+\endverbatim
 
 DESCRIPTION:
 
@@ -571,7 +431,7 @@ The FORMAT data type is used to describe parameters of the UG data structure.
 Several different formats can be defined at initialization time or later. Which format
 is used for a MULTIGRID can be specified when it is created or loaded from
 file. Each problem class defines at least one format. FORMAT objects
-are created with the CreateFormat function.
+are created with the CreateFormat() function.
 
 . d - The format is an environment directory. This directory will contain a list
 of SYMBOL objects. d also stores the name of the format.
@@ -653,16 +513,16 @@ will be allocated in each NODE and MATRIX respectively, i.e.
 we can represent four finite element functions and we store
 two global stiffness matrices.
 
-.vb
+\verbatim
 // define data types in order to determine size in bytes
 typedef DOUBLE FullScalarNodeData[4];
 typedef DOUBLE FullScalarLinkData[2];
-.ve
+\endverbatim
 
 The following two functions of type ConversionProcPtr are used
 to print the contents of a VECTOR and a MATRIX on the screen.
 
-.vb
+\verbatim
 // the print functions
 static INT PrintFullScalarNodeData (void *data, const char *indent, char *s)
 {
@@ -682,14 +542,14 @@ static INT PrintFullScalarLinkData (void *data, const char *indent, char *s)
     sprintf(s,"  A=%11.4E  LU=%11.4E",(double)vector[0],(double)vector[1]);
     return(0);
 }
-.ve
+\endverbatim
 
 Fortunately creating a format is simplified by the two data structures
 VectorDescriptor and MatrixDescriptor which are explained in the page
 for CreateFormat.  The following function InitFullScalarFormat now
 creates a FORMAT object in UGs environment.
 
-.vb
+\verbatim
 // now enrol the format description in ug
 INT InitFullScalarFormat (void)
 {
@@ -723,7 +583,7 @@ INT InitFullScalarFormat (void)
 
     return(0);
 }
-.ve
+\endverbatim
 
 @sa CreateFormat
 
@@ -734,7 +594,7 @@ VERTEX - Data type storing level-independent node information
 
 STRUCTURES:
 
-.vb
+\verbatim
 struct ivertex {               // inner vertex structure                
     
     // variables 
@@ -773,7 +633,7 @@ union vertex {                 // only used to define pointer to vertex
 } ;
 
 typedef union vertex VERTEX;
-.ve
+\endverbatim
 
 DESCRIPTION:
 
@@ -817,52 +677,52 @@ in the next version, its use is not recommended!
 
 MACROS:
 
-.vb
+\verbatim
 INT ID (VERTEX *p);
-.ve
+\endverbatim
 Returns VERTEX id.
 
-.vb
+\verbatim
 VERTEX *PREDV (VERTEX *p);
 VERTEX *SUCCV (VERTEX *p);
-.ve
+\endverbatim
 Access to the double linked list. NULL pointers indicate the end of the list
 in both directions.
 
-.vb
+\verbatim
 DOUBLE *CVECT (VERTEX *p);
 DOUBLE XC (VERTEX *p);
 DOUBLE YC (VERTEX *p);
 DOUBLE ZC (VERTEX *p);
-.ve
+\endverbatim
 CVECT returns the array of global coordinates (i.e. a pointer) and XC, YC and
 ZC return the individual components. Accessing the `z`-coordinate in a 2D application
 will not lead to an error message!
 
-.vb
+\verbatim
 DOUBLE *LCVECT (VERTEX *p);
 DOUBLE XI (VERTEX *p);
 DOUBLE ETA (VERTEX *p);
 DOUBLE NU (VERTEX *p);
-.ve
+\endverbatim
 LCVECT returns the array of local coordinates with the father element and the other
 macros return the individual components called XI, ETA and NU.
 
-.vb
+\verbatim
 void *VDATA (VERTEX *p);
-.ve
+\endverbatim
 Returns the pointer to user data space.
 
-.vb
+\verbatim
 ELEMENT *VFATHER (VERTEX *p);
-.ve
+\endverbatim
 Returns the pointer an ELEMENT of the next coarser grid level containing the 
 given VERTEX. A NULL pointer indicates that the VERTEX is on level 0, the
 coarsest level.
 
-.vb
+\verbatim
 NODE *TOPNODE (VERTEX *p);
-.ve
+\endverbatim
 Returns pointer to the highest NODE using that VERTEX. The use of this
 component is not recommended since it will not be supported in the future.
 
@@ -871,7 +731,7 @@ CONTROL WORDS:
 The first word of many UG data structure is used bitwise for various purposes.
 
 `General macros available for all objects`
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT OBJT (VERTEX *p);                 27  5   Object type IVOBJ for inner   
@@ -889,10 +749,10 @@ void SETLEVEL (VERTEX *p, INT n);             defined
 INT THEFLAG (VERTEX *p);              16  1   used only temporarily
 void SETTHEFLAG (VERTEX *p, INT n);
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 `Macros specific to the VERTEX structure`
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT MOVE (VERTEX *p);                 4   2   Number of dimensions in which
@@ -909,14 +769,14 @@ INT ONEDGE (VERTEX *p);               1   3   Edge in father element of vertex
 void SETONEDGE (VERTEX *p, INT n);            on which this vertex resides.
                                               2D: only valid for boundary vertex!
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 D*/
 
 /*D
 NODE - Data type representing a node in the mesh
 
 STRUCTURES:
-.vb
+\verbatim
 struct node {                   // level dependent part of a vertex     
 
     // variables 
@@ -937,7 +797,7 @@ struct node {                   // level dependent part of a vertex
 } ;
 
 typedef struct node NODE;
-.ve
+\endverbatim
 
 DESCRIPTION:
 
@@ -971,46 +831,46 @@ the node on the next coarser (father) and finer (son) grid levels.
 
 MACROS:
 
-.vb
+\verbatim
 NODE *PREDN (NODE *p);
 NODE *SUCCN (NODE *p);
-.ve
+\endverbatim
 
 Provides acces to the double linked list of nodes per level.
 
-.vb
+\verbatim
 INT INDEX (NODE *p);
-.ve
+\endverbatim
 
 Returns the index of the node in the node list.
 
-.vb
+\verbatim
 LINK *START (NODE *p);
-.ve
+\endverbatim
 
 Returns pointer to the first element of the LINK list of a node.
 
-.vb
+\verbatim
 NODE *NFATHER (NODE *p);
 NODE *SONNODE (NODE *p);
-.ve
+\endverbatim
 
-.vb
+\verbatim
 VERTEX *MYVERTEX (NODE *p);
-.ve
+\endverbatim
 
 Returns a pointer to the VERTEX of a node.
 
-.vb
+\verbatim
 VECTOR *NVECTOR (NODE *p);
-.ve
+\endverbatim
 
 Returns a pointer to the VECTOR associated with a node.
 
 CONTROL WORDS:
 
 `General macros available for all objects`
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT OBJT (NODE *p);                   27  5   Object type NDOBJ for a node. 
@@ -1028,11 +888,11 @@ void SETLEVEL (NODE *p, INT n);               allocated
 INT THEFLAG (NODE *p);                16  1   used only temporarily
 void SETTHEFLAG (NODE *p, INT n);
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 `Macros for the NODE structure`
 
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT CLASS (NODE *p);                  0   3   node class for local multigrid
@@ -1048,7 +908,7 @@ void SETMODIFIED (NODE *p, INT n);            or modified during last refinement
 INT NPROP (NODE *p);                  7   8   node property derived from
 void SETNPROP (NODE *p, INT n);               element property.
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 \sa
 
@@ -1061,7 +921,7 @@ LINK - Data type realizing a list of neighbors of a node
 
 STRUCTURES:
 
-.vb
+\verbatim
 struct link {
 
     // variables 
@@ -1071,7 +931,7 @@ struct link {
 } ;
 
 typedef struct link LINK;
-.ve
+\endverbatim
 
 DESCRIPTION:
 
@@ -1093,28 +953,28 @@ purposes.
 
 MACROS:
 
-.vb
+\verbatim
 NODE *NBNODE (LINK *p);
-.ve 
+\endverbatim 
 
 Returns pointer to a neighboring node that is stored in the LINK.
 
-.vb
+\verbatim
 LINK *NEXT (LINK *p);
-.ve
+\endverbatim
 
 Returns pointer to next LINK in the list. As usual a NULL pointer indicates
 the end of the list.
 
-.vb
+\verbatim
 EDGE *MYEDGE (LINK *p);
-.ve
+\endverbatim
 
 Provides access to the EDGE where this given LINK is part of. 
 
-.vb
+\verbatim
 LINK *REVERSE (LINK *p);
-.ve
+\endverbatim
 
 Macro that provides fast access to the LINK in the reverse direction.
 If the given LINK connects node `a` with node `b`, then REVERSE
@@ -1123,7 +983,7 @@ provides the LINK in the list of node `b` pointing to `a`.
 CONTROL WORDS:
 
 `General macros available for all objects`
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT OBJT (LINK *p);                   27  5   Object type EDOBJ for first 
@@ -1135,17 +995,17 @@ void SETUSED (LINK *p, INT n);
 INT THEFLAG (LINK *p);                16  1   used only temporarily
 void SETTHEFLAG (LINK *p, INT n);
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 `Macros for the LINK structure`
 
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT LOFFSET (LINK *p);                0   1   0 if first LINK of EDGE
 void SETLOFFSET (LINK *p, INT n);             1 if second LINK of EDGE
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 \sa
 
@@ -1158,7 +1018,7 @@ EDGE - Data type realizing an undirected connection of two nodes
 
 STRUCTURES:
 
-.vb
+\verbatim
 struct edge {                   // undirected edge of the grid graph    
 
     // variables 
@@ -1169,7 +1029,7 @@ struct edge {                   // undirected edge of the grid graph
 } ;
 
 typedef struct edge EDGE;
-.ve
+\endverbatim
 
 DESCRIPTION:
 
@@ -1190,35 +1050,35 @@ FORMAT.
 
 MACROS:
 
-.vb
+\verbatim
 LINK *LINK0 (EDGE *p);
-.ve
+\endverbatim
 
 Pointer to first LINK of an EDGE.
 
-.vb
+\verbatim
 LINK *LINK1 (EDGE *p);
-.ve
+\endverbatim
 
 Pointer to second LINK of an EDGE.
 
-.vb
+\verbatim
 NODE *MIDNODE (EDGE *p);
-.ve
+\endverbatim
 
 Returns pointer to midnode (a node on the next finer grid level
 that has been created on the given edge).
 
-.vb
+\verbatim
 VECTOR *EDVECTOR (EDGE *p);
-.ve
+\endverbatim
 
 Returns pointer to the VECTOR associated with the given EDGE.
 
 CONTROL WORDS:
 
 `General macros available for all objects`
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT OBJT (EDGE *p);                   27  5   Object type EDOBJ for an edge
@@ -1233,11 +1093,11 @@ void SETLEVEL (EDGE *p, INT n);               allocated
 INT THEFLAG (EDGE *p);                16  1   used only temporarily
 void SETTHEFLAG (EDGE *p, INT n);
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 `Macros for the EDGE structure`
 
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT EOFFSET (EDGE *p);                0   1   Overlay with bit from LINK
@@ -1255,7 +1115,7 @@ void DEC_NO_OF_ELEM (EDGE *p);
 INT EDGENEW (EDGE *p);                16  1   True if edge has been created in
 void SETEDGENEW (EDGE *p, INT n);             last refinement step. 3D only!
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 \sa
 
@@ -1270,7 +1130,7 @@ D*/
 
 STRUCTURES:
 
-.vb
+\verbatim
 struct generic_element {            // no difference between inner and bndel
 
     // variables 
@@ -1358,7 +1218,7 @@ union element {
 } ;
 
 typedef union element ELEMENT;
-.ve
+\endverbatim
 
 DESCRIPTION:
 
@@ -1417,53 +1277,53 @@ through switches in the makefiles at compile-time.
 
 MACROS:
 
-.vb
+\verbatim
 INT SIDES_OF_ELEM (ELEMENT *p);
-.ve
+\endverbatim
 
 Returns the number of sides of a given element. In 2D the number of sides and number
 of edges of an element coincide. The nb, sidevector and side
 arrays are of this size.
 
-.vb
+\verbatim
 INT EDGES_OF_ELEM (ELEMENT *p);
-.ve
+\endverbatim
 
 Returns the number of edges of a given element. In 2D the number of sides and number
 of edges of an element coincide.
 
-.vb
+\verbatim
 INT CORNERS_OF_ELEM (ELEMENT *p);
-.ve
+\endverbatim
 
 Returns the number of corners of a given element. This is also the size of the n
 array.
 
-.vb
+\verbatim
 INT SONS_OF_ELEM (ELEMENT *p);
-.ve
+\endverbatim
 
 Returns the maximum number of sons possible for a given element. This is the
 size of the sons array in 2D. The actual number of sons depends on the refinement
 rule that has been applied to the element and is given by the NSONS macro
 (see CONTROL WORDS section below).
 
-.vb
+\verbatim
 INT EDGES_OF_SIDE (ELEMENT *p,INT i);
-.ve
+\endverbatim
 
 Returns the number of edges of side i of the given element. In 2D a side has always one
 edge since edges and sides coincide.
 
-.vb
+\verbatim
 INT CORNERS_OF_SIDE (ELEMENT *p,INT i);
-.ve
+\endverbatim
 
 Returns the number of corners of side i of the given element.
 
-.vb
+\verbatim
 #define CORNERS_OF_EDGE 2
-.ve
+\endverbatim
 
 This definition is provided only to make the description complete.
 
@@ -1473,52 +1333,52 @@ Each side again has a local numbering of its edges and corners and each edge
 has a local numbering of its corners. We then need mappings of the numbering
 scheme within edges and sides to the numbering scheme within the element.`
 
-.vb
+\verbatim
 INT EDGE_OF_SIDE (ELEMENT *p,INT s,INT e);
-.ve
+\endverbatim
 
 Returns the number of edge e of side s within the element p.
 
-.vb
+\verbatim
 INT CORNER_OF_SIDE (ELEMENT *p,INT s,INT c);
-.ve
+\endverbatim
 
 Returns the number of corner c of side s within the element p.
 
-.vb
+\verbatim
 INT CORNER_OF_EDGE (ELEMENT *p,INT e,INT c);
-.ve
+\endverbatim
 
 Returns the number of corner c of edge e within the element p.
 
-.vb
+\verbatim
 INT EDGE_WITH_CORNERS (ELEMENT *p,INT c0,INT c1);
-.ve
+\endverbatim
 
 Returns the number of the edge (with respect to numbering in the element p)
 that connects corners with numbers c0 and c1 (with respect to numbering in
 element p).
 
-.vb
+\verbatim
 INT SIDE_WITH_EDGE (ELEMENT *p,INT e,INT k);
-.ve
+\endverbatim
 
 SIDE_WITH_EDGE(p,e,0) and SIDE_WITH_EDGE(p,e,1) delivers the numbers
 of the two sides (with respect to numbering in p) that share edge number e
 (also with respect to the element).
 
-.vb
+\verbatim
 INT CORNER_OF_SIDE_INV (ELEMENT *p,INT s,INT c);
-.ve
+\endverbatim
 
 When c is the number of a corner and s is the number of a side
 (both with respect to numbering in the element) then 
 CORNER_OF_SIDE_INV returns the number of corner c with respect
 to the numbering in side s or -1 if s does not contain corner c.
 
-.vb
+\verbatim
 INT EDGES_OF_CORNER (ELEMENT *p,INT c,INT k);
-.ve
+\endverbatim
 
 If c is the number of a corner with respect to numbering within
 the element then EDGES_OF_CORNER(p,c,k) returns all numbers
@@ -1527,52 +1387,52 @@ Since this number is variable a value of -1 identifies an invalid entry.
 The edges are numbered consecutively, i.e. if a -1 is encountered
 larger values of k (less than EDGES_OF_ELEM(p)) will lead also to -1).
 
-.vb
+\verbatim
 INT SUCCE (ELEMENT *p);
 INT PREDE (ELEMENT *p);
-.ve
+\endverbatim
 
 Return pointers to next and previous element of the double linked list of elements per level.
 
-.vb
+\verbatim
 NODE *CORNER (ELEMENT *p,INT i);
-.ve
+\endverbatim
 
 Returns a pointer to corner i of element p. i should be less than
 CORNERS_OF_ELEM(p).
 
-.vb
+\verbatim
 ELEMENT *EFATHER (ELEMENT *p);
-.ve
+\endverbatim
 
 Returns a pointer to the father element.
 
-.vb
+\verbatim
 ELEMENT *SON (ELEMENT *p,INT i);
-.ve
+\endverbatim
 
 Returns a pointer to son i of p in the element hierarchy. In 3D only i=0 is
 allowed and the function GetSons should be used instead. i should be
 smaller than NSONS(p).
 
-.vb
+\verbatim
 ELEMENT *NBELEM (ELEMENT *p,INT i);
-.ve
+\endverbatim
 
 Returns a pointer to neighboring element over side i. i should be less
 than SIDES_OF_ELEM(p).
 
-.vb
+\verbatim
 VECTOR *EVECTOR (ELEMENT *p);
-.ve
+\endverbatim
 
 Returns a pointer to the VECTOR associated with the element. This
 pointer is only available if the appropriate switches in the makefiles
 have been set for element vectors.
 
-.vb
+\verbatim
 VECTOR *SVECTOR (ELEMENT *p,INT i);
-.ve
+\endverbatim
 
 Returns a pointer to the VECTOR associated with the side i
 of element p. i must be less than SIDES_OF_ELEM(p). This
@@ -1584,7 +1444,7 @@ CONTROL WORDS:
 
 `General macros available for all objects`
 
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT OBJT (ELEMENT *p);                27  5   Object type BEOBJ for an element
@@ -1605,11 +1465,11 @@ INT THEFLAG (ELEMENT *p);             16  1   True if elements refinement rule
 void SETTHEFLAG (ELEMENT *p, INT n);          changed during last refinement
                                               step. 3D only !
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 `Macros for the ELEMENT structure in control`
 
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT ECLASS (ELEMENT *p);              8   2   stores element class which is 
@@ -1622,7 +1482,7 @@ void SETNSONS (ELEMENT *p,INT n);
 INT NEWEL (ELEMENT *p);               14  1   Set at creation time but never
 void SETNEWEL (ELEMENT *p,INT n);             reset. Do not use it!
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 `Macros for the ELEMENT structure in flag are all for internal use only`
 
@@ -1630,13 +1490,13 @@ void SETNEWEL (ELEMENT *p,INT n);             reset. Do not use it!
 
 `Macros for the ELEMENT structure in property`
 
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT PROP (ELEMENT *p);                0   32  Stores element property number.
 void SETPROP (ELEMENT *p,INT n);
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 \sa
 
@@ -1659,12 +1519,12 @@ of freedom, there are four different `vector types`. The vector type
 is stored in the control word (see VTYPE macro) and can have the
 following values
 
-.vb
+\verbatim
     NODEVECTOR 
     EDGEVECTOR 
     SIDEVECTOR
     ELEMVECTOR
-.ve
+\endverbatim
 
 The VECTOR provides access to the rows of the sparse matrix belonging to
 all degrees of freedom stored in the vector.
@@ -1692,27 +1552,27 @@ size specified in the FORMAT structure.
 
 MACROS:
 
-.vb
+\verbatim
 void *VOBJECT (VECTOR *v);
-.ve
+\endverbatim
 
 Returns a pointer to the object to which the VECTOR belongs.
 
-.vb
+\verbatim
 VECTOR *PREDVC (VECTOR *v);
 VECTOR *SUCCVC (VECTOR *v);
-.ve
+\endverbatim
 
 Access to next and previous VECTOR in the double linked list.
 
-.vb
+\verbatim
 INT VINDEX (VECTOR *v);
-.ve
+\endverbatim
 
 Position of the VECTOR in the doubl linked list. This is useful for
 the implementation of some iterative schemes.
 
-.vb
+\verbatim
 INT VSKIPME (VECTOR *v,INT n);
 INT VVECSKIP (VECTOR *v,INT n);
 INT VFULLSKIP (VECTOR *v,INT n);
@@ -1720,7 +1580,7 @@ void SETVSKIPME (VECTOR *v,INT n);
 INT VECSKIP (VECTOR *v);
 INT VECSKIPBIT (VECTOR *v,INT n);
 void SETVECSKIPBIT (VECTOR *v,INT n);
-.ve
+\endverbatim
 
 ????
 Macros to modify the skip flags. VECSKIP returns value of the skip word. Since it is
@@ -1729,66 +1589,66 @@ VECSKIP(v)=0 will reset all bits in the skip word. VECSKIPBIT returns true
 if the n th bit of the skip word is set. SETVECSKIPBIT sets the nth
 bit of the skip word to 1.
 
-.vb
+\verbatim
 MATRIX *VSTART (VECTOR *v);
-.ve
+\endverbatim
 
 Returns a pointer to the first element of the MATRIX list. The first
 MATRIX in the list is the diagonal matrix block coupling degrees
 of freedom in v with itself.
 
-.vb
+\verbatim
 DOUBLE VVALUE (VECTOR *v,INT n);
-.ve
+\endverbatim
 
 VVALUE returns the nth component of the value field. VVALUE is a macro and can
 also be used for assignment, i.e. VVALUE(v,1)=0.0 is a valid statement.
 
-.vb
+\verbatim
 DOUBLE *VVALUEPTR (VECTOR *v,INT n);
-.ve
+\endverbatim
 
 Returns a pointer to the nth component of the value array.
 
-.vb
+\verbatim
 NODE *VMYNODE (VECTOR *v);
 EDGE *VMYEDGE (VECTOR *v);
 ELEMENT *VMYELEMENT (VECTOR *v);
-.ve
+\endverbatim
 
 These macros return pointers the objects the vector belongs to with
 appropriate type casts.
 
-.vb
+\verbatim
 INT VUP(VECTOR *p);
 void SETVUP(VECTOR *p,INT n);
 INT VDOWN(VECTOR *p);
 void SETVDOWN(VECTOR *p,INT n);
-.ve
+\endverbatim
 
 ????
 
-.vb
+\verbatim
 BV_DESC VBVD (VECTOR *v);
-.ve
+\endverbatim
 
 Returns the whole information about the position of this VECTOR in the
 hierarchy of BLOCKVECTORs. This macro should only be applied if the
 BLOCKVECTOR mechanism is in use.
 
-.vb
+\verbatim
 INT VMATCH (VECTOR *v, BV_DESC *bvd, BV_DESC_FORMAT *bvdf);
-.ve
+\endverbatim
 
 Returns true if the VECTOR belongs to the BLOCKVECTOR given in the
 blockvector description (BV_DESC).
 
-.vb
+\verbatim
 CAST_NVECTOR (VECTOR *p);
 CAST_EDVECTOR (VECTOR *p);
 CAST_SVECTOR (VECTOR *p,INT i);
 CAST_EVECTOR (VECTOR *p);
-.ve
+\endverbatim
 
 ????
 
@@ -1796,7 +1656,7 @@ CONTROL WORDS:
 
 `General macros in control word`
 
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT OBJT (VECTOR *p);                 27  5   Object type VEOBJ 
@@ -1811,11 +1671,11 @@ void SETTAG (VECTOR *p, INT n);
 INT THEFLAG (VECTOR *p);              16  1   used only temporarily
 void SETTHEFLAG (VECTOR *p, INT n);        
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 `Macros for the VECTOR structure in control`
 
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 VTYPE (VECTOR *v);                    0   2   Type of geometric object the
@@ -1847,7 +1707,7 @@ SETVNEW (VECTOR *v, INT n);                   in last refinement step.
 VCNEW (VECTOR *v);                    20  1   True if VECTOR got a new 
 SETVCNEW (VECTOR *v, INT n);                  connection in refinement
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 \sa MATRIX, NODE, EDGE, ELEMENT, BLOCKVECTOR.
 
@@ -1872,63 +1732,63 @@ build a CONNECTION object.
 
 MACROS:
 
-.vb
+\verbatim
 MATRIX *MINC (MATRIX *m);
-.ve
+\endverbatim
 
 Adds sizeof(MATRIX) to m (of course the dynamic size of m).
 
-.vb
+\verbatim
 MATRIX *MDEC (MATRIX *m);
-.ve
+\endverbatim
 
 Subtracts sizeof(MATRIX) to m (of course the dynamic size of m).
 
-.vb
+\verbatim
 MATRIX *MNEXT (MATRIX *m);
-.ve
+\endverbatim
 
 Returns pointer to next MATRIX in the list.
 
-.vb
+\verbatim
 VECTOR *MDEST (MATRIX *m);
-.ve
+\endverbatim
 
 Returns pointer to destination VECTOR, i.e. the column VECTOR. If m is an element
 of the MATRIX list of some VECTOR `a` and MDEST(m)=`b`, then m contains
 all the matrix entries of rows belonging `a` and columns belonging to `b`.
  
-.vb
+\verbatim
 MATRIX *MADJ (MATRIX *m);
-.ve
+\endverbatim
 
 Returns a pointer to the transposed MATRIX, i.e. if m couples VECTOR
 `a` with VECTOR `b`, then MADJ(m) couples `b` with `a`.
 
-.vb
+\verbatim
 CONNECTION *MMYCON (MATRIX *m);
-.ve
+\endverbatim
 
 Returns a pointer to the CONNECTION where m is part of.
 
-.vb
+\verbatim
 DOUBLE MVALUE (MATRIX *m,INT n);
-.ve
+\endverbatim
 
 Returns the nth value of the MATRIX m. The number of entries is
 defined in the FORMAT structure. MVALUE is a macro and can also
 be used for assignment, i.e. MVALUE(m,n)=0.0 is a valid
 statement.
 
-.vb
+\verbatim
 DOUBLE *MVALUEPTR (MATRIX *m,INT n);
-.ve
+\endverbatim
 
 Returns a pointer to the nth entry of the MATRIX m.
 
-.vb
+\verbatim
 MDESTINDEX (MATRIX *m);
-.ve
+\endverbatim
 
 Returns the index component of the destination VECTOR.
 
@@ -1937,7 +1797,7 @@ CONTROL WORDS:
 
 `General macros in control word`
 
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT OBJT (MATRIX *p);                 27  5   Object type MAOBJ 
@@ -1952,11 +1812,11 @@ void SETTAG (MATRIX *p, INT n);
 INT THEFLAG (MATRIX *p);              16  1   used only temporarily
 void SETTHEFLAG (MATRIX *p, INT n);        
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 `Macros for the MATRIX structure in control`
 
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 MOFFSET (MATRIX *p);                  0   1   Position of MATRIX in
@@ -1994,7 +1854,7 @@ SETMDOWN (MATRIX *p,INT n);
 MUP (MATRIX *p);                      31  1   Input for ordering algorithm
 SETMUP (MATRIX *p,INT n);
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 \sa VECTOR, CONNECTION.
 
@@ -2005,9 +1865,9 @@ CONNECTION - Data type combing one or two MATRIX structures
 
 STRUCTURES:
 
-.vb
+\verbatim
 typedef struct matrix CONNECTION;
-.ve
+\endverbatim
 
 DESCRIPTION:
 
@@ -2018,16 +1878,16 @@ CONNECTION is defined as a MATRIX.
 
 MACROS:
 
-.vb
+\verbatim
 MATRIX *CMATRIX0 (CONNECTION *c);
 MATRIX *CMATRIX1 (CONNECTION *c);
-.ve
+\endverbatim
 
 Pointer to first and second matrix of a CONNECTION.
 
-.vb
+\verbatim
 void SETCUSED (CONNECTION *c, INT n);
-.ve
+\endverbatim
 
 Executes MUSED macro for both MATRIX objects of a CONNECTION. 
 
@@ -2091,63 +1951,63 @@ the tail of the VECTOR list.
 
 CONSTANTS:
 
-.vb
+\verbatim
 BVDOWNTYPEVECTOR = 0
 BVDOWNTYPEBV = 1
-.ve
+\endverbatim
 
 Symbolic values for BVDOWNTYPE. See MACROS.
 
 
 MACROS:
 
-.vb
+\verbatim
 INT BVDOWNTYPE ( BLOCKVECTOR *bv );
 void SETBVDOWNTYPE ( BLOCKVECTOR *bv, INT n );
-.ve
+\endverbatim
 
 Reads resp. sets the BLOCKVECTOR type: is BVDOWNTYPEBV if there is a further
 level of BLOCKVECTORs else is BVDOWNTYPEVECTOR, i.e. the BLOCKVECTOR is
 the last one in the hierarchy and the next "level" is the VECTOR sublist itself.
 
-.vb
+\verbatim
 BLOCKNUMBER BVNUMBER ( BLOCKVECTOR *bv );
-.ve
+\endverbatim
 
 Number of the BLOCKVECTOR.
 
-.vb
+\verbatim
 BLOCKVECTOR *BVPRED ( BLOCKVECTOR *bv );
 BLOCKVECTOR *BVSUCC ( BLOCKVECTOR *bv );
-.ve
+\endverbatim
 
 Access to next and previous BLOCKVECTOR in the double linked list.
 
-.vb
+\verbatim
 VECTOR *BVFIRSTVECTOR ( BLOCKVECTOR *bv );
 VECTOR *BVENDVECTOR ( BLOCKVECTOR *bv );
-.ve
+\endverbatim
 
 Access to the first and the successor of the last VECTOR in the sublist
 represented by this BLOCKVECTOR.
 
-.vb
+\verbatim
 VECTOR *BVDOWNVECTOR ( BLOCKVECTOR *bv );
-.ve
+\endverbatim
 
 Use only if BV_IS_LEAF_BV(bv)==TRUE! Equivalent to BVFIRSTVECTOR(bv).
 
-.vb
+\verbatim
 BLOCKVECTOR *BVDOWNBV ( BLOCKVECTOR *bv );
 BLOCKVECTOR *BVDOWNBVEND ( BLOCKVECTOR *bv );
-.ve
+\endverbatim
 
 Use only if BV_IS_LEAF_BV(bv)==FALSE! Returns the first resp. last member
 of the BLOCKVECTOR list on the next level (down the tree).
 
-.vb
+\verbatim
 INT BV_IS_LEAF_BV ( BLOCKVECTOR *bv );
-.ve
+\endverbatim
 
 Returns true if the BLOCKVECTOR is a leaf in the tree-like BLOCKVECTOR
 hierarchy, i.e. if BVDOWNTYPE(bv)==BVDOWNTYPEVECTOR.
@@ -2157,7 +2017,7 @@ CONTROL WORDS:
 
 `General macros in control word`
 
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT OBJT (BLOCKVECTOR *p);            27  5   Object type BLOCKVOBJ
@@ -2172,11 +2032,11 @@ void SETTAG (BLOCKVECTOR *p, INT n);
 INT THEFLAG (BLOCKVECTOR *p);         16  1   not used
 void SETTHEFLAG (BLOCKVECTOR *p, INT n);
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 `Macros for the BLOCKVECTOR structure in control`
 
-.vb
+\verbatim
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 BVDOWNTYPE ( BLOCKVECTOR *bv );       0   1   Type of BLOCKVECTOR:
@@ -2185,7 +2045,7 @@ SETBVDOWNTYPE ( BLOCKVECTOR *bv, INT n );     BVDOWNTYPEVECTOR if object is
                                               BLOCKVECTOR hierarchy,
                                               BVDOWNTYPEBV else.
 -----------------------------------------------------------------------------
-.ve
+\endverbatim
 
 RELATED~FUNCTIONS:
 
@@ -2214,15 +2074,15 @@ number of their BLOCKVECTOR. The result is a VECTOR list containing
 in the IND component the sequence "0,0,...0,1,1,...1,2,2,...,2,3,3,..., ...".
 
 First using the direct access to the BLOCKVECTOR list of the grid:~
-.vb
+\verbatim
     BLOCKVECTOR *bv;
 
     for ( bv = GFIRSTBV( grid ); bv != NULL; bv = BVSUCC( bv ) )
         dsetBS( bv, IND, (DOUBLE)BVNUMBER( bv ) );
-.ve
+\endverbatim
 
 The second variant uses a BV_DESC instead of the pointer:~
-.vb
+\verbatim
     BV_DESC my_bvd;
     INT i, found;
 
@@ -2234,7 +2094,7 @@ The second variant uses a BV_DESC instead of the pointer:~
         found = dsetGS( grid, &my_bvd, &one_level_bvdf, IND, (DOUBLE)i );
         BVD_DISCARD_LAST_ENTRY( &my_bvd );
     }
-.ve
+\endverbatim
 
 \sa VECTOR, MATRIX, BV_DESC, BV_DESC_FORMAT, BLOCKNUMBER, BLOCKLEVEL,
 CreateBlockvector, DisposeBlockvector, FreeAllBV, FreeBVList, FindBV,
@@ -2248,9 +2108,9 @@ BLOCKLEVEL - Data type for a level number in a BLOCKVECTOR hierarchy
 
 STRUCTURES:
 
-.vb
+\verbatim
 typedef unsigned char BLOCKLEVEL;	
-.ve
+\endverbatim
 
 DESCRIPTION:
 
@@ -2262,9 +2122,9 @@ Valid levels are in the range 0..MAX_BV_LEVEL.
 
 CONSTANTS:
 
-.vb
+\verbatim
 MAX_BV_LEVEL = UCHAR_MAX
-.ve
+\endverbatim
 
 Largest admissible BLOCKVECTOR level number.
 
@@ -2280,9 +2140,9 @@ BLOCKNUMBER - Data type for the position of BLOCKVECTOR in a BLOCKVECTOR list
 
 STRUCTURES:
 
-.vb
+\verbatim
 typedef unsigned SHORT BLOCKNUMBER;
-.ve
+\endverbatim
 
 DESCRIPTION:
 
@@ -2294,16 +2154,16 @@ Valid numbers are in the range 0..MAX_BV_NUMBER.
 
 CONSTANTS:
 
-.vb
+\verbatim
 NO_BLOCKVECTOR = ((BLOCKNUMBER)~0)
-.ve
+\endverbatim
 
 Number to indicate "there is no blockvector";
 largest number of type BLOCKNUMBER.
 
-.vb
+\verbatim
 MAX_BV_NUMBER = (NO_BLOCKVECTOR - 1)
-.ve
+\endverbatim
 
 Largest admissible BLOCKVECTOR number.
 
@@ -2319,9 +2179,9 @@ BVD_ENTRY_TYPE - Data type for storing a sequence of blockvector numbers bitwise
 
 STRUCTURES:
 
-.vb
+\verbatim
 typedef unsigned INT BVD_ENTRY_TYPE 
-.ve
+\endverbatim
 
 DESCRIPTION:
 
@@ -2343,7 +2203,7 @@ D*/
 BV_DESC - Data type for handling a sequence of blockvector numbers
 
 STRUCTURES:
-.vb
+\verbatim
 struct blockvector_description
 {
     BVD_ENTRY_TYPE entry;    // sequence of block levels according to
@@ -2353,7 +2213,7 @@ struct blockvector_description
 };
 
 typedef struct blockvector_description BV_DESC;
-.ve
+\endverbatim
 
 DESCRIPTION:
 
@@ -2391,9 +2251,9 @@ the level numbers.
 
 CONSTANTS:
 
-.vb
+\verbatim
 BVD_MAX_ENTRIES = (sizeof(BVD_ENTRY_TYPE)*CHAR_BIT)
-.ve
+\endverbatim
 
 Maximum number of entries in a BVD; NOTE: the actual available
 number of entries depends on the range of each entry given in a
@@ -2402,22 +2262,22 @@ BV_DESC_FORMAT.
 
 MACROS:
 
-.vb
+\verbatim
 BLOCKLEVEL BVD_NR_ENTRIES ( BV_DESC *bvd );
-.ve
+\endverbatim
 
 The number of stored BLOCKVECTOR numbers. 0 means no entry stored.
 
-.vb
+\verbatim
 void BVD_INIT ( BV_DESC *bvd );
-.ve
+\endverbatim
 
 Initializes a BV_DESC. Be sure to call this macro before the first use.
 
-.vb
+\verbatim
 INT BVD_PUSH_ENTRY ( BV_DESC *bvd, BLOCKNUMBER bnr, BV_DESC_FORMAT *bvdf );
 void BVD_DISCARD_LAST_ENTRY ( BV_DESC *bvd );
-.ve
+\endverbatim
 
 Use the macro BVD_PUSH_ENTRY to add a further number to the already stored sequence
 of blockvector numbers. The return value of this macro is the value of the
@@ -2432,10 +2292,10 @@ for the next level is pushed at the top of stack. Note: the traditionally
 "pop" corresponds to BVD_DISCARD_LAST_ENTRY but the value is thrown away
 because you usually do not need the previous "pushed" value.
 
-.vb
+\verbatim
 void BVD_INIT_SEQ_READ ( BV_DESC *bvd );
 BLOCKNUMBER BVD_READ_NEXT_ENTRY ( BV_DESC *bvd, BV_DESC_FORMAT *bvdf );
-.ve
+\endverbatim
 
 This 2 macros allow a sequential reading of the stored BLOCKNUMBERs.
 BVD_INIT_SEQ_READ must be called before the first reading access. After
@@ -2444,18 +2304,18 @@ starting with the first stored number. You can call this macro as often
 as you want; after the last stored number everytime NO_BLOCKVECTOR
 is returned.
 
-.vb
+\verbatim
 void BVD_SET_ENTRY ( BV_DESC *bvd, BLOCKLEVEL level, BLOCKNUMBER bnr, 
                      BV_DESC_FORMAT *bvdf );
 void BVD_GET_ENTRY ( BV_DESC *bvd, BLOCKLEVEL level, BV_DESC_FORMAT *bvdf );
-.ve
+\endverbatim
 
 This 2 macros give you random access to the single "packets"
 (i.e. blocknumbers). The level must be within the range described in bvdf.
 
-.vb
+\verbatim
 INT BVD_IS_SUB_BLOCK ( BV_DESC *bvd_a, BV_DESC *bvd_b, BV_DESC_FORMAT *bvdf );
-.ve
+\endverbatim
 
 Returns true if bvd_a is a subblock of bvd_b, i.e. all the entries in
 bvd_b must be same as in bvd_a.
@@ -2465,7 +2325,7 @@ EXAMPLES:
 Let always a pointer my_bvdf to a BV_DESC_FORMAT be given.
 
 To store a sequence of numbers use:~
-.vb
+\verbatim
     BV_DESC my_bvd;
     INT error = GM_OK;
 
@@ -2475,17 +2335,17 @@ To store a sequence of numbers use:~
     error |= BVD_PUSH_ENTRY( &my_bvd, number2, my_bvdf );
     if ( error != GM_OK )
         // there was not enough capacity to store 3 numbers in the given format
-.ve
+\endverbatim
 
 To read this sequence again use:~
-.vb
+\verbatim
     BVD_INIT_SEQ_READ( &my_bvd );
     number0 = BVD_READ_NEXT_ENTRY( &my_bvd, my_bvdf );
     number1 = BVD_READ_NEXT_ENTRY( &my_bvd, my_bvdf );
     number2 = BVD_READ_NEXT_ENTRY( &my_bvd, my_bvdf );
     if ( number2 == NO_BLOCKVECTOR )
         // there were stored less than 3 numbers
-.ve
+\endverbatim
 
 \sa
 
@@ -2498,7 +2358,7 @@ D*/
 BV_DESC_FORMAT - Data type for defining the storage pattern used in BV_DESC
 
 STRUCTURES:
-.vb
+\verbatim
 struct blockvector_description_format
 {
     INT bits;                                       // bits per blocknumberentry
@@ -2508,7 +2368,7 @@ struct blockvector_description_format
 };
 
 typedef struct blockvector_description_format BV_DESC_FORMAT;
-.ve
+\endverbatim
 
 DESCRIPTION:
 
@@ -2554,23 +2414,23 @@ If your desires are fulfilled by one of the predefined variables, simple use
 it. For example if you want to have only one blockvector level (e.g. for
 stripewise domain decomposition) use one_level_bvdf for setting up a
 BV_DESC:~
-.vb
+\verbatim
     BV_DESC my_bvd;
 
     BVD_INIT( &my_bvd );
     if ( BVD_PUSH_ENTRY( &my_bvd, blocknumber, &one_level_bvdf ) != GM_OK )
         // unexpected error; one number can always be stored.
     // work on with my_bvd
-.ve
+\endverbatim
 
 To create a customized format use InitBVDF. For example to create
 a format for managing a octree-like structure (that is subdividing a
 3D cube into 8 subcubes) you can use the following command:~
-.vb
+\verbatim
    BV_DESC_FORMAT my_bvdf;
 
    InitBVDF( &my_bvdf, 8 );
-.ve
+\endverbatim
 
 \sa
 
@@ -2627,75 +2487,75 @@ a grid level does not exist.
 
 MACROS:
 
-.vb
+\verbatim
 INT GLEVEL (GRID *p);
-.ve
+\endverbatim
 
 Returns the level of the GRID within the MULTIGRID structure.
 
-.vb
+\verbatim
 INT GSTATUS (GRID *p);
-.ve
+\endverbatim
 
 Returns grid status field. Bit 0 of the grid status is set to 1 if this
 grid level has been manipulated in the last refinement step.
 
-.vb
+\verbatim
 void SETGSTATUS (GRID *p,n);
 void RESETGSTATUS (GRID *p,n);
-.ve
+\endverbatim
 
 Set or reset all bits that are 1 in the mask n.
 
-.vb
+\verbatim
 ELEMENT *FIRSTELEMENT (GRID *p);
 ELEMENT *LASTELEMENT (GRID *p);
-.ve
+\endverbatim
 
 Return pointers to first and last ELEMENT.
 
-.vb
+\verbatim
 VERTEX *FIRSTVERTEX (GRID *p);
 VERTEX *LASTVERTEX (GRID *p);
-.ve
+\endverbatim
 
 Return pointers to first and last VERTEX of the GRID.
 
-.vb
+\verbatim
 NODE *FIRSTNODE (GRID *p);
 NODE *LASTNODE (GRID *p);
-.ve
+\endverbatim
 
 Return pointer to first and last NODE on that grid level.
 
-.vb
+\verbatim
 VECTOR *FIRSTVECTOR (GRID *p);
 VECTOR *LASTVECTOR (GRID *p);
-.ve
+\endverbatim
 
 Return pointer to first and last VECTOR of that grid level.
 
-.vb
+\verbatim
 BLOCKVECTOR *GFIRSTBV(GRID *p);
 BLOCKVECTOR *GLASTBV(GRID *p);
-.ve
+\endverbatim
 
 Return pointer to first and last BLOCKVECTOR of that grid level.
 
-.vb
+\verbatim
 GRID *UPGRID (GRID *p);
 GRID *DOWNGRID (GRID *p);
-.ve
+\endverbatim
 
 Return pointer to finer and coarser grid levels.
 
-.vb
+\verbatim
 MULTIGRID *MYMG (GRID *p);
-.ve
+\endverbatim
 
 Return pointer to associated MULTIGRID structure.
 
-.vb
+\verbatim
 INT NV (GRID *p);
 INT NN (GRID *p);
 INT NT (GRID *p);
@@ -2703,7 +2563,7 @@ INT NE (GRID *p);
 INT NS (GRID *p);
 INT NVEC (GRID *p);
 INT NC (GRID *p);
-.ve
+\endverbatim
 
 Return number of VERTEX (NV), NODE (NN), ELEMENT (NT), EDGE (NE), VECTOR (NVEC) and CONNECTION (NC) objects allocated on that grid level.
 
@@ -2791,109 +2651,109 @@ DefineMGUDBlock and GetMGUDBlockDescriptor resp. See also the macros below.
 
 MACROS:
 
-.vb
+\verbatim
 INT MGSTATUS (MULTIGRID *mg);
-.ve 
+\endverbatim 
 
 Return multigrid status. This is a macro, so assignment MGSTATUS(mg)=0 is
 also allowed.
 
-.vb
+\verbatim
 INT VIDCNT (MULTIGRID *mg);
 INT NIDCNT (MULTIGRID *mg);
 INT EIDCNT (MULTIGRID *mg);
-.ve
+\endverbatim
 
 Access to values of the vertex, node and element id counters.
 
-.vb
+\verbatim
 INT TOPLEVEL (MULTIGRID *mg);
 INT CURRENTLEVEL (MULTIGRID *mg);
-.ve
+\endverbatim
 
 Access to top and current level.
 
-.vb
+\verbatim
 DOMAIN *MGDOMAIN (MULTIGRID *mg);
 FORMAT *MGFORMAT (MULTIGRID *mg);
 PROBLEM *MGPROBLEM (MULTIGRID *mg);
-.ve
+\endverbatim
 Returns pointer to DOMAIN, FORMAT and PROBLEM associated with the MULTIGRID.
 
-.vb
+\verbatim
 BOUNDARY_SEGMENT *MG_GEOM_SEGMENT (MULTIGRID *mg,INT i);
-.ve
+\endverbatim
 
 Returns a pointer to the ith boundary segment of the domain.
 
-.vb
+\verbatim
 BNDSEGDESC *MGBNDSEGDESC (MULTIGRID *mg,INT i);
-.ve
+\endverbatim
 
 Returns a pointer to the ith BNDSEGDESC structure of the segments array.
 
-.vb
+\verbatim
 INT MGNOOFSEG (MULTIGRID *mg);
-.ve
+\endverbatim
 
 Returns number of boundary segments of the domain associated with the MULTIGRID.
 
-.vb
+\verbatim
 VERTEX *MGVERTEX (MULTIGRID *mg,k);
-.ve
+\endverbatim
 Returns a pointer to the kth corner VERTEX of the domain.
 
-.vb
+\verbatim
 INT MGNOOFCORNERS (MULTIGRID *mg);
-.ve
+\endverbatim
 Returns the number of corners of the domain associated with the MULTIGRID.
 
-.vb
+\verbatim
 HEAP *MGHEAP (MULTIGRID *mg);
-.ve
+\endverbatim
 Returns a pointer to the multigrids HEAP.
 
-.vb
+\verbatim
 GRID *GRID_ON_LEVEL (MULTIGRID *mg,INT i);
-.ve
+\endverbatim
 Returns a pointer to the ith grid level of the MULTIGRID.
 
-.vb
+\verbatim
 INT SELECTIONSIZE (MULTIGRID *mg);
 INT SELECTIONMODE (MULTIGRID *mg);
-.ve
+\endverbatim
 Returns number of objects in the selection buffer and type of these objects.
 
-.vb
+\verbatim
 GEOM_OBJECT *SELECTIONOBJECT (MULTIGRID *mg,INT i);
-.ve
+\endverbatim
 Returns a pointer to the ith object in the selection buffer.
 
-.vb
+\verbatim
 char *MGNAME (MULTIGRID *mg);
-.ve
+\endverbatim
 Returns the name of the multigrid from the environment item.
 
-.vb
+\verbatim
 HEAP *MG_USER_HEAP(MULTIGRID *mg);
-.ve
+\endverbatim
 Returns the multigrid user data heap pointer. The heapsize is determined by the
 FORMAT definition.
 
-.vb
+\verbatim
 void *GEN_MGUD(MULTIGRID *mg);
-.ve
+\endverbatim
 Returns the address of the general multigrid user data.
 
-.vb
+\verbatim
 void *GEN_MGUD_ADR(MULTIGRID *mg, MEM offset);
-.ve
+\endverbatim
 Returns the address of a block with a certain offset (in bytes)
 in the general multigrid user data. To be used in conjunction with
 
-.vb
+\verbatim
 MEM OFFSET_IN_MGUD(INT BlockID);
-.ve
+\endverbatim
 Returns the offset of a previously allocated block in the general multigrid
 user data.
 
@@ -2909,7 +2769,7 @@ Example:
  \brief Union of all geometric objects
 
 typedef union geom_object GEOM_OBJECT;
-.ve
+\endverbatim
 
 	DESCRIPTION:
 	This data type unifies all data types that can have references to a 
@@ -2918,168 +2778,4 @@ typedef union geom_object GEOM_OBJECT;
     MACROS:
     No macros are provided to for that data type.
 */
-
-/*D
-LIMITS - Constants defining limitations of the data structure
-
-DESCRIPTION:
-
-There are some constants defining limitations of the data structure.
-They are explained here. The actual value of the definition should
-be extracted from the source code via the uggrep shell script
-provided with UG.
-
-`In file gm.h`
-
-. MAXLEVEL - Maximum number of grid levels allowed in MULTIGRID.
-
-. MAXOBJECTS - Maximum number of different objects in free list.
-
-. MAXSELECTION - Size of the selection buffer in MULTIGRID.
-
-. MAX_SIDES_OF_ELEM - Maximum number of sides of an element (of any type).
-
-. MAX_EDGES_OF_ELEM - Maximum number of edges of an element (of any type).
-
-. MAX_CORNERS_OF_ELEM - Maximum number of corners of an element (of any type).
-
-. MAX_EDGES_OF_SIDE - Maximum number of edges per side.
-
-. MAX_CORNERS_OF_SIDE - Maximum number of corners per side.
-
-. MAX_CORNERS_OF_EDGE - Maximum number of corners per edge (is always 2).
-
-. MAX_SIDES_OF_EDGE - In 3D two sides always have on edge in common.
-
-. MAX_SONS - Maximum number of sons per element.
-
-. MAX_SIDES_TOUCHING - Maximum number of sides on the next finer mesh that make up
-a side on the coarser mesh.
-
-. MAXMATRICES - Maximum number of MATRIX types with different size.
-
-. MAXCONNECTIONS - Maximum number of different CONNECTION types.
-
-. MSIZEMAX - Maximum size of a MATRIX object in bytes.
-
-. NO_OF_ELEM_MAX - Maximum number of elements touching the same edge.
-
-`In file switch.h`
-
-. DIM_MAX - Maximum space dimension (is 3).
-
-. DIM_OF_BND_MAX - Maximum dimension of boundary (is DIM_MAX-1).
-
-. MAXVECTORS - Maximum number of different VECTOR types.
-
-D*/
-
-/*D
-REFINEMENT - Describes the interface to the grid refinement module
-
-DESCRIPTION:
-
-The interface to the grid refinement will change in the near future.
-Therefore only a rudimentary documentation is provided.
-
-UGs local refinement capability is element oriented, i.e. the
-error estimator (part of the problem class) selects all or
-part of the elements for refinement. To that end the error
-estimator calls the function
-
-.vb
-INT MarkForRefinement (ELEMENT *theElement, INT rule, INT side);
-.ve
-
-where rule is one of the following rules
-
-.vb
-NO_REFINEMENT
-COPY     
-RED    
-BLUE  
-BISECTION_1 
-BISECTION_2_Q 
-BISECTION_2_T1
-BISECTION_2_T2
-BISECTION_3 
-UNREFINE 
-.ve
-
-and side is some orientation necessary for those rules
-that are not invariant under rotation (e.g. the edge to bisect).
-The RED rule selects standard isotropic refinement independent
-of the element type. Triangles are subdivided in four triangles
-by connecting the edge midpoints, quadrilaterals are subdivided
-by connecting edge midpoints with the centroid and tetrahedral
-elements are subdivided using the refinement strategy of J. Bey.
-For RED refinement the side information is arbitrary.
-
-The MarkForRefinement function may only be called for those elements
-where 
-
-.vb
-INT EstimateHere (ELEMENT *theElement);
-.ve
-
-returns true. EstimateHere is true for the leave elements of the element
-hierarchy, i.e. those elements that are not further refined. Care
-must be taken when the estimator for an element needs also information
-on the solution in neighboring elements (see e.g. the implementation
-of the error estimator in the diff2d package). 
-
-After the desired elements have been tagged for refinement the refine
-of the UG command language is used to actually refine the elements.
-
-EXAMPLE:
-
-The following function selects all (possible) elements in a MULTIGRID for refinement and
-returns the number of elements selected for refinement.
-
-.vb
-static INT MarkAll (MULTIGRID *theMG)
-{
-    GRID *theGrid;
-    ELEMENT *theElement;
-    int k,j;
-    INT cnt;
-
-    // get number of levels
-    j = TOPLEVEL(theMG);
-
-    // cnt will hold the number elements to be refined 
-    cnt = 0;
-
-    // mark elements
-    for (k=0; k<=j; k++)
-    {
-        theGrid = GRID_ON_LEVEL(theMG,k);
-        for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-            if (EstimateHere(theElement))
-            {
-                cnt++;
-                MarkForRefinement(theElement,RED,0);
-            }
-    }
-
-    // return cnt
-    return(cnt);
-}
-.ve
-
-\sa
-
-MarkForRefinement, EstimateHere, refine.
-
-REFERENCES:
-
-[1] J. Bey: Tetrahedral Grid Refinement. To be published in Computing.
-
-[2] J. Bey: AGM^3D Manual. Technical Report, Universitaet Tuebingen, 1994.
-
-[3] R.E. Bank, A.H. Sherman, A. Weiser: Refinement Algorithms and Data
-Structures for Regular Local Mesh Refinement. In: Scientific Computing,
-IMACS, North-Holland, Amsterdam, 1983.
-
-D*/
 
