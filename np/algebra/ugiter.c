@@ -56,7 +56,7 @@
 /****************************************************************************/
 
 #define SMALL_DET                       1e-15
-#define MAX_DEPTH           8
+#define MAX_DEPTH           MAX_NODAL_VECTORS
 #define V_BVNUMBER(v,n)         (VINDEX(v)/n)
 
 /* macros to define VEC_SCALAR, VECDATA_DESC and MATDATA_DESC components */
@@ -5928,17 +5928,92 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
            const MATDATA_DESC *M, const VECDATA_DESC *d,
            INT depth, INT mode)
 {
+  ELEMENT *theElement;
   VECTOR *vec,*vlist[MAX_DEPTH],*w;
   MATRIX *mat;
   DOUBLE Mval[LOCAL_DIM*LOCAL_DIM],vval[LOCAL_DIM],dval[LOCAL_DIM];
-  INT cnt,m,i,k,l,ncomp,vcnt,vtype,wtype,wncomp;
+  INT cnt,m,i,j,k,l,ncomp,vcnt,vtype,wtype,wncomp;
   const SHORT *Comp,*VComp;
 
   if (depth > MAX_DEPTH) {
     UserWriteF("l_pgs: MAX_DEPTH too small\n");
     REP_ERR_RETURN (__LINE__);
   }
-  if (mode > 0) {
+
+  if (mode >= 5) {
+    dset(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,v,0.0);
+    for (theElement=FIRSTELEMENT(g); theElement!= NULL;
+         theElement=SUCCE(theElement)) {
+      if (ECLASS(theElement) == YELLOW_CLASS) continue;
+      cnt = GetAllVectorsOfElementOfType(theElement,vlist,v);
+      ASSERT(cnt <= MAX_DEPTH);
+      m = GetVlistMValues(cnt,vlist,M,Mval);
+      if (m != GetVlistVValues(cnt,vlist,d,dval)) {
+        UserWriteF("l_pgs: wrong dimension %d in local system %d\n",
+                   m,GetVlistVValues(cnt,vlist,d,dval));
+        REP_ERR_RETURN (__LINE__);
+      }
+      vcnt = 0;
+      for (i=0; i<cnt; i++) {
+        vtype = VTYPE(vlist[i]);
+        ncomp = VD_NCMPS_IN_TYPE(d,vtype);
+        for (mat=VSTART(vlist[i]); mat!=NULL; mat=MNEXT(mat)) {
+          w = MDEST(mat);
+          wtype = VTYPE(w);
+          Comp = MD_MCMPPTR_OF_MTYPE(M,MTP(vtype,wtype));
+          wncomp = VD_NCMPS_IN_TYPE(d,wtype);
+          VComp = VD_CMPPTR_OF_TYPE(v,wtype);
+          for (k=0; k<ncomp; k++)
+            for (l=0; l<wncomp; l++)
+              dval[vcnt+k] -= MVALUE(mat,Comp[k*wncomp+l])
+                              * VVALUE(w,VComp[l]);
+        }
+        vcnt += ncomp;
+      }
+      if (SolveFullMatrix(m,vval,Mval,dval)) {
+        UserWriteF("l_pgs: solving on local patch failed\n");
+        REP_ERR_RETURN (__LINE__);
+      }
+      AddVlistVValues(cnt,vlist,v,vval);
+    }
+    if (mode == 5) return (NUM_OK);
+    for (theElement=LASTELEMENT(g); theElement!= NULL;
+         theElement=PREDE(theElement)) {
+      if (ECLASS(theElement) == YELLOW_CLASS) continue;
+      cnt = GetAllVectorsOfElementOfType(theElement,vlist,v);
+      ASSERT(cnt <= MAX_DEPTH);
+      m = GetVlistMValues(cnt,vlist,M,Mval);
+      if (m != GetVlistVValues(cnt,vlist,d,dval)) {
+        UserWriteF("l_pgs: wrong dimension %d in local system %d\n",
+                   m,GetVlistVValues(cnt,vlist,d,dval));
+        REP_ERR_RETURN (__LINE__);
+      }
+      vcnt = 0;
+      for (i=0; i<cnt; i++) {
+        vtype = VTYPE(vlist[i]);
+        ncomp = VD_NCMPS_IN_TYPE(d,vtype);
+        for (mat=VSTART(vlist[i]); mat!=NULL; mat=MNEXT(mat)) {
+          w = MDEST(mat);
+          wtype = VTYPE(w);
+          Comp = MD_MCMPPTR_OF_MTYPE(M,MTP(vtype,wtype));
+          wncomp = VD_NCMPS_IN_TYPE(d,wtype);
+          VComp = VD_CMPPTR_OF_TYPE(v,wtype);
+          for (k=0; k<ncomp; k++)
+            for (l=0; l<wncomp; l++)
+              dval[vcnt+k] -= MVALUE(mat,Comp[k*wncomp+l])
+                              * VVALUE(w,VComp[l]);
+        }
+        vcnt += ncomp;
+      }
+      if (SolveFullMatrix(m,vval,Mval,dval)) {
+        UserWriteF("l_pgs: solving on local patch failed\n");
+        REP_ERR_RETURN (__LINE__);
+      }
+      AddVlistVValues(cnt,vlist,v,vval);
+    }
+    return (NUM_OK);
+  }
+  else if (mode > 0) {
     dset(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,v,0.0);
     for (vec=FIRSTVECTOR(g); vec!= NULL; vec=SUCCVC(vec)) {
       if (START(vec) == NULL) continue;
@@ -6074,7 +6149,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
     }
     SetVlistVValues(cnt,vlist,v,vval);
     for (i=0; i<cnt; i++)
-      SETVCUSED(vec,1);
+      SETVCUSED(vlist[i],1);
   }
 
   return (NUM_OK);
