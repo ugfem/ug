@@ -1336,7 +1336,30 @@ INT GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
       if (theNode == CORNER(nb,l))
         return(GetSideIDFromScratch(nb,theNode));
   }
+  for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+  {
+    if (4 != CORNERS_OF_SIDE(theElement,j)) continue;
+    for (l=0; l<4; l++)
+      if (theNode == CORNER(theElement,CORNER_OF_SIDE(theElement,j,l)))
+        break;
+    if (l < 4)
+    {
+      INT l1 = (l+1) % 4;
+      INT l2 = (l+3) % 4;
 
+      for (i=0; i<SIDES_OF_ELEM(theFather); i++) {
+        if (3 == CORNERS_OF_SIDE(theFather,i)) continue;
+        for (k=0; k<EDGES_OF_SIDE(theFather,i); k++) {
+          if (nd[EDGE_OF_SIDE(theFather,i,k)] ==
+              CORNER(theElement,CORNER_OF_SIDE(theElement,j,l1)))
+            return(i);
+          if (nd[EDGE_OF_SIDE(theFather,i,k)] ==
+              CORNER(theElement,CORNER_OF_SIDE(theElement,j,l1)))
+            return(i);
+        }
+      }
+    }
+  }
   return(SIDES_OF_ELEM(theFather));
 }
 
