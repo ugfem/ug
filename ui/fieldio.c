@@ -232,13 +232,14 @@ static void ClearVertexMarkers(MULTIGRID *mg)
       SETUSED(v,0);
 }
 
-static void StatisticsW(MULTIGRID *mg, int *nv, int *ne, double range[DIM][2])
+static void StatisticsW(MULTIGRID *mg, int *nv, int *ne,
+                        int *max_vid, double range[DIM][2])
 {
   ELEMENT *e;
   VERTEX *v;
-  int i, j, n, m;
+  int i, j, n, m, mvid;
 
-  n = m = 0;
+  n = m = mvid = 0;
   for (i = 0; i < DIM; i++) {
     range[i][0] =  MAX_D;
     range[i][1] = -MAX_D;
@@ -256,12 +257,19 @@ static void StatisticsW(MULTIGRID *mg, int *nv, int *ne, double range[DIM][2])
     }
 #ifdef ModelP
     ID(v) = n;
+#else
+    mvid = MAX(mvid, ID(v));
 #endif
     n++;
   }
   SURFACE_LOOP_END
   *nv = n;
   *ne = m;
+#ifdef ModelP
+  *max_vid = n-1;
+#else
+  *max_vid = mvid;
+#endif
 }
 
 static int WriteVertices(STREAM *stream, MULTIGRID *mg, int nv, int *id2pos)
@@ -454,7 +462,7 @@ static INT SaveFieldCommand(INT argc, char **argv)
   VEVALUATOR nve[MAXVAR];
   SEVALUATOR ese[MAXVAR];
   VEVALUATOR eve[MAXVAR];
-  int no_ns, no_nv, no_es, no_ev;
+  int no_ns, no_nv, no_es, no_ev, max_vid;
   char fname[NAMESIZE];
   STREAM stream;
   int no_vertices, no_elements;
@@ -477,11 +485,11 @@ static INT SaveFieldCommand(INT argc, char **argv)
     return CMDERRORCODE;
   }
   if (MagicW(&stream)) goto failed;
-  StatisticsW(mg, &no_vertices, &no_elements, bbox);
+  StatisticsW(mg, &no_vertices, &no_elements, &max_vid, bbox);
   if (BBoxW(&stream, bbox)) goto failed;
   heap = mg->theHeap;
   MarkTmpMem(heap, &key);
-  id2pos = (int *)GetTmpMem(heap, no_vertices*sizeof(int), key);
+  id2pos = (int *)GetTmpMem(heap, (max_vid+1)*sizeof(int), key);
   if (id2pos == NULL) goto failed;
   if (WriteVertices(&stream, mg, no_vertices, id2pos)) goto failed;
   if (WriteElements(&stream, mg, no_elements, id2pos)) goto failed;
