@@ -2437,6 +2437,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
   if (pe==NULL) return(NULL);
 
   /* initialize data */
+  SETNEWEL(pe,1);
   SETOBJT(pe,objtype);
   SETTAG(pe,tag);
   SETLEVEL(pe,theGrid->level);
