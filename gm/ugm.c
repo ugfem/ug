@@ -2292,12 +2292,13 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
         NFather = NFATHER(theNode);
         break;
       case MID_NODE :
-        printf("NTYPE = MID_NODE\n");
+        printf(PFMT "el "EID_FMTX " son "EID_FMTX " vertex "VID_FMTX "\n",me,EID_PRTX(theElement),EID_PRTX(theSon),VID_PRTX(MYVERTEX(CORNER(theSon,CORNER_OF_SIDE(theSon,son_side,i)))));
+        printf(PFMT "NTYPE = MID_NODE\n",me);
         theFatherEdge = NFATHEREDGE(theNode);
-        printf("EDSUBDOM = %d\n",(int)EDSUBDOM(theFatherEdge));
+        printf(PFMT "EDSUBDOM = %d\n",me,(int)EDSUBDOM(theFatherEdge));
         t1 = (OBJT(MYVERTEX(NBNODE(LINK0(theFatherEdge))))==BVOBJ);
         t2 = (OBJT(MYVERTEX(NBNODE(LINK1(theFatherEdge))))==BVOBJ);
-        printf("BVOBJ(theFatherEdge): %d %d\n",(int)t1,(int)t2);
+        printf(PFMT "BVOBJ(theFatherEdge): %d %d\n",me,(int)t1,(int)t2);
         break;
       case SIDE_NODE :
         printf("NTYPE = SIDE_NODE");
@@ -9346,7 +9347,9 @@ static INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
           n0 = CORNER(theElement,CORNER_OF_EDGE(theElement,k,0));
           n1 = CORNER(theElement,CORNER_OF_EDGE(theElement,k,1));
           SETNSUBDOM(n0,0);
+          ASSERT(OBJT(MYVERTEX(n0)) == BVOBJ);
           SETNSUBDOM(n1,0);
+          ASSERT(OBJT(MYVERTEX(n1)) == BVOBJ);
           ed = GetEdge(n0,n1);
           ASSERT(ed!=NULL);
           SETEDSUBDOM(ed,0);
@@ -9363,8 +9366,8 @@ static INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
       n0 = CORNER(theElement,CORNER_OF_EDGE(theElement,k,0));
       n1 = CORNER(theElement,CORNER_OF_EDGE(theElement,k,1));
       ed = GetEdge(n0,n1);
-      PRINTDEBUG(gm,1,("  ed(%d,%d)-sd=%d\n",ID(n0),ID(n1),
-                       EDSUBDOM(ed)));
+      PRINTDEBUG(gm,1,("  ed(%d,%d)-sd=%d nsub %d %d\n",ID(n0),ID(n1),
+                       EDSUBDOM(ed),NSUBDOM(n0),NSUBDOM(n1)));
     }
   }
   ENDDEBUG
@@ -9870,6 +9873,12 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
       fifo_in(&myfifo,(void *)theNeighbor);
     }
   }
+
+  IFDEBUG(gm,1)
+  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+    assert(USED(theElement));
+  ENDDEBUG
+
   if (SetEdgeAndNodeSubdomainFromElements(theGrid))
     REP_ERR_RETURN (GM_ERROR);
 
