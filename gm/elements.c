@@ -983,7 +983,6 @@ INT InitElementTypes (MULTIGRID *theMG)
 
 #ifdef ModelP
   InitCurrMG(theMG);
-  InitDDDTypes();
 #endif
 
   return(GM_OK);
