@@ -1123,8 +1123,8 @@ PRIVATE void init_scoring
 
   /* === Extract knobs ==================================================== */
 
-  dense_row_count = MAX (0, MIN (knobs [COLAMD_DENSE_ROW] * n_col, n_col)) ;
-  dense_col_count = MAX (0, MIN (knobs [COLAMD_DENSE_COL] * n_row, n_row)) ;
+  dense_row_count = (int)MAX (0, MIN (knobs [COLAMD_DENSE_ROW] * n_col, n_col)) ;
+  dense_col_count = (int)MAX (0, MIN (knobs [COLAMD_DENSE_COL] * n_row, n_row)) ;
   DEBUG0 (("densecount: %d %d\n", dense_row_count, dense_col_count)) ;
   max_deg = 0 ;
   n_col2 = n_col ;

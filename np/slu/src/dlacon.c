@@ -132,7 +132,7 @@ L20:
 
   for (i = 0; i < *n; ++i) {
     x[i] = d_sign(one, x[i]);
-    isgn[i] = i_dnnt(x[i]);
+    isgn[i] = (int) i_dnnt(x[i]);
   }
   *kase = 2;
   jump = 2;
@@ -185,7 +185,7 @@ L90:
 
   for (i = 0; i < *n; ++i) {
     x[i] = d_sign(one, x[i]);
-    isgn[i] = i_dnnt(x[i]);
+    isgn[i] = (int) i_dnnt(x[i]);
   }
   *kase = 2;
   jump = 4;

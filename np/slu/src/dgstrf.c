@@ -35,6 +35,17 @@
 #include "dsp_defs.h"
 #include "util.h"
 
+int
+dcopy_sluto_ucol(
+  int jcol,                   /* in */
+  int nseg,                   /* in */
+  int        *segrep,          /* in */
+  int        *repfnz,          /* in */
+  int        *perm_r,          /* in */
+  double     *dense,           /* modified - reset to zero on return */
+  GlobalLU_t *Glu              /* modified */
+  );
+
 void
 dgstrf (char *refact, SuperMatrix *A, double diag_pivot_thresh,
         double drop_tol, int relax, int panel_size, int *etree,
@@ -237,8 +248,8 @@ dgstrf (char *refact, SuperMatrix *A, double diag_pivot_thresh,
   m        = A->nrow;
   n        = A->ncol;
   min_mn   = MIN(m, n);
-  Astore   = A->Store;
-  a        = Astore->nzval;
+  Astore   = (NCPformat*)A->Store;
+  a        = (double*)Astore->nzval;
   asub     = Astore->rowind;
   xa_begin = Astore->colbeg;
   xa_end   = Astore->colend;

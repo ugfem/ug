@@ -35,6 +35,10 @@ void dusolve(int, int, double*, double*);
 void dlsolve(int, int, double*, double*);
 void dmatvec(int, int, int, double*, double*, double*);
 
+#include "../cblas/f2c.h"
+/* Subroutine */ int dtrsv_slu(char *uplo, char *trans, char *diag, integer *n,
+                               doublereal *a, integer *lda, doublereal *x, integer *incx);
+
 
 int
 sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
@@ -122,10 +126,10 @@ sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
     return 0;
   }
 
-  Lstore = L->Store;
-  Lval = Lstore->nzval;
-  Ustore = U->Store;
-  Uval = Ustore->nzval;
+  Lstore = (SCformat*)L->Store;
+  Lval = (double*)Lstore->nzval;
+  Ustore = (NCformat*)U->Store;
+  Uval = (double*)Ustore->nzval;
   solve_ops = 0;
 
   if ( !(work = doubleCalloc(L->nrow)) )
@@ -386,8 +390,8 @@ sp_dgemv(char *trans, double alpha, SuperMatrix *A, double *x,
   int notran;
 
   notran = lsame_(trans, "N");
-  Astore = A->Store;
-  Aval = Astore->nzval;
+  Astore = (NCformat*)A->Store;
+  Aval = (double*)Astore->nzval;
 
   /* Test the input parameters */
   info = 0;

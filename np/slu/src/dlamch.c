@@ -17,6 +17,8 @@
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
+int lsame_(char *ca, char *cb);
+
 double dlamch_(char *cmach)
 {
   /*  -- LAPACK auxiliary routine (version 2.0) --

@@ -43,11 +43,11 @@ SetIWork(int m, int n, int panel_size, int *iworkptr, int **segrep,
 
 
 void
-copy_mem_int(int howmany, void *old, void *new)
+copy_mem_int(int howmany, void *old, void *_new)
 {
   register int i;
-  int *iold = old;
-  int *inew = new;
+  int *iold = (int*)old;
+  int *inew = (int*)_new;
   for (i = 0; i < howmany; i++) inew[i] = iold[i];
 }
 

@@ -103,7 +103,7 @@ Destroy_CompCol_Permuted(SuperMatrix *A)
 void
 Destroy_Dense_Matrix(SuperMatrix *A)
 {
-  DNformat* Astore = A->Store;
+  DNformat* Astore = (DNformat*)A->Store;
   SUPERLU_FREE (Astore->nzval);
   SUPERLU_FREE ( A->Store );
 }
@@ -354,15 +354,15 @@ void super_stats(int nsuper, int *xsup)
 
   for (i = 0; i <= nsuper; i++) {
     isize = xsup[i+1] - xsup[i];
-    whichb = (float) isize / max_sup_size * NBUCKS;
+    whichb = (int)((float) isize / max_sup_size * NBUCKS);
     if (whichb >= NBUCKS) whichb = NBUCKS - 1;
     bucket[whichb]++;
   }
 
   printf("\tHistogram of supernode sizes:\n");
   for (i = 0; i < NBUCKS; i++) {
-    bl = (float) i * max_sup_size / NBUCKS;
-    bh = (float) (i+1) * max_sup_size / NBUCKS;
+    bl = (int)((float) i * max_sup_size / NBUCKS);
+    bh = (int)((float) (i+1) * max_sup_size / NBUCKS);
     printf("\tsnode: %d-%d\t\t%d\n", bl+1, bh, bucket[i]);
   }
 

@@ -10,6 +10,8 @@
 /* Germany.                                            */
 /*******************************************************/
 
+/* Subroutine */ int xerbla_(char *srname, int *info);
+
 /*
  * File name:		sp_ienv.c
  * History:             Modified from lapack routine ILAENV

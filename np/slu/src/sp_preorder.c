@@ -82,8 +82,8 @@ sp_preorder(char *refact,  SuperMatrix *A, int *perm_c,
   AC->Mtype       = A->Mtype;
   AC->nrow        = A->nrow;
   AC->ncol        = A->ncol;
-  Astore          = A->Store;
-  ACstore = AC->Store = (void *) SUPERLU_MALLOC( sizeof(NCPformat) );
+  Astore          = (NCformat*)A->Store;
+  ACstore = (NCPformat*)AC->Store = (void *) SUPERLU_MALLOC( sizeof(NCPformat) );
   if ( !ACstore ) ABORT("SUPERLU_MALLOC fails for ACstore");
   ACstore->nnz    = Astore->nnz;
   ACstore->nzval  = Astore->nzval;
@@ -153,7 +153,7 @@ sp_preorder(char *refact,  SuperMatrix *A, int *perm_c,
 
 }
 
-check_perm(char *what, int n, int *perm)
+int check_perm(char *what, int n, int *perm)
 {
   register int i;
   int          *marker;

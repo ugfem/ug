@@ -167,12 +167,12 @@ dgsrfs(char *trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
   extern int daxpy_slu(int *, double *, double *, int *, double *, int *);
 #endif
 
-  Astore = A->Store;
-  Aval   = Astore->nzval;
-  Bstore = B->Store;
-  Xstore = X->Store;
-  Bmat   = Bstore->nzval;
-  Xmat   = Xstore->nzval;
+  Astore = (NCformat*)A->Store;
+  Aval   = (double*)Astore->nzval;
+  Bstore = (DNformat*)B->Store;
+  Xstore = (DNformat*)X->Store;
+  Bmat   = (double*)Bstore->nzval;
+  Xmat   = (double*)Xstore->nzval;
   ldb    = Bstore->lda;
   ldx    = Xstore->lda;
   nrhs   = B->ncol;
@@ -251,9 +251,9 @@ dgsrfs(char *trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
   Bjcol.Mtype = B->Mtype;
   Bjcol.nrow  = B->nrow;
   Bjcol.ncol  = 1;
-  Bjcol.Store = (void *) SUPERLU_MALLOC( sizeof(DNformat) );
+  Bjcol.Store = (NCformat *) SUPERLU_MALLOC( sizeof(DNformat) );
   if ( !Bjcol.Store ) ABORT("SUPERLU_MALLOC fails for Bjcol.Store");
-  Bjcol_store = Bjcol.Store;
+  Bjcol_store = (DNformat*)Bjcol.Store;
   Bjcol_store->lda = ldb;
   Bjcol_store->nzval = work;   /* address aliasing */
 
