@@ -10,7 +10,7 @@
 include ../../../../ug.conf
 
 default: $(objects) 
-	$(ARCH_AR) r  ../../../../lib/libnetgen.a $(objects)
+	$(ARCH_AR) $(ARCH_ARFLAGS)  ../../../../lib/libnetgen.a $(objects)
 
 .PRECIOUS:   .cc
 .SUFFIXES:   .cc
