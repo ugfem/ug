@@ -1,0 +1,26 @@
+Testing Dart with UG
+
+1. The documentation contains the following files:
+
+   README_SETUP.txt
+
+   README_SCRIPTS.txt
+   README_TESTS.txt
+   README_ADVANCED.txt
+
+   DartCycleTimeline.fig
+   Dart-UG.fig
+
+   TODO: our wish and todo list
+
+
+
+
+2. Reading is recommended in the following order:
+
+   Read the file README_SETUP.txt first. It contains links
+   to the other files.
+   The figures in DartCycleTimeline.fig and Dart-UG.fig explain
+   structure and interaction of Dart and test application UG.
+
+
