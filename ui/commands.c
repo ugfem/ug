@@ -12189,8 +12189,9 @@ INT InitCommands ()
   if (CreateCommand("ptest",                      PTestCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("context",            ContextCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("pstat",                      PStatCommand                                )==NULL) return (__LINE__);
+#ifdef CHACOT
   if (CreateCommand("lb4",                        LB4Command                                              )==NULL) return (__LINE__);
-
+#endif
 #endif /* ModelP */
 
   /* array commands */
