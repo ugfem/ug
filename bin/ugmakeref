@@ -44,11 +44,12 @@ do
 			if test  -h $UGROOT/doc/texman/${i}${num}
 			then
 				echo "file name substitution failed for $i${num}";
-			else
-            	echo \\input\{${i}${num}\} >> refman.tex
-				ln -s `pwd`/$i $UGROOT/doc/texman/${i}${num} 
-            	#mv $i $UGROOT/doc/texman/${i}${num}
+				num="a"
+				echo "use $i${num} instead";
 			fi
+            echo \\input\{${i}${num}\} >> refman.tex
+			ln -s `pwd`/$i $UGROOT/doc/texman/${i}${num} 
+           	#mv $i $UGROOT/doc/texman/${i}${num}
         else
             echo \\input\{$i\} >> refman.tex
 			ln -s `pwd`/$i $UGROOT/doc/texman/$i 
