@@ -7875,7 +7875,7 @@ static INT SetViewCommand (INT argc, char **argv)
   DOUBLE *viewPoint,*targetPoint,*xAxis;
   DOUBLE vP[3],tP[3],xA[3];
   DOUBLE PlanePoint[3],PlaneNormal[3];
-  DOUBLE *CutPoint,*CutNormal;
+  DOUBLE *CutPoint,*CutNormal,vscale;
   INT *perspective;
   INT per;
   INT i,j,veclen,res,RemoveCut;
@@ -7935,6 +7935,15 @@ static INT SetViewCommand (INT argc, char **argv)
       for (j=0; j<veclen; j++)
         tP[j] = x[j];
       targetPoint = tP;
+      break;
+
+    case 'v' :
+      if (sscanf(argv[i],"v %f",x)!=1)
+      {
+        PrintErrorMessageF('E',"setview","v option: one option required");
+        return (PARAMERRORCODE);
+      }
+      vscale = x[0];
       break;
 
     case 'x' :
@@ -8029,7 +8038,7 @@ static INT SetViewCommand (INT argc, char **argv)
       return (PARAMERRORCODE);
     }
 
-  if (SetView(thePic,viewPoint,targetPoint,xAxis,perspective,RemoveCut,CutPoint,CutNormal)!=0)
+  if (SetView(thePic,viewPoint,targetPoint,xAxis,perspective,RemoveCut,CutPoint,CutNormal,vscale)!=0)
   {
     PrintErrorMessage('E',"setview","error during SetView");
     return (CMDERRORCODE);
