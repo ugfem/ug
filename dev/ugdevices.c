@@ -832,6 +832,14 @@ else
     return (error);
   }
 
+  /* init postscript device */
+  if (InitPostScriptBW()!=0)
+  {
+    SetHiWrd(error,__LINE__);
+    return (error);
+  }
+
+
   /* init ppm device */
   if (InitPPMDevice()!=0)
   {
