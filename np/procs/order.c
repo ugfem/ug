@@ -446,7 +446,7 @@ static INT OrderSO (NP_ORDER *theNP, INT level, MATDATA_DESC *A, INT *result)
   comp = MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,np->comp);
 
   /* set matrix dependencies */
-  if (MatDepProc_Adjoint(theGrid,A,comp)) return (1);
+  if (MatrixDep_Adjoint(theGrid,A,comp)) return (1);
 
   /* count matrix dependencies */
   for (theV=FIRSTVECTOR(theGrid),n=0; theV!=NULL; theV=SUCCVC(theV),n++)
