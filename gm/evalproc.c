@@ -635,7 +635,7 @@ static INT PreprocessNodeIndex (const char *name, MULTIGRID *theMG)
   INT i, index;
   VECTOR *theVector;
 
-  if (TYPE_DEF_IN_MG(theMG,NODEVECTOR))
+  if (!TYPE_DEF_IN_MG(theMG,NODEVECTOR))
     return (1);
   for (i=0; i<=CURRENTLEVEL(theMG); i++)
   {
