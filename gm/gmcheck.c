@@ -1018,6 +1018,330 @@ if (0)			nerrors++;
 	return (0);
 }		
 
+#if defined(__TWODIM__) || defined(ModelP)
+
+INT CheckSubdomains (MULTIGRID *theMG)
+{
+	return (0);
+}
+
+#else
+
+static INT CheckElementSubdomains (GRID *theGrid, ELEMENT *theElement, INT *NodeError, INT *EdgeError, INT *NbError, INT *FatherError, INT *errors)
+{
+	INT		side,found,i,j,k,l,n,nsons,bserror,nerrors,sdid,sc;
+	NODE	*theNode,*n1,*n2,*nbn1,*nbn2,*nbn3,*nbn4;
+	EDGE	*theEdge,*father_edge;
+	ELEMENT *NbElement,*theFather;
+	ELEMENT *SonList[MAX_SONS];
+	VERTEX	*theVertex,*Vertices[MAX_CORNERS_OF_ELEM];
+	
+	*NodeError = 0;
+	*EdgeError = 0; 
+	*NbError = 0;
+	*FatherError = 0;
+	nerrors    = 0;
+	
+	bserror = 0;
+
+	/* check side information */
+	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+	{
+		if (OBJT(theElement)==BEOBJ && ELEM_BNDS(theElement,i)!=NULL) 
+		{
+			for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++) 
+			{
+				k = CORNER_OF_SIDE(theElement,i,j);
+				theNode = CORNER(theElement,k);
+				if (NSUBDOM(theNode)!=0) 
+				{
+					UserWriteF(PFMT "wrong subdomain id(%d) on boundary node," "el =  " EID_FMTX ", side = %d, corner = %d, node = " ID_FMTX "\n",
+							   me,NSUBDOM(theNode),EID_PRTX(theElement),i,k,ID_PRTX(theNode));
+					*NodeError |= (1<<k);
+					nerrors++;
+				}
+			}
+			for (j=0; j<EDGES_OF_SIDE(theElement,i); j++) 		
+			{
+				k  = EDGE_OF_SIDE(theElement,i,j);
+				theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,k,0)),CORNER(theElement,CORNER_OF_EDGE(theElement,k,1)));
+				ASSERT(theEdge!=NULL);
+				if (EDSUBDOM(theEdge)!=0) 
+				{
+					UserWriteF(PFMT "wrong subdomain id(%d) on boundary edge %d,"
+							   "el =  " EID_FMTX ", side = %d, edge = %d, corner0 = " ID_FMTX ", corner1 = " ID_FMTX "\n",
+							   me,EDSUBDOM(theEdge),k,EID_PRTX(theElement), i, j,
+							   ID_PRTX(CORNER(theElement,CORNER_OF_EDGE(theElement,k,0))),
+							   ID_PRTX(CORNER(theElement,CORNER_OF_EDGE(theElement,k,1))));
+					*EdgeError |= (1<<j);
+					nerrors++;
+				}
+			}
+		}
+
+		if (NBELEM(theElement,i)!=NULL)
+		{
+			if (OBJT(theElement)==BEOBJ && ELEM_BNDS(theElement,i)!=NULL)
+			{
+				if (SUBDOMAIN(theElement)==SUBDOMAIN(NBELEM(theElement,i)))
+				{
+					UserWriteF(PFMT "wrong subdomain id(%d)[==%d] of neighbor element," "el =  " EID_FMTX ", side = %d, nb = EID_FMTX\n",
+								me,SUBDOMAIN(NBELEM(theElement,i)),SUBDOMAIN(theElement),EID_PRTX(theElement),i,EID_PRTX(NBELEM(theElement,i)));
+					*NbError |= (1<<i);
+					nerrors++;
+				}
+			}
+			else 
+			{
+				if (SUBDOMAIN(theElement)!=SUBDOMAIN(NBELEM(theElement,i)))
+				{
+					UserWriteF(PFMT "wrong subdomain id(%d)[!=%d] of neighbor element," "el =  " EID_FMTX ", side = %d, nb = EID_FMTX\n",
+								me,SUBDOMAIN(NBELEM(theElement,i)),SUBDOMAIN(theElement),EID_PRTX(theElement),i,EID_PRTX(NBELEM(theElement,i)));
+					*NbError |= (1<<i);
+					nerrors++;
+				}
+			}
+		}
+	}
+
+	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+	{
+		theNode = CORNER(theElement,i);
+		if (OBJT(MYVERTEX(theNode))==BVOBJ) continue;
+		if (NSUBDOM(theNode)==SUBDOMAIN(theElement)) continue;
+		UserWriteF(PFMT "wrong subdomain id(%d)[==%d] of node," "el =  " EID_FMTX ", nd = " ID_FMTX "\n",
+					me,NSUBDOM(theNode),SUBDOMAIN(theElement),EID_PRTX(theElement),ID_PRTX(theNode));
+		*NodeError |= (1<<i);
+		nerrors++;
+	}
+
+	if (EFATHER(theElement)!=NULL) 
+		if (SUBDOMAIN(EFATHER(theElement))!=SUBDOMAIN(theElement))
+		{
+			UserWriteF(PFMT "wrong subdomain id(%d)[==%d] of father," "el =  " EID_FMTX ", fa = " EID_FMTX "\n",
+				me,SUBDOMAIN(EFATHER(theElement)),SUBDOMAIN(theElement),EID_PRTX(theElement),EID_PRTX(EFATHER(theElement)));
+			*FatherError = 1;
+			nerrors++;
+		}
+
+	if (GLEVEL(theGrid)==0)
+	{
+		/* extended check on level 0 */
+		for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+		{
+			theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
+			ASSERT(theEdge!=NULL);
+			if (USED(theEdge))
+			{
+				if (EDSUBDOM(theEdge)!=SUBDOMAIN(theElement))
+				{			
+					UserWriteF(PFMT "wrong subdomain id(%d)[!=%d] of edge," "el =  " EID_FMTX ", ed = %d \n",
+						me,EDSUBDOM(theEdge),SUBDOMAIN(theElement),EID_PRTX(theElement),i);
+					*EdgeError = (1<<i);
+					nerrors++;
+				}
+			}
+			else
+			{
+				if (EDSUBDOM(theEdge)!=0)
+				{			
+					UserWriteF(PFMT "wrong subdomain id(%d)[!=0] of edge," "el =  " EID_FMTX ", ed = %d \n",
+						me,EDSUBDOM(theEdge),EID_PRTX(theElement),i);
+					*EdgeError = (1<<i);
+					nerrors++;
+				}
+			}
+		}
+	}
+	else if (EFATHER(theElement)!=NULL)
+	{
+		/* extended check on higher levels */
+		for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+		{	
+			sdid=EDSUBDOM(EFATHER(theElement));
+			n1 = CORNER(theElement,CORNER_OF_EDGE(theElement,i,0));
+			n2 = CORNER(theElement,CORNER_OF_EDGE(theElement,i,1));
+			if (NTYPE(n1)>NTYPE(n2)) {theNode=n1; n1=n2; n2=theNode;}
+			switch (NTYPE(n1)|(NTYPE(n2)<<4))
+			{
+				case (CORNER_NODE | (CORNER_NODE<<4)):
+					father_edge = GetEdge(NFATHER(n1),NFATHER(n2));
+					if (father_edge!=NULL) sdid=EDSUBDOM(father_edge);
+					else
+					{
+						/* do fathers of n1, n2 lies on a side (of the father) which has BNDS? */
+						for (j=0; j<SIDES_OF_ELEM(theFather); j++)
+						{
+							found=0;
+							for (k=0; k<CORNERS_OF_SIDE(theFather,j); k++)
+							{
+								sc = CORNER_OF_SIDE(theFather,j,k);
+								if (CORNER(theFather,sc)==NFATHER(n1) || CORNER(theFather,sc)==NFATHER(n2)) found++;
+							}
+                    		if (found==2 && (OBJT(theFather)==BEOBJ) && SIDE_ON_BND(theFather,j))
+                    		{
+                        		sdid=0;
+                        		break;
+                    		}
+						}
+					}
+					break;
+				case (CORNER_NODE | (MID_NODE<<4)):
+                    father_edge = NFATHEREDGE(n2);
+		            assert(father_edge!=NULL);
+                    nbn1 = NBNODE(LINK0(father_edge));
+        	        nbn2 = NBNODE(LINK1(father_edge));
+            		if (nbn1==NFATHER(n1) || nbn2==NFATHER(n1)) sdid=EDSUBDOM(father_edge);
+            		else
+            		{
+                		/* do all nodes n1, nbn1, nbn2 ly on the same side of father? */
+                        side=-1;
+                		for (j=0; j<SIDES_OF_ELEM(theFather); j++)
+                		{
+                    		found=0;
+                    		for (k=0; k<CORNERS_OF_SIDE(theFather,j); k++)
+                    		{
+                        		sc = CORNER_OF_SIDE(theFather,j,k);
+                        		if (CORNER(theFather,sc)==NFATHER(n1) || CORNER(theFather,sc)==nbn1 || CORNER(theFather,sc)==nbn2) found++;
+                    		}
+                    		if (found==3)
+                    		{
+                        		side = j;
+                        		break;
+                    		}
+                		}
+                        if (side>=0  && (OBJT(theFather)==BEOBJ) && SIDE_ON_BND(theFather,side)) sdid=0;
+            		}
+					break;
+				case (MID_NODE | (MID_NODE<<4)):
+                    father_edge = NFATHEREDGE(n1);
+		            assert(father_edge!=NULL);
+                    nbn1 = NBNODE(LINK0(father_edge));
+                    nbn2 = NBNODE(LINK1(father_edge));
+                    father_edge = NFATHEREDGE(n2);
+        		    assert(father_edge!=NULL);
+                	nbn3 = NBNODE(LINK0(father_edge));
+                    nbn4 = NBNODE(LINK1(father_edge));
+
+ 		 			/* do all nodes nbn1, nbn2, nbn3, nbn4 ly on the same side of father? */
+                    side=-1;
+                    for (j=0; j<SIDES_OF_ELEM(theFather); j++)
+                    {
+                        found=0;
+                        for (k=0; k<CORNERS_OF_SIDE(theFather,j); k++)
+                		{
+                    		sc = CORNER_OF_SIDE(theFather,j,k);
+                            if (CORNER(theFather,sc)==nbn1) found++;
+                            if (CORNER(theFather,sc)==nbn2) found++;
+                            if (CORNER(theFather,sc)==nbn3) found++;
+                            if (CORNER(theFather,sc)==nbn4) found++;
+                		}
+                        if (found==4)
+                        {
+                        	side = j;
+                            break;
+                        }
+                	}
+                    if (side>=0 && (OBJT(theFather)==BEOBJ) && SIDE_ON_BND(theFather,side)) sdid=0;
+					break;
+				case (CORNER_NODE | (SIDE_NODE<<4)):
+                    theVertex = MYVERTEX(n2);
+                    if (VFATHER(theVertex)==theFather) 	side = ONSIDE(theVertex);
+                    else 								side = ONNBSIDE(theVertex);
+                    if ((OBJT(theFather)==BEOBJ) && SIDE_ON_BND(theFather,side))
+                	for (k=0; k<CORNERS_OF_SIDE(theFather,side); k++)
+                    	if (CORNER(theFather,CORNER_OF_SIDE(theFather,side,k))==NFATHER(n1))
+                    	{
+                        	sdid=0;
+                       	 	break;
+                    	}
+					break;
+				case (MID_NODE | (SIDE_NODE<<4)):
+                    theVertex = MYVERTEX(n2);
+            		if (VFATHER(theVertex)==theFather) 	side = ONSIDE(theVertex);
+                    else 								side = ONNBSIDE(theVertex);
+                	if ((OBJT(theFather)==BEOBJ) && SIDE_ON_BND(theFather,side))
+            		{
+                		found=0;
+                		father_edge = NFATHEREDGE(n1);
+                		assert(father_edge!=NULL);
+                		nbn1 = NBNODE(LINK0(father_edge));
+                		nbn2 = NBNODE(LINK1(father_edge));
+                        for (k=0; k<CORNERS_OF_SIDE(theFather,side); k++)
+                        	if (CORNER(theFather,CORNER_OF_SIDE(theFather,side,k))==nbn1 || CORNER(theFather,CORNER_OF_SIDE(theFather,side,k))==nbn2)
+                        		found++;
+                		if (found==2) sdid=0;
+            		}
+					break;
+				default:
+					break;
+			}
+			if (EDSUBDOM(GetEdge(n1,n2))!=sdid)
+			{
+ 				*EdgeError |= (1<<i);
+				nerrors++;
+			}
+		}			
+	}
+
+	if (nerrors>0)
+	{
+		UserWriteF("ELEM(" EID_FMTX "): element has %d errors\n",EID_PRTX(theElement),nerrors);
+		*errors = nerrors;
+	}	
+
+	if (*NodeError || *EdgeError || *NbError || *FatherError)
+		return (1);
+		
+	return (0);
+}		
+
+INT CheckSubdomains (MULTIGRID *theMG)
+{
+	GRID *theGrid;
+	NODE *theNode;
+	EDGE *theEdge;
+	LINK *theLink;
+	ELEMENT *theElement;
+	INT i,j,k,nerror,NodeError,EdgeError,NbError,FatherError,sd_errors;
+
+	/* init */
+	nerror=0;
+
+	/* first level 0 */
+	theGrid = GRID_ON_LEVEL(theMG,0);
+    for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+        for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
+            SETUSED(MYEDGE(theLink),1);
+	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;theElement=SUCCE(theElement))
+		if (OBJT(theElement)==BEOBJ)
+			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+				if (ELEM_BNDS(theElement,i)!=NULL)
+					for (j=0; j<EDGES_OF_SIDE(theElement,i); j++)
+					{
+						k  = EDGE_OF_SIDE(theElement,i,j);
+						theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,k,0)),CORNER(theElement,CORNER_OF_EDGE(theElement,k,1)));
+						ASSERT(theEdge!=NULL);
+						SETUSED(theEdge,0);
+					}
+
+	for (i=0; i<=TOPLEVEL(theMG); i++)
+	{
+		for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+			if (CheckElementSubdomains (theGrid,theElement,&NodeError,&EdgeError,&NbError,&FatherError,&sd_errors))
+				nerror++;
+
+		if (nerror)      UserWriteF("[%d: subdom-ids: %d errors] ",(int)i,(int)nerror);
+		else			 UserWriteF("[%d: subdom-ids: ok] ",(int)i);
+		if (nerror && i<TOPLEVEL(theMG)) UserWrite("[check aborted] ");
+	}
+	UserWrite("\n");
+
+	/* return */
+	return (nerror);
+}
+#endif
+
 static INT CheckGeometry (GRID *theGrid)
 {
 	NODE *theNode;
@@ -1025,7 +1349,7 @@ static INT CheckGeometry (GRID *theGrid)
 	EDGE *theEdge;
 	LINK *theLink;
 	int i,j;
-	INT SideError, EdgeError, NodeError, ESonError, NSonError, count;
+	INT FatherError, sd_errors, SideError, EdgeError, NbError, NodeError, ESonError, NSonError, count;
 	INT errors = 0;
 
 	/* reset used flags */
@@ -1305,7 +1629,7 @@ static INT CheckGeometry (GRID *theGrid)
 		UserWriteF("there are %ld elements but %ld expected\n",(long)(count),
 			(long)NT(theGrid));
 	}
-	
+
 	return(errors);
 }
 
