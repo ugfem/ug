@@ -78,7 +78,8 @@
    CAUTION: the sequence of free's must be exctly the reverse of the get's! */
 #ifdef Debug
 #define GET_AUX_VEC                                     ( (TOS_FF_Vecs<FF_MAX_VECS) ? FF_Vecs[TOS_FF_Vecs++] : -1 )
-#define FREE_AUX_VEC(vec)                       ( (vec==FF_Vecs[TOS_FF_Vecs-1]) ? (void)(TOS_FF_Vecs--) : ASSERT(FALSE) );
+/* tricky: enforce, that TOS_FF_Vecs-- and ASSERT(FALSE) have the same type */
+#define FREE_AUX_VEC(vec)                       ( (vec==FF_Vecs[TOS_FF_Vecs-1]) ? (TOS_FF_Vecs--) : 0,ASSERT(FALSE) );
 #else
 #define GET_AUX_VEC                                     (FF_Vecs[TOS_FF_Vecs++])
 #define FREE_AUX_VEC(vec)                       (TOS_FF_Vecs--);
@@ -124,7 +125,7 @@
 #define THETA_ANAQQQ
 
 /* macros for communication buffer */
-#define FFMAX_TRIES     50000000  /* max. number of tries til timeout in communication */
+#define FFMAX_TRIES     500000  /* max. number of tries til timeout in communication */
 
 #define FF_LINES_NR -100
 #define FF_CROSS_NR -101
