@@ -1,0 +1,6 @@
+#!/bin/sh
+
+cd $UGROOT/../fe/appl
+time fe2d ugdemo2d.scr
+diff results/log.ugdemo2d results/log.ugdemo2d.save
+
