@@ -54,6 +54,7 @@
 #define OPTIONSEP               "$"     /* option character                                             */
 
 #define WHITESPACE              " \t\n" /* for skipping of blanks					*/
+#define COMMENT_CHAR    '#'             /* ignore rest of line after #				*/
 
 /****************************************************************************/
 /*																			*/
@@ -411,6 +412,11 @@ INT ExecCommand (char *cmdLine)
 
   if (optionCount==0)
     return (1);
+
+  /* strip comments from arguments */
+  for (i=0; i<optionCount; i++)
+    if ((s=strchr(options[i],COMMENT_CHAR))!=NULL)
+      *s = '\0';
 
   /* strip trailing blanks from arguments */
   for (i=0; i<optionCount; i++)
