@@ -45,7 +45,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-/*#include <values.h>*/
 #include <assert.h>
 
 /* low module */
@@ -4830,7 +4829,7 @@ static INT MarkCommand (INT argc, char **argv)
   sprintf(buffer," %ld elements marked for refinement\n",nmarked);
   UserWrite(buffer);
 
-  if (rv)
+  if (rv && theElement)
   {
     sprintf(buffer,"rule could not be applied for element with ID %ld, nothing marked",ID(theElement));
     PrintErrorMessage('W',"mark",buffer);
@@ -6815,9 +6814,10 @@ static INT OpenWindowCommand (INT argc, char **argv)
   int x,y,w,h;
 
         #ifdef ModelP
-  if (me!=master) return (OKCODE);
+  if (me!=master) {
+    return(OKCODE);
+  }
         #endif
-
 
   /* scan parameters */
   if (sscanf(argv[0],"openwindow %d %d %d %d",&x,&y,&w,&h)!=4)
@@ -10546,14 +10546,14 @@ static INT PTestCommand (INT argc, char **argv)
 
 static INT ContextCommand (INT argc, char **argv)
 {
-  INT proc = MAXINT;
+  INT proc = INT_MAX;
 
   /*if (p = ReadArgvOption("$+",argc,argv)) */
 
   ReadArgvINT("context", &proc, argc, argv);
   if (proc<0 || proc>=procs)
   {
-    if (proc!=MAXINT)
+    if (proc!=INT_MAX)
       UserWriteF("context: invalid processor id (procs=%d)\n", procs);
   }
   else
