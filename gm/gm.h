@@ -311,7 +311,10 @@
 #define BISECTION_3             9
 #endif
 #ifdef __THREEDIM__
+
 #define TETRA_RED_HEX           5
+
+#define PRISM_QUADSECT          6
 #endif
 
 /* values for element class */
