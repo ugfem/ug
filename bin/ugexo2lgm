@@ -1,0 +1,427 @@
+#!/usr/bin/perl -w #-d
+# $Header$
+# usage: exo2lgm <filename>
+# 		<filename> - exodus II file with surface triangulation and node 
+#					 assoziativity info
+
+# basic data types
+#$num = '\d';
+$int = '\d+';
+#$sint = '[+-]?\d+';
+$real = '[+-]?\d+(?:\.\d+)?';   # (?:\.\d+)? means: optional .nnnn part
+$exp = '[+-]?\d+(?:\.\d+(?:e[+-]?\d+)?)?';
+$string = '[a-z"_]\w*';
+
+%cdf = ();
+
+$netcdf = "$ARGV[0]";
+
+print "processing $netcdf\n";
+
+sub	scan_nsets
+{
+	my $nsets = $_[0];
+
+	print "nsets: $nsets\n";
+	$nns = 0;
+	$ready = 0;
+	LOOP1: while (1)
+	{
+		if ($nns == $nsets) { last LOOP1; }
+		LOOP: while(<NETCDF>)
+		{
+			if ( /^\s($string)/ )
+			{
+#				print "scan_node_sets: string $1\n";
+				$record = $1;
+				$i = 0;
+				$found = 0;
+			}
+			for $_ (split)
+			{
+#				if ( /($exp)/  || /($exp),/ ) { printf "$record %s\n", $1; }
+				if ( 
+					/($exp)/ || /($exp),/   ||
+					/($real)/ || /($real),/ ||
+					/($int)/  || /($int),/ || 
+ 					/($string)/ || /($string),/
+				   )
+				{
+#   					print "scan_node_sets: record $record $i $1\n";
+					$cdf{$record}{$i} = $1; 
+
+					$i++;
+				}
+ 				elsif ( /=/ ) { $found++; }
+				elsif ( /;/ ) { $nns++; last LOOP; }
+				elsif ( /}/ ) { $ready = 1; last LOOP; }
+				else { printf "error %s\n",$_;  print "ERROR while reading node_sets\n"; exit;}
+			}
+		}
+		if ($ready == 1) { last LOOP1; }
+#		print "scan_node_sets: $nns\n";
+	}
+}
+
+sub scan_dimension
+{
+	print "found dimensions block\n";
+
+	$token = 0; 
+	LOOP: while(<NETCDF>)
+	{
+		if ( /\s*num_dim\s*=\s*($int)\s*;/ ) { $cdf{num_dim} = $1; $token++;}
+		if ( /\s*num_nodes\s*=\s*($int)\s*;/ ) { $cdf{num_nodes} = $1; $token++;}
+		if ( /\s*num_node_sets\s*=\s*($int)\s*;/ )
+		{
+			$cdf{num_node_sets} = $1; 
+ 			scan_nsets($cdf{num_node_sets});
+			$token++;
+			print "scan_dimension: $token\n";
+		}
+		if ( /\s*num_el_blk\s*=\s*($int)\s*;/ )
+		{
+			$cdf{num_el_blk} = $1; 
+ 			scan_nsets(2*$cdf{num_el_blk});
+			$token++;
+			print "scan_dimension: $token\n";
+		}
+		if ($token == 4) { last LOOP; }
+	}
+
+	return(0);
+}
+
+
+sub scan_variables
+{
+	print "found variables block\n";
+
+	LOOP: while(<NETCDF>)
+	{
+		if ( /\s*num_dim\s*=\s*($int)\s*;/ ) { $cdf{num_dim} = $1; }
+		else {last LOOP; }
+	}
+
+	return(0);
+}
+
+sub scan_globalattributes
+{
+	print "found attributes block\n";
+
+	LOOP: while(<NETCDF>)
+	{
+		if ( /\s*num_dim\s*=\s*($int)\s*;/ ) { $cdf{num_dim} = $1; }
+		else {last LOOP; }
+	}
+
+	return(0);
+}
+
+sub scan_coord
+{
+	$i = 0;
+	$dim = 0;
+	LOOP: while(<NETCDF>)
+	{
+#		@coordline = split;
+#		print "$_\n";
+		for $_ (split)
+		{
+#			print "$cdf{num_nodes} $i\n";
+			if ( /($real),/ )
+			{
+				$cdf{coord}{$i}{$dim} = $1; $i++;
+				if ($i == $cdf{num_nodes})
+				{
+					$i = 0; $dim++;
+				}
+			}
+			elsif ( /($real)/ )
+			{
+				$cdf{coord}{$i}{$dim} = $1; $i++; $dim++;
+			}
+			elsif ( /;/ ) 
+			{
+				if ($i != $cdf{num_nodes})
+				{ print "ERROR: scaned coord=$i but num_nodes=$netcdf{num_nodes}\n"; exit;}
+				if ($dim != $cdf{num_dim})
+				{ print "ERROR: scaned dim=$i but num_dim=$netcdf{num_dim}\n"; exit;}
+				last LOOP;
+			} 
+			else { print "ERROR while reading coord\n";}
+		}
+	}
+}
+
+sub scan_node_sets
+{
+	# skip ns_status record
+	LOOP2: while(<NETCDF>)
+	{
+		if ( /;/ ) { last LOOP2; }
+	}
+
+	# read ns_prop1 record +  n node_ns/dist_face_ns records
+ 	scan_nsets(2*$cdf{num_node_sets}+1);
+}
+
+sub scan_data
+{
+	print "found data block\n";
+
+	$found = 0;
+	LOOP: while(<NETCDF>)
+	{
+		if ( /\s*coord\s*=\s*/ ) { scan_coord(); $found++}
+		elsif ( /\s*ns_status\s*=\s*/ ) { scan_node_sets(); $found++}
+		elsif ($found == 2) {last LOOP; }
+	}
+
+	return(0);
+}
+
+sub scan_modeldata ()
+{
+	$nunits = 0;
+	$cdf{unitsrev}{0} = 0;
+
+	LOOP: while(<NETCDF>)
+	{
+		if ( /Volume\sEntity\s*\(Id\s=\s($int)\)/ )
+		{
+#			printf "unit %d material%d\n",$1,$1;
+			$cdf{units}{$nunits} = $1;
+			$cdf{unitsrev}{$1} = $nunits+1;
+			$nunits++;
+		}
+		if ( /Surface\sEntity\s*\(Id\s=\s($int)\)/ )
+		{
+			$surface = $1;
+			LOOP1: while(<NETCDF>)
+			{
+				$surfacename = sprintf "surface%d",$surface; 
+				if ( /In\sVolume\s*($int)\./ )
+				{
+# 					printf "surface %d left=0 right=%d\n",$surface,$1;
+					$cdf{$surfacename}{left} = 0;
+					$cdf{$surfacename}{right} = $1;
+				}
+				elsif ( /In\sVolume\s*($int),\s*Volume\s*($int)\./ )
+				{
+# 					printf "surface %d left=%d right=%d\n",$surface,$1,$2;
+					$cdf{$surfacename}{left} = $1;
+					$cdf{$surfacename}{right} = $2;
+				}
+				else { printf "ERROR: left/right information missing for surface %d\n",$surface; exit;}
+				last LOOP1;
+			}
+		}
+	}
+
+	$cdf{nunits} = $nunits;
+
+}
+
+# read exodus II format
+sub read_exo2()
+{
+	open(NETCDF, "<$netcdf") || die "can't open $netcdf\n";
+
+	BEGIN: while(<NETCDF>)
+	{
+		last BEGIN if ( /^netcdf\s\w+\s\{/ ); 
+		print "$netcdf has no valid netcdf file format!\n";
+		exit;
+	}
+
+	$end = 0;
+	END: while(<NETCDF>)
+	{
+		if ( /dimensions:/ ) { scan_dimension(); }
+		if ( /variables:/ ) { scan_variables(); }
+		if ( /global\sattributes:/ ) { scan_globalattributes(); }
+#		if ( /data:/) { scan_data(); }
+ 		if ( /data:/) { scan_nsets(-1); }
+		if ( /\}/ ) { $end = 1; last END; }
+	}
+
+	if ($end == 0) { print "file $netcdf not complete!!\n"} 
+
+	# scan added model data for units and surface left/right
+	scan_modeldata();
+
+	close(NETCDF);
+
+	return(0);
+}
+
+
+
+sub write_domain
+{
+	print "# Domain-Info\n";
+	print "name = default_name\n";
+	print "problemname = default_problem\n";
+	print "convex = 1\n\n";
+}
+
+sub write_unit
+{
+	print "# Unit-Info\n";
+	
+	LOOP: foreach $nus (0 .. $cdf{nunits}-1)
+	{
+		printf "unit %d material%d\n",$nus+1, $nus+1;
+	}
+
+	print "\n";
+}
+
+sub write_line
+{
+	print "# Line-Info\n";
+	foreach $nns (1 .. $cdf{num_node_sets})
+	{
+#		print "$cdf{ns_prop1}{$nns}\n";
+		if ( $cdf{ns_prop1}{$nns} =~/\A4($int)/ )
+		{
+#			print "match $cdf{ns_prop1}{$nns}\n"; 
+			printf "line %d:",$1;
+			$ns = sprintf "node_ns%d",$nns; 
+			$numns = sprintf "num_nod_ns%d",$nns; 
+# 			print "$ns $numns $cdf{$numns}{1}\n";
+
+ 			print " points:";
+			$numnp = sprintf "node_ns%d",$nns; 
+			foreach $np (1 .. $cdf{$numns}{1})
+			{
+				printf " %d",$cdf{$numnp}{$np}-1;
+			}
+			print ";\n";
+		}
+	}
+	print "\n";
+}
+
+sub search_lines
+{
+	my $spoints = $_[0];
+	my $nsp = $_[1];
+
+#	printf "%s=%s",$spoints,$cdf{$spoints}{0};
+
+	LOOP: foreach $nns (1 .. $cdf{num_node_sets})
+	{
+		if ( $cdf{ns_prop1}{$nns} =~/\A4($int)/ )
+		{
+			$ns = sprintf "node_ns%d",$nns; 
+			$numns = sprintf "num_nod_ns%d",$nns; 
+
+			$numnp = sprintf "node_ns%d",$nns; 
+			LOOP1: foreach $np (1 .. $cdf{$numns}{1})
+			{
+				foreach $ns (1 .. $cdf{$nsp}{1})
+				{
+					if ( $cdf{$spoints}{$ns} == $cdf{$numnp}{$np} ) { next LOOP1;}
+				}
+				next LOOP;
+			}
+			printf " %d",$1;
+		}
+	}
+}
+
+sub write_surf
+{
+	print "# Surface-Info\n";
+	$nsurf = 0;
+	foreach $nns (1 .. $cdf{num_node_sets})
+	{
+#		print "$cdf{ns_prop1}{$nns}\n";
+		if ( $cdf{ns_prop1}{$nns} =~/\A3($int)/ )
+		{
+#			print "match $cdf{ns_prop1}{$nns}\n"; 
+			printf "surface %d:",$1;
+			$nsurf++;
+
+			$surfacename = sprintf "surface%d",$1;
+  			printf " left=%d; right=%d;",
+  				$cdf{unitsrev}{$cdf{$surfacename}{left}},
+  				$cdf{unitsrev}{$cdf{$surfacename}{right}};
+			
+			$ns = sprintf "node_ns%d",$nns; 
+			$numns = sprintf "num_nod_ns%d",$nns; 
+# 			print "$ns $numns $cdf{$numns}{1}\n";
+
+ 			print " points:";
+			$numnp = sprintf "node_ns%d",$nns; 
+			foreach $np (1 .. $cdf{$numns}{1})
+			{
+				printf " %d",$cdf{$numnp}{$np}-1;
+			}
+			print ";";
+
+ 			print " lines:";
+			search_lines($numnp,$numns);
+			print ";";
+
+ 			print " triangles:";
+			# number of triangles in block $1
+			$numnt = sprintf "num_el_in_blk%d",$nsurf; 
+			# hash of triangles
+			$connect = sprintf "connect%d",$nsurf; 
+#			print "$numnt;\n";
+			# print triangles
+#			printf "\nERROR %s %d\n", $numnt, $cdf{$numnt}{1};
+			foreach $nt (1 .. $cdf{$numnt}{1})
+			{
+				printf " %d", $cdf{$connect}{3*$nt-2}-1;
+				printf " %d", $cdf{$connect}{3*$nt-1}-1;
+				printf " %d;", $cdf{$connect}{3*$nt-0}-1;
+			}
+			print "\n";
+		}
+	}
+	print "\n";
+}
+
+sub write_coord
+{
+	print "# Point-Info\n";
+#	printf "%d\n",$cdf{num_nodes};
+#	printf "%s %s\n", $cdf{coord}{0},$cdf{coord}{1};
+#	printf "%s\n", $cdf{coord};
+	foreach $nc (1 .. $cdf{num_nodes})
+	{
+#    		printf "%lf, %lf, %lf\n",$cdf{coord}{$nc-1},$cdf{coord}{2*$nc-1},$cdf{coord}{3*$nc-1};
+    		printf "%s %s %s;\n",
+				$cdf{coord}{$nc},$cdf{coord}{$nc+$cdf{num_nodes}},$cdf{coord}{$nc+2*$cdf{num_nodes}}; 
+	}	
+	print "\n";
+}
+
+
+# write lgm
+sub write_lgm()
+{
+	print "writing geometry in lgm_format\n";
+
+	write_domain();
+	write_unit();
+	write_line();
+ 	write_surf();
+ 	write_coord();
+}
+
+sub main()
+{
+	read_exo2();
+  	write_lgm();
+}
+
+main();
+
+exit;
+
