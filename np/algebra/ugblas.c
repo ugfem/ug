@@ -153,6 +153,12 @@ static INT max_vectors_of_type[NVECTYPES] =
 { MAX_CORNERS_OF_ELEM, MAX_EDGES_OF_ELEM, 1, MAX_SIDES_OF_ELEM};
 #endif
 
+#ifdef __BLOCK_VECTOR_DESC__
+static const BV_DESC *ConsBvd;
+static const BV_DESC_FORMAT *ConsBvdf;
+static INT ConsComp;
+#endif
+
 #endif
 
 /* RCS string */
@@ -417,6 +423,67 @@ INT a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
                       m * sizeof(DOUBLE),
                       Gather_VectorComp, Scatter_VectorComp);
 
+  return (NUM_OK);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   l_vector_consistentBS - builds the sum of the vector values within the blockvector on all copies
+
+   SYNOPSIS:
+   INT l_vector_consistentBS (GRID *g, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT x);
+
+   PARAMETERS:
+   .  g - pointer to grid
+   .  bvd - description of the blockvector
+   .  bvdf - format to interpret bvd
+   .  x - vector data
+
+   DESCRIPTION:
+   This function builds the sum of the vector values within the specified
+   blockvector for all master and border vectors; the result is stored in all
+   master and border vectors.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+   D*/
+/****************************************************************************/
+
+#if (defined ModelP) && (defined __BLOCK_VECTOR_DESC__)
+static int Gather_VectorCompBS (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+
+  if( VMATCH(pv,ConsBvd, ConsBvdf) )
+  {printf(PFMT "Gather_VectorCompBS: v[%d][%d] = %g\n",me,VINDEX(pv),ConsComp,VVALUE(pv,ConsComp));
+   *((DOUBLE *)data) = VVALUE(pv,ConsComp);}
+  return (NUM_OK);
+}
+
+static int Scatter_VectorCompBS (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+
+  if( VMATCH(pv,ConsBvd, ConsBvdf) )
+  {
+    VVALUE(pv,ConsComp) += *((DOUBLE *)data);
+    printf(PFMT "Scatter_VectorCompBS: v[%d][%d] = %g\n",me,VINDEX(pv),ConsComp,VVALUE(pv,ConsComp));
+  }
+
+  return (NUM_OK);
+}
+
+INT l_vector_consistentBS (GRID *g, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT x)
+{
+  ConsBvd = bvd;
+  ConsBvdf = bvdf;
+  ConsComp = x;
+
+  DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g), sizeof(DOUBLE),
+                  Gather_VectorCompBS, Scatter_VectorCompBS);
   return (NUM_OK);
 }
 #endif
