@@ -69,6 +69,13 @@
 /*                                                                          */
 /****************************************************************************/
 
+/* large matrices for InvertFullMatrix, InvertSpdMatrix and SolveFullMatrix2 */
+/* (Macintosh cannot handle local data>32k) */
+static DOUBLE BL_full_lrmat[LOCAL_DIM][LOCAL_DIM];
+static DOUBLE BL_chol[LOCAL_DIM][LOCAL_DIM];
+static DOUBLE BL_imat[LOCAL_DIM*LOCAL_DIM];
+static DOUBLE BL_mat1[LOCAL_DIM*LOCAL_DIM];
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -386,7 +393,6 @@ INT InvertFullMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
                       DOUBLE invmat[LOCAL_DIM][LOCAL_DIM])
 {
   DOUBLE det,invdet,piv,sum;
-  DOUBLE lrmat[LOCAL_DIM][LOCAL_DIM];
   INT i,j,k;
 
   switch (n)
@@ -448,21 +454,21 @@ INT InvertFullMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
     /* copy matrix */
     for (i=0; i<n; i++)
       for (j=0; j<n; j++)
-        lrmat[i][j] = mat[i][j];
+        BL_full_lrmat[i][j] = mat[i][j];
 
     /* lr factorize mat */
     for (i=0; i<n; i++)
     {
-      invdet = lrmat[i][i];
+      invdet = BL_full_lrmat[i][i];
       if (ABS(invdet)<SMALL_DET)
         break;                          /* singular */
-      invdet = lrmat[i][i] = 1.0/invdet;
+      invdet = BL_full_lrmat[i][i] = 1.0/invdet;
 
       for (j=i+1; j<n; j++)
       {
-        piv = (lrmat[j][i] *= invdet);
+        piv = (BL_full_lrmat[j][i] *= invdet);
         for (k=i+1; k<n; k++)
-          lrmat[j][k] -= lrmat[i][k] * piv;
+          BL_full_lrmat[j][k] -= BL_full_lrmat[i][k] * piv;
       }
     }
 
@@ -473,20 +479,20 @@ INT InvertFullMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
         invmat[i][k] = 0.0;
       sum = 1.0;
       for (j=0; j<k; j++)
-        sum -= lrmat[k][j] * invmat[j][k];
+        sum -= BL_full_lrmat[k][j] * invmat[j][k];
       invmat[k][k] = sum;                       /* Lii = 1 */
       for (i=k+1; i<n; i++)
       {
         sum = 0.0;
         for (j=0; j<i; j++)
-          sum -= lrmat[i][j] * invmat[j][k];
+          sum -= BL_full_lrmat[i][j] * invmat[j][k];
         invmat[i][k] = sum;                             /* Lii = 1 */
       }
       for (i=n-1; i>=0; i--)
       {
         for (sum=invmat[i][k], j=i+1; j<n; j++)
-          sum -= lrmat[i][j] * invmat[j][k];
-        invmat[i][k] = sum * lrmat[i][i];                               /* Uii = Inv(Mii) */
+          sum -= BL_full_lrmat[i][j] * invmat[j][k];
+        invmat[i][k] = sum * BL_full_lrmat[i][i];                               /* Uii = Inv(Mii) */
       }
     }
 
@@ -532,7 +538,6 @@ INT InvertSpdMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
                      DOUBLE invmat[LOCAL_DIM][LOCAL_DIM])
 {
   DOUBLE sum;
-  DOUBLE chol[LOCAL_DIM][LOCAL_DIM];
   INT i,j,k;
 
   if (n<4)
@@ -544,7 +549,7 @@ INT InvertSpdMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
     return (1);
   }
 
-  if (CholeskyDecomposition(n,mat,chol))
+  if (CholeskyDecomposition(n,mat,BL_chol))
     return(1);
 
   /* solve */
@@ -554,21 +559,21 @@ INT InvertSpdMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
       invmat[i][k] = 0.0;
     sum = 1.0;
     for (j=0; j<k; j++)
-      sum -= chol[k][j] * invmat[j][k];
-    invmat[k][k] = sum * chol[k][k];
+      sum -= BL_chol[k][j] * invmat[j][k];
+    invmat[k][k] = sum * BL_chol[k][k];
     for (i=k+1; i<n; i++)
     {
       sum = 0.0;
       for (j=0; j<i; j++)
-        sum -= chol[i][j] * invmat[j][k];
-      invmat[i][k] = sum * chol[i][i];
+        sum -= BL_chol[i][j] * invmat[j][k];
+      invmat[i][k] = sum * BL_chol[i][i];
     }
     for (i=n-1; i>=0; i--)
     {
       sum=invmat[i][k];
       for (j=i+1; j<n; j++)
-        sum -= chol[j][i] * invmat[j][k];
-      invmat[i][k] = sum * chol[i][i];
+        sum -= BL_chol[j][i] * invmat[j][k];
+      invmat[i][k] = sum * BL_chol[i][i];
     }
   }
 
@@ -723,31 +728,29 @@ INT InvertFullMatrix_piv (INT n, DOUBLE *mat, DOUBLE *inv)
 
 INT SolveFullMatrix2 (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
 {
-  DOUBLE imat[LOCAL_DIM*LOCAL_DIM];
-  DOUBLE mat1[LOCAL_DIM*LOCAL_DIM];
   DOUBLE sum;
   INT i,j;
 
   for (i=0; i<n*n; i++)
-    mat1[i] = mat[i];
-  if (InvertFullMatrix_piv(n,mat,imat))
+    BL_mat1[i] = mat[i];
+  if (InvertFullMatrix_piv(n,mat,BL_imat))
     return(NUM_ERROR);
   for (i=0; i<n; i++) {
     sum = 0.0;
     for (j=0; j<n; j++)
-      sum += imat[i*n+j] * rhs[j];
+      sum += BL_imat[i*n+j] * rhs[j];
     sol[i] = sum;
   }
   for (i=0; i<n; i++) {
     sum = rhs[i];
     for (j=0; j<n; j++)
-      sum -= mat1[i*n+j] * sol[j];
+      sum -= BL_mat1[i*n+j] * sol[j];
     rhs[i] = sum;
   }
   for (i=0; i<n; i++) {
     sum = 0.0;
     for (j=0; j<n; j++)
-      sum += imat[i*n+j] * rhs[j];
+      sum += BL_imat[i*n+j] * rhs[j];
     sol[i] += sum;
   }
   return(NUM_OK);
