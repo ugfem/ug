@@ -78,13 +78,20 @@ typedef struct {
   INT interpolate;
   INT project;
 
+  VEC_TEMPLATE *vt;
+  INT sub;
+
 } NP_INDICATOR;
+
+typedef DOUBLE (*ElementIndicatorProcPtr)(ELEMENT *, INT, VECDATA_DESC *);
 
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
+
+static ElementIndicatorProcPtr ElementIndicator;
 
 REP_ERR_FILE;
 
@@ -338,7 +345,7 @@ static INT GradientAtLMP (ELEMENT *theElement, INT ncomp, VECDATA_DESC *theVD,
   return(0);
 }
 
-static DOUBLE ElementIndicator_christian (ELEMENT *t, INT ncomp, VECDATA_DESC *theVD)
+static DOUBLE ElementIndicator_grad (ELEMENT *t, INT ncomp, VECDATA_DESC *theVD)
 {
   ELEMENT *f;
   DOUBLE_VECTOR egrad[MAX_SINGLE_VEC_COMP];
@@ -363,15 +370,15 @@ static DOUBLE ElementIndicator_christian (ELEMENT *t, INT ncomp, VECDATA_DESC *t
   return(est * area);
 }
 
-static DOUBLE ElementIndicator (ELEMENT *t, INT ncomp, VECDATA_DESC *theVD)
+static DOUBLE ElementIndicator_minmax (ELEMENT *t, INT ncomp, VECDATA_DESC *theVD)
 {
   DOUBLE theMin=1.0E100, theMax=-1.0E100;
   INT i;
 
   for (i=0; i<CORNERS_OF_ELEM(t); i++)
   {
-    theMin = MIN(theMin,VVALUE(NVECTOR(CORNER(t,i)),VD_CMP_OF_TYPE(theVD,NODEVEC,1)));
-    theMax = MAX(theMax,VVALUE(NVECTOR(CORNER(t,i)),VD_CMP_OF_TYPE(theVD,NODEVEC,1)));
+    theMin = MIN(theMin,VVALUE(NVECTOR(CORNER(t,i)),VD_CMP_OF_TYPE(theVD,NODEVEC,0)));
+    theMax = MAX(theMax,VVALUE(NVECTOR(CORNER(t,i)),VD_CMP_OF_TYPE(theVD,NODEVEC,0)));
   }
 
   return(theMax-theMin);
@@ -502,6 +509,9 @@ static INT IndicatorInit (NP_BASE *theNumProc, INT argc, char **argv)
   theNP->interpolate = ReadArgvOption("i",argc,argv);
   theNP->clear = ReadArgvOption("c",argc,argv);
 
+  theNP->vt = ReadArgvVecTemplateSub(MGFORMAT(theNumProc->mg),
+                                     "minmax",argc,argv,&(theNP->sub));
+
   return (NPErrorInit(&theNP->error,argc,argv));
 }
 
@@ -533,11 +543,24 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x,
   MULTIGRID *theMG;
   GRID *theGrid;
   INT i;
+  VECDATA_DESC *y;
 
   np = (NP_INDICATOR*) theNP;
   theMG = NP_MG(theNP);
 
-  if (SurfaceIndicator(theMG,x,np->refine,np->coarse,
+  if (np->vt == NULL) {
+    y = x;
+    ElementIndicator = ElementIndicator_grad;
+  }
+  else {
+    if (VDsubDescFromVT(x,np->vt,np->sub,&y))
+      NP_RETURN(1,eresult->error_code);
+    if (VD_NCOMP_IN_TYPE(y,NODEVEC) < 1)
+      NP_RETURN(1,eresult->error_code);
+    ElementIndicator = ElementIndicator_minmax;
+  }
+
+  if (SurfaceIndicator(theMG,y,np->refine,np->coarse,
                        np->project,np->from,np->to,np->clear,eresult) == -1) NP_RETURN(1,eresult->error_code);
   i = 0;
   if (np->update) {
