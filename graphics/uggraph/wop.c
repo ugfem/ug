@@ -2585,7 +2585,12 @@ static INT MarkElements3D (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	
 	for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,toLevel)); theElement!=NULL; theElement=SUCCE(theElement))
 		if (EE3D_Elem2Plot[ECLASS(theElement)])
-			SETUSED(theElement,1);
+		{
+			if (!(EE3D_PlotSelection && SELECTIONMODE(theMG)==elementSelection))
+		 	  SETUSED(theElement,1);
+			else
+				if (!USED(theElement)) SETVSIDES(theElement,0);
+		}
 		else
 			SETUSED(theElement,0);
 				
