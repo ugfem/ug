@@ -5938,7 +5938,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
     UserWriteF("l_pgs: MAX_DEPTH too small\n");
     REP_ERR_RETURN (__LINE__);
   }
-  if (mode == 1) {
+  if (mode > 0) {
     dset(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,v,0.0);
     for (vec=FIRSTVECTOR(g); vec!= NULL; vec=SUCCVC(vec)) {
       if (START(vec) == NULL) continue;
@@ -5979,7 +5979,46 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
       }
       AddVlistVValues(cnt,vlist,v,vval);
     }
-
+    if (mode == 1) return (NUM_OK);
+    for (vec=LASTVECTOR(g); vec!= NULL; vec=PREDVC(vec)) {
+      if (START(vec) == NULL) continue;
+      cnt = 1;
+      vlist[0] = vec;
+      if (depth > 1)
+        for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat)) {
+          w = MDEST(mat);
+          vlist[cnt++] = w;
+          if (cnt >= depth) break;
+        }
+      m = GetVlistMValues(cnt,vlist,M,Mval);
+      if (m != GetVlistVValues(cnt,vlist,d,dval)) {
+        UserWriteF("l_pgs: wrong dimension %d in local system %d\n",
+                   m,GetVlistVValues(cnt,vlist,d,dval));
+        REP_ERR_RETURN (__LINE__);
+      }
+      vcnt = 0;
+      for (i=0; i<cnt; i++) {
+        vtype = VTYPE(vlist[i]);
+        ncomp = VD_NCMPS_IN_TYPE(d,vtype);
+        for (mat=VSTART(vlist[i]); mat!=NULL; mat=MNEXT(mat)) {
+          w = MDEST(mat);
+          wtype = VTYPE(w);
+          Comp = MD_MCMPPTR_OF_MTYPE(M,MTP(vtype,wtype));
+          wncomp = VD_NCMPS_IN_TYPE(d,wtype);
+          VComp = VD_CMPPTR_OF_TYPE(v,wtype);
+          for (k=0; k<ncomp; k++)
+            for (l=0; l<wncomp; l++)
+              dval[vcnt+k] -= MVALUE(mat,Comp[k*wncomp+l])
+                              * VVALUE(w,VComp[l]);
+        }
+        vcnt += ncomp;
+      }
+      if (SolveFullMatrix(m,vval,Mval,dval)) {
+        UserWriteF("l_pgs: solving on local patch failed\n");
+        REP_ERR_RETURN (__LINE__);
+      }
+      AddVlistVValues(cnt,vlist,v,vval);
+    }
     return (NUM_OK);
   }       /* else if (mode == 0) */
   for (vec=FIRSTVECTOR(g); vec!= NULL; vec=SUCCVC(vec)) {
