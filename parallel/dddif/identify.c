@@ -261,6 +261,15 @@ static INT Print_Identified_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject, in
     PrintDebug (" %d",*proclist);
     proclist += 2;
   }
+
+  /* print my processor number */
+  PrintDebug ("    me:%d",me);
+
+  /* print type of objects to identify */
+  PrintDebug ("    IdentObjectType:");
+  for (i=0; i<nobject; i++) {
+    PrintDebug (" %d",DDD_InfoType(IdentObjectHdr[i]));
+  }
   PrintDebug ("\n");
 
   return;
@@ -581,6 +590,8 @@ EDGE *FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge)
   else {
     edge0 = GetEdge(SONNODE(NBNODE(LINK0(fatherEdge))),SONNODE(NBNODE(LINK1(fatherEdge))));
   }
+
+  IFDEBUG(dddif,5)
   UserWriteF("%4d: fatherEdge=%x theEdge=%x edge0=%x edge1=%x\n",me,fatherEdge,theEdge,edge0,edge1);
   UserWriteF("%4d: Nodes[0]=%d Nodes[1]=%d\n",me,ID(Nodes[0]),ID(Nodes[1]));
 
@@ -590,6 +601,7 @@ EDGE *FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge)
   for (i=0; i<MAX_SIDE_NODES; i++)
     if (SideNodes[i]!=NULL) UserWriteF(" %5d",ID(SideNodes[i]));
   UserWriteF("\n");
+  ENDDEBUG
 
   assert(edge0==theEdge || edge1==theEdge);
   ENDDEBUG
@@ -736,9 +748,6 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement, INT 
     INT j;
 
     PRINTDEBUG(dddif,1,("%d: IdentifyObjectsOfElementSide(): identify EDGES and VECTORS\n",me));
-
-    /* TODO: delete */
-    Debuggm=4;
 
     if (Get_Sons_of_ElementSide(theElement,i,&SonsOfSide,
                                 SonList,SonSides,1)!=GM_OK)
