@@ -798,7 +798,7 @@ int ConstructColoring( int OrderingFunctionType, FAMGColor &myColor, FAMGColor &
 			BestMyColor = MyColor;
 
 		}
-                cout<<me<<": COLORGUESS "<<guess<<" MyColor "<<MyColor<<" max.col "<<maxcolor<<endl;
+                //cout<<me<<": COLORGUESS "<<guess<<" MyColor "<<MyColor<<" max.col "<<maxcolor<<endl;
 	}
 
 	myColor = BestMyColor;
