@@ -70,6 +70,7 @@ INT nb_offset[TAGS];
 INT evector_offset[TAGS];
 INT svector_offset[TAGS];
 INT side_offset[TAGS];
+INT data_offset[TAGS];
 
 GENERAL_ELEMENT *element_descriptors[TAGS],     *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
 
@@ -329,6 +330,11 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
     p_count += el->sides_of_elem;
   }
         #endif
+
+  if (EDATA_DEF_IN_MG(theMG)) {
+    data_offset[tag] = p_count;
+    p_count++;
+  }
 
   /* so far for an inner element */
   el->inner_size = sizeof(struct generic_element) + (p_count-1)*sizeof(void *);

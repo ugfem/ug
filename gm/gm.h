@@ -73,9 +73,6 @@
 /* if interpolation matrix is stored */
 #define __INTERPOLATION_MATRIX__
 
-/* if node-element list is used
- #define __NODE_ELEMENT_LIST__ */
-
 /* if block vector descriptors are used
  #define __BLOCK_VECTOR_DESC__ */
 
@@ -213,6 +210,8 @@ struct format {
   INT MaxConnectionDepth;                  /* maximal connection depth               */
   INT NeighborhoodDepth;                   /* geometrical depth corresponding		 */
   /* algebraic con with depth 1			 */
+  INT elementdata;
+  INT nodedata;
   ConversionProcPtr PrintVertex;       /* print user data to string	             */
   ConversionProcPtr PrintGrid;
   ConversionProcPtr PrintMultigrid;
@@ -396,10 +395,6 @@ struct node {                                           /* level dependent part 
   DDD_HEADER ddd;
         #endif
 
-        #ifdef __NODE_ELEMENT_LIST__
-  struct elementlist *first;
-        #endif
-
   /* pointers */
   struct node *pred,*succ;                      /* double linked list of nodes per level*/
   struct link *start;                           /* list of links						*/
@@ -411,6 +406,9 @@ struct node {                                           /* level dependent part 
 
   /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
+
+  /* WARNING: the allocation of the data pointer depends on the format        */
+  void *data;                                       /* associated data pointer              */
 } ;
 
 struct link {
@@ -487,6 +485,9 @@ struct triangle {
   VECTOR *vector;                                       /* associated vector					*/
 
   BNDS *bnds[3];                        /* only on bnd, NULL if interior side	*/
+
+  /* WARNING: the allocation of the data pointer depends on the format        */
+  void *data;                                       /* associated data pointer              */
 } ;
 
 struct quadrilateral {
@@ -520,6 +521,9 @@ struct quadrilateral {
   VECTOR *vector;                                       /* associated vector					*/
 
   BNDS *bnds[4];                        /* only on bnd, NULL if interior side	*/
+
+  /* WARNING: the allocation of the data pointer depends on the format        */
+  void *data;                                       /* associated data pointer              */
 } ;
 
 struct tetrahedron {
@@ -554,6 +558,9 @@ struct tetrahedron {
   VECTOR *sidevector[4];                        /* associated vectors for sides			*/
 
   BNDS *bnds[4];                        /* only on bnd, NULL if interior side	*/
+
+  /* WARNING: the allocation of the data pointer depends on the format        */
+  void *data;                                       /* associated data pointer              */
 } ;
 
 struct pyramid {
@@ -588,6 +595,9 @@ struct pyramid {
   VECTOR *sidevector[5];                        /* associated vectors for sides			*/
 
   BNDS *bnds[5];                        /* only on bnd, NULL if interior side	*/
+
+  /* WARNING: the allocation of the data pointer depends on the format        */
+  void *data;                                       /* associated data pointer              */
 } ;
 
 struct prism {
@@ -622,6 +632,9 @@ struct prism {
   VECTOR *sidevector[5];                        /* associated vectors for sides			*/
 
   BNDS *bnds[5];                        /* only on bnd, NULL if interior side	*/
+
+  /* WARNING: the allocation of the data pointer depends on the format        */
+  void *data;                                       /* associated data pointer              */
 };
 
 struct hexahedron {
@@ -656,6 +669,9 @@ struct hexahedron {
   VECTOR *sidevector[6];                        /* associated vectors for sides			*/
 
   BNDS *bnds[6];                        /* only on bnd, NULL if interior side	*/
+
+  /* WARNING: the allocation of the data pointer depends on the format        */
+  void *data;                                       /* associated data pointer              */
 } ;
 
 union element {
@@ -1492,10 +1508,8 @@ extern CONTROL_ENTRY
 #define NDIAG(p)        (p)->matelem
 #define NVECTOR(p)      (p)->vector
 
-#ifdef __NODE_ELEMENT_LIST__
-#define NODE_ELEMENT_LIST(p)    ((p)->first)
+#define NODE_ELEMENT_LIST(p)    ((elementlist *)(p)->data)
 #define ELEMENT_PTR(p)                  ((p)->el)
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -1685,6 +1699,7 @@ extern INT nb_offset[TAGS];
 extern INT evector_offset[TAGS];
 extern INT svector_offset[TAGS];
 extern INT side_offset[TAGS];
+extern INT data_offset[TAGS];
 
 /* the element descriptions are also globally available, these are pointers ! */
 extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
@@ -1740,6 +1755,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define ELEM_BNDS(p,i)  ((BNDS *) (p)->ge.refs[side_offset[TAG(p)]+(i)])
 #define EVECTOR(p)              ((VECTOR *) (p)->ge.refs[evector_offset[TAG(p)]])
 #define SVECTOR(p,i)    ((VECTOR *) (p)->ge.refs[svector_offset[TAG(p)]+(i)])
+#define EDATA(p)            ((void *) (p)->ge.refs[data_offset[TAG(p)]])
 #define ELEMENT_TO_MARK(e)  ((NSONS(e)>1) ? NULL :                           \
                              (ECLASS(e) == RED_CLASS) ? e :                    \
                              (ECLASS(EFATHER(e)) == RED_CLASS) ?               \
@@ -1953,6 +1969,8 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define NVEC(p)                         ((p)->nVector)
 #define NC(p)                           ((p)->nCon)
 #define TYPE_DEF_IN_GRID(p,tp) ((p)->mg->theFormat->VectorSizes[(tp)]>0)
+#define EDATA_DEF_IN_GRID(p)   ((p)->mg->theFormat->elementdata)
+#define NDATA_DEF_IN_GRID(p)   ((p)->mg->theFormat->nodedata)
 
 /****************************************************************************/
 /*																			*/
@@ -1987,6 +2005,8 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define GEN_MGUD(p)                     ((p)->GenData)
 #define GEN_MGUD_ADR(p,o)               ((void *)(((char *)((p)->GenData))+(o)))
 #define TYPE_DEF_IN_MG(p,tp)    ((p)->theFormat->VectorSizes[(tp)]>0)
+#define EDATA_DEF_IN_MG(p)      ((p)->theFormat->elementdata)
+#define NDATA_DEF_IN_MG(p)      ((p)->theFormat->nodedata)
 
 /****************************************************************************/
 /*																			*/

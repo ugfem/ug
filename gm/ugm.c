@@ -435,12 +435,16 @@ static NODE *CreateNode (GRID *theGrid)
 {
   NODE *pn;
   VECTOR *pv;
+  INT size;
 
-  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
-  {
-    /* create node and vector */
-    pn = GetMemoryForObject(MYMG(theGrid),sizeof(NODE),NDOBJ);
-    if (pn==NULL) return(NULL);
+  size = sizeof(NODE);
+  if (!TYPE_DEF_IN_GRID(theGrid,NODEVECTOR)) size -= sizeof(VECTOR *);
+  if (NDATA_DEF_IN_GRID(theGrid)) size += sizeof(void *);
+
+  pn = GetMemoryForObject(MYMG(theGrid),size,NDOBJ);
+  if (pn==NULL) return(NULL);
+
+  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR)) {
     pv = CreateVector (theGrid,NODEVECTOR,(GEOM_OBJECT *)pn);
     if (pv == NULL)
     {
@@ -448,13 +452,6 @@ static NODE *CreateNode (GRID *theGrid)
       return (NULL);
     }
     NVECTOR(pn) = pv;
-  }
-  else
-  {
-    /* create node */
-    pn = GetMemoryForObject(MYMG(theGrid),
-                            sizeof(NODE)-sizeof(VECTOR*),NDOBJ);
-    if (pn==NULL) return(NULL);
   }
 
   /* initialize data */
@@ -1620,6 +1617,7 @@ static INT DisposeNode (GRID *theGrid, NODE *theNode)
 {
   VERTEX *theVertex;
   NODE *father;
+  INT size;
 
   HEAPFAULT(theNode);
 
@@ -1641,14 +1639,16 @@ static INT DisposeNode (GRID *theGrid, NODE *theNode)
     DisposeVertex(theGrid,theVertex);
 
   /* dispose vector and its matrices from node-vector */
+  size = sizeof(NODE);
+  if (NDATA_DEF_IN_GRID(theGrid)) size += sizeof(void *);
   if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
   {
     if (DisposeVector (theGrid,NVECTOR(theNode)))
       RETURN(1);
-    PutFreeObject(theGrid->mg,theNode,sizeof(NODE),NDOBJ);
   }
   else
-    PutFreeObject(theGrid->mg,theNode,sizeof(NODE)-sizeof(VECTOR*),NDOBJ);
+    size -= sizeof(VECTOR *);
+  PutFreeObject(theGrid->mg,theNode,size,NDOBJ);
 
   /* return ok */
   (theGrid->nNode)--;
