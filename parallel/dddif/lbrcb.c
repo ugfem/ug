@@ -288,6 +288,8 @@ void XferGridWithOverlap (GRID *theGrid)
     int j;
 
     /* create Master copy */
+    printf("%d: XferGridWithOverlap(): XferCopy elem=%d to p=%d prio=%d\n",
+           me,DDD_InfoGlobalId(PARHDRE(elem)),PARTITION(elem),PrioMaster);
     DDD_XferCopyObjX(PARHDRE(elem),
                      PARTITION(elem),
                      PrioMaster,
@@ -305,6 +307,8 @@ void XferGridWithOverlap (GRID *theGrid)
         if (PARTITION(elem)!=PARTITION(nb))
         {
           /* create Ghost copy */
+          printf("%d: XferGridWithOverlap(): XferCopy elem=%d to p=%d prio=%d\n",
+                 me,DDD_InfoGlobalId(PARHDRE(elem)),PARTITION(nb),PrioGhost);
           DDD_XferCopyObjX(PARHDRE(elem),
                            PARTITION(nb),
                            PrioGhost,
@@ -326,11 +330,15 @@ void XferGridWithOverlap (GRID *theGrid)
       if (has_local_nb)
       {
         /* element is needed as Ghost copy */
+        printf("%d: XferGridWithOverlap(): PrioSet elem=%d prio=%d\n",
+               me,DDD_InfoGlobalId(PARHDRE(elem)),PrioGhost);
         DDD_PrioritySet(PARHDRE(elem), PrioGhost);
       }
       else
       {
         /* element isn't needed */
+        printf("%d: XferGridWithOverlap(): XferDel elem=%d to p=%d prio=%d\n",
+               me,DDD_InfoGlobalId(PARHDRE(elem)),PARTITION(elem),PrioGhost);
         DDD_XferDeleteObj(PARHDRE(elem));
       }
     }
