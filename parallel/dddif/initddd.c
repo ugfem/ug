@@ -532,9 +532,9 @@ static void ddd_IfInit (void)
 
   O[0] = TypeTrElem;
   O[1] = TypeTrBElem;
-  A[0] = 0; A[1] = 7;
-  B[0] = 0; B[1] = 7;
-  ElementIF = DDD_IFDefine(2,O,2,A,2,B);
+  A[0] = 7;       /*  A[1] = 7; */
+  B[0] = 5;       /*  B[1] = 7; */
+  ElementIF = DDD_IFDefine(2,O,1,A,1,B);
 
   O[0] = TypeNode;
   A[0] = 0; A[1] = 7;

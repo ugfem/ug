@@ -214,35 +214,76 @@ static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int d
 
 static void XferElemsAndOverlap (GRID *theGrid)
 {
-  ELEMENT *elem, *nb;
-  int i;
+  ELEMENT *elem;
 
 
-  /* create element copies */
   for(elem=FIRSTELEMENT(theGrid); elem!=NULL; elem=SUCCE(elem))
   {
-    /* create element copy */
+    int has_local_nb = 0;
+    int j;
+
+    /* create Master copy */
     DDD_XferCopyObjX(PARHDRE(elem),
                      PARTITION(elem),
-                     0,
+                     PrioMaster,
                      (OBJT(elem)==BEOBJ) ? BND_SIZE(TAG(elem)) : INNER_SIZE(TAG(elem))
                      );
 
+
+    /* create 1-overlapping of elements */
+    for(j=0; j<SIDES_OF_ELEM(elem); j++)
+    {
+      ELEMENT *nb = NBELEM(elem,j);
+
+      if (nb!=NULL)
+      {
+        if (PARTITION(elem)!=PARTITION(nb))
+        {
+          /* create Ghost copy */
+          DDD_XferCopyObjX(PARHDRE(elem),
+                           PARTITION(nb),
+                           PrioGhost,
+                           (OBJT(elem)==BEOBJ) ?
+                           BND_SIZE(TAG(elem)) :
+                           INNER_SIZE(TAG(elem))
+                           );
+        }
+
+        /* remember any local neighbour element */
+        if (PARTITION(nb)==me)
+          has_local_nb = 1;
+      }
+    }
+
+    /* consider elements on master-proc */
     if (PARTITION(elem)!=me)
     {
-      /*DDD_XferDeleteObj(PARHDRE(elem)); */
-      /*
-                              for(i=0; i<3; i++)
-                              {
-                                      elem->node[i]->elemCnt--;
-
-                                      if (elem->node[i]->triCnt==0)
-                                      {
-                                              DDD_XferDeleteObj(PARHDR(elem->node[i]));
-                                      }
-                              }
-       */
+      if (has_local_nb)
+      {
+        /* element is needed as Ghost copy */
+        DDD_PrioritySet(PARHDRE(elem), PrioGhost);
+      }
+      else
+      {
+        /* element isn't needed */
+        DDD_XferDeleteObj(PARHDRE(elem));
+      }
     }
+
+
+    /*
+                    {
+                            for(i=0; i<3; i++)
+                            {
+                                    elem->node[i]->elemCnt--;
+
+                                    if (elem->node[i]->triCnt==0)
+                                    {
+                                            DDD_XferDeleteObj(PARHDR(elem->node[i]));
+                                    }
+                            }
+                    }
+     */
   }
 }
 

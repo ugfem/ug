@@ -82,6 +82,7 @@ void ddd_pstat (int cmd)
     DDD_ListLocalObjects();
     UserWrite("\n");
     SYNC_END;
+    break;
 
   case 'b' :
     buggy(dddctrl.currMG);
