@@ -4948,7 +4948,7 @@ static INT EW_MarkElement2D (DRAWINGOBJ *q)
     side = (side+1)%CORNERS_OF_ELEM(ME2D_elem);
   else
     side = 0;
-  MarkForRefinement(LAST_RED_ELEM(ME2D_elem),ME2D_rule,(void *)side);
+  MarkForRefinement(ME2D_elem,ME2D_rule,(void *)side);
 
   /* invert new mark */
   q = InvertRefinementMark2D(ME2D_elem,q);
