@@ -415,6 +415,8 @@ static INT GenerateNewGrid(GRID *theGrid)
       }
       SETVCLASS(newVect,3);
       SETVNCLASS(newVect,VCLASS(vect));
+      SETNEW_DEFECT(newVect,1);
+      SETFINE_GRID_DOF(newVect,0);
       SETPRIO(newVect,PRIO(vect));
 
                         #ifdef ModelP
@@ -1083,11 +1085,14 @@ static INT GenerateClusters(AVECTOR **Ua, AVECTOR **Ue, GRID *theGrid, GRID *new
       /* generate a coarse grid vector for the cluster */
       if (CreateVector(newGrid,VOTYPE(vect),VOBJECT(vect),&newVect))
       {
-        PrintErrorMessage('E',"GenerateClusters","could not create vector");
+        PrintErrorMessage('E',"GenerateClusters",
+                          "could not create vector");
         REP_ERR_RETURN(1);
       }
       SETVCLASS(newVect,3);
       SETVNCLASS(newVect,VCLASS(vect));
+      SETNEW_DEFECT(newVect,1);
+      SETFINE_GRID_DOF(newVect,0);
       VINDEX(newVect)=nc;
 
       /* generate the cluster as imatrices to newVect */
