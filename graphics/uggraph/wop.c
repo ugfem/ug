@@ -14504,9 +14504,11 @@ static INT OrderFathersNNS (MULTIGRID *mg, ELEMENT **table)
 
 static INT CompareElementsXSH(INT mu, INT nu)
 {
-	ELEMENT *p, *q;
 	INT i, j, k, l, found, nCorners[2];
+	#ifndef ModelP
+	ELEMENT *p, *q;
 	DOUBLE *corners[2][8];
+	#endif
 	DOUBLE_VECTOR side[2][4];
 	COORD_POINT projection[2][4];
 
@@ -15283,14 +15285,12 @@ static INT compare_gid(const void *p, const void *q)
 
 static INT OrderFathersXSH (MULTIGRID *mg, INT *table)
 {
-	GRID *grid;
 	HEAP *heap;
 	ILIST *h;
     DOUBLE minx, maxx, miny, maxy, minz, maxz, dummy;
     COORD_POINT t;
-    DOUBLE *corner[8];
 	DOUBLE_VECTOR temp;
-    INT i, j, k, l, count, root, pos, lastBegin, newBegin, wanted;
+    INT i, j, k, l, root, pos, lastBegin, newBegin, wanted;
 
 	/* count boundary elements */
 	OE_nBndElem = 0;
@@ -15484,6 +15484,8 @@ static INT GatherOS_Data(DDD_OBJ obj, void *data)
 	d  = (INT *)data;
 	*d = GAP(p);  d++;
 	*d = N_LOCAL_SONS(p);
+	
+	return (0);
 }
 
 static INT ScatterOS_Data(DDD_OBJ obj, void *data)
@@ -15495,6 +15497,8 @@ static INT ScatterOS_Data(DDD_OBJ obj, void *data)
 	d = (INT *)data;
 	GAP(p) += *d;  d++;
 	N_GLOBAL_SONS(p) += *d;
+	
+	return (0);
 }
 
 static INT GatherOS_Data2(DDD_OBJ obj, void *data)
@@ -15506,6 +15510,8 @@ static INT GatherOS_Data2(DDD_OBJ obj, void *data)
 	d  = (INT *)data;
 	*d = GAP(p);  d++;
 	*d = N_GLOBAL_SONS(p);
+	
+	return (0);
 }
 
 static INT ScatterOS_Data2(DDD_OBJ obj, void *data)
@@ -15517,6 +15523,8 @@ static INT ScatterOS_Data2(DDD_OBJ obj, void *data)
 	d = (INT *)data;
 	GAP(p) = *d;  d++;
 	N_GLOBAL_SONS(p) = *d;
+	
+	return (0);
 }
 	
 static void ComputeOS_Data(MULTIGRID *mg)
@@ -15605,6 +15613,8 @@ static INT GatherPlotID(DDD_OBJ obj, void *data)
 
 	p = (ELEMENT *)obj;
 	*(INT *)data = PLOT_ID(p);
+	
+	return (0);
 }
 
 static INT ScatterPlotID(DDD_OBJ obj, void *data)
@@ -15613,6 +15623,8 @@ static INT ScatterPlotID(DDD_OBJ obj, void *data)
 
 	p = (ELEMENT *)obj;
 	PLOT_ID(p) = *(INT *)data;
+	
+	return (0);
 }
 
 static void DistributePlotIDs(GRID *theGrid)
@@ -15705,6 +15717,8 @@ static int GatherGraphs(DDD_OBJ obj, void *data)
 		*d2 = na;
 	}
 	*d1 = d - d1;
+	
+	return (0);
 }
 
 static int ScatterGraphs(DDD_OBJ obj, void *data)
@@ -15756,6 +15770,8 @@ static int ScatterGraphs(DDD_OBJ obj, void *data)
 			}
 		}
 	}
+	
+	return (0);
 }
 
 static INT CollectGraphs (GRID *theGrid, INT MarkKey)
@@ -15934,6 +15950,8 @@ static INT GatherOrdering(DDD_OBJ obj, void *data)
 		k = Lookup(HTAB(p), gid);
 		pid += HIS_GAP(p, k);
 	}
+	
+	return (0);
 }
 
 static INT ScatterOrdering(DDD_OBJ obj, void *data)
@@ -15966,6 +15984,8 @@ static INT ScatterOrdering(DDD_OBJ obj, void *data)
 		k = Lookup(htab, EGID(son));
 		PLOT_ID(son) = pid[k];
 	}
+	
+	return (0);
 }
 
 static void DistributeOrdering (GRID *theGrid)
@@ -18868,7 +18888,7 @@ INT ErasePicture (PICTURE *thePicture)
 */
 /****************************************************************************/
 
-void ConnectWopTree(void)  
+static void ConnectWopTree(void)  
 {
 	INT i, k;
 	
@@ -18975,7 +18995,7 @@ static void NumberOfDesc(void)
 */
 /****************************************************************************/
 
-void PWorkGEN_Init(void)
+static void PWorkGEN_Init(void)
 {
 	int i;
 
@@ -19020,7 +19040,7 @@ void PWorkGEN_Init(void)
 */
 /****************************************************************************/
 
-INT PWorkGEN_Quit(void)
+static INT PWorkGEN_Quit(void)
 {
 	INT i, quit;
 
@@ -19046,7 +19066,7 @@ INT PWorkGEN_Quit(void)
 */
 /****************************************************************************/
 
-void PWorkGEN_Execute(void)
+static void PWorkGEN_Execute(void)
 {
 	INT i;
 	DRAWINGOBJ *p;
@@ -19126,7 +19146,7 @@ void PWorkGEN_Execute(void)
 */
 /****************************************************************************/
 
-void PWorkEW_Evaluate(void)
+static void PWorkEW_Evaluate(void)
 {
 	INT i;
 	DRAWINGOBJ *p, *p1;
@@ -19192,7 +19212,7 @@ void PWorkEW_Evaluate(void)
 */
 /****************************************************************************/
 
-void PWorkEW_Execute_3D(void)
+static void PWorkEW_Execute_3D(void)
 {
 	INT i, k, t, min;
 
@@ -19307,7 +19327,7 @@ void PWorkEW_Execute_3D(void)
 */
 /****************************************************************************/
 
-void PWorkEW_Evaluate_3D(void)
+static void PWorkEW_Evaluate_3D(void)
 {
 	INT i;
 	DRAWINGOBJ *p, *p1, *p2;
@@ -19386,7 +19406,7 @@ void PWorkEW_Evaluate_3D(void)
 */
 /****************************************************************************/
 
-void PWorkNW_Evaluate(void)
+static void PWorkNW_Evaluate(void)
 {
 	INT i;
 	DRAWINGOBJ *p, *p1;
@@ -19438,7 +19458,7 @@ void PWorkNW_Evaluate(void)
 */
 /****************************************************************************/
 
-void PWorkVW_Evaluate(void)
+static void PWorkVW_Evaluate(void)
 {
 	INT i;
 	DRAWINGOBJ *p, *p1;
