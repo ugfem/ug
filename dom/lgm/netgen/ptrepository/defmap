@@ -11,7 +11,7 @@ gt
 <geom/geom3d.hh>
 @dec FILE @0 @1 @2
 <stdio.h>
-@dec ARRAY__pt__30_Q2_12SparseMatrix10linestruct @0 @1 @2
+@dec ARRAY__pt__30_Q2_12SparseMatrix10linestruct @0
 <linalg/sparsmat.hh>
 @dec __clockid_t @0 @1 @2
 <sys/time.h>
@@ -35,6 +35,8 @@ gt
 <linalg/sparsmat.hh>
 @dec iostream_withassign @0 @1 @2
 <iostream.h>
+@dec MatrixGraph @1 @2
+<linalg/sparsmat.hh>
 @dec stack_t @0 @1 @2
 <sys/newsig.h>
 @dec box3d @0 @1 @2
@@ -119,6 +121,8 @@ gt
 <iostream.h>
 @dec itimerval @0 @1 @2
 <sys/time.h>
+@dec vnetrule_new @1
+<meshing/ruler3.hh>
 @dec fp_rnd @0 @1 @2
 <math.h>
 @dec ARRAY__pt__23_Q2_8ADFRONT39FrontFace @0 @1
@@ -171,6 +175,8 @@ gt
 <geom/geom2d.hh>
 @dec threeint @0 @1 @2
 <template.hh>
+@dec SparseMatrixFix @1 @2
+<linalg/sparsmat.hh>
 @dec strstreambuf @1
 <strstream.h>
 @dec INDEX_3_HASHTABLE @0 @1
@@ -241,6 +247,8 @@ gt
 <sys/newsig.h>
 @dec ARRAY__pt__23_Q2_8ADFRONT29frontline @1
 <meshing/adfront2.hh>
+@dec SparseMatrixFlex @1 @2
+<linalg/sparsmat.hh>
 @dec fstreambase @0 @1 @2
 <fstream.h>
 @dec BASE_INDEX_2_HASHTABLE @0 @1
@@ -261,6 +269,8 @@ gt
 <array.hh>
 @dec iapply_long @0 @1
 <iomanip.h>
+@dec ARRAY__pt__29_Q2_11MatrixGraph10linestruct @1 @2
+<linalg/sparsmat.hh>
 @dec div_t @0 @1 @2
 <stdlib.h>
 @dec itimerspec @0 @1 @2

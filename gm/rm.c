@@ -36,6 +36,7 @@
 #include "debug.h"
 #include "fileopen.h"
 #include "general.h"
+#include "misc.h"
 
 /* dev module */
 #include "devices.h"
@@ -4065,7 +4066,14 @@ static INT InitRuleManager3D (void)
         #endif
   {
     if (GetDefaultValue(DEFAULTSFILENAME,"refrulefile",buffer)==0)
+    {
+      if (ExpandCShellVars(buffer)==NULL)
+      {
+        PrintErrorMessageF('W',"InitRuleManager3D","could not expand shell variables in 'refrulefile' of defaults file '%s'",DEFAULTSFILENAME);
+        return (1);
+      }
       stream = fileopen(buffer,"r");
+    }
     else
       stream = fileopen("RefRules.data","r");
     if (stream==NULL)

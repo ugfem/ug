@@ -34,6 +34,7 @@
 
 #include "compiler.h"
 #include "devices.h"
+#include "misc.h"
 #include "defaults.h"
 #include "general.h"
 #include "debug.h"
@@ -403,8 +404,12 @@ INT GenerateSurfaceGrid (HEAP *theHeap, INT MarkKey, LGM_SURFACE *aSurface, DOUB
 
   ntriangle = 0;
 
-  if (GetDefaultValue(DEFAULTSFILENAME,"netgentrianglerules",rulefilename))
-    strcpy(rulefilename,rulefilename);
+  if (GetDefaultValue(DEFAULTSFILENAME,"netgentrianglerules",rulefilename)) strcpy(rulefilename,rulefilename);
+  if (ExpandCShellVars(rulefilename)==NULL)
+  {
+    PrintErrorMessageF('W',"GenerateSurfaceGrid","could not expand shell variables in 'netgentrianglerules' of defaults file '%s'",DEFAULTSFILENAME);
+    return (1);
+  }
 
     #ifdef _NETGEN
   if (StartSurfaceNetgen(h,smooth,display, D)) return(1);
@@ -427,6 +432,12 @@ INT InitSurface(CoeffProcPtr Coeff)
   char rulefilename[128];
   if (GetDefaultValue(DEFAULTSFILENAME,"netgentrianglerules",rulefilename))
     strcpy(rulefilename,"triangle.rls");
+  if (ExpandCShellVars(rulefilename)==NULL)
+  {
+    PrintErrorMessageF('W',"InitSurface","could not expand shell variables in 'netgentrianglerules' of defaults file '%s'",DEFAULTSFILENAME);
+    return (1);
+  }
+
   /*	LOCAL_H[0] = Coeff[coeff];*/
   LOCAL_H = Coeff;
     #ifdef _NETGEN

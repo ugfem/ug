@@ -1315,6 +1315,11 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
 
     if (GetDefaultValue(DEFAULTSFILENAME,"netgenrules",rulefilename))
       strcpy(rulefilename,"tetra.rls");
+    if (ExpandCShellVars(rulefilename)==NULL)
+    {
+      PrintErrorMessageF('W',"GenerateGrid3d","could not expand shell variables in 'netgenrules' of defaults file '%s'",DEFAULTSFILENAME);
+      return (__LINE__);
+    }
                 #ifdef _NETGEN
     InitNetgen(rulefilename);
                 #else
