@@ -1016,8 +1016,13 @@ Broadcast(&nTPatch,sizeof(INT));
   theBVP->patches = (PATCH **)
                     GetFreelistMemory(Heap,(nPPatch+nTPatch)*sizeof(PATCH *));
   for (i=0; i<nPPatch; i++)
-    theBVP->patches[i] = (PATCH *)
-                         GetFreelistMemory(Heap,sizeof(M0_PATCH));
+  {
+    M0_PATCH *patch = (M0_PATCH *)GetFreelistMemory(Heap,sizeof(M0_PATCH));
+
+    patch->type = MARC_0_PATCH_TYPE;
+    patch->id = i;
+    theBVP->patches[i] = (PATCH *) patch;
+  }
   for (i=nPPatch; i<nPPatch+nLPatch; i++)
     theBVP->patches[i] = (PATCH *)
                          GetFreelistMemory(Heap,sizeof(M1_PATCH));
