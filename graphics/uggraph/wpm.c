@@ -4814,7 +4814,7 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
       theGpo->ElemColored = iValue;
       break;
     }
-  if (theGpo->ElemColored<0 || theGpo->ElemColored>2) return (NOT_ACTIVE);
+  if (theGpo->ElemColored<0 || theGpo->ElemColored>3) return (NOT_ACTIVE);
 
   /* selection option */
   for (i=1; i<argc; i++)
