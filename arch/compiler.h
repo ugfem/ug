@@ -86,6 +86,7 @@ extern "C" {
 /*          __LINUXPPC__                                                    */
 /*          __LINUXAXP__                                                    */
 /*          __LINUXIA64__                                                   */
+/*          __CYGWIN__                                                      */
 /*          __AMD64__                                                       */
 /*                                                                          */
 /* #define this if you are using NXLib                                      */
@@ -585,6 +586,40 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #define F77SYM(lsym,usym) lsym
 
 /* current time as DOUBLE value */
+#undef CURRENT_TIME
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
+
+#endif
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for Cygwin                                                   */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __CYGWIN__
+#undef __MWCW__
+
+#define ARCHNAME    "CYGWIN"
+
+/* basic types */
+#define SHORT  short
+#define INT    int
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+#define __SWAPBYTES__ 1
+
+/* memory */
+#define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) !  */
+#define ALIGNMASK 0xFFFFFFFC            /* compatible to alignment          */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym) lsym
+
+/* current time as DOUBLE value */
+#include <time.h>
 #undef CURRENT_TIME
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
