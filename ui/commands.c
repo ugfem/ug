@@ -11510,7 +11510,7 @@ static INT PStatCommand (INT argc, char **argv)
   if (argc!=2)
     return (CMDERRORCODE);
 
-  ddd_pstat(argv[1][0]);
+  ddd_pstat(argv[1]);
   return(OKCODE);
 }
 
