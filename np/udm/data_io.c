@@ -228,6 +228,7 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
   NODE *theNode;
   SHORT *cp[DIO_VDMAX];
   INT ncmp[DIO_VDMAX];
+  INT MarkKey;
   char FileName[NAMESIZE], NumberString[6];
   char buf[64];
 
@@ -323,11 +324,11 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   }
 
   /* create list of vectors */
-  MarkTmpMem(theHeap);
+  MarkTmpMem(theHeap,&MarkKey);
   nvec=0;
   for (i=0; i<=TOPLEVEL(theMG); i++)
     nvec += NN(GRID_ON_LEVEL(theMG,i));
-  VectorList = (VECTOR **)GetTmpMem(theHeap,nvec*sizeof(VECTOR*));
+  VectorList = (VECTOR **)GetTmpMem(theHeap,nvec*sizeof(VECTOR*),MarkKey);
   if (VectorList==NULL)                                                                   {CloseDTFile(); UserWrite("ERROR: cannot allocate memoriy for VectorList\n"); return (1);}
   for (i=0; i<nvec; i++) VectorList[i] = NULL;
   for (i=0; i<=TOPLEVEL(theMG); i++)
@@ -345,7 +346,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   }
 
   /* load data */
-  entry = (INT *)GetTmpMem(theHeap,ncomp*sizeof(INT));
+  entry = (INT *)GetTmpMem(theHeap,ncomp*sizeof(INT),MarkKey);
   if (entry==NULL)                                                                                {CloseDTFile(); return (1);}
   s=0;
   for (i=0; i<n; i++)
@@ -364,7 +365,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   m = m - m%sizeof(double); m /= sizeof(double);
   while(m>=ncomp)
   {
-    data = (double *)GetTmpMem(theHeap,m*sizeof(double));
+    data = (double *)GetTmpMem(theHeap,m*sizeof(double),MarkKey);
     if (data!=NULL) break;
     m *= 0.5;
   }
@@ -392,7 +393,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
         s++;
     copied_until += ncomp;
   }
-  ReleaseTmpMem(theHeap);
+  ReleaseTmpMem(theHeap,MarkKey);
 
   /* close file */
   if (CloseDTFile()) return (1);
@@ -439,6 +440,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   char FileName[NAMESIZE],NumberString[6];
   SHORT *cp[DIO_VDMAX];
   INT ncmp[DIO_VDMAX],blocksize,free,fb,lb,nblock,saved;
+  INT MarkKey;
   DTIO_BLOCK *block,*bptr;
 #ifdef ModelP
   INT error;
@@ -593,8 +595,8 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   if (Write_DT_General (&dio_general))                                    {CloseDTFile(); return (1);}
 
   /* save data: entries */
-  MarkTmpMem(theHeap);
-  entry = (INT *)GetTmpMem(theHeap,ncomp*sizeof(INT));
+  MarkTmpMem(theHeap,&MarkKey);
+  entry = (INT *)GetTmpMem(theHeap,ncomp*sizeof(INT),MarkKey);
   if (entry==NULL)                                                                                {CloseDTFile(); return (1);}
   s=0;
   for (i=0; i<n; i++)
@@ -619,7 +621,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   fnblock = (DOUBLE)free/(DOUBLE)blocksize;
   nblock = (INT)floor(fnblock);
   if (nblock<1)                                                                                   {CloseDTFile(); return (1);}
-  block = (DTIO_BLOCK *)GetTmpMem(theHeap,nblock*blocksize);
+  block = (DTIO_BLOCK *)GetTmpMem(theHeap,nblock*blocksize,MarkKey);
   if (block==NULL)                                                                                {CloseDTFile(); return (1);}
   if (100*nblock<nNode)
     UserWrite("WARNING: save will take long due to lake of temporary memory\n");
@@ -740,7 +742,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
       if (Bio_Write_mdouble(ncomp,bptr->data))                                                                                                {CloseDTFile(); return (1);}
     }
   }
-  ReleaseTmpMem(theHeap);
+  ReleaseTmpMem(theHeap,MarkKey);
 
   /* close file */
   if (CloseDTFile()) return (1);
