@@ -1774,14 +1774,20 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
 
   /* create edges */
   for (i=0; i<EDGES_OF_ELEM(pe); i++) {
-    if ((ed=CreateEdge(theGrid,
-                       nodes[CORNER_OF_EDGE(pe,i,0)],
-                       nodes[CORNER_OF_EDGE(pe,i,1)],
-                       FALSE)) == NULL) {
-      DisposeElement(theGrid,pe,TRUE);
-      return(NULL);
+    if (GetEdge(nodes[CORNER_OF_EDGE(pe,i,0)],
+                nodes[CORNER_OF_EDGE(pe,i,1)]) != NULL) {
+      continue;
     }
-    SETEDSUBDOM(ed,s_id);
+    else {
+      if ((ed=CreateEdge(theGrid,
+                         nodes[CORNER_OF_EDGE(pe,i,0)],
+                         nodes[CORNER_OF_EDGE(pe,i,1)],
+                         FALSE)) == NULL) {
+        DisposeElement(theGrid,pe,TRUE);
+        return(NULL);
+      }
+      SETEDSUBDOM(ed,s_id);
+    }
   }
 
   /* create element vector if */
@@ -1915,7 +1921,7 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
     #ifdef __THREEDIM__
   /* TODO: is this necessary? */
   for (i=0; i<EDGES_OF_SIDE(theSon,son_side); i++) {
-    k  = EDGE_OF_SIDE(theElement,son_side,i);
+    k  = EDGE_OF_SIDE(theSon,son_side,i);
     theEdge = GetEdge(CORNER(theSon,CORNER_OF_EDGE(theSon,k,0)),
                       CORNER(theSon,CORNER_OF_EDGE(theSon,k,1)));
     ASSERT(theEdge != NULL);
