@@ -531,6 +531,7 @@ static long EE3D_NoColor[10];	/* 1 if no color (background color) used	*/
 static long EE3D_Color[10];		/* colors used								*/
 static INT	EE3D_MaxLevel;		/* level considered to be the top level 	*/
 static INT 	EE3D_PlotSelection;	/* 1 to plot only selection */
+static INT 	EE3D_EdgeColor;		/* 1 to color edges like elements */
 static DOUBLE EE3D_ShrinkFactor;/* shrink factor, 1.0 if normal plot		*/
 static DOUBLE EE3D_AmbientLight;/* ...          , 1.0 if normal plot        */
 static INT	EE3D_Property;		/* 1 if plot property						*/
@@ -12223,6 +12224,7 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, j, NodeOrder, n;
+	long edgecolor = -1;
 	DOUBLE *x[MAX_CORNERS_OF_ELEM], *co[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
 	DOUBLE_VECTOR Polygon[MAX_POINTS_OF_POLY];
 	DOUBLE_VECTOR sx[MAX_CORNERS_OF_ELEM], MidPoint;
@@ -12322,9 +12324,9 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				  if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
 					return (1);
 				  #ifndef ModelP
-				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+				  DO_2l(theDO) = edgecolor = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
 				  #else
-				  DO_2l(theDO) = EE3D_PropertyColor[me+1];
+				  DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1];
 				  #endif
 				  DO_inc(theDO);
 				}			  
@@ -12337,9 +12339,22 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				{
 					DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO) 
-					DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
+					DO_2l(theDO) = edgecolor = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
 				}
-				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+
+				if (EE3D_EdgeColor == 1)
+				{
+					if (edgecolor != -1)
+					{
+						DO_2l(theDO) = edgecolor;
+						DO_inc(theDO);
+					}
+				}
+				else
+				{
+					DO_2l(theDO) = EE3D_Color[COLOR_EDGE];
+					DO_inc(theDO);
+				}
 				#ifdef ModelP
 				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 				{
@@ -12367,9 +12382,9 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 					if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
 						return (1);
                     #ifndef ModelP
-					DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+					DO_2l(theDO) = edgecolor = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
                     #else
-					DO_2l(theDO) = EE3D_PropertyColor[me+1]; 
+					DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1]; 
                     #endif
 					DO_inc(theDO);
 				}	  
@@ -12382,9 +12397,22 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				{
 					DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO);
-					DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
+					DO_2l(theDO) = edgecolor = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
 				}
-				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+
+				if (EE3D_EdgeColor == 1)
+				{
+					if (edgecolor != -1)
+					{
+						DO_2l(theDO) = edgecolor;
+						DO_inc(theDO);
+					}
+				}
+				else
+				{
+					DO_2l(theDO) = EE3D_Color[COLOR_EDGE];
+					DO_inc(theDO);
+				}
 				#ifdef ModelP
 				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 				{
@@ -12540,9 +12568,9 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				  if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
 					return (1);
 				  #ifndef ModelP
-				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+				  DO_2l(theDO) = edgecolor = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
 				  #else
-				  DO_2l(theDO) = EE3D_PropertyColor[me+1]; 
+				  DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1]; 
 				  #endif
 				  DO_inc(theDO);
 				}			  
@@ -12555,9 +12583,21 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				{
 					DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = n; DO_inc(theDO) 
-					DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO);
+					DO_2l(theDO) = edgecolor = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO);
 				}
-				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+				if (EE3D_EdgeColor == 1)
+				{
+					if (edgecolor != -1)
+					{
+						DO_2l(theDO) = edgecolor;
+						DO_inc(theDO);
+					}
+				}
+				else
+				{
+					DO_2l(theDO) = EE3D_Color[COLOR_EDGE];
+					DO_inc(theDO);
+				}
 				#ifdef ModelP
 				for (j=0; j<n; j++)
 				{
@@ -12583,9 +12623,9 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				  if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
 					return (1);
 				  #ifndef ModelP
-				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+				  DO_2l(theDO) = edgecolor = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
 				  #else
-				  DO_2l(theDO) = EE3D_PropertyColor[me+1]; 
+				  DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1]; 
 				  #endif
 				  DO_inc(theDO);
 				}			  
@@ -12598,9 +12638,22 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				{
 					DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = n; DO_inc(theDO) 
-					DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
+					DO_2l(theDO) = edgecolor = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
 				}
-				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+
+				if (EE3D_EdgeColor == 1)
+				{
+					if (edgecolor != -1)
+					{
+						DO_2l(theDO) = edgecolor;
+						DO_inc(theDO);
+					}
+				}
+				else
+				{
+					DO_2l(theDO) = EE3D_Color[COLOR_EDGE];
+					DO_inc(theDO);
+				}
 				#ifdef ModelP
 				for (j=0; j<n; j++)
 				{
@@ -12770,6 +12823,7 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, j, k, l, NodeOrder, n;
+	long edgecolor = -1;
 	DOUBLE *x[MAX_CORNERS_OF_ELEM], *co[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
 	DOUBLE_VECTOR Polygon[MAX_POINTS_OF_POLY];
 	DOUBLE_VECTOR sx[MAX_CORNERS_OF_ELEM], MidPoint;
@@ -12900,9 +12954,9 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 					if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
 						return (1);
                     #ifndef ModelP
-					DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+					DO_2l(theDO) = egdecolor = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
 				    #else
-					DO_2l(theDO) = EE3D_PropertyColor[me+1];
+					DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1];
 				    #endif
 					DO_inc(theDO);
 				}			  
@@ -12910,17 +12964,29 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				{
 					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO); 
-					DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+					DO_2l(theDO) = edgecolor = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
 				}
 				else
 				{
 					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO) 
-					DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
+					DO_2l(theDO) = edgecolor = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
 				}
 				*theDO = intensity; DO_inc(theDO);
 
-				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+				if (EE3D_EdgeColor == 1)
+				{
+					if (edgecolor != -1)
+					{
+						DO_2l(theDO) = edgecolor;
+						DO_inc(theDO);
+					}
+				}
+				else
+				{
+					DO_2l(theDO) = EE3D_Color[COLOR_EDGE];
+					DO_inc(theDO);
+				}
 				#ifdef ModelP
 				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 				{
@@ -12978,9 +13044,9 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 					if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
 						return (1);
                     #ifndef ModelP
-					DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+					DO_2l(theDO) = edgecolor = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
                     #else
-					DO_2l(theDO) = EE3D_PropertyColor[me+1]; 
+					DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1]; 
                     #endif
 					DO_inc(theDO);
 				}	  
@@ -12988,17 +13054,29 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				{
 					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO); 
-					DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+					DO_2l(theDO) = edgecolor = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
 				}
 				else
 				{
 					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO);
-					DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
+					DO_2l(theDO) = edgecolor = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
 				}
 				*theDO = intensity; DO_inc(theDO);
 
-				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+				if (EE3D_EdgeColor == 1)
+				{
+					if (edgecolor != -1)
+					{
+						DO_2l(theDO) = edgecolor;
+						DO_inc(theDO);
+					}
+				}
+				else
+				{
+					DO_2l(theDO) = EE3D_Color[COLOR_EDGE];
+					DO_inc(theDO);
+				}
 				#ifdef ModelP
 				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 				{
@@ -13177,9 +13255,9 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 					if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
 						return (1);
 				    #ifndef ModelP
-					DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+					DO_2l(theDO) = edgecolor = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
 				    #else
-					DO_2l(theDO) = EE3D_PropertyColor[me+1]; 
+					DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1]; 
 				    #endif
 					DO_inc(theDO);
 				}			  
@@ -13187,17 +13265,29 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				{
 					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO);
 					DO_2c(theDO) = n; DO_inc(theDO); 
-					DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+					DO_2l(theDO) = edgecolor = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
 				}
 				else
 				{
 					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = n; DO_inc(theDO) 
-					DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO);
+					DO_2l(theDO) = edgecolor = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO);
 				}
 				*theDO = intensity; DO_inc(theDO);
 
-				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+				if (EE3D_EdgeColor == 1)
+				{
+					if (edgecolor != -1)
+					{
+						DO_2l(theDO) = edgecolor;
+						DO_inc(theDO);
+					}
+				}
+				else
+				{
+					DO_2l(theDO) = EE3D_Color[COLOR_EDGE];
+					DO_inc(theDO);
+				}
 				#ifdef ModelP
 				for (j=0; j<n; j++)
 				{
@@ -13223,9 +13313,9 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 					if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
 						return (1);
 				    #ifndef ModelP
-					DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+					DO_2l(theDO) = edgecolor = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
 				    #else
-					DO_2l(theDO) = EE3D_PropertyColor[me+1]; 
+					DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1]; 
 				    #endif
 					DO_inc(theDO);
 				}			  
@@ -13233,17 +13323,29 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				{
 					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = n; DO_inc(theDO);
-					DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+					DO_2l(theDO) = edgecolor = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
 				}
 				else
 				{
 					DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = n; DO_inc(theDO) 
-					DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
+					DO_2l(theDO) = edgecolor = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
 				}
 				*theDO = intensity; DO_inc(theDO);
 
-				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+				if (EE3D_EdgeColor == 1)
+				{
+					if (edgecolor != -1)
+					{
+						DO_2l(theDO) = edgecolor;
+						DO_inc(theDO);
+					}
+				}
+				else
+				{
+					DO_2l(theDO) = EE3D_Color[COLOR_EDGE];
+					DO_inc(theDO);
+				}
 				#ifdef ModelP
 				for (j=0; j<n; j++)
 				{
@@ -17406,6 +17508,7 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 	/* mark surface elements */
 	EE3D_MaxLevel = CURRENTLEVEL(theMG);
 	EE3D_PlotSelection = theGpo->PlotSelection;
+	EE3D_EdgeColor = theGpo->EdgeColor;
 	if (MarkElements3D(theMG,0,CURRENTLEVEL(theMG))) return (1);
 	
 	EE3D_Property = 0;

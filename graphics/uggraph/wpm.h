@@ -407,6 +407,7 @@ struct GridPlotObj3D {
   INT ElemColored;                                                      /* YES or NO									*/
   INT WhichElem;                                                        /* see above									*/
   INT PlotSelection;                                                    /* see above									*/
+  INT EdgeColor;                                                        /* color themselves (0) / color like element (1)*/
   DOUBLE AmbientLight;                          /* contribution of ambient light to face intensity */
 };
 

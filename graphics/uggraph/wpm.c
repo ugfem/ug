@@ -4481,6 +4481,7 @@ static INT DisplayVecMat_3D (PLOTOBJ *thePlotObj)
    .    $s~<shrink>			- factor to shrink elements
    .    $a~0..1                - contribution of ambient light to face intensity
    .    $p~<shrink>			- parallel only: factor to shrink processor partition
+   .    $e~0|1					- color edges their own | color edges as elements
 
    KEYWORDS:
    graphics, plot, window, picture, plotobject, multigrid, elements
@@ -4523,6 +4524,7 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->WhichElem                       = PO_ALL;
     theGpo->PlotSelection           = 0;
     theGpo->AmbientLight        = 1.0;
+    theGpo->EdgeColor               = 0;
   }
 
   /* set shrink option */
@@ -4566,6 +4568,14 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     if (argv[i][0]=='S')
     {
       theGpo->PlotSelection = 1;
+      break;
+    }
+
+  /* selection option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='x')
+    {
+      theGpo->EdgeColor = 1;
       break;
     }
 
@@ -4673,6 +4683,7 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
   UserWriteF(DISPLAY_PO_FORMAT_SF,"PartShrinkFactor",(float)theGpo->PartShrinkFactor);
         #endif
   UserWriteF(DISPLAY_PO_FORMAT_SI,"colered elems",(int)theGpo->ElemColored);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"EdgeColor", (int)theGpo->EdgeColor);
   UserWriteF(DISPLAY_PO_FORMAT_SF,"AmbientLight", (float)theGpo->AmbientLight);
 
   switch (theGpo->WhichElem)
