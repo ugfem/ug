@@ -21,7 +21,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 
-START_NAMESPACE
+START_UG_NAMESPACE
 void buggy (MULTIGRID *);
 void dddif_PrintGridRelations (MULTIGRID *);
 END_NAMESPACE
