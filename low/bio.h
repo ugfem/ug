@@ -53,7 +53,7 @@
 /****************************************************************************/
 
 /* mode of file */
-#define BIO_DEBUG                                       0
+#define BIO_XDR                                 0
 #define BIO_ASCII                                       1
 #define BIO_BIN                                         2
 
@@ -77,7 +77,7 @@
 /*																			*/
 /****************************************************************************/
 
-int Bio_Initialize                      (FILE *file, int mode);
+int Bio_Initialize                      (FILE *file, int mode, char rw);
 int Bio_Read_mint                       (int n, int *intList);
 int Bio_Write_mint                      (int n, int *intList);
 int Bio_Read_mdouble            (int n, double *doubleList);

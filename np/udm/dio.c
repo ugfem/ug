@@ -241,7 +241,7 @@ int     Read_DT_General (DIO_GENERAL *dio_general)
   int i;
 
   /* initialize basic i/o */
-  if (Bio_Initialize(stream,BIO_ASCII)) return (1);
+  if (Bio_Initialize(stream,BIO_ASCII,'r')) return (1);
 
   /* head always in ACSII */
   if (Bio_Read_string(buffer)) return (1);if (strcmp(buffer,DIO_TITLE_LINE)!=0) return (1);
@@ -249,7 +249,7 @@ int     Read_DT_General (DIO_GENERAL *dio_general)
   dio_general->mode               = intList[0];
 
   /* re-initialize basic i/o */
-  if (Bio_Initialize(stream,dio_general->mode)) return (1);
+  if (Bio_Initialize(stream,dio_general->mode,'r')) return (1);
 
   /* now special mode */
   if (Bio_Read_string(dio_general->version)) return (1);
@@ -310,7 +310,7 @@ int     Write_DT_General (DIO_GENERAL *dio_general)
   int i;
 
   /* initialize basic i/o */
-  if (Bio_Initialize(stream,BIO_ASCII)) return (1);
+  if (Bio_Initialize(stream,BIO_ASCII,'w')) return (1);
 
   /* head always in ACSII */
   if (Bio_Write_string(DIO_TITLE_LINE)) return (1);
@@ -318,7 +318,7 @@ int     Write_DT_General (DIO_GENERAL *dio_general)
   if (Bio_Write_mint(1,intList)) return (1);
 
   /* re-initialize basic i/o */
-  if (Bio_Initialize(stream,dio_general->mode)) return (1);
+  if (Bio_Initialize(stream,dio_general->mode,'w')) return (1);
 
   /* now special mode */
   if (Bio_Write_string(dio_general->version)) return (1);

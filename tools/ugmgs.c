@@ -134,8 +134,8 @@ int PrintMGFileInfo (char *filename, int *magic_cookie)
   printf("\n############# mg-file ###############\n\n");
   switch (mg_general.mode)
   {
-  case BIO_DEBUG :
-    printf("Mode:           DEBUG\n");
+  case BIO_XDR :
+    printf("Mode:           XDR\n");
     break;
   case BIO_ASCII :
     printf("Mode:           ASCII\n");

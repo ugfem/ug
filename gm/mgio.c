@@ -273,7 +273,7 @@ int Write_OpenMGFile (char *filename, int rename)
 int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
 {
   /* initialize basic i/o */
-  if (Bio_Initialize(stream,BIO_ASCII)) return (1);
+  if (Bio_Initialize(stream,BIO_ASCII,'r')) return (1);
 
   /* head always in ACSII */
   if (Bio_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_TITLE_LINE)!=0) return (1);
@@ -281,7 +281,7 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
   mg_general->mode                = intList[0];
 
   /* re-initialize basic i/o */
-  if (Bio_Initialize(stream,mg_general->mode)) return (1);
+  if (Bio_Initialize(stream,mg_general->mode,'r')) return (1);
 
   /* now special mode */
   if (Bio_Read_string(mg_general->version)) return (1);
@@ -337,7 +337,7 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
 int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
 {
   /* initialize basic i/o */
-  if (Bio_Initialize(stream,BIO_ASCII)) return (1);
+  if (Bio_Initialize(stream,BIO_ASCII,'w')) return (1);
 
   /* head always in ACSII */
   if (Bio_Write_string(MGIO_TITLE_LINE)) return (1);
@@ -345,7 +345,7 @@ int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
   if (Bio_Write_mint(1,intList)) return (1);
 
   /* initialize basic i/o */
-  if (Bio_Initialize(stream,mg_general->mode)) return (1);
+  if (Bio_Initialize(stream,mg_general->mode,'w')) return (1);
 
   /* now special mode */
   if (Bio_Write_string(mg_general->version)) return (1);

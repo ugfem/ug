@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <rpc/xdr.h>
 
 #include "general.h"
 
@@ -71,6 +72,7 @@ typedef int (*RW_string_proc)(char *string);
 static FILE *stream;
 static int n_byte;
 static fpos_t pos;
+static XDR xdrs;
 
 
 /* low level read/write functions */
@@ -93,51 +95,49 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-static int DEBUG_Read_mint (int n, int *intList)
+static int XDR_Read_mint (int n, int *intList)
 {
   int i;
 
   for (i=0; i<n; i++)
-    if (fscanf(stream,"%d\n",intList+i)!=1) return (1);
+    if (!xdr_int(&xdrs,&(intList[i]))) return (1);
   return (0);
 }
 
-static int DEBUG_Write_mint (int n, int *intList)
+static int XDR_Write_mint (int n, int *intList)
 {
   int i,m;
 
   for (i=0; i<n; i++)
   {
-    m = fprintf(stream,"%d\n",intList[i]);
-    if (m<0) return (1);
-    n_byte += m;
+    if (!xdr_int(&xdrs,&(intList[i]))) return (1);
+    n_byte += 4;
   }
   return (0);
 }
 
-static int DEBUG_Read_mdouble (int n, double *doubleList)
+static int XDR_Read_mdouble (int n, double *doubleList)
 {
   int i;
 
   for (i=0; i<n; i++)
-    if (fscanf(stream,"%lg\n",doubleList+i)!=1) return (1);
+    if (!xdr_double(&xdrs,&(doubleList[i]))) return (1);
   return (0);
 }
 
-static int DEBUG_Write_mdouble (int n, double *doubleList)
+static int XDR_Write_mdouble (int n, double *doubleList)
 {
   int i,m;
 
   for (i=0; i<n; i++)
   {
-    m = fprintf(stream,"%lg\n",doubleList[i]);
-    if (m<0) return (1);
-    n_byte += m;
+    if (!xdr_double(&xdrs,&(doubleList[i]))) return (1);
+    n_byte += 8;
   }
   return (0);
 }
 
-static int DEBUG_Read_string (char *string)
+static int XDR_Read_string (char *string)
 {
   int i,len;
 
@@ -155,7 +155,7 @@ static int DEBUG_Read_string (char *string)
   return (0);
 }
 
-static int DEBUG_Write_string (char *string)
+static int XDR_Write_string (char *string)
 {
   int i,m,len;
 
@@ -336,19 +336,22 @@ static int BIN_Write_string (char *string)
 /*																			*/
 /****************************************************************************/
 
-int Bio_Initialize (FILE *file, int mode)
+int Bio_Initialize (FILE *file, int mode, char rw)
 {
   stream = file;
 
   switch (mode)
   {
-  case BIO_DEBUG :
-    Read_mint       = DEBUG_Read_mint;
-    Read_mdouble = DEBUG_Read_mdouble;
-    Read_string = DEBUG_Read_string;
-    Write_mint      = DEBUG_Write_mint;
-    Write_mdouble = DEBUG_Write_mdouble;
-    Write_string = DEBUG_Write_string;
+  case BIO_XDR :
+    if (rw=='r') xdrstdio_create(&xdrs,file,XDR_DECODE);
+    else if (rw=='w') xdrstdio_create(&xdrs,file,XDR_ENCODE);
+    else return (1);
+    Read_mint       = XDR_Read_mint;
+    Read_mdouble = XDR_Read_mdouble;
+    Read_string = XDR_Read_string;
+    Write_mint      = XDR_Write_mint;
+    Write_mdouble = XDR_Write_mdouble;
+    Write_string = XDR_Write_string;
     break;
   case BIO_ASCII :
     Read_mint       = ASCII_Read_mint;

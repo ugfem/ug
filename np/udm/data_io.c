@@ -498,7 +498,7 @@ INT SaveData (MULTIGRID *theMG, char *name, INT rename, char *type, INT number, 
 
   /* open file */
   nparfiles = procs;
-  if (strcmp(type,"dbg")==0) mode = BIO_DEBUG;
+  if (strcmp(type,"xdr")==0) mode = BIO_XDR;
   else if (strcmp(type,"asc")==0) mode = BIO_ASCII;
   else if (strcmp(type,"bin")==0) mode = BIO_BIN;
   else return (1);
