@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+
 /* Use prototypes in function declarations. */
 #define YY_USE_PROTOS
 
@@ -97,6 +98,8 @@ typedef struct ng_buffer_state *YY_BUFFER_STATE;
 
 extern int ngleng;
 extern FILE *ngin, *ngout;
+
+int ngerror (char *s);
 
 #define EOB_ACT_CONTINUE_SCAN 0
 #define EOB_ACT_END_OF_FILE 1
@@ -392,6 +395,11 @@ char *ngtext;
 #include "ng.h"
 #include "ngin-yacc.h"
 
+#include "namespace.h"
+
+USING_UG_NAMESPACES
+
+
 static int noline=1;
 
 /* data for CVS */
@@ -406,7 +414,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 #ifndef YY_SKIP_YYWRAP
 #ifdef __cplusplus
-extern "C" int ngwrap YY_PROTO(( void ));
+/* extern "C" int ngwrap YY_PROTO(( void )); */
+extern int ngwrap YY_PROTO(( void ));
 #else
 extern int ngwrap YY_PROTO(( void ));
 #endif
@@ -1594,9 +1603,9 @@ int main()
 #line 61 "ngin.l"
 
 
-NP_Error (int *line, char *text)
+int NP_Error (int *line, char *text)
 {
   *line=noline;
   strcpy(text,ngtext);
-  return;
+  return 0;
 }

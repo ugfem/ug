@@ -50,6 +50,12 @@
 
 #include "ng.h"
 
+#include "namespace.h"
+
+USING_UG_NAMESPACES
+
+
+
 #define alloca(p)               malloc(p)
 #define SP_COPY(d,s)    {(d)->surf_id=(s)->surf_id; \
                          (d)->tri_id=(s)->tri_id; \
@@ -63,6 +69,11 @@ static BND_NODE BndNode;
 static INNER_NODE InnerNode;
 static ELEM_FACE ElemFace;
 static NG_ELEMENT Elem;
+
+int ngerror (char *s);
+int nglex (void);
+int NP_Error (int *line, char *text);
+void ngbreak (void);
 
 
 
@@ -1125,12 +1136,12 @@ ngerrhandle:
 
 
 
-ngwrap (char *s)
+int ngwrap (void)
 {
   return (1);
 }
 
-ngerror (char *s)
+int ngerror (char *s)
 {
   int line;
   char text[128];

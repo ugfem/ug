@@ -60,11 +60,11 @@ KEY_TEND        	;
 
 %%
 
-NP_Error (int *line, char *text)
+int NP_Error (int *line, char *text)
 {
 	*line=noline;
 	strcpy(text,yytext);
-	return;
+	return 0;
 }
 
 
