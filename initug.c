@@ -32,8 +32,8 @@
 #include <stdio.h>
 
 /* low module */
-#include "misc.h"
 #include "initlow.h"
+#include "misc.h"
 #include "general.h"
 
 /* parallelization module */
@@ -50,9 +50,6 @@
 /* grid manager module */
 #include "initgm.h"
 #include "switch.h"
-
-/* grid generator module */
-#include "ggmain.h"
 
 /* numerics module */
 #include "initnumerics.h"
@@ -154,18 +151,6 @@ INT InitUg (int *argcp, char ***argvp)
 
     return (1);
   }
-
-    #ifdef __TWODIM__
-  /* init the gg module */
-  if ((err=InitGG())!=0)
-  {
-    printf("ERROR in InitUg while InitGG (line %d): called routine line %d\n",
-           (int) HiWrd(err), (int) LoWrd(err));
-    printf ("aborting ug\n");
-
-    return (1);
-  }
-    #endif
 
   /* init the numerics module */
   if ((err=InitNumerics())!=0)
