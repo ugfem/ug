@@ -214,6 +214,9 @@ INT ce_ELEMORD;
 #define MAT_XC(col)	(col)
 #define MAT_YC(row)	(MAT_maxrow-(row))
 
+/* miscellanea */
+#define SMALL  1E-10
+
 /****************************************************************************/
 /*                                                                          */
 /*  structs for ordering elements                                           */
@@ -1936,29 +1939,29 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 	DOUBLE determinante, c1, c2;
 	
 	/* check if one endpoint of line0 coincide with one endpoint of line1 */
-	if (ABS(P1.x - P3.x)<SMALL_D && ABS(P1.y - P3.y)<SMALL_D) return(0);
-	if (ABS(P1.x - P4.x)<SMALL_D && ABS(P1.y - P4.y)<SMALL_D) return(0);
-	if (ABS(P2.x - P3.x)<SMALL_D && ABS(P2.y - P3.y)<SMALL_D) return(0);
-	if (ABS(P2.x - P4.x)<SMALL_D && ABS(P2.y - P4.y)<SMALL_D) return(0);
+	if (ABS(P1.x - P3.x)<SMALL && ABS(P1.y - P3.y)<SMALL) return(0);
+	if (ABS(P1.x - P4.x)<SMALL && ABS(P1.y - P4.y)<SMALL) return(0);
+	if (ABS(P2.x - P3.x)<SMALL && ABS(P2.y - P3.y)<SMALL) return(0);
+	if (ABS(P2.x - P4.x)<SMALL && ABS(P2.y - P4.y)<SMALL) return(0);
 	
 	flags1 = 0;
-	if (ABS(P1.x - P2.x)<SMALL_D) flags1 |= 1;
-	if (ABS(P1.y - P2.y)<SMALL_D) flags1 |= 2;
-	if (ABS(P3.x - P4.x)<SMALL_D) flags1 |= 4;
-	if (ABS(P3.y - P4.y)<SMALL_D) flags1 |= 8;
+	if (ABS(P1.x - P2.x)<SMALL) flags1 |= 1;
+	if (ABS(P1.y - P2.y)<SMALL) flags1 |= 2;
+	if (ABS(P3.x - P4.x)<SMALL) flags1 |= 4;
+	if (ABS(P3.y - P4.y)<SMALL) flags1 |= 8;
 	
 	switch (flags1)
 	{
 		case(0):
 			/* the natural case */
 			determinante = (P2.y-P1.y)*(P4.x-P3.x) - (P2.x-P1.x)*(P4.y-P3.y);
-			if (ABS(determinante)<SMALL_D)
+			if (ABS(determinante)<SMALL)
 			{
 				/* the lines are parallel */
 				/* check if P1 (or P2) is on line1 */
 				c1 = (P1.y-P3.y)/(P4.y-P3.y);
 				c2 = (P2.y-P3.y)/(P4.y-P3.y);
-				if (ABS((1.0-c1)*P3.x + c1*P4.x - P1.x)<SMALL_D)
+				if (ABS((1.0-c1)*P3.x + c1*P4.x - P1.x)<SMALL)
 				{
 					if (((c1<=0.0) && (c2<=0.0)) || ((1.0<=c1) && (1.0<=c2)))
 						return (0);
@@ -2011,7 +2014,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 		case(3):
 			/* line0 is degenerated */
 			*beta = (P1.y-P3.y)/(P4.y-P3.y);
-			if (ABS((1.0-(*beta))*P3.x + (*beta)*P4.x - P1.x)<SMALL_D)
+			if (ABS((1.0-(*beta))*P3.x + (*beta)*P4.x - P1.x)<SMALL)
 				if (0.0<*beta && *beta<1.0)
 				{
 					*alpha = 0.5;
@@ -2027,7 +2030,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 			return (0);
 		case(5):
 			/* both lines are vertical */
-			if (ABS(P1.x - P3.x)<SMALL_D)
+			if (ABS(P1.x - P3.x)<SMALL)
 			{
 				c1 = (P1.y-P3.y)/(P4.y-P3.y);
 				if (0.0<c1 && c1<1.0)
@@ -2070,7 +2073,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 			return (0);
 		case(7):
 			/* line0 is degenerated, line1 is vertical */
-			if (ABS(P1.x - P3.x)<SMALL_D)
+			if (ABS(P1.x - P3.x)<SMALL)
 			{
 				*alpha = 0.5;
 				*beta  = (P1.y-P3.y)/(P4.y-P3.y);
@@ -2094,7 +2097,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 			return (0);
 		case(10):
 			/* both lines are horizontal */
-			if (ABS(P1.y - P3.y)<SMALL_D)
+			if (ABS(P1.y - P3.y)<SMALL)
 			{
 				c1 = (P1.x-P3.x)/(P4.x-P3.x);
 				if (0.0<c1 && c1<1.0)
@@ -2130,7 +2133,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 			return (0);
 		case(11):
 			/* line0 is degenerated, line1 is horizontal */
-			if (ABS(P1.y - P3.y)<SMALL_D)
+			if (ABS(P1.y - P3.y)<SMALL)
 			{
 				*alpha = 0.5;
 				*beta  = (P1.x-P3.x)/(P4.x-P3.x);
@@ -2141,7 +2144,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 		case(12):
 			/* line1 is degenerated */
 			*alpha = (P3.y-P1.y)/(P2.y-P1.y);
-			if (ABS((1.0-(*alpha))*P1.x + (*alpha)*P2.x - P3.x)<SMALL_D)
+			if (ABS((1.0-(*alpha))*P1.x + (*alpha)*P2.x - P3.x)<SMALL)
 				if (0.0<*alpha && *alpha<1.0)
 				{
 					*beta = 0.5;
@@ -2150,7 +2153,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 			return (0);
 		case(13):
 			/* line0 is vertical, lin1 is degenerated */
-			if (ABS(P1.x - P3.x)<SMALL_D)
+			if (ABS(P1.x - P3.x)<SMALL)
 			{
 				*alpha = (P3.y-P1.y)/(P2.y-P1.y);
 				*beta  = 0.5;
@@ -2160,7 +2163,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 			return (0);
 		case(14):
 			/* line0 is horizontal, lin1 is degenerated */
-			if (ABS(P1.y - P3.y)<SMALL_D)
+			if (ABS(P1.y - P3.y)<SMALL)
 			{
 				*alpha = (P3.x-P1.x)/(P2.x-P1.x);
 				*beta  = 0.5;
@@ -2170,7 +2173,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 			return (0);
 		case(15):
 			/* both lines are degenerated */
-			if (ABS(P1.x - P3.x)<SMALL_D && ABS(P1.y - P3.y)<SMALL_D)
+			if (ABS(P1.x - P3.x)<SMALL && ABS(P1.y - P3.y)<SMALL)
 			{
 				*alpha = 0.5;
 				*beta  = 0.5;
@@ -12752,7 +12755,7 @@ static INT EW_SelectVec3D (DRAWINGOBJ *q)
    */
 /****************************************************************************/
 
-static void CalcViewableSides (ELEMENT *theElement)
+static void CalcViewableSides(ELEMENT *theElement)
 {
 	DOUBLE_VECTOR Vector, Vector01, Vector02, Vector03, ViewDirection;
 	INT Viewablility;
@@ -13037,14 +13040,16 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 		{
 			NbElement = NBELEM(SonElement,j);
 			if (NbElement != NULL)
-				if (EFATHER(NbElement)==theElement && (!VIEWABLE(SonElement,j))) 
+				if (EFATHER(NbElement)==theElement && (!VIEWABLE(SonElement,j))) {
 					Count++;
+				}
 		}
 		if (Count)
 			SETCOUNT(SonElement,Count);
 		else
 			table[ActualPosition++] = SonElement;
 	}
+
 	NewShellBegin = ActualPosition;
 	
 	/* create list */
@@ -13570,9 +13575,9 @@ static INT CompareElementsXSH(INT mu, INT nu)
 	COORD_POINT projection[2][4];
 
 	/* ignore if boundary sides don't fit */
-	if (Z_MAX(mu)-Z_MIN(nu) <= SMALL_C && !(VIEWABLE_BSIDE(mu) && HIDDEN_BSIDE(nu)))
+	if (Z_MAX(mu)-Z_MIN(nu) <= SMALL && !(VIEWABLE_BSIDE(mu) && HIDDEN_BSIDE(nu)))
 		return 0;
-	if (Z_MAX(nu)-Z_MIN(mu) <= SMALL_C && !(VIEWABLE_BSIDE(nu) && HIDDEN_BSIDE(mu)))
+	if (Z_MAX(nu)-Z_MIN(mu) <= SMALL && !(VIEWABLE_BSIDE(nu) && HIDDEN_BSIDE(mu)))
 		return 0;
 	if (!(VIEWABLE_BSIDE(mu) && HIDDEN_BSIDE(nu)) &&
 		!(VIEWABLE_BSIDE(nu) && HIDDEN_BSIDE(mu)))
@@ -15496,6 +15501,8 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 				UserWrite("Falling back on slow method ...\n");
 				err = OrderFathersSEL(mg, table);
 			}
+			else if (err == 2) 
+				UserWrite("Insufficient memory to order coarse grid.\n");
 			break;
 		case 1:
 			err = OrderFathersNNS(mg, table);
@@ -15504,6 +15511,8 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 				UserWrite("Falling back on slow method ...\n");
 				err = OrderFathersSEL(mg, table);
 			}
+			else if (err == 2) 
+				UserWrite("Insufficient memory to order coarse grid.\n");
 			break;
 		case 2:
 			err = OrderFathersSEL(mg, table);
@@ -15514,6 +15523,8 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 		err = OrderFathersXSH(mg, table);
 		if (err == 1) 
 			UserWrite("Cycle detected while ordering coarse grid.\n");
+		else if (err == 2)
+			UserWrite("Insufficient memory to order coarse grid.\n");
 		Release(heap, FROM_TOP);
 	}
 	Broadcast(&err, sizeof(err));
@@ -15572,12 +15583,12 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 	WOP_MG_DATA *myMGdata;
 	MEM offset;
 	INT i;
-#	ifdef ModelP
+    #ifdef ModelP
 	HEAP *heap;
 	GRID *grid;
 	ELEMENT *p;
 	INT err;
-#	endif
+    #endif
 
 	/* check if multigrid is already ordered */
 	offset   = OFFSET_IN_MGUD(wopMGUDid);
@@ -15623,7 +15634,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 	fault:
 	err = UG_GlobalMaxINT(err);
 	if (err) {
-		UserWrite("Insufficient memory for ordering elements.\n");
+		UserWrite("Insufficient memory to order elements.\n");
 		Release(heap, FROM_TOP);
 		return 1;
 	}
@@ -15632,7 +15643,6 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 
    	/* order elements on level zero */
 	if (OrderCoarseGrid(mg)) {
-		UserWrite("Insufficient memory to order elements.\n");
 		#ifdef ModelP
 		Release(heap, FROM_TOP);
 		#endif
