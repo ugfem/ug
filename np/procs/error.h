@@ -55,6 +55,7 @@ typedef struct {
   INT nel;                                  /* number of surface elements       */
   INT refine;                               /* nb. el. marked for refinement    */
   INT coarse;                               /* nb. el. marked for coarsening    */
+  DOUBLE step;                              /* new timestepsize                 */
   DOUBLE error;                             /* error estimate                   */
 } ERESULT;
 
