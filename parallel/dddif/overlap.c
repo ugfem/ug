@@ -423,7 +423,7 @@ INT     ConnectGridOverlap (GRID *theGrid)
             ok = 1;
           }
           /* reset unsymmetric pointer relation ship */
-          /* TODO: delete this is done in gridcons.c
+          /* TODO: delete this is done in ElementObjMkCons()
                                                   else
                                                   {
                                                           for (k=0; k<SIDES_OF_ELEM(NbSon); k++)
