@@ -70,6 +70,7 @@ static int DetermineNbs( DDD_OBJ obj)
 
 
 int ConstructColoringGraph( DDD_ATTR grid_attr)
+// returns the number of neighbors
 {
 	int i;
 	int helpNb[FAMGColorMaxProcs];
@@ -96,8 +97,26 @@ int ConstructColoringGraph( DDD_ATTR grid_attr)
 	ENDDEBUG
 	assert(FAMGColorMaxNb>=NrNb);	// otherwise increase the constant FAMGColorMaxNb 
 
-	return 0;
+	return NrNb;
 }
+
+inline double CalculateWeight( int penr, int OrderingFunctionType )
+{
+	switch( OrderingFunctionType )
+	{
+		case 1:
+			return penr;
+		case 2:
+			srand(penr+1);
+			return rand() / (double)(1<<15);
+		case 3:
+			srand(penr+1);
+			return NrNb + rand() / (double)(1<<15);
+		default:
+			cout << "CalculateWeight(): unknown ordering function type" << endl << fflush;
+			abort();
+	}
+}	
 
 static int ColorCompare( const void *c1, const void *c2 )
 {
@@ -112,41 +131,25 @@ int ConstructColoring( int OrderingFunctionType )
 //		Robert K. Gjertsen jr., Mark T. Jones and Paul E. Plassmann
 //		Parallel Heuristics for Improved, Balanced Graph Colorings
 //		to appear in journal of Parallel and Distributed Computing
+// with a new procedure for determining the weights (choose weight
+// in such a way that it depends in a pseudorandom way only from 
+// the pe number; thus a processor can calculate the weights 
+// for all its neighbors without communication).
 {
 	int i, res, j;	
 	VChannelPtr NbCh[FAMGColorMaxNb];		// communication channels to the neighbor Pe's
 	VChannelPtr ch;
 	double MyWeight;						// weight of this Pe (see PLF algorithm); must be >= 0
+	double NbWeight;						// temp: weight of the neighbor
 	int SendQueue[FAMGColorMaxNb];			// list of the index in Nb of the neighbors that get a color-message from me 
 	int Recv[FAMGColorMaxNb];				// 1 for neighbors from which to receive a weight-message, 
 											// 2 for neighbors from which to receive a color-message
 	int NrSend = 0;							// number of entries in SendQueue (i.e. neighbors with a smaller weight than me)
 	int NrWait = 0;							// number of neighbors with a larger weight than me (from which I receive their color-messages)
 	FAMGColor NbColor[FAMGColorMaxNb];		// list of colors of the neighbors with a larger weight than me
-	double NbWeight[FAMGColorMaxNb];		// list of weights of the neighbors
 	msgid MsgOutId[FAMGColorMaxNb];			// id of async send's
 	msgid MsgInId[FAMGColorMaxNb];			// id of async recv's
 	
-	switch( OrderingFunctionType )
-	{
-		case 1:
-			FAMGMyColor = me;
-			return 0;
-		case 2:
-			srand(me+1);
-			MyWeight = rand() / (double)(1<<15);
-			break;
-		case 3:
-			srand(me+1);
-			MyWeight = NrNb + rand() / (double)(1<<15);
-			break;
-		default:
-			cout << "ConstructColoring(): unknown ordering function type" << endl << fflush;
-			abort();
-	}
-	
-	PRINTDEBUG(np,2,(PFMT " MyWeight %g\n", me, MyWeight));
-
 	if( NrNb > FAMGColorMaxNb )
 	{
 		cout << "ConstructColoring(): error Number of neighbors ("<<NrNb<<") larger than maximum <<FAMGColorMaxNb<<. Increase FAMGColorMaxNb"<<endl<<fflush;
@@ -154,19 +157,27 @@ int ConstructColoring( int OrderingFunctionType )
 	}
 	
 	//
-	// construct the communication channels
+	// construct the communication channels as early as possible
 	//
 	for( i = 0; i < NrNb; i++ )
 		NbCh[i] = ConnASync( Nb[i], 7643 );		// just a silly number
 	
-	//
-	// communicate weights with all neighbors
-	//
+	MyWeight = CalculateWeight( me, OrderingFunctionType );
+	PRINTDEBUG(np,2,(PFMT " MyWeight %g\n", me, MyWeight));
+
 	for( i = 0; i < NrNb; i++ )
 	{
+		//
+		// calculate weight for neighbor
+		//
+		NbWeight = CalculateWeight( Nb[i], OrderingFunctionType );
+		PRINTDEBUG(np,2,(PFMT " PE %d has weight %g\n", me, Nb[i], NbWeight));
+		
 		ch = NbCh[i];
 		
+		//
 		// check success of constructing the channel
+		//
 		while( (res=InfoAConn(ch)) == 0)
 			;	// wait until completion
 		if( res != 1 )
@@ -175,80 +186,37 @@ int ConstructColoring( int OrderingFunctionType )
 			abort();
 		}
 		
-		// now ready to send
-		MsgOutId[i] = SendASync( ch, &MyWeight, sizeof MyWeight, &res );
-		if( res != 0 )
+		//
+		// put receive calls for color
+		//
+		if( MyWeight < NbWeight )
 		{
-			cout << "ConstructColoring(): error "<<res<<" in SendASync myweight for PE "<<Nb[i]<<endl<<fflush;
-			abort();
-		}
-		assert(MsgOutId[i]!=-1);
-		
-		// receive 
-		MsgInId[i] = RecvASync( ch, NbWeight+i, sizeof(double), &res );
-		if( res != 0 )
-		{
-			cout << "ConstructColoring(): error "<<res<<" in RecvASync weights for PE "<<Nb[i]<<endl<<fflush;
-			abort();
-		}	
-		
-		Recv[i] = 1;	// receive a weight message from this neighbor
-	}
-	
-	//
-	// received weights from all neighbors? put receive calls for color.
-	//
-	j = NrNb;
-	while( j>0 )
-		for( i = 0; i < NrNb; i++ )
-		{
-			if( Recv[i] == 1 ) // pending receive weight
+			// receive color
+			MsgInId[i] = RecvASync( ch, NbColor+i, sizeof(FAMGColor), &res );
+			if( res != 0 )
 			{
-				ch = NbCh[i];
-				res = InfoARecv( ch, MsgInId[i] );
-				
-				if( res == 1 )
-				{	// message arrived
-					j--;
-					Recv[i] = 0;	// reset
-					
-					PRINTDEBUG(np,2,(PFMT " recv weight %g from %d (i=%d)\n", me, NbWeight[i], Nb[i], i));
-					if( MyWeight < NbWeight[i] )
-					{
-						// receive color
-						MsgInId[i] = RecvASync( ch, NbColor+i, sizeof(FAMGColor), &res );
-						if( res != 0 )
-						{
-							cout << "ConstructColoring(): error "<<res<<" in RecvASync color for PE "<<Nb[i]<<endl<<fflush;
-							abort();
-						}	
-						assert(MsgInId[i]!=-1);
-						NrWait++;
-						Recv[i] = 2;	// receive a color message from this neighbor
-					}
-					else
-					#ifdef Debug
-					if( MyWeight==NbWeight[i] )
-					{
-						cout << "ConstructColoring(): error: received weight "<<NbWeight[i]<<" from PE "<<Nb[i]<<". Same as my weight!"<<endl<<fflush;
-						abort();
-					}
-					else
-					#endif						
-						SendQueue[NrSend++] = i;
-					
-					if( j==0 )
-						break;					
-				}
-				else if( res != 0 )
-				{
-					cout << "ConstructColoring(): error: return status "<<res<<" in InfoARecv for weight from PE "<<Nb[i]<<". Same as my weight!"<<endl<<fflush;
-					abort();
-				}
-			}
-
+				cout << "ConstructColoring(): error "<<res<<" in RecvASync color for PE "<<Nb[i]<<endl<<fflush;
+				abort();
+			}	
+			assert(MsgInId[i]!=-1);
+			NrWait++;
+			Recv[i] = 2;	// receive a color message from this neighbor
 		}
-	
+		else
+		#ifdef Debug
+		if( MyWeight==NbWeight )
+		{
+			cout << "ConstructColoring(): error: received weight "<<NbWeight<<" from PE "<<Nb[i]<<". Same as my weight!"<<endl<<fflush;
+			abort();
+		}
+		else
+		#endif
+		{
+			Recv[i] = 0;	// don't receive a color message from this neighbor
+			SendQueue[NrSend++] = i;	// to the predecessor pe the color will be sent
+		}
+	}
+		
 	//
 	// received color from all neighbors?
 	//
@@ -322,32 +290,6 @@ int ConstructColoring( int OrderingFunctionType )
 		FAMGMyColor++;		// introduce a new color
 	
 	PRINTDEBUG(np,2,(PFMT " my color %d\n", me, FAMGMyColor));
-	
-	//
-	// check if first sends are finished
-	//
-	j = NrNb;
-	while( j>0 )
-		for( i = 0; i < NrNb; i++ )
-		{
-			if( MsgOutId[i] != -1 ) // pending send weight
-			{
-				res = InfoASend( NbCh[i], MsgOutId[i] );
-				
-				if( res == 1 )
-				{	// message sended successfully
-					j--;
-					MsgOutId[i] = -1;	// reset
-					if( j==0 )
-						break;
-				}
-				else if( res != 0 )
-				{
-					cout << "ConstructColoring(): error: return status "<<res<<" in InfoASend for weight from PE "<<Nb[i]<<endl<<fflush;
-					abort();
-				}
-			}
-		}
 	
 	//
 	// send FAMGMyColor to all neighbors with less weight
