@@ -2077,6 +2077,17 @@ static INT InvertFullMatrix3 (INT n, DOUBLE mat[MAX_PATCH][MAX_PATCH],
 
 NP_ITER *currNP;
 
+#ifdef __MWCW__
+static DOUBLE matr[MAX_PATCH][MAX_PATCH];
+static DOUBLE lmat[MAX_PATCH];
+static DOUBLE imatr[MAX_PATCH];
+static DOUBLE cor[MAX_PATCH];
+static DOUBLE def[MAX_PATCH];
+static VECTOR *w[MAX_VPATCH];
+static INT ucomp[MAX_VPATCH];
+static INT utype[MAX_VPATCH];
+#endif
+
 INT l_block_collect (GRID *theGrid,
                      VECDATA_DESC *ux, VECDATA_DESC *px,
                      VECDATA_DESC *ub, VECDATA_DESC *pb,
@@ -2105,16 +2116,18 @@ INT l_block_collect (GRID *theGrid,
   {
     INT ptype = VTYPE(v);
     INT pcomp = VD_NCMPS_IN_TYPE(pb,ptype);
-    DOUBLE mat[MAX_PATCH][MAX_PATCH];
+            #ifndef __MWCW__
+    DOUBLE matr[MAX_PATCH][MAX_PATCH];
     DOUBLE lmat[MAX_PATCH];
-    DOUBLE imat[MAX_PATCH];
+    DOUBLE imatr[MAX_PATCH];
     DOUBLE cor[MAX_PATCH];
     DOUBLE def[MAX_PATCH];
-    DOUBLE s = 0.0;
     VECTOR *w[MAX_VPATCH];
-    MATRIX *m;
     INT ucomp[MAX_VPATCH];
     INT utype[MAX_VPATCH];
+                #endif
+    DOUBLE s = 0.0;
+    MATRIX *m;
     INT n = pcomp;
     INT cnt = 0;
     INT i,j,k,l;
@@ -2132,20 +2145,20 @@ INT l_block_collect (GRID *theGrid,
 
     for (i=0; i<MAX_PATCH; i++)
       for (j=0; j<MAX_PATCH; j++)
-        mat[i][j] = 0.0;
+        matr[i][j] = 0.0;
 
     /*
        printf("A ");
        for (i=0; i<MAX_PATCH; i++)
-        printf("%8.1e",mat[0][i]);
+        printf("%8.1e",matr[0][i]);
        printf("\n");
      */
 
     m = START(v);
     for (i=0; i<pcomp; i++) {
       for (j=0; j<pcomp; j++)
-        mat[i][j] = s3 *
-                    MVALUE(m,MD_IJ_CMP_OF_RT_CT(ppA,ptype,ptype,i,j));
+        matr[i][j] = s3 *
+                     MVALUE(m,MD_IJ_CMP_OF_RT_CT(ppA,ptype,ptype,i,j));
     }
     for (; m!=NULL; m=NEXT(m))
     {
@@ -2156,27 +2169,27 @@ INT l_block_collect (GRID *theGrid,
       if (n+ucomp[cnt] > MAX_PATCH) break;
       for (i=0; i<ucomp[cnt]; i++) {
         for (j=0; j<ucomp[cnt]; j++)
-          mat[n+i][n+j] = s1 *
-                          MVALUE(START(w[cnt]),MD_IJ_CMP_OF_RT_CT(uuA,utype[cnt],
-                                                                  utype[cnt],i,j));
+          matr[n+i][n+j] = s1 *
+                           MVALUE(START(w[cnt]),MD_IJ_CMP_OF_RT_CT(uuA,utype[cnt],
+                                                                   utype[cnt],i,j));
         for (j=0; j<pcomp; j++) {
-          mat[n+i][j] = s2 *
-                        MVALUE(MADJ(m),MD_IJ_CMP_OF_RT_CT(upA,utype[cnt],ptype,
-                                                          i,j));
-          mat[j][n+i] = s2 *
-                        MVALUE(m,MD_IJ_CMP_OF_RT_CT(puA,ptype,utype[cnt],
-                                                    j,i));
+          matr[n+i][j] = s2 *
+                         MVALUE(MADJ(m),MD_IJ_CMP_OF_RT_CT(upA,utype[cnt],ptype,
+                                                           i,j));
+          matr[j][n+i] = s2 *
+                         MVALUE(m,MD_IJ_CMP_OF_RT_CT(puA,ptype,utype[cnt],
+                                                     j,i));
         }
       }
       /*
-             printf("%d:mat %d %d type %d mtp %d comp %d val %8.1e\n",
+             printf("%d:matr %d %d type %d mtp %d comp %d val %8.1e\n",
                                 me,VINDEX(v),VINDEX(w[cnt]),utype[cnt],
                                 MTP(ptype,utype[cnt]),
                                 MD_IJ_CMP_OF_RT_CT(puA,ptype,utype[cnt],0,1),
                  MVALUE(m,MD_IJ_CMP_OF_RT_CT(puA,ptype,utype[cnt],0,1)));
                       printf("B ");
                       for (i=0; i<MAX_PATCH; i++)
-                          printf("%8.1e",mat[0][i]);
+                          printf("%8.1e",matr[0][i]);
                       printf("\n");
        */
 
@@ -2198,8 +2211,8 @@ INT l_block_collect (GRID *theGrid,
           if (m != NULL)
             for (k=0; k<ucomp[i]; k++)
               for (l=0; l<ucomp[j]; l++)
-                mat[n+k][n1+l] = s4 *
-                                 MVALUE(m,MD_IJ_CMP_OF_RT_CT(uuA,utype[i],utype[j],k,l));
+                matr[n+k][n1+l] = s4 *
+                                  MVALUE(m,MD_IJ_CMP_OF_RT_CT(uuA,utype[i],utype[j],k,l));
         }
         n1 += ucomp[j];
       }
@@ -2208,28 +2221,28 @@ INT l_block_collect (GRID *theGrid,
     /*
        if (me == 1) {
        printf("b %d\n",n);
-       printf("%d:mat %d %8.1e\n",me,VINDEX(v),mat[0][0]);
+       printf("%d:matr %d %8.1e\n",me,VINDEX(v),matr[0][0]);
                     for (i=0; i<n; i++) {
        for (j=0; j<n; j++)
-        printf("%8.1e",mat[i][j]);
+        printf("%8.1e",matr[i][j]);
        printf("\n");
        }
        }
-       printf("%d: mat %d =",me,VINDEX(v));
+       printf("%d: matr %d =",me,VINDEX(v));
        for (i=0; i<n; i++)
-        printf("%8.1e",mat[0][i]);
+        printf("%8.1e",matr[0][i]);
        printf("\n");
      */
 
-    if (InvertFullMatrix3(n,mat,ndata)) {
+    if (InvertFullMatrix3(n,matr,ndata)) {
       for (i=0; i<n; i++)
         for (j=0; j<n; j++)
           if (i != j)
-            mat[i][j] = 0.0;
+            matr[i][j] = 0.0;
           else
-            mat[i][i] = 1.0;
-      if (InvertFullMatrix3(n,mat,ndata)) {
-        mat[0][0] = 1.0;
+            matr[i][i] = 1.0;
+      if (InvertFullMatrix3(n,matr,ndata)) {
+        matr[0][0] = 1.0;
         RETURN(1);
       }
     }
