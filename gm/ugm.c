@@ -1750,6 +1750,13 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
       break;
     case (CORNER_NODE | (MID_NODE<<4)) :
       father_edge = NFATHEREDGE(n2);
+#ifdef ModelP
+      if (father_edge==NULL)
+      {
+        assert( GHOST(n1) || GHOST(n2) );
+        break;
+      }
+#endif
       assert(father_edge!=NULL);
       if (NBNODE(LINK0(father_edge))==NFATHER(n1) || NBNODE(LINK1(father_edge))==NFATHER(n1)) SETEDSUBDOM(pe,EDSUBDOM(father_edge));
       break;
