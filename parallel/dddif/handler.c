@@ -166,32 +166,32 @@ void VectorUpdate (DDD_OBJ obj)
 	theGrid = GRID_ON_LEVEL(dddctrl.currMG,level);
 	after = LASTVECTOR(theGrid);
 
-        /* insert in vector list */
-        if (after==NULL)
-        {
-                SUCCVC(pv) = (VECTOR*)theGrid->firstVector;
-                PREDVC(pv) = NULL;
-                if (SUCCVC(pv)!=NULL)
-                        PREDVC(SUCCVC(pv)) = pv;
-                theGrid->firstVector = (void*)pv;
-                if (theGrid->lastVector==NULL)
-                        theGrid->lastVector = (void*)pv;
-        }
+    /* insert in vector list */
+    if (after==NULL)
+    {
+        SUCCVC(pv) = (VECTOR*)theGrid->firstVector;
+        PREDVC(pv) = NULL;
+        if (SUCCVC(pv)!=NULL)
+            PREDVC(SUCCVC(pv)) = pv;
+        theGrid->firstVector = (void*)pv;
+        if (theGrid->lastVector==NULL)
+            theGrid->lastVector = (void*)pv;
+    }
+    else
+    {
+        SUCCVC(pv) = SUCCVC(after);
+        PREDVC(pv) = after;
+        if (SUCCVC(pv)!=NULL)
+            PREDVC(SUCCVC(pv)) = pv;
         else
-        {
-                SUCCVC(pv) = SUCCVC(after);
-                PREDVC(pv) = after;
-                if (SUCCVC(pv)!=NULL)
-                        PREDVC(SUCCVC(pv)) = pv;
-                else
-                        theGrid->lastVector = (void*)pv;
-                SUCCVC(after) = pv;
-        }
+            theGrid->lastVector = (void*)pv;
+        SUCCVC(after) = pv;
+    }
 
-		VSTART(pv) = NULL;
+	VSTART(pv) = NULL;
 
-        /* counters */
-        theGrid->nVector++;
+    /* counters */
+    theGrid->nVector++;
 }
 
 
@@ -201,72 +201,52 @@ void VectorXferCopy (DDD_OBJ obj, int proc, int prio)
 	int 	nmat=0;
 	MATRIX	*mat;
 	VECTOR  *vec = (VECTOR *)obj;
-	size_t  sizeArray[30]; /* TODO: define this static global TODO: take size as maximum of possible connections */
-
-	PRINTDEBUG(dddif,2,("%2d:  VectorXferCopy(): v=%x AddData nmat=%d\n",me,vec,nmat))
+	size_t  sizeArray[30]; /* TODO: define this static global TODO: take size as
+ maximum of possible connections */
 
 	for(mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
 	{
-		if (XFERMATX(mat) == COPY) 
-		{
-			PRINTDEBUG(dddif,3,("%2d: VectorXferCopy(): v=%x COPYFLAG already set for mat=%x\n",me,vec,mat))
-			continue;
-		}
-
-		if (XFERMATX(mat) == TOUCHED || MDIAG(mat))
-		{
-			/* set XFERMATX to copy */
-			SETXFERMATX(mat,COPY);
-
-			PRINTDEBUG(dddif,3,("%2d: VectorXferCopy():  v=%x mat=%x XFERMATX=%d\n",me,vec,mat,XFERMATX(mat)))
-
-			sizeArray[nmat++] = (MDIAG(mat)?MSIZE(mat):2*MSIZE(mat));
-		}
-		else 
-		{
-			SETXFERMATX(MADJ(mat),TOUCHED);
-		}
+		sizeArray[nmat++] = MSIZE(mat);
 	}
 
-	PRINTDEBUG(dddif,2,("%2d:  VectorXferCopy(): v=%x AddData nmat=%d\n",me,vec,nmat))
+
+	PRINTDEBUG(dddif,2,("%2d:  VectorXferCopy(): v=%08x/%x AddData nmat=%d\n",\
+		me,DDD_InfoGlobalId(PARHDR(vec)),vec,nmat))
 
 	DDD_XferAddDataX(nmat,TypeMatrix,sizeArray);
 }
 
 
 
-void VectorGatherConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
+void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 {
 	VECTOR *vec = (VECTOR *)obj;
-	CONNECTION *conn;
-	int nconn=0;
-	int Size;
+	MATRIX *mat;
+	int nmat=0;
 
-	PRINTDEBUG(dddif,3,("%2d:  VectorGatherConnX(): v=%x ID=%d cnt=%d type=%d veobj=%d\n",me,vec,ID(VOBJECT(vec)),cnt,type_id,OBJT(vec)))
+	PRINTDEBUG(dddif,3,("%2d:  VectorGatherMatX(): v=%08x/%x ID=%d cnt=%d type=%d veobj=%d\n",\
+		me,DDD_InfoGlobalId(PARHDR(vec)),vec,ID(VOBJECT(vec)),cnt,type_id,OBJT(vec)))
+
 	if (cnt<=0) return;
 
-	for (conn=VSTART((VECTOR *) vec); conn!=NULL; conn=MNEXT(conn))
+	for (mat=VSTART((VECTOR *) vec); mat!=NULL; mat=MNEXT(mat))
 	{
-		if (XFERMATX(conn)==COPY)
+		int Size;
+
+		IFDEBUG(dddif,0)
+		if (cnt<nmat+1)
 		{
-			IFDEBUG(dddif,0)
-			if (cnt<nconn+1)
-			{
-				PRINTDEBUG(dddif,0,("%2d:  VectorGatherConnX(): v=%x cnt=%d nconn=%d type=%d veobj=%d\n",me,vec,cnt,nconn,type_id,OBJT(vec)))
-				return;
-			}
-			ENDDEBUG
+			PRINTDEBUG(dddif,0,("%2d:  VectorGatherMatX(): v=%x cnt=%d nmat=%d type=%d veobj=%d\n",me,vec,cnt,nmat,type_id,OBJT(vec)))
+			return;
+		}
+		ENDDEBUG
 
-			Size = (MDIAG(conn)?MSIZE(conn):2*MSIZE(conn));
-			PRINTDEBUG(dddif,3,("%2d:  VectorGatherConnX(): v=%x conn=%x Size=%d nodetoID=%d\n",me,vec,conn,Size,ID(VOBJECT(MDEST(conn)))))
-			memcpy(Data[nconn],MMYCON(conn),Size);
+		Size = MSIZE(mat);
+		memcpy(Data[nmat],mat,Size);
 
-			/* save pointer to destination vector */
-			if (MDEST(CMATRIX0(MMYCON(conn)))==vec && !MDIAG(conn)) 
-				MDEST(CMATRIX0((CONNECTION *)Data[nconn])) = MDEST(conn);
+		PRINTDEBUG(dddif,3,("%2d:  VectorGatherMatX(): v=%x mat=%x Size=%d nodetoID=%d\n",me,vec,mat,Size,ID(VOBJECT(MDEST(mat)))))
 
-			nconn++;
-		}				
+		nmat++;
 	}
 }
 
@@ -274,136 +254,155 @@ void VectorGatherConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 {
 	VECTOR *vec = (VECTOR *)obj;
-	CONNECTION *conn,*prev;
+	CONNECTION *first=NULL, *last=NULL;
 	GRID *theGrid = NULL;
-	int nconn=0;
-	INT RootType, DestType, MType, ds, Diag, Size, i;
+	int i, new_conns = 0;
 	int  level = DDD_InfoAttr(PARHDR(vec));
 
 	theGrid = GRID_ON_LEVEL(dddctrl.currMG,level);
-	Diag = 1; /* TODO: Is diagonal element?? */
-	ds;   /* TODO: How big is ds?        */
 
-	PRINTDEBUG(dddif,3,("%2d:  VectorScatterConnX(): v=%x cnt=%d type=%d veobj=%d\n",me,vec,cnt,type_id,OBJT(vec)))
+	PRINTDEBUG(dddif,3,("%2d:  VectorScatterConnX(): v=%08x/%x cnt=%d type=%d veobj=%d\n",\
+		me,DDD_InfoGlobalId(PARHDR(vec)),vec,cnt,type_id,OBJT(vec)))
+
 	if (cnt<=0) return;
 
-	Diag  = MDIAG((MATRIX *)Data[nconn]);
-	Size  = MSIZE((MATRIX *)Data[nconn]);
-	if (!Diag) Size  *= 2;
-	if (MSIZEMAX<Size)
+	for (i=0; i<cnt; i++)
 	{
-		PRINTDEBUG(dddif,0,("%2d:  VectorScatterConnX(): Size=%d but MSIZEMAX=%d\n",Size,MSIZEMAX))
-		return;
-	}
+		MATRIX *mcopy = (MATRIX *)Data[i];
 
-	conn = (CONNECTION *)GetMem(dddctrl.currMG->theHeap,Size,FROM_BOTTOM);
-	if (conn==NULL)
-	{
-		UserWriteF("%2d:  VectorScatterConnX(): can't get mem for conn=%x\n",conn);
-		return;
-	}
-
-	PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x Size=%d\n",me,vec,conn,Size))
-	memcpy(conn,Data[nconn++],Size);
-
-	/* look which matrix belongs to that vector 				*/
-	/* TODO: change this to faster macro sequence if stable 	*/
-	if (!MDIAG(conn))
-	{
-		if (XFERMATX(CMATRIX0(conn))==COPY)			conn = CMATRIX0(conn);
-		else if (XFERMATX(CMATRIX1(conn))==COPY)	
+		if (MDEST(mcopy)==NULL)
 		{
-			conn = CMATRIX1(conn);
-			/* restore pointer to destination vector */
-			MDEST(conn) = MDEST(CMATRIX0(MMYCON(conn)));
-			MDEST(CMATRIX0(MMYCON(conn))) = vec;
+			/* destination vector is not on this processor */
+			/* -> matrix entry is useless, throw away */
+			PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x mat=%x Size=%d, useless\n",me,vec,mcopy,MSIZE(mcopy)))
 		}
-		else UserWrite("%2d NodeScatterEdge(): 	NO copy flag in conn=%x\n",me,conn);
-	}
-
-	/* TODO: this loop is no nice programming */
-	for (i=1,VSTART((VECTOR *)vec)=conn; i<cnt; i++,MNEXT(prev)=conn)
-	{
-		Diag  = MDIAG((MATRIX *)Data[nconn]);
-		Size  = MSIZE((MATRIX *)Data[nconn]);
-		if (!Diag) Size  *= 2;
-		if (MSIZEMAX<Size)
-		{
-			UserWrite("%2d:  VectorScatterConnX(): Size=%d but MSIZEMAX=%d\n",Size,MSIZEMAX);
-			return;
-		}
-
-		prev = conn;
-		conn = (CONNECTION*)GetMem(dddctrl.currMG->theHeap,Size,FROM_BOTTOM);
-		if (conn==NULL)
-		{
-			UserWrite("%2d:  VectorScatterConnX(): ERROR can't get mem for conn=%x\n",conn);
-		}
-
-		PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x Size=%d\n",me,vec,conn,Size))
-		memcpy(conn,Data[nconn++],Size);
-		if (MDEST(conn))
-			PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x Size=%d nodetoID=%d\n",me,vec,conn,Size,ID(VOBJECT(MDEST(conn)))))
 		else
-			PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x Size=%d nodetoID=--\n",me,vec,conn,Size))
-
-		/* look which matrix belongs to that vector 				*/
-		/* TODO: change this to faster macro sequence if stable 	*/
-		if (!MDIAG(conn))
 		{
-			if (XFERMATX(CMATRIX0(conn))==COPY)			conn = CMATRIX0(conn);
-			else if (XFERMATX(CMATRIX1(conn))==COPY)
+			MATRIX *m;
+			int found=FALSE;
+
+			/* does matrix entry already exist? */
+			/* TODO not nice, linear search, change this! */
+			for (m=VSTART((VECTOR *)vec); m!=NULL && (!found); m=MNEXT(m))
 			{
-				conn = CMATRIX1(conn);
-				/* restore pointer to destination vector */
-				MDEST(conn) = MDEST(CMATRIX0(MMYCON(conn)));
-				MDEST(CMATRIX0(MMYCON(conn))) = vec;
+				if (MDEST(m)==MDEST(mcopy)) found=TRUE;
 			}
-			else UserWrite("%2d NodeScatterEdge(): 	NO copy flag in conn=%x\n",me,conn);
+
+			if (!found)
+			{
+				/* matrix entry is really new */
+
+				if (MDIAG(mcopy))
+				{
+					/* matrix diagonal entry, no other vector is involved */
+					CONNECTION *conn = (CONNECTION *)
+						GetMem(dddctrl.currMG->theHeap,
+							MSIZE(mcopy), FROM_BOTTOM);
+					new_conns++;
+
+					if (conn==NULL)
+					{
+						UserWriteF("%2d:  VectorScatterConnX(): can't get mem for conn=%x\n",conn);
+						return;
+					}
+	
+					PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x Size=%d, diag\n",me,vec,conn,MSIZE(mcopy)))
+
+					memcpy(conn,mcopy,MSIZE(mcopy));
+
+					if (first==NULL) first = conn;
+					else MNEXT(last) = conn;
+					last = conn;
+				}
+				else
+				{
+					/* matrix off-diagonal entry, another vector is involved */
+					VECTOR *other = MDEST(mcopy);
+					MATRIX *m, *back=NULL, *newm;
+	
+					/* does connection already exist for other vec? */
+					/* TODO not nice, linear search, change this! */
+
+					for (m=VSTART((VECTOR *)other); m!=NULL&&back==NULL; m=MNEXT(m))
+					{
+						if (MDEST(m)==vec) back=m;
+					}
+
+					if (back==NULL)
+					{
+						/* no backward entry, create connection */
+						MATRIX *otherm;
+						CONNECTION *conn = (CONNECTION *)
+							GetMem(dddctrl.currMG->theHeap,
+								2 * MSIZE(mcopy), FROM_BOTTOM);
+						new_conns++;
+
+						if (conn==NULL)
+						{
+							UserWriteF("%2d:  VectorScatterConnX(): can't get mem for mat=%x\n",mcopy);
+							return;
+						}
+	
+
+						if (MOFFSET(mcopy))
+						{
+							newm = (MATRIX *) ((char *)conn+MSIZE(mcopy));
+							otherm = (MATRIX *) conn;
+
+						PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x newm=%x Size=%d vectoID=%d, getmem\n",me,vec,conn,newm, MSIZE(mcopy),ID(MDEST(mcopy))))
+						}
+						else
+						{
+							newm = (MATRIX *) conn;
+							otherm = (MATRIX *) ((char *)conn+MSIZE(mcopy));
+
+						PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x newm=%x Size=%d vectoID=%d, getmem\n",me,vec,conn,newm, MSIZE(mcopy),ID(MDEST(mcopy))))
+						}
+
+						MDEST(otherm) = NULL;
+					}
+					else
+					{
+						/* backward entry found, use existing connection */
+						newm = MADJ(back);
+
+						PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x back=%x newm=%x Size=%d vectoID=%d, reuse\n",me,vec,back,newm,MSIZE(mcopy),ID(MDEST(mcopy))))
+					}
+
+					memcpy(newm, mcopy, MSIZE(mcopy));
+
+					if (first==NULL) first = newm;
+					else MNEXT(last) = newm;
+					last = newm;
+				}
+			}
 		}
 	}
-	
-	MNEXT(conn) = NULL;
 
-	NC(theGrid) += cnt;
+	/* enter matrix list at the beginning of existing list for this vector */
+	/* ensure diagonal entry being at first position */
+	if (VSTART(vec)!=NULL)
+	{
+		MNEXT(last) = MNEXT(VSTART(vec));
+		MNEXT(VSTART(vec)) = first;
+	}
+	else
+	{
+		MNEXT(last) = VSTART(vec);
+		VSTART(vec) = first;
+	}
+
+	/* count new connections */
+	NC(theGrid) += new_conns;
 }
+
 
 
 void VectorObjMkCons(DDD_OBJ obj)
 {
-	CONNECTION *conn;
-	VECTOR *vector	= (VECTOR *) obj;
-	VECTOR *vectorto;
+	VECTOR *vec = (VECTOR *) obj;
 
-	PRINTDEBUG(dddif,2,("%2d: VectorObjMkCons(): v=%x VEOBJ=%d\n",me,vector,OBJT(vector)))
-
-	for (conn=VSTART(vector); conn!=NULL; conn=MNEXT(conn))
-	{
-		if (MDIAG(conn)) continue;
-
-		/* TODO: Durch schnelle Version ersetzen */
-		if (XFERMATX(conn)==COPY) {
-			vectorto = MDEST(conn);
-		}
-		else
-		{
-			if (XFERMATX(MADJ(conn)) != COPY) 
-			{
-				UserWriteF("%2d VectorObjMkCons():     NO copy flag in conn with matrix=%x matrix=%x\n",me,conn,MADJ(conn));
-			}
-			continue;
-		}
-
-		/* is vectorto really stored on this proc? */
-		if (vectorto!=NULL)
-		{
-			/* reconstruct pointers of adj matrix */
-			MNEXT(MADJ(conn)) = MNEXT(VSTART(vectorto));
-			MNEXT(VSTART(vectorto)) = MADJ(conn);
-			MDEST(MADJ(conn)) = vector;
-		}
-	}
-
+	PRINTDEBUG(dddif,2,("%2d: VectorObjMkCons(): v=%x VEOBJ=%d\n",me,vec,OBJT(vec)))
 }
 
 
@@ -1222,7 +1221,7 @@ void ddd_HandlerInit (void)
 	DDD_HandlerRegister(TypeVector,
 		HANDLER_UPDATE,		VectorUpdate,
 		HANDLER_XFERCOPY,		VectorXferCopy,
-		HANDLER_XFERGATHERX,	VectorGatherConnX,
+		HANDLER_XFERGATHERX,	VectorGatherMatX,
 		HANDLER_XFERSCATTERX,	VectorScatterConnX,
 		HANDLER_OBJMKCONS,		VectorObjMkCons,
 		HANDLER_END

@@ -358,6 +358,7 @@ int BalanceGrid (MULTIGRID *theMG)
   DDD_XferBegin();
   if (me==master && NT(theGrid)>0) XferElemsAndOverlap(theGrid);
   DDD_XferEnd();
+  /*	DeleteLocalStuff();  */
 
 
   if (me==master)
