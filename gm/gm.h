@@ -1139,8 +1139,8 @@ extern CONTROL_ENTRY
 #define MUP(p)                                          CW_READ(p,MUP_CE)
 #define SETMUP(p,n)                             CW_WRITE(p,MUP_CE,n)
 
-#define MINC(m)                                         ((MATRIX*)(((unsigned INT)(m))+MSIZE(m)))
-#define MDEC(m)                                         ((MATRIX*)(((unsigned INT)(m))-MSIZE(m)))
+#define MINC(m)                                         ((MATRIX*)(((char *)(m))+MSIZE(m)))
+#define MDEC(m)                                         ((MATRIX*)(((char *)(m))-MSIZE(m)))
 #define MNEXT(m)                                        ((m)->next)
 #define MDEST(m)                                        ((m)->vect)
 #define MADJ(m)                                         ((MDIAG(m)) ? (m) : ((MOFFSET(m)) ? (MDEC(m)) : (MINC(m))))
