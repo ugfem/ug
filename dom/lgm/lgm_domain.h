@@ -74,6 +74,28 @@
 
 #endif
 
+/* OS_CHANGED */
+/* Set LGM_VERBOSE 1 to get a more verbose LGM module */
+#define LGM_VERBOSE 1
+
+/* Undefine the following line to get the old lgm geometry routines (3D) */
+#define NEW_LGM
+/* Undefine the following line to switch off accelerated lgm geometry access (3D) */
+#define LGM_ACCELERATE
+
+/* new lgm only for 3D, acceleration only for new lgm */
+#ifdef _2
+#undef NEW_LGM
+#endif
+#ifndef NEW_LGM
+#undef LGM_ACCELERATE
+#endif
+#ifdef LGM_ACCELERATE
+#include "bbtree.h"
+#endif
+
+
+
 /****************************************************************************/
 /*                                                                                                                                                      */
 /* defines in the following order                                                                                       */
@@ -115,6 +137,7 @@
 #define LGM_PROBLEM_USERF(p,i)                          (UserProcPtr)(p)->CU_ProcPtr[(i)+LGM_PROBLEM_NCOEFF(p)]
 #define LGM_PROBLEM_SETUSERF(p,i,q)                     (p)->CU_ProcPtr[(i)+LGM_PROBLEM_NCOEFF(p)]=(void*)(q)
 #define LGM_PROBLEM_BNDCOND(p)                          ((p)->BndCond)
+#define LGM_PROBLEM_INNERBNDCOND(p)                                 ((p)->InnerBndCond)
 #define LGM_DOMAIN_S2P_PTR(p)                           ((p)->s2p)
 #define LGM_DOMAIN_S2P(p,s)                                     ((p)->s2p[s])
 
@@ -180,6 +203,7 @@
 #if (LGM_DIM==3)
 
 #define NO_PROJECT
+#undef NO_PROJECT // OS_CHANGED
 
 #define MAXTRIANGLES 30
 
@@ -326,7 +350,6 @@ typedef INT (*DomainSizeConfig)(DOUBLE *min, DOUBLE *max);
 /****************************************************************************/
 
 struct lgm_problem {
-
   /* fields for environment directory */
   ENVDIR v;
 
@@ -335,6 +358,7 @@ struct lgm_problem {
   ConfigProcPtr ConfigProblem;      /* procedure to reinitialize problem                */
   DomainSizeConfig ConfigDomainSize;      /* procedure to reinitialize size of d*/
   BndCondProcPtr BndCond;               /* global boundary condition                            */
+  BndCondProcPtr InnerBndCond;              /* global inner boundary condition                  */
   INT numOfCoeffFct;                            /* number of coefficient functions                      */
   INT numOfUserFct;                             /* number of User functions                                     */
   void *CU_ProcPtr[1];                  /* coefficient functions                                        */
@@ -531,6 +555,11 @@ struct lgm_surface {
   INT active;
         #endif
 
+  /* for fast triangle search OS_CHANGED */
+            #ifdef LGM_ACCELERATE
+  BBT_TREE *bbtree;
+            #endif
+
   /* references */
   struct lgm_line *line[1];                             /* ptr to lines                                                 */
 };
@@ -703,11 +732,13 @@ BNDP *BNDP_InsertBndP (HEAP *Heap, BVP *aBVP, double *global);
 #endif
 
 #ifndef Grape
-LGM_PROBLEM     *CreateProblem                  (char *name, InitProcPtr config, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[]);
+LGM_PROBLEM *CreateProblem (char *name, InitProcPtr config, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[]);
+LGM_PROBLEM *CreateProblemWithInnerBCs (char *name, InitProcPtr config, DomainSizeConfig domconfig, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[]);
 #endif
-INT                     SetBoundaryCondition    (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond);
-INT                     SetDomainSize                   (LGM_DOMAIN *theDomain);
+INT SetBoundaryCondition (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond, BndCondProcPtr InnerBndCond);
+INT SetDomainSize (LGM_DOMAIN *theDomain);
 
-INT                             GetMaximumSurfaceID     (LGM_DOMAIN *theDomain);
-
+INT GetMaximumSurfaceID (LGM_DOMAIN *theDomain);
+INT OuterBndSurfaceIDs (LGM_DOMAIN *theDomain, INT *sf); /* OS_CHANGED */
+INT SurfaceIDsOfSubdomain (LGM_DOMAIN *theDomain, INT *sf, INT i); /* OS_CHANGED */
 #endif
