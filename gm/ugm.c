@@ -461,15 +461,16 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
         #ifdef ModelP
   DDD_AttrSet(PARHDR(pn),GRID_ATTR(theGrid));
   SETPRIO(pn,PrioMaster);
-  if (Father != NULL)
-    if ((OBJT(Father) == IEOBJ) || (OBJT(Father) == BEOBJ))
-      Father = NULL;
         #endif
   ID(pn) = (theGrid->mg->nodeIdCounter)++;
   START(pn) = NULL;
   SONNODE(pn) = NULL;
   if (NELIST_DEF_IN_GRID(theGrid)) NDATA(pn) = NULL;
   MYVERTEX(pn) = vertex;
+  /* priliminary */
+  if (father != NULL)
+    if ((OBJT(Father) == IEOBJ) || (OBJT(Father) == BEOBJ))
+      Father = NULL;
   SETNFATHER(pn,Father);
   SETNTYPE(pn,NodeType);
   if (VFATHER(vertex) != NULL)
