@@ -1426,12 +1426,14 @@ static INT DeleteStructCommand (INT argc, char **argv)
 
    'protocol {$i[ ]<verbatim text> | $n[ ]<verbatim text> | $t[ ]<verbatim text> | $f}*'
 
-   .   $\i                     - append <verbatim text> to protocol file
-   .   $\n                     - write a line feed and append <verbatim text> to protocol file
-   .   $\t                     - write a tab and append <verbatim text> to protocol file
-   .n                         NOTE: the first space (if there) following the option character is skipped
+   .vb
+    $\i   append <verbatim text> to protocol file
+    $\n   write a line feed and append <verbatim text> to protocol file
+    $\t   write a tab and append <verbatim text> to protocol file
+          NOTE: the first space (if there) following the option character is skipped
 
-   .   $\f                     - flush the file buffer
+    $\f   flush the file buffer
+   .ve
 
    EXAMPLE:
    .vb
