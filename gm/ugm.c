@@ -1680,12 +1680,12 @@ static
 EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
 {
   ELEMENT *theFather;
-  EDGE *pe,*father;
-  NODE *from,*to;
+  EDGE *pe,*father_edge;
+  NODE *from,*to,*n1,*n2,*nbn1,*nbn2,*nbn3,*nbn4;
   LINK *link0,*link1;
   VERTEX *theVertex;
   VECTOR *pv;
-  INT j,part;
+  INT j,k,side,found,part,sc;
 
   from = CORNER(theElement,CORNER_OF_EDGE(theElement,i,0));
   to = CORNER(theElement,CORNER_OF_EDGE(theElement,i,1));
@@ -1724,43 +1724,154 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
   NBNODE(link1) = from;
   SET_NO_OF_ELEM(pe,1);
   SETEDGENEW(pe,1);
+
+  /* set edge-subdomain from topological information with respect to father-element */
   SETEDSUBDOM(pe,SUBDOMAIN(theElement));
-  if ((NSUBDOM(from) == 0) && (NSUBDOM(to) == 0)) {
-    if (MIDTYPE(to))
-      father = (EDGE*)NFATHER(to);
-    /*
-       if (father != NULL) {
-        if ((SONNODE(NBNODE(LINK0(father)))==from)
-       ||(SONNODE(NBNODE(LINK1(father)))==from))
-                SETEDSUBDOM(pe,EDSUBDOM(father));
-       }
-       else if (MIDTYPE(from)) {
-        father = (EDGE *)NFATHER(from);
-            if (father != NULL)
-                if ((SONNODE(NBNODE(LINK0(father)))==to)
-       ||(SONNODE(NBNODE(LINK1(father)))==to))
-                        SETEDSUBDOM(pe,EDSUBDOM(father));
-       }
-     */
-                #ifdef __TREEDIM__
-    else if ((theFather = EFATHER(theElement)) != NULL)
-      if (OBJT(theFather) == BEOBJ) {
-        for (j=0; j<SIDES_OF_ELEM(theFather); j++) {
-
-          assert(0);
-
-        }
-        if (SIDETYPE(from)) {
-          theVertex = MYVERTEX(from);
-          if (VFATHER(theVertex) == theFather)
-            j = ONSIDE(theVertex);
-          else
-            j = ONNBSIDE(theVertex);
-          if (SIDE_ON_BND(theFather,j))
-            assert(0);
+  theFather = EFATHER(theElement);
+  if (theFather!=NULL)
+  {
+    SETEDSUBDOM(pe,SUBDOMAIN(theFather));
+    if (NTYPE(from)<NTYPE(to))
+    {
+      n1 = from;
+      n2 = to;
+    }
+    else
+    {
+      n1 = to;
+      n2 = from;
+    }
+    switch(NTYPE(n1)|(NTYPE(n2)<<4))
+    {
+#ifdef __TWODIM__
+    case (CORNER_NODE | (CORNER_NODE<<4)) :
+      father_edge = GetEdge(NFATHER(n1),NFATHER(n2));
+      if (father_edge!=NULL) SETEDSUBDOM(pe,EDSUBDOM(father_edge));
+      break;
+    case (CORNER_NODE | (MID_NODE<<4)) :
+      father_edge = NFATHEREDGE(n2);
+      assert(father_edge!=NULL);
+      if (NBNODE(LINK0(father_edge))==NFATHER(n1) || NBNODE(LINK1(father_edge))==NFATHER(n1)) SETEDSUBDOM(pe,EDSUBDOM(father_edge));
+      break;
+#endif
+#ifdef __THREEDIM__
+    case (CORNER_NODE | (CORNER_NODE<<4)) :
+      father_edge = GetEdge(NFATHER(n1),NFATHER(n2));
+      if (father_edge!=NULL) SETEDSUBDOM(pe,EDSUBDOM(father_edge));
+      else
+      {
+        /* do fathers of n1, n2 lies on a side (of the father) which has BNDS? */
+        for (j=0; j<SIDES_OF_ELEM(theFather); j++)
+        {
+          found=0;
+          for (k=0; k<CORNERS_OF_SIDE(theFather,j); k++)
+          {
+            sc = CORNER_OF_SIDE(theFather,j,k);
+            if (CORNER(theFather,sc)==NFATHER(n1) || CORNER(theFather,sc)==NFATHER(n2)) found++;
+          }
+          if (found==2 && SIDE_ON_BND(theFather,j))
+          {
+            SETEDSUBDOM(pe,0);
+            break;
+          }
         }
       }
-                #endif
+      break;
+    case (CORNER_NODE | (MID_NODE<<4)) :
+      father_edge = NFATHEREDGE(n2);
+      assert(father_edge!=NULL);
+      nbn1 = NBNODE(LINK0(father_edge));
+      nbn2 = NBNODE(LINK1(father_edge));
+      if (nbn1==NFATHER(n1) || nbn2==NFATHER(n1)) SETEDSUBDOM(pe,EDSUBDOM(father_edge));
+      else
+      {
+        /* do all nodes n1, nbn1, nbn2 ly on the same side of father? */
+        side=-1;
+        for (j=0; j<SIDES_OF_ELEM(theFather); j++)
+        {
+          found=0;
+          for (k=0; k<CORNERS_OF_SIDE(theFather,j); k++)
+          {
+            sc = CORNER_OF_SIDE(theFather,j,k);
+            if (CORNER(theFather,sc)==NFATHER(n1) || CORNER(theFather,sc)==nbn1 || CORNER(theFather,sc)==nbn2) found++;
+          }
+          if (found==3)
+          {
+            side = j;
+            break;
+          }
+        }
+        if (side>=0 && SIDE_ON_BND(theFather,side)) SETEDSUBDOM(pe,0);
+      }
+      break;
+    case (MID_NODE | (MID_NODE<<4)) :
+      father_edge = NFATHEREDGE(n1);
+      assert(father_edge!=NULL);
+      nbn1 = NBNODE(LINK0(father_edge));
+      nbn2 = NBNODE(LINK1(father_edge));
+      father_edge = NFATHEREDGE(n2);
+      assert(father_edge!=NULL);
+      nbn3 = NBNODE(LINK0(father_edge));
+      nbn4 = NBNODE(LINK1(father_edge));
+
+      /* do all nodes nbn1, nbn2, nbn3, nbn4 ly on the same side of father? */
+      side=-1;
+      for (j=0; j<SIDES_OF_ELEM(theFather); j++)
+      {
+        found=0;
+        for (k=0; k<CORNERS_OF_SIDE(theFather,j); k++)
+        {
+          sc = CORNER_OF_SIDE(theFather,j,k);
+          if (CORNER(theFather,sc)==nbn1) found++;
+          if (CORNER(theFather,sc)==nbn2) found++;
+          if (CORNER(theFather,sc)==nbn3) found++;
+          if (CORNER(theFather,sc)==nbn4) found++;
+        }
+        if (found==4)
+        {
+          side = j;
+          break;
+        }
+      }
+      if (side>=0 && SIDE_ON_BND(theFather,side)) SETEDSUBDOM(pe,0);
+      break;
+    case (CORNER_NODE | (SIDE_NODE<<4)) :
+      theVertex = MYVERTEX(n2);
+      if (VFATHER(theVertex) == theFather)
+        side = ONSIDE(theVertex);
+      else
+        side = ONNBSIDE(theVertex);
+      if (SIDE_ON_BND(theFather,side))
+        for (k=0; k<CORNERS_OF_SIDE(theFather,side); k++)
+          if (CORNER(theFather,CORNER_OF_SIDE(theFather,side,k))==NFATHER(n1))
+          {
+            SETEDSUBDOM(pe,0);
+            break;
+          }
+      break;
+    case (MID_NODE | (SIDE_NODE<<4)) :
+      theVertex = MYVERTEX(n2);
+      if (VFATHER(theVertex) == theFather)
+        side = ONSIDE(theVertex);
+      else
+        side = ONNBSIDE(theVertex);
+      if (SIDE_ON_BND(theFather,side))
+      {
+        found=0;
+        father_edge = NFATHEREDGE(n1);
+        assert(father_edge!=NULL);
+        nbn1 = NBNODE(LINK0(father_edge));
+        nbn2 = NBNODE(LINK1(father_edge));
+        for (k=0; k<CORNERS_OF_SIDE(theFather,side); k++)
+        {
+          if (CORNER(theFather,CORNER_OF_SIDE(theFather,side,k))==nbn1 || CORNER(theFather,CORNER_OF_SIDE(theFather,side,k))==nbn2)
+            found++;
+        }
+        if (found==2) SETEDSUBDOM(pe,0);
+      }
+      break;
+#endif
+    }
   }
 
   /* create vector if */
@@ -1995,13 +2106,53 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
 
   ASSERT (OBJT(theElement) == BEOBJ);
 
-  if (ELEM_BNDS(theElement,side) == NULL)
-    return(GM_OK);
+  ASSERT (ELEM_BNDS(theElement,side) != NULL);
+
+  /* check if Edges of theElement, which are on the side 'side' have EDSUBDOM 0 */
+  n = CORNERS_OF_SIDE(theElement,side);
+  for (i=0; i<n; i++)
+  {
+    theEdge = GetEdge(CORNER(theElement,CORNER_OF_SIDE(theElement,side,i)),CORNER(theElement,CORNER_OF_SIDE(theElement,side,(i+1)%n)));
+    assert(EDSUBDOM(theEdge)==0);
+  }
 
   n = CORNERS_OF_SIDE(theSon,son_side);
   for (i=0; i<n; i++)
-    bndp[i] = V_BNDP(MYVERTEX(CORNER(theSon,
-                                     CORNER_OF_SIDE(theSon,son_side,i))));
+  {
+    /* check if vertices of Son ly on boundary */
+    if (OBJT(MYVERTEX(CORNER(theSon,CORNER_OF_SIDE(theSon,son_side,i))))!=BVOBJ)
+    {
+      NODE *theNode,*NFather;
+      EDGE *theFatherEdge;
+      INT t1,t2;
+
+      theNode = CORNER(theSon,CORNER_OF_SIDE(theSon,son_side,i));
+      printf("ID=%d\n",(int)ID(theNode));
+      switch (NTYPE(theNode))
+      {
+      case CORNER_NODE :
+        printf("NTYPE = CORNER_NODE");
+        NFather = NFATHER(theNode);
+        break;
+      case MID_NODE :
+        printf("NTYPE = MID_NODE\n");
+        theFatherEdge = NFATHEREDGE(theNode);
+        printf("EDSUBDOM = %d\n",(int)EDSUBDOM(theFatherEdge));
+        t1 = (OBJT(MYVERTEX(NBNODE(LINK0(theFatherEdge))))==BVOBJ);
+        t2 = (OBJT(MYVERTEX(NBNODE(LINK1(theFatherEdge))))==BVOBJ);
+        printf("BVOBJ(theFatherEdge): %d %d\n",(int)t1,(int)t2);
+        break;
+      case SIDE_NODE :
+        printf("NTYPE = SIDE_NODE");
+        break;
+      case CENTER_NODE :
+        printf("NTYPE = CENTER_NODE");
+        break;
+      }
+      ASSERT(0);
+    }
+    bndp[i] = V_BNDP(MYVERTEX(CORNER(theSon,CORNER_OF_SIDE(theSon,son_side,i))));
+  }
   bnds = BNDP_CreateBndS(MGHEAP(MYMG(theGrid)),bndp,n);
   if (bnds == NULL)
     RETURN(GM_ERROR);
@@ -2021,14 +2172,14 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
         #endif
 
     #ifdef __THREEDIM__
-  /* TODO: is this necessary? */
-  for (i=0; i<EDGES_OF_SIDE(theSon,son_side); i++) {
-    int k  = EDGE_OF_SIDE(theSon,son_side,i);
-    theEdge = GetEdge(CORNER(theSon,CORNER_OF_EDGE(theSon,k,0)),
-                      CORNER(theSon,CORNER_OF_EDGE(theSon,k,1)));
-    ASSERT(theEdge != NULL);
-    SETEDSUBDOM(theEdge,0);
-  }
+  /* TODO: is this necessary?
+     for (i=0; i<EDGES_OF_SIDE(theSon,son_side); i++) {
+          int k  = EDGE_OF_SIDE(theSon,son_side,i);
+          theEdge = GetEdge(CORNER(theSon,CORNER_OF_EDGE(theSon,k,0)),
+                                            CORNER(theSon,CORNER_OF_EDGE(theSon,k,1)));
+          ASSERT(theEdge != NULL);
+          SETEDSUBDOM(theEdge,0);
+     } */
         #endif
 
   return(GM_OK);
