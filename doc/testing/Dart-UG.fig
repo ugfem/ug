@@ -7,73 +7,79 @@ A4
 Single
 -2
 1200 2
-2 2 0 1 1 7 50 0 -1 0.000 0 0 -1 0 0 5
-	 450 900 9000 900 9000 12600 450 12600 450 900
-2 1 0 1 1 7 50 0 -1 0.000 0 0 -1 0 0 2
-	 4725 900 4725 12600
-2 1 0 1 1 7 50 0 -1 0.000 0 0 -1 0 0 2
+2 2 0 3 1 7 50 -1 -1 0.000 0 0 -1 0 0 5
+	 450 900 9000 900 9000 13050 450 13050 450 900
+2 1 0 3 1 7 50 -1 -1 0.000 0 0 -1 0 0 2
 	 450 1350 9000 1350
-2 1 0 1 1 7 50 0 -1 0.000 0 0 -1 0 0 2
-	 450 3600 9000 3600
-2 1 0 1 1 7 50 0 -1 0.000 0 0 -1 0 0 2
-	 450 11250 9000 11250
-2 2 0 1 1 7 50 0 -1 0.000 0 0 -1 0 0 5
-	 450 12600 9000 12600 9000 13050 450 13050 450 12600
-2 1 0 1 0 7 50 -1 -1 0.000 0 0 -1 1 0 2
-	0 0 1.00 60.00 120.00
-	 5220 6930 5220 7785
-2 1 0 1 0 7 50 -1 -1 0.000 0 0 -1 1 0 4
-	0 0 1.00 60.00 120.00
-	 6030 6930 7110 7740 7110 10935 6120 11700
-2 1 0 1 0 7 50 -1 -1 0.000 0 0 -1 1 1 2
-	0 0 1.00 60.00 120.00
-	0 0 1.00 60.00 120.00
-	 3645 8100 5085 8100
-2 1 0 1 0 7 50 -1 -1 0.000 0 0 -1 1 1 2
-	0 0 1.00 60.00 120.00
-	0 0 1.00 60.00 120.00
-	 2565 10665 5310 10665
-2 1 0 1 0 7 50 -1 -1 0.000 0 0 -1 1 1 2
-	0 0 1.00 60.00 120.00
-	0 0 1.00 60.00 120.00
-	 1710 11925 5130 11925
-2 1 0 1 0 7 50 -1 -1 0.000 0 0 -1 1 0 2
-	0 0 1.00 60.00 120.00
-	 5220 9720 5400 10440
-2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
-	 5130 6930 6345 6930 6345 6660 5130 6660 5130 6930
-2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
-	 5130 9720 6210 9720 6210 9450 5130 9450 5130 9720
-4 0 0 50 0 2 16 0.0000 4 195 7800 450 450 Segmentation of the Dart cycle into Dart specific parts and UG specific parts:\001
-4 0 1 50 0 2 16 0.0000 4 150 480 2250 1260 Dart\001
-4 0 0 50 0 2 16 0.0000 4 150 360 6525 1260 UG\001
-4 0 0 50 0 2 12 0.0000 4 180 3705 900 1710 When "ug_dart.pl" is called it calls other scripts\001
-4 0 0 50 0 2 12 0.0000 4 180 3780 900 1965 to prepare a Dart cycle. This preparation consists\001
-4 0 0 50 0 2 12 0.0000 4 180 3630 900 2220 mainly of building the "DartConfiguration.tcl"\001
-4 0 0 50 0 2 12 0.0000 4 135 3060 900 2475 file and the "DartTestfile.txt" files. The \001
-4 0 0 50 0 2 12 0.0000 4 180 2955 900 2730 "DartConfiguration.tcl" file holds the \001
-4 0 0 50 0 2 12 0.0000 4 180 3510 900 2985 configuration for the Dart cycle. The tests are \001
-4 0 0 50 0 2 12 0.0000 4 180 3000 900 3240 specified in the "DartTestfile.txt" files. \001
-4 0 0 50 0 2 12 0.0000 4 180 3630 900 4065 The "DartConfiguration.tcl" file holds among  \001
-4 0 0 50 0 2 12 0.0000 4 180 2535 900 4320 others the following information:\001
-4 0 0 50 0 2 12 0.0000 4 165 3540 900 5085 1. BuildName: it has to be a unique name for  \001
-4 0 0 50 0 2 12 0.0000 4 180 3315 900 5340     the build-test-submit cycle. It consists of \001
-4 0 0 50 0 2 12 0.0000 4 180 3540 900 5595     the specification of the system on which the \001
-4 0 0 50 0 2 12 0.0000 4 180 3690 900 5850     the cycle is performed, the compiler name and\001
-4 0 0 50 0 2 12 0.0000 4 180 3810 900 6105     and maybe some ugconf options. There is a line\001
-4 0 0 50 0 2 12 0.0000 4 135 2550 900 6360     in the file which looks like this:\001
-4 0 0 50 0 2 12 0.0000 4 180 3555 900 7635 2. ConfigureCommand: The command which \001
-4 0 0 50 0 2 12 0.0000 4 180 3585 900 7890     should be used to configure the source to be \001
-4 0 0 50 0 2 12 0.0000 4 180 3675 900 9930     be used to build the source. There is an entry \001
-4 0 0 50 0 2 12 0.0000 4 135 840 900 10185     like this:\001
-4 0 0 50 0 2 12 0.0000 4 135 5385 900 10695       MakeCommand:                                                                 make build\001
-4 0 0 50 0 2 12 0.0000 4 165 3015 900 11700 The "DartTestfile,txt" file contains the \001
-4 0 0 50 0 2 12 0.0000 4 180 3390 5175 1710 The Makefiles have got an additional target:\001
-4 0 0 50 -1 2 12 0.0000 4 135 870 5175 1950 make build\001
-4 0 0 50 -1 2 12 0.0000 4 180 3705 5175 2430 The TestCases files hold the configuration of the\001
-4 0 0 50 -1 2 12 0.0000 4 180 2430 5175 2670 tests and the application to test.\001
-4 0 0 50 0 2 12 0.0000 4 180 5985 900 8145     build. There is an entry like this:                                    ug_conf -v <options> \001
-4 0 0 50 0 2 12 0.0000 4 180 7305 900 11955 following:                                                                               AddTest(<test name> <application>)   \001
-4 0 0 50 0 2 12 0.0000 4 180 7260 900 12960 Summary: The Makefiles and the TestCases files handle the interaction between Dart and UG.\001
-4 0 0 50 0 2 12 0.0000 4 135 5400 900 6870       BuildName: <BuildName>  .                                         TestCases file \001
-4 0 0 50 0 2 12 0.0000 4 135 5235 900 9675 3. BuildCommand: The command which should             Makefile file\001
+2 1 0 3 1 7 50 -1 -1 0.000 0 0 -1 0 0 2
+	 4725 900 4725 13050
+2 1 0 3 8 7 50 -1 -1 0.000 0 0 -1 0 0 2
+	 450 3330 9000 3330
+2 1 0 3 4 7 50 -1 -1 0.000 1 0 -1 1 0 4
+	1 1 6.00 180.00 360.00
+	 7515 12915 8775 12915 8775 10845 6210 10845
+2 1 0 3 4 7 50 -1 -1 0.000 1 0 -1 1 0 3
+	1 1 6.00 180.00 360.00
+	 6075 3510 5670 3510 5670 8505
+2 1 0 3 4 7 50 -1 -1 0.000 1 0 -1 1 0 2
+	1 1 6.00 180.00 360.00
+	 7200 3690 7200 11970
+2 1 0 3 4 7 50 -1 -1 0.000 1 0 -1 0 0 1
+	 4725 10890
+2 1 0 3 12 7 50 -1 -1 0.000 1 0 -1 1 0 2
+	1 1 3.00 90.00 90.00
+	 4725 10890 4455 10890
+2 1 0 3 12 7 50 -1 -1 0.000 1 0 -1 1 0 2
+	1 1 3.00 90.00 90.00
+	 4725 12195 4455 12195
+2 1 0 3 12 7 50 -1 -1 0.000 1 0 -1 1 0 2
+	1 1 3.00 90.00 90.00
+	 4725 8730 4455 8730
+2 1 0 3 4 7 50 -1 -1 0.000 1 0 -1 1 0 2
+	1 1 3.00 90.00 90.00
+	 4725 8730 4995 8730
+2 1 0 3 4 7 50 -1 -1 0.000 1 0 -1 1 0 2
+	1 1 3.00 90.00 90.00
+	 4770 10890 4995 10890
+2 1 0 3 4 7 50 -1 -1 0.000 1 0 -1 1 0 2
+	1 1 3.00 90.00 90.00
+	 4725 12195 4995 12195
+4 1 12 50 -1 2 17 0.0000 4 180 525 2610 1215 Dart\001
+4 1 20 50 -1 2 17 0.0000 4 180 375 6840 1215 UG\001
+4 0 0 50 -1 2 12 0.0000 4 180 3690 675 1710 "ug_dart.pl" controls the client side of the Dart \001
+4 0 0 50 -1 2 12 0.0000 4 180 3465 675 1950 cycle. It calls "ug_dart_conf.pl" to create the \001
+4 0 0 50 -1 2 12 0.0000 4 180 3420 675 2190 "DartConfiguration.tcl" file which holds the\001
+4 0 0 50 -1 2 12 0.0000 4 180 3375 675 2430 configuration for the Dart cycle. I then calls \001
+4 0 0 50 -1 2 12 0.0000 4 180 3285 675 2670 "ug_dart_tests.pl" to create several "Dart-\001
+4 0 0 50 -1 2 12 0.0000 4 180 3705 675 2910 Testfile.txt" files which contain the specification \001
+4 0 0 50 -1 2 12 0.0000 4 180 1725 675 3150 of applications to test. \001
+4 0 0 50 -1 2 12 0.0000 4 180 4005 4950 1710 The additional target "make build" has to be added\001
+4 0 0 50 -1 2 12 0.0000 4 180 3960 4950 1950 to the Makefiles of applications and libraries to test.\001
+4 0 0 50 -1 2 12 0.0000 4 180 3855 4950 2430 "TestCases" files have to be created. They contain\001
+4 0 0 50 -1 2 12 0.0000 4 180 2850 4950 2670 the configuration of application tests.\001
+4 0 0 50 -1 2 12 0.0000 4 180 3945 675 3960 Among others the "DartConfiguraion.tcl" contains\001
+4 0 0 50 -1 2 12 0.0000 4 180 3960 675 4200 the following information which is provided by UG.\001
+4 0 0 50 -1 2 12 0.0000 4 165 1155 675 4920 1.) BuildName \001
+4 0 0 50 -1 2 12 0.0000 4 180 3750 675 5400 The build name is a unique name for a library or\001
+4 0 0 50 -1 2 12 0.0000 4 180 1260 675 5640 application test. \001
+4 0 0 50 -1 2 12 0.0000 4 180 3750 675 5880 There is a line in "DartConfiguration.tcl" which \001
+4 0 0 50 -1 2 12 0.0000 4 135 1110 675 6120 looks like this:\001
+4 0 0 50 -1 2 12 0.0000 4 135 2055 675 6600 BuildName: <BuildName>\001
+4 0 0 50 -1 2 12 0.0000 4 180 1845 675 7320 2.) ConfigureCommand\001
+4 0 0 50 -1 2 12 0.0000 4 180 3810 675 7800 This specifies the program to be used to configure\001
+4 0 0 50 -1 2 12 0.0000 4 180 3495 675 8040 the source of the library or application to test.\001
+4 0 0 50 -1 2 12 0.0000 4 180 2010 675 8280 There is an entry like this:\001
+4 0 0 50 -1 2 12 0.0000 4 180 3720 675 9960 This is the program that should be used to build\001
+4 0 0 50 -1 2 12 0.0000 4 180 3780 675 10200 the source. "DartConfiguration.tcl" contains the \001
+4 0 0 50 -1 2 12 0.0000 4 135 330 675 10440 line:\001
+4 0 0 50 -1 2 12 0.0000 4 165 1500 675 9480 3.) MakeCommand\001
+4 1 12 50 -1 2 16 0.0000 4 165 1815 2610 11250 "DartTestfile.txt"\001
+4 1 20 50 -1 2 16 0.0000 4 165 1290 6840 3600 "TestCases"\001
+4 0 0 50 -1 2 12 0.0000 4 180 3795 675 11520 The "DartTestfile.txt" files contains the following\001
+4 0 0 50 -1 2 12 0.0000 4 135 330 675 11760 line:\001
+4 1 20 50 -1 2 16 0.0000 4 165 1155 6840 12960 "Makefile"\001
+4 1 12 50 -1 2 16 0.0000 4 210 2490 2610 3600 "DartConfiguration.tcl"\001
+4 0 0 50 -1 2 12 0.0000 4 180 6000 675 8760 ConfigureCommand:                                                            ug_conf -v <options>\001
+4 0 0 50 -1 2 12 0.0000 4 135 5250 675 10920 MakeCommand:                                                                    make build\001
+4 0 0 50 -1 2 12 0.0000 4 180 7410 675 12240 AddTest(...)                                                                            <test identifier><appliaction><options>\001
+4 1 0 50 -1 2 16 0.0000 4 195 7140 4725 450 Segmentation of the Dart cycle into Dart specific and UG specific parts\001
