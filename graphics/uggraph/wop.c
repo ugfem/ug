@@ -4470,8 +4470,7 @@ static INT BulletDraw2D (DRAWINGOBJ *q)
 				break;
 			case DO_POLYMARK:
 				DO_inc(q)
-				n = DO_2c(q); DO_inc(q)
-				UgSetColor(DO_2l(q)); DO_inc_n(q,3);
+				n = DO_2c(q); DO_inc_n(q,4)
 				DO_inc_n(q,2*n);
 				break;
 			case DO_INVPOLYMARK:
