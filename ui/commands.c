@@ -10699,19 +10699,39 @@ static INT PTestCommand (INT argc, char **argv)
 static INT ContextCommand (INT argc, char **argv)
 {
   INT proc = INT_MAX;
+  INT flag_all, flag_empty;
 
-  /*if (p = ReadArgvOption("$+",argc,argv)) */
+
+  flag_all   = ReadArgvOption("a", argc, argv);
+  flag_empty = ReadArgvOption("e", argc, argv);
 
   ReadArgvINT("context", &proc, argc, argv);
   if (proc<0 || proc>=procs)
   {
-    if (proc!=INT_MAX)
+    if (proc!=INT_MAX && me==0)
       UserWriteF("context: invalid processor id (procs=%d)\n", procs);
   }
   else
   {
     /* switch context for proc on/off */
     CONTEXT(proc) = 1-CONTEXT(proc);
+  }
+
+  if (proc==INT_MAX)
+  {
+    if (flag_all && !flag_empty)
+    {
+      int p; for(p=0; p<procs; p++) CONTEXT(p) = 1;
+    }
+    if (flag_empty && !flag_all)
+    {
+      int p; for(p=0; p<procs; p++) CONTEXT(p) = 0;
+    }
+    if (flag_empty && flag_all)
+    {
+      if (me==0)
+        UserWriteF("context: invalid option combination\n");
+    }
   }
 
   ddd_DisplayContext();
