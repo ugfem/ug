@@ -1,0 +1,26 @@
+#       ARCH MAKEFILE OPTIONS
+#
+#       for NEXTSTEP (only version 3.3 has been tested)
+#
+
+ARCH_TYPE     = __NEXTSTEP__
+
+ARCH_MAKE     = make
+ARCH_CC       = cc
+ARCH_C++      = cc++
+ARCH_LINK     = cc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK = true
+
+ARCH_LIBS     = -lm
+
+# this is standard UNIX, so define _POSIX_SOURCE
+# (_NEXT_SOURCE is for funky NEXTSTEP applications)
+ARCH_CFLAGS   = -D_POSIX_SOURCE -g -Wall
+ARCH_C++FLAGS =
+ARCH_LFLAGS   = -L../pclib -L/usr/local/lib 
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDES =
+ARCH_XLIBS     = 

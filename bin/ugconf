@@ -33,6 +33,7 @@ then
 	echo "         T3D (set ARCH = T3D)";
 	echo "         T3E (set ARCH = T3E)";
 	echo "         NECSX4 (set ARCH = NECSX4)";
+	echo "         NEXTSTEP (set ARCH = NEXTSTEP)";
 	echo "         SEQ (set MODEL = SEQ)";
 	echo "         MPI (set MODEL = MPI)";
 	echo "         NX (set MODEL = NX)";
@@ -62,15 +63,19 @@ fi
 ##################################################################
 
 # switch AWK depending on unix version
-case `/bin/uname` in
-        HP-UX)
-                AWK=awk
-                ;;
-        *)
-                AWK=nawk
-                ;;
-esac;
-
+if test -x /bin/uname
+then
+    case `/bin/uname` in
+	    HP-UX)
+		    AWK=awk
+		    ;;
+	    *)
+		    AWK=nawk
+		    ;;
+    esac;
+else
+AWK=awk
+fi
 
 # compression/decompression
 
@@ -284,6 +289,9 @@ edit_ugconf()
 		;;
 	NECSX4)
 		sed 's/^ARCH.*$/ARCH = NECSX4/' $1 > $1.tmp
+		;;
+	NEXTSTEP)
+		sed 's/^ARCH.*$/ARCH = NEXTSTEP/' $1 > $1.tmp
 		;;
 	SEQ)
 		sed 's/^MODEL[ \t].*$/MODEL = SEQ/' $1 > $1.tmp
