@@ -1915,7 +1915,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 /****************************************************************************/
 /*																			*/
-/*		blas level 0 routines												*/
+/*		blas level 1 routines												*/
 /*																			*/
 /****************************************************************************/
 
@@ -2835,7 +2835,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 /****************************************************************************/
 /*																			*/
-/*		blas level 1 routines												*/
+/*		blas level 2 routines												*/
 /*																			*/
 /****************************************************************************/
 
@@ -3228,6 +3228,13 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    D*/
 /****************************************************************************/
 
+INT dmatmul1        (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                     const MATDATA_DESC *M, const VECDATA_DESC *y)
+{
+  dset(mg,fl,tl,mode,x,0.0);
+  return(dmatmul_add(mg,fl,tl,mode,x,M,y));
+}
+
 #define T_FUNCNAME     dmatmul
 #define T_ARGS         ,const VECDATA_DESC *x,const MATDATA_DESC *M,const VECDATA_DESC *y
 #define T_ARGS_BV      ,INT xc,INT mc,INT yc
@@ -3239,31 +3246,32 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 #define T_LOOP_SCAL    sum = 0.0;
 #define T_MOD_SCAL     sum += MVALUE(mat,mc) * VVALUE(w,yc);
 #define T_POST_SCAL    VVALUE(v,xc) = sum;
+#define T_CLEAR_X
 #define T_LOOP_11          s0 = 0.0;
-#define T_POST_11          VVALUE(v,cx0) = s0;
+#define T_POST_11          VVALUE(v,cx0) += s0;
 #define T_LOOP_12          s0 = 0.0;
-#define T_POST_12          VVALUE(v,cx0) = s0;
+#define T_POST_12          VVALUE(v,cx0) += s0;
 #define T_LOOP_13          s0 = 0.0;
-#define T_POST_13          VVALUE(v,cx0) = s0;
+#define T_POST_13          VVALUE(v,cx0) += s0;
 #define T_LOOP_21          s0 = s1 = 0.0;
-#define T_POST_21      VVALUE(v,cx0) = s0; VVALUE(v,cx1) = s1;
+#define T_POST_21      VVALUE(v,cx0) += s0; VVALUE(v,cx1) += s1;
 #define T_LOOP_22          s0 = s1 = 0.0;
-#define T_POST_22      VVALUE(v,cx0) = s0; VVALUE(v,cx1) = s1;
+#define T_POST_22      VVALUE(v,cx0) += s0; VVALUE(v,cx1) += s1;
 #define T_LOOP_23          s0 = s1 = 0.0;
-#define T_POST_23      VVALUE(v,cx0) = s0; VVALUE(v,cx1) = s1;
+#define T_POST_23      VVALUE(v,cx0) += s0; VVALUE(v,cx1) += s1;
 #define T_LOOP_31          s0 = s1 = s2 = 0.0;
-#define T_POST_31          VVALUE(v,cx0) =s0;VVALUE(v,cx1) =s1;VVALUE(v,cx2) =s2;
+#define T_POST_31          VVALUE(v,cx0) +=s0;VVALUE(v,cx1) +=s1;VVALUE(v,cx2) +=s2;
 #define T_LOOP_32          s0 = s1 = s2 = 0.0;
-#define T_POST_32          VVALUE(v,cx0) =s0;VVALUE(v,cx1) =s1;VVALUE(v,cx2) =s2;
+#define T_POST_32          VVALUE(v,cx0) +=s0;VVALUE(v,cx1) +=s1;VVALUE(v,cx2) +=s2;
 #define T_LOOP_33          s0 = s1 = s2 = 0.0;
-#define T_POST_33          VVALUE(v,cx0) =s0;VVALUE(v,cx1) =s1;VVALUE(v,cx2) =s2;
+#define T_POST_33          VVALUE(v,cx0) +=s0;VVALUE(v,cx1) +=s1;VVALUE(v,cx2) +=s2;
 #define T_LOOP_N           for (i=0; i<nr; i++) s[i] = 0.0;
 #define T_MOD_N        for (i=0; i<nr; i++)                                   \
     for (j=0; j<nc; j++)                               \
       s[i] += MVALUE(mat,MD_MCMP_OF_RT_CT(M,rtype,ctype,i*nc+j)) *  \
               VVALUE(w,VD_CMP_OF_TYPE(y,ctype,j));
 #define T_POST_N           for (i=0; i<nr; i++)                                   \
-    VVALUE(v,VD_CMP_OF_TYPE(x,rtype,i)) = s[i];
+    VVALUE(v,VD_CMP_OF_TYPE(x,rtype,i)) += s[i];
 
 #include "matfunc.ct"
 

@@ -73,6 +73,10 @@ if (MD_SUCC_COMP(M)
 	#endif
 ) 
 {
+	#ifdef T_CLEAR_X
+    dset(mg,fl,tl,mode,x,0.0);
+	#endif
+
     #define T_RTYPE	VTYPE(v)==rtype
     #ifdef T_USE_Y
     #define T_CTYPE	VTYPE(w)==ctype
@@ -330,6 +334,10 @@ if (MD_SUCC_COMP(M)
 else 
 #endif
 {
+	#ifdef T_CLEAR_X
+    dset(mg,fl,tl,mode,x,0.0);
+	#endif
+
     #define T_RTYPE	VTYPE(v)==rtype
     #ifdef T_USE_Y
     #define T_CTYPE	VTYPE(w)==ctype

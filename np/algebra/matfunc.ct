@@ -177,6 +177,7 @@ INT CAT(T_FUNCNAME,BS) (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const
 #undef T_LOOP_SCAL
 #undef T_MOD_SCAL
 #undef T_POST_SCAL
+#undef T_CLEAR_X
 #undef T_PREP_SWITCH
 #undef T_PREP_11
 #undef T_LOOP_11
