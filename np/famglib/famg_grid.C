@@ -548,7 +548,11 @@ void FAMGGrid::Stencil()
 	ostr << me << ": ";
 #endif
 	ostr << "unknowns: " << nn << "\t";
-	ostr << "avg. stencil: " << (double)nl/(double)nn << endl;
+	ostr << "avg. stencil: " << (double)nl/(double)nn;
+#ifdef ModelP
+	ostr << " master= "<<GetNrMasterVectors()<<" border= "<<GetNrBorderVectors()<<" ghosts= "<<GetNrGhostVectors();
+#endif
+	ostr << endl;
 	FAMGWrite(ostr);
 
 	return;
@@ -665,11 +669,15 @@ int FAMGGrid::InitLevel0(const class FAMGSystem &system)
 
 	n = system.GetN();
     nf = 0;
-	
 	mygridvector = system.GetGridVector();
 	
 #ifdef USE_UG_DS
 	SetugGrid(system.GetFineGrid());
+	#ifdef ModelP
+	GetNrMasterVectors() = -1;		// default
+	GetNrBorderVectors() = -1;		// default
+	GetNrGhostVectors() = -1;		// default
+	#endif
 #else
     SetFather(NULL);
 #endif
@@ -740,6 +748,12 @@ int FAMGGrid::Init(int nn, const FAMGGrid& grid_pattern)
 	}
 	else
 		Consmatrix = matrix;
+	
+	#ifdef ModelP
+	GetNrMasterVectors() = -1;		// default
+	GetNrBorderVectors() = -1;		// default
+	GetNrGhostVectors() = -1;		// default
+	#endif
 #else	
     matrix = (FAMGMatrix *) FAMGGetMem(sizeof(FAMGMatrix),FAMG_FROM_TOP);
     if(matrix == NULL)
@@ -1382,8 +1396,9 @@ void FAMGGrid::ConstructOverlap()
 // extend the overlap as far as necessary; at least 2 links deep
 // the vectorlist will be renumbered
 {
-	VECTOR *vec;
+	VECTOR *vec, *mv;
 	INT i;
+	FAMGMatrixAlg *matrix_tmp;
 	
 	if(GLEVEL(mygrid)==0)
 	{	
@@ -1410,12 +1425,42 @@ ASSERT(!DDD_ConsCheck());
 		DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), SendToOverlap1 );
 	DDD_XferEnd();
 	
-	for( i=0,vec=PFIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec) )
+
+	// count & set number of vectors
+	mv = FIRSTVECTOR(mygrid);
+	i = 0;
+	GetNrMasterVectors()=0;
+	GetNrBorderVectors()=0;
+	GetNrGhostVectors()=0;
+	for( vec=PFIRSTVECTOR(mygrid); vec!=mv; vec=SUCCVC(vec))
+	{
 		VINDEX(vec) = i++;
+		GetNrGhostVectors()++;
+	}
+	for( ; vec!=NULL; vec=SUCCVC(vec))
+	{
+		VINDEX(vec) = i++;
+		if( IS_FAMG_MASTER(vec) )
+			GetNrMasterVectors()++;
+		else
+			GetNrBorderVectors()++;
+	}
 	
-	// set number of vectors
 	n = NVEC(mygrid);
 	assert(i==n);	// otherwise the vectorlist became inconsistent
+	assert(i==(GetNrMasterVectors()+GetNrBorderVectors()+GetNrGhostVectors()));	// otherwise the vectorlist became inconsistent
+	
+	// correct the number of vectors in matrices
+	matrix_tmp = GetMatrix();
+	if( matrix_tmp!=NULL)
+		matrix_tmp->GetN() = n;
+	matrix_tmp = GetTmpMatrix();
+	if( matrix_tmp!=NULL)
+		matrix_tmp->GetN() = n;
+	matrix_tmp = GetConsMatrix();
+	if( matrix_tmp!=NULL)
+		matrix_tmp->GetN() = n;
+	
 	
 	if(GLEVEL(mygrid)==0)
 	{		

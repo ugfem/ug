@@ -30,6 +30,7 @@ extern "C"
 
 #ifdef ModelP
 #include "np.h"
+#include "parallel.h"
 #endif
 }
 

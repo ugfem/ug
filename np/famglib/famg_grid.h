@@ -147,6 +147,19 @@ public:
 #ifdef ModelP
   void CommunicateNodeStatus();
   void ConstructOverlap();
+  INT &GetNrMasterVectors() {
+    return nrMaster;
+  }
+  INT &GetNrBorderVectors() {
+    return nrBorder;
+  }
+  INT &GetNrGhostVectors() {
+    return nrGhost;
+  }
+  GRID *GetugGrid() {
+    return mygrid;
+  }
+
 #endif
 
 private:
@@ -173,6 +186,11 @@ private:
 
 #ifdef USE_UG_DS
   GRID *mygrid;
+  #ifdef ModelP
+  INT nrMaster;                                                 // number of master vectors
+  INT nrBorder;                                                 // number of border vectors
+  INT nrGhost;                                                  // number of ghost vectors
+  #endif
 #else
   int *father;
 #endif

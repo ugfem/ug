@@ -142,6 +142,31 @@ int FAMGMultiGrid::Construct()
         FAMGWarning(ostr);
     }
 
+#ifdef ModelP	
+	// count & set number of vectors
+	VECTOR *vec, *mv;
+	int i = 0;
+	mv = FIRSTVECTOR(g->GetugGrid());
+	g->GetNrMasterVectors()=0;
+	g->GetNrBorderVectors()=0;
+	g->GetNrGhostVectors()=0;
+	for( vec=PFIRSTVECTOR(g->GetugGrid()); vec!=mv; vec=SUCCVC(vec))
+	{
+		VINDEX(vec) = i++;
+		g->GetNrGhostVectors()++;
+	}
+	for( ; vec!=NULL; vec=SUCCVC(vec))
+	{
+		VINDEX(vec) = i++;
+		if( IS_FAMG_MASTER(vec) )
+			g->GetNrMasterVectors()++;
+		else
+			g->GetNrBorderVectors()++;
+	}
+	
+	assert(NVEC(g->GetugGrid())==(g->GetNrMasterVectors()+g->GetNrBorderVectors()+g->GetNrGhostVectors()));	// otherwise the vectorlist became inconsistent
+#endif
+	
     g->Stencil();
 #ifdef FAMG_ILU	
     if(cgilu)
