@@ -257,16 +257,13 @@ static const char *ConvertFileName (const char *fname)
 
 const char *BasedConvertedFilename (const char *fname)
 {
-  PRINTDEBUG(low,2,("BasedConvertedFilename: fname at %p\n",fname));
-  PRINTDEBUG(low,2,("BasedConvertedFilename: based_filename at %p\n",based_filename));
-  PRINTDEBUG(low,1,("BasedConvertedFilename: fname= '%s'\n",fname));
-  strcpy(based_filename,BasePath);
-  PRINTDEBUG(low,2,("BasedConvertedFilename: based_filename= '%s'\n",based_filename));
-  strcat(based_filename,fname);
-  PRINTDEBUG(low,2,("BasedConvertedFilename: based_filename= '%s'\n",based_filename));
-  SimplifyPath(based_filename);
-  PRINTDEBUG(low,1,("BasedConvertedFilename: based_filename= '%s'\n",based_filename));
-
+  if (fname[0]!='/')                    /* use BasePath only if no absolute path specified */
+  {
+    strcpy(based_filename,BasePath);
+    strcat(based_filename,fname);
+    SimplifyPath(based_filename);
+    PRINTDEBUG(low,1,("BasedConvertedFilename: based_filename= '%s'\n",based_filename));
+  }
   return ConvertFileName(based_filename);
 }
 
@@ -862,7 +859,7 @@ int FileTypeUsingSearchPaths (const char *fname, const char *paths)
 
 int AppendTrailingSlash (char *path)
 {
-  if (path[strlen(path)-1]!='/')
+  if (path[0]!='\0' && path[strlen(path)-1]!='/')
   {
     strcat(path,"/");
     return YES;
