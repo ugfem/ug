@@ -70,9 +70,10 @@
 #define FILL_DERIV                                      (1<<2)
 #define FILL_GRAD                                       (1<<3)
 #define FILL_J                                      (1<<4)
+#define FILL_COE                                    (1<<5)
 #define FILL_SHAPES_AND_GRAD            (FILL_SHAPES | FILL_GRAD)
 #define FILL_SHAPES_GRAD_AND_DERIV      (FILL_SHAPES | FILL_GRAD | FILL_DERIV)
-#define FILL_ALL                                        (FILL_CORNER_DATA | FILL_SHAPES | FILL_GRAD | FILL_DERIV | FILL_J)
+#define FILL_ALL                                        (FILL_CORNER_DATA | FILL_SHAPES | FILL_GRAD | FILL_DERIV | FILL_J | FILL_COE)
 
 /* macros for access to exported data structures */
 #define FVG_ELEM(p)                                     ((p)->e)
@@ -92,6 +93,7 @@
 #define FVG_SCV(p,i)                            ((p)->scv+(i))
 #define FVG_SCVF(p,i)                           ((p)->scvf+(i))
 #define FVG_SCVBF(p,i)                          ((p)->bf+(i))
+#define FVG_SDV(p)                                  (&((p)->coe_sdv))
 #define FVG_COSDV(p,i)                          ((p)->co_sdv+(i))
 #define FVG_IPSDV(p,i)                          (&(((p)->scvf[i]).sdv))
 #define FVG_BIPSDV(p,i)                         (&(((p)->bf[i]).sdv))
@@ -182,6 +184,7 @@ typedef struct {
   DOUBLE_VECTOR sm_local[MAXS];         /* points in local space, side midpoints*/
   DOUBLE_VECTOR s_global;                       /* points in global space, center       */
   DOUBLE_VECTOR s_local;                        /* points in local space, center        */
+  SD_VALUES coe_sdv;                            /* shape fcts, deriv. etc. at coe       */
   SD_VALUES co_sdv[MAXNC];                      /* shape fcts, deriv. etc. at corners	*/
   SubControlVolume scv[MAXNC];          /* sub control volumes					*/
   SubControlVolumeFace scvf[MAXF];      /* sub control volume faces				*/

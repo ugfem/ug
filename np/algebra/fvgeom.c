@@ -146,7 +146,9 @@ typedef struct {
 static LOCAL_DOUBLES LocalCoords[TAGS];
 
 /* data for CVS */
-static char RCS_ID("$Header$",UG_RCS_STRING);
+RCSID("$Header$",UG_RCS_STRING)
+
+REP_ERR_FILE;
 
 /****************************************************************************/
 /*																			*/
@@ -1385,13 +1387,14 @@ INT EvaluateShapesAndDerivatives (FVElementGeometry *geo, INT flags)
   DOUBLE_VECTOR deriv;
   DOUBLE Jot[DIM][DIM];
   INT i,j,nco,nip,nbip,lin;
-  INT co_sdv,shapes,Jinv,grad,J;
+  INT co_sdv,shapes,Jinv,grad,J,Coe;
 
   co_sdv = READ_FLAG(flags,FILL_CORNER_DATA);
   shapes = READ_FLAG(flags,FILL_SHAPES);
   Jinv   = READ_FLAG(flags,FILL_DERIV);
   grad   = READ_FLAG(flags,FILL_GRAD);
   J      = READ_FLAG(flags,FILL_J);
+  Coe    = READ_FLAG(flags,FILL_COE);
 
   if (grad)
     Jinv = TRUE;
@@ -1425,7 +1428,6 @@ INT EvaluateShapesAndDerivatives (FVElementGeometry *geo, INT flags)
         {
           TRANSFORMATION(nco,FVG_GCOPTR(geo),FVG_LCO(geo,i),Jot);
           M_DIM_INVERT(Jot,SDV_JINV(sdv),SDV_DETJ(sdv));
-          if (SDV_DETJ(sdv)==0) return (__LINE__);
         }
 
         if (J) MM_DIM_COPY(Jot,SDV_J(sdv));
@@ -1473,7 +1475,6 @@ INT EvaluateShapesAndDerivatives (FVElementGeometry *geo, INT flags)
       {
         TRANSFORMATION(nco,FVG_GCOPTR(geo),SCVF_LIP(scvf),Jot);
         M_DIM_INVERT(Jot,SDV_JINV(sdv),SDV_DETJ(sdv));
-        if (SDV_DETJ(sdv)==0) return (__LINE__);
       }
 
       /* gradients */
@@ -1518,7 +1519,6 @@ INT EvaluateShapesAndDerivatives (FVElementGeometry *geo, INT flags)
       {
         TRANSFORMATION(nco,FVG_GCOPTR(geo),SCVBF_LIP(scvbf),Jot);
         M_DIM_INVERT(Jot,SDV_JINV(sdv),SDV_DETJ(sdv));
-        if (SDV_DETJ(sdv)==0) return (__LINE__);
       }
 
       /* gradients */
@@ -1535,6 +1535,49 @@ INT EvaluateShapesAndDerivatives (FVElementGeometry *geo, INT flags)
     }
   }
 
+  /* center of element */
+  if (Coe)
+  {
+    sdv=FVG_SDV(geo);
+
+    /* shape functions */
+    if (shapes)
+      if (GNs(nco,FVG_LCM(geo),SDV_SHAPEPTR(sdv)))
+      {
+        PrintErrorMessage('E',"EvaluateShapesAndDerivatives","something wrong with shape functions");
+        return(__LINE__);
+      }
+
+    /* inverse of transformation */
+    if (Jinv)
+    {
+      if (lin)
+      {
+        SDV_DETJ(sdv) = SDV_DETJ(sdv0);
+        MM_DIM_COPY(SDV_JINV(sdv0),SDV_JINV(sdv));
+      }
+      else
+      {
+        TRANSFORMATION(nco,FVG_GCOPTR(geo),FVG_LCM(geo),Jot);
+        M_DIM_INVERT(Jot,SDV_JINV(sdv),SDV_DETJ(sdv));
+      }
+    }
+
+    /* determinant */
+    if (J) MM_DIM_COPY(Jot,SDV_J(sdv));
+
+    /* gradients */
+    if (grad)
+      for (j=0; j<nco; j++)
+      {
+        if (D_GN(nco,j,FVG_LCM(geo),deriv))
+        {
+          PrintErrorMessage('E',"EvaluateShapesAndDerivatives","something wrong with derivatives of shape functions");
+          return(__LINE__);
+        }
+        MM_TIMES_V_DIM(SDV_JINV(sdv),deriv,SDV_GRADPTR(sdv,j));
+      }
+  }
 
   return (0);
 }
