@@ -2493,15 +2493,15 @@ static INT NewCommand (INT argc, char **argv)
 static INT OpenCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  char Multigrid[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE];
+  char Multigrid[NAMESIZE],File[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE];
   char *theBVP,*theFormat;
   unsigned long heapSize;
   INT i;
 
   /* get multigrid name */
-  if ((sscanf(argv[0],expandfmt(CONCAT3(" open %",NAMELENSTR,"[ -~]")),Multigrid)!=1) || (strlen(Multigrid)==0))
+  if ((sscanf(argv[0],expandfmt(CONCAT3(" open %",NAMELENSTR,"[ -~]")),File)!=1) || (strlen(File)==0))
   {
-    PrintErrorMessage('E',"open","specify the name of the multigrid to open");
+    PrintErrorMessage('E',"open","specify the name of the file to open");
     return (PARAMERRORCODE);
   }
 
@@ -2529,6 +2529,14 @@ static INT OpenCommand (INT argc, char **argv)
       theFormat = Format;
       break;
 
+    case 'm' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("m %",NAMELENSTR,"[ -~]")),Multigrid)!=1)
+      {
+        PrintHelp("open",HELPITEM," (cannot read multigrid specification)");
+        return(PARAMERRORCODE);
+      }
+      break;
+
     case 'h' :
       if (sscanf(argv[i],"h %lu",&heapSize)!=1)
       {
@@ -2548,15 +2556,16 @@ static INT OpenCommand (INT argc, char **argv)
     PrintErrorMessage('E',"open","heapsize not specified");
     return(CMDERRORCODE);
   }
+  if (Multigrid==NULL) strcpy(Multigrid,File);
+
 
   /* allocate the multigrid structure */
-  theMG = LoadMultiGrid(Multigrid,Multigrid,theBVP,theFormat,heapSize);
+  theMG = LoadMultiGrid(Multigrid,File,theBVP,theFormat,heapSize);
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"open","could not open multigrid");
     return(CMDERRORCODE);
   }
-
   currMG = theMG;
 
   return(OKCODE);
@@ -2753,7 +2762,7 @@ static INT SaveCommand (INT argc, char **argv)
       return (PARAMERRORCODE);
     }
 
-  SaveMultiGrid(theMG,Name,Comment);
+  if (SaveMultiGrid(theMG,Name,Comment)) return (PARAMERRORCODE);
 
   return(OKCODE);
 }
