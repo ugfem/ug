@@ -751,13 +751,9 @@ INT     IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel
     for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
          theElement=SUCCE(theElement))
     {
-      prio = DDD_InfoPriority(PARHDRE(theElement));
+      prio = EPRIO(theElement);
 
-      if (!IS_REFINED(theElement) ||
-          prio==PrioGhost || prio==PrioVGhost)
-      {
-        continue;
-      }
+      if (!IS_REFINED(theElement) || EGHOSTPRIO(prio)) continue;
 
       for (i=0; i<SIDES_OF_ELEM(theElement); i++)
       {
@@ -765,9 +761,8 @@ INT     IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel
         if (theNeighbor == NULL) continue;
 
         /* TODO: change for full dynamic element distribution */
-        if ((prio = DDD_InfoPriority(PARHDRE(theNeighbor))) != PrioGhost
-            || NSONS(theNeighbor)!=0)
-          continue;
+        prio = EPRIO(theNeighbor);
+        if (!HGHOSTPRIO(prio) || NSONS(theNeighbor)!=0) continue;
 
         PRINTDEBUG(dddif,1,("%d: Identify element: pe=%08x/%x eID=%d "
                             "side=%d\n",me,DDD_InfoGlobalId(PARHDRE(theElement)),
@@ -949,9 +944,8 @@ INT Identify_Objects_of_ElementSide(GRID *theGrid, ELEMENT *theElement, INT i)
   theNeighbor = NBELEM(theElement,i);
   if (theNeighbor == NULL) return(GM_OK);
 
-  if ((prio = DDD_InfoPriority(PARHDRE(theNeighbor))) != PrioGhost
-      || NSONS(theNeighbor)!=0)
-    return(GM_OK);
+  prio = EPRIO(theNeighbor);
+  if (!HGHOSTPRIO(prio) || NSONS(theNeighbor)!=0) return(GM_OK);
 
         #ifdef Debug
   identlevel = GLEVEL(theGrid);
