@@ -63,6 +63,7 @@ typedef struct
 {
   NP_DATA_BASE db;
 
+  char name[NAMELEN];
   INT n;
   DOUBLE *list;
 
@@ -91,27 +92,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-INT DB_Init (NP_BASE *theNP, INT argc, char **argv)
-{
-  NP_DATA_BASE *np;
-
-  np = (NP_DATA_BASE *)theNP;
-  if (ReadArgvChar("f",np->fname,argc,argv))
-    return (NP_NOT_ACTIVE);
-
-  return (NP_ACTIVE);
-}
-
-INT DB_Display (NP_BASE *theNP)
-{
-  NP_DATA_BASE *np;
-
-  np = (NP_DATA_BASE *)theNP;
-  UserWriteF(DISPLAY_NP_FORMAT_SS,"f",np->fname);
-
-  return (0);
-}
-
 /****************************************************************************/
 /*D
    list - numproc list
@@ -126,53 +106,39 @@ INT DB_Display (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-static INT ListPreProcess (NP_DATA_BASE *theNP, INT *result)
+static int cmp_real (const void *p, const void *q)
+{
+  DOUBLE v1,v2;
+
+  v1 = *((DOUBLE*)p);
+  v2 = *((DOUBLE*)q);
+  if (v1<v2) return (-1);
+  if (v2<v1) return (1);
+  return (0);
+}
+
+static INT List_PreProcess (NP_DATA_BASE *theNP, INT *result)
 {
   NP_LIST *np;
-  FILE *stream;
-  INT i;
-  int n;
-  double a;
+  int i,n;
+  char buffer[NAMESIZE];
 
   np = (NP_LIST *)theNP;
-        #ifdef ModelP
-  if (me == master) {
-        #endif
-  stream = fileopen(theNP->fname,"r");
-  if (stream == NULL)
-    NP_RETURN(1,*result);
-  if (fscanf(stream,"%d",&n) != 1) {
-    fclose(stream);
-    NP_RETURN(1,*result);
-  }
-        #ifdef ModelP
-}
-Broadcast(&n,sizeof(int));
-        #endif
-  np->n = n;
-  if (SetStringValue(":DB:size",(DOUBLE) n))
-    NP_RETURN(1,*result);
+  n = np->n;
   np->list = (DOUBLE*) GetMemoryForObject(NP_MG(np),n*sizeof(DOUBLE),-1);
-        #ifdef ModelP
-  if (me == master) {
-        #endif
-  for (i=0; i<n; i++) {
-    if (fscanf(stream,"%lf",&a) != 1) {
-      fclose(stream);
-      NP_RETURN(1,*result);
-    }
-    np->list[i] = a;
+  for (i=0; i<n; i++)
+  {
+    sprintf(buffer,"%s%d",np->name,(int)i);
+    if (GetStringValue(buffer,np->list+i)) return (1);
   }
-  fclose(stream);
-        #ifdef ModelP
-}
-Broadcast(np->list,n*sizeof(DOUBLE));
-        #endif
+
+  /* sort list */
+  qsort((void *)np->list,np->n,sizeof(DOUBLE),cmp_real);
 
   return(0);
 }
 
-static INT ListPostProcess (NP_DATA_BASE *theNP, INT *result)
+static INT List_PostProcess (NP_DATA_BASE *theNP, INT *result)
 {
   NP_LIST *np;
 
@@ -183,41 +149,58 @@ static INT ListPostProcess (NP_DATA_BASE *theNP, INT *result)
   return(0);
 }
 
-static INT ListSize (NP_DATA_BASE *theNP, INT *n, INT *result)
+static INT List_GetList (NP_DATA_BASE *theNP, DOUBLE **List, INT *n, INT *result)
 {
   NP_LIST *np;
 
   np = (NP_LIST *)theNP;
+  *List = np->list;
   *n = np->n;
 
   return(0);
 }
 
-static INT ListData (NP_DATA_BASE *theNP, INT i, void **data, INT *result)
+INT List_Init (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_LIST *np;
 
   np = (NP_LIST *)theNP;
-  data[0] = (void *) (np->list+i);
+  if (ReadArgvINT("n",&(np->n),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (ReadArgvChar ("L",np->name,argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
 
-  return(0);
+  return (NP_ACTIVE);
 }
 
+INT List_Display (NP_BASE *theNP)
+{
+  NP_LIST *np;
+  INT i;
+  char buffer[16];
+
+  np = (NP_LIST *)theNP;
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"n",(int)np->n);
+  for (i=0; i<np->n; i++)
+  {
+    sprintf(buffer,"List[%d]",(int)i);
+    UserWriteF(DISPLAY_NP_FORMAT_SF,buffer,np->list[i]);
+  }
+
+  return (0);
+}
+
+/****************************************************************************/
 static INT List_Construct (NP_BASE *theNP)
 {
   NP_DATA_BASE *np;
 
-  theNP->Init = DB_Init;
-  theNP->Display = DB_Display;
+  theNP->Init = List_Init;
+  theNP->Display = List_Display;
   theNP->Execute = NULL;
 
   np = (NP_DATA_BASE *)theNP;
-  np->PreProcess = ListPreProcess;
-  np->GetSize = ListSize;
-  np->SetSize = NULL;
-  np->GetData = ListData;
-  np->SetData = NULL;
-  np->PostProcess = ListPostProcess;
+  np->PreProcess = List_PreProcess;
+  np->GetList = List_GetList;
+  np->PostProcess = List_PostProcess;
 
   return(0);
 }

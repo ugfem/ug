@@ -55,30 +55,14 @@
 struct np_data_base {
   NP_BASE base;                              /* inherits base class             */
 
-  /* data (optional, necessary for calling the generic execute routine)   */
-  char fname[NAMESIZE];
-
   /* functions */
   INT (*PreProcess)
     (struct np_data_base *,                  /* pointer to (derived) object     */
     INT *);                                      /* result                          */
-  INT (*GetSize)
+  INT (*GetList)
     (struct np_data_base *,                  /* pointer to (derived) object     */
+    DOUBLE **,                                   /* ptr to list                     */
     INT *,                                       /* size of list                    */
-    INT *);                                      /* result                          */
-  INT (*SetSize)
-    (struct np_data_base *,                  /* pointer to (derived) object     */
-    INT ,                                        /* size of list                    */
-    INT *);                                      /* result                          */
-  INT (*GetData)
-    (struct np_data_base *,                  /* pointer to (derived) object     */
-    INT,                                         /* index                           */
-    void **,                                     /* size of list                    */
-    INT *);                                      /* result                          */
-  INT (*SetData)
-    (struct np_data_base *,                  /* pointer to (derived) object     */
-    INT,                                         /* index                           */
-    void *,                                      /* size of list                    */
     INT *);                                      /* result                          */
   INT (*PostProcess)
     (struct np_data_base *,                  /* pointer to (derived) object     */
@@ -87,10 +71,7 @@ struct np_data_base {
 typedef struct np_data_base NP_DATA_BASE;
 
 typedef INT (*PreProcessDataBase)(NP_DATA_BASE *, INT *);
-typedef INT (*GetSize)(NP_DATA_BASE *, INT *, INT *);
-typedef INT (*SetSize)(NP_DATA_BASE *, INT , INT *);
-typedef INT (*GetData)(NP_DATA_BASE *, INT , void **, INT *);
-typedef INT (*SetData)(NP_DATA_BASE *, INT , void *, INT *);
+typedef INT (*GetList)(NP_DATA_BASE *, DOUBLE **List, INT *, INT *);
 typedef INT (*PostProcessDataBase)(NP_DATA_BASE *, INT *);
 
 /****************************************************************************/

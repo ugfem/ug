@@ -88,6 +88,8 @@ typedef struct
   DOUBLE t_0;                                                        /* time t_k                                        */
   DOUBLE t_m1;                                                   /* time t_k-1                                  */
   NP_DATA_BASE *TimeControl;             /* list for time steps             */
+  DOUBLE disabled_timestep;                              /* storage for timestep disabled   */
+  /* TimeControl                     */
 
   /* parameters (to be set with init function */
   INT baselevel;                                                 /* for nested iteration		    */
@@ -118,6 +120,8 @@ typedef struct
   DOUBLE list_dt[50];
   DOUBLE list_work[50];
   INT displayMode;
+  char scaleName[NAMELEN];
+  DOUBLE scale;
 
   /* statistics */
   INT number_of_nonlinear_iterations;       /* number of iterations             */
@@ -314,7 +318,6 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
   void *data;
   INT n,i;
   INT indicatorstep;
-  DOUBLE *ddata;
   ERESULT eresult;
   MULTIGRID *mg;
   char buffer[128];
@@ -326,23 +329,12 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
 
 
   /* initialize bdf local variables */
+  bdf->disabled_timestep = -1.0;
   bdf->step = 0;
-  if (bdf->TimeControl == NULL) {
-    bdf->dt = bdf->dtstart;
-  }
-  else {
+  bdf->dt = bdf->dtstart;
+  if (bdf->TimeControl != NULL)
     if ((*bdf->TimeControl->PreProcess)(bdf->TimeControl,res))
       return(1);
-    if ((*bdf->TimeControl->GetSize)(bdf->TimeControl,&n,res))
-      return(1);
-    if (n < 2)
-      NP_RETURN(1,*res);
-    if ((*bdf->TimeControl->GetData)(bdf->TimeControl,0,&data,res))
-      return(1);
-    ddata = (DOUBLE *)data;
-    bdf->dtstart = ddata[0];
-    bdf->dt = ddata[1] - bdf->dtstart;
-  }
   bdf->t_0 = bdf->tstart;
   bdf->t_m1 = - bdf->dt;
 
@@ -449,8 +441,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   MULTIGRID *mg;
   char buffer[128];
   static INT qfm;
-  void *data;
-  DOUBLE *ddata;
+  DOUBLE *TimeList;
   char text[DISPLAY_WIDTH+4];                           /* display text					*/
 
   /* get numprocs ... */
@@ -465,6 +456,31 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   /* initialize strategy flags */
   verygood = bad = 0;
   eresult.step = 0.;
+
+  /* adjusting timestep, to reach defined points of time, if */
+  if (bdf->TimeControl != NULL)
+  {
+    if (bdf->disabled_timestep>0.0)
+    {
+      bdf->dt = bdf->disabled_timestep;
+      bdf->t_p1 = bdf->t_0 + bdf->dt;
+    }
+    if ((*bdf->TimeControl->GetList)(bdf->TimeControl,&TimeList,&n,res))
+      return(1);
+    i=n;
+    if (bdf->t_0+bdf->dt>=TimeList[0])
+      for (i=0; i<n; i++)
+        if (bdf->t_0<TimeList[i] && bdf->t_0+bdf->dt>TimeList[i])
+          break;
+    if (i<n)
+    {
+      bdf->disabled_timestep = bdf->dt;
+      bdf->t_p1 = TimeList[i];
+      bdf->dt = bdf->t_p1 - bdf->t_0;
+    }
+    else
+      bdf->disabled_timestep = -1.0;
+  }
 
   /* compute solution at new time step */
   while (1)
@@ -761,25 +777,6 @@ Continue:
     SetStringVar(":BDF:EFF",buffer);
   }
 
-  /*UserWriteF("TIMESTEP %4d: TIME=%10.4lg DT=%10.4lg EXECT=%10.4lg NLIT=%5d LIT=%5d MAXLIT=%3d QFM=%d\n",
-                         bdf->step,bdf->t_0,bdf->dt,bdf->exec_time,bdf->number_of_nonlinear_iterations,
-                         bdf->total_linear_iterations,bdf->max_linear_iterations,qfm);*/
-
-
-  if (bdf->TimeControl != NULL) {
-    if ((*bdf->TimeControl->GetSize)(bdf->TimeControl,&n,res))
-      return(1);
-    if (bdf->step+1 < n) {
-      if ((*bdf->TimeControl->GetData)(bdf->TimeControl,bdf->step+1,
-                                       &data,res))
-        return(1);
-      ddata = (DOUBLE *)data;
-      bdf->t_p1 = ddata[0];
-      bdf->dt = bdf->t_p1 - bdf->t_0;
-      goto output;
-    }
-  }
-
   /* chose new dt for next time step */
   dt_old = bdf->dt;
   if ((bdf->optnlsteps) && (nlresult.converged))
@@ -866,15 +863,14 @@ Continue:
     }
   }
 
-
 output:         /* output */
   if (bdf->displayMode != PCR_NO_DISPLAY)
   {
     UserWriteF("\n");
     CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(bdf),'%',"\n"); UserWrite(text);
-    UserWriteF("%-4d   Time:           t: %e\n",(int)bdf->step,(float)bdf->t_0);
-    UserWriteF("                      dt: %e\n",(float)dt_old);
-    UserWriteF("                    s_dt: %e\n",(float)bdf->dt);
+    UserWriteF("%-4d   Time:           t: %e %s\n",(int)bdf->step,(float)bdf->t_0/bdf->scale,bdf->scaleName);
+    UserWriteF("                      dt: %e %s\n",(float)dt_old/bdf->scale,bdf->scaleName);
+    UserWriteF("                    s_dt: %e %s\n",(float)bdf->dt/bdf->scale,bdf->scaleName);
     UserWriteF("\n");
   }
   if (bdf->displayMode == PCR_RED_DISPLAY || bdf->displayMode == PCR_FULL_DISPLAY)
@@ -1037,24 +1033,24 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
   if (ReadArgvDOUBLE("tstart",&(bdf->tstart),argc,argv))
     bdf->tstart = 0.0;
   if (ReadArgvDOUBLE("dtstart",&(bdf->dtstart),argc,argv))
-    if (bdf->TimeControl == NULL) {
-      UserWrite("dtstart must be specified\n");
-      return(NP_NOT_ACTIVE);
-    }
+  {
+    UserWrite("dtstart must be specified\n");
+    return(NP_NOT_ACTIVE);
+  }
   if ((bdf->dtstart<0.0)) return(NP_NOT_ACTIVE);
 
   if (ReadArgvDOUBLE("dtmin",&(bdf->dtmin),argc,argv))
-    if (bdf->TimeControl == NULL) {
-      bdf->dtmin = bdf->dtstart;
-      return(NP_NOT_ACTIVE);
-    }
+  {
+    bdf->dtmin = bdf->dtstart;
+    return(NP_NOT_ACTIVE);
+  }
   if ((bdf->dtmin<0.0)) return(NP_NOT_ACTIVE);
 
   if (ReadArgvDOUBLE("dtmax",&(bdf->dtmax),argc,argv))
-    if (bdf->TimeControl == NULL) {
-      bdf->dtmax = bdf->dtstart;
-      return(NP_NOT_ACTIVE);
-    }
+  {
+    bdf->dtmax = bdf->dtstart;
+    return(NP_NOT_ACTIVE);
+  }
   if ((bdf->dtmax<0.0)) return(NP_NOT_ACTIVE);
 
   if (ReadArgvDOUBLE("dtscale",&(bdf->dtscale),argc,argv))
@@ -1067,6 +1063,26 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
     bdf->rhogood = 0.01;
   }
   if ((bdf->rhogood<0.0) || (bdf->rhogood>1)) return(NP_NOT_ACTIVE);
+  if (ReadArgvChar("scale",bdf->scaleName,argc,argv))
+  {
+    bdf->scale = 1.0;
+    bdf->scaleName[0] = '\0';
+  }
+  else
+  {
+    if (strcmp(bdf->scaleName,"second")==0) bdf->scale = 1.0;
+    else if (strcmp(bdf->scaleName,"minute")==0) bdf->scale = 60.0;
+    else if (strcmp(bdf->scaleName,"hour")==0) bdf->scale = 3600.0;
+    else if (strcmp(bdf->scaleName,"day")==0) bdf->scale = 86400.0;
+    else if (strcmp(bdf->scaleName,"week")==0) bdf->scale = 604800;
+    else if (strcmp(bdf->scaleName,"month")==0) bdf->scale = 2628000;
+    else if (strcmp(bdf->scaleName,"year")==0) bdf->scale = 31536000;
+    else
+    {
+      UserWrite("ERROR: cannot read scale-option\n");
+      return(NP_NOT_ACTIVE);
+    }
+  }
 
   if (ReadArgvOption("copyall",argc,argv))
     bdf->refarg = GM_COPY_ALL;
