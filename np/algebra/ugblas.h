@@ -201,6 +201,76 @@
              + MVALUE(mat,m ## 21) * VVALUE(vec,c ## 1)       \
              + MVALUE(mat,m ## 22) * VVALUE(vec,c ## 2);}
 
+#define MATMUL_11_SUCC(s,mat,m,vec,c) MATMUL_11(s,mat,m,vec,c)
+
+#define MATMUL_12_SUCC(s,mat,m,vec,c)                                                                      \
+  {mptr = MVALUEPTR(mat,m ## 00);                  \
+   vptr = VVALUEPTR(vec,c ## 0);                   \
+   s ## 0 += mptr[0] * vptr[0]                     \
+             +  mptr[1] * vptr[1];}
+
+#define MATMUL_13_SUCC(s,mat,m,vec,c)                                                                      \
+  {mptr = MVALUEPTR(mat,m ## 00);                  \
+   vptr = VVALUEPTR(vec,c ## 0);                   \
+   s ## 0 += mptr[0] * vptr[0]                     \
+             +  mptr[1] * vptr[1]                     \
+             +  mptr[2] * vptr[2];}
+
+#define MATMUL_21_SUCC(s,mat,m,vec,c)                                                                      \
+  {mptr = MVALUEPTR(mat,m ## 00);                  \
+   vptr = VVALUEPTR(vec,c ## 0);                   \
+   s ## 0 += mptr[0] * vptr[0];                    \
+   s ## 1 += mptr[1] * vptr[0];}
+
+#define MATMUL_22_SUCC(s,mat,m,vec,c)                                                                      \
+  {mptr = MVALUEPTR(mat,m ## 00);                  \
+   vptr = VVALUEPTR(vec,c ## 0);                   \
+   s ## 0 += mptr[0] * vptr[0]                     \
+             +  mptr[1] * vptr[1];                    \
+   s ## 1 += mptr[2] * vptr[0]                     \
+             +  mptr[3] * vptr[1];}
+
+#define MATMUL_23_SUCC(s,mat,m,vec,c)                                                                      \
+  {mptr = MVALUEPTR(mat,m ## 00);                  \
+   vptr = VVALUEPTR(vec,c ## 0);                   \
+   s ## 0 += mptr[0] * vptr[0]                     \
+             +  mptr[1] * vptr[1]                     \
+             +  mptr[2] * vptr[2];                    \
+   s ## 1 += mptr[3] * vptr[0]                     \
+             +  mptr[4] * vptr[1]                     \
+             +  mptr[5] * vptr[2];}
+
+#define MATMUL_31_SUCC(s,mat,m,vec,c)                                                                      \
+  {mptr = MVALUEPTR(mat,m ## 00);                  \
+   vptr = VVALUEPTR(vec,c ## 0);                   \
+   s ## 0 += mptr[0] * vptr[0];                    \
+   s ## 1 += mptr[1] * vptr[0];                    \
+   s ## 2 += mptr[2] * vptr[0];}
+
+#define MATMUL_32_SUCC(s,mat,m,vec,c)                                                              \
+  {mptr = MVALUEPTR(mat,m ## 00);                  \
+   vptr = VVALUEPTR(vec,c ## 0);                   \
+   s ## 0 += mptr[0] * vptr[0]                     \
+             +  mptr[1] * vptr[1];                    \
+   s ## 1 += mptr[2] * vptr[0]                     \
+             +  mptr[3] * vptr[1];                    \
+   s ## 2 += mptr[4] * vptr[0]                     \
+             +  mptr[5] * vptr[1];}
+
+#define MATMUL_33_SUCC(s,mat,m,vec,c)                                                                      \
+  {mptr = MVALUEPTR(mat,m ## 00);                  \
+   vptr = VVALUEPTR(vec,c ## 0);                   \
+   s ## 0 += mptr[0] * vptr[0]                     \
+             +  mptr[1] * vptr[1]                     \
+             +  mptr[2] * vptr[2];                    \
+   s ## 1 += mptr[3] * vptr[0]                     \
+             +  mptr[4] * vptr[1]                     \
+             +  mptr[5] * vptr[2];                    \
+   s ## 2 += mptr[6] * vptr[0]                     \
+             +  mptr[7] * vptr[1]                     \
+             +  mptr[8] * vptr[2];}
+
+
 #define TPMATMUL_11(s,mat,m,vec,c)                                                                                      \
   {s ## 0 += MVALUE(MADJ(mat),m ## 00) * VVALUE(vec,c ## 0);}
 

@@ -20,7 +20,7 @@
 $Header$
 */
 
-INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode,const VECDATA_DESC *x T_ARGS)
+INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x T_ARGS)
 {
 	register VECTOR *v;
 	INT lev,vtype,ncomp,i;

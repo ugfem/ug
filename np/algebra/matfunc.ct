@@ -20,6 +20,31 @@
 $Header$
 */
 
+#ifdef T_USE_MATMUL
+
+#define T_MOD_11	   MATMUL_11(s,mat,m,w,cy)
+#define T_MOD_12	   MATMUL_12(s,mat,m,w,cy)
+#define T_MOD_13	   MATMUL_13(s,mat,m,w,cy)
+#define T_MOD_21	   MATMUL_21(s,mat,m,w,cy)
+#define T_MOD_22	   MATMUL_22(s,mat,m,w,cy)
+#define T_MOD_23	   MATMUL_23(s,mat,m,w,cy)
+#define T_MOD_31	   MATMUL_31(s,mat,m,w,cy)
+#define T_MOD_32	   MATMUL_32(s,mat,m,w,cy)
+#define T_MOD_33	   MATMUL_33(s,mat,m,w,cy)
+
+#define T_MOD_SUCC_11  MATMUL_11_SUCC(s,mat,m,w,cy)
+#define T_MOD_SUCC_12  MATMUL_12_SUCC(s,mat,m,w,cy)
+#define T_MOD_SUCC_13  MATMUL_13_SUCC(s,mat,m,w,cy)
+#define T_MOD_SUCC_21  MATMUL_21_SUCC(s,mat,m,w,cy)
+#define T_MOD_SUCC_22  MATMUL_22_SUCC(s,mat,m,w,cy)
+#define T_MOD_SUCC_23  MATMUL_23_SUCC(s,mat,m,w,cy)
+#define T_MOD_SUCC_31  MATMUL_31_SUCC(s,mat,m,w,cy)
+#define T_MOD_SUCC_32  MATMUL_32_SUCC(s,mat,m,w,cy)
+#define T_MOD_SUCC_33  MATMUL_33_SUCC(s,mat,m,w,cy)
+
+#endif
+
+
 INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode T_ARGS)
 {
 	register VECTOR *v;
@@ -27,6 +52,7 @@ INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode T_ARGS)
 	INT lev,rtype,ctype,nr,nc,i,j;
 	#ifdef T_USE_Y
 	register VECTOR *w;
+	register DOUBLE *mptr,*vptr;
 	#endif
 
 	#ifdef T_CONFIG
@@ -155,38 +181,47 @@ INT CAT(T_FUNCNAME,BS) (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const
 #undef T_PREP_11
 #undef T_LOOP_11
 #undef T_MOD_11 
+#undef T_MOD_SUCC_11 
 #undef T_POST_11
 #undef T_PREP_12
 #undef T_LOOP_12
 #undef T_MOD_12 
+#undef T_MOD_SUCC_12 
 #undef T_POST_12
 #undef T_PREP_13
 #undef T_LOOP_13
 #undef T_MOD_13 
+#undef T_MOD_SUCC_13 
 #undef T_POST_13
 #undef T_PREP_21
 #undef T_LOOP_21
 #undef T_MOD_21 
+#undef T_MOD_SUCC_21 
 #undef T_POST_21
 #undef T_PREP_22
 #undef T_LOOP_22
 #undef T_MOD_22
+#undef T_MOD_SUCC_22 
 #undef T_POST_22
 #undef T_PREP_23
 #undef T_LOOP_23
 #undef T_MOD_23
+#undef T_MOD_SUCC_23 
 #undef T_POST_23
 #undef T_PREP_31
 #undef T_LOOP_31
 #undef T_MOD_31 
+#undef T_MOD_SUCC_31 
 #undef T_POST_31
 #undef T_PREP_32
 #undef T_LOOP_32
 #undef T_MOD_32
+#undef T_MOD_SUCC_32 
 #undef T_POST_32
 #undef T_PREP_33
 #undef T_LOOP_33
 #undef T_MOD_33
+#undef T_MOD_SUCC_33
 #undef T_POST_33
 #undef T_PREP_N
 #undef T_MOD_N
