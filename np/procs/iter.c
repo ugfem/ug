@@ -2786,9 +2786,9 @@ static INT BHRConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-static INT SetAutoDamp (GRID *g, MATDATA_DESC *A, VECDATA_DESC *adv)
+static INT SetAutoDamp (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
 {
-  INT i,n,comp;
+  INT i,n,comp,rtype;
   SHORT *advcomp;
   VECTOR *v;
   MATRIX *m;
@@ -2804,8 +2804,8 @@ static INT SetAutoDamp (GRID *g, MATDATA_DESC *A, VECDATA_DESC *adv)
       sum=0.0;
       for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
         sum+=ABS(MVALUE(m,comp));
-      if (diag>=sum) VVALUE(v,advcomp[i])=1.0;
-      else VVALUE(v,advcomp[i])=diag/sum;
+      if (diag>=sum) VVALUE(v,advcomp[i])=damp[i];
+      else VVALUE(v,advcomp[i])=damp[i]*diag/sum;
     }
 
   return(0);
@@ -2816,7 +2816,7 @@ static INT SORInit (NP_BASE *theNP, INT argc , char **argv)
   NP_SMOOTHER *np;
 
   np = (NP_SMOOTHER *) theNP;
-  np->AutoDamp = ReadArgvOption("autodamp",argc,argv);
+  np->AutoDamp = ReadArgvOption("autodmp",argc,argv);
   np->DampVector = ReadArgvVecDesc(NP_MG(np),"dv",argc,argv);
 
   return (SmootherInit(theNP,argc,argv));
@@ -2828,7 +2828,7 @@ static INT SORDisplay (NP_BASE *theNP)
 
   NPIterDisplay(&np->iter);
   UserWrite("configuration parameters:\n");
-  UserWriteF(DISPLAY_NP_FORMAT_SI,"autodamp",np->AutoDamp);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"autodmp",np->AutoDamp);
   if (np->DampVector != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"dv",ENVITEM_NAME(np->DampVector));
 
@@ -2846,10 +2846,8 @@ static INT SORPreProcess  (NP_ITER *theNP, INT level,
   theGrid = NP_GRID(theNP,level);
   if (np->AutoDamp)
   {
-    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector))
-      NP_RETURN(1,result[0]);
-    if (SetAutoDamp(theGrid,A,np->DampVector))
-      NP_RETURN(1,result[0]);
+    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector)) NP_RETURN(1,result[0]);
+    if (SetAutoDamp(theGrid,A,np->damp,np->DampVector)) NP_RETURN(1,result[0]);
   }
         #ifdef ModelP
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L)) NP_RETURN(1,result[0]);
