@@ -407,7 +407,7 @@ INT a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
   for (tp=0; tp<NVECTYPES; tp++)
     m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
-  if ((fl==0) && (tl==TOPLEVEL(mg)))
+  if ((fl==BOTTOMLEVEL(mg)) && (tl==TOPLEVEL(mg)))
     DDD_IFExchange(BorderVectorSymmIF, m * sizeof(DOUBLE),
                    Gather_VectorComp, Scatter_VectorComp);
   else
@@ -476,6 +476,57 @@ INT l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x)
 
   DDD_IFAOneway(VectorVIF, GRID_ATTR(g), IF_FORWARD, m * sizeof(DOUBLE),
                 Gather_VectorComp, Scatter_GhostVectorComp);
+
+  return (NUM_OK);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   a_outervector_consistent - makes horizontal ghosts consistent
+
+   SYNOPSIS:
+   INT a_outervector_consistent (MULTIGRID *mg, INT fl, INT tl,
+   const VECDATA_DESC *x);
+
+   PARAMETERS:
+   .  mg - pointer to multigrid
+   .  fl - from level
+   .  tl - from level
+   .  x - vector data descriptor
+
+   DESCRIPTION:
+   This function copies the vector values on the master vectors to the
+   horizontal ghosts.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+   D*/
+/****************************************************************************/
+
+#ifdef ModelP
+INT a_outervector_consistent (MULTIGRID *mg, INT fl, INT tl,
+                              const VECDATA_DESC *x)
+{
+  INT tp,m,level;
+
+  ConsVector = (VECDATA_DESC *)x;
+
+  m = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+
+  if ((fl==BOTTOMLEVEL(mg)) && (tl==TOPLEVEL(mg)))
+    DDD_IFOneway(OuterVectorIF, IF_FORWARD, m * sizeof(DOUBLE),
+                 Gather_VectorComp, Scatter_GhostVectorComp);
+  else
+    for (level=fl; level<=tl; level++)
+      DDD_IFAOneway(OuterVectorIF,
+                    GRID_ATTR(GRID_ON_LEVEL(mg,level)), IF_FORWARD,
+                    m * sizeof(DOUBLE),
+                    Gather_VectorComp, Scatter_GhostVectorComp);
 
   return (NUM_OK);
 }
@@ -672,7 +723,7 @@ INT a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
   for (tp=0; tp<NVECTYPES; tp++)
     m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
-  if ((fl==0) && (tl==TOPLEVEL(mg)))
+  if ((fl==BOTTOMLEVEL(mg)) && (tl==TOPLEVEL(mg)))
     DDD_IFOneway(BorderVectorIF, IF_FORWARD, m * sizeof(DOUBLE),
                  Gather_VectorCompCollect, Scatter_VectorComp);
   else
@@ -780,7 +831,7 @@ INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
     m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
   m++;
-  if ((fl==0) && (tl==TOPLEVEL(mg)))
+  if ((fl==BOTTOMLEVEL(mg)) && (tl==TOPLEVEL(mg)))
     DDD_IFExchange(BorderVectorSymmIF, m * sizeof(DOUBLE),
                    Gather_VectorVecskip, Scatter_VectorVecskip);
   else
@@ -1322,7 +1373,7 @@ INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
   for (tp=0; tp<NVECTYPES; tp++)
     m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
-  if ((fl==0) && (tl==TOPLEVEL(mg)))
+  if ((fl==BOTTOMLEVEL(mg)) && (tl==TOPLEVEL(mg)))
     DDD_IFExchange(BorderVectorSymmIF, m * sizeof(DOUBLE),
                    Gather_VectorComp, Scatter_VectorComp);
   else
