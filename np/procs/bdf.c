@@ -321,6 +321,11 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
       a_daxpy(mg,0,low,bdf->y_p1,EVERY_CLASS,Factor,bdf->y_m1);
     }
 
+    if ( (*tass->TAssemblePreProcess)(tass,0,level,
+                                      bdf->t_p1,bdf->t_0,bdf->t_m1,
+                                      bdf->y_p1,bdf->y_0,bdf->y_m1,res) )
+      return(__LINE__);
+
     /* set Dirichlet conditions in predicted solution */
     if ( (*tass->TAssembleSolution)(tass,0,low,bdf->t_p1,bdf->y_p1,res) )
       return(__LINE__);
@@ -388,6 +393,11 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   }
 
   /* LATER: In the adaptive case now iterate: adapt grid & time step, solve again */
+
+  if ( (*tass->TAssemblePostProcess)(tass,0,level,
+                                     bdf->t_p1,bdf->t_0,bdf->t_m1,
+                                     bdf->y_p1,bdf->y_0,bdf->y_m1,res) )
+    return(__LINE__);
 
   /* accept new time step */
   a_dcopy(mg,0,level,bdf->y_m1,EVERY_CLASS,bdf->y_0 ); bdf->t_m1 = bdf->t_0;

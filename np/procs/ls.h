@@ -85,7 +85,8 @@ struct np_linear_solver {
     INT *);                                      /* result                          */
   INT (*Residuum)                        /* computes norm of the defect     */
     (struct np_linear_solver *,              /* pointer to (derived) object     */
-    INT,                                         /* level                           */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
     VECDATA_DESC *,                              /* solution vector                 */
     VECDATA_DESC *,                              /* defect vector                   */
     MATDATA_DESC *,                              /* matrix                          */

@@ -285,7 +285,11 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   /* compute norm of nonlinear defect */
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(newton),'*',"\n");
   if (PreparePCR(newton->d,newton->displayMode,text,&PrintID))    {res->error_code = __LINE__; return(res->error_code);}
-  if (s_eunorm(mg,0,level,newton->d,defect))                                              {res->error_code = __LINE__; return(res->error_code);}
+  if ((*newton->solve->Residuum)(newton->solve,0,level,newton->v,newton->d,newton->J,&lr)) {
+    res->error_code = __LINE__;
+    goto exit;
+  }
+  for (i=0; i<n_unk; i++) defect[i] = lr.last_defect[i];
   if (sc_mul(defect2reach,defect,reduction,newton->d))                    {res->error_code = __LINE__; return(res->error_code);}
   if (DoPCR(PrintID,defect,PCR_CRATE))                                                    {res->error_code = __LINE__; return(res->error_code);}
   for (i=0; i<n_unk; i++) res->first_defect[i] = defect[i];
@@ -353,7 +357,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
         res->error_code = __LINE__;
         return(res->error_code);
       }
-    if ((*newton->solve->Residuum)(newton->solve,level,newton->v,newton->d,newton->J,&lr))
+    if ((*newton->solve->Residuum)(newton->solve,0,level,newton->v,newton->d,newton->J,&lr))
     {
       res->error_code = __LINE__;
       goto exit;
@@ -440,8 +444,11 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
                         #endif
 
       /* compute norm of defect */
-      if (s_eunorm(mg,0,level,newton->d,defect))      {res->error_code = __LINE__; return(res->error_code);}
-
+      if ((*newton->solve->Residuum)(newton->solve,0,level,newton->v,newton->d,newton->J,&lr)) {
+        res->error_code = __LINE__;
+        goto exit;
+      }
+      for (i=0; i<n_unk; i++) defect[i] = lr.last_defect[i];
       /* compute single norm */
       sprime = 0.0; for (i=0; i<n_unk; i++) sprime += defect[i]*defect[i];
       sprime = sqrt(sprime);

@@ -251,7 +251,7 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPLinearSolverExecute","no Residuum");
       return (1);
     }
-    if ((*np->Residuum)(np,level,np->x,np->b,np->A,&lresult)) {
+    if ((*np->Residuum)(np,bl,level,np->x,np->b,np->A,&lresult)) {
       UserWriteF("NPLinearSolverExecute: Residuum failed, error code %d\n",
                  result);
       return (1);
@@ -361,7 +361,7 @@ static INT LinearDefect (NP_LINEAR_SOLVER *theNP, INT level,
   }
 }
 
-static INT LinearResiduum (NP_LINEAR_SOLVER *theNP, INT level,
+static INT LinearResiduum (NP_LINEAR_SOLVER *theNP, INT bl, INT level,
                            VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
                            LRESULT *lresult)
 {
@@ -369,12 +369,12 @@ static INT LinearResiduum (NP_LINEAR_SOLVER *theNP, INT level,
 
   np = (NP_LS *) theNP;
         #ifdef ModelP
-  if (a_vector_collect(theNP->base.mg,np->baselevel,level,b)) {
+  if (a_vector_collect(theNP->base.mg,bl,level,b)) {
     lresult->error_code = __LINE__;
     return(1);
   }
         #endif
-  if (s_eunorm(theNP->base.mg,np->baselevel,level,b,lresult->last_defect)) {
+  if (s_eunorm(theNP->base.mg,bl,level,b,lresult->last_defect)) {
     lresult->error_code = __LINE__;
     return(1);
   }
@@ -440,7 +440,7 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
       return (1);
     if ((*np->Update)(np,level,x,np->c,b,A,&lresult->error_code))
       return (1);
-    if (LinearResiduum(theNP,level,x,b,A,lresult))
+    if (LinearResiduum(theNP,bl,level,x,b,A,lresult))
       return(1);
     if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE)) {
       lresult->error_code = __LINE__;
