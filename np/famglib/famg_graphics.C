@@ -58,6 +58,7 @@ static INT GlobalIds;
 static INT VecCoordComp;
 
 #ifdef ModelP
+static int DrawBorderVec;
 static long GreenColor; /* Green for non master vectors */
 static VECDATA_DESC *ConsVector;
 
@@ -104,7 +105,10 @@ struct FAMGPlotObject
 	struct PlotObjHead theHead;    /* the head */
 	int level;
 	int ids;
-	VECDATA_DESC *CoordVec;
+	VECDATA_DESC *CoordVec;			// vector to hold the coordinate info for the node
+#ifdef ModelP
+	int DrawBorder;					// if 1, also border vectors are plotted
+#endif
 };
 
 
@@ -126,6 +130,13 @@ static INT SetFAMGGraph (PLOTOBJ *thePlotObj, INT argc, char **argv)
     if(i > 0) theObj->ids = 1;
     else theObj->ids = 0;
    
+#ifdef ModelP
+    if (ReadArgvINT("b",&i,argc,argv))
+    	theObj->DrawBorder = 0;
+	else
+    	theObj->DrawBorder = i;
+#endif
+	
     theObj->CoordVec = ReadArgvVecDesc(PO_MG(thePlotObj),"coordvec",argc,argv);
 	if( theObj->CoordVec != NULL )
 		if (VD_ncmps_in_otype(theObj->CoordVec,NODEVEC) < DIM)
@@ -169,6 +180,7 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
 	RedColor = theOD->red;
 #ifdef ModelP
 	GreenColor = theOD->green;
+	DrawBorderVec = theObj->DrawBorder;
 #endif
     if(theObj->level == 999) 
     {
@@ -243,7 +255,7 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
 {
     VERTEX *vertex, *nbvertex;
     DOUBLE_VECTOR mypos,nbpos;
-    int j;
+    int j, CircleSize;
     VECTOR *nbvec;
     MATRIX *mat, *imat;
 	long VectorColor;
@@ -252,6 +264,30 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
 
     if(vec == NULL) return (0);
 
+#ifdef ModelP
+	if( !IS_FAMG_MASTER(vec) )
+	{
+		if( !DrawBorderVec )
+		{
+		    DO_2c(theDO) = DO_NO_INST;
+			WOP_DObjPnt = theDO;
+			return 0;
+		}
+		VectorColor = GreenColor;
+	}
+	else
+	{
+		if( DrawBorderVec )
+			VectorColor = BlackColor;
+		else
+			VectorColor = (me%10)+1;
+	}
+	CircleSize = 12;
+#else
+	VectorColor = BlackColor;
+	CircleSize = 8;
+#endif
+	
 	if( VecCoordComp == -1 )
 	{
 	    vertex = MYVERTEX(VMYNODE(vec));				// take coord from vertex
@@ -262,13 +298,6 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
 		V_DIM_COPY(VVALUEPTR(vec,VecCoordComp),mypos);	// take coord from special vector
 	}
 
-#ifdef ModelP
-	if( !IS_FAMG_MASTER(vec) )
-		VectorColor = GreenColor;
-	else
-#endif
-		VectorColor = BlackColor;
-	
     /* plot  marker */
     if(VCCOARSE(vec))
     {
@@ -276,7 +305,7 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
         DO_2c(theDO) = 1; DO_inc(theDO); 
         DO_2l(theDO) = VectorColor; DO_inc(theDO);
         DO_2s(theDO) = FILLED_CIRCLE_MARKER; DO_inc(theDO); 
-        DO_2s(theDO) = 8; DO_inc(theDO);
+        DO_2s(theDO) = CircleSize; DO_inc(theDO);
         V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
     }
     else
@@ -285,7 +314,7 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
         DO_2c(theDO) = 1; DO_inc(theDO); 
         DO_2l(theDO) = VectorColor; DO_inc(theDO);
         DO_2s(theDO) = EMPTY_CIRCLE_MARKER; DO_inc(theDO); 
-        DO_2s(theDO) = 8; DO_inc(theDO);
+        DO_2s(theDO) = CircleSize; DO_inc(theDO);
         V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
     }
     
@@ -297,7 +326,7 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
         DO_2l(theDO) = VectorColor; DO_inc(theDO);
         DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO); 
         DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO); 
-        DO_2s(theDO) = 6; DO_inc(theDO);
+        DO_2s(theDO) = CircleSize - 2; DO_inc(theDO);
         V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
         sprintf(DO_2cp(theDO),"%d",VINDEX(vec));
         DO_inc_str(theDO);
@@ -317,7 +346,7 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
 	        V_DIM_COPY(VVALUEPTR(nbvec,VecCoordComp),nbpos);	// take coord from special vector
 		}
         DO_2c(theDO) = DO_LINE; DO_inc(theDO); 
-        DO_2l(theDO) =BlackColor; DO_inc(theDO);
+        DO_2l(theDO) = BlackColor; DO_inc(theDO);
         V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
         V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
     }
@@ -367,7 +396,7 @@ static INT EvalFAMGGraph2 (DRAWINGOBJ *theDO, VECTOR *vec)
 	        V_DIM_COPY(VVALUEPTR(nbvec,VecCoordComp),nbpos);	// take coord from special vector
 		}
         DO_2c(theDO) = DO_LINE; DO_inc(theDO); 
-        DO_2l(theDO) =RedColor; DO_inc(theDO);
+        DO_2l(theDO) = RedColor; DO_inc(theDO);
         V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
         V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2); 
      }
