@@ -2049,8 +2049,7 @@ static INT BuildGreenClosure (GRID *theGrid)
 	return(GM_OK);
 }
 
-#ifdef ModelP
-
+#if defined(ModelP) && defined(Debug)
 
 /****************************************************************************/
 /*
@@ -5893,7 +5892,11 @@ DDD_CONSCHECK;
 { 
 int check=1;
 int debugstart=3;
+#ifdef Debug
 int gmlevel=Debuggm;
+#else
+int gmlevel=0;
+#endif
 int dddiflevel;
 
 
@@ -6037,9 +6040,13 @@ void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel,
 
 	IFDEBUG(gm,debugstart)
 		printf(PFMT "AdaptMultiGrid(): %d. ConsCheck() on level=%d\n",me,(*check)++,level);
+		#ifdef Debug
 		Debuggm = GHOSTS;
+		#endif
 		CheckGrid(theGrid,GEOM,ALG,LIST,IF);
+		#ifdef Debug
 		Debuggm=gmlevel;
+		#endif
 		if (DDD_ConsCheck() > 0) buggy(theMG);
 	ENDDEBUG
 }
