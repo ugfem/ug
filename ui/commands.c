@@ -343,29 +343,6 @@ INT SetCurrentMultigrid (MULTIGRID *theMG)
   return (1);
 }
 
-#ifdef __THREEDIM__
-INT GetRule_AnisotropicRed (ELEMENT *theElement, INT *Rule)
-{
-  DOUBLE area,norm;
-  DOUBLE_VECTOR a,b,c;
-
-  *Rule=NO_REFINEMENT;
-  if (TAG(theElement)==PRISM)
-  {
-    V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,1))),CVECT(MYVERTEX(CORNER(theElement,0))),a);
-    V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,2))),CVECT(MYVERTEX(CORNER(theElement,0))),b);
-    V3_VECTOR_PRODUCT(a,b,c);
-    V3_EUKLIDNORM(c,area);
-    area *= 0.5;
-    V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,3))),CVECT(MYVERTEX(CORNER(theElement,0))),a);
-    V3_EUKLIDNORM(a,norm);
-    if (norm < 0.25*SQRT(area)) *Rule=PRISM_QUADSECT;
-  }
-
-  return (0);
-}
-#endif
-
 /****************************************************************************/
 /*D
    quit - quit command
@@ -4929,15 +4906,6 @@ static INT MarkCommand (INT argc, char **argv)
       mode = MARK_ALL;
       break;
 
-    case 'b' :
-      if (mode!=FALSE)
-      {
-        PrintErrorMessage('E',"mark","specify only one option of a, b, i, s");
-        return (PARAMERRORCODE);
-      }
-      mode = AI_MARK_ALL;
-      break;
-
     case 'i' :
       if (mode!=FALSE)
       {
@@ -4999,24 +4967,6 @@ static INT MarkCommand (INT argc, char **argv)
             nmarked++;
       }
     break;
-
-#ifdef THREEDIM__
-  case AI_MARK_ALL :
-    for (l=0; l<=TOPLEVEL(theMG); l++)
-      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l)); theElement!=NULL; theElement=SUCCE(theElement))
-        if (EstimateHere(theElement))
-        {
-          if (GetRule_AnisotropicRed(theElement,&Rule)) Rule=RED;
-          if ((rv = MarkForRefinement(theElement,Rule,NULL))!=0)
-          {
-            l = TOPLEVEL(theMG);
-            break;
-          }
-          else
-            nmarked++;
-        }
-    break;
-#endif
 
   case MARK_ID :
     theElement = NULL;
