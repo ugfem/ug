@@ -3617,7 +3617,7 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
       bnds = ELEM_BNDS(theElement,i);
       if (bnds != NULL)
       {
-#ifdef __SWAPBYTES__  /* Don't check for bnds HEAPFAULTs on little endian machines!! */
+#ifndef __SWAPBYTES__  /* Don't check for bnds HEAPFAULTs on little endian machines!! */
         HEAPFAULT(bnds);
 #endif
         BNDS_Dispose(MGHEAP(MYMG(theGrid)),bnds);
