@@ -238,6 +238,15 @@ int matherr(struct exception *x)
   UG_math_error = 1;       /* lets be more specific later ... */
   return(0);   /* proceed with standard messages */
 }
+#ifdef __HP__
+/* HP-UX 10.20 expects the name with an "_" as prefix for the math error handler */
+int _matherr(struct exception *x)
+{
+  /* your math error handling here */
+  UG_math_error = 1;       /* lets be more specific later ... */
+  return(0);   /* proceed with standard messages */
+}
+#endif
 
 #define FMTBUFFSIZE         1031
 
