@@ -7994,10 +7994,19 @@ void NS_PREFIX ListGrids (const MULTIGRID *theMG)
             v1 = MYVERTEX(n1);
 
             if ((theEdge=GetEdge(n0,n1))==NULL) continue;
-
             if (USED(theEdge)) continue;
             SETUSED(theEdge,1);
 
+            /* any sons ? */
+            if (SONNODE(n0)!=NULL && SONNODE(n1)!=NULL)
+              if (GetEdge(SONNODE(n0),SONNODE(n1))!=NULL) continue;
+            if (MIDNODE(theEdge) != NULL)
+            {
+              if (SONNODE(n0)!=NULL)
+                if (GetEdge(MIDNODE(theEdge),SONNODE(n0))!=NULL) continue;
+              if (SONNODE(n1)!=NULL)
+                if (GetEdge(MIDNODE(theEdge),SONNODE(n1))!=NULL) continue;
+            }
             ne++;
 
             V_DIM_EUKLIDNORM_OF_DIFF(CVECT(v0),CVECT(v1),h);
