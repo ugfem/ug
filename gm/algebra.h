@@ -103,7 +103,8 @@ extern INT MatrixType[MAXVECTORS][MAXVECTORS];
 /****************************************************************************/
 
 /* basic create and dispose functions */
-INT             CreateVector                                    (GRID *theGrid, VECTOR *After, INT VectorType, VECTOR **VectorHandle);
+VECTOR      *CreateVector                   (GRID *theGrid, INT VectorType, GEOM_OBJECT *object);
+VECTOR      *CreateSideVector               (GRID *theGrid, INT side, GEOM_OBJECT *object);
 CONNECTION      *CreateConnection                               (GRID *theGrid, VECTOR *from, VECTOR *to);
 INT             DisposeVector                                   (GRID *theGrid, VECTOR *theVector);
 INT             DisposeConnection                               (GRID *theGrid, CONNECTION *theConnection);

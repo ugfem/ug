@@ -91,7 +91,6 @@ INT              PutFreeObjectLocal             (MULTIGRID *theMG, void *object,
 VERTEX          *CreateBoundaryVertex   (GRID *theGrid, VERTEX *after);
 VERTEX          *CreateInnerVertex              (GRID *theGrid, VERTEX *after);
 VSEGMENT        *CreateVertexSegment    (GRID *theGrid, VERTEX *vertex);
-NODE            *CreateNode                     (GRID *theGrid, NODE *after);
 EDGE        *CreateEdge             (GRID *theGrid, NODE *from, NODE *to, INT with_vector);
 ELEMENT     *CreateElement          (GRID *theGrid, INT tag, INT objtype,
                                      NODE **nodes, ELEMENT *after);
@@ -110,6 +109,7 @@ INT              FindNeighborElement    (const ELEMENT *theElement, INT Side, EL
 INT              PointInElement                 (const COORD*, const ELEMENT *theElement);
 VIRT_HEAP_MGMT *GetGenMGUDM             (void);
 
+NODE        *CreateSonNode          (GRID *theGrid, NODE *FatherNode);
 NODE            *CreateMidNode                  (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after);
 NODE        *CreateCenterNode       (GRID *theGrid, ELEMENT *theElement);
 

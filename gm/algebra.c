@@ -466,8 +466,7 @@ BLOCKVECTOR *FindBV( const GRID *grid, BV_DESC *bvd, const BV_DESC_FORMAT *bvdf 
    CreateVector -  Return pointer to a new vector structure
 
    SYNOPSIS:
-   INT CreateVector (GRID *theGrid, VECTOR *After, INT VectorType,
-   VECTOR **VectorHandle);
+   VECTOR *CreateVector (GRID *theGrid, INT VectorType, GEOM_OBJECT *object);
 
    PARAMETERS:
    .  theGrid - grid where vector should be inserted
@@ -488,7 +487,7 @@ BLOCKVECTOR *FindBV( const GRID *grid, BV_DESC *bvd, const BV_DESC_FORMAT *bvdf 
    D*/
 /****************************************************************************/
 
-INT CreateVector (GRID *theGrid, VECTOR *After, INT VectorType, VECTOR **VectorHandle)
+VECTOR *CreateVector (GRID *theGrid, INT VectorType, GEOM_OBJECT *object)
 {
   MULTIGRID *theMG;
   VECTOR *pv;
@@ -496,17 +495,14 @@ INT CreateVector (GRID *theGrid, VECTOR *After, INT VectorType, VECTOR **VectorH
 
   theMG = MYMG(theGrid);
   ds = theMG->theFormat->VectorSizes[VectorType];
-  *VectorHandle = NULL;
   if (ds == 0)
-    return (0);
+    return (NULL);
   Size = sizeof(VECTOR)-sizeof(DOUBLE)+ds;
   pv = GetMemoryForObject(theMG,Size,VEOBJ);
   if (pv==NULL)
-    return(1);
-  *VectorHandle = pv;
+    return(NULL);
 
   /* initialize data */
-  CTRL(pv) = 0;
   SETOBJT(pv,VEOBJ);
   SETVTYPE(pv,VectorType);
   SETVDATATYPE(pv,DATATYPE_FROM_VECTORTYPE(VectorType));
@@ -525,40 +521,33 @@ INT CreateVector (GRID *theGrid, VECTOR *After, INT VectorType, VECTOR **VectorH
   DDD_PrioritySet(PARHDR(pv),PrioVector);
         #endif
 
-  pv->object = NULL;
-  pv->index  = (long)theGrid->nVector;
-  pv->skip   = 0;
-  pv->start  = NULL;
-#ifdef __INTERPOLATION_MATRIX__
-  VISTART(pv) = NULL;
-#endif
-
-  /* insert in vector list */
-  if (After==NULL)
-  {
-    SUCCVC(pv) = theGrid->firstVector;
-    PREDVC(pv) = NULL;
-    if (SUCCVC(pv)!=NULL)
-      PREDVC(SUCCVC(pv)) = pv;
-    theGrid->firstVector = (void*)pv;
-    if (theGrid->lastVector==NULL)
-      theGrid->lastVector = (void*)pv;
-  }
-  else
-  {
-    SUCCVC(pv) = SUCCVC(After);
-    PREDVC(pv) = After;
-    if (SUCCVC(pv)!=NULL)
-      PREDVC(SUCCVC(pv)) = pv;
-    else
-      theGrid->lastVector = (void*)pv;
-    SUCCVC(After) = pv;
-  }
+  VOBJECT(pv) = object;
+  VINDEX(pv) = (long)theGrid->nVector;
+  SUCCVC(pv) = theGrid->firstVector;
+  if (SUCCVC(pv)!=NULL)
+    PREDVC(SUCCVC(pv)) = pv;
+  FIRSTVECTOR(theGrid) = pv;
+  if (LASTVECTOR(theGrid)==NULL)
+    LASTVECTOR(theGrid) = pv;
 
   /* counters */
   theGrid->nVector++;
 
-  return (0);
+  return (pv);
+}
+
+VECTOR *CreateSideVector (GRID *theGrid, INT side, GEOM_OBJECT *object)
+{
+  VECTOR *pv;
+
+  pv = CreateVector(theGrid,SIDEVECTOR,object);
+  if (pv == NULL)
+    return(NULL);
+
+  SETVECTORSIDE(pv,side);
+  SETVCOUNT(pv,1);
+
+  return (pv);
 }
 
 /****************************************************************************/

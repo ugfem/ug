@@ -126,6 +126,8 @@ RCSID("$Header$",UG_RCS_STRING)
 /*																			*/
 /****************************************************************************/
 
+static NODE *CreateNode (GRID *theGrid);
+
 static INT DisposeNode (GRID *theGrid, NODE *theNode);
 static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex);
 static INT DisposeEdge (GRID *theGrid, EDGE *theEdge);
@@ -294,7 +296,6 @@ void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
 
   return(obj);
 }
-
 
 /****************************************************************************/
 /*D
@@ -585,7 +586,7 @@ VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after)
    CreateNode - Return pointer to a new node structure
 
    SYNOPSIS:
-   NODE *CreateNode (GRID *theGrid, NODE *after)
+   static NODE *CreateNode (GRID *theGrid);
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
@@ -602,7 +603,7 @@ VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after)
    D*/
 /****************************************************************************/
 
-NODE *CreateNode (GRID *theGrid, NODE *after)
+static NODE *CreateNode (GRID *theGrid)
 {
   NODE *pn;
   VECTOR *pv;
@@ -612,14 +613,13 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
     /* create node and vector */
     pn = GetMemoryForObject(MYMG(theGrid),sizeof(NODE),NDOBJ);
     if (pn==NULL) return(NULL);
-    if (CreateVector (theGrid,NULL,NODEVECTOR,&pv))
+    pv = CreateVector (theGrid,NODEVECTOR,(GEOM_OBJECT *)pn);
+    if (pv == NULL)
     {
       DisposeNode (theGrid,pn);
       return (NULL);
     }
-    assert (pv != NULL);
-    VOBJECT(pv) = (void*)pn;
-    NVECTOR(pn) = (void*)pv;
+    NVECTOR(pn) = pv;
   }
   else
   {
@@ -630,7 +630,6 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
   }
 
   /* initialize data */
-  CTRL(pn) = 0;
   SETOBJT(pn,NDOBJ);
   SETCLASS(pn,4);
   SETLEVEL(pn,theGrid->level);
@@ -639,32 +638,57 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
   DDD_PrioritySet(PARHDR(pn),PrioNode);
         #endif
   ID(pn) = (theGrid->mg->nodeIdCounter)++;
-  INDEX(pn) = 0;
   START(pn) = NULL;
-  NFATHER(pn) = NULL;
-  MYVERTEX(pn) = NULL;
   SONNODE(pn) = NULL;
   theGrid->status |= 1;          /* recalculate stiffness matrix */
 
   /* insert in vertex list */
-  if (after==NULL)
-  {
-    SUCCN(pn) = theGrid->firstNode;
-    PREDN(pn) = NULL;
-    if (SUCCN(pn)!=NULL) PREDN(SUCCN(pn)) = pn;
-    theGrid->firstNode = pn;
-    if (theGrid->lastNode==NULL) theGrid->lastNode = pn;
-  }
-  else
-  {
-    SUCCN(pn) = SUCCN(after);
-    PREDN(pn) = after;
-    if (SUCCN(pn)!=NULL) PREDN(SUCCN(pn)) = pn;else theGrid->lastNode = pn;
-    SUCCN(after) = pn;
-  }
+  SUCCN(pn) = theGrid->firstNode;
+  if (SUCCN(pn)!=NULL) PREDN(SUCCN(pn)) = pn;
+  theGrid->firstNode = pn;
+  if (theGrid->lastNode==NULL) theGrid->lastNode = pn;
 
   /* counters */
   theGrid->nNode++;
+
+  return(pn);
+}
+
+/****************************************************************************/
+/*D
+   CreateSonNode - Return pointer to a new node structure on an edge
+
+   SYNOPSIS:
+   NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode);
+
+   PARAMETERS:
+   .  theGrid - grid where vertex should be inserted
+   .  FatherNode - node father
+
+   DESCRIPTION:
+   This function creates and initializes a new node structure
+   at the midpoint of an element edge and returns a pointer to it.
+
+   RETURN VALUE:
+   NODE *
+   .n   pointer to requested object
+   .n   NULL if out of memory
+   D*/
+/****************************************************************************/
+
+NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
+{
+  NODE *pn;
+  VERTEX *theVertex;
+
+  pn = CreateNode(theGrid);
+  if (pn == NULL)
+    return(NULL);
+  SONNODE(FatherNode) = pn;
+  NFATHER(pn) = FatherNode;
+  theVertex = MYVERTEX(FatherNode);
+  MYVERTEX(pn) = theVertex;
+  TOPNODE(theVertex) = pn;
 
   return(pn);
 }
@@ -780,7 +804,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge, NODE *after)
   SETONEDGE(theVertex,edge);
 
   /* allocate node */
-  theNode = CreateNode(theGrid,after);
+  theNode = CreateNode(theGrid);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
@@ -909,7 +933,7 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
   VFATHER(theVertex) = theElement;
 
   /* create node */
-  theNode = CreateNode(theGrid,NULL);
+  theNode = CreateNode(theGrid);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
@@ -949,7 +973,7 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
   theVertex = CreateInnerVertex(theGrid,NULL);
   if (theVertex==NULL)
     return(NULL);
-  theNode = CreateNode(theGrid,NULL);
+  theNode = CreateNode(theGrid);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
@@ -1031,7 +1055,6 @@ EDGE *GetEdge (NODE *from, NODE *to)
    D*/
 /****************************************************************************/
 
-
 EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
 {
   EDGE *pe;
@@ -1057,8 +1080,6 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
   /* initialize data */
   link0 = LINK0(pe);
   link1 = LINK1(pe);
-  CTRL(pe) = 0;
-  CTRL(link1) = 0;
   SETOBJT(pe,EDOBJ);
   SETLOFFSET(link0,0);
   SETLOFFSET(link1,1);
@@ -1068,19 +1089,17 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
   SET_NO_OF_ELEM(pe,1);
   SETTAG(pe,0);
   SETEDGENEW(pe,1);
-  MIDNODE(pe) = NULL;
 
   /* create vector if */
   if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR) && with_vector)
   {
-    if (CreateVector (theGrid,NULL,EDGEVECTOR,&pv))
+    pv = CreateVector (theGrid,EDGEVECTOR,(GEOM_OBJECT *)pe);
+    if (pv == NULL)
     {
       DisposeEdge (theGrid,pe);
       return (NULL);
     }
-    assert (pv != NULL);
-    VOBJECT(pv) = (void*)pe;
-    EDVECTOR(pe) = (void*)pv;
+    EDVECTOR(pe) = pv;
   }
 
   /* put in neighbor lists */
@@ -1200,14 +1219,13 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   /* create element vector if */
   if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
   {
-    if (CreateVector (theGrid,NULL,ELEMVECTOR,&pv))
+    pv = CreateVector (theGrid,ELEMVECTOR,(GEOM_OBJECT *)pe);
+    if (pv == NULL)
     {
       DisposeElement (theGrid,pe,TRUE);
       return (NULL);
     }
-    assert (pv != NULL);
-    VOBJECT(pv) = (void*)pe;
-    SET_EVECTOR(pe,(void*)pv);
+    SET_EVECTOR(pe,pv);
   }
 
   /* create side vectors if */
@@ -1215,16 +1233,13 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
     for (i=0; i<SIDES_OF_ELEM(pe); i++)
     {
-      if (CreateVector (theGrid,NULL,SIDEVECTOR,&pv))
+      pv = CreateSideVector (theGrid,i,(GEOM_OBJECT *)pe);
+      if (pv == NULL)
       {
         DisposeElement (theGrid,pe,TRUE);
         return (NULL);
       }
-      assert (pv != NULL);
-      VOBJECT(pv) = (void*)pe;
-      SET_SVECTOR(pe,i,(void*)pv);
-      SETVECTORSIDE(pv,i);
-      SETVCOUNT(pv,1);
+      SET_SVECTOR(pe,i,pv);
     }
         #endif
 
@@ -1769,7 +1784,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
     if (pv[i]==NULL) { DisposeMultiGrid(theMG); return(NULL); }
     SETMOVE(pv[i],0);
     SETUSED(pv[i],0);
-    pn = CreateNode(theGrid,NULL);
+    pn = CreateNode(theGrid);
     if (pn==NULL) { DisposeMultiGrid(theMG); return(NULL); }
     MYVERTEX(pn) = pv[i];
     TOPNODE(pv[i]) = pn;
@@ -2769,7 +2784,7 @@ INT InsertInnerNode (MULTIGRID *theMG, COORD *pos)
     PrintErrorMessage('E',"InsertInnerNode","cannot create vertex");
     RETURN(GM_ERROR);
   }
-  theNode = CreateNode(theGrid,NULL);
+  theNode = CreateNode(theGrid);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
@@ -2899,7 +2914,7 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
     LAMBDA(vs,i) =        pos[i];
   VS_PATCH(vs) = thePatch;
 
-  theNode = CreateNode(theGrid,NULL);
+  theNode = CreateNode(theGrid);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
