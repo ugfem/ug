@@ -8,7 +8,7 @@
 /* Purpose:   convert Ansys-files to the UG-Domain-structure		    */
 /*                                                                          */
 /* Author:    Dirk Feuchter                			            */
-/*			  Institut fuer Computeranwendungen III 		*/
+/*			  Institut fuer Computeranwendungen III	        	*/
 /*			  Universitaet Stuttgart				*/
 /*			  Pfaffenwaldring 27					*/
 /*			  70569 Stuttgart, Germany				*/
@@ -4945,8 +4945,16 @@ SFE_KNOTEN_TYP *Find_SFE_Triangle(LI_KNOTEN_TYP *line,SF_TYP *theSurface)
 			}
 			else
 			{
-				PrintErrorMessage('E',"Find_SFE_Triangle","es wurden zwei(!!!) moegliche SFE_Triangles gefunden");
-				return (NULL);
+				/*wenn ein zweites Dreieck gefunden wurde...*/
+				if( (IDF_SFE_TRIA(lfptr)) != returnSFETriangle)
+				{
+					PrintErrorMessage('E',"Find_SFE_Triangle","es wurden zwei(!!!) moegliche SFE_Triangles gefunden");
+					return (NULL);
+				}
+				/*else adressengleiches Dreieck wurde gefunden ->
+				  Dies ist unbedenklich, da im Spezialfalle
+				  einer zu splittenden Doppelsurface passieren kann
+				  vergleiche ersten discovered Bug im Oktober*/
 			}
 		}
 	
@@ -5566,9 +5574,9 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
 { 
 	SF_TYP *sf_lfv2;
 	SF_TYP *newSurface,*merkeSurface;
-	SD_TYP *the_sbd;
-	SFC_TYP *lauf_sd_sfces, *pred_sfc_OF_the_sbd,  *sf_of_sd_lauf, *neue_sfc_of_sbd;
-	INT sbdmid,lauf_rs,lauf_plz,numberofpolylinesofpolylinecycle,rv;
+	SD_TYP *the_sbd, *the_sbd_Double;
+	SFC_TYP *lauf_sd_sfces, *lauf_sd_sfces_Double, *pred_sfc_OF_the_sbd, *pred_sfc_OF_the_sbd_Double,  *sf_of_sd_lauf,  *sf_of_sd_lauf_Double, *neue_sfc_of_sbd, *neue_sfc_of_sbd_Double;
+	INT sbdmid,sbdmid_Double,lauf_rs,lauf_plz,numberofpolylinesofpolylinecycle,rv;
 	RS_TYP *theRealSurface;
 	PLZ_TYP *thePolylineCycle;
 	SFPL_TYP *lauf_sfce_polyline,*merkeSfceplanfang,*anfang, *ende;
@@ -5576,17 +5584,39 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
 	SFE_KNOTEN_TYP *erstesdreieck;
 	INT dreiecksanzahl;
 	TRIANGLE_TYP *lauf_tria;
-	DOUBLE new_sfc_name;
+	DOUBLE new_sfc_name,new_sfc_name2;
 	TRIANGLE_TYP *lauf_sftria;
+	INT DoubleSurfaceCase;/*Flag ob Surface Beruehrungssurface ist oder nicht*/
+	
+	DoubleSurfaceCase = F;
+	
+	if(SF_NAME2(theSurface) != SEC_SFC_NAME_DEFAULT_VAL)
+	{
+		DoubleSurfaceCase = T; /*Es liegt eine Beruehrungssurface vor*/
+	}
+	
 	
 	/*suche Subdomain the_sbd der Surface*/
 	sbdmid = (int) (floor(SF_NAME1(theSurface)));
+	if(DoubleSurfaceCase == T)
+	{
+		sbdmid_Double = (int) (floor(SF_NAME2(theSurface)));
+	}
 	/* Suche die zugehoerige Subdomain : */
 	if((the_sbd = FindSubdomain(sbdmid)) == NULL)
 	{
 		PrintErrorMessage('E',"SplitSurface","no subdomain found: NULL returnd by FindSubdomain");
 		return (1);
 	}
+	if(DoubleSurfaceCase == T)
+	{
+		if((the_sbd_Double = FindSubdomain(sbdmid_Double)) == NULL)
+		{
+			PrintErrorMessage('E',"SplitSurface","no subdomain found:sbdmid_Double  NULL returnd by FindSubdomain");
+			return (1);
+		}
+	}
+
 	
 	/*suche den Surfaceeintrag von the_sbd und ermittle dessen Vorgaenger pred_sfc_OF_the_sbd*/
 	pred_sfc_OF_the_sbd = NULL;
@@ -5606,6 +5636,29 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
 			return (1);
 		}
 	}
+	
+	if(DoubleSurfaceCase == T)
+	{
+		/*suche den Surfaceeintrag von the_sbd_Double und ermittle dessen Vorgaenger pred_sfc_OF_the_sbd_Double*/
+		pred_sfc_OF_the_sbd_Double = NULL;
+		lauf_sd_sfces_Double = SD_SFCS(the_sbd_Double);
+		if(lauf_sd_sfces_Double == NULL)
+		{
+			PrintErrorMessage('E',"SplitSurface","lauf_sd_sfces_Double is NULL at begin and theSurface was not found yet ");
+			return (1);
+		}
+		while(SFC_SURF(lauf_sd_sfces_Double) != theSurface)
+		{
+			pred_sfc_OF_the_sbd_Double = lauf_sd_sfces_Double;
+			lauf_sd_sfces_Double = SFC_NEXT(lauf_sd_sfces_Double);
+			if(lauf_sd_sfces_Double == NULL)
+			{
+				PrintErrorMessage('E',"SplitSurface","lauf_sd_sfces_Double has just become NULL and theSurface was not found yet ");
+				return (1);
+			}
+		}
+	}
+	
 	
 	lauf_rs=0;	
 	theRealSurface = SF_REALSFCS(theSurface);
@@ -5739,11 +5792,32 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
 			/*Update des Surfacenamens von newSurface und dessen Dreiecken - bei den Lines wird auf ein Update verzichtet*/
 			new_sfc_name = SF_NAME1(newSurface) + (SPLIT_SURFACE_DISTINGUISH*lauf_rs);
 			SF_NAME1(newSurface) = new_sfc_name;
-			lauf_sftria = SF_TRIAS(newSurface);
-			while(lauf_sftria != NULL)
+			
+			/*wenn hier eine Doppelsurface gesplittet wurde, so muss der erste und der zweite Identifier einen Splitoffset bzw.
+			  ein Update erhalten.*/
+			if(SF_NAME2(newSurface) != 0.0)
 			{
-				SFE_IDF_0(TRIA_SFE_KN(lauf_sftria)) = new_sfc_name;
-				lauf_sftria = TRIA_NEXT(lauf_sftria);
+				new_sfc_name2 = SF_NAME2(newSurface) + (SPLIT_SURFACE_DISTINGUISH*lauf_rs);
+				SF_NAME2(newSurface) = new_sfc_name2;
+				
+				/*Update der Tria->Surfacezugehoerigkeit im Falle einer Doppelsurface bzgl dem ersten und zweiten Identifier:*/
+				lauf_sftria = SF_TRIAS(newSurface);
+				while(lauf_sftria != NULL)
+				{
+					SFE_IDF_0(TRIA_SFE_KN(lauf_sftria)) = new_sfc_name;
+					SFE_IDF_1(TRIA_SFE_KN(lauf_sftria)) = new_sfc_name2;
+					lauf_sftria = TRIA_NEXT(lauf_sftria);
+				}
+			}
+			else
+			{
+				/*Update der Tria->Surfacezugehoerigkeit im Falle einer einfachen Surface*/
+				lauf_sftria = SF_TRIAS(newSurface);
+				while(lauf_sftria != NULL)
+				{
+					SFE_IDF_0(TRIA_SFE_KN(lauf_sftria)) = new_sfc_name;
+					lauf_sftria = TRIA_NEXT(lauf_sftria);
+				}
 			}
 			
 			
@@ -5767,6 +5841,23 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
 			SFC_NEXT(neue_sfc_of_sbd) = SD_SFCS(the_sbd);/*vorne einfuegen*/
 			SD_SFCS(the_sbd) = neue_sfc_of_sbd; /*neue Wurzel*/
 			SD_NMB_OF_SFCS(the_sbd) = SD_NMB_OF_SFCS(the_sbd) + 1;
+			
+			
+			if(DoubleSurfaceCase == T)
+			{
+				/*  das noch prgrammieren*/
+				/*trage neue surfaces auch bei the_sbd_Double ein*/
+				/* the_sbd_Double->NMBsurfaces ++*/
+				if((neue_sfc_of_sbd_Double = GetTmpMem(theHeap,sizeof(SFC_TYP))) == NULL)
+				{
+					PrintErrorMessage('E',"SplitSurface","got  no SFC_TYP memory  for  neue_sfc_of_sbd_Double !???!");
+					return(1);
+				}
+				SFC_SURF(neue_sfc_of_sbd_Double) = newSurface;
+				SFC_NEXT(neue_sfc_of_sbd_Double) = SD_SFCS(the_sbd_Double);/*vorne einfuegen*/
+				SD_SFCS(the_sbd_Double) = neue_sfc_of_sbd_Double; /*neue Wurzel*/
+				SD_NMB_OF_SFCS(the_sbd_Double) = SD_NMB_OF_SFCS(the_sbd_Double) + 1;
+			}
 		
 		
 		theRealSurface = RS_NEXT(theRealSurface);
@@ -5832,6 +5923,41 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
 	{
 		SFC_NEXT(pred_sfc_OF_the_sbd) = SFC_NEXT(SFC_NEXT(pred_sfc_OF_the_sbd));
 	}
+	
+	
+	if(DoubleSurfaceCase == T)
+	{
+		/*loesche die gesplittete Surface aus der liste von  the_sbd_Double:*/ 
+		SD_NMB_OF_SFCS(the_sbd_Double) = SD_NMB_OF_SFCS(the_sbd_Double) - 1;
+		if(pred_sfc_OF_the_sbd_Double == NULL) /*d.h. die gesplittete Surface ist die allererste der Sbd_Double->SurfaceListe*/
+		{
+			/* vorne sind aber bereits mind. 2 neue Surfaces in der Liste durch das Split
+			  oder aber schon viel mehr ...*/
+			sf_of_sd_lauf_Double = SD_SFCS(the_sbd_Double);
+			if(sf_of_sd_lauf_Double == NULL)
+			{
+				PrintErrorMessage('E',"SplitSurface","sf_of_sd_lauf_Double became NULL but theSurface was not found yet");
+				return(1);
+			}
+			/*laufe von der allerersten Surface bis zur unmittelbar vor theSurface liegenden Surface*/
+			while(SFC_SURF(SFC_NEXT(sf_of_sd_lauf_Double)) != theSurface)
+			{
+				sf_of_sd_lauf_Double = SFC_NEXT(sf_of_sd_lauf_Double);
+				if(sf_of_sd_lauf_Double == NULL)
+				{
+					PrintErrorMessage('E',"SplitSurface","sf_of_sd_lauf_Double became NULL but theSurface was not found yet");
+					return(1);
+				}
+			}
+			SFC_NEXT(sf_of_sd_lauf_Double) = SFC_NEXT(SFC_NEXT(sf_of_sd_lauf_Double));/*loeschen der alten gesplitteten sf_lfv aus der Surfaceliste*/
+		}
+		else
+		{
+			SFC_NEXT(pred_sfc_OF_the_sbd_Double) = SFC_NEXT(SFC_NEXT(pred_sfc_OF_the_sbd_Double));
+		}
+	}
+
+	
 	
 	/*loesche die gesplittete Surface aus der Gesamtliste :*/ 
 	NMB_OF_SFCES(DomainInfo_Pointer) = NMB_OF_SFCES(DomainInfo_Pointer) - 1;
@@ -5899,9 +6025,10 @@ INT Ansys2lgmSurfaceDetecting()
 	while(sf_lfv != NULL)
 	{
 			/*Doppelsurfaces werden nicht gesplittet, folglich ...*/
-		/* wenn Surface nur einen SfcIdentifier besitzt ...*/
-		if(SF_NAME2(sf_lfv) == 0.0)
-		{
+			/* FALSCH !! 7.10.97 */
+			/*Auch Doppelsurfaces muesen u.U. gesplittet werden:
+			  siehe a2l_80.ans*/
+		/* egal ob Surface nur einen oder aber zwei SfcIdentifier besitzt ...*/
 			/*erzeuge die Polylinezyklen zu dieser Surface ...*/
 			if((rw = Create_PLZN(sf_lfv)) == 1)
 			{
@@ -5910,6 +6037,7 @@ INT Ansys2lgmSurfaceDetecting()
 			}
 			
 			/*Ist genau  ein Polylinezyklus entstanden ?*/
+			/*Das kann nicht sein, da im Falle eines Zyklus die Anzahl 0 vorliegt. siehe Create_PLZN*/
 			if(SF_NMB_OF_POLYLI_ZYK(sf_lfv) == 1)
 			{
 				PrintErrorMessage('E',"Ansys2lgmSurfaceDetecting","did receive exactly 1 PLZ from Create_PLZN but sfce must have at least 2 PLZs or none of it");
@@ -5990,11 +6118,6 @@ INT Ansys2lgmSurfaceDetecting()
 			{
 				pred_sf_lfv = sf_lfv;
 			}
-		}
-		else
-		{
-			pred_sf_lfv = sf_lfv;
-		}
 		
 		sf_lfv = SF_NEXT(sf_lfv);/*wird im Gegensatz zu pred_sf_lfv stets fortgeschaltet
 		  							pred_sf_lfv im Falle SplitSurface nicht !!!*/
