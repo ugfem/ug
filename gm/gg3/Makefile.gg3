@@ -18,10 +18,10 @@ LCFLAGS = -I../../include
 # $(NETGEN) is set to ON or OFF in ug.conf
 
 all: $(OBJECTS) $(NETGEN) Makefile.gg3
-	$(ARCH_AR) $(ARCH_ARFLAGS) ../../lib/libug$(UG_LIBSUFFIX).a $(OBJECTS) 
+	$(ARCH_AR) $(ARCH_ARFLAGS) ../../lib/libgg3.a $(OBJECTS) 
 
 .c.o:
-	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
+	$(ARCH_CC) $(UG_CFLAGS) $(NETGEN_CFLAGS) $(LCFLAGS) $<
 
 ON:
 	echo "creating netgen"
@@ -32,5 +32,10 @@ OFF:
 
 
 clean:
-	rm -f $(OBJECTS)
+	rm -f *.o
 	cd netgen; make -f Makefile.netgen clean; cd ..;
+
+extract:
+	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libgg3.a $(OBJECTS)
+
+xmc: extract all clean

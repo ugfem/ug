@@ -25,9 +25,17 @@ ON:
 
 OFF:
 	echo "no grape"
+	cd grape; make -f Makefile.grape; cd ..;
 
 
 clean:
 	cd uggraph; make -f Makefile.uggraph clean; cd ..;
 	cd grape; make -f Makefile.grape clean; cd ..;
 
+extract:
+	cd uggraph; make -f Makefile.uggraph extract; cd ..;
+	cd grape; make -f Makefile.grape extract; cd ..;
+
+xmc: extract all clean
+	cd uggraph; make -f Makefile.uggraph xmc; cd ..;
+	cd grape; make -f Makefile.grape xmc; cd ..;
