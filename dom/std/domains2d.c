@@ -276,7 +276,7 @@ static INT north2Boundary (void *data, DOUBLE *param, DOUBLE *result)
 
 static const INT two_sd2p[3] = {0,0,3};
 static const INT two_sg2p[8] = {0,1,0,0,3,3,3,2};
-static const INT two_pt2p[8] = {0,0,0,0,3,3,3,3};
+static const INT two_pt2p[8] = {0,1,1,0,3,3,3,3};
 static const DOMAIN_PART_INFO two_dpi = {two_sd2p,two_sg2p,two_pt2p};
 
 static INT InitTwo (void)
