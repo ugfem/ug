@@ -63,9 +63,9 @@
 #define PRINTDEBUG_EXT(m,n,s) IFDEBUG(m,n) PrintDebug("-" STR(m) "-"); PrintDebug s; ENDDEBUG
 #define ENDDEBUG  }
 #define RETURN(rcode)   {INT rc; rc = rcode; assert(!rc); return (rc);}
-#define HEAPFAULT(ptr)  assert(((int *)ptr)[1]!=-1);
+#define SETHEAPFAULT(p,v)       {int *hf_pr; hf_pr=(int*)(((char*)(p))+sizeof(void*)); hf_pr[0]=(int)(v);}
+#define HEAPFAULT(p)  assert(((int*)(((char*)(p))+sizeof(void*)))[0]!=-1);
 #define ASSERT(exp)             assert(exp)
-
 #define REP_ERR_INC             {rep_err_line[rep_err_count] = __LINE__;  \
                                  rep_err_file[rep_err_count] = this_file; \
                                  rep_err_count = (rep_err_count+1)%REP_ERR_MAX;}
