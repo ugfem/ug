@@ -2676,6 +2676,10 @@ else
   }
 }
         #endif
+
+
+  /* TODO: this should be put in a ExitUg() function, called by the application. KB 960823 */
+  ExitDevices();
 }
 
 /****************************************************************************/
