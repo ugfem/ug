@@ -159,6 +159,36 @@ int NP_ElemSideOnBnd (NG_ELEMENT *Elem)
   return (esob);
 }
 
+int OrientateElem (NG_ELEMENT *Elem)
+{
+  int i;
+  double p[4][2];
+
+  for (i=0; i<Elem->n_c; i++)
+    if (Elem->c_id[i]<Global_Mesh->nBndP)
+    {
+      p[i][0]=Global_Mesh->BndPosition[Elem->c_id[i]][0];
+      p[i][1]=Global_Mesh->BndPosition[Elem->c_id[i]][1];
+    }
+    else
+    {
+      p[i][0]=Global_Mesh->InnPosition[Elem->c_id[i]-Global_Mesh->nBndP][0];
+      p[i][1]=Global_Mesh->InnPosition[Elem->c_id[i]-Global_Mesh->nBndP][1];
+    }
+  for (i=1; i<Elem->n_c; i++)
+  {
+    p[i][0]-=p[0][0];
+    p[i][1]-=p[0][1];
+  }
+  if (p[1][0]*p[2][1]<p[1][1]*p[2][0])
+  {
+    i=Elem->c_id[0]; Elem->c_id[0]=Elem->c_id[2]; Elem->c_id[2]=i;
+  }
+
+  return(0);
+}
+
+
 /****************************************************************************/
 /*
 
@@ -254,6 +284,7 @@ int PutElement (NG_ELEMENT *Elem)
     Global_Mesh->nElements[Elem->subdom]++;
     break;
   case 2 :
+    if (OrientateElem(Elem)) return (1);
     Global_Mesh->Element_corners[Elem->subdom][Global_Mesh->nElements[Elem->subdom]]=Elem->n_c;
     for (i=0; i<Elem->n_s; i++)
     {
@@ -263,6 +294,7 @@ int PutElement (NG_ELEMENT *Elem)
     Global_Mesh->nElements[Elem->subdom]++;
     break;
   case 3 :
+    if (OrientateElem(Elem)) return (1);
     for (i=0; i<Elem->n_s; i++)
     {
       side=Global_Mesh->nSides[Elem->subdom];
