@@ -658,12 +658,13 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
    CreateMidNode - Return pointer to a new node structure on an edge
 
    SYNOPSIS:
-   NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge);
+   NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge, NODE *after);
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
    .  theElement - pointer to an element
    .  edge - id of an element edge
+   .  after - node where the new node should be appended in the node list
 
    DESCRIPTION:
    This function creates and initializes a new node structure
@@ -676,99 +677,88 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
    D*/
 /****************************************************************************/
 
-#ifdef __TWODIM__
-
-NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT side, NODE *after)
+NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge, NODE *after)
 {
-  ELEMENTSIDE *theSide;
-  COORD x,y;
-  COORD r[2],z;
-  COORD lambda,s,lambdaopt,smin;
-  DOUBLE dlambda,lambda1,lambda0;
-  INT i,n;
-  VERTEX *theVertex;
-  VSEGMENT *vsnew;
   NODE *theNode;
+  VERTEX *theVertex,*v0,*v1;
+  VSEGMENT *vs0,*vs1,*vs;
   PATCH *thePatch;
+  COORD *global,*local,*lambda,*lambda0,*lambda1,*x[MAX_CORNERS_OF_ELEM];
+  COORD_VECTOR bnd_global;
+  DOUBLE diff;
+  INT n,i,co0,co1,moved;
 
-  n = TAG(theElement);
-
-  /* calculate midpoint of edge */
-  x = 0.5*(XC(MYVERTEX(CORNER(theElement,side)))+XC(MYVERTEX(CORNER(theElement,(side+1)%n))));
-  y = 0.5*(YC(MYVERTEX(CORNER(theElement,side)))+YC(MYVERTEX(CORNER(theElement,(side+1)%n))));
+  co0 = CORNER_OF_EDGE(theElement,edge,0);
+  co1 = CORNER_OF_EDGE(theElement,edge,1);
+  v0 = MYVERTEX(CORNER(theElement,co0));
+  v1 = MYVERTEX(CORNER(theElement,co1));
+  theVertex = NULL;
 
   /* allocate vertex */
-  if ((OBJT(theElement)==BEOBJ)&&(SIDE(theElement,side)!=NULL))
+  if ((OBJT(theElement)==BEOBJ))
   {
-    /* find optimal boundary coordinate for boundary vertex */
-    theSide = SIDE(theElement,side);
-    thePatch = ES_PATCH(theSide);
-    smin = 1.0E30;
-    lambda0 = PARAM(theSide,0,0);
-    lambda1 = PARAM(theSide,1,0);
-    dlambda = (lambda1-lambda0)/((DOUBLE) RESOLUTION);
-    lambda = lambda0;
-    z = SIGNUM(dlambda);
-    for (i=1; i<RESOLUTION; i++)
-    {
-      lambda += dlambda;
-      /* TODO: quick fix */
-      if (z*lambda>z*lambda1) break;
-      if (Patch_local2global(thePatch,&lambda,r)) return(NULL);
-      s = (r[0]-x)*(r[0]-x)+(r[1]-y)*(r[1]-y);
-      if (s<smin)
-      {
-        smin = s;
-        lambdaopt = lambda;
-      }
-    }
+    moved = 0;
+    if (OBJT(v0) == BVOBJ && OBJT(v1) == BVOBJ)
+      for (vs0=VSEG(v0); vs0!=NULL; vs0=NEXTSEG(vs0))
+        for (vs1=VSEG(v1); vs1!=NULL; vs1=NEXTSEG(vs1))
+          if (VS_PATCH(vs0) == VS_PATCH(vs1))
+          {
+            if (theVertex == NULL)
+            {
+              theVertex = CreateBoundaryVertex(theGrid,NULL);
+              if (theVertex == NULL) return(NULL);
+              global = CVECT(theVertex);
+              local = LCVECT(theVertex);
+              V_DIM_LINCOMB(0.5, CVECT(v0), 0.5, CVECT(v1), global);
+              V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theElement,co0),
+                            0.5, LOCAL_COORD_OF_ELEM(theElement,co1),
+                            local);
+            }
+            if ((vs = CreateVertexSegment(theGrid,theVertex)) == NULL)
+            {
+              DisposeVertex(theGrid, theVertex);
+              return(NULL);
+            }
+            thePatch = VS_PATCH(vs) = VS_PATCH(vs0);
+            lambda = PVECT(vs);
+            lambda0 = PVECT(vs0);
+            lambda1 = PVECT(vs1);
+            for (i=0; i<DIM-1; i++)
+              lambda[i] = 0.5 * lambda0[i] + 0.5*lambda1[i];
+            if (Patch_local2global(thePatch,lambda,bnd_global))
+              return (NULL);
 
-    /* create vertex */
-    theVertex = CreateBoundaryVertex(theGrid,NULL);
-    if (theVertex==NULL) return(NULL);
-    vsnew = CreateVertexSegment(theGrid, theVertex);
-    if (vsnew==NULL)
-    {
-      DisposeVertex(theGrid,theVertex);
-      UserWrite("cannot create vertexsegment\n");
-      return(NULL);
-    }
-    LAMBDA(vsnew,0) = lambdaopt;
-    if (Patch_local2global(thePatch,PVECT(vsnew),CVECT(theVertex))) return(NULL);
-    z = (lambdaopt-lambda0)/(lambda1-lambda0);
-    SETONEDGE(theVertex,side);
-    VS_PATCH(vsnew) = thePatch;
-    if (n==3)
-    {
-      if (side==0) { XI(theVertex)= z  ; ETA(theVertex)= 0.0; }
-      if (side==1) { XI(theVertex)= 1-z; ETA(theVertex)= z  ; }
-      if (side==2) { XI(theVertex)= 0.0; ETA(theVertex)= 1-z; }
-    }
-    else
-    {
-      if (side==0) { XI(theVertex)= z;   ETA(theVertex)= 0.0; }
-      if (side==1) { XI(theVertex)= 1.0; ETA(theVertex)= z; }
-      if (side==2) { XI(theVertex)= z;   ETA(theVertex)= 1.0; }
-      if (side==3) { XI(theVertex)= 0.0; ETA(theVertex)= z; }
-    }
-    VFATHER(theVertex) = theElement;
-    SETMOVE(theVertex,1);
+            /* check if moved */
+            V3_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
+            if (diff > MAX_PAR_DIST)
+            {
+              if (moved)
+                PrintErrorMessage('W',"CreateMidNode",
+                                  "inconsistent boundary parametrisation");
+              else
+              {
+                SETMOVED(theVertex,1);
+                moved = 1;
+                CORNER_COORDINATES(theElement,n,x);
+              }
+              V_DIM_COPY(bnd_global,global);
+              GlobalToLocal(n,(const COORD **)x,global,local);
+            }
+          }
   }
-  else
+
+  if (theVertex == NULL)
   {
     /* we need an inner vertex */
     theVertex = CreateInnerVertex(theGrid,NULL);
     if (theVertex==NULL) return(NULL);
-    XC(theVertex) = x;
-    YC(theVertex) = y;
-    V2_LINCOMB(0.5,LOCAL_COORD_OF_ELEM(theElement,
-                                       CORNER_OF_SIDE(theElement,side,0)),
-               0.5,LOCAL_COORD_OF_ELEM(theElement,
-                                       CORNER_OF_SIDE(theElement,side,1)),
-               LCVECT(theVertex))
-    VFATHER(theVertex) = theElement;
-    SETMOVE(theVertex,2);
+    V_DIM_LINCOMB(0.5, CVECT(v0), 0.5, CVECT(v1), CVECT(theVertex));
+    V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theElement,co0),
+                  0.5, LOCAL_COORD_OF_ELEM(theElement,co1),
+                  LCVECT(theVertex));
   }
+  VFATHER(theVertex) = theElement;
+  SETONEDGE(theVertex,edge);
 
   /* allocate node */
   theNode = CreateNode(theGrid,after);
@@ -784,197 +774,6 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT side, NODE *after)
 
   return(theNode);
 }
-
-#endif
-
-#ifdef __THREEDIM__
-
-NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,int edge,NODE *after)
-{
-  ELEMENTSIDE   *theSide;
-  ELEMENT           *BoundaryElement;
-  COORD s,smin;
-  COORD x[3],r[3], ropt[3], l[2], dl[2], Inverse[9], Matrix[9];
-  COORD         **Corners;
-  COORD_VECTOR HelpVector;
-  COORD             *lambda, *lambda1, *lambda2, *cvect;
-  INT n,i,ni0,ni1,iopt;
-  VERTEX            *theVertex, *v1, *v2;
-  VSEGMENT          *vs1,*vs2, *vs;
-  NODE              *theNode;
-  PATCH             *thePatch;
-
-  /* calculate midpoint of edge */
-  ni0 = CORNER_OF_EDGE(theElement,edge,0);
-  ni1 = CORNER_OF_EDGE(theElement,edge,1);
-  v1      = MYVERTEX(CORNER(theElement,ni0));
-  v2      = MYVERTEX(CORNER(theElement,ni1));
-
-  /* calculate physical position of MidNode */
-  V3_LINCOMB(0.5, CVECT(v1), 0.5, CVECT(v2), x);
-
-  /* check for boundary node */
-  theVertex = NULL;
-  if (OBJT(v1) == BVOBJ && OBJT(v2) == BVOBJ)
-  {
-    /* We now assume, that the edge is on the boundary if and only if	*/
-    /* there is at least one boundary segment containing both vertices. */
-    /* This works if we assume that there is no level 0 element                 */
-    /* with a boundary side covering more than one boundary segment.	*/
-    /* See also "InsertElementCommand" in "plot3d.c".					*/
-
-    for (vs1=VSEG(v1); vs1!=NULL; vs1=NEXTSEG(vs1))
-    {
-      for (vs2=VSEG(v2); vs2!=NULL; vs2=NEXTSEG(vs2))
-      {
-        if (VS_PATCH(vs1) == VS_PATCH(vs2))
-        {
-          if (theVertex == NULL)
-          {
-            theVertex = CreateBoundaryVertex(theGrid,NULL);
-            cvect = CVECT(theVertex);
-          }
-          if (theVertex == NULL) return(NULL);
-
-          if ((vs = CreateVertexSegment(theGrid,theVertex)) == NULL)
-          {
-            DisposeVertex(theGrid, theVertex);
-            return(NULL);
-          }
-          thePatch = VS_PATCH(vs) = VS_PATCH(vs1);
-
-          /* find optimal parameters for this segment */
-          lambda1 = PVECT(vs1);
-          lambda2 = PVECT(vs2);
-          lambda  = PVECT(vs);
-
-          /* test midpoint */
-          lambda[0] = 0.5*(lambda1[0] + lambda2[0]);
-          lambda[1] = 0.5*(lambda1[1] + lambda2[1]);
-
-          if (Patch_local2global(thePatch,lambda,ropt)) return (NULL);
-
-          V3_EUKLIDNORM_OF_DIFF(x,ropt,smin)
-
-          if (smin>MAX_PAR_DIST)                               /* perhaps not the midpoint */
-          {
-            l[0] = lambda1[0];
-            l[1] = lambda1[1];
-
-            assert (RESOLUTION > 0);
-            dl[0] = (lambda2[0] - lambda1[0])/((COORD) RESOLUTION);
-            dl[1] = (lambda2[1] - lambda1[1])/((COORD) RESOLUTION);
-
-            for (i=0; i<=RESOLUTION; i++)
-            {
-              if (Patch_local2global(thePatch,l,r))
-                continue;
-              V3_EUKLIDNORM_OF_DIFF(x,r,s)
-              if (s<smin)
-              {
-                smin = s;
-                lambda[0] = l[0];
-                lambda[1] = l[1];
-                V3_COPY(r,ropt);
-              }
-              l[0]+=dl[0];
-              l[1]+=dl[1];
-            }
-          }
-
-          /* if it is the first vertex segment found fill in geometric data else compare with other vertex segments */
-          if (NEXTSEG(vs) == NULL)
-          {
-            V3_COPY(ropt,cvect);
-            SETMOVED(theVertex, smin>MAX_PAR_DIST);
-          }
-          else
-          {
-            V3_EUKLIDNORM_OF_DIFF(cvect,ropt,s)
-            if (s>MAX_PAR_DIST)
-            {
-              DisposeVertex(theGrid,theVertex);
-              UserWrite("two boundary segments with a common edge are not consistent\n");
-              return(NULL);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  if (theVertex == NULL)
-  {
-    theVertex = CreateInnerVertex(theGrid,NULL);
-    if (theVertex == NULL) return(NULL);
-    V3_COPY(x,CVECT(theVertex));
-  }
-
-  VFATHER(theVertex) = theElement;
-  SETONEDGE(theVertex,edge);
-
-  /* create node */
-  theNode = CreateNode(theGrid,after);
-  if (theNode==NULL)
-  {
-    DisposeVertex(theGrid,theVertex);
-    return(NULL);
-  }
-  MYVERTEX(theNode) = theVertex;
-  NFATHER(theNode) = NULL;
-  SETCLASS(theNode,4);
-  SETNTYPE(theNode,MID_NODE);
-
-  /* local coordinates for the reference tetrahedron */
-  if (!MOVED(theVertex))
-  {
-    V3_LINCOMB(0.5,LOCAL_COORD_OF_ELEM(theElement,ni0),0.5,LOCAL_COORD_OF_ELEM(theElement,ni1),LCVECT(theVertex))
-  }
-  else
-  {
-    if (TAG(theElement) == TETRAHEDRON)
-    {
-      /* set transformation matrix */
-      V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,1))), CVECT(MYVERTEX(CORNER(theElement,0))), Matrix)
-      V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,2))), CVECT(MYVERTEX(CORNER(theElement,0))), Matrix+3)
-      V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,3))), CVECT(MYVERTEX(CORNER(theElement,0))), Matrix+6)
-
-      /* Invert it */
-      if (M3_Invert(Inverse, Matrix))
-      {
-        UserWrite("error: cannot create MidNode on edge of the element\n");
-        UserWrite("       the element is degenerated\n");
-        return (NULL);
-      }
-      V3_SUBTRACT(CVECT(theVertex), CVECT(MYVERTEX(CORNER(theElement,0))), HelpVector)
-      M3_TIMES_V3(Inverse,HelpVector,LCVECT(theVertex))
-    }
-    else
-    {
-      /* Get global coordinates */
-      V3_COPY(CVECT(theVertex),x);
-
-      /* Get global coordinates */
-      CORNER_COORDINATES(theElement,n,Corners);
-
-      /* Set initial guess to local coordinates, */
-      /* as if the node was not moved.           */
-      V3_LINCOMB(0.5,LOCAL_COORD_OF_ELEM(theElement,ni0),0.5,LOCAL_COORD_OF_ELEM(theElement,ni1),r)
-
-      /* Compute local coordinates
-         if (GlobalToLocal3d(n,Corners,x,r)!=0) {
-              UserWrite(" *** CreateMidNodeHEX: can't move node !\n");
-              return (NULL);
-         }
-         else */
-      V3_COPY(r,LCVECT(theVertex));
-    }
-  }
-
-  return(theNode);
-}
-
-#endif
 
 /****************************************************************************/
 /*D
