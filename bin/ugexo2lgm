@@ -227,8 +227,16 @@ sub scan_modeldata ()
 				elsif ( /In\sVolume\s*($int),\s*Volume\s*($int)\./ )
 				{
 # 					printf "surface %d left=%d right=%d\n",$surface,$1,$2;
-					$cdf{$surfacename}{left} = $1;
-					$cdf{$surfacename}{right} = $2;
+					if ($1 < $2)
+					{
+						$cdf{$surfacename}{left} = $2;
+						$cdf{$surfacename}{right} = $1;
+					}
+					else
+					{
+						$cdf{$surfacename}{left} = $1;
+						$cdf{$surfacename}{right} = $2;
+					}
 					last LOOP1;
 				}
 				elsif ( /\s*Curve\s*($int)\s*($int)/ )
