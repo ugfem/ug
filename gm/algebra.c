@@ -763,7 +763,7 @@ INT CreateBlockvector( GRID *theGrid, BLOCKVECTOR **BVHandle )
   return GM_OK;
 }
 
-INT InsertBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *insertBV, BLOCKVECTOR *theBV, INT after, INT makeVC)
+static INT InsertBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *insertBV, BLOCKVECTOR *theBV, INT after, INT makeVC)
 {
   if (GFIRSTBV(theGrid)==NULL)
   {
@@ -812,7 +812,8 @@ INT InsertBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *insertBV, BLOCKVECTOR *the
         }
         else
         {
-          for (BVENDVECTOR(theBV)=BVFIRSTVECTOR(theBV); SUCCVC(BVENDVECTOR(theBV))!=NULL; BVENDVECTOR(theBV)=SUCCVC(BVENDVECTOR(theBV))) ;
+          for (BVENDVECTOR(theBV)=BVFIRSTVECTOR(theBV); SUCCVC(BVENDVECTOR(theBV))!=NULL;)
+            BVENDVECTOR(theBV)=SUCCVC(BVENDVECTOR(theBV));
           SUCCVC(BVENDVECTOR(theBV)) = BVFIRSTVECTOR(insertBV);
           PREDVC(BVFIRSTVECTOR(insertBV)) = BVENDVECTOR(theBV);
           SUCCVC(BVENDVECTOR(insertBV)) = NULL;
@@ -836,7 +837,7 @@ INT InsertBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *insertBV, BLOCKVECTOR *the
   return (GM_OK);
 }
 
-INT CreatBlockvector_l0 (GRID *theGrid, BLOCKVECTOR **BVHandle, BLOCKVECTOR *insertBV, INT after)
+static INT CreatBlockvector_l0 (GRID *theGrid, BLOCKVECTOR **BVHandle, BLOCKVECTOR *insertBV, INT after)
 {
   BLOCKVECTOR *theBV;
 
@@ -847,7 +848,7 @@ INT CreatBlockvector_l0 (GRID *theGrid, BLOCKVECTOR **BVHandle, BLOCKVECTOR *ins
   return (GM_OK);
 }
 
-INT CutBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *theBV, INT makeVC)
+static INT CutBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *theBV, INT makeVC)
 {
   if (theBV==0) return (GM_ERROR);
 
@@ -881,7 +882,8 @@ INT CutBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *theBV, INT makeVC)
 
     if (makeVC==YES)
     {
-      for (BVENDVECTOR(theBV)=BVFIRSTVECTOR(theBV); SUCCVC(BVENDVECTOR(theBV))!=NULL; BVENDVECTOR(theBV)=SUCCVC(BVENDVECTOR(theBV))) ;
+      for (BVENDVECTOR(theBV)=BVFIRSTVECTOR(theBV); SUCCVC(BVENDVECTOR(theBV))!=NULL;)
+        BVENDVECTOR(theBV)=SUCCVC(BVENDVECTOR(theBV));
       SUCCVC(PREDVC(BVENDVECTOR(BVPRED(theBV)))) = NULL;
       BVENDVECTOR(BVPRED(theBV)) = NULL;
     }
@@ -890,7 +892,8 @@ INT CutBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *theBV, INT makeVC)
     GFIRSTBV(theGrid) = GLASTBV(theGrid) = NULL;
 
     if (makeVC==YES)
-      for (BVENDVECTOR(theBV)=BVFIRSTVECTOR(theBV); SUCCVC(BVENDVECTOR(theBV))!=NULL; BVENDVECTOR(theBV)=SUCCVC(BVENDVECTOR(theBV))) ;
+      for (BVENDVECTOR(theBV)=BVFIRSTVECTOR(theBV); SUCCVC(BVENDVECTOR(theBV))!=NULL;)
+        BVENDVECTOR(theBV)=SUCCVC(BVENDVECTOR(theBV));
     break;
   }
 
@@ -1062,7 +1065,7 @@ CONNECTION *CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to)
    DESCRIPTION:
    This function returns a pointer to a new 'CONNECTION'
    structure with extra flag set. This e.g. for a direct solver
-   or ILU with fill in. The new connections can be differentiated
+   or ILU with fill in. The new connections can be distinguished
    from the connections necessary for the stiffness matrix.
 
    RETURN VALUE:
@@ -1171,37 +1174,6 @@ INT DisposeBlockvector( GRID *theGrid, BLOCKVECTOR *bv )
 
 /****************************************************************************/
 /*D
-   FreeAllBV - Frees all allocated blockvectors in the grid
-
-   SYNOPSIS:
-   void FreeAllBV( GRID *grid )
-
-   PARAMETERS:
-   .  grid - the grid from which all blockvectors are to be removed
-
-   DESCRIPTION:
-   Frees all allocated blockvectors in the grid and resets GFIRSTBV(grid)
-   and GLASTBV(grid) to 'NULL' and gives the memory back to the memory
-   of the 'MULTIGRID'.
-
-   RETURN VALUE:
-   void
-
-   SEE ALSO:
-   BLOCKVECTOR, FreeBVList
-
-   D*/
-/****************************************************************************/
-
-void FreeAllBV( GRID *grid )
-{
-  FreeBVList( grid, GFIRSTBV( grid ) );
-  GFIRSTBV( grid ) = NULL;
-  GLASTBV( grid ) = NULL;
-}
-
-/****************************************************************************/
-/*D
    FreeBVList - Frees blockvector-list and all its sons
 
    SYNOPSIS:
@@ -1226,7 +1198,7 @@ void FreeAllBV( GRID *grid )
    D*/
 /****************************************************************************/
 
-void FreeBVList( GRID *grid, BLOCKVECTOR *bv )
+static void FreeBVList (GRID *grid, BLOCKVECTOR *bv)
 {
   register BLOCKVECTOR *bv_h;
 
@@ -1244,6 +1216,36 @@ void FreeBVList( GRID *grid, BLOCKVECTOR *bv )
   }
 }
 
+/****************************************************************************/
+/*D
+   FreeAllBV - Frees all allocated blockvectors in the grid
+
+   SYNOPSIS:
+   void FreeAllBV( GRID *grid )
+
+   PARAMETERS:
+   .  grid - the grid from which all blockvectors are to be removed
+
+   DESCRIPTION:
+   Frees all allocated blockvectors in the grid and resets GFIRSTBV(grid)
+   and GLASTBV(grid) to 'NULL' and gives the memory back to the memory
+   of the 'MULTIGRID'.
+
+   RETURN VALUE:
+   void
+
+   SEE ALSO:
+   BLOCKVECTOR, FreeBVList
+
+   D*/
+/****************************************************************************/
+
+static void FreeAllBV (GRID *grid)
+{
+  FreeBVList( grid, GFIRSTBV( grid ) );
+  GFIRSTBV( grid ) = NULL;
+  GLASTBV( grid ) = NULL;
+}
 
 /****************************************************************************/
 /*D
@@ -1582,7 +1584,6 @@ CONNECTION *GetConnection (const VECTOR *FromVector, const VECTOR *ToVector)
   /* return not found */
   return (NULL);
 }
-
 
 /****************************************************************************/
 /*D
@@ -3333,6 +3334,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
   BVP_DESC theBVPDesc;
   INT i,entries,nm;
   HEAP *theHeap;
+  INT takeSkip, takeNonSkip;
 
   theMG   = MYMG(theGrid);
   entries = NVEC(theGrid);
@@ -3351,17 +3353,26 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
     PrintErrorMessage('E',"LexOrderVectorsInGrid","could not allocate memory from the MGHeap");
     return (2);
   }
+  if (which==0) return (99);
+
+  takeSkip        = which & GM_TAKE_SKIP;
+  takeNonSkip     = which & GM_TAKE_NONSKIP;
 
   /* fill array of pointers to nodes */
   entries = 0;
   for (theVec=FIRSTVECTOR(theGrid); theVec!=NULL; theVec=SUCCVC(theVec))
-    table[entries++] = theVec;
+    if ((takeSkip && VECSKIP(theVec)) || (takeNonSkip && !VECSKIP(theVec)))
+      table[entries++] = theVec;
 
   /* sort array of pointers */
   Order = order;
   Sign  = sign;
   SkipV = SpecSkipVecs;
   qsort(table,entries,sizeof(*table),(int (*)(const void *, const void *))LexCompare);
+
+  for (theVec=FIRSTVECTOR(theGrid); theVec!=NULL; theVec=SUCCVC(theVec))
+    if (!((takeSkip && VECSKIP(theVec)) || (takeNonSkip && !VECSKIP(theVec))))
+      table[entries++] = theVec;
 
   /* reorder double linked list */
   for (i=0; i<entries-1; i++)
@@ -3787,7 +3798,7 @@ INT ShellOrderVectors (GRID *theGrid, VECTOR *seed)
  */
 /****************************************************************************/
 
-INT CheckConsistence (GRID *theGrid, char *location)
+static INT CheckConsistence (GRID *theGrid, char *location)
 {
   VECTOR *theVector;
   MATRIX *theMatrix;
@@ -3819,7 +3830,7 @@ INT CheckConsistence (GRID *theGrid, char *location)
   return (nfound);
 }
 
-INT CheckVectorList (GRID *theGrid)
+static INT CheckVectorList (GRID *theGrid)
 {
   INT i;
   VECTOR *theVector;
@@ -3839,7 +3850,7 @@ INT CheckVectorList (GRID *theGrid)
   return (0);
 }
 
-INT CheckBVList (GRID *theGrid)
+static INT CheckBVList (GRID *theGrid)
 {
   BLOCKVECTOR *theBV;
 
@@ -3851,7 +3862,7 @@ INT CheckBVList (GRID *theGrid)
   return (0);
 }
 
-void GetBVNumberInGrid(GRID *theGrid, INT *nb)
+static void GetBVNumberInGrid (GRID *theGrid, INT *nb)
 {
   VECTOR *theVector;
 
@@ -3862,7 +3873,7 @@ void GetBVNumberInGrid(GRID *theGrid, INT *nb)
   return;
 }
 
-void GetBVNumber(BLOCKVECTOR *theBV, INT *nb, INT cutted)
+static void GetBVNumber (BLOCKVECTOR *theBV, INT *nb, INT cutted)
 {
   VECTOR *theVector;
 
@@ -3886,7 +3897,7 @@ void GetBVNumber(BLOCKVECTOR *theBV, INT *nb, INT cutted)
 static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT skipPat)
 {
   BLOCKVECTOR *theFirstBV, *theLastBV, *theCutBV, *theBV, *takeOut, **FBVList, **LBVList, **CBVList;
-  VECTOR FIRST_handle,CUT_handle,LAST_handle;
+  VECTOR FIRST_handle,LAST_handle;
   VECTOR *FIRST_next_out,*FIRST_last_in;
   VECTOR *LAST_next_out,*LAST_last_in;
   VECTOR *CUT_begin;
@@ -5220,8 +5231,8 @@ MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
 {
   MULTIGRID *theMG;
   HEAP *theHeap;
-  MATRIX *pm,*m;
-  INT RootType, DestType, MType, ds, Diag, Size;
+  MATRIX *pm;
+  INT RootType, DestType, MType, ds, Size;
 
   pm = GetIMatrix(fvec,cvec);
   if (pm != NULL)
@@ -5287,7 +5298,6 @@ MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
 
 INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix)
 {
-  VECTOR *from, *to;
   MATRIX *Matrix, *NextMatrix;
 
   for (Matrix=theMatrix; Matrix!=NULL; )
