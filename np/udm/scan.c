@@ -311,7 +311,7 @@ INT ReadArgvOption (char *name, INT argc, char **argv)
    ReadArgvPosition - Read command strings
 
    SYNOPSIS:
-   INT ReadArgvPosition (char *name, INT argc, char **argv, COORD *pos);
+   INT ReadArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos);
 
    PARAMETERS:
    .  name - name of the argument
@@ -329,7 +329,7 @@ INT ReadArgvOption (char *name, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-INT ReadArgvPosition (char *name, INT argc, char **argv, COORD *pos)
+INT ReadArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
 {
   INT i;
   char option[OPTIONLEN];

@@ -257,7 +257,7 @@ static INT GradientAtLMP (ELEMENT *theElement, INT ncomp, VECDATA_DESC *theVD,
   DOUBLE Jdet;
   DOUBLE *vptr[MAX_NODAL_VALUES];
   DOUBLE_VECTOR derivative;
-  COORD *x[MAX_CORNERS_OF_ELEM],*lmp;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM],*lmp;
   INT i,j,m,n;
 
   CORNER_COORDINATES(theElement,n,x);
@@ -317,7 +317,7 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
                       INT from, INT to, INT clear, ERESULT *eresult)
 {
   ELEMENT *t;
-  COORD *List,min,max,est,rf,cr;
+  DOUBLE *List,min,max,est,rf,cr;
   INT k,toplevel,nel,mfr,mfc,ncomp;
 
   ncomp = VD_NCMPS_IN_TYPE(theVD,NODEVECTOR);
@@ -348,7 +348,7 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
       }
 
   Mark(MGHEAP(theMG),FROM_TOP);
-  List = (COORD*) GetMem(MGHEAP(theMG),nel*sizeof(COORD),FROM_TOP);
+  List = (DOUBLE*) GetMem(MGHEAP(theMG),nel*sizeof(DOUBLE),FROM_TOP);
   if (List == NULL)
     return(-1);
 

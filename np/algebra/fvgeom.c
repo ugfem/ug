@@ -128,7 +128,7 @@ typedef struct {
   DOUBLE_VECTOR bip[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_SIDE];
   /* boundary faces						*/
 
-} LOCAL_COORDS;                         /* local geometry data for a general element	*/
+} LOCAL_DOUBLES;                                /* local geometry data for a general element	*/
 
 /****************************************************************************/
 /*																			*/
@@ -143,7 +143,7 @@ typedef struct {
 /*																			*/
 /****************************************************************************/
 
-static LOCAL_COORDS LocalCoords[TAGS];
+static LOCAL_DOUBLES LocalCoords[TAGS];
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -157,7 +157,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 #ifdef __THREEDIM__
 
 /* area of quadrilateral in 3D space */
-static DOUBLE F_q (COORD *x0, COORD *x1, COORD *x2, COORD *x3)
+static DOUBLE F_q (DOUBLE *x0, DOUBLE *x1, DOUBLE *x2, DOUBLE *x3)
 {
   DOUBLE_VECTOR n;
 
@@ -167,7 +167,7 @@ static DOUBLE F_q (COORD *x0, COORD *x1, COORD *x2, COORD *x3)
 }
 
 /* volume computations, orientation is same as in general element definition ! */
-static DOUBLE V_te (COORD *x0, COORD *x1, COORD *x2, COORD *x3)
+static DOUBLE V_te (DOUBLE *x0, DOUBLE *x1, DOUBLE *x2, DOUBLE *x3)
 {
   DOUBLE_VECTOR a, b, h, n;
 
@@ -179,7 +179,7 @@ static DOUBLE V_te (COORD *x0, COORD *x1, COORD *x2, COORD *x3)
   return(OneSixth*V3_SCAL_PROD(n,h));
 }
 
-static DOUBLE V_py (COORD *x0, COORD *x1, COORD *x2, COORD *x3, COORD *x4)
+static DOUBLE V_py (DOUBLE *x0, DOUBLE *x1, DOUBLE *x2, DOUBLE *x3, DOUBLE *x4)
 {
   DOUBLE_VECTOR a,b,h,n;
 
@@ -191,7 +191,7 @@ static DOUBLE V_py (COORD *x0, COORD *x1, COORD *x2, COORD *x3, COORD *x4)
   return(OneSixth*V3_SCAL_PROD(n,h));
 }
 
-static DOUBLE V_pr (COORD *x0, COORD *x1, COORD *x2, COORD *x3, COORD *x4, COORD *x5)
+static DOUBLE V_pr (DOUBLE *x0, DOUBLE *x1, DOUBLE *x2, DOUBLE *x3, DOUBLE *x4, DOUBLE *x5)
 {
   DOUBLE_VECTOR a,b,c,d,e,m,n;
 
@@ -213,7 +213,7 @@ static DOUBLE V_pr (COORD *x0, COORD *x1, COORD *x2, COORD *x3, COORD *x4, COORD
   return(OneSixth*V3_SCAL_PROD(n,e));
 }
 
-static DOUBLE V_he (COORD *x0, COORD *x1, COORD *x2, COORD *x3, COORD *x4, COORD *x5, COORD *x6, COORD *x7)
+static DOUBLE V_he (DOUBLE *x0, DOUBLE *x1, DOUBLE *x2, DOUBLE *x3, DOUBLE *x4, DOUBLE *x5, DOUBLE *x6, DOUBLE *x7)
 {
   return(V_pr(x0,x1,x2,x4,x5,x6)+V_pr(x0,x2,x3,x4,x6,x7));
 }
@@ -246,7 +246,7 @@ INT EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
 {
   INT i,j,k,l,n,coe,eoe;
   VERTEX *v;
-  LOCAL_COORDS *lc;
+  LOCAL_DOUBLES *lc;
   SubControlVolume *scv;
   SubControlVolumeFace *scvf;
   BoundaryFace *bf;
@@ -487,7 +487,7 @@ INT EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
    0 when o.k.
  */
 
-static INT SideIsCut (INT tag,  const COORD_VECTOR *x, const COORD_VECTOR ip, const DOUBLE_VECTOR vel, INT side, DOUBLE_VECTOR y)
+static INT SideIsCut (INT tag,  const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, const DOUBLE_VECTOR vel, INT side, DOUBLE_VECTOR y)
 {
 #       ifdef __TWODIM__
   DOUBLE_VECTOR v,r,coeff,M[DIM],MI[DIM];
@@ -619,7 +619,7 @@ static INT SideIsCut (INT tag,  const COORD_VECTOR *x, const COORD_VECTOR ip, co
  */
 /****************************************************************************/
 
-static INT GetNodeNextToCut (INT tag, const COORD_VECTOR *x, const COORD_VECTOR ip, const DOUBLE_VECTOR vel, INT *corn)
+static INT GetNodeNextToCut (INT tag, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, const DOUBLE_VECTOR vel, INT *corn)
 {
   DOUBLE_VECTOR y,d;
   DOUBLE min,l;
@@ -650,7 +650,7 @@ static INT GetNodeNextToCut (INT tag, const COORD_VECTOR *x, const COORD_VECTOR 
   return (0);
 }
 
-static INT Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const COORD_VECTOR pt,
+static INT Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const DOUBLE_VECTOR pt,
                         INT *Side, DOUBLE lambda[DIM_OF_BND])
 {
   DOUBLE_VECTOR v,r,coeff,M[DIM],MI[DIM];
@@ -753,7 +753,7 @@ INT GetFullUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel
 
 INT GetSkewedUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
 {
-  const COORD_VECTOR *x;
+  const DOUBLE_VECTOR *x;
   INT ip,corn,tag;
 
   x = FVG_GCOPTR(geo);
@@ -1144,7 +1144,7 @@ INT EvaluateShapesAndDerivatives (FVElementGeometry *geo, INT flags)
 
     /* shape functions */
     if (shapes)
-      if (GNs(nco,(COORD *)SCVF_LIP(scvf),SDV_SHAPEPTR(sdv)))
+      if (GNs(nco,(DOUBLE *)SCVF_LIP(scvf),SDV_SHAPEPTR(sdv)))
       {
         PrintErrorMessage('E',"EvaluateShapesAndDerivatives","something wrong with shape functions");
         return(__LINE__);
@@ -1169,7 +1169,7 @@ INT EvaluateShapesAndDerivatives (FVElementGeometry *geo, INT flags)
       if (grad)
         for (j=0; j<nco; j++)
         {
-          if (D_GN(nco,j,(COORD *)SCVF_LIP(scvf),deriv))
+          if (D_GN(nco,j,(DOUBLE *)SCVF_LIP(scvf),deriv))
           {
             PrintErrorMessage('E',"EvaluateShapesAndDerivatives","something wrong with derivatives of shape functions");
             return(__LINE__);
@@ -1189,7 +1189,7 @@ INT EvaluateShapesAndDerivatives (FVElementGeometry *geo, INT flags)
 
     /* shape functions */
     if (shapes)
-      if (GNs(nco,(COORD *)SCVBF_LIP(scvbf),SDV_SHAPEPTR(sdv)))
+      if (GNs(nco,(DOUBLE *)SCVBF_LIP(scvbf),SDV_SHAPEPTR(sdv)))
       {
         PrintErrorMessage('E',"EvaluateShapesAndDerivatives","something wrong with shape functions");
         return(__LINE__);
@@ -1214,7 +1214,7 @@ INT EvaluateShapesAndDerivatives (FVElementGeometry *geo, INT flags)
       if (grad)
         for (j=0; j<nco; j++)
         {
-          if (D_GN(nco,j,(COORD *)SCVBF_LIP(scvbf),deriv))
+          if (D_GN(nco,j,(DOUBLE *)SCVBF_LIP(scvbf),deriv))
           {
             PrintErrorMessage('E',"EvaluateShapesAndDerivatives","something wrong with derivatives of shape functions");
             return(__LINE__);
@@ -1250,7 +1250,7 @@ INT EvaluateShapesAndDerivatives (FVElementGeometry *geo, INT flags)
 
 static INT FillLocalCoords (INT tag)
 {
-  LOCAL_COORDS *lc;
+  LOCAL_DOUBLES *lc;
   DOUBLE scale;
   DOUBLE_VECTOR s;
   INT i,j,k,l,n,nco,ned,nsi;

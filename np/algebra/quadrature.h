@@ -59,13 +59,13 @@
 
 typedef struct {
   INT nip;
-  COORD local[MAX_INT_POINTS][3];
+  DOUBLE local[MAX_INT_POINTS][3];
   DOUBLE weight[MAX_INT_POINTS];
 } QUADRATURE;
 
 typedef struct {
-  COORD_VECTOR local;
-  COORD_VECTOR global;
+  DOUBLE_VECTOR local;
+  DOUBLE_VECTOR global;
   DOUBLE weight;
   DOUBLE_VECTOR Jinv[DIM];
 } GAUSS_POINT;
@@ -83,6 +83,6 @@ typedef struct {
 /****************************************************************************/
 
 QUADRATURE *GetQuadrature(INT dim, INT n, INT order);
-INT GaussPoints(INT dim, INT n, INT order, COORD_VECTOR *x, GAUSS_POINT *gp);
+INT GaussPoints(INT dim, INT n, INT order, DOUBLE_VECTOR *x, GAUSS_POINT *gp);
 
 #endif

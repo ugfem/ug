@@ -144,25 +144,25 @@ typedef struct {
 /* geometry related data */
 typedef struct {
   INT co;                                                       /* # of corner							*/
-  COORD_VECTOR center;                          /* node position						*/
+  DOUBLE_VECTOR center;                         /* node position						*/
   DOUBLE volume;                                        /* volume (area) of scv					*/
   INT node_property;                                    /* subdomain info						*/
 } SubControlVolume;                                     /* FV intersected with element			*/
 
 typedef struct {
   INT i,j;                                                      /* scvf seperates corner i and j of elem*/
-  COORD_VECTOR ip_local;                        /* integration point in local coords	*/
-  COORD_VECTOR ip_global;                   /* integration point in global coords	*/
-  COORD_VECTOR normal;                          /* normal on face at ip pointing to CV j*/
+  DOUBLE_VECTOR ip_local;                       /* integration point in local coords	*/
+  DOUBLE_VECTOR ip_global;                          /* integration point in global coords	*/
+  DOUBLE_VECTOR normal;                         /* normal on face at ip pointing to CV j*/
   SD_VALUES sdv;                                        /* shape fcts, deriv. etc. at scv-faces	*/
 } SubControlVolumeFace;
 
 typedef struct {
   INT co;                                                       /* corresponding corner					*/
   INT side;                                                     /* boundary side of element				*/
-  COORD_VECTOR ip_local;                        /* integration point in local coords	*/
-  COORD param[DIM-1];                           /* local side coordinates                       */
-  COORD_VECTOR normal;                          /* normal on face at ip pointing to CV j*/
+  DOUBLE_VECTOR ip_local;                       /* integration point in local coords	*/
+  DOUBLE param[DIM-1];                          /* local side coordinates                       */
+  DOUBLE_VECTOR normal;                         /* normal on face at ip pointing to CV j*/
   DOUBLE area;                                          /* area of boundary face				*/
   SD_VALUES sdv;                                        /* shape fcts, deriv. etc. at b-faces	*/
 } BoundaryFace;
@@ -174,14 +174,14 @@ typedef struct {
   INT n_scvf;                                                   /* # sub control volume faces (==ip's)  */
   INT n_bf;                                                     /* # boundary faces						*/
 
-  COORD_VECTOR co_global[MAXNC];        /* points in global space, corners      */
-  COORD_VECTOR co_local[MAXNC];         /* points in local space, corners       */
-  COORD_VECTOR em_global[MAXE];         /* points in global space, edge midpoint*/
-  COORD_VECTOR em_local[MAXE];          /* points in local space, edge midpoints*/
-  COORD_VECTOR sm_global[MAXS];         /* points in global space, side midpoint*/
-  COORD_VECTOR sm_local[MAXS];          /* points in local space, side midpoints*/
-  COORD_VECTOR s_global;                        /* points in global space, center       */
-  COORD_VECTOR s_local;                         /* points in local space, center        */
+  DOUBLE_VECTOR co_global[MAXNC];       /* points in global space, corners      */
+  DOUBLE_VECTOR co_local[MAXNC];        /* points in local space, corners       */
+  DOUBLE_VECTOR em_global[MAXE];        /* points in global space, edge midpoint*/
+  DOUBLE_VECTOR em_local[MAXE];         /* points in local space, edge midpoints*/
+  DOUBLE_VECTOR sm_global[MAXS];        /* points in global space, side midpoint*/
+  DOUBLE_VECTOR sm_local[MAXS];         /* points in local space, side midpoints*/
+  DOUBLE_VECTOR s_global;                       /* points in global space, center       */
+  DOUBLE_VECTOR s_local;                        /* points in local space, center        */
   SD_VALUES co_sdv[MAXNC];                      /* shape fcts, deriv. etc. at corners	*/
   SubControlVolume scv[MAXNC];          /* sub control volumes					*/
   SubControlVolumeFace scvf[MAXF];      /* sub control volume faces				*/

@@ -974,7 +974,7 @@ INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
 INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
 {
   VECTOR *v;
-  COORD pos[DIM];
+  DOUBLE pos[DIM];
   INT comp,ncomp,j;
 
   for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))

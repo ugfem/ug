@@ -97,6 +97,6 @@ INT ReadArgvINT (char *name, INT *j, INT argc, char **argv);
 INT ReadArgvChar (char *name, char *buffer, INT argc, char **argv);
 INT ReadArgvDisplay (INT argc, char **argv);
 INT ReadArgvOption (char *name, INT argc, char **argv);
-INT ReadArgvPosition (char *name, INT argc, char **argv, COORD *pos);
+INT ReadArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos);
 
 #endif

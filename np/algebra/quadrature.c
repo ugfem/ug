@@ -412,7 +412,7 @@ QUADRATURE *GetQuadrature(INT dim, INT n, INT order)
   return(NULL);
 }
 
-INT GaussPoints(INT dim, INT n, INT order, COORD_VECTOR *x, GAUSS_POINT *gp)
+INT GaussPoints(INT dim, INT n, INT order, DOUBLE_VECTOR *x, GAUSS_POINT *gp)
 {
   DOUBLE Jdet,area;
   INT ip,nip;

@@ -607,7 +607,7 @@ static void PrintEvent (EVENT theEvent)
 static INT ProcessEvent (char *String, INT EventMask)
 {
   EVENT theEvent;
-  COORD qw, qh, scaling;
+  DOUBLE qw, qh, scaling;
   UGWINDOW *theUgW;
   PICTURE *thePic;
   INT WinID, MousePosition[2], UGW_LLL_old[2], UGW_LUR_old[2], Offset[2];
@@ -717,8 +717,8 @@ static INT ProcessEvent (char *String, INT EventMask)
     else
     {
       /* set pixel range of windows */
-      qw = (COORD)(UGW_LUR(theUgW)[0]-UGW_LLL(theUgW)[0])/(COORD)(UGW_LUR_old[0]-UGW_LLL_old[0]);
-      qh = (COORD)(UGW_LUR(theUgW)[1]-UGW_LLL(theUgW)[1])/(COORD)(UGW_LUR_old[1]-UGW_LLL_old[1]);
+      qw = (DOUBLE)(UGW_LUR(theUgW)[0]-UGW_LLL(theUgW)[0])/(DOUBLE)(UGW_LUR_old[0]-UGW_LLL_old[0]);
+      qh = (DOUBLE)(UGW_LUR(theUgW)[1]-UGW_LLL(theUgW)[1])/(DOUBLE)(UGW_LUR_old[1]-UGW_LLL_old[1]);
       if (qw==1.0 || qh==1.0) scaling = 1.0;
       else scaling = MIN(qw,qh);
       for (thePic=GetFirstPicture(theUgW); thePic!=NULL; thePic=GetNextPicture(thePic))

@@ -109,8 +109,8 @@ static INT TecplotCommand (INT argc, char **argv)
   INT numElements;                              /* number of elements						*/
   PreprocessingProcPtr pre;             /* pointer to prepare function				*/
   ElementEvalProcPtr eval;              /* pointer to evaluation function			*/
-  COORD *CornersCoord[MAX_CORNERS_OF_ELEM];       /* pointers to coordinates    */
-  COORD LocalCoord[DIM];                /* is one of the corners local coordinates	*/
+  DOUBLE *CornersCoord[MAX_CORNERS_OF_ELEM];       /* pointers to coordinates    */
+  DOUBLE LocalCoord[DIM];               /* is one of the corners local coordinates	*/
   DOUBLE local[DIM];                            /* local coordinate in DOUBLE				*/
   DOUBLE value;                                 /* returned by user eval proc				*/
   INT maxCorners;                               /* dimension dependent                                          */
@@ -319,7 +319,7 @@ static INT TecplotCommand (INT argc, char **argv)
           for (j=0; j<DIM; j++) LocalCoord[j] = local[j];
 
           /* call eval function */
-          value = eval(el,(const COORD **)CornersCoord,LocalCoord);
+          value = eval(el,(const DOUBLE **)CornersCoord,LocalCoord);
           fprintf(stream,"%lg ",value);
           counter++;                                                                    /* count values	*/
           if (counter%VALUES_PER_LINE==0)

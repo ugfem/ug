@@ -175,8 +175,8 @@ static INT TetiCommand (INT argc, char **argv)
   INT numElements;                              /* number of elements						*/
   PreprocessingProcPtr pre;             /* pointer to prepare function				*/
   ElementEvalProcPtr eval_s;            /* pointer to scalar evaluation function	*/
-  COORD *CornersCoord[MAX_CORNERS_OF_ELEM];       /* pointers to coordinates    */
-  COORD LocalCoord[DIM];                /* is one of the corners local coordinates	*/
+  DOUBLE *CornersCoord[MAX_CORNERS_OF_ELEM];       /* pointers to coordinates    */
+  DOUBLE LocalCoord[DIM];               /* is one of the corners local coordinates	*/
   DOUBLE local[DIM];                            /* local coordinate in DOUBLE				*/
   DOUBLE *values;                               /* returned by user eval proc				*/
   INT frame;                                            /* frame number								*/
@@ -358,7 +358,7 @@ static INT TetiCommand (INT argc, char **argv)
             for (j=0; j<DIM; j++) LocalCoord[j] = local[j];
 
             /* evaluate plot function */
-            values[ID(vx)] = eval_s(el,(const COORD **)CornersCoord,LocalCoord);
+            values[ID(vx)] = eval_s(el,(const DOUBLE **)CornersCoord,LocalCoord);
           }
         }
 

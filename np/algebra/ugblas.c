@@ -1802,7 +1802,7 @@ INT l_dsetskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
    This function sets all components of a vector to a given function value
    of the type
 
-   'typedef INT (*SetFuncProcPtr) (const COORD_VECTOR Global, SHORT vtype,'
+   'typedef INT (*SetFuncProcPtr) (const DOUBLE_VECTOR Global, SHORT vtype,'
    'DOUBLE *val);'
 
    RETURN VALUE:
@@ -1818,7 +1818,7 @@ INT l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFu
 {
 	VECTOR *first_v;
 	DOUBLE val[MAX_SINGLE_VEC_COMP];
-	COORD_VECTOR Point;
+	DOUBLE_VECTOR Point;
 	INT maxsmallblock;
 	register VECTOR *v;
 	register SHORT i;
@@ -6192,7 +6192,7 @@ INT dsetGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, IN
    blockvector, given as pointer, matching the type and class
    to a given function value of the type
 
-   'typedef INT (*SetFuncProcPtr) (const COORD_VECTOR Global, SHORT vtype,'
+   'typedef INT (*SetFuncProcPtr) (const DOUBLE_VECTOR Global, SHORT vtype,'
    'DOUBLE *val);'
 
    RETURN VALUE:
@@ -6208,7 +6208,7 @@ D*/
 INT dsetfuncB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFunc)
 {
 	DOUBLE val[MAX_SINGLE_VEC_COMP];
-	COORD_VECTOR Point;
+	DOUBLE_VECTOR Point;
 	INT maxsmallblock;
 	register VECTOR *v, *end_v;
 	register SHORT i;
@@ -6301,7 +6301,7 @@ INT dsetfuncB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, SetFunc
    blockvector, given as 'BV_DESC', matching the type and class
    to a given function value of the type
 
-   'typedef INT (*SetFuncProcPtr) (const COORD_VECTOR Global, SHORT vtype,'
+   'typedef INT (*SetFuncProcPtr) (const DOUBLE_VECTOR Global, SHORT vtype,'
    'DOUBLE *val);'
 
    RETURN VALUE:
@@ -6318,7 +6318,7 @@ D*/
 INT dsetfuncG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFunc)
 {
 	DOUBLE val[MAX_SINGLE_VEC_COMP];
-	COORD_VECTOR Point;
+	DOUBLE_VECTOR Point;
 	INT maxsmallblock;
 	register VECTOR *v, *end_v;
 	register SHORT i;
@@ -6411,7 +6411,7 @@ INT dsetfuncG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf,
    blockvector, given as pointer, to a given function value
    of the type
 
-   'typedef INT (*SetFuncProcPtr) (const COORD_VECTOR Global, SHORT vtype,'
+   'typedef INT (*SetFuncProcPtr) (const DOUBLE_VECTOR Global, SHORT vtype,'
    'DOUBLE *val);'
 
    RETURN VALUE:
@@ -6427,7 +6427,7 @@ D*/
 INT dsetfuncBS (const BLOCKVECTOR *bv, INT xcomp, SetFuncProcPtr SetFunc)
 {
 	DOUBLE val;
-	COORD_VECTOR Point;
+	DOUBLE_VECTOR Point;
 	register VECTOR *v, *first_v, *end_v;
 	
 	assert( xcomp >= 0 );
@@ -6467,7 +6467,7 @@ INT dsetfuncBS (const BLOCKVECTOR *bv, INT xcomp, SetFuncProcPtr SetFunc)
    blockvector, given as 'BV_DESC', to a given function value
    of the type
 
-   'typedef INT (*SetFuncProcPtr) (const COORD_VECTOR Global, SHORT vtype,'
+   'typedef INT (*SetFuncProcPtr) (const DOUBLE_VECTOR Global, SHORT vtype,'
    'DOUBLE *val);'
 
    RETURN VALUE:
@@ -6484,7 +6484,7 @@ D*/
 INT dsetfuncGS (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT xcomp, SetFuncProcPtr SetFunc)
 {
 	DOUBLE val;
-	COORD_VECTOR Point;
+	DOUBLE_VECTOR Point;
 	register VECTOR *v, *first_v, *end_v;
 	register BLOCKVECTOR *bv;
 

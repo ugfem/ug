@@ -121,8 +121,8 @@ static INT AVSCommand (INT argc, char **argv)
   PreprocessingProcPtr pre;             /* pointer to prepare function				*/
   ElementEvalProcPtr eval_s;            /* pointer to scalar evaluation function	*/
   ElementVectorProcPtr eval_v;      /* pointer to vector evaluation function	*/
-  COORD *CornersCoord[MAX_CORNERS_OF_ELEM];       /* pointers to coordinates    */
-  COORD LocalCoord[DIM];                /* is one of the corners local coordinates	*/
+  DOUBLE *CornersCoord[MAX_CORNERS_OF_ELEM];       /* pointers to coordinates    */
+  DOUBLE LocalCoord[DIM];               /* is one of the corners local coordinates	*/
   DOUBLE local[DIM];                            /* local coordinate in DOUBLE				*/
   DOUBLE value;                                 /* returned by user eval proc				*/
   DOUBLE x,y,z;                                 /* scalar values							*/
@@ -372,7 +372,7 @@ static INT AVSCommand (INT argc, char **argv)
           if (zcoord!=NULL)
           {
             eval_s = zcoord->EvalProc;
-            z = scaling*eval_s(el,(const COORD **)CornersCoord,LocalCoord);
+            z = scaling*eval_s(el,(const DOUBLE **)CornersCoord,LocalCoord);
           }
           else
             z = 0.0;
@@ -542,7 +542,7 @@ static INT AVSCommand (INT argc, char **argv)
           for (v=0; v<ns; v++)
           {
             eval_s = es[v]->EvalProc;
-            value = eval_s(el,(const COORD **)CornersCoord,LocalCoord);
+            value = eval_s(el,(const DOUBLE **)CornersCoord,LocalCoord);
             fprintf(stream,"%lg ",value);
           }
 
@@ -550,7 +550,7 @@ static INT AVSCommand (INT argc, char **argv)
           for (v=0; v<nv; v++)
           {
             eval_v = ev[v]->EvalProc;
-            eval_v(el,(const COORD **)CornersCoord,LocalCoord,vval);
+            eval_v(el,(const DOUBLE **)CornersCoord,LocalCoord,vval);
             if (DIM==2)
               fprintf(stream,"%lg %lg ",vval[0],vval[1]);
             else
@@ -635,7 +635,7 @@ static INT AVSCommand (INT argc, char **argv)
           LocalCornerCoordinates(DIM,TAG(el),i,local);
           for (j=0; j<DIM; j++) LocalCoord[j] += local[j];
         }
-        for (j=0; j<DIM; j++) LocalCoord[j] /= ((COORD)CORNERS_OF_ELEM(el));
+        for (j=0; j<DIM; j++) LocalCoord[j] /= ((DOUBLE)CORNERS_OF_ELEM(el));
 
         /* write cell id */
         fprintf(stream,"%d ",counter);
@@ -644,7 +644,7 @@ static INT AVSCommand (INT argc, char **argv)
         for (v=0; v<ns_cell; v++)
         {
           eval_s = es_cell[v]->EvalProc;
-          value = eval_s(el,(const COORD **)CornersCoord,LocalCoord);
+          value = eval_s(el,(const DOUBLE **)CornersCoord,LocalCoord);
           fprintf(stream,"%lg ",value);
         }
 
@@ -652,7 +652,7 @@ static INT AVSCommand (INT argc, char **argv)
         for (v=0; v<nv_cell; v++)
         {
           eval_v = ev_cell[v]->EvalProc;
-          eval_v(el,(const COORD **)CornersCoord,LocalCoord,vval);
+          eval_v(el,(const DOUBLE **)CornersCoord,LocalCoord,vval);
           if (DIM==2)
             fprintf(stream,"%lg %lg ",vval[0],vval[1]);
           else

@@ -46,7 +46,7 @@
 /****************************************************************************/
 
 
-#define SMALL_COORD         1.0E-5      /* resolution when comparing COORDs */
+#define SMALL_DOUBLE         1.0E-5      /* resolution when comparing DOUBLEs */
 
 
 
@@ -59,7 +59,7 @@
 
 typedef struct {
   ELEMENT *elem;
-  COORD center[DIM];
+  DOUBLE center[DIM];
 } LB_INFO;
 
 
@@ -96,17 +96,17 @@ static int sort_rcb_x (const void *e1, const void *e2)
   t1 = (LB_INFO *)e1;
   t2 = (LB_INFO *)e2;
 
-  if (t1->center[0] < t2->center[0] -SMALL_COORD) return(-1);
-  if (t1->center[0] > t2->center[0] +SMALL_COORD) return(1);
+  if (t1->center[0] < t2->center[0] -SMALL_DOUBLE) return(-1);
+  if (t1->center[0] > t2->center[0] +SMALL_DOUBLE) return(1);
 
   /* x coordinates are considered to be equal, compare y now */
-  if (t1->center[1] < t2->center[1] -SMALL_COORD) return(-1);
-  if (t1->center[1] > t2->center[1] +SMALL_COORD) return(1);
+  if (t1->center[1] < t2->center[1] -SMALL_DOUBLE) return(-1);
+  if (t1->center[1] > t2->center[1] +SMALL_DOUBLE) return(1);
 
         #ifdef __THREEDIM__
   /* x and y coordinates are considered to be equal, compare y now */
-  if (t1->center[2] < t2->center[2] -SMALL_COORD) return(-1);
-  if (t1->center[2] > t2->center[2] +SMALL_COORD) return(1);
+  if (t1->center[2] < t2->center[2] -SMALL_DOUBLE) return(-1);
+  if (t1->center[2] > t2->center[2] +SMALL_DOUBLE) return(1);
         #endif
 
   return(0);
@@ -120,17 +120,17 @@ static int sort_rcb_y (const void *e1, const void *e2)
   t1 = (LB_INFO *)e1;
   t2 = (LB_INFO *)e2;
 
-  if (t1->center[1] < t2->center[1] -SMALL_COORD) return(-1);
-  if (t1->center[1] > t2->center[1] +SMALL_COORD) return(1);
+  if (t1->center[1] < t2->center[1] -SMALL_DOUBLE) return(-1);
+  if (t1->center[1] > t2->center[1] +SMALL_DOUBLE) return(1);
 
   /* y coordinates are considered to be equal, compare x now */
-  if (t1->center[0] < t2->center[0] -SMALL_COORD) return(-1);
-  if (t1->center[0] > t2->center[0] +SMALL_COORD) return(1);
+  if (t1->center[0] < t2->center[0] -SMALL_DOUBLE) return(-1);
+  if (t1->center[0] > t2->center[0] +SMALL_DOUBLE) return(1);
 
         #ifdef __THREEDIM__
   /* y and x coordinates are considered to be equal, compare x now */
-  if (t1->center[2] < t2->center[2] -SMALL_COORD) return(-1);
-  if (t1->center[2] > t2->center[2] +SMALL_COORD) return(1);
+  if (t1->center[2] < t2->center[2] -SMALL_DOUBLE) return(-1);
+  if (t1->center[2] > t2->center[2] +SMALL_DOUBLE) return(1);
         #endif
 
   return(0);
@@ -145,16 +145,16 @@ static int sort_rcb_z (const void *e1, const void *e2)
   t1 = (LB_INFO *)e1;
   t2 = (LB_INFO *)e2;
 
-  if (t1->center[2] < t2->center[2] -SMALL_COORD) return(-1);
-  if (t1->center[2] > t2->center[2] +SMALL_COORD) return(1);
+  if (t1->center[2] < t2->center[2] -SMALL_DOUBLE) return(-1);
+  if (t1->center[2] > t2->center[2] +SMALL_DOUBLE) return(1);
 
   /* z coordinates are considered to be equal, compare x now */
-  if (t1->center[1] < t2->center[1] -SMALL_COORD) return(-1);
-  if (t1->center[1] > t2->center[1] +SMALL_COORD) return(1);
+  if (t1->center[1] < t2->center[1] -SMALL_DOUBLE) return(-1);
+  if (t1->center[1] > t2->center[1] +SMALL_DOUBLE) return(1);
 
   /* z and y coordinates are considered to be equal, compare x now */
-  if (t1->center[0] < t2->center[0] -SMALL_COORD) return(-1);
-  if (t1->center[0] > t2->center[0] +SMALL_COORD) return(1);
+  if (t1->center[0] < t2->center[0] -SMALL_DOUBLE) return(-1);
+  if (t1->center[0] > t2->center[0] +SMALL_DOUBLE) return(1);
 
   return(0);
 }
@@ -249,7 +249,7 @@ static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int d
 
 /****************************************************************************/
 
-static void CenterOfMass (ELEMENT *e, COORD *pos)
+static void CenterOfMass (ELEMENT *e, DOUBLE *pos)
 {
   int i;
 

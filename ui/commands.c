@@ -3901,7 +3901,7 @@ static INT VMListCommand (INT argc, char **argv)
 static INT InsertInnerNodeCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  COORD xc[DIM];
+  DOUBLE xc[DIM];
   INT i;
 
   /* following variables: keep type for sscanf */
@@ -4179,7 +4179,7 @@ static INT MoveNodeCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   VERTEX *myVertex;
   NODE *theNode;
-  COORD xc[DIM];
+  DOUBLE xc[DIM];
   INT type,i,j,level,relative;
 
   /* following variables: keep type for sscanf */
@@ -4777,7 +4777,7 @@ static INT MarkCommand (INT argc, char **argv)
   ELEMENT *theElement;
   char rulename[32];
   INT i,j,l,mode,rv,Rule;
-  COORD_VECTOR global;
+  DOUBLE_VECTOR global;
   DOUBLE x,y,z;
   long nmarked;
 
@@ -5173,7 +5173,7 @@ INT SmoothGridCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   GRID *theGrid;
-  COORD LimitLocDis;
+  DOUBLE LimitLocDis;
   INT i,MoveInfo[4],GridReset,lev,FirstSurLev,lowLevel,LowLevelSet,forceLevel,ForceLevelSet;
 
   GridReset = FALSE;
@@ -6154,7 +6154,7 @@ static INT FindCommand (INT argc, char **argv)
   NODE *theNode;
   VECTOR *theVector;
   ELEMENT *theElement;
-  COORD xc[DIM],tolc[DIM];
+  DOUBLE xc[DIM],tolc[DIM];
   INT i,j,select,isNode,isElement,isVector;
 
   /* following variables: keep type for sscanf */
@@ -8212,8 +8212,8 @@ static INT SetViewCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
   VIEWEDOBJ *theViewedObj;
-  COORD *viewPoint,*targetPoint,*xAxis;
-  COORD vP[3],tP[3],xA[3];
+  DOUBLE *viewPoint,*targetPoint,*xAxis;
+  DOUBLE vP[3],tP[3],xA[3];
   INT *perspective;
   INT per;
   INT i,j,veclen;
@@ -8451,7 +8451,7 @@ static INT WalkCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
   VIEWEDOBJ *theViewedObj;
-  COORD dx[3];
+  DOUBLE dx[3];
   INT i,veclen;
 
   /* following variables: keep type for sscanf */

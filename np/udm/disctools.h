@@ -65,7 +65,7 @@
 
 CoeffProcPtr MG_GetCoeffFct     (MULTIGRID *theMG, INT n);
 UserProcPtr MG_GetUserFct       (MULTIGRID *theMG, INT n);
-INT GetElementVertices          (ELEMENT *theElement, COORD **x);
+INT GetElementVertices          (ELEMENT *theElement, DOUBLE **x);
 INT GetAllVectorsOfElementOfType(ELEMENT *theElement, VECTOR **vec,
                                  const VECDATA_DESC *theVD);
 INT GetElementsideIndices       (ELEMENT *theElement, INT side,
