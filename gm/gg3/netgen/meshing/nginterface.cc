@@ -211,10 +211,11 @@ int AddSurfaceTriangle (int node0, int node1, int node2)
   return 0;
 }
 
+static int openkey=0;
 
 int InitNetgen (char * rulefilename)
 {
-  testout = new ofstream("test.out");
+  if(openkey==0) {testout = new ofstream("test.out"); openkey=1;}
   meshing = new my_meshing3(rulefilename);
 
   points = new ARRAY<Point3d>;
