@@ -44,7 +44,7 @@ static int TransferGridComplete (MULTIGRID *theMG, INT level)
 }
 
 
-static int TransferGridToMaster (MULTIGRID *theMG)
+static int TransferGridToMaster (MULTIGRID *theMG, INT fl, INT tl)
 {
   ELEMENT *e;
   GRID *theGrid;
@@ -54,7 +54,7 @@ static int TransferGridToMaster (MULTIGRID *theMG)
   {
     int l;
 
-    for (l=0; l<=TOPLEVEL(theMG); l++) {
+    for (l=fl; l<=tl; l++) {
 
       theGrid = GRID_ON_LEVEL(theMG,l);
 
@@ -121,13 +121,17 @@ static int CreateDD(GRID *theGrid, int hor_boxes, int vert_boxes )
 
 void ddd_test (char *argv, MULTIGRID *theMG)
 {
-  int mode,param,fromlevel,tolevel,part,hor_boxes, vert_boxes;
+  int n,mode,param,fromlevel,tolevel,part,hor_boxes,vert_boxes;
 
   mode = param = fromlevel = tolevel = 0;
 
-  sscanf(argv,"%d %d %d",&param,&fromlevel,&tolevel);
-  UserWriteF(PFMT "ddd_test() param=%d fromlevel=%d tolevel=%d\n",
-             me,param,fromlevel,tolevel);
+  n = sscanf(argv,"%d %d %d",&param,&fromlevel,&tolevel);
+  UserWriteF(PFMT "ddd_test() param=%d",me,param);
+  if (n > 1)
+    UserWriteF(" fromlevel=%d",fromlevel);
+  if (n > 1)
+    UserWriteF(" tolevel=%d",tolevel);
+  UserWriteF("\n");
 
   /* param>100 is used as switch for DDD xfer statistics */
   if (param>=100)
@@ -160,7 +164,7 @@ void ddd_test (char *argv, MULTIGRID *theMG)
 
   /* dies verschickt ein verteiltes GRID zum master */
   case (2) :
-    TransferGridToMaster(theMG);
+    TransferGridToMaster(theMG,fromlevel,tolevel);
     fromlevel = 0;
     break;
 
