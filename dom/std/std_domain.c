@@ -3446,6 +3446,7 @@ INT BNDS_Dispose (HEAP *Heap, BNDS *theBndS)
 
 INT BVP_Save (BVP *theBVP, char *name, INT argc, char **argv)
 {
+  UserWrite("ERROR: std domain cannot be saved\n");
   return (1);
 }
 
