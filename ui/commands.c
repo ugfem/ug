@@ -2774,7 +2774,7 @@ static INT LoadDataCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   char FileName[NAMESIZE];
   VECDATA_DESC *theVDList[5];
-  INT n;
+  INT i,m,n;
 
   theMG = currMG;
   if (theMG==NULL) {PrintErrorMessage('E',"loaddata","no open multigrid"); return (CMDERRORCODE);}
@@ -2784,14 +2784,19 @@ static INT LoadDataCommand (INT argc, char **argv)
 
   /* get vecdatadesc */
   n=0;
-  if ((theVDList[n]=ReadArgvVecDesc(theMG,"a",argc,argv))!=NULL)
-    if ((theVDList[++n]=ReadArgvVecDesc(theMG,"b",argc,argv))!=NULL)
-      if ((theVDList[++n]=ReadArgvVecDesc(theMG,"c",argc,argv))!=NULL)
-        if ((theVDList[++n]=ReadArgvVecDesc(theMG,"d",argc,argv))!=NULL)
-          if ((theVDList[++n]=ReadArgvVecDesc(theMG,"e",argc,argv))!=NULL)
-            n++;
-  if (n<=0) return (PARAMERRORCODE);
-  if (LoadData(theMG,FileName,n,theVDList)) return (PARAMERRORCODE);
+  theVDList[n++]=ReadArgvVecDesc(theMG,"a",argc,argv);
+  theVDList[n++]=ReadArgvVecDesc(theMG,"b",argc,argv);
+  theVDList[n++]=ReadArgvVecDesc(theMG,"c",argc,argv);
+  theVDList[n++]=ReadArgvVecDesc(theMG,"d",argc,argv);
+  theVDList[n++]=ReadArgvVecDesc(theMG,"e",argc,argv);
+
+  m=0;
+  for (i=0; i<n; i++)
+    if (theVDList[i]!=NULL)
+      m = i+1;
+
+  if (m<=0) return (PARAMERRORCODE);
+  if (LoadData(theMG,FileName,m,theVDList)) return (PARAMERRORCODE);
 
   return(OKCODE);
 }
