@@ -250,21 +250,23 @@ static int Scatter_pamgCheck (DDD_OBJ obj, void *data)
   MATRIX *m, *m2;
   DDD_GID *buf = (DDD_GID *)data;
   DDD_GID gid,loc_gids[NBARRAYSIZE*NBARRAYSIZE];
-  INT i, nr_local_gids, sender_gid, sender_pe, in_overlap2;
+  INT i, nr_local_gids, sender_gid, sender_pe;
+  /* INT in_overlap2;	not necessary any longer because scatter is called only for matsers if using BorderVectorIF and IF_FORWARD*/
 
+  assert(PRIO(v)==PrioMaster);
   nr_local_gids=0;
   m=VSTART(v);
-  in_overlap2 = (PRIO(v)==PrioMaster);
+  /*in_overlap2 = (PRIO(v)==PrioMaster);*/
   if(m!=NULL)
     for( m=MNEXT(VSTART(v)); m!=NULL; m = MNEXT(m) )
       for( m2=VSTART(MDEST(m)); m2!=NULL; m2 = MNEXT(m2) )
       {
         loc_gids[nr_local_gids++] = DDD_InfoGlobalId(PARHDR(MDEST(m2)));
-        in_overlap2 |= (PRIO(MDEST(m2))==PrioMaster);
+        /*in_overlap2 |= (PRIO(MDEST(m2))==PrioMaster);*/
       }
 
-  if(!in_overlap2)
-    return 0;                   /* only vectors within overlap 2 must have the complete neighbourhood */
+  /*if(!in_overlap2)*/
+  /*	return 0;	 only vectors within overlap 2 must have the complete neighbourhood */
 
   /*qsort( loc_gid, nr_local_gids, sizeof(DDD_GID), sort_Gids); makes only sense for bisection search */
 
