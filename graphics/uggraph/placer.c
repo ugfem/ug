@@ -510,9 +510,9 @@ int placer_Exec (INT *win_geom, int n, DOUBLE *rect_defs, INT *geom)
 
   /* return success */
         #ifdef INSIDE_UG
-  return(1);
-        #else
   return(0);
+        #else
+  return(1);
         #endif
 }
 
