@@ -59,5 +59,8 @@ find ${UGROOT} \
 
 mv include.tmp include
 
+# devices.h was renamed to ugdevices.h. For compatibility reasons:
+ln -s $UGROOT/dev/ugdevices.h $UGROOT/include/devices.h
+
 exit 0
 
