@@ -865,7 +865,7 @@ static DRAWINGOBJ       *WOP_DO_Buffer[WOP_DOWN_CHANNELS+1][DO_BUFFER_SLOTS];
 static VChannelPtr       WOP_UpChannel;
 static VChannelPtr       WOP_DownChannel[WOP_DOWN_CHANNELS];
 static INT               WOP_NbDesc[WOP_DOWN_CHANNELS];
-static DRAWINGOBJ        *WOP_DObjPnt;
+DRAWINGOBJ        *WOP_DObjPnt;
 static INT WOP_Sending  [WOP_DOWN_CHANNELS+1]; /* indicates sending from buffer i  */
 static INT WOP_Receiving[WOP_DOWN_CHANNELS];   /* indicates receiving in buffer i  */
 static INT WOP_NbTokens [WOP_DOWN_CHANNELS];   /* nb of tokens seen from channel i */
@@ -879,6 +879,7 @@ static msgid WOP_Outmsg [WOP_DOWN_CHANNELS+1]; /* IDs for messages being sent   
 static msgid WOP_Inmsg  [WOP_DOWN_CHANNELS];   /* IDs for messages being received  */
 static INT WOP_CurrDoLen;                      /* length of current DO             */ 
 static INT WOP_lastID, WOP_nextID;             /* plot id of last/next element     */
+static INT WOP_EXT_End;						   /* flag for end of working loop	   */
 #endif
 
 
@@ -20329,6 +20330,56 @@ static void PWorkVW_Evaluate(void)
 	}
 }
 
+/****************************************************************************/
+/*
+   PWorkET_Evaluate - evaluates extern wise
+
+   SYNOPSIS:
+   void PWorkET_Evaluate(void)
+
+   DESCRIPTION:
+   see PWorkEW_Evaluate
+
+   PARAMETERS:
+   none
+
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
+
+static void PWorkET_Evaluate(void)
+{
+	INT i;
+	DRAWINGOBJ *p, *p1;
+
+	i = WOP_DOWN_CHANNELS;
+	if (WOP_More[i] && WOP_Count[i] < DO_BUFFER_SLOTS) {
+		p = p1 = WOP_DO_Buffer[i][WOP_Front[i]];
+		DO_inc(p);
+		DO_2INT(p1) = NO_TOKEN;
+		do {
+			if (WOP_CurrDoLen > 0) {
+				memcpy(p, WOP_DrawingObject, (size_t)(WOP_CurrDoLen));
+				p = (DRAWINGOBJ *) (DO_2cp(p) + WOP_CurrDoLen);
+			}
+			if (WOP_EXT_End) {
+				DO_2INT(p1) = END_TOKEN;
+				WOP_More[i] = 0;
+				break;
+			}
+			else {
+				(*WOP_EXT_EvaluateProc)(WOP_DrawingObject, &WOP_EXT_End);
+				WOP_CurrDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
+			}
+		} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
+				 > WOP_CurrDoLen);
+		DO_2c(p) = DO_NO_INST;
+		WOP_Count[i]++;
+		WOP_Front[i] = (WOP_Front[i] + 1) % DO_BUFFER_SLOTS;
+	}
+}
+
 #endif
 
 
@@ -20718,6 +20769,10 @@ oops:
 
 static INT WorkET(void)
 {
+#ifndef ModelP
+
+	/*** Sequential Version ***/
+
 	INT end;
 
 	end = 0;
@@ -20727,6 +20782,46 @@ static INT WorkET(void)
 		if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))                          return (1);
 	}
 	return (0);
+	
+#else
+
+	/*** Parallel Version ***/
+
+	HEAP *heap;
+	INT i, j, err=0;
+	INT MarkKey;
+
+	/* allocate buffers */
+	heap = WOP_MG->theHeap;
+	MarkTmpMem(heap,&MarkKey);
+	for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+		for (j = 0; j < DO_BUFFER_SLOTS; j++)
+			if ((WOP_DO_Buffer[i][j] = (DRAWINGOBJ *)GetTmpMem(heap, 
+				 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), MarkKey)) == NULL) {
+				err = 1;
+				goto oops;
+			}
+oops:
+	err = UG_GlobalMaxINT(err);
+	if (err) {
+		ReleaseTmpMem(heap,MarkKey);
+		return 1;
+	}
+
+	PWorkGEN_Init();
+
+	WOP_EXT_End = !CONTEXT(me);
+				
+	for (;;) {
+		if (PWorkGEN_Quit()) break;
+		PWorkGEN_Execute();
+		PWorkET_Evaluate();
+	}
+  
+	ReleaseTmpMem(heap,MarkKey);
+	return (0);
+
+#endif
 }
 
 static INT WorkRC(void)
@@ -22349,7 +22444,7 @@ INT MoveCut (PICTURE *thePicture, const INT *OldMousePos)
 
    DESCRIPTION:
    This function draws the picture. It initializes a structure 'WORK' to be a
-   'DRAW_WORK', and calls the function 'WOorkOnPicture'.
+   'DRAW_WORK', and calls the function 'WorkOnPicture'.
 
    RETURN VALUE:
    INT
