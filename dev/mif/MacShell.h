@@ -47,6 +47,19 @@
 /*																			*/
 /****************************************************************************/
 
+enum SPECIAL_KEYS {
+
+  SK_NONE,
+  SK_PAGE_UP,
+  SK_PAGE_DOWN,
+  SK_PAGE_LEFT,
+  SK_PAGE_RIGHT,
+  SK_LINE_UP,
+  SK_LINE_DOWN,
+  SK_COL_LEFT,
+  SK_COL_RIGHT
+};
+
 /********************************************************************************/
 /*																				*/
 /* data structures exported by the corresponding source file					*/
@@ -83,7 +96,7 @@ INT      ActivateShellWin                       ();
 INT      DeactivateShellWin             ();
 INT      UpdateShellWin                         (void);
 void     IdleShellWindow                        ();
-char    *ShellHandleKeybordEvent        (char key);
+char    *ShellHandleKeybordEvent        (INT SpecialKey, char key);
 void     MacWriteString                         (char *s);
 
 int      ShellInitAndOpen                       (ShellWindow *sh);

@@ -489,6 +489,11 @@ static INT InsertInShellWin (char c)
 
   nLinesBefore = (**(shell->textH)).nLines;
 
+  {
+    CharsHandle ch;
+    ch = TEGetText(shell->textH);
+  }
+
   /* insert text into text edit record */
   TESetSelect(32760,32760,shell->textH);
   TEKey(c,shell->textH);
@@ -616,8 +621,37 @@ void MacWriteString (char *s)
 /*																			*/
 /****************************************************************************/
 
-char *ShellHandleKeybordEvent (char key)
+char *ShellHandleKeybordEvent (INT SpecialKey, char key)
 {
+  if (SpecialKey)
+    switch (SpecialKey)
+    {
+    case SK_PAGE_UP :
+      MyShellScrollAction(shell->vScrollBar,inPageUp);
+      return (NULL);
+    case SK_PAGE_DOWN :
+      MyShellScrollAction(shell->vScrollBar,inPageDown);
+      return (NULL);
+    case SK_PAGE_LEFT :
+      MyShellScrollAction(shell->hScrollBar,inPageUp);
+      return (NULL);
+    case SK_PAGE_RIGHT :
+      MyShellScrollAction(shell->hScrollBar,inPageDown);
+      return (NULL);
+    case SK_LINE_UP :
+      MyShellScrollAction(shell->vScrollBar,inUpButton);
+      return (NULL);
+    case SK_LINE_DOWN :
+      MyShellScrollAction(shell->vScrollBar,inDownButton);
+      return (NULL);
+    case SK_COL_LEFT :
+      MyShellScrollAction(shell->hScrollBar,inUpButton);
+      return (NULL);
+    case SK_COL_RIGHT :
+      MyShellScrollAction(shell->hScrollBar,inDownButton);
+      return (NULL);
+    }
+
   switch (key)
   {
   case '\n' :              /* carriage return */
@@ -633,14 +667,6 @@ char *ShellHandleKeybordEvent (char key)
       InsertInShellWin(key);
       nchars--;
     }
-    return (NULL);
-
-  case '\f' :                   /* page down */
-    MyShellScrollAction(shell->vScrollBar,inPageDown);
-    return (NULL);
-
-  case '\v' :                   /* page up */
-    MyShellScrollAction(shell->vScrollBar,inPageUp);
     return (NULL);
 
   default :
