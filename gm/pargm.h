@@ -345,6 +345,9 @@ enum Priorities
 #define PROCLIST(p)             (&_proclist_)
 #define NCOPIES(p)              1
 
+/* dummies for vertices */
+#define SETVXPRIO(e,p)  ;
+
 /* ddd dummies */
 #define DDD_OBJ                 void *
 #define DDD_IdentifyBegin()
