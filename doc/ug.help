@@ -139,8 +139,7 @@ logoff          # switch off the logging mechanism
 new              # allocate heap and new multigrid structure
 new [<mgname>] $d <domain> $p <problem> $f <format> $h <heapsize>
     <mgname>               # the name of the multigrid (default is 'untitled-<nb>')
-    $d <domain>            # one of the enroled domains
-    $p <problem>           # one of the problems enroled for <domain>
+    $b <BVP name>          # one of the enroled boundary value problems
     $f <format>            # one of the enroled formats matching with <problem>
     $h <heapsize>          # the heapsize to be allocated
 
@@ -148,8 +147,7 @@ new [<mgname>] $d <domain> $p <problem> $f <format> $h <heapsize>
 open             # allocate heap and new multigrid structure
 open <mgname> [$d <domain> [$p <problem>]] [$f <format>] $h <heapsize>
     <mgname>               # the name of the multigrid
-    $d <domain>            # one of the enroled domains
-    $p <problem>           # one of the problems enroled for <domain>
+    $b <BVP name>          # one of the enroled boundary value problems
     $f <format>            # one of the enroled formats matching with <problem>
     $h <heapsize>          # the heapsize to be allocated
 
@@ -749,7 +747,7 @@ lmgc # linear multigrid cycle
 for initialisation use:
 npinit $x <sol sym> $b <rhs sym> $c <cor sym> $t <temp sym> $A <mat sym> 
        $m <maxit> $l <baselevel> $g <gamma> $s <sm1 sm2 basesm> $D{no|red|full}
-       $red <sc double list>
+       $red <sc double list> [$p <cg sym>] [$abslimit <sc double list>]
 
 -nl > numproc 
 nl # nonlinear solver
@@ -757,8 +755,8 @@ for initialisation use:
 npinit $n <new sym> $o <old sym> $t <temp sym> $d {NO|RED|FULL} $m <maxit> 
        $l <linear solver> $r <assemble> $Rel_Limit <sc double list> $Damp <sc double list>
 
--TNLSolve > numproc
-TNLSolve                  # time solver
+-tnl > numproc
+tnl                  # time solver
 npinit $n <new sym> $o <old sym> $t <temp sym> $d {NO|RED|FULL} $m <maxit> 
        $l <linear solver> $r <assemble> $Rel_Limit <sc double list> $Damp <sc double list> ??????
 
