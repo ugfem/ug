@@ -2015,7 +2015,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 
 /* control word identifier */
 #define MULTIGRID_STATUS                                11
-#define MULTIGRID_STATUS_OFFSET                 (sizeof(ENVVAR))
+#define MULTIGRID_STATUS_OFFSET                 (sizeof(ENVDIR))
 
 #define MGSTATUS(p)                     ((p)->status)
 #define RESETMGSTATUS(p)                {(p)->status=0; (p)->magic_cookie = (int)time(NULL);}
