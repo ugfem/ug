@@ -143,7 +143,7 @@ public:
   typedef class FAMGVectorRevIter RevIterator;
 
   FAMGVector(const FAMGGridVector & gridvec) : mygridvector(gridvec) {}
-  ~FAMGVector() {};                     // nothing to do
+  ~FAMGVector();
   FAMGVector( const FAMGGridVector & gridvec, VECDATA_DESC *vec_desc ) : mygridvector(gridvec), mydesc(vec_desc) {
     allocatedVD=0; assert(VD_IS_SCALAR(vec_desc)); comp = VD_SCALCMP(vec_desc);
   }

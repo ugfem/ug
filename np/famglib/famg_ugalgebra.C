@@ -40,6 +40,7 @@ FAMGVector* FAMGugVector::create_new() const
 	FAMGugVector *new_v = new FAMGugVector(gridvector); 
 	if(new_v!=NULL)
 	{
+		new_v->mydesc = NULL;
 		if(AllocVDFromVD( MYMG(grid), GLEVEL(grid), GLEVEL(grid), mydesc, &new_v->mydesc)) 
 		{
 	        ostrstream ostr;
@@ -53,8 +54,11 @@ FAMGVector* FAMGugVector::create_new() const
 	return new_v;
 };
 
-#ifndef ONLY_ONE_ALGEBRA_DS
+#ifdef ONLY_ONE_ALGEBRA_DS
+FAMGVector::~FAMGVector()
+#else
 FAMGugVector::~FAMGugVector()
+#endif
 {
 	if( allocatedVD == 1 )
 	{
@@ -65,7 +69,6 @@ FAMGugVector::~FAMGugVector()
 		allocatedVD = 0;
 	}
 }
-#endif	// ONLY_ONE_ALGEBRA_DS
 
 #ifdef WEG // wird wahrscheinlich nicht mehr benoetigt
 void FAMGugMatrix::SetNumbers()
