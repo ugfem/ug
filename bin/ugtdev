@@ -45,6 +45,10 @@ while ($ready == 0)
 			set timescale = 3600;
 			breaksw;
 
+		case "-Smin":
+			set timescale = 60;
+			breaksw;
+
 		case "-G":
 			set FlagScreen = 1;
 			breaksw;
