@@ -85,12 +85,12 @@ static GENERAL_ELEMENT def_triangle = {
   3,                                                                                    /* number of corners			*/
   {{0.0,0.0},{1.0,0.0},{0.0,1.0}},                      /* local coordinates			*/
   3,                                                                                    /* number of edges				*/
-  {1,1,1,0},                                                                    /* edges for each side	(2D!)	*/
-  {2,2,2,0},                                                                    /* corners for each side		*/
+  {1,1,1,-1},                                                                   /* edges for each side	(2D!)	*/
+  {2,2,2,-1},                                                                   /* corners for each side		*/
   2,                                                                                    /* an edge has 2 corners		*/
-  { {0,0,0}, {1,0,0}, {2,0,0}, {0,0,0} },       /* number of edge j of side i   */
-  { {0,1,0}, {1,2,0}, {2,0,0}, {0,0,0} },       /* number of corner j of side i */
-  { {0,1},{1,2},{2,0},{0,0},{0,0},{0,0} }       /* number of corner j of edge i */
+  {{0,-1,-1},{1,-1,-1},{2,-1,-1},{-1,-1,-1}},       /* number of edge j of side i   */
+  {{0,1,-1},{1,2,-1},{2,0,-1},{-1,-1,-1}},          /* number of corner j of side i */
+  {{0,1},{1,2},{2,0},{-1,-1},{-1,-1},{-1,-1}}       /* number of corner j of edge i */
 } ;
 
 static GENERAL_ELEMENT def_quadrilateral = {
@@ -104,9 +104,9 @@ static GENERAL_ELEMENT def_quadrilateral = {
   {1,1,1,1},                                                                    /* edges for each side	(2D!)	*/
   {2,2,2,2},                                                                    /* corners for each side		*/
   2,                                                                                    /* an edge has 2 corners		*/
-  { {0,0,0}, {1,0,0}, {2,0,0}, {3,0,0} },       /* number of edge j of side i   */
-  { {0,1,0}, {1,2,0}, {2,3,0}, {3,0,0} },       /* number of corner j of side i */
-  { {0,1},{1,2},{2,3},{3,0},{0,0},{0,0} }       /* number of corner j of edge i */
+  {{0,-1,-1},{1,-1,-1},{2,-1,-1},{3,-1,-1}},       /* number of edge j of side i   */
+  {{0,1,-1},{1,2,-1},{2,3,-1},{3,0,-1}},           /* number of corner j of side i */
+  {{0,1},{1,2},{2,3},{3,0},{-1,-1},{-1,-1}}        /* number of corner j of edge i */
 } ;
 #endif
 

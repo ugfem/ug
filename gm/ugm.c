@@ -1266,6 +1266,7 @@ void GetNbSideByNodes (ELEMENT *theNeighbor, INT *nbside, ELEMENT *theElement, I
       if (CORNER_OF_SIDE_PTR(theElement,side,0) ==
           CORNER_OF_SIDE_PTR(theNeighbor,i,k))
         break;
+    if (k == nc) continue;
 
     for (l=1; l<ec; l++)
     {
@@ -1771,10 +1772,15 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   {
     INT where = PRIO2INDEX(PrioMaster);
 
+#ifndef ModelP
     ASSERT(Father != NULL);
-    if (SON(Father,where) == NULL)
-      SET_SON(Father,where,pe);
-    SETNSONS(Father,NSONS(Father)+1);
+#endif
+    if (Father != NULL)
+    {
+      if (SON(Father,where) == NULL)
+        SET_SON(Father,where,pe);
+      SETNSONS(Father,NSONS(Father)+1);
+    }
   }
 
   /* return ok */
@@ -5549,41 +5555,37 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
     }
   }
 
-  for (i=0; i<=maxlevel; i++)
-  {
-    theGrid = GRID_ON_LEVEL(theMG,i);
-    for (j=1; j<=theMesh->nSubDomains; j++)
-      for (k=0; k<theMesh->nElements[j]; k++)
+  for (j=1; j<=theMesh->nSubDomains; j++)
+    for (k=0; k<theMesh->nElements[j]; k++)
+    {
+      i = theMesh->ElementLevel[j][k];
+      theGrid = GRID_ON_LEVEL(theMG,i);
+      n = theMesh->Element_corners[j][k];
+      for (l=0; l<n; l++)
       {
-        n = theMesh->Element_corners[j][k];
-        for (l=0; l<n; l++)
+        ListNode = NList[theMesh->Element_corner_ids[j][k][l]];
+        if (ListNode==NULL || LEVEL(ListNode)<i)
         {
-          ListNode = NList[theMesh->Element_corner_ids[j][k][l]];
-          if (ListNode==NULL || LEVEL(ListNode)<i)
+          Nodes[l] = CreateNode(theGrid,VList[theMesh->Element_corner_ids[j][k][l]],NULL,LEVEL_0_NODE);
+          if (Nodes[l]==NULL) assert(0);
+          NList[theMesh->Element_corner_ids[j][k][l]] = Nodes[l];
+          if (ListNode==NULL || LEVEL(ListNode)<i-1)
           {
-            Nodes[l] = CreateNode(theGrid,VList[theMesh->Element_corner_ids[j][k][l]],NULL,LEVEL_0_NODE);
-            if (Nodes[l]==NULL) assert(0);
-            NList[theMesh->Element_corner_ids[j][k][l]] = Nodes[l];
-            if (ListNode==NULL || LEVEL(ListNode)<i-1)
-            {
-              NFATHER(Nodes[l]) = NULL;
-            }
-            else
-            {
-              SETNFATHER(Nodes[l],(GEOM_OBJECT *)ListNode);
-              SONNODE(ListNode) = Nodes[l];
-            }
+            SETNFATHER(Nodes[l],NULL);
           }
           else
           {
-            Nodes[l] = ListNode;
+            SETNFATHER(Nodes[l],(GEOM_OBJECT *)ListNode);
+            SONNODE(ListNode) = Nodes[l];
           }
         }
-        theElement = InsertElement (theGrid,n,Nodes,NULL,NULL);
-        if (theElement==NULL) return (GM_ERROR);
-        SETSUBDOMAIN(theElement,j);
+        else
+        {
+          Nodes[l] = ListNode;
+        }
       }
-  }
+      theElement = InsertElement (theGrid,n,Nodes,NULL,NULL);
+    }
 
   return(GM_OK);
 }

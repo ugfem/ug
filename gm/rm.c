@@ -2144,9 +2144,6 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
 
 INT EstimateHere (ELEMENT *theElement)
 {
-        #ifdef ModelP
-  if (EGHOST(theElement)) return(0);
-        #endif
   return(LEAFELEM(theElement));
 }
 

@@ -237,12 +237,15 @@ struct mgio_parinfo {
   unsigned short *proclist;                                             /* NULL for elements without copies             */
   unsigned short prio_elem;
   unsigned short ncopies_elem;
+  int e_ident;                                                                  /* identification of element				*/
   unsigned short prio_node[MGIO_MAX_CORNERS_OF_ELEM];
   unsigned short ncopies_node[MGIO_MAX_CORNERS_OF_ELEM];
+  int n_ident[MGIO_MAX_CORNERS_OF_ELEM];                /* identification of nodes of elem			*/
 
 #if (MGIO_DIM==3)
   unsigned short prio_edge[MGIO_MAX_EDGES_OF_ELEM];
   unsigned short ncopies_edge[MGIO_MAX_EDGES_OF_ELEM];
+  int ed_ident[MGIO_MAX_EDGES_OF_ELEM];                 /* identification of edges of element		*/
 #endif
 };
 
@@ -267,9 +270,6 @@ struct mgio_cg_element {
 
   /* (procs>1)-extension */
   int level;
-  int e_ident;                                                                  /* identification of element				*/
-  int n_ident[MGIO_MAX_CORNERS_OF_ELEM];                /* identification of nodes of elem			*/
-  int ed_ident[MGIO_MAX_EDGES_OF_ELEM];                 /* identification of edges of element		*/
 };
 
 struct mgio_refinement_seq {                                    /* used only for sizeof						*/
@@ -342,7 +342,7 @@ int             Read_RR_Rules           (int n, MGIO_RR_RULE    *rr_rules);
 int     Read_CG_General         (MGIO_CG_GENERAL *cg_general);
 int             Read_CG_Points          (int n, MGIO_CG_POINT   *cg_point);
 int             Read_CG_Elements        (int n, MGIO_CG_ELEMENT *cg_element);
-int     Read_Refinement         (int n, MGIO_REFINEMENT *refinement, MGIO_RR_RULE *rr_rules);
+int     Read_Refinement         (MGIO_REFINEMENT *refinement, MGIO_RR_RULE *rr_rules);
 int             Read_BD_General         (MGIO_BD_GENERAL *bd_general);
 
 /* write functions */
@@ -355,7 +355,7 @@ int             Write_RR_Rules          (int n, MGIO_RR_RULE    *rr_rules);
 int     Write_CG_General        (MGIO_CG_GENERAL *cg_general);
 int             Write_CG_Points         (int n, MGIO_CG_POINT   *cg_point);
 int             Write_CG_Elements       (int n, MGIO_CG_ELEMENT *cg_element);
-int     Write_Refinement        (int n, MGIO_REFINEMENT *refinement, MGIO_RR_RULE *rr_rules);
+int     Write_Refinement        (MGIO_REFINEMENT *refinement, MGIO_RR_RULE *rr_rules);
 int             Write_BD_General        (MGIO_BD_GENERAL *bd_general);
 
 #ifdef __MGIO_USE_IN_UG__

@@ -3295,7 +3295,7 @@ static int compare_nodes (const void *ce0, const void *ce1)
 #pragma optimization_level 1
 #endif
 
-INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT notHanging)
+INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT notHanging, INT ioflag)
 {
 	COMPARE_RECORD ElemSonTable[MAX_SONS];
 	COMPARE_RECORD NbSonTable[MAX_SONS];
@@ -3593,7 +3593,7 @@ static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theCo
 		SonSides[0] = i;
 
 		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side,
-			Sons_of_Side_List,SonSides,hFlag)!=GM_OK) RETURN(GM_FATAL);
+			Sons_of_Side_List,SonSides,hFlag,0)!=GM_OK) RETURN(GM_FATAL);
 
 		#ifdef ModelP
 		if (Identify_Objects_of_ElementSide(theGrid,theElement,i)) RETURN(GM_FATAL);
@@ -4554,7 +4554,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 		assert(Sons_of_Side>0 && Sons_of_Side<6);
 
 		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side, 
-			 	Sons_of_Side_List,SonSides,hFlag)!=GM_OK) RETURN(GM_FATAL);
+			 	Sons_of_Side_List,SonSides,hFlag,0)!=GM_OK) RETURN(GM_FATAL);
 
 		#ifdef ModelP
 		if (Identify_Objects_of_ElementSide(theGrid,theElement,i)) RETURN(GM_FATAL);
@@ -4775,7 +4775,7 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 				Sons_of_Side_List,SonSides,0)!=GM_OK) RETURN(GM_FATAL);
 
 		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side, 
-				Sons_of_Side_List,SonSides,hFlag)!=GM_OK) RETURN(GM_FATAL);
+				Sons_of_Side_List,SonSides,hFlag,0)!=GM_OK) RETURN(GM_FATAL);
 
 		#ifdef ModelP
 		if (Identify_Objects_of_ElementSide(theGrid,theElement,i)) RETURN(GM_FATAL);
@@ -4861,9 +4861,6 @@ static int RefineGrid (GRID *theGrid)
 
 	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),("RefineGrid(%d):\n",GLEVEL(theGrid)),"");
 	
-	/* grid not modified yet! */
-	RESETGSTATUS(UpGrid,GRID_CHANGED);
-
 	/* refine elements */
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 		 theElement=SUCCE(theElement))
@@ -4905,7 +4902,8 @@ static int RefineGrid (GRID *theGrid)
 			SETUSED(theElement,0);
 
 			/* this grid is modified */
-			SETGSTATUS(UpGrid,GRID_CHANGED);
+			SETGLOBALGSTATUS(UpGrid);
+			RESETMGSTATUS(MYMG(UpGrid));
 		}
 		else if (USED(theElement) == 0)
 		{
@@ -5064,7 +5062,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 				RETURN(GM_FATAL);
 		}
 
-					Sons_of_Side,Sons_of_Side_List,SonSides,hFlag)!=GM_OK) 
+		/* yellow_class specific code:                             */
 		/* check whether is a valid ghost, which as in minimum one */
 		/* master element as neighbor                              */
 
@@ -5382,18 +5380,12 @@ CheckConsistency(theMG,level,debugstart,gmlevel,&check);
 
 /*
 	if (hFlag)
-	/* set grid status of grid 0 */
-	RESETGSTATUS(GRID_ON_LEVEL(theMG,0),GRID_CHANGED);
-
 		UserWriteF(" Number of green refinements not updated: "
 			"%d (%d green marks)\n",No_Green_Update,Green_Marks);
 	
 	/* increment step count */
 	SETREFINESTEP(REFINEINFO(theMG),REFINESTEP(REFINEINFO(theMG))+1);
 /*
-	/* reset status */
-	RESETMGSTATUS(theMG);
-
 CheckMultiGrid(theMG);
 */
 }
