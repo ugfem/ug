@@ -1394,7 +1394,8 @@ void EdgeUpdate (DDD_OBJ obj)
 {
 	EDGE *pe = (EDGE *)obj;
 	LINK *link0,*link1;
-	GRID *theGrid = GRID_ON_LEVEL(dddctrl.currMG,0);
+	INT     level = DDD_InfoAttr(PARHDR(NBNODE(LINK0(pe))));
+	GRID    *theGrid = GetGridOnDemand(dddctrl.currMG,level);
 
 	#ifdef __THREEDIM__
 	{
