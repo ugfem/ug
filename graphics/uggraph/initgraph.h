@@ -32,4 +32,4 @@
 /****************************************************************************/
 
 /* initialisation of the low module */
-INT InitGraph (void);
+INT InitUGGraph (void);

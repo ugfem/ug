@@ -55,10 +55,10 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*
-   InitGraph -  Call the inits for the graph module
+   InitUGGraph -  Call the inits for the graph module
 
    SYNOPSIS:
-   INT InitGraph ();
+   INT InitUGGraph ();
 
    PARAMETERS:
    .  void
@@ -73,7 +73,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /****************************************************************************/
 
-INT InitGraph ()
+INT InitUGGraph (void)
 {
   INT err;
 
