@@ -16,7 +16,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef __MACOSX__
 #include <malloc.h>
+#endif
 #include <assert.h>
 
 /* Macros */

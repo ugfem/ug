@@ -14,7 +14,9 @@
 /*  Elimination tree computation and layout routines */
 
 #include <stdio.h>
+#ifndef __MACOSX__
 #include <malloc.h>
+#endif
 #include <stdlib.h>
 #include "util.h"
 
