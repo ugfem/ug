@@ -302,7 +302,7 @@ static COUPLING ** IFCollectStdCouplings (void)
   /* get memory for couplings inside STD_IF */
   cplarray = (COUPLING **) AllocIF(sizeof(COUPLING *)*nCplItems);
   if (cplarray==NULL) {
-    DDD_PrintError('E', 4000, "not enough memory in IFCreateFromScratch");
+    DDD_PrintError('E', 4000, STR_NOMEM " in IFCreateFromScratch");
     HARD_EXIT;
   }
 
@@ -398,9 +398,8 @@ static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
       theIF[ifId].cpl = (COUPLING **) AllocIF(sizeof(COUPLING *)*n);
       if (theIF[ifId].cpl==NULL)
       {
-        sprintf(cBuffer,
-                "not enough memory for IF %02d in IFCreateFromScratch",
-                ifId);
+        sprintf(cBuffer, STR_NOMEM
+                " for IF %02d in IFCreateFromScratch", ifId);
         DDD_PrintError('E', 4001, cBuffer);
         HARD_EXIT;
       }
@@ -644,7 +643,7 @@ if (nCplItems>0)
      average interfaces. */
   tmpcpl = (COUPLING **) AllocTmp(sizeof(COUPLING *)*nCplItems);
   if (tmpcpl==NULL) {
-    DDD_PrintError('E', 4002, "out of memory in IFDefine");
+    DDD_PrintError('E', 4002, STR_NOMEM " in IFDefine");
     HARD_EXIT;
   }
 
@@ -921,7 +920,7 @@ void IFAllFromScratch (void)
     tmpcpl = (COUPLING **) AllocTmp(sizeof(COUPLING *)*nCplItems);
     if (tmpcpl==NULL)
     {
-      DDD_PrintError('E', 4000, "out of memory in IFAllFromScratch");
+      DDD_PrintError('E', 4000, STR_NOMEM " in IFAllFromScratch");
       HARD_EXIT;
     }
 

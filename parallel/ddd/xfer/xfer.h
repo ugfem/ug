@@ -110,12 +110,20 @@ typedef struct _XICopyObj
   int addLen;
   struct   xferaddinfo *add;         /* additional data items                   */
 
+  int flags;
 } XICopyObj;
 
 /* include template */
 #define T XICopyObj
 #include "sll.ht"
 
+
+/* usage of flags in XICopyObj */
+/* usage of 0x01 while PruneXIDelCpl, temporarily */
+#define MASK_CO_SELF 0x00000001
+#define CO_SELF(c) (((int)((c)->flags))&MASK_CO_SELF)
+#define SET_CO_SELF(c,d)     ((c)->flags) =   \
+  ((((c)->flags)&(~MASK_CO_SELF)) | ((d)&MASK_CO_SELF))
 
 
 /****************************************************************************/
@@ -190,6 +198,7 @@ typedef struct _TENewCpl
   DDD_GID gid;                  /* obj-gid for which new copy will be created   */
   DDD_PROC dest;                /* destination of new object copy               */
   DDD_PRIO prio;                /* priority of new object copy                  */
+  DDD_TYPE type;                /* ddd-type of gid for PriorityMerge on receiver*/
 
 } TENewCpl;
 
@@ -467,6 +476,12 @@ void CommunicateCplMsgs (XIDelCpl **, int,
                          XIModCpl **, int, XIAddCpl **, int, DDD_HDR *, int);
 void CplMsgInit (void);
 void CplMsgExit (void);
+
+
+/* cmdmsg.c */
+int  PruneXIDelCmd (XIDelCmd **, int, XICopyObj **, int);
+void CmdMsgInit (void);
+void CmdMsgExit (void);
 
 
 /* xfer.c, used only by cmds.c */

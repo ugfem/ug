@@ -471,7 +471,7 @@ void DDD_XferEnd (void)
   XICopyObj   **arrayXICopyObj, **arrayNewOwners;
   int remXICopyObj, nNewOwners;
   XIDelCmd    **arrayXIDelCmd;
-  int remXIDelCmd;
+  int remXIDelCmd, prunedXIDelCmd;
   XIDelObj    **arrayXIDelObj;
   XISetPrio   **arrayXISetPrio;
   int remXISetPrio;
@@ -487,6 +487,7 @@ void DDD_XferEnd (void)
   LC_MSGHANDLE *recvMsgs;
   DDD_HDR     *localCplObjs=NULL;
   size_t sendMem=0, recvMem=0;
+  int DelCmds_were_pruned;
 
 
   /* step mode and check whether call to XferEnd is valid */
@@ -498,14 +499,53 @@ void DDD_XferEnd (void)
 
 
   /*
-          COMMUNICATION PHASE 1
+          PREPARATION PHASE
    */
-
   /* create sorted array of XICopyObj-items, and unify it */
   arrayXICopyObj = SortedArrayXICopyObj(sort_XICopyObj);
   remXICopyObj   = UnifyXICopyObj(arrayXICopyObj, unify_XICopyObj);
   obsolete = nXICopyObj-remXICopyObj;
 
+
+  /*
+          (OPTIONAL) COMMUNICATION PHASE 0
+   */
+  if (DDD_GetOption(OPT_XFER_PRUNE_DELETE)==OPT_ON)
+  {
+    /*
+            for each XferDelete-Cmd: if there exists at least
+                    one XferCopy-cmd with destination=me, then the
+                    XferDelete-Cmd is discarded.
+
+            NOTE: the priorities behave like in the specification,
+                    i.e., incoming objects with lower priority than the
+                    local (deleted) object won't be rejected.
+     */
+    /* create sorted array of XIDelCmd-items, and unify it */
+    /* in case of pruning set to OPT_OFF, this sorting/unifying
+       step is done lateron. */
+    arrayXIDelCmd = SortedArrayXIDelCmd(sort_XIDelCmd);
+    remXIDelCmd   = UnifyXIDelCmd(arrayXIDelCmd, unify_XIDelCmd);
+    obsolete += (nXIDelCmd-remXIDelCmd);
+
+    /* do communication and actual pruning */
+    prunedXIDelCmd = PruneXIDelCmd(arrayXIDelCmd, remXIDelCmd,
+                                   arrayXICopyObj, remXICopyObj);
+    obsolete += prunedXIDelCmd;
+    remXIDelCmd -= prunedXIDelCmd;
+
+    DelCmds_were_pruned = TRUE;
+  }
+  else
+  {
+    DelCmds_were_pruned = FALSE;
+  }
+
+
+
+  /*
+          COMMUNICATION PHASE 1
+   */
   /* send Cpl-info about new objects to owners of other local copies */
   arrayNewOwners = CplClosureEstimate(
     arrayXICopyObj, remXICopyObj,
@@ -541,10 +581,13 @@ void DDD_XferEnd (void)
   remXISetPrio   = UnifyXISetPrio(arrayXISetPrio, unify_XISetPrio);
   obsolete += (nXISetPrio-remXISetPrio);
 
-  /* create sorted array of XIDelCmd-items, and unify it */
-  arrayXIDelCmd = SortedArrayXIDelCmd(sort_XIDelCmd);
-  remXIDelCmd   = UnifyXIDelCmd(arrayXIDelCmd, unify_XIDelCmd);
-  obsolete += (nXIDelCmd-remXIDelCmd);
+  if (!DelCmds_were_pruned)
+  {
+    /* create sorted array of XIDelCmd-items, and unify it */
+    arrayXIDelCmd = SortedArrayXIDelCmd(sort_XIDelCmd);
+    remXIDelCmd   = UnifyXIDelCmd(arrayXIDelCmd, unify_XIDelCmd);
+    obsolete += (nXIDelCmd-remXIDelCmd);
+  }
 
   /* execute local commands */
   /* NOTE: messages have been build before in order to allow
@@ -748,7 +791,7 @@ void DDD_XferEnd (void)
 
 void DDD_XferPrioChange (DDD_HDR hdr, DDD_PRIO prio)
 {
-  XISetPrio *xi = NewXISetPrio();
+  XISetPrio *xi = NewXISetPrio(SLLNewArgs);
   xi->hdr  = hdr;
   xi->gid  = OBJ_GID(hdr);
   xi->prio = prio;
@@ -793,7 +836,7 @@ static void XferInitCopyInfo (DDD_HDR hdr,
   if (dest==me)
   {
     /* XFER-C4: XferCopyObj degrades to SetPrio command */
-    XISetPrio *xi = NewXISetPrio();
+    XISetPrio *xi = NewXISetPrio(SLLNewArgs);
     xi->hdr  = hdr;
     xi->gid  = OBJ_GID(hdr);
     xi->prio = prio;
@@ -822,7 +865,7 @@ static void XferInitCopyInfo (DDD_HDR hdr,
   else
   {
     /* this is a real transfer to remote proc */
-    XICopyObj  *xi = NewXICopyObj();
+    XICopyObj  *xi = NewXICopyObj(SLLNewArgs);
     xi->hdr  = hdr;
     xi->gid  = OBJ_GID(hdr);
     xi->size = size;
@@ -1044,7 +1087,7 @@ void DDD_Object::XferDeleteObj (void)
   DDD_HDR hdr = &_hdr;
         #endif
   TYPE_DESC *desc =  &(theTypeDefs[OBJ_TYPE(hdr)]);
-  XIDelCmd  *dc = NewXIDelCmd();
+  XIDelCmd  *dc = NewXIDelCmd(SLLNewArgs);
 
 
         #ifdef CPP_FRONTEND
@@ -1071,7 +1114,7 @@ void DDD_Object::XferDeleteObj (void)
 void DDD_XferDeleteObj (DDD_TYPE *type, DDD_OBJ *obj)
 {
   DDD_HDR hdr = OBJ2HDR(*obj,&theTypeDefs[*type]);
-  XIDelCmd  *dc = NewXIDelCmd();
+  XIDelCmd  *dc = NewXIDelCmd(SLLNewArgs);
 
   dc->hdr = hdr;
 

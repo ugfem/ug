@@ -150,7 +150,7 @@ static AddDataSegm *NewAddDataSegm (void)
 
   if (segm==NULL)
   {
-    DDD_PrintError('F', 9999, "out of memory during XferEnd()");
+    DDD_PrintError('F', 9999, STR_NOMEM " during XferEnd()");
     HARD_EXIT;
   }
 
@@ -190,7 +190,7 @@ static SizesSegm *NewSizesSegm (void)
 
   if (segm==NULL)
   {
-    DDD_PrintError('F', 9999, "out of memory during XferEnd()");
+    DDD_PrintError('F', 9999, STR_NOMEM " during XferEnd()");
     HARD_EXIT;
   }
 

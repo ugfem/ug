@@ -192,6 +192,7 @@ DDD_Library::DDD_Library (int *argcp, char ***argvp)
   ddd_SetOption(OPT_INFO_XFER, XFER_SHOW_NONE);
   ddd_SetOption(OPT_WARNING_OLDSTYLE, OPT_ON);
   ddd_SetOption(OPT_INFO_IF_WITH_ATTR, OPT_OFF);
+  ddd_SetOption(OPT_XFER_PRUNE_DELETE, OPT_OFF);
 
 #ifdef CPP_FRONTEND
   // remember pointer to singleton

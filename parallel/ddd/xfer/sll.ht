@@ -46,7 +46,7 @@ extern int n(T);
 /****************************************************************************/
 
 /* from sll.ct */
-T *New(T) (void);
+T *New(T) (SLLNewArgProtos);
 T **SortedArray(T) (int (*) (const void *, const void *));
 int Unify(T) (T **, int (*) (T **, T **));
 void OrigOrder(T) (T **, int);

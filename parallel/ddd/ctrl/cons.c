@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "dddi.h"
 /*#include "xfer/xfer.h"*/
@@ -48,6 +49,12 @@
 /*                                                                          */
 /****************************************************************************/
 
+/*
+   PAIRS:     check existance of object for each coupling
+   ALLTOALL:  check if all coupling lists are equal
+ */
+#define CHECK_CPL_PAIRS
+#define CHECK_CPL_ALLTOALL
 
 
 
@@ -61,15 +68,17 @@ typedef struct
 {
   DDD_GID gid;
   DDD_TYPE typ;
+  DDD_PROC dest;
   DDD_PROC proc;
   DDD_PRIO prio;
 } CONS_INFO;
 
 
 
+
 typedef struct _CONSMSG
 {
-  DDD_PROC proc;
+  DDD_PROC dest;
 
   struct _CONSMSG *next;
 
@@ -126,35 +135,34 @@ void ddd_ConsExit (void)
 {}
 
 
-
+/****************************************************************************/
 
 static int ConsBuildMsgInfos (CONS_INFO *allItems, int nXferItems, CONSMSG **theMsgs)
 {
   CONSMSG    *cm, *lastCm;
-  int i, lastproc, nMsgs;
+  int i, lastdest, nMsgs;
 
-  lastproc = -1;
+  lastdest = -1;
   lastCm = cm = NULL;
   nMsgs = 0;
   for(i=0; i<nXferItems; i++)
   {
     /* eventually create new message item */
-    if (allItems[i].proc != lastproc)
+    if (allItems[i].dest != lastdest)
     {
       cm = (CONSMSG *) AllocTmp(sizeof(CONSMSG));
       if (cm==NULL)
       {
-        DDD_PrintError('E', 9900,
-                       "not enough memory in ConsBuildMsgInfos");
+        DDD_PrintError('E', 9900, STR_NOMEM " in ConsBuildMsgInfos");
         return(0);
       }
 
       cm->nItems     = 0;
       cm->consArray = &allItems[i];
-      cm->proc = allItems[i].proc;
+      cm->dest = allItems[i].dest;
       cm->next = lastCm;
       lastCm = cm;
-      lastproc = cm->proc;
+      lastdest = cm->dest;
       nMsgs++;
     }
     cm->nItems++;
@@ -166,7 +174,7 @@ static int ConsBuildMsgInfos (CONS_INFO *allItems, int nXferItems, CONSMSG **the
   for(cm=*theMsgs; cm!=NULL; cm=cm->next)
   {
     /* create new send message */
-    cm->msg_h = LC_NewSendMsg(consmsg_t, cm->proc);
+    cm->msg_h = LC_NewSendMsg(consmsg_t, cm->dest);
 
     /* init table inside message */
     LC_SetTableSize(cm->msg_h, constab_id, cm->nItems);
@@ -197,16 +205,14 @@ static void ConsSend (CONSMSG *theMsgs)
 
 
 
-static int ConsCheckSingleMsg (LC_MSGHANDLE xm)
+static int ConsCheckSingleMsg (LC_MSGHANDLE xm, DDD_HDR *locObjs)
 {
-  DDD_HDR      *locObjs;
   CONS_INFO    *theCplBuf;
   int i, j, nItems;
   int error_cnt = 0;
 
 
   nItems = LC_GetTableLen(xm,constab_id);
-  locObjs = LocalObjectsList();
   theCplBuf = (CONS_INFO *) LC_GetPtr(xm, constab_id);
 
 
@@ -247,23 +253,20 @@ static int ConsCheckSingleMsg (LC_MSGHANDLE xm)
     }
   }
 
-  if (locObjs!=NULL)
-    FreeTmp(locObjs);
-
   return(error_cnt);
 }
 
 
 
-static int sort_CplBufProc (const void *e1, const void *e2)
+static int sort_CplBufDest (const void *e1, const void *e2)
 {
   CONS_INFO   *ci1, *ci2;
 
   ci1 = (CONS_INFO *)e1;
   ci2 = (CONS_INFO *)e2;
 
-  if (ci1->proc < ci2->proc) return(-1);
-  if (ci1->proc > ci2->proc) return(1);
+  if (ci1->dest < ci2->dest) return(-1);
+  if (ci1->dest > ci2->dest) return(1);
 
   if (ci1->gid < ci2->gid) return(-1);
   if (ci1->gid > ci2->gid) return(1);
@@ -280,6 +283,7 @@ static int ConsCheckGlobalCpl (void)
   CONSMSG      *sendMsgs, *cm=0;
   LC_MSGHANDLE *recvMsgs;
   int error_cnt = 0;
+  DDD_HDR      *locObjs = NULL;
 
 
   /* count overall number of couplings */
@@ -303,14 +307,16 @@ static int ConsCheckGlobalCpl (void)
       }
       cplBuf[j].gid  = OBJ_GID(cpl->obj);
       cplBuf[j].typ  = OBJ_TYPE(cpl->obj);
+      cplBuf[j].dest = cpl->proc;
       cplBuf[j].proc = cpl->proc;
       cplBuf[j].prio = cpl->prio;
       j++;
     }
   }
+  assert(j==lenCplBuf);
 
   /* sort couplings */
-  qsort(cplBuf, lenCplBuf, sizeof(CONS_INFO), sort_CplBufProc);
+  qsort(cplBuf, lenCplBuf, sizeof(CONS_INFO), sort_CplBufDest);
 
   /* accumulate messages (one for each partner); inform receivers */
   nSendMsgs = ConsBuildMsgInfos(cplBuf, lenCplBuf, &sendMsgs);
@@ -327,10 +333,13 @@ static int ConsCheckGlobalCpl (void)
 
 
   /* perform checking of received data */
+  if (nRecvMsgs>0) locObjs = LocalObjectsList();
   for(i=0; i<nRecvMsgs; i++)
   {
-    error_cnt += ConsCheckSingleMsg(recvMsgs[i]);
+    error_cnt += ConsCheckSingleMsg(recvMsgs[i], locObjs);
   }
+  if (nRecvMsgs>0) FreeTmp(locObjs);
+
 
 
   /* cleanup low-comm layer */
@@ -351,6 +360,195 @@ static int ConsCheckGlobalCpl (void)
 }
 
 
+
+
+/****************************************************************************/
+
+
+static int Cons2CheckSingleMsg (LC_MSGHANDLE xm, DDD_HDR *locObjs)
+{
+  CONS_INFO    *theCplBuf;
+  int i, inext, j, nItems;
+  int error_cnt = 0;
+
+
+  nItems = LC_GetTableLen(xm,constab_id);
+  theCplBuf = (CONS_INFO *) LC_GetPtr(xm, constab_id);
+
+
+  /*
+          sprintf(cBuffer, "%4d: checking message from proc %d (%d items)\n",
+                  me, LC_MsgGetProc(xm), nItems);
+          DDD_PrintDebug(cBuffer);
+   */
+
+
+  /* test whether there are consistent objects for all couplings */
+  for(i=0, j=0; i<nItems; i=inext)
+  {
+    inext = i+1;
+
+    while ((j<nObjs) && (OBJ_GID(locObjs[j]) < theCplBuf[i].gid))
+      j++;
+
+    if ((j<nObjs) && (OBJ_GID(locObjs[j])==theCplBuf[i].gid))
+    {
+      if (theCplBuf[i].proc == me)
+      {
+        if (OBJ_PRIO(locObjs[j])!=theCplBuf[i].prio)
+        {
+          sprintf(cBuffer, "    DDD-GCC Warning: obj %08x type %d on %d"
+                  " has prio %d, cpl from %d has prio %d!\n",
+                  OBJ_GID(locObjs[j]), OBJ_TYPE(locObjs[j]), me, OBJ_PRIO(locObjs[j]),
+                  LC_MsgGetProc(xm), theCplBuf[i].prio);
+          DDD_PrintLine(cBuffer);
+
+          error_cnt++;
+        }
+      }
+      else
+      {
+        int i2;
+        COUPLING *j2;
+
+        for(j2=THECOUPLING(locObjs[j]); j2!=NULL; j2=CPL_NEXT(j2))
+        {
+          int ifound = -1;
+
+          for(i2=i; i2<nItems && theCplBuf[i2].gid==theCplBuf[i].gid;
+              i2++)
+          {
+            if (theCplBuf[i2].proc==j2->proc)
+            {
+              ifound = i2;
+              break;
+            }
+          }
+
+          if (ifound==-1)
+          {
+            sprintf(cBuffer, "    DDD-GCC Warning: obj %08x type %d on %d has cpl"
+                    " from%4d, but %d hasn't!\n",
+                    theCplBuf[i].gid, theCplBuf[i].typ, me,
+                    j2->proc, LC_MsgGetProc(xm));
+            DDD_PrintLine(cBuffer);
+
+            error_cnt++;
+          }
+        }
+
+        for(; inext<nItems && theCplBuf[inext].gid==theCplBuf[i].gid; inext++)
+          ;
+      }
+    }
+    /*   this is superfluous and (more important:) wrong!
+                    else
+                    {
+                            sprintf(cBuffer, " X  DDD-GCC Warning: obj %08x type %d on %d for cpl"
+                                    " from %3d missing!\n",
+                                    theCplBuf[i].gid, theCplBuf[i].typ, me, LC_MsgGetProc(xm));
+                            DDD_PrintLine(cBuffer);
+
+                            error_cnt++;
+                    }
+     */
+  }
+
+  if (locObjs!=NULL)
+    FreeTmp(locObjs);
+
+  return(error_cnt);
+}
+
+
+
+static int Cons2CheckGlobalCpl (void)
+{
+  CONS_INFO *cplBuf;
+  COUPLING     *cpl, *cpl2;
+  int i, j, lenCplBuf, nRecvMsgs, nSendMsgs;
+  CONSMSG      *sendMsgs, *cm=0;
+  LC_MSGHANDLE *recvMsgs;
+  int error_cnt = 0;
+  DDD_HDR      *locObjs = NULL;
+
+  /* count overall number of couplings */
+  for(i=0, lenCplBuf=0; i<nCpls; i++)
+    lenCplBuf += (theCplN[i] * (theCplN[i]+1));
+
+  /* get storage for messages */
+  cplBuf = (CONS_INFO *) AllocTmp(lenCplBuf*sizeof(CONS_INFO));
+
+  /* copy CONS_INFOs into message buffer */
+  for(i=0, j=0; i<nCpls; i++)
+  {
+    for(cpl=theCpl[i]; cpl!=NULL; cpl=CPL_NEXT(cpl))
+    {
+      cplBuf[j].gid  = OBJ_GID(cpl->obj);
+      cplBuf[j].typ  = OBJ_TYPE(cpl->obj);
+      cplBuf[j].dest = cpl->proc;
+      cplBuf[j].proc = me;
+      cplBuf[j].prio = OBJ_PRIO(cpl->obj);
+      j++;
+
+      for(cpl2=theCpl[i]; cpl2!=NULL; cpl2=CPL_NEXT(cpl2))
+      {
+        cplBuf[j].gid  = OBJ_GID(cpl->obj);
+        cplBuf[j].typ  = OBJ_TYPE(cpl->obj);
+        cplBuf[j].dest = cpl->proc;
+        cplBuf[j].proc = cpl2->proc;
+        cplBuf[j].prio = cpl2->prio;
+        j++;
+      }
+    }
+  }
+  assert(j==lenCplBuf);
+
+  /* sort couplings */
+  qsort(cplBuf, lenCplBuf, sizeof(CONS_INFO), sort_CplBufDest);
+
+  /* accumulate messages (one for each partner); inform receivers */
+  nSendMsgs = ConsBuildMsgInfos(cplBuf, lenCplBuf, &sendMsgs);
+
+  /* init communication topology */
+  nRecvMsgs = LC_Connect(consmsg_t);
+
+  /* build and send messages */
+  ConsSend(sendMsgs);
+
+  /* communicate set of messages (send AND receive) */
+  recvMsgs = LC_Communicate();
+
+
+  /* perform checking of received data */
+  if (nRecvMsgs>0) locObjs = LocalObjectsList();
+  for(i=0; i<nRecvMsgs; i++)
+  {
+    error_cnt += Cons2CheckSingleMsg(recvMsgs[i], locObjs);
+  }
+  if (nRecvMsgs>0) FreeTmp(locObjs);
+
+
+  /* cleanup low-comm layer */
+  LC_Cleanup();
+
+
+  /* free temporary storage */
+  if (cplBuf!=NULL)
+    FreeTmp(cplBuf);
+
+  for(; sendMsgs!=NULL; sendMsgs=cm)
+  {
+    cm = sendMsgs->next;
+    FreeTmp(sendMsgs);
+  }
+
+  return(error_cnt);
+}
+
+
+
+/****************************************************************************/
 
 static int ConsCheckDoubleObj (void)
 {
@@ -408,7 +606,12 @@ int DDD_Library::ConsCheck (void)
   }
 
   total_errors += ConsCheckDoubleObj();
+#ifdef CHECK_CPL_PAIRS
   total_errors += ConsCheckGlobalCpl();
+#endif
+#ifdef CHECK_CPL_ALLTOALL
+  total_errors += Cons2CheckGlobalCpl();
+#endif
   total_errors += DDD_CheckInterfaces();
 
 

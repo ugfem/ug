@@ -119,9 +119,8 @@ static CPLMSG *CreateCplMsg (DDD_PROC dest, CPLMSG *lastxm)
   xm = (CPLMSG *) AllocTmp(sizeof(CPLMSG));
   if (xm==NULL)
   {
-    DDD_PrintError('E', 9900,
-                   "not enough memory in PrepareCplMsgs");
-    return(NULL);
+    DDD_PrintError('E', 6400, STR_NOMEM " in PrepareCplMsgs");
+    HARD_EXIT;
   }
 
   xm->nDelCpl    = 0;
@@ -271,6 +270,17 @@ static void CplMsgSend (CPLMSG *theMsgs)
     for(i=0; i<m->nModCpl; i++)
     {
       arrayMC[i] = m->xferModCpl[i]->te;
+
+#                       ifdef SLL_DebugNew
+      {
+        XIModCpl *mc = m->xferModCpl[i];
+
+        sprintf(cBuffer, "%4d: send modcpl to %d (%08x, %3d)  %s:%d\n",
+                me, m->proc,
+                mc->te.gid, mc->te.prio, mc->sll_file, mc->sll_line);
+        DDD_PrintDebug(cBuffer);
+      }
+#                       endif
     }
     for(i=0; i<m->nAddCpl; i++)
     {
@@ -339,7 +349,7 @@ static void CplMsgUnpackSingle (LC_MSGHANDLE xm,
 
     if ((j<nLCO) && (OBJ_GID(localCplObjs[j])==theAddCpl[i].gid))
     {
-      AddCoupling(localCplObjs[j], proc, theAddCpl[i].prio);
+      AddCoupling(localCplObjs[j], theAddCpl[i].proc, theAddCpl[i].prio);
     }
   }
 }
@@ -424,12 +434,22 @@ void CommunicateCplMsgs (
                              itemsAC, nAC,
                              &sendMsgs);
 
-
   /* init communication topology */
   nRecvMsgs = LC_Connect(cplmsg_t);
 
   /* build and send messages */
   CplMsgSend(sendMsgs);
+
+
+#if DebugCplMsg>2
+  if (DDD_GetOption(OPT_DEBUG_XFERMESGS)==OPT_ON)
+#endif
+  {
+    for(sm=sendMsgs; sm!=NULL; sm=sm->next)
+    {
+      CplMsgDisplay("CS", sm->msg_h);
+    }
+  }
 
 
   /* communicate set of messages (send AND receive) */
@@ -440,8 +460,10 @@ void CommunicateCplMsgs (
   {
     CplMsgUnpackSingle(recvMsgs[i], localCplObjs, nLCO);
 
-    if (DDD_GetOption(OPT_DEBUG_XFERMESGS)==OPT_ON)
-      CplMsgDisplay("CR", recvMsgs[i]);
+    /*
+                    if (DDD_GetOption(OPT_DEBUG_XFERMESGS)==OPT_ON)
+                            CplMsgDisplay("CR", recvMsgs[i]);
+     */
   }
 
 

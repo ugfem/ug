@@ -94,8 +94,8 @@
 #define MAX_TYPEDESC   32    /* max. number of TYPE_DESC                    */
 #define MAX_PRIO       32    /* max. number of DDD_PRIO                     */
 
-#define MAX_OBJ    200000    /* max. number of locally registered objects   */
-#define MAX_CPL     77000    /* max. number of local objects with coupling  */
+#define MAX_OBJ    700000    /* max. number of locally registered objects   */
+#define MAX_CPL    100000    /* max. number of local objects with coupling  */
 
 #define MAX_TRIES  50000000  /* max. number of tries til timeout in IF-comm */
 
@@ -135,6 +135,10 @@ enum PrioMergeVals {
 };
 
 
+/****************************************************************************/
+
+/* string constants */
+#define STR_NOMEM  "out of memory"
 
 
 /****************************************************************************/
@@ -200,6 +204,7 @@ typedef struct obj_coupl
 
 
 #define CPL_NEXT(cpl)   ((cpl)->_next)
+#define CPL_PROC(cpl)   ((cpl)->proc)
 
 
 
@@ -383,7 +388,7 @@ extern VChannelPtr *theTopology;
 /* usage of flags in COUPLING */
 /* usage of 0x03 while interface-building, temporarily */
 #define MASKCPLDIR 0x00000003
-#define CPLDIR(c) (((INT)((c)->flags))&MASKCPLDIR)
+#define CPLDIR(c) (((int)((c)->flags))&MASKCPLDIR)
 #define SETCPLDIR(c,d) ((c)->flags) = (((c)->flags)&(~MASKCPLDIR))|((d)&MASKCPLDIR)
 
 
@@ -445,12 +450,48 @@ extern VChannelPtr *theTopology;
 #define IsHdrInvalid(hdr)      OBJ_INDEX(hdr)==MAX_OBJ
 
 
-/* macro for calling DDD Handler */
+
+/****************************************************************************/
+/*                                                                          */
+/* specialties for CPP_FRONTEND                                             */
+/*                                                                          */
+/****************************************************************************/
+
 #ifdef CPP_FRONTEND
-#define CallHandler(o,hname)     (o)->Handler ## hname
+
+class DDD_ObjPtr
+{
+public:
+
+  // access to DDD_HEADER of DDD_Object
+  DDD_HDR operator-> ()  { return &(_obj->_hdr); }
+
+  // access to DDD_Object itself
+  DDD_Object* operator* ()  { return _obj; }
+
+private:
+  DDD_Object*  _obj;
+};
+
+#define HdrPtr   DDD_ObjPtr
+
+#define CallHandler(o,hname)     ((*o)->Handler ## hname)
+
 #endif
 
 
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#define HdrPtr   DDD_HDR
+#endif
+
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* memory management                                                        */
+/*                                                                          */
+/****************************************************************************/
 
 
 #if defined(CheckPMEM) || defined(CheckIFMEM) || defined(CheckCplMEM) || defined(CheckMsgMEM) || defined(CheckTmpMEM)
@@ -464,8 +505,6 @@ static void *dummy_ptr;
 
 #endif
 
-
-/* memory management */
 
 /*** mapping memory allocation calls to memmgr_ calls ***/
 

@@ -31,6 +31,15 @@
 
 /****************************************************************************/
 
+/* configure debugging of New(T) calls.
+   NOTE: this will add additional data to each sll-item!! */
+/*
+   #define SLL_DebugNew
+ */
+
+
+
+/* size of segments for memory allocation */
 #define SEGM_SIZE  256
 
 
@@ -39,9 +48,30 @@
 /*
         which structure components are needed for each item?
  */
+#ifdef SLL_DebugNew
+
+#define SLLNewArgProtos     char * file, int line
+#define SLLNewArgs          __FILE__, __LINE__
+
+#define SLL_NAMELEN    30
+
 #define SLL_INFO(T)   \
-  int sll_n;                   /* unique index number */  \
-  struct T *sll_next           /* linked list         */
+  int sll_n;                              /* unique index number  */  \
+  struct T *sll_next;                     /* linked list          */  \
+  char sll_file[SLL_NAMELEN];             /* filename of New-call */  \
+  int sll_line                            /* lineno of New-call   */
+
+#else
+
+#define SLLNewArgProtos     /* none */
+#define SLLNewArgs          /* none */
+
+
+#define SLL_INFO(T)   \
+  int sll_n;                    /* unique index number */  \
+  struct T *sll_next            /* linked list         */
+
+#endif
 
 
 

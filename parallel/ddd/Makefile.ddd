@@ -221,6 +221,7 @@ Xfer-o = xfer.o	\
 	unpack.o	\
 	ctrl.o	\
 	cplmsg.o	\
+	cmdmsg.o	\
 	supp.o
 
 
@@ -254,6 +255,11 @@ ctrl.o: $(SrcPth)/dddi.h	\
 		$(XferPth)/xfer.h	\
 		$(XferPth)/ctrl.c
 	$(DDD_CC) $(SrcOpt) $(XferPth)/ctrl.c
+
+cmdmsg.o: $(SrcPth)/dddi.h	\
+		$(XferPth)/xfer.h	\
+		$(XferPth)/cmdmsg.c
+	$(DDD_CC) $(SrcOpt) $(XferPth)/cmdmsg.c
 
 cplmsg.o: $(SrcPth)/dddi.h	\
 		$(XferPth)/xfer.h	\

@@ -134,6 +134,7 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
     REGISTER DDD_PROC dest = xi->dest;              /* destination proc */
     REGISTER COUPLING *cpl, *xicpl = THECOUPLING(xi->hdr);
     REGISTER DDD_GID xigid = xi->gid;
+    REGISTER DDD_TYPE xitype = OBJ_TYPE(xi->hdr);
 
     xi->new_owner = TRUE;
 
@@ -166,7 +167,6 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
     }
 
 
-
     if (xi->new_owner)
     {
       nNewOwners++;
@@ -176,11 +176,12 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
       /* inform other owners of local copies (XINewCpl) */
       for(cpl=xicpl; cpl!=NULL; cpl=CPL_NEXT(cpl))
       {
-        XINewCpl *xc = NewXINewCpl();
+        XINewCpl *xc = NewXINewCpl(SLLNewArgs);
         xc->to      = cpl->proc;                           /* receiver of XINewCpl     */
         xc->te.dest = dest;                                /* destination of XICopyObj */
         xc->te.gid  = xigid;                               /* the object's gid         */
         xc->te.prio = xi->prio;                            /* new object's priority    */
+        xc->te.type = xitype;                              /* the object's type        */
       }
 
       /* send current couplings (XIOldCpl) to new destination */
@@ -189,7 +190,7 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
                with same gid (from different senders)  */
       for(cpl=xicpl; cpl!=NULL; cpl=CPL_NEXT(cpl))
       {
-        XIOldCpl *xc = NewXIOldCpl();
+        XIOldCpl *xc = NewXIOldCpl(SLLNewArgs);
         xc->to      = dest;                                    /* receiver of XIOldCpl */
         xc->te.gid  = xigid;                                   /* the object's gid     */
         xc->te.proc = cpl->proc;                               /* coupling proc        */
@@ -198,7 +199,7 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
 
       /* send one coupling (XIOldCpl) for local copy */
       {
-        XIOldCpl *xc = NewXIOldCpl();
+        XIOldCpl *xc = NewXIOldCpl(SLLNewArgs);
         xc->to      = dest;                                     /* receiver of XIOldCpl */
         xc->te.gid  = xigid;                                    /* the object's gid     */
         xc->te.proc = me;                                       /* coupling proc        */
@@ -245,26 +246,31 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
       for(k=j+1; k<nNewOwners; k++)
       {
         REGISTER XICopyObj *no2 = arrayNewOwners[k];
+        REGISTER DDD_TYPE no2type;
 
         if (no2->gid != gid1)
           break;
 
+        no2type = OBJ_TYPE(no2->hdr);
+
         /* inform other new-owners of same obj (also XINewCpl!)    */
         /* tell no1-dest that no2-dest gets a copy with no2->prio  */
         {
-          XINewCpl *xc = NewXINewCpl();
+          XINewCpl *xc = NewXINewCpl(SLLNewArgs);
           xc->to      = no1->dest;                                 /* receiver of XINewCpl     */
           xc->te.dest = no2->dest;                                 /* destination of XICopyObj */
           xc->te.gid  = gid1;                                      /* the object's gid         */
           xc->te.prio = no2->prio;                                 /* new object's priority    */
+          xc->te.type = no2type;                                   /* the object's type        */
         }
         /* tell no2->dest that no1-dest gets a copy with no1->prio */
         {
-          XINewCpl *xc = NewXINewCpl();
+          XINewCpl *xc = NewXINewCpl(SLLNewArgs);
           xc->to      = no2->dest;                                 /* receiver of XINewCpl     */
           xc->te.dest = no1->dest;                                 /* destination of XICopyObj */
           xc->te.gid  = gid1;                                      /* the object's gid         */
           xc->te.prio = no1->prio;                                 /* new object's priority    */
+          xc->te.type = no2type;                                   /* the object's type        */
         }
       }
     }
@@ -318,8 +324,7 @@ static XFERMSG *CreateXferMsg (DDD_PROC dest, XFERMSG *lastxm)
   xm = (XFERMSG *) AllocTmp(sizeof(XFERMSG));
   if (xm==NULL)
   {
-    DDD_PrintError('E', 6100,
-                   "not enough memory in PrepareObjMsgs");
+    DDD_PrintError('E', 6100, STR_NOMEM " in PrepareObjMsgs");
     return NULL;
   }
   xm->nPointers  = 0;
@@ -648,7 +653,7 @@ void ExecLocalXISetPrio (
       /* 1. for all existing couplings */
       for(cpl=THECOUPLING(hdr); cpl!=NULL; cpl=CPL_NEXT(cpl))
       {
-        XIModCpl *xc = NewXIModCpl();
+        XIModCpl *xc = NewXIModCpl(SLLNewArgs);
         xc->to      = cpl->proc;                               /* receiver of XIModCpl  */
         xc->te.gid  = gid;                                     /* the object's gid      */
         xc->te.prio = newprio;                                 /* the object's new prio */
@@ -657,7 +662,7 @@ void ExecLocalXISetPrio (
       /* 2. for all CopyObj-items with new-owner destinations */
       while (iNO<nNO && itemsNO[iNO]->gid==gid)
       {
-        XIModCpl *xc = NewXIModCpl();
+        XIModCpl *xc = NewXIModCpl(SLLNewArgs);
         xc->to      = itemsNO[iNO]->dest;                        /* receiver of XIModCpl */
         xc->te.gid  = gid;                                       /* the object's gid     */
         xc->te.prio = newprio;                                  /* the object's new prio */
@@ -729,8 +734,7 @@ void ExecLocalXIDelCmd (XIDelCmd  **itemsD, int nD)
 #endif
 #ifdef CPP_FRONTEND
     // call virtual destructor
-    printf("%4d: calling virtual destructor for %08x\n",
-           me, origD[iD]->obj);
+    //printf("%4d: calling virtual destructor for %08x\n", me, origD[iD]->obj);
 
     delete origD[iD]->obj;
 #endif
@@ -767,7 +771,7 @@ void ExecLocalXIDelObj (
     /* 2. for all CopyObj-items with new-owner destinations */
     while (iNO<nNO && itemsNO[iNO]->gid==gid)
     {
-      XIDelCpl *xc = NewXIDelCpl();
+      XIDelCpl *xc = NewXIDelCpl(SLLNewArgs);
       xc->to      = itemsNO[iNO]->dest;                  /* receiver of XIDelCpl */
       xc->prio    = PRIO_INVALID;                        /* dont remember priority   */
       xc->te.gid  = gid;                                 /* the object's gid     */
@@ -821,7 +825,7 @@ void PropagateCplInfos (
       /* generate additional XIModCpl-items for all valid NewCpl-items */
       while (iNC<nNC && arrayNC[iNC].gid==gid)
       {
-        XIModCpl *xc = NewXIModCpl();
+        XIModCpl *xc = NewXIModCpl(SLLNewArgs);
         xc->to      = arrayNC[iNC].dest;                         /* receiver of XIModCpl */
         xc->te.gid  = gid;                                       /* the object's gid     */
         xc->te.prio = newprio;                                   /* the object's new prio */
@@ -848,7 +852,7 @@ void PropagateCplInfos (
     /* generate additional XIDelCpl-items for all valid NewCpl-items */
     while (iNC<nNC && arrayNC[iNC].gid==gid)
     {
-      XIDelCpl *xc = NewXIDelCpl();
+      XIDelCpl *xc = NewXIDelCpl(SLLNewArgs);
       xc->to      = arrayNC[iNC].dest;                   /* receiver of XIDelCpl */
       xc->prio    = PRIO_INVALID;
       xc->te.gid  = gid;                                 /* the object's gid     */
@@ -877,7 +881,7 @@ void XferRegisterDelete (DDD_HDR hdr)
   XIDelObj *xi;
 
   /* create new XIDelObj */
-  xi      = NewXIDelObj();
+  xi      = NewXIDelObj(SLLNewArgs);
   xi->gid = OBJ_GID(hdr);
   xi->delcpls = NULL;
 
@@ -891,7 +895,7 @@ void XferRegisterDelete (DDD_HDR hdr)
    */
   for(cpl=THECOUPLING(hdr); cpl!=NULL; cpl=CPL_NEXT(cpl))
   {
-    XIDelCpl *xc = NewXIDelCpl();
+    XIDelCpl *xc = NewXIDelCpl(SLLNewArgs);
 
     xc->to      = cpl->proc;                     /* receiver of XIDelCpl */
     xc->prio    = cpl->prio;                     /* remember priority    */
@@ -1022,11 +1026,13 @@ void ddd_XferInit (void)
    */
 
   CplMsgInit();
+  CmdMsgInit();
 }
 
 
 void ddd_XferExit (void)
 {
+  CmdMsgExit();
   CplMsgExit();
 }
 

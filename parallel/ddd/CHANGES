@@ -1,5 +1,27 @@
 ---------------------------
 
+CHANGES 1.8.4 -> 1.8.5
+
+---------------------------
+970414 kb
+fixed serious bug in xfer/unpack. NEVER USE 1.8.4!
+970411 kb
+added new option OPT_XFER_PRUNE_DELETE.
+	- with this option set to OPT_ON, DelCmds during transfer
+	  will discarded, if a XferCopyObj command for the same
+	  distributed object exists. Therefore, the object will
+	  not be deleted and created afterwards.
+	- the priority merging of the two objects will be as given
+	  in the specification, i.e., the new object will be accepted
+	  disregarding its priority.
+970327 kb
+fixed serious bug in xfer/unpack.c.
+	- bug could occur with procs>=4
+	- now coupling consistency should work properly.
+	- efficiency (runtime, message size and storage) is not quite
+	  clear for large problems. TODO: this must be checked.
+---------------------------
+
 CHANGES 1.8.3 -> 1.8.4
 
 ---------------------------

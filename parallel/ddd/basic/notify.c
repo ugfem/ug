@@ -115,7 +115,7 @@ void NotifyInit (void)
   theRouting = (int *) AllocFix(procs*sizeof(int));
   if (theRouting==NULL)
   {
-    DDD_PrintError('E', 6301, "not enough memory in NotifyInit");
+    DDD_PrintError('E', 6301, STR_NOMEM " in NotifyInit");
     HARD_EXIT;
   }
 
@@ -127,7 +127,7 @@ void NotifyInit (void)
   allInfoBuffer = (NOTIFY_INFO *) AllocFix(maxInfos*sizeof(NOTIFY_INFO));
   if (allInfoBuffer==NULL)
   {
-    DDD_PrintError('E', 6300, "not enough memory in NotifyInit");
+    DDD_PrintError('E', 6300, STR_NOMEM " in NotifyInit");
     HARD_EXIT;
   }
 }

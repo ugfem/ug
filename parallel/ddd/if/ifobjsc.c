@@ -117,7 +117,7 @@ void IFCreateObjShortcut (DDD_IF ifId)
   /* get memory for addresses of objects inside IF */
   objarray = (IFObjPtr *) AllocIF(sizeof(IFObjPtr)*theIF[ifId].nItems);
   if (objarray==NULL) {
-    DDD_PrintError('E', 4000, "not enough memory in IFCreateObjShortcut");
+    DDD_PrintError('E', 4000, STR_NOMEM " in IFCreateObjShortcut");
     HARD_EXIT;
   }
   theIF[ifId].obj = objarray;

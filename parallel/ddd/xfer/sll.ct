@@ -55,7 +55,6 @@ int n(T);
 static Segm(T) *segms(T);
 
 
-
 /****************************************************************************/
 /*                                                                          */
 /* routines                                                                 */
@@ -71,7 +70,7 @@ static Segm(T) *NewSegm(T) (void)
 
 	if (segm==NULL)
 	{
-		DDD_PrintError('F', 9999, "out of memory during XferEnd()");
+		DDD_PrintError('F', 9999, STR_NOMEM " during XferEnd()");
 		HARD_EXIT;
 	}
 
@@ -100,7 +99,8 @@ static void FreeSegms(T) (void)
 }
 
 
-T *New(T) (void)
+
+T *New(T) (SLLNewArgProtos)
 {
 	Segm(T) *segm = segms(T);
 	T        *item;
@@ -120,6 +120,11 @@ T *New(T) (void)
 
 	/* insert unique counter */
 	item->sll_n = n(T);
+
+#	ifdef SLL_DebugNew
+		strncpy(item->sll_file, file, SLL_NAMELEN);
+		item->sll_line = line;
+#	endif
 
 	return(item);
 }

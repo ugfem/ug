@@ -296,7 +296,7 @@ static void ConstructEl (ELEM_DESC *elem, int t, int o, size_t s, DDD_TYPE rt)
     elem->gbits = (unsigned char *) AllocFix(s);
     if (elem->gbits==NULL)
     {
-      DDD_PrintError('E', 9932, "out of memory for EL_GBITS array");
+      DDD_PrintError('E', 9932, STR_NOMEM " for EL_GBITS array");
       HARD_EXIT;
     }
   }
@@ -465,7 +465,7 @@ static void ConstructDesc (TYPE_DESC *desc)
   if (! (desc->hdr = AllocHdr(sizeof(DDD_HEADER) * desc->arraySize) ) )
   {
     DDD_PrintError('E', 9999,
-                   RegisterError(desc,0, "out of memory"));
+                   RegisterError(desc,0, STR_NOMEM));
     HARD_EXIT;             /*return;*/
   }
 #endif
@@ -580,7 +580,7 @@ static void AttachMask (TYPE_DESC *desc)
   if (desc->cmask==0)
   {
     DDD_PrintError('E', 9906,
-                   RegisterError(desc,0, "out of memory"));
+                   RegisterError(desc,0, STR_NOMEM));
     HARD_EXIT;             /*return;*/
   }
 

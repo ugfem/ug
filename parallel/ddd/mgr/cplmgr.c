@@ -31,6 +31,7 @@
 /* standard C library */
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "dddi.h"
 
@@ -50,6 +51,38 @@
 /*                                                                          */
 /****************************************************************************/
 
+/* size of segment of couplings (for memory allocation) */
+#define CPLSEGM_SIZE 512
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* data types                                                               */
+/*                                                                          */
+/****************************************************************************/
+
+/*
+        the storage of COUPLING items is done with the following scheme:
+        allocation in segments of couplings, freeing into freelist.
+
+        ALLOC:  try first to get one item out of freelist (memlistCpl),
+                if that's not possible, get one from current segment;
+                alloc segments from MemMgr.
+
+        FREE:   put coupling into freelist.
+ */
+
+
+/* segment of Cpls */
+typedef struct _CplSegm
+{
+  struct _CplSegm *next;
+  int nItems;
+
+  COUPLING item[CPLSEGM_SIZE];
+} CplSegm;
+
 
 
 /****************************************************************************/
@@ -63,9 +96,10 @@ RCSID("$Header$",DDD_RCS_STRING)
 
 
 
-static COUPLING *memlistCpl;
+static CplSegm *segmCpl = NULL;
+static COUPLING *memlistCpl = NULL;
 static int *localIBuffer;
-static int nAllCplItems;
+static int nCplSegms;
 
 
 /****************************************************************************/
@@ -74,14 +108,63 @@ static int nAllCplItems;
 /*                                                                          */
 /****************************************************************************/
 
+
+static CplSegm *NewCplSegm (void)
+{
+  CplSegm *segm;
+
+  segm = (CplSegm *) AllocTmp(sizeof(CplSegm));
+
+  if (segm==NULL)
+  {
+    DDD_PrintError('F', 2550, STR_NOMEM " during NewCoupling()");
+    HARD_EXIT;
+  }
+
+  segm->next   = segmCpl;
+  segmCpl      = segm;
+  segm->nItems = 0;
+  nCplSegms++;
+
+  return(segm);
+}
+
+
+static void FreeCplSegms (void)
+{
+  CplSegm *segm = segmCpl;
+  CplSegm *next = NULL;
+
+  while (segm!=NULL)
+  {
+    next = segm->next;
+    FreeTmp(segm);
+
+    segm = next;
+  }
+
+  segmCpl = NULL;
+  nCplSegms = 0;
+  memlistCpl = NULL;
+}
+
+
+/****************************************************************************/
+
 static COUPLING *NewCoupling (void)
 {
   COUPLING *cpl;
 
   if (memlistCpl==NULL)
   {
-    cpl = (COUPLING *) AllocCpl(sizeof(COUPLING));
-    nAllCplItems++;
+    CplSegm *segm = segmCpl;
+
+    if (segm==NULL || segm->nItems==CPLSEGM_SIZE)
+    {
+      segm = NewCplSegm();
+    }
+
+    cpl = &(segm->item[segm->nItems++]);
   }
   else
   {
@@ -127,6 +210,8 @@ COUPLING *AddCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
   COUPLING        *cp, *cp2;
   DDD_HDR oldObj;
   int objIndex;
+
+  assert(proc!=me);
 
 #       if DebugCoupling<=1
   sprintf(cBuffer, "%4d: AddCoupling %08x proc=%d prio=%d\n",
@@ -181,7 +266,7 @@ COUPLING *AddCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
   /* create new coupling record */
   cp = NewCoupling();
   if (cp==NULL) {
-    DDD_PrintError('E', 2500, "not enough memory in AddCoupling");
+    DDD_PrintError('E', 2500, STR_NOMEM " in AddCoupling");
     return(NULL);
   }
 
@@ -224,6 +309,8 @@ COUPLING *ModCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
   COUPLING        *cp2;
   int objIndex;
 
+  assert(proc!=me);
+
 #       if DebugCoupling<=1
   sprintf(cBuffer, "%4d: ModCoupling %08x proc=%d prio=%d\n",
           me, OBJ_GID(hdr), proc, prio);
@@ -256,7 +343,9 @@ COUPLING *ModCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
   sprintf(cBuffer, "no coupling from %d for %08x in ModCoupling",
           proc, OBJ_GID(hdr));
   DDD_PrintError('E', 2531, cBuffer);
-  return(NULL);
+  HARD_EXIT;
+
+  return(NULL);         /* never reach this */
 }
 
 
@@ -447,16 +536,18 @@ int DDD_InfoIsLocal (DDD_HDR hdr)
 
 int DDD_InfoNCopies (DDD_HDR hdr)
 {
-  COUPLING *cpl;
-  int n = 0;
+  /*
+     COUPLING *cpl;
+     int n = 0;
 
-  if (HAS_COUPLING(hdr))
-  {
-    for(cpl=theCpl[OBJ_INDEX(hdr)]; cpl!=NULL; cpl=CPL_NEXT(cpl))
-      n++;
-  }
+     if (HAS_COUPLING(hdr))
+     {
+          for(cpl=theCpl[OBJ_INDEX(hdr)]; cpl!=NULL; cpl=CPL_NEXT(cpl))
+                  n++;
+     }
+   */
 
-  return(n);
+  return(NCOUPLINGS(hdr));
 }
 
 
@@ -511,7 +602,7 @@ size_t DDD_InfoCplMemory (void)
 {
   size_t sum = 0;
 
-  sum += sizeof(COUPLING) * nAllCplItems;
+  sum += sizeof(CplSegm) * nCplSegms;
 
   return(sum);
 }
@@ -532,23 +623,23 @@ size_t DDD_InfoCplMemory (void)
 
 void ddd_CplMgrInit (void)
 {
-  memlistCpl = NULL;
   localIBuffer = (int*)AllocFix(2*procs*sizeof(int));
   if (localIBuffer==NULL)
   {
-    DDD_PrintError('E', 2532, "not enough memory for DDD_InfoProcList()");
+    DDD_PrintError('E', 2532, STR_NOMEM " for DDD_InfoProcList()");
     HARD_EXIT;
   }
 
-  nAllCplItems = 0;
+  memlistCpl = NULL;
+  segmCpl    = NULL;
+  nCplSegms  = 0;
 }
 
 
 void ddd_CplMgrExit (void)
 {
-  /* TODO put freeing of memlist of unused COUPLINGS here */
-
   FreeFix(localIBuffer);
+  FreeCplSegms();
 }
 
 

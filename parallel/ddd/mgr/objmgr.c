@@ -120,7 +120,7 @@ DDD_HDR *LocalObjectsList (void)
 
   locObjs = (DDD_HDR *) AllocTmp(nObjs*sizeof(DDD_HDR));
   if (locObjs==NULL) {
-    DDD_PrintError('E', 6520,  "not enough memory in LocalObjectsList");
+    DDD_PrintError('E', 6520,  STR_NOMEM " in LocalObjectsList");
     return(NULL);
   }
 
@@ -140,7 +140,7 @@ DDD_HDR *LocalCoupledObjectsList (void)
 
   locObjs = (DDD_HDR *) AllocTmp(nCpls*sizeof(DDD_HDR));
   if (locObjs==NULL) {
-    DDD_PrintError('E', 6521,  "not enough memory in LocalCoupledObjectsList");
+    DDD_PrintError('E', 6521, STR_NOMEM " in LocalCoupledObjectsList");
     return(NULL);
   }
 
@@ -204,7 +204,7 @@ DDD_OBJ DDD_ObjNew (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
   /* get object memory */
   obj = (DDD_OBJ) AllocObj(size, typ, prio, attr);
   if (obj==NULL) {
-    DDD_PrintError('E', 2200, "not enough memory in DDD_ObjNew");
+    DDD_PrintError('E', 2200, STR_NOMEM " in DDD_ObjNew");
     return(NULL);
   }
 
@@ -566,7 +566,7 @@ DDD_OBJ DDD_ObjGet (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
   /* get raw memory */
   obj = (DDD_OBJ) DDD_ObjNew(size, typ, prio, attr);
   if (obj==NULL) {
-    DDD_PrintError('E', 2200, "not enough memory in DDD_ObjGet");
+    DDD_PrintError('E', 2200, STR_NOMEM " in DDD_ObjGet");
     return(NULL);
   }
 
@@ -601,7 +601,7 @@ void DDD_ObjGet (DDD_TYPE *ftyp, DDD_PRIO *fprio, DDD_ATTR *fattr,
 
   if (*fobj==0)
   {
-    DDD_PrintError('E', 2200, "not enough memory in DDD_ObjGet");
+    DDD_PrintError('E', 2200, STR_NOMEM " in DDD_ObjGet");
     return;
   }
 

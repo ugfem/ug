@@ -564,9 +564,12 @@ static void ResolveDependencies (
   IDENTINFO **refd;
   int i, j;
 
+  if (nIdentObjs==0)
+    return;
+
   refd = (IDENTINFO **) AllocTmp(sizeof(IDENTINFO *)*nIdentObjs);
   if (refd==NULL) {
-    DDD_PrintError('E', 3300, "not enough memory in ResolveDependencies");
+    DDD_PrintError('E', 3300, STR_NOMEM " in ResolveDependencies");
     return;
   }
 
@@ -762,7 +765,7 @@ static int IdentifySort (IDENTINFO *id, int nIds,
   /* construct array with one pointer onto each tupel */
   idp = (IDENTINFO **) AllocTmp(sizeof(IDENTINFO *)*nTupels);
   if (idp==NULL) {
-    DDD_PrintError('E', 3000, "not enough memory in IdentifySort");
+    DDD_PrintError('E', 3000, STR_NOMEM " in IdentifySort");
     return(0);
   }
 
@@ -1026,7 +1029,7 @@ void DDD_Library::IdentifyEnd (void)
 
     if (plist->local_ids==NULL)
     {
-      DDD_PrintError('F',3100,"not enough memory in DDD_IdentifyEnd");
+      DDD_PrintError('F',3100, STR_NOMEM " in DDD_IdentifyEnd");
       HARD_EXIT;
     }
     plist->msgin  = (MSGITEM *) &plist->local_ids[plist->entries];
@@ -1244,8 +1247,7 @@ static void IdentifyIdEntry (DDD_HDR hdr, ID_ENTRY *id, DDD_PROC proc)
     /* get new id_plist record */
     pnew = (ID_PLIST *) AllocTmp(sizeof(ID_PLIST));
     if (pnew==NULL) {
-      DDD_PrintError('F', 3210,
-                     "not enough memory in IdentifyIdEntry");
+      DDD_PrintError('F', 3210, STR_NOMEM "in IdentifyIdEntry");
       return;
     }
 
@@ -1303,8 +1305,7 @@ ID_ENTRY        *id;
 
 id = (ID_ENTRY *) AllocTmp(sizeof(ID_ENTRY));
 if (id==NULL) {
-  DDD_PrintError('F', 3200,
-                 "not enough memory in DDD_IdentifyNumber");
+  DDD_PrintError('F', 3200, STR_NOMEM " in DDD_IdentifyNumber");
   return;
 }
 
@@ -1343,8 +1344,7 @@ ID_ENTRY        *id;
 
 id = (ID_ENTRY *) AllocTmp(sizeof(ID_ENTRY));
 if (id==NULL) {
-  DDD_PrintError('F', 3201,
-                 "not enough memory in DDD_IdentifyString");
+  DDD_PrintError('F', 3201, STR_NOMEM "in DDD_IdentifyString");
   return;
 }
 
@@ -1383,8 +1383,7 @@ ID_ENTRY        *id;
 
 id = (ID_ENTRY *) AllocTmp(sizeof(ID_ENTRY));
 if (id==NULL) {
-  DDD_PrintError('F', 3202,
-                 "not enough memory in DDD_IdentifyObject");
+  DDD_PrintError('F', 3202, STR_NOMEM " in DDD_IdentifyObject");
   return;
 }
 

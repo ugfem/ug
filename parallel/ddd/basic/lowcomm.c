@@ -360,8 +360,10 @@ size_t LC_MsgPrepareSend (LC_MSGHANDLE msg)
   md->buffer = (char *) AllocMsg(md->bufferSize);
   if (md->buffer==NULL)
   {
-    DDD_PrintError('E', 6600, "not enough memory in LC_MsgPrepareSend");
-    return(0);
+    sprintf(cBuffer, STR_NOMEM " in LC_MsgPrepareSend (size=%ld)",
+            (unsigned long)md->bufferSize);
+    DDD_PrintError('E', 6600, cBuffer);
+    HARD_EXIT;
   }
 
 
@@ -450,7 +452,7 @@ static void LC_MsgRecv (MSG_DESC *md)
             "invalid magic number for message from %d in LC_MsgRecv()",
             md->proc);
     DDD_PrintError('E', 6680, cBuffer);
-    return;
+    HARD_EXIT;
   }
 
   /* number of chunks must be consistent with message type */
@@ -460,7 +462,7 @@ static void LC_MsgRecv (MSG_DESC *md)
             "wrong number of chunks (%d!=%d) in msg from %d in LC_MsgRecv()",
             n, md->msgType->nComps, md->proc);
     DDD_PrintError('E', 6681, cBuffer);
-    return;
+    HARD_EXIT;
   }
 
   /* get chunk descriptions from message header */
@@ -612,10 +614,10 @@ static void LC_PrepareRecv (void)
   theRecvBuffer = (char *) AllocMsg(sumSize);
   if (theRecvBuffer==NULL)
   {
-    DDD_PrintError('E', 6610, "not enough memory in LC_PrepareRecv");
+    DDD_PrintError('E', 6610, STR_NOMEM " in LC_PrepareRecv");
     sprintf(cBuffer, "(size of message buffer: %d)", sumSize);
     DDD_PrintError('E', 6610, cBuffer);
-    return;
+    HARD_EXIT;
   }
 
 

@@ -42,10 +42,6 @@
 
 
 /* TODO kb 961210
-#define WANTED_NOCH_GENAUER_UNTERSUCHEN
-*/
-
-/* TODO kb 961210
 #define DEBUG_MERGE_MODE
 */
 #define MERGE_MODE_IN_TESTZUSTAND
@@ -57,7 +53,7 @@
 
 
 /*
-#define AddCoupling(a,b,c)  printf("%4d: AC %d,%d/%d %d\n",me,__LINE__,b,c,(int) AddCoupling(a,b,c))
+#define AddCoupling(a,b,c)  printf("%4d: AC %05d, %d/%d     %08x\n",me,__LINE__,b,c,(int) AddCoupling(a,b,c))
 */
 
 
@@ -92,6 +88,18 @@
 #define _FADR
 #endif
 
+
+#define NEW_AddCpl(destproc,objgid,cplproc,cplprio)   {          \
+				XIAddCpl *xc = NewXIAddCpl(SLLNewArgs);          \
+				xc->to      = (destproc);                        \
+				xc->te.gid  = (objgid);                          \
+				xc->te.proc = (cplproc);                         \
+				xc->te.prio = (cplprio);                         \
+			} 
+/*
+printf("%4d:          NEW_AddCpl(%d,%08x, %d, %d)\n",\
+me,destproc,objgid,cplproc,cplprio); \
+*/
 
 
 /****************************************************************************/
@@ -134,9 +142,12 @@ static int sort_TENewCpl (const void *e1, const void *e2)
     if (ci1->dest < ci2->dest) return(-1);
     if (ci1->dest > ci2->dest) return(1);
 
-	/* ascending priority */
+	/* sorting according to priority is not necessary anymore,
+	   equal items with different priorities will be sorted
+	   out according to PriorityMerge(). KB 970326
     if (ci1->prio < ci2->prio) return(-1);
     if (ci1->prio > ci2->prio) return(1);
+	*/
 
 	return(0);
 }
@@ -555,6 +566,8 @@ static void AcceptObjFromMsg (
 	     		desc->handlerLDATACONSTRUCTOR(newcopy);
 #endif
 #ifdef CPP_FRONTEND
+printf("%4d: CallHandler LDATACONSTRUCTOR %08x\n",
+me, ((DDD_Object *)(ote->hdr))->InfoGlobalId());
 	     		CallHandler(ote->hdr,LDATACONSTRUCTOR) ();
 #endif
 #ifdef F_FRONTEND
@@ -664,6 +677,23 @@ static void AcceptReceivedObjects (
 
 /****************************************************************************/
 
+
+static void AddAndSpread (DDD_HDR hdr, DDD_GID gid, DDD_PROC dest, DDD_PRIO prio,
+	XICopyObj **itemsNO, int nNO)
+{
+	int     k;
+
+	if (hdr!=NULL)
+		AddCoupling(hdr, dest, prio);
+
+	for(k=0; k<nNO; k++)
+	{
+		if (itemsNO[k]->dest != dest)
+			NEW_AddCpl(itemsNO[k]->dest, gid, dest, prio);
+	}
+}
+
+
 /*
 	this function updates the couplings of local objects.
 	the inputs for deciding which couplings have to be added are:
@@ -680,6 +710,9 @@ static void AcceptReceivedObjects (
 */
 
 
+enum UpdateCpl_Cases { UCC_NONE, UCC_NO, UCC_NC, UCC_NO_AND_NC };
+
+
 static void UpdateCouplings (
 		TENewCpl *itemsNC, int nNC,       /* NewCpl  */
 		OBJTAB_ENTRY **itemsO, int nO,    /* Objects */
@@ -694,15 +727,11 @@ static void UpdateCouplings (
 		or to a local object, but not both.
 	*/
 
-	/* loop for all incoming objects */
+	/*** loop for all incoming objects ***/
 	for(iO=0, iNC=0, iDO=0; iO<nO; iO++)
 	{
 		REGISTER DDD_HDR hdr = itemsO[iO]->hdr;
 		REGISTER DDD_GID gid = itemsO[iO]->gid;
-
-		/* scan NewCpl-entries for given gid */
-		while (iNC<nNC && itemsNC[iNC].gid < gid)
-			iNC++;
 
 		/* scan DelObj-entries for given gid */
 		while (iDO<nDO && itemsDO[iDO]->gid < gid)
@@ -733,205 +762,196 @@ static void UpdateCouplings (
 		}
 
 
+		/* scan NewCpl-entries for given gid */
+		while (iNC<nNC && itemsNC[iNC].gid < gid)
+			iNC++;
+
 		/* for all NewCpl-Items with same gid as incoming object */
 		while (iNC<nNC && itemsNC[iNC].gid == gid)
 		{
 			/* there is a corresponding NewCpl-item */
 			AddCoupling(hdr, itemsNC[iNC].dest, itemsNC[iNC].prio);
-
-			{
-				XIAddCpl *xc = NewXIAddCpl();
-				xc->to      = itemsNC[iNC].dest;
-				xc->te.gid  = gid;
-				xc->te.proc = me;
-				xc->te.prio = OBJ_PRIO(hdr);
-			}
+			NEW_AddCpl(itemsNC[iNC].dest, gid, me, OBJ_PRIO(hdr));
 
 			iNC++;
 		}
 	}
 
 
-	/* loop for previously existing objects */
-	iNO=0; iNC=0; iLCO=0; iDO=0; iO=0;
+
+	/*** loop for previously existing objects ***/
+	iNO=iNC=iLCO=iDO=iO=0;
 	while (iNO<nNO || iNC<nNC)
 	{
-/*
-printf("%4d: NO-NC n %d-%d   i %d-%d\n", me, nNO, nNC, iNO, iNC);
-*/
+		DDD_HDR hdrNO, hdrNC;
+		DDD_GID gidNO, gidNC;
+		int moreNO, moreNC, curr_case;
+		int firstNC,lastNC;
+		int firstNO,lastNO,nNOset;
+		XICopyObj **setNO;
 
-		/* scan all NewCpl-items with same (gid/dest), and take
-		   the last of each group (the one with highest prio). */
-		while (iNC<nNC-1 && itemsNC[iNC+1].gid==itemsNC[iNC].gid && 
-							itemsNC[iNC+1].dest==itemsNC[iNC].dest)
+		/* scan all NewOwner-items with same gid, and set first/last indices */
+		firstNO = iNO;
+		while (iNO<nNO-1 && itemsNO[iNO+1]->gid==itemsNO[iNO]->gid)
+			iNO++;
+		lastNO = iNO;
+		nNOset = 1+lastNO-firstNO;
+		setNO = itemsNO+firstNO;
+
+		/* scan all NewCpl-items with same gid, and set first/last indices */
+		firstNC = iNC;
+		while (iNC<nNC-1 && itemsNC[iNC+1].gid==itemsNC[iNC].gid)
 			iNC++;
+		lastNC = iNC;
 
+		/*
+		printf("%4d: MULTILOOP  NewOwner %3d-%3d of %3d  NewCpl %3d-%3d of %3d\n",
+			me, firstNO, lastNO, nNO, firstNC, lastNC, nNC);
+		*/
 
-		if (iNO>=nNO)
+		/* set control flags */
+		moreNO = (iNO<nNO); if (moreNO) gidNO = setNO[0]->gid;
+		moreNC = (iNC<nNC); if (moreNC) gidNC = itemsNC[firstNC].gid;
+
+		curr_case = UCC_NONE;
+		if (moreNO && (!moreNC || gidNO<gidNC))
+			curr_case = UCC_NO;
+		if (moreNC && (!moreNO || gidNC<gidNO))
+			curr_case = UCC_NC;
+		if (moreNO && moreNC && gidNC==gidNO)
+			curr_case = UCC_NO_AND_NC;
+		
+
+		/* find DDD_HDR for given gid */
+		hdrNO = hdrNC = NULL;
+		if (moreNC)
 		{
-			if (iNC<nNC)
-			{
-				TENewCpl *nc = &(itemsNC[iNC]);
-				DDD_GID gidNC = nc->gid;
-
-				/* scan local objects with couplings */
-				while (iLCO<nLCO && OBJ_GID(itemsLCO[iLCO])<gidNC)
-					iLCO++;
-
-				if (iLCO<nLCO && OBJ_GID(itemsLCO[iLCO])==gidNC)
-				{
-					AddCoupling(itemsLCO[iLCO], nc->dest, nc->prio);
-				}
-
-				iNC++;
-			}
-			/* else: no moreNOs and no moreNCs, do nothing */
+			/* scan local objects with couplings */
+			while (iLCO<nLCO && OBJ_GID(itemsLCO[iLCO])<gidNC) iLCO++;
+			if (iLCO<nLCO && OBJ_GID(itemsLCO[iLCO])==gidNC)
+				hdrNC = itemsLCO[iLCO];
 		}
-		else
+		if (moreNO)
 		{
-			/* there is a new_owner-XICopyObj-item */
-			XICopyObj *no = itemsNO[iNO];
-			DDD_GID gidNO = no->gid;
-
-			if (iNC>=nNC)
+			/* check whether obj has been deleted during this xfer */
+			while (iDO<nDO && itemsDO[iDO]->gid < gidNO) iDO++;
+			if (! (iDO<nDO && itemsDO[iDO]->gid==gidNO))
 			{
-				/* no more NewCpl-items */
-
-				/* scan received objects */
-				while (iO<nO && itemsO[iO]->gid < gidNO)
-					iO++;
-
-				/* check whether obj has been deleted during this xfer */
-				while (iDO<nDO && itemsDO[iDO]->gid < gidNO)
-					iDO++;
-
-				if (! (iDO<nDO && itemsDO[iDO]->gid==gidNO))
-				{
-					/* there is no DelObj-item */
-					AddCoupling(no->hdr, no->dest, no->prio);
-				}
-				else if (iO<nO && itemsO[iO]->gid==gidNO)
-				{
-					/* obj has been deleted and received again */
-					AddCoupling(itemsO[iO]->hdr, no->dest, no->prio);
-				}
-				/*
-					else: object has been deleted, and not been resent
-						  ->hdr is invalid
-					      there is no need for AddCoupling here.
-				*/
-
-				iNO++;
+				/* there is no DelObj-item */
+				hdrNO = setNO[0]->hdr;
 			}
-			else
+
+			/* scan received objects */
+			while (iO<nO && itemsO[iO]->gid < gidNO) iO++;
+			if (iO<nO && itemsO[iO]->gid==gidNO)
 			{
-				/* moreNOs and moreNCs */
-				TENewCpl *nc = &(itemsNC[iNC]);
-				DDD_GID gidNC = nc->gid;
-				DDD_HDR hdr   = NULL;
+				/* obj has been deleted and received again */
+				assert(hdrNO==NULL || hdrNO==itemsO[iO]->hdr);
+				hdrNO = itemsO[iO]->hdr;
+			}
+		}
 
-				/* scan local objects with couplings */
-				while (iLCO<nLCO && OBJ_GID(itemsLCO[iLCO])<gidNC)
-					iLCO++;
 
-				/* check whether obj has been deleted during this xfer */
-				while (iDO<nDO && itemsDO[iDO]->gid < gidNO)
-					iDO++;
+		switch (curr_case)
+		{
+			case UCC_NONE:       /* no other case is valid -> do nothing */
+				break;
 
-				/* scan received objects */
-				while (iO<nO && itemsO[iO]->gid < gidNO)
-					iO++;
 
-				/* now the minimum of gids is relevant */
-				if (gidNC==gidNO)
+			case UCC_NO:         /* there is a NewOwner set without NewCpl set */
+			{
+				int jNO;
+
+				for(jNO=0; jNO<nNOset; jNO++)
 				{
-					DDD_PROC destNC = nc->dest;
-					DDD_PROC destNO = no->dest;
+					/* there is no NewCpl-item for given dest */
+					AddAndSpread(hdrNO, gidNO, setNO[jNO]->dest,
+						setNO[jNO]->prio, setNO, nNOset);
+				}
+
+				/* step to next gid */
+				iNO = lastNO+1;
+				iNC = firstNC;
+			}
+			break;
 
 
-					if (! (iDO<nDO && itemsDO[iDO]->gid==gidNO))
+			case UCC_NC:         /* there is a NewCpl set without NewOwner set */
+			{
+				int jNC;
+
+				for(jNC=firstNC; jNC<=lastNC; jNC++)
+				{
+					if (hdrNC!=NULL)
+						AddCoupling(hdrNC, itemsNC[jNC].dest,
+							itemsNC[jNC].prio);
+					/* else: dont need to AddCpl to deleted object */
+				}
+
+				/* step to next gid */
+				iNC = lastNC+1;
+				iNO = firstNO;
+			}
+			break;
+
+
+			case UCC_NO_AND_NC:  /* there are both NewCpl and NewOwner sets */
+			{
+				DDD_HDR hdr;
+				int jNO, jNC;
+
+				/* same gids -> same object and header */
+				assert(hdrNO==NULL || hdrNC==NULL || hdrNO==hdrNC);
+
+				if (hdrNO==NULL) hdr = hdrNC;
+				else             hdr = hdrNO;
+
+				jNC = firstNC;
+				for(jNO=0; jNO<nNOset; jNO++)
+				{
+					/* scan NewCpl-items for given dest processor */
+					while (jNC<=lastNC && itemsNC[jNC].dest < setNO[jNO]->dest)
 					{
-						hdr = no->hdr;
-					}
-					if (iLCO<nLCO && OBJ_GID(itemsLCO[iLCO])==gidNC)
-					{
-						hdr = itemsLCO[iLCO];
-					}
-					if (iO<nO && itemsO[iO]->gid==gidNO)
-					{
-						hdr = itemsO[iO]->hdr;
+						AddAndSpread(hdr, gidNO, itemsNC[jNC].dest, itemsNC[jNC].prio,
+							setNO, nNOset);
+						jNC++;
 					}
 
-					if (destNO < destNC)
+					if (jNC<=lastNC && itemsNC[jNC].dest == setNO[jNO]->dest)
 					{
-						if (hdr!=NULL)
-							AddCoupling(hdr, destNO, itemsNO[iNO]->prio);
-						iNO++;
+						/* found NewCpl-item */
+						DDD_PRIO newprio;
+
+						PriorityMerge(&theTypeDefs[itemsNC[jNC].type],
+							setNO[jNO]->prio, itemsNC[jNC].prio, &newprio);
+
+						AddAndSpread(hdr, gidNO, setNO[jNO]->dest, newprio,
+							setNO, nNOset);
+						jNC++;
 					}
 					else
 					{
-						if (destNO > destNC)
-						{
-							if (hdr!=NULL)
-								AddCoupling(hdr, nc->dest, nc->prio);
-#ifdef WANTED_NOCH_GENAUER_UNTERSUCHEN
-else { printf("%4d: WANTED 3  %d/%d\n",me,nc->dest,nc->prio); }
-#endif
-							iNC++;
-						}
-						else /* destNO == destNC */
-						{
-							if (hdr!=NULL)
-							{
-								TYPE_DESC *desc = &theTypeDefs[OBJ_TYPE(hdr)];
-								DDD_PRIO newprio;
-
-								PriorityMerge(desc, no->prio, nc->prio, &newprio);
-								AddCoupling(hdr, nc->dest, newprio);
-							}
-#ifdef WANTED_NOCH_GENAUER_UNTERSUCHEN
-else { printf("%4d: WANTED 4  %d/%d/%d\n",me,nc->dest,no->prio,nc->prio); }
-#endif
-							iNO++;
-							iNC++;
-						}
+						/* there is no NewCpl-item for given dest */
+						AddAndSpread(hdr, gidNO, setNO[jNO]->dest, setNO[jNO]->prio,
+							setNO, nNOset);
 					}
 				}
-				else
+				while (jNC<=lastNC)
 				{
-					if (gidNC<gidNO)
-					{
-						if (iLCO<nLCO && OBJ_GID(itemsLCO[iLCO])==gidNC)
-						{
-							AddCoupling(itemsLCO[iLCO], nc->dest, nc->prio);
-						}
-#ifdef WANTED_NOCH_GENAUER_UNTERSUCHEN
-else { printf("%4d: WANTED 5  %d/%d\n",me,nc->dest,nc->prio); }
-#endif
-						iNC++;
-					}
-					else
-					{
-						/* gidNC>gidNO */
-						/* no more NewCpl-items */
-
-						if (! (iDO<nDO && itemsDO[iDO]->gid==gidNO))
-						{
-							/* there is no DelObj-item */
-							AddCoupling(no->hdr, no->dest, no->prio);
-						}
-#ifdef WANTED_NOCH_GENAUER_UNTERSUCHEN
-else { printf("%4d: WANTED 6  %d/%d\n",me,nc->dest,no->prio); }
-#endif
-						/*
-							else: object has been deleted, ->hdr is invalid
-					      		there is no need for AddCoupling here.
-						*/
-
-						iNO++;
-					}
+					AddAndSpread(hdr, gidNO, itemsNC[jNC].dest, itemsNC[jNC].prio,
+						setNO, nNOset);
+					jNC++;
 				}
+
+				/* step to next gid */
+				iNO = lastNO+1;
+				iNC = lastNC+1;
 			}
+			break;
+
+			default:
+				assert(0);
+				break;
 		}
 	}
 }
@@ -972,7 +992,7 @@ static void PropagateIncomings (
 			{
 				if (newness==PARTNEW)
 				{
-					XIModCpl *xc = NewXIModCpl();
+					XIModCpl *xc = NewXIModCpl(SLLNewArgs);
 					xc->to      = arrayNO[iNO]->dest; /* receiver of XIModCpl*/
 					xc->te.gid  = ote->gid;           /* the object's gid    */
 					xc->te.prio = OBJ_PRIO(ote->hdr); /* the obj's new prio  */
@@ -989,7 +1009,7 @@ static void PropagateIncomings (
 				if (newness==PARTNEW)
 				{
 */
-					XIModCpl *xc = NewXIModCpl();
+					XIModCpl *xc = NewXIModCpl(SLLNewArgs);
 					xc->to      = cpl->proc;         /* receiver of XIModCpl*/
 					xc->te.gid  = ote->gid;           /* the object's gid   */
 					xc->te.prio = OBJ_PRIO(ote->hdr); /* the obj's new prio */
@@ -1102,7 +1122,7 @@ static void LocalizeObjects (LC_MSGHANDLE xm,
 		*/
 
 		#ifdef MERGE_MODE_IN_TESTZUSTAND
-		if (theObjTab[i].is_new==OTHERMSG || theObjTab[i].is_new==PARTNEW)
+		if (theObjTab[i].is_new!=TOTALNEW)
 		{
 			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
 			DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
@@ -1251,8 +1271,17 @@ static void CallSetPriorityHandler (LC_MSGHANDLE xm)
 
 	for(i=0; i<lenObjTab; i++)         /* for all message items */
 	{
+		/*
+			the next condition is crucial. the SETPRIORITY-handler is
+			called for _all_ object collisions, even if the old priority
+			and the new priority are equal! this is to give the user
+			a chance to note object collisions at all. (BTW, he could
+			note it also during handlerMKCONS, but this could be too
+			late...)
+			970410 kb
+		*/
 		if ((theObjTab[i].is_new==NOTNEW || theObjTab[i].is_new==PARTNEW)
-			&& (theObjTab[i].oldprio != theObjTab[i].prio))
+		/*	&& (theObjTab[i].oldprio != theObjTab[i].prio) */  )
 		{
 			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
 			DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
@@ -1288,13 +1317,23 @@ static void CallObjMkConsHandler (LC_MSGHANDLE xm)
 	/* initialize new objects corresponding to application: consistency */
 	for(i=0; i<lenObjTab; i++)         /* for all message items */
 	{
-		if (theObjTab[i].is_new==PARTNEW || theObjTab[i].is_new==TOTALNEW)
+		if (theObjTab[i].is_new==TOTALNEW ||
+			theObjTab[i].is_new==PARTNEW ||
+			theObjTab[i].is_new==NOTNEW)
 		{
 			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
 			DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
+			int     newness;
 
-			int     newness = (theObjTab[i].is_new==PARTNEW) ?
-						XFER_UPGRADE : XFER_NEW;
+			assert(theObjTab[i].is_new!=OTHERMSG);
+
+			switch (theObjTab[i].is_new)
+			{
+				case NOTNEW:   newness=XFER_REJECT;   break;
+				case PARTNEW:  newness=XFER_UPGRADE;  break;
+				case TOTALNEW: newness=XFER_NEW;      break;
+			}
+
 
     		/* call application handler for object consistency */
 			if (desc->handlerOBJMKCONS)
@@ -1360,6 +1399,58 @@ static void UnpackOldCplTab (
 }
 
 
+
+/*
+	compress table of TENewCpl-items.
+
+	forall sets of NewCpl-items with same gid and same dest,
+	compress set according to PriorityMerge(). only the winning
+	priority has to survive.
+
+	at first, the table is sorted according to (gid/dest), which
+	will construct the NewCpl-sets. afterwards, for each set the winner
+	is determined and stored into table. the tablesize will be equal or
+	smaller at the end of this function.
+*/
+static int CompressNewCpl (TENewCpl *tabNC, int nNC)
+{
+	int nNCnew;
+	int iNC;
+
+	qsort(tabNC, nNC, sizeof(TENewCpl), sort_TENewCpl);
+
+	nNCnew = iNC = 0;
+	while (iNC<nNC)
+	{
+		/* TENewCpl.type component is needed here (for merging priorities)! */
+		TYPE_DESC *desc  = &theTypeDefs[tabNC[iNC].type];
+		DDD_PRIO  newprio;
+		int       ret;
+
+		newprio = tabNC[iNC].prio;
+		while (iNC<nNC-1 && tabNC[iNC+1].gid==tabNC[iNC].gid &&
+							tabNC[iNC+1].dest==tabNC[iNC].dest)
+		{
+			PriorityMerge(desc, newprio, tabNC[iNC+1].prio, &newprio);
+			iNC++;
+		}
+
+		if (iNC<nNC)
+		{
+			tabNC[nNCnew].gid = tabNC[iNC].gid;
+			tabNC[nNCnew].dest = tabNC[iNC].dest;
+			tabNC[nNCnew].prio = newprio;
+			tabNC[nNCnew].type = tabNC[iNC].type;
+			nNCnew++;
+
+			iNC++;
+		}
+	}
+
+	return(nNCnew);
+}
+
+
 /****************************************************************************/
 
 
@@ -1408,7 +1499,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 		allNewCpl = (TENewCpl *) AllocTmp(sizeof(TENewCpl)*nNewCpl);
 
 		if (allNewCpl==NULL) {
-			DDD_PrintError('E', 6560, "not enough memory in XferUnpack");
+			DDD_PrintError('E', 6560, STR_NOMEM " in XferUnpack");
 			return;
 		}
 	} else {
@@ -1422,7 +1513,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 			AllocTmp(sizeof(OBJTAB_ENTRY *)*lenObjTab);
 
 		if (unionObjTab==NULL) {
-			DDD_PrintError('E', 6562, "not enough memory in XferUnpack");
+			DDD_PrintError('E', 6562, STR_NOMEM " in XferUnpack");
 			return;
 		}
 	} else {
@@ -1461,7 +1552,9 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 	}
 
 	if (nNewCpl>0)
-		qsort(allNewCpl, nNewCpl, sizeof(TENewCpl), sort_TENewCpl);
+	{
+		nNewCpl = CompressNewCpl(allNewCpl, nNewCpl);
+	}
 
 	if (lenObjTab>0) 
 		qsort(unionObjTab, lenObjTab,
@@ -1471,7 +1564,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 #	if DebugUnpack<=2
 		for(i=0; i<nNewCpl; i++)
 		{
-			sprintf(cBuffer, "%4d:   allNewCpl %08x on %4d/%d\n",me,
+			sprintf(cBuffer, "%4d: TAB allNewCpl %08x on %4d/%d\n",me,
 				allNewCpl[i].gid,allNewCpl[i].dest,allNewCpl[i].prio);
 			DDD_PrintDebug(cBuffer);
 		}
@@ -1537,6 +1630,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 
 
 
+/*
 #	if DebugXfer>1
 	if (DDD_GetOption(OPT_DEBUG_XFERMESGS)==OPT_ON)
 #	endif
@@ -1544,6 +1638,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 		for(i=0; i<nRecvMsgs; i++)
 			XferDisplayMsg("OR", theMsgs[i]);
 	}
+*/
 
 
 

@@ -97,7 +97,7 @@ void ddd_TopoInit (void)
   theTopology = (VChannelPtr *) AllocFix(procs*sizeof(VChannelPtr));
   if (theTopology==NULL)
   {
-    DDD_PrintError('E', 1500, "not enough memory in TopoInit");
+    DDD_PrintError('E', 1500, STR_NOMEM " in TopoInit");
     return;
   }
 
@@ -110,14 +110,14 @@ void ddd_TopoInit (void)
   theProcArray = (DDD_PROC *) AllocFix(2 * procs*sizeof(DDD_PROC));
   if (theProcArray==NULL)
   {
-    DDD_PrintError('E', 1510, "not enough memory in TopoInit");
+    DDD_PrintError('E', 1510, STR_NOMEM " in TopoInit");
     return;
   }
 
   theProcFlags = (int *) AllocFix(2 * procs*sizeof(int));
   if (theProcFlags==NULL)
   {
-    DDD_PrintError('E', 1511, "not enough memory in TopoInit");
+    DDD_PrintError('E', 1511, STR_NOMEM " in TopoInit");
     return;
   }
 }

@@ -43,7 +43,7 @@
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.4"
+#define DDD_VERSION    "1.8.5"
 
 
 /****************************************************************************/
@@ -156,6 +156,8 @@ enum OptionType {
   OPT_DEBUG_XFERMESGS,             /* print debug info for xfer messages        */
   OPT_INFO_XFER,                   /* display some statistical info during xfer */
   OPT_INFO_IF_WITH_ATTR,           /* display interfaces detailed (with attrs)  */
+
+  OPT_XFER_PRUNE_DELETE,           /* prune del-cmd in del/xfercopy-combination */
 
   OPT_END
 };
@@ -290,6 +292,11 @@ typedef DDD_HEADER     * DDD_HDR;
 typedef unsigned int DDD_OPTION;
 
 
+/* NULL values for DDD types */
+#define DDD_TYPE_NULL  0
+#define DDD_PROC_NULL  0
+#define DDD_PRIO_NULL  0
+#define DDD_ATTR_NULL  0
 
 
 /* types of handlers for HandlerRegister */
@@ -529,18 +536,18 @@ public:
 
   // DDD Handlers as virtual functions
   // TODO: is this general enough?
-  virtual void HandlerLDATACONSTRUCTOR (void);
-  //virtual void HandlerDESTRUCTOR       (void);
-  //virtual void HandlerDELETE           (void);
-  virtual void HandlerUPDATE           (void);
-  //virtual void HandlerOBJMKCONS        (int);
-  //virtual void HandlerSETPRIORITY      (DDD_PRIO);
-  virtual void HandlerXFERCOPY         (DDD_PROC, DDD_PRIO);
-  //virtual void HandlerXFERDELETE       (void);
-  //virtual void HandlerXFERGATHER       (int, DDD_TYPE, void *);
-  //virtual void HandlerXFERSCATTER      (int, DDD_TYPE, void *, int);
-  //virtual void HandlerXFERGATHERX      (int, DDD_TYPE, char **);
-  //virtual void HandlerXFERSCATTERX     (int, DDD_TYPE, char **, int);
+  virtual void HandlerLDATACONSTRUCTOR (void) { }
+  //virtual void HandlerDESTRUCTOR       (void) { }
+  //virtual void HandlerDELETE           (void) { }
+  virtual void HandlerUPDATE           (void) { }
+  //virtual void HandlerOBJMKCONS        (int) { }
+  //virtual void HandlerSETPRIORITY      (DDD_PRIO) { }
+  virtual void HandlerXFERCOPY         (DDD_PROC, DDD_PRIO) { }
+  //virtual void HandlerXFERDELETE       (void) { }
+  //virtual void HandlerXFERGATHER       (int, DDD_TYPE, void *) { }
+  //virtual void HandlerXFERSCATTER      (int, DDD_TYPE, void *, int) { }
+  //virtual void HandlerXFERGATHERX      (int, DDD_TYPE, char **) { }
+  //virtual void HandlerXFERSCATTERX     (int, DDD_TYPE, char **, int) { }
 
 private:
   DDD_HEADER _hdr;
