@@ -144,6 +144,8 @@ INT InitUg (int *argcp, char ***argvp)
   /* create struct for configuration parameters */
   if (MakeStruct(":conf"))
     return(__LINE__);
+  if (SetStringValue("conf:chaco",0.0))
+    return(__LINE__);
   /* set variable for parallel modus */
         #ifdef ModelP
   if (SetStringValue("conf:parallel",1.0))
@@ -152,6 +154,10 @@ INT InitUg (int *argcp, char ***argvp)
     return(__LINE__);
   if (SetStringValue("conf:me",(DOUBLE)me))
     return(__LINE__);
+        #ifdef CHACOT
+  if (SetStringValue("conf:chaco",1.0))
+    return(__LINE__);
+                #endif
     #else
   if (SetStringValue("conf:parallel",0.0))
     return(__LINE__);
