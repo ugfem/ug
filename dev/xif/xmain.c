@@ -83,6 +83,8 @@
 /*																			*/
 /****************************************************************************/
 
+#define DBG_LEVEL               4
+
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
@@ -217,7 +219,7 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
   {
   case EVERY_EVENT :
     if (!XCheckIfEvent(display,&report,callback,NULL)) return(0);
-    PRINTDEBUG(dev,1,("XCheckIfEvent(): matching event found count=%d\n",count++));
+    PRINTDEBUG(dev,DBG_LEVEL,("XCheckIfEvent(): matching event found count=%d\n",count++));
     onlyCmdKey = 0;
     break;
   case TERM_STRING :
@@ -257,7 +259,7 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
     theEvent->DocActivate.win = (WINDOWID) gw;
     SetCurrentGW(gw);
     /*
-       IFDEBUG(dev,1)
+       IFDEBUG(dev,DBG_LEVEL)
        printf("reporting DOC_ACTIVATE for view %s\n",MY_VIEW(gw)->name);
        ENDDEBUG
      */
@@ -268,12 +270,12 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
     {
                                 #ifdef USE_XAW
       flag=XtDispatchEvent(&report);
-      IFDEBUG(dev,1)
+      IFDEBUG(dev,DBG_LEVEL)
       if (flag==FALSE) {
-        PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"));
+        PRINTDEBUG(dev,DBG_LEVEL,("XtDispatchEvent(): NO handler for this event found\n"));
       }
       else {
-        PRINTDEBUG(dev,1,("XtDispatchEvent(): handler for this event found\n"));
+        PRINTDEBUG(dev,DBG_LEVEL,("XtDispatchEvent(): handler for this event found\n"));
       }
       ENDDEBUG
                                 #else /* USE_XAW */
@@ -313,7 +315,7 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
       gw->window_width = w;
       gw->window_height = h;
       /*
-         IFDEBUG(dev,1)
+         IFDEBUG(dev,DBG_LEVEL)
          printf("reporting DOC_GROW dxmin=%g dymin=%g dxmax=%g dymax=%g\n",
               theEvent->DocGrow.LowerLeft[0],theEvent->DocGrow.LowerLeft[1],
               theEvent->DocGrow.UpperRight[0],theEvent->DocGrow.UpperRight[1]);
@@ -338,7 +340,7 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
       gw->window_x = report.xconfigure.x;
       gw->window_y = report.xconfigure.y;
       /*
-         IFDEBUG(dev,1)
+         IFDEBUG(dev,DBG_LEVEL)
          printf("reporting DOC_DRAG dxmin=%g dymin=%g dxmax=%g dymax=%g\n",
               theEvent->DocDrag.LowerLeft[0],theEvent->DocDrag.LowerLeft[1],
               theEvent->DocDrag.UpperRight[0],theEvent->DocDrag.UpperRight[1]);
@@ -374,7 +376,7 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
       theEvent->DocChangeTool.Tool = tool;
       theEvent->DocChangeTool.MousePosition[0] = where_x;
       theEvent->DocChangeTool.MousePosition[1] = where_y;
-      IFDEBUG(dev,1)
+      IFDEBUG(dev,DBG_LEVEL)
       printf("reporting DOC_CHANGETOOL tool=%d\n",tool);
       ENDDEBUG
       break;
@@ -401,12 +403,12 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
         cutbuffer = XFetchBytes(display,&cnt);
         if (cutbuffer == NULL)
         {
-          IFDEBUG(dev,1)
+          IFDEBUG(dev,DBG_LEVEL)
           printf("cut buffer empty\n");
           ENDDEBUG
           break;
         }
-        IFDEBUG(dev,1)
+        IFDEBUG(dev,DBG_LEVEL)
         printf("ButtonRelease with cnt=%d cutbuffer=%s\n",cnt,cutbuffer);
         ENDDEBUG
 
@@ -456,12 +458,12 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
         #ifdef USE_XAW
   /* Send all events to shell widget */
   flag=XtDispatchEvent(&report);
-  IFDEBUG(dev,1)
+  IFDEBUG(dev,DBG_LEVEL)
   if (flag==FALSE) {
-    PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"));
+    PRINTDEBUG(dev,DBG_LEVEL,("XtDispatchEvent(): NO handler for this event found\n"));
   }
   else {
-    PRINTDEBUG(dev,1,("XtDispatchEvent(): Handler for this event found\n"));
+    PRINTDEBUG(dev,DBG_LEVEL,("XtDispatchEvent(): Handler for this event found\n"));
   }
   ENDDEBUG
 
