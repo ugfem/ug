@@ -1,0 +1,67 @@
+#!/usr/bin/perl -w #-d
+# $Header$
+# usage: ugexo2mbg_vol <cubit_logfile> <cubit_volcmd_file>
+#
+# author: Stefan Lang, INF 368, IWR, University of Heidelberg
+#         Stefan.Lang@iwr.uni-heidelberg.de
+# history: start 041220
+
+# basic data types
+#$num = '\d';
+$int = '\d+';
+#$sint = '[+-]?\d+';
+#$real = '[+-]?\d+(?:\.\d+)?';   # (?:\.\d+)? means: optional .nnnn part
+#$exp = '[+-]?\d+(?:\.\d+(?:e[+-]?\d+)?)?';
+#$string = '[a-z"_]\w*';
+
+
+if ($#ARGV != 1)
+{
+	print "usage: ugexo2mbg_vol <cubit_logfile> <cubit_volcmd>\n";
+ 	exit;
+}
+
+$log = "$ARGV[0]";
+$usn = "$ARGV[1]";
+
+
+sub main()
+{
+	open(LOG, "<$log") || die "can't open $log\n";
+	open(USN, ">$usn") || die "can't open $usn\n";
+
+	while(<LOG>)
+	{
+		if ( /($int) Owned Surfaces:/ )
+		{
+			$nsurf = $1;
+			printf "body with %d surfaces\n",$nsurf;
+			$surf = 0;
+			printf USN "create body surface";
+
+			LOOP: while(<LOG>)
+			{
+				if ( /Surface\s+($int)\s+($int)/ )
+				{
+					if ($1 != $2)
+					{
+						printf USN "surface ids don't match!\n"; 
+						exit;
+					}
+					$surfid = 30000+$1;
+					printf USN " %d",$surfid;
+					$surf++;
+
+					if ($surf == $nsurf) { printf USN "\n"; last LOOP;}
+				}
+			}
+		}
+	}
+	close(LOG);
+	close(USN);
+}
+
+main();
+
+exit;
+
