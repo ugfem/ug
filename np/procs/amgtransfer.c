@@ -707,7 +707,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     np->agglevel = -MAXLEVEL-1;
 
     SetStringValue(":amg:blevel",tl);
-    SetStringValue(":amg:vect0",(double)theGrid->nVector);
+    SetStringValue(":amg:vect0",(double)NVEC(theGrid));
     SetStringValue(":amg:con0",(double)theGrid->nCon);
     if (np->display == PCR_FULL_DISPLAY) {
       CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
@@ -721,7 +721,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     while (level > np->levelLimit) {
       breakflag = 0;
       theGrid=GRID_ON_LEVEL(theMG,level);
-      nVect=theGrid->nVector;
+      nVect=NVEC(theGrid);
       nMat=2*theGrid->nCon;
 
       if (np->vectLimit!=0)
@@ -867,7 +867,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                    (int)newGrid->nCon,(int)theGrid->nIMat);
 
       sprintf(varname,":amg:vect%d",level-1);
-      SetStringValue(varname,(double)newGrid->nVector);
+      SetStringValue(varname,(double)NVEC(newGrid));
       sprintf(varname,":amg:con%d",level-1);
       SetStringValue(varname,(double)newGrid->nCon);
       sprintf(varname,":amg:imat%d",level);
@@ -890,7 +890,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 
       breakflag = 0;
       if (np->vRedLimit!=0.0) {
-        if ((DOUBLE)newGrid->nVector/(DOUBLE)nVect > np->vRedLimit)
+        if ((DOUBLE)NVEC(newGrid)/(DOUBLE)nVect > np->vRedLimit)
           breakflag = 1;
         PRINTDEBUG(np,1,("%3d: bandLimit reached",me));
         PRINTDEBUG(np,1,(" on level %d\n",level));
