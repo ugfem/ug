@@ -655,11 +655,16 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     if (a_vector_vecskip(theMG,*fl,tl,x) != NUM_OK)
       NP_RETURN(1,result[0]);
         #endif
-    for (i=*fl; i<=tl; i++)
+    i = *fl;
+    if (np->dirichlet > 1) i = np->dirichlet - 1;
+    for ( ; i<=tl; i++) {
       if (AssembleDirichletBoundary (GRID_ON_LEVEL(theMG,i),A,x,b))
         NP_RETURN(1,result[0]);
+      if (np->display != PCR_NO_DISPLAY)
+        UserWriteF(" [d:%d]",i);
+    }
     if (np->display != PCR_NO_DISPLAY)
-      UserWrite(" [d]\n");
+      UserWrite("\n");
   }
         #ifdef ModelP
   else
