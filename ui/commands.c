@@ -2684,7 +2684,7 @@ static INT RenumberMGCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (RenumberMultiGrid(theMG)!=GM_OK)
+  if (RenumberMultiGrid(theMG,NULL,NULL,NULL,NULL,NULL,NULL)!=GM_OK)
   {
     PrintErrorMessage('E',"renumber","renumbering of the mg failed");
     return (CMDERRORCODE);
@@ -3513,7 +3513,7 @@ static INT InsertInnerNodeCommand (INT argc, char **argv)
     xc[i] = x[i];
 
   /* NB: toplevel=0 is checked by InsertInnerNode() */
-  if (InsertInnerNode(theMG,xc)==NULL)
+  if (InsertInnerNode(GRID_ON_LEVEL(theMG,0),xc)==NULL)
   {
     PrintErrorMessage('E',"in","inserting an inner node failed");
     return (CMDERRORCODE);
@@ -3571,7 +3571,7 @@ static INT InsertBoundaryNodeCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (InsertBoundaryNode(theMG,bndp)==NULL)
+  if (InsertBoundaryNode(GRID_ON_LEVEL(theMG,0),bndp)==NULL)
   {
     PrintErrorMessage('E',"bn","inserting a boundary node failed");
     return (CMDERRORCODE);
@@ -3635,7 +3635,7 @@ static INT DeleteNodeCommand (INT argc, char **argv)
   {
     if (SELECTIONMODE(theMG)==nodeSelection)
       for (i=0; i<SELECTIONSIZE(theMG); i++)
-        if (DeleteNode(theMG,(NODE *)SELECTIONOBJECT(theMG,i))!=GM_OK)
+        if (DeleteNode(GRID_ON_LEVEL(theMG,0),(NODE *)SELECTIONOBJECT(theMG,i))!=GM_OK)
         {
           PrintErrorMessage('E',"deln","deleting the node failed");
           return (CMDERRORCODE);
@@ -3654,7 +3654,7 @@ static INT DeleteNodeCommand (INT argc, char **argv)
   }
 
   /* NB: toplevel=0 is checked by DeleteNode() */
-  if (DeleteNodeWithID(theMG,id)!=GM_OK)
+  if (DeleteNodeWithID(GRID_ON_LEVEL(theMG,0),id)!=GM_OK)
   {
     PrintErrorMessage('E',"deln","deleting the node failed");
     return (CMDERRORCODE);
@@ -3889,7 +3889,7 @@ static INT InsertElementCommand (INT argc, char **argv)
   /* got the nodes via s option? */
   if (nNodes>0)
   {
-    if (InsertElement(theMG,nNodes,theNodes,NULL,NULL)==NULL)
+    if (InsertElement(GRID_ON_LEVEL(theMG,0),nNodes,theNodes,NULL,NULL)==NULL)
     {
       PrintErrorMessage('E',"ie","inserting the element failed");
       return (CMDERRORCODE);
@@ -3928,7 +3928,7 @@ static INT InsertElementCommand (INT argc, char **argv)
   }
 
   /* NB: toplevel=0 is checked by InsertElementFromIDs() */
-  if (InsertElementFromIDs(theMG,nNodes,Id)==NULL)
+  if (InsertElementFromIDs(GRID_ON_LEVEL(theMG,0),nNodes,Id)==NULL)
   {
     PrintErrorMessage('E',"ie","inserting the element failed");
     return (CMDERRORCODE);
@@ -4930,7 +4930,7 @@ static INT OrderNodesCommand (INT argc, char **argv)
     }
 
   /* first we renumber the multigrid (to have node-IDs coinciding with lists) */
-  if (RenumberMultiGrid(theMG)!=GM_OK)
+  if (RenumberMultiGrid(theMG,NULL,NULL,NULL,NULL,NULL,NULL)!=GM_OK)
   {
     PrintErrorMessage('E',"ordernodes","renumbering of the mg failed");
     return (CMDERRORCODE);
