@@ -42,6 +42,10 @@
 #include "ugdevices.h"
 #endif
 
+#include "namespace.h"
+
+START_NAMESPACE
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -146,5 +150,7 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey);
 #ifdef __USE_IN_UG__
 int NG_Init (int domainpaths_set);
 #endif
+
+END_NAMESPACE
 
 #endif
