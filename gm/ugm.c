@@ -4928,7 +4928,7 @@ void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT ma
    D*/
 /****************************************************************************/
 
-        #ifdef ModelP
+#ifdef ModelP
 void CheckLists(GRID *theGrid)
 {
   int objs = 0;
@@ -5270,7 +5270,7 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
 #ifdef __THREEDIM__
 static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, INT *NodeError, INT *ESonError, INT *NSonError)
 {
-  int i,j,k;
+  INT i,j,k,l,n;
   NODE *theNode;
   EDGE *theEdge;
   ELEMENT *NbElement;
@@ -5294,6 +5294,18 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
             break;
         if (j == SIDES_OF_ELEM(NbElement))
           *SideError |= (1<<i);
+        n = CORNERS_OF_SIDE(theElement,i);
+        for (k=0; k<n; k++)
+          if (CORNER(theElement,CORNER_OF_SIDE(theElement,i,k))
+              == CORNER(NbElement,CORNER_OF_SIDE(NbElement,j,0)))
+            break;
+        if (k == n)
+          *SideError |= (1<<i);
+        for (l=1; l<n; l++)
+          if (CORNER(theElement,
+                     CORNER_OF_SIDE(theElement,i,(n+k-l)%n))
+              != CORNER(NbElement,CORNER_OF_SIDE(NbElement,j,l)))
+            *SideError |= (1<<i);
       }
       else
       {
