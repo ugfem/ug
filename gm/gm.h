@@ -1896,8 +1896,10 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 /****************************************************************************/
 
 /* predefined blockvector description formats */
-extern const BV_DESC_FORMAT DH_bvdf;                    /* bvdf for domain halfening	*/
+extern const BV_DESC_FORMAT DH_bvdf;            /* bvdf for domain halfening	*/
 extern const BV_DESC_FORMAT one_level_bvdf;     /* bvdf for only 1 blocklevel	*/
+extern const BV_DESC_FORMAT two_level_bvdf;     /* bvdf for 2 blocklevels		*/
+extern const BV_DESC_FORMAT three_level_bvdf;   /* bvdf for 3 blocklevels	*/
 
 /****************************************************************************/
 /*																			*/
@@ -2000,7 +2002,8 @@ INT InitBVDF                                            ( BV_DESC_FORMAT *bvdf, 
 INT PushEntry                                           ( BV_DESC *bvd, BLOCKNUMBER bnr, const BV_DESC_FORMAT *bvdf );
 
 /* functions to create a BLOCKVECTOR structure for a regular rectangular grid */
-INT CreateBVStripe                                      ( GRID *grid, INT points, INT points_per_stripe );
+INT CreateBVStripe2D                            ( GRID *grid, INT vectors, INT vectors_per_stripe );
+INT CreateBVStripe3D                            ( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT vectors_per_stripe );
 INT CreateBVDomainHalfening                     ( GRID *grid, INT side, INT leaf_size );
 
 /* general functions for BLOCKVECTOR */
