@@ -6162,8 +6162,10 @@ static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
 
 	grid=GRID_ON_LEVEL(mg,level);
 
-	for (vec=FIRSTVECTOR(grid); vec!=NULL; vec=SUCCVC(vec))
-	  SETUSED(vec,FALSE);
+	for (vec=FIRSTVECTOR(grid); vec!=NULL; vec=SUCCVC(vec)) {
+	  SETUSED(vec,FALSE);		/* vector of marked element */
+	  SETTHEFLAG(vec,FALSE);	/* periodic vector */
+	}
 
 	/* check if element has points on periodic boundary and set flags */
 	for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
@@ -6172,8 +6174,6 @@ static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
 
 		if (GetRefinementMark(elem, &mark, &side)==-1)
 		  REP_ERR_RETURN (GM_ERROR);
-
-		if (mark == NO_REFINEMENT) continue;
 
 		for (co=0; co<CORNERS_OF_ELEM(elem); co++) {
 		  VERTEX *vtx;
@@ -6188,8 +6188,11 @@ static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
 		  
 		  if (OBJT(vtx)!=BVOBJ) continue;
 		  if ((*IsPeriodicBnd)(vtx,&n,per_ids,coord,pcoords)) {
-			if (mark==RED)
+			SETTHEFLAG(vec,TRUE);
+			if (mark==RED) {
 			  SETUSED(vec,TRUE);
+			  PRINTDEBUG(gm,1,("periodic vec %8d: used at %d bndries\n",VINDEX(vec),n));
+			}
 		  }
 		}
 	  }
@@ -6213,12 +6216,31 @@ static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
 		  co=CORNER_OF_EDGE(elem,edge,1);
 		  vec=NVECTOR(CORNER(elem,co));
 		  if (USED(vec)) marked++;
-
+		  
 		  if (marked>1) break;
 		}
 		
-		if (marked>1)
+		if (marked>1) {
+		  INT co;
+		  
 		  MarkForRefinement(elem,RED,0);
+
+		  PRINTDEBUG(gm,1,("Elem %8d marked red\n",ID(elem)));
+
+		  /* flag all vectors of newly marked element */
+		  for (co=0; co<CORNERS_OF_ELEM(elem); co++) {
+			NODE *node;
+			VECTOR *vec;
+
+			node = CORNER(elem,co);
+			vec = NVECTOR(node);
+		  
+			if (THEFLAG(vec)) {	/* periodic vector */
+			  SETUSED(vec,TRUE);
+			  PRINTDEBUG(gm,1,("Elem %8d: periodic vec %8d\n",ID(elem),VINDEX(vec)));
+			}
+		  }
+		}
 	  }
 	}
   }
