@@ -472,6 +472,8 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 
 #define ARCHNAME        "PC"
 
+#include <time.h>
+
 /* basic types */
 #define SHORT  short
 #define INT    int
@@ -489,7 +491,6 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #define F77SYM(lsym,usym) lsym
 
 /* current time as DOUBLE value */
-#include <time.h>
 #undef CURRENT_TIME
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
@@ -536,6 +537,8 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 
 #define ARCHNAME        "LINUXAXP"
 
+#include <time.h>
+
 /* basic types */
 #define SHORT  short
 #define INT    long                     /* sizeof(int) != sizeof(void *) !! */
@@ -568,6 +571,8 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #undef __MWCW__
 
 #define ARCHNAME        "LINUXIA64"
+
+#include <time.h>
 
 /* basic types */
 #define SHORT  short
@@ -602,6 +607,8 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 
 #define ARCHNAME    "CYGWIN"
 
+#include <time.h>
+
 /* basic types */
 #define SHORT  short
 #define INT    int
@@ -619,7 +626,6 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #define F77SYM(lsym,usym) lsym
 
 /* current time as DOUBLE value */
-#include <time.h>
 #undef CURRENT_TIME
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
@@ -670,6 +676,8 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #undef __MWCW__
 
 #define ARCHNAME        "LINUXPPC"
+
+#include <time.h>
 
 /* basic types */
 #define SHORT  short
