@@ -164,6 +164,29 @@ typedef struct struct_SFPL_TYP SFPL_TYP; /* Typ fuer die Polylines einer Surface
 #define SFPL_NEXT(p)                            (p->next)
 
 
+/* SURFACEDETECTOR . . .  */
+struct struct_PLZ_TYP {
+  struct struct_PLZ_TYP *next;
+  INT plz_nmb_of_pllns;
+  SFPL_TYP *plz_polylines;
+} ;
+typedef struct struct_PLZ_TYP PLZ_TYP; /*Typ fuer die Polylinezyklen */
+#define PLZ_NEXT(p)                                     (p->next)
+#define PLZ_NMB_OF_POLYLINES(p)         (p->plz_nmb_of_pllns)
+#define PLZ_POLYLINES(p)                        (p->plz_polylines)
+
+
+
+struct struct_RS_TYP {
+  struct struct_RS_TYP *next;
+  PLZ_TYP *RealSurface_PolylineZyklen;
+  INT rs_nmb_of_plz;
+} ;
+typedef struct struct_RS_TYP RS_TYP; /*Typ fuer die "realSurfaces" */
+#define RS_NEXT(p)                                      (p->next)
+#define RS_PL_ZKLN(p)                           (p->RealSurface_PolylineZyklen)
+#define RS_NMB_OF_PL_ZKLN(p)            (p->rs_nmb_of_plz)
+/* . . . SURFACEDETECTOR */
 
 struct struct_SF_TYP {
   struct struct_SF_TYP *next;
@@ -175,6 +198,10 @@ struct struct_SF_TYP {
   INT leftsubdomain;
   SFPL_TYP *polylines;
   INT nmbofpolylines;
+  INT nmbofpolylincycles;
+  PLZ_TYP *polylinecycles;
+  INT nmbofrealsurfaces;
+  RS_TYP *realsurfaces;
 } ;
 typedef struct struct_SF_TYP SF_TYP; /*Typ fuer die surfaces */
 #define SF_NAME1(p)                             (p->sfcname[0])
@@ -182,11 +209,15 @@ typedef struct struct_SF_TYP SF_TYP; /*Typ fuer die surfaces */
 #define SF_NEXT(p)                              (p->next)
 #define SF_TRIAS(p)                             (p->triangles)
 #define SF_NMB_OF_TRIAS(p)              (p->nmboftrias)
-#define SF_RIGHT_SBD(p)             (p->rightsubdomain)
-#define SF_LEFT_SBD(p)              (p->leftsubdomain)
+#define SF_RIGHT_SBD(p)                 (p->rightsubdomain)
+#define SF_LEFT_SBD(p)                  (p->leftsubdomain)
 #define SF_NMB_OF_POINTS(p)             (p->nmbofpoints)
 #define SF_POLYLINES(p)                 (p->polylines)
-#define SF_NMB_OF_POLYLINES(p)  (p->nmbofpolylines)
+#define SF_NMB_OF_POLYLINES(p)          (p->nmbofpolylines)
+#define SF_NMB_OF_POLYLI_ZYK(p)         (p->nmbofpolylincycles)
+#define SF_NMB_OF_REALSFCS(p)           (p->nmbofrealsurfaces)
+#define SF_POLYLI_ZYK(p)            (p->polylinecycles)
+#define SF_REALSFCS(p)          (p->realsurfaces)
 
 
 
@@ -283,6 +314,11 @@ typedef struct {
 #define PI_HALBE 1.570796327
 #define LI_IFS_ERROR 2
 #define SORTED 0
+#define REACHED 3 /*Aller guten Dinge sind ...*/
+
+#define SPLIT_SURFACE_DISTINGUISH       0.0001 /*z.B. aus der in 5 Teile gesplitteten Surface 15.78
+                                                                                        entstehen die 5 neuen SUrfaces
+                                                                                        15.7801, 15.7802, 15.7803, 15.7804 und 15.7805*/
 
 #define MAXLINE                         100
 #define NMBOFCNDS                       30
@@ -293,7 +329,7 @@ typedef struct {
 
 #define MAX_NUB_OF_SBDMS        101
 
-
+#define USE_SFC_DETECTOR        1
 
 /****************************************************************************/
 /*                                                                          */
