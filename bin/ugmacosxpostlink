@@ -1,0 +1,93 @@
+#!/usr/bin/perl
+
+# This skript should be invoked after linking an UG application
+# It sets everything up for a proper MacOS X application
+#
+# Suggested Usage:
+#
+#    set   ARCH_POSTLINK = ugmacosxpostlink $(PROGNAME) $(APPL)
+#
+#    in mk.arch.  If $(PROGNAME) isn't set, then $(APPL) will be used as 
+#    the programs name.
+
+#
+# Only needed for MacOS X
+#
+if ( $ENV{'OSTYPE'}!='rhapsody' )
+{
+    print "ugmacosxpostlink is only needed for MacOS X systems\n";
+    exit 0;
+}
+
+#
+# UGROOT has to be defined
+#
+$ENV{'UGROOT'} or die "define environment variable 'UGROOT'\n";
+
+
+#
+# We need an argument (the programs name)
+#
+if (!@ARGV) {die "usage: ugmacosxpostlink <application>\n";} 
+
+
+$n=@ARGV;
+
+
+#
+# Get the program name. It may be either the first or the second argument 
+# (better the first).
+#
+$progname    = $ARGV[0];
+
+if ( $progname eq "" ) {die "No program name specified\n";}
+
+#
+# If program doesn't exist try with second argument
+if ( ! (-e $progname && -x $progname) ) 
+{
+    print "$progname not found, trying $ARGV[1]\n";
+    $progname = $ARGV[1];
+    if ( $progname eq "" ) { die "No program name specified\n"; }
+    if ( ! (-e $progname && -x $progname) ) {
+	die "Program $progname not found or not executable\n"; }
+}
+
+print "    Using $progname as program name\n";
+
+$appdir = $progname . '.app';
+
+if ( ! ( -e $appdir && -d $appdir ) ) 
+{
+    system("mkdir $appdir"); 
+}
+
+if ( ! ( -e "$appdir/Resources" && -d "$appdir/Resources" ) ) 
+{
+    system("mkdir $appdir/Resources"); 
+}
+
+if ( ! ( -e "$appdir/Resources/English.lproj" && -d "$appdir/Resources/English.lproj" ) ) 
+{
+    system("mkdir $appdir/Resources/English.lproj");
+}
+
+print "    cp $progname $appdir\n";
+system("cp $progname $appdir");
+
+$plistfile = $appdir . "/Resources/Info-nextstep.plist";
+print "    Updating $plistfile\n";
+open PLIST, "> $plistfile";
+print PLIST "{\n";
+print PLIST "    NOTE = \"Created by ugmacosxpostlink\";\n";
+print PLIST "    NSExecutable = $progname;\n";
+print PLIST "    NSMainNibFile = UG_MacOSXServer.nib;\n";
+print PLIST "    NSPrincipalClass = NSApplication;\n";
+print PLIST "}\n";
+close(PLIST);
+
+print "    cp -r $ENV{'UGROOT'}/dev/mif/English.lproj/UG_MacOSXServer.nib $appdir/Resources/English.lproj\n";
+system("cp -r $ENV{'UGROOT'}/dev/mif/English.lproj/UG_MacOSXServer.nib $appdir/Resources/English.lproj");
+
+exit 0;
+
