@@ -109,6 +109,10 @@ int AddTetrahedron (int node0, int node1, int node2, int node3){
   return (0);
 }
 
+int AddElement (int node0, int node1, int node2, int node3)
+{
+  return (0);
+}
 
 int PrintMGFileInfo (char *filename, int *magic_cookie)
 {
