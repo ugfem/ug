@@ -193,7 +193,7 @@ INT NPIterExecute (NP_BASE *theNP, INT argc , char **argv)
     return (1);
   }
 
-  if (ReadOption("i",argc,argv)) {
+  if (ReadArgvOption("i",argc,argv)) {
     if (np->PreProcess == NULL) {
       PrintErrorMessage('E',"NPIterExecute","no PreProcess");
       return (1);
@@ -205,7 +205,7 @@ INT NPIterExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("s",argc,argv)) {
+  if (ReadArgvOption("s",argc,argv)) {
     if (np->Iter == NULL) {
       PrintErrorMessage('E',"NPIterExecute","no Iter");
       return (1);
@@ -216,7 +216,7 @@ INT NPIterExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("p",argc,argv)) {
+  if (ReadArgvOption("p",argc,argv)) {
     if (np->PostProcess == NULL) {
       PrintErrorMessage('E',"NPIterExecute","no PostProcess");
       return (1);
@@ -324,7 +324,7 @@ static INT ILU_PreProcess  (NP_ITER *theNP, INT level,
 
   np = (NP_ILU *) theNP;
 
-  if (AllocMDFormMD(theNP->base.mg,level,level,A,&np->L)) {
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) {
     result[0] = __LINE__;
     return (1);
   }

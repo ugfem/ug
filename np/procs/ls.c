@@ -190,7 +190,7 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
     return (1);
   }
 
-  if (ReadOption("i",argc,argv)) {
+  if (ReadArgvOption("i",argc,argv)) {
     if (*np->PreProcess == NULL) {
       PrintErrorMessage('E',"NPLinearSolverExecute","no PreProcess");
       return (1);
@@ -202,7 +202,7 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("d",argc,argv)) {
+  if (ReadArgvOption("d",argc,argv)) {
     if (*np->Defect == NULL) {
       PrintErrorMessage('E',"NPLinearSolverExecute","no Defect");
       return (1);
@@ -214,7 +214,7 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("r",argc,argv)) {
+  if (ReadArgvOption("r",argc,argv)) {
     if (*np->Residuum == NULL) {
       PrintErrorMessage('E',"NPLinearSolverExecute","no Residuum");
       return (1);
@@ -226,7 +226,7 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("s",argc,argv)) {
+  if (ReadArgvOption("s",argc,argv)) {
     if (*np->Solver == NULL) {
       PrintErrorMessage('E',"NPLinearSolverExecute","no Solver");
       return (1);
@@ -239,7 +239,7 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("p",argc,argv)) {
+  if (ReadArgvOption("p",argc,argv)) {
     if (*np->PostProcess == NULL) {
       PrintErrorMessage('E',"NPLinearSolverExecute","no PostProcess");
       return (1);

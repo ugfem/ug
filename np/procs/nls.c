@@ -196,7 +196,7 @@ INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv)
     return (1);
   }
 
-  if (ReadOption("i",argc,argv)) {
+  if (ReadArgvOption("i",argc,argv)) {
     if (*np->PreProcess == NULL) {
       PrintErrorMessage('E',"NPNLSolverExecute","no PreProcess");
       return (1);
@@ -208,7 +208,7 @@ INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("s",argc,argv)) {
+  if (ReadArgvOption("s",argc,argv)) {
     if (np->Solver == NULL) {
       PrintErrorMessage('E',"NPNLSolverExecute","no Solver");
       return (1);
@@ -221,7 +221,7 @@ INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("p",argc,argv)) {
+  if (ReadArgvOption("p",argc,argv)) {
     if (np->PostProcess == NULL) {
       PrintErrorMessage('E',"NPNLSolverExecute","no PostProcess");
       return (1);

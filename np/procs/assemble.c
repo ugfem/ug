@@ -142,7 +142,7 @@ INT NPAssembleDisplay (NP_ASSEMBLE *np)
   return(0);
 }
 
-INT NPAssmbleExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_ASSEMBLE *np;
   INT result,level;
@@ -163,7 +163,7 @@ INT NPAssmbleExecute (NP_BASE *theNP, INT argc , char **argv)
     return (1);
   }
 
-  if (ReadOption("i",argc,argv)) {
+  if (ReadArgvOption("i",argc,argv)) {
     if (np->PreProcess == NULL) {
       PrintErrorMessage('E',"NPAssembleExecute","no PreProcess");
       return (1);
@@ -175,7 +175,7 @@ INT NPAssmbleExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("a",argc,argv)) {
+  if (ReadArgvOption("a",argc,argv)) {
     if (np->Assemble == NULL) {
       PrintErrorMessage('E',"NPAssembleExecute","no Assemble");
       return (1);
@@ -187,7 +187,7 @@ INT NPAssmbleExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("s",argc,argv)) {
+  if (ReadArgvOption("s",argc,argv)) {
     if (np->AssembleSolution == NULL) {
       PrintErrorMessage('E',"NPAssembleExecute","no AssembleSolution");
       return (1);
@@ -199,7 +199,7 @@ INT NPAssmbleExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("d",argc,argv)) {
+  if (ReadArgvOption("d",argc,argv)) {
     if (np->AssembleDefect == NULL) {
       PrintErrorMessage('E',"NPAssembleExecute","no AssembleDefect");
       return (1);
@@ -211,7 +211,7 @@ INT NPAssmbleExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("M",argc,argv)) {
+  if (ReadArgvOption("M",argc,argv)) {
     if (np->AssembleMatrix == NULL) {
       PrintErrorMessage('E',"NPAssembleExecute","no AssembleMatrix");
       return (1);
@@ -223,7 +223,7 @@ INT NPAssmbleExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("p",argc,argv)) {
+  if (ReadArgvOption("p",argc,argv)) {
     if (np->PostProcess == NULL) {
       PrintErrorMessage('E',"NPAssembleExecute","no PostProcess");
       return (1);
@@ -324,6 +324,7 @@ static INT Assemble (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
   np = (NP_LOCAL_ASSEMBLE *) theNP;
   theMG = theNP->base.mg;
   for (l=0; l<level; l++) {
+    UserWriteF(" [%d:",l);
     theGrid = GRID_ON_LEVEL(theMG,l);
     if (l_dset(theGrid,b,EVERY_CLASS,0.0)!=NUM_OK) {
       result[0] = __LINE__;
@@ -352,6 +353,7 @@ static INT Assemble (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
       for (i=0; i<m; i++) *sptr[i] = sol[i];
       if (OBJT(theElement) == BEOBJ)
         SetElementDirichletFlags(theElement,x,vecskip);
+      UserWrite("a]");
     }
   }
   if (theNP->AssembleSolution != NULL)
@@ -374,12 +376,11 @@ static INT AssemblePostProcess (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
   NP_LOCAL_ASSEMBLE *np;
 
   np = (NP_LOCAL_ASSEMBLE *) theNP;
-  if ((*np->PreProcess)
-        (np,level,x,b,A,&sol,&mat,&def,&vecskip,result)) {
+  if ((*np->PostProcess)(np,level,x,b,A,result)) {
     UserWriteF("PreProcess failed, error code %d\n",result[0]);
     return (1);
   }
-
+  UserWrite("\n");
   return(0);
 }
 

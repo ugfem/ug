@@ -152,7 +152,7 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
     return (1);
   }
 
-  if (ReadOption("i",argc,argv)) {
+  if (ReadArgvOption("i",argc,argv)) {
     if (np->PreProcess == NULL) {
       PrintErrorMessage('E',"NPErrorExecute","no PreProcess");
       return (1);
@@ -164,7 +164,7 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("a",argc,argv)) {
+  if (ReadArgvOption("a",argc,argv)) {
     if (np->Error == NULL) {
       PrintErrorMessage('E',"NPErrorExecute","no PreProcess");
       return (1);
@@ -176,7 +176,7 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("t",argc,argv)) {
+  if (ReadArgvOption("t",argc,argv)) {
     if (np->TimeError == NULL) {
       PrintErrorMessage('E',"NPErrorExecute","no PreProcess");
       return (1);
@@ -200,7 +200,7 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("p",argc,argv)) {
+  if (ReadArgvOption("p",argc,argv)) {
     if (np->PostProcess == NULL) {
       PrintErrorMessage('E',"NPErrorExecute","no PostProcess");
       return (1);

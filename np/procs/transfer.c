@@ -174,7 +174,7 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
   np = (NP_TRANSFER *) theNP;
   level = CURRENTLEVEL(theNP->mg);
 
-  if (ReadOption("i",argc,argv)) {
+  if (ReadArgvOption("i",argc,argv)) {
     if (np->PreProcess == NULL) {
       PrintErrorMessage('E',"NPTransferExecute","no PreProcess");
       return (1);
@@ -198,7 +198,7 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("R",argc,argv)) {
+  if (ReadArgvOption("R",argc,argv)) {
     if (np->RestrictDefect == NULL) {
       PrintErrorMessage('E',"NPTransferExecute","no RestrictDefect");
       return (1);
@@ -218,7 +218,7 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("I",argc,argv)) {
+  if (ReadArgvOption("I",argc,argv)) {
     if (np->InterpolateCorrection == NULL) {
       PrintErrorMessage('E',"NPTransferExecute","no InterpolateCorrection");
       return (1);
@@ -238,7 +238,7 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("N",argc,argv)) {
+  if (ReadArgvOption("N",argc,argv)) {
     if (np->InterpolateNewVectors == NULL) {
       PrintErrorMessage('E',"NPTransferExecute","no InterpolateNewVectors");
       return (1);
@@ -254,7 +254,7 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("P",argc,argv)) {
+  if (ReadArgvOption("P",argc,argv)) {
     if (np->ProjectSolution == NULL) {
       PrintErrorMessage('E',"NPTransferExecute","no ProjectSolution");
       return (1);
@@ -270,7 +270,7 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadOption("p",argc,argv)) {
+  if (ReadArgvOption("p",argc,argv)) {
     if (np->PostProcess == NULL) {
       PrintErrorMessage('E',"NPTransferExecute","no PostProcess");
       return (1);
@@ -361,7 +361,7 @@ static INT TransferInit (NP_BASE *theNP, INT argc , char **argv)
   np->level = ReadArgvOption("L",argc,argv);
   np->display = ReadArgvDisplay(argc,argv);
 
-  return (TransferInitSymbols(&np->transfer,argc,argv));
+  return (NPTransferInit(&np->transfer,argc,argv));
 }
 
 static INT TransferDisplay (NP_BASE *theNP)
@@ -370,7 +370,7 @@ static INT TransferDisplay (NP_BASE *theNP)
 
   np = (NP_STANDARD_TRANSFER *) theNP;
 
-  TransferDisplaySymbols(&np->transfer);
+  NPTransferDisplay(&np->transfer);
 
   if (np->res == StandardRestrict)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Restrict","StandardRestrict");
