@@ -218,12 +218,12 @@ int RemoveDebugFileIfEmpty (void)
 INT PrintRepErrStack (PrintfProcPtr print)
 {
   if (rep_err_count==0)
-    UserWrite("no errors are reported\n");
+    print("no errors are reported\n");
   else
   {
     INT i;
 
-    UserWrite("reported errors are:\n\n");
+    print("reported errors are:\n\n");
 
     for (i=0; i<rep_err_count; i++)
       print("%2d: File: %20s, Line: %5d\n",i,rep_err_file[i],rep_err_line[i]);
