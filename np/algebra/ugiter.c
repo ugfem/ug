@@ -315,7 +315,7 @@ INT l_jac (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
 
   first_vec = FIRSTVECTOR(g);
 
-  if (MD_IS_SCALAR(M))
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
   {
     vc    = VD_SCALCMP(v);
     mc    = MD_SCALCMP(M);
@@ -645,7 +645,7 @@ INT l_lgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, 
   first_index = VINDEX(first_vec);
   end_vec = BVENDVECTOR(theBV);
 
-  if (MD_IS_SCALAR(M))
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
   {
     vc    = VD_SCALCMP(v);
     mc    = MD_SCALCMP(M);
@@ -692,7 +692,7 @@ INT l_tplgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M
   last_index = VINDEX(first_vec);
   end_vec = PREDVC(BVFIRSTVECTOR(theBV));
 
-  if (MD_IS_SCALAR(M))
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
   {
     vc    = VD_SCALCMP(v);
     mc    = MD_SCALCMP(M);
@@ -957,7 +957,7 @@ INT l_ugs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, 
   end_vec = PREDVC(BVFIRSTVECTOR(theBV));
   last_index = VINDEX(last_vec);
 
-  if (MD_IS_SCALAR(M))
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
   {
     vc    = VD_SCALCMP(v);
     mc    = MD_SCALCMP(M);
@@ -1053,7 +1053,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
   if (l_dcopy(g,(VECDATA_DESC*)v,ACTIVE_CLASS,(VECDATA_DESC*)d)!=0)
     REP_ERR_RETURN (__LINE__);
 
-  if (MD_IS_SCALAR(M))
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
   {
     vc    = VD_SCALCMP(v);
     mc    = MD_SCALCMP(M);
@@ -1399,7 +1399,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
   first_vec = FIRSTVECTOR(g);
   offset = VD_OFFSETPTR(v);
 
-  if (MD_IS_SCALAR(M))
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
   {
     vc    = VD_SCALCMP(v);
     mc    = MD_SCALCMP(M);
@@ -4479,7 +4479,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
   maxBVmembers = NVEC(g);
   bvn = BVNUMBER(bv);
 
-  if (MD_IS_SCALAR(M))
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
   {
     vc    = VD_SCALCMP(v);
     mc    = MD_SCALCMP(M);
@@ -4860,7 +4860,7 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
   first_vec = FIRSTVECTOR(g);
   last_vec  = LASTVECTOR(g);
 
-  if (MD_IS_SCALAR(M))
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
   {
     vc    = VD_SCALCMP(v);
     mc    = MD_SCALCMP(M);
@@ -5583,7 +5583,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
   first_vec = FIRSTVECTOR(g);
   last_vec  = LASTVECTOR(g);
 
-  if (MD_IS_SCALAR(M))
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
   {
     vc    = VD_SCALCMP(v);
     mc    = MD_SCALCMP(M);
