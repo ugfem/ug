@@ -1,12 +1,13 @@
-// -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
-// vi: set et ts=4 sw=2 sts=2:
+// NOTE: The current revision of this file was left untouched when the DUNE source files were reindented!
+// NOTE: It contained invalid syntax that could not be processed by uncrustify.
+
 /****************************************************************************/
 /*                                                                          */
-/* File:      bdf.c                                                             */
+/* File:      bdf.c                                                     	*/
 /*                                                                          */
-/* Purpose:   implement BDF(1) and BDF(2) as a tsolver                                          */
+/* Purpose:   implement BDF(1) and BDF(2) as a tsolver 						*/
 /*                                                                          */
-/* Author:    Peter Bastian                                                                                             */
+/* Author:    Peter Bastian 												*/
 /*            Institut fuer Computeranwendungen III                         */
 /*            Universitaet Stuttgart                                        */
 /*            Pfaffenwaldring 27                                            */
@@ -69,509 +70,509 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*                                                                          */
-/*  Class Definition                                                                    */
+/*  Class Definition                                               			*/
 /*                                                                          */
 /****************************************************************************/
 
 typedef struct
 {
-  NP_T_SOLVER tsolver;                                   /* derived from class NP_T_SOLVER	*/
+	NP_T_SOLVER tsolver;				 /* derived from class NP_T_SOLVER	*/
 
-  /* local variables */
-  INT step;                                                              /* number of time step				*/
-  DOUBLE dt;                                                     /* size of time step				*/
-  DOUBLE t_p1;                                                   /* time t_k+1                                  */
-  DOUBLE t_0;                                                        /* time t_k                                        */
-  DOUBLE t_m1;                                                   /* time t_k-1                                  */
+	/* local variables */
+	INT step;							 /* number of time step				*/
+    DOUBLE dt;						  	 /* size of time step				*/
+	DOUBLE t_p1;						 /* time t_k+1           			*/
+	DOUBLE t_0;						     /* time t_k           				*/
+	DOUBLE t_m1;						 /* time t_k-1           			*/
 
-  /* parameters (to be set with init function */
-  INT baselevel;                                                 /* for nested iteration		    */
-  INT order;                                                             /* 1,2 are allowed					*/
-  INT predictorder;                                              /* 0,1 are allowed					*/
-  INT nested;                                                            /* use nested iteration                        */
-  INT nlinterpolate;                                             /* nonlinear interpolation			*/
-  INT optnlsteps;                                            /* optimal number of nonlin. steps */
-  INT Break;                                                     /* break after error estimator         */
-  INT Continue;                                              /* continue after error estimator  */
-  DOUBLE tstart;                                                 /* start time                          */
-  DOUBLE dtstart;                                                /* time step to begin with			*/
-  DOUBLE dtmin;                                                  /* smallest time step allowed		*/
-  DOUBLE dtmax;                                                  /* largest time step allowed		*/
-  DOUBLE dtscale;                                                /* scaling factor applied after ste*/
-  DOUBLE rhogood;                                                /* threshold for step doubling		*/
-  NP_TRANSFER *trans;                                            /* uses transgrid for nested iter  */
-  NP_ERROR *error;                       /* error indicator                 */
+	/* parameters (to be set with init function */
+	INT baselevel;						 /* for nested iteration		    */
+	INT order;							 /* 1,2 are allowed					*/
+	INT predictorder;					 /* 0,1 are allowed					*/
+	INT nested;							 /* use nested iteration 			*/
+	INT nlinterpolate;					 /* nonlinear interpolation			*/
+	INT optnlsteps;					     /* optimal number of nonlin. steps */
+	INT Break;					         /* break after error estimator  	*/
+	INT Continue;					     /* continue after error estimator  */
+	DOUBLE tstart;						 /* start time              		*/
+	DOUBLE dtstart;						 /* time step to begin with			*/
+	DOUBLE dtmin;						 /* smallest time step allowed		*/
+	DOUBLE dtmax;						 /* largest time step allowed		*/
+	DOUBLE dtscale;						 /* scaling factor applied after ste*/
+	DOUBLE rhogood;					 	 /* threshold for step doubling		*/
+	NP_TRANSFER *trans;					 /* uses transgrid for nested iter  */
+    NP_ERROR *error;                     /* error indicator                 */
 
-  /* statistics */
-  INT number_of_nonlinear_iterations;       /* number of iterations             */
-  INT total_linear_iterations;          /* total number                     */
-  INT max_linear_iterations;            /* max number of linear iterations  */
-  DOUBLE exec_time;                     /* for nonlinear solver ...             */
+	/* statistics */
+	INT number_of_nonlinear_iterations; /* number of iterations             */
+    INT total_linear_iterations;        /* total number                     */
+    INT max_linear_iterations;          /* max number of linear iterations  */
+    DOUBLE exec_time;                   /* for nonlinear solver ...     	*/
 
-  /* and XDATA_DESCs */
-  VECDATA_DESC *y_p1;                    /* solution y_k+1                                      */
-  VECDATA_DESC *y_0;                     /* solution y_k                                        */
-  VECDATA_DESC *y_m1;                    /* solution y_k-1                                      */
-  VECDATA_DESC *b;                                               /* saved nonlinear solution		*/
+	/* and XDATA_DESCs */
+    VECDATA_DESC *y_p1;                  /* solution y_k+1 	 				*/
+    VECDATA_DESC *y_0;                   /* solution y_k 	 				*/
+    VECDATA_DESC *y_m1;                  /* solution y_k-1 	 				*/
+	VECDATA_DESC *b;					 /* saved nonlinear solution		*/
 
-} NP_BDF;                                                                /*final class implementing BDF(1,2)*/
+} NP_BDF;								 /*final class implementing BDF(1,2)*/
 
 
 /****************************************************************************/
 /****************************************************************************/
 /*                                                                          */
 /* Nonlinear Assemble Interface provided to nonlinear solver				*/
-/* REMEMBER: NP_T_SOLVER is derived from NP_NL_ASSEMBLE.                                */
+/* REMEMBER: NP_T_SOLVER is derived from NP_NL_ASSEMBLE.    				*/
 /*                                                                          */
 /****************************************************************************/
 /****************************************************************************/
 
-static INT BDFPreProcess
-  (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, INT *res)
+static INT BDFPreProcess 
+		(NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, INT *res)
 {
-  return(0);
+	return(0);
 }
 
-static INT BDFAssembleSolution
-  (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, INT *res)
+static INT BDFAssembleSolution 
+		(NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, INT *res)
 {
-  NP_BDF *bdf;
-  NP_T_ASSEMBLE *tass;
-
-  /* get numprocs ... */
-  bdf = (NP_BDF *) ass;                 /* this is the trick, tsolver is derived	*/
-  /* from nonlinear assemble !				*/
-  tass = bdf->tsolver.tass;             /* since we need to access it quite often       */
-
-  /* now call time assemble with correct time value */
-  return((*tass->TAssembleSolution)(tass,fl,tl,bdf->t_p1,u,res));
+	NP_BDF *bdf;
+	NP_T_ASSEMBLE *tass;
+	
+	/* get numprocs ... */
+	bdf = (NP_BDF *) ass;     	/* this is the trick, tsolver is derived	*/
+								/* from nonlinear assemble !				*/
+	tass = bdf->tsolver.tass; 	/* since we need to access it quite often 	*/
+	
+	/* now call time assemble with correct time value */
+	return((*tass->TAssembleSolution)(tass,fl,tl,bdf->t_p1,u,res));
 }
 
-static INT BDFAssembleDefect
-  (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u,
-  VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
+static INT BDFAssembleDefect 
+		(NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, 
+		 VECDATA_DESC *d, MATDATA_DESC *J, INT *res)        
 {
-  NP_BDF *bdf;
-  NP_T_ASSEMBLE *tass;
-  DOUBLE s_a,s_m;
-  DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1;
+	NP_BDF *bdf;
+	NP_T_ASSEMBLE *tass;
+	DOUBLE s_a,s_m;
+	DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1;
+	
+	/* get numprocs ... */
+	bdf = (NP_BDF *) ass;     	/* this is the trick, tsolver is derived	*/
+	tass = bdf->tsolver.tass; 	/* since we need to access it quite often 	*/
+	
+	/* compute coefficients */
+	dt_p1 = bdf->t_p1-bdf->t_0;
+	dt_0  = bdf->t_0-bdf->t_m1;
+	g_p1  = (dt_0+2*dt_p1)/(dt_0+dt_p1);
+	g_0   = -(dt_0+dt_p1)/dt_0;
+	g_m1  = dt_p1*dt_p1/(dt_0*dt_0+dt_0*dt_p1);
+	
+	/* compute scaling factors depending on selected order */
+	switch (bdf->order)
+	{
+		case 1: s_m = 1.0; s_a = -dt_p1; break;
+		case 2: s_m = 1.0; s_a = -dt_p1/g_p1; break;
+		default:
+			UserWrite("BDFAssembleDefect: invalid order\n");
+			return(1);
+	}
 
-  /* get numprocs ... */
-  bdf = (NP_BDF *) ass;                 /* this is the trick, tsolver is derived	*/
-  tass = bdf->tsolver.tass;             /* since we need to access it quite often       */
-
-  /* compute coefficients */
-  dt_p1 = bdf->t_p1-bdf->t_0;
-  dt_0  = bdf->t_0-bdf->t_m1;
-  g_p1  = (dt_0+2*dt_p1)/(dt_0+dt_p1);
-  g_0   = -(dt_0+dt_p1)/dt_0;
-  g_m1  = dt_p1*dt_p1/(dt_0*dt_0+dt_0*dt_p1);
-
-  /* compute scaling factors depending on selected order */
-  switch (bdf->order)
-  {
-  case 1 : s_m = 1.0; s_a = -dt_p1; break;
-  case 2 : s_m = 1.0; s_a = -dt_p1/g_p1; break;
-  default :
-    UserWrite("BDFAssembleDefect: invalid order\n");
-    return(1);
-  }
-
-  /* copy precomputed part of defect */
-  a_dcopy(ass->base.mg,fl,tl,d,EVERY_CLASS,bdf->b);
-
-  /* call function from time assemble interface */
-  return( (*tass->TAssembleDefect)(tass,fl,tl,bdf->t_p1,s_m,s_a,u,d,J,res) );
+	/* copy precomputed part of defect */
+	a_dcopy(ass->base.mg,fl,tl,d,EVERY_CLASS,bdf->b);
+	
+	/* call function from time assemble interface */
+	return( (*tass->TAssembleDefect)(tass,fl,tl,bdf->t_p1,s_m,s_a,u,d,J,res) ); 
 }
 
-static INT BDFAssembleMatrix
-  (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u,
-  VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
+static INT BDFAssembleMatrix 
+		(NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, 
+         VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
 {
-  NP_BDF *bdf;
-  NP_T_ASSEMBLE *tass;
-  DOUBLE s_a;
-  DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1;
+	NP_BDF *bdf;
+	NP_T_ASSEMBLE *tass;
+	DOUBLE s_a;
+	DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1;
+	
+	/* get numprocs ... */
+	bdf = (NP_BDF *) ass;     	/* this is the trick, tsolver is derived	*/
+	tass = bdf->tsolver.tass; 	/* since we need to access it quite often 	*/
+	
+	/* compute coefficients */
+	dt_p1 = bdf->t_p1-bdf->t_0;
+	dt_0  = bdf->t_0-bdf->t_m1;
+	g_p1  = (dt_0+2*dt_p1)/(dt_0+dt_p1);
+	g_0   = -(dt_0+dt_p1)/dt_0;
+	g_m1  = dt_p1*dt_p1/(dt_0*dt_0+dt_0*dt_p1);
+	
+	/* compute scaling factors depending on selected order */
+	switch (bdf->order)
+	{
+		case 1: s_a = -dt_p1; break;
+		case 2: s_a = -dt_p1/g_p1; break;
+		default:
+			UserWrite("BDFAssembleMatrix: invalid order\n");
+			return(1);
+	}
 
-  /* get numprocs ... */
-  bdf = (NP_BDF *) ass;                 /* this is the trick, tsolver is derived	*/
-  tass = bdf->tsolver.tass;             /* since we need to access it quite often       */
-
-  /* compute coefficients */
-  dt_p1 = bdf->t_p1-bdf->t_0;
-  dt_0  = bdf->t_0-bdf->t_m1;
-  g_p1  = (dt_0+2*dt_p1)/(dt_0+dt_p1);
-  g_0   = -(dt_0+dt_p1)/dt_0;
-  g_m1  = dt_p1*dt_p1/(dt_0*dt_0+dt_0*dt_p1);
-
-  /* compute scaling factors depending on selected order */
-  switch (bdf->order)
-  {
-  case 1 : s_a = -dt_p1; break;
-  case 2 : s_a = -dt_p1/g_p1; break;
-  default :
-    UserWrite("BDFAssembleMatrix: invalid order\n");
-    return(1);
-  }
-
-  /* call function from time assemble interface */
-  return( (*tass->TAssembleMatrix)(tass,fl,tl,bdf->t_p1,s_a,u,d,v,J,res) );
+	/* call function from time assemble interface */
+	return( (*tass->TAssembleMatrix)(tass,fl,tl,bdf->t_p1,s_a,u,d,v,J,res) ); 
 }
 
-static INT BDFPostProcess
-  (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x,
-  VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
+static INT BDFPostProcess 
+		(NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, 
+		 VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
 {
-  return(0);
+	return(0);
 }
 
 /****************************************************************************/
 /****************************************************************************/
 /*                                                                          */
-/* Implementation of NP_T_SOLVER functions                                                              */
+/* Implementation of NP_T_SOLVER functions    								*/
 /*                                                                          */
 /****************************************************************************/
 /****************************************************************************/
 
 static INT TimePreProcess (NP_T_SOLVER *ts, INT level, INT *res)
 {
-  NP_BDF *bdf;
+	NP_BDF *bdf;
+	
+	/* get numprocs ... */
+	bdf = (NP_BDF *) ts;     
 
-  /* get numprocs ... */
-  bdf = (NP_BDF *) ts;
-
-  /* allocate XDATA_DESCs here */
-  if (ts->y == NULL)
-  {
-    UserWrite("solution y is not defined\n");
-    return(__LINE__);
-  }
-  if (AllocVDFromVD(ts->nlass.base.mg,0,level,ts->y,&(bdf->y_p1))) return(__LINE__);
-  if (AllocVDFromVD(ts->nlass.base.mg,0,level,ts->y,&(bdf->y_m1))) return(__LINE__);
-  if (AllocVDFromVD(ts->nlass.base.mg,0,level,ts->y,&(bdf->b))) return(__LINE__);
-
-  return(0);
+	/* allocate XDATA_DESCs here */
+	if (ts->y == NULL) 
+	{
+		UserWrite("solution y is not defined\n");
+		return(__LINE__);
+	}
+	if (AllocVDFromVD(ts->nlass.base.mg,0,level,ts->y,&(bdf->y_p1))) return(__LINE__);
+	if (AllocVDFromVD(ts->nlass.base.mg,0,level,ts->y,&(bdf->y_m1))) return(__LINE__);
+	if (AllocVDFromVD(ts->nlass.base.mg,0,level,ts->y,&(bdf->b)))    return(__LINE__);
+	
+	return(0);
 }
 
 static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
 {
-  NP_BDF *bdf;
-  NP_T_ASSEMBLE *tass;
-  char buffer[128];
+	NP_BDF *bdf;
+	NP_T_ASSEMBLE *tass;
+	char buffer[128];
+	
+	/* get numprocs ... */
+	bdf = (NP_BDF *) ts;     
+	tass = bdf->tsolver.tass;
+	
+	/* initialize bdf local variables */
+	/* initialize bdf local variables */
+	bdf->dt = bdf->dtstart;
+	bdf->step = 0;
+	bdf->t_0 = bdf->tstart;
+	bdf->t_m1 = - bdf->dt;
 
-  /* get numprocs ... */
-  bdf = (NP_BDF *) ts;
-  tass = bdf->tsolver.tass;
+	/* set initial values and boundary conditions in y_0 */
+	*res = 1;
+	if (tass->TAssembleInitial != NULL)
+	    if ( (*tass->TAssembleInitial)(tass,0,level,bdf->t_0,bdf->y_0,res) )
+		    return(1);
+	if ( (*tass->TAssembleSolution)(tass,0,level,bdf->t_0,bdf->y_0,res) )
+		return(1);
+	
+	/* write time to shell */
+	sprintf(buffer,"%12.4lE",bdf->t_0);
+	SetStringVar("TIME",buffer);
+	sprintf(buffer,"%12.4lE",bdf->dt);
+	SetStringVar("TIMESTEP",buffer);
 
-  /* initialize bdf local variables */
-  /* initialize bdf local variables */
-  bdf->dt = bdf->dtstart;
-  bdf->step = 0;
-  bdf->t_0 = bdf->tstart;
-  bdf->t_m1 = - bdf->dt;
+	/* statistics init */
+	bdf->number_of_nonlinear_iterations = 0;
+	bdf->total_linear_iterations = 0;
+	bdf->max_linear_iterations = 0;
+	bdf->exec_time = 0.0;
 
-  /* set initial values and boundary conditions in y_0 */
-  *res = 1;
-  if (tass->TAssembleInitial != NULL)
-    if ( (*tass->TAssembleInitial)(tass,0,level,bdf->t_0,bdf->y_0,res) )
-      return(1);
-  if ( (*tass->TAssembleSolution)(tass,0,level,bdf->t_0,bdf->y_0,res) )
-    return(1);
-
-  /* write time to shell */
-  sprintf(buffer,"%12.4lE",bdf->t_0);
-  SetStringVar("TIME",buffer);
-  sprintf(buffer,"%12.4lE",bdf->dt);
-  SetStringVar("TIMESTEP",buffer);
-
-  /* statistics init */
-  bdf->number_of_nonlinear_iterations = 0;
-  bdf->total_linear_iterations = 0;
-  bdf->max_linear_iterations = 0;
-  bdf->exec_time = 0.0;
-
-  /* return ok */
-  *res = 0;
-  return(*res);
+	/* return ok */
+	*res = 0;
+	return(*res);		
 }
 
 static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
 {
-  NP_BDF *bdf;
-  NP_T_ASSEMBLE *tass;
-  NP_NL_SOLVER *nlsolve;
-  DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1;
-  DOUBLE Factor[MAX_VEC_COMP];
-  INT n_unk;
-  INT i,k,mg_changed;
-  INT low,nlinterpolate,last_number_of_nonlinear_iterations;
-  INT verygood,bad;
-  NLRESULT nlresult;
-  ERESULT eresult;
-  MULTIGRID *mg;
-  char buffer[128];
+	NP_BDF *bdf;
+	NP_T_ASSEMBLE *tass;
+	NP_NL_SOLVER *nlsolve;
+	DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1;
+	DOUBLE Factor[MAX_VEC_COMP];
+	INT n_unk;
+	INT i,k,mg_changed;
+	INT low,nlinterpolate,last_number_of_nonlinear_iterations;
+	INT verygood,bad;
+	NLRESULT nlresult;
+	ERESULT eresult;
+	MULTIGRID *mg;
+	char buffer[128];
+		
+	/* get numprocs ... */
+	bdf = (NP_BDF *) ts;     	/* this is the trick, tsolver is derived	*/
+	tass = bdf->tsolver.tass; 	/* since we need to access it quite often 	*/
+	nlsolve = ts->nlsolve;
+	mg = nlsolve->base.mg;
+	
+	/* get number of components */
+	n_unk = VD_NCOMP(bdf->y_p1);
 
-  /* get numprocs ... */
-  bdf = (NP_BDF *) ts;                  /* this is the trick, tsolver is derived	*/
-  tass = bdf->tsolver.tass;             /* since we need to access it quite often       */
-  nlsolve = ts->nlsolve;
-  mg = nlsolve->base.mg;
+	/* initialize strategy flags */		
+	verygood = bad = 0;
 
-  /* get number of components */
-  n_unk = VD_NCOMP(bdf->y_p1);
+	/* compute solution at new time step */
+	while (1)
+	{
+		/* advance time level with current time step */
+		bdf->t_p1 = bdf->t_0+bdf->dt;
+		
+		/* compute coefficients */
+		dt_p1 = bdf->t_p1-bdf->t_0;
+		dt_0  = bdf->t_0-bdf->t_m1;
+		g_p1  = (dt_0+2*dt_p1)/(dt_0+dt_p1);
+		g_0   = -(dt_0+dt_p1)/dt_0;
+		g_m1  = dt_p1*dt_p1/(dt_0*dt_0+dt_0*dt_p1);
+		last_number_of_nonlinear_iterations =
+			bdf->number_of_nonlinear_iterations;
 
-  /* initialize strategy flags */
-  verygood = bad = 0;
+		if (bdf->Continue) {
+			nlinterpolate = bdf->nlinterpolate - 1;
+			goto Continue;
+		}
+		/* determine level where to predict to new time step */
+		if (bdf->nested) low = MIN(bdf->baselevel,level);
+		else low = level;
 
-  /* compute solution at new time step */
-  while (1)
-  {
-    /* advance time level with current time step */
-    bdf->t_p1 = bdf->t_0+bdf->dt;
+		/* grid adaption ? */
+		if (bdf->error != NULL) nlinterpolate = bdf->nlinterpolate;
+		else nlinterpolate = 0;
 
-    /* compute coefficients */
-    dt_p1 = bdf->t_p1-bdf->t_0;
-    dt_0  = bdf->t_0-bdf->t_m1;
-    g_p1  = (dt_0+2*dt_p1)/(dt_0+dt_p1);
-    g_0   = -(dt_0+dt_p1)/dt_0;
-    g_m1  = dt_p1*dt_p1/(dt_0*dt_0+dt_0*dt_p1);
-    last_number_of_nonlinear_iterations =
-      bdf->number_of_nonlinear_iterations;
+		/* predict to new time step on level low */
+		a_dcopy(mg,0,low,bdf->y_p1,EVERY_CLASS,bdf->y_0);
+		if (bdf->predictorder==1 && bdf->t_0>0.0)
+		{
+			for (i=0; i<n_unk; i++) Factor[i] = (bdf->t_p1-bdf->t_m1)/dt_0;
+			a_dscale(mg,0,low,bdf->y_p1,EVERY_CLASS,Factor);
+			for (i=0; i<n_unk; i++) Factor[i] = 1.0-(bdf->t_p1-bdf->t_m1)/dt_0;
+			a_daxpy(mg,0,low,bdf->y_p1,EVERY_CLASS,Factor,bdf->y_m1);
+		}
 
-    if (bdf->Continue) {
-      nlinterpolate = bdf->nlinterpolate - 1;
-      goto Continue;
-    }
-    /* determine level where to predict to new time step */
-    if (bdf->nested) low = MIN(bdf->baselevel,level);
-    else low = level;
+		if ( (*tass->TAssemblePreProcess)(tass,0,level,
+										  bdf->t_p1,bdf->t_0,bdf->t_m1,
+										  bdf->y_p1,bdf->y_0,bdf->y_m1,res) )
+			return(__LINE__);
+		
+		/* set Dirichlet conditions in predicted solution */
+		if ( (*tass->TAssembleSolution)(tass,0,low,bdf->t_p1,bdf->y_p1,res) )
+			return(__LINE__);
+			
+		/* do nested iteration on new time step */
+		if (bdf->trans->PreProcessProject!=NULL)
+		    if ((*bdf->trans->PreProcessProject)(bdf->trans,0,level,res))
+			    return(__LINE__);
+		for (k=low; k<=level; k++)
+		{
+			if (bdf->nested) UserWriteF("Nested Iteration on level %d\n",k);
 
-    /* grid adaption ? */
-    if (bdf->error != NULL) nlinterpolate = bdf->nlinterpolate;
-    else nlinterpolate = 0;
+			/* prepare constant part of defect */
+			a_dset(mg,0,k,bdf->b,EVERY_CLASS,0.0);
+			if (bdf->order==1)
+			{
+				if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_0,-1.0,0.0,bdf->y_0,bdf->b,NULL,res) )
+					return(__LINE__);
+			}
+			else
+			{
+				if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_0,g_0/g_p1,0.0,bdf->y_0,bdf->b,NULL,res) )
+					return(__LINE__);
+				if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_m1,g_m1/g_p1,0.0,bdf->y_m1,bdf->b,NULL,res) )
+					return(__LINE__);
+			}
+			
+			/* solve nonlinear problem on level k */
+			if (nlsolve->PreProcess!=NULL)
+				if ( (*nlsolve->PreProcess)(nlsolve,k,bdf->y_p1,res) )
+					return(__LINE__);
+			if ( (*nlsolve->Solver)(nlsolve,k,bdf->y_p1,&bdf->tsolver.nlass,nlsolve->abslimit,nlsolve->reduction,&nlresult) )
+				return(__LINE__);
 
-    /* predict to new time step on level low */
-    a_dcopy(mg,0,low,bdf->y_p1,EVERY_CLASS,bdf->y_0);
-    if (bdf->predictorder==1 && bdf->t_0>0.0)
-    {
-      for (i=0; i<n_unk; i++) Factor[i] = (bdf->t_p1-bdf->t_m1)/dt_0;
-      a_dscale(mg,0,low,bdf->y_p1,EVERY_CLASS,Factor);
-      for (i=0; i<n_unk; i++) Factor[i] = 1.0-(bdf->t_p1-bdf->t_m1)/dt_0;
-      a_daxpy(mg,0,low,bdf->y_p1,EVERY_CLASS,Factor,bdf->y_m1);
-    }
+			/* update statisitics */
+		    bdf->number_of_nonlinear_iterations += nlresult.number_of_nonlinear_iterations;
+    		bdf->total_linear_iterations += nlresult.total_linear_iterations;
+    		bdf->max_linear_iterations = MAX(bdf->max_linear_iterations,nlresult.max_linear_iterations);
+    		bdf->exec_time += nlresult.exec_time;
 
-    if ( (*tass->TAssemblePreProcess)(tass,0,level,
-                                      bdf->t_p1,bdf->t_0,bdf->t_m1,
-                                      bdf->y_p1,bdf->y_0,bdf->y_m1,res) )
-      return(__LINE__);
+			if (nlsolve->PostProcess!=NULL)
+				if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
+					return(__LINE__);		
+			if (!nlresult.converged)
+			{
+				bdf->dt *= 0.5; /* reduce time step 	*/
+				if (bdf->dt<bdf->dtmin) {
+					UserWrite("time step too small -- aborting\n");
+					return(__LINE__);
+				}
+				UserWrite("reduced time step\n");
+				bad=1;
+				break;       /* and try all over again  */
+			}
+			else {
+				if (nlresult.rho_first<=bdf->rhogood) 
+					verygood=1; 
+				else 
+					verygood=0;
+			}
 
-    /* set Dirichlet conditions in predicted solution */
-    if ( (*tass->TAssembleSolution)(tass,0,low,bdf->t_p1,bdf->y_p1,res) )
-      return(__LINE__);
+			/* interpolate up */
+			if (k<level)
+			{
+				for (i=0; i<n_unk; i++) Factor[i] = 1.0;
+	   			if ((*bdf->trans->InterpolateCorrection)(bdf->trans,k+1,bdf->y_p1,bdf->y_p1,NULL,Factor,res))
+	       			return(__LINE__);
+				/* set Dirichlet conditions in predicted solution */
+				if ( (*tass->TAssembleSolution)(tass,k+1,k+1,bdf->t_p1,bdf->y_p1,res) )
+					return(__LINE__);						
+			}
+			else if (nlinterpolate > 0) {
+			    if (bdf->error->PreProcess != NULL) 
+				    if ((*bdf->error->PreProcess)(bdf->error,level,res))
+					    NP_RETURN(1,res[0]);
+				if (bdf->error->TimeError == NULL)
+				    NP_RETURN(1,res[0]);
+				if ((*bdf->error->TimeError)
+					(bdf->error,level,bdf->t_p1,&dt_0,bdf->y_p1,bdf->y_0,
+					 ts,&eresult))
+				    NP_RETURN(1,res[0]);
+				if (nlsolve->PostProcess!=NULL)
+				    if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
+					    NP_RETURN(1,res[0]);
+				if (bdf->error->PostProcess != NULL)
+				    if ((*bdf->error->PostProcess)(bdf->error,level,res)) 
+					    NP_RETURN(1,res[0]);
+				if (bdf->Break) return(0);
+			Continue:
+				if (eresult.refine + eresult.coarse > 0) { 
+				    if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL,
+						GM_REFINE_PARALLEL,GM_REFINE_NOHEAPTEST) != GM_OK) 
+					    NP_RETURN(1,res[0]);
+				if (level != TOPLEVEL(mg)) {
+				    level = TOPLEVEL(mg);
+					mg_changed = 1;
+				}
+				else {
+				    mg_changed = 0;
+					for (i=0; i<=level; i++)
+					    if (GSTATUS(GRID_ON_LEVEL(mg,i)) & GRID_CHANGED)
+					        mg_changed = 1;
+				}
+                if (mg_changed) {
+					k = level - 1;
+					if (bdf->trans->PreProcessSolution != NULL) 
+					    if ((*bdf->trans->PreProcessSolution)  
+							(bdf->trans,0,level,bdf->y_p1,res)) 
+						    NP_RETURN(1,res[0]);
+					if ((*bdf->trans->InterpolateNewVectors)
+						(bdf->trans,0,level,bdf->y_m1,res)) 
+					    NP_RETURN(1,res[0]);
+					if ((*bdf->trans->InterpolateNewVectors)
+						(bdf->trans,0,level,bdf->y_0,res)) 
+					    NP_RETURN(1,res[0]);
+					if ((*bdf->trans->InterpolateNewVectors)
+						(bdf->trans,0,level,bdf->y_p1,res)) 
+					    NP_RETURN(1,res[0]);
+					if (bdf->trans->PostProcessSolution != NULL) 
+					    if ((*bdf->trans->PostProcessSolution)  
+							(bdf->trans,0,level,bdf->y_p1,res)) 
+						    NP_RETURN(1,res[0]);
+					nlinterpolate--;
+				}
+				else {
+				    nlinterpolate = 0;
+					if (nlsolve->PostProcess!=NULL)
+					    if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
+						    NP_RETURN(1,res[0]);
+				}
+			}
+		}
+		if (bdf->trans->PostProcessProject!=NULL)
+		    if ((*bdf->trans->PostProcessProject)(bdf->trans,0,level,res))
+			    return(__LINE__);
+		
+		/* check convergence */
+		if (!nlresult.converged) continue; 	/* start again with smaller time step 	*/
+		else break;							/* exit while loop						*/
+	}
+	if ( (*tass->TAssemblePostProcess)(tass,0,level,
+									   bdf->t_p1,bdf->t_0,bdf->t_m1,
+									   bdf->y_p1,bdf->y_0,bdf->y_m1,res) )
+		return(__LINE__);
+	
+	/* accept new time step */
+	a_dcopy(mg,0,level,bdf->y_m1,EVERY_CLASS,bdf->y_0 ); bdf->t_m1 = bdf->t_0;
+	a_dcopy(mg,0,level,bdf->y_0 ,EVERY_CLASS,bdf->y_p1); bdf->t_0  = bdf->t_p1;
+	bdf->step++;
 
-    /* do nested iteration on new time step */
-    if (bdf->trans->PreProcessProject!=NULL)
-      if ((*bdf->trans->PreProcessProject)(bdf->trans,0,level,res))
-        return(__LINE__);
-    for (k=low; k<=level; k++)
-    {
-      if (bdf->nested) UserWriteF("Nested Iteration on level %d\n",k);
+	/* write time to shell */
+	sprintf(buffer,"%12.4lE",bdf->t_0);
+	SetStringVar("TIME",buffer);
+	sprintf(buffer,"%12.4lE",bdf->dt);
+	SetStringVar("TIMESTEP",buffer);
 
-      /* prepare constant part of defect */
-      a_dset(mg,0,k,bdf->b,EVERY_CLASS,0.0);
-      if (bdf->order==1)
-      {
-        if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_0,-1.0,0.0,bdf->y_0,bdf->b,NULL,res) )
-          return(__LINE__);
-      }
-      else
-      {
-        if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_0,g_0/g_p1,0.0,bdf->y_0,bdf->b,NULL,res) )
-          return(__LINE__);
-        if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_m1,g_m1/g_p1,0.0,bdf->y_m1,bdf->b,NULL,res) )
-          return(__LINE__);
-      }
+    UserWriteF("TIMESTEP %4d: TIME=%10.4lg DT=%10.4lg EXECT=%10.4lg NLIT=%5d LIT=%5d MAXLIT=%3d\n",
+         bdf->step,bdf->t_0,bdf->dt,bdf->exec_time,bdf->number_of_nonlinear_iterations,
+         bdf->total_linear_iterations,bdf->max_linear_iterations);
 
-      /* solve nonlinear problem on level k */
-      if (nlsolve->PreProcess!=NULL)
-        if ( (*nlsolve->PreProcess)(nlsolve,k,bdf->y_p1,res) )
-          return(__LINE__);
-      if ( (*nlsolve->Solver)(nlsolve,k,bdf->y_p1,&bdf->tsolver.nlass,nlsolve->abslimit,nlsolve->reduction,&nlresult) )
-        return(__LINE__);
+	if ((bdf->optnlsteps) && (nlresult.converged)) {
+		k = bdf->number_of_nonlinear_iterations - 
+			last_number_of_nonlinear_iterations;
+		if (k <= 0)  
+			bdf->dt *= 2.0;
+		else 
+			bdf->dt *= bdf->optnlsteps / ((DOUBLE) k);
+		if (bdf->dt < bdf->dtmin)
+			bdf->dt = bdf->dtmin;
+		else if (bdf->dt > bdf->dtmax)
+			bdf->dt = bdf->dtmax;
+		PRINTDEBUG(np,1,("new time step %f k %d n %d l %d\n",
+				  bdf->dt,k,bdf->number_of_nonlinear_iterations,
+				  last_number_of_nonlinear_iterations));
+		*res = 0; 
+		return(0);
+	}
 
-      /* update statisitics */
-      bdf->number_of_nonlinear_iterations += nlresult.number_of_nonlinear_iterations;
-      bdf->total_linear_iterations += nlresult.total_linear_iterations;
-      bdf->max_linear_iterations = MAX(bdf->max_linear_iterations,nlresult.max_linear_iterations);
-      bdf->exec_time += nlresult.exec_time;
+	/* chose new dt for next time step */
+	if (verygood && (!bad) && bdf->dt*2<=bdf->dtmax)
+	{
+		bdf->dt *= 2.0;
+		UserWrite("doubling time step\n");
+		*res=0; return(*res);
+	}
+	if ((!bad) && bdf->dt*bdf->dtscale<=bdf->dtmax && bdf->dt*bdf->dtscale>=bdf->dtmin)
+	{
+		bdf->dt *= bdf->dtscale;
+		*res=0; return(*res);
+	}
 
-      if (nlsolve->PostProcess!=NULL)
-        if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
-          return(__LINE__);
-      if (!nlresult.converged)
-      {
-        bdf->dt *= 0.5;                         /* reduce time step     */
-        if (bdf->dt<bdf->dtmin) {
-          UserWrite("time step too small -- aborting\n");
-          return(__LINE__);
-        }
-        UserWrite("reduced time step\n");
-        bad=1;
-        break;                               /* and try all over again  */
-      }
-      else {
-        if (nlresult.rho_first<=bdf->rhogood)
-          verygood=1;
-        else
-          verygood=0;
-      }
-
-      /* interpolate up */
-      if (k<level)
-      {
-        for (i=0; i<n_unk; i++) Factor[i] = 1.0;
-        if ((*bdf->trans->InterpolateCorrection)(bdf->trans,k+1,bdf->y_p1,bdf->y_p1,NULL,Factor,res))
-          return(__LINE__);
-        /* set Dirichlet conditions in predicted solution */
-        if ( (*tass->TAssembleSolution)(tass,k+1,k+1,bdf->t_p1,bdf->y_p1,res) )
-          return(__LINE__);
-      }
-      else if (nlinterpolate > 0) {
-        if (bdf->error->PreProcess != NULL)
-          if ((*bdf->error->PreProcess)(bdf->error,level,res))
-            NP_RETURN(1,res[0]);
-        if (bdf->error->TimeError == NULL)
-          NP_RETURN(1,res[0]);
-        if ((*bdf->error->TimeError)
-              (bdf->error,level,bdf->t_p1,&dt_0,bdf->y_p1,bdf->y_0,
-              ts,&eresult))
-          NP_RETURN(1,res[0]);
-        if (nlsolve->PostProcess!=NULL)
-          if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
-            NP_RETURN(1,res[0]);
-        if (bdf->error->PostProcess != NULL)
-          if ((*bdf->error->PostProcess)(bdf->error,level,res))
-            NP_RETURN(1,res[0]);
-        if (bdf->Break) return(0);
-Continue:
-        if (eresult.refine + eresult.coarse > 0)
-          if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL,
-                              GM_REFINE_PARALLEL) != GM_OK)
-            NP_RETURN(1,res[0]);
-        if (level != TOPLEVEL(mg)) {
-          level = TOPLEVEL(mg);
-          mg_changed = 1;
-        }
-        else {
-          mg_changed = 0;
-          for (i=0; i<=level; i++)
-            if (GSTATUS(GRID_ON_LEVEL(mg,i)) & GRID_CHANGED)
-              mg_changed = 1;
-        }
-        if (mg_changed) {
-          k = level - 1;
-          if (bdf->trans->PreProcessSolution != NULL)
-            if ((*bdf->trans->PreProcessSolution)
-                  (bdf->trans,0,level,bdf->y_p1,res))
-              NP_RETURN(1,res[0]);
-          if ((*bdf->trans->InterpolateNewVectors)
-                (bdf->trans,0,level,bdf->y_m1,res))
-            NP_RETURN(1,res[0]);
-          if ((*bdf->trans->InterpolateNewVectors)
-                (bdf->trans,0,level,bdf->y_0,res))
-            NP_RETURN(1,res[0]);
-          if ((*bdf->trans->InterpolateNewVectors)
-                (bdf->trans,0,level,bdf->y_p1,res))
-            NP_RETURN(1,res[0]);
-          if (bdf->trans->PostProcessSolution != NULL)
-            if ((*bdf->trans->PostProcessSolution)
-                  (bdf->trans,0,level,bdf->y_p1,res))
-              NP_RETURN(1,res[0]);
-          nlinterpolate--;
-        }
-        else {
-          nlinterpolate = 0;
-          if (nlsolve->PostProcess!=NULL)
-            if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
-              NP_RETURN(1,res[0]);
-        }
-      }
-    }
-    if (bdf->trans->PostProcessProject!=NULL)
-      if ((*bdf->trans->PostProcessProject)(bdf->trans,0,level,res))
-        return(__LINE__);
-
-    /* check convergence */
-    if (!nlresult.converged) continue;                  /* start again with smaller time step   */
-    else break;                                                                 /* exit while loop						*/
-  }
-  if ( (*tass->TAssemblePostProcess)(tass,0,level,
-                                     bdf->t_p1,bdf->t_0,bdf->t_m1,
-                                     bdf->y_p1,bdf->y_0,bdf->y_m1,res) )
-    return(__LINE__);
-
-  /* accept new time step */
-  a_dcopy(mg,0,level,bdf->y_m1,EVERY_CLASS,bdf->y_0 ); bdf->t_m1 = bdf->t_0;
-  a_dcopy(mg,0,level,bdf->y_0 ,EVERY_CLASS,bdf->y_p1); bdf->t_0  = bdf->t_p1;
-  bdf->step++;
-
-  /* write time to shell */
-  sprintf(buffer,"%12.4lE",bdf->t_0);
-  SetStringVar("TIME",buffer);
-  sprintf(buffer,"%12.4lE",bdf->dt);
-  SetStringVar("TIMESTEP",buffer);
-
-  UserWriteF("TIMESTEP %4d: TIME=%10.4lg DT=%10.4lg EXECT=%10.4lg NLIT=%5d LIT=%5d MAXLIT=%3d\n",
-             bdf->step,bdf->t_0,bdf->dt,bdf->exec_time,bdf->number_of_nonlinear_iterations,
-             bdf->total_linear_iterations,bdf->max_linear_iterations);
-
-  if ((bdf->optnlsteps) && (nlresult.converged)) {
-    k = bdf->number_of_nonlinear_iterations -
-        last_number_of_nonlinear_iterations;
-    if (k <= 0)
-      bdf->dt *= 2.0;
-    else
-      bdf->dt *= bdf->optnlsteps / ((DOUBLE) k);
-    if (bdf->dt < bdf->dtmin)
-      bdf->dt = bdf->dtmin;
-    else if (bdf->dt > bdf->dtmax)
-      bdf->dt = bdf->dtmax;
-    PRINTDEBUG(np,1,("new time step %f k %d n %d l %d\n",
-                     bdf->dt,k,bdf->number_of_nonlinear_iterations,
-                     last_number_of_nonlinear_iterations));
-    *res = 0;
-    return(0);
-  }
-
-  /* chose new dt for next time step */
-  if (verygood && (!bad) && bdf->dt*2<=bdf->dtmax)
-  {
-    bdf->dt *= 2.0;
-    UserWrite("doubling time step\n");
-    *res=0; return(*res);
-  }
-  if ((!bad) && bdf->dt*bdf->dtscale<=bdf->dtmax && bdf->dt*bdf->dtscale>=bdf->dtmin)
-  {
-    bdf->dt *= bdf->dtscale;
-    *res=0; return(*res);
-  }
-
-  return(0);
+	return(0);		
 }
 
 static INT TimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
 {
-  NP_BDF *bdf;
+	NP_BDF *bdf;
+	
+	/* get numprocs ... */
+	bdf = (NP_BDF *) ts;     
 
-  /* get numprocs ... */
-  bdf = (NP_BDF *) ts;
-
-  /* free XDATA_DESCs here */
-  FreeVD(ts->nlass.base.mg,0,level,bdf->y_0);
-  FreeVD(ts->nlass.base.mg,0,level,bdf->y_m1);
-  FreeVD(ts->nlass.base.mg,0,level,bdf->b);
-
-  return(0);
+	/* free XDATA_DESCs here */
+	FreeVD(ts->nlass.base.mg,0,level,bdf->y_0);
+	FreeVD(ts->nlass.base.mg,0,level,bdf->y_m1);
+	FreeVD(ts->nlass.base.mg,0,level,bdf->b);
+	
+	return(0);
 }
 
 
@@ -581,7 +582,7 @@ static INT TimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
 /*																			*/
 /* Purpose:   init solve cycle												*/
 /*																			*/
-/* Input:         NumProcType Init Function										*/
+/* Input: 	  NumProcType Init Function										*/
 /*																			*/
 /* Output: INT 0: ok														*/
 /*			   1: error														*/
@@ -590,103 +591,103 @@ static INT TimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
 
 static INT BDFInit (NP_BASE *base, INT argc, char **argv)
 {
-  NP_BDF *bdf;
-  VECDATA_DESC *tmp;
-  INT r;
+	NP_BDF *bdf;
+	VECDATA_DESC *tmp;
+	INT r;
+	
+	/* get numprocs ... */
+	bdf = (NP_BDF *) base;     
+	
+	/* call tsolver init */
+	r = NPTSolverInit(&bdf->tsolver,argc,argv);
 
-  /* get numprocs ... */
-  bdf = (NP_BDF *) base;
+	/* read data descs */
+	bdf->y_0 = bdf->tsolver.y; /* allocated already in tsolver */
+	tmp = ReadArgvVecDesc(base->mg,"yp1",argc,argv);
+	if (tmp!=NULL) bdf->y_p1 = tmp;
+	tmp = ReadArgvVecDesc(base->mg,"ym1",argc,argv);
+	if (tmp!=NULL) bdf->y_m1 = tmp;
+	tmp = ReadArgvVecDesc(base->mg,"b",argc,argv);
+	if (tmp!=NULL) bdf->b = tmp;
+	
+	/* read other numprocs */
+	bdf->trans = (NP_TRANSFER *) ReadArgvNumProc(base->mg,"T",TRANSFER_CLASS_NAME,argc,argv);
+	if (bdf->trans == NULL) return(NP_NOT_ACTIVE);
+	bdf->error = (NP_ERROR *) ReadArgvNumProc(base->mg,"E",ERROR_CLASS_NAME,argc,argv);
+	
+	/* set configuration parameters */
+	if (ReadArgvINT("baselevel",&(bdf->baselevel),argc,argv))
+	{
+		UserWrite("default: baselevel=0\n");
+		bdf->baselevel=0;
+	}
+	if ((bdf->baselevel<0)||(bdf->baselevel>32)) return(NP_NOT_ACTIVE);
 
-  /* call tsolver init */
-  r = NPTSolverInit(&bdf->tsolver,argc,argv);
+	if (ReadArgvINT("order",&(bdf->order),argc,argv))
+	{
+		UserWrite("default: order=1\n");
+		bdf->order=1;
+	}
+	if ((bdf->order<1)||(bdf->order>2)) return(NP_NOT_ACTIVE);
 
-  /* read data descs */
-  bdf->y_0 = bdf->tsolver.y;       /* allocated already in tsolver */
-  tmp = ReadArgvVecDesc(base->mg,"yp1",argc,argv);
-  if (tmp!=NULL) bdf->y_p1 = tmp;
-  tmp = ReadArgvVecDesc(base->mg,"ym1",argc,argv);
-  if (tmp!=NULL) bdf->y_m1 = tmp;
-  tmp = ReadArgvVecDesc(base->mg,"b",argc,argv);
-  if (tmp!=NULL) bdf->b = tmp;
+	if (ReadArgvINT("predictorder",&(bdf->predictorder),argc,argv))
+	{
+		UserWrite("default: predictorder=0\n");
+		bdf->predictorder=0;
+	}
+	if ((bdf->predictorder<0)||(bdf->predictorder>1)) return(NP_NOT_ACTIVE);
 
-  /* read other numprocs */
-  bdf->trans = (NP_TRANSFER *) ReadArgvNumProc(base->mg,"T",TRANSFER_CLASS_NAME,argc,argv);
-  if (bdf->trans == NULL) return(NP_NOT_ACTIVE);
-  bdf->error = (NP_ERROR *) ReadArgvNumProc(base->mg,"E",ERROR_CLASS_NAME,argc,argv);
+	if (ReadArgvINT("nested",&(bdf->nested),argc,argv))
+	{
+		UserWrite("default: nested=0\n");
+		bdf->nested=0;
+	}
+	if ((bdf->nested<0)||(bdf->nested>1)) return(NP_NOT_ACTIVE);
+	if (ReadArgvINT("optnlsteps",&(bdf->optnlsteps),argc,argv))
+		bdf->optnlsteps = 0;
+	if (bdf->optnlsteps < 0) return(NP_NOT_ACTIVE);
+	if (ReadArgvINT("nlinterpolate",&(bdf->nlinterpolate),argc,argv))
+		bdf->nlinterpolate=0;
+	if (bdf->nlinterpolate<0) return(NP_NOT_ACTIVE);
 
-  /* set configuration parameters */
-  if (ReadArgvINT("baselevel",&(bdf->baselevel),argc,argv))
-  {
-    UserWrite("default: baselevel=0\n");
-    bdf->baselevel=0;
-  }
-  if ((bdf->baselevel<0)||(bdf->baselevel>32)) return(NP_NOT_ACTIVE);
+	if (ReadArgvDOUBLE("tstart",&(bdf->tstart),argc,argv))
+	    bdf->tstart = 0.0;
+	if (ReadArgvDOUBLE("dtstart",&(bdf->dtstart),argc,argv))
+	{
+		UserWrite("dtstart must be specified\n");
+		return(NP_NOT_ACTIVE);
+	}
+	if ((bdf->dtstart<0.0)) return(NP_NOT_ACTIVE);
 
-  if (ReadArgvINT("order",&(bdf->order),argc,argv))
-  {
-    UserWrite("default: order=1\n");
-    bdf->order=1;
-  }
-  if ((bdf->order<1)||(bdf->order>2)) return(NP_NOT_ACTIVE);
+	if (ReadArgvDOUBLE("dtmin",&(bdf->dtmin),argc,argv))
+	{
+		UserWrite("dtmin must be specified\n");
+		return(NP_NOT_ACTIVE);
+	}
+	if ((bdf->dtmin<0.0)) return(NP_NOT_ACTIVE);
 
-  if (ReadArgvINT("predictorder",&(bdf->predictorder),argc,argv))
-  {
-    UserWrite("default: predictorder=0\n");
-    bdf->predictorder=0;
-  }
-  if ((bdf->predictorder<0)||(bdf->predictorder>1)) return(NP_NOT_ACTIVE);
+	if (ReadArgvDOUBLE("dtmax",&(bdf->dtmax),argc,argv))
+	{
+		UserWrite("dtmax must be specified\n");
+		return(NP_NOT_ACTIVE);
+	}
+	if ((bdf->dtmax<0.0)) return(NP_NOT_ACTIVE);
 
-  if (ReadArgvINT("nested",&(bdf->nested),argc,argv))
-  {
-    UserWrite("default: nested=0\n");
-    bdf->nested=0;
-  }
-  if ((bdf->nested<0)||(bdf->nested>1)) return(NP_NOT_ACTIVE);
-  if (ReadArgvINT("optnlsteps",&(bdf->optnlsteps),argc,argv))
-    bdf->optnlsteps = 0;
-  if (bdf->optnlsteps < 0) return(NP_NOT_ACTIVE);
-  if (ReadArgvINT("nlinterpolate",&(bdf->nlinterpolate),argc,argv))
-    bdf->nlinterpolate=0;
-  if (bdf->nlinterpolate<0) return(NP_NOT_ACTIVE);
+	if (ReadArgvDOUBLE("dtscale",&(bdf->dtscale),argc,argv))
+	{
+		UserWrite("dtscale must be specified\n");
+		return(NP_NOT_ACTIVE);
+	}
+	if ((bdf->dtscale<0.0)) return(NP_NOT_ACTIVE);
 
-  if (ReadArgvDOUBLE("tstart",&(bdf->tstart),argc,argv))
-    bdf->tstart = 0.0;
-  if (ReadArgvDOUBLE("dtstart",&(bdf->dtstart),argc,argv))
-  {
-    UserWrite("dtstart must be specified\n");
-    return(NP_NOT_ACTIVE);
-  }
-  if ((bdf->dtstart<0.0)) return(NP_NOT_ACTIVE);
+	if (ReadArgvDOUBLE("rhogood",&(bdf->rhogood),argc,argv))
+	{
+		UserWrite("default: rhogood=0.01\n");
+		bdf->rhogood = 0.01;
+	}
+	if ((bdf->rhogood<0.0) || (bdf->rhogood>1)) return(NP_NOT_ACTIVE);
 
-  if (ReadArgvDOUBLE("dtmin",&(bdf->dtmin),argc,argv))
-  {
-    UserWrite("dtmin must be specified\n");
-    return(NP_NOT_ACTIVE);
-  }
-  if ((bdf->dtmin<0.0)) return(NP_NOT_ACTIVE);
-
-  if (ReadArgvDOUBLE("dtmax",&(bdf->dtmax),argc,argv))
-  {
-    UserWrite("dtmax must be specified\n");
-    return(NP_NOT_ACTIVE);
-  }
-  if ((bdf->dtmax<0.0)) return(NP_NOT_ACTIVE);
-
-  if (ReadArgvDOUBLE("dtscale",&(bdf->dtscale),argc,argv))
-  {
-    UserWrite("dtscale must be specified\n");
-    return(NP_NOT_ACTIVE);
-  }
-  if ((bdf->dtscale<0.0)) return(NP_NOT_ACTIVE);
-
-  if (ReadArgvDOUBLE("rhogood",&(bdf->rhogood),argc,argv))
-  {
-    UserWrite("default: rhogood=0.01\n");
-    bdf->rhogood = 0.01;
-  }
-  if ((bdf->rhogood<0.0) || (bdf->rhogood>1)) return(NP_NOT_ACTIVE);
-
-  return (r);
+	return (r);
 }
 
 /****************************************************************************/
@@ -704,42 +705,42 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
 
 static INT BDFDisplay (NP_BASE *theNumProc)
 {
-  NP_BDF *bdf;
+	NP_BDF *bdf;
+	
+	/* get numprocs ... */
+	bdf = (NP_BDF *) theNumProc;     
+	
+	/* general ts display */
+	NPTSolverDisplay(&bdf->tsolver);
 
-  /* get numprocs ... */
-  bdf = (NP_BDF *) theNumProc;
+	UserWrite("\nBDF data:\n");
+	if (bdf->trans != NULL)
+		UserWriteF(DISPLAY_NP_FORMAT_SS,"T",ENVITEM_NAME(bdf->trans));
+	else
+		UserWriteF(DISPLAY_NP_FORMAT_SS,"T","---");
+	if (bdf->error != NULL)
+		UserWriteF(DISPLAY_NP_FORMAT_SS,"E",ENVITEM_NAME(bdf->error));
+	else
+		UserWriteF(DISPLAY_NP_FORMAT_SS,"E","---");
+	UserWriteF(DISPLAY_NP_FORMAT_SF,"t_m1",(float)bdf->t_m1);
+	UserWriteF(DISPLAY_NP_FORMAT_SF,"t_0",(float)bdf->t_0);
+	UserWriteF(DISPLAY_NP_FORMAT_SF,"t_p1",(float)bdf->t_p1);
+	UserWriteF(DISPLAY_NP_FORMAT_SF,"dt",(float)bdf->dt);
+	UserWriteF(DISPLAY_NP_FORMAT_SI,"nested",(int)bdf->nested);
+	UserWriteF(DISPLAY_NP_FORMAT_SI,"nlinterpolate",(int)bdf->nlinterpolate);
+	UserWriteF(DISPLAY_NP_FORMAT_SI,"optnlsteps",(int)bdf->optnlsteps);
+	UserWriteF(DISPLAY_NP_FORMAT_SF,"dtscale",(float)bdf->dtscale);
+	UserWriteF(DISPLAY_NP_FORMAT_SF,"rhogood",(float)bdf->rhogood);
+	if (bdf->y_p1 != NULL) 
+		UserWriteF(DISPLAY_NP_FORMAT_SS,"y_p1",ENVITEM_NAME(bdf->y_p1));
+	if (bdf->y_0  != NULL) 
+		UserWriteF(DISPLAY_NP_FORMAT_SS,"y_0 ",ENVITEM_NAME(bdf->y_0 ));
+	if (bdf->y_m1 != NULL) 
+		UserWriteF(DISPLAY_NP_FORMAT_SS,"y_m1",ENVITEM_NAME(bdf->y_m1));
+	if (bdf->b    != NULL) 
+		UserWriteF(DISPLAY_NP_FORMAT_SS,"b   ",ENVITEM_NAME(bdf->b   ));
 
-  /* general ts display */
-  NPTSolverDisplay(&bdf->tsolver);
-
-  UserWrite("\nBDF data:\n");
-  if (bdf->trans != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"T",ENVITEM_NAME(bdf->trans));
-  else
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"T","---");
-  if (bdf->error != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"E",ENVITEM_NAME(bdf->error));
-  else
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"E","---");
-  UserWriteF(DISPLAY_NP_FORMAT_SF,"t_m1",(float)bdf->t_m1);
-  UserWriteF(DISPLAY_NP_FORMAT_SF,"t_0",(float)bdf->t_0);
-  UserWriteF(DISPLAY_NP_FORMAT_SF,"t_p1",(float)bdf->t_p1);
-  UserWriteF(DISPLAY_NP_FORMAT_SF,"dt",(float)bdf->dt);
-  UserWriteF(DISPLAY_NP_FORMAT_SI,"nested",(int)bdf->nested);
-  UserWriteF(DISPLAY_NP_FORMAT_SI,"nlinterpolate",(int)bdf->nlinterpolate);
-  UserWriteF(DISPLAY_NP_FORMAT_SI,"optnlsteps",(int)bdf->optnlsteps);
-  UserWriteF(DISPLAY_NP_FORMAT_SF,"dtscale",(float)bdf->dtscale);
-  UserWriteF(DISPLAY_NP_FORMAT_SF,"rhogood",(float)bdf->rhogood);
-  if (bdf->y_p1 != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"y_p1",ENVITEM_NAME(bdf->y_p1));
-  if (bdf->y_0  != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"y_0 ",ENVITEM_NAME(bdf->y_0 ));
-  if (bdf->y_m1 != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"y_m1",ENVITEM_NAME(bdf->y_m1));
-  if (bdf->b    != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"b   ",ENVITEM_NAME(bdf->b   ));
-
-  return (0);
+	return (0);
 }
 
 
@@ -749,7 +750,7 @@ static INT BDFDisplay (NP_BASE *theNumProc)
 /*																			*/
 /* Purpose:   init solve cycle												*/
 /*																			*/
-/* Input:         NumProcType Init Function										*/
+/* Input: 	  NumProcType Init Function										*/
 /*																			*/
 /* Output: INT 0: ok														*/
 /*			   1: error														*/
@@ -758,116 +759,116 @@ static INT BDFDisplay (NP_BASE *theNumProc)
 
 static INT BDFExecute (NP_BASE *theNP, INT argc , char **argv)
 {
-  NP_BDF *bdf;
-  NP_T_SOLVER *np;
-  DOUBLE initialtime,dtime;
-  INT result,level;
+	NP_BDF *bdf;
+    NP_T_SOLVER *np;	
+	DOUBLE initialtime,dtime;
+    INT result,level;
+	
+	/* get numprocs ... */
+	np = (NP_T_SOLVER *) theNP;
+	bdf = (NP_BDF *) theNP;     
 
-  /* get numprocs ... */
-  np = (NP_T_SOLVER *) theNP;
-  bdf = (NP_BDF *) theNP;
+	/* get level */
+	level = CURRENTLEVEL(theNP->mg);
 
-  /* get level */
-  level = CURRENTLEVEL(theNP->mg);
+	/* check functions */
+	if (np->y == NULL) {
+		PrintErrorMessage('E',"BDFExecute","no vector y");
+		return (1);
+	}
+	if (np->tass == NULL) {
+		PrintErrorMessage('E',"BDFExecute","no assemble num proc");
+		return (1);
+	}
+	if (np->nlsolve == NULL) {
+		PrintErrorMessage('E',"BDFExecute","no solver num proc");
+		return (1);
+	}
+	bdf->Break = ReadArgvOption("Break",argc,argv);
+	bdf->Continue = ReadArgvOption("Continue",argc,argv);
 
-  /* check functions */
-  if (np->y == NULL) {
-    PrintErrorMessage('E',"BDFExecute","no vector y");
-    return (1);
-  }
-  if (np->tass == NULL) {
-    PrintErrorMessage('E',"BDFExecute","no assemble num proc");
-    return (1);
-  }
-  if (np->nlsolve == NULL) {
-    PrintErrorMessage('E',"BDFExecute","no solver num proc");
-    return (1);
-  }
-  bdf->Break = ReadArgvOption("Break",argc,argv);
-  bdf->Continue = ReadArgvOption("Continue",argc,argv);
+	/* call preprocess function, allocates vectors ! */	
+    if (ReadArgvOption("pre",argc,argv)) {
+        if (np->TimePreProcess != NULL)
+        	if ((*np->TimePreProcess)(np,level,&result)) {
+ 	        	UserWriteF("NPTSolverExecute: TimePreProcess failed, error code %d\n",
+                        	result);
+            	return (1);
+        	}
+	}
 
-  /* call preprocess function, allocates vectors ! */
-  if (ReadArgvOption("pre",argc,argv)) {
-    if (np->TimePreProcess != NULL)
-      if ((*np->TimePreProcess)(np,level,&result)) {
-        UserWriteF("NPTSolverExecute: TimePreProcess failed, error code %d\n",
-                   result);
-        return (1);
-      }
-  }
+	/* set initial values */
+	if (ReadArgvOption("init",argc,argv)) 
+	    if (np->TimeInit != NULL) {
+		    if (ReadArgvDOUBLE("t",&initialtime,argc,argv) == 0)
+			    bdf->tstart = initialtime;
+		    if (ReadArgvDOUBLE("dt",&dtime,argc,argv) == 0)
+			    bdf->dt = dtime;
+			if ((*np->TimeInit)(np,level,&result)) {
+			    UserWriteF("NPTSolverExecute: TimeInit failed, error code %d\n",result);
+				return (1);
+			}
+		}
 
-  /* set initial values */
-  if (ReadArgvOption("init",argc,argv))
-    if (np->TimeInit != NULL) {
-      if (ReadArgvDOUBLE("t",&initialtime,argc,argv) == 0)
-        bdf->tstart = initialtime;
-      if (ReadArgvDOUBLE("dt",&dtime,argc,argv) == 0)
-        bdf->dt = dtime;
-      if ((*np->TimeInit)(np,level,&result)) {
-        UserWriteF("NPTSolverExecute: TimeInit failed, error code %d\n",result);
-        return (1);
-      }
-    }
+	/* execute bdf1, nonnested */
+    if (ReadArgvOption("bdf1",argc,argv)) {
+    	bdf->order = 1;
+    	bdf->nested = 0;
+        if (np->TimeStep != NULL)
+        	if ((*np->TimeStep)(np,level,&result)) {
+ 	        	UserWriteF("NPTSolverExecute: TimeStep failed, error code %d\n",
+                        	result);
+            	return (1);
+        	}
+	}
 
-  /* execute bdf1, nonnested */
-  if (ReadArgvOption("bdf1",argc,argv)) {
-    bdf->order = 1;
-    bdf->nested = 0;
-    if (np->TimeStep != NULL)
-      if ((*np->TimeStep)(np,level,&result)) {
-        UserWriteF("NPTSolverExecute: TimeStep failed, error code %d\n",
-                   result);
-        return (1);
-      }
-  }
+	/* execute bdf2, nonnested */
+    if (ReadArgvOption("bdf2",argc,argv)) {
+    	bdf->order = 2;
+    	bdf->nested = 0;
+        if (np->TimeStep != NULL)
+        	if ((*np->TimeStep)(np,level,&result)) {
+ 	        	UserWriteF("NPTSolverExecute: TimeStep failed, error code %d\n",
+                        	result);
+            	return (1);
+        	}
+	}
 
-  /* execute bdf2, nonnested */
-  if (ReadArgvOption("bdf2",argc,argv)) {
-    bdf->order = 2;
-    bdf->nested = 0;
-    if (np->TimeStep != NULL)
-      if ((*np->TimeStep)(np,level,&result)) {
-        UserWriteF("NPTSolverExecute: TimeStep failed, error code %d\n",
-                   result);
-        return (1);
-      }
-  }
+	/* execute bdf1, nested */
+    if (ReadArgvOption("bdf1n",argc,argv)) {
+    	bdf->order = 1;
+    	bdf->nested = 1;
+        if (np->TimeStep != NULL)
+        	if ((*np->TimeStep)(np,level,&result)) {
+ 	        	UserWriteF("NPTSolverExecute: TimeStep failed, error code %d\n",
+                        	result);
+            	return (1);
+        	}
+	}
 
-  /* execute bdf1, nested */
-  if (ReadArgvOption("bdf1n",argc,argv)) {
-    bdf->order = 1;
-    bdf->nested = 1;
-    if (np->TimeStep != NULL)
-      if ((*np->TimeStep)(np,level,&result)) {
-        UserWriteF("NPTSolverExecute: TimeStep failed, error code %d\n",
-                   result);
-        return (1);
-      }
-  }
+	/* execute bdf2, nested */
+    if (ReadArgvOption("bdf2n",argc,argv)) {
+    	bdf->order = 2;
+    	bdf->nested = 1;
+        if (np->TimeStep != NULL)
+        	if ((*np->TimeStep)(np,level,&result)) {
+ 	        	UserWriteF("NPTSolverExecute: TimeStep failed, error code %d\n",
+                        	result);
+            	return (1);
+        	}
+	}
 
-  /* execute bdf2, nested */
-  if (ReadArgvOption("bdf2n",argc,argv)) {
-    bdf->order = 2;
-    bdf->nested = 1;
-    if (np->TimeStep != NULL)
-      if ((*np->TimeStep)(np,level,&result)) {
-        UserWriteF("NPTSolverExecute: TimeStep failed, error code %d\n",
-                   result);
-        return (1);
-      }
-  }
+	/* postprocess, free vectors */
+    if (ReadArgvOption("post",argc,argv)) {
+        if (np->TimePostProcess != NULL)
+        	if ((*np->TimePostProcess)(np,level,&result)) {
+ 	        	UserWriteF("NPTSolverExecute: TimePostProcess failed, error code %d\n",
+                        	result);
+            	return (1);
+        	}
+	}
 
-  /* postprocess, free vectors */
-  if (ReadArgvOption("post",argc,argv)) {
-    if (np->TimePostProcess != NULL)
-      if ((*np->TimePostProcess)(np,level,&result)) {
-        UserWriteF("NPTSolverExecute: TimePostProcess failed, error code %d\n",
-                   result);
-        return (1);
-      }
-  }
-
-  return(0);
+    return(0);
 }
 
 /****************************************************************************/
@@ -886,38 +887,38 @@ static INT BDFExecute (NP_BASE *theNP, INT argc , char **argv)
 
 static INT BDFConstruct (NP_BASE *theNP)
 {
-  NP_T_SOLVER *ts;
-  NP_NL_ASSEMBLE *na;
-  NP_BDF *bdf;
+    NP_T_SOLVER *ts;
+    NP_NL_ASSEMBLE *na;
+	NP_BDF *bdf;
 
-  /* get numprocs ... */
-  ts = (NP_T_SOLVER *) theNP;
-  na = &ts->nlass;
-  bdf = (NP_BDF *) theNP;
+	/* get numprocs ... */
+	ts = (NP_T_SOLVER *) theNP;
+	na = &ts->nlass;
+	bdf = (NP_BDF *) theNP;     
+    		
+	/* set base functions */
+    theNP->Init    = BDFInit;
+    theNP->Display = BDFDisplay;
+    theNP->Execute = BDFExecute;
 
-  /* set base functions */
-  theNP->Init    = BDFInit;
-  theNP->Display = BDFDisplay;
-  theNP->Execute = BDFExecute;
+	/* nonlinear assemble functions */
+    na->PreProcess 			= BDFPreProcess;
+    na->PostProcess 		= BDFPostProcess;
+    na->NLAssembleSolution	= BDFAssembleSolution;
+    na->NLAssembleDefect 	= BDFAssembleDefect;
+    na->NLAssembleMatrix 	= BDFAssembleMatrix;
+	
+	/* and the time solver */
+	ts->TimePreProcess		= TimePreProcess;
+	ts->TimeInit			= TimeInit;
+	ts->TimeStep			= TimeStep;
+	ts->TimePostProcess		= TimePostProcess;
 
-  /* nonlinear assemble functions */
-  na->PreProcess                      = BDFPreProcess;
-  na->PostProcess             = BDFPostProcess;
-  na->NLAssembleSolution      = BDFAssembleSolution;
-  na->NLAssembleDefect        = BDFAssembleDefect;
-  na->NLAssembleMatrix        = BDFAssembleMatrix;
+	bdf->y_p1 = NULL;
+	bdf->y_m1 = NULL;
+	bdf->b = NULL;
 
-  /* and the time solver */
-  ts->TimePreProcess              = TimePreProcess;
-  ts->TimeInit                    = TimeInit;
-  ts->TimeStep                    = TimeStep;
-  ts->TimePostProcess             = TimePostProcess;
-
-  bdf->y_p1 = NULL;
-  bdf->y_m1 = NULL;
-  bdf->b = NULL;
-
-  return(0);
+    return(0);
 }
 
 /****************************************************************************/
@@ -930,90 +931,90 @@ static INT BDFConstruct (NP_BASE *theNP)
    in the nonlinear solver is constructed from a time dependent assembling
    routine of type 'NP_T_ASSEMBLE'.
 
-   .vb
-   npinit <name> $y <sol> $A <tnlass> $S <nlsolver>
-          $T <transfer> [$baselevel <bl>] $order {1|2}
-                  $predictorder {0|1} $nested {0|1}
-          $tstart <time> $dtstart <step> $dtmin <min step> $dtmax <max step>
+.vb
+npinit <name> $y <sol> $A <tnlass> $S <nlsolver>
+          $T <transfer> [$baselevel <bl>] $order {1|2} 
+		  $predictorder {0|1} $nested {0|1}
+          $tstart <time> $dtstart <step> $dtmin <min step> $dtmax <max step> 
           $dtscale <fac> $rhogood <rho> [$J <mat>];
-   .ve
+.ve
 
-   .  $y~<sol>            - solution vector
-   .  $A~<tnlass>         - assemble numproc of type 'NP_T_ASSEMBLE'
-   .  $S~<nlsolver>       - nonlinear solver numproc of type 'NP_NL_SOLVER'
-   .  $T~<transfer>       - transfer numproc
-   .  $baselevel~<bl>     - baselevel for nested iteration
-   .  $order~{1|2}        - order of the time stepping scheme
-   .  $predictorder~{0|1} - order of the predictor for the next start vector
-   .  $nested~{0|1}       - flag nested nonlinear solver in every time step
-   .  $tstart~<time>      - start time
-   .  $dtstart~<step>     - time step to begin with
-   .  $dtmin~<min step>   - smallest time step allowed
-   .  $dtmax~<max step>   - largest time step allowed
-   .  $dtscale~<fac>      - scaling factor applied after step
-   .  $rhogood~<rho>      - threshold for step doubling
+.  $y~<sol>            - solution vector
+.  $A~<tnlass>         - assemble numproc of type 'NP_T_ASSEMBLE'
+.  $S~<nlsolver>       - nonlinear solver numproc of type 'NP_NL_SOLVER'
+.  $T~<transfer>       - transfer numproc
+.  $baselevel~<bl>     - baselevel for nested iteration
+.  $order~{1|2}        - order of the time stepping scheme
+.  $predictorder~{0|1} - order of the predictor for the next start vector
+.  $nested~{0|1}       - flag nested nonlinear solver in every time step 
+.  $tstart~<time>      - start time
+.  $dtstart~<step>     - time step to begin with
+.  $dtmin~<min step>   - smallest time step allowed	
+.  $dtmax~<max step>   - largest time step allowed
+.  $dtscale~<fac>      - scaling factor applied after step
+.  $rhogood~<rho>      - threshold for step doubling 
 
    'npexecute <name> [$pre] [$init] [$bdf1|$bdf1n|$bdf2|$bdf2n] [$post];'
 
-   .  $pre - preprocess
-   .  $init - initialization
-   .  $bdf1 - backward Euler of first order
-   .  $bdf1n - nested backward Euler of first order
-   .  $bdf1 - backward Euler of second order
-   .  $bdf1n - nested backward Euler of second order
-   .  $post - postprocess
+.  $pre - preprocess
+.  $init - initialization
+.  $bdf1 - backward Euler of first order
+.  $bdf1n - nested backward Euler of first order
+.  $bdf1 - backward Euler of second order
+.  $bdf1n - nested backward Euler of second order
+.  $post - postprocess
 
    EXAMPLE:
-   .vb
- # grid transfer numproc
-   npcreate transfer $c transfer;
-   npinit transfer;
+.vb
+# grid transfer numproc
+npcreate transfer $c transfer;
+npinit transfer;
 
- # assemble numproc
-   npcreate tnlass $c boxtnl;
-   npinit tnlass;
+# assemble numproc
+npcreate tnlass $c boxtnl;
+npinit tnlass;
 
- # linear solver and iteration numprocs
-   npcreate smooth $c gs;
-   npinit smooth;
+# linear solver and iteration numprocs
+npcreate smooth $c gs;
+npinit smooth;
 
-   npcreate basesolver $c ls;
-   npinit basesolver $red 0.001 $m 10 $I smooth;
+npcreate basesolver $c ls;
+npinit basesolver $red 0.001 $m 10 $I smooth;
 
-   npcreate lmgc $c lmgc;
-   npinit lmgc $S smooth smooth basesolver $T transfer $n1 2 $n2 2;
+npcreate lmgc $c lmgc;
+npinit lmgc $S smooth smooth basesolver $T transfer $n1 2 $n2 2;
 
-   npcreate mgs $c ls;
-   npinit mgs $m 40 $I lmgc $display full;
+npcreate mgs $c ls;
+npinit mgs $m 40 $I lmgc $display full;
 
- # nonlinear solver numproc to be used by time solver
-   npcreate newton $c newton;
-   npinit newton $red 1.0E-8 $T transfer $S mgs
-              $rhoreass 0.8 $lsteps 6 $maxit 50 $line 1 $linrate 0
+# nonlinear solver numproc to be used by time solver
+npcreate newton $c newton;
+npinit newton $red 1.0E-8 $T transfer $S mgs
+              $rhoreass 0.8 $lsteps 6 $maxit 50 $line 1 $linrate 0 
               $lambda 1.0 $linminred 1.0E-2 $display full;
 
- # the time solver
-   npcreate ts $c bdf;
-   npinit ts $y sol $A tnlass $S newton
+# the time solver
+npcreate ts $c bdf;
+npinit ts $y sol $A tnlass $S newton
           $T transfer $baselevel 0 $order 1 $predictorder 0 $nested 0
           $dtstart 0.00125 $dtmin 0.001 $dtmax 0.00125 $dtscale 1.0
           $rhogood 0.001;
 
- # first time step
-   TIMESTEPS = 100;
-   step = 1;
-   npexecute ts $pre $init;
-   npexecute ts $bdf1;
+# first time step
+TIMESTEPS = 100;
+step = 1;
+npexecute ts $pre $init;
+npexecute ts $bdf1;
 
- # time step loop
-   repeat {
+# time step loop
+repeat {
     if (step==TIMESTEPS) break;
     step = step+1;
     npexecute ts $bdf2;
-   }
-   npexecute ts $post;
-   .ve
-   D*/
+}
+npexecute ts $post;
+.ve
+D*/
 /****************************************************************************/
 
 /****************************************************************************/
@@ -1024,23 +1025,24 @@ static INT BDFConstruct (NP_BASE *theNP)
    INT InitBDFSolver (void);
 
    PARAMETERS:
-   .  void -
+.  void -
 
    DESCRIPTION:
    This function inits this file.
 
    RETURN VALUE:
    INT
-   .n    0 if ok
-   .n    __LINE__ if error occured.
- */
+.n    0 if ok
+.n    __LINE__ if error occured.
+*/
 /****************************************************************************/
 
 INT InitBDFSolver (void)
 {
-  if (CreateClass (T_SOLVER_CLASS_NAME ".bdf",
-                   sizeof(NP_BDF), BDFConstruct))
-    return (__LINE__);
+    if (CreateClass (T_SOLVER_CLASS_NAME ".bdf",
+                     sizeof(NP_BDF), BDFConstruct))
+        return (__LINE__);
 
-  return (0);
+    return (0);
 }
+
