@@ -462,19 +462,29 @@ CHECK(OTYPE)
 		 i<=LASTPART_OF_LIST(OTYPE);
 		 i++)
 	{
-		INT prio = LISTPART2PRIO(CAT(OTYPE,_LIST),i);
+		INT prios[MAXPRIOS],j,prio_error; 
+
+		LISTPART2PRIO(CAT(OTYPE,_LIST),i,prios);
 
 		objs = 0;
 		for (Object = CAT(LISTPART_LAST,OTYPE(Grid,i));
 			 Object != NULL;
 			 Object = PRED(Object))
 		{
+			INT prio = DDD_InfoPriority(HDR(OTYPE)(Object));
+			assert(prio != -1);
+
 			objs++;
-			if (prio != DDD_InfoPriority(HDR(OTYPE)(Object))) 
+			prio_error = 1;
+			for (j=0; j<MAXPRIOS; j++)
+				if (prios[j] == prio)
+					prio_error = 0;
+
+			if (prio_error) 
 			{
 				printf(PFMT "  ERROR nob=%d o=" CAT(FORMAT(OTYPE),FMTX) 
-					" WRONG LIST\n",
-					me,objs,CAT(FORMAT(OTYPE),PRTX(Object)));
+					" WRONG LIST=%d prio=%d\n",
+					me,objs,CAT(FORMAT(OTYPE),PRTX(Object)),i,prio);
 			}
 
 			if (Object == CAT(LISTPART_FIRST,OTYPE(Grid,i)))
