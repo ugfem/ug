@@ -1290,7 +1290,6 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   int lastnumber;
   INT MarkKey;
 #ifdef ModelP
-  int ftype;
   int error;
 #endif
 
@@ -1362,20 +1361,10 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
 #ifdef ModelP
   error = 0;
   if (me == master)
-  {
     if (MGIO_PARFILE)
-    {
-      ftype = MGIO_filetype(filename);
-      if (ftype == FT_FILE)
-      {
+      if (MGIO_dircreate(filename,(int)rename))
         error = -1;
-      }
-      else if (ftype == FT_UNKNOWN)
-      {
-        if (MGIO_dircreate(filename)) error = -1;
-      }
-    }
-  }
+
   Broadcast(&error,sizeof(int));
   if (error == -1)
   {
