@@ -114,7 +114,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /****************************************************************************/
 
-void NS_PREFIX ConstructConsistentGridLevel (GRID *theGrid)
+static void ConstructConsistentGridLevel (GRID *theGrid)
 {
   INT i,j,k,l,m,o;
   DOUBLE fac,*local;

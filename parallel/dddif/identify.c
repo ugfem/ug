@@ -34,6 +34,8 @@
 #include "general.h"
 #include "compiler.h"
 #include "debug.h"
+#include "ugdevices.h"
+
 #include "gm.h"
 #include "rm.h"
 #include "refine.h"
@@ -159,7 +161,7 @@ static INT identlevel = 0;
  */
 /****************************************************************************/
 
-INT NS_PREFIX compare_gid (const void *e0, const void *e1)
+static INT compare_gid (const void *e0, const void *e1)
 {
   INT num0, num1;
 
@@ -400,12 +402,14 @@ static INT Identify_by_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
   ASSERT(nident>0);
   ASSERT(*proclist!=-1);
 
+#ifdef Debug
   IFDEBUG(graph,1)
   Print_Identify_ObjectList(IdentObjectHdr,nobject,proclist,skiptag,
                             IdentHdr,nident);
   ENDDEBUG
+#endif
 
-    n = 0;
+  n = 0;
   while (*proclist != -1)
   {
     ASSERT(n<procs);
@@ -1131,7 +1135,7 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
  */
 /****************************************************************************/
 
-INT NS_PREFIX IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
+static INT IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
 {
   INT l,i,j,prio;
   ELEMENT *theElement,*theNeighbor;
@@ -2024,7 +2028,7 @@ static int Scatter_SonEdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO
  */
 /****************************************************************************/
 
-INT NS_PREFIX Identify_SonNodes (GRID *theGrid)
+static INT Identify_SonNodes (GRID *theGrid)
 {
 
 #ifdef IDENT_ONLY_NEW

@@ -13,6 +13,8 @@
 #include "ugdevices.h"
 #include "namespace.h"
 
+#include "debugger.h"
+
 USING_UG_NAMESPACES
 
 /* RCS string */
@@ -21,10 +23,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 
-START_UG_NAMESPACE
-void buggy (MULTIGRID *);
-void dddif_PrintGridRelations (MULTIGRID *);
-END_NAMESPACE
 
 /****************************************************************************/
 

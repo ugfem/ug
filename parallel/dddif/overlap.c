@@ -643,7 +643,7 @@ INT NS_PREFIX ConnectVerticalOverlap (MULTIGRID *theMG)
   return(GM_OK);
 }
 
-INT NS_PREFIX ConnectOverlapVerticalGrid (GRID *theGrid)
+static INT ConnectOverlapVerticalGrid (GRID *theGrid)
 {
   INT i,j,k,found,edgenode0,edgenode1,edgenum;
   ELEMENT *theElement,*theSon,*SonList[MAX_SONS];
@@ -764,7 +764,7 @@ INT NS_PREFIX ConnectOverlapVerticalGrid (GRID *theGrid)
   return(GM_OK);
 }
 
-INT NS_PREFIX ConnectOverlapVerticalMultiGrid (MULTIGRID *theMG)
+static INT ConnectOverlapVerticalMultiGrid (MULTIGRID *theMG)
 {
   INT i;
   GRID    *theGrid;

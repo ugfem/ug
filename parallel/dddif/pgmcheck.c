@@ -145,7 +145,7 @@ static INT check_distributed_objects_errors = 0;
  */
 /****************************************************************************/
 
-INT NS_PREFIX CheckProcListCons (int *proclist, int uniqueTag)
+static INT CheckProcListCons (int *proclist, int uniqueTag)
 {
   int nunique = 0;
 
@@ -182,7 +182,7 @@ INT NS_PREFIX CheckProcListCons (int *proclist, int uniqueTag)
  */
 /****************************************************************************/
 
-INT NS_PREFIX ListProcList (int *proclist, int uniqueTag)
+static INT ListProcList (int *proclist, int uniqueTag)
 {
   while (*proclist != -1)
   {
@@ -212,7 +212,7 @@ INT NS_PREFIX ListProcList (int *proclist, int uniqueTag)
  */
 /****************************************************************************/
 
-INT NS_PREFIX CheckVectorPrio (ELEMENT *theElement, VECTOR *theVector)
+static INT CheckVectorPrio (ELEMENT *theElement, VECTOR *theVector)
 {
   INT nmaster;
   INT nerrors = 0;
@@ -324,7 +324,7 @@ static INT CheckPerNodeVecPrio (NODE *theNode)
 }
 #endif
 
-INT NS_PREFIX CheckNodePrio (ELEMENT *theElement, NODE *theNode)
+static INT CheckNodePrio (ELEMENT *theElement, NODE *theNode)
 {
   INT nmaster;
   INT nerrors = 0;
@@ -382,7 +382,7 @@ INT NS_PREFIX CheckNodePrio (ELEMENT *theElement, NODE *theNode)
  */
 /****************************************************************************/
 
-INT NS_PREFIX CheckEdgePrio (ELEMENT *theElement, EDGE *theEdge)
+static INT CheckEdgePrio (ELEMENT *theElement, EDGE *theEdge)
 {
   INT nmaster;
   INT nerrors = 0;
@@ -427,7 +427,7 @@ INT NS_PREFIX CheckEdgePrio (ELEMENT *theElement, EDGE *theEdge)
  */
 /****************************************************************************/
 
-INT NS_PREFIX CheckElementPrio (ELEMENT *theElement)
+static INT CheckElementPrio (ELEMENT *theElement)
 {
   INT i,nmaster,prio,valid_copy;
   INT nerrors = 0;
@@ -726,7 +726,7 @@ static int Scatter_EdgeObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_P
 }
 #endif
 
-INT NS_PREFIX CheckDistributedObjects (GRID *theGrid)
+static INT CheckDistributedObjects (GRID *theGrid)
 {
   INT nerrors;
         #ifdef __TWODIM__

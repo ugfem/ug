@@ -36,6 +36,7 @@
 #include "compiler.h"
 #include "heaps.h"
 #include "misc.h"
+#include "ugdevices.h"
 
 #include "parallel.h"
 #include "general.h"
@@ -43,6 +44,8 @@
 #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 #include "ugm.h"
 #endif
+
+#include "memmgr.h"
 
 #include "namespace.h"
 

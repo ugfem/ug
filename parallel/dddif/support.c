@@ -42,6 +42,8 @@
 #include "compiler.h"
 #include "memmgr.h"
 
+#include "pargm.h"
+
 #include "namespace.h"
 
 /* UG namespaces: */
