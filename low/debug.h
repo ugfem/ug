@@ -60,8 +60,10 @@
 #define HEAPFAULT(ptr)  assert(((int *)ptr)[1]!=-1);
 #define ASSERT(exp)             assert(exp)
 
-#define REP_ERR_RETURN(err)             {rep_err_line[rep_err_count] = __LINE__; rep_err_file[rep_err_count] = this_file; \
-                                         rep_err_count = (rep_err_count+1)%REP_ERR_MAX; return (err);}
+#define REP_ERR_INC             {rep_err_line[rep_err_count] = __LINE__;  \
+                                 rep_err_file[rep_err_count] = this_file; \
+                                 rep_err_count = (rep_err_count+1)%REP_ERR_MAX;}
+#define REP_ERR_RETURN(err)             { REP_ERR_INC  return (err);}
 #define REP_ERR_RESET                   rep_err_count = 0;
 #define REP_ERR_FILE                    static char *this_file=__FILE__
 #else
@@ -73,6 +75,7 @@
 #define ASSERT(exp)
 
 #define REP_ERR_RETURN(err)             return (err);
+#define REP_ERR_INC
 #define REP_ERR_RESET
 #define REP_ERR_FILE
 #endif
