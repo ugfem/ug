@@ -56,6 +56,9 @@
 #include "cmdint.h"
 #include "uginterface.h"
 
+/* TODO: conflict with hierarchy */
+#include "initug.h"
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
