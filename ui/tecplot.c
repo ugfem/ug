@@ -103,7 +103,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 static INT TecplotCommand (INT argc, char **argv)
 {
   INT i,j,k,v;                                  /* counters etc.							*/
-  INT counter;                                  /* for formatting output					*/
   VECTOR *vc;                                           /* a vector pointer							*/
   ELEMENT *el;                                  /* an element pointer						*/
 
@@ -222,142 +221,160 @@ static INT TecplotCommand (INT argc, char **argv)
 
   /********************************/
   /* write ZONE data				*/
-  /* uses FEBLOCK for data		*/
+  /* uses FEPOINT for data		*/
   /* uses QUADRILATERAL in 2D		*/
   /* and BRICK in 3D				*/
   /********************************/
 
   /* write zone record header */
-  if (DIM==2)
-    fprintf(stream,"ZONE N=%d, E=%d, F=FEBLOCK, ET=QUADRILATERAL\n",numNodes,numElements);
-  if (DIM==3)
-    fprintf(stream,"ZONE N=%d, E=%d, F=FEBLOCK, ET=BRICK\n",numNodes,numElements);
+  if (DIM==2) fprintf(stream,"ZONE N=%d, E=%d, F=FEPOINT, ET=QUADRILATERAL\n",numNodes,numElements);
+  if (DIM==3) fprintf(stream,"ZONE N=%d, E=%d, F=FEPOINT, ET=BRICK\n",numNodes,numElements);
 
-  /* write data in FEBLOCK format, i.e. all values of one variable in sequence */
-  counter = 1;      /* reset counter needed for fixing the number of values per line */
+  /* write data in FEPOINT format, i.e. all variables of a node per line*/
 
-  /* first the X coordinate */
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (vc=FIRSTVECTOR(GRID_ON_LEVEL(mg,k)); vc!=NULL; vc=SUCCVC(vc))
       SETVCFLAG(vc,0);           /* clear all flags */
+
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
     {
-      if (NSONS(el)>0) continue;                        /* process finest level elements only */
+      if (NSONS(el)>0) continue;                /* process finest level elements only */
+
+      for (i=0; i<CORNERS_OF_ELEM(el); i++)
+        CornersCoord[i] = CVECT(MYVERTEX(CORNER(el,i)));                        /* x,y,z of corners */
+
       for (i=0; i<CORNERS_OF_ELEM(el); i++)
       {
         vc = NVECTOR(CORNER(el,i));
-        if (VCFLAG(vc)) continue;                       /* we have this one already */
-        SETVCFLAG(vc,1);                                        /* tag vector as visited */
-        fprintf(stream,"%g ",(double)XC(MYVERTEX(CORNER(el,i))));
-        counter++;                                                              /* count values	*/
-        if (counter%VALUES_PER_LINE==0)
-          fprintf(stream,"\n");
-      }
-    }
+        if (VCFLAG(vc)) continue;                       /* we have this one alre ady */
+        SETVCFLAG(vc,1);                                /* tag vector as visited */
 
-  /* then the Y coordinate */
-  for (k=0; k<=TOPLEVEL(mg); k++)
-    for (vc=FIRSTVECTOR(GRID_ON_LEVEL(mg,k)); vc!=NULL; vc=SUCCVC(vc))
-      SETVCFLAG(vc,0);           /* clear all flags */
-  for (k=0; k<=TOPLEVEL(mg); k++)
-    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
-    {
-      if (NSONS(el)>0) continue;                        /* process finest level elements only */
-      for (i=0; i<CORNERS_OF_ELEM(el); i++)
-      {
-        vc = NVECTOR(CORNER(el,i));
-        if (VCFLAG(vc)) continue;                       /* we have this one already */
-        SETVCFLAG(vc,1);                                        /* tag vector as visited */
-        fprintf(stream,"%g ",(double)YC(MYVERTEX(CORNER(el,i))));
-        counter++;                                                              /* count values	*/
-        if (counter%VALUES_PER_LINE==0)
-          fprintf(stream,"\n");
-      }
-    }
+        fprintf(stream,"%g",(double)XC(MYVERTEX(CORNER(el,i))));
+        fprintf(stream," %g",(double)YC(MYVERTEX(CORNER(el,i))));
+        if (DIM == 3)
+          fprintf(stream," %g",(double)ZC(MYVERTEX(CORNER(el,i))));
 
-  /* then the Z coordinate */
-  if (DIM==3) {
-    for (k=0; k<=TOPLEVEL(mg); k++)
-      for (vc=FIRSTVECTOR(GRID_ON_LEVEL(mg,k)); vc!=NULL; vc=SUCCVC(vc))
-        SETVCFLAG(vc,0);                 /* clear all flags */
-    for (k=0; k<=TOPLEVEL(mg); k++)
-      for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
-      {
-        if (NSONS(el)>0) continue;                              /* process finest level elements only */
-        for (i=0; i<CORNERS_OF_ELEM(el); i++)
+        /* now all the user variables */
+
+        /* get local coordinate of corner */
+        LocalCornerCoordinates(DIM,TAG(el),i,local);
+        for (j=0; j<DIM; j++) LocalCoord[j] = local[j];
+
+        for (v=0; v<nv; v++)
         {
-          vc = NVECTOR(CORNER(el,i));
-          if (VCFLAG(vc)) continue;                             /* we have this one already */
-          SETVCFLAG(vc,1);                                              /* tag vector as visited */
-          fprintf(stream,"%g ",(double)ZC(MYVERTEX(CORNER(el,i))));
-          counter++;                                                                    /* count values	*/
-          if (counter%VALUES_PER_LINE==0)
-            fprintf(stream,"\n");
-        }
-      }
-  }
+          pre =  ev[v]->PreprocessProc;
+          eval = ev[v]->EvalProc;
 
-  /* now all the user variables */
-  for (v=0; v<nv; v++)
-  {
-    pre =  ev[v]->PreprocessProc;
-    eval = ev[v]->EvalProc;
+          /* execute prepare function */
+          /* This is not really equivalent to
+             the FEBLOCK-version sinc we call "pre" more
+             often than there. D.Werner */
 
-    /* execute prepare function */
-    if (pre!=NULL) pre(ev_name[v],mg);
-
-    /* now the data */
-    for (k=0; k<=TOPLEVEL(mg); k++)
-      for (vc=FIRSTVECTOR(GRID_ON_LEVEL(mg,k)); vc!=NULL; vc=SUCCVC(vc))
-        SETVCFLAG(vc,0);                 /* clear all flags */
-    for (k=0; k<=TOPLEVEL(mg); k++)
-      for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
-      {
-        if (NSONS(el)>0) continue;                              /* process finest level elements only */
-        for (i=0; i<CORNERS_OF_ELEM(el); i++)
-          CornersCoord[i] = CVECT(MYVERTEX(CORNER(el,i)));                       /* x,y,z of corners */
-        for (i=0; i<CORNERS_OF_ELEM(el); i++)
-        {
-          vc = NVECTOR(CORNER(el,i));
-          if (VCFLAG(vc)) continue;                             /* we have this one already */
-          SETVCFLAG(vc,1);                                              /* tag vector as visited */
-
-          /* get local coordinate of corner */
-          LocalCornerCoordinates(DIM,TAG(el),i,local);
-          for (j=0; j<DIM; j++) LocalCoord[j] = local[j];
+          if (pre!=NULL) pre(ev_name[v],mg);
 
           /* call eval function */
           value = eval(el,(const DOUBLE **)CornersCoord,LocalCoord);
-          fprintf(stream,"%g ",value);
-          counter++;                                                                    /* count values	*/
-          if (counter%VALUES_PER_LINE==0)
-            fprintf(stream,"\n");
+          fprintf(stream," %g",value);
         }
+        fprintf(stream,"\n");
       }
-  }
+    }
   fprintf(stream,"\n");
 
   /* finally write the connectivity list */
-  if (DIM==2) maxCorners=4;else maxCorners=8;
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
     {
-      if (NSONS(el)>0) continue;                        /* process finest level elements only */
+      if (NSONS(el)>0) continue;           /* process finest level elements only */
 
-      /* write indices of corners of element */
-      for (i=0; i<CORNERS_OF_ELEM(el); i++)
-        fprintf(stream,"%d ",VINDEX(NVECTOR(CORNER(el,i))));
+      switch(DIM) {
+      case 2 :
+        switch(TAG(el)) {
+        case TRIANGLE :
+          fprintf(stream,"%d %d %d %d\n",
+                  VINDEX(NVECTOR(CORNER(el,0))),
+                  VINDEX(NVECTOR(CORNER(el,1))),
+                  VINDEX(NVECTOR(CORNER(el,2))),
+                  VINDEX(NVECTOR(CORNER(el,2)))
+                  );
+          break;
+        case QUADRILATERAL :
+          fprintf(stream,"%d %d %d %d\n",
+                  VINDEX(NVECTOR(CORNER(el,0))),
+                  VINDEX(NVECTOR(CORNER(el,1))),
+                  VINDEX(NVECTOR(CORNER(el,2))),
+                  VINDEX(NVECTOR(CORNER(el,3)))
+                  );
+          break;
+        default :
+          UserWriteF("tecplot: unknown 2D element type with tag(el) = %d detected. Aborting further processing of command tecplot\n", TAG(el));
+          return CMDERRORCODE;
+          break;
+        }
+        break;
+      case 3 :
+        switch(TAG(el)) {
+        case HEXAHEDRON :
+          fprintf(stream,"%d %d %d %d "
+                  "%d %d %d %d\n",
+                  VINDEX(NVECTOR(CORNER(el,0))),
+                  VINDEX(NVECTOR(CORNER(el,1))),
+                  VINDEX(NVECTOR(CORNER(el,2))),
+                  VINDEX(NVECTOR(CORNER(el,3))),
+                  VINDEX(NVECTOR(CORNER(el,4))),
+                  VINDEX(NVECTOR(CORNER(el,5))),
+                  VINDEX(NVECTOR(CORNER(el,6))),
+                  VINDEX(NVECTOR(CORNER(el,7)))
+                  );
+          break;
+        case TETRAHEDRON :
+          fprintf(stream,"%d %d %d %d "
+                  "%d %d %d %d\n",
+                  VINDEX(NVECTOR(CORNER(el,0))),
+                  VINDEX(NVECTOR(CORNER(el,1))),
+                  VINDEX(NVECTOR(CORNER(el,2))),
+                  VINDEX(NVECTOR(CORNER(el,2))),
+                  VINDEX(NVECTOR(CORNER(el,3))),
+                  VINDEX(NVECTOR(CORNER(el,3))),
+                  VINDEX(NVECTOR(CORNER(el,3))),
+                  VINDEX(NVECTOR(CORNER(el,3)))
+                  );
+          break;
+        case PYRAMID :
+          fprintf(stream,"%d %d %d %d "
+                  "%d %d %d %d\n",
+                  VINDEX(NVECTOR(CORNER(el,0))),
+                  VINDEX(NVECTOR(CORNER(el,1))),
+                  VINDEX(NVECTOR(CORNER(el,2))),
+                  VINDEX(NVECTOR(CORNER(el,3))),
+                  VINDEX(NVECTOR(CORNER(el,4))),
+                  VINDEX(NVECTOR(CORNER(el,4))),
+                  VINDEX(NVECTOR(CORNER(el,4))),
+                  VINDEX(NVECTOR(CORNER(el,4)))
+                  );
+          break;
+        case PRISM :
+          fprintf(stream,"%d %d %d %d "
+                  "%d %d %d %d\n",
+                  VINDEX(NVECTOR(CORNER(el,0))),
+                  VINDEX(NVECTOR(CORNER(el,1))),
+                  VINDEX(NVECTOR(CORNER(el,2))),
+                  VINDEX(NVECTOR(CORNER(el,2))),
+                  VINDEX(NVECTOR(CORNER(el,3))),
+                  VINDEX(NVECTOR(CORNER(el,4))),
+                  VINDEX(NVECTOR(CORNER(el,5))),
+                  VINDEX(NVECTOR(CORNER(el,5)))
+                  );
+          break;
+        default :
+          UserWriteF("tecplot: unknown 3D element type with tag(el) = %d detected. Aborting further processing of command tecplot\n", TAG(el));
+          return CMDERRORCODE;
+          break;
+        }
+        break;
+      }
 
-      /* now we have i=#corners (e.g. 3 for triangle) */
-      j = VINDEX(NVECTOR(CORNER(el,i-1)));                   /* last index */
-
-      /* fill up with last index */
-      for ( ; i<maxCorners; i++)
-        fprintf(stream,"%d ",j);
-
-      /* end of line is needed */
-      fprintf(stream,"\n");
     }
 
   /********************************/
