@@ -410,13 +410,14 @@ typedef struct
   INT fmode;                                                    /* apply float-matrix					*/
   INT optimizeBand;                                     /* 1 for optimization of bandwidth		*/
   INT CopyBack;                                         /* 1 for copy decomposed mat back		*/
-  INT MarkKey;                                          /* key for Mark/Release					*/
-  FLOAT *FMat;                                          /* float-matrix							*/
-  DOUBLE *DMat;                                         /* double-matrix						*/
+  INT MarkKey[MAXLEVEL];                        /* key for Mark/Release					*/
+  INT count;                            /* counter for MarkKey                  */
+  FLOAT *FMat[MAXLEVEL];                        /* float-matrix							*/
+  DOUBLE *DMat[MAXLEVEL];                       /* double-matrix						*/
   INT mem;                                                      /* memory used temporary (bytes)		*/
   INT pp_failed;                                        /* 1 if preproc failed, used in smooth  */
 
-  DOUBLE *Vec;                                          /* vector								*/
+  DOUBLE *Vec;                                  /* vector								*/
 
 } NP_EX;
 
@@ -2384,6 +2385,7 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
   }
   if (dset(theMG,level,level,ALL_VECTORS,np->px,0.0)!= NUM_OK)
     NP_RETURN(1,result[0]);
+
   if ((*np->p_iter->Iter)(np->p_iter,level,np->r,np->q,np->S,result))
     REP_ERR_RETURN(1);
 
@@ -2507,7 +2509,6 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
     FreeVD(NP_MG(theNP),level,level,np->q);
     FreeVD(NP_MG(theNP),level,level,np->r);
   }
-
   return (0);
 }
 
@@ -5312,7 +5313,6 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   if ((*np->Transfer->RestrictDefect)
         (np->Transfer,level,b,b,A,Factor_One,result))
     REP_ERR_RETURN(1);
-
 #ifdef USE_FAMG
   /* update correction, defect computed in restriction */
   if((*np->Transfer->RestrictDefect) == FAMGRestrictDefect)
@@ -5340,6 +5340,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   if ((*np->Transfer->InterpolateCorrection)
         (np->Transfer,level,np->t,c,A,np->damp,result))
     REP_ERR_RETURN(1);
+
   IFDEBUG(np,4)
   dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,np->t,&eunorm);
   UserWriteF("norm of interpolated correction : %f\n",eunorm);
@@ -5348,6 +5349,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
     NP_RETURN(1,result[0]);
   if (dmatmul_minus(theMG,level,level,ALL_VECTORS,b,A,np->t) != NUM_OK)
     NP_RETURN(1,result[0]);
+
   IFDEBUG(np,4)
   dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
   UserWriteF("defect after CG correction : %f\n",eunorm);
@@ -5378,11 +5380,10 @@ static INT LmgcPostProcess (NP_ITER *theNP, INT level,
 
   np = (NP_LMGC *) theNP;
 
-  if (np->PreSmooth->PostProcess != NULL)
-    for (i = level; i >= np->baselevel+1; i--)
-      if ((*np->PreSmooth->PostProcess)
-            (np->PreSmooth,i,x,b,A,result))
-        REP_ERR_RETURN(1);
+  if (np->BaseSolver->PostProcess != NULL)
+    if ((*np->BaseSolver->PostProcess)
+          (np->BaseSolver,np->baselevel,x,b,A,result))
+      REP_ERR_RETURN(1);
 
   if (np->PreSmooth != np->PostSmooth)
     if (np->PostSmooth->PostProcess != NULL)
@@ -5391,10 +5392,11 @@ static INT LmgcPostProcess (NP_ITER *theNP, INT level,
               (np->PostSmooth,i,x,b,A,result))
           REP_ERR_RETURN(1);
 
-  if (np->BaseSolver->PostProcess != NULL)
-    if ((*np->BaseSolver->PostProcess)
-          (np->BaseSolver,np->baselevel,x,b,A,result))
-      REP_ERR_RETURN(1);
+  if (np->PreSmooth->PostProcess != NULL)
+    for (i = level; i >= np->baselevel+1; i--)
+      if ((*np->PreSmooth->PostProcess)
+            (np->PreSmooth,i,x,b,A,result))
+        REP_ERR_RETURN(1);
 
   if (np->Transfer->PostProcess != NULL)
     if ((*np->Transfer->PostProcess)
@@ -5676,6 +5678,8 @@ static INT EXInit (NP_BASE *theNP, INT argc , char **argv)
   np->fmode = ReadArgvOption ("f",argc,argv);
   if (ReadArgvINT ("o",&np->optimizeBand,argc,argv)) np->optimizeBand=1;
   if (ReadArgvINT ("copyback",&np->CopyBack,argc,argv)) np->CopyBack=0;
+  np->nv = -1;
+  np->count = -1;
 
   return (SmootherInit(theNP,argc,argv));
 }
@@ -5706,6 +5710,8 @@ static INT EXDisplay (NP_BASE *theNP)
   UserWriteF(DISPLAY_NP_FORMAT_SF,name,(float)mem);
   UserWriteF(DISPLAY_NP_FORMAT_SS,"optimize",BOOL_2_YN(np->optimizeBand));
   UserWriteF(DISPLAY_NP_FORMAT_SS,"copy back",BOOL_2_YN(np->CopyBack));
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"nv",(int)np->nv);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"count",(int)np->count);
 
   return (0);
 }
@@ -5756,8 +5762,18 @@ static INT EXCopyMatrixFLOAT (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, I
     for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
     {
       index = VINDEX(theV);
-      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
+      rtype = VTYPE(theV);
+      rcomp = VD_NCMPS_IN_TYPE(x,rtype);
+      if (rcomp == 0) continue;
+      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM)) {
+        theW = MDEST(theM);
+        cindex = VINDEX(theW);
+        ctype = VTYPE(theW);
+        ccomp = VD_NCMPS_IN_TYPE(x,ctype);
+        if (ccomp == 0) continue;
+        comp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
         EX_MAT(Mat,bw,index,MDESTINDEX(theM)) = MVALUE(theM,ment);
+      }
     }
   }
   else
@@ -5828,8 +5844,18 @@ static INT EXCopyMatrixFLOATback (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *
     for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
     {
       index = VINDEX(theV);
-      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
+      rtype = VTYPE(theV);
+      rcomp = VD_NCMPS_IN_TYPE(x,rtype);
+      if (rcomp == 0) continue;
+      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM)) {
+        theW = MDEST(theM);
+        cindex = VINDEX(theW);
+        ctype = VTYPE(theW);
+        ccomp = VD_NCMPS_IN_TYPE(x,ctype);
+        if (ccomp == 0) continue;
+        comp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
         MVALUE(theM,ment) = EX_MAT(Mat,bw,index,MDESTINDEX(theM));
+      }
     }
   }
   else
@@ -5901,8 +5927,18 @@ static INT EXCopyMatrixDOUBLE (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, 
     for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
     {
       index = VINDEX(theV);
-      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
+      rtype = VTYPE(theV);
+      rcomp = VD_NCMPS_IN_TYPE(x,rtype);
+      if (rcomp == 0) continue;
+      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM)) {
+        theW = MDEST(theM);
+        cindex = VINDEX(theW);
+        ctype = VTYPE(theW);
+        ccomp = VD_NCMPS_IN_TYPE(x,ctype);
+        if (ccomp == 0) continue;
+        comp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
         EX_MAT(Mat,bw,index,MDESTINDEX(theM)) = MVALUE(theM,ment);
+      }
     }
   }
   else
@@ -5973,8 +6009,18 @@ static INT EXCopyMatrixDOUBLEback (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC 
     for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
     {
       index = VINDEX(theV);
-      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
+      rtype = VTYPE(theV);
+      rcomp = VD_NCMPS_IN_TYPE(x,rtype);
+      if (rcomp == 0) continue;
+      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM)) {
+        theW = MDEST(theM);
+        cindex = VINDEX(theW);
+        ctype = VTYPE(theW);
+        ccomp = VD_NCMPS_IN_TYPE(x,ctype);
+        if (ccomp == 0) continue;
+        comp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
         MVALUE(theM,ment) = EX_MAT(Mat,bw,index,MDESTINDEX(theM));
+      }
     }
   }
   else
@@ -6002,29 +6048,28 @@ static INT EXCopyMatrixDOUBLEback (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC 
 
 static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
 {
-  NP_EX *np;
+  NP_EX *np = (NP_EX *) theNP;
   FIFO myfifo;
   void *buffer;
   VECTOR **vlist;
   VECTOR *theV;
   MATRIX *theM;
-  HEAP *theHeap;
-  GRID *theGrid;
-  INT bw,i,k,n,index,max;
+  HEAP *theHeap = MGHEAP(NP_MG(theNP));
+  GRID *theGrid = NP_GRID(theNP,level);
+  INT bw,i,k,index,max;
   INT MarkKey;
+  INT optimizeBand = np->optimizeBand;
+  INT n = 0;
 
-  np = (NP_EX *) theNP;
-  *baselevel = level;
-  theGrid = NP_GRID(theNP,level);
-  n = 0;
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) n++;
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    if (VD_NCMPS_IN_TYPE(x,VTYPE(theV)) > 0) n++;
   np->nv = n;
   np->pp_failed=0;
-
   if (n == 0)
     return(0);
-
-  theHeap = MGHEAP(NP_MG(theNP));
+  *baselevel = level;
+  if (np->count >= 0)
+    optimizeBand = 0;
   if (np->optimizeBand)
   {
     IFDEBUG(np,1)
@@ -6049,7 +6094,10 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
     fifo_init(&myfifo,buffer,sizeof(VECTOR*)*n);
     for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
       SETVCUSED(theV,0);
-    fifo_in(&myfifo,(void *)FIRSTVECTOR(theGrid));
+    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+      if (VD_NCMPS_IN_TYPE(x,VTYPE(theV)) > 0)
+        break;
+    fifo_in(&myfifo,theV);
     SETVCUSED(FIRSTVECTOR(theGrid),1);
     while(!fifo_empty(&myfifo))
     {
@@ -6057,6 +6105,8 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
       for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
         if (!VCUSED(MDEST(theM)))
         {
+          if (VD_NCMPS_IN_TYPE(x,VTYPE(MDEST(theM))) == 0)
+            continue;
           fifo_in(&myfifo,(void *)MDEST(theM));
           SETVCUSED(MDEST(theM),1);
         }
@@ -6070,6 +6120,8 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
       for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
         if (VCUSED(MDEST(theM)))
         {
+          if (VD_NCMPS_IN_TYPE(x,VTYPE(MDEST(theM))) == 0)
+            continue;
           fifo_in(&myfifo,(void *)MDEST(theM));
           SETVCUSED(MDEST(theM),0);
         }
@@ -6081,14 +6133,18 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   }
   if (MD_IS_SCALAR(A))
   {
+    k = 0;
     for (theV=FIRSTVECTOR(theGrid),i=0; theV!=NULL; theV=SUCCVC(theV),i++)
-      VINDEX(theV) = i;
+      if (VD_NCMPS_IN_TYPE(x,VTYPE(theV)) > 0)
+        VINDEX(theV) = k++;
     bw = 0;
     for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
     {
       index = VINDEX(theV);
+      if (VD_NCMPS_IN_TYPE(x,VTYPE(theV)) == 0) continue;
       for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
       {
+        if (VD_NCMPS_IN_TYPE(x,VTYPE(MDEST(theM))) == 0) continue;
         k = index-MDESTINDEX(theM);
         k = ABS(k);
         bw = MAX(bw,k);
@@ -6110,8 +6166,10 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
     for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
     {
       index = VINDEX(theV);
+      if (VD_NCMPS_IN_TYPE(x,VTYPE(theV)) == 0) continue;
       for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
       {
+        if (VD_NCMPS_IN_TYPE(x,VTYPE(MDEST(theM))) == 0) continue;
         k = index-MDESTINDEX(theM);
         k = ABS(k);
         bw = MAX(bw,k);
@@ -6127,45 +6185,44 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
 
   /* get storage for matrix */
   bw = np->bw;
-  if (MarkTmpMem(theHeap,&np->MarkKey))
+  np->count++;
+  if (MarkTmpMem(theHeap,&(np->MarkKey[np->count])))
     REP_ERR_RETURN(1);
-  np->Vec = (DOUBLE*)GetTmpMem(theHeap,np->nv*sizeof(DOUBLE),np->MarkKey);
-  /* np->Vec = (DOUBLE*)GetFreelistMemory(theHeap,np->nv*sizeof(DOUBLE)); */
+  if (np->count == 0)
+    np->Vec = (DOUBLE*)GetTmpMem(theHeap,np->nv*sizeof(DOUBLE),np->MarkKey[np->count]);
 
   if (np->fmode == 1)
   {
     np->mem = np->nv*(2*bw+1)*sizeof(FLOAT);
-    /*np->FMat = (FLOAT*)GetFreelistMemory(theHeap,np->mem); */
-    np->FMat = (FLOAT*)GetTmpMem(theHeap,np->mem,np->MarkKey);
-    if (np->FMat==NULL) {
+    np->FMat[np->count] = (FLOAT*)GetTmpMem(theHeap,np->mem,np->MarkKey[np->count]);
+    if (np->FMat[np->count]==NULL) {
       UserWriteF("EX: cannot allocate %d bytes\n",np->mem);
       REP_ERR_RETURN(1);
     }
-    memset((void*)np->FMat,0,np->mem);
-    if (EXCopyMatrixFLOAT (theGrid,x,A,np->bw,np->FMat))
+    memset((void*)(np->FMat[np->count]),0,np->mem);
+    if (EXCopyMatrixFLOAT (theGrid,x,A,np->bw,np->FMat[np->count]))
       REP_ERR_RETURN(1);
-    if (EXDecomposeMatrixFLOAT (np->FMat,np->bw,np->nv))
+    if (EXDecomposeMatrixFLOAT (np->FMat[np->count],np->bw,np->nv))
       np->pp_failed=1;
     if (np->CopyBack)
-      if (EXCopyMatrixFLOATback(theGrid,x,np->smoother.L,np->bw,np->FMat))
+      if (EXCopyMatrixFLOATback(theGrid,x,np->smoother.L,np->bw,np->FMat[np->count]))
         REP_ERR_RETURN(1);
   }
   else
   {
     np->mem = np->nv*(2*bw+1)*sizeof(DOUBLE);
-    /*np->DMat = (DOUBLE*)GetFreelistMemory(theHeap,np->mem); */
-    np->DMat = (DOUBLE*)GetTmpMem(theHeap,np->mem,np->MarkKey);
-    if (np->DMat==NULL) {
+    np->DMat[np->count] = (DOUBLE*)GetTmpMem(theHeap,np->mem,np->MarkKey[np->count]);
+    if (np->DMat[np->count]==NULL) {
       UserWriteF("EX: cannot allocate %d bytes\n",np->mem);
       REP_ERR_RETURN(1);
     }
-    memset((void*)np->DMat,0,np->mem);
-    if (EXCopyMatrixDOUBLE (theGrid,x,A,np->bw,np->DMat))
+    memset((void*)(np->DMat[np->count]),0,np->mem);
+    if (EXCopyMatrixDOUBLE (theGrid,x,A,np->bw,np->DMat[np->count]))
       REP_ERR_RETURN(1);
-    if (EXDecomposeMatrixDOUBLE (np->DMat,np->bw,np->nv))
+    if (EXDecomposeMatrixDOUBLE (np->DMat[np->count],np->bw,np->nv))
       np->pp_failed=1;
     if (np->CopyBack)
-      if (EXCopyMatrixDOUBLEback(theGrid,x,np->smoother.L,np->bw,np->DMat))
+      if (EXCopyMatrixDOUBLEback(theGrid,x,np->smoother.L,np->bw,np->DMat[np->count]))
         REP_ERR_RETURN(1);
   }
   return (0);
@@ -6207,8 +6264,10 @@ static INT EXSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC 
   if (MD_IS_SCALAR(A))
   {
     vent=VD_SCALCMP(b);
+    j = 0;
     for (theV=FIRSTVECTOR(theGrid),i=0; theV!=NULL; theV=SUCCVC(theV),i++)
-      Vec[i] = VVALUE(theV,vent);
+      if (VD_NCMPS_IN_TYPE(b,VTYPE(theV)) > 0)
+        Vec[j++] = VVALUE(theV,vent);
   }
   else
   {
@@ -6224,19 +6283,21 @@ static INT EXSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC 
   /* solve for vector */
   if (np->fmode == 1)
   {
-    if (EXApplyLUFLOAT (np->FMat,bw,n,Vec)) REP_ERR_RETURN(1);
+    if (EXApplyLUFLOAT (np->FMat[np->count],bw,n,Vec)) REP_ERR_RETURN(1);
   }
   else
   {
-    if (EXApplyLUDOUBLE (np->DMat,bw,n,Vec)) REP_ERR_RETURN(1);
+    if (EXApplyLUDOUBLE (np->DMat[np->count],bw,n,Vec)) REP_ERR_RETURN(1);
   }
 
-  /* copy Vec to c */
+  /* copy Vec to x */
   if (MD_IS_SCALAR(A))
   {
     vent=VD_SCALCMP(x);
+    j = 0;
     for (theV=FIRSTVECTOR(theGrid),i=0; theV!=NULL; theV=SUCCVC(theV),i++)
-      VVALUE(theV,vent) = Vec[i];
+      if (VD_NCMPS_IN_TYPE(x,VTYPE(theV)) > 0)
+        VVALUE(theV,vent) = Vec[j++];
   }
   else
   {
@@ -6296,11 +6357,12 @@ static INT EXPostProcess (NP_ITER *theNP, INT level,VECDATA_DESC *x, VECDATA_DES
      if (PutFreelistMemory(theHeap, np->Vec, np->nv*sizeof(DOUBLE)))
           REP_ERR_RETURN(1);
    */
-
-  ReleaseTmpMem(theHeap,np->MarkKey);
-  np->FMat = NULL;
-  np->DMat = NULL;
-  np->Vec = NULL;
+  ReleaseTmpMem(theHeap,np->MarkKey[np->count]);
+  np->FMat[np->count] = NULL;
+  np->DMat[np->count] = NULL;
+  if (np->count == 0)
+    np->Vec = NULL;
+  np->count--;
 
   return(0);
 }
