@@ -5,7 +5,7 @@
 #include <string.h>
 #include <math.h>
 
-#include <template.hh>
+
 #include <myadt.hh>
 #include <linalg/linalg.hh>
 
@@ -66,6 +66,7 @@ ostream & operator<<(ostream & s, const BaseMatrix & m)
 
 ostream & BaseMatrix :: Print (ostream & s) const
 {
+  if (Symmetric()) s << "Symmetric" << endl;
   for (INDEX i = 1; i <= Height(); i++)
   {
     for (INDEX j = 1; j < Width(); j++)
@@ -84,11 +85,13 @@ TempVector BaseMatrix :: operator* (const BaseVector & v) const
 
   if (Width() != v.Length())
   {
-    //    myerr << "\nMatrix and Vector don't fit" << endl;
+    //    myerr << "\nMatrix and Vector don't fit 1" << endl;
+    ;
   }
   else if (Height() != prod->Length())
   {
     //    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
+    ;
   }
   else
   {
@@ -108,10 +111,12 @@ DenseMatrix operator* (const BaseMatrix & m1, const BaseMatrix & m2)
   if (m1.Width() != m2.Height())
   {
     //         myerr << "BaseMatrix :: operator*: Matrix Size does not fit" << endl;
+    ;
   }
   else if (temp.Height() != m1.Height())
   {
     //         myerr << "BaseMatrix :: operator*: temp not allocated" << endl;
+    ;
   }
   else
   {
@@ -136,10 +141,12 @@ DenseMatrix operator+ (const BaseMatrix & m1, const BaseMatrix & m2)
   if (m1.Width() != m2.Width() || m1.Height() != m2.Height())
   {
     //    myerr << "BaseMatrix :: operator+: Matrix Size does not fit" << endl;
+    ;
   }
   else if (temp.Height() != m1.Height())
   {
     //    myerr << "BaseMatrix :: operator+: temp not allocated" << endl;
+    ;
   }
   else
   {
@@ -157,6 +164,7 @@ void BaseMatrix :: Mult (const BaseVector & /* v */,
                          BaseVector & /* prod */) const
 {
   //  myerr << "BaseMatrix :: Mult called" << endl;
+  ;
 }
 
 void BaseMatrix :: MultTrans (const BaseVector &  v,
@@ -201,17 +209,18 @@ BaseVector * BaseMatrix :: CreateVector () const
 /*
    void BaseMatrix :: Mult (const Vector & v, Vector & prod) const
    {
-   float sum;
+   double sum;
 
    prod.SetLength (Height());
 
    if (Width() != v.Length())
     {
-   //    myerr << "\nMatrix and Vector don't fit" << endl;
+   //    myerr << "\nMatrix and Vector don't fit 2" << endl;
     }
    else if (Height() != prod.Length())
     {
    //    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
+                ;
     }
    else
     {
@@ -230,17 +239,19 @@ BaseVector * BaseMatrix :: CreateVector () const
 
    void BaseMatrix :: MultTrans (const Vector & v, Vector & prod) const
    {
-   float sum;
+   double sum;
 
    prod.SetLength (Width());
 
    if (Height() != v.Length())
     {
-   //    myerr << "\nMatrix and Vector don't fit" << endl;
+   //    myerr << "\nMatrix and Vector don't fit 3" << endl;
+                ;
     }
    else if (Width() != prod.Length())
     {
    //    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
+                ;
     }
    else
     {
@@ -259,17 +270,19 @@ BaseVector * BaseMatrix :: CreateVector () const
 
    void BaseMatrix :: Residuum (const Vector & x, const Vector & b, Vector & res) const
    {
-   float sum;
+   double sum;
 
    res.SetLength (Height());
 
    if (Width() != x.Length() || Height() != b.Length())
     {
-   //    myerr << "\nMatrix and Vector don't fit" << endl;
+   //    myerr << "\nMatrix and Vector don't fit 4" << endl;
+                ;
     }
    else if (Height() != res.Length())
     {
    //    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
+                ;
     }
    else
     {
@@ -299,7 +312,7 @@ void BaseMatrix :: SolveDestroy (const Vector & v, Vector & sol)
 
   if (Width() != Height())
   {
-    //   myerr << "SolveDestroy: Matrix not square";
+    //    myerr << "SolveDestroy: Matrix not square";
     return;
   }
   if (Width() != v.Length())
@@ -352,6 +365,12 @@ void BaseMatrix :: Solve (const Vector & v, Vector & sol) const
   temp->SolveDestroy (v, sol);
 
   delete temp;
+}
+
+
+Vector BaseMatrix :: SolveDestroyFunc (const Vector & /* b */) const
+{
+  return Vector(0);
 }
 
 
@@ -428,4 +447,34 @@ void Transpose (const BaseMatrix & m1, DenseMatrix & m2)
   for (i = 1; i <= m1.Height(); i++)
     for (j = 1; j <= m1.Width(); j++)
       m2(j, i) = m1(i, j);
+}
+
+
+
+DenseMatrix * BaseMatrix :: MakeDenseMatrix () const
+{
+  DenseMatrix * dmat = new DenseMatrix (Height(), Width());
+  dmat -> SetSymmetric(Symmetric());
+
+  Vector x(Width()), y(Height());
+  INDEX i, j;
+
+  for (i = 1; i <= Width(); i++)
+  {
+    x = 0;
+    x.Elem(i) = 1;
+    Mult (x, y);
+
+    for (j = 1; j <= Height(); j++)
+      dmat->Elem(j, i) = y.Get(j);
+  }
+
+  return dmat;
+}
+
+
+BaseMatrix * BaseMatrix :: InverseMatrix (const BitArray * /* inner */) const
+{
+  cout << "called basematrix::inversemarix" << endl;
+  return NULL;
 }

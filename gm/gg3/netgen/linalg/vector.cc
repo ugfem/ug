@@ -12,6 +12,7 @@
 
 //extern ofstream myerr;
 
+
 double BaseVector :: shit = 0;
 
 // %FD Constructs a vector of length zero
@@ -86,6 +87,42 @@ BaseVector :: Copy () const
 
 
 
+
+void BaseVector :: GetElementVector (const ARRAY<INDEX> & pnum,
+                                     BaseVector & elvec) const
+{
+  int i;
+  for (i = 1; i <= pnum.Size(); i++)
+    elvec(i) = (*this)(pnum.Get(i));
+}
+
+void BaseVector :: SetElementVector (const ARRAY<INDEX> & pnum,
+                                     const BaseVector & elvec)
+{
+  int i;
+  for (i = 1; i <= pnum.Size(); i++)
+    (*this)(pnum.Get(i)) = elvec(i);
+}
+
+
+void BaseVector :: AddElementVector (const ARRAY<INDEX> & pnum,
+                                     const BaseVector & elvec)
+{
+  int i;
+  for (i = 1; i <= pnum.Size(); i++)
+    (*this)(pnum.Get(i)) += elvec(i);
+}
+
+
+
+
+
+
+
+
+
+
+
 TempVector :: ~TempVector ()
 {
   delete vec;
@@ -107,14 +144,14 @@ TempVector BaseVector :: operator- () const
 }
 
 
-TempVector BaseVector :: operator* (double scal) const
+TempVector operator* (const BaseVector & v1, double scal)
 {
-  return (*Copy()) *= scal;
+  return (*v1.Copy()) *= scal;
 }
 
-TempVector BaseVector :: operator/ (double scal) const
+TempVector operator/ (const BaseVector & v1, double scal)
 {
-  return (*Copy()) /= scal;
+  return (*v1.Copy()) /= scal;
 }
 
 
@@ -143,6 +180,40 @@ BaseVector * TempVector :: Copy () const
 
 double Vector :: shit = 0;
 
+static ARRAY<double *> vecpool;
+static ARRAY<INDEX> poolveclen;
+
+static double * NewDouble (INDEX len)
+{
+  if (len < 10)
+    return new double[len];
+  else
+  {
+    int i;
+    for (i = 1; i <= poolveclen.Size(); i++)
+      if (poolveclen.Get(i) == len)
+      {
+        double * hvec = vecpool.Get(i);
+        vecpool.DeleteElement(i);
+        poolveclen.DeleteElement(i);
+        return hvec;
+      }
+
+    return new double[len];
+  }
+}
+
+static void DeleteDouble (INDEX len, double * dp)
+{
+  if (len < 10)
+    delete dp;
+  else
+  {
+    vecpool.Append (dp);
+    poolveclen.Append (len);
+  }
+}
+
 
 
 Vector :: Vector () : BaseVector()
@@ -152,11 +223,11 @@ Vector :: Vector () : BaseVector()
 
 Vector :: Vector (INDEX alength) : BaseVector (alength)
 {
-
-  //  (*testout) << "New Vector of size " << alength << endl;
   if (length)
   {
-    data = new double[length];
+    //    data = new double[length];
+    data = NewDouble (length);
+
     if (!data)
     {
       length = 0;
@@ -167,14 +238,15 @@ Vector :: Vector (INDEX alength) : BaseVector (alength)
     data = NULL;
 }
 
+
 Vector :: Vector (const Vector & v2)
 {
   length = v2.length;
 
-  //  (*testout) << "New Vector (cc) of size " << length << endl;
   if (length)
   {
-    data = new double[length];
+    //    data = new double[length];
+    data = NewDouble (length);
 
     if (data)
     {
@@ -193,19 +265,31 @@ Vector :: Vector (const Vector & v2)
 
 Vector :: ~Vector ()
 {
-  //  (*testout) << "delete Vector of size " << length << endl;
-  if (data) delete [] data;
+  //  veclenfile << "~Vector delete: " << length << endl;
+  if (data)
+  {
+    DeleteDouble (length, data);
+    //      delete [] data;
+  }
+
 }
 
 void Vector :: SetLength (INDEX alength)
 {
   if (length == alength) return;
-  if (data) delete [] data;
+
+  if (data)
+  {
+    DeleteDouble (length, data);
+    //      delete [] data;
+  }
   data = NULL;
   length = alength;
 
   if (length == 0) return;
-  data = new double[length];
+  //  data = new double[length];
+  data = NewDouble (length);
+
   if (!data)
   {
     length = 0;
@@ -215,18 +299,21 @@ void Vector :: SetLength (INDEX alength)
 
 void Vector :: ChangeLength (INDEX alength)
 {
+  cout << "Vector::ChangeLength called" << endl;
   if (length == alength) return;
 
   if (alength == 0)
   {
-    delete [] data;
+    //    delete [] data;
+    DeleteDouble (length, data);
     length = 0;
     return;
   }
 
   double * olddata = data;
 
-  data = new double[alength];
+  data = NewDouble (alength);
+  //  data = new double[alength];
   if (!data)
   {
     length = 0;
@@ -239,6 +326,13 @@ void Vector :: ChangeLength (INDEX alength)
   delete [] olddata;
   length = alength;
 }
+
+/// NEW RM
+void Vector::SetBlockLength (INDEX /* blength */)
+{
+  MyError("BaseVector::SetBlockLength was called for a Vector");
+}
+
 
 double & Vector :: operator() (INDEX i)
 {
@@ -478,6 +572,69 @@ BaseVector & Vector :: Set (double scal , const BaseVector & v2,
 }
 
 
+void Vector :: GetPart (int startpos, BaseVector & v2) const
+{
+  Vector & hv2 = v2.CastToVector();
+
+  if (Length() >= startpos + v2.Length() - 1)
+  {
+    const double * p1 = &Get(startpos);
+    double * p2 = &hv2.Elem(1);
+
+    memcpy (p2, p1, hv2.Length() * sizeof(double));
+  }
+  else
+    MyError ("Vector::GetPart: Vector to short");
+}
+
+
+// NEW RM
+void Vector :: SetPart (int startpos, const BaseVector & v2)
+{
+  const Vector & hv2 = v2.CastToVector();
+  INDEX i;
+  INDEX n = v2.Length();
+
+  if (Length() >= startpos + n - 1)
+  {
+    double * p1 = &Elem(startpos);
+    const double * p2 = &hv2.Get(1);
+
+    for (i = 1; i <= n; i++)
+    {
+      (*p1) = (*p2);
+      p1++;
+      p2++;
+    }
+  }
+  else
+    MyError ("Vector::SetPart: Vector to short");
+}
+
+void Vector :: AddPart (int startpos, double val, const BaseVector & v2)
+{
+  const Vector & hv2 = v2.CastToVector();
+  INDEX i;
+  INDEX n = v2.Length();
+
+  if (Length() >= startpos + n - 1)
+  {
+    double * p1 = &Elem(startpos);
+    const double * p2 = &hv2.Get(1);
+
+    for (i = 1; i <= n; i++)
+    {
+      (*p1) += val * (*p2);
+      p1++;
+      p2++;
+    }
+  }
+  else
+    MyError ("Vector::AddPart: Vector to short");
+}
+
+
+
 
 double Vector :: operator* (const BaseVector & v2) const
 {
@@ -504,7 +661,8 @@ void Vector :: SetRandom ()
 {
   INDEX i;
   for (i = 1; i <= Length(); i++)
-    Elem(i) = 1.0 / double(i);
+    //    Elem(i) = 1.0 / double(i);
+    Elem(i) = drand48();
 }
 
 
@@ -558,7 +716,7 @@ BaseVector & Vector::operator= (const BaseVector & v2)
 BaseVector & Vector::operator= (double scal)
 {
   //  if (!Length()) myerr << "Vector::operator= (double) : data not allocated"
-  //                     << endl;
+  //                      << endl;
 
   for (INDEX i = 1; i <= Length(); i++)
     Set (i, scal);
@@ -578,4 +736,35 @@ void Vector :: Swap (BaseVector & v2)
   Vector & hv2 = v2.CastToVector();
   swap (length, hv2.length);
   swap (data, hv2.data);
+}
+
+
+
+
+void Vector :: GetElementVector (const ARRAY<INDEX> & pnum,
+                                 BaseVector & elvec) const
+{
+  int i;
+  Vector & helvec = elvec.CastToVector();
+  for (i = 1; i <= pnum.Size(); i++)
+    helvec.Elem(i) = Get(pnum.Get(i));
+}
+
+void Vector :: SetElementVector (const ARRAY<INDEX> & pnum,
+                                 const BaseVector & elvec)
+{
+  int i;
+  const Vector & helvec = elvec.CastToVector();
+  for (i = 1; i <= pnum.Size(); i++)
+    Elem(pnum.Get(i)) = helvec.Get(i);
+}
+
+
+void Vector :: AddElementVector (const ARRAY<INDEX> & pnum,
+                                 const BaseVector & elvec)
+{
+  int i;
+  const Vector & helvec = elvec.CastToVector();
+  for (i = 1; i <= pnum.Size(); i++)
+    Elem(pnum.Get(i)) += helvec.Get(i);
 }
