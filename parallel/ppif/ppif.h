@@ -67,12 +67,6 @@
 /* #error ****    CurrentTime defined before **** */
 #endif
 
-#ifdef __cplusplus
- #ifndef PPIF_FRONTEND_CPP
-extern "C" {
- #endif
-#endif
-
 
 /****************************************************************************/
 /*                                                                          */
@@ -135,11 +129,6 @@ extern int slvcnt[];                   /* number of processors in subtree       
 /****************************************************************************/
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 /* initialization & shutdown */
 int         InitPPIF         (int *argcp, char ***argvp);
 int         ExitPPIF         (void);
@@ -179,13 +168,6 @@ double      CurrentTime      (void);
 int         Distance             (int p, int q);
 int         aid_to_pid       (int x, int y, int z);
 int         pid_to_aid       (int p);
-
-
-#ifdef __cplusplus
-}
-#endif
-
-
 
 
 /****************************************************************************/
@@ -338,15 +320,6 @@ template<class T> void PPIF_ReduceMin (T * val)
   Broadcast(val, sizeof(T));
 }
 
-#endif
-
-
-/****************************************************************************/
-
-#ifdef __cplusplus
- #ifndef PPIF_FRONTEND_CPP
-}
- #endif
 #endif
 
 
