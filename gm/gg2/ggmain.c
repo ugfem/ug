@@ -2006,7 +2006,7 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   }
 
   /*
-          theElement = InsertElement (theGrid,n,Node,Neighbor,NeighborSide);
+          theElement = InsertElement (theGrid,n,Node,Neighbor,NeighborSide,NULL);
    */
   IFDEBUG(gm,2)
   printf("ggmain.c: theMG=%x InsertElement n=%d Node=%x\n",MYMG(theGrid),n,Node);
@@ -2025,13 +2025,13 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   ENDDEBUG
 
 
-    theElement = InsertElement (theGrid,n,Node,NULL,NULL);
+    theElement = InsertElement (theGrid,n,Node,NULL,NULL,NULL);
   if (theElement == NULL) RETURN(GM_FATAL);
 
   SETSUBDOMAIN(theElement,theElementContext->SubdomainID);
   theElementContext->thenewElement = theElement;
 
-  /* alternativ O(N*N): InsertElement (MYMG(theGrid),n,Node,NULL,NULL);*/
+  /* alternativ O(N*N): InsertElement (MYMG(theGrid),n,Node,NULL,NULL,NULL);*/
 
   /* plot */
 

@@ -153,6 +153,7 @@ int AddInnerNode (double x, double y, double z)
 int AddTetrahedron (int node0, int node1, int node2, int node3)
 {
   INT Id[4];
+  ELEMENT *theElement;
 
   PRINTDEBUG(dom,1,(" add element %4d %4d %4d %4d\n",
                     node0,node1,node2,node3));
@@ -162,8 +163,9 @@ int AddTetrahedron (int node0, int node1, int node2, int node3)
   Id[2] = node2;
   Id[3] = node3;
 
-  if (InsertElementFromIDs(GRID_ON_LEVEL(currMG,0),4,Id) == NULL)
-    return(1);
+  theElement = InsertElementFromIDs(GRID_ON_LEVEL(currMG,0),4,Id,NULL);
+  if (theElement==NULL) return(1);
+  /*SETSUBDOMAIN(theElement,id_from_somewhere);*/
 
   return(0);
 }
