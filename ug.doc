@@ -2,67 +2,104 @@
 /*D
    ug - software library for the development of applications solving partial differential equations
 
-   OVERVIEW:
-	This man page discusses the main concepts of the software library `ug`
-	and shall give helpful hints for understanding how an application is
-	constructed using this library. Furhermore this page should be the
-	starting point for getting hierarchically a deeper sight into the internal
-	structure of the different `ug` modules. At last there is given some practical
-	information for using `ug`.
+WHAT IS UG:
+   UG is a software toolbox that allows you to build applications
+   that solve partial differential equations with state of the art techniques
+   like multigrid, unstructured meshes, adaptivity and parallelism. 
+   The idea is that as much code as possible can be reused for many different 
+   problems and numerical methods. Of course every abstraction has its strengths
+   and weaknesses but we believe that UG may be of great help to many people.
 
-   APPLICATION STRUCTURE:
-	A typical application developed using the `ug` library can be divided into three 
-	layers: application layer, problem class layer and ug layer. The layers perform
-	the following tasks.
+MAIN FEATURES OF UG:
 
-.   application~layer - descrption of the domain shape and the boundary conditions.
-.   problem~class~layer - implements the partial defferential equation with a set of different 
-	solvers, estimators and discretisations
-.   ug~layer - the ug layer itself consists of different modules each performs a specific task 
+.  Grids - UG was primarily written to ease the development of multigrid methods
+   for practical problems. The basic mesh data structure allows hierarchical local
+   refinement (and coarsening) of completely unstructured meshes. Currently triangular and quadrilateral
+   elements in 2D and tetrahedral elements in 3D are supported. Work on hexahedral and
+   pyramidal elements is in progress.
+
+.  Solvers - UG stores matrices and vectors in a sparse matrix data structure that
+   is independent of the geometric structure of the mesh. Any number of degrees of
+   freedom can be placed in the nodes, edges, faces (3D) and elements of the mesh. This
+   allows also the implementation of mixed or non-conforming finite elements for
+   systems of partial differential equations. For some standard cases ready-to-use
+   multigrid components are available.
+
+.  Graphics - UG has built in graphics and a multiple window graphical user
+   interface. E.g. in 3D color plots or vector plots on arbitrary planar cuts
+   through the unstructured mesh can be plotted without writing lengthy files to disk.
+   This functionality is available on standard X11 basis and the Apple Macintosh.
+   In batch mode binary graphics files can be written for film animation and postscript
+   conversion.
+
+.  Interpreter - UG has a powerful command language that can be used to elegantly
+   specify parameters, doing parameter studies, producing films from instationary calculations etc.
+
+.  Parallelism - Version 2 of UG has been parallelized on MIMD message-passing architectures.
+   This version is only 2D and allows only degrees of freedom in the nodes of the mesh. However,
+   it has dynamic load balancing capabilites for unstructured, locally refined multigrid hierarchies
+   and is highly portable (interfaces for PVM, MPI, PARIX, NXlib, T3D are available).
+   Work is in progress to provide the extended functionality of ug3 on parallel architectures. A
+   smooth migration for existing serial applications will be possible.
+
+.  Applications - Five ready-to-run applications are shipped with the current
+   distribution. These are: diffusion equation on triangular meshes with piecewise
+   linear finite elements, diffusion equation on triangular meshes discretized with
+   non-conforming P1 elements, linear elasticity with linear, conforming elements
+   on triangles, Navier-Stokes equations discretized with a Finite-Volume method
+   on triangular and quadrilateral meshes and diffusion equation in 3D.
+   Several other applications are being developed with UG that are not publicly available:~
+   two-phase flow in porous media, density driven flow in porous media, Euler equations,
+   compressible Navier-Stokes equations, Plasticity, ...
+
+THE BASIC IDEA:
+   A typical application developed using the `ug` library can be divided into three 
+   layers: application layer, problem class layer and ug layer. The layers perform
+   the following tasks.
+
+.   application~layer - description of the domain shape and the boundary conditions. This
+    is done using a general interface that is independent of the specific problem to solve.
+ 
+.   problem~class~layer - implements the partial differential equation with a set of different 
+	solvers, estimators and discretisations. As far as the solver is concerned there are a number
+    of methods built into the ug layer that can be used in the standard cases.
+
+.   ug~layer - the ug layer itself is completely problem independent and is responsible
+    for managing unstructured, locally refined meshes in two and three dimensions, drawing
+    grids and results, managing multiple windows in a graphical user interface, providing
+    a powerful script language etc. 
 
 .vb
       
-                           layers of an ug application
+       layers of the UG software system:
 
-        ________________________________________________________________________
-       |                                                                        | 
-       |                        application layer                               | 
-       |                                                                        | 
-        ------------------------------------------------------------------------
-       |                                                                        | 
-       |                                                                        | 
-       |                        problem class layer                             | 
-       |                                                                        | 
-        ------------------------------------------------------------------------
-       |                                                                        | 
-       |                            ug layer:                                   | 
-       |                                                                        | 
-       |      grid management      graphics      user interface    devices      | 
-       |                                                                        | 
-       |              numerical procedures     low tasks                        | 
-       |________________________________________________________________________| 
+        _____________________________________
+       |                                     | 
+       |        application layer:           | 
+       |                                     | 
+       | geometry, cofficient functions,     | 
+       | boundary conditions                 | 
+       |                                     | 
+       +-------------------------------------+
+       |                                     | 
+       |         problem class layer:        | 
+       |                                     | 
+       | discretization, solver, estimator   | 
+       |                                     | 
+       +-------------------------------------+
+       |                                     | 
+       |            ug layer:                | 
+       |                                     | 
+       |         user interface              | 
+       |                                     | 
+       |  grid manager  graphics  numprocs   | 
+       |                                     | 
+       |       devices     low tasks         | 
+       |_____________________________________| 
 .ve
 
-	Since `ug` is provided with some sample applications, experiments with the
-	problems (partial differential equation, domain definition and boundary conditions)
-	defined here can be done without any programming. For example see man pages diff2da, cd3da.
 
-	If you just want to concern with a modified domain or different boundary conditions the
-	only thing to do is to modify the file of the application layer. These are in the case of
-	module diff2d and cd3d the corresponding source files diff2da.c and cd3da.c.
-
-	To write an own application treating your specific problem you need to change the two upper layers.
-	The problem class layer defines the mathematical tools to handle the equation, e.g. 
-	discretisation, solver, estimator. For the realisation of these mathematical algorithms the ug
-	layer provides a powerful interface by providing well defined abstract operations and functions, e.g.  
-	for the acess to the data structures of the multigrid (elements, nodes) as also for building up a
-	new solver.
-	Definition of the domain shape and boundary conditions for a new application should be done
-	in the application layer as mentioned above, this is the basis for a series of experiments with one
-	class of differential equation. 
-	As examples how to use the ug layer for your own needs, see man pages for diff2d and cd3d.
-
-	MODULES:
+MODULAR STRUCTURE OF THE UG KERNEL:
 	A module is considered in the 
 	context of `ug` as a set of one or more source files which realize a specific functionality. 
 	This viewpoint is closely related to the abstract data type (ADT) with data structures and 
@@ -71,7 +108,8 @@
 	This should ensure the typical software engineering demands and create a basis for flexible 
 	software which is portable and can be modified or extended to your needs with a small amount of work.  
 
-	Now let us have a closer look at the modules in the ug layer.
+    The ug layer itself has again an internal modular structure. The modules of the
+    ug layer are the following.
 
 .   'grid~management~(gm)' - The grid manager module performs all operations which manipulate the grid. It controls the creation 
 	and deletion of new elements during refine and provides a well defined interface to the layers above.
@@ -102,32 +140,87 @@
 	dependencies. 
 
 
-    OBTAINING THE CODE:
-	`ug` is beginning at version 3.0 a licensed software product. If you want your own copy of the 
-	ug sources you can get it via ftp from the ftp server 'dom.ica3.uni-stuttgart.de'. You will get there the ug sources including some 
-	problem class libraries and application examples. Fill out two copies of the licsence agreement and send them to
-.n   Sekretariat 
-.n   Institut fuer Computeranwendungen 3
-.n   Universitaet Stuttgart
-.n   Pfaffenwaldring 27
-.n   70569 Stuttgart
+OBTAINING THE CODE:
+	UG is available for free for all non-profit users. However a license form has to be completed
+    in order to keep track of all UG users. Upon sending back the license form you will receive a header file
+    'gm.h' that is needed to compile UG. WITHOUT THAT FILE YOU WILL NOT BE ABLE TO COMPILE UG!
+    Please read the file 'README.license' in the 'ug31' directory.
 
-	As soon as possible you will get one copy of the licsense back. Futhermore we will send you one header file that you
-	need to compile `ug`.
-	For more information on license conditions and restrictions read 'license'.
-	
+    Please send the license to the following address.
 
-    INSTALLATION:
-	For installation purposes read the manual page 'installation'. It will give you a
-	detailed desciption about the easy installation and compilation process of `ug` and related applications.
+.vb
+    Sekretariat
+    Institut fuer Computeranwendungen III
+    Universitaet Stuttgart
+    Pfaffenwaldring 27
+    D-70550 Stuttgart
+.ve
 
-	COMPILATION:
-	If you want to modify a module of the `ug` library itself, you just invoke the ugmake commnad in the directory
-	you have edited. If you have created new source files just add the file name to the Makefile.<module>. 
-	More information on Makefiles is in the man page makefiles.
+INSTALLATION:
+	For installation purposes read the manual page 'Installation' or the file 'README.install'. It will give you a
+	detailed description about the installation and compilation process of `ug` and related applications.
 
-	SEE ALSO:
-	application, dev, gm, graph, installation, license, low, makefiles, numerics, ui
+DOCUMENTATION:
+    UGs documentation is included in formatted comments in the source code. The
+    documentation is extracted from the source code with the program 'doctext'
+    which is available freely from William A. Gropp of Argonne National Laboratory.
+    The documentation is available in postscript form (formatted by LaTeX) and
+    as UNIX manual pages that can be read by either 'man' or 'xman'.
+
+WHERE TO GO NEXT:
+.   LicenseAgreement,Installation - We suppose that you completed the license form and received
+    the file 'gm.h'. You should now read the file 'README.install' in the top level ug directory
+    which explains the installation process in detail. The installation procedure will also
+    explain how to access the manual pages. If you have problems with compilation, you should
+    read the man page 'makefiles' that explains how the makefiles work and how UG can be
+    adapted to different sites.
+
+.   modules - We suppose now that UG has been compiled successfully and that you can access the manual
+    pages. The next page to read is 'modules' which gives an overview of the UGs files and directories.
+
+.   sample_session - Probably you now want to see whether UG really works. The man page 'sample_session'
+    will guide you through your first steps with UG.
+
+.   Applications - May be the next step is now to play around with the application supplied with UG.
+    The manual section 'Problem Class & Appl Overview' accessible with the X manual browser (xugman command)
+    or the chapters 1,4,7 in the application manual (applmanual.ps) are the appropriate place to start.
+    If you change the application source file (e.g. 'diff2da.c' or 'cd3da.c') do not forget to type 'make'
+    to rebuild the application. By reading the manual pages of the section 'Problem Class & Appl Overview'
+    and looking at the application source code ('diff2da.c' or 'cd3da.c') you should be able to modify
+    the domains, boundary conditions and coefficient functions for an existing application and also
+    how to implement a new problem.
+
+.   Commands - Another important thing to do is to explore all the commands that are available on UGs
+    shell window. For that information see either the section 'ug Commands' from the X manual browser (xugman
+    command) or chapter 2 in the Programmers Manual (progmanual.ps).
+    Here you can also find a (more) detailed description of the commands used in the sample session.
+
+.   Interpreter - The manual page 'Interpreter' describes the usage of UGs script language (the '*.scr' files).
+    A good thing is also to look into the existing script files in order to see how commands are used.
+
+    
+HOW TO SOLVE YOUR PARTIAL DIFFERENTIAL EQUATION:
+    If the p.d.e. you want to solve is not already supported by UG you will have to
+    write your own problem class library and application. This of course is a major task that requires
+    much more insight in UGs data structures and functions. The best thing to do
+    is to try to understand how an existing problem class works (e.g. 'diff2d') by
+    looking at the source code and reading manual pages about the functions and
+    data structures that are encounterd on the way. Some important pages to read
+    are pointed out below.
+
+.   DATASTRUCTURE - This page provides an entry point to the description of the
+    basic data structures that describe domains, problems, grids, etc.
+
+.   numerics - provides an entry point to the BLAS routines, multigrid components,
+    nonlinear solution strategies that have been implemented in reusable form. If
+    you can use one of these methods things are simplified greatly.
+
+.   GRAPH - provides an entry point in UGs graphics routines. 
+
+
+ACKNOWLEDGEMENTS:
+    We appreciate the use of the 'doctext' program written by William A. Gropp
+    of Argonne National Laboratory.
 
 D*/
 /****************************************************************************/

@@ -105,13 +105,6 @@ UI Ä
 	delete makeout
 	directory ::
 
-NUMERICS Ä
-	directory numerics
-	make -d UGDEFINES="{UGDEFINES}" -d LIBSUFFIX="{LIBSUFFIX}" -d COPTS="{COPTS}" -f numerics.make > makeout
-	makeout
-	delete makeout
-	directory ::
-
 CleanAll Ä
 	Set Exit 0
 	delete -i ":lib:libug{LIBSUFFIX}.a"
