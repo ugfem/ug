@@ -1,68 +1,154 @@
 #!/bin/csh -f
-if ( $1 == "-H" ) then
-echo "ugtdev [-a | -m | -g | -h] [-G] [-k] <film-name>"; exit;
+
+#set verbose
+set ToolName = $0;
+
+
+if ( $1 == "-h" || $1 == "-help" ) then
+echo $ToolName " [-S[a|m|g|h]] [-G] [-k] <film-name>"; exit;
 endif
 
+
+##################################################################
+
+# default settings
 set timescale = 1;
-
-if ( $1 == "-a" ) then
-set timescale = 31536000; shift;
-endif
-
-if ( $1 == "-m" ) then
-set timescale = 2592000; shift;
-endif
-
-if ( $1 == "-g" ) then
-set timescale = 86400; shift;
-endif
-
-if ( $1 == "-h" ) then
-set timescale = 3600; shift;
-endif
-
 set Screen = 0;
-if ( $1 == "-G" ) then
-set Screen = 1; shift;
-endif
-
 set Keep = 0;
-if ( $1 == "-k" ) then
-set Keep = 1; shift;
-endif
+
+
+##################################################################
+
+
+# process list of options in variable order
+
+set ready = 0;
+while ($ready == 0)
+
+	# process one option
+	switch ($1)
+		case "-Sa":
+			set timescale = 31536000;
+			breaksw;
+
+		case "-Sm":
+			set timescale = 2592000;
+			breaksw;
+
+		case "-Sg":
+			set timescale = 86400;
+			breaksw;
+
+		case "-Sh":
+			set timescale = 3600;
+			breaksw;
+
+		case "-G":
+			set Screen = 1;
+			breaksw;
+
+		case "-k":
+			set Keep = 1;
+			breaksw;
+		
+		default:
+			set ready = 1;
+	endsw
+
+	# eat option argument if it was interpreted
+	if ($ready == 0) then
+		shift;
+	endif
+end
+
+
+##################################################################
+
 
 rm -f t.gnu;
 rm -f dt.gnu;
 set PREFIX = $1
+
 @ i = 0
-while ( $i <= 10000 )
-	set nr = `echo $i | awk '{printf("%04d.ug.data.bin",$1);}' - `
-	if (! -f $PREFIX.$nr ) break;
-	echo "extracting data from file" $PREFIX.$nr
-	ugmgs $PREFIX.$nr | awk '$1=="Time:"     {print awk_i,$2/(ts+0);i++;}' ts=$timescale awk_i=$i  - >> t.gnu
-	ugmgs $PREFIX.$nr | awk '$1=="TimeStep:" {print awk_i,$2/(ts+0);i++;}' ts=$timescale awk_i=$i  - >> dt.gnu
+while ($i <= 10000)
+
+	set DataFileSuffix = `echo $i | awk '{printf("%04d.ug.data.bin",$1);}' - `
+	set DataFile = $PREFIX.$DataFileSuffix
+	if (! -f $DataFile ) break;
+
+	echo "extracting data from file" $DataFile
+	ugmgs $DataFile | \
+		awk '$1=="Time:"     {print awk_i,$2/(ts+0);i++;}' \
+			ts=$timescale awk_i=$i  - >> t.gnu
+
+	ugmgs $DataFile | \
+		awk '$1=="TimeStep:" {print awk_i,$2/(ts+0);i++;}' \
+			ts=$timescale awk_i=$i  - >> dt.gnu
 	@ i = $i + 1
 end
 
-if ( $Screen == 1 ) then 
-	echo 'set parametric; set grid; plot "t.gnu" w l; pause -1; set terminal postscript; set output "t.ps"; plot "t.gnu" w l;' > t.scr;
+
+if (! -f t.gnu) then
+	echo $ToolName": couldn't extract 'Time' data."
+	exit;
 endif
+
+if (! -f dt.gnu) then
+	echo $ToolName": couldn't extract 'TimeStep' data."
+	exit;
+endif
+
+
+##################################################################
+
+
 if ( $Screen == 0 ) then 
-	echo 'set parametric; set grid; set terminal postscript; set output "t.ps"; plot "t.gnu" w l;' > t.scr;
+	echo '\
+		set parametric; \
+		set grid; \
+		set terminal postscript; \
+		set output "t.ps"; \
+		plot "t.gnu" w l;'       > t.scr;
+
+	echo '\
+		set parametric; \
+		set grid; \
+		set terminal postscript; \
+		set output "dt.ps"; \
+		plot "dt.gnu" w l;'        > dt.scr;
 endif
-gnuplot "t.scr";
+
+
 if ( $Screen == 1 ) then 
-	echo 'set parametric; set grid; plot "dt.gnu" w l; pause -1; set terminal postscript; set output "dt.ps"; plot "dt.gnu" w l;' > dt.scr;
+	echo '\
+		set parametric; \
+		set grid; \
+		plot "t.gnu" w l; \
+		pause -1; \
+		set terminal postscript; \
+		set output "t.ps";\
+		plot "t.gnu" w l;'       > t.scr;
+
+	echo '\
+		set parametric; \
+		set grid; \
+		plot "dt.gnu" w l; \
+		pause -1; \
+		set terminal postscript; \
+		set output "dt.ps"; \
+		plot "dt.gnu" w l;'         > dt.scr;
 endif
-if ( $Screen == 0 ) then
-	echo 'set parametric; set grid; set terminal postscript; set output "dt.ps"; plot "dt.gnu" w l;' > dt.scr;
-endif
-gnuplot "dt.scr";
-rm t.scr;
-rm dt.scr;
+
+
+gnuplot "t.scr";   rm t.scr;
+gnuplot "dt.scr";  rm dt.scr;
+
+
 if ( $Keep == 0 ) then
 	rm t.gnu;
 	rm dt.gnu;
 endif
 
+
+##################################################################
 
