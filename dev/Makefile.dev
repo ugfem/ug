@@ -12,7 +12,7 @@ include ../ug.conf
 
 
 # select your devices: one of { XIF, SIF, RIF }. META and PS are optional
-DEVICES = XIF META PS
+DEVICES = SIF META PS
 OBJECTS = devices.o sockcomm.o
 
 
