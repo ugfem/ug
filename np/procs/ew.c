@@ -47,6 +47,7 @@
 #include "formats.h"
 #include "np.h"
 #include "ugstruct.h"
+#include "block.h"
 
 #include "assemble.h"
 #include "transfer.h"
