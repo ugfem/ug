@@ -186,15 +186,15 @@
              + MVALUE(mat,m ## 21) * VVALUE(vec,c ## 1);}
 
 #define MATMUL_33(s,mat,m,vec,c)                                                                                        \
-  {s ## 0 += MVALUE(MADJ(mat),m ## 00) * VVALUE(vec,c ## 0)     \
-             + MVALUE(MADJ(mat),m ## 01) * VVALUE(vec,c ## 1) \
-             + MVALUE(MADJ(mat),m ## 02) * VVALUE(vec,c ## 2);        \
-   s ## 1 += MVALUE(MADJ(mat),m ## 10) * VVALUE(vec,c ## 0)     \
-             + MVALUE(MADJ(mat),m ## 11) * VVALUE(vec,c ## 1) \
-             + MVALUE(MADJ(mat),m ## 12) * VVALUE(vec,c ## 2);        \
-   s ## 2 += MVALUE(MADJ(mat),m ## 20) * VVALUE(vec,c ## 0)     \
-             + MVALUE(MADJ(mat),m ## 21) * VVALUE(vec,c ## 1) \
-             + MVALUE(MADJ(mat),m ## 22) * VVALUE(vec,c ## 2);}
+  {s ## 0 += MVALUE(mat,m ## 00) * VVALUE(vec,c ## 0)   \
+             + MVALUE(mat,m ## 01) * VVALUE(vec,c ## 1)       \
+             + MVALUE(mat,m ## 02) * VVALUE(vec,c ## 2);      \
+   s ## 1 += MVALUE(mat,m ## 10) * VVALUE(vec,c ## 0)   \
+             + MVALUE(mat,m ## 11) * VVALUE(vec,c ## 1)       \
+             + MVALUE(mat,m ## 12) * VVALUE(vec,c ## 2);      \
+   s ## 2 += MVALUE(mat,m ## 20) * VVALUE(vec,c ## 0)   \
+             + MVALUE(mat,m ## 21) * VVALUE(vec,c ## 1)       \
+             + MVALUE(mat,m ## 22) * VVALUE(vec,c ## 2);}
 
 #define TPMATMUL_11(s,mat,m,vec,c)                                                                                      \
   {s ## 0 += MVALUE(MADJ(mat),m ## 00) * VVALUE(vec,c ## 0);}
