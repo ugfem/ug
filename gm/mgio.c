@@ -1214,9 +1214,11 @@ int Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
   unsigned int ctrl;
   char buffer[128];
 
+#if (MGIO_DEBUG>0)
   if (Bio_Read_string(buffer)) assert(0);                                                  /*return (1);*/
   if(strcmp(buffer,"REFINEMENT_BEGIN")!=0) assert(0);                              /*return (1);*/
   if (Bio_Read_mint(1,intList)) assert(0);       /*return (1);*/
+#endif
 
   if (Bio_Read_mint(2,intList)) assert(0);       /*return (1);*/
   ctrl = intList[0];
@@ -1348,9 +1350,11 @@ int Write_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
   int j,k,s,t,tag;
   static int g_count;
 
+#if (MGIO_DEBUG>0)
   if (Bio_Write_string("REFINEMENT_BEGIN")) return (1);
   if (Bio_Write_mint(1,&g_count)) return (1);
   g_count++;
+#endif
 
   s=t=0;
   intList[s++] = MGIO_ECTRL(pr->refrule+1,pr->nnewcorners,pr->nmoved,pr->refclass,pr->orphanid_ex);
