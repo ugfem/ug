@@ -11,7 +11,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de							    */
 /*																			*/
 /* History:   27.02.95 begin, ug version 3.0								*/
 /*																			*/
@@ -36,7 +36,9 @@
 #include "initlow.h"
 
 /* parallelization module */
+#ifdef ModelP
 #include "parallel.h"
+#endif
 
 /* devices module */
 #include "devices.h"
