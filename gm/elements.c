@@ -848,6 +848,11 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
   }
         #endif
 
+  if (EDATA_DEF_IN_MG(theMG)) {
+    data_offset[tag] = p_count;
+    p_count++;
+  }
+
   /* so far for an inner element */
   el->inner_size = sizeof(struct generic_element) + (p_count-1)*sizeof(void *);
 
@@ -908,6 +913,8 @@ INT PreInitElementTypes (void)
   err = PreProcessElementDescription(&def_tetrahedron);
   if (err!=GM_OK) return(err);
   err = PreProcessElementDescription(&def_pyramid);
+  if (err!=GM_OK) return(err);
+  err = PreProcessElementDescription(&def_prism);
   if (err!=GM_OK) return(err);
   err = PreProcessElementDescription(&def_hexahedron);
   if (err!=GM_OK) return(err);
