@@ -68,6 +68,7 @@ clean:
 	rm -f *.o
 	cd xif;  make -f Makefile.xif  clean; cd ..;
 	cd sif;  make -f Makefile.sif  clean; cd ..;
+	cd nif;  make -f Makefile.nif  clean; cd ..;
 	cd rif;  make -f Makefile.rif  clean; cd ..;
 	cd meta; make -f Makefile.meta clean; cd ..;
 	cd ps;   make -f Makefile.ps   clean; cd ..;
