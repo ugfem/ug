@@ -3303,7 +3303,8 @@ static int compare_nodes (const void *ce0, const void *ce1)
 #pragma optimization_level 1
 #endif
 
-INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT notHanging, INT ioflag)
+INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides,
+								 INT notHanging, INT ioflag)
 {
 	COMPARE_RECORD ElemSonTable[MAX_SONS];
 	COMPARE_RECORD NbSonTable[MAX_SONS];
@@ -3313,7 +3314,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 	ELEMENT *theNeighbor;
 	ELEMENT *Sons_of_NbSide_List[MAX_SONS];
 	INT nbside,Sons_of_NbSide,NbSonSides[MAX_SONS];
-	INT i;
+	INT i,j,k;
 
 	IFDEBUG(gm,2)
 	UserWriteF("Connect_Sons_of_ElementSide: ID(elem)=%d side=%d "
@@ -3351,7 +3352,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 	/* master elements only connect to master elements     */
 	/* ghost elements connect to ghost and master elements */
 	#ifdef ModelP
-	if (EMASTER(theElement) && EHGHOST(theNeighbor))
+	if (!ioflag && EMASTER(theElement) && EHGHOST(theNeighbor))
 		return(GM_OK);
 	#endif
 
@@ -3364,7 +3365,6 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 		return(GM_OK);
 	}			
 
-
 	if (REFINEMENT_CHANGES(theNeighbor)) return(GM_OK);
 
 	/* determine corresponding side of neighbor */
@@ -3375,8 +3375,11 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 	/* get sons of neighbor to connect */
 	Get_Sons_of_ElementSide(theNeighbor,nbside,&Sons_of_NbSide,
 		Sons_of_NbSide_List,NbSonSides,1);
-	ASSERT(Sons_of_Side == Sons_of_NbSide && Sons_of_NbSide>0 
-			&& Sons_of_NbSide<6);
+
+	if (!ioflag)
+		/* match exactly */
+		ASSERT(Sons_of_Side == Sons_of_NbSide && Sons_of_NbSide>0 
+			   && Sons_of_NbSide<6);
 
 	IFDEBUG(gm,2)
 	UserWriteF("Connect_Sons_of_ElementSide: NBID(elem)=%d side=%d "
@@ -3393,29 +3396,32 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 	IFDEBUG(gm,5)
 	INT i,j;
 
-	UserWriteF("BEFORE qsort\n");
-
-	/* test whether all entries are corresponding */
-	for (i=0; i<Sons_of_Side; i++)
+	if (!ioflag)
 	{
-		COMPARE_RECORD *Entry, *NbEntry;
-
-		Entry = ElemSortTable[i];
-		NbEntry = NbSortTable[i];
-
-		if (Entry->nodes != NbEntry->nodes)
-			UserWriteF("Connect_Sons_of_ElementSide(): LIST Sorttables[%d]"
-						" eNodes=%d nbNodes=%d\n",
-						i,Entry->nodes,NbEntry->nodes);
-		for (j=0; j<Entry->nodes; j++)
-			UserWriteF("Connect_Sons_of_ElementSide(): LIST Sorttables[%d][%d]"
-							" eNodePtr=%d/%8x/%d nbNodePtr=%d/%8x/%d\n",
-							i,j,
-							ID(Entry->nodeptr[j]),Entry->nodeptr[j],NTYPE(Entry->nodeptr[j]),
-							ID(NbEntry->nodeptr[j]),NbEntry->nodeptr[j],NTYPE(NbEntry->nodeptr[j]));
-		UserWriteF("\n");
+		UserWriteF("BEFORE qsort\n");
+		
+		/* test whether all entries are corresponding */
+		for (i=0; i<Sons_of_Side; i++)
+		{
+			COMPARE_RECORD *Entry, *NbEntry;
+			
+			Entry = ElemSortTable[i];
+			NbEntry = NbSortTable[i];
+			
+			if (Entry->nodes != NbEntry->nodes)
+				UserWriteF("Connect_Sons_of_ElementSide(): LIST Sorttables[%d]"
+						   " eNodes=%d nbNodes=%d\n",
+						   i,Entry->nodes,NbEntry->nodes);
+			for (j=0; j<Entry->nodes; j++)
+				UserWriteF("Connect_Sons_of_ElementSide(): LIST Sorttables[%d][%d]"
+						   " eNodePtr=%d/%8x/%d nbNodePtr=%d/%8x/%d\n",
+						   i,j,
+						   ID(Entry->nodeptr[j]),Entry->nodeptr[j],NTYPE(Entry->nodeptr[j]),
+						   ID(NbEntry->nodeptr[j]),NbEntry->nodeptr[j],NTYPE(NbEntry->nodeptr[j]));
+			UserWriteF("\n");
+		}
+		UserWriteF("\n\n");
 	}
-	UserWriteF("\n\n");
 	ENDDEBUG
 
 	/* qsort the tables using nodeptrs */
@@ -3427,100 +3433,132 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 	#endif
 
 	#ifdef Debug
-	/* check whether both sort table match exactly */
-	for (i=0; i<Sons_of_Side; i++)
-	{
-		COMPARE_RECORD *Entry, *NbEntry;
-		INT j;
-
-		Entry = ElemSortTable[i];
-		NbEntry = NbSortTable[i];
-
-		if (Entry->nodes != NbEntry->nodes)
+	if (!ioflag)
+		/* check whether both sort table match exactly */
+		for (i=0; i<Sons_of_Side; i++)
 		{
-			printf("Connect_Sons_of_ElementSide(): ERROR Sorttables[%d]"\
-						" eNodes=%d nbNodes=%d\n",i,Entry->nodes,NbEntry->nodes);
-			assert(0);
-		}
-		for (j=0; j<Entry->nodes; j++)
-			if (Entry->nodeptr[j] != NbEntry->nodeptr[j])
+			COMPARE_RECORD *Entry, *NbEntry;
+			INT j;
+			
+			Entry = ElemSortTable[i];
+			NbEntry = NbSortTable[i];
+			
+			if (Entry->nodes != NbEntry->nodes)
 			{
-				printf("Connect_Sons_of_ElementSide(): "
-					"ERROR Sorttables[%d][%d]"\
-					" eNodePtr=%x nbNodePtr=%x\n",
-					i,j,Entry->nodeptr[j],NbEntry->nodeptr[j]);
+				printf("Connect_Sons_of_ElementSide(): ERROR Sorttables[%d]"\
+					   " eNodes=%d nbNodes=%d\n",i,Entry->nodes,NbEntry->nodes);
 				assert(0);
 			}
-	}
+			for (j=0; j<Entry->nodes; j++)
+				if (Entry->nodeptr[j] != NbEntry->nodeptr[j])
+				{
+					printf("Connect_Sons_of_ElementSide(): "
+						   "ERROR Sorttables[%d][%d]"\
+						   " eNodePtr=%x nbNodePtr=%x\n",
+						   i,j,Entry->nodeptr[j],NbEntry->nodeptr[j]);
+					/*				assert(0);*/
+				}
+		}
 	#endif
 
 	IFDEBUG(gm,4)
-	INT i;
-
-	UserWriteF("After qsort\n");
-
-	/* test whether all entries are corresponding */
-	UserWriteF("SORTTABLELIST:\n");
-	for (i=0; i<Sons_of_Side; i++)
+	INT i,j;
+	if (!ioflag)
 	{
-		COMPARE_RECORD *Entry, *NbEntry;
-
-		Entry = ElemSortTable[i];
-		NbEntry = NbSortTable[i];
-
-		UserWriteF("EAdr=%x side=%d realNbAdr=%x    NbAdr=%x nbside=%x "
-			"realNbAdr=%x\n",
-			Entry->elem, Entry->side, NBELEM(Entry->elem,Entry->side),
-			NbEntry->elem, NbEntry->side,NBELEM(NbEntry->elem,NbEntry->side));
-	}
-
-	for (i=0; i<Sons_of_Side; i++)
-	{
-		COMPARE_RECORD *Entry, *NbEntry;
-
-		Entry = ElemSortTable[i];
-		NbEntry = NbSortTable[i];
-
-		if (NBELEM(Entry->elem,Entry->side)!=NbEntry->elem)
+		UserWriteF("After qsort\n");
+		
+		/* test whether all entries are corresponding */
+		UserWriteF("SORTTABLELIST:\n");
+		for (i=0; i<Sons_of_Side; i++)
 		{
-			UserWriteF("NOTEQUAL for i=%d elem=%x: elemrealnb=%x "
-				"elemsortnb=%x\n",
-				i,Entry->elem,NBELEM(Entry->elem,Entry->side),NbEntry->elem);
-			REFINE_ELEMENT_LIST(0,theElement,"theElement:");
-			REFINE_ELEMENT_LIST(0,theNeighbor,"theNeighbor:");
+			COMPARE_RECORD *Entry, *NbEntry;
+			
+			Entry = ElemSortTable[i];
+			NbEntry = NbSortTable[i];
+			
+			UserWriteF("EAdr=%x side=%d realNbAdr=%x    NbAdr=%x nbside=%x "
+					   "realNbAdr=%x\n",
+					   Entry->elem, Entry->side, NBELEM(Entry->elem,Entry->side),
+					   NbEntry->elem, NbEntry->side,NBELEM(NbEntry->elem,NbEntry->side));
 		}
-		if (NBELEM(NbEntry->elem,NbEntry->side)!=Entry->elem)
+		
+		for (i=0; i<Sons_of_Side; i++)
 		{
-			UserWriteF("NOTEQUAL for i=%d nb=%x: nbrealnb=%x nbsortnb=%x\n",
-				i,NbEntry->elem,NBELEM(NbEntry->elem,NbEntry->side),
-				Entry->elem);
-			REFINE_ELEMENT_LIST(0,theElement,"theE:");
-			REFINE_ELEMENT_LIST(0,theNeighbor,"theN:");
+			COMPARE_RECORD *Entry, *NbEntry;
+			
+			Entry = ElemSortTable[i];
+			NbEntry = NbSortTable[i];
+			
+			if (NBELEM(Entry->elem,Entry->side)!=NbEntry->elem)
+			{
+				UserWriteF("NOTEQUAL for i=%d elem=%x: elemrealnb=%x "
+						   "elemsortnb=%x\n",
+						   i,Entry->elem,NBELEM(Entry->elem,Entry->side),NbEntry->elem);
+				REFINE_ELEMENT_LIST(0,theElement,"theElement:");
+				REFINE_ELEMENT_LIST(0,theNeighbor,"theNeighbor:");
+			}
+			if (NBELEM(NbEntry->elem,NbEntry->side)!=Entry->elem)
+			{
+				UserWriteF("NOTEQUAL for i=%d nb=%x: nbrealnb=%x nbsortnb=%x\n",
+						   i,NbEntry->elem,NBELEM(NbEntry->elem,NbEntry->side),
+						   Entry->elem);
+				REFINE_ELEMENT_LIST(0,theElement,"theE:");
+				REFINE_ELEMENT_LIST(0,theNeighbor,"theN:");
+			}
 		}
+		UserWriteF("\n\n");
 	}
-	UserWriteF("\n\n");
 	ENDDEBUG
 
 	/* set neighborship relations */
-	for (i=0; i<Sons_of_Side; i++)
+	if (ioflag)
 	{
-		SET_NBELEM(ElemSortTable[i]->elem,ElemSortTable[i]->side,
-				   NbSortTable[i]->elem);
-		SET_NBELEM(NbSortTable[i]->elem,NbSortTable[i]->side,
-				   ElemSortTable[i]->elem);
+		INT nbson;
+		COMPARE_RECORD *Entry, *NbEntry;
+		
+		nbson = 0;
+		for (i=0; i<Sons_of_Side; i++)
+		{
+			Entry = ElemSortTable[i];
+			for (k=nbson; k<Sons_of_NbSide; k++)
+			{
+				NbEntry = NbSortTable[k];
+			
+				if (Entry->nodes != NbEntry->nodes) continue;
+				for (j=0; j<Entry->nodes; j++)
+					if (Entry->nodeptr[j] != NbEntry->nodeptr[j])
+						break;
+				if (j == Entry->nodes)
+				{
+					SET_NBELEM(ElemSortTable[i]->elem,ElemSortTable[i]->side,
+							   NbSortTable[k]->elem);
+					SET_NBELEM(NbSortTable[k]->elem,NbSortTable[k]->side,
+							   ElemSortTable[i]->elem);					
+					nbson = k+1;
+				}
+			}
+		}
+	}
+	else
+		/* all entires need to match exactly */
+		for (i=0; i<Sons_of_Side; i++)
+		{
+			SET_NBELEM(ElemSortTable[i]->elem,ElemSortTable[i]->side,
+					   NbSortTable[i]->elem);
+			SET_NBELEM(NbSortTable[i]->elem,NbSortTable[i]->side,
+					   ElemSortTable[i]->elem);
 #ifdef __THREEDIM__
-		if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))							  
-		  if (DisposeDoubledSideVector(theGrid,ElemSortTable[i]->elem,
-									   ElemSortTable[i]->side,
-									   NbSortTable[i]->elem,
-									   NbSortTable[i]->side))
-			RETURN(GM_FATAL);
+			if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+				if (DisposeDoubledSideVector(theGrid,ElemSortTable[i]->elem,
+											 ElemSortTable[i]->side,
+											 NbSortTable[i]->elem,
+											 NbSortTable[i]->side))
+					RETURN(GM_FATAL);
 #endif
-	  }
-
+		}
+	
 	return(GM_OK);
 }
-
 #ifdef __MWCW__
 #pragma global_optimizer off
 #endif
