@@ -173,6 +173,47 @@ int Write_OpenDTFile (char *filename)
   return (0);
 }
 
+#ifdef __DTIO_USE_IN_UG__
+int DTIO_dircreate (char *filename)
+{
+
+  if (datapathes_set) return(DirCreateUsingSearchPaths(filename,"datapaths"));
+  else return(DirCreateUsingSearchPaths(filename,NULL));
+}
+#endif
+
+/****************************************************************************/
+/*D
+   DTIO_filetype - test for type of file
+
+   SYNOPSIS:
+   INT DTIO_filetype (char *filename);
+
+   PARAMETERS:
+   .  filename - name of file
+
+   DESCRIPTION:
+   test for type of file with name filename in searching pathes if exist
+
+   RETURN VALUE:
+   int
+   .n    FT_FILE if regular file
+   .n    FT_DIR  if directory
+   .n    FT_UNKNOWN else
+
+   SEE ALSO:
+   D*/
+/****************************************************************************/
+
+#ifdef __DTIO_USE_IN_UG__
+int DTIO_filetype (char *filename)
+{
+
+  if (datapathes_set) return(FileTypeUsingSearchPaths(filename,"datapaths"));
+  else return(filetype(filename));
+}
+#endif
+
 /****************************************************************************/
 /*
    Read_DT_General - reads general information about mg

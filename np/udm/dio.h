@@ -125,6 +125,12 @@ typedef struct dio_general DIO_GENERAL;
 int             Read_OpenDTFile         (char *filename);
 int             Read_DT_General         (DIO_GENERAL *dio_general);
 
+/* misc functions */
+#ifdef __DTIO_USE_IN_UG__
+int             DTIO_dircreate          (char *filename);
+int             DTIO_filetype           (char *filename);
+#endif
+
 /* write functions */
 int             Write_OpenDTFile        (char *filename);
 int             Write_DT_General        (DIO_GENERAL *dio_general);
