@@ -128,11 +128,11 @@
 #include "dlb.h"
 #include "dlb_eval.h"
 #include "dlb_metis.h"
+#include "chaco.h"
 #endif
 
 #ifdef CHACOT
 #include "lb4.h"
-#include "chaco.h"
 #endif
 
 /* own header */
@@ -10810,7 +10810,9 @@ static INT LB4Command (INT argc, char **argv)
   MULTIGRID *theMG;
   int iopt,i,res,copt;
   char buffer[100];
+#               ifdef __DLB__
   extern double dlb_chaco;
+#               endif
 
   theMG = currMG;
 
@@ -10946,6 +10948,7 @@ static INT LB4Command (INT argc, char **argv)
      if (copt) CloseOnlyTags(theMG);
    */
 
+#               ifdef __DLB__
   if (GetStringValue(":conf:dlb_chaco",&dlb_chaco) != 0)
     UserWriteF("PARTITION: warning %s not set using default value=%.1lf\n",
                ":conf:dlb_chaco",dlb_chaco);
@@ -10953,9 +10956,12 @@ static INT LB4Command (INT argc, char **argv)
     error = Balance_CHACO(theMG,minlevel,cluster_depth,threshold,Const,n,c,
                           strategy,eigen,loc,dims,weights,coarse,mode,iopt);
   else
-    error = Balance_CCPTM(theMG,minlevel,cluster_depth,threshold,Const,n,c,
-                          strategy,eigen,loc,dims,weights,coarse,mode,iopt);
+#               endif
+  error = Balance_CCPTM(theMG,minlevel,cluster_depth,threshold,Const,n,c,
+                        strategy,eigen,loc,dims,weights,coarse,mode,iopt);
+#               ifdef __DLB__
   dlb_chaco = 0.0;
+#               endif
 
   if (error>0) return(CMDERRORCODE);
 
