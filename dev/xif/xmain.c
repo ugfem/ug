@@ -458,11 +458,11 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
    InitScreen - Init rest of GUI and return pointer to screen outputdevice
 
    SYNOPSIS:
-   OUTPUTDEVICE *InitScreen (int argc, char **argv, INT *error);
+   OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error);
 
    PARAMETERS:
-   .  argc - argument counter
-   .  argv - argument vector
+   .  argcp - pointer to argument counter
+   .  argv  - argument vector
    .  error - errorcode
 
    DESCRIPTION:
@@ -476,13 +476,13 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
  */
 /****************************************************************************/
 
-OUTPUTDEVICE *InitScreen (int argc, char **argv, INT *error)
+OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 {
   OUTPUTDEVICE *d;
   char buf[128];
 
   /* copy parameters to globals */
-  if_argc = argc;
+  if_argc = *argcp;
   if_argv = argv;
 
   /* connect procedure */
@@ -493,7 +493,7 @@ OUTPUTDEVICE *InitScreen (int argc, char **argv, INT *error)
         #ifdef USE_XAW
   applShell = XtAppInitialize (&context, "Xug3",
                                (XrmOptionDescRec*)NULL, 0,
-                               &argc, argv,
+                               argcp, argv,
                                (String*)NULL,
                                (Arg*)NULL, 0);
 
@@ -524,6 +524,13 @@ OUTPUTDEVICE *InitScreen (int argc, char **argv, INT *error)
   *error = 0;
   return(d);
 }
+
+
+
+void ExitScreen (void)
+{}
+
+
 
 /****************************************************************************/
 /*
