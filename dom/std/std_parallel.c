@@ -51,6 +51,10 @@
 
 #include "std_domain.h"
 
+/* domain module */
+#include "std_internal.h"
+
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
