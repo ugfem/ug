@@ -996,13 +996,9 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
       fscanf(stream," (%c%c %ld %ld",&c1,&c2,&i1,&i2);
 
       /* load ID from MidNode if */
-                        #ifdef __TWODIM__
-      MIDNODE(theEdge)=NULL;
-                #endif
                         #ifdef __THREEDIM__
       {
         fscanf(stream," %ld",&i3);
-        MIDNODE(theEdge) = (NODE *)i3;
       }
                         #endif
 
@@ -1218,11 +1214,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
           if (ID(NBNODE(theLink))>ID(theNode))
           {
             theEdge = MYEDGE(theLink);
-            /*						l = (long)MIDNODE(theEdge);
-                                                            if (l>=0)
-                                                                    MIDNODE(theEdge) = Nodes[l];
-                                                            else
-                                                                    MIDNODE(theEdge) = NULL;*/
+            MIDNODE(theEdge) = NULL;
           }
 
     /* elements */
