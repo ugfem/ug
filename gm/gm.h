@@ -2668,8 +2668,7 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 /*@}*/
 
 /* use the following macros to assign values, since definition  */
-/* above is no proper lvalue.
-   /*@{*/*/
+/* above is no proper lvalue. */
 #define SET_CORNER(p,i,q)       ((p)->ge.refs[n_offset[TAG(p)]+(i)] = q)
 #define SET_EFATHER(p,q)        ((p)->ge.refs[father_offset[TAG(p)]] = q)
 #define SET_SON(p,i,q)          ((p)->ge.refs[sons_offset[TAG(p)]+(i)] = q)
@@ -2682,7 +2681,6 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 
 #define SideBndCond(t,side,l,v,type)  BNDS_BndCond(ELEM_BNDS(t,side),l,NULL,v,type)
 #define Vertex_BndCond(p,w,i,v,t)     BNDP_BndCond(V_BNDP(p),w,i,NULL,v,t)
-/*@}*/
 
 /** @name Macros to access corner pointers directly */
 /*@{*/
@@ -2981,7 +2979,7 @@ enum {MG_ELEMUSED =    1,
       MG_EDGEUSED =    4,
       MG_VERTEXUSED =   8,
       MG_VECTORUSED =  16,
-      MG_MATRIXUSED =  32}
+      MG_MATRIXUSED =  32};
 
 
 /****************************************************************************/
