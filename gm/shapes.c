@@ -874,6 +874,115 @@ INT GNs (INT n, const DOUBLE *ip_local, DOUBLE *result)
 
 /****************************************************************************/
 /*D
+   GNs - General Shape function for nodes
+
+   SYNOPSIS:
+   INT GNs (INT n, DOUBLE *ip_local, DOUBLE *result)
+
+   PARAMETERS:
+.  n - number of corners of the element
+.  local - local DOUBLEinates
+.  result - vector of values
+
+   DESCRIPTION:
+   This function finds the value of the shape functions for the reference 
+   elements at the given local coordinate.
+
+   The shape functions fullfill
+.n   Ni(node i) = 1
+.n   Ni(node k) = 0, if k is not equal i.
+   
+   RETURN VALUE:
+   INT
+.n    0 if ok 
+.n    1 if determinant of coordinate transformation too small.
+D*/   
+/****************************************************************************/
+
+INT DimGNs (INT dim, INT n, const DOUBLE *ip_local, DOUBLE *result)
+{
+	switch (dim)
+	{
+		case 1:
+			result[0] = 1.-ip_local[0];
+			result[1] = ip_local[0];
+			return (0);
+		
+		case 2:
+			switch (n)
+			{
+				case 3:
+					result[0] = 1.0-Xi-Eta;
+					result[1] = Xi;
+					result[2] = Eta;
+					return (0);
+				case 4:
+					result[0] = (1.0-Xi)*(1.0-Eta);
+					result[1] = Xi*(1.0-Eta);
+					result[2] = Xi*Eta;
+					result[3] = (1.0-Xi)*Eta;
+					return (0);
+				default:
+					return (1);
+			}
+	
+		case 3:
+			switch (n)
+			{
+				case 4:
+					result[0] = 1.0-Xi-Eta-Mu;
+					result[1] = Xi;
+					result[2] = Eta;
+					result[3] = Mu;
+					return (0);
+				case 5:
+					if (Xi > Eta)
+					{
+						result[0] = (1.0-Xi)*(1.0-Eta) - Mu*(1.0-Eta);
+						result[1] = Xi*(1.0-Eta)       - Mu*Eta;
+						result[2] = Xi*Eta             + Mu*Eta;
+						result[3] = (1.0-Xi)*Eta       - Mu*Eta;
+						result[4] = Mu;
+						return (0);
+					}
+					else
+					{
+						result[0] = (1.0-Xi)*(1.0-Eta) - Mu*(1.0-Xi);
+						result[1] = Xi*(1.0-Eta)       - Mu*Xi;
+						result[2] = Xi*Eta             + Mu*Xi;
+						result[3] = (1.0-Xi)*Eta       - Mu*Xi;
+						result[4] = Mu;
+						return (0);
+					}
+				case 6:
+					result[0] = (1.0-Xi-Eta)*(1.0-Mu);
+					result[1] = Xi*(1.0-Mu);
+					result[2] = Eta*(1.0-Mu);
+					result[3] = (1.0-Xi-Eta)*Mu;
+					result[4] = Xi*Mu;
+					result[5] = Eta*Mu;
+					return (0);
+				case 8:
+					result[0] = (1.0-Xi)*(1.0-Eta)*(1.0-Mu);
+					result[1] = Xi*(1.0-Eta)*(1.0-Mu);
+					result[2] = Xi*Eta*(1.0-Mu);
+					result[3] = (1.0-Xi)*Eta*(1.0-Mu);
+					result[4] = (1.0-Xi)*(1.0-Eta)*Mu;
+					result[5] = Xi*(1.0-Eta)*Mu;
+					result[6] = Xi*Eta*Mu;
+					result[7] = (1.0-Xi)*Eta*Mu;
+					return (0);
+				default:
+					return (1);
+			}
+		
+		default:
+			return (1);
+	}
+}
+
+/****************************************************************************/
+/*D
    D_GN - General Shape function for nodes
 
    SYNOPSIS:
@@ -1219,6 +1328,78 @@ INT UG_GlobalToLocal (INT n, const DOUBLE **Corners,
 		MT_TIMES_V_DIM(IM,diff,tmp);
 		V_DIM_SUBTRACT(LocalCoord,tmp,LocalCoord);
 	  }
+
+	return(1);
+}
+
+/****************************************************************************/
+/*D
+   UG_GlobalToLocal - Transform global coordinates to local
+
+   SYNOPSIS:
+   INT UG_GlobalToLocal (INT n, const DOUBLE **Corners, const DOUBLE *EvalPoint, 
+   DOUBLE *LocalCoord);
+
+   PARAMETERS:
+.  n - number of corners
+.  Corners - coordinates of corners 
+.  EvalPoint - global coordinates
+.  LocalCoord - local coordinates 
+
+   DESCRIPTION:
+   This function transforms global coordinates to local in an evaluated point
+   in 3D.
+
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+
+INT UG_GlobalToLocalBnd (INT n, const DOUBLE **Corners, 
+				   const DOUBLE *EvalPoint, DOUBLE *LocalCoord)
+{
+#	ifdef __TWODIM__
+	
+	LocalCoord[0] = (EvalPoint[0]-Corners[0][0])/(Corners[1][0]-Corners[0][0]);
+	return (0);
+	
+#	else
+
+	DOUBLE_VECTOR tmp,diff,M[DIM_OF_BND],IM[DIM_OF_BND];
+	DOUBLE s,IMdet;
+	INT i;
+
+	V2_SUBTRACT(EvalPoint,Corners[0],diff);
+	if (n == DIM_OF_BND+1)
+	{
+		/* the simplex case */
+		TRANSFORMATION_2D(DIM_OF_BND+1,Corners,LocalCoord,M);
+		M2_INVERT(M,IM,IMdet);
+		if (IMdet==0) return (2);
+		MT2_TIMES_V2(IM,diff,LocalCoord);	
+		return(0);
+	}
+	V2_CLEAR(LocalCoord);
+	TRANSFORMATION_2D(n,Corners,LocalCoord,M);
+	M2_INVERT(M,IM,IMdet);
+	if (IMdet==0) return (3);
+	MT2_TIMES_V2(IM,diff,LocalCoord);	
+	for (i=0; i<MAX_ITER; i++)
+	  {
+		LOCAL_TO_GLOBAL_2D (n,Corners,LocalCoord,tmp);
+		V2_SUBTRACT(tmp,EvalPoint,diff);
+		V2_EUKLIDNORM(diff,s);
+		if (s * s <= SMALL_DIFF * IMdet) 
+			return (0);
+		TRANSFORMATION_2D(n,Corners,LocalCoord,M);
+		M2_INVERT(M,IM,IMdet);
+		if (IMdet==0) return (4);
+		MT2_TIMES_V2(IM,diff,tmp);
+		V2_SUBTRACT(LocalCoord,tmp,LocalCoord);
+	  }
+#	endif
 
 	return(1);
 }

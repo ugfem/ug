@@ -83,9 +83,7 @@
 										case 3 : r=1-s; break;\
 									}\
 								}
-#endif
 
-#ifdef __TWODIM__
 #define CORNER_COORDINATES_TRIANGLE(e,n,x)                                \
                                    {(n)=3;                                \
 								   (x)[0]=CVECT(MYVERTEX(CORNER((e),0))); \
@@ -133,6 +131,9 @@
   else if (TAG((e))==QUADRILATERAL)                             \
                  COPY_COORDINATES_QUADRILATERAL((e),(n),(x))}
 
+#endif /* __TWODIM__ */
+
+
 #define LOCAL_TO_GLOBAL_TRIANGLE(x,local,global)          \
  {(global)[0] = (1.0-(local)[0]-(local)[1])*(x)[0][0]     \
    +(local)[0]*(x)[1][0] + (local)[1]*(x)[2][0];          \
@@ -149,7 +150,7 @@
    + (local)[0]*(local)[1]*(x)[2][1]                          \
    + (1.0-(local)[0])*(local)[1]*(x)[3][1];}
 
-#define LOCAL_TO_GLOBAL(n,x,local,global)                                 \
+#define LOCAL_TO_GLOBAL_2D(n,x,local,global)                              \
  {if ((n) == 3)      LOCAL_TO_GLOBAL_TRIANGLE((x),(local),(global))       \
   else if ((n) == 4) LOCAL_TO_GLOBAL_QUADRILATERAL((x),(local),(global))}
 
@@ -168,11 +169,11 @@
 										 V2_VECTOR_PRODUCT(a,b,detJ);        \
 									     (area) = ABS(detJ) * 0.5 + ar;}
 
-#define AREA_OF_ELEMENT(n,x,area)                       \
+#define AREA_OF_ELEMENT_2D(n,x,area)                       \
  {if ((n) == 3)      AREA_OF_TRIANGLE((x),(area))       \
   else if ((n) == 4) AREA_OF_QUADRILATERAL((x),(area)) }
 
-#define AREA_OF_REF(n,area)       { if ( (n) == 3) (area) = 0.5;     \
+#define AREA_OF_REF_2D(n,area)       { if ( (n) == 3) (area) = 0.5;     \
 									else if ( (n) == 4) (area) = 1.0; }
 
 #define TRANSFORMATION_OF_TRIANGLE(x,M)     \
@@ -188,11 +189,11 @@
 	  (M)[1][0] = a*((x)[3][0]-x[0][0])+(local)[0]*((x)[2][0]-(x)[1][0]); \
 	  (M)[1][1] = a*((x)[3][1]-x[0][1])+(local)[0]*((x)[2][1]-(x)[1][1]); }
 
-#define TRANSFORMATION(n,x,local,M)                                      \
+#define TRANSFORMATION_2D(n,x,local,M)                                      \
  {if ((n) == 3)      {TRANSFORMATION_OF_TRIANGLE((x),(M));}              \
   else if ((n) == 4) {TRANSFORMATION_OF_QUADRILATERAL((x),(local),(M));} }
 
-#define SIDE_NORMAL(n,i,x,normal)                 \
+#define SIDE_NORMAL_2D(n,i,x,normal)                 \
    { DOUBLE s; DOUBLE_VECTOR y;                   \
    	 V2_SUBTRACT(x[(i+1)%n],x[i],y);              \
  	 V2_EUKLIDNORM(y,s);                          \
@@ -203,7 +204,7 @@
 	 V2_EUKLIDNORM(normal,s);                     \
 	 V2_SCALE(1.0/s,normal);}         
 
-#endif /* __TWODIM__ */
+
 
 #ifdef __THREEDIM__
 #define CORNER_COORDINATES_TETRAHEDRON(e,n,x)                              \
@@ -314,7 +315,10 @@
    else if (TAG((e))==PYRAMID)    COPY_COORDINATES_PYRAMID((e),(n),(x))    \
    else if (TAG((e))==PRISM)      COPY_COORDINATES_PRISM((e),(n),(x))      \
    else if (TAG((e))==HEXAHEDRON) COPY_COORDINATES_HEXAHEDRON((e),(n),(x))}
- 
+
+#endif /* __THREEDIM__ */
+
+
 #define LOCAL_TO_GLOBAL_TETRAHEDRON(x,local,global)                       \
  {(global)[0] = (1.0-(local)[0]-(local)[1]-(local)[2])*(x)[0][0]          \
    +(local)[0]*(x)[1][0] + (local)[1]*(x)[2][0] + (local)[2]*(x)[3][0];   \
@@ -393,7 +397,7 @@
 	a0*(x)[0][2]+a1*(x)[1][2]+a2*(x)[2][2]+a3*(x)[3][2]+                    \
 	a4*(x)[4][2]+a5*(x)[5][2]+a6*(x)[6][2]+a7*(x)[7][2]; }
 
-#define LOCAL_TO_GLOBAL(n,x,local,global)                                 \
+#define LOCAL_TO_GLOBAL_3D(n,x,local,global)                              \
  {if ((n) == 4)      LOCAL_TO_GLOBAL_TETRAHEDRON((x),(local),(global))    \
   else if ((n) == 5) LOCAL_TO_GLOBAL_PYRAMID((x),(local),(global))        \
   else if ((n) == 6) LOCAL_TO_GLOBAL_PRISM((x),(local),(global))          \
@@ -477,13 +481,13 @@
 									  V3_SCALAR_PRODUCT(a,c,detJ);         \
 									  (area) = ABS(detJ)/6.0 + ar;}
 
-#define AREA_OF_ELEMENT(n,x,area)                        \
+#define AREA_OF_ELEMENT_3D(n,x,area)                        \
  {if ((n) == 4)      {AREA_OF_TETRAHEDRON((x),(area));}  \
   else if ((n) == 5) {AREA_OF_PYRAMID((x),(area));}      \
   else if ((n) == 6) {AREA_OF_PRISM((x),(area));}        \
   else if ((n) == 8) {AREA_OF_HEXAHEDRON((x),(area));}}
 
-#define AREA_OF_REF(n,area)          { if ( (n) == 4)                   \
+#define AREA_OF_REF_3D(n,area)          { if ( (n) == 4)                   \
                                           (area) = 0.16666666666666666; \
                                        else if ( (n) == 5)              \
 										  (area) = 0.33333333333333333; \
@@ -577,13 +581,13 @@
 	  (M)[2][2] = a0*((x)[4][2]-x[0][2])+a1*((x)[5][2]-(x)[1][2])         \
 	            + a2*((x)[6][2]-x[2][2])+a3*((x)[7][2]-(x)[3][2]); }
 
-#define TRANSFORMATION(n,x,local,M)                                     \
+#define TRANSFORMATION_3D(n,x,local,M)                                     \
  {if ((n) == 4)      {TRANSFORMATION_OF_TETRAHEDRON((x),(M));}          \
   else if ((n) == 5) {TRANSFORMATION_OF_PYRAMID((x),(local),(M));}      \
   else if ((n) == 6) {TRANSFORMATION_OF_PRISM((x),(local),(M));}        \
   else if ((n) == 8) {TRANSFORMATION_OF_HEXAHEDRON((x),(local),(M));}}
 
-#define SIDE_NORMAL(n,i,x,normal)                                \
+#define SIDE_NORMAL_3D(n,i,x,normal)                                \
   { DOUBLE s; DOUBLE_VECTOR a,b; ELEMENT e;                      \
 	V3_SUBTRACT(x[CORNER_OF_SIDE_REF((n),(i),1)],                \
                 x[CORNER_OF_SIDE_REF((n),(i),0)],a);             \
@@ -593,7 +597,27 @@
 	V3_EUKLIDNORM((normal),s);                                   \
 	V3_SCALE(1.0/s,(normal));}
 
-#endif
+
+#ifdef __TWODIM__
+#define LOCAL_TO_GLOBAL(n,x,local,global)			LOCAL_TO_GLOBAL_2D(n,x,local,global)
+#define AREA_OF_ELEMENT(n,x,area)					AREA_OF_ELEMENT_2D(n,x,area)
+#define AREA_OF_REF(n,area)							AREA_OF_REF_2D(n,area)
+#define TRANSFORMATION(n,x,local,M)					TRANSFORMATION_2D(n,x,local,M)
+#define SIDE_NORMAL(n,i,x,normal)					SIDE_NORMAL_2D(n,i,x,normal)
+#endif /* __TWODIM__ */
+
+#ifdef __THREEDIM__
+#define TRANSFORMATION_BND(n,x,local,M)				TRANSFORMATION_2D(n,x,local,M)
+#define LOCAL_TO_GLOBAL_BND(n,x,local,global)		LOCAL_TO_GLOBAL_2D(n,x,local,global)
+#define AREA_OF_ELEMENT_BND(n,x,area)				AREA_OF_ELEMENT_2D(n,x,area)
+#define AREA_OF_REF_BND(n,area)						AREA_OF_REF_2D(n,area)
+
+#define LOCAL_TO_GLOBAL(n,x,local,global)			LOCAL_TO_GLOBAL_3D(n,x,local,global)
+#define AREA_OF_ELEMENT(n,x,area)					AREA_OF_ELEMENT_3D(n,x,area)
+#define AREA_OF_REF(n,area)							AREA_OF_REF_3D(n,area)
+#define TRANSFORMATION(n,x,local,M)					TRANSFORMATION_3D(n,x,local,M)
+#define SIDE_NORMAL(n,i,x,normal)					SIDE_NORMAL_3D(n,i,x,normal)
+#endif /* __THREEDIM__ */
 
 #define INVERSE_TRANSFORMATION(n,x,local,Jinv,Jdet)   \
 {   DOUBLE_VECTOR J[DIM];                             \
@@ -620,9 +644,12 @@
 
 DOUBLE 		GN 		(INT n, INT i, const DOUBLE *ip_local);
 INT 		GNs 	(INT n, const DOUBLE *ip_local, DOUBLE *result);
+INT			DimGNs	(INT dim, INT n, const DOUBLE *ip_local, DOUBLE *result);
 INT 		D_GN 	(INT n, INT i, const DOUBLE *ip_local, DOUBLE *derivative);
 DOUBLE 	   *LMP 	(INT n);
-INT 	    UG_GlobalToLocal   (INT n, const DOUBLE **Corners, const DOUBLE *EvalPoint, DOUBLE *LocalCoord);
+INT 	    UG_GlobalToLocal	(INT n, const DOUBLE **Corners, const DOUBLE *EvalPoint, DOUBLE *LocalCoord);
+INT			UG_GlobalToLocalBnd	(INT n, const DOUBLE **Corners, 
+								   const DOUBLE *EvalPoint, DOUBLE *LocalCoord);
 
 INT LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *result);
 /*****************************************************************************
