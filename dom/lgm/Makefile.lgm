@@ -41,6 +41,7 @@ clean:
 	rm -f *.o
 	cd netgen; make -f lgm_makefile.netgen clean; cd ..;
 	cd ngin; make -f Makefile.ngin clean; cd ..;
+	cd ngin2d; make -f Makefile.ngin clean; cd ..;
 
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS)
