@@ -2366,7 +2366,7 @@ static INT InterpretString (void)
       }
                         #ifdef ModelP
       error = ParExecCommand(cmdBuffer);
-      /*			if ((gresult==CMD_EXIT)||(gresult==CMD_DISASTROUS)) return(DONE); */
+      /* if ((gresult==CMD_EXIT)||(gresult==CMD_DISASTROUS)) return(DONE); */
                         #else
       error = ExecCommand(cmdBuffer);
                         #endif
@@ -2386,7 +2386,8 @@ static INT InterpretString (void)
     }
     else
     {
-      /* There is only the possibility left that the statement is an assignment */
+      /* There is only the possibility left that the statement
+         is an assignment */
       cmdPtr++;
       if ((error=EvaluateExpression(&result))!=DONE)
         return(error);
@@ -2438,6 +2439,53 @@ static INT InterpretString (void)
 }       /* InterpretString */
 
 
+
+/****************************************************************************/
+/*D
+   PrintVersionString - Generate version string and print it
+
+   SYNOPSIS:
+   void PrintVersionString (void);
+
+   PARAMETERS:
+   .  none
+
+   DESCRIPTION:
+   This function generates the version string and prints it.
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+static void PrintVersionString (void)
+{
+  char ver[128];
+  int i,j,k;
+
+
+  strcpy(ver,VERSION);
+  for (i=0; i<100; i++)
+  {
+    if (ver[i] == '\0') break;
+    if (ver[i] == '$') break;
+  }
+  k = 0;
+  for (j=i+6; j<100; j++)
+  {
+    if (ver[j] == '$')
+      k = 1;
+    else
+      ver[j-6-k] = ver[j];
+    if (ver[j] == '\0') break;
+  }
+
+  /* print version */
+  UserWrite(ver);
+}
+
+
+
 /****************************************************************************/
 /*D
    CommandLoop - Read commands from user interface
@@ -2461,8 +2509,8 @@ static INT InterpretString (void)
 void CommandLoop (int argc, char **argv)
 {
   INT error;
-  int i,j,k,kerr;
-  char c,errLine[256],spcLine[256],ver[128],buffer[256];
+  int i,kerr;
+  char c,errLine[256],spcLine[256],buffer[256];
   char *inpLine;
   char *strStart;
 
@@ -2474,36 +2522,24 @@ void CommandLoop (int argc, char **argv)
   }
   inpLine[0] = (char) 0;
 
+  printf("%4d: CommandLoop with argc==%d\n", me, argc);
+
         #ifdef ModelP
   if (me==master)
   {
+    /* FOR MASTER PROCESSOR */
         #endif
 
-  strcpy(ver,VERSION);
-  for (i=0; i<100; i++)
-  {
-    if (ver[i] == '\0') break;
-    if (ver[i] == '$') break;
-  }
-  k = 0;
-  for (j=i+6; j<100; j++)
-  {
-    if (ver[j] == '$')
-      k = 1;
-    else
-      ver[j-6-k] = ver[j];
-    if (ver[j] == '\0') break;
-  }
-  /* print version */
-  UserWrite(ver);
-
+  PrintVersionString();
 
   /* reset doneFlag */
   doneFlag=FALSE;
 
 
-  /* execute init script */
+  /* if (argc==-1): second start of CommandLoop */
   if (argc != -1)
+  {
+    /* execute init script */
     if (GetDefaultValue(DEFAULTSFILENAME,"initscript",buffer)==0) {
       strcpy(inpLine,"execute ");
       strcat(inpLine,buffer);
@@ -2511,8 +2547,10 @@ void CommandLoop (int argc, char **argv)
       if (error==QUITCODE)
         doneFlag=TRUE;
     }
+  }
 
-  if (argc<2 || strcmp(argv[1],"-sz")==0)
+
+  if (argc<2)
   {
     while (!doneFlag)
     {
@@ -2546,7 +2584,7 @@ void CommandLoop (int argc, char **argv)
 
           if (kerr<254)
           {
-            k=0;
+            int k=0;
             while (k<254)
             {
               c=*(strStart++);
@@ -2575,20 +2613,22 @@ void CommandLoop (int argc, char **argv)
   }
   else
   {
-    i = 1;     /* first argument */
-    while (i<argc)
+    i = 1;             /* first argument */
+    while (i<argc && !doneFlag)
     {
       /* execute batch file */
       if (argv[i][0]!='-')
       {
         sprintf(inpLine,"execute %s\n",argv[i]);
-        InterpretCommand(inpLine);         /* execute command line argument */
+        printf("%4d: cmdline %s", me, inpLine);
+
+        InterpretCommand(inpLine);                 /* execute command line argument */
         if (i + 1 < argc)
           if (strcmp(argv[i+1],"-noquit") == 0) {
             CommandLoop(-1,NULL);
             return;
           }
-        InterpretCommand("quit\n");        /* end program */
+        InterpretCommand("quit\n");                /* end program */
         i++;
         continue;
       }
@@ -2628,82 +2668,30 @@ void CommandLoop (int argc, char **argv)
 }
 else
 {
+  /* FOR PROCESSORS WITH ME!=MASTER */
+
   /* reset doneFlag */
   doneFlag = FALSE;
 
-  /* read init script */
-  if (GetDefaultValue(DEFAULTSFILENAME,"initscript",inpLine)==0)
+  printf("%4d: Inside \n", me);
+
+  while (!doneFlag)
   {
-    error = ParExecCommand(inpLine);
+    if (doneFlag) break;
+    error=ParExecCommand(inpLine);
     if (error==QUITCODE)
       doneFlag=TRUE;
   }
-
-
-  if (argc<2 || strcmp(argv[1],"-sz")==0)
-  {
-    while (!doneFlag)
-    {
-      if (doneFlag) break;
-      error=ParExecCommand(inpLine);
-      if (error==QUITCODE)
-        doneFlag=TRUE;
-    }
-  }
-  /* TODO: control this might be wrong in batch mode */
-  else
-  {
-    i = 1;             /* first argument */
-    while (i<argc)
-    {
-      /* execute batch file */
-      if ((argv[i][0]!='-')&&(argv[i][1]!='s'))
-      {
-        sprintf(inpLine,"execute %s\n",argv[i]);
-        InterpretCommand(inpLine);                 /* execute command line argument */
-        InterpretCommand("quit\n");                /* end program */
-        i++;
-        continue;
-      }
-      /* set command from command line */
-      if ((argv[i][0]=='-')&&(argv[i][1]=='S'))
-      {
-        if (i+1<argc)
-        {
-          sprintf(inpLine,"set %s\n",(argv[i+1]));
-          InterpretCommand(inpLine);
-          i++;
-        }
-        else
-          UserWrite("Error in command line option -S\n");
-        i++;
-        continue;
-      }
-      /* logon command from command line */
-      if ((argv[i][0]=='-')&&(argv[i][1]=='L'))
-      {
-        if (i+1<argc)
-        {
-          sprintf(inpLine,"logon %s\n",(argv[i+1]));
-          InterpretCommand(inpLine);
-          i++;
-        }
-        else
-          UserWrite("Error in command line option -L\n");
-        i++;
-        continue;
-      }
-      i++;
-    }
-  }
 }
         #endif
+
 
   /* call ExitUg() at the end of CommandLoop in order to avoid that
      the application programmer will forget to call it at the end of
      the application. */
   ExitUg();
 }
+
 
 /****************************************************************************/
 /*
