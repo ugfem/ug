@@ -26,7 +26,7 @@ all: include $(MODULES)
 	make $(UG_LIB) 	
 	echo "libug, libdom and libdev compiled"
 
-uglib: include $(OBJECTS) $(UGMODULES)
+uglib: include $(UGMODULES)
 	make $(UG_LIB) 	
 	echo "libug compiled"
 
