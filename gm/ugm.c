@@ -1112,7 +1112,8 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
     }
     if (moved == 1) {
       for (j=0; j<EDGES_OF_ELEM(theElement); j++)
-        if (MOVED(VertexOnEdge[j])) break;
+        if (VertexOnEdge[j] != NULL)
+          if (MOVED(VertexOnEdge[j])) break;
       theVertex = VertexOnEdge[OPPOSITE_EDGE(theElement,j)];
       if (theVertex != NULL) {
         V_DIM_LINCOMB(0.5,CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)))),
