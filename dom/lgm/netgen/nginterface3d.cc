@@ -158,8 +158,8 @@ int GetTriangleId(const Point3d & pp, Point3d & pnew)
     }
     //    cout << mi << endl;
 
-    if(mi==0)
-      cout << "E R R O R" << endl;
+    /* if(mi==0)
+         cout << "E R R O R" << endl;*/
     ep1 = geompoints[geomelements[mi].PNum(1)].p;
     ep2 = geompoints[geomelements[mi].PNum(2)].p;
     ep3 = geompoints[geomelements[mi].PNum(3)].p;
@@ -170,17 +170,17 @@ int GetTriangleId(const Point3d & pp, Point3d & pnew)
     if(n1.Length()>eps)
       n1 /= n1.Length();
     else
-      cout << "ERROR n1" << endl;
+      ; //cout << "ERROR n1" << endl;
     n2 = ep3 - ep2;
     if(n1.Length()>eps)
       n2 /= n2.Length();
     else
-      cout << "ERROR n2" << endl;
+      ; //cout << "ERROR n2" << endl;
     n3 = Cross(n1,n2);
     if(n1.Length()>eps)
       n3 /= n3.Length();
     else
-      cout << "ERROR n3" << endl;
+      ; //cout << "ERROR n3" << endl;
 
     p1.X() = 0.0;
     p1.Y() = 0.0;
@@ -669,7 +669,7 @@ void surfacemeshing :: Mesh (double gh)
     fclose(file);
 
     // Ausgabe der Front
-    adfront->ugPrint(cout);
+    //adfront->ugPrint(cout);
   }
 
   testmode = 0;
@@ -802,10 +802,10 @@ void surfacemeshing :: Mesh (double gh)
 
         SaveElement (locelements[i]);
         cntelem++;
-        cout << cntelem << "  "
-             << locelements[i].PNum(1) << "  "
-             << locelements[i].PNum(2) << "  "
-             << locelements[i].PNum(3) << endl;
+        /*		cout    << cntelem << "  "
+                                        << locelements[i].PNum(1) << "  "
+                                << locelements[i].PNum(2) << "  "
+                                << locelements[i].PNum(3) << endl;*/
       }
 
       for (i = 1; i <= dellines.Size(); i++)
@@ -1838,8 +1838,8 @@ int GetEdgeId(const Point3d & ep1, Point3d & ep2)
     mi = case4(ep1, ep2);
   if(mi==0)
   {
-    cout << ep1 << endl;
-    cout << ep2 << endl;
+    //cout << ep1 << endl;
+    //cout << ep2 << endl;
 
     printf("%s\n","schotter");
   }
