@@ -346,6 +346,7 @@ struct HGridPlotObj2D {
   INT PlotSubdomain;                        /* YES or NO                                    */
   INT WhichElem;                            /* see above                                    */
   INT ElemColored;                          /* YES or NO                                    */
+  INT EdgeColor;                                                        /* for coloring of edges                        */
   DOUBLE ZMax;                                                          /* z-coordinate to which CURRLEVEL is extended  */
 };
 
