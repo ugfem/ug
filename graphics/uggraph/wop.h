@@ -481,6 +481,7 @@ INT                     SetTextFactor                   (DOUBLE textfactor);
 INT                     SetDoFramePicture               (INT mode);
 INT             DrawPictureFrame                (PICTURE *thePicture, INT mode);
 INT             ErasePicture                    (PICTURE *thePicture);
+INT                     SetOrderStrategy                (INT OrderStrategy);
 
 
 #endif

@@ -109,6 +109,12 @@ INT ce_CUTMODE;
 #define CM_INTERSECT					1
 #define CM_INFRONT						2
 
+INT ce_ELEMORD;
+#define ELEMORD_LEN 					2
+#define ELEMORD(p)						CW_READ(p,ce_CUTMODE)
+#define SETELEMORD(p,n) 				CW_WRITE(p,ce_CUTMODE,n)
+
+
 /* Macros for Node order */
 #define NODE_ORDER(p) 		   ((TAG(theElement) == TETRAHEDRON) ? \
 								NORDER(theElement) : (NODEORD(p)) )
@@ -313,9 +319,9 @@ static RotObsTrafoProcPtr InitRotObsTrafo3d;
 
 /*---------- variables use by OrderElements etc ----------------------------*/
 static VIEWEDOBJ			*OE_ViewedObj;
+static INT                  OE_OrderStrategy;
 static DOUBLE               *OE_zMin;
 static DOUBLE               *OE_zMax;
-INT                         OE_OrderStrategy;
 static INT                  OE_nBndElem;
 static MAP                  *OE_Map;
 static BE_DATA              *OE_BE_Data;
@@ -5049,6 +5055,37 @@ static INT GEN_PostProcess_Vector_FR (PICTURE *thePicture, WORK *theWork)
 	/* store if */
 	if (GEN_FR_put == YES)
 		PIC_PO(thePicture)->theEvpo.max = FR_Work->max;
+	
+	return (0);
+}
+
+/****************************************************************************/
+/*
+   SetOrderStrategy - choose order strategy for OrderElements
+
+   SYNOPSIS:
+   INT SetOrderStrategy (INT OrderStrategy)
+
+   PARAMETERS:
+.  OrderStrategy - index of the order strategy to be used
+
+   DESCRIPTION:
+   This function chooses the order strategy for OrderElements.
+
+   RETURN VALUE:
+   INT
+   		0: ok
+   		1: error
+*/
+/****************************************************************************/
+
+INT SetOrderStrategy (INT OrderStrategy)
+{
+	/* for valid range compare switch below */
+	if ((OrderStrategy<0) || (OrderStrategy>2))
+		return (1);
+	
+	OE_OrderStrategy = OrderStrategy;
 	
 	return (0);
 }
@@ -11354,7 +11391,7 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 			if (checkZ && (myz<=-SMALL_C))
 				continue;
 			
-			/* we don«t have to check VCUSED flag */
+			/* we don´t have to check VCUSED flag */
 			vec = SVECTOR(theElement,i);
 			/*SETVCUSED(vec,TRUE);*/
 			EE3D_sdv[nplotSDV++] = vec;
@@ -13895,16 +13932,10 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 	if (myMGdata->init==0)
 		/* not yet initialized */
 		SaveSettings(theViewedObj,myMGdata);
-	else if (SettingsEqual(theViewedObj,myMGdata)) {
-		if (OE_OrderStrategy < 3) 
+	else if (SettingsEqual(theViewedObj,myMGdata))
+		if (ELEMORD(theMG))
+			/* no ordering neccessary */
 			return (0);
-	}
-	else
-		/* save changed settings */
-		SaveSettings(theViewedObj,myMGdata);
-	
-	if (OE_OrderStrategy > 2) 
-		OE_OrderStrategy -= 3;
 
 	/* inits */
 	OE_ViewedObj = theViewedObj;	
@@ -13996,8 +14027,9 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 	/* release heap */
 	Release(theHeap,FROM_TOP);
 	
-	/* store the view to which elements are ordered */
-	/*...*/
+	/* save changed settings */
+	SaveSettings(theViewedObj,myMGdata);
+	SETELEMORD(theMG,TRUE);
 	
 	return (0);
 }
@@ -14197,6 +14229,7 @@ static INT EXT_VecMatEval3D (DRAWINGOBJ *theDO, INT *end)
 	NODE *nd;
 	ELEMENT *elem;
 	DOUBLE_VECTOR pos;
+	DOUBLE md,mo;
 	INT i,rt,ct;
 	
 	vec = (VECTOR*)SELECTIONOBJECT(WOP_MG,0);
@@ -14231,16 +14264,19 @@ static INT EXT_VecMatEval3D (DRAWINGOBJ *theDO, INT *end)
 	DO_2s(theDO) = EE3D_TEXTSIZE; DO_inc(theDO);
 	VectorPosition(vec,pos);
 	V3_COPY(pos,DO_2Cp(theDO)); DO_inc_n(theDO,3);
+	if (VM_MatData)
+	{
+		md = MVALUE(VSTART(vec),MD_MCMP_OF_RT_CT(VM_tmd,rt,rt,0));
+	}
 	if (VM_VecData && VM_MatData)
 	{
-		sprintf(DO_2cp(theDO),"%.2g %.2g",VecTypeName[rt],
-											(float)VVALUE(vec,VD_CMP_OF_TYPE(VM_tvd,rt,0)),
-											(float)MVALUE(VSTART(vec),MD_MCMP_OF_RT_CT(VM_tmd,rt,rt,0)));
+		sprintf(DO_2cp(theDO),"%.2g %.2g",(float)VVALUE(vec,VD_CMP_OF_TYPE(VM_tvd,rt,0)),
+										  (float)md);
 		DO_inc_str(theDO);
 	}
 	if (VM_MatData)
 	{
-		sprintf(DO_2cp(theDO),"%.2g",(float)MVALUE(VSTART(vec),MD_MCMP_OF_RT_CT(VM_tmd,rt,rt,0)));
+		sprintf(DO_2cp(theDO),"%.2g",(float)md);
 		DO_inc_str(theDO);
 	}
 	if (VM_VecData)
@@ -14263,15 +14299,19 @@ static INT EXT_VecMatEval3D (DRAWINGOBJ *theDO, INT *end)
 			VectorPosition(nbvec,pos);
 			V3_COPY(pos,DO_2Cp(theDO)); DO_inc_n(theDO,3);
 			
+			mo = MVALUE(mat,MD_MCMP_OF_RT_CT(VM_tmd,rt,ct,0));
+			if (fabs(mo/md)<SMALL_C)
+				mo = 0.0;
+			
 			if (VM_VecData)
 			{
 				sprintf(DO_2cp(theDO),"%.2g %.2g",(float)VVALUE(nbvec,VD_CMP_OF_TYPE(VM_tvd,ct,0)),
-													(float)MVALUE(mat,MD_MCMP_OF_RT_CT(VM_tmd,rt,ct,0)));
+													(float)mo);
 				DO_inc_str(theDO);
 			}
 			else
 			{
-				sprintf(DO_2cp(theDO),"%.2g",(float)MVALUE(mat,MD_MCMP_OF_RT_CT(VM_tmd,rt,ct,0)));
+				sprintf(DO_2cp(theDO),"%.2g",(float)mo);
 				DO_inc_str(theDO);
 			}
 		}
@@ -17286,7 +17326,6 @@ static void InvertCut (const DOUBLE *sc, const DOUBLE *ph,
 	/* origin */
 	(*OBS_ProjectProc)(sc,&op);
 	
-	/* x,y,z unit vec */
 	GET_POINT3D( n[_X_], n[_Y_], n[_Z_],pt[0]);
 	GET_POINT3D( x[_X_], x[_Y_], x[_Z_],pt[1]);
 	GET_POINT3D(-x[_X_],-x[_Y_],-x[_Z_],pt[2]);
@@ -17299,10 +17338,11 @@ static void InvertCut (const DOUBLE *sc, const DOUBLE *ph,
 	UgInverseLine(pt[1],pt[2]);
 	UgInverseLine(pt[3],pt[4]);
 	
-	UgInverseLine(pt[1],pt[0]);
+	/*UgInverseLine(pt[1],pt[0]);
 	UgInverseLine(pt[2],pt[0]);
 	UgInverseLine(pt[3],pt[0]);
-	UgInverseLine(pt[4],pt[0]);
+	UgInverseLine(pt[4],pt[0]);*/
+	UgInverseLine(pt[0],op);
 	
 	UgInverseLine(pt[1],pt[3]);
 	UgInverseLine(pt[3],pt[2]);
@@ -18465,7 +18505,11 @@ INT InitWOP (void)
 		if (AllocateControlEntry(ELEMENT_CW,CUTMODE_LEN,&ce_CUTMODE) != GM_OK)
 			if (AllocateControlEntry(FLAG_CW,CUTMODE_LEN,&ce_CUTMODE) != GM_OK)
 				return (__LINE__);
-	
+		
+		/* flag in MG status to indicated elements have been ordered */
+		if (AllocateControlEntry(MULTIGRID_STATUS,ELEMORD_LEN,&ce_ELEMORD) != GM_OK)
+			return (__LINE__);
+		
 		/* create WorkHandling for 'VecMat' */
 		if ((thePOH=CreatePlotObjHandling ("VecMat")) 	== NULL) return (__LINE__);
 		
