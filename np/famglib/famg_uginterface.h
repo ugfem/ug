@@ -75,6 +75,9 @@ struct FAMGParameter_ug
   double ilut;
   double cgilut;
   int cgnodes;
+#ifdef ModelP
+  int cgminnodespe;
+#endif
   int cglevels;
   double mincoarse;
   int conloops;

@@ -44,6 +44,9 @@ typedef struct
   INT n2;
   INT gamma;
   INT cgnodes;
+#ifdef ModelP
+  INT cgminnodespe;
+#endif
   INT cglevels;
   DOUBLE coarsening;
   DOUBLE strong;

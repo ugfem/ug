@@ -134,6 +134,10 @@ static void FAMGReadArgvParameter(INT argc, char **argv)
 		famg_parameter.cgnodes = 1;
 	if (ReadArgvINT("cgl",&(famg_parameter.cglevels),argc,argv))
 		famg_parameter.cglevels = 100;
+#ifdef ModelP
+	if (ReadArgvINT("cgnpe",&(famg_parameter.cgminnodespe),argc,argv))
+		famg_parameter.cgminnodespe = 1;
+#endif
 }
 	
 static void FAMGReadStringParameter(void)
@@ -971,6 +975,9 @@ static INT FAMGIterInit (NP_BASE *theNP, INT argc, char **argv)
     np->n2 = famg_parameter.n2;
     np->gamma = famg_parameter.gamma;
     np->cgnodes = famg_parameter.cgnodes;
+#ifdef ModelP
+    np->cgminnodespe = famg_parameter.cgminnodespe;
+#endif 
     np->cglevels = famg_parameter.cglevels;
     np->maxit = famg_parameter.maxit;
     np->alimit = famg_parameter.alimit;
@@ -995,6 +1002,9 @@ static INT FAMGIterDisplay (NP_BASE *theNP)
 	UserWriteF(DISPLAY_NP_FORMAT_SI,"n2",(int)np->n2);
 	UserWriteF(DISPLAY_NP_FORMAT_SI,"g",(int)np->gamma);
 	UserWriteF(DISPLAY_NP_FORMAT_SI,"cgn",(int)np->cgnodes);
+#ifdef ModelP
+	UserWriteF(DISPLAY_NP_FORMAT_SI,"cgnpe",(int)np->cgminnodespe);
+#endif
 	UserWriteF(DISPLAY_NP_FORMAT_SI,"cgl",(int)np->cglevels);
 	UserWriteF(DISPLAY_NP_FORMAT_SI,"maxit",(int)np->maxit);
 	UserWriteF(DISPLAY_NP_FORMAT_SE,"alimit",(double)np->alimit);

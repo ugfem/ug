@@ -35,6 +35,19 @@
 $Header$
 */
 
+// data structure local to this file
+struct leaveinfo
+{
+	double coarsefrac;
+	int cgnodes;
+#ifdef ModelP
+	int cgminnodespe;
+#endif
+};
+
+typedef struct leaveinfo FAMGLeaveInfo;
+
+
 // Class FAMGMultigrid
 
 
@@ -60,18 +73,46 @@ int FAMGMultiGrid::Init(const FAMGSystem &system)
     return 0;
 }    
 
+#ifdef ModelP
+static void GlobalLeave (FAMGLeaveInfo *x)
+// input: x filled with my data
+// output: x filled with global values according to
+// calculate GlobalMax(x->coarsefrac)
+//           GlobalSum(x->cgnodes)
+//           GlobalMin(x->cgminnodespe)
+{
+	int l;
+	FAMGLeaveInfo n;
+
+	for (l=degree-1; l>=0; l--)
+	{
+		GetConcentrate(l,&n,sizeof(FAMGLeaveInfo));
+		x->coarsefrac = MAX(x->coarsefrac,n.coarsefrac);
+		x->cgnodes += n.cgnodes;
+		x->cgminnodespe = MIN(x->cgminnodespe,n.cgminnodespe);
+	}
+	Concentrate(x,sizeof(FAMGLeaveInfo));
+	Broadcast(x,sizeof(FAMGLeaveInfo));
+
+	return;
+}
+#endif
+
 int FAMGMultiGrid::Construct()
 {
     FAMGGrid *g, *cg;
     int level, nnc, nn, ilu, cgilu, leave;
 	DOUBLE coarsefrac = 0.0;
 #ifdef ModelP
-	DOUBLE commBuf [2];
+	FAMGLeaveInfo myleaveinfo;
 #endif
 
 
     // read parameter
     const int cgnodes = FAMGGetParameter()->Getcgnodes();
+#ifdef ModelP
+    const int cgminnodespe = FAMGGetParameter()->Getcgminnodespe();
+#endif
     const int cglevels = FAMGGetParameter()->Getcglevels();
     const double mincoarse = FAMGGetParameter()->Getmincoarse();
     const int gamma = FAMGGetParameter()->Getgamma();
@@ -102,19 +143,56 @@ int FAMGMultiGrid::Construct()
 #else
         nn = g->GetN();
 #endif
-		
+	
+		leave = 0;
+
+		myleaveinfo.coarsefrac = coarsefrac;
+		myleaveinfo.cgnodes = nn;
 #ifdef ModelP
-		leave = ( nn <= cgnodes || level>=cglevels) && (gamma > 0);
-		commBuf [0] = coarsefrac;
-		commBuf[1] = (DOUBLE)leave;
-		UG_GlobalMaxNDOUBLE(2,commBuf);
-		leave = (commBuf[1]==1.0) || (commBuf[0] > mincoarse) && (gamma > 0);
-#else
-		leave = ( coarsefrac > mincoarse || nn <= cgnodes || level>=cglevels) && (gamma > 0);
+		myleaveinfo.cgminnodespe = nn;
+		GlobalLeave( &myleaveinfo );
 #endif
+
+		if( myleaveinfo.coarsefrac > mincoarse )
+		{
+			leave = 1;
+			#ifdef ModelP
+			if( me==master )	
+			#endif
+				cout << "FAMG finished; coarsening rate " << 1.0/myleaveinfo.coarsefrac << " < " << 1.0/mincoarse << endl; 
+		}
+
+		if( level >= cglevels )
+		{
+			leave = 1;
+			#ifdef ModelP
+			if( me==master )	
+			#endif
+				cout << "FAMG finished; levels " << level << " >= " << cglevels << endl; 
+		}
+
+		if( myleaveinfo.cgnodes <= cgnodes )
+		{
+			leave = 1;
+			#ifdef ModelP
+			if( me==master )	
+			#endif
+				cout << "FAMG finished; cg nodes " << myleaveinfo.cgnodes << " <= " << cgnodes << endl; 
+		}
+
+#ifdef ModelP
+		if( myleaveinfo.cgminnodespe <= cgminnodespe )
+		{
+			leave = 1;
+			if( me==master )	
+				cout << "FAMG finished; min cg nodes per PE " << myleaveinfo.cgminnodespe << " <= " << cgminnodespe << endl; 
+		}
+#endif
+
         if (leave)
 			break;
 
+        if (gamma < 1) return 0;	// ModelP: simple return because gamma is known to all processors
 #ifdef ModelP
 //prv(-level,0);
 		g->ConstructOverlap();
@@ -130,7 +208,6 @@ int FAMGMultiGrid::Construct()
 				RETURN(1);
         }
 #endif
-        if (gamma < 1) return 0;	// ModelP: simple return because gamma is known to all processors
 
 
 #ifdef FAMG_SPARSE_BLOCK

@@ -87,6 +87,9 @@ static void ReadParameter(FAMGParameter *parameter, FAMGParameter_ug *in_paramet
     parameter->Setilut(in_parameter->ilut);
     parameter->Setcgilut(in_parameter->cgilut);
     parameter->Setcgnodes(in_parameter->cgnodes);
+#ifdef ModelP
+    parameter->Setcgminnodespe(in_parameter->cgminnodespe);
+#endif
     parameter->Setcglevels(in_parameter->cglevels);
     parameter->Setconloops(in_parameter->conloops);
     parameter->Setmincoarse(in_parameter->mincoarse);

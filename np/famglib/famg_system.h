@@ -53,6 +53,9 @@ public:
   double Getcgilut();
   double Getilut();
   int Getcgnodes();
+#ifdef ModelP
+  int Getcgminnodespe();
+#endif
   int Getcglevels();
   double Getmincoarse();
   int Getconloops();
@@ -83,6 +86,9 @@ public:
   void Setilut(double d);
   void Setcgilut(double d);
   void Setcgnodes(int i);
+#ifdef ModelP
+  void Setcgminnodespe(int i);
+#endif
   void Setcglevels(int i);
   void Setmincoarse(double d);
   void Setconloops(int i);
@@ -113,6 +119,9 @@ private:
   double ilut;
   double cgilut;
   int cgnodes;
+#ifdef ModelP
+  int cgminnodespe;
+#endif
   int cglevels;
   double mincoarse;
   int conloops;
@@ -160,6 +169,11 @@ inline double FAMGParameter::Getcgilut() {
 inline int FAMGParameter::Getcgnodes() {
   return cgnodes;
 }
+#ifdef ModelP
+inline int FAMGParameter::Getcgminnodespe() {
+  return cgminnodespe;
+}
+#endif
 inline int FAMGParameter::Getcglevels() {
   return cglevels;
 }
@@ -248,6 +262,11 @@ inline void FAMGParameter::Setn2(int i) {
 inline void FAMGParameter::Setcgnodes(int i) {
   cgnodes = i;
 }
+#ifdef ModelP
+inline void FAMGParameter::Setcgminnodespe(int i) {
+  cgminnodespe = i;
+}
+#endif
 inline void FAMGParameter::Setcglevels(int i) {
   cglevels = i;
 }

@@ -38,6 +38,9 @@ static void ReadParameter(FAMGParameter *parameter, FAMGParameter *in_parameter)
     parameter->Setilut(in_parameter->Getilut());
     parameter->Setcgilut(in_parameter->Getcgilut());
     parameter->Setcgnodes(in_parameter->Getcgnodes());
+#ifdef ModelP
+    parameter->Setcgminnodespe(in_parameter->Getcgminnodespe());
+#endif
     parameter->Setconloops(in_parameter->Getconloops());
     parameter->Setmincoarse(in_parameter->Getmincoarse());
     parameter->Settype(in_parameter->Gettype());
