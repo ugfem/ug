@@ -188,7 +188,18 @@ $Header$
 										(C)[1] = (A)[1]*(B)[0]+(A)[3]*(B)[1];\
 										(C)[2] = (A)[0]*(B)[2]+(A)[2]*(B)[3];\
 										(C)[3] = (A)[1]*(B)[2]+(A)[3]*(B)[3];}
-#define M2_INVERT(M,IM,det)                       \
+#define M2_INVERT_STD(M,IM,det)                       \
+{ DOUBLE invdet;                                  \
+  det = (M)[0]*(M)[3]-(M)[1]*(M)[2];  \
+	if (ABS((det))<SMALL_D*SMALL_D) det= 0.;  \
+	else {                                      \
+	invdet = 1.0 / (det);                       \
+	(IM)[0] =  (M)[3]*invdet;             \
+	(IM)[1] = -(M)[1]*invdet;             \
+	(IM)[2] = -(M)[2]*invdet;             \
+	(IM)[3] =  (M)[0]*invdet;}}
+
+#define M2_INVERT(M,IM,det)                   \
 { DOUBLE invdet;                                  \
   det = (M)[0][0]*(M)[1][1]-(M)[1][0]*(M)[0][1];  \
 	if (ABS((det))<SMALL_D*SMALL_D) det= 0.;  \
@@ -198,6 +209,8 @@ $Header$
 	(IM)[1][0] = -(M)[1][0]*invdet;             \
 	(IM)[0][1] = -(M)[0][1]*invdet;             \
 	(IM)[1][1] =  (M)[0][0]*invdet;}}
+
+#define M2_MAXNORM(M,n)					(n)=MAX(ABS((M)[0])+ABS((M)[2]),ABS((M)[1])+ABS((M)[3]))
 
 /* macros for vector operations */
 #define V3_LINCOMB(a,A,b,B,C)		   {(C)[0] = (a)*(A)[0] + (b)*(B)[0];\
