@@ -1206,7 +1206,7 @@ static void GetCurrentContext (ELEMENT *theElement, ElementContext *theContext)
   NODE **Nodes;                                         /* corner nodes of an element to be ref.*/
   NODE **MidNodes;                                      /* nodes on refined edges				*/
   ELEMENT **Neighbors;                          /* neighbors on next higher level		*/
-  ELEMENT ***BackPtrs;                          /* locations where neighbs store my adr */
+  ELEMENT ***BackPtrs;                                  /* locations where neighbs store my adr */
   REFRULE *rule;                                        /* current refinement rule of theElement*/
   REFRULE *nbrule;                                      /* current refinement rule of neighbor	*/
 
@@ -1266,7 +1266,7 @@ static void GetCurrentContext (ELEMENT *theElement, ElementContext *theContext)
             for (l=0; l<TAG(theNeighborOfSon); l++)
               if (NBELEM(theNeighborOfSon,l)==theSon)
                 break;
-            BackPtrs[2*i]  = &(VOID_NBELEM(theNeighborOfSon,l));
+            BackPtrs[2*i]  = (ELEMENT **) &(VOID_NBELEM(theNeighborOfSon,l));
           }
 
           if (rule->nbSon[2*i+1]>=0)
@@ -1279,7 +1279,7 @@ static void GetCurrentContext (ELEMENT *theElement, ElementContext *theContext)
               for (l=0; l<TAG(theNeighborOfSon); l++)
                 if (NBELEM(theNeighborOfSon,l)==theSon)
                   break;
-              BackPtrs[2*i+1]  = &(VOID_NBELEM(theNeighborOfSon,l));
+              BackPtrs[2*i+1]  = (ELEMENT **) &(VOID_NBELEM(theNeighborOfSon,l));
             }
           }
         }
@@ -1300,16 +1300,16 @@ static void GetCurrentContext (ELEMENT *theElement, ElementContext *theContext)
         {
           Neighbors[2*i] = SON(theNeighbor,nbrule->nbSon[2*l+1]);
           if (Neighbors[2*i]!=NULL)
-            BackPtrs[2*i]  = &(VOID_NBELEM(Neighbors[2*i],nbrule->nbSide[2*l+1]));
+            BackPtrs[2*i]  = (ELEMENT **) &(VOID_NBELEM(Neighbors[2*i],nbrule->nbSide[2*l+1]));
           Neighbors[2*i+1] = SON(theNeighbor,nbrule->nbSon[2*l]);
           if (Neighbors[2*i+1]!=NULL)
-            BackPtrs[2*i+1]  = &(VOID_NBELEM(Neighbors[2*i+1],nbrule->nbSide[2*l]));
+            BackPtrs[2*i+1]  = (ELEMENT **) &(VOID_NBELEM(Neighbors[2*i+1],nbrule->nbSide[2*l]));
         }
         else
         {
           Neighbors[2*i] = SON(theNeighbor,nbrule->nbSon[2*l]);
           if (Neighbors[2*i]!=NULL)
-            BackPtrs[2*i]  = &(VOID_NBELEM(Neighbors[2*i],nbrule->nbSide[2*l]));
+            BackPtrs[2*i]  = (ELEMENT **) &(VOID_NBELEM(Neighbors[2*i],nbrule->nbSide[2*l]));
         }
       }
     }
@@ -1518,13 +1518,13 @@ static INT UpdateContext (GRID *theGrid, ELEMENT *theElement, ElementContext *th
         {
           Neighbors[2*i] = SON(theNeighbor,nbrule->nbSon[2*l+1]);
           if (Neighbors[2*i]!=NULL)
-            BackPtrs[2*i]  = &(VOID_NBELEM(Neighbors[2*i],nbrule->nbSide[2*l+1]));
+            BackPtrs[2*i]  = (ELEMENT **) &(VOID_NBELEM(Neighbors[2*i],nbrule->nbSide[2*l+1]));
           else
             BackPtrs[2*i]=NULL;
 
           Neighbors[2*i+1] = SON(theNeighbor,nbrule->nbSon[2*l]);
           if (Neighbors[2*i+1]!=NULL)
-            BackPtrs[2*i+1]  = &(VOID_NBELEM(Neighbors[2*i+1],nbrule->nbSide[2*l]));
+            BackPtrs[2*i+1]  = (ELEMENT **) &(VOID_NBELEM(Neighbors[2*i+1],nbrule->nbSide[2*l]));
           else
             BackPtrs[2*i+1]=NULL;
         }
@@ -1532,7 +1532,7 @@ static INT UpdateContext (GRID *theGrid, ELEMENT *theElement, ElementContext *th
         {
           Neighbors[2*i] = SON(theNeighbor,nbrule->nbSon[2*l]);
           if (Neighbors[2*i]!=NULL)
-            BackPtrs[2*i]  = &(VOID_NBELEM(Neighbors[2*i],nbrule->nbSide[2*l]));
+            BackPtrs[2*i]  = (ELEMENT **) &(VOID_NBELEM(Neighbors[2*i],nbrule->nbSide[2*l]));
           else
             BackPtrs[2*i]=NULL;
 
@@ -1785,7 +1785,7 @@ static INT RefineElement (GRID *theGrid, ELEMENT *theElement, ElementContext *th
       V2_ADD(CVECT(theVertex),corr,CVECT(theVertex));
 
       /* calc local coordinates in the father element */
-      if (GlobalToLocal2d(n,corners,CVECT(theVertex),LCVECT(theVertex))!=0) return (1);
+      if (GlobalToLocal2d(n,(const COORD **) corners,CVECT(theVertex),LCVECT(theVertex))!=0) return (1);
     }
     VFATHER(theVertex) = theElement;
     NFATHER(theNode) = NULL;
