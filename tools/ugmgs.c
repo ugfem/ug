@@ -201,6 +201,7 @@ int PrintDataFileInfo (char *filename, int *magic_cookie)
   printf("Version:        %s\n",dio_general.version);
   printf("MG File:        %s\n",dio_general.mgfile);
   printf("Time:           %f\n",(float)dio_general.time);
+  printf("TimeStep:       %f\n",(float)dio_general.dt);
   printf("Magic Cookie:   %d\n",(int)dio_general.magic_cookie);
   printf("\n");
   printf("# VecData:      %d\n",dio_general.nVD);
