@@ -710,10 +710,14 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     SetStringValue(":amg:vect0",(double)NVEC(theGrid));
     SetStringValue(":amg:con0",(double)theGrid->nCon);
     if (np->display == PCR_FULL_DISPLAY) {
+      VECTOR *v;
+      INT nv=0;
+      for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) nv++;
       CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
       UserWrite(text);
       UserWrite(DISPLAY_NP_AMG_STRING);
-      UserWriteF(DISPLAY_NP_AMG_FORMAT,tl,(int)theGrid->nVector,
+      UserWriteF(DISPLAY_NP_AMG_FORMAT,
+                 tl,(int)nv,
                  (int)theGrid->nCon,0);
     }
     /* coarsen until criteria are fulfilled */
@@ -861,11 +865,14 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       /* set the index field on the new grid
          (even if the ordering might be changed again) */
       l_setindex(newGrid);
-      if (np->display == PCR_FULL_DISPLAY)
+      if (np->display == PCR_FULL_DISPLAY) {
+        VECTOR *v;
+        INT nv=0;
+        for (v=FIRSTVECTOR(newGrid); v!=NULL; v=SUCCVC(v)) nv++;
         UserWriteF(DISPLAY_NP_AMG_FORMAT,
-                   (int)level-1,(int)newGrid->nVector,
+                   (int)level-1,(int)nv,
                    (int)newGrid->nCon,(int)theGrid->nIMat);
-
+      }
       sprintf(varname,":amg:vect%d",level-1);
       SetStringValue(varname,(double)NVEC(newGrid));
       sprintf(varname,":amg:con%d",level-1);
