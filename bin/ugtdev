@@ -1,11 +1,12 @@
 #!/bin/csh -f
 
 #set verbose
-set ToolName = $0;
+set ToolName = `basename $0`;
 
 
 if ( $1 == "-h" || $1 == "-help" ) then
-echo $ToolName " [-S[a|m|g|h]] [-G] [-k] <film-name>"; exit;
+echo $ToolName " [-S[a|m|g|h]] [-G] [-k] [-n] <film-name> [<path-to-mg-files>]";
+exit;
 endif
 
 
@@ -13,8 +14,9 @@ endif
 
 # default settings
 set timescale = 1;
-set Screen = 0;
-set Keep = 0;
+set FlagScreen = 0;
+set FlagKeep = 0;
+set FlagNodes = 0;
 
 
 ##################################################################
@@ -44,11 +46,15 @@ while ($ready == 0)
 			breaksw;
 
 		case "-G":
-			set Screen = 1;
+			set FlagScreen = 1;
 			breaksw;
 
 		case "-k":
-			set Keep = 1;
+			set FlagKeep = 1;
+			breaksw;
+
+		case "-n":
+			set FlagNodes = 1;
 			breaksw;
 		
 		default:
@@ -65,9 +71,14 @@ end
 ##################################################################
 
 
-rm -f t.gnu;
-rm -f dt.gnu;
+rm -f t.gnu dt.gnu n.gnu;
 set PREFIX = $1
+if ($2 != "") then
+	set PathToMG = $2
+else
+	set PathToMG = .
+endif
+
 
 @ i = 0
 while ($i <= 10000)
@@ -84,6 +95,21 @@ while ($i <= 10000)
 	ugmgs $DataFile | \
 		awk '$1=="TimeStep:" {print awk_i,$2/(ts+0);i++;}' \
 			ts=$timescale awk_i=$i  - >> dt.gnu
+
+	if ( $FlagNodes ) then 
+		# getting corresponding mg-file
+		set MGFileName = `ugmgs $DataFile | awk '$1=="MG" {print $3}' -`
+		set MGFile = $PathToMG/$MGFileName;
+
+		if (! -f $MGFile) then
+			echo $ToolName": couldn't open MG-file " $MGFile
+		else
+			ugmgs $MGFile | \
+				awk '$2=="Vertex:"  {print awk_i,$3;}' \
+					ts=$timescale awk_i=$i  - >> n.gnu
+		endif
+	endif
+
 	@ i = $i + 1
 end
 
@@ -98,28 +124,17 @@ if (! -f dt.gnu) then
 	exit;
 endif
 
+if ($FlagNodes && (! -f n.gnu)) then
+	echo $ToolName": couldn't extract 'Vertex' data."
+	exit;
+endif
+
 
 ##################################################################
 
 
-if ( $Screen == 0 ) then 
-	echo '\
-		set parametric; \
-		set grid; \
-		set terminal postscript; \
-		set output "t.ps"; \
-		plot "t.gnu" w l;'       > t.scr;
 
-	echo '\
-		set parametric; \
-		set grid; \
-		set terminal postscript; \
-		set output "dt.ps"; \
-		plot "dt.gnu" w l;'        > dt.scr;
-endif
-
-
-if ( $Screen == 1 ) then 
+if ($FlagScreen) then 
 	echo '\
 		set parametric; \
 		set grid; \
@@ -137,16 +152,53 @@ if ( $Screen == 1 ) then
 		set terminal postscript; \
 		set output "dt.ps"; \
 		plot "dt.gnu" w l;'         > dt.scr;
-endif
 
+	if ($FlagNodes) then
+		echo '\
+			set parametric; \
+			set grid; \
+			plot "n.gnu" w l; \
+			pause -1; \
+			set terminal postscript; \
+			set output "n.ps"; \
+			plot "n.gnu" w l;'         > n.scr;
+	endif
+else
+	echo '\
+		set parametric; \
+		set grid; \
+		set terminal postscript; \
+		set output "t.ps"; \
+		plot "t.gnu" w l;'       > t.scr;
+
+	echo '\
+		set parametric; \
+		set grid; \
+		set terminal postscript; \
+		set output "dt.ps"; \
+		plot "dt.gnu" w l;'        > dt.scr;
+
+	if ($FlagNodes) then
+		echo '\
+			set parametric; \
+			set grid; \
+			set terminal postscript; \
+			set output "n.ps"; \
+			plot "n.gnu" w l;'        > n.scr;
+	endif
+endif
 
 gnuplot "t.scr";   rm t.scr;
 gnuplot "dt.scr";  rm dt.scr;
+if ($FlagNodes) then
+	gnuplot "n.scr";  rm n.scr;
+endif
 
 
-if ( $Keep == 0 ) then
+if (! $FlagKeep) then
 	rm t.gnu;
 	rm dt.gnu;
+	rm n.gnu;
 endif
 
 
