@@ -161,7 +161,9 @@ INT ce_ELEMORD;
 
 /* Macros for extended shell algorithm */
 #define NCUT                  10
+#ifndef INFINITY
 #define INFINITY              1.79769E308
+#endif
 #define SENTINEL              -INFINITY
 #define BT(i)                 (OE_BoxTab[i])
 
