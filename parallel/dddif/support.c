@@ -160,6 +160,21 @@ DOUBLE UG_GlobalSumDOUBLE (DOUBLE x)
   return(x);
 }
 
+INT UG_GlobalSumINT (INT x)
+{
+  int l;
+  INT y;
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,&y,sizeof(INT));
+    x += y;
+  }
+  Concentrate(&x,sizeof(INT));
+  Broadcast(&x,sizeof(INT));
+  return(x);
+}
+
 
 
 
