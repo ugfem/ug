@@ -8028,11 +8028,13 @@ static INT TextFacCommand (INT argc, char **argv)
 
    2D:
 
-   'Grid [$c {0|1}] [$e {0|1}] [$n {0|1}] [$w {0|1}]'
+   'Grid [$c {0|1}] [$e {0|1}] [$n {0|1}] [$w {0|1}] [$m {0|1}] [$r {0|1}] [$i {0|1}] '
 
    .    $c~{0|1}      - plot colored: no/yes
    .    $e~{0|1}      - plot ElemIDs: no/yes
    .    $n~{0|1}      - plot NodeIDs: no/yes
+   .    $r~{0|1}      - plot ref marks: no/yes
+   .    $i~{0|1}      - plot marksof indicator: no/yes
    .    $w~{c/i/r/a}  - which elements to plot:
    .n                                        c  copies and up
    .n                                        i  irregular and up
@@ -8666,10 +8668,11 @@ static INT ClearCommand (INT argc, char **argv)
 
    DESCRIPTION:
 
-   'copy $f <from vec sym> $t <to vec sym>'
+   'copy $f <from vec sym> $t <to vec sym> [$a]'
 
    .  $f~<from~vec~sym>      - from vector symbol
    .  $t~<from~vec~sym>      - to vector symbol
+   .  $a                     - all levels
 
    EXAMPLE:
    'copy $f sol $t old;'
@@ -8688,7 +8691,7 @@ static INT CopyCommand (INT argc, char **argv)
     return(CMDERRORCODE);
   }
 
-  if (argc!=3)
+  if (argc<3 || argc>4)
   {
     PrintErrorMessage('E',"copy","specify exactly the f and t option");
     return(PARAMERRORCODE);
@@ -8704,8 +8707,18 @@ static INT CopyCommand (INT argc, char **argv)
     return (PARAMERRORCODE);
   }
 
-  if (l_dcopy(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),SYM_VEC_DESC(to),EVERY_CLASS,SYM_VEC_DESC(from))!=NUM_OK)
-    return (CMDERRORCODE);
+  if (ReadArgvOption("a",argc,argv))
+  {
+    if (a_dcopy(theMG,0,CURRENTLEVEL(theMG),
+                SYM_VEC_DESC(to),EVERY_CLASS,SYM_VEC_DESC(from))!=NUM_OK)
+      return (CMDERRORCODE);
+  }
+  else
+  {
+    if (l_dcopy(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),
+                SYM_VEC_DESC(to),EVERY_CLASS,SYM_VEC_DESC(from))!=NUM_OK)
+      return (CMDERRORCODE);
+  }
 
   return (OKCODE);
 }
