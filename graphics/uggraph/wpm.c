@@ -3588,7 +3588,8 @@ static INT InitVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
         break;
       if (strlen(buffer)>=NAMESIZE) break;
       strcpy(PO_NAME(theEvpo),buffer);
-      theEvpo->EvalFct = GetElementVectorEvalProc("nvector");
+      if (theEvpo->EvalFct == NULL)
+        theEvpo->EvalFct = GetElementVectorEvalProc("nvector");
       break;
     }
 
