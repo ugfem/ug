@@ -4373,13 +4373,14 @@ static INT DeleteElementCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   refine - refine the current multigrid
+   adapt - adapt the current multigrid
 
    DESCRIPTION:
-   This command refines the multigrid according to the refinement marks
+   This command adapt the multigrid according to the refinement marks
    set in the elements, calling the function 'AdaptMultiGrid'.
+   If coarsen marks are set refinements are deleted.
 
-   'refine [$g] [$a] [$h] [$x] [$d <vector plot proc>]'
+   'adapt [$g] [$a] [$h] [$x] [$d <vector plot proc>]'
 
    .  no~option				- only local refinement
    .  $g						- copy nonrefined regions to new level
@@ -4394,7 +4395,7 @@ static INT DeleteElementCommand (INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-static INT RefineCommand (INT argc, char **argv)
+static INT AdaptCommand (INT argc, char **argv)
 {
   MULTIGRID       *theMG;
   INT i,mode,mark,rv;
@@ -4405,7 +4406,7 @@ static INT RefineCommand (INT argc, char **argv)
         #ifdef ModelP
   if (!CONTEXT(me))
   {
-    PRINTDEBUG(ui,0,("%2d: RefineCommand(): me not in Context,"
+    PRINTDEBUG(ui,0,("%2d: AdaptCommand(): me not in Context,"
                      " grid not refined\n",me))
     return (OKCODE);
   }
@@ -4414,7 +4415,7 @@ static INT RefineCommand (INT argc, char **argv)
   theMG = currMG;
   if (theMG==NULL)
   {
-    PrintErrorMessage('E',"refine","no open multigrid");
+    PrintErrorMessage('E',"adapt","no open multigrid");
     return (CMDERRORCODE);
   }
 
@@ -11677,21 +11678,19 @@ static INT LBCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*
-   ptest - simple testbed for parallel implementations, t.b. removed
+   lbs - simple or special load balancing functionality
 
    DESCRIPTION:
    ...
 
-   'ptest ...'
-
-   arguments will be passed to DDD
+   'lbs ...'
 
    KEYWORDS:
-   parallel, processors, check, DDD
+   parallel, processors, check, load balancing
  */
 /****************************************************************************/
 
-static INT PTestCommand (INT argc, char **argv)
+static INT LBSCommand (INT argc, char **argv)
 {
   MULTIGRID *theCurrMG;
 
@@ -11703,9 +11702,9 @@ static INT PTestCommand (INT argc, char **argv)
   }
 
   if (argc==2)
-    ddd_test(argv[1], theCurrMG);
+    lbs(argv[1], theCurrMG);
   else
-    ddd_test("0", theCurrMG);
+    lbs("0", theCurrMG);
 
   return(OKCODE);
 }
@@ -13122,7 +13121,8 @@ INT InitCommands ()
   if (CreateCommand("move",                       MoveNodeCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("ie",                         InsertElementCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("dele",                       DeleteElementCommand                    )==NULL) return (__LINE__);
-  if (CreateCommand("refine",             RefineCommand                                   )==NULL) return (__LINE__);
+  if (CreateCommand("refine",             AdaptCommand                                    )==NULL) return (__LINE__);
+  if (CreateCommand("adapt",                      AdaptCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("fixcoarsegrid",      FixCoarseGridCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("mark",                       MarkCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("find",                       FindCommand                                     )==NULL) return (__LINE__);
@@ -13234,7 +13234,8 @@ INT InitCommands ()
 
 #ifdef ModelP
   /* commands for parallel version */
-  if (CreateCommand("ptest",                      PTestCommand                                )==NULL) return (__LINE__);
+  if (CreateCommand("ptest",                      LBSCommand                                      )==NULL) return (__LINE__);
+  if (CreateCommand("lbs",                        LBSCommand                                      )==NULL) return (__LINE__);
   if (CreateCommand("context",            ContextCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("pstat",                      PStatCommand                                )==NULL) return (__LINE__);
 #ifdef CHACOT
