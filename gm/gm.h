@@ -2861,6 +2861,7 @@ VECTOR      *FindVectorFromIndex    (GRID *theGrid, INT index);
 ELEMENT         *FindElementFromId              (GRID *theGrid, INT id);
 ELEMENT         *FindElementFromPosition(GRID *theGrid, DOUBLE *pos);
 ELEMENT     *FindElementOnSurface   (MULTIGRID *theMG, DOUBLE *global);
+ELEMENT     *FindElementOnSurfaceCached (MULTIGRID *theMG, DOUBLE *global);
 ELEMENT     *NeighbourElement       (ELEMENT *t, INT side);
 INT          InnerBoundary          (ELEMENT *t, INT side);
 BLOCKVECTOR *FindBV                                     (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf );

@@ -7349,6 +7349,57 @@ ELEMENT *FindElementOnSurface (MULTIGRID *theMG, DOUBLE *global)
   return(NULL);
 }
 
+/****************************************************************************/
+/*D
+   FindElementOnSurfaceCached - Find element containing position
+
+   SYNOPSIS:
+   ELEMENT *FindElementOnSurfaceCached (MULTIGRID *theMG, DOUBLE *global)
+
+   PARAMETERS:
+   .  theMG - multigrid level to search
+   .  global - given position
+
+   DESCRIPTION:
+   This function finds the first element containing the position `pos`.
+
+   RETURN VALUE:
+   ELEMENT *
+   .n   pointer to ELEMENT
+   .n   NULL if not found.
+   D*/
+/****************************************************************************/
+
+ELEMENT *FindElementOnSurfaceCached (MULTIGRID *theMG, DOUBLE *global)
+{
+  ELEMENT *t;
+  INT k;
+  static ELEMENT *e = NULL;
+
+  if ( e!=NULL && EstimateHere(e) )
+  {
+    /* First try the cached element */
+    if (PointInElement(global,e)) {
+      return e;
+    }
+
+    /* Then try the neighbours */
+    for (k=0; k<SIDES_OF_ELEM(e); k++) {
+      t = NBELEM(e,k);
+      if ( t!=NULL )
+        if (PointInElement(global,t))
+        {
+          e = t;
+          return t;
+        }
+    }
+  }
+
+  /* No luck? Do it the hard way. */
+  e = FindElementOnSurface(theMG, global);
+  return e;
+}
+
 
 /****************************************************************************/
 /*
