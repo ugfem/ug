@@ -325,7 +325,7 @@ bf setfont
 (     beginnend mit 0 bezieht sich die <triangle_id>\). Die lokalen Koordinaten beschreiben) s
 (     einen Punkt in diesem Dreieck durch konvexe Linearkombination:) s
 ( ) s
-(                 x = local_x*p0 + local_y*p1 + \(1-local_x-local_y\)*p2) s
+(                 x = \(1-local_x-local_y\)*p0 + local_x*p1 + local_y*p2) s
 ( ) s
 (         wenn das Dreieck bei der Surface-definition im .lgm-file durch 'p0 p1 p2;' beschreiben) s
 (     wurde. Selbstverstaendlich muessen local_x, local_y, \(1-local_x-local_y\) >=0 sein.) s
