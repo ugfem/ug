@@ -108,12 +108,13 @@
 #include "field.h"
 
 /* np/procs */
+#include "error.h"
 #include "amgtransfer.h"
 #include "assemble.h"
 #include "basics.h"
+#include "ts.h"
 #include "bdf.h"
 #include "db.h"
-#include "error.h"
 #include "ew.h"
 #include "fas.h"
 #include "freebnd.h"
@@ -125,7 +126,6 @@
 #include "order.h"
 #include "project.h"
 #include "transfer.h"
-#include "ts.h"
 #include "tstep.h"
 
 /* graphics */
@@ -147,3 +147,6 @@
 #include "initui.h"
 #include "tecplot.h"
 #include "uginterface.h"
+
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
