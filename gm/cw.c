@@ -247,6 +247,7 @@ INT InitPredefinedControlEntries (void)
     if (predefines[i].used)
     {
       pce = predefines+i;
+      assert(pce->control_entry_id<MAX_CONTROL_ENTRIES);
       ce = control_entries+pce->control_entry_id;
       if (ce->used)
       {

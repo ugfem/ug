@@ -186,7 +186,7 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 
 /* macros for the control word management									*/
 #define MAX_CONTROL_WORDS       20              /* maximum number of control words		*/
-#define MAX_CONTROL_ENTRIES 80          /* max number of entries				*/
+#define MAX_CONTROL_ENTRIES 100         /* max number of entries				*/
 
 /* macros for the multigrid user data space management						*/
 #define OFFSET_IN_MGUD(id)              (GetMGUDBlockDescriptor(id)->offset)
