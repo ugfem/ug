@@ -163,6 +163,7 @@ INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass);
 INT PrintSVector (MULTIGRID *mg, VECDATA_DESC *X);
 INT PrintMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass);
 INT PrintTMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass);
+INT PrintDiagMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass);
 INT PrintIMatrix (GRID *g, VECDATA_DESC *V, INT vclass, INT vnclass);
 
 #endif

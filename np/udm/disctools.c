@@ -687,7 +687,7 @@ INT GetElementMPtrs (ELEMENT *theElement, const MATDATA_DESC *md,
   m1 = 0;
   for (i=0; i<cnt; i++)
   {
-    theMatrix = START(theVec[i]);
+    theMatrix = VSTART(theVec[i]);
     for (k=0; k<vncomp[i]; k++)
       for (l=0; l<vncomp[i]; l++)
         mptr[(m1+k)*m+m1+l] =
@@ -763,7 +763,7 @@ INT GetVlistMValues (INT cnt, VECTOR **theVec,
 
   m1 = 0;
   for (i=0; i<cnt; i++) {
-    theMatrix = START(theVec[i]);
+    theMatrix = VSTART(theVec[i]);
     mptr = MVALUEPTR(theMatrix,0);
     for (k=0; k<vncomp[i]; k++)
       for (l=0; l<vncomp[i]; l++)
@@ -845,7 +845,7 @@ INT AddVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
   if (MD_SUCC_COMP(theMD)) {
     m1 = 0;
     for (i=0; i<cnt; i++) {
-      theMatrix = START(theVec[i]);
+      theMatrix = VSTART(theVec[i]);
       mptr = MVALUEPTR(theMatrix,Comp[i][i][0]);
       for (k=0; k<vncomp[i]; k++)
         for (l=0; l<vncomp[i]; l++)
@@ -876,7 +876,7 @@ INT AddVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
   }
   m1 = 0;
   for (i=0; i<cnt; i++) {
-    theMatrix = START(theVec[i]);
+    theMatrix = VSTART(theVec[i]);
     mptr = MVALUEPTR(theMatrix,0);
     comp = Comp[i][i];
     for (k=0; k<vncomp[i]; k++)
@@ -962,7 +962,7 @@ INT GetElementVMPtrs (ELEMENT *theElement,
   m1 = 0;
   for (i=0; i<cnt; i++)
   {
-    theMatrix = START(theVec[i]);
+    theMatrix = VSTART(theVec[i]);
     for (k=0; k<vncomp[i]; k++)
       for (l=0; l<vncomp[i]; l++)
         mptr[(m1+k)*m+m1+l] =
@@ -1058,7 +1058,7 @@ INT GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD1,
   m1 = 0;
   for (i=0; i<cnt; i++)
   {
-    theMatrix = START(theVec[i]);
+    theMatrix = VSTART(theVec[i]);
     for (k=0; k<vncomp[i]; k++)
       for (l=0; l<vncomp[i]; l++)
         mptr[(m1+k)*m+m1+l] =
@@ -2049,6 +2049,52 @@ INT PrintTMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
       UserWrite("\n");
     }
   }
+
+  return(NUM_OK);
+}
+
+INT PrintDiagMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
+{
+  char buffer[256];
+  VECTOR *v;
+  DOUBLE_VECTOR pos;
+  INT info=FALSE;
+  MATRIX *m;
+  INT Mcomp,rcomp,ccomp,i,j,rtype,ctype;
+
+  for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+  {
+    if (VCLASS(v) > vclass) continue;
+    if (VNCLASS(v) > vnclass) continue;
+    rtype = VTYPE(v);
+    ccomp = MD_COLS_IN_RT_CT(Mat,rtype,rtype);
+    if (ccomp == 0) continue;
+    m = VSTART(v);
+    Mcomp = MD_MCMP_OF_RT_CT(Mat,rtype,rtype,0);
+    /* Check if there is an object associated with the vector. */
+    i = 0;
+    if (VOBJECT(v) != NULL) {
+      VectorPosition(v,pos);
+      i += sprintf(buffer,"x=%5.2f y=%5.2f ",pos[0],pos[1]);
+      if (DIM == 3)
+        i += sprintf(buffer+i,"z=%5.2f ",pos[2]);
+    }
+    else {
+      info = TRUE;
+      i += sprintf(buffer,"                ");
+      if (DIM == 3)
+        i += sprintf(buffer+i,"        ");
+    }
+    for (j=0; j<ccomp; j++)
+      i += sprintf(buffer+i,"d[%d]=%15.8lf ",j,
+                   MVALUE(m,Mcomp+j*ccomp+j));
+    i += sprintf(buffer+i,"\n");
+    UserWrite(buffer);
+  }
+
+  if (info)
+    UserWrite("NOTE: "
+              "Geometrical information not available for some vectors.\n");
 
   return(NUM_OK);
 }
