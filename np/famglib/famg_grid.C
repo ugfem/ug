@@ -2309,7 +2309,7 @@ void FAMGGrid::ConstructOverlap()
 		NrMasterForOverlap = 0;
 		DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), SendToMaster );
 
-		if( NrMasterForOverlap==0 )
+		if( procs>1 && NrMasterForOverlap==0 )
 		{	// delete all border (and ghost) if no more master vectors exist
 			for( vec=PFIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec) )
 				DDD_XferDeleteObj(PARHDR(vec));
