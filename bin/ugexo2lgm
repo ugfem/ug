@@ -4,6 +4,10 @@
 # 		<exo2filename> - exodus II file with surface triangulation and node 
 #					 assoziativity info
 #       <lgmfilename> - lgm file to create
+#
+# author: Stefan Lang, INF 368, IWR, University of Heidelberg
+#         Stefan.Lang@iwr.uni-heidelberg.de
+# history: start 030907
 
 # basic data types
 #$num = '\d';
@@ -15,14 +19,15 @@ $string = '[a-z"_]\w*';
 
 %cdf = ();
 
-if ($#ARGV != 1)
+if ($#ARGV != 2)
 {
-	print "usage: ugexo2lgm <exo2filename> <lgmfilename>\n";
+	print "usage: ugexo2lgm <exo2filename> <lgmfilename> <mapfilename>\n";
  	exit;
 }
 
 $exo2 = "$ARGV[0]";
 $lgm = "$ARGV[1]";
+$map = "$ARGV[2]";
 
 
 print "processing $exo2\n";
@@ -275,7 +280,7 @@ sub read_exo2()
 	return(0);
 }
 
-
+#######################################################################################
 
 sub write_domain
 {
@@ -301,6 +306,7 @@ sub write_unit
 sub write_line
 {
 	print LGM "# Line-Info\n";
+	printf MAP " Line-Map\n";
 	$nl = 0;
 	foreach $nns (1 .. $cdf{num_node_sets})
 	{
@@ -310,6 +316,8 @@ sub write_line
 			$linestring = $1;
 #			print "match $cdf{ns_prop1}{$nns}\n"; 
 # 			if ($nl == 74) { print "ERROR line $nl has id $1\n"; }
+			printf MAP " %4d %4d\n",$linestring,$nl;
+#			printf LGM "#       cubit lineid %d\n",$linestring;
 			printf LGM "line %d:",$nl;
 			$ns = sprintf "node_ns%d",$nns; 
 			$numns = sprintf "num_nod_ns%d",$nns; 
@@ -384,6 +392,7 @@ sub search_lines
 sub write_surf
 {
 	print LGM "# Surface-Info\n";
+	printf MAP " Surface-Map\n";
 	$nsurf = 0;
 	foreach $nns (1 .. $cdf{num_node_sets})
 	{
@@ -393,6 +402,8 @@ sub write_surf
 			$surf = $1;
 #			printf "writing surface $1 ";
 #			print "match $cdf{ns_prop1}{$nns}\n"; 
+			printf MAP " %4d %4d\n",$surf,$nsurf;
+#			printf LGM "#         cubit surfaceid %d\n",$surf;
 			printf LGM "surface %d:",$nsurf;
 			$nsurf++;
 
@@ -468,6 +479,10 @@ sub write_lgm()
 {
 	print "writing lgm geometry file $lgm\n";
 	open(LGM, ">$lgm") || die "can't open $lgm\n";
+	open(MAP, ">$map") || die "can't open $map\n";
+	printf MAP "Map file created by ugexo2lgm\n";
+	printf MAP "Map from cubit lines/surfaces to lgm lines/surfaces\n";
+	printf MAP "Map valid for file %s\n",$exo2;
 
 	write_domain();
 	write_unit();
@@ -475,6 +490,7 @@ sub write_lgm()
  	write_surf();
  	write_coord();
 
+	close(MAP);
 	close(LGM);
 }
 
