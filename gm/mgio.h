@@ -82,6 +82,8 @@
         #define MGIO_MAX_NEW_CORNERS                            MAX_NEW_CORNERS_DIM
         #define MGIO_MAX_CORNERS_OF_SIDE            MAX_CORNERS_OF_SIDE
 
+        #define MGIO_FATHER_SIDE_OFFSET                         FATHER_SIDE_OFFSET
+
         #define MGIO_MAXLEVEL                                           MAXLEVEL
         #define MGIO_TAGS                                                       TAGS
         #define MGIO_REFINEMENT_SIZE                            (MGIO_PARFILE ? sizeof(MGIO_REFINEMENT) : sizeof(struct mgio_refinement_seq))

@@ -54,7 +54,7 @@
 /*																			*/
 /****************************************************************************/
 
-/* uncomment this if you want to use the fule rule set for tetrahedra */
+/* uncomment this if you want to use the full rule set for tetrahedra */
 /* -> recompile rm.c refine.c ugm.c gmcheck.c ../ui/commands.c        */
 /* touch rm.c refine.c ugm.c gmcheck.c ../ui/commands.c; ugmake gm; ugmake ui */
 
@@ -70,7 +70,7 @@
 #define NEXTSIDEMASKHEX         0x00000007
 #define NEXTSIDEHEX(i,n)        (((i) & (NEXTSIDEMASKHEX<<(3*(n))))>>(3*(n)))
 
-#define FATHER_SIDE_OFFSET 20 /* greater values indicate outside faces */
+#define FATHER_SIDE_OFFSET 100 /* greater values indicate outside faces */
 
 #define MAX_NEW_CORNERS(tag) MaxNewCorners[tag]       /* midpoints on edges and sides plus center           */
 #define MAX_NEW_EDGES(tag)   MaxNewEdges[tag]         /* maximal new edges of type 1/2                      */
@@ -127,6 +127,10 @@
 #define MAX_SONS_2D    4
 #define MAX_SONS_3D    12
 #define MAX_SONS_DIM CONCAT(MAX_SONS_,DIM,D)
+
+#if FATHER_SIDE_OFFSET<MAX_SONS
+#error  /* increase FATHER_SIDE_OFFSET correspondigly */
+#endif
 
 /* max fine grid nodes of an element */
 #define MAX_REFINED_CORNERS_DIM (MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM)
@@ -305,12 +309,12 @@ struct edgedata {
 };
 
 struct sondata {
-  SHORT tag;                                     /* which element type is the son     */
-  SHORT corners[MAX_CORNERS_OF_ELEM_DIM];        /* corners of the son                */
-  SHORT nb[MAX_SIDES_OF_ELEM_DIM];               /* neighbors of this son             */
-  /* < 20 if neighbor has same father  */
-  /* >= 20 if neighbor has other father*/
-  INT path;                                      /* path used in GetSons() for tetras */
+  SHORT tag;                                     /* which element type is the son			    */
+  SHORT corners[MAX_CORNERS_OF_ELEM_DIM];        /* corners of the son                                  */
+  SHORT nb[MAX_SIDES_OF_ELEM_DIM];               /* neighbors of this son                               */
+  /* < FATHER_SIDE_OFFSET if nb has same father  */
+  /* >= FATHER_SIDE_OFFSET if nb has other father*/
+  INT path;                                      /* path used in GetSons() for tetras                   */
 };
 
 struct refrule {
