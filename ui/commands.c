@@ -84,6 +84,7 @@
 #include "disctools.h"
 #include "data_io.h"
 #include "npcheck.h"
+#include "udm.h"
 
 /* graph module */
 #include "wpm.h"
@@ -6118,6 +6119,14 @@ static INT SelectCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   int id;
 
+        #ifdef ModelP
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: SelectCommand(): me not in Context," \
+                     " no selection of elements\n",me))
+    return(OKCODE);
+  }
+        #endif
+
   theMG = currMG;
   if (theMG==NULL)
   {
@@ -6773,7 +6782,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
         #endif
   if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
   {
-    PrintErrorMessage('E',"InsertBoundaryNode","only a multigrid with exactly one level can be edited");
+    PrintErrorMessage('E',"MakeGridCommand","only for a multigrid with exactly one level a grid can be generated");
     RETURN(GM_ERROR);
   }
   MarkKey = MG_MARK_KEY(theMG);
@@ -12808,6 +12817,79 @@ static INT InitArray (void)
   return (0);
 }
 
+
+static DumpAlgCommand(INT argc, char **argv)
+{
+  INT v_comp,level, comp;
+  VECTOR *v;
+  MATRIX *m;
+  MULTIGRID *theMG;
+  GRID *theGrid;
+  VECDATA_DESC *v_desc;
+  char buffer[1024];
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"dumpalg","no open multigrid");
+    return (CMDERRORCODE);
+  }
+
+  v_desc = ReadArgvVecDesc(theMG,"v",argc,argv);
+  if (v_desc == NULL)
+  {
+    PrintErrorMessage('E',"dumpalg","wrong vector specification");
+    return (CMDERRORCODE);
+  }
+  UserWriteF(DISPLAY_NP_FORMAT_SS,"vector displayed",ENVITEM_NAME(v_desc));
+  DisplayVecDataDesc(v_desc,~0,buffer);
+
+  for (level=0; level<=TOPLEVEL(theMG); level++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,level);
+
+#ifdef ModelP
+    for( v=PFIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v) )
+#else
+    for( v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v) )
+#endif
+    {
+      printf( "Vec key=%d level=%d type=%d pe=%d fine=%d new_def=%d ",
+              KeyForObject((KEY_OBJECT*)v),level,VTYPE(v),me,
+              FINE_GRID_DOF(v),NEW_DEFECT(v) );
+      for( comp=0; comp<VD_NCMPS_IN_TYPE(v_desc,VTYPE(v)); comp++ )
+        printf(" %g ",comp,VVALUE(v,VD_CMP_OF_TYPE(v_desc,VTYPE(v),comp)));
+      printf("\n");
+    }
+  }
+
+  /* aus nstools.c
+      DisplayMatDataDesc(m,buffer);
+      fprintf(fptr,"%s",buffer);
+
+      fprintf(fptr,"Matrix:\n");
+      for (vec=FIRSTVECTOR(theGrid); vec!=NULL; vec=SUCCVC(vec))
+      {
+          for (mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
+          {
+              fprintf(fptr,"%d\t%d\n",(int)VINDEX(vec),(int)VINDEX(MDEST(mat)));
+              fprintf(fptr,"f\tt");
+              for (i=0; i<MD_ROWS_IN_RT_CT(m,VTYPE(vec),VTYPE(MDEST(mat))); i++)
+              {
+                  for (j=0; j<MD_COLS_IN_RT_CT(m,VTYPE(vec),VTYPE(MDEST(mat))); j+
+     +)
+                      fprintf(fptr,"\t%.9le",(double)MVALUE(mat,MD_IJ_CMP_OF_RT_CT
+     (m,VTYPE(vec),VTYPE(MDEST(mat)),i,j)));
+                  fprintf(fptr,"\n\t");
+              }
+              fprintf(fptr,"\n");
+          }
+      }
+   */
+
+  return(OKCODE);
+}
+
 /****************************************************************************/
 /*
    InitCommands - Initialization of the commands
@@ -13020,6 +13102,8 @@ INT InitCommands ()
   if (CreateCommand("wrar",               WriteArrayCommand                                       )==NULL) return (__LINE__);
   if (CreateCommand("rear",               ReadArrayCommand                                        )==NULL) return (__LINE__);
   if (CreateCommand("clar",               ClearArrayCommand                                       )==NULL) return (__LINE__);
+
+  if (CreateCommand("dumpalg",            DumpAlgCommand                                  )==NULL) return (__LINE__);
 
   if (InitClock()                 !=0) return (__LINE__);
   if (InitFindRange()     !=0) return (__LINE__);
