@@ -412,20 +412,22 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
 
   /* print defect */
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
-  if (PreparePCR(x,np->display,text,&PrintID)) {
-    lresult->error_code = __LINE__;
-    return(1);
-  }
+  if (np->display > PCR_NO_DISPLAY)
+    if (PreparePCR(x,np->display,text,&PrintID)) {
+      lresult->error_code = __LINE__;
+      return(1);
+    }
   for (i=0; i<VD_NCOMP(x); i++)
     lresult->first_defect[i] = lresult->last_defect[i];
   if (sc_mul_check(defect2reach,lresult->first_defect,reduction,b)) {
     lresult->error_code = __LINE__;
     return(1);
   }
-  if (DoPCR(PrintID,lresult->first_defect,PCR_CRATE)) {
-    lresult->error_code = __LINE__;
-    return(1);
-  }
+  if (np->display > PCR_NO_DISPLAY)
+    if (DoPCR(PrintID,lresult->first_defect,PCR_CRATE)) {
+      lresult->error_code = __LINE__;
+      return(1);
+    }
   if (sc_cmp(lresult->first_defect,abslimit,b)) lresult->converged = 1;
   else lresult->converged = 0;
   for (i=0; i<np->maxiter; i++)
@@ -442,27 +444,34 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
       return (1);
     if (LinearResiduum(theNP,bl,level,x,b,A,lresult))
       return(1);
-    if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE)) {
-      lresult->error_code = __LINE__;
-      return (1);
-    }
+    if (np->display > PCR_NO_DISPLAY)
+      if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE)) {
+        lresult->error_code = __LINE__;
+        return (1);
+      }
     if (sc_cmp(lresult->last_defect,abslimit,b) ||
         sc_cmp(lresult->last_defect,defect2reach,b)) {
       lresult->converged = 1;
       break;
     }
   }
-  if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) {
-    lresult->error_code = __LINE__;
-    return (1);
-  }
   FreeVD(theNP->base.mg,bl,level,np->c);
   if (np->Close != NULL)
     if ((*np->Close)(np,level,&lresult->error_code))
       return (1);
-  if (PostPCR(PrintID,NULL)) {
-    lresult->error_code = __LINE__;
-    return (1);
+  if (np->display > PCR_NO_DISPLAY) {
+    if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) {
+      lresult->error_code = __LINE__;
+      return (1);
+    }
+    if (PostPCR(PrintID,":ls:avg")) {
+      lresult->error_code = __LINE__;
+      return (1);
+    }
+    if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1))) {
+      lresult->error_code = __LINE__;
+      return (1);
+    }
   }
 
   return (0);
@@ -789,6 +798,8 @@ INT InitLinearSolver ()
     return (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
+  if (MakeStruct(":ls")) return(__LINE__);
+  if (MakeStruct(":ls:avg")) return(__LINE__);
 
   return (0);
 }
