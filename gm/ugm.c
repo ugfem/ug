@@ -2703,6 +2703,10 @@ static ELEMENT *FindFather (VERTEX *theVertex)
     if (PointInElement(CVECT(theVertex),NBELEM(theElement,i)))
       return(NBELEM(theElement,i));
 
+  if (i == SIDES_OF_ELEM(theElement))
+    if (OBJT(theVertex) == BVOBJ)
+      return(theElement);
+
   return(NULL);
 }
 
