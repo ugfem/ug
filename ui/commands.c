@@ -147,12 +147,15 @@
 
 /* for MarkCommand */
 #define MARK_ALL                                1
+#define AI_MARK_ALL             256
 #define MARK_COARSEN                    2
 #define MARK_ID                                 3
 #define MARK_SELECTION                  4
 #define NO_SIDE_SPECIFIED               -1
 #define NO_RULE_SPECIFIED               -1
 #define NO_OF_RULES                     64
+
+/* for anisotropic refinement */
 
 /* for save command */
 #define NO_COMMENT                               "no comment"
@@ -338,6 +341,29 @@ INT SetCurrentMultigrid (MULTIGRID *theMG)
   return (1);
 }
 
+#ifdef __THREEDIM__
+INT GetRule_AnisotropicRed (ELEMENT *theElement, INT *Rule)
+{
+  DOUBLE area,norm;
+  DOUBLE_VECTOR a,b,c;
+
+  *Rule=NO_REFINEMENT;
+  if (TAG(theElement)==PRISM)
+  {
+    V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,1))),CVECT(MYVERTEX(CORNER(theElement,0))),a);
+    V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,2))),CVECT(MYVERTEX(CORNER(theElement,0))),b);
+    V3_VECTOR_PRODUCT(a,b,c);
+    V3_EUKLIDNORM(c,area);
+    area *= 0.5;
+    V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,3))),CVECT(MYVERTEX(CORNER(theElement,0))),a);
+    V3_EUKLIDNORM(a,norm);
+    if (norm < 0.25*SQRT(area)) *Rule=PRISM_QUADSECT;
+  }
+
+  return (0);
+}
+#endif
+
 /****************************************************************************/
 /*D
    quit - quit command
@@ -355,7 +381,7 @@ INT SetCurrentMultigrid (MULTIGRID *theMG)
 static INT QuitCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
-
+  SetDoneFlag();
   return(QUITCODE);
 }
 
@@ -4541,12 +4567,10 @@ static INT AdaptCommand (INT argc, char **argv)
     nmarked = 0;
 
     for (l=TOPLEVEL(theMG); l<=TOPLEVEL(theMG); l++)
-      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
-           theElement!=NULL; theElement=SUCCE(theElement))
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l)); theElement!=NULL; theElement=SUCCE(theElement))
       {
         if (EstimateHere(theElement))
-          if ((rv = MarkForRefinement(theElement,
-                                      RED,NULL))!=0)
+          if ((rv = MarkForRefinement(theElement,RED,NULL))!=0)
           {
             l = TOPLEVEL(theMG);
             break;
@@ -4874,16 +4898,25 @@ static INT MarkCommand (INT argc, char **argv)
     case 'a' :
       if (mode!=FALSE)
       {
-        PrintErrorMessage('E',"mark","specify only one option of a, i, s");
+        PrintErrorMessage('E',"mark","specify only one option of a, b, i, s");
         return (PARAMERRORCODE);
       }
       mode = MARK_ALL;
       break;
 
+    case 'b' :
+      if (mode!=FALSE)
+      {
+        PrintErrorMessage('E',"mark","specify only one option of a, b, i, s");
+        return (PARAMERRORCODE);
+      }
+      mode = AI_MARK_ALL;
+      break;
+
     case 'i' :
       if (mode!=FALSE)
       {
-        PrintErrorMessage('E',"mark","specify only one option of a, i, s");
+        PrintErrorMessage('E',"mark","specify only one option of a, b, i, s");
         return (PARAMERRORCODE);
       }
       mode = MARK_ID;
@@ -4899,7 +4932,7 @@ static INT MarkCommand (INT argc, char **argv)
     case 's' :
       if (mode!=FALSE)
       {
-        PrintErrorMessage('E',"mark","specify only one option of a, i, s");
+        PrintErrorMessage('E',"mark","specify only one option of a, b, i, s");
         return (PARAMERRORCODE);
       }
       mode = MARK_SELECTION;
@@ -4913,7 +4946,7 @@ static INT MarkCommand (INT argc, char **argv)
 
   if (mode==FALSE)
   {
-    PrintErrorMessage('E',"mark","specify exactly one option of a, i, s");
+    PrintErrorMessage('E',"mark","specify exactly one option of a, b, i, s");
     return (PARAMERRORCODE);
   }
 
@@ -4941,6 +4974,24 @@ static INT MarkCommand (INT argc, char **argv)
             nmarked++;
       }
     break;
+
+#ifdef THREEDIM__
+  case AI_MARK_ALL :
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l)); theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+        {
+          if (GetRule_AnisotropicRed(theElement,&Rule)) Rule=RED;
+          if ((rv = MarkForRefinement(theElement,Rule,NULL))!=0)
+          {
+            l = TOPLEVEL(theMG);
+            break;
+          }
+          else
+            nmarked++;
+        }
+    break;
+#endif
 
   case MARK_ID :
     theElement = NULL;
@@ -6641,7 +6692,7 @@ static INT CheckCommand (INT argc, char **argv)
  */
 /****************************************************************************/
 
-static INT QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
+INT QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
 {
   INT error;
 
@@ -6650,7 +6701,6 @@ static INT QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
 
   if ((error=MinMaxAngle(theElement,&min,&max))!=GM_OK)
     return(error);
-
   minangle = MIN(min,minangle);
   maxangle = MAX(max,maxangle);
   if ((lessopt && (min<themin)) && (greateropt && (max>themax)))
@@ -6806,7 +6856,7 @@ static INT QualityCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  UserWriteF(" min angle = %12.4f\n max angle = %12.4f\n",(float)minangle,(float)maxangle);
+  UserWriteF(" min angle = %20.12f\n max angle = %20.12f\n",(float)minangle,(float)maxangle);
 
   return(OKCODE);
 }
@@ -6871,8 +6921,8 @@ static INT MakeGridCommand  (INT argc, char **argv)
   float tmp;
 #endif
 #if defined __THREEDIM__ && defined _NETGEN
-  INT smooth;
-  DOUBLE h;
+  INT smooth, from, to, prism, save;
+  DOUBLE h, sc_x, sc_y, sc_z, sc[9], vol_h, a1, a2, a3, a4, a5, a6, a7, a8, a9;
   INT coeff;
 #endif
 
@@ -6950,7 +7000,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
     params.h_global = .0;
     params.CheckCos = cos(PI/18.0);
     params.searchconst = 0.2;
-    smooth = 10;
+    smooth = 5;
     for (i=1; i<argc; i++)
       switch (argv[i][0])
       {
@@ -7068,7 +7118,44 @@ static INT MakeGridCommand  (INT argc, char **argv)
     if(h<0)
       if (ReadArgvINT("c",&coeff,argc,argv)) coeff = 0;
 
-    if (GenerateGrid3d(theMG,mesh,h,smooth,ReadArgvOption("d",argc,argv),coeff))
+    sc[0] = 1.0; sc[1] = 0.0; sc[2] = 0.0;
+    sc[3] = 0.0; sc[4] = 1.0; sc[5] = 0.0;
+    sc[6] = 0.0; sc[7] = 0.0; sc[8] = 1.0;
+    for (i=1; i<argc; i++)
+      switch (argv[i][0])
+      {
+      case 'i' :
+        if (sscanf(argv[i],"i %lf %lf %lf %lf %lf %lf %lf %lf %lf",&a1,&a2,&a3,&a4,&a5,&a6,&a7,&a8,&a9)!=9)
+          break;
+        sc[0] = a1;
+        sc[1] = a2;
+        sc[2] = a3;
+        sc[3] = a4;
+        sc[4] = a5;
+        sc[5] = a6;
+        sc[6] = a7;
+        sc[7] = a8;
+        sc[8] = a9;
+        break;
+      }
+
+    if (ReadArgvINT("s",&save,argc,argv))
+      save = 0;
+    if (ReadArgvINT("p",&prism,argc,argv))
+      prism = 0;
+    if (ReadArgvINT("f",&from,argc,argv))
+      from = 1;
+    if(from<1)
+      from = 1;
+    if (ReadArgvINT("t",&to,argc,argv))
+      to = theMG->theBVPD.nSubDomains;
+    if(to>theMG->theBVPD.nSubDomains)
+      to = theMG->theBVPD.nSubDomains;
+
+    if (ReadArgvDOUBLE("v",&vol_h,argc,argv))
+      vol_h = h;
+
+    if (GenerateGrid3d(theMG,mesh,vol_h,smooth,ReadArgvOption("d",argc,argv),coeff, sc, from, to, prism, save))
     {
       PrintErrorMessage('E',"makegrid","execution failed");
       ReleaseTmpMem(MGHEAP(theMG),MarkKey);
