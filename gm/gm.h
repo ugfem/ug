@@ -2340,6 +2340,7 @@ BLOCKVECTOR *FindBV                                     (const GRID *grid, const
 /* list */
 void            ListMultiGridHeader     (const INT longformat);
 void            ListMultiGrid                   (MULTIGRID *theMG, const INT isCurrent, const INT longformat);
+INT                     MultiGridStatus                 (MULTIGRID *theMG, INT green, INT load);
 void            ListGrids                               (const MULTIGRID *theMG);
 void            ListNode                                (MULTIGRID *theMG, NODE *theNode,               INT dataopt, INT bopt, INT nbopt, INT vopt);
 void            ListNodeSelection               (MULTIGRID *theMG,                                              INT dataopt, INT bopt, INT nbopt, INT vopt);
