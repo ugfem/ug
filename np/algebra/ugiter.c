@@ -1064,7 +1064,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
       /* rhs */
       for (i=0; i<n; i++)
         s[i] = 0.0;
-      for (ctype=0; ctype<=NVECTYPES; ctype++)
+      for (ctype=0; ctype<NVECTYPES; ctype++)
         if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
           switch (MAT_RCKIND(M,rtype,ctype))
           {
@@ -1397,7 +1397,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
     /* rhs */
     for (i=0; i<n; i++)
       s[i] = VVALUE(vec,dcomp[i]);
-    for (ctype=0; ctype<=NVECTYPES; ctype++)
+    for (ctype=0; ctype<NVECTYPES; ctype++)
       if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
         switch (MAT_RCKIND(M,rtype,ctype))
         {
