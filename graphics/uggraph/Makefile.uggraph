@@ -14,6 +14,9 @@ OBJECTS = wpm.o graph.o wop.o initgraph.o plotproc.o
 $(UG_LIB): $(OBJECTS) Makefile.uggraph 
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 
+ar :
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
+
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $<
 

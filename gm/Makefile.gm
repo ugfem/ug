@@ -20,6 +20,9 @@ all: GG Makefile.gm
 $(UG_LIB): $(OBJECTS) 
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 
+ar: 
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
+
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $<
 
