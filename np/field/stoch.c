@@ -268,7 +268,6 @@ static DOUBLE getLinRnd()
 static DOUBLE getGaussRnd()
 {
   DOUBLE ReLinRnd, ImLinRnd, AbsLinRnd;
-  extern DOUBLE getLinRnd(void);
 
   do
   {
@@ -283,7 +282,6 @@ static DOUBLE getGaussRnd()
 static void getGaussRnd2(DOUBLE *out)
 {
   DOUBLE ReLinRnd, ImLinRnd, AbsLinRnd;
-  extern DOUBLE getLinRnd(void);
 
   do
   {
@@ -337,7 +335,6 @@ static INT StochModel(INT i, INT j, INT k, DOUBLE *out, DOUBLE Var, DOUBLE Nug, 
   DOUBLE Matrix[3];       /* lower left matrix with less than 3 entries, arranged column after column, down from
                              the diagonal */
   DOUBLE RandomNumber[2];
-  extern DOUBLE getGaussRnd(void);
 
   Frequence[0] = ((DOUBLE) i) * F[0];
   Frequence[1] = ((DOUBLE) j) * F[1];
