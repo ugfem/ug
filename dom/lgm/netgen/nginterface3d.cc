@@ -90,10 +90,22 @@ static int qualclass, surfind;
 static int LGM_DEBUG = 0;
 static double SMALL = 0.0005;
 static double Triangle_Angle2 = 60.0;
+static Point3d sp1;
+static Vec3d n, t1, t2;
+static ARRAY<INDEX> locelements(0);
+static ARRAY<int> locrots(0);
+static ARRAY<Point3d> * optpoints;
+static const ARRAY<Element> * optelements;
+static int locerr2;
+static double loch;
+static int surfi, surfi2;
 double hh;
 
 int GetEdgeId(const Point3d & ep1, Point3d & ep2);
 int Calc_Coord_Vectors(const Point3d p1,const Point3d p2,const int mi,Vec3d & nx,Vec3d & ny,Vec3d & nz);
+int Project_Point2Surface(Point3d &inpoint, Point3d &outpoint);
+
+extern void BFGS (Vector & x, double (*f)(const Vector & x, Vector & g));
 
 class surfacemeshing
 {
@@ -132,6 +144,7 @@ protected:
                                  Point2d & plainpoint, double h);
   virtual void TransformFromPlain (INDEX surfind, Point2d & plainpoint,
                                    Point3d & locpoint, double h);
+public:
   virtual void ProjectPoint (INDEX surfind, Point3d & p) const;
   virtual void ProjectPointold (INDEX surfind, Point3d & p) const;
   virtual void ProjectPoint2 (INDEX surfind, INDEX surfind2, Point3d & p) const;
@@ -255,7 +268,7 @@ int GetTriangleId(const Point3d & pp, Point3d & pnew)
 
 int surfacemeshing :: DefineTransformation (INDEX surfind, Point3d & p1, Point3d & p2)
 {
-  int mi,i;
+  int mi;
 
   mi = GetEdgeId(p1,p2);
 
@@ -308,7 +321,7 @@ void surfacemeshing :: TransformToPlain (INDEX surfind, const Point3d & locpoint
 {
   Vec3d p1p,pp,dirvec,vec;
   Point3d lp,np1,np2,np3;
-  int tidlp,tidgp,di;
+  int tidlp;
   float d1,d2,d3;
   int MAXINT2;
   MAXINT2 = 100000;
@@ -440,18 +453,7 @@ void surfacemeshing :: TransformFromPlain (INDEX surfind, Point2d & plainpoint,
   p1p = plainpoint.X() * ex + plainpoint.Y() * ey;
   p1p *= h;
   locpoint = globp1 + p1p;
-  /*  cout << "plain2geo" << endl;
-     cout << plainpoint.X() << "  " << plainpoint.Y() << endl;
-     cout << p1p.X() << "  " << p1p.Y() << "  " << p1p.Z() << endl;
-     cout << globp1.X() << "  " << globp1.Y() << "  " << globp1.Z() << endl;
-     cout << locpoint.X() << "  " << locpoint.Y() << "  " << locpoint.Z() << endl;*/
-  // fuer den Fall, dan p1 und p2 nicht auf einem Geometriedreieck liegen
-  //  ProjectPoint2geo(locpoint);
-  //  ProjectPoint2Triangle(locpoint,mi);
-  //  cout << locpoint.X() << "  " << locpoint.Y() << "  " << locpoint.Z() << endl;
-  // cout << endl;
 }
-
 
 void surfacemeshing :: ProjectPoint (INDEX surfind, Point3d & p) const
 {
@@ -463,57 +465,10 @@ void surfacemeshing :: ProjectPoint (INDEX surfind, Point3d & p) const
   mi = GetTriangleId(p,pnew);
   p = pnew;
 
-  /*do
-     {
-     pold = p;
-     min = 100000000.0;
-     mi = 0;
-     for(i=1;i<=geomelements.Size();i++)
-     {
-      ep1 = geompoints[geomelements[i].PNum(1)].p;
-      ep2 = geompoints[geomelements[i].PNum(2)].p;
-      ep3 = geompoints[geomelements[i].PNum(3)].p;
-
-      e1 = p - ep1;
-      e2 = p - ep2;
-      e3 = p - ep3;
-      test = e1.Length() + e2.Length() + e3.Length();
-      if(min > test)
-      {
-        min = test;
-        mi = i;
-      }
-     }
-   */
-  /*  ep1 = geompoints[geomelements[mi].PNum(1)].p;
-     ep2 = geompoints[geomelements[mi].PNum(2)].p;
-     ep3 = geompoints[geomelements[mi].PNum(3)].p;
-
-     n1 = ep3 - ep1;
-     n1 /= n1.Length();
-     n2 = ep3 - ep2;
-     n2 /= n2.Length();
-     n3 = Cross(n1,n2);
-     n3 /= n3.Length();
-     p1.X() = 0.0;
-     p1.Y() = 0.0;
-     p1.Z() = 0.0;
-     np = p - ep1;
-     np = np - (n3 * np) * n3;
-     p.X() = np.X() + ep1.X();
-     p.Y() = np.Y() + ep1.Y();
-     p.Z() = np.Z() + ep1.Z();
-     cout << "projectpoint " << mi << endl;
-
-     cout << p.X() << "  " << p.Y() << "  " << p.Z() << endl;
-     cout << n3.X() << "  " << n3.Y() << "  " << n3.Z() << endl;*/
-  dist = sqrt( (p.X() - pold.X()) * (p.X() - pold.X())
-               + (p.Y() - pold.Y()) * (p.Y() - pold.Y())
-               + (p.Z() - pold.Z()) * (p.Z() - pold.Z()));
-  //  cout << " dist " << dist << endl;
-  //}
+  dist = sqrt(  (p.X() - pold.X()) * (p.X() - pold.X())
+                + (p.Y() - pold.Y()) * (p.Y() - pold.Y())
+                + (p.Z() - pold.Z()) * (p.Z() - pold.Z()));
   while( dist >= 0.5 ) ;
-  //  cout << endl;
 }
 
 void surfacemeshing :: ProjectPointold (INDEX surfind, Point3d & p) const
@@ -523,30 +478,8 @@ void surfacemeshing :: ProjectPointold (INDEX surfind, Point3d & p) const
   double min,test;
   int mi,i;
 
-  /*  cout << "projectpoint " << endl;
-     cout << p.X() << "  " << p.Y() << "  " << p.Z() << endl;*/
-
   mi = GetTriangleId(p,pnew);
   min = 100000000.0;
-
-
-  /*  mi = 0;
-
-     for(i=1;i<=geomelements.Size();i++)
-     {
-      ep1 = geompoints[geomelements[i].PNum(1)].p;
-      ep2 = geompoints[geomelements[i].PNum(2)].p;
-      ep3 = geompoints[geomelements[i].PNum(3)].p;
-      e1 = p - ep1;
-      e2 = p - ep2;
-      e3 = p - ep3;
-      test = e1.Length() + e2.Length() + e3.Length();
-      if(min > test)
-      {
-        min = test;
-        mi = i;
-      }
-     }*/
 
   ep1 = geompoints[geomelements[mi].PNum(1)].p;
   ep2 = geompoints[geomelements[mi].PNum(2)].p;
@@ -566,10 +499,6 @@ void surfacemeshing :: ProjectPointold (INDEX surfind, Point3d & p) const
   p.X() = np.X() + ep1.X();
   p.Y() = np.Y() + ep1.Y();
   p.Z() = np.Z() + ep1.Z();
-  /*  cout << "projectpoint " << mi << endl;
-
-     cout << p.X() << "  " << p.Y() << "  " << p.Z() << endl;
-     cout << n3.X() << "  " << n3.Y() << "  " << n3.Z() << endl;*/
 }
 
 void surfacemeshing :: ProjectPoint2 (INDEX surfind, INDEX surfind2, Point3d & p) const
@@ -638,11 +567,6 @@ void surfacemeshing :: GetNormalVector(INDEX surfind, const Point3d & pp, Vec3d 
   n2 /= n2.Length();
   n = Cross(n1,n2);
   n /= n.Length();
-  /*  cout << "normalvector " <<  mi << endl;
-     cout << n.X() << "  " << n.Y() << "  " << n.Z() << endl;
-     cout << "im punkt " << p.X() << "  "
-                        << p.Y() << "  "
-                        << p.Z() << endl;*/
 }
 
 void surfacemeshing :: GetNormalVectorold(INDEX surfind, const Point3d & p, Vec3d & n) const
@@ -706,7 +630,6 @@ void surfacemeshing :: SaveElement (const Element & elem)
 class my_surfacemeshing : public surfacemeshing
 {
 public:
-  //  my_meshinggeosurfaces (ARRAY<Surface*> & asurfaces);
   my_surfacemeshing (char * rulefilename);
   virtual int SavePoint (const Point3d & p);
   virtual void SaveElement (const Element & elem);
@@ -761,9 +684,6 @@ void my_surfacemeshing :: SaveElement (const Element & elem)
 static my_surfacemeshing * meshing;
 static const surfacemeshing * meshthis;
 
-
-//static surfacemeshing * meshing;
-
 int AddGeomPoint (int id, double x, double y, double z)
 {
   geompoints.Append (geompoint3d());
@@ -797,10 +717,6 @@ int AddLinePoint (int id, double x, double y, double z)
 {
   points.Append (Point3d(x,y,z));
 
-  //  points->Append (Point3d());
-  //  points->Last().X() = x;
-  //  points->Last().Y() = y;
-  //  points->Last().Z() = z;
   meshing->AddPoint (points.Last(), id);
   if (LGM_DEBUG) printf("%s %d %f %f %f \n","POINT",id,x,y,z);
   return 0;
@@ -843,33 +759,31 @@ void surfacemeshing :: Mesh (double gh)
   int old;
   double in[5];
   static ARRAY<Point3d> locp;
+  FILE *file;
 
   double h;
-  /*  Point2d bemp, bemp1, bemp2;*/
   Point3d bemp, bemp1, bemp2;
 
   if(LGM_DEBUG)
   {
     // Ausgabe fuer Netgen
-    printf("%s\n","ug");
-    printf("%d\n",geompoints.Size());
+    file = fopen("netgen","w");
+    fprintf(file, "%s\n","ug");
+    fprintf(file, "%d\n",geompoints.Size());
     for (i = 1; i <= geompoints.Size(); i++)
-    {
-      cout << geompoints[i].p.X() << "  "
-           << geompoints[i].p.Y() << "  "
-           << geompoints[i].p.Z() << endl;
-    }
-    printf("%d\n",geomelements.Size());
+      fprintf(file, "%f %f %f\n", geompoints[i].p.X(),
+              geompoints[i].p.Y(),
+              geompoints[i].p.Z());
+    fprintf(file, "%d\n",geomelements.Size());
     for(i=1; i<=geomelements.Size(); i++)
-    {
-      cout << geomelements[i].PNum(1) << "  "
-           << geomelements[i].PNum(2) << "  "
-           << geomelements[i].PNum(3) << "  "
-           << geomelements[i].Neighbour(1) << "  "
-           << geomelements[i].Neighbour(2) << "  "
-           << geomelements[i].Neighbour(3)
-           << endl;
-    }
+      fprintf(file, "%d %d %d %d %d %d\n",    geomelements[i].PNum(1),
+              geomelements[i].PNum(2),
+              geomelements[i].PNum(3),
+              geomelements[i].Neighbour(1),
+              geomelements[i].Neighbour(2),
+              geomelements[i].Neighbour(3));
+
+    fclose(file);
 
     // Ausgabe der Front
     adfront->ugPrint(cout);
@@ -1499,7 +1413,7 @@ int case1(const Point3d & ep1, Point3d & ep2)
       Calc_Vectors(p0,p1,p2,n0,n1,n2);
       help = Project2Plane(p,np,p0,n0,n1,n2);
       for(j=0; j<3; j++)
-        if(lam[j]<SMALL/det)
+        if(lam[j]<10*SMALL)
           triang[trnb][j+1] = j;
       trnb++;
     }
@@ -1738,14 +1652,15 @@ int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh)
   Point3d midp,midsp,ep0,ep1,ep2;
   Vec3d n0,n1,n2,np,front_vec, triang_direction,dist_vec;
   int front_id, line_id;
-  double angle,help1,help2,nh,sp,help,L;
+  double angle,help1,help2,nh,sp,help,L,front;
 
   midp = Center (p1,p2);
   midsp = Center (sp1,sp2);
 
   nh = Dist(sp1,sp2);
+  front = Dist(sp1,sp2);
   nh = xh;
-  if(Dist (midp, midsp) > nh*2/3)
+  if(Dist (midp, midsp) > nh)
     return(0);
   else
   {
@@ -1780,7 +1695,7 @@ int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh)
     // vielleicht Dist(sp1,p1)
     L = Dist(p1,p2);
 
-    if( (help1>0.5*nh/3) || (help2>0.5*nh/3) )
+    if( (help1>0.5*front/3) || (help2>0.5*front/3) )
       return(0);
 
     angle = Calc_Angle(geomelements[front_id], geomelements[line_id]);
@@ -1789,7 +1704,7 @@ int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh)
 
     if(front_id==line_id)
     {
-      if(help > 0.3*nh/3)
+      if(help > 0.3*front/3)
       {
         return(0);
       }
@@ -1868,6 +1783,298 @@ void Smooth_SurfaceMesh (ARRAY<Point3d> & points, const ARRAY<Element> & element
   }
 }
 
+static void CalcTriangleBadness (double x2, double x3, double y3, int err2,
+                                 double h, double & badness, double & g1x, double & g1y)
+{
+  // badness = sqrt(3) /36 * circumference^2 / area - 1 +
+  //           h / li + li / h - 2
+
+  // p1 = (0, 0), p2 = (x2, 0), p3 = (x3, y3);
+
+  Vec2d v23;
+  double l12, l13, l23, cir, area;
+  static const double c = sqrt(3) / 36;
+  double c1, c2, c3, c4;
+
+  v23.X() = x3 - x2;
+  v23.Y() = y3;
+
+  l12 = x2;
+  l13 = sqrt (x3*x3 + y3*y3);
+  l23 = v23.Length();
+
+  cir = l12 + l13 + l23;
+  area = 0.5 * x2 * y3;
+
+  if (area < 0)
+  {
+    g1x = 0;
+    g1y = 0;
+    badness = 1e10;
+    return;
+  }
+
+  badness = c * cir * cir / area - 1;
+
+  c1 = 2 * c * cir / area;
+  c2 = 0.5 * c * cir * cir / (area * area);
+
+  g1x = c1 * ( - 1 - x3 / l13) - c2 * (-v23.Y());
+  g1y = c1 * (     - y3 / l13) - c2 * ( v23.X());
+
+  if (err2)
+  {
+    badness += cir / h + h/l12 + h/l13 + h/l23 - 6;
+    c3 = 1 / (h * l12) - h / (l12 * l12 * l12);
+    c4 = 1 / (h * l13) - h / (l13 * l13 * l13);
+    g1x -= c3 * x2 + c4 * x3;
+    g1y -= c4 * y3;
+  }
+}
+
+
+double Opti2FunctionValueGrad (const Vector & x, Vector & grad)
+{
+  int j, rot;
+  INDEX eli;
+  const Element * el;
+  Vec3d n, v1, v2, e1, e2, vgrad;
+  Point3d pp1;
+  Vec2d g1, g2, g3;
+  double badness, hbadness;
+
+  vgrad.X() = 0;
+  vgrad.Y() = 0;
+  vgrad.Z() = 0;
+  badness = 0;
+
+  pp1 = sp1 + (x.Get(1) * t1) + (x.Get(2) * t2);
+
+  meshthis -> ProjectPoint (surfi, pp1);
+  meshthis -> GetNormalVector (surfi, pp1, n);
+
+  for (j = 1; j <= locelements.Size(); j++)
+  {
+    eli = locelements.Get(j);
+    rot = locrots.Get(j);
+    el = &optelements->Get(eli);
+
+    v1 = optpoints->Get(el->PNumMod(rot + 1)) - pp1;
+    v2 = optpoints->Get(el->PNumMod(rot + 2)) - pp1;
+
+    e1 = v1;
+    e2 = v2;
+    if(e1.Length()>1e-7)
+      e1 /= e1.Length();
+    e2 -= (e1 * e2) * e1;
+    if(e2.Length()>1e-7)
+      e2 /= e2.Length();
+
+    if (Cross (e1, e2) * n > 0)
+    {
+      CalcTriangleBadness ( (e1 * v1), (e1 * v2), (e2 * v2), locerr2, loch,
+                            hbadness, g1.X(), g1.Y());
+
+      badness += hbadness;
+
+      vgrad.X() += g1.X() * e1.X() + g1.Y() * e2.X();
+      vgrad.Y() += g1.X() * e1.Y() + g1.Y() * e2.Y();
+      vgrad.Z() += g1.X() * e1.Z() + g1.Y() * e2.Z();
+    }
+    else
+      badness += 1e8;
+  }
+
+  vgrad -= (vgrad * n) * n;
+
+  grad.Elem(1) = vgrad * t1;
+  grad.Elem(2) = vgrad * t2;
+  return badness;
+}
+
+
+double Opti2EdgeFunctionValueGrad (const Vector & x, Vector & grad)
+{
+  int j, rot;
+  INDEX eli;
+  const Element * el;
+  Vec3d n1, n2, v1, v2, e1, e2, vgrad;
+  Point3d pp1;
+  Vec2d g1, g2, g3;
+  double badness, hbadness;
+
+  vgrad.X() = 0;
+  vgrad.Y() = 0;
+  vgrad.Z() = 0;
+  badness = 0;
+
+  pp1 = sp1 + x.Get(1) * t1;
+  meshthis -> ProjectPoint2 (surfi, surfi2, pp1);
+
+  for (j = 1; j <= locelements.Size(); j++)
+  {
+    eli = locelements.Get(j);
+    rot = locrots.Get(j);
+    el = &optelements->Get(eli);
+
+    v1 = optpoints->Get(el->PNumMod(rot + 1)) - pp1;
+    v2 = optpoints->Get(el->PNumMod(rot + 2)) - pp1;
+
+    e1 = v1;
+    e2 = v2;
+    e1 /= e1.Length();
+    e2 -= (e1 * e2) * e1;
+    e2 /= e2.Length();
+
+    CalcTriangleBadness ( (e1 * v1), (e1 * v2), (e2 * v2), locerr2, loch,
+                          hbadness, g1.X(), g1.Y());
+
+    badness += hbadness;
+
+    vgrad.X() += g1.X() * e1.X() + g1.Y() * e2.X();
+    vgrad.Y() += g1.X() * e1.Y() + g1.Y() * e2.Y();
+    vgrad.Z() += g1.X() * e1.Z() + g1.Y() * e2.Z();
+  }
+
+  meshthis -> GetNormalVector (surfi, pp1, n1);
+  meshthis -> GetNormalVector (surfi2, pp1, n2);
+
+  v1 = Cross (n1, n2);
+  v1 /= v1.Length();
+
+  //  vgrad -= (vgrad * n) * n;
+  //  grad.Elem(1) = vgrad * t1;
+  //  grad.Elem(2) = vgrad * t2;
+
+  grad.Elem(1) = (vgrad * v1) * (t1 * v1);
+
+  return badness;
+}
+
+void surfacemeshing :: ImproveMesh (ARRAY<Point3d> & points, const ARRAY<Element> & elements,
+                                    int improveedges, int numboundarypoints, double h, int steps, int err2)
+{
+  INDEX i, eli;
+  int j, it, ito, rot, surfi3;
+  const Element * el;
+
+  Vec3d n1, n2;
+  TABLE<INDEX> elementsonpoint(points.Size());
+  Vector x(2), xedge(1);
+
+  for (i = 1; i <= elements.Size(); i++)
+    for (j = 1; j <= elements[i].NP(); j++)
+      elementsonpoint.Add (elements[i].PNum(j), i);
+
+  loch = h;
+  locerr2 = err2;
+  optpoints = &points;
+  optelements = &elements;
+  meshthis = this;
+
+  if (improveedges)
+    for (i = 1; i <= numboundarypoints; i++)
+    {
+      sp1 = points.Elem(i);
+
+      locelements.SetSize(0);
+      locrots.SetSize (0);
+      surfi = surfi2 = surfi3 = 0;
+
+      for (j = 1; j <= elementsonpoint.EntrySize(i); j++)
+      {
+        eli = elementsonpoint.Get(i, j);
+        el = &elements.Get(eli);
+
+        if (!surfi)
+          surfi = el->SurfaceIndex();
+        else if (surfi != el->SurfaceIndex())
+        {
+          if (surfi2 != 0 && surfi2 != el->SurfaceIndex())
+            surfi3 = el->SurfaceIndex();
+          else
+            surfi2 = el->SurfaceIndex();
+        }
+
+        locelements.Append (eli);
+
+        if (el->PNum(1) == i)
+          locrots.Append (1);
+        else if (el->PNum(2) == i)
+          locrots.Append (2);
+        else
+          locrots.Append (3);
+      }
+
+      //      testout << "surfaces = " << surfi << ", " << surfi2 << ", " << surfi3 << endl;
+
+      if (surfi2 && !surfi3)
+      {
+        GetNormalVector (surfi, sp1, n1);
+        GetNormalVector (surfi2, sp1, n2);
+        t1 = Cross (n1, n2);
+
+        if (surfi == 10 && surfi2 == 16)
+          (*testout) << "n1 = " << n1 << " n2 = " << n2 << " t = " << t1 << endl;
+
+        xedge = 0;
+        //        BFGS (xedge, Opti2EdgeFunctionValueGrad);
+
+        points.Elem(i).X() += xedge.Get(1) * t1.X();
+        points.Elem(i).Y() += xedge.Get(1) * t1.Y();
+        points.Elem(i).Z() += xedge.Get(1) * t1.Z();
+        ProjectPoint2 (surfi, surfi2, points.Elem(i));
+      }
+    }
+  for (i = numboundarypoints+1; i <= elementsonpoint.Size(); i++)
+  {
+    sp1 = points.Elem(i);
+
+    locelements.SetSize(0);
+    locrots.SetSize (0);
+    for (j = 1; j <= elementsonpoint.EntrySize(i); j++)
+    {
+      eli = elementsonpoint.Get(i, j);
+      el = &elements.Get(eli);
+      surfi = el->SurfaceIndex();
+
+      locelements.Append (eli);
+
+      if (el->PNum(1) == i)
+        locrots.Append (1);
+      else if (el->PNum(2) == i)
+        locrots.Append (2);
+      else
+        locrots.Append (3);
+    }
+
+    GetNormalVector (surfi, sp1, n);
+    if (fabs (n.X()) > 0.3)
+    {
+      t1.X() = n.Y();
+      t1.Y() = -n.X();
+      t1.Z() = 0;
+      t1 /= t1.Length();
+    }
+    else
+    {
+      t1.X() = 0;
+      t1.Y() = -n.Z();
+      t1.Z() = n.Y();
+      t1 /= t1.Length();
+    }
+    t2 = Cross (n, t1);
+
+    x = 0;
+    //    BFGS (x, Opti2FunctionValueGrad);
+
+    points.Elem(i).X() += (x.Get(1) * t1.X() + x.Get(2) * t2.X());
+    points.Elem(i).Y() += (x.Get(1) * t1.Y() + x.Get(2) * t2.Y());
+    points.Elem(i).Z() += (x.Get(1) * t1.Z() + x.Get(2) * t2.Z());
+    ProjectPoint (surfi, points.Elem(i));
+  }
+}
+
 
 int InitSurfaceNetgen (char * rulefilename)
 {
@@ -1884,6 +2091,9 @@ int InitSurfaceNetgen (char * rulefilename)
 int StartSurfaceNetgen (double h, int smooth, int display)
 {
   int i;
+  double hpx, hpy, hpz, v1x, v1y, v1z, v2x, v2y, v2z;
+  Vec3d n;
+  Point3d p1,p2,p3,p;
 
   nbp = points.Size();
   disp = display;
@@ -1893,16 +2103,37 @@ int StartSurfaceNetgen (double h, int smooth, int display)
 
   Smooth_SurfaceMesh(points, elements, nbp, smooth);
 
-  for (i = nbp + 1; i <= points.Size(); i++)
-    AddInnerNode2ug (points.Get(i).X(),
-                     points.Get(i).Y(),
-                     points.Get(i).Z());
+  //	meshing->ImproveMesh (points, elements, 0, nbp, h, smooth, 1);
 
+  for (i = nbp + 1; i <= points.Size(); i++)
+    AddInnerNode2ug (       points.Get(i).X(),
+                            points.Get(i).Y(),
+                            points.Get(i).Z());
   for (i = 1; i <= elements.Size(); i++)
   {
-    AddSurfaceTriangle2ug (elements.Get(i).PNum(1) - 1,
-                           elements.Get(i).PNum(2) - 1,
-                           elements.Get(i).PNum(3) - 1);
+    AddSurfaceTriangle2ug ( elements.Get(i).PNum(1) - 1,
+                            elements.Get(i).PNum(2) - 1,
+                            elements.Get(i).PNum(3) - 1);
+
+    if(LGM_DEBUG)
+    {
+      p1 = points.Get(elements.Get(i).PNum(1));
+      p2 = points.Get(elements.Get(i).PNum(2));
+      p3 = points.Get(elements.Get(i).PNum(3));
+
+      v1x = points.Get(elements.Get(i).PNum(2)).X() - points.Get(elements.Get(i).PNum(1)).X();
+      v1y = points.Get(elements.Get(i).PNum(2)).Y() - points.Get(elements.Get(i).PNum(1)).Y();
+      v1z = points.Get(elements.Get(i).PNum(2)).Z() - points.Get(elements.Get(i).PNum(1)).Z();
+
+      v2x = points.Get(elements.Get(i).PNum(3)).X() - points.Get(elements.Get(i).PNum(1)).X();
+      v2y = points.Get(elements.Get(i).PNum(3)).Y() - points.Get(elements.Get(i).PNum(1)).Y();
+      v2z = points.Get(elements.Get(i).PNum(3)).Z() - points.Get(elements.Get(i).PNum(1)).Z();
+
+      n.X() = v1y * v2z - v1z * v2y;
+      n.Y() = v1z * v2x - v1x * v2z;
+      n.Z() = v1x * v2y - v1y * v2x;
+      n /= n.Length();
+    }
   }
 
   elements.SetSize(0);
