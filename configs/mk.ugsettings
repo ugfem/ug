@@ -66,7 +66,7 @@ UG_CFLAGS =	-c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 			-I$(UGROOT)/include
 
 UG_C++FLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
-			$(ARCH_C++FLAGS) -I$(UGROOT)/include
+			$(ARCH_C++FLAGS) $(MODEL_CFLAGS) -I$(UGROOT)/include
 
 UG_FFLAGS = -c $(ARCH_FFLAGS)
 
