@@ -428,13 +428,17 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT fl, INT tl,
   {
     /* create restriction matrices */
     for (i=tl; i>fl; i--)
-      if (InstallScaledRestrictionMatrix(GRID_ON_LEVEL(theMG,i),A,np->cut)!=NUM_OK)
+      if (InstallScaledRestrictionMatrix(GRID_ON_LEVEL(theMG,i),
+                                         A,np->cut)!=NUM_OK) {
+        result[0] = __LINE__;
         return(1);
-
+      }
     /* scale equations */
     for (i=tl; i>=fl; i--)
-      if (DiagonalScaleSystem(GRID_ON_LEVEL(theMG,i),A,b)!=NUM_OK)
+      if (DiagonalScaleSystem(GRID_ON_LEVEL(theMG,i),A,b)!=NUM_OK) {
+        result[0] = __LINE__;
         return (1);
+      }
   }
 
   return(0);
