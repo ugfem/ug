@@ -2870,6 +2870,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     /* no coarse mesh */
 
     if (CreateAlgebra (theMG))                                      {DisposeMultiGrid(theMG); return (NULL);}
+                #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+    if (DisposeBottomHeapTmpMemory(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+                #endif
     if (PrepareAlgebraModification(theMG))          {DisposeMultiGrid(theMG); return (NULL);}
 
         #ifdef ModelP
@@ -2944,6 +2947,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     }
 
     if (CreateAlgebra (theMG))                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+                #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+    if (DisposeBottomHeapTmpMemory(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+                #endif
     if (PrepareAlgebraModification(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
     DDD_IdentifyBegin();
