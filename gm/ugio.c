@@ -830,12 +830,12 @@ static INT WriteElementParInfo (GRID *theGrid,
   n_max = PROCLISTSIZE-(ActProcListPos-ProcList);
 
   s=0;
-  pinfo->prio_elem = DDD_InfoPriority(PARHDRE(theElement));
-  pinfo->ncopies_elem = DDD_InfoNCopies(PARHDRE(theElement));
+  pinfo->prio_elem = EPRIO(theElement);
+  pinfo->ncopies_elem = ENCOPIES(theElement);
   if (n_max<pinfo->ncopies_elem) RETURN (1);
   if (pinfo->ncopies_elem>0)
   {
-    pl = DDD_InfoProcList(PARHDRE(theElement));
+    pl = EPROCLIST(theElement);
     for (i=0,j=2; i<pinfo->ncopies_elem; i++,j+=2)
       ActProcListPos[s++] = pl[j];
   }
@@ -843,12 +843,12 @@ static INT WriteElementParInfo (GRID *theGrid,
   for (k=0; k<CORNERS_OF_ELEM(theElement); k++)
   {
     theNode = CORNER(theElement,k);
-    pinfo->prio_node[k] = DDD_InfoPriority(PARHDR(theNode));
-    pinfo->ncopies_node[k] = DDD_InfoNCopies(PARHDR(theNode));
+    pinfo->prio_node[k] = PRIO(theNode);
+    pinfo->ncopies_node[k] = NCOPIES(theNode);
     if (n_max<pinfo->ncopies_node[k]+s) RETURN (1);
     if (pinfo->ncopies_node[k]>0)
     {
-      pl = DDD_InfoProcList(PARHDR(theNode));
+      pl = PROCLIST(theNode);
       for (i=0,j=2; i<pinfo->ncopies_node[k]; i++,j+=2)
         ActProcListPos[s++] = pl[j];
     }
@@ -857,12 +857,12 @@ static INT WriteElementParInfo (GRID *theGrid,
   for (k=0; k<CORNERS_OF_ELEM(theElement); k++)
   {
     theVertex = MYVERTEX(CORNER(theElement,k));
-    pinfo->prio_vertex[k] = DDD_InfoPriority(PARHDRV(theVertex));
-    pinfo->ncopies_vertex[k] = DDD_InfoNCopies(PARHDRV(theVertex));
+    pinfo->prio_vertex[k] = VXPRIO(theVertex);
+    pinfo->ncopies_vertex[k] = VXNCOPIES(theVertex);
     if (n_max<pinfo->ncopies_vertex[k]+s) RETURN (1);
     if (pinfo->ncopies_vertex[k]>0)
     {
-      pl = DDD_InfoProcList(PARHDRV(theVertex));
+      pl = VXPROCLIST(theVertex);
       for (i=0,j=2; i<pinfo->ncopies_vertex[k]; i++,j+=2)
         ActProcListPos[s++] = pl[j];
     }
@@ -877,12 +877,12 @@ static INT WriteElementParInfo (GRID *theGrid,
       theEdge=GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,k,0)),
                       CORNER(theElement,CORNER_OF_EDGE(theElement,k,1)));
       v = EDVECTOR(theEdge);
-      pinfo->prio_edge[k] = DDD_InfoPriority(PARHDR(v));
-      pinfo->ncopies_edge[k] = DDD_InfoNCopies(PARHDR(v));
+      pinfo->prio_edge[k] = PRIO(v);
+      pinfo->ncopies_edge[k] = NCOPIES(v);
       if (n_max<pinfo->ncopies_edge[k]+s) RETURN (1);
       pinfo->ed_ident[k] = GID(v);
       if (pinfo->ncopies_edge[k]>0) {
-        pl = DDD_InfoProcList(PARHDR(v));
+        pl = PROCLIST(v);
         for (i=0,j=2; i<pinfo->ncopies_edge[k]; i++,j+=2)
           ActProcListPos[s++] = pl[j];
       }
@@ -895,11 +895,11 @@ static INT WriteElementParInfo (GRID *theGrid,
   {
     theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,k,0)),
                       CORNER(theElement,CORNER_OF_EDGE(theElement,k,1)));
-    pinfo->prio_edge[k] = DDD_InfoPriority(PARHDR(theEdge));
-    pinfo->ncopies_edge[k] = DDD_InfoNCopies(PARHDR(theEdge));
+    pinfo->prio_edge[k] = PRIO(theEdge);
+    pinfo->ncopies_edge[k] = NCOPIES(theEdge);
     if (n_max<pinfo->ncopies_edge[k]+s) RETURN (1);
     if (pinfo->ncopies_edge[k]>0) {
-      pl = DDD_InfoProcList(PARHDR(theEdge));
+      pl = PROCLIST(theEdge);
       for (i=0,j=2; i<pinfo->ncopies_edge[k]; i++,j+=2)
         ActProcListPos[s++] = pl[j];
     }
