@@ -1722,7 +1722,7 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElemen
 	NODE *CenterNode;
 	REFRULE *rule;					/* current refinement rule of theElement*/
 	ELEMENTCONTEXT sonContext;
-	ELEMENT *theSon,*SonList[MAX_SONS],*theNeighbor,*NbSonList[MAX_SONS],*NbSon;
+	ELEMENT *theSon,*SonList[MAX_SONS],*theNeighbor,*NbSonList[MAX_SONS],*NbSon,*NbElem;
 	EDGEDATA *edata;
 
 	/* something to do ? */
@@ -1755,7 +1755,11 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElemen
 		for (s=0; s<NSONS(theNeighbor); s++) {
 			NbSon = NbSonList[s];
 			for (j=0; j<SIDES_OF_ELEM(NbSon); j++) 
-				if (EFATHER(NBELEM(NbSon,j)) == theElement) SET_NBELEM(NbSon,j,NULL);
+			  {
+				NbElem = NBELEM(NbSon,j);
+				if (NbElem != NULL)
+				  if (EFATHER(NbElem) == theElement) SET_NBELEM(NbSon,j,NULL);
+			  }
 		}
 	}
 
