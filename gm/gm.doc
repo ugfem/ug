@@ -3416,7 +3416,7 @@ inserted in the appropriate list of free objects.
 . freeVectors,freeConnections - List of free 'VECTOR' and 'CONNECTION'
 objects sorted by type. Same comment as for 'freeObjects' applies.
 
-. Selection - Array of pointers to selection objects ('VECTOR's, NODE's or 'ELEMENT's)
+. Selection - Array of pointers to selection objects ('VECTOR's, 'NODE's or 'ELEMENT's)
 that have been selected with the mouse in the graphical user interface or by the select command.
 
 . NbOfSelections - Number of objects in the selection buffer ('Selection').
@@ -3547,10 +3547,9 @@ SEE ALSO:
 D*/
 
 /*D
-GEOM_OBJECT - Union of all geometric objects
+	GEOM_OBJECT - Union of all geometric objects
 
-STRUCTURES:
-
+	STRUCTURES:
 .vb
 union geom_object {    // objects that can hold a vector
     struct node nd;
@@ -3561,15 +3560,12 @@ union geom_object {    // objects that can hold a vector
 typedef union geom_object GEOM_OBJECT;
 .ve
 
-DESCRIPTION:
+	DESCRIPTION:
+	This data type unifies all data types that can have references to a 
+	'VECTOR' structure. This type is never used for allocation.
 
-This data type unifies all data types that can have references to a 'VECTOR'
-structure. This type is never used for allocation.
-
-MACROS:
-
-No macros are provided to for that data type.
-
+    MACROS:
+    No macros are provided to for that data type.
 D*/
 
 /*D
