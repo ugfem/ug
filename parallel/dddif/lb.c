@@ -304,95 +304,180 @@ static int CreateDD(MULTIGRID *theMG, INT level, int hor_boxes, int vert_boxes )
   PartitionElementsForDD(theGrid, hor_boxes, vert_boxes );
 }
 
+#ifdef __TWODIM__
 static int BalanceBS (GRID *theGrid,  INT Procs)
 {
   ELEMENT *theElement;
-  DOUBLE_VECTOR pog,c;
-  INT i,nrcorners;
+  DOUBLE_VECTOR pog;
+  DOUBLE g[12];
+  INT i,nrcorners,comp;
 
-  c[0] = 9.0;
-  c[1] = 12.4;
-  c[2] = 50.0;
+  /* x-coordinates of coarse grid */
+  g[0]=3700.000000;
+  g[1]=4200.000000;
+  g[2]=6700.000000;
+  g[3]=7200.000000;
+  g[4]=8700.000000;
+  g[5]=11200.000000;
+  g[6]=13300.000000;
+  g[7]=16200.000000;
+  g[8]=19800.000000;
+  g[9]=22400.000000;
+  g[10]=25200.000000;
+  g[11]=33000.000000;
 
-  UserWriteF("BalanceBS: level=%d onto %d procs\n",GLEVEL(theGrid),procs);
-
-  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
-       theElement=SUCCE(theElement))
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
     PARTITION(theElement) = 0;
-
     V_DIM_CLEAR(pog);
-
     nrcorners = CORNERS_OF_ELEM(theElement);
-    for( i=0; i<nrcorners; i++ )
-    {
-      V_DIM_ADD(pog,CVECT(MYVERTEX(CORNER(theElement,i))),pog);
-    }
+    for( i=0; i<nrcorners; i++ ) { V_DIM_ADD(pog,CVECT(MYVERTEX(CORNER(theElement,i))),pog); }
     V_DIM_SCALE(1.0/nrcorners,pog);
-
     switch (Procs)
     {
     case 1 :
       break;
 
     case 2 :
-      if (pog[0] > c[0])
-        PARTITION(theElement) += 1;
+      if (pog[0]>g[6]) PARTITION(theElement)+=1;
       break;
 
-    case 4 :
-      if (pog[0] > c[0])
-        PARTITION(theElement) += 1;
-      if (pog[1] > c[1])
-        PARTITION(theElement) += 2;
+    case 3 :
+      if (pog[0]>g[5]) PARTITION(theElement)+=1;
+      if (pog[0]>g[8]) PARTITION(theElement)+=1;
       break;
 
-    case 8 :
-      if (pog[0] > c[0])
-        PARTITION(theElement) += 1;
-      if (pog[1] > c[1])
-        PARTITION(theElement) += 2;
-      if (pog[2] > c[2])
-        PARTITION(theElement) += 4;
+    case 5 :
+      if (pog[0]>g[3]) PARTITION(theElement)+=1;
+      if (pog[0]>g[5]) PARTITION(theElement)+=1;
+      if (pog[0]>g[7]) PARTITION(theElement)+=1;
+      if (pog[0]>g[9]) PARTITION(theElement)+=1;
       break;
 
-    case 12 :
-      if (pog[0] > c[0])
-        PARTITION(theElement) += 1;
-      if (pog[1] > c[1])
-        PARTITION(theElement) += 2;
-      if (pog[2] > 47.6)
-        PARTITION(theElement) += 4;
-      if (pog[2] > 52.4)
-        PARTITION(theElement) += 4;
+    case 10 :
+      if (pog[0]>g[1]) PARTITION(theElement)+=1;
+      if (pog[0]>g[3]) PARTITION(theElement)+=1;
+      if (pog[0]>g[4]) PARTITION(theElement)+=1;
+      if (pog[0]>g[5]) PARTITION(theElement)+=1;
+      if (pog[0]>g[6]) PARTITION(theElement)+=1;
+      if (pog[0]>g[7]) PARTITION(theElement)+=1;
+      if (pog[0]>g[8]) PARTITION(theElement)+=1;
+      if (pog[0]>g[9]) PARTITION(theElement)+=1;
+      if (pog[0]>g[10]) PARTITION(theElement)+=1;
       break;
 
-    case 24 :
-      if (pog[0] > c[0])
-        PARTITION(theElement) += 1;
-      if (pog[1] > 2.4)
-        PARTITION(theElement) += 2;
-      if (pog[1] > 7.4)
-        PARTITION(theElement) += 2;
-      if (pog[1] > 22.4)
-        PARTITION(theElement) += 2;
-      if (pog[2] > 47.6)
-        PARTITION(theElement) += 8;
-      if (pog[2] > 52.4)
-        PARTITION(theElement) += 8;
+    case 20 :
+      if (pog[0]>g[0]) PARTITION(theElement)+=1;
+      if (pog[0]>g[1]) PARTITION(theElement)+=1;
+      if (pog[0]>g[2]) PARTITION(theElement)+=1;
+      if (pog[0]>g[3]) PARTITION(theElement)+=1;
+      if (pog[0]>0.5*(g[3]+g[4])) PARTITION(theElement)+=1;
+      if (pog[0]>g[4]) PARTITION(theElement)+=1;
+      if (pog[0]>0.5*(g[4]+g[5])) PARTITION(theElement)+=1;
+      if (pog[0]>g[5]) PARTITION(theElement)+=1;
+      if (pog[0]>0.5*(g[5]+g[6])) PARTITION(theElement)+=1;
+      if (pog[0]>g[6]) PARTITION(theElement)+=1;
+      if (pog[0]>0.5*(g[6]+g[7])) PARTITION(theElement)+=1;
+      if (pog[0]>g[7]) PARTITION(theElement)+=1;
+      if (pog[0]>0.5*(g[7]+g[8])) PARTITION(theElement)+=1;
+      if (pog[0]>g[8]) PARTITION(theElement)+=1;
+      if (pog[0]>0.5*(g[8]+g[9])) PARTITION(theElement)+=1;
+      if (pog[0]>g[9]) PARTITION(theElement)+=1;
+      if (pog[0]>0.5*(g[9]+g[10])) PARTITION(theElement)+=1;
+      if (pog[0]>g[10]) PARTITION(theElement)+=1;
+      if (pog[0]>0.5*(g[10]+g[11])) PARTITION(theElement)+=1;
       break;
 
     default :
       assert(0);
     }
-
-#ifdef Debug
-    UserWriteF(PFMT "BalanceBS: pog0=%lf p=%d\n",me,pog[0],PARTITION(theElement));
-#endif
   }
 
   return(0);
 }
+#else
+static int BalanceBS (GRID *theGrid,  INT Procs)
+{
+  ELEMENT *theElement;
+  DOUBLE_VECTOR pog;
+  DOUBLE g[15];
+  INT i,nrcorners,comp;
+
+  /* x-coordinates of coarse grid */
+  g[0]=625.0;
+  g[1]=1250.0;
+  g[2]=1876.0;
+  g[3]=2500.0;
+  g[4]=3125.0;
+  g[5]=3750.0;
+  g[6]=4375.0;
+  g[7]=5000.0;
+  g[8]=5625.0;
+  g[9]=6250.0;
+  g[10]=6875.0;
+  g[11]=7500.0;
+  g[12]=8125.0;
+  g[13]=8750.0;
+  g[14]=9375.0;
+
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+  {
+    PARTITION(theElement) = 0;
+    V_DIM_CLEAR(pog);
+    nrcorners = CORNERS_OF_ELEM(theElement);
+    for( i=0; i<nrcorners; i++ ) { V_DIM_ADD(pog,CVECT(MYVERTEX(CORNER(theElement,i))),pog); }
+    V_DIM_SCALE(1.0/nrcorners,pog);
+    switch (Procs)
+    {
+    case 1 :
+      break;
+
+    case 2 :
+      if (pog[1]>g[7]) PARTITION(theElement)+=1;
+      break;
+
+    case 4 :
+      if (pog[1]>g[3]) PARTITION(theElement)+=1;
+      if (pog[1]>g[7]) PARTITION(theElement)+=1;
+      if (pog[1]>g[11]) PARTITION(theElement)+=1;
+      break;
+
+    case 8 :
+      if (pog[1]>g[1]) PARTITION(theElement)+=1;
+      if (pog[1]>g[3]) PARTITION(theElement)+=1;
+      if (pog[1]>g[5]) PARTITION(theElement)+=1;
+      if (pog[1]>g[7]) PARTITION(theElement)+=1;
+      if (pog[1]>g[9]) PARTITION(theElement)+=1;
+      if (pog[1]>g[11]) PARTITION(theElement)+=1;
+      if (pog[1]>g[13]) PARTITION(theElement)+=1;
+      break;
+
+    case 16 :
+      if (pog[1]>g[0]) PARTITION(theElement)+=1;
+      if (pog[1]>g[1]) PARTITION(theElement)+=1;
+      if (pog[1]>g[2]) PARTITION(theElement)+=1;
+      if (pog[1]>g[3]) PARTITION(theElement)+=1;
+      if (pog[1]>g[4]) PARTITION(theElement)+=1;
+      if (pog[1]>g[5]) PARTITION(theElement)+=1;
+      if (pog[1]>g[6]) PARTITION(theElement)+=1;
+      if (pog[1]>g[7]) PARTITION(theElement)+=1;
+      if (pog[1]>g[8]) PARTITION(theElement)+=1;
+      if (pog[1]>g[9]) PARTITION(theElement)+=1;
+      if (pog[1]>g[10]) PARTITION(theElement)+=1;
+      if (pog[1]>g[11]) PARTITION(theElement)+=1;
+      if (pog[1]>g[12]) PARTITION(theElement)+=1;
+      if (pog[1]>g[13]) PARTITION(theElement)+=1;
+      if (pog[1]>g[14]) PARTITION(theElement)+=1;
+      break;
+
+    default :
+      assert(0);
+    }
+  }
+
+  return(0);
+}
+#endif
 
 static int MGBalanceBS (MULTIGRID *theMG,  INT Procs, INT from, INT to)
 {
@@ -404,6 +489,17 @@ static int MGBalanceBS (MULTIGRID *theMG,  INT Procs, INT from, INT to)
     if (BalanceBS(theGrid,Procs)) return(1);
   }
 
+  return(0);
+}
+
+static int SimpleSubdomainDistribution (MULTIGRID *theMG,  INT Procs, INT from, INT to)
+{
+  INT i;
+  ELEMENT *e;
+
+  for (i=from; i<=to; i++)
+    for (e=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); e!=NULL; e=SUCCE(e))
+      PARTITION(e)=SUBDOMAIN(e)-1;
   return(0);
 }
 
@@ -541,6 +637,11 @@ void lbs (char *argv, MULTIGRID *theMG)
 
     MGBalanceBS(theMG,Procs,fromlevel,tolevel);
 
+    break;
+  }
+  case (8) :
+  {
+    SimpleSubdomainDistribution(theMG,procs,fromlevel,tolevel);
     break;
   }
 
