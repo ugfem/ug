@@ -4054,27 +4054,27 @@ static INT InitRuleManager3D (void)
     }
 
     fclose(stream);
-  }
 
-  /* bug fix */
-  CorrectRule40(&Rules[40]);
-  CorrectRule41(&Rules[41]);
-  CorrectRule52(&Rules[52]);
-  CorrectRule53(&Rules[53]);
-  CorrectRule85(&Rules[85]);
-  CorrectRule86(&Rules[86]);
-  CorrectRule111(&Rules[111]);
-  CorrectRule112(&Rules[112]);
-  CorrectRule135(&Rules[135]);
-  CorrectRule136(&Rules[136]);
-  CorrectRule155(&Rules[155]);
-  CorrectRule156(&Rules[156]);
-  CorrectRule183(&Rules[183]);
-  CorrectRule184(&Rules[184]);
+    /* bug fix */
+    CorrectRule40(&Rules[40]);
+    CorrectRule41(&Rules[41]);
+    CorrectRule52(&Rules[52]);
+    CorrectRule53(&Rules[53]);
+    CorrectRule85(&Rules[85]);
+    CorrectRule86(&Rules[86]);
+    CorrectRule111(&Rules[111]);
+    CorrectRule112(&Rules[112]);
+    CorrectRule135(&Rules[135]);
+    CorrectRule136(&Rules[136]);
+    CorrectRule155(&Rules[155]);
+    CorrectRule156(&Rules[156]);
+    CorrectRule183(&Rules[183]);
+    CorrectRule184(&Rules[184]);
 
-  for (i=0; i<nRules; i++)
-  {
-    CheckVolumes(Rules+i);
+    for (i=0; i<nRules; i++)
+    {
+      CheckVolumes(Rules+i);
+    }
   }
 
         #ifdef ModelP
