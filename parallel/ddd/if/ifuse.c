@@ -36,6 +36,7 @@
 /* standard C library */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "dddi.h"
 #include "if.h"
@@ -72,8 +73,24 @@ void IFGetMem (IF_PROC *ifHead, size_t itemSize, int lenIn, int lenOut)
   size_t sizeOut = itemSize * lenOut;
 
   BufferCreate(ifHead->bufIn,  sizeIn);
+  if (sizeIn > 0)
+  {
+    /* check memory creation and set memory to initial value, in order to
+       find any bugs lateron (hint by C.Wieners). */
+    assert(ifHead->bufIn.buf != NULL);
+    memset(BufferMem(ifHead->bufIn),0,sizeIn);
+  }
+
   BufferCreate(ifHead->bufOut, sizeOut);
+  if (sizeOut > 0)
+  {
+    /* check memory creation and set memory to initial value, in order to
+       find any bugs lateron (hint by C.Wieners). */
+    assert(ifHead->bufOut.buf != NULL);
+    memset(BufferMem(ifHead->bufOut),0,sizeOut);
+  }
 }
+
 
 
 

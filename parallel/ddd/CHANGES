@@ -1,5 +1,17 @@
 ---------------------------
 
+CHANGES 1.8.25 -> 1.9
+---------------------------
+990211 kb
+added some memory checks and initialization routines.
+	- due to C.Wieners, some neuralgic parts of the
+	  code have been equipped with assert and memset
+	  calls in order to find possible serious application bugs
+	  easier in future.
+	- GetIFMem in if/ifuse.c.
+	- NewCoupling in mgr/cplmgr.c.
+---------------------------
+
 CHANGES 1.8.24 -> 1.8.25
 ---------------------------
 990202 kb

@@ -152,6 +152,18 @@ static void FreeCplSegms (void)
 
 /****************************************************************************/
 
+/* auxiliary function to init Coupling memory and initial data */
+static void InitNewCoupling (COUPLING* cpl)
+{
+  /* set coupling to initial value, in order to find any bugs lateron.
+     (hint by C.Wieners) */
+  memset(cpl, 0, sizeof(COUPLING));
+
+  /* init private data */
+  cpl->_flags = 0;
+}
+
+
 static COUPLING *NewCoupling (void)
 {
   COUPLING *cpl;
@@ -178,8 +190,8 @@ static COUPLING *NewCoupling (void)
       memlistCpl = CPL_NEXT(cpl);
     }
 
-    /* init private data */
-    cpl->_flags = 0;
+    /* init coupling memory and its private data */
+    InitNewCoupling(cpl);
 
     /* remember memory origin for later disposal */
     SETCPLMEM_FREELIST(cpl);
@@ -195,8 +207,8 @@ static COUPLING *NewCoupling (void)
       HARD_EXIT;
     }
 
-    /* init private data */
-    cpl->_flags = 0;
+    /* init coupling memory and its private data */
+    InitNewCoupling(cpl);
 
     /* remember memory origin for later disposal */
     SETCPLMEM_EXTERNAL(cpl);
