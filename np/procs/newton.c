@@ -107,6 +107,8 @@ typedef struct
   DOUBLE divFactor[MAX_VEC_COMP];         /* divergence factor for nonlin iteration	*/
   INT noLastDef;                                        /* no defect check after last iteration			*/
   INT force_iteration;                  /* if 1 at least 1 iteration is carried out     */
+  /* if 2 maxit iteration are carried out and     */
+  /* newton exits without error                   */
 
   /* and XDATA_DESCs */
   MATDATA_DESC *J;                              /* the Matrix to be solved						*/
@@ -472,7 +474,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
       break;
     }
 
-    if (res->converged) break;             /* solution already found */
+    if (res->converged && newton->force_iteration!=2) break;             /* solution already found */
 
     /* compute jacobian */
     CSTART();
@@ -658,9 +660,14 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     if (!newton->linearRate) reassemble = 1;
 
     /* check convergence of nonlinear iteration */
-    if (sprime<s2reach) {res->converged=1; break;}
-    if (sc_cmp(defect,abslimit,newton->d)) {res->converged=1; break;}
-    if (sc_cmp(defect,defect2reach,newton->d)) {res->converged=1; break;}
+    if (newton->force_iteration!=2)
+    {
+      if (sprime<s2reach) {res->converged=1; break;}
+      if (sc_cmp(defect,abslimit,newton->d)) {res->converged=1; break;}
+      if (sc_cmp(defect,defect2reach,newton->d)) {res->converged=1; break;}
+    }
+    else
+    if (r==newton->maxit) {res->converged=1; break;}
     if (use_second)
     {
       use_second=0;
