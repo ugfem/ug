@@ -184,8 +184,9 @@ static void buggy_NodeShow (NODE *n)
 
 static void buggy_Search (MULTIGRID *theMG, DDD_GID gid)
 {
-  int level;
+  int level, found;
 
+  found = FALSE;
   for(level=0; level<=TOPLEVEL(theMG); level++)
   {
     GRID *theGrid = GRID_ON_LEVEL(theMG,level);
@@ -193,7 +194,7 @@ static void buggy_Search (MULTIGRID *theMG, DDD_GID gid)
     NODE    *n;
 
     /* search for element */
-    for(e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
+    for(e=PFIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
     {
       if (DDD_InfoGlobalId(PARHDRE(e))==gid)
       {
@@ -201,12 +202,13 @@ static void buggy_Search (MULTIGRID *theMG, DDD_GID gid)
                me, gid, e, level);
         buggy_ShowCopies(PARHDRE(e));
         buggy_ElemShow(e);
+        found = TRUE;
       }
     }
 
 
     /* search for node */
-    for(n=FIRSTNODE(theGrid); n!=NULL; n=SUCCN(n))
+    for(n=PFIRSTNODE(theGrid); n!=NULL; n=SUCCN(n))
     {
       if (DDD_InfoGlobalId(PARHDR(n))==gid)
       {
@@ -214,7 +216,24 @@ static void buggy_Search (MULTIGRID *theMG, DDD_GID gid)
                me, gid, n, level);
         buggy_ShowCopies(PARHDR(n));
         buggy_NodeShow(n);
+        found = TRUE;
       }
+    }
+  }
+
+  if (!found)
+  {
+    DDD_HDR hdr = DDD_SearchHdr(gid);
+
+    if (hdr!=NULL)
+    {
+      printf("%4d: DDDOBJ gid=%08x, typ=%d, level=%d\n",
+             me, gid, DDD_InfoType(hdr), DDD_InfoAttr(hdr));
+      buggy_ShowCopies(hdr);
+    }
+    else
+    {
+      printf("%4d: unknown gid=%08x\n", me, gid);
     }
   }
 }
