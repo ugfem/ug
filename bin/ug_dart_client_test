@@ -17,7 +17,13 @@
 # dashboardmanager command
 set MANAGER = "${DART_HOME}/Source/Client/DashboardManager.tcl"
 # coverage parameter
-set COVERAGE_PARAM = $3;
+set COVERAGE_PARAM = "$3";
+
+echo "cov:";
+echo "$3";
+echo "   ";
+echo "test:";
+echo "$4";
 
 ###############################################################################
 # read the command line arguments
@@ -37,27 +43,29 @@ cd $2;
 tclsh  $MANAGER DartConfiguration.tcl $1 Start; 
 
 # the Update script makes an update against the cvs repository
-tclsh  $MANAGER DartConfiguration.tcl $1 Update; 
+tclsh $MANAGER DartConfiguration.tcl $1 Update; 
 
 # the Configure script executes the configure command which is specified in 
 # "DartConfiguration.tcl" file
-tclsh  $MANAGER DartConfiguration.tcl $1 Configure; 
+tclsh $MANAGER DartConfiguration.tcl $1 Configure; 
 
 # the Build script executes the build command which is specified in 
 # "DartConfiguration.tcl" file 
-tclsh  $MANAGER DartConfiguration.tcl $1 Build;
+tclsh $MANAGER DartConfiguration.tcl $1 Build;
 
 # the Test scripts runs the tests which are specified in the several 
 #"DartTestfile.txt" files
-if ($4 == "yes") then
-    tclsh  $MANAGER DartConfiguration.tcl $1 Test;
+if ("$4" == "yes") then
+    tclsh $MANAGER DartConfiguration.tcl $1 Test;
 endif
 
 # the Coverage script collects the coverage information which may be created 
 # with gcc
-if ( $COVERAGE_PARAM == "COV" ) then  
-	tclsh $MANAGER DartConfiguration.tcl $1 Coverage;
+if ($COVERAGE_PARAM == yes) then  
+    tclsh $MANAGER DartConfiguration.tcl $1 Coverage;
 endif
 
 # the Submit script sends the test information to the server
-tclsh  $MANAGER DartConfiguration.tcl $1 Submit;
+tclsh $MANAGER DartConfiguration.tcl $1 Submit;
+
+
