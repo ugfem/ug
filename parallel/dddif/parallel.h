@@ -79,7 +79,12 @@ enum HandlerSets
  #define KEEP_VECTOR  0*/ /* this is a node with vector */
 /*#define DEL_VECTOR  1*/  /* this is a node without vector */
 
+/* status output from different parallel phases */
+#define STAT_OUT                0
 
+/* old/new style for grid consistency */
+/* undefine if old is wanted          */
+#define NEW_GRIDCONS_STYLE
 
 /* macros for processor-synchronized output */
 #define SYNC_ALL   { int _p; for(_p=0; _p<procs; _p++) { \
