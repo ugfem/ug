@@ -50,6 +50,10 @@
 
 #define PI                       3.141592653589793238462643383279
 
+#define KBYTE                                   1024
+#define MBYTE                                   (KBYTE*KBYTE)
+#define GBYTE                                   (KBYTE*KBYTE*KBYTE)
+
 
 /* cleanup old definitions of macros */
 #ifdef MIN
@@ -65,6 +69,8 @@
 #define POW2(i)                  (1<<(i))
 #define ABSDIFF(a,b)             (fabs((a)-(b)))
 #define SIGNUM(x)                (((x)>0) ? 1 : ((x)<0) ? -1 : 0)
+#define FSIGNUM(x)               (((x)>SMALL_F) ? 1 : ((x)<-SMALL_F) ? -1 : 0)
+#define DSIGNUM(x)               (((x)>SMALL_D) ? 1 : ((x)<-SMALL_D) ? -1 : 0)
 #define EVEN(i)                  (!(i%2))
 #define ODD(i)                   ((i%2))
 #define SWAP(a,b,temp)           {(temp) = (a); (a) = (b); (b) = (temp);}
@@ -123,9 +129,7 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef COMPILE_MISC_H
 extern int UG_math_error;
-#endif
 
 #ifndef ModelP
 extern int me;          /* to have in the serial case this variable as a dummy */
@@ -146,6 +150,7 @@ void            INT_2_bitpattern        (INT n, char text[33]);
 char       *StrTok              (char *s, const char *ct);
 char       *expandfmt           (const char *fmt);
 const char *strntok             (const char *str, const char *sep, int n, char *token);
+char       *StrDup                              (const char *s);
 void        QSort               (void *base, INT n, INT size, int (*cmp)(const void *, const void *));
 void        SelectionSort       (void *base, INT n, INT size, int (*cmp)(const void *, const void *));
 #ifdef __MWCW__

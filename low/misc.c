@@ -37,7 +37,6 @@
 #include <limits.h>
 #include <float.h>
 
-#define COMPILE_MISC_H
 #include "compiler.h"
 #include "general.h"
 #include "misc.h"
@@ -381,6 +380,36 @@ const char *strntok (const char *str, const char *sep, int n, char *token)
   token[i] = '\0';
 
   return (str);
+}
+
+/****************************************************************************/
+/*D
+   StrDup - duplicate string to memory allocated with malloc
+
+   SYNOPSIS:
+   char *StrDup (const char *s)
+
+   PARAMETERS:
+   .  s - string to duplicate
+
+   DESCRIPTION:
+   This function duplicates a string to memory allocated with malloc.
+
+   RETURN VALUE:
+   char*
+   .n        pointer to new string
+   D*/
+/****************************************************************************/
+
+char *StrDup (const char *s)
+{
+  char *p;
+
+  p = (char*) malloc(strlen(s)+1);
+  if (p!=NULL)
+    strcpy(p,s);
+
+  return(p);
 }
 
 /****************************************************************************/
