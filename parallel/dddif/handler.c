@@ -212,22 +212,24 @@ void VectorXferCopy (DDD_OBJ obj, int proc, int prio)
 	int 	nmat=0;
 	MATRIX	*mat;
 	VECTOR  *pv = (VECTOR *)obj;
-	size_t  sizeArray[30]; /* TODO: define this static global TODO: take size as
+	size_t  sizeArray[50]; /* TODO: define this static global TODO: take size as
  maximum of possible connections */
 
     PRINTDEBUG(dddif,1,("%2d: VectorXferCopy(): v=%08x/%x proc=%d prio=%d\n",
 		me,DDD_InfoGlobalId(PARHDR(pv)),pv,proc,prio))
 
-	for(mat=VSTART(pv); mat!=NULL; mat=MNEXT(mat))
+	if (prio!=PrioGhost)
 	{
-		sizeArray[nmat++] = MSIZE(mat);
+		for(mat=VSTART(pv); mat!=NULL; mat=MNEXT(mat))
+		{
+			sizeArray[nmat++] = MSIZE(mat);
+		}
+
+		PRINTDEBUG(dddif,2,("%2d:  VectorXferCopy(): v=%08x/%x AddData nmat=%d\n",\
+			me,DDD_InfoGlobalId(PARHDR(pv)),pv,nmat))
+
+		DDD_XferAddDataX(nmat,TypeMatrix,sizeArray);
 	}
-
-
-	PRINTDEBUG(dddif,2,("%2d:  VectorXferCopy(): v=%08x/%x AddData nmat=%d\n",\
-		me,DDD_InfoGlobalId(PARHDR(pv)),pv,nmat))
-
-	DDD_XferAddDataX(nmat,TypeMatrix,sizeArray);
 }
 
 
@@ -289,8 +291,18 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 			/* destination vector is not on this processor */
 			/* -> matrix entry is useless, throw away */
 			PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x mat=%x Size=%d, useless\n",me,vec,mcopy,MSIZE(mcopy)))
+			continue;
 		}
-		else
+
+		if (DDD_InfoPriority(PARHDR(MDEST(mcopy)))==PrioGhost)
+		{
+			/* destination vector has only PrioGhost on this processor */
+			/* -> matrix entry is useless, throw away */
+			PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x mat=%x Size=%d, useless\n",me,vec,mcopy,MSIZE(mcopy)))
+			continue;
+		}
+
+
 		{
 			MATRIX *m;
 			int found=FALSE;

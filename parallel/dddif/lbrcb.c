@@ -274,10 +274,12 @@ void XferGridWithOverlap (GRID *theGrid)
   NODE *node;
 
   /* by default, no node stores its vector */
-  for(node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
-  {
-    SETXFERNODE(node,DEL_VECTOR);
-  }
+  /*
+          for(node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
+          {
+                  SETXFERNODE(node,DEL_VECTOR);
+          }
+   */
 
 
   for(elem=FIRSTELEMENT(theGrid); elem!=NULL; elem=SUCCE(elem))
@@ -473,6 +475,23 @@ int BalanceGrid (MULTIGRID *theMG)
   }
 
   DDD_XferEnd();
+
+
+
+  /* remove all connections for vectors with PrioGhost */
+  {
+    int g;
+    for(g=TOPLEVEL(theMG); g>=0; g--)
+    {
+      GRID *grid = GRID_ON_LEVEL(theMG,g);
+      VECTOR *vec;
+
+      for(vec=PRIO_LASTVECTOR(grid,PrioGhost); vec!=NULL; vec=PREDVC(vec))
+      {
+        DisposeConnectionFromVector(grid, vec);
+      }
+    }
+  }
 
 
   /* set priorities of border nodes */
