@@ -1,0 +1,99 @@
+/*D
+
+exercise - exercises for UG
+
+INTRODUCTION:
+
+Here are a number of exercises which can be done independently.
+
+
+EXERCISE 1:
+
+Type 
+
+.vb
+ugman ugdemo
+.ve
+
+and get familiar with the examples and the scripts.
+Use the man pages to learn about the availible num procs and
+the configuration.
+
+EXERCISE 2:
+
+Take one of the demo scripts and try 
+
+.vb
+ugrun <demo> <proc>
+.ve
+
+for various number of processors.
+Find optimal parameters in the num proc configuration
+depending on the number of processors.
+Make a table of your results with
+configuration (smooth, basesolver, number of pre- and
+postsmoothing steps), number of iteration steps, solution time
+depending on the problem size and number of processors ...
+
+EXERCISE 3:
+
+Take one of the time dependent demo scripts and 
+make a meta film (see gpd.scr for an example).
+Therefore, choose a finer grid and smaller time steps.
+Then, let the script run over night.
+The film can be displayed by 'xugv'.
+
+EXERCISE 4:
+
+Try all discretizations in fe/appl/simple.scr and find 
+a method to determine optimal configurations
+for all cases and different number of processors.
+
+EXERCISE 5:
+
+Type 
+
+.vb
+ugman simple
+.ve
+
+and work through the exercises given there.
+
+EXERCISE 6:
+
+Copy the LMGC num proc in ug/np/procs/iter.c and change
+the order of the function call from multiplicative to
+additive multigrid. Change the communication calls 
+to larger interfaces and compare both methods.
+
+For testing, change to an application directory and type
+
+.vb
+ugmake procs
+make
+ugrun <appl> <procs>
+.ve
+
+EXERCISE 7:
+
+Copy the BCGS num proc in ug/np/procs/ls.c and change
+it to GMRES. Therefore, take an orthogonalization
+similar to 'Orthogonalize' in 'ew.c' and use the tools in
+block.c for the solution of the small system.
+Include the necessary parallel comunication tools
+and check for all vectors, if they are consistent or inconsistent.
+
+For testing, change to an application directory and type
+
+.vb
+ugmake procs
+make
+ugrun <appl> <procs>
+.ve
+
+EXERCISE 8:
+
+Make a list of UG features, seperately for the tools in the
+UG - library and for the special applications.
+
+D*/

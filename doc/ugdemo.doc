@@ -1,0 +1,99 @@
+/*D
+
+ugdemo - description of the ugdemo problems
+
+INTRODUCTION:
+
+ugdemo is a shell script which executes a number of demo scripts.
+Just typing 
+
+.vb
+ugdemo
+.ve
+
+gives a list of available demo scripts. They can be started by
+
+.vb
+ugdemo <demo>
+.ve
+
+Here, you get a short description.
+
+dc2d and dc3d: 
+
+This is a finite volume discretization by Schneider and Raw
+for the Navier Stokes equation.
+The driven cavity example is documented in the scripts which can be
+found in 'ns/appl2d/scripts/ugdemo.scr' and 
+'ns/appl3d/scripts/DrivenCavity.scr'.
+There, all configuration parameters are explained in detail. 
+
+df2d: 
+
+This is a density driven flow discretization in 2d.
+The pressure and the salt concentration are simulated,
+the flow can be computed from this.
+This model is used for the groundwater simulation in a salt dome.
+The example is documented in the script which can be
+found in 'df/gen/appl/scripts'.
+There, all configuration parameters are explained in detail. 
+
+pm2d: 
+
+This is the poros media equation in 2d
+	
+du/dt = delta (u*u).
+
+The script performs 5 time steps with the backward Euler scheme
+and a linearization by numerical differentiation.
+
+tu2d: 
+
+This is a tutorial script for a simple scalar equation
+where you get online explanations for every line in the script.
+
+ep2d and ep3d:
+
+This are examples for elasto-plasticitic simulations for the
+Prantl-Reuss model of perfect plasticity.
+The method uses the Simo-Taylor lineariziation and the
+backward Euler scheme with line search and step length control.
+
+ball: 
+
+This example shows the local refinement of a ball for
+the diffusion equation with diffusion constant 0.001 in the inner ball
+and 1 else.
+
+Warning: up to now, this works with one processor only! 
+
+disc: 
+
+This example shows the local refinement of a reentrant corner domain
+for P1 and P2 conforming elements, Crouziex-Raviart nonconforming elements,
+Raviart-Thomas elements of order 0 and 1 and BDM elements.
+Warning: up to now, this works with one processor only! 
+
+diff: 
+
+This example shows the local refinement of a ball for
+a diffusion equation varying diffusion constants in 2d
+for Raviart-Thomas elements.
+
+er2d: 
+
+Here, an error bound in the energy norm for the 
+modified Emden equation
+
+- delta u = u*u + 800 * sin(pi x) * sin (pi y)
+
+is computed. This method can be used to prove the existence of
+four different solution of this equations.  
+
+ew2d:
+
+This demonstrates the computation of the 3 lowest eigenvalues
+of the Wolfgangsee. It is simulated by the Laplace equation with
+Neumann boundary conditions. 
+
+D*/
