@@ -29,7 +29,7 @@ do
 	else
 		if test "$i" = "progmanual.ps" -o "$i" = "refmanual.ps" -o \
 				"$i" = "applmanual.ps" -o "$i" = "ug.help" -o \
-                "$i" = "ug2.help" -o "$i" = "ug3.help"
+                "$i" = "ug2d.help" -o "$i" = "ug3d.help"
 		then 
 			echo "`basename $0`: $i not removed!";
 		else
