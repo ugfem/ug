@@ -8234,8 +8234,8 @@ INT MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
         error=GM_ERROR; continue;
       }
 
-      *amax = MAX(*amax,angle);
-      *amin = MIN(*amin,angle);
+      *amax = MAX(*amax,PI-angle);
+      *amin = MIN(*amin,PI-angle);
     }
   }
 
