@@ -511,6 +511,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
       else
         cg_element[i].nbid[j] = -1;
     cg_element[i].refrule = -1;
+    cg_element[i].nnewcorners = 0;
     cg_element[i].nmoved = 0;
   }
   if (Write_CG_Elements((int)n,cg_element)) return (1);

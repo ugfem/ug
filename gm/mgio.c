@@ -939,7 +939,7 @@ int Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
 
 #define MGIO_ECTRL(ge,ref,nf,nm)                                ((ge)&15) | (((nf)&31)<<4) | (((nm)&31)<<9)  | (((ref)&131071)<<14)
 #define MGIO_ECTRL_GE(ctrl)                                             ((ctrl)&15)
-#define MGIO_ECTRL_NF(ctrl)                                             (((ctrl)>>4)&31)
+#define MGIO_ECTRL_NC(ctrl)                                             (((ctrl)>>4)&31)
 #define MGIO_ECTRL_NM(ctrl)                                             (((ctrl)>>9)&31)
 #define MGIO_ECTRL_REF(ctrl)                                    (((ctrl)>>14)&131071)
 
@@ -965,15 +965,17 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
     pe->refrule = MGIO_ECTRL_REF(ctrl)-1;
     if (pe->refrule>-1)
     {
-      newcornerid
-
+      pe->nnewcorners = MGIO_ECTRL_NC(ctrl);
       pe->nmoved = MGIO_ECTRL_NM(ctrl);
+      if (pe->nnewcorners+pe->nmoved>0)
+        if ((*Read_mint)(pe->nnewcorners+pe->nmoved,intList)) return (1);
+      s=0;
+      for (j=0; j<pe->nnewcorners; j++)
+        pe->newcornerid[j] = intList[s++];
+      for (j=0; j<pe->nmoved; j++)
+        pe->mvcorner[j].id = intList[s++];
       if (pe->nmoved>0)
       {
-        if ((*Read_mint)(pe->nmoved,intList)) return (1);
-        s=0;
-        for (j=0; j<pe->nmoved; j++)
-          pe->mvcorner[j].id = intList[s++];
         if ((*Read_mdouble)(MGIO_DIM*pe->nmoved,doubleList)) return (1);
         s=0;
         for (j=0; j<pe->nmoved; j++)
@@ -1018,17 +1020,18 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
   pe = cg_element;
   for (i=0; i<n; i++)
   {
-    s=0;
-    intList[s++] = MGIO_ECTRL(pe->ge,pe->refrule+1,0,pe->nmoved);
+    s=t=0;
+    intList[s++] = MGIO_ECTRL(pe->ge,pe->refrule+1,pe->nnewcorners,pe->nmoved);
     for (j=0; j<lge[pe->ge].nCorner; j++)
       intList[s++] = pe->cornerid[j];
     for (j=0; j<lge[pe->ge].nSide; j++)
       intList[s++] = pe->nbid[j];
     if (pe->refrule>-1)
     {
+      for (j=0; j<pe->nnewcorners; j++)
+        intList[s++] = pe->newcornerid[j];
       for (j=0; j<pe->nmoved; j++)
         intList[s++] = pe->mvcorner[j].id;
-      t=0;
       for (j=0; j<pe->nmoved; j++)
         for (k=0; k<MGIO_DIM; k++)
           doubleList[t++] = pe->mvcorner[j].position[k];
