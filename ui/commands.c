@@ -7619,7 +7619,7 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
 
     case 'q' :
       qopt=1;
-      if (sscanf(argv[i],expandfmt(CONCAT3("q %",NAMELENSTR,"[a-zA-Z0-9_]")),qarray)!=1)
+      if (sscanf(argv[i],expandfmt(CONCAT3("q %",NAMELENSTR,"[a-zA-Z0-9_:]")),qarray)!=1)
       {
         PrintErrorMessage('E',"openppic","specify an array name with q option");
         return (PARAMERRORCODE);
@@ -7628,7 +7628,7 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
 
     case 'r' :
       ropt=1;
-      if (sscanf(argv[i],expandfmt(CONCAT3("r %",NAMELENSTR,"[a-zA-Z0-9_]")),rarray)!=1)
+      if (sscanf(argv[i],expandfmt(CONCAT3("r %",NAMELENSTR,"[a-zA-Z0-9_:]")),rarray)!=1)
       {
         PrintErrorMessage('E',"openppic","specify an array name with q option");
         return (PARAMERRORCODE);
