@@ -5616,7 +5616,7 @@ static int RefineGrid (GRID *theGrid)
 		NextElement = SUCCE(theElement);
 
 		#ifdef ModelP
-		/* reset update overlap  */
+		/* reset update overlap flag */
 		SETTHEFLAG(theElement,0);
 		#endif
 
@@ -5673,7 +5673,7 @@ if (0)
 			SETUSED(theElement,0);
 
 			#ifdef ModelP
-			/* set update overlap  */
+			/* set update overlap flag */
 			SETTHEFLAG(theElement,1);
 			#endif
 
@@ -5755,7 +5755,10 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 	/* update need to be done for all elements with THEFLAG set,  */
 	/* execpt for yellow copies, since their neighbor need not be */
 	/* refined (s.l. 971029)                                      */
+/*
 	if (!THEFLAG(theElement) && REFINECLASS(theElement)!=YELLOW_CLASS) return(GM_OK);
+*/
+	if (!THEFLAG(theElement)) return(GM_OK);
 
 	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 	{
@@ -5769,9 +5772,11 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 		/* this is the special situation an update of the element overlap  */
 		/* is needed, since the yellow element has now gotten a new yellow */
 		/* neighbor (s.l. 971029)                                          */
+		/* sending of yellow copies is now done in each situation. To send */
+		/* a yellow copy only if needed, THEFLAG(theNeighbor) must be set  */
+		/* properly in RefineGrid() (980114 s.l.)                          */
 		if ((REFINECLASS(theElement)==YELLOW_CLASS && !THEFLAG(theElement)) && 
-			((REFINECLASS(theNeighbor)!=YELLOW_CLASS) || 
-			(REFINECLASS(theNeighbor)==YELLOW_CLASS && !THEFLAG(theNeighbor)))) continue;
+			!THEFLAG(theNeighbor)) continue;
 
 		PRINTDEBUG(gm,1,("%d: EID=%d side=%d NbID=%d " "NbPARTITION=%d\n",me,
 			ID(theElement),i,ID(theNeighbor), EPROCPRIO(theNeighbor,PrioMaster)))
@@ -5822,9 +5827,6 @@ static INT UpdateGridOverlap (GRID *theGrid)
 
 	for (theElement=FIRSTELEMENT(theGrid);theElement!=NULL;theElement=SUCCE(theElement))
 	{ 
-/*
-		if (IS_REFINED(theElement) && THEFLAG(theElement))
-*/
 		if (IS_REFINED(theElement))
 			UpdateElementOverlap(theElement);
 	}
