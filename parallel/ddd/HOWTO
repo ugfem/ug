@@ -1,0 +1,35 @@
+------------------------------------------
+Some additional documentation.
+------------------------------------------
+
+HOWTO release a new version and export it.
+Example for release number 1.7.0.
+
+Change to src directory.
+cvs commit (Enter appropriate comments).
+Edit CHANGES file and record global changes.
+cvs commit CHANGES (Enter comment 'new version 1.7.0.').
+Change to main directory.
+date >> VERSION
+cvs commit VERSION (Enter comment 'new version 1.7.0.').
+cvs tag DDD1_7_0
+cd ..
+cvs export -d ddd-1.7.0 -rDDD1_7_0 ddd
+
+990202 kb
+------------------------------------------
+
+HOWTO import new version into UG.
+(move this HOWTO to somewhere else...)
+
+Act as described above.
+Change to exported directory ddd-1.7.0.
+Change to src directory.
+cvs import UG/ug/parallel/ddd ugddd DDD1_7_0
+Enter comment 'new version ddd-1.7.0' and additional
+   information about changes in this release.
+Hope that there are no conflicts.
+
+990202 kb
+------------------------------------------
+
