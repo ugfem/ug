@@ -144,8 +144,9 @@ enum UG_PALETTE {
 /*                                                                                                                                                      */
 /****************************************************************************/
 
-/* identification of windows */
-typedef INT WINDOWID;
+/* identification of windows, used to carry a pointer (xif, ppm, ps)
+   or INT (rif) */
+typedef void* WINDOWID;
 
 /* type for device coordinates */
 typedef struct
