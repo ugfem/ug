@@ -30,12 +30,15 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <math.h>
 
 #include "fileopen.h"
 #include "general.h"
 #include "misc.h"
 #include "defaults.h"
+#include "ppif.h"
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -45,6 +48,11 @@
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
+
+#ifdef ModelP
+static char *defaults_buffer=NULL;
+#endif
+
 
 /****************************************************************************/
 /*D
@@ -77,8 +85,72 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 INT GetDefaultValue (const char *filename, const char *name, char *value)
 {
   FILE *defaultsFile;
-  char Name[NAMESIZE],buffer[BUFFSIZE];
+  char Name[NAMESIZE], buffer[BUFFSIZE], *curr;
+  int file_ok;
 
+        #ifdef ModelP
+  size_t fsize,actsize;
+
+  if (defaults_buffer==NULL)
+  {
+    /* first call to GetDefaultValue, we must read the defaults file */
+
+    /* get filesize and broadcast it */
+    if (me==master) fsize = filesize(filename);
+    Broadcast(&fsize, sizeof(fsize));
+    if (fsize==0) return(1);
+
+    /* get buffer for file */
+    defaults_buffer = (char *) malloc(fsize+1);
+    assert(defaults_buffer!=NULL);
+
+    /* open defaults file */
+    if (me==master) {
+      defaultsFile = fileopen(filename,"r");
+      file_ok = (defaultsFile!=NULL);
+    }
+    Broadcast(&file_ok, sizeof(file_ok));
+    if (!file_ok) {
+      free(defaults_buffer);
+      defaults_buffer = NULL;
+      return(1);
+    }
+
+
+    /* read file into buffer */
+    if (me==master) {
+      actsize = fread(defaults_buffer, 1, fsize, defaultsFile);
+      fclose(defaultsFile);
+
+      /* set end mark */
+      defaults_buffer[actsize] = 0;
+    }
+
+    /* broadcast buffer */
+    Broadcast(defaults_buffer, fsize);
+  }
+
+  curr = defaults_buffer;
+  while (curr!=NULL && *curr!=0)
+  {
+    if (sscanf(curr,
+               expandfmt(CONCAT5(" %",NAMELENSTR,"[0-9a-zA-Z_] %",
+                                 BUFFLENSTR,"[ -~]")), Name,value) ==2)
+    {
+      if (strcmp(Name,name)==0) return(0);
+    }
+
+    /* get next line */
+    curr = strchr(curr, '\n');
+    if (curr!=NULL) curr++;
+  }
+
+  return(1);
+
+
+        #else
+
+  /* sequential version */
   defaultsFile = fileopen(filename,"r");
   if (defaultsFile==NULL) return(1);
 
@@ -88,8 +160,15 @@ INT GetDefaultValue (const char *filename, const char *name, char *value)
     if (sscanf(buffer,
                expandfmt(CONCAT5(" %",NAMELENSTR,"[0-9a-zA-Z_] %",
                                  BUFFLENSTR,"[ -~]")),Name,value) ==2)
-      if (strcmp(Name,name)==0) {fclose(defaultsFile); return(0);}
+    {
+      if (strcmp(Name,name)==0) {
+        fclose(defaultsFile);
+        return(0);
+      }
+    }
   }
   fclose(defaultsFile);
   return(1);
+
+        #endif
 }
