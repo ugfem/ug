@@ -44,7 +44,7 @@
 
 #include "namespace.h"
 
-START_UG_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
