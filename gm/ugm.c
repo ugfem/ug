@@ -1154,7 +1154,7 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex)
             #endif
   }
 
-  if (theVertex == NULL)
+  if (vertex_null)
   {
     theVertex = CreateInnerVertex(theGrid);
     if (theVertex==NULL)
@@ -4723,7 +4723,9 @@ INT GetMidNodeParam (NODE * theNode, DOUBLE *lambda)
   *lambda = Lambda0;
 
   if (iter > (MaxIter-2))
-    PrintErrorMessage('W',"GetMidNodeParam","could not determine lambda");
+  {
+    PrintErrorMessageF('W',"GetMidNodeParam","could not determine lambda for node %ld",ID(theNode));
+  }
 
   return(GM_OK);
 }
