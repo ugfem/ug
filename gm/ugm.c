@@ -684,13 +684,13 @@ static INT SideOfNbElement(ELEMENT *theElement, INT side)
 NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 {
   DOUBLE_VECTOR bnd_global,global,local,bnd_local;
-  DOUBLE *x[MAX_CORNERS_OF_ELEM],*y;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM];
   VERTEX *theVertex;
   NODE *theNode;
   BNDP *bndp;
   BNDS *bnds;
   DOUBLE fac, diff;
-  INT n,m,j,k,size;
+  INT n,j,k;
 
   n = CORNERS_OF_SIDE(theElement,side);
   fac = 1.0 / n;
@@ -2268,7 +2268,7 @@ static int LinkCompare (LINK **LinkHandle1, LINK **LinkHandle2)
 
 /****************************************************************************/
 /*D
-   OrderNodesInGrid - reorder double linked ÔNODEÔ list
+   OrderNodesInGrid - reorder double linked 'NODE' list
 
    SYNOPSIS:
    INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign);

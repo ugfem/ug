@@ -138,13 +138,16 @@ static DOUBLE OneSideMoveCP(DOUBLE *CenterPVertex, DOUBLE *sideMid,
 
 static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, DOUBLE *LocCoord)
 {
-  INT i,j,n,nbn,ncorn,nmoved,found;
+  INT i,j,n,nmoved,found;
   ELEMENT *sonElement;
-  NODE *theNode[MAX_SIDES_OF_ELEM],*cornerNode[MAX_CORNERS_OF_SIDE];
+  NODE *theNode[MAX_SIDES_OF_ELEM];
   VERTEX *bndVertex[MAX_SIDES_OF_ELEM],*theVertex;
-  DOUBLE lcorn0[DIM],lcorn1[DIM],*lmid,totalLocal,*theCorners[MAX_CORNERS_OF_ELEM];
+#ifdef __TWODIM__
   LINK *theLink;
-
+  NODE *cornerNode[MAX_CORNERS_OF_SIDE];
+  DOUBLE lcorn0[DIM],lcorn1[DIM],*lmid,totalLocal,*theCorners[MAX_CORNERS_OF_ELEM];
+  INT nbn,ncorn;
+#endif
 
 #ifdef __THREEDIM__
   PrintErrorMessage('E',"NewPosCenterNodeCurved","3D not implemented yet");
@@ -305,9 +308,12 @@ static INT NewPosCenterNode(ELEMENT *fatherElement, ELEMENT *nbElement[MAX_SIDES
   VERTEX *theVertex;
   DOUBLE sideMid[DIM],CenterPoint[DIM];
   DOUBLE *nbCorners[MAX_CORNERS_OF_ELEM],*fatherCorners[MAX_CORNERS_OF_ELEM],CenterPVertex[DIM];
-  INT i,j,k,coe,fcorn,numOfSides,idim,nmove[DIM],found,co0,co1;
-  DOUBLE localmove,LocMove[DIM],LocCoord[DIM],lcorn0[DIM],lcorn1[DIM];
-
+  INT i,j,k,coe,fcorn,numOfSides,nmove[DIM];
+  DOUBLE localmove,LocMove[DIM],LocCoord[DIM];
+#ifdef __TWODIM__
+  DOUBLE lcorn0[DIM],lcorn1[DIM];
+  INT idim,found,co0,co1;
+#endif
 
 #ifdef __THREEDIM__
   PrintErrorMessage('E',"NewPosCenterNode","3D not implemented yet");
@@ -747,13 +753,19 @@ static INT DefaultBndElemCenterLocal(NODE *centerNode, DOUBLE *defaultLocal)
 INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const INT ForceLevelSet)
 {
   MULTIGRID *theMG;
-  ELEMENT *fatherElement,*oppositeElement,*nbElement[MAX_SIDES_OF_ELEM];
+  ELEMENT *fatherElement,*nbElement[MAX_SIDES_OF_ELEM];
   VERTEX *theVertex;
-  NODE *theNode,*CornerNodes[2],*CenterNodes[2],*node0,*node1;
+  NODE *theNode;
   DOUBLE *CornerPtrs[MAX_CORNERS_OF_ELEM],LocalCenter[3]={0.5,0.5,0.5};
-  DOUBLE newPos[DIM],newLocal[DIM],lambda,lambda0,lambda1,lambda_old,x1,x2;
-  INT i,coe,numOfSides,coN,ceN,Eside,nlinks,OnlyRedSons;
+  DOUBLE newPos[DIM],newLocal[DIM];
+  INT i,coe,numOfSides,OnlyRedSons;
+#ifdef __TWODIM__
   LINK *theLink;
+  NODE *CornerNodes[2],*CenterNodes[2],*node0,*node1;
+  ELEMENT *oppositeElement;
+  DOUBLE lambda,lambda0,lambda1,lambda_old,x1,x2;
+  INT coN,ceN,Eside,nlinks;
+#endif
 
   theMG = MYMG(theGrid);
 
@@ -1032,11 +1044,16 @@ INT SmoothGridReset (GRID *theGrid, INT *MoveInfo)
   MULTIGRID *theMG;
   ELEMENT *fatherElement;
   VERTEX *theVertex;
-  NODE *theNode,*CornerNodes[2],*CenterNodes[2];
+  NODE *theNode;
   DOUBLE *CornerPtrs[MAX_CORNERS_OF_ELEM],LocalCenter[3]={0.5,0.5,0.5};
-  DOUBLE newPos[DIM],defaultLocal[DIM],lambda_old,x1,x2;
-  INT coe,ceN,coN;
+  DOUBLE newPos[DIM],defaultLocal[DIM];
+  INT coe;
+#ifdef __TWODIM__
   LINK *theLink;
+  NODE *CornerNodes[2],*CenterNodes[2];
+  DOUBLE lambda_old,x1,x2;
+  INT ceN,coN;
+#endif
 
   theMG = MYMG(theGrid);
   /* re-move side vertices; this must be performed before re-moving the center nodes because of
