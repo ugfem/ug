@@ -104,6 +104,8 @@ INT SolveSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
   DOUBLE aux,M3div0,M6div0;
   register DOUBLE dinv,piv,sum;
   register i,j,k;
+  INT pivrow;
+  DOUBLE factor;
 
   if (n>=MAX_SINGLE_VEC_COMP)
     return (1);
@@ -141,34 +143,53 @@ INT SolveSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
       for (j=0; j<n; j++)
         BlockMat[i*n+j] = mat[mcomp[i*n+j]];
 
-    /* lr factorize mat */
-    for (i=0; i<n; i++)
+    /* Gauss elimination with pivoting PB 080800 */
+    for (i=0; i<n-1; i++)
     {
-      dinv = BlockMat[i*n+i];
-      if (ABS(dinv)<SMALL_D)
-        return (NUM_SMALL_DIAG);
-      dinv = BlockMat[i*n+i] = 1.0/dinv;
+      /* find pivot */
+      piv = BlockMat[i*n+i];
+      if (ABS(piv)<1E-10)
+      {
+        /* do maximum column pivoting */
+        pivrow=i;
+        for (j=i+1; j<n; j++)
+          if (ABS(BlockMat[j*n+i])>ABS(piv))
+          {
+            piv = BlockMat[j*n+i];
+            pivrow = j;
+          }
 
+        /* check again */
+        if (ABS(piv)<SMALL_D)
+          return (NUM_SMALL_DIAG);                                       /* matrix is singular */
+
+        /* exchange rows i and pivrow */
+        for (k=i; k<n; k++)
+        {
+          factor = BlockMat[i*n+k];
+          BlockMat[i*n+k] = BlockMat[pivrow*n+k];
+          BlockMat[pivrow*n+k] = factor;
+        }
+        factor = rhs[i];
+        rhs[i] = rhs[pivrow];
+        rhs[pivrow] = factor;
+      }
+
+      /* eliminate column */
       for (j=i+1; j<n; j++)
       {
-        piv = (BlockMat[j*n+i] *= dinv);
+        factor = BlockMat[j*n+i]/piv;
         for (k=i+1; k<n; k++)
-          BlockMat[j*n+k] -= BlockMat[i*n+k] * piv;
+          BlockMat[j*n+k] -= BlockMat[i*n+k]*factor;
+        rhs[j] -= rhs[i]*factor;
       }
     }
 
-    /* solve */
-    for (i=0; i<n; i++)
-    {
-      for (sum=rhs[i], j=0; j<i; j++)
-        sum -= BlockMat[i*n+j] * BlockSol[j];
-      BlockSol[i] = sum;                                /* Lii = 1 */
-    }
+    /* back solve */
     for (i=n-1; i>=0; i--)
     {
-      for (sum=BlockSol[i], j=i+1; j<n; j++)
-        sum -= BlockMat[i*n+j] * BlockSol[j];
-      BlockSol[i] = sum * BlockMat[i*n+i];                              /* Uii = Inv(Mii) */
+      for (j=i+1; j<n; j++) rhs[i] -= BlockMat[i*n+j]*BlockSol[j];
+      BlockSol[i] = rhs[i]/BlockMat[i*n+i];
     }
 
     /* copy BlockSol to sol */
@@ -247,8 +268,10 @@ INT SolveInverseSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
 INT InvertSmallBlock (SHORT n, const SHORT *mcomp,
                       const DOUBLE *mat, DOUBLE *invmat)
 {
-  DOUBLE det,invdet,lrmat[MAX_SINGLE_MAT_COMP],sum,piv;
+  DOUBLE det,invdet,BlockMat[MAX_SINGLE_MAT_COMP],sum,piv;
   INT i,j,k;
+  INT pivrow;
+  DOUBLE factor;
 
   switch (n)
   {
@@ -300,50 +323,74 @@ INT InvertSmallBlock (SHORT n, const SHORT *mcomp,
       return (NUM_ERROR);
     }
 
-    /* copy matrix */
+    /* set outputmatrix */
     for (i=0; i<n; i++)
       for (j=0; j<n; j++)
-        lrmat[i*n+j] = mat[mcomp[i*n+j]];
+        if (i==j)
+          invmat[i*n+j] = 1.0;
+        else
+          invmat[i*n+j] = 0.0;
 
-    /* lr factorize mat */
+    /* copy input matrix */
     for (i=0; i<n; i++)
-    {
-      invdet = lrmat[i*n+i];
-      if (ABS(invdet)<SMALL_DET)
-        break;                          /* singular */
-      invdet = lrmat[i*n+i] = 1.0/invdet;
+      for (j=0; j<n; j++)
+        BlockMat[i*n+j] = mat[mcomp[i*n+j]];
 
+    /* Gauss elimination with pivoting PB 080800 */
+    for (i=0; i<n-1; i++)
+    {
+      /* find pivot */
+      piv = BlockMat[i*n+i];
+      if (ABS(piv)<1E-10)
+      {
+        /* do maximum column pivoting */
+        pivrow=i;
+        for (j=i+1; j<n; j++)
+          if (ABS(BlockMat[j*n+i])>ABS(piv))
+          {
+            piv = BlockMat[j*n+i];
+            pivrow = j;
+          }
+
+        /* check again */
+        if (ABS(piv)<SMALL_D)
+          return (NUM_SMALL_DIAG);                               /* matrix is singular */
+
+        /* exchange rows i and pivrow */
+        for (k=i; k<n; k++)
+        {
+          factor = BlockMat[i*n+k];
+          BlockMat[i*n+k] = BlockMat[pivrow*n+k];
+          BlockMat[pivrow*n+k] = factor;
+        }
+        /* exchange in right hand side */
+        for (k=0; k<n; k++)
+        {
+          factor = invmat[i*n+k];
+          invmat[i*n+k] = invmat[pivrow*n+k];
+          invmat[pivrow*n+k] = factor;
+        }
+      }
+
+      /* eliminate column */
       for (j=i+1; j<n; j++)
       {
-        piv = (lrmat[j*n+i] *= invdet);
+        factor = BlockMat[j*n+i]/piv;
         for (k=i+1; k<n; k++)
-          lrmat[j*n+k] -= lrmat[i*n+k] * piv;
+          BlockMat[j*n+k] -= BlockMat[i*n+k]*factor;
+        for (k=0; k<n; k++)
+          invmat[j*n+k] -= invmat[i*n+k]*factor;
       }
     }
 
-    /* solve */
-    for (k=0; k<n; k++)
-    {
-      for (i=0; i<k; i++)
-        invmat[i*n+k] = 0.0;
-      sum = 1.0;
-      for (j=0; j<k; j++)
-        sum -= lrmat[k*n+j] * invmat[j*n+k];
-      invmat[k*n+k] = sum;                      /* Lii = 1 */
-      for (i=k+1; i<n; i++)
+    /* back solve */
+    for (i=n-1; i>=0; i--)
+      for (k=0; k<n; k++)
       {
-        sum = 0.0;
-        for (j=0; j<i; j++)
-          sum -= lrmat[i*n+j] * invmat[j*n+k];
-        invmat[i*n+k] = sum;                            /* Lii = 1 */
+        for (j=i+1; j<n; j++) invmat[i*n+k] -= BlockMat[i*n+j]*invmat[j*n+k];
+        invmat[i*n+k] = invmat[i*n+k]/BlockMat[i*n+i];
       }
-      for (i=n-1; i>=0; i--)
-      {
-        for (sum=invmat[i*n+k], j=i+1; j<n; j++)
-          sum -= lrmat[i*n+j] * invmat[j*n+k];
-        invmat[i*n+k] = sum * lrmat[i*n+i];                             /* Uii = Inv(Mii) */
-      }
-    }
+
 
     return (NUM_OK);
   }

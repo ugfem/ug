@@ -67,10 +67,10 @@
 /****************************************************************************/
 
 typedef const struct {
-  INT nip;                              /* number of integration points     */
-  INT order;                            /* order of quadrature rule         */
-  const DOUBLE_VECTOR_3D *local;        /* array[nip] for local coordinates */
-  const DOUBLE *weight;                 /* array[nip] for weights           */
+  INT nip;                                /* number of integration points     */
+  INT order;        /* NEW ! */           /* order of quadrature rule         */
+  const DOUBLE_VECTOR_3D *local;          /* array[nip] for local coordinates */
+  const DOUBLE *weight;                           /* array[nip] for weights           */
 } QUADRATURE;
 
 typedef struct {

@@ -56,9 +56,8 @@
 /*																			*/
 /****************************************************************************/
 
-/* switch on blasm calls
-   #define _SPARSE_
- */
+/* switch on blasm calls */
+#define _SPARSE_
 
 
 #define SMALL_DET                       1e-15
@@ -641,10 +640,16 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
           nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
-            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
+          {
+            w=MDEST(mat);
+            wmat  = VVALPTR(w);
+            if (((VTYPE(w)==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
+            {
               for (i=0; i<n; i++)
                 for (j=0; j<nc; j++)
-                  s[i] -= MVALUE(mat, mcomp[i*nc+j]) * VVALUE(w, wcomp[j]);
+                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+            }
+          }
         }
         #ifdef ModelP
     if (diag != NULL) {
@@ -960,10 +965,16 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
           nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
-            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+          {
+            w=MDEST(mat);
+            wmat  = VVALPTR(w);
+            if (((VTYPE(w)==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+            {
               for (i=0; i<n; i++)
                 for (j=0; j<nc; j++)
-                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * VVALUE(w, wcomp[j]);
+                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+            }
+          }
         }
 
     /* solve */
@@ -1589,10 +1600,16 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
           wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
           nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
-            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
+          {
+            w=MDEST(mat);
+            wmat  = VVALPTR(w);
+            if (((VTYPE(w)==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
+            {
               for (i=0; i<n; i++)
                 for (j=0; j<nc; j++)
-                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * VVALUE(w, wcomp[j]);
+                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+            }
+          }
         }
 
     /* solve */
@@ -1796,10 +1813,16 @@ INT l_usor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
           wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
           nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
-            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+          {
+            w=MDEST(mat);
+            wmat  = VVALPTR(w);
+            if (((VTYPE(w)==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+            {
               for (i=0; i<n; i++)
                 for (j=0; j<nc; j++)
-                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * VVALUE(w,wcomp[j]);
+                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+            }
+          }
         }
 
     /* solve */
@@ -2002,10 +2025,16 @@ INT l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
           wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
           nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
-            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+          {
+            w=MDEST(mat);
+            wmat  = VVALPTR(w);
+            if (((VTYPE(w)==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
+            {
               for (i=0; i<n; i++)
                 for (j=0; j<nc; j++)
-                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * VVALUE(w,wcomp[j]);
+                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+            }
+          }
         }
 
     /* solve */
@@ -2236,10 +2265,16 @@ INT l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
           wcomp = VD_CMPPTR_OF_TYPE(v,ctype);
           nc    = MD_COLS_IN_RT_CT(M,rtype,ctype);
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
-            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
+          {
+            w=MDEST(mat);
+            wmat  = VVALPTR(w);
+            if (((VTYPE(w)==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
+            {
               for (i=0; i<n; i++)
                 for (j=0; j<nc; j++)
-                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * VVALUE(w,wcomp[j]);
+                  s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
+            }
+          }
         }
 
     /* solve */
@@ -2523,7 +2558,10 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
 
       /* the normalization factors of the j diagonal */
       for (l=0; l<nr; l++)
-        j_Normalization[l] = 1.0 / sqrt(fabs(Djj[DjjComp[l*nr+l]]));
+        if (VD_rest!=NULL)
+          j_Normalization[l] = 1.0 / sqrt(fabs(Djj[DjjComp[l*nr+l]]));
+        else
+          j_Normalization[l] = 1.0;
 
       /* and we use a further vector to store the row sums of the normalized rest matrix */
       for (l=0; l<nr; l++) RowSum[l] = 0.0;
@@ -2588,15 +2626,24 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
           continue;                                             /* nothing to correct */
 
         /* the normalization factors of the k diagonal */
-        if (ctype==rtype)
-          /* normalize with diag of vj */
-          for (l=0; l<nr; l++)
-            k_Normalization[l] = j_Normalization[l];                                            /* this choice led to good results -*/
-        /* but why not else in all cases?	*/
+        if (VD_rest!=NULL)
+        {
+          if (ctype==rtype)
+            /* normalize with diag of vj */
+            for (l=0; l<nr; l++)
+              k_Normalization[l] = j_Normalization[l];                                                  /* this choice led to good results -*/
+          /* but why not else in all cases?	*/
+          else
+            /* normalize with diag of vk */
+            for (l=0; l<nc; l++)
+              k_Normalization[l] = 1.0 / sqrt(fabs(Dkk[DkkComp[l*nc+l]]));
+        }
         else
-          /* normalize with diag of vk */
-          for (l=0; l<nc; l++)
-            k_Normalization[l] = 1.0 / sqrt(fabs(Dkk[DkkComp[l*nc+l]]));
+        {
+          for (l=0; l<MAX(nr,nc); l++)
+            k_Normalization[l] = 1.0;
+        }
+
         Mjk = GetMatrix(vj,vk);
         if (threshold!=NULL)                            /* only if threshold is defined */
           if (Mjk==NULL)
