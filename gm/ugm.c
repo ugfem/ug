@@ -5330,7 +5330,7 @@ D*/
 
 INT MultiGridStatus (MULTIGRID *theMG, INT greenflag, INT loadflag)
 {
-	INT		i,j,sons,maxsons,heap,used;
+	INT		i,j,sons,maxsons,heap,used,free;
 	INT		red, green, yellow; 
 	INT		mg_red,mg_green,mg_yellow;
 	INT		mg_greenrulesons[MAXLEVEL+1][MAX_SONS+1],mg_greenrules[MAXLEVEL+1];
@@ -5353,6 +5353,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT greenflag, INT loadflag)
 			maxsons = 0;
 		}
 
+	/* compute multi grid info */
 	UserWriteF("MULTIGRID STATISTICS:\n");
 	UserWriteF("LEVEL      RED     GREEN    YELLOW        SUM     SUM/RED (RED+GREEN)/RED\n");
 
@@ -5406,8 +5407,10 @@ INT MultiGridStatus (MULTIGRID *theMG, INT greenflag, INT loadflag)
 	UserWriteF("  ALL  %9d %9d %9d  %9.0f    %2.3f      %2.3f\n",
 		mg_red,mg_green,mg_yellow,mg_sum,mg_sum_div_red,mg_redplusgreen_div_red);
 	
+	/* compute heap info */
 	heap = HeapFreelistUsed(MGHEAP(theMG));
 	used = HeapUsed(MGHEAP(theMG))-heap;
+	free = (HeapSize(MGHEAP(theMG))-used)>>10;
 	mg_sum_size = used>>10;
 	mg_red_size = mg_sum_size*mg_red/mg_sum;
 	mg_green_size = mg_sum_size*mg_green/mg_sum;
@@ -5417,7 +5420,11 @@ INT MultiGridStatus (MULTIGRID *theMG, INT greenflag, INT loadflag)
 	UserWriteF(" HEAP  %7dKB %7dKB %7dKB  %7dKB    %2.3fKB    %2.3fKB\n",
 		mg_red_size,mg_green_size,mg_yellow_size,mg_sum_size,
 		mg_sum_size_div_red,mg_redplusgreen_size_div_red);
-	
+
+	UserWriteF(" EST  FREE=%7dKB  MAXNEWELEMENTS free/(SUM/RED)=%9.0f "
+		"FREE/((RED+GREEN)/RED)=%9.0f\n",
+		free,free/mg_sum_size_div_red,
+		free/mg_redplusgreen_size_div_red);
 
 	if (greenflag)
 	{
