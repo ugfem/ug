@@ -21,6 +21,3 @@ libparallel2_la_LIBADD = $(SUBLIBS) dddif/libdddif2.la
 libparallel3_la_SOURCES = $(SOURCES)
 libparallel3_la_CPPFLAGS = $(UG_3DFLAGS)
 libparallel3_la_LIBADD = $(SUBLIBS) dddif/libdddif3.la
-
-# !!! quick hack to get tarball working
-EXTRA_DIST = ddd/include/ddd.h dddif/parallel.h ppif/ppif.h

@@ -35,6 +35,11 @@ MISC = analyser/inv.c
 
 DDD = ddd.c dddi.h
 
+INCLUDES = include/dddaddon.h include/ddd.h include/memmgr.h include/dddio.h \
+           include/fddd.f include/dddresources.h
+
 libddd_la_SOURCES = $(BASIC) $(CTRL) $(MGR) $(IDENT) $(IF) $(XFER) \
                     $(PRIO) $(JOIN) $(MISC) $(DDD) f77/f2c.c
 libddd_la_CPPFLAGS = $(UG_CPPFLAGS) $(DDDFLAGS)
+
+EXTRA_DIST = $(INCLUDES)

@@ -180,7 +180,6 @@ AC_CONFIG_FILES([Makefile
 		 dom/lgm/Makefile
 		 dom/lgm/ngin/Makefile
 		 dom/lgm/ngin2d/Makefile
-		 dom/gen/Makefile
                  gm/Makefile
 		 gm/gg2/Makefile
 		 gm/gg3/Makefile
@@ -213,6 +212,7 @@ AC_OUTPUT
 
 dnl Still missing:
 dnl
+dnl		     dom/gen/Makefile
 dnl                  dev/mif/Makefile
 dnl                  gm/gg3/netgen/general/makefile
 dnl                  gm/gg3/netgen/geom/makefile
