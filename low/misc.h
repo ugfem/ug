@@ -160,6 +160,7 @@ void            INT_2_bitpattern        (INT n, char text[33]);
 INT                     CenterInPattern         (char *str, INT PatLen, const char *text, char p, const char *end);
 char       *StrTok              (char *s, const char *ct);
 char       *expandfmt           (const char *fmt);
+char       *ExpandCShellVars    (char *string);
 const char *strntok             (const char *str, const char *sep, int n, char *token);
 char       *StrDup                              (const char *s);
 void        QSort               (void *base, INT n, INT size, int (*cmp)(const void *, const void *));

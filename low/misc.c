@@ -98,6 +98,12 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 #define MIN_DETERMINANT                 1e-8
 
+/* for ExpandCShellVars */
+#define CSHELL_VAR_BEGIN                "$("
+#define CSHELL_VAR_BEGIN_LEN    2               /* strlen(CSHELL_VAR_BEGIN)			*/
+#define CSHELL_VAR_END                  ")"
+#define CSHELL_VAR_END_LEN              1               /* strlen(CSHELL_VAR_END)			*/
+
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
@@ -345,6 +351,58 @@ char *expandfmt (const char *fmt)
   *newpos = '\0';
 
   return (newfmt);
+}
+
+char *ExpandCShellVars (char *string)
+{
+  if (strstr(string,CSHELL_VAR_BEGIN)!=NULL)
+  {
+    /* shell var reference contained: copy string and expand vars */
+    char *copy = StrDup(string);
+    char *p0  = copy;                           /* current pos  */
+    char *p1;                                           /* end of token */
+
+    string[0] = '\0';
+
+    while ((p1 = strstr(p0,CSHELL_VAR_BEGIN))!=NULL)
+    {
+      char *var;
+
+      /* enclose current pos (p0) to CSHELL_VAR_BEGIN between p0,p1 */
+      *p1 = '\0';
+
+      /* copy verbatim */
+      strcat(string,p0);
+
+      /* advance p0 to begin of shell var name */
+      p0 = p1+CSHELL_VAR_BEGIN_LEN;
+
+      /* enclose current pos (p0) to CSHELL_VAR_END between p0,p1 */
+      p1 = strstr(p0,CSHELL_VAR_END);
+      if (p1==NULL)
+      {
+        free(copy);
+        return NULL;
+      }
+      *p1 = '\0';
+
+      /* copy shell variable iff */
+      var = getenv(p0);
+      if (var==NULL)
+      {
+        free(copy);
+        return NULL;
+      }
+      strcat(string,var);
+
+      /* advance p0 */
+      p0 = p1+CSHELL_VAR_END_LEN;
+    }
+    /* copy remainder */
+    strcat(string,p0);
+    free(copy);
+  }
+  return string;
 }
 
 /****************************************************************************/
