@@ -3305,7 +3305,7 @@ INT MoveMidNode (MULTIGRID *theMG,
     return(GM_ERROR);
   }
 
-  if (NFATHER(MidNode) == NULL)
+  if (NFATHER(MidNode) != NULL)
     return(GM_ERROR);
 
   theVertex = MYVERTEX(MidNode);
@@ -3329,7 +3329,8 @@ INT MoveMidNode (MULTIGRID *theMG,
   if (OBJT(theVertex) == BVOBJ)
   {
     moved = 0;
-    thePatch = VS_PATCH(VSEG(theVertex));
+    vs = VSEG(theVertex);
+    thePatch = VS_PATCH(vs);
     mid_lambda = PVECT(vs);
     for (vs0=VSEG(MYVERTEX(Node0)); vs0!=NULL; vs0=NEXTSEG(vs0))
       if (VS_PATCH(vs0) == thePatch)
