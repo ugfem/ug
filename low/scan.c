@@ -289,7 +289,7 @@ INT ReadArgvChar (const char *name, char *buffer, INT argc, char **argv)
       G for gigabyte
       M for megabyte
       K for kilobyte
-   (also the lower case char's are recognized).
+   (also the lower case chars are recognized).
 
    EXAMPLE:
       "10M" is converted to 10485760 (10 mega byte).
