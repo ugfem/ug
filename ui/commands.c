@@ -5554,12 +5554,6 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
   INT sign[DIM],order[DIM],which,xused,yused,zused,error,AlsoOrderMatrices,SpecialTreatSkipVecs;
   char ord[3];
 
-        #ifdef ModelP
-  if (me == master)
-    UserWriteF("%d: LexOrderVectorsCommand() not implemented in parallel version\n",me);
-  return (OKCODE);
-        #endif
-
   theMG = currMG;
   if (theMG==NULL)
   {
