@@ -1,0 +1,31 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for DEC Workstations 
+#
+
+ARCH_TYPE     = __DEC__
+
+#ARCH_CC       = gcc
+ARCH_CC       = cc
+ARCH_C++      = g++
+#ARCH_LINK     = gcc
+ARCH_LINK     = cc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK = true
+
+ARCH_LIBS     = -lm -lc
+#ARCH_PLIBS    = /usr/lib/libV3.a
+
+#ARCH_CFLAGS   = -ansi
+ARCH_CFLAGS   = -std1
+ARCH_C++FLAGS = 
+ARCH_LFLAGS   = 
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDES = -I/usr/opt/XR6320/X11R6/include/X11
+ARCH_XLIBS     = -L/usr/opt/XR6320/X11R6/lib -lX11 -lXt -lXaw -lXmu -lXext
+
+
+
