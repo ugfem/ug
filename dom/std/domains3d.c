@@ -2584,9 +2584,7 @@ static INT InitCylinder (void)
 /*                                                                          */
 /****************************************************************************/
 
-#define BENCH_H 0.5
-
-
+#define BENCH_H 1
 
 static INT south1Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
