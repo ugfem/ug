@@ -1188,10 +1188,10 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
 
   /* create a virginenal multigrid on the BVP */
   theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize);
+  if (theMG==NULL)                                                                                                        {UserWrite("ERROR(ugio): cannot create multigrid\n"); CloseMGFile (); return (NULL);}
   MG_MAGIC_COOKIE(theMG) = mg_general.magic_cookie;
   theHeap = MGHEAP(theMG);
   MarkTmpMem(theHeap);
-  if (theMG==NULL)                                                                                                        {CloseMGFile (); return (NULL);}
   if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (CreateNewLevel(theMG)==NULL)                                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   theHeap = MGHEAP(theMG);
