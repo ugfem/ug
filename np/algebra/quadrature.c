@@ -2256,7 +2256,7 @@ static const DOUBLE Quadrature3D43_w[] = {
 };
 static QUADRATURE Quadrature3D43 = {8, 3, Quadrature3D43_l, Quadrature3D43_w};
 
-/* Strout 1971 */
+/* Stroud 1971 */
 
 #define s_1 0.091971078   /* (7 - sq(15) ) / 34 */
 #define s_2 0.31979363    /* (7 + sq(15) ) / 34 */
