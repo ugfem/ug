@@ -111,7 +111,7 @@ static char rcsid[] = "$Header$";
 
 void PrintDebug (const char *format, ...)
 {
-  char buffer[256];
+  char buffer[4096];
   va_list args;
 
   va_start(args,format);
@@ -123,6 +123,7 @@ void PrintDebug (const char *format, ...)
 
   /* use specific debug function for displaying */
   (*printdebug)(buffer);
+  WriteLogFile(buffer);
 
         #ifdef ModelP
 }
@@ -130,6 +131,7 @@ else
 {
   printf(buffer);
   fflush(stdout);
+  WriteLogFile(buffer);
 }
 
         #endif
