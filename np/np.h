@@ -459,7 +459,7 @@ INT             ListNumProc                             (NP_BASE *currNumProc);
 INT                     SetNumProc                                      (NP_BASE *, INT, char **);
 INT             InitNum                                         (void);
 INT             GetVectorCompNames                      (VECDATA_DESC *theVDT, char *compNames, INT *nComp);
-INT             WriteVEC_SCALAR                         (VECDATA_DESC *theVDT, VEC_SCALAR Scalar, char *structdir);
+INT             WriteVEC_SCALAR                         (const VECDATA_DESC *theVDT, const VEC_SCALAR Scalar, const char *structdir);
 
 #ifdef __INTERPOLATION_MATRIX__
 /* interpolation matrix functions */
