@@ -702,7 +702,7 @@ showpf           # show current printing format settings
 -
 ##############################  PlotObjectTypes  #########################################
 
--matrix > setplotobject setview plot matrix
+-matrix > setplotobject setview plot matrix blockmatrix blockvector block
 Matrix         # name of PlotObjType for plot Matrix where entries are indicated by colors
 Matrix [$e <matrix eval proc> | $M <scalar matrix symbol>] [$f <fromValue>] [$t <toValue>] [$l 0|1]
     $f <fromValue> $t <toValue>     # range [fromValue,toValue]
@@ -712,7 +712,11 @@ Matrix [$e <matrix eval proc> | $M <scalar matrix symbol>] [$f <fromValue>] [$t 
     $E 0|1                          # plot extra connections
     $l 0|1                          # choose logarithmic coloring (ln |A_ij|)
     $T <threshold>                  # supress entries with |A_ij| < threshold
-
+    $BV 0|1 [<dash> <space>]        # disabel|enabel plotting of blockmatrixstructure
+                                    # optional you can enabel dotted lines up to
+                                    #     the border of the matrix
+                                    #     <dash> gives the length of one small linesegment,
+                                    #     <space> the space between such segments
 -
 ############################### numerical procedures #####################################
 
