@@ -58,6 +58,9 @@
 #include "dio.h"
 #include "parallel.h"
 
+#include "namespace.h"
+
+USING_UG_NAMESPACE
 
 /****************************************************************************/
 /*																			*/

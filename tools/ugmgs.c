@@ -55,6 +55,10 @@
 #include "mgio.h"
 #include "dio.h"
 
+#include "namespace.h"
+
+USING_UGDIM_NAMESPACE
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
