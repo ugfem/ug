@@ -1663,6 +1663,11 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
 
       if (PO_USESCUT(thePlotObj))
         CUT_STATUS(VO_CUT(theViewedObj))                        = NOT_INIT;
+
+      V3_COPY(ex,VO_SXD(theViewedObj))
+      V3_COPY(ey,VO_SYD(theViewedObj))
+      V3_COPY(ez,VO_SZD(theViewedObj))
+      DefaultScale[0] = DefaultScale[1] = DefaultScale[2] = 1.0;
     }
     else
     {
@@ -1698,6 +1703,11 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
     }
     if (perspective!=NULL)
       DefaultPJ = *perspective;
+    if (scale!=NULL)
+    {
+      V3_COPY(scale,DefaultScale);
+    }
+
 
     /* save values */
     V3_COPY(DefaultVP,VO_VP(theViewedObj))
@@ -1706,6 +1716,7 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
     V3_COPY(DefaultPXD,VO_PXD(theViewedObj))
     V3_COPY(DefaultPYD,VO_PYD(theViewedObj))
     VO_PERSPECTIVE(theViewedObj) = DefaultPJ;
+    V3_COPY(DefaultScale,VO_SCALE(theViewedObj))
 
     /* set status of ViewedObj */
     VO_STATUS(theViewedObj) = ACTIVE;

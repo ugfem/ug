@@ -1114,6 +1114,19 @@ static INT BuildObsTrafo (PICTURE *thePicture)
 			
 		case TYPE_3D:
 			
+			/* set trafo from phys. space to phys. space: scale-implementation */
+			VRS_2_PHS[0] = 2.0*SXD[0];		VRS_2_PHS[4] = 2.0*SYD[0];		VRS_2_PHS[8]  = 2.0*SZD[0];      VRS_2_PHS[12] = MP[0]-SXD[0]-SYD[0]-SZD[0];
+			VRS_2_PHS[1] = 2.0*SXD[1];		VRS_2_PHS[5] = 2.0*SYD[1];		VRS_2_PHS[9]  = 2.0*SZD[1];      VRS_2_PHS[13] = MP[1]-SXD[1]-SYD[1]-SZD[1];
+			VRS_2_PHS[2] = 2.0*SXD[2];		VRS_2_PHS[6] = 2.0*SYD[2];		VRS_2_PHS[10] = 2.0*SZD[2];      VRS_2_PHS[14] = MP[2]-SXD[2]-SYD[2]-SZD[2];
+			VRS_2_PHS[3] = 0.0; 			VRS_2_PHS[7] = 0.0; 			VRS_2_PHS[11] = 0.0;             VRS_2_PHS[15] = 1.0;
+			if (M4_Invert(PHS_2_VRS,VRS_2_PHS)) return (1);
+			SCALE[0] = VO_SCALE(theViewedObj)[0];	SCALE[4] = 0.0;							SCALE[8]  = 0.0;                         SCALE[12] = 0.0;
+			SCALE[1] = 0.0;							SCALE[5] = VO_SCALE(theViewedObj)[1];	SCALE[9]  = 0.0;                         SCALE[13] = 0.0;
+			SCALE[2] = 0.0;							SCALE[6] = 0.0;							SCALE[10] = VO_SCALE(theViewedObj)[2];   SCALE[14] = 0.0;
+			SCALE[3] = 0.0; 						SCALE[7] = 0.0; 						SCALE[11] = 0.0;                         SCALE[15] = 1.0;
+			M4_TIMES_M4(SCALE,PHS_2_VRS,HELP);	
+			M4_TIMES_M4(VRS_2_PHS,HELP,ScaleTrafo);				
+			
 			/* set trafo from phys. space to view reference system */
 			V3_VECTOR_PRODUCT(XD,YD,ZD)
 			if (V3_Normalize(ZD)) return (1);
@@ -1130,7 +1143,8 @@ static INT BuildObsTrafo (PICTURE *thePicture)
 			VRS_2_SCS[3] = 0.0; 				VRS_2_SCS[7] = 0.0; 				VRS_2_SCS[11]= 0.0; 		VRS_2_SCS[15]= 1.0;
 
 			/* set ObsTrafo and its inverse */
-			M4_TIMES_M4(VRS_2_SCS,PHS_2_VRS,ObsTrafo)	
+			M4_TIMES_M4(VRS_2_SCS,PHS_2_VRS,HELP);	
+			M4_TIMES_M4(HELP,ScaleTrafo,ObsTrafo);
 			if (M4_Invert(InvObsTrafo,ObsTrafo)) return (1);
 			if (VO_PERSPECTIVE(theViewedObj) == YES)
 			{
