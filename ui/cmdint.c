@@ -75,7 +75,7 @@
 #define MAXTOKENLENGTH          64
 #define MAXCMDSIZE                      256
 #define MAXSTRINGSIZE           256
-#define EXECUTEBUFSIZE          16000
+#define EXECUTEBUFSIZE          32000
 #define PROGRAMBUFSIZE          8000
 #define FILEBUFSIZE                     1000
 
@@ -1425,7 +1425,7 @@ static INT GetEquation (OPERAND *result)
       break;
 
     case LSTRINGID :
-      if ((error=StringCompare(&t,term1.so.sptr,term2.lo.sptr,0,(size_t) term2.lo.length))!=DONE)
+      if ((error=StringCompare(&t,term1.so.sptr,term2.lo.sptr,strlen(term1.so.sptr),(size_t) term2.lo.length))!=DONE)
         return(error);
       break;
     }
@@ -1446,7 +1446,7 @@ static INT GetEquation (OPERAND *result)
       break;
 
     case ALPHAID :
-      if ((error=StringCompare(&t,term1.lo.sptr,term2.so.sptr,(size_t) term1.lo.length,0))!=DONE)
+      if ((error=StringCompare(&t,term1.lo.sptr,term2.so.sptr,(size_t) term1.lo.length,strlen(term2.so.sptr)))!=DONE)
         return(error);
       break;
 
@@ -1733,7 +1733,10 @@ INT InterpretCommand (char *cmds)
 
   /* call InterpretString */
   if ((error = InterpretString())!=DONE)
+  {
+    SetMuteLevel(0);
     return(error);
+  }
 
   /* restore cmdPtr/cmdStart and return */
   cmdPtr=oldCmdPtr;
@@ -2220,6 +2223,9 @@ static INT InterpretString()
       executeBuffer[executePos++]=(char) 0;
 
       fclose(filePtr);
+
+      /* set :scriptname var */
+      SetStringVar(":scriptname",buffer);
 
       /* execute buffer */
       error=InterpretCommand(&(executeBuffer[executePos0]));
