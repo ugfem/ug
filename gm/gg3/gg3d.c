@@ -192,7 +192,7 @@ static INT AddBoundaryNode (INT nodeid, COORD *global)
   PRINTDEBUG(dom,1,(" add node   %4d    %6.3f %6.3f %6.3f\n",
                     nodeid,global[0],global[1],global[2]));
 
-    #ifdef NETGENT
+    #ifdef _NETGEN
   AddSurfaceNode (nodeid,
                   (double)global[0],(double)global[1],(double)global[2]);
     #endif
@@ -231,7 +231,7 @@ static INT AddBoundaryElement (INT n, INT *nodelist)
   PRINTDEBUG(dom,1,(" add triangle  %4d %4d %4d\n",
                     nodelist[0],nodelist[1],nodelist[2]));
 
-    #ifdef NETGENT
+    #ifdef _NETGEN
   AddSurfaceTriangle(nodelist[0],nodelist[1],nodelist[2]);
     #endif
 
@@ -279,7 +279,7 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth)
 
   if (GetDefaultValue(DEFAULTSFILENAME,"netgenrules",rulefilename))
     strcpy(rulefilename,"tetra.rls");
-    #ifdef NETGENT
+    #ifdef _NETGEN
   InitNetgen(rulefilename);
     #endif
 
@@ -342,11 +342,9 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth)
                         x[mesh->Side_corner_ids[sid][i][2]][1],
                         x[mesh->Side_corner_ids[sid][i][2]][2]));
 
-
-
     }
 
-    #ifdef NETGENT
+    #ifdef _NETGEN
   if (StartNetgen(h,smooth)) return(1);
     #endif
 
