@@ -1550,11 +1550,13 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
       {
       case UNREFINE :
         SETCOARSEN(theElement,1);
+        SETMARKCLASS(theElement,0);
         SETMARK(theElement,NO_REF);
         break;
 
       case NO_REFINEMENT :
         SETMARK(theElement,NO_REF);
+        SETMARKCLASS(theElement,0);
         break;
 
       case COPY :
@@ -1599,10 +1601,12 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
       {
       case (UNREFINE) :
         SETMARK(theElement,NO_REF);
+        SETMARKCLASS(theElement,0);
         SETCOARSEN(theElement,1);
         break;
       case (NO_REFINEMENT) :
         SETMARK(theElement,NO_REF);
+        SETMARKCLASS(theElement,0);
         break;
       case (COPY) :
         SETMARK(theElement,TET_COPY);
@@ -1622,10 +1626,12 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
       {
       case (UNREFINE) :
         SETMARK(theElement,NO_REF);
+        SETMARKCLASS(theElement,0);
         SETCOARSEN(theElement,1);
         break;
       case (NO_REFINEMENT) :
         SETMARK(theElement,NO_REF);
+        SETMARKCLASS(theElement,0);
         break;
       case (COPY) :
         SETMARK(theElement,PYR_COPY);
@@ -1645,10 +1651,12 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
       {
       case (UNREFINE) :
         SETMARK(theElement,NO_REF);
+        SETMARKCLASS(theElement,0);
         SETCOARSEN(theElement,1);
         break;
       case (NO_REFINEMENT) :
         SETMARK(theElement,NO_REF);
+        SETMARKCLASS(theElement,0);
         break;
       case (COPY) :
         SETMARK(theElement,HEXA_COPY);
