@@ -29,19 +29,19 @@ LCFLAGS = -I../../include
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
 
 SURFACE:
-	cd netgen; make -f lgm_makefile.netgen $(DIM); cd ..;
+	cd netgen && make -f lgm_makefile.netgen $(DIM)
 	
 NGIN2Dtarget:
-	cd ngin2d; make -f Makefile.ngin; cd ..;
+	cd ngin2d && make -f Makefile.ngin
 	
 NGINtarget:
-	cd ngin; make -f Makefile.ngin; cd ..;
+	cd ngin && make -f Makefile.ngin
 	
 clean:
 	rm -f *.o
-	cd netgen; make -f lgm_makefile.netgen clean; cd ..;
-	cd ngin; make -f Makefile.ngin clean; cd ..;
-	cd ngin2d; make -f Makefile.ngin clean; cd ..;
+	cd netgen && make -f lgm_makefile.netgen clean
+	cd ngin && make -f Makefile.ngin clean
+	cd ngin2d && make -f Makefile.ngin clean
 
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS)
