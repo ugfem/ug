@@ -5873,8 +5873,8 @@ static INT CheckMultiGrid (MULTIGRID *theMG)
 
 INT AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest)
 {
-	int level,toplevel,nrefined,nadapted;
-	int newlevel;
+	INT level,toplevel,nrefined,nadapted;
+	INT newlevel;
 	NODE *theNode;
 	GRID *theGrid, *FinerGrid;
 	ELEMENT *theElement;
