@@ -27,37 +27,29 @@ fi
 
 cd $UGROOT;
 
+# clear include-directory
 if test -d include
 then
 	rm -f -r include;
 fi	
 mkdir include;
 
-for i in . * */* */*/* */*/*/* */*/*/*/*
-do
-	if $TEST_WITH_LINKS  -d $i -a ! -h $i
-	then
-		if test "$i" != "include" -a `basename $i` != "doc" -a `basename $i` != "CVS"
-		then
-			echo $i
-			cd $i
-			for j in *.h
-			do
-				if test "$j" != "*.h"
-				then
-					echo $j
-					if $TEST_WITH_LINKS  -h $UGROOT/include/$j
-					then	
-						echo "link for $i/$j already exists";
-					else
-						ln -s ../$i/$j $UGROOT/include/$j
-					fi
-				fi
-			done
-			cd $UGROOT
-		fi
-	fi
-done
+case `/bin/uname | cut -f1 -d ' ' ` in
+	AIX | Paragon)
+		FOLLOW_LINKS=
+		echo "not following symbolic links"
+		;;
+	*)
+		FOLLOW_LINKS=-follow
+		;;
+esac;
+
+find ${UGROOT} \
+	-type d -name include -prune -o \
+	-type d -name doc -prune -o \
+	-type d -name man -prune -o \
+	-name '*.h' \
+	${FOLLOW_LINKS} -exec ln -s {} $UGROOT/include \; -print
 
 exit 0
 
