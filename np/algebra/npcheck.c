@@ -33,6 +33,7 @@
 #include "compiler.h"
 #include "gm.h"
 #include "np.h"
+#include "disctools.h"
 #include "debug.h"
 #include "general.h"
 
@@ -332,16 +333,74 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
 INT CheckNP (MULTIGRID *theMG, INT argc, char **argv)
 {
   MATDATA_DESC *A;
-  INT level,nerr;
+  VECDATA_DESC *x,*y;
+  INT i,level,nerr;
   char value[VALUELEN];
+  VEC_SCALAR damp;
+  DOUBLE nrm,diff;
 
   if (ReadArgvChar("A",value,argc,argv) == 0) {
     A = GetMatDataDescByName(theMG,value);
-    if (A != NULL)
+    if (A == NULL) {
+      UserWriteF("ERROR: no matrix %s in npckeck\n",value);
+      return(1);
+    }
+    if (ReadArgvOption("S",argc,argv)) {
       for (level=theMG->bottomLevel; level<=TOPLEVEL(theMG); level++)
         if (CheckSymmetryOfMatrix(GRID_ON_LEVEL(theMG,level),A))
           UserWriteF("matrix %s not symmetric on level %d\n",
                      ENVITEM_NAME(A),level);
+      return(0);
+    }
+    if (ReadArgvOption("G",argc,argv)) {
+      if (ReadArgvChar("x",value,argc,argv)) {
+        UserWriteF("ERROR: no vector in npckeck\n");
+        return(1);
+      }
+      x = GetVecDataDescByName(theMG,value);
+      if (x == NULL) {
+        UserWriteF("ERROR: no vector %s in npckeck\n",value);
+        return(1);
+      }
+      level = CURRENTLEVEL(theMG);
+      if (level == BOTTOMLEVEL(theMG)) {
+        UserWriteF("ERROR: no GalerkinCheck,"
+                   "level %d is bottomlevel\n",level);
+        return(1);
+      }
+      if (AllocVDFromVD(theMG,level-1,level,x,&y))
+        return(1);
+      dmatset(theMG,level-1,level-1,ALL_VECTORS,A,0.0);
+      dset(theMG,level,level,ALL_VECTORS,x,0.0);
+      dset(theMG,level-1,level,ALL_VECTORS,y,0.0);
+      AssembleGalerkinByMatrix(GRID_ON_LEVEL(theMG,level),A,0);
+      for (i=0; i<VD_NCOMP(x); i++) damp[i] = 1.0;
+      InterpolateCorrectionByMatrix(GRID_ON_LEVEL(theMG,level),x,x,damp);
+      if (dmatmul(theMG,level,level,ALL_VECTORS,y,A,x) != NUM_OK)
+        return(1);
+      RestrictByMatrix(GRID_ON_LEVEL(theMG,level),y,y,damp);
+      IFDEBUG(np,1)
+      UserWriteF("x %d\n",level-1);
+      PrintVector(GRID_ON_LEVEL(theMG,level-1),x,3,3);
+      UserWriteF("x %d\n",level);
+      PrintVector(GRID_ON_LEVEL(theMG,level),x,3,3);
+      UserWriteF("y %d\n",level);
+      PrintVector(GRID_ON_LEVEL(theMG,level),y,3,3);
+      UserWriteF("y %d\n",level-1);
+      PrintVector(GRID_ON_LEVEL(theMG,level-1),y,3,3);
+      ENDDEBUG
+      if (dmatmul_minus(theMG,level-1,level-1,ALL_VECTORS,y,A,x)!=NUM_OK)
+        return(1);
+      IFDEBUG(np,1)
+      UserWriteF("y %d\n",level-1);
+      PrintVector(GRID_ON_LEVEL(theMG,level-1),y,3,3);
+      ENDDEBUG
+      dnrm2(theMG,level-1,level-1,ALL_VECTORS,x,&nrm);
+      dnrm2(theMG,level-1,level-1,ALL_VECTORS,y,&diff);
+      UserWriteF("Galerkin test: nrm(x) = %f nrm(Ax-RAPx) = %f\n",
+                 nrm,diff);
+      return(0);
+    }
   }
   for (level=theMG->bottomLevel; level<=TOPLEVEL(theMG); level++) {
     UserWriteF("[%d: numeric: ",level);
