@@ -2069,7 +2069,7 @@ static INT InterpretString (void)
 
       StatusStack[StatusPos++]=status;
 
-      if (res==1)
+      if (res!=0)
         status=IF;
       else
         status=(IF|SKIPMODE);
