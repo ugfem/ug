@@ -2319,13 +2319,11 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 {
-  DOUBLE a1[MAX_VEC_COMP+1];
-  INT i;
-
         #ifdef ModelP
         #ifdef Debug
   INT i;
-  DOUBLE a1[NVECTYPES+1];
+  DOUBLE a1[MAX_VEC_COMP+1];
+
   for (i=0; i<ncomp; i++)
     a1[i] = a[i];
   a1[ncomp] = (DOUBLE) rep_err_count;
