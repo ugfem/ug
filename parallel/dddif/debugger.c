@@ -19,6 +19,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 void buggy (MULTIGRID *);
+void dddif_PrintGridRelations (MULTIGRID *);
 
 
 /****************************************************************************/
@@ -83,6 +84,10 @@ void ddd_pstat (char *arg)
 
   switch (cmd)
   {
+  case 'X' :
+    dddif_PrintGridRelations(dddctrl.currMG);
+    break;
+
   case 'm' :
     SYNC_CONTEXT;
     dddif_DisplayMemoryUsage();
@@ -160,6 +165,7 @@ static void buggy_ShowCopies (DDD_HDR hdr)
 
 static void buggy_ElemShow (ELEMENT *e)
 {
+  ELEMENT *SonList[MAX_SONS];
   int i;
 
   printf("%4d:    ID=%06d LEVEL=%02d corners=%03d\n", me,
@@ -186,12 +192,18 @@ static void buggy_ElemShow (ELEMENT *e)
     }
   }
 
-  for(i=0; i<SONS_OF_ELEM(e); i++)
+  if (GetAllSons(e,SonList)==0)
   {
-    if (SON(e,i)!=NULL)
+    for(i=0; SonList[i]!=NULL; i++)
     {
-      printf("%4d:    son[%d]=%08x\n", me,
-             i, DDD_InfoGlobalId(PARHDRE(SON(e,i))));
+      if (SON(e,i)!=NULL)
+      {
+        printf("%4d:    son[%d]=%08x prio=%d\n", me,
+               i,
+               DDD_InfoGlobalId(PARHDRE(SonList[i])),
+               DDD_InfoPriority(PARHDRE(SonList[i]))
+               );
+      }
     }
   }
 }
@@ -478,6 +490,48 @@ void buggy (MULTIGRID *theMG)
   }
   while (proc>=0);
 }
+
+
+/****************************************************************************/
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  PrintGridRelations                                            */
+/*                                                                          */
+/* Purpose:   print certain information about a grid in order to test       */
+/*            the formal approach to parallelisation.                       */
+/*                                                                          */
+/****************************************************************************/
+
+#define PREFIX "__"
+
+void dddif_PrintGridRelations (MULTIGRID *theMG)
+{
+  ELEMENT *e, *enb;
+  GRID    *theGrid = GRID_ON_LEVEL(theMG,TOPLEVEL(theMG));
+  INT j;
+
+  SYNC_CONTEXT;
+  for(e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
+  {
+    printf(PREFIX "master(e%07x, p%02d).\n", EGID(e), me);
+
+    for(j=0; j<SIDES_OF_ELEM(e); j++)
+    {
+      enb = NBELEM(e,j);
+      if (enb!=NULL)
+      {
+        printf(PREFIX "nb(e%07x, e%07x).\n", EGID(e), EGID(enb));
+      }
+    }
+  }
+  SYNC_END;
+
+}
+
+#undef PREFIX
 
 
 /****************************************************************************/
