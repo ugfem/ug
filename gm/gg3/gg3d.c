@@ -299,7 +299,7 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
     #endif
 
   IFDEBUG(dom,1)
-  x = (DOUBLE **) GetTmpMem(MGHEAP(theMG),mesh->nBndP*sizeof(DOUBLE *),GetCoarseGridMarkKey());
+  x = (DOUBLE **) GetTmpMem(MGHEAP(theMG),mesh->nBndP*sizeof(DOUBLE *),MG_MARK_KEY(theMG));
   for (i=0, theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,0));
        theNode!=NULL; theNode=SUCCN(theNode))
   {

@@ -2724,7 +2724,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
   ELEMENT_2D *elem_2d;
   FRONTCOMP *disp_FC;
   FRONTLIST *disp_FL;
-  INT MarkKey=GetCoarseGridMarkKey();
+  INT MarkKey=MG_MARK_KEY(theMG);
 
 
   SingleMode = Single_Mode;
