@@ -39,6 +39,7 @@ list_options_arch()
 	echo "             ORIGIN (set ARCH = ORIGIN)";
 	echo "             PARAGON (set ARCH = PARAGON)";
 	echo "             PC (set ARCH = PC)";
+	echo "             PCGCOV (set ARCH = PCGCOV)";
 	echo "             PCI (set ARCH = PCI)";
 	echo "             PCCLUSTER (set ARCH = PCCLUSTER)";
 	echo "             PCICLUSTER (set ARCH = PCICLUSTER)";
@@ -415,6 +416,9 @@ edit_ugconf()
 		;;
 	PC)
 		sed 's/^ARCH.*$/ARCH = PC/' $1 > $1.tmp
+		;;
+	PCGCOV)
+		sed 's/^ARCH.*$/ARCH = PCGCOV/' $1 > $1.tmp
 		;;
 	PCI)
 		sed 's/^ARCH.*$/ARCH = PCI/' $1 > $1.tmp
