@@ -1,7 +1,7 @@
 # $Id$
 
 # do everything in the subdirs (order matters!)
-SUBDIRS = arch low dev dom gm graphics np ui parallel lib tools
+SUBDIRS = arch low dev parallel gm dom graphics np ui lib tools
 #
 # libltdl after low will be needed for plugins later
 

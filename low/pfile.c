@@ -40,7 +40,7 @@
 #include "fileopen.h"
 
 #ifdef ModelP
-#include "parallel.h"
+#include "pargm.h"
 #endif
 
 #include "pfile.h"

@@ -10,14 +10,23 @@ EXTRA_DIST = dlmgr.t
 include_HEADERS = gm.h pargm.h evm.h shapes.h dlmgr.h algebra.h \
   rm.h refine.h
 
+
+
+EXTRALIBS =
 if BUILD2D
   LIB_2D = libug_gm2.la
+if PARALLEL
+  EXTRALIBS += ../parallel/dddif/libdddif2.la
+endif
 else
   LIB_2D =
 endif
 
 if BUILD3D
   LIB_3D = libug_gm3.la
+if PARALLEL
+  EXTRALIBS += ../parallel/dddif/libdddif3.la
+endif
 else
   LIB_3D =
 endif
