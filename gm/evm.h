@@ -45,8 +45,6 @@ $Header$
 
 #include "debug.h"
 
-#include "np.h"
-
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -555,6 +553,14 @@ struct coord_point
 typedef struct coord_point COORD_POINT;
 
 /****************************************************************************/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
+/****************************************************************************/
+
+extern const DOUBLE unit_vec[DIM][DIM];
+
+/****************************************************************************/
 /*																			*/
 /* function declarations													*/
 /*																			*/
@@ -580,6 +586,7 @@ INT 		M2_Invert							(DOUBLE *Inverse, const DOUBLE *Matrix);
 DOUBLE		vp									(const DOUBLE x1, const DOUBLE y1, const DOUBLE x2, const DOUBLE y2);
 INT 		V2_Normalize						(DOUBLE *a);
 INT 		V2_Rotate							(DOUBLE *vector, DOUBLE alpha);
+INT			V2_IntersectLineSegments			(const DOUBLE_VECTOR a0, const DOUBLE_VECTOR a1, const DOUBLE_VECTOR b0, const DOUBLE_VECTOR b1, DOUBLE *lambda);
 DOUBLE		tarea								(DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2);
 DOUBLE		qarea								(DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBLE x3,DOUBLE y3);
 DOUBLE		c_tarea								(const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2);

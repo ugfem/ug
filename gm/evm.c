@@ -66,6 +66,14 @@
 /*																			*/
 /****************************************************************************/
 
+#ifdef __TWODIM__
+const DOUBLE unit_vec[DIM][DIM]={{1,0},{0,1}};
+#endif
+
+#ifdef __THREEDIM__
+const DOUBLE unit_vec[DIM][DIM]={{1,0,0},{0,1,0},{0,0,1}};
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
@@ -585,6 +593,69 @@ INT V2_Rotate (DOUBLE *vector, DOUBLE alpha)
 
 /****************************************************************************/
 /*D
+   V2_IntersectLineSegments - compute intersection of two line segments
+
+   SYNOPSIS:
+   INT V2_IntersectLineSegments (const DOUBLE_VECTOR a0, const DOUBLE_VECTOR a1, const DOUBLE_VECTOR b0, const DOUBLE_VECTOR b1, DOUBLE *lambda)
+
+   PARAMETERS:
+   .  a0		- begin of line segment a
+   .  a1		- end   of line segment a
+   .  b0		- begin of line segment b
+   .  b1		- end   of line segment b
+   .  lambda	- result: parameter of intersection on segment a
+
+   DESCRIPTION:
+   This function returns positive number if vector 2 is "left" of vector 1, i.e.
+   the third component of the vector product of (x1,y1,0) and (x2,y2,0).
+
+   RETURN VALUE:
+   INT
+   .n    0: segments intersect
+   .n    1<<2: segments are (nearly) parallel
+   .n    bit 0 and bit 1 say whether intersection does not lie on segment a and b resp.
+   D*/
+/****************************************************************************/
+
+INT V2_IntersectLineSegments (const DOUBLE_VECTOR a0, const DOUBLE_VECTOR a1, const DOUBLE_VECTOR b0, const DOUBLE_VECTOR b1, DOUBLE *lambda)
+{
+  DOUBLE_VECTOR ta,tb,coeff,r,M[DIM],MI[DIM];
+  DOUBLE det;
+  INT res;
+
+  /* we search the cutting point of line a0+c0*ta with b0-c1*tb by solving the system
+
+                                    T
+          (ta[0]  ta[1])    (c0)   (b0[0]-a0[0])
+          (			 )    (  ) = (			 )
+          (tb[0]  tb[1])    (c1)   (b0[1]-a0[1])
+   */
+
+  V2_SUBTRACT(a1,a0,ta);                                                                        /* vector from a0 to a1 */
+  V2_SUBTRACT(b0,b1,tb);                                                                        /* vector from b1 to b0 */
+  V2_COPY(ta,M[0]);                                                                                     /* transposed coefficient matrix for cut of lines */
+  V2_COPY(tb,M[1]);
+
+  M2_INVERT(M,MI,det);                                                                          /* inverse */
+  if (ABS(det)<SMALL_D)
+    /* lines are parallel */
+    return (1<<2);
+
+  V2_SUBTRACT(b0,a0,r);                                                                         /* right hand side */
+  MT2_TIMES_V2(MI,r,coeff);                                                                     /* solve for coefficients */
+  *lambda = coeff[0];                                                                                   /* local param on side */
+
+  res = 0;
+  if (!((-SMALL_C<coeff[0]) && (coeff[0]<1.0+SMALL_C)))         /* local param of segment a not in [0,1]? */
+    res |= 1<<0;
+  if (!((-SMALL_C<coeff[1]) && (coeff[1]<1.0+SMALL_C)))         /* local param of segment b not in [0,1]? */
+    res |= 1<<1;
+
+  return (res);
+}
+
+/****************************************************************************/
+/*D
    vp - Return positive number if vector 2 is "left" of vector 1
 
    SYNOPSIS:
@@ -677,7 +748,7 @@ DOUBLE qarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBLE
    .  x2 - Array with coordinates of third point
 
    DESCRIPTION:
-   This function computes area of a triangle.
+   This function computes the area of a triangle.
 
    RETURN VALUE:
    DOUBLE area
@@ -701,7 +772,7 @@ DOUBLE c_tarea (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2)
    .  x3 - Array with coordinates of fourth point
 
    DESCRIPTION:
-   This function computes area of a convex quadrilateral.
+   This function computes the area of a convex quadrilateral.
 
    RETURN VALUE:
    DOUBLE area
@@ -1263,14 +1334,15 @@ DOUBLE ElementVolume (const ELEMENT *elem)
 INT EXDecomposeMatrixFLOAT (FLOAT *Mat, INT bw, INT n)
 {
   INT i,j,k;
-  DOUBLE f;
+  FLOAT f,d;
 
   for (i=0; i<n-1; i++)
   {
-    if (EX_MAT(Mat,bw,i,i)==0.0) return (1);
+    d = EX_MAT(Mat,bw,i,i);
+    if (ABS(d)<=SMALL_F) return (1);
     for (j=i+1; j<=MIN(i+bw,n-1); j++)
     {
-      f = EX_MAT(Mat,bw,j,i)/EX_MAT(Mat,bw,i,i);
+      f = EX_MAT(Mat,bw,j,i)/d;
       EX_MAT(Mat,bw,j,i) = f;
       for (k=i+1; k<=MIN(i+bw,n-1); k++)
         EX_MAT(Mat,bw,j,k) -= f*EX_MAT(Mat,bw,i,k);
@@ -1307,15 +1379,15 @@ INT EXDecomposeMatrixFLOAT (FLOAT *Mat, INT bw, INT n)
 INT EXDecomposeMatrixDOUBLE (DOUBLE *Mat, INT bw, INT n)
 {
   INT i,j,k;
-  DOUBLE f;
+  DOUBLE f,d;
 
   for (i=0; i<n-1; i++)
   {
-    if (EX_MAT(Mat,bw,i,i)==0.0)
-      REP_ERR_RETURN (1);
+    d = EX_MAT(Mat,bw,i,i);
+    if (ABS(d)<=SMALL_D) REP_ERR_RETURN (1);
     for (j=i+1; j<=MIN(i+bw,n-1); j++)
     {
-      f = EX_MAT(Mat,bw,j,i)/EX_MAT(Mat,bw,i,i);
+      f = EX_MAT(Mat,bw,j,i)/d;
       EX_MAT(Mat,bw,j,i) = f;
       for (k=i+1; k<=MIN(i+bw,n-1); k++)
         EX_MAT(Mat,bw,j,k) -= f*EX_MAT(Mat,bw,i,k);
