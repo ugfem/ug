@@ -15,7 +15,7 @@ ARCH_SUFFIX   =
 ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lm -lc
-ARCH_PLIBS    = -lpthread
+ARCH_PLIBS    = -lmpi -lpthread
 ARCH_FLIBS    =
 #   -D_MALLOC64       enable patch to allocate more then 2GB memory
 #   -pvctl,nomsg      switch off messages from vectorizer
