@@ -37,7 +37,7 @@ mkdir include.tmp;
 if test -x /bin/uname
 then
 case `/bin/uname | cut -f1 -d' ' ` in
-	AIX | Paragon)
+	AIX | Paragon | HI-UX/MPP)
 		FOLLOW_LINKS=
 		echo "not following symbolic links"
 		;;
