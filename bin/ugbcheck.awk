@@ -362,7 +362,7 @@ function print_wrong_pvs (prop)
 		split(idx,ii,SUBSEP);
 
 		if (ii[1]==prop && ii[2]!=prop_vmax_val[prop])
-			wrong_pvs++;
+			wrong_pvs+=pv_count[idx];
 	}
 
 	printf("%d of %d", wrong_pvs, properties[prop]);
