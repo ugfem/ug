@@ -15,35 +15,35 @@ fi
 DEFAULT=stefan,klaus,birken,henrik,peter,wieners,christia,niko
 ERRORFILE=$UGROOT/bin/cvsaccess
 
-cd $UGROOT/..
+cd $UGROOT/../..
 rm -f $ERRORFILE;
 
 # clear access lists 
 echo "cvs admin -e * ...";
-cvs admin -e * 2>> $ERRORFILE;
+cvs admin -e UG 2>> $ERRORFILE;
 
 # set default access lists 
 echo "cvs admin -a$DEFAULT ...";
-cvs admin -a$DEFAULT * 2>> $ERRORFILE;
+cvs admin -a$DEFAULT UG 2>> $ERRORFILE;
 
 # set special access lists
 echo "setting special access lists ...";
-cd $UGROOT/../cd;
-cvs admin -agabi * 2>> $ERRORFILE;
+cd $UGROOT/..;
+cvs admin -agabi cd 2>> $ERRORFILE;
 
-cd $UGROOT/gm;
-cvs admin -agabi * 2>> $ERRORFILE;
+cd $UGROOT;
+cvs admin -agabi gm 2>> $ERRORFILE;
 
-cd $UGROOT/numerics;
-cvs admin -agabi * 2>> $ERRORFILE;
+cd $UGROOT;
+cvs admin -agabi numerics 2>> $ERRORFILE;
 
-cd $UGROOT/bin;
-cvs admin -e * 2>> $ERRORFILE;
-cvs admin -abirken,wieners,stefan,peter * 2>> $ERRORFILE;
+cd $UGROOT;
+cvs admin -e bin 2>> $ERRORFILE;
+cvs admin -abirken,wieners,stefan,peter bin 2>> $ERRORFILE;
 
-cd $UGROOT/parallel
-cvs admin -e * 2>> $ERRORFILE;
-cvs admin -abirken,stefan * 2>> $ERRORFILE;
+cd $UGROOT;
+cvs admin -e parallel 2>> $ERRORFILE;
+cvs admin -abirken,stefan parallel 2>> $ERRORFILE;
 
 if test `grep failed $ERRORFILE | wc -l` -ge 1
 then 
