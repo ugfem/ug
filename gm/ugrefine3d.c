@@ -125,6 +125,8 @@ static SHORT *PatternToRefrule;
 static FULLREFRULEPTR theFullRefRule;
 static int rFlag=GM_REFINE_TRULY_LOCAL; /* type of refine					*/
 static INT theBFRRDirID;                                /* env type for BestFullRefRule		*/
+static ElementVectorProcPtr theDirectionElemEval;
+
 
 /* data for CVS */
 static char rcsid[] = "$Header$";
@@ -1300,6 +1302,65 @@ static int RefineGrid (GRID *theGrid)
 
 /****************************************************************************/
 /*																			*/
+/* Function:  Alignment														*/
+/*																			*/
+/* Purpose:   compute best full refined refrule for the element according	*/
+/*			  to velocity													*/
+/*																			*/
+/* Param:	  ELEMENT *theElement: for that element                                                 */
+/*																			*/
+/* return:	  INT Mark: number of refrule									*/
+/*																			*/
+/****************************************************************************/
+
+static INT Alignment (ELEMENT *theElement)
+{
+  COORD *Corners[MAX_CORNERS_OF_ELEM];
+  COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM], help, MidPoint;
+  DOUBLE_VECTOR Velocity;
+  INT i, flags, imax;
+  COORD Dist_0_5, Dist_1_3, Dist_2_4, max;
+
+  /* get physical position of the corners */
+  V3_CLEAR(MidPoint)
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+    Corners[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
+  (*theDirectionElemEval)(theElement,Corners,LMP(CORNERS_OF_ELEM(theElement)),Velocity);
+
+  /* get physical position of the midpoints of the edges */
+  for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+    V3_LINCOMB(0.5, Corners[CornerOfEdge[i][0]], 0.5, Corners[CornerOfEdge[i][1]], MidPoints[i]);
+
+  /* compute differences */
+  max=-MAX_C;
+  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+  {
+    V3_SUBTRACT(Corners[CornerOfEdge[i][0]], Corners[CornerOfEdge[i][1]], help)
+    V3_Normalize(help);
+    if (ABS(Velocity[0]*help[0]+Velocity[1]*help[1]+Velocity[2]*help[2])>max) {imax=i; max=ABS(Velocity[0]*help[0]+Velocity[1]*help[1]+Velocity[2]*help[2]);}
+  }
+  V3_EUKLIDNORM_OF_DIFF(MidPoints[0], MidPoints[5], Dist_0_5)
+  V3_EUKLIDNORM_OF_DIFF(MidPoints[1], MidPoints[3], Dist_1_3)
+  V3_EUKLIDNORM_OF_DIFF(MidPoints[2], MidPoints[4], Dist_2_4)
+  switch (imax)
+  {
+  case 0 : if (Dist_1_3<Dist_2_4) return (FULL_REFRULE_1_3);
+    else return (FULL_REFRULE_2_4);
+  case 1 : if (Dist_0_5<Dist_2_4) return (FULL_REFRULE_0_5);
+    else return (FULL_REFRULE_2_4);
+  case 2 : if (Dist_1_3<Dist_0_5) return (FULL_REFRULE_1_3);
+    else return (FULL_REFRULE_0_5);
+  case 3 : if (Dist_0_5<Dist_2_4) return (FULL_REFRULE_0_5);
+    else return (FULL_REFRULE_2_4);
+  case 4 : if (Dist_1_3<Dist_0_5) return (FULL_REFRULE_1_3);
+    else return (FULL_REFRULE_0_5);
+  case 5 : if (Dist_1_3<Dist_2_4) return (FULL_REFRULE_1_3);
+    else return (FULL_REFRULE_2_4);
+  }
+}
+
+/****************************************************************************/
+/*																			*/
 /* Function:  YAlignment													*/
 /*																			*/
 /* Purpose:   compute best full refined refrule for the element                         */
@@ -2154,14 +2215,17 @@ static INT ComputEdgeTypes (GRID *theGrid)
    RefineMultiGrid - Refine whole multigrid structure
 
    SYNOPSIS:
-   INT RefineMultiGrid (MULTIGRID *theMG, INT flag);
+   INT RefineMultiGrid (MULTIGRID *theMG, INT flag, char *name);
 
    PARAMETERS:
    .  theMG - multigrid to refine
    .  flag -
+   .  direction - element evaluation function for the direction
+   .n otherwise NULL
 
    DESCRIPTION:
-   This function refines whole multigrid structure.
+   This function refines whole multigrid structure. The full refinement rule
+   .n is chosen according to the direction.
 
    RETURN VALUE:
    INT
@@ -2171,7 +2235,7 @@ static INT ComputEdgeTypes (GRID *theGrid)
  */
 /****************************************************************************/
 
-INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
+INT RefineMultiGrid (MULTIGRID *theMG, INT flag, EVECTOR *direction)
 {
   int j,k,r;
   int newlevel;
@@ -2179,8 +2243,16 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
   GRID *theGrid, *FinerGrid;
   ELEMENT *theElement, *FatherElement;
 
-  theFullRefRule = YAlignment;
-  /*theFullRefRule = ShortestInteriorEdge;*/
+  /* get velocity */
+  if (direction != NULL)
+  {
+    if ((*(direction->PreprocessProc))(ENVITEM_NAME(direction),theMG)) return(1);
+    theDirectionElemEval = direction->EvalProc;
+    theFullRefRule = Alignment;
+  }
+  else
+    theFullRefRule = ShortestInteriorEdge;
+
   rFlag=flag;           /* set global variable */
 
   /* drop marks to regular elements */

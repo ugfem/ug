@@ -1977,6 +1977,7 @@ static INT RefineGrid (GRID *theGrid)
    PARAMETERS:
    .  theMG - multigrid to refine
    .  flag - refinement mode, see below
+   .  direction - element evaluation direction
 
    DESCRIPTION:
    This function refines whole multigrid structure. It reads the
@@ -1993,6 +1994,8 @@ static INT RefineGrid (GRID *theGrid)
    requirements are only optimal if there is a geometric growth in the
    number of refined elements.
 
+   The direction is not considered.
+
    RETURN VALUE:
    INT
    .n    GM_OK when ok
@@ -2001,7 +2004,7 @@ static INT RefineGrid (GRID *theGrid)
    D*/
 /****************************************************************************/
 
-INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
+INT RefineMultiGrid (MULTIGRID *theMG, INT flag, EVECTOR *direction)
 {
   INT j,k,r;
   INT newlevel;
