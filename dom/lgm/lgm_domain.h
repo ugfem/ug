@@ -323,6 +323,9 @@ struct lgm_domain {
   /* fields for environment directory */
   ENVVAR v;
 
+  /* heap */
+  HEAP *theHeap;
+
   /* parameters */
   INT convex;                                                           /* 0 (no) or 1 (yes)							*/
   float radius, midpoint[LGM_DIM];              /* sphere of which domain is a subset			*/
@@ -480,6 +483,9 @@ struct lgm_domain {
 
   /* fields for environment directory */
   ENVVAR v;
+
+  /* heap */
+  HEAP *theHeap;
 
   /* parameters */
   INT convex;                                                           /* 0 (no) or 1 (yes)							*/

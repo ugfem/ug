@@ -268,6 +268,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   /* HRR_TODO: fill number of parts */
   for (i=0; i<LGM_DOMAIN_NSUBDOM(theDomain); i++)
     LGM_DOMAIN_S2P(theDomain,i) = 0;
+  theDomain->theHeap = Heap;
 
   return ((BVP *)theDomain);
 }
