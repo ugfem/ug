@@ -1201,6 +1201,7 @@ static INT RestrictByMatrix_General (GRID *FineGrid, const VECDATA_DESC *to,
         }
       else
         for (i=0; i<wncomp; i++)
+        {
           if (!(vecskip & (1<<i)))
           {
             sum = 0.0;
@@ -1208,6 +1209,9 @@ static INT RestrictByMatrix_General (GRID *FineGrid, const VECDATA_DESC *to,
               sum += mptr[rcomp++] * vptr[j];
             wptr[i] += sum;
           }
+          else
+            rcomp += vncomp;
+        }
     }
   }
 
