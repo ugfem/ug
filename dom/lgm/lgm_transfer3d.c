@@ -583,15 +583,18 @@ static int Change_Triangle(LGM_SURFACE_INFO *surface_info, int n)
 
 static int Check_Orientation(LGM_SURFACE_INFO *surface_info)
 {
-  int i, j, tr_used[1000], n, change, flag;
+  int i, j, n_new, change;
+  int *tr_used;
 
-  n = 1000;
-  for(i=0; i<n; i++)
+  n_new = surface_info->nTriangles;
+
+  tr_used = malloc(n_new * sizeof(int));
+
+  for(i=0; i<n_new; i++)
     tr_used[i] = -1;
 
   /* erstes Freieck legt die Orientierung fest */
   tr_used[0] = 1;
-
   do
   {
     for(i=0; i<surface_info->nTriangles; i++)
