@@ -66,8 +66,10 @@
 #include "domain.h"
 #endif
 
+#ifdef ModelP
 #ifndef __PARALLEL_H__
 #include "parallel.h"
+#endif
 #endif
 
 /* if interpolation matrix is stored */
@@ -840,6 +842,10 @@ extern CONTROL_ENTRY
 #define ControlWord(p,ce)  (((unsigned INT *)(p))[control_entries[ce].offset_in_object])
 #define CW_READ(p,ce)      ((ControlWord(p,ce) & control_entries[ce].mask)>>control_entries[ce].offset_in_word)
 #define CW_WRITE(p,ce,n)   ControlWord(p,ce) = (ControlWord(p,ce)&control_entries[ce].xor_mask)|(((n)<<control_entries[ce].offset_in_word)&control_entries[ce].mask)
+
+#ifndef ModelP
+#define DDD_OFFSET 0
+#endif
 
 /* in serial case DDD_OFFSET=0, therefor ParControlWord matches ControlWord */
 #define ParControlWord(p,ce)  (((unsigned INT *)(p))[control_entries[ce].offset_in_object+DDD_OFFSET])
