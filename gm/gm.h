@@ -721,7 +721,6 @@ struct grid {
   struct multigrid *mg;                         /* corresponding multigrid structure	*/
 } ;
 
-
 struct multigrid {
 
   /* env item */
@@ -739,6 +738,7 @@ struct multigrid {
   struct problem *theProblem;           /* pointer to problem definition		*/
   struct bndsegdesc *segments;          /* array of combined boundary descriptio*/
   INT numOfSegments;                                    /* number of entries in the array above */
+  INT numOfSubdomains;                          /* number of subdomains		            */
   union vertex **corners;                       /* pointer to array of pointers to corne*/
   INT numOfCorners;                                     /* number of entries in the array above */
   HEAP *theHeap;                                        /* associated heap structure			*/
@@ -1707,6 +1707,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define MGBNDSEGDESC(p,i)               (&((p)->segments[i]))
 #define MGNOOFSEG(p)                    ((p)->numOfSegments)
 #define MGVERTEX(p,k)                   ((p)->corners[k])
+#define MGNOOFSUBDOMAINS(p)             ((p)->numOfSubdomains)
 #define MGNOOFCORNERS(p)                ((p)->numOfCorners)
 #define MGHEAP(p)                               ((p)->theHeap)
 #define GRID_ON_LEVEL(p,i)              ((p)->grids[i])
@@ -1934,5 +1935,6 @@ INT             OrderVectors (MULTIGRID *theMG, INT levels, INT mode, char *depe
 INT             RenumberMultiGrid               (MULTIGRID *theMG);
 INT                     OrderNodesInGrid                (GRID *theGrid, const INT *order, const INT *sign, INT AlsoOrderLinks);
 INT             PutAtStartOfList                (GRID *theGrid, INT cnt, ELEMENT **elemList);
+INT         MGSetVectorClasses      (MULTIGRID *theMG);
 
 #endif
