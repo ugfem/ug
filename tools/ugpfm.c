@@ -111,6 +111,7 @@ typedef struct {
 } HASH_STAT;
 
 typedef int (*HashEntryProc)(void **object);
+typedef int (*RefinementProcPtr)(MGIO_REFINEMENT *ref);
 
 /****************************************************************************/
 /*																			*/
@@ -565,8 +566,8 @@ int InsertRefinement (HASH_TABLE **hth, int *key, MGIO_REFINEMENT *refinement, M
   for (i=0; i<rr_rules[ref->refrule].nsons; i++)
   {
     if (((ref->sonex&(1<<i))==0)||((ref->sonref&(1<<i))==0)) continue;
-    for (j=1; j<ge_element[rr_rules[ref->refrule].sons[i].tag].nCorner; j++)
-      key[j]=ref->pinfo[i].n_ident[j];
+    for (j=0; j<ge_element[rr_rules[ref->refrule].sons[i].tag].nCorner; j++)
+      key[j+1]=ref->pinfo[i].n_ident[j];
     key[0]=j;
     if (InsertRefinement(hth,key,NULL,ge_element,rr_rules,nref))
     {printf("ERROR in 'InsertRefinement': cannot recursivly call myself\n");return (1);}
@@ -606,6 +607,76 @@ void write_cge_gnu(FILE *stream, MGIO_CG_ELEMENT *elem, struct mgio_cg_point_seq
   return;
 }
 
+#ifdef MERGE_DEBUG
+static HASH_TABLE *ht_ref_crosscheck=NULL;
+static int ref_crosscheck=0;
+#endif
+int ClimbRefinementTree(int *key, HASH_TABLE *ht_ref, RefinementProcPtr Proc, MGIO_GE_ELEMENT *ge_element, MGIO_RR_RULE *rr_rules)
+{
+  int i,j,sonkey[MGIO_MAX_CORNERS_OF_ELEM+1],nc[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];
+  MGIO_REFINEMENT *ref;
+
+  ref=(MGIO_REFINEMENT*)PopHashEntry(ht_ref,key);
+  if (ref==NULL) return (0);
+
+#ifdef MERGE_DEBUG
+  if (ref_crosscheck)
+    if (PushHashEntry(&ht_ref_crosscheck,key,NULL)) return (1);
+#endif
+
+  if (ReconstructNodeContext (ref,ge_element,rr_rules,nc)) return (1);
+  if (Proc!=NULL) if ((*Proc)(ref)) return (1);
+  for (i=0; i<rr_rules[ref->refrule].nsons; i++)
+  {
+    if (((ref->sonex&(1<<i))==0)||((ref->sonref&(1<<i))==0)) continue;
+    for (j=0; j<ge_element[rr_rules[ref->refrule].sons[i].tag].nCorner; j++)
+    {
+      sonkey[j+1]=nc[rr_rules[ref->refrule].sons[i].corners[j]];
+      assert(sonkey[j+1]!=-1);
+    }
+    sonkey[0]=j;
+    if (ClimbRefinementTree(sonkey,ht_ref,Proc,ge_element,rr_rules)) return (1);
+  }
+
+  return (0);
+}
+
+static HASH_TABLE *WR_GOL;
+static MGIO_RR_RULE *WR_rr_rules;
+int WriteRefinement (MGIO_REFINEMENT *ref)
+{
+  int i,lid,key[2];
+
+  for (i=0; i<ref->nnewcorners; i++)
+  {
+    key[0]=1; key[1]=ref->newcornerid[i];
+    if (LocalIndexHash(WR_GOL,key,&lid)) return (1);
+    assert(lid!=-1);
+    /*ref->newcornerid[i]=lid;*/
+  }
+  if (Write_Refinement(ref,WR_rr_rules)) return (1);
+
+  return (0);
+}
+
+int PrintRefinementCID (MGIO_REFINEMENT *ref)
+{
+  int i;
+
+  for (i=0; i<ref->nnewcorners; i++)
+    printf("%d\n",ref->newcornerid[i]);
+  printf("\n");
+
+  return (0);
+}
+
+static int CR_nref;
+int CountRefinements (MGIO_REFINEMENT *ref)
+{
+  CR_nref++;
+  return (0);
+}
+
 int MergeMultigrid (char *in, int rename)
 {
   HASH_TABLE *ht_cgv,*ht_ref,*ht_bnp, *ht_cgvlid;
@@ -628,7 +699,7 @@ int MergeMultigrid (char *in, int rename)
   char prefix[128],appdix[128],outname[128],tmp[128],tmp2[28],*p;
   int i,j,k,l,s,t,non,foid,tag,*vidlist,key[MGIO_MAX_CORNERS_OF_ELEM+1],*ncge,n_ref_tot,nref_read,level,*in_lid2gid;
   int nc[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS],*o_element_im,out_blid_offset,out_ilid_offset,nid_l0_max,vid_l0_max,vid_bl0_max,lid,error;
-  int found,n_bn_l0,n_in_l0,id;
+  int found,n_bn_l0,n_in_l0,id,gecid[MGIO_MAX_CORNERS_OF_ELEM],crosscheck_nref_tot;
   void *object;
   FILE *stream;
 
@@ -918,6 +989,10 @@ int MergeMultigrid (char *in, int rename)
   HashTablePrint(ht_cgv,"vtx");
   HashTablePrint(ht_bnp,"bnp");
   HashTablePrint(ht_ref,"ref");
+#ifdef MERGE_DEBUG
+  HashTableStat(ht_ref,&hst);
+  crosscheck_nref_tot=hst.n_obj;
+#endif
   HashTablePrint(ht_gol,"gol");
 #ifdef MERGE_DEBUG
   HashTablePrint(ht_nodes,"nds");
@@ -997,39 +1072,41 @@ int MergeMultigrid (char *in, int rename)
         if (PushHashEntry(&ht_cge,key,(void*)(&(cg_element[i][j]))))
         {printf("ERROR in 'MergeMultigrid': cannot push 'cg_element' to 'ht_cge'\n");return (1);}
       }
-  if (BeginHashGet(ht_cge))                                                                       {printf("ERROR in 'MergeMultigrid': cannot 'BeginHashGet' of 'ht_cge' for output file\n");return (1);}
-  while (1)
-  {
-    if (HashGet(ht_cge,&object,key,&lid,&found))            {printf("ERROR in 'MergeMultigrid': cannot 'HashGet' of 'ht_cge' for output file\n");return (1);}
-    if (!found) break;
-    elem=(MGIO_CG_ELEMENT *)object;
-    for (i=0; i<ge_element[elem->ge].nSide; i++)
-    {
-      if (elem->nbid[i]==-1) continue;
-      key[0]=1; key[1]=elem->nbid[i];
-      if (LocalIndexHash(ht_cge,key,&lid))                             {printf("ERROR in 'MergeMultigrid': cannot 'LocalIndexHash'of 'ht_cge' for output file\n");return (1);}
-      assert(lid>=0);
-      assert(lid<cg_general_out.nElement);
-      elem->nbid[i]=lid;
-    }
-    for (i=0; i<ge_element[elem->ge].nCorner; i++)
-    {
-      key[0]=1; key[1]=elem->cornerid[i];
-      if (LocalIndexHash(ht_gol,key,&lid))                 {printf("ERROR in 'MergeMultigrid': cannot 'LocalIndexHash'of 'ht_gol' for output file\n");return (1);}
-      assert(lid!=-1);
-      elem->cornerid[i]=lid;
-    }
-    elem->nref=0;
-    write_cge_gnu(stream,elem,cg_point_out);
-  }
-  if (EndHashGet(ht_cge))                                     {printf("ERROR in 'MergeMultigrid': cannot 'EndHashGet' of 'ht_cge' for output file\n");return (1);}
 #ifdef MERGE_DEBUG
   HashTablePrint(ht_cge,"cge");
 #endif
   for (i=0; i<nparfiles; i++)
     for (j=0; j<ncge[i]; j++)
       if (cg_element[i][j].ge!=-1)
-        if (Write_CG_Elements(1,cg_element[i]+j))               {printf("ERROR in 'MergeMultigrid': cannot 'Write_CG_Elements' for output file\n");return (1);}
+      {
+        elem=&(cg_element[i][j]);
+        for (k=0; k<ge_element[elem->ge].nSide; k++)
+        {
+          if (elem->nbid[k]==-1) continue;
+          key[0]=1; key[1]=elem->nbid[k];
+          if (LocalIndexHash(ht_cge,key,&lid))        {printf("ERROR in 'MergeMultigrid': cannot 'LocalIndexHash'of 'ht_cge' for output file\n");return (1);}
+          assert(lid>=0);
+          assert(lid<cg_general_out.nElement);
+          elem->nbid[k]=lid;
+        }
+        for (k=0; k<ge_element[elem->ge].nCorner; k++)
+          key[k+1]=elem->cornerid[k];
+        key[0]=k;
+        CR_nref=0;
+        if (ClimbRefinementTree(key,ht_ref,CountRefinements,ge_element,rr_rules))
+        {printf("ERROR in 'MergeMultigrid': cannot 'ClimbRefinementTree' for output file\n");return (1);}
+        elem->nref=CR_nref;
+        for (k=0; k<ge_element[elem->ge].nCorner; k++)
+        {
+          key[0]=1; key[1]=gecid[k]=elem->cornerid[k];
+          if (LocalIndexHash(ht_gol,key,&lid))        {printf("ERROR in 'MergeMultigrid': cannot 'LocalIndexHash'of 'ht_gol' for output file\n");return (1);}
+          assert(lid!=-1);
+          elem->cornerid[k]=lid;
+        }
+        if (Write_CG_Elements(1,elem))                                  {printf("ERROR in 'MergeMultigrid': cannot 'Write_CG_Elements' for output file\n");return (1);}
+        for (k=0; k<ge_element[elem->ge].nCorner; k++)
+          elem->cornerid[k]=gecid[k];
+      }
   if (Bio_Jump_From ())                                                                           {printf("ERROR in 'MergeMultigrid': cannot 'Bio_Jump_From' for output file\n");return (1);}
   bd_general_out.nBndP=cg_general_out.nBndPoint;
   if (Write_BD_General(&bd_general_out))                                          {printf("ERROR in 'MergeMultigrid': cannot 'Write_BD_General' for output file\n");return (1);}
@@ -1059,11 +1136,32 @@ int MergeMultigrid (char *in, int rename)
 #endif
   if (Write_PBndDesc(-bd_general_out.nBndP,BndPList))                     {printf("ERROR in 'MergeMultigrid': cannot 'Write_PBndDesc' of 'BndPList' for output file\n");return (1);}
   if (Bio_Jump_To ())                                                                             {printf("ERROR in 'MergeMultigrid': cannot 'Bio_Jump_To' for output file\n");return (1);}
-
+  WR_GOL=ht_gol;
+  WR_rr_rules=rr_rules;
+#ifdef MERGE_DEBUG
+  ref_crosscheck=1;
+#endif
+  for (i=0; i<nparfiles; i++)
+    for (j=0; j<ncge[i]; j++)
+      if (cg_element[i][j].ge!=-1)
+      {
+        elem=&(cg_element[i][j]);
+        for (k=0; k<ge_element[elem->ge].nCorner; k++)
+          key[k+1]=elem->cornerid[k];
+        key[0]=k;
+        if (ClimbRefinementTree(key,ht_ref,WriteRefinement,ge_element,rr_rules))
+        {printf("ERROR in 'MergeMultigrid': cannot 'ClimbRefinementTree' for output file\n");return (1);}
+      }
 
   /* cross-check */
   assert(n_bn_l0==cg_general_out.nBndPoint);
   assert(n_in_l0==cg_general_out.nInnerPoint);
+#ifdef MERGE_DEBUG
+  HashTablePrint(ht_ref_crosscheck,"refcrosscheck");
+  HashTableStat(ht_ref_crosscheck,&hst);
+  assert(hst.nmerge==0);
+  assert(hst.n_obj==crosscheck_nref_tot);
+#endif
 
   /* we are done */
   if (CloseMGFile())                                                              {printf("ERROR in 'MergeMultigrid': cannot close output file\n");return (1);}
