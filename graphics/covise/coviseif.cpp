@@ -71,7 +71,11 @@ extern "C" {
 
 enum CommonConsts {
   MT_NONE,
-  MT_UGHEADER
+  MT_UGHEADER,
+  MT_UGGRIDV,
+  MT_UGGRIDE,
+  MT_UGSCALAR,
+  MT_UGVECT
 };
 
 
@@ -277,6 +281,7 @@ static INT ResetVertexFlags (MULTIGRID *theMG, INT min_level, INT max_level)
     }
   }
 
+  return(0);       /* no error */
 }
 
 
@@ -313,8 +318,9 @@ static INT SendSurfaceGrid (MULTIGRID *theMG, COVISE_HEADER *covise)
 {
   INT l, remaining, sent;
   TokenBuffer tb;
-  Message* msg = new Message(tb);
+  Message* msg = new Message;
   msg->type = (covise_msg_type)0;
+  printf("CoviseIF: SendSurfaceGrid start\n");
 
   /* renumber vertex IDs */
   /* TODO doesn't work in ModelP */
@@ -329,6 +335,7 @@ static INT SendSurfaceGrid (MULTIGRID *theMG, COVISE_HEADER *covise)
   /* start first buffer */
   tb.reset();
   remaining = MIN(covise->n_vertices,MAX_ITEMS_SENT);
+  tb << MT_UGGRIDV;
   tb << remaining;
 
   for (l=covise->min_level; l<=covise->max_level; l++)
@@ -359,19 +366,24 @@ static INT SendSurfaceGrid (MULTIGRID *theMG, COVISE_HEADER *covise)
       if (remaining==0)
       {
         /* send this buffer */
+        msg->data = (char*)tb.get_data();
+        msg->length = tb.get_length();
         covise_connection->send_msg(msg);
 
         /* start next buffer */
         tb.reset();
+        tb << MT_UGGRIDV;
         remaining = MIN(covise->n_vertices - sent, MAX_ITEMS_SENT);
         tb << remaining;
       }
     }
   }
 
+  printf("CoviseIF: SendSurfaceGrid ...\n");
 
   /* next buffer */
   tb.reset();
+  tb << MT_UGGRIDE;
   remaining = MIN(covise->n_elems,MAX_ITEMS_SENT);
   tb << remaining;
   sent = 0;
@@ -407,10 +419,13 @@ static INT SendSurfaceGrid (MULTIGRID *theMG, COVISE_HEADER *covise)
         if (remaining==0)
         {
           /* send this buffer */
+          msg->data = (char*)tb.get_data();
+          msg->length = tb.get_length();
           covise_connection->send_msg(msg);
 
           /* start next buffer */
           tb.reset();
+          tb << MT_UGGRIDE;
           remaining = MIN(covise->n_elems - sent, MAX_ITEMS_SENT);
           tb << remaining;
         }
@@ -421,6 +436,7 @@ static INT SendSurfaceGrid (MULTIGRID *theMG, COVISE_HEADER *covise)
   /* cleanup */
   delete msg;
 
+  printf("CoviseIF: SendSurfaceGrid stop\n");
   return(0);
 }
 
@@ -430,8 +446,10 @@ static INT SendSolution (MULTIGRID *theMG, COVISE_HEADER *covise, INT idx_sol)
 {
   INT l, remaining, sent, n_comp_sol;
   TokenBuffer tb;
-  Message* msg = new Message(tb);
+  Message* msg = new Message;
   msg->type = (covise_msg_type)0;
+
+  printf("CoviseIF: SendSolution start, idx_sol=%d\n", idx_sol);
 
   n_comp_sol = covise->solutions[idx_sol].n_components;
 
@@ -442,54 +460,65 @@ static INT SendSolution (MULTIGRID *theMG, COVISE_HEADER *covise, INT idx_sol)
   /* start first buffer */
   tb.reset();
   remaining = MIN(covise->n_vertices,MAX_ITEMS_SENT);
-  tb << remaining;
+  tb << MT_UGSCALAR;
   tb << idx_sol;
+  tb << remaining;
   sent = 0;
 
-  for (l=covise->min_level; l<=covise->max_level; l++)
 
-    /* extract data, loop from max_level to min_level! */
-    /* TODO: special handling in ModelP */
-    for (l=covise->max_level; l>=covise->min_level; l--)
+  /* extract data, loop from max_level to min_level! */
+  /* TODO: special handling in ModelP */
+  for (l=covise->max_level; l>=covise->min_level; l--)
+  {
+    NODE *theNode;
+    GRID *theGrid = GRID_ON_LEVEL(theMG,l);
+
+    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
     {
-      NODE *theNode;
-      GRID *theGrid = GRID_ON_LEVEL(theMG,l);
+      VECTOR *theVector;
+      INT i;
+      INT vid;
 
-      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+      if (USED(MYVERTEX(theNode))) continue;
+      SETUSED(MYVERTEX(theNode),1);
+
+
+      /* NOTE: vid is sent along with data! this increases msg sizes, but
+         is the secure solution (resistent to message order a.s.o.) */
+      vid = ID(MYVERTEX(theNode));
+      tb << (INT32)vid;
+
+      theVector = NVECTOR(theNode);
+
+      /* extract data from vector */
+      for(i=0; i<n_comp_sol; i++)
       {
-        VECTOR *theVector;
-        INT i;
+        INT comp = covise->solutions[idx_sol].comps[i];
+        tb << (FLOAT32) VVALUE(theVector,comp);
+      }
 
-        if (USED(MYVERTEX(theNode))) continue;
-        SETUSED(MYVERTEX(theNode),1);
+      remaining--;
+      sent++;
 
-        theVector = NVECTOR(theNode);
+      if (remaining==0)
+      {
+        /* send this buffer */
+        msg->data = (char*)tb.get_data();
+        msg->length = tb.get_length();
+        covise_connection->send_msg(msg);
 
-        /* extract data from vector */
-        for(i=0; i<n_comp_sol; i++)
-        {
-          INT comp = covise->solutions[idx_sol].comps[i];
-          tb << (FLOAT32) VVALUE(theVector,comp);
-        }
-
-        remaining--;
-        sent++;
-
-        if (remaining==0)
-        {
-          /* send this buffer */
-          covise_connection->send_msg(msg);
-
-          /* start next buffer */
-          tb.reset();
-          remaining = MIN(covise->n_vertices - sent, MAX_ITEMS_SENT);
-          tb << remaining;
-          tb << idx_sol;
-        }
+        /* start next buffer */
+        tb.reset();
+        remaining = MIN(covise->n_vertices - sent, MAX_ITEMS_SENT);
+        tb << MT_UGSCALAR;
+        tb << idx_sol;
+        tb << remaining;
       }
     }
+  }
 
   delete msg;
+  printf("CoviseIF: SendSolution stop\n");
   return(0);
 }
 
@@ -506,9 +535,11 @@ extern "C" INT ConnectCovise (MULTIGRID *theMG, char *hostname)
 {
   COVISE_HEADER covise;
   Host *remotehost=new Host(hostname);
+  int quit_loop;
 
   printf("CoviseIF: trying to connect to %s\n", hostname);
 
+  int wait_for_header=FALSE;
   if (covise_connection==NULL)
   {
     covise_connection =
@@ -520,92 +551,120 @@ extern "C" INT ConnectCovise (MULTIGRID *theMG, char *hostname)
       delete covise_connection;
       covise_connection=NULL;
     }
+    else
+    {
+      wait_for_header=TRUE;
+    }
   }
 
   if (covise_connection!=NULL && covise_connection->is_connected())
   {
     printf("CoviseIF: ok, connected to %s\n", hostname);
+
     Message* msg = new Message();
-    msg->type = (covise_msg_type)0;
     int i;
 
-    if (covise_connection->check_for_input())
+    if (covise_connection->check_for_input()||wait_for_header)
     {
       printf("CoviseIF: input from %s\n", hostname);
-      covise_connection->recv_msg(msg);
-      printf("CoviseIF: received msg from %s, type %d\n", hostname, msg->type);
 
-      switch (msg->type)
-      {
-      case (covise_msg_type)0 :
-      {
-        TokenBuffer tb(msg);
-        int headerRequest,gridRequest,numSolutions,solutions[MAX_SOLUTIONS];
-        tb >> headerRequest;
-        tb >> gridRequest;
-        tb >> numSolutions;
-        for(i=0; i<numSolutions; i++)
-          tb >> solutions[i];
+      quit_loop = FALSE;
+      do {
+        covise_connection->recv_msg(msg);
+        printf("CoviseIF: received msg from %s, type %d\n", hostname, msg->type);
 
-        if (headerRequest)
+        switch (msg->type)
         {
-          printf("CoviseIF: headerRequest\n");
-          TokenBuffer rtb;
-          FillCoviseHeader(theMG, &covise);
-          rtb << MT_UGHEADER;
-          rtb << covise.min_level;
-          rtb << covise.max_level;
-          rtb << covise.n_vertices;
-          rtb << covise.n_elems;
-          rtb << covise.n_conns;
-          rtb << covise.num_solutions;
+        case (covise_msg_type)0 :
+        {
+          TokenBuffer tb(msg);
+          int headerRequest,gridRequest,numSolutions,solutions[MAX_SOLUTIONS];
+          tb >> headerRequest;
+          tb >> gridRequest;
+          tb >> numSolutions;
           for(i=0; i<numSolutions; i++)
+            tb >> solutions[i];
+
+          if (headerRequest)
           {
-            rtb << covise.solutions[i].n_components;
-            rtb << covise.solutions[i].name;
+            printf("CoviseIF: headerRequest\n");
+
+            TokenBuffer rtb;
+            FillCoviseHeader(theMG, &covise);
+            rtb << MT_UGHEADER;
+            rtb << covise.min_level;
+            rtb << covise.max_level;
+            rtb << covise.n_vertices;
+            rtb << covise.n_elems;
+            rtb << covise.n_conns;
+            rtb << covise.num_solutions;
+            for(i=0; i<covise.num_solutions; i++)
+            {
+              printf("CoviseIF: sol #%d: comp=%d name=%s\n", i, covise.solutions[i].n_components, covise.solutions[i].name);
+              rtb << covise.solutions[i].n_components;
+              rtb << covise.solutions[i].name;
+            }
+
+            Message rmsg(rtb);
+            rmsg.type = (covise_msg_type)0;
+            covise_connection->send_msg(&rmsg);
           }
 
-          Message rmsg(rtb);
-          rmsg.type = (covise_msg_type)0;
-          covise_connection->send_msg(&rmsg);
-        }
-
-        if (gridRequest)
-        {
-          printf("CoviseIF: gridRequest\n");
-          SendSurfaceGrid(theMG, &covise);
-        }
-
-        if (numSolutions>0)
-        {
-          printf("CoviseIF: solRequest\n");
-          for(i=0; i<numSolutions; i++)
+          if (gridRequest)
           {
-            SendSolution(theMG,&covise,solutions[i]);
+            printf("CoviseIF: gridRequest\n");
+
+            SendSurfaceGrid(theMG, &covise);
+          }
+
+          if (numSolutions>0)
+          {
+            printf("CoviseIF: solRequest, numSol=%d\n", numSolutions);
+
+            for(i=0; i<numSolutions; i++)
+            {
+              SendSolution(theMG,&covise,solutions[i]);
+            }
           }
         }
-      }
-      break;
+        break;
 
-      case SOCKET_CLOSED :
-      case CLOSE_SOCKET :
-      case EMPTY :
-      {
-        printf("CoviseIF: SOCKET_CLOSED\n");
-        delete covise_connection;
-        covise_connection = NULL;
-      }
-      break;
+        /* 'continue without sending grid or solution' message */
+        case (covise_msg_type)1 :
+        {
+          printf("CoviseIF: continue\n");
 
-      case QUIT :
-      {
-        printf("CoviseIF: QUIT\n");
-        delete covise_connection;
-        covise_connection = NULL;
-        /* TODO exit UG itself */
-      }
-      break;
-      }
+          quit_loop = TRUE;
+        }
+        break;
+
+        case SOCKET_CLOSED :
+        case CLOSE_SOCKET :
+        case EMPTY :
+        {
+          printf("CoviseIF: SOCKET_CLOSED\n");
+
+          delete covise_connection;
+          covise_connection = NULL;
+
+          quit_loop = TRUE;
+        }
+        break;
+
+        case QUIT :
+        {
+          printf("CoviseIF: QUIT\n");
+
+          delete covise_connection;
+          covise_connection = NULL;
+
+          quit_loop = TRUE;
+
+          /* TODO exit UG itself */
+        }
+        break;
+        }
+      } while (!quit_loop);
     }
 
     delete msg;
