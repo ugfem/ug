@@ -1063,7 +1063,7 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
         SETMOVED(theVertex,1);
         V3_COPY(bnd_global,global);
         CORNER_COORDINATES(theElement,m,x);
-        GlobalToLocal(m,x,global,local);
+        GlobalToLocal(m,(const COORD **)x,global,local);
       }
     }
   }
@@ -5923,7 +5923,7 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
 
   if (vopt)       /* verbose: print all information */
   {
-    /* line 2 */ sprintf(buffer,"   CLASS=%d NCLASS=%d",CLASS(theNode),NCLASS(theNode));
+    /* line 2 */ sprintf(buffer,"   CLASS=%d ",CLASS(theNode));
     UserWrite(buffer);
 
     /* print nfather information */
