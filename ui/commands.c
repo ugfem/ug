@@ -2943,7 +2943,8 @@ static INT GListCommand (INT argc, char **argv)
 
         #ifdef ModelP
   if (!CONTEXT(me)) {
-    PRINTDEBUG(ui,0,("%2d: GListCommand(): me not in Context, no listing of grid\n",me))
+    PRINTDEBUG(ui,0,("%2d: GListCommand(): me not in Context,"\
+                     " no listing of grid\n",me))
     return(OKCODE);
   }
         #endif
@@ -3025,7 +3026,8 @@ static INT NListCommand (INT argc, char **argv)
 
         #ifdef ModelP
   if (!CONTEXT(me)) {
-    PRINTDEBUG(ui,0,("%2d: NListCommand(): me not in Context, no listing of nodes\n",me))
+    PRINTDEBUG(ui,0,("%2d: NListCommand(): me not in Context," \
+                     " no listing of nodes\n",me))
     return(OKCODE);
   }
         #endif
@@ -3196,7 +3198,8 @@ static INT EListCommand (INT argc, char **argv)
 
         #ifdef ModelP
   if (!CONTEXT(me)) {
-    PRINTDEBUG(ui,0,("%2d: EListCommand(): me not in Context, no listing of elements\n",me))
+    PRINTDEBUG(ui,0,("%2d: EListCommand(): me not in Context," \
+                     " no listing of elements\n",me))
     return(OKCODE);
   }
         #endif
@@ -3358,7 +3361,8 @@ static INT SelectionListCommand (INT argc, char **argv)
 
         #ifdef ModelP
   if (!CONTEXT(me)) {
-    PRINTDEBUG(ui,0,("%2d: SelectionListCommand(): me not in Context, no listing of selection\n",me))
+    PRINTDEBUG(ui,0,("%2d: SelectionListCommand(): me not in Context,"\
+                     " no listing of selection\n",me))
     return(OKCODE);
   }
         #endif
@@ -3564,7 +3568,8 @@ static INT VMListCommand (INT argc, char **argv)
 
         #ifdef ModelP
   if (!CONTEXT(me)) {
-    PRINTDEBUG(ui,0,("%2d: VMListCommand(): me not in Context, no listing of VM\n",me))
+    PRINTDEBUG(ui,0,("%2d: VMListCommand(): me not in Context," \
+                     " no listing of VM\n",me))
     return(OKCODE);
   }
         #endif
@@ -4467,7 +4472,8 @@ static INT RefineCommand (INT argc, char **argv)
 
         #ifdef ModelP
   if (!CONTEXT(me)) {
-    PRINTDEBUG(ui,0,("%2d: RefineCommand(): me not in Context, grid not refined\n",me))
+    PRINTDEBUG(ui,0,("%2d: RefineCommand(): me not in Context," \
+                     " grid not refined\n",me))
     return (OKCODE);
   }
         #endif
@@ -4609,7 +4615,8 @@ static INT MarkCommand (INT argc, char **argv)
 
         #ifdef ModelP
   if (!CONTEXT(me)) {
-    PRINTDEBUG(ui,0,("%d: MarkCommand() me not in Context, nothing marked\n",me))
+    PRINTDEBUG(ui,0,("%d: MarkCommand() me not in Context," \
+                     " nothing marked\n",me))
     return (OKCODE);
   }
         #endif
@@ -6899,7 +6906,9 @@ static INT OpenWindowCommand (INT argc, char **argv)
   int x,y,w,h;
 
         #ifdef ModelP
-  if (me!=master) {
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: OpenWindowCommand(): me not in Context," \
+                     "  no window structure allocated\n",me))
     return(OKCODE);
   }
         #endif
@@ -6912,7 +6921,15 @@ static INT OpenWindowCommand (INT argc, char **argv)
   }
 
   /* check options */
+        #ifdef ModelP
+  if (me == master)
+        #endif
   theOutDev  = GetDefaultOutputDevice();
+        #ifdef ModelP
+  else
+    theOutDev  = GetDefaultOutputDevice();
+        #endif
+
   winname[0] = '\0';
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -6923,6 +6940,9 @@ static INT OpenWindowCommand (INT argc, char **argv)
         PrintErrorMessage('E',"openwindow","specify device name with d option");
         return (PARAMERRORCODE);
       }
+                                #ifdef ModelP
+      if (me == master)
+                                #endif
       if ((theOutDev=GetOutputDevice(devname))==NULL)
       {
         sprintf(buffer,"there is no device named '%s'",devname);
@@ -6948,6 +6968,10 @@ static INT OpenWindowCommand (INT argc, char **argv)
   if (strlen(winname)==0)
     sprintf(winname,"window%d",(int) wincounter++);
 
+
+        #ifdef ModelP
+  if (me == master)
+        #endif
   if (theOutDev==NULL) {
     PrintErrorMessage('E',"openwindow","no output device");
     return (PARAMERRORCODE);
@@ -7355,9 +7379,12 @@ static INT OpenPictureCommand (INT argc, char **argv)
   int h,v,dh,dv;
 
         #ifdef ModelP
-  if (me!=master) return (OKCODE);
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: OpenPictureCommand(): me not in Context,"\
+                     " no picture stucture allocated\n",me))
+    return(OKCODE);
+  }
         #endif
-
 
   theWin = GetCurrentUgWindow();
   if (theWin==NULL)
@@ -7881,7 +7908,11 @@ static INT SetViewCommand (INT argc, char **argv)
   float x[3];
 
         #ifdef ModelP
-  if (me!=master) return (OKCODE);
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: SetViewCommand(): me not in Context,"\
+                     " view not specified",me))
+    return(OKCODE);
+  }
         #endif
 
   /* current picture */
@@ -8668,7 +8699,11 @@ static INT SetPlotObjectCommand (INT argc, char **argv)
   char potname[NAMESIZE],*thePlotObjTypeName;
 
         #ifdef ModelP
-  if (me!=master) return (OKCODE);
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: SetPlotObjectCommand(): me not in Context," \
+                     " plot object not specified\n",me))
+    return(OKCODE);
+  }
         #endif
 
   /* current picture */
@@ -8820,7 +8855,11 @@ static INT PlotCommand (INT argc, char **argv)
   WORK myWork,*theWork;
 
         #ifdef ModelP
-  if (me!=master) return (OKCODE);
+  if (!CONTEXT(me) && me!=master) {
+    PRINTDEBUG(ui,0,("%2d: PlotCommand(): me not in Context,"\
+                     " nothing plotted\n",me))
+    return(OKCODE);
+  }
         #endif
 
   NO_OPTION_CHECK(argc,argv);
@@ -8844,6 +8883,9 @@ static INT PlotCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
+        #ifdef ModelP
+  if (me == master)
+        #endif
   /* picture is current */
   DrawPictureFrame(thePic,WOP_ACTIVE);
 
