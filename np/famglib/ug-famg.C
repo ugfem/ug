@@ -42,7 +42,8 @@ extern "C"
 #include "debug.h"
 #include "ugstruct.h"
 #include "iter.h"
-    
+#include "disctools.h"   // for AssembleDirichletBoundary
+
 /* test */
 #include "wpm.h"
 #include "wop.h"
@@ -62,6 +63,8 @@ extern "C"
 
 #include "famg_uginterface.h"
 #include "famg_misc.h"
+
+#include "famg_grid.h" // nur fuer printm fuers debuggen. WEG!
 
 /****************************************************************************/
 /*                                                                          */
@@ -119,7 +122,8 @@ typedef struct
 {
 	NP_AMG_TRANSFER amg_trans;
 	
-	INT famg_mark_key;        
+	INT famg_mark_key;
+	INT coarsegridsolver;
 } NP_FAMG_TRANSFER;
 
 /****************************************************************************/
@@ -277,6 +281,7 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 				SETPRIO(newvec,PRIO(vec));
 				VECSKIP(newvec)=VECSKIP(vec);
 				SETVCCOARSE(newvec,0);
+				VSTART(newvec) = NULL;
 				
 				// store a temporary link from the geometric-level vector to its amg-level copy
 				// use therefore the geom_object field
@@ -305,6 +310,7 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 			SETPRIO(newvec,PRIO(vec));
 			VECSKIP(newvec)=VECSKIP(vec);
 			SETVCCOARSE(newvec,0);
+			VSTART(newvec) = NULL;
 			
 			// store a temporary link from the geometric-level vector to its amg-level copy
 			// use therefore the geom_object field
@@ -566,6 +572,132 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 	}
 	
 	if( (famg_interface.matrix = new FAMGugMatrix( amggrid, mc, nrVec, nrLinks )) == NULL )
+	{
+		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create matrix" << endl;
+		FAMGError(ostr);
+		return 0;
+	}
+
+	// init testvectors
+	*famg_interface.vector[FAMG_TVA] = 1.0;
+	*famg_interface.vector[FAMG_TVB] = 1.0;
+
+	FAMGConstructParameter(&famg_parameter);
+
+    FAMGConstruct(famg_interface.gridvector, famg_interface.matrix, famg_interface.vector);
+
+	result[0]=0;
+
+	return NUM_OK;
+}
+
+
+static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT level,
+							VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+							INT *result)
+// in this case, use grid on level 0 as the fine grid for FAMG and
+// do not copy the start grid into level -1
+{
+	GRID *grid;
+    VECTOR *vec;
+	MATRIX *m;
+	INT nrVec = 0, nrLinks = 0, i;
+	SHORT xc,bc,mc,xmask,bmask;	
+    
+    MarkTmpMem(MGHEAP(mg),mark_key); /* release in PostProcess */
+	
+	    
+    if (MD_IS_SCALAR(A) && VD_IS_SCALAR(x) && VD_IS_SCALAR(b))
+	{
+		xc    = VD_SCALCMP(x);
+		mc    = MD_SCALCMP(A);
+		bc    = VD_SCALCMP(b);
+		xmask  = VD_SCALTYPEMASK(x);
+		bmask  = VD_SCALTYPEMASK(b);
+    }
+    else
+    {
+        UserWrite("Not a scalar equation. \n");
+        REP_ERR_RETURN(1);
+    }
+
+    grid = GRID_ON_LEVEL(mg,0);
+	assert(grid!=NULL);
+printm(0);
+	if (AssembleDirichletBoundary (grid,A,x,b))
+        NP_RETURN(1,result[0]);
+printm(0);
+
+    for (vec=FIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
+    {
+		nrVec++;
+        if( (!VSKIPME(vec,0)) && (VDATATYPE(vec)&bmask) && (NEW_DEFECT(vec)))
+		{
+			for( m=VSTART(vec); m!=NULL; m = MNEXT(m) )
+				nrLinks++;
+		}
+		else
+		{
+			// check whether a dirichlet vector has exactly 1 matrix entry (the main diagonnal)
+			m = VSTART(vec);
+			nrLinks++;
+			assert(fabs(MVALUE(m,mc))>=1e-8);
+			for( m=MNEXT(m); m!=NULL; m = MNEXT(m) )
+			{
+				nrLinks++;
+				assert(fabs(MVALUE(m,mc))<1e-8);
+			}
+		}
+    }
+
+
+	famg_interface.gridvector = new FAMGugGridVector(grid);
+	if( famg_interface.gridvector == NULL )
+	{
+		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create gridvector" << endl;
+		FAMGError(ostr);
+		return 0;
+	}
+	
+	famg_interface.vector[FAMG_DEFECT] = new FAMGugVector( *(FAMGugGridVector*)famg_interface.gridvector, b );
+	if( famg_interface.vector[FAMG_DEFECT] == NULL )
+	{
+		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create vector FAMG_DEFECT" << endl;
+		FAMGError(ostr);
+		return 0;
+	}
+	
+	famg_interface.vector[FAMG_UNKNOWN] = new FAMGugVector( *(FAMGugGridVector*)famg_interface.gridvector, x );
+	if( famg_interface.vector[FAMG_UNKNOWN] == NULL )
+	{
+		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create vector FAMG_UNKNOWN" << endl;
+		FAMGError(ostr);
+		return 0;
+	}
+
+	for(i = 0; i < FAMG_NVECTORS; i++)
+	{
+		switch(i)
+		{
+			case FAMG_DEFECT: 
+				continue;	// alreday allocated
+				
+			case FAMG_UNKNOWN:
+				continue;	// alreday allocated
+				
+			default:
+				famg_interface.vector[i] = famg_interface.vector[FAMG_UNKNOWN]->create_new();
+		}
+		
+		if( famg_interface.vector[i] == NULL )
+		{
+			ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create vector nr. " << i << endl;
+			FAMGError(ostr);
+			return 0;
+		}
+	}
+	
+	if( (famg_interface.matrix = new FAMGugMatrix( grid, mc, nrVec, nrLinks )) == NULL )
 	{
 		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create matrix" << endl;
 		FAMGError(ostr);
@@ -885,7 +1017,7 @@ static INT FAMGIterPreProcess  (NP_ITER *theNP, INT level,
 
     if(i != n)
     {
-        UserWrite("error in FAMGPreProcess. \n");
+        UserWrite("error in FAMGIterPreProcess. \n");
         REP_ERR_RETURN(1);
     }
 
@@ -914,7 +1046,7 @@ static INT FAMGIterPreProcess  (NP_ITER *theNP, INT level,
             {
                 if(offset != start[i])
                 {
-                    UserWrite("error in FAMGPreProcess. \n");
+                    UserWrite("error in FAMGIterPreProcess. \n");
                     REP_ERR_RETURN(1);
                 }
                 entry[offset] = MVALUE(VSTART(vec),mc);
@@ -994,7 +1126,7 @@ static INT FAMGIterPreProcess  (NP_ITER *theNP, INT level,
         {
             if(offset != start[i])
             {
-                UserWrite("error in FAMGPreProcess. \n");
+                UserWrite("error in FAMGIterPreProcess. \n");
                 REP_ERR_RETURN(1);
             }
             entry[offset] = MVALUE(VSTART(vec),mc);
@@ -1135,7 +1267,7 @@ static INT FAMGIterSolve (NP_ITER *theNP, INT level,
 	viter(ve);
     if((*rhs).is_valid(ve))
     {
-        UserWrite("error in FAMGPreProcess: now more entries than initialized\n");
+        UserWrite("error in FAMGIterSolve: now more entries than initialized\n");
         REP_ERR_RETURN(1);
     }
     UserWriteF("unknowns: %d \n",n);
@@ -1202,7 +1334,7 @@ static INT FAMGIterSolve (NP_ITER *theNP, INT level,
     }
     if(i != n)
     {
-        UserWrite("error in FAMGPreProcess: vector length differ\n");
+        UserWrite("error in FAMGIterSolve: vector length differ\n");
         REP_ERR_RETURN(1);
     }
 
@@ -1260,8 +1392,13 @@ static INT FAMGConstructIterNP (NP_BASE *theNP)
 
 INT FAMGTransferInit (NP_BASE *theNP, INT argc, char **argv)
 {
+	NP_FAMG_TRANSFER *famgtrans = (NP_FAMG_TRANSFER *)theNP;
+	
 	FAMGReadArgvParameter(argc, argv);
 
+	if (ReadArgvINT("coarsegridsolver",&(famgtrans->coarsegridsolver),argc,argv))
+        famgtrans->coarsegridsolver = 1;
+	
 	//return AMGTransferInit (theNP, argc, argv); is not good because we can't provide the necessary parameters
 	return NP_EXECUTABLE;
 }
@@ -1278,7 +1415,10 @@ INT FAMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 	np = (NP_FAMG_TRANSFER *) theNP;
 	mg = NP_MG(theNP);
 	
-	res = FAMGPreProcess( mg, &np->famg_mark_key, *fl, x, b, A, result);
+	if( np->coarsegridsolver )
+		res = FAMGPreProcessForCoarseGridSolver( mg, &np->famg_mark_key, *fl, x, b, A, result);
+	else
+		res = FAMGPreProcess( mg, &np->famg_mark_key, *fl, x, b, A, result);
 
 	/* we set the baselevel for the following cycle!! */
 	*fl = mg->bottomLevel;
@@ -1306,7 +1446,16 @@ static INT FAMGRestrictDefect (NP_TRANSFER *theNP, INT level,
 						   MATDATA_DESC *A, VEC_SCALAR damp,
 						   INT *result)
 {
-	result[0] = FAMG_RestrictDefect(level);
+	INT famglevel;
+    NP_FAMG_TRANSFER *np;
+
+	np = (NP_FAMG_TRANSFER *) theNP;
+	if( np->coarsegridsolver )
+		famglevel = -level;
+	else
+		famglevel = -1-level;
+	
+	result[0] = FAMG_RestrictDefect(famglevel);
 	return result[0];
 }
 
@@ -1316,7 +1465,18 @@ static INT FAMGInterpolateCorrection (NP_TRANSFER *theNP, INT level,
 								  MATDATA_DESC *A, VEC_SCALAR damp,
 								  INT *result)
 {
-	result[0] = FAMG_ProlongCorrection(level);
+	INT famglevel;
+    NP_FAMG_TRANSFER *np;
+
+	np = (NP_FAMG_TRANSFER *) theNP;	
+	if( np->coarsegridsolver )
+	{
+		famglevel = -level;
+	}
+	else
+		famglevel = -1-level;
+	
+	result[0] = FAMG_ProlongCorrection(famglevel);
 	return result[0];
 }
 
@@ -1335,6 +1495,7 @@ static INT FAMGConstructTransferNP (NP_BASE *theNP)
 	
 	// change default settings
 	theNP->Init = FAMGTransferInit;
+	np = (NP_TRANSFER *)theNP;
 	np->PreProcess = FAMGTransferPreProcess;
 	np->PostProcess = FAMGTransferPostProcess;
 	np->RestrictDefect = FAMGRestrictDefect; 
@@ -1349,7 +1510,7 @@ INT InitFAMG ()
 	if (CreateClass(ITER_CLASS_NAME ".famg",sizeof(NP_FAMG_ITER),FAMGConstructIterNP))
 		REP_ERR_RETURN (__LINE__);
 
-	if (CreateClass(ITER_CLASS_NAME ".famgTransfer",sizeof(NP_FAMG_TRANSFER),FAMGConstructTransferNP))
+	if (CreateClass(TRANSFER_CLASS_NAME ".famgTransfer",sizeof(NP_FAMG_TRANSFER),FAMGConstructTransferNP))
 		REP_ERR_RETURN (__LINE__);
 
 #ifdef UG_DRAW

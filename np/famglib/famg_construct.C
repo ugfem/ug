@@ -115,7 +115,7 @@ void printim(int level)
 	printf("Interpolation Matrix:\n");
 	for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
 	{
-		printf("vec[%4d] ", VINDEX(v));
+		printf("vec[%4d] %c ", VINDEX(v), VCCOARSE(v)?'C':'F' );
 		for (m=VISTART(v); m!=NULL; m = MNEXT(m))
 		{
 			trans = (FAMGTransferEntry*)m;
@@ -184,7 +184,7 @@ void printv( int level, int x_nr )
 #ifdef __THREEDIM__
 		printf("z=%5.2f ",pos[2]);
 #endif
-		printf("  index = %d  ", VINDEX( v ) );
+		printf("  index = %d %c ", VINDEX( v ) , VCCOARSE(v)?'C':'F' );
 		printf("u[%d]=%15.8f ",x_nr,VVALUE(v,x_nr));
 		/*printf("   cl %d %d sk ",VCLASS(v),VNCLASS(v));*/
 		/*for (j=0; j<ncomp; j++)

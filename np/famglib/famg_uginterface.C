@@ -202,10 +202,10 @@ int FAMGSolveSystem(FAMG_Interface *interface)
 }
 
 int FAMG_RestrictDefect( int fine_level )
+// fine_level in the famg grid stack
 {
-	// map ug-amg level (-1,-2,-3,...) to famg gridlevel (0,1,2,3,...)
-	FAMGGrid &fg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(-1-fine_level);
-	FAMGGrid &cg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(-fine_level);
+	FAMGGrid &fg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(fine_level);
+	FAMGGrid &cg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(fine_level+1);
 	
 	fg.Restriction(&cg);
 	
@@ -214,10 +214,10 @@ int FAMG_RestrictDefect( int fine_level )
 
 
 int FAMG_ProlongCorrection( int fine_level )
+// fine_level in the famg grid stack
 {
-	// map ug-amg level (-1,-2,-3,...) to famg gridlevel (0,1,2,3,...)
-	FAMGGrid &fg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(-1-fine_level);
-	FAMGGrid &cg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(-fine_level);
+	FAMGGrid &fg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(fine_level);
+	FAMGGrid &cg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(fine_level+1);
 	
 	fg.Prolongation(&cg);
 	
