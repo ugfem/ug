@@ -182,6 +182,21 @@ typedef struct
 
 } NP_SQCG;
 
+struct np_ldcs
+{
+  NP_LINEAR_SOLVER ls;
+
+  NP_LINEAR_SOLVER *linsol;
+
+  VECDATA_DESC *b;                       /* tmp defect                                  */
+  VECDATA_DESC *c;                       /* tmp corr                                            */
+  MATDATA_DESC *DC;                      /* defect correction matrix        */
+  INT maxiter;
+  INT display;
+  INT baselevel;
+};
+typedef struct np_ldcs NP_LDCS;
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
@@ -1790,6 +1805,198 @@ static INT SQCGConstruct (NP_BASE *theNP)
 }
 
 /****************************************************************************/
+/*D
+   ls - numproc for linear solvers
+
+   DESCRIPTION:
+   This numproc executes a linear solver: it performs an iteration
+   up to convergence.
+
+   .vb
+   npinit [$x <sol>] [$b <rhs>] [$A <mat sym>]
+       [$red <sc double list>] [$abslimit <sc double list>]
+       $m <maxit> $I <iteration> [$d {full|red|no}]
+   .ve
+
+   .  $x~<sol> - solution vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $m~<maxit> - maximal number of iterations
+   .  $I~<iteration> - iteration numproc
+   .  $d - display modus
+
+   'npexecute <name> [$i] [$d] [$r] [$s] [$p]'
+
+   .  $i - preprocess
+   .  $d - replace right hand side by the defect
+   .  $r - compute the residuum of the defect
+   .  $s - solve
+   .  $p - postprocess
+
+   EXAMPLE:
+   .vb
+   npcreate pre $c ilu;           npinit pre;
+   npcreate post $c ilu;          npinit post;
+   npcreate base $c ilu;          npinit base $n 3;
+   npcreate basesolver $c ls;     npinit basesolver $red 0.001 $I base;
+   npcreate transfer $c transfer; npinit transfer;
+   npcreate lmgc $c lmgc;         npinit lmgc $S pre post basesolver $T transfer;
+   npcreate mgs $c ls;            npinit mgs $A MAT $x sol $b rhs
+                                          $red 0.00001 $I lmgc $d full;
+   .ve
+   D*/
+/****************************************************************************/
+
+static INT LDCSInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_LDCS *np;
+
+  np = (NP_LDCS *) theNP;
+
+  if (ReadArgvINT("m",&(np->maxiter),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  np->display = ReadArgvDisplay(argc,argv);
+  np->linsol = (NP_LINEAR_SOLVER *)       ReadArgvNumProc(theNP->mg,"LS",LINEAR_SOLVER_CLASS_NAME,argc,argv);
+  if (np->linsol == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  np->DC = ReadArgvMatDesc(theNP->mg,"DC",argc,argv);
+  if (np->DC == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+
+  return (NPLinearSolverInit(&np->ls,argc,argv));
+}
+
+static INT LDCSDisplay (NP_BASE *theNP)
+{
+  NP_LDCS *np;
+
+  np = (NP_LDCS *) theNP;
+  NPLinearSolverDisplay(&np->ls);
+
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"m",(int)np->maxiter);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)np->baselevel);
+  if (np->linsol != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"LS",ENVITEM_NAME(np->linsol));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"LS","---");
+  if (np->display == PCR_NO_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
+  else if (np->display == PCR_RED_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
+  else if (np->display == PCR_FULL_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
+  if (np->DC != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"DC",ENVITEM_NAME(np->DC));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"DC","---");
+  if (np->b != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"b",ENVITEM_NAME(np->b));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"b","---");
+  if (np->c != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"c",ENVITEM_NAME(np->c));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"c","---");
+
+  return (0);
+}
+
+static INT LDCSPreProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+  NP_LDCS *np;
+
+  /* store passed XXXDATA_DESCs */
+  NPLS_A(theNP) = A;
+  NPLS_x(theNP) = x;
+  NPLS_b(theNP) = b;
+
+  np = (NP_LDCS *) theNP;
+  if (np->linsol->PreProcess != NULL)
+    if ((*np->linsol->PreProcess)(np->linsol,level,x,b,np->DC,baselevel,result))
+      REP_ERR_RETURN(1);
+  np->baselevel = MIN(*baselevel,level);
+
+  return(0);
+}
+
+static INT LDCSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, VEC_SCALAR abslimit, VEC_SCALAR reduction, LRESULT *lresult)
+{
+  NP_LDCS *np;
+  VEC_SCALAR defect2reach;
+  INT i,bl,PrintID;
+  char text[DISPLAY_WIDTH+4];
+  NP_LINEAR_SOLVER * linsol;
+  LRESULT linsolresult;
+
+  /* store passed reduction and abslimit */
+  for (i=0; i<VD_NCOMP(x); i++)
+  {
+    NPLS_red(theNP)[i] = reduction[i];
+    NPLS_abs(theNP)[i] = abslimit[i];
+  }
+
+  np = (NP_LDCS *) theNP;
+  linsol = np->linsol;
+  if (linsol == NULL) NP_RETURN(1,lresult->error_code);
+
+  /* print defect */
+  CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
+  if (np->display > PCR_NO_DISPLAY)
+    if (PreparePCR(x,np->display,text,&PrintID)) NP_RETURN(1,lresult->error_code);
+  for (i=0; i<VD_NCOMP(x); i++)
+    lresult->first_defect[i] = lresult->last_defect[i];
+  if (sc_mul_check(defect2reach,lresult->first_defect,reduction,b)) NP_RETURN(1,lresult->error_code);
+  if (np->display > PCR_NO_DISPLAY)
+    if (DoPCR(PrintID,lresult->first_defect,PCR_CRATE)) NP_RETURN(1,lresult->error_code);
+  if (sc_cmp(lresult->first_defect,abslimit,b)) lresult->converged = 1;
+  else lresult->converged = 0;
+  lresult->number_of_linear_iterations = 0;
+  if (AllocVDFromVD(theNP->base.mg,np->baselevel,level,x,&np->b)) REP_ERR_RETURN(1);
+  if (AllocVDFromVD(theNP->base.mg,np->baselevel,level,x,&np->c)) REP_ERR_RETURN(1);
+  for (i=0; i<np->maxiter; i++)
+  {
+    if (lresult->converged) break;
+    if (s_dcopy(theNP->base.mg,np->baselevel,level,np->b,b)) REP_ERR_RETURN(1);
+    if (s_dset(theNP->base.mg,np->baselevel,level,np->c,0.0)) REP_ERR_RETURN(1);
+    if ((*linsol->Residuum)(linsol,np->baselevel,level,np->c,np->b,np->DC,&linsolresult)) NP_RETURN(1,lresult->error_code);
+    if ((*linsol->Solver)(linsol,level,np->c,np->b,np->DC,linsol->abslimit,linsol->reduction,&linsolresult)) REP_ERR_RETURN (1);
+    if (s_daxpy (theNP->base.mg,np->baselevel,level,x,Factor_One,np->c)) REP_ERR_RETURN(1);
+    if (s_dmatmul_minus(theNP->base.mg,np->baselevel,level,b,A,np->c,EVERY_CLASS)) REP_ERR_RETURN(1);
+    if (LinearResiduum(theNP,bl,level,x,b,A,lresult)) REP_ERR_RETURN(1);
+    if (np->display > PCR_NO_DISPLAY)
+      if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE)) NP_RETURN(1,lresult->error_code);
+    if (sc_cmp(lresult->last_defect,abslimit,b) || sc_cmp(lresult->last_defect,defect2reach,b))
+    {
+      lresult->converged = 1;
+      lresult->number_of_linear_iterations=i+1;
+      break;
+    }
+  }
+  FreeVD(theNP->base.mg,np->baselevel,level,np->b);
+  FreeVD(theNP->base.mg,np->baselevel,level,np->c);
+  if (np->display > PCR_NO_DISPLAY)
+  {
+    if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) NP_RETURN(1,lresult->error_code);
+  }
+
+  return (0);
+}
+
+static INT LDCSPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  NP_LDCS *np;
+
+  np = (NP_LDCS *) theNP;
+
+  if (np->linsol->PostProcess == NULL) return(0);
+  return((*np->linsol->PostProcess)(np->linsol,level,x,b,np->DC,result));
+}
+
+static INT LDCSConstruct (NP_BASE *theNP)
+{
+  NP_LDCS *np;
+
+  theNP->Init             = LDCSInit;
+  theNP->Display          = LDCSDisplay;
+  theNP->Execute          = NPLinearSolverExecute;
+
+  np = (NP_LDCS *) theNP;
+  np->ls.PreProcess       = LDCSPreProcess;
+  np->ls.Defect           = LinearDefect;
+  np->ls.Residuum         = LinearResiduum;
+  np->ls.Solver           = LDCSSolver;
+  np->ls.PostProcess      = LDCSPostProcess;
+
+  return(0);
+}
+
+/****************************************************************************/
 /*
    InitLinearSolver	- Init this file
 
@@ -1824,6 +2031,8 @@ INT InitLinearSolver ()
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".bcgs",sizeof(NP_BCGS),BCGSConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".sqcg",sizeof(NP_SQCG),SQCGConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".ldcs",sizeof(NP_LDCS),LDCSConstruct))
     REP_ERR_RETURN (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
