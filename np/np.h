@@ -447,6 +447,8 @@ INT l_ilubdecomp_SB     (BLOCKVECTOR *theBV, const MATDATA_DESC *M, const VEC_SC
 
 INT l_ilubthdecomp      (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VEC_SCALAR threshold, const VECDATA_DESC *rest, const VEC_SCALAR oldrestthresh);
 INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VEC_SCALAR threshold, const VECDATA_DESC *rest, const VEC_SCALAR oldrestthresh);
+INT l_iluspbldecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta);
+INT l_iluspbliter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
 INT l_icdecomp      (GRID *g, const MATDATA_DESC *M);
 INT l_iluspdecomp       (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VECDATA_DESC *t, INT mode, const VEC_SCALAR oldrestthresh);
 INT l_lrdecomp          (GRID *g, const MATDATA_DESC *M);

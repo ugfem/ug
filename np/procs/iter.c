@@ -324,6 +324,15 @@ typedef struct
 {
   NP_SMOOTHER smoother;
 
+  VEC_SCALAR beta;
+  VEC_SCALAR mindiag;
+
+} NP_SPBLILU;
+
+typedef struct
+{
+  NP_SMOOTHER smoother;
+
   INT regularize;
 
 } NP_LU;
@@ -6165,6 +6174,145 @@ static INT SPILUConstruct (NP_BASE *theNP)
 
   return(0);
 }
+
+/****************************************************************************/
+/*D
+   spblilu - numproc for point block ilu smoother for sparse block matrices
+
+   DESCRIPTION:
+   This numproc executes a point block ilu smoother, using the blas routines
+   'l_iluspbldecomp' and 'l_iluspbliter'. It can be used in 'lmgc'.
+   The Beta-correction and the threshhold mode are not implemented (yet).
+
+   .vb
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$L <mat>]
+       [$damp <sc double list>] [$beta <sc double list>]
+   .ve
+
+   .  $c~<cor> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $L~<mat> - decomposition matrix
+   .  $damp~<sc~double~list> - damping factors for each component
+   .  $beta~<sc~double~list> - parameter for modification of the diagonal
+   .n  ($beta is only used if the matrix blocks are not sparse. Else it
+   .n   is ignored.)
+
+   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
+   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
+
+   'npexecute <name> [$i] [$s] [$p]'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+   D*/
+/****************************************************************************/
+
+static INT SPBLILUInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_SPBLILU *np;
+  INT i;
+
+  np = (NP_SPBLILU *) theNP;
+
+  for (i=0; i<MAX_VEC_COMP; i++) np->beta[i] = 0.0;
+  sc_read(np->beta,NP_FMT(np),np->smoother.iter.b,"beta",argc,argv);
+  for (i=0; i<MAX_VEC_COMP; i++) np->mindiag[i] = 0.0;
+  sc_read(np->mindiag,NP_FMT(np),np->smoother.iter.b,"mindiag",argc,argv);
+
+  return (SmootherInit(theNP,argc,argv));
+}
+
+static INT SPBLILUDisplay (NP_BASE *theNP)
+{
+  NP_SPBLILU *np;
+
+  SmootherDisplay(theNP);
+  np = (NP_SPBLILU *) theNP;
+  if (sc_disp(np->beta,np->smoother.iter.b,"beta"))
+    REP_ERR_RETURN (1);
+  if (sc_disp(np->mindiag,np->smoother.iter.b,"mindiag"))
+    REP_ERR_RETURN (1);
+
+  return (0);
+}
+
+static INT SPBLILUPreProcess (NP_ITER *theNP, INT level,
+                              VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                              INT *baselevel, INT *result)
+{
+  NP_SPBLILU *np;
+  GRID *theGrid;
+
+  np = (NP_SPBLILU *) theNP;
+  theGrid = NP_GRID(theNP,level);
+  if (np->smoother.Order!=NULL)
+    if ((*np->smoother.Order->Order)(np->smoother.Order,level,A,result)) NP_RETURN(1,result[0]);
+  if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
+  /* Natalia - np->smoother.L = A; */
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L))
+    NP_RETURN(1,result[0]);
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK)
+    NP_RETURN(1,result[0]);
+        #ifdef ModelP
+  if (l_matrix_consistent(theGrid,np->smoother.L,np->smoother.cons_mode)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+        #endif
+  if (l_iluspbldecomp(theGrid,np->smoother.L,np->beta)
+      !=NUM_OK) {
+    PrintErrorMessage('E',"SPBLILUPreProcess","decomposition failed");
+    NP_RETURN(1,result[0]);
+  }
+  *baselevel = level;
+
+  return (0);
+}
+
+static INT SPBLILUStep (NP_SMOOTHER *theNP, INT level,
+                        VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                        MATDATA_DESC *L,
+                        INT *result)
+{
+  NP_SPBLILU *np;
+  GRID *theGrid;
+
+  np = (NP_SPBLILU *) theNP;
+  theGrid = NP_GRID(theNP,level);
+    #ifdef ModelP
+  if (np->smoother.cons_mode == MAT_MASTER_CONS) {
+    if (l_vector_collect(theGrid,b)!=NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+  else {
+    if (l_vector_meanvalue(theGrid,b) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+    #endif
+  if (l_iluspbliter(NP_GRID(theNP,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
+
+  return (0);
+}
+
+static INT SPBLILUConstruct (NP_BASE *theNP)
+{
+  NP_SMOOTHER *np;
+
+  theNP->Init = SPBLILUInit;
+  theNP->Display = SPBLILUDisplay;
+  theNP->Execute = NPIterExecute;
+
+  np = (NP_SMOOTHER *) theNP;
+  np->iter.PreProcess = SPBLILUPreProcess;
+  np->iter.Iter = Smoother;
+  np->iter.PostProcess = SmootherPostProcess;
+  np->Step = SPBLILUStep;
+
+  return(0);
+}
+
 /****************************************************************************/
 /*D
    ic - numproc for point block icncomplete Cholesky smoother
@@ -10252,6 +10400,8 @@ INT InitIter ()
                   THILUConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".spilu",sizeof(NP_ILU),SPILUConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".spblilu",sizeof(NP_SPBLILU),SPBLILUConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ic",sizeof(NP_ILU),ICConstruct))
     REP_ERR_RETURN (__LINE__);

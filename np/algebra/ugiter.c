@@ -7233,3 +7233,479 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
 
   return (NUM_OK);
 }
+
+/****************************************************************************/
+/*																			*/
+/* Function:  InvertSparseBlock												*/
+/*																			*/
+/* Purpose:   invert  sparse block                                              */
+/*																			*/
+/* Input:	                                                                        */
+/*			  SPARSE_MATRIX *sm     pointer to the sparse matrix structure  */
+/*			  MATRIX *mat			matrix to be invetred                                   */
+/*			  DOUBLE *invmat		store inverse matrix here				*/
+/*																			*/
+/* Author: Natalia Simus													*/
+/*																			*/
+/* Output:	  INT 0: ok                                                                                                     */
+/*			 __LINE__ line where an error occured							*/
+/*																			*/
+/****************************************************************************/
+
+static INT InvertSparseBlock (SPARSE_MATRIX *sm, MATRIX *mat, DOUBLE *invmat)
+{
+  DOUBLE det,invdet,lrmat[MAX_SINGLE_MAT_COMP],sum,piv;
+  INT n,size,i,j,k;
+
+  n=sm->nrows;
+  if (!(sm->nrows>0)) REP_ERR_RETURN (__LINE__);
+  size=n*n;
+  if (size > MAX_SINGLE_MAT_COMP) REP_ERR_RETURN (__LINE__);
+
+  for (i=0; i<size; i++) lrmat[i]=0.0;
+
+  /* copy sparse matrix into full block array */
+
+  for (i=0; i<n; i++)
+    for (j=sm->row_start[i]; j<sm->row_start[i+1]; j++)
+    {
+      k = sm->col_ind[j];
+      if (k>=n) REP_ERR_RETURN(__LINE__);                     /* NS - needed ? */
+      lrmat[i*n+k]=MVALUE(mat,sm->offset[j]);
+    }
+
+  /* then invert the full block - nothing changed passed this line */
+
+  /* lr factorize mat */
+  for (i=0; i<n; i++)
+  {
+    invdet = lrmat[i*n+i];
+    if (ABS(invdet)<SMALL_DET)             /* singular */
+      REP_ERR_RETURN (__LINE__);
+    invdet = lrmat[i*n+i] = 1.0/invdet;
+
+    for (j=i+1; j<n; j++)
+    {
+      piv = (lrmat[j*n+i] *= invdet);
+      for (k=i+1; k<n; k++)
+        lrmat[j*n+k] -= lrmat[i*n+k] * piv;
+    }
+  }
+
+  /* solve */
+  for (k=0; k<n; k++)
+  {
+    for (i=0; i<k; i++)
+      invmat[i*n+k] = 0.0;
+    sum = 1.0;
+    for (j=0; j<k; j++)
+      sum -= lrmat[k*n+j] * invmat[j*n+k];
+    invmat[k*n+k] = sum;                /* Lii = 1 */
+    for (i=k+1; i<n; i++)
+    {
+      sum = 0.0;
+      for (j=0; j<i; j++)
+        sum -= lrmat[i*n+j] * invmat[j*n+k];
+      invmat[i*n+k] = sum;                      /* Lii = 1 */
+    }
+    for (i=n-1; i>=0; i--)
+    {
+      for (sum=invmat[i*n+k], j=i+1; j<n; j++)
+        sum -= lrmat[i*n+j] * invmat[j*n+k];
+      invmat[i*n+k] = sum * lrmat[i*n+i];                       /* Uii = Inv(Mii) */
+    }
+  }
+
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  SolveInverseSparseBlock										*/
+/*																			*/
+/* Purpose:   solve a small system of equations								*/
+/*																			*/
+/* Input:	  SPARSE_MATRIX *sm		sparse matrix structure of the system   */
+/*			  MATRIX *mat           components of inverse matrix			*/
+/*            SHORT  *scomp             components of the solution              */
+/*			  DOUBLE *sol			DOUBLE array of the solution			*/
+/*			  DOUBLE *rhs			find right hand side here				*/
+/*																			*/
+/* Output:	  INT 0: ok                                                                                                     */
+/*				  1: error													*/
+/*																			*/
+/****************************************************************************/
+
+static INT SolveInverseSparseBlock (SPARSE_MATRIX *sm, MATRIX *mat,
+                                    DOUBLE *sol, const DOUBLE *rhs)
+{
+  register DOUBLE sum;
+  register INT i,j;
+
+  if (sm->nrows>=MAX_SINGLE_VEC_COMP)
+    return (1);
+
+
+  /* sol = matrix * rhs */
+  for (i=0; i<sm->nrows; i++)
+  {
+    sum = 0.0;
+    for (j=sm->row_start[i]; j<sm->row_start[i+1]; j++)
+      sum += MVALUE(mat,sm->offset[j]) * rhs[sm->col_ind[j]];
+    sol[i] = sum;
+  }
+
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*D
+   l_iluspbldecomp - compute incomplete decomposition
+
+   SYNOPSIS:
+   INT l_iluspbldecomp (GRID *g, const MATDATA_DESC *M);
+
+   PARAMETERS:
+   .  g - pointer to grid
+   .  M - type matrix descriptor
+
+   DESCRIPTION:
+   This function computes an incomplete decomposition of
+   order 0 for  matrix with sparse blocks structure
+   without modification of the diagonal.
+
+   The matrix M is overwritten !
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    i<0 if decomposition failed
+   .n    __LINE__ line where an error occured.
+   D*/
+/****************************************************************************/
+INT l_iluspbldecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta)
+{
+  VECTOR *vi,*vj,*vk;
+  MATRIX *Mii,*Mij,*Mji,*Mjk,*Mik;
+  SPARSE_MATRIX *sm;
+  SPARSE_MATRIX *smr;
+  SPARSE_MATRIX *smc;
+  SPARSE_MATRIX *smrc;
+
+  DOUBLE InvMat[MAX_SINGLE_MAT_COMP],PivMat[MAX_SINGLE_MAT_COMP];
+  DOUBLE Mat[MAX_SINGLE_MAT_COMP];
+
+  DOUBLE sum;
+  register INT i0,j0,k0,m0;
+  INT type,ctype,rtype,PivIsZero;
+  INT i,n;
+  INT mattype,colind,ind,current;
+
+  /* If the blocks are not sparse, call the usual decomposition: */
+  if (! MD_IS_SPARSE(M))
+    return(l_ilubthdecomp(g,M,beta,NULL,NULL,NULL));
+
+  /* consistency check: diagonal blocks are supposed to be square matrices */
+
+  for (type=0; type<NVECTYPES; type++)
+  {
+    /* for all types of sparse diagonal blocks */
+    sm = MD_SM(M,DMTP(type));
+
+    if (sm == NULL ) continue;             /* REP_ERR_RETURN(1); -  only sparse matrices are supposed for now */
+    if (sm->nrows>0)             /* if not an empty block */
+    {
+      n=sm-> nrows;
+      if (n*n > MAX_SINGLE_MAT_COMP)
+        REP_ERR_RETURN (__LINE__);
+      if (n != sm->ncols)
+        REP_ERR_RETURN (__LINE__);                                     /* diagonal block is not square matrices */
+    }
+  }
+
+  /* consistency check:                                                                                         */
+  /* the transpose block-matrices (iff) must have the same format */
+
+  for (rtype=0; rtype<NVECTYPES; rtype++)
+    for (ctype=rtype+1; ctype<NVECTYPES; ctype++)
+    {
+
+      smr = MD_SM(M,MTP(rtype,ctype));
+      smc = MD_SM(M,MTP(ctype,rtype));
+      sm = MD_SM(M,MTP(rtype,rtype));
+
+      if (smr == NULL || smc == NULL || sm == NULL)
+        continue;                         /* REP_ERR_RETURN(1); - only sparse matrices are supposed for now */
+
+      if (smr->nrows>0)                   /* if not an empty block */
+      {
+        if (sm->nrows!=smr->nrows)
+          REP_ERR_RETURN (__LINE__);
+        if (smr->nrows!=smc->ncols)
+          REP_ERR_RETURN (__LINE__);
+        if (smr->ncols!=smc->nrows)
+          REP_ERR_RETURN (__LINE__);
+      }
+    }
+
+  /* loop over all lines */
+  L_VLOOP__CLASS(vi,FIRSTVECTOR(g),ACTIVE_CLASS)
+  {
+    type = VTYPE(vi);
+    sm = MD_SM(M,DMTP(type));
+    if (sm == NULL) continue;
+
+    i = VINDEX(vi);
+    n = sm->nrows;
+
+    /* Mii=GetMatrix(vi,vi);*/
+
+    Mii = VSTART(vi);             /* diagonal block is always first */
+
+    if (InvertSparseBlock(sm,Mii,InvMat)!=0)
+      REP_ERR_RETURN (-i);
+
+    /* write inverse to sparse diagonal block */
+
+    for (i0=0; i0<n; i0++)
+      for (j0=sm->row_start[i0]; j0<sm->row_start[i0+1]; j0++)
+      {
+        k0 = sm->col_ind[j0];
+        if (k0>=n) REP_ERR_RETURN(1);
+        MVALUE(Mii,sm->offset[j0]) = InvMat[i0*n+k0];
+      }
+
+
+    /* eliminate all entries (j,i) with j>i */
+    for (Mij=MNEXT(VSTART(vi)); Mij!=NULL; Mij=MNEXT(Mij))
+    {
+      rtype   = VTYPE(vj=MDEST(Mij));
+
+      smr = MD_SM(M,MTP(rtype,type));
+
+      if (!((smr->nrows>0)
+            && (VCLASS(vj)>=ACTIVE_CLASS)
+            && (i<VINDEX(vj))))
+        continue;
+
+      Mji = GetMatrix (MDEST(Mij),vi);
+      /* Mji = MADJ(Mij); */
+
+      /* multiplication of sparse block Mji by invert diagonal block Mii */
+
+      PivIsZero = TRUE;
+
+      for (j0=0; j0<smr->nrows; j0++)
+        for (i0=0; i0<n; i0++)
+        {
+          sum = 0.0;
+          for (m0=smr->row_start[j0]; m0<smr->row_start[j0+1]; m0++)
+            sum += MVALUE(Mji,smr->offset[m0]) * InvMat[smr->col_ind[m0]*n+i0];
+
+          PivMat[j0*n+i0] = sum;
+
+          if (sum!=0.0) PivIsZero = FALSE;
+        }
+
+
+
+      /* story the entry of the lower triangular part */
+
+      for (j0=0; j0<smr->nrows; j0++)
+        for (m0=smr->row_start[j0]; m0<smr->row_start[j0+1]; m0++)
+        {
+          k0 = smr->col_ind[m0];
+          MVALUE(Mji,smr->offset[m0]) = PivMat[j0*smr->ncols+k0];
+
+        }
+
+
+      if (PivIsZero) continue;                                  /* nothing to eliminate */
+
+      /*  for all Mjk, k>i  Mjk-(Mji*inverse Mii)*Mik  */
+
+      for (Mik=MNEXT(VSTART(vi)); Mik!=NULL; Mik=MNEXT(Mik))
+      {
+        ctype   = VTYPE(vk=MDEST(Mik));
+
+        if ((Mjk = GetMatrix(vj,vk)) == NULL) continue;
+
+        /* Mik will never be a diagonal block */
+        smc = MD_SM(M,MTP(type,ctype));
+
+        if (MDIAG(Mjk))
+          smrc = MD_SM(M,DMTP(rtype));
+        else
+          smrc = MD_SM(M,MTP(rtype,ctype));
+
+        if (!((smrc->nrows>0)
+              && (VCLASS(vk)>=ACTIVE_CLASS)
+              && (i<VINDEX(vk))))
+          continue;
+
+        memset(Mat,0,smc->nrows * smc->ncols);
+        for (j0=0; j0<smc->nrows; j0++)
+          for (k0=smc->row_start[j0]; k0<smc->row_start[j0+1]; k0++)
+            Mat[j0 + smc->nrows * smc->col_ind[k0]]
+              = MVALUE(Mik,smc->offset[k0]);
+
+        for (j0=0; j0<smrc->nrows; j0++)
+          for (k0=smrc->row_start[j0]; k0<smrc->row_start[j0+1]; k0++)
+          {
+            colind = smrc->col_ind[k0];
+            sum = 0.0;
+
+            for (m0=0; m0<n; m0++)
+              sum += PivMat[j0*n+m0] * Mat[m0+colind*smc->nrows];
+
+            MVALUE(Mjk,smrc->offset[k0]) -= sum;
+          }
+
+      }
+    }
+  }
+
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*D
+   l_iluspbliter - solve L*U*v=d
+
+   SYNOPSIS:
+   INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
+   const VECDATA_DESC *d);
+
+   PARAMETERS:
+   .  g - pointer to grid
+   .  v - type vector descriptor to store correction
+   .  M - type matrix descriptor for precondition
+   .  d - type vector descriptor for right hand side (the defect)
+
+   DESCRIPTION:
+   This function solves `L*U*v=d`, where `L`, `U` are the factors from a
+   (in-)complete decomposition, stored in 'M',
+   only sparse block structure of 'M' under consideration
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_DESC_MISMATCH if the type descriptors not match
+   .n    NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP
+   .n    __LINE__ line where an error occured.
+   D*/
+/****************************************************************************/
+
+INT l_iluspbliter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+{
+  VECTOR *vec,*w,*first_vec,*last_vec;
+  INT rtype,ctype,myindex;
+  register MATRIX *mat;
+  register SHORT *dcomp;
+  register SHORT i,j;
+  register SHORT n,nc;
+  register DOUBLE sum;
+  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
+  SPARSE_MATRIX *sm;
+
+  /* If the matrix is not sparse, call the usual function: */
+  if (! MD_IS_SPARSE(M))
+    return(l_luiter(g,v,M,d));
+
+  first_vec = FIRSTVECTOR(g);
+  last_vec  = LASTVECTOR(g);
+
+  /* solve lower traingle */
+  L_VLOOP__CLASS(vec,first_vec,EVERY_CLASS)
+  {
+    rtype = VTYPE(vec);
+
+    n           = VD_NCMPS_IN_TYPE(v,rtype);
+    if (n == 0) continue;
+
+    vmat =       VVALUEPTR(vec,VD_CMP_OF_TYPE(v,rtype,0));
+
+    if (VCLASS(vec) < ACTIVE_CLASS)
+    {
+      for (i=0; i<n; i++) vmat[i] = 0.0;
+      continue;
+    }
+    dcomp   = VD_CMPPTR_OF_TYPE(d,rtype);
+    myindex = VINDEX(vec);
+
+    /* rhs */
+    for (i=0; i<n; i++) s[i]=  VVALUE(vec,dcomp[i]);
+    for (ctype=0; ctype<NVECTYPES; ctype++)
+    {
+      sm = MD_SM(M,MTP(rtype,ctype));
+      if (sm == NULL ) continue;                   /* REP_ERR_RETURN(1); - only sparse matrices are supposed for now */
+
+      if (sm->nrows>0)                        /* if not an empty block */
+      {
+
+        for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+          if ((VTYPE(w=MDEST(mat))==ctype) &&
+              (VCLASS(w)>=ACTIVE_CLASS) &&
+              (myindex>VINDEX(w)))
+          {
+
+            wmat =  VVALUEPTR(w,VD_CMP_OF_TYPE(v,ctype,0));
+            for (i=0; i<sm->nrows; i++)
+              for (j=sm->row_start[i]; j<sm->row_start[i+1]; j++)
+
+                s[i] -= MVALUE(mat,sm->offset[j]) * wmat[sm->col_ind[j]];
+          }
+      }
+    }
+
+    /* solve (Diag(L)=I per convention) */
+
+    for (i=0; i<n; i++) vmat[i] = s[i];
+  }
+
+  /* solve upper triangle */
+  L_REVERSE_VLOOP__CLASS(vec,last_vec,ACTIVE_CLASS)
+  {
+    rtype = VTYPE(vec);
+
+    n = VD_NCMPS_IN_TYPE(v,rtype);
+    if (n == 0) continue;
+    myindex = VINDEX(vec);
+
+    /* rhs */
+    for (i=0; i<n; i++) s[i] = VVALUE(vec,VD_CMP_OF_TYPE(v,rtype,i));
+    for (ctype=0; ctype<NVECTYPES; ctype++)
+    {
+      sm = MD_SM(M,MTP(rtype,ctype));
+      if (sm == NULL ) continue;                   /* REP_ERR_RETURN(1); - only sparse matrices are supposed for now */
+
+      if (sm->nrows>0)                        /* if not an empty block */
+      {
+
+        for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+          if ((VTYPE(w=MDEST(mat))==ctype) &&
+              (VCLASS(w)>=ACTIVE_CLASS) &&
+              (myindex<VINDEX(w)))
+          {
+
+            wmat =        VVALUEPTR(w,VD_CMP_OF_TYPE(v,ctype,0));
+
+            for (i=0; i<sm->nrows; i++)
+              for (j=sm->row_start[i]; j<sm->row_start[i+1]; j++)
+
+                s[i] -= MVALUE(mat,sm->offset[j]) * wmat[sm->col_ind[j]];
+          }
+      }
+    }
+
+    /* solve */
+
+    if(SolveInverseSparseBlock (MD_SM(M,DMTP(rtype)),
+                                VSTART(vec) ,
+                                VVALUEPTR(vec,VD_CMP_OF_TYPE(v,rtype,0)),
+                                s)!=0)
+      REP_ERR_RETURN (__LINE__);
+  }
+
+  return (NUM_OK);
+}
