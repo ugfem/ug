@@ -321,6 +321,7 @@ typedef struct {
                                                                                         15.7801, 15.7802, 15.7803, 15.7804 und 15.7805*/
 
 #define MAXLINE                         100
+#define MAX_INT                         2147483648
 #define NMBOFCNDS                       30
 
 #define NMBOFLOCLCOORDS         2
