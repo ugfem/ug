@@ -394,6 +394,10 @@ static INT SLUPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_D
   double *a;
   void *work;
 
+        #ifdef ModelP
+  if (me != master) return(0);
+        #endif
+
   /* init heap management */
   SLU_MarkKey_nb=0;
   SLU_Heap=theHeap;
@@ -447,6 +451,10 @@ static INT SLUIter (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b,
   void *work;
   VEC_SCALAR defect;
 
+        #ifdef ModelP
+  if (me != master) return(0);
+        #endif
+
   /* control parameters */
   *fact='F'; *equed='B'; *trans='N'; *refact='N';
 
@@ -470,6 +478,10 @@ static INT SLUIter (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b,
 static INT SLUPostProcess (NP_ITER *theNP, INT level,VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
 {
   NP_SLU *np;
+
+        #ifdef ModelP
+  if (me != master) return(0);
+        #endif
 
   np = (NP_SLU *) theNP;
   ReleaseTmpMem(SLU_Heap,SLU_MarkKey[SLU_MarkKey_nb]);
