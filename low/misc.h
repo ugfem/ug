@@ -68,6 +68,7 @@
 #define EVEN(i)                  (!(i%2))
 #define ODD(i)                   ((i%2))
 #define SWAP(a,b,temp)           {(temp) = (a); (a) = (b); (b) = (temp);}
+#define QUOT(i,j)                                ((double)(i))/((double)(j))
 
 #define SET_FLAG(flag,bitpattern)               (flag |=  (bitpattern))
 #define CLEAR_FLAG(flag,bitpattern)     (flag &= ~(bitpattern))
