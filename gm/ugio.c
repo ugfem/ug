@@ -52,7 +52,7 @@
 #include "ugio.h"
 
 /* include refine because of macros accessed  */
-#include "ugrefine.h"
+#include "refine.h"
 
 /****************************************************************************/
 /*																			*/
@@ -270,7 +270,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   if (BVP_GetBVPDesc(MG_BVP(theMG),&theBVPDesc)) return (GM_ERROR);
 
   /* NB: keep first two ints written for compatibility mode (former controlword) */
-  fprintf(stream,"(MG %d %d %ld %ld %ld %ld %ld %ld \n\"%s\"\n\"%s\"\n",
+  fprintf(stream,"(MG %d %d %ld %ld %ld %ld %ld %ld \n\"%s\"\n\"%s\"\n\"%s\"\n",
           0,
           0,
           (long) theMG->status,
@@ -1046,6 +1046,11 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
       }
 
       /* load ID from MidNode if */
+                        #ifdef __TWODIM__
+            #ifdef __MIDNODE__
+      MIDNODE(theEdge)=NULL;
+                #endif
+                #endif
                         #ifdef __THREEDIM__
       {
         fscanf(stream," %ld",&i3);

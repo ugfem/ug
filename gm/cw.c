@@ -11,7 +11,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 368										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de					*/
+/*			  internet: bastian@iwr1.iwr.uni-heidelberg.de					*/
 /*																			*/
 /* History:   11.01.95 begin, ug version 3.0								*/
 /*																			*/
@@ -29,7 +29,7 @@
 #include "misc.h"
 #include "algebra.h"
 #include "ugm.h"
-#include "ugrefine.h"
+#include "refine.h"
 #include "cw.h"
 
 /****************************************************************************/
@@ -76,7 +76,7 @@ CONTROL_WORD control_words[MAX_CONTROL_WORDS] = {
   {GRID_CW_OFFSET, 0},
   {GRID_STATUS_OFFSET, 0},
   {MULTIGRID_STATUS_OFFSET, 0},
-  {BLOCKVECTOR_OFFSET, 0},
+  {0, 0},
   {0, 0},
   {0, 0},
   {0, 0},
@@ -86,11 +86,6 @@ CONTROL_WORD control_words[MAX_CONTROL_WORDS] = {
   {0, 0}
 } ;
 
-/* After extending this list update the corresponding line
-   #define NPREDEFOBJ xxx
-   in the file gm.h
- */
-
 CONTROL_ENTRY control_entries[MAX_CONTROL_ENTRIES];
 
 predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
@@ -99,15 +94,13 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {1,VCUSED_CE,           VECTOR_CW,      VCUSED_SHIFT,           VCUSED_LEN              },
   {1,VCOUNT_CE,           VECTOR_CW,      VCOUNT_SHIFT,           VCOUNT_LEN              },
   {1,VECTORSIDE_CE,       VECTOR_CW,      VECTORSIDE_SHIFT,       VECTORSIDE_LEN  },
-  {1,VCLASS_CE,           VECTOR_CW,      VCLASS_SHIFT,           VCLASS_LEN              },
+  {1,VCLASS_CE,           VECTOR_CW,      VCLASS_SHIFT,           VCLASS_LEN      },
   {1,VDATATYPE_CE,        VECTOR_CW,      VDATATYPE_SHIFT,        VDATATYPE_LEN   },
   {1,VNCLASS_CE,          VECTOR_CW,      VNCLASS_SHIFT,          VNCLASS_LEN     },
-  {1,VNEW_CE,             VECTOR_CW,      VNEW_SHIFT,             VNEW_LEN                },
-  {1,VCNEW_CE,            VECTOR_CW,      VCNEW_SHIFT,            VCNEW_LEN               },
-  {1,VCNB_CE,                     VECTOR_CW,      VCNB_SHIFT,                     VCNB_LEN                },
-  {1,VCCUT_CE,            VECTOR_CW,      VCCUT_SHIFT,            VCCUT_LEN               },
-
-  {1,MOFFSET_CE,          MATRIX_CW,      MOFFSET_SHIFT,          MOFFSET_LEN     },
+  {1,VNEW_CE,             VECTOR_CW,      VNEW_SHIFT,             VNEW_LEN        },
+  {1,VCNEW_CE,            VECTOR_CW,      VCNEW_SHIFT,            VCNEW_LEN       },
+  /*10*/
+  {1,MOFFSET_CE,          MATRIX_CW,      MOFFSET_SHIFT,          MOFFSET_LEN             },
   {1,MROOTTYPE_CE,        MATRIX_CW,      MROOTTYPE_SHIFT,        MROOTTYPE_LEN   },
   {1,MDESTTYPE_CE,        MATRIX_CW,      MDESTTYPE_SHIFT,        MDESTTYPE_LEN   },
   {1,MDIAG_CE,            MATRIX_CW,      MDIAG_SHIFT,            MDIAG_LEN               },
@@ -117,54 +110,88 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {1,MNEW_CE,             MATRIX_CW,      MNEW_SHIFT,             MNEW_LEN                },
   {1,CEXTRA_CE,           MATRIX_CW,      CEXTRA_SHIFT,           CEXTRA_LEN              },
   {1,MDOWN_CE,            MATRIX_CW,      MDOWN_SHIFT,            MDOWN_LEN               },
-  {1,MUP_CE,                      MATRIX_CW,      MUP_SHIFT,                      MUP_LEN                 },
+  /*20*/
+  {1,MUP_CE,              MATRIX_CW,      MUP_SHIFT,              MUP_LEN                 },
 
-  {1,BVDOWNTYPE_CE,       BLOCKVECTOR_CW, BVDOWNTYPE_SHIFT,       BVDOWNTYPE_LEN  },
+  {1,OBJ_CE,              GENERAL_CW,     OBJ_SHIFT,              OBJ_LEN                 },
+  {1,USED_CE,             GENERAL_CW,     USED_SHIFT,             USED_LEN                },
+  {1,TAG_CE,              GENERAL_CW,     TAG_SHIFT,              TAG_LEN                 },
+  {1,LEVEL_CE,            GENERAL_CW,     LEVEL_SHIFT,            LEVEL_LEN               },
+  {1,THEFLAG_CE,          GENERAL_CW,     THEFLAG_SHIFT,          THEFLAG_LEN             },
 
-  {1,OBJ_CE,                      GENERAL_CW, OBJ_SHIFT,                  OBJ_LEN                 },
-  {1,USED_CE,             GENERAL_CW, USED_SHIFT,                 USED_LEN                },
-  {1,TAG_CE,                      GENERAL_CW, TAG_SHIFT,                  TAG_LEN                 },
-  {1,LEVEL_CE,            GENERAL_CW, LEVEL_SHIFT,                LEVEL_LEN               },
-  {1,THEFLAG_CE,          GENERAL_CW, THEFLAG_SHIFT,              THEFLAG_LEN     },
-
-  {1,VERTEX_GEN,          VERTEX_CW,      GENERAL_SHIFT,          GENERAL_LEN     },
+  {1,VERTEX_GEN,          VERTEX_CW,      GENERAL_SHIFT,          GENERAL_LEN             },
   {1,MOVE_CE,             VERTEX_CW,      MOVE_SHIFT,             MOVE_LEN                },
   {1,MOVED_CE,            VERTEX_CW,      MOVED_SHIFT,            MOVED_LEN               },
   {1,ONEDGE_CE,           VERTEX_CW,      ONEDGE_SHIFT,           ONEDGE_LEN              },
 
-  {1,NODE_GEN,            NODE_CW,        GENERAL_SHIFT,          GENERAL_LEN     },
+  /*30*/
+  {1,NODE_GEN,            NODE_CW,        GENERAL_SHIFT,          GENERAL_LEN             },
   {1,CLASS_CE,            NODE_CW,        CLASS_SHIFT,            CLASS_LEN               },
   {1,NCLASS_CE,           NODE_CW,        NCLASS_SHIFT,           NCLASS_LEN              },
   {1,MODIFIED_CE,         NODE_CW,        MODIFIED_SHIFT,         MODIFIED_LEN    },
-  {1,NPROP_CE,            NODE_CW,        NPROP_SHIFT,            NPROP_LEN               },
 
-  {1,LINK_GEN,            LINK_CW,        GENERAL_SHIFT,          GENERAL_LEN     },
-  {1,LOFFSET_CE,          LINK_CW,        LOFFSET_SHIFT,          LOFFSET_LEN     },
+  {1,LINK_GEN,            LINK_CW,        GENERAL_SHIFT,          GENERAL_LEN             },
+  {1,LOFFSET_CE,          LINK_CW,        LOFFSET_SHIFT,          LOFFSET_LEN             },
 
-  {1,EDGE_GEN,            EDGE_CW,        GENERAL_SHIFT,          GENERAL_LEN     },
-  {1,EOFFSET_CE,          EDGE_CW,        LOFFSET_SHIFT,          LOFFSET_LEN     },
+  {1,EDGE_GEN,            EDGE_CW,        GENERAL_SHIFT,          GENERAL_LEN             },
+  {1,EOFFSET_CE,          EDGE_CW,        LOFFSET_SHIFT,          LOFFSET_LEN             },
   {1,EXTRA_CE,            EDGE_CW,        EXTRA_SHIFT,            EXTRA_LEN               },
   {1,NOOFELEM_CE,         EDGE_CW,        NOOFELEM_SHIFT,         NOOFELEM_LEN    },
-  {1,AUXEDGE_CE,          EDGE_CW,        AUXEDGE_SHIFT,          AUXEDGE_LEN     },
-  {1,PATTERN_CE,          EDGE_CW,        PATTERN_SHIFT,          PATTERN_LEN     },
+  /*40*/
+  {1,AUXEDGE_CE,          EDGE_CW,        AUXEDGE_SHIFT,          AUXEDGE_LEN             },
+  {1,PATTERN_CE,          EDGE_CW,        PATTERN_SHIFT,          PATTERN_LEN             },
   {1,ADDPATTERN_CE,       EDGE_CW,        ADDPATTERN_SHIFT,       ADDPATTERN_LEN  },
-  {1,EDGENEW_CE,          EDGE_CW,        EDGENEW_SHIFT,          EDGENEW_LEN     },
+  {1,EDGENEW_CE,          EDGE_CW,        EDGENEW_SHIFT,          EDGENEW_LEN             },
 
-  {1,ELEMENT_GEN,         ELEMENT_CW, GENERAL_SHIFT,              GENERAL_LEN     },
-  {1,REFINE_CE,           ELEMENT_CW, REFINE_SHIFT,               REFINE_LEN              },
-  {1,ECLASS_CE,           ELEMENT_CW, ECLASS_SHIFT,               ECLASS_LEN              },
-  {1,NSONS_CE,            ELEMENT_CW, NSONS_SHIFT,                NSONS_LEN               },
-  {1,NEWEL_CE,            ELEMENT_CW, NEWEL_SHIFT,                NEWEL_LEN               },
-  {1,REFINECLASS_CE,      ELEMENT_CW, REFINECLASS_SHIFT,  REFINECLASS_LEN },
+  {1,ELEMENT_GEN,         ELEMENT_CW,     GENERAL_SHIFT,          GENERAL_LEN             },
+  {1,REFINE_CE,           ELEMENT_CW,     REFINE_SHIFT,           REFINE_LEN              },
+  {1,ECLASS_CE,           ELEMENT_CW,     ECLASS_SHIFT,           ECLASS_LEN              },
+  {1,NSONS_CE,            ELEMENT_CW,     NSONS_SHIFT,            NSONS_LEN               },
+  {1,NEWEL_CE,            ELEMENT_CW,     NEWEL_SHIFT,        NEWEL_LEN           },
+  {1,REFINECLASS_CE,      ELEMENT_CW,     REFINECLASS_SHIFT,      REFINECLASS_LEN },
 
+  /*50*/
   {1,MARK_CE,             FLAG_CW,        MARK_SHIFT,             MARK_LEN                },
-  {1,COARSEN_CE,          FLAG_CW,        COARSEN_SHIFT,          COARSEN_LEN     },
+  {1,COARSEN_CE,          FLAG_CW,        COARSEN_SHIFT,          COARSEN_LEN             },
   {1,EBUILDCON_CE,        FLAG_CW,        EBUILDCON_SHIFT,        EBUILDCON_LEN   },
   {1,DECOUPLED_CE,        FLAG_CW,        DECOUPLED_SHIFT,        DECOUPLED_LEN   },
-  {1,EDGEPATTERN_CE,      FLAG_CW,        EDGEPATTERN_SHIFT,      EDGEPATTERN_LEN },
+  /* TODO: delete next line */
+  /*	{1,EDGEPATTERN_CE,	FLAG_CW,	EDGEPATTERN_SHIFT,	EDGEPATTERN_LEN	}, */
   {1,SIDEPATTERN_CE,      FLAG_CW,        SIDEPATTERN_SHIFT,      SIDEPATTERN_LEN },
-  {1,MARKCLASS_CE,        FLAG_CW,        MARKCLASS_SHIFT,        MARKCLASS_LEN   }
-}; /* last entry used: 68 for VCCUT */
+  {1,MARKCLASS_CE,        FLAG_CW,        MARKCLASS_SHIFT,        MARKCLASS_LEN   },
+
+
+        #ifdef ModelP
+  {1,XFERLINK_CE,         LINK_CW,        XFERLINK_SHIFT,         XFERLINK_LEN    },
+  {1,XFERVECTOR_CE,       VECTOR_CW,      XFERVECTOR_SHIFT,       XFERVECTOR_LEN  },
+  {1,XFERNODE_CE,         NODE_CW,        XFERNODE_SHIFT,         XFERNODE_LEN    },
+  {1,XFERMATX_CE,         MATRIX_CW,      XFERMATX_SHIFT,         XFERMATX_LEN    },
+        #else /* ModelP */
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+        #endif /* ModelP */
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0},
+  {0,0,0,0,0}
+}; /* last entry used: 64 for VCUSED_CE */
 
 /****************************************************************************/
 /*                                                                          */
@@ -173,7 +200,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
 /****************************************************************************/
 
 /* data for CVS */
-static char rcsid[] = "$Header$";
+static char rcsid[] = "/hosts/dom/cvs/ug3/ug/gm/cw.c,v 1.1.1.1 1995/04/28 10:07:41 stefan Exp";
 
 /****************************************************************************/
 /*D
@@ -232,8 +259,25 @@ INT InitPredefinedControlEntries (void)
       ce->offset_in_object = cw->offset_in_object;
       ce->mask = (POW2(ce->length)-1)<<ce->offset_in_word;
       ce->xor_mask = ~ce->mask;
-      /*if (cw->used_mask & ce->mask)
-              UserWriteF("overlap defining predef ce %d\n",i);*/
+                        #ifdef Debug
+      /* check for overlapping control entries */
+      if (cw->used_mask & ce->mask)
+      {
+        int j;
+        CONTROL_ENTRY *test_ce;
+        predefined_control_entry *test_pce;
+
+        PrintDebug("control_entry[%d] has overlapping bits with previous control_entries:\n",i);
+        for (j=0; j<i; j++)
+        {
+          test_pce = predefines+j;
+          test_ce = control_entries+test_pce->control_entry_id;
+          if (test_ce->mask & ce->mask)
+            PrintDebug(" %d",j);
+        }
+        PrintDebug("\n");
+      }
+                        #endif
       cw->used_mask |= ce->mask;
     }
   return (GM_OK);

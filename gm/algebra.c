@@ -61,7 +61,6 @@
 #include "ugm.h"
 #include "evm.h"
 #include "misc.h"
-#include "simplex.h"
 #include "algebra.h"
 
 /****************************************************************************/

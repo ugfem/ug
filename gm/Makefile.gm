@@ -19,13 +19,14 @@ include ../ug.conf
 LCFLAGS = -I../low -I../dev -I../dom
 
 # object files for both dimensions
-OBJECTS = algebra.o enrol.o evm.o ugio.o ugm.o cw.o initgm.o elements.o shapes.o evalproc.o 
+OBJECTS = algebra.o enrol.o evm.o ugio.o ugm.o cw.o initgm.o \
+          elements.o shapes.o evalproc.o rm.o refine.o
 
 # objects for 2D version
-OBJECTS2 = shapes2d.o ugm2d.o ugrefine2d.o
+OBJECTS2 = 
 
 # objects for 3D version
-OBJECTS3 = shapes3d.o ugm3d.o simplex.o ugrefine3d.o
+OBJECTS3 = 
 
 # main rules
 2Dversion : $(OBJECTS) $(OBJECTS2) Makefile.gm

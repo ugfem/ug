@@ -12,7 +12,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 368										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de					*/
+/*			  internet: ug@ica3.uni-stuttgart.de			                        */
 /*																			*/
 /* History:   09.03.92 begin, ug version 2.0								*/
 /*			  13.12.94 begin, ug version 3.0								*/
@@ -52,7 +52,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define MAX_PAR_DIST    1.0E-6          /* max.dist between different parameter */
+#define MAX_PAR_DIST    1.0E-5          /* max.dist between different parameter */
 
 /****************************************************************************/
 /*																			*/
@@ -107,5 +107,17 @@ INT                      DisposeEdgesFromElement(GRID *theGrid, ELEMENT *theElem
 INT              FindNeighborElement    (const ELEMENT *theElement, INT Side, ELEMENT **theNeighbor, INT *NeighborSide);
 INT              PointInElement                 (const COORD*, const ELEMENT *theElement);
 VIRT_HEAP_MGMT *GetGenMGUDM             ();
+
+#ifdef __TWODIM__
+EDGE            *CreateAuxEdge                  (GRID *theGrid, NODE *from, NODE *to);
+INT              DisposeAuxEdges                (GRID *theGrid);
+#endif
+
+#ifdef __THREEDIM__
+INT          DisposeEdgesFromElement(GRID *theGrid, ELEMENT *theElement);
+INT          CheckParityOfElements      (MULTIGRID* theMG);
+INT              SetParityInGrid            (GRID *theGrid);
+INT          SetParityOfElement         (ELEMENT *theElement);
+#endif
 
 #endif

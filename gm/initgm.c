@@ -11,7 +11,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de						        */
 /*																			*/
 /* History:   27.02.95 begin, ug version 3.0								*/
 /*																			*/
@@ -45,12 +45,7 @@
 #include "ugm.h"
 #include "ugio.h"
 #include "elements.h"
-#ifdef __TWODIM__
-        #include "ugrefine2d.h"
-#endif
-#ifdef __THREEDIM__
-        #include "ugrefine3d.h"
-#endif
+#include "refine.h"
 
 /* own header */
 #include "initgm.h"
@@ -137,23 +132,12 @@ INT InitGm ()
     return (err);
   }
 
-        #ifdef __TWODIM__
-  /* ugrefine2d.c */
-  if ((err=InitRefine2d())!=0)
+  /* rm.c */
+  if ((err=InitRuleManager())!=0)
   {
     SetHiWrd(err,__LINE__);
     return (err);
   }
-        #endif
-
-        #ifdef __THREEDIM__
-  /* ugrefine3d.c */
-  if ((err=InitRefine3d())!=0)
-  {
-    SetHiWrd(err,__LINE__);
-    return (err);
-  }
-        #endif
 
   return (0);
 }

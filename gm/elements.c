@@ -6,14 +6,15 @@
 /*																			*/
 /* Purpose:   implements a general element concept							*/
 /*																			*/
-/* Author:	  Peter Bastian                                                                                                 */
+/* Author:	  Peter Bastian, Stefan Lang                                                                    */
 /*			  Institut fuer Computeranwendungen III                                                 */
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de							    */
 /*																			*/
-/* History:   24.03.95 begin, ug version 3.0								*/
+/* History:   24.03.95 begin, ug version 3.0                                */
+/*			  18.03.96 ug3.1                                                                */
 /*																			*/
 /* Remarks:                                                                                                                             */
 /*																			*/
@@ -21,6 +22,8 @@
 
 /* define this to exclude extern definition of global arrays */
 #define __COMPILE_EL__
+
+#include <assert.h>
 
 #include "devices.h"
 
@@ -76,6 +79,7 @@ static GENERAL_ELEMENT def_triangle = {
   4,                                                                                    /* max number of sons			*/
   3,                                                                                    /* number of sides				*/
   3,                                                                                    /* number of corners			*/
+  {{0.0,0.0},{1.0,0.0},{0.0,1.0}},                      /* local coordinates			*/
   3,                                                                                    /* number of edges				*/
   {1,1,1,0},                                                                    /* edges for each side	(2D!)	*/
   {2,2,2,0},                                                                    /* corners for each side		*/
@@ -90,6 +94,8 @@ static GENERAL_ELEMENT def_quadrilateral = {
   4,                                                                                    /* max number of sons			*/
   4,                                                                                    /* number of sides				*/
   4,                                                                                    /* number of corners			*/
+  {{-1.0,-1.0},{1.0,-1.0},{1.0,1.0},
+   {-1.0,1.0}},                                                         /* local coordinates			*/
   4,                                                                                    /* number of edges				*/
   {1,1,1,1},                                                                    /* edges for each side	(2D!)	*/
   {2,2,2,2},                                                                    /* corners for each side		*/
@@ -106,13 +112,55 @@ static GENERAL_ELEMENT def_tetrahedron = {
   12,                                                                                   /* max number of sons			*/
   4,                                                                                    /* number of sides				*/
   4,                                                                                    /* number of corners			*/
+  {{0.0,0.0,0.0},{1.0,0.0,0.0},
+   {0.0,1.0,0.0},{0.0,0.0,1.0}},                        /* local coordinates			*/
   6,                                                                                    /* number of edges				*/
-  {3,3,3,3},                                                                    /* edges for each side	(2D!)	*/
-  {3,3,3,3},                                                                    /* corners for each side		*/
+  {3,3,3,3,-1,-1},                                                      /* edges for each side	(2D!)	*/
+  {3,3,3,3,-1,-1},                                                      /* corners for each side		*/
   2,                                                                                    /* an edge has 2 corners		*/
-  { {0,1,2}, {1,5,4}, {2,3,5}, {0,4,3} },       /* number of edge j of side i   */
-  { {0,2,1}, {1,2,3}, {2,0,3}, {3,0,1} },       /* number of corner j of side i */
-  { {0,1},{1,2},{0,2},{0,3},{1,3},{2,3} }       /* number of corner j of edge i */
+  {{0,1,2,-1},{1,5,4,-1},{2,3,5,-1},{0,4,3,-1}},       /* number of edge j of side i   */
+  {{0,1,2,-1},{1,2,3,-1},{2,3,0,-1},{3,0,1,-1}},       /* number of corner j of side i */
+  {{0,1},{1,2},{0,2},{0,3},{1,3},{2,3} }        /* number of corner j of edge i */
+} ;
+
+static GENERAL_ELEMENT def_pyramid = {
+  5,                                                                                    /* tag							*/
+  0,                                                                                    /* max number of sons			*/
+  5,                                                                                    /* number of sides				*/
+  5,                                                                                    /* number of corners			*/
+  {{0.0,0.0,0.0},{1.0,0.0,0.0},{1.0,1.0,0.0},
+   {0.0,1.0,0.0},{0.0,0.0,1.0}},                        /* local coordinates			*/
+  8,                                                                                    /* number of edges				*/
+  {4,3,3,3,3,-1},                                                       /* edges for each side	(2D!)	*/
+  {4,3,3,3,3,-1},                                                       /* corners for each side		*/
+  2,                                                                                    /* an edge has 2 corners		*/
+  {{3,2,1,0},{0,5,4,-1},{1,6,5,-1},                     /* number of edge j of side i   */
+   {2,7,6,-1},{3,4,7,-1}},
+  {{0,3,2,1},{0,1,4,-1},{1,2,4,-1},                     /* number of corner j of side i */
+   {2,3,4,-1},{3,0,4,-1}},
+  {{0,1},{1,2},{2,3},{3,0},{0,4},{1,4},         /* number of corner j of edge i */
+   {2,4},{3,4}}
+} ;
+
+static GENERAL_ELEMENT def_hexahedron = {
+  7,                                                                                    /* tag							*/
+  30,                                                                                   /* max number of sons			*/
+  6,                                                                                    /* number of sides				*/
+  8,                                                                                    /* number of corners			*/
+  {{0.0,0.0,0.0},{1.0,0.0,0.0},
+   {1.0,1.0,0.0},{0.0,1.0,0.0},
+   {0.0,0.0,1.0},{1.0,0.0,1.0},
+   {1.0,1.0,1.0},{0.0,1.0,1.0}},                        /* local coordinates			*/
+  12,                                                                                   /* number of edges				*/
+  {4,4,4,4,4,4},                                                        /* edges for each side	(2D!)	*/
+  {4,4,4,4,4,4},                                                        /* corners for each side		*/
+  2,                                                                                    /* an edge has 2 corners		*/
+  {{3,2,1,0},{0,5,8,4},{1,6,9,5},                       /* number of edge j of side i   */
+   {2,7,10,6},{3,4,11,7},{8,9,10,11}},
+  {{0,3,2,1},{0,1,5,4},{1,2,6,5},                       /* number of corner j of side i */
+   {2,3,7,6},{3,0,4,7},{4,5,6,7}},
+  {{0,1},{1,2},{2,3},{3,0},{0,4},{1,5},         /* number of corner j of edge i */
+   {2,6},{3,7},{4,5},{5,6},{6,7},{7,4}}
 } ;
 #endif
 
@@ -130,7 +178,6 @@ static char rcsid[] = "$Header$";
    .  el - pointer to an element description
 
    STRUCTURES:
-
    .vb
    typedef struct {
     INT tag;                                // element type to be defined
@@ -164,6 +211,11 @@ static char rcsid[] = "$Header$";
     INT corner_of_side_inv[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_ELEM];
     INT edges_of_corner[MAX_CORNERS_OF_ELEM][MAX_EDGES_OF_ELEM];
         INT corner_of_oppedge[MAX_EDGES_OF_ELEM][MAX_CORNERS_OF_EDGE];
+        INT corner_opp_to_side[MAX_SIDES_OF_ELEM];
+        INT opposite_edge[MAX_EDGES_OF_ELEM];
+        INT side_opp_to_corner[MAX_CORNERS_OF_ELEM];
+        INT edge_of_corner[MAX_CORNERS_OF_ELEM][MAX_EDGES_OF_ELEM];
+        INT edge_of_two_sides[MAX_SIDES_OF_ELEM][MAX_SIDES_OF_ELEM];
 
    } GENERAL_ELEMENT;
    .ve
@@ -209,7 +261,7 @@ static char rcsid[] = "$Header$";
 static INT ProcessElementDescription (GENERAL_ELEMENT *el)
 {
   INT p_count, tag;
-  INT i,j,k,l,n;
+  INT i,j,k,l,m,n,n1,n2;
 
   tag = el->tag;
   p_count = 0;
@@ -313,38 +365,361 @@ static INT ProcessElementDescription (GENERAL_ELEMENT *el)
         }
     }
 
-  /* corner_of_oppedge(i,j) : i is a number of an edge, j is a number of a corner
-     of an edge, then corner_of_oppedge(i,j) gives the corner of the edge opposite
-     to the specified edge or -1 if there is no opposite edge						*/
+
+  /* fields not valid for all elements */
+
+  /* corner_of_oppedge(i,j) */
   for (i=0; i<MAX_EDGES_OF_ELEM; i++)
     for (j=0; j<MAX_CORNERS_OF_EDGE; j++)
       el->corner_of_oppedge[i][j] = -1;
-  if (tag==4)
-    for (i=0; i<el->edges_of_elem; i++)
-      for (j=0; j<el->edges_of_elem; j++)
-      {
+
+  /* corner_opp_to_side(i) */
+  for (i=0; i<MAX_SIDES_OF_ELEM; i++)
+    el->corner_opp_to_side[i] = -1;
+
+  /* opposite_edge(i) */
+  for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+    el->opposite_edge[i] = -1;
+
+  /* side_opp_to_corner(i) */
+  for (i=0; i<MAX_CORNERS_OF_ELEM; i++)
+    el->side_opp_to_corner[i] = -1;
+
+  /* edge_of_corner(i,j) */
+  for (i=0; i<MAX_CORNERS_OF_ELEM; i++)
+    for (j=0; j<MAX_EDGES_OF_ELEM; j++)
+      el->edge_of_corner[i][j] = -1;
+
+#ifdef __TWODIM__
+  switch (tag)
+  {
+  case TRIANGLE :
+    /* corner_of_oppedge(i,j) */
+    /* is not defined!		  */
+
+    /* corner_opp_to_side(i)  */
+    /* is not defined!		  */
+
+    /* opposite_edge(i)		  */
+    /* is not defined!		  */
+
+    /* side_opp_to_corner(i)  */
+    /* is not defined!		  */
+
+    /* edge_of_corner(i,j)	  */
+    for (i=0; i<el->edges_of_elem; i++) {
+      for (j=0; j<el->corners_of_edge; j++) {
+        if (el->corner_of_edge[i][j] >=0) {
+          for (k=0; k<el->edges_of_elem; k++)
+            if (el->edge_of_corner[el->corner_of_edge[i][j]][k] < 0)
+              break;
+          assert(k<el->edges_of_elem);
+          el->edge_of_corner[el->corner_of_edge[i][j]][k] = i;
+        }
+      }
+    }
+
+    break;
+
+  case QUADRILATERAL :
+    /* corner_of_oppedge(i,j) */
+    for (i=0; i<el->edges_of_elem; i++) {
+      for (j=0; j<el->edges_of_elem; j++) {
         n=1;
         for (k=0; k<el->corners_of_edge; k++)
           for (l=0; l<el->corners_of_edge; l++)
             if (el->corner_of_edge[i][k]==el->corner_of_edge[j][l])
               n=0;
-        if (n)
-        {
+        if (n) {
           el->corner_of_oppedge[i][0] = el->corner_of_edge[j][0];
           el->corner_of_oppedge[i][1] = el->corner_of_edge[j][1];
+          break;
         }
       }
+      assert(j<el->edges_of_elem);
+    }
+
+    /* corner_opp_to_side(i)  */
+    /* is not defined!		  */
+
+    /* opposite_edge(i)		  */
+    for (i=0; i<el->edges_of_elem; i++) {
+      n = 0;
+      for (j=0; j<el->corners_of_edge; j++) {
+        for (k=0; k<el->edges_of_elem; k++) {
+          if (el->edges_of_corner[el->corner_of_edge[i][j]][k] >= 0)
+            n |= (0x1<<(el->edges_of_corner[el->corner_of_edge[i][j]][k]));
+        }
+      }
+      for (j=0; j<el->edges_of_elem; j++)
+        if (((n>>j) & 0x1) == 0)
+          break;
+      assert(j<el->edges_of_elem);
+
+      el->opposite_edge[i] = j;
+    }
+
+    /* side_opp_to_corner(i)  */
+    /* is not defined!		  */
+
+    /* edge_of_corner(i,j)	  */
+    for (i=0; i<el->edges_of_elem; i++) {
+      for (j=0; j<el->corners_of_edge; j++) {
+        if (el->corner_of_edge[i][j] >=0) {
+          for (k=0; k<el->edges_of_elem; k++)
+            if (el->edge_of_corner[el->corner_of_edge[i][j]][k] < 0)
+              break;
+          assert(k<el->edges_of_elem);
+          el->edge_of_corner[el->corner_of_edge[i][j]][k] = i;
+        }
+      }
+    }
+
+    break;
+  }
+#endif
+
+#ifdef __THREEDIM__
+  /* edge_of_two_sides(i,j) */
+  for (i=0; i<MAX_SIDES_OF_ELEM; i++)
+    for (j=0; j<MAX_SIDES_OF_ELEM; j++)
+      el->edge_of_two_sides[i][j] = -1;
+
+  switch (tag)
+  {
+  case TETRAHEDRON :
+
+    /* corner_of_oppedge(i,j) */
+    for (i=0; i<el->edges_of_elem; i++) {
+      for (j=0; j<el->edges_of_elem; j++) {
+        n=1;
+        for (k=0; k<el->corners_of_edge; k++)
+          for (l=0; l<el->corners_of_edge; l++)
+            if (el->corner_of_edge[i][k]==el->corner_of_edge[j][l])
+              n=0;
+        if (n) {
+          el->corner_of_oppedge[i][0] = el->corner_of_edge[j][0];
+          el->corner_of_oppedge[i][1] = el->corner_of_edge[j][1];
+          break;
+        }
+      }
+      assert(j<el->edges_of_elem);
+    }
+
+    /* corner_opp_to_side(i) */
+    for (i=0; i<el->sides_of_elem; i++) {
+      n = 0;
+      for (j=0; j<el->corners_of_side[i]; j++) {
+        n |= (0x1<<(el->corner_of_side[i][j]));
+      }
+      for (j=0; j<el->corners_of_elem; j++) {
+        if (((n>>j) & 0x1) == 0)
+          break;
+      }
+      assert(j<el->corners_of_elem);
+      el->corner_opp_to_side[i] = j;
+    }
+
+    /* opposite_edge(i)		  */
+    for (i=0; i<el->edges_of_elem; i++) {
+      n = 0;
+      for (j=0; j<el->corners_of_edge; j++) {
+        for (k=0; k<el->edges_of_elem; k++) {
+          if (el->edges_of_corner[el->corner_of_edge[i][j]][k] >= 0)
+            n |= (0x1<<(el->edges_of_corner[el->corner_of_edge[i][j]][k]));
+        }
+      }
+      for (j=0; j<el->edges_of_elem; j++)
+        if (((n>>j) & 0x1) == 0)
+          break;
+      assert(j<el->edges_of_elem);
+
+      el->opposite_edge[i] = j;
+    }
+
+    /* side_opp_to_corner(i)  */
+    for (i=0; i<el->corners_of_elem; i++) {
+      for (j=0; j<el->sides_of_elem; j++) {
+        n = 0;
+        for (k=0; k<el->corners_of_side[j]; k++)
+          n |= (0x1<<(el->corner_of_side[j][k]));
+        if (((n>>i) & 0x1) == 0) {
+          el->side_opp_to_corner[i] = j;
+          break;
+        }
+      }
+      assert(j<el->sides_of_elem);
+    }
+
+    /* edge_of_corner(i,j)	  */
+    for (i=0; i<el->edges_of_elem; i++) {
+      for (j=0; j<el->corners_of_edge; j++) {
+        if (el->corner_of_edge[i][j] >=0) {
+          for (k=0; k<el->edges_of_elem; k++)
+            if (el->edge_of_corner[el->corner_of_edge[i][j]][k] < 0)
+              break;
+          assert(k<el->edges_of_elem);
+          el->edge_of_corner[el->corner_of_edge[i][j]][k] = i;
+        }
+      }
+    }
+
+    break;
+
+  case PYRAMID :
+
+    /* corner_of_oppedge(i,j) */
+    /* is not defined!		  */
+
+    /* corner_opp_to_side(i) */
+    for (i=0; i<el->sides_of_elem; i++) {
+      if (el->corners_of_side[i] == 4) {
+        n = 0;
+        for (j=0; j<el->corners_of_side[i]; j++) {
+          n |= (0x1<<(el->corner_of_side[i][j]));
+        }
+        for (j=0; j<el->corners_of_elem; j++) {
+          if (((n>>j) & 0x1) == 0)
+            break;
+        }
+        assert(j<el->corners_of_elem);
+        el->corner_opp_to_side[i] = j;
+      }
+    }
+
+    /* opposite_edge(i)		  */
+    /* is not defined!		  */
+
+    /* side_opp_to_corner(i)  */
+    for (i=0; i<el->corners_of_elem; i++) {
+      for (j=0; j<el->sides_of_elem; j++) {
+        n = 0;
+        for (k=0; k<el->corners_of_side[j]; k++)
+          n |= (0x1<<(el->corner_of_side[j][k]));
+        if (((n>>i) & 0x1) == 0) {
+          el->side_opp_to_corner[i] = j;
+          break;
+        }
+      }
+      assert(j<el->sides_of_elem);
+    }
+
+    /* edge_of_corner(i,j)	  */
+    for (i=0; i<el->edges_of_elem; i++) {
+      for (j=0; j<el->corners_of_edge; j++) {
+        if (el->corner_of_edge[i][j] >=0) {
+          for (k=0; k<el->edges_of_elem; k++)
+            if (el->edge_of_corner[el->corner_of_edge[i][j]][k] < 0)
+              break;
+          assert(k<el->edges_of_elem);
+          el->edge_of_corner[el->corner_of_edge[i][j]][k] = i;
+        }
+      }
+    }
+
+    break;
+
+  case HEXAHEDRON :
+
+    /* corner_of_oppedge(i,j) */
+    for (i=0; i<el->edges_of_elem; i++) {
+      n = 0;
+      for (j=0; j<el->corners_of_edge; j++) {
+        n1 = el->corner_of_edge[i][j];
+        for (k=0; k<el->edges_of_elem; k++) {
+          if (el->edges_of_corner[n1][k] >= 0) {
+            n |= (0x1<<(el->edges_of_corner[n1][k]));
+            for (l=0; l<el->corners_of_edge; l++) {
+              n2 = el->corner_of_edge[el->edges_of_corner[n1][k]][l];
+              if (n2 != n1) {
+                for (m=0; m<el->edges_of_elem; m++)
+                  if (el->edges_of_corner[n2][m] >= 0)
+                    n |= (0x1<<(el->edges_of_corner[n2][m]));
+              }
+            }
+          }
+        }
+      }
+      for (k=0; k<el->edges_of_elem; k++)
+        if (((n>>k) & 0x1) == 0)
+          break;
+      assert(k<el->edges_of_elem);
+
+      el->corner_of_oppedge[i][0] = el->corner_of_edge[k][0];
+      el->corner_of_oppedge[i][0] = el->corner_of_edge[k][1];
+    }
+
+    /* corner_opp_to_side(i)  */
+    /* is not defined!		  */
+
+    /* opposite_edge(i)		  */
+    for (i=0; i<el->edges_of_elem; i++) {
+      n = 0;
+      for (j=0; j<el->corners_of_edge; j++) {
+        n1 = el->corner_of_edge[i][j];
+        for (k=0; k<el->edges_of_elem; k++) {
+          if (el->edges_of_corner[n1][k] >= 0) {
+            n |= (0x1<<(el->edges_of_corner[n1][k]));
+            for (l=0; l<el->corners_of_edge; l++) {
+              n2 = el->corner_of_edge[el->edges_of_corner[n1][k]][l];
+              if (n2 != n1) {
+                for (m=0; m<el->edges_of_elem; m++) {
+                  if (el->edges_of_corner[n2][m] >= 0)
+                    n |= (0x1<<(el->edges_of_corner[n2][m]));
+                }
+              }
+            }
+          }
+        }
+      }
+      for (k=0; k<el->edges_of_elem; k++)
+        if (((n>>k) & 0x1) == 0)
+          break;
+      assert(k<el->edges_of_elem);
+
+      el->opposite_edge[i] = k;
+    }
+
+    /* side_opp_to_corner(i)  */
+    /* is not defined!		  */
+
+    /* edge_of_corner(i,j)	  */
+    for (i=0; i<el->edges_of_elem; i++) {
+      for (j=0; j<el->corners_of_edge; j++) {
+        if (el->corner_of_edge[i][j] >=0) {
+          for (k=0; k<el->edges_of_elem; k++)
+            if (el->edge_of_corner[el->corner_of_edge[i][j]][k] < 0)
+              break;
+          assert(k<el->edges_of_elem);
+          el->edge_of_corner[el->corner_of_edge[i][j]][k] = i;
+        }
+      }
+    }
+
+    break;
+  }
+
+  for (i=0; i<el->sides_of_elem; i++)
+    for (j=0; j<el->sides_of_elem; j++)
+      for (k=0; k<el->edges_of_side[i]; k++)
+        for (l=0; l<el->edges_of_side[j]; l++)
+          if (el->edge_of_side[k][i] == el->edge_of_side[k][i])
+            el->edge_of_two_sides[i][j] = el->edge_of_side[k][i];
+#endif
 
   /* make description globally available */
   element_descriptors[tag] = el;
 
   /* get a free object id for free list */
   el->mapped_inner_objt = GetFreeOBJT();
+  if (el->mapped_inner_objt < 0)
+    return(GM_ERROR);
   el->mapped_bnd_objt = GetFreeOBJT();
+  if (el->mapped_bnd_objt < 0)
+    return(GM_ERROR);
 
   return(GM_OK);
 }
-
 
 /****************************************************************************/
 /*D
@@ -381,6 +756,10 @@ INT InitElementTypes (void)
 
 #ifdef __THREEDIM__
   err = ProcessElementDescription(&def_tetrahedron);
+  if (err!=GM_OK) return(err);
+  err = ProcessElementDescription(&def_pyramid);
+  if (err!=GM_OK) return(err);
+  err = ProcessElementDescription(&def_hexahedron);
   if (err!=GM_OK) return(err);
 #endif
 

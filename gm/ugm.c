@@ -23,7 +23,6 @@
 #pragma segment ugm
 #endif
 
-
 /****************************************************************************/
 /*																			*/
 /*		defines to exclude functions										*/
@@ -56,21 +55,11 @@
 #include "evm.h"
 #include "gm.h"
 #include "misc.h"
-#include "simplex.h"
 #include "algebra.h"
 #include "ugm.h"
 
-#ifdef __TWODIM__
-#include "shapes2d.h"
-#endif
-
-#ifdef __THREEDIM__
-#include "shapes3d.h"
-#include "ugm3d.h"
-#endif
-
 /* include refine because of macros accessed in list functions */
-#include "ugrefine.h"
+#include "refine.h"
 
 /****************************************************************************/
 /*																			*/
@@ -81,6 +70,9 @@
 /*		  macros															*/
 /*																			*/
 /****************************************************************************/
+
+#define RESOLUTION       20     /* resolution for creating boundary midnode */
+#define SMALL1 0.001
 
 #define ORDERRES                1e-3    /* resolution for OrderNodesInGrid			*/
 #define LINKTABLESIZE   32              /* max number of inks per node for ordering	*/
@@ -317,7 +309,7 @@ VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex)
 
   /* initialize data */
   CTRL(vs) = 0;
-  SETOBJT(vs,VSOBJ);
+  PARSETOBJT(vs,VSOBJ);
   VS_PATCH(vs) = NULL;
   for (i=0; i<DIM; i++) LAMBDA(vs,i) = 0.0;
 
@@ -357,7 +349,11 @@ VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after)
   INT ds;
   int i;
 
+        #ifdef ModelP
+  pv = NULL;
+        #else
   pv = GetFreeObject(theGrid->mg,BVOBJ);
+        #endif
   if (pv==NULL)
   {
     pv = GetMem(theGrid->mg->theHeap,sizeof(struct bvertex),FROM_BOTTOM);
@@ -374,7 +370,7 @@ VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after)
 
   /* initialize data */
   CTRL(pv) = 0;
-  SETOBJT(pv,BVOBJ);
+  PARSETOBJT(pv,BVOBJ);
   SETLEVEL(pv,theGrid->level);
   ID(pv) = (theGrid->mg->vertIdCounter)++;
   VFATHER(pv) = NULL;
@@ -437,7 +433,11 @@ VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after)
   INT ds;
   int i;
 
+        #ifdef ModelP
+  pv = NULL;
+        #else
   pv = GetFreeObject(theGrid->mg,IVOBJ);
+        #endif
   if (pv==NULL)
   {
     pv = GetMem(theGrid->mg->theHeap,sizeof(struct ivertex),FROM_BOTTOM);
@@ -454,7 +454,7 @@ VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after)
 
   /* initialize data */
   CTRL(pv) = 0;
-  SETOBJT(pv,IVOBJ);
+  PARSETOBJT(pv,IVOBJ);
   SETLEVEL(pv,theGrid->level);
   ID(pv) = (theGrid->mg->vertIdCounter)++;
   VFATHER(pv) = NULL;
@@ -519,7 +519,11 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
   VECTOR *pv;
         #endif
 
+        #ifdef ModelP
+  pn = NULL;
+        #else
   pn = GetFreeObject(theGrid->mg,NDOBJ);
+        #endif
   if (pn==NULL)
   {
     pn = GetMem(theGrid->mg->theHeap,sizeof(NODE),FROM_BOTTOM);
@@ -563,7 +567,7 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
 
   /* initialize data */
   CTRL(pn) = 0;
-  SETOBJT(pn,NDOBJ);
+  PARSETOBJT(pn,NDOBJ);
   SETCLASS(pn,4);
   SETLEVEL(pn,theGrid->level);
   ID(pn) = (theGrid->mg->nodeIdCounter)++;
@@ -602,6 +606,507 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
 }
 
 /****************************************************************************/
+/*                                                                          */
+/* Function:  CreateMidNode                                                 */
+/*                                                                          */
+/* Purpose:   call CreateMidNode2D() or CreateMidNode3D()                   */
+/*                                                                          */
+/* Param:     ELEMENT *theElement: element to refine                        */
+/*            int edge: edge to refine                                      */
+/*            NODE *after: insert new node after that node                  */
+/*                                                                          */
+/* return:    NODE* : pointer to new node                                   */
+/*            NULL  : could not allocate                                    */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __TWODIM__
+
+NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after)
+{
+  ELEMENTSIDE *theSide;
+  COORD x,y;
+  COORD r[2],lambda1,lambda0,z;
+  COORD lambda,dlambda,s,lambdaopt,smin;
+  INT i,n;
+  VERTEX *theVertex;
+  VSEGMENT *vsnew;
+  NODE *theNode;
+  PATCH *thePatch;
+
+  n = TAG(theElement);
+
+  /* calculate midpoint of edge */
+  x = 0.5*(XC(MYVERTEX(CORNER(theElement,side)))+XC(MYVERTEX(CORNER(theElement,(side+1)%n))));
+  y = 0.5*(YC(MYVERTEX(CORNER(theElement,side)))+YC(MYVERTEX(CORNER(theElement,(side+1)%n))));
+
+  /* allocate vertex */
+  if ((OBJT(theElement)==BEOBJ)&&(SIDE(theElement,side)!=NULL))
+  {
+    /* find optimal boundary coordinate for boundary vertex */
+    theSide = SIDE(theElement,side);
+    thePatch = ES_PATCH(theSide);
+    smin = 1.0E30;
+    lambda0 = PARAM(theSide,0,0);
+    lambda1 = PARAM(theSide,1,0);
+    dlambda = (lambda1-lambda0)/((COORD) RESOLUTION);
+    lambda = lambda0;
+    for (i=1; i<RESOLUTION; i++)
+    {
+      lambda += dlambda;
+      if (Patch_local2global(thePatch,&lambda,r)) return (NULL);
+      s = (r[0]-x)*(r[0]-x)+(r[1]-y)*(r[1]-y);
+      if (s<smin)
+      {
+        smin = s;
+        lambdaopt = lambda;
+      }
+    }
+
+    /* create vertex */
+    theVertex = CreateBoundaryVertex(theGrid,NULL);
+    if (theVertex==NULL) return(NULL);
+    vsnew = CreateVertexSegment(theGrid, theVertex);
+    if (vsnew==NULL)
+    {
+      DisposeVertex(theGrid,theVertex);
+      UserWrite("cannot create vertexsegment\n");
+      return(NULL);
+    }
+    LAMBDA(vsnew,0) = lambdaopt;
+    if (Patch_local2global(thePatch,PVECT(vsnew),CVECT(theVertex))) return (NULL);
+    z = (lambdaopt-lambda0)/(lambda1-lambda0);
+    ZETA(vsnew) = z;
+    SETONEDGE(theVertex,side);
+    VS_PATCH(vsnew) = thePatch;
+    if (n==3)
+    {
+      if (side==0) { XI(theVertex)= z  ; ETA(theVertex)= 0.0; }
+      if (side==1) { XI(theVertex)= 1-z; ETA(theVertex)= z  ; }
+      if (side==2) { XI(theVertex)= 0.0; ETA(theVertex)= 1-z; }
+    }
+    else
+    {
+      if (side==0) { XI(theVertex)= 2*z-1; ETA(theVertex)= -1.0; }
+      if (side==1) { XI(theVertex)= 1.0;       ETA(theVertex)= 2*z-1; }
+      if (side==2) { XI(theVertex)= 1-2*z; ETA(theVertex)= 1.0; }
+      if (side==3) { XI(theVertex)= -1.0;  ETA(theVertex)= 1-2*z; }
+    }
+    VFATHER(theVertex) = theElement;
+    SETMOVE(theVertex,1);
+  }
+  else
+  {
+    /* we need an inner vertex */
+    theVertex = CreateInnerVertex(theGrid,NULL);
+    if (theVertex==NULL) return(NULL);
+    XC(theVertex) = x;
+    YC(theVertex) = y;
+    if (n==3)
+    {
+      if (side==0) { XI(theVertex)= 0.5; ETA(theVertex)= 0.0; }
+      if (side==1) { XI(theVertex)= 0.5; ETA(theVertex)= 0.5; }
+      if (side==2) { XI(theVertex)= 0.0; ETA(theVertex)= 0.5; }
+    }
+    else
+    {
+      if (side==0) { XI(theVertex)= 0.0; ETA(theVertex)=-1.0; }
+      if (side==1) { XI(theVertex)= 1.0; ETA(theVertex)= 0.0; }
+      if (side==2) { XI(theVertex)= 0.0; ETA(theVertex)= 1.0; }
+      if (side==3) { XI(theVertex)=-1.0; ETA(theVertex)= 0.0; }
+    }
+    VFATHER(theVertex) = theElement;
+    SETMOVE(theVertex,2);
+  }
+
+  /* allocate node */
+  theNode = CreateNode(theGrid,after);
+  if (theNode==NULL)
+  {
+    DisposeVertex(theGrid,theVertex);
+    return(NULL);
+  }
+  MYVERTEX(theNode) = theVertex;
+  NFATHER(theNode) = NULL;
+  TOPNODE(theVertex) = theNode;
+
+  return(theNode);
+}
+
+#endif
+
+#ifdef __THREEDIM__
+
+NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,int edge,NODE *after)
+{
+  ELEMENTSIDE   *theSide;
+  ELEMENT           *BoundaryElement;
+  COORD s,smin;
+  COORD x[3],r[3], ropt[3], l[2], dl[2], Inverse[9], Matrix[9];
+  COORD_VECTOR HelpVector;
+  COORD             *lambda, *lambda1, *lambda2, *cvect;
+  int i,ni0,ni1,iopt;
+  VERTEX            *theVertex, *v1, *v2;
+  VSEGMENT          *vs1,*vs2, *vs;
+  NODE              *theNode;
+  PATCH             *thePatch;
+
+  /* calculate midpoint of edge */
+  ni0 = CORNER_OF_EDGE(theElement,edge,0);
+  ni1 = CORNER_OF_EDGE(theElement,edge,1);
+  v1      = MYVERTEX(CORNER(theElement,ni0));
+  v2      = MYVERTEX(CORNER(theElement,ni1));
+
+  /* calculate physical position of MidNode */
+  V3_LINCOMB(0.5, CVECT(v1), 0.5, CVECT(v2), x);
+
+  /* check for boundary node */
+  theVertex = NULL;
+  if (OBJT(v1) == BVOBJ && OBJT(v2) == BVOBJ)
+  {
+    /* We now assume, that the edge is on the boundary if and only if	*/
+    /* there is at least one boundary segment containing both vertices. */
+    /* This works if we assume that there is no level 0 element                 */
+    /* with a boundary side covering more than one boundary segment.	*/
+    /* See also "InsertElementCommand" in "plot3d.c".					*/
+
+    for (vs1=VSEG(v1); vs1!=NULL; vs1=NEXTSEG(vs1))
+    {
+      for (vs2=VSEG(v2); vs2!=NULL; vs2=NEXTSEG(vs2))
+      {
+        if (VS_PATCH(vs1) == VS_PATCH(vs2))
+        {
+          if (theVertex == NULL)
+          {
+            theVertex = CreateBoundaryVertex(theGrid,NULL);
+            cvect = CVECT(theVertex);
+          }
+          if (theVertex == NULL) return(NULL);
+
+          if ((vs = CreateVertexSegment(theGrid,theVertex)) == NULL)
+          {
+            DisposeVertex(theGrid, theVertex);
+            return(NULL);
+          }
+          thePatch = VS_PATCH(vs) = VS_PATCH(vs1);
+
+          /* find optimal parameters for this segment */
+          lambda1 = PVECT(vs1);
+          lambda2 = PVECT(vs2);
+          lambda  = PVECT(vs);
+
+          /* test midpoint */
+          lambda[0] = 0.5*(lambda1[0] + lambda2[0]);
+          lambda[1] = 0.5*(lambda1[1] + lambda2[1]);
+
+          if (Patch_local2global(thePatch,lambda,ropt)) return (NULL);
+
+          V3_EUKLIDNORM_OF_DIFF(x,ropt,smin)
+
+          if (smin>MAX_PAR_DIST)                               /* perhaps not the midpoint */
+          {
+            l[0] = lambda1[0];
+            l[1] = lambda1[1];
+
+            assert (RESOLUTION > 0);
+            dl[0] = (lambda2[0] - lambda1[0])/((COORD) RESOLUTION);
+            dl[1] = (lambda2[1] - lambda1[1])/((COORD) RESOLUTION);
+
+            for (i=0; i<=RESOLUTION; i++)
+            {
+              if (Patch_local2global(thePatch,l,r))
+                continue;
+              V3_EUKLIDNORM_OF_DIFF(x,r,s)
+              if (s<smin)
+              {
+                smin = s;
+                lambda[0] = l[0];
+                lambda[1] = l[1];
+                V3_COPY(r,ropt);
+              }
+              l[0]+=dl[0];
+              l[1]+=dl[1];
+            }
+          }
+
+          /* if it is the first vertex segment found fill in geometric data else compare with other vertex segments */
+          if (NEXTSEG(vs) == NULL)
+          {
+            V3_COPY(ropt,cvect);
+            SETMOVED(theVertex, smin>MAX_PAR_DIST);
+          }
+          else
+          {
+            V3_EUKLIDNORM_OF_DIFF(cvect,ropt,s)
+            if (s>MAX_PAR_DIST)
+            {
+              DisposeVertex(theGrid,theVertex);
+              UserWrite("two boundary segments with a common edge are not consistent\n");
+              return(NULL);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (theVertex == NULL)
+  {
+    theVertex = CreateInnerVertex(theGrid,NULL);
+    if (theVertex == NULL) return(NULL);
+    V3_COPY(x,CVECT(theVertex));
+  }
+
+  VFATHER(theVertex) = theElement;
+  SETONEDGE(theVertex,edge);
+
+  /* create node */
+  theNode = CreateNode(theGrid,after);
+  if (theNode==NULL)
+  {
+    DisposeVertex(theGrid,theVertex);
+    return(NULL);
+  }
+  MYVERTEX(theNode) = theVertex;
+  NFATHER(theNode) = NULL;
+  SETCLASS(theNode,4);
+
+  /* local coordinates for the reference tetrahedron */
+  if (!MOVED(theVertex))
+  {
+    V3_LINCOMB(0.5,LOCAL_COORD_OF_ELEM(theElement,ni0),0.5,LOCAL_COORD_OF_ELEM(theElement,ni1),LCVECT(theVertex))
+  }
+  else
+  {
+    if (TAG(theElement) == TETRAHEDRON)
+    {
+      /* set transformation matrix */
+      V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,1))), CVECT(MYVERTEX(CORNER(theElement,0))), Matrix)
+      V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,2))), CVECT(MYVERTEX(CORNER(theElement,0))), Matrix+3)
+      V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,3))), CVECT(MYVERTEX(CORNER(theElement,0))), Matrix+6)
+
+      /* Invert it */
+      if (M3_Invert(Inverse, Matrix))
+      {
+        UserWrite("error: cannot create MidNode on edge of the element\n");
+        UserWrite("       the element is degenerated\n");
+        return (NULL);
+      }
+      V3_SUBTRACT(CVECT(theVertex), CVECT(MYVERTEX(CORNER(theElement,0))), HelpVector)
+      M3_TIMES_V3(Inverse,HelpVector,LCVECT(theVertex))
+    }
+    else
+    {
+      /* Compute transformation coeffisients */
+      TransformCoefficients(theElement);
+
+      /* Get global coordinates */
+      V3_COPY(CVECT(theVertex),x);
+
+      /* Set initial guess to local coordinates, */
+      /* as if the node was not moved.           */
+      V3_LINCOMB(0.5,LOCAL_COORD_OF_ELEM(theElement,ni0),0.5,LOCAL_COORD_OF_ELEM(theElement,ni1),r)
+
+      /* Compute local coordinates */
+      if (GlobalToLocalHEX(x, r)!=0) {
+        UserWrite(" *** CreateMidNodeHEX: can't move node !\n");
+        return (NULL);
+      }
+      else
+        V3_COPY(r,LCVECT(theVertex));
+    }
+  }
+
+  return(theNode);
+}
+
+#endif
+
+/****************************************************************************/
+/*																			*/
+/* Function:  CreateSideNode	                                                                                        */
+/*																			*/
+/* Purpose:   allocate a new node on an side of an element. Includes vertex */
+/*			  best fit boundary coordinates and local coordinates.			*/
+/*																			*/
+/* Param:	  ELEMENT *theElement: element to refine						*/
+/*			  int side: side to refine										*/
+/*			  NODE *after: insert new node after that node					*/
+/*																			*/
+/* return:	  NODE* : pointer to new node									*/
+/*			  NULL	: could not allocate									*/
+/*																			*/
+/****************************************************************************/
+
+#ifdef __THREEDIM__
+NODE *CreateSideNode (GRID *theGrid,ELEMENT *theElement,NODE *Node0, NODE *Node1,NODE *after)
+{
+  ELEMENTSIDE   *theSide;
+  ELEMENT           *BoundaryElement;
+  COORD s,smin;
+  COORD x[3], r[3], ropt[3], l[2], dl[2], Inverse[9], Matrix[9];
+  COORD_VECTOR HelpVector;
+  COORD             *lambda, *lambda1, *lambda2, *cvect;
+  int i,ni0,ni1,iopt;
+  VERTEX            *theVertex, *v1, *v2;
+  VSEGMENT          *vs1,*vs2, *vs;
+  NODE              *theNode;
+  PATCH         *thePatch;
+
+  /* calculate midpoint of side */
+  v1      = MYVERTEX(Node0);
+  v2      = MYVERTEX(Node1);
+
+  /* calculate physical position of SideNode */
+  V3_LINCOMB(0.5, CVECT(v1), 0.5, CVECT(v2), x);
+
+  /* check for boundary node */
+  theVertex = NULL;
+  if (OBJT(v1) == BVOBJ && OBJT(v2) == BVOBJ)
+  {
+    /* We now assume, that the edge is on the boundary if and only if	*/
+    /* there is at least one boundary segment containing both vertices. */
+    /* This works if we assume that there is no level 0 element                 */
+    /* with a boundary side covering more than one boundary segment.	*/
+    /* See also "InsertElementCommand" in "plot3d.c".					*/
+
+    for (vs1=VSEG(v1); vs1!=NULL; vs1=NEXTSEG(vs1))
+    {
+      for (vs2=VSEG(v2); vs2!=NULL; vs2=NEXTSEG(vs2))
+      {
+        if (VS_PATCH(vs1) == VS_PATCH(vs2))
+        {
+          if (theVertex == NULL)
+          {
+            theVertex = CreateBoundaryVertex(theGrid,NULL);
+            cvect = CVECT(theVertex);
+          }
+          if (theVertex == NULL) return(NULL);
+
+          if ((vs = CreateVertexSegment(theGrid,theVertex)) == NULL)
+          {
+            DisposeVertex(theGrid, theVertex);
+            return(NULL);
+          }
+          thePatch = VS_PATCH(vs) = VS_PATCH(vs1);
+
+          /* find optimal parameters for this segment */
+          lambda1 = PVECT(vs1);
+          lambda2 = PVECT(vs2);
+          lambda  = PVECT(vs);
+
+          /* test midpoint */
+          lambda[0] = 0.5*(lambda1[0] + lambda2[0]);
+          lambda[1] = 0.5*(lambda1[1] + lambda2[1]);
+
+          if (Patch_local2global(thePatch,lambda,ropt))
+            return (NULL);
+
+          V3_EUKLIDNORM_OF_DIFF(x,ropt,smin)
+
+          if (smin>MAX_PAR_DIST)                               /* perhaps not the midpoint */
+          {
+            l[0] = lambda1[0];
+            l[1] = lambda1[1];
+
+            assert (RESOLUTION > 0);
+            dl[0] = (lambda2[0] - lambda1[0])/((COORD) RESOLUTION);
+            dl[1] = (lambda2[1] - lambda1[1])/((COORD) RESOLUTION);
+
+            for (i=0; i<=RESOLUTION; i++)
+            {
+              if (Patch_local2global(thePatch,l,r))
+                return (NULL);
+              V3_EUKLIDNORM_OF_DIFF(x,r,s)
+              if (s<smin)
+              {
+                smin = s;
+                lambda[0] = l[0];
+                lambda[1] = l[1];
+                V3_COPY(r,ropt);
+              }
+              l[0]+=dl[0];
+              l[1]+=dl[1];
+            }
+          }
+
+          /* if it is the first vertex segment found fill in geometric data else compare with other vertex segments */
+          if (NEXTSEG(vs) == NULL)
+          {
+            V3_COPY(ropt,cvect);
+            SETMOVED(theVertex, smin>MAX_PAR_DIST);
+          }
+          else
+          {
+            V3_EUKLIDNORM_OF_DIFF(cvect,ropt,s)
+            if (s>MAX_PAR_DIST)
+            {
+              DisposeVertex(theGrid,theVertex);
+              UserWrite("two boundary segments with a common edge are not consistent\n");
+              return(NULL);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (theVertex == NULL)
+  {
+    theVertex = CreateInnerVertex(theGrid,NULL);
+    if (theVertex == NULL) return(NULL);
+    V3_COPY(x,CVECT(theVertex));
+  }
+
+  VFATHER(theVertex) = theElement;
+
+  /* create node */
+  theNode = CreateNode(theGrid,after);
+  if (theNode==NULL)
+  {
+    DisposeVertex(theGrid,theVertex);
+    return(NULL);
+  }
+  MYVERTEX(theNode) = theVertex;
+  NFATHER(theNode) = NULL;
+  /* SETCLASS(theNode,4); */
+
+  /* local coordinates for the reference tetrahedron */
+  if (!MOVED(theVertex))
+  {
+    XI(theVertex)  = 0.5*(XI(v1)+XI(v2));
+    ETA(theVertex) = 0.5*(ETA(v1)+ETA(v2));
+    NU(theVertex)  = 0.5*(NU(v1)+NU(v2));
+  }
+  else
+  {
+    /* Compute transformation coeffisients */
+    TransformCoefficients(theElement);
+
+    /* Get global coordinates */
+    V3_COPY(CVECT(theVertex),x);
+
+    /* Set initial guess to local coordinates, */
+    /* as if the node was not moved.           */
+    r[0] = 0.5*(XI(v1)+XI(v2));
+    r[1] = 0.5*(ETA(v1)+ETA(v2));
+    r[2] = 0.5*(NU(v1)+NU(v2));
+
+    /* Compute local coordinates */
+    if (GlobalToLocalHEX(x, r)!=0)
+    {
+      UserWrite(" *** CreateSideNode: can't move node !\n");
+      return (NULL);
+    }
+    else
+      V3_COPY(r,LCVECT(theVertex));
+  }
+
+  return(theNode);
+}
+#endif /* __THREEDIM__ */
+
+/****************************************************************************/
 /*D
    GetEdge - Return pointer to edge if it exists
 
@@ -631,7 +1136,11 @@ EDGE *GetEdge (NODE *from, NODE *to)
   for (pl=START(from); pl!=NULL; pl = NEXT(pl))
     if (NBNODE(pl)==to)
     {
+                        #ifdef ModelP
+      pe = MYEDGE(pl);
+                        #else /* ModelP */
       pe = (EDGE *) (pl-LOFFSET(pl));
+                        #endif /* ModelP */
       return(pe);
     }
 
@@ -713,15 +1222,15 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to)
   link1 = LINK1(pe);
   CTRL(pe) = 0;
   CTRL(link1) = 0;
-  SETOBJT(pe,EDOBJ);
+  PARSETOBJT(pe,EDOBJ);
   SETLOFFSET(link0,0);
   SETLOFFSET(link1,1);
-  SETLEVEL(pe,theGrid->level);
+  PARSETLEVEL(pe,theGrid->level);
   NBNODE(link0) = to;
   NBNODE(link1) = from;
         #ifdef __THREEDIM__
   SET_NO_OF_ELEM(pe,0);
-  SETTAG(pe,0);
+  PARSETTAG(pe,0);
   SETEDGENEW(pe,1);
         #endif
         #ifdef __MIDNODE__
@@ -793,7 +1302,6 @@ LINK *GetLink (NODE *from, NODE *to)
   return(NULL);
 }
 
-
 /****************************************************************************/
 /*D
    CreateBoundaryElement - Allocate a new element structure
@@ -821,6 +1329,7 @@ ELEMENT *CreateBoundaryElement (GRID *theGrid, ELEMENT *after, INT tag)
 {
   ELEMENT *pe;
   INT i;
+  MULTIGRID *theMG;
 
         #if defined __ELEMDATA__ || defined __SIDEDATA__
   VECTOR *pv;
@@ -829,7 +1338,13 @@ ELEMENT *CreateBoundaryElement (GRID *theGrid, ELEMENT *after, INT tag)
   INT ds;
         #endif
 
-  pe = GetFreeObject(theGrid->mg,MAPPED_BND_OBJT(tag));
+        #ifdef ModelP
+  pe = NULL;
+        #else
+  theMG = theGrid->mg;
+  i = MAPPED_BND_OBJT(tag);
+  pe = GetFreeObject(theMG,i);
+        #endif
   if (pe==NULL)
   {
     pe = GetMem(theGrid->mg->theHeap,BND_SIZE(tag),FROM_BOTTOM);
@@ -849,14 +1364,14 @@ ELEMENT *CreateBoundaryElement (GRID *theGrid, ELEMENT *after, INT tag)
   /* initialize data */
   CTRL(pe) = 0;
   CTRL2(pe) = 0;
-  SETOBJT(pe,BEOBJ);
-  SETTAG(pe,tag);
+  PARSETOBJT(pe,BEOBJ);
+  PARSETTAG(pe,tag);
   SETLEVEL(pe,theGrid->level);
         #ifdef __version3__
   SETEBUILDCON(pe,1);
         #endif
         #ifdef __THREEDIM__
-  SETNEWEL(pe,TRUE);
+  /* TODO: check control word:	SETNEWEL(pe,TRUE); */
         #endif
   ID(pe) = (theGrid->mg->elemIdCounter)++;
   SET_EFATHER(pe,NULL);
@@ -976,7 +1491,12 @@ ELEMENT *CreateInnerElement (GRID *theGrid, ELEMENT *after, INT tag)
   INT ds;
         #endif
 
+        #ifdef ModelP
+  pe = NULL;
+        #else
   pe = GetFreeObject(theGrid->mg,MAPPED_INNER_OBJT(tag));
+        #endif
+
   if (pe==NULL)
   {
     pe = GetMem(theGrid->mg->theHeap,INNER_SIZE(tag),FROM_BOTTOM);
@@ -996,14 +1516,14 @@ ELEMENT *CreateInnerElement (GRID *theGrid, ELEMENT *after, INT tag)
   /* initialize data */
   CTRL(pe) = 0;
   CTRL2(pe) = 0;
-  SETOBJT(pe,IEOBJ);
-  SETTAG(pe,tag);
+  PARSETOBJT(pe,IEOBJ);
+  PARSETTAG(pe,tag);
   SETLEVEL(pe,theGrid->level);
         #ifdef __version3__
   SETEBUILDCON(pe,1);
         #endif
         #ifdef __THREEDIM__
-  SETNEWEL(pe,TRUE);
+  /* TODO: check control word:	SETNEWEL(pe,TRUE); */
         #endif
   ID(pe) = (theGrid->mg->elemIdCounter)++;
   SET_EFATHER(pe,NULL);
@@ -1124,7 +1644,7 @@ ELEMENTSIDE *CreateElementSide (GRID *theGrid)
 
   /* initialize data */
   CTRL(ps) = 0;
-  SETOBJT(ps,ESOBJ);
+  PARSETOBJT(ps,ESOBJ);
   ES_PATCH(ps) = NULL;
 
   /* insert in side list */
@@ -1182,7 +1702,7 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
 
   /* fill in data */
   CTRL(theGrid) = 0;
-  SETOBJT(theGrid,GROBJ);
+  PARSETOBJT(theGrid,GROBJ);
   theGrid->level = l;
   theGrid->nVert = 0;
   theGrid->nNode = 0;
@@ -1527,6 +2047,10 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
     TOPNODE(pv[i]) = pn;
   }
 
+        #ifdef ModelP
+  if (me!=master) return(theMG);
+        #endif
+
   /* create and fill segment data of vertex */
   for (i=0; i<BVPD_NPATCHES(theBVPDesc); i++)
   {
@@ -1695,8 +2219,12 @@ INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
     return(1);
         #endif
 
+        #ifdef ModelP
+  DDD_ObjDelete((OBJECT)theEdge);
+    #else
   /* free edge object */
   if (PutFreeObject(theGrid->mg,theEdge)>0) return(1);
+    #endif
 
   /* check error condition */
   if (found!=2) return(1);
@@ -1706,6 +2234,40 @@ INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
   return(0);
 }
 
+/****************************************************************************/
+/*																			*/
+/* Function:  DisposeEdgesFromElement										*/
+/*																			*/
+/* Purpose:   dispose all edge of element not needed otherwise				*/
+/*																			*/
+/* Input:	  GRID *theGrid: grid to remove from							*/
+/*			  ELEMENTSIDE *theElementSide: element side to remove			*/
+/*																			*/
+/* Output:	  INT 0: ok                                                                                                     */
+/*			  INT 1: edge with zero nb of elements found					*/
+/*																			*/
+/****************************************************************************/
+
+INT DisposeEdgesFromElement (GRID *theGrid, ELEMENT *theElement)
+{
+  INT i,j,ret;
+  EDGE *theEdge;
+
+  ret=GM_OK;
+  for (j=0; j<EDGES_OF_ELEM(theElement); j++)
+  {
+    theEdge=GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)),CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)));
+    assert (theEdge != NULL);
+
+    if (NO_OF_ELEM(theEdge)<1)
+      ret=GM_ERROR;
+    if (NO_OF_ELEM(theEdge)==1)
+      DisposeEdge(theGrid,theEdge);
+    else
+      DEC_NO_OF_ELEM(theEdge);
+  }
+  return(ret);
+}
 
 /****************************************************************************/
 /*D
@@ -1792,8 +2354,12 @@ INT DisposeNode (GRID *theGrid, NODE *theNode)
     return(1);
         #endif
 
+        #ifdef ModelP
+  DDD_ObjDelete((OBJECT)theNode);
+    #else
   /* delete the node itself */
   if (PutFreeObject(theGrid->mg,theNode)>0) return(1);
+    #endif
 
   /* check error condition */
   if (found!=0) return(1);
@@ -1851,7 +2417,11 @@ INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
     }
   }
 
+        #ifdef ModelP
+  DDD_ObjDelete((OBJECT)theVertex);
+    #else
   if (PutFreeObject(theGrid->mg,theVertex)>0) return(1);
+    #endif
 
   theGrid->nVert--;
   return(0);
@@ -1890,7 +2460,11 @@ INT DisposeElementSide  (GRID *theGrid, ELEMENTSIDE *theElementSide)
   if (SUCCS(theElementSide)!=NULL)
     PREDS(SUCCS(theElementSide)) = PREDS(theElementSide);
 
+        #ifdef ModelP
+  DDD_ObjDelete((OBJECT)theElementSide);
+    #else
   if (PutFreeObject(theGrid->mg,theElementSide)>0) return(1);
+    #endif
 
   theGrid->nSide--;
   return(0);
@@ -1983,10 +2557,15 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement)
   /* dispose element */
   /* give it a new tag ! (I know this is somewhat ugly) */
   if (OBJT(theElement)==BEOBJ)
-    SETOBJT(theElement,MAPPED_BND_OBJT(TAG(theElement)));
+    PARSETOBJT(theElement,MAPPED_BND_OBJT(TAG(theElement)));
   else
-    SETOBJT(theElement,MAPPED_INNER_OBJT(TAG(theElement)));
+    PARSETOBJT(theElement,MAPPED_INNER_OBJT(TAG(theElement)));
+
+        #ifdef ModelP
+  DDD_ObjDelete((OBJECT)theElement);
+    #else
   if (PutFreeObject(theGrid->mg,theElement)>0) return(1);
+    #endif
 
   theGrid->nElem--;
   return(0);
@@ -2035,7 +2614,11 @@ INT DisposeTopLevel (MULTIGRID *theMG)
   (theMG->topLevel)--;
   if (theMG->currentLevel>theMG->topLevel) theMG->currentLevel = theMG->topLevel;
 
+        #ifdef ModelP
+  DDD_ObjDelete((OBJECT)theGrid);
+    #else
   if (PutFreeObject(theGrid->mg,theGrid)>0) return(1);
+    #endif
 
   return(0);
 }
@@ -2619,6 +3202,7 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
   VS_PATCH(vs) = thePatch;
 
   /* check if the vertex is on an edge of the patch */
+        #ifdef __THREEDIM__
   node_on_edge = FALSE;
   npc = PATCH_N(thePatchDesc);
   from = PATCH_CID(thePatchDesc,npc-1);
@@ -2694,6 +3278,7 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
         }
     }
   }
+        #endif
 
   /* fill data into node/vertex */
   INDEX(theNode) = 0;
@@ -2798,7 +3383,6 @@ INT DeleteNode (MULTIGRID *theMG, NODE *theNode)
   return(GM_OK);
 }
 
-
 /****************************************************************************/
 /*D
    DeleteNodeWithID - Delete the node with id
@@ -2844,15 +3428,1182 @@ INT DeleteNodeWithID (MULTIGRID *theMG, INT id)
   return (DeleteNode(theMG,theNode));
 }
 
+/****************************************************************************/
+/*D
+   FindFather - Find the new father element
+
+   SYNOPSIS:
+   static ELEMENT *FindFather(VERTEX *vptr);
+
+   PARAMETERS:
+   .  vptr - Pointer to 'VERTEX' whose father element is to be found.
+
+   DESCRIPTION:
+   This function finds the new father element of the given vertex.
+   It assumes that the  new father is one of the neighbors of the
+   old father element. The current father of 'vptr' is not changed.
+
+   RETURN VALUE:
+   ELEMENT *
+   .n     pointer to an element
+   .n     NULL if none or no correct father is found or vertex is level 0
+   D*/
+/****************************************************************************/
+
+#ifdef __TWODIM__
+static ELEMENT *FindFather(VERTEX *vptr)
+{
+  short i;
+  COORD x[2],lambda,lambda1,lambda2;
+  ELEMENT *eptr,*eptr1;
+  ELEMENTSIDE *eside;
+  VSEGMENT *vseg;
+
+  if ((eptr=VFATHER(vptr))==NULL)
+    return(NULL);
+
+  if (OBJT(vptr)==BVOBJ)
+  {
+    /* for boundary vertices only a consistency check is made */
+    eside=SIDE(eptr,ONEDGE(vptr));
+    vseg = VSEG(vptr);
+
+    if (VS_PATCH(vseg)!=ES_PATCH(eside))
+      return(NULL);
+
+    /* for higher dimensions (3d) the following must be generalized */
+    lambda=LAMBDA(vseg,0);
+    lambda1=PARAM(eside,0,0);
+    lambda2=PARAM(eside,1,0);
+    if ( ((lambda1<=lambda)&&(lambda2>=lambda)) || ((lambda2<=lambda)&&(lambda1>=lambda)) )
+      return(eptr);
+    else
+      return(NULL);
+  }
+
+  x[0]=XC(vptr); x[1]=YC(vptr);
+
+  eptr=VFATHER(vptr);
+  if (PointInElement(x,eptr))
+    return(eptr);
+
+  for (i=0; i<SIDES_OF_ELEM(eptr); i++)
+    if (PointInElement(x,(eptr1=NBELEM(eptr,i))))
+      return(eptr1);
+
+  return(NULL);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   Local2Global - Updates the global coordinates of a vertex
+
+   SYNOPSIS:
+   static INT Local2Global (MULTIGRID *theMG, VERTEX *vptr);
+
+   PARAMETERS:
+   .  theMG - pointer to 'MULTIGRID' structure.
+   .  vptr - pointer to a 'VERTEX'
+
+   DESCRIPTION:
+   This function updates the global coordinates of a vertex by
+   evaluating the local coordinates in the father element of the vertex.
+   This function overwrites the current coordinates, it works for interior
+   and boundary vertices.
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   >0 if an error occured or vertex is on level 0
+   D*/
+/****************************************************************************/
+
+#ifdef __TWODIM__
+static INT Local2Global (MULTIGRID *theMG, VERTEX *vptr)
+{
+  short i,n,side;
+  COORD x[DIM],xi,eta;
+  COORD lambda1,lambda2,lambdaa,lambdae;
+  ELEMENT *eptr;
+  VERTEX *vptr1,*vptr2,*vptra,*vptre;
+  VSEGMENT *vseg;
+  PATCH *thePatch;
+  PATCH_DESC thePatchDesc;
+
+  if ((eptr=VFATHER(vptr))==NULL)
+    return(8040);
+
+  n=TAG(eptr);
+  if (OBJT(vptr)==BVOBJ)
+  {
+    vseg = VSEG(vptr);
+    if ((thePatch=VS_PATCH(vseg))==NULL) return(8041);
+    if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(8041);
+
+    side=ONEDGE(vptr);
+    vptr1=MYVERTEX(CORNER(eptr,side));
+    vptr2=MYVERTEX(CORNER(eptr,(side+1)%n));
+
+    vptra=theMG->corners[PATCH_CID(thePatchDesc,0)]; lambdaa=PATCH_LCVECT(thePatchDesc,0)[0];
+    vptre=theMG->corners[PATCH_CID(thePatchDesc,1)]; lambdae=PATCH_LCVECT(thePatchDesc,1)[0];
+
+    if (vptr1==vptra)
+      lambda1=lambdaa;
+    else
+    if (vptr1==vptre)
+      lambda1=lambdae;
+    else
+      lambda1=LAMBDA(VSEG(vptr1),0);
+
+    if (vptr2==vptra)
+      lambda2=lambdaa;
+    else
+    if (vptr2==vptre)
+      lambda2=lambdae;
+    else
+      lambda2=LAMBDA(VSEG(vptr2),0);
+
+
+    LAMBDA(vseg,0)=(1-ZETA(vseg))*lambda1+ZETA(vseg)*lambda2;
+    if (Patch_local2global(thePatch,PVECT(vseg),CVECT(vptr))) return(8041);
+  }
+  else
+  {
+    xi=XI(vptr); eta=ETA(vptr);
+    x[0]=x[1]=0;
+    for (i=0; i<n; i++)
+    {
+      vptr1=MYVERTEX(CORNER(eptr,i));
+      x[0]+=XC(vptr1)*N(n,i,xi,eta);
+      x[1]+=YC(vptr1)*N(n,i,xi,eta);
+    }
+
+    XC(vptr)=x[0]; YC(vptr)=x[1];
+  }
+
+  return(0);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   Global2Local - Updates the local coordinates of a vertex
+
+   SYNOPSIS:
+   static INT Global2Local (MULTIGRID *theMG, VERTEX *vptr);
+
+   PARAMETERS:
+   .  theMG - pointer to 'MULTIGRID'
+   .  vptr - pointer to a 'VERTEX'
+
+   DESCRIPTION:
+   This function updates the local coordinates of a vertex in the
+   local coordinate system of the father element. It is assumed that
+   the vertex is inside the father element. If not an error is returned.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok vertex is level 0
+   .n    >0 if error occured (invalid trafo, not inside)
+   D*/
+/***************************************************************************/
+
+#ifdef __TWODIM__
+static INT Global2Local (MULTIGRID *theMG, VERTEX *vptr)
+{
+  short n,side;
+  DOUBLE t1x,t2x,t3x,t1y,t2y,t3y,a,b,c,D,xi1,xi2,eta1,eta2;
+  DOUBLE x1,x2,y1,y2,x3,y3,x4,y4,x,y;
+  DOUBLE a1,a2,a3,a4,b1,b2,b3,b4;
+  COORD lambda1,lambda2,lambdaa,lambdae;
+  ELEMENT *eptr;
+  VERTEX *vptr1,*vptr2,*vptra,*vptre;
+  VSEGMENT *vseg;
+  PATCH *thePatch;
+  PATCH_DESC thePatchDesc;
+
+  if ((eptr=VFATHER(vptr))==NULL)
+    return(0);
+
+  if (OBJT(vptr)==BVOBJ)
+  {
+    n=TAG(eptr);
+    vseg = VSEG(vptr);
+    thePatch=VS_PATCH(vseg);
+    if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return (1);
+    side=ONEDGE(vptr);
+    vptr1=MYVERTEX(CORNER(eptr,side));
+    vptr2=MYVERTEX(CORNER(eptr,(side+1)%n));
+
+    vptra=theMG->corners[PATCH_CID(thePatchDesc,0)]; lambdaa=PATCH_LCVECT(thePatchDesc,0)[0];
+    vptre=theMG->corners[PATCH_CID(thePatchDesc,1)]; lambdae=PATCH_LCVECT(thePatchDesc,1)[0];
+
+    if (vptr1==vptra)
+      lambda1=lambdaa;
+    else
+    if (vptr1==vptre)
+      lambda1=lambdae;
+    else
+      lambda1=LAMBDA(VSEG(vptr1),0);
+
+    if (vptr2==vptra)
+      lambda2=lambdaa;
+    else
+    if (vptr2==vptre)
+      lambda2=lambdae;
+    else
+      lambda2=LAMBDA(VSEG(vptr2),0);
+
+    /* falls sich Projektion auf Edge als sinnvoller erweist
+       x = XC(vptr); y = YC(vptr);
+       x1 = XC(vptr1); y1 = YC(vptr1);
+       x2 = XC(vptr2); y2 = YC(vptr2);
+       a=sqrt(pow(x2-x1,2)+pow(y2-y1,2));
+       b=sqrt(pow(x-x1,2)+pow(y-y1,2));
+       assert(errno==0);
+       if (a*b==0)
+            return(8052);
+       c=((x-x1)*(x2-x1)+(y-y1)*(y2-y1))/(a*b);
+       if ((c<.1)||(c>.9))
+            return(8053);
+     */
+
+    /* set local boundary coordinate */
+    ZETA(vseg)=c=(LAMBDA(vseg,0)-lambda1)/(lambda2-lambda1);
+
+    /* set local coordinates */
+    switch(n)
+    {
+    case TRIANGLE :
+      XI(vptr) = ETA(vptr) = 0.0;
+      switch (side)
+      {
+      case 0 : XI(vptr)=c; break;
+      case 1 : XI(vptr)=1-c; ETA(vptr)=c; break;
+      case 2 : ETA(vptr)=1-c; break;
+      }
+      break;
+
+    case QUADRILATERAL :
+      switch (side)
+      {
+      case 0 : XI(vptr)=2*c-1; ETA(vptr) = -1;  break;
+      case 1 : XI(vptr) = 1;   ETA(vptr)=2*c-1; break;
+      case 2 : XI(vptr)=1-2*c; ETA(vptr) = 1;   break;
+      case 3 : XI(vptr) = -1;  ETA(vptr)=1-2*c; break;
+      }
+      break;
+    }
+  }
+  else
+  {
+    /* compute local coordinates */
+    vptr1=MYVERTEX(CORNER(eptr,0)); x1 = XC(vptr1); y1 = YC(vptr1);
+    vptr1=MYVERTEX(CORNER(eptr,1)); x2 = XC(vptr1); y2 = YC(vptr1);
+    vptr1=MYVERTEX(CORNER(eptr,2)); x3 = XC(vptr1); y3 = YC(vptr1);
+    x = XC(vptr);
+    y = YC(vptr);
+
+    switch (TAG(eptr))
+    {
+    case TRIANGLE :
+      t1x = x2-x1; t2x = x3-x1; t3x = x1;
+      t1y = y2-y1; t2y = y3-y1; t3y = y1;
+      D = t1x*t2y-t2x*t1y;
+      if (D<0.0)
+        return(8051);
+
+      XI(vptr) = (t2y*(x-t3x)-t2x*(y-t3y))/D;
+      ETA(vptr) = (-t1y*(x-t3x)+t1x*(y-t3y))/D;
+      break;
+
+    case QUADRILATERAL :
+      vptr1=MYVERTEX(CORNER(eptr,3)); x4 = XC(vptr1); y4 = YC(vptr1);
+
+      a1=-x+.25*(x1+x2+x3+x4); b1=-y+.25*(y1+y2+y3+y4);
+      a2=.25*(-x1+x2+x3-x4); b2=.25*(-y1+y2+y3-y4);
+      a3=.25*(-x1-x2+x3+x4); b3=.25*(-y1-y2+y3+y4);
+      a4=.25*(x1-x2+x3-x4); b4=.25*(y1-y2+y3-y4);
+
+      c=a2*b1-a1*b2;
+      b=a4*b1-a3*b2+a2*b3-a1*b4;
+      a=a4*b3-a3*b4;
+
+      if (ABS(a)<SMALL_D)
+      {
+        if (ABS(b)<SMALL_D)
+          return(8051);
+
+        eta1 = eta2 = -c/b;
+      }
+      else
+      {
+        D=b*b-4*a*c;
+        if (D<0) return(8051);
+
+        eta1=(-b+sqrt(D))/(2*a); eta2=(-b-sqrt(D))/(2*a);
+      }
+
+      c=a3*b1-a1*b3;
+      b=a4*b1+a3*b2-a2*b3-a1*b4;
+      a=a4*b2-a2*b4;
+
+      if (ABS(a)<SMALL_D)
+      {
+        if (ABS(b)<SMALL_D)
+          return(8051);
+
+        xi1 = xi2 = -c/b;
+      }
+      else
+      {
+        D=b*b-4*a*c;
+        if (D<0) return(8051);
+
+        xi1=(-b+sqrt(D))/(2*a); xi2=(-b-sqrt(D))/(2*a);
+      }
+
+      if ((xi1>=-1-SMALL1)&&(xi1<=1+SMALL1)&&(eta1>=-1-SMALL1)&&(eta1<=1+SMALL1))
+      {
+        XI(vptr) = xi1;
+        ETA(vptr) = eta1;
+        break;
+      }
+
+      if ((xi2>=-1-SMALL1)&&(xi2<=1+SMALL1)&&(eta1>=-1-SMALL1)&&(eta1<=1+SMALL1))
+      {
+        XI(vptr) = xi2;
+        ETA(vptr) = eta1;
+        break;
+      }
+
+      if ((xi1>=-1-SMALL1)&&(xi1<=1+SMALL1)&&(eta2>=-1-SMALL1)&&(eta2<=1+SMALL1))
+      {
+        XI(vptr) = xi1;
+        ETA(vptr) = eta2;
+        break;
+      }
+
+      if ((xi2>=-1-SMALL1)&&(xi2<=1+SMALL1)&&(eta2>=-1-SMALL1)&&(eta2<=1+SMALL1))
+      {
+        XI(vptr) = xi2;
+        ETA(vptr) = eta2;
+        break;
+      }
+
+      return(8051);
+      break;
+    }
+  }
+
+  return(0);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   MoveInnerNode - Let user enter a new position for an inner node
+
+   SYNOPSIS:
+   INT MoveInnerNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos);
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+   .  theNode - node to move
+   .  newPos - new position (x,y)
+
+   DESCRIPTION:
+   This function moves a given node to a new position. The complete
+   multigrid structure is moved hierachically, that all global coordinates
+   of nodes are updated in order to reflect the changes on coarser grids.
+
+   `Function only implemented in 2D version !`
+
+   RETURN VALUE:
+   INT
+   .n   0 when ok
+   .n   >0 when error occured.
+   D*/
+/****************************************************************************/
+
+#ifdef __TWODIM__
+INT MoveInnerNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
+{
+  GRID *theGrid2;
+  int k,k2;
+  NODE *theNode2;
+  VERTEX *theVertex,*theVertex2;
+  ELEMENT *theElement,*oldElement;
+  double x,y,oldx,oldy;
+
+  k = LEVEL(theNode);
+
+  /* set k (and theNode) to the level where the node appears the first time */
+  while ((theNode2=NFATHER(theNode))!=NULL)
+  {
+    theNode=theNode2;
+    k=k-1;
+  }
+
+  theVertex = MYVERTEX(theNode);
+  oldx = XC(theVertex); oldy = YC(theVertex);
+
+  if (OBJT(theVertex)!=IVOBJ)
+  {
+    PrintErrorMessage('E',"MoveInnerNode","no inner node passed");
+    return(GM_ERROR);
+  }
+
+  x = newPos[0]; y = newPos[1];
+
+  /* set values */
+  XC(theVertex) = x; YC(theVertex) = y;
+  if (VFATHER(theVertex)!=NULL)
+  {
+    oldElement=VFATHER(theVertex);
+    if ((theElement=FindFather(theVertex))==NULL)
+    {
+      PrintErrorMessage('E',"MoveInnerNode","No father element! Probably you tried to move the vertex too far!");
+      XC(theVertex) = oldx; YC(theVertex) = oldy;
+      return(GM_ERROR);
+    }
+    else
+      VFATHER(theVertex)=theElement;
+
+    if (Global2Local(theMG,theVertex)!=0)
+    {
+      PrintErrorMessage('E',"MoveInnerNode","Error in Global2Local");
+      VFATHER(theVertex)=oldElement;
+      XC(theVertex) = oldx; YC(theVertex) = oldy;
+      return(GM_ERROR);
+    }
+  }
+
+  /*	now we correct the global coordinates for all levels above, since it is not
+          easy to find exactly the vertices whose global coordinates have changed */
+
+  for(k2=k+1; k2<=theMG->topLevel; k2++)
+  {
+    theGrid2 = theMG->grids[k2];
+    for (theVertex2=FIRSTVERTEX(theGrid2); theVertex2!=NULL; theVertex2=SUCCV(theVertex2))
+      if (Local2Global(theMG,theVertex2)!=0)
+      {
+        PrintErrorMessage('E',"MoveInnerNode","Fatal error in correcting global coordinates for higher levels. Grid may be inconsistent from now on.");
+        return(GM_ERROR);
+      }
+  }
+
+  /* OK, done */
+  return(GM_OK);
+}
+#endif
+
+#ifdef __THREEDIM__
+INT MoveInnerNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
+{
+  UserWrite("MoveInnerNode not implemented in 3D version jet\n");
+  return (0);
+}
+#endif
+
+
+
+/****************************************************************************/
+/*D
+   MoveBoundaryNode - Let user enter a new position
+
+   SYNOPSIS:
+   INT MoveBoundaryNode (MULTIGRID *theMG, NODE *theNode, INT segid,
+   COORD *newPos);
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+   .  theNode - node to move
+   .  segid - new boundary segment id
+   .  newPos - new parameter lambda
+
+   DESCRIPTION:
+   This function moves a boundary node to a new position. The position of
+   all nodes on finer grids is updated to reflect these changes.
+
+   `Function only implemented in 2D version!`
+
+   RETURN VALUE:
+   INT
+   .n    0 when ok
+   .n    >0 when error occured.
+   D*/
+/****************************************************************************/
+
+#ifdef __TWODIM__
+INT MoveBoundaryNode (MULTIGRID *theMG, NODE *theNode, INT patchid, COORD *newPos)
+{
+  GRID *theGrid,*theGrid2;
+  int i,n,k,k2;
+  NODE *theNode2;
+  VERTEX *theVertex,*theVertex2;
+  ELEMENT *theElement,*oldElement;
+  ELEMENTSIDE *theSide;
+  double oldx,oldy,l,oldl;
+  BVP             *theBVP;
+  BVP_DESC theBVPDesc;
+  PATCH *thePatch, *oldPatch;
+  PATCH_DESC thePatchDesc;
+
+  /* get BVP description */
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc))
+  {
+    PrintErrorMessage('E',"MoveBoundaryNode","cannot evaluate BVP");
+    return(1);
+  }
+
+  k = LEVEL(theNode);
+  theGrid = GRID_ON_LEVEL(theMG,k);
+
+  /* set k (and theNode) to the level where the node appears the first time */
+  while ((theNode2=NFATHER(theNode))!=NULL)
+  {
+    theNode=theNode2;
+    k=k-1;
+  }
+
+  theVertex = MYVERTEX(theNode);
+  oldx = XC(theVertex); oldy = YC(theVertex);
+
+  if (OBJT(theVertex)!=BVOBJ)
+  {
+    PrintErrorMessage('E',"MoveBoundaryNode","no boundary node passed");
+    return(GM_ERROR);
+  }
+
+  if (MOVE(theVertex)==0)
+  {
+    PrintErrorMessage('W',"MoveBoundaryNode","corners cannot be moved");
+    return(GM_ERROR);
+  }
+
+  l = oldl = LAMBDA(VSEG(theVertex),0);
+  oldPatch = VS_PATCH(VSEG(theVertex));
+  if (START(theNode)==NULL)
+  {
+    if(patchid >= BVPD_NPATCHES(theBVPDesc))
+    {
+      PrintErrorMessage('E',"MoveBoundaryNode","patchid out of range");
+      return(GM_ERROR);
+    }
+    thePatch = Patch_GetPatchByID(theBVP,patchid);
+  }
+  else thePatch = VS_PATCH(VSEG(theVertex));
+
+  if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return (1);
+  patchid = PATCH_ID(thePatchDesc);
+
+  l = newPos[0];
+
+  if ((l<PATCH_LCVECT(thePatchDesc,0)[0]) || (l>PATCH_LCVECT(thePatchDesc,1)[0]))
+  {
+    PrintErrorMessage('E',"MoveBoundaryNode","parameter out of range");
+    return(GM_ERROR);
+  }
+
+  LAMBDA(VSEG(theVertex),0) = l;
+  if (Patch_local2global(thePatch,PVECT(VSEG(theVertex)),CVECT(theVertex))) return (1);
+  VS_PATCH(VSEG(theVertex)) = thePatch;
+
+  if (VFATHER(theVertex)!=NULL)
+  {
+    oldElement=VFATHER(theVertex);
+    if ((theElement=FindFather(theVertex))==NULL)
+    {
+      PrintErrorMessage('E',"MoveBoundaryNode","No father element! Probably you have tried to move the vertex too far");
+      XC(theVertex) = oldx; YC(theVertex) = oldy; LAMBDA(VSEG(theVertex),0)=oldl; VS_PATCH(VSEG(theVertex)) = oldPatch;
+      return(GM_ERROR);
+    }
+    else
+      VFATHER(theVertex)=theElement;
+
+    if (Global2Local(theMG,theVertex)!=0)
+    {
+      PrintErrorMessage('E',"MoveBoundaryNode","Error in Global2Local!");
+      VFATHER(theVertex)=oldElement;
+      XC(theVertex) = oldx; YC(theVertex) = oldy; LAMBDA(VSEG(theVertex),0)=oldl;
+      return(GM_ERROR);
+    }
+  }
+
+  /*	now we correct the global coordinates for all new vertices in the levels above, since it is not
+          easy to find exactly the vertices whose global coordinates have changed */
+  for(k2=k+1; k2<=theMG->topLevel; k2++)
+  {
+    theGrid2 = theMG->grids[k2];
+    for (theVertex2=FIRSTVERTEX(theGrid2); theVertex2!=NULL; theVertex2=SUCCV(theVertex2))
+      if (Local2Global(theMG,theVertex2)!=0)
+      {
+        PrintErrorMessage('E',"MoveBoundaryNode","Fatal error in correcting global coordinates for higher levels. Grid may be inconsistent from now on");
+        return(GM_ERROR);
+      }
+  }
+
+  /* update element sides on this level */
+  for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+    if (OBJT(theElement)==BEOBJ)
+    {
+      n = SIDES_OF_ELEM(theElement);
+      for (i=0; i<n; i++)
+      {
+        theSide = SIDE(theElement,i);
+        if (theSide!=NULL)
+        {
+          if (MYVERTEX(CORNER(theElement,i))==theVertex)
+            PARAM(theSide,0,0) = l;
+          if (MYVERTEX(CORNER(theElement,(i+1)%n))==theVertex)
+            PARAM(theSide,1,0) = l;
+        }
+      }
+    }
+
+  /* update (for simplicity) all sides on that segment for all levels above */
+  for(k2=k+1; k2<=theMG->topLevel; k2++)
+  {
+    theGrid2 = theMG->grids[k2];
+    for (theElement=theGrid2->elements; theElement!=NULL; theElement=SUCCE(theElement))
+    {
+      if (OBJT(theElement)==BEOBJ)
+      {
+        n = SIDES_OF_ELEM(theElement);
+        for (i=0; i<n; i++)
+        {
+          theSide = SIDE(theElement,i);
+          if (theSide!=NULL)
+          {
+            theNode2=CORNER(theElement,i);
+            if (NFATHER(theNode2)==NULL)
+            {
+              theVertex2=MYVERTEX(theNode2);
+              if (VS_PATCH(VSEG(theVertex2))==thePatch)
+                PARAM(theSide,0,0) = LAMBDA(VSEG(theVertex2),0);
+            }
+            theNode2=CORNER(theElement,(i+1)%n);
+            if (NFATHER(theNode2)==NULL)
+            {
+              theVertex2=MYVERTEX(theNode2);
+              if (VS_PATCH(VSEG(theVertex2))==VS_PATCH(VSEG(theVertex)))
+                PARAM(theSide,1,0) = LAMBDA(VSEG(theVertex2),0);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return(GM_OK);
+}
+#endif
+
+#ifdef __THREEDIM__
+INT MoveBoundaryNode (MULTIGRID *theMG, NODE *theNode, INT segid, COORD *newPos)
+{
+  UserWrite("MoveBoundaryNode not implemented in 3D version jet\n");
+  return (0);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   SmoothMultiGrid - Interprete and execute a smooth multigrid command
+
+   SYNOPSIS:
+   INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag);
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+   .  niter - number of iterations to do
+   .  bdryFlag - see 'smoothmg' command.
+
+   DESCRIPTION:
+   This function smoothes all grid levels of a multigrid hierarchy.
+   It processes all grid levels from bottom to top. Within each grid
+   level all nodes that are not already in coarser levels are set to
+   a new position obtained by the center of gravity of their neighboring
+   nodes. The processing from bottom to top level ensures fast convergence
+   of the algorithm. Caution! The algorithm may produce undesirable
+   results for non-convex domains.
+
+   `This function is available in 2D version only!`
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    >0 if error occured.
+   D*/
+/****************************************************************************/
+
+#ifdef __TWODIM__
+INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
+{
+  int l,i,n;
+  double ratio;
+  DOUBLE N;
+  /* COORD beta,gamma; */
+  COORD lambda,lambda0,lambda1,lambda2,lambdaa,lambdae;
+  GRID *theGrid;
+  NODE *node,*node2;
+  ELEMENT *eptr;
+  ELEMENTSIDE *eside;
+  VERTEX *vptr0,*vptr1,*vptr2,*vptra,*vptre,*vptr;
+  LINK *lptr;
+  PATCH *thePatch;
+  PATCH_DESC thePatchDesc;
+
+  COORD x[2];
+
+  n = niter;
+  if (n<=0) n = 1;
+  if (n>50) n = 50;
+
+  ratio=.5;
+
+  for (i=0; i<n; i++)
+  {
+    for (l=0; l<=theMG->topLevel; l++)
+    {
+      theGrid=theMG->grids[l];
+
+      /* update global coordinates of new nodes */
+      if (l!=0)
+        for (node=theGrid->firstNode; node!=NULL; node=SUCCN(node))
+          if (NFATHER(node)==NULL)
+          {
+            vptr=MYVERTEX(node);
+            if ((OBJT(vptr)!=BVOBJ)||(bdryFlag!=0))
+              if (Local2Global(theMG,vptr)!=0)
+                return(GM_ERROR);
+          }
+
+      for (node=theGrid->firstNode; node!=NULL; node=SUCCN(node))
+      {
+        /* skip node if it is a copy from a lower level */
+        if (NFATHER(node)!=NULL) continue;
+
+        vptr0=MYVERTEX(node);
+        if (OBJT(vptr0)==BVOBJ)
+        {
+          if (bdryFlag==0) continue;                                            /* boundary is not allowed to move */
+          if (MOVE(vptr0)==0) continue;                                 /* corner: do not move it */
+
+          /* test if free boundary: since that type is determined by the grid it may only
+             be smoothed in certain cases and in a special way */
+          thePatch=VS_PATCH(VSEG(vptr0));
+          if(Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(1);
+          if (PATCH_TYPE(thePatchDesc)==FREE)
+            continue;                                           /*free boundary is not allowed to be smoothed */
+
+          /* first find endpoints of vptr0's boundary segment */
+          lambda0=LAMBDA(VSEG(vptr0),0);
+          vptra=theMG->corners[PATCH_CID(thePatchDesc,0)]; lambdaa=PATCH_LCVECT(thePatchDesc,0)[0];
+          vptre=theMG->corners[PATCH_CID(thePatchDesc,1)]; lambdae=PATCH_LCVECT(thePatchDesc,1)[0];
+
+          /* search for the two nearest neighbors on the same segment */
+          vptr1=vptr2=NULL;
+          for (lptr=START(node); lptr!=NULL; lptr=NEXT(lptr))
+            if (EXTRA(MYEDGE(lptr))==0)
+            {
+              node2=NBNODE(lptr);
+              vptr=MYVERTEX(node2);
+              if (OBJT(vptr)!=BVOBJ)
+                continue;
+
+              /* if on same segment get lambda value */
+              if (vptr==vptra)
+                lambda=lambdaa;
+              else
+              if (vptr==vptre)
+                lambda=lambdae;
+              else
+              if (thePatch==VS_PATCH(VSEG(vptr)))
+                lambda=LAMBDA(VSEG(vptr),0);
+              else
+                continue;
+
+              if (lambda>lambda0)
+              {
+                if (vptr2==NULL)
+                {
+                  vptr2=vptr;
+                  lambda2=lambda;
+                }
+                else
+                if (lambda<lambda2)
+                {
+                  vptr2=vptr;
+                  lambda2=lambda;
+                }
+              }
+              else
+              {
+                if (vptr1==NULL)
+                {
+                  vptr1=vptr;
+                  lambda1=lambda;
+                }
+                else
+                if (lambda>lambda1)
+                {
+                  vptr1=vptr;
+                  lambda1=lambda;
+                }
+              }
+            }
+
+          if ((vptr1==NULL)||(vptr2==NULL))
+            return(GM_ERROR);
+
+          if (PATCH_TYPE(thePatchDesc)==FREE)
+          {
+            /*	This is only sensible if the free boundary is a line and the endpoints are moved.
+                    A more general smoothing would be to use e.g. a quadratic interpolant. */
+            XC(vptr0)=.5*(XC(vptr1)+XC(vptr2));
+            YC(vptr0)=.5*(YC(vptr1)+YC(vptr2));
+            /*	since local and global boundary coordinates are given by the grid itself
+                    they are assumed to be correct. */
+          }
+          else
+          {
+            LAMBDA(VSEG(vptr0),0)=.5*(lambda1+lambda2);
+            /* set global coordinates */
+            if (Patch_local2global(thePatch,PVECT(VSEG(vptr0)),CVECT(vptr0))) return (GM_ERROR);
+
+            /* set local boundary coordinates */
+            if (Global2Local(theMG,vptr0)!=0)
+              return(GM_ERROR);
+          }
+        }
+        else
+        {
+          x[0]=x[1]=0; N=0;
+
+          for (lptr=START(node); lptr!=NULL; lptr=NEXT(lptr))
+          {
+            node2=NBNODE(lptr);
+            vptr=MYVERTEX(node2);
+
+            if (EXTRA(MYEDGE(lptr))==0)
+            {
+              x[0]+=XC(vptr);
+              x[1]+=YC(vptr);
+              N+=1;
+            }
+            else
+            {
+              x[0]+=ratio*XC(vptr);
+              x[1]+=ratio*YC(vptr);
+              N+= ratio;
+            }
+          }
+
+          XC(vptr0)=x[0]/N; YC(vptr0)=x[1]/N;
+
+          /* if there is a father element, change local variables */
+          if (l!=0)
+            if ((eptr=FindFather(vptr0))!=NULL)
+            {
+              VFATHER(vptr0)=eptr;
+              if (Global2Local(theMG,vptr0)!=0)
+                return(GM_ERROR);
+            }
+            else
+              return(GM_ERROR);
+        }
+      }
+
+      /* at last, the boundary element sides of this level must be updated! */
+      for (eptr=theGrid->elements; eptr!=NULL; eptr=SUCCE(eptr))
+        if (OBJT(eptr)==BEOBJ)
+        {
+          n=SIDES_OF_ELEM(eptr);
+          for (i=0; i<n; i++)
+            if ((eside=SIDE(eptr,i))!=NULL)
+            {
+              /* for higher dimensions (3d) the following must be generalized */
+              vptr=MYVERTEX(CORNER(eptr,i));
+              if (MOVE(vptr)!=0)
+                PARAM(eside,0,0)=LAMBDA(VSEG(vptr),0);
+              vptr=MYVERTEX(CORNER(eptr,(i+1)%n));
+              if (MOVE(vptr)!=0)
+                PARAM(eside,1,0)=LAMBDA(VSEG(vptr),0);
+            }
+        }
+    }
+  }
+
+  return(GM_OK);
+}
+#endif
+
+#ifdef __THREEDIM__
+INT  SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
+{
+  UserWrite("SmoothMultiGrid not implemented in 3D version jet\n");
+  return (0);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   CreateAuxEdge - Inserts an 'EDGE' with AUXEDGE flag set
+
+   SYNOPSIS:
+   EDGE *CreateAuxEdge (GRID *theGrid, NODE *from, NODE *to);
+
+   PARAMETERS:
+   .  theGrid - grid to remove from
+   .  from - starting 'NODE'
+   .  to - destination 'NODE'
+
+   DESCRIPTION:
+   This function inserts a new edge between given nodes.
+   This function is useful only in version 2.3 compatibility mode which is
+   not documented.
+
+   RETURN VALUE:
+   INT
+   .n     NULL when alloc failed
+   .n     else it returns a pointer to the new edge
+   D*/
+/****************************************************************************/
+
+#ifdef __TWODIM__
+EDGE *CreateAuxEdge (GRID *theGrid, NODE *from, NODE *to)
+{
+  EDGE *theEdge;
+
+  theEdge = CreateEdge(theGrid,from,to);
+  if (theEdge==NULL) return(NULL);
+  SETEXTRA(theEdge,1);
+  SETAUXEDGE(theEdge,1);
+  return(theEdge);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   DisposeAuxEdges - Remove edges with AUXEDGE flag set from theGrid
+
+   SYNOPSIS:
+   INT DisposeAuxEdges (GRID *theGrid);
+
+   PARAMETERS:
+   .  theGrid - pointer to grid
+
+   DESCRIPTION:
+   This function removes all 'EDGE' objects with AUXEDGE flag set from the
+   given grid level. This function is provided for compatibility with
+   version 2.3.
+
+   RETURN VALUE:
+   INT
+   .n    -1 in case of an error
+   .n    else it returns the number of edges that have been disposed
+   D*/
+/****************************************************************************/
+
+#ifdef __TWODIM__
+INT DisposeAuxEdges (GRID *theGrid)
+{
+  NODE *theNode;
+  LINK *theLink;
+  long cnt;
+
+  cnt = 0;
+
+  /* throw away the AUXEDGEs */
+  for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
+    for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
+      if (AUXEDGE(MYEDGE(theLink)))
+        if (DisposeEdge(theGrid,MYEDGE(theLink)))
+          return (-1);
+        else
+          cnt++;
+
+  if (cnt)
+    GSTATUS(theGrid) = 1;
+
+  return (cnt);
+}
+#endif
+
+/****************************************************************************/
+/*
+   SetParityOfElement - Set parity of element
+
+   SYNOPSIS:
+   INT SetParityOfElement (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement -	pointer to 'ELEMENT'
+
+   DESCRIPTION:
+   This function sets parity of element.
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   1 if error occured.
+ */
+/****************************************************************************/
+
+#ifdef __THREEDIM__
+INT SetParityOfElement (ELEMENT *theElement)
+{
+  INT j;
+  ELEMENT *e;
+  ELEMENTSIDE *s;
+  NODE *n;
+  COORD sp,*x[4];
+  COORD_VECTOR a,b,c,d;
+        #ifdef __SIDEDATA__
+  VECTOR *v;
+        #endif
+
+  if (TAG(theElement)!=TETRAHEDRON) return (0);
+  if (EFATHER(theElement)!=NULL) return (1);
+  if (NSONS(theElement)!=0) return (1);
+
+  /* check orientation */
+  for (j=0; j<4; j++) x[j] = CVECT(MYVERTEX(CORNER(theElement,j)));
+  V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,0,1)],x[CORNER_OF_SIDE(theElement,0,0)],a)
+  V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,0,2)],x[CORNER_OF_SIDE(theElement,0,0)],b)
+  V3_SUBTRACT(x[CORNER_OPP_TO_SIDE(theElement,0)],x[CORNER_OF_SIDE(theElement,0,0)],c)
+  V3_VECTOR_PRODUCT(a,b,d)
+  V3_SCALAR_PRODUCT(c,d,sp)
+  if (sp<0.0) return(0);
+
+  /* invert orientaion */
+  n = CORNER(theElement,0);
+  SET_CORNER(theElement,0,CORNER(theElement,1));
+  SET_CORNER(theElement,1,CORNER(theElement,2));
+  SET_CORNER(theElement,2,CORNER(theElement,3));
+  SET_CORNER(theElement,3,n);
+
+  e = NBELEM(theElement,0);
+  SET_NBELEM(theElement,0,NBELEM(theElement,1));
+  SET_NBELEM(theElement,1,NBELEM(theElement,2));
+  SET_NBELEM(theElement,2,NBELEM(theElement,3));
+  SET_NBELEM(theElement,3,e);
+
+        #ifdef __SIDEDATA__
+  v = SVECTOR(theElement,0);
+  SET_SVECTOR(theElement,0,SVECTOR(theElement,1));
+  SET_SVECTOR(theElement,1,SVECTOR(theElement,2));
+  SET_SVECTOR(theElement,2,SVECTOR(theElement,3));
+  SET_SVECTOR(theElement,3,v);
+        #endif
+
+  if (OBJT(theElement)==IEOBJ) return(0);
+  s = SIDE(theElement,0);
+  SET_SIDE(theElement,0,SIDE(theElement,1));
+  SET_SIDE(theElement,1,SIDE(theElement,2));
+  SET_SIDE(theElement,2,SIDE(theElement,3));
+  SET_SIDE(theElement,3,s);
+
+  return(0);
+}
+#endif
+
+/****************************************************************************/
+/*
+   SetParityInGrid - Set parity of elements in grid
+
+   SYNOPSIS:
+   INT SetParityInGrid (GRID* theGrid);
+
+   PARAMETERS:
+   .  theGrid - pointer to grid
+
+   DESCRIPTION:
+   This function sets parity of elements in grid.
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   1 if error occured.
+ */
+/****************************************************************************/
+
+#ifdef __THREEDIM__
+INT SetParityInGrid (GRID* theGrid)
+{
+  ELEMENT *theElement;
+
+  if (UPGRID(theGrid)!=NULL) return (1);
+  if (DOWNGRID(theGrid)!=NULL) return (1);
+
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+    if (SetParityOfElement(theElement)) return (1);
+
+  return (0);
+}
+#endif
+
+/****************************************************************************/
+/*
+   CheckParityOfElements - Check parity of elements in multigrid
+
+   SYNOPSIS:
+   INT CheckParityOfElements (MULTIGRID* theMG);
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+
+   DESCRIPTION:
+   This function checks parity of elements in multigrid.
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   1 if error occured.
+ */
+/****************************************************************************/
+
+#ifdef __THREEDIM__
+INT CheckParityOfElements (MULTIGRID* theMG)
+{
+  INT i,j;
+  ELEMENT *theElement;
+  COORD sp,*x[4];
+  COORD_VECTOR a,b,c,d;
+  char buffer[128];
+
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
+    {
+      if (TAG(theElement)!=TETRAHEDRON) return (1);
+
+      /* check orientation */
+      for (j=0; j<4; j++) x[j] = CVECT(MYVERTEX(CORNER(theElement,j)));
+      V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,0,1)],x[CORNER_OF_SIDE(theElement,0,0)],a)
+      V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,0,2)],x[CORNER_OF_SIDE(theElement,0,0)],b)
+      V3_SUBTRACT(x[CORNER_OPP_TO_SIDE(theElement,0)],x[CORNER_OF_SIDE(theElement,0,0)],c)
+      V3_VECTOR_PRODUCT(a,b,d)
+      V3_SCALAR_PRODUCT(c,d,sp)
+      if (sp<0.0) continue;
+
+      sprintf(buffer,"parity wrong: IS = %d\n",(int)ID(theElement));
+      UserWrite(buffer);
+    }
+
+  return(0);
+}
+#endif
 
 /****************************************************************************/
 /*D
    InsertElement - Insert an element
 
    SYNOPSIS:
-   InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]); // 2D Version
-   INT InsertElement (MULTIGRID *theMG, INT n,
-   NODE *Node[MAX_CORNERS_OF_ELEM]); // 3D Version
+   InsertElement (MULTIGRID *theMG, INT n, NODE **Node);
 
    PARAMETERS:
    .  theMG - multigrid structure
@@ -2892,7 +4643,7 @@ static INT CheckOrientation (INT n, VERTEX **vertices)
 
 #define SWAP_IJ(a,i,j,t)                        {t = a[i]; a[i] = a[j]; a[j] = t;}
 
-INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
+INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
 {
   GRID *theGrid;
   int i,j,m,found,NeighborSide[4],bndEdges;
@@ -3147,7 +4898,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
 
   /* fill element data */
   SETECLASS(theElement,RED);       /* this is a coarse grid element */
-  SETTAG(theElement,n);
+  PARSETTAG(theElement,n);
   SET_EFATHER(theElement,NULL);
   for (i=0; i<n; i++)
   {
@@ -3173,21 +4924,45 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
 }
 #endif
 
-
 #ifdef __THREEDIM__
 
-INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 3D VERSION */
+static INT CheckOrientation (INT n, VERTEX **vertices)
+{
+  COORD_VECTOR diff[3],rot;
+  COORD det;
+  INT i;
+
+  /* TODO: this case */
+  if (n == 8)
+    return(0);
+
+  for (i=1; i<n; i++)
+    V3_SUBTRACT(CVECT(vertices[i]),CVECT(vertices[0]),diff[i-1]);
+  V3_VECTOR_PRODUCT(diff[0],diff[1],rot);
+  V3_SCALAR_PRODUCT(rot,diff[2],det);
+
+  if (det < 0.0)
+    return(1);
+
+  return(0);
+}
+
+INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
 {
   GRID             *theGrid;
-  int i,j,k,l,m,found,num;
-  int NeighborSide[MAX_SIDES_OF_ELEM];
+  INT i,j,k,l,m,found,num;
+  INT NeighborSide[MAX_SIDES_OF_ELEM];
+  INT tag,corners,sides,edges,corners_of_side;
+  INT                      (*corner_of_side)[MAX_CORNERS_OF_SIDE];
+  INT          (*corner_of_edge)[MAX_CORNERS_OF_EDGE];
   NODE             *sideNode[MAX_CORNERS_OF_SIDE];
   VERTEX           *Vertex[MAX_CORNERS_OF_ELEM],*sideVertex[MAX_CORNERS_OF_SIDE];
   ELEMENT          *theElement,*Neighbor[MAX_SIDES_OF_ELEM];
   EDGE             *theEdge;
-  COORD param[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_SIDE][DIM_OF_BND], *plambda[MAX_CORNERS_OF_SIDE];
-  VSEGMENT         *vs;
-  BVP             *theBVP;
+  COORD param[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_SIDE][DIM_OF_BND];
+  COORD        *plambda[MAX_CORNERS_OF_SIDE];
+  VSEGMENT         *vs,*vs1;
+  BVP              *theBVP;
   BVP_DESC theBVPDesc;
   PATCH            *thePatch[MAX_SIDES_OF_ELEM], *Patch;
   PATCH_DESC thePatchDesc;
@@ -3209,34 +4984,58 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
   }
 
   /* check parameters */
-  if ( n != 4 )
+  if ( n != 4 && n != 8)
   {
-    PrintErrorMessage('E',"InsertElement","exactly four ID's of nodes are nesessary in 3D");
+    PrintErrorMessage('E',"InsertElement","exactly four (eight) ID's of nodes are nesessary in 3D (only for tetra/hexahedra!)");
     return(GM_ERROR);
   }
 
+  if (n==4)
+    tag = TETRAHEDRON;
+  else if (n==8)
+    tag = HEXAHEDRON;
+  else
+    return(GM_ERROR);
+
+  /* initialize element description variables */
+  corners                 = element_descriptors[tag]->corners_of_elem;          /* number of corners    */
+  sides                   = element_descriptors[tag]->sides_of_elem;                    /* number of sides      */
+  edges                   = element_descriptors[tag]->edges_of_elem;                    /* number of edges      */
+  corners_of_side = element_descriptors[tag]->corners_of_side[0];       /* corners of each side */
+  corner_of_side  = element_descriptors[tag]->corner_of_side;                   /* lokal to global node */
+  corner_of_edge  = element_descriptors[tag]->corner_of_edge;                   /* lokal to global edge */
+
   /* init vertices */
-  for (i=0; i<MAX_CORNERS_OF_ELEM; i++)
+  for (i=0; i<corners; i++)
     Vertex[i] = MYVERTEX(Node[i]);
 
+  if (CheckOrientation (n,Vertex))
+  {
+    sideNode[0] = Node[0];
+    sideVertex[0] = Vertex[0];
+    Node[0] = Node[1];
+    Vertex[0] = Vertex[1];
+    Node[1] = sideNode[0];
+    Vertex[1] = sideVertex[0];
+  }
+
   /* init pointers */
-  for (i=0; i<MAX_SIDES_OF_ELEM; i++)
+  for (i=0; i<sides; i++)
   {
     Neighbor[i] = NULL;
     thePatch[i] = NULL;
   }
 
   /* compute side information (theSeg[i]==NULL) means inner side */
-  for (i=0; i<MAX_SIDES_OF_ELEM; i++)
+  for (i=0; i<sides; i++)
   {
-    for( j=0; j<MAX_CORNERS_OF_SIDE; j++ )
+    for(j=0; j<corners_of_side; j++ )
     {
-      sideNode[j] = Node[CornerOfSide[i][j]];
-      sideVertex[j] = Vertex[CornerOfSide[i][j]];
+      sideNode[j] = Node[corner_of_side[i][j]];
+      sideVertex[j] = Vertex[corner_of_side[i][j]];
     }
-
     found = 0;
-    for( j=0; j<MAX_CORNERS_OF_SIDE; j++ )
+    for( j=0; j<corners_of_side; j++ )
     {
       if( OBJT(sideVertex[j]) == IVOBJ ) found = 1;
     }
@@ -3249,15 +5048,18 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
     /* That means, one should not define elements at the boundary	*/
     /* with a boundary side covering more than one segment.			*/
 
-    for (Patch=BVP_GetFirstPatch(theBVP); Patch!=NULL; Patch=BVP_GetNextPatch(theBVP,Patch))
+    for (vs1 = VSEG(sideVertex[0]); vs1 != NULL; vs1 = NEXTSEG(vs1))
     {
-      if (Patch_GetPatchDesc(Patch,&thePatchDesc)) return (GM_ERROR);
-      for( k=0; k<MAX_CORNERS_OF_SIDE; k++ )
+      Patch = VS_PATCH(vs1);
+      plambda[0] = PVECT(vs1);
+      for( k=1; k<corners_of_side; k++ )
       {
         found = 0;
-        for( vs = VSEG(sideVertex[k]); vs!=NULL; vs = NEXTSEG(vs) )                           /* the segments of that corner */
+        /* the segments of that corner */
+        for( vs = VSEG(sideVertex[k]); vs!=NULL; vs = NEXTSEG(vs) )
         {
-          if (VS_PATCH(vs)==Patch)                               /* corner belongs to segment */
+          if (Patch == VS_PATCH(vs))
+          /* corner belongs to segment */
           {
             found = 1;
             break;
@@ -3275,7 +5077,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
     {
       /*	set boundary parameters for vertices of that side */
       thePatch[i] = Patch;
-      for( k=0; k<MAX_CORNERS_OF_SIDE; k++)                    /* vertices of side i */
+      for( k=0; k<corners_of_side; k++)                    /* vertices of side i */
       {
         param[i][k][0] = plambda[k][0];
         param[i][k][1] = plambda[k][1];
@@ -3286,27 +5088,27 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
   /* find neighboring elements */
 
   /* for all sides of the element to be created */
-  for (i=0; i<MAX_SIDES_OF_ELEM; i++)
+  for (i=0; i<sides; i++)
   {
-    for (j=0; j<MAX_CORNERS_OF_SIDE; j++)
+    for (j=0; j<corners_of_side; j++)
     {
-      sideNode[j] = Node[CornerOfSide[i][j]];
+      sideNode[j] = Node[corner_of_side[i][j]];
     }
     /* for all neighbouring elements allready inserted */
     for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
     {
       /* for all sides of the neighbour element */
-      for (j=0; j<MAX_SIDES_OF_ELEM; j++)
+      for (j=0; j<sides; j++)
       {
         num = 0;
         /* for all corners of the side of the neighbour */
-        for (m=0; m<MAX_CORNERS_OF_SIDE; m++)
+        for (m=0; m<corners_of_side; m++)
           /* for all corners of the side of the element to be created */
-          for (k=0; k<MAX_CORNERS_OF_SIDE; k++)
+          for (k=0; k<corners_of_side; k++)
           {
-            if(CORNER(theElement,CornerOfSide[j][m])==sideNode[k]) num++;
+            if(CORNER(theElement,corner_of_side[j][m])==sideNode[k]) num++;
           }
-        if(num==MAX_CORNERS_OF_SIDE)
+        if(num==corners_of_side)
         {
           if (NBELEM(theElement,j)!=NULL)
           {
@@ -3321,17 +5123,16 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
   }
 
   /* check type of element */
-
   found = 0;
-  for (i=0; i<MAX_SIDES_OF_ELEM; i++)
+  for (i=0; i<sides; i++)
     if (thePatch[i]!=NULL)
       found++;
 
   /* create element */
   if ( found )
-    theElement = CreateBoundaryElement(theGrid,NULL,4);
+    theElement = CreateBoundaryElement(theGrid,NULL,tag);
   else
-    theElement = CreateInnerElement(theGrid,NULL,4);
+    theElement = CreateInnerElement(theGrid,NULL,tag);
   if (theElement==NULL)
   {
     PrintErrorMessage('E',"InsertElement","cannot allocate element");
@@ -3341,7 +5142,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
   /* create element sides if necessary */
   if (OBJT(theElement)==BEOBJ)
   {
-    for (i=0; i<MAX_SIDES_OF_ELEM; i++)
+    for (i=0; i<sides; i++)
     {
       SET_SIDE(theElement,i,NULL);
       if (thePatch[i]!=NULL)
@@ -3354,7 +5155,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
           return(GM_ERROR);
         }
         ES_PATCH(SIDE(theElement,i)) = thePatch[i];
-        for(k=0; k<MAX_CORNERS_OF_SIDE; k++)
+        for(k=0; k<corners_of_side; k++)
           for(l=0; l<DIM_OF_BND; l++)
             PARAM(SIDE(theElement,i),k,l) = param[i][k][l];
       }
@@ -3362,12 +5163,12 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
   }
 
   /* create edges */
-  for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+  for (i=0; i<edges; i++)
   {
-    theEdge = GetEdge(Node[CornerOfEdge[i][0]],Node[CornerOfEdge[i][1]]);
+    theEdge = GetEdge(Node[corner_of_edge[i][0]],Node[corner_of_edge[i][1]]);
     if (theEdge==NULL)
     {
-      theEdge = CreateEdge(theGrid,Node[CornerOfEdge[i][0]],Node[CornerOfEdge[i][1]]);
+      theEdge = CreateEdge(theGrid,Node[corner_of_edge[i][0]],Node[corner_of_edge[i][1]]);
       if (theEdge==NULL)
       {
         DisposeElement(theGrid,theElement);                         /* including element sides */
@@ -3386,7 +5187,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
   }
 
   /* fill element data */
-  for (i=0; i<MAX_SIDES_OF_ELEM; i++)
+  for (i=0; i<sides; i++)
   {
     SET_NBELEM(theElement,i,Neighbor[i]);
     if (Neighbor[i]!=NULL)
@@ -3398,13 +5199,13 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[MAX_CORNERS_OF_ELEM]) /* 
                         #endif
     }
   }
-  for (i=0; i<MAX_CORNERS_OF_ELEM; i++) SET_CORNER(theElement,i,Node[i]);
+  for (i=0; i<corners; i++) SET_CORNER(theElement,i,Node[i]);
   SETNSONS(theElement,0);
   SET_SON(theElement,0,NULL);
   SET_EFATHER(theElement,NULL);
   SETECLASS(theElement,RED);
 
-  /* create connection to other elements. ATTENTION: this function is O(n) */
+  /* create connection to other elements. ATTENTION: this function is O(n)*/
   if (InsertedElementCreateConnection(theGrid,theElement))
   {
     PrintErrorMessage('E',"InsertElement","could not create algebra connections");
@@ -4537,8 +6338,10 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
           for(j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
                                                 #ifdef __THREEDIM__
-            sprintf(buffer,"  NODE[ID=%ld]: ",(long)(ID(CORNER(theElement,CornerOfSide[i][j]))));
+                        #ifdef ModelP
+            sprintf(buffer,"  NODE[ID=%ld]: ",(long)(NODE_ID(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j)))));
             UserWrite(buffer);
+                                                #endif
                                                 #endif
             for(k=0; k<DIM_OF_BND; k++)
             {
@@ -5050,7 +6853,6 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
   return (0);
 }
 
-
 INT CheckGrid (GRID *theGrid) /* 2D VERSION */
 {
   NODE *theNode;
@@ -5060,13 +6862,26 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
   EDGE *theEdge;
   INT SideError, EdgeError, NodeError,count,n;
 
-  /* reset used flags */
-  for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode))
-  {
-    SETUSED(theNode,0);
-    for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
-      SETUSED(MYEDGE(theLink),0);
-  }
+  /* reset used flags
+     for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode))
+     {
+     #ifdef Debug
+     #ifdef ModelP
+          printf("%2d: CheckGrid:       n=%x\n",me,theNode);
+     #endif
+     #endif
+
+          SETUSED(theNode,0);
+          for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
+            PARSETUSED(MYEDGE(theLink),0);
+          }
+     }
+
+     #ifdef Debug
+     #ifdef ModelP
+     printf("%2d: CheckGrid: all nodes and links are SETUSED\n",me);
+     #endif
+   #endif */
 
   /* check neighbors and edges of elements */
   for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
@@ -5140,33 +6955,56 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
   {
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
     {
-      if (ID(NBNODE(theLink))>ID(theNode))
+      PARSETUSED(theLink,1);
+    }
+  }
+  for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode))
+  {
+    for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
+    {
+      if ((PARUSED(theLink)&&!PARUSED(REVERSE(theLink))) ||
+          (PARUSED(REVERSE(theLink))&&!PARUSED(theLink)))
       {
-        theEdge = MYEDGE(theLink);
-        if (!USED(theEdge))
-        {
-          sprintf(buffer,"edge between %ld and %ld dead ",(long)ID(theNode),(long)ID(NBNODE(theLink)));
-          UserWrite(buffer);
-          UserWrite("\n");
-        }
-        else
-          SETUSED(theEdge,0);
+                #ifdef ModelP
+        sprintf(buffer,"edge between %ld and %ld dead ",(long)NODE_ID(theNode),(long)NODE_ID(NBNODE(theLink)));
+                                #endif
+        UserWrite(buffer);
+        UserWrite("\n");
+      }
+      else
+      {
+        PARSETUSED(theLink,0);
+        PARSETUSED(REVERSE(theLink),0);
       }
     }
   }
+
+        #ifdef Debug
+        #ifdef ModelP
+  printf("%2d: CheckGrid(): no dead edges found!\n",me);
+        #endif
+        #endif
 
   /* look for dead nodes */
   for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode))
   {
     if (!USED(theNode))
     {
-      sprintf(buffer,"node %ld is dead ",(long)ID(theNode));
+            #ifdef ModelP
+      sprintf(buffer,"node %ld is dead ",(long)NODE_ID(theNode));
       UserWrite(buffer);
       UserWrite("\n");
+                        #endif
     }
     else
       SETUSED(theNode,0);
   }
+
+        #ifdef Debug
+        #ifdef ModelP
+  printf("%2d: CheckGrid(): no dead nodes found!\n",me);
+        #endif
+        #endif
 
   /* check number of elem and their pointers */
   count = 0;
@@ -5255,7 +7093,7 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
           {
             for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
             {
-              theVertex = MYVERTEX(CORNER(theElement,(k=CornerOfSide[i][j])));
+              theVertex = MYVERTEX(CORNER(theElement,(k=CORNER_OF_SIDE(theElement,i,j))));
               if (OBJT(theVertex) == BVOBJ)
               {
                 thePatch = ES_PATCH(theSide);
@@ -5295,7 +7133,7 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
           {
             for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
             {
-              theVertex = MYVERTEX(CORNER(theElement,(k=CornerOfSide[i][j])));
+              theVertex = MYVERTEX(CORNER(theElement,(k=CORNER_OF_SIDE(theElement,i,j))));
               if (OBJT(theVertex) == BVOBJ)
               {
                 thePatch = ES_PATCH(theSide);
@@ -5316,14 +7154,15 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
   {
     SETUSED(CORNER(theElement,i),1);
-    for (j=i+1; j<CORNERS_OF_ELEM(theElement); j++)
-    {
-      theEdge = GetEdge(CORNER(theElement,i),CORNER(theElement,j));
-      if (theEdge==NULL)
-        *EdgeError |= 1<<EdgeWithCorners[i][j];
-      else
-        SETUSED(theEdge,1);
-    }
+  }
+
+  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+  {
+    theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
+    if (theEdge==NULL)
+      *EdgeError |= 1<<i;
+    else
+      PARSETUSED(theEdge,1);
   }
 
   if (NSONS(theElement)!=0)
@@ -5367,7 +7206,7 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
   {
     SETUSED(theNode,0);
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
-      SETUSED(MYEDGE(theLink),0);
+      PARSETUSED(MYEDGE(theLink),0);
   }
 
   /* check neighbors and edges of elements */
@@ -5384,7 +7223,7 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
           UserWrite("   SIDE(");
           for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
-            sprintf(buffer,"%ld",(long)ID(CORNER(theElement,CornerOfSide[i][j])));
+            sprintf(buffer,"%ld",(long)ID(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j))));
             UserWrite(buffer);
             if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
           }
@@ -5395,7 +7234,7 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
           UserWrite("   SIDE(");
           for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
-            sprintf(buffer,"%ld",(long)ID(CORNER(theElement,CornerOfSide[i][j])));
+            sprintf(buffer,"%ld",(long)ID(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j))));
             UserWrite(buffer);
             if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
           }
@@ -5406,7 +7245,7 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
           UserWrite("   SIDE(");
           for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
-            sprintf(buffer,"%ld",(long)ID(CORNER(theElement,CornerOfSide[i][j])));
+            sprintf(buffer,"%ld",(long)ID(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j))));
             UserWrite(buffer);
             if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
           }
@@ -5417,9 +7256,12 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
       for (i=0; i<EDGES_OF_ELEM(theElement); i++)
       {
         if (!(EdgeError & 1<<i)) continue;
-        sprintf(buffer,"   EDGE(%ld,%ld) is missing\n",(long)ID(CORNER(theElement,CornerOfEdge[i][0])),(long)ID(CORNER(theElement,CornerOfEdge[i][1])));
+                                #ifdef ModelP
+        sprintf(buffer,"   EDGE(%ld,%ld) is missing\n",(long)NODE_ID(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0))),(long)NODE_ID(CORNER(theElement,CORNER_OF_EDGE(theElement,i,1))));
         UserWrite(buffer);
+                                #endif
       }
+
     if (NodeError)
       for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
       {
@@ -5483,18 +7325,20 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
   {
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
     {
-      if (ID(NBNODE(theLink))>ID(theNode))
+                    #ifdef ModelP
+      if (NODE_ID(NBNODE(theLink))>NODE_ID(theNode))
       {
         theEdge = MYEDGE(theLink);
-        if (!USED(theEdge))
+        if (!PARUSED(theEdge))
         {
-          sprintf(buffer,"edge between %ld and %ld dead, NO_OF_ELEM=%d ",(long)ID(theNode),(long)ID(NBNODE(theLink)),NO_OF_ELEM(theEdge));
+          sprintf(buffer,"edge between %ld and %ld dead, NO_OF_ELEM=%d ",(long)NODE_ID(theNode),(long)NODE_ID(NBNODE(theLink)),NO_OF_ELEM(theEdge));
           UserWrite(buffer);
           UserWrite("\n");
         }
         else
-          SETUSED(theEdge,0);
+          PARSETUSED(theEdge,0);
       }
+                        #endif
     }
   }
 
@@ -5503,9 +7347,11 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
   {
     if (!USED(theNode))
     {
-      sprintf(buffer,"node %ld is dead ",(long)ID(theNode));
+                    #ifdef ModelP
+      sprintf(buffer,"node %ld is dead ",(long)NODE_ID(theNode));
       UserWrite(buffer);
       UserWrite("\n");
+                        #endif
     }
     else
       SETUSED(theNode,0);
@@ -6016,12 +7862,10 @@ static INT QualityElement (int type, ELEMENT *element, DOUBLE *angle)
     /* normalize sperical angle to unit spere */
     angle[i] /= 4*PI;
   }
-
-
-  if (TetraSideNormals (x,theNormal)) return (2);
+  if (TetraSideNormals (element,x,theNormal)) return (2);
   for (i=0; i<MAX_EDGES_OF_ELEM; i++)
   {
-    V3_SCALAR_PRODUCT(theNormal[SideWithEdge[i][0]],theNormal[SideWithEdge[i][1]],help);
+    V3_SCALAR_PRODUCT(theNormal[SIDE_WITH_EDGE(element,i,0)],theNormal[SIDE_WITH_EDGE(element,i,1)],help);
     help = MAX(help,-1.0);
     help = MIN(help, 1.0);
     angle[CORNERS_OF_ELEM(element)+i] = 180.0/PI*acos(-help);

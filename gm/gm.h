@@ -82,6 +82,9 @@
 /* necessary for most C runtime libraries */
 #undef DOMAIN
 
+/* serial version */
+#define DDD_OFFSET 0
+
 /* some size parameters */
 #define MAXLEVEL                                32      /* maximum depth of triangulation		*/
 #define MAXOBJECTS                              32      /* use 5 bits for object identification */
@@ -89,14 +92,14 @@
 #define TAGS                                    8       /* number of different element types	*/
 
 /* some size macros for allocation purposes */
-#define MAX_SIDES_OF_ELEM               4                       /* max number of sides of an elem	*/
-#define MAX_EDGES_OF_ELEM               6                       /* max number of edges of an element*/
-#define MAX_CORNERS_OF_ELEM             4                       /* max number of corners of an eleme*/
-#define MAX_EDGES_OF_SIDE               3           /* max number of edges of a side	*/
-#define MAX_CORNERS_OF_SIDE     3           /* max number of corners of a side  */
+#define MAX_SIDES_OF_ELEM               6                       /* max number of sides of an elem	*/
+#define MAX_EDGES_OF_ELEM               12                      /* max number of edges of an element*/
+#define MAX_CORNERS_OF_ELEM             8                       /* max number of corners of an eleme*/
+#define MAX_EDGES_OF_SIDE               4           /* max number of edges of a side	*/
+#define MAX_CORNERS_OF_SIDE     4           /* max number of corners of a side  */
 #define MAX_CORNERS_OF_EDGE             2                       /* an edge has always two corners.. */
 #define MAX_SIDES_OF_EDGE               2                       /* two sides have one edge in common*/
-#define MAX_SONS                        12          /* max number of sons of an element */
+#define MAX_SONS                        30          /* max number of sons of an element */
 
 #define MAX_SIDES_TOUCHING              10                      /* max #fine sides touching a coarse*/
 
@@ -297,6 +300,11 @@ struct blockvector_description  /* describes the position of a blockvector	*/
 typedef struct blockvector_description BV_DESC;
 
 struct vector {
+
+        #ifdef ModelP
+  DDD_HEADER;
+        #endif
+
   unsigned INT control;                         /* object identification, various flags */
   union geom_object *object;                    /* associated object					*/
 
@@ -358,6 +366,10 @@ typedef struct blockvector BLOCKVECTOR;
 
 struct ivertex {                                        /* inner vertex structure				*/
 
+        #ifdef ModelP
+  DDD_HEADER;
+        #endif
+
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
@@ -389,6 +401,10 @@ struct vsegment {
 
 struct bvertex {                                        /* boundary vertex structure			*/
 
+        #ifdef ModelP
+  DDD_HEADER;
+        #endif
+
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
@@ -411,6 +427,10 @@ union vertex {                                          /* only used to define p
 
 
 struct node {                                           /* level dependent part of a vertex     */
+
+        #ifdef ModelP
+  DDD_HEADER;
+        #endif
 
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
@@ -475,14 +495,17 @@ struct edge {                                           /* undirected edge of th
         #endif
 } ;
 
-
 struct generic_element {            /* no difference between inner and bndel*/
+
+        #ifdef ModelP
+  DDD_HEADER;
+        #endif
 
   /* variables */
   unsigned INT control;             /* object identification, various flags */
   INT id;                           /* unique id used for load/store        */
   unsigned INT flag;                /* additional flags for elements        */
-  unsigned INT property;                        /* we need more bits ...				*/
+  INT property;                         /* to store NodeOrder for hexahedrons   */
 
   /* pointers */
   union element *pred, *succ;       /* double linked list of elements       */
@@ -491,14 +514,18 @@ struct generic_element {            /* no difference between inner and bndel*/
 
 struct triangle {
 
+        #ifdef ModelP
+  DDD_HEADER;
+        #endif
+
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
   unsigned INT flag;                            /* additional flags for elements		*/
-  unsigned INT property;                        /* we need more bits ...				*/
+  INT property;                                 /* we need more bits ...				*/
 
   /* pointers */
-  union element *pred, *succ;           /* double linked list of elements		*/
+  union element *pred, *succ;           /* doubly linked list of elements		*/
   struct node *n[3];                                    /* corners of that element				*/
   union element *father;                        /* father element on coarser grid		*/
   union element *sons[4];                       /* element tree                                                 */
@@ -519,14 +546,18 @@ struct triangle {
 
 struct quadrilateral {
 
+        #ifdef ModelP
+  DDD_HEADER;
+        #endif
+
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
   unsigned INT flag;                            /* additional flags for elements		*/
-  unsigned INT property;                        /* we need more bits ...				*/
+  INT property;                                 /* we need more bits ...				*/
 
   /* pointers */
-  union element *pred, *succ;           /* double linked list of elements		*/
+  union element *pred, *succ;           /* doubly linked list of elements		*/
   struct node *n[4];                                    /* corners of that element				*/
   union element *father;                        /* father element on coarser grid		*/
   union element *sons[4];                       /* element tree                                                 */
@@ -547,14 +578,18 @@ struct quadrilateral {
 
 struct tetrahedron {
 
+        #ifdef ModelP
+  DDD_HEADER;
+        #endif
+
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
   unsigned INT flag;                            /* additional flags for elements		*/
-  unsigned INT property;                        /* we need more bits ...				*/
+  INT property;                                 /* we need more bits ...				*/
 
   /* pointers */
-  union element *pred, *succ;           /* double linked list of elements		*/
+  union element *pred, *succ;           /* doubly linked list of elements		*/
   struct node *n[4];                                    /* corners of that element				*/
   union element *father;                        /* father element on coarser grid		*/
   union element *sons[1];                       /* element tree                                                 */
@@ -573,11 +608,81 @@ struct tetrahedron {
   struct elementside *side[4];          /* only on bnd, NULL if interior side	*/
 } ;
 
+struct pyramid {
+
+        #ifdef ModelP
+  DDD_HEADER;
+        #endif
+
+  /* variables */
+  unsigned INT control;                         /* object identification, various flags */
+  INT id;                                                       /* unique id used for load/store		*/
+  unsigned INT flag;                            /* additional flags for elements		*/
+  INT property;                                 /* we need more bits ...				*/
+
+  /* pointers */
+  union element *pred, *succ;           /* doubly linked list of elements		*/
+  struct node *n[5];                                    /* corners of that element				*/
+  union element *father;                        /* father element on coarser grid		*/
+  union element *sons[1];                       /* element tree                                                 */
+  union element *nb[5];                         /* dual graph							*/
+
+  /* associated vector if */
+        #ifdef __ELEMDATA__
+  VECTOR *vector;                                       /* associated vector					*/
+        #endif
+
+  /* associated vector if */
+        #ifdef __SIDEDATA__
+  VECTOR *sidevector[5];                        /* associated vectors for sides			*/
+        #endif
+
+  struct elementside *side[5];          /* only on bnd, NULL if interior side	*/
+} ;
+
+struct hexahedron {
+
+        #ifdef ModelP
+  DDD_HEADER;
+        #endif
+
+  /* variables */
+  unsigned INT control;                         /* object identification, various flags */
+  INT id;                                                       /* unique id used for load/store		*/
+  unsigned INT flag;                            /* additional flags for elements		*/
+  INT property;                                 /* we need more bits ...				*/
+
+  /* pointers */
+  union element *pred, *succ;           /* doubly linked list of elements		*/
+  struct node *n[8];                                    /* corners of that element				*/
+  union element *father;                        /* father element on coarser grid		*/
+  union element *sons[1];                       /* element tree                                                 */
+  union element *nb[6];                         /* dual graph							*/
+
+  /* associated vector if */
+        #ifdef __ELEMDATA__
+  VECTOR *vector;                                       /* associated vector					*/
+        #endif
+
+  /* associated vector if */
+        #ifdef __SIDEDATA__
+  VECTOR *sidevector[6];                        /* associated vectors for sides			*/
+        #endif
+
+  struct elementside *side[6];          /* only on bnd, NULL if interior side	*/
+} ;
+
 union element {
   struct generic_element ge;
+    #ifdef __TWODIM__
   struct triangle tr;
   struct quadrilateral qu;
+        #endif
+    #ifdef __THREEDIM__
   struct tetrahedron te;
+  struct pyramid py;
+  struct hexahedron he;
+        #endif
 } ;
 
 struct elementside {
@@ -585,17 +690,10 @@ struct elementside {
   /* variables */
   unsigned INT control;                                         /* object identification, various flags */
   PATCH *thePatch;                                                      /* pointer to patch						*/
-  COORD lambda[MAX_CORNERS_OF_SIDE]                     /* parameter of side corners			*/
-  [DIM_OF_BND];
+  COORD lambda[MAX_CORNERS_OF_SIDE][DIM_OF_BND];
+  /* parameter of side corners			*/
   /* pointers */
   struct elementside *pred,*succ;                       /* double linked list					*/
-} ;
-
-struct bndsegdesc {                                             /* descriptor for one boundary segment	*/
-  unsigned INT control;                                         /* object identification, various flags */
-  INT id;                                                                       /* unique id used for load/store		*/
-  struct boundary_segment *theSegment;          /* (1) coordinate definition			*/
-  struct bndcond *theBoundaryCondition;         /* (2) boundary condition definition	*/
 } ;
 
 union geom_object {                                             /* objects that can hold a vector		*/
@@ -695,7 +793,6 @@ typedef struct vsegment VSEGMENT;
 typedef struct node NODE;
 typedef union  element ELEMENT;
 typedef struct elementside ELEMENTSIDE;
-typedef struct bndsegdesc BNDSEGDESC;
 typedef struct link LINK;
 typedef struct edge EDGE;
 typedef union  geom_object GEOM_OBJECT;
@@ -821,6 +918,11 @@ extern CONTROL_ENTRY
 #define CW_READ(p,ce)      ((ControlWord(p,ce) & control_entries[ce].mask)>>control_entries[ce].offset_in_word)
 #define CW_WRITE(p,ce,n)   ControlWord(p,ce) = (ControlWord(p,ce)&control_entries[ce].xor_mask)|(((n)<<control_entries[ce].offset_in_word)&control_entries[ce].mask)
 
+/* in serial case DDD_OFFSET=0, therefor ParControlWord matches ControlWord */
+#define ParControlWord(p,ce)  (((unsigned INT *)(p))[control_entries[ce].offset_in_object+DDD_OFFSET])
+
+#define PARCW_READ(p,ce)           ((ParControlWord(p,ce) & control_entries[ce].mask)>>control_entries[ce].offset_in_word)
+#define PARCW_WRITE(p,ce,n)   ParControlWord(p,ce) = (ParControlWord(p,ce)&control_entries[ce].xor_mask)|(((n)<<control_entries[ce].offset_in_word)&control_entries[ce].mask)
 
 /****************************************************************************/
 /*																			*/
@@ -884,7 +986,7 @@ extern CONTROL_ENTRY
 
 /* control word identifier */
 #define VECTOR_CW                                       0
-#define VECTOR_OFFSET                           0
+#define VECTOR_OFFSET                           (0+DDD_OFFSET)
 
 /* predefined control word entries */
 #define VTYPE_CE                                        0
@@ -952,6 +1054,14 @@ extern CONTROL_ENTRY
 #define VCCUT_LEN                                       1
 #define VCCUT(p)                                        CW_READ(p,VCCUT_CE)
 #define SETVCCUT(p,n)                           CW_WRITE(p,VCCUT_CE,n)
+
+#ifdef ModelP
+#define XFERVECTOR_CE                           60
+#define XFERVECTOR_SHIFT                        21
+#define XFERVECTOR_LEN                          2
+#define XFERVECTOR(p)                           CW_READ(p,XFERVECTOR_CE)
+#define SETXFERVECTOR(p,n)                      CW_WRITE(p,XFERVECTOR_CE,n)
+#endif /* ModelP */
 
 #define VOBJECT(v)                                      ((v)->object)
 #define PREDVC(v)                                       ((v)->pred)
@@ -1032,6 +1142,28 @@ extern CONTROL_ENTRY
 #define MUSED_LEN                                       1
 #define MUSED(p)                                        CW_READ(p,MUSED_CE)
 #define SETMUSED(p,n)                           CW_WRITE(p,MUSED_CE,n)
+
+#ifndef ModelP
+#define MSIZE_CE                                        15
+#define MSIZE_SHIFT                             13
+#define MSIZE_LEN                                       15
+#define MSIZEMAX                                        (POW2(MSIZE_LEN)-1)
+#define MSIZE(p)                                        CW_READ(p,MSIZE_CE)
+#define SETMSIZE(p,n)                           CW_WRITE(p,MSIZE_CE,n)
+#else /* NOT ModelP */
+#define MSIZE_CE                                        15
+#define MSIZE_SHIFT                             13
+#define MSIZE_LEN                                       13
+#define MSIZEMAX                                        (POW2(MSIZE_LEN)-1)
+#define MSIZE(p)                                        CW_READ(p,MSIZE_CE)
+#define SETMSIZE(p,n)                           CW_WRITE(p,MSIZE_CE,n)
+
+#define XFERMATX_CE                                     65
+#define XFERMATX_SHIFT                          26
+#define XFERMATX_LEN                            2
+#define XFERMATX(p)                             CW_READ(p,XFERMATX_CE)
+#define SETXFERMATX(p,n)                        CW_WRITE(p,XFERMATX_CE,n)
+#endif /* NOT ModelP */
 
 #define MSIZE_CE                                        15
 #define MSIZE_SHIFT                             13
@@ -1224,6 +1356,16 @@ extern CONTROL_ENTRY
 /*																			*/
 /****************************************************************************/
 
+/* remark for PARALLEL version:                                              */
+/* in serial case all control words for the general macros are at the same   */
+/* position. In parallel case there is need to change the offset for the     */
+/* control word in objects with DDD_HEADER. Since the urgent objects have a  */
+/* DDD_HEADER to the normal offset of ControlWord(p,ce) DDD_OFFSET is        */
+/* added. For objects without header new ParControlWord(p,ce) gives their    */
+/* controlword. This is used for PARCW_READ(p,ce) and PARCW_WRITE            */
+/* CAUTION: for new structs intoduced which have no DDD_HEADER there is need */
+/* to change the general makros used for them to the one beginning with PAR  */
+
 /* macros for handling of flags, not recommended to use anymore ! */
 #define SET_FLAG(flag,bitpattern)               (flag |=  (bitpattern))
 #define CLEAR_FLAG(flag,bitpattern)     (flag &= ~(bitpattern))
@@ -1238,30 +1380,40 @@ extern CONTROL_ENTRY
 #define OBJ_LEN                                         5
 #define OBJT(p)                                         CW_READ(p,OBJ_CE)
 #define SETOBJT(p,n)                            CW_WRITE(p,OBJ_CE,n)
+#define PAROBJT(p)                                      CW_READ(p,OBJ_CE)
+#define PARSETOBJT(p,n)                         CW_WRITE(p,OBJ_CE,n)
 
 #define USED_CE                                         21
 #define USED_SHIFT                                      23
 #define USED_LEN                                        1
 #define USED(p)                                         CW_READ(p,USED_CE)
 #define SETUSED(p,n)                            CW_WRITE(p,USED_CE,n)
+#define PARUSED(p)                                      CW_READ(p,USED_CE)
+#define PARSETUSED(p,n)                         CW_WRITE(p,USED_CE,n)
 
 #define TAG_CE                                          42
 #define TAG_SHIFT                                       24
 #define TAG_LEN                                         3
 #define TAG(p)                                          CW_READ(p,TAG_CE)
 #define SETTAG(p,n)                             CW_WRITE(p,TAG_CE,n)
+#define PARTAG(p)                                               CW_READ(p,TAG_CE)
+#define PARSETTAG(p,n)                          CW_WRITE(p,TAG_CE,n)
 
 #define LEVEL_CE                                        22
 #define LEVEL_SHIFT                             17
 #define LEVEL_LEN                                       5
 #define LEVEL(p)                                        CW_READ(p,LEVEL_CE)
 #define SETLEVEL(p,n)                           CW_WRITE(p,LEVEL_CE,n)
+#define PARLEVEL(p)                                     CW_READ(p,LEVEL_CE)
+#define PARSETLEVEL(p,n)                        CW_WRITE(p,LEVEL_CE,n)
 
 #define THEFLAG_CE                                      23
 #define THEFLAG_SHIFT                           16
 #define THEFLAG_LEN                             1
 #define THEFLAG(p)                                      CW_READ(p,THEFLAG_CE)
 #define SETTHEFLAG(p,n)                         CW_WRITE(p,THEFLAG_CE,n)
+#define PARTHEFLAG(p)                           CW_READ(p,THEFLAG_CE)
+#define PARSETTHEFLAG(p,n)                      CW_WRITE(p,THEFLAG_CE,n)
 
 /* use this to allocate space for general flags in all control words */
 /* of geometric objects                                                                                          */
@@ -1344,7 +1496,7 @@ extern CONTROL_ENTRY
 
 /* control word identifier */
 #define NODE_CW                                         4
-#define NODE_OFFSET                             0
+#define NODE_OFFSET                                     (0+DDD_OFFSET)
 
 #define NODE_GEN                                        28
 
@@ -1372,6 +1524,11 @@ extern CONTROL_ENTRY
 #define NPROP(p)                                        CW_READ(p,NPROP_CE)
 #define SETNPROP(p,n)                           CW_WRITE(p,NPROP_CE,n)
 
+#define XFERNODE_CE                             61
+#define XFERNODE_SHIFT                          7
+#define XFERNODE_LEN                            2
+#define XFERNODE(p)                             CW_READ(p,XFERNODE_CE)
+#define SETXFERNODE(p,n)                        CW_WRITE(p,XFERNODE_CE,n)
 
 #define PREDN(p)        (p)->pred
 #define SUCCN(p)        (p)->succ
@@ -1408,6 +1565,14 @@ extern CONTROL_ENTRY
 #define LOFFSET_LEN                             1
 #define LOFFSET(p)                                      CW_READ(p,LOFFSET_CE)
 #define SETLOFFSET(p,n)                         CW_WRITE(p,LOFFSET_CE,n)
+
+#ifdef ModelP
+#define XFERLINK_CE                                     59
+#define XFERLINK_SHIFT                          10
+#define XFERLINK_LEN                            2
+#define XFERLINK(p)                             CW_READ(p,XFERLINK_CE)
+#define SETXFERLINK(p,n)                        CW_WRITE(p,XFERLINK_CE,n)
+#endif /* ModelP */
 
 #define NBNODE(p)       (p)->nbnode
 #define NEXT(p)         (p)->next
@@ -1474,12 +1639,15 @@ extern CONTROL_ENTRY
 #define TRIANGLE                3
 #define QUADRILATERAL   4
 #define TETRAHEDRON     4
+#define PYRAMID                 5
+#define PRISM           6
+#define HEXAHEDRON              7
 
 /* control word identifier */
 #define ELEMENT_CW                                              7
-#define ELEMENT_OFFSET                                  0
+#define ELEMENT_OFFSET                                  (0+DDD_OFFSET)
 #define FLAG_CW                                                 8
-#define FLAG_OFFSET                                     2
+#define FLAG_OFFSET                                             (2+DDD_OFFSET)
 
 #define ELEMENT_GEN                                     43
 #define FLAG_GEN                                                44
@@ -1493,12 +1661,12 @@ extern CONTROL_ENTRY
 
 #define NSONS_CE                                                47
 #define NSONS_SHIFT                                     10
-#define NSONS_LEN                                               4
+#define NSONS_LEN                                               5
 #define NSONS(p)                                                CW_READ(p,NSONS_CE)
 #define SETNSONS(p,n)                                   CW_WRITE(p,NSONS_CE,n)
 
 #define NEWEL_CE                                                48
-#define NEWEL_SHIFT                                     14
+#define NEWEL_SHIFT                                     15
 #define NEWEL_LEN                                               1
 #define NEWEL(p)                                                CW_READ(p,NEWEL_CE)
 #define SETNEWEL(p,n)                                   CW_WRITE(p,NEWEL_CE,n)
@@ -1518,6 +1686,9 @@ typedef struct {
   INT max_sons_of_elem;                                         /* max number of sons for this type */
   INT sides_of_elem;                                                    /* how many sides ?					*/
   INT corners_of_elem;                                          /* how many corners ?				*/
+
+  /* local geometric description of the element */
+  COORD_VECTOR local_corner[MAX_CORNERS_OF_ELEM];               /* local coordinates of the corners of the element */
 
   /* more size parameters */
   INT edges_of_elem;                                                    /* how many edges ?					*/
@@ -1543,6 +1714,11 @@ typedef struct {
   INT corner_of_side_inv[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_ELEM];
   INT edges_of_corner[MAX_CORNERS_OF_ELEM][MAX_EDGES_OF_ELEM];
   INT corner_of_oppedge[MAX_EDGES_OF_ELEM][MAX_CORNERS_OF_EDGE];
+  INT corner_opp_to_side[MAX_SIDES_OF_ELEM];
+  INT opposite_edge[MAX_EDGES_OF_ELEM];
+  INT side_opp_to_corner[MAX_CORNERS_OF_ELEM];
+  INT edge_of_corner[MAX_CORNERS_OF_ELEM][MAX_EDGES_OF_ELEM];
+  INT edge_of_two_sides[MAX_SIDES_OF_ELEM][MAX_SIDES_OF_ELEM];
 
   /* ... the refinement rules should be placed here later */
 } GENERAL_ELEMENT;
@@ -1562,11 +1738,13 @@ extern INT side_offset[TAGS];
 extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #endif
 
-
 #define SIDES_OF_ELEM(p)                (element_descriptors[TAG(p)]->sides_of_elem)
 #define EDGES_OF_ELEM(p)                (element_descriptors[TAG(p)]->edges_of_elem)
 #define CORNERS_OF_ELEM(p)              (element_descriptors[TAG(p)]->corners_of_elem)
-#define SONS_OF_ELEM(p)                         (element_descriptors[TAG(p)]->max_sons_of_elem) /* this is the number of pointers ! */
+#define LOCAL_COORD_OF_ELEM(p,c)        (element_descriptors[TAG(p)]->local_corner[(c)])
+
+
+#define SONS_OF_ELEM(p)                 (element_descriptors[TAG(p)]->max_sons_of_elem) /* this is the number of pointers ! */
 
 #define EDGES_OF_SIDE(p,i)              (element_descriptors[TAG(p)]->edges_of_side[(i)])
 #define CORNERS_OF_SIDE(p,i)            (element_descriptors[TAG(p)]->corners_of_side[(i)])
@@ -1574,9 +1752,9 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define CORNERS_OF_EDGE                         2
 
 #define EDGE_OF_SIDE(p,s,e)             (element_descriptors[TAG(p)]->edge_of_side[(s)][(e)])
+#define EDGE_OF_TWO_SIDES(p,s,t)        (element_descriptors[TAG(p)]->edge_of_two_sides[(s)][(t)])
 #define CORNER_OF_SIDE(p,s,c)           (element_descriptors[TAG(p)]->corner_of_side[(s)][(c)])
 #define CORNER_OF_EDGE(p,e,c)           (element_descriptors[TAG(p)]->corner_of_edge[(e)][(c)])
-#define CORNER_OF_OPPEDGE(p,e,c)        (element_descriptors[TAG(p)]->corner_of_oppedge[(e)][(c)])
 
 #define INNER_SIZE(tag)                 (element_descriptors[tag]->inner_size)
 #define BND_SIZE(tag)                   (element_descriptors[tag]->bnd_size)
@@ -1586,11 +1764,16 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define SIDE_WITH_EDGE(p,e,k)           (element_descriptors[TAG(p)]->side_with_edge[(e)][(k)])
 #define CORNER_OF_SIDE_INV(p,s,c)       (element_descriptors[TAG(p)]->corner_of_side_inv[(s)][(c)])
 #define EDGES_OF_CORNER(p,c,k)          (element_descriptors[TAG(p)]->edges_of_corner[(c)][(k)])
+#define CORNER_OF_OPPEDGE(p,e,c)        (element_descriptors[TAG(p)]->corner_of_oppedge[(e)][(c)])
+#define CORNER_OPP_TO_SIDE(p,s)         (element_descriptors[TAG(p)]->corner_opp_to_side[(s)])
+#define OPPOSITE_EDGE(p,e)              (element_descriptors[TAG(p)]->opposite_edge[(e)])
+#define SIDE_OPP_TO_CORNER(p,c)         (element_descriptors[TAG(p)]->side_opp_to_corner[(c)])
+#define EDGE_OF_CORNER(p,c,e)           (element_descriptors[TAG(p)]->edge_of_corner[(c)][(e)])
 
 #define CTRL2(p)        ((p)->ge.flag)
 #define FLAG(p)                 (p)->ge.flag
 #define PROP(p)                 (p)->ge.property
-#define SETPROP(p,n)    (p)->ge.property = n
+#define SETPROP(p,n)    ((p)->ge.property = n)
 #define SUCCE(p)                (p)->ge.succ
 #define PREDE(p)                (p)->ge.pred
 
@@ -1626,26 +1809,6 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define ES_PATCH(p)             (p)->thePatch
 #define PARAM(p,i,j)    (p)->lambda[i][j]
 #define PARAMPTR(p,i)   (p)->lambda[i]
-
-/****************************************************************************/
-/*																			*/
-/* macros for boundary segment descriptors									*/
-/*																			*/
-/****************************************************************************/
-
-#define SEGID(p)                (p)->theSegment->id
-#define LEFT(p)                 (p)->theSegment->left
-#define RIGHT(p)                (p)->theSegment->right
-#define SEGTYPE(p)              (p)->theSegment->type
-#define POINT(p,i)              (p)->theSegment->points[i]
-#define RES(p)                  (p)->theSegment->resolution
-#define BNDSEGFUNC(p)   ((p)->theSegment->BndSegFunc)
-#define SEGDATA(p)              ((p)->theSegment->data)
-#define BNDDATA(p)              ((p)->theSegment->data)
-#define BNDCONDFUNC(p)  ((p)->theBoundaryCondition->BndCond)
-#define CONDDATA(p)     ((p)->theBoundaryCondition->data)
-#define ALPHA(p,i)              (p)->theSegment->alpha[i]
-#define BETA(p,i)               (p)->theSegment->beta[i]
 
 /****************************************************************************/
 /*																			*/
@@ -1751,6 +1914,8 @@ extern const BV_DESC_FORMAT one_level_bvdf;     /* bvdf for only 1 blocklevel	*/
 #define GM_MOVE_BOUNDARY_NODES          1
 #define GM_REFINE_TRULY_LOCAL           2
 #define GM_COPY_ALL                             3
+#define GM_REFINE_NOT_CLOSED            4
+#define GM_USE_HEXAHEDRA                        8
 #define GM_FCFCLL                                       1
 #define GM_FFCCLL                                       2
 #define GM_FFLLCC                                       3
@@ -1819,9 +1984,9 @@ INT             DeleteElement                   (MULTIGRID *theMG, ELEMENT *theE
 
 /* refinement */
 INT             EstimateHere                    (ELEMENT *theElement);
-INT             MarkForRefinement               (ELEMENT *theElement, INT rule, INT side);
-INT             GetRefinementMark               (const ELEMENT *theElement, INT *rule, INT *side);
-INT             RefineMultiGrid                 (MULTIGRID *theMG, INT flag, EVECTOR *direction);
+INT         MarkForRefinement       (ELEMENT *theElement, INT rule, void *data);
+INT             GetRefinementMark               (const ELEMENT *theElement, INT *rule, void *data);
+INT             RefineMultiGrid                 (MULTIGRID *theMG, INT flag);
 NODE            *GetFineNodeOnEdge              (const ELEMENT *theElement, INT side);
 /*INT			GetFineSidesTouchingCoarseSide (const ELEMENT *theElement, INT side, INT *nfine, ELEMENT *Elements[MAX_SIDES_TOUCHING], INT Sides[MAX_SIDES_TOUCHING]);*/
 
