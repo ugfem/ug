@@ -186,18 +186,30 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
                                 const char *name, const SHORT *RowsInType,
                                 const SHORT *ColsInType, const SHORT *Comps, const char *CompNames);
 
-INT DisplayVecDataDesc (const VECDATA_DESC *vd);
-INT DisplayMatDataDesc (const MATDATA_DESC *md);
+INT DisplayVecDataDesc (const VECDATA_DESC *vd, char *buffer);
+INT DisplayMatDataDesc (const MATDATA_DESC *md, char *buffer);
 
 VECDATA_DESC *GetVecDataDescByName (const MULTIGRID *theMG, char *name);
 MATDATA_DESC *GetMatDataDescByName (const MULTIGRID *theMG, char *name);
 
+/* allocation of vector descriptors */
+INT AllocVDfromNCmp (MULTIGRID *theMG, INT fl, INT tl,
+                     const SHORT *NCmpInType, const char *compNames, VECDATA_DESC **new_desc);
 INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
-                   VECDATA_DESC *template_desc, VECDATA_DESC **new_desc);
+                   const VECDATA_DESC *template_desc, VECDATA_DESC **new_desc);
+
+/* allocation of matrix descriptors */
+INT AllocMDFromMRowMCol (MULTIGRID *theMG, INT fl, INT tl,
+                         const SHORT *RowsInType,const SHORT *ColsInType,const char *compNames,
+                         MATDATA_DESC **new_desc);
+INT AllocMDFromVRowVCol (MULTIGRID *theMG, INT fl, INT tl,
+                         const SHORT *RowsInType, const SHORT *ColsInType, MATDATA_DESC **new_desc);
 INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
-                   VECDATA_DESC *x, VECDATA_DESC *y, MATDATA_DESC **new_desc);
+                   const VECDATA_DESC *x, const VECDATA_DESC *y, MATDATA_DESC **new_desc);
 INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
-                   MATDATA_DESC *template_desc, MATDATA_DESC **new_desc);
+                   const MATDATA_DESC *template_desc, MATDATA_DESC **new_desc);
+
+/* freeing of vector and matrix descriptors */
 INT FreeVD        (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *x);
 INT FreeMD        (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *A);
 
