@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
+#include <assert.h>
 
 /* first compiler header for __MACINTOSH__ definition iff */
 #include "compiler.h"

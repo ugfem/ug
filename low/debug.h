@@ -115,6 +115,8 @@
 #define DEBUG_TIME_INC
 #define DEBUG_TIME(n)
 
+#define PrintDebug
+
 #endif  /* Debug */
 
 /****************************************************************************/
@@ -167,11 +169,13 @@ extern const char  *__debug_time_file[DEBUG_TIME_MAX];
 /*																			*/
 /****************************************************************************/
 
+#ifdef Debug
 void SetPrintDebugProc          (PrintfProcPtr print);
 int  PrintDebug                         (const char *format, ...);
 int  PrintDebugToFile           (const char *format, ...);
 int  SetPrintDebugToFile        (const char *fname);
 int  PostprocessDebugFile       (const char *newname);
 INT  PrintRepErrStack           (PrintfProcPtr print);
+#endif
 
 #endif
