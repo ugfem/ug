@@ -3043,7 +3043,7 @@ static INT InitRuleManager2D (void)
   Pattern2Rule[TRIANGLE][7] = T_RED;                            /* 1 1 1 */
 
   /* now make rules for tetrahedrons globally available */
-  MaxRules[TRIANGLE] = 17;
+  MaxRules[TRIANGLE] = 18;
   MaxNewCorners[TRIANGLE] = 3;
   MaxNewEdges[TRIANGLE] = 9;
   CenterNodeIndex[TRIANGLE] = 4;
@@ -3101,7 +3101,7 @@ static INT InitRuleManager2D (void)
   Pattern2Rule[QUADRILATERAL][31] = Q_RED;                      /* 1 1 1 1 1 */
 
   /* now make rules for tetrahedrons globally available */
-  MaxRules[QUADRILATERAL] = 16;
+  MaxRules[QUADRILATERAL] = 17;
   MaxNewCorners[QUADRILATERAL] = 4;
   MaxNewEdges[QUADRILATERAL] = 12;
   CenterNodeIndex[QUADRILATERAL] = 4;
