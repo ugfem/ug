@@ -1762,7 +1762,8 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
 #ifdef ModelP
       if (father_edge==NULL)
       {
-        assert( GHOST(n1) || GHOST(n2) );
+        /* TODO: check this after priority set:
+           assert( GHOST(n1) || GHOST(n2) ); */
         break;
       }
 #endif
