@@ -762,7 +762,7 @@ static INT NLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
   }
   PA_NASS(thePA) = nass;
 
-  if (!((r==NP_ACTIVE) || (r==NP_EXECUTABLE)))
+  if ((r==NP_ACTIVE) || (r==NP_EXECUTABLE))
     return (r);
   else
     REP_ERR_RETURN (r);
@@ -979,7 +979,7 @@ static INT TPartAssInit (NP_BASE *theNP, INT argc, char **argv)
   }
   PA_NASS(thePA) = nass;
 
-  if (!((r==NP_ACTIVE) || (r==NP_EXECUTABLE)))
+  if ((r==NP_ACTIVE) || (r==NP_EXECUTABLE))
     return (r);
   else
     REP_ERR_RETURN (r);
