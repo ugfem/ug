@@ -33,6 +33,7 @@
 #define __BLOCKING__
 
 #include "np.h"
+#include "heaps.h"
 
 #include "namespace.h"
 
@@ -56,7 +57,7 @@ START_UGDIM_NAMESPACE
 /*                                                                          */
 /****************************************************************************/
 
-typedef void *(*GetMemProcPtr)(MEM n);
+typedef void *(*GetMemProcPtr)(NS_PREFIX MEM n);
 
 typedef struct
 {
