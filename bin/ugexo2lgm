@@ -282,13 +282,14 @@ sub write_unit
 sub write_line
 {
 	print "# Line-Info\n";
+	$nl = 0;
 	foreach $nns (1 .. $cdf{num_node_sets})
 	{
 #		print "$cdf{ns_prop1}{$nns}\n";
 		if ( $cdf{ns_prop1}{$nns} =~/\A4($int)/ )
 		{
 #			print "match $cdf{ns_prop1}{$nns}\n"; 
-			printf "line %d:",$1;
+			printf "line %d:",$nl;
 			$ns = sprintf "node_ns%d",$nns; 
 			$numns = sprintf "num_nod_ns%d",$nns; 
 # 			print "$ns $numns $cdf{$numns}{1}\n";
@@ -300,6 +301,7 @@ sub write_line
 				printf " %d",$cdf{$numnp}{$np}-1;
 			}
 			print ";\n";
+			$nl++;
 		}
 	}
 	print "\n";
@@ -312,10 +314,12 @@ sub search_lines
 
 #	printf "%s=%s",$spoints,$cdf{$spoints}{0};
 
+	$nl = 0;
 	LOOP: foreach $nns (1 .. $cdf{num_node_sets})
 	{
 		if ( $cdf{ns_prop1}{$nns} =~/\A4($int)/ )
 		{
+			$found = 1;
 			$ns = sprintf "node_ns%d",$nns; 
 			$numns = sprintf "num_nod_ns%d",$nns; 
 
@@ -326,9 +330,11 @@ sub search_lines
 				{
 					if ( $cdf{$spoints}{$ns} == $cdf{$numnp}{$np} ) { next LOOP1;}
 				}
-				next LOOP;
+				$found = 0;
+				last LOOP1;
 			}
-			printf " %d",$1;
+			if ($found == 1) { printf " %d",$nl; }
+			$nl++;
 		}
 	}
 }
@@ -343,7 +349,7 @@ sub write_surf
 		if ( $cdf{ns_prop1}{$nns} =~/\A3($int)/ )
 		{
 #			print "match $cdf{ns_prop1}{$nns}\n"; 
-			printf "surface %d:",$1;
+			printf "surface %d:",$nsurf;
 			$nsurf++;
 
 			$surfacename = sprintf "surface%d",$1;
