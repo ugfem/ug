@@ -124,6 +124,8 @@
 /* macros for communication buffer */
 #define FFMAX_TRIES     50000000  /* max. number of tries til timeout in communication */
 
+#ifdef ModelP
+
 #define FFCommBufferBV(bv)      ((FFCommBuffer*)BVUSERDATA(bv))
 #define FFVChannel(bv)      (FFCommBufferBV(bv)->vc)
 #define FFMsgIn(bv)             (FFCommBufferBV(bv)->msgIn)
@@ -160,6 +162,8 @@ typedef enum ffcommobject {FFCommNone,FFCommVec,FFCommTridiagMat} FFCommObjectTy
 typedef void (*FFBufferProc)(char *bp, BLOCKVECTOR *bv);
 typedef INT (*FFStartProc)(BLOCKVECTOR *bv, FFCommObjectType ffcommobjt, FFBufferProc b_proc);
 typedef INT (*FFFinishFct)(BLOCKVECTOR *bv, FFBufferProc b_proc);
+
+#endif
 
 /****************************************************************************/
 /*																			*/
