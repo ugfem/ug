@@ -1477,8 +1477,133 @@ EDGE *GetSonEdge (EDGE *theEdge)
 }
 
 
-#ifdef __THREEDIM__
+/****************************************************************************/
+/*D
+   GetSonEdges - Return pointer to son edges if it exists
 
+   SYNOPSIS:
+   INT GetSonEdges (EDGE *theEdge, EDGE *SonEdges[2]);
+
+   PARAMETERS:
+   .  theEdge - edge for which son is searched
+   .  SonEdges - array of pointers will be filled with son edges
+
+   DESCRIPTION:
+   This function returns the pointer to the son edges if existing.
+
+   RETURN VALUE:
+   INT
+   .n   number of found edges (0,1,2)
+   D*/
+/****************************************************************************/
+
+INT GetSonEdges (EDGE *theEdge, EDGE *SonEdges[2])
+{
+  INT nedges;
+  NODE *Node0,*Node1,*SonNode0,*SonNode1,*MidNode;
+
+  nedges = 0;
+  SonEdges[0] = NULL;
+  SonEdges[1] = NULL;
+
+  Node0 = NBNODE(LINK0(theEdge));
+  Node1 = NBNODE(LINK1(theEdge));
+
+  SonNode0 = SONNODE(Node0);
+  SonNode1 = SONNODE(Node1);
+  MidNode = MIDNODE(theEdge);
+
+  /* parallel note:                                                */
+  /* since existance of MidNode decides whether for one SonEdge or */
+  /* two half SonEdges is searched, the data structure must be     */
+  /* consistent in a way that if the MidNode exists also the       */
+  /* MIDNODE pointer is set to MidNode. (s.l. 980227)              */
+  if (MidNode == NULL)
+  {
+    SonEdges[0] = GetEdge(SonNode0,SonNode1);
+  }
+  else
+  {
+    SonEdges[0] = GetEdge(SonNode0,MidNode);
+
+    if (SonEdges[0] == NULL) SonEdges[0] = GetEdge(MidNode,SonNode1);
+    else SonEdges[1] = GetEdge(MidNode,SonNode1);
+  }
+
+  if (SonEdges[0] != NULL) nedges++;
+  if (SonEdges[1] != NULL) nedges++;
+
+  return(nedges);
+}
+
+/****************************************************************************/
+/*D
+   GetFatherEdge - Return pointer to father edge if it exists
+
+   SYNOPSIS:
+   EDGE *GetFatherEdge (EDGE *theEdge)
+
+   PARAMETERS:
+   .  theEdge - edge for which father is searched
+
+   DESCRIPTION:
+   This function returns the pointer to the father edge if it exists.
+
+   RETURN VALUE:
+   EDGE *
+   .n   pointer to specified object
+   .n   NULL if not found
+   D*/
+/****************************************************************************/
+
+EDGE *GetFatherEdge (EDGE *theEdge)
+{
+  NODE *theNode0 = NBNODE(LINK0(theEdge));
+  NODE *theNode1 = NBNODE(LINK1(theEdge));
+  EDGE *FatherEdge = NULL;
+
+  /* one node is center node -> no father edge */
+  if (CENTERTYPE(theNode0) || CENTERTYPE(theNode1)) return(NULL);
+
+        #ifdef __THREEDIM__
+  /* one node is side node -> no father edge */
+  if (SIDETYPE(theNode0) || SIDETYPE(theNode1)) return(NULL);
+        #endif
+
+  /* both nodes are mid nodes -> no father edge */
+  if (MIDTYPE(theNode0) && MIDTYPE(theNode1)) return(NULL);
+
+  /* one node is mid node -> no father edge */
+  if (MIDTYPE(theNode0) || MIDTYPE(theNode1))
+  {
+    NODE *FatherNode0,*FatherNode1, *theNode;
+
+    if (MIDTYPE(theNode1))
+    {
+      theNode = theNode0; theNode0 = theNode1; theNode1 = theNode;
+    }
+    FatherEdge = (EDGE *) NFATHER(theNode0);
+    if (FatherEdge == NULL) return(NULL);
+
+    FatherNode0 = NBNODE(LINK0(FatherEdge));
+    FatherNode1 = NBNODE(LINK1(FatherEdge));
+    if (SONNODE(FatherNode0)==theNode1 || SONNODE(FatherNode1)==theNode1)
+      return(FatherEdge);
+    else
+      return(NULL);
+  }
+
+  /* both nodes are corner nodes -> try to get the edge */
+  if (CORNERTYPE(theNode0) && CORNERTYPE(theNode1))
+  {
+    return (GetEdge(NFATHER(theNode0),NFATHER(theNode1)));
+  }
+
+  /* one case not considered */
+  assert(0);
+}
+
+#ifdef __THREEDIM__
 
 /****************************************************************************/
 /*D
@@ -1727,6 +1852,9 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
   SETLEVEL(pe,GLEVEL(theGrid));
         #if (defined ModelP) && (defined __THREEDIM__)
   DDD_AttrSet(PARHDR(pe), GRID_ATTR(theGrid));
+        #ifdef IDENT_ONLY_NEW
+  SETNEW_EDIDENT(pe,1);
+        #endif
   /*SETPRIO(pe,PrioMaster);*/
         #endif
   NBNODE(link0) = to;
