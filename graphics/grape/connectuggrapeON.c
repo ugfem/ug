@@ -55,6 +55,7 @@
 #define ELEMENTG ELEMENT3D
 #define F_HDATA F_HDATA3D
 #define F_HEL_INFO F_HEL_INFO3D
+#define F_DATA F_DATA3D
 
 #elif (DIM == 2)
 
@@ -65,6 +66,7 @@
 #define ELEMENTG ELEMENT2D
 #define F_HDATA F_HDATA2D
 #define F_HEL_INFO F_HEL_INFO2D
+#define F_DATA F_DATA2D
 
 #endif
 
@@ -320,7 +322,7 @@ static DL_HELEM *get_dl_helem (void)
       dl_helem->vertex[i]                     = dl_helem->vcoord[i];
     dl_helem->hel.vertex                            = dl_helem->vertex;
     dl_helem->hel.vindex                            = dl_helem->vindex;
-    dl_helem->hel.descr                             = &simplex_description;
+    dl_helem->hel.descr                             = (ELEMENT3D_DESCRIPTION *)&simplex_description;
     dl_helem->hel.size_of_user_data         = sizeof(ELEMENT);
     dl_helem->next                                  = NULL;
   }
@@ -735,7 +737,7 @@ static ELEMENTG *simplex_copy_element (ELEMENTG *e1)
    D*/
 /****************************************************************************/
 
-static HELEMENT *simplex_first_macro (HMESH *mesh)
+static HELEMENT *simplex_first_macro (HMESH3D *mesh)
 {
   DL_HELEM *dl_helem;
   int i,j ;
@@ -744,7 +746,7 @@ static HELEMENT *simplex_first_macro (HMESH *mesh)
 
   /* Start of level list */
   dl_helem = get_dl_helem() ;
-  dl_helem->hel.mesh      = (HMESH *)mesh;
+  dl_helem->hel.mesh      = (MESH3D *)mesh;
   dl_helem->hel.vinh      = NULL ;
   dl_helem->previous      = NULL ;
 
@@ -1064,8 +1066,9 @@ static void data_f_hel_info (HELEMENT *el, F_HEL_INFO *f_hel_info)
 
 static void data_f_scalar (HELEMENT *el, int j, double *coord, double *val)
 {
-  int dim,i ;
+  int dim,i;
   DOUBLE_VECTOR LocCoord;
+  DOUBLE *c[MAX_CORNERS_OF_ELEM], pos[MAX_CORNERS_OF_ELEM][DIM];
 
   dim = el->mesh->f_data->dimension_of_value;
   if (dim!=1)
@@ -1086,7 +1089,12 @@ static void data_f_scalar (HELEMENT *el, int j, double *coord, double *val)
       V2_COPY(coord,LocCoord)
 
 #endif
-      *val = (*EvalPlotProc)(ELEMENT_ELEM(el),el->vertex,LocCoord);
+      for (i=0; i<CORNERS_OF_ELEM(ELEMENT_ELEM(el)); i++)
+      {
+        c[i] = pos[i];
+        V_DIM_COPY(el->vertex[i],pos[i]);
+      }
+  *val = (*EvalPlotProc)(ELEMENT_ELEM(el),c,LocCoord);
 
 #ifdef DEBUG
   printf(" values in data_F %d %f \n",el->eindex,val[0]) ;
@@ -1123,6 +1131,7 @@ static void data_f_vector (HELEMENT *el, int j, double *coord, double *val)
 {
   int dim,i ;
   DOUBLE_VECTOR LocCoord;
+  DOUBLE *c[MAX_CORNERS_OF_ELEM], pos[MAX_CORNERS_OF_ELEM][DIM];
 
   dim = el->mesh->f_data->dimension_of_value;
 
@@ -1139,8 +1148,12 @@ static void data_f_vector (HELEMENT *el, int j, double *coord, double *val)
       V2_COPY(coord,LocCoord)
 
 #endif
-
-      (*EvecPlotProc)(ELEMENT_ELEM(el),el->vertex,LocCoord,val);
+      for (i=0; i<CORNERS_OF_ELEM(ELEMENT_ELEM(el)); i++)
+      {
+        c[i] = pos[i];
+        V_DIM_COPY(el->vertex[i],pos[i]);
+      }
+  (*EvecPlotProc)(ELEMENT_ELEM(el),c,LocCoord,val);
 
 #ifdef DEBUG
   printf(" values in data_F %d %f \n",el->eindex,val[0]) ;
@@ -1289,20 +1302,20 @@ int CallGrape (MULTIGRID *theMG)
     mesh->max_number_of_vertices = MAX_CORNERS_OF_ELEM;
     mesh->max_dimension_of_coord = DIM+1;
 
-    mesh->f_data = (F_HDATA *)mem_alloc(sizeof(F_HDATA));
+    mesh->f_data = (F_DATA *)mem_alloc(sizeof(F_HDATA));
     ASSURE(mesh->f_data, "CallGrape : can't alloc memory for f_data",return (NULL));
     mesh->f_data->name                = "data to hierarhical grid";
     mesh->f_data->dimension_of_value  = 1;
     mesh->f_data->continuous_data     = 1;
-    mesh->f_data->f                   = data_f_scalar;
-    mesh->f_data->f_el_info           = data_f_hel_info;
+    mesh->f_data->f                   = (void (*)())data_f_scalar;
+    mesh->f_data->f_el_info           = (void (*)())data_f_hel_info;
     mesh->f_data->size_of_user_data   = 0;
     mesh->f_data->user_data           = NULL;
     mesh->f_data->last                = NULL;
     mesh->f_data->next                = NULL;
-    mesh->f_data->get_bounds          = simplex_get_bounds ;
-    mesh->f_data->get_estimate        = NULL;     /*simplex_get_estimate ;*/
-    mesh->f_data->est_bound           = 0.1;
+    ((F_HDATA *)mesh->f_data)->get_bounds          = (void (*)())simplex_get_bounds ;
+    ((F_HDATA *)mesh->f_data)->get_estimate        = NULL;     /*simplex_get_estimate ;*/
+    ((F_HDATA *)mesh->f_data)->est_bound           = 0.1;
     mesh->size_of_user_data           = sizeof(MULTIGRID);
     mesh->user_data                   = (void*)theMG;
 
@@ -1385,7 +1398,7 @@ BUTTON *button_change_function(void)
   if(button->name[0] == 's')
   {
     /* skalare Gr"osse */
-    mesh->f_data->f = data_f_scalar;
+    mesh->f_data->f = (void (*)())data_f_scalar;
     mesh->f_data->dimension_of_value = 1 ;
     ElemEval = GetElementValueEvalProc(button->name+2);
 
@@ -1396,7 +1409,7 @@ BUTTON *button_change_function(void)
   }
   else
   {
-    mesh->f_data->f = data_f_vector;
+    mesh->f_data->f = (void (*)())data_f_vector;
 
     ElemVec = GetElementVectorEvalProc(button->name+2);
     ASSURE(ElemVec, "problems with vector functions", END_METHOD(NULL));
