@@ -746,19 +746,39 @@ D*/
 /****************************************************************************/
 
 #ifdef ModelP
+int DDD_InfoPrioCopies (DDD_HDR hdr)
+{
+	INT i,n;
+	int *proclist;
+
+	if (DDD_InfoNCopies(hdr) == 0)
+	    return(0);
+
+	proclist = DDD_InfoProcList(hdr);
+	n = 0;
+	for(i=2; proclist[i]>=0; i+=2)
+	    if ((DDD_PRIO)proclist[i+1]!=PrioGhost)
+		    n++;
+
+	return(n);
+}	 
+
 static INT l_vector_average (GRID *g, const VECDATA_DESC *x)
 {
 	VECTOR *v;
 	DOUBLE fac;
-	INT vc,i,type,mask,n,vecskip;
+	INT vc,i,type,mask,n,m,vecskip;
 	const SHORT *Comp;	
 
 	if (VD_IS_SCALAR(x)) {
         mask = VD_SCALTYPEMASK(x);
 		vc = VD_SCALCMP(x);
 		for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v)) 
-		    if ((VECSKIP(v) == 0) && (mask & VDATATYPE(v)))
-			    VVALUE(v,vc) *= 1.0 / (DDD_InfoNCopies(PARHDR(v)) + 1.0);
+		    if ((VECSKIP(v) == 0) && (mask & VDATATYPE(v))) {
+			    m = DDD_InfoPrioCopies(PARHDR(v));
+				if (m > 0)
+				    VVALUE(v,vc) *= 1.0 / (m+1.0);
+			}
 
 		for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v)) 
 		  UserWriteF("v %f m %d\n",VVALUE(v,vc),DDD_InfoNCopies(PARHDR(v)));
@@ -771,8 +791,9 @@ static INT l_vector_average (GRID *g, const VECDATA_DESC *x)
 			if (n == 0) continue;
 			vecskip = VECSKIP(v);
 			Comp = VD_CMPPTR_OF_TYPE(x,type);
-			fac = 1.0 / (DDD_InfoNCopies(PARHDR(v)) + 1.0);
-			if (fac == 1.0) continue;
+			m = DDD_InfoPrioCopies(PARHDR(v));
+			if (m == 0) continue;
+			fac = 1.0 / (m + 1.0);
 			if (vecskip == 0)
 			    for (i=0; i<n; i++)
 				    VVALUE(v,Comp[i]) *= fac;
@@ -953,7 +974,7 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 	DOUBLE  *msgbuf = (DOUBLE *)           data;
 	INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
 	DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
-	INT i, *proclist,mc,vtype,mtype,masc;
+	int i, *proclist,mc,vtype,mtype,masc;
 	const SHORT *Comp;	
 
 	*maxgid = 0;
@@ -1017,7 +1038,7 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
 	DOUBLE  *msgbuf = (DOUBLE *)           data;
 	INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
 	DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
-	INT i, *proclist,mc,vtype,mtype,masc;
+	int i, *proclist,mc,vtype,mtype,masc;
 	const SHORT *Comp;	
 
 	*maxgid = 0;
@@ -1098,7 +1119,7 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 	INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
 	DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
 	INT     igid = 0;
-	INT   i,j,k, *proclist,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
+	int     i,j,k, *proclist,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
 	const SHORT *Comp;	
 
 	if (VSTART(pv) == NULL) return (NUM_OK);
