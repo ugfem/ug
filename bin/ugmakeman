@@ -34,6 +34,10 @@ then
 	then
 		rm $UGROOT/../fem/man/*/*
 	fi
+	if test -d $UGROOT/../ns2d/man
+	then
+		rm $UGROOT/../ns2d/man/*/*
+	fi
     echo "$0: old man pages removed!"
 fi
 
@@ -54,6 +58,11 @@ then
 	cd $UGROOT/gm;
 	doctext -quotefmt -mpath $UGROOT/man/man5 -ext 5 -heading ug/gm *.c *.h
 	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/gm *.doc
+
+	# generate gg man pages
+	cd $UGROOT/gg;
+	doctext -quotefmt -mpath $UGROOT/man/man5 -ext 5 -heading ug/gg *.c *.h
+	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/gg *.doc
 
 	# generate graph man pages
 	cd $UGROOT/graph;
@@ -119,23 +128,31 @@ then
 	cd $UGROOT/../diff2d/pclib
 	doctext -quotefmt -mpath $UGROOT/../diff2d/man/manb -ext b -heading diff2d/pclib *.c *.h
 	cd $UGROOT/../diff2d/appl
-	doctext -quotefmt -mpath $UGROOT/../diff2d/man/manc -ext c -heading diff2d/appl *.c *.h
+	doctext -quotefmt -mpath $UGROOT/../diff2d/man/manb -ext b -heading diff2d/appl *.c *.h
 
 	#generate man pages for cd3d
 	cd $UGROOT/../cd3d
 	doctext -quotefmt -mpath $UGROOT/../cd3d/man/mana -ext a -heading cd3d *.doc
 	cd $UGROOT/../cd3d/pclib
-	doctext -quotefmt -mpath $UGROOT/../cd3d/man/mand -ext d -heading cd3d/pclib *.c *.h
+	doctext -quotefmt -mpath $UGROOT/../cd3d/man/manc -ext c -heading cd3d/pclib *.c *.h
 	cd $UGROOT/../cd3d/appl
-	doctext -quotefmt -mpath $UGROOT/../cd3d/man/mane -ext e -heading cd3d/appl *.c *.h
+	doctext -quotefmt -mpath $UGROOT/../cd3d/man/manc -ext c -heading cd3d/appl *.c *.h
+
+	#generate man pages for ns2d
+	cd $UGROOT/../ns2d
+	doctext -quotefmt -mpath $UGROOT/../ns2d/man/mana -ext a -heading ns2d *.doc
+	cd $UGROOT/../ns2d/pclib
+	doctext -quotefmt -mpath $UGROOT/../ns2d/man/mane -ext e -heading ns2d/pclib *.c *.h
+	cd $UGROOT/../ns2d/appl
+	doctext -quotefmt -mpath $UGROOT/../ns2d/man/mane -ext e -heading ns2d/appl *.c *.h
 
 	#generate man pages for fem
 	cd $UGROOT/../fem
 	doctext -quotefmt -mpath $UGROOT/../fem/man/mana -ext a -heading fem *.doc
 	cd $UGROOT/../fem/pclib
-	doctext -quotefmt -mpath $UGROOT/../fem/man/manf -ext f -heading fem/pclib *.c *.h
+	doctext -quotefmt -mpath $UGROOT/../fem/man/mand -ext d -heading fem/pclib *.c *.h
 	cd $UGROOT/../fem/appl
-	doctext -quotefmt -mpath $UGROOT/../fem/man/mang -ext g -heading fem/appl *.c *.h
+	doctext -quotefmt -mpath $UGROOT/../fem/man/mand -ext d -heading fem/appl *.c *.h
 
 	echo "$0: man pages for ug created!";
 	exit 0;

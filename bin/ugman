@@ -1,7 +1,7 @@
 #!/bin/sh
 if test $UGROOT
 then
-    MANPATH=$UGROOT/man
+	MANPATH=$UGROOT/man:$UGROOT/../diff2d/man:$UGROOT/../cd3d/man:$UGROOT/../fem/man:$UGROOT/../ns2d/man
     export MANPATH
     man $*
 else
