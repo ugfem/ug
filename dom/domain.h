@@ -535,7 +535,7 @@ INT         BNDP_Global           (BNDP *theBndP, DOUBLE *global);
    BNDP_Move - change global coordinates of free boundary point
 
    SYNOPSIS:
-   INT BNDP_Move (BNDP *aBndP, DOUBLE global[]);
+   INT BNDP_Move (BNDP *aBndP, const DOUBLE global[]);
 
    PARAMETERS:
    .  aBndP - BNDP structure
@@ -552,7 +552,7 @@ INT         BNDP_Global           (BNDP *theBndP, DOUBLE *global);
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT BNDP_Move (BNDP *aBndP, DOUBLE global[]);
+INT BNDP_Move (BNDP *aBndP, const DOUBLE global[]);
 
 /****************************************************************************/
 /*D
