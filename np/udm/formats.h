@@ -61,18 +61,22 @@
 /*                                                                          */
 /****************************************************************************/
 
-INT DisplayPrintingFormat (void);
-INT SetPrintingFormatCmd (const MULTIGRID *mg, INT argc, char **argv);
+INT DisplayPrintingFormat                               (void);
+INT SetPrintingFormatCmd                                (const MULTIGRID *mg, INT argc, char **argv);
 
-VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
-                                       const char *name, const char *template);
-MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
-                                       const char *name, const char *template);
+VECDATA_DESC *CreateVecDescOfTemplate   (MULTIGRID *theMG,
+                                         const char *name, const char *template);
+MATDATA_DESC *CreateMatDescOfTemplate   (MULTIGRID *theMG,
+                                         const char *name, const char *template);
 
-INT CreateFormatCmd                             (INT argc, char **argv);
-INT CreateVecDescCmd            (MULTIGRID *theMG, INT argc, char **argv);
-INT CreateMatDescCmd                (MULTIGRID *theMG, INT argc, char **argv);
+INT VDsubDescFromVT                                             (const VECDATA_DESC *vd, const char *tplt, const char *sub, VECDATA_DESC **subvd);
+INT MDsubDescFromVT                                             (const MATDATA_DESC *md, const char *tplt, const char *sub, MATDATA_DESC **submd);
+INT VDinterfaceDesc                                             (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi);
 
-INT InitFormats                                 (void);
+INT CreateFormatCmd                                             (INT argc, char **argv);
+INT CreateVecDescCmd                            (MULTIGRID *theMG, INT argc, char **argv);
+INT CreateMatDescCmd                                (MULTIGRID *theMG, INT argc, char **argv);
+
+INT InitFormats                                                 (void);
 
 #endif
