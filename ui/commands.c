@@ -127,6 +127,7 @@
 #ifdef __DLB__
 #include "dlb.h"
 #include "dlb_eval.h"
+#include "dlb_metis.h"
 #endif
 
 #ifdef CHACOT
@@ -11983,6 +11984,7 @@ INT NS_DIM_PREFIX InitCommands ()
   if (CreateCommand("cprcb",          CPRCBCommand                     )==NULL) return(__LINE__);
   if (CreateCommand("dlb_config",     DLB_Config_Command                  )==NULL      ) return(__LINE__);
   if (CreateCommand("dlb_eval",           DLB_EvalCommand                             )==NULL) return (__LINE__);
+  if (CreateCommand("metis",          METISCommand                    )==NULL) return (__LINE__);
         #endif
 
 #ifdef USE_FAMG
