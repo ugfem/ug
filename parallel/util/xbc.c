@@ -11,6 +11,7 @@
    $Header$
  */
 
+#include <stddef.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -20,11 +21,12 @@
 
 static char buffer[XBCMAX];
 
-void XBroadcast(int n, void *p, int s, ...)
+void XBroadcast(int n, void *p, size_t s, ...)
 {
   char *b;
   void *pp;
-  int i, ss;
+  int i;
+  size_t ss;
   va_list a, aa;
 
   b = buffer;

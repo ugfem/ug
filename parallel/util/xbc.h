@@ -14,6 +14,8 @@
 #ifndef __XBC__
 #define __XBC__
 
-void XBroadcast(int n, void *p, int s, ...);
+#include <stddef.h>
+
+void XBroadcast(int n, void *p, size_t s, ...);
 
 #endif
