@@ -1,0 +1,63 @@
+#!/bin/sh 
+if test "$1" = "-help"
+then
+	echo "usage: $0";
+	echo "purpose: set the access lists of ug3x module";
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+DEFAULT=stefan,klaus,birken,henrik,peter,wieners
+ERRORFILE=$UGROOT/bin/cvsacces
+
+cd $UGROOT/..
+rm $ERRORFILE;
+
+# clear all access lists
+echo "cvs admin -e * ..."; 
+cvs admin -e * 2>> $ERRORFILE;
+
+# set default access lists 
+echo "cvs admin -a$DEFAULT ...";
+cvs admin -a$DEFAULT * 2>> $ERRORFILE;
+
+# set special access lists
+echo "setting special access lists ...";
+cd $UGROOT/../cd;
+cvs admin -Agabi * 2>> $ERRORFILE;
+
+cd $UGROOT/gm;
+cvs admin -Aniko,christian,gabi * 2>> $ERRORFILE;
+
+cd $UGROOT/numerics;
+cvs admin -Achristian,gabi * 2>> $ERRORFILE;
+
+cd $UGROOT/numerics;
+cvs admin -Aniko * 2>> $ERRORFILE;
+
+cd $UGROOT/bin;
+cvs admin -abirken,wieners,stefan * 2>> $ERRORFILE;
+
+cd $UGROOT/parallel
+cvs admin -abirken,stefan * 2>> $ERRORFILE;
+
+if test `grep failed $ERRORFILE | wc -l` -ge 1
+then 
+	echo "";
+	echo "ERROR REPORT:";
+	grep failed $ERRORFILE;
+	echo "";
+	echo "access to above files of repository failed";
+	echo "not all access lists could be set properly";
+	echo "Check for errors in file: $ERRORFILE!";
+else
+	rm $ERRORFILE;
+	echo "$0 succeded, all access lists are set properly!";
+fi
+
+exit 0;
