@@ -1569,6 +1569,8 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
   /* prepare */
   np = (NP_BCGS *) theNP;
 
+  alpha = rho_new = beta = tt = 0.0;
+
   /* print defect */
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
   if (np->display > PCR_NO_DISPLAY) if (PreparePCR(x,np->display,text,&PrintID)) NP_RETURN(1,lresult->error_code);
@@ -1601,7 +1603,8 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
 
     /* update x, b */
     if (ddotw(NP_MG(theNP),np->baselevel,level,ON_SURFACE,b,np->r,np->weight,&rho_new)!=NUM_OK) REP_ERR_RETURN (1);
-    beta=rho_new*alpha/np->rho/np->omega;
+    if ((np->rho != 0.0) && (np->omega != 0.0))
+      beta = rho_new*alpha/np->rho/np->omega;
     if (dscal(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->p,beta)) REP_ERR_RETURN (1);
     if (dadd(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->p,b)!= NUM_OK) REP_ERR_RETURN (1);
     if (daxpy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->p,-beta*np->omega,np->v)!= NUM_OK) REP_ERR_RETURN (1);
@@ -1618,7 +1621,8 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
         NP_RETURN(1,lresult->error_code);
             #endif
       if (ddotw(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->v,np->r,np->weight,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
-      alpha = rho_new/alpha;
+      if (alpha != 0.0)
+        alpha = rho_new/alpha;
       if (daxpy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,x,alpha,np->q)!= NUM_OK) REP_ERR_RETURN (1);
     }
     else
@@ -1635,7 +1639,8 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
         NP_RETURN(1,lresult->error_code);
             #endif
       if (ddotw(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->v,np->r,np->weight,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
-      alpha = rho_new/alpha;
+      if (alpha != 0.0)
+        alpha = rho_new/alpha;
       if (daxpy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,x,alpha,np->p)!= NUM_OK) REP_ERR_RETURN (1);
     }
     lresult->number_of_linear_iterations++;
@@ -1677,17 +1682,16 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     if (ddotw(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->t,np->t,np->weight,&tt)!=NUM_OK) REP_ERR_RETURN (1);
     if (ddotw(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->s,np->t,np->weight,&(np->omega))!=NUM_OK) REP_ERR_RETURN (1);
     PRINTDEBUG(np,2,("tt %f omega %f\n",tt,np->omega));
-    if (tt!=0.0)
+    if (tt != 0.0)
       np->omega /= tt;
-    else
-      np->omega /= 1.0E-20;
     if (daxpy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,x,np->omega,np->q)!= NUM_OK) REP_ERR_RETURN (1);
     if (dcopy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,b,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
     if (daxpy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,b,-np->omega,np->t)!= NUM_OK) REP_ERR_RETURN (1);
     np->rho = rho_new;
 
-    /* redisuum */
-    if (LinearResiduum(theNP,np->baselevel,level,x,b,A,lresult)) REP_ERR_RETURN (1);
+    /* residuum */
+    if (LinearResiduum(theNP,np->baselevel,level,x,b,A,lresult))
+      REP_ERR_RETURN (1);
     if (np->display > PCR_NO_DISPLAY)
       if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE)) NP_RETURN(1,lresult->error_code);
     lresult->number_of_linear_iterations++;
@@ -1701,12 +1705,16 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
 
   if (np->display > PCR_NO_DISPLAY)
   {
-    if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) NP_RETURN(1,lresult->error_code);
-    if (PostPCR(PrintID,":ls:avg")) NP_RETURN(1,lresult->error_code);
-    if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1))) NP_RETURN(1,lresult->error_code);
-    UserWriteF("BCGS: L=%2d N=%2d TSOLVE=%10.4lg TIT=%10.4lg\n",level,
-               lresult->number_of_linear_iterations,ti,
-               ti/lresult->number_of_linear_iterations);
+    if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE))
+      NP_RETURN(1,lresult->error_code);
+    if (PostPCR(PrintID,":ls:avg"))
+      NP_RETURN(1,lresult->error_code);
+    if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1)))
+      NP_RETURN(1,lresult->error_code);
+    if (lresult->number_of_linear_iterations > 0)
+      UserWriteF("BCGS: L=%2d N=%2d TSOLVE=%10.4lg TIT=%10.4lg\n",level,
+                 lresult->number_of_linear_iterations,ti,
+                 ti/lresult->number_of_linear_iterations);
   }
 
   return (0);
