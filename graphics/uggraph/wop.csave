@@ -4649,12 +4649,15 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
   struct VecMatPlotObj2D *theVmo;
   OUTPUTDEVICE *theOD;
   MULTIGRID *theMG;
+  GRID *theGrid;
   VECTOR *vec;
+  BLOCKVECTOR  *theBV;
   INT cycle,cycles;
 
   theVmo = &(PIC_PO(thePicture)->theVmo);
   theOD  = PIC_OUTPUTDEV(thePicture);
   theMG  = PO_MG(PIC_PO(thePicture));
+  theGrid = GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
 
   /* set globals for eval function */
   VM_Marker                                       = theVmo->Marker;
@@ -4681,12 +4684,26 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
   VM_tmd                                          = SYM_MAT_DESC(theVmo->ms);
   VM_VecMatColor                          = theOD->red;
 
+  /* check if ordered */
+  if (GFIRSTBV(theGrid)==NULL && VM_Order)
+  {
+    VM_Order=NO;
+    UserWrite("grid is not ordered: switch back to non-ordered mode\n");
+  }
+  if (GFIRSTBV(theGrid)!=NULL && VM_Order)
+  {
+    for (theBV=GFIRSTBV(theGrid); theBV!=NULL; theBV=BVSUCC(theBV))
+      for (vec=BVFIRSTVECTOR(theBV); vec!=BVENDVECTOR(theBV); vec=SUCCVC(vec))
+        VINDEX(vec) = BVNUMBER(theBV);
+  }
+
+
   VM_LastVector                           = NULL;
 
   if (VM_Order)
   {
     cycles = 0;
-    for (vec=FIRSTVECTOR(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG))); vec!=NULL; vec=SUCCVC(vec))
+    for (vec=FIRSTVECTOR(theGrid); vec!=NULL; vec=SUCCVC(vec))
       if ((cycle=VINDEX(vec)/3)>cycles)                         /* integer division! */
         cycles = cycle;
 
@@ -4806,15 +4823,23 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
   /* plot markers */
   if (VM_Marker)
   {
-    if (VM_Order)
+    switch (VM_Order)
     {
-      color = VM_OrderStart+cycle*VM_OrderDelta;
-      markertype = set;
-    }
-    else
-    {
+    case 0 :
       color = VN_MarkerColor[VCLASS(vec)];
       markertype = VTYPE(vec);
+      break;
+    case 1 :
+      color = VM_OrderStart+cycle*VM_OrderDelta;
+      markertype = set;
+      break;
+    case 2 :
+      if (set<2)
+        color = VM_OrderStart+cycle*VM_OrderDelta;
+      else
+        color = VM_MColor;
+      markertype = set;
+      break;
     }
 
     DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO)
@@ -4829,10 +4854,18 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
       DO_2s(theDO) = FILLED_RHOMBUS_MARKER;
       break;
     case 2 :
-      if (VM_Order)
-        DO_2s(theDO) = EMPTY_SQUARE_MARKER;
-      else
+      switch (VM_Order)
+      {
+      case 0 :
         DO_2s(theDO) = FILLED_SQUARE_MARKER;
+        break;
+      case 1 :
+        DO_2s(theDO) = EMPTY_SQUARE_MARKER;
+        break;
+      case 2 :
+        DO_2s(theDO) = FILLED_SQUARE_MARKER;
+        break;
+      }
       break;
     }
     DO_inc(theDO);

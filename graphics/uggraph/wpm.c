@@ -2587,7 +2587,7 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theVmo->Connections                     = YES;
     theVmo->Extra                           = NO;
     theVmo->Idx                                     = NO;
-    theVmo->Order                           = NO;
+    theVmo->Order                           = 0;
     theVmo->Dependency                      = NO;
     theVmo->ConnectVectors          = NO;
     theVmo->Boundary                        = YES;
@@ -2651,8 +2651,9 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     case 'o' :
       if (sscanf(argv[i],"o %d",&iValue)!=1)
         break;
-      if              (iValue==1) theVmo->Order = YES;
-      else if (iValue==0) theVmo->Order = NO;
+      theVmo->Order = iValue;
+      theVmo->Order = MAX(theVmo->Order,0);
+      theVmo->Order = MIN(theVmo->Order,2);
       break;
 
     case 'b' :
@@ -2779,10 +2780,7 @@ static INT DisplayVecMat_2D (PLOTOBJ *thePlotObj)
   else
     UserWriteF(DISPLAY_PO_FORMAT_SS,"extra","NO");
 
-  if (theVmo->Order == YES)
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"order","YES");
-  else
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"order","NO");
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"order",(int)theVmo->Order);
 
   if (theVmo->Dependency == YES)
     UserWriteF(DISPLAY_PO_FORMAT_SS,"dependency","YES");
