@@ -3192,7 +3192,7 @@ static BNDP *CreateBndPOnLine (HEAP *Heap, PATCH *p0, PATCH *p1, DOUBLE lcoord)
 
 #define BN_RES          100
 
-static int DropPerpendicularOnSegment (PATCH *patch, const double range[][DIM_OF_BND], const double global[], double local[], double *mindist2)
+static int DropPerpendicularOnSegment (PATCH *patch, double range[][DIM_OF_BND], const double global[], double local[], double *mindist2)
 {
   double sa = range[0][0];
   double sb = range[1][0];
@@ -3236,7 +3236,7 @@ static int DropPerpendicularOnSegment (PATCH *patch, const double range[][DIM_OF
   return 0;
 }
 
-static int ResolvePointOnSegment (PATCH *patch, int depth, double resolution2, const double range[][DIM_OF_BND], const double global[], double local[])
+static int ResolvePointOnSegment (PATCH *patch, int depth, double resolution2, double range[][DIM_OF_BND], const double global[], double local[])
 {
   double ds = (range[1][0] - range[0][0])/((double)BN_RES);
         #if (DIM==3)
@@ -5497,17 +5497,17 @@ INT ReadAndPrintArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
 {
   INT i;
   char option[OPTIONLEN];
-  float x[DIM];
+  double x[DIM];
 
   for (i=0; i<argc; i++)
     if (argv[i][0]==name[0])
     {
           #ifdef __TWODIM__
-      if (sscanf(argv[i],"%s %f %f",option,x,x+1) != 3)
+      if (sscanf(argv[i],"%s %lf %lf",option,x,x+1) != 3)
         continue;
           #endif
           #ifdef __THREEDIM__
-      if (sscanf(argv[i],"%s %f %f %f",option,x,x+1,x+2) != 4)
+      if (sscanf(argv[i],"%s %lf %lf %lf",option,x,x+1,x+2) != 4)
         continue;
           #endif
       if (strcmp(option,name) == 0)
@@ -5515,11 +5515,11 @@ INT ReadAndPrintArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
         pos[0] = x[0];
         pos[1] = x[1];
               #ifdef __TWODIM__
-        UserWriteF("set %s to (%f,%f)\n",name,x[0],x[1]);
+        UserWriteF("set %s to (%lf,%lf)\n",name,x[0],x[1]);
               #endif
               #ifdef __THREEDIM__
         pos[2] = x[2];
-        UserWriteF("set %s to (%f,%f,%f)\n",name,x[0],x[1],x[2]);
+        UserWriteF("set %s to (%lf,%lf,%lf)\n",name,x[0],x[1],x[2]);
               #endif
         return(0);
       }
