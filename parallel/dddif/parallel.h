@@ -71,9 +71,9 @@ enum HandlerSets
 #define CLEAR       0 /* clear xfer flag					*/
 
 /* CE for nodes */
-#define KEEP_VECTOR  0 /* this is a node with vector */
-#define DEL_VECTOR  1  /* this is a node without vector */
-
+/* not used, kb 961216
+ #define KEEP_VECTOR  0*/ /* this is a node with vector */
+/*#define DEL_VECTOR  1*/  /* this is a node without vector */
 
 
 
@@ -186,11 +186,13 @@ void ddd_test ();
 void ddd_HandlerInit (INT);
 
 /* from lbrcb.c */
-int BalanceGrid (MULTIGRID *);
+int BalanceGridRCB (MULTIGRID *);
 
 /* from gridcons.c */
 void dddif_SetBorderPriorities (GRID *);
 
+/* from transfer.c */
+int TransferGridFromCoarse (MULTIGRID *);
 
 #endif /* ModelP */
 #endif /* __PARALLEL_H__ */

@@ -20,9 +20,6 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef __LBRCB_H__
-#define __LBRCB_H__
-
 #ifdef ModelP
 
 /****************************************************************************/
@@ -249,136 +246,6 @@ static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int d
 
 
 
-/****************************************************************************/
-/*                                                                          */
-/* Function:  XferGridWithOverlap                                           */
-/*                                                                          */
-/* Purpose:   send elements to other procs, keep overlapping region of one  */
-/*            element, maintain correct priorities at interfaces.           */
-/*                                                                          */
-/*            the destination procs have been computed by theRCB function   */
-/*            and put into the elements' PARTITION-entries.                 */
-/*                                                                          */
-/*            NOTE: this routine handles only the local grid case, i.e.,    */
-/*                  distributed grids cannot be redistributed               */
-/*                                                                          */
-/* Input:     -                                                             */
-/*                                                                          */
-/* Output:    -                                                             */
-/*                                                                          */
-/****************************************************************************/
-
-void XferGridWithOverlap (GRID *theGrid)
-{
-  ELEMENT *elem;
-  NODE *node;
-
-  /* by default, no node stores its vector */
-  /*
-          for(node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
-          {
-                  SETXFERNODE(node,DEL_VECTOR);
-          }
-   */
-
-
-  for(elem=FIRSTELEMENT(theGrid); elem!=NULL; elem=SUCCE(elem))
-  {
-    int has_local_nb = FALSE;
-    int j;
-
-    /* create Master copy */
-    printf("%d: XferGridWithOverlap(): XferCopy elem=%d to p=%d prio=%d\n",
-           me,DDD_InfoGlobalId(PARHDRE(elem)),PARTITION(elem),PrioMaster);
-    DDD_XferCopyObjX(PARHDRE(elem),
-                     PARTITION(elem),
-                     PrioMaster,
-                     (OBJT(elem)==BEOBJ) ? BND_SIZE_TAG(TAG(elem)) : INNER_SIZE_TAG(TAG(elem))
-                     );
-
-
-    /* create 1-overlapping of elements */
-    for(j=0; j<SIDES_OF_ELEM(elem); j++)
-    {
-      ELEMENT *nb = NBELEM(elem,j);
-
-      if (nb!=NULL)
-      {
-        if (PARTITION(elem)!=PARTITION(nb))
-        {
-          /* create Ghost copy */
-          printf("%d: XferGridWithOverlap(): XferCopy elem=%d to p=%d prio=%d\n",
-                 me,DDD_InfoGlobalId(PARHDRE(elem)),PARTITION(nb),PrioGhost);
-          DDD_XferCopyObjX(PARHDRE(elem),
-                           PARTITION(nb),
-                           PrioGhost,
-                           (OBJT(elem)==BEOBJ) ?
-                           BND_SIZE_TAG(TAG(elem)) :
-                           INNER_SIZE_TAG(TAG(elem))
-                           );
-        }
-
-        /* remember any local neighbour element */
-        if (PARTITION(nb)==me)
-          has_local_nb = TRUE;
-      }
-    }
-
-    /* consider elements on master-proc */
-    if (PARTITION(elem)!=me)
-    {
-      if (has_local_nb)
-      {
-        /* element is needed as Ghost copy */
-        printf("%d: XferGridWithOverlap(): PrioSet elem=%d prio=%d\n",
-               me,DDD_InfoGlobalId(PARHDRE(elem)),PrioGhost);
-        DDD_PrioritySet(PARHDRE(elem), PrioGhost);
-      }
-      else
-      {
-        /* element isn't needed */
-        printf("%d: XferGridWithOverlap(): XferDel elem=%d to p=%d prio=%d\n",
-               me,DDD_InfoGlobalId(PARHDRE(elem)),PARTITION(elem),PrioGhost);
-        DDD_XferDeleteObj(PARHDRE(elem));
-      }
-    }
-    else
-    {
-      /* element will be local master */
-      int n;
-      for(n=0; n<CORNERS_OF_ELEM(elem); n++)
-      {
-        SETXFERNODE(CORNER(elem,n),KEEP_VECTOR);
-      }
-    }
-
-
-    /*
-                    {
-                            for(i=0; i<3; i++)
-                            {
-                                    elem->node[i]->elemCnt--;
-
-                                    if (elem->node[i]->triCnt==0)
-                                    {
-                                            DDD_XferDeleteObj(PARHDR(elem->node[i]));
-                                    }
-                            }
-                    }
-     */
-  }
-
-  /* evaluate _VECTOR flag for nodes */
-  /*
-          for(node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
-          {
-                  if (XFERNODE(node)==DEL_VECTOR)
-                          DDD_XferDeleteObj(PARHDR(NVECTOR(node)));
-          }
-   */
-}
-
-
 
 /****************************************************************************/
 
@@ -417,7 +284,7 @@ static void InheritPartition (ELEMENT *e)
 
 
 
-int BalanceGrid (MULTIGRID *theMG)
+int BalanceGridRCB (MULTIGRID *theMG)
 {
   HEAP *theHeap = theMG->theHeap;
   GRID *theGrid = GRID_ON_LEVEL(theMG,0);       /* balance coarse grid */
@@ -426,6 +293,7 @@ int BalanceGrid (MULTIGRID *theMG)
   int i, son;
 
   /* distributed grids cannot be redistributed by this function */
+
 
   if (me==master)
   {
@@ -457,70 +325,10 @@ int BalanceGrid (MULTIGRID *theMG)
       UserWriteF("elem %08x has dest=%d\n",
                  DDD_InfoGlobalId(PARHDRE(e)), PARTITION(e));
     }
-  }
 
 
-  /* send son elements to father element */
-  for (e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
-  {
-    InheritPartition(e);
-  }
-
-
-
-  /* start physical transfer */
-  ddd_HandlerInit(HSET_XFER);
-  DDD_XferBegin();
-  if (me==master)
-  {
-    /* send all grids */
-    int g;
-    for(g=TOPLEVEL(theMG); g>=0; g--)
-    {
-      GRID *grid = GRID_ON_LEVEL(theMG,g);
-      if (NT(grid)>0) XferGridWithOverlap(grid);
-    }
-  }
-
-  DDD_XferEnd();
-
-
-
-  /* remove all connections for vectors with PrioGhost */
-  {
-    int g;
-    for(g=TOPLEVEL(theMG); g>=0; g--)
-    {
-      GRID *grid = GRID_ON_LEVEL(theMG,g);
-      VECTOR *vec;
-
-      for(vec=PRIO_LASTVECTOR(grid,PrioGhost); vec!=NULL; vec=PREDVC(vec))
-      {
-        DisposeConnectionFromVector(grid, vec);
-      }
-    }
-  }
-
-
-  /* set priorities of border nodes */
-  /* TODO this is an extra communication. eventually integrate this
-              with grid distribution phase. */
-  {
-    int g;
-    for(g=TOPLEVEL(theMG); g>=0; g--)
-    {
-      GRID *grid = GRID_ON_LEVEL(theMG,g);
-      dddif_SetBorderPriorities(grid);
-    }
-  }
-
-
-  if (me==master)
-  {
     Release(theHeap,FROM_TOP);
   }
-
-  DDD_ConsCheck();
 
   return 0;
 }
@@ -529,4 +337,3 @@ int BalanceGrid (MULTIGRID *theMG)
 /****************************************************************************/
 
 #endif  /* ModelP */
-#endif

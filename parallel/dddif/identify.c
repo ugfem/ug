@@ -439,13 +439,15 @@ static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode, NODE *Nodes[MAX_S
                         #endif
 
     /* identify using edge nodes */
-    IdentHdr[nident++] = PARHDR(NFATHER(EdgeNodes[0]));
-    IdentHdr[nident++] = PARHDR(NFATHER(EdgeNodes[1]));
+    /*
+                            IdentHdr[nident++] = PARHDR(NFATHER(EdgeNodes[0]));
+                            IdentHdr[nident++] = PARHDR(NFATHER(EdgeNodes[1]));
+     */
 
     /* this is the buggy case
-                            IdentHdr[nident++] = PARHDR(EdgeNodes[0]);
-                            IdentHdr[nident++] = PARHDR(EdgeNodes[1]);
      */
+    IdentHdr[nident++] = PARHDR(EdgeNodes[0]);
+    IdentHdr[nident++] = PARHDR(EdgeNodes[1]);
 
     Ident_FctPtr(IdentObjectHdr, nobject,
                  proclist+2, PrioGhost, IdentHdr, nident);
