@@ -909,6 +909,9 @@ static INT AllocVecDesc (MULTIGRID *theMG, INT fl, INT tl, const VECDATA_DESC *v
       for (j=0; j<VD_NCMPS_IN_TYPE(vd,tp); j++)
         SET_DR_VEC_FLAG(theGrid,tp,VD_CMP_OF_TYPE(vd,tp,j));
   }
+  for (tp=0; tp<NVECTYPES; tp++)
+    for (j=0; j<VD_NCMPS_IN_TYPE(vd,tp); j++)
+      SET_DR_VEC_FLAG(theMG,tp,VD_CMP_OF_TYPE(vd,tp,j));
 
   return (NUM_OK);
 }
@@ -1109,6 +1112,18 @@ INT FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
       for (j=0; j<VD_NCMPS_IN_TYPE(vd,tp); j++)
         CLEAR_DR_VEC_FLAG(theGrid,tp,VD_CMP_OF_TYPE(vd,tp,j));
   }
+
+  for (i=BOTTOMLEVEL(theMG); i<=TOPLEVEL(theMG); i++) {
+    theGrid = GRID_ON_LEVEL(theMG,i);
+    for (tp=0; tp<NVECTYPES; tp++)
+      for (j=0; j<VD_NCMPS_IN_TYPE(vd,tp); j++)
+        if (READ_DR_VEC_FLAG(theGrid,tp,VD_CMP_OF_TYPE(vd,tp,j)))
+          return(NUM_OK);
+  }
+  for (tp=0; tp<NVECTYPES; tp++)
+    for (j=0; j<VD_NCMPS_IN_TYPE(vd,tp); j++)
+      CLEAR_DR_VEC_FLAG(theMG,tp,VD_CMP_OF_TYPE(vd,tp,j));
+
 
   return (NUM_OK);
 }
