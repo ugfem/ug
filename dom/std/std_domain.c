@@ -5283,6 +5283,24 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
 }
 
 /* domain interface function: for description see domain.h */
+INT BNDP_SurfaceId (BNDP *aBndP, INT *n, INT i)
+{
+  BND_PS *ps;
+  PATCH *p;
+  DOUBLE global[DOM_N_IN_PARAMS];
+  DOUBLE *local;
+
+  if (i < 0)
+    return(1);
+
+  ps = (BND_PS *)aBndP;
+  if (ps == NULL)
+    return(-1);
+
+  return ps->patch_id;
+}
+
+/* domain interface function: for description see domain.h */
 INT BNDP_Dispose (HEAP *Heap, BNDP *theBndP)
 {
   BND_PS *ps;
