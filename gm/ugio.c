@@ -105,6 +105,11 @@
 /* orphan condition for elements */
 #define EORPHAN(e)              (EFATHER(e)==NULL || THEFLAG(e))
 
+/* define this for reconstruction of vertical node pointers */
+/*
+   #define __ConnectVerticalOverlap__
+ */
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -656,6 +661,10 @@ static INT OrphanCons(MULTIGRID *theMG)
   ELEMENT *theElement, *el_father, *nb_el, *nb_el_father;
   NODE    *theNode,*FatherNode;
   EDGE    *theEdge;
+
+        #if defined(ModelP) && defined(__ConnectVerticalOverlap__)
+  if (ConnectVerticalOverlap(theMG)) assert(0);
+        #endif
 
   error = 0;
   for (i=0; i<=TOPLEVEL(theMG); i++)
