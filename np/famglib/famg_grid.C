@@ -2083,12 +2083,14 @@ static int SendToMaster( DDD_OBJ obj)
 	MATRIX *mat;
 	DDD_PROC masterPe;
 	int *proclist, i, found, size;
-	
+
 	if( IS_FAMG_MASTER(vec) )
 	{
 		NrMasterForOverlap++;
 		return 0;		// we want only border vectors here
 	}
+
+	SETVCUSED(vec,1);	// set flag for all border 
 
 	PRINTDEBUG(np,1,("%d: SendToMaster: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 	
@@ -2102,14 +2104,14 @@ static int SendToMaster( DDD_OBJ obj)
 	//	return 0;	// vec has no master neighbor; hence is not in overlap1
 	
 	proclist = DDD_InfoProcList(PARHDR(vec));
-	masterPe = (DDD_PROC)me;	// init with an unpossible value
+	masterPe = (DDD_PROC)(procs+1);	// init with an unpossible value
 	for( i=2; proclist[i]!=-1; i+=2 )
 		if( proclist[i+1] == PrioMaster )
 		{
 			masterPe = proclist[i];
 			break;
 		}
-	assert(masterPe!=(DDD_PROC)me);	// a master copy must exist on an other processor
+	assert(masterPe!=(DDD_PROC)(procs+1));	// a master copy must exist on an other processor
 
 	PRINTDEBUG(np,1,("%d: SendToMaster %d: myself "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(vec)));
 	
@@ -2135,8 +2137,13 @@ static int SendToOverlap1FULL( DDD_OBJ obj)
 	MATRIX *mat;
 	int dest_pe;
 	
+	SETVCUSED(vec,0);	// avoid setting the flag!
+
 	if( !IS_FAMG_MASTER(vec) )
-		return 0;		// we want only master vectors here
+	{
+		NrMasterForOverlap++;
+		return 0;		// we want only border vectors here
+	}
 
 	PRINTDEBUG(np,1,("%d: SendToOverlap1: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 
@@ -2266,6 +2273,43 @@ static inline int CountInterfaceLength(GRID *grid)
 */
 #endif
 
+static int ClearOverlap2( DDD_OBJ obj)
+{
+	VECTOR *vec = (VECTOR *)obj, *w;
+	MATRIX *mat;
+	int foundmaster;
+
+	if( IS_FAMG_MASTER(vec) || !VCUSED(vec) )
+		return 0;		// we want only unchecked border vectors here
+
+	PRINTDEBUG(np,1,("%d: ClearOverlap2: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+
+	SETVCUSED( vec, 0 );	// mark border as checked
+
+	mat = VSTART(vec);
+	if( mat == NULL )
+	{
+		DDD_XferDeleteObj(PARHDR(vec));	// vec has no matrix entry -> is isolated -> delete
+	}
+	else
+	{
+		foundmaster = 0;
+		for( mat=MNEXT(mat); mat!=NULL; mat=MNEXT(mat) )	// skip diag entry
+		{
+			w = MDEST(mat);
+			if( IS_FAMG_MASTER(w) )
+			{
+				foundmaster = 1;
+				break;
+			}
+		}
+		if( !foundmaster )
+			DDD_XferDeleteObj(PARHDR(vec));	// delete border without master-neighbor
+	}
+
+	return 0;
+}
+
 void FAMGGrid::ConstructOverlap()
 // extend the overlap as far as necessary; at least 2 links deep
 // the vectorlist will be renumbered
@@ -2302,6 +2346,7 @@ void FAMGGrid::ConstructOverlap()
 		abort();
 	}
 
+prv(GLEVEL(mygrid),0);
 	DDD_XferBegin();
     #ifdef DDDOBJMGR
     DDD_ObjMgrBegin();
@@ -2309,11 +2354,22 @@ void FAMGGrid::ConstructOverlap()
 		NrMasterForOverlap = 0;
 		DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), SendToMaster );
 
-		if( procs>1 && NrMasterForOverlap==0 )
-		{	// delete all border (and ghost) if no more master vectors exist
-			for( vec=PFIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec) )
-				DDD_XferDeleteObj(PARHDR(vec));
+		if( GLEVEL(mygrid)<0 && procs>1 )
+		{
+			if( NrMasterForOverlap==0 )
+			{	// delete all border (and ghost) if no more master vectors exist
+				for( vec=PFIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec) )
+				{
+					ASSERT(!IS_FAMG_MASTER(vec));
+					DDD_XferDeleteObj(PARHDR(vec));
+				}
+			}
+			else
+			{
+				DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), ClearOverlap2 );
+			}
 		}
+
 #ifdef XFERTIMING
 	t1 = CURRENT_TIME;
 	XFERTIMING_algtime += t1-XFERTIMING_algtime_start;
