@@ -7798,7 +7798,7 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		#ifdef ModelP
 			sprintf(DO_2cp(theDO),"%d/%x",
 				(int)ID(theElement),
-				(long)DDD_InfoGlobalId(PARHDRE(theElement)));
+				(long)EGID(theElement));
 			DO_inc_str(theDO);
 		#else
 			if (EE2D_Subdom && EE2D_ElemID)
@@ -7909,7 +7909,7 @@ static INT NW_NodesEval2D (NODE *theNode, DRAWINGOBJ *theDO)
 		#ifdef ModelP
 			sprintf(DO_2cp(theDO),"%d/%x",
 				(int)ID(theNode),
-				(long)DDD_InfoGlobalId(PARHDR(theNode)));
+				(long)GID(theNode));
 			DO_inc_str(theDO);
 		#else
 			sprintf(DO_2cp(theDO),"%d",(int)ID(theNode)); DO_inc_str(theDO);
@@ -7973,7 +7973,7 @@ static INT EXT_NodesEval2D (DRAWINGOBJ *theDO, INT *end)
 		#ifdef ModelP
 			sprintf(DO_2cp(theDO),"%d/%x",
 				(int)ID(NE_Node),
-				(long)DDD_InfoGlobalId(PARHDR(NE_Node)));
+				(long)GID(NE_Node));
 			DO_inc_str(theDO);
 		#else
 			sprintf(DO_2cp(theDO),"%d",(int)ID(NE_Node)); DO_inc_str(theDO);
@@ -11554,7 +11554,7 @@ static DRAWINGOBJ *ElementNodes (ELEMENT *theElement, DRAWINGOBJ *theDO, INT Vie
 			#ifdef ModelP
 				sprintf(DO_2cp(theDO),"%d/%x",
 					(int)ID(CORNER(theElement,EE3D_PlotNode[j])),
-					(long)DDD_InfoGlobalId(PARHDR(CORNER(theElement,EE3D_PlotNode[j]))));
+					(long)GID(CORNER(theElement,EE3D_PlotNode[j])));
 				DO_inc_str(theDO);
 			#else
 				sprintf(DO_2cp(theDO),"%d",(int)ID(CORNER(theElement,EE3D_PlotNode[j]))); DO_inc_str(theDO);
@@ -11890,7 +11890,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 						if (Viewable[i]) {
 							Neighbor = NBELEM(theElement, i);
-							if (Neighbor != NULL && DDD_InfoPriority(PARHDRE(Neighbor)) == PrioMaster)
+							if (Neighbor != NULL && EPRIO(Neighbor) == PrioMaster)
 								Viewable[i] = 0;
 						}
 				#endif
@@ -12059,7 +12059,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 						if (Viewable[i]) {
 							Neighbor = NBELEM(theElement, i);
-							if (Neighbor != NULL && DDD_InfoPriority(PARHDRE(Neighbor)) == PrioMaster)
+							if (Neighbor != NULL && EPRIO(Neighbor) == PrioMaster)
 								Viewable[i] = 0;
 						}
 				#endif
@@ -12987,8 +12987,7 @@ static void CalcViewableSidesOnGrid (GRID *theGrid)
 			#ifndef ModelP
 			if (ID(theElement) < ID(theNeighbor))
 			#else
-			if (DDD_InfoGlobalId(PARHDRE(theElement)) <
-				DDD_InfoGlobalId(PARHDRE(theNeighbor)))
+			if (EGID(theElement) < EGID(theNeighbor))
 			#endif
 			{
 				for(j=0; j<SIDES_OF_ELEM(theElement); j++)
@@ -14519,7 +14518,7 @@ static void ComputeOS_Data(MULTIGRID *mg)
 	for (i = mg->topLevel; i >= 0; i--) {
 		grid = GRID_ON_LEVEL(mg,i);
 		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p)) {
-			prio = DDD_InfoPriority(PARHDRE(p));
+			prio = EPRIO(p);
 			if (prio == PrioGhost) continue;
 			if (prio == PrioMaster && !IS_REFINED(p))
 				gap = 1;
@@ -14528,7 +14527,7 @@ static void ComputeOS_Data(MULTIGRID *mg)
 			GetAllSons(p, sonList);
 			n = 0;
 			for (j = 0; j < NSONS(p); j++) {
-				if (DDD_InfoPriority(PARHDRE(sonList[j])) != PrioMaster) continue;
+				if (EPRIO(sonList[j]) != PrioMaster) continue;
 				n++;
 				gap += GAP(sonList[j]);
 			}
@@ -14677,8 +14676,8 @@ static int GatherGraphs(DDD_OBJ obj, void *data)
 	GetAllSons(p, sonList);
 	for (i = 0; i < NSONS(p); i++) {
 		son = sonList[i];
-		if (DDD_InfoPriority(PARHDRE(son)) != PrioMaster) continue;
-		*d = DDD_InfoGlobalId(PARHDRE(son));  d++;
+		if (EPRIO(son) != PrioMaster) continue;
+		*d = EGID(son);  d++;
 		*d = GAP(son);  d++;
 		d2 = d;  d += 2;
 		na = cnt = 0;
@@ -14689,7 +14688,7 @@ static int GatherGraphs(DDD_OBJ obj, void *data)
 					cnt++;
 				else {
 					na++;
-					*d = DDD_InfoGlobalId(PARHDRE(nbElem));  d++;
+					*d = EGID(nbElem);  d++;
 				}
 		}
 		*d2 = cnt;  d2++;
@@ -14788,8 +14787,8 @@ static INT OrderRemoteSons(ELEMENT *p)
 	GetAllSons(p, sonList);
 	for (i = 0; i < NSONS(p); i++) {
 		son = sonList[i];
-		if (DDD_InfoPriority(PARHDRE(son)) != PrioMaster) continue;
-		k = Insert(HTAB(p), DDD_InfoGlobalId(PARHDRE(son))); 
+		if (EPRIO(son) != PrioMaster) continue;
+		k = Insert(HTAB(p), EGID(son)); 
 		pel[k] = son;
 		if ((GR_LINK(p)[k] = (GR_DATA *)GetMem(OE_Heap, sizeof(GR_DATA), FROM_TOP)) == NULL)
 			return 1;
@@ -14801,7 +14800,7 @@ static INT OrderRemoteSons(ELEMENT *p)
 				if (!VIEWABLE(son ,j)) 
 					cnt++;
 				else
-					adjacent[k][na++] = DDD_InfoGlobalId(PARHDRE(nbElem));
+					adjacent[k][na++] = EGID(nbElem);
 		}
 		NAD(p, k) = na;
 		CNT(p, k) = cnt;
@@ -14911,8 +14910,8 @@ static INT ScatterOrdering(DDD_OBJ obj, void *data)
 	GetAllSons(p, sonList);
 	for (i = 0; i < NSONS(p); i++) {
 		son = sonList[i];
-		if (DDD_InfoPriority(PARHDRE(son)) != PrioMaster) continue;
-		k = Lookup(htab, DDD_InfoGlobalId(PARHDRE(son)));
+		if (EPRIO(son) != PrioMaster) continue;
+		k = Lookup(htab, EGID(son));
 		PLOT_ID(son) = pid[k];
 	}
 }
@@ -15038,8 +15037,8 @@ static INT cmp_gid(const void *p, const void *q)
 {
     INT gid1, gid2;
     
-	gid1 = DDD_InfoGlobalId(PARHDRE(*((ELEMENT **)p)));
-    gid2 = DDD_InfoGlobalId(PARHDRE(*((ELEMENT **)q)));
+	gid1 = EGID(*((ELEMENT **)p));
+    gid2 = EGID(*((ELEMENT **)q));
 
 	if (gid1 < gid2)
 		return -1;
@@ -15076,7 +15075,7 @@ static INT NumberCoarseGrid(INT *table, MULTIGRID *mg)
 	
 	/* number your coarse grid elems according to table */
 	for (i = 0; i < OE_nLocalCGelems; i++) {
-		me = DDD_InfoGlobalId(PARHDRE(mine[i]));
+		me = EGID(mine[i]);
 		j = 0;
 		while (table[j] != me) 
 			j+=2;
@@ -15265,7 +15264,7 @@ oops:
 
 			/* produce local adjacency */
 			while (elem != NULL && d-d0 <= CGG_SLOT_LEN-MAX_PGRAPH_SIZE) {
-				CGG_2INT(d) = DDD_InfoGlobalId(PARHDRE(elem));  d++;
+				CGG_2INT(d) = EGID(elem);  d++;
 				CGG_2INT(d) = GAP(elem);  d++;
 				d2 = d;  d += 2;
 				na = cnt = 0;
@@ -15276,7 +15275,7 @@ oops:
 							cnt++;
 						else {
 							na++;
-							CGG_2INT(d) = DDD_InfoGlobalId(PARHDRE(neighbor));  d++;
+							CGG_2INT(d) = EGID(neighbor);  d++;
 						}
 				}
 				CGG_2INT(d2) = cnt; d2++;
@@ -15365,7 +15364,7 @@ static INT OrderHirarchically(MULTIGRID *mg)
 		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
 		{
             #ifdef ModelP
-			if (DDD_InfoPriority(PARHDRE(p)) == PrioGhost) continue;
+			if (EPRIO(p) == PrioGhost) continue;
 			SH_LINK(p) = NULL;
 			/* all sons here? */
 			if (N_LOCAL_SONS(p) != N_GLOBAL_SONS(p) || N_GLOBAL_SONS(p) == 0)
@@ -15640,7 +15639,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 	for (i = 0; i <= mg->topLevel; i++) {
 		grid = GRID_ON_LEVEL(mg,i);
 		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
-			if (DDD_InfoPriority(PARHDRE(p)) != PrioGhost)
+			if (EPRIO(p) != PrioGhost)
 				if ((OS_LINK(p) = (OS_DATA *) GetMem(heap, sizeof(OS_DATA), FROM_TOP)) == NULL) {
 					err = 1;
 					goto fault;
