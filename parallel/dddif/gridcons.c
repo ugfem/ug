@@ -4,8 +4,8 @@
 /*																			*/
 /* File:	  gridcons.c													*/
 /*																			*/
-/* Purpose:   basic functions for managing consistency of distributed grids
-   /*																			*/
+/* Purpose:   basic functions for managing consistency of distributed grids */
+/*																			*/
 /* Author:	  Stefan Lang, Klaus Birken										*/
 /*			  Institut fuer Computeranwendungen III                                                 */
 /*			  Universitaet Stuttgart										*/
