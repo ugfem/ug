@@ -68,7 +68,7 @@ boundary of the domain, this side has a corresponding 'ELEMENTSIDE' object
 describing the position on the boundary.
 
 . BNDSEGDESC - Combines pointers to 'BOUNDARY_SEGMENT' and 'BOUNDARY_CONDITION'
-in order to save memory.a
+in order to save memory.
 
 . NODE - Corners of the elements are described by the 'NODE' structure. Only the
 information that is different per level is stored here. E.g. geometric information 
@@ -79,7 +79,7 @@ share one 'VERTEX' if they are at the same position on different levels.
 coordinates, the position in the coarser grid level (local coordinates) and
 boundary information if the node is on the boundary (see 'VSEGMENT').
 
-. VSEGMENT - A vertex can reside on several boundary segments, especially when
+. VSEGMENT - A boundary vertex can reside on several boundary segments, especially when
 internal boundaries are defined. Therefore it stores a list of 'VSEGMENT'
 structures, one for each position on a boundary segment.
 
@@ -92,7 +92,10 @@ references to all neighbors. The 'LINK' data type forms that list and each
 . EDGE - The 'LINK' structure represents a directed edge of the mesh graph from
 some node `a` to node `b`. The 'LINK' from node `b` to node `a` must always exist
 since the neighbor relation is symmetric and therefore the two 'LINK' objects
-are combined to form an 'EDGE' object.
+are combined to form an (undirected) 'EDGE' object.
+
+. SELECTION_OBJECT - This is an union of 'ELEMENT', 'NODE' and 'VECTOR', the
+objects that can be selected by mouse or by the select command.
 
 . GEOM_OBJECT - This is an union of 'ELEMENT', 'NODE' and 'EDGE', the basic
 geometric objects.
@@ -105,9 +108,11 @@ representing the rows of the global stiffness matrix corresponding to all
 degrees of freedom in the 'VECTOR'.
 
 . MATRIX - Contains all matrix entries coupling the degrees of freedom
-in two 'VECTOR' objects. 'MATRIX' objects always come in pairs connecting two
-'VECTOR' objects in both directions. The graph induced by the 'MATRIX'-'VECTOR'
-structure is completely independend from the mesh graph represented by the
+in two 'VECTOR' objects. 'MATRIX' objects come in pairs connecting two
+'VECTOR' objects in both directions. If the 'VECTOR' objects are identical (which is
+the case for diagonal entries) then there is only one 'MATRIX'.
+The graph induced by the 'MATRIX'-'VECTOR'
+structure is completely independent from the mesh graph represented by the
 'LINK'-'NODE' structure.
 
 . BLOCKVECTOR - Gives you the facility to structure a 'VECTOR'-list. The
@@ -117,7 +122,7 @@ described by a 'BLOCKVECTOR' can be processed by itself. Via the
 'BLOCKVECTOR' structure there is also a blockmatrix structure induced to
 the 'MATRIX' structure but without any additional memory need.
 
-. CONNECTION - The two 'MATRIX' objects connecting two 'VECTOR' objects 
+. CONNECTION - The two (or one, s.a.) 'MATRIX' objects connecting two 'VECTOR' objects
 are combined to a 'CONNECTION' object. This is similar to the combination of two
 'LINK' objects in an 'EDGE'.
 
@@ -154,10 +159,10 @@ STRUCTURES:
 .vb
 struct domain {
 
-    /* fields for environment directory */
+    /* fields for environment directory
     ENVDIR d;
 
-    /* domain variables */
+    /* domain variables
     COORD MidPoint[DIM];                // point in the middle of domain    
     COORD radius;                       // defines sphere around MidPoint  
                                         // containing the domain           
@@ -214,7 +219,7 @@ The following two functions of type 'BndSegFuncPtr' define the
 mapping for the upper and lower half circle respectively.
 
 .vb
-/* circleBoundary maps [0.0,1.0] to the upper half circle */
+// circleBoundary maps [0.0,1.0] to the upper half circle
 static INT circleBoundaryUpper (void *data, COORD *param, COORD *result)
 {
     COORD lambda;
@@ -233,7 +238,7 @@ static INT circleBoundaryUpper (void *data, COORD *param, COORD *result)
     return(0);
 }
 
-/* circleBoundary maps [0.0,1.0] to the lower half circle */
+// circleBoundary maps [0.0,1.0] to the lower half circle
 static INT circleBoundaryLower (void *data, COORD *param, COORD *result)
 {
     COORD lambda;
@@ -326,10 +331,10 @@ typedef INT (*BndSegFuncPtr) (void *,COORD *,COORD *);
 
 struct boundary_segment {
 
-    /* fields for environment directory */
+    // fields for environment directory
     ENVVAR v;
 
-    /* fields for boundary segment */
+    // fields for boundary segment
     INT left,right;                   // number of left and right subdomain 
     INT id;                           // unique id of that segment          
     INT segType;                      // segment type, see above            
@@ -417,7 +422,8 @@ straight lines 1 is sufficient.
 [alpha[0],beta[0]], in 3D this is the rectangle 
 [alpha[0],beta[0]] x [alpha[1],beta[1]] (or a=alpha[0], b=beta[0],
 c=alpha[1], d=beta[1] in the figure above.
-BndSegFunc - Pointer to a C function describing the mapping from parameter
+
+. BndSegFunc - Pointer to a C function describing the mapping from parameter
 space to the `d`-space. This function must be of type 'BndSegFuncPtr'.
 (see below).
 
@@ -470,10 +476,10 @@ typedef INT (*ConfigProcPtr) (INT argc, char **argv);
 
 struct problem {
 
-    // fields for environment directory */
+    // fields for environment directory
     ENVDIR d;
    
-    // fields for problem */
+    // fields for problem
     INT problemID;              // used to identify problem type    
     ConfigProcPtr ConfigProblem;// procedure to reinitialize problem
     INT numOfCoeffFct;          // # of coefficient functions      
@@ -678,7 +684,7 @@ struct format {
 DESCRIPTION:
 
 The 'FORMAT' data type is used to describe parameters of the UG data structure.
-Several different formats can be defined at initialization time. Which format
+Several different formats can be defined at initialization time or later. Which format
 is used for a 'MULTIGRID' can be specified when it is created or loaded from
 file. Each problem class defines at least one format. 'FORMAT' objects
 are created with the 'CreateFormat' function.
@@ -691,8 +697,8 @@ of 'SYMBOL' objects. 'd' also stores the name of the format.
 . sMultiGrid - Size of user data space in the 'MULTIGRID' structure in bytes.
 
 . VectorSizes - Array giving the number of 'DOUBLE' values to be allocated
-for the 'VECTOR' per geometric object. The number of 'DOUBLE's can be different
-in nodes, edges, sides and elements. 'VERTEX[NODEVECTOR]' specifies
+for the 'VECTOR' per geometrical object. The number of 'DOUBLE's can be different
+in nodes, edges, sides and elements. 'VectorSizes[NODEVECTOR]' specifies
 the number of 'DOUBLE's in a node of the grid. 'EDGEVECTOR', 'SIDEVECTOR'
 and 'ELEMVECTOR' are used for the other geometric objects. If a number of 'DOUBLE's
 is requested in a vector of a geometric object that is not allowed
@@ -701,13 +707,14 @@ compilation - see 'makefiles') an error is returned by the 'CreateFormat' functi
 
 . MatrixSizes - Array determining the number of 'DOUBLE' values in a 'MATRIX' 
 coupling of one 'VECTOR' with another. Since the number of degrees
-of freedom in a 'VECTOR' depends on its geometric position, the 'MATRIX'
-size depends on position of source and destination 'VECTOR'. The memory requirements
+of freedom in a 'VECTOR' depends on the geometrical object its is associated with -
+in other words the 'VTYPE' - the 'MATRIX'
+size depends on the type of source and destination 'VECTOR'. The memory requirements
 are assumed to be symmetric, that is a 'MATRIX' from a node vector to an edge
 vector needs the same memory as that from an edge vector to a node vector.
-Therefore in 2D there are 3 vector positions and 6 different matrix sizes and
-in 3D there are 4 vector positions and 10 different matrix sizes.
-A mapping of  source and destination vector position to an index in the 'MatrixSizes'
+Therefore in 2D there are 3 vector types and 6 different matrix sizes and
+in 3D there are 4 vector types and 10 different matrix sizes.
+A mapping of  source and destination vector type to an index in the 'MatrixSizes'
 array is provided by the array 'MatrixType' exported by 'algebra.h'.
 E. g. 'MatrixType[NODEVECTOR][EDGEVECTOR]' provides the index for node-edge
 matrices.
@@ -733,9 +740,10 @@ print the contents of the user data fields in vertices, grids and multigrids.
 print functions for each vector position.
 
 . PrintMatrix -  is used to print user data in matrices. There may be different
-print functions according to position of source and destination vector.
+print functions according to the type of source and destination vector.
 There may be different
-print functions according to position of source and destination vector.
+print functions according to the type of source and destination vector but on and the same
+print function is used for both a->b and b->a.
 
 . ConversionProcPtr - Data type for the print functions. First parameter
 is a pointer to the user data space (this must be casted appropriately).
@@ -753,7 +761,7 @@ EXAMPLES:
 
 The following example defines a format where degrees of freedom are in the
 nodes of the mesh and and all nodes within on element are coupled.
-This format is suitable for standard conformin (bi-)linear basis
+This format is suitable for standard conforming (bi-)linear basis
 functions.
 
 First we define 'DOUBLE' arrays with four and two entries which
@@ -1210,11 +1218,12 @@ INT SEGTYPE (BNDSEGDESC *p);
 Get number of subdomain.
 
 .vb
-INT POINT (BNDSEGDESC *p,i);
+INT POINT (BNDSEGDESC *p, INT i);
 .ve
 
 Return global numbers of the corners of the parameter space. 'i' is the
-local number of the corner.
+local number of the corner (2D: 0 or 1 for the start or end point resp.,
+3D: 0-3 for the corners of the patch).
 
 .vb
 INT RES (BNDSEGDESC *p);
@@ -1251,8 +1260,8 @@ void *CONDDATA (BNDSEGDESC *p);
 Returns the 'data' pointer from the 'BOUNDARY_CONDITION' structure.
 
 .vb
-COORD ALPHA (BNDSEGDESC *p,i);
-COORD BETA (BNDSEGDESC *p,i);
+COORD ALPHA (BNDSEGDESC *p, INT i);
+COORD BETA (BNDSEGDESC *p, INT i);
 .ve
 
 Returns the parameter interval that is used by the functions returned
@@ -1515,7 +1524,7 @@ SEE ALSO:
 D*/
 
 /*D
-EDGE - Data type realizing a directed connection of two nodes
+EDGE - Data type realizing an undirected connection of two nodes
 
 STRUCTURES:
 
@@ -1738,7 +1747,7 @@ typedef union element ELEMENT;
 DESCRIPTION:
 
 UG provides a flexible element concept, i.e. there may be different
-types of elements in a mesh (currently 8). All element types are derived
+types of elements in a mesh (currently limited to 8). All element types are derived
 from the 'generic_element' where the 'refs' array is allocated to the
 appropriate length. Data types for the currently implemented three different
 elements triangle, quadrilateral and tetrahedron are provided only
@@ -1764,7 +1773,7 @@ The 'flag' is also used bitwise.
 
 . property - Since 'control' and 'flag' were full, a third word had to be introduced that
 can be used bitwise. A part of this word stores the element property, which is simple
-a number per element. This number can be used to differentiate between different materials
+a number per element. This number can be used to distinguish different materials
 for example.
 
 . pred,succ - All elements of a grid level are connected by a double linked list.
@@ -1851,7 +1860,7 @@ This definition is provided only to make the description complete.
 element type the corners, edges and sides are numbered beginning with zero.
 Each side again has a local numbering of its edges and corners and each edge
 has a local numbering of its corners. We then need mappings of the numbering
-scheme within edges and sides to the numbering schem within the element.`
+scheme within edges and sides to the numbering scheme within the element.`
 
 .vb
 INT EDGE_OF_SIDE (ELEMENT *p,INT s,INT e);
@@ -1884,7 +1893,7 @@ INT SIDE_WITH_EDGE (ELEMENT *p,INT e,INT k);
 .ve
 
 'SIDE_WITH_EDGE(p,e,0)' and 'SIDE_WITH_EDGE(p,e,1)' delivers the numbers
-of the sides (with respect to numbering in 'p') that share edge number 'e'
+of the two sides (with respect to numbering in 'p') that share edge number 'e'
 (also with respect to the element).
 
 .vb
@@ -2079,7 +2088,7 @@ ELEMENTSIDE *SUCCS (ELEMENTSIDE *p);
 ELEMENTSIDE *PREDS (ELEMENTSIDE *p);
 .ve
 
-Returns pointer to next and previos 'ELEMENTSIDE' structures.
+Returns pointer to next and previous 'ELEMENTSIDE' structures.
 
 .vb
 BNDSEGDESC *SEGDESC (ELEMENTSIDE *p);
@@ -2103,7 +2112,7 @@ CONTROL WORDS:
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
 INT OBJT (ELEMENTSIDE *p);            27  5   Object type ESOBJ for an element
-void SETOBJT (ELEMENTSIDE *p, INT n);         with at least one side on a
+void SETOBJT (ELEMENTSIDE *p, INT n);         with at least one side on a boundary
 -----------------------------------------------------------------------------
 .ve
 
@@ -2369,16 +2378,18 @@ typedef struct matrix MATRIX;
 DESCRIPTION:
 
 The 'MATRIX' data type is part of UGs sparse matrix vector data structure.
-A 'MATRIX' stores all the matrix entries coupling two 'VECTOR's.
-The number of entries in a 'MATRIX' depends on the geometric position
+A 'MATRIX' stores all the matrix entries coupling two 'VECTOR's (which can be identical - this
+is the case for diagonal entries).
+The number of entries in a 'MATRIX' depends on the geometrical position
 of the source and destination 'VECTOR', i.e. a 'MATRIX' coupling
 a 'VECTOR' in 'NODE' with a 'VECTOR' in another 'NODE' can have a different
 size than a 'MATRIX' coupling a 'VECTOR' in a 'NODE' with a
 'VECTOR' in an 'EDGE'.
 The 'MATRIX' structure forms a single linked list that contains all
 couplings of the 'VECTOR' where the list starts (see the 'VSTART' macro
-there).
-Two 'MATRIX' objects are combined to build a 'CONNECTION' object.
+there). The list `always` starts with the diagonal element.
+Except for diagonal 'MATRIX' entries two 'MATRIX' objects are combined to
+build a 'CONNECTION' object.
 
 MACROS:
 
@@ -2425,7 +2436,7 @@ Returns a pointer to the 'CONNECTION' where 'm' is part of.
 DOUBLE MVALUE (MATRIX *m,INT n);
 .ve
 
-Returns the 'n'th entry of the 'MATRIX' 'm'. The number of entries is
+Returns the 'n'th value of the 'MATRIX' 'm'. The number of entries is
 defined in the 'FORMAT' structure. 'MVALUE' is a macro and can also
 be used for assignment, i.e. 'MVALUE(m,n)=0.0' is a valid
 statement.
@@ -2513,7 +2524,7 @@ SEE ALSO:
 D*/
 
 /*D
-CONNECTION - Data type combing two 'MATRIX' structures
+CONNECTION - Data type combing one or two 'MATRIX' structures
 
 STRUCTURES:
 
@@ -2524,7 +2535,8 @@ typedef struct matrix CONNECTION;
 DESCRIPTION:
 
 The 'CONNECTION' data type consists of two 'MATRIX' objects stored consecutively
-in memory. Since the 'MATRIX' objects size is determined at run-time the
+in memory. If it is a diagonal entry of the stiffness matrix it consists of only
+`one` 'MATRIX'. Since the 'MATRIX' objects size is determined at run-time the
 'CONNECTION' is defined as a 'MATRIX'.
 
 MACROS:
@@ -3157,7 +3169,7 @@ All the pointers to the first list elements are there.
 . control - used bitwise as usual.
 
 . status - A word storing status information. This can be used also by the
-problem class, e.g. to store whether the grid level is assmbled or not.
+problem class, e.g. to store whether the grid level is assembled or not.
 
 . level - Level within the 'MULTIGRID' structure.
 
@@ -3234,7 +3246,7 @@ VERTEX *LASTVERTEX (GRID *p);
 Return pointers to first and last 'VERTEX' of the 'GRID'.
 
 .vb
-ELEMSIDE *FIRSTELEMSIDE (GRID *p);
+ELEMENTSIDE *FIRSTELEMSIDE (GRID *p);
 .ve
 
 Return pointer to first element of the 'ELEMENTSIDE' list.
@@ -3333,7 +3345,7 @@ struct multigrid {
     // selection 
     INT NbOfSelections;             // number of selected objects           
     INT SelectionMode;              // selectionmode (see above)            
-    union geom_object *Selection[MAXSELECTION]; // pointer to selec. objects
+    union selection_object *Selection[MAXSELECTION]; // pointer to selec. objects
     
     // user data 
 	void *GenData;					// general user data space
@@ -3357,7 +3369,7 @@ and 'open' commands.
 
 . vertIdCounter,nodeIdCounter,elemIdCounter - Counters used to assign unique
 identification numbers to 'VERTEX', 'NODE' and 'ELEMENT' objects. The counter
-wraps around after 2^32 objects have been allocated !
+wraps around after 2 to the power of 32 objects have been allocated!
 
 . topLevel - Finest grid level currently allocated in the 'MULTIGRID'.
 
@@ -3384,14 +3396,14 @@ array. This corresponds to the number of boundary segments in 'theDomain'.
 . segments - Array of 'BNDSEGDESC' structures. Index `i` in that array corresponds
 to boundary segment `i`.
 
-. corners - Array of Pointers to 'VERTEX' structures that are allocated at the
+. corners - Array of pointers to 'VERTEX' structures that are allocated at the
 `corners` of 'theDomain'. 
 
 . numOfCorners - Number of corners of 'theDomain'. This is also the size of the
 'corners' array.
 
 . theHeap - Pointer to a 'HEAP' structure allocated for that 'MULTIGRID'. The size
-of this heap is selected with the 'open' and 'new' commands.
+of this heap is selected with the 'open' or 'new' commands.
 
 . grids - Array of pointers to 'GRID' structures representing the individual
 levels of the multigrid hierarchy.
@@ -3404,13 +3416,13 @@ inserted in the appropriate list of free objects.
 . freeVectors,freeConnections - List of free 'VECTOR' and 'CONNECTION'
 objects sorted by type. Same comment as for 'freeObjects' applies.
 
-. Selection - Array of pointers to geometric objects that have been selected
-with the mouse in the graphical user interface.
+. Selection - Array of pointers to selection objects ('VECTOR's, NODE's or 'ELEMENT's)
+that have been selected with the mouse in the graphical user interface or by the select command.
 
 . NbOfSelections - Number of objects in the selection buffer ('Selection').
 
 . SelectionMode - Indicates type of objects in the selection buffer. Currently
-'nodeSelection'  and 'elementSelection' is possible.
+'nodeSelection', 'elementSelection' and 'vectorSelection' is possible.
 
 . GenData - Management of general user data space in multigrid. At initialisation time
 different modules can (pre)allocate storage which will (actually) be allocated in
