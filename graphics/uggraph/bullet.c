@@ -179,7 +179,7 @@ INT BulletOpen(PICTURE *picture, DOUBLE factor)
     *z++ = FAR_AWAY;
 
   /* init pixel buffer */
-  p = (char *)PBuffer = (char *)z;
+  p = (char *)(PBuffer = (char *)z);
 #else
   p = (char *)(PBuffer = ZBuffer);
 #endif
