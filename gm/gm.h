@@ -141,14 +141,9 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 #define MAX_CONTROL_WORDS       20              /* maximum number of control words		*/
 #define MAX_CONTROL_ENTRIES 80          /* max number of entries				*/
 
-/* defines for the multigrid user data space management                                         */
-#define IN_GENERAL_MGUD         1               /* value for where: same for all MGs	*/
-#define IN_INDIVID_MGUD         2               /* value for where: for one individ MG	*/
-#define IN_ALL_MGS                      NULL    /* Define and Free: treat all open MGs	*/
-
 /* macros for the multigrid user data space management						*/
-#define OFFSET_IN_MGUD(w,mg,id)         (GetMGUDBlockDescriptor(w,mg,id)->offset)
-#define IS_MGUDBLOCK_DEF(w,mg,id)       (GetMGUDBlockDescriptor(w,mg,id)!=NULL)
+#define OFFSET_IN_MGUD(id)              (GetMGUDBlockDescriptor(id)->offset)
+#define IS_MGUDBLOCK_DEF(id)    (GetMGUDBlockDescriptor(id)!=NULL)
 
 /****************************************************************************/
 /*																			*/
@@ -652,9 +647,6 @@ struct grid {
   VECTOR *lastVector;                           /* pointer to last vector				*/
   struct grid *coarser, *finer;         /* coarser and finer grids				*/
   struct multigrid *mg;                         /* corresponding multigrid structure	*/
-
-  /* user data */
-  HEAP *userData;                                       /*	associated user data structure		*/
 } ;
 
 
@@ -691,9 +683,8 @@ struct multigrid {
   union geom_object *Selection[MAXSELECTION];       /* pointer to selec. objects*/
 
   /* user data */
-  VIRT_HEAP_MGMT *IndivMGUDM;           /* individual user data space management*/
   void *GenData;                                        /* general user data space				*/
-  void *IndivData;                                      /* individual user data space			*/
+  HEAP *UserHeap;                                       /* user heap							*/
 } ;
 
 /****************************************************************************/
@@ -1586,11 +1577,9 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define SELECTIONMODE(p)                ((p)->SelectionMode)
 #define SELECTIONOBJECT(p,i)    ((p)->Selection[(((i)<MAXSELECTION) ? (i) : (MAXSELECTION-1))])
 #define MGNAME(p)                               ((p)->v.name)
-#define INDIV_MGUDM(p)                  ((p)->IndivMGUDM)
-#define INDIV_MGUD(p)                   ((p)->IndivData)
-#define INDIV_MGUD_ADR(p,o)     ((void *)(((char *)((p)->IndivData))+o))
+#define MG_USER_HEAP(p)                 ((p)->UserHeap)
 #define GEN_MGUD(p)                     ((p)->GenData)
-#define GEN_MGUD_ADR(p,o)               ((void *)(((char *)((p)->GenData))+o))
+#define GEN_MGUD_ADR(p,o)               ((void *)(((char *)((p)->GenData))+(o)))
 
 /****************************************************************************/
 /*																			*/
@@ -1765,9 +1754,9 @@ INT             RemoveElementFromSelection(MULTIGRID *theMG, ELEMENT *theElement
 /* multigrid user data space management (using the heaps.c block heap management) */
 INT             AllocateControlEntry    (INT cw_id, INT length, INT *ce_id);
 INT             FreeControlEntry                (INT ce_id);
-INT             DefineMGUDBlock                 (INT where, MULTIGRID *theMG, BLOCK_ID id, MEM size);
-INT             FreeMGUDBlock                   (INT where, MULTIGRID *theMG, BLOCK_ID id);
-BLOCK_DESC      *GetMGUDBlockDescriptor (INT where, MULTIGRID *theMG, BLOCK_ID id);
+INT             DefineMGUDBlock                 (BLOCK_ID id, MEM size);
+INT             FreeMGUDBlock                   (BLOCK_ID id);
+BLOCK_DESC      *GetMGUDBlockDescriptor (BLOCK_ID id);
 
 /* ordering of degrees of freedom */
 ALG_DEP         *CreateAlgebraicDependency (char *name, DependencyProcPtr DependencyProc);
@@ -1775,7 +1764,7 @@ INT             OrderVectors (MULTIGRID *theMG, INT levels, INT mode, char *depe
 
 /* miscellaneous */
 INT             RenumberMultiGrid               (MULTIGRID *theMG);
-INT                     OrderNodesInGrid                (GRID *theGrid, const INT *order, const INT *sign);
+INT                     OrderNodesInGrid                (GRID *theGrid, const INT *order, const INT *sign, INT AlsoOrderLinks);
 INT             PutAtStartOfList                (GRID *theGrid, INT cnt, ELEMENT **elemList);
 
 #endif
