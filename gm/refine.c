@@ -92,6 +92,13 @@
 #include "pargm.h"
 #endif
 
+/* TODO: temporarily included to make vecskips consistent for df */
+/* 
+#include "udm.h"
+INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
+*/
+
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -108,6 +115,9 @@
    not ensured.
 #define UPDATE_FULLOVERLAP
 */
+
+/* define for identification in several stages to 1 */
+#define IDENT_IN_STEPS  1
 
 /* define for use of DDD_ConsCheck() */
 /*
@@ -141,11 +151,11 @@
 #define EDGE_IN_PAT(p,i)			(((p)>>(i)) & 0x1)
 #define SIDE_IN_PAT(p,i)			(((p)>>(i)) & 0x1)
 
-#define MARK_BISECT_EDGE(r,i)		(r->pattern[i]==1)
+#define MARK_BISECT_EDGE(r,i)		((r)->pattern[(i)]==1)
 
 #define REF_TYPE_CHANGES(e)			((REFINE(e)!=MARK(e)) || \
 										(REFINECLASS(e)!=MARKCLASS(e)))
-#define MARKED(e)					(MARK(theElement)!=NO_REFINEMENT)
+#define MARKED(e)					(MARK(e)!=NO_REFINEMENT)
 
 /* green marked elements were NEWGREEN is true are refined without rule */
 #ifdef TET_RULESET
@@ -180,23 +190,23 @@
 /* macros for storing sparse data needed in ExchangeClosureInfo() */
 #define MARKCLASSDATA_SHIFT	20
 #define GETMARKCLASSDATA(elem,dataadr)                                       \
-		(*dataadr) = (*dataadr) | ((MARKCLASS(elem))<<MARKCLASSDATA_SHIFT)
+		(*(dataadr)) = (*(dataadr)) | ((MARKCLASS(elem))<<MARKCLASSDATA_SHIFT)
 #define SETMARKCLASSDATA(elem,data)                                          \
-		SETMARKCLASS(elem,(data>>MARKCLASSDATA_SHIFT)&((1<<MARKCLASS_LEN)-1))
+		SETMARKCLASS((elem),((data)>>MARKCLASSDATA_SHIFT)&((1<<MARKCLASS_LEN)-1))
 
 /* macros for storing sparse data needed in ExchangeClosureInfo() */
 #define MARKDATA_SHIFT	22
 #define GETMARKDATA(elem,dataadr)                                            \
-		(*dataadr) = (*dataadr) | ((MARK(elem))<<MARKDATA_SHIFT)
+		(*(dataadr)) = (*(dataadr)) | ((MARK(elem))<<MARKDATA_SHIFT)
 #define SETMARKDATA(elem,data)                                               \
-		SETMARK(elem,(data>>MARKDATA_SHIFT)&((1<<MARK_LEN)-1))
+		SETMARK((elem),MARK(elem)|((data)>>MARKDATA_SHIFT)&((1<<MARK_LEN)-1))
 		
 /* macros for storing sparse data needed in ExchangeClosureInfo() */
 #define COARSENDATA_SHIFT	19
 #define GETCOARSENDATA(elem,dataadr)                                         \
-		(*dataadr) = (*dataadr) | ((COARSEN(elem))<<COARSENDATA_SHIFT)
+		(*(dataadr)) = (*(dataadr)) | ((COARSEN(elem))<<COARSENDATA_SHIFT)
 #define SETCOARSENDATA(elem,data)                                            \
-		SETCOARSEN(elem,(data>>COARSENDATA_SHIFT)&((1<<COARSEN_LEN)-1))
+		SETCOARSEN((elem),((data)>>COARSENDATA_SHIFT)&((1<<COARSEN_LEN)-1))
 		
 /* macros to get and set the edgepattern on an element */
 #define GetEdgeInfo(elem,patadr,macro)                                       \
@@ -207,14 +217,14 @@
             pattern = 0;                                                     \
 			for (i=EDGES_OF_ELEM(elem)-1; i>=0; i--)                         \
 			{                                                                \
-				theEdge=GetEdge(CORNER_OF_EDGE_PTR(elem,i,0),                \
-						    	CORNER_OF_EDGE_PTR(elem,i,1));               \
+				theEdge=GetEdge(CORNER_OF_EDGE_PTR((elem),i,0),              \
+						    	CORNER_OF_EDGE_PTR((elem),i,1));             \
 				ASSERT(theEdge!=NULL);                                       \
                                                                              \
 				pattern = (pattern<<1) | macro(theEdge);                     \
 			}                                                                \
                                                                              \
-            (*patadr) |= pattern;                                            \
+            (*(patadr)) |= pattern;                                          \
 		}
 
 #define	SetEdgeInfo(elem,pat,macro,OP)                                       \
@@ -222,14 +232,14 @@
 			INT i,pattern;                                                   \
 			EDGE *theEdge;                                                   \
                                                                              \
-            pattern = pat;                                                   \
+            pattern = (pat);                                                 \
 			for (i=0; i<EDGES_OF_ELEM(elem); i++)                            \
 			{                                                                \
-				theEdge = GetEdge(CORNER_OF_EDGE_PTR(elem,i,0),              \
-								  CORNER_OF_EDGE_PTR(elem,i,1));             \
+				theEdge = GetEdge(CORNER_OF_EDGE_PTR((elem),i,0),            \
+								  CORNER_OF_EDGE_PTR((elem),i,1));           \
 				ASSERT(theEdge!=NULL);                                       \
                                                                              \
-				SET ## macro(theEdge, macro(theEdge) OP (pattern&0x1));      \
+				SET ## (macro)(theEdge, (macro)(theEdge) OP (pattern&0x1));  \
 				pattern >>= 1;                                               \
 			}                                                                \
 		}
@@ -238,18 +248,18 @@
 static ELEMENT *debugelem=NULL;
 /*
 #define PRINTELEMID(id)                                                      \
-		if (ID(theElement)==id && id!=10120)                                 \
+		if (ID(theElement)==(id) && (id)!=10120)                             \
 		{                                                                    \
 			debugelem=theElement;                                            \
 			UserWriteF("refine.c:line=%d\n",__LINE__);                       \
 			ListElement(NULL,theElement,0,0,1,0);                            \
 		}                                                                    \
-		else if ((id==-1 || ID(theElement)==10120) && debugelem!=NULL)       \
+		else if (((id)==-1 || ID(theElement)==10120) && debugelem!=NULL)     \
 		{                                                                    \
 			UserWriteF("refine.c:line=%d\n",__LINE__);                       \
 			ListElement(NULL,debugelem,0,0,1,0);                             \
 		}                                                                    \
-		else if (id==-2 && debugelem!=NULL)                                  \
+		else if ((id)==-2 && debugelem!=NULL)                                \
 		{                                                                    \
 			if (ID(theElement)==8899)                                        \
 			{                                                                \
@@ -272,8 +282,8 @@ static ELEMENT *debugelem=NULL;
 			UserWriteF(" %3d",i);                                            \
 		UserWrite("\n");                                                     \
 		for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)             \
-			if (context[i] != NULL)                                          \
-				UserWriteF(" %3d",ID(context[i]));                           \
+			if ((context)[i] != NULL)                                        \
+				UserWriteF(" %3d",ID((context)[i]));                         \
 			else                                                             \
 				UserWriteF("    ");                                          \
 		UserWrite("\n");                                                     \
@@ -863,20 +873,23 @@ static int Gather_ElementClosureInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DD
 	INT 	refinedata;
 	ELEMENT *theElement = (ELEMENT *)obj;
 
-	PRINTDEBUG(gm,4,(PFMT "Gather_ElementClosureInfo(): e=" EID_FMTX "\n",
+	PRINTDEBUG(gm,1,(PFMT "Gather_ElementClosureInfo(): e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
 	   
 	refinedata = 0;
-	GetEdgeInfo(theElement,&refinedata,PATTERN);
 
-	GETMARKCLASSDATA(theElement,&refinedata);
+	#ifdef __TWODIM__
+	GetEdgeInfo(theElement,&refinedata,PATTERN);
+	#endif
+
 	/* mark and sidepattern have same control word positions */
 	/* if this changes sidepattern must be sent separately   */
 	GETMARKDATA(theElement,&refinedata);
+	GETMARKCLASSDATA(theElement,&refinedata);
 	GETCOARSENDATA(theElement,&refinedata);
 	((INT *)data)[0] = refinedata;
 
-	PRINTDEBUG(gm,4,(PFMT "Gather_ElementClosureInfo(): refinedata=%08x "
+	PRINTDEBUG(gm,1,(PFMT "Gather_ElementClosureInfo(): refinedata=%08x "
 		"sidepattern=%d markclass=%d mark=%d coarse=%d\n",me,refinedata,
 		SIDEPATTERN(theElement),MARKCLASS(theElement),MARK(theElement),COARSEN(theElement)))
 
@@ -908,28 +921,121 @@ static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data, DDD_PROC proc, D
 	INT		refinedata;
 	ELEMENT *theElement = (ELEMENT *)obj;
 
-	PRINTDEBUG(gm,4,(PFMT "Scatter_ElementClosureInfo(): e=" EID_FMTX "\n",
+	PRINTDEBUG(gm,1,(PFMT "Scatter_ElementClosureInfo(): e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
 
 	refinedata = ((INT *)data)[0];
+
+	#ifdef __TWODIM__
 	SetEdgeInfo(theElement,refinedata,PATTERN,|);
+	#endif
+
+	/* mark and sidepattern have same control word positions */
+	/* if this changes sidepattern must be sent separately   */
+	SETMARKDATA(theElement,refinedata);
 
 	if (EMASTER(theElement)) return(GM_OK);
 	if (EGHOST(theElement) && EGHOSTPRIO(prio)) return(GM_OK);
 
 	SETMARKCLASSDATA(theElement,refinedata);
-	/* mark and sidepattern have same control word positions */
-	/* if this changes sidepattern must be sent separately   */
-	SETMARKDATA(theElement,refinedata);
 	SETCOARSENDATA(theElement,refinedata);
 
-	PRINTDEBUG(gm,4,(PFMT "Scatter_ElementClosureInfo(): refinedata=%08x "
+	PRINTDEBUG(gm,1,(PFMT "Scatter_ElementClosureInfo(): refinedata=%08x "
 		"sidepattern=%d markclass=%d mark=%d coarse=%d\n",me,refinedata,
 		SIDEPATTERN(theElement),MARKCLASS(theElement),MARK(theElement),COARSEN(theElement)))
 
 	return(GM_OK);
 }
 
+INT ExchangeElementClosureInfo (GRID *theGrid)
+{
+	/* exchange information of elements to compute closure */
+	DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+		Gather_ElementClosureInfo, Scatter_ElementClosureInfo);
+
+	return(GM_OK);
+}
+
+
+#ifdef __THREEDIM__
+
+/****************************************************************************/
+/*
+   Gather_EdgeClosureInfo - 
+
+   SYNOPSIS:
+   static int Gather_EdgeClosureInfo (DDD_OBJ obj, void *data);
+
+   PARAMETERS:
+.  obj
+.  data
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+*/
+/****************************************************************************/
+
+static int Gather_EdgeClosureInfo (DDD_OBJ obj, void *data)
+{
+	INT 	pattern;
+	EDGE 	*theEdge = (EDGE *)obj;
+
+	PRINTDEBUG(gm,1,(PFMT "Gather_EdgeClosureInfo(): e=" ID_FMTX "pattern=%d \n",
+			 me,ID_PRTX(theEdge),PATTERN(theEdge)))
+	   
+	pattern = PATTERN(theEdge);
+
+	((INT *)data)[0] = pattern;
+
+	return(GM_OK);
+}
+
+
+
+/****************************************************************************/
+/*
+   Scatter_EdgeClosureInfo - 
+
+   SYNOPSIS:
+   static int Scatter_EdgeClosureInfo (DDD_OBJ obj, void *data);
+
+   PARAMETERS:
+.  obj
+.  data
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+*/
+/****************************************************************************/
+
+static int Scatter_EdgeClosureInfo (DDD_OBJ obj, void *data)
+{
+	INT 	pattern;
+	EDGE 	*theEdge = (EDGE *)obj;
+
+	pattern = MAX(PATTERN(theEdge),((INT *)data)[0]);
+
+	PRINTDEBUG(gm,1,(PFMT "Gather_EdgeClosureInfo(): e=" ID_FMTX "pattern=%d \n",
+			 me,ID_PRTX(theEdge),pattern))
+
+	SETPATTERN(theEdge,pattern);
+
+	return(GM_OK);
+}
+
+INT	ExchangeEdgeClosureInfo (GRID *theGrid)
+{
+	/* exchange information of edges to compute closure */
+	DDD_IFAOneway(EdgeVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+		Gather_EdgeClosureInfo, Scatter_EdgeClosureInfo);
+
+	return(GM_OK);
+}
+#endif
 
 /****************************************************************************/
 /*
@@ -950,9 +1056,14 @@ static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data, DDD_PROC proc, D
 
 static INT ExchangeClosureInfo (GRID *theGrid)
 {
-	/* exchange sidepattern of edges */
-	DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
-		Gather_ElementClosureInfo, Scatter_ElementClosureInfo);
+
+	/* exchange information of elements to compute closure */
+	if (ExchangeElementClosureInfo(theGrid) != GM_OK) RETURN(GM_ERROR);
+
+	#ifdef __THREEDIM__ 
+	/* exchange information of edges to compute closure */
+	if (ExchangeEdgeClosureInfo(theGrid) != GM_OK) RETURN(GM_ERROR);
+	#endif
 
 	return(GM_OK);
 }
@@ -991,10 +1102,17 @@ static INT ComputePatterns (GRID *theGrid)
 	/* reset EDGE/SIDEPATTERN in elements                 */
 	/* set SIDEPATTERN in elements                        */
 	/* set PATTERN on the edges                           */
-	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
+	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 			theElement=SUCCE(theElement))
 	{
 		/* TODO: delete special debug */ PRINTELEMID(11668)
+		#if defined(ModelP) && defined(__THREEDIM__)
+		if (EGHOST(theElement))
+		{
+			SETSIDEPATTERN(theElement,0);
+			continue;
+		}
+		#endif
 
 		if (MARKCLASS(theElement)==RED_CLASS)
 		{
@@ -1013,6 +1131,8 @@ static INT ComputePatterns (GRID *theGrid)
 				}
 
 			#ifdef __THREEDIM__
+			/* SIDEPATTERN must be reset here for master elements, */
+			/* because it overlaps with MARK (980217 s.l.)         */
 			SETSIDEPATTERN(theElement,0);
 			for (i=0;i<SIDES_OF_ELEM(theElement); i++)
 			{
@@ -1033,25 +1153,19 @@ static INT ComputePatterns (GRID *theGrid)
 		else
 		{
 			#ifdef __THREEDIM__
+			/* SIDEPATTERN must be reset here for master elements, */
+			/* because it overlaps with MARK (980217 s.l.)         */
 			SETSIDEPATTERN(theElement,0);
 			#endif
 			SETMARKCLASS(theElement,NO_CLASS);
 		}
 	}
 
-	#ifdef ModelP
-	if (!refine_seq)
-	{
-		if (ExchangeClosureInfo(theGrid) != GM_OK) return(GM_ERROR);
-	}
-	#endif
-
 	return(GM_OK);
 }
 
 #ifdef __THREEDIM__
 #ifdef TET_RULESET
-
 
 /****************************************************************************/
 /*
@@ -1136,12 +1250,19 @@ static INT CorrectTetrahedronSidePattern (ELEMENT *theElement, INT i, ELEMENT *t
 				NbSideMask = (1<<j);
 
 				if ( NbSidePattern & NbSideMask )
+				{
 					NbSidePattern &= ~NbSideMask;
+					#ifdef ModelP
+					/* in this case ExchangeSidePatterns() fails */
+					/* does it occur ? (980217 s.l.)             */
+					assert(0);
+					#endif
+				}
 				else
 					NbSidePattern |= NbSideMask;
 
 				PRINTDEBUG(gm,1,(PFMT "CorrectTetrahedronSidePattern(): nb=" EID_FMTX 
-				"new nbsidepattern=%d\n",me,EID_PRTX(theNeighbor),NbSidePattern));
+				" new nbsidepattern=%d\n",me,EID_PRTX(theNeighbor),NbSidePattern));
 				SETSIDEPATTERN(theNeighbor,NbSidePattern);
 			}
 			break;
@@ -1206,6 +1327,19 @@ static INT CorrectElementSidePattern (ELEMENT *theElement, ELEMENT *theNeighbor,
 {
 	INT		j,NbSidePattern;
 
+#ifdef ModelP
+/* this case should not occur */
+if (theNeighbor == NULL)
+{
+	ASSERT(EGHOST(theElement));
+	UserWriteF(PFMT "CorrectElementSidePattern(): error elem=" EID_FMTX " nb[%d]=" 
+		EID_FMTX " nb=" EID_FMTX 
+		"\n", me,EID_PRTX(theElement),i,EID_PRTX(NBELEM(theElement,i)),
+		EID_PRTX(theNeighbor));
+	return(GM_OK);
+}
+#endif
+
 	/* search neighbors side */
 	for (j=0; j<SIDES_OF_ELEM(theNeighbor); j++)
 		if (NBELEM(theNeighbor,j) == theElement)
@@ -1213,6 +1347,12 @@ static INT CorrectElementSidePattern (ELEMENT *theElement, ELEMENT *theNeighbor,
 	#ifdef ModelP
 	if (j >= SIDES_OF_ELEM(theNeighbor))
 	{
+		if (!(EGHOST(theElement) && EGHOST(theNeighbor)))
+		{
+			UserWriteF(PFMT "CorrectElementSidePattern(): ERROR nbelem not found elem=%08x/"
+				EID_FMTX " nb=%08x/" EID_FMTX "\n",
+				me,theElement,EID_PRTX(theElement),theNeighbor,EID_PRTX(theNeighbor));
+		}
 		ASSERT(EGHOST(theElement) && EGHOST(theNeighbor));
 		return(GM_OK);
 	}
@@ -1355,10 +1495,15 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 
 		#ifdef __TWODIM__
 		thePattern = theEdgePattern;
+		PRINTDEBUG(gm,1,(PFMT "SetElementRules(): e=" EID_FMTX " edgepattern=%d\n",
+			me,EID_PRTX(theElement),theEdgePattern));
 		#endif
 		#ifdef __THREEDIM__
 		theSidePattern = SIDEPATTERN(theElement);
 		thePattern = theSidePattern<<EDGES_OF_ELEM(theElement) | theEdgePattern;
+		PRINTDEBUG(gm,1,(PFMT "SetElementRules(): e=" EID_FMTX 
+			" edgepattern=%03x sidepattern=%02x\n",
+			me,EID_PRTX(theElement),theEdgePattern,theSidePattern));
 		#endif
 
 		/* get Mark from pattern */
@@ -1440,8 +1585,8 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 	return(GM_OK);
 }
 
-#ifdef ModelP
 
+#ifdef ModelP
 
 /****************************************************************************/
 /*
@@ -1463,6 +1608,7 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 
 static int Gather_AddEdgePattern (DDD_OBJ obj, void *data)
 {
+	#ifdef __TWODIM__
 	INT 	pat;
 	ELEMENT *theElement = (ELEMENT *)obj;
 
@@ -1474,6 +1620,20 @@ static int Gather_AddEdgePattern (DDD_OBJ obj, void *data)
 	PRINTDEBUG(gm,4,(PFMT "Gather_AddEdgePattern(): elem=" EID_FMTX "pat=%08x\n",
 		me,EID_PRTX(theElement),pat));
 	return(GM_OK);
+	#endif
+
+	#ifdef __THREEDIM__
+	INT		addpattern;	
+	EDGE	*theEdge = (EDGE *)obj;
+
+	addpattern = ADDPATTERN(theEdge);
+
+	((INT *)data)[0] = addpattern;
+
+	PRINTDEBUG(gm,4,(PFMT "Gather_AddEdgePattern(): edge=" ID_FMTX "pat=%08x\n",
+		me,ID_PRTX(theEdge),addpattern));
+	return(GM_OK);
+	#endif
 }
 
 
@@ -1497,6 +1657,7 @@ static int Gather_AddEdgePattern (DDD_OBJ obj, void *data)
 
 static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data)
 {
+	#ifdef __TWODIM__
 	INT		pat;
 	ELEMENT *theElement = (ELEMENT *)obj;
 	
@@ -1508,6 +1669,21 @@ static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data)
 	SetEdgeInfo(theElement,pat,ADDPATTERN,&);
 
 	return(GM_OK);
+	#endif
+
+	#ifdef __THREEDIM__
+	INT		addpattern;	
+	EDGE	*theEdge = (EDGE *)obj;
+
+	addpattern = MIN(ADDPATTERN(theEdge),((INT *)data)[0]);
+
+	PRINTDEBUG(gm,4,(PFMT "Gather_AddEdgePattern(): edge=" ID_FMTX "pat=%08x\n",
+		me,ID_PRTX(theEdge),addpattern));
+	
+	SETADDPATTERN(theEdge,addpattern);
+
+	return(GM_OK);
+	#endif
 }
 
 
@@ -1531,8 +1707,14 @@ static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data)
 static INT ExchangeAddPatterns (GRID *theGrid)
 {
 	/* exchange addpatterns of edges */
+	#ifdef __TWODIM__
 	DDD_IFAOneway(ElementVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
 		Gather_AddEdgePattern, Scatter_AddEdgePattern);
+	#endif
+	#ifdef __THREEDIM__
+	DDD_IFAOneway(EdgeVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+		Gather_AddEdgePattern, Scatter_AddEdgePattern);
+	#endif
 
 	return(GM_OK);
 }
@@ -1588,7 +1770,6 @@ static INT SetAddPatterns (GRID *theGrid)
 	}
 
 	#ifdef ModelP
-	if (ExchangeAddPatterns(theGrid)) 	RETURN(GM_FATAL);
 	if (ExchangeAddPatterns(theGrid)) 	RETURN(GM_FATAL);
 	#endif
 
@@ -1812,7 +1993,7 @@ static int Gather_ElementInfo (DDD_OBJ obj, void *Data)
 		INT _mark0,_mark1,_pat0,_pat1;                                       \
                                                                              \
 		_mark0 = macro(elem0); _mark1 = macro(elem1);                        \
-		_pat0 = MARK2PAT(elem0,_mark0); _pat1 = MARK2PAT(elem1,_mark1);      \
+		_pat0 = MARK2PAT((elem0),_mark0); _pat1 = MARK2PAT((elem1),_mark1);  \
 		if ((_pat0 & ((1<<10)-1)) != (_pat1 & ((1<<10)-1)))                  \
 			COMPARE_MACRO(elem0,elem1,macro,print)                           \
 	}
@@ -1823,10 +2004,10 @@ static int Gather_ElementInfo (DDD_OBJ obj, void *Data)
 
 /* this macro compares two values */
 #define COMPARE_VALUE(elem0,val0,val1,string,print)                          \
-	if (val0 != val1)                                                        \
+	if ((val0) != (val1))                                                    \
 	{                                                                        \
-		print("e=" EID_FMTX " %s differs value0=%d value1=%d \n",            \
-		EID_PRTX(elem0),string,val0,val1);                                   \
+		(print)("e=" EID_FMTX " %s differs value0=%d value1=%d \n",          \
+		EID_PRTX(elem0),(string),(val0),(val1));                             \
 		assert(0);                                                           \
 	}
 
@@ -1871,9 +2052,11 @@ static int Scatter_ElementInfo (DDD_OBJ obj, void *Data)
 	COMPARE_MACROX(theElement,theMaster,MARK,PrintDebug)
 	COMPARE_MACRO(theElement,theMaster,COARSEN,PrintDebug)
 	COMPARE_MACRO(theElement,theMaster,USED,PrintDebug)
-	#ifndef TET_RULESET
+/*	#ifndef TET_RULESET */
+	#ifdef __THREEDIM__
 	COMPARE_MACRO(theElement,theMaster,SIDEPATTERN,PrintDebug)
 	#endif
+/*	#endif */
 
 	epat = 0;
 	GetEdgeInfo(theElement,&epat,PATTERN);
@@ -1960,8 +2143,20 @@ static int GridClosure (GRID *theGrid)
 	do
 	{
 		#ifdef __THREEDIM__
+		#if defined(ModelP) && defined(TET_RULESET)
+		/* edge pattern is needed consistently in CorrectTetrahedronSidePattern() */
+		if (!refine_seq)
+		{
+			if (ExchangeEdgeClosureInfo(theGrid) != GM_OK) return(GM_ERROR);
+		}
+		#endif
+
 		/* set side patterns on the elements */
 		if (SetElementSidePatterns(theGrid,firstElement) != GM_OK)		RETURN(GM_ERROR);
+		#endif
+
+		#ifdef ModelP
+		if (ExchangeClosureInfo(theGrid) != GM_OK) RETURN(GM_ERROR);
 		#endif
 
 		/* set rules on the elements */
@@ -5294,18 +5489,41 @@ static int AdaptGrid (GRID *theGrid, INT *nadapted)
 	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),("AdaptGrid(%d):\n",GLEVEL(theGrid)),"");
 
 	#ifdef IDENT_ONLY_NEW
+	/* reset ident flags for old objects */
 	{
+		INT  i; 	
 		NODE *theNode;
+		EDGE *theEdge;
+
 		for (theNode=PFIRSTNODE(UpGrid); theNode!=NULL; theNode=SUCCN(theNode))
 			SETNEW_NIDENT(theNode,0);
+		#ifdef __THREEDIM__
+		for (theElement=PFIRSTELEMENT(UpGrid); theElement!=NULL; theElement=SUCCE(theElement))
+		{
+			for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+			{
+				theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
+								CORNER_OF_EDGE_PTR(theElement,i,1));
+				SETNEW_EDIDENT(theEdge,0);
+			}
+		}
+		#endif
 	}
 	#endif
 	
-	/* refine elements */
-	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
+	/* refine elements                                                  */
+	/* ModelP: first loop over master elems, then loop over ghost elems */
+	/* this assures that no unnecessary disposures of objects are done  */
+	/* which may cause trouble during identification (s.l. 9803020      */
+	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
 		 theElement=NextElement)
 	{
 		NextElement = SUCCE(theElement);
+		#ifdef ModelP
+		/* loop over master elems first, then over ghost elems */
+		if (NextElement == NULL)					NextElement=PFIRSTELEMENT(theGrid);
+		if (NextElement == FIRSTELEMENT(theGrid))	NextElement = NULL;
+		#endif
 
 		#ifdef ModelP
 		/* reset update overlap flag */
@@ -5326,8 +5544,11 @@ static int AdaptGrid (GRID *theGrid, INT *nadapted)
 				{
 					if (*(proclist+1)!=PrioMaster && (*(proclist+1)!=PrioHGhost))
 					{
-						UserWriteF(PFMT "ERROR invalid load balancing: this element"
-							" has copies of type=%d\n",me,*(proclist+1));
+						UserWriteF(PFMT "ERROR invalid load balancing: element="
+							EID_FMTX " has copies of type=%d\n",
+							me,EID_PRTX(theElement),*(proclist+1));
+						REFINE_ELEMENT_LIST(0,theElement,"ERROR element: ");
+						assert(0);
 					}
 					proclist += 2;
 				}
@@ -5474,8 +5695,11 @@ int gmlevel=Debuggm;
 int dddiflevel;
 
 
-if (1)
+if (IDENT_IN_STEPS)
 {
+	printf(PFMT " 1. DDD_IdentifyEnd() in AdaptGrid(level=%d)\n",me,GLEVEL(theGrid));
+	fflush(stdout);
+	Synchronize();
 	DDD_IdentifyEnd();
 
 	/* if no grid adaption has occured adapt next level */
@@ -5488,11 +5712,17 @@ if (1)
 
 DDD_CONSCHECK;
 
-	if (Identify_SonNodesAndSonEdges(theGrid))	RETURN(GM_FATAL);
+	if (Identify_SonObjects(theGrid))	RETURN(GM_FATAL);
 
 
+if (IDENT_IN_STEPS)
+{
+	printf(PFMT " 3. DDD_IdentifyEnd() in AdaptGrid(level=%d)\n",me,GLEVEL(theGrid));
+	fflush(stdout);
+	Synchronize();
 	DDD_IdentifyEnd();
 	/* DDD_JoinEnd(); */
+}
 
 
 DDD_CONSCHECK;
@@ -5670,8 +5900,14 @@ if (0)
 #endif
 
 	/* set up information in refine_info */
+	#ifndef ModelP
 	if (TOPLEVEL(theMG) == 0)
+	#else
+	if (UG_GlobalMaxINT(TOPLEVEL(theMG)) == 0)
+	#endif
+	{
 		SETREFINESTEP(REFINEINFO(theMG),0);
+	}
 		
 	/* set info for refinement prediction */
 	SetRefineInfo(theMG);
@@ -5879,7 +6115,13 @@ if (0)
 CheckMultiGrid(theMG);
 */
 
-	DEBUG_TIME(0);
+/* TODO: temporarily to debug df 
+#ifdef ModelP
+if (GetVecDataDescByName(theMG,"sol") != NULL)
+	a_vector_vecskip(theMG,0,TOPLEVEL(theMG),GetVecDataDescByName(theMG,"sol"));
+#endif
+*/
+
 
 	return(GM_OK);
 }
