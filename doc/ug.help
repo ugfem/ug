@@ -182,6 +182,12 @@ mark [$h | {[<rule> [<side>]] [$a | $i <Id> | $s]} | $c]
     $s                     # refine all elements from the current selection
     $h                     # show available rules
 
+-extracon > connections extra grid delete
+extracon         # display number of extra connections (and delete them)
+                 # stringvar :extraconratio is set to (# extra/# connections)
+extracon [$d]
+    $d                     # delete extra connections on the current level
+
 -check > grid multigrid algebra vector matrix
 check            # check consistency of grid (and algebraic) datastrcuture
 check [$c]
@@ -222,6 +228,16 @@ orderv $m FFCCLL | FCFCLL [$s <skip pattern>] $d <dep-proc> $o dep-proc options>
     $o <dep-proc options>  # ...and passes these options to it
     $c <cut proc>          # user specified proc for cuts
     $a                     # order all levels of the current multigrid
+
+-shellorderv > vector matrix order sort
+shellorderv      # order vectors of the current level starting from a seed shell by shell
+shellorderv f | l | s
+    f                      # seed = FIRSTVECTOR
+    l                      # seed = LASTVECTOR
+    s                      # seed = selection
+
+-setindex > vector index
+setindex         # set vector indices of the current level in ascending order beginning with 1
 
 -ordernodes > nodes grid order sort
 ordernodes       # reorder nodes lexicographically
@@ -336,9 +352,10 @@ dele <Id> | $s
 
 -find > node element grid multigrid selection
 find             # find a node (element) on the current level of the current multigrid
-find <x> <y> <z> {$n <tol> | $e} [$s]
+find <x> <y> <z> {$n <tol> | $v <tol> | $e} [$s]
     <x> <y> <z>            # specify as much coordinates as the space has dimensions
     $n <tol>               # find a node maching the position with tolerance <tol>
+    $v <tol>               # find a vector maching the position with tolerance <tol>
     $e                     # find an element maching the position
     $s                     # add the selected node (element) to the selection buffer
                            # (if not specified the node is just listed)
@@ -604,19 +621,22 @@ npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|r
        $damp <sc double list>
 
 -pbilu > smoother numproc ilu-beta
-for initialisation of the damped point-block ilu-beta with beta modification use:
+for initialisation of the damped point-block ilu with beta modification use:
 npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
        $damp <sc double list> $L <lu mat sym> $beta <sc double list>
+       [$rest <rest vector symbol> [$ort <sc double list>]]
 
 -pbilubt > smoother numproc ilu-beta threshold
-for initialisation of the damped point-block ilu-beta with beta modification and threshold use:
+for initialisation of the damped point-block ilu with beta modification and threshold use:
 npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
        $damp <sc double list> $thresh <sc double list> $L <lu mat sym> $beta <sc double list>
+       $rest <rest vector symbol>
 
 -pbilusp > smoother numproc ilu-beta spectrally shifted
 for initialisation of the damped point-block spectrally shifted ilu use:
 npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
        $damp <sc double list> $L <lu mat sym> $beta <sc double list> $mode local|global
+       [$rest <rest vector symbol> [$ort <sc double list>]]
 
 -pblu > smoother numproc lu lr
 for initialisation of the point-block lu (with threshold and damping) use:
