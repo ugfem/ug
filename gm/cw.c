@@ -644,7 +644,7 @@ static INT InitPredefinedControlEntries (void)
         /* do other control entries overlap? */
         if (cw->used_mask & mask)
         {
-          IFDEBUG(gm,0)
+          IFDEBUG(gm,1)
           printf("predef ctrl entry '%s' has overlapping bits with previous ctrl entries:\n",pce->name);
           for (j=0; j<i; j++)
           {
@@ -664,7 +664,7 @@ static INT InitPredefinedControlEntries (void)
       }
     }
 
-  IFDEBUG(gm,0)
+  IFDEBUG(gm,1)
   ListAllCWsOfObjectType(IVOBJ);
   ListAllCWsOfObjectType(IEOBJ);
   ListAllCWsOfObjectType(EDOBJ);
