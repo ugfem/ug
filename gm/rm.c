@@ -44,7 +44,6 @@
 #include "evm.h"
 #include "gm.h"
 #include "refine.h"
-#include "GenerateRules.h"
 #include "shapes.h"
 #include "rm.h"
 
@@ -2698,12 +2697,14 @@ static INT PrintEdgeData (struct edgedata theEdgeData)
  */
 /****************************************************************************/
 
-static INT PrintSonData(struct sondata theSonData)
+static INT PrintSonData (struct sondata theSonData, PrintfProcPtr Printf)
 {
   char buffer[128];
   int i,j;
+  int path = theSonData.path;
+  int pd = PATHDEPTH(path);
 
-  UserWriteF("tag=%d ",(int)theSonData.tag);
+  Printf("tag=%d ",(int)theSonData.tag);
 
   j = 0;
   j = sprintf(buffer," corners=");
@@ -2711,7 +2712,7 @@ static INT PrintSonData(struct sondata theSonData)
   {
     j += sprintf(buffer+j,"%2d ",(int)theSonData.corners[i]);
   }
-  UserWrite(buffer);
+  Printf(buffer);
 
   j = 0;
   j += sprintf(buffer,"  nb=");
@@ -2719,16 +2720,24 @@ static INT PrintSonData(struct sondata theSonData)
   {
     j += sprintf(buffer+j,"%2d ",(int)theSonData.nb[i]);
   }
-  UserWrite(buffer);
+  Printf(buffer);
 
-  UserWriteF("  path=");
-  for (i=8*sizeof(INT)-1; i>=0; i--)
-  {
-    sprintf(buffer,"%d",(int)((theSonData.path>>i) & 0x1));
-    if (i%2 == 0 && theSonData.tag == TETRAHEDRON) sprintf(buffer+1," ");
-    if (i%3 == 0 && theSonData.tag == HEXAHEDRON) sprintf(buffer+1," ");
-    UserWrite(buffer);
-  }
+  Printf("  path of depth %d=",pd);
+  /*for (i=8*sizeof(INT)-1; i>=0; i--)
+     {
+          sprintf(buffer,"%d",(int)((theSonData.path>>i) & 0x1));
+          if (i%2 == 0 && theSonData.tag == TETRAHEDRON)	sprintf(buffer+1," ");
+          if (i%3 == 0 && theSonData.tag == HEXAHEDRON)	sprintf(buffer+1," ");
+          Printf(buffer);
+     }*/
+  if (pd>=MAX_PATH_DEPTH)
+    Printf(" ERROR: path depth > MAX_PATH_DEPTH");
+  else
+    for (j=0; j<pd; j++)
+    {
+      int ns = NEXTSIDE(path,j);
+      Printf("%2d",ns);
+    }
 
   return(0);
 }
@@ -2752,68 +2761,72 @@ static INT PrintSonData(struct sondata theSonData)
    D*/
 /****************************************************************************/
 
-INT ShowRefRule (INT tag, INT nb)
+INT ShowRefRuleX (INT tag, INT nb, PrintfProcPtr Printf)
 {
   INT i;
   REFRULE *theRule;
 
   if (MaxRules[tag]<=nb)
   {
-    UserWriteF("ShowRefRule(): ERROR: nb=%d but MaxRules[%d]=%d\n",nb,tag,MaxRules[tag]);
+    Printf("ShowRefRule(): ERROR: nb=%d but MaxRules[%d]=%d\n",nb,tag,MaxRules[tag]);
     return (1);
   }
 
   theRule=&(RefRules[tag][nb]);
 
   /* header */
-  UserWrite("\n");
-  UserWriteF("RefRule %3d:\n",nb);
+  Printf("\n");
+  Printf("RefRule %3d:\n",nb);
 
   /* nsons, mark and class */
-  UserWriteF("   tag=%d mark=%3d class=%2d, nsons=%d\n",(int)theRule->tag,(int)theRule->mark,(int)theRule->class,(int)theRule->nsons);
+  Printf("   tag=%d mark=%3d class=%2d, nsons=%d\n",(int)theRule->tag,(int)theRule->mark,(int)theRule->class,(int)theRule->nsons);
 
   /* pattern */
-  UserWrite("   pattern= ");
+  Printf("   pattern= ");
   for (i=0; i<(element_descriptors[tag]->edges_of_elem+element_descriptors[tag]->sides_of_elem+1); i++)
-    UserWriteF("%2d ",(int)theRule->pattern[i]);
-  UserWrite("\n");
+    Printf("%2d ",(int)theRule->pattern[i]);
+  Printf("\n");
 
   /* pat */
-  UserWrite("   pat    = ");
+  Printf("   pat    = ");
   for (i=0; i<(element_descriptors[tag]->edges_of_elem+element_descriptors[tag]->sides_of_elem+1); i++)
-    UserWriteF("%2d ",(int)((theRule->pat>>i) & 0x1));
-  UserWrite("\n");
+    Printf("%2d ",(int)((theRule->pat>>i) & 0x1));
+  Printf("\n");
 
   /* sonandnode */
   for (i=0; i<MAX_NEW_CORNERS(tag); i++)
   {
-    UserWriteF("   newnode %2d: sonandnode[%2d][0]=%2d",i,i,(int)theRule->sonandnode[i][0]);
-    UserWriteF("  [%2d][1]=%2d\n",i,(int)theRule->sonandnode[i][1]);
+    Printf("   newnode %2d: sonandnode[%2d][0]=%2d",i,i,(int)theRule->sonandnode[i][0]);
+    Printf("  [%2d][1]=%2d\n",i,(int)theRule->sonandnode[i][1]);
   }
-  UserWrite("\n");
+  Printf("\n");
 
-  /* print edge data */
-  UserWrite("   Edge data\n");
-  for (i=0; i<MAX_NEW_EDGES(tag); i++)
-  {
-    UserWriteF("      e %2d: ",i);
-    PrintEdgeData(theRule->edges[i]);
-    if (i%2 == 1) UserWrite("\n");
-  }
-  UserWrite("\n");
+  /* print edge data
+     Printf("   Edge data\n");
+     for (i=0; i<MAX_NEW_EDGES(tag); i++)
+     {
+          Printf("      e %2d: ",i);
+          PrintEdgeData(theRule->edges[i]);
+          if (i%2 == 1) Printf("\n");
+     }
+     Printf("\n");*/
 
   /* print sondata data */
-  UserWrite("   Son data\n");
+  Printf("   Son data\n");
   for (i=0; i<(int)theRule->nsons; i++)
   {
-    UserWriteF("      son %2d: ",i);
-    PrintSonData(theRule->sons[i]);
-    UserWrite("\n");
+    Printf("      son %2d: ",i);
+    PrintSonData(theRule->sons[i],Printf);
+    Printf("\n");
   }
 
   return (0);
 }
 
+INT ShowRefRule (INT tag, INT nb)
+{
+  return (ShowRefRuleX(tag,nb,UserWriteF));
+}
 
 /****************************************************************************/
 /*D
