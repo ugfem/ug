@@ -89,14 +89,6 @@
 #define DO_DEPEND                                               14
 #define DO_INVERSE_POLYLINE                     15
 
-/* text position */
-#define TEXT_NOT_CENTERED                               0
-#define TEXT_CENTERED                                   1
-
-/* text modes */
-#define TEXT_REGULAR                                    0
-#define TEXT_INVERSE                                    1
-
 /* increment */
 #define DO_inc(p)                                               (p)+=1;
 #define DO_inc_n(p,n)                                   (p)+=n;
@@ -417,7 +409,7 @@ typedef struct PlotObjHandling PLOTOBJHANDLING;
 INT             InitWOP                                 (void);
 
 INT             WorkOnPicture                   (PICTURE *thePicture, WORK *theWork);
-INT                     DrawWindowText                  (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT size, INT center, INT inverse);
+INT                     DrawWindowText                  (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT size, INT center, INT mode);
 INT                     DragPicture                             (PICTURE *thePicture, INT *MousePos);
 INT                     ZoomPicture                             (PICTURE *thePicture, INT *MousePos);
 INT             DrawUgPicture                   (PICTURE *thePicture);
