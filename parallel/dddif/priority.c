@@ -519,6 +519,12 @@ INT SetBorderPriorities (GRID *theGrid)
   DDD_IFAExecLocal(BorderNodeSymmIF,GRID_ATTR(theGrid),
                    ComputeNodeBorderPrios);
 
+  /* TODO: distinguish two cases:
+     1. only nodevectors then setting of vector prios can
+          be done in ComputeNodeBorderPrios without extra communiction
+     2. with other vectortypes (side and/or edgevectors) use
+          ComputeVectorBorderPrios
+   */
   DDD_IFAExecLocal(BorderVectorSymmIF,GRID_ATTR(theGrid),
                    ComputeVectorBorderPrios);
 
