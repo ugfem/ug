@@ -7666,7 +7666,6 @@ static INT ClosePictureCommand (INT argc, char **argv)
   }
 
   SetCurrentPicture(NULL);
-  if (ErasePicture(thePic)) return (CMDERRORCODE);
 
   if (DisposePicture(thePic)!=0)
   {
