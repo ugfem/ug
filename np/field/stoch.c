@@ -205,7 +205,7 @@ REP_ERR_FILE;
  */
 /************************************************************************/
 
-static DOUBLE getLinRnd()
+static DOUBLE getLinRnd(void)
 {
   static DOUBLE RND[97];
   static INT i, ix1, ix2, ix3;
@@ -265,7 +265,7 @@ static DOUBLE getLinRnd()
  */
 /************************************************************************/
 
-static DOUBLE getGaussRnd()
+static DOUBLE getGaussRnd(void)
 {
   DOUBLE ReLinRnd, ImLinRnd, AbsLinRnd;
 
@@ -1848,12 +1848,13 @@ static INT GetFieldAtPoint (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
   INT i;
   DOUBLE zeta, lambda, transX[DIM], value[1];
 
+  np = (NP_GET_FIELD *) theField;
   if ((npsd = np->FldNp) == NULL) return(1);
 
   for (i=0; i<DIM; i++)
     transX[i] = Pos[i]/np->cor[i];
 
-  if ((*npsd->Evaluate)(theField, transX, value)) return(1);
+  if ((*npsd->Evaluate)(npsd, transX, value)) return(1);
 
   switch (np->dtype)
   {
@@ -1992,7 +1993,6 @@ static INT NPanisoFldDisplay(NP_BASE *theNP)
 
 static INT RotateAndGetField (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 {
-  NP_GET_FIELD *theNP;
   NP_ANISO_FIELD  *np;
   DOUBLE transX[DIM];
 #ifdef __THREEDIM__
@@ -2002,7 +2002,7 @@ static INT RotateAndGetField (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
   DOUBLE sinus, cosinus;
 #endif
 
-  np      = (NP_ANISO_FIELD *) theNP;
+  np      = (NP_ANISO_FIELD *) theField;
 
 #ifdef __TWODIM__
   sinus = sin( - np->angle*PI/180.0);
@@ -2047,6 +2047,7 @@ static INT GetAnisoFieldConstruct       (NP_BASE *theNP)
   theField = (NP_FIELD *) theNP;
   theField->Evaluate = RotateAndGetField;
 
+  fldnp = (NP_GET_FIELD *) theNP;
   for (i=0; i<DIM; i++)
     fldnp->cor[i] = -1.0;
   fldnp->mean = 0.0;
