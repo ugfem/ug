@@ -713,7 +713,7 @@ static INT WriteElementProcLists (ELEMENT *theElement, MGIO_PARINFO *pinfo)
     if (n_max<pinfo->ncopies_node[k]+s) RETURN (1);
     if (pinfo->ncopies_node[k]>0)
     {
-      pl = NCOPIES(theNode);
+      pl = PROCLIST(theNode);
       for (i=0,j=2; i<pinfo->ncopies_node[k]; i++,j+=2)
         ActProcListPos[s++] = pl[j];
     }
