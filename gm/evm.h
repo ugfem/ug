@@ -569,8 +569,6 @@ INT 		PointInPolygon						(const COORD_POINT *Points, INT n, COORD_POINT Point);
 INT 		PointInPolygonC 					(const DOUBLE_VECTOR_2D *Points, INT n, const DOUBLE_VECTOR_2D Point);
 INT 		PolyArea 							(INT n, DOUBLE_VECTOR_2D *Polygon, DOUBLE *Area);
 INT 		QuadraticFittedMin 					(DOUBLE *x, DOUBLE *y, INT n, DOUBLE *minx);
-INT 		EXCopyMatrixFLOAT 					(GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, INT bw, FLOAT *Mat);
-INT 		EXCopyMatrixDOUBLE 					(GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, INT bw, DOUBLE *Mat);
 INT 		EXDecomposeMatrixFLOAT 				(FLOAT *Mat, INT bw, INT n);
 INT 		EXDecomposeMatrixDOUBLE 			(DOUBLE *Mat, INT bw, INT n);
 INT 		EXApplyLUFLOAT 						(FLOAT *Mat, INT bw, INT n, DOUBLE *Vec);

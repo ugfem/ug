@@ -1132,95 +1132,30 @@ INT QuadraticFittedMin (DOUBLE *x, DOUBLE *y, INT n, DOUBLE *minx)
 }
 
 
-INT EXCopyMatrixFLOAT (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, INT bw, FLOAT *Mat)
-{
-  INT ment,index,rindex,rtype,rcomp,cindex,ctype,ccomp,i,j;
-  VECTOR *theV,*theW;
-  MATRIX *theM;
-  SHORT *comp;
+/****************************************************************************/
+/*D
+   EXDecomposeMatrixFLOAT - LU decompose a band matrix (FLOAT numbers)
 
-        #ifdef ModelP
-  if (FIRSTELEMENT(theGrid) == NULL)
-    return(0);
-        #endif
+   SYNOPSIS:
+   INT EXDecomposeMatrixFLOAT (FLOAT *Mat, INT bw, INT n);
 
-  if (MD_IS_SCALAR(A))
-  {
-    ment = MD_SCALCMP(A);
-    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-    {
-      index = VINDEX(theV);
-      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
-        EX_MAT(Mat,bw,index,MDESTINDEX(theM)) = MVALUE(theM,ment);
-    }
-  }
-  else
-  {
-    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-    {
-      rindex = VINDEX(theV);
-      rtype = VTYPE(theV);
-      rcomp = VD_NCMPS_IN_TYPE(x,rtype);
-      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
-      {
-        theW = MDEST(theM);
-        cindex = VINDEX(theW);
-        ctype = VTYPE(theW);
-        ccomp = VD_NCMPS_IN_TYPE(x,ctype);
-        comp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
-        for (i=0; i<rcomp; i++)
-          for (j=0; j<ccomp; j++)
-            EX_MAT(Mat,bw,rindex+i,cindex+j) = MVALUE(theM,comp[i*ccomp+j]);
-      }
-    }
-  }
-  return (0);
-}
+   PARAMETERS:
+   .  Mat - pointer to FLOAT array containing the bandmatrix
+   .  bw - bandwidth
+   .  n - number of rows (==columns) of the matrix
 
-INT EXCopyMatrixDOUBLE (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, INT bw, DOUBLE *Mat)
-{
-  INT ment,index,rindex,rtype,rcomp,cindex,ctype,ccomp,i,j;
-  VECTOR *theV,*theW;
-  MATRIX *theM;
-  SHORT *comp;
+   DESCRIPTION:
+   This function calculates the Gauss decomposition of the given band matrix;
+   the L and U factors are stored instead of the band matrix.
 
-        #ifdef ModelP
-  if (FIRSTELEMENT(theGrid) == NULL)
-    return(0);
-        #endif
+   RETURN VALUE:
+   INT  0: o.k.
+        1: main diagonal element to small (0.0); can not divide
 
-  if (MD_IS_SCALAR(A))
-  {
-    ment = MD_SCALCMP(A);
-    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-    {
-      index = VINDEX(theV);
-      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
-        EX_MAT(Mat,bw,index,MDESTINDEX(theM)) = MVALUE(theM,ment);
-    }
-  }
-  else
-  {
-    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-    {
-      rindex = VINDEX(theV);
-      rtype = VTYPE(theV);
-      rcomp = VD_NCMPS_IN_TYPE(x,rtype);
-      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
-      {
-        theW = MDEST(theM);
-        cindex = VINDEX(theW);
-        ctype = VTYPE(theW);
-        ccomp = VD_NCMPS_IN_TYPE(x,ctype);
-        comp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
-        for (i=0; i<rcomp; i++)
-          for (j=0; j<ccomp; j++)
-            EX_MAT(Mat,bw,rindex+i,cindex+j) = MVALUE(theM,comp[i*ccomp+j]);
-      }
-    }
-  }
-  return (0);
-}
+   SEE ALSO:
+   EXDecomposeMatrixDOUBLE, EXCopyMatrixFLOAT, EXApplyLUFLOAT
+   D*/
+/****************************************************************************/
 
 INT EXDecomposeMatrixFLOAT (FLOAT *Mat, INT bw, INT n)
 {
@@ -1241,6 +1176,31 @@ INT EXDecomposeMatrixFLOAT (FLOAT *Mat, INT bw, INT n)
   return (0);
 }
 
+/****************************************************************************/
+/*D
+   EXDecomposeMatrixDOUBLE - LU decompose a band matrix (DOUBLE numbers)
+
+   SYNOPSIS:
+   INT EXDecomposeMatrixDOUBLE (DOUBLE *Mat, INT bw, INT n);
+
+   PARAMETERS:
+   .  Mat - pointer to DOUBLE array containing the bandmatrix
+   .  bw - bandwidth
+   .  n - number of rows (==columns) of the matrix
+
+   DESCRIPTION:
+   This function calculates the Gauss decomposition of the given band matrix;
+   the L and U factors are stored instead of the band matrix.
+
+   RETURN VALUE:
+   INT  0: o.k.
+        1: main diagonal element to small (0.0); can not divide
+
+   SEE ALSO:
+   EXDecomposeMatrixFLOAT, EXCopyMatrixDOUBLE, EXApplyLUDOUBLE
+   D*/
+/****************************************************************************/
+
 INT EXDecomposeMatrixDOUBLE (DOUBLE *Mat, INT bw, INT n)
 {
   INT i,j,k;
@@ -1260,6 +1220,34 @@ INT EXDecomposeMatrixDOUBLE (DOUBLE *Mat, INT bw, INT n)
   return (0);
 }
 
+/****************************************************************************/
+/*D
+   EXApplyLUFLOAT - applies a LU decomposed band matrix (FLOAT numbers)
+
+   SYNOPSIS:
+   INT EXApplyLUFLOAT (FLOAT *Mat, INT bw, INT n, DOUBLE *Vec);
+
+   PARAMETERS:
+   .  Mat - pointer to FLOAT array containing the bandmatrix
+   .  bw - bandwidth
+   .  n - number of rows (==columns) of the matrix
+   .  Vec - pointer to DOUBLE array containing the vector
+
+   DESCRIPTION:
+   This function solves for the LU decomposed band matrix 'Mat' the equation
+   L*U x = f.
+   f is provided in 'Vec' and the result x is returned again in 'Vec'.
+
+   Note: 'MAt' contains FLOATs whereas 'Vec' contains DOUBLEs.
+
+   RETURN VALUE:
+   INT  0: o.k.
+
+   SEE ALSO:
+   EXApplyLUDOUBLE, EXCopyMatrixFLOAT, EXDecomposeMatrixFLOAT
+   D*/
+/****************************************************************************/
+
 INT EXApplyLUFLOAT (FLOAT *Mat, INT bw, INT n, DOUBLE *Vec)
 {
   INT i,j;
@@ -1278,6 +1266,32 @@ INT EXApplyLUFLOAT (FLOAT *Mat, INT bw, INT n, DOUBLE *Vec)
   }
   return (0);
 }
+
+/****************************************************************************/
+/*D
+   EXApplyLUDOUBLE - applies a LU decomposed band matrix (DOUBLE numbers)
+
+   SYNOPSIS:
+   INT EXApplyLUDOUBLE (DOUBLE *Mat, INT bw, INT n, DOUBLE *Vec);
+
+   PARAMETERS:
+   .  Mat - pointer to DOUBLE array containing the bandmatrix
+   .  bw - bandwidth
+   .  n - number of rows (==columns) of the matrix
+   .  Vec - pointer to DOUBLE array containing the vector
+
+   DESCRIPTION:
+   This function solves for the LU decomposed band matrix 'Mat' the equation
+   L*U x = f.
+   f is provided in 'Vec' and the result x is returned again in 'Vec'.
+
+   RETURN VALUE:
+   INT  0: o.k.
+
+   SEE ALSO:
+   EXApplyLUFLOAT, EXCopyMatrixDOUBLE, EXDecomposeMatrixDOUBLE
+   D*/
+/****************************************************************************/
 
 INT EXApplyLUDOUBLE (DOUBLE *Mat, INT bw, INT n, DOUBLE *Vec)
 {

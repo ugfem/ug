@@ -3987,6 +3987,152 @@ static INT EXDisplay (NP_BASE *theNP)
   return (0);
 }
 
+/****************************************************************************/
+/*D
+   EXCopyMatrixFLOAT - copy ug MATRIX to band matrix (FLOAT numbers)
+
+   SYNOPSIS:
+   static INT EXCopyMatrixFLOAT (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, INT bw, FLOAT *Mat);
+
+   PARAMETERS:
+   .  theGrid - grid which holds the matrix
+   .  x - vector data descriptor for row vector
+   .  A - matrix data descriptor
+   .  bw - bandwidth
+   .  Mat - pointer to FLOAT array to get the bandmatrix
+
+   DESCRIPTION:
+   This function copies an ug MATRIX to an array; it is stored as a band matrix.
+
+   'Mat' must provide enough memory!
+   At least (2*bw*number_rows + number_cols)*sizeof(FLOAT).
+
+   RETURN VALUE:
+   INT  0: o.k.
+
+   SEE ALSO:
+   EXCopyMatrixDOUBLE, EXDecomposeMatrixFLOAT, EXApplyLUFLOAT
+   D*/
+/****************************************************************************/
+
+static INT EXCopyMatrixFLOAT (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, INT bw, FLOAT *Mat)
+{
+  INT ment,index,rindex,rtype,rcomp,cindex,ctype,ccomp,i,j;
+  VECTOR *theV,*theW;
+  MATRIX *theM;
+  SHORT *comp;
+
+        #ifdef ModelP
+  if (FIRSTELEMENT(theGrid) == NULL)
+    return(0);
+        #endif
+
+  if (MD_IS_SCALAR(A))
+  {
+    ment = MD_SCALCMP(A);
+    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    {
+      index = VINDEX(theV);
+      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
+        EX_MAT(Mat,bw,index,MDESTINDEX(theM)) = MVALUE(theM,ment);
+    }
+  }
+  else
+  {
+    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    {
+      rindex = VINDEX(theV);
+      rtype = VTYPE(theV);
+      rcomp = VD_NCMPS_IN_TYPE(x,rtype);
+      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
+      {
+        theW = MDEST(theM);
+        cindex = VINDEX(theW);
+        ctype = VTYPE(theW);
+        ccomp = VD_NCMPS_IN_TYPE(x,ctype);
+        comp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
+        for (i=0; i<rcomp; i++)
+          for (j=0; j<ccomp; j++)
+            EX_MAT(Mat,bw,rindex+i,cindex+j) = MVALUE(theM,comp[i*ccomp+j]);
+      }
+    }
+  }
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   EXCopyMatrixDOUBLE - copy ug MATRIX to band matrix (DOUBLE numbers)
+
+   SYNOPSIS:
+   static INT EXCopyMatrixDOUBLE (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, INT bw, DOUBLE *Mat);
+
+   PARAMETERS:
+   .  theGrid - grid which holds the matrix
+   .  x - vector data descriptor for row vector
+   .  A - matrix data descriptor
+   .  bw - bandwidth
+   .  Mat - pointer to DOUBLE array to get the bandmatrix
+
+   DESCRIPTION:
+   This function copies an ug MATRIX to an array; it is stored as a band matrix.
+
+   'Mat' must provide enough memory!
+   At least (2*bw*number_rows + number_cols)*sizeof(DOUBLE).
+
+   RETURN VALUE:
+   INT  0: o.k.
+
+   SEE ALSO:
+   EXCopyMatrixFLOAT, EXDecomposeMatrixDOUBLE, EXApplyLUDOUBLE
+   D*/
+/****************************************************************************/
+
+static INT EXCopyMatrixDOUBLE (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, INT bw, DOUBLE *Mat)
+{
+  INT ment,index,rindex,rtype,rcomp,cindex,ctype,ccomp,i,j;
+  VECTOR *theV,*theW;
+  MATRIX *theM;
+  SHORT *comp;
+
+        #ifdef ModelP
+  if (FIRSTELEMENT(theGrid) == NULL)
+    return(0);
+        #endif
+
+  if (MD_IS_SCALAR(A))
+  {
+    ment = MD_SCALCMP(A);
+    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    {
+      index = VINDEX(theV);
+      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
+        EX_MAT(Mat,bw,index,MDESTINDEX(theM)) = MVALUE(theM,ment);
+    }
+  }
+  else
+  {
+    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    {
+      rindex = VINDEX(theV);
+      rtype = VTYPE(theV);
+      rcomp = VD_NCMPS_IN_TYPE(x,rtype);
+      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
+      {
+        theW = MDEST(theM);
+        cindex = VINDEX(theW);
+        ctype = VTYPE(theW);
+        ccomp = VD_NCMPS_IN_TYPE(x,ctype);
+        comp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
+        for (i=0; i<rcomp; i++)
+          for (j=0; j<ccomp; j++)
+            EX_MAT(Mat,bw,rindex+i,cindex+j) = MVALUE(theM,comp[i*ccomp+j]);
+      }
+    }
+  }
+  return (0);
+}
+
 static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
 {
   NP_EX *np;
