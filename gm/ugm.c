@@ -3003,8 +3003,8 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
                                   "cannot create vertexsegment");
                 RETURN(GM_ERROR);
               }
-              V2_LINCOMB(lambda,PATCH_LCVECT(thePatchDesc,k),
-                         (1.0-lambda),PATCH_LCVECT(thePatchDesc,i),
+              V2_LINCOMB(lambda,PATCH_LCVECT(thePatchDesc,i),
+                         (1.0-lambda),PATCH_LCVECT(thePatchDesc,k),
                          local);
               Patch_local2global(Patch,local,global);
               V3_EUKLIDNORM_OF_DIFF(CVECT(theVertex),global,val);
@@ -3012,15 +3012,15 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
               /* fill data into the vertex segment */
               if (ABS(val) < SMALL_C * 1000)
               {
-                for(i=0; i<DIM_OF_BND; i++)
-                  LAMBDA(vs,i) = local[i];
+                for(j=0; j<DIM_OF_BND; j++)
+                  LAMBDA(vs,j) = local[j];
                 VS_PATCH(vs) = Patch;
               }
               else
               {
                 Patch_global2local(Patch,CVECT(theVertex),local);
-                for(i=0; i<DIM_OF_BND; i++)
-                  LAMBDA(vs,i) = local[i];
+                for(j=0; j<DIM_OF_BND; j++)
+                  LAMBDA(vs,j) = local[j];
                 VS_PATCH(vs) = Patch;
               }
               break;
