@@ -3241,10 +3241,26 @@ INT DisposeAMGLevel (MULTIGRID *theMG)
   if (DisposeIMatricesInGrid(fineGrid))
     return(1);
 
+        #ifdef ModelP
+  /* tell DDD that we will 'inconsistently' delete objects.
+     this is a dangerous mode as it switches DDD warnings off. */
+  DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_OFF);
+        #endif
+
   /* clear level */
   while (PFIRSTVECTOR(theGrid)!=NULL)
+  {
+    /* In ModelP, the DisposeVector is done on all procs which
+           own copies. We do it without Xfer-communication. */
     if (DisposeVector(theGrid,PFIRSTVECTOR(theGrid)))
       return(1);
+  }
+
+        #ifdef ModelP
+  /* stop dangerous mode. from now on DDD will issue warnings again. */
+  DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_ON);
+        #endif
+
 
   /* remove from grids array */
   theMG->grids[l] = NULL;
