@@ -372,7 +372,7 @@ extern "C" {
 
 /* basic types */
 #define SHORT  short
-#define INT    int
+#define INT    long
 #define FLOAT  float
 #define DOUBLE double
 #define COORD  float
