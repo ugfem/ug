@@ -8658,10 +8658,6 @@ static INT SetCurrentWindowCommand (INT argc, char **argv)
   UGWINDOW *theWin;
   char winname[NAMESIZE];
 
-        #ifdef ModelP
-  if (me!=master) return (OKCODE);
-        #endif
-
   NO_OPTION_CHECK(argc,argv);
 
   /* get window name */
