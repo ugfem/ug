@@ -98,12 +98,12 @@
         #define MGIO_TAGS                                                       8
 
         #if (MGIO_DIM==2)
-                #define MGIO_MAX_SONS_OF_ELEM                   4
-                #define MGIO_MAX_EDGES_OF_ELEM                  4
-                #define MGIO_MAX_CORNERS_OF_ELEM                4
-                #define MGIO_MAX_SIDES_OF_ELEM                  4
+                #define MGIO_MAX_SONS_OF_ELEM                   30
+                #define MGIO_MAX_EDGES_OF_ELEM                  12
+                #define MGIO_MAX_CORNERS_OF_ELEM                8
+                #define MGIO_MAX_SIDES_OF_ELEM                  6
                 #define MGIO_MAX_NEW_CORNERS                    5
-                #define MGIO_MAX_CORNERS_OF_SIDE        2
+                #define MGIO_MAX_CORNERS_OF_SIDE        4
         #endif
         #if (MGIO_DIM==3)
                 #define MGIO_MAX_SONS_OF_ELEM                   30
