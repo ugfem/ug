@@ -70,7 +70,7 @@
 
 #endif
 
-#define DIO_VDMAX                                               10
+#define DIO_VDMAX                                               100
 #define DIO_NAMELEN                                             128
 #define DIO_IDENTLEN                                    4096
 
