@@ -280,7 +280,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   INT n_unk;
   INT i,k;
   INT low,bl;
-  INT verygood;
+  INT verygood,bad;
   NLRESULT nlresult;
   MULTIGRID *mg;
   char buffer[128];
@@ -293,6 +293,9 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
 
   /* get number of components */
   n_unk = VD_NCOMP(bdf->y_p1);
+
+  /* initialize strategy flags */
+  verygood = bad = 0;
 
   /* compute solution at new time step ON CURRENT GRID */
   while (1)
@@ -362,11 +365,20 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
       if (!nlresult.converged)
       {
         bdf->dt *= 0.5;                         /* reduce time step     */
-        if (bdf->dt<bdf->dtmin) return(__LINE__);
+        if (bdf->dt<bdf->dtmin) {
+          UserWrite("time step too small -- aborting\n");
+          return(__LINE__);
+        }
         UserWrite("reduced time step\n");
+        bad=1;
         break;                               /* and try all over again  */
       }
-      if (nlresult.rho_first<=bdf->rhogood) verygood=1;else verygood=0;
+      else {
+        if (nlresult.rho_first<=bdf->rhogood)
+          verygood=1;
+        else
+          verygood=0;
+      }
 
       /* interpolate up */
       if (k<level)
@@ -411,12 +423,13 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   SetStringVar("TIMESTEP",buffer);
 
   /* chose new dt for next time step */
-  if (verygood && bdf->dt*2<=bdf->dtmax)
+  if (verygood && (!bad) && bdf->dt*2<=bdf->dtmax)
   {
     bdf->dt *= 2.0;
+    UserWrite("doubling time step\n");
     *res=0; return(*res);
   }
-  if (bdf->dt*bdf->dtscale<=bdf->dtmax && bdf->dt*bdf->dtscale>=bdf->dtmin)
+  if ((!bad) && bdf->dt*bdf->dtscale<=bdf->dtmax && bdf->dt*bdf->dtscale>=bdf->dtmin)
   {
     bdf->dt *= bdf->dtscale;
     *res=0; return(*res);
