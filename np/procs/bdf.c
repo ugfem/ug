@@ -91,6 +91,7 @@ typedef struct
   INT nested;                                                            /* use nested iteration                        */
   INT nlinterpolate;                                             /* nonlinear interpolation			*/
   INT optnlsteps;                                            /* optimal number of nonlin. steps */
+  INT rep;                                                       /* for repeat solver after grid changed */
   INT Break;                                                     /* break after error estimator         */
   INT Continue;                                              /* continue after error estimator  */
   DOUBLE tstart;                                                 /* start time                          */
@@ -322,6 +323,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
 
   /* initialize strategy flags */
   verygood = bad = 0;
+  eresult.step = 0.;
 
   /* compute solution at new time step */
   while (1)
@@ -340,6 +342,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
 
     if (bdf->Continue) {
       nlinterpolate = bdf->nlinterpolate - 1;
+      nlresult.converged = 1;
       goto Continue;
     }
     /* determine level where to predict to new time step */
@@ -468,7 +471,8 @@ Continue:
             if (GSTATUS(GRID_ON_LEVEL(mg,i)) & GRID_CHANGED)
               mg_changed = 1;
         }
-        if (mg_changed) {
+        if (mg_changed)
+        {
           k = level - 1;
           if (bdf->trans->PreProcessSolution != NULL)
             if ((*bdf->trans->PreProcessSolution)
@@ -488,8 +492,17 @@ Continue:
                   (bdf->trans,0,level,bdf->y_p1,res))
               NP_RETURN(1,res[0]);
           nlinterpolate--;
+          if(bdf->rep ==0)
+          {
+            k = level;
+            nlinterpolate = 0;
+            if (nlsolve->PostProcess!=NULL)
+              if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
+                NP_RETURN(1,res[0]);
+          }
         }
-        else {
+        else
+        {
           nlinterpolate = 0;
           if (nlsolve->PostProcess!=NULL)
             if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
@@ -544,16 +557,45 @@ Continue:
   }
 
   /* chose new dt for next time step */
-  if (verygood && (!bad) && bdf->dt*2<=bdf->dtmax)
+  if (eresult.step ==0.)
   {
-    bdf->dt *= 2.0;
-    UserWrite("doubling time step\n");
-    *res=0; return(*res);
+    if (verygood && (!bad) && bdf->dt*2<=bdf->dtmax)
+    {
+      bdf->dt *= 2.0;
+      UserWrite("doubling time step\n");
+      *res=0; return(*res);
+    }
+    if ((!bad) && bdf->dt*bdf->dtscale<=bdf->dtmax && bdf->dt*bdf->dtscale>=bdf->dtmin)
+    {
+      bdf->dt *= bdf->dtscale;
+      *res=0; return(*res);
+    }
   }
-  if ((!bad) && bdf->dt*bdf->dtscale<=bdf->dtmax && bdf->dt*bdf->dtscale>=bdf->dtmin)
+  else if (eresult.step > bdf->dt && (!bad))
   {
-    bdf->dt *= bdf->dtscale;
-    *res=0; return(*res);
+    if (eresult.step <=bdf->dtmax)
+    {
+      bdf->dt = eresult.step;
+      UserWrite("time step modified\n");
+    }
+    if (eresult.step >=bdf->dtmax)
+    {
+      bdf->dt = bdf->dtmax;
+      UserWrite("time step modified, dt= dtmax\n");
+    }
+  }
+  else if (eresult.step < bdf->dt)
+  {
+    if ( eresult.step < bdf->dtmin)
+    {
+      bdf->dt = bdf->dtmin;
+      UserWrite("time step modified, \n WARNING dt = dtmin\n");
+    }
+    if ( eresult.step >= bdf->dtmin)
+    {
+      bdf->dt = eresult.step;
+      UserWrite("time step modified\n");
+    }
   }
 
   return(0);
@@ -613,6 +655,10 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
   bdf->trans = (NP_TRANSFER *) ReadArgvNumProc(base->mg,"T",TRANSFER_CLASS_NAME,argc,argv);
   if (bdf->trans == NULL) return(NP_NOT_ACTIVE);
   bdf->error = (NP_ERROR *) ReadArgvNumProc(base->mg,"E",ERROR_CLASS_NAME,argc,argv);
+  if (bdf->error == NULL)
+  {
+    UserWrite("no indicator active");
+  }
 
   /* set configuration parameters */
   if (ReadArgvINT("baselevel",&(bdf->baselevel),argc,argv))
@@ -645,6 +691,8 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
   if (ReadArgvINT("optnlsteps",&(bdf->optnlsteps),argc,argv))
     bdf->optnlsteps = 0;
   if (bdf->optnlsteps < 0) return(NP_NOT_ACTIVE);
+  if (ReadArgvINT("rep",&(bdf->rep),argc,argv))
+    bdf->rep=1;
   if (ReadArgvINT("nlinterpolate",&(bdf->nlinterpolate),argc,argv))
     bdf->nlinterpolate=0;
   if (bdf->nlinterpolate<0) return(NP_NOT_ACTIVE);
