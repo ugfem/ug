@@ -5413,7 +5413,7 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
     if (EXCopyMatrixFLOAT (theGrid,x,A,np->bw,np->FMat))
       REP_ERR_RETURN(1);
     if (EXDecomposeMatrixFLOAT (np->FMat,np->bw,np->nv))
-      REP_ERR_RETURN(1);
+      return(1);
     if (np->CopyBack)
       if (EXCopyMatrixFLOATback(theGrid,x,np->smoother.L,np->bw,np->FMat))
         REP_ERR_RETURN(1);
@@ -5431,7 +5431,7 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
     if (EXCopyMatrixDOUBLE (theGrid,x,A,np->bw,np->DMat))
       REP_ERR_RETURN(1);
     if (EXDecomposeMatrixDOUBLE (np->DMat,np->bw,np->nv))
-      REP_ERR_RETURN(1);
+      return(1);
     if (np->CopyBack)
       if (EXCopyMatrixDOUBLEback(theGrid,x,np->smoother.L,np->bw,np->DMat))
         REP_ERR_RETURN(1);
