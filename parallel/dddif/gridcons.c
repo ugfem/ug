@@ -39,7 +39,6 @@
 #include "gm.h"
 #include "evm.h"
 
-
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -385,36 +384,35 @@ void ConstructConsistentGrid (GRID *theGrid)
         }
 
         case (SIDE_NODE) :
+          /* always compute new coords for this case! */
           k =  GetSideIDFromScratch(theElement,theNode);
           ASSERT(k < SIDES_OF_ELEM(theFather));
-          if (k != ONSIDE(theVertex))
+
+          SETONSIDE(theVertex,k);
+
+          m = CORNERS_OF_SIDE(theFather,k);
+          local = LCVECT(theVertex);
+          fac = 1.0 / m;
+          V_DIM_CLEAR(local);
+          for (o=0; o<m; o++)
           {
-            SETONSIDE(theVertex,j);
-
-            m = CORNERS_OF_SIDE(theFather,k);
-            local = LCVECT(theVertex);
-            fac = 1.0 / m;
-            V_DIM_CLEAR(local);
-            for (o=0; o<m; o++)
-            {
-              l = CORNER_OF_SIDE(theFather,k,o);
-              V_DIM_LINCOMB(1.0,local,1.0,
-                            LOCAL_COORD_OF_ELEM(theFather,l),local);
-            }
-            V_DIM_SCALE(fac,local);
-
-            theNb = NBELEM(theFather,k);
-            if (theNb != NULL)
-            {
-              for (j=0; j<SIDES_OF_ELEM(theNb); j++)
-              {
-                if (NBELEM(theNb,j) == theFather) break;
-              }
-              ASSERT(j < SIDES_OF_ELEM(theNb));
-              SETONNBSIDE(theVertex,j);
-            }
-            else SETONNBSIDE(theVertex,MAX_SIDES_OF_ELEM);
+            l = CORNER_OF_SIDE(theFather,k,o);
+            V_DIM_LINCOMB(1.0,local,1.0,
+                          LOCAL_COORD_OF_ELEM(theFather,l),local);
           }
+          V_DIM_SCALE(fac,local);
+
+          theNb = NBELEM(theFather,k);
+          if (theNb != NULL)
+          {
+            for (j=0; j<SIDES_OF_ELEM(theNb); j++)
+            {
+              if (NBELEM(theNb,j) == theFather) break;
+            }
+            ASSERT(j < SIDES_OF_ELEM(theNb));
+            SETONNBSIDE(theVertex,j);
+          }
+          else SETONNBSIDE(theVertex,MAX_SIDES_OF_ELEM);
           break;
 
         case (CENTER_NODE) :
