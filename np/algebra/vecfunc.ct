@@ -41,9 +41,9 @@ INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x T
 			PrintDebug T_PR_DBG;
 		#endif
 		PrintDebug("\n");
-		#ifdef T_PR_VEC
+		#ifdef T_PR_IN
 		if (trace_ugblas>=TRBL_VECS)
-			T_PR_VEC
+			T_PR_IN
 		#endif
 	}
 	ASSERT(fl<=tl);
@@ -69,6 +69,15 @@ INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x T
 	#ifdef T_POST
 	T_POST;
     #endif
+	
+	#ifdef T_PR_OUT
+	if (trace_ugblas>=TRBL_VECS)
+	{
+		PrintDebug("\nresult:\n");
+		T_PR_OUT
+	}
+	#endif
+	
 	return(NUM_OK);
 }
 
@@ -118,7 +127,8 @@ INT CAT(T_FUNCNAME,BS) (const BLOCKVECTOR *bv, INT xc T_ARGS_BV)
 #undef T_FUNCNAME 
 #undef T_ARGS 
 #undef T_PR_DBG
-#undef T_PR_VEC
+#undef T_PR_IN
+#undef T_PR_OUT
 #undef T_ARGS_BV
 #undef T_USE_Y
 #undef T_CONFIG
