@@ -1,0 +1,10 @@
+#!/bin/sh
+
+cd $UGROOT/../simple
+simple simple.scr
+cd $UGROOT/../diff2d/appl
+diff2da square.scr
+cd $UGROOT/../cd/appl
+cda cd.init
+cd $UGROOT/../fem/appl
+fema cook.scr

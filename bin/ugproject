@@ -4,14 +4,11 @@
 set -e
 ugclean
 ugconf save
-ugconf 2TFFF
+ugconf 2
 ugmake ug uglib
 ugmake dev
 ugmake dom
-ugconf 2FTFF
-ugmake ug -i ifdef
-ugmake ug uglib
-ugconf 3TFFF
+ugconf 3
 ugmake ug -i ifdef
 ugmake ug uglib
 ugmake dom

@@ -17,6 +17,7 @@ fi
 cd $UGROOT;
 ugmake -i clean
 ugmake netgen -i clean
+ugmake simple -i clean
 ugmake diff2d -i clean
 ugmake diff2da -i clean
 ugmake cda -i clean

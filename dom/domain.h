@@ -69,10 +69,6 @@
 #endif
 #endif
 
-#ifndef __version23__
-#define __version3__
-#endif
-
 /* compile time constants */
 #define BVPD_MAX_COEFFFCTS              10
 #define BVPD_MAX_USERFCTS               10

@@ -206,47 +206,6 @@ PROBLEM *GetProblem (const char * domain, const char *name)
 }
 
 /****************************************************************************/
-/*
-   CreateBoundaryCondition - Create a new BNDCOND structure
-
-   SYNOPSIS:
-   BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id,
-   BndCondProcPtr theBndCond);
-
-   PARAMETERS:
-   .  name - name of the boundary condition
-   .  id - identification number of condition
-   .  theBndCond - the boundary conditions
-
-   DESCRIPTION:
-   This function allocates and initializes a new BNDCOND structure in the previously allocated
-   PROBLEM structure.
-
-   RETURN VALUE:
-   BOUNDARY_CONDITION *
-   .n      Pointer to BOUNDARY_CONDITION
-   .n      NULL if if out of memory.
- */
-/****************************************************************************/
-
-#ifdef __version23__
-BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id, BndCondProcPtr theBndCond)
-{
-  BOUNDARY_CONDITION *newBndCond;
-
-  /* allocate boundary condition */
-  newBndCond = (BOUNDARY_CONDITION *) MakeEnvItem (name,theBdryCondVarID,sizeof(BOUNDARY_CONDITION));
-  if (newBndCond==NULL) return(NULL);
-
-  /* fill in data */
-  newBndCond->id = id;
-  newBndCond->BndCond = theBndCond;
-
-  return(newBndCond);
-}
-#endif
-
-/****************************************************************************/
 /*D
    CreateBoundaryCondition - Allocate a new BNDCOND structure
 
@@ -271,7 +230,6 @@ BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id, BndCondProcPtr 
    D*/
 /****************************************************************************/
 
-#ifdef __version3__
 BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id, BndCondProcPtr theBndCond, void *Data)
 {
   BOUNDARY_CONDITION *newBndCond;
@@ -287,7 +245,6 @@ BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id, BndCondProcPtr 
 
   return(newBndCond);
 }
-#endif
 
 /****************************************************************************/
 /*D

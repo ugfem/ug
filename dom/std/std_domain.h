@@ -116,11 +116,7 @@ struct boundary_segment {
 
 /*----------- typedef for functions ----------------------------------------*/
 
-#ifdef __version23__
-typedef INT (*BndCondProcPtr)(void *, DOUBLE *, DOUBLE *, INT *);
-#else
 typedef INT (*BndCondProcPtr)(void *, void *, COORD *, DOUBLE *, INT *);
-#endif
 
 /*----------- definition of structs ----------------------------------------*/
 
@@ -242,12 +238,7 @@ BOUNDARY_CONDITION *GetNextBoundaryCondition (BOUNDARY_CONDITION *theBCond);
 /* problem definition */
 PROBLEM                  *CreateProblem                         (char *domain,char *name, int id, ConfigProcPtr config, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[]);
 PROBLEM                  *GetProblem                            (const char * domain, const char *name);
-#ifdef __version23__
-BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id, BndCondProcPtr theBndCond);
-#endif
-#ifdef __version3__
 BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id, BndCondProcPtr theBndCond, void *Data);
-#endif
 
 /* BVP definition */
 BVP                             *CreateBVP                                      (char *BVP, char *Domain, char *Problem);

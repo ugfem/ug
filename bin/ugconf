@@ -32,52 +32,18 @@ then
 	fi				
 fi			
 
-if test "$1" = "2TFFF"
+if test "$1" = "2"
 then
-	if test -r $UGROOT/configs/2TFFF.conf
+	if test -r $UGROOT/configs/ug2.conf
 	then
-  	    cp $UGROOT/configs/2TFFF.conf $UGROOT/ug.conf
+  	    cp $UGROOT/configs/ug2.conf $UGROOT/ug.conf
 	fi				
 fi			
 
-if test "$1" = "2TTFF"
+if test "$1" = "3"
 then
-	if test -r $UGROOT/configs/2TTFF.conf
+	if test -r $UGROOT/configs/ug3.conf
 	then
-  	    cp $UGROOT/configs/2TTFF.conf $UGROOT/ug.conf
+  	    cp $UGROOT/configs/ug3.conf $UGROOT/ug.conf
 	fi				
 fi			
-
-if test "$1" = "2FTFF"
-then
-	if test -r $UGROOT/configs/2FTFF.conf
-	then
-  	    cp $UGROOT/configs/2FTFF.conf $UGROOT/ug.conf
-	fi				
-fi			
-
-if test "$1" = "3TFFF"
-then
-	if test -r $UGROOT/configs/3TFFF.conf
-	then
-  	    cp $UGROOT/configs/3TFFF.conf $UGROOT/ug.conf
-	fi				
-fi			
-
-if test "$1" = "3FFTF"
-then
-	if test -r $UGROOT/configs/3FFTF.conf
-	then
-  	    cp $UGROOT/configs/3FFTF.conf $UGROOT/ug.conf
-	fi				
-fi			
-
-if test "$1" = "3TTTT"
-then
-	if test -r $UGROOT/configs/3TTTT.conf
-	then
-  	    cp $UGROOT/configs/3TTTT.conf $UGROOT/ug.conf
-	fi				
-fi			
-
-exit 0;
