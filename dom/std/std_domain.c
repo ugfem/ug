@@ -4470,7 +4470,28 @@ INT BNDP_SaveBndP (BNDP *BndP)
 
 INT BNDP_SaveBndP_Ext (BNDP *BndP)
 {
-  return (1);
+  BND_PS *bp;
+  INT i,j;
+  int iList[2];
+  double dList[DIM-1];
+
+  IF_MARC(BndP)
+  return(M_BNDP_SaveBndP(BndP));
+
+  /* TODO: save free boundary points */
+  iList[0] = BND_PATCH_ID(BndP);
+  iList[1] = BND_N(BndP);
+  if (Bio_Write_mint(2,iList)) return (1);
+
+  bp = (BND_PS *)BndP;
+  for (i=0; i<BND_N(BndP); i++)
+  {
+    for (j=0; j<DIM-1; j++)
+      dList[j] = bp->local[i][j];
+    if (Bio_Write_mdouble(DIM-1,dList)) return (1);
+  }
+
+  return(0);
 }
 
 /* domain interface function: for description see domain.h */
@@ -4509,7 +4530,35 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 
 BNDP *BNDP_LoadBndP_Ext (void)
 {
-  return (NULL);
+  BND_PS *bp;
+  int i,j,pid,n;
+  int iList[2];
+  double dList[DIM-1];
+
+  if (Bio_Read_mint(2,iList)) return (NULL);
+  pid = iList[0]; n = iList[1];
+  bp = (BND_PS *)malloc((n-1)*sizeof(COORD_BND_VECTOR) + sizeof(BND_PS));
+  bp->n = n;
+  bp->patch_id = pid;
+  for (i=0; i<n; i++)
+  {
+    if (Bio_Read_mdouble(DIM-1,dList)) return (NULL);
+    for (j=0; j<DIM-1; j++)
+      bp->local[i][j] = dList[j];
+  }
+  /* TODO: load free boundary points properly */
+  if (!PATCH_IS_FIXED(currBVP->patches[pid]))
+  {
+    /* store global coordinates */
+    BND_DATA(bp) = malloc(DIM*sizeof(DOUBLE));
+    if (BND_DATA(bp)==NULL)
+      return (NULL);
+
+    if (BndPointGlobal((BNDP *)bp,BND_DATA(bp)))
+      return (NULL);
+  }
+
+  return((BNDP *)bp);
 }
 
 INT ReadAndPrintArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
