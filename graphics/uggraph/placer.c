@@ -76,7 +76,11 @@ typedef double DOUBLE;
 
 #define FTOI(f)   ((int)((f)+((f)<0.0 ? -.5 : .5)))
 
-
+#ifdef __MWCW__
+/* map to ANSI standard library functions */
+#define random                  rand
+#define srandom(i)              srand(i)
+#endif
 
 /****************************************************************************/
 
