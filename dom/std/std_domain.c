@@ -2124,7 +2124,7 @@ CreateLinearSegment (char *name,
   for (i = 0; i < n; i++)
   {
     newSegment->points[i] = point[i];
-    for (k = 0; k < DIM; k++)
+    for (k = 0; k < DIM_OF_BND; k++)
       newSegment->x[i][k] = x[i][k];
   }
 
