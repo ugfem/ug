@@ -163,11 +163,6 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge);
 #else
 #define PVID GID
 #endif
-/*
-   #define COORDLIST(n) coordlist[(n)]
-   #define COORDLISTX(g,l,n) (LEVEL(g)?((PERIODIC_HENTRIES *)(l))[(n)]:((PERIODIC_ENTRIES *)(l))[(n)])
-   #define COORDLISTPTR(g) (LEVEL(g)?((PERIODIC_ENTRIES *)hcoordlist):coordlist)
- */
 
 #ifdef __TWODIM__
 #define MIN_COORD(a,b) (((*a)[0]< (*b)[0]) ? (a) : (((*a)[1] < (*b)[1]) ? (a) : (b)))
@@ -175,17 +170,25 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge);
 #define MIN_COORD(a,b) (((*a)[0]< (*b)[0]) ? (a) : (((*a)[1] < (*b)[1]) ? (a) : (((*a)[2] < (*b)[2]) ? (a) : (b))))
 #endif
 
+#ifdef __TWODIM__
+#define NPERVEC 2
+#else
+#define NPERVEC 4
+#endif
+
+typedef struct id_tupel
+{
+  INT tpl[NPERVEC+1];
+}
+IDTPL;
+
 typedef struct periodic_entries
 {
   NODE *node;
   DOUBLE_VECTOR coord;
   INT periodic_id;
   INT n;
-        #ifdef __TWODIM__
-  VECTOR *vp[2];
-        #else
-  VECTOR *vp[4];
-        #endif
+  VECTOR *vp[NPERVEC];
 }
 PERIODIC_ENTRIES;
 
@@ -11482,6 +11485,9 @@ static INT MatchingPeriodicEntries (PERIODIC_ENTRIES *coordlist, INT i, INT j)
   return(0);
 }
 
+#ifdef ModelP
+static int GetMatchingProcs (PERIODIC_ENTRIES *coordlist, INT i, int *np, int *theprocs);
+
 INT SetPerVecVOBJECT(GRID *g)
 {
   NODE *n;
@@ -11513,7 +11519,314 @@ INT SetPerVecVOBJECT(GRID *g)
   return(0);
 }
 
-#ifdef ModelP
+static void CountNTpls (GRID *g, INT nn, PERIODIC_ENTRIES *coordlist, int *ntpls)
+{
+  INT i;
+  int j,theprocs[MAX_PERIODIC_PROCS],np;
+
+  for (i=0; i<nn; i++)
+  {
+    assert(VOBJECT(NVECTOR(coordlist[i].node))!=NULL);
+
+    if (coordlist[i].node != (NODE *)VOBJECT(NVECTOR(coordlist[i].node))) continue;
+
+    np = 0;
+    if (GetMatchingProcs(coordlist,i,&np,theprocs)) assert(0);
+
+    for (j=0; j<np; j++)
+    {
+      ntpls[theprocs[j]]++;
+    }
+  }
+
+  return;
+}
+
+static void MergeNTplsMax (int *gntpls, int *lntpls)
+{
+  int i;
+  for (i=0; i<procs*procs; i++) gntpls[i] = MAX(gntpls[i],lntpls[i]);
+  return;
+}
+
+static void AddMyNTpls (int *gntpls, int *ntpls)
+{
+  int i;
+  for (i=0; i<procs; i++) gntpls[me*procs+i] = ntpls[i];
+        #ifdef Debug
+  if (0)
+  {
+    UserWriteF("AddMyNTpls:");
+    for (i=0; i<procs; i++) UserWriteF(" %4d",ntpls[i]);
+    UserWriteF("\n");
+  }
+        #endif
+  return;
+}
+
+static void CommNTpls(GRID *g, int *send_ntpls, int *recv_ntpls)
+{
+  int l;
+  INT n,MarkKey;
+  int *gntpls,*lntpls;
+
+  MarkTmpMem(MGHEAP(MYMG(g)),&MarkKey);
+
+  gntpls = (int *)GetTmpMem(MGHEAP(MYMG(g)),procs*procs*sizeof(int),MarkKey);
+  assert(gntpls!=NULL);
+  memset(gntpls,0,procs*procs*sizeof(int));
+  lntpls = (int *)GetTmpMem(MGHEAP(MYMG(g)),procs*procs*sizeof(int),MarkKey);
+  assert(lntpls!=NULL);
+  memset(lntpls,0,procs*procs*sizeof(int));
+
+  /* construct global tupel array */
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,lntpls,procs*procs*sizeof(int));
+    MergeNTplsMax(gntpls,lntpls);
+  }
+  AddMyNTpls(gntpls,send_ntpls);
+  Concentrate(gntpls,procs*procs*sizeof(int));
+  Broadcast(gntpls,procs*procs*sizeof(int));
+        #ifdef Debug
+  if (1)
+  {
+    INT i,j;
+
+    UserWriteF("CommNTplsMatrix:\n");
+
+    for (i=0; i<procs; i++)
+    {
+      UserWriteF(PFMT,me);
+      for (j=0; j<procs; j++) UserWriteF(" %4d",gntpls[i*procs+j]);
+      UserWriteF("\n");
+    }
+  }
+        #endif
+
+  /* fill recv_ntpls array with recv counts */
+  for (l=0; l<procs; l++) recv_ntpls[l] = gntpls[l*procs+me];
+
+  ReleaseTmpMem(MGHEAP(MYMG(g)),MarkKey);
+
+  return;
+}
+
+static void PrintIdTpl (int i, int j, IDTPL *idtpl)
+{
+  int k;
+
+  UserWriteF(PFMT " j=%d n=%08x",i,j,(*idtpl).tpl[0]);
+  for (k=0; k<idtpl->tpl[0]; k++)
+    UserWriteF(" %08x",idtpl->tpl[k+1]);
+  UserWriteF("\n");
+
+  return;
+}
+
+static void CpyIDTpl (IDTPL **send_tpls, INT *send_tplcur, int proc, PERIODIC_ENTRIES *coordlist, int i)
+{
+  int j;
+
+  send_tpls[proc][send_tplcur[proc]].tpl[0] = coordlist[i].n;
+
+  for (j=0; j<coordlist[i].n; j++)
+  {
+    send_tpls[proc][send_tplcur[proc]].tpl[j+1] = PVID(coordlist[i].vp[j]);
+    if (0)
+      UserWriteF("CpyIDTpl copying: from=%08x to=%08x\n",
+                 PVID(coordlist[i].vp[j]),send_tpls[proc][send_tplcur[proc]].tpl[j+1]);
+  }
+
+  /*
+          UserWriteF("CpyIDTpl: ");
+          PrintIdTpl(proc,send_tplcur[proc],&(send_tpls[proc][send_tplcur[proc]]));
+   */
+
+  send_tplcur[proc]++;
+}
+
+static void CommTpls (GRID *g, INT nn, PERIODIC_ENTRIES *coordlist, int *send_ntpls, IDTPL **send_tpls, int *recv_ntpls, IDTPL **recv_tpls, INT MarkKey)
+{
+  int i,j;
+
+        #ifdef Debug
+  if (0)
+  {
+    UserWriteF("Send_NTpls:");
+    for (i=0; i<procs; i++) UserWriteF(" %4d",send_ntpls[i]);
+    UserWriteF("\n");
+    UserWriteF("Recv_NTpls:");
+    for (i=0; i<procs; i++) UserWriteF(" %4d",recv_ntpls[i]);
+    UserWriteF("\n");
+  }
+        #endif
+
+  /* allocate send/recv tpls */
+  for (i=0; i<procs; i++)
+  {
+    if (send_ntpls[i]>0 && recv_ntpls[i]>0)
+    {
+      send_tpls[i] = (IDTPL *)GetTmpMem(MGHEAP(MYMG(g)),send_ntpls[i]*sizeof(IDTPL),MarkKey);
+      assert(send_tpls[i] != NULL);
+
+      recv_tpls[i] = (IDTPL *)GetTmpMem(MGHEAP(MYMG(g)),recv_ntpls[i]*sizeof(IDTPL),MarkKey);
+      assert(recv_tpls[i] != NULL);
+    }
+  }
+
+  /* fill send_tpls */
+  {
+    INT *send_tplcur;
+    int np,theprocs[MAX_PERIODIC_PROCS];
+
+    send_tplcur = (INT *)GetTmpMem(MGHEAP(MYMG(g)),procs*sizeof(INT),MarkKey);
+    assert(send_tplcur!=NULL);
+    memset(send_tplcur,0,procs*sizeof(INT));
+
+    for (i=0; i<nn; i++)
+    {
+      assert(VOBJECT(NVECTOR(coordlist[i].node))!=NULL);
+
+      if (coordlist[i].node != (NODE *)VOBJECT(NVECTOR(coordlist[i].node))) continue;
+
+      np = 0;
+      if (GetMatchingProcs(coordlist,i,&np,theprocs)) assert(0);
+
+      for (j=0; j<np; j++)
+      {
+        int p = theprocs[j];
+        if (recv_ntpls[p] <= 0) continue;
+
+        CpyIDTpl(send_tpls,send_tplcur,p,coordlist,i);
+      }
+    }
+        #ifdef Debug
+    /* check tuple sizes */
+    for (i=0; i<procs; i++)
+      if (send_ntpls[i]>0 && recv_ntpls[i]>0)
+        assert(send_ntpls[i]==send_tplcur[i]);
+        #endif
+  }
+
+  /* communicate IDTPLs */
+  {
+    VChannelPtr *mych;
+    msgid *recv_msg, *send_msg;
+    char *com_stat;
+    int nc,rc,error;
+
+    /* establish channels */
+    mych = (VChannelPtr *)GetTmpMem(MGHEAP(MYMG(g)),procs*sizeof(VChannelPtr),MarkKey);
+    assert(mych!=NULL);
+    recv_msg = (msgid *)GetTmpMem(MGHEAP(MYMG(g)),procs*sizeof(msgid),MarkKey);
+    assert(recv_msg!=NULL);
+    send_msg = (msgid *)GetTmpMem(MGHEAP(MYMG(g)),procs*sizeof(msgid),MarkKey);
+    assert(send_msg!=NULL);
+    com_stat = (char *)GetTmpMem(MGHEAP(MYMG(g)),procs*sizeof(char),MarkKey);
+    assert(com_stat!=NULL);
+    memset(com_stat,0,procs*sizeof(char));
+
+    nc = 0;
+    for (i=0; i<procs; i++)
+    {
+      if (send_ntpls[i]>0 && recv_ntpls[i]>0)
+      {
+        mych[i] = ConnASync(i,3917);
+        nc++;
+      }
+    }
+
+    /* poll connect */
+    rc = 0;
+    while (rc < nc)
+    {
+      for (i=0; i<procs; i++)
+      {
+        if (send_ntpls[i]>0 && recv_ntpls[i]>0)
+        {
+          if ((com_stat[i] & 1) == 0)
+            if (InfoAConn(mych[i]) > 0)
+            {
+              com_stat[i] |= 1;
+              rc++;
+            }
+        }
+      }
+    }
+
+    /* send/recv send/recv_tpls */
+    for (i=0; i<procs; i++)
+    {
+      if (send_ntpls[i]>0 && recv_ntpls[i]>0)
+      {
+        recv_msg[i] = RecvASync(mych[i],(void *)recv_tpls[i],recv_ntpls[i]*sizeof(IDTPL),&error);
+        send_msg[i] = SendASync(mych[i],(void *)send_tpls[i],send_ntpls[i]*sizeof(IDTPL),&error);
+      }
+    }
+
+    /* poll send/recv */
+    rc = 0;
+    while (rc < 2*nc)
+    {
+      for (i=0; i<procs; i++)
+      {
+        if (send_ntpls[i]>0 && recv_ntpls[i]>0)
+        {
+          if ((com_stat[i] & 2) == 0)
+            if (InfoASend(mych[i],send_msg[i]) > 0)
+            {
+              com_stat[i] |= 2;
+              rc++;
+            }
+
+          if ((com_stat[i] & 4) == 0)
+            if (InfoARecv(mych[i],recv_msg[i]) > 0)
+            {
+              com_stat[i] |= 4;
+              rc++;
+            }
+        }
+      }
+    }
+
+    /* disconnect channels */
+    for (i=0; i<procs; i++)
+    {
+      if (send_ntpls[i]>0 && recv_ntpls[i]>0)
+      {
+        DiscASync(mych[i]);
+      }
+    }
+
+    /* poll disconnect */
+    rc = 0;
+    while (rc < nc)
+    {
+      for (i=0; i<procs; i++)
+      {
+        if (send_ntpls[i]>0 && recv_ntpls[i]>0)
+        {
+          if ((com_stat[i] & 8) == 0)
+            if (InfoADisc(mych[i]) > 0)
+            {
+              com_stat[i] |= 8;
+              rc++;
+            }
+        }
+      }
+    }
+
+  }
+        #ifdef Debug
+  /*
+          Synchronize();
+   */
+        #endif
+
+  return;
+}
+
 static INT SelectCorProc (VECTOR **vp, INT pos, INT p, int *np, int *theprocs)
 {
   int *proclist = PROCLIST(vp[pos]);
@@ -11603,6 +11916,33 @@ static int GetMatchingProcs (PERIODIC_ENTRIES *coordlist, INT i, int *np, int *t
   return(0);
 }
 
+static INT Identify_PeriodicVectorX (PERIODIC_ENTRIES *coordlist, INT i, INT p)
+{
+  int j;
+
+  PRINTDEBUG(gm,1,("IPVX:" VINDEX_FMTX " p=%d\n",
+                   VINDEX_PRTX(NVECTOR(coordlist[i].node)),p))
+
+  for (j=0; j<coordlist[i].n; j++)
+  {
+    ASSERT(NVECTOR(coordlist[i].node)!=NULL);
+    ASSERT(coordlist[i].vp[j]!=NULL);
+    PRINTDEBUG(gm,1,(" GID=%08x",
+                     GID(coordlist[i].vp[j])))
+
+    DDD_IdentifyNumber(PARHDR(NVECTOR(coordlist[i].node)),p,
+                       GID(coordlist[i].vp[j]));
+  }
+        #ifdef Debug
+  {
+    DOUBLE *cv = CVECT(MYVERTEX(coordlist[i].node));
+    PRINTDEBUG(gm,1,(" c %lf %lf %lf \n",cv[0],cv[1],cv[2]))
+  }
+        #endif
+
+  return(0);
+}
+
 static INT Identify_PeriodicVector (PERIODIC_ENTRIES *coordlist, INT i)
 {
   int p,j,theprocs[MAX_PERIODIC_PROCS],np;
@@ -11648,6 +11988,166 @@ static INT Identify_PeriodicVector (PERIODIC_ENTRIES *coordlist, INT i)
   }
 
   return(0);
+}
+
+static int CompTpls (IDTPL *tpl, PERIODIC_ENTRIES *cle)
+{
+  int i;
+
+  if (tpl->tpl[0] > cle->n) return(1);
+  if (tpl->tpl[0] < cle->n) return(-1);
+
+  for (i=0; i<cle->n; i++)
+  {
+    if (tpl->tpl[i+1] > PVID(cle->vp[i])) return(1);
+    if (tpl->tpl[i+1] < PVID(cle->vp[i])) return(-1);
+  }
+
+  return(0);
+}
+
+
+static void PrintIdTpls (int *idntpls, IDTPL **idtpls)
+{
+  int i,j,k;
+
+  for (i=0; i<procs; i++)
+  {
+    if (idntpls[i] <= 0) continue;
+
+    for (j=0; j<idntpls[i]; j++)
+    {
+      PrintIdTpl(i,j,idtpls[i]+j);
+    }
+  }
+
+  return;
+}
+
+static void PrintListEntry (int i, PERIODIC_ENTRIES *coordlist)
+{
+  INT j;
+
+  UserWriteF(PFMT " i=%d n=%d",me,i,coordlist[i].n);
+  for (j=0; j<coordlist[i].n; j++)
+    UserWriteF(" %08x",PVID(coordlist[i].vp[j]));
+  UserWriteF("\n");
+
+  return;
+}
+
+static void IdentListX (GRID *g, INT nn, PERIODIC_ENTRIES *coordlist, int *recv_ntpls, IDTPL **recv_tpls, INT MarkKey)
+{
+  INT i,j;
+  int theprocs[MAX_PERIODIC_PROCS],np;
+  INT *recv_tplscur,*nidv,*njpv;
+
+  recv_tplscur = (INT *)GetTmpMem(MGHEAP(MYMG(g)),procs*sizeof(INT),MarkKey);
+  assert(recv_tplscur!=NULL);
+  memset(recv_tplscur,0,procs*sizeof(INT));
+  nidv = (INT *)GetTmpMem(MGHEAP(MYMG(g)),procs*sizeof(INT),MarkKey);
+  assert(nidv!=NULL);
+  memset(nidv,0,procs*sizeof(INT));
+  njpv = (INT *)GetTmpMem(MGHEAP(MYMG(g)),procs*sizeof(INT),MarkKey);
+  assert(njpv!=NULL);
+  memset(njpv,0,procs*sizeof(INT));
+
+  PRINTDEBUG(gm,1,("IPV: GetMatchingProcs\n"));
+
+  DDD_IdentifyBegin();
+
+  if (0) PrintIdTpls(recv_ntpls,recv_tpls);
+
+  for (i=0; i<nn; i++)
+  {
+    assert(VOBJECT(NVECTOR(coordlist[i].node))!=NULL);
+
+    if (coordlist[i].node != (NODE *)VOBJECT(NVECTOR(coordlist[i].node))) continue;
+
+    np = 0;
+    if (GetMatchingProcs(coordlist,i,&np,theprocs)) assert(0);
+
+    for (j=0; j<np; j++)
+    {
+      int p = theprocs[j];
+
+      if (recv_ntpls[p] <= 0) continue;
+
+      if (0) PrintListEntry(i,coordlist);
+
+      while (recv_tplscur[p]<recv_ntpls[p] &&
+             CompTpls(&(recv_tpls[p][recv_tplscur[p]]),coordlist+i)<0)
+      {
+        UserWriteF(PFMT " skipping entry:",me);
+        PrintIdTpl(p,recv_tplscur[p],recv_tpls[p]+recv_tplscur[p]);
+        PrintListEntry(i,coordlist);
+
+        recv_tplscur[p]++;
+        njpv[p]++;
+      }
+
+      if (recv_tplscur[p]<recv_ntpls[p] &&
+          CompTpls(&(recv_tpls[p][recv_tplscur[p]]),coordlist+i)==0)
+      {
+        /*
+                                        UserWriteF(PFMT " ident entry:",me);
+                                        PrintIdTpl(p,recv_tplscur[p],recv_tpls[p]+recv_tplscur[p]);
+                                        PrintListEntry(i,coordlist);
+         */
+
+        Identify_PeriodicVectorX(coordlist,i,p);
+        recv_tplscur[p]++;
+        nidv[p]++;
+      }
+    }
+  }
+
+  if (1)
+  {
+    DDD_IdentifyEnd();
+    DDD_IFRefreshAll();
+  }
+
+#ifdef Debug
+  for (j=0; j<procs; j++)
+  {
+    if (nidv[j] != recv_ntpls[j])
+    {
+      UserWriteF(PFMT "SKIPS p=%d nrecv=%d nidv=%d njpv=%d\n",
+                 me,j,recv_ntpls[j],nidv[j],njpv[j]);
+    }
+  }
+  /*
+     Synchronize();
+     Synchronize();
+   */
+#endif
+
+  return;
+}
+
+static void IdentList (INT nn, PERIODIC_ENTRIES *coordlist)
+{
+  INT i;
+
+  DDD_IdentifyBegin();
+
+  for (i=0; i<nn; i++)
+  {
+    assert(VOBJECT(NVECTOR(coordlist[i].node))!=NULL);
+
+    if (coordlist[i].node != (NODE *)VOBJECT(NVECTOR(coordlist[i].node))) continue;
+
+    Identify_PeriodicVector(coordlist,i);
+  }
+
+  if (1)
+  {
+    DDD_IdentifyEnd();
+    DDD_IFRefreshAll();
+  }
+
+  return;
 }
 #endif
 
@@ -11796,12 +12296,7 @@ INT Grid_GeometricToPeriodic (GRID *g)
                );
     if (coordlist[i].n>0)
     {
-      INT j;
-
-      UserWriteF("v");
-      for (j=0; j<coordlist[i].n; j++)
-        UserWriteF(" %08x",PVID(coordlist[i].vp[j]));
-      UserWriteF("\n");
+      PrintListEntry(i,coordlist);
     }
   }
   ENDDEBUG
@@ -11896,24 +12391,46 @@ INT Grid_GeometricToPeriodic (GRID *g)
 
         #ifdef ModelP
   /* identify periodic vectors between processors */
-  if (GLEVEL(g) == 0) return (GM_OK);
-  if (procs == 1) return (GM_OK);
-
-  DDD_IdentifyBegin();
-
-  for (i=0; i<nn; i++)
+  if (GLEVEL(g)>0 && procs>1)
   {
-    assert(VOBJECT(NVECTOR(coordlist[i].node))!=NULL);
+    INT MarkKey,i;
+    int *send_ntpls,*recv_ntpls;
+    IDTPL **send_tpls,**recv_tpls;
 
-    if (coordlist[i].node != (NODE *)VOBJECT(NVECTOR(coordlist[i].node))) continue;
+    if (1) {
+      /* count identify tupels per proc */
+      MarkTmpMem(MGHEAP(MYMG(g)),&MarkKey);
 
-    Identify_PeriodicVector(coordlist,i);
-  }
+      send_ntpls = (int *)GetTmpMem(MGHEAP(MYMG(g)),procs*sizeof(int),MarkKey);
+      assert(send_ntpls!=NULL);
+      memset(send_ntpls,0,procs*sizeof(int));
 
-  if (1)
-  {
-    DDD_IdentifyEnd();
-    DDD_IFRefreshAll();
+      recv_ntpls = (int *)GetTmpMem(MGHEAP(MYMG(g)),procs*sizeof(int),MarkKey);
+      assert(recv_ntpls!=NULL);
+      memset(recv_ntpls,0,procs*sizeof(int));
+
+      CountNTpls(g,nn,coordlist,send_ntpls);
+
+      /* communicate local tupel list count */
+      CommNTpls(g,send_ntpls,recv_ntpls);
+
+      /* prepare, send and recv tupel lists */
+      send_tpls = (IDTPL **)GetTmpMem(MGHEAP(MYMG(g)),procs*sizeof(IDTPL *),MarkKey);
+      assert(send_tpls!=NULL);
+      for (i=0; i<procs; i++) send_tpls[i] = NULL;
+      recv_tpls = (IDTPL **)GetTmpMem(MGHEAP(MYMG(g)),procs*sizeof(IDTPL *),MarkKey);
+      assert(recv_tpls!=NULL);
+      for (i=0; i<procs; i++) recv_tpls[i] = NULL;
+      CommTpls(g,nn,coordlist,send_ntpls,send_tpls,recv_ntpls,recv_tpls,MarkKey);
+
+      IdentListX(g,nn,coordlist,recv_ntpls,recv_tpls,MarkKey);
+    }
+    else {
+      /* identify entries */
+      IdentList(nn,coordlist);
+    }
+
+    ReleaseTmpMem(MGHEAP(MYMG(g)),MarkKey);
   }
         #endif
 
@@ -12088,7 +12605,7 @@ static INT ListPeriodicNodeAndVec (GRID *g, INT vgid)
     if (n == nref) sprintf(pbuf+strlen(pbuf),"	X ");
     else sprintf(pbuf+strlen(pbuf),"	  ");
 
-    sprintf(pbuf+strlen(pbuf),"c %f %f %f ",cv[0],cv[1],cv[2]);
+    sprintf(pbuf+strlen(pbuf),"c %g %g %g ",cv[0],cv[1],cv[2]);
     sprintf(pbuf+strlen(pbuf),"n=" ID_FMTX " ",ID_PRTX(n));
 
     proclist = PROCLIST(n);
@@ -12127,8 +12644,10 @@ static INT Grid_ListPeriodicPos (GRID *g, DOUBLE_VECTOR pos)
   for (i=0; i<procs; i++)
   {
                 #ifdef ModelP
-    Synchronize();
-    fflush(stdout);
+    /*
+                    Synchronize();
+                    fflush(stdout);
+     */
                 #endif
     if (me!=i) continue;
 
