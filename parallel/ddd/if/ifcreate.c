@@ -142,6 +142,14 @@ static int sort_int (const void *e1, const void *e2)
 }
 
 
+static int sort_prio (const void *e1, const void *e2)
+{
+  if (*(DDD_PRIO *)e1 < *(DDD_PRIO *)e2) return(-1);
+  if (*(DDD_PRIO *)e1 == *(DDD_PRIO *)e2) return(0);
+  return(1);
+}
+
+
 /****************************************************************************/
 /*                                                                          */
 /* Function:  sort_IFCouplings                                              */
@@ -610,8 +618,8 @@ memcpy(theIF[nIFs].O, O, nO*sizeof(DDD_TYPE));
 memcpy(theIF[nIFs].A, A, nA*sizeof(DDD_PRIO));
 memcpy(theIF[nIFs].B, B, nB*sizeof(DDD_PRIO));
 if (nO>1) qsort(theIF[nIFs].O, nO, sizeof(DDD_TYPE), sort_int);
-if (nA>1) qsort(theIF[nIFs].A, nA, sizeof(DDD_PRIO), sort_int);
-if (nB>1) qsort(theIF[nIFs].B, nB, sizeof(DDD_PRIO), sort_int);
+if (nA>1) qsort(theIF[nIFs].A, nA, sizeof(DDD_PRIO), sort_prio);
+if (nB>1) qsort(theIF[nIFs].B, nB, sizeof(DDD_PRIO), sort_prio);
 
 
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
