@@ -364,7 +364,7 @@ INT DirWalk (const char *dir, ProcessFileProc fcn)
 {
 #ifndef __MACINTOSH__
   DIR *dfd = opendir(dir);
-  ft = filetype(dir);
+  int ft = filetype(dir);
 
   if (ft!=FT_DIR)
     REP_ERR_RETURN (PATH_NO_DIR)
