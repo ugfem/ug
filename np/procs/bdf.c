@@ -198,6 +198,43 @@ static INT BDFAssembleDefect
   return( (*tass->TAssembleDefect)(tass,fl,tl,bdf->t_p1,s_m,s_a,u,d,J,res) );
 }
 
+static INT BDFNAssembleDefect
+  (NP_NL_ASSEMBLE *ass, INT fl, INT tl, NODE *n, VECDATA_DESC *u,
+  VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
+{
+  NP_BDF *bdf;
+  NP_T_ASSEMBLE *tass;
+  DOUBLE s_a,s_m;
+  DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1;
+
+  /* get numprocs ... */
+  bdf = (NP_BDF *) ass;                 /* this is the trick, tsolver is derived	*/
+  tass = bdf->tsolver.tass;             /* since we need to access it quite often       */
+
+  /* compute coefficients */
+  dt_p1 = bdf->t_p1-bdf->t_0;
+  dt_0  = bdf->t_0-bdf->t_m1;
+  g_p1  = (dt_0+2*dt_p1)/(dt_0+dt_p1);
+  g_0   = -(dt_0+dt_p1)/dt_0;
+  g_m1  = dt_p1*dt_p1/(dt_0*dt_0+dt_0*dt_p1);
+
+  /* compute scaling factors depending on selected order */
+  switch (bdf->order)
+  {
+  case 1 : s_m = 1.0; s_a = -dt_p1; break;
+  case 2 : s_m = 1.0; s_a = -dt_p1/g_p1; break;
+  default :
+    UserWrite("BDFNAssembleDefect: invalid order\n");
+    return(1);
+  }
+
+  /* copy precomputed part of defect */
+  dcopy(NP_MG(ass),fl,tl,ALL_VECTORS,d,bdf->b);
+
+  /* call function from time assemble interface */
+  return( (*tass->TNAssembleDefect)(tass,fl,tl,n,bdf->t_p1,s_m,s_a,u,d,J,res) );
+}
+
 static INT BDFAssembleMatrix
   (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u,
   VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
@@ -230,6 +267,40 @@ static INT BDFAssembleMatrix
 
   /* call function from time assemble interface */
   return( (*tass->TAssembleMatrix)(tass,fl,tl,bdf->t_p1,s_a,u,d,v,J,res) );
+}
+
+static INT BDFNAssembleMatrix
+  (NP_NL_ASSEMBLE *ass, INT fl, INT tl, NODE *n, VECDATA_DESC *u,
+  VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
+{
+  NP_BDF *bdf;
+  NP_T_ASSEMBLE *tass;
+  DOUBLE s_a;
+  DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1;
+
+  /* get numprocs ... */
+  bdf = (NP_BDF *) ass;                 /* this is the trick, tsolver is derived	*/
+  tass = bdf->tsolver.tass;             /* since we need to access it quite often       */
+
+  /* compute coefficients */
+  dt_p1 = bdf->t_p1-bdf->t_0;
+  dt_0  = bdf->t_0-bdf->t_m1;
+  g_p1  = (dt_0+2*dt_p1)/(dt_0+dt_p1);
+  g_0   = -(dt_0+dt_p1)/dt_0;
+  g_m1  = dt_p1*dt_p1/(dt_0*dt_0+dt_0*dt_p1);
+
+  /* compute scaling factors depending on selected order */
+  switch (bdf->order)
+  {
+  case 1 : s_a = -dt_p1; break;
+  case 2 : s_a = -dt_p1/g_p1; break;
+  default :
+    UserWrite("BDFNAssembleMatrix: invalid order\n");
+    return(1);
+  }
+
+  /* call function from time assemble interface */
+  return( (*tass->TNAssembleMatrix)(tass,fl,tl,n,bdf->t_p1,s_a,u,d,v,J,res) );
 }
 
 static INT BDFPostProcess
@@ -1188,7 +1259,9 @@ static INT BDFConstruct (NP_BASE *theNP)
   na->PostProcess             = BDFPostProcess;
   na->NLAssembleSolution      = BDFAssembleSolution;
   na->NLAssembleDefect        = BDFAssembleDefect;
+  na->NLNAssembleDefect       = BDFNAssembleDefect;
   na->NLAssembleMatrix        = BDFAssembleMatrix;
+  na->NLNAssembleMatrix       = BDFNAssembleMatrix;
 
   /* and the time solver */
   ts->TimePreProcess              = TimePreProcess;
