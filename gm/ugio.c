@@ -98,7 +98,11 @@
 /*  n_elem = 6+30 (6 h-ghosts, 30 v-ghosts)											*/
 /*  n_edge = 12*30 (12 max_edges_of_elem) (30 probably 30 elements per edge)		*/
 /*  n_node = 100*8 (8 max_node_of_elem) 100 probably elements per node)				*/
-#define PROCLISTSIZE            ELEMPROCLISTSIZE*MAX_SONS * 2
+#ifdef ModelP
+/*#define PROCLISTSIZE      (ELEMPROCLISTSIZE*MAX_SONS * 2) size not enough and change to static variable; Christian Wrobel 980128 */
+#define PROCLISTSIZE_VALUE      (ELEMPROCLISTSIZE*MAX_SONS * MAX(5,(int)(2.0+log((double)procs))))
+#define PROCLISTSIZE            proc_list_size
+#endif
 
 /* orphan condition for elements */
 #define EORPHAN(e)              (EFATHER(e)==NULL || THEFLAG(e))
@@ -132,7 +136,8 @@ static NODE **nid_n;                                            /* mapping: orph
 static NODE **vid_n;                                            /* mapping: orphan-vertex-id  -->  lowest orphan node */
 static INT nov;                                                         /* number of orphan vertices */
 static ELEMENT **eid_e;
-static int nparfiles;                                     /* nb of parallel files		*/
+static int nparfiles;                                           /* nb of parallel files		*/
+static int proc_list_size = -1;                         /* hold the computed value for PROCLISTSIZE; initialized with crazy dummy */
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -1224,6 +1229,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   saved = MG_SAVED(theMG);
 #ifdef ModelP
   saved = UG_GlobalMinINT(saved);
+  proc_list_size = PROCLISTSIZE_VALUE;
 #endif
   if (saved)
   {
@@ -1437,7 +1443,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   if (MGIO_PARFILE)
   {
     ActProcListPos = ProcList = (unsigned short*)GetTmpMem(theHeap,PROCLISTSIZE*sizeof(unsigned short),MarkKey);
-    if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(int)); REP_ERR_RETURN(1);}
+    if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(unsigned short)); REP_ERR_RETURN(1);}
   }
   else
     ActProcListPos = ProcList = NULL;
@@ -2612,6 +2618,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   strcat(filename,itype);
 
 #ifdef ModelP
+  proc_list_size = PROCLISTSIZE_VALUE;
   if (me == master)
   {
 #endif
@@ -3006,7 +3013,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   if (MGIO_PARFILE)
   {
     ActProcListPos = ProcList = (unsigned short*)GetTmpMem(theHeap,PROCLISTSIZE*sizeof(unsigned short),MarkKey);
-    if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(int)); return (NULL);}
+    if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(unsigned short)); return (NULL);}
 
     cg_pinfo.proclist = ProcList;
     for (level=0; level<=TOPLEVEL(theMG); level++)
@@ -3086,7 +3093,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   if (MGIO_PARFILE)
   {
     ProcList = (unsigned short*)malloc(PROCLISTSIZE*sizeof(unsigned short));
-    if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(int)); return (NULL);}
+    if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(unsigned short)); return (NULL);}
     for (i=0; i<MAX_SONS; i++) refinement->pinfo[i].proclist = ProcList+i*ELEMPROCLISTSIZE;
   }
   for (j=0; j<cg_general.nElement; j++)
