@@ -5024,7 +5024,8 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 		if (!IS_REFINED(theElement) || !EHGHOSTPRIO(prio)) continue;
 		INT prio = EPRIO(theElement);
 		PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
-		if (!IS_REFINED(theElement) || EMASTERPRIO(prio)) continue;
+		/* connect only done FROM hgost copies */
+							theElement,ID(theElement),
 							LEVEL(theElement)));
 
 		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
@@ -5045,7 +5046,8 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 			if (!THEFLAG(theElement) && !THEFLAG(theNeighbor)) continue;
 
 			/* connect only TO master copies */
-			if (!IS_REFINED(theNeighbor) || EHGHOSTPRIO(prio))	continue;
+					Sons_of_Side_List,SonSides,1,0)!=GM_OK) RETURN(GM_FATAL);
+			if (!IS_REFINED(theNeighbor) || !MASTERPRIO(prio))	continue;
 			IFDEBUG(gm,1)
 				UserWriteF(PFMT " 		side=%d NSONS=%d Sons_of_Side=%d:\n",
 					Sons_of_Side_List,SonSides,1)!=GM_OK) RETURN(GM_FATAL);
