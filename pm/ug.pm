@@ -26,6 +26,19 @@ BEGIN
 	my $end='';
 	my $TimeHiRes;
 	my %time;
+	my $np_i_name='';
+	my $np_o_name='';
+
+	sub	Export_io_pipe_names
+	{
+		$np_i_name=shift;
+		$np_o_name=shift;
+	}
+	sub Remove_pipes
+	{
+		`rm $np_i_name`;
+		`rm $np_o_name`;
+	}
 
 	sub module
 	{
@@ -124,6 +137,8 @@ BEGIN
 	{
 		eval $end;
 		close(DEBUG);
+		-e $np_i_name and `rm $np_i_name`;
+		-e $np_o_name and `rm $np_o_name`;
 	}
 	sub out
 	{
@@ -231,7 +246,7 @@ sub ug
 		# command 'start'
 		if ($command eq "start")
 		{
-			my ($exec,$appl,$e,$r,$amp,$model,$a_mode,$m_mode,$p_mode,$r_mode,$pre,@name);
+			my ($np_i_name,$np_o_name,$np_ext_name,$exec,$appl,$e,$r,$amp,$model,$a_mode,$m_mode,$p_mode,$r_mode,$pre,@name);
 			if(@in!=7)
         	{   
         	    die 'ERROR: usage: ug "start", "p"=>"program", "x"=>[0|1], "n"=><# of procs>;'."\n";
@@ -252,6 +267,14 @@ sub ug
 			# determin procs-mode
 			$p_mode='s'; if ($argv{'n'}>1) { $p_mode='p'; }
 
+			# create named pipes extension name and corresponding named pipes
+			$np_ext_name=rand;
+			$np_i_name=".I_PIPE_$np_ext_name"; 
+			-e $np_i_name and `rm $np_i_name`; `mkfifo $np_i_name`;
+			$np_o_name=".O_PIPE_$np_ext_name"; 
+			-e $np_o_name and `rm $np_o_name`; `mkfifo $np_o_name`;
+			Export_io_pipe_names($np_i_name,$np_o_name);
+
 			$amp=$a_mode.$m_mode.$p_mode; $r_mode=0;
 			SWITCH:
 			{
@@ -262,7 +285,7 @@ sub ug
 					$pre.="application: $appl\n";
 					$pre.="mode: running sequential\n";
 					$pre.="########################################\n";
-					$exec="$argv{'p'} $ui -perl";
+					$exec="$argv{'p'} $ui -perl -np $np_ext_name";
 					last SWITCH;
 				}
 				if ($amp eq 'ssp')
@@ -278,7 +301,7 @@ sub ug
 					$pre.="mode: running sequential code on one\n";
 					$pre.="      processor of parallel machine\n";
 					$pre.="########################################\n";
-					($e,$exec)=ugp::run('n'=>$argv{'n'},'p'=>"$argv{'p'} $ui -perl",'b'=>0,'r'=>0);
+					($e,$exec)=ugp::run('n'=>$argv{'n'},'p'=>"$argv{'p'} $ui -perl -np $np_ext_name",'b'=>0,'r'=>0);
 					last SWITCH;
 				}
 				if ($amp eq 'spp')
@@ -304,7 +327,7 @@ sub ug
 					$pre.="mode: running parallel code on one\n";
 					$pre.="      processor of parallel machine\n";
 					$pre.="########################################\n";
-					($e,$exec)=ugp::run('n'=>$argv{'n'},'p'=>"$argv{'p'} $ui -perl",'b'=>0,'r'=>0);
+					($e,$exec)=ugp::run('n'=>$argv{'n'},'p'=>"$argv{'p'} $ui -perl -np $np_ext_name",'b'=>0,'r'=>0);
 					last SWITCH;
 				}
 				if ($amp eq 'ppp')
@@ -314,16 +337,26 @@ sub ug
 					$pre.="application: $appl\n";
 					$pre.="mode: running parallel on $argv{'n'} procs\n";
 					$pre.="########################################\n";
-					($e,$exec)=ugp::run('n'=>$argv{'n'},'p'=>"$argv{'p'} $ui -perl",'b'=>0,'r'=>0);
+					($e,$exec)=ugp::run('n'=>$argv{'n'},'p'=>"$argv{'p'} $ui -perl -np $np_ext_name",'b'=>0,'r'=>0);
 					last SWITCH;
 				}
 			}
 
 			# run ug 
-        	open2(*OUT,*IN,$exec);
-			IN->autoflush(1); OUT->autoflush(1);
-			if ($print) { $pre.=out(0); } else { out(0); }
-			return $pre;
+            my $id;
+            if ($id=fork) { }
+            else { system($exec); exit 0; }
+            open(OUT,".O_PIPE_$np_ext_name") or die "ERROR: cannot open '.O_PIPE' for reading\n";
+            OUT->autoflush(1);
+            open(IN,">.I_PIPE_$np_ext_name") or die "ERROR: cannot open '.I_PIPE' for writing\n";
+            IN->autoflush(1);
+
+			Remove_pipes;
+            if ($id<=0) { die "crun: invalid id of forked process returned: $id\n"; }
+            if (1!=stat IN) { die "crun: IN-pipe is down\n"; }
+            if (1!=stat OUT) { die "crun: OUT-pipe is down\n"; }
+            if ($print) { $pre.=out(0); } else { out(0); }
+            return $pre;
 		}
 	
 		# command 'ug' 
