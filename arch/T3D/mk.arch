@@ -10,7 +10,7 @@ ARCH_CC       = cc
 ARCH_LINK     = mppld
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
-ARCH_POSTLINK =
+ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lc -lm
 

@@ -10,7 +10,7 @@ ARCH_CC       = px ancc.px
 ARCH_LINK     = px ancc.px
 ARCH_AR       = px ar
 ARCH_SUFFIX   = .px
-ARCH_POSTLINK =     # strip $(APPL).px
+ARCH_POSTLINK = true    # strip $(APPL).px
 
 ARCH_LIBS     = -lm
 

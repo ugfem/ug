@@ -12,7 +12,7 @@ ARCH_F77      = f77
 ARCH_LINK     = cc
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
-ARCH_POSTLINK =
+ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lm
 
