@@ -125,10 +125,14 @@ INT GetElementDirichletFlags    (ELEMENT *theElement, const VECDATA_DESC *theTVD
                                  INT *vecskip);
 INT SetElementDirichletFlags    (ELEMENT *theElement, const VECDATA_DESC *theTVD,
                                  INT *vecskip);
+INT ModifyDirichletMatrix               (GRID *theGrid, const MATDATA_DESC *Mat);
 INT AssembleDirichletBoundary   (GRID *theGrid, const MATDATA_DESC *Mat,
                                  const VECDATA_DESC *Sol, const VECDATA_DESC *Rhs);
 INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
                                     const VECDATA_DESC *Sol, const VECDATA_DESC *Rhs);
+
+INT GetElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
+                       DOUBLE *value);
 
 INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass);
 INT PrintSVector (MULTIGRID *mg, VECDATA_DESC *X);

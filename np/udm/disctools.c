@@ -912,6 +912,9 @@ INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
             vptrlist[l][vc[l]++] = VVALUEPTR(rv,VD_CMP_OF_TYPE(MVMD_VD(mvmd,l),rt,k));
         }
 
+    if (MVMD_NMD(mvmd)<=0)
+      continue;
+
     /* now connections */
 
     /* diag first */
@@ -1151,6 +1154,61 @@ INT AssembleDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
         {
           dtype = MDESTTYPE(theMatrix);
           dcomp = VD_NCMPS_IN_TYPE (Sol,dtype);
+          if (dcomp == 0) continue;
+          for (i=j*dcomp; i<(j+1)*dcomp; i++)
+            MVALUE(theMatrix,MD_MCMP_OF_RT_CT(Mat,type,dtype,i)) = 0.0;
+        }
+      }
+  }
+
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*D
+   ModifyDirichletMatrix - modifies matrix entries for Dirichlet values
+   for Dirichlet boundary
+
+   SYNOPSIS:
+   INT ModifyDirichletMatrix (GRID *theGrid, const MATDATA_DESC *Mat);
+
+   PARAMETERS:
+   .  theGrid - pointer to a grid
+   .  Mat - type matrix descriptor for the stiffness matix
+
+   DESCRIPTION:
+   This function sets all matrix rows to the unit vector where the vecskip flag is set.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+INT ModifyDirichletMatrix (GRID *theGrid, const MATDATA_DESC *Mat)
+{
+  VECTOR *theVector;
+  MATRIX *theMatrix;
+  INT i,j,ncomp,dcomp,type,dtype;
+
+  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector))
+  {
+    type = VTYPE(theVector);
+    ncomp = MD_ROWS_IN_RT_CT (Mat,type,type);
+    if (ncomp == 0) continue;
+    for (j=0; j<ncomp; j++)
+      if (VECSKIP(theVector) & (1<<j))
+      {
+        theMatrix = VSTART(theVector);
+        for (i=j*ncomp; i<(j+1)*ncomp; i++)
+          MVALUE(theMatrix,MD_MCMP_OF_RT_CT(Mat,type,type,i)) = 0.0;
+        MVALUE(theMatrix,MD_MCMP_OF_RT_CT(Mat,type,type,j+j*ncomp)) = 1.0;
+
+        for (theMatrix=MNEXT(theMatrix); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+        {
+          dtype = MDESTTYPE(theMatrix);
+          dcomp = MD_COLS_IN_RT_CT (Mat,type,dtype);
           if (dcomp == 0) continue;
           for (i=j*dcomp; i<(j+1)*dcomp; i++)
             MVALUE(theMatrix,MD_MCMP_OF_RT_CT(Mat,type,dtype,i)) = 0.0;
