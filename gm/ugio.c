@@ -1072,8 +1072,6 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment)
 
 static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_CG_ELEMENT *cge, MGIO_PARINFO *pinfo)
 {
-  /*/ / HRR_TODO : remove next line* /
-        #ifdef _HRR_
   INT i,j,s,prio;
   INT evec,nvec,edvec,svec;
   NODE *theNode;
@@ -1170,14 +1168,12 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_CG_ELEMENT *
       s += pinfo->ncopies_edge[j];
   }
 #endif
-        #endif
+
   return(0);
 }
 
 static INT IO_GridCons(MULTIGRID *theMG)
 {
-  /*/ / HRR_TODO : remove next line* /
-        #ifdef _HRR_
   INT i,*proclist;
   GRID    *theGrid;
   ELEMENT *theElement;
@@ -1199,7 +1195,7 @@ static INT IO_GridCons(MULTIGRID *theMG)
       if (!MASTER(theVector))
         DisposeConnectionFromVector(theGrid,theVector);
   }
-        #endif
+
   return(GM_OK);
 }
 
@@ -1465,10 +1461,8 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
   if (procs>nparfiles)
   {
-    /*/ / HRR_TODO : remove next line* /
-        #ifdef _HRR_
     Broadcast(&mg_general,sizeof(MGIO_MG_GENERAL));
-        #endif
+
     if (me < nparfiles)
       mg_general.me = me;
   }
@@ -1702,9 +1696,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   if (MGIO_PARFILE)
   {
     /* open identification context */
-        #ifdef _HRR_
     DDD_IdentifyBegin();
-        #endif
 
     ActProcListPos = ProcList = (unsigned short*)GetTmpMem(theHeap,PROCLISTSIZE*sizeof(unsigned short));
     if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(int)); return (NULL);}
@@ -1723,9 +1715,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
       }
     }
     /* open identification context */
-        #ifdef _HRR_
     DDD_IdentifyEnd();
-        #endif
   }
 
   /* repair inconsistencies */
