@@ -752,6 +752,9 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
         return (NULL);
   }
 
+  mesh->VertexLevel = NULL;
+  mesh->VertexPrio = NULL;
+
   /* print mesh-info */
   if (LGM_DEBUG)
     if (PrintMeshInfo(mesh))
