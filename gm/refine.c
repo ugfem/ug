@@ -1078,10 +1078,8 @@ INT GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
     while (SUCCE(son) != NULL)
     {
       if (EFATHER(SUCCE(son)) == theElement
-                                #ifdef ModelP
           && DDD_InfoPriority(PARHDRE(son))==
           DDD_InfoPriority(PARHDRE(SUCCE(son)))
-                                #endif
           )
       {
         SonList[SonID++] = SUCCE(son);
