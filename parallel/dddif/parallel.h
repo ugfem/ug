@@ -308,6 +308,22 @@ INT             Identify_Objects_of_ElementSide (GRID *theGrid, ELEMENT *theElem
 INT             Identify_SonNodesAndSonEdges    (GRID *theGrid);
 INT             IdentifyGridLevels                              (MULTIGRID *theMG, INT FromLevel, INT ToLevel);
 
+/* from overlap.c */
+INT             UpdateGridOverlap                       (GRID *theGrid);
+INT             ConnectGridOverlap                      (GRID *theGrid);
+
+/* from priority.c */
+void    SetGhostObjectPriorities        (GRID *theGrid);
+INT             SetBorderPriorities                     (GRID *theGrid);
+INT             SetGridBorderPriorities         (GRID *theGrid);
+
+/* from partition.c */
+INT             CheckPartitioning                       (MULTIGRID *theMG);
+INT             RestrictPartitioning            (MULTIGRID *theMG);
+
+/* from pgmcheck.c */
+INT             CheckInterfaces                         (GRID *theGrid);
+
 /* form memmgr.c */
 void    memmgr_Init             (void);
 void    memmgr_Report   (void);
