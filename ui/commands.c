@@ -3364,6 +3364,8 @@ static INT VMListCommand (INT argc, char **argv)
     if (theMD != NULL) {
       if (ReadArgvOption("T",argc,argv))
         PrintTMatrix(theGrid,theMD,vclass,vnclass);
+      else if (ReadArgvOption("D",argc,argv))
+        PrintDiagMatrix(theGrid,theMD,vclass,vnclass);
       else
         PrintMatrix(theGrid,theMD,vclass,vnclass);
       return(OKCODE);
