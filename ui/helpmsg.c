@@ -43,6 +43,8 @@
 #include "general.h"
 #include "debug.h"
 
+#include "parallel.h"
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -323,6 +325,10 @@ INT PrintHelp (const char *HelpFor,int mode, const char *addText)
 	char *s,HelpItem[64],helpfor[BUFFERSIZE];
 	INT i,len,found;
 	
+	#ifdef ModelP
+	if (me != master) return(OKCODE);
+	#endif
+
 	if (strlen(HelpFor)==0)
 		return (HELP_STRING_EMPTY);
 	if (strlen(HelpFor)>BUFFERSIZE-1)
@@ -514,6 +520,10 @@ INT CheckHelp ()
 	char HelpItem[128],cmdname[NAMESIZE],*s;
 	int i,found,rv;
 	
+	#ifdef ModelP
+	if (me != master) return(OKCODE);
+	#endif
+
 	/* loop commands */
 	UserWrite("checking commands...\n");
 	rv = 0;
@@ -585,6 +595,10 @@ INT InitHelpMsg (void)
 	FILE *fp;
 	char *token,buffer[BUFFSIZE+64],path2ug[64],fname[64],*s;
 	
+	#ifdef ModelP
+	if (me != master) return(OKCODE);
+	#endif
+
 	NHelpFiles = 0;
 	
 	/* get application help files */

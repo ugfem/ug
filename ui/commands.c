@@ -407,6 +407,10 @@ static INT HelpCommand (INT argc, char **argv)
   COMMAND *Cmd;
   char buf[NAMESIZE];
 
+        #ifdef ModelP
+  if (me != master) return(OKCODE);
+        #endif
+
   mode = HELPITEM;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -478,6 +482,10 @@ static INT HelpCommand (INT argc, char **argv)
 static INT CheckHelpCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
+
+        #ifdef ModelP
+  if (me != master) return(OKCODE);
+        #endif
 
   CheckHelp();
 
@@ -3425,12 +3433,14 @@ static INT VMListCommand (INT argc, char **argv)
   if (ReadArgvChar("vmlist",value,argc,argv) == 0) {
     theVD = GetVecDataDescByName(theMG,value);
     if (theVD != NULL) {
+      if (ReadArgvOption("S",argc,argv))
+        PrintSVector(theMG,theVD);
             #ifdef __INTERPOLATION_MATRIX__
-      if (ReadArgvOption("I",argc,argv))
+      else if (ReadArgvOption("I",argc,argv))
         PrintIMatrix(theGrid,theVD,vclass,vnclass);
-      else
             #endif
-      PrintVector(theGrid,theVD,vclass,vnclass);
+      else
+        PrintVector(theGrid,theVD,vclass,vnclass);
       return(OKCODE);
     }
     theMD = GetMatDataDescByName(theMG,value);
@@ -10580,6 +10590,9 @@ static INT SystemCommand (INT argc, char **argv)
 
   if (strlen(argv[0])<8) return (PARAMERRORCODE);
   p = argv[0]+7;
+
+  printf("system \n%s\n",p);
+
   if (system(p)==-1)
     UserWrite("system-error\n");
 
