@@ -6,6 +6,8 @@
 #
 #   for fvwm (window manager): add to .Xresources: Xug3*input: true
 #   set LD_LIBRARY_PATH /usr/X11/lib:/usr/openwin/lib
+#   -R/usr/local/X11/lib:/usr/openwin/lib   for  static linking of
+#                                           shared libraries (in parallel)
 #
 ARCH_TYPE     = __SUN__
 
@@ -26,5 +28,5 @@ ARCH_LFLAGS   = -g
 ARCH_ARFLAGS  = ru
 
 ARCH_XINCLUDES = -I/usr/openwin/share/include -I/usr/X11/include -I.
-ARCH_XLIBS     = -L/usr/X11/lib -L/usr/openwin/lib -L. -lX11 -lXt -lXaw -lXmu -lXext
+ARCH_XLIBS     = -R/usr/local/X11/lib:/usr/openwin/lib -L/usr/X11/lib -L/usr/openwin/lib -L. -lX11 -lXt -lXaw -lXmu -lXext
 
