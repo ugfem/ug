@@ -163,6 +163,7 @@ void DDD_Init (int *argcp, char ***argvp)
   DDD_SetOption(OPT_DEBUG_XFERMESGS, OPT_OFF);
   DDD_SetOption(OPT_QUIET_CONSCHECK, OPT_OFF);
   DDD_SetOption(OPT_IDENTIFY_MODE, IDMODE_LISTS);
+  DDD_SetOption(OPT_WARNING_REF_COLLISION, OPT_ON);
 }
 
 

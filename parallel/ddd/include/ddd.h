@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/*            DDD V1.6.10                                                   */
+/*            DDD V1.7                                                      */
 /*                                                                          */
 /* File:      ddd.h                                                         */
 /*                                                                          */
@@ -62,7 +62,7 @@ extern "C" {
  #endif
 #endif
 
-#define DDD_VERSION    "1.6.10"
+#define DDD_VERSION    "1.7"
 
 
 /* F77SYM(lsym,usym) macro is defined in compiler.h. 961127 KB */
@@ -130,6 +130,7 @@ enum OptionType {
   OPT_DEBUG_XFERMESGS,             /* print debug info for xfer messages        */
   OPT_QUIET_CONSCHECK,             /* do ConsCheck in a quiet manner            */
   OPT_IDENTIFY_MODE,               /* one of the IDMODE_xxx constants           */
+  OPT_WARNING_REF_COLLISION,       /* warning on collision in reference-localize*/
   OPT_END
 };
 

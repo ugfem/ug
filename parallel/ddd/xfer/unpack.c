@@ -43,9 +43,9 @@
  */
 
 /* TODO kb 961210
-   #define MERGE_MODE_WEITERENTWICKELN
+   #define DEBUG_MERGE_MODE
  */
-
+#define MERGE_MODE_IN_TESTZUSTAND
 
 
 #define DebugUnpack  5  /* off: 5 */
@@ -194,14 +194,6 @@ static void LocalizeObject (int merge_mode, TYPE_DESC *desc,
         /* ref points to a reference inside objmem */
         DDD_OBJ *ref = (DDD_OBJ *) (objrefarray+l);
 
-        /* test for Localize execution in merge_mode */
-        if (merge_mode && (*ref!=NULL_REF))
-        {
-          /* if we are in merge_mode, we do not update
-             existing references. */
-          continue;
-        }
-
 
         /* reference had been replaced by SymTab-index */
 #ifdef C_FRONTEND
@@ -210,6 +202,45 @@ static void LocalizeObject (int merge_mode, TYPE_DESC *desc,
         /* TODO: this is from V1_6_4_F77_3, not the actual version. */
         stIdx = ((INT)*ref) - 1;
 #endif
+
+
+        /* test for Localize execution in merge_mode */
+        if (merge_mode && (*ref!=NULL_REF))
+        {
+          /* if we are in merge_mode, we do not update
+             existing references. */
+                                        #ifdef DEBUG_MERGE_MODE
+          printf("%4d: loc-merge curr=%08x keep     e=%d l=%d\n",
+                 me, OBJ_GID(OBJ2HDR(*ref,refdesc)), e,l);
+                                        #endif
+
+          /* it may happen here that different references
+             are in incoming and existing object. this is implicitly
+             resolved by using the existing reference and ignoring
+             the incoming one. if the REF_COLLISION option is set,
+                  we will issue a warning.
+           */
+
+          if (stIdx>=0 &&
+              DDD_GetOption(OPT_WARNING_REF_COLLISION)==OPT_ON)
+          {
+            /* get corresponding symtab entry */
+            if (theSymTab[stIdx].adr.hdr!=OBJ2HDR(*ref,refdesc))
+            {
+              sprintf(cBuffer,
+                      "reference collision in %08x "
+                      "(old=%08x, inc=%08x) in LocalizeObject\n",
+                      OBJ_GID(OBJ2HDR(obj,desc)),
+                      OBJ_GID(OBJ2HDR(*ref,refdesc)),
+                      OBJ_GID(theSymTab[stIdx].adr.hdr));
+              DDD_PrintError('W', 6540, cBuffer);
+              /* exit(1);  ??? */
+            }
+          }
+
+          continue;
+        }
+
 
         /*
            printf("%4d:    Localize adr=%08x l=%d ref=%08x *ref=%08x stIdx=%d\n",
@@ -227,28 +258,51 @@ static void LocalizeObject (int merge_mode, TYPE_DESC *desc,
                   therefore be NULL, too!
            */
 
-          /*
-                  if (merge_mode && st->adr.hdr!=NULL)
-                  {
-                          printf("%4d:  would localize e=%d l=%d to %08x\n",
-                                  me, e,l,OBJ_GID(st->adr.hdr));
-                          continue;
-                  }
-                  if (merge_mode && st->adr.hdr==NULL)
-                  {
-                          printf("%4d:  would localize e=%d l=%d to NULL\n",
-                                  me, e,l);
-                          continue;
-                  }
-           */
-          if (st->adr.hdr!=NULL)
-            *ref = HDR2OBJ(st->adr.hdr,refdesc);
+#ifdef MERGE_MODE_IN_TESTZUSTAND
+          if (merge_mode)
+          {
+            if (st->adr.hdr!=NULL)
+            {
+                                                        #ifdef DEBUG_MERGE_MODE
+              printf("%4d: loc-merge curr=%08x have_sym e=%d l=%d to %08x\n",
+                     me, *ref, e,l,OBJ_GID(st->adr.hdr));
+                                                        #endif
+
+              *ref = HDR2OBJ(st->adr.hdr,refdesc);
+            }
+                                                #ifdef DEBUG_MERGE_MODE
+            else
+            {
+              printf(
+                "%4d: loc-merge curr=%08x have_sym e=%d l=%d to NULL_REF\n",
+                me, *ref, e, l);
+            }
+                                                #endif
+          }
           else
-            *ref = NULL_REF;
+#endif
+          {
+            if (st->adr.hdr!=NULL)
+              *ref = HDR2OBJ(st->adr.hdr,refdesc);
+            else
+              *ref = NULL_REF;
+          }
         }
         else
         {
-          *ref = NULL_REF;
+#ifdef MERGE_MODE_IN_TESTZUSTAND
+          if (merge_mode)
+          {
+                                                #ifdef DEBUG_MERGE_MODE
+            printf("%4d: loc-merge curr=%08x no_sym   e=%d l=%d\n",
+                   me, *ref, e,l);
+                                                #endif
+          }
+          else
+#endif
+          {
+            *ref = NULL_REF;
+          }
         }
       }
     }
@@ -969,28 +1023,7 @@ static void UnpackSingleMsg (LC_MSGHANDLE xm,
       }
     }
 
-    if (theObjTab[i].is_new==OTHERMSG || theObjTab[i].is_new==PARTNEW)
-    {
-      TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
-      DDD_OBJ obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 
-      if (desc->nPointers>0)
-      {
-#ifdef MERGE_MODE_WEITERENTWICKELN
-        printf("%4d: LocalizeObject in merge_mode, %08x prio %d\n",
-               me, theObjTab[i].gid, theObjTab[i].prio);
-#endif
-
-        /* execute Localize in merge_mode */
-        /*
-                                        LocalizeObject(TRUE, desc,
-                                                (char *)(theObjects+theObjTab[i].offset),
-                                                obj,
-                                                theSymTab);
-         */
-      }
-
-    }
     /*
             TODO: hier geht das wissen aus etwaigen anderen kopien
             mit is_new==OTHERMSG verloren. referenzen aus diesen kopien,
@@ -1003,6 +1036,28 @@ static void UnpackSingleMsg (LC_MSGHANDLE xm,
             implemented merge_mode for Localize. references from all copies
             will be merged into the local copy. 960813 KB
      */
+
+                #ifdef MERGE_MODE_IN_TESTZUSTAND
+    if (theObjTab[i].is_new==OTHERMSG || theObjTab[i].is_new==PARTNEW)
+    {
+      TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
+      DDD_OBJ obj   = HDR2OBJ(theObjTab[i].hdr, desc);
+
+      if (desc->nPointers>0)
+      {
+                                #ifdef DEBUG_MERGE_MODE
+        printf("%4d: LocalizeObject in merge_mode, %08x prio %d\n",
+               me, theObjTab[i].gid, theObjTab[i].prio);
+                                #endif
+
+        /* execute Localize in merge_mode */
+        LocalizeObject(TRUE, desc,
+                       (char *)(theObjects+theObjTab[i].offset),
+                       obj,
+                       theSymTab);
+      }
+    }
+                #endif
   }
 
 #       if DebugUnpack<=4

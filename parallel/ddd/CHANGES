@@ -1,5 +1,25 @@
 ---------------------------
 
+CHANGES 1.6.10 -> 1.7
+
+---------------------------
+961220 kb
+added option OPT_WARNING_REF_COLLISION, with default OPT_ON.
+	- each EL_OBJPTR (i.e. each reference) inside a DDD object
+	  must be NULL_REF or a pointer to a valid DDD-object.
+	  when two or more local objects of one distributed object
+	  exist, each reference element must contain either NULL_REF or
+	  a reference to THE SAME valid DDD-object. if this is not the
+	  case, a warning 'reference collision' will be issued by DDD.
+	  this option may be used for switching this warning off, which
+	  might be dangerous due to possible data inconsistencies.
+961219 kb
+switched on merge-mode for xfer-unpack.
+	- now references of
+	  incoming objects and objects already on the local processor
+	  are merged.
+---------------------------
+
 CHANGES 1.6.9 -> 1.6.10
 
 ---------------------------
