@@ -3143,13 +3143,10 @@ static int RefineGrid (GRID *theGrid)
 		SETCOARSEN(theElement,0);
 	}
 
-	/* set node class on next level */
+	/* set topnode on next level */
 	for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode))
-		if (SONNODE(theNode)!=NULL)
-		{
-			SETCLASS(SONNODE(theNode),NCLASS(theNode));
-			if (NCLASS(theNode)>=2) TOPNODE(MYVERTEX(theNode)) = SONNODE(theNode);
-		}
+	  if (SONNODE(theNode)!=NULL)
+		TOPNODE(MYVERTEX(theNode)) = SONNODE(theNode);
 
 	return(0);
 }
