@@ -81,7 +81,7 @@
 /****************************************************************************/
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -338,13 +338,8 @@ INT ReadArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
   for (i=0; i<argc; i++)
     if (argv[i][0]==name[0])
     {
-                  #ifdef __TWODIM__
-      if (sscanf(argv[i],"%s %f %f",option,&x,&y)!=3)
-                  #endif
-                  #ifdef __THREEDIM__
-      if (sscanf(argv[i],"%s %f %f %f",option,&x,&y,&z)!=4)
-                  #endif
-      continue;
+      if (sscanf(argv[i],"%s %f %f %f",option,&x,&y,&z)!=DIM+1)
+        continue;
       if (strcmp(option,name) == 0)
       {
         pos[0] = x;

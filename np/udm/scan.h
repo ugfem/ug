@@ -81,6 +81,11 @@ MATDATA_DESC *ReadArgvMatDesc      (MULTIGRID *theMG, char *name,
 NP_BASE      *ReadArgvNumProc      (MULTIGRID *theMG, char *name, char *class,
                                     INT argc, char **argv);
 
+/* for reading dampinf factors etc. */
+INT ReadVecTypeINTs             (char *str, INT n, INT nINT[MAXVECTORS], INT theINTs[][MAXVECTORS]);
+INT ReadVecTypeDOUBLEs  (char *str, INT n, INT nDOUBLE[MAXVECTORS], DOUBLE theDOUBLEs[][MAXVECTORS]);
+INT ReadVecTypeOrder    (char *str, INT n, INT MaxPerType, INT *nOrder, INT theOrder[]);
+
 /* tools for VEC_SCALAR                                                     */
 INT sc_read          (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name,
                       INT argc, char **argv);
