@@ -155,7 +155,7 @@ then
 	cd $UGROOT/numerics;
 	for i in *.c *.h
 	do 
-		if test "$i" = "basics.c" -o "$i" = "mgsolver.c" -o "$i" = "nlsolver.c" -o "$i" = "smoother.c"
+		if test "$i" = "basics.c" -o "$i" = "mgsolver.c" -o "$i" = "nlsolver.c" -o "$i" = "smoother.c" -o "$i" = "tnlsolve.c" -o "$i" = "ew.c"
 		then
 			doctext -latex -heading ug/numerics -quotefmt $i
 			mv [a-z][a-z].3 $UGROOT/doc/ug3/ug/commands; 

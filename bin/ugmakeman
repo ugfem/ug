@@ -91,7 +91,7 @@ then
 	cd $UGROOT/numerics;
 	for i in *.c *.h
 	do 
-		if test "$i" = "basics.c" -o "$i" = "mgsolver.c" -o "$i" = "nlsolver.c" -o "$i" = "smoother.c"
+		if test "$i" = "basics.c" -o "$i" = "mgsolver.c" -o "$i" = "nlsolver.c" -o "$i" = "smoother.c" -o "$i" = "tnlsolve.c" -o "$i" = "ew.c"
 		then
 			doctext -quotefmt -ext 1 -heading ug/numerics $i
 			mv [a-z][a-z].1 $UGROOT/man/man1; 
