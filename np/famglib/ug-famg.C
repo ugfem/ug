@@ -53,7 +53,21 @@ extern "C"
 #ifdef USE_UG_DS
 #include "amgtransfer.h"
 #endif
-}
+
+// give C-linkage to this two functions
+INT FAMGRestrictDefect (NP_TRANSFER *theNP, INT level,
+						   VECDATA_DESC *to, VECDATA_DESC *from, 
+						   MATDATA_DESC *A, VEC_SCALAR damp,
+						   INT *result);
+
+INT FAMGInterpolateCorrection (NP_TRANSFER *theNP, INT level,
+								  VECDATA_DESC *to, VECDATA_DESC *from, 
+								  MATDATA_DESC *A, VEC_SCALAR damp,
+								  INT *result);
+
+} // extern "C"
+
+#include "ug-famg.h"
 
 #ifdef USE_UG_DS
 #include "famg_ugalgebra.h"
@@ -91,40 +105,6 @@ static struct FAMGParameter_ug famg_parameter;
 /* RCS_ID
 $Header$
 */
-
-/****************************************************************************/
-/*                                                                          */
-/*  Class Definition                                               			*/
-/*                                                                          */
-/****************************************************************************/
-
-typedef struct
-{
-	NP_ITER iter;
-
-    INT heap; 
-    INT n1; 
-    INT n2; 
-    INT gamma;
-    INT cgnodes;
-    DOUBLE coarsening;
-    DOUBLE strong;
-    INT adaptive;
-    INT maxit;
-    DOUBLE alimit;
-    DOUBLE rlimit;
-    DOUBLE divlimit;
-    DOUBLE reduction;
-	INT famg_mark_key;        
-} NP_FAMG_ITER;
-
-typedef struct
-{
-	NP_AMG_TRANSFER amg_trans;
-	
-	INT famg_mark_key;
-	INT coarsegridsolver;
-} NP_FAMG_TRANSFER;
 
 /****************************************************************************/
 /*                                                                          */
@@ -1402,6 +1382,9 @@ INT FAMGTransferInit (NP_BASE *theNP, INT argc, char **argv)
 	if (ReadArgvINT("coarsegridsolver",&(famgtrans->coarsegridsolver),argc,argv))
         famgtrans->coarsegridsolver = 1;
 	
+	famgtrans->smooth_sol = NULL;	// default to detect errors
+	famgtrans->smooth_def = NULL;	// default to detect errors
+	
 	//return AMGTransferInit (theNP, argc, argv); is not good because we can't provide the necessary parameters
 	return NP_EXECUTABLE;
 }
@@ -1441,10 +1424,12 @@ static INT FAMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 	np = (NP_AMG_TRANSFER *) theNP;
 	theMG = NP_MG(theNP);
 
+	// release memory. TODO
+	
 	return 0;
 }
 
-static INT FAMGRestrictDefect (NP_TRANSFER *theNP, INT level,
+INT FAMGRestrictDefect (NP_TRANSFER *theNP, INT level,
 						   VECDATA_DESC *to, VECDATA_DESC *from, 
 						   MATDATA_DESC *A, VEC_SCALAR damp,
 						   INT *result)
@@ -1458,12 +1443,12 @@ static INT FAMGRestrictDefect (NP_TRANSFER *theNP, INT level,
 	else
 		famglevel = -1-level;
 	
-	result[0] = FAMG_RestrictDefect(famglevel);
+	result[0] = FAMG_RestrictDefect(famglevel, to, from, np->smooth_sol, np->smooth_def);
 	return result[0];
 }
 
 
-static INT FAMGInterpolateCorrection (NP_TRANSFER *theNP, INT level,
+INT FAMGInterpolateCorrection (NP_TRANSFER *theNP, INT level,
 								  VECDATA_DESC *to, VECDATA_DESC *from, 
 								  MATDATA_DESC *A, VEC_SCALAR damp,
 								  INT *result)
@@ -1479,7 +1464,7 @@ static INT FAMGInterpolateCorrection (NP_TRANSFER *theNP, INT level,
 	else
 		famglevel = -1-level;
 	
-	result[0] = FAMG_ProlongCorrection(famglevel);
+	result[0] = FAMG_ProlongCorrection(famglevel, to, from, np->smooth_sol, np->smooth_def);
 	return result[0];
 }
 

@@ -201,11 +201,35 @@ int FAMGSolveSystem(FAMG_Interface *interface)
     return status;
 }
 
-int FAMG_RestrictDefect( int fine_level )
+int FAMG_RestrictDefect( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from, VECDATA_DESC *smooth_sol, VECDATA_DESC *smooth_def )
 // fine_level in the famg grid stack
 {
+	INT i;
+
 	FAMGGrid &fg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(fine_level);
 	FAMGGrid &cg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(fine_level+1);
+		
+	assert(from==smooth_def);
+	//assert(VD_IS_SCALAR(from)); has not to be fulfilled
+	//assert(VD_IS_SCALAR(to)); has not to be fulfilled
+	//assert(VD_SCALCMP(from)==VD_SCALCMP(to)); has not to be fulfilled
+	// now it is sure we can use for np->smooth_def, from and to the same component
+	
+	FAMGugVector fgsol(*(const FAMGugGridVector*)&fg.GetGridVector(),smooth_sol);
+	FAMGugVector fgdef(*(const FAMGugGridVector*)&fg.GetGridVector(),from);
+	FAMGugVector cgdef(*(const FAMGugGridVector*)&fg.GetGridVector(),to);
+	
+	// be sure not to use an out-dated pointer
+	for (i=0; i<FAMGMAXVECTORS; i++ )
+	{
+		fg.SetVector(i, NULL);
+		cg.SetVector(i, NULL);
+	}
+	
+	fg.SetVector(FAMGUNKNOWN, &fgsol);
+	fg.SetVector(FAMGDEFECT, &fgdef);
+	fg.SetVector(FAMGRHS, &fgdef);		// rhs and defect are the same for smoothing/defect calculation 
+	cg.SetVector(FAMGDEFECT, &cgdef);
 	
 	fg.Restriction(&cg);
 	
@@ -213,11 +237,34 @@ int FAMG_RestrictDefect( int fine_level )
 }
 
 
-int FAMG_ProlongCorrection( int fine_level )
+int FAMG_ProlongCorrection( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from, VECDATA_DESC *smooth_sol, VECDATA_DESC *smooth_def )
 // fine_level in the famg grid stack
 {
+	INT i;
+
 	FAMGGrid &fg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(fine_level);
 	FAMGGrid &cg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(fine_level+1);
+	
+	assert(to==smooth_sol);
+	//assert(VD_IS_SCALAR(from)); has not to be fulfilled
+	//assert(VD_IS_SCALAR(to)); has not to be fulfilled
+	// now it is sure we can use for np->smooth_sol, from and to the same component
+
+	FAMGugVector fgsol(*(const FAMGugGridVector*)&fg.GetGridVector(),to);
+	FAMGugVector fgdef(*(const FAMGugGridVector*)&fg.GetGridVector(),smooth_def);
+	FAMGugVector cgsol(*(const FAMGugGridVector*)&fg.GetGridVector(),from);
+
+	// be sure not to use an out-dated pointer
+	for (i=0; i<FAMGMAXVECTORS; i++ )
+	{
+		fg.SetVector(i, NULL);
+		cg.SetVector(i, NULL);
+	}
+	
+	fg.SetVector(FAMGUNKNOWN, &fgsol);
+	fg.SetVector(FAMGDEFECT, &fgdef);
+	fg.SetVector(FAMGRHS, &fgdef);		// rhs and defect are the same for smoothing/defect calculation 
+	cg.SetVector(FAMGUNKNOWN, &cgsol);
 	
 	fg.Prolongation(&cg);
 	

@@ -29,7 +29,7 @@
  */
 
 //#include "gm.h"        /* for ug data structure               */
-#include "famg_algebra.h"
+#include "famg_ugalgebra.h"
 
 
 #define FAMG_RHS      0
@@ -138,8 +138,8 @@ int FAMGConstructSimple(FAMGMatrixAlg *matrix, FAMGVector *tvA, FAMGVector *tvB)
 int FAMGSolve(FAMGVector *rhs, FAMGVector *defect, FAMGVector *unknown);
 void FAMGDeconstruct();
 void FAMGDeconstructSimple();
-int FAMG_RestrictDefect( int fine_level );
-int FAMG_ProlongCorrection( int fine_level );
+int FAMG_RestrictDefect( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from, VECDATA_DESC *smooth_sol, VECDATA_DESC *smooth_def );
+int FAMG_ProlongCorrection( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from, VECDATA_DESC *smooth_sol, VECDATA_DESC *smooth_def );
 
 int FAMGSolveSystem(struct FAMG_Interface*);
 int FAMG_GetNF(int level);
