@@ -238,7 +238,7 @@ static int Scatter_pamgCheckQQQQQQQQQQQQQQQQQQQQQQQQ (DDD_OBJ obj, void *data)
     if( !isAlocalGID(buf[i],loc_gids,nr_local_gids) )
     {
       pamgerrors++;
-      UserWriteF("\nERROR GID %d on PE %d had NB with GID %d", sender_gid, sender_pe, buf[i]);
+      UserWriteF("\nERROR GID %08x on PE %d had NB with GID %08x", sender_gid, sender_pe, buf[i]);
     }
 
   return 0;
@@ -274,7 +274,7 @@ static int Scatter_pamgCheck (DDD_OBJ obj, void *data)
     if( !isAlocalGID(buf[i],loc_gids,nr_local_gids) )
     {
       pamgerrors++;
-      UserWriteF("\nERROR GID %d on PE %d had NB with GID %d", sender_gid, sender_pe, buf[i]);
+      UserWriteF("\nERROR GID %08x on PE %d had NB with GID %08x", sender_gid, sender_pe, buf[i]);
     }
 
   return 0;
@@ -303,7 +303,7 @@ INT pamgCheckDo( MULTIGRID *theMG, INT level )
     if( pamgerrors == 0 )
       UserWrite( " OK\n" );
     else
-      UserWriteF( "%d ERRORS\n", pamgerrors );
+      UserWriteF( " %d ERRORS\n", pamgerrors );
 
     /*printmgrid( grid, 1 );*/
   }
