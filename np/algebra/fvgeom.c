@@ -435,7 +435,8 @@ INT EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
 
 #                               ifdef __TWODIM__
         /* normal, assumes correct numbering of edges relative to corners (of side) !! */
-        V2_SUBTRACT(FVG_GCO(geo,CORNER_OF_SIDE(e,i,k)),FVG_GEM(geo,i),x);
+        if(k==0) V2_SUBTRACT(FVG_GEM(geo,i),FVG_GCO(geo,CORNER_OF_SIDE(e,i,0)),x);
+        if(k==1) V2_SUBTRACT(FVG_GCO(geo,CORNER_OF_SIDE(e,i,1)),FVG_GEM(geo,i),x);
         V2_EUKLIDNORM(x,SCVBF_AREA(bf));
         SCVBF_PARAM(bf,0) = 0.25 + k * 0.5;
         V2_NORMAL(x,SCVBF_NORMAL(bf));
