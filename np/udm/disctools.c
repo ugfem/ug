@@ -186,31 +186,48 @@ INT GetAllVectorsOfElementsideOfType (ELEMENT *theElement, INT side,
                                       VECTOR **vec,
                                       const VECDATA_DESC *theVD)
 {
-  VECTOR *v[MAX_NODAL_VECTORS];
-  INT i,cnt,cnt1;
+  VECTOR *v,*vv[MAX_CORNERS_OF_ELEM];
+  INT i,n;
+  INT obj = VD_OBJ_USED(theVD);
+  INT cnt = 0;
 
-  if (GetVectorsOfDataTypesInObjects(theElement,VD_DATA_TYPES(theVD),
-                                     VD_OBJ_USED(theVD),&cnt,v))
-    return (-1);
-
-  cnt = cnt1 = 0;
-  if (VD_NCMPS_IN_TYPE(theVD,NODEVEC)) {
-    for (i=0; i<CORNERS_OF_SIDE(theElement,side); i++)
-      vec[cnt++] = v[CORNER_OF_SIDE(theElement,side,i)];
-    cnt1 += CORNERS_OF_ELEM(theElement);
+  if (obj & BITWISE_TYPE(NODEVEC)) {
+    if (GetVectorsOfNodes(theElement,&n,vv) != GM_OK)
+      return(GM_ERROR);
+    for (i=0; i<CORNERS_OF_SIDE(theElement,side); i++) {
+      v = vv[CORNER_OF_SIDE(theElement,side,i)];
+      if (VD_NCMPS_IN_TYPE(theVD,VTYPE(v)))
+        vec[cnt++] = v;
+    }
   }
-  if (VD_NCMPS_IN_TYPE(theVD,EDGEVEC)) {
-    for (i=0; i<EDGES_OF_SIDE(theElement,side); i++)
-      vec[cnt++] = v[cnt1+EDGE_OF_SIDE(theElement,side,i)];
-    cnt1 += EDGES_OF_ELEM(theElement);
+  if (obj & BITWISE_TYPE(EDGEVEC)) {
+    if (GetVectorsOfEdges(theElement,&n,vv) != GM_OK)
+      return(GM_ERROR);
+    for (i=0; i<EDGES_OF_SIDE(theElement,side); i++) {
+      v = vv[EDGE_OF_SIDE(theElement,side,i)];
+      if (VD_NCMPS_IN_TYPE(theVD,VTYPE(v)))
+        vec[cnt++] = v;
+    }
+  }
+  if (obj & BITWISE_TYPE(ELEMVEC)) {
+    if (GetVectorsOfElement(theElement,&n,vec+cnt) != GM_OK)
+      return(GM_ERROR);
+    if (VD_NCMPS_IN_TYPE(theVD,VTYPE(vec[cnt])))
+      cnt++;
   }
     #ifdef __THREEDIM__
-  if (VD_NCMPS_IN_TYPE(theVD,SIDEVEC))
-    vec[cnt++] = v[cnt1];
+  if (obj & BITWISE_TYPE(SIDEVEC)) {
+    if (GetVectorsOfSides(theElement,&n,vec+cnt) != GM_OK)
+      return(GM_ERROR);
+    if (VD_NCMPS_IN_TYPE(theVD,VTYPE(vec[cnt])))
+      cnt++;
+  }
     #endif
 
   return (cnt);
 }
+
+
 
 /****************************************************************************/
 /*D
