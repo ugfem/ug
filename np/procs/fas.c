@@ -102,7 +102,7 @@ typedef struct
   INT gamma;                                                   /* gamma						                */
   INT maxit;                           /* maximal number of iterations      */
   DOUBLE damp[MAX_VEC_COMP];           /* damp factor for solution		    */
-  DOUBLE restrict[MAX_VEC_COMP];           /* restrict factor for solution              */
+  DOUBLE restriction[MAX_VEC_COMP];                /* restriction factor for solution           */
 
   /* and XDATA_DESCs */
   MATDATA_DESC *J;                              /* the Matrix to be solved				        */
@@ -684,7 +684,7 @@ INT FasStep (NP_FAS *fas, NP_NL_ASSEMBLE *ass, INT level,
   /* restrict value */
   if (dset  (mg,level-1,level-1,ALL_VECTORS,fas->l,0.0))
     return (1);
-  if (RestrictValue(g,fas->l,x,fas->restrict))
+  if (RestrictValue(g,fas->l,x,fas->restriction))
     return (1);
 
   /* nonlinear defect on current level */
@@ -764,7 +764,7 @@ static INT FasSolverInit (NP_BASE *base, INT argc, char **argv)
   /* set configuration parameters */
   if(sc_read(fas->damp,NP_FMT(fas),fas->l,"damp",argc,argv))
     REP_ERR_RETURN(1);
-  if(sc_read(fas->restrict,NP_FMT(fas),fas->l,"res",argc,argv))
+  if(sc_read(fas->restriction,NP_FMT(fas),fas->l,"res",argc,argv))
     REP_ERR_RETURN(1);
   if (ReadArgvINT("maxit",&(fas->maxit),argc,argv))
     fas->maxit = 50;
@@ -825,7 +825,7 @@ static INT FasSolverDisplay (NP_BASE *theNumProc)
   UserWriteF(DISPLAY_NP_FORMAT_SI,"gamma",(int)fas->gamma);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)fas->baselevel);
   if (sc_disp(fas->damp,fas->l,"damp")) REP_ERR_RETURN (1);
-  if (sc_disp(fas->restrict,fas->l,"res")) REP_ERR_RETURN (1);
+  if (sc_disp(fas->restriction,fas->l,"res")) REP_ERR_RETURN (1);
 
   return (0);
 }
