@@ -145,7 +145,7 @@ static INT check_distributed_objects_errors = 0;
  */
 /****************************************************************************/
 
-INT CheckProcListCons (int *proclist, int uniqueTag)
+INT NS_PREFIX CheckProcListCons (int *proclist, int uniqueTag)
 {
   int nunique = 0;
 
