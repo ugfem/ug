@@ -1755,6 +1755,7 @@ extern const BV_DESC_FORMAT one_level_bvdf;     /* bvdf for only 1 blocklevel	*/
 #define GM_FFCCLL                                       2
 #define GM_FFLLCC                                       3
 #define GM_FFLCLC                                       4
+#define GM_CCFFLL                                       5
 #define GM_GEN_FIRST                            0
 #define GM_GEN_LAST                                     1
 #define GM_GEN_CUT                                      2
