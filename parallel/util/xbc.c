@@ -36,16 +36,16 @@ void XBroadcast(int n, void *p, size_t s, ...)
   va_start(a, s);
 
 #if defined va_copy
-  va_copy(aa, a);
+  va_copy(aa, a);            /* C99 */
 #elif defined __va_copy
-  __va_copy (aa, a);
+  __va_copy (aa, a);         /* draft C99 */
 #else
-  aa = a;
+  aa = a;                    /* hope */
 #endif
 
   for (i = 1; i < n; i++) {
     p = va_arg(a, void*);
-    s = va_arg(a, int);
+    s = va_arg(a, size_t);
     memcpy(b, p, s); b += s;
   }
 
@@ -56,7 +56,7 @@ void XBroadcast(int n, void *p, size_t s, ...)
 
   for (i = 1; i < n; i++) {
     p = va_arg(aa, void*);
-    s = va_arg(aa, int);
+    s = va_arg(aa, size_t);
     memcpy(p, b, s); b += s;
   }
 
