@@ -11335,7 +11335,7 @@ static INT SymListCommand (INT argc, char **argv)
       /* print all matrices */
       for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md))
       {
-
+        DisplayMatDataDesc(md,buffer);
         UserWrite(buffer);
       }
       return (OKCODE);
@@ -11343,7 +11343,7 @@ static INT SymListCommand (INT argc, char **argv)
     for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md))
       if (strcmp(ENVITEM_NAME(md),name)==0)
       {
-
+        DisplayMatDataDesc(md,buffer);
         UserWrite(buffer);
         return (OKCODE);
       }
