@@ -17,6 +17,7 @@ ARCH_POSTLINK =
 ARCH_LIBS     = -lm
 
 ARCH_CFLAGS   = -A  # -g -Xc -O1 -Mnoperfmon -Mvect
+ARCH_C++FLAGS =
 ARCH_LFLAGS   = # -Mdebug -Mframe -O0
 ARCH_ARFLAGS  = ru
 
