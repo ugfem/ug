@@ -34,6 +34,6 @@
 /*																			*/
 /****************************************************************************/
 
-INT InitPredefinedControlEntries        (void);
+INT InitCW      (void);
 
 #endif

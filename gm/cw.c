@@ -19,6 +19,9 @@
 /*																			*/
 /****************************************************************************/
 
+#include <string.h>
+#include <stdio.h>
+
 /* define this to exclude extern definition of global arrays */
 #define __COMPILE_CW__
 
@@ -43,6 +46,21 @@
 /*																			*/
 /****************************************************************************/
 
+#define CW_EDOBJ                (BITWISE_TYPE(EDOBJ) | BITWISE_TYPE(LIOBJ))
+/* take both matrix and connection in one	*/
+#define CW_GROBJ                BITWISE_TYPE(GROBJ)
+#define CW_MGOBJ                BITWISE_TYPE(MGOBJ)
+#define CW_NDOBJ                BITWISE_TYPE(NDOBJ)
+#define CW_VEOBJ                BITWISE_TYPE(VEOBJ)
+#define CW_MAOBJ                (BITWISE_TYPE(MAOBJ) | BITWISE_TYPE(COOBJ))
+/* take both matrix and connection in one	*/
+#define CW_BVOBJ                BITWISE_TYPE(BLOCKVOBJ)
+
+#define CW_VXOBJS               (BITWISE_TYPE(IVOBJ) | BITWISE_TYPE(BVOBJ))
+#define CW_ELOBJS               (BITWISE_TYPE(IEOBJ) | BITWISE_TYPE(BEOBJ))
+#define CW_GEOMOBJS             (CW_VXOBJS | CW_ELOBJS | CW_NDOBJ | CW_EDOBJ | CW_GROBJ)
+/* NOTE: CW_GEOMOBJS and GEOM_OBJECTS differ*/
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -50,13 +68,32 @@
 /*																			*/
 /****************************************************************************/
 
+/* description of a control word predefines */
 typedef struct {
   INT used;                                                             /* used this entry					*/
+  char *name;                                                           /* name string						*/
+  INT control_word_id;                                  /* index in control_words			*/
+  unsigned INT offset_in_object ;               /* where in object is it ?			*/
+  INT objt_used;                                                /* bitwise object ID				*/
+} CONTROL_WORD_PREDEF;
+
+/* description of a control enty predefines */
+typedef struct {
+  INT used;                                                             /* used this entry					*/
+  char *name;                                                           /* name string						*/
+  INT control_word;                                             /* index of corresp. controlword	*/
   INT control_entry_id;                                 /* index in control_entries             */
-  INT control_word ;                                            /* pointer to corresponding controlw*/
   INT offset_in_word;                                   /* shift in control word			*/
   INT length;                                                   /* number of bits used				*/
-} predefined_control_entry;
+  INT objt_used;                                                /* bitwise object ID				*/
+} CONTROL_ENTRY_PREDEF;
+
+typedef struct {
+
+  INT read;                                                             /* number of accesses to read		*/
+  INT write;                                                            /* number of accesses to write		*/
+
+} CE_USAGE;
 
 /****************************************************************************/
 /*																			*/
@@ -64,136 +101,8 @@ typedef struct {
 /*																			*/
 /****************************************************************************/
 
-CONTROL_WORD control_words[MAX_CONTROL_WORDS] = {
-  {VECTOR_OFFSET, 0},
-  {MATRIX_OFFSET, 0},
-  {GENERAL_OFFSET, 0},
-  {VERTEX_OFFSET, 0},
-  {NODE_OFFSET, 0},
-  {LINK_OFFSET, 0},
-  {EDGE_OFFSET, 0},
-  {ELEMENT_OFFSET, 0},
-  {FLAG_OFFSET, 0},
-  {GRID_CW_OFFSET, 0},
-  {GRID_STATUS_OFFSET, 0},
-  {MULTIGRID_STATUS_OFFSET, 0},
-  {PROPERTY_OFFSET, 0},
-  {0, 0},
-  {0, 0},
-  {0, 0},
-  {0, 0},
-  {0, 0},
-  {0, 0},
-  {0, 0}
-} ;
-
+CONTROL_WORD control_words[MAX_CONTROL_WORDS];
 CONTROL_ENTRY control_entries[MAX_CONTROL_ENTRIES];
-
-/* the first entry gives the status: 0 unused,
-                                     1 used,
-                                     2 locked (do not modify) */
-
-predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
-  {2,VOTYPE_CE,           VECTOR_CW,      VOTYPE_SHIFT,           VOTYPE_LEN              },
-  {2,VBUILDCON_CE,        VECTOR_CW,      VBUILDCON_SHIFT,        VBUILDCON_LEN   },
-  {2,VCFLAG_CE,           VECTOR_CW,      VCFLAG_SHIFT,           VCFLAG_LEN              },
-  {2,VCUSED_CE,           VECTOR_CW,      VCUSED_SHIFT,           VCUSED_LEN              },
-  {2,VCOUNT_CE,           VECTOR_CW,      VCOUNT_SHIFT,           VCOUNT_LEN              },
-  {2,VECTORSIDE_CE,       VECTOR_CW,      VECTORSIDE_SHIFT,       VECTORSIDE_LEN  },
-  {2,VCLASS_CE,           VECTOR_CW,      VCLASS_SHIFT,           VCLASS_LEN      },
-  {2,VDATATYPE_CE,        VECTOR_CW,      VDATATYPE_SHIFT,        VDATATYPE_LEN   },
-  {2,VNCLASS_CE,          VECTOR_CW,      VNCLASS_SHIFT,          VNCLASS_LEN     },
-  {2,VNEW_CE,             VECTOR_CW,      VNEW_SHIFT,             VNEW_LEN        },
-  {2,VCNEW_CE,            VECTOR_CW,      VCNEW_SHIFT,            VCNEW_LEN       },
-  {2,VCNB_CE,         VECTOR_CW,  VCNB_SHIFT,             VCNB_LEN        },
-  {2,VCCUT_CE,            VECTOR_CW,      VCCUT_SHIFT,            VCCUT_LEN               },
-  {2,VTYPE_CE,            VECTOR_CW,      VTYPE_SHIFT,            VTYPE_LEN               },
-  {2,VPART_CE,            VECTOR_CW,      VPART_SHIFT,            VPART_LEN               },
-  {2,VCCOARSE_CE,         VECTOR_CW,      VCCOARSE_SHIFT,         VCCOARSE_LEN    },
-
-  {2,MOFFSET_CE,          MATRIX_CW,      MOFFSET_SHIFT,          MOFFSET_LEN             },
-  {2,MROOTTYPE_CE,        MATRIX_CW,      MROOTTYPE_SHIFT,        MROOTTYPE_LEN   },
-  {2,MDESTTYPE_CE,        MATRIX_CW,      MDESTTYPE_SHIFT,        MDESTTYPE_LEN   },
-  {2,MDIAG_CE,            MATRIX_CW,      MDIAG_SHIFT,            MDIAG_LEN               },
-  {2,MTYPE_CE,            MATRIX_CW,      MTYPE_SHIFT,            MTYPE_LEN               },
-  {2,MUSED_CE,            MATRIX_CW,      MUSED_SHIFT,            MUSED_LEN               },
-  {2,MSIZE_CE,            MATRIX_CW,      MSIZE_SHIFT,            MSIZE_LEN               },
-  {2,MNEW_CE,             MATRIX_CW,      MNEW_SHIFT,             MNEW_LEN                },
-  {2,CEXTRA_CE,           MATRIX_CW,      CEXTRA_SHIFT,           CEXTRA_LEN              },
-  {2,MDOWN_CE,            MATRIX_CW,      MDOWN_SHIFT,            MDOWN_LEN               },
-  {2,MUP_CE,              MATRIX_CW,      MUP_SHIFT,              MUP_LEN                 },
-
-  {1,BVDOWNTYPE_CE,       BLOCKVECTOR_CW, BVDOWNTYPE_SHIFT,       BVDOWNTYPE_LEN  },
-  {1,BVLEVEL_CE,          BLOCKVECTOR_CW, BVLEVEL_SHIFT,          BVLEVEL_LEN             },
-  {1,BVTVTYPE_CE,         BLOCKVECTOR_CW, BVTVTYPE_SHIFT,         BVTVTYPE_LEN    },
-
-  {2,OBJ_CE,              GENERAL_CW,     OBJ_SHIFT,              OBJ_LEN                 },
-  {2,USED_CE,             GENERAL_CW,     USED_SHIFT,             USED_LEN                },
-  {2,TAG_CE,              GENERAL_CW,     TAG_SHIFT,              TAG_LEN                 },
-  {2,LEVEL_CE,            GENERAL_CW,     LEVEL_SHIFT,            LEVEL_LEN               },
-  {2,THEFLAG_CE,          GENERAL_CW,     THEFLAG_SHIFT,          THEFLAG_LEN             },
-
-  {2,VERTEX_GEN,          VERTEX_CW,      GENERAL_SHIFT,          GENERAL_LEN             },
-  {2,MOVE_CE,             VERTEX_CW,      MOVE_SHIFT,             MOVE_LEN                },
-  {2,MOVED_CE,            VERTEX_CW,      MOVED_SHIFT,            MOVED_LEN               },
-  {2,ONEDGE_CE,           VERTEX_CW,      ONEDGE_SHIFT,           ONEDGE_LEN              },
-  {2,ONSIDE_CE,           VERTEX_CW,      ONSIDE_SHIFT,           ONSIDE_LEN              },
-  {2,ONNBSIDE_CE,         VERTEX_CW,      ONNBSIDE_SHIFT,         ONNBSIDE_LEN    },
-  {2,NOOFNODE_CE,         VERTEX_CW,      NOOFNODE_SHIFT,         NOOFNODE_LEN    },
-
-  {2,NODE_GEN,            NODE_CW,        GENERAL_SHIFT,          GENERAL_LEN             },
-  {2,NSUBDOM_CE,          NODE_CW,        NSUBDOM_SHIFT,      NSUBDOM_LEN         },
-  {2,NPROP_CE,            NODE_CW,        NPROP_SHIFT,            NPROP_LEN               },
-  {2,MODIFIED_CE,         NODE_CW,        MODIFIED_SHIFT,         MODIFIED_LEN    },
-  {2,NTYPE_CE,            NODE_CW,        NTYPE_SHIFT,            NTYPE_LEN               },
-
-  {1,LINK_GEN,            LINK_CW,        GENERAL_SHIFT,          GENERAL_LEN             },
-  {1,LOFFSET_CE,          LINK_CW,        LOFFSET_SHIFT,          LOFFSET_LEN             },
-
-  {1,EDGE_GEN,            EDGE_CW,        GENERAL_SHIFT,          GENERAL_LEN             },
-  {1,EOFFSET_CE,          EDGE_CW,        LOFFSET_SHIFT,          LOFFSET_LEN             },
-  {0,0,0,0,0},
-  {1,NOOFELEM_CE,         EDGE_CW,        NOOFELEM_SHIFT,         NOOFELEM_LEN    },
-  {1,AUXEDGE_CE,          EDGE_CW,        AUXEDGE_SHIFT,          AUXEDGE_LEN             },
-  {1,PATTERN_CE,          EDGE_CW,        PATTERN_SHIFT,          PATTERN_LEN             },
-  {1,ADDPATTERN_CE,       EDGE_CW,        ADDPATTERN_SHIFT,       ADDPATTERN_LEN  },
-  {1,EDGENEW_CE,          EDGE_CW,        EDGENEW_SHIFT,          EDGENEW_LEN             },
-  {1,EDSUBDOM_CE,         EDGE_CW,        EDSUBDOM_SHIFT,         EDSUBDOM_LEN    },
-
-  {1,ELEMENT_GEN,         ELEMENT_CW,     GENERAL_SHIFT,          GENERAL_LEN             },
-  {1,REFINE_CE,           ELEMENT_CW,     REFINE_SHIFT,           REFINE_LEN              },
-  {1,ECLASS_CE,           ELEMENT_CW,     ECLASS_SHIFT,           ECLASS_LEN              },
-  {1,NSONS_CE,            ELEMENT_CW,     NSONS_SHIFT,            NSONS_LEN               },
-  {1,REFINECLASS_CE,      ELEMENT_CW,     REFINECLASS_SHIFT,      REFINECLASS_LEN },
-  {1,NEWEL_CE,            ELEMENT_CW,     NEWEL_SHIFT,        NEWEL_LEN           },
-
-  {1,MARK_CE,             FLAG_CW,        MARK_SHIFT,             MARK_LEN                },
-  {1,COARSEN_CE,          FLAG_CW,        COARSEN_SHIFT,          COARSEN_LEN             },
-  {1,EBUILDCON_CE,        FLAG_CW,        EBUILDCON_SHIFT,        EBUILDCON_LEN   },
-  {1,DECOUPLED_CE,        FLAG_CW,        DECOUPLED_SHIFT,        DECOUPLED_LEN   },
-  {1,UPDATE_GREEN_CE,     FLAG_CW,        UPDATE_GREEN_SHIFT,     UPDATE_GREEN_LEN},
-  {1,SIDEPATTERN_CE,      FLAG_CW,        SIDEPATTERN_SHIFT,      SIDEPATTERN_LEN },
-  {1,MARKCLASS_CE,        FLAG_CW,        MARKCLASS_SHIFT,        MARKCLASS_LEN   },
-
-  {1,SUBDOMAIN_CE,    PROPERTY_CW,SUBDOMAIN_SHIFT,    SUBDOMAIN_LEN   },
-  {1,NODEORD_CE,          PROPERTY_CW,NODEORD_SHIFT,      NODEORD_LEN     },
-  {1,PROP_CE,             PROPERTY_CW,PROP_SHIFT,                 PROP_LEN                },
-
-        #ifdef ModelP
-  {1,XFERLINK_CE,         LINK_CW,        XFERLINK_SHIFT,         XFERLINK_LEN    },
-  {1,XFERVECTOR_CE,       VECTOR_CW,      XFERVECTOR_SHIFT,       XFERVECTOR_LEN  },
-  {1,XFERNODE_CE,         NODE_CW,        XFERNODE_SHIFT,         XFERNODE_LEN    },
-  {1,XFERMATX_CE,         MATRIX_CW,      XFERMATX_SHIFT,         XFERMATX_LEN    },
-        #else /* ModelP */
-  {0,0,0,0,0},
-  {0,0,0,0,0},
-  {0,0,0,0,0},
-  {0,0,0,0,0},
-        #endif /* ModelP */
-  {0,0,0,0,0},
-  {0,0,0,0,0},
-  {0,0,0,0,0},
-}; /* last entry used: 84 for BVTVTYPE_CE */
 
 /****************************************************************************/
 /*                                                                          */
@@ -201,8 +110,460 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
 /*                                                                          */
 /****************************************************************************/
 
+static CONTROL_WORD_PREDEF cw_predefines[MAX_CONTROL_WORDS] = {
+  CW_INIT(CW_USED,VECTOR_,                        CW_VEOBJ),
+  CW_INIT(CW_USED,MATRIX_,                        CW_MAOBJ),
+  CW_INIT(CW_USED,BLOCKVECTOR_,           CW_BVOBJ),
+  CW_INIT(CW_USED,VERTEX_,                        CW_VXOBJS),
+  CW_INIT(CW_USED,NODE_,                          CW_NDOBJ),
+  CW_INIT(CW_USED,LINK_,                          CW_EDOBJ),
+  CW_INIT(CW_USED,EDGE_,                          CW_EDOBJ),
+  CW_INIT(CW_USED,ELEMENT_,                       CW_ELOBJS),
+  CW_INIT(CW_USED,FLAG_,                          CW_ELOBJS),
+  CW_INIT(CW_USED,PROPERTY_,                      CW_ELOBJS),
+  CW_INIT(CW_USED,GRID_,                          CW_GROBJ),
+  CW_INIT(CW_USED,GRID_STATUS_,           CW_GROBJ),
+  CW_INIT(CW_USED,MULTIGRID_STATUS_,      CW_MGOBJ),
+  CW_INIT_UNUSED,
+  CW_INIT_UNUSED,
+  CW_INIT_UNUSED,
+  CW_INIT_UNUSED,
+  CW_INIT_UNUSED,
+  CW_INIT_UNUSED,
+  CW_INIT_UNUSED,
+};
+
+static CONTROL_ENTRY_PREDEF ce_predefines[MAX_CONTROL_ENTRIES] = {
+  CE_INIT(CE_LOCKED,      VECTOR_,                VOTYPE_,                CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VCFLAG_,                CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VCUSED_,                CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VCOUNT_,                CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VECTORSIDE_,    CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VCLASS_,                CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VDATATYPE_,             CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VNCLASS_,               CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VNEW_,                  CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VCNEW_,                 CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VCNB_,                  CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VCCUT_,                 CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VTYPE_,                 CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VPART_,                 CW_VEOBJ),
+  CE_INIT(CE_LOCKED,      VECTOR_,                VCCOARSE_,              CW_VEOBJ),
+
+  CE_INIT(CE_LOCKED,      MATRIX_,                MOFFSET_,               CW_MAOBJ),
+  CE_INIT(CE_LOCKED,      MATRIX_,                MROOTTYPE_,             CW_MAOBJ),
+  CE_INIT(CE_LOCKED,      MATRIX_,                MDESTTYPE_,             CW_MAOBJ),
+  CE_INIT(CE_LOCKED,      MATRIX_,                MDIAG_,                 CW_MAOBJ),
+  CE_INIT(CE_LOCKED,      MATRIX_,                MTYPE_,                 CW_MAOBJ),
+  CE_INIT(CE_LOCKED,      MATRIX_,                MUSED_,                 CW_MAOBJ),
+  CE_INIT(CE_LOCKED,      MATRIX_,                MSIZE_,                 CW_MAOBJ),
+  CE_INIT(CE_LOCKED,      MATRIX_,                MNEW_,                  CW_MAOBJ),
+  CE_INIT(CE_LOCKED,      MATRIX_,                CEXTRA_,                CW_MAOBJ),
+  CE_INIT(CE_LOCKED,      MATRIX_,                MDOWN_,                 CW_MAOBJ),
+  CE_INIT(CE_LOCKED,      MATRIX_,                MUP_,                   CW_MAOBJ),
+
+  CE_INIT(CE_USED,        BLOCKVECTOR_,   BVDOWNTYPE_,    CW_BVOBJ),
+  CE_INIT(CE_USED,        BLOCKVECTOR_,   BVLEVEL_,               CW_BVOBJ),
+  CE_INIT(CE_USED,        BLOCKVECTOR_,   BVTVTYPE_,              CW_BVOBJ),
+
+  CE_INIT(CE_LOCKED,      GENERAL_,               OBJ_,                   CW_GEOMOBJS),
+  CE_INIT(CE_LOCKED,      GENERAL_,               USED_,                  CW_GEOMOBJS),
+  CE_INIT(CE_LOCKED,      GENERAL_,               TAG_,                   CW_GEOMOBJS),
+  CE_INIT(CE_LOCKED,      GENERAL_,               LEVEL_,                 CW_GEOMOBJS),
+  CE_INIT(CE_LOCKED,      GENERAL_,               THEFLAG_,               CW_GEOMOBJS),
+
+  CE_INIT(CE_LOCKED,      VERTEX_,                MOVE_,                  CW_VXOBJS),
+  CE_INIT(CE_LOCKED,      VERTEX_,                MOVED_,                 CW_VXOBJS),
+  CE_INIT(CE_LOCKED,      VERTEX_,                ONEDGE_,                CW_VXOBJS),
+  CE_INIT(CE_LOCKED,      VERTEX_,                NOOFNODE_,              CW_VXOBJS),
+
+  CE_INIT(CE_LOCKED,      NODE_,                  NSUBDOM_,               CW_NDOBJ),
+  CE_INIT(CE_LOCKED,      NODE_,                  NPROP_,                 CW_NDOBJ),
+  CE_INIT(CE_LOCKED,      NODE_,                  MODIFIED_,              (CW_NDOBJ | CW_GROBJ)),
+  CE_INIT(CE_LOCKED,      NODE_,                  NTYPE_,                 CW_NDOBJ),
+
+  CE_INIT(CE_USED,        LINK_,                  LOFFSET_,               CW_EDOBJ),
+
+  CE_INIT(CE_USED,        EDGE_,                  AUXEDGE_,               CW_EDOBJ),
+  CE_INIT(CE_USED,        EDGE_,                  PATTERN_,               CW_EDOBJ),
+  CE_INIT(CE_USED,        EDGE_,                  ADDPATTERN_,    CW_EDOBJ),
+  CE_INIT(CE_USED,        EDGE_,                  EDGENEW_,               CW_EDOBJ),
+  CE_INIT(CE_USED,        EDGE_,                  EDSUBDOM_,              CW_EDOBJ),
+  CE_INIT(CE_USED,        EDGE_,                  NO_OF_ELEM_,    CW_EDOBJ),
+
+  CE_INIT(CE_USED,        ELEMENT_,               REFINE_,                CW_ELOBJS),
+  CE_INIT(CE_USED,        ELEMENT_,               ECLASS_,                CW_ELOBJS),
+  CE_INIT(CE_USED,        ELEMENT_,               NSONS_,                 CW_ELOBJS),
+  CE_INIT(CE_USED,        ELEMENT_,               REFINECLASS_,   CW_ELOBJS),
+  CE_INIT(CE_USED,        ELEMENT_,               NEWEL_,                 CW_ELOBJS),
+
+  CE_INIT(CE_USED,        FLAG_,                  MARK_,                  CW_ELOBJS),
+  CE_INIT(CE_USED,        FLAG_,                  COARSEN_,               CW_ELOBJS),
+  CE_INIT(CE_USED,        FLAG_,                  EBUILDCON_,             CW_ELOBJS),
+  CE_INIT(CE_USED,        FLAG_,                  DECOUPLED_,             CW_ELOBJS),
+  CE_INIT(CE_USED,        FLAG_,                  UPDATE_GREEN_,  CW_ELOBJS),
+  CE_INIT(CE_USED,        FLAG_,                  SIDEPATTERN_,   CW_ELOBJS),
+  CE_INIT(CE_USED,        FLAG_,                  MARKCLASS_,             CW_ELOBJS),
+
+  CE_INIT(CE_USED,        PROPERTY_,              SUBDOMAIN_,             CW_ELOBJS),
+  CE_INIT(CE_USED,        PROPERTY_,              NODEORD_,               CW_ELOBJS),
+  CE_INIT(CE_USED,        PROPERTY_,              PROP_,                  CW_ELOBJS),
+
+        #ifdef ModelP
+  CE_INIT(CE_USED,        LINK_,                  XFERLINK_,              CW_EDOBJ),
+  CE_INIT(CE_USED,        NODE_,                  XFERNODE_,              CW_NDOBJ),
+  CE_INIT(CE_USED,        VECTOR_,                XFERVECTOR_,    CW_VEOBJ),
+  CE_INIT(CE_USED,        MATRIX_,                XFERMATX_,              CW_MAOBJ),
+        #else /* ModelP */
+  CE_INIT_UNUSED,
+  CE_INIT_UNUSED,
+  CE_INIT_UNUSED,
+  CE_INIT_UNUSED,
+        #endif /* ModelP */
+  CE_INIT_UNUSED,
+  CE_INIT_UNUSED,
+  CE_INIT_UNUSED,
+  CE_INIT_UNUSED,
+};
+
+static CE_USAGE ce_usage[MAX_CONTROL_ENTRIES];
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
+
+/****************************************************************************/
+/*D
+   INT_2_bitpattern	- transform an INT into a bitpattern string
+
+   SYNOPSIS:
+   static void INT_2_bitpattern (INT n, char *text)
+
+   PARAMETERS:
+   .  n - integer to convert
+   .  text - string of size >= 33 for conversion
+
+   DESCRIPTION:
+   This function transforms an INT into a bitpattern string consisting of 0s
+   and 1s only.
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+static void INT_2_bitpattern (INT n, char *text)
+{
+  INT i;
+
+  memset(text,'0',32*sizeof(char));
+
+  for (i=0; i<32; i++)
+    if ((1<<i)&n)
+      text[31-i] = '1';
+  text[32] = '\0';
+
+  return;
+}
+
+/****************************************************************************/
+/*D
+   ListCWofObject	- print all control entries of an objects control word
+
+   SYNOPSIS:
+   void ListCWofObject (const void *obj, INT offset)
+
+   PARAMETERS:
+   .  obj - object pointer
+   .  offset - controlword offset in (unsigned INT) in object
+
+   DESCRIPTION:
+   This function prints the contents of all control entries of an objects control word at a
+   given offset.
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void ListCWofObject (const void *obj, INT offset)
+{
+  INT i,n,ce,last_ce,sub,min,cw_objt,oiw;
+
+  ASSERT(obj!=NULL);
+  HEAPFAULT(obj);
+
+  cw_objt = BITWISE_TYPE(OBJT(obj));
+  sub = -1;
+  last_ce = -1;
+
+  /* print control word entries in ascending order of offsets in word */
+  do
+  {
+    min = MAX_I;
+    for (i=0; i<MAX_CONTROL_ENTRIES; i++)
+      if (control_entries[i].used)
+        if (control_entries[i].objt_used & cw_objt)
+          if (control_entries[i].offset_in_object==offset)
+          {
+            oiw = control_entries[i].offset_in_word;
+            if ((oiw<min) && (oiw>=sub))
+            {
+              if ((oiw==sub) && (i<=last_ce))
+                continue;
+              ce = i;
+              min = oiw;
+            }
+          }
+    if (min==MAX_I)
+      break;
+
+    n = CW_READ(obj,ce);
+    UserWriteF("  ce %s with offset in cw %3d: %10d\n",control_entries[i].name,min,n);
+    sub = min;
+    last_ce = ce;
+  }
+  while (TRUE);
+
+  ASSERT(sub>=0);
+}
+
+/****************************************************************************/
+/*D
+   ListAllCWsOfObject	- print all control entries of all control words of an object
+
+   SYNOPSIS:
+   void ListAllCWsOfObject (const void *obj)
+
+   PARAMETERS:
+   .  obj - object pointer
+
+   DESCRIPTION:
+   This function prints the contents of all control entries of all control words
+   of the object. 'ListCWofObject' is called.
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void ListAllCWsOfObject (const void *obj)
+{
+  INT i,cw,last_cw,sub,min,cw_objt,offset;
+
+  ASSERT(obj!=NULL);
+  HEAPFAULT(obj);
+
+  cw_objt = BITWISE_TYPE(OBJT(obj));
+  sub = -1;
+  last_cw = -1;
+
+  /* print control word contents in ascending order of offsets */
+  do
+  {
+    min = MAX_I;
+    for (i=0; i<MAX_CONTROL_WORDS; i++)
+      if (control_words[i].used)
+        if (control_words[i].objt_used & cw_objt)
+        {
+          offset = control_words[i].offset_in_object;
+          if ((offset<min) && (offset>=sub))
+          {
+            if ((offset==sub) && (i<=last_cw))
+              continue;
+            cw = i;
+            min = offset;
+          }
+        }
+    if (min==MAX_I)
+      break;
+
+    UserWriteF("cw %s with offset %3d:\n",control_words[cw].name,min);
+    ListCWofObject(obj,min);
+    sub = min;
+    last_cw = cw;
+  }
+  while (TRUE);
+
+  ASSERT(sub>=0);
+}
+
+/****************************************************************************/
+/*D
+   ListCWofObjectType	- print used pattern of all control entries of an object types control word
+
+   SYNOPSIS:
+   static void ListCWofObjectType (INT objt, INT offset)
+
+   PARAMETERS:
+   .  obj - object pointer
+   .  offset - controlword offset in (unsigned INT) in object
+
+   DESCRIPTION:
+   This function prints the used pattern of all control entries of an object types control word at a
+   given offset.
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+static void ListCWofObjectType (INT objt, INT offset)
+{
+  INT i,ce,last_ce,sub,min,cw_objt,oiw;
+  char bitpat[33];
+
+  cw_objt = BITWISE_TYPE(objt);
+  sub = -1;
+  last_ce = -1;
+
+  /* print control word entries in ascending order of offsets in word */
+  do
+  {
+    min = MAX_I;
+    for (i=0; i<MAX_CONTROL_ENTRIES; i++)
+      if (control_entries[i].used)
+        if (control_entries[i].objt_used & cw_objt)
+          if (control_entries[i].offset_in_object==offset)
+          {
+            oiw = control_entries[i].offset_in_word;
+            if ((oiw<min) && (oiw>=sub))
+            {
+              if ((oiw==sub) && (i<=last_ce))
+                continue;
+              ce = i;
+              min = oiw;
+            }
+          }
+    if (min==MAX_I)
+      break;
+
+    INT_2_bitpattern(control_entries[ce].mask,bitpat);
+    printf("  ce %-20s offset in cw %3d, len %3d: %s\n",
+           control_entries[ce].name,
+           control_entries[ce].offset_in_word,
+           control_entries[ce].length,
+           bitpat);
+    sub = min;
+    last_ce = ce;
+  }
+  while (TRUE);
+
+  if (sub==-1)
+    printf(" --- no ce found with objt %d\n",objt);
+}
+
+/****************************************************************************/
+/*D
+   ListAllCWsOfObjectType	- print used pattern of all control entries of all
+                                                                control words of an object type
+
+   SYNOPSIS:
+   static void ListAllCWsOfObjectType (INT objt)
+
+   PARAMETERS:
+   .  obj - object pointer
+
+   DESCRIPTION:
+   This function prints the used pattern of all control entries of all control words
+   of an object type. 'ListCWofObjectType' is called.
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+static void ListAllCWsOfObjectType (INT objt)
+{
+  INT i,cw,last_cw,sub,min,cw_objt,offset;
+
+  cw_objt = BITWISE_TYPE(objt);
+  sub = -1;
+  last_cw = -1;
+
+  /* print control word contents in ascending order of offsets */
+  do
+  {
+    min = MAX_I;
+    for (i=0; i<MAX_CONTROL_WORDS; i++)
+      if (control_words[i].used)
+        if (control_words[i].objt_used & cw_objt)
+        {
+          offset = control_words[i].offset_in_object;
+          if ((offset<min) && (offset>=sub))
+          {
+            if ((offset==sub) && (i<=last_cw))
+              continue;
+            cw = i;
+            min = offset;
+          }
+        }
+    if (min==MAX_I)
+      break;
+
+    printf("cw %-20s with offset in object %3d (unsigend INTs):\n",control_words[cw].name,min);
+    ListCWofObjectType(objt,min);
+    sub = min;
+    last_cw = cw;
+  }
+  while (TRUE);
+
+  if (sub==-1)
+    printf(" --- no cw found with objt %d\n",objt);
+}
+
+/****************************************************************************/
+/*D
+   InitPredefinedControlWords	- Initialize control words
+
+   SYNOPSIS:
+   INT InitPredefinedControlWords (void)
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+   This function initializes the predefined control words.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR if error occured.
+   D*/
+/****************************************************************************/
+
+static INT InitPredefinedControlWords (void)
+{
+  INT i,nused;
+  CONTROL_WORD *cw;
+  CONTROL_WORD_PREDEF *pcw;
+
+  /* clear everything */
+  memset(control_words,0,MAX_CONTROL_WORDS*sizeof(CONTROL_WORD));
+
+  nused = 0;
+  for (i=0; i<MAX_CONTROL_WORDS; i++)
+    if (cw_predefines[i].used)
+    {
+      pcw = cw_predefines+i;
+      ASSERT(pcw->control_word_id<MAX_CONTROL_WORDS);
+
+      nused++;
+      cw = control_words+pcw->control_word_id;
+      if (cw->used)
+      {
+        printf("redefinition of control word '%s'\n",pcw->name);
+        return(__LINE__);
+      }
+      cw->used = pcw->used;
+      cw->name = pcw->name;
+      cw->offset_in_object = pcw->offset_in_object;
+      cw->objt_used = pcw->objt_used;
+    }
+
+  ASSERT(nused==GM_N_CW);
+
+  return (GM_OK);
+}
 
 /****************************************************************************/
 /*D
@@ -225,65 +586,313 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT InitPredefinedControlEntries (void)
+static INT InitPredefinedControlEntries (void)
 {
-  INT i;
-  CONTROL_ENTRY *ce;
+  CONTROL_ENTRY *ce,*test_ce;
   CONTROL_WORD *cw;
-  predefined_control_entry *pce;
+  CONTROL_ENTRY_PREDEF *pce,*test_pce;
+  INT i,j,k,offset,mask,error,nused;
 
+  /* clear everything */
+  memset(control_entries,0,MAX_CONTROL_ENTRIES*sizeof(CONTROL_ENTRY));
+
+  error = 0;
+  nused = 0;
   for (i=0; i<MAX_CONTROL_ENTRIES; i++)
-  {
-    ce = control_entries+i;
-    ce->used = 0;
-    ce->control_word = 0;
-    ce->offset_in_word = 0;
-    ce->length = 0;
-    ce->offset_in_object = 0;
-    ce->mask = 0;
-    ce->xor_mask = 0;
-  }
-  for (i=0; i<MAX_CONTROL_ENTRIES; i++)
-    if (predefines[i].used)
+    if (ce_predefines[i].used)
     {
-      pce = predefines+i;
+      pce = ce_predefines+i;
       ASSERT(pce->control_entry_id<MAX_CONTROL_ENTRIES);
+
+      nused++;
       ce = control_entries+pce->control_entry_id;
       if (ce->used)
       {
-        PrintErrorMessage('E',"InitPredefinedControlEntries","redefinition of control entry");
+        printf("redefinition of control entry '%s'\n",pce->name);
         return(__LINE__);
       }
       cw = control_words+pce->control_word;
-      ce->used = predefines[i].used;
+      ASSERT(cw->used);
+      ce->used = pce->used;
+      ce->name = pce->name;
       ce->control_word = pce->control_word;
       ce->offset_in_word = pce->offset_in_word;
       ce->length = pce->length;
+      ce->objt_used = pce->objt_used;
       ce->offset_in_object = cw->offset_in_object;
       ce->mask = (POW2(ce->length)-1)<<ce->offset_in_word;
       ce->xor_mask = ~ce->mask;
-      IFDEBUG(gm,1)
-      /* check for overlapping control entries */
-      if (cw->used_mask & ce->mask)
-      {
-        int j;
-        CONTROL_ENTRY *test_ce;
-        predefined_control_entry *test_pce;
-        PRINTDEBUG(gm,1,("control_entry[%d] has overlapping bits with previous control_entries:\n",i));
-        for (j=0; j<i; j++)
-        {
-          test_pce = predefines+j;
-          test_ce = control_entries+test_pce->control_entry_id;
-          if (test_ce->mask & ce->mask)
-            PRINTDEBUG(gm,1,(" %d",j));
 
+      ASSERT(ce->objt_used & cw->objt_used);                                    /* ce and cw have! common objects */
+
+      /* set mask in all cws that use some of the ces objects and have the same offset than cw */
+      offset = ce->offset_in_object;
+      mask   = ce->mask;
+      for (k=0; k<MAX_CONTROL_WORDS; k++)
+      {
+        cw = control_words+k;
+
+        if (!cw->used)
+          continue;
+        if (!(ce->objt_used & cw->objt_used))
+          continue;
+        if (cw->offset_in_object!=offset)
+          continue;
+
+        /* do other control entries overlap? */
+        if (cw->used_mask & mask)
+        {
+          IFDEBUG(gm,1)
+          printf("predef ctrl entry '%s' has overlapping bits with previous ctrl entries:\n",pce->name);
+          for (j=0; j<i; j++)
+          {
+            test_pce = ce_predefines+j;
+            test_ce  = control_entries+test_pce->control_entry_id;
+            if (test_ce->objt_used & ce->objt_used)
+              if (test_ce->offset_in_object==offset)
+                if (test_ce->mask & mask)
+                  printf(" '%s'",test_pce->name);
+
+          }
+          printf("\n");
+          ENDDEBUG
+            error++;
         }
-        PRINTDEBUG(gm,1,("\n"));
+        cw->used_mask |= mask;
       }
-      ENDDEBUG
-      cw->used_mask |= ce->mask;
     }
+
+  IFDEBUG(gm,1)
+  ListAllCWsOfObjectType(IVOBJ);
+  ListAllCWsOfObjectType(IEOBJ);
+  ListAllCWsOfObjectType(EDOBJ);
+  ListAllCWsOfObjectType(NDOBJ);
+  ListAllCWsOfObjectType(VEOBJ);
+  ListAllCWsOfObjectType(MAOBJ);
+  ListAllCWsOfObjectType(BLOCKVOBJ);
+  ListAllCWsOfObjectType(GROBJ);
+  ListAllCWsOfObjectType(MGOBJ);
+  ENDDEBUG;
+
+  /* TODO: enable next lines for error control
+     if (error)
+          return (__LINE__);*/
+
+  ASSERT(nused==REFINE_N_CE);
+
   return (GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   ResetCEstatistics	- reset counters for read/write control word access
+
+   SYNOPSIS:
+   void ResetCEstatistics (void)
+
+   PARAMETERS:
+   .  void -
+
+   DESCRIPTION:
+   This function resets all counters for read/write control word access.
+   This is only possible if the code is compiled with #define _DEBUG_CW_
+   in gm.h. (Maybe it makes sense to do that only for part of the code.
+   Then the warnings should be removed.)
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void ResetCEstatistics (void)
+{
+        #ifndef _DEBUG_CW_
+  PrintErrorMessage('W',"ResetCEstatistics","compile with #ifdef _DEBUG_CW_ in gm.h!");
+        #else
+  memset(ce_usage,0,MAX_CONTROL_ENTRIES*sizeof(CE_USAGE));
+        #endif
+}
+
+/****************************************************************************/
+/*D
+   PrintCEstatistics	- print control word read/write acces statistic to shell
+
+   SYNOPSIS:
+   void PrintCEstatistics (void)
+
+   PARAMETERS:
+   .  void -
+
+   DESCRIPTION:
+   This function prints all counters for read/write control word access
+   (only if at least one of them is nonzero).
+   This is only possible if the code is compiled with #define _DEBUG_CW_
+   in gm.h. (Maybe it makes sense to do that only for part of the code.
+   Then the warnings should be removed.)
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void PrintCEstatistics (void)
+{
+  INT i;
+
+        #ifndef _DEBUG_CW_
+  PrintErrorMessage('W',"PrintCEstatistics","compile with #ifdef _DEBUG_CW_ in gm.h!");
+        #else
+  for (i=0; i<MAX_CONTROL_ENTRIES; i++)
+    if (control_entries[i].used)
+      if (ce_usage[i].read || ce_usage[i].write)
+        UserWriteF("ce %-20s: read %10d write %10d\n",control_entries[i].name,ce_usage[i].read,ce_usage[i].write);
+        #endif
+}
+
+/****************************************************************************/
+/*D
+   ReadCW	- function to replace CW_READ macro and does extended error checks
+
+   SYNOPSIS:
+   unsigned INT ReadCW (const void *obj, INT ceID)
+
+   PARAMETERS:
+   .  obj - object pointer
+   .  ceID - control entry ID
+
+   DESCRIPTION:
+   This function is to replace the CW_READ and CW_READ_STATIC macros of gm.h and does extended
+   error checks:~
+   .n   obj != NULL
+   .n   HEAPFAULT
+   .n   ceID in valid range
+   .n   control entry used
+   .n   if ce uses a geom object the object type is checked
+   Additionally the read accesses to a control entry are counted.
+
+   CAUTION:
+   set #define _DEBUG_CW_ to replace CW_READ by ReadCW but be aware of the
+   terribble slowing down of the program in this case (no large problems!).
+
+   RETURN VALUE:
+   unsigned INT
+   .n   number read from the control entry of the object
+   D*/
+/****************************************************************************/
+
+unsigned INT ReadCW (const void *obj, INT ceID)
+{
+  CONTROL_ENTRY *ce;
+  unsigned INT off_in_obj,mask,i,off_in_wrd,cw,cw_objt;
+
+  ASSERT(obj!=NULL);
+  HEAPFAULT(obj);
+  ASSERT(ceID>=0);
+  ASSERT(ceID<MAX_CONTROL_ENTRIES);
+
+  ce_usage[ceID].read++;
+
+  ce = control_entries+ceID;
+
+  ASSERT(ce->used);
+
+  if (ce->objt_used & CW_GEOMOBJS)
+  {
+    cw_objt = BITWISE_TYPE(OBJT(obj));
+
+    ASSERT(cw_objt & ce->objt_used);
+  }
+
+  off_in_wrd = ce->offset_in_word;
+  off_in_obj = ce->offset_in_object;
+  mask = ce->mask;
+  cw = ((unsigned INT *)(obj))[off_in_obj];
+  i = cw & mask;
+  i = i>>off_in_wrd;
+
+  /* the next statement is just to keep variable contents despite optimization
+     printf("", ce,off_in_obj,mask,i,off_in_wrd,cw);*/
+
+  return (i);
+}
+
+/****************************************************************************/
+/*D
+   WriteCW	- function to replace CW_WRITE macro and does extended error checks
+
+   SYNOPSIS:
+   void WriteCW (void *obj, INT ceID, INT n)
+
+   PARAMETERS:
+   .  obj - object pointer
+   .  ceID - control entry ID
+   .  n - number to write to the objects control entry
+
+   DESCRIPTION:
+   This function is to replace the CW_WRITE and CW_WRITE_STATIC macros of gm.h and does extended
+   error checks:~
+   .n   obj != NULL
+   .n   HEAPFAULT
+   .n   ceID in valid range
+   .n   control entry used
+   .n   if ce uses a geom object the object type is checked
+   .n   n small enough for length of control entry
+   Additionally the write accesses to a control entry are counted.
+
+   CAUTION:
+   set #define _DEBUG_CW_ to replace CW_WRITE by WriteCW but be aware of the
+   terribble slowing down of the program in this case (no large problems!).
+
+   RETURN VALUE:
+   unsigned INT
+   .n   number read from the control entry of the object
+   D*/
+/****************************************************************************/
+
+void WriteCW (void *obj, INT ceID, INT n)
+{
+  CONTROL_ENTRY *ce;
+  unsigned INT off_in_obj,mask,i,j,off_in_wrd,cw_objt,xmsk;
+  unsigned INT *pcw;
+
+  ASSERT(obj!=NULL);
+  HEAPFAULT(obj);
+  ASSERT(ceID>=0);
+  ASSERT(ceID<MAX_CONTROL_ENTRIES);
+
+  ce_usage[ceID].write++;
+
+  ce = control_entries+ceID;
+
+  ASSERT(ce->used);
+
+  cw_objt = BITWISE_TYPE(OBJT(obj));
+
+  if (ce->objt_used & CW_GEOMOBJS)
+  {
+    /* special: SETOBJT cannot be checked */
+    if (cw_objt==BITWISE_TYPE(0))
+      ASSERT(ceID==OBJ_CE);
+    else
+      ASSERT(cw_objt & ce->objt_used);
+  }
+
+  off_in_wrd = ce->offset_in_word;
+  off_in_obj = ce->offset_in_object;
+  mask = ce->mask;
+  xmsk = ce->xor_mask;
+  pcw = ((unsigned INT *)(obj)) + off_in_obj;
+  i = (*pcw) & xmsk;
+  j = n<<off_in_wrd;
+
+  ASSERT(j<=mask);
+
+  j = j & mask;
+
+  *pcw = i | j;
+
+  /* the next statement is just to keep variable contents despite optimization
+     printf("", ce,off_in_obj,mask,i,j,off_in_wrd,cw_objt,xmsk,pcw);*/
 }
 
 /****************************************************************************/
@@ -345,6 +954,9 @@ INT AllocateControlEntry (INT cw_id, INT length, INT *ce_id)
   /* check input */
   if ((length<0)||(length>=32)) return(GM_ERROR);
   if ((cw_id<0)||(cw_id>=MAX_CONTROL_WORDS)) return(GM_ERROR);
+
+  /* it is sufficient to check only the control entries control word
+     multiple object types are only allowed for predefines */
   cw = control_words+cw_id;
 
   /* find unused entry */
@@ -431,11 +1043,45 @@ INT PrintCW (void)
   INT i;
   CONTROL_ENTRY *ce;
 
-  for (i=0; i<MAX_CONTROL_ENTRIES; i++) {
-    if (!control_entries[i].used) continue;
-    ce = control_entries+i;
-    UserWriteF("cw %3d entry %3d offset %3d length %3d\n",
-               i,ce->control_word,ce->offset_in_object,ce->length);
-  }
+  for (i=0; i<MAX_CONTROL_ENTRIES; i++)
+    if (control_entries[i].used)
+    {
+      ce = control_entries+i;
+      UserWriteF("ce %-20s in cw %-20s offset %3d length %3d\n",
+                 ce->name,control_words[ce->control_word].name,ce->offset_in_object,ce->length);
+    }
   return(GM_OK);
+}
+
+
+/****************************************************************************/
+/*D
+   InitCW - init cw.c file
+
+   SYNOPSIS:
+   INT InitCW (void)
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+   This function initializes the control word manager.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   > 0 line in which error occured.
+   D*/
+/****************************************************************************/
+
+INT InitCW (void)
+{
+  if (InitPredefinedControlWords())
+    return (__LINE__);
+  if (InitPredefinedControlEntries())
+    return (__LINE__);
+
+  ResetCEstatistics();
+
+  return (GM_OK);
 }
