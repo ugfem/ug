@@ -3781,6 +3781,11 @@ static INT EXCopyMatrixFLOAT (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, I
   MATRIX *theM;
   SHORT *comp;
 
+        #ifdef ModelP
+  if (FIRSTELEMENT(theGrid) == NULL)
+    return(0);
+        #endif
+
   if (MD_IS_SCALAR(A))
   {
     ment = MD_SCALCMP(A);
@@ -3820,6 +3825,11 @@ static INT EXCopyMatrixDOUBLE (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, 
   VECTOR *theV,*theW;
   MATRIX *theM;
   SHORT *comp;
+
+        #ifdef ModelP
+  if (FIRSTELEMENT(theGrid) == NULL)
+    return(0);
+        #endif
 
   if (MD_IS_SCALAR(A))
   {
@@ -3911,6 +3921,11 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   np = (NP_EX *) theNP;
   *baselevel = level;
   theGrid = NP_GRID(theNP,level);
+
+        #ifdef ModelP
+  if (FIRSTELEMENT(theGrid) == NULL)
+    return(0);
+        #endif
 
   /* reorder vector-list */
   theHeap = MGHEAP(NP_MG(theNP));
@@ -4075,6 +4090,11 @@ static INT EXSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC 
   np = (NP_EX *) theNP;
   theGrid = NP_GRID(theNP,level);
 
+        #ifdef ModelP
+  if (FIRSTELEMENT(theGrid) == NULL)
+    return(0);
+        #endif
+
   /* init */
   n               = np->nv;
   bw              = np->bw;
@@ -4139,8 +4159,14 @@ static INT EXPostProcess (NP_ITER *theNP, INT level,VECDATA_DESC *x, VECDATA_DES
 {
   HEAP *theHeap;
 
+        #ifdef ModelP
+  if (FIRSTELEMENT(NP_GRID(theNP,level)) == NULL)
+    return(0);
+        #endif
+
   theHeap = MGHEAP(NP_MG(theNP));
-  if (Release(theHeap,FROM_BOTTOM)) REP_ERR_RETURN(1);
+  if (Release(theHeap,FROM_BOTTOM))
+    REP_ERR_RETURN(1);
 
   return(0);
 }
