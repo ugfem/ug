@@ -27,6 +27,18 @@
 #ifndef __COMPILER__
 #define __COMPILER__
 
+/* try to import stuff found by autoconf. This is the first time I can
+   use that C-compilers don't fail compilation if a header doesn't
+   exist... */
+#include "config.h"
+#ifdef AUTOTOOLS_BUILD
+/* include all headers providing the compiler.h functionality */
+  #include "architecture.h"
+  #include "ugtypes.h"
+  #include "ugmemory.h"
+  #include "ugstrings.h"
+#else
+
 #include <limits.h>
 #include <float.h>
 
@@ -1192,8 +1204,15 @@ static char compilerrcs_id[] = "$Id$";
 #define MAX_C            FLT_MAX
 #define SMALL_C         (FLT_EPSILON*SMALL_FAC)
 
+/* define derived types */
+typedef unsigned INT UINT;
 
 #ifdef __cplusplus
 }
 #endif
+
+/* end of ifdef AUTOTOOLS_BUILD */
+#endif
+
+/* end of ifdef __COMPILER__ */
 #endif
