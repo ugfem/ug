@@ -59,66 +59,12 @@
 /*                                                                          */
 /****************************************************************************/
 
-#define DISPLAY_NP_AMG_STRING "Level  NVectors   NMatrices  NIMats (to finer level)\n"
-#define DISPLAY_NP_AMG_FORMAT "%3d   %8d   %8d   %8d\n"
-
 /****************************************************************************/
 /*                                                                          */
 /* data structures used in this source file (exported data structures are   */
 /*        in the corresponding include file!)                               */
 /*                                                                          */
 /****************************************************************************/
-
-/* a data type for returning the status of the coarsening procedure         */
-typedef struct {
-  INT nVects;
-  INT nMats;
-  INT nIMats;
-} CLRESULT;
-
-typedef struct {
-  INT error_code;                           /* error code                       */
-  INT nLevels;                              /* number of created CG levels      */
-  CLRESULT clres[MAXLEVEL];                 /* data for each level              */
-} CRESULT;
-
-typedef INT (*MarkConnectionsProcPtr)(GRID *, MATDATA_DESC *, DOUBLE);
-typedef INT (*CoarsenProcPtr)(GRID *);
-typedef INT (*SetupIRMatProcPtr)(GRID *, MATDATA_DESC *, MATDATA_DESC *);
-typedef INT (*SetupCGMatProcPtr)(GRID *, MATDATA_DESC *, MATDATA_DESC *);
-
-typedef struct
-{
-  NP_TRANSFER transfer;
-  INT display;                               /* display modus                   */
-
-  MarkConnectionsProcPtr MarkStrong;        /* mark strong connections         */
-  DOUBLE thetaS;                             /* parameter                       */
-
-  CoarsenProcPtr Coarsen;                    /* the coarsening routine          */
-
-  SetupIRMatProcPtr SetupIR;                 /* setup interpolation/restriction */
-
-  SetupCGMatProcPtr SetupCG;                 /* setup coarse grid matrix        */
-
-  MarkConnectionsProcPtr MarkKeep;           /* mark connections to keep        */
-  DOUBLE thetaK;                             /* parameter                       */
-  INT sparsenFlag;                           /* if set, lump to diagonal        */
-
-  INT reorderFlag;                           /* ordering of fine grid points    */
-
-  INT vectLimit;                             /* stop if vects<vectLimit         */
-  INT matLimit;                              /* stop if matrices<matLimit       */
-  DOUBLE bandLimit;                          /* stop if matrices/vects>bandLimit*/
-  DOUBLE vRedLimit;                          /* stop if vectReduction<vRedLimit */
-  DOUBLE mRedLimit;                          /* stop if matReduction<mRedLimit  */
-  INT levelLimit;                            /* stop if -level>levelLimit       */
-
-  INT symmetric;                             /* flag for symmetry               */
-  INT explicitFlag;                          /* clear only by npexecute         */
-  INT hold;                                  /* no clear in postprocess         */
-
-} NP_AMG_TRANSFER;
 
 /****************************************************************************/
 /*																			*/
@@ -224,40 +170,64 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    .vb
    npcreate <name> $c {selectionAMG|clusterAMG};
    npinit <name> {$strongAll|$strongAbs <thetaS>|$strongRel <thetaS>}
-                {$keepAbs <thetaS>|$keepRel <thetaS>} [$lump]
-                                {$coarsefine|$finecoarse}
+                {$I {Average|RugeStueben} | $I {PiecewiseConstant|Vanek}}
+                [{$keepAbs <thetaS>|$keepRel <thetaS>} [$lump]]
+                                [{$coarsefine|$finecoarse}]
                             [$display {full|red|no}]
-                                [$vectLimit] [$matLimit] [$bandLimit] [$vRedLimit] [$mRedLimit] [$levelLimit]
-                                [$explicit];
+                                [$vectLimit] [$matLimit] [$bandLimit]
+                                [$vRedLimit] [$mRedLimit]
+                                [$levelLimit]
+                                [$explicit]
+                                [$hold];
    .ve
 
    .  $strong... - defines strong connection type for coarsening
+   .  $I - specifies the coarsening
+   .     - possibilities for selectionAMG: Average, RugeStueben
+   .     - possibilities for clusterAMG: PiecewiseConstant, Vanek
    .  $keep... - defines strong connections to keep when sparsening the CG matrix
    .  $lump... - lump omitted element to diagonal when sparsening the CG matrix
    .  $coarsefine - reorder the fine grid points to first coarse, then fine
    .  $finecoarse - reorder the fine grid points to first fine, then coarse
    .  $display - display modus
-   .  $vectLimit - stop if vects<vectLimit
-   .  $matLimit - stop if matrices<matLimit
+   .  $vectLimit - stop if vects<=vectLimit
+   .  $matLimit - stop if matrices<=matLimit
    .  $bandLimit - stop if matrices/vects>bandLimit
    .  $vRedLimit - stop if vectReduction<vRedLimit
    .  $mRedLimit - stop if matReduction<mRedLimit
    .  $levelLimit - stop if level<=levelLimit (numbers<=0)
    .  $explicit - clear AMG levels only by npexecute
+   .  $hold - holds AMG levels after solving
 
    USE:
-   You can apply this transfer procedure without the $explicit option as a coarse grid solver
-   (in the moment only on level 0) inside a usual MG cycle. Then building and removing of the
-   AMG grids are done automatically with pre/postprocess of the solver.
+   Usually one will apply this transfer procedure
+   as a coarse grid solver (in the moment only on level 0)
+   inside a usual MG cycle. Then building and removing of the AMG
+   grids are done automatically with pre/postprocess of the solver.
+   Mainly for debugging purposes you may keep the AMG grids after
+   solving by using the $hold-option.
 
    Alternatively, if the $explicit-option has been given,
-   you can do this explicitly (without solving) by
+   you can building and removing of the AMG grids
+   explicitly (without solving) by
    .vb
    npexecute <name> [$i] [$p];
    .ve
 
    .  $i - preprocess, rebuilds AMG levels
    .  $p - postprocess, clear AMG levels
+
+   APPLICABILITY:
+   All schemes are applicable to (multi-)linear FE discretizations of
+   diffusion equations. Up to now, for selectionAMG only the averaging
+   interpolation and for clusterAMG the piecewise constant interpolation
+   are applicable to systems. Applicability does not mean good
+   convergence! Up to now there are no AMG schemes which are good
+   for large classes of systems and the averaging technique as well as
+   the piecewise constant interpolation do not share
+   the robustness properties of the RugeStueben/Vanek interpolation
+   with respect to singular perturbations like strong convection,
+   strong anisotropy and large jumps in the diffusion coefficient.
 
    MORE~DETAILS:
    For access in scripts the result of an AMG coarsening is stored in the
@@ -275,7 +245,7 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
 {
   INT i;
   NP_AMG_TRANSFER *np;
-  char buffer[32];
+  char buffer[VALUELEN];
 
   np = (NP_AMG_TRANSFER *) theNP;
 
@@ -309,6 +279,61 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
       REP_ERR_RETURN(NP_NOT_ACTIVE);
     }
   }
+
+  if (np->MarkStrong==NULL)
+  {
+    PrintErrorMessage('E',"NPAMGTransferInit","no $strong... definition");
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+  }
+
+  /* specification of coarsen procedure */
+  if (ReadArgvChar("C",buffer,argc,argv) == 1) {
+    PrintErrorMessage('E',"NPAMGTransferInit","no $C ... definition");
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+  }
+  np->Coarsen = NULL;
+  if (np->AMGtype==SELECTION_AMG)
+  {
+    if (strcmp(buffer,"Average") == 0)
+      np->Coarsen = CoarsenAverage;
+    if (strcmp(buffer,"RugeStueben") == 0)
+      np->Coarsen = CoarsenRugeStueben;
+  }
+  else if (np->AMGtype==CLUSTER_AMG)
+  {
+    if (strcmp(buffer,"VanekNeuss") == 0)
+      np->Coarsen = CoarsenVanek;
+  }
+  if (np->Coarsen==NULL) {
+    PrintErrorMessage('E',"NPAMGTransferInit","$I ... definition is incorrect");
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+  }
+
+  /* specification of interpolation procedure */
+  if (ReadArgvChar("I",buffer,argc,argv) == 1) {
+    PrintErrorMessage('E',"NPAMGTransferInit","no $I ... definition");
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+  }
+  np->SetupIR = NULL;
+  if (np->AMGtype==SELECTION_AMG)
+  {
+    if (strcmp(buffer,"Average") == 0)
+      np->SetupIR = IpAverage;
+    if (strcmp(buffer,"RugeStueben") == 0)
+      np->SetupIR = IpRugeStueben;
+  }
+  else if (np->AMGtype==CLUSTER_AMG)
+  {
+    if (strcmp(buffer,"PiecewiseConstant") == 0)
+      np->SetupIR = IpPiecewiseConstant;
+    if (strcmp(buffer,"Vanek") == 0)
+      np->SetupIR = IpVanek;
+  }
+  if (np->SetupIR==NULL) {
+    PrintErrorMessage('E',"NPAMGTransferInit","$I ... definition is incorrect");
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+  }
+
   /* definition of sparsen criterion, default = no sparsening, keep all */
   np->MarkKeep=NULL;
   np->thetaK = 0.0;
@@ -338,18 +363,7 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
     if (ReadArgvOption("lump",argc,argv)==1)
       np->sparsenFlag=1;
   }
-  if (ReadArgvOption("hold",argc,argv)==1)
-    np->hold=1;
-  if (ReadArgvChar("I",buffer,argc,argv) == 0) {
-    if (strcmp(buffer,"Average") == 0) {
-      np->SetupIR = IpAverage;
-      np->Coarsen = CoarsenAverage;
-    }
-    if (strcmp(buffer,"RugeStueben") == 0)
-      np->SetupIR = IpRugeStueben;
-    if (strcmp(buffer,"Vanek") == 0)
-      np->SetupIR = IpVanek;
-  }
+
   np->reorderFlag=0;
   if (ReadArgvOption("coarsefine",argc,argv)==1)
     np->reorderFlag=COARSEFINE;
@@ -387,6 +401,9 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
   else
     np->explicitFlag=0;
   np->symmetric = ReadArgvOption("symmetric",argc,argv);
+
+  if (ReadArgvOption("hold",argc,argv)==1)
+    np->hold=1;
 
   /* finally the usual TRANSFER data */
   if (sc_read(np->transfer.damp,np->transfer.x,"damp",argc,argv))
@@ -459,6 +476,8 @@ INT AMGTransferDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","RugeStueben");
   else if (np->SetupIR==IpAverage)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","Average");
+  else if (np->SetupIR==IpPiecewiseConstant)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","PiecewiseConstant");
   else if (np->SetupIR==IpVanek)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupIR","Vanek");
   else
@@ -559,11 +578,11 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     nMat=2*theGrid->nCon;
 
     if (np->vectLimit!=0)
-      if (nVect<np->vectLimit)
+      if (nVect<=np->vectLimit)
         break;
 
     if (np->matLimit!=0)
-      if (nMat<np->matLimit)
+      if (nMat<=np->matLimit)
         break;
 
     if (np->bandLimit!=0.0)
@@ -684,6 +703,7 @@ static INT AMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   MULTIGRID *theMG;
   NP_AMG_TRANSFER *np;
 
+  result[0]=0;
   np = (NP_AMG_TRANSFER *) theNP;
   theMG = theNP->base.mg;
 
@@ -697,6 +717,7 @@ static INT AMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   if (DisposeAMGLevels(theMG) != 0) {
     PrintErrorMessage('E',"AMGTransferPostProcess",
                       "could not dispose AMG levels");
+    result[0]=1;
     REP_ERR_RETURN(1);
   }
   *fl=0;
@@ -763,7 +784,7 @@ INT AMGTransferExecute (NP_BASE *theNP, INT argc , char **argv)
     npa->explicitFlag=1;
 
     if (result) {
-      UserWriteF("NPTransferExecute: PostProcess failed, error code %d\n",
+      UserWriteF("AMGTransferExecute: PostProcess failed, error code %d\n",
                  result);
       REP_ERR_RETURN (1);
     }
@@ -802,6 +823,7 @@ static INT SelectionAMGConstruct (NP_BASE *theNP)
   AMGTransferConstruct(theNP);
 
   np =(NP_AMG_TRANSFER *) theNP;
+  np->AMGtype = SELECTION_AMG;
   np->Coarsen = CoarsenRugeStueben;
   np->SetupIR = IpRugeStueben;
   np->SetupCG = NULL;
@@ -816,6 +838,7 @@ static INT ClusterAMGConstruct (NP_BASE *theNP)
   AMGTransferConstruct(theNP);
 
   np =(NP_AMG_TRANSFER *) theNP;
+  np->AMGtype = CLUSTER_AMG;
   np->Coarsen = CoarsenVanek;
   np->SetupIR = IpVanek;
   np->SetupCG = NULL;
