@@ -6464,7 +6464,8 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
       V_DIM_COPY(theMesh->Position[i-theMesh->nBndP],CVECT(VList[i]));
     }
   }
-
+  if (theMesh->nElements == NULL)
+    return(GM_OK);
   for (j=1; j<=theMesh->nSubDomains; j++)
     for (k=0; k<theMesh->nElements[j]; k++)
     {
