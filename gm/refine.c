@@ -4057,8 +4057,38 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 	if (!ioflag)
 	#endif
 		/* match exactly */
-		ASSERT(Sons_of_Side == Sons_of_NbSide && Sons_of_NbSide>0 
-			   && Sons_of_NbSide<6);
+		if (1) ASSERT(Sons_of_Side == Sons_of_NbSide && Sons_of_NbSide>0 
+	                           && Sons_of_NbSide<6);
+		else
+			if (!(Sons_of_Side == Sons_of_NbSide && Sons_of_NbSide>0 
+				   && Sons_of_NbSide<6))
+			{
+				INT i;
+				ELEMENT *elem=NULL;
+				ELEMENT *SonList[MAX_SONS];
+
+				REFINE_ELEMENT_LIST(0,theElement,"theElement:");
+				REFINE_ELEMENT_LIST(0,theNeighbor,"theNeighbor:");
+				UserWriteF(PFMT "elem=" EID_FMTX " nb=" EID_FMTX
+					"Sons_of_Side=%d Sons_of_NbSide=%d\n",me,EID_PRTX(theElement),
+					EID_PRTX(theNeighbor),Sons_of_Side,Sons_of_NbSide);
+				fflush(stdout);
+				GetAllSons(theElement,SonList);
+				for (i=0; SonList[i]!=NULL; i++) 
+				{
+					REFINE_ELEMENT_LIST(0,SonList[i],"son:");
+				}
+				GetAllSons(theNeighbor,SonList);
+				for (i=0; SonList[i]!=NULL; i++) 
+				{
+					REFINE_ELEMENT_LIST(0,SonList[i],"nbson:");
+				}
+		
+				/* sig bus error to see stack in totalview */
+				SET_NBELEM(elem,0,NULL);
+				assert(0);
+				
+			}
 
 	IFDEBUG(gm,2)
 	UserWriteF("Connect_Sons_of_ElementSide: NBID(elem)=%d side=%d "
@@ -5755,10 +5785,10 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 	/* update need to be done for all elements with THEFLAG set,  */
 	/* execpt for yellow copies, since their neighbor need not be */
 	/* refined (s.l. 971029)                                      */
-/*
 	if (!THEFLAG(theElement) && REFINECLASS(theElement)!=YELLOW_CLASS) return(GM_OK);
-*/
+/*
 	if (!THEFLAG(theElement)) return(GM_OK);
+*/
 
 	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 	{
@@ -5793,6 +5823,9 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 			PRINTDEBUG(gm,1,("%d: Sending Son=%08x/%x SonID=%d "
 				"SonLevel=%d to dest=%d\n", me,EGID(theSon),theSon,
 				ID(theSon),LEVEL(theSon), EPROCPRIO(theNeighbor,PrioMaster)))
+
+			HEAPFAULT(theNeighbor);			
+			ASSERT(EPROCPRIO(theNeighbor,PrioMaster)<procs);
 
 			XFERECOPYX(theSon,EPROCPRIO(theNeighbor,PrioMaster),PrioHGhost,
 				(OBJT(theSon)==BEOBJ)?BND_SIZE_TAG(TAG(theSon)):
@@ -5976,8 +6009,9 @@ static INT	ConnectGridOverlap (GRID *theGrid)
 				printf("%d:         connecting ghostelements:\n",me);
 			ENDDEBUG
 			
+			/* the ioflag=1 is needed, since not all sended ghosts are needed! */
 			if (Connect_Sons_of_ElementSide(theGrid,theElement,i,
-					Sons_of_Side,Sons_of_Side_List,SonSides,hFlag,0)!=GM_OK) 
+					Sons_of_Side,Sons_of_Side_List,SonSides,hFlag,1)!=GM_OK) 
 				RETURN(GM_FATAL);
 		}
 
