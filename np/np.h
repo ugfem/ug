@@ -65,87 +65,10 @@
 #define SP_LOCAL                                0       /* modify locally						*/
 #define SP_GLOBAL                               1       /* modify globally						*/
 
-#define DEFAULT_NAMES "uvwzpqrst"   /* of size MAX_VEC_COMP                 */
-
-/* DisplayModes for PrintConvergenceRate */
-#define PCR_NO_DISPLAY                  0
-#define PCR_RED_DISPLAY                 1
-#define PCR_FULL_DISPLAY                2
-
-/* printmode PrintConvergenceRate */
-#define PCR_CRATE                               0
-#define PCR_AVERAGE                             1
-#define PCR_INTERN                              2
-#define PCR_CRATE_SD                    3
-#define PCR_AVERAGE_SD                  4
-#define PCR_INTERN_SD                   5
-
 #define OPTIONLEN                       32
 #define OPTIONLENSTR            "31"
 #define VALUELEN                        64
 #define VALUELENSTR                     "63"
-
-/****************************************************************************/
-/*																			*/
-/* macros concerned with data descriptors and symbols						*/
-/*																			*/
-/****************************************************************************/
-
-/* VECDATA_DESC */
-#define VD_ISDEF_IN_TYPE(vd,tp)             (VD_NCMPS_IN_TYPE(vd,tp)>0)
-#define VD_NCMPPTR(vd)                              ((vd)->NCmpInType)
-#define VD_NCMPS_IN_TYPE(vd,tp)             (VD_NCMPPTR(vd)[tp])
-#define VD_CMP_OF_TYPE(vd,tp,i)             ((vd)->CmpsInType[tp][i])
-#define VD_CMPPTR_OF_TYPE(vd,tp)            ((vd)->CmpsInType[tp])
-#define VD_CMPPTR_OF_TYPE(vd,tp)            ((vd)->CmpsInType[tp])
-
-#define VD_IS_SCALAR(vd)                    ((vd)->IsScalar)
-#define VD_SCALCMP(vd)                                          ((vd)->ScalComp)
-#define VD_SCALTYPEMASK(vd)                                     ((vd)->ScalTypeMask)
-#define VD_OFFSETPTR(vd)                    ((vd)->offset)
-#define VD_OFFSET(vd,tp)                    (VD_OFFSETPTR(vd)[tp])
-#define VD_NCOMP(vd)                        (VD_OFFSETPTR(vd)[NVECTYPES])
-
-/* MATDATA_DESC */
-#define MTP(rt,ct)                          ((rt)*NVECTYPES+(ct))
-#define MCMP(row,col,ncol)                  ((row)*(ncol)+col)
-#define MTYPE_RT(mtp)                                           ((mtp)/NVECTYPES)
-#define MTYPE_CT(mtp)                                           ((mtp)%NVECTYPES)
-#define MCMP_I(mc,ncol)                                         ((mc)/(ncol))
-#define MCMP_J(mc,ncol)                                         ((mc)%(ncol))
-
-#define MD_ISDEF_IN_MTYPE(md,mtp)           (MD_ROWS_IN_MTYPE(md,mtp)>0)
-#define MD_ISDEF_IN_RT_CT(md,rt,ct)         MD_ISDEF_IN_MTYPE(md,MTP(rt,ct))
-#define MD_ROWPTR(md)                               ((md)->RowsInType)
-#define MD_ROWS_IN_MTYPE(md,mtp)            (MD_ROWPTR(md)[mtp])
-#define MD_ROWS_IN_RT_CT(md,rt,ct)          MD_ROWS_IN_MTYPE(md,MTP(rt,ct))
-#define MD_COLPTR(md)                               ((md)->ColsInType)
-#define MD_COLS_IN_MTYPE(md,mtp)            (MD_COLPTR(md)[mtp])
-#define MD_COLS_IN_RT_CT(md,rt,ct)          MD_COLS_IN_MTYPE(md,MTP(rt,ct))
-#define MD_NCMPS_IN_MTYPE(md,mtp)           MD_ROWS_IN_MTYPE(md,mtp)*MD_COLS_IN_MTYPE(md,mtp)
-#define MD_MCMPPTR_OF_MTYPE(md,mtp)         ((md)->CmpsInType[mtp])
-#define MD_MCMP_OF_MTYPE(md,mtp,i)          ((md)->CmpsInType[mtp][i])
-#define MD_MCMPPTR_OF_RT_CT(md,rt,ct)       ((md)->CmpsInType[MTP(rt,ct)])
-#define MD_MCMP_OF_RT_CT(md,rt,ct,i)        MD_MCMP_OF_MTYPE(md,MTP(rt,ct),i)
-#define MD_IJ_CMP_OF_MTYPE(md,mtp,i,j)      MD_MCMP_OF_MTYPE(md,mtp,MCMP(i,j,MD_COLS_IN_MTYPE(md,mtp)))
-#define MD_IJ_CMP_OF_RT_CT(md,rt,ct,i,j)    MD_IJ_CMP_OF_MTYPE(md,MTP(rt,ct),i,j)
-
-#define MD_IS_SCALAR(md)                    ((md)->IsScalar)
-#define MD_SCALCMP(md)                                          ((md)->ScalComp)
-#define MD_SCAL_RTYPEMASK(md)                           ((md)->ScalRowTypeMask)
-#define MD_SCAL_CTYPEMASK(md)                           ((md)->ScalColTypeMask)
-#define MD_OFFSETPTR(md)                        ((md)->offset)
-#define MD_MTYPE_OFFSET(md,mtp)             (MD_OFFSETPTR(md)[mtp])
-#define MD_RT_CT_OFFSET(md,mtp)             (MD_MTYPE_OFFSET(md,MTP(rt,ct)))
-
-/* VEC_SCALAR */
-#define VS_CMP_AT_OFFSET(vs,os,i)                       (vs[(os)+(i)])
-#define VS_CMP_OF_TYPE(vs,vd,tp,i)                      VS_CMP_AT_OFFSET(vs,VD_OFFSET(vd,tp),i)
-
-#define VM_COMP_NAMEPTR(p)                 ((p)->compNames)
-#define VM_COMP_NAME(p,i)                  (VM_COMP_NAMEPTR(p)[i])
-#define VM_COMPPTR(p)                      ((p)->Components)
-#define VM_LOCKED(p)                       ((p)->locked)
 
 /****************************************************************************/
 /*																			*/
