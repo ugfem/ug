@@ -341,6 +341,7 @@ char* stringconvert(INT i,char **string)
 	helpstring[0] = '\0';
 	helpstringptr = helpstring;
 
+
 	do
 	{
 		divrest = zahl%10;
