@@ -88,6 +88,9 @@
 #define DO_WAIT                                                 13
 #define DO_DEPEND                                               14
 #define DO_INVERSE_POLYLINE                     15
+#ifdef ModelP
+#define DO_END_GPIPE                                    16
+#endif
 
 /* increment */
 #define DO_inc(p)                                               (p)+=1;
