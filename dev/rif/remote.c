@@ -851,4 +851,14 @@ INT MouseStillDown (void)
 
 /****************************************************************************/
 
+void DrawInfoBox (WINDOWID win, const char *info)
+{
+  return;
+}
+
+INT WhichTool (WINDOWID win, const INT mouse[2], INT *tool)
+{
+  return (0);
+}
+
 #endif
