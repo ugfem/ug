@@ -725,7 +725,7 @@ INT CheckEdgePrio (ELEMENT *theElement, EDGE *theEdge)
 
 INT CheckElementPrio (ELEMENT *theElement)
 {
-	INT		i,nmaster,prio;
+	INT		i,nmaster,prio,valid_copy;
 	INT		nerrors = 0;
 	NODE	*theNode;
 	EDGE	*theEdge;
@@ -764,15 +764,6 @@ INT CheckElementPrio (ELEMENT *theElement)
 	/* check element prio */
 	CHECK_OBJECT_PRIO(theElement,EPRIO,EMASTER,EGHOST,EID,"ELEM",nerrors)
 
-	if (dddctrl.elemData)
-		nerrors += CheckVectorPrio(theElement,EVECTOR(theElement));
-
-	if (dddctrl.sideData)
-	{
-		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-			nerrors += CheckVectorPrio(theElement,SVECTOR(theElement,i));
-	}
-
 	/* master copy has to be unique */
 	if ((nmaster = CheckProcListCons(EPROCLIST(theElement),PrioMaster)) != 1)	
 	{
@@ -781,6 +772,46 @@ INT CheckElementPrio (ELEMENT *theElement)
 		ListProcList(EPROCLIST(theElement),PrioMaster);
 		UserWriteF("\n");
 		nerrors++;
+	}
+
+	/* hghost copy needs to a master neighbor */
+	if (EHGHOST(theElement))
+	{
+		valid_copy = 0;	
+		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+		{
+			if (NBELEM(theElement,i)!=NULL && EMASTER(NBELEM(theElement,i)))
+				valid_copy = 1;
+		}
+		if (!valid_copy) 
+		{
+			UserWriteF("ELEM=" EID_FMTX " ERROR: hghost copy with no master neighbor!\n",
+				EID_PRTX(theElement));
+			nerrors++;
+		}
+	}
+
+	/* vghost copy needs to a master Son */
+	if (EVGHOST(theElement))
+	{
+		if (GetSons(theElement,SonList) != 0) RETURN(1);
+		if (SonList[0] == NULL) valid_copy = 0;
+		else 					valid_copy = 1;
+		if (!valid_copy) 
+		{
+			UserWriteF("ELEM=" EID_FMTX " ERROR: vghost copy with no master son!\n",
+				EID_PRTX(theElement));
+			nerrors++;
+		}
+	}
+
+	if (dddctrl.elemData)
+		nerrors += CheckVectorPrio(theElement,EVECTOR(theElement));
+
+	if (dddctrl.sideData)
+	{
+		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+			nerrors += CheckVectorPrio(theElement,SVECTOR(theElement,i));
 	}
 
 	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
