@@ -433,7 +433,8 @@ INT TestRefineInfo (MULTIGRID *theMG)
 .  theMG
 
    DESCRIPTION:
-   This function drops marks from leafelements to first regular, and resets marks on all elements above (important for restrict marks)
+   This function drops marks from leafelements to first regular, and resets 
+   marks on all elements above (important for restrict marks)
 
    RETURN VALUE:
    INT 
@@ -808,7 +809,11 @@ static INT PrintEdgeInfo (GRID *theGrid, char* string, INT level)
 .  theGrid - pointer to grid structure
 
    DESCRIPTION:
-   This function computes the closure for next level. A closure can only be determined if the rule set for the used elements is complete. This means that for all side and edge patterns possible for an element type exists a rule which closes the element. In this case a FIFO for computing the closure is not needed any more and the closure can be computed in one step.	
+   This function computes the closure for next level. A closure can only be 
+   determined if the rule set for the used elements is complete. This means 
+   that for all side and edge patterns possible for an element type exists a 
+   rule which closes the element. In this case a FIFO for computing the closure 
+   is not needed any more and the closure can be computed in one step.	
   
    RETURN VALUE:
    INT 
@@ -2115,7 +2120,11 @@ static INT CheckElementInfo (GRID *theGrid)
 .  theGrid - pointer to grid structure
 
    DESCRIPTION:
-   This function computes closure for next level. A closure can only be determined if the rule set for the used elements is complete. This means that for all side and edge patterns possible for an element type exists a rule which closes the element.  In this case a FIFO for computing the closure is not needed any more and the closure can be computed in one step.
+   This function computes closure for next level. A closure can only be 
+   determined if the rule set for the used elements is complete. This means 
+   that for all side and edge patterns possible for an element type exists 
+   a rule which closes the element.  In this case a FIFO for computing the 
+   closure is not needed any more and the closure can be computed in one step.
    
    RETURN VALUE:
    int
@@ -2393,7 +2402,8 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 .  theElement - pointer to the element
 
    DESCRIPTION:
-   This function restricts refinement marks of an element whose sons are further marked for refinement
+   This function restricts refinement marks of an element whose sons are 
+   further marked for refinement
    
    RETURN VALUE:
    INT
@@ -2834,7 +2844,9 @@ static void CheckElementContextConsistency(ELEMENT *theElement,
 .  theContext - context structure to update
 
    DESCRIPTION:
-   This function assembles references to objects which interact with the sons of the given element, i.e. objects are allocated, kept or deleted as indicated by MARK (i) corner nodes  (ii) nodes at midpoints of edges	
+   This function assembles references to objects which interact with the sons 
+   of the given element, i.e. objects are allocated, kept or deleted as 
+   indicated by MARK (i) corner nodes  (ii) nodes at midpoints of edges	
    
    RETURN VALUE:
    int
@@ -3147,7 +3159,9 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 .  theElement: element to refine
 
    DESCRIPTION:
-   This function removes previous refinement for an element and all sonelement recursively, deletes: (i) all connections, (ii) all interior nodes and edges are deleted, (iii) sons are deleted and references to sons reset to NULL.
+   This function removes previous refinement for an element and all sonelement 
+   recursively, deletes: (i) all connections, (ii) all interior nodes and edges 
+   are deleted, (iii) sons are deleted and references to sons reset to NULL.
 
    RETURN VALUE:
    INT     
@@ -4223,7 +4237,11 @@ static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theCo
 .  theContext - nodes needed for new elements
 
    DESCRIPTION:
-   This function refines an element without context, (i) corner and midnodes are already allocated, (ii) edges between corner and midnodes are ok, (iii) create interior nodes and edges, (iv) create sons and set references to sons. 	 
+   This function refines an element without context, 
+   (i) corner and midnodes are already allocated, 
+   (ii) edges between corner and midnodes are ok, 
+   (iii) create interior nodes and edges, 
+   (iv) create sons and set references to sons. 	 
    
    RETURN VALUE:
    INT
@@ -5187,7 +5205,11 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 .  theContext - current context of element
 
    DESCRIPTION:
-   This function refines an element in the given context, (i) corner and midnodes are already allocated, (ii) edges between corner and midnodes are ok, (iii) create interior nodes and edges, (iv) create sons and set references to sons. 
+   This function refines an element in the given context, 
+   (i) corner and midnodes are already allocated, 
+   (ii) edges between corner and midnodes are ok, 
+   (iii) create interior nodes and edges, 
+   (iv) create sons and set references to sons. 
    
    RETURN VALUE:
    INT
