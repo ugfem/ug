@@ -5616,7 +5616,7 @@ static int RefineGrid (GRID *theGrid)
 		NextElement = SUCCE(theElement);
 
 		#ifdef ModelP
-		/* update overlap  */
+		/* reset update overlap  */
 		SETTHEFLAG(theElement,0);
 		#endif
 
@@ -5638,11 +5638,15 @@ static int RefineGrid (GRID *theGrid)
 
 			#ifdef ModelP
 			/* dispose hghost elements with EFATHER==NULL */
+/* TODO: how handle this situation?                       */ 
+/* situation possibly some elements to be coarsened are   */
+/* disconnected from their fathers (970109 s.l.)          */             
+if (0)
 			if (EHGHOST(theElement) && COARSEN(theElement))
 			{
 				if (LEVEL(theElement)>0 && EFATHER(theElement)==NULL)
 				{
-					DisposeElement(UpGrid,theElement,TRUE);
+					DisposeElement(theGrid,theElement,TRUE);
 					continue;
 				}
 			}
@@ -5669,7 +5673,7 @@ static int RefineGrid (GRID *theGrid)
 			SETUSED(theElement,0);
 
 			#ifdef ModelP
-			/* update overlap  */
+			/* set update overlap  */
 			SETTHEFLAG(theElement,1);
 			#endif
 
@@ -5680,11 +5684,14 @@ static int RefineGrid (GRID *theGrid)
 		{
 			#ifdef ModelP
 			/* dispose hghost elements with EFATHER==NULL */
+/* TODO: how handle this situation?                       */ 
+/* situation possibly some elements to be coarsened are   */
+/* disconnected from their fathers (970109 s.l.)          */             
 			if (EHGHOST(theElement) && COARSEN(theElement))
 			{
 				if (LEVEL(theElement)>0 && EFATHER(theElement)==NULL)
 				{
-					DisposeElement(UpGrid,theElement,TRUE);
+					DisposeElement(theGrid,theElement,TRUE);
 					continue;
 				}
 			}
@@ -5747,7 +5754,9 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 	/* yellow_class specific code:                                */
 	/* update need to be done for all elements with THEFLAG set,  */
 	/* execpt for yellow copies, since their neighbor need not be */
+	/* refined (s.l. 971029)                                      */
 	if (!THEFLAG(theElement) && REFINECLASS(theElement)!=YELLOW_CLASS) return(GM_OK);
+
 	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 	{
 		theNeighbor = NBELEM(theElement,i);
@@ -5760,9 +5769,11 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 		/* this is the special situation an update of the element overlap  */
 		/* is needed, since the yellow element has now gotten a new yellow */
 		/* neighbor (s.l. 971029)                                          */
+		if ((REFINECLASS(theElement)==YELLOW_CLASS && !THEFLAG(theElement)) && 
 			((REFINECLASS(theNeighbor)!=YELLOW_CLASS) || 
 			(REFINECLASS(theNeighbor)==YELLOW_CLASS && !THEFLAG(theNeighbor)))) continue;
 
+		PRINTDEBUG(gm,1,("%d: EID=%d side=%d NbID=%d " "NbPARTITION=%d\n",me,
 			ID(theElement),i,ID(theNeighbor), EPROCPRIO(theNeighbor,PrioMaster)))
 
 		Get_Sons_of_ElementSide(theElement,i,&SonsOfSide,
@@ -6448,9 +6459,11 @@ CheckConsistency(theMG,level,debugstart,gmlevel,&check);
 	if (hFlag)
 		UserWriteF(" Number of green refinements not updated: "
 			"%d (%d green marks)\n",No_Green_Update,Green_Marks);
+*/
 	
 	/* increment step count */
 	SETREFINESTEP(REFINEINFO(theMG),REFINESTEP(REFINEINFO(theMG))+1);
+
 /*
 CheckMultiGrid(theMG);
 */
