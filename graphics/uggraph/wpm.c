@@ -1622,6 +1622,7 @@ INT CopyView (const PICTURE *mypic, INT all, INT cut)
           V2_COPY(VO_PMP(myvo),VO_PMP(vo))
           V2_COPY(VO_PXD(myvo),VO_PXD(vo))
           V2_COPY(VO_PYD(myvo),VO_PYD(vo))
+          V2_COPY(VO_SCALE(myvo),VO_SCALE(vo))
           break;
 
         case TYPE_3D :
