@@ -291,7 +291,7 @@ UGWINDOW *CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *UgWindowNam
   UGW_IFWINDOW(theWindow)         = winID;
 
   SetDeviceInfo();
-
+#ifdef ModelP
   XBroadcast(8,
              &(UGW_GLL(theWindow)), sizeof(UGW_GLL(theWindow)),
              &(UGW_GUR(theWindow)), sizeof(UGW_GUR(theWindow)),
@@ -301,7 +301,7 @@ UGWINDOW *CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *UgWindowNam
              &(UGW_NPIC(theWindow)), sizeof(UGW_NPIC(theWindow)),
              &(UGW_VALID(theWindow)), sizeof(UGW_VALID(theWindow)),
              &(UGW_IFWINDOW(theWindow)), sizeof(UGW_IFWINDOW(theWindow)));
-
+#endif
   return (theWindow);
 }
 
