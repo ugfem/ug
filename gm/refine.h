@@ -36,6 +36,10 @@
 #include "gm.h"
 #endif
 
+#ifndef __ALGEBRA__
+#include "algebra.h"            /* just for ALGEBRA_N_CE */
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -56,14 +60,28 @@
 /*																			*/
 /****************************************************************************/
 
+enum REFINE_CE {
+
+  PATTERN_CE = ALGEBRA_N_CE,            /* continue after algebra.h entries		*/
+  ADDPATTERN_CE,
+  REFINE_CE,
+  MARK_CE,
+  COARSEN_CE,
+  DECOUPLED_CE,
+  REFINECLASS_CE,
+  UPDATE_GREEN_CE,
+  SIDEPATTERN_CE,
+  MARKCLASS_CE,
+
+  REFINE_N_CE
+};
+
 /* edges */
-#define PATTERN_CE                                      39
 #define PATTERN_SHIFT                           10
 #define PATTERN_LEN                             1
 #define PATTERN(p)                                      CW_READ(p,PATTERN_CE)
 #define SETPATTERN(p,n)                         CW_WRITE(p,PATTERN_CE,n)
 
-#define ADDPATTERN_CE                           40
 #define ADDPATTERN_SHIFT                        11
 #define ADDPATTERN_LEN                          1
 #define ADDPATTERN(p)                           CW_READ(p,ADDPATTERN_CE)
@@ -71,49 +89,41 @@
 
 
 /* element */
-#define REFINE_CE                                               45
 #define REFINE_SHIFT                                    0
 #define REFINE_LEN                                              8
 #define REFINE(p)                                               CW_READ(p,REFINE_CE)
 #define SETREFINE(p,n)                                  CW_WRITE(p,REFINE_CE,n)
 
-#define MARK_CE                                                 50
 #define MARK_SHIFT                                              0
 #define MARK_LEN                                                8
 #define MARK(p)                                                 CW_READ(p,MARK_CE)
 #define SETMARK(p,n)                                    CW_WRITE(p,MARK_CE,n)
 
-#define COARSEN_CE                                              51
 #define COARSEN_SHIFT                                   10
 #define COARSEN_LEN                                     1
 #define COARSEN(p)                                              CW_READ(p,COARSEN_CE)
 #define SETCOARSEN(p,n)                                 CW_WRITE(p,COARSEN_CE,n)
 
-#define DECOUPLED_CE                                    53
 #define DECOUPLED_SHIFT                                 12
 #define DECOUPLED_LEN                                   1
 #define DECOUPLED(p)                                    CW_READ(p,DECOUPLED_CE)
 #define SETDECOUPLED(p,n)                               CW_WRITE(p,DECOUPLED_SHIFT,n)
 
-#define REFINECLASS_CE                                  49
 #define REFINECLASS_SHIFT                               15
 #define REFINECLASS_LEN                                 2
 #define REFINECLASS(p)                                  CW_READ(p,REFINECLASS_CE)
 #define SETREFINECLASS(p,n)                     CW_WRITE(p,REFINECLASS_CE,n)
 
-#define UPDATE_GREEN_CE                                 54
 #define UPDATE_GREEN_SHIFT                              8
 #define UPDATE_GREEN_LEN                                1
 #define UPDATE_GREEN(p)                                 CW_READ(p,UPDATE_GREEN_CE)
 #define SETUPDATE_GREEN(p,n)                    CW_WRITE(p,UPDATE_GREEN_CE,n)
 
-#define SIDEPATTERN_CE                                  55
 #define SIDEPATTERN_SHIFT                               0
 #define SIDEPATTERN_LEN                                 6
 #define SIDEPATTERN(p)                                  CW_READ(p,SIDEPATTERN_CE)
 #define SETSIDEPATTERN(p,n)                     CW_WRITE(p,SIDEPATTERN_CE,n)
 
-#define MARKCLASS_CE                                    58
 #define MARKCLASS_SHIFT                                 13
 #define MARKCLASS_LEN                                   2
 #define MARKCLASS(p)                                    CW_READ(p,MARKCLASS_CE)
