@@ -2346,7 +2346,9 @@ INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const MATDATA_
     /* multiply row from left */
     for (mij=VSTART(vi); mij!=NULL; mij=MNEXT(mij))
     {
-      if (CEXTRA(mij)) continue;
+      /*
+                              if (CEXTRA(mij)) continue;
+       */
 
       Dfine = &(MVALUE(mij,A));
       for (i=0; i<n; i++)
