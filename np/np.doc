@@ -208,3 +208,114 @@ name of the derived class and ending with the final class name.
 
 D*/
 /****************************************************************************/
+
+/****************************************************************************/
+/*D
+   
+udm - user data manager
+
+DESCRIPTION:
+
+The user data manager allocates VECDATA_DESCs and MATDATA_DESCs dynamicly.
+It uses vector and matrix templates provided by the format.
+
+VECDATA_DESCs and MATDATA_DESCs used in the script are 'locked'. 
+They can be constructed by -> 'createvector' and -> 'creatematrix'
+directly or by -> 'ReadArgvVecDesc' and -> 'ReadArgvVecDesc' as 
+parameters of commands and num procs. 
+In both cases a vector or matrix is constructed with the template
+of the same name (or with the first template, if there is no template
+of this name).
+
+VECDATA_DESCs and MATDATA_DESCs not used in the script but required in
+num procs can be alloccated dynamicly. We explain the concept for a 
+vector v:
+
+In 'npinit' a temporary vector can be specified for debugging purpose.
+Thus, the init routine tries to get the vector by calling 'ReadArgvVecDesc'.
+If the vector is not specified (the general case), 'ReadArgvVecDesc' returns
+NULL.
+
+In 'npexecute', the vector can be allocated by AllocVDFromVD(...,x,v):
+
+   if v == NULL, it returns a free VECDATA_DESC, or if there is no
+   free vector, it creates a new vector. Then, the vector is allocated.
+
+   if v != NULL, it checks if the vector is free and allocates it.
+   Otherwise, it acts like above.
+
+When the vector is not used any more, it is deallocate with FreeVD.
+
+Usually, v will be the same vector for every call of the num proc,
+but in between other num procs can allocate and deallocate the same
+vector.
+
+If v is locked (i. e. v is specified in the script), Alloc and Free does 
+nothing.
+
+EXAMPLES:
+
+.vb
+newformat P1_conform $V n1: 4 $M n1xn1: 2;
+
+createvector sol;
+clear rhs;
+.ve
+
+A format 'P1_conform' is created with one vector and one matrix template.
+'createvector sol' creates a VECDATA_DESC 'sol' with the unique vector 
+template.
+'clear rhs' reads 'rhs with 'ReadArgvVecDesc' and creates a VECDATA_DESC 'rhs'
+with the unique vector template.
+
+.vb
+newformat P1P2 $V n1 k1: sol rhs $V n1: 4 $M n1xn1: 2;
+
+createvector sol;
+clear rhs;
+.ve
+
+A format 'P1_conform' is created with three vector and one matrix template.
+'createvector sol' creates a VECDATA_DESC 'sol' with the vector 
+template 'sol'.
+'clear rhs' reads 'rhs with 'ReadArgvVecDesc' and creates a VECDATA_DESC 'rhs'
+with the vector template 'rhs'.
+
+.vb
+npcreate smooth $c gs;
+npinit smooth;
+
+npcreate basesolver $c ls;
+npinit basesolver $red 0.001 $m 1 $I smooth;
+
+npcreate transfer $c transfer;
+npinit transfer;
+
+npcreate lmgc $c lmgc;
+npinit lmgc $S smooth smooth basesolver $T transfer $n1 2 $n2 2;
+
+npcreate mgs $c ls;
+npinit mgs $A MAT $x sol $b rhs $m 8 $red 0.00001 $I lmgc $d full;
+.ve
+
+MAT, sol and rhs will be created by 'npinit mgs' and locked.
+'npexecute mgs' requires two additional vectors vec00 and vec01. 
+
+.vb
+mgs --> | Alloc vec00
+        | lmgc        | Alloc vec01
+		|			  |	--> transfer
+        |             | --> smooth
+        |             | Free vec01
+        |             | --> basesolver | Alloc vec01
+	    |                              | --> smooth
+        |                              | Free vec01
+        | Free vec00
+.ve                                    
+
+Then, 'npdisplay' shows which vectors are used by the num procs.
+vec00 and vec01 are free after the termination of 'mgs', so
+that they can be used by other num procs as well.
+
+D*/
+/****************************************************************************/
