@@ -64,6 +64,10 @@
 /*																			*/
 /****************************************************************************/
 
+#ifdef ModelP
+int ParExecCommand (char *s);
+#endif
+
 INT                     InitUgInterface                                 (void);
 
 INT                     DelCmdKey                                               (char c);

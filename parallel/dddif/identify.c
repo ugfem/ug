@@ -217,7 +217,7 @@ static INT Print_Identify_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
 
   PrintDebug ("\n");
 
-  return;
+  return(0);
 
 }
 #endif
@@ -270,8 +270,7 @@ static INT Print_Identified_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
 
   PrintDebug ("\n");
 
-  return;
-
+  return(0);
 }
 #endif
 
@@ -549,12 +548,12 @@ static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor,
   /* edge unlocked -> no debugging occurs */
         #ifdef Debug
   if (debug == 1) {
-    if (EDIDENT(theEdge) == CLEAR) return;
+    if (EDIDENT(theEdge) == CLEAR) return(0);
   }
   else
         #endif
   /* edge locked -> already identified */
-  if (EDIDENT(theEdge) == IDENT) return;
+  if (EDIDENT(theEdge) == IDENT) return(0);
 
   PRINTDEBUG(dddif,1,("%d: Identify EDGE edgeofside=%d pe=%08x/%x eID=%d"
                       " ntype0=%d  ntype1=%d\n",me,edgeofside,
@@ -610,7 +609,7 @@ static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor,
   /* lock this edge for identification */
   SETEDIDENT(theEdge,IDENT);
 
-  return;
+  return(0);
 }
 
 
