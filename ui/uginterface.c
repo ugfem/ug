@@ -54,6 +54,13 @@
 
 #define MAXCMDLEN                       256
 
+#define POINTER                                 0               /* arrow tool can zoom pictures		*/
+#define DRAG                                    1               /* arrow tool can drag pictures		*/
+#define ZOOM                                    2               /* arrow tool can zoom pictures		*/
+
+#define SEL_NODE                                0               /* hand tool can select nodes		*/
+#define SEL_VECTOR                              1               /* hand tool can select vectors		*/
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -82,7 +89,9 @@ static PICTURE *currPicture;
 
 static INT autoRefresh;                                 /* ON or OFF						*/
 
-static INT Arrow=POINTER;                               /* POINTER, ZOOM or DRAG			*/
+static INT ArrowToolState=POINTER;              /* POINTER, ZOOM or DRAG			*/
+static INT MarkToolState=RED;                   /* NO_REFINEMENT, RED, BLUE, COPY	*/
+static INT HandToolState=SEL_NODE;              /* SEL_NODE, SEL_VECTOR				*/
 
 static INT theCmdKeyDirID;                              /* env ID for the /Cmd Key dir		*/
 static INT theCmdKeyVarID;                              /* env ID for the /Cmd Key dir		*/
@@ -236,7 +245,7 @@ UGWINDOW *GetCurrentUgWindow (void)
 static INT DoCmdKey (char c, char *String)
 {
   CMDKEY *theCmdKey;
-  char theCmdKeyName[2];
+  char theCmdKeyName[2],*s;
 
   /* find cmd key env item */
   theCmdKeyName[0] = c;
@@ -245,6 +254,9 @@ static INT DoCmdKey (char c, char *String)
   if (theCmdKey != NULL)
   {
     strcpy(String, (const char *)theCmdKey->CommandName);
+    for (s=String; *s!='\0'; s++)
+      if (*s=='?')
+        *s = '@';
     return (1);
   }
   return (0);
@@ -611,7 +623,11 @@ static INT ProcessEvent (char *String, INT EventMask)
             if (PIC_VALID(thePic)==NO && VO_STATUS(PIC_VO(thePic))==ACTIVE)
             {
               if (DrawUgPicture(thePic))
+              {
+                autoRefresh = FALSE;
+                PrintErrorMessage('W',"ProcessEvent","autorefresh is switched OFF");
                 return (PE_OTHER);
+              }
               if (thePic==currPicture) DrawPictureFrame(thePic,WOP_ACTIVE);
               else DrawPictureFrame(thePic,WOP_NOT_ACTIVE);
             }
@@ -711,23 +727,63 @@ static INT ProcessEvent (char *String, INT EventMask)
     /* change tool */
     WinID = theEvent.DocChangeTool.win;
     theUgW = WinID2UgWindow(WinID);
-    if (UGW_CURRTOOL(theUgW)==arrowTool)
-      if (theEvent.DocChangeTool.Tool==arrowTool)
-        switch (Arrow)
+    if (UGW_CURRTOOL(theUgW)==theEvent.DocChangeTool.Tool)
+      switch (theEvent.DocChangeTool.Tool)
+      {
+      case arrowTool :
+        switch (ArrowToolState)
         {
         case POINTER :
           SetToolName(arrowTool,"drag tool");
-          Arrow = DRAG;
+          ArrowToolState = DRAG;
           break;
         case DRAG :
           SetToolName(arrowTool,"zoom tool");
-          Arrow = ZOOM;
+          ArrowToolState = ZOOM;
           break;
         default :
           SetToolName(arrowTool,arrowToolName);
-          Arrow = POINTER;
+          ArrowToolState = POINTER;
           break;
         }
+        break;
+
+      case gnoedelTool :
+        switch (MarkToolState)
+        {
+        case NO_REFINEMENT :
+          SetToolName(gnoedelTool,"mark red tool");
+          MarkToolState = RED;
+          break;
+        case RED :
+          SetToolName(gnoedelTool,"mark blue tool");
+          MarkToolState = BLUE;
+          break;
+        case BLUE :
+          SetToolName(gnoedelTool,"mark copy tool");
+          MarkToolState = COPY;
+          break;
+        case COPY :
+          SetToolName(gnoedelTool,"unmark tool");
+          MarkToolState = NO_REFINEMENT;
+          break;
+        }
+        break;
+
+      case handTool :
+        switch (HandToolState)
+        {
+        case SEL_NODE :
+          SetToolName(handTool,"select vec tool");
+          HandToolState = SEL_VECTOR;
+          break;
+        case SEL_VECTOR :
+          SetToolName(handTool,"select nd tool");
+          HandToolState = SEL_NODE;
+          break;
+        }
+        break;
+      }
     UGW_CURRTOOL(theUgW) = theEvent.DocChangeTool.Tool;
     InvalidateUgWindow(theUgW);
     if (PIC_UGW(currPicture)==theUgW)
@@ -750,7 +806,7 @@ static INT ProcessEvent (char *String, INT EventMask)
     switch (UGW_CURRTOOL(theUgW))
     {
     case arrowTool :
-      switch (Arrow)
+      switch (ArrowToolState)
       {
       case ZOOM :
         ZoomPicture(currPicture,MousePosition);
@@ -779,9 +835,21 @@ static INT ProcessEvent (char *String, INT EventMask)
       if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
       break;
     case handTool :
-      W_ID(&theWork) = SELECTNODE_WORK;
-      W_SELECTNODE_WORK(&theWork)->PixelX = MousePosition[0];
-      W_SELECTNODE_WORK(&theWork)->PixelY = MousePosition[1];
+      switch (HandToolState)
+      {
+      case SEL_NODE :
+        W_ID(&theWork) = SELECTNODE_WORK;
+        W_SELECTNODE_WORK(&theWork)->PixelX = MousePosition[0];
+        W_SELECTNODE_WORK(&theWork)->PixelY = MousePosition[1];
+        break;
+      case SEL_VECTOR :
+        W_ID(&theWork) = SELECTVECTOR_WORK;
+        W_SELECTVECTOR_WORK(&theWork)->PixelX = MousePosition[0];
+        W_SELECTVECTOR_WORK(&theWork)->PixelY = MousePosition[1];
+        break;
+      default :
+        return (PE_OTHER);
+      }
       if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
       break;
     case heartTool :
@@ -792,8 +860,9 @@ static INT ProcessEvent (char *String, INT EventMask)
       break;
     case gnoedelTool :
       W_ID(&theWork) = MARKELEMENT_WORK;
-      W_SELECTELEMENT_WORK(&theWork)->PixelX = MousePosition[0];
-      W_SELECTELEMENT_WORK(&theWork)->PixelY = MousePosition[1];
+      W_MARKELEMENT_WORK(&theWork)->PixelX = MousePosition[0];
+      W_MARKELEMENT_WORK(&theWork)->PixelY = MousePosition[1];
+      W_MARKELEMENT_WORK(&theWork)->rule   = MarkToolState;
       if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
       break;
     default :
