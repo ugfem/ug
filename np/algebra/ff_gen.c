@@ -944,21 +944,23 @@ static void MeshwidthForFFConstructTestvector_loc( const VECTOR *v, const VECTOR
 }
 
 
-void CalculateTv_loc_linesegments( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr )
+static void CalculateTv_loc_linesegments( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr )
 /* isolates the single linesegments (leaf blockvectors) and calculates for
    each of these segments an ordinary (1D) testvector */
 {
-  register DOUBLE pos, hkpi;
   register VECTOR *v, *end_v;
   register BLOCKVECTOR *bv_i, *bv_end;
-  DOUBLE meshwidth, coord, line_pos;
 
   if ( BV_IS_EMPTY( bv ) )
     return;
 
-#ifdef QQQTTTT /* auskommentiert fuer Variante, die sich an den Vector-Koordinaten oreintiert */
+#ifdef QQQTTTT /* auskommentiert fuer Variante, die sich an den Vector-Koordinaten orientiert */
   if ( BV_IS_LEAF_BV(bv) )
-  {             /* go simply over the vectors of the blockvector */
+  {
+    register DOUBLE pos, hkpi;
+    DOUBLE meshwidth, coord;
+
+    /* go simply over the vectors of the blockvector */
     v = BVFIRSTVECTOR(bv);
     MeshwidthForFFConstructTestvector_loc( v, SUCCVC(v), &meshwidth, &coord );
     hkpi = PI * wavenr * meshwidth;
@@ -1354,7 +1356,7 @@ INT FFMultWithMInv(
   register BV_DESC *bvd_i=NULL, *bvd_ip1, *bvd_temp;
   BV_DESC bvd1, bvd2;
   BLOCKVECTOR *bv_first;
-  INT aux_comp, auxsub_comp, L_comp;
+  INT aux_comp, L_comp;
 #ifdef MINV_2D_EXACT
   INT auxA_comp, auxB_comp;
 #endif

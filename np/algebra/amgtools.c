@@ -324,10 +324,7 @@ INT CountStrongNeighbors(AVECTOR *initialS, DOUBLE *avNrOfStrongNbsHnd, INT *max
 
 static INT CheckImat(GRID *theGrid, int i)
 {
-  INT noc,nof;
-  VECTOR *vect,*newVect;
-  GRID *newGrid;
-  MULTIGRID *theMG;
+  VECTOR *vect;
   MATRIX *imat;
 
   UserWriteF("Checking at point %d\n",i);
@@ -735,7 +732,7 @@ INT CoarsenAverage (GRID *theGrid)
   VECTOR *theV,*theW;
   MATRIX *theM;
   HEAP *theHeap;
-  INT n,m,d,dmin,p;
+  INT n,m,d,dmin;
 
   m = 0;
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
@@ -904,7 +901,7 @@ static INT l_vectorflag_consistent1 (GRID *g)
 }
 #endif
 
-INT CoarsenAverage1 (GRID *theGrid)
+static INT CoarsenAverage1 (GRID *theGrid)
 {
   INT error;
   FIFO myfifo;
@@ -912,7 +909,10 @@ INT CoarsenAverage1 (GRID *theGrid)
   VECTOR *theV,*theW;
   MATRIX *theM;
   HEAP *theHeap;
-  INT n,m,d,dmin,p;
+  INT n,m,d,dmin;
+        #ifdef ModelP
+  INT p;
+        #endif
 
   m = 0;
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
@@ -1054,7 +1054,6 @@ INT CoarsenAverage1 (GRID *theGrid)
 static INT GenerateClusters(AVECTOR **Ua, AVECTOR **Ue, GRID *theGrid, GRID *newGrid, int minSizeOfCluster)
 {
   int i,k,nc;
-  INT error;
   VECTOR *vect,*vect2,*newVect;
   AVECTOR *avect,*avect2;
   MATRIX *mat,*mat2,*imat;
@@ -1297,11 +1296,11 @@ INT CoarsenVanek(GRID *theGrid)
 
 INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
-  INT icomp,mcomp,ncomp,i,j,n,nmax;
-  DOUBLE s,t,sum,factor;
+  INT ncomp,i,j,n,nmax;
+  DOUBLE s;
   GRID *newGrid;
   VECTOR *vect,*dest,*newVect;
-  MATRIX *mat,*mat2,*imat;
+  MATRIX *mat,*imat;
 
   for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
     if (VCCOARSE(vect)) {

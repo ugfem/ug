@@ -49,7 +49,7 @@ INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode T_ARGS)
 {
 	register VECTOR *v;
 	register MATRIX *mat;
-	INT lev,rtype,ctype,nr,nc,i,j;
+	INT lev,rtype,ctype,nr,nc,i;
 	#ifdef T_USE_Y
 	register VECTOR *w;
 	register DOUBLE *mptr,*vptr;

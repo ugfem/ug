@@ -5931,8 +5931,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
   VECTOR *vec,*vlist[MAX_DEPTH],*w;
   MATRIX *mat;
   DOUBLE Mval[LOCAL_DIM*LOCAL_DIM],vval[LOCAL_DIM],dval[LOCAL_DIM];
-  INT cnt,m,i,j,k,l,ncomp,vcnt,vtype,wtype,wncomp;
-  INT myindex,index;
+  INT cnt,m,i,k,l,ncomp,vcnt,vtype,wtype,wncomp;
   const SHORT *Comp,*VComp;
 
   if (depth > MAX_DEPTH) {

@@ -2049,7 +2049,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 /****************************************************************************/
 
 #ifdef __MWCW__
-#pragma mark blas_level_0
+#pragma mark blas_level_1
 #endif
 
 /****************************************************************************/
@@ -2969,7 +2969,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 /****************************************************************************/
 
 #ifdef __MWCW__
-#pragma mark blas_level_1
+#pragma mark blas_level_2
 #endif
 
 /****************************************************************************/
@@ -3357,12 +3357,13 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    D*/
 /****************************************************************************/
 
-INT dmatmul1        (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
-                     const MATDATA_DESC *M, const VECDATA_DESC *y)
-{
-  dset(mg,fl,tl,mode,x,0.0);
-  return(dmatmul_add(mg,fl,tl,mode,x,M,y));
-}
+/* TODO: remove this
+   INT dmatmul1        (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                                        const MATDATA_DESC *M, const VECDATA_DESC *y)
+   {
+    dset(mg,fl,tl,mode,x,0.0);
+        return(dmatmul_add(mg,fl,tl,mode,x,M,y));
+   }*/
 
 #define T_FUNCNAME     dmatmul
 #define T_ARGS         ,const VECDATA_DESC *x,const MATDATA_DESC *M,const VECDATA_DESC *y
@@ -3370,7 +3371,7 @@ INT dmatmul1        (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC
 #define T_USE_X
 #define T_USE_Y
 #define T_USE_MATMUL
-#define T_CONFIG           DOUBLE s[MAX_SINGLE_VEC_COMP],sum;DEFINE_VS_CMPS(s);
+#define T_CONFIG           INT j; DOUBLE s[MAX_SINGLE_VEC_COMP],sum;DEFINE_VS_CMPS(s);
 #define T_CONFIG_BV        register DOUBLE sum;
 #define T_LOOP_SCAL    sum = 0.0;
 #define T_MOD_SCAL     sum += MVALUE(mat,mc) * VVALUE(w,yc);
@@ -3471,7 +3472,7 @@ INT dmatmul1        (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC
 #define T_USE_X
 #define T_USE_Y
 #define T_USE_MATMUL
-#define T_CONFIG           DOUBLE s[MAX_SINGLE_VEC_COMP],sum;DEFINE_VS_CMPS(s);
+#define T_CONFIG           INT j; DOUBLE s[MAX_SINGLE_VEC_COMP],sum;DEFINE_VS_CMPS(s);
 #define T_CONFIG_BV    register DOUBLE sum;
 #define T_LOOP_SCAL    sum = 0.0;
 #define T_MOD_SCAL     sum += MVALUE(mat,mc) * VVALUE(w,yc);
@@ -3571,7 +3572,7 @@ INT dmatmul1        (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC
 #define T_USE_X
 #define T_USE_Y
 #define T_USE_MATMUL
-#define T_CONFIG           DOUBLE s[MAX_SINGLE_VEC_COMP],sum;DEFINE_VS_CMPS(s);
+#define T_CONFIG           INT j; DOUBLE s[MAX_SINGLE_VEC_COMP],sum;DEFINE_VS_CMPS(s);
 #define T_CONFIG_BV    register DOUBLE sum;
 #define T_LOOP_SCAL    sum = 0.0;
 #define T_MOD_SCAL     sum += MVALUE(mat,mc) * VVALUE(w,yc);

@@ -87,12 +87,12 @@ if (MD_SUCC_COMP(M)
 	for (rtype=0; rtype<NVECTYPES; rtype++) 
 		for (ctype=0; ctype<NVECTYPES; ctype++) 
 			if (MD_ISDEF_IN_RT_CT(M,rtype,ctype)) {
-				DEFINE_MD_CMPS(m);
+				register INT m00;
                 #ifdef T_USE_X
 				DEFINE_VD_CMPS(cx);
                 #endif
                 #ifdef T_USE_Y
-				DEFINE_VD_CMPS(cy);
+				register INT cy0;
                 #endif
 
                 #ifdef T_PREP_SWITCH
