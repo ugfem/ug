@@ -19065,7 +19065,9 @@ static INT EW_PreProcess_EScalar3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	#ifdef ModelP
 	EE3D_PartShrinkFactor			= 1.0;
 	#endif
-	
+
+	EE3D_Property                   = 0;
+
 	/* build cut trafo */
 	theCut = VO_CUT(PIC_VO(thePicture));
 	if (BuildCutTrafo(theCut,OBS_ViewDirection)) return (1);
