@@ -146,7 +146,7 @@ int PrintMGFileInfo (char *filename, int *magic_cookie)
   printf("BVP:            %s\n",mg_general.DomainName);
   printf("MG-Name:        %s\n",mg_general.MultiGridName);
   printf("Format-Name:    %s\n",mg_general.Formatname);
-  printf("Heapsize:       %d\n",mg_general.heapsize);
+  printf("Heapsize:       %d kByte\n",mg_general.heapsize);
   printf("\n");
   printf("# Level:        %d\n",mg_general.nLevel);
   printf("# Node:         %d\n",mg_general.nNode);
