@@ -1447,11 +1447,11 @@ static INT YAlignment (ELEMENT *theElement)
 INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
 {
   INT side;
-  ELEMENT *LastRedElem;
 
   SETCOARSEN(theElement,0);
 
-  LastRedElem = LAST_RED_ELEM(theElement);
+  if (rule != COARSE)
+    theElement = ELEMENT_TO_MARK(theElement);
 
   /* choose dimension */
   switch (DIM)
@@ -1473,8 +1473,8 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
         break;
 
       case NO_REFINEMENT :
-        SETMARK(LastRedElem,NO_REFINEMENT);
-        SETMARKCLASS(LastRedElem,0);
+        SETMARK(theElement,NO_REFINEMENT);
+        SETMARKCLASS(theElement,0);
         break;
 
       case COPY :
@@ -1483,8 +1483,8 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
         break;
 
       case RED :
-        SETMARK(LastRedElem,T_RED);
-        SETMARKCLASS(LastRedElem,RED_CLASS);
+        SETMARK(theElement,T_RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
 
       /* TODO: these marks must be introduced first
@@ -1534,8 +1534,8 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
         break;
 
       case NO_REFINEMENT :
-        SETMARK(LastRedElem,NO_REFINEMENT);
-        SETMARKCLASS(LastRedElem,0);
+        SETMARK(theElement,NO_REFINEMENT);
+        SETMARKCLASS(theElement,0);
         break;
 
       case COPY :
@@ -1544,8 +1544,8 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
         break;
 
       case RED :
-        SETMARK(LastRedElem,Q_RED);
-        SETMARKCLASS(LastRedElem,RED_CLASS);
+        SETMARK(theElement,Q_RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
 
       /* TODO: these mark must be introduced first */
@@ -1584,16 +1584,16 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
         SETCOARSEN(theElement,1);
         break;
       case (NO_REFINEMENT) :
-        SETMARK(LastRedElem,NO_REFINEMENT);
-        SETMARKCLASS(LastRedElem,0);
+        SETMARK(theElement,NO_REFINEMENT);
+        SETMARKCLASS(theElement,0);
         break;
       case (COPY) :
         SETMARK(theElement,TET_COPY);
         SETMARKCLASS(theElement,RED_CLASS);
         break;
       case (RED) :
-        SETMARK(LastRedElem,(*theFullRefRule)(theElement));
-        SETMARKCLASS(LastRedElem,RED_CLASS);
+        SETMARK(theElement,(*theFullRefRule)(theElement));
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
       default :
         return(GM_ERROR);
@@ -1609,16 +1609,16 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
         SETCOARSEN(theElement,1);
         break;
       case (NO_REFINEMENT) :
-        SETMARK(LastRedElem,NO_REFINEMENT);
-        SETMARKCLASS(LastRedElem,0);
+        SETMARK(theElement,NO_REFINEMENT);
+        SETMARKCLASS(theElement,0);
         break;
       case (COPY) :
         SETMARK(theElement,PYR_COPY);
         SETMARKCLASS(theElement,RED_CLASS);
         break;
       case (RED) :
-        SETMARK(LastRedElem,PYR_RED);
-        SETMARKCLASS(LastRedElem,RED_CLASS);
+        SETMARK(theElement,PYR_RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
       default :
         return(GM_ERROR);
@@ -1634,16 +1634,16 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
         SETCOARSEN(theElement,1);
         break;
       case (NO_REFINEMENT) :
-        SETMARK(LastRedElem,NO_REFINEMENT);
-        SETMARKCLASS(LastRedElem,0);
+        SETMARK(theElement,NO_REFINEMENT);
+        SETMARKCLASS(theElement,0);
         break;
       case (COPY) :
         SETMARK(theElement,HEXA_COPY);
         SETMARKCLASS(theElement,RED_CLASS);
         break;
       case (RED) :
-        SETMARK(LastRedElem,HEXA_RED);
-        SETMARKCLASS(LastRedElem,RED_CLASS);
+        SETMARK(theElement,HEXA_RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
       default :
         return(GM_ERROR);
@@ -1843,11 +1843,9 @@ INT GetRefinementMark (const ELEMENT *theElement, INT *rule, void *data)
 {
   INT *side = data;
 
-  if (ECLASS(theElement) != RED_CLASS)
-    if (LEAFELEM(theElement))
-      return(GetRefinementMark(LAST_RED_ELEM(theElement),rule,data));
-    else
-      return(-1);
+  if (LEAFELEM(theElement) &&
+      ECLASS(theElement) != RED_CLASS)
+    theElement = ELEMENT_TO_MARK(theElement);
 
   ASSERT(theElement != NULL);
   if (!((ECLASS(theElement) == RED_CLASS)
