@@ -56,6 +56,8 @@ extern "C"
 $Header$
 */
 
+//#define PROTOCOLNUMERIC
+
 #ifdef ModelP
 // forward declaration for ug functions
 extern "C"{
@@ -139,7 +141,26 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, FAMGVector *c)
 	register double sum;
 	
 	
-	// ModelP: solution must be consistent!
+    #ifdef ModelP
+	// distribute master values to V(H)Ghosts
+	if (l_ghostvector_consistent(DOWNGRID(mygrid),((FAMGugVector&)cgsol).GetUgVecDesc())!= NUM_OK)
+		assert(0);
+	#endif        
+	
+#ifdef PROTOCOLNUMERIC
+	FAMGVector &cgdefect = *(cg->GetVector(FAMGDEFECT));
+	cgdefect = 1.0;
+	#ifdef ModelP
+	FAMGVectorIter citer(cg->GetGridVector());
+	FAMGVectorEntry cvec;
+	while( citer(cvec) )	// make an inconsistent vector with the const value 1.0
+	{
+		if(!IS_FAMG_MASTER(((FAMGugVectorEntryRef*)(cvec.GetPointer()))->myvector()))
+			cgdefect[cvec] = 0.0;
+	}
+	#endif
+    cout<<"FAMGGrid::Prolongation: 1*cgsol before prolongation "<<cgdefect*cgsol<<endl;
+#endif
 	
 	FAMGVectorIter fiter(GetGridVector());
 	while( fiter(fvec) )
@@ -151,14 +172,19 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, FAMGVector *c)
 		sum = 0.0;
 	    for(transfg = transfer.GetFirstEntry(fvec); transfg != NULL; transfg = transfg->GetNext())
         	sum += transfg->GetProlongation() * cgsol[transfg->GetCol()];
-		fgsol[fvec] += sum;
+		fgsol[fvec] = sum;
 	}
 #ifdef ModelP
 	if (l_force_consistence(mygrid,((FAMGugVector&)fgsol).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
 #endif
 
-    
+#ifdef PROTOCOLNUMERIC
+    cout<<"FAMGGrid::Prolongation: defect after prolongation "<<fgdefect*fgdefect<<endl;
+    cout<<"FAMGGrid::Prolongation: sol after prolongation "<<fgsol*fgsol<<endl;
+    cout<<"FAMGGrid::Prolongation: defect*sol after prolongation "<<fgdefect*fgsol<<endl;
+#endif
+	
 	// prepare defect for jacobi smoothing
 	Defect();
 #ifdef ModelP
@@ -166,6 +192,12 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, FAMGVector *c)
 		assert(0);
 #endif
 	
+#ifdef PROTOCOLNUMERIC
+    cout<<"FAMGGrid::Prolongation: defect after defect "<<fgdefect*fgdefect<<endl;
+    cout<<"FAMGGrid::Prolongation: sol after defect "<<fgsol*fgsol<<endl;
+    cout<<"FAMGGrid::Prolongation: defect*sol after defect "<<fgdefect*fgsol<<endl;
+#endif
+
 	if(c == NULL)
     {
         // famg as solver
@@ -186,14 +218,25 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, FAMGVector *c)
         (*c) += fgsol;
         fgsol = 0.0;
 
-        // jacobi smoothing for the fine nodes
+#ifdef PROTOCOLNUMERIC
+	    cout<<"FAMGGrid::Prolongation: sol after update "<<(*c)*(*c)<<endl;
+    	cout<<"FAMGGrid::Prolongation: defect*c after update "<<fgdefect*(*c)<<endl;
+#endif
+
+		// jacobi smoothing for the fine nodes
         fgsol.JacobiSmoothFG( *GetConsMatrix(), fgdefect );
 #ifdef ModelP
 		if (l_vector_consistent(mygrid,((FAMGugVector&)fgsol).GetUgVecDesc())!=NUM_OK) 
 			assert(0);
 #endif
 
-        // defect is computed in ug (Lmgc)
+#ifdef PROTOCOLNUMERIC
+	    cout<<"FAMGGrid::Prolongation: defect after smoothing "<<fgdefect*fgdefect<<endl;
+    	cout<<"FAMGGrid::Prolongation: sol after smoothing "<<fgsol*fgsol<<endl;
+	    cout<<"FAMGGrid::Prolongation: defect*sol after smoothing "<<fgdefect*fgsol<<endl;
+#endif
+
+		// defect is computed in ug (Lmgc)
     }
 
 	return;
@@ -924,6 +967,28 @@ int FAMGGrid::ConstructTransfer()
 		}
     }
 #endif
+
+#ifdef SIMULATE_HALFENING	// TODO: remove it
+	FAMGNode *nodei;
+	VECTOR *vec;
+	
+		    if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+		    if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+    		if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+	// put the undecided nodes from the core partition into the list
+    for(i = 0; i < n; i++)
+   	{
+       	nodei = graph->GetNode(i);
+	
+		// now only the unmarked nodes must be inserted into the list
+		if( nodei->IsUndecidedNode() )
+		{
+			vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
+				if(graph->InsertNode(this, nodei))
+					return 0;
+		}
+    }
+#endif
 	
 	if( graph->InsertHelplist() ) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
     if (graph->EliminateNodes(this)) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
@@ -1414,11 +1479,12 @@ static int Gather_NodeStatus (DDD_OBJ obj, void *data)
 			buffer = (char*)data + CEIL(sizeof(msgtype)+sizeof(int));	// round up to achive alignment
 			DDD_GID *pgid = (DDD_GID*)buffer;
 			DOUBLE *prolongation = (DOUBLE*)(buffer+CEIL(FAMGMAXPARENTS*sizeof(DDD_GID)));
-			DOUBLE *restriction = prolongation+FAMGMAXPARENTS*sizeof(DOUBLE);
+			DOUBLE *restriction = prolongation+FAMGMAXPARENTS;
 			FAMGTransferEntry *trans;
 			
 			for ( MATRIX *imat=VISTART(vec); imat!= NULL; imat = MNEXT(imat) )
 			{
+				assert(NumberEntries<FAMGMAXPARENTS);
 				pgid[NumberEntries] = DDD_InfoGlobalId(PARHDR(MDEST(imat)));
 				
 				trans = (FAMGTransferEntry*)imat;	// dirty cast
@@ -1428,7 +1494,6 @@ static int Gather_NodeStatus (DDD_OBJ obj, void *data)
 		    	PRINTDEBUG(np,1,("%d: Gather_NodeStatus:      ->"VINDEX_FMTX" P=%g R=%g\n",me,VINDEX_PRTX(MDEST(imat)),prolongation[NumberEntries],restriction[NumberEntries] ));
 
 				NumberEntries++;
-				assert(NumberEntries<=FAMGMAXPARENTS);
 			}
 		}
 		else
@@ -1608,7 +1673,7 @@ void FAMGGrid::CommunicateNodeStatus()
 	Communication_Grid = this;			// set global variable to pass the grid to the Handlers
 	
 	int size = CEIL(sizeof(FAMG_MSG_TYPE) + sizeof(char)) + 
-				CEIL(FAMGMAXPARENTS * ( sizeof(DDD_GID)) + 2 * sizeof(DOUBLE) );
+				CEIL(FAMGMAXPARENTS * ( sizeof(DDD_GID)) + 2 * FAMGMAXPARENTS * sizeof(DOUBLE) );
 	size = CEIL(size);
 	
 DDD_IFRefreshAll(); // ????????/// only temp
