@@ -3441,7 +3441,7 @@ BVP_InsertBndP (HEAP * Heap, BVP * aBVP, INT argc, char **argv)
   PATCH *p;
   INT j, pid;
   int i;
-  float pos[2];
+  DOUBLE pos[2];
 #       ifdef __THREEDIM__
   DOUBLE lc;
 #       endif
@@ -3512,7 +3512,7 @@ BVP_InsertBndP (HEAP * Heap, BVP * aBVP, INT argc, char **argv)
   }
   else
   {
-    if (sscanf (argv[0], "bn %d %f %f", &i, pos, pos + 1) != DIM_OF_BND + 1)
+    if (sscanf (argv[0], "bn %d %lf %lf", &i, pos, pos + 1) != DIM_OF_BND + 1)
     {
       PrintErrorMessageF ('E', "BVP_InsertBndP",
                           "could not scan segment id and\n"
