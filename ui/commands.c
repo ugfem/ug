@@ -4165,6 +4165,11 @@ static INT RefineCommand (INT argc, char **argv)
     SetStringVar(":errno","0");
     return (OKCODE);
 
+  case GM_COARSE_NOT_FIXED :
+    PrintErrorMessage('E',"refine","do 'fixcoarsegrid' first and then refine!");
+    SetStringVar(":errno","1");
+    return (CMDERRORCODE);
+
   case GM_ERROR :
     PrintErrorMessage('E',"refine","could not refine, data structure still ok");
     SetStringVar(":errno","1");
