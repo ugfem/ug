@@ -256,7 +256,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   fprintf(stream,">-version UG23-<\n");
 #endif
 #ifdef __version3__
-  fprintf(stream,">-version UG30-<\n");
+  fprintf(stream,">-version UG31-<\n");
 #endif
 
   fprintf(stream,"%s\n",comment);
@@ -1092,8 +1092,6 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
       NFATHER(theNode) = (NODE *) i3;
       SONNODE(theNode) = (NODE *) i4;
       MYVERTEX(theNode) = (VERTEX *) i5;
-      if (CLASS(theNode)>=2)
-        TOPNODE(MYVERTEX(theNode)) = theNode;
 
       if (version<=23)                   /* then we have data fields (possibly empty) */
       {
