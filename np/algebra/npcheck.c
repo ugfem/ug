@@ -136,13 +136,13 @@ static INT CheckVector (GRID *theGrid, VECTOR *v)
 
   /* check flags locally */
   if (NEW_DEFECT(v) != (VCLASS(v)>=2)) {
-    UserWriteF(PFMT "ERROR: VSTART no diagonal matrix vec="
+    UserWriteF(PFMT "ERROR: classes not match vec="
                VINDEX_FMTX " NEW_DEFECT %d VCLASS %d\n",
                me,VINDEX_PRTX(v),NEW_DEFECT(v),VCLASS(v));
     nerr++;
   }
   if (FINE_GRID_DOF(v) != ((VCLASS(v)>=2)&&(VNCLASS(v)<=1))) {
-    UserWriteF(PFMT "ERROR: VSTART no diagonal matrix vec="
+    UserWriteF(PFMT "ERROR: classes not match vec="
                VINDEX_FMTX " FINE_GRID_DOF %d VNCLASS %d VCLASS %d\n",
                me,VINDEX_PRTX(v),FINE_GRID_DOF(v),VNCLASS(v),VCLASS(v));
     nerr++;
@@ -185,11 +185,11 @@ static INT CheckVector (GRID *theGrid, VECTOR *v)
           }
           if (VNCLASS(w) != VCLASS(v)) {
             UserWriteF(PFMT "ERROR:"
-                       " VCALSS and VNCLASS not matches vec="
+                       " VCLASS and VNCLASS not matches vec="
                        VINDEX_FMTX " VCLASS %d father vec "
                        VINDEX_FMTX " VNCLASS %d\n",
                        me,VINDEX_PRTX(v),VCLASS(v),
-                       VINDEX_PRTX(v));
+                       VINDEX_PRTX(w),VNCLASS(w));
             nerr++;
           }
         }
