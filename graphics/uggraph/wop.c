@@ -17745,7 +17745,7 @@ void ConnectWopTree(void)
    NumberOfDesc - computes the number of descandants of every node
 
    SYNOPSIS:
-   void NumberOfDesc()
+   static void NumberOfDesc(void)
 
    PARAMETERS:
    none
@@ -17759,7 +17759,7 @@ void ConnectWopTree(void)
 */
 /****************************************************************************/
 
-void NumberOfDesc()
+static void NumberOfDesc(void)
 {
 	msgid umid, dmid[WOP_DOWN_CHANNELS];
 	INT   uerr, derr[WOP_DOWN_CHANNELS];
