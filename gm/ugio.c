@@ -1047,15 +1047,11 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   /* write information about refrules used */
   if (Write_RefRules(theMG,RefRuleOffset)) return (1);
 
-  if (MGIO_PARFILE)
+  if (i = OrphanCons(theMG))
   {
-    if (i = OrphanCons(theMG))
-    {
-      PRINTDEBUG(gm,1,(PFMT "OrphanCons() returned %d errors\n",me,i));
-      fflush(stdout);
-      assert(0);
-    }
-
+    PRINTDEBUG(gm,1,(PFMT "OrphanCons() returned %d errors\n",me,i));
+    fflush(stdout);
+    assert(0);
   }
 
   /* renumber objects */
