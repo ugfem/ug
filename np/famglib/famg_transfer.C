@@ -192,7 +192,9 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 
     #ifdef ModelP
 	DDD_IdentifyBegin();
-	DDD_XferBegin();
+    #ifdef DDDOBJMGR
+    DDD_ObjMgrBegin();
+    #endif
 	#endif
 
 	// first step: create the coarse grid vectors and the transfer matrix to them
@@ -278,7 +280,9 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 	}
 
     #ifdef ModelP
-	DDD_XferEnd();
+    #ifdef DDDOBJMGR
+    DDD_ObjMgrEnd();
+    #endif
 	DDD_IdentifyEnd();
 	#endif
 	

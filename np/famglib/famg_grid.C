@@ -1530,11 +1530,23 @@ ASSERT(!DDD_ConsCheck());
 	}
 	
 	DDD_XferBegin();
+    #ifdef DDDOBJMGR
+    DDD_ObjMgrBegin();
+    #endif
 		DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), SendToMaster );
+    #ifdef DDDOBJMGR
+    DDD_ObjMgrEnd();
+    #endif
 	DDD_XferEnd();
 	
 	DDD_XferBegin();
+    #ifdef DDDOBJMGR
+    DDD_ObjMgrBegin();
+    #endif
 		DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), SendToOverlap1 );
+    #ifdef DDDOBJMGR
+    DDD_ObjMgrEnd();
+    #endif
 	DDD_XferEnd();
 	
 	FAMGReleaseHeap(FAMG_FROM_BOTTOM);
@@ -1580,277 +1592,6 @@ ASSERT(!DDD_ConsCheck());
 ///////////////////////////////////////////////////////////////////////////////
 // CommunicateNodeStatus
 ///////////////////////////////////////////////////////////////////////////////
-
-#ifdef ModelPQQQQQQQQQQQQQQQQQQQQQ
-
-/*
-	Das Problem bei dieser Methode ist zur Zeit, dass beim Zielknoten VINDEX und 
-	VCCOARSE ueberschrieben werden, bevor noch geeignete Ueberpruefungen (VCCOARSE)
-	oder Verhinderungen (VINDEX) stattfinden koennen. 
-	Wenn VINDEX richtig waere, koennte man uden zugehoerigen Knoten fingen und so 
-	das Problem mit VCCOARSE umgehen. VINDEX geht aber verloren.
-	Man koennte hinterher den Index (da die Verkettung unveraendert geblieben ist)
-	wieder richtig setzen, dann ist es aber zu spaet, weil die geschickten 
-	I-Matrizen nur waehrend des Haenfdleraufrufs fuer den einzelnen
-	Knoten verfuegbar sind.
-	So ist das Vorgehen also nicht praktikabel.
-	
-	Im derzeit vorhandenen Code fehlen auch noch die Aenderungsarbeiten an 
-	der FAMG Datenstruktur (Nodes, Listen).
-*/
-void FAMGVectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
-// derived from dddif/handler.c/VectorXferCopy()
-{
-	INT		nmat	= 0;
-	MATRIX	*imat;
-	VECTOR	*pv		= (VECTOR *)obj;
-	INT		level		= ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(pv)));
-	GRID		*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
-	/* TODO: define this static global                    */
-	/* TODO: take size as maximum of possible connections */
-	size_t	sizeArray[256];
-	INT flag;
-
-	PRINTDEBUG(dddif,1,(PFMT " FAMGVectorXferCopy(): v=" VINDEX_FMTX " proc=%d "
-		"prio=%d vtype=%d\n",me,VINDEX_PRTX(pv),proc,prio,VTYPE(pv)))
-	
-    if (DDD_XferWithAddData()) {
-	    for(imat=VISTART(pv); imat!=NULL; imat=MNEXT(imat)) {
-		    ASSERT(nmat<256);
-			sizeArray[nmat++] = MSIZE(imat);
-		}
-		PRINTDEBUG(dddif,2,(PFMT " FAMGVectorXferCopy(): v=" VINDEX_FMTX 
-							" AddData nmat=%d\n",me,VINDEX_PRTX(pv),nmat))
-		DDD_XferAddDataX(nmat,TypeMatrix,sizeArray);
-	}
-	else
-	{
-		PRINTDEBUG(dddif,2,(PFMT " FAMGVectorXferCopy(): no AddData\n"))
-	}
-}
-
-void FAMGVectorGatherIMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data)
-// derived from dddif/handler.c/FAMGVectorGatherMatX()
-{
-	VECTOR	*vec = (VECTOR *)obj;
-	MATRIX	*imat;
-	INT		nmat = 0;
-
-	PRINTDEBUG(dddif,3,(PFMT " FAMGVectorGatherIMatX(): v=" VINDEX_FMTX 
-		" VOBJID=%d cnt=%d type=%d veobj=%d vtype=%d\n",
-		me,VINDEX_PRTX(vec),ID(VOBJECT(vec)),cnt,type_id,
-		OBJT(vec),VTYPE(vec)))
-
-	if (cnt<=0) return;
-
-	for (imat=VISTART((VECTOR *) vec); imat!=NULL; imat=MNEXT(imat))
-	{
-		int Size;
-
-		IFDEBUG(dddif,0)
-		if (cnt<nmat+1)
-		{
-			PRINTDEBUG(dddif,0,(PFMT " FAMGVectorGatherIMatX(): v=" VINDEX_FMTX 
-				" cnt=%d nmat=%d type=%d veobj=%d\n",
-				me,VINDEX_PRTX(vec),cnt,nmat,type_id,OBJT(vec)))
-			assert(0);
-		}
-		ENDDEBUG
-
-		Size = MSIZE(imat);
-		memcpy(Data[nmat],imat,Size);
-
-		PRINTDEBUG(dddif,3,(PFMT " FAMGVectorGatherIMatX(): v=" VINDEX_FMTX 
-			" mat=%x Size=%d vectoID=" VINDEX_FMTX "\n",
-			me,VINDEX_PRTX(vec),imat,Size,VINDEX_PRTX(MDEST(imat))))
-
-		nmat++;
-	}
-}
-
-
-void FAMGVectorScatterIMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, int newness)
-// derived from dddif/handler.c/FAMGVectorScatterConnX()
-{
-	VECTOR		*vec		= (VECTOR *)obj;
-	CONNECTION	*first		= NULL,
-				*last		= NULL;
-	INT			level		= ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(vec)));
-	GRID		*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
-	INT			prio 		= PRIO(vec);
-	INT			i;
-	INT			nconn		= 0;
-	INT			newconn		= 0;
-
-	PRINTDEBUG(dddif,3,(PFMT " FAMGVectorScatterIMatX(): v=" VINDEX_FMTX 
-		" cnt=%d type=%d veobj=%d vtype=%d\n",\
-		me,VINDEX_PRTX(vec),cnt,type_id,OBJT(vec),VTYPE(vec)))
-	
-	if (cnt<=0) return;
-
-	for (i=0; i<cnt; i++)
-	{
-		MATRIX *mcopy = (MATRIX *)Data[i];
-
-		/* reset MNEXT */
-		MNEXT(mcopy) = NULL;
-
-		if (MDEST(mcopy)==NULL)
-		{
-			/* destination vector is not on this processor  */
-			/* -> matrix entry is useless, throw away       */
-			PRINTDEBUG(dddif,4,(PFMT " FAMGVectorScatterIMatX(): v=" VINDEX_FMTX
-				" mat=%x Size=%d, USELESS no dest vector \n",
-				me,VINDEX_PRTX(vec),mcopy,MSIZE(mcopy)))
-			continue;
-		}
-
-		{
-			MATRIX *m,*mat=NULL;
-
-			/* does matrix entry already exist? */
-			/* TODO not nice, linear search, change this! */
-			for (m=VISTART((VECTOR *)vec); 
-				 m!=NULL && (mat==NULL); 
-				 m=MNEXT(m))
-			{
-				if (MDEST(m)==MDEST(mcopy)) mat=m;
-			}
-
-			/* matrix entry is really new */
-			if (mat == NULL)
-			{
-				/* handle diagonal entry */
-				if (MDIAG(mcopy))
-				{
-					/* matrix diagonal entry, no other vector is involved */
-					assert(0);
-				}
-				/* handle off-diagonal entry */
-				else
-				{
-					/* matrix off-diagonal entry, another vector is involved */
-					VECTOR *other = MDEST(mcopy);
-					MATRIX *m, *back=NULL, *newm;
-	
-					/* does connection already exist for other vec? no, can not be here for Imats*/
-					{
-						MATRIX *otherm;
-						CONNECTION *conn = (CONNECTION *)
-						#ifndef DYNAMIC_MEMORY_ALLOCMODEL
-							GetFreelistMemory(dddctrl.currMG->theHeap,
-											  MSIZE(mcopy));
-						#else
-					  		GetMemoryForObject(dddctrl.currMG,MSIZE(mcopy),MAOBJ);
-						#endif
-
-						nconn++; newconn++;
-
-						if (conn==NULL)
-						{
-							ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << me << ":  FAMGVectorScatterIMatX(): can't get mem for mat=" << &mcopy << endl;
-							FAMGError(ostr);
-							return;
-						}
-	
-
-						if (MOFFSET(mcopy))
-						{
-							assert(0);
-						}
-						else
-						{
-							newm = (MATRIX *) conn;
-							PRINTDEBUG(dddif,4,(PFMT " FAMGVectorScatterIMatX(): v="
-							VINDEX_FMTX " conn=%x newm=%x Size=%d vectoID=" 
-							VINDEX_FMTX " GETMEM\n",
-							me,VINDEX_PRTX(vec),conn,newm, MSIZE(mcopy),
-							VINDEX_PRTX(MDEST(mcopy))))
-						}
-					}
-
-					/* TODO: define clearly     
-					memcpy(newm,mcopy,MSIZE(mcopy)); */
-					memset(newm,0,MSIZE(mcopy));
-					memcpy(newm,mcopy,sizeof(MATRIX)-sizeof(DOUBLE));
-
-					if (first==NULL) first = newm;
-					else MNEXT(last) = newm;
-					last = newm;
-				}
-			}
-			/* matrix entry does already exist */
-			else
-			{
-				PRINTDEBUG(dddif,4,(PFMT " FAMGVectorScatterIMatX(): v="
-					VINDEX_FMTX " mat=%x Size=%d vectoID=" VINDEX_FMTX 
-					" FOUND\n",me,VINDEX_PRTX(vec),mat,MSIZE(mcopy),
-					VINDEX_PRTX(MDEST(mcopy))))
-			}
-		}
-	}
-
-	/* enter matrix list at the beginning of existing list for this vector */
-	// is already done
-	
-		#ifdef Debug
-/*
-		{
-		MATRIX *mat;
-        PRINTDEBUG(dddif,4,(PFMT " FAMGVectorScatterIMatX():  v="
-                VINDEX_FMTX "new matrices:\n",me,VINDEX_PRTX(vec)));
-		for (mat=first; mat!=NULL; mat=MNEXT(mat))
-		{
-        	PRINTDEBUG(dddif,4,(PFMT "     mat=%x dest=" EID_FMTX "\n",me,mat,VINDEX_PRTX(MDEST(mat))));
-		}
-		}
-*/
-		#endif
-}
-
-void FAMGGrid::CommunicateNodeStatus()
-// idea: send a copy of the vec to all its already existing copies because then 
-//       the I-matrix entries can be copied too (as the stiffness matrix entries
-//		 are handled in the original VectorXfer routine).
-{
-	INT i, size;
-	int *proclist;
-	VECTOR *vec;
-	FAMGNode *nodei;
-	
-	// set my own handlers
-	DDD_SetHandlerXFERCOPY         (TypeVector, FAMGVectorXferCopy);
-	DDD_SetHandlerXFERGATHERX      (TypeVector, FAMGVectorGatherIMatX);
-	DDD_SetHandlerXFERSCATTERX     (TypeVector, FAMGVectorScatterIMatX);
-
-	DDD_XferBegin();
-	
-    for(i = 0; i < n; i++)
-   	{
-       	nodei = graph->GetNode(i);
-		vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
-		size = sizeof(VECTOR)-sizeof(DOUBLE)
-					  +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
-		proclist = DDD_InfoProcList(PARHDR(vec));
-		proclist += 2;	// skip the entry for this instance itself
-		while( *proclist != -1 )
-		{
-			DDD_XferCopyObjX(PARHDR(vec), proclist[0], proclist[1], size);
-			proclist += 2;
-		}
-
-	}
-	
-	DDD_XferEnd();
-	
-	// restore the ug handlers
-	DDD_SetHandlerXFERCOPY         (TypeVector, VectorXferCopy);
-	DDD_SetHandlerXFERGATHERX      (TypeVector, VectorGatherMatX);
-	DDD_SetHandlerXFERSCATTERX     (TypeVector, VectorScatterConnX);
-}
-#endif
-
-
 #ifdef ModelP
 
 /*
