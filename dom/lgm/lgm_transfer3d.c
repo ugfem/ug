@@ -122,6 +122,8 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, IN
   char buffer[256];
   fpos_t filepos_tmp;
 
+  if (LGM_DEBUG) UserWrite("Running LGM_ReadDomain...\n");
+
   /* store heapptr */
   if (Heap==NULL) return (1);
   theHeap = Heap;
@@ -167,6 +169,7 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, IN
   if (fgetpos(stream, &UnitInfoFilepos)) return (1);
   while (fscanf(stream,"unit %d",&i)==1)
     if (SkipEOL()) return (1);
+  if (LGM_DEBUG) UserWrite("\tLGM_ReadDomain: Reading Unit-Info done.\n");
 
   /* read Subdomain-Info if */
   if (fgetpos(stream, &filepos_tmp)) return (1);
@@ -180,6 +183,7 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, IN
     while (fscanf(stream,"subdomain %s",buffer)==1)
       if (SkipEOL()) return (1);
   }
+  if (LGM_DEBUG) UserWrite("\tLGM_ReadDomain: Reading Subdomain-Info done.\n");
 
   /* get number of subdomains, surfaces and lines */
   if (SkipBTN()) return (1);
@@ -209,6 +213,7 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, IN
     if (SkipBTN())
       return (1);
   }
+  if (LGM_DEBUG) UserWrite("\tLGM_ReadDomain: Getting Line number done.\n");
 
   if (SkipBTN())
     return (1);
@@ -218,6 +223,8 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, IN
     return (1);
   if (fgetpos(stream, &filepossurface))
     return (1);
+  if (LGM_DEBUG) UserWrite("\tLGM_ReadDomain: Reading Surfaces...\n");
+
   while (fscanf(stream,"surface %d:",&i)==1)
   {
     if (SkipBTN())
@@ -266,12 +273,15 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, IN
         break;
     }
     domain_info->nSurface++;
+    if (LGM_DEBUG) UserWriteF("\tLGM_ReadDomain: Reading Surface %d done.\n",domain_info->nSurface);
   }
   domain_info->nPoint++;
   nSubdomain = domain_info->nSubDomain;
   nSurface = domain_info->nSurface;
   nLine = domain_info->nPolyline;
   nPoint = domain_info->nPoint;
+
+  if (LGM_DEBUG) UserWrite("LGM_ReadDomain done\n");
 
   return (0);
 }
@@ -280,6 +290,7 @@ int LGM_ReadSizes (LGM_SIZES *lgm_sizes)
 {
   int i,line_i,surface_i,i0,i1,i2;
 
+  if (LGM_DEBUG) UserWrite("Running LGM_ReadSizes...\n");
 
   for (i=0; i<=nSubdomain; i++) lgm_sizes->Subdom_nSurf[i] = 0;
   for (i=0; i<=nSurface; i++) lgm_sizes->Surf_nPolyline[i] = 0;
@@ -366,12 +377,15 @@ int LGM_ReadSizes (LGM_SIZES *lgm_sizes)
     surface_i++;
   }
 
+  if (LGM_DEBUG) UserWrite("LGM_ReadSizes done\n");
   return (0);
 }
 
 int LGM_ReadLines (int dummy, LGM_LINE_INFO *line_info)
 {
   int i,n, old_i, error, line_id;
+
+  if (LGM_DEBUG) UserWrite("Running LGM_ReadLines...\n");
 
   error = 0;
   if(dummy == 0)
@@ -405,6 +419,8 @@ int LGM_ReadLines (int dummy, LGM_LINE_INFO *line_info)
 
   if(error>0)
     UserWriteF("%s %d\n", "Error in Line", line_id);
+
+  if (LGM_DEBUG) UserWrite("Running LGM_ReadLines...\n");
 
   return (0);
 }
