@@ -119,13 +119,37 @@
 #define MARKCLASS(p)                                    CW_READ(p,MARKCLASS_CE)
 #define SETMARKCLASS(p,n)                               CW_WRITE(p,MARKCLASS_CE,n)
 
+/* macros for refineinfo */
+#define REFINEINFO(mg)                                  refine_info
+#define MARKCOUNT(r)                                    r.markcount
+#define SETMARKCOUNT(r,n)                               r.markcount = n
+#define PREDNEW(r)                                              r.predicted_new
+#define SETPREDNEW(r,n)                                 r.predicted_new = n
+#define PREDMAX(r)                                              r.predicted_max
+#define SETPREDMAX(r,n)                                 r.predicted_max = n
+
 /****************************************************************************/
 /*																			*/
 /* typedefs																	*/
 /*																			*/
 /****************************************************************************/
 
+typedef struct refineinfo
+{
+  float markcount;                      /* count of currently marked elements           */
+  float predicted_new;          /* count of elements, which would be created    */
+  float predicted_max;          /* count of elements which can be created       */
+} REFINEINFO;
+
 typedef INT (*Get_Sons_of_ElementSideProcPtr)(ELEMENT *theElement, INT side, INT *Sons_of_Side,ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons);
+
+/****************************************************************************/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
+/****************************************************************************/
+
+extern REFINEINFO refine_info;
 
 /****************************************************************************/
 /*																			*/
