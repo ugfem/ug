@@ -16,7 +16,7 @@ OBJECTS = postscript.o
 LCFLAGS = -I../../include
 
 all : $(OBJECTS) Makefile.ps
-	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libdev.a $(OBJECTS) 
+	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libdev$(IF).a $(OBJECTS) 
 
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
@@ -25,7 +25,7 @@ clean:
 	rm -f *.o
 
 extract:
-	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libdev.a $(OBJECTS)
+	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libdev$(IF).a $(OBJECTS)
 
 xmc: extract all clean
 

@@ -17,7 +17,7 @@ OBJECTS = remote.o
 LCFLAGS = -I../../include
 
 all : $(OBJECTS) Makefile.rif
-	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libdev.a $(OBJECTS) 
+	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libdevR.a $(OBJECTS) 
 
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
@@ -26,7 +26,7 @@ clean:
 	rm -f *.o
 
 extract:
-	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libdev.a $(OBJECTS)
+	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libdevR.a $(OBJECTS)
 
 xmc: extract all clean
 
