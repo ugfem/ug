@@ -1351,7 +1351,6 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 				IFDEBUG(gm,2)
 				UserWriteF(" created ID(MidNode)=%d for edge=%d",ID(MidNodes[i]),i);
 				ENDDEBUG
-				MIDNODE(theEdge) = MidNodes[i];
 			} 
 		}
 	}

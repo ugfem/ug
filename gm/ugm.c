@@ -724,6 +724,7 @@ NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
 NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge, NODE *after)
 {
   NODE *theNode;
+  EDGE *theEdge;
   VERTEX *theVertex,*v0,*v1;
   VSEGMENT *vs0,*vs1,*vs;
   PATCH *thePatch;
@@ -814,6 +815,12 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge, NODE *after)
     DisposeVertex(theGrid,theVertex);
     return(NULL);
   }
+
+  /* set MIDNODE pointer */
+  theEdge = GetEdge(CORNER(theElement,co0),CORNER(theElement,co1));
+  ASSERT(theEdge!=NULL);
+
+  MIDNODE(theEdge) = theNode;
   MYVERTEX(theNode) = theVertex;
   NFATHER(theNode) = NULL;
   TOPNODE(theVertex) = theNode;
