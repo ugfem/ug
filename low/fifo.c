@@ -171,8 +171,8 @@ INT fifo_full (const FIFO *myfifo)
 
    RETURN VALUE:
    INT
-   .n     0 if error occurred.
-   .n     1 if OK
+   .n     1 if error occurred.
+   .n     0 if OK
    D*/
 /****************************************************************************/
 
@@ -183,10 +183,10 @@ INT fifo_in (FIFO *myfifo, void *newelement)
     (myfifo->elements)[myfifo->end] = newelement;
     myfifo->end = (myfifo->end+1)%myfifo->size;
     myfifo->used++;
-    return(1);
+    return(0);
   }
   else
-    return(0);
+    return(1);
 }
 
 /****************************************************************************/
