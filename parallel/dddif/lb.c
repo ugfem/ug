@@ -128,26 +128,26 @@ static int TransferGridToMaster (MULTIGRID *theMG, INT fl, INT tl)
 /****************************************************************************/
 
 static int CollectElementsNearSegment(MULTIGRID *theMG,
-                                      int level, int part, int dest)
+                                      int fl, int tl, int part, int dest)
 {
-  GRID *theGrid = GRID_ON_LEVEL(theMG,level);
   ELEMENT *theElement;
-  INT dompart,side,sid,nbsid;
+  INT dompart,side,sid,nbsid,level;
 
-  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
-       theElement=SUCCE(theElement))
-    if (OBJT(theElement) == BEOBJ)
-      for (side=0; side<SIDES_OF_ELEM(theElement); side++) {
-        if (INNER_SIDE(theElement,side))
-          continue;
-        BNDS_BndSDesc(ELEM_BNDS(theElement,side),&sid,&nbsid,&dompart);
-        if (part == dompart)
-          PARTITION(theElement) = dest;
-      }
+  for (level=fl; level<=tl; level ++)
+    for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,level));
+         theElement!=NULL; theElement=SUCCE(theElement))
+      if (OBJT(theElement) == BEOBJ)
+        for (side=0; side<SIDES_OF_ELEM(theElement); side++) {
+          if (INNER_SIDE(theElement,side))
+            continue;
+          BNDS_BndSDesc(ELEM_BNDS(theElement,side),
+                        &sid,&nbsid,&dompart);
+          if (part == dompart)
+            PARTITION(theElement) = dest;
+        }
 
   return(0);
 }
-
 
 /****************************************************************************/
 /*
@@ -300,9 +300,12 @@ void ddd_test (char *argv, MULTIGRID *theMG)
     break;
 
   case (5) :
-    if (sscanf(argv,"%d %d %d",&param,&part,&dest) != 3) break;
-    fromlevel = CURRENTLEVEL(theMG);
-    CollectElementsNearSegment(theMG,fromlevel,part,dest);
+    n = sscanf(argv,"%d %d %d %d %d",
+               &param,&part,&dest,&fromlevel,&tolevel);
+    if (n < 5) tolevel = TOPLEVEL(theMG);
+    if (n < 4) fromlevel = CURRENTLEVEL(theMG);
+    if (n < 3) break;
+    CollectElementsNearSegment(theMG,fromlevel,tolevel,part,dest);
     UserWriteF(PFMT "ddd_test() collect from part %d to proc %d\n",
                me,part,dest);
     break;
