@@ -163,7 +163,7 @@ static void PVPCI (VECTOR *v, char *c, INT f)
   VectorPosition(v,pos);
   ipos[0]=(INT)(pos[0]*f+0.5);
   ipos[1]=(INT)(pos[1]*f+0.5);
-  printf("%s: %d %d\n",ipos[0],ipos[1]);
+  printf("%s: %d %d\n",c,ipos[0],ipos[1]);
 
   return;
 }
@@ -817,8 +817,8 @@ static INT OrderSO (NP_ORDER *theNP, INT level, MATDATA_DESC *A, INT *result)
   fni = fno = 0; lni = lno = n-1;
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
   {
-    if (VUP(theV)==NULL) FirstInsertInVList(theGrid,theV,vlist,fni++,0);
-    else if (VDOWN(theV)==NULL) LastInsertInVList(theGrid,theV,vlist,lni--,0);
+    if (VUP(theV)==0) FirstInsertInVList(theGrid,theV,vlist,fni++,0);
+    else if (VDOWN(theV)==0) LastInsertInVList(theGrid,theV,vlist,lni--,0);
   }
   for (i=fno; i<fni; i++) GRID_UNLINK_VECTOR(theGrid,vlist[i]);
   for (i=lno; i>lni; i--) GRID_UNLINK_VECTOR(theGrid,vlist[i]);

@@ -206,7 +206,7 @@ static INT MySolveSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol, const SH
   DOUBLE BlockMat[MAX_SINGLE_MAT_COMP],BlockSol[MAX_SINGLE_VEC_COMP], det;
   DOUBLE aux,M3div0,M6div0;
   register DOUBLE dinv,piv,sum;
-  register i,j,k;
+  register SHORT i,j,k;
 
   if (n>=MAX_SINGLE_VEC_COMP)
     return (1);

@@ -515,7 +515,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     }
     if ((*newton->solve->Solver)(newton->solve,level,newton->v,newton->d,newton->J,newton->solve->abslimit,linred,&lr))
     {
-      res->error_code = __LINE__;
+      res->error_code = 0;
       goto exit;
     }
     if (newton->solve->PostProcess!=NULL)

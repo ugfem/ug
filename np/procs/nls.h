@@ -48,6 +48,7 @@
 /****************************************************************************/
 
 #define NL_SOLVER_CLASS_NAME "nl_solver"
+#define ENL_SOLVER_CLASS_NAME "enl_solver"
 
 /****************************************************************************/
 /*																			*/
@@ -63,11 +64,17 @@ typedef struct {
   VEC_SCALAR last_defect;                   /* last defect                      */
   INT number_of_nonlinear_iterations;       /* number of iterations             */
   INT number_of_line_searches;              /* number of line search steps      */
-  DOUBLE rho_first;                            /* first rho                        */
+  DOUBLE rho_first;                         /* first rho                        */
   INT total_linear_iterations;          /* total number                     */
   INT max_linear_iterations;            /* max number of linear iterations  */
   DOUBLE exec_time;                     /* for this nonlinear solve ...     */
 } NLRESULT;
+
+/****************************************************************************/
+/*																			*/
+/* ordinary nonlinear solver												*/
+/*																			*/
+/****************************************************************************/
 
 struct np_nl_solver {
   NP_BASE base;                              /* inherits base class             */
@@ -100,13 +107,61 @@ struct np_nl_solver {
 };
 typedef struct np_nl_solver NP_NL_SOLVER;
 
-typedef INT (*PreProcessNLSolverProcPtr)                                    \
-  (NP_NL_SOLVER *, INT, VECDATA_DESC *, INT *);
-typedef INT (*Solver)                                                       \
-  (NP_NL_SOLVER *, INT, VECDATA_DESC *, NP_NL_ASSEMBLE *, VEC_SCALAR *,      \
-  VEC_SCALAR *, NLRESULT *);
-typedef INT (*PostProcessNLSolverProcPtr)                                   \
-  (NP_NL_SOLVER *, INT, VECDATA_DESC *, INT *);
+typedef INT (*PreProcessNLSolverProcPtr)(NP_NL_SOLVER *, INT, VECDATA_DESC *, INT *);
+typedef INT (*Solver)(NP_NL_SOLVER *, INT, VECDATA_DESC *, NP_NL_ASSEMBLE *, VEC_SCALAR *, VEC_SCALAR *, NLRESULT *);
+typedef INT (*PostProcessNLSolverProcPtr)(NP_NL_SOLVER *, INT, VECDATA_DESC *, INT *);
+
+/****************************************************************************/
+/*																			*/
+/* extended nonlinear solver												*/
+/*																			*/
+/****************************************************************************/
+
+/* a data type for returning the status of the computation                  */
+typedef struct {
+  INT error_code;                           /* error code                       */
+  INT converged;                            /* error code                       */
+  EVEC_SCALAR first_defect;                 /* first defect                     */
+  EVEC_SCALAR last_defect;                  /* last defect                      */
+  INT number_of_nonlinear_iterations;       /* number of iterations             */
+  INT number_of_line_searches;              /* number of line search steps      */
+  INT rho_first;                            /* first rho                        */
+  INT total_linear_iterations;          /* total number                     */
+  INT max_linear_iterations;            /* max number of linear iterations  */
+  DOUBLE exec_time;                     /* for this nonlinear solve ...     */
+} ENLRESULT;
+
+struct np_enl_solver {
+  NP_BASE base;                          /* inherits base class             */
+
+  /* data (optinal, necessary for calling the generic execute routine)    */
+  EVECDATA_DESC *x;                                  /* solution                        */
+  NP_ENL_ASSEMBLE *Assemble;             /* the assemble numproc            */
+  EVEC_SCALAR reduction;                 /* reduction factor                */
+  EVEC_SCALAR abslimit;                  /* absolute limit for the defect   */
+
+  /* functions */
+  INT (*PreProcess)
+    (struct np_enl_solver *,             /* pointer to (derived) object     */
+    INT,                                 /* level                           */
+    EVECDATA_DESC *,                     /* solution vector                 */
+    INT *);                              /* result                          */
+  INT (*Solver)                          /* b := b - Ax                     */
+    (struct np_enl_solver *,             /* pointer to (derived) object     */
+    INT,                                 /* level                           */
+    EVECDATA_DESC *,                     /* solution vector                 */
+    NP_ENL_ASSEMBLE *,                   /* the assemble numproc            */
+    EVEC_SCALAR,                         /* absolute limit for the defect   */
+    EVEC_SCALAR,                         /* reduction factor                */
+    ENLRESULT *);                        /* result structure                */
+  INT (*PostProcess)
+    (struct np_enl_solver *,             /* pointer to (derived) object     */
+    INT,                                 /* level                           */
+    EVECDATA_DESC *,                     /* solution vector                 */
+    INT *);                              /* result                          */
+};
+typedef struct np_enl_solver NP_ENL_SOLVER;
+
 
 /****************************************************************************/
 /*																			*/
@@ -116,9 +171,11 @@ typedef INT (*PostProcessNLSolverProcPtr)                                   \
 
 /* generic init function for LinearSolver num procs */
 INT NPNLSolverInit (NP_NL_SOLVER *theNP, INT argc , char **argv);
+INT NPENLSolverInit (NP_ENL_SOLVER *theNP, INT argc , char **argv);
 
 /* generic display function for LinearSolver num procs */
 INT NPNLSolverDisplay (NP_NL_SOLVER *theNP);
+INT NPENLSolverDisplay (NP_ENL_SOLVER *theNP);
 
 /* generic execute function for LinearSolver num procs */
 INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv);

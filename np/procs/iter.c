@@ -2454,9 +2454,9 @@ static MATDATA_DESC *II_uuA,*II_upA,*II_puA,*II_ppA;
 static VECDATA_DESC *II_t,*II_u,*II_p;
 static NP_ITER *II_Smooth;
 
-static II_MultiplySchurComplement (MULTIGRID *theMG, INT level,
-                                   VECDATA_DESC *c, VECDATA_DESC *d,
-                                   INT *result)
+static INT II_MultiplySchurComplement (MULTIGRID *theMG, INT level,
+                                       VECDATA_DESC *c, VECDATA_DESC *d,
+                                       INT *result)
 {
   DOUBLE eunorm;
 
@@ -2476,6 +2476,8 @@ static II_MultiplySchurComplement (MULTIGRID *theMG, INT level,
   if (dmatmul_minus(theMG,level,level,ALL_VECTORS,d,II_ppA,c)
       != NUM_OK)
     NP_RETURN(1,result[0]);
+
+  return(0);
 }
 
 static INT II_Iter (NP_ITER *theNP, INT level,
@@ -3598,6 +3600,39 @@ static INT SetAutoDamp (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DE
       if (diag>=sum) VVALUE(v,advcomp[i])=damp[i];
       else VVALUE(v,advcomp[i])=damp[i]*diag/sum;
     }
+
+  return(0);
+}
+
+static INT SetAutoDamp_new (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
+{
+  INT i,n,comp,rtype;
+  SHORT *advcomp;
+  VECTOR *v;
+  MATRIX *m;
+  DOUBLE diag,sum;
+
+  advcomp = VD_ncmp_cmpptr_of_otype(adv,NODEVEC,&n);
+  for (v=FIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
+  {
+    comp = MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,0);
+
+    diag=ABS(MVALUE(VSTART(v),comp));
+    if (diag==0.0) return(1);
+    sum=ABS(MVALUE(VSTART(v),comp+2));
+    for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
+      sum+=ABS(MVALUE(m,comp))+ABS(MVALUE(m,comp+2));
+    if (diag>=sum) VVALUE(v,advcomp[0])=damp[0];
+    else VVALUE(v,advcomp[0])=damp[0]*diag/sum;
+
+    diag=ABS(MVALUE(VSTART(v),comp+3));
+    if (diag==0.0) return(1);
+    sum=ABS(MVALUE(VSTART(v),comp+1));
+    for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
+      sum+=ABS(MVALUE(m,comp+3))+ABS(MVALUE(m,comp+1));
+    if (diag>=sum) VVALUE(v,advcomp[1])=damp[1];
+    else VVALUE(v,advcomp[1])=damp[1]*diag/sum;
+  }
 
   return(0);
 }

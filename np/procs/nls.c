@@ -248,6 +248,56 @@ INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv)
   return(0);
 }
 
+INT NPENLSolverInit (NP_ENL_SOLVER *np, INT argc , char **argv)
+{
+  DOUBLE s;
+  INT i,r;
+  VECDATA_DESC *tmp;
+
+  r = NP_EXECUTABLE;       /* highest state */
+
+  /* The solution is required for execution */
+  tmp = ReadArgvVecDesc(np->base.mg,"sol",argc,argv); if (tmp==NULL) r=NP_ACTIVE;
+  if (AllocEVDForVD(np->base.mg,tmp,1,&(np->x))) r=NP_ACTIVE;
+
+  /* abslimit is required for execution */
+  for (i=0; i<MAX_VEC_COMP+EXTENSION_MAX; i++) np->abslimit[i] = 1.0E-10;
+  esc_read(np->abslimit,NP_FMT(np),np->x,"abslimit",argc,argv);
+  if (!ReadArgvDOUBLE("ebslimit",&s,argc,argv))
+    for (i=VD_NCOMP(np->x->vd); i<VD_NCOMP(np->x->vd)+np->x->n; i++) np->abslimit[i] = s;
+
+
+  /* reduction factor is required for execution */
+  if (esc_read(np->reduction,NP_FMT(np),np->x,"red",argc,argv))
+    for (i=0; i<MAX_VEC_COMP+EXTENSION_MAX; i++) np->reduction[i] = 1.0E-10;             /* default */
+
+  /* assemble numproc is required for execution */
+  np->Assemble = (NP_ENL_ASSEMBLE *)
+                 ReadArgvNumProc(np->base.mg,"A",ENL_ASSEMBLE_CLASS_NAME,argc,argv);
+  if (np->Assemble == NULL) r = NP_ACTIVE;
+
+  return(r);
+}
+
+INT NPENLSolverDisplay (NP_ENL_SOLVER *np)
+{
+  UserWrite("symbolic user data:\n");
+  if (np->x != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(np->x));
+  UserWrite("\n");
+
+  UserWrite("configuration parameters:\n");
+  if (np->x != NULL)
+  {
+    if (esc_disp(np->reduction,np->x,"red")) return (1);
+    if (esc_disp(np->abslimit,np->x,"abslimit")) return (1);
+  }
+  if (np->Assemble != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"Assemble",ENVITEM_NAME(np->Assemble));
+
+  return(0);
+}
+
 
 /****************************************************************************/
 /*

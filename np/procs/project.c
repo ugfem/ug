@@ -236,7 +236,7 @@ static INT ProjectionVectorPL1 (NP_PROJECT *theNP, INT fl, INT tl,
 /* modified projection for the plate-equation */
 /* the node and middle point are differently valued */
 
-static Normale(INT n, INT i, DOUBLE **x, DOUBLE_VECTOR normal)
+static INT Normale(INT n, INT i, DOUBLE **x, DOUBLE_VECTOR normal)
 {
   DOUBLE s ;
   DOUBLE_VECTOR y;

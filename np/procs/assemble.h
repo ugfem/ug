@@ -47,6 +47,7 @@
 
 #define ASSEMBLE_CLASS_NAME     "assemble"
 #define NL_ASSEMBLE_CLASS_NAME  "nlass"
+#define ENL_ASSEMBLE_CLASS_NAME "enlass"
 #define T_ASSEMBLE_CLASS_NAME   "tass"
 #define NL_PARTASS_CLASS_NAME   "nlpass"
 #define T_PARTASS_CLASS_NAME    "tpass"
@@ -358,6 +359,63 @@ typedef INT (*NLNAssembleMatrixProcPtr)                                       \
   MATDATA_DESC *, INT *);
 typedef INT (*PostProcessNLAssembleProcPtr)                                  \
   (NP_NL_ASSEMBLE *, INT, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
+
+/****************************************************************************/
+/*																			*/
+/* non-linear extension to nonlinear assemble interface                     */
+/*																			*/
+/****************************************************************************/
+
+struct np_enl_assemble {
+
+  NP_BASE base;                              /* inherits base class             */
+
+  /* data (optinal, necessary for calling the generic execute routine)    */
+  EVECDATA_DESC *x;                      /* solution                        */
+  EVECDATA_DESC *c;                      /* correction                      */
+  EVECDATA_DESC *b;                      /* defect                          */
+  EMATDATA_DESC *A;                      /* matrix                          */
+
+  /* functions */
+  INT (*PreProcess)
+    (struct np_enl_assemble *,               /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    EVECDATA_DESC *,                             /* solution vector                 */
+    INT *);                                      /* result                          */
+  INT (*ENLAssembleSolution)
+    (struct np_enl_assemble *,               /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    EVECDATA_DESC *,                             /* solution vector                 */
+    INT *);                                      /* result                          */
+  INT (*ENLAssembleDefect)
+    (struct np_enl_assemble *,               /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    EVECDATA_DESC *,                             /* solution vector                 */
+    EVECDATA_DESC *,                             /* defect vector                   */
+    EMATDATA_DESC *,                             /* matrix                          */
+    INT *);                                      /* result                          */
+  INT (*ENLAssembleMatrix)
+    (struct np_enl_assemble *,               /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    EVECDATA_DESC *,                                         /* current solution	(initial)	*/
+    EVECDATA_DESC *,                                         /* defect for current solution     */
+    EVECDATA_DESC *,                                         /* correction to be computed               */
+    EMATDATA_DESC *,                             /* matrix                          */
+    INT *);                                      /* result                          */
+  INT (*PostProcess)
+    (struct np_enl_assemble *,               /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    EVECDATA_DESC *,                             /* solution vector                 */
+    EVECDATA_DESC *,                             /* defect vector                   */
+    EMATDATA_DESC *,                             /* matrix                          */
+    INT *);                                      /* result                          */
+};
+typedef struct np_enl_assemble NP_ENL_ASSEMBLE;
 
 /****************************************************************************/
 /*																			*/
