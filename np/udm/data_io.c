@@ -222,6 +222,7 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
   if (Read_DT_General (&dio_general))                                     {CloseDTFile(); return (1);}
   if (SetStringValue(":IO:TIME",dio_general.time))                {CloseDTFile(); return (1);}
   if (SetStringValue(":IO:DT",dio_general.dt))                    {CloseDTFile(); return (1);}
+  if (SetStringValue(":IO:NDT",dio_general.ndt))                  {CloseDTFile(); return (1);}
   if (strcmp(dio_general.version,DIO_VERSION)!=0)                 {CloseDTFile(); UserWrite("ERROR: wrong version\n"); return (1);}
   if (dio_general.magic_cookie != MG_MAGIC_COOKIE(theMG)) {CloseDTFile(); UserWrite("m-c-error"); return (1);}
   if (dio_general.nVD != n)                                                               {CloseDTFile(); UserWrite("ERROR: wrong nb of VectorData\n"); return (1);}
@@ -336,7 +337,7 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
    D*/
 /****************************************************************************/
 
-INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time, DOUBLE dt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec)
+INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec)
 {
   INT i,j,k,l,ncomp,s,t,*e_per_n,*entry,nNode,store_from_eval,id,tag,coe,q,mode;
   unsigned long m;
@@ -407,11 +408,13 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   {
     dio_general.time = time;
     dio_general.dt = dt;
+    dio_general.ndt = ndt;
   }
   else
   {
     dio_general.time = -1.0;
     dio_general.dt = -1.0;
+    dio_general.ndt = -1.0;
   }
   dio_general.magic_cookie = MG_MAGIC_COOKIE(theMG);
   dio_general.nVD = n;

@@ -289,6 +289,7 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
   sprintf(buffer,"%12.4lE",bdf->dt);
   SetStringVar("TIMESTEP",buffer);
   SetStringVar(":BDF:DT",buffer);
+  SetStringVar(":BDF:SDT",buffer);
 
   /* statistics init */
   bdf->number_of_nonlinear_iterations = 0;
@@ -640,6 +641,9 @@ Continue:
       UserWrite("time step modified\n");
     }
   }
+
+  /* save suggested timestep */
+  SetStringVar(":BDF:SDT",buffer);
 
   return(0);
 }

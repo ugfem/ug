@@ -2449,10 +2449,10 @@ static INT SaveDataCommand (INT argc, char **argv)
   VECDATA_DESC *theVDList[5];
   EVALUES *theEValues[5];
   EVECTOR *theEVector[5];
-  INT i,n,ret,number;
+  INT i,j,n,ret,number;
   int iValue;
-  float fValue,fValue2;
-  DOUBLE time,dt;
+  float fValue[3];
+  DOUBLE t[3];
 
         #ifdef ModelP
   if (me != master) return(OKCODE);
@@ -2466,7 +2466,7 @@ static INT SaveDataCommand (INT argc, char **argv)
 
   strcpy(type,"asc");
   number = -1;
-  time = dt = -1.0;
+  t[0]=t[1]=t[2]=-1.0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -2493,21 +2493,21 @@ static INT SaveDataCommand (INT argc, char **argv)
       break;
 
     case 'T' :
-      if (sscanf(argv[i],"T %f %f",&fValue,&fValue2)!=2)
+      ret = sscanf(argv[i],"T %f %f %f",fValue,fValue+1,fValue+2);
+      if (ret<1 || ret>3)
       {
         PrintHelp("savedata",HELPITEM," (cannot read TIME specification)");
         return(PARAMERRORCODE);
       }
-      time = fValue;
-      dt = fValue2;
-      if (time<0.0)
+      for (j=0; j<ret; j++) t[j] = fValue[j];
+      if (t[0]<0.0)
       {
         PrintHelp("savedata",HELPITEM," (TIME out of range ]-inf, 0.0[)");
         return(PARAMERRORCODE);
       }
       break;
     }
-  if (((time<0.0||dt<=0.0) && number>=0) || ((time>=0.0||dt>=0.0) && number<0))
+  if (((t[0]<0.0) && number>=0) || ((t[0]>=0.0) && number<0))
   {
     PrintHelp("savedata",HELPITEM," (specify both or none the options 'n' and 'T')");
     return(PARAMERRORCODE);
@@ -2522,7 +2522,7 @@ static INT SaveDataCommand (INT argc, char **argv)
   ret = ReadSaveDataInput (theMG,argc,argv,"e",'E',theVDList+4,theEValues+4,theEVector+4);        if (ret) n++;
 
   if (n<=0) return (PARAMERRORCODE);
-  if (SaveData(theMG,FileName,type,number,time,dt,n,theVDList,theEValues,theEVector)) return (PARAMERRORCODE);
+  if (SaveData(theMG,FileName,type,number,t[0],t[1],t[2],n,theVDList,theEValues,theEVector)) return (PARAMERRORCODE);
 
   return(OKCODE);
 }

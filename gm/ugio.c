@@ -886,10 +886,6 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
     else
     {
       if (type==NULL) return (1);
-      if (strcmp(type,"dbg")==0) mode = BIO_DEBUG;
-      else if (strcmp(type,"asc")==0) mode = BIO_ASCII;
-      else if (strcmp(type,"bin")==0) mode = BIO_BIN;
-      else return (1);
       strcpy(itype,type);
       if (name==NULL) return (1);
       strcpy(filename,name);
@@ -899,14 +895,14 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   else
   {
     if (type==NULL) return (1);
-    if (strcmp(type,"dbg")==0) mode = BIO_DEBUG;
-    else if (strcmp(type,"asc")==0) mode = BIO_ASCII;
-    else if (strcmp(type,"bin")==0) mode = BIO_BIN;
-    else return (1);
     strcpy(itype,type);
     if (name==NULL) return (1);
     strcpy(filename,name);
   }
+  if (strcmp(itype,"dbg")==0) mode = BIO_DEBUG;
+  else if (strcmp(itype,"asc")==0) mode = BIO_ASCII;
+  else if (strcmp(itype,"bin")==0) mode = BIO_BIN;
+  else return (1);
   sprintf(buf,".ug.mg.");
   strcat(filename,buf);
   strcat(filename,itype);

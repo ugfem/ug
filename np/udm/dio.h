@@ -92,7 +92,8 @@ struct dio_general {
   char version[DIO_NAMELEN];                    /* version of i/o						*/
   char mgfile[DIO_NAMELEN];                     /* corresponding multigrid file                 */
   double time;                                          /* time, -1.0 means no time specified!  */
-  double dt;                                                    /* next (not previous) time-step                */
+  double dt;                                                    /* previous time-step                                   */
+  double ndt;                                                   /* next time-step (suggestion)                  */
   int magic_cookie;                                     /* identification with mg-file			*/
 
   /* information about data stored */

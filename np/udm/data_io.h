@@ -74,6 +74,6 @@
 /****************************************************************************/
 
 INT LoadData (MULTIGRID *theMG, char *FileName, char *type, INT number, INT n, VECDATA_DESC **theVDList);
-INT SaveData (MULTIGRID *theMG, char *FileName, char *type, INT number, DOUBLE time, DOUBLE dt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec);
+INT SaveData (MULTIGRID *theMG, char *FileName, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec);
 
 #endif
