@@ -3215,7 +3215,9 @@ INT RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *n
 					SETUSED(CORNER(theElement,j),1);
 					SETUSED(MYVERTEX(CORNER(theElement,j)),1);
 				}
+				#ifdef ModelP
 				assert(i==0 || EGHOST(theElement));
+				#endif
 			}
 	for (i=0; i<=TOPLEVEL(theMG); i++)
 		for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
