@@ -701,9 +701,9 @@ static void ddd_IfInit (void)
   BorderVectorSymmIF = DDD_IFDefine(1,O,2,A,2,B);
   DDD_IFSetName(BorderVectorSymmIF, "BorderVectorSymmIF: Master/Border");
 
-  A[0] = PrioMaster; A[1] = PrioBorder;
+  A[0] = PrioMaster;
   B[0] = PrioGhost;
-  OuterVectorIF = DDD_IFDefine(1,O,2,A,1,B);
+  OuterVectorIF = DDD_IFDefine(1,O,1,A,1,B);
   DDD_IFSetName(OuterVectorIF, "OuterVectorIF: Master->Ghost");
 
   A[0] = PrioMaster; A[1] = PrioBorder; A[2] = PrioGhost;
