@@ -1490,6 +1490,13 @@ static INT SetDefaultVP3D (PLOTOBJ *thePO, DOUBLE *DefaultVP)
   DOUBLE M[DIM*DIM],MInv[DIM*DIM],diff, norm;
   INT i,j;
 
+#ifdef ModelP
+  /*
+   * TODO: fix for ModelP
+   */
+  return 1;
+#endif
+
   if (thePO==NULL) return (1);
   theGrid=GRID_ON_LEVEL(PO_MG(thePO),0);
   for (i=0; i<DIM; i++)
