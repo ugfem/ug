@@ -39,9 +39,8 @@
 #include "ddd.h"
 #endif
 
-#ifndef __GM__
 #include "gm.h"
-#endif
+#include "pargm.h"
 
 
 /****************************************************************************/
@@ -56,17 +55,6 @@
 
 
 #define MAXDDDTYPES   32
-
-enum Priorities
-{
-  PrioNone     = 0,
-  PrioGhost    = 2,
-  PrioBorder   = 3,
-  PrioMaster   = 4,
-  PrioVertex   = 10,
-  PrioVector   = 11
-};
-
 
 enum HandlerSets
 {
@@ -147,6 +135,8 @@ extern DDD_TYPE TypeBndS;
 
 /* DDD Interfaces */
 extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF;
+extern DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF;
+
 
 
 /* DDD Global Controls */
