@@ -331,7 +331,7 @@ INT NS_PREFIX NPTransferDisplay (NP_TRANSFER *np)
   if (np->x != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(np->x));
   if (np->c != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"c",ENVITEM_NAME(np->x));
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"c",ENVITEM_NAME(np->c));
   UserWrite("\n");
 
   UserWrite("configuration parameters:\n");
