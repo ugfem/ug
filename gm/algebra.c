@@ -60,7 +60,6 @@
 
 #include "devices.h"
 
-#include "switch.h"
 #include "dlmgr.h"
 #include "gm.h"
 #include "ugm.h"
@@ -91,6 +90,9 @@
 #else
 #define ORDERRES                1e-3    /* resolution for LexAlgDep					*/
 #endif
+
+/* for GetDomainPart indicating an element is meant rather than an element side */
+#define NOSIDE          -1
 
 /* for LexOrderVectorsInGrid */
 #define MATTABLESIZE    32
@@ -123,7 +125,7 @@ static INT ce_VCSTRONG;
 /****************************************************************************/
 
 INT MatrixType[MAXVECTORS][MAXVECTORS];
-const char *VecTypeName[MAXVECTORS];
+const char *ObjTypeName[MAXVOBJECTS];
 
 /****************************************************************************/
 /*																			*/
@@ -256,6 +258,8 @@ static const INT *Order,*Sign;
 static INT SkipV;
 static DOUBLE InvMeshSize;
 
+REP_ERR_FILE;
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -264,6 +268,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /* forward declarations of functions used before they are defined			*/
 /*																			*/
 /****************************************************************************/
+
+static INT ReallocateVector (GRID *g, VECTOR *v, INT part, INT side);
 
 static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, const BV_DESC_FORMAT *bvdf, VECTOR **v, INT stripes, INT vectors_per_stripe, GRID *grid );
 static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation, INT leaf_size );
@@ -518,22 +524,153 @@ BLOCKVECTOR *FindBV( const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT 
 
 /****************************************************************************/
 /*D
-   CreateVector -  Return pointer to a new vector structure
+   GetDomainPart - compute part information of geometrical object
 
    SYNOPSIS:
-   VECTOR *CreateVector (GRID *theGrid, INT VectorType, GEOM_OBJECT *object);
+   INT GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side)
+
+   PARAMETERS:
+   .  s2p - table translating subdomain to domain part
+   .  obj - geometric object (node, element or edge)
+   .  side - if element side is meant for obj==element side has to be >=0, negative else
+
+   DESCRIPTION:
+   Compute the part info for a geometrical object including element sides.
+
+   RETURN VALUE:
+   INT
+   .n    part if ok
+   .n    -n else
+   D*/
+/****************************************************************************/
+
+static INT GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side)
+{
+  NODE *nd;
+  EDGE *ed;
+  ELEMENT *elem;
+  VERTEX *v0,*v1;
+  BNDS *bs;
+  INT part=-1,subdom,move,left,right;
+
+  switch (OBJT(obj))
+  {
+  case NDOBJ :
+    nd = (NODE*)obj;
+    v0 = MYVERTEX(nd);
+    if (OBJT(v0)==IVOBJ)
+    {
+      if (CORNERTYPE(nd) || (LEVEL(obj)==0))
+      {
+        /* get subdom info from first edge iff (coarse grid is complete when arriving here) */
+        if (START(nd)!=NULL)
+          ed = MYEDGE(START(nd));
+        else
+          /* NFATHER exists for corner nodes and already has edges */
+          ed = MYEDGE(START(NFATHER(nd)));
+
+        ASSERT(ed!=NULL);
+        subdom = EDSUBDOM(ed);
+      }
+      else
+      {
+        /* get subdom info from vertex father */
+        elem = VFATHER(v0);
+        ASSERT(elem!=NULL);
+        subdom = SUBDOMAIN(elem);
+      }
+      ASSERT(subdom>0);                                                 /* inner node ==> inner edge */
+      part = s2p[subdom];
+    }
+    else
+    {
+      /* get part info from domain module */
+      if (BNDP_BndPDesc(V_BNDP(v0),&move,&part))
+        REP_ERR_RETURN(-2);
+    }
+    break;
+
+  case IEOBJ :
+  case BEOBJ :
+    elem = (ELEMENT*)obj;
+    if (side==NOSIDE)
+    {
+      /* get info for element */
+
+      subdom = SUBDOMAIN(elem);
+      ASSERT(subdom>0);
+      part = s2p[subdom];
+    }
+    else
+    {
+      /* get info for element side */
+
+      ASSERT(side<SIDES_OF_ELEM(elem));
+      ASSERT(side>=0);
+
+      if ((OBJT(elem)==BEOBJ) && ((bs = ELEM_BNDS(elem,side))!=NULL))
+      {
+        /* this is a boundary side: ask domain module */
+        if (BNDS_BndSDesc(ELEM_BNDS(elem,side),&left,&right,&part))
+          REP_ERR_RETURN(-3);
+      }
+      else
+      {
+        /* there still is the possibility that the side is a boundary side
+           because VECTORs are created while CreateElement but boundary sides later
+           by CreateSonElementSide.
+           The vector eventually will be reallocated by ReinspectSonSideVector later */
+        subdom = SUBDOMAIN(elem);
+        ASSERT(subdom>0);
+        part = s2p[subdom];
+      }
+    }
+    break;
+
+  case EDOBJ :
+    ed = (EDGE*)obj;
+    subdom = EDSUBDOM(ed);
+    if (subdom>0)
+    {
+      part = s2p[subdom];
+    }
+    else
+    {
+      /* it is a boundary edge: ask domain module */
+      v0 = MYVERTEX(NBNODE(LINK0(ed)));
+      v1 = MYVERTEX(NBNODE(LINK1(ed)));
+      ASSERT(OBJT(v0)==BVOBJ);
+      ASSERT(OBJT(v1)==BVOBJ);
+      if (BNDP_BndEDesc(V_BNDP(v0),V_BNDP(v1),&part))
+        REP_ERR_RETURN(-4);
+    }
+    break;
+
+  default : REP_ERR_RETURN (-5);
+  }
+  return (part);
+}
+
+/****************************************************************************/
+/*D
+   CreateVectorInPart -  Return pointer to a new vector structure
+
+   SYNOPSIS:
+   INT CreateVectorInPart (GRID *theGrid, INT DomPart, INT ObjType, GEOM_OBJECT *object, VECTOR **vHandle);
 
    PARAMETERS:
    .  theGrid - grid where vector should be inserted
-   .  After - vector after which to insert
-   .  VectorType - one of the types defined in gm.h
-   .  VectorHandle - handle of new vector, i.e. a pointer to a pointer where
-   a pointer to the new vector is placed.
+   .  DomPart - part of the domain where vector is created
+   .  ObjType - one of the types defined in gm.h
+   .  object  - associate vector with this object
+   .  vHandle - handle of new vector, i.e. a pointer to a pointer where
+                                a pointer to the new vector is placed.
 
    DESCRIPTION:
-   This function returns pointer to a new vector structure. First the free list
-   is checked for a free entry, if none is available, a new structure is allocated
-   from the heap.
+   This function returns a pointer to a new vector structure.
+   The vector type is determined by 'DomPart' and 'ObjType'
+   First the free list is checked for a free entry, if none
+   is available, a new structure is allocated from the heap.
 
    RETURN VALUE:
    INT
@@ -542,25 +679,34 @@ BLOCKVECTOR *FindBV( const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT 
    D*/
 /****************************************************************************/
 
-VECTOR *CreateVector (GRID *theGrid, INT VectorType, GEOM_OBJECT *object)
+static INT CreateVectorInPart (GRID *theGrid, INT DomPart, INT VectorObjType, GEOM_OBJECT *object, VECTOR **vHandle)
 {
   MULTIGRID *theMG;
   VECTOR *pv;
-  INT ds, Size;
+  INT ds, Size, vtype;
+
+  *vHandle = NULL;
 
   theMG = MYMG(theGrid);
-  ds = theMG->theFormat->VectorSizes[VectorType];
+  vtype = FMT_PO2T(MGFORMAT(theMG),DomPart,VectorObjType);
+  ds = FMT_S_VEC_TP(MGFORMAT(theMG),vtype);
   if (ds == 0)
-    return (NULL);
+    return (0);                         /* HRR: this is ok now, no XXXXVEC in part of the domain */
+
   Size = sizeof(VECTOR)-sizeof(DOUBLE)+ds;
   pv = (VECTOR *)GetMemoryForObject(theMG,Size,VEOBJ);
   if (pv==NULL)
-    return(NULL);
+    REP_ERR_RETURN(1);
 
   /* initialize data */
   SETOBJT(pv,VEOBJ);
-  SETVTYPE(pv,VectorType);
-  SETVDATATYPE(pv,DATATYPE_FROM_VECTORTYPE(VectorType));
+  SETVTYPE(pv,vtype);
+  SETVPART(pv,DomPart);
+  ds = VPART(pv);
+  if (ds!=DomPart)
+    return (1);
+  SETVDATATYPE(pv,BITWISE_TYPE(vtype));
+  SETVOTYPE(pv,VectorObjType);
   SETVCLASS(pv,3);
   SETVNCLASS(pv,0);
   SETVBUILDCON(pv,1);
@@ -582,24 +728,73 @@ VECTOR *CreateVector (GRID *theGrid, INT VectorType, GEOM_OBJECT *object)
 
   GRID_LINK_VECTOR(theGrid,pv,PrioMaster);
 
-  return (pv);
+  *vHandle = pv;
+
+  PRINTDEBUG(gm,1,("%s-vector created (%d): p=%d, t=%d\n",ObjTypeName[VOTYPE(pv)],ID(VOBJECT(pv)),VPART(pv),VTYPE(pv)));
+
+  return (0);
 }
 
-#ifdef __THREEDIM__
-VECTOR *CreateSideVector (GRID *theGrid, INT side, GEOM_OBJECT *object)
+/****************************************************************************/
+/*D
+   CreateVector -  Return pointer to a new vector structure
+
+   SYNOPSIS:
+   INT CreateVector (GRID *theGrid, INT VectorObjType, GEOM_OBJECT *object, VECTOR **vHandle);
+
+   PARAMETERS:
+   .  theGrid - grid where vector should be inserted
+   .  VectorObjType - one of the types defined in gm.h
+   .  object  - associate vector with this object
+   .  vHandle - handle of new vector, i.e. a pointer to a pointer where
+                                a pointer to the new vector is placed.
+
+   DESCRIPTION:
+   This function returns a pointer to a new vector structure. First the free list
+   is checked for a free entry, if none is available, a new structure is allocated
+   from the heap.
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT CreateVector (GRID *theGrid, INT VectorObjType, GEOM_OBJECT *object, VECTOR **vHandle)
 {
-  VECTOR *pv;
+  MULTIGRID *mg;
+  INT part;
 
-  pv = CreateVector(theGrid,SIDEVECTOR,object);
-  if (pv == NULL)
-    return(NULL);
+  mg = MYMG(theGrid);
+  part = GetDomainPart(BVPD_S2P_PTR(MG_BVPD(mg)),object,NOSIDE);
+  if (part<0)
+    REP_ERR_RETURN(1);
 
-  SETVECTORSIDE(pv,side);
-  SETVCOUNT(pv,1);
-
-  return (pv);
+  if (CreateVectorInPart(theGrid,part,VectorObjType,object,vHandle))
+    REP_ERR_RETURN(1)
+    else
+      return (0);
 }
-#endif
+
+INT CreateSideVector (GRID *theGrid, INT side, GEOM_OBJECT *object, VECTOR **vHandle)
+{
+  MULTIGRID *mg;
+  INT part;
+
+  mg = MYMG(theGrid);
+  part = GetDomainPart(BVPD_S2P_PTR(MG_BVPD(mg)),object,side);
+  if (part<0)
+    REP_ERR_RETURN(1);
+
+  if (CreateVectorInPart(theGrid,part,SIDEVEC,object,vHandle))
+    REP_ERR_RETURN(1);
+
+  SETVECTORSIDE(*vHandle,side);
+  SETVCOUNT(*vHandle,1);
+
+  return (0);
+}
 
 /****************************************************************************/
 /*D
@@ -795,7 +990,7 @@ CONNECTION *CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to)
   /* check expected size */
   theMG = MYMG(theGrid);
   theHeap = theMG->theHeap;
-  ds = theMG->theFormat->MatrixSizes[MType];
+  ds = FMT_S_MAT_TP(MGFORMAT(theMG),MType);
   if (ds == 0)
     return (NULL);
   Size = sizeof(MATRIX)-sizeof(DOUBLE)+ds;
@@ -999,11 +1194,103 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
 
   /* delete the vector itself */
   Size = sizeof(VECTOR)-sizeof(DOUBLE)
-         +theGrid->mg->theFormat->VectorSizes[VTYPE(theVector)];
+         + FMT_S_VEC_TP(MGFORMAT(MYMG(theGrid)),VTYPE(theVector));
   if (PutFreeObject(theGrid->mg,theVector,Size,VEOBJ))
     RETURN(1);
 
   return(0);
+}
+
+/****************************************************************************/
+/*D
+   ReallocateVector - change vector allocated with wrong part
+
+   SYNOPSIS:
+   INT ReinspectSonSideVector (GRID *g, ELEMENT *elem, INT side, VECTOR **vHandle)
+
+   PARAMETERS:
+   .  g - grid level where the element is in.
+   .  elem - element of side vector
+   .  side - element side
+   .  vHandle - handle to side vector (inialized with old, may be changed)
+
+   DESCRIPTION:
+   This changes a side vector which was allocated with the wrong part (maybe unknown for side vectors
+   when creating an element).
+
+   RETURN VALUE:
+   INT
+   .n    GM_OK if ok
+   .n    GM_ERROR if error occured.
+   D*/
+/****************************************************************************/
+
+INT ReinspectSonSideVector (GRID *g, ELEMENT *elem, INT side, VECTOR **vHandle)
+{
+  MULTIGRID *mg;
+  VECTOR *vold,*vnew;
+  FORMAT *fmt;
+  INT partnew,partold,vtnew,vtold,dsnew,dsold;
+
+  mg  = MYMG(g);
+  fmt = MGFORMAT(mg);
+
+  vold = *vHandle;
+
+  /* check whether part has actually changed */
+  partold = (vold!=NULL) ? VPART(vold) : BVPD_S2P(MG_BVPD(mg),SUBDOMAIN(elem));
+  partnew = GetDomainPart(BVPD_S2P_PTR(MG_BVPD(mg)),(GEOM_OBJECT*)elem,side);
+  if (partnew<0)
+    REP_ERR_RETURN(GM_ERROR);
+  if (partnew==partold)
+    return (GM_OK);
+
+  /* check whether vtype has actually changed */
+  vtold = (vold!=NULL) ? VTYPE(vold) : FMT_PO2T(fmt,partold,SIDEVEC);
+  vtnew = FMT_PO2T(fmt,partnew,SIDEVEC);
+  if (vtnew==vtold)
+  {
+    if (vold!=NULL)
+    {
+      /* just change part */
+      SETVPART(vold,partnew);
+    }
+    PRINTDEBUG(gm,1,("SIDEVEC (%d,%d): part\n",ID(elem),side));
+    return (GM_OK);
+  }
+
+  /* check whether size has actually changed */
+  dsold = FMT_S_VEC_TP(fmt,vtold);
+  dsnew = FMT_S_VEC_TP(fmt,vtnew);
+  if (dsold==dsnew)
+  {
+    if (vold!=NULL)
+    {
+      /* just change part and type */
+      SETVTYPE(vold,vtnew);
+      SETVPART(vold,partnew);
+
+      DisposeConnectionFromVector(g,vold);
+
+      SETVBUILDCON(vold,1);
+    }
+    PRINTDEBUG(gm,1,("SIDEVEC (%d,%d): part and type\n",ID(elem),side));
+    return (GM_OK);
+  }
+
+  PRINTDEBUG(gm,1,("SIDEVEC (%d,%d): part, type and size\n",ID(elem),side));
+
+  /* create new vector */
+  if (CreateVectorInPart(g,partnew,SIDEVEC,(GEOM_OBJECT*)elem,&vnew))
+    REP_ERR_RETURN(GM_ERROR);
+
+  /* now we can dispose the old vector */
+  if (DisposeVector(g,vold))
+    REP_ERR_RETURN(GM_ERROR);
+
+  *vHandle = vnew;
+
+  return (GM_OK);
 }
 
 /****************************************************************************/
@@ -1210,12 +1497,17 @@ INT DisposeDoubledSideVector (GRID *theGrid, ELEMENT *Elem0, INT Side0, ELEMENT 
   VECTOR *Vector0, *Vector1;
   int vc0,vc1;
 
-  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
   {
     assert(NBELEM(Elem0,Side0)==Elem1 && NBELEM(Elem1,Side1)==Elem0);
     Vector0 = SVECTOR(Elem0,Side0);
     Vector1 = SVECTOR(Elem1,Side1);
     if (Vector0 == Vector1)
+      return (0);
+    if ((Vector0==NULL) || (Vector1==NULL))
+      /* this is the case at boundaries between different parts
+         the part not using vectors in SIDEs will not need a pointer
+         to the side vector */
       return (0);
     vc0=VCOUNT(Vector0);
     vc1=VCOUNT(Vector1);
@@ -1303,7 +1595,7 @@ INT DisposeConnectionFromElement (GRID *theGrid, ELEMENT *theElement)
   VECTOR *vList[20];
   INT cnt;
 
-  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
   {
     GetVectorsOfElement(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
@@ -1313,20 +1605,17 @@ INT DisposeConnectionFromElement (GRID *theGrid, ELEMENT *theElement)
     }
   }
     #ifdef __THREEDIM__
-  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
   {
-    if (DIM==3)
+    GetVectorsOfSides(theElement,&cnt,vList);
+    for (i=0; i<cnt; i++)
     {
-      GetVectorsOfSides(theElement,&cnt,vList);
-      for (i=0; i<cnt; i++)
-      {
-        if (DisposeConnectionFromVector(theGrid,vList[i])) RETURN(GM_ERROR);
-        SETVBUILDCON(vList[i],1);
-      }
+      if (DisposeConnectionFromVector(theGrid,vList[i])) RETURN(GM_ERROR);
+      SETVBUILDCON(vList[i],1);
     }
   }
     #endif
-  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
   {
     GetVectorsOfEdges(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
@@ -1335,7 +1624,7 @@ INT DisposeConnectionFromElement (GRID *theGrid, ELEMENT *theElement)
       SETVBUILDCON(vList[i],1);
     }
   }
-  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC))
   {
     GetVectorsOfNodes(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
@@ -1400,7 +1689,7 @@ static INT DisposeConnectionFromElementInNeighborhood (GRID *theGrid, ELEMENT *t
 INT DisposeConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
 {
   INT Depth;
-  Depth = (INT)(floor(0.5*(double)theGrid->mg->theFormat->MaxConnectionDepth));
+  Depth = (INT)(floor(0.5*(double)FMT_CONN_DEPTH_MAX(MGFORMAT(MYMG(theGrid)))));
   return(DisposeConnectionFromElementInNeighborhood(theGrid,theElement,Depth));
 }
 
@@ -1560,12 +1849,16 @@ CONNECTION *GetConnection (const VECTOR *FromVector, const VECTOR *ToVector)
 
 INT GetVectorsOfElement (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 {
-  vList[0] = EVECTOR(theElement);
-  *cnt = 1;
+  *cnt = 0;
+  if (EVECTOR(theElement) != NULL)
+    vList[(*cnt)++] = EVECTOR(theElement);
 
   IFDEBUG(gm,0)
-  assert(vList[0] != NULL);
-  assert(VTYPE(vList[0]) == ELEMVECTOR);
+  if (*cnt)
+  {
+    assert(vList[0] != NULL);
+    assert(VOTYPE(vList[0]) == ELEMVEC);
+  }
   ENDDEBUG
 
   return(GM_OK);
@@ -1608,7 +1901,7 @@ INT GetVectorsOfSides (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
   for (i=0; i<(*cnt); i++)
   {
     assert(vList[i] != NULL);
-    assert(VTYPE(vList[i]) == SIDEVECTOR);
+    assert(VOTYPE(vList[i]) == SIDEVEC);
   }
   ENDDEBUG
 
@@ -1648,13 +1941,14 @@ INT GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
     if ((theEdge =
            GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
                    CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)))) != NULL)
-      vList[(*cnt)++] = EDVECTOR(theEdge);
+      if (EDVECTOR(theEdge) != NULL)
+        vList[(*cnt)++] = EDVECTOR(theEdge);
 
   IFDEBUG(gm,0)
   for (i=0; i<(*cnt); i++)
   {
     assert(vList[i] != NULL);
-    assert(VTYPE(vList[i]) == EDGEVECTOR);
+    assert(VOTYPE(vList[i]) == EDGEVEC);
   }
   ENDDEBUG
 
@@ -1696,7 +1990,7 @@ INT GetVectorsOfNodes (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
   for (i=0; i<(*cnt); i++)
   {
     assert(vList[i] != NULL);
-    assert(VTYPE(vList[i]) == NODEVECTOR);
+    assert(VOTYPE(vList[i]) == NODEVEC);
   }
   ENDDEBUG
 
@@ -1705,10 +1999,10 @@ INT GetVectorsOfNodes (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 
 /****************************************************************************/
 /*D
-   GetVectorsOfType - Get a pointer list to all vector data of specified type
+   GetVectorsOfOType - Get a pointer list to all vector data of specified object type
 
    SYNOPSIS:
-   INT GetVectorsOfType (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vList)
+   INT GetVectorsOfOType (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vList)
 
    PARAMETERS:
    .  theElement -  that element
@@ -1726,18 +2020,18 @@ INT GetVectorsOfNodes (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
    D*/
 /****************************************************************************/
 
-INT GetVectorsOfType (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vList)
+INT GetVectorsOfOType (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vList)
 {
   switch (type)
   {
-  case NODEVECTOR :
+  case NODEVEC :
     return (GetVectorsOfNodes(theElement,cnt,vList));
-  case ELEMVECTOR :
+  case ELEMVEC :
     return (GetVectorsOfElement(theElement,cnt,vList));
-  case EDGEVECTOR :
+  case EDGEVEC :
     return (GetVectorsOfEdges(theElement,cnt,vList));
         #ifdef __THREEDIM__
-  case SIDEVECTOR :
+  case SIDEVEC :
     return (GetVectorsOfSides(theElement,cnt,vList));
         #endif
   }
@@ -1746,18 +2040,54 @@ INT GetVectorsOfType (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vL
 
 /****************************************************************************/
 /*D
-   GetVectorsOfTypes - get vector list including all vectors of specified types
+   DataTypeFilterVList - remove vectors with non-matching type from list
 
    SYNOPSIS:
-   INT GetVectorsOfTypes (const ELEMENT *theElement, const INT *type, INT *cnt, VECTOR **vList)
+   INT DataTypeFilterVList (INT dt, VECTOR **vec, INT *cnt)
+
+   PARAMETERS:
+   .  dt - data type including all vtypes needed
+   .  vec - vector list
+   .  cnt  - number of vectors return in the list
+
+   DESCRIPTION:
+   This function removes vectors with non-matching types from the list.
+
+   RETURN VALUE:
+   INT
+   .n    number of remaining vectors in the list
+   D*/
+/****************************************************************************/
+
+INT DataTypeFilterVList (INT dt, VECTOR **vec, INT *cnt)
+{
+  INT i,n;
+
+  n = *cnt;
+  *cnt = 0;
+  for (i=0; i<n; i++)
+    if (VDATATYPE(vec[i]) & dt)
+      vec[(*cnt)++] = vec[i];
+
+  return (*cnt);
+}
+
+/****************************************************************************/
+/*D
+   GetVectorsOfDataTypesInObjects - get vector list including all vectors of specified vtypes
+
+   SYNOPSIS:
+   INT GetVectorsOfDataTypesInObjects (const ELEMENT *theElement, INT dt, INT obj, INT *cnt, VECTOR **vec)
 
    PARAMETERS:
    .  theElement - pointer to an element
-   .  type - specified types
+   .  dt  - data type including all vtypes needed
+   .  obj - flags for objects types needed
+   .  cnt - number of vectors return in the list
    .  vec - vector list
 
    DESCRIPTION:
-   This function gets a list of vectors of the specified types corresponding to an element.
+   This function gets a list of vectors of the specified vtypes corresponding to an element.
 
    RETURN VALUE:
    INT
@@ -1766,37 +2096,46 @@ INT GetVectorsOfType (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vL
    D*/
 /****************************************************************************/
 
-INT GetVectorsOfTypes (const ELEMENT *theElement, const INT *type, INT *cnt, VECTOR **vec)
+INT GetVectorsOfDataTypesInObjects (const ELEMENT *theElement, INT dt, INT obj, INT *cnt, VECTOR **vec)
 {
-  INT i;
+  INT i,n;
 
-  *cnt = 0;
-  if (type[NODEVECTOR])
+  *cnt = n = 0;
+
+  if (obj & BITWISE_TYPE(NODEVEC))
   {
     if (GetVectorsOfNodes(theElement,&i,vec) != GM_OK)
       return(GM_ERROR);
-    *cnt += i;
+    n += i;
   }
-  if (type[EDGEVECTOR])
+
+  if (obj & BITWISE_TYPE(EDGEVEC))
   {
-    if (GetVectorsOfEdges(theElement,&i,vec+*cnt) != GM_OK)
+    if (GetVectorsOfEdges(theElement,&i,vec+n) != GM_OK)
       return(GM_ERROR);
-    *cnt += i;
+    n += i;
   }
-  if (type[ELEMVECTOR])
+
+  if (obj & BITWISE_TYPE(ELEMVEC))
   {
-    if (GetVectorsOfElement(theElement,&i,vec+*cnt) != GM_OK)
+    if (GetVectorsOfElement(theElement,&i,vec+n) != GM_OK)
       return(GM_ERROR);
-    *cnt += i;
+    n += i;
   }
+
     #ifdef __THREEDIM__
-  if (type[SIDEVECTOR])
+  if (obj & BITWISE_TYPE(SIDEVEC))
   {
-    if (GetVectorsOfSides(theElement,&i,vec+*cnt) != GM_OK)
+    if (GetVectorsOfSides(theElement,&i,vec+n) != GM_OK)
       return(GM_ERROR);
-    *cnt += i;
+    n += i;
   }
     #endif
+
+  *cnt = n;
+
+  /* remove vectors of types not needed */
+  DataTypeFilterVList(dt,vec,cnt);
 
   return (GM_OK);
 }
@@ -1829,26 +2168,26 @@ INT GetAllVectorsOfElement (GRID *theGrid, ELEMENT *theElement, VECTOR **vec)
   INT cnt;
 
   cnt = 0;
-  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC))
   {
     if (GetVectorsOfNodes(theElement,&i,vec) == GM_ERROR)
       RETURN(-1);
     cnt += i;
   }
-  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
   {
     if (GetVectorsOfEdges(theElement,&i,vec+cnt) == GM_ERROR)
       RETURN(-1);
     cnt += i;
   }
-  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
   {
     if (GetVectorsOfElement(theElement,&i,vec+cnt) == GM_ERROR)
       RETURN(-1);
     cnt += i;
   }
     #ifdef __THREEDIM__
-  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
   {
     if (GetVectorsOfSides(theElement,&i,vec+cnt) == GM_ERROR)
       RETURN(-1);
@@ -2018,7 +2357,7 @@ INT GetElementInfoFromSideVector (const VECTOR *theVector, ELEMENT **Elements, I
   INT i;
   ELEMENT *theNeighbor;
 
-  if (VTYPE(theVector) != SIDEVECTOR)
+  if (VOTYPE(theVector) != SIDEVEC)
     RETURN (1);
   Elements[0] = (ELEMENT *)VOBJECT(theVector);
   Sides[0] = VECTORSIDE(theVector);
@@ -2141,9 +2480,9 @@ INT CreateConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
   /* set pointers */
   theMG = theGrid->mg;
   theFormat = theMG->theFormat;
-  MaxDepth = theFormat->MaxConnectionDepth;
-  ConDepth = theFormat->ConnectionDepth;
-  MatSize = theFormat->MatrixSizes;
+  MaxDepth = FMT_CONN_DEPTH_MAX(theFormat);
+  ConDepth = FMT_CONN_DEPTH_PTR(theFormat);
+  MatSize = FMT_S_MATPTR(theFormat);
 
   /* reset used flags in neighborhood */
   if (ResetUsedFlagInNeighborhood(theElement,0,MaxDepth))
@@ -2231,10 +2570,13 @@ INT InsertedElementCreateConnection (GRID *theGrid, ELEMENT *theElement)
   FORMAT *theFormat;
   INT MaxDepth;
 
+  if (!MG_COARSE_FIXED(MYMG(theGrid)))
+    RETURN (1);
+
   /* set pointers */
   theMG = theGrid->mg;
   theFormat = theMG->theFormat;
-  MaxDepth = (INT)(floor(0.5*(double)theFormat->MaxConnectionDepth));
+  MaxDepth = (INT)(floor(0.5*(double)FMT_CONN_DEPTH_MAX(theFormat)));
 
   /* reset used flags in neighborhood */
   if (ResetUsedFlagInNeighborhood(theElement,0,MaxDepth))
@@ -2273,6 +2615,9 @@ INT GridCreateConnection (GRID *theGrid)
   VECTOR *vList[20];
   INT i,cnt;
 
+  if (!MG_COARSE_FIXED(MYMG(theGrid)))
+    RETURN (1);
+
   /* lets see if there's something to do */
   if (theGrid == NULL)
     return (0);
@@ -2285,7 +2630,7 @@ INT GridCreateConnection (GRID *theGrid)
 
     /* check flags in vectors */
                 #ifdef __THREEDIM__
-    if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
     {
       GetVectorsOfSides(theElement,&cnt,vList);
       for (i=0; i<cnt; i++)
@@ -2293,14 +2638,14 @@ INT GridCreateConnection (GRID *theGrid)
     }
     if (EBUILDCON(theElement)) continue;
         #endif
-    if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
     {
       GetVectorsOfEdges(theElement,&cnt,vList);
       for (i=0; i<cnt; i++)
         if (VBUILDCON(vList[i])) {SETEBUILDCON(theElement,1); break;}
     }
     if (EBUILDCON(theElement)) continue;
-    if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC))
     {
       GetVectorsOfNodes(theElement,&cnt,vList);
       for (i=0; i<cnt; i++)
@@ -2328,7 +2673,8 @@ INT GridCreateConnection (GRID *theGrid)
    .  theGrid - pointer to grid
 
    DESCRIPTION:
-   This function creates nothing (up to now).
+   This function allocates VECTORs in all geometrical objects of the grid (where
+   described by format) and then calls 'GridCreateConnection'.
 
    RETURN VALUE:
    INT
@@ -2336,8 +2682,88 @@ INT GridCreateConnection (GRID *theGrid)
    D*/
 /****************************************************************************/
 
-INT CreateAlgebra (GRID *theGrid)
+INT CreateAlgebra (GRID *g)
 {
+  FORMAT *fmt;
+  VECTOR *vec;
+  ELEMENT *elem;
+  NODE *nd;
+  LINK *li;
+  EDGE *ed;
+  INT side;
+
+  /* check necessary conditions */
+  if (GLEVEL(g)!=0)
+    REP_ERR_RETURN (GM_ERROR);
+
+  if (!MG_COARSE_FIXED(MYMG(g)))
+    REP_ERR_RETURN (GM_ERROR);
+
+  if (NVEC(g)>0)
+    REP_ERR_RETURN (GM_ERROR);
+
+  fmt = MGFORMAT(MYMG(g));
+
+  /* loop nodes and edges */
+  for (nd=FIRSTNODE(g); nd!=NULL; nd=SUCCN(nd))
+  {
+    ASSERT(NVECTOR(nd)==NULL);
+
+    /* node vector */
+    if (FMT_USES_OBJ(fmt,NODEVEC))
+    {
+      if (CreateVector (g,NODEVEC,(GEOM_OBJECT *)nd,&vec))
+        REP_ERR_RETURN (GM_ERROR);
+      NVECTOR(nd) = vec;
+    }
+
+    /* edge vectors */
+    if (FMT_USES_OBJ(fmt,EDGEVEC))
+      for (li=START(nd); li!=NULL; li=NEXT(li))
+      {
+        ed = MYEDGE(li);
+        if (li==LINK0(ed))                                                      /* to avoid double access of edges */
+        {
+          ASSERT(EDVECTOR(ed)==NULL);
+
+          if (CreateVector (g,EDGEVEC,(GEOM_OBJECT *)ed,&vec))
+            REP_ERR_RETURN (GM_ERROR);
+          EDVECTOR(ed) = vec;
+        }
+      }
+  }
+
+  /* loop elements and element sides */
+  for (elem=FIRSTELEMENT(g); elem!=NULL; elem=SUCCE(elem))
+  {
+    /* to tell GridCreateConnection to build connections */
+    SETEBUILDCON(elem,1);
+
+    /* element vector */
+    if (FMT_USES_OBJ(fmt,ELEMVEC))
+    {
+      ASSERT(EVECTOR(elem)==NULL);
+
+      if (CreateVector (g,ELEMVEC,(GEOM_OBJECT *)elem,&vec))
+        REP_ERR_RETURN (GM_ERROR);
+      SET_EVECTOR(elem,vec);
+    }
+
+    /* side vectors */
+    if (FMT_USES_OBJ(fmt,SIDEVEC))
+      for (side=0; side<SIDES_OF_ELEM(elem); side++)
+        if (SVECTOR(elem,side)==NULL)
+        {
+          if (CreateSideVector (g,side,(GEOM_OBJECT *)elem,&vec))
+            REP_ERR_RETURN (GM_ERROR);
+          SET_SVECTOR(elem,side,vec);
+        }
+  }
+
+  /* now connections */
+  if (GridCreateConnection(g))
+    REP_ERR_RETURN (1);
+
   return(GM_OK);
 }
 
@@ -2366,6 +2792,9 @@ INT MGCreateConnection (MULTIGRID *theMG)
   INT i;
   GRID *theGrid;
   ELEMENT *theElement;
+
+  if (!MG_COARSE_FIXED(theMG))
+    RETURN (1);
 
   for (i=0; i<=theMG->topLevel; i++)
   {
@@ -2597,9 +3026,9 @@ INT ElementCheckConnection (GRID *theGrid, ELEMENT *theElement)
   /* set pointers */
   theMG = theGrid->mg;
   theFormat = theMG->theFormat;
-  MaxDepth = theFormat->MaxConnectionDepth;
-  ConDepth = theFormat->ConnectionDepth;
-  MatSize = theFormat->MatrixSizes;
+  MaxDepth = FMT_CONN_DEPTH_MAX(theFormat);
+  ConDepth = FMT_CONN_DEPTH_PTR(theFormat);
+  MatSize = FMT_S_MATPTR(theFormat);
 
   /* call elements recursivly */
   return(CheckNeighborhood(theGrid,theElement,theElement,ConDepth,0,MaxDepth,MatSize));
@@ -2654,11 +3083,17 @@ static INT CheckConnections (GRID *theGrid)
    CheckVector - Checks validity of geom_object	and its vector
 
    SYNOPSIS:
-   INT CheckVector (GEOM_OBJECT *theObject, VECTOR *theVector);
+   INT CheckVector (const FORMAT *fmt, const INT s2p[], GEOM_OBJECT *theObject, char *ObjectString,
+                VECTOR *theVector, INT VectorObjType, INT side);
 
    PARAMETERS:
+   .  fmt - FORMAT of associated multigrid
+   .  s2p - subdomain to part table
    .  theObject - the object which points to theVector
+   .  ObjectString - for error message
    .  theVector - the vector of theObject
+   .  VectorObjType - NODEVEC,...
+   .  side - element side for SIDEVEC, NOSIDE else
 
    DESCRIPTION:
    This function checks the consistency between an geom_object and
@@ -2671,20 +3106,35 @@ static INT CheckConnections (GRID *theGrid)
    D*/
 /****************************************************************************/
 
-static INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString,
-                        VECTOR *theVector, int VectorType)
+static INT CheckVector (const FORMAT *fmt, const INT s2p[], GEOM_OBJECT *theObject, char *ObjectString,
+                        VECTOR *theVector, INT VectorObjType, INT side)
 {
   GEOM_OBJECT *VecObject;
-  INT errors = 0;
+  MATRIX *mat;
+  INT errors = 0,vtype,DomPart,ds;
 
   if (theVector == NULL)
   {
-    errors++;
-    UserWriteF("%d: %s ID=%ld  has NO VECTOR\n",me, ObjectString,
-               ID(theObject));
+    /* check if size is really 0 */
+    DomPart = GetDomainPart(s2p,theObject,side);
+    vtype = FMT_PO2T(fmt,DomPart,VectorObjType);
+    ds = FMT_S_VEC_TP(fmt,vtype);
+    if (ds>0)
+    {
+      errors++;
+      UserWriteF("%d: %s ID=%ld  has NO VECTOR\n",me, ObjectString,
+                 ID(theObject));
+    }
   }
   else
   {
+    ds = FMT_S_VEC_TP(fmt,VTYPE(theVector));
+    if (ds==0)
+    {
+      errors++;
+      UserWriteF("%d: %s ID=%ld  exists but should not\n",me, ObjectString,
+                 ID(theObject));
+    }
     SETUSED(theVector,1);
 
     VecObject = VOBJECT(theVector);
@@ -2697,20 +3147,21 @@ static INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString,
                  EGID(&(theObject->el)) : (OBJT(theObject)==NDOBJ) ?
                  GID(&(theObject->nd)) :
                                 #ifdef __TWODIM__
-                 ((int *)(theObject))[0]);
+                 ((int *)(theObject))[0]
                                 #else
-                 GID(&(theObject->ed)));
+                 GID(&(theObject->ed))
                                 #endif
+                 );
     }
     else
     {
-      if (VTYPE(theVector) != VectorType)
+      if (VOTYPE(theVector) != VectorObjType)
       {
         errors++;
         UserWriteF("%d: %s vector=" VINDEX_FMTX " has incompatible type=%d, "
-                   "should be type=%d\n",
+                   "should be type=%s\n",
                    me, ObjectString, VINDEX_PRTX(theVector), VTYPE(theVector),
-                   VectorType);
+                   ObjTypeName[VectorObjType]);
       }
 
       if (VecObject != theObject)
@@ -2762,7 +3213,7 @@ static INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString,
         else
         {
                                         #ifdef __THREEDIM__
-          if (VectorType == SIDEVECTOR)
+          if (VectorObjType == SIDEVEC)
           {
             /* TODO: check side vector */
           }
@@ -2787,6 +3238,21 @@ static INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString,
         }
       }
     }
+    /* check connectivity of matrices */
+    for (mat=VSTART(theVector); mat!=NULL; mat=MNEXT(mat))
+      if (MDEST(mat)==NULL)
+      {
+        errors++;
+        UserWriteF("%d: %s vector=" VINDEX_FMTX ": matrix dest==NULL\n",
+                   me, ObjectString, VINDEX_PRTX(theVector));
+      }
+      else if (MDEST(MADJ(mat))!=theVector)
+      {
+        errors++;
+        UserWriteF("%d: %s vector=" VINDEX_FMTX ": adj matrix dest does not coincide with vector\n",
+                   me, ObjectString, VINDEX_PRTX(theVector));
+      }
+
   }
 
   return(errors);
@@ -2816,17 +3282,32 @@ static INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString,
 
 INT CheckAlgebra (GRID *theGrid)
 {
+  FORMAT *fmt;
   ELEMENT *theElement;
   NODE *theNode;
   VECTOR *theVector;
   EDGE *theEdge;
   LINK *theLink;
   INT errors;
+  INT *s2p;
 #       ifdef __THREEDIM__
   INT i;
 #       endif
 
   errors = 0;
+
+  if ((GLEVEL(theGrid)==0) && !MG_COARSE_FIXED(MYMG(theGrid)))
+  {
+    if ((NVEC(theGrid)>0) || (NC(theGrid)>0))
+    {
+      errors++;
+      UserWriteF("coarse grid not fixed but vectors allocated\n");
+    }
+    return(errors);
+  }
+
+  s2p = BVPD_S2P_PTR(MG_BVPD(MYMG(theGrid)));
+  fmt = MGFORMAT(MYMG(theGrid));
 
   /* reset USED flag */
   for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL;
@@ -2841,22 +3322,22 @@ INT CheckAlgebra (GRID *theGrid)
   {
 
     /* check element vectors */
-    if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
     {
       theVector = EVECTOR(theElement);
-      errors += CheckVector((GEOM_OBJECT *) theElement, "ELEMENT",
-                            theVector, ELEMVECTOR);
+      errors += CheckVector(fmt,s2p,(GEOM_OBJECT *) theElement, "ELEMENT",
+                            theVector, ELEMVEC,NOSIDE);
     }
 
                 #ifdef __THREEDIM__
     /* check side vectors */
-    if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
     {
       for (i=0; i<SIDES_OF_ELEM(theElement); i++)
       {
         theVector = SVECTOR(theElement,i);
-        errors += CheckVector((GEOM_OBJECT *) theElement, "ELEMSIDE",
-                              theVector, SIDEVECTOR);
+        errors += CheckVector(fmt,s2p,(GEOM_OBJECT *) theElement, "ELEMSIDE",
+                              theVector, SIDEVEC,i);
       }
     }
                 #endif
@@ -2866,23 +3347,23 @@ INT CheckAlgebra (GRID *theGrid)
   {
 
     /* check node vectors */
-    if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC))
     {
       theVector = NVECTOR(theNode);
-      errors += CheckVector((GEOM_OBJECT *) theNode, "NODE", theVector,
-                            NODEVECTOR);
+      errors += CheckVector(fmt,s2p,(GEOM_OBJECT *) theNode, "NODE", theVector,
+                            NODEVEC,NOSIDE);
     }
 
     /* check edge vectors */
-    if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
     {
       for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
       {
         theEdge = GetEdge(theNode,NBNODE(theLink));
         if (theEdge != NULL) {
           theVector = EDVECTOR(theEdge);
-          errors += CheckVector((GEOM_OBJECT *) theEdge, "EDGE",
-                                theVector, EDGEVECTOR);
+          errors += CheckVector(fmt,s2p,(GEOM_OBJECT *) theEdge, "EDGE",
+                                theVector, EDGEVEC,NOSIDE);
         }
       }
     }
@@ -3008,27 +3489,27 @@ INT VectorInElement (ELEMENT *theElement, VECTOR *theVector)
   VECTOR *vList[20];
   INT cnt;
 
-  if (VTYPE(theVector) == ELEMVECTOR)
+  if (VOTYPE(theVector) == ELEMVEC)
   {
     GetVectorsOfElement(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
       if (vList[i]==theVector) RETURN(1);
   }
         #ifdef __THREEDIM__
-  if (VTYPE(theVector) == SIDEVECTOR)
+  if (VOTYPE(theVector) == SIDEVEC)
   {
     GetVectorsOfSides(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
       if (vList[i]==theVector) RETURN(1);
   }
     #endif
-  if (VTYPE(theVector) == EDGEVECTOR)
+  if (VOTYPE(theVector) == EDGEVEC)
   {
     GetVectorsOfEdges(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
       if (vList[i]==theVector) RETURN(1);
   }
-  if (VTYPE(theVector) == NODEVECTOR)
+  if (VOTYPE(theVector) == NODEVEC)
   {
     GetVectorsOfNodes(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
@@ -3071,21 +3552,21 @@ INT VectorPosition (const VECTOR *theVector, DOUBLE *position)
 
   ASSERT(theVector != NULL);
 
-  switch(VTYPE(theVector))
+  switch (VOTYPE(theVector))
   {
-  case (NODEVECTOR) :
+  case NODEVEC :
     for (i=0; i<DIM; i++)
       position[i] = CVECT(MYVERTEX((NODE*)VOBJECT(theVector)))[i];
     return (0);
 
-  case (EDGEVECTOR) :
+  case EDGEVEC :
     theEdge = (EDGE*)VOBJECT(theVector);
     for (i=0; i<DIM; i++)
       position[i] = 0.5*(CVECT(MYVERTEX(NBNODE(LINK0(theEdge))))[i] +
                          CVECT(MYVERTEX(NBNODE(LINK1(theEdge))))[i]   );
     return (0);
                 #ifdef __THREEDIM__
-  case (SIDEVECTOR) :
+  case SIDEVEC :
     theElement = (ELEMENT *)VOBJECT(theVector);
     theSide = VECTORSIDE(theVector);
     for (i=0; i<DIM; i++)
@@ -3097,7 +3578,7 @@ INT VectorPosition (const VECTOR *theVector, DOUBLE *position)
     }
     return (0);
                 #endif
-  case (ELEMVECTOR) :
+  case ELEMVEC :
     theElement = (ELEMENT *) VOBJECT(theVector);
     for (i=0; i<DIM; i++)
     {
@@ -3140,24 +3621,24 @@ INT SeedVectorClasses (GRID *theGrid, ELEMENT *theElement)
   VECTOR *vList[20];
   INT cnt;
 
-  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
   {
     GetVectorsOfElement(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) SETVCLASS(vList[i],3);
   }
         #ifdef __THREEDIM__
-  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
   {
     GetVectorsOfSides(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) SETVCLASS(vList[i],3);
   }
     #endif
-  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
   {
     GetVectorsOfEdges(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) SETVCLASS(vList[i],3);
   }
-  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC))
   {
     GetVectorsOfNodes(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) SETVCLASS(vList[i],3);
@@ -3302,24 +3783,24 @@ INT SeedNextVectorClasses (GRID *theGrid, ELEMENT *theElement)
   VECTOR *vList[20];
   INT cnt;
 
-  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
   {
     GetVectorsOfElement(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) SETVNCLASS(vList[i],3);
   }
         #ifdef __THREEDIM__
-  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
   {
     GetVectorsOfSides(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) SETVNCLASS(vList[i],3);
   }
         #endif
-  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
   {
     GetVectorsOfEdges(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) SETVNCLASS(vList[i],3);
   }
-  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC))
   {
     GetVectorsOfNodes(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) SETVNCLASS(vList[i],3);
@@ -3401,24 +3882,24 @@ INT MaxNextVectorClass (GRID *theGrid, ELEMENT *theElement)
   INT cnt;
 
   m = 0;
-  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
   {
     GetVectorsOfElement(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) m = MAX(m,VNCLASS(vList[i]));
   }
         #ifdef __THREEDIM__
-  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
   {
     GetVectorsOfSides(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) m = MAX(m,VNCLASS(vList[i]));
   }
         #endif
-  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
   {
     GetVectorsOfEdges(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) m = MAX(m,VNCLASS(vList[i]));
   }
-  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC))
   {
     GetVectorsOfNodes(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) m = MAX(m,VNCLASS(vList[i]));
@@ -3523,7 +4004,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
   VECTOR **table,*theVec;
   MATRIX *theMat,**MatTable;
   BVP *theBVP;
-  BVP_DESC theBVPDesc;
+  BVP_DESC *theBVPDesc;
   INT i,entries,nm;
   HEAP *theHeap;
   INT takeSkip, takeNonSkip;
@@ -3533,7 +4014,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
 
   /* calculate the diameter of the bounding rectangle of the domain */
   theBVP = MG_BVP(theMG);
-  if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (1);
+  theBVPDesc = MG_BVPD(MYMG(theGrid));
   InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / BVPD_RADIUS(theBVPDesc);
 
   /* allocate memory for the node list */
@@ -3702,7 +4183,7 @@ ALG_DEP *CreateAlgebraicDependency (char *name, DependencyProcPtr DependencyProc
    DESCRIPTION:
    This function can be used as a find-cut-procedure for the streamwise ordering
    algorithm. But it just puts `all` the remaining vectors into the new order
-   list instead of removing only as much as neccessary to get rid of cyclic
+   list instead of removing only as much as necessary to get rid of cyclic
    dependencies.
 
    It is used as default when no cut procedure is specified.
@@ -5248,10 +5729,12 @@ INT PrepareForLineorderVectors (GRID *theGrid)
    MarkBeginEndForLineorderVectors - flag begin or end vectors for lineorderv
 
    SYNOPSIS:
-   INT MarkBeginEndForLineorderVectors (ELEMENT *elem, const INT *type, const INT *mark)
+   INT MarkBeginEndForLineorderVectors (ELEMENT *elem, INT dt, INT ot, const INT *mark)
 
    PARAMETERS:
    .  elem - set flag in marked vectors of the element
+   .  dt - data types of vectors needed
+   .  ot - object types of vectors needed
    .  mark - set GM_LOV_BEGIN or GM_LOV_END or no flag
 
    DESCRIPTION:
@@ -5264,12 +5747,13 @@ INT PrepareForLineorderVectors (GRID *theGrid)
    D*/
 /****************************************************************************/
 
-INT MarkBeginEndForLineorderVectors (ELEMENT *elem, const INT *type, const INT *mark)
+INT MarkBeginEndForLineorderVectors (ELEMENT *elem, INT dt, INT ot, const INT *mark)
 {
   VECTOR *vList[MAX_ELEM_VECTORS];
   INT i,cnt;
 
-  GetVectorsOfTypes(elem,type,&cnt,vList);
+  if (GetVectorsOfDataTypesInObjects(elem,dt,ot,&cnt,vList)!=GM_OK)
+    REP_ERR_RETURN (1);
 
   for (i=0; i<cnt; i++)
     switch (mark[i])
@@ -5355,7 +5839,7 @@ static INT LexAlgDep (GRID *theGrid, const char *data)
   INT Sign[DIM],Order[DIM],xused,yused,zused,error,SpecialTreatSkipVecs;
   char ord[3];
   BVP *theBVP;
-  BVP_DESC theBVPDesc;
+  BVP_DESC *theBVPDesc;
 
   /* read ordering directions */
         #ifdef __TWODIM__
@@ -5436,7 +5920,7 @@ static INT LexAlgDep (GRID *theGrid, const char *data)
 
   /* find an approximate measure for the mesh size */
   theBVP = MG_BVP(theMG);
-  if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) RETURN (1);
+  theBVPDesc = MG_BVPD(theMG);
   InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / BVPD_RADIUS(theBVPDesc);
 
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
@@ -5530,7 +6014,7 @@ static INT StrongLexAlgDep (GRID *theGrid, const char *data)
   INT Sign[DIM],Order[DIM],xused,yused,zused,error,SpecialTreatSkipVecs;
   char ord[3];
   BVP *theBVP;
-  BVP_DESC theBVPDesc;
+  BVP_DESC *theBVPDesc;
 
   /* read ordering directions */
         #ifdef __TWODIM__
@@ -5611,7 +6095,7 @@ static INT StrongLexAlgDep (GRID *theGrid, const char *data)
 
   /* find an approximate measure for the mesh size */
   theBVP = MG_BVP(theMG);
-  if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (1);
+  theBVPDesc = MG_BVPD(theMG);
   InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / BVPD_RADIUS(theBVPDesc);
 
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
@@ -6565,7 +7049,7 @@ MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
   /* check expected size */
   theMG = MYMG(theGrid);
   theHeap = theMG->theHeap;
-  ds = theMG->theFormat->IMatrixSizes[MType];
+  ds = FMT_S_IMAT_TP(MGFORMAT(theMG),MType);
   if (ds == 0)
     return (NULL);
   Size = sizeof(MATRIX)-sizeof(DOUBLE)+ds;
@@ -6738,6 +7222,12 @@ INT InitAlgebra (void)
   theFindCutVarID = GetNewEnvVarID();
 
   /* set MatrixType-field */
+  /* example for MAXVECTORS=4
+     0 4 7 9
+     4 1 5 8
+     7 5 2 6
+     9 8 6 3
+   */
   n=0;
   for (i=0; i<MAXVECTORS; i++)
     for (j=0; j<MAXVECTORS-i; j++)
@@ -6759,14 +7249,14 @@ INT InitAlgebra (void)
   /* init default find cut proc */
   if (CreateFindCutProc ("lex",FeedbackVertexVectors)==NULL) return(__LINE__);
 
-  for (i=0; i<MAXVECTORS; i++)
+  for (i=0; i<MAXVOBJECTS; i++)
     switch (i)
     {
-    case NODEVECTOR : VecTypeName[i] = "nd"; break;
-    case EDGEVECTOR : VecTypeName[i] = "ed"; break;
-    case ELEMVECTOR : VecTypeName[i] = "el"; break;
-    case SIDEVECTOR : VecTypeName[i] = "si"; break;
-    default : VecTypeName[i] = "";
+    case NODEVEC : ObjTypeName[i] = "nd"; break;
+    case EDGEVEC : ObjTypeName[i] = "ed"; break;
+    case ELEMVEC : ObjTypeName[i] = "el"; break;
+    case SIDEVEC : ObjTypeName[i] = "si"; break;
+    default : ObjTypeName[i] = "";
     }
 
   return (0);

@@ -39,7 +39,6 @@
 #define __ALGEBRA__
 
 #include "compiler.h"
-#include "switch.h"
 #include "gm.h"
 
 /****************************************************************************/
@@ -78,7 +77,7 @@
 /****************************************************************************/
 
 extern INT MatrixType[MAXVECTORS][MAXVECTORS];
-extern const char *VecTypeName[MAXVECTORS];
+extern const char *ObjTypeName[MAXVOBJECTS];
 
 /****************************************************************************/
 /*																			*/
@@ -110,8 +109,9 @@ extern const char *VecTypeName[MAXVECTORS];
 /****************************************************************************/
 
 /* basic create and dispose functions */
-VECTOR      *CreateVector                   (GRID *theGrid, INT VectorType, GEOM_OBJECT *object);
-VECTOR      *CreateSideVector               (GRID *theGrid, INT side, GEOM_OBJECT *object);
+INT                     CreateVector                                    (GRID *theGrid, INT ObjectType, GEOM_OBJECT *object, VECTOR **vHandle);
+INT             CreateSideVector                (GRID *theGrid, INT side, GEOM_OBJECT *object, VECTOR **vHandle);
+INT                     ReinspectSonSideVector                  (GRID *g, ELEMENT *elem, INT side, VECTOR **vHandle);
 CONNECTION      *CreateConnection                               (GRID *theGrid, VECTOR *from, VECTOR *to);
 INT         CreateElementList               (GRID *theGrid, NODE *theNode, ELEMENT *theElement);
 INT             DisposeVector                                   (GRID *theGrid, VECTOR *theVector);
@@ -135,8 +135,9 @@ INT             GetVectorsOfElement                     (const ELEMENT *theEleme
 INT             GetVectorsOfSides                               (const ELEMENT *theElement, INT *cnt, VECTOR **vList);
 INT             GetVectorsOfEdges                               (const ELEMENT *theElement, INT *cnt, VECTOR **vList);
 INT             GetVectorsOfNodes                               (const ELEMENT *theElement, INT *cnt, VECTOR **vList);
-INT                     GetVectorsOfType                                (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vList);
-INT                     GetVectorsOfTypes                               (const ELEMENT *theElement, const INT *type, INT *cnt, VECTOR **vList);
+INT                     GetVectorsOfOType                               (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vList);
+INT                     DataTypeFilterVList                             (INT dt, VECTOR **vec, INT *cnt);
+INT                     GetVectorsOfDataTypesInObjects  (const ELEMENT *theElement, INT dt, INT obj, INT *cnt, VECTOR **vec);
 INT             GetElementInfoFromSideVector    (const VECTOR *theVector, ELEMENT **Elements, INT *Sides);
 
 /* gridwise functions */
