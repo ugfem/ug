@@ -7,17 +7,12 @@
 /* Purpose:   grid manager header file (the heart of ug)					*/
 /*																			*/
 /* Author:	  Peter Bastian, Klaus Johannsen								*/
-/*			  Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen	*/
-/*			  Universitaet Heidelberg										*/
-/*			  Im Neuenheimer Feld 368										*/
-/*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de					*/
 /*																			*/
 /*			  Institut fuer Computeranwendungen III                                                 */
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de						        */
 /*																			*/
 /*			  blockvector data structure:									*/
 /*			  Christian Wrobel                                                                              */
@@ -25,7 +20,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de					    */
+/*			  email: ug@ica3.uni-stuttgart.de					            */
 /*																			*/
 /* History:   09.03.92 begin, ug version 2.0  (as ugtypes2.h)				*/
 /*			  13.12.94 begin, ug version 3.0								*/
@@ -1032,6 +1027,12 @@ extern CONTROL_ENTRY
 #define VCNB(p)                                         CW_READ(p,VCNB_CE)
 #define SETVCNB(p,n)                            CW_WRITE(p,VCNB_CE,n)
 
+#define VCCUT_CE                                        68
+#define VCCUT_SHIFT                             26
+#define VCCUT_LEN                                       1
+#define VCCUT(p)                                        CW_READ(p,VCCUT_CE)
+#define SETVCCUT(p,n)                           CW_WRITE(p,VCCUT_CE,n)
+
 #define VOBJECT(v)                                      ((v)->object)
 #define PREDVC(v)                                       ((v)->pred)
 #define SUCCVC(v)                                       ((v)->succ)
@@ -1210,6 +1211,14 @@ extern CONTROL_ENTRY
 #define BVDOWNVECTOR(bv)                                ((bv)->first_vec)
 #define BVDOWNBV(bv)                                    ((bv)->first_son)
 #define BVDOWNBVEND(bv)                                 ((bv)->last_son)
+
+#define BV_GEN_F                                                0
+#define BV_GEN_L                                                1
+#define BV_GEN_C                                                2
+#define SETBV_GC(bv,flc,cyc)                    (BVNUMBER(bv)=3*(cyc)+(flc))
+#define BV_IS_GC(bv,gen,cyc)                    (BVNUMBER(bv)%3==(gen) && BVNUMBER(bv)/3==(cyc))
+#define BV_GEN(bv)                                              (BVNUMBER(bv)%3)                        /* gen.: FLC    */
+#define BV_CYC(bv)                                              (BVNUMBER(bv)/3)                        /* nb. of cycle */
 
 /* operations on struct block */
 #define BV_IS_LEAF_BV(bv)                               (BVDOWNTYPE(bv)==BVDOWNTYPEVECTOR)
@@ -1839,6 +1848,11 @@ extern const BV_DESC_FORMAT one_level_bvdf;     /* bvdf for only 1 blocklevel	*/
 #define GM_COPY_ALL                             3
 #define GM_FCFCLL                                       1
 #define GM_FFCCLL                                       2
+#define GM_FFLLCC                                       3
+#define GM_FFLCLC                                       4
+#define GM_GEN_FIRST                            0
+#define GM_GEN_LAST                                     1
+#define GM_GEN_CUT                                      2
 #define GM_ALL_LEVELS                           1
 #define GM_CURRENT_LEVEL                        2
 #define GM_ORDER_IN_COLS                        0

@@ -96,6 +96,8 @@
 /* macros for 2D matrix-vector operations */
 #define M2_TIMES_V2(M,A,B)			   {(B)[0] = (M)[0]*(A)[0] + (M)[2]*(A)[1];\
 										(B)[1] = (M)[1]*(A)[0] + (M)[3]*(A)[1];}
+#define MM2_TIMES_V2(M,A,B)			   {(B)[0] = (M)[0][0]*(A)[0] + (M)[0][1]*(A)[1];\
+										(B)[1] = (M)[1][0]*(A)[0] + (M)[1][1]*(A)[1];}
 
 /* macros for matrix operations */
 #define M2_SCALE(c,M)				   {(M)[0] = (c)*(M)[0];\
@@ -146,6 +148,9 @@
 #define M3_TIMES_V3(M,A,B)			   {(B)[0] = (M)[0]*(A)[0] + (M)[3]*(A)[1] + (M)[6]*(A)[2];\
 										(B)[1] = (M)[1]*(A)[0] + (M)[4]*(A)[1] + (M)[7]*(A)[2];\
 										(B)[2] = (M)[2]*(A)[0] + (M)[5]*(A)[1] + (M)[8]*(A)[2];}
+#define MM3_TIMES_V3(M,A,B)			   {(B)[0] = (M)[0][0]*(A)[0] + (M)[0][1]*(A)[1] + (M)[0][2]*(A)[2];\
+										(B)[1] = (M)[1][0]*(A)[0] + (M)[1][1]*(A)[1] + (M)[1][2]*(A)[2];\
+										(B)[2] = (M)[2][0]*(A)[0] + (M)[2][1]*(A)[1] + (M)[2][2]*(A)[2];}
 
 /* macros for matrix operations */
 #define M3_SCALE(c,M)				   {(M)[0] = (c)*(M)[0];\
@@ -229,6 +234,7 @@
 #define V_DIM_SCALAR_PRODUCT(A,B,c)		V2_SCALAR_PRODUCT(A,B,c)
 #define V_DIM_ISZERO(A)				V2_ISZERO(A)
 #define M_TIMES_V_DIM(M,A,B)	             	M2_TIMES_V2(M,A,B)
+#define MM_TIMES_V_DIM(M,A,B)	             	MM2_TIMES_V2(M,A,B)
 #define M_DIM_ADD(A,B,C)			M2_ADD(A,B,C)
 #define M_DIM_COPY(A,C)				M2_COPY(A,C)
 #define M_DIM_SCALE(c,M)			M2_SCALE(c,M)
@@ -252,6 +258,7 @@
 #define V_DIM_SCALAR_PRODUCT(A,B,c)		V3_SCALAR_PRODUCT(A,B,c)
 #define V_DIM_ISZERO(A)				V3_ISZERO(A)
 #define M_TIMES_V_DIM(M,A,B)			M3_TIMES_V3(M,A,B)
+#define MM_TIMES_V_DIM(M,A,B)			MM3_TIMES_V3(M,A,B)
 #define M_DIM_ADD(A,B,C) 		   	M3_ADDMATRIX(A,B,C)
 #define M_DIM_COPY(A,C)				M3_COPY(A,C)
 #define M_DIM_SCALE(c,M)			M3_SCALE(c,M)
