@@ -983,7 +983,11 @@ static INT SetCommand (INT argc, char **argv)
     return(__LINE__);
   }
 
-  res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %16384[\t\n -~]")),name,buffer);
+  /* if there are problems with expandfmt print format string !
+          printf("SetCommand(): formatstring=%s\n",
+                  expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %16384[]\t\n -~]")));
+   */
+  res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %16384[]\t\n -~]")),name,buffer);
         #else
   res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %255[ -~]")),name,buffer);
         #endif /* ModelP */
