@@ -12,11 +12,13 @@ then
 	exit 1;
 fi
 
-DEFAULT=stefan,klaus,birken,henrik,peter,wieners,christia,niko,ug,df
+DEFAULT=ug
+DEFAULT_CORE=birken,wieners,stefan,klaus,peter,henrik,ug,volker
 ERRORFILE=$UGROOT/bin/cvsaccess
-UG=`dirname $UGROOT`
+#UG=`dirname $UGROOT`
+UG=$UGROOT
 
-cd $UGROOT/../..
+cd $UGROOT/..
 rm -f $ERRORFILE;
 
 # clear access lists 
@@ -27,29 +29,53 @@ cvs admin -e `basename $UG` 2>> $ERRORFILE;
 echo "cvs admin -a$DEFAULT `basename $UG` ...";
 cvs admin -a$DEFAULT `basename $UG` 2>> $ERRORFILE;
 
+
 # set special access lists
-echo "setting special access lists ...";
-cd $UGROOT/..;
-cvs admin -agabi cd 2>> $ERRORFILE;
-
 cd $UGROOT;
-cvs admin -agabi gm 2>> $ERRORFILE;
-
-cd $UGROOT;
-cvs admin -agabi numerics 2>> $ERRORFILE;
-
-cd $UGROOT;
-cvs admin -aniko np 2>> $ERRORFILE;
+cvs admin -a$DEFAULT_CORE arch 2>> $ERRORFILE;
 
 cd $UGROOT;
 cvs admin -e bin 2>> $ERRORFILE;
-cvs admin -abirken,wieners,stefan,peter,henrik,ug bin 2>> $ERRORFILE;
+cvs admin -a$DEFAULT_CORE bin 2>> $ERRORFILE;
+
+cd $UGROOT;
+cvs admin -e dev 2>> $ERRORFILE;
+cvs admin -a$DEFAULT_CORE dev 2>> $ERRORFILE;
+
+cd $UGROOT;
+cvs admin -a$DEFAULT_CORE dom 2>> $ERRORFILE;
+cd dom;
+cvs admin -e std 2>> $ERRORFILE;
+cvs admin -awieners,peter std 2>> $ERRORFILE;
+cvs admin -e lgm 2>> $ERRORFILE;
+cvs admin -aklaus,stefan,ug,christop lgm 2>> $ERRORFILE;
+cvs admin -adirk lgm/ansys* 2>> $ERRORFILE;
+
+
+cd $UGROOT;
+cvs admin -awieners,stefan,klaus gm 2>> $ERRORFILE;
+cvs admin -achristop gm/gg3 2>> $ERRORFILE;
+
+cd $UGROOT;
+cvs admin -a$DEFAULT_CORE graphics 2>> $ERRORFILE;
+
+cd $UGROOT;
+cvs admin -a$DEFAULT_CORE low 2>> $ERRORFILE;
+
+cd $UGROOT;
+cvs admin -awieners,peter,klaus np 2>> $ERRORFILE;
 
 cd $UGROOT;
 cvs admin -e parallel 2>> $ERRORFILE;
 cvs admin -abirken,stefan,ug parallel 2>> $ERRORFILE;
-cd $UGROOT/parallel
-cvs admin -awieners dddif 2>> $ERRORFILE;
+cd parallel;
+cvs admin -abirken,ug ddd dddobj 2>> $ERRORFILE;
+cvs admin -astefan,ug chaco 2>> $ERRORFILE;
+cvs admin -abirken,stefan,ug ppif 2>> $ERRORFILE;
+cvs admin -abirken,stefan,ug,wieners dddif 2>> $ERRORFILE;
+
+cd $UGROOT;
+cvs admin -a$DEFAULT_CORE ui 2>> $ERRORFILE;
 
 if test `grep failed $ERRORFILE | wc -l` -ge 1
 then 
