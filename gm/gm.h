@@ -213,6 +213,7 @@ struct format {
   INT NeighborhoodDepth;                   /* geometrical depth corresponding		 */
   /* algebraic con with depth 1			 */
   INT elementdata;
+  INT nodeelementlist;
   INT nodedata;
   ConversionProcPtr PrintVertex;       /* print user data to string	             */
   ConversionProcPtr PrintGrid;
@@ -1505,7 +1506,7 @@ extern CONTROL_ENTRY
 #define NDIAG(p)        (p)->matelem
 #define NVECTOR(p)      (p)->vector
 
-#define NODE_ELEMENT_LIST(p)    ((elementlist *)(p)->data)
+#define NODE_ELEMENT_LIST(p)    ((ELEMENTLIST *)(p)->data)
 #define ELEMENT_PTR(p)                  ((p)->el)
 
 /****************************************************************************/
@@ -1781,6 +1782,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define SET_BNDS(p,i,q)         (p)->ge.refs[side_offset[TAG(p)]+(i)] = q
 #define SET_EVECTOR(p,q)        (p)->ge.refs[evector_offset[TAG(p)]] = q
 #define SET_SVECTOR(p,i,q)      (p)->ge.refs[svector_offset[TAG(p)]+(i)] = q
+#define SET_EDATA(p,q)      (p)->ge.refs[data_offset[TAG(p)]] = q
 
 #define SideBndCond(t,side,l,v,type)  BNDS_BndCond(ELEM_BNDS(t,side),l,NULL,v,type)
 #define Vertex_BndCond(p,w,i,v,t)     BNDP_BndCond(V_BNDP(p),w,i,NULL,v,t)
@@ -1966,6 +1968,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define NVEC(p)                         ((p)->nVector)
 #define NC(p)                           ((p)->nCon)
 #define TYPE_DEF_IN_GRID(p,tp) ((p)->mg->theFormat->VectorSizes[(tp)]>0)
+#define NELIST_DEF_IN_GRID(p)  ((p)->mg->theFormat->nodeelementlist)
 #define EDATA_DEF_IN_GRID(p)   ((p)->mg->theFormat->elementdata)
 #define NDATA_DEF_IN_GRID(p)   ((p)->mg->theFormat->nodedata)
 
@@ -2002,6 +2005,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define GEN_MGUD(p)                     ((p)->GenData)
 #define GEN_MGUD_ADR(p,o)               ((void *)(((char *)((p)->GenData))+(o)))
 #define TYPE_DEF_IN_MG(p,tp)    ((p)->theFormat->VectorSizes[(tp)]>0)
+#define NELIST_DEF_IN_MG(p)     ((p)->theFormat->nodeelementlist)
 #define EDATA_DEF_IN_MG(p)      ((p)->theFormat->elementdata)
 #define NDATA_DEF_IN_MG(p)      ((p)->theFormat->nodedata)
 

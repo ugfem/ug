@@ -932,6 +932,21 @@ CONNECTION      *CreateExtraConnection  (GRID *theGrid, VECTOR *from, VECTOR *to
   return(pc);
 }
 
+static INT CreateElementList (GRID *theGrid, NODE *theNode, ELEMENT *theElement)
+{
+  ELEMENTLIST *pel;
+
+  pel = (ELEMENTLIST *)GetMemoryForObject(theGrid->mg,sizeof(ELEMENTLIST),-1);
+  if (pel == NULL)
+    return(1);
+
+  pel->next = NODE_ELEMENT_LIST(theNode);
+  pel->el = theElement;
+  NDATA(theNode) = (void *) pel;
+
+  return(0);
+}
+
 /****************************************************************************/
 /*D
    DisposeVector - Remove vector from the data structure
@@ -1403,6 +1418,20 @@ INT DisposeConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
   return(DisposeConnectionFromElementInNeighborhood(theGrid,theElement,Depth));
 }
 
+INT     DisposeElementList (GRID *theGrid, NODE *theNode)
+{
+  ELEMENTLIST *pel,*next;
+
+  pel = NODE_ELEMENT_LIST(theNode);
+  while (pel != NULL) {
+    next = pel->next;
+    if (PutFreeObject(theGrid->mg,pel,sizeof(ELEMENTLIST),-1))
+      return(1);
+    pel = next;
+  }
+
+  return(0);
+}
 
 /****************************************************************************/
 /*D
@@ -1882,6 +1911,11 @@ static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0, ELEMEN
             if (CreateConnection(theGrid,vec0[i],vec0[j])==NULL)
               RETURN(GM_ERROR);
       }
+    if (NELIST_DEF_IN_GRID(theGrid))
+      for (i=0; i<CORNERS_OF_ELEM(Elem0); i++)
+        if (CreateElementList(theGrid,CORNER(Elem0,i),Elem0))
+          RETURN(GM_ERROR);
+
     return (0);
   }
 

@@ -440,6 +440,7 @@ static NODE *CreateNode (GRID *theGrid)
   size = sizeof(NODE);
   if (!TYPE_DEF_IN_GRID(theGrid,NODEVECTOR)) size -= sizeof(VECTOR *);
   if (NDATA_DEF_IN_GRID(theGrid)) size += sizeof(void *);
+  if (NELIST_DEF_IN_GRID(theGrid)) size += sizeof(void *);
 
   pn = GetMemoryForObject(MYMG(theGrid),size,NDOBJ);
   if (pn==NULL) return(NULL);
@@ -454,6 +455,15 @@ static NODE *CreateNode (GRID *theGrid)
     NVECTOR(pn) = pv;
   }
 
+  if (NDATA_DEF_IN_GRID(theGrid)) {
+    NDATA(pn) = (void *) GetMemoryForObject(theGrid->mg,
+                                            NDATA_DEF_IN_GRID(theGrid),-1);
+    if (NDATA(pn) == NULL) {
+      DisposeNode (theGrid,pn);
+      return (NULL);
+    }
+  }
+
   /* initialize data */
   SETOBJT(pn,NDOBJ);
   SETCLASS(pn,4);
@@ -465,6 +475,8 @@ static NODE *CreateNode (GRID *theGrid)
   ID(pn) = (theGrid->mg->nodeIdCounter)++;
   START(pn) = NULL;
   SONNODE(pn) = NULL;
+  if (NELIST_DEF_IN_GRID(theGrid)) NDATA(pn) = NULL;
+
   theGrid->status |= 1;          /* recalculate stiffness matrix */
 
   /* insert in vertex list */
@@ -1012,6 +1024,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   ELEMENT *pe;
   INT i;
   VECTOR *pv;
+  void *q;
 
   if (objtype == IEOBJ)
     pe = GetMemoryForObject(MYMG(theGrid),INNER_SIZE_TAG(tag),
@@ -1058,6 +1071,15 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
       return (NULL);
     }
     SET_EVECTOR(pe,pv);
+  }
+
+  if (EDATA_DEF_IN_GRID(theGrid)) {
+    q = (void *) GetMemoryForObject(theGrid->mg,EDATA_DEF_IN_GRID(theGrid),-1);
+    if (q == NULL) {
+      DisposeElement (theGrid,pe,TRUE);
+      return (NULL);
+    }
+    SET_EDATA(pe,q);
   }
 
   /* create side vectors if */
@@ -1636,7 +1658,14 @@ static INT DisposeNode (GRID *theGrid, NODE *theNode)
 
   /* dispose vector and its matrices from node-vector */
   size = sizeof(NODE);
-  if (NDATA_DEF_IN_GRID(theGrid)) size += sizeof(void *);
+  if (NDATA_DEF_IN_GRID(theGrid)) {
+    size += sizeof(void *);
+    PutFreeObject(theGrid->mg,NDATA(theNode),NDATA_DEF_IN_GRID(theGrid),-1);
+  }
+  if (NELIST_DEF_IN_GRID(theGrid)) {
+    DisposeElementList(theGrid,theNode);
+    size += sizeof(void *);
+  }
   if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
   {
     if (DisposeVector (theGrid,NVECTOR(theNode)))
@@ -1835,6 +1864,10 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
   if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
     if (DisposeVector (theGrid,EVECTOR(theElement)))
       RETURN(1);
+
+  if (EDATA_DEF_IN_GRID(theGrid))
+    PutFreeObject(theGrid->mg,EDATA(theElement),
+                  EDATA_DEF_IN_GRID(theGrid),-1);
 
   /* dispose element */
   /* give it a new tag ! (I know this is somewhat ugly) */

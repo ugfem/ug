@@ -38,17 +38,9 @@
 #ifndef __ALGEBRA__
 #define __ALGEBRA__
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
-
-#ifndef __SWITCH__
 #include "switch.h"
-#endif
-
-#ifndef __GM__
 #include "gm.h"
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -119,6 +111,7 @@ INT             DisposeConnectionsInNeighborhood(GRID *theGrid, ELEMENT *theElem
 #ifdef __THREEDIM__
 INT             DisposeDoubledSideVector                (GRID *theGrid, ELEMENT *Elem0, INT Side0, ELEMENT *Elem1, INT Side1);
 #endif
+INT             DisposeElementList(GRID *theGrid, NODE *theNode);
 
 /* query functions */
 INT             GetVectorsOfElement                     (const ELEMENT *theElement, INT *cnt, VECTOR **vList);
