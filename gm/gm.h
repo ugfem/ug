@@ -974,15 +974,33 @@ extern CONTROL_ENTRY
 
 /* dynamic control words */
 #define ControlWord(p,ce)  (((unsigned INT *)(p))[control_entries[ce].offset_in_object])
+
+#ifndef __T3E__
 #define CW_READ(p,ce)      ((ControlWord(p,ce) & control_entries[ce].mask)>>control_entries[ce].offset_in_word)
+#endif
+
+/* very special hack */
+#ifdef __T3E__
+#define CW_READ(p,ce)      ((int)((ControlWord(p,ce) & control_entries[ce].mask)>>control_entries[ce].offset_in_word) )
+#endif
+
 #define CW_WRITE(p,ce,n)   ControlWord(p,ce) = (ControlWord(p,ce)&control_entries[ce].xor_mask)|(((n)<<control_entries[ce].offset_in_word)&control_entries[ce].mask)
 
 /* static control words */
 #define StaticControlWord(p,t)            (((unsigned INT *)(p))[t ## OFFSET])
 #define StaticControlWordMask(s)          ((POW2(s ## LEN) - 1) << s ## SHIFT)
 
+#ifndef __T3E__
 #define CW_READ_STATIC(p,s,t)                                                \
   ((StaticControlWord(p,t) &  StaticControlWordMask(s)) >> s ## SHIFT)
+#endif
+
+/* very special hack */
+#ifdef __T3E__
+#define CW_READ_STATIC(p,s,t)                                                \
+  ((int)     ((StaticControlWord(p,t) &  StaticControlWordMask(s)) >> s ## SHIFT))
+#endif
+
 #define CW_WRITE_STATIC(p,s,t,n)                                             \
   StaticControlWord(p,t) =                                           \
     (StaticControlWord(p,t) &  (~StaticControlWordMask(s))) |          \
