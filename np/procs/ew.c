@@ -98,6 +98,7 @@ typedef struct
   INT assemble;
   INT interpolate;
   INT reset;
+  INT idefect;
 
   VEC_SCALAR damp;
 
@@ -105,6 +106,8 @@ typedef struct
   VECDATA_DESC *t;
   VECDATA_DESC *q;
   MATDATA_DESC *M;
+
+  VECDATA_DESC *e[MAX_NUMBER_EW];            /* eigenvectors                    */
 
 } NP_EW;
 
@@ -366,27 +369,29 @@ INT NPEWSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 /* tools for eingenvalue computations */
 
 static INT SetUnsymmetric (MULTIGRID *mg, INT fl, INT tl,
-                           const VECDATA_DESC *x, INT xclass)
+                           const VECDATA_DESC *x, INT xclass, INT index)
 {
-  register VECTOR *v;
-  register SHORT i;
-  register SHORT ncomp;
-  register INT vtype;
+  SHORT i;
+  INT vtype;
   INT lev;
 
   for (lev=fl; lev<=tl; lev++)
     l_setindex(GRID_ON_LEVEL(mg,lev));
-
+  index *= 10;
   for (vtype=0; vtype<NVECTYPES; vtype++)
-    if (VD_ISDEF_IN_TYPE(x,vtype)) {
-      ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-      A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-      for (i=0; i<ncomp; i++)
-        VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) =
-          VINDEX(v) + i * 0.3 + 0.1;
-    }
+    if (VD_ISDEF_IN_TYPE(x,vtype))
+    {
+      SHORT ncomp = VD_NCMPS_IN_TYPE(x,vtype);
+      VECTOR *v;
 
-    #ifdef ModelP
+      A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass) {
+        for (i=0; i<ncomp; i++) {
+          VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) =
+            VINDEX(v) + i * 0.3 + 0.1 + index;
+        }
+      }
+    }
+        #ifdef ModelP
   if (a_vector_consistent(mg,fl,tl,x))
     return(NUM_ERROR);
     #endif
@@ -589,7 +594,7 @@ static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
       return(1);
   if (np->reset)
     for (i=0; i<nev; i++)
-      if (SetUnsymmetric(theNP->base.mg,bl,level,ev[i],EVERY_CLASS))
+      if (SetUnsymmetric(theNP->base.mg,bl,level,ev[i],EVERY_CLASS,i))
         NP_RETURN(1,result[0]);
   np->reset = 0;
   if (np->interpolate) {
@@ -634,12 +639,12 @@ static INT Rayleigh (NP_EW_SOLVER *theNP, INT level,
   if (np->r == NULL) NP_RETURN(1,result[0]);
   if (np->t == NULL) NP_RETURN(1,result[0]);
   if ((*Assemble->NLAssembleDefect)(Assemble,0,level,ev,np->r,np->M,result))
-    return(1);
+    NP_RETURN(1,result[0]);
 
-        #ifdef ModelP
+    #ifdef ModelP
   if (a_vector_collect(theNP->base.mg,0,level,np->r))
-    return(1);
-        #endif
+    NP_RETURN(1,result[0]);
+    #endif
 
   IFDEBUG(np,5)
   UserWriteF("r\n");
@@ -693,7 +698,7 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
     if (dset(theMG,bl,level,ON_SURFACE,ev[0],1.0))
       NP_RETURN(1,ewresult->error_code);
     if (np->Neumann == 2)
-      SetUnsymmetric(theMG,bl,level,ev[0],EVERY_CLASS);
+      SetUnsymmetric(theMG,bl,level,ev[0],EVERY_CLASS,0);
     if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,ev[0],np->r,np->M,
                                       &ewresult->error_code))
       return(1);
@@ -999,6 +1004,8 @@ static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
       np->damp[i] = 1.0;
   if (ReadArgvINT("m",&(np->maxiter),argc,argv))
     return(NP_NOT_ACTIVE);
+  if (ReadArgvINT("idefect",&(np->idefect),argc,argv))
+    np->idefect = 0;
   np->display = ReadArgvDisplay(argc,argv);
   np->baselevel = 0;
   if (ReadArgvOption("O",argc,argv))
@@ -1035,6 +1042,7 @@ static INT EWDisplay (NP_BASE *theNP)
   NPEWSolverDisplay(&np->ew);
 
   UserWriteF(DISPLAY_NP_FORMAT_SI,"m",(int)np->maxiter);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"idefect",(int)np->idefect);
   if (np->LS != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"L",ENVITEM_NAME(np->LS));
   else
@@ -1142,6 +1150,404 @@ static INT EWConstruct (NP_BASE *theNP)
   return(0);
 }
 
+static INT SmallEWSolver(INT nev, DOUBLE G[MAX_NUMBER_EW][MAX_NUMBER_EW],
+                         DOUBLE *alpha, DOUBLE E[MAX_NUMBER_EW][MAX_NUMBER_EW])
+
+{
+  DOUBLE beta[MAX_NUMBER_EW];
+  DOUBLE w, s, c, h, d, x, y, z, sigma;
+  INT i,j,k,m;
+  INT l,iter2,p,ii, sym=1, debug=0;
+  DOUBLE temp1, temp2;
+
+  /* Givens rotation */
+  for (j=0; j<nev-2; j++)
+    for (i=j+2; i<nev; i++) {
+      if (G[i][j] != 0.0) {
+        if (ABS(G[j+1][j]) < VERY_SMALL * ABS(G[i][j])) {
+          w = - G[i][j];
+          c = 0.0;
+          s = 1;
+        }
+        else {
+          w = SIGNUM(G[j+1][j])
+              * sqrt( G[j+1][j]*G[j+1][j] + G[i][j]*G[i][j] );
+          c = G[j+1][j] / w;
+          s = - G[i][j] / w;
+        }
+        G[j+1][j] = w;
+        if (s == 1.0) G[i][j] = 1.0;
+        else if ( ABS(s) < c ) G[i][j] = s;
+        else G[i][j] = SIGNUM(s)/c;
+        if (sym) {
+          d = G[j+1][j+1] - G[i][i];
+          z = (d * s + 2 * c * G[i][j+1]) * s;
+          G[i][j+1] = d * c * s + G[i][j+1] * (c*c - s*s);
+          G[j+1][j+1] -= z;
+          G[i][i] += z;
+          for (k=j+2; k<=i-1; k++) {
+            h = c * G[k][j+1] - s * G[i][k];
+            G[i][k] = s * G[k][j+1] + c * G[i][k];
+            G[k][j+1] = h;
+          }
+          for (k=i+1; k<nev; k++) {
+            h = c * G[k][j+1] - s * G[k][i];
+            G[k][i] = s * G[k][j+1] + c * G[k][i];
+            G[k][j+1] = h;
+          }
+        }
+        else {
+          for (k=j+1; k<nev; k++) {
+            h = c * G[j+1][k] - s * G[i][k];
+            G[i][k] = s * G[j+1][k] + c * G[i][k];
+            G[j+1][k] = h;
+          }
+          for (k=0; k<nev; k++) {
+            h = c * G[k][j+1] - s * G[k][i];
+            G[k][i] = s * G[k][j+1] + c * G[k][i];
+            G[k][j+1] = h;
+          }
+        }
+      }
+    }
+  if (sym)
+    for (i=0; i<nev; i++)
+      for (j=i+1; j<nev; j++)
+        G[i][j] = G[j][i];
+
+  /* QR-decomposition */
+
+  for (i=0; i<nev; i++)
+    for (j=0; j<nev; j++)
+      E[i][j] = (i==j);
+
+  if (sym) {
+    for (i=0; i<nev; i++) {
+      alpha[i] = G[i][i];
+      if (i>0) beta[i-1] = G[i][i-1];
+    }
+    for (m=nev; m>1; m--) {
+      for (iter2=1; iter2<=5; iter2++) {
+        if ( ABS(beta[m-2]) < VERY_SMALL
+             * ( ( (temp1=ABS(alpha[m-2])) <
+                   (temp2=ABS(alpha[m-1])) ) ? temp1 : temp2 ) ) {
+          break;
+        }
+        d = 0.5 * (alpha[m-2]-alpha[m-1]);
+        sigma = alpha[m-1] + d - SIGNUM(d)
+                * sqrt(d*d + beta[m-2]*beta[m-2]);
+        x = alpha[0]-sigma;
+        y = beta[0];
+        for (p=0; p<m-1; p++) {
+          if (ABS(x) < VERY_SMALL * ABS(y)) {
+            w = -y;
+            c = 0;
+            s = 1;
+          }
+          else {
+            w = sqrt(x*x + y*y);
+            c = x/w;
+            s = -y/w;
+          }
+          d = alpha[p] - alpha[p+1];
+          z = (2 * c * beta[p] + d * s) * s;
+          alpha[p] -= z;
+          alpha[p+1] += z;
+          beta[p] = d * c * s + (c*c - s*s) * beta[p];
+          for (ii=0; ii<nev; ii++) {
+            temp1 = E[ii][p]; temp2 = E[ii][p+1];
+            E[ii][p] = temp1 * c - temp2 * s;
+            E[ii][p+1] = temp1 * s + temp2 * c;
+          }
+          x = beta[p];
+          if (p>0) beta[p-1] = w;
+          if (p<m-2) {
+            y = -s * beta[p+1];
+            beta[p+1] *= c;
+          }
+        }
+      }
+    }
+  }
+
+  for (j=nev-2; j>=0; j--)
+    for (i=nev-1; i>j+1; i--) {
+      if (G[i][j]==1.0) {
+        s = 1.0;
+        c = 0.0;
+      }
+      else if (ABS(G[i][j]) < 0.70710678118655) {
+        s = G[i][j];
+        c = sqrt(1 - s*s);
+      }
+      else {
+        c = 1 / ABS(G[i][j]);
+        s = SIGNUM(G[i][j]) * sqrt(1-c*c);
+      }
+      for (ii=0; ii<nev; ii++) {
+        temp1 = E[j+1][ii]; temp2 = E[i][ii];
+        E[j+1][ii] = temp1 * c + temp2 * s;
+        E[i][ii] = - temp1 * s + temp2 * c;
+      }
+    }
+
+  return(0);
+}
+
+/* Comparison-Function for qsort in EWSolver1 */
+
+static int EWCompare (DOUBLE **index1, DOUBLE **index2)
+{
+  if (**index1>**index2)
+    return (1);
+  else if (**index1<**index2)
+    return (-1);
+  else return (0);
+}
+
+static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT new,
+                      VECDATA_DESC **ev, DOUBLE *ew, NP_NL_ASSEMBLE *Assemble,
+                      VEC_SCALAR abslimit, VEC_SCALAR reduction,
+                      EWRESULT *ewresult)
+{
+  NP_EW     *np    = (NP_EW *) theNP;
+  MULTIGRID *theMG = theNP->base.mg;
+  INT i,j,k,l,PrintID,iter;
+  char text[DISPLAY_WIDTH+4];
+  VEC_SCALAR defect, defect2reach;
+  DOUBLE a[2],rq,s;
+  DOUBLE A[MAX_NUMBER_EW*MAX_NUMBER_EW];
+  DOUBLE B[MAX_NUMBER_EW*MAX_NUMBER_EW];
+  DOUBLE L[MAX_NUMBER_EW*MAX_NUMBER_EW];
+  DOUBLE G[MAX_NUMBER_EW][MAX_NUMBER_EW];
+  DOUBLE E[MAX_NUMBER_EW][MAX_NUMBER_EW];
+  DOUBLE* table[MAX_NUMBER_EW];       /* for qsort */
+  INT index[MAX_NUMBER_EW];
+  INT bl = 0;
+
+  if (Assemble->NLAssembleDefect == NULL)
+    NP_RETURN(1,ewresult->error_code);
+  ewresult->error_code = 0;
+  CenterInPattern(text,DISPLAY_WIDTH,
+                  " inverse block iteration ",'%',"\n");
+  for (i=0; i<new; i++) {
+    if (Rayleigh(theNP,level,ev[i],Assemble,a,&ew[i],
+                 &ewresult->error_code))
+      NP_RETURN(1,ewresult->error_code);
+    if (np->display == PCR_FULL_DISPLAY)
+      UserWriteF("Rayleigh quotient (ew%d) %lf\n", i, ew[i]);
+    if (i==np->idefect) {
+      if (PreparePCR(np->r,np->display,text,&PrintID))
+        NP_RETURN(1,ewresult->error_code);
+      if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
+                                        ev[np->idefect],np->t,
+                                        np->M,&ewresult->error_code))
+        NP_RETURN(1,ewresult->error_code);
+      if (RayleighDefect(theMG,np->r,np->t,rq,defect))
+        NP_RETURN(1,ewresult->error_code);
+      if (sc_mul(defect2reach,defect,reduction,np->t))
+        NP_RETURN(1,ewresult->error_code);
+      if (DoPCR(PrintID,defect,PCR_CRATE))
+        NP_RETURN(1,ewresult->error_code);
+    }
+  }
+  for (iter=0; iter<np->maxiter; iter++)
+  {
+    if (sc_cmp(defect,defect2reach,np->t))
+      break;
+    if (sc_cmp(defect,abslimit,np->t))
+      break;
+    if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t))
+      NP_RETURN(1,ewresult->error_code);
+    for (i=0; i<new; i++) {
+      if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
+                                        ev[i],np->t,
+                                        np->M,&ewresult->error_code))
+        NP_RETURN(1,ewresult->error_code);
+      if ((*np->LS->Defect)(np->LS,level,ev[i],np->t,np->M,
+                            &ewresult->error_code))
+        NP_RETURN(1,ewresult->error_code);
+      if ((*np->LS->Residuum)(np->LS,0,level,ev[i],np->t,np->M,
+                              &ewresult->lresult[i]))
+        NP_RETURN(1,ewresult->error_code);
+      if ((*np->LS->Solver)(np->LS,level,ev[i],np->t,np->M,
+                            abslimit,reduction,
+                            &ewresult->lresult[i]))
+        NP_RETURN(1,ewresult->error_code);
+      if (np->Project != NULL)
+        if (np->Project->Project(np->Project,bl,level,
+                                 ev[i],&ewresult->error_code)
+            != NUM_OK)
+          NP_RETURN(1,ewresult->error_code);
+    }
+    for (i=0; i<new; i++) {
+      if (dmatmul (theMG,0,level,ON_SURFACE,np->t,np->M,ev[i]) != NUM_OK)
+        NP_RETURN(1,ewresult->error_code);
+      if (ddot(theMG,0,level,ON_SURFACE,np->t,ev[i],&A[i*new+i]))
+        NP_RETURN(1,ewresult->error_code);
+      if (dscal(theMG,0,level,ALL_VECTORS,ev[i],1/sqrt(A[i*new+i]))
+          != NUM_OK)
+        NP_RETURN(1,ewresult->error_code);
+    }
+    if (dscal(theMG,0,level,ALL_VECTORS,np->r,1/sqrt(A[0])) != NUM_OK)
+      NP_RETURN(1,ewresult->error_code);
+    for (i=0; i<new; i++)
+    {
+      if (dmatmul (theMG,0,level,ON_SURFACE,np->t,np->M,ev[i]) != NUM_OK)
+        NP_RETURN(1,ewresult->error_code);
+      for (j=0; j<=i; j++)
+        if (ddot(theMG,0,level,ON_SURFACE,np->t,ev[j],&A[i*new+j]))
+          NP_RETURN(1,ewresult->error_code);
+    }
+    for (i=0; i<new; i++) {
+      if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
+                                        ev[i],np->t,
+                                        np->M,&ewresult->error_code))
+        NP_RETURN(1,ewresult->error_code);
+      for (j=0; j<=i; j++)
+        if (ddot(theMG,0,level,ON_SURFACE,np->t,ev[j],&B[i*new+j]))
+          NP_RETURN(1,ewresult->error_code);
+    }
+    if (FreeVD(theMG,bl,level,np->t))
+      NP_RETURN(1,ewresult->error_code);
+    for (i=0; i<new; i++)
+      for (j=0; j<i; j++) {
+        A[j*new+i] = A[i*new+j];
+        B[j*new+i] = B[i*new+j];
+      }
+    for (i=0; i<new; i++)
+      for (j=0; j<i; j++)
+        E[i][j] = E[j][i] = 0.0;
+    for (i=0; i<new; i++)
+      E[i][i] = 1.0;
+    if (Choleskydecomposition(new,B,L))
+      NP_RETURN(1,ewresult->error_code);
+
+    /* Inverse of L */
+    for (i=1; i<new; i++) {
+      for (j=0; j<i; j++)
+      {
+        DOUBLE sum = L[i*new+j] * L[j*new+j];
+
+        for (k=j+1; k<i; k++)
+          sum += L[i*new+k] * L[k*new+j];
+        L[i*new+j] = - sum * L[i*new+i];
+      }
+    }
+
+    /* Left hand side for special Eigenvalue problem */
+    for (i=0; i<new; i++) {
+      for (j=0; j<=i; j++)
+      {
+        DOUBLE sum = 0.0;
+
+        for (k=0; k<=i; k++)
+          for (l=0; l<=j; l++)
+            sum += L[i*new+k] * A[k*new+l] * L[j*new+l];
+        G[i][j] = G[j][i]  = sum;
+      }
+    }
+
+    /* Special Eigenvalue problem  G E_i = lambda E_i */
+
+    SmallEWSolver(new,G,ew,E);
+
+    /* transform back the Eigenvectors */
+    for (i=0; i<new; i++) {
+      for (j=0; j<new; j++)
+      {
+        DOUBLE sum = L[i*new+i]*E[i][j];
+
+        for (k=i+1; k<new; k++)
+          sum += L[k*new+i]*E[k][j];
+        E[i][j]= sum;
+      }
+    }
+
+    for (i=0; i<new; i++) {
+      if (AllocVDFromVD(theMG,bl,level,ev[0],&np->e[i]))
+        NP_RETURN(1,ewresult->error_code);
+    }
+    for (i=0; i<new; i++) {
+      if (dset(theMG,bl,level,ALL_VECTORS,np->e[i],0.0))
+        NP_RETURN(1,ewresult->error_code);
+      for (j=0; j<new; j++)
+        if (daxpy(theMG,bl,level,ALL_VECTORS,np->e[i],E[j][i],ev[j])
+            != NUM_OK)
+          NP_RETURN(1,ewresult->error_code);
+    }
+
+    for (i=0; i<new; i++)
+      table[i] = &ew[i];
+    qsort(table, new, sizeof(*table),
+          (int (*)(const void *, const void *))EWCompare);
+    for (i=0; i<new; i++)
+      for (j=0; j<new; j++)
+        if (table[i]==&ew[j])
+          index[i] = j;
+
+    for (i=0; i<new; i++)
+    {
+      if (dcopy(theMG,bl,level,ALL_VECTORS,ev[i],np->e[index[i]]))
+        NP_RETURN(1,ewresult->error_code);
+      if (FreeVD(theMG,bl,level,np->e[index[i]]))
+        NP_RETURN(1,ewresult->error_code);
+    }
+    for (i=0; i<new; i++) {
+      if (Rayleigh(theNP,level,ev[i],Assemble,a,&ew[i],
+                   &ewresult->error_code))
+        NP_RETURN(1,ewresult->error_code);
+      if (i==np->idefect) {
+        if (np->display == PCR_FULL_DISPLAY)
+          UserWriteF("Rayleigh quotient (ew%d) %lf\n", i, ew[i]);
+        if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
+                                          ev[i],np->r,
+                                          np->M,&ewresult->error_code))
+          NP_RETURN(1,ewresult->error_code);
+        if (dmatmul (theMG,0,level,ON_SURFACE,np->t,np->M,ev[i])
+            != NUM_OK)
+          NP_RETURN(1,ewresult->error_code);
+        if (daxpy(theMG,bl,level,ON_SURFACE,np->t,-ew[i],np->r))
+          NP_RETURN(1,ewresult->error_code);
+        if (dnrm2x(theMG,bl,level,ON_SURFACE,np->t,defect))
+          NP_RETURN(1,ewresult->error_code);
+        if (FreeVD(theMG,bl,level,np->t))
+          NP_RETURN(1,ewresult->error_code);
+        if (DoPCR(PrintID,defect,PCR_CRATE))
+          NP_RETURN(1,ewresult->error_code);
+      }
+    }
+    if (np->display > PCR_NO_DISPLAY) {
+      for (i=0; i<np->ew.nev; i++)
+        UserWriteF(" step %d: ew%d = %10.5e \n",iter+1,i,np->ew.ew[i]);
+      UserWriteF("\n");
+    }
+  }
+  if (DoPCR(PrintID,defect,PCR_AVERAGE))
+    NP_RETURN(1,ewresult->error_code);
+  if (PostPCR(PrintID,":ew:avg"))
+    NP_RETURN(1,ewresult->error_code);
+
+  return (0);
+}
+
+static INT EW1Construct (NP_BASE *theNP)
+{
+  NP_EW *np;
+
+  theNP->Init = EWInit;
+  theNP->Display = EWDisplay;
+  theNP->Execute = EWExecute;
+
+  np = (NP_EW *) theNP;
+  np->ew.PreProcess = EWPreProcess;
+  np->ew.Rayleigh = Rayleigh;
+  np->ew.Solver = EWSolver1;
+  np->ew.PostProcess = EWPostProcess;
+
+  return(0);
+}
+
 /****************************************************************************/
 /*
    InitEW	- Init this file
@@ -1167,6 +1573,8 @@ INT InitEW ()
   INT i;
 
   if (CreateClass(EW_SOLVER_CLASS_NAME ".ew",sizeof(NP_EW),EWConstruct))
+    return (__LINE__);
+  if (CreateClass(EW_SOLVER_CLASS_NAME ".ew1",sizeof(NP_EW),EW1Construct))
     return (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
