@@ -655,7 +655,7 @@ static int ClearStack (void)
   return(AMG_OK);
 }
 
-static int Pop (AMG_GRAPH *g, AMG_CoarsenContext *cc)
+static int PopMajor (AMG_GRAPH *g, AMG_CoarsenContext *cc)
 {
   int *ca=g->ca;
   char *na=g->na;
@@ -663,6 +663,8 @@ static int Pop (AMG_GRAPH *g, AMG_CoarsenContext *cc)
   int n = AMG_GRAPH_N(g);
   int iso,con;
   int isomaj,conmaj,comp,sas=AMG_GRAPH_SAS(g),major=cc->major;
+
+  if (major<0) return(-1);
 
   /* get from stack */
   while (stacksize>0)
@@ -675,7 +677,7 @@ static int Pop (AMG_GRAPH *g, AMG_CoarsenContext *cc)
 
   /* stack is empty, are there any nodes left to fill the stack ? */
   stackhead=0; stacksize=0;
-  majisoumin=majumin=isoumin=umin=100000;
+  majisoumin=majumin=isoumin=umin=1000000;
   isomaj=conmaj=iso=con=0;
   for (i=0; i<n; i++)
   {
@@ -702,10 +704,132 @@ static int Pop (AMG_GRAPH *g, AMG_CoarsenContext *cc)
     }
   }
   if (iso+con==0) return(-1);       /* early exit */
+
+        #ifdef DEBUG_STACK
+  sprintf(buf,"RESTACKING n=%d iso=%d con=%d\n",n,iso,con);
+  AMG_Print(buf);
+  for (i=0; i<n; i++)
+  {
+    if (ca[i]>=0) continue;
+    sprintf(buf,"i=%d, ca[i]=%d, isolated=%d, comp=%d\n",
+            i,ca[i],ISOLATED(na[i]),i%sas);
+    AMG_Print(buf);
+  }
+        #endif
+
+  if (conmaj+isomaj==0)
+  {
+    AMG_Print("PopMajor: only nonmajor nodes left?! \n");
+    return(-1);
+  }
+
+  if (conmaj>0)
+  {
+    /* there are major components in major mode ... */
+    for (i=0; i<n; i++)
+      if ( (i%sas==major) && ca[i]<0 && (!ISOLATED(na[i])) && UnusedNeighbors(g,i)==majumin )
+      {
+        stack[stackhead] = i;
+        stacksize=AMG_MIN(stacksize+1,AMG_MAX_STACK);
+        stackhead=(stackhead+AMG_MAX_STACK+1)%AMG_MAX_STACK;
+      }
+        #ifdef DEBUG_STACK
+    sprintf(buf,"restacking connected size=%d\n",stacksize);
+    AMG_Print(buf);
+        #endif
+  }
+  else
+  {
+    /* there are major components in major mode ... */
+    for (i=0; i<n; i++)
+      if ( (i%sas==major) && ca[i]<0 && (ISOLATED(na[i])) && UnusedNeighbors(g,i)==majisoumin )
+      {
+        stack[stackhead] = i;
+        stacksize=AMG_MIN(stacksize+1,AMG_MAX_STACK);
+        stackhead=(stackhead+AMG_MAX_STACK+1)%AMG_MAX_STACK;
+      }
+        #ifdef DEBUG_STACK
+    sprintf(buf,"restacking connected size=%d\n",stacksize);
+    AMG_Print(buf);
+        #endif
+  }
+
+  /* now try again */
+  while (stacksize>0)
+  {
+    stackhead = (stackhead+AMG_MAX_STACK-1)%AMG_MAX_STACK;
+    stacksize--;
+    i = stack[stackhead];
+    if (ca[i]<0) return(i);
+  }
+
+  /* no, all nodes have been processed return invalid node number */
+  return(-1);
+}
+
+static int Pop (AMG_GRAPH *g, AMG_CoarsenContext *cc)
+{
+  int *ca=g->ca;
+  char *na=g->na;
+  int i,umin,isoumin,majisoumin,majumin;
+  int n = AMG_GRAPH_N(g);
+  int iso,con;
+  int isomaj,conmaj,comp,sas=AMG_GRAPH_SAS(g),major=cc->major;
+
+  /* get from stack */
+  while (stacksize>0)
+  {
+    stackhead = (stackhead+AMG_MAX_STACK-1)%AMG_MAX_STACK;
+    stacksize--;
+    i = stack[stackhead];
+    if (ca[i]<0) return(i);
+  }
+
+  /* stack is empty, are there any nodes left to fill the stack ? */
+  stackhead=0; stacksize=0;
+  majisoumin=majumin=isoumin=umin=1000000;
+  isomaj=conmaj=iso=con=0;
+  for (i=0; i<n; i++)
+  {
+    if ( ca[i]>=0 ) continue;
+    if ( ISOLATED(na[i]) )
+    {
+      isoumin =  AMG_MIN(isoumin,UnusedNeighbors(g,i));
+      iso++;
+      if (major>=0 && sas>1 && (i%sas==major) )
+      {
+        isomaj++;
+        majisoumin = AMG_MIN(majisoumin,UnusedNeighbors(g,i));
+      }
+    }
+    else
+    {
+      umin = AMG_MIN(umin,UnusedNeighbors(g,i));
+      con++;
+      if (major>=0 && sas>1 && (i%sas==major) )
+      {
+        conmaj++;
+        majumin = AMG_MIN(majumin,UnusedNeighbors(g,i));
+      }
+    }
+  }
+  if (iso+con==0) return(-1);       /* early exit */
+        #ifdef DEBUG_STACK
+  sprintf(buf,"RESTACKING n=%d iso=%d con=%d\n",n,iso,con);
+  AMG_Print(buf);
+  for (i=0; i<n; i++)
+  {
+    if (ca[i]>=0) continue;
+    sprintf(buf,"i=%d, ca[i]=%d, isolated=%d, comp=%d\n",
+            i,ca[i],ISOLATED(na[i]),i%sas);
+    AMG_Print(buf);
+  }
+        #endif
   if (con>0)
   {
     if (conmaj==0)
     {
+      if (major>=0) AMG_Print("Pop: pushing connected nonmajor nodes?!\n");
       /* push only connected */
       for (i=0; i<n; i++)
         if ( ca[i]<0 && (!ISOLATED(na[i])) && UnusedNeighbors(g,i)==umin )
@@ -739,6 +863,7 @@ static int Pop (AMG_GRAPH *g, AMG_CoarsenContext *cc)
   {
     if (isomaj==0)
     {
+      if (major>=0) AMG_Print("Pop: pushing isolated nonmajor nodes?!\n");
       /* push only isolated */
       for (i=0; i<n; i++)
         if ( ca[i]<0 && (ISOLATED(na[i])) && UnusedNeighbors(g,i)==isoumin )
@@ -782,11 +907,19 @@ static int Pop (AMG_GRAPH *g, AMG_CoarsenContext *cc)
   return(-1);
 }
 
-static int Push (AMG_GRAPH *g, int i)
+static int Push (AMG_GRAPH *g, int i, AMG_CoarsenContext *cc)
 {
   int *ca=g->ca;
+  int sas=g->system_as_scalar, major=cc->major;
+  char buffer[128];
 
   if ( ca[i]>=0 ) return(0);
+
+  if (major>=0 && i%sas!=major)
+  {
+    sprintf(buffer,"pushing nonmajor component %d\n",i);
+    AMG_Print(buffer);
+  }
 
   stack[stackhead] = i;
   stacksize=AMG_MIN(stacksize+1,AMG_MAX_STACK);
@@ -840,8 +973,11 @@ static int Clustering (AMG_GRAPH *g, AMG_CoarsenContext *cc)
   conclusters=isoclusters=0;
 
   /* greedy search */
-  while ( (s=Pop(g,cc))>=0 )
+  while ( 1 )
   {
+    if (major>=0) s=PopMajor(g,cc);else s=Pop(g,cc);
+    if (s<0) break;
+
     if (cc->verbose==1 && clusternumber>0 && (clusternumber%10000==0) )
     {
       AMG_Print("c");
@@ -906,12 +1042,12 @@ static int Clustering (AMG_GRAPH *g, AMG_CoarsenContext *cc)
           /* push only major components */
           for (i=0; i<frontsize; i++)
             if ( front[i]%sas==major && (ISOLATED(na[front[i]])) )
-              Push(g,front[i]);
+              Push(g,front[i],cc);
         }
         else
         {
           for (i=0; i<frontsize; i++)
-            if (ISOLATED(na[front[i]])) Push(g,front[i]);
+            if (ISOLATED(na[front[i]])) Push(g,front[i],cc);
         }
         ResetFront(g);
 
@@ -1005,12 +1141,12 @@ static int Clustering (AMG_GRAPH *g, AMG_CoarsenContext *cc)
           /* push only major components */
           for (i=0; i<frontsize; i++)
             if ( front[i]%sas==major && (!ISOLATED(na[front[i]])) )
-              Push(g,front[i]);
+              Push(g,front[i],cc);
         }
         else
         {
           for (i=0; i<frontsize; i++)
-            if (!ISOLATED(na[front[i]])) Push(g,front[i]);
+            if (!ISOLATED(na[front[i]])) Push(g,front[i],cc);
         }
         ResetFront(g);
 
@@ -1060,12 +1196,12 @@ static int Clustering (AMG_GRAPH *g, AMG_CoarsenContext *cc)
           /* push only major components */
           for (i=0; i<frontsize; i++)
             if ( front[i]%sas==major && (!ISOLATED(na[front[i]])) )
-              Push(g,front[i]);
+              Push(g,front[i],cc);
         }
         else
         {
           for (i=0; i<frontsize; i++)
-            if (!ISOLATED(na[front[i]])) Push(g,front[i]);
+            if (!ISOLATED(na[front[i]])) Push(g,front[i],cc);
         }
         ResetFront(g);
 
@@ -1087,7 +1223,17 @@ static int Clustering (AMG_GRAPH *g, AMG_CoarsenContext *cc)
       {
         if (s%sas!=major)
         {
-          AMG_Print("clustered a nonmajor component !?\n");
+          AMG_Print("clustered a nonmajor isolated component !?\n");
+          sprintf(buffer,"clusternumber=%d, s=%d, major=%d, sas=%d\n",
+                  clusternumber,s,major,sas);
+          AMG_Print(buffer);
+          for (i=0; i<n; i++)
+          {
+            if (ca[i]>=0) continue;
+            sprintf(buffer,"%d: %d\n",i,ca[i]);
+            AMG_Print(buffer);
+          }
+          AMG_Print(buffer);
           return(AMG_FATAL);
         }
 
@@ -1095,7 +1241,7 @@ static int Clustering (AMG_GRAPH *g, AMG_CoarsenContext *cc)
         for (comp=0; comp<sas; comp++)
         {
           if (comp==major) continue;
-          ca[(cluster[0]/sas)*sas+comp]=ca[(m/sas)*sas+comp];
+          ca[(s/sas)*sas+comp]=ca[(m/sas)*sas+comp];
                                         #ifdef DEBUG_CLUSTERING
           sprintf(buf,"MMerge  node %d: %d\n",(cluster[0]/sas)*sas+comp,ca[(m/sas)*sas+comp]); AMG_Print(buf);
                                         #endif
@@ -1123,7 +1269,16 @@ static int Clustering (AMG_GRAPH *g, AMG_CoarsenContext *cc)
       {
         if (s%sas!=major)
         {
-          AMG_Print("clustered a nonmajor component !?\n");
+          AMG_Print("clustered a nonmajor nonisolated component !?\n");
+          sprintf(buffer,"clusternumber=%d, s=%d, major=%d, sas=%d\n",
+                  clusternumber,s,major,sas);
+          for (i=0; i<n; i++)
+          {
+            if (ca[i]>=0) continue;
+            sprintf(buffer,"%d: %d\n",i,ca[i]);
+            AMG_Print(buffer);
+          }
+          AMG_Print(buffer);
           return(AMG_FATAL);
         }
 

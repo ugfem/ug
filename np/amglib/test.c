@@ -454,17 +454,17 @@ int main (int argc, char *argv[])
 
   /* solver context */
   sc.verbose=1;
-  sc.solver=AMG_BCGS;
+  sc.solver=AMG_LS;
   sc.preconditioner=AMG_MGC;
   sc.maxit=800;
   sc.red_factor=1.0E-8;
   sc.dnorm_min=1.0E-15;
-  sc.coarse_smoother=AMG_SSOR;
+  sc.coarse_smoother=AMG_EX;
   sc.coarse_maxit=200;
   sc.coarse_red_factor=1.0E-3;
   sc.n1=3;
   sc.n2=3;
-  sc.gamma=1;
+  sc.gamma=2;
   sc.omega_p[0]=1.8;
   sc.smoother=AMG_DJAC;
   sc.omega[0]=0.5;
