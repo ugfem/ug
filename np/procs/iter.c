@@ -3980,6 +3980,123 @@ static INT ILUConstruct (NP_BASE *theNP)
   return(0);
 }
 
+static INT BDInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  return (SmootherInit(theNP,argc,argv));
+}
+
+static INT BDDisplay (NP_BASE *theNP)
+{
+  SmootherDisplay(theNP);
+
+  return (0);
+}
+
+INT l_bdpreprocess1 (GRID *g, MATDATA_DESC *A, MATDATA_DESC *L)
+{
+  VECTOR *v;
+
+  for (v=FIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
+  {
+    MATRIX *m = VSTART(v);
+    if (VECSKIP(v) == 0)
+      MVALUE(m,MD_SCALCMP(L)) = 1.0 / MVALUE(m,MD_SCALCMP(L));
+    else
+      MVALUE(m,MD_SCALCMP(L)) = 0.0;
+    for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
+      MVALUE(m,MD_SCALCMP(L)) = 0.0;
+  }
+
+  return (0);
+}
+
+INT l_bdpreprocess (GRID *g, VECDATA_DESC *x,
+                    MATDATA_DESC *A, MATDATA_DESC *L)
+{
+  ELEMENT *e;
+
+  for (e=FIRSTELEMENT(g); e!=NULL; e=SUCCE(e)) {
+    VECTOR *v[MAX_NODAL_VECTORS];
+    INT cnt = GetAllVectorsOfElementOfType(e,v,x);
+    DOUBLE mat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
+    DOUBLE imat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
+    INT m = GetVlistMValues(cnt,v,A,mat);
+
+    if (InvertFullMatrix_piv(m,mat,imat))
+      return(1);
+
+    SetVlistMValues(g,cnt,v,L,imat);
+  }
+
+  return (0);
+}
+
+static INT BDPreProcess (NP_ITER *theNP, INT level,
+                         VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                         INT *baselevel, INT *result)
+{
+  NP_SMOOTHER *np = (NP_SMOOTHER *)theNP;
+  GRID *theGrid = NP_GRID(theNP,level);
+
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L))
+    NP_RETURN(1,result[0]);
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
+    NP_RETURN(1,result[0]);
+        #ifdef ModelP
+  if (l_matrix_consistent(theGrid,np->L,np->smoother.cons_mode)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+        #endif
+  *baselevel = level;
+
+  l_bdpreprocess(theGrid,x,A,np->L);
+
+  return (0);
+}
+
+static INT BDStep (NP_SMOOTHER *theNP, INT level,
+                   VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                   MATDATA_DESC *L,
+                   INT *result)
+{
+  GRID *theGrid = NP_GRID(theNP,level);
+
+    #ifdef ModelP
+  if (np->smoother.cons_mode == MAT_MASTER_CONS) {
+    if (l_vector_collect(theGrid,b)!=NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+  else {
+    if (l_vector_meanvalue(theGrid,b) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+    #endif
+
+  if (dmatmul(NP_MG(theNP),level,level,ON_SURFACE,x,L,b) != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,x,theNP->damp) != NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  return (0);
+}
+
+static INT BDConstruct (NP_BASE *theNP)
+{
+  NP_SMOOTHER *np;
+
+  theNP->Init = BDInit;
+  theNP->Display = BDDisplay;
+  theNP->Execute = NPIterExecute;
+
+  np = (NP_SMOOTHER *) theNP;
+  np->iter.PreProcess = BDPreProcess;
+  np->iter.Iter = Smoother;
+  np->iter.PostProcess = SmootherPostProcess;
+  np->Step = BDStep;
+
+  return(0);
+}
+
 /****************************************************************************/
 /*D
    filu - numproc for point block beta-modified ilu smoother working on FINE NODES ONLY
@@ -7798,6 +7915,8 @@ INT InitIter ()
   if (CreateClass(ITER_CLASS_NAME ".gbgs",sizeof(NP_SBGS),GBGSConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ilu",sizeof(NP_ILU),ILUConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".bd",sizeof(NP_SMOOTHER),BDConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".filu",sizeof(NP_ILU),FILUConstruct))
     REP_ERR_RETURN (__LINE__);
