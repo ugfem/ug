@@ -7055,6 +7055,74 @@ INT SurfaceNamer(double sfce_name1, double sfce_name2, char *The_String, int *mf
 
 
 
+/****************************************************************************/
+/*D
+   int2string -
+
+   SYNOPSIS:
+   INT int2string(int integer_zahl, char *generated_string )
+
+   PARAMETERS:
+   .  integer_zahl - int to be converted int an string
+   .  generated_string - pointer to new string
+
+   DESCRIPTION:
+   bla bla
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+INT int2string(int integer_zahl, char *generated_string )
+{
+  int i,j,k;
+  char helpchar;
+
+  if (integer_zahl > MAX_INT)
+  {
+    UserWrite("ERROR: in int2string: integer_zahl > MAX_INT");
+    return (1);
+  }
+  if (integer_zahl < 0)
+  {
+    UserWrite("ERROR: in int2string: integer_zahl < 0");
+    return (1);
+  }
+
+
+  i = 0;
+
+  do
+  {
+    generated_string[i++] = integer_zahl % 10 + '0';
+    integer_zahl = integer_zahl /10;
+  }
+  while(integer_zahl > 0);
+
+  generated_string[i] = '\0';       /*Stringabschluss*/
+
+  /*reverse :*/
+  k = i-1 ;       /*Stelle des letzten Zeichens*/
+  i = i/2;       /*Anzahl der Zeichen DIV 2 */
+  for(j=0; j<i; j++)       /*bis zur MItte*/
+  {
+    helpchar = generated_string[j];
+    generated_string[j] = generated_string[k];
+    generated_string[k] = helpchar;
+    k--;
+  }
+
+
+
+  return(0);
+} /* of function int2string*/
+
+
+
+
+
 
 /****************************************************************************/
 /*D
@@ -7088,6 +7156,7 @@ INT Ansys2lgmUpdateSbdmIDs()
 
   /*DIRKS NEU*/
   char TheString[20];
+  char *stringpointer;
 
   int cad_id[2];
   /*ALT	int lf;
@@ -7095,9 +7164,34 @@ INT Ansys2lgmUpdateSbdmIDs()
           int anzahlgefundene;
      ALT*/
 
+  FILE *stream;
+  char *buffer;
+  int necessary,rval;
+  char generated_string[11];      /*2hoch31 = 2147483648 hat 10 Stellen*/
+
+  /*Wieviel Speicher ist notwendig ?*/
+  necessary = sizeof(char);
+
+  /*Herleitung siehe File abschaetzung auf saentis unter Text*/
+  necessary = 300 + 150 * NMB_OF_SBDMS(DomainInfo_Pointer) + 150 * NMB_OF_SFCES(DomainInfo_Pointer);
+
+
+  if((buffer = GetTmpMem(theHeap,necessary * sizeof(char),ANS_MarkKey))== NULL)
+  {
+    PrintErrorMessage('E',"Ansys2lgmUpdateSbdmIDs","no memory obtained for buffer");
+    return (1);
+  }
+  *buffer ='\0';       /*mit Leerstring beginnen*/
+
+
   UserWrite("\n");
+  if((buffer = strcat(buffer,(char*)"\n")) == NULL) return (1);
   UserWrite("-------------------------------------------\n");
+  if((buffer = strcat(buffer,(char*)"-------------------------------------------\n")) == NULL) return (1);
+
   UserWrite("CAD-Subdomain-ID =>LGM-Subdomain-ID => Identifierstring :\n");
+  if((buffer = strcat(buffer,"CAD-Subdomain-ID =>LGM-Subdomain-ID => Identifierstring :\n")) == NULL) return (1);
+
 
   sd_pointer = EXCHNG_TYP2_ROOT_SBD(ExchangeVar_2_Pointer);
   /*laufe ueber alle Subdomains*/
@@ -7119,10 +7213,44 @@ INT Ansys2lgmUpdateSbdmIDs()
       if(KomponentenIndexArray[hlp] == -1)
       {
         UserWriteF("  %d                 %d                       %s\n",bisherige_ID,i,&(KomponentenNamenArray[0]));
+        if((buffer = strcat(buffer,(char*)"  ")) == NULL) return (1);
+        if((rval = int2string(bisherige_ID,generated_string)) == 1)
+        {
+          UserWrite("ERROR: in Ansys2lgmUpdateSbdmIDs: int2string failed");
+          return (1);
+        }
+        if((buffer = strcat(buffer,generated_string)) == NULL) return (1);
+        if((buffer = strcat(buffer,(char*)"                 ")) == NULL) return (1);
+        if((rval = int2string(i,generated_string)) == 1)
+        {
+          UserWrite("ERROR: in Ansys2lgmUpdateSbdmIDs: int2string failed");
+          return (1);
+        }
+        if((buffer = strcat(buffer,generated_string)) == NULL) return (1);
+        if((buffer = strcat(buffer,(char*)"                       ")) == NULL) return (1);
+        if((buffer = strcat(buffer,&(KomponentenNamenArray[0]))) == NULL) return (1);
+        if((buffer = strcat(buffer,(char*)"\n")) == NULL) return (1);
       }
       else
       {
         UserWriteF("  %d                 %d                       %s\n",bisherige_ID,i,&(KomponentenNamenArray[hlp*31]));
+        if((buffer = strcat(buffer,(char*)"  ")) == NULL) return (1);
+        if((rval = int2string(bisherige_ID,generated_string)) == 1)
+        {
+          UserWrite("ERROR: in Ansys2lgmUpdateSbdmIDs: int2string failed");
+          return (1);
+        }
+        if((buffer = strcat(buffer,generated_string)) == NULL) return (1);
+        if((buffer = strcat(buffer,(char*)"                 ")) == NULL) return (1);
+        if((rval = int2string(i,generated_string)) == 1)
+        {
+          UserWrite("ERROR: in Ansys2lgmUpdateSbdmIDs: int2string failed");
+          return (1);
+        }
+        if((buffer = strcat(buffer,generated_string)) == NULL) return (1);
+        if((buffer = strcat(buffer,(char*)"                       ")) == NULL) return (1);
+        if((buffer = strcat(buffer,&(KomponentenNamenArray[hlp*31]))) == NULL) return (1);
+        if((buffer = strcat(buffer,(char*)"\n")) == NULL) return (1);
       }
     }
     else
@@ -7163,8 +7291,11 @@ INT Ansys2lgmUpdateSbdmIDs()
   UserWrite("\n");
   UserWrite("\n");
   UserWrite("\n");
+  if((buffer = strcat(buffer,(char*)"\n\n\n")) == NULL) return (1);
   UserWrite("-------------------------------------------\n");
+  if((buffer = strcat(buffer,(char*)"-------------------------------------------\n")) == NULL) return (1);
   UserWrite("CAD-Surface-ID       =>   LGM-Surface-ID \n");
+  if((buffer = strcat(buffer,(char*)"CAD-Surface-ID       =>   LGM-Surface-ID \n")) == NULL) return (1);
   /**********12345678901234567890*/
   for(i=0; i<NMB_OF_SFCES(DomainInfo_Pointer); i++)
   {
@@ -7241,10 +7372,49 @@ INT Ansys2lgmUpdateSbdmIDs()
 
 
         UserWriteF("%s                     %d          FirstTria:%d,%d,%d\n",&(TheString[0]),i,cad_id[0],cad_id[1],cad_id[2]);
+        if((buffer = strcat(buffer,&(TheString[0]))) == NULL) return (1);
+        if((buffer = strcat(buffer,(char*)"                     ")) == NULL) return (1);
+        if((rval = int2string(i,generated_string)) == 1)
+        {
+          UserWrite("ERROR: in Ansys2lgmUpdateSbdmIDs: int2string failed");
+          return (1);
+        }
+        if((buffer = strcat(buffer,generated_string)) == NULL) return (1);
+        if((buffer = strcat(buffer,(char*)"          FirstTria:")) == NULL) return (1);
+        if((rval = int2string(cad_id[0],generated_string)) == 1)
+        {
+          UserWrite("ERROR: in Ansys2lgmUpdateSbdmIDs: int2string failed");
+          return (1);
+        }
+        if((buffer = strcat(buffer,generated_string)) == NULL) return (1);
+        if((buffer = strcat(buffer,(char*)",")) == NULL) return (1);
+        if((rval = int2string(cad_id[1],generated_string)) == 1)
+        {
+          UserWrite("ERROR: in Ansys2lgmUpdateSbdmIDs: int2string failed");
+          return (1);
+        }
+        if((buffer = strcat(buffer,generated_string)) == NULL) return (1);
+        if((buffer = strcat(buffer,(char*)",")) == NULL) return (1);
+        if((rval = int2string(cad_id[2],generated_string)) == 1)
+        {
+          UserWrite("ERROR: in Ansys2lgmUpdateSbdmIDs: int2string failed");
+          return (1);
+        }
+        if((buffer = strcat(buffer,generated_string)) == NULL) return (1);
+        if((buffer = strcat(buffer,(char*)"\n")) == NULL) return (1);
       }
       else
       {
         UserWriteF("%s                     %d          \n",&(TheString[0]),i);
+        if((buffer = strcat(buffer,&(TheString[0]))) == NULL) return (1);
+        if((buffer = strcat(buffer,(char*)"                     ")) == NULL) return (1);
+        if((rval = int2string(i,generated_string)) == 1)
+        {
+          UserWrite("ERROR: in Ansys2lgmUpdateSbdmIDs: int2string failed");
+          return (1);
+        }
+        if((buffer = strcat(buffer,generated_string)) == NULL) return (1);
+        if((buffer = strcat(buffer,(char*)"          \n")) == NULL) return (1);
       }
       /**********12345678901234567890*/
       /* . . .DIRKS NEW : Ausgabe der Surfacinformationen */
@@ -7257,6 +7427,18 @@ INT Ansys2lgmUpdateSbdmIDs()
     }
     lauf_sfce = SF_NEXT(lauf_sfce);
   }
+
+  stream = LGM_WriteOpenFile("sid.geo");
+  if(stream == NULL)
+  {
+    UserWrite("ERROR: in LGM_LoadDomain: could not open stream ...");
+    return (NULL);
+  }
+
+  if (fprintf(stream,"%s\n",(char*)buffer)<0) return (1);
+  /* close file */
+  if (fclose(stream)==EOF) return (1);
+
 
 
   return(0);
