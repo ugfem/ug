@@ -4189,10 +4189,6 @@ static INT FixCoarseGridCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-    #ifdef ModelP
-  ddd_test("0", currMG);         /* WARNING: will disappear! */
-        #endif
-
   return(OKCODE);
 }
 
