@@ -4613,7 +4613,7 @@ static INT MarkCommand (INT argc, char **argv)
       for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i));
            theElement!=NULL; theElement=SUCCE(theElement))
         if (EstimateHere(theElement))
-          MarkForRefinement(theElement,NO_REFINEMENT,NULL);
+          MarkForRefinement(LAST_RED_ELEM(theElement),NO_REFINEMENT,NULL);
 
     UserWrite("all refinement marks removed\n");
 
@@ -4641,7 +4641,7 @@ static INT MarkCommand (INT argc, char **argv)
       theElement = FindElementOnSurface(theMG,global);
       if (theElement == NULL)
         return(PARAMERRORCODE);
-      MarkForRefinement(theElement,RED,NULL);
+      MarkForRefinement(LAST_RED_ELEM(theElement),RED,NULL);
 
       UserWriteF("element %d marked for refinement\n",ID(theElement));
 
@@ -4763,7 +4763,8 @@ static INT MarkCommand (INT argc, char **argv)
     for (l=0; l<=TOPLEVEL(theMG); l++)
       for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l)); theElement!=NULL; theElement=SUCCE(theElement))
         if (EstimateHere(theElement))
-          if ((rv = MarkForRefinement(theElement,Rule,(void *)Side))!=0)
+          if ((rv = MarkForRefinement(LAST_RED_ELEM(theElement),
+                                      Rule,(void *)Side))!=0)
           {
             l = TOPLEVEL(theMG);
             break;
@@ -4787,7 +4788,8 @@ static INT MarkCommand (INT argc, char **argv)
       }
 
       if (EstimateHere(theElement))
-        if ((rv = MarkForRefinement(theElement,Rule,(void *)Side))!=0)
+        if ((rv = MarkForRefinement(LAST_RED_ELEM(theElement),
+                                    Rule,(void *)Side))!=0)
           break;
         else
           nmarked++;
@@ -4801,7 +4803,8 @@ static INT MarkCommand (INT argc, char **argv)
         theElement = (ELEMENT *)SELECTIONOBJECT(theMG,i);
         if (EstimateHere(theElement))
         {
-          if ((rv = MarkForRefinement(theElement,Rule,(void *)Side))!=0)
+          if ((rv = MarkForRefinement(LAST_RED_ELEM(theElement),
+                                      Rule,(void *)Side))!=0)
             break;
           else
             nmarked++;
