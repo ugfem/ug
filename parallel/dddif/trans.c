@@ -37,6 +37,7 @@
 #include "evm.h"
 #include "general.h"
 #include "ugm.h"
+#include "algebra.h"
 #include "debug.h"
 
 /****************************************************************************/
@@ -355,6 +356,9 @@ int TransferGridFromCoarse (MULTIGRID *theMG)
     }
   }
 
+    #ifndef __EXCHANGE_CONNECTIONS__
+  MGCreateConnection(theMG);
+        #endif
 
   DDD_ConsCheck();
 

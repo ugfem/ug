@@ -93,6 +93,8 @@ enum HandlerSets
 #define DDD_DOMAIN_DATA    DDD_USER_DATA+1
 #define DDD_EXTRA_DATA     DDD_USER_DATA+2
 
+#define __EXCHANGE_CONNECTIONS__
+
 #endif /* ModelP */
 
 

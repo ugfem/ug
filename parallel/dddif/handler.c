@@ -173,6 +173,10 @@ void VectorUpdate (DDD_OBJ obj)
 /* TODO: is this needed?
 	VSTART(pv) = NULL;
 */
+
+    #ifndef __EXCHANGE_CONNECTIONS__
+	VSTART(pv) = NULL;
+	#endif
 }
 
 
@@ -182,6 +186,8 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 	INT		nmat	= 0;
 	MATRIX	*mat;
 	VECTOR	*pv		= (VECTOR *)obj;
+	INT			level		= DDD_InfoAttr(PARHDR(pv));
+	GRID		*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 	/* TODO: define this static global                    */
 	/* TODO: take size as maximum of possible connections */
 	size_t	sizeArray[50];
@@ -189,6 +195,7 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 	PRINTDEBUG(dddif,1,(PFMT " VectorXferCopy(): v=" VINDEX_FMTX " proc=%d "
 		"prio=%d vtype=%d\n",me,VINDEX_PRTX(pv),proc,prio,VTYPE(pv)))
 
+    #ifdef __EXCHANGE_CONNECTIONS__
 	if (prio!=PrioGhost)
 	{
 		for(mat=VSTART(pv); mat!=NULL; mat=MNEXT(mat))
@@ -201,6 +208,19 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 
 		DDD_XferAddDataX(nmat,TypeMatrix,sizeArray);
 	}
+	#else
+	{
+		MATRIX *theMatrix,*next;
+
+		for (theMatrix=VSTART(pv); theMatrix!=NULL;
+			 theMatrix = next)
+		{
+			next = MNEXT(theMatrix);
+			if (DisposeConnection(theGrid,MMYCON(theMatrix)))
+			    ASSERT(0);
+		}
+	}
+	#endif
 }
 
 
