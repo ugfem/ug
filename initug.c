@@ -210,7 +210,7 @@ InitUg (int *argcp, char ***argvp)
 #ifdef Debug
 #ifdef __MWCW__
   if ((GetDefaultValue (DEFAULTSFILENAME, UGDEBUGRFILE, buffer) == 0)
-      && (sscanf (buffer, " %s ", &debugfilename) == 1))
+      && (sscanf (buffer, " %s ", debugfilename) == 1))
   {
     if (SetPrintDebugToFile (debugfilename) != 0)
     {
@@ -233,7 +233,7 @@ InitUg (int *argcp, char ***argvp)
         break;
     if ((i < *argcp)
         && (GetDefaultValue (DEFAULTSFILENAME, UGDEBUGRFILE, buffer) == 0)
-        && (sscanf (buffer, " %s ", &debugfilename) == 1))
+        && (sscanf (buffer, " %s ", debugfilename) == 1))
     {
       if (SetPrintDebugToFile (debugfilename) != 0)
       {
