@@ -31,7 +31,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 %}
 
 COMMENT             #.*
-KEY_DOUBLE 			-?(([0-9]+)|([0-9]*\.[0-9]+)([eE][-+]?[0-9]+)?)
+KEY_DOUBLE 			-?(([0-9]+)|([0-9]*(\.)?[0-9]*)([eE][-+]?[0-9]+)?)
 KEY_INT             [0-9]+
 
 KEY_INODE           I
