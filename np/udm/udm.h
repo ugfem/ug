@@ -162,6 +162,7 @@ enum DISP_DATA_DESC_MODIF
 /* we remove this for security reasons: please use function calls
    #define VM_LOCKED(p)                       ((p)->locked)
  */
+#define EVM_LOCKED(p)                      ((p)->locked)
 
 /* swapping part interface data */
 #define SPID_NVD_MAX            4
@@ -275,6 +276,39 @@ typedef struct {
 
 } SPID_DESC;
 
+
+#define EXTENSION_MAX                   10
+
+typedef struct {
+
+  /* fields for environment list variable */
+  ENVVAR v;
+
+  SHORT locked;                         /* locked for dynamic allocation        */
+  INT n;                                /* size of extension                    */
+  VECDATA_DESC *vd;                     /* vector descriptor                    */
+  DOUBLE e[EXTENSION_MAX];          /* extension                            */
+
+} EVECDATA_DESC;
+
+typedef struct {
+
+  /* fields for environment list variable */
+  ENVVAR v;
+
+  SHORT locked;                         /* locked for dynamic allocation        */
+  INT n;                                /* size of extension                    */
+  MATDATA_DESC *mm;                             /* 11-block                     */
+  VECDATA_DESC *me[EXTENSION_MAX];              /* 12-block                     */
+  VECDATA_DESC *em[EXTENSION_MAX];              /* 21-block                     */
+  DOUBLE ee[EXTENSION_MAX*EXTENSION_MAX];       /* 22-block                     */
+
+} EMATDATA_DESC;
+
+typedef DOUBLE EVEC_SCALAR[MAX_VEC_COMP+EXTENSION_MAX];
+
+
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported data structures									*/
@@ -324,6 +358,10 @@ INT AllocVDfromNCmp (MULTIGRID *theMG, INT fl, INT tl,
 INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
                    const VECDATA_DESC *template_desc, VECDATA_DESC **new_desc);
 
+/* allocation of extended vector descriptors */
+INT AllocEVDForVD (MULTIGRID *theMG, const VECDATA_DESC *vd, INT n, EVECDATA_DESC **new_desc);
+INT AllocEVDFromEVD (MULTIGRID *theMG, INT fl, INT tl, const EVECDATA_DESC *vd, EVECDATA_DESC **new_desc);
+
 /* allocation of matrix descriptors */
 INT AllocMDFromMRowMCol (MULTIGRID *theMG, INT fl, INT tl,
                          const SHORT *RowsInType,const SHORT *ColsInType,const char *compNames,
@@ -334,6 +372,10 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
                    const VECDATA_DESC *x, const VECDATA_DESC *y, MATDATA_DESC **new_desc);
 INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
                    MATDATA_DESC *template_desc, MATDATA_DESC **new_desc);
+
+/* allocation of extended matrix descriptors */
+INT AllocEMDFromEVD (MULTIGRID *theMG, INT fl, INT tl, const EVECDATA_DESC *x, const EVECDATA_DESC *y, EMATDATA_DESC **new_desc);
+INT AllocEMDForMD (MULTIGRID *theMG, const MATDATA_DESC *md, INT n, EMATDATA_DESC **new_desc);
 
 /* locking of vector and matrix descriptors */
 INT LockVD (MULTIGRID *theMG, VECDATA_DESC *vd);
@@ -347,6 +389,10 @@ INT TransmitLockStatusMD (const MATDATA_DESC *md, MATDATA_DESC *smd);
 /* freeing of vector and matrix descriptors */
 INT FreeVD        (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *x);
 INT FreeMD        (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *A);
+
+/* freeing of extended vector and matrix descriptors */
+INT FreeEVD       (MULTIGRID *theMG, INT fl, INT tl, EVECDATA_DESC *vd);
+INT FreeEMD       (MULTIGRID *theMG, INT fl, INT tl, EMATDATA_DESC *md);
 
 /* interpolate allocation on new level */
 INT InterpolateVDAllocation (MULTIGRID *theMG, VECDATA_DESC *vd);

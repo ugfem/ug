@@ -171,7 +171,7 @@ static INT ConsComp;
 
 #endif
 
-static trace_ugblas=0;
+static INT trace_ugblas=0;
 
 /* RCS string */
 const static char RCS_ID("$Header$",UG_RCS_STRING);

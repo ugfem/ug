@@ -242,6 +242,92 @@ VECDATA_DESC *ReadArgvVecDescX (MULTIGRID *theMG, const char *name,
 
 /****************************************************************************/
 /*D
+   ReadArgvEVecDesc - Read command strings
+
+   SYNOPSIS:
+   EVECDATA_DESC *ReadArgvEVecDesc (MULTIGRID *theMG, const char *name,
+                                                           INT argc, char **argv);
+
+   PARAMETERS:
+   .  theMG - pointer to a multigrid
+   .  name - name of the argument
+   .  argc - argument counter
+   .  argv - argument vector
+
+   DESCRIPTION:
+   This function reads a symbol name from the command strings and returns
+   a pointer to the corresponding extended vector descriptor.
+   (This function is a macro calling 'ReadArgvVecDescX')
+
+   CAUTION: If no template is specified the first vector template is used.
+
+   This call locks the vector descriptor for dynamic allocation.
+
+   SYNTAX:
+   '$<name> <vec desc name>[/<template name>]'
+
+   RETURN VALUE:
+   VECDATA_DESC *
+   .n    pointer to vector descriptor
+   .n    NULL if error occurs
+   D*/
+/****************************************************************************/
+
+EVECDATA_DESC *ReadArgvEVecDescX (MULTIGRID *theMG, const char *name, INT argc, char **argv, INT CreateIfNonExistent)
+{
+  VECDATA_DESC *vd;
+  EVECDATA_DESC *evd;
+
+  vd=ReadArgvVecDescX(theMG,name,argc,argv,CreateIfNonExistent);
+  if (AllocEVDForVD(theMG,vd,1,&evd)) return(NULL);
+
+  return(evd);
+}
+
+/****************************************************************************/
+/*D
+   ReadArgvEMatDescX - Read command strings
+
+   SYNOPSIS:
+   EMATDATA_DESC *ReadArgvEMatDescX (MULTIGRID *theMG, const char *name, INT argc, char **argv, INT CreateIfNonExistent)
+
+   PARAMETERS:
+   .  theMG - pointer to a multigrid
+   .  name - name of the argument
+   .  argc - argument counter
+   .  argv - argument vector
+
+   DESCRIPTION:
+   This function reads a symbol name from the command strings and returns
+   a pointer to the corresponding extended vector descriptor.
+
+   CAUTION: If no template is specified the first vector template is used.
+
+   This call locks the vector descriptor for dynamic allocation.
+
+   SYNTAX:
+   '$<name> <vec desc name>[/<template name>]'
+
+   RETURN VALUE:
+   VECDATA_DESC *
+   .n    pointer to vector descriptor
+   .n    NULL if error occurs
+   D*/
+/****************************************************************************/
+
+EMATDATA_DESC *ReadArgvEMatDescX (MULTIGRID *theMG, const char *name, INT argc, char **argv, INT CreateIfNonExistent)
+{
+  MATDATA_DESC *md;
+  EMATDATA_DESC *emd;
+
+  md=ReadArgvMatDescX(theMG,name,argc,argv,CreateIfNonExistent);
+  if (AllocEMDForMD(theMG,md,1,&emd)) return(NULL);
+
+  return(emd);
+}
+
+/****************************************************************************/
+/*D
    ReadArgvVecTemplate - read vec template from command string
 
    SYNOPSIS:
@@ -971,6 +1057,19 @@ INT sc_cmp (VEC_SCALAR x, const VEC_SCALAR y, const VECDATA_DESC *theVD)
   return (1);
 }
 
+INT esc_cmp (EVEC_SCALAR x, const EVEC_SCALAR y, const EVECDATA_DESC *theVD)
+{
+  INT i;
+
+  if (sc_cmp(x,y,theVD->vd)==0) return(0);
+  for (i=VD_NCOMP(theVD->vd); i<VD_NCOMP(theVD->vd)+theVD->n; i++)
+    if (ABS(x[i])>=ABS(y[i]))
+      return (0);
+
+  return (1);
+}
+
+
 /****************************************************************************/
 /*D
    sc_eq - Check if VEC_SCALARs are (nearly) equal
@@ -1048,6 +1147,16 @@ INT sc_mul_check (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z, const VE
     x[i] = y[i] * z[i];
     if (x[i] == 0.0) x[i] = z[i];
   }
+  return (NUM_OK);
+}
+
+INT esc_mul (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, const EVECDATA_DESC *theVD)
+{
+  INT i;
+
+  for (i=0; i<VD_NCOMP(theVD->vd)+theVD->n; i++)
+    x[i] = y[i] * z[i];
+
   return (NUM_OK);
 }
 
@@ -1151,6 +1260,11 @@ INT sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const c
   return (NUM_OK);
 }
 
+INT esc_read (EVEC_SCALAR x, const FORMAT *fmt, const EVECDATA_DESC *theVD, const char *name, INT argc, char **argv)
+{
+  if (theVD==NULL) return(1);
+  return(sc_read(x,fmt,theVD->vd,name,argc,argv));
+}
 
 /****************************************************************************/
 /*D
@@ -1212,4 +1326,10 @@ INT sc_disp (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name)
   UserWrite("\n");
 
   return (NUM_OK);
+}
+
+INT esc_disp (EVEC_SCALAR x, const EVECDATA_DESC *theVD, const char *name)
+{
+  sc_disp(x,theVD->vd,name);
+  return(NUM_OK);
 }

@@ -117,7 +117,7 @@ static int ElementCompare (ELEMENT **e0, ELEMENT **e1)
   assert(0);
 }
 
-static LoadElementData (MULTIGRID *theMG)
+static INT LoadElementData (MULTIGRID *theMG)
 {
   HEAP *Heap = MGHEAP(theMG);
   INT m = EDATA_DEF_IN_MG(theMG) / sizeof(DOUBLE);
@@ -151,7 +151,7 @@ static LoadElementData (MULTIGRID *theMG)
   return(0);
 }
 
-static SaveElementData (MULTIGRID *theMG)
+static INT SaveElementData (MULTIGRID *theMG)
 {
   HEAP *Heap = MGHEAP(theMG);
   INT m = EDATA_DEF_IN_MG(theMG) / sizeof(DOUBLE);
@@ -199,7 +199,7 @@ static int EdgeCompare (EDGE **ed0, EDGE **ed1)
   return(-1);
 }
 
-static LoadEdgeData (MULTIGRID *theMG, VECDATA_DESC *v)
+static INT LoadEdgeData (MULTIGRID *theMG, VECDATA_DESC *v)
 {
   HEAP *Heap = MGHEAP(theMG);
   INT m = VD_NCMPS_IN_TYPE(v,EDGEVEC);
@@ -244,7 +244,7 @@ static LoadEdgeData (MULTIGRID *theMG, VECDATA_DESC *v)
   return(0);
 }
 
-static SaveEdgeData (MULTIGRID *theMG, VECDATA_DESC *v)
+static INT SaveEdgeData (MULTIGRID *theMG, VECDATA_DESC *v)
 {
   HEAP *Heap = MGHEAP(theMG);
   INT m = VD_NCMPS_IN_TYPE(v,EDGEVEC);
@@ -503,11 +503,12 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   if (SetStringValue(":IO:TIME",dio_general.time))                {CloseDTFile(); return (1);}
   if (SetStringValue(":IO:DT",dio_general.dt))                    {CloseDTFile(); return (1);}
   if (SetStringValue(":IO:NDT",dio_general.ndt))                  {CloseDTFile(); return (1);}
+  if (SetStringVar(":IDENTIFICATION",dio_general.ident))  {CloseDTFile(); return (1);}
   if (me >= nparfiles) return (0);
 
   /* read general information */
   if (strcmp(dio_general.version,DIO_VERSION)!=0)                 {CloseDTFile(); UserWrite("ERROR: wrong version\n"); return (1);}
-  if (dio_general.magic_cookie != MG_MAGIC_COOKIE(theMG)) {CloseDTFile(); UserWrite("m-c-error"); return (1);}
+  if (0 && dio_general.magic_cookie != MG_MAGIC_COOKIE(theMG))    {CloseDTFile(); UserWrite("m-c-error"); return (1);}
   ncomp = 0;
   for (i=0; i<dio_general.nVD; i++)
   {

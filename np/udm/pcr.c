@@ -324,6 +324,71 @@ INT PreparePCR (VECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
   return (0);
 }
 
+INT PrepareEPCR (EVECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
+{
+  INT i,j;
+
+  /* get new ID */
+  for (i=0; i<32; i++)
+    if (((PCR_IDAdmin>>i)&1)==0)
+    {
+      PCR_IDAdmin |= (1<<i);
+      *ID = i;
+      break;
+    }
+  if (i==32)
+  {
+    PrintErrorMessage('E',"PreparePCR","no ID left");
+    return (1);
+  }
+
+  /* init */
+  PCR_nb[i]   = 0;
+  PCR_DispMode[i] = DispMode;
+  PCR_header[i] = text;
+  for (j=i; j<32; j++) PCR_printed[j] = FALSE;
+
+  /* print head line */
+  if (text!=NULL && DispMode!=PCR_NO_DISPLAY)
+  {
+    UserWrite("\n");
+    UserWrite(text);
+  }
+
+  /* store number and names of components */
+  if (Vsym != NULL) {
+    PCR_nComp[*ID] = VD_OFFSET(Vsym->vd,NVECTYPES)+Vsym->n;
+    if (PCR_nComp[*ID]>MAX_VEC_COMP) return (1);
+    memcpy(PCR_compNames[*ID],VM_COMP_NAMEPTR(Vsym->vd),MAX_VEC_COMP);
+    for (i=0; i<Vsym->n; i++) (PCR_compNames[*ID]+VD_OFFSET(Vsym->vd,NVECTYPES))[i]='e';
+    PCR_nid[*ID] = VD_NID(Vsym->vd);
+    PCR_ident[*ID] = VD_IDENT_PTR(Vsym->vd);
+  }
+  else if (*ID > 0) {
+    PCR_nComp[*ID] = PCR_nComp[*ID-1];
+    memcpy(PCR_compNames[*ID],PCR_compNames[*ID-1],MAX_VEC_COMP);
+    PCR_nid[*ID] = PCR_nid[*ID-1];
+    PCR_ident[*ID] = PCR_ident[*ID-1];
+  }
+  else {
+    PCR_nComp[*ID] = MAX_VEC_COMP;
+    memcpy(PCR_compNames[*ID],DEFAULT_NAMES,MAX_VEC_COMP);
+    PCR_nid[*ID] = NO_IDENT;
+  }
+  PCR_allComp[*ID] = PCR_nComp[*ID];
+  if (PCR_nid[*ID]!=NO_IDENT)
+  {
+    /* change compnames according to identification */
+    for (j=0, i=0; i<PCR_nComp[*ID]; i++)
+      if (PCR_ident[*ID][i]==i)
+        PCR_compNames[*ID][j++] = PCR_compNames[*ID][i];
+
+    PCR_nComp[*ID] = PCR_nid[*ID];
+  }
+
+  return (0);
+}
+
 /**************************************************************************/
 /*
    PostPCR - stores the PCR values

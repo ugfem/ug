@@ -96,6 +96,10 @@ static INT VectorDirID;
 static INT MatrixDirID;
 static INT VectorVarID;
 static INT MatrixVarID;
+static INT EVectorDirID;
+static INT EMatrixDirID;
+static INT EVectorVarID;
+static INT EMatrixVarID;
 
 REP_ERR_FILE;
 
@@ -501,6 +505,134 @@ VECDATA_DESC *GetNextVector (VECDATA_DESC *vd)
   for (item=NEXT_ENVITEM((ENVITEM *)vd); item!=NULL; item=NEXT_ENVITEM(item))
     if (ENVITEM_TYPE(item) == VectorVarID)
       return ((VECDATA_DESC *)item);
+
+  return (NULL);
+}
+
+/****************************************************************************/
+/*D
+   GetFirstEVector - return first extended vector for a given multigrid
+
+   SYNOPSIS:
+   EVECDATA_DESC *GetEFirstVector (MULTIGRID *theMG)
+
+   PARAMETERS:
+   .  theMG - multigrid
+
+   DESCRIPTION:
+   This function returns the first extended vector for a given multigrid
+
+   RETURN VALUE:
+   EVECDATA_DESC *
+   .n    NULL if there is none
+   D*/
+/****************************************************************************/
+
+EVECDATA_DESC *GetFirstEVector (MULTIGRID *theMG)
+{
+  ENVITEM *item;
+
+  if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
+  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
+  item = (ENVITEM *)ChangeEnvDir("EVectors");
+  if (item == NULL) return (NULL);
+  for (item=ENVITEM_DOWN(item); item!=NULL; item=NEXT_ENVITEM(item))
+    if (ENVITEM_TYPE(item) == EVectorVarID)
+      return ((EVECDATA_DESC *)item);
+
+  return (NULL);
+}
+
+/****************************************************************************/
+/*D
+   GetNextEVector - return next extended vector for a given vector
+
+   SYNOPSIS:
+   EVECDATA_DESC *GetNextEVector (EVECDATA_DESC *vd)
+
+   PARAMETERS:
+   .  theMG - multigrid
+
+   DESCRIPTION:
+   This function returns the next vector for a given vector
+
+   RETURN VALUE:
+   EVECDATA_DESC *
+   .n    NULL if there is no successor
+   D*/
+/****************************************************************************/
+
+EVECDATA_DESC *GetNextEVector (EVECDATA_DESC *vd)
+{
+  ENVITEM *item;
+
+  for (item=NEXT_ENVITEM((ENVITEM *)vd); item!=NULL; item=NEXT_ENVITEM(item))
+    if (ENVITEM_TYPE(item) == EVectorVarID)
+      return ((EVECDATA_DESC *)item);
+
+  return (NULL);
+}
+
+/****************************************************************************/
+/*D
+   GetFirstEMatrix - return first extended matrix for a given multigrid
+
+   SYNOPSIS:
+   EMATDATA_DESC *GetFirstEMatrix (MULTIGRID *theMG)
+
+   PARAMETERS:
+   .  theMG - multigrid
+
+   DESCRIPTION:
+   This function returns the first extended matrix for a given multigrid
+
+   RETURN VALUE:
+   EMATDATA_DESC *
+   .n    NULL if there is none
+   D*/
+/****************************************************************************/
+
+EMATDATA_DESC *GetFirstEMatrix (MULTIGRID *theMG)
+{
+  ENVITEM *item;
+
+  if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
+  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
+  item = (ENVITEM *)ChangeEnvDir("EMatrices");
+  if (item == NULL) return (NULL);
+  for (item=ENVITEM_DOWN(item); item!=NULL; item=NEXT_ENVITEM(item))
+    if (ENVITEM_TYPE(item) == EMatrixVarID)
+      return ((EMATDATA_DESC *)item);
+
+  return (NULL);
+}
+
+/****************************************************************************/
+/*D
+   GetNextEMatrix - return next extended matrix for a given extended matrix
+
+   SYNOPSIS:
+   EMATDATA_DESC *GetNextEMatrix (EMATDATA_DESC *md)
+
+   PARAMETERS:
+   .  md - matrix
+
+   DESCRIPTION:
+   This function returns the next extended matrix for a given extended matrix
+
+   RETURN VALUE:
+   EMATDATA_DESC *
+   .n    NULL if there is no successor
+   D*/
+/****************************************************************************/
+
+EMATDATA_DESC *GetNextEMatrix (EMATDATA_DESC *md)
+{
+  ENVITEM *item;
+
+  for (item=NEXT_ENVITEM((ENVITEM *)md); item!=NULL; item=NEXT_ENVITEM(item))
+    if (ENVITEM_TYPE(item) == EMatrixVarID)
+      return ((EMATDATA_DESC *)item);
 
   return (NULL);
 }
@@ -1026,6 +1158,226 @@ INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
 
 /****************************************************************************/
 /*D
+   AllocEVDFromEVD - dynamically allocate extended vector descriptor from given extended vector descriptor
+
+   SYNOPSIS:
+   INT AllocEVDFromEVD (MULTIGRID *theMG, INT fl, INT tl, const EVECDATA_DESC *vd, EVECDATA_DESC **new_desc)
+
+   PARAMETERS:
+   .  theMG - allocate descriptor for this multigrid
+   .  fl - from level
+   .  tl - to level
+   .  vd - given extended vector descriptor
+   .  new_desc   - handle for descriptor
+
+   DESCRIPTION:
+   This function allocates an extended vector descriptor from a
+   given vector descriptors.
+   If there is no existing decriptor a new one is created.
+
+   SEE ALSO:
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occurred
+ */
+/****************************************************************************/
+
+static INT GetEVDName (char *name)
+{
+  static INT id=0;
+  sprintf(name,"evec%d",id);
+  id++;
+  return(0);
+}
+
+static INT GetEMDName (char *name)
+{
+  static INT id=0;
+  sprintf(name,"emat%d",id);
+  id++;
+  return(0);
+}
+
+INT AllocEVDFromEVD (MULTIGRID *theMG, INT fl, INT tl, const EVECDATA_DESC *vd, EVECDATA_DESC **new_desc)
+{
+  VECDATA_DESC *nvd=NULL;
+  EVECDATA_DESC *evd;
+  char name[NAMESIZE];
+
+  /* create VECDATA_DESC */
+  if (AllocVDFromVD(theMG,fl,tl,vd->vd,&nvd)) return(1);
+
+  /* get Evector */
+  for (evd=GetFirstEVector(theMG); evd!=NULL; evd=GetNextEVector(evd))
+  {
+    if (!EVM_LOCKED(evd)) break;
+  }
+  if (evd==NULL)
+  {
+    /* create EVECDATA_DESC with extension name */
+    if (ChangeEnvDir("/Multigrids") == NULL) return(1);
+    if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return(1);
+    if (ChangeEnvDir("EVectors") == NULL)
+    {
+      MakeEnvItem("EVectors",EVectorDirID,sizeof(ENVDIR));
+      if (ChangeEnvDir("EVectors") == NULL) return(1);
+    }
+    if (GetEVDName(name)) return(1);
+    evd=(EVECDATA_DESC *)MakeEnvItem(name,EVectorVarID,sizeof(EVECDATA_DESC));
+    if (evd == NULL) return(1);
+  }
+
+  /* fill evd */
+  EVM_LOCKED(evd)=1;
+  evd->vd=nvd;
+  evd->n=vd->n;
+  new_desc[0]=evd;
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   AllocEVDForVD - dynamically allocate extended vector descriptor from given vector descriptor
+
+   SYNOPSIS:
+   INT AllocEVDForVD (MULTIGRID *theMG, const VECDATA_DESC *vd, INT n, EVECDATA_DESC **new_desc)
+
+   PARAMETERS:
+   .  theMG - allocate descriptor for this multigrid
+   .  vd - given vector descriptor
+   .  n - number of paramters
+   .  new_desc   - handle for descriptor
+
+   DESCRIPTION:
+   This function allocates an extended vector descriptor from a
+   given vector descriptors.
+   If there is no existing decriptor a new one is created.
+
+   SEE ALSO:
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occurred
+ */
+/****************************************************************************/
+
+INT AllocEVDForVD (MULTIGRID *theMG, const VECDATA_DESC *vd, INT n, EVECDATA_DESC **new_desc)
+{
+  EVECDATA_DESC *evd;
+  char name[NAMESIZE];
+
+  /* check */
+  if (n<1 || n>EXTENSION_MAX) return(1);
+  if (vd==NULL) return(1);
+
+  /* get Evector */
+  for (evd=GetFirstEVector(theMG); evd!=NULL; evd=GetNextEVector(evd))
+  {
+    if (!EVM_LOCKED(evd)) break;
+  }
+  if (evd==NULL)
+  {
+    /* create EVECDATA_DESC with extension name */
+    if (ChangeEnvDir("/Multigrids") == NULL) return(1);
+    if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return(1);
+    if (ChangeEnvDir("EVectors") == NULL)
+    {
+      MakeEnvItem("EVectors",EVectorDirID,sizeof(ENVDIR));
+      if (ChangeEnvDir("EVectors") == NULL) return(1);
+    }
+    if (GetEVDName(name)) return(1);
+    evd=(EVECDATA_DESC *)MakeEnvItem(name,EVectorVarID,sizeof(EVECDATA_DESC));
+    if (evd == NULL) return(1);
+  }
+
+  /* fill evd */
+  EVM_LOCKED(evd)=1;
+  evd->vd=(VECDATA_DESC*)vd;
+  evd->n=n;
+  new_desc[0]=evd;
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   AllocEMDForMD - dynamically allocate extended matrix descriptor for given matrix descriptor
+
+   SYNOPSIS:
+   INT AllocEMDForMD (MULTIGRID *theMG, const MATDATA_DESC *md, INT n, EMATDATA_DESC **new_desc)
+
+   PARAMETERS:
+   .  theMG - allocate descriptor for this multigrid
+   .  vd - given vector descriptor
+   .  n - number of paramters
+   .  new_desc   - handle for descriptor
+
+   DESCRIPTION:
+   This function allocates an extended matrix descriptor for a
+   given matrix descriptors.
+   If there is no existing decriptor a new one is created.
+
+   SEE ALSO:
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occurred
+ */
+/****************************************************************************/
+
+INT AllocEMDForMD (MULTIGRID *theMG, const MATDATA_DESC *md, INT n, EMATDATA_DESC **new_desc)
+{
+  INT i;
+  EMATDATA_DESC *emd;
+  char name[NAMESIZE];
+
+  /* check */
+  if (n<1 || n>EXTENSION_MAX) return(1);
+  if (md==NULL) return(1);
+
+  /* get EMatrix */
+  for (emd=GetFirstEMatrix(theMG); emd!=NULL; emd=GetNextEMatrix(emd))
+  {
+    if (!EVM_LOCKED(emd)) break;
+  }
+  if (emd==NULL)
+  {
+    /* create EMATDATA_DESC */
+    if (ChangeEnvDir("/Multigrids") == NULL) return(1);
+    if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return(1);
+    if (ChangeEnvDir("EMatrices") == NULL)
+    {
+      MakeEnvItem("EMatrices",EMatrixDirID,sizeof(ENVDIR));
+      if (ChangeEnvDir("EMatrices") == NULL) return(1);
+    }
+    if (GetEMDName(name)) return(1);
+    emd=(EMATDATA_DESC *)MakeEnvItem(name,EMatrixVarID,sizeof(EVECDATA_DESC));
+    if (emd == NULL) return(1);
+  }
+
+  /* fill emd */
+  EVM_LOCKED(emd)=1;
+  emd->mm=(MATDATA_DESC*)md;
+  emd->n=n;
+  for (i=0; i<n; i++)
+  {
+    if (GetEVDName(name)) return(1);
+    emd->me[i]=CreateVecDescOfTemplate(theMG,name,NULL); if (emd->me[i]==NULL) return(1);
+    if (GetEVDName(name)) return(1);
+    emd->em[i]=CreateVecDescOfTemplate(theMG,name,NULL); if (emd->me[i]==NULL) return(1);
+  }
+  new_desc[0]=emd;
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    LockVD - protect vector against removal or deallocation
 
    SYNOPSIS:
@@ -1144,6 +1496,38 @@ INT FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
 
 /****************************************************************************/
 /*D
+   FreeEVD - dynamic extended vector deallocation
+
+   SYNOPSIS:
+   INT FreeEVD (MULTIGRID *theMG, INT fl, INT tl, EVECDATA_DESC *vd);
+
+   PARAMETERS:
+   .  theMG - free vector for this multigrid
+   .  fl - from level
+   .  tl - to level
+   .  vd - extended vector descriptor
+
+   DESCRIPTION:
+   This function deallocates an extended vector.
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occurred
+ */
+/****************************************************************************/
+
+INT FreeEVD (MULTIGRID *theMG, INT fl, INT tl, EVECDATA_DESC *vd)
+{
+  if (vd==NULL) REP_ERR_RETURN (NUM_ERROR);
+  if (FreeVD(theMG,fl,tl,vd->vd)) REP_ERR_RETURN (NUM_ERROR);
+  EVM_LOCKED(vd)=0;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
    InterpolateVDAllocation - dynamic vector allocation on new level
 
    SYNOPSIS:
@@ -1248,7 +1632,7 @@ INT DisposeVD (VECDATA_DESC *vd)
    D*/
 /****************************************************************************/
 
-static INT lev2str (const levels[MAXLEVEL], char *list)
+static INT lev2str (const INT levels[MAXLEVEL], char *list)
 {
   INT i,f,t,p;
 
@@ -2877,6 +3261,75 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
 
 /****************************************************************************/
 /*D
+   AllocEMDFromEVD - dynamically allocate extended matrix descriptor from given extended vector descriptors
+
+   SYNOPSIS:
+   INT AllocEMDFromEVD (MULTIGRID *theMG, INT fl, INT tl, const EVECDATA_DESC *x, const EVECDATA_DESC *y, EMATDATA_DESC **new_desc)
+
+   PARAMETERS:
+   .  theMG - allocate descriptor for this multigrid
+   .  fl - from level
+   .  tl - to level
+   .  x - source vector the matrix is operating on
+   .  y - destination vector the matrix is operating to
+   .  new_desc   - handle for descriptor
+
+   DESCRIPTION:
+   This function allocates ain extended matrix descriptor from
+   given extended vector descriptors the matrix is operating
+   from and to. If there is no existing decriptor a new one is created.
+
+   SEE ALSO:
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occurred
+ */
+/****************************************************************************/
+
+INT AllocEMDFromEVD (MULTIGRID *theMG, INT fl, INT tl, const EVECDATA_DESC *x, const EVECDATA_DESC *y, EMATDATA_DESC **new_desc)
+{
+  INT i;
+  MATDATA_DESC *md=NULL;
+  EMATDATA_DESC *emd;
+
+  /* check */
+  if (x->n!=y->n) return(1);
+
+  /* nothing to do if it is locked */
+  if (*new_desc != NULL)
+    if (EVM_LOCKED(*new_desc))
+      return (NUM_OK);
+
+  /* create MATDATA_DESC */
+  if (AllocMDFromVD(theMG,fl,tl,x->vd,y->vd,&md)) return(1);
+
+  /* create EMATDATA_DESC with same name */
+  if (ChangeEnvDir("/Multigrids") == NULL) return(1);
+  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return(1);
+  if (ChangeEnvDir("EMatrices") == NULL)
+  {
+    MakeEnvItem("EMatrices",EMatrixDirID,sizeof(ENVDIR));
+    if (ChangeEnvDir("EMatrices") == NULL) return(1);
+  }
+  emd = (EMATDATA_DESC *) MakeEnvItem(ENVITEM_NAME(md),EVectorVarID,sizeof(EMATDATA_DESC));
+  if (emd == NULL) return(1);
+  emd->mm=md;
+  emd->n=x->n;
+  for (i=0; i<x->n; i++)
+  {
+    if (AllocVDFromVD(theMG,fl,tl,x->vd,&(emd->me[i]))) return(1);
+    if (AllocVDFromVD(theMG,fl,tl,x->vd,&(emd->em[i]))) return(1);
+  }
+  EVM_LOCKED(emd)=1;
+  new_desc[0]=emd;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
    AllocMDFromMD - dynamically allocate matrix descriptor from given matrix descriptor
 
    SYNOPSIS:
@@ -3042,6 +3495,45 @@ INT FreeMD (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *md)
     for (tp=0; tp<NMATTYPES; tp++)
       for (j=0; j<MD_NCMPS_IN_MTYPE(md,tp); j++)
         CLEAR_DR_MAT_FLAG(theGrid,tp,MD_MCMP_OF_MTYPE(md,tp,j));
+  }
+
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*D
+   FreeEMD - dynamic extended matrix deallocation
+
+   SYNOPSIS:
+   INT FreeMD (MULTIGRID *theMG, INT fl, INT tl, EMATDATA_DESC *md);
+
+   PARAMETERS:
+   .  theMG - free vector for this multigrid
+   .  fl - from level
+   .  tl - to level
+   .  md - extended matrix descriptor
+
+   DESCRIPTION:
+   This function deallocates an extended matrix.
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occurred
+ */
+/****************************************************************************/
+
+INT FreeEMD (MULTIGRID *theMG, INT fl, INT tl, EMATDATA_DESC *md)
+{
+  INT i;
+
+  if (md==NULL) REP_ERR_RETURN (NUM_ERROR);
+  if (EVM_LOCKED(md)) return (NUM_OK);
+  if (FreeMD(theMG,fl,tl,md->mm)) return(1);
+  for (i=0; i<md->n; i++)
+  {
+    if (FreeVD(theMG,fl,tl,md->em[i])) return(1);
+    if (FreeVD(theMG,fl,tl,md->me[i])) return(1);
   }
 
   return (NUM_OK);
@@ -4322,6 +4814,10 @@ INT InitUserDataManager ()
   VectorDirID = GetNewEnvDirID();
   MatrixVarID = GetNewEnvVarID();
   VectorVarID = GetNewEnvVarID();
+  EMatrixDirID = GetNewEnvDirID();
+  EVectorDirID = GetNewEnvDirID();
+  EMatrixVarID = GetNewEnvVarID();
+  EVectorVarID = GetNewEnvVarID();
   names = DEFAULT_NAMES;
   for (i=0; i<MIN(MAX_VEC_COMP,strlen(DEFAULT_NAMES)); i++)
     NoVecNames[i] = names[i];

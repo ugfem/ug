@@ -81,22 +81,20 @@
 
 INT ReadArgvPosition                                    (const char *name, INT argc, char **argv, DOUBLE *pos);
 
-VECDATA_DESC *ReadArgvVecDescX                  (MULTIGRID *theMG, const char *name,
-                                                 INT argc, char **argv, INT CreateIfNonExistent);
-VEC_TEMPLATE *ReadArgvVecTemplate               (const FORMAT *fmt, const char *name,
-                                                 INT argc, char **argv);
-VEC_TEMPLATE *ReadArgvVecTemplateSub    (const FORMAT *fmt, const char *name,
-                                         INT argc, char **argv, INT *sub);
-MAT_TEMPLATE *ReadArgvMatTemplateSub    (const FORMAT *fmt, const char *name,
-                                         INT argc, char **argv, INT *sub);
-MATDATA_DESC *ReadArgvMatDescX                  (MULTIGRID *theMG, const char *name,
-                                                 INT argc, char **argv, INT CreateIfNonExistent);
+VECDATA_DESC *ReadArgvVecDescX                  (MULTIGRID *theMG, const char *name, INT argc, char **argv, INT CreateIfNonExistent);
+EVECDATA_DESC *ReadArgvEVecDescX        (MULTIGRID *theMG, const char *name, INT argc, char **argv, INT CreateIfNonExistent);
+VEC_TEMPLATE *ReadArgvVecTemplate               (const FORMAT *fmt, const char *name, INT argc, char **argv);
+VEC_TEMPLATE *ReadArgvVecTemplateSub    (const FORMAT *fmt, const char *name, INT argc, char **argv, INT *sub);
+MAT_TEMPLATE *ReadArgvMatTemplateSub    (const FORMAT *fmt, const char *name, INT argc, char **argv, INT *sub);
+MATDATA_DESC *ReadArgvMatDescX                  (MULTIGRID *theMG, const char *name, INT argc, char **argv, INT CreateIfNonExistent);
+EMATDATA_DESC *ReadArgvEMatDescX                (MULTIGRID *theMG, const char *name, INT argc, char **argv, INT CreateIfNonExistent);
 
-NP_BASE      *ReadArgvNumProc                   (MULTIGRID *theMG, const char *name, const char *cls,
-                                                 INT argc, char **argv);
+NP_BASE      *ReadArgvNumProc                   (MULTIGRID *theMG, const char *name, const char *cls, INT argc, char **argv);
 
 #define ReadArgvVecDesc(mg,n,ac,av)             ReadArgvVecDescX(mg,n,ac,av,YES)
+#define ReadArgvEVecDesc(mg,n,ac,av)    ReadArgvEVecDescX(mg,n,ac,av,YES)
 #define ReadArgvMatDesc(mg,n,ac,av)             ReadArgvMatDescX(mg,n,ac,av,YES)
+#define ReadArgvEMatDesc(mg,n,ac,av)    ReadArgvEMatDescX(mg,n,ac,av,YES)
 
 /* for reading damping factors etc. */
 INT ReadVecTypeINTs             (const FORMAT *fmt, char *str, INT n, INT nINT[MAXVECTORS], INT theINTs[][MAXVECTORS]);
@@ -106,11 +104,14 @@ INT ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, char *class_name, IN
 
 /* tools for VEC_SCALAR */
 INT sc_read          (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const char *name, INT argc, char **argv);
+INT esc_read     (EVEC_SCALAR x, const FORMAT *fmt, const EVECDATA_DESC *theVD, const char *name, INT argc, char **argv);
 INT sc_disp      (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name);
+INT esc_disp     (EVEC_SCALAR x, const EVECDATA_DESC *theVD, const char *name);
 INT sc_cmp           (VEC_SCALAR x, const VEC_SCALAR y, const VECDATA_DESC *theVD);
+INT esc_cmp      (EVEC_SCALAR x, const EVEC_SCALAR y, const EVECDATA_DESC *theVD);
 INT sc_eq            (VEC_SCALAR x, const VEC_SCALAR y, DOUBLE ac, const VECDATA_DESC *theVD);
-INT sc_mul           (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z,
-                      const VECDATA_DESC *theVD);
+INT sc_mul           (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z, const VECDATA_DESC *theVD);
+INT esc_mul      (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, const EVECDATA_DESC *theVD);
 INT sc_mul_check (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z,
                   const VECDATA_DESC *theVD);
 

@@ -1189,7 +1189,7 @@ INT AddInterpolationMatrix (GRID *theGrid,
 
 /******** checks if damp != 1.0 ***********/
 
-static CheckDamp (INT n, const DOUBLE *damp)
+static INT CheckDamp (INT n, const DOUBLE *damp)
 {
   INT i;
 
