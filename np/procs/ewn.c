@@ -108,6 +108,7 @@ typedef struct
   INT c_d;                                                               /* up to c_d digits                */
   INT type;                                  /* usage of mass matrix            */
   DOUBLE shift_min, shift_max;                   /* shift of center of inverse iter */
+  DOUBLE imag_max;                           /* range of imaginary parts        */
   DOUBLE scale;                                                  /* scaling factor for eigenvalues  */
   VEC_SCALAR weight;                         /* weighting for reduced system    */
   /* build-up						*/
@@ -327,6 +328,7 @@ static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
   if (np->scale<=0.0) return(NP_ACTIVE);
   if (ReadArgvDOUBLE("smin",&np->shift_min,argc,argv)) np->shift_min=0.0;
   if (ReadArgvDOUBLE("smax",&np->shift_max,argc,argv)) np->shift_max=0.0;
+  if (ReadArgvDOUBLE("imax",&np->imag_max,argc,argv)) np->imag_max=0.0;
   if (sc_read(np->weight,NP_FMT(npew),npew->ev[0],"weight",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++)
       np->weight[i]=1.0;
@@ -536,7 +538,7 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
   MULTIGRID *theMG = theNP->base.mg;
   INT i,j,k,l,PrintID,iter,done,result,DoLS;
   char text[DISPLAY_WIDTH+4],format2[64],format3[64],formatr1[64],formatr2[64],formats[64];
-  DOUBLE a[2],rq,s,min,shift,shift_old,norm_max,cnorm[MAX_NUMBER_EW],norm_x1x2,norm_yx2,norm_yx1,ss,max_additional,max_wanted,help;
+  DOUBLE a[2],rq,s,min,shift,shift_old,norm_max,cnorm[MAX_NUMBER_EW],norm_x1x2,norm_yx2,norm_yx1,delta;
   DOUBLE A[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE B[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE BL[MAX_NUMBER_EW*MAX_NUMBER_EW];
@@ -560,7 +562,7 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
   strcpy(format3,"      %3d: [% "); strcat(format3,text); strcat(format3,"e, % "); strcat(format3,text); strcat(format3,"e]");
   strcpy(formatr1," %-3d   res: %3d: (% "); strcat(formatr1,text); strcat(formatr1,"e, % "); strcat(formatr1,text); strcat(formatr1,"e)\n");
   strcpy(formatr2,"            %3d: (% "); strcat(formatr2,text); strcat(formatr2,"e, % "); strcat(formatr2,text); strcat(formatr2,"e)\n");
-  shift=np->shift_min; DoLS=0;
+  shift=np->shift_min; DoLS=0; shift_old=shift-1;
   for (iter=0; iter<np->maxiter; iter++)
   {
     /* preprocess if */
@@ -741,38 +743,21 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
     for (i=0; i<New; i++)
       if (FreeVD(theMG,bl,level,np->e[i])) NP_RETURN(1,ewresult->error_code);
 
-    /* calculate shift
-       shift=0.5*(shift+ew_re[0]);
-       min=0;
-       for (i=1; i<New; i++)
-       {
-            min=2.0*ew_re[0]-ew_re[i];
-            if (min<ew_re[0]) break;
-       }
-       shift=MIN(shift,min);
-       shift=MAX(shift,np->shift_min);
-       shift=MIN(shift,np->shift_max);
-       DoLS=0; if (shift!=shift_old) DoLS=1; shift_old=shift; */
+    /* convergence of smallest */
+    UserWriteF("convergence of smallest\n");
+    UserWriteF("-----------------------\n");
+    delta=0.0; for (i=0; i<New; i++) delta=MAX(delta,(ew_re[i]-shift)*(ew_re[i]-shift)+ew_im[i]*ew_im[i]);
+    delta=((ew_re[0]-shift)*(ew_re[0]-shift)+ew_im[0]*ew_im[0])/delta; delta=sqrt(delta);
+    UserWriteF("gamma: %e\n\n",delta);
 
     /* calculate shift */
-    shift=np->shift_min-1.0;
-    for (ss=np->shift_min; ss<=np->shift_max; ss+=0.01*(np->shift_max-np->shift_min))
-    {
-      max_wanted=0.0;
-      for (i=0; i<np->c_n; i++)
-      {
-        help=(ew_re[i]-shift)*(ew_re[i]-shift)+ew_im[i]*ew_im[i];
-        max_wanted=MAX(max_wanted,sqrt(help));
-      }
-      max_additional=10.0*max_wanted;
-      for (i=np->c_n+1; i<np->ew.nev; i++)
-      {
-        help=(ew_re[i]-shift)*(ew_re[i]-shift)+ew_im[i]*ew_im[i];
-        max_additional=MAX(max_additional,sqrt(help));
-      }
-      if (max_wanted<=0.5*max_additional) shift=ss;
-    }
-    assert(shift>=np->shift_min);
+    delta=0.0; for (i=0; i<New; i++) delta=MAX(delta,ABS(ew_im[i]));delta=MAX(delta,np->imag_max);
+    shift=ew_re[0]+delta*delta/(ew_re[0]-ew_re[New-1]);
+    delta=0.0; for (i=0; i<New; i++) { delta=ew_re[0]-ew_re[i]; if (delta!=0.0) break;}
+    shift=MIN(shift,ew_re[0]+0.5*delta);
+    shift=MAX(shift,np->shift_min);
+    shift=MIN(shift,np->shift_max);
+    DoLS=0; if (shift!=shift_old) DoLS=1;shift_old=shift;
 
     /* postprocess if */
     if (done || iter==np->maxiter-1 || DoLS)
