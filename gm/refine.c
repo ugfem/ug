@@ -1132,9 +1132,6 @@ static void GetCurrentContext (ELEMENT *theElement, NODE **theElementContext)
 	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
 		theElementContext[i] = SONNODE(CORNER(theElement,i));
 
-	if (ID(theElement)==30)
-		printf("element\n");
-
 	if (DIM==3 && TAG(theElement)==HEXAHEDRON && REFINECLASS(theElement)==GREEN) {
 
 		for (i=0; i<EDGES_OF_ELEM(theElement); i++)
@@ -1747,9 +1744,10 @@ static int RefineGreenElement (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 	int i,j,k,l,m,n,o,p,q,r,s,s2,t,found,points;
 	int NbrSide,side,nbside,NbSonIndex,nelem,nedges,node,node0,nsi;
 	int bdy,edge, sides[4], side0, side1;
-	int tetNode0, tetNode1, tetNode2,
+	int tetNode0, tetNode1, tetNode2, tetEdge0, tetEdge1, tetEdge2,
 		tetSideNode0Node1, tetSideNode0Node2, tetSideNode1Node2,
 		pyrSide, pyrNode0, pyrNode1, pyrNode2, pyrNode3,
+		pyrEdge0, pyrEdge1, pyrEdge2, pyrEdge3,
 		pyrSideNode0Node1, pyrSideNode1Node2, pyrSideNode2Node3, pyrSideNode0Node3;
 	int elementsSide0[5], elementsSide1[5];
 
@@ -1810,33 +1808,19 @@ static int RefineGreenElement (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 	tetNode1 = element_descriptors[TETRAHEDRON]->corner_of_side[0][1];
 	tetNode2 = element_descriptors[TETRAHEDRON]->corner_of_side[0][2];
 
-	for (i=0; i<element_descriptors[TETRAHEDRON]->edges_of_elem; i++)
-		if(element_descriptors[TETRAHEDRON]->corner_of_edge[i][0]==tetNode0 && element_descriptors[TETRAHEDRON]->corner_of_edge[i][1]==tetNode1 ||
-		   element_descriptors[TETRAHEDRON]->corner_of_edge[i][1]==tetNode0 && element_descriptors[TETRAHEDRON]->corner_of_edge[i][0]==tetNode1)
-			break;
-	for (j=0; j<element_descriptors[TETRAHEDRON]->sides_of_elem; j++)
-		if (element_descriptors[TETRAHEDRON]->side_with_edge[i][j] != 0)
-			break;
-	tetSideNode0Node1 = element_descriptors[TETRAHEDRON]->side_with_edge[i][j];
-	
-	for (i=0; i<element_descriptors[TETRAHEDRON]->edges_of_elem; i++)
-		if(element_descriptors[TETRAHEDRON]->corner_of_edge[i][0]==tetNode0 && element_descriptors[TETRAHEDRON]->corner_of_edge[i][1]==tetNode2 ||
-		   element_descriptors[TETRAHEDRON]->corner_of_edge[i][1]==tetNode0 && element_descriptors[TETRAHEDRON]->corner_of_edge[i][0]==tetNode2)
-			break;
-	for (j=0; j<element_descriptors[TETRAHEDRON]->sides_of_elem; j++)
-		if (element_descriptors[TETRAHEDRON]->side_with_edge[i][j] != 0)
-			break;
-	tetSideNode0Node2 = element_descriptors[TETRAHEDRON]->side_with_edge[i][j];
-	
-	for (i=0; i<element_descriptors[TETRAHEDRON]->edges_of_elem; i++)
-		if(element_descriptors[TETRAHEDRON]->corner_of_edge[i][0]==tetNode1 && element_descriptors[TETRAHEDRON]->corner_of_edge[i][1]==tetNode2 ||
-		   element_descriptors[TETRAHEDRON]->corner_of_edge[i][1]==tetNode1 && element_descriptors[TETRAHEDRON]->corner_of_edge[i][0]==tetNode2)
-			break;
-	for (j=0; j<element_descriptors[TETRAHEDRON]->sides_of_elem; j++)
-		if (element_descriptors[TETRAHEDRON]->side_with_edge[i][j] != 0)
-			break;
-	tetSideNode1Node2 = element_descriptors[TETRAHEDRON]->side_with_edge[i][j];
+	tetEdge0 = element_descriptors[TETRAHEDRON]->edge_of_side[0][0];
+	tetEdge1 = element_descriptors[TETRAHEDRON]->edge_of_side[0][1];
+	tetEdge2 = element_descriptors[TETRAHEDRON]->edge_of_side[0][2];
 
+	tetSideNode0Node1 = element_descriptors[TETRAHEDRON]->side_with_edge[tetEdge0][0];
+	if (tetSideNode0Node1 == 0) tetSideNode0Node1 = element_descriptors[TETRAHEDRON]->side_with_edge[tetEdge0][1];
+
+	tetSideNode1Node2 = element_descriptors[TETRAHEDRON]->side_with_edge[tetEdge1][0];
+	if (tetSideNode1Node2 == 0) tetSideNode1Node2 = element_descriptors[TETRAHEDRON]->side_with_edge[tetEdge1][1];
+
+	tetSideNode0Node2 = element_descriptors[TETRAHEDRON]->side_with_edge[tetEdge2][0];
+	if (tetSideNode0Node2 == 0) tetSideNode0Node2 = element_descriptors[TETRAHEDRON]->side_with_edge[tetEdge2][1];
+	
 	/* outer side for pyramid has 4 corners */
 	for (i=0; i<element_descriptors[PYRAMID]->sides_of_elem; i++)
 		if (element_descriptors[PYRAMID]->corners_of_side[i] == 4)
@@ -1847,41 +1831,22 @@ static int RefineGreenElement (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 	pyrNode2 = element_descriptors[PYRAMID]->corner_of_side[i][2];
 	pyrNode3 = element_descriptors[PYRAMID]->corner_of_side[i][3];
 
-	for (k=0; k<element_descriptors[PYRAMID]->edges_of_elem; k++)
-		if(element_descriptors[PYRAMID]->corner_of_edge[k][0]==pyrNode0 && element_descriptors[PYRAMID]->corner_of_edge[k][1]==pyrNode1 ||
-		   element_descriptors[PYRAMID]->corner_of_edge[k][1]==pyrNode0 && element_descriptors[PYRAMID]->corner_of_edge[k][0]==pyrNode1)
-			break;
-	for (j=0; j<element_descriptors[PYRAMID]->sides_of_elem; j++)
-		if (element_descriptors[PYRAMID]->side_with_edge[k][j] != i)
-			break;
-	pyrSideNode0Node1 = element_descriptors[PYRAMID]->side_with_edge[k][j];
+	pyrEdge0 = element_descriptors[PYRAMID]->edge_of_side[i][0];
+	pyrEdge1 = element_descriptors[PYRAMID]->edge_of_side[i][1];
+	pyrEdge2 = element_descriptors[PYRAMID]->edge_of_side[i][2];
+	pyrEdge3 = element_descriptors[PYRAMID]->edge_of_side[i][3];
 
-	for (k=0; k<element_descriptors[PYRAMID]->edges_of_elem; k++)
-		if(element_descriptors[PYRAMID]->corner_of_edge[k][0]==pyrNode1 && element_descriptors[PYRAMID]->corner_of_edge[k][1]==pyrNode2 ||
-		   element_descriptors[PYRAMID]->corner_of_edge[k][1]==pyrNode1 && element_descriptors[PYRAMID]->corner_of_edge[k][0]==pyrNode2)
-			break;
-	for (j=0; j<element_descriptors[PYRAMID]->sides_of_elem; j++)
-		if (element_descriptors[PYRAMID]->side_with_edge[k][j] != i)
-			break;
-	pyrSideNode1Node2 = element_descriptors[PYRAMID]->side_with_edge[k][j];
+	pyrSideNode0Node1 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge0][1];
+	if (pyrSideNode0Node1 == i) pyrSideNode0Node1 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge0][0];
 
-	for (k=0; k<element_descriptors[PYRAMID]->edges_of_elem; k++)
-		if(element_descriptors[PYRAMID]->corner_of_edge[k][0]==pyrNode2 && element_descriptors[PYRAMID]->corner_of_edge[k][1]==pyrNode3 ||
-		   element_descriptors[PYRAMID]->corner_of_edge[k][1]==pyrNode2 && element_descriptors[PYRAMID]->corner_of_edge[k][0]==pyrNode3)
-			break;
-	for (j=0; j<element_descriptors[PYRAMID]->sides_of_elem; j++)
-		if (element_descriptors[PYRAMID]->side_with_edge[k][j] != i)
-			break;
-	pyrSideNode2Node3 = element_descriptors[PYRAMID]->side_with_edge[k][j];
+	pyrSideNode1Node2 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge1][1];
+	if (pyrSideNode1Node2 == i) pyrSideNode1Node2 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge1][0];
 
-	for (k=0; k<element_descriptors[PYRAMID]->edges_of_elem; k++)
-		if(element_descriptors[PYRAMID]->corner_of_edge[k][0]==pyrNode3 && element_descriptors[PYRAMID]->corner_of_edge[k][1]==pyrNode0 ||
-		   element_descriptors[PYRAMID]->corner_of_edge[k][1]==pyrNode3 && element_descriptors[PYRAMID]->corner_of_edge[k][0]==pyrNode0)
-			break;
-	for (j=0; j<element_descriptors[PYRAMID]->sides_of_elem; j++)
-		if (element_descriptors[PYRAMID]->side_with_edge[k][j] != i)
-			break;
-	pyrSideNode0Node3 = element_descriptors[PYRAMID]->side_with_edge[k][j];
+	pyrSideNode2Node3 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge2][1];
+	if (pyrSideNode2Node3 == i) pyrSideNode2Node3 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge2][0];
+
+	pyrSideNode0Node3 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge3][1];
+	if (pyrSideNode0Node3 == i) pyrSideNode0Node3 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge3][0];
 
 	/* create edges on inner of sides, create son elements and connect them */
 	for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
@@ -2202,7 +2167,7 @@ static int RefineGreenElement (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 					}
 				if (found) break;
 			}
-			assert(j<side1*5+5);
+			assert(l<side1*5+5);
 
 			sons[j].nb[k] = l;
 			sons[l].nb[m] = j;
