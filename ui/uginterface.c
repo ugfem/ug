@@ -1031,8 +1031,6 @@ INT InitUgInterface ()
   theCmdKeyVarID = GetNewEnvVarID();
 
   DefaultDevice = GetDefaultOutputDevice();
-  if (DefaultDevice==NULL)
-    return (__LINE__);
 
   return (0);
 }

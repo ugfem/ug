@@ -1297,15 +1297,27 @@ void MousePosition (INT *ScreenPoint)
 }
 
 /****************************************************************************/
-/*																			*/
-/* Function:  MouseStillDown												*/
-/*																			*/
-/* Purpose:   return true when button is still pressed						*/
-/*																			*/
-/* Input:	  none															*/
-/*																			*/
-/* Output:	  1 if button pressed, zero else								*/
-/*																			*/
+/*
+   MouseStillDown - Determine if mouse button is still pressed
+
+
+   SYNOPSIS:
+   INT MouseStillDown (void);
+
+   PARAMETERS:
+   no parameters
+
+   DESCRIPTION:
+   This function returns true (1) if the mouse button is still pressed.
+   The function should only be called after a button pressed event has been
+   reported.
+
+
+   RETURN VALUE:
+   INT
+   .n 0 if mouse button has been released
+   .n 1 if mouse button is still pressed
+ */
 /****************************************************************************/
 
 static Bool callback (Display *d, XEvent *report, char *arg)

@@ -5608,6 +5608,11 @@ static INT OpenWindowCommand (INT argc, char **argv)
   if (strlen(winname)==0)
     sprintf(winname,"window%d",(int) wincounter++);
 
+  if (theOutDev==NULL) {
+    PrintErrorMessage('E',"openwindow","no output device");
+    return (PARAMERRORCODE);
+  }
+
   if ((theWin=CreateUgWindow(theOutDev,winname,x,y,w,h))==NULL)
   {
     PrintErrorMessage('E',"openwindow","failed to open a window");

@@ -2435,9 +2435,52 @@ void CommandLoop (int argc, char **argv)
   }
   else
   {
-    sprintf(inpLine,"execute %s\n",argv[1]);
-    InterpretCommand(inpLine);
-    InterpretCommand("quit");
+    i = 1;     /* first argument */
+    while (i<argc)
+    {
+      /* execute batch file */
+      if (argv[i][0]!='-')
+      {
+        sprintf(inpLine,"execute %s\n",argv[i]);
+        InterpretCommand(inpLine);         /* execute command line argument */
+        InterpretCommand("quit\n");        /* end program */
+        i++;
+        continue;
+      }
+      /* set command from command line */
+      if ((argv[i][0]=='-')&&(argv[i][1]=='S'))
+      {
+        if (i+1<argc)
+        {
+          sprintf(inpLine,"set %s\n",(argv[i+1]));
+          InterpretCommand(inpLine);
+          i++;
+        }
+        else
+        {
+          UserWrite("Error in command line option -S\n");
+        }
+        i++;
+        continue;
+      }
+      /* logon command from command line */
+      if ((argv[i][0]=='-')&&(argv[i][1]=='L'))
+      {
+        if (i+1<argc)
+        {
+          sprintf(inpLine,"logon %s\n",(argv[i+1]));
+          InterpretCommand(inpLine);
+          i++;
+        }
+        else
+        {
+          UserWrite("Error in command line option -L\n");
+        }
+        i++;
+        continue;
+      }
+      i++;
+    }
   }
 }
 
