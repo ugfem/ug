@@ -112,6 +112,7 @@ enum PP_ACTIONS {
 #define PP_SCALE_M(p)                   ((p)->s_m)
 #define PP_TIME(p)                              ((p)->time)
 #define PP_DELTA_T(p)                   ((p)->dt)
+#define PP_OLD_DELTA_T(p)               ((p)->dt_old)
 #define PP_TIMEDEP(p)                   ((p)->dt!=0.0)
 #define PP_ASS_PART(p)                  ((p)->ass_part)
 #define PP_SKIP(p)                              ((p)->partskip)
@@ -122,6 +123,7 @@ enum PP_ACTIONS {
 #define PP_VD_s_glob(p)                 ((p)->VD_s_glob)
 #define PP_VD_s_i(p)                    ((p)->VD_s_i)
 #define PP_VD_s_co(p)                   ((p)->VD_s_co)
+#define PP_VD_s_ico(p)                  ((p)->VD_s_ico)
 #define PP_VD_o(p)                              ((p)->VD_o)
 #define PP_VD_o_glob(p)                 ((p)->VD_o_glob)
 #define PP_VD_c(p)                              ((p)->VD_c)
@@ -145,6 +147,9 @@ enum PP_ACTIONS {
 #define NPPNL_POST(p)                   (((NP_NL_PARTASS*)(p))->NLPpostprocess)
 
 /* NP_T_PARTASS access macros */
+#define NPPT_t(p)                               (((NP_T_PARTASS*)(p))->t)
+#define NPPT_s(p)                               (((NP_T_PARTASS*)(p))->s)
+
 #define NPPT_INITIAL(p)                 (((NP_T_PARTASS*)(p))->TPassembleInitial)
 #define NPPT_PRE(p)                     (((NP_T_PARTASS*)(p))->TPpreprocess)
 #define NPPT_ASSSOL(p)                  (((NP_T_PARTASS*)(p))->TPassembleSolution)
@@ -494,6 +499,7 @@ typedef struct {
   DOUBLE s_m;                                                           /* scale mass matrix			*/
   DOUBLE time;                                                          /* time                                                 */
   DOUBLE dt;                                                            /* time step					*/
+  DOUBLE dt_old;                                                        /* last time step				*/
   INT ass_part;                                                         /* assemble part only			*/
   INT partskip[NVECTYPES];                              /* own skip flag positions		*/
   INT co_partskip[NVECTYPES];                           /* co skip flag positions		*/
@@ -503,6 +509,7 @@ typedef struct {
   VECDATA_DESC   *VD_s_glob;
   VECDATA_DESC   *VD_s_i;
   VECDATA_DESC   *VD_s_co;
+  VECDATA_DESC   *VD_s_ico;
   VECDATA_DESC   *VD_o;                                         /* last time step sol			*/
   VECDATA_DESC   *VD_o_glob;
   VECDATA_DESC   *VD_c;                                         /* correction					*/
@@ -646,7 +653,7 @@ INT NPTAssembleExecute                  (NP_BASE *theNP, INT argc , char **argv)
 
 void DefaultPartassParams               (PARTASS_PARAMS *pp);
 INT SetPartassParams                    (PARTASS_PARAMS *pp, const VEC_TEMPLATE *vt, INT sub,
-                                         DOUBLE s_a, DOUBLE s_m, DOUBLE t, DOUBLE dt,
+                                         DOUBLE s_a, DOUBLE s_m, DOUBLE t, DOUBLE dt, DOUBLE dt_old,
                                          VECDATA_DESC *s, VECDATA_DESC *r, VECDATA_DESC *o,
                                          VECDATA_DESC *c, VECDATA_DESC *g, MATDATA_DESC *A);
 
