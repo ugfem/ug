@@ -40,6 +40,9 @@
 /* ANSI-C includes */
 #include <stdio.h>
 
+/* for the definition of NS_PREFIX */
+#include "domain.h"
+
 /* low module */
 #include "compiler.h"
 #include "misc.h"
