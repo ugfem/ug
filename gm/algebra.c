@@ -1002,7 +1002,7 @@ INT DisposeBlockvector( GRID *theGrid, BLOCKVECTOR *bv )
    D*/
 /****************************************************************************/
 
-static void FreeBVList (GRID *grid, BLOCKVECTOR *bv)
+void FreeBVList (GRID *grid, BLOCKVECTOR *bv)
 {
   register BLOCKVECTOR *bv_h;
 
@@ -2276,6 +2276,7 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
 static ELEMENT *CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *centerElement, INT *ConDepth, INT ActDepth, INT MaxDepth, INT *MatSize)
 {
   int i;
+  ELEMENT *theErrorElement;
 
   /* is anything to do ? */
   if (theElement==NULL) return (NULL);
@@ -2288,7 +2289,8 @@ static ELEMENT *CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *
   /* call all neighbors recursively */
   if (ActDepth<MaxDepth)
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-      return(CheckNeighborhood(theGrid,NBELEM(theElement,i),centerElement,ConDepth,ActDepth+1,MaxDepth,MatSize));
+      if ((theErrorElement=CheckNeighborhood(theGrid,NBELEM(theElement,i),centerElement,ConDepth,ActDepth+1,MaxDepth,MatSize))!=NULL)
+        return(theErrorElement);
 
   return (NULL);
 }
@@ -2331,7 +2333,7 @@ ELEMENT *ElementCheckConnection (GRID *theGrid, ELEMENT *theElement)
   MatSize = theFormat->MatrixSizes;
 
   /* call elements recursivly */
-  return(CheckNeighborhood (theGrid,theElement,theElement,ConDepth,0,MaxDepth,MatSize));
+  return(CheckNeighborhood(theGrid,theElement,theElement,ConDepth,0,MaxDepth,MatSize));
 }
 
 /****************************************************************************/

@@ -190,7 +190,7 @@ DOUBLE GN (INT n, INT i, COORD *local)
    LMP - local midpoint
 
    SYNOPSIS:
-   COORD *LMidP (INT n);
+   COORD *LMP (INT n);
 
    PARAMETERS:
 .  n - number of corners of the element

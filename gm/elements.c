@@ -750,6 +750,9 @@ INT InitElementTypes (MULTIGRID *theMG)
 {
   INT err;
 
+  if (theMG==NULL)
+    return(GM_ERROR);
+
 #ifdef __TWODIM__
   err = ProcessElementDescription(theMG,&def_triangle);
   if (err!=GM_OK) return(err);
