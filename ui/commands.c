@@ -4127,7 +4127,7 @@ static INT RefineCommand (INT argc, char **argv)
 
         #ifdef ModelP
   /* currently only this is supported in parallel */
-  if (0 && procs > 1)
+  if (procs > 1)
   {
     mark = MARK_ALL;
     mode = mode | GM_REFINE_NOT_CLOSED;
