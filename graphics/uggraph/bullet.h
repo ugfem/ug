@@ -13,15 +13,15 @@
 /*                                                                          */
 /* Author:    Michael Lampe                                                 */
 /*            Institut fuer Computeranwendungen                             */
-/*            Universitaet Stuttgart                                                                                */
-/*            Pfaffenwaldring 27                                                                                    */
-/*            70569 Stuttgart                                                                                               */
-/*            internet: ug@ica3.uni-stuttgart.de                                                    */
-/*                                                                                                                                                      */
-/* History:   24.2.98 begin, ug3-version                                                                        */
-/*                                                                                                                                                      */
-/* Remarks:                                                                                                                             */
-/*                                                                                                                                                      */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            internet: ug@ica3.uni-stuttgart.de                            */
+/*                                                                          */
+/* History:   24.2.98 begin, ug3-version                                    */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 /* RCS_ID
@@ -65,17 +65,28 @@ START_UGDIM_NAMESPACE
 #define FAR_AWAY     (-FLT_MAX)        /* a large negative number from ZTYP */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/*  exported variables                                                                                                  */
-/*                                                                                                                                                      */
+/*                                                                          */
+/*  exported data structures                                                */
+/*                                                                          */
+/****************************************************************************/
+
+typedef struct {
+  unsigned char cindex;
+  unsigned char intensity;
+} PIXEL;
+
+/****************************************************************************/
+/*                                                                          */
+/*  exported variables                                                      */
+/*                                                                          */
 /****************************************************************************/
 
 extern INT BulletDim;
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/*  exported functions                                                                                                  */
-/*                                                                                                                                                      */
+/*                                                                          */
+/*  exported functions                                                      */
+/*                                                                          */
 /****************************************************************************/
 
 INT BulletOpen(PICTURE *picture, DOUBLE factor);

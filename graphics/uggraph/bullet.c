@@ -57,13 +57,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-#define DM_ROWS      8                /* dither matrix rows, power of 2     */
-#define DM_COLS      8                /* dither matrix cols, power of 2     */
-#define DM_ENTRIES   (DM_ROWS*DM_COLS)
-
 /* macros for accessing pixel buffer lines */
-#define Z_BUFFER(y)  ((ZTYP *)(ZBuffer)+(y)*Width)
-#define P_BUFFER(y)  ((char *)(PBuffer)+(y)*Width)
+#define Z_BUFFER(y)  ((ZTYP  *)(ZBuffer)+(y)*Width)
+#define P_BUFFER(y)  ((PIXEL *)(PBuffer)+(y)*Width)
 
 /****************************************************************************/
 /*																			*/
@@ -104,16 +100,6 @@ static void *PBuffer;                /* pixel buffer                        */
 static void *ZBuffer;                /* z buffer                            */
 static void *ABuffer;                /* auxiliary buffer                    */
 
-static INT DitherMatrix[DM_ROWS][DM_COLS] =
-{{ 0, 32,  8, 40,  2, 34, 10, 42},
- {48, 16, 56, 24, 50, 18, 58, 26},
- {12, 44,  4, 36, 14, 46,  6, 38},
- {60, 28, 52, 20, 62, 30, 54, 22},
- { 3, 35, 11, 43,  1, 33,  9, 41},
- {51, 19, 59, 27, 49, 17, 57, 25},
- {15, 47,  7, 39, 13, 45,  5, 37},
- {63, 31, 55, 23, 61, 29, 53, 21}};
-
 /****************************************************************************/
 /*																			*/
 /* forward declarations of functions used before they are defined			*/
@@ -151,7 +137,7 @@ INT NS_DIM_PREFIX BulletOpen(PICTURE *picture, DOUBLE factor)
 {
   HEAP *heap;
   ZTYP *z;
-  char *p;
+  PIXEL *p;
   INT i, err;
 
   /* remember picture data */
@@ -170,9 +156,9 @@ INT NS_DIM_PREFIX BulletOpen(PICTURE *picture, DOUBLE factor)
   /* allocate buffers */
   NbPixels = Width*Height;
   if (BulletDim == 3)
-    Length = NbPixels + NbPixels*sizeof(ZTYP);
+    Length = NbPixels * (sizeof(PIXEL)+sizeof(ZTYP));
   else
-    Length = NbPixels;
+    Length = NbPixels * sizeof(PIXEL);
 
   heap = GetCurrentMultigrid()->theHeap;
   MarkTmpMem(heap, &MarkKey);
@@ -198,14 +184,18 @@ INT NS_DIM_PREFIX BulletOpen(PICTURE *picture, DOUBLE factor)
     for (i = 0; i < NbPixels; i++)
       *z++ = FAR_AWAY;
 
-    /* init pixel buffer */
-    p = (char *)(PBuffer = (void *)z);
+    PBuffer = z;
   }
   else
-    p = (char *)(PBuffer = ZBuffer);
+    PBuffer = ZBuffer;
 
-  for (i = 0; i < NbPixels; i++)
-    *p++ = (char)OutputDevice->white;
+  /* init pixel buffer */
+  p = (PIXEL *)PBuffer;
+  for (i = 0; i < NbPixels; i++) {
+    p->cindex = OutputDevice->white;
+    p->intensity = 255;
+    p++;
+  }
 
   return BULLET_OK;
 }
@@ -246,13 +236,13 @@ void NS_DIM_PREFIX BulletClose(void)
 static void MergeBuffers(void *buffer1, void *buffer2)
 {
   INT i;
-  char *p1, *p2;
-  ZTYP *z1, *z2;
+  ZTYP  *z1, *z2;
+  PIXEL *p1, *p2;
 
   if (BulletDim == 3)
   {
-    z1 = (ZTYP *)buffer1;        z2 = (ZTYP *)buffer2;
-    p1 = (char *)(z1+NbPixels);  p2 = (char *)(z2+NbPixels);
+    z1 = (ZTYP  *)buffer1;        z2 = (ZTYP  *)buffer2;
+    p1 = (PIXEL *)(z1+NbPixels);  p2 = (PIXEL *)(z2+NbPixels);
 
     for (i = 0; i < NbPixels; i++) {
       if (*z2 > *z1) {
@@ -265,10 +255,10 @@ static void MergeBuffers(void *buffer1, void *buffer2)
   }
   else
   {
-    p1 = (char *)buffer1;
-    p2 = (char *)buffer2;
+    p1 = (PIXEL *)buffer1;
+    p2 = (PIXEL *)buffer2;
     for (i = 0; i < NbPixels; i++) {
-      if (*p2 != (char)OutputDevice->white)
+      if (p2->cindex != OutputDevice->white)
         *p1 = *p2;
       p1++;  p2++;
     }
@@ -332,8 +322,8 @@ void NS_DIM_PREFIX BulletPlot(void)
 #endif
   {
     FramePicture();
-    (*OutputDevice->PlotPixelBuffer)(PBuffer, scratch, NbPixels,
-                                     XShift, YShift, Width, Height);
+    (*OutputDevice->PlotPixelBuffer)(PBuffer, scratch, XShift, YShift,
+                                     Width, Height);
   }
 }
 
@@ -353,12 +343,15 @@ static void DrawPoint(INT x, INT y, DOUBLE z, char c)
   {
     zp = Z_BUFFER(y)+x;
     if (z >= (*zp)-ZEPS*ABS(*zp)) {
-      P_BUFFER(y)[x] = c;
+      P_BUFFER(y)[x].cindex = c;
+      P_BUFFER(y)[x].intensity = 255;
       *zp = z;
     }
   }
-  else
-    P_BUFFER(y)[x]=c;
+  else {
+    P_BUFFER(y)[x].cindex = c;
+    P_BUFFER(y)[x].intensity = 255;
+  }
 }
 
 /*****************************************************************************
@@ -421,16 +414,14 @@ static void DrawLine(POINT p1, DOUBLE z1, POINT p2, DOUBLE z2, char c)
 
 static void DrawSpan(INT x1, INT x2, INT y, DOUBLE z, DOUBLE dz, DOUBLE i, char c)
 {
-  char *pp;
+  PIXEL *pp;
   ZTYP *pz;
-  INT *pd, x, threshold;
+  INT x;
 
   if (y < 0 || y >= Height) return;
 
   pp = P_BUFFER(y)+x1;
   pz = Z_BUFFER(y)+x1;
-  pd = DitherMatrix[y & (DM_ROWS-1)];
-  threshold = (INT)(0.5+DM_ENTRIES*i);
 
   if (x1 <= x2) {
     for (x = x1; x <= x2; x++) {
@@ -438,16 +429,15 @@ static void DrawSpan(INT x1, INT x2, INT y, DOUBLE z, DOUBLE dz, DOUBLE i, char 
         if (BulletDim == 3)
         {
           if (z >= *pz) {
-            if (pd[x & (DM_COLS-1)] < threshold)
-              *pp = c;
-            else
-              *pp = (char)OutputDevice->black;;
+            pp->cindex = c;
+            pp->intensity = i*255.0;
             *pz = z;
           }
         }
         else
         {
-          *pp = c;
+          pp->cindex = c;
+          pp->intensity = i*255.0;
         }
       }
       pp++;
@@ -464,16 +454,15 @@ static void DrawSpan(INT x1, INT x2, INT y, DOUBLE z, DOUBLE dz, DOUBLE i, char 
         if (BulletDim == 3)
         {
           if (z >= *pz) {
-            if (pd[x & (DM_COLS-1)] < threshold)
-              *pp = c;
-            else
-              *pp = (char)OutputDevice->black;
+            pp->cindex = c;
+            pp->intensity = i*255.0;
             *pz = z;
           }
         }
         else
         {
-          *pp = c;
+          pp->cindex = c;
+          pp->intensity = i*255.0;
         }
       }
       pp--;

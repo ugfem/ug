@@ -56,6 +56,7 @@
 #include "general.h"
 #include "debug.h"
 #include "commands.h"
+#include "bullet.h"
 
 /* Xif includes */
 #include "xmain.h"
@@ -659,86 +660,59 @@ static void IFFlush (void)
   return;
 }
 
-
 /*--------------------------------------------------------------------------*
-*   Convert pixel buffer to XImage data: one has to copy the 8, 16 or 32   *
+*   Convert pixel buffer to XImage data: one has to copy the 16 or 32      *
 *   lower bits of the pixel values keeping the clients byte order.         *
 *--------------------------------------------------------------------------*/
 
-static void MakeXImageData(void *buffer, void *data, INT len, int pad)
+static void MakeXImageData(void *buffer, void *data, int len, int pad)
 {
-  unsigned char  *p;
-  unsigned char  *q0;
-  unsigned short *q1;
-  unsigned int   *q2;
-  unsigned long pixel;
-  INT i;
+  int i, c;
+  unsigned long pixel, r, g, b, f;
+  char *d;
+  PIXEL *p;
 
-  p = (unsigned char *)buffer;
-  switch(pad)
-  {
-  case 8 :
-    for (i=0; i<len; i++) {
-      *p = ctab[*p].pixel;
-      p++;
-    }
-    break;
+  p = (PIXEL *)buffer;
+  d = (char  *)data;
 
-  case 16 :
-    if (sizeof(*q1) == 2) {
-      q1 = (unsigned short *)data;
-      for (i=0; i<len; i++)
-        *q1++ = ctab[*p++].pixel;
-    }
-    else {
-      q0 = (unsigned char *)data;
+  for (i = 0; i < len; i++) {
+    c = p->cindex;
+    f = p->intensity;
+    p++;
+    r = (ctab[c].pixel & red_mask  ) >> red_shift;
+    g = (ctab[c].pixel & green_mask) >> green_shift;
+    b = (ctab[c].pixel & blue_mask ) >> blue_shift;
+    r = r*f/255;
+    g = g*f/255;
+    b = b*f/255;
+    pixel = (r << red_shift) + (g << green_shift) + (b << blue_shift);
+    switch (pad)
+    {
+    case 16 :
 #ifdef __SWAPBYTES__
-      for (i=0; i<len; i++) {
-        pixel = ctab[*p++].pixel;
-        *q0++ = pixel & 0x00FF;
-        *q0++ = pixel >> 8;
-      }
+      d[0] = ((char*)&pixel)[0];
+      d[1] = ((char*)&pixel)[1];
 #else
-      for (i=0; i<len; i++) {
-        pixel = ctab[*p++].pixel;
-        *q0++ = pixel >> 8;
-        *q0++ = pixel & 0x00FF;
-      }
+      d[0] = ((char*)&pixel)[sizeof(pixel)-2];
+      d[1] = ((char*)&pixel)[sizeof(pixel)-1];
 #endif
-    }
-    break;
-
-  case 32 :
-    if (sizeof(*q1) == 4) {
-      q1 = (unsigned short *)data;
-      for (i=0; i<len; i++)
-        *q1++ = ctab[*p++].pixel;
-    }
-    else if (sizeof(*q2) == 4) {
-      q2 = (unsigned int *)data;
-      for (i=0; i<len; i++)
-        *q2++ = ctab[*p++].pixel;
-    }
-    else {
-      q0 = (unsigned char *)data;
+      d += 2;
+      break;
+    case 32 :
 #ifdef __SWAPBYTES__
-      for (i=0; i<len; i++) {
-        pixel = ctab[*p++].pixel;
-        *q0++ = pixel & 0x000000FF;
-        *q0++ = (pixel & 0x0000FF00) >> 8;
-        *q0++ = (pixel & 0x00FF0000) >> 16;
-        *q0++ = pixel >> 24;
-      }
+      d[0] = ((char*)&pixel)[0];
+      d[1] = ((char*)&pixel)[1];
+      d[2] = ((char*)&pixel)[2];
+      d[3] = ((char*)&pixel)[3];
 #else
-      for (i=0; i<len; i++) {
-        pixel = ctab[*p++].pixel;
-        *q0++ = pixel >> 24;
-        *q0++ = (pixel & 0x00FF0000) >> 16;
-        *q0++ = (pixel & 0x0000FF00) >> 8;
-        *q0++ = pixel & 0x000000FF;
-      }
+      d[0] = ((char*)&pixel)[sizeof(pixel)-4];
+      d[1] = ((char*)&pixel)[sizeof(pixel)-3];
+      d[2] = ((char*)&pixel)[sizeof(pixel)-2];
+      d[3] = ((char*)&pixel)[sizeof(pixel)-1];
 #endif
+      d += 4;
     }
+
   }
 }
 
@@ -746,32 +720,32 @@ static void MakeXImageData(void *buffer, void *data, INT len, int pad)
 *   write the pixel buffer to the screen                                   *
 *--------------------------------------------------------------------------*/
 
-static void IFPlotPixelBuffer(void *buffer, void *data, INT len,
+static void IFPlotPixelBuffer(void *buffer, void *data,
                               int x, int y, int w, int h)
 {
   HEAP *heap;
   XImage *image;
-  unsigned char *p;
-  unsigned long pixel;
   int bitmap_pad;
-  INT mem_allocated, key, i;
+  INT mem_allocated, key;
+
+  /* We support only TrueColor, this is 2004! */
+  if (default_visual->CLASS != TrueColor) {
+    UserWrite("IFPlotPixelBuffer: Sorry, only TrueColor visuals supported.\n");
+    return;
+  }
 
   /* how many bits per pixel do we need? */
-  if (default_depth <= 8)
-    bitmap_pad = 8;
-  else if (default_depth <= 16)
+  if (default_depth <= 16)
     bitmap_pad = 16;
   else
     bitmap_pad = 32;
 
   /* allocate mem for XImage data if necessary */
   mem_allocated = NO;
-  if (bitmap_pad == 8)
-    data = buffer;
-  else if (data == NULL) {
+  if (data == NULL) {
     heap = GetCurrentMultigrid()->theHeap;
     MarkTmpMem(heap, &key);
-    if ((data = GetTmpMem(heap, len * bitmap_pad/8, key)) == NULL) {
+    if ((data = GetTmpMem(heap, w*h*bitmap_pad/8, key)) == NULL) {
       UserWrite("IFPlotPixelBuffer: Sorry, not enough memory.\n");
       ReleaseTmpMem(heap, key);
       return;
@@ -779,7 +753,7 @@ static void IFPlotPixelBuffer(void *buffer, void *data, INT len,
     mem_allocated = YES;
   }
 
-  MakeXImageData(buffer, data, len, bitmap_pad);
+  MakeXImageData(buffer, data, w*h, bitmap_pad);
 
   /* create XImage structure and write image to the screen */
   image = XCreateImage(display, default_visual, default_depth, ZPixmap, 0,

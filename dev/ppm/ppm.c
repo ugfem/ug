@@ -35,7 +35,7 @@
 #include "ugdevices.h"
 #include "initdev.h"
 #include "general.h"
-
+#include "bullet.h"
 
 USING_UG_NAMESPACE
 
@@ -71,6 +71,9 @@ static PPM_WINDOW   *ppm_Window;
 static short RedTab[COLORS];
 static short GreenTab[COLORS];
 static short BlueTab[COLORS];
+
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -174,21 +177,24 @@ static void ppm_SetNewPalette(long x, long count, short *r, short *g, short *b)
 /*																			*/
 /****************************************************************************/
 
-static void ppm_PlotPixelBuffer(void *buffer, void *data, INT len,
+static void ppm_PlotPixelBuffer(void *buffer, void *data,
                                 int x, int y, int w, int h)
 {
-  unsigned char *p;
-  int i, j;
+  PIXEL *p;
+  int i, j, c, f;
   long offset;
 
-  p = (unsigned char *)buffer;
+  p = (PIXEL *)buffer;
   offset = ppm_Window->header_length + 3 * (y*ppm_Window->width + x);
   for (j = 0; j < h; j++) {
     fseek(ppm_Window->file, offset, SEEK_SET);
     for (i = 0; i < w; i++) {
-      fputc(RedTab  [*p],   ppm_Window->file);
-      fputc(GreenTab[*p],   ppm_Window->file);
-      fputc(BlueTab [*p++], ppm_Window->file);
+      c = p->cindex;
+      f = p->intensity;
+      p++;
+      fputc(RedTab  [c] *f/255, ppm_Window->file);
+      fputc(GreenTab[c] *f/255, ppm_Window->file);
+      fputc(BlueTab [c] *f/255, ppm_Window->file);
     }
     offset += 3 * ppm_Window->width;
   }

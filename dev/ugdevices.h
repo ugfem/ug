@@ -213,7 +213,7 @@ struct outputdevice {
   /* pointers to miscellaneous functions */
   void (*GetPaletteEntry)(long,short *,short *,short *);        /* read color tab                                       */
   void (*Flush)(void);                                                                          /* flush graphics buffer                        */
-  void (*PlotPixelBuffer)(void *, void *, INT, int, int, int, int);
+  void (*PlotPixelBuffer)(void *, void *, int, int, int, int);
   /* plot a pixel buffer              */
 
   /* operations for managing windows */
