@@ -1475,6 +1475,27 @@ MATRIX *GetMatrix (const VECTOR *FromVector, const VECTOR *ToVector)
   return (NULL);
 }
 
+MATRIX *GetOrderedMatrix (const VECTOR *FromVector, const VECTOR *ToVector)
+{
+  MATRIX *theMatrix;
+
+  if (INDEX(FromVector) > INDEX(ToVector)) {
+    for (theMatrix=VSTART(FromVector);
+         theMatrix!=NULL; theMatrix = MNEXT(theMatrix))
+      if (MDEST(theMatrix)==ToVector)
+        return (theMatrix);
+  }
+  else {
+    for (theMatrix=VSTART(ToVector);
+         theMatrix!=NULL; theMatrix = MNEXT(theMatrix))
+      if (MDEST(theMatrix)==FromVector)
+        return (MADJ(theMatrix));
+  }
+
+  /* return not found */
+  return (NULL);
+}
+
 /****************************************************************************/
 /*D
    GetConnection - Return pointer to connection if it exists

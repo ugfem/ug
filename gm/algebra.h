@@ -57,6 +57,20 @@
 #define NEWDEF_CLASS    2       /* <= class of the vectors where defect needed	*/
 #define ACTIVE_CLASS    3       /* <= class of the active vectors				*/
 
+#define GET_MATRIX(v,w,m)                                                   \
+  { register MATRIX *theMatrix0;                                              \
+    register VECTOR *theVector0 = (v);                                        \
+    register VECTOR *theVector1 = (w);                                        \
+    if (INDEX(theVector0) > INDEX(theVector1)) {                              \
+      for (theMatrix0=VSTART(theVector0); theMatrix0!=NULL;                 \
+           theMatrix0=MNEXT(theMatrix0))                                    \
+        if (MDEST(theMatrix0)==theVector1) break;                         \
+      (m) = theMatrix0; }                                                   \
+    else { for (theMatrix0=VSTART(theVector1); theMatrix0!=NULL;              \
+                theMatrix0=MNEXT(theMatrix0))                                    \
+             if (MDEST(theMatrix0)==theVector0) break;                         \
+           (m) = MADJ(theMatrix0); }}
+
 /****************************************************************************/
 /*																			*/
 /* data structures exported by the corresponding source file				*/
