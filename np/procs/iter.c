@@ -213,6 +213,8 @@ typedef struct
   INT ls;
   INT diag;
 
+  DOUBLE thresh;
+
   NP_ITER *u_iter;
   NP_ITER *v_iter;
   NP_ITER *p_iter;
@@ -1620,14 +1622,14 @@ static INT II_PreProcess (NP_ITER *theNP, INT level,
       REP_ERR_RETURN(1);
 
   if (np->PreSmooth->PreProcess != NULL)
-    for (i = np->baselevel; i <= level; i++)
+    for (i = level; i <= level; i++)
       if ((*np->PreSmooth->PreProcess)
             (np->PreSmooth,i,x,b,A,baselevel,result))
         REP_ERR_RETURN(1);
 
   if (np->PreSmooth != np->PostSmooth)
     if (np->PostSmooth->PreProcess != NULL)
-      for (i = np->baselevel; i <= level; i++)
+      for (i = level; i <= level; i++)
         if ((*np->PreSmooth->PreProcess)
               (np->PostSmooth,i,x,b,A,baselevel,result))
           REP_ERR_RETURN(1);
@@ -1877,6 +1879,8 @@ static INT TSInit (NP_BASE *theNP, INT argc , char **argv)
   np->diag = ReadArgvOption("diag",argc,argv);
   np->display = ReadArgvDisplay(argc,argv);
   np->dc_max = 0;
+  if (ReadArgvDOUBLE("thresh",&np->thresh,argc,argv))
+    np->thresh = 0.0;
 
   return (NPIterInit(&np->iter,argc,argv));
 }
@@ -1947,6 +1951,7 @@ static INT TSDisplay (NP_BASE *theNP)
   UserWriteF(DISPLAY_NP_FORMAT_SI,"extra",(int)np->extra);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"ls",(int)np->ls);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"diag",(int)np->diag);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"thresh",(float)np->thresh);
 
   if (np->display == PCR_NO_DISPLAY)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
@@ -2255,12 +2260,17 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
   if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),np->s)!=NUM_OK)
     NP_RETURN(1,result[0]);
     #endif
-  if (np->dc) {
+  if (np->dc)
+  {
+    INT display = np->display;
+
+    if (level < TOPLEVEL(theMG))
+      display = PCR_NO_DISPLAY;
     if (dcopy(theMG,level,level,ALL_VECTORS,np->q,np->s) != NUM_OK)
       NP_RETURN(1,result[0]);
     sprintf(text1,"level %d: %s",level,ENVITEM_NAME(np));
     CenterInPattern(text,DISPLAY_WIDTH,text1,' ',"\n");
-    if (PreparePCR(np->q,np->display,text,&PrintID))
+    if (PreparePCR(np->q,display,text,&PrintID))
       NP_RETURN(1,result[0]);
         #ifdef ModelP
     if (l_vector_collect(GRID_ON_LEVEL(theMG,level),np->q)!=NUM_OK)
@@ -2285,8 +2295,22 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
   if ((*np->p_iter->Iter)(np->p_iter,level,np->r,np->q,np->S,result))
     REP_ERR_RETURN(1);
 
+  i = 0;
+  if (np->thresh > 0.0)
+  {
+    DOUBLE udef,pdef;
+
+    if (dnrm2(theMG,level,level,ALL_VECTORS,np->ub,&udef))
+      NP_RETURN(1,result[0]);
+    if (dnrm2(theMG,level,level,ALL_VECTORS,np->pb,&pdef))
+      NP_RETURN(1,result[0]);
+
+    if (udef < pdef * np->thresh)
+      i = np->dc;
+  }
+
   /* defect correction for the Schur complement*/
-  for (i=0; i<np->dc; i++) {
+  for ( ; i<np->dc; i++) {
     /* compute q = S * p */
     if (ddot(theMG,level,level,ALL_VECTORS,np->s,np->r,&lambda))
       NP_RETURN(1,result[0]);
