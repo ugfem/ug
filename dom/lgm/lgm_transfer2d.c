@@ -137,7 +137,7 @@ static int ReadCommentLine (char *comment)
 /****************************************************************************/
 
 static int nSubdomain, nLine;
-static fpos_t filepos,UnitInfoFilepos;
+static fpos_t filepos,filepos2,UnitInfoFilepos;
 static HEAP *theHeap;
 
 int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info)
@@ -193,7 +193,7 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info)
   if (ReadCommentLine("Unit-Info")) return (1);
   if (SkipBTN()) return (1);
   if (fgetpos(stream, &UnitInfoFilepos)) return (1);
-  while (fscanf(stream,"name %d",&i)==1)
+  while (fscanf(stream,"unit %d",&i)==1)
     if (SkipEOL()) return (1);
 
   /* get number of subdomain and line */
@@ -393,14 +393,14 @@ int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
   }
 
   /* scan Unit-Info */
-  if (fgetpos(stream, &filepos)) return (1);
+  if (fgetpos(stream, &filepos2)) return (1);
   if (fsetpos(stream, &UnitInfoFilepos)) return (1);
   found = 0;
   while(1)
   {
     copy = 0;
     if (fscanf(stream,"%s",buffer)!=1) break;
-    if (strcmp(buffer,"name")!=0) break;
+    if (strcmp(buffer,"unit")!=0) break;
     while (fscanf(stream," %d",&i)==1)
       if (i==subdom_i)
       {
@@ -411,8 +411,17 @@ int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
     if (copy)
       strcpy(subdom_info->Unit,buffer);
   }
-  if (found!=1) return (1);
-  if (fsetpos(stream, &filepos)) return (1);
+  if (found<1)
+  {
+    UserWriteF("ERROR: subdomain %d references no unit\n",(int)subdom_i);
+    return (1);
+  }
+  if (found>1)
+  {
+    UserWriteF("ERROR: subdomain %d references more than 1 unit\n",(int)subdom_i);
+    return (1);
+  }
+  if (fsetpos(stream, &filepos2)) return (1);
 
   return (0);
 }
