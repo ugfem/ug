@@ -448,7 +448,7 @@ void ConstructConsistentGrid (GRID *theGrid)
             INT n;
             DOUBLE *x[MAX_CORNERS_OF_ELEM];
 
-            CORNER_COORDINATES(pe,n,x);
+            CORNER_COORDINATES(theFather,n,x);
             UG_GlobalToLocal(n,(const DOUBLE **)x,
                              CVECT(theVertex),LCVECT(theVertex));
           }
