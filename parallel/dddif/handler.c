@@ -1680,8 +1680,6 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
   DEBUGNSONS(pe,theFather,"ElementObjMkCons begin:");
 
   /* correct nb relationships between ghostelements */
-  /* TODO: 3d case */
-        #ifdef __TWODIM__
   if (EGHOST(pe))
   {
     for (i=0; i<SIDES_OF_ELEM(pe); i++)
@@ -1696,7 +1694,6 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
       }
     }
   }
-        #endif
 
   /* reconstruct pointer from vectors */
   if (dddctrl.elemData) VOBJECT(EVECTOR(pe)) = (void*)pe;

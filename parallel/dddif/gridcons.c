@@ -122,30 +122,13 @@ void ConstructConsistentGrid (GRID *theGrid)
 	/* - setting of the border priorities can only be done if all      */
 	/*   ghost objects have their proper priority                      */
 
-	DEBUG_TIME(0);
-
 	DDD_XferBegin();
-
-	DEBUG_TIME(0);
-
 	SetGhostObjectPriorities(theGrid);
-
-	DEBUG_TIME(0);
-
 	DDD_XferEnd();
-
-	DEBUG_TIME(0);
-
-
 
 	DDD_XferBegin();
 	SetBorderPriorities(theGrid);
-
-	DEBUG_TIME(0);
-
 	DDD_XferEnd();
-
-	DEBUG_TIME(0);
 
 #ifdef __TWODIM__
 	/* this is the simplest fix for VFATHER zombies  */
