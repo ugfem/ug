@@ -117,12 +117,12 @@ typedef struct
 
   INT nBlocks;                      /* number of blocks                     */
   INT Block[MAX_BLOCKS+1];          /* block subdivision                    */
-  NP_SMOOTHER *BlockIter[MAX_BLOCKS];  /* block iteration scheme               */
+  NP_SMOOTHER *BlockIter[MAX_BLOCKS];  /* block iteration scheme            */
   INT nBlockIter;                   /* number of block iterations           */
   INT BlockOrder[MAX_ORDER];        /* iteration order for the blocks       */
-  MATDATA_DESC MD_Ab[MAX_BLOCKS];  /* blocked lower stiffness matrix       */
-  VECDATA_DESC VD_rb[MAX_BLOCKS];  /* blocked right hand side              */
-  VECDATA_DESC VD_tb[MAX_BLOCKS];  /* blocked temporary                    */
+  MATDATA_DESC MD_Ab[MAX_BLOCKS];   /* blocked lower stiffness matrix       */
+  VECDATA_DESC VD_rb[MAX_BLOCKS];   /* blocked right hand side              */
+  VECDATA_DESC VD_tb[MAX_BLOCKS];   /* blocked temporary                    */
 
   /* storage for components */
   SHORT COMP_A[MAX_BLOCKS*MAX_MAT_COMP];
@@ -589,15 +589,18 @@ static INT SGSPreProcess  (NP_ITER *theNP, INT level,
   GRID *theGrid;
 
   np = (NP_SGS *) theNP;
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smooother.L)) NP_RETURN(1,result[0]);
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L))
+    NP_RETURN(1,result[0]);
   theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
   if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS) != NUM_OK)
+    NP_RETURN(1,result[0]);
         #endif
   *baselevel = level;
 
   /* get storage for extra temp */
-  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NP_SGS_t((NP_SGS *) theNP))) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NP_SGS_t((NP_SGS *)theNP)))
+    NP_RETURN(1,result[0]);
 
   return (0);
 }
@@ -629,8 +632,11 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
   /* iterate forward */
     #ifdef ModelP
   if (l_vector_collect(theGrid,b)!=NUM_OK) NP_RETURN(1,result[0]);
-  if (l_lgs(theGrid,NP_SGS_t(theNP),L,b) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_vector_consistent(theGrid,NP_SGS_t(theNP)) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_lgs(theGrid,NP_SGS_t(np),(const MATDATA_DESC *)&np->smoother.L,b)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (l_vector_consistent(theGrid,NP_SGS_t(np)) != NUM_OK)
+    NP_RETURN(1,result[0]);
     #else
   if (l_lgs(theGrid,NP_SGS_t(np),A,b)) NP_RETURN(1,result[0]);
     #endif
@@ -645,7 +651,8 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
   /* iterate backward */
     #ifdef ModelP
   if (l_vector_collect(theGrid,b)!=NUM_OK) NP_RETURN(1,result[0]);
-  if (l_ugs(theGrid,x,L,b)) NP_RETURN(1,result[0]);
+  if (l_ugs(theGrid,x,(const MATDATA_DESC *)&np->smoother.L,b))
+    NP_RETURN(1,result[0]);
   if (l_vector_consistent(theGrid,x) != NUM_OK) NP_RETURN(1,result[0]);
         #else
   if (l_ugs(theGrid,x,A,b)) NP_RETURN(1,result[0]);
