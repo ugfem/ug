@@ -101,11 +101,12 @@ enum HandlerSets
 /* for elements */
 #define EPRIO(e)                                                DDD_InfoPriority(PARHDRE(e))
 #define SETEPRIO(e,p)                                   DDD_PrioritySet(PARHDRE(e),p)
-#define EMASTER(e)                                              (DDD_InfoPriority(PARHDRE(e)) == PrioMaster)
-#define EGHOST(e)                                               (DDD_InfoPriority(PARHDRE(e))==PrioGhost || \
-                                                                 DDD_InfoPriority(PARHDRE(e))==PrioVGhost)
-#define EVGHOST(e)                                              (DDD_InfoPriority(PARHDRE(e))==PrioVGhost)
-#define EHGHOST(e)                                              (DDD_InfoPriority(PARHDRE(e))==PrioGhost)
+#define EMASTER(e)                                              (EPRIO(e) == PrioMaster)
+#define EGHOST(e)                                               (EPRIO(e)==PrioGhost  || EPRIO(e)==PrioVGhost ||\
+                                                                 EPRIO(e)==PrioVHGhost)
+#define EVHGHOST(e)                                             (EPRIO(e)==PrioVHGhost)
+#define EVGHOST(e)                                              (EPRIO(e)==PrioVGhost || EPRIO(e)==PrioVHGhost)
+#define EHGHOST(e)                                              (EPRIO(e)==PrioGhost  || EPRIO(e)==PrioVHGhost)
 #define EGID(e)                                                 DDD_InfoGlobalId(PARHDRE(e))
 #define EPROCLIST(e)                                    DDD_InfoProcList(PARHDRE(e))
 #define EPROCPRIO(e,p)                                  DDD_InfoProcPrio(PARHDRE(e),p)
@@ -118,12 +119,12 @@ enum HandlerSets
 /* for nodes, vectors, edges (edges only 3D) */
 #define PRIO(e)                                                 DDD_InfoPriority(PARHDR(e))
 #define SETPRIO(e,p)                                    DDD_PrioritySet(PARHDR(e),p)
-#define MASTER(e)                                               (DDD_InfoPriority(PARHDR(e))==PrioMaster || \
-                                                                 DDD_InfoPriority(PARHDR(e))==PrioBorder)
-#define GHOST(e)                                                (DDD_InfoPriority(PARHDR(e))==PrioGhost || \
-                                                                 DDD_InfoPriority(PARHDR(e))==PrioVGhost)
-#define VGHOST(e)                                               (DDD_InfoPriority(PARHDR(e))==PrioVGhost)
-#define HGHOST(e)                                               (DDD_InfoPriority(PARHDR(e))==PrioGhost)
+#define MASTER(e)                                               (PRIO(e)==PrioMaster || PRIO(e)==PrioBorder)
+#define GHOST(e)                                                (PRIO(e)==PrioGhost  || PRIO(e)==PrioVGhost ||\
+                                                                 PRIO(e)==PrioVHGhost)
+#define VHGHOST(e)                                              (PRIO(e)==PrioVHGhost)
+#define VGHOST(e)                                               (PRIO(e)==PrioVGhost || PRIO(e)==PrioVHGhost)
+#define HGHOST(e)                                               (PRIO(e)==PrioGhost  || PRIO(e)==PrioVHGhost)
 #define GID(e)                                                  DDD_InfoGlobalId(PARHDR(e))
 #define PROCLIST(e)                                             DDD_InfoProcList(PARHDR(e))
 #define PROCPRIO(e,p)                                   DDD_InfoProcPrio(PARHDR(e),p)
@@ -136,12 +137,12 @@ enum HandlerSets
 /* for vertices */
 #define VXPRIO(e)                                               DDD_InfoPriority(PARHDRV(e))
 #define SETVXPRIO(e,p)                                  DDD_PrioritySet(PARHDRV(e),p)
-#define VXMASTER(e)                                             (DDD_InfoPriority(PARHDRV(e))==PrioMaster || \
-                                                                 DDD_InfoPriority(PARHDRV(e))==PrioBorder)
-#define VXGHOST(e)                                              (DDD_InfoPriority(PARHDRV(e))==PrioGhost || \
-                                                                 DDD_InfoPriority(PARHDRV(e))==PrioVGhost)
-#define VXVGHOST(e)                                             (DDD_InfoPriority(PARHDRV(e))==PrioVGhost)
-#define VXHGHOST(e)                                             (DDD_InfoPriority(PARHDRV(e))==PrioGhost)
+#define VXMASTER(e)                                             (VXPRIO(e)==PrioMaster || VXPRIO(e)==PrioBorder)
+#define VXGHOST(e)                                              (VXPRIO(e)==PrioGhost || VXPRIO(e)==PrioVGhost ||\
+                                                                 VXPRIO(e)==PrioVHGhost)
+#define VXVHGHOST(e)                                    (VXPRIO(e)==PrioVHGhost)
+#define VXVGHOST(e)                                             (VXPRIO(e)==PrioVGhost || VXPRIO(e)==PrioVHGhost)
+#define VXHGHOST(e)                                             (VXPRIO(e)==PrioGhost || VXPRIO(e)==PrioVHGhost)
 #define VXGID(e)                                                DDD_InfoGlobalId(PARHDRV(e))
 #define VXPROCLIST(e)                                   DDD_InfoProcList(PARHDRV(e))
 #define VXATTR(e)                                               DDD_InfoAttr(PARHDRV(e))
@@ -152,15 +153,17 @@ enum HandlerSets
 /* macros for priorities */
 /* for elements */
 #define EMASTERPRIO(p)                                  (p==PrioMaster)
-#define EGHOSTPRIO(p)                                   (p==PrioGhost || p==PrioVGhost)
-#define EVGHOSTPRIO(p)                                  (p==PrioVGhost)
-#define EHGHOSTPRIO(p)                                  (p==PrioGhost)
+#define EGHOSTPRIO(p)                                   (p==PrioGhost || p==PrioVGhost || p==PrioVHGhost)
+#define EVHGHOSTPRIO(p)                                 (p==PrioVHGhost)
+#define EVGHOSTPRIO(p)                                  (p==PrioVGhost || p==PrioVHGhost)
+#define EHGHOSTPRIO(p)                                  (p==PrioGhost  || p==PrioVHGhost)
 
 /* for nodes, vertices, vectors, edges (edges only 3D) */
 #define MASTERPRIO(p)                                   (p==PrioMaster || p==PrioBorder)
-#define GHOSTPRIO(p)                                    (p==PrioGhost || p==PrioVGhost)
-#define VGHOSTPRIO(p)                                   (p==PrioVGhost)
-#define HGHOSTPRIO(p)                                   (p==PrioGhost)
+#define GHOSTPRIO(p)                                    (p==PrioGhost || p==PrioVGhost || p==PrioVHGhost)
+#define VHGHOSTPRIO(p)                                  (p==PrioVHGhost)
+#define VGHOSTPRIO(p)                                   (p==PrioVGhost || p==PrioVHGhost)
+#define HGHOSTPRIO(p)                                   (p==PrioGhost  || p==PrioVHGhost)
 
 
 #define GIDFMT                                                  "%08x"
