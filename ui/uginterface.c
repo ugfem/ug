@@ -82,6 +82,8 @@ static PICTURE *currPicture;
 
 static INT autoRefresh;                                 /* ON or OFF						*/
 
+static INT Arrow=POINTER;                               /* POINTER, ZOOM or DRAG			*/
+
 static INT theCmdKeyDirID;                              /* env ID for the /Cmd Key dir		*/
 static INT theCmdKeyVarID;                              /* env ID for the /Cmd Key dir		*/
 
@@ -177,6 +179,18 @@ PICTURE *GetCurrentPicture (void)
 
 INT SetCurrentUgWindow (UGWINDOW *theUgWindow)
 {
+  UGWINDOW *win;
+
+  /* check validity */
+  win = GetFirstUgWindow();
+  if (win!=theUgWindow)
+  {
+    for (; win!=NULL; win=GetNextUgWindow(win))
+      if (win==theUgWindow)
+        break;
+    if (win==NULL)
+      return (1);
+  }
   currUgWindow=theUgWindow;
   return (0);
 }
@@ -591,13 +605,13 @@ static INT ProcessEvent (char *String, INT EventMask)
       /* do current work (not if UserInterrupt is calling) */
       for (theUgW=GetFirstUgWindow(); theUgW!=NULL; theUgW=GetNextUgWindow(theUgW))
       {
-        if (UGW_VALID(theUgW)==NO) if (UpdateUgWindow(theUgW,currPicture)) return (PE_ERROR);
+        if (UGW_VALID(theUgW)==NO) if (UpdateUgWindow(theUgW,currPicture)) return (PE_OTHER);
         if (autoRefresh)
           for (thePic=GetFirstPicture(theUgW); thePic!=NULL; thePic=GetNextPicture(thePic))
             if (PIC_VALID(thePic)==NO && VO_STATUS(PIC_VO(thePic))==ACTIVE)
             {
               if (DrawUgPicture(thePic))
-                return (PE_ERROR);
+                return (PE_OTHER);
               if (thePic==currPicture) DrawPictureFrame(thePic,WOP_ACTIVE);
               else DrawPictureFrame(thePic,WOP_NOT_ACTIVE);
             }
@@ -629,32 +643,34 @@ static INT ProcessEvent (char *String, INT EventMask)
   case DOC_GOAWAY :
     WinID = theEvent.DocGoAway.win;
     theUgW = WinID2UgWindow(WinID);
-    if (theUgW == NULL) return (PE_ERROR);
+    if (theUgW == NULL) return (PE_OTHER);
+    if ((currPicture!=NULL) && (PIC_UGW(currPicture)==theUgW))
+      SetCurrentPicture(NULL);
     for (thePic=GetFirstPicture(theUgW); thePic!=NULL; thePic=GetFirstPicture(theUgW))
       if (DisposePicture(thePic))
-        return (PE_ERROR);
+        return (PE_OTHER);
     if (DisposeUgWindow(theUgW))
-      return (PE_ERROR);
+      return (PE_OTHER);
     if (theUgW == currUgWindow)
-      if (SetCurrentUgWindow(GetFirstUgWindow())) return (PE_ERROR);
+      if (SetCurrentUgWindow(GetFirstUgWindow())) return (PE_OTHER);
     break;
   case DOC_ACTIVATE :
     WinID = theEvent.DocActivate.win;
     SetCurrentUgWindow(WinID2UgWindow(WinID));
-    if (currUgWindow == NULL) return (PE_ERROR);
+    if (currUgWindow == NULL) return (PE_OTHER);
     break;
   case DOC_DRAG :
     /* Update window position */
     WinID = theEvent.DocDrag.win;
     theUgW = WinID2UgWindow(WinID);
-    if (theUgW == NULL) return (PE_ERROR);
+    if (theUgW == NULL) return (PE_OTHER);
     V2_COPY(theEvent.DocDrag.Global_LL,UGW_GLL(theUgW))
     V2_COPY(theEvent.DocDrag.Global_UR,UGW_GUR(theUgW))
     break;
   case DOC_GROW :
     WinID = theEvent.DocGrow.win;
     theUgW = WinID2UgWindow(WinID);
-    if (theUgW == NULL) return (PE_ERROR);
+    if (theUgW == NULL) return (PE_OTHER);
     V2_COPY(UGW_LLL(theUgW),UGW_LLL_old)
     V2_COPY(UGW_LUR(theUgW),UGW_LUR_old)
     V2_COPY(theEvent.DocGrow.Global_LL,UGW_GLL(theUgW))
@@ -671,7 +687,7 @@ static INT ProcessEvent (char *String, INT EventMask)
       V2_COPY(UGW_LUR(theUgW),PIC_GUR(thePic))
 
       /* resize plane in physical space */
-      if (ResizeViewPlane(PIC_VO(thePic),UGW_LLL_old,UGW_LUR_old,UGW_LLL(theUgW),UGW_LUR(theUgW))) return (PE_ERROR);
+      if (ResizeViewPlane(PIC_VO(thePic),UGW_LLL_old,UGW_LUR_old,UGW_LLL(theUgW),UGW_LUR(theUgW))) return (PE_OTHER);
     }
     else
     {
@@ -695,8 +711,29 @@ static INT ProcessEvent (char *String, INT EventMask)
     /* change tool */
     WinID = theEvent.DocChangeTool.win;
     theUgW = WinID2UgWindow(WinID);
+    if (UGW_CURRTOOL(theUgW)==arrowTool)
+      if (theEvent.DocChangeTool.Tool==arrowTool)
+        switch (Arrow)
+        {
+        case POINTER :
+          SetToolName(arrowTool,"drag tool");
+          Arrow = DRAG;
+          break;
+        case DRAG :
+          SetToolName(arrowTool,"zoom tool");
+          Arrow = ZOOM;
+          break;
+        default :
+          SetToolName(arrowTool,arrowToolName);
+          Arrow = POINTER;
+          break;
+        }
     UGW_CURRTOOL(theUgW) = theEvent.DocChangeTool.Tool;
     InvalidateUgWindow(theUgW);
+    if (PIC_UGW(currPicture)==theUgW)
+      UpdateUgWindow(theUgW,currPicture);
+    else
+      UpdateUgWindow(theUgW,NULL);
     break;
   case DOC_CONTENTCLICK :
     WinID = theEvent.DocDrag.win;
@@ -713,44 +750,51 @@ static INT ProcessEvent (char *String, INT EventMask)
     switch (UGW_CURRTOOL(theUgW))
     {
     case arrowTool :
+      switch (Arrow)
+      {
+      case ZOOM :
+        ZoomPicture(currPicture,MousePosition);
+        break;
+      case DRAG :
+        DragPicture(currPicture,MousePosition);
+        break;
+      }
       break;
     case crossTool :
       W_ID(&theWork) = INSERTBNDNODE_WORK;
       W_INSERTBNDNODE_WORK(&theWork)->PixelX = MousePosition[0];
       W_INSERTBNDNODE_WORK(&theWork)->PixelY = MousePosition[1];
-      if (WorkOnPicture(currPicture,&theWork)) return (PE_ERROR);
+      if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
       break;
     case choiceTool :
-      /* do not use, not implemented correctly */
-      break;
       W_ID(&theWork) = MOVENODE_WORK;
       W_MOVENODE_WORK(&theWork)->PixelX = MousePosition[0];
       W_MOVENODE_WORK(&theWork)->PixelY = MousePosition[1];
-      if (WorkOnPicture(currPicture,&theWork)) return (PE_ERROR);
+      if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
       break;
     case circleTool :
       W_ID(&theWork) = INSERTNODE_WORK;
       W_INSERTNODE_WORK(&theWork)->PixelX = MousePosition[0];
       W_INSERTNODE_WORK(&theWork)->PixelY = MousePosition[1];
-      if (WorkOnPicture(currPicture,&theWork)) return (PE_ERROR);
+      if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
       break;
     case handTool :
       W_ID(&theWork) = SELECTNODE_WORK;
       W_SELECTNODE_WORK(&theWork)->PixelX = MousePosition[0];
       W_SELECTNODE_WORK(&theWork)->PixelY = MousePosition[1];
-      if (WorkOnPicture(currPicture,&theWork)) return (PE_ERROR);
+      if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
       break;
     case heartTool :
       W_ID(&theWork) = SELECTELEMENT_WORK;
       W_SELECTELEMENT_WORK(&theWork)->PixelX = MousePosition[0];
       W_SELECTELEMENT_WORK(&theWork)->PixelY = MousePosition[1];
-      if (WorkOnPicture(currPicture,&theWork)) return (PE_ERROR);
+      if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
       break;
     case gnoedelTool :
       W_ID(&theWork) = MARKELEMENT_WORK;
       W_SELECTELEMENT_WORK(&theWork)->PixelX = MousePosition[0];
       W_SELECTELEMENT_WORK(&theWork)->PixelY = MousePosition[1];
-      if (WorkOnPicture(currPicture,&theWork)) return (PE_ERROR);
+      if (WorkOnPicture(currPicture,&theWork)) return (PE_OTHER);
       break;
     default :
       break;
@@ -759,7 +803,7 @@ static INT ProcessEvent (char *String, INT EventMask)
   case DOC_UPDATE :
     WinID = theEvent.DocDrag.win;
     theUgW = WinID2UgWindow(WinID);
-    if (InvalidatePicturesOfUgWindow(theUgW)) return(PE_ERROR);
+    if (InvalidatePicturesOfUgWindow(theUgW)) return(PE_OTHER);
     InvalidateUgWindow(theUgW);
     for (thePic=GetFirstPicture(theUgW); thePic!=NULL; thePic=GetNextPicture(thePic))
       if (thePic==currPicture) DrawPictureFrame(thePic,WOP_ACTIVE);
@@ -789,6 +833,7 @@ static INT ProcessEvent (char *String, INT EventMask)
 
         DESCRIPTION:
         Check whether a user interrupt event was encounterd and return 'YES' or 'NO' correspondingly.
+        If yes the mutelevel is set to 0 if it was < 0.
 
         RETURN VALUE:
         INT
@@ -799,7 +844,7 @@ static INT ProcessEvent (char *String, INT EventMask)
 
 INT UserInterrupt (const char *text)
 {
-  INT Code,EventMask;
+  INT Code,EventMask,mutelevel;
   char buffer[128];
 
   EventMask = TERM_CMDKEY;
@@ -812,13 +857,19 @@ INT UserInterrupt (const char *text)
       return (YES);
     else
     {
+      mutelevel = GetMuteLevel();
+      if (GetMuteLevel()<0)
+        SetMuteLevel(0);
       sprintf(buffer,"### user-interrupt in '%s'?",text);
       UserWrite(buffer);
       UserRead(buffer);
       if (buffer[0]=='y')
         return (YES);
       else
+      {
+        SetMuteLevel(mutelevel);
         return (NO);
+      }
     }
   }
 

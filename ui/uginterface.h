@@ -58,6 +58,10 @@
 
 #define MAXLEN_INFOSTRING               20
 
+#define POINTER                                 0               /* arrow tool can zoom pictures		*/
+#define DRAG                                    1               /* arrow tool can drag pictures		*/
+#define ZOOM                                    2               /* arrow tool can zoom pictures		*/
+
 /****************************************************************************/
 /*																			*/
 /* function declarations													*/
