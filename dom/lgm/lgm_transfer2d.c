@@ -217,8 +217,10 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, IN
   if (SkipBTN()) return (1);
   if (fgetpos(stream, &filepos)) return (1);
   domain_info->nSubDomain=domain_info->nPolyline=domain_info->nPoint=0;
-  while (fscanf(stream,"line %d:",&i)==1)
+  while (fscanf(stream,"line %d",&i)==1)
   {
+    if (SkipBTN()) return (1);
+    fscanf(stream,":");
     if (SkipBTN()) return (1);
     if (fscanf(stream,"left=%d;",&i)!=1) return (1);
     domain_info->nSubDomain = MAX(domain_info->nSubDomain,i);
@@ -276,8 +278,10 @@ int LGM_ReadSizes (LGM_SIZES *lgm_sizes)
   for (i=0; i<nLine; i++) lgm_sizes->Polyline_nPoint[i] = 0;
   line_i=0;
   if (fsetpos(stream, &filepos)) return (1);
-  while (fscanf(stream,"line %d:",&i)==1)
+  while (fscanf(stream,"line %d",&i)==1)
   {
+    if (SkipBTN()) return (1);
+    fscanf(stream,":");
     if (SkipBTN()) return (1);
     if (fscanf(stream,"left=%d;",&i)!=1) return (1);
     lgm_sizes->Subdom_nLine[i]++;
@@ -330,7 +334,9 @@ int LGM_ReadLines (int dummy, LGM_LINE_INFO *line_info)
 
   /* read line information */
   if (SkipBTN()) return (1);
-  if (fscanf(stream,"line %d:",&i)!=1) return (1);
+  if (fscanf(stream,"line %d",&i)!=1) return (1);
+  if (SkipBTN()) return (1);
+  fscanf(stream,":");
 
   if (SkipBTN()) return (1);
   if (fscanf(stream,"left=%d",&i)!=1) return (1);
@@ -387,8 +393,10 @@ int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
   line_i=0;
   n=0;
   if (SkipBTN()) return (1);
-  while (fscanf(stream,"line %d:",&i)==1)
+  while (fscanf(stream,"line %d",&i)==1)
   {
+    if (SkipBTN()) return (1);
+    fscanf(stream,":");
     if (SkipBTN()) return (1);
     if (fscanf(stream,"left=%d;",&i)!=1) return (1);
     if (i==subdom_i) subdom_info->LineNumber[n++] = line_i;
