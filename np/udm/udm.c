@@ -1019,6 +1019,8 @@ INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
   VD_NID(*new_desc) = VD_NID(vd);
   VD_IDENT_PTR(*new_desc) = VD_IDENT_PTR(vd);
 
+  PRINTDEBUG(np,2,(" AllocVDFromVD %s from %d to %d\n", ENVITEM_NAME(*new_desc),fl,tl));
+
   return (0);
 }
 
