@@ -465,7 +465,7 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
       break;
     }
   }
-  FreeVD(theNP->base.mg,np->c);
+  FreeVD(theNP->base.mg,bl,level,np->c);
   if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) {
     lresult->error_code = __LINE__;
     return (1);

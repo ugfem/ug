@@ -110,7 +110,8 @@ struct np_transfer {
 typedef struct np_transfer NP_TRANSFER;
 
 typedef INT (*PreProcessTransferProcPtr)                                    \
-  (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
+  (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *,       \
+  INT *, INT *);
 typedef INT (*InterpolateCorrectionProcPtr)                                 \
   (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, DOUBLE *, INT *);
 typedef INT (*RestrictDefectProcPtr)                                        \

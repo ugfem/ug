@@ -403,7 +403,7 @@ static INT ILU_Iter (NP_ITER *theNP, INT level,
       return (1);
     }
   }
-  FreeVD(theNP->base.mg,np->t);
+  FreeVD(theNP->base.mg,level,level,np->t);
 
   return (0);
 }
@@ -416,7 +416,7 @@ static INT ILU_PostProcess (NP_ITER *theNP, INT level,
 
   np = (NP_ILU *) theNP;
 
-  FreeMD(theNP->base.mg,np->L);
+  FreeMD(theNP->base.mg,level,level,np->L);
 
   return(0);
 }
@@ -650,7 +650,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
     result[0] = __LINE__;
     return(1);
   }
-  FreeVD(theMG,np->t);
+  FreeVD(theMG,level,level,np->t);
   for (i=0; i<np->nu1; i++)
     if ((*np->PostSmooth->Iter)(np->PostSmooth,level,c,b,A,result))
       return(1);
