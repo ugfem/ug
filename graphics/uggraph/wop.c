@@ -7116,7 +7116,7 @@ static INT EXT_PostProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
 	theVertex = MYVERTEX(MN_Node);
 	
 	if (OBJT(theVertex)==IVOBJ) {
-		if (MoveNode(MN_MG,MN_Node,MN_pos)!=GM_OK)
+		if (MoveNode(MN_MG,MN_Node,MN_pos,TRUE)!=GM_OK)
 			return (1);
 		return (0);
 	}
@@ -7126,7 +7126,7 @@ static INT EXT_PostProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
 							  "on the boundary only midnodes can be moved");
 			return (1);
 		}
-		if (MoveMidNode (MN_MG,MN_Node,MN_lambda))
+		if (MoveMidNode (MN_MG,MN_Node,MN_lambda,TRUE))
 			return (1);
 	}
 

@@ -3895,7 +3895,7 @@ static INT MoveNodeCommand (INT argc, char **argv)
       for (j=0; j<DIM; j++)
         xc[j] += CVECT(myVertex)[j];
     }
-    if (MoveNode(theMG,theNode,xc)!=GM_OK)
+    if (MoveNode(theMG,theNode,xc,TRUE)!=GM_OK)
     {
       PrintErrorMessage('E',"move","failed moving the node");
       return (CMDERRORCODE);
@@ -4753,20 +4753,23 @@ static INT SmoothMGCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
+
 /****************************************************************************/
 /*D
    smoothgrid - resize quadrilaterals and triangles on surface levels according to
               the element sizes on level l-1
 
    DESCRIPTION:
-   'smoothgrid [$limit <value>] [$reset] [$g <value>] [$force <value>]  [$ortho <val0> <val1> ... <valN>]'
+   'smoothgrid [$limit <value>] [$reset] [$f <value>]  [$b] [($ortho0 || $ortho1) <val0> <val1> ... <valN>]'
 
    . $limit~<value>       - give maximum displacement of the vertices in local coordinates
                          of the father element (0 < value < 0.5, default: 0.3)
    . $reset               - reset elements to default size
-   . $g <value>           - do not apply smoothing below grid level <value>
-   . $force <value>       - apply smoothgrid for all elements between toplevel and level <value>
-   . $ortho <b0> <b1> ... - generate 'orthogonal' elements on boundarys <b0> ... <bN> (N<10)
+   . $f <value>           - apply smoothgrid for all elements between level <value> and current level (default: current level)
+   . $ortho0 <b0> <b1> ...- generate 'orthogonal' elements on boundaries <b0> ... <bN> (N<10)
+   . $ortho1 <b0> <b1> ...- generate 'orthogonal' elements on boundaries <b0> ... <bN> (N<10) for all sons
+                         of the boundary elements on level 0
+   . $b                   - move only boundary mid nodes
 
    KEYWORDS:
    multigrid, anisotropy
@@ -4789,18 +4792,11 @@ static INT FirstSurfaceLevel(MULTIGRID *theMG)
 static INT SmoothGridCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  GRID *theGrid;
   DOUBLE LimitLocDis;
-  INT i,MoveInfo[4],GridReset,lev,FirstSurLev,lowLevel,LowLevelSet,forceLevel,ForceLevelSet;
-  INT bnd_num,bnd[10];
+  INT i,GridReset,lev,FirstSurLev,lowLevel;
+  INT bnd_num,bnd[10],fl,option,dummy;
   float fValue;
 
-
-  GridReset = FALSE;
-  LowLevelSet = FALSE;
-  ForceLevelSet = FALSE;
-  LimitLocDis = 0.3;
-  bnd_num = 0;
   theMG = currMG;
   if (theMG==NULL)
   {
@@ -4816,7 +4812,13 @@ static INT SmoothGridCommand (INT argc, char **argv)
   PrintErrorMessage('E',"smoothgrid","3D not implemented yet");
   return(CMDERRORCODE);
 #endif
+
   /* options */
+  lowLevel = CURRENTLEVEL(theMG);
+  option = 0;
+  GridReset = FALSE;
+  LimitLocDis = 0.3;
+  bnd_num = 0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -4843,41 +4845,64 @@ static INT SmoothGridCommand (INT argc, char **argv)
       }
       break;
 
-    case 'g' :
-      if (sscanf(argv[i],"g %d",&lowLevel)!=1)
-      {
-        PrintErrorMessageF('E',"smoothgrid","(invalid option '%s')",argv[i]);
-        return (PARAMERRORCODE);
-      }
-      if (ForceLevelSet==TRUE)
-      {
-        PrintErrorMessage('E',"smoothgrid","specify either the 'l' or the 'force' option");
-        return (PARAMERRORCODE);
-      }
-      LowLevelSet = TRUE;
-      break;
-
     case 'f' :
-      if (sscanf(argv[i],"force %d",&forceLevel)!=1)
+      if (sscanf(argv[i],"f %d",&fl)!=1)
       {
         PrintErrorMessageF('E',"smoothgrid","(invalid option '%s')",argv[i]);
         return (PARAMERRORCODE);
       }
-      if (LowLevelSet==TRUE)
-      {
-        PrintErrorMessage('E',"smoothgrid","specify either the 'l' or the 'force' option");
-        return (PARAMERRORCODE);
-      }
-      ForceLevelSet = TRUE;
+      lowLevel = fl;
       break;
     case 'o' :
-      if ((bnd_num=sscanf(argv[i],"ortho %d %d %d %d %d %d %d %d %d %d",&bnd[0],&bnd[1],&bnd[2],
-                          &bnd[3],&bnd[4],&bnd[5],&bnd[6],&bnd[7],&bnd[8],&bnd[9]))<1)
+      if (strstr(argv[i],"ortho0")!=NULL)
       {
-        PrintErrorMessage('E',"smoothgrid","specify at least one boundary-id with 'ortho' option");
+        if ((bnd_num=sscanf(argv[i],"ortho0 %d %d %d %d %d %d %d %d %d %d",&bnd[0],&bnd[1],&bnd[2],
+                            &bnd[3],&bnd[4],&bnd[5],&bnd[6],&bnd[7],&bnd[8],&bnd[9],&dummy))<1)
+        {
+          PrintErrorMessage('E',"smoothgrid","specify at least one boundary-id with 'ortho0' option");
+          return (PARAMERRORCODE);
+        }
+        if (option!=0)
+        {
+          PrintErrorMessage('E',"smoothgrid","specify either $b, $ortho0 or $ortho1 option");
+          return (PARAMERRORCODE);
+        }
+        option = 1;
+      }
+      else if (strstr(argv[i],"ortho1")!=NULL)
+      {
+        if ((bnd_num=sscanf(argv[i],"ortho1 %d %d %d %d %d %d %d %d %d %d",&bnd[0],&bnd[1],&bnd[2],
+                            &bnd[3],&bnd[4],&bnd[5],&bnd[6],&bnd[7],&bnd[8],&bnd[9],&dummy))<1)
+        {
+          PrintErrorMessage('E',"smoothgrid","specify at least one boundary-id with 'ortho1' option");
+          return (PARAMERRORCODE);
+        }
+        if (option!=0)
+        {
+          PrintErrorMessage('E',"smoothgrid","specify either $b, $ortho0 or $ortho1 option");
+          return (PARAMERRORCODE);
+        }
+        option = 2;
+      }
+      else
+      {
+        PrintErrorMessageF('E',"smoothgrid","(invalid option '%s')",argv[i]);
         return (PARAMERRORCODE);
       }
-      if (bnd_num>=9) UserWrite("cannot process more than 10 boundaries with 'ortho' option");
+      if (bnd_num>9)
+      {
+        PrintErrorMessage('E',"smoothgrid","cannot process more than 9 boundaries with 'ortho' option");
+        return (PARAMERRORCODE);
+      }
+      break;
+
+    case 'b' :
+      if (option!=0)
+      {
+        PrintErrorMessage('E',"smoothgrid","specify either $b, $ortho0 or $ortho1 option");
+        return (PARAMERRORCODE);
+      }
+      option = 3;
       break;
 
     default :
@@ -4885,51 +4910,16 @@ static INT SmoothGridCommand (INT argc, char **argv)
       return (PARAMERRORCODE);
     }
 
-  if (CURRENTLEVEL(theMG)!=TOPLEVEL(theMG) && ForceLevelSet==FALSE && GridReset==FALSE)
-  {
-    PrintErrorMessage('E',"smoothgrid","apply smoothgrid only on toplevel or set 'force' option");
-    return(CMDERRORCODE);
-  }
-
   if (GridReset==TRUE)
   {
-    if (LowLevelSet)
-      lowLevel = MAX(1,lowLevel);
-    else
-      lowLevel = CURRENTLEVEL(theMG);
-
-    for (lev=lowLevel; lev<=CURRENTLEVEL(theMG); lev++)
-    {
-      theGrid = GRID_ON_LEVEL(theMG,lev);
-      for (i=0; i<5; i++) MoveInfo[i] = 0;
-      if (SmoothGridReset(theGrid,MoveInfo)!=0) return(CMDERRORCODE);
-      UserWriteF(" %d center nodes and %d mid nodes reset on level %d \n",MoveInfo[0],MoveInfo[1],lev);
-    }
+    if (SmoothGridReset(theMG,lowLevel,CURRENTLEVEL(theMG))!=0) return(CMDERRORCODE);
   }
   else
   {
     FirstSurLev = FirstSurfaceLevel(theMG);
-    if (LowLevelSet)
-      lowLevel = MAX(FirstSurLev,lowLevel);
-    else if (ForceLevelSet)
-      lowLevel = MAX(forceLevel,1);
-    else
-      lowLevel = FirstSurLev;
-    for (lev=lowLevel; lev<=CURRENTLEVEL(theMG); lev++)
-    {
-      theGrid = GRID_ON_LEVEL(theMG,lev);
-      for (i=0; i<5; i++) MoveInfo[i] = 0;
-      if (SmoothGrid(theGrid,LimitLocDis,MoveInfo,ForceLevelSet,bnd_num,bnd)!=0) return(CMDERRORCODE);
-      UserWriteF(" %d center nodes and %d mid nodes moved on level %d \n",MoveInfo[0],MoveInfo[1],lev);
-      if (MoveInfo[2]!=0 || MoveInfo[3]!=0)
-      {
-        UserWriteF("%d center nodes and %d mid nodes reached limit on level %d\n",MoveInfo[2],MoveInfo[3],lev);
-      }
-      if (MoveInfo[4]!=0)
-      {
-        UserWriteF("%d mid nodes moved due to 'ortho' option on level %d\n",MoveInfo[4],lev);
-      }
-    }
+    lowLevel = MIN(FirstSurLev,lowLevel);
+    lowLevel = MAX(lowLevel,1);
+    if (SmoothGrid(theMG,lowLevel,CURRENTLEVEL(theMG),LimitLocDis,bnd_num,bnd,option)!=0) return(CMDERRORCODE);
   }
 
   InvalidatePicturesOfMG(theMG);
