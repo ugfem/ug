@@ -1591,7 +1591,7 @@ INT Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
     for (i=0; i<2; i++)
       cornerValues[i] = beta*cornerValues[i] + alpha[1]*cornerValues[i+2];
     beta = 1.0 - alpha[0];
-    out[0] = beta*cornerValues[0] + alpha[0]*cornerValues[1];
+    out[0] = (beta*cornerValues[0] + alpha[0]*cornerValues[1] - np->mean) / sqrt(np->var);
   }
   break;
   default :
@@ -1617,7 +1617,7 @@ INT Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
     for (i=0; i<2; i++)
       cornerValues[i] = beta*cornerValues[i] + alpha[1]*cornerValues[i+2];
     beta = 1.0 - alpha[0];
-    out[0] = beta*cornerValues[0] + alpha[0]*cornerValues[1];
+    out[0] = (beta*cornerValues[0] + alpha[0]*cornerValues[1] - np->mean) / sqrt(np->var);
   }
   break;
   default :
