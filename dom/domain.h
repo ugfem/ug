@@ -138,7 +138,7 @@ struct mesh
   INT nBndP;                         /* nb. of boundary points              */
   BNDP **theBndPs;                                       /* list of boundary points	            */
   INT nInnP;                         /* nb. of inner nodes                  */
-  DOUBLE **Position;                  /* positions of inner nodes            */
+  DOUBLE **Position;                 /* positions of inner nodes            */
   INT nSubDomains;                   /* nb. of subdomains                   */
   INT *nSides;                       /* nb. of boundary sides per subdomain */
   INT **Side_corners;                /* nb. of side corners                 */
@@ -147,6 +147,16 @@ struct mesh
   INT **Element_corners;             /* nb. of element corners              */
   INT ***Element_corner_ids;         /* nb. of side corners                 */
   INT ***nbElements;                 /* nb. of side corners                 */
+
+  /* parallel part */
+  char *VertexLevel;                                     /* level of vertex						*/
+  /* NULL if all vertex on level 0		*/
+  char *VertexPrio;                                      /* priority of vertex					*/
+  /* NULL if all vertex are master		*/
+  char **ElementLevel;                                   /* level of element in subdomain	*/
+  /* NULL if all elements on level 0		*/
+  char **ElementPrio;                                    /* priority of element in subdomain	*/
+  /* NULL if all elements are master		*/
 };
 typedef struct mesh MESH;
 
