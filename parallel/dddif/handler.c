@@ -71,7 +71,7 @@
     }                                                \
 }
 #else
-#define DEBUGNSONS(pe,m)
+#define DEBUGNSONS(pe,f,m)
 #endif
 
 /****************************************************************************/
@@ -973,6 +973,9 @@ void NodeObjMkCons (DDD_OBJ obj, int newness)
 
   /* set pointer of vector to its node */
   if (dddctrl.nodeData && NVECTOR(theNode))
+#ifdef __PERIODIC_BOUNDARY__
+    if (VOBJECT(NVECTOR(theNode))==NULL || PRIO((NODE *)VOBJECT(NVECTOR(theNode)))<PRIO(theNode))
+#endif
     VOBJECT(NVECTOR(theNode)) = (void*)theNode;
 
 }
