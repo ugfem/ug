@@ -208,6 +208,7 @@ sub scan_modeldata ()
 		if ( /Surface\sEntity\s*\(Id\s=\s($int)\)/ )
 		{
 			$surface = $1;
+			$nl = 0;
 			LOOP1: while(<EXO2>)
 			{
 				$surfacename = sprintf "surface%d",$surface; 
@@ -216,16 +217,24 @@ sub scan_modeldata ()
 # 					printf "surface %d left=0 right=%d\n",$surface,$1;
 					$cdf{$surfacename}{left} = 0;
 					$cdf{$surfacename}{right} = $1;
+					last LOOP1;
 				}
 				elsif ( /In\sVolume\s*($int),\s*Volume\s*($int)\./ )
 				{
 # 					printf "surface %d left=%d right=%d\n",$surface,$1,$2;
 					$cdf{$surfacename}{left} = $1;
 					$cdf{$surfacename}{right} = $2;
+					last LOOP1;
 				}
-				else { printf "ERROR: left/right information missing for surface %d\n",$surface; exit;}
-				last LOOP1;
+				elsif ( /\s*Curve\s*($int)\s*($int)/ )
+				{
+					$cdf{$surfacename}{lines}{$nl} = $2;
+					if ( $1 != $2 ) { printf "ERROR curve name $1 differs from its id $2\n"; }
+					$nl++;
+				}
+				else { printf "ERROR: left/right or curve information missing for surface %d\n",$surface; exit;}
 			}
+			$cdf{$surfacename}{lines}{nlines} = $nl;
 		}
 	}
 
@@ -283,7 +292,7 @@ sub write_unit
 	
 	LOOP: foreach $nus (0 .. $cdf{nunits}-1)
 	{
-		printf LGM "unit %d material%d\n",$nus+1, $nus+1;
+		printf LGM "unit %d MATERIAL%d\n",$nus+1, $nus+1;
 	}
 
 	print LGM "\n";
@@ -298,6 +307,7 @@ sub write_line
 #		print "$cdf{ns_prop1}{$nns}\n";
 		if ( $cdf{ns_prop1}{$nns} =~/\A4($int)/ )
 		{
+			$linestring = $1;
 #			print "match $cdf{ns_prop1}{$nns}\n"; 
 # 			if ($nl == 74) { print "ERROR line $nl has id $1\n"; }
 			printf LGM "line %d:",$nl;
@@ -312,10 +322,27 @@ sub write_line
 				printf LGM " %d",$cdf{$numnp}{$np}-1;
 			}
 			print LGM ";\n";
+			
+			$line = sprintf "%d",$linestring; 
+			$cdf{linemap}{$line} = $nl;
+#			printf "new line %s = %d %d\n", $line, $cdf{linemap}{$line}, $nl;
 			$nl++;
 		}
 	}
 	print LGM "\n";
+}
+
+sub write_surflines
+{
+	my $surfacename = $_[0];
+
+	foreach $nns (0 .. $cdf{$surfacename}{lines}{nlines}-1)
+	{
+#		printf "line id %d\n", $cdf{$surfacename}{lines}{$nns};
+#		$test = $cdf{linemap}{$cdf{$surfacename}{lines}{$nns}}; 
+#		printf LGM " %d", $test;
+		printf LGM " %d", $cdf{linemap}{$cdf{$surfacename}{lines}{$nns}}; 
+	}
 }
 
 sub search_lines
@@ -364,7 +391,7 @@ sub write_surf
 		if ( $cdf{ns_prop1}{$nns} =~/\A3($int)/ )
 		{
 			$surf = $1;
-			printf "writing surface $1 ";
+#			printf "writing surface $1 ";
 #			print "match $cdf{ns_prop1}{$nns}\n"; 
 			printf LGM "surface %d:",$nsurf;
 			$nsurf++;
@@ -387,7 +414,8 @@ sub write_surf
 			print LGM ";";
 
  			print LGM " lines:";
-			search_lines($numnp,$numns);
+			write_surflines($surfacename);
+#			search_lines($numnp,$numns);
 			print LGM ";";
 
  			print LGM " triangles:";
