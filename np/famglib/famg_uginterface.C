@@ -217,7 +217,7 @@ int FAMG_RestrictDefect( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from, V
 	
 	FAMGugVector fgsol(*(const FAMGugGridVector*)&fg.GetGridVector(),smooth_sol);
 	FAMGugVector fgdef(*(const FAMGugGridVector*)&fg.GetGridVector(),from);
-	FAMGugVector cgdef(*(const FAMGugGridVector*)&fg.GetGridVector(),to);
+	FAMGugVector cgdef(*(const FAMGugGridVector*)&cg.GetGridVector(),to);
 	
 	// be sure not to use an out-dated pointer
 	for (i=0; i<FAMGMAXVECTORS; i++ )
@@ -252,7 +252,7 @@ int FAMG_ProlongCorrection( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from
 
 	FAMGugVector fgsol(*(const FAMGugGridVector*)&fg.GetGridVector(),to);
 	FAMGugVector fgdef(*(const FAMGugGridVector*)&fg.GetGridVector(),smooth_def);
-	FAMGugVector cgsol(*(const FAMGugGridVector*)&fg.GetGridVector(),from);
+	FAMGugVector cgsol(*(const FAMGugGridVector*)&cg.GetGridVector(),from);
 
 	// be sure not to use an out-dated pointer
 	for (i=0; i<FAMGMAXVECTORS; i++ )
