@@ -1542,6 +1542,15 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
     SETEDSUBDOM(pe,0);
   else {
     if ((OBJT(MYVERTEX(from)) == BVOBJ) && (OBJT(MYVERTEX(to)) == BVOBJ)) {
+      /* in parallel, it cannot be guaranteed that the boundary
+         information is available */
+                    #ifdef ModelP
+      if (V_BNDP(MYVERTEX(from)) == NULL)
+        SETEDSUBDOM(pe,0);
+      else if (V_BNDP(MYVERTEX(to)) == NULL)
+        SETEDSUBDOM(pe,0);
+      else
+                        #endif
       if (BNDP_BndEDesc(V_BNDP(MYVERTEX(from)),
                         V_BNDP(MYVERTEX(to)),&part) == 0)
         SETEDSUBDOM(pe,0);
