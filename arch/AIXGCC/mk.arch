@@ -1,0 +1,24 @@
+#       ARCH MAKEFILE OPTIONS
+#
+#       for IBM AIX
+#
+
+ARCH_TYPE     = __AIX__
+
+ARCH_CC       = gcc
+ARCH_C++      = g++
+ARCH_LINK     = g++
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK = true
+
+ARCH_LIBS     = -lm -lc -lprof
+
+ARCH_CFLAGS   = -g -w -W
+ARCH_C++FLAGS =
+ARCH_LFLAGS   = -L../pclib -L/usr/local/lib 
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDES =
+ARCH_XLIBS     = -lX11 -lXt -lXext -lXaw -lXmu
+
