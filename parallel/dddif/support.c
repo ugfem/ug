@@ -80,41 +80,20 @@ INT UG_GlobalMaxINT (INT i)
   return(i);
 }
 
-/*
+INT UG_GlobalMinINT (INT i)
+{
+  int l;
+  INT n;
 
-   int ddd_GlobalMinInt (int i)
-   {
-        int l,n;
-
-        for (l=degree-1; l>=0; l--)
-        {
-                GetConcentrate(l,&n,sizeof(int));
-                i = MIN(i,n);
-        }
-        Concentrate(&i,sizeof(int));
-        Broadcast(&i,sizeof(int));
-        return(i);
-   }
-
-
-
-   int ddd_GlobalSumInt (int x)
-   {
-        int l;
-        int y;
-
-        for (l=degree-1; l>=0; l--)
-        {
-                GetConcentrate(l,&y,sizeof(int));
-                x += y;
-        }
-        Concentrate(&x,sizeof(int));
-        Broadcast(&x,sizeof(int));
-        return(x);
-   }
-
-
- */
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,&n,sizeof(INT));
+    i = MIN(i,n);
+  }
+  Concentrate(&i,sizeof(INT));
+  Broadcast(&i,sizeof(INT));
+  return(i);
+}
 
 DOUBLE UG_GlobalMaxDOUBLE (DOUBLE i)
 {
@@ -175,9 +154,6 @@ INT UG_GlobalSumINT (INT x)
   Broadcast(&x,sizeof(INT));
   return(x);
 }
-
-
-
 
 void UG_GlobalSumNDOUBLE (INT n, DOUBLE *xs)
 {
