@@ -5037,27 +5037,6 @@ static INT MarkCommand (INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-/****************************************************************************/
-/*
-   SmoothMGCommand - Invoke hierarchical multigrid smoother
-
-   SYNOPSIS:
-   static INT SmoothMGCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function invokes hierarchical multigrid smoother.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
-/****************************************************************************/
-
 static INT SmoothMGCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -5102,6 +5081,177 @@ static INT SmoothMGCommand (INT argc, char **argv)
   }
 
   InvalidatePicturesOfMG(theMG);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   smoothgrid - resize quadrilaterals and triangles on surface levels according to
+              the element sizes on level l-1
+
+   DESCRIPTION:
+   'smoothgrid [$limit <value>] [$reset] [$g <value>] [$force <value>]'
+
+   . $limit~<value>       - give maximum displacement of the vertices in local coordinates
+                       of the father element (0 < value < 0.5, default: 0.3)
+   . $reset               - reset elements to default size
+   . $g <value>           - do not apply smoothing below grid level <value>
+   . $force <value>       - apply smoothgrid for all elements between toplevel and level <value>
+   D*/
+/****************************************************************************/
+
+static INT FirstSurfaceLevel(MULTIGRID *theMG)
+{
+  ELEMENT *theElement;
+  INT lev;
+
+  for (lev=0; lev<=CURRENTLEVEL(theMG); lev++)
+    for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,lev));
+         theElement!=NULL; theElement=SUCCE(theElement))
+      if (EstimateHere(theElement))
+        return(lev);
+  return(-1);
+}
+
+INT SmoothGridCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  GRID *theGrid;
+  COORD LimitLocDis;
+  INT i,MoveInfo[4],GridReset,lev,FirstSurLev,lowLevel,LowLevelSet,forceLevel,ForceLevelSet;
+
+  GridReset = FALSE;
+  LowLevelSet = FALSE;
+  ForceLevelSet = FALSE;
+  LimitLocDis = 0.3;
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"smoothgrid","no current multigrid");
+    return(CMDERRORCODE);
+  }
+  if (CURRENTLEVEL(theMG)==0)
+  {
+    PrintErrorMessage('E',"smoothgrid","cannot smooth grid on level 0");
+    return(CMDERRORCODE);
+  }
+#ifdef __THREEDIM__
+  PrintErrorMessage('E',"smoothgrid","3D not implemented yet");
+  return(CMDERRORCODE);
+#endif
+  /* options */
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'r' :
+      if (strcmp(argv[i],"reset")==NULL)
+        GridReset=TRUE;
+      else
+      {
+        sprintf(buffer,"(invalid option '%s')",argv[i]);
+        PrintErrorMessage('E',"smoothgrid",buffer);
+        return (PARAMERRORCODE);
+      }
+      break;
+    case 'l' :
+      if (sscanf(argv[i],"limit %f",&LimitLocDis)!=1)
+      {
+        sprintf(buffer,"(invalid option '%s')",argv[i]);
+        PrintErrorMessage('E',"smoothgrid",buffer);
+        return (PARAMERRORCODE);
+      }
+      if (LimitLocDis>=0.5 || LimitLocDis <=0)
+      {
+        PrintErrorMessage('E',"smoothgrid","specify a local limit between 0 and 0.5 (default 0.3)");
+        return (PARAMERRORCODE);
+      }
+      break;
+
+    case 'g' :
+      if (sscanf(argv[i],"g %d",&lowLevel)!=1)
+      {
+        sprintf(buffer,"(invalid option '%s')",argv[i]);
+        PrintErrorMessage('E',"smoothgrid",buffer);
+        return (PARAMERRORCODE);
+      }
+      if (ForceLevelSet==TRUE)
+      {
+        PrintErrorMessage('E',"smoothgrid","specify either the 'l' or the 'force' option");
+        return (PARAMERRORCODE);
+      }
+      LowLevelSet = TRUE;
+      break;
+
+    case 'f' :
+      if (sscanf(argv[i],"force %d",&forceLevel)!=1)
+      {
+        sprintf(buffer,"(invalid option '%s')",argv[i]);
+        PrintErrorMessage('E',"smoothgrid",buffer);
+        return (PARAMERRORCODE);
+      }
+      if (LowLevelSet==TRUE)
+      {
+        PrintErrorMessage('E',"smoothgrid","specify either the 'l' or the 'force' option");
+        return (PARAMERRORCODE);
+      }
+      ForceLevelSet = TRUE;
+      break;
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintErrorMessage('E',"smoothgrid",buffer);
+      return (PARAMERRORCODE);
+    }
+
+  if (CURRENTLEVEL(theMG)!=TOPLEVEL(theMG) && ForceLevelSet==FALSE && GridReset==FALSE)
+  {
+    PrintErrorMessage('E',"smoothgrid","apply smoothgrid only on toplevel or set 'force' option");
+    return(CMDERRORCODE);
+  }
+
+  if (GridReset==TRUE)
+  {
+    if (LowLevelSet)
+      lowLevel = MAX(1,lowLevel);
+    else
+      lowLevel = CURRENTLEVEL(theMG);
+
+    for (lev=lowLevel; lev<=CURRENTLEVEL(theMG); lev++)
+    {
+      theGrid = GRID_ON_LEVEL(theMG,lev);
+      for (i=0; i<4; i++) MoveInfo[i] = 0;
+      if (SmoothGridReset(theGrid,MoveInfo)!=0) return(CMDERRORCODE);
+      sprintf(buffer," %d center nodes and %d mid nodes reset on level %d \n",MoveInfo[0],MoveInfo[1],lev);
+      UserWrite(buffer);
+    }
+  }
+  else
+  {
+    FirstSurLev = FirstSurfaceLevel(theMG);
+    if (LowLevelSet)
+      lowLevel = MAX(FirstSurLev,lowLevel);
+    else if (ForceLevelSet)
+      lowLevel = MAX(forceLevel,1);
+    else
+      lowLevel = FirstSurLev;
+    for (lev=lowLevel; lev<=CURRENTLEVEL(theMG); lev++)
+    {
+      theGrid = GRID_ON_LEVEL(theMG,lev);
+      for (i=0; i<4; i++) MoveInfo[i] = 0;
+      if (SmoothGrid(theGrid,LimitLocDis,MoveInfo,ForceLevelSet)!=0) return(CMDERRORCODE);
+      sprintf(buffer," %d center nodes and %d mid nodes moved on level %d \n",MoveInfo[0],MoveInfo[1],lev);
+      UserWrite(buffer);
+      if (MoveInfo[2]!=0 || MoveInfo[3]!=0)
+      {
+        sprintf(buffer,"%d center nodes and %d mid nodes reached limit on level %d\n",MoveInfo[2],MoveInfo[3],lev);
+        UserWrite(buffer);
+      }
+    }
+  }
+
+  InvalidatePicturesOfMG(theMG);
+  InvalidateUgWindowsOfMG(theMG);
 
   return (OKCODE);
 }
@@ -12118,6 +12268,7 @@ INT InitCommands ()
   if (CreateCommand("level",                      LevelCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("renumber",           RenumberMGCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("smooth",             SmoothMGCommand                                 )==NULL) return (__LINE__);
+  if (CreateCommand("smoothgrid",     SmoothGridCommand               )==NULL) return(__LINE__);
   if (CreateCommand("ordernodes",         OrderNodesCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("lexorderv",          LexOrderVectorsCommand                  )==NULL) return (__LINE__);
   if (CreateCommand("orderv",             OrderVectorsCommand                     )==NULL) return (__LINE__);
