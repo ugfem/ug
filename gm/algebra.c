@@ -198,6 +198,49 @@ const BV_DESC_FORMAT one_level_bvdf =
   { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
+const BV_DESC_FORMAT two_level_bvdf =
+{ 16, 2,
+  {     (BVD_ENTRY_TYPE)0x0000ffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff},
+  { (BVD_ENTRY_TYPE)0xffff0000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+
+const BV_DESC_FORMAT three_level_bvdf =
+{ 10, 3,
+  {     (BVD_ENTRY_TYPE)0x000003ff, (BVD_ENTRY_TYPE)0x000fffff,
+                (BVD_ENTRY_TYPE)0x3fffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff},
+  { (BVD_ENTRY_TYPE)0xfffffc00, (BVD_ENTRY_TYPE)0xfff00000,
+            (BVD_ENTRY_TYPE)0xc0000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
@@ -218,7 +261,8 @@ RCSID("$Header$",UG_RCS_STRING)
 /*																			*/
 /****************************************************************************/
 
-INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation, INT leaf_size );
+static INT CreateBVPlane( BLOCKVECTOR **bv_plane, BV_DESC *bvd_plane, BV_DESC_FORMAT *bvdf, VECTOR **v, INT stripes, INT points_per_stripe, GRID *grid );
+static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation, INT leaf_size );
 
 /****************************************************************************/
 /*D
@@ -1015,6 +1059,9 @@ INT DisposeBlockvector( GRID *theGrid, BLOCKVECTOR *bv )
 static void FreeBVList (GRID *grid, BLOCKVECTOR *bv)
 {
   register BLOCKVECTOR *bv_h;
+
+  if ( bv == NULL )
+    return;
 
   /* free all blocks in the current block list */
   for ( ; bv != NULL; )
@@ -5025,38 +5072,56 @@ static INT StrongLexAlgDep (GRID *theGrid, const char *data)
   return (0);
 }
 
+#ifdef __BLOCK_VECTOR_DESC__
 /****************************************************************************/
-/*D
-   CreateBVStripe - Creates a stripewise domain decomposition
+/* (without *D, since only internal function)
+
+   CreateBVPlane - Creates a stripewise decomposition of a 2D rectangular domain with a regular mesh
 
    SYNOPSIS:
-   INT CreateBVStripe( GRID *grid, INT points, INT points_per_stripe )
+   static INT CreateBVPlane( BLOCKVECTOR **bv_plane, BV_DESC *bvd_plane, const BV_DESC_FORMAT *bvdf, VECTOR **v, INT stripes, INT vectors_per_stripe, GRID *grid );
 
    PARAMETERS:
+   .  bv_plane - handle for the blockvector covering the plane
+   .  bvd_plane - blockvector description for the block 'bv_plane'
+   .  bvdf - blockvector description format for 'bvd_plane'
+   .  v - input: handle to the first vector; output: handle to the next vector after this plane
+   .  stripes  - number of stripes to be constructed
+   .  vectors_per_stripe - number of vectors a stripe should contain
    .  grid - the grid containing the vectors to be structured
-   .  points  - number of vectors, i.e. gridpoints
-   .  points_per_stripe - number of points a stripe should contain
 
    DESCRIPTION:
    From the list of vectors the blockvector-list is generated in
-   the following way: beginning
-   at the start of the vector-list, blocks are constructed containing
-   'points_per_stripe' consecutive vectors. The start of the new
-   blockvector-list is anchored in the 'grid'. The blockvectors are
+   the following way:
+   First a blockvector 'bv_plane' corresponding to 'bvd_plane' is constructed
+   which will cover all the blockvectors for the single stripes and
+   thus all the vectors of the plane. Beginning
+   at the start of the vector-list ('v'), blocks are constructed containing
+   'vectors_per_stripe' consecutive vectors. The start of the new
+   blockvector-list is anchored in the blockvector 'bv_plane'.
+   This blockvectors are
    numbered beginning from 0 along the construction. If the vector-list
-   is longer than 'points', the function will not be troubled (this
-   overlapping vectors might be for example dirichlet boundary vectors).
+   is not long enough, the function will not be troubled but construct
+   as far as possible the structure and GM_INCONSISTANCY is returned.
+
+   REQUIREMENTS:
+   The macro '__BLOCK_VECTOR_DESC__' must be defined in 'gm.h' to enable
+   blockvector descriptions.
+
+   REMARK:
+   This is only an auxiliary function. In the returned 'bv_plane' the
+   components BVSUCC, BVPRED, BVNUMBER are not yet set.
 
    APPLICATION:
    If the vector-list is ordered lexicographic, each line resp. column
-   containing 'points_per_stripe' vectors, then this function constructs
+   containing 'vectors_per_stripe' vectors, then this function constructs
    the blockvector structure belonging to a
    `linewise domain decomposition`.
 
-   If 'points_per_stripe' is a natural multiple of the actual linewidth
+   If 'vectors_per_stripe' is a natural multiple of the actual linewidth
    (resp. columnlength), this function constructs the blockvector
    structure belonging to a `stripewise domain decomposition`, each stripe
-   consisting of 'points_per_stripe'/linewidth lines (resp. columns).
+   consisting of 'vectors_per_stripe'/linewidth lines (resp. columns).
 
    RETURN VALUE:
 
@@ -5065,82 +5130,349 @@ static INT StrongLexAlgDep (GRID *theGrid, const char *data)
    .n GM_INCONSISTANCY if the vector-list was too short
 
    SEE ALSO:
-   BLOCKVECTOR, CreateBVDomainHalfening
+   BLOCKVECTOR, CreateBVStripe2D, CreateBVStripe3D, CreateBVDomainHalfening
 
    D*/
 /****************************************************************************/
 
-INT CreateBVStripe( GRID *grid, INT points, INT points_per_stripe )
+static INT CreateBVPlane( BLOCKVECTOR **bv_plane, BV_DESC *bvd_plane, const BV_DESC_FORMAT *bvdf, VECTOR **v, INT stripes, INT vectors_per_stripe, GRID *grid )
 {
   BLOCKVECTOR *bv;
   register BLOCKVECTOR *prev;
-  register INT i, j, nr_blocks;
-  register VECTOR *v, *pred_v;
+  register INT i, j;
+  register VECTOR *pred_v;
 
-        #ifndef __BLOCK_VECTOR_DESC__
-  return(1);
-        #endif
+  (void)CreateBlockvector( grid, bv_plane );
+  if ( *bv_plane == NULL )
+    return GM_OUT_OF_MEM;
 
-  /* number of blockvectors to be constructed */
-  nr_blocks = ( points + points_per_stripe - 1) / points_per_stripe;
+  SETBVDOWNTYPE( *bv_plane, BVDOWNTYPEBV );             /* further blocks follow */
+  BVFIRSTVECTOR( *bv_plane ) = *v;
 
-  v = FIRSTVECTOR( grid );
-
-  /* construct each blockvector */
-  for ( i = 0; (i < nr_blocks) && (v != NULL); i++ )
+  /* construct for each stripe a blockvector */
+  for ( i = 0; (i < stripes) && (*v != NULL); i++ )
   {
     (void)CreateBlockvector( grid, &bv );
 
     if ( i == 0 )
     {
-      GFIRSTBV( grid ) = bv;                    /* anchor blockvector list in the grid */
+      BVDOWNBV( *bv_plane ) = bv;                   /* anchor stripe-blocks in the block of the plane */
+      if ( bv == NULL )
+        return GM_OUT_OF_MEM;
       BVPRED( bv ) = NULL;
     }
     else
     {
       BVSUCC( prev ) = bv;                              /* continue blockvector list */
+      if ( bv == NULL )
+        return GM_OUT_OF_MEM;
       BVPRED( bv ) = prev;
     }
 
-    prev = bv;                                                  /* prepare for the next loop */
-
-    if ( bv == NULL )
-      return GM_OUT_OF_MEM;
+    prev = bv;                                                          /* prepare for the next loop */
 
     SETBVDOWNTYPE( bv, BVDOWNTYPEVECTOR );              /* block is at last block level */
     BVNUMBER( bv ) = i;
 
     /* let the blockvector point to the vector */
-    BVDOWNVECTOR( bv ) = v;
-    BVFIRSTVECTOR( bv ) = v;
+    BVDOWNVECTOR( bv ) = *v;
+    BVFIRSTVECTOR( bv ) = *v;
 
     /* find successor of the last vector of this blockvector and store it;
        update the blockvector description for all vectors of this
        blockvector
      */
-
-    for ( j = points_per_stripe; (j > 0) && (v != NULL); j-- )
+    for ( j = vectors_per_stripe; (j > 0) && (*v != NULL); j-- )
     {
-            #ifdef __BLOCK_VECTOR_DESC__
-      BVD_PUSH_ENTRY( &VBVD( v ), i, &one_level_bvdf );
-            #endif
-      pred_v = v;
-      v = SUCCVC( v );
+      VBVD( *v ) = *bvd_plane;
+      BVD_PUSH_ENTRY( &VBVD( *v ), i, bvdf );
+      pred_v = *v;
+      *v = SUCCVC( *v );
     }
-
     BVLASTVECTOR( bv ) = pred_v;
-    BVNUMBEROFVECTORS( bv ) = points_per_stripe - j;
+    BVNUMBEROFVECTORS( bv ) = vectors_per_stripe - j;
   }
-
   BVSUCC( bv ) = NULL;                          /* end of the blockvector list */
-  GLASTBV( grid ) = bv;
+
+  BVLASTVECTOR( *bv_plane ) = pred_v;
+  BVDOWNBVLAST( *bv_plane ) = bv;
+  BVNUMBEROFVECTORS( *bv_plane ) = stripes * vectors_per_stripe - j;
 
   /* the for loop exited premature because of v == NULL */
-  if ( i < nr_blocks )
+  if ( (i < stripes) || (j != 0) )
     return GM_INCONSISTANCY;
 
   return GM_OK;
 }
+#endif /* __BLOCK_VECTOR_DESC__ */
+
+
+/****************************************************************************/
+/*D
+   CreateBVStripe2D - Creates a stripewise domain decomposition of a 2D rectangular domain with a regular mesh
+
+   SYNOPSIS:
+   INT CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_stripe );
+
+   PARAMETERS:
+   .  grid - the grid containing the vectors to be structured
+   .  vectors  - number of vectors, i.e. gridpoints, in the inner
+   .  vectors_per_stripe - number of vectors a stripe should contain
+
+   DESCRIPTION:
+   From the list of vectors the blockvector-list is generated in
+   the following way:
+   The first blockvector level consists of 2 blockvectors: the first
+   covering all inner vectors (number 0), the second all boundary vectors
+   (number 1). Beginning
+   at the start of the vector-list, blocks are constructed containing
+   'vectors_per_stripe' consecutive vectors. The start of the new
+   blockvector-list is anchored in the blockvector for the inner vectors.
+   This blockvectors are
+   numbered beginning from 0 along the construction. If the vector-list
+   is shorter than 'vectors', the function will not be troubled
+   and GM_INCONSISTANCY is returned. If the vector-list
+   is longer than 'vectors', these vectors are covered in a seperate
+   blockvector with number 1 (this overlapping vectors might be for
+   example dirichlet boundary vectors).
+
+   REQUIREMENTS:
+   The macro '__BLOCK_VECTOR_DESC__' must be defined in 'gm.h' to enable
+   blockvector descriptions.
+
+   APPLICATION:
+   If the vector-list is ordered lexicographic, each line resp. column
+   containing 'vectors_per_stripe' vectors, then this function constructs
+   the blockvector structure belonging to a
+   `linewise domain decomposition`.
+
+   If 'vectors_per_stripe' is a natural multiple of the actual linewidth
+   (resp. columnlength), this function constructs the blockvector
+   structure belonging to a `stripewise domain decomposition`, each stripe
+   consisting of 'vectors_per_stripe'/linewidth lines (resp. columns).
+
+   RETURN VALUE:
+
+   .n GM_OK if ok
+   .n GM_OUT_OF_MEM if there was not enough memory to allocate all blockvectors
+   .n GM_INCONSISTANCY if the vector-list was too short
+
+   SEE ALSO:
+   BLOCKVECTOR, CreateBVStripe3D, CreateBVDomainHalfening
+
+   D*/
+/****************************************************************************/
+
+INT CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_stripe )
+{
+  BLOCKVECTOR *bv_inner, *bv_boundary;
+  VECTOR *v;
+  INT nr_blocks, ret;
+#ifdef __BLOCK_VECTOR_DESC__
+  BV_DESC bvd;
+
+  /* number of blockvectors to be constructed */
+  nr_blocks = ( vectors + vectors_per_stripe - 1) / vectors_per_stripe;
+
+  BVD_INIT( &bvd );
+  BVD_PUSH_ENTRY( &bvd, 0, &two_level_bvdf );
+  v = FIRSTVECTOR( grid );
+  ret = CreateBVPlane( &bv_inner, &bvd, &two_level_bvdf, &v, nr_blocks, vectors_per_stripe, grid );
+  if ( ret != GM_OK )
+  {
+    FreeBVList( grid, bv_inner );
+    return ret;
+  }
+
+  (void)CreateBlockvector( grid, &bv_boundary );
+  if ( bv_boundary == NULL )
+  {
+    FreeBVList( grid, bv_inner );
+    return GM_OUT_OF_MEM;
+  }
+
+  GFIRSTBV( grid ) = bv_inner;          /* anchor blockvector list in the grid */
+  GLASTBV( grid ) = bv_boundary;
+
+  BVPRED( bv_inner ) = NULL;
+  BVSUCC( bv_inner ) = bv_boundary;
+  BVNUMBER( bv_inner ) = 0;
+
+  BVPRED( bv_boundary ) = bv_inner;
+  BVSUCC( bv_boundary ) = NULL;
+  BVNUMBER( bv_boundary ) = 1;
+  SETBVDOWNTYPE( bv_boundary, BVDOWNTYPEVECTOR );       /* block is at last block level */
+  BVNUMBEROFVECTORS( bv_boundary ) = NVEC( grid ) - BVNUMBEROFVECTORS( bv_inner );
+  BVFIRSTVECTOR( bv_boundary ) = v;
+  BVLASTVECTOR( bv_boundary ) = LASTVECTOR( grid );
+
+  /* complete the boundary vector list */
+  BVD_INC_LAST_ENTRY( &bvd, 1, &two_level_bvdf );
+  for ( ; v != NULL; v = SUCCVC( v ) )
+    VBVD( v ) = bvd;
+
+  return GM_OK;
+#else
+  return(1);
+#endif /* __BLOCK_VECTOR_DESC__ */
+}
+
+
+/****************************************************************************/
+/*D
+   CreateBVStripe3D - Creates a plane- and stripewise domain decomposition of a 3D rectangular domain with a regular mesh
+
+   SYNOPSIS:
+   INT CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT vectors_per_stripe );
+
+   PARAMETERS:
+   .  grid - the grid containing the vectors to be structured
+   .  inner_vectors  - number of vectors, i.e. gridpoints, in the inner
+   .  stripes_per_plane - number of stripes forming a plane
+   .  vectors_per_stripe - number of vectors a stripe should contain
+
+   DESCRIPTION:
+   From the list of vectors the blockvector-list is generated in
+   the following way:
+   The first blockvector level consists of 2 blockvectors: the first
+   covering all inner vectors (number 0), the second all other vectors
+   (number 1). Beginning
+   at the start of the vector-list, plane-blockvectors are constructed: each
+   plane-blockvector consists of a blockvector list of 'stripes_per_plane'
+   stripe-blockvectors and each
+   stripe-blockvector contains 'vectors_per_stripe' vectors. Plane-blocks are
+   constructed as long as not 'inner_vectors' vectors are processed
+   or all vectors in the grid are processed. The start of the new
+   plane-blockvector-list is anchored in the blockvector for the
+   inner vectors. The blockvectors in each list are
+   numbered beginning from 0 along the construction. If the vector-list
+   is shorter than 'inner_vectors', the function will not be troubled
+   and GM_INCONSISTANCY is returned. If the vector-list
+   is longer than 'vectors', these vectors are covered in a seperate
+   blockvector with number 1 (this overlapping vectors might be for
+   example dirichlet boundary vectors).
+
+   REQUIREMENTS:
+   The macro '__BLOCK_VECTOR_DESC__' must be defined in 'gm.h' to enable
+   blockvector descriptions.
+
+   APPLICATION:
+   If the vector-list is ordered lexicographic and each line contains
+   'vectors_per_stripe' vectors and each plane contains 'stripes_per_plane'
+   lines, then this function constructs the blockvector structure belonging
+   to a `plane- and linewise domain decomposition`.
+
+   RETURN VALUE:
+
+   .n GM_OK if ok
+   .n GM_OUT_OF_MEM if there was not enough memory to allocate all blockvectors
+   .n GM_INCONSISTANCY if the vector-list was too short
+
+   SEE ALSO:
+   BLOCKVECTOR, CreateBVStripe2D, CreateBVDomainHalfening
+
+   D*/
+/****************************************************************************/
+
+INT CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT vectors_per_stripe )
+{
+  BLOCKVECTOR *bv_inner, *bv_boundary, *bv_plane, *prev;
+  VECTOR *v;
+  INT i, nr_planes, nr_vectors, ret;
+#ifdef __BLOCK_VECTOR_DESC__
+  BV_DESC bvd;
+
+  /* number of planes to be constructed */
+  nr_planes = ( inner_vectors + stripes_per_plane*vectors_per_stripe - 1) / (stripes_per_plane*vectors_per_stripe);
+
+  v = FIRSTVECTOR( grid );
+
+  (void)CreateBlockvector( grid, &bv_inner );
+  if ( bv_inner == NULL )
+    return GM_OUT_OF_MEM;
+
+  (void)CreateBlockvector( grid, &bv_boundary );
+  if ( bv_boundary == NULL )
+  {
+    DisposeBlockvector( grid, bv_inner );
+    return GM_OUT_OF_MEM;
+  }
+
+  GFIRSTBV( grid ) = bv_inner;          /* anchor blockvector list in the grid */
+  GLASTBV( grid ) = bv_boundary;
+
+  BVPRED( bv_inner ) = NULL;
+  BVSUCC( bv_inner ) = bv_boundary;
+  BVNUMBER( bv_inner ) = 0;
+  SETBVDOWNTYPE( bv_inner, BVDOWNTYPEBV );              /* block is parent for all planes */
+  BVFIRSTVECTOR( bv_inner ) = v;
+
+  BVPRED( bv_boundary ) = bv_inner;
+  BVSUCC( bv_boundary ) = NULL;
+  BVNUMBER( bv_boundary ) = 1;
+  SETBVDOWNTYPE( bv_boundary, BVDOWNTYPEVECTOR );       /* block is at last block level */
+
+  /* construct for each plane a blockvector-tree */
+  BVD_INIT( &bvd );
+  BVD_PUSH_ENTRY( &bvd, 0, &three_level_bvdf );         /* inner vectors */
+  BVD_PUSH_ENTRY( &bvd, 0, &three_level_bvdf );         /* 1. plane */
+  nr_vectors = 0;
+  for ( i = 0; (i < nr_planes) && (v != NULL); i++ )
+  {
+    ret = CreateBVPlane( &bv_plane, &bvd, &three_level_bvdf, &v, stripes_per_plane, vectors_per_stripe, grid );
+    if ( ret == GM_OUT_OF_MEM )
+    {
+      FreeAllBV( grid );
+      return ret;
+    }
+
+    if ( i == 0 )
+    {
+      BVDOWNBV( bv_inner ) = bv_plane;                   /* anchor stripe-blocks in the block of the plane */
+      BVPRED( bv_plane ) = NULL;
+    }
+    else
+    {
+      BVSUCC( prev ) = bv_plane;                                /* continue blockvector list */
+      BVPRED( bv_plane ) = prev;
+    }
+
+    prev = bv_plane;                                                    /* prepare for the next loop */
+
+    BVNUMBER( bv_plane ) = i;
+    nr_vectors += BVNUMBEROFVECTORS( bv_plane );
+
+    BVD_INC_LAST_ENTRY( &bvd, 1, &three_level_bvdf );
+  }
+  BVSUCC( bv_plane ) = NULL;                            /* end of the blockvector list */
+
+  BVLASTVECTOR( bv_inner ) = v;
+  BVDOWNBVLAST( bv_inner ) = bv_plane;
+  BVNUMBEROFVECTORS( bv_inner ) = nr_vectors;
+
+  BVFIRSTVECTOR( bv_boundary ) = SUCCVC( v );
+  BVLASTVECTOR( bv_boundary ) = LASTVECTOR( grid );
+  BVNUMBEROFVECTORS( bv_boundary ) = NVEC( grid ) - BVNUMBEROFVECTORS( bv_inner );
+
+  /* complete the boundary vector list */
+  BVD_INIT( &bvd );
+  BVD_PUSH_ENTRY( &bvd, 1, &three_level_bvdf );         /* boundary vectors */
+  for ( ; v != NULL; v = SUCCVC( v ) )
+    VBVD( v ) = bvd;
+
+  if ( ret != GM_OK )
+    return ret;
+
+  if ( BVNUMBEROFVECTORS(bv_inner) != nr_planes*stripes_per_plane*vectors_per_stripe )
+    return GM_INCONSISTANCY;
+
+  return GM_OK;
+
+#else
+  return(1);
+#endif /* __BLOCK_VECTOR_DESC__ */
+}
+
 
 /****************************************************************************/
 /*D
@@ -5191,15 +5523,9 @@ INT CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
 {
   BLOCKVECTOR *bv;
   INT ret;
-  register VECTOR *end_v;
-    #ifdef __BLOCK_VECTOR_DESC__
-  register VECTOR *v
-        #endif
+  register VECTOR *v, *end_v;
 
-    #ifndef __BLOCK_VECTOR_DESC__
-  return(1);
-    #endif
-
+#ifdef __BLOCK_VECTOR_DESC__
   /* create first block of the hierarchy */
   if ( CreateBlockvector( grid, &bv ) != GM_OK )
     return GM_OUT_OF_MEM;
@@ -5237,15 +5563,19 @@ INT CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
   LASTVECTOR( grid ) = BVLASTVECTOR( bv );
 
   return GM_OK;
+#else
+  return(1);
+#endif /* __BLOCK_VECTOR_DESC__ */
 }
 
+#ifdef __BLOCK_VECTOR_DESC__
 /****************************************************************************/
 /* (without *D, since only internal function)
 
    BlockHalfening - internal function to perform the work of CreateBVDomainHalfening
 
    SYNOPSIS:
-   INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation )
+   static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation )
 
    PARAMETERS:
    .  grid - the grid containing the vectors to be structured
@@ -5276,7 +5606,7 @@ INT CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
  */
 /****************************************************************************/
 
-INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation, INT leaf_size )
+static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation, INT leaf_size )
 {
   VECTOR *v, *vpred, *end_v, **v0, **v1, **vi;
   BLOCKVECTOR *bv0, *bv1, *bvi;
@@ -5436,7 +5766,7 @@ INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width
 
   return GM_OK;
 }
-
+#endif /* __BLOCK_VECTOR_DESC__ */
 
 
 /****************************************************************************/
