@@ -194,9 +194,9 @@ using namespace UG3d;
 #define NO_SIDE_SPECIFIED               -1
 #define NO_RULE_SPECIFIED               -1
 #define NO_OF_RULES                     64
-/*@}*
+/*@}*/
 
-   /* for anisotropic refinement */
+/* for anisotropic refinement */
 
 /* for save command */
 #define NO_COMMENT                               "no comment"
@@ -207,9 +207,9 @@ using namespace UG3d;
 #define AR_NVAR(p)                      ((p)->nVar)
 #define AR_VARDIM(p,i)          ((p)->VarDim[i])
 #define AR_DATA(p,i)            ((p)->data[i])
-/*@}*
+/*@}*/
 
-   /****************************************************************************/
+/****************************************************************************/
 /*                                                                          */
 /* data structures used in this source file (exported data structures are   */
 /* in the corresponding include file!)                                      */
