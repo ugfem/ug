@@ -5063,7 +5063,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 { 
 int dddiflevel;
 if (1)
-int debugstart=0;
+int debugstart=1;
 		DDD_IdentifyEnd();
 
 if (level == 0)
