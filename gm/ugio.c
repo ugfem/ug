@@ -3033,7 +3033,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
         else SETNSUBDOM(theNode,cge->subdomain);
         ID(CORNER(theElement,j)) = cge->cornerid[j];
       }
-      for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+      for (j=0; j<EDGES_OF_ELEM(theElement); j++)
       {
         SETEDSUBDOM(GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),CORNER_OF_EDGE_PTR(theElement,j,1)),cge->subdomain);
       }
