@@ -204,62 +204,66 @@ typedef struct
 /****************************************************************************/
 
 static INT NonLinearDefect (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x,
-                            NP_NEWTON *newton, NP_NL_ASSEMBLE *ass, VEC_SCALAR defect)
+                            NP_NEWTON *newton, NP_NL_ASSEMBLE *ass, VEC_SCALAR defect, INT *error)
 {
   LRESULT lr;                           /* result of linear solver				*/
-  INT i,error,n_unk;
+  INT i,n_unk;
 
   n_unk = VD_NCOMP(x);
 
   /* project solution to all grid levels */
   if (newton->trans->PreProcessProject!=NULL)
     if ((*newton->trans->PreProcessProject)
-          (newton->trans,0,level,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN(error);
+          (newton->trans,0,level,error)) {
+      *error = __LINE__;
+      REP_ERR_RETURN(*error);
     }
-  if ((*newton->trans->ProjectSolution)(newton->trans,0,level,x,&error)) {
-    error = __LINE__;
-    REP_ERR_RETURN(error);
+  if ((*newton->trans->ProjectSolution)(newton->trans,0,level,x,error)) {
+    *error = __LINE__;
+    REP_ERR_RETURN(*error);
   }
   if (newton->trans->PostProcessProject!=NULL)
     if ((*newton->trans->PostProcessProject)
-          (newton->trans,0,level,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN(error);
+          (newton->trans,0,level,error)) {
+      *error = __LINE__;
+      REP_ERR_RETURN(*error);
     }
 
   if (init)
   {
     /* preprocess assemble once before all calls */
     if (ass->PreProcess!=NULL)
-      if ((*ass->PreProcess)(ass,0,level,x,&error)) {
-        error = __LINE__;
-        REP_ERR_RETURN(error);
+      if ((*ass->PreProcess)(ass,0,level,x,error)) {
+        *error = __LINE__;
+        REP_ERR_RETURN(*error);
       }
 
     /* set dirichlet conditions on all grid levels */
-    if ((*ass->NLAssembleSolution)(ass,0,level,x,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN(error);
+    if ((*ass->NLAssembleSolution)(ass,0,level,x,error)) {
+      *error = __LINE__;
+      REP_ERR_RETURN(*error);
     }
   }
 
   /* compute new nonlinear defect */
   CSTART();
   dset(mg,0,level,ALL_VECTORS,newton->d,0.0);
-  if ((*ass->NLAssembleDefect)(ass,0,level,x,newton->d,newton->J,&error)) {
-    error = __LINE__;
-    REP_ERR_RETURN(error);
+  *error = 0;
+  if ((*ass->NLAssembleDefect)(ass,0,level,x,newton->d,newton->J,error)) {
+    *error = __LINE__;
+    REP_ERR_RETURN(*error);
   }
+  if (*error)
+    return(0);
   CSTOP(defect_t,defect_c);
+
   if (newton->lineSearch == 3)
     dcopy(mg,0,level,ALL_VECTORS,newton->dsave,newton->d);
   if (UG_math_error) {
     UserWrite("math error in NLAssembleDefect\n");
     UG_math_error = 0;
-    error = __LINE__;
-    REP_ERR_RETURN(error);
+    *error = __LINE__;
+    REP_ERR_RETURN(*error);
   }
 
   IFDEBUG(np,1)
@@ -269,8 +273,8 @@ static INT NonLinearDefect (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x,
 
   /* compute norm of defect */
   if ((*newton->solve->Residuum)(newton->solve,0,level,newton->v,newton->d,newton->J,&lr)) {
-    error = __LINE__;
-    REP_ERR_RETURN(error);
+    *error = __LINE__;
+    REP_ERR_RETURN(*error);
   }
   for (i=0; i<n_unk; i++) defect[i] = lr.last_defect[i];
 
@@ -417,12 +421,13 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   n_unk = VD_NCOMP(x);
 
   /* init ass once and compute nonlinear defect */
-  if (NonLinearDefect(mg,level,TRUE,x,newton,ass,defect)!=0)
+  if (NonLinearDefect(mg,level,TRUE,x,newton,ass,defect,&error)!=0)
   {
     res->error_code = __LINE__;
     REP_ERR_RETURN(res->error_code);
   }
-
+  if (error)
+    goto exit;
   /* display norm of nonlinear defect */
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(newton),'#',"\n");
   if (PreparePCR(newton->d,newton->displayMode,text,&PrintID))    {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
@@ -616,11 +621,13 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
       dcopy(mg,0,level,ALL_VECTORS,x,newton->s);
       daxpy(mg,0,level,ALL_VECTORS,x,-la,newton->v);
 
-      if (NonLinearDefect(mg,level,FALSE,x,newton,ass,defect)!=0)
+      if (NonLinearDefect(mg,level,FALSE,x,newton,ass,defect,&error)!=0)
       {
         res->error_code = __LINE__;
         REP_ERR_RETURN(res->error_code);
       }
+      if (error)
+        goto exit;
 
       /* compute single norm */
       sold = sprime;
@@ -678,11 +685,14 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
         dcopy(mg,0,level,ALL_VECTORS,x,newton->s);
         daxpy(mg,0,level,ALL_VECTORS,x,-la,newton->v);
 
-        if (NonLinearDefect(mg,level,FALSE,x,newton,ass,defect)!=0)
+        if (NonLinearDefect(mg,level,FALSE,x,newton,ass,
+                            defect,&error)!=0)
         {
           res->error_code = __LINE__;
           REP_ERR_RETURN(res->error_code);
         }
+        if (error)
+          goto exit;
         break;
 
         /*default: accept */
