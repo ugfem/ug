@@ -119,5 +119,22 @@
 #define MARKCLASS(p)                                    CW_READ(p,MARKCLASS_CE)
 #define SETMARKCLASS(p,n)                               CW_WRITE(p,MARKCLASS_CE,n)
 
+/****************************************************************************/
+/*																			*/
+/* typedefs																	*/
+/*																			*/
+/****************************************************************************/
+
+typedef INT (*Get_Sons_of_ElementSideProcPtr)(ELEMENT *theElement, INT side, INT *Sons_of_Side,ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons);
+
+/****************************************************************************/
+/*																			*/
+/* functions exported														*/
+/*																			*/
+/****************************************************************************/
+
+INT     Set_Get_Sons_of_ElementSideProc                 (Get_Sons_of_ElementSideProcPtr Proc);
+INT     GetSonSideNodes                                                 (ELEMENT *theElement, INT side, INT *nodes, NODE *SideNodes[MAX_SIDE_NODES]);
+INT     Connect_Sons_of_ElementSide                     (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides);
 
 #endif
