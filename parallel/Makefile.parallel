@@ -66,6 +66,7 @@ clean: ppif_clean
 	cd dddif && make -f Makefile.dddif clean
 	cd dddobj && make -f Makefile.dddobj clean
 	cd chaco && make -f Makefile.chaco clean
+	cd util && make -f Makefile.util clean
 	rm -f $(OBJECTS);
 
 
