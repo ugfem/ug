@@ -292,10 +292,11 @@ INT UgSetPalette (OUTPUTDEVICE *dev, INT palette)
    OpenLogFile - open a log file
 
    SYNOPSIS:
-   INT OpenLogFile (const char *name);
+   INT OpenLogFile (const char *name, int rename);
 
    PARAMETERS:
    .  name -
+   .  rename -
 
    DESCRIPTION:
    This function opens a log file where all output to 'UserWrite', 'UserWriteF'
@@ -309,7 +310,7 @@ INT UgSetPalette (OUTPUTDEVICE *dev, INT palette)
    D*/
 /****************************************************************************/
 
-INT OpenLogFile (const char *name)
+INT OpenLogFile (const char *name, int rename)
 {
   char logpath[BUFFSIZE];
 
@@ -317,9 +318,9 @@ INT OpenLogFile (const char *name)
 
   /* get path to logfile directory */
   if (GetDefaultValue(DEFAULTSFILENAME,"logfilesdir",logpath)==0)
-    logFile = FileOpenUsingSearchPath(name,"w",logpath);
+    logFile = FileOpenUsingSearchPath_r(name,"w",logpath,rename);
   else
-    logFile = fileopen(name,"w");
+    logFile = fileopen_r(name,"w",rename);
 
   if (logFile==NULL) return(2);
 
