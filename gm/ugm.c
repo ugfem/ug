@@ -7265,6 +7265,82 @@ INT PointInElement (const DOUBLE *global, const ELEMENT *theElement)
 
   return(1);
 }
+
+#endif
+
+
+/****************************************************************************/
+/*D
+   PointOnSide - Determine whether point is on an element side
+
+   SYNOPSIS:
+   INT PointInElement (const DOUBLE *x, const ELEMENT *theElement, INT side);
+
+   PARAMETERS:
+   .  x - coordinates of given point
+   .  theElement - element to scan
+   .  side - the element side
+
+   DESCRIPTION:
+   This function determines whether a given point specified by coordinates `x`
+   is contained in an element side.
+
+   Beware:  The function only tests if the Point is in the plane spawned by the element side.
+   The point could be outside the element side area.
+
+   RETURN VALUE:
+   INT
+   .n   0 not on side
+   .n   1 x is on side
+   D*/
+/****************************************************************************/
+
+#ifdef __TWODIM__
+INT PointOnSide(const DOUBLE *global, const ELEMENT *theElement, INT side)
+{
+  INT n;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM];
+  DOUBLE M[DIM+DIM];
+  DOUBLE *a, *b, *c;
+  DOUBLE det;
+
+  a = &M[0];
+  b = &M[DIM];
+
+  CORNER_COORDINATES(theElement,n,x);
+
+  V2_SUBTRACT(x[CORNER_OF_SIDE(theElement,side,1)], x[CORNER_OF_SIDE(theElement,side,0)], a);
+  V2_SUBTRACT(global, x[CORNER_OF_SIDE(theElement,side,0)], c);
+  det = M2_DET(M);
+  if (fabs(det) < SMALL_C)
+    return 1;
+
+  return 0;
+}
+#else
+INT PointOnSide(const DOUBLE *global, const ELEMENT *theElement, INT side)
+{
+  INT n;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM];
+  DOUBLE M[DIM*DIM];
+  DOUBLE *a, *b, *c;
+  DOUBLE det;
+
+  a = &M[0];
+  b = &M[DIM];
+  c = &M[2*DIM];
+
+  CORNER_COORDINATES(theElement,n,x);
+
+  V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,side,1)], x[CORNER_OF_SIDE(theElement,side,0)], a);
+  V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,side,2)], x[CORNER_OF_SIDE(theElement,side,0)], b);
+  V3_SUBTRACT(global, x[CORNER_OF_SIDE(theElement,side,0)], c);
+  det = M3_DET(M);
+  if (fabs(det) < SMALL_C)
+    return 1;
+
+  return 0;
+}
 #endif
 
 /****************************************************************************/
@@ -7513,7 +7589,7 @@ ELEMENT *NeighbourElement (ELEMENT *t, INT side)
 
    DESCRIPTION:
    This function calculates the center of mass for an arbitrary element.
-   DOUBLE_VECTOR is a array for a 2D resp. 3D coordinate.
+   DOUBLE_VECTOR is an array for a 2D resp. 3D coordinate.
 
    SEE ALSO:
    DOUBLE_VECTOR, ELEMENT
@@ -7538,6 +7614,47 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
   }
 
   V_DIM_SCALE(1.0/nr_corners,center_of_mass);
+}
+
+/****************************************************************************/
+/*D
+   CalculateCenterOfMass - Calculate the center of mass for an element
+
+   SYNOPSIS:
+   void CalculateCenterOfMassOfSide(ELEMENT *theElement, int side, DOUBLE_VECTOR center_of_mass)
+
+   PARAMETERS:
+   .  theElement - the element
+   .  side - index of element side
+   .  center_of_mass - center of mass as the result
+
+   DESCRIPTION:
+   This function calculates the center of mass for an arbitrary element
+   side. DOUBLE_VECTOR is an array for a 2D resp. 3D coordinate.
+
+   SEE ALSO:
+   DOUBLE_VECTOR, ELEMENT
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void CalculateCenterOfMassOfSide(ELEMENT *theElement, int side, DOUBLE_VECTOR position)
+{
+  DOUBLE *corner;
+  INT i, nr_corners;
+
+  nr_corners = CORNERS_OF_SIDE(theElement,side);
+  V_DIM_CLEAR(position);
+
+  for (i=0; i<nr_corners; i++)
+  {
+    corner = CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_SIDE(theElement,side,i))));
+    V_DIM_ADD(position,corner,position);
+  }
+
+  V_DIM_SCALE(1.0/nr_corners,position);
 }
 
 /****************************************************************************/
