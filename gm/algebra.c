@@ -4194,6 +4194,7 @@ INT PropagateVectorClass (GRID *theGrid, INT vclass)
        theNode=SUCCN(theNode))
   {
     theVector = NVECTOR(theNode);
+    if (theVector == NULL) continue;
     if ((VCLASS(theVector)==vclass)&&(START(theNode)!=NULL))
       for (theLink=START(theNode); theLink!=NULL;
            theLink=NEXT(theLink))
@@ -4429,6 +4430,7 @@ INT PropagateNextVectorClass (GRID *theGrid, INT vnclass)
        theNode=SUCCN(theNode))
   {
     theVector = NVECTOR(theNode);
+    if (theVector == NULL) continue;
     if ((VNCLASS(theVector)==vnclass)&&(START(theNode)!=NULL))
       for (theLink=START(theNode); theLink!=NULL;
            theLink=NEXT(theLink))
