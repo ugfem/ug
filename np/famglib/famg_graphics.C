@@ -221,8 +221,8 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
 		double end = theOD->spectrumEnd;
 		
 #ifdef ModelP
-		double pe = procs<=1 ? 1.0 : procs-1.0;
-		SpectrumColor = (long)(start + me*(end-start)/ pe);
+		double frac = theObj->spectrum<=1 ? 1.0 : theObj->spectrum-1.0;
+		SpectrumColor = (long)(start + (me%theObj->spectrum)*(end-start)/frac);
 #else
 		SpectrumColor = theOD->green;
 #endif
