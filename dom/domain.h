@@ -180,7 +180,7 @@ void BVertexScatterBndP  (BNDP **bndp, int cnt, char *data);
 /* functions for BVP */
 BVP        *BVP_GetFirst          (void);
 BVP        *BVP_GetNext           (BVP *theBVP);
-INT         BVP_Save              (BVP *theBVP, char *name, INT argc, char **argv);
+INT         BVP_Save              (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv);
 BVP        *BVP_Load              (char *name, INT argc, char **argv);
 BVP        *BVP_GetByName         (char *name);
 BVP        *BVP_Init              (char *name, HEAP *Heap, MESH *Mesh);
