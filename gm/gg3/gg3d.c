@@ -79,6 +79,9 @@ static INT right;
 static MULTIGRID *currMG;
 static double h_global;
 
+static CoeffProcPtr Coefficients[8];
+static CoeffProcPtr LOCAL_H;
+
 /* RCS string */
 RCSID("$Header$",UG_RCS_STRING)
 
@@ -243,14 +246,14 @@ static INT AddBoundaryElement (INT n, INT *nodelist)
    GenerateGrid3d - call the netgen grid generator
 
    SYNOPSIS:
-   INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth);
+   INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth, INT coeff);
 
    PARAMETERS:
    .  theMG - pointer to multigrid
    .  mesh - pointer to mesh
    .  h - mesh size
    .  smoothing parameter
-
+   .  coeff - number of coefficientfunction for gridsize
    DESCRIPTION:
    This function is an interface function for the grid generator.
    It calls the netgen grid genarator to compute an inner
@@ -265,7 +268,7 @@ static INT AddBoundaryElement (INT n, INT *nodelist)
 /****************************************************************************/
 
 INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
-                    INT display)
+                    INT display, INT coeff)
 {
   NODE *theNode;
   VERTEX *theVertex;
@@ -277,6 +280,14 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
     return(GM_OK);
 
   currMG = theMG;
+
+  if(h<=0.0)
+  {
+    /* get Coefficientfunctions */
+    if (BVP_SetCoeffFct(MG_BVP(theMG),-1,Coefficients))
+      return (NULL);
+    LOCAL_H = Coefficients[coeff];
+  }
 
   if (GetDefaultValue(DEFAULTSFILENAME,"netgenrules",rulefilename))
     strcpy(rulefilename,"tetra.rls");
@@ -352,5 +363,11 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
   if (StartNetgen(h,smooth,display)) return(1);
     #endif
 
+  return(0);
+}
+
+int Get_h (double *in, double *out)
+{
+  (*LOCAL_H)(in, out);
   return(0);
 }
