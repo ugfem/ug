@@ -1786,7 +1786,7 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
             sc = CORNER_OF_SIDE(theFather,j,k);
             if (CORNER(theFather,sc)==NFATHER(n1) || CORNER(theFather,sc)==NFATHER(n2)) found++;
           }
-          if (found==2 && SIDE_ON_BND(theFather,j))
+          if (found==2 && (OBJT(theFather)==BEOBJ) && SIDE_ON_BND(theFather,j))
           {
             SETEDSUBDOM(pe,0);
             break;
@@ -1794,6 +1794,7 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
         }
       }
       break;
+
     case (CORNER_NODE | (MID_NODE<<4)) :
       father_edge = NFATHEREDGE(n2);
       assert(father_edge!=NULL);
@@ -1818,9 +1819,10 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
             break;
           }
         }
-        if (side>=0 && SIDE_ON_BND(theFather,side)) SETEDSUBDOM(pe,0);
+        if (side>=0  && (OBJT(theFather)==BEOBJ) && SIDE_ON_BND(theFather,side)) SETEDSUBDOM(pe,0);
       }
       break;
+
     case (MID_NODE | (MID_NODE<<4)) :
       father_edge = NFATHEREDGE(n1);
       assert(father_edge!=NULL);
@@ -1850,15 +1852,16 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
           break;
         }
       }
-      if (side>=0 && SIDE_ON_BND(theFather,side)) SETEDSUBDOM(pe,0);
+      if (side>=0 && (OBJT(theFather)==BEOBJ) && SIDE_ON_BND(theFather,side)) SETEDSUBDOM(pe,0);
       break;
+
     case (CORNER_NODE | (SIDE_NODE<<4)) :
       theVertex = MYVERTEX(n2);
       if (VFATHER(theVertex) == theFather)
         side = ONSIDE(theVertex);
       else
         side = ONNBSIDE(theVertex);
-      if (SIDE_ON_BND(theFather,side))
+      if ((OBJT(theFather)==BEOBJ) && SIDE_ON_BND(theFather,side))
         for (k=0; k<CORNERS_OF_SIDE(theFather,side); k++)
           if (CORNER(theFather,CORNER_OF_SIDE(theFather,side,k))==NFATHER(n1))
           {
@@ -1866,13 +1869,14 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
             break;
           }
       break;
+
     case (MID_NODE | (SIDE_NODE<<4)) :
       theVertex = MYVERTEX(n2);
       if (VFATHER(theVertex) == theFather)
         side = ONSIDE(theVertex);
       else
         side = ONNBSIDE(theVertex);
-      if (SIDE_ON_BND(theFather,side))
+      if ((OBJT(theFather)==BEOBJ) && SIDE_ON_BND(theFather,side))
       {
         found=0;
         father_edge = NFATHEREDGE(n1);
@@ -1888,8 +1892,8 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
       }
       break;
 #endif
-    }
-  }
+    }     /* end switch */
+  }   /* end (theFather!=NULL) */
 
   /* create vector if */
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
@@ -9726,8 +9730,9 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
 
 INT FixCoarseGrid (MULTIGRID *theMG)
 {
-  if (MG_COARSE_FIXED(theMG))
-    return (GM_OK);
+  INT MarkKey;
+
+  if (MG_COARSE_FIXED(theMG)) return (GM_OK);
 
   /* TODO (HRR 971031): check that before check-in!
      if (FinishGrid(theMG))
