@@ -302,7 +302,8 @@ int InitPPIF (int *argcp, char ***argvp)
   MPI_Status status;
   int mpierror, mpiinitialized;
 
-  /* the following is due to Klaus-Dieter Oertel, 961016 */
+  /* the following is due to Klaus-Dieter Oertel, 961016;
+         (original idea from the developers of the PetSc library)  */
   /* ppif checks whether MPI has been started by another
      library and starts it only if necessary. */
   mpierror = MPI_Initialized(&mpiinitialized);
