@@ -1217,22 +1217,24 @@ static INT SearchCoarse (VECTOR *theV, INT *m)
   }
   VectorPosition(theV,x);
   i = n;
-  for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-    theW = MDEST(theM);
-    if (VCUSED(theW)) continue;
-    w[n++] = theW;
-    if (n >= LEN_MAX)
-      break;
-  }
   if (n < LEN_MAX)
     for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
       theW = MDEST(theM);
-      if (VCUSED(theW) == 0) continue;
-      if (VCCOARSE(theW)) continue;
+      if (VCUSED(theW)) continue;
       w[n++] = theW;
       if (n >= LEN_MAX)
         break;
     }
+  if (n < LEN_MAX)
+    if (add_mark == 0)
+      for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
+        theW = MDEST(theM);
+        if (VCUSED(theW) == 0) continue;
+        if (VCCOARSE(theW)) continue;
+        w[n++] = theW;
+        if (n >= LEN_MAX)
+          break;
+      }
   /* if (n < DIM) printf("n %d i %d\n",n,i); */
   if (n > DIM) {
     if (FindCoarseVectors(n,theV,w,s) == 0) {
