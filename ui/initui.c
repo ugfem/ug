@@ -157,13 +157,6 @@ INT InitUi ()
     return (err);
   }
 
-  /* grape test output */
-  if ((err=InitTeti())!=0)
-  {
-    SetHiWrd(err,__LINE__);
-    return (err);
-  }
-
   /* return to application */
   return(0);
 }
