@@ -11242,415 +11242,418 @@ static INT GetPolyElemISCutPlaneHEX (DOUBLE **CornerDC, DOUBLE *CutZCoord, INT N
 	*Number = 0;
 	switch (count1)
 	{
+	case (0):
+		switch (count2)
+		{
 		case (0):
-			switch (count2)
-			{
-				case (0):
-				case (1):
-				case (2):
-				case (3):
-					RETURN(1);
-				case (4):
-					for (i=0; i<4; ++i)
-						V3_COPY(x[i], Poly[i])
-					*Number = 4;
-					DefinePolygon (Poly, *Number);
-					return (0);
-				case (5):
-					RETURN(1);					
-				case (6):
-				case (7):
-				case (8):
-					return (0);
-			}
 		case (1):
-			switch (count2)
-			{
-				case (0):
-				case (1):
-				case (2):
-				case (3):
-					RETURN(1);
-				case (4):
-					V3_COPY(x[1], Poly[0])
-					V3_COPY(x[2], Poly[1])
-					V3_COPY(x[3], Poly[2])
-					*Number = 3;
-					return (0);					
-				case (5):
-					V3_COPY(x[1], Poly[0])
-					V3_COPY(x[2], Poly[1])
-					for (i=0; i<3; ++i){
-						if ((ordercon[0][i]==1)||(ordercon[0][i]==2)) continue;
-						V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[2])
-					}
-					*Number = 3;
-					return (0);										
-				case (6):
-					V3_COPY(x[1], Poly[0])
-					j = 0;
-					for (i=0; i<3; ++i){
-						if ((ordercon[0][i]==1)) continue;
-						++j;
-						V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
-					}
-					*Number = 3;
-					return (0);										
-				case (7):
-					for (i=0; i<3; ++i)
-						V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[i])
-					*Number = 3;
-					return (0);
-				default:
-					RETURN(1);
-				break;
-			}
 		case (2):
-			switch (count2)
-			{
-				case (0):
-				case (1):
-					RETURN(1);
-				case (2):
-					V3_COPY(x[2],Poly[0])
-					V3_COPY(x[3],Poly[1])
-					V3_COPY(x[4],Poly[2])
-					V3_COPY(x[5],Poly[3])
-					*Number = 4;
-					DefinePolygon (Poly, *Number);
-					return (0);				
-				case (3):
-					j = -1;
-					for (i=0; i<3; ++i){
-						if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)||(ordercon[0][i]==4)) continue;
-						++j;
-						V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
-					}	
-					for (i=0; i<3; ++i){
-						if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)||(ordercon[1][i]==4)) continue;
-						++j;
-						V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
-					}
-					++j; V3_COPY(x[2],Poly[j])
-					++j; V3_COPY(x[3],Poly[j])
-					++j; V3_COPY(x[4],Poly[j])
-					*Number = j + 1;
-					if (*Number>3) DefinePolygon (Poly, *Number);
-					return (0);				
-				case (4):
-					j = -1;
-					for (i=0; i<3; ++i){
-						if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)) continue;
-						++j;
-						V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
-					}	
-					for (i=0; i<3; ++i){
-						if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)) continue;
-						++j;
-						V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
-					}
-					++j; V3_COPY(x[2],Poly[j])
-					++j; V3_COPY(x[3],Poly[j])
-					*Number = j + 1;
-					if (*Number>3) DefinePolygon (Poly, *Number);
-					return (0);				
-				case (5):
-					j = -1;
-					for (i=0; i<3; ++i){
-						if ((ordercon[0][i]==1)||(ordercon[0][i]==2)) continue;
-						++j;
-						V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
-					}	
-					for (i=0; i<3; ++i){
-						if ((ordercon[1][i]==0)||(ordercon[1][i]==2)) continue;
-						++j;
-						V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
-					}
-					++j; V3_COPY(x[2],Poly[j])
-					*Number = j + 1;
-					if (*Number>3) DefinePolygon (Poly, *Number);
-					return (0);				
-				case (6):
-					j = -1;
-					for (i=0; i<3; ++i){
-						if (ordercon[0][i]==1) continue;
-						++j;
-						V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
-					}	
-					for (i=0; i<3; ++i){
-						if (ordercon[1][i]==0) continue;
-						++j;
-						V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
-					}
-					ASSERT(j==3);
-					*Number = 4;
-					DefinePolygon (Poly, *Number);
-					return (0);				
-				default:
-					RETURN(1);
-				break;
-			}
 		case (3):
-			switch (count2)
-			{
-				case (0):
-				case (1):
-				case (2):
-					RETURN(1);
-				case (3):
-				case (4):
-				case (5):
-					j = -1;
-					for (i=0; i<3; ++i){
-						if ((ordercon[0][i]==1)||(ordercon[0][i]==2)) continue;
-						++j;
-						V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
-					}
-					for (i=0; i<3; ++i){	
-						if ((ordercon[1][i]==0)||(ordercon[1][i]==2)) continue;
-						++j;
-						V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
-					}
-					for (i=0; i<3; ++i){
-						if ((ordercon[2][i]==0)||(ordercon[2][i]==1)) continue;	
-						++j;
-						V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
-					}
-					ASSERT(j==4);						
-					*Number = 5;
-					DefinePolygon (Poly, *Number);
-					return (0);
-				default:
-					RETURN(1);
-			}
+			RETURN(1);
 		case (4):
-			switch (count2)
-			{
-				case (0):
-					V3_COPY(x[4], Poly[0])
-					V3_COPY(x[5], Poly[1])
-					V3_COPY(x[6], Poly[2])
-					V3_COPY(x[7], Poly[3])
+			for (i=0; i<4; ++i)
+				V3_COPY(x[i], Poly[i])
 					*Number = 4;
-					DefinePolygon (Poly, *Number);
-					return (0);
-				case (1):
-					j = -1;
-					for (i=0; i<3; ++i){
-						if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)||(ordercon[0][i]==4)||(ordercon[0][i]==5)||(ordercon[0][i]==6)) continue;
-						++j;
-						V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
-					}
-					for (i=0; i<3; ++i){	
-						if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)||(ordercon[1][i]==4)||(ordercon[1][i]==5)||(ordercon[1][i]==6)) continue;
-						++j;
-						V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
-					}
-					for (i=0; i<3; ++i){
-						if ((ordercon[2][i]==0)||(ordercon[2][i]==1)||(ordercon[2][i]==3)||(ordercon[2][i]==4)||(ordercon[2][i]==5)||(ordercon[2][i]==6)) continue;	
-						++j;
-						V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
-					}
-					for (i=0; i<3; ++i){
-						if ((ordercon[3][i]==0)||(ordercon[3][i]==1)||(ordercon[3][i]==2)||(ordercon[3][i]==4)||(ordercon[3][i]==5)||(ordercon[3][i]==6)) continue;	
-						++j;
-						V3_LINCOMB(Z[3]/(Z[3]-Z[ordercon[3][i]]), x[ordercon[3][i]], -Z[ordercon[3][i]]/(Z[3]-Z[ordercon[3][i]]), x[3], Poly[j])
-					}
-					++j; V3_COPY(x[4],Poly[j])
-					++j; V3_COPY(x[5],Poly[j])
-					++j; V3_COPY(x[6],Poly[j])
-					*Number = j + 1;
-					if (*Number>3) DefinePolygon (Poly, *Number);
-					return (0);				
-				case (2):
-					j = -1;
-					for (i=0; i<3; ++i){
-						if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)||(ordercon[0][i]==4)||(ordercon[0][i]==5)) continue;
-						++j;
-						V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
-					}
-					for (i=0; i<3; ++i){	
-						if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)||(ordercon[1][i]==4)||(ordercon[1][i]==5)) continue;
-						++j;
-						V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
-					}
-					for (i=0; i<3; ++i){
-						if ((ordercon[2][i]==0)||(ordercon[2][i]==1)||(ordercon[2][i]==3)||(ordercon[2][i]==4)||(ordercon[2][i]==5)) continue;	
-						++j;
-						V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
-					}
-					for (i=0; i<3; ++i){
-						if ((ordercon[3][i]==0)||(ordercon[3][i]==1)||(ordercon[3][i]==2)||(ordercon[3][i]==4)||(ordercon[3][i]==5)) continue;	
-						++j;
-						V3_LINCOMB(Z[3]/(Z[3]-Z[ordercon[3][i]]), x[ordercon[3][i]], -Z[ordercon[3][i]]/(Z[3]-Z[ordercon[3][i]]), x[3], Poly[j])
-					}
-					++j; V3_COPY(x[4],Poly[j])
-					++j; V3_COPY(x[5],Poly[j])
-					*Number = j + 1;
-					if (*Number>3) DefinePolygon (Poly, *Number);
-					return (0);				
-				case (3):
-					j = -1;
-					for (i=0; i<3; ++i){
-						if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)||(ordercon[0][i]==4)) continue;
-						++j;
-						V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
-					}
-					for (i=0; i<3; ++i){	
-						if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)||(ordercon[1][i]==4)) continue;
-						++j;
-						V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
-					}
-					for (i=0; i<3; ++i){
-						if ((ordercon[2][i]==0)||(ordercon[2][i]==1)||(ordercon[2][i]==3)||(ordercon[2][i]==4)) continue;	
-						++j;
-						V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
-					}
-					for (i=0; i<3; ++i){
-						if ((ordercon[3][i]==0)||(ordercon[3][i]==1)||(ordercon[3][i]==2)||(ordercon[3][i]==4)) continue;	
-						++j;
-						V3_LINCOMB(Z[3]/(Z[3]-Z[ordercon[3][i]]), x[ordercon[3][i]], -Z[ordercon[3][i]]/(Z[3]-Z[ordercon[3][i]]), x[3], Poly[j])
-					}
-					++j; V3_COPY(x[4],Poly[j])
-					*Number = j + 1;
-					DefinePolygon (Poly, *Number);
-					return (0);				
-				case (4):
-					j = -1;
-					for (i=0; i<3; ++i){
-						if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)) continue;
-						++j;
-						V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
-					}
-					for (i=0; i<3; ++i){	
-						if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)) continue;
-						++j;
-						V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
-					}
-					for (i=0; i<3; ++i){
-						if ((ordercon[2][i]==0)||(ordercon[2][i]==1)||(ordercon[2][i]==3)) continue;	
-						++j;
-						V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
-					}
-					for (i=0; i<3; ++i){
-						if ((ordercon[3][i]==0)||(ordercon[3][i]==1)||(ordercon[3][i]==2)) continue;	
-						++j;
-						V3_LINCOMB(Z[3]/(Z[3]-Z[ordercon[3][i]]), x[ordercon[3][i]], -Z[ordercon[3][i]]/(Z[3]-Z[ordercon[3][i]]), x[3], Poly[j])
-					}
-					*Number = j + 1;
-					DefinePolygon (Poly, *Number);
-					return (0);
-				default:
-					RETURN(1);
-			}
+			DefinePolygon (Poly, *Number);
+			return (0);
 		case (5):
-			switch (count2)
-			{
-				case (1):
-					j = -1;
-					for (i=0; i<3; ++i){
-						if ((ordercon[7][i]==6)||(ordercon[7][i]==5)) continue;
-						++j;						
-						V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
-					}
-					++j; V3_COPY(x[5],Poly[j]);
-					++j; V3_COPY(x[6],Poly[j]);
-					*Number = j+1;
-					if (*Number>3) DefinePolygon (Poly, *Number);
-					return (0);
-				case (2):
-					j = -1;
-					for (i=0; i<3; ++i){
-						if ((ordercon[7][i]==6)||(ordercon[7][i]==5)) continue;
-						++j;						
-						V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
-					}
-					for (i=0; i<3; ++i){
-						if ((ordercon[6][i]==7)||(ordercon[6][i]==5)) continue;
-						++j;						
-						V3_LINCOMB(Z[6]/(Z[6]-Z[ordercon[6][i]]), x[ordercon[6][i]], -Z[ordercon[6][i]]/(Z[6]-Z[ordercon[6][i]]), x[6], Poly[j])
-					}
-					++j;
-					V3_COPY(x[5],Poly[j]);
-					*Number = j+1;
-					if (*Number>3) DefinePolygon (Poly, *Number);
-					return (0);
-				case (3):
-					j = -1;
-					for (i=0; i<3; ++i){
-						if ((ordercon[7][i]==5)||(ordercon[7][i]==6)) continue;
-						++j;						
-						V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
-					}
-					for (i=0; i<3; ++i){
-						if ((ordercon[6][i]==5)||(ordercon[6][i]==7)) continue;
-						++j;						
-						V3_LINCOMB(Z[6]/(Z[6]-Z[ordercon[6][i]]), x[ordercon[6][i]], -Z[ordercon[6][i]]/(Z[6]-Z[ordercon[6][i]]), x[6], Poly[j])
-					}
-					for (i=0; i<3; ++i){
-						if ((ordercon[5][i]==6)||(ordercon[5][i]==7)) continue;
-						++j;						
-						V3_LINCOMB(Z[5]/(Z[5]-Z[ordercon[5][i]]), x[ordercon[5][i]], -Z[ordercon[5][i]]/(Z[5]-Z[ordercon[5][i]]), x[5], Poly[j])
-					}
-					*Number = j + 1;
-					if (*Number>3) DefinePolygon (Poly, *Number);
-					return (0);
-				default:
-					RETURN(1);
-			}
+			RETURN(1);					
 		case (6):
-			switch (count2)
-			{
-				case (0):
-					return (0);
-				case (1):
-					j = -1;
-					for (i=0; i<3; ++i){
-						if ((ordercon[7][i]==6)) continue;
-						++j;						
-						V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
-					}
-					++j; V3_COPY(x[6],Poly[j]);
-					*Number = j+1;
-					if (*Number>3) DefinePolygon (Poly, *Number);
-					return (0);
-				case (2):
-					j = -1;
-					for (i=0; i<3; ++i){
-						if ((ordercon[7][i]==6)) continue;
-						++j;						
-						V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
-					}
-					for (i=0; i<3; ++i){
-						if ((ordercon[6][i]==7)) continue;
-						++j;						
-						V3_LINCOMB(Z[6]/(Z[6]-Z[ordercon[6][i]]), x[ordercon[6][i]], -Z[ordercon[6][i]]/(Z[6]-Z[ordercon[6][i]]), x[6], Poly[j])
-					}
-					*Number = j + 1;
-					if (*Number>3) DefinePolygon (Poly, *Number);
-					return (0);										
-				default:
-					RETURN(1);
-			}
 		case (7):
-			switch (count2)
-			{
-				case (0):
-					return (0);
-				case (1):
-					j = -1;
-					for (i=0; i<3; ++i){
-						++j;						
-						V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
-					}
-					*Number = j + 1;
-					if (*Number>3) DefinePolygon (Poly, *Number);
-					return (0);														
-				default:
-					RETURN(1);
-			}
 		case (8):
 			return (0);
+		}
+	case (1):
+		switch (count2)
+		{
+		case (0):
+		case (1):
+		case (2):
+		case (3):
+			RETURN(1);
+		case (4):
+			V3_COPY(x[1], Poly[0])
+				V3_COPY(x[2], Poly[1])
+				V3_COPY(x[3], Poly[2])
+				*Number = 3;
+			return (0);					
+		case (5):
+			V3_COPY(x[1], Poly[0])
+				V3_COPY(x[2], Poly[1])
+				for (i=0; i<3; ++i){
+					if ((ordercon[0][i]==1)||(ordercon[0][i]==2)) continue;
+					V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[2])
+						}
+			*Number = 3;
+			return (0);										
+		case (6):
+			V3_COPY(x[1], Poly[0])
+				j = 0;
+			for (i=0; i<3; ++i){
+				if ((ordercon[0][i]==1)) continue;
+				++j;
+				V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+					}
+			*Number = 3;
+			return (0);										
+		case (7):
+			for (i=0; i<3; ++i)
+				V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[i])
+					*Number = 3;
+			return (0);
+		default:
+			RETURN(1);
+			break;
+		}
+	case (2):
+		switch (count2)
+		{
+		case (0):
+		case (1):
+			RETURN(1);
+		case (2):
+			V3_COPY(x[2],Poly[0])
+				V3_COPY(x[3],Poly[1])
+				V3_COPY(x[4],Poly[2])
+				V3_COPY(x[5],Poly[3])
+				*Number = 4;
+			DefinePolygon (Poly, *Number);
+			return (0);				
+		case (3):
+			j = -1;
+			for (i=0; i<3; ++i){
+				if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)||(ordercon[0][i]==4)) continue;
+				++j;
+				V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+					}	
+			for (i=0; i<3; ++i){
+				if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)||(ordercon[1][i]==4)) continue;
+				++j;
+				V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+					}
+			++j; V3_COPY(x[2],Poly[j]);
+			++j; V3_COPY(x[3],Poly[j]);
+			++j; V3_COPY(x[4],Poly[j]);
+			*Number = j + 1;
+			if (*Number>3) DefinePolygon (Poly, *Number);
+			return (0);				
+		case (4):
+			j = -1;
+			for (i=0; i<3; ++i){
+				if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)) continue;
+				++j;
+				V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+					}	
+			for (i=0; i<3; ++i){
+				if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)) continue;
+				++j;
+				V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+					}
+			++j; V3_COPY(x[2],Poly[j]);
+			++j; V3_COPY(x[3],Poly[j]);
+			*Number = j + 1;
+			if (*Number>3) DefinePolygon (Poly, *Number);
+			return (0);				
+		case (5):
+			j = -1;
+			for (i=0; i<3; ++i){
+				if ((ordercon[0][i]==1)||(ordercon[0][i]==2)) continue;
+				++j;
+				V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+					}	
+			for (i=0; i<3; ++i){
+				if ((ordercon[1][i]==0)||(ordercon[1][i]==2)) continue;
+				++j;
+				V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+					}
+			++j; V3_COPY(x[2],Poly[j])
+					 *Number = j + 1;
+			if (*Number>3) DefinePolygon (Poly, *Number);
+			return (0);				
+		case (6):
+			j = -1;
+			for (i=0; i<3; ++i){
+				if (ordercon[0][i]==1) continue;
+				++j;
+				V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+					}	
+			for (i=0; i<3; ++i){
+				if (ordercon[1][i]==0) continue;
+				++j;
+				V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+					}
+			ASSERT(j==3);
+			*Number = 4;
+			DefinePolygon (Poly, *Number);
+			return (0);				
+		default:
+			RETURN(1);
+			break;
+		}
+	case (3):
+		switch (count2)
+		{
+		case (0):
+		case (1):
+		case (2):
+			RETURN(1);
+		case (3):
+		case (4):
+		case (5):
+			j = -1;
+			for (i=0; i<3; ++i){
+				if ((ordercon[0][i]==1)||(ordercon[0][i]==2)) continue;
+				++j;
+				V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+					}
+			for (i=0; i<3; ++i){	
+				if ((ordercon[1][i]==0)||(ordercon[1][i]==2)) continue;
+				++j;
+				V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+					}
+			for (i=0; i<3; ++i){
+				if ((ordercon[2][i]==0)||(ordercon[2][i]==1)) continue;	
+				++j;
+				V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
+					}
+			ASSERT(j==4);						
+			*Number = 5;
+			DefinePolygon (Poly, *Number);
+			return (0);
+		default:
+			RETURN(1);
+		}
+	case (4):
+		switch (count2)
+		{
+		case (0):
+			V3_COPY(x[4], Poly[0])
+				V3_COPY(x[5], Poly[1])
+				V3_COPY(x[6], Poly[2])
+				V3_COPY(x[7], Poly[3])
+				*Number = 4;
+			DefinePolygon (Poly, *Number);
+			return (0);
+		case (1):
+			j = -1;
+			for (i=0; i<3; ++i){
+				if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)||(ordercon[0][i]==4)||(ordercon[0][i]==5)||(ordercon[0][i]==6)) continue;
+				++j;
+				V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+					}
+			for (i=0; i<3; ++i){	
+				if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)||(ordercon[1][i]==4)||(ordercon[1][i]==5)||(ordercon[1][i]==6)) continue;
+				++j;
+				V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+					}
+			for (i=0; i<3; ++i){
+				if ((ordercon[2][i]==0)||(ordercon[2][i]==1)||(ordercon[2][i]==3)||(ordercon[2][i]==4)||(ordercon[2][i]==5)||(ordercon[2][i]==6)) continue;	
+				++j;
+				V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
+					}
+			for (i=0; i<3; ++i){
+				if ((ordercon[3][i]==0)||(ordercon[3][i]==1)||(ordercon[3][i]==2)||(ordercon[3][i]==4)||(ordercon[3][i]==5)||(ordercon[3][i]==6)) continue;	
+				++j;
+				V3_LINCOMB(Z[3]/(Z[3]-Z[ordercon[3][i]]), x[ordercon[3][i]], -Z[ordercon[3][i]]/(Z[3]-Z[ordercon[3][i]]), x[3], Poly[j])
+					}
+			++j; V3_COPY(x[4],Poly[j]);
+			++j; V3_COPY(x[5],Poly[j]);
+			++j; V3_COPY(x[6],Poly[j]);
+			*Number = j + 1;
+			if (*Number>3) DefinePolygon (Poly, *Number);
+			return (0);				
+		case (2):
+			j = -1;
+			for (i=0; i<3; ++i){
+				if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)||(ordercon[0][i]==4)||(ordercon[0][i]==5)) continue;
+				++j;
+				V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+					}
+			for (i=0; i<3; ++i){	
+				if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)||(ordercon[1][i]==4)||(ordercon[1][i]==5)) continue;
+				++j;
+				V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+					}
+			for (i=0; i<3; ++i){
+				if ((ordercon[2][i]==0)||(ordercon[2][i]==1)||(ordercon[2][i]==3)||(ordercon[2][i]==4)||(ordercon[2][i]==5)) continue;	
+				++j;
+				V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
+					}
+			for (i=0; i<3; ++i){
+				if ((ordercon[3][i]==0)||(ordercon[3][i]==1)||(ordercon[3][i]==2)||(ordercon[3][i]==4)||(ordercon[3][i]==5)) continue;	
+				++j;
+				V3_LINCOMB(Z[3]/(Z[3]-Z[ordercon[3][i]]), x[ordercon[3][i]], -Z[ordercon[3][i]]/(Z[3]-Z[ordercon[3][i]]), x[3], Poly[j])
+					}
+			++j; V3_COPY(x[4],Poly[j]);
+			++j; V3_COPY(x[5],Poly[j]);
+			*Number = j + 1;
+			if (*Number>3) DefinePolygon (Poly, *Number);
+			return (0);				
+		case (3):
+			j = -1;
+			for (i=0; i<3; ++i){
+				if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)||(ordercon[0][i]==4)) continue;
+				++j;
+				V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+					}
+			for (i=0; i<3; ++i){	
+				if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)||(ordercon[1][i]==4)) continue;
+				++j;
+				V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+					}
+			for (i=0; i<3; ++i){
+				if ((ordercon[2][i]==0)||(ordercon[2][i]==1)||(ordercon[2][i]==3)||(ordercon[2][i]==4)) continue;	
+				++j;
+				V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
+					}
+			for (i=0; i<3; ++i){
+				if ((ordercon[3][i]==0)||(ordercon[3][i]==1)||(ordercon[3][i]==2)||(ordercon[3][i]==4)) continue;	
+				++j;
+				V3_LINCOMB(Z[3]/(Z[3]-Z[ordercon[3][i]]), x[ordercon[3][i]], -Z[ordercon[3][i]]/(Z[3]-Z[ordercon[3][i]]), x[3], Poly[j])
+					}
+			++j; V3_COPY(x[4],Poly[j])
+					 *Number = j + 1;
+			DefinePolygon (Poly, *Number);
+			return (0);				
+		case (4):
+			j = -1;
+			for (i=0; i<3; ++i){
+				if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)) continue;
+				++j;
+				V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+					}
+			for (i=0; i<3; ++i){	
+				if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)) continue;
+				++j;
+				V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+					}
+			for (i=0; i<3; ++i){
+				if ((ordercon[2][i]==0)||(ordercon[2][i]==1)||(ordercon[2][i]==3)) continue;	
+				++j;
+				V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
+					}
+			for (i=0; i<3; ++i){
+				if ((ordercon[3][i]==0)||(ordercon[3][i]==1)||(ordercon[3][i]==2)) continue;	
+				++j;
+				V3_LINCOMB(Z[3]/(Z[3]-Z[ordercon[3][i]]), x[ordercon[3][i]], -Z[ordercon[3][i]]/(Z[3]-Z[ordercon[3][i]]), x[3], Poly[j])
+					}
+			*Number = j + 1;
+			DefinePolygon (Poly, *Number);
+			return (0);
+		default:
+			RETURN(1);
+		}
+	case (5):
+		switch (count2)
+		{
+		case 0:
+			return(0);  /* ??? Please check */
+
+		case (1):
+			j = -1;
+			for (i=0; i<3; ++i){
+				if ((ordercon[7][i]==6)||(ordercon[7][i]==5)) continue;
+				++j;						
+				V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
+					}
+			++j; V3_COPY(x[5],Poly[j]);
+			++j; V3_COPY(x[6],Poly[j]);
+			*Number = j+1;
+			if (*Number>3) DefinePolygon (Poly, *Number);
+			return (0);
+		case (2):
+			j = -1;
+			for (i=0; i<3; ++i){
+				if ((ordercon[7][i]==6)||(ordercon[7][i]==5)) continue;
+				++j;						
+				V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
+					}
+			for (i=0; i<3; ++i){
+				if ((ordercon[6][i]==7)||(ordercon[6][i]==5)) continue;
+				++j;						
+				V3_LINCOMB(Z[6]/(Z[6]-Z[ordercon[6][i]]), x[ordercon[6][i]], -Z[ordercon[6][i]]/(Z[6]-Z[ordercon[6][i]]), x[6], Poly[j])
+					}
+			++j;
+			V3_COPY(x[5],Poly[j]);
+			*Number = j+1;
+			if (*Number>3) DefinePolygon (Poly, *Number);
+			return (0);
+		case (3):
+			j = -1;
+			for (i=0; i<3; ++i){
+				if ((ordercon[7][i]==5)||(ordercon[7][i]==6)) continue;
+				++j;						
+				V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
+					}
+			for (i=0; i<3; ++i){
+				if ((ordercon[6][i]==5)||(ordercon[6][i]==7)) continue;
+				++j;						
+				V3_LINCOMB(Z[6]/(Z[6]-Z[ordercon[6][i]]), x[ordercon[6][i]], -Z[ordercon[6][i]]/(Z[6]-Z[ordercon[6][i]]), x[6], Poly[j])
+					}
+			for (i=0; i<3; ++i){
+				if ((ordercon[5][i]==6)||(ordercon[5][i]==7)) continue;
+				++j;						
+				V3_LINCOMB(Z[5]/(Z[5]-Z[ordercon[5][i]]), x[ordercon[5][i]], -Z[ordercon[5][i]]/(Z[5]-Z[ordercon[5][i]]), x[5], Poly[j])
+					}
+			*Number = j + 1;
+			if (*Number>3) DefinePolygon (Poly, *Number);
+			return (0);
+		default:
+			RETURN(1);
+		}
+	case (6):
+		switch (count2)
+		{
+		case (0):
+			return (0);
+		case (1):
+			j = -1;
+			for (i=0; i<3; ++i){
+				if ((ordercon[7][i]==6)) continue;
+				++j;						
+				V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
+					}
+			++j; V3_COPY(x[6],Poly[j]);
+			*Number = j+1;
+			if (*Number>3) DefinePolygon (Poly, *Number);
+			return (0);
+		case (2):
+			j = -1;
+			for (i=0; i<3; ++i){
+				if ((ordercon[7][i]==6)) continue;
+				++j;						
+				V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
+					}
+			for (i=0; i<3; ++i){
+				if ((ordercon[6][i]==7)) continue;
+				++j;						
+				V3_LINCOMB(Z[6]/(Z[6]-Z[ordercon[6][i]]), x[ordercon[6][i]], -Z[ordercon[6][i]]/(Z[6]-Z[ordercon[6][i]]), x[6], Poly[j])
+					}
+			*Number = j + 1;
+			if (*Number>3) DefinePolygon (Poly, *Number);
+			return (0);										
+		default:
+			RETURN(1);
+		}
+	case (7):
+		switch (count2)
+		{
+		case (0):
+			return (0);
+		case (1):
+			j = -1;
+			for (i=0; i<3; ++i){
+				++j;						
+				V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
+					}
+			*Number = j + 1;
+			if (*Number>3) DefinePolygon (Poly, *Number);
+			return (0);														
+		default:
+			RETURN(1);
+		}
+	case (8):
+		return (0);
 	}
 	
 	RETURN(1);
