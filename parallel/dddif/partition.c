@@ -170,7 +170,7 @@ INT CheckPartitioning (MULTIGRID *theMG)
           if (LEVEL(theFather)==0) continue;
           if (!EMASTER(EFATHER(theFather)))
           {
-            UserWriteF(PFMT "elem=" EID_FMTX  "cannot be coarsened\n",
+            UserWriteF(PFMT "elem=" EID_FMTX " cannot be coarsened\n",
                        me,EID_PRTX(theFather));
             _restrict_ = 1;
           }
