@@ -13396,7 +13396,7 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				  DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
 				  DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO) 
 				  if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
-					return (1);
+					  /* return (1) */ ;
 				  #ifndef ModelP
 				  if (EE3D_Property==2)
 				  {
@@ -13460,7 +13460,7 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 					DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
 					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO);
 					if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
-						return (1);
+						/* return (1) */ ;
                     #ifndef ModelP
 				  	if (EE3D_Property==2)
 				  	{
