@@ -326,7 +326,7 @@ struct refrule {
   SHORT class;                                                      /* class of rule:3bits for COPY, IREG, REG */
   SHORT nsons;                                              /* number of sons rule creates             */
   SHORT pattern[MAX_NEW_CORNERS_DIM];                       /* stores which edges are refined          */
-  SHORT pat;                                                /* bitwise format of pattern               */
+  INT pat;                                                      /* bitwise format of pattern               */
   SHORT sonandnode[MAX_NEW_CORNERS_DIM][2];                 /* for each new node the number of the son */
   /* and the local node number of the node   */
   struct edgedata edges[MAX_NEW_EDGES_DIM];
