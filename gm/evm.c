@@ -1309,7 +1309,8 @@ INT EXDecomposeMatrixDOUBLE (DOUBLE *Mat, INT bw, INT n)
 
   for (i=0; i<n-1; i++)
   {
-    if (EX_MAT(Mat,bw,i,i)==0.0) return (1);
+    if (EX_MAT(Mat,bw,i,i)==0.0)
+      REP_ERR_RETURN (1);
     for (j=i+1; j<=MIN(i+bw,n-1); j++)
     {
       f = EX_MAT(Mat,bw,j,i)/EX_MAT(Mat,bw,i,i);
