@@ -34,6 +34,7 @@ list_options_arch()
 	echo "             ORIGIN (set ARCH = ORIGIN)";
 	echo "             PARAGON (set ARCH = PARAGON)";
 	echo "             PC (set ARCH = PC)";
+	echo "             PCCLUSTER (set ARCH = PCCLUSTER)";
 	echo "             POWERGC (set ARCH = POWERGC)";
 	echo "             SOLARIS (set ARCH = SOLARIS)";
 	echo "             SOLARISGCC (set ARCH = SOLARISGCC)";
@@ -399,6 +400,9 @@ edit_ugconf()
 		;;
 	PC)
 		sed 's/^ARCH.*$/ARCH = PC/' $1 > $1.tmp
+		;;
+	PCCLUSTER)
+		sed 's/^ARCH.*$/ARCH = PCCLUSTER/' $1 > $1.tmp
 		;;
 	MKLINUX)
 		sed 's/^ARCH.*$/ARCH = MKLINUX/' $1 > $1.tmp
