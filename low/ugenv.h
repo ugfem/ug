@@ -61,7 +61,7 @@ namespace UG3d {
 /* CAUTION: when changing NAMESIZE also change scanf sizes!!! */
 #define NAMESIZE            128        /* max length of name string            */
 #define NAMELEN             127        /* NAMESIZE-1                            */
-#define NAMELENSTR             "128"    /* NAMESIZE-1 as string                    */
+#define NAMELENSTR             "127"    /* NAMESIZE-1 as string                    */
 #define SEARCHALL            -1        /* scan through all directories         */
 #define DIRSEP                "/"     /* character separating directories     */
 
