@@ -16,13 +16,13 @@ include machines/mk.$(ARCHDIR)
 include ug.conf
 
 # the following list may be extended
-MODULES = LOW DEV GM NUMERICS GRAPH UI 
+MODULES = LOW DEV GM NUMERICS GRAPH UI GG
 
 # dimension dependent targets
 version = $(DIM)Dversion
 
 # local C compiler flags
-LCFLAGS = -Ilow -Idev -Igm -Igraph -Iui -Inumerics
+LCFLAGS = -Ilow -Idev -Igm -Igraph -Iui -Inumerics -Igg
 
 # object files for both dimensions
 OBJECTS = initug.o
@@ -49,6 +49,9 @@ GRAPH:
 	
 UI:
 	cd ui; make -f Makefile.ui $(version); cd ..;
+
+GG:
+	cd gg; make -f Makefile.gg $(version); cd ..;
 	
 # default rule
 .c.o:
@@ -67,4 +70,5 @@ ifdef:
 	cd gm; make -f Makefile.gm clean; cd ..;
 	cd numerics; make -f Makefile.numerics clean; cd ..;
 	cd graph; make -f Makefile.graph clean; cd ..;
+	cd ui; rm commands.o ; cd ..;
 
