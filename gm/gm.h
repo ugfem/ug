@@ -782,6 +782,11 @@ struct multigrid {
   /* user data */
   void *GenData;                                        /* general user data space				*/
   HEAP *UserHeap;                                       /* user heap							*/
+  void *genpurp;                                        /* general purpose pointer				*/
+
+  /* i/o handing */
+  INT saved;                                                    /* 1 if multigrid saved					*/
+  char filename[NAMESIZE];                      /* filename if saved					*/
 } ;
 
 /****************************************************************************/
@@ -2036,7 +2041,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MULTIGRID_STATUS_OFFSET                 (sizeof(ENVDIR))
 
 #define MGSTATUS(p)                     ((p)->status)
-#define RESETMGSTATUS(p)                {(p)->status=0; (p)->magic_cookie = (int)time(NULL);}
+#define RESETMGSTATUS(p)                {(p)->status=0; (p)->magic_cookie = (int)time(NULL); (p)->saved=0}
 #define MG_MAGIC_COOKIE(p)              ((p)->magic_cookie)
 #define VIDCNT(p)                       ((p)->vertIdCounter)
 #define NIDCNT(p)                       ((p)->nodeIdCounter)
@@ -2063,6 +2068,9 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define NELIST_DEF_IN_MG(p)     ((p)->theFormat->nodeelementlist)
 #define EDATA_DEF_IN_MG(p)      ((p)->theFormat->elementdata)
 #define NDATA_DEF_IN_MG(p)      ((p)->theFormat->nodedata)
+#define MG_GENPURP(p)                   ((p)->genpurp)
+#define MG_SAVED(p)                             ((p)->saved)
+#define MG_FILENAME(p)                  ((p)->filename)
 
 /****************************************************************************/
 /*																			*/
@@ -2205,12 +2213,14 @@ void FreeAllBV                                          ( GRID *grid );
 /* algebraic connections */
 CONNECTION      *CreateExtraConnection  (GRID *theGrid, VECTOR *from, VECTOR *to);
 INT             DisposeExtraConnections (GRID *theGrid);
+INT             DisposeConnectionsInGrid (GRID *theGrid);
 MATRIX          *GetMatrix                              (const VECTOR *FromVector, const VECTOR *ToVector);
 CONNECTION      *GetConnection                  (const VECTOR *FromVector, const VECTOR *ToVector);
 #ifdef __INTERPOLATION_MATRIX__
 MATRIX      *GetIMatrix             (VECTOR *FineVector, VECTOR *CoarseVector);
 MATRIX      *CreateIMatrix          (GRID *theGrid, VECTOR *fvec, VECTOR *cvec);
 INT                     DisposeIMatrixList              (GRID *theGrid, VECTOR *theVector);
+INT             DisposeIMatricesInGrid  (GRID *theGrid);
 #endif
 INT         GetAllVectorsOfElement  (GRID *theGrid, ELEMENT *theElement,
                                      VECTOR **vec);
