@@ -207,6 +207,7 @@ typedef struct {
 
 /* finite volume geometry */
 INT EvaluateFVGeometry                          (const ELEMENT *e, FVElementGeometry *geo);
+INT EvaluateAFVGeometry                         (const ELEMENT *e, const DOUBLE *conv, FVElementGeometry *geo);
 
 /* upwinding procedures */
 INT GetFullUpwindShapes                         (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC]);

@@ -441,6 +441,186 @@ INT EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
   return (0);
 }
 
+#       ifdef __TWODIM__
+INT EvaluateAFVGeometry (const ELEMENT *e, const DOUBLE *conv, FVElementGeometry *geo)
+{
+  INT i,j,k,l,n,coe,eoe;
+  VERTEX *v;
+  LOCAL_DOUBLES *lc;
+  SubControlVolume *scv;
+  SubControlVolumeFace *scvf;
+  BoundaryFace *bf;
+  DOUBLE min,scale,dist;
+  const DOUBLE *ex[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR s,gdp,ldp;
+  DOUBLE_VECTOR x,mdp;
+  INT iminus1;
+
+  /* general info */
+  FVG_ELEM(geo)   = e;
+  FVG_TAG(geo)    = TAG(e);
+  FVG_NSCV(geo)   = coe = CORNERS_OF_ELEM(e);
+  FVG_NSCVF(geo)  = eoe = EDGES_OF_ELEM(e);
+  FVG_NSCVBF(geo) = 0;       /* initially */
+
+  lc = LocalCoords+TAG(e);
+
+  /* corners */
+  for (i=0; i<coe; i++)
+  {
+    v = MYVERTEX(CORNER(e,i));
+    V_DIM_COPY(CVECT(v),FVG_GCO(geo,i));
+    ex[i]=CVECT(v);
+    V_DIM_COPY(lc->co[i],FVG_LCO(geo,i));
+  }
+
+  /* edge midpoints */
+  for (k=0; k<eoe; k++)
+  {
+    i = CORNER_OF_EDGE(e,k,0);
+    j = CORNER_OF_EDGE(e,k,1);
+    V_DIM_COPY(lc->em[k],FVG_LEM(geo,k));
+    V_DIM_AVG2(FVG_GCO(geo,i),FVG_GCO(geo,j),FVG_GEM(geo,k));
+  }
+
+  /* side midpoints */
+  for (k=0; k<SIDES_OF_ELEM(e); k++)
+  {
+    scale = 1.0/((DOUBLE)CORNERS_OF_SIDE(e,k));
+
+    V_DIM_CLEAR(s);
+    for (l=0; l<CORNERS_OF_SIDE(e,k); l++)
+      V_DIM_ADD1(FVG_GCO(geo,CORNER_OF_SIDE(e,k,l)),s);
+    V_DIM_SCALE(scale,s);
+    V_DIM_COPY(s,FVG_GSM(geo,k));
+
+    V_DIM_COPY(lc->sm[k],FVG_LSM(geo,k));
+  }
+
+  /* center of mass */
+  scale = 1.0/((DOUBLE)coe);
+  V_DIM_CLEAR(s);
+  for (l=0; l<coe; l++)
+    V_DIM_ADD1(FVG_GCO(geo,l),s);
+  V_DIM_SCALE(scale,s);
+  V_DIM_COPY(s,FVG_GCM(geo));
+
+  V_DIM_COPY(lc->cm,FVG_LCM(geo));
+
+  /* determine scv-division point */
+  min=MAX_D;
+  for (i=0; i<eoe; i++)
+  {
+    if (V2_apbmin2c(FVG_GEM(geo,i),conv,FVG_GCM(geo),&dist,mdp)) RETURN(__LINE__);
+    if (dist<min)
+    {
+      min=dist;
+      V_DIM_COPY(mdp,gdp);
+    }
+  }
+  if (min==MAX_D) RETURN(__LINE__);
+  if (UG_GlobalToLocal(coe,ex,gdp,ldp)) RETURN(__LINE__);
+
+  /* sub control volumes */
+  for (i=0; i<coe; i++)
+  {
+    scv = FVG_SCV(geo,i);
+    SCV_CO(scv)     = i;
+    V_DIM_COPY(FVG_GCO(geo,i),SCV_GCO(scv));
+    SCV_NDPROP(scv) =  NPROP(CORNER(e,i));
+  }
+  switch (TAG(e))
+  {
+  case TRIANGLE :
+  case QUADRILATERAL :
+    for (i=0; i<coe; i++)
+    {
+      iminus1 = (i+coe-1)%coe;
+      scv = FVG_SCV(geo,i);
+      SCV_VOL(scv) = qarea(FVG_GCO(geo,i)[0],FVG_GCO(geo,i)[1],
+                           FVG_GEM(geo,i)[0],FVG_GEM(geo,i)[1],
+                           gdp[0],gdp[1],
+                           FVG_GEM(geo,iminus1)[0],FVG_GEM(geo,iminus1)[1]);
+    }
+    break;
+
+  default :
+    PrintErrorMessage('E',"EvaluateAFVGeometry","unknown element");
+    RETURN(__LINE__);
+  }
+
+  IFDEBUG(np,0)
+  for (k=0; k<coe; k++)               /* check sign */
+    if (SCV_VOL(FVG_SCV(geo,k))<0.0)
+      UserWriteF("w: scv negative e=%5d k=%1d v=%10.4g\n",ID(e),k,SCV_VOL(FVG_SCV(geo,k)));
+  ENDDEBUG
+
+  /* sub control volume faces */
+  for (k=0; k<eoe; k++)
+  {
+    i = CORNER_OF_EDGE(e,k,0); j = CORNER_OF_EDGE(e,k,1);
+    scvf = FVG_SCVF(geo,k);
+    SCVF_FROM(scvf) = i; SCVF_TO(scvf) = j;
+
+    V_DIM_AVG2(lc->em[k],ldp,SCVF_LIP(scvf));
+
+    V2_AVG2(FVG_GEM(geo,i),gdp,SCVF_GIP(scvf));
+    V2_SUBTRACT(gdp,FVG_GEM(geo,i),s);
+    V2_NORMAL(s,SCVF_NORMAL(scvf));
+
+    IFDEBUG(np,0)
+    /* check sign */
+    V_DIM_SUBTRACT(FVG_GCO(geo,j),FVG_GCO(geo,i),s);
+    if (V_DIM_SCAL_PROD(s,SCVF_NORMAL(scvf))<0.0)
+    {
+      UserWriteF("W: scvf normal w. edge negative e=%5d i=%2d j=%2d\n",
+                 ID(e),i,j);
+      RETURN(__LINE__);
+    }
+    ENDDEBUG
+  }
+
+  /* boundary integration points (this is in parameter space !) */
+  if (OBJT(e)==BEOBJ)
+    for (i=0; i<SIDES_OF_ELEM(e); i++)
+    {
+      if (INNER_SIDE(e,i)) continue;
+      /* interpolate in parameter and local space on side: center of mass */
+      n = CORNERS_OF_SIDE(e,i);
+
+      /* fill boundary face */
+      for (k=0; k<n; k++)
+      {
+        bf = FVG_SCVBF(geo,FVG_NSCVBF(geo));
+
+        SCVBF_FROM(bf) = CORNER_OF_SIDE(e,i,k);
+        SCVBF_SIDE(bf) = i;
+
+        /* bip coord in local space */
+        V_DIM_COPY(lc->bip[i][k],SCVBF_LIP(bf));
+
+        /* normal, assumes correct numbering of edges relative to corners (of side) !! */
+        if(k==0) V2_SUBTRACT(FVG_GEM(geo,i),FVG_GCO(geo,CORNER_OF_SIDE(e,i,0)),x);
+        if(k==1) V2_SUBTRACT(FVG_GCO(geo,CORNER_OF_SIDE(e,i,1)),FVG_GEM(geo,i),x);
+        V2_EUKLIDNORM(x,SCVBF_AREA(bf));
+        SCVBF_PARAM(bf,0) = 0.25 + k * 0.5;
+        V2_NORMAL(x,SCVBF_NORMAL(bf));
+
+        FVG_NSCVBF(geo)++;
+      }
+    }
+
+  return (0);
+}
+#       endif
+
+#       ifdef __THREEDIM__
+INT EvaluateAFVGeometry (const ELEMENT *e, DOUBLE v, FVElementGeometry *geo)
+{
+  assert(0);
+}
+#       endif
+
 /****************************************************************************/
 /*
    SideIsCut - return YES if side is cut together with global coordinates of cutting point
