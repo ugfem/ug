@@ -16893,8 +16893,13 @@ static INT CollectCoarseGrid(MULTIGRID *mg, INT MarkKeyMaster)
 	Mark(heap,FROM_BOTTOM,&MarkBottomKey);
 	for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
 		for (j = 0; j < DO_BUFFER_SLOTS; j++)
-			if ((OE_Buffer[i][j] = (DOUBLE *)GetMem(heap, 
-				 CGG_SLOT_LEN*sizeof(DOUBLE), FROM_BOTTOM)) == NULL) {
+			if ((OE_Buffer[i][j] =
+				#ifndef DYNAMIC_MEMORY_ALLOCMODEL
+				(DOUBLE *)GetMem(heap, CGG_SLOT_LEN*sizeof(DOUBLE), FROM_BOTTOM))
+				#else
+				(DOUBLE *)GetMemoryForObject(mg,CGG_SLOT_LEN*sizeof(DOUBLE),MAOBJ))
+				#endif
+				== NULL) {
 				error = 1;
 				goto oops;
 			}
