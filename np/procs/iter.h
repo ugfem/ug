@@ -51,6 +51,9 @@
 #define NPIT_A(p)                       (((NP_ITER*)(p))->A)
 #define NPIT_b(p)                       (((NP_ITER*)(p))->b)
 #define NPIT_c(p)                       (((NP_ITER*)(p))->c)
+#define NPIT_PREP(p)            (((NP_ITER*)(p))->PreProcess)
+#define NPIT_ITER(p)            (((NP_ITER*)(p))->Iter)
+#define NPIT_POST(p)            (((NP_ITER*)(p))->PostProcess)
 
 /****************************************************************************/
 /*																			*/

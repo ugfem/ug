@@ -3145,7 +3145,10 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
 {
   NP_FF *np;
   MULTIGRID *theMG;
-  INT i, num_buffers;
+  INT i;
+#ifdef FF_ModelP
+  INT num_buffers;
+#endif
 
   np = (NP_FF *) theNP;
   theMG = np->smoother.iter.base.mg;
