@@ -22,6 +22,8 @@
 
    #include "namespace.h"
 
+    USING_UG_NAMESPACES
+
     int NS_PREFIX function(...) { ... };
 
  */
@@ -35,10 +37,12 @@
 /* namespace for dimension */
 #  ifdef __TWODIM__
 #   define NAMESPACE D2
-#   define NS_PREFIX UG::D2::
+#   define NS_PREFIX D2::
+#  define USING_UG_NAMESPACES using namespace UG; using namespace UG::D2;
 #  else
 #   define NAMESPACE D3
-#   define NS_PREFIX UG::D3::
+#   define NS_PREFIX D3::
+#  define USING_UG_NAMESPACES using namespace UG; using namespace UG::D3;
 #  endif
 #  define START_NAMESPACE namespace UG { namespace NAMESPACE {
 #  define END_NAMESPACE } }
@@ -47,13 +51,16 @@
 #  define NS_PREFIX UG::
 #  define START_NAMESPACE namespace UG {
 #  define END_NAMESPACE }
+#  define USING_UG_NAMESPACES using namespace UG;
 # endif
+
 
 #else
 /* normal C-compiler, no namespace-stuff */
 # define START_NAMESPACE
 # define END_NAMESPACE
 # define NS_PREFIX
+# define USING_UG_NAMESPACES
 #endif
 
 /* check if the required symbols exist */
