@@ -59,42 +59,42 @@
 #define Eta ((DOUBLE)ip_local[1])
 #define Mu  ((DOUBLE)ip_local[2])
 
-#define J11 J[0][0]
-#define J12 J[0][1]
-#define J13 J[0][2]
-#define J21 J[1][0]
-#define J22 J[1][1]
-#define J23 J[1][2]
-#define J31 J[2][0]
-#define J32 J[2][1]
-#define J33 J[2][2]
+#define Jot00 J[0][0]
+#define Jot01 J[0][1]
+#define Jot02 J[0][2]
+#define Jot10 J[1][0]
+#define Jot11 J[1][1]
+#define Jot12 J[1][2]
+#define Jot20 J[2][0]
+#define Jot21 J[2][1]
+#define Jot22 J[2][2]
 
-#define X0  co_global[0][0]
-#define X1  co_global[1][0]
-#define X2  co_global[2][0]
-#define X3  co_global[3][0]
-#define X4  co_global[4][0]
-#define X5  co_global[5][0]
-#define X6  co_global[6][0]
-#define X7  co_global[7][0]
+#define X0  (co_global[0][0])
+#define X1  (co_global[1][0])
+#define X2  (co_global[2][0])
+#define X3  (co_global[3][0])
+#define X4  (co_global[4][0])
+#define X5  (co_global[5][0])
+#define X6  (co_global[6][0])
+#define X7  (co_global[7][0])
 
-#define Y0  co_global[0][1]
-#define Y1  co_global[1][1]
-#define Y2  co_global[2][1]
-#define Y3  co_global[3][1]
-#define Y4  co_global[4][1]
-#define Y5  co_global[5][1]
-#define Y6  co_global[6][1]
-#define Y7  co_global[7][1]
+#define Y0  (co_global[0][1])
+#define Y1  (co_global[1][1])
+#define Y2  (co_global[2][1])
+#define Y3  (co_global[3][1])
+#define Y4  (co_global[4][1])
+#define Y5  (co_global[5][1])
+#define Y6  (co_global[6][1])
+#define Y7  (co_global[7][1])
 
-#define Z0  co_global[0][2]
-#define Z1  co_global[1][2]
-#define Z2  co_global[2][2]
-#define Z3  co_global[3][2]
-#define Z4  co_global[4][2]
-#define Z5  co_global[5][2]
-#define Z6  co_global[6][2]
-#define Z7  co_global[7][2]
+#define Z0  (co_global[0][2])
+#define Z1  (co_global[1][2])
+#define Z2  (co_global[2][2])
+#define Z3  (co_global[3][2])
+#define Z4  (co_global[4][2])
+#define Z5  (co_global[5][2])
+#define Z6  (co_global[6][2])
+#define Z7  (co_global[7][2])
 
 #define U0  nodal_values[0]
 #define U1  nodal_values[1]
@@ -105,7 +105,7 @@
 #define U6  nodal_values[6]
 #define U7  nodal_values[7]
 
-#define SQ(x) (x)*(x)
+#define SQ(x) ((x)*(x))
 
 /****************************************************************************/
 /*																			*/
@@ -135,7 +135,7 @@ static COORD_VECTOR_3D LMP_Prism    		= {0.33333333333,0.3333333333,0.5};
 static COORD_VECTOR_3D LMP_Hexahedron		= {0.5, 0.5, 0.5};
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -171,72 +171,9 @@ D*/
 
 INT LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *result)
 {
-	if (dim==2) 
-	{
-		if (tag==TRIANGLE)
-			switch (corner) {
-				case 0: result[0] = 0.0; result[1] = 0.0; return(0);
-				case 1: result[0] = 1.0; result[1] = 0.0; return(0);
-				case 2: result[0] = 0.0; result[1] = 1.0; return(0);
-				default: return(1);
-			}
-		if (tag==QUADRILATERAL)
-			switch (corner) {
-				case 0: result[0] = 0.0; result[1] = 0.0; return(0);
-				case 1: result[0] = 1.0; result[1] = 0.0; return(0);
-				case 2: result[0] = 1.0; result[1] = 1.0; return(0);
-				case 3: result[0] = 0.0; result[1] = 1.0; return(0);
-				default: return(1);
-			}
-	}
-	if (dim==3)
-	{
-		switch (tag) {
-			case TETRAHEDRON:
-				switch (corner) {
-					case 0: result[0] = 0.0; result[1] = 0.0; result[2] = 0.0; return(0);
-					case 1: result[0] = 1.0; result[1] = 0.0; result[2] = 0.0; return(0);
-					case 2: result[0] = 0.0; result[1] = 1.0; result[2] = 0.0; return(0);
-					case 3: result[0] = 0.0; result[1] = 0.0; result[2] = 1.0; return(0);
-					default: return(1);
-				}
-			case PYRAMID:
-				switch (corner) {
-					case 0: result[0] = 0.0; result[1] = 0.0; result[2] = 0.0; return(0);
-					case 1: result[0] = 1.0; result[1] = 0.0; result[2] = 0.0; return(0);
-					case 2: result[0] = 1.0; result[1] = 1.0; result[2] = 0.0; return(0);
-					case 3: result[0] = 0.0; result[1] = 1.0; result[2] = 0.0; return(0);
-					case 4: result[0] = 0.0; result[1] = 0.0; result[2] = 1.0; return(0);
-					default: return(1);
-				}
-			case PRISM:
-				switch (corner) {
-					case 0: result[0] = 0.0; result[1] = 0.0; result[2] = 0.0; return(0);
-					case 1: result[0] = 1.0; result[1] = 0.0; result[2] = 0.0; return(0);
-					case 2: result[0] = 0.0; result[1] = 1.0; result[2] = 0.0; return(0);
-					case 4: result[0] = 0.0; result[1] = 0.0; result[2] = 1.0; return(0);
-					case 5: result[0] = 1.0; result[1] = 0.0; result[2] = 1.0; return(0);
-					case 6: result[0] = 0.0; result[1] = 1.0; result[2] = 1.0; return(0);
-					default: return(1);
-				}
-			case HEXAHEDRON:
-				switch (corner) {
-					case 0: result[0] = 0.0; result[1] = 0.0; result[2] = 0.0; return(0);
-					case 1: result[0] = 1.0; result[1] = 0.0; result[2] = 0.0; return(0);
-					case 2: result[0] = 1.0; result[1] = 1.0; result[2] = 0.0; return(0);
-					case 3: result[0] = 0.0; result[1] = 1.0; result[2] = 0.0; return(0);
-					case 4: result[0] = 0.0; result[1] = 0.0; result[2] = 1.0; return(0);
-					case 5: result[0] = 1.0; result[1] = 0.0; result[2] = 1.0; return(0);
-					case 6: result[0] = 1.0; result[1] = 1.0; result[2] = 1.0; return(0);
-					case 7: result[0] = 0.0; result[1] = 1.0; result[2] = 1.0; return(0);
-					default: return(1);
-				}
-			default: return(1);
-		}
-	}				
+	V_DIM_COPY(LOCAL_COORD_OF_TAG(tag,corner),result);
 
-	return (1);
-
+	return (0);
 }
 
 /****************************************************************************/
@@ -459,86 +396,85 @@ INT JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM
 		/* fill jacobian */
 		switch (tag) {
 			case TETRAHEDRON:
-				J11 = X1-X0;	J12 = Y1-Y0;	J13 = Z1-Z0;
-				J21 = X2-X0;	J22 = Y2-Y0;	J23 = Z2-Z0;
-				J31 = X3-X0;	J32 = Y3-Y0;	J33 = Z3-Z0;
+				Jot00 = X1-X0;	Jot01 = Y1-Y0;	Jot02 = Z1-Z0;
+				Jot10 = X2-X0;	Jot11 = Y2-Y0;	Jot12 = Z2-Z0;
+				Jot20 = X3-X0;	Jot21 = Y3-Y0;	Jot22 = Z3-Z0;
 				break;
 			case PYRAMID:
 				if (Xi > Eta)
 				  {
-					J11= -(1.0-Eta)*X0 +(1.0-Eta)*X1+Eta*X2    -Eta*X3;
-					J21= (Mu-1.0+Xi)*X0-(Xi+Mu)*X1  +(Xi+Mu)*X2+(1.0-Xi-Mu)*X3;
-					J31= -(1.0-Eta)*X0 -Eta*X1;     +Eta*X2    -Eta*X3     +X4;
-					J12= -(1.0-Eta)*Y0 +(1.0-Eta)*Y1+Eta*Y2    -Eta*Y3;
-					J22= (Mu-1.0+Xi)*Y0-(Xi+Mu)*Y1  +(Xi+Mu)*Y2+(1.0-Xi-Mu)*Y3;
-					J32= -(1.0-Eta)*Y0 -Eta*Y1;     +Eta*Y2    -Eta*Y3     +Y4;
-					J13= -(1.0-Eta)*Z0 +(1.0-Eta)*Z1+Eta*Z2    -Eta*Z3;
-					J23= (Mu-1.0+Xi)*Z0-(Xi+Mu)*Z1  +(Xi+Mu)*Z2+(1.0-Xi-Mu)*Z3;
-					J33= -(1.0-Eta)*Z0 -Eta*Z1;     +Eta*Z2    -Eta*Z3     +Z4;
-					break;
+					Jot00= -(1.0-Eta)*X0 +(1.0-Eta)*X1+Eta*X2    -Eta*X3;
+					Jot01= -(1.0-Eta)*Y0 +(1.0-Eta)*Y1+Eta*Y2    -Eta*Y3;
+					Jot02= -(1.0-Eta)*Z0 +(1.0-Eta)*Z1+Eta*Z2    -Eta*Z3;
+					Jot10= (Mu-1.0+Xi)*X0-(Xi+Mu)*X1  +(Xi+Mu)*X2+(1.0-Xi-Mu)*X3;
+					Jot11= (Mu-1.0+Xi)*Y0-(Xi+Mu)*Y1  +(Xi+Mu)*Y2+(1.0-Xi-Mu)*Y3;
+					Jot12= (Mu-1.0+Xi)*Z0-(Xi+Mu)*Z1  +(Xi+Mu)*Z2+(1.0-Xi-Mu)*Z3;
+					Jot20= -(1.0-Eta)*X0 -Eta*X1     +Eta*X2    -Eta*X3     +X4;
+					Jot21= -(1.0-Eta)*Y0 -Eta*Y1     +Eta*Y2    -Eta*Y3     +Y4;
+					Jot22= -(1.0-Eta)*Z0 -Eta*Z1     +Eta*Z2    -Eta*Z3     +Z4;
 				  }
 				else
 				  {
-					J11=(Mu+Eta-1.0)*X0+(1.0-Eta-Mu)*X1+(Eta+Mu)*X2-(Eta+Mu)*X3;
-					J21=-(1.0-Xi)*X0   -Xi*X1          +Xi*X2      +(1.0-Xi)*X3;
-					J31=-(1.0-Xi)*X0   -Xi*X1          +Xi*X2      -Xi*X3   +X4;
-					J12=(Mu+Eta-1.0)*Y0+(1.0-Eta-Mu)*Y1+(Eta+Mu)*Y2-(Eta+Mu)*Y3;
-					J22=-(1.0-Xi)*Y0   -Xi*Y1          +Xi*Y2      +(1.0-Xi)*Y3;
-					J32=-(1.0-Xi)*Y0   -Xi*Y1          +Xi*Y2      -Xi*Y3   +Y4;
-					J13=(Mu+Eta-1.0)*Z0+(1.0-Eta-Mu)*Z1+(Eta+Mu)*Z2-(Eta+Mu)*Z3;
-					J23=-(1.0-Xi)*Z0   -Xi*Z1          +Xi*Z2      +(1.0-Xi)*Z3;
-					J33=-(1.0-Xi)*Z0   -Xi*Z1          +Xi*Z2      -Xi*Z3   +Z4;
-					break;
+					Jot00=(Mu+Eta-1.0)*X0+(1.0-Eta-Mu)*X1+(Eta+Mu)*X2-(Eta+Mu)*X3;
+					Jot10=-(1.0-Xi)*X0   -Xi*X1          +Xi*X2      +(1.0-Xi)*X3;
+					Jot20=-(1.0-Xi)*X0   -Xi*X1          +Xi*X2      -Xi*X3   +X4;
+					Jot01=(Mu+Eta-1.0)*Y0+(1.0-Eta-Mu)*Y1+(Eta+Mu)*Y2-(Eta+Mu)*Y3;
+					Jot11=-(1.0-Xi)*Y0   -Xi*Y1          +Xi*Y2      +(1.0-Xi)*Y3;
+					Jot21=-(1.0-Xi)*Y0   -Xi*Y1          +Xi*Y2      -Xi*Y3   +Y4;
+					Jot02=(Mu+Eta-1.0)*Z0+(1.0-Eta-Mu)*Z1+(Eta+Mu)*Z2-(Eta+Mu)*Z3;
+					Jot12=-(1.0-Xi)*Z0   -Xi*Z1          +Xi*Z2      +(1.0-Xi)*Z3;
+					Jot22=-(1.0-Xi)*Z0   -Xi*Z1          +Xi*Z2      -Xi*Z3   +Z4;
 				  }
+				break;
 			  case PRISM:
-				J11=-(1.0-Mu)*X0+(1.0-Mu)*X1     -Mu*X3+Mu*X4;
-				J21=-(1.0-Mu)*X0+(1.0-Mu)*X2     -Mu*X3+Mu*X5;
-				J31=-(1.0-Xi-Eta)*X0-Xi*X1-Eta*X2+(1.0-Xi-Eta)*X3+Xi*X4+Eta*X5;
-				J12=-(1.0-Mu)*Y0+(1.0-Mu)*Y1     -Mu*Y3+Mu*Y4;
-				J22=-(1.0-Mu)*Y0+(1.0-Mu)*Y2     -Mu*Y3+Mu*Y5;
-				J32=-(1.0-Xi-Eta)*Y0-Xi*Y1-Eta*Y2+(1.0-Xi-Eta)*Y3+Xi*Y4+Eta*Y5;
-				J13=-(1.0-Mu)*Z0+(1.0-Mu)*Z1     -Mu*Z3+Mu*Z4;
-				J23=-(1.0-Mu)*Z0+(1.0-Mu)*Z2     -Mu*Z3+Mu*Z5;
-				J33=-(1.0-Xi-Eta)*Z0-Xi*Z1-Eta*Z2+(1.0-Xi-Eta)*Z3+Xi*Z4+Eta*Z5;
+				Jot00=-(1.0-Mu)*X0+(1.0-Mu)*X1     -Mu*X3+Mu*X4;
+				Jot10=-(1.0-Mu)*X0+(1.0-Mu)*X2     -Mu*X3+Mu*X5;
+				Jot20=-(1.0-Xi-Eta)*X0-Xi*X1-Eta*X2+(1.0-Xi-Eta)*X3+Xi*X4+Eta*X5;
+				Jot01=-(1.0-Mu)*Y0+(1.0-Mu)*Y1     -Mu*Y3+Mu*Y4;
+				Jot11=-(1.0-Mu)*Y0+(1.0-Mu)*Y2     -Mu*Y3+Mu*Y5;
+				Jot21=-(1.0-Xi-Eta)*Y0-Xi*Y1-Eta*Y2+(1.0-Xi-Eta)*Y3+Xi*Y4+Eta*Y5;
+				Jot02=-(1.0-Mu)*Z0+(1.0-Mu)*Z1     -Mu*Z3+Mu*Z4;
+				Jot12=-(1.0-Mu)*Z0+(1.0-Mu)*Z2     -Mu*Z3+Mu*Z5;
+				Jot22=-(1.0-Xi-Eta)*Z0-Xi*Z1-Eta*Z2+(1.0-Xi-Eta)*Z3+Xi*Z4+Eta*Z5;
 				break;
 			case HEXAHEDRON:
 				sub0123 = X0-X1+X2-X3;
 				sub0145 = X0-X1-X4+X5;
 				sub0347 = X0-X3-X4+X7;
 				sub10234567 = X1-X0-X2+X3+X4-X5+X6-X7;
-				J11 = X1-X0 + Eta*(sub0123) + Mu *(sub0145) + Eta*Mu*(sub10234567);
-				J21 = X3-X0 + Xi *(sub0123) + Mu *(sub0347) + Xi *Mu*(sub10234567);
-				J31 = X4-X0 + Xi *(sub0145) + Eta*(sub0347) + Xi*Eta*(sub10234567);
+				Jot00 = X1-X0 + Eta*(sub0123) + Mu *(sub0145) + Eta*Mu*(sub10234567);
+				Jot10 = X3-X0 + Xi *(sub0123) + Mu *(sub0347) + Xi *Mu*(sub10234567);
+				Jot20 = X4-X0 + Xi *(sub0145) + Eta*(sub0347) + Xi*Eta*(sub10234567);
 
 				sub0123 = Y0-Y1+Y2-Y3;
 				sub0145 = Y0-Y1-Y4+Y5;
 				sub0347 = Y0-Y3-Y4+Y7;
 				sub10234567 = Y1-Y0-Y2+Y3+Y4-Y5+Y6-Y7;
-				J12 = Y1-Y0 + Eta*(sub0123) + Mu *(sub0145) + Eta*Mu*(sub10234567);
-				J22 = Y3-Y0 + Xi *(sub0123) + Mu *(sub0347) + Xi *Mu*(sub10234567);
-				J32 = Y4-Y0 + Xi *(sub0145) + Eta*(sub0347) + Xi*Eta*(sub10234567);
+				Jot01 = Y1-Y0 + Eta*(sub0123) + Mu *(sub0145) + Eta*Mu*(sub10234567);
+				Jot11 = Y3-Y0 + Xi *(sub0123) + Mu *(sub0347) + Xi *Mu*(sub10234567);
+				Jot21 = Y4-Y0 + Xi *(sub0145) + Eta*(sub0347) + Xi*Eta*(sub10234567);
 
 				sub0123 = Z0-Z1+Z2-Z3;
 				sub0145 = Z0-Z1-Z4+Z5;
 				sub0347 = Z0-Z3-Z4+Z7;
 				sub10234567 = Z1-Z0-Z2+Z3+Z4-Z5+Z6-Z7;
-				J13 = Z1-Z0 + Eta*(sub0123) + Mu *(sub0145) + Eta*Mu*(sub10234567);
-				J23 = Z3-Z0 + Xi *(sub0123) + Mu *(sub0347) + Xi *Mu*(sub10234567);
-				J33 = Z4-Z0 + Xi *(sub0145) + Eta*(sub0347) + Xi*Eta*(sub10234567);
+				Jot02 = Z1-Z0 + Eta*(sub0123) + Mu *(sub0145) + Eta*Mu*(sub10234567);
+				Jot12 = Z3-Z0 + Xi *(sub0123) + Mu *(sub0347) + Xi *Mu*(sub10234567);
+				Jot22 = Z4-Z0 + Xi *(sub0145) + Eta*(sub0347) + Xi*Eta*(sub10234567);
 				break;
 			default: return(1);
 		}
 		
 		/* compute determinant */
-		det = J11*J22*J33 + J12*J23*J31 + J13*J21*J32
-		    - J13*J22*J31 - J11*J23*J32 - J12*J21*J33;
+		det = Jot00*Jot11*Jot22 + Jot01*Jot12*Jot20 + Jot02*Jot10*Jot21
+		    - Jot02*Jot11*Jot20 - Jot00*Jot12*Jot21 - Jot01*Jot10*Jot22;
 	 	if (fabs(det)<=1.0E-15) return (1);
 		*detJ = det;
 
 		/* invert jacobian */
-		Jinv[0][0] =  (J22*J33-J23*J32)/det; Jinv[0][1] = -(J12*J33-J13*J32)/det; Jinv[0][2] =  (J12*J23-J13*J22)/det;	    	
-		Jinv[1][0] = -(J21*J33-J23*J31)/det; Jinv[1][1] =  (J11*J33-J13*J31)/det; Jinv[1][2] = -(J11*J23-J13*J21)/det;	    	
-		Jinv[2][0] =  (J21*J32-J22*J31)/det; Jinv[2][1] = -(J11*J32-J12*J31)/det; Jinv[2][2] =  (J11*J22-J12*J21)/det;	    	
+		Jinv[0][0] =  (Jot11*Jot22-Jot12*Jot21)/det; Jinv[0][1] = -(Jot01*Jot22-Jot02*Jot21)/det; Jinv[0][2] =  (Jot01*Jot12-Jot02*Jot11)/det;	    	
+		Jinv[1][0] = -(Jot10*Jot22-Jot12*Jot20)/det; Jinv[1][1] =  (Jot00*Jot22-Jot02*Jot20)/det; Jinv[1][2] = -(Jot00*Jot12-Jot02*Jot10)/det;	    	
+		Jinv[2][0] =  (Jot10*Jot21-Jot11*Jot20)/det; Jinv[2][1] = -(Jot00*Jot21-Jot01*Jot20)/det; Jinv[2][2] =  (Jot00*Jot11-Jot01*Jot10)/det;	    	
 
 		return(0);
 	}
@@ -747,7 +683,7 @@ INT SurfaceElement (INT dim, INT nc,
 D*/   
 /****************************************************************************/
 
-DOUBLE GN (INT n, INT i, COORD *ip_local)
+DOUBLE GN (INT n, INT i, const COORD *ip_local)
 {
     #ifdef __TWODIM__
     switch (n)
@@ -863,7 +799,7 @@ DOUBLE GN (INT n, INT i, COORD *ip_local)
 D*/   
 /****************************************************************************/
 
-INT GNs (INT n, COORD *ip_local, DOUBLE *result)
+INT GNs (INT n, const COORD *ip_local, DOUBLE *result)
 {
     #ifdef __TWODIM__
     switch (n)
@@ -941,7 +877,7 @@ INT GNs (INT n, COORD *ip_local, DOUBLE *result)
    D_GN - General Shape function for nodes
 
    SYNOPSIS:
-   INT D_GN (INT n, INT i, COORD *ip_local, DOUBLE *derivative);
+   INT D_GN (INT n, INT i, const COORD *ip_local, DOUBLE *derivative);
 
    PARAMETERS:
 .  n - number of corners of the element
@@ -959,7 +895,7 @@ INT GNs (INT n, COORD *ip_local, DOUBLE *result)
 D*/   
 /****************************************************************************/
 
-INT D_GN (INT n, INT i, COORD *ip_local, DOUBLE *derivative)
+INT D_GN (INT n, INT i, const COORD *ip_local, DOUBLE *derivative)
 {
     #ifdef __TWODIM__
 	switch (n)
@@ -1261,13 +1197,15 @@ INT UG_GlobalToLocal (INT n, const COORD **Corners,
 	  {
 		TRANSFORMATION(DIM+1,Corners,LocalCoord,M);
 		M_DIM_INVERT(M,IM,IMdet);
-		MM_TIMES_V_DIM(IM,diff,LocalCoord);	
+		if (IMdet==0) return (2);
+		MT_TIMES_V_DIM(IM,diff,LocalCoord);	
 		return(0);
 	  }
 	V_DIM_CLEAR(LocalCoord);
 	TRANSFORMATION(n,Corners,LocalCoord,M);
 	M_DIM_INVERT(M,IM,IMdet);
-	MM_TIMES_V_DIM(IM,diff,LocalCoord);	
+	if (IMdet==0) return (3);
+	MT_TIMES_V_DIM(IM,diff,LocalCoord);	
 	for (i=0; i<MAX_ITER; i++)
 	  {
 		LOCAL_TO_GLOBAL (n,Corners,LocalCoord,tmp);
@@ -1277,7 +1215,8 @@ INT UG_GlobalToLocal (INT n, const COORD **Corners,
 			return (0);
 		TRANSFORMATION(n,Corners,LocalCoord,M);
 		M_DIM_INVERT(M,IM,IMdet);
-		MM_TIMES_V_DIM(IM,diff,tmp);
+		if (IMdet==0) return (4);
+		MT_TIMES_V_DIM(IM,diff,tmp);
 		V_DIM_SUBTRACT(LocalCoord,tmp,LocalCoord);
 	  }
 
