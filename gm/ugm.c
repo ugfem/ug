@@ -7116,7 +7116,6 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
   INT             **lbinfo;
   INT total_elements,sum_elements;
   INT master_elements,hghost_elements,vghost_elements,vhghost_elements;
-  VChannelPtr mych;
         #endif
 
   mg_red = mg_green = mg_yellow = mg_sum = 0;
@@ -7421,16 +7420,30 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
     UserWriteF("\nLB INFO:\n");
     /* now collect lb info on master */
     if (me == master)
+    {
+      VChannelPtr     *mych;
+
+      mych = malloc(procs*sizeof(VChannelPtr));
+
       for (i=1; i<procs; i++)
       {
-        mych =ConnSync(i,3917);
-        RecvSync(mych,(void *)lbinfo[i],(MAXLEVEL+1)*ELEMENT_PRIOS*sizeof(INT));
-        DiscSync(mych);
+        mych[i] =ConnSync(i,3917);
+        RecvSync(mych[i],(void *)lbinfo[i],(MAXLEVEL+1)*ELEMENT_PRIOS*sizeof(INT));
       }
+      Synchronize();
+      for (i=1; i<procs; i++)
+      {
+        DiscSync(mych[i]);
+      }
+      free(mych);
+    }
     else
     {
+      VChannelPtr mych;
+
       mych = ConnSync(master,3917);
       SendSync(mych,(void *)lbinfo[me],(MAXLEVEL+1)*ELEMENT_PRIOS*sizeof(INT));
+      Synchronize();
       DiscSync(mych);
       ReleaseTmpMem(MGHEAP(theMG),MarkKey);
       return(GM_OK);
