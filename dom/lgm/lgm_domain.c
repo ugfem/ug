@@ -169,9 +169,6 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
   INT i,nSubDom,conf_df_problem;
   char **argv;
 
-  if (Mesh==NULL)
-    return (NULL);
-
   if ((theDomain = (LGM_DOMAIN *)BVP_GetByName(name))==NULL)
   {
     if ((theDomain = LGM_LoadDomain(name,name,Heap,theLGMDomainVarID,MarkKey))==NULL)
@@ -234,7 +231,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
   if (SetDomainSize(theDomain)) return (NULL);
 
   /* set mesh with nothing */
-  if (LGM_LoadMesh(Heap,Mesh,theDomain,MarkKey))
+  if (Mesh!=NULL && LGM_LoadMesh(Heap,Mesh,theDomain,MarkKey))
   {
     Mesh->nBndP             = 0;
     Mesh->nInnP             = 0;
