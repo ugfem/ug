@@ -354,6 +354,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   DOUBLE lambda_min;                    /* minimal lamda                        */
   DOUBLE mu;                            /* guess for lambda                     */
   DOUBLE s_tmp;                         /* tmp norm                             */
+  INT use_second;
 
   /* get status */
   newton = (NP_NEWTON *) nls;      /* cast from abstract base class to final class*/
@@ -425,6 +426,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   if (PreparePCR(newton->d,newton->displayMode,text,&PrintID))    {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
   if (sc_mul(defect2reach,defect,reduction,newton->d))                    {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
   if (sc_mul(defectmax,defect,newton->divFactor,newton->d))               {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
+  use_second=0; for (i=0; i<n_unk; i++) if (defectmax[i]==0.0) use_second=1;
   if (DoPCR(PrintID,defect,PCR_CRATE))                                                    {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
   for (i=0; i<n_unk; i++) res->first_defect[i] = defect[i];
 
@@ -695,7 +697,15 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     if (sprime<s2reach) {res->converged=1; break;}
     if (sc_cmp(defect,abslimit,newton->d)) {res->converged=1; break;}
     if (sc_cmp(defect,defect2reach,newton->d)) {res->converged=1; break;}
-    if (!sc_cmp(defect,defectmax,newton->d)) break;
+    if (use_second)
+    {
+      use_second=0;
+      if (sc_mul(defectmax,defect,newton->divFactor,newton->d))               {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
+    }
+    else
+    {
+      if (!sc_cmp(defect,defectmax,newton->d)) break;
+    }
 
     /* compute new reduction factor, assuming quadratic convergence */
     for (i=0; i<n_unk; i++)
