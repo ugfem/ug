@@ -10437,15 +10437,27 @@ static INT InitScreenSize (void)
   return (0);
 }
 
+
 /****************************************************************************/
 /*
    lb - a simple load balancing front end to chaco
                         based on the clustering technique
 
    DESCRIPTION:
-   ...
+   The lb command performs load balancing.  If not run on a parallel machine
+   it will do nothing.  If run on a parallel machine it will try to use Chaco,
+   provided the CHACO option for ug was turned on.  If Chaco is not available
+   a simple RCB load balancing will be employed.  In the latter case some of
+   the optional arguments will be ignored.
 
-   'lb ...'
+   'lb  [<strategy>] [$c <minlevel>] [$d <depth>] [$f <maxlevel>] [$e <minelem>]'
+
+   .  <strategy>		- load balancing strategy
+   .  $c <minlevel>	- start load balancing at this level
+   .  $d <depth>		- depth of clusters
+   .  $f <maxlevel>	- no load balancing above this level
+   .  $e <minelem>		- minimal number of elements on each processor
+
 
    KEYWORDS:
    parallel, processors, load balance, chaco
@@ -10497,8 +10509,8 @@ static INT LBCommand (INT argc, char **argv)
   res = sscanf(argv[0]," lb %d", &strategy);
   if (res > 1)
   {
-    UserWriteF("lb [<strategy>] [$c <minlevel>] [$d <depth>] [$f <maxlevel>]\n");
-    UserWriteF("default lb 0 $c 1 $d 2\n");
+    UserWriteF("lb [<strategy>] [$c <minlevel>] [$d <depth>] [$f <maxlevel>] [$e <minelem>] \n");
+    UserWriteF("default lb 0 $c 1 $d 2 $e 1\n");
     return(OKCODE);
   }
 
@@ -10523,8 +10535,17 @@ static INT LBCommand (INT argc, char **argv)
       sscanf(argv[i],"f %d",&maxlevel);
       break;
 
+    case 'e' :
+                                                #ifdef CHACOT
+      sscanf(argv[i],"e %d",&Const);
+                                                #endif
+                                                #ifndef CHACOT
+      UserWriteF("lb: minelem parameter skipped\n");
+                                                #endif
+      break;
+
     default :
-      UserWriteF("lb [<strategy>] [$c <minlevel>] [$d <depth>] [$f <maxlevel>]\n");
+      UserWriteF("lb [<strategy>] [$c <minlevel>] [$d <depth>] [$f <maxlevel>] [$e <minelem>]\n");
       UserWriteF("default lb 0 $c 1 $d 2\n");
       break;
     }
@@ -10566,7 +10587,13 @@ static INT LBCommand (INT argc, char **argv)
     return(OKCODE);
   }
 
-  if (strategy==1 && strategy==2)
+  if (Const < 1)
+  {
+    UserWriteF("Choose <minelem> > 0\n");
+    cmd_error = 1;
+  }
+
+  if (strategy==1 || strategy==2)
   {
     if (strategy == 1)
     {
@@ -10602,6 +10629,7 @@ static INT LBCommand (INT argc, char **argv)
   return(OKCODE);
                 #endif
 }
+
 
 #ifdef ModelP
 
