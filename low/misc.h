@@ -133,5 +133,6 @@ void        SelectionSort       (void *base, INT n, INT size, int (*cmp)(const v
 /* this function is no external for the MetroWerks CodeWarrior: so just define it */
 int                     matherr                         (struct exception *x);
 #endif
+INT                     MemoryParameters        (void);
 
 #endif

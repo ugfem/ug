@@ -34,6 +34,8 @@
 #include <ctype.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <limits.h>
+#include <float.h>
 
 #define COMPILE_MISC_H
 #include "compiler.h"
@@ -488,4 +490,73 @@ void SelectionSort (void *base, INT n, INT size, int (*cmp)(const void *, const 
     Copy(Base+i*size,Base+k1*size,size);
     Copy(Base+k1*size,Smallest,size);
   }
+}
+
+/* may be later on ugshell better ... */
+#define UserWriteF printf
+
+INT MemoryParameters (void)
+{
+  /* integer data types */
+  char charType;
+  short shortType;
+  int intType;
+  long longType;
+  unsigned char ucharType;
+  unsigned short ushortType;
+  unsigned int uintType;
+  unsigned long ulongType;
+
+  /* floating point data types */
+  float floatType;
+  double doubleType;
+
+  /* pointer data types */
+  void *                          ptrType;
+
+  int byteorder = 1;
+  char hline[40]="---------------------------";
+
+  UserWriteF("MEMORY specific parameters\n");
+
+  UserWriteF("\n  Data type sizes are:\n");
+
+  /* sizes of integer types */
+  UserWriteF("    for integer types\n");
+  UserWriteF("        type        | %.5s | %.5s | %.5s | %.5s\n","char","short","int","long");
+  UserWriteF("    size   (signed) |   %2d |    %2d |  %2d |   %2d\n",
+             sizeof(charType),sizeof(shortType),sizeof(intType),sizeof(longType));
+  UserWriteF("    size (unsigned) |	%2d |    %2d |  %2d |   %2d\n",
+             sizeof(ucharType),sizeof(ushortType),sizeof(uintType),sizeof(ulongType));
+
+  /* sizes of floating point types */
+  UserWriteF("    for floating point types\n");
+  UserWriteF("        type | %6s | %6s\n","float","double");
+  UserWriteF("        size |	   %2d |     %2d\n",
+             sizeof(floatType),sizeof(doubleType));
+
+  /* size of pointer types */
+  UserWriteF("    for pointer types\n");
+  UserWriteF("        ptr=%d\n",sizeof(ptrType));
+
+  UserWriteF("\n  Ranges of data types are:\n");
+  UserWriteF("    for integer types\n");
+  UserWriteF("         type | %25s | %25s | %25s\n","<type>_MIN","<type>_MAX","U<type>_MAX");
+  UserWriteF("         -------%.25s---%.25s---%.25s\n",hline,hline,hline);
+  UserWriteF("         CHAR | %25d | %25d | %25d\n",CHAR_MIN,CHAR_MAX,UCHAR_MAX);
+  UserWriteF("        SHORT | %25d | %25d | %25d\n",SHRT_MIN,SHRT_MAX,USHRT_MAX);
+  UserWriteF("          INT | %25d | %25d | %25d\n",INT_MIN,INT_MAX,UINT_MAX);
+  UserWriteF("         LONG | %25d | %25d | %25d\n",LONG_MIN,LONG_MAX,ULONG_MAX);
+
+  UserWriteF("    for floating point types\n");
+  UserWriteF("         type | %25s | %25s\n","<type>_MIN","<type>_MAX");
+  UserWriteF("         -------%.25s---%.25s---%.25s\n",hline,hline,hline);
+  UserWriteF("         FLT  | %.19E | %.19E\n",FLT_MIN,FLT_MAX);
+  UserWriteF("         DBL  | %.19E| %.19E\n",DBL_MIN,DBL_MAX);
+
+  UserWriteF("\n  Alignment and byteorder are:\n");
+  UserWriteF("    alignment=%d byteorder=%s\n",ALIGNMENT,
+             (((*((char *)&byteorder))==1) ? "BIGENDIAN" : "LITTLEENDIAN"));
+
+  return(0);
 }

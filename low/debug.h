@@ -47,6 +47,9 @@
 
 #define REP_ERR_MAX             10
 
+/* if HEAPCHECK is true p is a pointer to a zombie object */
+#define HEAPCHECK(ptr) (((int *)ptr)[1] == -1)
+
 #ifdef Debug
 #include <assert.h>
 
