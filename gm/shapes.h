@@ -475,12 +475,14 @@
   else if ((n) == 6) {TRANSFORMATION_OF_PRISM((x),(local),(M));}        \
   else if ((n) == 8) {TRANSFORMATION_OF_HEXAHEDRON((x),(local),(M));}}
 
-#define SIDE_NORMAL(n,i,x,normal)                                             \
-  { DOUBLE s; DOUBLE_VECTOR a,b,axb; ELEMENT e;                               \
-	V3_SUBTRACT(x[CORNER_OF_SIDE_REF((n),(i),2)],x[CORNER_OF_SIDE_REF((n),(i),0)],a); \
-	V3_SUBTRACT(x[CORNER_OF_SIDE_REF((n),(i),1)],x[CORNER_OF_SIDE_REF((n),(i),0)],a); \
-	V3_VECTOR_PRODUCT(a,b,axb);                                               \
-	V3_EUKLIDNORM((normal),s);                                                  \
+#define SIDE_NORMAL(n,i,x,normal)                                \
+  { DOUBLE s; DOUBLE_VECTOR a,b,axb; ELEMENT e;                  \
+	V3_SUBTRACT(x[CORNER_OF_SIDE_REF((n),(i),1)],                \
+                x[CORNER_OF_SIDE_REF((n),(i),0)],a);             \
+	V3_SUBTRACT(x[CORNER_OF_SIDE_REF((n),(i),2)],                \
+				x[CORNER_OF_SIDE_REF((n),(i),0)],b);             \
+	V3_VECTOR_PRODUCT(a,b,axb);                                  \
+	V3_EUKLIDNORM((normal),s);                                   \
 	V3_SCALE(1.0/s,(normal));}
 
 #endif
