@@ -2210,21 +2210,21 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *com
   if (theMG == NULL)
     REP_ERR_RETURN (NULL);
 
-  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN (NULL);
-  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) REP_ERR_RETURN (NULL);
+  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN_PTR (NULL);
+  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) REP_ERR_RETURN_PTR (NULL);
   if (ChangeEnvDir("Matrices") == NULL) {
     MakeEnvItem("Matrices",MatrixDirID,sizeof(ENVDIR));
-    if (ChangeEnvDir("Matrices") == NULL) REP_ERR_RETURN (NULL);
+    if (ChangeEnvDir("Matrices") == NULL) REP_ERR_RETURN_PTR (NULL);
   }
   ConstructMatOffsets(RowsInType,ColsInType,offset);
   ncmp = offset[NMATTYPES];
-  if (ncmp <= 0) REP_ERR_RETURN (NULL);
+  if (ncmp <= 0) REP_ERR_RETURN_PTR (NULL);
   size = sizeof(MATDATA_DESC)+(ncmp-1)*sizeof(SHORT);
   if (name != NULL)
     strcpy(buffer,name);
-  else if (GetNewMatrixName(theMG,buffer)) REP_ERR_RETURN (NULL);
+  else if (GetNewMatrixName(theMG,buffer)) REP_ERR_RETURN_PTR (NULL);
   md = (MATDATA_DESC *) MakeEnvItem (buffer,MatrixVarID,size);
-  if (md == NULL) REP_ERR_RETURN (NULL);
+  if (md == NULL) REP_ERR_RETURN_PTR (NULL);
   if (compNames==NULL)
     memcpy(VM_COMP_NAMEPTR(md),NoMatNames,2*MIN(ncmp,MAX_MAT_COMP));
   else
@@ -2244,7 +2244,7 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *com
       if (i >= offset[tp+1]) break;
       if (j*sizeof(DOUBLE) >=
           FMT_S_MAT_TP(MGFORMAT(theMG),MatrixType[MTYPE_RT(tp)][MTYPE_CT(tp)]))
-        REP_ERR_RETURN (NULL);
+        REP_ERR_RETURN_PTR (NULL);
       if (READ_DR_MAT_FLAG(theMG,tp,j)) continue;
       Comp[i++] = j;
       SET_DR_MAT_FLAG(theMG,tp,j);
