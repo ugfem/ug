@@ -445,7 +445,7 @@ else
 }
         #endif
 
-  if (logFile!=NULL)
+  if (logFile!=NULL) {
     if ( fputs(buffer,logFile) < 0 )
     {
       UserWrite( "ERROR in writing logfile\n" );
@@ -457,8 +457,9 @@ else
       return 1;
     }
                 #ifdef Debug
-  fflush(logFile);
+    fflush(logFile);
                 #endif
+  }
 
   /* garbage collection */
   va_end(args);
