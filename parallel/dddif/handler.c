@@ -61,7 +61,14 @@
 /****************************************************************************/
 
 #ifdef Debug
-#define DEBUGNSONS(pe,m) { if (pe!=NULL) {CheckNSons(pe,m);} }
+#define DEBUGNSONS(e,f,m) {                                                  \
+    if (f!=NULL)                                     \
+    {                                                \
+      if (CheckNSons(f,m))                         \
+        printf(PFMT "inserted elem=" EID_FMTX    \
+               "\n",me,EID_PRTX(e));                \
+    }                                                \
+}
 #else
 #define DEBUGNSONS(pe,m)
 #endif
@@ -113,7 +120,7 @@ void PrintSons (ELEMENT *theElement)
   }
 }
 
-void CheckNSons (ELEMENT *theElement, char *buffer)
+int CheckNSons (ELEMENT *theElement, char *buffer)
 {
   ELEMENT *SonList[MAX_SONS];
   int i,nsons;
@@ -128,7 +135,9 @@ void CheckNSons (ELEMENT *theElement, char *buffer)
            me,buffer,EID_PRTX(theElement),i,nsons);
     if (1) PrintSons(theElement);
     fflush(stdout);
+    return(1);
   }
+  return (0);
 }
 
 static GRID *GetGridOnDemand (MULTIGRID *mg, int level)
@@ -1528,6 +1537,7 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
       }
 
       /* set nfather pointer of midnode */
+      ASSERT(enew != NULL);
       ASSERT(ID(MIDNODE(enew)) != -1);
       SETNFATHER(MIDNODE(enew),(GEOM_OBJECT *)enew);
 
@@ -1667,7 +1677,7 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
                       " newness=%d\n",
                       me,EID_PRTX(pe),newness))
 
-  DEBUGNSONS(theFather,"ElementObjMkCons begin:");
+  DEBUGNSONS(pe,theFather,"ElementObjMkCons begin:");
 
   /* correct nb relationships between ghostelements */
   /* TODO: 3d case */
@@ -1821,7 +1831,7 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
     }
         #endif
 
-  DEBUGNSONS(theFather,"end ElementObjMkCons");
+  DEBUGNSONS(pe,theFather,"end ElementObjMkCons");
 }
 
 /* TODO: these versions are now unified */
