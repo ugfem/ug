@@ -3676,6 +3676,13 @@ INT CheckAlgebra (GRID *theGrid)
     {
       MATRIX *Adj = MADJ(theMatrix);
 
+      if (MDEST(theMatrix) == NULL)
+      {
+        errors++;
+        UserWriteF(PFMT "ERROR: matrix %x has no dest, start vec="
+                   VINDEX_FMTX "\n",
+                   me,theMatrix,VINDEX_PRTX(theVector));
+      }
       if (MDEST(Adj) != theVector)
       {
         errors++;
@@ -3706,6 +3713,17 @@ INT CheckAlgebra (GRID *theGrid)
       }
                         #endif
     }
+                #ifdef __INTERPOLATION_MATRIX__
+    for (theMatrix=VISTART(theVector);
+         theMatrix!=NULL;
+         theMatrix = MNEXT(theMatrix))
+      if (MDEST(theMatrix) == NULL) {
+        errors++;
+        UserWriteF(PFMT "ERROR: interpolation matrix %x has no dest,"
+                   " start vec=" VINDEX_FMTX "\n",me,theMatrix,
+                   VINDEX_PRTX(theVector));
+      }
+        #endif
   }
 
   return(errors);
@@ -7463,6 +7481,9 @@ MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
   pm = GetIMatrix(fvec,cvec);
   if (pm != NULL)
     return(pm);
+
+  ASSERT(fvec != NULL);
+  ASSERT(cvec != NULL);
 
   RootType = VTYPE(fvec);
   DestType = VTYPE(cvec);
