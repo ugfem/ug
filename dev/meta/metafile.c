@@ -11,7 +11,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 368										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de					*/
+/*			  internet: ug@ica3.uni-stuttgart.de					        */
 /*																			*/
 /* History:   01.11.92 begin, ug version 2.0								*/
 /*																			*/
@@ -49,7 +49,6 @@
 /****************************************************************************/
 
 #define METABUFFERSIZE 16384            /* buffering graphic commmands			*/
-#define TEXTSIZE                        8
 
 /* meta command opcodes */
 #define opNop                           0
@@ -70,11 +69,36 @@
 #define opInvPolygon            15
 #define opErasePolygon          16
 
+/* The following macro is only valid for long and short data types */
+
+/* Adjust a little endian variable from the native data length to
+   the standard legth */
+
+#define ADJLEN(VALP,STD_SIZE) ((void*) (((char *) (VALP)) + (sizeof(*(VALP)) - (STD_SIZE))))
+
+#define NAT2STDS(VAL) ((myshort = swap_short(VAL)),(ADJLEN(&(myshort),STD_SHORT)))
+
+#define NAT2STDL(VAL) ((mylong  = swap_long(VAL)),(ADJLEN(&(mylong ) ,STD_LONG )))
+
+#define MEMCPYS(data,val) {memcpy(data,NAT2STDS(val),STD_SHORT); data += STD_SHORT; }
+
+/* STD_LONG and STD_SHORT are chose n the minimum possible values for   */
+/* reasons of efficiency, the code relies on this fact, they may        */
+/* NEVER be larger than sizeof(long) resp. sizeof(short)                */
+/* This code relies on sizeof(char) being exactly one byte.             */
+
+#define STD_LONG  4
+#define STD_SHORT 2
+
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
+
+static INT littleEndian = 1; /* needed for check LITTLE/BIG-ENDIAN */
+static short myshort;
+static long mylong;
 
 typedef struct {
 
@@ -108,6 +132,39 @@ RCSID("$Header$",UG_RCS_STRING)
 /*																			*/
 /****************************************************************************/
 
+static short swap_short (short data)
+{
+  char *s;
+  int i;
+  short res;
+
+  if (littleEndian) return(data);
+
+  s = (char *) &res;
+
+  /* the condition i>0 is equal to just "i" */
+  for (i = sizeof(short); i; i--)
+    s[i-1] = ((char *) &data)[sizeof(short)-i];
+
+  return(res);
+}
+
+static long swap_long (long data)
+{
+  char *s;
+  long res;
+  int i;
+
+  if (littleEndian) return(data);
+
+  s = (char *) &res;
+
+  for (i = sizeof(long); i; i--)       /* the condition i>0 is equal to just "i" */
+    s[i-1] = ((char *) &data)[sizeof(long)-i];
+
+  return(res);
+}
+
 static void flush_block (void)
 {
   int error;
@@ -116,9 +173,9 @@ static void flush_block (void)
 
   if (currMW->blockUsed>0)
   {
-    error = fwrite(&(currMW->blockUsed),4,1,currMF);
+    error = fwrite(NAT2STDL(currMW->blockUsed),STD_LONG,1,currMF);
     if (error!=1) return;
-    error = fwrite(&(currMW->itemCounter),4,1,currMF);
+    error = fwrite(NAT2STDL(currMW->itemCounter),STD_LONG,1,currMF);
     if (error!=1) return;
     error = fwrite(currMW->metabuffer,currMW->blockUsed,1,currMF);
     if (error!=1) return;
@@ -133,10 +190,9 @@ static void MetaMove (SHORT_POINT point)
   if (currMW->blockUsed+5>METABUFFERSIZE) flush_block();
   *currMW->data = opMove;
   currMW->data++;
-  memcpy(currMW->data,&(point.x),2);
-  currMW->data += 2;
-  memcpy(currMW->data,&(point.y),2);
-  currMW->data += 2;
+
+  MEMCPYS(currMW->data,point.x);
+  MEMCPYS(currMW->data,point.y);
   currMW->itemCounter++;
   currMW->blockUsed += 5;
   return;
@@ -147,10 +203,8 @@ static void MetaDraw (SHORT_POINT point)
   if (currMW->blockUsed+5>METABUFFERSIZE) flush_block();
   *currMW->data = opDraw;
   currMW->data++;
-  memcpy(currMW->data,&(point.x),2);
-  currMW->data += 2;
-  memcpy(currMW->data,&(point.y),2);
-  currMW->data += 2;
+  MEMCPYS(currMW->data,point.x);
+  MEMCPYS(currMW->data,point.y);
   currMW->itemCounter++;
   currMW->blockUsed += 5;
   return;
@@ -168,18 +222,11 @@ static void MetaPolyline (SHORT_POINT *points, INT nb)
 
   *currMW->data = opPolyline;
   currMW->data++;
-  memcpy(currMW->data,&n,2);
-  currMW->data += 2;
+  MEMCPYS(currMW->data,n);
   for (i=0; i<n; i++)
-  {
-    memcpy(currMW->data,&(points[i].x),2);
-    currMW->data += 2;
-  }
+    MEMCPYS(currMW->data,points[i].x);
   for (i=0; i<n; i++)
-  {
-    memcpy(currMW->data,&(points[i].y),2);
-    currMW->data += 2;
-  }
+    MEMCPYS(currMW->data,points[i].y);
   currMW->itemCounter++;
   currMW->blockUsed += size1;
   return;
@@ -197,19 +244,12 @@ static void MetaPolygon (SHORT_POINT *points, INT nb)
 
   *currMW->data = opPolygon;
   currMW->data++;
-  memcpy(currMW->data,&n,2);
-  currMW->data += 2;
+  MEMCPYS(currMW->data,n);
 
   for (i=0; i<n; i++)
-  {
-    memcpy(currMW->data,&(points[i].x),2);
-    currMW->data += 2;
-  }
+    MEMCPYS(currMW->data,points[i].x);
   for (i=0; i<n; i++)
-  {
-    memcpy(currMW->data,&(points[i].y),2);
-    currMW->data += 2;
-  }
+    MEMCPYS(currMW->data,points[i].y);
   currMW->itemCounter++;
   currMW->blockUsed += size1;
   return;
@@ -217,62 +257,12 @@ static void MetaPolygon (SHORT_POINT *points, INT nb)
 
 static void MetaInversePolygon (SHORT_POINT *points, INT nb)
 {
-  /*int i,size1;
-     short n;*/
   return;
-
-  /* n = (short)nb;
-     if (n<2) return;
-     size1 = 3+n*4;
-     if (currMW->blockUsed+size1>METABUFFERSIZE) flush_block();
-
-     *currMW->data = opInvPolygon;
-     currMW->data++;
-     memcpy(currMW->data,&n,2);
-     currMW->data += 2;
-     for (i=0; i<n; i++)
-     {
-          memcpy(currMW->data,&(points[i].x),2);
-          currMW->data += 2;
-     }
-     for (i=0; i<n; i++)
-     {
-          memcpy(currMW->data,&(points[i].y),2);
-          currMW->data += 2;
-     }
-     currMW->itemCounter++;
-     currMW->blockUsed += size1;
-     return;*/
 }
 
 static void MetaErasePolygon (SHORT_POINT *points, INT nb)
 {
-  /*int i,size1;
-     short n;*/
   return;
-
-  /* n = (short)nb;
-     if (n<2) return;
-     size1 = 3+n*4;
-     if (currMW->blockUsed+size1>METABUFFERSIZE) flush_block();
-
-     *currMW->data = opErasePolygon;
-     currMW->data++;
-     memcpy(currMW->data,&n,2);
-     currMW->data += 2;
-     for (i=0; i<n; i++)
-     {
-          memcpy(currMW->data,&(points[i].x),2);
-          currMW->data += 2;
-     }
-     for (i=0; i<n; i++)
-     {
-          memcpy(currMW->data,&(points[i].y),2);
-          currMW->data += 2;
-     }
-     currMW->itemCounter++;
-     currMW->blockUsed += size1;
-     return; */
 }
 
 static void MetaPolymark (short n, SHORT_POINT *points)
@@ -285,18 +275,12 @@ static void MetaPolymark (short n, SHORT_POINT *points)
 
   *currMW->data = opPolymark;
   currMW->data++;
-  memcpy(currMW->data,&n,2);
-  currMW->data += 2;
+  MEMCPYS(currMW->data,n);
+
   for (i=0; i<n; i++)
-  {
-    memcpy(currMW->data,&(points[i].x),2);
-    currMW->data += 2;
-  }
+    MEMCPYS(currMW->data,points[i].x);
   for (i=0; i<n; i++)
-  {
-    memcpy(currMW->data,&(points[i].y),2);
-    currMW->data += 2;
-  }
+    MEMCPYS(currMW->data,points[i].y);
   currMW->itemCounter++;
   currMW->blockUsed += size1;
   return;
@@ -312,8 +296,7 @@ static void MetaText (const char *s, INT mode)
 
   *currMW->data = opText;
   currMW->data++;
-  memcpy(currMW->data,&n,2);
-  currMW->data += 2;
+  MEMCPYS(currMW->data,n);
   memcpy(currMW->data,s,n);
   currMW->data += n;
   currMW->itemCounter++;
@@ -331,12 +314,9 @@ static void MetaCenteredText (SHORT_POINT point, const char *s, INT mode)
 
   *currMW->data = opCenteredText;
   currMW->data++;
-  memcpy(currMW->data,&(point.x),2);
-  currMW->data += 2;
-  memcpy(currMW->data,&(point.y),2);
-  currMW->data += 2;
-  memcpy(currMW->data,&n,2);
-  currMW->data += 2;
+  MEMCPYS(currMW->data,point.x);
+  MEMCPYS(currMW->data,point.y);
+  MEMCPYS(currMW->data,n);
   memcpy(currMW->data,s,n);
   currMW->data += n;
   currMW->itemCounter++;
@@ -354,8 +334,7 @@ static void MetaSetLineWidth (short w)
   if (currMW->blockUsed+3>METABUFFERSIZE) flush_block();
   *currMW->data = opSetLineWidth;
   currMW->data++;
-  memcpy(currMW->data,&w,2);
-  currMW->data += 2;
+  MEMCPYS(currMW->data,w);
   currMW->itemCounter++;
   currMW->blockUsed += 3;
   return;
@@ -366,8 +345,7 @@ static void MetaSetTextSize (short s)
   if (currMW->blockUsed+3>METABUFFERSIZE) flush_block();
   *currMW->data = opSetTextSize;
   currMW->data++;
-  memcpy(currMW->data,&s,2);
-  currMW->data += 2;
+  MEMCPYS(currMW->data,s);
   currMW->itemCounter++;
   currMW->blockUsed += 3;
   return;
@@ -378,8 +356,7 @@ static void MetaSetMarker (short n)
   if (currMW->blockUsed+3>METABUFFERSIZE) flush_block();
   *currMW->data = opSetMarker;
   currMW->data++;
-  memcpy(currMW->data,&n,2);
-  currMW->data += 2;
+  MEMCPYS(currMW->data,n);
   currMW->itemCounter++;
   currMW->blockUsed += 3;
   return;
@@ -390,8 +367,7 @@ static void MetaSetMarkerSize (short n)
   if (currMW->blockUsed+3>METABUFFERSIZE) flush_block();
   *currMW->data = opSetMarkerSize;
   currMW->data++;
-  memcpy(currMW->data,&n,2);
-  currMW->data += 2;
+  MEMCPYS(currMW->data,n);
   currMW->itemCounter++;
   currMW->blockUsed += 3;
   return;
@@ -635,12 +611,15 @@ static WINDOWID OpenMetaWindow (const char *title, INT x, INT y, INT width, INT 
   currMF = MetaWindow->metafile;
 
   /* init metafile */
-  fwrite(&MetaWindow->blockSize,4,1,MetaWindow->metafile);                /* block size */
-  fwrite(&MetaWindow->xdim,2,1,MetaWindow->metafile);                     /* x size     */
-  fwrite(&MetaWindow->ydim,2,1,MetaWindow->metafile);                     /* y size     */
+  /* block size */
+  fwrite(NAT2STDL(MetaWindow->blockSize),STD_LONG,1,MetaWindow->metafile);
+  /* x size     */
+  fwrite(NAT2STDS(MetaWindow->xdim),STD_SHORT,1,MetaWindow->metafile);
+  /* y size     */
+  fwrite(NAT2STDS(MetaWindow->ydim),STD_SHORT,1,MetaWindow->metafile);
 
   /* write pallette */
-  MetaSetPalette(0,256,red,green,blue);                                                   /* default palette */
+  MetaSetPalette(0,256,red,green,blue);                         /* default palette */
 
   /* return corners in devices coordinate system */
   Global_LL[0] = Local_LL[0] = x;  Global_LL[1] = Local_LL[1] = y;
@@ -810,6 +789,9 @@ static OUTPUTDEVICE *InitMetaOutputDevice (void)
 
 INT InitMeta (void)
 {
+  /* check for little/big endian storage type */
+  littleEndian = !( *((char *) &littleEndian));
+
   if ((InitMetaOutputDevice()) == NULL) return (1);
 
   return (0);
