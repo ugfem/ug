@@ -166,7 +166,7 @@ static void MacInversePolyline (SHORT_POINT *points, INT n)
   PenNormal();
 }
 
-static void MacPolygon (SHORT_POINT *points, INT n)
+static void MacintoshPolygon (SHORT_POINT *points, INT n)
 {
   int i;
   PolyHandle myPoly;
@@ -202,7 +202,7 @@ static void MacShadedPolygon (SHORT_POINT *points, INT n, DOUBLE intensity)
   theColor.blue  *= intensity;
 
   RGBForeColor(&theColor);
-  MacPolygon(points,n);
+  MacintoshPolygon(points,n);
 
   /* retsore color */
   //MacSetPaletteEntry(CurrColor,r,g,b);
@@ -619,7 +619,7 @@ static void InitMacPort ()
   MacOutputDevice->Draw                           = MacDraw;
   MacOutputDevice->Polyline                       = MacPolyline;
   MacOutputDevice->InversePolyline        = MacInversePolyline;
-  MacOutputDevice->Polygon                        = MacPolygon;
+  MacOutputDevice->Polygon                        = MacintoshPolygon;
   MacOutputDevice->ShadedPolygon          = MacShadedPolygon;
   MacOutputDevice->InversePolygon         = MacInversePolygon;
   MacOutputDevice->ErasePolygon           = MacErasePolygon;
