@@ -122,12 +122,6 @@ static INT InitAccelObjs (MULTIGRID *theMG)
 
 INT TerminateAccel (MULTIGRID *theMG, INT flag)
 {
-
-  theMG->freeObjects[QuObj] = NULL;
-  theMG->freeObjects[ScObj]  = NULL;
-  theMG->freeObjects[QfclObj]  = NULL;
-  theMG->freeObjects[EttObj]  = NULL;
-
   ReleaseOBJT(QuObj);
   ReleaseOBJT(ScObj);
   ReleaseOBJT(QfclObj);

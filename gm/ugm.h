@@ -54,6 +54,14 @@
 
 #define MAX_PAR_DIST    1.0E-5          /* max.dist between different parameter */
 
+#ifdef ModelP
+#define PutFreeObject(theMG,object,size,type) PutFreeObject_par(MGHEAP(theMG),(object),(size),(type))
+#define GetMemoryForObject(theMG,size,type) GetMemoryForObject_par(MGHEAP(theMG),(size),(type))
+#else
+#define GetMemoryForObject(theMG,size,type) GetFreelistMemory(MGHEAP(theMG),(size))
+#define PutFreeObject(theMG,object,size,type) PutFreelistMemory(MGHEAP(theMG),(object),(size))
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* data structures exported by the corresponding source file				*/
@@ -80,14 +88,9 @@ INT              InitUGManager                  (void);
 /* object handling */
 INT              GetFreeOBJT                    (void);
 INT              ReleaseOBJT                    (INT type);
-void            *GetMemoryForObject             (MULTIGRID *theMG, INT size, INT type);
-INT              PutFreeObject                  (MULTIGRID *theMG, void *object, INT size, INT type);
-INT          MGMemory               (MULTIGRID *theMG, INT *used, INT *free);
-#ifdef ModelP
-void            *GetMemoryLocal                 (MULTIGRID *theMG, INT size, INT type);
-INT              PutFreeObjectLocal             (MULTIGRID *theMG, void *object, INT size, INT type);
 
 /* create basic objects */
+#ifdef ModelP
 EDGE        *CreateEdge             (GRID *theGrid, NODE *from, NODE *to, INT with_vector);
 #endif
 ELEMENT     *CreateElement          (GRID *theGrid, INT tag, INT objtype,

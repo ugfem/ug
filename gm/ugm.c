@@ -231,9 +231,9 @@ INT ReleaseOBJT (INT type)
 /****************************************************************************/
 
 #ifdef ModelP
-void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
+void *GetMemoryForObject_par (HEAP *theHeap, INT size, INT type)
 {
-  void *obj = GetMemoryLocal(theMG, size, type);
+  void *obj = GetFreelistMemory(theHeap, size);
 
   if (obj!=NULL && type!=NOOBJ)
   {
@@ -249,58 +249,7 @@ void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
 
   return obj;
 }
-
-
-/* in ModelP, this function creates local memory. */
-void *GetMemoryLocal (MULTIGRID *theMG, INT size, INT type)
-#else
-
-void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
 #endif
-{
-  void **ptr, *obj;
-  INT i,j,k,l;
-
-  if (size == 0)
-    return(NULL);
-  obj = NULL;
-
-  /* 'ptr' will be set equal to 'theMG->freeObjects[k]' but with	        */
-  /* different interpretation: void ** instead of void *. 'ptr'			*/
-  /* points to the first two bytes of the object (i.e. unsigned INT ctrl	*/
-  /* and INT id) but will be interpreted as a void * pointer, witch points*/
-  /* to the next free object.                                                                                   */
-
-  i = (size / ALIGNMENT);
-  for (j=0; j<MAXFREEOBJECTS; j++)
-  {
-    k = (i + j) % MAXFREEOBJECTS;
-    l = theMG->SizeOfFreeObjects[k];
-    if (l == size)
-    {
-      if (theMG->freeObjects[k] != NULL)
-      {
-        ptr = (void **) theMG->freeObjects[k];
-        theMG->freeObjects[k] = ptr[0];
-        obj = (void *) ptr;
-      }
-      break;
-    }
-    if(l == -1)
-      break;
-  }
-
-  if (obj == NULL)
-    obj = GetMem(MGHEAP(theMG),(MEM)size,FROM_BOTTOM);
-
-  if (obj != NULL)
-    memset(obj,0,size);
-
-  if (obj == NULL)
-    PRINTDEBUG(gm,0,("GetMemoryForObject: cannot allocate %d bytes\n",size));
-
-  return(obj);
-}
 
 /****************************************************************************/
 /*D
@@ -326,7 +275,7 @@ void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
 /****************************************************************************/
 
 #ifdef ModelP
-INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type)
+INT PutFreeObject_par (HEAP *theHeap, void *object, INT size, INT type)
 {
   if (type!=NOOBJ)
   {
@@ -339,100 +288,9 @@ INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type)
     }
   }
 
-  return (PutFreeObjectLocal(theMG, object, size, type));
+  return (PutFreelistMemory(theHeap, object, size));
 }
-
-
-INT PutFreeObjectLocal (MULTIGRID *theMG, void *object, INT size, INT type)
-#else
-
-INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type)
 #endif
-{
-  void **ptr;
-  INT i,j,k,l;
-
-  memset(object,0,size);
-  ((int *)object)[1] = -1;
-  ptr = (void **) object;
-
-  /* 'ptr' will be set equal to 'object' but with different inter-		*/
-  /* pretation: void ** instead of void *. 'ptr' points to the first		*/
-  /* two bytes of the object (i.e. unsigned INT ctrl	and INT id) but         */
-  /* will be interpreted as a void * pointer, witch will be set equal   */
-  /* to 'theMG->freeObjects[k]' i.e. the first free object.			    */
-
-  i = (size / ALIGNMENT);
-  for (j=0; j<MAXFREEOBJECTS; j++)
-  {
-    k = (i + j) % MAXFREEOBJECTS;
-    l = theMG->SizeOfFreeObjects[k];
-    if (l == size)
-    {
-      ptr[0] = theMG->freeObjects[k];
-      theMG->freeObjects[k] = object;
-      return(0);
-    }
-    if(l == -1)
-    {
-      theMG->SizeOfFreeObjects[k] = size;
-      ptr[0] = theMG->freeObjects[k];
-      theMG->freeObjects[k] = object;
-      return(0);
-    }
-  }
-
-  UserWrite("PutFreeObject: increase MAXFREEOBJECTS\n");
-
-  RETURN(1);
-}
-
-/****************************************************************************/
-/*D
-   MGMemory - computes free and used memory of multigrid heap
-
-   SYNOPSIS:
-   INT MGMemory (MULTIGRID *theMG, INT *used, INT *free);
-
-   PARAMETERS:
-   .  theMG - pointer to multigrid
-   .  used - used memory of multigrid heap in bytes
-   .  free - free memory of multigrid heap in bytes
-
-   DESCRIPTION:
-   This function computes the amount of memory in the freeObject lists of the
-   multigrid and adds it to the free memory of the multigrid heap.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 when error occured.
-   D*/
-/****************************************************************************/
-
-INT MGMemory (MULTIGRID *theMG, INT *used, INT *free)
-{
-  void *ptr;
-  INT j,k;
-
-  *used = HeapSize(MGHEAP(theMG));
-  *free = HeapUsed(MGHEAP(theMG));
-  *free = *used - *free;
-  for (j=0; j<MAXFREEOBJECTS; j++)
-  {
-    k = 0;
-    ptr = theMG->freeObjects[j];
-    while (ptr != NULL)
-    {
-      k++;
-      ptr = ((void **) ptr)[0];
-    }
-    *free += k * theMG->SizeOfFreeObjects[j];
-  }
-
-  *used -= *free;
-  return(0);
-}
 
 /****************************************************************************/
 /*D
@@ -1822,12 +1680,8 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
   MG_BVP(theMG) = theBVP;
   theMG->theHeap = theHeap;
   SELECTIONSIZE(theMG) = 0;
-  for (i=0; i<MAXLEVEL; i++) theMG->grids[i] = NULL;
-  for (i=0; i<MAXFREEOBJECTS; i++)
-  {
-    theMG->freeObjects[i] = NULL;
-    theMG->SizeOfFreeObjects[i] = -1;;
-  }
+  for (i=0; i<MAXLEVEL; i++)
+    theMG->grids[i] = NULL;
 
   /* allocate level 0 grid */
   theGrid = CreateNewLevel(theMG);
@@ -4607,9 +4461,9 @@ void ListGrids (const MULTIGRID *theMG)
              (long)ns,(long)nvec,(long)nc,(float)hmin,(float)hmax);
 
   /* storage */
-  MGMemory((MULTIGRID *)theMG,&used,&free);
-  heap = HeapUsed(MGHEAP(theMG));
-  heap -= used;
+  heap = HeapFreelistUsed(MGHEAP(theMG));
+  used = HeapUsed(MGHEAP(theMG)) - heap;
+  free = HeapSize(MGHEAP(theMG)) - used;
   if (0 == heap)
     UserWriteF("\n%d bytes used out of %d allocated\n",used,used+free);
   else

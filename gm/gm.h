@@ -95,7 +95,6 @@
 /* some size parameters */
 #define MAXLEVEL                                32      /* maximum depth of triangulation		*/
 #define MAXOBJECTS                              32      /* use 5 bits for object identification */
-#define MAXFREEOBJECTS             128  /* number of free object pionters       */
 #define MAXSELECTION               100  /* max number of elements in selection	*/
 #define TAGS                                     8      /* number of different element types	*/
 
@@ -718,10 +717,6 @@ struct multigrid {
 
   /* pointers */
   struct grid *grids[MAXLEVEL];         /* pointers to the grids				*/
-  void *freeObjects[MAXFREEOBJECTS];
-  /* pointer to allocated but unused objs */
-  INT SizeOfFreeObjects[MAXFREEOBJECTS];
-  /* corresponding size                   */
 
   /* selection */
   INT NbOfSelections;                           /* number of selected objects			*/

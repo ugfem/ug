@@ -2534,11 +2534,6 @@ static INT InitGGObjs (MULTIGRID *theMG)
 
 static INT TerminateGG (MULTIGRID *theMG, INT flag)
 {
-
-  theMG->freeObjects[IflObj] = NULL;
-  theMG->freeObjects[FlObj]  = NULL;
-  theMG->freeObjects[FcObj]  = NULL;
-
   ReleaseOBJT(IflObj);
   ReleaseOBJT(FlObj);
   ReleaseOBJT(FcObj);
