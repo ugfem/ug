@@ -67,8 +67,17 @@
 /* own header */
 #include "initug.h"
 
-/* TODO: delete this */
+/** \todo delete this */
 #include "debug.h"
+
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -112,7 +121,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT InitUg (int *argcp, char ***argvp)
+INT NS_PREFIX InitUg (int *argcp, char ***argvp)
 {
   INT err;
         #ifdef Debug
@@ -312,7 +321,7 @@ INT InitUg (int *argcp, char ***argvp)
    D*/
 /****************************************************************************/
 
-INT ExitUg (void)
+INT NS_PREFIX ExitUg (void)
 {
   INT err;
 

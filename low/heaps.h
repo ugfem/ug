@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*	                                                                        */
+/*                                                                          */
 /* File:      heaps.h                                                       */
 /*                                                                          */
 /* Purpose:   low-level memory management for ug                            */
@@ -32,13 +32,24 @@
 #ifndef __HEAPS__
 #define __HEAPS__
 
-#ifndef __COMPILER__
+
 #include "compiler.h"
-#endif
+
 
 #if defined __NECSX4__ && defined _MALLOC64
 #define MEM_SIZE_ULL
 #include "stdlib.h" /* for the patched malloc */
+#endif
+
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
 #endif
 
 /****************************************************************************/
@@ -218,5 +229,9 @@ BLOCK_ID     GetNewBlockID            (void);
 BLOCK_DESC  *GetBlockDesc            (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id);
 INT          DefineBlock            (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id, MEM size);
 INT          FreeBlock                (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif
