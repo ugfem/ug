@@ -51,7 +51,7 @@ close(IN);
 # admin
 open(IN,$ARGV[0]);
 $sd_min=1000000; $sd_max=-1;
-
+ 
 # write header
 while($line=<IN>)
 {
