@@ -1412,12 +1412,11 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
   COORD *lambda;
   INT i,j;
 
-  IFDEBUG(gm,0)
-  assert (OBJT(theElement) == BEOBJ);
-  assert (SIDE(theElement,side) != NULL);
-  ENDDEBUG
+  ASSERT (OBJT(theElement) == BEOBJ);
 
-    oldSide = SIDE(theElement,side);
+  oldSide = SIDE(theElement,side);
+  if (oldSide == NULL) return(GM_OK);
+
   newSide = CreateElementSide(theGrid);
   if (newSide == NULL)
     RETURN(GM_ERROR);

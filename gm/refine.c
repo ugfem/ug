@@ -2093,7 +2093,6 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 
   ELEMENT *theNeighbor;
   ELEMENT *Sons_of_NbSide_List[MAX_SONS];
-  ELEMENTSIDE *ElementSide;
   INT nbside,Sons_of_NbSide,NbSonSides[MAX_SONS];
   INT i;
 
@@ -2313,7 +2312,6 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
   ELEMENT *NbElement;
   ELEMENT *NbSonList[MAX_SONS];
   ELEMENT *NbSideSons[5];
-  ELEMENTSIDE *oldSide;
   REFRULE *NbRule;
   SONDATA *sdata2;
   int i,j,k,l,m,n,o,p,q,r,s,s2,found,points;
@@ -2900,12 +2898,13 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
         /* connect outer sides of son elements */
         if (sons[i*5+j].bdy == 1) {
 
-          for (k=0; k<SIDES_OF_ELEM(sons[i*5+j].theSon); k++)
-            SET_SIDE(sons[i*5+j].theSon,k,NULL);
+          /* TODO: delete this
+                                          for (k=0; k<SIDES_OF_ELEM(sons[i*5+j].theSon); k++)
+                                                  SET_SIDE(sons[i*5+j].theSon,k,NULL);
 
-          /* search boundary side */
-          oldSide = SIDE(theElement,i);
-          ASSERT(oldSide != NULL);
+                                          oldSide = SIDE(theElement,i);
+                                          ASSERT(oldSide != NULL);
+           */
 
           IFDEBUG(gm,3)
           UserWriteF("CreateSonElementSide(ID=%d,side=%d,SONID=%d,side=%d) TAG(ID)=%d TAG(SONID)=%d\n",\
@@ -3174,7 +3173,6 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
   ELEMENT *theSon,*theNeighbor;
   ELEMENT *SonList[MAX_SONS],*SonList2[MAX_SONS];
   ELEMENT *NbSideSons[5];
-  ELEMENTSIDE *oldSide;
   NODE *ElementNodes[MAX_CORNERS_OF_ELEM];
   INT boundaryelement, found;
   REFRULE *rule, *rule2;
@@ -3244,7 +3242,9 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
         SET_SIDE(SonList[s],j,NULL);
         if ((side = SON_NB_OF_RULE(rule,s,j)) < FATHER_SIDE_OFFSET) continue;
         side -= FATHER_SIDE_OFFSET;
-        if ((oldSide = SIDE(theElement,side)) == NULL) continue;
+        /* TODO: delete this
+                                                if ((oldSide = SIDE(theElement,side)) == NULL) continue;
+         */
 
         if (CreateSonElementSide(theGrid,theElement,side,SonList[s],j)!=GM_OK) RETURN(GM_FATAL);
       }
