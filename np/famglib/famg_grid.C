@@ -1331,12 +1331,28 @@ void FAMGGrid::ConstructOverlap()
 	VECTOR *vec;
 	INT i;
 	
+	if(GLEVEL(mygrid)==0)
+	{	
+		/* change ghosts to border */
+		DDD_XferBegin();
+		for( vec=PFIRSTVECTOR(mygrid); PRIO(vec) != PrioBorder && PRIO(vec) != PrioMaster; vec = SUCCVC(vec))
+		{
+			DDD_XferPrioChange( PARHDR((NODE*)VOBJECT(vec)), PrioBorder ); /* TODO: cancel this line; its only for beauty in checks */
+			DDD_XferPrioChange( PARHDR(vec), PrioBorder );
+		}
+		/* elements with old ghostprios cause errors in check; but that's ok */
+		DDD_XferEnd();
+		/* vectors which just become border have not set the VECSKIP flag correctly! 
+		   this flags will be corrected by the subsequent a_vector_vecskip */
+
+ASSERT(!DDD_ConsCheck());	
+	}	
+
 	DDD_XferBegin();
 		DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), SendToMaster );
 	DDD_XferEnd();
 	
 	DDD_XferBegin();
-	//		DDD_IFAExecLocal( VectorIF, GRID_ATTR(mygrid), SendToOverlap1 );
 		DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), SendToOverlap1 );
 	DDD_XferEnd();
 	
@@ -1348,7 +1364,8 @@ void FAMGGrid::ConstructOverlap()
 	assert(i==n);	// otherwise the vectorlist became inconsistent
 	
 	if(GLEVEL(mygrid)==0)
-	{	// do modifications for dirichlet vectors (as coarsegrid solver)
+	{		
+		// do modifications for dirichlet vectors (as coarsegrid solver)
 		// communicate vecskip flags and dirichlet values
 		if (a_vector_vecskip(MYMG(mygrid),0,0,((FAMGugVector*)GetVector(FAMGUNKNOWN))->GetUgVecDesc()) != NUM_OK)
 			abort();
@@ -1356,6 +1373,7 @@ void FAMGGrid::ConstructOverlap()
 		if (AssembleDirichletBoundary (mygrid,((FAMGugMatrix*)GetMatrix())->GetMatDesc(),((FAMGugVector*)GetVector(FAMGUNKNOWN))->GetUgVecDesc(),((FAMGugVector*)GetVector(FAMGDEFECT))->GetUgVecDesc()))
 			abort();
 	}	
+
 }
 #endif
 
