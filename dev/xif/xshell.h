@@ -28,6 +28,10 @@
 #ifndef __XSHELL__
 #define __XSHELL__
 
+#ifndef __GENERAL__
+#include "general.h"
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -42,8 +46,8 @@
 #define MAXLINES                100
 #define MAXCOLS                 130
 
-#define SHELLICONNAME   "ug3.2 shell"
-#define SHELLWINNAME    "ug3.2 shell"
+#define SHELLICONNAME   UG_VERSION " shell"
+#define SHELLWINNAME    UG_VERSION " shell"
 #define RESOURCENAME    "ug3"
 
 /****************************************************************************/
