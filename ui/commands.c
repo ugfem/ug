@@ -8763,13 +8763,13 @@ static INT UpdateDocumentCommand (INT argc, char **argv)
 
    DESCRIPTION:
    This function sets the values of a grid function specified by a vec data descriptor.
-   The data descriptor is created if it doesn´t exist yet.
+   The data descriptor is created if it does not exist yet.
    It clears or assigns a constant value.
 
    'clear <symbol name> [$a] [$u] [$v <value>]'
 
    .  $a         - from level 0 through current level (default: current level only)
-   .  $s         - don't change skip (Dirichlet) values
+   .  $s         - do not change skip (Dirichlet) values
    .  $v~<value> - assign this value (instead of 0.0)
 
    KEYWORDS:
@@ -10751,7 +10751,7 @@ static INT ShowConfigCommand (INT argc, char **argv)
    array - family of ug-commands to handle n-dimensional arrays of doubles
 
    DESCRIPTION:
-   Each array is a struct in the directory '\Array'. Besides some
+   Each array is a struct in the directory '/Array'. Besides some
    administrational information it contains an ordinary, n-dimensional array
    of doubles as a 'double[n_1][n_2]...[n_k]' definition in C would allocate.
    The maximum number 'k' of dimensions is restricted to 'AR_NVAR_MAX'.
@@ -10826,12 +10826,12 @@ static INT ClearArray (ARRAY *theAR)
    static ARRAY *CreateArray (char *name, INT nVar, INT *VarDim);
 
    PARAMETERS:
-   .  name - name under which the array is allocated in '\Array'
+   .  name - name under which the array is allocated in '/Array'
    .  nVar - number of dimensions of the data field
    .  VarDim - extension of the data field in each dimension
 
    DESCRIPTION:
-   Allocate a new array structure in the directory '\Array' and
+   Allocate a new array structure in the directory '/Array' and
    allocate the data field. The maximum number of dimensions is
    'AR_NVAR_MAX'.
 
@@ -10945,7 +10945,7 @@ static INT ReadArray (ARRAY *theAR, INT *Point, DOUBLE *value)
    crar - create a new array structure
 
    DESCRIPTION:
-   Allocate a new array structure in the directory '\Array' and
+   Allocate a new array structure in the directory '/Array' and
    allocate the data field of the specified size with the function
    'CreateArray'. The data field is the same as a 'double[n_1][n_2]...[n_k]'
    definition in C would allocate. The maximum number 'k' of dimensions
@@ -11005,7 +11005,7 @@ static INT CreateArrayCommand (INT argc, char **argv)
    dear - delete an existing array structure
 
    DESCRIPTION:
-   Delete the already existing array. The entry in the directory '\Array'
+   Delete the already existing array. The entry in the directory '/Array'
    is removed and the data field of the array is freed.
 
    'dear $n <name>'
@@ -11126,7 +11126,7 @@ static INT SaveArrayCommand (INT argc, char **argv)
    DESCRIPTION:
    Load the content of the array from the file with name '<array name>.array'.
    The 'arraypathes' entry in the 'defaults' file is considered. A new array
-   structure with the given name is allocated in the directory '\Array'.
+   structure with the given name is allocated in the directory '/Array'.
 
    'loar $n <name>'
 
@@ -11436,7 +11436,7 @@ static INT InitArray (void)
 }
 
 /****************************************************************************/
-/*D
+/*
    InitCommands - Initialization of the commands
 
    SYNOPSIS:
@@ -11458,7 +11458,7 @@ static INT InitArray (void)
    INT
    .n    0 if ok
    .n    __LINE__ if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT InitCommands ()
