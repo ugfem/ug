@@ -44,6 +44,40 @@
 #define NL_ASSEMBLE_CLASS_NAME  "nlass"
 #define T_ASSEMBLE_CLASS_NAME   "tass"
 
+/* access macros for NP_ASSEMBLE */
+#define NPASS_x(p)                              (((NP_ASSEMBLE*)(p))->x)
+#define NPASS_c(p)                              (((NP_ASSEMBLE*)(p))->c)
+#define NPASS_b(p)                              (((NP_ASSEMBLE*)(p))->b)
+#define NPASS_A(p)                              (((NP_ASSEMBLE*)(p))->A)
+
+#define NPASS_PRE(p)                    (((NP_ASSEMBLE*)(p))->PreProcess)
+#define NPASS_ASSSOL(p)                 (((NP_ASSEMBLE*)(p))->AssembleSolution)
+#define NPASS_ASSDEF(p)                 (((NP_ASSEMBLE*)(p))->AssembleDefect)
+#define NPASS_ASSMAT(p)                 (((NP_ASSEMBLE*)(p))->AssembleMatrix)
+#define NPASS_ASS(p)                    (((NP_ASSEMBLE*)(p))->Assemble)
+#define NPASS_POST(p)                   (((NP_ASSEMBLE*)(p))->PostProcess)
+
+/* access macros for NP_LOCAL_ASSEMBLE */
+#define NPLOC_GALERKIN(p)               (((NP_LOCAL_ASSEMBLE*)(p))->galerkin)
+#define NPLOC_PRE(p)                    (((NP_LOCAL_ASSEMBLE*)(p))->PreProcess)
+#define NPLOC_ASS(p)                    (((NP_LOCAL_ASSEMBLE*)(p))->AssembleLocal)
+#define NPLOC_ASSDEF(p)                 (((NP_LOCAL_ASSEMBLE*)(p))->AssembleLocalDefect)
+#define NPLOC_ASSMAT(p)                 (((NP_LOCAL_ASSEMBLE*)(p))->AssembleLocalMatrix)
+#define NPLOC_POSTMAT(p)                (((NP_LOCAL_ASSEMBLE*)(p))->PostMatrix)
+#define NPLOC_POST(p)                   (((NP_LOCAL_ASSEMBLE*)(p))->PostProcess)
+
+/* access macros for NP_NL_ASSEMBLE */
+#define NPANL_x(p)                              (((NP_NL_ASSEMBLE*)(p))->x)
+#define NPANL_c(p)                              (((NP_NL_ASSEMBLE*)(p))->c)
+#define NPANL_b(p)                              (((NP_NL_ASSEMBLE*)(p))->b)
+#define NPANL_A(p)                              (((NP_NL_ASSEMBLE*)(p))->A)
+
+#define NPANL_PRE(p)                    (((NP_NL_ASSEMBLE*)(p))->PreProcess)
+#define NPANL_ASSDEF(p)                 (((NP_NL_ASSEMBLE*)(p))->NLAssembleDefect)
+#define NPANL_ASSSOL(p)                 (((NP_NL_ASSEMBLE*)(p))->NLAssembleSolution)
+#define NPANL_ASSMAT(p)                 (((NP_NL_ASSEMBLE*)(p))->NLAssembleMatrix)
+#define NPANL_POST(p)                   (((NP_NL_ASSEMBLE*)(p))->PostProcess)
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported data structures									*/

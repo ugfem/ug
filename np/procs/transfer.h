@@ -42,6 +42,22 @@
 
 #define TRANSFER_CLASS_NAME "transfer"
 
+/* access macros for NP_TRANSFER */
+#define NPTR_x(p)                               (((NP_TRANSFER*)(p))->x)
+#define NPTR_c(p)                               (((NP_TRANSFER*)(p))->c)
+#define NPTR_b(p)                               (((NP_TRANSFER*)(p))->b)
+#define NPTR_A(p)                               (((NP_TRANSFER*)(p))->A)
+#define NPTR_DAMP(p)                    (((NP_TRANSFER*)(p))->damp)
+
+#define NPTR_PRE(p)                             (((NP_TRANSFER*)(p))->PreProcess)
+#define NPTR_PREPROJ(p)                 (((NP_TRANSFER*)(p))->PreProcessProject)
+#define NPTR_INTCOR(p)                  (((NP_TRANSFER*)(p))->InterpolateCorrection)
+#define NPTR_RESTRICT(p)                (((NP_TRANSFER*)(p))->RestrictDefect)
+#define NPTR_INTNEW(p)                  (((NP_TRANSFER*)(p))->InterpolateNewVectors)
+#define NPTR_PROJSOL(p)                 (((NP_TRANSFER*)(p))->ProjectSolution)
+#define NPTR_ADPTCOR(p)                 (((NP_TRANSFER*)(p))->AdaptCorrection)
+#define NPTR_POST(p)                    (((NP_TRANSFER*)(p))->PostProcess)
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported data structures									*/
@@ -126,7 +142,7 @@ typedef INT (*PreProcessTransferProcPtr)                                    \
 typedef INT (*InterpolateCorrectionProcPtr)                                 \
   (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, DOUBLE *, INT *);
 typedef INT (*RestrictDefectProcPtr)                                        \
-  (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, DOUBLE *, INT *);
+  (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, DOUBLE *, INT *);
 typedef INT (*InterpolateSolutionProcPtr)                                   \
   (NP_TRANSFER *, INT, VECDATA_DESC *, INT *);
 typedef INT (*ProjectSolutionProcPtr)                                       \
