@@ -36,7 +36,8 @@ uglib: include $(OBJECTS) $(UGMODULES)
 	echo "libug compiled"
 
 UGD:  include $(UGDMODULES) ugd.o
-	$(UG_LINK) -o bin/ugd $(ARCH_LFLAGS) ugd.o lib/libdev.a lib/libug$(UG_LIBSUFFIX).a $(UG_LFLAGS)
+	$(UG_LINK) -o bin/ugd $(ARCH_LFLAGS) ugd.o lib/libdev.a \
+		lib/libug$(UG_LIBSUFFIX).a $(UG_LFLAGS)
 	echo "ugd compiled"
 
 
@@ -85,8 +86,7 @@ PARALLEL_clean:
 include:
 	ugmakelinks;
 
-# default rule
-.c.o: 
+.c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
 
 
@@ -109,3 +109,18 @@ ifdef: $(MODEL_TARGET)_clean
 	cd dom; make -f Makefile.dom clean; cd ..;
 	cd ui; rm commands.o ; cd ..;
 	rm -f initug.o;
+
+extract:
+	$(ARCH_AR) $(ARCH_EXFLAGS) lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
+	cd low; make -f Makefile.low extract; cd ..;
+	cd gm; make -f Makefile.gm extract; cd ..;
+	cd numerics; make -f Makefile.numerics extract; cd ..;
+	cd graphics; make -f Makefile.graphics extract; cd ..;
+	cd ui; make -f Makefile.ui extract; cd ..;
+
+xmc:
+	cd low; make -f Makefile.low xmc; cd ..;
+	cd gm; make -f Makefile.gm xmc; cd ..;
+	cd numerics; make -f Makefile.numerics xmc; cd ..;
+	cd graphics; make -f Makefile.graphics xmc; cd ..;
+	cd ui; make -f Makefile.ui xmc; cd ..;
