@@ -64,7 +64,7 @@ then
 			;;
         dc3d)
 			cd $UGROOT/../ns/appl3d
-			ugrun ns3d $PROC DrivenCavity.scr -noquit
+			ugrun ns3d $PROC ugdemo.scr -noquit
 			;;
         pm2d)
 			cd $UGROOT/../sc/appl2d
@@ -76,11 +76,11 @@ then
 			;;
         ep2d)
 			cd $UGROOT/../fe/appl
-			ugrun fe2d $PROC gpd.scr -noquit
+			ugrun fe2d $PROC ep2d.scr -noquit
 			;;
         ep3d)
 			cd $UGROOT/../fe/appl
-			ugrun fe3d $PROC lame.scr -noquit
+			ugrun fe3d $PROC ep3d.scr -noquit
 			;;
         ball)
 			cd $UGROOT/../fe/appl
@@ -88,7 +88,7 @@ then
 			;;
         diff)
 			cd $UGROOT/../fe/appl
-			ugrun fe2d $PROC simple.scr -noquit
+			ugrun fe2d $PROC diff.scr -noquit
 			;;
         disc)
 			cd $UGROOT/../fe/appl
@@ -96,11 +96,11 @@ then
 			;;
         ew2d)
 			cd $UGROOT/../fe/appl
-			ugrun fe2d $PROC wolfgangsee.scr -noquit
+			ugrun fe2d $PROC ew2d.scr -noquit
 			;;
         er2d)
 			cd $UGROOT/../fe/appl
-			ugrun fe2d $PROC emden.scr -noquit
+			ugrun fe2d $PROC er2d.scr -noquit
 			;;
         tu2d)
 			cd $UGROOT/../sc/appl2d
