@@ -167,7 +167,7 @@ typedef struct {
 INT                     SetFlagsfortemporaryGGObjects(INT IflObject,INT FlObject,INT FcObject);
 INDEPFRONTLIST  *CreateIndepFrontList   (GRID *theGrid);
 FRONTLIST               *CreateFrontList                (INDEPFRONTLIST *theIFL, INT SubdomainID);
-FRONTCOMP               *CreateFrontComp                (FRONTLIST *mylist, FRONTCOMP *after, int ncomp, NODE **NodeHandle);
+FRONTCOMP               *CreateFrontComp                (FRONTLIST *mylist, FRONTCOMP *after, INT ncomp, NODE **NodeHandle);
 
 INT DisposeADVfront                     (GRID *theGrid);
 INT DisposeIndepFrontList       (INDEPFRONTLIST *theIFL);
