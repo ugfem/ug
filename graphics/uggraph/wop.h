@@ -482,7 +482,7 @@ typedef struct PlotObjHandling PLOTOBJHANDLING;
 /*																			*/
 /****************************************************************************/
 #ifdef ModelP
-DRAWINGOBJ        *WOP_DObjPnt;
+extern DRAWINGOBJ        *WOP_DObjPnt;
 #endif
 
 /****************************************************************************/
