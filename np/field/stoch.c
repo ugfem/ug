@@ -1555,6 +1555,7 @@ INT Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
     node[i] = ((INT) alpha[i]) % np->size[i];
     if (node[i] < 0)
       node[i] += np->size[i];
+
     alpha[i] -= (INT) alpha[i];
   }
 #ifdef __THREEDIM__
@@ -1564,14 +1565,19 @@ INT Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
     out[0] = (REALPART(np->size,np->Fld,node[0],node[1],node[2]) - np->mean) / sqrt(np->var);
     break;
   case TRUE :
+  {
+    INT extraNode[DIM];
+
+    for (i=0; i<DIM; i++)
+      extraNode[i] = (node[i]+1) % np->size[i];
     cornerValues[0] =  REALPART(np->size,np->Fld,node[0],node[1],node[2]);
-    cornerValues[1] =  REALPART(np->size,np->Fld,node[0]+1,node[1],node[2]);
-    cornerValues[2] =  REALPART(np->size,np->Fld,node[0],node[1]+1,node[2]);
-    cornerValues[3] =  REALPART(np->size,np->Fld,node[0]+1,node[1]+1,node[2]);
-    cornerValues[4] =  REALPART(np->size,np->Fld,node[0],node[1],node[2]+1);
-    cornerValues[5] =  REALPART(np->size,np->Fld,node[0]+1,node[1],node[2]+1);
-    cornerValues[6] =  REALPART(np->size,np->Fld,node[0],node[1]+1,node[2]+1);
-    cornerValues[7] =  REALPART(np->size,np->Fld,node[0]+1,node[1]+1,node[2]+1);
+    cornerValues[1] =  REALPART(np->size,np->Fld,extraNode[0],node[1],node[2]);
+    cornerValues[2] =  REALPART(np->size,np->Fld,node[0],extraNode[1],node[2]);
+    cornerValues[3] =  REALPART(np->size,np->Fld,extraNode[0],extraNode[1],node[2]);
+    cornerValues[4] =  REALPART(np->size,np->Fld,node[0],node[1],extraNode[2]);
+    cornerValues[5] =  REALPART(np->size,np->Fld,extraNode[0],node[1],extraNode[2]);
+    cornerValues[6] =  REALPART(np->size,np->Fld,node[0],extraNode[1],extraNode[2]);
+    cornerValues[7] =  REALPART(np->size,np->Fld,extraNode[0],extraNode[1],extraNode[2]);
     beta = 1.0 - alpha[2];
     for (i=0; i<4; i++)
       cornerValues[i] = beta*cornerValues[i] + alpha[2]*cornerValues[i+4];
@@ -1580,7 +1586,8 @@ INT Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
       cornerValues[i] = beta*cornerValues[i] + alpha[1]*cornerValues[i+2];
     beta = 1.0 - alpha[0];
     out[0] = beta*cornerValues[0] + alpha[0]*cornerValues[1];
-    break;
+  }
+  break;
   default :
     return(1);
   }
@@ -1591,16 +1598,22 @@ INT Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
     out[0] = (REALPART(np->size,np->Fld,node[0],node[1]) - np->mean) / sqrt(np->var);
     break;
   case TRUE :
+  {
+    INT extraNode[DIM];
+
+    for (i=0; i<DIM; i++)
+      extraNode[i] = (node[i]+1) % np->size[i];
     cornerValues[0] =  REALPART(np->size,np->Fld,node[0],node[1]);
-    cornerValues[1] =  REALPART(np->size,np->Fld,node[0]+1,node[1]);
-    cornerValues[2] =  REALPART(np->size,np->Fld,node[0],node[1]+1);
-    cornerValues[3] =  REALPART(np->size,np->Fld,node[0]+1,node[1]+1);
+    cornerValues[1] =  REALPART(np->size,np->Fld,extraNode[0],node[1]);
+    cornerValues[2] =  REALPART(np->size,np->Fld,node[0],extraNode[1]);
+    cornerValues[3] =  REALPART(np->size,np->Fld,extraNode[0],extraNode[1]);
     beta = 1.0 - alpha[1];
     for (i=0; i<2; i++)
       cornerValues[i] = beta*cornerValues[i] + alpha[1]*cornerValues[i+2];
     beta = 1.0 - alpha[0];
     out[0] = beta*cornerValues[0] + alpha[0]*cornerValues[1];
-    break;
+  }
+  break;
   default :
     return(1);
   }
