@@ -39,6 +39,7 @@
 #include "general.h"
 #include "devices.h"
 
+#include "ugblas.h"
 #include "disctools.h"
 
 /****************************************************************************/
@@ -326,6 +327,54 @@ INT GetElementVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD, DOUBLE **vp
     vtype = VTYPE(theVec[i]);
     for (j=0; j<VD_NCMPS_IN_TYPE (theVD,vtype); j++)
       vptr[m++] = VVALUEPTR(theVec[i],VD_CMP_OF_TYPE(theVD,vtype,j));
+  }
+
+  return (m);
+}
+
+/****************************************************************************/
+/*D
+   GetElementVValue - get list of DOUBLE values for vectors
+
+   SYNOPSIS:
+   INT GetElementVValues (ELEMENT *theElement, VECDATA_DESC *theVD,
+   DOUBLE *value);
+
+   PARAMETERS:
+   .  theElement - pointer to an element
+   .  theVD - type vector descriptor
+   .  value - pointer to double values
+
+   DESCRIPTION:
+   This function gets all local vector values corresponding to an element.
+
+   RETURN VALUE:
+   INT
+   .n    number of components
+   .n    -1 if error occured
+   D*/
+/****************************************************************************/
+
+INT GetElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
+                       DOUBLE *value)
+{
+  VECTOR *theVec[MAX_NODAL_VECTORS];
+  DOUBLE *vptr;
+  INT i,j,m,cnt,vtype;
+
+  cnt = GetAllVectorsOfElementOfType(theElement,theVec,theVD);
+
+  if (cnt > MAX_NODAL_VECTORS || cnt < 1)
+    return(-1);
+
+  m = 0;
+  for (i=0; i<cnt; i++) {
+    vtype = VTYPE(theVec[i]);
+    vptr = VVALUEPTR(theVec[i],VD_CMP_OF_TYPE(theVD,vtype,0));
+    for (j=0; j<VD_NCMPS_IN_TYPE (theVD,vtype); j++) {
+      value[m++] = *vptr;
+      vptr++;
+    }
   }
 
   return (m);
@@ -1139,36 +1188,45 @@ INT AssembleDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
 /****************************************************************************/
 
 INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
-                                    const VECDATA_DESC *Sol, const VECDATA_DESC *Rhs)
+                                    const VECDATA_DESC *Sol,
+                                    const VECDATA_DESC *Rhs)
 {
   VECTOR *theVector;
   MATRIX *theMatrix;
   INT i,j,comp1,comp2,ncomp,dcomp,type,dtype;
 
   for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL;
-       theVector=SUCCVC(theVector))
-  {
+       theVector=SUCCVC(theVector)) {
     type = VTYPE(theVector);
     ncomp = VD_NCMPS_IN_TYPE (Sol,type);
     if (ncomp == 0) continue;
     for (j=0; j<ncomp; j++)
-      if (VECSKIP(theVector) & (1<<j))
-      {
+      if (VECSKIP(theVector) & (1<<j)) {
         comp1 = VD_CMP_OF_TYPE(Sol,type,j);
         comp2 = VD_CMP_OF_TYPE(Rhs,type,j);
-        VVALUE(theVector,comp2) =     VVALUE(theVector,comp1);
+        VVALUE(theVector,comp2) =       VVALUE(theVector,comp1);
         theMatrix = VSTART(theVector);
-        for (i=j*ncomp; i<(j+1)*ncomp; i++)
-          MVALUE(theMatrix,MD_MCMP_OF_RT_CT(Mat,type,type,i)) = 0.0;
-        MVALUE(theMatrix,MD_MCMP_OF_RT_CT(Mat,type,type,j+j*ncomp))=1.0;
+        for (i=0; i<ncomp; i++) {
+          MVALUE(theMatrix,
+                 MD_MCMP_OF_RT_CT(Mat,type,type,i*ncomp+j)) = 0.0;
+          MVALUE(theMatrix,
+                 MD_MCMP_OF_RT_CT(Mat,type,type,j*ncomp+i)) = 0.0;
+        }
+        MVALUE(theMatrix,
+               MD_MCMP_OF_RT_CT(Mat,type,type,j+j*ncomp)) = 1.0;
         for (theMatrix=MNEXT(theMatrix); theMatrix!=NULL;
-             theMatrix=MNEXT(theMatrix))
-        {
+             theMatrix=MNEXT(theMatrix)) {
           dtype = MDESTTYPE(theMatrix);
           dcomp = VD_NCMPS_IN_TYPE (Sol,dtype);
           if (dcomp == 0) continue;
-          for (i=j*dcomp; i<(j+1)*dcomp; i++)
-            MVALUE(theMatrix,MD_MCMP_OF_RT_CT(Mat,type,dtype,i)) =  MVALUE(MADJ(theMatrix),MD_MCMP_OF_RT_CT(Mat,type,dtype,i)) = 0.0;
+          for (i=0; i<dcomp; i++) {
+            MVALUE(theMatrix,
+                   MD_MCMP_OF_RT_CT(Mat,type,dtype,j*dcomp+i))
+              = 0.0;
+            MVALUE(MADJ(theMatrix),
+                   MD_MCMP_OF_RT_CT(Mat,dtype,type,i*ncomp+j))
+              = 0.0;
+          }
         }
       }
   }
@@ -1203,7 +1261,7 @@ INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
 INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
 {
   VECTOR *v;
-  DOUBLE pos[DIM];
+  DOUBLE_VECTOR pos;
   INT comp,ncomp,j;
 
   for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
@@ -1222,7 +1280,46 @@ INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
     UserWriteF("   cl %d %d sk ",VCLASS(v),VNCLASS(v));
     for (j=0; j<ncomp; j++)
       UserWriteF("%d ",((VECSKIP(v) & (1<<j))!=0));
-    UserWrite("\n");
+    UserWriteF("n %d\n",VNEW(v));
+  }
+
+  return(NUM_OK);
+}
+
+INT PrintSVector (MULTIGRID *mg, VECDATA_DESC *X)
+{
+  VECTOR *v;
+  DOUBLE_VECTOR pos;
+  INT vtype,comp,ncomp,j,lev;
+
+  for (vtype=0; vtype<NVECTYPES; vtype++) {
+    ncomp = VD_NCMPS_IN_TYPE(X,vtype);
+    if (ncomp == 0) continue;
+    comp = VD_CMP_OF_TYPE(X,vtype,0);
+    S_BELOW_VLOOP__TYPE(lev,0,CURRENTLEVEL(mg),v,mg,vtype) {
+      VectorPosition(v,pos);
+      UserWriteF("x=%5.2f y=%5.2f ",pos[0],pos[1]);
+      if (DIM == 3)
+        UserWriteF("z=%5.2f ",pos[2]);
+      for (j=0; j<ncomp; j++)
+        UserWriteF("u[%d]=%15.8lf ",j,VVALUE(v,comp+j));
+      UserWriteF("   cl %d %d sk ",VCLASS(v),VNCLASS(v));
+      for (j=0; j<ncomp; j++)
+        UserWriteF("%d ",((VECSKIP(v) & (1<<j))!=0));
+      UserWriteF("\n");
+    }
+    S_FINE_VLOOP__TYPE(CURRENTLEVEL(mg),v,mg,vtype) {
+      VectorPosition(v,pos);
+      UserWriteF("x=%5.2f y=%5.2f ",pos[0],pos[1]);
+      if (DIM == 3)
+        UserWriteF("z=%5.2f ",pos[2]);
+      for (j=0; j<ncomp; j++)
+        UserWriteF("u[%d]=%15.8lf ",j,VVALUE(v,comp+j));
+      UserWriteF("   cl %d %d sk ",VCLASS(v),VNCLASS(v));
+      for (j=0; j<ncomp; j++)
+        UserWriteF("%d ",((VECSKIP(v) & (1<<j))!=0));
+      UserWriteF("\n");
+    }
   }
 
   return(NUM_OK);
@@ -1276,6 +1373,35 @@ INT PrintMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
         Mcomp = MD_MCMP_OF_RT_CT(Mat,rtype,ctype,i*ccomp);
         for (j=0; j<ccomp; j++)
           UserWriteF("%4.2lf ",MVALUE(m,Mcomp+j));
+      }
+      UserWrite("\n");
+    }
+  }
+
+  return(NUM_OK);
+}
+
+INT PrintTMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
+{
+  VECTOR *v;
+  MATRIX *m;
+  INT Mcomp,rcomp,ccomp,i,j,rtype,ctype;
+
+  for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+  {
+    if (VCLASS(v) > vclass) continue;
+    if (VNCLASS(v) > vnclass) continue;
+    rtype = VTYPE(v);
+    ccomp = MD_COLS_IN_RT_CT(Mat,rtype,rtype);
+    for (i=0; i<ccomp; i++)
+    {
+      for (m=VSTART(v); m!=NULL; m = MNEXT(m))
+      {
+        ctype = MDESTTYPE(MADJ(m));
+        rcomp = MD_ROWS_IN_RT_CT(Mat,rtype,ctype);
+        Mcomp = MD_MCMP_OF_RT_CT(Mat,rtype,ctype,0);
+        for (j=0; j<rcomp; j++)
+          UserWriteF("%4.2lf ",MVALUE(MADJ(m),Mcomp+j*ccomp+i));
       }
       UserWrite("\n");
     }
