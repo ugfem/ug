@@ -1,0 +1,61 @@
+This file describes how to create lgm and ng files for UG
+using the cubit mesh generation toolkit.
+
+1. How to create a lgm domain file with cubit
+
+This involves four steps
+
+1.1 Here is a sample cubit journal file which 
+creates two files:
+- a surface mesh file cyli_lgm.gen and
+- a log file with necessary information which
+	cannot be reconstructed from the surface mesh
+	file. The information includes volumes ids and 
+	curve information of surfaces.
+
+# construct a consistent geometry
+import iges '../models/cylinder_in_box_asm.igs'
+body all scale 0.001
+imprint body all #keep
+body 1 copy
+subtract body 3 from 2
+merge all
+
+# mesh the surfaces
+curve all size 1
+surface all scheme trimesh
+mesh surface all
+
+# write associativity information in surface mesh file
+set nodeset Associativity on
+set nodeset Associativity Complete on
+
+# write the surface mesh file 
+# in netcdf exodus II format
+export genesis 'cyli_lgm.gen'
+
+# logfile with additional information
+logging on file 'cyli.log'
+list volume all
+list surface all
+
+
+1.2 Transform the surface mesh file in readable format
+	
+This uses the netcdf tools ncdump
+ncdump cyli_lgm.gen > cyli_lgm.gen.txt
+
+
+1.3 Add logfile info to the surface mesh file
+
+ugexo2lgm_amd cyli.log cyli_lgm.gen.txt
+
+
+1.4 Create a lgm domain file
+
+ugexo2lgm cyli_lgm.gen.txt cyli.lgm
+
+
+2. How to create a ng file with cubit
+
+
