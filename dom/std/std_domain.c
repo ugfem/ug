@@ -283,7 +283,6 @@ BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id, BndCondProcPtr 
 }
 #endif
 
-
 /****************************************************************************/
 /*D
    GetFirstBoundaryCondition - Get first BNDCOND structure of `theProblem`
@@ -303,7 +302,6 @@ BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id, BndCondProcPtr 
    .n      NULL if not found or error.
    D*/
 /****************************************************************************/
-
 BOUNDARY_CONDITION *GetFirstBoundaryCondition (PROBLEM *theProblem)
 {
   ENVITEM *theItem;
@@ -315,7 +313,6 @@ BOUNDARY_CONDITION *GetFirstBoundaryCondition (PROBLEM *theProblem)
   else
     return (GetNextBoundaryCondition((BOUNDARY_CONDITION *) theItem));
 }
-
 
 /****************************************************************************/
 /*D
@@ -336,7 +333,6 @@ BOUNDARY_CONDITION *GetFirstBoundaryCondition (PROBLEM *theProblem)
    .n      NULL if not found or error.
    D*/
 /****************************************************************************/
-
 BOUNDARY_CONDITION *GetNextBoundaryCondition (BOUNDARY_CONDITION *theBCond)
 {
   ENVITEM *theItem;
@@ -404,7 +400,6 @@ DOMAIN *CreateDomain (char *name, COORD *MidPoint, COORD radius, INT segments, I
   return(newDomain);
 }
 
-
 /****************************************************************************/
 /*D
    GetDomain  - Get a pointer to a domain structure
@@ -430,7 +425,6 @@ DOMAIN *GetDomain (char *name)
 {
   return((DOMAIN *) SearchEnv(name,"/Domains",theDomainDirID,theDomainDirID));
 }
-
 
 /****************************************************************************/
 /*D
@@ -495,7 +489,6 @@ BOUNDARY_SEGMENT *CreateBoundarySegment (char *name,
   return(newSegment);
 }
 
-
 /****************************************************************************/
 /*D
    GetFirstBoundarySegment - Get first boundary segment of a domain
@@ -527,7 +520,6 @@ BOUNDARY_SEGMENT *GetFirstBoundarySegment (DOMAIN *theDomain)
   else
     return (GetNextBoundarySegment((BOUNDARY_SEGMENT *) theItem));
 }
-
 
 /****************************************************************************/
 /*D
@@ -802,6 +794,7 @@ INT BVP_GetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
   theBVPDesc->numOfCoeffFct       = theBVP->numOfCoeffFct;
   theBVPDesc->numOfUserFct        = theBVP->numOfUserFct;
   theBVPDesc->ConfigProc          = theBVP->ConfigProblem;
+  theBVPDesc->id                  = theBVP->problemId;
 
   return (0);
 }
