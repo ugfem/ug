@@ -1,45 +1,45 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  ugblas.c														*/
-/*																			*/
-/* Purpose:   basic linear algebra routines                                                             */
-/*			  working on the matrix-vector and								*/
-/*			  matrix-blockvector structure									*/
-/*																			*/
-/* Author:	  Henrik Rentz-Reichert                                                                                 */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*																			*/
-/*			  blockvector routines from:									*/
-/*			  Christian Wrobel                                                                              */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*																			*/
-/*			  email: ug@ica3.uni-stuttgart.de					                */
-/*																			*/
-/* History:   06.03.95 begin, ug version 3.0								*/
-/*			  28.09.95 blockvector routines implemented (Christian Wrobel)	*/
-/*			  22.08.03 corrections concering skip flags for many components	*/
-/*			           in a vector data descriptor. Not adapted for the     */
-/*			           block vectors, AMG and Galerkin approximations!		*/
-/*			           Switch on by macro _XXL_SKIPFLAGS_ (else not active).*/
-/*																			*/
-/* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                          */
+/* File:      ugblas.c                                                      */
+/*                                                                          */
+/* Purpose:   basic linear algebra routines                                 */
+/*            working on the matrix-vector and                              */
+/*            matrix-blockvector structure                                  */
+/*                                                                          */
+/* Author:    Henrik Rentz-Reichert                                         */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*                                                                          */
+/* blockvector routines from:                                               */
+/*            Christian Wrobel                                              */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*                                                                          */
+/* email:     ug@ica3.uni-stuttgart.de                                      */
+/*                                                                          */
+/* History:   06.03.95 begin, ug version 3.0                                */
+/*            28.09.95 blockvector routines implemented (Christian Wrobel)  */
+/*            22.08.03 corrections concering skip flags for many components */
+/*                     in a vector data descriptor. Not adapted for the     */
+/*                     block vectors, AMG and Galerkin approximations!      */
+/*                     Switch on by macro _XXL_SKIPFLAGS_ (else not active).*/
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* include files															*/
-/*			  system include files											*/
-/*			  application include files                                                                     */
-/*																			*/
+/*                                                                          */
+/* include files                                                            */
+/* system include files                                                     */
+/* application include files                                                */
+/*                                                                          */
 /****************************************************************************/
 
 #include <stdio.h>
@@ -75,13 +75,13 @@ using namespace UG3d;
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*    compile time constants defining static data size (i.e. arrays)        */
+/*    other constants                                                       */
+/*    macros                                                                */
+/*                                                                          */
 /****************************************************************************/
 
 #undef _SPARSE_
@@ -92,17 +92,22 @@ using namespace UG3d;
 
 #define MATARRAYSIZE 512
 
-/* macros to define VEC_SCALAR, VECDATA_DESC and MATDATA_DESC components */
+/** @name Macros to define VEC_SCALAR, VECDATA_DESC and MATDATA_DESC components */
+/*@{ */
 #define DEFINE_VS_CMPS(a)                               register DOUBLE a ## 0,a ## 1,a ## 2
 #define DEFINE_VD_CMPS(x)                               register INT x ## 0,x ## 1,x ## 2
 #define DEFINE_MD_CMPS(m)                               register INT m ## 00,m ## 01,m ## 02,m ## 10,m ## 11,m ## 12,m ## 20,m ## 21,m ## 22
+/*@}*/
 
-/* macros to set VEC_SCALAR components */
+/** @name Macros to set VEC_SCALAR components */
+/*@{ */
 #define SET_VS_CMP_1(a,A,off,tp)                {a ## 0 = (A)[(off)[tp]];}
 #define SET_VS_CMP_2(a,A,off,tp)                {a ## 0 = (A)[(off)[tp]]; a ## 1 = (A)[(off)[tp]+1];}
 #define SET_VS_CMP_3(a,A,off,tp)                {a ## 0 = (A)[(off)[tp]]; a ## 1 = (A)[(off)[tp]+1]; a ## 2 = (A)[(off)[tp]+2];}
+/*@}*/
 
-/* macros to set VECDATA_DESC components */
+/** @name Macros to set VECDATA_DESC components */
+/*@{ */
 #define SET_VD_CMP_1(x,v,tp)                    {x ## 0 = VD_CMP_OF_TYPE(v,tp,0);}
 #define SET_VD_CMP_2(x,v,tp)                    {x ## 0 = VD_CMP_OF_TYPE(v,tp,0); x ## 1 = VD_CMP_OF_TYPE(v,tp,1);}
 #define SET_VD_CMP_3(x,v,tp)                    {x ## 0 = VD_CMP_OF_TYPE(v,tp,0); x ## 1 = VD_CMP_OF_TYPE(v,tp,1); x ## 2 = VD_CMP_OF_TYPE(v,tp,2);}
@@ -110,8 +115,10 @@ using namespace UG3d;
 #define SET_VD_CMP_N(x,v,tp)                    switch (VD_NCMPS_IN_TYPE(v,tp)) {case 1 : SET_VD_CMP_1(x,v,tp); break; \
                                                                                case 2 : SET_VD_CMP_2(x,v,tp); break; \
                                                                                case 3 : SET_VD_CMP_3(x,v,tp); break;}
+/*@}*/
 
-/* macros to set MATDATA_DESC components */
+/** @name Macros to set MATDATA_DESC components */
+/*@{ */
 #define SET_MD_CMP_11(m,M,rt,ct)                {m ## 00 = MD_MCMP_OF_RT_CT(M,rt,ct,0);}
 #define SET_MD_CMP_12(m,M,rt,ct)                {m ## 00 = MD_MCMP_OF_RT_CT(M,rt,ct,0); m ## 01 = MD_MCMP_OF_RT_CT(M,rt,ct,1);}
 #define SET_MD_CMP_13(m,M,rt,ct)                {m ## 00 = MD_MCMP_OF_RT_CT(M,rt,ct,0); m ## 01 = MD_MCMP_OF_RT_CT(M,rt,ct,1); m ## 02 = MD_MCMP_OF_RT_CT(M,rt,ct,2);}
@@ -135,24 +142,25 @@ using namespace UG3d;
 #else
 #define PRINTVEC(x)             {PrintDebug("contents of " STR(x) ":\n");PrintVectorX(GRID_ON_LEVEL(mg,tl),x,3,3,printf);}
 #endif
+/*@}*/
 
 /****************************************************************************/
-/*																			*/
-/* data structures used in this source file (exported data structures are	*/
-/*		  in the corresponding include file!)								*/
-/*																			*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                          */
+/* data structures used in this source file (exported data structures are   */
+/* in the corresponding include file!)                                      */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
+/****************************************************************************/
+
+/****************************************************************************/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 #ifdef ModelP
@@ -204,9 +212,9 @@ const static char RCS_ID("$Header$",UG_RCS_STRING);
 REP_ERR_FILE;
 
 /****************************************************************************/
-/*																			*/
-/* forward declarations of functions used before they are defined			*/
-/*																			*/
+/*                                                                          */
+/* forward declarations of functions used before they are defined           */
+/*                                                                          */
 /****************************************************************************/
 
 INT NS_PREFIX TraceUGBlas (INT trace)
@@ -215,24 +223,18 @@ INT NS_PREFIX TraceUGBlas (INT trace)
 }
 
 /****************************************************************************/
-/*D
-   VecCheckConsistency - Check wether two VECDATA_DESCs match
+/** \brief Check wether two VECDATA_DESCs match
 
-   SYNOPSIS:
-   INT VecCheckConsistency (const VECDATA_DESC *x, const VECDATA_DESC *y)
+ * @param x - vector data descriptor
+ * @param y - vector data descriptor
 
-   PARAMETERS:
-   .  x - vector data descriptor
-   .  y - vector data descriptor
-
-   DESCRIPTION:
    This function checks wether the two VECDATA_DESCs match.
 
    RETURN VALUE:
    INT
    .n    NUM_OK if ok
    .n    NUM_DESC_MISMATCH if the type descriptors does not match
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX VecCheckConsistency (const VECDATA_DESC *x, const VECDATA_DESC *y)
@@ -254,19 +256,13 @@ INT NS_PREFIX VecCheckConsistency (const VECDATA_DESC *x, const VECDATA_DESC *y)
 }
 
 /****************************************************************************/
-/*D
-   MatmulCheckConsistency - Check the consistency of the data descriptors
+/** \brief Check the consistency of the data descriptors
 
-   SYNOPSIS:
-   INT MatmulCheckConsistency (const VECDATA_DESC *x, const MATDATA_DESC *M,
-   const VECDATA_DESC *y )
+ * @param x - vector data descriptor
+ * @param M - matrix data descriptor
+ * @param y - vector data descriptor
 
-   PARAMETERS:
-   .  x - vector data descriptor
-   .  M - matrix data descriptor
-   .  y - vector data descriptor
 
-   DESCRIPTION:
    This function checks whether the VECDATA_DESCs and the MATDATA_DESC
    match.
 
@@ -275,7 +271,7 @@ INT NS_PREFIX VecCheckConsistency (const VECDATA_DESC *x, const VECDATA_DESC *y)
    .n    NUM_OK if ok
    .n    NUM_DESC_MISMATCH if the type descriptors not match
    .n    NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX MatmulCheckConsistency (const VECDATA_DESC *x, const MATDATA_DESC *M, const VECDATA_DESC *y)
@@ -312,50 +308,30 @@ INT NS_PREFIX MatmulCheckConsistency (const VECDATA_DESC *x, const MATDATA_DESC 
 }
 
 /****************************************************************************/
-/* naming convention:														*/
-/*																			*/
-/* all names have the form													*/
-/*																			*/
-/* ?_function																*/
-/*																			*/
-/* where ? can be one of the letters:										*/
-/*																			*/
-/* l	operation working on a grid level									*/
-/* s	operation working on all fine grid dof's (surface)                  */
-/* a	operation working on all dofs on all levels                                             */
-/*																			*/
-/* (blockvector routines see below in this file)							*/
-/*																			*/
+/* naming convention:                                                       */
+/*                                                                          */
+/* all names have the form                                                  */
+/*                                                                          */
+/* ?_function                                                               */
+/*                                                                          */
+/* where ? can be one of the letters:                                       */
+/*                                                                          */
+/* l	operation working on a grid level                                    */
+/* s	operation working on all fine grid dof's (surface)                   */
+/* a	operation working on all dofs on all levels                          */
+/*                                                                          */
+/* (blockvector routines see below in this file)                            */
+/*                                                                          */
 /****************************************************************************/
 
 
 /****************************************************************************/
 /****************************************************************************/
-/* first parallel routines													*/
+/* first parallel routines                                                  */
 /****************************************************************************/
 /****************************************************************************/
 
 #ifdef ModelP
-/****************************************************************************/
-/*D
-   l_vector_consistent - builds the sum of the vector values on all copies
-
-   SYNOPSIS:
-   INT l_vector_consistent (GRID *g, const VECDATA_DESC *x);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  x - vector data descriptor
-
-   DESCRIPTION:
-   This function builds the sum of the vector values for all border vectors.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
 
 static int Gather_VectorComp (DDD_OBJ obj, void *data)
 {
@@ -406,6 +382,21 @@ static int Scatter_VectorComp (DDD_OBJ obj, void *data)
   return (NUM_OK);
 }
 
+/****************************************************************************/
+/** \brief Builds the sum of the vector values on all copies
+
+ * @param g - pointer to grid
+ * @param x - vector data descriptor
+
+
+   This function builds the sum of the vector values for all border vectors.
+
+   RETURN VALUE:
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+ */
+/****************************************************************************/
+
 INT l_vector_consistent (GRID *g, const VECDATA_DESC *x)
 {
   INT tp,m;
@@ -421,26 +412,6 @@ INT l_vector_consistent (GRID *g, const VECDATA_DESC *x)
   return (NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   l_vector_consistent_noskip - builds the sum of the vector values on all copies
-
-   SYNOPSIS:
-   INT l_vector_consistent_noskip (GRID *g, const VECDATA_DESC *x);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  x - vector data descriptor
-
-   DESCRIPTION:
-   This function builds the sum of the vector values for all border vectors.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
 
 static int Scatter_VectorComp_noskip (DDD_OBJ obj, void *data)
 {
@@ -463,6 +434,27 @@ static int Scatter_VectorComp_noskip (DDD_OBJ obj, void *data)
   return (NUM_OK);
 }
 
+/****************************************************************************/
+/** \brief
+   l_vector_consistent_noskip - builds the sum of the vector values on all copies
+
+   SYNOPSIS:
+   INT l_vector_consistent_noskip (GRID *g, const VECDATA_DESC *x);
+
+   PARAMETERS:
+ * @param g - pointer to grid
+ * @param x - vector data descriptor
+
+
+   This function builds the sum of the vector values for all border vectors.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+ */
+/****************************************************************************/
+
 INT l_vector_consistent_noskip (GRID *g, const VECDATA_DESC *x)
 {
   INT tp,m;
@@ -479,26 +471,20 @@ INT l_vector_consistent_noskip (GRID *g, const VECDATA_DESC *x)
 }
 
 /****************************************************************************/
-/*D
-   a_vector_consistent - builds the sum of the vector values on all copies
+/** \brief Builds the sum of the vector values on all copies
 
-   SYNOPSIS:
-   INT a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - from level
+ * @param x - vector data descriptor
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - from level
-   .  x - vector data descriptor
 
-   DESCRIPTION:
    This function builds the sum of the vector values for all border vectors.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
@@ -547,30 +533,6 @@ INT NS_PREFIX a_vector_consistent_noskip (MULTIGRID *mg, INT fl, INT tl, const V
   return (NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   l_vector_consistentBS - builds the sum of the vector values within the blockvector on all copies
-
-   SYNOPSIS:
-   INT l_vector_consistentBS (GRID *g, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT x);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  bvd - description of the blockvector
-   .  bvdf - format to interpret bvd
-   .  x - vector data
-
-   DESCRIPTION:
-   This function builds the sum of the vector values within the specified
-   blockvector for all master and border vectors; the result is stored in all
-   master and border vectors.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
 
 #ifdef __BLOCK_VECTOR_DESC__
 static int Gather_VectorCompBS (DDD_OBJ obj, void *data)
@@ -596,6 +558,25 @@ static int Scatter_VectorCompBS (DDD_OBJ obj, void *data)
   return (NUM_OK);
 }
 
+/****************************************************************************/
+/** \brief Builds the sum of the vector values within the blockvector on all copies
+
+ * @param g - pointer to grid
+ * @param bvd - description of the blockvector
+ * @param bvdf - format to interpret bvd
+ * @param x - vector data
+
+
+   This function builds the sum of the vector values within the specified
+   blockvector for all master and border vectors; the result is stored in all
+   master and border vectors.
+
+   RETURN VALUE:
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+ */
+/****************************************************************************/
+
 INT NS_PREFIX l_vector_consistentBS (GRID *g, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT x)
 {
   ConsBvd = bvd;
@@ -612,26 +593,6 @@ INT NS_PREFIX l_vector_consistentBS (GRID *g, const BV_DESC *bvd, const BV_DESC_
 }
 #endif
 
-/****************************************************************************/
-/*D
-   l_ghostvector_consistent - copy values of masters to ghosts
-
-   SYNOPSIS:
-   INT l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  x - vector data descriptor
-
-   DESCRIPTION:
-   This function copies the vector values of master vectors to ghost vectors.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
 
 static int Scatter_GhostVectorComp (DDD_OBJ obj, void *data)
 {
@@ -654,6 +615,21 @@ static int Scatter_GhostVectorComp (DDD_OBJ obj, void *data)
   return (NUM_OK);
 }
 
+/****************************************************************************/
+/** \brief Copy values of masters to ghosts
+
+ * @param g - pointer to grid
+ * @param x - vector data descriptor
+
+
+   This function copies the vector values of master vectors to ghost vectors.
+
+   RETURN VALUE:
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+ */
+/****************************************************************************/
+
 INT NS_PREFIX l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x)
 {
   INT tp,m;
@@ -671,28 +647,21 @@ INT NS_PREFIX l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x)
 }
 
 /****************************************************************************/
-/*D
-   a_outervector_consistent - makes horizontal ghosts consistent
+/** \brief Makes horizontal ghosts consistent
 
-   SYNOPSIS:
-   INT a_outervector_consistent (MULTIGRID *mg, INT fl, INT tl,
-   const VECDATA_DESC *x);
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - from level
+ * @param x - vector data descriptor
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - from level
-   .  x - vector data descriptor
 
-   DESCRIPTION:
    This function copies the vector values on the master vectors to the
    horizontal ghosts.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX a_outervector_consistent (MULTIGRID *mg, INT fl, INT tl,
@@ -719,28 +688,7 @@ INT NS_PREFIX a_outervector_consistent (MULTIGRID *mg, INT fl, INT tl,
   return (NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   a_elementdata_consistent - makes element data  consistent
 
-   SYNOPSIS:
-   INT a_elementdata_consistent (MULTIGRID *mg, INT fl, INT tl);
-
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - from level
-
-   DESCRIPTION:
-   This function copies the element data field form all masters to the
-   copy elements.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
 
 static int Gather_EData (DDD_OBJ obj, void *data)
 {
@@ -760,6 +708,22 @@ static int Scatter_EData (DDD_OBJ obj, void *data)
   return (0);
 }
 
+/****************************************************************************/
+/** \brief Makes element data  consistent
+
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - from level
+
+
+   This function copies the element data field form all masters to the
+   copy elements.
+
+   RETURN VALUE:
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+ */
+/****************************************************************************/
 INT NS_PREFIX a_elementdata_consistent (MULTIGRID *mg, INT fl, INT tl)
 {
   INT level;
@@ -779,27 +743,7 @@ INT NS_PREFIX a_elementdata_consistent (MULTIGRID *mg, INT fl, INT tl)
   return (NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   a_nodedata_consistent - makes element data  consistent
 
-   SYNOPSIS:
-   INT a_nodedata_consistent (MULTIGRID *mg, INT fl, INT tl);
-
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - from level
-
-   DESCRIPTION:
-   This function adds the node data field form all borders and masters.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
 
 static INT DataSizePerNode;
 
@@ -821,6 +765,21 @@ static int Scatter_NData (DDD_OBJ obj, void *data)
   return (0);
 }
 
+/****************************************************************************/
+/** \brief Makes node data  consistent
+
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - from level
+
+
+   This function adds the node data field form all borders and masters.
+
+   RETURN VALUE:
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+ */
+/****************************************************************************/
 INT NS_PREFIX a_nodedata_consistent (MULTIGRID *mg, INT fl, INT tl)
 {
   INT level;
@@ -840,26 +799,6 @@ INT NS_PREFIX a_nodedata_consistent (MULTIGRID *mg, INT fl, INT tl)
   return (NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   l_ghostvector_project - copy values of ghosts to masters
-
-   SYNOPSIS:
-   INT l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  x - vector data descriptor
-
-   DESCRIPTION:
-   This function copies the vector values of master vectors to ghost vectors.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
 
 static int Gather_ProjectVectorComp (DDD_OBJ obj, void *data)
 {
@@ -912,6 +851,20 @@ static int Scatter_ProjectVectorComp (DDD_OBJ obj, void *data)
 
   return (NUM_OK);
 }
+/****************************************************************************/
+/** \brief Copy values of ghosts to masters
+
+ * @param g - pointer to grid
+ * @param x - vector data descriptor
+
+
+   This function copies the vector values of master vectors to ghost vectors.
+
+   RETURN VALUE:
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+ */
+/****************************************************************************/
 
 INT NS_PREFIX l_ghostvector_project (GRID *g, const VECDATA_DESC *x)
 {
@@ -930,27 +883,7 @@ INT NS_PREFIX l_ghostvector_project (GRID *g, const VECDATA_DESC *x)
   return (NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   l_vector_collect - collects the vector values of all copies
 
-   SYNOPSIS:
-   INT l_vector_collect (GRID *g, const VECDATA_DESC *x);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  x - vector data descriptor
-
-   DESCRIPTION:
-   This function collects the sum of the vector values for all border vectors
-   to the master vector.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
 
 static int Gather_VectorCompCollect (DDD_OBJ obj, void *data)
 {
@@ -977,6 +910,21 @@ static int Gather_VectorCompCollect (DDD_OBJ obj, void *data)
   return (NUM_OK);
 }
 
+/****************************************************************************/
+/** \brief Collects the vector values of all copies
+
+ * @param g - pointer to grid
+ * @param x - vector data descriptor
+
+
+   This function collects the sum of the vector values for all border vectors
+   to the master vector.
+
+   RETURN VALUE:
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+ */
+/****************************************************************************/
 INT NS_PREFIX l_vector_collect (GRID *g, const VECDATA_DESC *x)
 {
   INT tp,m;
@@ -994,27 +942,21 @@ INT NS_PREFIX l_vector_collect (GRID *g, const VECDATA_DESC *x)
 }
 
 /****************************************************************************/
-/*D
-   a_vector_collect - collects the vector values of all copies
+/** \brief Collect the vector values of all copies
 
-   SYNOPSIS:
-   INT a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - from level
+ * @param x - vector data descriptor
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - from level
-   .  x - vector data descriptor
 
-   DESCRIPTION:
    This function collects the sum of the vector values for all border vectors
    to the master vector.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
@@ -1063,28 +1005,6 @@ INT NS_PREFIX a_vector_collect_noskip (MULTIGRID *mg, INT fl, INT tl, const VECD
   return (NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   a_vector_vecskip - checks vecskip flags
-
-   SYNOPSIS:
-   INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
-
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - from level
-   .  x - vector data descriptor
-
-   DESCRIPTION:
-   This function checks the vecskip flags and exchanges Dirichlet values.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
 
 static int Gather_VectorVecskip (DDD_OBJ obj, void *data)
 {
@@ -1170,6 +1090,23 @@ static int Scatter_GhostVectorVecskip (DDD_OBJ obj, void *data)
   return (NUM_OK);
 }
 
+/****************************************************************************/
+/** \brief Checks vecskip flags
+
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - from level
+ * @param x - vector data descriptor
+
+
+   This function checks the vecskip flags and exchanges Dirichlet values.
+
+   RETURN VALUE:
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+ */
+/****************************************************************************/
+
 INT NS_PREFIX a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 {
   INT level,tp,m;
@@ -1212,25 +1149,19 @@ INT NS_PREFIX a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DES
 }
 
 /****************************************************************************/
-/*D
-   l_ghostvector_collect - collects the vector values of all copies
+/** \brief Collects the vector values of all copies
 
-   SYNOPSIS:
-   INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x);
+ * @param g - pointer to grid
+ * @param x - vector data descriptor
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  x - vector data descriptor
 
-   DESCRIPTION:
    This function collects the sum of the vector values for all ghost vectors
    to the master vector.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX l_ghostvector_collect (GRID *g, const VECDATA_DESC *x)
@@ -1249,27 +1180,6 @@ INT NS_PREFIX l_ghostvector_collect (GRID *g, const VECDATA_DESC *x)
   return (NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   l_ghostmatrix_collect - collects ghostmatrix entries for Galerkin assembling
-
-   SYNOPSIS:
-   INT l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  A - matrix data descriptor
-
-   DESCRIPTION:
-   This function collects the matrix entries of ghost elements.
-   It is called in 'AssembleGalerkinByMatrix'.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
 
 /* !!! */
 static int Gather_MatrixCollect (DDD_OBJ obj, void *data)
@@ -1307,7 +1217,22 @@ static int Scatter_MatrixCollect (DDD_OBJ obj, void *data)
   return (NUM_OK);
 }
 
-/* !!! */
+/****************************************************************************/
+/** \brief Collects ghostmatrix entries for Galerkin assembling
+
+ * @param g - pointer to grid
+ * @param A - matrix data descriptor
+
+
+   This function collects the matrix entries of ghost elements.
+   It is called in 'AssembleGalerkinByMatrix'.
+
+   RETURN VALUE:
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+ */
+/****************************************************************************/
+
 INT NS_PREFIX l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A)
 {
   INT rtp,m;
@@ -1326,28 +1251,6 @@ INT NS_PREFIX l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A)
   return (NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   l_amgmatrix_collect - collects ghostmatrix entries for AMG method
-
-   SYNOPSIS:
-   INT l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  A - matrix data descriptor
-
-   DESCRIPTION:
-   This function collects the matrix entries of vertical ghosts on the
-   first AMG-level stored on one processor.
-   It is called in 'AMGAgglomerate'.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
 
 /* !!! */
 static int Gather_AMGMatrixCollect (DDD_OBJ obj, void *data)
@@ -1565,6 +1468,23 @@ static int CountAndSortMatrices (DDD_OBJ obj)
 }
 
 /* !!! */
+/****************************************************************************/
+/** \brief Collects ghostmatrix entries for AMG method
+
+ * @param g - pointer to grid
+ * @param A - matrix data descriptor
+
+
+   This function collects the matrix entries of vertical ghosts on the
+   first AMG-level stored on one processor.
+   It is called in 'AMGAgglomerate'.
+
+   RETURN VALUE:
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+ */
+/****************************************************************************/
+
 INT NS_PREFIX l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A)
 {
   INT mt;
@@ -1605,26 +1525,6 @@ INT NS_PREFIX l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A)
   return (NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   l_vector_meanvalue - averages the vector values of all copies
-
-   SYNOPSIS:
-   INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  x - vector data descriptor
-
-   DESCRIPTION:
-   This function builds the mean value of all vector values on border vectors.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
 
 int NS_PREFIX DDD_InfoPrioCopies (DDD_HDR hdr)
 {
@@ -1682,6 +1582,21 @@ static INT l_vector_average (GRID *g, const VECDATA_DESC *x)
   return(NUM_OK);
 }
 
+/****************************************************************************/
+/** \brief Averages the vector values of all copies
+
+ * @param g - pointer to grid
+ * @param x - vector data descriptor
+
+
+   This function builds the mean value of all vector values on border vectors.
+
+   RETURN VALUE:
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+ */
+/****************************************************************************/
+
 INT NS_PREFIX l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
 {
   INT tp,m;
@@ -1702,26 +1617,20 @@ INT NS_PREFIX l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
 }
 
 /****************************************************************************/
-/*D
-   a_vector_meanvalue - averages the vector values of all copies
+/** \brief Averages the vector values of all copies
 
-   SYNOPSIS:
-   INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - from level
+ * @param x - vector data descriptor
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - from level
-   .  x - vector data descriptor
 
-   DESCRIPTION:
    This function builds the mean value of all vector values on border vectors.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
@@ -1751,29 +1660,7 @@ INT NS_PREFIX a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_D
   return (NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   l_matrix_consistent - builds the sum of the matrix values on all copies
 
-   SYNOPSIS:
-   INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  M - matrix data descriptor
-   .  mode - consistence of the diagonal (MAT_DIAG_CONS), the complete row for
-          all master vectors (MAT_MASTER_CONS) or all (MAT_CONS)
-
-   DESCRIPTION:
-   This function builds the sum of the matrix values for
-   the matrix list of all border vectors.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
 
 /* !?! */
 static int Gather_DiagMatrixComp (DDD_OBJ obj, void *data)
@@ -2159,7 +2046,23 @@ static int CountAndSortInconsMatrices (DDD_OBJ obj)
 /** \todo  perhaps it would make sense to have two routines,
         one for diagonal matrix entries only and the other for
         diag. and off-diag. matrix entries. */
+/****************************************************************************/
+/** \brief Builds the sum of the matrix values on all copies
 
+ * @param g - pointer to grid
+ * @param M - matrix data descriptor
+ * @param mode - consistence of the diagonal (MAT_DIAG_CONS), the complete row for
+          all master vectors (MAT_MASTER_CONS) or all (MAT_CONS)
+
+
+   This function builds the sum of the matrix values for
+   the matrix list of all border vectors.
+
+   RETURN VALUE:
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+ */
+/****************************************************************************/
 INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 {
   INT mt;
@@ -2173,7 +2076,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
   PRINTDEBUG(np,2,("%2d: l_matrix_consistent mode\n",me,mode));
 
-  /* TODO: make consistency of diags and off-diags in one communication! */
+  /** \todo make consistency of diags and off-diags in one communication! */
 
   DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g),
                   MaxBlockSize*sizeof(DOUBLE),
@@ -2222,14 +2125,14 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 /****************************************************************************/
 /****************************************************************************/
-/* end of parallel routines													*/
+/* end of parallel routines                                                 */
 /****************************************************************************/
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/*		blas level 1 routines												*/
-/*																			*/
+/*                                                                          */
+/*        blas level 1 routines                                             */
+/*                                                                          */
 /****************************************************************************/
 
 #ifdef __MWCW__
@@ -2237,58 +2140,48 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 #endif
 
 /****************************************************************************/
-/*D
-   dset - set the given components of a vector to a given value
+/** \fn dset
+   \brief Set the given components of a vector to a given value
 
-   SYNOPSIS:
-   INT dset (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, DOUBLE a);
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - vector data descriptor
+ * @param a - the DOUBLE value
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - vector data descriptor
-   .  a - the DOUBLE value
 
-   DESCRIPTION:
    This function sets the given components of a vector to a given value.
 
    It runs from level fl to tl.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK
    .n    NUM_ERROR if error occured
 
    SEE ALSO:
    dsetBS
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
-   dsetBS - set one component of a vector to a given value
+/** \fn dsetBS
+   \brief Set one component of a vector to a given value
 
-   SYNOPSIS:
-   INT dsetBS (const BLOCKVECTOR *bv, INT xc, DOUBLE a);
+ * @param bv - BLOCKVECTOR specifying the vector list
+ * @param xc - component in the VECTOR
+ * @param a - the DOUBLE value
 
-   PARAMETERS:
-   .  bv - BLOCKVECTOR specifying the vector list
-   .  xc - component in the VECTOR
-   .  a - the DOUBLE value
 
-   DESCRIPTION:
    This function sets all components of a vector to a given value.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK
    .n    NUM_ERROR if error occured
 
    SEE ALSO:
    dset
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME      NS_PREFIX dset
@@ -2306,22 +2199,17 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 #include "vecfunc.ct"
 
 /****************************************************************************/
-/*D
-   dcopy - copy a vector
+/** \fn dcopy
+    \brief Copy a vector
 
-   SYNOPSIS:
-   INT dcopy (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
-   VECDATA_DESC *y);
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - destination vector data descriptor
+ * @param y - source vector data descriptor
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - destination vector data descriptor
-   .  y - source vector data descriptor
 
-   DESCRIPTION:
    This function copies a vector to another: `x := y`.
 
    It runs from level fl to tl.
@@ -2333,22 +2221,22 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    dcopyBS
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    dcopyBS - copy a vector
 
    SYNOPSIS:
    INT dcopyBS (const BLOCKVECTOR *bv, INT xc, INT yc);
 
-   PARAMETERS:
-   .  bv - BLOCKVECTOR specifying the vector list
-   .  xc - component in the destination VECTOR
-   .  yc - component in the source VECTOR
 
-   DESCRIPTION:
+ * @param bv - BLOCKVECTOR specifying the vector list
+ * @param xc - component in the destination VECTOR
+ * @param yc - component in the source VECTOR
+
+
    This function copies a vector to another: `x := y`.
 
    RETURN VALUE:
@@ -2358,7 +2246,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    dcopy
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME      NS_PREFIX dcopy
@@ -2415,22 +2303,22 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    dscal - scaling x with a
 
    SYNOPSIS:
    INT dscal (MULTIGRID *mg, INT fl, INT tl, INT mode,
    VECDATA_DESC *x, DOUBLE a);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - destination vector data descriptor
-   .  a - the scaling factor
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - destination vector data descriptor
+ * @param a - the scaling factor
+
+
    This function calculates `x := a * x`.
 
    It runs from level fl to tl.
@@ -2442,22 +2330,22 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    dscalx, dscalBS
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    dscalBS - scaling x with a
 
    SYNOPSIS:
    INT dscalBS (const BLOCKVECTOR *bv, INT xc, DOUBLE a);
 
-   PARAMETERS:
-   .  bv - BLOCKVECTOR specifying the vector list
-   .  xc - component in the VECTOR
-   .  a - the scaling factor
 
-   DESCRIPTION:
+ * @param bv - BLOCKVECTOR specifying the vector list
+ * @param xc - component in the VECTOR
+ * @param a - the scaling factor
+
+
    This function calculates `x := a * x`.
 
    RETURN VALUE:
@@ -2467,7 +2355,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    dscal
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME      NS_PREFIX dscal
@@ -2485,22 +2373,22 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 #include "vecfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    dscalx - scaling x with a
 
    SYNOPSIS:
    INT dscalx (MULTIGRID *mg, INT fl, INT tl, INT mode,
    VECDATA_DESC *x, VEC_SCALAR *a);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - destination vector data descriptor
-   .  a - DOUBLE value per component
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - destination vector data descriptor
+ * @param a - DOUBLE value per component
+
+
    This function calculates `x := a * x`.
 
    It runs from level fl to tl.
@@ -2512,7 +2400,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    dscal, dscalBS
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME      NS_PREFIX dscalx
@@ -2536,22 +2424,22 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 #include "vecfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    dadd - x plus y
 
    SYNOPSIS:
    INT dadd (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
    VECDATA_DESC *y);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - vector data descriptor
-   .  y - vector data descriptor
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - vector data descriptor
+ * @param y - vector data descriptor
+
+
    This function calculates `x := x + y`.
 
    It runs from level fl to tl.
@@ -2563,22 +2451,22 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    daddBS, dsub, dminusadd
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    daddBS - x plus y
 
    SYNOPSIS:
    INT daddBS (const BLOCKVECTOR *bv, INT xc, INT yc);
 
-   PARAMETERS:
-   .  bv - BLOCKVECTOR specifying the vector list
-   .  xc - component in the destination VECTOR
-   .  yc - component in the source VECTOR
 
-   DESCRIPTION:
+ * @param bv - BLOCKVECTOR specifying the vector list
+ * @param xc - component in the destination VECTOR
+ * @param yc - component in the source VECTOR
+
+
    This function calculates `x := x + y`.
 
    RETURN VALUE:
@@ -2588,7 +2476,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    dadd, dsubBS, dminusaddBS
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME      NS_PREFIX dadd
@@ -2626,22 +2514,22 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 #include "vecfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    dsub - x minus y
 
    SYNOPSIS:
    INT dsub (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
    VECDATA_DESC *y);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - vector data descriptor
-   .  y - vector data descriptor
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - vector data descriptor
+ * @param y - vector data descriptor
+
+
    This function calculates `x := x - y`.
 
    It runs from level fl to tl.
@@ -2653,22 +2541,22 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    dsubBS, dadd, dminusadd
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    dsubBS - x minus y
 
    SYNOPSIS:
    INT dsubBS (const BLOCKVECTOR *bv, INT xc, INT yc);
 
-   PARAMETERS:
-   .  bv - BLOCKVECTOR specifying the vector list
-   .  xc - component in the destination VECTOR
-   .  yc - component in the source VECTOR
 
-   DESCRIPTION:
+ * @param bv - BLOCKVECTOR specifying the vector list
+ * @param xc - component in the destination VECTOR
+ * @param yc - component in the source VECTOR
+
+
    This function calculates `x := x - y`.
 
    RETURN VALUE:
@@ -2678,7 +2566,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    dsub, daddBS, dminusaddBS
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME      NS_PREFIX dsub
@@ -2699,22 +2587,22 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 #include "vecfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    dminusadd - x := -x + y
 
    SYNOPSIS:
    INT dminusadd (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
    VECDATA_DESC *y);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - vector data descriptor
-   .  y - vector data descriptor
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - vector data descriptor
+ * @param y - vector data descriptor
+
+
    This function calculates `x := -x + y`.
 
    It runs from level fl to tl.
@@ -2726,22 +2614,22 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    dminusaddBS, dadd, dsub
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    dminusaddBS - x := -x + y
 
    SYNOPSIS:
    INT dminusaddBS (const BLOCKVECTOR *bv, INT xc, INT yc);
 
-   PARAMETERS:
-   .  bv - BLOCKVECTOR specifying the vector list
-   .  xc - component in the destination VECTOR
-   .  yc - component in the source VECTOR
 
-   DESCRIPTION:
+ * @param bv - BLOCKVECTOR specifying the vector list
+ * @param xc - component in the destination VECTOR
+ * @param yc - component in the source VECTOR
+
+
    This function calculates `x := -x + y`.
 
    RETURN VALUE:
@@ -2751,7 +2639,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    dminusadd, daddBS, dsubBS
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME      NS_PREFIX dminusadd
@@ -2772,23 +2660,23 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 #include "vecfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    daxpyx - x plus a times y
 
    SYNOPSIS:
    INT daxpyx (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
    const VEC_SCALAR a, VECDATA_DESC *y);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - vector data descriptor
-   .  a - DOUBLE value for every component of 'x'
-   .  y - vector data descriptor
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - vector data descriptor
+ * @param a - DOUBLE value for every component of 'x'
+ * @param y - vector data descriptor
+
+
    This function calculates `x := x + ay`.
 
    It runs from level fl to tl.
@@ -2800,7 +2688,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    daxpyBS, daxpy
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME      NS_PREFIX daxpyx
@@ -2823,23 +2711,23 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 #include "vecfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    daxpy - x plus a times y
 
    SYNOPSIS:
    INT daxpy (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
    DOUBLE a, VECDATA_DESC *y);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - vector data descriptor
-   .  a - scaling factor
-   .  y - vector data descriptor
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - vector data descriptor
+ * @param a - scaling factor
+ * @param y - vector data descriptor
+
+
    This function calculates `x := x + ay`.
 
    It runs from level fl to tl.
@@ -2851,23 +2739,23 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    daxpyBS, daxpyx
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    daxpyBS - x plus a times y
 
    SYNOPSIS:
    INT daxpyBS (const BLOCKVECTOR *bv, INT xc, DOUBLE a, INT yc);
 
-   PARAMETERS:
-   .  bv - BLOCKVECTOR specifying the vector list
-   .  xc - component in the destination VECTOR
-   .  a - scaling factor
-   .  yc - component in the source VECTOR
 
-   DESCRIPTION:
+ * @param bv - BLOCKVECTOR specifying the vector list
+ * @param xc - component in the destination VECTOR
+ * @param a - scaling factor
+ * @param yc - component in the source VECTOR
+
+
    This function calculates `x := x + ay`.
 
    RETURN VALUE:
@@ -2877,7 +2765,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    daxpy
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME      NS_PREFIX daxpy
@@ -2898,23 +2786,23 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 #include "vecfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    ddotx - scalar product of two vectors
 
    SYNOPSIS:
    INT ddotx (MULTIGRID *mg, INT fl, INT tl, INT mode,
    VECDATA_DESC *x, VECDATA_DESC *y, VEC_SCALAR a);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - vector data descriptor
-   .  y - vector data descriptor
-   .  a - DOUBLE value for every component of 'x'
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - vector data descriptor
+ * @param y - vector data descriptor
+ * @param a - DOUBLE value for every component of 'x'
+
+
    This function computes the scalar product of two vectors.
 
    It runs from level fl to tl.
@@ -2926,7 +2814,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    SEE ALSO:
    ddotBS, dnrm2, ddot, ddotw
-   D*/
+ */
 /****************************************************************************/
 
 static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
@@ -2996,24 +2884,24 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 #include "vecfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    ddotw - weighted scalar product of two vectors
 
    SYNOPSIS:
    INT ddotw (MULTIGRID *mg, INT fl, INT tl, INT mode,
    VECDATA_DESC *x, VECDATA_DESC *y, const VEC_SCALAR w, DOUBLE *s);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - vector data descriptor
-   .  y - vector data descriptor
-   .  w - weight factors
-   .  a - DOUBLE value for every component of 'x'
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - vector data descriptor
+ * @param y - vector data descriptor
+ * @param w - weight factors
+ * @param a - DOUBLE value for every component of 'x'
+
+
    This function computes the weighted scalar product of two vectors.
 
    It runs from level fl to tl.
@@ -3025,7 +2913,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
    SEE ALSO:
    ddotBS, dnrm2, ddot, ddotx
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME      NS_PREFIX ddotw
@@ -3052,23 +2940,23 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 #include "vecfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    ddot - scalar product of two vectors
 
    SYNOPSIS:
    INT ddot (MULTIGRID *mg, INT fl, INT tl, INT mode,
    const VECDATA_DESC *x, const VECDATA_DESC *y, DOUBLE *a);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - vector data descriptor
-   .  y - vector data descriptor
-   .  a - pointer to result
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - vector data descriptor
+ * @param y - vector data descriptor
+ * @param a - pointer to result
+
+
    This function computes the scalar product of two vectors.
 
    It runs from level fl to tl.
@@ -3080,23 +2968,23 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
    SEE ALSO:
    ddotBS, dnrm2, ddotx, ddotw
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    ddotBS - scalar product of two vectors
 
    SYNOPSIS:
    INT ddotBS (const BLOCKVECTOR *bv, INT xc, INT yc, DOUBLE *a);
 
-   PARAMETERS:
-   .  bv - BLOCKVECTOR specifying the vector list
-   .  xc - component in the destination VECTOR
-   .  yc - component in the source VECTOR
-   .  a - pointer to result
 
-   DESCRIPTION:
+ * @param bv - BLOCKVECTOR specifying the vector list
+ * @param xc - component in the destination VECTOR
+ * @param yc - component in the source VECTOR
+ * @param a - pointer to result
+
+
    This function computes the scalar product of two vectors.
 
    RETURN VALUE:
@@ -3106,7 +2994,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
    SEE ALSO:
    ddot, dnrm2BS
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME      NS_PREFIX ddot
@@ -3130,22 +3018,22 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 #include "vecfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    dnrm2x - euclidian norm of a vector
 
    SYNOPSIS:
    INT dnrm2x (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
    VEC_SCALAR a);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - vector data descriptor
-   .  a - DOUBLE value for every component of 'x'
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - vector data descriptor
+ * @param a - DOUBLE value for every component of 'x'
+
+
    This function computes the euclidian norm of a vector and stores it to a
    VEC_SCALAR.
 
@@ -3158,7 +3046,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
    SEE ALSO:
    dnrm2
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME      NS_PREFIX dnrm2x
@@ -3184,22 +3072,22 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 #include "vecfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    dnrm2 - euclidian norm of a vector
 
    SYNOPSIS:
    INT dnrm2 (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
    DOUBLE *a);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - vector data descriptor
-   .  a - pointer to result
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - vector data descriptor
+ * @param a - pointer to result
+
+
    This function computes the euclidian norm of a vector and stores it to
    a DOUBLE.
 
@@ -3212,22 +3100,22 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
    SEE ALSO:
    dnrm2BS, ddot
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    dnrm2BS - euclidian norm of a vector
 
    SYNOPSIS:
    INT dnrm2BS (const BLOCKVECTOR *bv, INT xc, DOUBLE *a);
 
-   PARAMETERS:
-   .  bv - BLOCKVECTOR specifying the vector list
-   .  xc - component in the destination VECTOR
-   .  a - pointer to result
 
-   DESCRIPTION:
+ * @param bv - BLOCKVECTOR specifying the vector list
+ * @param xc - component in the destination VECTOR
+ * @param a - pointer to result
+
+
    This function computes the euclidian norm of a vector and stores it to
    a DOUBLE.
 
@@ -3238,7 +3126,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
    SEE ALSO:
    dnrm2, ddotBS
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME      NS_PREFIX dnrm2
@@ -3270,12 +3158,12 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    dmatclear - Initialize a matrix with zero.
 
    SYNOPSIS:
    INT dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M);
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M)
@@ -3289,22 +3177,22 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    dmatset - initialize a matrix with a given value
 
    SYNOPSIS:
    INT dmatset (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M,
    DOUBLE a);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  M - matrix data descriptor
-   .  a - DOUBLE value
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param M - matrix data descriptor
+ * @param a - DOUBLE value
+
+
    This function sets all matrix entries to `a`.
 
    It runs from level fl to tl.
@@ -3316,25 +3204,25 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 
    SEE ALSO:
    dmatsetBS
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    dmatsetBS - initialize a matrix with a given value
 
    SYNOPSIS:
    INT dmatsetBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col,
    const BV_DESC_FORMAT *bvdf, INT mc, DOUBLE a);
 
-   PARAMETERS:
-   .  bv_row - BLOCKVECTOR specifying the row vector list
-   .  bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
-   .  bvdf - format to interpret bvd_col
-   .  mc - component in the MATRIX
-   .  a - DOUBLE value
 
-   DESCRIPTION:
+ * @param bv_row - BLOCKVECTOR specifying the row vector list
+ * @param bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
+ * @param bvdf - format to interpret bvd_col
+ * @param mc - component in the MATRIX
+ * @param a - DOUBLE value
+
+
    This function sets all matrix entries to `a`.
 
    RETURN VALUE:
@@ -3344,7 +3232,7 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 
    SEE ALSO:
    dmatset
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME     NS_PREFIX dmatset
@@ -3474,22 +3362,22 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 
 
 /****************************************************************************/
-/*D
+/** \brief
    dmatcopy - copy a matrix
 
    SYNOPSIS:
    INT dmatcopy (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M,
    const MATDATA_DESC *N);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  M - destination matrix data descriptor
-   .  N - source matrix data descriptor
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param M - destination matrix data descriptor
+ * @param N - source matrix data descriptor
+
+
    This function set all 'M := N'.
 
    It runs from level fl to tl.
@@ -3501,25 +3389,25 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 
    SEE ALSO:
    dmatcopyBS
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    dmatcopyBS - copy a matrix
 
    SYNOPSIS:
    INT dmatcopyBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col,
    const BV_DESC_FORMAT *bvdf, INT mc, INT nc);
 
-   PARAMETERS:
-   .  bv_row - BLOCKVECTOR specifying the row vector list
-   .  bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
-   .  bvdf - format to interpret bvd_col
-   .  mc - component in the destination MATRIX
-   .  nc - component in the source MATRIX
 
-   DESCRIPTION:
+ * @param bv_row - BLOCKVECTOR specifying the row vector list
+ * @param bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
+ * @param bvdf - format to interpret bvd_col
+ * @param mc - component in the destination MATRIX
+ * @param nc - component in the source MATRIX
+
+
    This function set all 'M := N'.
 
    RETURN VALUE:
@@ -3529,7 +3417,7 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 
    SEE ALSO:
    dmatcopy
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME     NS_PREFIX dmatcopy
@@ -3598,22 +3486,22 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 #include "matfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    dmatadd - add a matrix
 
    SYNOPSIS:
    INT dmatadd (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M,
    const MATDATA_DESC *N);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  M - destination matrix data descriptor
-   .  N - source matrix data descriptor
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param M - destination matrix data descriptor
+ * @param N - source matrix data descriptor
+
+
    This function sets 'M := M + N'.
 
    It runs from level fl to tl.
@@ -3625,26 +3513,26 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 
    SEE ALSO:
    dmataddBS, dmatmul
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    dmataddBS - add a matrix
 
    SYNOPSIS:
    INT dmataddBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col,
    const BV_DESC_FORMAT *bvdf, INT mc, INT nc);
 
-   PARAMETERS:
-   .  bv_row - BLOCKVECTOR specifying the row vector list
-   .  bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
-   .  bvdf - format to interpret bvd_col
-   .  mc - component in the destination MATRIX
-   .  nc - component in the source MATRIX
+
+ * @param bv_row - BLOCKVECTOR specifying the row vector list
+ * @param bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
+ * @param bvdf - format to interpret bvd_col
+ * @param mc - component in the destination MATRIX
+ * @param nc - component in the source MATRIX
 
 
-   DESCRIPTION:
+
    This function sets 'M := M + N'.
 
    RETURN VALUE:
@@ -3654,7 +3542,7 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 
    SEE ALSO:
    dmatadd, dmatmulBS
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME     NS_PREFIX dmatadd
@@ -3722,24 +3610,24 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 #include "matfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    dmatmul - matrix vector product
 
    SYNOPSIS:
    INT dmatmul (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
    const MATDATA_DESC *M, const VECDATA_DESC *y);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - vector descriptor
-   .  M - matrix data descriptor
-   .  y - vector descriptor
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - vector descriptor
+ * @param M - matrix data descriptor
+ * @param y - vector descriptor
+
+
    This function computes `x = M * y`.
 
    It runs from level fl to tl.
@@ -3751,26 +3639,26 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 
    SEE ALSO:
    dmatmulBS, dmatmul_add, dmatmul_minus
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    dmatmulBS - matrix vector product
 
    SYNOPSIS:
    INT dmatmulBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col,
    const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
 
-   PARAMETERS:
-   .  bv_row - BLOCKVECTOR specifying the row vector list
-   .  bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
-   .  bvdf - format to interpret bvd_col
-   .  xc - component in the result VECTOR
-   .  mc - component in the MATRIX
-   .  yc - component in the source VECTOR
 
-   DESCRIPTION:
+ * @param bv_row - BLOCKVECTOR specifying the row vector list
+ * @param bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
+ * @param bvdf - format to interpret bvd_col
+ * @param xc - component in the result VECTOR
+ * @param mc - component in the MATRIX
+ * @param yc - component in the source VECTOR
+
+
    This function computes `x = M * y`.
 
    RETURN VALUE:
@@ -3780,7 +3668,7 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 
    SEE ALSO:
    dmatmul, dmatmul_addBS, dmatmul_minusBS, d2matmulBS, d3matmulBS
-   D*/
+ */
 /****************************************************************************/
 
 /* TODO: remove this
@@ -3838,23 +3726,23 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 #include "matfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    dmatmul_add - add matrix vector product
 
    SYNOPSIS:
    INT dmatmul_add (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
    const MATDATA_DESC *M, const VECDATA_DESC *y);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - vector descriptor
-   .  M - matrix data descriptor
-   .  y - vector descriptor
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - vector descriptor
+ * @param M - matrix data descriptor
+ * @param y - vector descriptor
+
+
    This function computes `x = x + M * y`.
 
    It runs from level fl to tl.
@@ -3866,26 +3754,26 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 
    SEE ALSO:
    dmatmul_addBS, dmatmul_minus, dmatmul
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    dmatmul_addBS - add matrix vector product
 
    SYNOPSIS:
    INT dmatmul_addBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col,
    const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
 
-   PARAMETERS:
-   .  bv_row - BLOCKVECTOR specifying the row vector list
-   .  bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
-   .  bvdf - format to interpret bvd_col
-   .  xc - component in the result VECTOR
-   .  mc - component in the MATRIX
-   .  yc - component in the source VECTOR
 
-   DESCRIPTION:
+ * @param bv_row - BLOCKVECTOR specifying the row vector list
+ * @param bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
+ * @param bvdf - format to interpret bvd_col
+ * @param xc - component in the result VECTOR
+ * @param mc - component in the MATRIX
+ * @param yc - component in the source VECTOR
+
+
    This function computes `x = x + M * y`.
 
    RETURN VALUE:
@@ -3895,7 +3783,7 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 
    SEE ALSO:
    dmatmul_add, dmatmul_minusBS, dmatmulBS, d2matmulBS, d3matmulBS
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME     NS_PREFIX dmatmul_add
@@ -3946,23 +3834,23 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 #include "matfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    dmatmul_minus - subtract matrix vector product
 
    SYNOPSIS:
    INT dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, INT mode,
    const VECDATA_DESC *x, const MATDATA_DESC *M, const VECDATA_DESC *y);
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  mode - ALL_VECTORS or ON_SURFACE
-   .  x - vector descriptor
-   .  M - matrix data descriptor
-   .  y - vector descriptor
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param mode - ALL_VECTORS or ON_SURFACE
+ * @param x - vector descriptor
+ * @param M - matrix data descriptor
+ * @param y - vector descriptor
+
+
    This function computes `x = x - M * y`.
 
    It runs from level fl to tl.
@@ -3974,26 +3862,26 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 
    SEE ALSO:
    dmatmul_minusBS, dmatmul_add, dmatmul
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    dmatmul_minusBS - subtract matrix vector product
 
    SYNOPSIS:
    INT dmatmul_minusBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col,
    const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
 
-   PARAMETERS:
-   .  bv_row - BLOCKVECTOR specifying the row vector list
-   .  bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
-   .  bvdf - format to interpret bvd_col
-   .  xc - component in the result VECTOR
-   .  mc - component in the MATRIX
-   .  yc - component in the source VECTOR
 
-   DESCRIPTION:
+ * @param bv_row - BLOCKVECTOR specifying the row vector list
+ * @param bvd_col - BLOCKVECTOR_DESCRIPTOR specifying the column vector list
+ * @param bvdf - format to interpret bvd_col
+ * @param xc - component in the result VECTOR
+ * @param mc - component in the MATRIX
+ * @param yc - component in the source VECTOR
+
+
    This function computes `x = x - M * y`.
 
    RETURN VALUE:
@@ -4003,7 +3891,7 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 
    SEE ALSO:
    dmatmul_minus, dmatmul_addBS, dmatmulBS, d2matmulBS, d3matmulBS
-   D*/
+ */
 /****************************************************************************/
 
 #define T_FUNCNAME     NS_PREFIX dmatmul_minus
@@ -4054,26 +3942,26 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
 #include "matfunc.ct"
 
 /****************************************************************************/
-/*D
+/** \brief
    l_dsetrandom - set all components of a vector randomly
 
    SYNOPSIS:
    INT l_dsetrandom (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a);
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  x - vector data descriptor
-   .  xclass - vector class
-   .  a - the maximal random value
 
-   DESCRIPTION:
+ * @param g - pointer to grid
+ * @param x - vector data descriptor
+ * @param xclass - vector class
+ * @param a - the maximal random value
+
+
    This function sets all components of a vector on one grid level
    to random value.
 
    RETURN VALUE:
    INT
    .n    NUM_OK
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX l_dsetrandom (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
@@ -4249,26 +4137,26 @@ INT NS_PREFIX l_dsetrandom2 (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE 
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    l_dsetnonskip - set all !skip components of a vector to a given value
 
    SYNOPSIS:
    INT l_dsetnonskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a);
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  x - vector data descriptor
-   .  xclass - vector class
-   .  a - the DOUBLE value
 
-   DESCRIPTION:
+ * @param g - pointer to grid
+ * @param x - vector data descriptor
+ * @param xclass - vector class
+ * @param a - the DOUBLE value
+
+
    This function sets on one grid level all components of a vector for which
    the skip flag is not set to a given value.
 
    RETURN VALUE:
    INT
    .n    NUM_OK
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX l_dsetnonskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
@@ -4324,22 +4212,22 @@ INT NS_PREFIX l_dsetnonskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE 
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    a_dsetnonskip - set all !skip components of a vector to a given value
 
    SYNOPSIS:
    INT a_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,
              INT xclass, DOUBLE a)
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  x - vector data descriptor
-   .  xclass - vector class
-   .  a - the DOUBLE value
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param x - vector data descriptor
+ * @param xclass - vector class
+ * @param a - the DOUBLE value
+
+
    This function sets on one grid level all components of a vector for which
    the skip flag is not set to a given value.
    It runs from level fl to level tl.
@@ -4347,7 +4235,7 @@ INT NS_PREFIX l_dsetnonskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE 
    RETURN VALUE:
    INT
    .n    NUM_OK
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX a_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE a)
@@ -4400,21 +4288,21 @@ INT NS_PREFIX a_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *
   return (NUM_OK);
 }
 /****************************************************************************/
-/*D
+/** \brief
    s_dsetnonskip - set all !skip components of a vector to a given value
 
    SYNOPSIS:
    INT s_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,
    DOUBLE a)
 
-   PARAMETERS:
-   .  mg - pointer to multigrid
-   .  fl - from level
-   .  tl - to level
-   .  x - vector data descriptor
-   .  a - the DOUBLE value
 
-   DESCRIPTION:
+ * @param mg - pointer to multigrid
+ * @param fl - from level
+ * @param tl - to level
+ * @param x - vector data descriptor
+ * @param a - the DOUBLE value
+
+
    This function sets on one grid level all components of a vector for which
    the skip flag is not set to a given value.
    It runs the surface of the grid, c. f. 'FINE_GRID_DOF' in 'gm.h'.
@@ -4422,7 +4310,7 @@ INT NS_PREFIX a_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *
    RETURN VALUE:
    INT
    .n    NUM_OK
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX s_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE a)
@@ -4494,26 +4382,26 @@ INT NS_PREFIX s_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    l_dsetskip - set all skip components of a vector to a given value
 
    SYNOPSIS:
    INT l_dsetskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a);
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  x - vector data descriptor
-   .  xclass - vector class
-   .  a - the DOUBLE value
 
-   DESCRIPTION:
+ * @param g - pointer to grid
+ * @param x - vector data descriptor
+ * @param xclass - vector class
+ * @param a - the DOUBLE value
+
+
    This function sets on one grid level all components of a vector for which
    the skip flag is not set to a given value.
 
    RETURN VALUE:
    INT
    .n    NUM_OK
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX l_dsetskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
@@ -4569,20 +4457,20 @@ INT NS_PREFIX l_dsetskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    l_dsetfunc - set all components of a vector to a given function value
 
    SYNOPSIS:
    INT l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass,
    SetFuncProcPtr SetFunc);
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  x - destination vector data descriptor
-   .  xclass - vector class
-   .  SetFunc - pointer to a function
 
-   DESCRIPTION:
+ * @param g - pointer to grid
+ * @param x - destination vector data descriptor
+ * @param xclass - vector class
+ * @param SetFunc - pointer to a function
+
+
    This function sets all components of a vector to a given function value
    of the type
 
@@ -4595,7 +4483,7 @@ INT NS_PREFIX l_dsetskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
    .n    NUM_ERROR if the function could not be evaluated for a VECTOR
    .n    if NDEBUG is defined:
    .n    NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFunc)
@@ -4858,20 +4746,20 @@ INT NS_PREFIX l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    l_mean - mean of a vector
 
    SYNOPSIS:
    INT l_mean (const GRID *g, const VECDATA_DESC *x, INT xclass,
    DOUBLE *sp);
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  x - vector data descriptor
-   .  xclass - vector class
-   .  sp - DOUBLE value for every component of 'x'
 
-   DESCRIPTION:
+ * @param g - pointer to grid
+ * @param x - vector data descriptor
+ * @param xclass - vector class
+ * @param sp - DOUBLE value for every component of 'x'
+
+
    This function computes the mean of a vector on one grid level.
 
    RETURN VALUE:
@@ -4879,7 +4767,7 @@ INT NS_PREFIX l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass,
    .n    NUM_OK if ok
    .n    if NDEBUG is not defined:
    .n    error code from 'VecCheckConsistency'
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX l_mean (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *sp)
@@ -5045,18 +4933,18 @@ INT NS_PREFIX l_dmatset_SB (BLOCKVECTOR *dest, BLOCKVECTOR *source,const MATDATA
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    l_dmattranspose - transpose a matrix
 
    SYNOPSIS:
    INT l_dmattranspose (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2);
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  M1 - destination matrix data descriptor (transpose matrix)
-   .  M2 - source matrix data descriptor
 
-   DESCRIPTION:
+ * @param g - pointer to grid
+ * @param M1 - destination matrix data descriptor (transpose matrix)
+ * @param M2 - source matrix data descriptor
+
+
    This function copies a matrix `M1 = M2-transpose` on one grid level.
 
    RETURN VALUE:
@@ -5064,7 +4952,7 @@ INT NS_PREFIX l_dmatset_SB (BLOCKVECTOR *dest, BLOCKVECTOR *source,const MATDATA
    .n    NUM_OK if ok
    .n    if NDEBUG is not defined:
    .n    NUM_DESC_MISMATCH if the type descriptors not match.
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX l_dmattranspose (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
@@ -5739,22 +5627,22 @@ INT NS_PREFIX s_dtpmatmul_set (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    l_dtpmatmul - transpose matrix times vector
 
    SYNOPSIS:
    INT l_dtpmatmul (GRID *g, const VECDATA_DESC *x, INT xclass,
    const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  x - destination vector data descriptor
-   .  xclass - vector class
-   .  M - matrix vector descriptor
-   .  y - source vector data descriptor
-   .  yclass - vector class
 
-   DESCRIPTION:
+ * @param g - pointer to grid
+ * @param x - destination vector data descriptor
+ * @param xclass - vector class
+ * @param M - matrix vector descriptor
+ * @param y - source vector data descriptor
+ * @param yclass - vector class
+
+
    This function computes times matrix with vector `x := x + M-Transpose * y`
    on one grid level.
 
@@ -5763,7 +5651,7 @@ INT NS_PREFIX s_dtpmatmul_set (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC
    .n    NUM_OK if ok
    .n    if NDEBUG is not defined:
    .n    error code from 'MatmulCheckConsistency'
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX l_dtpmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass)
@@ -5821,17 +5709,17 @@ INT NS_PREFIX l_dtpmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MAT
    const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp,
    INT M1comp, INT M2comp, GRID *grid );
 
-   PARAMETERS:
-   .  bv_row1 - row-blockvector of the result matrix and matrix M1
-   .  bvd_col1 - description of the column-blockvector of M1 (identical to row-blockvector of M2)
-   .  bvd_col2 - description of the column-blockvector of M2 (identical to column-blockvector of the result matrix)
-   .  bvdf - format to interpret the 'bvd_col's
-   .  M_res_comp - position of the scalar result in the MATRIXs of the blockmatrix bv_row1 times bvd_col2
-   .  M1comp - 1. operand; position of the scalar in the MATRIXs of the blockmatrix bv_row1 times bvd_col1
-   .  M2comp - 2. operand; position of the scalar result in the MATRIXs of the blockmatrix bvd_col1 times bvd_col2
-   .  grid - grid to allocate new matrix-entries from
 
-   DESCRIPTION:
+ * @param bv_row1 - row-blockvector of the result matrix and matrix M1
+ * @param bvd_col1 - description of the column-blockvector of M1 (identical to row-blockvector of M2)
+ * @param bvd_col2 - description of the column-blockvector of M2 (identical to column-blockvector of the result matrix)
+ * @param bvdf - format to interpret the 'bvd_col's
+ * @param M_res_comp - position of the scalar result in the MATRIXs of the blockmatrix bv_row1 times bvd_col2
+ * @param M1comp - 1. operand; position of the scalar in the MATRIXs of the blockmatrix bv_row1 times bvd_col1
+ * @param M2comp - 2. operand; position of the scalar result in the MATRIXs of the blockmatrix bvd_col1 times bvd_col2
+ * @param grid - grid to allocate new matrix-entries from
+
+
    This function adds the product of 2 matrices `Mres += M1 * M2`
    on one grid level.
 
@@ -5906,17 +5794,17 @@ INT NS_PREFIX d2matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, 
    const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp,
    INT M1comp, INT M2comp, GRID *grid );
 
-   PARAMETERS:
-   .  bv_row1 - row-blockvector of the result matrix and matrix M1
-   .  bvd_col1 - description of the column-blockvector of M1 (identical to row-blockvector of M2)
-   .  bvd_col2 - description of the column-blockvector of M2 (identical to column-blockvector of the result matrix)
-   .  bvdf - format to interpret the 'bvd_col's
-   .  M_res_comp - position of the scalar result in the MATRIXs of the blockmatrix bv_row1 times bvd_col2
-   .  M1comp - 1. operand; position of the scalar in the MATRIXs of the blockmatrix bv_row1 times bvd_col1
-   .  M2comp - 2. operand; position of the scalar result in the MATRIXs of the blockmatrix bvd_col1 times bvd_col2
-   .  grid - grid to allocate new matrix-entries from
 
-   DESCRIPTION:
+ * @param bv_row1 - row-blockvector of the result matrix and matrix M1
+ * @param bvd_col1 - description of the column-blockvector of M1 (identical to row-blockvector of M2)
+ * @param bvd_col2 - description of the column-blockvector of M2 (identical to column-blockvector of the result matrix)
+ * @param bvdf - format to interpret the 'bvd_col's
+ * @param M_res_comp - position of the scalar result in the MATRIXs of the blockmatrix bv_row1 times bvd_col2
+ * @param M1comp - 1. operand; position of the scalar in the MATRIXs of the blockmatrix bv_row1 times bvd_col1
+ * @param M2comp - 2. operand; position of the scalar result in the MATRIXs of the blockmatrix bvd_col1 times bvd_col2
+ * @param grid - grid to allocate new matrix-entries from
+
+
    This function subtracts the product of 2 matrices `Mres -= M1 * M2`
    on one grid level.
 
@@ -5993,19 +5881,19 @@ INT NS_PREFIX d2matmul_minusBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_
    INT M_res_comp, INT M1comp, INT M2comp, INT M3comp, GRID *grid );
 
 
-   PARAMETERS:
-   .  bv_row1 - row-blockvector of the result matrix and matrix M1
-   .  bvd_col1 - description of the column-blockvector of M1 (identical to row-blockvector of M2)
-   .  bvd_col2 - description of the column-blockvector of M2 (identical to row-blockvector of M3)
-   .  bvd_col3 - description of the column-blockvector of M3 (identical to column-blockvector of the result matrix)
-   .  bvdf - format to interpret the 'bvd_col's
-   .  M_res_comp - position of the scalar result in the MATRIXs of the blockmatrix bv_row1 times bvd_col2
-   .  M1comp - 1. operand; position of the scalar in the MATRIXs of the blockmatrix bv_row1 times bvd_col1
-   .  M2comp - 2. operand; position of the scalar result in the MATRIXs of the blockmatrix bvd_col1 times bvd_col2
-   .  M2comp - 3. operand; position of the scalar result in the MATRIXs of the blockmatrix bvd_col2 times bvd_col3
-   .  grid - grid to allocate new matrix-entries from
 
-   DESCRIPTION:
+ * @param bv_row1 - row-blockvector of the result matrix and matrix M1
+ * @param bvd_col1 - description of the column-blockvector of M1 (identical to row-blockvector of M2)
+ * @param bvd_col2 - description of the column-blockvector of M2 (identical to row-blockvector of M3)
+ * @param bvd_col3 - description of the column-blockvector of M3 (identical to column-blockvector of the result matrix)
+ * @param bvdf - format to interpret the 'bvd_col's
+ * @param M_res_comp - position of the scalar result in the MATRIXs of the blockmatrix bv_row1 times bvd_col2
+ * @param M1comp - 1. operand; position of the scalar in the MATRIXs of the blockmatrix bv_row1 times bvd_col1
+ * @param M2comp - 2. operand; position of the scalar result in the MATRIXs of the blockmatrix bvd_col1 times bvd_col2
+ * @param M2comp - 3. operand; position of the scalar result in the MATRIXs of the blockmatrix bvd_col2 times bvd_col3
+ * @param grid - grid to allocate new matrix-entries from
+
+
    This function adds the product of 3 matrices `Mres += M1 * M2 * M3`
    on one grid level.
 
@@ -6082,7 +5970,7 @@ INT NS_PREFIX d3matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, 
 
 
 /****************************************************************************/
-/*D
+/** \brief
    CalculateDefectAndNormBS - calculates the defect of a blockmatrix d := f - K * u
 
    SYNOPSIS:
@@ -6090,16 +5978,16 @@ INT NS_PREFIX d3matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, 
             const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT d_comp,
                 INT f_comp, INT K_comp, INT u_comp );
 
-   PARAMETERS:
-   .  bv_row - row-blockvector of the matrix
-   .  bvd_col - description of the column-blockvector
-   .  bvdf - format to interpret the 'bvd_col'
-   .  d_comp - position of the resultant defect in the VECTORs of the blockvector
-   .  f_comp - position of the right hand side in the VECTORs of the blockvector
-   .  K_comp - position of the matrix in the MATRIXs of the blockvector
-   .  u_comp - position of the solution in the VECTORs of the blockvector
 
-   DESCRIPTION:
+ * @param bv_row - row-blockvector of the matrix
+ * @param bvd_col - description of the column-blockvector
+ * @param bvdf - format to interpret the 'bvd_col'
+ * @param d_comp - position of the resultant defect in the VECTORs of the blockvector
+ * @param f_comp - position of the right hand side in the VECTORs of the blockvector
+ * @param K_comp - position of the matrix in the MATRIXs of the blockvector
+ * @param u_comp - position of the solution in the VECTORs of the blockvector
+
+
    This function subtracts scalar matrix times scalar vector
    `d := f - K * u` for all
    VECTORs d, f and u of the blockvectors, given by pointer 'bv_row'
@@ -6114,7 +6002,7 @@ INT NS_PREFIX d3matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, 
 
    SEE ALSO:
    BLOCKVECTOR, blas_routines, dmatmul_minusBS
-   D*/
+ */
 /****************************************************************************/
 
 DOUBLE NS_PREFIX CalculateDefectAndNormBS( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT d_comp, INT f_comp, INT K_comp, INT u_comp )
