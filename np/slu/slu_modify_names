@@ -1,0 +1,45 @@
+#!/usr/bin/perl -w
+
+-e 'Cnames.h' or die "cannot extract name from 'Cnames.h'\n";
+open(C,'Cnames.h');
+while($line=<C>)
+{
+	if ($line=~/define\s+(\w+_)\s+/)
+	{
+		$fname{$1}=1;
+	}
+}
+
+@file=split /\s+/,`ls *.c`;
+for ($i=0; $i<@file; $i++)
+{
+	print "processing '$file[$i]': ";
+	open(IN,$file[$i]);
+	$fc='';
+	while($line=<IN>)
+	{
+		for $key (keys %fname)
+		{
+			$f=$key; $t="$key"."slu";
+			$line=~s/$f/$t/g;
+		}
+		$fc.=$line;
+	}
+	close(IN);
+	open(OUT,">$file[$i]");
+	print OUT $fc;
+	close(OUT);
+	print "done\n";
+}
+
+
+
+
+
+
+
+
+
+
+
+
