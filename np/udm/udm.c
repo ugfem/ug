@@ -79,6 +79,7 @@
 
 static char NoVecNames[MAX_VEC_COMP];
 static char NoMatNames[2*MAX_MAT_COMP];
+static char TypeName[NVECTYPES][3];
 
 static INT VectorDirID;
 static INT MatrixDirID;
@@ -86,7 +87,7 @@ static INT VectorVarID;
 static INT MatrixVarID;
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -120,7 +121,7 @@ RCSID("$Header$",UG_RCS_STRING)
    D*/
 /****************************************************************************/
 
-INT ConstructVecOffsets (SHORT *NCmpInType, SHORT *offset)
+INT ConstructVecOffsets (const SHORT *NCmpInType, SHORT *offset)
 {
   INT type;
 
@@ -161,7 +162,7 @@ static INT SetScalVecSettings (VECDATA_DESC *vd)
   return (NUM_OK);
 }
 
-static VECDATA_DESC *GetFirstVector (MULTIGRID *theMG)
+VECDATA_DESC *GetFirstVector (MULTIGRID *theMG)
 {
   ENVITEM *item;
 
@@ -176,7 +177,7 @@ static VECDATA_DESC *GetFirstVector (MULTIGRID *theMG)
   return (NULL);
 }
 
-static VECDATA_DESC *GetNextVector (VECDATA_DESC *vd)
+VECDATA_DESC *GetNextVector (VECDATA_DESC *vd)
 {
   ENVITEM *item;
 
@@ -205,8 +206,8 @@ static INT GetNewVectorName (MULTIGRID *theMG, char *name)
   return(0);
 }
 
-VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
-                             SHORT *NCmpInType)
+VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *compNames,
+                             const SHORT *NCmpInType)
 {
   VECDATA_DESC *vd;
   SHORT offset[NVECOFFSETS],*Comp;
@@ -268,13 +269,13 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
   return (vd);
 }
 
-VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, VECDATA_DESC *theVD,
-                                char *name, SHORT *NCmpInType, SHORT *Comps)
+VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const VECDATA_DESC *theVD, const char *name,
+                                const SHORT *NCmpInType, const SHORT *Comps, const char *CompNames)
 {
   VECDATA_DESC *vd;
   SHORT offset[NVECOFFSETS];
-  SHORT *offptr;
-  INT j,tp,ncmp,size;
+  const SHORT *offptr;
+  INT j,k,tp,ncmp,size;
 
   if (theMG == NULL)
     return (NULL);
@@ -291,15 +292,16 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, VECDATA_DESC *theVD,
   if (vd == NULL) return (NULL);
 
   /* fill data in vec data desc */
+  strcpy(VM_COMP_NAMEPTR(vd),CompNames);
+  k = 0;
   for (tp=0; tp<NVECTYPES; tp++) {
     VD_NCMPS_IN_TYPE(vd,tp) = NCmpInType[tp];
     VD_CMPPTR_OF_TYPE(vd,tp) = VM_COMPPTR(vd) + offset[tp];
     for (j=0; j<NCmpInType[tp]; j++) {
-      VM_COMP_NAME(vd,offset[tp]+j) =
-        VM_COMP_NAME(theVD,offptr[tp]+Comps[tp]+j);
-      VD_CMP_OF_TYPE(vd,tp,j) = VD_CMP_OF_TYPE(theVD,tp,Comps[tp]+j);
+      VD_CMP_OF_TYPE(vd,tp,j) = Comps[k++];
     }
   }
+  ASSERT(k==offset[NVECTYPES]);
   for (tp=0; tp<NVECOFFSETS; tp++)
     VD_OFFSET(vd,tp) = offset[tp];
 
@@ -336,7 +338,7 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, VECDATA_DESC *theVD,
    D*/
 /****************************************************************************/
 
-INT ConstructMatOffsets (SHORT *RowsInType, SHORT *ColsInType, SHORT *offset)
+INT ConstructMatOffsets (const SHORT *RowsInType, const SHORT *ColsInType, SHORT *offset)
 {
   INT type;
 
@@ -379,7 +381,7 @@ static INT SetScalMatSettings (MATDATA_DESC *md)
   return (NUM_OK);
 }
 
-static MATDATA_DESC *GetFirstMatrix (MULTIGRID *theMG)
+MATDATA_DESC *GetFirstMatrix (MULTIGRID *theMG)
 {
   ENVITEM *item;
 
@@ -394,7 +396,7 @@ static MATDATA_DESC *GetFirstMatrix (MULTIGRID *theMG)
   return (NULL);
 }
 
-static MATDATA_DESC *GetNextMatrix (MATDATA_DESC *md)
+MATDATA_DESC *GetNextMatrix (MATDATA_DESC *md)
 {
   ENVITEM *item;
 
@@ -423,8 +425,8 @@ static INT GetNewMatrixName (MULTIGRID *theMG, char *name)
   return(0);
 }
 
-MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, char *name, char *compNames,
-                             SHORT *RowsInType, SHORT *ColsInType)
+MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *compNames,
+                             const SHORT *RowsInType, const SHORT *ColsInType)
 {
   MATDATA_DESC *md;
   SHORT offset[NMATOFFSETS],*Comp;
@@ -450,9 +452,9 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, char *name, char *compNames,
   md = (MATDATA_DESC *) MakeEnvItem (buffer,MatrixVarID,size);
   if (md == NULL) return (NULL);
   if (compNames==NULL)
-    memcpy(VM_COMP_NAMEPTR(md),NoMatNames,MAX(ncmp,MAX_VEC_COMP));
+    memcpy(VM_COMP_NAMEPTR(md),NoMatNames,MAX(ncmp,MAX_MAT_COMP));
   else
-    memcpy(VM_COMP_NAMEPTR(md),compNames,MAX(ncmp,MAX_VEC_COMP));
+    memcpy(VM_COMP_NAMEPTR(md),compNames,MAX(ncmp,MAX_MAT_COMP));
 
   /* fill data in vec data desc */
   i = 0;
@@ -481,13 +483,13 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, char *name, char *compNames,
   return (md);
 }
 
-MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, MATDATA_DESC *theMD,
-                                char *name, SHORT *RowsInType,
-                                SHORT *ColsInType, SHORT *Comps)
+MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
+                                const char *name, const SHORT *RowsInType,
+                                const SHORT *ColsInType, const SHORT *Comps, const char *CompNames)
 {
   MATDATA_DESC *md;
   SHORT offset[NMATOFFSETS];
-  SHORT *offptr;
+  const SHORT *offptr;
   INT j,tp,ncmp,size;
 
   if (theMG == NULL)
@@ -529,8 +531,159 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, MATDATA_DESC *theMD,
 }
 
 /****************************************************************************/
+/*
+   DisplayVecDataDesc - Display VECDATA_DESC entries
+
+   SYNOPSIS:
+   INT DisplayVecDataDesc (const VECDATA_DESC *vd)
+
+   PARAMETERS:
+   .  vd - VECDATA_DESC to display
+
+   DESCRIPTION:
+   This function displays the entries of a VECDATA_DESC: comp-names, comp-positions etc.
+
+   RETURN VALUE:
+   INT
+   .n      0: ok
+   .n      else: error
+ */
+/****************************************************************************/
+
+INT DisplayVecDataDesc (const VECDATA_DESC *vd)
+{
+  const SHORT *offset;
+  const char *cn;
+  INT rt,i;
+
+  if (vd==NULL) return (1);
+
+  UserWriteF("contents of vector symbol '%s'\n",ENVITEM_NAME(vd));
+
+  cn = VM_COMP_NAMEPTR(vd);
+  offset = VD_OFFSETPTR(vd);
+  for (rt=0; rt<NVECTYPES; rt++)
+    if (VD_ISDEF_IN_TYPE(vd,rt))
+    {
+      UserWrite("-------\n");
+      for (i=0; i<VD_NCMPS_IN_TYPE(vd,rt); i++)
+        UserWriteF("%s %c %2d\n",(i) ? "  " : TypeName[rt],cn[offset[rt]+i],VD_CMP_OF_TYPE(vd,rt,i));
+    }
+  UserWrite("-------\n");
+
+  if (VD_IS_SCALAR(vd))
+  {
+    UserWrite("\nvecsym is scalar:\n");
+    UserWriteF("  comp %2d\n",VD_SCALCMP(vd));
+    UserWriteF("  mask %2d\n",VD_SCALTYPEMASK(vd));
+  }
+
+  UserWrite("\n");
+
+  return (0);
+}
+
+INT DisplayMatDataDesc (const MATDATA_DESC *md)
+{
+  const SHORT *offset;
+  const char *cn;
+  INT rt,ct,mtp,i,j,nc,maxr[NVECTYPES],maxc[NVECTYPES];
+
+  if (md==NULL) return (1);
+
+  UserWriteF("contents of matrix symbol '%s'\n",ENVITEM_NAME(md));
+
+  cn = VM_COMP_NAMEPTR(md);
+  offset = MD_OFFSETPTR(md);
+
+  for (rt=0; rt<NVECTYPES; rt++)
+  {
+    maxr[rt] = 0;
+    for (ct=0; ct<NVECTYPES; ct++)
+      if (MD_ISDEF_IN_RT_CT(md,rt,ct))
+        maxr[rt] = MAX(maxr[rt],MD_ROWS_IN_RT_CT(md,rt,ct));
+  }
+
+  /* headline for col types */
+  UserWrite("  ");
+  for (ct=0; ct<NVECTYPES; ct++)
+  {
+    maxc[ct] = 0;
+    for (rt=0; rt<NVECTYPES; rt++)
+      if (MD_ISDEF_IN_RT_CT(md,rt,ct))
+        maxc[ct] = MAX(maxc[ct],MD_COLS_IN_RT_CT(md,rt,ct));
+    for (j=0; j<maxc[ct]; j++)
+      UserWriteF(" %s%s",(j) ? "" : "|",(j) ? "  " : TypeName[ct]);
+  }
+  UserWrite("\n--");
+  for (ct=0; ct<NVECTYPES; ct++)
+    for (j=0; j<maxc[ct]; j++)
+      UserWriteF("-%s--",(j) ? "" : "-");
+
+  for (rt=0; rt<NVECTYPES; rt++)
+  {
+    for (i=0; i<maxr[rt]; i++)
+    {
+      /* compname line */
+      UserWriteF("\n%s",(i) ? "  " : TypeName[rt]);
+      if (cn[0]!=' ')
+      {
+        for (ct=0; ct<NVECTYPES; ct++)
+        {
+          j = 0;
+          if (MD_ISDEF_IN_RT_CT(md,rt,ct))
+          {
+            mtp = MTP(rt,ct);
+            nc  = MD_COLS_IN_MTYPE(md,mtp);
+            for (; j<nc; j++)
+              UserWriteF(" %s%c%c",(j) ? "" : "|",cn[2*(offset[mtp]+i*nc+j)],cn[2*(offset[mtp]+i*nc+j)+1]);
+          }
+          for (; j<maxc[ct]; j++)
+            UserWriteF(" %s  ",(j) ? "" : "|");
+        }
+        UserWrite("\n  ");
+      }
+      /* comp position line */
+      for (ct=0; ct<NVECTYPES; ct++)
+      {
+        j = 0;
+        if (MD_ISDEF_IN_RT_CT(md,rt,ct))
+        {
+          mtp = MTP(rt,ct);
+          for (; j<MD_COLS_IN_MTYPE(md,mtp); j++)
+            UserWriteF(" %s%2d",(j) ? "" : "|",MD_IJ_CMP_OF_MTYPE(md,mtp,i,j));
+        }
+        for (; j<maxc[ct]; j++)
+          UserWriteF(" %s  ",(j) ? "" : "|");
+      }
+    }
+    if (maxr[rt]>0)
+    {
+      /* type seperator line */
+      UserWrite("\n--");
+      for (ct=0; ct<NVECTYPES; ct++)
+        for (j=0; j<maxc[ct]; j++)
+          UserWriteF("-%s--",(j) ? "" : "-");
+    }
+  }
+  UserWrite("\n");
+
+  if (MD_IS_SCALAR(md))
+  {
+    UserWrite("\nmatsym is scalar:\n");
+    UserWriteF("  comp %2d\n",MD_SCALCMP(md));
+    UserWriteF("  rmsk %2d\n",MD_SCAL_RTYPEMASK(md));
+    UserWriteF("  cmsk %2d\n",MD_SCAL_CTYPEMASK(md));
+  }
+
+  UserWrite("\n");
+
+  return (0);
+}
+
+/****************************************************************************/
 /*D
-   GetVecDataDescByName - find matrix
+   GetVecDataDescByName - find vector data desciptor
 
    SYNOPSIS:
    VECDATA_DESC *GetVecDataDescByName (MULTIGRID *theMG, char *name);
@@ -549,7 +702,7 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, MATDATA_DESC *theMD,
    D*/
 /****************************************************************************/
 
-VECDATA_DESC *GetVecDataDescByName (MULTIGRID *theMG, char *name)
+VECDATA_DESC *GetVecDataDescByName (const MULTIGRID *theMG, char *name)
 {
   if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
   if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
@@ -559,7 +712,7 @@ VECDATA_DESC *GetVecDataDescByName (MULTIGRID *theMG, char *name)
 
 /****************************************************************************/
 /*D
-   GetMatDataDescByName - find matrix
+   GetMatDataDescByName - find matrix data descriptor
 
    SYNOPSIS:
    MATDATA_DESC *GetMatDataDescByName (MULTIGRID *theMG, char *name);
@@ -578,7 +731,7 @@ VECDATA_DESC *GetVecDataDescByName (MULTIGRID *theMG, char *name)
    D*/
 /****************************************************************************/
 
-MATDATA_DESC *GetMatDataDescByName (MULTIGRID *theMG, char *name)
+MATDATA_DESC *GetMatDataDescByName (const MULTIGRID *theMG, char *name)
 {
   if (ChangeEnvDir("/Multigrids") == NULL) return (NULL);
   if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
@@ -944,6 +1097,13 @@ INT InitUserDataManager ()
     NoVecNames[i] = names[i];
   for (i=0; i<2*MAX_MAT_COMP; i++)
     NoMatNames[i] = ' ';
+
+  strcpy(TypeName[NODEVECTOR],"nd");
+  strcpy(TypeName[EDGEVECTOR],"ed");
+  strcpy(TypeName[ELEMVECTOR],"el");
+        #ifdef __THREEDIM__
+  strcpy(TypeName[SIDEVECTOR],"si");
+        #endif
 
   return (0);
 }

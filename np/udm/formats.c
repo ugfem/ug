@@ -57,10 +57,10 @@
 /*                                                                          */
 /****************************************************************************/
 
-/* limits for SYMBOL handling */
+/* limits for XDATA_DESC handling */
 #define MAX_VEC                         30
 #define MAX_MAT                         6
-#define MAX_SUB                         3
+#define MAX_SUB                         5
 #define SYMNAMESIZE                     16
 
 #define MAX_PRINT_SYM           5
@@ -77,8 +77,7 @@
 #define SUBV_NAME(s)            ((s)->Name)
 #define SUBV_NCOMPS(s)          ((s)->Comp)
 #define SUBV_NCOMP(s,tp)        ((s)->Comp[tp])
-#define SUBV_COMP(s,tp)     ((s)->Comps[tp])
-#define SUBV_COMPPTR(s)     ((s)->Comps)
+#define SUBV_COMP(s,tp,i)       ((s)->Comps[tp][i])
 
 /* macros for SUBMAT */
 #define SUBM_NAME(s)            ((s)->Name)
@@ -86,8 +85,7 @@
 #define SUBM_CCOMPS(s)          ((s)->CComp)
 #define SUBM_RCOMP(s,tp)        ((s)->RComp[tp])
 #define SUBM_CCOMP(s,tp)        ((s)->CComp[tp])
-#define SUBM_COMP(s,tp)     ((s)->Comps[tp])
-#define SUBM_COMPPTR(s)     ((s)->Comps)
+#define SUBM_COMP(s,tp,i)       ((s)->Comps[tp][i])
 
 /* macros for VEC_FORMAT */
 #define VF_COMPS(vf)            ((vf)->Comp)
@@ -117,7 +115,7 @@ typedef struct {
 
   char Name[SYMNAMESIZE];
   SHORT Comp[NVECTYPES];
-  SHORT Comps[NVECTYPES];
+  SHORT Comps[NVECTYPES][MAX_VEC_COMP];
 
 } SUBVEC;
 
@@ -126,7 +124,7 @@ typedef struct {
   char Name[SYMNAMESIZE];
   SHORT RComp[NMATTYPES];
   SHORT CComp[NMATTYPES];
-  SHORT Comps[NMATTYPES];
+  SHORT Comps[NMATTYPES][MAX_MAT_COMP];
 
 } SUBMAT;
 
@@ -166,8 +164,10 @@ static ConversionProcPtr PrintVectorDataPtr[NVECTYPES];
 static ConversionProcPtr PrintMatrixDataPtr[NMATTYPES];
 
 /* print symbol counters and lists */
-static INT NPrintVectorSymbols=0;
-static INT NPrintMatrixSymbols=0;
+static INT NPrintVectors=0;
+static INT NPrintMatrixs=0;
+static VECDATA_DESC *PrintVector[MAX_PRINT_SYM];
+static MATDATA_DESC *PrintMatrix[MAX_PRINT_SYM];
 
 /* printing formats */
 static INT VectorPrintingFormat = 0x3;
@@ -183,11 +183,205 @@ static INT theMatVarID;                                 /* env type for MAT_FORM
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
+/****************************************************************************/
+/*																			*/
+/* functions to set, display and change the printing format			                */
+/*																			*/
+/****************************************************************************/
+
+INT DisplayPrintingFormat ()
+{
+  INT i;
+
+  if (NPrintVectors==0)
+    UserWrite("no vector symbols printed\n");
+  else
+  {
+    UserWrite("printed vector symbols\n");
+    for (i=0; i<NPrintVectors; i++)
+      UserWriteF("   '%s'\n",ENVITEM_NAME(PrintVector[i]));
+  }
+
+  if (NPrintMatrixs==0)
+    UserWrite("\nno matrix symbols printed\n");
+  else
+  {
+    UserWrite("\nprinted matrix symbols\n");
+    for (i=0; i<NPrintMatrixs; i++)
+      UserWriteF("   '%s'\n",ENVITEM_NAME(PrintMatrix[i]));
+  }
+
+  return (0);
+}
+
+/********************************************************/
+/* for the following function							*/
+/* please keep help comment in commands.c up to date	*/
+/********************************************************/
+
+INT SetPrintingFormatCmd (const MULTIGRID *mg, INT argc, char **argv)
+{
+  VECDATA_DESC *vd;
+  MATDATA_DESC *md;
+  INT i,j,add,vec;
+  char *token,buffer[64];
+
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'V' :
+    case 'M' :
+      if (strchr("0+-",argv[i][1])==NULL)
+      {
+        PrintErrorMessage('E',"setpf","specify 0,+ or - after V or M option");
+        return (1);
+      }
+      vec = (argv[i][0]=='V');
+      if (argv[i][1]=='0')
+      {
+        if (vec)
+          NPrintVectors = 0;
+        else
+          NPrintMatrixs = 0;
+        break;
+      }
+      add = (argv[i][1]=='+');
+      token = strtok(argv[i]+1,BLANKS);                                 /* forget about first token (0,+ or -) */
+      while ((token=strtok(NULL,BLANKS))!=NULL)
+      {
+        if (add)
+        {
+          if (vec)
+          {
+            if (NPrintVectors>=MAX_PRINT_SYM)
+            {
+              PrintErrorMessage('E',"setpf","max number of print vetor symbols exceeded");
+              return (1);
+            }
+            for (j=0; j<NPrintVectors; j++)
+              if (strcmp(token,ENVITEM_NAME(PrintVector[j]))==0)
+                break;
+            if (j<NPrintVectors) continue;                                                      /* already in list */
+            if ((vd=GetVecDataDescByName(mg,token))==NULL)
+            {
+              PrintErrorMessage('E',"setpf","vector symbol not found");
+              return (1);
+            }
+            PrintVector[NPrintVectors++] = vd;
+          }
+          else
+          {
+            if (NPrintMatrixs>=MAX_PRINT_SYM)
+            {
+              PrintErrorMessage('E',"setpf","max number of print vetor symbols exceeded");
+              return (1);
+            }
+            for (j=0; j<NPrintMatrixs; j++)
+              if (strcmp(token,ENVITEM_NAME(PrintMatrix[j]))==0)
+                break;
+            if (j<NPrintMatrixs) continue;                                                      /* already in list */
+            if ((md=GetMatDataDescByName(mg,token))==NULL)
+            {
+              PrintErrorMessage('E',"setpf","matrix symbol not found");
+              return (1);
+            }
+            PrintMatrix[NPrintMatrixs++] = md;
+          }
+        }
+        else
+        {
+          if (vec)
+          {
+            for (j=0; j<NPrintVectors; j++)
+              if (strcmp(token,ENVITEM_NAME(PrintVector[j]))==0)
+                break;
+            if (j==NPrintVectors)
+            {
+              PrintErrorMessage('W',"setpf","vector symbol not in list");
+              continue;
+            }
+            for (j++; j<NPrintVectors; j++)
+              PrintVector[j-1] = PrintVector[j];
+            NPrintVectors--;
+          }
+          else
+          {
+            for (j=0; j<NPrintMatrixs; j++)
+              if (strcmp(token,ENVITEM_NAME(PrintMatrix[j]))==0)
+                break;
+            if (j==NPrintMatrixs)
+            {
+              PrintErrorMessage('W',"setpf","matrix symbol not in list");
+              continue;
+            }
+            for (j++; j<NPrintMatrixs; j++)
+              PrintMatrix[j-1] = PrintMatrix[j];
+            NPrintMatrixs--;
+          }
+        }
+      }
+      break;
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintErrorMessage('E',"setpf",buffer);
+      return (1);
+    }
+
+  DisplayPrintingFormat();
+
+  return (0);
+}
+
+static char *DisplayVecDD (const VECDATA_DESC *vd, INT type, const DOUBLE *data, const char *indent, char *s)
+{
+  INT i,n,off;
+
+  n = VD_NCMPS_IN_TYPE(vd,type);
+  if (n==0) return (s);
+
+  off = VD_OFFSET(vd,type);
+
+  s += sprintf(s,"%s%s:",indent,ENVITEM_NAME(vd));
+  for (i=0; i<n; i++)
+    s += sprintf(s,VFORMAT,VM_COMP_NAME(vd,off+i),data[VD_CMP_OF_TYPE(vd,type,i)]);
+
+  *(s++) = '\n';
+
+  return (s);
+}
+
+/****************************************************************************/
+/*D
+        PrintTypeVectorData - print selected vector user data for the 'nsr' format
+
+        SYNOPSIS:
+        static INT PrintTypeVectorData (INT type, void *data, const char *indent, char *s)
+
+    PARAMETERS:
+   .   type - consider only this type
+   .   data - user data
+   .   indent - is printed at the beginning of lines
+   .   s - output string
+
+        DESCRIPTION:
+        Print selected vector user data for the 'nsr' format.
+
+        RETURN VALUE:
+        INT
+   .n   0: ok
+
+        SEE ALSO:
+        setformat, showformat
+   D*/
+/****************************************************************************/
+
 static INT PrintTypeVectorData (INT type, void *data, const char *indent, char *s)
 {
   INT i;
 
-  /* TODO: fill in print */
+  for (i=0; i<NPrintVectors; i++)
+    s = DisplayVecDD(PrintVector[i],type,data,indent,s);
 
   /* remove last \n */
   *s = '\0';
@@ -217,11 +411,58 @@ static INT PrintSideVectorData (void *data, const char *indent, char *s)
 }
 #endif
 
+static char *DisplayMatDD (const MATDATA_DESC *md, INT type, const DOUBLE *data, const char *indent, char *s)
+{
+  INT i,j,nr,nc,off;
+
+  nr = MD_ROWS_IN_MTYPE(md,type);
+  nc = MD_COLS_IN_MTYPE(md,type);
+  if (nr==0) return (s);
+
+  off = MD_MTYPE_OFFSET(md,type);
+
+  for (i=0; i<nr; i++)
+  {
+    s += sprintf(s,"%s%s:",indent,ENVITEM_NAME(md));
+    for (j=0; j<nc; j++)
+      s += sprintf(s,MFORMAT,VM_COMP_NAME(md,2*(off+i*nc+j)),VM_COMP_NAME(md,2*(off+i*nc+j)+1),data[MD_IJ_CMP_OF_MTYPE(md,type,i,j)]);
+    *(s++) = '\n';
+  }
+
+  return (s);
+}
+
+/****************************************************************************/
+/*D
+        PrintTypeMatrixData - print selected matrix user data for the 'nsr' format
+
+        SYNOPSIS:
+        static INT PrintTypeMatrixData (INT type, void *data, const char *indent, char *s)
+
+    PARAMETERS:
+   .   type - consider this mat type
+   .   data - user data
+   .   indent - is printed at the beginning of lines
+   .   s - output string
+
+        DESCRIPTION:
+        Print selected matrix user data for the 'nsr' format.
+
+        RETURN VALUE:
+        INT
+   .n   0: ok
+
+        SEE ALSO:
+        setformat, showformat
+   D*/
+/****************************************************************************/
+
 static INT PrintTypeMatrixData (INT type, void *data, const char *indent, char *s)
 {
   INT i;
 
-  /* TODO: fill in print */
+  for (i=0; i<NPrintMatrixs; i++)
+    s = DisplayMatDD(PrintMatrix[i],type,data,indent,s);
 
   /* remove last \n */
   *s = '\0';
@@ -311,7 +552,9 @@ VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
   VECDATA_DESC *vd;
   VEC_FORMAT *vf;
   SUBVEC *subv;
-  INT i;
+  SHORT *Comp,SubComp[MAX_VEC_COMP],*offset;
+  char SubName[MAX_VEC_COMP];
+  INT i,j,k,nc,cmp,type;
   char buffer[NAMESIZE];
 
   if (template != NULL)
@@ -329,13 +572,30 @@ VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
                       "cannot create vector descriptor");
     return(NULL);
   }
+
+  /* now create sub vec descs */
+  offset = VD_OFFSETPTR(vd);
+  Comp = VM_COMPPTR(vd);
   for (i=0; i<VF_NSUB(vf); i++) {
     subv = VF_SUB(vf,i);
     strcpy(buffer,SUBV_NAME(subv));
     strcat(buffer,name);
+
+    /* compute sub components */
+    k = 0;
+    for (type=0; type<NVECTYPES; type++)
+    {
+      nc = SUBV_NCOMP(subv,type);
+      for (j=0; j<nc; j++)
+      {
+        cmp = offset[type]+SUBV_COMP(subv,type,j);
+        SubComp[k] = Comp[cmp];
+        SubName[k] = VF_COMPNAME(vf,cmp);
+        k++;
+      }
+    }
     if (CreateSubVecDesc(theMG,vd,buffer,
-                         SUBV_NCOMPS(subv),SUBV_COMPPTR(subv))
-        == NULL) {
+                         SUBV_NCOMPS(subv),SubComp,SubName) == NULL) {
       PrintErrorMessage('E',"CreateVecDescOfTemplate",
                         "cannot create subvector descriptor");
       return(NULL);
@@ -392,7 +652,9 @@ MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
   MATDATA_DESC *md;
   MAT_FORMAT *mf;
   SUBMAT *subm;
-  INT i;
+  SHORT *Comp,SubComp[MAX_MAT_COMP],*offset;
+  INT i,j,k,nc,cmp,type;
+  char SubName[2*MAX_MAT_COMP];
   char buffer[NAMESIZE];
 
   if (template != NULL)
@@ -400,7 +662,7 @@ MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
   else
     mf = GetMatrixTemplate(theMG,name);
   if (mf == NULL) {
-    PrintErrorMessage('E'," CreateMatDescOfTemplate",
+    PrintErrorMessage('E',"CreateMatDescOfTemplate",
                       "no matrix template");
     return(NULL);
   }
@@ -411,14 +673,32 @@ MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
                       "cannot create matrix descriptor");
     return(NULL);
   }
+
+  /* now create sub mat descs */
+  offset = MD_OFFSETPTR(md);
+  Comp = VM_COMPPTR(md);
   for (i=0; i<MF_NSUB(mf); i++) {
     subm = MF_SUB(mf,i);
     strcpy(buffer,SUBM_NAME(subm));
     strcat(buffer,name);
+
+    /* compute sub components */
+    k = 0;
+    for (type=0; type<NMATTYPES; type++)
+    {
+      nc = SUBM_RCOMP(subm,type)*SUBM_CCOMP(subm,type);
+      for (j=0; j<nc; j++)
+      {
+        cmp = offset[type]+SUBM_COMP(subm,type,j);
+        SubComp[k] = Comp[cmp];
+        SubName[2*k]   = MF_COMPNAME(mf,2*cmp);
+        SubName[2*k+1] = MF_COMPNAME(mf,2*cmp+1);
+        k++;
+      }
+    }
     if (CreateSubMatDesc(theMG,md,buffer,SUBM_RCOMPS(subm),
-                         SUBM_CCOMPS(subm),SUBM_COMPPTR(subm))
-        == NULL) {
-      PrintErrorMessage('E'," CreateMatDescOfTemplate",
+                         SUBM_CCOMPS(subm),SubComp,SubName) == NULL) {
+      PrintErrorMessage('E',"CreateMatDescOfTemplate",
                         "cannot create submatrix descriptor");
       return(NULL);
     }
@@ -453,7 +733,7 @@ static VEC_FORMAT *CreateVecTemplate (char *name, INT n)
 {
   VEC_FORMAT *vf;
   char buffer[NAMESIZE],*token;
-  INT j,type;
+  INT j;
 
   if (ChangeEnvDir("/newformat")==NULL)
     return(NULL);
@@ -474,7 +754,7 @@ static MAT_FORMAT *CreateMatTemplate (char *name, INT n)
 {
   MAT_FORMAT *mf;
   char buffer[NAMESIZE];
-  INT j,type;
+  INT j;
 
   if (ChangeEnvDir("/newformat")==NULL)
     return(NULL);
@@ -535,7 +815,7 @@ INT CreateFormatCmd (INT argc, char **argv)
   MAT_FORMAT *mf,*mm;
   SUBVEC *subv,*subvv;
   SUBMAT *subm,*submm;
-  INT i,j,size,type,currtype,rtype,ctype,nvec,nmat,nsc[NMATTYPES],nvd,nmd;
+  INT i,j,k,size,type,currtype,rtype,ctype,nvec,nmat,nsc[NMATTYPES],nvd,nmd;
   INT edata,ndata,nodeelementlist;
   SHORT offset[NMATOFFSETS],ConnDepth[NMATTYPES],ImatTypes[NVECTYPES];
   SHORT FirstVecComp[NVECTYPES],FirstMatComp[NMATTYPES];
@@ -675,8 +955,7 @@ INT CreateFormatCmd (INT argc, char **argv)
                                   "max number of subv comps exceeded");
                 return (1);
               }
-              nsc[type]++;
-              SUBV_COMP(subv,type) = n-offset[type];
+              SUBV_COMP(subv,type,nsc[type]++) = n-offset[type];
             }
             for (type=0; type<NVECTYPES; type++)
               SUBV_NCOMP(subv,type) = nsc[type];
@@ -710,8 +989,9 @@ INT CreateFormatCmd (INT argc, char **argv)
             subvv = VF_SUB(vv,j);
             strcpy(SUBV_NAME(subvv),SUBV_NAME(subv));
             for (type=0; type<NVECTYPES; type++) {
-              SUBV_COMP(subvv,type) = SUBV_COMP(subv,type);
               SUBV_NCOMP(subvv,type) = SUBV_NCOMP(subv,type);
+              for (k=0; k<SUBV_NCOMP(subv,type); k++)
+                SUBV_COMP(subvv,type,k) = SUBV_COMP(subv,type,k);
             }
           }
           token = strtok(NULL,BLANKS);
@@ -852,8 +1132,7 @@ INT CreateFormatCmd (INT argc, char **argv)
                                     "wrong comp type for subm");
                   return (1);
                 }
-                nsc[type]++;
-                SUBM_COMP(subm,type) = n-offset[type];
+                SUBM_COMP(subm,type,nsc[type]++) = n-offset[type];
                 if (nsc[type]==nr*nc) break;
               }
               SUBM_RCOMP(subm,type) = nr;
@@ -891,9 +1170,10 @@ INT CreateFormatCmd (INT argc, char **argv)
             submm = MF_SUB(mm,j);
             strcpy(SUBM_NAME(submm),SUBM_NAME(subm));
             for (type=0; type<NMATTYPES; type++) {
-              SUBM_COMP(submm,type) = SUBM_COMP(subm,type);
               SUBM_RCOMP(submm,type) = SUBM_RCOMP(subm,type);
               SUBM_CCOMP(submm,type) = SUBM_CCOMP(subm,type);
+              for (k=0; k<SUBM_RCOMP(subm,type)*SUBM_CCOMP(subm,type); k++)
+                SUBM_COMP(submm,type,k) = SUBM_COMP(subm,type,k);
             }
           }
           token = strtok(NULL,BLANKS);

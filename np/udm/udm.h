@@ -58,7 +58,6 @@
 #define VD_NCMPS_IN_TYPE(vd,tp)             (VD_NCMPPTR(vd)[tp])
 #define VD_CMP_OF_TYPE(vd,tp,i)             ((vd)->CmpsInType[tp][i])
 #define VD_CMPPTR_OF_TYPE(vd,tp)            ((vd)->CmpsInType[tp])
-#define VD_CMPPTR_OF_TYPE(vd,tp)            ((vd)->CmpsInType[tp])
 
 #define VD_IS_SCALAR(vd)                    ((vd)->IsScalar)
 #define VD_SCALCMP(vd)                                          ((vd)->ScalComp)
@@ -172,18 +171,26 @@ typedef DOUBLE VEC_SCALAR[MAX_VEC_COMP];
 /*																			*/
 /****************************************************************************/
 
-VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
-                             SHORT *NCmpInType);
-MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, char *name, char *compNames,
-                             SHORT *RowsInType, SHORT *ColsInType);
-VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, VECDATA_DESC *vd,
-                                char *name, SHORT *NCmpInType, SHORT *Comps);
-MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, MATDATA_DESC *md,
-                                char *name, SHORT *RowsInType,
-                                SHORT *ColsInType, SHORT *Comps);
+VECDATA_DESC *GetFirstVector (MULTIGRID *theMG);
+VECDATA_DESC *GetNextVector (VECDATA_DESC *vd);
+MATDATA_DESC *GetFirstMatrix (MULTIGRID *theMG);
+MATDATA_DESC *GetNextMatrix (MATDATA_DESC *md);
 
-VECDATA_DESC *GetVecDataDescByName (MULTIGRID *theMG, char *name);
-MATDATA_DESC *GetMatDataDescByName (MULTIGRID *theMG, char *name);
+VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *compNames,
+                             const SHORT *NCmpInType);
+MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *compNames,
+                             const SHORT *RowsInType, const SHORT *ColsInType);
+VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const VECDATA_DESC *theVD, const char *name,
+                                const SHORT *NCmpInType, const SHORT *Comps, const char *CompNames);
+MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
+                                const char *name, const SHORT *RowsInType,
+                                const SHORT *ColsInType, const SHORT *Comps, const char *CompNames);
+
+INT DisplayVecDataDesc (const VECDATA_DESC *vd);
+INT DisplayMatDataDesc (const MATDATA_DESC *md);
+
+VECDATA_DESC *GetVecDataDescByName (const MULTIGRID *theMG, char *name);
+MATDATA_DESC *GetMatDataDescByName (const MULTIGRID *theMG, char *name);
 
 INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
                    VECDATA_DESC *template_desc, VECDATA_DESC **new_desc);
@@ -194,8 +201,8 @@ INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
 INT FreeVD        (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *x);
 INT FreeMD        (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *A);
 
-INT ConstructVecOffsets (SHORT *NCmpInType, SHORT *offset);
-INT ConstructMatOffsets (SHORT *RowsInType, SHORT *ColsInType, SHORT *offset);
+INT ConstructVecOffsets (const SHORT *NCmpInType, SHORT *offset);
+INT ConstructMatOffsets (const SHORT *RowsInType, const SHORT *ColsInType, SHORT *offset);
 
 
 /* init user data manager */

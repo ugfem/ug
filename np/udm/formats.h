@@ -61,6 +61,9 @@
 /*                                                                          */
 /****************************************************************************/
 
+INT DisplayPrintingFormat (void);
+INT SetPrintingFormatCmd (const MULTIGRID *mg, INT argc, char **argv);
+
 VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
                                        char *name, char *template);
 MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
