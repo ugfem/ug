@@ -92,7 +92,7 @@
 #define VF_COMP(vf,tp)          ((vf)->Comp[tp])
 #define VF_COMPNAMES(vf)        ((vf)->CompNames)
 #define VF_COMPNAME(vf,i)       ((vf)->CompNames[i])
-#define VF_SUB(vf,i)            ((vf)->SubVec+(i))
+#define VF_SUB(vf,i)            ((vf)->SubVec[i])
 #define VF_NSUB(vf)                     ((vf)->nsub)
 
 /* macros for MAT_FORMAT */
@@ -102,7 +102,7 @@
 #define MF_CCOMP(mf,tp)         ((mf)->CComp[tp])
 #define MF_COMPNAMES(mf)        ((mf)->CompNames)
 #define MF_COMPNAME(mf,i)       ((mf)->CompNames[i])
-#define MF_SUB(mf,i)            ((mf)->SubMat+(i))
+#define MF_SUB(mf,i)            ((mf)->SubMat[i])
 #define MF_NSUB(mf)                     ((mf)->nsub)
 
 /****************************************************************************/
@@ -136,7 +136,7 @@ typedef struct {
   char CompNames[MAX_VEC_COMP];
 
   SHORT nsub;
-  SUBVEC SubVec[MAX_SUB];
+  SUBVEC  *SubVec[MAX_SUB];
 
 } VEC_FORMAT;
 
@@ -149,7 +149,7 @@ typedef struct {
   char CompNames[2*MAX_MAT_COMP];
 
   SHORT nsub;
-  SUBMAT SubMat[MAX_SUB];
+  SUBMAT  *SubMat[MAX_SUB];
 
 } MAT_FORMAT;
 
@@ -921,9 +921,14 @@ INT CreateFormatCmd (INT argc, char **argv)
                                 "max number of vector subs exceeded");
               return (1);
             }
-            subv = VF_SUB(vf,VF_NSUB(vf));
+            subv = AllocEnvMemory(sizeof(SUBVEC));
+            if (subv == NULL) {
+              PrintErrorMessage('E',"newformat",
+                                "could not allocate environment storage");
+              return (2);
+            }
+            VF_SUB(vf,VF_NSUB(vf)) = subv;
             VF_NSUB(vf)++;
-
             /* subv name */
             token = strtok(argv[i]+3,BLANKS);
             if (token==NULL) {
@@ -984,16 +989,8 @@ INT CreateFormatCmd (INT argc, char **argv)
           for (j=0; j<MAX_VEC_COMP; j++)
             VF_COMPNAME(vv,j) = VF_COMPNAME(vf,j);
           VF_NSUB(vv) = VF_NSUB(vf);
-          for (j=0; j<VF_NSUB(vf); j++) {
-            subv = VF_SUB(vf,j);
-            subvv = VF_SUB(vv,j);
-            strcpy(SUBV_NAME(subvv),SUBV_NAME(subv));
-            for (type=0; type<NVECTYPES; type++) {
-              SUBV_NCOMP(subvv,type) = SUBV_NCOMP(subv,type);
-              for (k=0; k<SUBV_NCOMP(subv,type); k++)
-                SUBV_COMP(subvv,type,k) = SUBV_COMP(subv,type,k);
-            }
-          }
+          for (j=0; j<VF_NSUB(vf); j++)
+            VF_SUB(vv,j) = VF_SUB(vf,j);
           token = strtok(NULL,BLANKS);
         }
       }
@@ -1081,7 +1078,13 @@ INT CreateFormatCmd (INT argc, char **argv)
                                 "max number of matrix subs exceeded");
               return (1);
             }
-            subm = MF_SUB(mf,MF_NSUB(mf));
+            subm = AllocEnvMemory(sizeof(SUBMAT));
+            if (subm == NULL) {
+              PrintErrorMessage('E',"newformat",
+                                "could not allocate environment storage");
+              return (2);
+            }
+            MF_SUB(mf,MF_NSUB(mf)) = subm;
             MF_NSUB(mf)++;
 
             /* subm name */
@@ -1165,17 +1168,8 @@ INT CreateFormatCmd (INT argc, char **argv)
           for (j=0; j<2*MAX_MAT_COMP; j++)
             MF_COMPNAME(mm,j) = MF_COMPNAME(mf,j);
           MF_NSUB(mm) = MF_NSUB(mf);
-          for (j=0; j<MF_NSUB(mf); j++) {
-            subm = MF_SUB(mf,j);
-            submm = MF_SUB(mm,j);
-            strcpy(SUBM_NAME(submm),SUBM_NAME(subm));
-            for (type=0; type<NMATTYPES; type++) {
-              SUBM_RCOMP(submm,type) = SUBM_RCOMP(subm,type);
-              SUBM_CCOMP(submm,type) = SUBM_CCOMP(subm,type);
-              for (k=0; k<SUBM_RCOMP(subm,type)*SUBM_CCOMP(subm,type); k++)
-                SUBM_COMP(submm,type,k) = SUBM_COMP(subm,type,k);
-            }
-          }
+          for (j=0; j<MF_NSUB(mf); j++)
+            MF_SUB(mm,j) = MF_SUB(mf,j);
           token = strtok(NULL,BLANKS);
         }
       }
