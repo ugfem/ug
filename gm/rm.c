@@ -2137,32 +2137,18 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
   return(GM_OK);
 }
 
-INT MarkForRefinementX (ELEMENT *theElement,
-                        INT fl, INT tl, INT rule, void *data)
+INT MarkForRefinementX (ELEMENT *t, INT fl, INT tl, INT rule, void *data)
 {
-  switch (rule) {
-  case (RED) :
-  {
-    switch (ECLASS(theElement)) {
-    case (RED_CLASS) :
-      if (LEVEL(theElement) < tl)
-        return(MarkForRefinement(theElement,rule,data));
-    case (GREEN_CLASS) :
-    case (YELLOW_CLASS) :
-      if (LEVEL(theElement) <= tl)
-        return(MarkForRefinement(theElement,rule,data));
-    }
-    break;
-  }
-  case (COARSE) :
-    if ((ECLASS(theElement)==RED_CLASS) && (LEVEL(theElement) > fl))
-      return(MarkForRefinement(theElement,rule,data));
-    break;
-  default :
-    return(MarkForRefinement(theElement,rule,data));
-  }
+  if ((ECLASS(t)==RED_CLASS) && (LEVEL(t) < tl))
+    return(MarkForRefinement(t,RED,0));
+  if ((ECLASS(t)==GREEN_CLASS) && (LEVEL(t) < tl+1))
+    return(MarkForRefinement(t,RED,0));
+  if ((ECLASS(t)==YELLOW_CLASS) && (LEVEL(t) < tl+1))
+    return(MarkForRefinement(t,RED,0));
+  if ((ECLASS(t)==RED_CLASS) && (LEVEL(t) > fl))
+    return(MarkForRefinement(t,COARSE,0));
 
-  return(1);
+  return(GM_ERROR);
 }
 
 /****************************************************************************/
