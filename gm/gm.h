@@ -790,6 +790,53 @@ typedef struct multigrid MULTIGRID;
 
 /****************************************************************************/
 /*																			*/
+/*					structs for evaluation functions						*/
+/*																			*/
+/****************************************************************************/
+
+/*----------- typedef for functions ----------------------------------------*/
+
+typedef INT (*PreprocessingProcPtr)(const char *, MULTIGRID *);
+typedef DOUBLE (*ElementEvalProcPtr)(const ELEMENT *,const COORD **,COORD *);
+typedef void (*ElementVectorProcPtr)(const ELEMENT *,const COORD **,COORD *,DOUBLE *);
+typedef DOUBLE (*MatrixEvalProcPtr)(const MATRIX *);
+
+/*----------- definition of structs ----------------------------------------*/
+
+struct elementvalues {
+
+  /* fields for enironment list variable */
+  ENVVAR v;
+
+  PreprocessingProcPtr PreprocessProc;                  /* prepare eval values					*/
+  ElementEvalProcPtr EvalProc;                                  /* pointer to corresponding function	*/
+} ;
+
+struct elementvector {
+
+  /* fields for enironment list variable */
+  ENVVAR v;
+
+  PreprocessingProcPtr PreprocessProc;                  /* prepare eval values					*/
+  ElementVectorProcPtr EvalProc;                                /* pointer to corresponding function	*/
+  int dimension;                                                                /* dimension of result vector			*/
+} ;
+
+struct matrixvalues {
+
+  /* fields for enironment list variable */
+  ENVVAR v;
+
+  PreprocessingProcPtr PreprocessProc;                  /* prepare eval values					*/
+  MatrixEvalProcPtr EvalProc;                                   /* pointer to corresponding function	*/
+} ;
+
+typedef struct elementvalues EVALUES ;
+typedef struct elementvector EVECTOR ;
+typedef struct matrixvalues MVALUES ;
+
+/****************************************************************************/
+/*																			*/
 /* algebraic dependency for vector ordering                                                             */
 /*																			*/
 /****************************************************************************/
@@ -1868,7 +1915,7 @@ INT             DeleteElement                   (MULTIGRID *theMG, ELEMENT *theE
 INT             EstimateHere                    (ELEMENT *theElement);
 INT             MarkForRefinement               (ELEMENT *theElement, INT rule, INT side);
 INT             GetRefinementMark               (const ELEMENT *theElement, INT *rule, INT *side);
-INT             RefineMultiGrid                 (MULTIGRID *theMG, INT flag);
+INT             RefineMultiGrid                 (MULTIGRID *theMG, INT flag, EVECTOR *direction);
 NODE            *GetFineNodeOnEdge              (const ELEMENT *theElement, INT side);
 /*INT			GetFineSidesTouchingCoarseSide (const ELEMENT *theElement, INT side, INT *nfine, ELEMENT *Elements[MAX_SIDES_TOUCHING], INT Sides[MAX_SIDES_TOUCHING]);*/
 
@@ -1964,6 +2011,17 @@ ALG_DEP         *CreateAlgebraicDependency (char *name, DependencyProcPtr Depend
 FIND_CUT        *CreateFindCutProc              (char *name, FindCutProcPtr FindCutProc);
 INT                     LexOrderVectorsInGrid   (GRID *theGrid, const INT *order, const INT *sign, INT SpecSkipVecs, INT AlsoOrderMatrices);
 INT             OrderVectors                    (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat, const char *dependency, const char *dep_options, const char *findcut);
+
+/* functions for evaluation-fct management */
+INT              InitEvalProc                                                           ();
+EVALUES         *CreateElementValueEvalProc                             (const char *name, PreprocessingProcPtr PreProc, ElementEvalProcPtr EvalProc);
+EVECTOR         *CreateElementVectorEvalProc                            (const char *name, PreprocessingProcPtr PreProc, ElementVectorProcPtr EvalProc, INT d);
+MVALUES         *CreateMatrixValueEvalProc                                      (const char *name, PreprocessingProcPtr PreProc, MatrixEvalProcPtr EvalProc);
+EVALUES         *CreateElementValueEvalProcFromCoeffProc        (const char *name, CoeffProcPtr CoeffProc);
+EVECTOR         *CreateElementVectorEvalProcFromCoeffProc       (const char *name, CoeffProcPtr CoeffProc, INT d);
+EVALUES         *GetElementValueEvalProc                                        (const char *name);
+EVECTOR         *GetElementVectorEvalProc                                       (const char *name);
+MVALUES         *GetMatrixValueEvalProc                                         (const char *name);
 
 /* miscellaneous */
 INT             RenumberMultiGrid               (MULTIGRID *theMG);
