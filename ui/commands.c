@@ -212,7 +212,7 @@ static MARKRULE myMR[NO_OF_RULES]=      /* name and ID of available rules	*/
  {"bi_3",       BISECTION_3},
                                          #endif
                                          #ifdef __THREEDIM__
-                                         #ifdef TET_RULESET
+                                         #ifndef TET_RULESET
  {"tet2hex",TETRA_RED_HEX},
                                          #endif
                                          #endif
@@ -4046,7 +4046,8 @@ static INT RefineCommand (INT argc, char **argv)
 {
   MULTIGRID       *theMG;
   INT i,mode,mark,rv;
-  INT seq = 0;
+  INT seq;
+  INT mgtest;
   EVECTOR         *theElemEvalDirection;
 
         #ifdef ModelP
@@ -4064,6 +4065,10 @@ static INT RefineCommand (INT argc, char **argv)
     PrintErrorMessage('E',"refine","no open multigrid");
     return (CMDERRORCODE);
   }
+
+  /* init defaults */
+  seq = GM_REFINE_PARALLEL;
+  mgtest = GM_REFINE_NOHEAPTEST;
 
   /* check options */
   theElemEvalDirection = NULL;
@@ -4094,7 +4099,10 @@ static INT RefineCommand (INT argc, char **argv)
       break;
 
     case 's' :
-      seq = 1;
+      seq = GM_REFINE_SEQUENTIAL;
+
+    case 't' :
+      mgtest = GM_REFINE_HEAPTEST;
 
     case 'x' :
       mode = mode | GM_USE_HEXAHEDRA;
@@ -4144,7 +4152,7 @@ static INT RefineCommand (INT argc, char **argv)
   SetAlignmentPtr (theMG, theElemEvalDirection);
         #endif
 
-  rv = RefineMultiGrid(theMG,mode,seq);
+  rv = RefineMultiGrid(theMG,mode,seq,mgtest);
 
   InvalidatePicturesOfMG(theMG);
   InvalidateUgWindowsOfMG(theMG);
@@ -6549,7 +6557,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
 static INT StatusCommand  (INT argc, char **argv)
 {
   MULTIGRID       *theMG;
-  INT i,grid,green,load;
+  INT i,grid,green,load,verbose;
 
   /* get current multigrid */
   theMG = currMG;
@@ -6559,6 +6567,7 @@ static INT StatusCommand  (INT argc, char **argv)
     return (CMDERRORCODE);
   }
   grid = green = load = 0;
+  verbose = 1;
 
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -6586,7 +6595,7 @@ static INT StatusCommand  (INT argc, char **argv)
       break;
     }
 
-  if (MultiGridStatus(theMG,grid,green,load) != 0)
+  if (MultiGridStatus(theMG,grid,green,load,verbose) != 0)
   {
     PrintErrorMessage('E',"GridStatus()","execution failed");
     return (CMDERRORCODE);
