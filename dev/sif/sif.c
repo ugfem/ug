@@ -102,7 +102,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /****************************************************************************/
 
-static INT GetScreenSize (INT size[2])
+INT NS_PREFIX GetScreenSize (INT size[2])
 {
   size[0] = 0;
   size[1] = 0;
