@@ -88,7 +88,7 @@ int IFInitComm (DDD_IF ifId)
   int recv_mesgs;
 
 
-  MarkHeap();
+  /* MarkHeap(); */
 
   recv_mesgs = 0;
 
@@ -134,7 +134,7 @@ void IFExitComm (DDD_IF ifId)
     }
   }
 
-  ReleaseHeap();
+  /* ReleaseHeap(); */
 }
 
 

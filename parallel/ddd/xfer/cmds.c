@@ -95,50 +95,6 @@ RCSID("$Header$",DDD_RCS_STRING)
 /****************************************************************************/
 
 
-static int sort_XICopyObj (const void *e1, const void *e2)
-{
-  REGISTER XICopyObj *item1 = *((XICopyObj **)e1);
-  REGISTER XICopyObj *item2 = *((XICopyObj **)e2);
-
-  if (item1->dest < item2->dest) return(-1);
-  if (item1->dest > item2->dest) return(1);
-
-  if (item1->gid < item2->gid) return(-1);
-  if (item1->gid > item2->gid) return(1);
-
-  /* sorting according to priority is not necessary anymore,
-     equal items with different priorities will be sorted
-     out according to PriorityMerge(). KB 970129
-     if (item1->prio < item2->prio) return(-1);
-     if (item1->prio > item2->prio) return(1);
-   */
-
-  return(0);
-}
-
-
-
-static int sort_XISetPrio (const void *e1, const void *e2)
-{
-  REGISTER XISetPrio *item1 = *((XISetPrio **)e1);
-  REGISTER XISetPrio *item2 = *((XISetPrio **)e2);
-
-  /* ascending GID is needed for ExecLocalXI___ */
-  if (item1->gid < item2->gid) return(-1);
-  if (item1->gid > item2->gid) return(1);
-
-  /* sorting according to priority is not necessary anymore,
-     equal items with different priorities will be sorted
-     out according to PriorityMerge(). KB 970129
-     if (item1->prio < item2->prio) return(-1);
-     if (item1->prio > item2->prio) return(1);
-   */
-
-  return(0);
-}
-
-
-
 static int sort_XIDelCmd (const void *e1, const void *e2)
 {
   REGISTER XIDelCmd *item1 = *((XIDelCmd **)e1);
@@ -273,108 +229,6 @@ static int sort_XIAddCpl (const void *e1, const void *e2)
 
 
 /*
-        eliminate double XICopyObj-items.
-        merge priorities from similar XICopyObj-items.
-
-        the items have been sorted according to key (dest,gid),
-        all in ascending order. if dest or gid are different, then
-        at least the first item is relevant. if both are equal,
-        we merge priorities and get a new priority together with
-        the information whether first item wins over second.
-        if first item wins, it is switched into second position and
-        the second item (now on first position) is rejected.
-        if second item wins, first item is rejected.
-        in both cases, we use the new priority for next comparison.
-
-        this implements rule XFER-C1.
- */
-static int unify_XICopyObj (XICopyObj **i1p, XICopyObj **i2p)
-{
-  XICopyObj *i1 = *i1p, *i2 = *i2p;
-  DDD_PRIO newprio;
-  int ret;
-
-  /* if items are different in gid or dest, take first item */
-  if ((i1->hdr != i2->hdr) || (i1->dest != i2->dest))
-    return TRUE;
-
-  /* items have equal gid and dest, we must check priority */
-  ret = PriorityMerge(&theTypeDefs[OBJ_TYPE(i1->hdr)],
-                      i1->prio, i2->prio, &newprio);
-
-  if (ret==PRIO_FIRST || ret==PRIO_UNKNOWN)
-  {
-    /* i1 is winner, take it, switch it into second position,
-       signal rejection of i2 (now on first position).
-       use new priority */
-
-    i1->prio = newprio;
-    *i1p = i2; *i2p = i1;              /* switch pointers */
-  }
-  else
-  {
-    /* i1 lost, i2 is winner. throw away i1, but
-       use new priority for next comparison */
-    i2->prio = newprio;
-  }
-
-  return FALSE;
-}
-
-
-
-/*
-        eliminate double XISetPrio-items.
-        merge priorities from similar XISetPrio-items.
-
-        the items have been sorted according to key (gid), in
-        ascending order. if gid (i.e., hdr) is different,
-        then at least the first item is relevant. if gid is equal,
-        we merge priorities and get a new priority together with
-        the information whether first item wins over second.
-        if first item wins, it is switched into second position and
-        the second item (now on first position) is rejected.
-        if second item wins, first item is rejected.
-        in both cases, we use the new priority for next comparison.
-
-        this implements rule XFER-P1.
- */
-static int unify_XISetPrio (XISetPrio **i1p, XISetPrio **i2p)
-{
-  XISetPrio *i1 = *i1p, *i2 = *i2p;
-  DDD_PRIO newprio;
-  int ret;
-
-  /* if items are different in gid or dest, take first item */
-  if (i1->hdr != i2->hdr)
-    return TRUE;
-
-  /* items have equal gid, we must check priority */
-  ret = PriorityMerge(&theTypeDefs[OBJ_TYPE(i1->hdr)],
-                      i1->prio, i2->prio, &newprio);
-
-  if (ret==PRIO_FIRST || ret==PRIO_UNKNOWN)
-  {
-    /* i1 is winner, take it, switch it into second position,
-       signal rejection of i2 (now on first position).
-       use new priority */
-
-    i1->prio = newprio;
-    *i1p = i2; *i2p = i1;              /* switch pointers */
-  }
-  else
-  {
-    /* i1 lost, i2 is winner. throw away i1, but
-       use new priority for next comparison */
-    i2->prio = newprio;
-  }
-
-  return FALSE;
-}
-
-
-
-/*
         eliminate double XIDelCmd-items.
 
         the items have been sorted according to key
@@ -441,6 +295,102 @@ static int unify_XIModCpl (XIModCpl **i1p, XIModCpl **i2p)
 
 
 
+/* TODO remove this */
+void GetSizesXIAddData (int *, int *, size_t *, size_t *);
+
+
+/*
+        compute and display memory resources used
+ */
+static void DisplayMemResources (void)
+{
+  int nSegms=0, nItems=0, nNodes=0;
+  size_t memAllocated=0, memUsed=0;
+
+  GetSizesXIAddData(&nSegms, &nItems, &memAllocated, &memUsed);
+  if (nSegms>0)
+    printf("%4d: XferEnd, XIAddData segms=%d items=%d allocated=%ld used=%ld\n",
+           me, nSegms, nItems, (long)memAllocated, (long)memUsed);
+
+
+  XICopyObjSet_GetResources(xferGlobals.setXICopyObj,
+                            &nSegms, &nItems, &nNodes, &memAllocated, &memUsed);
+  if (nSegms>0) {
+    printf("%4d: XferEnd, XICopyObj "
+           "segms=%d items=%d nodes=%ld allocated=%ld used=%ld\n",
+           me, nSegms, nItems, nNodes, (long)memAllocated, (long)memUsed);
+  }
+
+
+        #ifdef XICOPYOBJ_DETAILED_RESOURCES
+  /* this is a different version, split up into BTree and SegmList */
+  XICopyObjSegmList_GetResources(xferGlobals.setXICopyObj->list,
+                                 &nSegms, &nItems, &memAllocated, &memUsed);
+  if (nSegms>0)
+    printf("%4d: XferEnd, XICopyObj segms=%d items=%d allocated=%ld used=%ld\n",
+           me, nSegms, nItems, (long)memAllocated, (long)memUsed);
+
+  XICopyObjBTree_GetResources(xferGlobals.setXICopyObj->tree,
+                              &nNodes, &nItems, &memAllocated, &memUsed);
+  if (nItems>0)
+    printf("%4d: XferEnd, XICopyObj nodes=%d items=%d allocated=%ld used=%ld\n",
+           me, nNodes, nItems, (long)memAllocated, (long)memUsed);
+        #endif
+
+
+  XISetPrioSet_GetResources(xferGlobals.setXISetPrio,
+                            &nSegms, &nItems, &nNodes, &memAllocated, &memUsed);
+  if (nSegms>0) {
+    printf("%4d: XferEnd, XISetPrio "
+           "segms=%d items=%d nodes=%ld allocated=%ld used=%ld\n",
+           me, nSegms, nItems, nNodes, (long)memAllocated, (long)memUsed);
+  }
+
+
+  GetSizesXIDelCmd(&nSegms, &nItems, &memAllocated, &memUsed);
+  if (nSegms>0)
+    printf("%4d: XferEnd, XIDelCmd  segms=%d items=%d allocated=%ld used=%ld\n",
+           me, nSegms, nItems, (long)memAllocated, (long)memUsed);
+
+  GetSizesXIDelObj(&nSegms, &nItems, &memAllocated, &memUsed);
+  if (nSegms>0)
+    printf("%4d: XferEnd, XIDelObj  segms=%d items=%d allocated=%ld used=%ld\n",
+           me, nSegms, nItems, (long)memAllocated, (long)memUsed);
+
+  GetSizesXINewCpl(&nSegms, &nItems, &memAllocated, &memUsed);
+  if (nSegms>0)
+    printf("%4d: XferEnd, XINewCpl  segms=%d items=%d allocated=%ld used=%ld\n",
+           me, nSegms, nItems, (long)memAllocated, (long)memUsed);
+
+  GetSizesXIOldCpl(&nSegms, &nItems, &memAllocated, &memUsed);
+  if (nSegms>0)
+    printf("%4d: XferEnd, XIOldCpl  segms=%d items=%d allocated=%ld used=%ld\n",
+           me, nSegms, nItems, (long)memAllocated, (long)memUsed);
+
+  GetSizesXIDelCpl(&nSegms, &nItems, &memAllocated, &memUsed);
+  if (nSegms>0)
+    printf("%4d: XferEnd, XIDelCpl  segms=%d items=%d allocated=%ld used=%ld\n",
+           me, nSegms, nItems, (long)memAllocated, (long)memUsed);
+
+  GetSizesXIModCpl(&nSegms, &nItems, &memAllocated, &memUsed);
+  if (nSegms>0)
+    printf("%4d: XferEnd, XIModCpl  segms=%d items=%d allocated=%ld used=%ld\n",
+           me, nSegms, nItems, (long)memAllocated, (long)memUsed);
+
+  GetSizesXIAddCpl(&nSegms, &nItems, &memAllocated, &memUsed);
+  if (nSegms>0)
+    printf("%4d: XferEnd, XIAddCpl  segms=%d items=%d allocated=%ld used=%ld\n",
+           me, nSegms, nItems, (long)memAllocated, (long)memUsed);
+
+
+  /*
+          sprintf(cBuffer, "%4d: XferEnd, segms=%d items=%d allocated=%ld used=%ld\n",
+                  me, nSegms, nItems, (long)memAllocated, (long)memUsed);
+          DDD_PrintDebug(cBuffer);
+   */
+}
+
+
 /****************************************************************************/
 /*                                                                          */
 /* Function:  DDD_XferEnd                                                   */
@@ -465,13 +415,13 @@ void DDD_Library::XferEnd (void)
 void DDD_XferEnd (void)
 #endif
 {
-  XICopyObj   **arrayXICopyObj, **arrayNewOwners;
-  int remXICopyObj, nNewOwners;
+  XICopyObjPtrArray *arrayXICopyObj;
+  XICopyObj   **arrayNewOwners;
+  int nNewOwners;
   XIDelCmd    **arrayXIDelCmd;
   int remXIDelCmd, prunedXIDelCmd;
   XIDelObj    **arrayXIDelObj;
-  XISetPrio   **arrayXISetPrio;
-  int remXISetPrio;
+  XISetPrioPtrArray *arrayXISetPrio;
   XINewCpl    **arrayXINewCpl;
   XIOldCpl    **arrayXIOldCpl;
   XIDelCpl    **arrayXIDelCpl;
@@ -486,6 +436,11 @@ void DDD_XferEnd (void)
   size_t sendMem=0, recvMem=0;
   int DelCmds_were_pruned;
 
+        #ifdef XferMemFromHeap
+  MarkHeap();
+  LC_SetMemMgr(memmgr_AllocTMEM, memmgr_FreeTMEM,
+               memmgr_AllocHMEM, NULL);
+        #endif
 
   STAT_SET_MODULE(DDD_MODULE_XFER);
   STAT_ZEROALL;
@@ -502,11 +457,18 @@ void DDD_XferEnd (void)
           PREPARATION PHASE
    */
   STAT_RESET;
-  /* create sorted array of XICopyObj-items, and unify it */
-  arrayXICopyObj = SortedArrayXICopyObj(sort_XICopyObj);
-  remXICopyObj   = UnifyXICopyObj(arrayXICopyObj, unify_XICopyObj);
-  obsolete = nXICopyObj-remXICopyObj;
-  STAT_TIMER(T_XFER_PREP_CMDS);
+  /* get sorted array of XICopyObj-items */
+  arrayXICopyObj = XICopyObjSet_GetArray(xferGlobals.setXICopyObj);
+  obsolete = XICopyObjSet_GetNDiscarded(xferGlobals.setXICopyObj);
+
+  /* debugging output, write all XICopyObjs to file
+     if (XICopyObjSet_GetNItems(xferGlobals.setXICopyObj)>0)
+     {
+          FILE *ff = fopen("xfer.dump","w");
+          XICopyObjSet_Print(xferGlobals.setXICopyObj, 2, ff);
+          fclose(ff);
+     }
+   */
 
 
   /*
@@ -531,8 +493,7 @@ void DDD_XferEnd (void)
     obsolete += (nXIDelCmd-remXIDelCmd);
 
     /* do communication and actual pruning */
-    prunedXIDelCmd = PruneXIDelCmd(arrayXIDelCmd, remXIDelCmd,
-                                   arrayXICopyObj, remXICopyObj);
+    prunedXIDelCmd = PruneXIDelCmd(arrayXIDelCmd, remXIDelCmd, arrayXICopyObj);
     obsolete += prunedXIDelCmd;
     remXIDelCmd -= prunedXIDelCmd;
 
@@ -543,6 +504,11 @@ void DDD_XferEnd (void)
     DelCmds_were_pruned = FALSE;
   }
 
+  /*
+     if (nXIDelCmd>0||remXIDelCmd>0||prunedXIDelCmd>0)
+     printf("%4d: XIDelCmd. all=%d rem=%d pruned=%d\n", me,
+     nXIDelCmd, remXIDelCmd, prunedXIDelCmd);
+   */
 
 
   /*
@@ -550,9 +516,7 @@ void DDD_XferEnd (void)
    */
   STAT_RESET;
   /* send Cpl-info about new objects to owners of other local copies */
-  arrayNewOwners = CplClosureEstimate(
-    arrayXICopyObj, remXICopyObj,
-    &nNewOwners);
+  arrayNewOwners = CplClosureEstimate(arrayXICopyObj, &nNewOwners);
 
   /* create sorted array of XINewCpl- and XIOldCpl-items.
      TODO. if efficiency is a problem here, use b-tree or similar
@@ -562,16 +526,19 @@ void DDD_XferEnd (void)
 
 
   /* prepare msgs for objects and XINewCpl-items */
-  nSendMsgs = PrepareObjMsgs(
-    arrayXICopyObj, remXICopyObj,
-    arrayXINewCpl, nXINewCpl,
-    arrayXIOldCpl, nXIOldCpl,
-    &sendMsgs, &sendMem);
+  nSendMsgs = PrepareObjMsgs(arrayXICopyObj,
+                             arrayXINewCpl, nXINewCpl,
+                             arrayXIOldCpl, nXIOldCpl,
+                             &sendMsgs, &sendMem);
+
+
+  /*
+     DisplayMemResources();
+   */
 
   /* init communication topology */
   nRecvMsgs = LC_Connect(xferGlobals.objmsg_t);
   STAT_TIMER(T_XFER_PREP_MSGS);
-
 
   STAT_RESET;
   /* build obj msgs on sender side and start send */
@@ -584,9 +551,9 @@ void DDD_XferEnd (void)
 
   /* create sorted array of XISetPrio-items, and unify it */
   STAT_RESET;
-  arrayXISetPrio = SortedArrayXISetPrio(sort_XISetPrio);
-  remXISetPrio   = UnifyXISetPrio(arrayXISetPrio, unify_XISetPrio);
-  obsolete += (nXISetPrio-remXISetPrio);
+  arrayXISetPrio = XISetPrioSet_GetArray(xferGlobals.setXISetPrio);
+  obsolete += XISetPrioSet_GetNDiscarded(xferGlobals.setXISetPrio);
+
 
   if (!DelCmds_were_pruned)
   {
@@ -611,7 +578,7 @@ void DDD_XferEnd (void)
   /* create sorted array of XIDelObj-items */
   arrayXIDelObj = SortedArrayXIDelObj(sort_XIDelObj);
 
-  ExecLocalXISetPrio(arrayXISetPrio, remXISetPrio,
+  ExecLocalXISetPrio(arrayXISetPrio,
                      arrayXIDelObj,  nXIDelObj,
                      arrayNewOwners, nNewOwners);
   ExecLocalXIDelObj(arrayXIDelObj,  nXIDelObj,
@@ -625,8 +592,12 @@ void DDD_XferEnd (void)
   {
     if (DDD_GetOption(OPT_INFO_XFER) & XFER_SHOW_OBSOLETE)
     {
+      int all = nXIDelObj+
+                XISetPrioSet_GetNItems(xferGlobals.setXISetPrio)+
+                XICopyObjSet_GetNItems(xferGlobals.setXICopyObj);
+
       sprintf(cBuffer, "DDD MESG [%03d]: %4d from %4d xfer-cmds obsolete.\n",
-              me, obsolete, nXICopyObj+nXISetPrio+nXIDelObj);
+              me, obsolete, all);
       DDD_PrintLine(cBuffer);
     }
   }
@@ -683,9 +654,9 @@ void DDD_XferEnd (void)
   STAT_RESET;
   XferUnpack(recvMsgs, nRecvMsgs,
              localCplObjs, NCPL_GET,
-             arrayXISetPrio, remXISetPrio,
+             arrayXISetPrio,
              arrayXIDelObj, nXIDelObj,
-             arrayXICopyObj, remXICopyObj,
+             arrayXICopyObj,
              arrayNewOwners, nNewOwners);
   LC_Cleanup();
   STAT_TIMER(T_XFER_UNPACK);
@@ -735,13 +706,14 @@ void DDD_XferEnd (void)
           free temporary storage
    */
 
-  if (arrayXICopyObj!=NULL) FreeTmp(arrayXICopyObj);
+  XICopyObjPtrArray_Free(arrayXICopyObj);
+  XICopyObjSet_Reset(xferGlobals.setXICopyObj);
+
   if (arrayNewOwners!=NULL) FreeTmp(arrayNewOwners);
   FreeAllXIAddData();
-  FreeAllXICopyObj();
 
-  if (arrayXISetPrio!=NULL) FreeTmp(arrayXISetPrio);
-  FreeAllXISetPrio();
+  XISetPrioPtrArray_Free(arrayXISetPrio);
+  XISetPrioSet_Reset(xferGlobals.setXISetPrio);
 
   if (arrayXIDelCmd!=NULL) FreeTmp(arrayXIDelCmd);
   FreeAllXIDelCmd();
@@ -772,6 +744,11 @@ void DDD_XferEnd (void)
     FreeTmp(sendMsgs);
   }
 
+        #ifdef XferMemFromHeap
+  ReleaseHeap();
+  LC_SetMemMgr(memmgr_AllocTMEM, memmgr_FreeTMEM,
+               memmgr_AllocTMEM, memmgr_FreeTMEM);
+        #endif
 
 #       if DebugXfer<=4
   sprintf(cBuffer,"%4d: XferEnd, before IFAllFromScratch().\n", me);
@@ -827,10 +804,13 @@ void DDD_XferEnd (void)
 
 void DDD_XferPrioChange (DDD_HDR hdr, DDD_PRIO prio)
 {
-  XISetPrio *xi = NewXISetPrio(SLLNewArgs);
+  XISetPrio *xi = XISetPrioSet_NewItem(xferGlobals.setXISetPrio);
   xi->hdr  = hdr;
   xi->gid  = OBJ_GID(hdr);
   xi->prio = prio;
+
+  if (! XISetPrioSet_ItemOK(xferGlobals.setXISetPrio))
+    return;
 
 #       if DebugXfer<=2
   sprintf(cBuffer, "%4d: DDD_XferPrioChange %08x, prio=%d\n",
@@ -872,12 +852,30 @@ static void XferInitCopyInfo (DDD_HDR hdr,
   if (dest==me)
   {
     /* XFER-C4: XferCopyObj degrades to SetPrio command */
-    XISetPrio *xi = NewXISetPrio(SLLNewArgs);
+    XISetPrio *xi = XISetPrioSet_NewItem(xferGlobals.setXISetPrio);
     xi->hdr  = hdr;
     xi->gid  = OBJ_GID(hdr);
     xi->prio = prio;
 
-    /* nevertheless, call XFERCOPY-handler! */
+    if (! XISetPrioSet_ItemOK(xferGlobals.setXISetPrio))
+    {
+      /* item has been inserted already, don't store it twice. */
+      /* even don't call XFERCOPY-handler, this is a real API change! */
+
+      /* xi->prio will be set to PRIO_INVALID if the priority of
+         the previously existing XICopyObj-item wins the PriorityMerge
+         in the corresponding Compare function (see supp.c). Then,
+         we in fact won't need calling the XFERCOPY-handler here,
+         because it doesn't give new information. If xi->prio is
+         not PRIO_INVALID, then the XICopyObj-item xi wins the merge
+         and the XFERCOPY-handler has to be called a second time, now
+         with a higher priority. */
+      if (xi->prio==PRIO_INVALID)
+        return;
+    }
+
+
+    /* although XferCopyObj degrades to SetPrio, call XFERCOPY-handler! */
 
     /* reset for eventual AddData-calls during handler execution */
     theXIAddData = NULL;
@@ -895,13 +893,30 @@ static void XferInitCopyInfo (DDD_HDR hdr,
   else
   {
     /* this is a real transfer to remote proc */
-    XICopyObj  *xi = NewXICopyObj(SLLNewArgs);
+    XICopyObj  *xi = XICopyObjSet_NewItem(xferGlobals.setXICopyObj);
     xi->hdr  = hdr;
     xi->gid  = OBJ_GID(hdr);
-    xi->size = size;
     xi->dest = dest;
     xi->prio = prio;
 
+    if (! XICopyObjSet_ItemOK(xferGlobals.setXICopyObj))
+    {
+      /* item has been inserted already, don't store it twice. */
+      /* even don't call XFERCOPY-handler, this is a real API change! */
+
+      /* xi->prio will be set to PRIO_INVALID if the priority of
+         the previously existing XICopyObj-item wins the PriorityMerge
+         in the corresponding Compare function (see supp.c). Then,
+         we in fact won't need calling the XFERCOPY-handler here,
+         because it doesn't give new information. If xi->prio is
+         not PRIO_INVALID, then the XICopyObj-item xi wins the merge
+         and the XFERCOPY-handler has to be called a second time, now
+         with a higher priority. */
+      if (xi->prio==PRIO_INVALID)
+        return;
+    }
+
+    xi->size = size;
     xi->add    = NULL;
     xi->addLen = 0;
 

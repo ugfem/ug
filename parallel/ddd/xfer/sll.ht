@@ -52,7 +52,7 @@ int Unify(T) (T **, int (*) (T **, T **));
 void OrigOrder(T) (T **, int);
 void Init(T) (void);
 void FreeAll(T) (void);
-
+void GetSizes(T) (int *, int *, size_t *, size_t *);
 
 /****************************************************************************/
 

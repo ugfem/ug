@@ -797,14 +797,14 @@ static void AddAndSpread (DDD_HDR hdr, DDD_GID gid, DDD_PROC dest, DDD_PRIO prio
 	the inputs for deciding which couplings have to be added are:
 
 	for prev. existing objects:
-		-  sending to new_owner-destinations
+		-  sending to NEWOWNER-destinations
 		-  incoming NewCpl-items for previously existing objects
 
 	for new (incoming) objects:
 		-  incoming NewCpl-items for new objects
 
 	as a side effect this function sends XIAddCpl-items
-	to new_owner-procs.
+	to NEWOWNER-procs.
 */
 
 
@@ -1085,7 +1085,7 @@ static void PropagateIncomings (
 			while ((iNO<nNO) && (arrayNO[iNO]->gid < ote->gid))
 				iNO++;
 
-			/* communicate to all new_owner-destinations */
+			/* communicate to all NEWOWNER-destinations */
 			while (iNO<nNO && arrayNO[iNO]->gid == ote->gid)
 			{
 				if (newness==PARTNEW || newness==PRUNEDNEW)
@@ -1575,12 +1575,12 @@ static int CompressNewCpl (TENewCpl *tabNC, int nNC)
 
 void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 	DDD_HDR *localCplObjs, int nLocalCplObjs,
-	XISetPrio **arraySP, int nSP,
+	XISetPrioPtrArray *theSP,
 	XIDelObj **arrayDO, int nDO,
 #ifdef CPP_FRONTEND
-	XICopyObj **, int ,
+	XICopyObjPtrArray *,
 #else
-	XICopyObj **arrayCO, int nCO,
+	XICopyObjPtrArray *arrayCO,
 #endif
 	XICopyObj **arrayNewOwners, int nNewOwners)
 {
@@ -1588,6 +1588,9 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 	OBJTAB_ENTRY **unionObjTab;
 	int          lenObjTab, lenSymTab, nNewCpl;
 	int          i, pos1, pos2, len;
+	XISetPrio    **arraySP = XISetPrioPtrArray_GetData(theSP);
+	int          nSP       = XISetPrioPtrArray_GetSize(theSP);
+
 
 
 	lenObjTab=lenSymTab=nNewCpl=0;

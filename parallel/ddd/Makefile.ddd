@@ -233,7 +233,9 @@ Xfer-o = xfer.o	\
 
 $(XferPth)/xfer.h:	$(BasicPth)/lowcomm.h	\
 		$(XferPth)/sll.ht	\
-		$(XferPth)/sll.h
+		$(XferPth)/sll.h	\
+		$(BasicPth)/oopp.h   \
+		$(BasicPth)/ooppcc.h
 	touch $(XferPth)/xfer.h
 
 xfer.o: $(SrcPth)/dddi.h	\

@@ -291,7 +291,18 @@ static int ConsCheckGlobalCpl (void)
     lenCplBuf += IdxNCpl(i);
 
   /* get storage for messages */
-  cplBuf = (CONS_INFO *) AllocTmp(lenCplBuf*sizeof(CONS_INFO));
+  cplBuf = (CONS_INFO *)
+                #ifdef ConsMemFromHeap
+           AllocHeap(lenCplBuf*sizeof(CONS_INFO));
+                #else
+           AllocTmp(lenCplBuf*sizeof(CONS_INFO));
+                #endif
+
+  if (cplBuf==NULL)
+  {
+    DDD_PrintError('E', 9901, STR_NOMEM " in ConsCheckGlobalCpl");
+    return(-1);
+  }
 
   /* copy CONS_INFOs into message buffer */
   for(i=0, j=0; i<NCPL_GET; i++)
@@ -349,8 +360,10 @@ static int ConsCheckGlobalCpl (void)
 
 
   /* free temporary storage */
+        #ifndef ConsMemFromHeap
   if (cplBuf!=NULL)
     FreeTmp(cplBuf);
+        #endif
 
   for(; sendMsgs!=NULL; sendMsgs=cm)
   {
@@ -483,7 +496,18 @@ static int Cons2CheckGlobalCpl (void)
     lenCplBuf += (IdxNCpl(i) * (IdxNCpl(i)+1));
 
   /* get storage for messages */
-  cplBuf = (CONS_INFO *) AllocTmp(lenCplBuf*sizeof(CONS_INFO));
+  cplBuf = (CONS_INFO *)
+                #ifdef ConsMemFromHeap
+           AllocHeap(lenCplBuf*sizeof(CONS_INFO));
+                #else
+           AllocTmp(lenCplBuf*sizeof(CONS_INFO));
+                #endif
+
+  if (cplBuf==NULL)
+  {
+    DDD_PrintError('E', 9902, STR_NOMEM " in Cons2CheckGlobalCpl");
+    return(-1);
+  }
 
   /* copy CONS_INFOs into message buffer */
   for(i=0, j=0; i<NCPL_GET; i++)
@@ -540,8 +564,10 @@ static int Cons2CheckGlobalCpl (void)
 
 
   /* free temporary storage */
+        #ifndef ConsMemFromHeap
   if (cplBuf!=NULL)
     FreeTmp(cplBuf);
+        #endif
 
   for(; sendMsgs!=NULL; sendMsgs=cm)
   {
@@ -614,7 +640,13 @@ int DDD_ConsCheck (void)
 int DDD_Library::ConsCheck (void)
 #endif
 {
+  int cpl_errors;
   int total_errors=0;
+
+        #ifdef ConsMemFromHeap
+  MarkHeap();
+  LC_SetMemMgr(memmgr_AllocTMEM, memmgr_FreeTMEM, memmgr_AllocHMEM, NULL);
+        #endif
 
   DDD_Flush();
   Synchronize();
@@ -625,12 +657,20 @@ int DDD_Library::ConsCheck (void)
   }
 
   total_errors += ConsCheckDoubleObj();
+
 #ifdef CHECK_CPL_PAIRS
-  total_errors += ConsCheckGlobalCpl();
+  cpl_errors = ConsCheckGlobalCpl();
 #endif
 #ifdef CHECK_CPL_ALLTOALL
-  total_errors += Cons2CheckGlobalCpl();
+  cpl_errors = Cons2CheckGlobalCpl();
 #endif
+  if (cpl_errors==-1)
+  {
+    DDD_PrintError('E', 9910, "ConsCheck aborted.");
+    HARD_EXIT;
+  }
+  total_errors += cpl_errors;
+
   total_errors += DDD_CheckInterfaces();
 
 
@@ -647,6 +687,13 @@ int DDD_Library::ConsCheck (void)
       DDD_PrintLine(cBuffer);
     }
   }
+
+
+        #ifdef ConsMemFromHeap
+  ReleaseHeap();
+  LC_SetMemMgr(memmgr_AllocTMEM, memmgr_FreeTMEM,
+               memmgr_AllocTMEM, memmgr_FreeTMEM);
+        #endif
 
   return(total_errors);
 }

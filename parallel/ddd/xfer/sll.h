@@ -19,6 +19,10 @@
 /*                                                                          */
 /****************************************************************************/
 
+/* RCS_ID
+   $Header$
+ */
+
 /****************************************************************************/
 /*                                                                          */
 /* auto include mechanism and other include files                           */
@@ -129,6 +133,9 @@
 
 #define _FreeAll(T) FreeAll ## T
 #define FreeAll(T) _FreeAll(T)
+
+#define _GetSizes(T) GetSizes ## T
+#define GetSizes(T) _GetSizes(T)
 
 
 

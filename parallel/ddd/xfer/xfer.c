@@ -121,10 +121,13 @@ static int sort_NewOwners (const void *e1, const void *e2)
         XFER-P and XFER-D).
  */
 
-XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
+XICopyObj **CplClosureEstimate (XICopyObjPtrArray *arrayItems, int *nRet)
 {
   int i, nNewOwners;
   XICopyObj **arrayNewOwners = NULL;
+  XICopyObj **items = XICopyObjPtrArray_GetData(arrayItems);
+  int n       = XICopyObjPtrArray_GetSize(arrayItems);
+
 
 
   nNewOwners=0;
@@ -136,7 +139,7 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
     REGISTER DDD_GID xigid = xi->gid;
     REGISTER DDD_TYPE xitype = OBJ_TYPE(xi->hdr);
 
-    xi->new_owner = TRUE;
+    SET_CO_NEWOWNER(xi);
 
     /* look if there's a coupling for dest */
     for(cpl=xicpl; cpl!=NULL; cpl=CPL_NEXT(cpl))
@@ -144,7 +147,7 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
       if (dest==cpl->proc)
       {
         /* got one coupling, destination is not a new owner */
-        xi->new_owner=FALSE;
+        CLEAR_CO_NEWOWNER(xi);
 
         /* destination proc had a copy before xfer */
         /* check whether priority of that copy will change */
@@ -167,7 +170,7 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
     }
 
 
-    if (xi->new_owner)
+    if (CO_NEWOWNER(xi))
     {
       nNewOwners++;
 
@@ -226,10 +229,10 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
       return NULL;
     }
 
-    /* fill pointer array XICopyObj-items marked new_owner */
+    /* fill pointer array XICopyObj-items marked CO_NEWOWNER */
     for(j=0, k=0; j<n; j++)
     {
-      if (items[j]->new_owner)
+      if (CO_NEWOWNER(items[j]))
       {
         arrayNewOwners[k] = items[j];
         k++;
@@ -504,14 +507,17 @@ static XFERMSG *AccumXIOldCpl (XFERMSG *currxm, int *nMsgs, int *nItems,
         coupling closure from CplClosureEstimate().
  */
 
-int PrepareObjMsgs (
-  XICopyObj **itemsO, int nO,
-  XINewCpl **itemsNC, int nNC,
-  XIOldCpl **itemsOC, int nOC,
-  XFERMSG **theMsgs, size_t *memUsage)
+int PrepareObjMsgs (XICopyObjPtrArray *arrayO,
+                    XINewCpl **itemsNC, int nNC,
+                    XIOldCpl **itemsOC, int nOC,
+                    XFERMSG **theMsgs, size_t *memUsage)
 {
   XFERMSG    *xm=NULL;
   int iO, iNC, iOC, nMsgs=0;
+
+  XICopyObj  **itemsO = XICopyObjPtrArray_GetData(arrayO);
+  int nO       = XICopyObjPtrArray_GetSize(arrayO);
+
 
 #       if DebugXfer<=3
   printf("%4d: PrepareObjMsgs, nXICopyObj=%d nXINewCpl=%d nXIOldCpl=%d\n",
@@ -610,11 +616,13 @@ int PrepareObjMsgs (
         procs during first message phase.
  */
 void ExecLocalXISetPrio (
-  XISetPrio **itemsP, int nP,
+  XISetPrioPtrArray *arrayP,
   XIDelObj  **itemsD, int nD,
   XICopyObj  **itemsNO, int nNO)
 {
   int iP, iD, iNO;
+  XISetPrio **itemsP = XISetPrioPtrArray_GetData(arrayP);
+  int nP       = XISetPrioPtrArray_GetSize(arrayP);
 
   /*
           execute SetPrio only if no corresponding DelObj exists!
@@ -1000,15 +1008,15 @@ int XferStepMode (int old)
 
 void ddd_XferInit (void)
 {
-  /* XferInfo-items for first message */
-  InitXICopyObj();
+  /* init control structures for XferInfo-items in first (?) message */
+  xferGlobals.setXICopyObj = New_XICopyObjSet();
+  xferGlobals.setXISetPrio = New_XISetPrioSet();
   InitXIDelCmd();
   InitXIDelObj();
-  InitXISetPrio();
   InitXINewCpl();
   InitXIOldCpl();
 
-  /* XferInfo-items for second message */
+  /* init control structures for XferInfo-items for second (?) message */
   InitXIDelCpl();
   InitXIModCpl();
   InitXIAddCpl();
@@ -1044,6 +1052,8 @@ void ddd_XferExit (void)
 {
   CmdMsgExit();
   CplMsgExit();
+
+  /* TODO data (e.g., lists&trees of XI-items) should be freed!! */
 }
 
 

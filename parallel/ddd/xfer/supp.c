@@ -32,9 +32,19 @@
 /* standard C library */
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 
 #include "dddi.h"
+
+
+/*
+        NOTE: all container-classes from ooppcc.h are implemented in this
+              source file by setting the following define.
+ */
+#define ContainerImplementation
+#define _CHECKALLOC(ptr)   assert(ptr!=NULL)
+
 #include "xfer.h"
 
 
@@ -98,29 +108,141 @@ static AddDataSegm *segmAddData = NULL;
 static SizesSegm   *segmSizes   = NULL;
 
 
+
 /****************************************************************************/
 /*                                                                          */
-/* routines                                                                 */
+/* class member function implementations                                    */
 /*                                                                          */
+/****************************************************************************/
+
+#define ClassName XICopyObj
+
+/*
+        compare-method in order to eliminate double XICopyObj-items.
+        merge priorities from similar XICopyObj-items.
+
+        the items are sorted according to key (dest,gid),
+        all in ascending order. if dest and gid are equal,
+        we merge priorities and get a new priority together with
+        the information whether first item wins over second.
+        in both cases, we use the new priority for next comparison.
+
+        this implements rule XFER-C1.
+ */
+int Method(Compare) (ClassPtr item1, ClassPtr item2)
+{
+  DDD_PRIO newprio;
+  int ret;
+
+  if (item1->dest < item2->dest) return(-1);
+  if (item1->dest > item2->dest) return(1);
+
+  if (item1->gid < item2->gid) return(-1);
+  if (item1->gid > item2->gid) return(1);
+
+
+  /* items have equal gid and dest, so they are considered as equal. */
+  /* however, we must check priority, and patch both items with
+     the new priority after merge. */
+  ret = PriorityMerge(&theTypeDefs[OBJ_TYPE(item1->hdr)],
+                      item1->prio, item2->prio, &newprio);
+
+  item1->prio = newprio;
+
+  if (ret==PRIO_FIRST || ret==PRIO_UNKNOWN)
+  {
+    /* tell XferInitCopyInfo() that item is rejected */
+    item2->prio = PRIO_INVALID;
+  }
+  else
+  {
+    /* communicate new priority to XferInitCopyInfo() */
+    item2->prio = newprio;
+  }
+
+  return(0);
+}
+
+
+void Method(Print) (ParamThis _PRINTPARAMS)
+{
+  fprintf(fp, "XICopyObj dest=%d gid=%08x prio=%d\n",
+          This->dest, This->gid, This->prio);
+}
+
+#undef ClassName
+
+
+
+/****************************************************************************/
+
+#define ClassName XISetPrio
+
+/*
+        compare-method in order to eliminate double XISetPrio-items.
+        merge priorities from similar XISetPrio-items.
+
+        the items are sorted according to key (gid),
+        all in ascending order. if both gids are equal,
+        we merge priorities and get a new priority together with
+        the information whether first item wins over second.
+        in both cases, we use the new priority for next comparison.
+
+        this implements rule XFER-P1.
+ */
+int Method(Compare) (ClassPtr item1, ClassPtr item2)
+{
+  DDD_PRIO newprio;
+  int ret;
+
+  /* ascending GID is needed for ExecLocalXI___ */
+  if (item1->gid < item2->gid) return(-1);
+  if (item1->gid > item2->gid) return(1);
+
+
+  /* items have equal gid and dest, so they are considered as equal. */
+  /* however, we must check priority, and patch both items with
+     the new priority after merge. */
+  ret = PriorityMerge(&theTypeDefs[OBJ_TYPE(item1->hdr)],
+                      item1->prio, item2->prio, &newprio);
+
+  item1->prio = item2->prio = newprio;
+
+
+  if (ret==PRIO_FIRST || ret==PRIO_UNKNOWN)
+  {
+    /* tell XferInitCopyInfo() that item is rejected */
+    item2->prio = PRIO_INVALID;
+  }
+  else
+  {
+    /* communicate new priority to XferInitCopyInfo() */
+    item2->prio = newprio;
+  }
+
+  return(0);
+}
+
+
+void Method(Print) (ParamThis _PRINTPARAMS)
+{
+  fprintf(fp, "XISetPrio gid=%08x prio=%d\n", This->gid, This->prio);
+}
+
+#undef ClassName
+
+
 /****************************************************************************/
 
 
 /*
     include templates
  */
-#define T XICopyObj
-#include "sll.ct"
-#undef T
-
 #define T XIDelCmd
 #include "sll.ct"
 #undef T
 
 #define T XIDelObj
-#include "sll.ct"
-#undef T
-
-#define T XISetPrio
 #include "sll.ct"
 #undef T
 
@@ -271,6 +393,42 @@ int *AddDataAllocSizes (int cnt)
   segm->current += cnt;
 
   return(pos);
+}
+
+
+/****************************************************************************/
+
+
+/*
+        get quantitative resource usage
+ */
+void GetSizesXIAddData (int *nSegms, int *nItems, size_t *alloc_mem, size_t *used_mem)
+{
+  size_t allocated=0, used=0;
+  int ns=0, ni=0;
+
+  {
+    AddDataSegm  *segm;
+    for (segm=segmAddData; segm!=NULL; segm=segm->next)
+    {
+      /* count number of segments and number of items */
+      ns++;
+      ni+=segm->nItems;
+
+      /* compute memory usage */
+      allocated += sizeof(AddDataSegm);
+      used += (sizeof(AddDataSegm) -
+               (sizeof(XFERADDDATA)*(ADDDATASEGM_SIZE-segm->nItems)));
+    }
+  }
+
+  /* TODO: add resources for SizesSegm */
+
+
+  *nSegms    = ns;
+  *nItems    = ni;
+  *alloc_mem = allocated;
+  *used_mem  = used;
 }
 
 

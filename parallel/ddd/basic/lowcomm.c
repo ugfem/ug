@@ -190,6 +190,8 @@ static char *theRecvBuffer;
 static LC_MSGHANDLE *theRecvArray;
 static MSG_DESC *LC_FreeMsgDescs;
 
+static AllocFunc _SendAlloc, _RecvAlloc;
+static FreeFunc _SendFree,  _RecvFree;
 
 
 /****************************************************************************/
@@ -205,9 +207,12 @@ static MSG_DESC *LC_FreeMsgDescs;
         to initialize the LowComm subsystem. After a call to
         this function, the functionality of the LowComm can
         be used.
+
+   @param aAllocFunc memory allocation function used as the default
+   @param aFreeFunc  memory free function used as the default
  */
 
-void LC_Init (void)
+void LC_Init (AllocFunc aAllocFunc, FreeFunc aFreeFunc)
 {
   LC_SendQueue = NULL;
   LC_RecvQueue = NULL;
@@ -219,6 +224,11 @@ void LC_Init (void)
   theRecvArray = NULL;
 
   LC_FreeMsgDescs = NULL;
+
+  _SendAlloc = aAllocFunc;
+  _SendFree  = aFreeFunc;
+  _RecvAlloc = aAllocFunc;
+  _RecvFree  = aFreeFunc;
 }
 
 
@@ -234,6 +244,22 @@ void LC_Exit (void)
   /* TODO: free temporary data */
 }
 
+
+
+
+/**
+        Customizing memory management for LowComm subsystem.
+        Currently this function supports only alloc/free of message buffers.
+ */
+
+void LC_SetMemMgr (AllocFunc send_alloc, FreeFunc send_free,
+                   AllocFunc recv_alloc, FreeFunc recv_free)
+{
+  _SendAlloc = send_alloc;
+  _SendFree  = send_free;
+  _RecvAlloc = recv_alloc;
+  _RecvFree  = recv_free;
+}
 
 
 /****************************************************************************/
@@ -321,7 +347,8 @@ static void LC_DeleteMsgBuffer (LC_MSGHANDLE msg)
 {
   MSG_DESC   *md = (MSG_DESC *)msg;
 
-  FreeMsg(md->buffer);
+  if (_SendFree!=NULL)
+    (*_SendFree)(md->buffer);
 }
 
 
@@ -579,7 +606,7 @@ int LC_MsgAlloc (LC_MSGHANDLE msg)
      no remaining async-sends, we give up. */
   do {
     /* allocate buffer for messages */
-    md->buffer = (char *) AllocMsg(md->bufferSize);
+    md->buffer = (char *) (*_SendAlloc)(md->bufferSize);
     if (md->buffer==NULL)
     {
       if (remaining==0)
@@ -643,7 +670,7 @@ static void LC_PrepareRecv (void)
 
 
   /* allocate buffer for messages */
-  theRecvBuffer = (char *) AllocMsg(sumSize);
+  theRecvBuffer = (char *) (*_RecvAlloc)(sumSize);
   if (theRecvBuffer==NULL)
   {
     DDD_PrintError('E', 6610, STR_NOMEM " in LC_PrepareRecv");
@@ -1153,7 +1180,9 @@ void LC_Cleanup (void)
 
   if (nRecvs>0)
   {
-    FreeMsg(theRecvBuffer);
+    if (_RecvFree!=NULL)
+      (*_RecvFree)(theRecvBuffer);
+
     theRecvBuffer=NULL;
   }
 
@@ -1175,7 +1204,6 @@ void LC_Cleanup (void)
   DDD_PrintDebug(cBuffer);
 #       endif
 }
-
 
 
 /****************************************************************************/

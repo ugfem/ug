@@ -1,5 +1,36 @@
 ---------------------------
 
+CHANGES 1.8.11 -> 1.8.12
+
+---------------------------
+971024 kb
+improved memory handling.
+	- use compiler-switch XferMemFromHeap to instruct the Xfer
+	  module using the MemMgr's Heap-functions (Mark/Alloc/Release)
+	  to get memory for receive buffers and other data.
+	  Note: this feature is not yet in its final state and will
+	  be extended in future versions.
+	- use compiler-switch ConsMemFromHeap to instruct the ConsCheck
+	  module using the MemMgr's Heap-functions (Mark/Alloc/Release)
+	  to get memory for receive buffers and other data.
+	  Note: this feature is not yet in its final state and will
+	  be extended in future versions.
+971023 kb
+xfer more efficient, in space and time.
+	- used new container classes for several data structures in
+	  Xfer.
+	- now, DDD_XferCopyObj calls will be merged on the fly, as
+	  a result the XFERCOPY-handlers will only be called if the
+	  corresponding call to DDD_XferCopyObj is either new or
+	  wins against an existing call with respect to priority-
+	  merge.
+971020 kb
+new base level of container class data structures.
+	- introduced new object-oriented style via C preprocessor.
+	  implemented several efficient container classes with
+	  this style.
+---------------------------
+
 CHANGES 1.8.10 -> 1.8.11
 
 ---------------------------

@@ -231,7 +231,7 @@ int Unify(T) (T **array, int (*compar) (T **, T **))
 		/* else: skip item */
 	}
 
-	/* loop unrolling: always choose last item */
+	/* always choose last item */
 	if (n(T)>0)
 	{
 		array[cntValid] = array[n(T)-1];
@@ -272,6 +272,33 @@ void FreeAll(T) (void)
 	n(T) = 0;
 
 	FreeSegms(T) ();
+}
+
+
+/*
+	get quantitative resource usage
+*/
+void GetSizes(T) (int *nSegms, int *nItems, size_t *alloc_mem, size_t *used_mem)
+{
+	size_t   allocated=0, used=0;
+	int      ns=0, ni=0;
+	Segm(T)  *segm;
+
+	for (segm=segms(T); segm!=NULL; segm=segm->next)
+	{
+		/* count number of segments and number of items */
+		ns++;
+		ni+=segm->nItems;
+
+		/* compute memory usage */
+		allocated += sizeof(Segm(T));
+		used += (sizeof(Segm(T)) - (sizeof(T)*(SEGM_SIZE-segm->nItems)));
+	}
+
+	*nSegms    = ns;
+	*nItems    = ni;
+	*alloc_mem = allocated;
+	*used_mem  = used;
 }
 
 

@@ -20,7 +20,7 @@
 /****************************************************************************/
 
 /* RCS_ID
-   $Header: /hosts/dom/cvs/ddd/src/dddi.h,v 1.4 1997/07/24 15:49:05 birken Exp
+   $Header: /hosts/dom/cvs/ddd/src/dddi.h,v 1.5 1997/07/24 15:49:05 birken Exp
    $
  */
 
@@ -63,6 +63,10 @@ typedef void *LC_MSGTYPE;    /* type of message (on send AND recv side) */
 typedef int LC_MSGCOMP;      /* component of message (dto) */
 
 
+/* function pointer types for alloc and free */
+typedef void * (*AllocFunc)(size_t);
+typedef void (*FreeFunc)(void *);
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -72,8 +76,10 @@ typedef int LC_MSGCOMP;      /* component of message (dto) */
 
 
 /* lowcomm.c */
-void  LC_Init (void);
-void  LC_Exit (void);
+void  LC_Init (AllocFunc,FreeFunc);
+void  LC_Exit ();
+
+void  LC_SetMemMgr (AllocFunc,FreeFunc,AllocFunc,FreeFunc);
 
 
 LC_MSGTYPE LC_NewMsgType (char *);
@@ -85,6 +91,8 @@ void       LC_MsgSend (LC_MSGHANDLE);
 int           LC_Connect (LC_MSGTYPE);
 LC_MSGHANDLE *LC_Communicate (void);
 void          LC_Cleanup (void);
+
+
 
 LC_MSGHANDLE LC_NewSendMsg (LC_MSGTYPE, DDD_PROC);
 ULONG    LC_GetTableLen (LC_MSGHANDLE, LC_MSGCOMP);

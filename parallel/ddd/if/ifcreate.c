@@ -275,7 +275,7 @@ static void update_channels (DDD_IF ifId)
   if (theIF[ifId].nIfHeads==0)
     return;
 
-  MarkHeap();
+  /* MarkHeap(); */
 
   for(i=0, ifh=theIF[ifId].ifHead; ifh!=NULL; i++, ifh=ifh->next)
   {
@@ -288,7 +288,7 @@ static void update_channels (DDD_IF ifId)
     ifh->vc = VCHAN_TO(ifh->proc);
   }
 
-  ReleaseHeap();
+  /* ReleaseHeap(); */
 }
 
 

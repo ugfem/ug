@@ -209,6 +209,8 @@ void ddd_EnsureObjTabSize (int n)
 /*                                                                          */
 /* Function:  DDD_ObjNew                                                    */
 /*                                                                          */
+/****************************************************************************/
+
 /* Purpose:   get raw memory for new DDD-object.                            */
 /*                                                                          */
 /* Input:     size:  memory size of object                                  */
@@ -220,21 +222,54 @@ void ddd_EnsureObjTabSize (int n)
 /*                                                                          */
 /****************************************************************************/
 
+/**
+        Allocate raw memory for new \ddd{object}.
+        This function dynamically creates raw memory for a new \ddd{object}.
+        Therefore, the user-supplied memory manager function \memmgrfunk{AllocOMEM}
+        is called to allocate the necessary memory. Although the caller must
+        supply the object's priority and attribute, its header will not be
+        initialized by \funk{ObjNew}; the parameters are used for smart
+        memory allocation, only.
+
+        The function \funk{ObjNew} and \funk{ObjDelete}, its corresponding
+        deletion function, form the ObjManager's {\em raw memory interface}.
+
+        DDD users who use the #C_FRONTEND# may prefer the more
+        elaborate {\em application interface}, consisting of the functions
+        \funk{ObjGet} and \funk{ObjUnGet}. DDD users who use the language
+        C++ (object-oriented style) with #CPP_FRONTEND# will use the
+        {\em raw memory interface} together with the
+        {\em constructor/destructor interface} (\funk{HdrConstructor},
+        \funk{HdrDestructor}, \funk{HdrConstructorMove})
+        in order to integrate DDD into C++ style object management easily.
+
+        For variable-sized \ddd{objects}, the parameter {\em aSize}
+        may differ from the size specified during the corresponding
+        \funk{TypeDefine}-call.
+
+   @return pointer to free memory block for the \ddd{object}
+   @param  aSize   memory size of the new object
+   @param  aType   \ddd{type} of the new object
+   @param  aPrio   \ddd{priority} of the new object
+   @param  aAttr   \ddd{attribute} of the new object
+ */
+
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 
-DDD_OBJ DDD_ObjNew (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
+DDD_OBJ DDD_ObjNew (size_t aSize, DDD_TYPE aType,
+                    DDD_PRIO aPrio, DDD_ATTR aAttr)
 {
   DDD_OBJ obj;
 
   /* check input parameters */
-  if (prio>=MAX_PRIO)
+  if (aPrio>=MAX_PRIO)
   {
     sprintf(cBuffer,
             "priority must be less than %d in DDD_ObjNew", MAX_PRIO);
     DDD_PrintError('E', 2205, cBuffer);
     HARD_EXIT;
   }
-  if (typ>=MAX_TYPEDESC)
+  if (aType>=MAX_TYPEDESC)
   {
     sprintf(cBuffer,
             "DDD-type must be less than %d in DDD_ObjNew", MAX_TYPEDESC);
@@ -243,16 +278,16 @@ DDD_OBJ DDD_ObjNew (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
   }
 
   /* get object memory */
-  obj = (DDD_OBJ) AllocObj(size, typ, prio, attr);
+  obj = (DDD_OBJ) AllocObj(aSize, aType, aPrio, aAttr);
   if (obj==NULL) {
     DDD_PrintError('E', 2200, STR_NOMEM " in DDD_ObjNew");
     return(NULL);
   }
 
 #       ifdef DebugCreation
-  sprintf(cBuffer, "%4d: DDD_ObjNew(size=%d, typ=%d, prio=%d, attr=%d),"
+  sprintf(cBuffer, "%4d: DDD_ObjNew(aSize=%d, type=%d, prio=%d, attr=%d),"
           " ADR=%08x\n",
-          me, size, typ, prio, attr, obj);
+          me, aSize, aType, aPrio, aAttr, obj);
   DDD_PrintDebug(cBuffer);
 #       endif
 
@@ -261,10 +296,10 @@ DDD_OBJ DDD_ObjNew (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
 
 #else
 
-DDD_OBJ DDD_ObjNew (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
+DDD_OBJ DDD_ObjNew (size_t aSize, DDD_TYPE aType, DDD_PRIO aPrio, DDD_ATTR aAttr)
 
 {
-  TYPE_DESC *desc = &(theTypeDefs[typ]);
+  TYPE_DESC *desc = &(theTypeDefs[aType]);
   DDD_OBJ obj;
 
   if (desc->handlerALLOCOBJ)
@@ -299,11 +334,11 @@ DDD_OBJ DDD_ObjNew (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
 
   if (obj != 0)
   {
-    OBJ_ATTR(OBJ2HDR(obj,desc)) = attr;
-    OBJ_PRIO(OBJ2HDR(obj,desc)) = prio;
+    OBJ_ATTR(OBJ2HDR(obj,desc)) = aAttr;
+    OBJ_PRIO(OBJ2HDR(obj,desc)) = aPrio;
 
 #               ifdef DebugCreation
-    sprintf(cBuffer, "%d: Allocated obj %d of type %d\n", me, obj, typ);
+    sprintf(cBuffer, "%d: Allocated obj %d of type %d\n", me, obj, aType);
     DDD_PrintDebug(cBuffer);
     fflush(stdout);
 #               endif
@@ -359,9 +394,9 @@ void DDD_ObjDelete (DDD_OBJ obj, size_t size, DDD_TYPE typ)
 /****************************************************************************/
 
 /**
-        Initiate object's DDD Header.
-        This function registers a DDD-object via constructing
-        its DDD-header. Each DDD-object is given a unique {\em global ID},
+        Initiate object's \ddd{header}.
+        This function registers a \ddd{object} via constructing
+        its DDD-header. Each \ddd{object} is given a unique {\em global ID},
         which is stored in the DDD-header together with the object's
         properties (type\_id, prio, attr) and additional data used by DDD.
 
@@ -378,14 +413,15 @@ void DDD_ObjDelete (DDD_OBJ obj, size_t size, DDD_TYPE typ)
         after many calls to \funk{HdrConstructor}
         (\MaxUniqueGids\ times in \Version).
 
-   @param hdr   Pointer to the DDD Header which should be constructed
-   @param typ   DDD Type of DDD Object
-   @param prio  Priority of DDD Object
-   @param attr  Attribute of DDD Object
+   @param aHdr   pointer to the \ddd{header} which should be constructed
+   @param aType  \ddd{type} of \ddd{object}
+   @param aPrio  \ddd{priority} of \ddd{object}
+   @param aAttr  \ddd{attribute} of \ddd{object}
  */
 
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
-void DDD_HdrConstructor (DDD_HDR hdr,DDD_TYPE typ,DDD_PRIO prio,DDD_ATTR attr)
+void DDD_HdrConstructor (DDD_HDR aHdr, DDD_TYPE aType,
+                         DDD_PRIO aPrio, DDD_ATTR aAttr)
 {
 #endif
 
@@ -400,28 +436,28 @@ DDD_Object::DDD_Object (void)
 
 
 // construct as valid DDD_Object
-DDD_Object::DDD_Object (DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
+DDD_Object::DDD_Object (DDD_TYPE aType, DDD_PRIO aPrio, DDD_ATTR aAttr)
 {
-  Init(typ, prio, attr);
+  Init(aType, aPrio, aAttr);
 }
 
 
-void DDD_Object::Init (DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
+void DDD_Object::Init (DDD_TYPE aType, DDD_PRIO aPrio, DDD_ATTR aAttr)
 {
-  DDD_HDR hdr = &_hdr;
+  DDD_HDR aHdr = &_hdr;
 
-  if (! IsHdrInvalid(hdr))
+  if (! IsHdrInvalid(aHdr))
   {
     sprintf(cBuffer,
             "cannot initialize DDD_Object %08x twice in DDD_Object::Init",
-            OBJ_GID(hdr));
+            OBJ_GID(aHdr));
     DDD_PrintError('E', 2250, cBuffer);
     HARD_EXIT;
   }
 #endif
 
 /* check input parameters */
-if (prio>=MAX_PRIO)
+if (aPrio>=MAX_PRIO)
 {
   sprintf(cBuffer,
           "priority must be less than %d in DDD_HdrConstructor", MAX_PRIO);
@@ -444,25 +480,25 @@ if (ddd_nObjs==ddd_ObjTabSize)
 }
 
 /* insert into theObj array */
-ddd_ObjTable[ddd_nObjs] = hdr;
-OBJ_INDEX(hdr) = ddd_nObjs;
+ddd_ObjTable[ddd_nObjs] = aHdr;
+OBJ_INDEX(aHdr) = ddd_nObjs;
 ddd_nObjs++;
         #else
 /* if we dont have WithFullObjectTable, pure local objects without
    copies on other processors aren't registered by DDD. Therefore,
    they don't have a valid OBJ_INDEX field. */
-MarkHdrLocal(hdr);
+MarkHdrLocal(aHdr);
         #endif
 
 
 /* init object header with defaults */
-OBJ_TYPE(hdr)  = typ;
-OBJ_PRIO(hdr)  = prio;
-OBJ_ATTR(hdr)  = attr;
-OBJ_FLAGS(hdr) = 0;
+OBJ_TYPE(aHdr)  = aType;
+OBJ_PRIO(aHdr)  = aPrio;
+OBJ_ATTR(aHdr)  = aAttr;
+OBJ_FLAGS(aHdr) = 0;
 
 /* create unique GID */
-OBJ_GID(hdr)   = MakeUnique(theIdCount++);
+OBJ_GID(aHdr)   = MakeUnique(theIdCount++);
 
 /* check overflow of global id numbering */
 if (MakeUnique(theIdCount) <= MakeUnique(theIdCount-1))
@@ -475,9 +511,9 @@ if (MakeUnique(theIdCount) <= MakeUnique(theIdCount-1))
 
 #       ifdef DebugCreation
 sprintf(cBuffer, "%4d: DDD_HdrConstructor(adr=%08x, "
-        "typ=%d, prio=%d, attr=%d), "
+        "type=%d, prio=%d, attr=%d), "
         "GID=%08x  INDEX=%d\n",
-        me, hdr, typ, prio, attr, OBJ_GID(hdr), OBJ_INDEX(hdr));
+        me, aHdr, aType, aPrio, aAttr, OBJ_GID(aHdr), OBJ_INDEX(aHdr));
 DDD_PrintDebug(cBuffer);
 #       endif
 }
@@ -504,10 +540,10 @@ DDD_IndexObject::DDD_IndexObject (DDD_TYPE typ,
 /**
         Remove object's header from DDD management.
         This function removes an object from DDD-management
-        via destructing its DDD-header.
-        {\em Note:} The DDD-object will be destructed, but its copies
+        via destructing its \ddd{header}.
+        {\em Note:} The \ddd{object} will be destructed, but its copies
         on remote processors will not be informed by \funk{HdrDestructor}.
-        There are two consistent possibilities to delete DDD-objects which
+        There are two consistent possibilities to delete \ddd{objects} which
         have copies on remote processors:
 
         \begin{itemize}

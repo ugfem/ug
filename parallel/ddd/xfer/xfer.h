@@ -47,7 +47,8 @@
 
 
 #include "basic/lowcomm.h"
-#include "sll.h"
+#include "basic/oopp.h"    /* for object-orientated style via preprocessor */
+#include "sll.h"           /* TODO: remove this in future versions */
 
 
 
@@ -61,6 +62,26 @@
 /*                                                                          */
 /****************************************************************************/
 
+/* some macros for customizing oopp */
+#define _NEWPARAMS
+#define _NEWPARAMS_OR_VOID    void
+
+#define __INDENT(n)   { int i; for(i=0; i<n; i++) fputs("   ",fp);}
+#define _PRINTPARAMS  , int indent, FILE *fp
+#define _PRINTPARAMS_DEFAULT  ,0,stdout
+#define _INDENT       __INDENT(indent)
+#define _INDENT1      __INDENT(indent+1)
+#define _INDENT2      __INDENT(indent+2)
+#define _PRINTNEXT    , indent+1, fp
+#define _PRINTSAME    , indent, fp
+
+/* map memory allocation calls */
+#define OO_Allocate  AllocTmp
+#define OO_Free      FreeTmp
+
+
+/* extra prefix for all xfer-related data structures and/or typedefs */
+#define ClassPrefix
 
 
 /* types of 'newness' of incoming object (for xferunpack.c) */
@@ -109,27 +130,30 @@ typedef struct xferaddinfo {
 /* XICopyObj:                                                               */
 /****************************************************************************/
 
-typedef struct _XICopyObj
-{
-  SLL_INFO(_XICopyObj);
-  DDD_HDR hdr;                  /* local obj for which a copy should be created */
-  DDD_GID gid;                  /* gid of local object                          */
-  DDD_PROC dest;                /* proc involved with operation, me -> proc     */
-  DDD_PRIO prio;                /* priority for new object copy                 */
-  size_t size;                  /* V1.2: needed for variable-sized objects      */
+#define ClassName XICopyObj
+Class_Data_Begin
+DDD_HDR hdr;                    /* local obj for which a copy should be created */
+DDD_GID gid;                    /* gid of local object                          */
+DDD_PROC dest;                  /* proc involved with operation, me -> proc     */
+DDD_PRIO prio;                  /* priority for new object copy                 */
+size_t size;                    /* V1.2: needed for variable-sized objects      */
 
-  int new_owner;                /* did destination proc know this gid before?   */
+int addLen;
+XFERADDDATA *add;               /* additional data items                   */
 
-  int addLen;
-  struct   xferaddinfo *add;         /* additional data items                   */
+int flags;
+Class_Data_End
+void Method(Print)   (DefThis _PRINTPARAMS);
+int  Method(Compare) (ClassPtr, ClassPtr);
 
-  int flags;
-} XICopyObj;
+#undef ClassName
 
-/* include template */
-#define T XICopyObj
-#include "sll.ht"
-#undef T
+
+/* define container class */
+#define SetOf          XICopyObj
+#define Set_SegmSize   256
+#define Set_BTreeOrder 32
+#include "basic/ooppcc.h"
 
 
 /* usage of flags in XICopyObj */
@@ -138,6 +162,14 @@ typedef struct _XICopyObj
 #define CO_SELF(c) (((int)((c)->flags))&MASK_CO_SELF)
 #define SET_CO_SELF(c,d)     ((c)->flags) =   \
   ((((c)->flags)&(~MASK_CO_SELF)) | ((d)&MASK_CO_SELF))
+
+/* usage of 0x02 for new_owner:
+        did destination proc know the object's gid before? */
+#define MASK_CO_NEWOWNER 0x00000002
+#define CO_NEWOWNER(c) (((int)((c)->flags))&MASK_CO_NEWOWNER)
+#define SET_CO_NEWOWNER(c)     ((c)->flags) = (((c)->flags) | MASK_CO_NEWOWNER)
+#define CLEAR_CO_NEWOWNER(c)   ((c)->flags) = (((c)->flags)&(~MASK_CO_NEWOWNER))
+
 
 
 /****************************************************************************/
@@ -186,24 +218,25 @@ typedef struct _XIDelObj
 /* XISetPrio:                                                               */
 /****************************************************************************/
 
-typedef struct _XISetPrio
-{
-  SLL_INFO(_XISetPrio);
-  DDD_HDR hdr;                  /* local obj for which prio should be set       */
-  DDD_GID gid;                  /* gid of local object                          */
-  DDD_PRIO prio;                /* new priority                                 */
+#define ClassName XISetPrio
+Class_Data_Begin
+DDD_HDR hdr;                    /* local obj for which prio should be set       */
+DDD_GID gid;                    /* gid of local object                          */
+DDD_PRIO prio;                  /* new priority                                 */
 
-  int is_valid;                 /* invalid iff there's a DelObj for same gid    */
+int is_valid;                   /* invalid iff there's a DelObj for same gid    */
+Class_Data_End
+void Method(Print)   (DefThis _PRINTPARAMS);
+int  Method(Compare) (ClassPtr, ClassPtr);
 
-} XISetPrio;
-
-
-/* include template */
-#define T XISetPrio
-#include "sll.ht"
-#undef T
+#undef ClassName
 
 
+/* define container class */
+#define SetOf          XISetPrio
+#define Set_SegmSize   256
+#define Set_BTreeOrder 32
+#include "basic/ooppcc.h"
 
 
 /****************************************************************************/
@@ -360,13 +393,13 @@ typedef struct _XFERMSG
   struct _XFERMSG *next;
 
 
-  XICopyObj **xferObjArray;
+  XICopyObjPtr *xferObjArray;
   int nObjItems;
 
-  XINewCpl  **xferNewCpl;
+  XINewCpl     **xferNewCpl;
   int nNewCpl;
 
-  XIOldCpl  **xferOldCpl;
+  XIOldCpl     **xferOldCpl;
   int nOldCpl;
 
   int nPointers;
@@ -452,9 +485,11 @@ typedef struct _XFER_GLOBALS
   LC_MSGCOMP symtab_id, objtab_id;
   LC_MSGCOMP newcpl_id, oldcpl_id;
   LC_MSGCOMP objmem_id;
-  /*
-          LC_MSGCOMP  priotab_id, deltab_id;
-   */
+
+
+  /* entry points for global sets */
+  XICopyObjSet *setXICopyObj;
+  XISetPrioSet *setXISetPrio;
 
 } XFER_GLOBALS;
 
@@ -490,17 +525,17 @@ void CplMsgExit (void);
 
 
 /* cmdmsg.c */
-int  PruneXIDelCmd (XIDelCmd **, int, XICopyObj **, int);
+int  PruneXIDelCmd (XIDelCmd **, int, XICopyObjPtrArray *);
 void CmdMsgInit (void);
 void CmdMsgExit (void);
 
 
 /* xfer.c, used only by cmds.c */
-XICopyObj **CplClosureEstimate(XICopyObj **, int, int *);
-int  PrepareObjMsgs(XICopyObj **, int, XINewCpl **, int,
+XICopyObj **CplClosureEstimate(XICopyObjPtrArray *, int *);
+int  PrepareObjMsgs(XICopyObjPtrArray *, XINewCpl **, int,
                     XIOldCpl **, int, XFERMSG **, size_t *);
 void ExecLocalXIDelCmd(XIDelCmd  **, int);
-void ExecLocalXISetPrio(XISetPrio **,int, XIDelObj  **,int, XICopyObj **,int);
+void ExecLocalXISetPrio(XISetPrioPtrArray *, XIDelObj  **,int, XICopyObj **,int);
 void ExecLocalXIDelObj(XIDelObj  **, int, XICopyObj **,int);
 void PropagateCplInfos(XISetPrio **, int, XIDelObj  **, int,
                        TENewCpl *, int);
@@ -514,8 +549,8 @@ void XferPackMsgs (XFERMSG *);
 
 /* unpack.c, used only by cmds.c */
 void XferUnpack (LC_MSGHANDLE *, int, DDD_HDR *, int,
-                 XISetPrio **, int, XIDelObj  **, int,
-                 XICopyObj **, int, XICopyObj **, int);
+                 XISetPrioPtrArray *, XIDelObj  **, int,
+                 XICopyObjPtrArray *, XICopyObj **, int);
 
 
 /* ctrl.c */

@@ -197,7 +197,7 @@ DDD_Library::DDD_Library (int *argcp, char ***argvp)
 
   /* init all DDD components */
   NotifyInit();
-  LC_Init();
+  LC_Init(memmgr_AllocTMEM, memmgr_FreeTMEM);
   ddd_StatInit();
   ddd_TypeMgrInit();
   ddd_ObjMgrInit();
