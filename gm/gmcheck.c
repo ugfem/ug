@@ -1295,14 +1295,16 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
 	if (checkgeom)
 	{
 		UserWrite(" geometry:");
-		fflush(stdout);
 
-		if ((errors = CheckGeometry(theGrid)) != GM_OK)
+		errors = CheckGeometry(theGrid);
+        #ifdef ModelP
+		errors = UG_GlobalSumINT(errors);
+ 	    #endif
+		if (errors != GM_OK)
 		{
 			totalerrors += errors;
 			error++;
 			UserWriteF(" geometry BAD: %d errors",errors);
-			fflush(stdout);
 		}
 		else
 			UserWrite(" ok");
@@ -1312,14 +1314,16 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
 	if (checkalgebra)
 	{
 		UserWrite(", algebra:");
-		fflush(stdout);
 
-		if ((errors = CheckAlgebra(theGrid)) != GM_OK)
+		errors = CheckAlgebra(theGrid);
+        #ifdef ModelP
+		errors = UG_GlobalSumINT(errors);
+ 	    #endif
+		if (errors != GM_OK)
 		{
 			totalerrors += errors;
 			error++;
 			UserWriteF(" algebra BAD: %d errors",errors);
-			fflush(stdout);
 		}
 		else
 			UserWrite(" ok");
@@ -1329,14 +1333,16 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
 	if (checklists)
 	{
 		UserWrite(", lists:");
-		fflush(stdout);
 
-		if ((errors = CheckLists(theGrid)) != GM_OK)
+		errors = CheckLists(theGrid);
+        #ifdef ModelP
+		errors = UG_GlobalSumINT(errors);
+ 	    #endif
+		if (errors != GM_OK)
 		{
 			totalerrors += errors;
 			error++;
 			UserWriteF(" lists BAD: %d errors",errors);
-			fflush(stdout);
 		}
 		else
 			UserWrite(" ok");
@@ -1347,14 +1353,16 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
 	if (checkif)
 	{
 		UserWrite(", interface:");
-		fflush(stdout);
 
-		if (errors = CheckInterfaces(theGrid) != GM_OK)
+		errors = CheckInterfaces(theGrid);
+        #ifdef ModelP
+		errors = UG_GlobalSumINT(errors);
+ 	    #endif
+		if (errors != GM_OK)
 		{
 			totalerrors += errors;
 			error++;
 			UserWriteF(" interfaces BAD: %d errors",errors);
-			fflush(stdout);
 		}
 		else
 			UserWrite(" ok");
