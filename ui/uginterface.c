@@ -1128,8 +1128,6 @@ INT UserInterrupt (const char *text)
         #endif
 
         #ifndef STDIF
-  if (NUI_ON) return (NO);
-
     #ifdef ModelP
   if (me == master)
   {
