@@ -7310,7 +7310,7 @@ DOUBLE NS_DIM_PREFIX DistanceFromSide(const DOUBLE *global, const ELEMENT *theEl
    </ul> */
 /****************************************************************************/
 #ifdef __THREEDIM__
-INT FindFlippedElements(MULTIGRID *theMG, INT verbose)
+INT NS_DIM_PREFIX FindFlippedElements(MULTIGRID *theMG, INT verbose)
 {
   GRID *theGrid;
   ELEMENT *e;

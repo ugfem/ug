@@ -44,6 +44,10 @@
 #include "general.h"
 #include "iso.h"
 
+#include "namespace.h"
+
+namespace UG {};
+
 USING_UG_NAMESPACES
 
 /****************************************************************************/
