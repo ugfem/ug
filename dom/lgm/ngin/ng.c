@@ -365,8 +365,8 @@ int PutBndNode (BND_NODE *BndNode)
       Global_Mesh->BndP_SurfID[n_bn][i]=BndNode->sp[i].surf_id;
       Global_Mesh->BndP_Cor_TriaID[n_bn][i]=BndNode->sp[i].tri_id;
       Global_Mesh->BndP_lcoord[n_bn][i]=fp;
-      Global_Mesh->BndP_lcoord[n_bn][i][0]=1.0-BndNode->sp[i].local[0]-BndNode->sp[i].local[1];
-      Global_Mesh->BndP_lcoord[n_bn][i][1]=BndNode->sp[i].local[0];
+      Global_Mesh->BndP_lcoord[n_bn][i][0]=BndNode->sp[i].local[0];
+      Global_Mesh->BndP_lcoord[n_bn][i][1]=BndNode->sp[i].local[1];
       fp+=2;
     }
     Global_Mesh->BndPosition[n_bn]=(double*)NG_MALLOC(Global_Heap,3*sizeof(double),Global_MarkKey);

@@ -757,8 +757,10 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
 
       /* add the local coordinates: thereby triangleId is added*/
                         #ifdef NO_PROJECT
-      local_cooordinate[0] = ((lgm_mesh_info.BndP_Cor_TriaID)[i])[j] + (((lgm_mesh_info.BndP_lcoord)[i])[j])[0];
-      local_cooordinate[1] = ((lgm_mesh_info.BndP_Cor_TriaID)[i])[j] + (((lgm_mesh_info.BndP_lcoord)[i])[j])[1];
+      if (lgm_mesh_info.BndP_lcoord[i][j][0]<0.0) lgm_mesh_info.BndP_lcoord[i][j][0]=0.0;
+      if (lgm_mesh_info.BndP_lcoord[i][j][1]<0.0) lgm_mesh_info.BndP_lcoord[i][j][1]=0.0;
+      local_cooordinate[0] = lgm_mesh_info.BndP_Cor_TriaID[i][j] + lgm_mesh_info.BndP_lcoord[i][j][0];
+      local_cooordinate[1] = lgm_mesh_info.BndP_Cor_TriaID[i][j] + lgm_mesh_info.BndP_lcoord[i][j][1];
       if((ret_val = Surface_Local2Global (theSurface, global_cooordinate, local_cooordinate)) == 1)
       {
         PrintErrorMessage('E',"LGM_LoadMesh","Error from Surface_Local2Global");

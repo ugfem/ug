@@ -5467,16 +5467,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
           }
 
   if (count==0) return(NULL);
-  if (0)
-    if(count>1 && n==4)
-    {
-      /* why should the returning of a null pointer make sense (s.l. 011011) */
-      /* for quadrilateral sides */
-      UserWriteF("return 2 n %d count %d",n,count);
-      return(NULL);
-    }
-
-  if(count>1)
+  if(count>1 && n==3)
   {
     count = 0;
     min_d = DBL_MAX;
@@ -5513,11 +5504,46 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
           }
         }
   }
-
-  if (count==0)
+  else if (count>1 && n==4)
   {
-    return (NULL);
+    count = 0;
+    min_d = DBL_MAX;
+    for (i=0; i<LGM_BNDP_N(theBndP1); i++)
+      for (j=0; j<LGM_BNDP_N(theBndP2); j++)
+        for (k=0; k<LGM_BNDP_N(theBndP3); k++)
+          for (q=0; q<LGM_BNDP_N(theBndP4); q++)
+          {
+            if((LGM_BNDP_SURFACE(theBndP1,i)==LGM_BNDP_SURFACE(theBndP2,j))
+               && (LGM_BNDP_SURFACE(theBndP2,j)==LGM_BNDP_SURFACE(theBndP3,k))
+               && (LGM_BNDP_SURFACE(theBndP3,k)==LGM_BNDP_SURFACE(theBndP4,q)) )
+            {
+              /* Zusatzabfrage fuer den Fall, dass 3 Punkte auf zwei Surfaces liegen */
+              theSurface = LGM_BNDP_SURFACE(theBndP1,i);
+              V_DIM_CLEAR(nv);
+              mi = GetLocalKoord(theSurface, global, local, nv);
+              if(mi!=-1)
+              {
+                Surface_Local2Global(theSurface, globalnew, local);
+                d = E_Distance(global, globalnew);
+              }
+              else
+                d = DBL_MAX;
+              if(d<min_d)
+              {
+                if( Check_Local_Coord(theSurface, local) )
+                {
+                  min_d = d;
+                  theSurface = LGM_BNDP_SURFACE(theBndP1,i);
+                  count++;
+                  i0=i;
+                  j0=j;
+                  k0=k;
+                }
+              }
+            }
+          }
   }
+  if (count==0) return (NULL);
 
   theSurface = LGM_BNDP_SURFACE(theBndP1,i0);
 
