@@ -303,7 +303,7 @@ static INT BE_TimeStep (NP_T_STEP *tstep, INT level, DOUBLE t0, VECDATA_DESC *so
   /* do (nested) iteration on new time step */
   for (be->frac_step=0; be->frac_step<dirk_spec[be->tscheme].s; be->frac_step++)
   {
-    dcopy(mg,0,flevel,ALL_VECTORS,be->sol_tfrac,sol_t1);
+    dcopy(mg,0,level,ALL_VECTORS,be->sol_tfrac,sol_t1);
     for (k=flevel; k<=level; k++)
     {
       if (be->nested) UserWriteF("Nested Iteration on level %d (%d)\n",k,level);
