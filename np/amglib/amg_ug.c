@@ -257,6 +257,10 @@ static INT AMGSolverPreProcess (NP_LINEAR_SOLVER *theNP, INT level,
       nonzeros++;
   }
 
+#ifdef ModelP
+  if (me == master)
+  {
+#endif
   /* now allocate fine grid vectors x and b */
   theAMGC->x = AMG_NewVector(n*blocksize,1,"x");
   if (theAMGC->x==NULL) {
@@ -275,6 +279,16 @@ static INT AMGSolverPreProcess (NP_LINEAR_SOLVER *theNP, INT level,
     UserWrite("no memory for A\n");
     goto exit;
   }
+                #ifdef ModelP
+}
+else
+{
+  /* no master vectors allowed */
+  assert(n==0);
+  /* only master builds up coarse levels */
+  return (0);
+}
+                #endif
 
   /* now fill matrix */
   for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector))
@@ -479,6 +493,11 @@ static INT AMGSolver (NP_LINEAR_SOLVER *theNP, INT level,
       AMG_VECTOR_ENTRY(theAMGC->b,i*blocksize+k,0)=VVALUE(theVector,bcomp+k);
     }
   }
+        #ifdef ModelP
+  /* only master solves */
+  if (me == master)
+  {
+        #endif
   AMG_dset(theAMGC->x,0.0);
   if ((rv=AMG_Solve(theAMGC->x,theAMGC->b))<0)
   {
@@ -507,6 +526,9 @@ static INT AMGSolver (NP_LINEAR_SOLVER *theNP, INT level,
     lresult->error_code = __LINE__;
     return(1);
   }
+        #ifdef ModelP
+}
+        #endif
   if (AMGSolverResiduum(theNP,bl,level,x,b,A,lresult))
     return(1);
   if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE)) {
