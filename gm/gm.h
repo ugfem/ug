@@ -160,12 +160,12 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 #define COPY                            1
 #define RED                                     2
 #define BLUE                            3
-#define BISECTION_1             4
-#define BISECTION_2_Q           5
-#define BISECTION_2_T1          6
-#define BISECTION_2_T2          7
-#define BISECTION_3             8
-#define COARSE                          9
+#define COARSE                          4
+#define BISECTION_1             5
+#define BISECTION_2_Q           6
+#define BISECTION_2_T1          7
+#define BISECTION_2_T2          8
+#define BISECTION_3             9
 
 /* values for element class */
 #define NO_CLASS                0
