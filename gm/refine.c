@@ -376,12 +376,15 @@ void SendPatternFromMasterToSlaves(int level)
 static int CloseGrid (GRID *theGrid)
 {
 	ELEMENT *theElement, *NbElement, *firstElement;
-	EDGE *MyEdge, *NbEdge;
-	INT i,j,k,cnt,n;
-	INT Mark, MyEdgePattern, MySidePattern, MyEdgeNum, MyPattern, NewPattern;
-	INT NbEdgePattern, NbSidePattern, NbEdgeNum, NbSideMask;
+	EDGE *MyEdge;
+	INT i,j,cnt,n;
+	INT Mark, MyEdgePattern, MySidePattern, MyPattern, NewPattern;
 	SHORT *myPattern;
-
+#	ifdef __THREEDIM__
+	EDGE *NbEdge;
+	INT k,NbEdgePattern, NbSidePattern, NbEdgeNum, NbSideMask, MyEdgeNum;
+#	endif
+	
 	/* reset USED flag of elements and PATTERN and */
 	/* ADDPATTERN flag on the edges                */
 	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
@@ -2059,7 +2062,7 @@ static INT compare_node (const void *e0, const void *e1)
 	return(0);
 }
 
-INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
+static INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 							 ELEMENT *SonList[MAX_SONS], INT *SonSides, 
 							 INT NeedSons)
 {
