@@ -6513,6 +6513,66 @@ static INT MakeGridCommand  (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   status - show status about (parallel) multigrid
+
+   DESCRIPTION:
+   This command outputs some statistics about red,green yellow element
+   distribution and some loadbalacing measures for parallel.
+
+   .  ${W|w|K|k}	- W resp. K are using the quadtree accellerator,
+
+   KEYWORDS:
+   multigrid, loadbalancing, mesh, net, grid, adaptive refinement, estimator
+   D*/
+/****************************************************************************/
+
+static INT StatusCommand  (INT argc, char **argv)
+{
+  MULTIGRID       *theMG;
+  INT i,green,load;
+
+  /* get current multigrid */
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"status command","no open multigrid");
+    return (CMDERRORCODE);
+  }
+  green = 0;
+  load = 0;
+
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'a' :
+      green = 1;
+                                #ifdef ModelP
+      load = 1;
+                                #endif
+      break;
+    case 'g' :
+      green = 1;
+      break;
+                        #ifdef ModelP
+    case 'l' :
+      load = 1;
+      break;
+                        #endif
+    default :
+      break;
+    }
+
+  if (MultiGridStatus(theMG,green,load) != 0)
+  {
+    PrintErrorMessage('E',"GridStatus()","execution failed");
+    return (CMDERRORCODE);
+  }
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
    cadconvert - convert predefined CADgrid
 
    DESCRIPTION:
@@ -11546,6 +11606,7 @@ INT InitCommands ()
   if (CreateCommand("vmlist",             VMListCommand                                   )==NULL) return (__LINE__);
   if (CreateCommand("quality",            QualityCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("makegrid",           MakeGridCommand                                 )==NULL) return (__LINE__);
+  if (CreateCommand("status",                     StatusCommand                                   )==NULL) return (__LINE__);
 
 #if defined(CAD) && defined(__THREEDIM__)
   if (CreateCommand("cadconvert",     CADGridConvertCommand           )==NULL) return (__LINE__);
