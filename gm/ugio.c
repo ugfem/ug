@@ -2890,9 +2890,10 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     if (PrepareAlgebraModification(theMG))          {DisposeMultiGrid(theMG); return (NULL);}
 
         #ifdef ModelP
-           #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+                #ifdef DYNAMIC_MEMORY_ALLOCMODEL
     if (DisposeBottomHeapTmpMemory(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-           #endif
+                #endif
+                #endif
 
     DDD_IdentifyBegin();
     /* no elements to insert */
@@ -2965,6 +2966,12 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     if (DisposeBottomHeapTmpMemory(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
                 #endif
     if (PrepareAlgebraModification(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+
+                #ifdef ModelP
+                #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+    if (DisposeBottomHeapTmpMemory(theMG))      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+                #endif
+                #endif
 
     DDD_IdentifyBegin();
     /* no elements to insert */
@@ -3186,6 +3193,12 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   if (DisposeBottomHeapTmpMemory(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
         #endif
   if (PrepareAlgebraModification(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+        #ifdef ModelP
+        #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  if (DisposeBottomHeapTmpMemory(theMG))      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+        #endif
+        #endif
+
 
   i = MG_ELEMUSED | MG_NODEUSED | MG_EDGEUSED | MG_VERTEXUSED |  MG_VECTORUSED;
   ClearMultiGridUsedFlags(theMG,0,TOPLEVEL(theMG),i);
