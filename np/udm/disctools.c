@@ -871,6 +871,38 @@ INT AddVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
     for (j=0; j<cnt; j++)
       Comp[i][j] = MD_MCMPPTR_OF_MTYPE(theMD,MTP(vtype[i],vtype[j]));
 
+  if (MD_SUCC_COMP(theMD)) {
+    m1 = 0;
+    for (i=0; i<cnt; i++) {
+      theMatrix = START(theVec[i]);
+      mptr = MVALUEPTR(theMatrix,Comp[i][i][0]);
+      for (k=0; k<vncomp[i]; k++)
+        for (l=0; l<vncomp[i]; l++)
+          mptr[k*vncomp[i]+l]
+            += value[(m1+k)*m+m1+l];
+      m2 = 0;
+      for (j=0; j<i; j++) {
+        GET_MATRIX(theVec[i],theVec[j],theMatrix);
+        if (theMatrix == NULL) {
+          theMatrix =
+            CreateExtraConnection(theGrid,theVec[i],theVec[j]);
+          if (theMatrix == NULL)
+            return (-1);
+        }
+        mptr = MVALUEPTR(theMatrix,Comp[i][j][0]);
+        for (k=0; k<vncomp[i]; k++)
+          for (l=0; l<vncomp[j]; l++)
+            mptr[k*vncomp[j]+l] += value[(m1+k)*m+m2+l];
+        mptr = MVALUEPTR(MADJ(theMatrix),Comp[j][i][0]);
+        for (k=0; k<vncomp[i]; k++)
+          for (l=0; l<vncomp[j]; l++)
+            mptr[l*vncomp[i]+k] += value[(m2+l)*m+m1+k];
+        m2 += vncomp[j];
+      }
+      m1 += vncomp[i];
+    }
+    return (m);
+  }
   m1 = 0;
   for (i=0; i<cnt; i++) {
     theMatrix = START(theVec[i]);
