@@ -1882,6 +1882,26 @@ INT DisposeExtraConnections (GRID *theGrid)
   return(GM_OK);
 }
 
+INT DisposeConnectionsInGrid (GRID *theGrid)
+{
+  VECTOR *theVector;
+  MATRIX *theMatrix, *nextMatrix;
+  CONNECTION *theCon;
+
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+  {
+    theMatrix = VSTART(theVector);
+    while (theMatrix!=NULL)
+    {
+      nextMatrix = MNEXT(theMatrix);
+      theCon = MMYCON(theMatrix);
+      DisposeConnection(theGrid,theCon);
+      theMatrix = nextMatrix;
+    }
+  }
+  return(GM_OK);
+}
+
 /****************************************************************************/
 /*D
    ElementElementCreateConnection - Create connections of two elements
@@ -6510,6 +6530,19 @@ INT DisposeIMatrixList (GRID *theGrid, VECTOR *theVector)
   if (DisposeIMatrices(theGrid,VISTART(theVector)))
     RETURN (1);
   VISTART(theVector) = NULL;
+  return (0);
+}
+
+INT DisposeIMatricesInGrid (GRID *theGrid)
+{
+  VECTOR *theV;
+
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+  {
+    if (DisposeIMatrices(theGrid,VISTART(theV))) RETURN (1);
+    VISTART(theV) = NULL;
+  }
+
   return (0);
 }
 
