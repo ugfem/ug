@@ -165,6 +165,7 @@ typedef struct
   DOUBLE rho, omega;
   VEC_SCALAR weight;
   VEC_SCALAR old_defect;
+  MATDATA_DESC *B;
   VECDATA_DESC *r;
   VECDATA_DESC *p;
   VECDATA_DESC *v;
@@ -1532,6 +1533,7 @@ static INT BCGSInit (NP_BASE *theNP, INT argc , char **argv)
   if (sc_read (np->weight,NP_FMT(np),NULL,"weight",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++) np->weight[i] = 1.0;
   for (i=0; i<MAX_VEC_COMP; i++) np->weight[i] *= np->weight[i];
+  np->B = ReadArgvMatDesc(theNP->mg,"B",argc,argv);
   np->r = ReadArgvVecDesc(theNP->mg,"r",argc,argv);
   np->p = ReadArgvVecDesc(theNP->mg,"p",argc,argv);
   np->v = ReadArgvVecDesc(theNP->mg,"v",argc,argv);
@@ -1565,6 +1567,7 @@ static INT BCGSDisplay (NP_BASE *theNP)
   if (np->display == PCR_NO_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
   else if (np->display == PCR_RED_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
   else if (np->display == PCR_FULL_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
+  if (np->B != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"B",ENVITEM_NAME(np->B));
   if (np->r != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"r",ENVITEM_NAME(np->r));
   if (np->p != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"p",ENVITEM_NAME(np->p));
   if (np->v != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"v",ENVITEM_NAME(np->v));
@@ -1587,7 +1590,12 @@ static INT BCGSPreProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, 
 
   if (np->Iter!=NULL)
     if (np->Iter->PreProcess != NULL)
-      if ((*np->Iter->PreProcess)(np->Iter,level,x,b,A,baselevel,result)) REP_ERR_RETURN(1);
+    {
+      if (np->B == NULL)
+        if ((*np->Iter->PreProcess)(np->Iter,level,x,b,A,baselevel,result)) REP_ERR_RETURN(1);
+      if (np->B != NULL)
+        if ((*np->Iter->PreProcess)(np->Iter,level,x,b,np->B,baselevel,result)) REP_ERR_RETURN(1);
+    }
 
   if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->r)) NP_RETURN(1,result[0]);
   if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->p)) NP_RETURN(1,result[0]);
@@ -1615,8 +1623,12 @@ static INT BCGSPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x,
 
   if (np->Iter!=NULL) {
     if (np->Iter->PostProcess != NULL)
-      if ((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result))
-        NP_RETURN(1,result[0]);
+    {
+      if (np->B == NULL)
+        if ((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result)) NP_RETURN(1,result[0]);
+      if (np->B != NULL)
+        if ((*np->Iter->PostProcess)(np->Iter,level,x,b,np->B,result)) NP_RETURN(1,result[0]);
+    }
   }
   else
     return (0);
@@ -1630,6 +1642,7 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
 {
   NP_BCGS *np;
   VEC_SCALAR defect2reach;
+  MATDATA_DESC *DC;
   INT i,j,PrintID,restart,eq_count;
   char text[DISPLAY_WIDTH+4];
   DOUBLE alpha,rho_new,beta,tt;
@@ -1650,6 +1663,8 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
 
   /* prepare */
   np = (NP_BCGS *) theNP;
+  if (np->B == NULL) DC = A;
+  else DC = np->B;
 
   alpha = rho_new = beta = tt = 0.0;
 
@@ -1695,7 +1710,7 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     {
       if (dset(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->q,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
       if (dcopy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->s,np->p)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if ((*np->Iter->Iter)(np->Iter,level,np->q,np->p,A,&lresult->error_code)) REP_ERR_RETURN (1);
+      if ((*np->Iter->Iter)(np->Iter,level,np->q,np->p,DC,&lresult->error_code)) REP_ERR_RETURN (1);
       if (dcopy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->p,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
       if (dmatmul(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->v,A,np->q)) REP_ERR_RETURN (1);
             #ifdef ModelP
@@ -1744,7 +1759,7 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     {
       if (dset(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->q,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
       if (dcopy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->t,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if ((*np->Iter->Iter)(np->Iter,level,np->q,np->s,A,&lresult->error_code)) REP_ERR_RETURN (1);
+      if ((*np->Iter->Iter)(np->Iter,level,np->q,np->s,DC,&lresult->error_code)) REP_ERR_RETURN (1);
       if (dcopy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->s,np->t)!= NUM_OK) NP_RETURN(1,lresult->error_code);
     }
     else
