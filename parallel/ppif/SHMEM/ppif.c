@@ -589,20 +589,31 @@ static void fit_configuration (int p, int *x, int *y, int *z)
 static void fit_configuration (int p, int *xx, int *yy, int *zz)
 {
   int i,x,y,z;
+  int toggle=1;
 
-  x = y = z = 1;
+  x = p;
+  y = z = 1;
 
-  for (i=0; i<p; i++)
+  if (p%2 != 0)
   {
-    if ((x<=y)&&((x+1)*y<=p))
+    *xx = p;
+    *yy = 1;
+    *zz = 1;
+    return;
+  }
+
+  while (p%2==0 && x>y && x>z)
+  {
+    x = p = p/2;
+    if (toggle)
     {
-      x++;
-      continue;
+      y*=2;
+      toggle = 0;
     }
-    if ((y<x)&&(x*(y+1)<=p))
+    else
     {
-      y++;
-      continue;
+      z*=2;
+      toggle = 1;
     }
   }
   *xx = x; *yy = y; *zz = z;
