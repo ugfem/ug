@@ -1327,7 +1327,7 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 	int     i,j,k, *proclist,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
 	const SHORT *Comp;	
 
-	PRINTDEBUG(np,0,("%d: Scatter_OffDiagMatrixComp %d: maxgid %d\n",
+	PRINTDEBUG(np,1,("%d: Scatter_OffDiagMatrixComp %d: maxgid %d\n",
 					 me,GID(pv),*maxgid));
 
 	if (VSTART(pv) == NULL) return (NUM_OK);
@@ -1638,7 +1638,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 	sizePerVector = CEIL(sizePerVector);
 
     if (mode == MAT_CONS) {
-	    PRINTDEBUG(np,0,("%d: MAT_CONS\n",me));
+	    PRINTDEBUG(np,1,("%d: MAT_CONS\n",me));
 		DDD_IFAExchangeX(BorderVectorSymmIF, GRID_ATTR(g), sizePerVector,
 						 Gather_OffDiagMatrixComp, Scatter_OffDiagMatrixComp);
 	}
