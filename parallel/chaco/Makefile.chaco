@@ -134,4 +134,4 @@ UTIL:
 	cd util; make; cd ..;
 
 clean:
-	rm -f FILES.o $(DEST)
+	rm -f $(FILES.o) $(DEST)
