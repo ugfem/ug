@@ -60,7 +60,6 @@
 
 /* standard C library */
 #include <string.h>
-#include <strings.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -392,6 +391,8 @@ INT ActivateShellWin ()
   SetPort(theWindow);
   DrawGrowIcon(theWindow);
   TEActivate(shell->textH);
+  ShowControl(shell->vScrollBar);
+  ShowControl(shell->hScrollBar);
   SetMyCursor(textCurs);
 
   return (0);
@@ -413,6 +414,8 @@ INT DeactivateShellWin ()
 {
   SetPort(MAC_WIN(shell));
   TEDeactivate(shell->textH);
+  HideControl(shell->vScrollBar);
+  HideControl(shell->hScrollBar);
   DrawGrowIcon(MAC_WIN(shell));
 
   return (0);
