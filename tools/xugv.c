@@ -157,6 +157,7 @@ int dispcells;            /* number of available displaycells */
 int incr=1,first,last,film,frame_number;
 int _wait=0;                      /* wait for file creation, if file does not exist */
 int ignore=0;
+int verbose=0;
 char frame[50];
 int outopt=0;
 char outext[80];
@@ -215,7 +216,15 @@ FILE *fopen_with_wait (const char *name, const char *type)
   {
     stream = fopen(name,type);
     if (stream == NULL) sleep(sleep_seconds);
-    else break;
+    else
+    {
+      if (verbose)
+      {
+        printf ("xugv: opened file %s\n",name);
+        fflush(stdout);
+      }
+      break;
+    }
   }
   while (1);
 
@@ -1984,6 +1993,7 @@ char* argv[];
   while (i<argc)
   {
     if (argv[i][1]=='v') {option = argv[i]; i++; continue;}
+    if (argv[i][1]=='V') {verbose = 1; i++; continue;}
     if (argv[i][1]=='c') {count = 1; i++; continue;}
     if (argv[i][1]=='w') {_wait = 1; i++; continue;}
     if (argv[i][1]=='s') {stoploop = 1; i++; continue;}
@@ -2145,6 +2155,15 @@ char* argv[];
     /* realize widget tree */
     XtRealizeWidget (applShell);
 
+    /* use backing store for window */
+    {
+      XSetWindowAttributes attr;
+      unsigned long mask;
+
+      attr.backing_store = Always;
+      mask = CWBackingStore;
+      XChangeWindowAttributes(display, XtWindow(picture), mask, &attr);
+    }
 
     /* create colormap and graphic context */
     createGraphics();
@@ -2264,6 +2283,16 @@ char* argv[];
 
     /* realize widget tree */
     XtRealizeWidget (applShell);
+
+    /* use backing store for window */
+    {
+      XSetWindowAttributes attr;
+      unsigned long mask;
+
+      attr.backing_store = Always;
+      mask = CWBackingStore;
+      XChangeWindowAttributes(display, XtWindow(picture), mask, &attr);
+    }
 
     /* create colormap and graphic context */
     createGraphics();
