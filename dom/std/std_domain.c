@@ -3117,7 +3117,7 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, COORD *in, DOUBLE *value, INT *typ
 {
   BND_PS *ps;
   PATCH *p;
-  COORD lambda[DIM_OF_BND],global[DIM];
+  COORD global[DIM];
   COORD *local;
   INT j;
 
@@ -3157,30 +3157,13 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, COORD *in, DOUBLE *value, INT *typ
   PRINTDEBUG(dom,1,(" BndCond %d loc %f %f\n",
                     PATCH_ID(p),local[0],local[1]));
 
-  if (PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE)
-      #ifdef __TWODIM__
-    lambda[0] = (1.0-local[0])*PARAM_PATCH_RANGE(p)[0][0]
-                + local[0]*PARAM_PATCH_RANGE(p)[1][0];
-      #endif
-      #ifdef __THREEDIM__
-  {
-    lambda[0] = (1.0-local[0])*(1.0-local[1])*PARAM_PATCH_RANGE(p)[0][0]
-                + local[0]*(1.0-local[1])*PARAM_PATCH_RANGE(p)[1][0]
-                + local[0]*local[1]*PARAM_PATCH_RANGE(p)[1][0]
-                + (1.0-local[0])*local[1]*PARAM_PATCH_RANGE(p)[0][0];
-    lambda[1] = (1.0-local[0])*(1.0-local[1])*PARAM_PATCH_RANGE(p)[0][1]
-                + local[0]*(1.0-local[1])*PARAM_PATCH_RANGE(p)[0][1]
-                + local[0]*local[1]*PARAM_PATCH_RANGE(p)[1][1]
-                + (1.0-local[0])*local[1]*PARAM_PATCH_RANGE(p)[1][1];
-  }
-      #endif
-    else
-      return(1);
+  if (PATCH_TYPE(p) != PARAMETRIC_PATCH_TYPE)
+    return(1);
 
   if (currBVP->GeneralBndCond != NULL)
   {
     type[0] = PATCH_ID(p) - currBVP->sideoffset;
-    if ((*PARAM_PATCH_BS (p))(PARAM_PATCH_BSD(p),lambda,global))
+    if ((*PARAM_PATCH_BS (p))(PARAM_PATCH_BSD(p),local,global))
       return(1);
     if (in == NULL)
       return((*(currBVP->GeneralBndCond))(NULL,NULL,global,value,type));
@@ -3190,10 +3173,10 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, COORD *in, DOUBLE *value, INT *typ
   }
 
   if (in == NULL)
-    return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,lambda,value,type));
+    return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,local,value,type));
 
   for (i=0; i<DIM_OF_BND; i++)
-    in[i] = lambda[i];
+    in[i] = local[i];
   return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,in,value,type));
 }
 
