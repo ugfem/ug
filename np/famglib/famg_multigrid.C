@@ -103,10 +103,7 @@ int FAMGMultiGrid::Construct()
     FAMGGrid *g, *cg;
     int level, nnc, nn, ilu, cgilu, leave;
 	DOUBLE coarsefrac = 0.0;
-#ifdef ModelP
 	FAMGLeaveInfo myleaveinfo;
-#endif
-
 
     // read parameter
     const int cgnodes = FAMGGetParameter()->Getcgnodes();

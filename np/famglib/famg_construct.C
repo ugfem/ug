@@ -1061,7 +1061,7 @@ int FAMGGraph::EliminateDirichletNodes(FAMGGrid *gridptr)
 
 #else
 	cout << "FAMGGraph::EliminateDirichletNodes only implemented for UG" << endl;
-#endif	// ModelP
+#endif	// USE_UG_DS
 	return 0;
 }
 
@@ -1255,7 +1255,7 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 			if(InsertNode(gridptr, nodei))
 				return 0;
 	}
-#else
+#else // !defined ModelP
 	// put all nodes into the list
     for(i = 0; i < n; i++)
     {

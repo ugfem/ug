@@ -1326,7 +1326,7 @@ int FAMGGrid::ConstructTransfer()
 		if (graph->EliminateDirichletNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 		CommunicateNodeStatus();
 	}
-
+	
 #ifdef FAMG_INNER_FIRST
 	if( graph->InsertHelplist() )
 		RETURN(1);
@@ -1418,7 +1418,7 @@ int FAMGGrid::ConstructTransfer()
     }
 #endif //FAMG_INNER_FIRST
 
-#endif
+#endif // ModelP
 
 #ifdef SIMULATE_HALFENING	// TODO: remove it
 	FAMGNode *nodei;
@@ -1445,7 +1445,7 @@ int FAMGGrid::ConstructTransfer()
     }
 #endif
 	
-#ifndef FAMG_INNER_FIRST
+#if !(defined ModelP && defined FAMG_INNER_FIRST) // i.e !ModelP || (ModelP && !FAMG_INNER_FIRST)
 	if( graph->InsertHelplist() ) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
     if (graph->EliminateNodes(this)) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 #endif 
@@ -1481,16 +1481,16 @@ int FAMGGrid::ConstructTransfer()
         // FAMGReleaseHeap(FAMG_FROM_BOTTOM);
     }
 
-#ifndef FAMG_INNER_FIRST
+#if !(defined ModelP && defined FAMG_INNER_FIRST) // i.e !ModelP || (ModelP && !FAMG_INNER_FIRST)
     if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 
 #ifdef ModelP
 	// update the ghost and border nodes
-//prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
+	//prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
 	CommunicateNodeStatus();
 
 #endif
-#endif
+#endif // #if !(defined ModelP && defined FAMG_INNER_FIRST)
 	
     nf = graph->GetNF();
     // TODO: not neceassary any more: matrix->MarkUnknowns(graph);
