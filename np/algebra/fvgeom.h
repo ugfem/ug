@@ -126,6 +126,7 @@
 
 #define SDV_SHAPEPTR(p)                         ((p)->shape)
 #define SDV_SHAPE(p,i)                          ((p)->shape[i])
+#define SDV_GRADPTRPTR(p)                       ((p)->grad)
 #define SDV_GRADPTR(p,i)                        ((p)->grad[i])
 #define SDV_GRAD(p,i,j)                         ((p)->grad[i][j])
 #define SDV_JINV(p)                                     ((p)->Jinv)
