@@ -514,7 +514,7 @@ static INT DropMarks (MULTIGRID *theMG)
    int GetEdgePatternOfElement (OBJECT obj, void *data);
 
    PARAMETERS:
-.  level - level for which to make flags consistent
+ \param level - level for which to make flags consistent
 
    DESCRIPTION:
    This function exchanges the PATTERN between elements on horizontal boundary of one level.
@@ -710,7 +710,7 @@ static INT UpdateClosureFIFO (GRID *theGrid)
    static INT ManageParallelFIFO (ELEMENT *firstElement);
 
    PARAMETERS:
-.  firstElement
+ \param firstElement
 
    DESCRIPTION: 
 
@@ -816,7 +816,7 @@ INT NS_DIM_PREFIX Refinement_Changes (ELEMENT *theElement)
    static INT PrepareGridClosure (GRID *theGrid);
 
    PARAMETERS:
-.  theGrid - pointer to grid structure
+ \param theGrid - pointer to grid structure
 
    DESCRIPTION:
    This function computes the closure for next level. A closure can only be 
@@ -4421,30 +4421,25 @@ INT NS_DIM_PREFIX Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElemen
 #endif
 
 /****************************************************************************/
-/*
-   RefineElementYellow - copy an element
+/** \brief  Copy an element
 
-   SYNOPSIS:
-   static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theContext);
-
-   PARAMETERS:
-.  theGrid - grid level of sons of theElement
-.  theElement - element to refine
-.  theContext - nodes needed for new elements
+ \param theGrid - grid level of sons of theElement
+ \param theElement - element to refine
+ \param theContext - nodes needed for new elements
    
-   DESCRIPTION:
    This function copies an element, (i) corner nodes are already allocated, (iv) create son and set references to sons
 
-   RETURN VALUE:
-   INT
-.n   0 - ok
-.n   1 - fatal memory error  
+   \return <ul>
+   <li> 0 - ok </li>
+   <li> 1 - fatal memory error </li>
+   </ul>
 */
 /****************************************************************************/			
 static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theContext)
 {
-	INT		i,boundaryelement;
+    INT i;
 	ELEMENT *theSon;
+        INT boundaryelement = 0;
 
 	/* check for boundary */
 	if (OBJT(theElement) == BEOBJ)
@@ -4511,18 +4506,12 @@ static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theCo
 
 
 /****************************************************************************/
-/*
-   RefineElementGreen - refine an element without context
+/** \brief Refine an element without context
 
-   SYNOPSIS:
-   static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theContext);
+ \param theGrid - grid level of sons of theElement
+ \param theElement - element to refine
+ \param theContext - nodes needed for new elements
 
-   PARAMETERS:
-.  theGrid - grid level of sons of theElement
-.  theElement - element to refine
-.  theContext - nodes needed for new elements
-
-   DESCRIPTION:
    This function refines an element without context, 
    (i) corner and midnodes are already allocated, 
    (ii) edges between corner and midnodes are ok, 
@@ -5493,9 +5482,9 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
    static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theElementContext);
 
    PARAMETERS:
-.  theGrid - grid level of sons of theElement
-.  theElement - element to refine
-.  theContext - current context of element
+ \param theGrid - grid level of sons of theElement
+ \param theElement - element to refine
+ \param theContext - current context of element
 
    DESCRIPTION:
    This function refines an element in the given context, 
@@ -5720,9 +5709,9 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
    static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContext);
 
    PARAMETERS:
-.  UpGrid - grid level to refine
-.  theElement - element to refine
-.  theNodeContext - nodecontext for refinement
+ \param UpGrid - grid level to refine
+ \param theElement - element to refine
+ \param theNodeContext - nodecontext for refinement
 
    DESCRIPTION:
    This function refines an element
@@ -5783,8 +5772,8 @@ static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContex
    static int AdaptGrid (GRID *theGrid, INT *nadapted)
 
    PARAMETERS:
-.  theGrid - grid level to refine
-.  nadapted - number elements have been changed
+ \param theGrid - grid level to refine
+ \param nadapted - number elements have been changed
 
    DESCRIPTION:
    This function refines one level of the grid
