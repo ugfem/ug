@@ -1360,7 +1360,7 @@ INT NS_PREFIX UG_GlobalToLocalBnd (INT n, const DOUBLE **Corners,
 		LOCAL_TO_GLOBAL_2D (n,Corners,LocalCoord,tmp);
 		V2_SUBTRACT(tmp,EvalPoint,diff);
 		V2_EUKLIDNORM(diff,s);
-		if (s * s <= SMALL_DIFF * IMdet) 
+		if (s * s <= SMALL_DIFF * ABS(IMdet)) 
 			return (0);
 		TRANSFORMATION_2D(n,Corners,LocalCoord,M);
 		M2_INVERT(M,IM,IMdet);
