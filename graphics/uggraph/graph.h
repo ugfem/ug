@@ -81,6 +81,7 @@ INT     PrepareGraphWindow                      (const UGWINDOW *theWindow);
 void    UgMove                                          (COORD_POINT in);
 void    UgDraw                                          (COORD_POINT point);
 void    UgLine                                          (COORD_POINT point1, COORD_POINT point2);
+void    UgStyledLine                            (COORD_POINT point1, COORD_POINT point2, COORD dash_length, COORD space_length );
 void    UgInverseLine                           (COORD_POINT point1, COORD_POINT point2);
 void    UgPolyLine                                      (COORD_POINT *points, INT n);
 void    UgPolygon                                       (COORD_POINT *points, INT n);

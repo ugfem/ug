@@ -11,7 +11,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  internet: ug@ica3.uni-stuttgart.de                                            */
+/*			  internet: ug@ica3.uni-stuttgart.de                                                    */
 /*																			*/
 /* History:   8.12.94 begin, ug3-version									*/
 /*																			*/
@@ -774,7 +774,7 @@ void UgDraw (COORD_POINT point)
 
 /****************************************************************************/
 /*D
-   UgLine - Draw line from point1  to point2
+   UgLine - Draw line from point1 to point2
 
    SYNOPSIS:
    void UgLine (COORD_POINT point1, COORD_POINT point2);
@@ -784,7 +784,7 @@ void UgDraw (COORD_POINT point)
    .  point2 -
 
    DESCRIPTION:
-   This function draws line from point1  to point2.
+   This function draws line from point1 to point2.
 
    RETURN VALUE:
    void
@@ -806,6 +806,97 @@ void UgLine (COORD_POINT point1, COORD_POINT point2)
   {
     (*CurrentOutputDevice->Move)(out1);
     (*CurrentOutputDevice->Draw)(out2);
+  }
+}
+
+/****************************************************************************/
+/*D
+   UgStyledLine - Draw line from point1 to point2 with the specified pattern
+
+   SYNOPSIS:
+   void UgStyledLine (COORD_POINT point1, COORD_POINT point2, COORD dash_length, COORD space_length );
+
+   PARAMETERS:
+   .  point1 -
+   .  point2 -
+   .  dash_length - length of the small line segments in pixel coordinates
+   .  space_length - length of the gap betwenn small line segments in pixel coordinates
+
+   DESCRIPTION:
+   Along the line from point1 to point2 there will be drawn a line segment
+   of length 'dash_length' followed by a gap of length 'space_length' then
+   again a linesegment and so on. The lengths are adjusted a little bit thus
+   the whole line ends again with a dash.
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void UgStyledLine (COORD_POINT point1, COORD_POINT point2, COORD dash_length, COORD space_length )
+{
+  SHORT_POINT out1,out2, end;
+  INT reject,dummy;
+  register double x1, y1, x2, y2;
+  double dx_dash, dy_dash, dx_space, dy_space;
+  COORD_POINT temp;
+
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
+  /* to avoid rounding errors if the same line is drawn twice, one time p1->p2
+     and the other time p2->p1, order the points in a general way */
+  if ( point1.x > point2.x )
+  {
+    temp = point1;
+    point1 = point2;
+    point2 =  temp;
+  }
+
+  if (ClipLine (point1,point2,&out1,&out2,&reject,&dummy,&dummy)) return;
+  if (reject)
+    return;
+
+  /* adjust the dash- and spacelength to fit exactly into the line;
+     the line will start and end with a dash */
+
+  /* misuse of x1 and y1 as the slopes and x2 as linelength; y2 as temp */
+  x1 = (double)(out2.x - out1.x); y1 = (double)(out2.y - out1.y);
+  x2 = sqrt( x1*x1 + y1 * y1 );
+  if( fabs(x2) < 1e-20 )
+  {             /* linelength very small */
+    (*CurrentOutputDevice->Move)(out1);
+    (*CurrentOutputDevice->Draw)(out2);
+    return;
+  }
+
+  /* adjust the dash- and spacelength to fit exactly into the line;
+     the line will start and end with a dash! */
+  dummy = x2 / (dash_length + space_length) + 0.5;              /* how many pairs of dash+space fit completely into the line? */
+  y2 = x2 / ( (dummy+1)*dash_length + dummy*space_length );             /* scaling factor */
+  dash_length *= y2;
+  space_length *= y2;
+
+  /* increments for dashes and spaces */
+  dx_dash = x1 * dash_length / x2; dy_dash = y1 * dash_length / x2;
+  dx_space = x1 * space_length / x2; dy_space = y1 * space_length / x2;
+
+  x1 = out1.x; y1 = out1.y;
+  end = out2;                   /* save end point */
+  out2 = out1;          /* reset */
+
+  while ( out2.x != end.x || out2.y != end.y )
+  {
+    x2 = x1 + dx_dash; y2 = y1 + dy_dash;
+    out2.x = (short)(x2 + 0.5 ); out2.y = (short)(y2 + 0.5 );             /* rounding */
+
+    (*CurrentOutputDevice->Move)(out1);
+    (*CurrentOutputDevice->Draw)(out2);
+
+    x1 = x2 + dx_space; y1 = y2 + dy_space;
+    out1.x = (short)(x1 + 0.5 ); out1.y = (short)(y1 + 0.5 );             /* rounding */
   }
 }
 
