@@ -259,7 +259,7 @@ static void CheckMatrixList (VECTOR *theVector)
    There are predefined 'blockvector description formats', which are
    often used. This formats you can use without initialization.
    .  DH_bvdf  - useful for domain halfening methods (up to 4 blocks per level)
-   .  one_level_bvdf - max. number of blocks but only 1 level
+   .  one_level_bvdf - max. number of blocks in a level but only 1 level
 
    EXAMPLE:
    To create a format for managing a octree-like structure (that is
@@ -369,7 +369,7 @@ INT PushEntry( BV_DESC *bvd, BLOCKNUMBER bnr, const BV_DESC_FORMAT *bvdf )
 
 /****************************************************************************/
 /*D
-   FindBV - Find the described blockvector
+   FindBV - Find the described blockvector in the grid
 
    SYNOPSIS:
    BLOCKVECTOR *FindBV( const GRID *grid, BV_DESC *bvd, const BV_DESC_FORMAT *bvdf )
@@ -717,6 +717,7 @@ INT CreateBlockvector( GRID *theGrid, BLOCKVECTOR **BVHandle )
     }
 
   memset( bv, 0, sizeof(BLOCKVECTOR) );
+  SETOBJT(bv,BLOCKVOBJ);
 
   *BVHandle = bv;
 
@@ -999,7 +1000,8 @@ INT DisposeBlockvector( GRID *theGrid, BLOCKVECTOR *bv )
 
    DESCRIPTION:
    Frees all allocated blockvectors in the grid and resets GFIRSTBV(grid)
-   to NULL.
+   and GLASTBV(grid) to 'NULL' and gives the memory back to the memory
+   of the 'MULTIGRID'.
 
    RETURN VALUE:
    void
@@ -3669,7 +3671,7 @@ INT CreateBVStripe( GRID *grid, INT points, INT points_per_stripe )
    Each of the 2 resulting subdomains 0 and 1 are now halfened horizontally
    and processed analogical. The halfening is recursively proceeded until
    a subdomain consists of less than 10 points. The initial grid should have
-   a side length allowing all halfening without a remainder.
+   a side length allowing all halfenings without a remainder.
 
    RETURN VALUE:
    INT
@@ -3688,7 +3690,8 @@ INT CreateBVDomainHalfening( GRID *grid, INT side )
   register VECTOR *v;
   INT ret;
 
-  /* create first block of the hierarchy */
+  /* create first block of the hierarchy (it is only a dummy
+     for temporary use) */
   (void)CreateBlockvector( grid, &bv );
   GFIRSTBV( grid ) = bv;
   if ( bv == NULL )
@@ -3709,22 +3712,31 @@ INT CreateBVDomainHalfening( GRID *grid, INT side )
     ;
   LASTVECTOR( grid ) = v;
 
-  /* set last blockvector */
+  if ( ret != GM_OK )
+  {
+    GFIRSTBV( grid ) = bv;
+    GLASTBV( grid ) = bv;
+    FreeAllBV( grid );
+    GFIRSTBV( grid ) = NULL;
+    GLASTBV( grid ) = NULL;
+    return ret;
+  }
+
+  /* remove the dummy blockvector and set first and last blockvector
+     of the grid */
+  GFIRSTBV( grid ) = BVDOWNBV( bv );
+  DisposeBlockvector( grid, bv );
+  bv = GFIRSTBV( grid );
   while ( BVSUCC( bv ) != NULL )
     bv = BVSUCC( bv );
   GLASTBV( grid ) = bv;
 
-  if ( ret != GM_OK )
-  {
-    FreeAllBV( grid );
-    GFIRSTBV( grid ) = NULL;
-  }
-
-  return ret;
+  return GM_OK;
 }
 
 /****************************************************************************/
-/*
+/* (without *D, since only internal function)
+
    BlockHalfening - internal function to perform the work of CreateBVDomainHalfening
 
    SYNOPSIS:
