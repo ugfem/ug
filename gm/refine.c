@@ -1890,7 +1890,7 @@ INT GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 		if (i == 0)
 			son = SON(theElement,PRIO2INDEX(PrioMaster));
 		else
-			son = SON(theElement,PRIO2INDEX(PrioGhost));
+			son = SON(theElement,PRIO2INDEX(PrioHGhost));
 
 		if (son == NULL)
 			continue;
@@ -4953,7 +4953,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 				(OBJT(theSon)==BEOBJ)?BND_SIZE_TAG(TAG(theSon)):
 				INNER_SIZE_TAG(TAG(theSon)));
 		}
-			XFERECOPYX(theSon,EPROCPRIO(theNeighbor,PrioMaster),PrioGhost,
+	}
 
 	return(GM_OK);
 }

@@ -153,7 +153,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 	}
 
 	
-	if (theFather!=NULL && MASTER(theNode) && EPRIO(theFather)==PrioGhost)
+	if (theFather!=NULL && MASTER(theNode) && EPRIO(theFather)==PrioHGhost)
 	{
         #ifdef ModelP
 		if (!CORNERTYPE(theNode))
@@ -267,7 +267,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 			{
 				nerrors++;	
                 #ifdef ModelP
-				if (EPRIO(theElement)==PrioGhost) {
+				if (EPRIO(theElement)==PrioHGhost) {
 				    nerrors = 0;
 					IFDEBUG(gm,1)
 					    nerrors = 1;
@@ -297,7 +297,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 			{
 				nerrors++;	
                 #ifdef ModelP
-				if (EPRIO(theElement)==PrioGhost) {
+				if (EPRIO(theElement)==PrioHGhost) {
 				    nerrors = 0;
 					IFDEBUG(gm,1)
 					    nerrors = 1;

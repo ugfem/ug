@@ -55,7 +55,7 @@
 enum Priorities
 {
   PrioNone     = 0,
-  PrioGhost    = 1,
+  PrioHGhost   = 1,
   PrioVGhost   = 2,
   PrioVHGhost  = 3,
   PrioBorder   = 4,
@@ -85,10 +85,10 @@ enum Priorities
 
 /* define mapping from object priority to position in linked list */
 #define PRIO2LISTPART(listtype,prio) \
-  ((listtype == ELEMENT_LIST) ? ((prio == PrioGhost) ? 0 :\
+  ((listtype == ELEMENT_LIST) ? ((prio == PrioHGhost) ? 0 :\
                                  (prio == PrioVGhost) ? 0 : (prio == PrioVHGhost) ? 0 :\
                                  (prio == PrioMaster) ? 1 : -1) :\
-   ((prio == PrioGhost) ? 0 : (prio ==PrioVGhost) ? 0 :\
+   ((prio == PrioHGhost) ? 0 : (prio ==PrioVGhost) ? 0 :\
       (prio == PrioVHGhost) ? 0 :\
       (prio == PrioBorder) ? 2 : (prio == PrioMaster) ? 2 : -1))
 
@@ -102,7 +102,7 @@ enum Priorities
     {                                                                    \
       if (listpart == 0)                                               \
       {                                                                \
-        prios[Entry++] = PrioGhost;                                  \
+        prios[Entry++] = PrioHGhost;                                  \
         prios[Entry++] = PrioVGhost;                                 \
         prios[Entry++] = PrioVHGhost;                                \
       }                                                                \
@@ -112,7 +112,7 @@ enum Priorities
     {                                                                    \
       if (listpart == 0)                                               \
       {                                                                \
-        prios[Entry++] = PrioGhost;                                  \
+        prios[Entry++] = PrioHGhost;                                  \
         prios[Entry++] = PrioVGhost;                                 \
         prios[Entry++] = PrioVHGhost;                                \
       }                                                                \
@@ -126,7 +126,7 @@ enum Priorities
 
 /* define mapping from element priority to index in son array of father */
 #define PRIO2INDEX(prio) \
-  ((prio==PrioGhost || prio==PrioVGhost || prio==PrioVHGhost) ? 1 : \
+  ((prio==PrioHGhost || prio==PrioVGhost || prio==PrioVHGhost) ? 1 : \
    (prio == PrioMaster) ? 0 : -1)
 
 /* map pointer to structure onto a pointer to its DDD_HDR */
@@ -373,7 +373,7 @@ extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF,
               NodeIF, NodeAllIF;
 extern DDD_IF BorderVectorIF, BorderVectorSymmIF,
               OuterVectorIF, OuterVectorSymmIF,
-              VectorVIF, VectorVAllIF;
+              VectorVIF, VectorVAllIF, VectorAllIF;
 #ifdef __THREEDIM__
 extern DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF, EdgeAllIF;
 #endif

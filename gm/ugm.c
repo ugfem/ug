@@ -6270,7 +6270,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
         lbinfo[me][ELEMENT_PRIOS*i]++;
         lbinfo[me][ELEMENT_PRIOS*MAXLEVEL]++;
         break;
-      case PrioGhost :
+      case PrioHGhost :
         lbinfo[me][ELEMENT_PRIOS*i+1]++;
         lbinfo[me][ELEMENT_PRIOS*MAXLEVEL+1]++;
         break;
