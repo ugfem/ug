@@ -1481,6 +1481,11 @@ INT SmoothGrid (MULTIGRID *theMG, INT fl, INT tl, const DOUBLE LimitLocDis,
   DOUBLE lambda, lambda_old, *MidNodeLambdaOld, *MidNodeLambdaNew;
   INT MarkKey;
 
+        #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  if (MG_COARSE_FIXED(theMG))
+    if (DisposeBottomHeapTmpMemory(theMG))
+      REP_ERR_RETURN(1);
+        #endif
   /* allocate temporary memory */
   MarkTmpMem(MGHEAP(theMG),&MarkKey);
   VertexCoord = (DOUBLE_VECTOR *) GetTmpMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE_VECTOR),MarkKey);
@@ -1686,6 +1691,11 @@ option_b:
       SETUSED(theNode,0);
   }
   ReleaseTmpMem(MGHEAP(theMG),MarkKey);
+    #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  if (MG_COARSE_FIXED(theMG))
+    if (CreateAlgebra(theMG))
+      REP_ERR_RETURN(1);
+        #endif
   return(0);
 
 exit:
@@ -1697,6 +1707,11 @@ exit:
       SETUSED(theNode,0);
   }
   ReleaseTmpMem(MGHEAP(theMG),MarkKey);
+    #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  if (MG_COARSE_FIXED(theMG))
+    if (CreateAlgebra(theMG))
+      REP_ERR_RETURN(1);
+        #endif
   return(1);
 
 }
@@ -1733,6 +1748,11 @@ INT SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
   DOUBLE *MidNodeLambdaOld, *MidNodeLambdaNew,lambda_old;
   INT MarkKey;
 
+        #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  if (MG_COARSE_FIXED(theMG))
+    if (DisposeBottomHeapTmpMemory(theMG))
+      REP_ERR_RETURN(1);
+        #endif
   /* allocate temporary memory */
   MarkTmpMem(MGHEAP(theMG),&MarkKey);
   VertexCoord = (DOUBLE_VECTOR *) GetTmpMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE_VECTOR),MarkKey);
@@ -1825,6 +1845,13 @@ INT SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
       SETUSED(theNode,0);
   }
   ReleaseTmpMem(MGHEAP(theMG),MarkKey);
+
+    #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  if (MG_COARSE_FIXED(theMG))
+    if (CreateAlgebra(theMG))
+      REP_ERR_RETURN(1);
+        #endif
+
   return(0);
 }
 
