@@ -684,32 +684,32 @@ static void ddd_IfInit (void)
   A[0] = PrioMaster;
   B[0] = PrioHGhost; B[1] = PrioVHGhost;
   ElementIF = DDD_IFDefine(nO,O,1,A,2,B);
-  DDD_IFSetName(ElementIF, "ElementIF: Master->HGhost");
+  DDD_IFSetName(ElementIF, "ElementIF: Master->HGhost/VHGhost");
 
   A[0] = PrioMaster; A[1] = PrioHGhost; A[2] = PrioVHGhost;
   B[0] = PrioMaster; B[1] = PrioHGhost; B[2] = PrioVHGhost;
   ElementSymmIF = DDD_IFDefine(nO,O,3,A,3,B);
-  DDD_IFSetName(ElementSymmIF, "ElementSymmIF: Master/HGhost");
+  DDD_IFSetName(ElementSymmIF, "ElementSymmIF: Master/HGhost/VHGhost");
 
   A[0] = PrioMaster;
   B[0] = PrioVGhost; B[1] = PrioVHGhost;
   ElementVIF = DDD_IFDefine(nO,O,1,A,2,B);
-  DDD_IFSetName(ElementVIF, "ElementVIF: Master->VGhost");
+  DDD_IFSetName(ElementVIF, "ElementVIF: Master->VGhost/VHGhost");
 
   A[0] = PrioMaster; A[1] = PrioVGhost; A[2] = PrioVHGhost;
   B[0] = PrioMaster; B[1] = PrioVGhost; B[2] = PrioVHGhost;
   ElementSymmVIF = DDD_IFDefine(nO,O,3,A,3,B);
-  DDD_IFSetName(ElementSymmVIF, "ElementSymmVIF: Master/VGhost");
+  DDD_IFSetName(ElementSymmVIF, "ElementSymmVIF: Master/VGhost/VHGhost");
 
   A[0] = PrioMaster;
   B[0] = PrioVGhost; B[1] = PrioHGhost; B[2] = PrioVHGhost;
   ElementVHIF = DDD_IFDefine(nO,O,1,A,3,B);
-  DDD_IFSetName(ElementVHIF, "ElementVHIF: Master->VGhost/HGhost");
+  DDD_IFSetName(ElementVHIF, "ElementVHIF: Master->VGhost/HGhost/VHGhost");
 
   A[0] = PrioMaster; A[1] = PrioVGhost; A[2] = PrioHGhost; A[3] = PrioVHGhost;
   B[0] = PrioMaster; B[1] = PrioVGhost; B[2] = PrioHGhost; B[3] = PrioVHGhost;
   ElementSymmVHIF = DDD_IFDefine(nO,O,4,A,4,B);
-  DDD_IFSetName(ElementSymmVHIF, "ElementSymmVHIF: Master/VGhost/HGhost");
+  DDD_IFSetName(ElementSymmVHIF, "ElementSymmVHIF: Master/VGhost/HGhost/VHGhost");
 
 
   /* define node interfaces */
@@ -728,17 +728,17 @@ static void ddd_IfInit (void)
   A[0] = PrioMaster;
   B[0] = PrioHGhost; B[1] = PrioVHGhost;
   OuterNodeIF = DDD_IFDefine(1,O,1,A,2,B);
-  DDD_IFSetName(OuterNodeIF, "OuterNodeIF: Master->HGhost");
+  DDD_IFSetName(OuterNodeIF, "OuterNodeIF: Master->HGhost/VGhost");
 
   A[0] = PrioMaster;
   B[0] = PrioVGhost; B[1] = PrioVHGhost;
   NodeVIF = DDD_IFDefine(1,O,1,A,2,B);
-  DDD_IFSetName(NodeVIF, "NodeVIF: Master->VGhost");
+  DDD_IFSetName(NodeVIF, "NodeVIF: Master->VGhost/VHGhost");
 
   A[0] = PrioMaster;
   B[0] = PrioVGhost; B[1] = PrioHGhost; B[2] = PrioVHGhost;
   NodeIF = DDD_IFDefine(1,O,1,A,3,B);
-  DDD_IFSetName(NodeIF, "NodeIF: Master->HGhost");
+  DDD_IFSetName(NodeIF, "NodeIF: Master->VGhost/HGhost/VHGhost");
 
   A[0] = PrioMaster; A[1] = PrioBorder; A[2] = PrioVGhost; A[3] = PrioHGhost; A[4] = PrioVHGhost;
   B[0] = PrioMaster; B[1] = PrioBorder; B[2] = PrioVGhost; B[3] = PrioHGhost; B[4] = PrioVHGhost;
@@ -762,28 +762,28 @@ static void ddd_IfInit (void)
   A[0] = PrioMaster;
   B[0] = PrioHGhost; B[1] = PrioVHGhost;
   OuterVectorIF = DDD_IFDefine(1,O,1,A,2,B);
-  DDD_IFSetName(OuterVectorIF, "OuterVectorIF: Master->HGhost");
+  DDD_IFSetName(OuterVectorIF, "OuterVectorIF: Master->HGhost/VHGhost");
 
   A[0] = PrioMaster; A[1] = PrioBorder; A[2] = PrioHGhost; A[3] = PrioVHGhost;
   B[0] = PrioMaster; B[1] = PrioBorder; B[2] = PrioHGhost; B[3] = PrioVHGhost;
   OuterVectorSymmIF = DDD_IFDefine(1,O,4,A,4,B);
-  DDD_IFSetName(OuterVectorSymmIF, "OuterVectorSymmIF: Master/Border/HGhost");
+  DDD_IFSetName(OuterVectorSymmIF, "OuterVectorSymmIF: Master/Border/HGhost/VHGhost");
 
   A[0] = PrioMaster;
   B[0] = PrioVGhost; B[1] = PrioVHGhost;
   VectorVIF = DDD_IFDefine(1,O,1,A,2,B);
-  DDD_IFSetName(VectorVIF, "VectorVIF: Master->VGhost");
+  DDD_IFSetName(VectorVIF, "VectorVIF: Master->VGhost/VHGhost");
 
   A[0] = PrioMaster; A[1] = PrioBorder; A[2] = PrioVGhost; A[3] = PrioVHGhost;
   B[0] = PrioMaster; B[1] = PrioBorder;
   VectorVAllIF = DDD_IFDefine(1,O,4,A,2,B);
-  DDD_IFSetName(VectorVAllIF, "VectorVAllIF: Master/Border/VGhost->Master/Border");
+  DDD_IFSetName(VectorVAllIF, "VectorVAllIF: Master/Border/VGhost/VHGhost->Master/Border");
 
   A[0] = PrioMaster;
   B[0] = PrioBorder; B[1] = PrioVGhost;
   B[2] = PrioVHGhost; B[3] = PrioHGhost;
   VectorAllIF = DDD_IFDefine(1,O,1,A,4,B);
-  DDD_IFSetName(VectorVAllIF, "VectorAllIF: Master->Border/HGhost/VGhost/VHGhost");
+  DDD_IFSetName(VectorVAllIF, "VectorAllIF: Master->Border/VGhost/VHGhost/HGhost");
 
   /* define vertex interfaces */
   O[0] = TypeIVertex; O[1] = TypeBVertex;
@@ -811,7 +811,7 @@ static void ddd_IfInit (void)
   A[0] = PrioMaster; A[1] = PrioBorder;
   B[0] = PrioMaster; B[1] = PrioBorder; B[2] = PrioHGhost; B[3] = PrioVHGhost;
   EdgeHIF = DDD_IFDefine(1,O,2,A,4,B);
-  DDD_IFSetName(EdgeHIF, "EdgeHIF: Master/Border");
+  DDD_IFSetName(EdgeHIF, "EdgeHIF: Master/Border->Master/Border/PrioHGhost/PrioVHGhost");
 
   A[0] = PrioMaster; A[1] = PrioBorder; A[2] = PrioVGhost; A[3] = PrioHGhost; A[4] = PrioVHGhost;
   B[0] = PrioMaster; B[1] = PrioBorder; B[2] = PrioVGhost; B[3] = PrioHGhost; B[4] = PrioVHGhost;
