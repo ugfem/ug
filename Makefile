@@ -36,6 +36,9 @@ UGD: include $(UGDMODULES) ugd.o
                           $(UG_LIB) $(UG_LFLAGS)
 	echo "ugd compiled"
 
+init: $(OBJECTS)
+	make $(UG_LIB) 	
+
 $(UG_LIB): $(OBJECTS) 
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 
