@@ -425,3 +425,17 @@ INT FreeControlEntry (INT ce_id)
   /* ok, exit */
   return(GM_OK);
 }
+
+INT PrintCW (void)
+{
+  INT i;
+  CONTROL_ENTRY *ce;
+
+  for (i=0; i<MAX_CONTROL_ENTRIES; i++) {
+    if (!control_entries[i].used) continue;
+    ce = control_entries+i;
+    UserWriteF("cw %3d entry %3d offset %3d length %3d\n",
+               i,ce->control_word,ce->offset_in_object,ce->length);
+  }
+  return(GM_OK);
+}

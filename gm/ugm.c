@@ -1454,14 +1454,8 @@ EDGE *GetEdge (NODE *from, NODE *to)
 
   /* run through neighbor list */
   for (pl=START(from); pl!=NULL; pl = NEXT(pl))
-    if (NBNODE(pl)==to) {
-      if (OBJT(MYEDGE(pl)) != EDOBJ) {
-        PRINTDEBUG(dddif,0,(PFMT " GetEdge(): n=" ID_FMTX " OBJT=%d\n",
-                            me,ID_PRTX(MYEDGE(pl)),OBJT(MYEDGE(pl))));
-        assert(0);
-      }
+    if (NBNODE(pl)==to)
       return(MYEDGE(pl));
-    }
 
   /* return not found */
   return(NULL);
@@ -1561,7 +1555,7 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
   /* counters */
   theGrid->nEdge++;
 
-  PRINTDEBUG(dddif,0,(PFMT " CreateEdge(): n=" ID_FMTX " OBJT=%d\n",
+  PRINTDEBUG(dddif,1,(PFMT " CreateEdge(): n=" ID_FMTX " OBJT=%d\n",
                       me,ID_PRTX(pe),OBJT(pe)));
 
   /* return ok */

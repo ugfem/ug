@@ -2673,6 +2673,7 @@ INT             RemoveVectorFromSelection(MULTIGRID *theMG, VECTOR *theVector);
 /* multigrid user data space management (using the heaps.c block heap management) */
 INT             AllocateControlEntry    (INT cw_id, INT length, INT *ce_id);
 INT             FreeControlEntry                (INT ce_id);
+INT         PrintCW                 (void);
 INT             DefineMGUDBlock                 (BLOCK_ID id, MEM size);
 INT             FreeMGUDBlock                   (BLOCK_ID id);
 BLOCK_DESC      *GetMGUDBlockDescriptor (BLOCK_ID id);
