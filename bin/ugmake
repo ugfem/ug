@@ -32,6 +32,16 @@ then
 	fi
 fi
 
+if test $# -eq 2 
+then
+	if test "$2" = "appl"
+	then
+	    ugmake $1;
+	    ugmake;
+		exit 0;
+	fi
+fi
+
 # if parameter are specified make the specified module
 if test $# -ge 1 
 then

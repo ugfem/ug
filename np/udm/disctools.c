@@ -1471,6 +1471,46 @@ INT SetElementDirichletFlags (ELEMENT *theElement, const VECDATA_DESC *theVD,
 
 /****************************************************************************/
 /*D
+   ClearDirichletValues - sets values with Dirichlet flag to 0
+
+   SYNOPSIS:
+   INT ClearDirichletValues (GRID *theGrid, VECDATA_DESC *x);
+
+   PARAMETERS:
+   .  theGrid - pointer to a grid
+   .  x - type vector descriptor
+
+   DESCRIPTION:
+   This function sets all components of x where the vecskip flag is set
+   to zero.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+INT ClearDirichletValues (GRID *theGrid, VECDATA_DESC *x)
+{
+  VECTOR *theVector;
+  INT j,type,ncomp;
+
+  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL;
+       theVector=SUCCVC(theVector)) {
+    type = VTYPE(theVector);
+    ncomp = VD_NCMPS_IN_TYPE (x,type);
+    if (ncomp == 0) continue;
+    for (j=0; j<ncomp; j++)
+      if (VECSKIP(theVector) & (1<<j))
+        VVALUE(theVector,VD_CMP_OF_TYPE(x,type,j)) = 0.0;
+  }
+
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*D
    AssembleDirichletBoundary - modifies matrix entries and right hand side
    for Dirichlet boundary
 
