@@ -57,6 +57,9 @@
 #include "basic/notify.h"
 
 
+#include "basic/oopp.h"    /* for object-orientated style via preprocessor */
+
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -84,6 +87,58 @@ enum IdentMode {
   IMODE_CMDS,              /* after DDD_IdentifyBegin(), before DDD_IdentifyEnd() */
   IMODE_BUSY               /* during DDD_IdentifyEnd() */
 };
+
+
+
+/***/
+
+/* some macros for customizing oopp */
+#define _NEWPARAMS
+#define _NEWPARAMS_OR_VOID    void
+
+#define __INDENT(n)   { int i; for(i=0; i<n; i++) fputs("   ",fp);}
+#define _PRINTPARAMS  , int indent, FILE *fp
+#define _PRINTPARAMS_DEFAULT  ,0,stdout
+#define _INDENT       __INDENT(indent)
+#define _INDENT1      __INDENT(indent+1)
+#define _INDENT2      __INDENT(indent+2)
+#define _PRINTNEXT    , indent+1, fp
+#define _PRINTSAME    , indent, fp
+
+
+/* map memory allocation calls */
+#define OO_Allocate  ident_AllocTmp
+#define OO_Free      ident_FreeTmp
+
+
+/* extra prefix for all xfer-related data structures and/or typedefs */
+/*#define ClassPrefix*/
+
+
+
+/*
+    NOTE: all container-classes from ooppcc.h are implemented in this
+          source file by setting the following define.
+ */
+#define ContainerImplementation
+#define _CHECKALLOC(ptr)   assert(ptr!=NULL)
+
+
+/***/
+
+
+static int TmpMem_kind = TMEM_ANY;
+
+static void *ident_AllocTmp (size_t size)
+{
+  return AllocTmpReq(size, TmpMem_kind);
+}
+
+static void ident_FreeTmp (void *buffer)
+{
+  FreeTmpReq(buffer, 0, TmpMem_kind);
+}
+
 
 
 
@@ -160,21 +215,26 @@ typedef struct _ID_TUPEL {
   int nObjIds;                    /* number of entries with typeID==ID_OBJECT */
 
   int loi;                        /* level of indirection */
-  ID_REFDBY     *refd;            /* list of referencing ID_ENTRIES */
+  ID_REFDBY     *refd;            /* list of referencing IdEntries */
 
 } ID_TUPEL;
 
 
 /****************************************************************************/
-/* ID_ENTRY:                                                                */
+/* IdEntry:                                                                 */
 /****************************************************************************/
 
 
-typedef struct _ID_ENTRY {
+typedef struct _IdEntry {
   IDENTINFO msg;
-  struct _ID_ENTRY *next;
+} IdEntry;
 
-} ID_ENTRY;
+
+/* define container class */
+#define SegmListOf   IdEntry
+#define SegmSize     128
+#include "basic/ooppcc.h"
+
 
 
 
@@ -184,11 +244,11 @@ typedef struct _ID_ENTRY {
 
 typedef struct _ID_PLIST {
   DDD_PROC proc;
-  int entries;
+  int nEntries;
   int nIdentObjs;
 
   struct _ID_PLIST *next;
-  ID_ENTRY    *first;
+  IdEntrySegmList  *entries;
 
   IDENTINFO   **local_ids;
   ID_TUPEL    *indexmap;                  /* index-mapping of local_ids array */
@@ -227,6 +287,8 @@ static int identMode;
 /*                                                                          */
 /* routines                                                                 */
 /*                                                                          */
+/****************************************************************************/
+
 /****************************************************************************/
 /*
         management functions for IdentMode.
@@ -309,35 +371,8 @@ static int IdentStepMode (int old)
 static void PrintPList (ID_PLIST *plist)
 {
   sprintf(cBuffer, "%d: PList proc=%04d entries=%05d\n",
-          me, plist->proc, plist->entries);
+          me, plist->proc, plist->nEntries);
   DDD_PrintDebug(cBuffer);
-}
-
-
-/****************************************************************************/
-
-/* memory management functions */
-
-
-static ID_ENTRY *FreeIdEntry (ID_ENTRY *item)
-{
-  ID_ENTRY *next = item->next;
-
-  /* TODO use chunks and freelists */
-  FreeTmp(item,0);
-
-  return(next);
-}
-
-
-static void FreeIdEntryList (ID_ENTRY *list)
-{
-  ID_ENTRY *item = list;
-
-  while (item!=NULL)
-  {
-    item = FreeIdEntry(item);
-  }
 }
 
 
@@ -607,7 +642,7 @@ static void ResolveDependencies (
     while (j<nIdentObjs &&
            refd[j]->id.object == tupels[i].infos[0]->msg.gid)
     {
-      ID_REFDBY *rby = (ID_REFDBY *)AllocTmp(sizeof(ID_REFDBY));
+      ID_REFDBY *rby = (ID_REFDBY *)AllocTmpReq(sizeof(ID_REFDBY),TMEM_IDENT);
       if (rby==NULL) {
         DDD_PrintError('E', 3301, ERR_ID_NOMEM_RESOLV);
         return;
@@ -671,7 +706,7 @@ static void CleanupLOI (ID_TUPEL *tupels, int nTupels)
       next = rby->next;
 
       /* TODO use freelists */
-      FreeTmp(rby,0);
+      FreeTmpReq(rby, sizeof(ID_REFDBY), TMEM_IDENT);
     }
   }
 }
@@ -939,11 +974,18 @@ static int InitComm (int nPartners)
   /* initiate asynchronous receives and sends */
   for(plist=thePLists; plist!=NULL; plist=plist->next)
   {
-    plist->idin = RecvASync(VCHAN_TO(plist->proc),
-                            plist->msgin, sizeof(MSGITEM)*plist->entries, &err);
+    long *len_adr;
 
+    plist->idin = RecvASync(VCHAN_TO(plist->proc),
+                            ((char *)plist->msgin) - sizeof(long),
+                            sizeof(MSGITEM)*plist->nEntries + sizeof(long), &err);
+
+    /* store number of entries at beginning of message */
+    len_adr = (long *) (((char *)plist->msgout) - sizeof(long));
+    *len_adr = plist->nEntries;
     plist->idout = SendASync(VCHAN_TO(plist->proc),
-                             plist->msgout, sizeof(MSGITEM)*plist->entries, &err);
+                             ((char *)plist->msgout) - sizeof(long),
+                             sizeof(MSGITEM)*plist->nEntries + sizeof(long), &err);
   }
 
   return(TRUE);
@@ -966,7 +1008,7 @@ static void idcons_CheckPairs (void)
   for(i=0, plist=thePLists; plist!=NULL; plist=plist->next, i++)
   {
     msgs[i].proc = plist->proc;
-    msgs[i].size = plist->entries;
+    msgs[i].size = plist->nEntries;
   }
 
   /* communicate */
@@ -989,16 +1031,16 @@ static void idcons_CheckPairs (void)
 
     if (j==nRecvs)
     {
-      sprintf(cBuffer, ERR_ID_DIFF_IDENT, plist->proc, plist->entries);
+      sprintf(cBuffer, ERR_ID_DIFF_IDENT, plist->proc, plist->nEntries);
       DDD_PrintError('E', 3900, cBuffer);
       err=TRUE;
     }
     else
     {
-      if (msgs[j].size!=plist->entries)
+      if (msgs[j].size!=plist->nEntries)
       {
         sprintf(cBuffer, ERR_ID_DIFF_N_IDENT,
-                msgs[j].size, plist->proc, plist->entries);
+                msgs[j].size, plist->proc, plist->nEntries);
         DDD_PrintError('E', 3901, cBuffer);
         err=TRUE;
       }
@@ -1044,8 +1086,8 @@ void DDD_Library::IdentifyEnd (void)
 #endif
 {
   ID_PLIST        *plist, *pnext=NULL;
-  ID_ENTRY        *id;
-  int i, cnt, j;
+  IdEntry *id;
+  int cnt, j;
 
   /* REMARK: dont use the id->msg.msg.prio fields until they
           are explicitly set at line L1!                         */
@@ -1079,9 +1121,11 @@ void DDD_Library::IdentifyEnd (void)
     /* allocate message buffers */
     /* use one alloc for three buffers */
     plist->local_ids = (IDENTINFO **) AllocTmp(
-      sizeof(IDENTINFO *)*plist->entries +                    /* for local id-infos */
-      sizeof(MSGITEM)    *plist->entries +                    /* for incoming msg   */
-      sizeof(MSGITEM)    *plist->entries                      /* for outgoing msg   */
+      sizeof(IDENTINFO *)*plist->nEntries +                    /* for local id-infos  */
+      sizeof(long) +                                           /* len of incoming msg */
+      sizeof(MSGITEM)    *plist->nEntries +                    /* for incoming msg    */
+      sizeof(long) +                                           /* len of outgoing msg */
+      sizeof(MSGITEM)    *plist->nEntries                      /* for outgoing msg    */
       );
 
     if (plist->local_ids==NULL)
@@ -1089,28 +1133,40 @@ void DDD_Library::IdentifyEnd (void)
       DDD_PrintError('F',3100, ERR_ID_NOMEM_IDENT_END);
       HARD_EXIT;
     }
-    plist->msgin  = (MSGITEM *) &plist->local_ids[plist->entries];
-    plist->msgout =             &plist->msgin[plist->entries];
+    plist->msgin  = (MSGITEM *)
+                    (((char *)&plist->local_ids[plist->nEntries]) + sizeof(long));
+    plist->msgout = (MSGITEM *)
+                    (((char *)&plist->msgin[plist->nEntries]) + sizeof(long));
 
 
     /* construct pointer array to IDENTINFO structs */
     /* AND: fill in current priority from object's header */
-    for(id=plist->first, i=0; id!=NULL; id=id->next, i++)
     {
-      plist->local_ids[i] = &(id->msg);
+      IdEntrySegm *li;
+      int i = 0;
 
-      id->msg.msg.prio = OBJ_PRIO(id->msg.hdr);                   /* L1 */
+      for(li=plist->entries->first; li!=NULL; li=li->next)
+      {
+        int entry;
+        for(entry=0; entry<li->nItems; entry++)
+        {
+          IdEntry *id = &(li->data[entry]);
+
+          plist->local_ids[i] = &(id->msg);
+          id->msg.msg.prio = OBJ_PRIO(id->msg.hdr);                               /* L1 */
+          i++;
+        }
+      }
     }
-
 
 
     /* sort outgoing items */
     STAT_RESET2;
-    plist->entries = IdentifySort(plist->local_ids, plist->entries,
-                                  plist->nIdentObjs,
-                                  plist->msgout,   /* output: msgbuffer outgoing */
-                                  &plist->indexmap, /* output: mapping of indices to local_ids array */
-                                  plist->proc);
+    plist->nEntries = IdentifySort(plist->local_ids, plist->nEntries,
+                                   plist->nIdentObjs,
+                                   plist->msgout,  /* output: msgbuffer outgoing */
+                                   &plist->indexmap, /* output: mapping of indices to local_ids array */
+                                   plist->proc);
     STAT_INCTIMER2(T_PREPARE_SORT);
 
 
@@ -1146,7 +1202,7 @@ void DDD_Library::IdentifyEnd (void)
   {
     if (plist->msgin!=NULL)
     {
-      int ret;
+      int ret, i;
 
       if ((ret=InfoARecv(VCHAN_TO(plist->proc), plist->idin))==1)
       {
@@ -1154,7 +1210,17 @@ void DDD_Library::IdentifyEnd (void)
         MSGITEM   *msgin  = plist->msgin;
         ID_TUPEL  *msgout = plist->indexmap;
 
-        for(i=0; i<plist->entries; i++, msgin++, msgout++)
+        /* check control data */
+        long *len_adr = (long *) (((char *)msgin) - sizeof(long));
+        if (*len_adr != plist->nEntries)
+        {
+          sprintf(cBuffer, ERR_ID_DIFF_N_OBJECTS,
+                  (int)*len_adr, plist->proc, plist->nEntries);
+          DDD_PrintError('E', 3902, cBuffer);
+          HARD_EXIT;
+        }
+
+        for(i=0; i<plist->nEntries; i++, msgin++, msgout++)
         {
 #                                       if DebugIdent<=1
           printf("%4d: identifying %08x with %08x/%d to %08x\n", me,
@@ -1214,11 +1280,11 @@ void DDD_Library::IdentifyEnd (void)
     while(InfoASend(VCHAN_TO(plist->proc), plist->idout)!=1)
       ;
 
-    FreeTmp(plist->local_ids,0);
-    FreeTmp(plist,0);
+    /* now, the plist->entries list isn't needed anymore, free */
+    IdEntrySegmList_Free(plist->entries);
 
-    /* now, the plist->first list isn't needed anymore, free */
-    FreeIdEntryList(plist->first);
+    FreeTmp(plist->local_ids,0);
+    FreeTmpReq(plist, sizeof(ID_PLIST), TMEM_IDENT);
   };
 
 
@@ -1247,11 +1313,12 @@ void DDD_Library::IdentifyEnd (void)
 /****************************************************************************/
 
 
-static void IdentifyIdEntry (DDD_HDR hdr, ID_ENTRY *id, DDD_PROC proc)
+static IdEntry *IdentifyIdEntry (DDD_HDR hdr, DDD_PROC proc)
 {
-  ID_PLIST        *plist, *pnew;
+  IdEntry     *id;
+  ID_PLIST        *plist;
 
-  /* step mode and check whether Identify-call is valid */
+  /* check whether Identify-call is valid */
   if (!IdentActive())
   {
     DDD_PrintError('E', 3072, ERR_ID_NO_BEGIN);
@@ -1273,35 +1340,6 @@ static void IdentifyIdEntry (DDD_HDR hdr, ID_ENTRY *id, DDD_PROC proc)
   }
 
 
-#       if DebugIdent<=2
-  switch (id->msg.typeId)
-  {
-  case ID_NUMBER :
-    printf("%4d: IdentifyIdEntry %08x %02d with %4d num %d\n", me, OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.number);
-    break;
-
-  case ID_STRING :
-    printf("%4d: IdentifyIdEntry %08x %02d with %4d str %s\n", me, OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.string);
-    break;
-
-  case ID_OBJECT :
-    printf("%4d: IdentifyIdEntry %08x %02d with %4d gid %08x\n", me, OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.object);
-    break;
-  }
-#       endif
-
-  id->msg.hdr      = hdr;
-  id->msg.msg.gid  = OBJ_GID(hdr);
-
-  /* NOTE: priority can change between Identify-command and IdentifyEnd!
-     therefore, scan priorities at the beginning of IdentifyEnd.
-     KB 970730.
-
-          id->msg.msg.prio = OBJ_PRIO(hdr);
-   */
-
-  id->next     = NULL;
-  id->msg.entry= cntIdents++;
 
   /* search current plist entries */
   for(plist=thePLists; plist!=NULL; plist=plist->next) {
@@ -1312,37 +1350,42 @@ static void IdentifyIdEntry (DDD_HDR hdr, ID_ENTRY *id, DDD_PROC proc)
   if (plist==NULL)
   {
     /* get new id_plist record */
-    pnew = (ID_PLIST *) AllocTmp(sizeof(ID_PLIST));
-    if (pnew==NULL) {
+    plist = (ID_PLIST *) AllocTmpReq(sizeof(ID_PLIST),TMEM_IDENT);
+    if (plist==NULL) {
       DDD_PrintError('F', 3210, ERR_ID_NOMEM_IDENTRY);
       return;
     }
 
-    pnew->proc = proc;
-    pnew->entries = 1;
-    pnew->first = id;
-    pnew->nIdentObjs = 0;
-    pnew->next = thePLists;
-    thePLists = pnew;
+    plist->proc = proc;
+    plist->nEntries = 0;
+    plist->entries = New_IdEntrySegmList();
+    plist->nIdentObjs = 0;
+    plist->next = thePLists;
+    thePLists = plist;
     nPLists++;
-
-    if (id->msg.typeId==ID_OBJECT)
-    {
-      pnew->nIdentObjs++;
-    }
   }
-  else
+
+
+  /* insert into current plist */
+  id =  IdEntrySegmList_NewItem(plist->entries);
+  plist->nEntries++;
+  if (id->msg.typeId==ID_OBJECT)
   {
-    /* insert at current plist */
-    id->next = plist->first;
-    plist->first = id;
-    plist->entries++;
-
-    if (id->msg.typeId==ID_OBJECT)
-    {
-      plist->nIdentObjs++;
-    }
+    plist->nIdentObjs++;
   }
+
+  id->msg.hdr      = hdr;
+  id->msg.msg.gid  = OBJ_GID(hdr);
+
+  /* NOTE: priority can change between Identify-command and IdentifyEnd!
+     therefore, scan priorities at the beginning of IdentifyEnd, and not
+     here. KB 970730.
+          id->msg.msg.prio = OBJ_PRIO(hdr);
+   */
+
+  id->msg.entry = cntIdents++;
+
+  return(id);
 }
 
 
@@ -1381,7 +1424,7 @@ void DDD_IdentifyNumber (DDD_HDR hdr, DDD_PROC proc, int ident)
 #ifdef CPP_FRONTEND
 void DDD_Object::IdentifyNumber (DDD_PROC proc, int ident)
 {
-  DDD_HDR hdr = &_hdr;
+  DDD_HDR hdr = this;
 #endif
 #ifdef F_FRONTEND
 void orgDDD_IdentifyNumber (DDD_HDR hdr, DDD_PROC proc, int ident);
@@ -1396,19 +1439,21 @@ void DDD_IdentifyNumber (DDD_TYPE *type, DDD_OBJ *obj, DDD_PROC *proc, int *iden
 void orgDDD_IdentifyNumber (DDD_HDR hdr, DDD_PROC proc, int ident)
 {
 #endif
-ID_ENTRY        *id;
+IdEntry *id;
 
-id = (ID_ENTRY *) AllocTmp(sizeof(ID_ENTRY));
+        #if DebugIdent<=2
+printf("%4d: IdentifyIdEntry %08x %02d with %4d num %d\n", me,
+       OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.number);
+        #endif
+
+id = IdentifyIdEntry(hdr, proc);
 if (id==NULL) {
   DDD_PrintError('F', 3200, ERR_ID_NOMEM_IDNUMBER);
   return;
 }
 
-
 id->msg.typeId = ID_NUMBER;
 id->msg.id.number = ident;
-
-IdentifyIdEntry(hdr, id, proc);
 }
 
 
@@ -1447,7 +1492,7 @@ void DDD_IdentifyString (DDD_HDR hdr, DDD_PROC proc, char *ident)
 #ifdef CPP_FRONTEND
 void DDD_Object::IdentifyString (DDD_PROC proc, char *ident)
 {
-  DDD_HDR hdr = &_hdr;
+  DDD_HDR hdr = this;
 #endif
 #ifdef F_FRONTEND
 void orgDDD_IdentifyString (DDD_HDR hdr, DDD_PROC proc, char *ident);
@@ -1462,19 +1507,23 @@ void DDD_IdentifyString (DDD_TYPE *type, DDD_OBJ *obj, DDD_PROC *proc, char *ide
 void orgDDD_IdentifyString (DDD_HDR hdr, DDD_PROC proc, char *ident)
 {
 #endif
-ID_ENTRY        *id;
+IdEntry *id;
 
-id = (ID_ENTRY *) AllocTmp(sizeof(ID_ENTRY));
+        #if DebugIdent<=2
+printf("%4d: IdentifyIdEntry %08x %02d with %4d str %s\n", me,
+       OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.string);
+        #endif
+
+id = IdentifyIdEntry(hdr, proc);
 if (id==NULL) {
-  DDD_PrintError('F', 3201, ERR_ID_NOMEM_IDNUMBER);
+  DDD_PrintError('F', 3201, ERR_ID_NOMEM_IDSTRING);
   return;
 }
 
 id->msg.typeId = ID_STRING;
 id->msg.id.string = ident;
-
-IdentifyIdEntry(hdr, id, proc);
 }
+
 
 
 /****************************************************************************/
@@ -1515,10 +1564,9 @@ void DDD_IdentifyObject (DDD_HDR hdr, DDD_PROC proc, DDD_HDR ident)
 {
 #endif
 #ifdef CPP_FRONTEND
-void DDD_Object::IdentifyObject (DDD_PROC proc, DDD_Object* idobj)
+void DDD_Object::IdentifyObject (DDD_PROC proc, DDD_Object* ident)
 {
-  DDD_HDR hdr   = &_hdr;
-  DDD_HDR ident = &(idobj->_hdr);
+  DDD_HDR hdr   = this;
 #endif
 #ifdef F_FRONTEND
 void orgDDD_IdentifyObject (DDD_HDR hdr, DDD_PROC proc, DDD_HDR ident);
@@ -1534,9 +1582,14 @@ void DDD_IdentifyObject (DDD_TYPE *type, DDD_OBJ *obj, DDD_PROC *proc, DDD_TYPE 
 void orgDDD_IdentifyObject (DDD_HDR hdr, DDD_PROC proc, DDD_HDR ident)
 {
 #endif
-ID_ENTRY        *id;
+IdEntry *id;
 
-id = (ID_ENTRY *) AllocTmp(sizeof(ID_ENTRY));
+        #if DebugIdent<=2
+printf("%4d: IdentifyIdEntry %08x %02d with %4d gid %08x\n", me,
+       OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.object);
+        #endif
+
+id = IdentifyIdEntry(hdr, proc);
 if (id==NULL) {
   DDD_PrintError('F', 3202, ERR_ID_NOMEM_IDOBJ);
   return;
@@ -1550,8 +1603,6 @@ id->msg.typeId = ID_OBJECT;
    remember identification value in order to replace above estimate,
    if necessary (i.e., remember ptr to ddd-hdr) */
 id->msg.id.object = OBJ_GID(ident);
-
-IdentifyIdEntry(hdr, id, proc);
 }
 
 
