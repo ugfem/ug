@@ -648,7 +648,7 @@ static INT InsertBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *insertBV, BLOCKVECT
   return (GM_OK);
 }
 
-static INT CreatBlockvector_l0 (GRID *theGrid, BLOCKVECTOR **BVHandle, BLOCKVECTOR *insertBV, INT after)
+INT CreatBlockvector_l0 (GRID *theGrid, BLOCKVECTOR **BVHandle, BLOCKVECTOR *insertBV, INT after)
 {
   BLOCKVECTOR *theBV;
 
@@ -1031,7 +1031,7 @@ static void FreeBVList (GRID *grid, BLOCKVECTOR *bv)
    D*/
 /****************************************************************************/
 
-static void FreeAllBV (GRID *grid)
+void FreeAllBV (GRID *grid)
 {
   FreeBVList( grid, GFIRSTBV( grid ) );
   GFIRSTBV( grid ) = NULL;
@@ -3868,17 +3868,21 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT 
   currlevel = theMG->currentLevel;
 
   /* get algebraic dependency */
-  theAlgDep = (ALG_DEP *) SearchEnv(dependency,"/Alg Dep",theAlgDepVarID,theAlgDepDirID);
-  if (theAlgDep==NULL)
+  theAlgDep=NULL;
+  if (dependency!=NULL)
   {
-    UserWrite("algebraic dependency not found\n");
-    return(GM_ERROR);
-  }
-  DependencyProc = theAlgDep->DependencyProc;
-  if (DependencyProc==NULL)
-  {
-    UserWrite("don't be stupid: implement a dependency!\n");
-    return(GM_ERROR);
+    theAlgDep = (ALG_DEP *) SearchEnv(dependency,"/Alg Dep",theAlgDepVarID,theAlgDepDirID);
+    if (theAlgDep==NULL)
+    {
+      UserWrite("algebraic dependency not found\n");
+      return(GM_ERROR);
+    }
+    DependencyProc = theAlgDep->DependencyProc;
+    if (DependencyProc==NULL)
+    {
+      UserWrite("don't be stupid: implement a dependency!\n");
+      return(GM_ERROR);
+    }
   }
 
   /* get find cut dependency */
@@ -3908,11 +3912,12 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT 
     baselevel = 0;
   else
     baselevel = currlevel;
-  for (i=baselevel; i<=currlevel; i++)
-  {
-    theGrid = theMG->grids[i];
-    if ((*DependencyProc)(theGrid,dep_options)) return(GM_ERROR);
-  }
+  if (theAlgDep!=NULL)
+    for (i=baselevel; i<=currlevel; i++)
+    {
+      theGrid = theMG->grids[i];
+      if ((*DependencyProc)(theGrid,dep_options)) return(GM_ERROR);
+    }
   for (i=baselevel; i<=currlevel; i++)
   {
     theGrid = theMG->grids[i];
