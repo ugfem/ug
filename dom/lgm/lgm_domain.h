@@ -197,6 +197,7 @@
 #define LGM_LINE_LINEDISC(p)                            ((p)->ldisc)
 #define LGM_LINE_BEGIN(p)                                       ((p)->begin)
 #define LGM_LINE_END(p)                                         ((p)->end)
+#define LGM_LINE_USED(p)                                        ((p)->used)
 
 /* macros for LGM_TRIANGLE */
 #define LGM_TRIANGLE_CORNER(p,i)                        ((p)->corner[(i)])
@@ -419,7 +420,7 @@ struct lgm_line {
         #ifdef Grape
   INT active;
         #endif
-
+  INT used;
   struct lgm_point point[1];                    /* points of line stored here	*/
 };
 
