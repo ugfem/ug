@@ -4895,24 +4895,44 @@ static INT MarkCommand (INT argc, char **argv)
 
   if (ReadArgvPosition("pos",argc,argv,global)==0)
   {
+    DOUBLE r;
+
+    if (ReadArgvDOUBLE("r",&r,argc, argv)==0) {
+      for (l=0; l<=TOPLEVEL(theMG); l++)
+        for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+             theElement!=NULL; theElement=SUCCE(theElement))
+          if (EstimateHere(theElement))
+            for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+            {
+              DOUBLE dist;
+
+              V_DIM_EUKLIDNORM_OF_DIFF(global,
+                                       CVECT(MYVERTEX(CORNER(theElement,j))),dist);
+              if (dist <= r) {
+                MarkForRefinement(theElement,Rule,NULL);
+                break;
+              }
+            }
+      UserWriteF("all elements in |x - p|  < %f marked for refinement\n",
+                 (float) r);
+
+      return(OKCODE);
+    }
     theElement = FindElementOnSurface(theMG,global);
-    if (theElement != NULL)
-    {
+    if (theElement != NULL) {
       MarkForRefinement(theElement,Rule,NULL);
         #ifdef ModelP
       j = (INT) UG_GlobalSumDOUBLE(1.0);
       i = DDD_InfoGlobalId(PARHDRE(theElement));
     }
-    else
-    {
+    else {
       j = (INT) UG_GlobalSumDOUBLE(0.0);
       i = -1;
     }
     if (j == 0)
       return(PARAMERRORCODE);
 
-    for (l=0; l<j; l++)
-    {
+    for (l=0; l<j; l++) {
       rv = UG_GlobalMaxINT(i);
       UserWriteF("element GID %08x marked for refinement\n",rv);
       if (rv == i) i = -1;
