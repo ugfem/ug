@@ -41,6 +41,7 @@
 
 /* parallelization module */
 #ifdef ModelP
+#include "initparallel.h"
 #include "parallel.h"
 #include "ppif.h"
 #endif
@@ -119,16 +120,6 @@ INT InitUg (int *argcp, char ***argvp)
   char debugfilename[NAMESIZE];
         #endif
 
-        #ifdef ModelP
-  if ((err=InitPPIF(argcp, argvp)) != PPIF_SUCCESS)
-  {
-    printf("ERROR in InitUg while InitPPIF.\n");
-    printf ("aborting ug\n");
-
-    return (1);
-  }
-    #endif
-
   /* init the low module */
   if ((err=InitLow())!=0)
   {
@@ -142,7 +133,7 @@ INT InitUg (int *argcp, char ***argvp)
   /* init parallelization module */
         #ifdef ModelP
   PRINTDEBUG(init,1,("%d:     InitParallel()...\n",me))
-  if ((err=InitParallel())!=0)
+  if ((err=InitParallel(argcp,argvp))!=0)
   {
     printf("ERROR in InitUg while InitParallel (line %d): called routine line %d\n",(int) HiWrd(err), (int) LoWrd(err));
     printf ("aborting ug\n");
@@ -275,6 +266,7 @@ INT InitUg (int *argcp, char ***argvp)
     return (1);
   }
 
+
   /* init the ui module */
   if ((err=InitUi())!=0)
   {
@@ -284,7 +276,6 @@ INT InitUg (int *argcp, char ***argvp)
 
     return (1);
   }
-
 
   return (0);
 }

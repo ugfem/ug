@@ -1000,10 +1000,10 @@ static int CheckInitParallel (void)
 
 /****************************************************************************/
 /*
-   InitParallel - initialize the ddd library
+   InitDDD - initialize the ddd library
 
    SYNOPSIS:
-   int InitParallel (int *argc, char ***argv);
+   int InitDDD (int *argc, char ***argv);
 
    PARAMETERS:
    .  argc - pointer to number of arguments
@@ -1017,7 +1017,7 @@ static int CheckInitParallel (void)
  */
 /****************************************************************************/
 
-int InitParallel (void)
+int InitDDD (void)
 {
   INT err;
   int i;
@@ -1087,10 +1087,10 @@ int InitParallel (void)
 
 /****************************************************************************/
 /*
-   ExitParallel - exit the parallel application on ddd level
+   ExitDDD - exit the parallel application on ddd level
 
    SYNOPSIS:
-   int ExitParallel (void);
+   int ExitDDD (void);
 
    PARAMETERS:
    .  void
@@ -1104,7 +1104,7 @@ int InitParallel (void)
  */
 /****************************************************************************/
 
-int ExitParallel (void)
+int ExitDDD (void)
 {
   /* free memory allocated by InitParallel */
   if (dddctrl._context!=NULL)

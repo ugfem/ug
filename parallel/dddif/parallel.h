@@ -84,6 +84,11 @@ enum HandlerSets
    #define STAT_OUT
  */
 
+/* use dynamic load balance lib */
+/*
+   #define __DLB__
+ */
+
 /* old/new style for grid consistency */
 /* undefine if old is wanted          */
 #define NEW_GRIDCONS_STYLE
@@ -267,8 +272,8 @@ extern DDD_CTRL dddctrl;
 #ifdef ModelP
 
 /* from initddd.c */
-int             InitParallel    (void);
-int             ExitParallel    (void);
+int             InitDDD                 (void);
+int             ExitDDD                 (void);
 void    InitCurrMG              (MULTIGRID *);
 
 /* from debugger.c */
