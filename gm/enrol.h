@@ -30,10 +30,6 @@
 #define __ENROL__
 
 
-#ifndef __SWITCH__
-#include "switch.h"
-#endif
-
 #ifndef __COMPILER__
 #include "compiler.h"
 #endif

@@ -50,12 +50,12 @@
 #include "heaps.h"
 #include "ugenv.h"
 #include "general.h"
+#include "debug.h"
 
 /* devices module */
 #include "devices.h"
 
 /* grid manager module */
-#include "switch.h"
 #include "gm.h"
 #include "algebra.h"
 #include "misc.h"
@@ -93,6 +93,8 @@
 static INT theFormatDirID;                      /* env type for Format dir				*/
 static INT theSymbolVarID;                      /* env type for Format vars                     */
 
+REP_ERR_FILE;
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -104,7 +106,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
                 ConversionProcPtr PrintVertex, ConversionProcPtr PrintGrid,
                 ConversionProcPtr PrintMultigrid, INT nvDesc, VectorDescriptor *vDesc,
-                INT nmDesc, MatrixDescriptor *mDesc);
+                INT nmDesc, MatrixDescriptor *mDesc, INT po2t[MAXDOMPARTS][MAXVOBJECTS]);
 
    PARAMETERS:
    .  name - name of new format structure
@@ -114,10 +116,17 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    .  PrintGrid - pointer to conversion procedure (though there are no user data associated directly with a grid,
                                 the user may wish to print grid associated data from his multigrid user data space)
    .  PrintMultigrid - pointer to conversion procedure
+   .  PrintVector - pointer to conversion procedure tagged with vtype
+   .  PrintMatrix - pointer to conversion procedure tagged with mtype
    .  nvDesc - number of vector descriptors
    .  vDesc - pointer to vector descriptor
    .  nmDesc - number of matrix desciptors
    .  mDesc - pointer to matrix descriptor
+   .  ImatTypes - size of interpolation matrices
+   .  po2t  - table (part,obj) --> vtype, NOVTYPE if not defined
+   .  nodeelementlist - nodes shoulf have a list of their elements
+   .  edata - size of edge data
+   .  ndata - size of node data
 
    DESCRIPTION:
    This function allocates and initializes a new FORMAT structure in the environment.
@@ -126,15 +135,14 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    VectorDescriptor is defined as
    .vb
           typedef struct {
-          int pos;
+          int tp;
           int size;
           ConversionProcPtr print;
           } VectorDescriptor ;
    .ve
         The components have the following meaning
 
-   .   pos - this is the position for which this description is valid, one of
-                        NODEVECTOR, EDGEVECTOR, ELEMVECTOR, SIDEVECTOR
+   .   tp - this is just an abstract vector type
    .   size - the data size of a VECTOR structure on this position in bytes
    .   print - pointer to a function which is called for printing the contents of the data
                         fields.
@@ -151,8 +159,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    .ve
         The meaning of the components is
 
-   .   from - this connection goes from position
-   .   to - to this position, position is one of NODEVECTOR, EDGEVECTOR, ELEMVECTOR, SIDEVECTOR
+   .   from - this connection goes from vtype
+   .   to - to vtype
    .   size - this defines the size in bytes per connection
    .   depth - this connection has the depth defined here
    .   print - function to print the data.
@@ -161,21 +169,22 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    A small example to create a format looks like the following. In this format only
    vectors in nodes are used and therfore all connections connect two nodevectors.
    .vb
+   HRR_TODO: man page for CreateFormat:
       // we need dofs only in nodes
-      vd[0].pos   = NODEVECTOR;
+      vd[0].tp    = NODEVEC;
       vd[0].size  = 3*sizeof(DOUBLE);
       vd[0].print = Print_3_NodeVectorData;
 
       // and the following connection: node-node
-      md[0].from  = NODEVECTOR;
-      md[0].to    = NODEVECTOR;
+      md[0].from  = NODEVEC;
+      md[0].to    = NODEVEC;
       md[0].size  = sizeof(DOUBLE);
       md[0].depth = 0;
       md[0].print = Print_1_NodeNodeMatrixData;
 
       newFormat = CreateFormat("full scalar",0,0,
                   (ConversionProcPtr)NULL,(ConversionProcPtr)NULL,
-                  (ConversionProcPtr)NULL,1,vd,1,md);
+                  (ConversionProcPtr)NULL,1,vd,1,md,po2t);
    .ve
 
    RETURN VALUE:
@@ -186,86 +195,172 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
-                      ConversionProcPtr PrintVertex, ConversionProcPtr PrintGrid, ConversionProcPtr PrintMultigrid,
-                      INT nvDesc, VectorDescriptor *vDesc, INT nmDesc, MatrixDescriptor *mDesc)
+                      ConversionProcPtr PrintVertex, ConversionProcPtr PrintGrid,
+                      ConversionProcPtr PrintMultigrid,
+                      TaggedConversionProcPtr PrintVector, TaggedConversionProcPtr PrintMatrix,
+                      INT nvDesc, VectorDescriptor *vDesc, INT nmDesc, MatrixDescriptor *mDesc,
+                      SHORT ImatTypes[], INT po2t[MAXDOMPARTS][MAXVOBJECTS],
+                      INT nodeelementlist, INT edata, INT ndata)
 {
-  FORMAT *newFormat;
-  INT i, j, MaxDepth, NeighborhoodDepth;
+  FORMAT *fmt;
+  INT i, j, type, part, obj, MaxDepth, NeighborhoodDepth, MaxType;
 
 
   /* change to /Formats directory */
   if (ChangeEnvDir("/Formats")==NULL)
-    return (NULL);
+    REP_ERR_RETURN (NULL);
 
   /* allocate new format structure */
-  newFormat = (FORMAT *) MakeEnvItem (name,theFormatDirID,sizeof(FORMAT));
-  if (newFormat==NULL) return(NULL);
+  fmt = (FORMAT *) MakeEnvItem (name,theFormatDirID,sizeof(FORMAT));
+  if (fmt==NULL) REP_ERR_RETURN(NULL);
 
   /* fill in data */
-  newFormat->sVertex                      = sVertex;
-  newFormat->sMultiGrid           = sMultiGrid;
-  newFormat->PrintVertex          = PrintVertex;
-  newFormat->PrintGrid            = PrintGrid;
-  newFormat->PrintMultigrid       = PrintMultigrid;
+  FMT_S_VERTEX(fmt)               = sVertex;
+  FMT_S_MG(fmt)                   = sMultiGrid;
+  FMT_PR_VERTEX(fmt)              = PrintVertex;
+  FMT_PR_GRID(fmt)                = PrintGrid;
+  FMT_PR_MG(fmt)                  = PrintMultigrid;
+  FMT_PR_VEC(fmt)                 = PrintVector;
+  FMT_PR_MAT(fmt)                 = PrintMatrix;
+
+  FMT_NODE_ELEM_LIST(fmt) = nodeelementlist;
+  FMT_ELEM_DATA(fmt)              = edata;
+  FMT_NODE_DATA(fmt)              = ndata;
 
   /* initialize with zero */
   for (i=0; i<MAXVECTORS; i++)
   {
-    newFormat->VectorSizes[i] = 0;
-    newFormat->PrintVector[i] = (ConversionProcPtr) NULL;
-    for (j=0; j<MAXVECTORS; j++) newFormat->PrintMatrix[i][j] = (ConversionProcPtr) NULL;
+    FMT_S_VEC_TP(fmt,i) = 0;
   }
   for (i=0; i<MAXMATRICES; i++)
   {
-    newFormat->MatrixSizes[i] = 0;
-    newFormat->ConnectionDepth[i] = 0;
+    FMT_S_MAT_TP(fmt,i) = 0;
+    FMT_CONN_DEPTH_TP(fmt,i) = 0;
   }
+  for (i=FROM_VTNAME; i<=TO_VTNAME; i++)
+    FMT_SET_N2T(fmt,i,NOVTYPE);
   MaxDepth = NeighborhoodDepth = 0;
 
   /* set vector stuff */
   for (i=0; i<nvDesc; i++)
   {
-    if ((vDesc[i].pos<0)||(vDesc[i].pos>=MAXVECTORS)||(vDesc[i].size<0)) return(NULL);
-    newFormat->VectorSizes[vDesc[i].pos] = vDesc[i].size;
-    newFormat->PrintVector[vDesc[i].pos] = vDesc[i].print;
+    if ((vDesc[i].tp<0)||(vDesc[i].tp>=MAXVECTORS)||(vDesc[i].size<0)) REP_ERR_RETURN(NULL);
+    FMT_S_VEC_TP(fmt,vDesc[i].tp) = vDesc[i].size;
+    if ((vDesc[i].name<FROM_VTNAME) || (TO_VTNAME<vDesc[i].name))
+    {
+      PrintErrorMessageF('E',"CreateFormat","type name '%c' out of range (%c-%c)",vDesc[i].name,FROM_VTNAME,TO_VTNAME);
+      REP_ERR_RETURN (NULL);
+    }
+    FMT_VTYPE_NAME(fmt,vDesc[i].tp) = vDesc[i].name;
+    FMT_SET_N2T(fmt,vDesc[i].name,vDesc[i].tp);
+    FMT_T2N(fmt,vDesc[i].tp) = vDesc[i].name;
   }
+
+  /* copy part,obj to type table and derive t2p, t2o lists */
+  for (type=0; type<MAXVECTORS; type++)
+    FMT_T2P(fmt,type) = FMT_T2O(fmt,type) = 0;
+  for (part=0; part<MAXDOMPARTS; part++)
+    for (obj=0; obj<MAXVOBJECTS; obj++)
+    {
+      type = FMT_PO2T(fmt,part,obj) = po2t[part][obj];
+      FMT_T2P(fmt,type) |= (1<<part);
+      FMT_T2O(fmt,type) |= (1<<obj);
+    }
 
 #ifdef __INTERPOLATION_MATRIX__
   for (i=0; i<MAXMATRICES; i++)
-    newFormat->IMatrixSizes[i] = 0;
+    FMT_S_IMAT_TP(fmt,i) = 0;
 #endif
 
   /* set connection stuff */
   for (i=0; i<nmDesc; i++)
   {
-    if ((mDesc[i].from<0)||(mDesc[i].from>=MAXVECTORS)) return(NULL);
-    if ((mDesc[i].to<0)  ||(mDesc[i].to>=MAXVECTORS)) return(NULL);
-    if ((mDesc[i].size<0)||(mDesc[i].depth<0)) return(NULL);
-    if (newFormat->VectorSizes[mDesc[i].from]>0 &&
-        newFormat->VectorSizes[mDesc[i].to]>0 &&
+    if ((mDesc[i].from<0)||(mDesc[i].from>=MAXVECTORS)) REP_ERR_RETURN(NULL);
+    if ((mDesc[i].to<0)  ||(mDesc[i].to>=MAXVECTORS)) REP_ERR_RETURN(NULL);
+    if ((mDesc[i].size<0)||(mDesc[i].depth<0)) REP_ERR_RETURN(NULL);
+    if (FMT_S_VEC_TP(fmt,mDesc[i].from)>0 &&
+        FMT_S_VEC_TP(fmt,mDesc[i].to)>0 &&
         mDesc[i].size>0 && mDesc[i].depth>=0)
     {
-      newFormat->MatrixSizes[MatrixType[mDesc[i].from][mDesc[i].to]] = mDesc[i].size;
+      FMT_S_MAT_TP(fmt,MatrixType[mDesc[i].from][mDesc[i].to]) = mDesc[i].size;
 #ifdef __INTERPOLATION_MATRIX__
-      newFormat->IMatrixSizes[MatrixType[mDesc[i].from][mDesc[i].to]] = mDesc[i].isize;
+      FMT_S_IMAT_TP(fmt,MatrixType[mDesc[i].from][mDesc[i].to]) = mDesc[i].isize;
 #endif
-      newFormat->ConnectionDepth[MatrixType[mDesc[i].from][mDesc[i].to]] = mDesc[i].depth;
+      FMT_CONN_DEPTH_TP(fmt,MatrixType[mDesc[i].from][mDesc[i].to]) = mDesc[i].depth;
       MaxDepth = MAX(MaxDepth,mDesc[i].depth);
-      if ((mDesc[i].from==ELEMVECTOR)&&(mDesc[i].to==ELEMVECTOR))
+      if ((FMT_TYPE_USES_OBJ(fmt,mDesc[i].from,ELEMVEC))&&(FMT_TYPE_USES_OBJ(fmt,mDesc[i].to,ELEMVEC)))
         NeighborhoodDepth = MAX(NeighborhoodDepth,mDesc[i].depth);
       else
         NeighborhoodDepth = MAX(NeighborhoodDepth,mDesc[i].depth+1);
-      newFormat->PrintMatrix[mDesc[i].from][mDesc[i].to] = mDesc[i].print;
-      newFormat->PrintMatrix[mDesc[i].to][mDesc[i].from] = mDesc[i].print;
     }
   }
-  newFormat->MaxConnectionDepth = MaxDepth;
-  newFormat->NeighborhoodDepth  = NeighborhoodDepth;
+  FMT_CONN_DEPTH_MAX(fmt) = MaxDepth;
+  FMT_NB_DEPTH(fmt)           = NeighborhoodDepth;
 
-  if (ChangeEnvDir(name)==NULL) return(NULL);
+#ifdef __INTERPOLATION_MATRIX__
+  for (i=0; i<MAXVECTORS; i++)
+    for (j=0; j<MAXVECTORS; j++)
+      FMT_S_IMAT_TP(fmt,MatrixType[i][j]) = ImatTypes[i] * ImatTypes[j] * sizeof(DOUBLE);
+#endif
+
+  /* derive additional information */
+  for (i=0; i<MAXVOBJECTS; i++) FMT_USES_OBJ(fmt,i) = FALSE;
+  FMT_MAX_PART(fmt) = 0;
+  MaxType = 0;
+  for (i=0; i<MAXDOMPARTS; i++)
+    for (j=0; j<MAXVOBJECTS; j++)
+      if (po2t[i][j]!=NOVTYPE)
+      {
+        FMT_USES_OBJ(fmt,j) = TRUE;
+        FMT_MAX_PART(fmt) = MAX(FMT_MAX_PART(fmt),i);
+        MaxType = MAX(MaxType,po2t[i][j]);
+      }
+  FMT_MAX_TYPE(fmt) = MaxType;
+
+  if (ChangeEnvDir(name)==NULL) REP_ERR_RETURN(NULL);
   UserWrite("format "); UserWrite(name); UserWrite(" installed\n");
 
-  return(newFormat);
+  return(fmt);
+}
+
+/****************************************************/
+/*D
+   DeleteFormat - remove previously enroled format
+
+   SYNOPSIS:
+   INT DeleteFormat (const char *name)
+
+   PARAMETERS:
+   .  name - name of the format
+
+   DESCRIPTION:
+   This function removes the specified format.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if removed or non existent
+   .n   GM_ERROR if an error occured
+   D*/
+/****************************************************/
+
+INT DeleteFormat (const char *name)
+{
+  FORMAT *fmt;
+
+  fmt = GetFormat(name);
+  if (fmt==NULL)
+  {
+    PrintErrorMessageF('W',"DeleteFormat","format '%s' doesn't exist",name);
+    return (GM_OK);
+  }
+
+  if (ChangeEnvDir("/Formats")==NULL)
+    REP_ERR_RETURN (GM_ERROR);
+  ENVITEM_LOCKED(fmt) = 0;
+  if (RemoveEnvDir((ENVITEM *)fmt))
+    REP_ERR_RETURN (GM_ERROR);
+
+  return (GM_OK);
 }
 
 /****************************************************/
@@ -380,9 +475,9 @@ FORMAT *GetNextFormat (FORMAT *fmt)
 INT ChangeToFormatDir (const char *name)
 {
   if (ChangeEnvDir("/Formats")==NULL)
-    return (1);
+    REP_ERR_RETURN (1);
   if (ChangeEnvDir(name)==NULL)
-    return (2);
+    REP_ERR_RETURN (2);
 
   return (0);
 }
