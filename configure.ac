@@ -121,10 +121,10 @@ AC_SUBST(UG_EXTRAFLAGS)
 AC_SUBST(UG_2DFLAGS, '$(UG_CPPFLAGS) -D_2')
 AC_SUBST(UG_3DFLAGS, '$(UG_CPPFLAGS) -D_3')
 
-AC_ARG_ENABLE([2d],AS_HELP_STRING([--enable-2d],[build library for 2d (default is YES)]),[build2d=$enableval],[build2d=yes])
+AC_ARG_ENABLE([2d],AC_HELP_STRING([--enable-2d],[build library for 2d (default is YES)]),[build2d=$enableval],[build2d=yes])
 AM_CONDITIONAL(BUILD2D, test x$build2d = xyes)
 
-AC_ARG_ENABLE([3d],AS_HELP_STRING([--enable-3d],[build library for 3d (default is YES)]),[build3d=$enableval],[build3d=yes])
+AC_ARG_ENABLE([3d],AC_HELP_STRING([--enable-3d],[build library for 3d (default is YES)]),[build3d=$enableval],[build3d=yes])
 AM_CONDITIONAL(BUILD3D, test x$build3d = xyes)
 
 # lib-stuff
