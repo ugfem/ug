@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "general.h"
 #include "bio.h"
 #include "mgio.h"
 

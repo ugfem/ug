@@ -31,7 +31,6 @@
 #define __UGM__
 
 #include "compiler.h"
-#include "switch.h"
 #include "gm.h"
 #include "dlmgr.h"
 

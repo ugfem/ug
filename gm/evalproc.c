@@ -641,13 +641,13 @@ static INT PreprocessNodeIndex (const char *name, MULTIGRID *theMG)
   INT i, index;
   VECTOR *theVector;
 
-  if (!TYPE_DEF_IN_MG(theMG,NODEVECTOR))
+  if (!VEC_DEF_IN_OBJ_OF_MG(theMG,NODEVEC))
     return (1);
   for (i=0; i<=CURRENTLEVEL(theMG); i++)
   {
     index = 0;
     for (theVector=FIRSTVECTOR(GRID_ON_LEVEL(theMG,i)); theVector!=NULL; theVector=SUCCVC(theVector))
-      if (VTYPE(theVector)==NODEVECTOR)
+      if (VOTYPE(theVector)==NODEVEC)
         VINDEX(theVector) = index++;
   }
 

@@ -51,7 +51,6 @@
 
 #include "devices.h"
 
-#include "switch.h"
 #include "evm.h"
 #include "gm.h"
 #include "rm.h"

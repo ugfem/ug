@@ -50,8 +50,6 @@
 
 #include "devices.h"
 
-#include "parallel.h"
-#include "switch.h"
 #include "gm.h"
 #include "algebra.h"
 #include "misc.h"
@@ -66,6 +64,10 @@
 /* include refine because of macros accessed  */
 #include "refine.h"
 #include "rm.h"
+
+/* for parallel */
+#include "parallel.h"
+#include "pargm.h"
 
 /****************************************************************************/
 /*																			*/
@@ -213,7 +215,7 @@ static INT SaveSurfaceGrid  (MULTIGRID *theMG, FILE *stream)
   VERTEX *theVertex;
   DOUBLE *global;
   char buffer[BUFFERSIZE];
-  INT i,id,move,l,tl;
+  INT i,id,move,part,l,tl;
 
   tl = CURRENTLEVEL(theMG);
   for (l=0; l<= tl; l++)
@@ -231,7 +233,7 @@ static INT SaveSurfaceGrid  (MULTIGRID *theMG, FILE *stream)
     theVertex = MYVERTEX(theNode);
     if (OBJT(theVertex) == IVOBJ)
       continue;
-    if (BNDP_BndPDesc(V_BNDP(theVertex),&move))
+    if (BNDP_BndPDesc(V_BNDP(theVertex),&move,&part))
       RETURN(1);
     if (move == 0)
       ID(theVertex) = id++;
@@ -245,7 +247,7 @@ static INT SaveSurfaceGrid  (MULTIGRID *theMG, FILE *stream)
           if (OBJT(theVertex) == IVOBJ)
             continue;
           /* skip corner points */
-          if (BNDP_BndPDesc(V_BNDP(theVertex),&move))
+          if (BNDP_BndPDesc(V_BNDP(theVertex),&move,&part))
             RETURN(1);
           if (move == 0)
             continue;
@@ -307,8 +309,8 @@ static INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
   time_t Time;
   char *fmt;
   char buffer[BUFFERSIZE];
-  BVP_DESC theBVPDesc;
-  INT i,id,move;
+  BVP_DESC *theBVPDesc;
+  INT i,id,move,part;
 
   if (gridpaths_set)
     /* this way grids are stored to path[0] */
@@ -321,9 +323,7 @@ static INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
     RETURN(GM_FILEOPEN_ERROR);
   }
 
-  /* get BVPDesc */
-  if (BVP_SetBVPDesc(MG_BVP(theMG),&theBVPDesc))
-    RETURN (GM_ERROR);
+  theBVPDesc = MG_BVPD(theMG);
 
   /* get time */
   fmt = "%a %b %d %H:%M:%S %Y";
@@ -346,7 +346,7 @@ static INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
     theVertex = MYVERTEX(theNode);
     if (OBJT(theVertex) == IVOBJ)
       continue;
-    if (BNDP_BndPDesc(V_BNDP(theVertex),&move))
+    if (BNDP_BndPDesc(V_BNDP(theVertex),&move,&part))
       RETURN(1);
     if (move == 0)
       ID(theNode) = id++;
@@ -357,7 +357,7 @@ static INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
     if (OBJT(theVertex) == IVOBJ)
       continue;
     /* skip corner points */
-    if (BNDP_BndPDesc(V_BNDP(theVertex),&move))
+    if (BNDP_BndPDesc(V_BNDP(theVertex),&move,&part))
       RETURN(1);
     if (move == 0)
       continue;
@@ -754,7 +754,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char * type, char *c
   HEAP *theHeap;
   MGIO_MG_GENERAL mg_general;
   BVP *theBVP;
-  BVP_DESC theBVPDesc;
+  BVP_DESC *theBVPDesc;
   MGIO_GE_GENERAL ge_general;
   MGIO_GE_ELEMENT ge_element[TAGS];
   MGIO_CG_GENERAL cg_general;
@@ -819,7 +819,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char * type, char *c
 
   /* write general information */
   theBVP = MG_BVP(theMG);
-  if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (1);
+  theBVPDesc = MG_BVPD(theMG);
   mg_general.mode                 = mode;
   mg_general.dim                  = DIM;
   mg_general.magic_cookie = MG_MAGIC_COOKIE(theMG);
@@ -1072,20 +1072,18 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment)
 
 static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_CG_ELEMENT *cge, MGIO_PARINFO *pinfo)
 {
+  /*/ / HRR_TODO : remove next line* /
+        #ifdef _HRR_
   INT i,j,s,prio;
   INT evec,nvec,edvec,svec;
   NODE *theNode;
   EDGE *theEdge;
   VECTOR *theVector;
 
-  evec = TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR);
-  nvec = TYPE_DEF_IN_GRID(theGrid,NODEVECTOR);
-  edvec = TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR);
-#ifdef __THREEDIM__
-  svec = TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR);
-#else
-  svec = 0;
-#endif
+  evec = VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC);
+  nvec = VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC);
+  edvec = VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC);
+  svec = VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC);
   /* this funxtion does not support side vectors                        */
   /* proclist and identificator need to be stored for each  side vector */
   if (svec) assert(0);
@@ -1172,12 +1170,14 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_CG_ELEMENT *
       s += pinfo->ncopies_edge[j];
   }
 #endif
-
+        #endif
   return(0);
 }
 
 static INT IO_GridCons(MULTIGRID *theMG)
 {
+  /*/ / HRR_TODO : remove next line* /
+        #ifdef _HRR_
   INT i,*proclist;
   GRID    *theGrid;
   ELEMENT *theElement;
@@ -1199,7 +1199,7 @@ static INT IO_GridCons(MULTIGRID *theMG)
       if (!MASTER(theVector))
         DisposeConnectionFromVector(theGrid,theVector);
   }
-
+        #endif
   return(GM_OK);
 }
 
@@ -1407,7 +1407,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   BNDP **BndPList;
   DOUBLE *Positions;
   BVP *theBVP;
-  BVP_DESC theBVPDesc;
+  BVP_DESC *theBVPDesc;
   MESH theMesh;
   char FormatName[NAMESIZE], BndValName[NAMESIZE], MGName[NAMESIZE], filename[NAMESIZE];
   INT i,j,k,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],
@@ -1465,7 +1465,10 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
   if (procs>nparfiles)
   {
+    /*/ / HRR_TODO : remove next line* /
+        #ifdef _HRR_
     Broadcast(&mg_general,sizeof(MGIO_MG_GENERAL));
+        #endif
     if (me < nparfiles)
       mg_general.me = me;
   }
@@ -1517,7 +1520,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   theHeap = MGHEAP(theMG);
   theBVP = MG_BVP(theMG);
   if (theBVP==NULL)                                                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-  if (BVP_SetBVPDesc(theBVP,&theBVPDesc))                                                         {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  theBVPDesc = MG_BVPD(theMG);
 
   /* read general element information */
   if (Read_GE_General(&ge_general))                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
@@ -1583,7 +1586,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   }
   else
     theMesh.VertexLevel = NULL;
-  theMesh.nSubDomains = theBVPDesc.nSubDomains;
+  theMesh.nSubDomains = theBVPDesc->nSubDomains;
   theMesh.nElements = (INT*)GetTmpMem(theHeap,(theMesh.nSubDomains+1)*sizeof(INT));
   if (theMesh.nElements==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for theMesh.nElements\n",(int)(theMesh.nSubDomains+1)*sizeof(INT)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   theMesh.ElementLevel = (char**)GetTmpMem(theHeap,(theMesh.nSubDomains+1)*sizeof(char*));
@@ -1677,6 +1680,10 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
   /* insert coarse mesh */
   if (InsertMesh(theMG,&theMesh))                                                                         {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+
+  if (FixCoarseGrid(theMG))
+    return (NULL);
+
   for (i=0; i<=TOPLEVEL(theMG); i++)
     for (theElement = PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
     {
@@ -1695,7 +1702,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   if (MGIO_PARFILE)
   {
     /* open identification context */
+        #ifdef _HRR_
     DDD_IdentifyBegin();
+        #endif
 
     ActProcListPos = ProcList = (unsigned short*)GetTmpMem(theHeap,PROCLISTSIZE*sizeof(unsigned short));
     if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(int)); return (NULL);}
@@ -1714,7 +1723,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
       }
     }
     /* open identification context */
+        #ifdef _HRR_
     DDD_IdentifyEnd();
+        #endif
   }
 
   /* repair inconsistencies */
@@ -1795,7 +1806,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     theGrid = GRID_ON_LEVEL(theMG,i);
 
 #ifdef __THREEDIM__
-    if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
       for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
         for (j=0; j<SIDES_OF_ELEM(theElement); j++)
         {

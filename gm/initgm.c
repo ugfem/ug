@@ -38,7 +38,6 @@
 #include "general.h"
 
 /* gm module */
-#include "switch.h"
 #include "gm.h"
 #include "enrol.h"
 #include "algebra.h"

@@ -770,10 +770,10 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
   NODE *CornerNodes[2],*CenterNodes[2],*node0,*node1;
   ELEMENT *oppositeElement;
   DOUBLE lambda,lambda0,lambda1,lambda_old,x1,x2;
-  INT coN,ceN,Eside,nlinks;
+  INT ceN,Eside,nlinks;
+  INT edge,co0,co1;
 #endif
 
-  INT edge,co0,co1;
   theMG = MYMG(theGrid);
 
   /*    move center nodes of quadrilaterals  */

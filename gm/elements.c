@@ -28,7 +28,6 @@
 #include "general.h"
 #include "devices.h"
 
-#include "switch.h"
 #include "gm.h"
 #include "ugm.h"
 
@@ -845,7 +844,7 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
 
   /* element vector */
   evector_offset[tag] = 0;
-  if (TYPE_DEF_IN_MG(theMG,ELEMVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_MG(theMG,ELEMVEC))
   {
     evector_offset[tag] = p_count;
     p_count++;
@@ -854,7 +853,7 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
   /* side vector */
   svector_offset[tag] = 0;
         #ifdef __THREEDIM__
-  if (TYPE_DEF_IN_MG(theMG,SIDEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_MG(theMG,SIDEVEC))
   {
     svector_offset[tag] = p_count;
     p_count += el->sides_of_elem;

@@ -81,7 +81,6 @@
 #include "GenerateRules.h"
 #include "refine.h"
 #include "rm.h"
-#include "switch.h"
 #include "ugm.h"
 
 /* paralllel modules */
@@ -2112,7 +2111,6 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 	ELEMENT *theNeighbor;			/* neighbor and a son of current elem.	*/
 	NODE **SideNodes;				/* nodes on refined sides				*/
 	NODE *theNode0, *theNode1;
-	LINK *theLink0,*theLink1;
 	EDGE *fatherEdge;
 	INT l,j;
 	#endif
@@ -3085,7 +3083,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 	#endif
 
 	IFDEBUG(gm,4)
-	INT i,j;
+	INT i;
 
 	UserWriteF("After qsort\n");
 
@@ -3139,7 +3137,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 		SET_NBELEM(NbSortTable[i]->elem,NbSortTable[i]->side,
 				   ElemSortTable[i]->elem);
 #ifdef __THREEDIM__
-		if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))							  
+		if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))							  
 		  if (DisposeDoubledSideVector(theGrid,ElemSortTable[i]->elem,
 									   ElemSortTable[i]->side,
 									   NbSortTable[i]->elem,
@@ -4349,7 +4347,7 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 		
 				/* dispose doubled side vectors if */
 				#ifdef __THREEDIM__
-				if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+				if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
 				{
 					for (l=0; l<SIDES_OF_ELEM(SonList[side]); l++)
 					  if (NBELEM(SonList[side],l)==SonList[s])
@@ -4735,6 +4733,10 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 	DEBUG_TIME(0);
 
 /*
+	
+#ifdef ModelP
+	/* check and restrict partitioning of elements */
+		return (GM_ERROR);
 	
 	/* set info for refinement prediction */
 	SetRefineInfo(theMG);
