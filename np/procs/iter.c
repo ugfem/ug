@@ -146,6 +146,7 @@ struct np_smoother {
   VEC_SCALAR damp;
   MATDATA_DESC *L;
   NP_ORDER *Order;
+  INT Liscomplete;
   INT AutoDamp;
   VECDATA_DESC *DampVector;
 
@@ -647,6 +648,13 @@ static INT SmootherInit (NP_BASE *theNP, INT argc , char **argv)
   np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
   np->Order = (NP_ORDER*)ReadArgvNumProc(theNP->mg,"O",ORDER_CLASS_NAME,argc,argv);
     #ifdef ModelP
+  if (ReadArgvINT("Liscomplete",&(np->Liscomplete),argc,argv))
+    np->Liscomplete = 0;
+  if( np->Liscomplete && (np->L==NULL) )
+  {
+    PrintErrorMessage('E',"SmootherInit","L is mandatory for option Liscomplete");
+    REP_ERR_RETURN (1);
+  }
   np->diag = ReadArgvVecDesc(theNP->mg,"diag",argc,argv);
   if (ReadArgvOption("M",argc,argv))
     np->cons_mode = MAT_CONS;
@@ -676,6 +684,7 @@ static INT SmootherDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Order","---");
     #ifdef ModelP
   UserWriteF(DISPLAY_NP_FORMAT_SI,"cons_mode",(int)np->cons_mode);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"Liscomplete",(int)np->Liscomplete);
         #endif
 
   return (0);
@@ -718,6 +727,7 @@ static INT SmootherPostProcess (NP_ITER *theNP, INT level,
   if (np->L != NULL)
     if (FreeMD(NP_MG(theNP),level,level,np->L))
       REP_ERR_RETURN(1);
+  np->Liscomplete = 0;
         #ifdef ModelP
   if (np->cons_mode == MAT_DIAG_VEC_CONS)
     if (FreeVD(NP_MG(theNP),level,level,np->diag))
@@ -767,8 +777,11 @@ static INT JacobiPreProcess  (NP_ITER *theNP, INT level,
   GRID *theGrid;
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L)) NP_RETURN(1,result[0]);
   theGrid = NP_GRID(theNP,level);
-  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->L,MAT_DIAG_CONS) != NUM_OK) NP_RETURN(1,result[0]);
+  if( !np->Liscomplete )
+  {
+    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
+    if (l_matrix_consistent(theGrid,np->L,MAT_DIAG_CONS) != NUM_OK) NP_RETURN(1,result[0]);
+  }
         #else
   np->L = A;
         #endif
@@ -881,10 +894,13 @@ static INT GSPreProcess  (NP_ITER *theNP, INT level,
   else {
     if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L))
       NP_RETURN(1,result[0]);
-    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
-      NP_RETURN(1,result[0]);
-    if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
-      NP_RETURN(1,result[0]);
+    if( !np->Liscomplete )
+    {
+      if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
+        NP_RETURN(1,result[0]);
+      if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
+        NP_RETURN(1,result[0]);
+    }
   }
         #endif
   if (np->Order!=NULL)
@@ -1129,6 +1145,8 @@ static INT BCGSSmootherPostProcess (NP_ITER *theNP, INT level,
 
   nps = (NP_SMOOTHER *) theNP;
   if (nps->L != NULL) if (FreeMD(NP_MG(theNP),level,level,nps->L)) REP_ERR_RETURN(1);
+  nps->Liscomplete = 0;
+
   np = (NP_BCGSSMOOTHER *) theNP;
   if (FreeVD(nps->iter.base.mg,level,level,np->r)) REP_ERR_RETURN(1);
   if (FreeVD(nps->iter.base.mg,level,level,np->p)) REP_ERR_RETURN(1);
@@ -1228,10 +1246,13 @@ static INT SGSPreProcess  (NP_ITER *theNP, INT level,
         #ifdef ModelP
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L))
     NP_RETURN(1,result[0]);
-  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
-    NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
-    NP_RETURN(1,result[0]);
+  if( !np->Liscomplete )
+  {
+    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
         #endif
   if (np->Order!=NULL)
     if ((*np->Order->Order)(np->Order,level,A,result)) NP_RETURN(1,result[0]);
@@ -1324,11 +1345,9 @@ static INT SGSPostProcess (NP_ITER *theNP, INT level,
   NP_SGS *np;
 
   np = (NP_SGS *) theNP;
-  if (np->smoother.L != NULL)
-    if (FreeMD(NP_MG(theNP),level,level,np->smoother.L)) REP_ERR_RETURN(1);
   if (FreeVD(NP_MG(theNP),level,level,NP_SGS_t(np)) ) REP_ERR_RETURN(1);
 
-  return(0);
+  return(SmootherPostProcess(theNP,level,x,b,A,result));
 }
 
 static INT SGSConstruct (NP_BASE *theNP)
@@ -1428,10 +1447,13 @@ static INT SSORPreProcess  (NP_ITER *theNP, INT level,
   else {
     if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L))
       NP_RETURN(1,result[0]);
-    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
-      NP_RETURN(1,result[0]);
-    if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
-      NP_RETURN(1,result[0]);
+    if( !np->Liscomplete )
+    {
+      if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
+        NP_RETURN(1,result[0]);
+      if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
+        NP_RETURN(1,result[0]);
+    }
     np->diag = NULL;
   }
   myMat = np->L;
@@ -1566,10 +1588,6 @@ static INT SSORPostProcess (NP_ITER *theNP, INT level,
 {
   NP_SSOR *np = (NP_SSOR *) theNP;
 
-  if (np->smoother.L != NULL)
-    if (FreeMD(NP_MG(theNP),level,level,np->smoother.L))
-      REP_ERR_RETURN(1);
-
   if (FreeVD(NP_MG(theNP),level,level,np->t))
     REP_ERR_RETURN(1);
 
@@ -1577,7 +1595,7 @@ static INT SSORPostProcess (NP_ITER *theNP, INT level,
     if (FreeVD(NP_MG(theNP),level,level,np->smoother.DampVector))
       REP_ERR_RETURN(1);
 
-  return(0);
+  return(SmootherPostProcess(theNP,level,x,b,A,result));
 }
 
 static INT SSORConstruct (NP_BASE *theNP)
@@ -1743,10 +1761,13 @@ static INT PGSPreProcess  (NP_ITER *theNP, INT level,
         #ifdef ModelP
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L))
     NP_RETURN(1,result[0]);
-  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK)
-    NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->smoother.L,MAT_CONS) != NUM_OK)
-    NP_RETURN(1,result[0]);
+  if( !np->smoother.Liscomplete )
+  {
+    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (l_matrix_consistent(theGrid,np->smoother.L,MAT_CONS) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
         #endif
   if (np->smoother.Order!=NULL)
     if ((*np->smoother.Order->Order)(np->smoother.Order,level,A,result)) NP_RETURN(1,result[0]);
@@ -1810,11 +1831,10 @@ static INT PGSPostProcess (NP_ITER *theNP, INT level,
   NP_PGS *np;
 
   np = (NP_PGS *) theNP;
-  if (np->smoother.L != NULL)
-    if (FreeMD(NP_MG(theNP),level,level,np->smoother.L)) REP_ERR_RETURN(1);
+
   if (FreeVD(NP_MG(theNP),level,level,np->t)) REP_ERR_RETURN(1);
 
-  return(0);
+  return(SmootherPostProcess(theNP,level,x,b,A,result));
 }
 
 static INT PGSConstruct (NP_BASE *theNP)
@@ -3173,10 +3193,13 @@ static INT SORPreProcess  (NP_ITER *theNP, INT level,
   else {
     if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L))
       NP_RETURN(1,result[0]);
-    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
-      NP_RETURN(1,result[0]);
-    if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
-      NP_RETURN(1,result[0]);
+    if( !np->Liscomplete )
+    {
+      if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
+        NP_RETURN(1,result[0]);
+      if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
+        NP_RETURN(1,result[0]);
+    }
     np->diag = NULL;
   }
   myMat = np->L;
@@ -3773,10 +3796,13 @@ static INT GBGSPreProcess (NP_ITER *theNP, INT level,
   theGrid = NP_GRID(theNP,level);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L)) NP_RETURN(1,result[0]);
-  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
-        #ifdef ModelP
-  if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
-        #endif
+  if( !np->Liscomplete )
+  {
+    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
+                #ifdef ModelP
+    if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
+                #endif
+  }
   if (l_lrdecompB(theGrid,np->L)!=NUM_OK) {
     PrintErrorMessage('E',"GBGSPreProcess","decomposition failed");
     NP_RETURN(1,result[0]);
@@ -3891,13 +3917,16 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L))
     NP_RETURN(1,result[0]);
-  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK)
-    NP_RETURN(1,result[0]);
-        #ifdef ModelP
-  if (l_matrix_consistent(theGrid,np->smoother.L,np->smoother.cons_mode)
-      != NUM_OK)
-    NP_RETURN(1,result[0]);
-        #endif
+  if( !np->smoother.Liscomplete )
+  {
+    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK)
+      NP_RETURN(1,result[0]);
+                #ifdef ModelP
+    if (l_matrix_consistent(theGrid,np->smoother.L,np->smoother.cons_mode)
+        != NUM_OK)
+      NP_RETURN(1,result[0]);
+                #endif
+  }
   if (l_ilubthdecomp(theGrid,np->smoother.L,np->beta,NULL,NULL,NULL)
       !=NUM_OK) {
     PrintErrorMessage('E',"ILUPreProcess","decomposition failed");
@@ -3995,10 +4024,13 @@ static INT FILUPreProcess (NP_ITER *theNP, INT level,
     if ((*np->smoother.Order->Order)(np->smoother.Order,level,A,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
-  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
-        #ifdef ModelP
-  if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
-        #endif
+  if( !np->smoother.Liscomplete )
+  {
+    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
+                #ifdef ModelP
+    if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
+                #endif
+  }
   if (l_ilubthdecomp_fine(theGrid,np->smoother.L,np->beta,NULL,NULL,NULL)
       !=NUM_OK) {
     PrintErrorMessage('E',"FILUPreProcess","decomposition failed");
@@ -4111,10 +4143,13 @@ static INT THILUPreProcess (NP_ITER *theNP, INT level,
     if ((*np->smoother.Order->Order)(np->smoother.Order,level,A,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
-  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
-        #ifdef ModelP
-  if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
-        #endif
+  if( !np->smoother.Liscomplete )
+  {
+    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
+                #ifdef ModelP
+    if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
+                #endif
+  }
   if (l_ilubthdecomp(theGrid,np->smoother.L,np->beta,np->thresh,NULL,NULL)
       !=NUM_OK) {
     PrintErrorMessage('E',"THILUPreProcess","decomposition failed");
@@ -4234,10 +4269,13 @@ static INT SPILUPreProcess (NP_ITER *theNP, INT level,
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocVDFromVD(NP_MG(theNP),level,level,x,&tmp)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
-  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
-        #ifdef ModelP
-  if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
-        #endif
+  if( !np->smoother.Liscomplete )
+  {
+    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
+                #ifdef ModelP
+    if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
+                #endif
+  }
   if (l_iluspdecomp(theGrid,np->smoother.L,np->beta,tmp,np->mode,NULL)
       !=NUM_OK) {
     PrintErrorMessage('E',"SPILUPreProcess","decomposition failed");
@@ -4310,10 +4348,13 @@ static INT ICPreProcess (NP_ITER *theNP, INT level,
     if ((*np->smoother.Order->Order)(np->smoother.Order,level,A,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
-  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
-        #ifdef ModelP
-  if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
-        #endif
+  if( !np->smoother.Liscomplete )
+  {
+    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
+                #ifdef ModelP
+    if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
+                #endif
+  }
   if (l_icdecomp(theGrid,np->smoother.L)
       !=NUM_OK) {
     PrintErrorMessage('E',"ICPreProcess","decomposition failed");
@@ -4433,10 +4474,13 @@ static INT LUPreProcess (NP_ITER *theNP, INT level,
     if ((*np->smoother.Order->Order)(np->smoother.Order,level,A,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
-  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
-        #ifdef ModelP
-  if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS) != NUM_OK) NP_RETURN(1,result[0]);
-        #endif
+  if( !np->smoother.Liscomplete )
+  {
+    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
+                #ifdef ModelP
+    if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS) != NUM_OK) NP_RETURN(1,result[0]);
+                #endif
+  }
   err = l_lrdecomp(theGrid,np->smoother.L);
   if (err != NUM_OK) {
     if (err>0) {
