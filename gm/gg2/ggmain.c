@@ -1963,7 +1963,7 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   V2_SCALE(0.3333333333333333,position);
   if (BVP_SetBVPDesc(MG_BVP(MYMG(theGrid)),&theBVPDesc)) return (1);
   V2_EUKLIDNORM_OF_DIFF(theBVPDesc.midpoint,position,diff);
-  if (diff>theBVPDesc.radius)
+  if (diff>theBVPDesc.radius*1.5)
   {
     UserWrite("\nERROR: trying to create element outside bounding sphere of domain\n");
     return (1);
@@ -2440,46 +2440,90 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
     return (4);
   }
 
-  if (AssembleFrontLists (theMG,mesh)!=0)
-  {
-    return (5);
-  }
 
-  /* now we can create all element sides that will be needed by the MakeElement fct. */
-
-  if (doAngle || doEdge)
-    if (AccelInit(theGrid, doAngle, doEdge, myPars)!=0) return(1);
+  for (SingleMode=1; SingleMode<=mesh->nSubDomains; SingleMode++) {
 
 
+    if (AssembleFrontLists (theMG,mesh)!=0)
+    {
+      return (5);
+    }
 
-  /*************************************************************************************/
-  /*                                                                                     */
-  /* creating inner nodes	and vertices for automatically triangulation                             */
-  /* loops for the indep. front lists and front lists begin at the end of the lists      */
-  /* according to the possibility of creating of new indep. front lists or front lists */
-  /*                                                                                     */
-  /*************************************************************************************/
+    /* now we can create all element sides that will be needed by the MakeElement fct. */
 
-  for (theIFL=LASTIFL(myMGdata); theIFL!=NULL; theIFL=nextIFL)
-  {
     if (doAngle || doEdge)
-      while ((theFC=AccelBaseTreeSearch(&myList)) != NULL)
-      {
-        theIFL = myList->myIFL;
-        the_old_succ = SUCCFC(theFC);
-        /* are there only 3 FCs left and lie they not on an inner hole? */
-        if (PREDFC(theFC)==SUCCFC(SUCCFC(theFC)) && NFL(theIFL) == 1)
-        {
-          /* we make this last element and dispose the list */
-          /* accelerator final case */
-          FlgForAccel = FINALCASE;
-          AccelUpdate( theFC, PREDFC(theFC), the_old_succ, FlgForAccel,doAngle,doEdge);
+      if (AccelInit(theGrid, doAngle, doEdge, myPars)!=0) return(1);
 
-          if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
+
+
+    /*************************************************************************************/
+    /*                                                                                           */
+    /* creating inner nodes	and vertices for automatically triangulation                             */
+    /* loops for the indep. front lists and front lists begin at the end of the lists    */
+    /* according to the possibility of creating of new indep. front lists or front lists */
+    /*                                                                                           */
+    /*************************************************************************************/
+
+    for (theIFL=LASTIFL(myMGdata); theIFL!=NULL; theIFL=nextIFL)
+    {
+      if (doAngle || doEdge)
+        while ((theFC=AccelBaseTreeSearch(&myList)) != NULL)
+        {
+          theIFL = myList->myIFL;
+          the_old_succ = SUCCFC(theFC);
+          /* are there only 3 FCs left and lie they not on an inner hole? */
+          if (PREDFC(theFC)==SUCCFC(SUCCFC(theFC)) && NFL(theIFL) == 1)
+          {
+            /* we make this last element and dispose the list */
+            /* accelerator final case */
+            FlgForAccel = FINALCASE;
+            AccelUpdate( theFC, PREDFC(theFC), the_old_succ, FlgForAccel,doAngle,doEdge);
+
+            if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
+              return (1);
+
+            if (MakeElement(theGrid, &theElementContext ))
+              return (8);
+            if (display>0)
+            {
+              nElement++;
+              if (nElement%display==0)
+              {
+                if (nElement%(10*display)==0) UserWrite("\n");
+                UserWriteF("[%d] ",(int)nElement);
+              }
+            }
+            DisposeFrontList(myList);
+
+            /* in this case "FrontcomponentUpdate(...);" is redundant*/
+
+            continue;
+          }
+
+          CalcNewPoint (myList,theFC,xt,yt);
+
+          thesuccFC = SUCCFC(theFC);
+
+          theIntersectfoundPoints[0] = NULL;
+
+          if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
+            return (9);
+
+          FlgForAccel = NORMALCASE;
+
+          disp_FC = NULL;
+          disp_FL = NULL;
+
+          if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
+            return (10);
+
+          if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ ))
             return (1);
 
-          if (MakeElement(theGrid, &theElementContext ))
-            return (8);
+          AccelUpdate( theFC, thenewFC, the_old_succ, FlgForAccel, doAngle, doEdge);
+
+          if (MakeElement(theGrid,&theElementContext))
+            return (11);
           if (display>0)
           {
             nElement++;
@@ -2489,76 +2533,75 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
               UserWriteF("[%d] ",(int)nElement);
             }
           }
-          DisposeFrontList(myList);
 
-          /* in this case "FrontcomponentUpdate(...);" is redundant*/
-
-          continue;
-        }
-
-        CalcNewPoint (myList,theFC,xt,yt);
-
-        thesuccFC = SUCCFC(theFC);
-
-        theIntersectfoundPoints[0] = NULL;
-
-        if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
-          return (9);
-
-        FlgForAccel = NORMALCASE;
-
-        disp_FC = NULL;
-        disp_FL = NULL;
-
-        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
-          return (10);
-
-        if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ ))
-          return (1);
-
-        AccelUpdate( theFC, thenewFC, the_old_succ, FlgForAccel, doAngle, doEdge);
-
-        if (MakeElement(theGrid,&theElementContext))
-          return (11);
-        if (display>0)
-        {
-          nElement++;
-          if (nElement%display==0)
-          {
-            if (nElement%(10*display)==0) UserWrite("\n");
-            UserWriteF("[%d] ",(int)nElement);
-          }
-        }
-
-        if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
-          return (1);
-
-        if(FL_FC_Disposer(disp_FC, disp_FL))
-          return (1);
-
-
-
-        if (printelem)
-        {
-          sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
-          UserWrite(buffer);
-        }
-      }                   /* while */
-    else
-    if (doedge)
-      while ((theFC=ChooseFCminside(theIFL,&myList)) != NULL)
-      {
-        theIFL = myList->myIFL;
-        the_old_succ = SUCCFC(theFC);
-        /* are there only 3 FCs left and lie they not on an inner hole? */
-        if (PREDFC(theFC)==SUCCFC(SUCCFC(theFC)) && NFL(theIFL) == 1)
-        {
-          FlgForAccel = FINALCASE;
-          /* we make this last element and dispose the list */
-          if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
+          if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
             return (1);
+
+          if(FL_FC_Disposer(disp_FC, disp_FL))
+            return (1);
+
+
+
+          if (printelem)
+          {
+            sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
+            UserWrite(buffer);
+          }
+        }                 /* while */
+      else
+      if (doedge)
+        while ((theFC=ChooseFCminside(theIFL,&myList)) != NULL)
+        {
+          theIFL = myList->myIFL;
+          the_old_succ = SUCCFC(theFC);
+          /* are there only 3 FCs left and lie they not on an inner hole? */
+          if (PREDFC(theFC)==SUCCFC(SUCCFC(theFC)) && NFL(theIFL) == 1)
+          {
+            FlgForAccel = FINALCASE;
+            /* we make this last element and dispose the list */
+            if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
+              return (1);
+            if (MakeElement(theGrid, &theElementContext))
+              return (12);
+            if (display>0)
+            {
+              nElement++;
+              if (nElement%display==0)
+              {
+                if (nElement%(10*display)==0) UserWrite("\n");
+                UserWriteF("[%d] ",(int)nElement);
+              }
+            }
+
+            /* in this case "FrontcomponentUpdate(...);" is redundant*/
+
+            DisposeFrontList(myList);
+            continue;
+          }
+
+          CalcNewPoint (myList,theFC,xt,yt);
+
+          thesuccFC = SUCCFC(theFC);
+
+          theIntersectfoundPoints[0] = NULL;
+
+          if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
+            return (13);
+
+          FlgForAccel = NORMALCASE;
+
+          disp_FC = NULL;
+          disp_FL = NULL;
+
+          if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
+            return (10);
+
+          if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
+            return (1);
+
           if (MakeElement(theGrid, &theElementContext))
-            return (12);
+            return (15);
+
           if (display>0)
           {
             nElement++;
@@ -2569,79 +2612,78 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
             }
           }
 
-          /* in this case "FrontcomponentUpdate(...);" is redundant*/
-
-          DisposeFrontList(myList);
-          continue;
-        }
-
-        CalcNewPoint (myList,theFC,xt,yt);
-
-        thesuccFC = SUCCFC(theFC);
-
-        theIntersectfoundPoints[0] = NULL;
-
-        if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
-          return (13);
-
-        FlgForAccel = NORMALCASE;
-
-        disp_FC = NULL;
-        disp_FL = NULL;
-
-        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
-          return (10);
-
-        if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
-          return (1);
-
-        if (MakeElement(theGrid, &theElementContext))
-          return (15);
-
-        if (display>0)
-        {
-          nElement++;
-          if (nElement%display==0)
-          {
-            if (nElement%(10*display)==0) UserWrite("\n");
-            UserWriteF("[%d] ",(int)nElement);
-          }
-        }
-
-        if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
-          return (1);
-
-        debug++;
-        if (debug==17)
-          debug=debug;
-        if (debug==19)
-          debug=debug;
-
-        if(FL_FC_Disposer(disp_FC, disp_FL))
-          return (1);
-
-        if (printelem)
-        {
-          sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
-          UserWrite(buffer);
-        }
-      }                           /* while */
-    else
-      while ((theFC=ChooseFCminangle(theIFL,&myList)) != NULL)
-      {
-        theIFL = myList->myIFL;
-        the_old_succ = SUCCFC(theFC);
-        /* are there only 3 FCs left and lie they not on an inner hole? */
-        if (PREDFC(theFC)==SUCCFC(SUCCFC(theFC)) && NFL(theIFL) == 1)
-        {
-          FlgForAccel = FINALCASE;
-
-          if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
+          if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
             return (1);
 
-          /* we make this last element and dispose the list */
-          if (MakeElement(theGrid, &theElementContext ))
-            return (16);
+          debug++;
+          if (debug==17)
+            debug=debug;
+          if (debug==19)
+            debug=debug;
+
+          if(FL_FC_Disposer(disp_FC, disp_FL))
+            return (1);
+
+          if (printelem)
+          {
+            sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
+            UserWrite(buffer);
+          }
+        }                         /* while */
+      else
+        while ((theFC=ChooseFCminangle(theIFL,&myList)) != NULL)
+        {
+          theIFL = myList->myIFL;
+          the_old_succ = SUCCFC(theFC);
+          /* are there only 3 FCs left and lie they not on an inner hole? */
+          if (PREDFC(theFC)==SUCCFC(SUCCFC(theFC)) && NFL(theIFL) == 1)
+          {
+            FlgForAccel = FINALCASE;
+
+            if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
+              return (1);
+
+            /* we make this last element and dispose the list */
+            if (MakeElement(theGrid, &theElementContext ))
+              return (16);
+            if (display>0)
+            {
+              nElement++;
+              if (nElement%display==0)
+              {
+                if (nElement%(10*display)==0) UserWrite("\n");
+                UserWriteF("[%d] ",(int)nElement);
+              }
+            }
+            DisposeFrontList(myList);
+            /* in this case "FrontcomponentUpdate(...);" is redundant*/
+            continue;
+          }
+
+          CalcNewPoint (myList,theFC,xt,yt);
+
+          thesuccFC = SUCCFC(theFC);
+
+          theIntersectfoundPoints[0] = NULL;
+
+          if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
+            return (17);
+
+          FlgForAccel = NORMALCASE;
+
+          disp_FC = NULL;
+          disp_FL = NULL;
+
+          if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
+            return (10);
+
+
+          if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
+            return (1);
+
+          if (MakeElement(theGrid, &theElementContext))
+            return (19);
+
           if (display>0)
           {
             nElement++;
@@ -2651,61 +2693,26 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
               UserWriteF("[%d] ",(int)nElement);
             }
           }
-          DisposeFrontList(myList);
-          /* in this case "FrontcomponentUpdate(...);" is redundant*/
-          continue;
-        }
+          if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
+            return (1);
 
-        CalcNewPoint (myList,theFC,xt,yt);
+          if(FL_FC_Disposer(disp_FC, disp_FL))
+            return (1);
 
-        thesuccFC = SUCCFC(theFC);
-
-        theIntersectfoundPoints[0] = NULL;
-
-        if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
-          return (17);
-
-        FlgForAccel = NORMALCASE;
-
-        disp_FC = NULL;
-        disp_FL = NULL;
-
-        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
-          return (10);
-
-
-        if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
-          return (1);
-
-        if (MakeElement(theGrid, &theElementContext))
-          return (19);
-
-        if (display>0)
-        {
-          nElement++;
-          if (nElement%display==0)
+          if (printelem)
           {
-            if (nElement%(10*display)==0) UserWrite("\n");
-            UserWriteF("[%d] ",(int)nElement);
+            sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
+            UserWrite(buffer);
           }
-        }
-        if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
-          return (1);
-
-        if(FL_FC_Disposer(disp_FC, disp_FL))
-          return (1);
-
-        if (printelem)
-        {
-          sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
-          UserWrite(buffer);
-        }
-      }                           /* while */
+        }                         /* while */
 
 
-    nextIFL = PREDIFL(theIFL);                          /* remember pred before disposing */
-    DisposeIndepFrontList(theIFL);
+      nextIFL = PREDIFL(theIFL);                        /* remember pred before disposing */
+      DisposeIndepFrontList(theIFL);
 
+    }
+
+    STARTIFL(myMGdata) = NULL;
   }
 
 
