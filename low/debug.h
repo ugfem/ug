@@ -41,14 +41,18 @@
 /****************************************************************************/
 
 #ifdef Debug
+#include <assert.h>
+
 #define CAT(x,y)                x ## y
 #define IFDEBUG(m,n)    if (CAT(Debug, m) >=(n)) {
 #define PRINTDEBUG(m,n,s) IFDEBUG(m,n) PrintDebug s; ENDDEBUG
 #define ENDDEBUG  }
+#define RETURN(rcode)   {INT rc; rc = rcode; assert(!rc); return (rc);}
 #else
 #define IFDEBUG(m,n)    if (1==0) {
 #define ENDDEBUG        }
 #define PRINTDEBUG(m,n,s) /* no debugging */
+#define RETURN(rcode)   return (rcode)
 #endif
 
 
