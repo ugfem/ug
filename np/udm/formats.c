@@ -1016,6 +1016,9 @@ INT MDmatchesVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt)
   for (rt=0; rt<NVECTYPES; rt++)
     for (ct=0; ct<NVECTYPES; ct++)
     {
+      if (VT_COMP(vt,rt)*VT_COMP(vt,ct)==0)
+        continue;
+
       mt = MTP(rt,ct);
       if (MD_ROWS_IN_MTYPE(md,mt)!=VT_COMP(vt,rt))
         return (NO);
