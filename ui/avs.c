@@ -102,14 +102,20 @@ static INT AVSCommand (INT argc, char **argv)
   FILE *stream;                                 /* the output file pointer					*/
 
   EVALUES *zcoord;                              /* use scalar as z coordinate in 2D only	*/
+  char zcoord_name[NAMESIZE];           /* name for eval functions                  */
+
   INT ns;                                               /* number of scalar eval procs				*/
   INT nv;                                               /* number of vector eval procs				*/
   EVALUES *es[MAXVARIABLES];            /* pointers to scalar eval function desc	*/
+  char es_name[MAXVARIABLES][NAMESIZE];         /* names for eval functions     */
   EVECTOR *ev[MAXVARIABLES];            /* pointers to vector eval function desc	*/
+  char ev_name[MAXVARIABLES][NAMESIZE];         /* names for eval functions     */
   INT ns_cell;                                  /* number of scalar eval procs				*/
   INT nv_cell;                                  /* number of vector eval procs				*/
   EVALUES *es_cell[MAXVARIABLES];       /* pointers to scalar eval function desc*/
+  char es_cell_name[MAXVARIABLES][NAMESIZE];            /* names for eval functions */
   EVECTOR *ev_cell[MAXVARIABLES];       /* pointers to vector eval function desc*/
+  char ev_cell_name[MAXVARIABLES][NAMESIZE];            /* names for eval functions */
   char s[NAMESIZE];                             /* name of eval proc						*/
   INT numNodes;                                 /* number of data points					*/
   INT numElements;                              /* number of elements						*/
@@ -154,6 +160,13 @@ static INT AVSCommand (INT argc, char **argv)
         PrintErrorMessage('E',"avs:",buf);
         break;
       }
+      if (sscanf(argv[i+1],"s %s", s) == 1)
+      {
+        strcpy(zcoord_name,s);
+        i++;
+      }
+      else
+        strcpy(zcoord_name,zcoord->v.name);
       continue;
     }
 
@@ -171,6 +184,13 @@ static INT AVSCommand (INT argc, char **argv)
         PrintErrorMessage('E',"avs:",buf);
         break;
       }
+      if (sscanf(argv[i+1],"s %s", s) == 1)
+      {
+        strcpy(es_name[ns],s);
+        i++;
+      }
+      else
+        strcpy(es_name[ns],es[ns]->v.name);
       ns++;
       continue;
     }
@@ -189,6 +209,13 @@ static INT AVSCommand (INT argc, char **argv)
         PrintErrorMessage('E',"avs:",buf);
         break;
       }
+      if (sscanf(argv[i+1],"s %s", s) == 1)
+      {
+        strcpy(ev_name[nv],s);
+        i++;
+      }
+      else
+        strcpy(ev_name[nv],ev[nv]->v.name);
       nv++;
       continue;
     }
@@ -207,6 +234,13 @@ static INT AVSCommand (INT argc, char **argv)
         PrintErrorMessage('E',"avs:",buf);
         break;
       }
+      if (sscanf(argv[i+1],"s %s", s) == 1)
+      {
+        strcpy(es_cell_name[ns_cell],s);
+        i++;
+      }
+      else
+        strcpy(es_cell_name[ns_cell],es_cell[ns_cell]->v.name);
       ns_cell++;
       continue;
     }
@@ -225,6 +259,13 @@ static INT AVSCommand (INT argc, char **argv)
         PrintErrorMessage('E',"avs:",buf);
         break;
       }
+      if (sscanf(argv[i+1],"s %s", s) == 1)
+      {
+        strcpy(ev_cell_name[nv_cell],s);
+        i++;
+      }
+      else
+        strcpy(ev_cell_name[nv_cell],ev_cell[nv_cell]->v.name);
       nv_cell++;
       continue;
     }
@@ -297,7 +338,7 @@ static INT AVSCommand (INT argc, char **argv)
   if (DIM==2 && zcoord!=NULL)
   {
     pre    = zcoord->PreprocessProc;
-    if (pre!=NULL) pre("zcoord->v.name",mg);
+    if (pre!=NULL) pre("zcoord_name",mg);
   }
 
   /* clear USED flag in vertices on all levels */
@@ -444,9 +485,9 @@ static INT AVSCommand (INT argc, char **argv)
 
     /* now all scalar variables */
     for (i=0; i<ns; i++)
-      fprintf(stream,"%s, \n",es[i]->v.name);           /* no units */
+      fprintf(stream,"%s, \n",es_name[i]);           /* no units */
     for (i=0; i<nv; i++)
-      fprintf(stream,"%s, \n",ev[i]->v.name);           /* no units */
+      fprintf(stream,"%s, \n",ev_name[i]);           /* no units */
 
     /********************************/
     /* (6) all the node data		*/
@@ -464,14 +505,14 @@ static INT AVSCommand (INT argc, char **argv)
       pre    = es[v]->PreprocessProc;
 
       /* execute prepare function */
-      if (pre!=NULL) pre("es[v]->v.name",mg);
+      if (pre!=NULL) pre(es_name[v],mg);
     }
     for (v=0; v<nv; v++)
     {
       pre    = ev[v]->PreprocessProc;
 
       /* execute prepare function */
-      if (pre!=NULL) pre("ev[v]->v.name",mg);
+      if (pre!=NULL) pre(ev_name[v],mg);
     }
 
     /* now the data in point block format */
@@ -548,9 +589,9 @@ static INT AVSCommand (INT argc, char **argv)
 
     /* now all scalar variables */
     for (i=0; i<ns_cell; i++)
-      fprintf(stream,"%s, \n",es_cell[i]->v.name);           /* no units */
+      fprintf(stream,"%s, \n",es_cell_name[i]);           /* no units */
     for (i=0; i<nv_cell; i++)
-      fprintf(stream,"%s, \n",ev_cell[i]->v.name);           /* no units */
+      fprintf(stream,"%s, \n",ev_cell_name[i]);           /* no units */
 
     /********************************/
     /* (6) all the cell data		*/
@@ -568,14 +609,14 @@ static INT AVSCommand (INT argc, char **argv)
       pre    = es_cell[v]->PreprocessProc;
 
       /* execute prepare function */
-      if (pre!=NULL) pre("es_cell[v]->v.name",mg);
+      if (pre!=NULL) pre(es_cell_name[v],mg);
     }
     for (v=0; v<nv_cell; v++)
     {
       pre    = ev_cell[v]->PreprocessProc;
 
       /* execute prepare function */
-      if (pre!=NULL) pre("ev_cell[v]->v.name",mg);
+      if (pre!=NULL) pre(ev_cell_name[v],mg);
     }
 
     /* now the data in point block format */

@@ -104,6 +104,7 @@ static INT TecplotCommand (INT argc, char **argv)
 
   INT nv;                                               /* number of variables (eval functions)		*/
   EVALUES *ev[MAXVARIABLES];            /* pointers to eval function descriptors	*/
+  char ev_name[MAXVARIABLES][NAMESIZE];         /* names for eval functions     */
   char s[NAMESIZE];                             /* name of eval proc						*/
   INT numNodes;                                 /* number of data points					*/
   INT numElements;                              /* number of elements						*/
@@ -146,6 +147,13 @@ static INT TecplotCommand (INT argc, char **argv)
         PrintErrorMessage('E',"tecplot",buf);
         break;
       }
+      if (sscanf(argv[i+1],"s %s", s) == 1)
+      {
+        strcpy(ev_name[nv],s);
+        i++;
+      }
+      else
+        strcpy(ev_name[nv],ev[nv]->v.name);
       nv++;
       break;
 
@@ -175,7 +183,7 @@ static INT TecplotCommand (INT argc, char **argv)
   fprintf(stream,"VARIABLES = \"X\", \"Y\"");
   if (DIM==3) fprintf(stream,", \"Z\"");
   for (i=0; i<nv; i++)
-    fprintf(stream,", \"%s\"",ev[i]->v.name);
+    fprintf(stream,", \"%s\"",ev_name[i]);
   fprintf(stream,"\n");
 
   /********************************/
@@ -289,7 +297,7 @@ static INT TecplotCommand (INT argc, char **argv)
     eval = ev[v]->EvalProc;
 
     /* execute prepare function */
-    if (pre!=NULL) pre("ev[v]->v.name",mg);
+    if (pre!=NULL) pre(ev_name[v],mg);
 
     /* now the data */
     for (k=0; k<=TOPLEVEL(mg); k++)
