@@ -554,7 +554,7 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
   VECDATA_DESC *vd;
   SHORT offset[NVECOFFSETS],*Comp;
   char buffer[NAMESIZE];
-  INT i,j,tp,ncmp,size;
+  INT i,j,k,tp,ncmp,size;
 
   if (theMG == NULL)
     REP_ERR_RETURN (NULL);
@@ -586,11 +586,14 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
   for (tp=0; tp<NVECTYPES; tp++) {
     VD_NCMPS_IN_TYPE(vd,tp) = NCmpInType[tp];
     VD_CMPPTR_OF_TYPE(vd,tp) = Comp + offset[tp];
-    for (j=0; j<MAX_NDOF_MOD_32*32; j++) {
+    for (j=0; j<=MAX_NDOF_MOD_32*32-NCmpInType[tp]; j++) {
       if (i >= offset[tp+1]) break;
       if (j*sizeof(DOUBLE) >= FMT_S_VEC_TP(MGFORMAT(theMG),tp))
         REP_ERR_RETURN (NULL);
       if (READ_DR_VEC_FLAG(theMG,tp,j)) continue;
+      for (k=1; k<offset[tp+1]-i; k++)
+        if (READ_DR_VEC_FLAG(theMG,tp,j+k)) break;
+      if ( k<offset[tp+1]-i ) continue;
       Comp[i++] = j;
       SET_DR_VEC_FLAG(theMG,tp,j);
     }
@@ -1103,6 +1106,7 @@ INT FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
   INT i,j,tp;
 
   if (vd==NULL) return (NUM_OK);
+  dset(theMG,fl,tl,ALL_VECTORS,vd,0.0);
   if (VM_LOCKED(vd)) return (NUM_OK);
   PRINTDEBUG(np,2,(" FreeVD %s from %d to %d\n",
                    ENVITEM_NAME(vd),fl,tl));
