@@ -85,4 +85,26 @@ enum Priorities
 
 #endif
 
+/****************************************************************************/
+/*                                                                          */
+/* exported global variables                                                */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef ModelP
+/* DDD Interfaces */
+extern DDD_IF ElementIF, ElementSymmIF;
+extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF;
+extern DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF;
+#endif
+
+
+/****************************************************************************/
+/*                                                                          */
+/* function declarations                                                    */
+/*                                                                          */
+/****************************************************************************/
+
+DOUBLE UG_GlobalSumDOUBLE (DOUBLE x);
+
 #endif /* __PARGM_H__ */
