@@ -91,7 +91,7 @@
 #include "tool4"
 #include "tool5"
 #include "tool6"
-#include "shades.ct"
+#include "shades.h"
 
 /****************************************************************************/
 /*																			*/
