@@ -38,10 +38,17 @@
 #include "misc.h"
 #include "ugenv.h"
 #include "defaults.h"
+#include "debug.h"
 
 /* dev module */
 #include "devices.h"
 #include "initdev.h"
+
+/* dddif module */
+#ifdef ModelP
+#include "ppif.h"
+#endif
+
 
 /****************************************************************************/
 /*																			*/
@@ -598,8 +605,16 @@ INT InitDevices (int argc, char **argv)
   theOutputDevVarID = GetNewEnvVarID();
 
   /* init screen device */
+        #ifdef ModelP
+  if (me == master)
+  {
+        #endif
   defaultOuputDevice = InitScreen(argc,argv,&error);
   if (error) return(1);
+        #ifdef ModelP
+}
+        #endif
+
 
   /* init metafile device */
   InitMeta();

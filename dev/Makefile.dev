@@ -8,11 +8,12 @@
 
 # load architecture dependent makefile	
 include ../ug.arch
+include ../ug.conf
 
 # architecture-dependent makefile entries
 include ../machines/mk.$(ARCHDIR)
 
-LCFLAGS = -I../low
+LCFLAGS = -I../low -I../dddif
 
 # select your devices: one of XIF or SIF, META is optional
 DEVICES = XIF META
@@ -22,7 +23,7 @@ all : $(OBJECTS) $(DEVICES) Makefile.dev
 	ar $(ARFLAGS) ../lib/libdev.a $(OBJECTS)
 
 .c.o:
-	$(CC) $(CFLAGS) $(LCFLAGS) $<
+	$(CC) $(UGDEFINES) $(CFLAGS) $(LCFLAGS) $<
 
 XIF:
 	cd xif; make -f Makefile.xif; cd ..;
