@@ -322,6 +322,9 @@ INT l_lsor                      (GRID *g, const VECDATA_DESC *v, const MATDATA_D
 INT l_lgs_SB            (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
 INT l_tplgs_SB          (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
 INT l_ugs_SB            (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
+INT l_luiter_SB         (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
+INT l_tpluiter_SB       (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
+INT l_ilubdecomp_SB     (BLOCKVECTOR *theBV, const MATDATA_DESC *M, const VEC_SCALAR beta);
 
 
 INT l_ilubthdecomp      (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VEC_SCALAR threshold, const VECDATA_DESC *rest, const VEC_SCALAR oldrestthresh);
