@@ -48,6 +48,15 @@
 /*																			*/
 /****************************************************************************/
 
+/* a data type for returning the status of the computation                  */
+typedef struct {
+  INT error_code;                           /* error code                       */
+  INT nel;                                  /* number of surface elements       */
+  INT refine;                               /* nb. el. marked for refinement    */
+  INT coarse;                               /* nb. el. marked for coarsening    */
+  DOUBLE error;                             /* error estimate                   */
+} ERESULT;
+
 struct np_error {
 
   NP_BASE base;                              /* inherits base class             */
@@ -65,7 +74,7 @@ struct np_error {
     (struct np_error *,                      /* pointer to (derived) object     */
     INT,                                         /* level                           */
     VECDATA_DESC *,                              /* solution vector                 */
-    INT *);                                      /* result                          */
+    ERESULT *);                                  /* result                          */
   INT (*TimeError)
     (struct np_error *,                      /* pointer to (derived) object     */
     INT,                                         /* level                           */
@@ -73,7 +82,7 @@ struct np_error {
     DOUBLE *,                                    /* time step                       */
     VECDATA_DESC *,                              /* solution vector                 */
     VECDATA_DESC *,                              /* old solution vector             */
-    INT *);                                      /* result                          */
+    ERESULT *);                                  /* result                          */
   INT (*PostProcess)
     (struct np_error *,                      /* pointer to (derived) object     */
     INT,                                         /* level                           */
@@ -84,9 +93,9 @@ typedef struct np_error NP_ERROR;
 typedef INT (*PreProcessErrorProcPtr)                                       \
   (NP_ERROR *, INT, INT *);
 typedef INT (*ErrorProcPtr)                                                 \
-  (NP_ERROR *, INT, VECDATA_DESC *, VECDATA_DESC *, INT *);
+  (NP_ERROR *, INT, VECDATA_DESC *, VECDATA_DESC *, ERESULT *);
 typedef INT (*TimeErrorProcPtr)                                             \
-  (NP_ERROR *, INT, DOUBLE, DOUBLE *, VECDATA_DESC *, VECDATA_DESC *, INT *);
+  (NP_ERROR *, INT, DOUBLE, DOUBLE *, VECDATA_DESC *, VECDATA_DESC *, ERESULT *);
 typedef INT (*PostProcessErrorProcPtr)                                      \
   (NP_ERROR *, INT, INT *);
 
@@ -104,7 +113,7 @@ typedef INT (*PostProcessErrorProcPtr)                                      \
 
 INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
                       DOUBLE refine, DOUBLE coarse, INT project,
-                      INT from, INT to, INT clear);
+                      INT from, INT to, INT clear, ERESULT *eresult);
 
 /* generic init function for Error num procs */
 INT NPErrorInit (NP_ERROR *theNP, INT argc , char **argv);

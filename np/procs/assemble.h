@@ -197,8 +197,13 @@ INT NPLocalAssembleInit (NP_LOCAL_ASSEMBLE *theNP, INT argc , char **argv);
 /* generic display function for LocalAssemble num procs */
 INT NPLocalAssembleDisplay (NP_LOCAL_ASSEMBLE *theNP);
 
+/* modification of the matrix for Dirichlet values */
+INT NPLocalAssemblePostProcess (NP_LOCAL_ASSEMBLE *theNP, INT level,
+                                VECDATA_DESC *x,
+                                VECDATA_DESC *b, MATDATA_DESC *A, INT *result);
+
 /* generic construction of NP_ASSEMBLE from NP_LOCAL_ASSEMBLE */
-INT LocalAssembleConstruct (NP_ASSEMBLE *theNP);
+INT NPLocalAssembleConstruct (NP_ASSEMBLE *theNP);
 
 /* create standard Assemble num proc type
    INT InitAssemble (void); */

@@ -301,7 +301,7 @@ static INT AssemblePreProcess (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
   NP_LOCAL_ASSEMBLE *np;
 
   np = (NP_LOCAL_ASSEMBLE *) theNP;
-  if ((*np->PreProcess)(np,level,x,b,A,&sol,&mat,&def,&vecskip,result)) {
+  if ((*np->PreProcess)(np,level,x,b,A,&sol,&def,&mat,&vecskip,result)) {
     UserWriteF("PreProcess failed, error code %d\n",result[0]);
     return (1);
   }
@@ -376,15 +376,31 @@ static INT AssemblePostProcess (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
   NP_LOCAL_ASSEMBLE *np;
 
   np = (NP_LOCAL_ASSEMBLE *) theNP;
-  if ((*np->PostProcess)(np,level,x,b,A,result)) {
-    UserWriteF("PreProcess failed, error code %d\n",result[0]);
-    return (1);
-  }
+  if (np->PostProcess != NULL)
+    if ((*np->PostProcess)(np,level,x,b,A,result)) {
+      UserWriteF("PostProcess failed, error code %d\n",result[0]);
+      return (1);
+    }
   UserWrite("\n");
+
   return(0);
 }
 
-INT LocalAssembleConstruct (NP_ASSEMBLE *np)
+INT NPLocalAssemblePostProcess (NP_LOCAL_ASSEMBLE *theNP, INT level,
+                                VECDATA_DESC *x,
+                                VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  INT lev;
+
+  for (lev=0; lev<=level; lev++)
+    AssembleDirichletBoundary(GRID_ON_LEVEL(theNP->assemble.base.mg,lev),
+                              A,x,b);
+  UserWrite(" [d]");
+
+  return(0);
+}
+
+INT NPLocalAssembleConstruct (NP_ASSEMBLE *np)
 {
   np->PreProcess = AssemblePreProcess;
   np->Assemble = Assemble;

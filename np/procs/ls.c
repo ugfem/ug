@@ -165,7 +165,7 @@ INT NPLinearSolverInit (NP_LINEAR_SOLVER *np, INT argc , char **argv)
   np->b = ReadArgvVecDesc(np->base.mg,"b",argc,argv);
   if (sc_read(np->abslimit,np->x,"abslimit",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++)
-      np->abslimit[i] = 1.0;
+      np->abslimit[i] = ABS_LIMIT;
   if (sc_read(np->reduction,NULL,"red",argc,argv))
     return(NP_ACTIVE);
 
@@ -263,7 +263,7 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
       return (1);
     }
     if ((*np->Solver)(np,level,np->x,np->b,np->A,
-                      np->reduction,np->abslimit,&lresult)) {
+                      np->abslimit,np->reduction,&lresult)) {
       UserWriteF("NPLinearSolverExecute: Solver failed, error code %d\n",
                  lresult.error_code);
       return (1);
@@ -340,7 +340,7 @@ static INT LinearSolverPreProcess (NP_LINEAR_SOLVER *theNP, INT level,
   np = (NP_LS *) theNP;   if (np->Iter->PreProcess != NULL)
     if ((*np->Iter->PreProcess)(np->Iter,level,x,b,A,baselevel,result))
       return(1);
-  np->baselevel = *baselevel;
+  np->baselevel = MIN(*baselevel,level);
 
   return(0);
 }
@@ -409,7 +409,7 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
       return (1);
 
   /* print defect */
-  CenterInPattern(text,DISPLAY_WIDTH," Linear Solver ",'*',"\n");
+  CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
   if (PreparePCR(x,np->display,text,&PrintID)) {
     lresult->error_code = __LINE__;
     return(1);
@@ -458,6 +458,11 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
   if (np->Close != NULL)
     if ((*np->Close)(np,level,&lresult->error_code))
       return (1);
+  if (PostPCR(PrintID,NULL)) {
+    lresult->error_code = __LINE__;
+    return (1);
+  }
+
   return (0);
 }
 

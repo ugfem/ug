@@ -34,6 +34,7 @@
 
 #include "general.h"
 #include "gm.h"
+#include "algebra.h"
 #include "scan.h"
 #include "numproc.h"
 #include "np.h"
@@ -64,10 +65,7 @@ struct np_smoother {
   NP_ITER iter;
 
   VEC_SCALAR damp;
-  INT n;
-
   MATDATA_DESC *L;
-  VECDATA_DESC *t;
 
   INT (*Step)
     (struct np_smoother *,                   /* pointer to (derived) object     */
@@ -75,7 +73,6 @@ struct np_smoother {
     VECDATA_DESC *,                              /* correction vector               */
     VECDATA_DESC *,                              /* defect vector                   */
     MATDATA_DESC *,                              /* matrix                          */
-    VECDATA_DESC *,                              /* temporary vector                */
     MATDATA_DESC *,                              /* temporary matrix                */
     INT *);                                      /* result                          */
 };
@@ -165,7 +162,7 @@ INT NPIterInit (NP_ITER *np, INT argc , char **argv)
 {
   np->A = ReadArgvMatDesc(np->base.mg,"A",argc,argv);
   np->c = ReadArgvVecDesc(np->base.mg,"c",argc,argv);
-  np->b = ReadArgvVecDesc(np->base.mg,"b",argc,argv);
+  np->b = ReadArgvVecDesc(np->base.mg,"r",argc,argv);
 
   if ((np->A == NULL) || (np->b == NULL) || (np->c == NULL))
     return(NP_ACTIVE);
@@ -181,7 +178,7 @@ INT NPIterDisplay (NP_ITER *np)
   if (np->A != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"A",ENVITEM_NAME(np->A));
   if (np->b != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"b",ENVITEM_NAME(np->b));
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"r",ENVITEM_NAME(np->b));
   if (np->c != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"c",ENVITEM_NAME(np->c));
   UserWrite("\n");
@@ -259,10 +256,7 @@ static INT SmootherInit (NP_BASE *theNP, INT argc , char **argv)
 
   for (i=0; i<MAX_VEC_COMP; i++) np->damp[i] = 1.0;
   sc_read(np->damp,np->iter.b,"damp",argc,argv);
-  if (ReadArgvINT("n",&(np->n),argc,argv))
-    np->n = 1;
   np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
-  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
 
   return (NPIterInit(&np->iter,argc,argv));
 }
@@ -275,11 +269,8 @@ static INT SmootherDisplay (NP_BASE *theNP)
   NPIterDisplay(&np->iter);
   UserWrite("configuration parameters:\n");
   if (sc_disp(np->damp,np->iter.b,"damp")) return (1);
-  UserWriteF(DISPLAY_NP_FORMAT_SI,"n",(int)np->n);
   if (np->L != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"L",ENVITEM_NAME(np->L));
-  if (np->t != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
 
   return (0);
 }
@@ -322,34 +313,23 @@ static INT Smoother (NP_ITER *theNP, INT level,
 
   np = (NP_SMOOTHER *) theNP;
   theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
-  if (AllocVDFromVD(theNP->base.mg,level,level,x,&np->t)) {
+  if ((*np->Step)(np,level,x,b,A,np->L,result))
+    return (1);
+    #ifdef ModelP
+  if (l_vector_consistent(theGrid,x) != NUM_OK) {
     result[0] = __LINE__;
-    return(1);
+    return (1);
   }
-  for (i=0; i<np->n; i++) {
-    if ((*np->Step)(np,level,x,b,A,np->t,np->L,result))
-      return (1);
-        #ifdef ModelP
-    if (l_vector_consistent(theGrid,np->t) != NUM_OK) {
-      result[0] = __LINE__;
-      return (1);
-    }
-        #endif
-    if (l_dscale(theGrid,np->t,ACTIVE_CLASS,np->damp) != NUM_OK) {
-      result[0] = __LINE__;
-      return (1);
-    }
-    if (l_daxpy(theGrid,x,ACTIVE_CLASS,Factor_One,np->t) != NUM_OK) {
-      result[0] = __LINE__;
-      return (1);
-    }
-    if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,np->t,ACTIVE_CLASS)
-        != NUM_OK) {
-      result[0] = __LINE__;
-      return (1);
-    }
+    #endif
+  if (l_dscale(theGrid,x,ACTIVE_CLASS,np->damp) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
   }
-  FreeVD(theNP->base.mg,level,level,np->t);
+  if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,x,ACTIVE_CLASS)
+      != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
 
   return (0);
 }
@@ -399,16 +379,16 @@ static INT SmootherPostProcess (NP_ITER *theNP, INT level,
 
 static INT JacobiStep (NP_SMOOTHER *theNP, INT level,
                        VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                       VECDATA_DESC *t, MATDATA_DESC *L,
+                       MATDATA_DESC *L,
                        INT *result)
 {
     #ifdef ModelP
-  if (l_jac(GRID_ON_LEVEL(theNP->iter.base.mg,level),t,L,b) != NUM_OK) {
+  if (l_jac(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,L,b) != NUM_OK) {
     result[0] = __LINE__;
     return (1);
   }
     #else
-  if (l_jac(GRID_ON_LEVEL(theNP->iter.base.mg,level),t,A,b) != NUM_OK) {
+  if (l_jac(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,A,b) != NUM_OK) {
     result[0] = __LINE__;
     return (1);
   }
@@ -466,16 +446,16 @@ static INT JacobiConstruct (NP_BASE *theNP)
 
 static INT GSStep (NP_SMOOTHER *theNP, INT level,
                    VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                   VECDATA_DESC *t, MATDATA_DESC *L,
+                   MATDATA_DESC *L,
                    INT *result)
 {
     #ifdef ModelP
-  if (l_lgs(GRID_ON_LEVEL(theNP->iter.base.mg,level),t,L,b) != NUM_OK) {
+  if (l_lgs(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,L,b) != NUM_OK) {
     result[0] = __LINE__;
     return (1);
   }
     #else
-  if (l_lgs(GRID_ON_LEVEL(theNP->iter.base.mg,level),t,A,b) != NUM_OK) {
+  if (l_lgs(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,A,b) != NUM_OK) {
     result[0] = __LINE__;
     return (1);
   }
@@ -566,7 +546,7 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
   np = (NP_ILU *) theNP;
 
   if (SmootherPreProcess(theNP,level,x,b,A,baselevel,result))
-    return (1);
+    return(1);
   theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
   if (l_setindex(theGrid)) {
     result[0] = __LINE__;
@@ -593,7 +573,7 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
 
 static INT ILUStep (NP_SMOOTHER *theNP, INT level,
                     VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                    VECDATA_DESC *t, MATDATA_DESC *L,
+                    MATDATA_DESC *L,
                     INT *result)
 {
     #ifdef ModelP
@@ -602,7 +582,7 @@ static INT ILUStep (NP_SMOOTHER *theNP, INT level,
     return (1);
   }
     #endif
-  if (l_luiter(GRID_ON_LEVEL(theNP->iter.base.mg,level),t,L,b) != NUM_OK) {
+  if (l_luiter(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,L,b) != NUM_OK) {
     result[0] = __LINE__;
     return (1);
   }
@@ -743,13 +723,13 @@ static INT LUConstruct (NP_BASE *theNP)
    This numproc executes
 
    .vb
-   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
+   npinit [$c <cor>] [$r <rhs>] [$A <mat>]
        $S <pre post base> $T <transfer>
        [$b <baselevel>] [$g <gamma>] [$n1 <it>] [$n2 <it>]
    .ve
 
    .  $c~<sol> - correction vector
-   .  $b~<rhs> - right hand side vector
+   .  $r~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
    .  $T~<transfer> - transfer numproc
    .  $S~<pre~post~base> - numprocs for pre- and postsmoother, base solver
@@ -872,11 +852,11 @@ static INT LmgcPreProcess  (NP_ITER *theNP, INT level,
               (np->PostSmooth,i,x,b,A,baselevel,result))
           return(1);
 
+  *baselevel = MIN(np->baselevel,level);
   if (np->BaseSolver->PreProcess != NULL)
     if ((*np->BaseSolver->PreProcess)
-          (np->BaseSolver,np->baselevel,x,b,A,baselevel,result))
+          (np->BaseSolver,*baselevel,x,b,A,baselevel,result))
       return(1);
-  *baselevel = np->baselevel;
 
   return (0);
 }
@@ -887,6 +867,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
 {
   NP_LMGC *np;
   MULTIGRID *theMG;
+  GRID *theGrid;
   LRESULT lresult;
   INT i;
 
@@ -908,40 +889,49 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   }
 
   theMG = theNP->base.mg;
-  for (i=0; i<np->nu1; i++)
-    if ((*np->PreSmooth->Iter)(np->PreSmooth,level,c,b,A,result))
+  theGrid = GRID_ON_LEVEL(theMG,level);
+  if (AllocVDFromVD(theMG,level,level,c,&np->t)) {
+    result[0] = __LINE__;
+    return(1);
+  }
+  for (i=0; i<np->nu1; i++) {
+    if ((*np->PreSmooth->Iter)(np->PreSmooth,level,np->t,b,A,result))
       return(1);
+    if (l_daxpy(theGrid,c,ACTIVE_CLASS,Factor_One,np->t) != NUM_OK) {
+      result[0] = __LINE__;
+      return (1);
+    }
+  }
   if ((*np->Transfer->RestrictDefect)
         (np->Transfer,level,b,b,A,Factor_One,result))
     return(1);
-  if (l_dset(GRID_ON_LEVEL(theMG,level-1),c,EVERY_CLASS,0.0) != NUM_OK) {
+  if (l_dset(DOWNGRID(theGrid),c,EVERY_CLASS,0.0) != NUM_OK) {
     result[0] = __LINE__;
     return(1);
   }
   for (i=0; i<np->gamma; i++)
     if (Lmgc(theNP,level-1,c,b,A,result))
       return(1);
-  if (AllocVDFromVD(theMG,level,level,c,&np->t)) {
-    result[0] = __LINE__;
-    return(1);
-  }
   if ((*np->Transfer->InterpolateCorrection)
         (np->Transfer,level,np->t,c,A,Factor_One,result))
     return(1);
-  if (l_daxpy  (GRID_ON_LEVEL(theMG,level),c,EVERY_CLASS,Factor_One,np->t)
-      != NUM_OK) {
+  if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK) {
     result[0] = __LINE__;
     return(1);
   }
-  if (l_dmatmul_minus(GRID_ON_LEVEL(theMG,level),b,2,A,np->t,EVERY_CLASS)
-      != NUM_OK) {
+  if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,np->t,EVERY_CLASS) != NUM_OK) {
     result[0] = __LINE__;
     return(1);
   }
-  FreeVD(theMG,level,level,np->t);
-  for (i=0; i<np->nu1; i++)
-    if ((*np->PostSmooth->Iter)(np->PostSmooth,level,c,b,A,result))
+  for (i=0; i<np->nu2; i++) {
+    if ((*np->PostSmooth->Iter)(np->PostSmooth,level,np->t,b,A,result))
       return(1);
+    if (l_daxpy(theGrid,c,ACTIVE_CLASS,Factor_One,np->t) != NUM_OK) {
+      result[0] = __LINE__;
+      return (1);
+    }
+  }
+  FreeVD(theNP->base.mg,level,level,np->t);
   if (np->Transfer->AdaptCorrection != NULL)
     if ((*np->Transfer->AdaptCorrection)(np->Transfer,level,c,b,A,result))
       return(1);

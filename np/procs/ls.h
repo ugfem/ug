@@ -60,7 +60,7 @@ typedef struct {
 struct np_linear_solver {
   NP_BASE base;                              /* inherits base class             */
 
-  /* data (optinal, necessary for calling the generic execute routine)    */
+  /* data (optional, necessary for calling the generic execute routine)   */
   VECDATA_DESC *x;                       /* solution                        */
   VECDATA_DESC *b;                       /* defect                          */
   MATDATA_DESC *A;                       /* matrix                          */

@@ -399,21 +399,21 @@ static INT TransferDisplay (NP_BASE *theNP)
 }
 
 static INT TransferPreProcess (NP_TRANSFER *theNP, INT level,
-                               VECDATA_DESC *from, VECDATA_DESC *to,
+                               VECDATA_DESC *x, VECDATA_DESC *b,
                                MATDATA_DESC *A, INT *baselevel, INT *result)
 {
   return(0);
 }
 
 static INT RestrictDefect (NP_TRANSFER *theNP, INT level,
-                           VECDATA_DESC *from, VECDATA_DESC *to,
+                           VECDATA_DESC *to, VECDATA_DESC *from,
                            MATDATA_DESC *A, VEC_SCALAR damp,
                            INT *result)
 {
   NP_STANDARD_TRANSFER *np;
 
   np = (NP_STANDARD_TRANSFER *) theNP;
-  result[0] = (*np->res)(GRID_ON_LEVEL(theNP->base.mg,level),from,to,damp);
+  result[0] = (*np->res)(GRID_ON_LEVEL(theNP->base.mg,level),to,from,damp);
 
     #ifdef ModelP
   if (l_ghostvector_collect(GRID_ON_LEVEL(theNP->base.mg,level-1),to)
@@ -427,14 +427,14 @@ static INT RestrictDefect (NP_TRANSFER *theNP, INT level,
 }
 
 static INT InterpolateCorrection (NP_TRANSFER *theNP, INT level,
-                                  VECDATA_DESC *from, VECDATA_DESC *to,
+                                  VECDATA_DESC *to, VECDATA_DESC *from,
                                   MATDATA_DESC *A, VEC_SCALAR damp,
                                   INT *result)
 {
   NP_STANDARD_TRANSFER *np;
 
   np = (NP_STANDARD_TRANSFER *) theNP;
-  result[0] = (*np->intcor)(GRID_ON_LEVEL(theNP->base.mg,level),from,to,damp);
+  result[0] = (*np->intcor)(GRID_ON_LEVEL(theNP->base.mg,level),to,from,damp);
     #ifdef ModelP
   if (np->meanvalue)
     if (l_vector_meanvalue(GRID_ON_LEVEL(theNP->base.mg,level),to)

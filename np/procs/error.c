@@ -141,6 +141,7 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
   NP_ERROR *np;
   DOUBLE Time,step;
   INT result,level;
+  ERESULT eresult;
 
   np = (NP_ERROR *) theNP;
   level = CURRENTLEVEL(theNP->mg);
@@ -162,19 +163,19 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadArgvOption("E",argc,argv)) {
+  if (ReadArgvOption("e",argc,argv)) {
     if (np->Error == NULL) {
       PrintErrorMessage('E',"NPErrorExecute","no PreProcess");
       return (1);
     }
-    if ((*np->Error)(np,level,np->x,&result)) {
+    if ((*np->Error)(np,level,np->x,&eresult)) {
       UserWriteF("NPErrorExecute: Error failed, error code %d\n",
-                 result);
+                 eresult.error_code);
       return (1);
     }
   }
 
-  if (ReadArgvOption("T",argc,argv)) {
+  if (ReadArgvOption("t",argc,argv)) {
     if (np->TimeError == NULL) {
       PrintErrorMessage('E',"NPErrorExecute","no PreProcess");
       return (1);
@@ -191,9 +192,9 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPErrorExecute","no time step");
       return (1);
     }
-    if ((*np->TimeError)(np,level,Time,&step,np->x,np->o,&result)) {
+    if ((*np->TimeError)(np,level,Time,&step,np->x,np->o,&eresult)) {
       UserWriteF("NPErrorExecute: PreProcess failed, error code %d\n",
-                 result);
+                 eresult.error_code);
       return (1);
     }
   }
@@ -313,7 +314,7 @@ static DOUBLE ElementIndicator (ELEMENT *t, INT ncomp, VECDATA_DESC *theVD)
 
 INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
                       DOUBLE refine, DOUBLE coarse, INT project,
-                      INT from, INT to, INT clear)
+                      INT from, INT to, INT clear, ERESULT *eresult)
 {
   ELEMENT *t;
   COORD *List,min,max,est,rf,cr;
@@ -401,7 +402,11 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
   UserWrite("\n");
 
   /* return number of flagged elements */
-  return(mfc+mfr);
+  eresult->nel = nel;
+  eresult->refine = mfr;
+  eresult->coarse = mfc;
+
+  return(0);
 }
 
 static INT IndicatorInit (NP_BASE *theNumProc, INT argc, char **argv)
@@ -441,7 +446,8 @@ static INT IndicatorDisplay (NP_BASE *theNumProc)
   return(0);
 }
 
-static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x, INT *result)
+static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x,
+                      ERESULT *eresult)
 {
   NP_INDICATOR *np;
   MULTIGRID *theMG;
@@ -452,15 +458,15 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x, INT *result)
   theMG = theNP->base.mg;
 
   if (SurfaceIndicator(theMG,x,np->refine,np->coarse,
-                       np->project,np->from,np->to,np->clear) == -1) {
-    result[0] = __LINE__;
+                       np->project,np->from,np->to,np->clear,eresult) == -1) {
+    eresult->error_code = __LINE__;
     return(1);
   }
   i = 0;
   if (np->update) {
     i = 1;
     if (RefineMultiGrid(theMG,GM_REFINE_TRULY_LOCAL) != GM_OK) {
-      result[0] = __LINE__;
+      eresult->error_code = __LINE__;
       return(1);
     }
     UserWrite("[r]");
@@ -472,7 +478,7 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x, INT *result)
         GSTATUS(theGrid) &= 0xFFFFFFFE;
         if (StandardInterpolateNewVectors
               (theGrid,(const VECDATA_DESC *)x) != NUM_OK) {
-          result[0] = __LINE__;
+          eresult->error_code = __LINE__;
           return(1);
         }
         UserWriteF(" [i%d]",i);
@@ -487,7 +493,7 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x, INT *result)
 static INT IndicatorExecute (NP_BASE *theNumProc, INT argc, char **argv)
 {
   NP_INDICATOR *theNP;
-  INT result;
+  ERESULT eresult;
 
   theNP = (NP_INDICATOR*)theNumProc;
 
@@ -497,8 +503,8 @@ static INT IndicatorExecute (NP_BASE *theNumProc, INT argc, char **argv)
   theNP->interpolate = ReadArgvOption("i",argc,argv);
 
   if (Indicator(&theNP->error,CURRENTLEVEL(theNumProc->mg),
-                theNP->error.x,&result)) {
-    UserWriteF("Indicator failed, error code %d\n",result);
+                theNP->error.x,&eresult)) {
+    UserWriteF("Indicator failed, error code %d\n",eresult.error_code);
     return (1);
   }
 
