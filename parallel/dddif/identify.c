@@ -93,13 +93,11 @@ static INT ce_NIDENT;
 #define NIDENT(p)                     CW_READ(p,ce_NIDENT)
 #define SETNIDENT(p,n)                CW_WRITE(p,ce_NIDENT,n)
 
-#ifdef __THREEDIM__
 /* temp edge flag for Identification */
 static INT ce_EDIDENT;
 #define EDIDENT_LEN                   1
 #define EDIDENT(p)                    CW_READ(p,ce_EDIDENT)
 #define SETEDIDENT(p,n)               CW_WRITE(p,ce_EDIDENT,n)
-#endif
 
 /* this function is called for low level identification */
 static INT (*Ident_FctPtr)(DDD_HDR *IdentObjectHdr, INT nobject,
