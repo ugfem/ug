@@ -47,6 +47,11 @@
 
 #define T_STEP_CLASS_NAME "tstep"
 
+#define INIT_TSTEPRESULT(t) t.converged=0;t.number_of_nonlinear_iterations=0;\
+  t.number_of_linear_iterations=0;                 \
+  t.max_linear_iterations=0;                       \
+  t.exec_time=0.0;
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported data structures									*/
