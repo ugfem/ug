@@ -276,7 +276,7 @@ static INT AVSCommand (INT argc, char **argv)
   const SHORT *comp;
   time_t ltime;
   double scaling=1.0;
-  INT oe,on;
+  INT oe,on,n;
 
 
   /* get current multigrid */
@@ -292,9 +292,9 @@ static INT AVSCommand (INT argc, char **argv)
   zcoord = NULL;
   displacement = ReadArgvVecDesc(mg,"displacement",argc,argv);
   if (displacement != NULL) {
-    if (VD_NCMPS_IN_TYPE(displacement,NODEVECTOR) < DIM)
+    comp = VD_ncmp_cmpptr_of_otype(displacement,NODEVEC,&n);
+    if (n < DIM)
       return(CMDERRORCODE);
-    comp = VD_CMPPTR_OF_TYPE(displacement,NODEVECTOR);
     if (ReadArgvDOUBLE("scale",&scale,argc,argv))
       scale = 1.0;
   }
