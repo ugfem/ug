@@ -610,7 +610,7 @@ static int ScatterClusterNumber (DDD_OBJ theCoupling, void *data)
 		while (cptr->edges[i]!=0 && i<=SIDES_OF_ELEM(theElement)) i++;
 		if (i>SIDES_OF_ELEM(theElement)) 
 		{
-			sprintf(buffer,"ScatterClusterNumber: #neighbors=%d, i=%d", TAG(theElement),i);  
+			sprintf(buffer,"ScatterClusterNumber: neighbors=%d, i=%d", TAG(theElement),i);  
 			UserWrite(buffer);
 			return(1);
 		}
