@@ -3464,56 +3464,48 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
   InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / BVPD_RADIUS(theBVPDesc);
 
   /* allocate memory for the node list */
+  if (which==0) return (99);
+  takeSkip        = which & GM_TAKE_SKIP;
+  takeNonSkip     = which & GM_TAKE_NONSKIP;
+  entries = 0;
+  for (theVec=FIRSTVECTOR(theGrid); theVec!=NULL; theVec=SUCCVC(theVec))
+    if ((takeSkip && VECSKIP(theVec)) || (takeNonSkip && !VECSKIP(theVec)))
+      entries++;
+  if (entries < 2) return(0);
   theHeap = MGHEAP(theMG);
-  Mark(theHeap,FROM_TOP);
-  if ((table=GetMem(theHeap,entries*sizeof(NODE *),FROM_TOP))==NULL)
+  MarkTmpMem(theHeap);
+  if ((table=GetTmpMem(theHeap,entries*sizeof(VECTOR *)))==NULL)
   {
-    Release(theHeap,FROM_TOP);
+    ReleaseTmpMem(theHeap);
     PrintErrorMessage('E',"LexOrderVectorsInGrid",
                       "could not allocate memory from the MGHeap");
     return (2);
   }
-  if (which==0) return (99);
-
-  takeSkip        = which & GM_TAKE_SKIP;
-  takeNonSkip     = which & GM_TAKE_NONSKIP;
-
-  ASSERT(entries == NVEC(theGrid));
   /* fill array of pointers to nodes */
   entries = 0;
   for (theVec=FIRSTVECTOR(theGrid); theVec!=NULL; theVec=SUCCVC(theVec))
-    if ((takeSkip && VECSKIP(theVec)) || (takeNonSkip && !VECSKIP(theVec)))
+    if ((takeSkip && VECSKIP(theVec))||(takeNonSkip && !VECSKIP(theVec)))
       table[entries++] = theVec;
 
   /* sort array of pointers */
   Order = order;
   Sign  = sign;
   SkipV = SpecSkipVecs;
-  qsort(table,entries,sizeof(*table),(int (*)(const void *, const void *))LexCompare);
+  qsort(table,entries,sizeof(*table),
+        (int (*)(const void *, const void *))LexCompare);
 
-  for (theVec=FIRSTVECTOR(theGrid); theVec!=NULL; theVec=SUCCVC(theVec))
-    if (!((takeSkip && VECSKIP(theVec)) || (takeNonSkip && !VECSKIP(theVec))))
-      table[entries++] = theVec;
+  for (i=0; i<entries; i++)
+    GRID_UNLINK_VECTOR(theGrid,table[i]);
 
-  /* reorder double linked list */
-  for (i=0; i<entries-1; i++)
-    SUCCVC(table[i]) = table[i+1];
-
-  for (i=1; i<entries; i++)
-  {
+  for (i=0; i<entries; i++) {
     INDEX(table[i]) = i;
-    PREDVC(table[i]) = table[i-1];
+        #ifdef ModelP
+    GRID_LINK_VECTOR(theGrid,table[i],DDD_InfoPriority(PARHDR(table[i])));
+        #else
+    GRID_LINK_VECTOR(theGrid,table[i],PrioMaster);
+            #endif
   }
-  INDEX(table[0]) = 0;
-
-  SUCCVC(table[entries-1])  = NULL;
-  PREDVC(table[0]) = NULL;
-
-  SFIRSTVECTOR(theGrid) = table[0];
-  LASTVECTOR(theGrid)  = table[entries-1];
-
-
-  Release(theHeap,FROM_TOP);
+  ReleaseTmpMem(theHeap);
 
   if (!AlsoOrderMatrices)
     return (0);
@@ -3530,7 +3522,8 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
 
       MatTable[nm++] = theMat;
     }
-    qsort(MatTable+1,nm-1,sizeof(LINK*),(int (*)(const void *, const void *))MatrixCompare);
+    qsort(MatTable+1,nm-1,sizeof(*MatTable),
+          (int (*)(const void *, const void *))MatrixCompare);
 
     /* establish pointer connections */
     MNEXT(MatTable[--nm]) = NULL;
