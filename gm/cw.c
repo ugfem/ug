@@ -892,13 +892,12 @@ void WriteCW (void *obj, INT ceID, INT n)
   cw_objt = BITWISE_TYPE(OBJT(obj));
 
   /* special: SETOBJT cannot be checked */
-  if (cw_objt==BITWISE_TYPE(0))
-  {
+  if (cw_objt==BITWISE_TYPE(0)) {
     if (ceID!=OBJ_CE)
-    {
-      printf("WriteCW: objt 0 but no SETOBJT access\n");
-      assert(FALSE);
-    }
+      if (cw_objt != ce->objt_used) {
+        printf("WriteCW: objt 0 but no SETOBJT access\n");
+        assert(FALSE);
+      }
   }
   else if (!(cw_objt & ce->objt_used))
   {
@@ -1114,7 +1113,9 @@ INT InitCW (void)
   if (InitPredefinedControlEntries())
     return (__LINE__);
 
+        #ifdef _DEBUG_CW_
   ResetCEstatistics();
+        #endif
 
   return (GM_OK);
 }
