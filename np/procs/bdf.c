@@ -544,6 +544,13 @@ Continue:
             }
             if (mg_changed)
             {
+
+              for (i=0; i<=level; i++)
+                                  #ifndef ModelP
+                CheckGrid(GRID_ON_LEVEL(mg,i),1,1,1);
+                                  #else
+                CheckGrid(GRID_ON_LEVEL(mg,i),1,1,1,1);
+                                  #endif
               k = level - 1;
               if (bdf->trans->PreProcessSolution != NULL)
                 if ((*bdf->trans->PreProcessSolution)
