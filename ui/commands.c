@@ -3379,13 +3379,14 @@ static INT RuleListCommand (INT argc, char **argv)
    This command lists information on specified vectors and matrices, calling
    the functions 'ListVectorRange' and 'ListVectorSelection'.
 
-   'vmlist {$s | $i <fromID> [<toID>] | $g <global id> | $k <key>} [$m] [$d] [$a] [$l <f> <t>] [$pos 0|1] [$obj 0|1]'
+   'vmlist {$s | $i <fromID> [<toID>] | $g <global id> | $k <key>} [$t <dt-list>] [$m] [$d] [$a] [$l <f> <t>] [$pos 0|1] [$obj 0|1]'
 
    .  $s			- list info for the selected vectors
    .  $i			- list info for vectors with an ID in the range <fromID> through <toID>
                           if <fromID> is omitted only the vector with <fromID> is listed
    .  $g <glob. id>- list info for vector with global id (only for ModelP)
    .  $k <key>     - list info for vector with key
+   .  $t~<dt-list>	- list only vectors of specified data types (list of chars, no seperator)
 
    .  $m			- list also the associated matrix entries
    .  $d			- list also the user data
