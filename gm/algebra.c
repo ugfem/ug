@@ -2993,7 +2993,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
 
   /* calculate the diameter of the bounding rectangle of the domain */
   theBVP = MG_BVP(theMG);
-  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
+  if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (1);
   InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / BVPD_RADIUS(theBVPDesc);
 
   /* allocate memory for the node list */
@@ -4832,7 +4832,7 @@ static INT LexAlgDep (GRID *theGrid, const char *data)
 
   /* find an approximate measure for the mesh size */
   theBVP = MG_BVP(theMG);
-  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) RETURN (1);
+  if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) RETURN (1);
   InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / BVPD_RADIUS(theBVPDesc);
 
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
@@ -5007,7 +5007,7 @@ static INT StrongLexAlgDep (GRID *theGrid, const char *data)
 
   /* find an approximate measure for the mesh size */
   theBVP = MG_BVP(theMG);
-  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
+  if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (1);
   InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / BVPD_RADIUS(theBVPDesc);
 
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))

@@ -606,7 +606,7 @@ FIFOSTART:
               UserWriteF("CloseGrid(): ERROR edge i=%d of element e=%x not found!",i,theElement);
 
             /* boundary case */
-            if (SIDE(theElement,j) != NULL) continue;
+            if (SIDE_ON_BND(theElement,j)) continue;
 
             /* add the element sharing this edge to fifo_queue */
             NbElement = NBELEM(theElement,j);
@@ -1481,7 +1481,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
       }
       else {
         /* this must be a boundary side */
-        ASSERT(SIDE(theElement,i)!=NULL);
+        ASSERT(SIDE_ON_BND(theElement,i));
       }
       ENDDEBUG
 
@@ -2117,7 +2117,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
   if (Sons_of_Side <= 0) return(GM_OK);
 
   /* connect to boundary */
-  if (OBJT(theElement)==BEOBJ && SIDE(theElement,side)!=NULL) {
+  if (OBJT(theElement)==BEOBJ && SIDE_ON_BND(theElement,side)) {
     /* TODO: connect change test */
     if (!newstyle) return(GM_OK);
 
@@ -2414,7 +2414,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
     nedges = EDGES_OF_SIDE(theElement,i);
 
     bdy = 0;
-    if (OBJT(theElement) == BEOBJ && SIDE(theElement,i)!= NULL)
+    if (OBJT(theElement) == BEOBJ && SIDE_ON_BND(theElement,i))
       bdy = 1;
     nelem = 5*i;
     for (j=nelem; j<(nelem+5); j++)
@@ -2850,10 +2850,8 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
       SETECLASS(sons[i].theSon,GREEN_CLASS);
       SETNSONS(theElement,NSONS(theElement)+1);
       if (i == 0) SET_SON(theElement,0,sons[i].theSon);
-      for (s=0; s<SIDES_OF_ELEM(sons[i].theSon); s++) {
+      for (s=0; s<SIDES_OF_ELEM(sons[i].theSon); s++)
         SET_NBELEM(sons[i].theSon,s,NULL);
-        if (sons[i].bdy == 1) SET_SIDE(sons[i].theSon,s,NULL);
-      }
 
       n++;
     }
@@ -3201,7 +3199,7 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
       for (i=0; i<SIDES_OF_TAG(SON_TAG_OF_RULE(rule,s)); i++) {
         /* TODO: delete special debug */ PRINTELEMID(-2)
         if ( (side = SON_NB_OF_RULE(rule,s,i)) >= FATHER_SIDE_OFFSET )                                  /* exterior side */
-          if (SIDE(theElement,side-FATHER_SIDE_OFFSET)!=NULL)                                           /* at the boundary */
+          if (SIDE_ON_BND(theElement,side-FATHER_SIDE_OFFSET))                                          /* at the boundary */
           {
             boundaryelement = 1;
             break;
@@ -3244,7 +3242,6 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
       if (newstyle || OBJT(SonList[s]) != BEOBJ) continue;
       for (j=0; j<SIDES_OF_ELEM(SonList[s]); j++)
       {
-        SET_SIDE(SonList[s],j,NULL);
         if ((side = SON_NB_OF_RULE(rule,s,j)) < FATHER_SIDE_OFFSET) continue;
         side -= FATHER_SIDE_OFFSET;
         /* TODO: delete this
@@ -3339,7 +3336,8 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
       }
       if(newstyle) continue;
       /* the boundary case */
-      if ((OBJT(SonList[s]) == BEOBJ) && (SIDE(SonList[s],i) != NULL)) continue;
+      if ((OBJT(SonList[s]) == BEOBJ) && SIDE_ON_BND(SonList[s],i))
+        continue;
 
       /* check, if neighbor has been refined */
       side -= FATHER_SIDE_OFFSET;
@@ -4162,7 +4160,7 @@ INT CreateGridOverlap (MULTIGRID *theMG, INT FromLevel)
                              ELEMENT *Sons_of_Side_List[MAX_SONS];
                              INT SonSides[MAX_SIDE_NODES];
                              for (j=0; j<Sons_of_Side; j++)
-                               if ((OBJT(theElement)==BEOBJ && SIDE(theElement,i) != NULL) ||
+                               if ((OBJT(theElement)==BEOBJ && SIDE_ON_BND(theElement,i)) ||
                                    NBELEM(theElement,i) == NULL ||
                                    (prio = DDD_InfoPriority(PARHDRE(NBELEM(theElement,i)))) == PrioGhost)
                                  continue;

@@ -1724,13 +1724,17 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define EFATHER(p)              ((ELEMENT *) (p)->ge.refs[father_offset[TAG(p)]])
 #define SON(p,i)                ((ELEMENT *) (p)->ge.refs[sons_offset[TAG(p)]+(i)])
 #define NBELEM(p,i)     ((ELEMENT *) (p)->ge.refs[nb_offset[TAG(p)]+(i)])
-#define SIDE(p,i)               ((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)])
 #define EVECTOR(p)              ((VECTOR *) (p)->ge.refs[evector_offset[TAG(p)]])
 #define SVECTOR(p,i)    ((VECTOR *) (p)->ge.refs[svector_offset[TAG(p)]+(i)])
-#define ELEMENT_TO_MARK(e)  ((NSONS(e)>1) ? NULL :                         \
-                             (ECLASS(e) == RED_CLASS) ? e :                \
-                             (ECLASS(EFATHER(e)) == RED_CLASS) ?           \
+#define ELEMENT_TO_MARK(e)  ((NSONS(e)>1) ? NULL :                           \
+                             (ECLASS(e) == RED_CLASS) ? e :                    \
+                             (ECLASS(EFATHER(e)) == RED_CLASS) ?               \
                              EFATHER(e) : EFATHER(EFATHER(e)))
+#define SIDE_ON_BND(p,i) (((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)]) != NULL)
+#define INNER_SIDE(p,i) (((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)]) == NULL)
+#define INNER_BOUNDARY(p,i) (0)
+/* TODO: replacind by function call */
+
 
 /* use the following macros to assign values, since definition  */
 /* above is no proper lvalue.									*/
@@ -1739,7 +1743,6 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define SET_SON(p,i,q)          (p)->ge.refs[sons_offset[TAG(p)]+(i)] = q
 #define SET_NBELEM(p,i,q)       (p)->ge.refs[nb_offset[TAG(p)]+(i)] = q
 #define VOID_NBELEM(p,i)        (p)->ge.refs[nb_offset[TAG(p)]+(i)]
-#define SET_SIDE(p,i,q)         (p)->ge.refs[side_offset[TAG(p)]+(i)] = q
 #define SET_EVECTOR(p,q)        (p)->ge.refs[evector_offset[TAG(p)]] = q
 #define SET_SVECTOR(p,i,q)      (p)->ge.refs[svector_offset[TAG(p)]+(i)] = q
 
@@ -1798,20 +1801,6 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define OPPOSITE_EDGE_REF(n,e)            (reference_descriptors[n]->opposite_edge[(e)])
 #define SIDE_OPP_TO_CORNER_REF(n,c)       (reference_descriptors[n]->side_opp_to_corner[(c)])
 #define EDGE_OF_CORNER_REF(n,c,e)         (reference_descriptors[n]->edge_of_corner[(c)][(e)])
-
-
-
-/****************************************************************************/
-/*																			*/
-/* macros for element sides                                                                                             */
-/*																			*/
-/****************************************************************************/
-
-#define SUCCS(p)                (p)->succ
-#define PREDS(p)                (p)->pred
-#define ES_PATCH(p)             (p)->thePatch
-#define PARAM(p,i,j)    (p)->lambda[i][j]
-#define PARAMPTR(p,i)   (p)->lambda[i]
 
 /****************************************************************************/
 /*																			*/
@@ -2104,5 +2093,103 @@ INT             RenumberMultiGrid               (MULTIGRID *theMG);
 INT                     OrderNodesInGrid                (GRID *theGrid, const INT *order, const INT *sign, INT AlsoOrderLinks);
 INT             PutAtStartOfList                (GRID *theGrid, INT cnt, ELEMENT **elemList);
 INT         MGSetVectorClasses      (MULTIGRID *theMG);
+
+
+
+/* will disappear next week */
+
+
+#define SIDE(p,i)               ((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)])
+#define SET_SIDE(p,i,q)         (p)->ge.refs[side_offset[TAG(p)]+(i)] = q
+#define SUCCS(p)                (p)->succ
+#define PREDS(p)                (p)->pred
+#define ES_PATCH(p)             (p)->thePatch
+#define PARAM(p,i,j)    (p)->lambda[i][j]
+#define PARAMPTR(p,i)   (p)->lambda[i]
+
+#define _SIDE(p,i)              ((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)])
+#define _SET_SIDE(p,i,q)        (p)->ge.refs[side_offset[TAG(p)]+(i)] = q
+#define _SUCCS(p)               (p)->succ
+#define _PREDS(p)               (p)->pred
+#define _ES_PATCH(p)            (p)->thePatch
+#define _PARAM(p,i,j)   (p)->lambda[i][j]
+#define _PARAMPTR(p,i)  (p)->lambda[i]
+
+
+#ifdef __TWODIM__
+
+#define SideBndCond(t,side,l,v,type)     {      ELEMENTSIDE *theSide;\
+                                                PATCH *thePatch;  \
+                                                COORD mu[DIM-1];\
+                                                theSide = _SIDE((t),(side)); \
+                                                thePatch = _ES_PATCH(theSide);\
+                                                mu[0] = (1.0-(l)[0])*_PARAM(theSide,0,0)+(l)[0]*_PARAM(theSide,1,0);\
+                                                if (Patch_local2bndcond(thePatch,mu,(v),(type)))\
+                                                  return (1);}
+
+
+
+#else
+
+#define SideBndCond(t,side,l,v,type)   {        ELEMENTSIDE *theSide;   \
+                                                PATCH *thePatch;          \
+                                                COORD mu[DIM-1];\
+                                                theSide = _SIDE((t),(side)); \
+                                                thePatch = _ES_PATCH(theSide);\
+                                                if (CORNERS_OF_SIDE((t),(side)) == 3)\
+                                                {\
+                                                  mu[0] = (1.0-(l)[0]-(l)[1])*_PARAM(theSide,0,0) \
+                                                          + (l)[0]*_PARAM(theSide,1,0) + (l)[1]*_PARAM(theSide,2,0);\
+                                                  mu[1] = (1.0-(l)[0]-(l)[1])*_PARAM(theSide,0,1)\
+                                                          + (l)[0]*_PARAM(theSide,1,1) + (l)[1]*_PARAM(theSide,2,1);\
+                                                }\
+                                                else if (CORNERS_OF_SIDE((t),(side)) == 4)\
+                                                {\
+                                                  mu[0] = (1.0-(l)[0])*(1.0-(l)[1])*_PARAM(theSide,0,0) \
+                                                          + (l)[0]*(1.0-(l)[1])*_PARAM(theSide,1,0) \
+                                                          + (l)[0]*(l)[1]*_PARAM(theSide,2,0)\
+                                                          + (1.0-(l)[0])*(l)[1]*_PARAM(theSide,3,0);\
+                                                  mu[1] = (1.0-(l)[0])*(1.0-(l)[1])*_PARAM(theSide,0,1) \
+                                                          + (l)[0]*(1.0-(l)[1])*_PARAM(theSide,1,1) \
+                                                          + (l)[0]*(l)[1]*_PARAM(theSide,2,1)\
+                                                          + (1.0-(l)[0])*(l)[1]*_PARAM(theSide,3,1);\
+                                                }\
+                                                if (Patch_local2bndcond(thePatch,mu,(v),(type)))\
+                                                  return (1);}
+
+
+#endif
+
+/*  only for checks
+
+   #undef SIDE
+   #undef SET_SIDE
+   #undef SUCCS
+   #undef PREDS
+   #undef ES_PATCH
+   #undef PARAM
+   #undef PARAMPTR
+
+   #define SIDE(p,i)            please change
+   #define SET_SIDE(p,i,q) please change
+   #define SUCCS(p)		please change
+   #define PREDS(p)		please change
+   #define ES_PATCH(p)		please change
+   #define PARAM(p,i,j)	please change
+   #define PARAMPTR(p,i)	please change
+
+
+   #define BVP_GetCoeffFct please change
+   #define BVP_GetUserFct please change
+   #define BVP_GetBVPDesc please change
+
+ */
+
+
+#define BVP_GetCoeffFct BVP_SetCoeffFct
+#define BVP_GetUserFct BVP_SetUserFct
+#define BVP_GetBVPDesc BVP_SetBVPDesc
+
+
 
 #endif

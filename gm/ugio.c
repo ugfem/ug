@@ -216,7 +216,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
                       "only level 0 will be saved");
 
   /* get BVPDesc */
-  if (BVP_GetBVPDesc(MG_BVP(theMG),&theBVPDesc))
+  if (BVP_SetBVPDesc(MG_BVP(theMG),&theBVPDesc))
     return (GM_ERROR);
 
   /* get time */
