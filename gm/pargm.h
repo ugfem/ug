@@ -351,6 +351,7 @@ enum Priorities
 #define DDD_IdentifyEnd()
 #define DDD_IdentifyNumber(o,p,n)
 #define DDD_IFAOneway(p1,p2,p3,p4,p5,p6)
+#define DDD_PrioritySet(e,p)
 
 /* ppif dummies */
 #define Broadcast(p,n)  ((int)0)
