@@ -10626,11 +10626,11 @@ static void CalcViewableSidesOnGrid (GRID *theGrid)
   INT i, j;
 
   /* calc viewable sides for each element */
-  for (theElement=theGrid->elements; theElement!= NULL; theElement=SUCCE(theElement))
+  for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
     CalcViewableSides(theElement);
 
   /* make the viewable sides consistent */
-  for (theElement=theGrid->elements; theElement!= NULL; theElement=SUCCE(theElement))
+  for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
     {
       if ((theNeighbor=NBELEM(theElement,i))==NULL) continue;
@@ -11088,7 +11088,7 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 
   /* order elements on level zero */
   i=0;
-  for (theElement=theGrid->elements; theElement!= NULL; theElement=SUCCE(theElement))
+  for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
     table[i++] = theElement;
   if (i!=NT(theGrid)) return (1);
   SelectionSort((void *)table,theGrid->nElem,sizeof(*table),CompareElements);
