@@ -17,14 +17,11 @@ ARCH_POSTLINK = true
 ARCH_LIBS     = -lc -lm
 ARCH_FLIBS    =
 
-ARCH_CFLAGS   = -I /usr/include/mpp -g   # -O 
+#-hinline2,scalar2 or -hinline3,scalar3 or -g -or -O2, -happrentice
+ARCH_CFLAGS   = -g
 ARCH_FFLAGS   = -g
-#ARCH_CFLAGS  = -hinline3,scalar3
-#ARCH_CFLAGS  = -g
-#ARCH_CFLAGS  = -hinline2,scalar2
-#ARCH_CFLAGS  = -happrentice
 ARCH_C++FLAGS =
-ARCH_LFLAGS   = # -g
+ARCH_LFLAGS   =  -g
 ARCH_ARFLAGS  = ru
 
 ARCH_XINCLUDES =
