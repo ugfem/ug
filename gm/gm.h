@@ -61,6 +61,10 @@
 #include "misc.h"
 #endif
 
+#ifndef __DOMAIN__
+#include "domain.h"
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -99,10 +103,6 @@ typedef COORD COORD_VECTOR_3D[3];
 typedef DOUBLE DOUBLE_VECTOR[DIM];
 typedef DOUBLE DOUBLE_VECTOR_2D[2];
 typedef DOUBLE DOUBLE_VECTOR_3D[3];
-
-/* boundary segment types */
-#define PERIODIC                                1
-#define NON_PERIODIC                    2
 
 /* result codes of user supplied functions	0 = OK as usual */
 #define OUT_OF_RANGE                    1       /* coordinate out of range				*/
@@ -160,93 +160,6 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 /* macros for the multigrid user data space management						*/
 #define OFFSET_IN_MGUD(id)              (GetMGUDBlockDescriptor(id)->offset)
 #define IS_MGUDBLOCK_DEF(id)    (GetMGUDBlockDescriptor(id)!=NULL)
-
-/****************************************************************************/
-/*																			*/
-/* domain definition data structures										*/
-/*																			*/
-/****************************************************************************/
-
-/*----------- typedef for functions ----------------------------------------*/
-
-typedef INT (*BndSegFuncPtr)(void *,COORD *,COORD *);
-
-
-/*----------- definition of structs ----------------------------------------*/
-
-struct domain {
-
-  /* fields for environment directory */
-  ENVDIR d;
-
-  /* domain variables */
-  COORD MidPoint[DIM];                                  /* point in the middle of domain	*/
-  COORD radius;                                                 /* defines sphere around MidPoint	*/
-  /* containing the domain			*/
-  INT numOfSegments;                                            /* number of boundary segments		*/
-  INT numOfCorners;                                             /* number of corner points			*/
-  INT domConvex;                                                /* is the domain convex?			*/
-} ;
-
-struct boundary_segment {
-
-  /* fields for environment directory */
-  ENVVAR v;
-
-  /* fields for boundary segment */
-  INT left,right;                                         /* number of left and right subdomain */
-  INT id;                                                         /* unique id of that segment			*/
-  INT segType;                                            /* segment type, see above			*/
-  INT points[CORNERS_OF_BND_SEG];         /* numbers of the vertices (ID)		*/
-  INT resolution;                                         /* measure for the curvature			*/
-  COORD alpha[DIM_OF_BND],beta[DIM_OF_BND];               /* parameter interval used*/
-  BndSegFuncPtr BndSegFunc;                       /* pointer to definition function     */
-  void *data;                                             /* can be used by applic to find data */
-} ;
-
-/****************************************************************************/
-/*																			*/
-/* problem data structure													*/
-/*																			*/
-/****************************************************************************/
-
-/*----------- typedef for functions ----------------------------------------*/
-
-#ifdef __version23__
-typedef INT (*BndCondProcPtr)(void *, DOUBLE *, DOUBLE *, INT *);
-#else
-typedef INT (*BndCondProcPtr)(void *, void *, COORD *, DOUBLE *, INT *);
-#endif
-typedef INT (*CoeffProcPtr)(COORD *, DOUBLE *);
-typedef INT (*UserProcPtr)(DOUBLE *, DOUBLE *);
-typedef INT (*ConfigProcPtr)(INT argc, char **argv);
-
-
-/*----------- definition of structs ----------------------------------------*/
-
-struct problem {
-
-  /* fields for environment directory */
-  ENVDIR d;
-
-  /* fields for problem */
-  INT problemID;                                /* used to identify problem type			*/
-  ConfigProcPtr ConfigProblem;      /* procedure to reinitialize problem		*/
-  INT numOfCoeffFct;                            /* # of coefficient functions				*/
-  INT numOfUserFct;                             /* # of User functions						*/
-  void * CU_ProcPtr[1];                 /* coefficient functions					*/
-};
-
-struct bndcond {
-
-  /* fields for environment variable */
-  ENVVAR v;
-
-  /* fields for boundary condition */
-  INT id;                                               /* corresponds to boundary segment id !         */
-  BndCondProcPtr BndCond;               /* function defining boundary condition         */
-  void *data;                                   /* additional data for bnd cond                         */
-} ;
 
 /****************************************************************************/
 /*																			*/
@@ -451,7 +364,7 @@ struct ivertex {                                        /* inner vertex structur
 struct vsegment {
 
   unsigned INT control;                         /* object identification, various flags */
-  struct bndsegdesc *segdesc;           /* pointer to boundary segment desc		*/
+  PATCH *thePatch;                                      /* pointer to patch						*/
   COORD lambda[DIM_OF_BND];                     /* position of vertex on boundary segmen*/
 
         #ifdef __TWODIM__
@@ -660,7 +573,7 @@ struct elementside {
 
   /* variables */
   unsigned INT control;                                         /* object identification, various flags */
-  struct bndsegdesc *segdesc;                           /* pointer to boundary segment desc		*/
+  PATCH *thePatch;                                                      /* pointer to patch						*/
   COORD lambda[MAX_CORNERS_OF_SIDE]                     /* parameter of side corners			*/
   [DIM_OF_BND];
   /* pointers */
@@ -728,12 +641,8 @@ struct multigrid {
   INT elemIdCounter;                                    /* count objects in that multigrid		*/
   INT topLevel;                                         /* depth of the element tree			*/
   INT currentLevel;                                     /* level we are working on				*/
-  struct domain *theDomain;                     /* pointer to domain definition                 */
+  BVP *theBVP;                                          /* pointer to BndValProblem				*/
   struct format *theFormat;                     /* pointer to format definition                 */
-  struct problem *theProblem;           /* pointer to problem definition		*/
-  struct bndsegdesc *segments;          /* array of combined boundary descriptio*/
-  INT numOfSegments;                                    /* number of entries in the array above */
-  INT numOfSubdomains;                          /* number of subdomains		            */
   union vertex **corners;                       /* pointer to array of pointers to corne*/
   INT numOfCorners;                                     /* number of entries in the array above */
   HEAP *theHeap;                                        /* associated heap structure			*/
@@ -761,12 +670,6 @@ struct multigrid {
 /****************************************************************************/
 
 /* geometrical part */
-typedef struct domain DOMAIN;
-typedef struct boundary_segment BOUNDARY_SEGMENT;
-
-typedef struct problem PROBLEM ;
-typedef struct bndcond BOUNDARY_CONDITION ;
-
 typedef struct format FORMAT;
 
 typedef union  vertex VERTEX;
@@ -1394,8 +1297,7 @@ extern CONTROL_ENTRY
 
 /* for boundary vertices */
 #define VSEG(p)                 (p)->bv.vseg
-#define FIRSTSEG(p)     (BSEGDESC(VSEG(p)))             /* compatibility purposes	*/
-#define FIRSTSEGDESC(p) (BSEGDESC(VSEG(p)))
+#define FIRSTPATCH(p)   (VS_PATCH(VSEG(p)))
 #define BVLAMBDA(p)     (VSEG(p)->lambda[0])
 #define FIRSTLAMBDA(p)  (VSEG(p)->lambda[0])
 #define FIRSTPVECT(p)   (VSEG(p)->lambda)
@@ -1407,8 +1309,7 @@ extern CONTROL_ENTRY
 /****************************************************************************/
 
 #define NEXTSEG(p)              (p)->next
-#define BSEG(p)                 (p)->segdesc                    /* compatibility purposes	*/
-#define BSEGDESC(p)             (p)->segdesc
+#define VS_PATCH(p)             (p)->thePatch
 #define PVECT(p)                (p)->lambda
 #define LAMBDA(p,i)     (p)->lambda[i]
 #define ZETA(p)                 (p)->zeta
@@ -1701,7 +1602,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 
 #define SUCCS(p)                (p)->succ
 #define PREDS(p)                (p)->pred
-#define SEGDESC(p)              (p)->segdesc
+#define ES_PATCH(p)             (p)->thePatch
 #define PARAM(p,i,j)    (p)->lambda[i][j]
 #define PARAMPTR(p,i)   (p)->lambda[i]
 
@@ -1780,15 +1681,11 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define EIDCNT(p)                               ((p)->elemIdCounter)
 #define TOPLEVEL(p)                     ((p)->topLevel)
 #define CURRENTLEVEL(p)                 ((p)->currentLevel)
-#define MGDOMAIN(p)                     ((p)->theDomain)
 #define MGFORMAT(p)                     ((p)->theFormat)
 #define DATAFORMAT(p)                   ((p)->theFormat)
-#define MGPROBLEM(p)                    ((p)->theProblem)
-#define MG_GEOM_SEGMENT(p,i)    (((p)->segments[i]).theSegment)
+#define MG_BVP(p)                               ((p)->theBVP)
 #define MGBNDSEGDESC(p,i)               (&((p)->segments[i]))
-#define MGNOOFSEG(p)                    ((p)->numOfSegments)
 #define MGVERTEX(p,k)                   ((p)->corners[k])
-#define MGNOOFSUBDOMAINS(p)             ((p)->numOfSubdomains)
 #define MGNOOFCORNERS(p)                ((p)->numOfCorners)
 #define MGHEAP(p)                               ((p)->theHeap)
 #define GRID_ON_LEVEL(p,i)              ((p)->grids[i])
@@ -1799,19 +1696,6 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define MG_USER_HEAP(p)                 ((p)->UserHeap)
 #define GEN_MGUD(p)                     ((p)->GenData)
 #define GEN_MGUD_ADR(p,o)               ((void *)(((char *)((p)->GenData))+(o)))
-
-/****************************************************************************/
-/*																			*/
-/* macros for problems														*/
-/*																			*/
-/****************************************************************************/
-
-#define PROBLEMID(p)   (p)->problemID
-#define CONFIGFUNC(p)  (p)->ConfigProblem
-#define NUMCOEFF(p)    (p)->numOfCoeffFct
-#define NUMUSERFCT(p)  (p)->numOfUserFct
-#define COEFFFUNC(p,i) (CoeffProcPtr)((p)->CU_ProcPtr[i])
-#define USERFUNC(p,i)  (UserProcPtr)((p)->CU_ProcPtr[i+(p)->numOfCoeffFct])
 
 /****************************************************************************/
 /*																			*/
@@ -1866,26 +1750,6 @@ MULTIGRID               *GetMultigrid                           (const char *nam
 MULTIGRID               *GetFirstMultigrid                      (void);
 MULTIGRID               *GetNextMultigrid                       (const MULTIGRID *theMG);
 
-/* domain definition */
-DOMAIN                   *CreateDomain                          (char *name, COORD *MidPoint, COORD radius, INT segments, INT corners, INT Convex);
-DOMAIN                   *GetDomain                             (char *name);
-BOUNDARY_SEGMENT *CreateBoundarySegment         (char *name, INT left, INT right,INT id,INT type,INT res,INT *point, COORD *alpha,COORD *beta, BndSegFuncPtr BndSegFunc, void *data);
-BOUNDARY_SEGMENT *CreateBoundarySegment2D       (char *name, int left, int right, int id, int from, int to, int res, COORD alpha, COORD beta, BndSegFuncPtr BndSegFunc, void *data);
-BOUNDARY_SEGMENT *GetFirstBoundarySegment       (DOMAIN *theDomain);
-BOUNDARY_SEGMENT *GetNextBoundarySegment        (BOUNDARY_SEGMENT *theBSeg);
-BOUNDARY_CONDITION *GetFirstBoundaryCondition (PROBLEM *theProblem);
-BOUNDARY_CONDITION *GetNextBoundaryCondition (BOUNDARY_CONDITION *theBCond);
-
-/* problem definition */
-PROBLEM                  *CreateProblem                         (char *domain,char *name, int id, ConfigProcPtr config, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[]);
-PROBLEM                  *GetProblem                            (const char * domain, const char *name);
-#ifdef __version23__
-BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id, BndCondProcPtr theBndCond);
-#endif
-#ifdef __version3__
-BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id, BndCondProcPtr theBndCond, void *Data);
-#endif
-
 /* format definition */
 FORMAT                   *GetFormat                             (const char *name);
 #ifdef __version23__
@@ -1910,7 +1774,7 @@ FORMAT                  *Ugly_CreateFormat (char *name,INT sVertex, INT sMultiGr
 #endif
 
 /* create, saving and disposing a multigrid structure */
-MULTIGRID       *CreateMultiGrid                (char *MultigridName, char *domain, char *problem, char *format, unsigned long heapSize);
+MULTIGRID   *CreateMultiGrid        (char *MultigridName, char *BndValProblem, char *format, unsigned long heapSize);
 MULTIGRID       *LoadMultiGrid                  (char *MultigridName, char *FileName, char *domain, char *problem, char *format, unsigned long heapSize);
 INT             SaveMultiGrid                   (MULTIGRID *theMG, char *FileName, char *comment);
 INT             DisposeMultiGrid                (MULTIGRID *theMG);

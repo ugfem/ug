@@ -2319,17 +2319,16 @@ static INT DisplayCutPlane (CUT *theCut)
 
 static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
-  DOMAIN *theDomain;
+  BVP_DESC theBVPDesc;
   struct GridPlotObj2D *theGpo;
   char buffer[64];
   INT i;
   int iValue;
 
   theGpo = &(thePlotObj->theGpo);
-  theDomain = MGDOMAIN(PO_MG(thePlotObj));
-  if (theDomain == NULL) return (NOT_INIT);
-  V2_COPY(theDomain->MidPoint,PO_MIDPOINT(thePlotObj))
-  PO_RADIUS(thePlotObj) = theDomain->radius;
+  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  V2_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
+  PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
 
   /* defaults */
   if (PO_STATUS(thePlotObj)==NOT_INIT)
@@ -2565,7 +2564,7 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
 
 static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
-  DOMAIN *theDomain;
+  BVP_DESC theBVPDesc;
   FORMAT *theFormat;
   struct VecMatPlotObj2D *theVmo;
   char name[NAMELEN];
@@ -2573,11 +2572,10 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   int iValue;
 
   theVmo = &(thePlotObj->theVmo);
-  theDomain = MGDOMAIN(PO_MG(thePlotObj));
   theFormat = MGFORMAT(PO_MG(thePlotObj));
-  if (theDomain == NULL) return (NOT_INIT);
-  V2_COPY(theDomain->MidPoint,PO_MIDPOINT(thePlotObj))
-  PO_RADIUS(thePlotObj) = theDomain->radius;
+  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  V2_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
+  PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
 
   /* defaults */
   if (PO_STATUS(thePlotObj)==NOT_INIT)
@@ -2839,7 +2837,7 @@ static INT DisplayVecMat_2D (PLOTOBJ *thePlotObj)
 
 static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
-  DOMAIN *theDomain;
+  BVP_DESC theBVPDesc;
   struct ElemScalarPlotObj2D *theEspo;
   char buffer[64];
   INT i, ret;
@@ -2847,10 +2845,9 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
   float fValue;
 
   theEspo = &(thePlotObj->theEspo);
-  theDomain = MGDOMAIN(PO_MG(thePlotObj));
-  if (theDomain == NULL) return (NOT_INIT);
-  V2_COPY(theDomain->MidPoint,PO_MIDPOINT(thePlotObj))
-  PO_RADIUS(thePlotObj) = theDomain->radius;
+  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  V2_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
+  PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
   ret = ACTIVE;
 
   /* defaults */
@@ -3063,7 +3060,7 @@ static INT DisplayScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj)
 
 static INT InitVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
-  DOMAIN *theDomain;
+  BVP_DESC theBVPDesc;
   struct ElemVectorPlotObj2D *theEvpo;
   char buffer[64];
   INT i, ret;
@@ -3071,10 +3068,9 @@ static INT InitVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
   float fValue;
 
   theEvpo = &(thePlotObj->theEvpo);
-  theDomain = MGDOMAIN(PO_MG(thePlotObj));
-  if (theDomain == NULL) return (NOT_INIT);
-  V2_COPY(theDomain->MidPoint,PO_MIDPOINT(thePlotObj))
-  PO_RADIUS(thePlotObj) = theDomain->radius;
+  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  V2_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
+  PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
   ret = ACTIVE;
 
   /* defaults */
@@ -3230,16 +3226,15 @@ static INT DisplayVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj)
 
 static INT InitDomainPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
-  DOMAIN *theDomain;
+  BVP_DESC theBVPDesc;
   struct DomainPlotObj3D *theDpo;
   INT i;
   int iValue;
 
   theDpo = &(thePlotObj->theDpo);
-  theDomain = MGDOMAIN(PO_MG(thePlotObj));
-  if (theDomain == NULL) return (NOT_INIT);
-  V3_COPY(theDomain->MidPoint,PO_MIDPOINT(thePlotObj))
-  PO_RADIUS(thePlotObj) = theDomain->radius;
+  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  V3_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
+  PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
 
   /* defaults */
   if (PO_STATUS(thePlotObj)==NOT_INIT)
@@ -3317,7 +3312,7 @@ static INT DisplayDomainPlotObject_3D (PLOTOBJ *thePlotObj)
 
 static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
-  DOMAIN *theDomain;
+  BVP_DESC theBVPDesc;
   struct GridPlotObj3D *theGpo;
   CUT *theCut;
   INT i;
@@ -3325,10 +3320,9 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   char buffer[64];
 
   theGpo = &(thePlotObj->theGpo);
-  theDomain = MGDOMAIN(PO_MG(thePlotObj));
-  if (theDomain == NULL) return (NOT_INIT);
-  V3_COPY(theDomain->MidPoint,PO_MIDPOINT(thePlotObj))
-  PO_RADIUS(thePlotObj) = theDomain->radius;
+  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  V3_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
+  PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
   theCut = &(theGpo->theCut);
 
   /* defaults */
@@ -3459,7 +3453,7 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
 
 static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
-  DOMAIN *theDomain;
+  BVP_DESC theBVPDesc;
   CUT *theCut;
   struct ElemScalarPlotObj3D *theEspo;
   char buffer[64];
@@ -3468,10 +3462,9 @@ static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
   float fValue;
 
   theEspo = &(thePlotObj->theEspo);
-  theDomain = MGDOMAIN(PO_MG(thePlotObj));
-  if (theDomain == NULL) return (NOT_INIT);
-  V3_COPY(theDomain->MidPoint,PO_MIDPOINT(thePlotObj))
-  PO_RADIUS(thePlotObj) = theDomain->radius;
+  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  V3_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
+  PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
   theCut = &(theEspo->theCut);
   ret = ACTIVE;
 
@@ -3657,7 +3650,7 @@ static INT DisplayScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj)
 
 static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
-  DOMAIN *theDomain;
+  BVP_DESC theBVPDesc;
   struct ElemVectorPlotObj3D *theEvpo;
   CUT *theCut;
   char buffer[64];
@@ -3666,10 +3659,9 @@ static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
   float fValue;
 
   theEvpo = &(thePlotObj->theEvpo);
-  theDomain = MGDOMAIN(PO_MG(thePlotObj));
-  if (theDomain == NULL) return (NOT_INIT);
-  V3_COPY(theDomain->MidPoint,PO_MIDPOINT(thePlotObj))
-  PO_RADIUS(thePlotObj) = theDomain->radius;
+  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  V3_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
+  PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
   theCut = &(theEvpo->theCut);
   ret = ACTIVE;
 

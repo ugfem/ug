@@ -250,7 +250,8 @@ static MULTIGRID *MN_MG;                /* multigrid pointer						*/
 static NODE *MN_Node;                   /* moved node								*/
 static COORD MN_pos[2];                 /* new pos of the moved node				*/
 static COORD MN_lambda;                 /* new boundary parameter if boundary node      */
-static BNDSEGDESC *MN_seg;              /* boundary segdesc if boundary node	        */
+static PATCH *MN_patch;                 /* patch if boundary node				        */
+static PATCH_DESC MN_PatchDesc; /* patch descriptor for boundary node		*/
 static COORD MN_xmin;                   /* limits of the picture					*/
 static COORD MN_xmax;                   /* limits of the picture					*/
 static COORD MN_ymin;                   /* limits of the picture					*/
@@ -4476,11 +4477,13 @@ static INT EXT_PreProcess_VecMatBnd2d (PICTURE *thePicture, WORK *theWork)
 
 static INT EXT_BndEval2d (DRAWINGOBJ *theDO, INT *end)
 {
-  BNDSEGDESC *theSegDesc;
   COORD alpha,beta,delta,lambda;
   INT res;
   COORD_VECTOR x0,x1;
   long Color;
+  BVP *theBVP;
+  PATCH *thePatch;
+  PATCH_DESC thePatchDesc;
 
   if (!BE_PlotBoundary && !BE_PlotSegmentIDs)
   {
@@ -4488,30 +4491,31 @@ static INT EXT_BndEval2d (DRAWINGOBJ *theDO, INT *end)
     *end = TRUE;
     return (0);
   }
+  theBVP = MG_BVP(BE_MG);
 
   /* plot boundary segments and their ids (if) */
-  for (; BE_CurrSeg<MGNOOFSEG(BE_MG); BE_CurrSeg++)
+  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
   {
-    theSegDesc = MGBNDSEGDESC(BE_MG,BE_CurrSeg);
-    if ((LEFT(theSegDesc)==0) || (RIGHT(theSegDesc)==0))
+    if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return (1);
+    if ((PATCH_LEFT(thePatchDesc)==0) || (PATCH_RIGHT(thePatchDesc)==0))
       Color = BE_BndColor;
     else
       Color = BE_InnerBndColor;
-    alpha  = ALPHA(theSegDesc,0);
-    beta   = BETA(theSegDesc,0);
-    res    = RES(theSegDesc);
+    alpha  = PATCH_LCVECT(thePatchDesc,0)[0];
+    beta   = PATCH_LCVECT(thePatchDesc,1)[0];
+    res    = PATCH_RES(thePatchDesc);
     delta  = (beta - alpha) / ((COORD)res);
 
     if (BE_PlotBoundary)
     {
       /* plot boundary with resolution */
       lambda = alpha + (BE_CurrLine-1)*delta;
-      (*BNDSEGFUNC (theSegDesc))(BNDDATA(theSegDesc),&lambda,x0);
-      for (; BE_CurrLine<=RES(theSegDesc); BE_CurrLine++)
+      if (Patch_local2global(thePatch,&lambda,x0)) return (1);
+      for (; BE_CurrLine<=res; BE_CurrLine++)
       {
         lambda = alpha + BE_CurrLine*delta;
         lambda = MIN(lambda,beta);
-        (*BNDSEGFUNC (theSegDesc))(BNDDATA(theSegDesc),&lambda,x1);
+        if (Patch_local2global(thePatch,&lambda,x1)) return (1);
 
         DO_2c(theDO) = DO_LINE; DO_inc(theDO)
         DO_2l(theDO) = Color; DO_inc(theDO);
@@ -4532,7 +4536,7 @@ static INT EXT_BndEval2d (DRAWINGOBJ *theDO, INT *end)
     if (BE_PlotSegmentIDs)
     {
       lambda = 0.5*(alpha+beta);
-      (*BNDSEGFUNC (theSegDesc))(BNDDATA(theSegDesc),&lambda,x0);
+      if (Patch_local2global(thePatch,&lambda,x0)) return (1);
       DO_2c(theDO) = DO_TEXT; DO_inc(theDO)
       DO_2l(theDO) = BE_SegIdColor; DO_inc(theDO);
       DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO)
@@ -4860,11 +4864,14 @@ static INT EXT_PreProcess_InsertNode2D (PICTURE *thePicture, WORK *theWork)
   OUTPUTDEVICE *theOD;
   MULTIGRID *theMG;
   GRID *theGrid;
-  BNDSEGDESC *theSegment,*MySegment;
   COORD pt[2],pos[2];
   COORD deltaScreen[2],zeroScreen[2],deltaVector[2],zeroVector[2],npos[2],apos[2],epos[2];
   COORD delta,len,l,la,le,dl,MyLambda,dist2,bestDist2,sdl;
   INT i,found;
+  BVP             *theBVP;
+  BVP_DESC theBVPDesc;
+  PATCH *thePatch, *MyPatch;
+  PATCH_DESC thePatchDesc, MyPatchDesc;
 
   theGpo = &(PIC_PO(thePicture)->theGpo);
   theOD  = PIC_OUTPUTDEV(thePicture);
@@ -4874,6 +4881,14 @@ static INT EXT_PreProcess_InsertNode2D (PICTURE *thePicture, WORK *theWork)
   {
     PrintErrorMessage('E',"work","you can only insert nodes if TOPLEVEL=0");
     return (1);
+  }
+
+  /* get BVP description */
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc))
+  {
+    PrintErrorMessage('E',"MoveBoundaryNode","cannot evaluate BVP");
+    return(1);
   }
 
   NE_IDColor                                      = theOD->black;
@@ -4919,24 +4934,24 @@ static INT EXT_PreProcess_InsertNode2D (PICTURE *thePicture, WORK *theWork)
     /* find position */
     found = FALSE;
     bestDist2 = MAX_C;
-    for (i=0; i<theMG->numOfSegments; i++)
+    for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
     {
-      theSegment = theMG->segments+i;
-      dl = (BETA(theSegment,0)-ALPHA(theSegment,0))/ ((COORD)RES(theSegment));
+      if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return (NULL);
+      dl = (PATCH_LCVECT(thePatchDesc,1)[0]-PATCH_LCVECT(thePatchDesc,0)[0])/ PATCH_RES(thePatchDesc);
 
       /* scan resolution points of the segment */
-      for (la=ALPHA(theSegment,0); la<=BETA(theSegment,0); la+=dl)
+      for (la=PATCH_LCVECT(thePatchDesc,1)[0]; la<=PATCH_LCVECT(thePatchDesc,0)[0]; la+=dl)
       {
-        le = MIN(la+dl,BETA(theSegment,0));
-        BNDSEGFUNC(theSegment) (BNDDATA(theSegment),&la,apos);
-        BNDSEGFUNC(theSegment) (BNDDATA(theSegment),&le,epos);
+        le = MIN(la+dl,PATCH_LCVECT(thePatchDesc,0)[0]);
+        if (Patch_local2global(thePatch,&la,apos)) return (1);
+        if (Patch_local2global(thePatch,&le,epos)) return (1);
         V2_EUKLIDNORM_OF_DIFF(apos,epos,len);
         sdl = len/MAX(10.0*len/delta,1.0);
 
         /* scan part between resolution points */
         for (l=la; l<le; l+=sdl)
         {
-          BNDSEGFUNC(theSegment) (BNDDATA(theSegment),&l,npos);
+          if (Patch_local2global(thePatch,&l,npos)) return (1);
           if ((fabs(npos[0]-pos[0]) < delta) &&  (fabs(npos[1]-pos[1]) < delta))
           {
             /* we are inside the pixel resolution */
@@ -4949,14 +4964,14 @@ static INT EXT_PreProcess_InsertNode2D (PICTURE *thePicture, WORK *theWork)
             {
               bestDist2 = dist2;
               MyLambda  = l;
-              MySegment = theSegment;
+              MyPatch = thePatch;
             }
           }
           else if (found)
           {
             /* exit loops */
-            la = BETA(theSegment,0) + dl;
-            i  = theMG->numOfSegments;
+            la = PATCH_LCVECT(thePatchDesc,0)[0] + dl;
+            thePatch=NULL;
             break;
           }
         }
@@ -4965,12 +4980,13 @@ static INT EXT_PreProcess_InsertNode2D (PICTURE *thePicture, WORK *theWork)
     if (found)
     {
       /* we will insert a boundary vertex */
-      if (InsertBoundaryNode(theMG,MySegment->theSegment->id,&MyLambda)!=GM_OK)
+      if (Patch_GetPatchDesc(MyPatch,&MyPatchDesc)) return (NULL);
+      if (InsertBoundaryNode(theMG,PATCH_ID(MyPatchDesc),&MyLambda)!=GM_OK)
       {
         PrintErrorMessage('E',"work","inserting a boundary node failed");
         return (1);
       }
-      UserWriteF("inserted boundary vertex on %s at lambda = %g\n",ENVITEM_NAME(MySegment->theSegment),(float)MyLambda);
+      UserWriteF("inserted boundary vertex on patch (ID=%d) at lambda = %g\n",(int)PATCH_ID(MyPatchDesc),(float)MyLambda);
     }
     else
     {
@@ -5132,24 +5148,25 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
     if (MOVE(theVertex)==1)
     {
       /* find pos on segment with shortest dist to mouse pos */
-      MN_seg = FIRSTSEGDESC(theVertex);
+      MN_patch = FIRSTPATCH(theVertex);
+      if (Patch_GetPatchDesc(MN_patch,&MN_PatchDesc)) return(1);
       MN_lambda = FIRSTLAMBDA(theVertex);
-      dl = (BETA(MN_seg,0)-ALPHA(MN_seg,0))/ ((COORD)RES(MN_seg));
+      dl = (PATCH_LCVECT(MN_PatchDesc,1)[0]-PATCH_LCVECT(MN_PatchDesc,0)[0])/ PATCH_RES(MN_PatchDesc);
 
       /* scan resolution points of the segment */
       bestDist2 = MAX_C;
-      for (la=ALPHA(MN_seg,0); la<=BETA(MN_seg,0); la+=dl)
+      for (la=PATCH_LCVECT(MN_PatchDesc,0)[0]; la<=PATCH_LCVECT(MN_PatchDesc,1)[0]; la+=dl)
       {
-        le = MIN(la+dl,BETA(MN_seg,0));
-        BNDSEGFUNC(MN_seg) (BNDDATA(MN_seg),&la,apos);
-        BNDSEGFUNC(MN_seg) (BNDDATA(MN_seg),&le,epos);
+        le = MIN(la+dl,PATCH_LCVECT(MN_PatchDesc,1)[0]);
+        if (Patch_local2global(MN_patch,&la,apos)) return(1);
+        if (Patch_local2global(MN_patch,&le,epos)) return(1);
         V2_EUKLIDNORM_OF_DIFF(apos,epos,len);
         sdl = len/MAX(10.0*len/MN_delta,1.0);
 
         /* scan part between resolution points */
         for (l=la; l<le; l+=sdl)
         {
-          BNDSEGFUNC(MN_seg) (BNDDATA(MN_seg),&l,npos);
+          if (Patch_local2global(MN_patch,&l,npos)) return(1);
           V2_SUBTRACT(npos,MN_pos,npos);
           V2_SCALAR_PRODUCT(npos,npos,dist2);
 
@@ -5161,7 +5178,7 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
           }
         }
       }
-      BNDSEGFUNC(MN_seg) (BNDDATA(MN_seg),&MN_lambda,MN_pos);
+      if (Patch_local2global(MN_patch,&MN_lambda,MN_pos)) return(1);
     }
 
     /* plot links inverse */
@@ -5216,7 +5233,7 @@ static INT EXT_PostProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
     return (0);
   }
   else
-  if (MoveBoundaryNode(MN_MG,MN_Node,MN_seg->id,&MN_lambda)!=GM_OK)
+  if (MoveBoundaryNode(MN_MG,MN_Node,PATCH_ID(MN_PatchDesc),&MN_lambda)!=GM_OK)
     return (1);
 
   return (0);
