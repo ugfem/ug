@@ -1414,8 +1414,7 @@ INT AFVGeometry (const ELEMENT *theElement, FVElementGeometry *geo, DOUBLE_VECTO
       V2_CLEAR(SCVF_GIP(FVG_SCVF(geo,outflow[0]))) V2_CLEAR(SCVF_LIP(FVG_SCVF(geo,outflow[0])))
       break;
     default :
-      PrintErrorMessage('E',"AFVGeometry","unknown case");
-      return(__LINE__);
+      return(EvaluateFVGeometry (theElement,geo));
     }
     break;
   case QUADRILATERAL :
