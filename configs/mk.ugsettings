@@ -24,29 +24,26 @@ UG_LINK = $(ARCH_LINK)
 # include architecture-dependent makefile macro definitions
 include $(UGROOT)/arch/$(ARCH)/mk.arch
 
-
 # include macro definitions for programming model
 include $(UGROOT)/configs/mk.model.$(MODEL)
-
 
 # include macro definitions for remote interface
 include $(UGROOT)/configs/mk.rif.$(REMOTE_IF)
 
-
 # include macro definitions for debugging
 include $(UGROOT)/configs/mk.debug.$(DEBUG_MODE)
-
 
 # include macro definitions for netgen
 include $(UGROOT)/configs/mk.netgen.$(NETGEN)
 
-
 # include macro definitions for grape
 include $(UGROOT)/configs/mk.grape.$(GRAPE)
 
-
-# include macro definitions for grape
+# include macro definitions for chaco
 include $(UGROOT)/configs/mk.chaco.$(CHACO)
+
+# include macro definitions for cad
+include $(UGROOT)/configs/mk.cad.$(CAD)
 
 
 
@@ -56,6 +53,7 @@ UG_CFLAGS =	-c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 			$(ARCH_XINCLUDES) $(ENV_CFLAGS) \
 			$(RIF_CFLAGS) $(CHACO_CFLAGS) \
 			$(NETGEN_CFLAGS) $(GRAPE_CFLAGS) \
+			$(CAD_CFLAGS) \
 			-I$(UGROOT)/include
 
 UG_C++FLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
@@ -63,7 +61,7 @@ UG_C++FLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 
 UG_LFLAGS = $(ARCH_LFLAGS) $(PPIF_LFLAGS) $(MODEL_LFLAGS) $(GRAPE_LFLAGS) \
 			$(ARCH_XLIBS) $(ARCH_LIBS) $(ENV_LFLAGS) $(ARCH_PLIBS) \
-			$(NETGEN_LFLAGS) $(CHACO_LFLAGS)
+			$(NETGEN_LFLAGS) $(CHACO_LFLAGS) $(CAD_LFLAGS)
 
 UG_LIB    = $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a 
 
