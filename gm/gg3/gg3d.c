@@ -120,7 +120,7 @@ int AddInnerNode (double x, double y, double z)
   xc[1] = y;
   xc[2] = z;
 
-  if (InsertInnerNode(currMG,xc)!=GM_OK)
+  if (InsertInnerNode(currMG,xc) == NULL)
     return(-1);
 
   return(nodeid++);
@@ -159,7 +159,7 @@ int AddTetrahedron (int node0, int node1, int node2, int node3)
   Id[2] = node2;
   Id[3] = node3;
 
-  if (InsertElementFromIDs(currMG,4,Id)!=GM_OK)
+  if (InsertElementFromIDs(currMG,4,Id) == NULL)
     return(1);
 
   return(0);
