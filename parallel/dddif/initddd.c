@@ -87,9 +87,9 @@ DDD_TYPE TypeHeElem, TypeHeBElem;
 
 /* DDD data objects */
 DDD_TYPE TypeMatrix;
-DDD_TYPE TypeVSegment;
+DDD_TYPE TypeBndP;
 DDD_TYPE TypeEdge;
-DDD_TYPE TypeElementSide;
+DDD_TYPE TypeBndS;
 
 /* DDD interfaces needed for distributed computation */
 DDD_IF ElementIF, BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, VertexIF;
@@ -186,7 +186,7 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
   else
   {
     DDD_TypeDefine(dddType, ge,
-                   EL_GDATA, r+side_offset[tag],  ps*desc->sides_of_elem,
+                   EL_LDATA, r+side_offset[tag],  ps*desc->sides_of_elem,
                    EL_END, desc->bnd_size);
 
     /* init type mapping arrays */
@@ -283,17 +283,17 @@ static void ddd_DeclareTypes (void)
   dddctrl.ugtypes[TypeMatrix] = MAOBJ;
   dddctrl.types[MAOBJ] = TypeMatrix;
 
-  TypeVSegment    = DDD_TypeDeclare("VSegment");
-  dddctrl.ugtypes[TypeVSegment] = VSOBJ;
-  dddctrl.types[VSOBJ] = TypeVSegment;
+  TypeBndP    = DDD_TypeDeclare("BndP");
+  dddctrl.ugtypes[TypeBndP] = BPOBJ;
+  dddctrl.types[BPOBJ] = TypeBndP;
 
   TypeEdge        = DDD_TypeDeclare("Edge");
   dddctrl.ugtypes[TypeEdge] = EDOBJ;
   dddctrl.types[EDOBJ] = TypeEdge;
 
-  TypeElementSide = DDD_TypeDeclare("ElementSide");
-  dddctrl.ugtypes[TypeElementSide] = ESOBJ;
-  dddctrl.types[ESOBJ] = TypeElementSide;
+  TypeBndS = DDD_TypeDeclare("BndS");
+  dddctrl.ugtypes[TypeBndS] = BSOBJ;
+  dddctrl.types[BSOBJ] = TypeBndS;
 }
 
 
@@ -320,10 +320,7 @@ static void ddd_DefineTypes (void)
   struct bvertex bv;
 
   MATRIX m;
-  VSEGMENT vs;
   EDGE e;
-  ELEMENTSIDE es;
-
 
   /* 1. DDD objects (with DDD_HEADER) */
 
@@ -397,7 +394,7 @@ static void ddd_DefineTypes (void)
 
                  /* TODO topnode wirklich OBJPTR? */
                  EL_OBJPTR, ELDEF(bv.topnode), TypeNode,
-                 EL_LDATA,  ELDEF(bv.vseg),     /* different from IVertex */
+                 EL_LDATA,  ELDEF(bv.bndp),     /* different from IVertex */
                  EL_END,    &bv+1
                  );
 
@@ -461,20 +458,6 @@ static void ddd_DefineTypes (void)
                  );
 
 
-  DDD_TypeDefine(TypeVSegment, &vs,
-                 EL_GDATA,  ELDEF(vs.control),
-
-                 /* TODO: thePatch LDATA oder OBJPTR? */
-                 EL_LDATA,  ELDEF(vs.thePatch),
-                 EL_GDATA,  ELDEF(vs.lambda),
-                 EL_LDATA,  ELDEF(vs.next),
-
-                 /* TODO: alte version. has id to be send? */
-                 EL_GDATA,  &vs+1, sizeof(INT), /* add a dummy containing segment id */
-                 EL_END,    ((char *)&vs)+(sizeof(VSEGMENT)+sizeof(INT))
-                 );
-
-
   DDD_TypeDefine(TypeEdge, &e,
                  /* link 0 data */
                  EL_GDATA,  ELDEF(e.links[0].control),
@@ -495,19 +478,6 @@ static void ddd_DefineTypes (void)
                    EL_CONTINUE);
 
   DDD_TypeDefine(TypeEdge, &e, EL_END, &e+1);
-
-
-  DDD_TypeDefine(TypeElementSide, &es,
-                 EL_GDATA,  ELDEF(es.control),
-                 EL_LDATA,  ELDEF(es.thePatch),
-                 EL_GDATA,  ELDEF(es.lambda),
-                 EL_LDATA,  ELDEF(es.pred),
-                 EL_LDATA,  ELDEF(es.succ),
-
-                 /* TODO: alte version. has id to be send? */
-                 EL_GDATA,  &es+1, sizeof(INT), /* add a dummy containing segment id */
-                 EL_END,    ((char *)&es)+(sizeof(ELEMENTSIDE)+sizeof(INT))
-                 );
 }
 
 
@@ -620,9 +590,7 @@ void InitDDDTypes (void)
 
   /* display dependent types */
   DDD_TypeDisplay(TypeMatrix);
-  DDD_TypeDisplay(TypeVSegment);
   DDD_TypeDisplay(TypeEdge);
-  DDD_TypeDisplay(TypeElementSide);
   ENDDEBUG
 
   ddd_HandlerInit(HSET_XFER);
@@ -717,7 +685,7 @@ int InitParallel (int *argc, char ***argv)
   ddd_DeclareTypes();
   dddctrl.allTypesDefined = FALSE;
 
-
+  DomInitParallel(TypeBndP,TypeBndS);
 
         #ifdef __TWODIM__
   ddd_IfInit();

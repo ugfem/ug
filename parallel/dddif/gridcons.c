@@ -90,7 +90,7 @@ RCSID("$Header$",UG_RCS_STRING)
  */
 
 
-static int dddif_ComputeBorderPrios (DDD_OBJ *obj)
+static int dddif_ComputeBorderPrios (DDD_OBJ obj)
 {
   NODE    *node  = (NODE *)obj;
   int     *plist = DDD_InfoProcList(PARHDR(node));

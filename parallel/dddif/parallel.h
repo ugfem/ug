@@ -141,9 +141,9 @@ extern DDD_TYPE TypeHeElem, TypeHeBElem;
 
 /* DDD data objects */
 extern DDD_TYPE TypeMatrix;
-extern DDD_TYPE TypeVSegment;
+extern DDD_TYPE TypeBndP;
 extern DDD_TYPE TypeEdge;
-extern DDD_TYPE TypeElementSide;
+extern DDD_TYPE TypeBndS;
 
 /* DDD Interfaces */
 extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF;
