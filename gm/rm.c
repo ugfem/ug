@@ -2341,6 +2341,7 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
 INT GetRefinementMark (const ELEMENT *theElement, INT *rule, void *data)
 {
   INT *side = data;
+  INT mark;
 
   if (LEAFELEM(theElement) &&
       ECLASS(theElement) != RED_CLASS)
@@ -2349,18 +2350,25 @@ INT GetRefinementMark (const ELEMENT *theElement, INT *rule, void *data)
   ASSERT(theElement != NULL);
   if (!((ECLASS(theElement) == RED_CLASS)
         && (REFINECLASS(theElement) != RED_CLASS)))
+  {
+    printf("GetRefinementMark: eclass=%d refineclass=%d\n",
+           ECLASS(theElement),REFINECLASS(theElement));
     return(-1);
+  }
 
-        #ifdef __THREEDIM__
-  /* tetrahedra have their own ruleset */
-  if (TAG(theElement)==TETRAHEDRON && MARK(theElement)==FULL_REFRULE)
+  mark = MARK(theElement);
+
+        #if defined(__THREEDIM__)
+  /* tetrahedra have three red rules */
+  if (TAG(theElement)==TETRAHEDRON &&
+      (mark==TET_RED_2_4 || mark==TET_RED_0_5 || mark==TET_RED_1_3))
   {
     *rule=RED;
     return(GM_RULE_WITHOUT_ORIENTATION);
   }
         #endif
 
-  switch (MARK(theElement))
+  switch (mark)
   {
   case RED :
     *rule=RED;
@@ -2397,7 +2405,7 @@ INT GetRefinementMarkType (const ELEMENT *theElement)
   INT rule;
   INT side;
 
-  GetRefinementMark(theElement,&rule,&side);
+  if (GetRefinementMark(theElement,&rule,&side) == -1) RETURN(GM_ERROR);
 
   switch (rule)
   {
