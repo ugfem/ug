@@ -6574,6 +6574,7 @@ MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
 
   CTRL(pm) = 0;
   SETMTYPE(pm,MType);
+  SETMDIAG(pm,0);
   SETMROOTTYPE(pm,RootType);
   SETMDESTTYPE(pm,DestType);
   SETMSIZE(pm,Size);
