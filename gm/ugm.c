@@ -128,7 +128,7 @@ REP_ERR_FILE;
 /*																			*/
 /****************************************************************************/
 
-static NODE *CreateNode (GRID *theGrid, VERTEX *vertex, GEOM_OBJECT *Father, INT NodeType);
+static NODE *CreateNode (GRID *theGrid, VERTEX *vertex, GEOM_OBJECT *Father, INT NodeType, INT with_vector);
 static VERTEX *CreateBoundaryVertex     (GRID *theGrid);
 static VERTEX *CreateInnerVertex (GRID *theGrid);
 
@@ -442,7 +442,7 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
 /****************************************************************************/
 
 static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
-                         GEOM_OBJECT *Father, INT NodeType)
+                         GEOM_OBJECT *Father, INT NodeType, INT with_vector)
 {
   NODE *pn;
   VECTOR *pv;
@@ -486,7 +486,7 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
     SETNSUBDOM(pn,0);
 
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC))
-    if (GLEVEL(theGrid)!=0)
+    if (with_vector)
     {
       if (CreateVector (theGrid,NODEVEC,(GEOM_OBJECT *)pn,&pv))
       {
@@ -544,7 +544,7 @@ NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
 
   theVertex = MYVERTEX(FatherNode);
 
-  pn = CreateNode(theGrid,theVertex,(GEOM_OBJECT *)FatherNode,CORNER_NODE);
+  pn = CreateNode(theGrid,theVertex,(GEOM_OBJECT *)FatherNode,CORNER_NODE,1);
   if (pn == NULL)
     return(NULL);
   SONNODE(FatherNode) = pn;
@@ -651,7 +651,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
   ASSERT(theEdge!=NULL);
 
   /* allocate node */
-  theNode = CreateNode(theGrid,theVertex,(GEOM_OBJECT *)theEdge,MID_NODE);
+  theNode = CreateNode(theGrid,theVertex,(GEOM_OBJECT *)theEdge,MID_NODE,1);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
@@ -822,7 +822,7 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 
   /* create node */
   theNode = CreateNode(theGrid,theVertex,
-                       (GEOM_OBJECT *)theElement,SIDE_NODE);
+                       (GEOM_OBJECT *)theElement,SIDE_NODE,1);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
@@ -1112,7 +1112,7 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
   VFATHER(theVertex) = theElement;
 
   theNode = CreateNode(theGrid,theVertex,
-                       (GEOM_OBJECT *)theElement,CENTER_NODE);
+                       (GEOM_OBJECT *)theElement,CENTER_NODE,1);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
@@ -1595,8 +1595,8 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
   }
 
   /* create vector if */
-  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC) && with_vector)
-    if (GLEVEL(theGrid)!=0)
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
+    if (with_vector)
     {
       if (CreateVector (theGrid,EDGEVEC,(GEOM_OBJECT *)pe,&pv))
       {
@@ -1680,8 +1680,8 @@ LINK *GetLink (NODE *from, NODE *to)
    D*/
 /****************************************************************************/
 
-ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
-                        NODE **nodes, ELEMENT *Father)
+ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
+                        ELEMENT *Father, INT with_vector)
 {
   ELEMENT *pe;
   EDGE *ed;
@@ -1723,7 +1723,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
     if ((ed=CreateEdge(theGrid,
                        nodes[CORNER_OF_EDGE(pe,i,0)],
                        nodes[CORNER_OF_EDGE(pe,i,1)],
-                       TRUE)) == NULL)
+                       with_vector)) == NULL)
     {
       DisposeElement(theGrid,pe,TRUE);
       return(NULL);
@@ -1731,7 +1731,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
 
   /* create element vector if */
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
-    if (GLEVEL(theGrid)!=0)
+    if (with_vector)
     {
       if (CreateVector (theGrid,ELEMVEC,(GEOM_OBJECT *)pe,&pv))
       {
@@ -1755,7 +1755,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   /* create side vectors if */
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
     for (i=0; i<SIDES_OF_ELEM(pe); i++)
-      if (GLEVEL(theGrid)!=0)
+      if (with_vector)
       {
         if (CreateSideVector (theGrid,i,(GEOM_OBJECT *)pe,&pv))
         {
@@ -3798,7 +3798,7 @@ NODE *InsertInnerNode (GRID *theGrid, DOUBLE *pos)
     PrintErrorMessage('E',"InsertInnerNode","cannot create vertex");
     return(NULL);
   }
-  theNode = CreateNode(theGrid,theVertex,NULL,LEVEL_0_NODE);
+  theNode = CreateNode(theGrid,theVertex,NULL,LEVEL_0_NODE,0);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
@@ -3862,7 +3862,7 @@ NODE *InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
   SETMOVE(theVertex,move);
   V_BNDP(theVertex) = bndp;
 
-  theNode = CreateNode(theGrid,theVertex,NULL,LEVEL_0_NODE);
+  theNode = CreateNode(theGrid,theVertex,NULL,LEVEL_0_NODE,0);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
@@ -5258,7 +5258,7 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
   }
 
   /* create the new Element */
-  theElement = CreateElement(theGrid,tag,ElementType,Node,NULL);
+  theElement = CreateElement(theGrid,tag,ElementType,Node,NULL,0);
   if (theElement==NULL)
   {
     PrintErrorMessage('E',"InsertElement","cannot allocate element");
@@ -5591,7 +5591,7 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
         ListNode = NList[theMesh->Element_corner_ids[j][k][l]];
         if (ListNode==NULL || LEVEL(ListNode)<i)
         {
-          Nodes[l] = CreateNode(theGrid,VList[theMesh->Element_corner_ids[j][k][l]],NULL,LEVEL_0_NODE);
+          Nodes[l] = CreateNode(theGrid,VList[theMesh->Element_corner_ids[j][k][l]],NULL,LEVEL_0_NODE,0);
           if (Nodes[l]==NULL) assert(0);
           NList[theMesh->Element_corner_ids[j][k][l]] = Nodes[l];
           if (ListNode==NULL || LEVEL(ListNode)<i-1)

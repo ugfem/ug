@@ -3653,10 +3653,10 @@ static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theCo
 	/* create son */
 	if (boundaryelement)
 		theSon = CreateElement(theGrid,TAG(theElement),BEOBJ,
-							   theContext,theElement);
+							   theContext,theElement,1);
 	else
 		theSon = CreateElement(theGrid,TAG(theElement),IEOBJ,
-							   theContext,theElement);
+							   theContext,theElement,1);
 	if (theSon==NULL) RETURN(GM_ERROR);
 	SETECLASS(theSon,MARKCLASS(theElement));
 
@@ -4532,10 +4532,10 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 
 			if (sons[i].bdy == 1) 
 				sons[i].theSon = CreateElement(theGrid,sons[i].tag,BEOBJ,
-									ElementNodes,theElement);
+									ElementNodes,theElement,1);
 			else
 				sons[i].theSon = CreateElement(theGrid,sons[i].tag,IEOBJ,
-									ElementNodes,theElement);
+									ElementNodes,theElement,1);
 			if (sons[i].theSon==NULL) RETURN(GM_FATAL);
 
 			IFDEBUG(gm,0)
@@ -4726,10 +4726,10 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 		/* TODO: delete special debug */ PRINTELEMID(-2)
 		if (boundaryelement)
 				theSon = CreateElement(theGrid,SON_TAG_OF_RULE(rule,s),BEOBJ,
-							ElementNodes,theElement);
+							ElementNodes,theElement,1);
 		else
 				theSon = CreateElement(theGrid,SON_TAG_OF_RULE(rule,s),IEOBJ,
-							ElementNodes,theElement);
+							ElementNodes,theElement,1);
 		if (theSon==NULL) RETURN(GM_ERROR);
 
 		/* TODO: delete special debug */ PRINTELEMID(-2)
@@ -5236,6 +5236,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 	if (CheckPartitioning(theMG))
 	{
 		if (RestrictPartitioning(theMG,COARSENED)) RETURN(GM_FATAL);
+if (0)
 if (0)
 		return(GM_OK);
 	}

@@ -428,8 +428,8 @@ INT OrphanCons(MULTIGRID *theMG)
             else if (LEVEL(theElement) != 0)
             {
               error++;
-              printf(PFMT "OrphanCons(): ERROR: elem=" EID_FMTX " cornernode=" ID_FMTX " is orphannode\n",
-                     me,EID_PRTX(theElement),ID_PRTX(theNode));
+              PRINTDEBUG(gm,1,(PFMT "OrphanCons(): ERROR: elem=" EID_FMTX " cornernode=" ID_FMTX " is orphannode\n",
+                               me,EID_PRTX(theElement),ID_PRTX(theNode)));
             }
           }
           else
@@ -443,8 +443,8 @@ INT OrphanCons(MULTIGRID *theMG)
             else if (LEVEL(theElement) != 0)
             {
               error++;
-              printf(PFMT "OrphanCons(): ERROR: elem=" EID_FMTX " midnode=" ID_FMTX " is orphannode\n",
-                     me,EID_PRTX(theElement),ID_PRTX(theNode));
+              PRINTDEBUG(gm,1,(PFMT "OrphanCons(): ERROR: elem=" EID_FMTX " midnode=" ID_FMTX " is orphannode\n",
+                               me,EID_PRTX(theElement),ID_PRTX(theNode)));
             }
           }
           else
@@ -1004,7 +1004,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   {
     if (i = OrphanCons(theMG))
     {
-      printf(PFMT "OrphanCons() returned %d errors\n",me,i);
+      PRINTDEBUG(gm,1,(PFMT "OrphanCons() returned %d errors\n",me,i));
       fflush(stdout);
       assert(0);
     }
@@ -1273,7 +1273,7 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
           GRID_LINK_VECTOR(theGrid,theVector,prio);
         }
       }
-      /*printf("Evaluate-pinfo():nid=%d prio=%d\n",ID(theNode),prio);fflush(stdout);*/
+      PRINTDEBUG(gm,1,("Evaluate-pinfo():nid=%d prio=%d\n",ID(theNode),prio);fflush(stdout));
       for (i=0; i<pinfo->ncopies_node[j]; i++)
       {
         DDD_IdentifyNumber(PARHDR(theNode),pinfo->proclist[s],pinfo->n_ident[j]);
@@ -1440,8 +1440,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     }
     else if (ID(NodeList[i]) != ref->newcornerid[r_index])
     {
-      printf("WARNING: inconsistent CORNER-node-ids(elem=%d): %d != %d\n",ID(theElement),(int)ID(NodeList[i]),(int)ref->newcornerid[r_index]);
-      printf("pos: %f %f\n",(float)CVECT(MYVERTEX(NodeList[i]))[0],(float)CVECT(MYVERTEX(NodeList[i]))[1]);
+      ASSERT(0);
     }
     SETNTYPE(NodeList[i],CORNER_NODE);
     r_index++;
@@ -1486,8 +1485,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     }
     else if (ID(NodeList[i]) != ref->newcornerid[r_index])
     {
-      printf("WARNING: inconsistent EDGE-node-ids(elem=%d): %d != %d\n",ID(theElement),(int)ID(NodeList[i]),(int)ref->newcornerid[r_index]);
-      printf("pos: %f %f\n",(float)CVECT(MYVERTEX(NodeList[i]))[0],(float)CVECT(MYVERTEX(NodeList[i]))[1]);
+      ASSERT(0);
     }
     SETNTYPE(NodeList[i],MID_NODE);
     HEAPFAULT(NodeList[i]);
@@ -1567,7 +1565,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
         }
     for (j=0; j<CORNERS_OF_TAG(SonData->tag); j++)
       SonNodeList[j] = NodeList[SonData->corners[j]];
-    theSonList[i] = CreateElement(upGrid,SonData->tag,type,SonNodeList,theElement);
+    theSonList[i] = CreateElement(upGrid,SonData->tag,type,SonNodeList,theElement,1);
     if (theSonList[i]==NULL) RETURN (1);
     SETECLASS(theSonList[i],ref->refclass);
     SETSUBDOMAIN(theSonList[i],SUBDOMAIN(theElement));
@@ -1923,7 +1921,6 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
   /* insert coarse mesh */
   if (InsertMesh(theMG,&theMesh))                                                                         {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-  if (FixCoarseGrid (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   for (i=0; i<=TOPLEVEL(theMG); i++)
     for (theElement = PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
     {
@@ -1935,9 +1932,17 @@ nparfiles = UG_GlobalMinINT(nparfiles);
       SETSUBDOMAIN(theElement,cge->subdomain);
       for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
       {
+        SETNSUBDOM(CORNER(theElement,j),cge->subdomain);
         ID(CORNER(theElement,j)) = cge->cornerid[j];
       }
+      for (j=0; j<EDGES_OF_ELEM(theElement); j++)
+      {
+        SETEDSUBDOM(GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),
+                            CORNER_OF_EDGE_PTR(theElement,j,1)),
+                    cge->subdomain);
+      }
     }
+  if (CreateAlgebra (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   i = MG_ELEMUSED | MG_NODEUSED | MG_EDGEUSED | MG_VERTEXUSED |  MG_VECTORUSED;
   ClearMultiGridUsedFlags(theMG,0,TOPLEVEL(theMG),i);
