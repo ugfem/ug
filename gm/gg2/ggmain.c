@@ -209,42 +209,10 @@ static INT IsPointLeftOfFC (COORD xP,COORD yP, FRONTCOMP *theFC)
 
 static INT CreateBNodeAndVertex (COORD lambda, PATCH *thePatch, GRID *theGrid)
 {
-  VERTEX *theVertex;
-  NODE *theNode;
-  VSEGMENT *theVSeg;
+  COORD pos[1];
 
-  /* create objects */
-  theVertex = CreateBoundaryVertex(theGrid,NULL);
-  if (theVertex==NULL)
-  {
-    UserWrite("ERROR: cannot create vertex\n");
-    return(1);
-  }
-  theNode = CreateNode(theGrid,NULL);
-  if (theNode==NULL)
-  {
-    DisposeVertex(theGrid,theVertex);
-    UserWrite("ERROR: cannot create node\n");
-    return(1);
-  }
-  theVSeg = CreateVertexSegment(theGrid, theVertex);
-  if (theVSeg==NULL)
-  {
-    DisposeVertex(theGrid,theVertex);
-    DisposeNode(theGrid, theNode);
-    PrintErrorMessage('E',"InsertBoundaryNode","cannot create vertexsegment");
-    return(GM_ERROR);
-  }
-
-  /* ------- fill data into node/vertex/vseg --------- */
-  FIRSTLAMBDA(theVertex)  = lambda;
-  Patch_local2global(thePatch,&lambda,CVECT(theVertex));
-  VS_PATCH(theVSeg)       = thePatch;
-  INDEX(theNode)          = 0;
-  MYVERTEX(theNode)       = theVertex;
-  TOPNODE(theVertex)      = theNode;
-
-  return (0);
+  pos[0] = lambda;
+  return(InsertBoundaryNodeFromPatch (MYMG(theGrid),thePatch,pos));
 }
 
 /****************************************************************************/
@@ -435,8 +403,7 @@ INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
         if (arclength<0.5*meshsize)
           if (MOVE(theVertex))
           {
-            DisposeVertex(theGrid,theVertex);
-            DisposeNode(theGrid,theNode);
+            DeleteNode(MYMG(theGrid),theNode);
           }
         break;
       }
@@ -2347,13 +2314,6 @@ static INT RedistributeFLs (FRONTLIST *myList,FRONTLIST *thenewFL)
   return (0);
 }
 
-
-
-
-
-
-
-
 /****************************************************************************/
 /*                                                                          */
 /* Function:  FrontLineUpDate				                                */
@@ -2661,6 +2621,8 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   Node[2] = theElementContext->theNode[2];
 
 
+  UserWriteF("el %d %d %d\n",ID(Node[0]),ID(Node[1]),ID(Node[2]));
+
   /* find neighboring elements and side information (theElemSide[i]==NULL) means inner side */
   found = 0;
   for (i=0; i<n; i++)
@@ -2831,6 +2793,7 @@ static FRONTCOMP *CreateOrSelectFC (
   FRONTCOMP *thenewFC;
   VERTEX *theVertex;
   NODE *innerNodeNew;
+  COORD_VECTOR pos;
 
   if (recursiondepth > 10)
   {
@@ -2888,40 +2851,19 @@ static FRONTCOMP *CreateOrSelectFC (
   if (theProposedFC!=NULL)
     return (theProposedFC);
 
-
   /* create a new FC including node and vertex */
-
-  theVertex = CreateInnerVertex(theGrid,NULL);
-  if (theVertex==NULL)
-  {
-    UserWrite("cannot create vertex\n");
+  pos[0] = xt[2];
+  pos[1] = yt[2];
+  if (InsertInnerNode (MYMG(theGrid),pos) != GM_OK)
     return(NULL);
-  }
-  innerNodeNew = CreateNode(theGrid,NULL);
-  if (innerNodeNew==NULL)
-  {
-    DisposeVertex(theGrid,theVertex);
-    UserWrite("cannot create node\n");
-    return(NULL);
-  }
 
-  /* fill data */
-  CVECT(theVertex)[0] = xt[2];
-  CVECT(theVertex)[1] = yt[2];
-  SETMOVE(theVertex,DIM);
-
-  MYVERTEX(innerNodeNew) = theVertex;
-  TOPNODE(theVertex) = innerNodeNew;
-
-  thenewFC = CreateFrontComp (myList, theFC, 1, &innerNodeNew);
+  thenewFC = CreateFrontComp (myList, theFC, 1, &FIRSTNODE(theGrid));
   if (thenewFC==NULL)
   {
     PrintErrorMessage('E',"CreateOrSelectFC","no storage for new FC");
     return (NULL);
 
   }
-
-
 
   return (thenewFC);
 }
@@ -2985,6 +2927,7 @@ static INT TerminateGG (MULTIGRID *theMG, INT flag)
 /* Output:    ELEMENT_CONTEXT* theElementContext                            */
 /*                                                                          */
 /****************************************************************************/
+
 static int FillElementContext(INT FlgForAccel, ELEMENT_CONTEXT* theElementContext, FRONTCOMP* theFC, FRONTCOMP* thenewFC, FRONTCOMP* the_old_succ)
 {
   theElementContext->theNode[0] = FRONTN(theFC);
@@ -3288,11 +3231,11 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
 
         FlgForAccel = NORMALCASE;
 
-        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
-          return (10);
-
         if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ ))
           return (1);
+
+        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
+          return (10);
 
         if (MakeElement(theGrid,&theElementContext))
           return (11);
@@ -3341,11 +3284,11 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
           return (13);
 
         FlgForAccel = NORMALCASE;
-        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
-          return (14);
-
         if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
           return (1);
+
+        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
+          return (14);
 
         if (MakeElement(theGrid, &theElementContext))
           return (15);
@@ -3390,11 +3333,11 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
           return (17);
 
         FlgForAccel = NORMALCASE;
-        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
-          return (18);
-
         if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
           return (1);
+
+        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
+          return (18);
 
         if (MakeElement(theGrid, &theElementContext))
           return (19);

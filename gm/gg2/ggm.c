@@ -406,6 +406,44 @@ INT DisposeIndepFrontList (INDEPFRONTLIST *theIFL)
 
 /****************************************************************************/
 /*                                                                          */
+/* Function:  DisposeFrontComp                                                          */
+/*                                                                          */
+/* Purpose:   remove front component                                                                        */
+/*                                                                          */
+/* Input:     GRID *theGrid: grid to remove from                                                */
+/*            FRONTCOMP *theFC: front component to remove                   */
+/*                                                                          */
+/* Output:    INT 0: ok                                                                                                         */
+/*                                                                          */
+/****************************************************************************/
+
+INT DisposeFrontComp (FRONTLIST *myList, FRONTCOMP *theFC)
+{
+  SUCCFC(PREDFC(theFC)) = SUCCFC(theFC);
+  PREDFC(SUCCFC(theFC)) = PREDFC(theFC);
+
+  if (theFC == STARTFC(myList))
+  {
+    if (theFC == LASTFC(myList))
+    {
+      STARTFC(myList) = NULL;
+      LASTFC(myList) = NULL;
+    }
+    else
+      STARTFC(myList) = SUCCFC(theFC);
+  }
+  else if (theFC == LASTFC(myList))
+    LASTFC(myList) = PREDFC(theFC);
+
+  PutFreeObject(MYGRID(myList)->mg,theFC,sizeof(FRONTCOMP),FcObj);
+
+  NFC(myList)--;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*                                                                          */
 /* Function:  DisposeFrontList                                                          */
 /*                                                                          */
 /* Purpose:   remove front list including its front components		        */
@@ -421,18 +459,13 @@ INT DisposeFrontList (FRONTLIST *theFL)
 {
   GRID *theGrid;
   INDEPFRONTLIST *myIFL;
-  FRONTCOMP *theFC;
 
   myIFL = MYIFL(theFL);
   theGrid = MYGRID(theFL);
 
   /* remove front components of theFL */
-  for (theFC=STARTFC(theFL); theFC!=NULL; theFC=SUCCFC(theFC))
-  {
-    PutFreeObject(theGrid->mg,theFC,sizeof(FRONTCOMP),FcObj);
-    if (theFC==LASTFC(theFL))
-      break;
-  }
+  while (STARTFC(theFL) != NULL)
+    DisposeFrontComp(theFL,STARTFC(theFL));
 
   /* remove front list from list */
   if (PREDFL(theFL)!=NULL)
@@ -448,43 +481,6 @@ INT DisposeFrontList (FRONTLIST *theFL)
 
   /* delete the front list itself */
   PutFreeObject(theGrid->mg,theFL,sizeof(FRONTLIST),FlObj);
-
-  return(0);
-}
-
-/****************************************************************************/
-/*                                                                          */
-/* Function:  DisposeFrontComp                                                          */
-/*                                                                          */
-/* Purpose:   remove front component                                                                        */
-/*                                                                          */
-/* Input:     GRID *theGrid: grid to remove from                                                */
-/*            FRONTCOMP *theFC: front component to remove                   */
-/*                                                                          */
-/* Output:    INT 0: ok                                                                                                         */
-/*                                                                          */
-/****************************************************************************/
-
-INT DisposeFrontComp (FRONTLIST *myList, FRONTCOMP *theFC)
-{
-  /* is this the only FC left? */
-  if (STARTFC(myList)==LASTFC(myList))
-  {
-    DisposeFrontList(myList);
-    return (0);
-  }
-
-  /* remove front component from list */
-  SUCCFC(PREDFC(theFC)) = SUCCFC(theFC);
-  PREDFC(SUCCFC(theFC)) = PREDFC(theFC);
-  if (STARTFC(myList)==theFC)
-    STARTFC(myList) = SUCCFC(theFC);
-  if (LASTFC(myList)==theFC)
-    LASTFC(myList) = PREDFC(theFC);
-
-  PutFreeObject(MYGRID(myList)->mg,theFC,sizeof(FRONTCOMP),FcObj);
-
-  NFC(myList)--;
 
   return(0);
 }
