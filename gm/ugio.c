@@ -2231,7 +2231,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     if (GridCreateConnection(theGrid))                                                              {DisposeMultiGrid(theMG); return (NULL);}
     ClearVectorClasses(theGrid);
     ClearNextVectorClasses(theGrid);
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+    for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
     {
       if (ECLASS(theElement)>=GREEN_CLASS)
         SeedVectorClasses(theGrid,theElement);
