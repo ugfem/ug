@@ -163,6 +163,7 @@ INT l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A);
 INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
 INT l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A);
 int DDD_InfoPrioCopies (DDD_HDR hdr);
+INT a_elementdata_consistent (MULTIGRID *mg, INT fl, INT tl);
 
 #ifdef __BLOCK_VECTOR_DESC__
 INT l_vector_consistentBS (GRID *g, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT x);
