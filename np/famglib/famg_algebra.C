@@ -124,6 +124,11 @@ double norm( const VT& v )
 		val = v[ve];
 		res += val*val; 
 	}
+	
+#ifdef ModelP
+	res = UG_GlobalSumDOUBLE( res );
+#endif
+	
 	return sqrt(res);
 }
 
@@ -135,6 +140,10 @@ double ScalProd( const VT& v, const VT& w )
 	typename VT::Iterator viter(v); 
 	typename VT::VectorEntry ve; 
 	register double res=0.0;
+	
+#ifdef ModelP
+	assert(0);	// TODO: make it for parallel
+#endif
 	
 	while(viter(ve))
 		res += v[ve]*w[ve]; 
