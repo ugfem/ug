@@ -46,6 +46,7 @@
 #define __STD_DOMAIN__
 
 #include "domain.h"
+#include "dimension.h"
 
 #include "compiler.h"
 

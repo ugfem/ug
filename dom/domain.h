@@ -46,8 +46,6 @@
 #ifndef __DOMAIN__
 #define __DOMAIN__
 
-#include <stdio.h>
-
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -57,28 +55,6 @@
 /*          macros                                                          */
 /*                                                                          */
 /****************************************************************************/
-
-#ifdef _2
-#ifdef _3
-#error ****    define EITHER dimension _2 OR _3       ****
-#endif
-#define __TWODIM__
-#define DIM 2
-#define DIM_OF_BND 1
-#endif
-
-#ifdef _3
-#define __THREEDIM__
-#define DIM 3
-#define DIM_OF_BND 2
-#endif
-
-#ifndef _2
-#ifndef _3
-#error ****    define at least dimension two OR three        ****
-#endif
-#endif
-
 
 #include "compiler.h"
 #include "ugenv.h"
@@ -93,17 +69,13 @@ enum DOM_IN_PARAMS {
 
   DOM_GLB_X,              /*!< General bnd cond. x-coordinate               */
   DOM_GLB_Y,              /*!< General bnd cond. y-coordinate               */
-#ifdef __THREEDIM__
   DOM_GLB_Z,              /*!< General bnd cond. z-coordinate               */
-#endif
   DOM_EVAL_FOR_SD,        /*!< Evaluate bc for this subdomain               */
   DOM_N_IN_PARAMS
 };
 
 #define DOM_LOC_X       DOM_GLB_X       /*!< Parametrized bnd cond. local x-coord.*/
-#ifdef __THREEDIM__
 #define DOM_LOC_Y       DOM_GLB_Y       /*!< parametrized bnd cond. local y-coord.*/
-#endif
 
 #define DOM_PARAM_OFFSET        DOM_N_IN_PARAMS
 
@@ -166,7 +138,7 @@ struct BVP_Descriptor
   /** @name Domain part */
   /*@{*/
   /** \brief Midpoint of a sphere in which the domain lies     */
-  DOUBLE midpoint[DIM];
+  DOUBLE midpoint[3];
 
   /** \brief Radius of a sphere in which the domain lies     */
   DOUBLE radius;
