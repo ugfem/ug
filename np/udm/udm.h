@@ -48,14 +48,14 @@
 #define NMATTYPES                               (MAXVECTORS*MAXVECTORS)
 #define MAX_SINGLE_VEC_COMP              9      /* max nb of comp in one TYPE                   */
 #define MAX_SINGLE_MAT_COMP             81      /* max nb of comp in one TYPE		    */
-#define MAX_VEC_COMP                    12      /* max nb of comp in one VECDATA_DESC	*/
-#define MAX_MAT_COMP               144  /* max nb of comp in one VECDATA_DESC	*/
+#define MAX_VEC_COMP                    14      /* max nb of comp in one VECDATA_DESC	*/
+#define MAX_MAT_COMP        (14*14)     /* max nb of comp in one VECDATA_DESC	*/
 
 #define NVECOFFSETS                             (NVECTYPES+1)
 /* for offset component in VECDATA_DESC	*/
 #define NMATOFFSETS                             (NMATTYPES+1)
 
-#define DEFAULT_NAMES "uvwzpqrst"   /* of size MAX_VEC_COMP                 */
+#define DEFAULT_NAMES "uvwzpqrstabcdefghijklmno"   /* of size MAX_VEC_COMP                 */
 
 #define NO_IDENT                        -1              /* no identification of components		*/
 #define FULL_TPLT                       -1              /* full template rather than sub		*/
