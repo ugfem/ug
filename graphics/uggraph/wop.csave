@@ -7359,7 +7359,7 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, j;
 	DOUBLE *x[MAX_CORNERS_OF_ELEM];
-	DOUBLE_VECTOR MidPoint, help;
+	DOUBLE_VECTOR MidPoint,help,help1;
 	INT coe,rule;
 	void *data;
 
@@ -7373,27 +7373,21 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	  GetRefinementMark ((const ELEMENT *)theElement,&rule,&data);
 
 	/* store viewable sides on drawing obj */
-	if (EE2D_ShrinkFactor==1.0)
+	if (EE2D_Property)
 	{
-		if (EE2D_Property)
-		{
-			DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
-			DO_2c(theDO) = coe; DO_inc(theDO) ;
-			if (SUBDOMAIN(theElement)<1 || SUBDOMAIN(theElement)>EE2D_NProperty) return (1);
-			#ifndef ModelP
-			DO_2l(theDO) = EE2D_PropertyColor[(int)SUBDOMAIN(theElement)];
-			#else
-			DO_2l(theDO) = EE2D_PropertyColor[me+1];
-			#endif
-			DO_inc(theDO);
-			DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
-			for (j=0; j<coe; j++)
-			{
-				V2_COPY(x[j],DO_2Cp(theDO));
-				DO_inc_n(theDO,2);
-			}
-		}
-		else if (LEVEL(theElement)<EE2D_MaxLevel)
+		DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
+		DO_2c(theDO) = coe; DO_inc(theDO) ;
+		#ifndef ModelP
+		if (SUBDOMAIN(theElement)<1 || SUBDOMAIN(theElement)>EE2D_NProperty) return (1);
+		DO_2l(theDO) = EE2D_PropertyColor[(int)SUBDOMAIN(theElement)];
+		#else
+		DO_2l(theDO) = EE2D_PropertyColor[me+1];
+		#endif
+		DO_inc(theDO);
+	}
+	else
+	{
+		if (LEVEL(theElement)<EE2D_MaxLevel)			
 		{
 			if (((EE2D_NoColor[COLOR_LOWER_LEVEL] && !EE2D_IndMark)) ||
 				(((rule != RED) && EE2D_IndMark)) )
@@ -7411,21 +7405,6 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				  DO_2l(theDO) = EE2D_Color[COLOR_LOWER_LEVEL]; 
 				DO_inc(theDO);
 			}
-			DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
-			#ifdef ModelP
-			for (j=0; j<coe; j++)
-			{
-				V2_LINCOMB(EE2D_PartShrinkFactor,x[j],1.0-EE2D_PartShrinkFactor,EE2D_PartMidPoint,help)
-				V2_COPY(help,DO_2Cp(theDO));
-				DO_inc_n(theDO,2);
-			}
-			#else
-			for (j=0; j<coe; j++)
-			{
-				V2_COPY(x[j],DO_2Cp(theDO));
-				DO_inc_n(theDO,2);
-			}
-			#endif
 		}
 		else
 		{
@@ -7445,97 +7424,65 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				  DO_2l(theDO) = EE2D_Color[ECLASS(theElement)]; 
 				DO_inc(theDO);
 			}
-			DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
-			#ifdef ModelP
-			for (j=0; j<coe; j++)
-			{
-				V2_LINCOMB(EE2D_PartShrinkFactor,x[j],1.0-EE2D_PartShrinkFactor,EE2D_PartMidPoint,help)
-				V2_COPY(help,DO_2Cp(theDO));
-				DO_inc_n(theDO,2);
-			}
-			#else
-			for (j=0; j<coe; j++)
-			{
-				V2_COPY(x[j],DO_2Cp(theDO));
-				DO_inc_n(theDO,2);
-			}
-			#endif
 		}
+	}
+
+	DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
+
+	/* now compute transformation of geomtric information */
+	/* as configured with setplotobject:                  */
+	/* ShrinkFactor: shrink to point of gradient of elem  */
+	/* PartShrinkFactor: shrink to point gradient of      */
+	/*    residing on this partition                      */
+	if (EE2D_ShrinkFactor==1.0)
+	{
+		#ifdef ModelP
+		for (j=0; j<coe; j++)
+		{
+			V2_LINCOMB(EE2D_PartShrinkFactor,x[j],1.0-EE2D_PartShrinkFactor,EE2D_PartMidPoint,help)
+			V2_COPY(help,DO_2Cp(theDO));
+			DO_inc_n(theDO,2);
+		}
+		#else
+		for (j=0; j<coe; j++)
+		{
+			V2_COPY(x[j],DO_2Cp(theDO));
+			DO_inc_n(theDO,2);
+		}
+		#endif
 	}
 	else
 	{
+		#ifdef ModelP
+		V2_CLEAR(MidPoint)
+		for (i=0; i<coe; i++)
+		{
+			V2_LINCOMB(EE2D_PartShrinkFactor,x[i],1.0-EE2D_PartShrinkFactor,EE2D_PartMidPoint,help)
+			V2_ADD(MidPoint,help,MidPoint)
+		}
+		V2_SCALE(1.0/(DOUBLE)i,MidPoint)
+
+		for (j=0; j<coe; j++)
+		{
+			V2_LINCOMB(EE2D_PartShrinkFactor,x[j],1.0-EE2D_PartShrinkFactor,EE2D_PartMidPoint,help)
+			V2_LINCOMB(EE2D_ShrinkFactor,help,1.0-EE2D_ShrinkFactor,MidPoint,help1)
+			V2_COPY(help1,DO_2Cp(theDO));
+			DO_inc_n(theDO,2);
+
+		}
+		#else
 		V2_CLEAR(MidPoint)
 		for (i=0; i<coe; i++)
 			V2_ADD(MidPoint,x[i],MidPoint)
 		V2_SCALE(1.0/(DOUBLE)i,MidPoint)
-					
-		if (EE2D_Property)
+
+		for (j=0; j<coe; j++)
 		{
-			DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
-			DO_2c(theDO) = coe; DO_inc(theDO) ;
-			if (SUBDOMAIN(theElement)<1 || SUBDOMAIN(theElement)>EE2D_NProperty) return (1);
-			DO_2l(theDO) = EE2D_PropertyColor[(int)SUBDOMAIN(theElement)]; 
-			DO_inc(theDO);
-			DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
-			for (j=0; j<coe; j++)
-			{
-				V2_LINCOMB(EE2D_ShrinkFactor,x[j],1.0-EE2D_ShrinkFactor,MidPoint,help)
-				V2_COPY(help,DO_2Cp(theDO));
-				DO_inc_n(theDO,2);
-			}
+			V2_LINCOMB(EE2D_ShrinkFactor,x[j],1.0-EE2D_ShrinkFactor,MidPoint,help)
+			V2_COPY(help,DO_2Cp(theDO));
+			DO_inc_n(theDO,2);
 		}
-		else if (LEVEL(theElement)<EE2D_MaxLevel)
-		{
-			if (((EE2D_NoColor[COLOR_LOWER_LEVEL] && !EE2D_IndMark)) ||
-				(((rule != RED) && EE2D_IndMark)) )
-			{
-				DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO) 
-				DO_2c(theDO) = coe; DO_inc(theDO) 
-			}
-			else
-			{
-				DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
-				DO_2c(theDO) = coe; DO_inc(theDO) 
-				if (EE2D_IndMark)
-				  DO_2l(theDO) = EE2D_ColorIndMark;
-				else
-				  DO_2l(theDO) = EE2D_Color[COLOR_LOWER_LEVEL]; 
-				DO_inc(theDO);
-			}
-			DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
-			for (j=0; j<coe; j++)
-			{
-				V2_LINCOMB(EE2D_ShrinkFactor,x[j],1.0-EE2D_ShrinkFactor,MidPoint,help)
-				V2_COPY(help,DO_2Cp(theDO));
-				DO_inc_n(theDO,2);
-			}
-		}
-		else
-		{
-			if (((EE2D_NoColor[ECLASS(theElement)] && !EE2D_IndMark)) ||
-				(((rule != RED) && EE2D_IndMark)) )
-			{
-				DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO) 
-				DO_2c(theDO) = coe; DO_inc(theDO) 
-			}
-			else
-			{
-				DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
-				DO_2c(theDO) = coe; DO_inc(theDO) 
-				if (EE2D_IndMark)
-				  DO_2l(theDO) = EE2D_ColorIndMark;
-				else
-				  DO_2l(theDO) = EE2D_Color[ECLASS(theElement)]; 
-				DO_inc(theDO);
-			}
-			DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
-			for (j=0; j<coe; j++)
-			{
-				V2_LINCOMB(EE2D_ShrinkFactor,x[j],1.0-EE2D_ShrinkFactor,MidPoint,help)
-				V2_COPY(help,DO_2Cp(theDO));
-				DO_inc_n(theDO,2);
-			}
-		}
+		#endif
 	}
 	
 	/* plot refinement mark */
@@ -11679,7 +11626,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				  #ifndef ModelP
 				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
 				  #else
-				  DO_2l(theDO) = EE3D_PropertyColor[PARTITION(theElement)+1]; 
+				  DO_2l(theDO) = EE3D_PropertyColor[me+1];
 				  #endif
 				  DO_inc(theDO);
 				}			  
@@ -11724,7 +11671,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				  #ifndef ModelP
 				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
 				  #else
-				  DO_2l(theDO) = EE3D_PropertyColor[PARTITION(theElement)+1]; 
+				  DO_2l(theDO) = EE3D_PropertyColor[me+1]; 
 				  #endif
 				  DO_inc(theDO);
 				}			  
@@ -11868,7 +11815,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				  #ifndef ModelP
 				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
 				  #else
-				  DO_2l(theDO) = EE3D_PropertyColor[PARTITION(theElement)+1]; 
+				  DO_2l(theDO) = EE3D_PropertyColor[me+1]; 
 				  #endif
 				  DO_inc(theDO);
 				}			  
@@ -11901,7 +11848,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				  #ifndef ModelP
 				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
 				  #else
-				  DO_2l(theDO) = EE3D_PropertyColor[PARTITION(theElement)+1]; 
+				  DO_2l(theDO) = EE3D_PropertyColor[me+1]; 
 				  #endif
 				  DO_inc(theDO);
 				}			  
@@ -13966,7 +13913,7 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 	{
 		Release(theHeap,FROM_TOP);
 		UserWrite("ERROR: could not allocate memory from the MGHeap\n");
-		return (1);
+		RETURN(1);
 	}
 	
 	/* order elements on level zero */
@@ -14002,7 +13949,7 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
         #ifndef ModelP
 		if (i!=NT(theGrid)) return (1);
         #endif
-	    if (OrderFathersNNS(table, theHeap, i)) return (1);
+	    if (OrderFathersNNS(table, theHeap, i)) RETURN(1);
 		break;
 
 	case 2:
@@ -14022,7 +13969,7 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 			     (stop-start)/(DOUBLE)CLOCKS_PER_SEC);
 	UserWriteF( "number of CompareElements    : %9d\n", OE_nCompareElements);
 
-	if (PutAtEndOfList(theGrid,theGrid->nElem,table)!=GM_OK) return (1);	
+	if (PutAtEndOfList(theGrid,i,table)!=GM_OK) RETURN(1);	
 
 	/* now order level 1 to toplevel hirarchically */
 	for (i=0; i<theMG->topLevel; i++)
@@ -14032,7 +13979,7 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 		{
 			if (NSONS(theElement)<=0) continue;
 			OrderSons(table,theElement);
-			if (PutAtEndOfList(UPGRID(theGrid),NSONS(theElement),table)!=GM_OK) return (1);
+			if (PutAtEndOfList(UPGRID(theGrid),NSONS(theElement),table)!=GM_OK) RETURN(1);
 		}
 	}
 	
@@ -16532,7 +16479,7 @@ static INT WOP_Init(INT WOP_WorkMode)
 				#endif
 				{
 					UserWrite("ording of elements failed\n");
-					return (1);
+					RETURN(1);
 				}
 			}
 		
@@ -16610,7 +16557,7 @@ static INT WOP_Init(INT WOP_WorkMode)
 			break;
 		
 		default:
-			return (1);
+			RETURN(1);
 	}
 	return (0);
 }
