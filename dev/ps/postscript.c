@@ -366,7 +366,7 @@ static void PrintPSString (const char *s)
   fputc(')',currPSF);
 }
 
-static void PSText (const char *s, INT mode)
+static void PSDrawText (const char *s, INT mode)
 {
   fprintf(currPSF,"%g %g M\n",TRFMX(PScp),TRFMY(PScp));
   if (landscape) fprintf(currPSF,"90 rotate\n");
@@ -381,7 +381,7 @@ static void PSCenteredText (SHORT_POINT point, const char *s, INT mode)
   /* centering?? */
   point.x -= 0.5*REL_CHARWIDTH*PSts*strlen(s);
   PSMoveTo(point);
-  PSText(s,mode);
+  PSDrawText(s,mode);
 }
 
 static void PSClearViewPort (void)
@@ -493,7 +493,7 @@ static void InitPSPort (OUTPUTDEVICE *thePort)
   thePort->ErasePolygon   = PSErasePolygon;
   thePort->Polymark               = PSPolymark;
   thePort->InvPolymark    = PSInvPolymark;
-  thePort->Text                   = PSText;
+  thePort->DrawText               = PSDrawText;
   thePort->CenteredText   = PSCenteredText;
   thePort->ClearViewPort  = PSClearViewPort;
 

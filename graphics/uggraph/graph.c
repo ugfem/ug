@@ -1202,7 +1202,7 @@ void UgText (const char *s, INT mode)
       *move = '\0';
 
     (*CurrentOutputDevice->Move)(out);
-    (*CurrentOutputDevice->Text)(p,TEXT_REGULAR);
+    (*CurrentOutputDevice->DrawText)(p,TEXT_REGULAR);
 
     while (next!=NULL)
     {
@@ -1235,14 +1235,14 @@ void UgText (const char *s, INT mode)
       }
       p++;
       (*CurrentOutputDevice->Move)(out);
-      (*CurrentOutputDevice->Text)(p,TEXT_REGULAR);
+      (*CurrentOutputDevice->DrawText)(p,TEXT_REGULAR);
     }
     return;
 
   case TEXT_REGULAR :
   case TEXT_INVERSE :
     (*CurrentOutputDevice->Move)(out);
-    (*CurrentOutputDevice->Text)(s,mode);
+    (*CurrentOutputDevice->DrawText)(s,mode);
   }
 }
 

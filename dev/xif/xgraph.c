@@ -424,7 +424,7 @@ static void IFInvPolymark (short n, SHORT_POINT *points)
   for (i=0; i<n; i++) Marker(gw->marker_id,gw->marker_size,points[i]);
 }
 
-static void IFText (const char *s, INT mode)
+static void IFDrawText (const char *s, INT mode)
 {
   XGCValues values_return;
   unsigned long valuemask,plane_mask;
@@ -815,7 +815,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
   thePort->ErasePolygon   = IFErasePolygon;
   thePort->Polymark               = IFPolymark;
   thePort->InvPolymark    = IFInvPolymark;
-  thePort->Text                   = IFText;
+  thePort->DrawText               = IFDrawText;
   thePort->CenteredText   = IFCenteredText;
   thePort->ClearViewPort  = IFClearViewPort;
 

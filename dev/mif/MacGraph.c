@@ -437,7 +437,7 @@ static void MacInvPolymark (short n, SHORT_POINT *points)
     InvMarker(points[i]);
 }
 
-static void MacText (const char *s, INT mode)
+static void MacDrawText (const char *s, INT mode)
 {
   switch(mode)
   {
@@ -593,7 +593,7 @@ static void InitMacPort ()
   MacOutputDevice->ErasePolygon           = MacErasePolygon;
   MacOutputDevice->Polymark                       = MacPolymark;
   MacOutputDevice->InvPolymark            = MacInvPolymark;
-  MacOutputDevice->Text                           = MacText;
+  MacOutputDevice->DrawText                       = MacDrawText;
   MacOutputDevice->CenteredText           = MacCenteredText;
   MacOutputDevice->ClearViewPort          = MacClearViewPort;
 

@@ -57,7 +57,7 @@
 #define opPolyline                      3
 #define opPolygon                       4
 #define opPolymark                      5
-#define opText                          6
+#define opDrawText                      6
 #define opCenteredText          7
 #define opSetLineWidth          8
 #define opSetMarker             9
@@ -298,7 +298,7 @@ static void MetaPolymark (short n, SHORT_POINT *points)
 static void MetaInvPolymark (short n, SHORT_POINT *points)
 {}
 
-static void MetaText (const char *s, INT mode)
+static void MetaDrawText (const char *s, INT mode)
 {
   short n,size;
 
@@ -306,7 +306,7 @@ static void MetaText (const char *s, INT mode)
   size = 3+n;
   if (currMW->blockUsed+size>METABUFFERSIZE) flush_block();
 
-  *currMW->data = opText;
+  *currMW->data = opDrawText;
   currMW->data++;
   MEMCPYS(currMW->data,n);
   memcpy(currMW->data,s,n);
@@ -480,7 +480,7 @@ static void InitMetaPort (OUTPUTDEVICE *thePort)
   thePort->ErasePolygon   = MetaErasePolygon;
   thePort->Polymark               = MetaPolymark;
   thePort->InvPolymark    = MetaInvPolymark;
-  thePort->Text                   = MetaText;
+  thePort->DrawText               = MetaDrawText;
   thePort->CenteredText   = MetaCenteredText;
   thePort->ClearViewPort  = MetaClearViewPort;
 
