@@ -129,7 +129,7 @@ static int CheckInnNode (INNER_NODE *InnNode)
   return (0);
 }
 
-static int CheckElem (ELEMENT *Elem)
+static int CheckElem (NG_ELEMENT *Elem)
 {
   int i;
 
@@ -172,7 +172,7 @@ static int cmp_int (const void *p, const void *q)
   return (0);
 }
 
-int NP_ElemSideOnBnd (ELEMENT *Elem)
+int NP_ElemSideOnBnd (NG_ELEMENT *Elem)
 {
   int i,j,n,esob;
   int cof[4];
@@ -220,7 +220,7 @@ int NP_ElemSideOnBnd (ELEMENT *Elem)
   ((x[2])*(y[0])-(x[0])*(y[2]))*z[1] + \
   ((x[0])*(y[1])-(x[1])*(y[0]))*z[2]
 
-int OrientateElem (ELEMENT *Elem)
+int OrientateElem (NG_ELEMENT *Elem)
 {
   int i;
   double sp;
@@ -413,7 +413,7 @@ int PutInnerNode (INNER_NODE *InnNode)
   return (0);
 }
 
-int PutElement (ELEMENT *Elem)
+int PutElement (NG_ELEMENT *Elem)
 {
   int i,j,side;
 

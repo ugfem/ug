@@ -90,7 +90,7 @@ typedef struct {
   int c_id[8];
   int n_f;
   ELEM_FACE face[6];
-} ELEMENT;
+} NG_ELEMENT;
 
 #ifdef __USE_IN_UG__
 
@@ -156,7 +156,7 @@ typedef struct {
 
 int PutBndNode (BND_NODE *BndNode);
 int PutInnerNode (INNER_NODE *InnNode);
-int PutElement (ELEMENT *Elem);
+int PutElement (NG_ELEMENT *Elem);
 int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey);
 
 #ifdef __USE_IN_UG__
