@@ -4167,7 +4167,7 @@ static INT LmgcDisplay (NP_BASE *theNP)
   UserWriteF(DISPLAY_NP_FORMAT_SI,"g",(int)np->gamma);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"n1",(int)np->nu1);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"n2",(int)np->nu2);
-  UserWriteF(DISPLAY_NP_FORMAT_SI,"b",(int)np->baselevel);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)np->baselevel);
 
   if (np->Transfer != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"T",ENVITEM_NAME(np->Transfer));
@@ -4346,7 +4346,6 @@ static INT LmgcPostProcess (NP_ITER *theNP, INT level,
   INT i;
 
   np = (NP_LMGC *) theNP;
-
 
   if (np->PreSmooth->PostProcess != NULL)
     for (i = np->baselevel+1; i <= level; i++)

@@ -548,10 +548,12 @@ static INT LinearDefect (NP_LINEAR_SOLVER *theNP, INT level,
                          INT *result)
 {
   NP_LS *np;
+  INT bl;
 
   np = (NP_LS *) theNP;
-  if (dmatmul_minus(NP_MG(theNP),np->baselevel,level,ON_SURFACE,b,A,x)
-      != NUM_OK) NP_RETURN(1,result[0]);
+  bl = MIN(FULLREFINELEVEL(NP_MG(theNP)),MAX(0,np->baselevel));
+  if (dmatmul_minus(NP_MG(theNP),bl,level,ON_SURFACE,b,A,x) != NUM_OK)
+    NP_RETURN(1,result[0]);
 
   return (*result);
 }
@@ -670,9 +672,14 @@ static INT LinearSolverPostProcess (NP_LINEAR_SOLVER *theNP,
 
   np = (NP_LS *) theNP;
 
-  if (np->Iter->PostProcess == NULL)
-    return(0);
-  return((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result));
+  if (np->Iter != NULL)
+    if (np->Iter->PostProcess != NULL)
+      if ((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result))
+        NP_RETURN(1,result[0]);
+
+  np->baselevel = MAX(BOTTOMLEVEL(theNP->base.mg),np->baselevel);
+
+  return(0);
 }
 
 /****************************************************************************/
@@ -1530,13 +1537,15 @@ static INT BCGSPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x,
   if (FreeVD(np->ls.base.mg,np->baselevel,level,np->t)) REP_ERR_RETURN(1);
   if (FreeVD(np->ls.base.mg,np->baselevel,level,np->q)) REP_ERR_RETURN(1);
 
-  if (np->Iter!=NULL)
-  {
-    if (np->Iter->PostProcess == NULL) return(0);
-    return((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result));
+  if (np->Iter!=NULL) {
+    if (np->Iter->PostProcess != NULL)
+      if ((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result))
+        NP_RETURN(1,result[0]);
   }
   else
     return (0);
+
+  np->baselevel = MAX(BOTTOMLEVEL(theNP->base.mg),np->baselevel);
 
   return(0);
 }

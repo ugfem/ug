@@ -825,6 +825,8 @@ static INT AMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   np = (NP_AMG_TRANSFER *) theNP;
   theMG = NP_MG(theNP);
 
+  ASSERT(*fl == theMG->bottomLevel);
+
   for (level=-1; level>=theMG->bottomLevel; level--)
     if (FreeMD(theMG,level,level,A))
       REP_ERR_RETURN(1);
@@ -842,6 +844,8 @@ static INT AMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     result[0]=1;
     REP_ERR_RETURN(1);
   }
+  if (np->display == PCR_FULL_DISPLAY)
+    UserWriteF("amg disposed\n");
   *fl=0;
 
   return(0);
