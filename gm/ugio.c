@@ -1201,7 +1201,7 @@ static INT IO_GridCons(MULTIGRID *theMG)
 
 static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT *refinement, int *RefRuleOffset)
 {
-  INT i,j,k,l_entry,r_index,nedge,type,sonRefined,n0,n1,Sons_of_Side,SonSides[MAX_SONS];
+  INT i,j,k,r_index,nedge,type,sonRefined,n0,n1,Sons_of_Side,SonSides[MAX_SONS],offset;
   ELEMENT *theSonElem[MAX_SONS];
   ELEMENT *theSonList[MAX_SONS];
   NODE *NodeList[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
@@ -1211,7 +1211,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   MGIO_RR_RULE *theRule;
   static MGIO_REFINEMENT *ref;
   struct mgio_sondata *SonData;
-  INT nbside;
+  INT nbside,nex;
 
   /* init */
   if (refinement!=NULL) ref=refinement;
@@ -1224,76 +1224,104 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   upGrid = UPGRID(theGrid);
 
   /* insert nodes */
+  if (MGIO_PARFILE)
+  {
+    nex=0;
+    for (i=0; i<theRule->nsons; i++)
+      if ((ref->sonex>>i)&1)
+        for (j=0; j<CORNERS_OF_TAG(theRule->sons[i].tag); j++)
+          nex |= (1<<theRule->sons[i].corners[j]);
+  }
+  r_index = 0;
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
   {
+    if (MGIO_PARFILE && !((nex>>i)&1))
+    {
+      NodeList[i] = NULL;
+      continue;
+    }
     NodeList[i] = SONNODE(CORNER(theElement,i));
     if (NodeList[i]==NULL)
     {
       NodeList[i] = CreateSonNode(upGrid,CORNER(theElement,i));
       if (NodeList[i]==NULL) return (1);
-      ID(NodeList[i]) = ref->newcornerid[i];
+      ID(NodeList[i]) = ref->newcornerid[r_index++];
     }
   }
+  offset = i;
 
   nedge = EDGES_OF_ELEM(theElement);
-  l_entry = r_index = CORNERS_OF_ELEM(theElement);
-  for (i=0; i<nedge; i++)
+  for (; i<nedge+offset; i++)
   {
-    if (theRule->pattern[i]!=1)
+    if (MGIO_PARFILE && !((nex>>i)&1))
     {
-      NodeList[l_entry++] = NULL;
+      NodeList[i] = NULL;
       continue;
     }
-    n0 = CORNER_OF_EDGE(theElement,i,0);
-    n1 = CORNER_OF_EDGE(theElement,i,1);
+    if (theRule->pattern[i-offset]!=1)
+    {
+      NodeList[i] = NULL;
+      continue;
+    }
+    n0 = CORNER_OF_EDGE(theElement,i-offset,0);
+    n1 = CORNER_OF_EDGE(theElement,i-offset,1);
     theEdge = GetEdge(CORNER(theElement,n0),CORNER(theElement,n1));
     if (theEdge==NULL) return (1);
-    NodeList[l_entry] = MIDNODE(theEdge);
-    if (NodeList[l_entry]==NULL)
+    NodeList[i] = MIDNODE(theEdge);
+    if (NodeList[i]==NULL)
     {
-      NodeList[l_entry] = CreateMidNode(upGrid,theElement,i);
-      if (NodeList[l_entry]==NULL) return (1);
-      ID(NodeList[l_entry]) = ref->newcornerid[r_index];
-      HEAPFAULT(NodeList[l_entry]);
+      NodeList[i] = CreateMidNode(upGrid,theElement,i-offset);
+      if (NodeList[i]==NULL) return (1);
+      ID(NodeList[i]) = ref->newcornerid[r_index++];
+      HEAPFAULT(NodeList[i]);
     }
-    HEAPFAULT(NodeList[l_entry]);
-    l_entry++; r_index++;
+    HEAPFAULT(NodeList[i]);
   }
+  offset = i;
 
 #ifdef __THREEDIM__
-  for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+  for (; i<SIDES_OF_ELEM(theElement)+offset; i++)
   {
-    if (theRule->pattern[i+nedge]!=1)
+    if (MGIO_PARFILE && !((nex>>i)&1))
     {
-      NodeList[l_entry++] = NULL;
+      NodeList[i] = NULL;
+      continue;
+    }
+    if (theRule->pattern[i-CORNERS_OF_ELEM(theElement)]!=1)
+    {
+      NodeList[i] = NULL;
       continue;
     }
 
     if (ref->newcornerid[r_index]-foid>=0 && ref->newcornerid[r_index]-foid<non)
     {
-      NodeList[l_entry] = nid_n[ref->newcornerid[r_index]-foid];
-      assert(NodeList[l_entry]!=NULL);
+      NodeList[i] = nid_n[ref->newcornerid[r_index]-foid];
+      assert(NodeList[i]!=NULL);
     }
     else
-      NodeList[l_entry] = GetSideNode(theElement,i);
-    if (NodeList[l_entry]==NULL)
+      NodeList[i] = GetSideNode(theElement,i-offset);
+    if (NodeList[i]==NULL)
     {
-      NodeList[l_entry] = CreateSideNode(upGrid,theElement,i);
-      if (NodeList[l_entry]==NULL) return (1);
-      ID(NodeList[l_entry]) = ref->newcornerid[r_index];
+      NodeList[i] = CreateSideNode(upGrid,theElement,i-offset);
+      if (NodeList[i]==NULL) return (1);
+      ID(NodeList[i]) = ref->newcornerid[r_index];
     }
     else
-      SETONNBSIDE(MYVERTEX(NodeList[l_entry]),i);
-    l_entry++; r_index++;
+      SETONNBSIDE(MYVERTEX(NodeList[i]),i-offset);
+    r_index++;
   }
+  offset = i;
 #endif
 
-  if (theRule->pattern[CENTER_NODE_INDEX(theElement)]==1)
+  if (theRule->pattern[CENTER_NODE_INDEX(theElement)]==1 && (!MGIO_PARFILE || ((nex>>i)&1)))
   {
-    NodeList[l_entry] = CreateCenterNode(upGrid,theElement);
-    if (NodeList[l_entry]==NULL) return (1);
-    ID(NodeList[l_entry]) = ref->newcornerid[r_index];
+    NodeList[i] = CreateCenterNode(upGrid,theElement);
+    if (NodeList[i]==NULL) return (1);
+    ID(NodeList[i]) = ref->newcornerid[r_index++];
   }
+  else
+    NodeList[i] = NULL;
+
 
   /* insert elements */
   for (i=0; i<theRule->nsons; i++)
