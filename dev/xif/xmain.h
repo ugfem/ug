@@ -54,6 +54,7 @@ START_UG_NAMESPACE
 #define XGUI            0x5
 #define CGUI            0x6
 #define CNUI            0xa
+#define PUI             0x10
 
 #define CUITOGGLE               0x2
 
@@ -69,6 +70,7 @@ START_UG_NAMESPACE
 #define XUI_ON          (user_interface & XUI)
 #define GUI_ON          (user_interface & GUI)
 #define NUI_ON          (user_interface & NUI)
+#define PUI_ON          (user_interface & PUI)
 
 #define SET_CUI_ON      (user_interface |= CUI)
 #define SET_XUI_ON      (user_interface |= XUI)

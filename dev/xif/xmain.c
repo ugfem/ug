@@ -94,6 +94,8 @@ USING_UG_NAMESPACES
 /****************************************************************************/
 
 static ShellWindow shell;                                       /* our only shell window		*/
+FILE *i_pipe=NULL;                          /* input to ug                  */
+FILE *o_pipe=NULL;                                                  /* output from ug               */
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -200,6 +202,46 @@ static Bool callback (Display *d, XEvent *report, char *arg)
 /****************************************************************************/
 
 static INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask);
+
+void PUI_CreatePipes (char *extension)
+{
+  char i_name[128];
+  char o_name[128];
+
+  sprintf(i_name,".I_PIPE_%s",extension);
+  sprintf(o_name,".O_PIPE_%s",extension);
+
+
+  o_pipe=fopen(o_name,"w");
+  assert(o_pipe!=NULL);
+  fflush(o_pipe);
+
+  i_pipe=fopen(i_name,"r");
+  assert(i_pipe!=NULL);
+
+  return;
+}
+
+static INT GetNextUGEvent_PUI (EVENT *theEvent, INT EventMask)
+{
+  char *s;
+  int cmdKey, onlyCmdKey;
+
+  /* no event as default */
+  theEvent->Type = NO_EVENT;
+  theEvent->NoEvent.InterfaceEvent = 0;
+
+  /* we have no command keys */
+  if (EventMask==TERM_CMDKEY) return(0);
+
+  /* read in a string from the user and store it in event structure */
+  if (i_pipe==NULL) return(0);
+  fgets(theEvent->TermString.String,INPUTBUFFERLEN,i_pipe);
+  theEvent->Type = TERM_STRING;
+
+  /* ready */
+  return(0);
+}
 
 static INT GetNextUGEvent_CUI (EVENT *theEvent, INT EventMask)
 {
@@ -528,7 +570,8 @@ static INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask)
 
 INT NS_PREFIX GetNextUGEvent (EVENT *theEvent, INT EventMask)
 {
-  if (CUI_ON) GetNextUGEvent_CUI (theEvent,EventMask);
+  if (PUI_ON) GetNextUGEvent_PUI (theEvent,EventMask);
+  else if (CUI_ON) GetNextUGEvent_CUI (theEvent,EventMask);
   else if (!NUI_ON) GetNextUGEvent_XUI (theEvent,EventMask);
   return(0);
 }
@@ -590,13 +633,14 @@ OUTPUTDEVICE * NS_PREFIX InitScreen (int *argcp, char **argv, INT *error)
         exit(-1);
       }
 
-      if (strcmp(buffer,XUI_STRING)==0)       { user_interface = XUI; ok = 1; }
-      if (strcmp(buffer,CUI_STRING)==0)       { user_interface = CUI; ok = 1; }
-      if (strcmp(buffer,GUI_STRING)==0)       { user_interface = GUI; ok = 1; }
-      if (strcmp(buffer,NUI_STRING)==0)       { user_interface = NUI; ok = 1; }
-      if (strcmp(buffer,XGUI_STRING)==0)      { user_interface = XGUI; ok = 1; }
-      if (strcmp(buffer,CGUI_STRING)==0)      { user_interface = CGUI; ok = 1; }
-      if (strcmp(buffer,CNUI_STRING)==0)      { user_interface = CNUI; ok = 1; }
+      user_interface=0;
+      if (strcmp(buffer,XUI_STRING)==0)       { user_interface |= XUI; ok = 1; }
+      if (strcmp(buffer,CUI_STRING)==0)       { user_interface |= CUI; ok = 1; }
+      if (strcmp(buffer,GUI_STRING)==0)       { user_interface |= GUI; ok = 1; }
+      if (strcmp(buffer,NUI_STRING)==0)       { user_interface |= NUI; ok = 1; }
+      if (strcmp(buffer,XGUI_STRING)==0)      { user_interface |= XGUI; ok = 1; }
+      if (strcmp(buffer,CGUI_STRING)==0)      { user_interface |= CGUI; ok = 1; }
+      if (strcmp(buffer,CNUI_STRING)==0)      { user_interface |= CNUI; ok = 1; }
 
       if (!ok)
       {
@@ -612,6 +656,24 @@ OUTPUTDEVICE * NS_PREFIX InitScreen (int *argcp, char **argv, INT *error)
       i -= 1;
       *argcp -= 2;
     }
+    else if (strcmp(argv[i],"-np")==0)
+    {
+      int ok = 0;
+      if (sscanf(argv[i+1],"%s",buffer)!=1)
+      {
+        fprintf(stderr,"%s: invalid use of option -np\n",prog_name);
+        fprintf(stderr,"%s: choose for option -np name extension for named pipes\n");
+        exit(-1);
+      }
+      user_interface |= PUI;
+      PUI_CreatePipes(buffer);
+
+      /* erase arguments from arglist */
+      for (j=i+2; j<*argcp; j++) argv[j-2] = argv[j];
+      i -= 1;
+      *argcp -= 2;
+    }
+
 
   if (NUI_ON) { *error = 0; return(NULL); }
 
@@ -691,7 +753,13 @@ void NS_PREFIX ExitScreen ()
 
 void NS_PREFIX WriteString (const char *s)
 {
-  if (CUI_ON)
+  if (PUI_ON)
+  {
+    if (o_pipe==NULL) return;
+    fprintf(o_pipe,"%s",s);
+    fflush(o_pipe);
+  }
+  else if (CUI_ON)
   {
     fputs(s,stdout);
                 #ifdef Debug
