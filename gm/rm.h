@@ -58,7 +58,7 @@
 /* -> recompile rm.c refine.c ugm.c gmcheck.c ../ui/commands.c        */
 /* touch rm.c refine.c ugm.c gmcheck.c ../ui/commands.c; ugmake gm; ugmake ui */
 
-/*#define TET_RULESET*/
+#define TET_RULESET
 
 
 /* defines for edge types */
@@ -72,27 +72,27 @@
 
 #define FATHER_SIDE_OFFSET 100 /* greater values indicate outside faces */
 
-#define MAX_NEW_CORNERS(tag) MaxNewCorners[tag]       /* midpoints on edges and sides plus center           */
-#define MAX_NEW_EDGES(tag)   MaxNewEdges[tag]         /* maximal new edges of type 1/2                      */
-#define MAX_RULES(tag)       MaxRules[tag]            /* number of rules for one element type               */
+#define MAX_NEW_CORNERS(tag) MaxNewCorners[(tag)]       /* midpoints on edges and sides plus center           */
+#define MAX_NEW_EDGES(tag)   MaxNewEdges[(tag)]         /* maximal new edges of type 1/2                      */
+#define MAX_RULES(tag)       MaxRules[(tag)]            /* number of rules for one element type               */
 #define CENTER_NODE_INDEX(e) CenterNodeIndex[TAG(e)]  /* index of centernode in sonandnode and elemcontext */
-#define CENTER_NODE_INDEX_TAG(t) CenterNodeIndex[t]       /* index of centernode in sonandnode and elemcontext */
+#define CENTER_NODE_INDEX_TAG(t) CenterNodeIndex[(t)]     /* index of centernode in sonandnode and elemcontext */
 
 #define MARK2RULE(e,m)          (m)
-#define MARK2RULEADR(e,m)       (&(RefRules[TAG(e)][m]))
-#define RULE2PATTERN(e,r)       (RefRules[TAG(e)][r].pattern)
-#define RULE2PAT(e,r)           (RefRules[TAG(e)][r].pat)
-#define MARK2PAT(e,r)           (RefRules[TAG(e)][r].pat)
-#define MARK2PATTERN(e,m)       (RefRules[TAG(e)][m].pattern)
+#define MARK2RULEADR(e,m)       (&(RefRules[TAG(e)][(m)]))
+#define RULE2PATTERN(e,r)       (RefRules[TAG(e)][(r)].pattern)
+#define RULE2PAT(e,r)           (RefRules[TAG(e)][(r)].pat)
+#define MARK2PAT(e,r)           (RefRules[TAG(e)][(r)].pat)
+#define MARK2PATTERN(e,m)       (RefRules[TAG(e)][(m)].pattern)
 
 #define PATTERN2RULE(e,p)       (Patterns2Rules((e),(p)))
-#define RULE2MARK(e,r)          (RefRules[TAG(e)][r].mark)
-#define PATTERN2MARK(e,p)       (((PATTERN2RULE(e,p))>=0) ? (RefRules[TAG(e)][PATTERN2RULE(e,p)].mark) : -1)
+#define RULE2MARK(e,r)          (RefRules[TAG(e)][(r)].mark)
+#define PATTERN2MARK(e,p)       (((PATTERN2RULE((e),(p)))>=0) ? (RefRules[TAG(e)][PATTERN2RULE((e),(p))].mark) : -1)
 
 #ifdef __SR2201__
-#define NODE_OF_RULE(e,m,i) ((*MARK2RULEADR(e,m)).sonandnode[i][0]!=-1)
+#define NODE_OF_RULE(e,m,i) ((*MARK2RULEADR((e),(m))).sonandnode[(i)][0]!=-1)
 #else
-#define NODE_OF_RULE(e,m,i)     (MARK2RULEADR(e,m)->sonandnode[i][0]!=-1)
+#define NODE_OF_RULE(e,m,i)     (MARK2RULEADR((e),(m))->sonandnode[(i)][0]!=-1)
 #endif
 
 #define CONCAT(a,b,c)            CONCAT_AUX(a,b,c)
@@ -136,12 +136,13 @@
 #define MAX_REFINED_CORNERS_DIM (MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM)
 
 #define IS_REFINED(e)           (REFINE(e)!=NO_REFINEMENT)
+#define MARKED(e)               (MARK(e)!=NO_REFINEMENT)
 #define LEAFELEM(e)                     (!IS_REFINED(e))
 
 #define RESTRICT_BY_FUNCTION
 #ifndef RESTRICT_BY_FUNCTION
 #define ELEMENT_TO_MARK(e)  ((IS_REFINED(e)) ? NULL :                                         \
-                             (ECLASS(e) == RED_CLASS) ? e :                                    \
+                             (ECLASS(e) == RED_CLASS) ? (e) :                                  \
                              (ECLASS(EFATHER(e)) == RED_CLASS) ?  EFATHER(e) :                 \
                              (ECLASS(EFATHER(EFATHER(e))) == RED_CLASS) ? EFATHER(EFATHER(e)) :\
                              EFATHER(EFATHER(EFATHER(e))))
@@ -226,34 +227,34 @@
 /* Hacks for HITACHI SR2201 will be eliminated as soon as the HITACHI
    compiler bug is removed */
 
-#define TAG_OF_RULE(r)              (r->tag)
-#define MARK_OF_RULE(r)             (r->mark)
+#define TAG_OF_RULE(r)              ((r)->tag)
+#define MARK_OF_RULE(r)             ((r)->mark)
 #ifdef __SR2201__
-#define CLASS_OF_RULE(r)            ((*r).class)
-#define NSONS_OF_RULE(r)            ((*r).nsons)
-#define SON_OF_RULE(r,s)            (&((*r).sons[s]))
+#define CLASS_OF_RULE(r)            ((*(r)).class)
+#define NSONS_OF_RULE(r)            ((*(r)).nsons)
+#define SON_OF_RULE(r,s)            (&((*(r)).sons[(s)]))
 #else
-#define CLASS_OF_RULE(r)            (r->class)
-#define NSONS_OF_RULE(r)            (r->nsons)
-#define SON_OF_RULE(r,s)            (&(r->sons[s]))
+#define CLASS_OF_RULE(r)            ((r)->class)
+#define NSONS_OF_RULE(r)            ((r)->nsons)
+#define SON_OF_RULE(r,s)            (&((r)->sons[(s)]))
 #endif
-#define PATTERN_OF_RULE(r,i)            (r->pattern[i])
-#define PAT_OF_RULE(r)                          (r->pat)
-#define SON_OF_NODE_OF_RULE(r,n)        (r->sonandnode[n][0])
-#define SONNODE_OF_NODE_OF_RULE(r,n)(r->sonandnode[n][0])
-#define EDGE_OF_RULE(r,e)                       (&(r->edges[e]))
-#define EDGE_TYPE_OF_RULE(r,e)          (r->edges[e].type)
-#define EDGE_FROM_OF_RULE(r,e)          (r->edges[e].from)
-#define EDGE_TO_OF_RULE(r,e)            (r->edges[e].to)
-#define EDGE_SIDE_OF_RULE(r,e)          (r->edges[e].side)
-#define SON_TAG_OF_RULE(r,s)            (r->sons[s].tag)
-#define SON_TAG(s)                                      (s->tag)
-#define SON_CORNER_OF_RULE(r,s,n)       (r->sons[s].corners[n])
-#define SON_CORNER(s,n)                         (s->corners[n])
-#define SON_NB_OF_RULE(r,s,n)           (r->sons[s].nb[n])
-#define SON_NB(s,n)                                     (s->nb[n])
-#define SON_PATH_OF_RULE(r,s)           (r->sons[s].path)
-#define SON_PATH(s)                                     (s->path)
+#define PATTERN_OF_RULE(r,i)            ((r)->pattern[(i)])
+#define PAT_OF_RULE(r)                          ((r)->pat)
+#define SON_OF_NODE_OF_RULE(r,n)        ((r)->sonandnode[(n)][0])
+#define SONNODE_OF_NODE_OF_RULE(r,n)((r)->sonandnode[(n)][0])
+#define EDGE_OF_RULE(r,e)                       (&((r)->edges[(e)]))
+#define EDGE_TYPE_OF_RULE(r,e)          ((r)->edges[(e)].type)
+#define EDGE_FROM_OF_RULE(r,e)          ((r)->edges[(e)].from)
+#define EDGE_TO_OF_RULE(r,e)            ((r)->edges[(e)].to)
+#define EDGE_SIDE_OF_RULE(r,e)          ((r)->edges[(e)].side)
+#define SON_TAG_OF_RULE(r,s)            ((r)->sons[(s)].tag)
+#define SON_TAG(s)                                      ((s)->tag)
+#define SON_CORNER_OF_RULE(r,s,n)       ((r)->sons[(s)].corners[(n)])
+#define SON_CORNER(s,n)                         ((s)->corners[(n)])
+#define SON_NB_OF_RULE(r,s,n)           ((r)->sons[(s)].nb[(n)])
+#define SON_NB(s,n)                                     ((s)->nb[(n)])
+#define SON_PATH_OF_RULE(r,s)           ((r)->sons[(s)].path)
+#define SON_PATH(s)                                     ((s)->path)
 
 /* macros for referencing of sons paths */
 /* 4 high bits for no of neighbours to be passed */
@@ -269,11 +270,11 @@
 
 #define MAX_PATH_DEPTH                          (PATHDEPTHSHIFT/3)
 
-#define NOCLASS(c)                                      (c == 0)
-#define YELLOWCLASS(c)                          (c & 1)
-#define GREENCLASS(c)                           (c & 2)
-#define REDCLASS(c)                                     (c & 3)
-#define SWITCHCLASS(c)                          (c & 4)
+#define NOCLASS(c)                                      ((c) == 0)
+#define YELLOWCLASS(c)                          ((c) & 1)
+#define GREENCLASS(c)                           ((c) & 2)
+#define REDCLASS(c)                                     ((c) & 3)
+#define SWITCHCLASS(c)                          ((c) & 4)
 
 /****************************************************************************/
 /*																			*/
