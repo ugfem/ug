@@ -1,0 +1,132 @@
+#!/bin/csh -f
+#
+# ugppm2mpg: converts a series of ppm-files to an mpeg-clip
+# (adapted from ugm2mpeg)
+# 
+# Michael Lampe, Oct 1998
+# 
+
+set help = "usage: ugppm2mpg <basename> [-f first last] [-fi increment]"
+
+if ( $#argv == 0 || ( $#argv != 4 && $#argv != 6 ) ) then
+	echo $help
+	exit
+endif
+
+#
+# defaults
+#
+
+@ fs = 1	# starting frame number
+@ fe = 1	# ending frame number
+@ fi = 1	# frame increment
+
+#
+# parse commandline
+#
+
+set base = $1
+if ( "$argv[2]" == "-f" ) then
+	@ fs = $3
+	@ fe = $4
+else
+	echo $help
+	exit
+endif
+if ( $#argv > 4 ) then
+	if ( "$argv[5]" == "-fi" )  then
+		@ fi = $6
+	else
+		echo $help
+		exit
+	endif
+endif
+
+#
+# convert PPM to YUV
+#
+
+echo ""
+
+set up = "[A[A"
+set bell = ""
+
+@ i = $fs
+@ j = 1
+while ( $i <= $fe )
+	set infile = `echo $base $i | awk '{printf "%s.%04d",$1,$2}'`
+	set outfile = $base.$j
+	echo "Converting PPM to YUV: $infile                              "
+	ppmtoyuvsplit $outfile $infile >& /dev/null
+	sleep 1
+	echo "$up"
+	@ i += $fi
+	@ j++;
+end
+echo "Converting PPM to YUV: done                                 "
+
+#
+# Now convert the YUVs to an MPG
+#
+
+echo "Converting YUV to MPG: wait..."
+
+#
+# get size of images
+#
+
+set file = `echo $base $fs | awk '{printf "%s.%04d",$1,$2}'` 
+set junk = `head -3 $file`
+@ width = $junk[7]
+@ height = $junk[8]
+
+#
+#  mpeg needs an option if width is not divisible by 16
+#
+
+set junk = `echo $width 16 | awk '{print $1/$2}'`
+@ div16 = `echo $junk | awk -F. '{print $2}'`
+if ($div16 == 0) then
+   set junk = `echo $height 16 | awk '{print $1/$2}'`
+   @ div16 = `echo $junk | awk -F. '{print $2}'`
+   if ($div16 == 0) then
+      set PF = ""
+   else
+      set PF = "-PF"
+   endif
+else
+   set PF = "-PF"
+endif
+
+#
+#  ppmtoyuvsplit may chop off an odd row and/or column
+#
+
+set junk = `echo $width 2 | awk '{print $1/$2}'`
+@ xeven = `echo $junk | awk -F. '{print $2}'`
+set junk = `echo $height 2 | awk '{print $1/$2}'`
+@ yeven = `echo $junk | awk -F. '{print $2}'`
+if ( $xeven != 0 ) @ width --
+if ( $yeven != 0 ) @ height --
+
+#
+# make MPG
+#
+
+set MPEGNAME = "$base".mpg
+@ j--
+mpeg -a $fs -b $j -h $width -v $height $PF $base. -s $MPEGNAME >& /dev/null
+
+#
+# clean up
+#
+
+rm -f $base.*.[YUV]
+
+
+echo "$up"
+echo "Converting YUV to MPG: done   "
+echo "$bell"
+echo "$base.mpg created." 
+echo ""
+
