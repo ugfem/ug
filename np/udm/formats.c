@@ -2738,9 +2738,10 @@ static INT ScanIMatOption (INT argc, char **argv,                       /* optio
 static INT ScanTypeOptions (INT argc, char **argv, INT po2t[][MAXVOBJECTS], INT *MaxTypes, char TypeNames[])
 {
   INT i,j,opt,found,max;
-  INT nparts,partlist[MAXDOMPARTS],part;
+  INT nparts,partlist[MAXDOMPARTS];
   INT nobjs,objlist[MAXDOMPARTS];
   char *objstr,*partstr,c,*token;
+  int part;
 
   /* init po2t */
   for (i=0; i<MAXDOMPARTS; i++)
