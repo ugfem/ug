@@ -641,6 +641,67 @@ INT a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 
 /****************************************************************************/
 /*D
+   l_vector_ghostconsistent - copy values of masters to ghosts
+
+   SYNOPSIS:
+   INT l_vector_consistent (GRID *g, const VECDATA_DESC *x);
+
+   PARAMETERS:
+.  g - pointer to grid 
+.  x - vector data descriptor
+
+   DESCRIPTION:
+   This function copies the vector values of master vectors to ghost vectors.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK      if ok
+.n    NUM_ERROR   if error occurrs
+D*/
+/****************************************************************************/
+
+#ifdef ModelP
+static int Scatter_GhostVectorComp (DDD_OBJ obj, void *data)
+{
+	VECTOR *pv = (VECTOR *)obj;
+	INT i,type;
+	const SHORT *Comp;	
+
+	if (VD_IS_SCALAR(ConsVector)) {
+  	    if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
+		    if (!VECSKIP(pv))
+			    VVALUE(pv,VD_SCALCMP(ConsVector)) = *((DOUBLE *)data);
+
+		return(0);
+	}
+
+	type = VTYPE(pv);
+	Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
+	for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+		VVALUE(pv,Comp[i]) = ((DOUBLE *)data)[i]; 
+
+	return(0);
+}
+
+INT l_vector_ghostconsistent (GRID *g, const VECDATA_DESC *x)
+{
+    INT tp,m; 
+
+    ConsVector = (VECDATA_DESC *)x;
+
+	m = 0;
+	for (tp=0; tp<NVECTYPES; tp++)
+	  m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+
+	DDD_IFAOneway(OuterVectorIF, GLEVEL(g), IF_FORWARD, m * sizeof(DOUBLE),
+				  Gather_VectorComp, Scatter_GhostVectorComp);
+
+	return (NUM_OK);
+}
+#endif
+
+/****************************************************************************/
+/*D
    l_vector_collect - collects the vector values of all copies
 
    SYNOPSIS:
@@ -749,6 +810,101 @@ INT a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 					  Gather_VectorCompCollect, Scatter_VectorComp);
 
 	return (NUM_OK);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   l_ghostvector_collect - collects the vector values of all copies
+
+   SYNOPSIS:
+   INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x);
+
+   PARAMETERS:
+.  g - pointer to grid 
+.  x - vector data descriptor
+
+   DESCRIPTION:
+   This function collects the sum of the vector values for all ghost vectors
+   to the master vector. 
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK      if ok
+.n    NUM_ERROR   if error occurrs
+D*/
+/****************************************************************************/
+
+#ifdef ModelP
+INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x)
+{
+    INT tp,m; 
+
+    ConsVector = (VECDATA_DESC *)x;
+
+	m = 0;
+	for (tp=0; tp<NVECTYPES; tp++)
+	  m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+
+	DDD_IFAOneway(OuterVectorIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
+				  Gather_VectorCompCollect, Scatter_VectorComp);
+
+	return (NUM_OK);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   l_vector_meanvalue - collects the vector values of all copies
+
+   SYNOPSIS:
+   INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x);
+
+   PARAMETERS:
+.  g - pointer to grid 
+.  x - vector data descriptor
+
+   DESCRIPTION:
+   This function builds the mean value of all vector values on border vectors.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK      if ok
+.n    NUM_ERROR   if error occurrs
+D*/
+/****************************************************************************/
+
+#ifdef ModelP
+INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
+{
+	VECTOR *v;
+	INT vc,i,type,mask,m,n;
+	const SHORT *Comp;	
+
+    if (l_vector_collect(g,x) != NUM_OK)
+	    return(NUM_ERROR);
+	
+	if (VD_IS_SCALAR(x)) {
+        mask = VD_SCALTYPEMASK(x);
+		vc = VD_SCALCMP(x);
+		for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v)) 
+		    if (mask & VDATATYPE(v)) {
+			    m = DDD_InfoNCopies(PARHDR(v)) + 1;
+			    VVALUE(v,vc) *= 1.0 / m;
+			}
+	}
+	else 
+	    for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v)) {
+		  type = VTYPE(v);
+		  n = VD_NCMPS_IN_TYPE(x,type);
+		  if (n == 0) continue;
+		  Comp = VD_CMPPTR_OF_TYPE(x,type);
+		  m = DDD_InfoNCopies(PARHDR(v)) + 1;
+		  for (i=0; i<VD_NCMPS_IN_TYPE(x,type); i++)
+		      VVALUE(v,Comp[i]) = 1.0 / m;
+		}
+
+	return (l_vector_consistent(g,x));
 }
 #endif
 
