@@ -57,16 +57,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-#define LRX 48            /* X Coordinate of the lower right corner */
-#define LRY 44            /* Y Coordinate of the lower right corner */
-#define ULX  0            /* X Coordinate of the upper left corner */
-#define ULY 44            /* Y Coordinate of the upper left corner */
-#define URX 48            /* X Coordinate of the upper right corner */
-#define URY 60            /* Y Coordinate of the upper right  corner */
-#define LLX  0            /* X Coordinate of the lower left corner */
-#define LLY  0            /* X Coordinate of the lower left corner */
-
-typedef COORD COORD_VECTOR[DIM];
+#define OPTIONLEN                       32
 
 /****************************************************************************/
 /*                                                                          */
@@ -74,6 +65,8 @@ typedef COORD COORD_VECTOR[DIM];
 /*        in the corresponding include file!)                               */
 /*                                                                          */
 /****************************************************************************/
+
+typedef COORD COORD_VECTOR[DIM];
 
 /****************************************************************************/
 /*                                                                          */
@@ -86,6 +79,9 @@ typedef COORD COORD_VECTOR[DIM];
 /* definition of variables global to this source file only (static!)        */
 /*                                                                          */
 /****************************************************************************/
+
+static COORD_VECTOR quad[4];
+
 
 static DOUBLE Rand[54][2] = {
   {189,22.5},
@@ -156,7 +152,7 @@ RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*                                                                          */
-/*  define the unit square                                                  */
+/*  define a quadrilateral                                                  */
 /*                                                                          */
 /****************************************************************************/
 
@@ -165,15 +161,10 @@ static INT southBoundary (void *data, COORD *param, COORD *result)
   COORD lambda;
 
   lambda = param[0];
-
-  /* check range */
   if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (1.0-lambda)*quad[0][0] + lambda*quad[1][0];
+  result[1] = (1.0-lambda)*quad[0][1] + lambda*quad[1][1];
 
-  /* fill result */
-  result[0] = lambda;
-  result[1] = 0.0;
-
-  /* return ok */
   return(0);
 }
 
@@ -182,15 +173,10 @@ static INT eastBoundary (void *data, COORD *param, COORD *result)
   COORD lambda;
 
   lambda = param[0];
-
-  /* check range */
   if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (1.0-lambda)*quad[1][0] + lambda*quad[2][0];
+  result[1] = (1.0-lambda)*quad[1][1] + lambda*quad[2][1];
 
-  /* fill result */
-  result[0] = 1.0;
-  result[1] = lambda;
-
-  /* return ok */
   return(0);
 }
 
@@ -199,15 +185,10 @@ static INT northBoundary (void *data, COORD *param, COORD *result)
   COORD lambda;
 
   lambda = param[0];
-
-  /* check range */
   if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (1.0-lambda)*quad[2][0] + lambda*quad[3][0];
+  result[1] = (1.0-lambda)*quad[2][1] + lambda*quad[3][1];
 
-  /* fill result */
-  result[0] = 1.0-lambda;
-  result[1] = 1.0;
-
-  /* return ok */
   return(0);
 }
 
@@ -216,15 +197,10 @@ static INT westBoundary (void *data, COORD *param, COORD *result)
   COORD lambda;
 
   lambda = param[0];
-
-  /* check range */
   if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (1.0-lambda)*quad[0][0] + lambda*quad[3][0];
+  result[1] = (1.0-lambda)*quad[0][1] + lambda*quad[3][1];
 
-  /* fill result */
-  result[0] = 0.0;
-  result[1] = lambda;
-
-  /* return ok */
   return(0);
 }
 
@@ -232,12 +208,17 @@ static INT InitQuadrilateral (void)
 {
   COORD radius,MidPoint[2];
 
-  /* allocate new domain structure */
-  MidPoint[0] = MidPoint[1] = 0.5;
-  radius = 0.5;
+  MidPoint[0] = 0.25*(quad[0][0]+quad[1][0]+quad[2][0]+quad[3][0]);
+  MidPoint[1] = 0.25*(quad[0][1]+quad[1][1]+quad[2][1]+quad[3][1]);
+  radius =            ABS(quad[0][0]-MidPoint[0]);
+  radius = MAX(radius,ABS(quad[1][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(quad[2][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(quad[3][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(quad[0][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(quad[1][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(quad[2][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(quad[3][1]-MidPoint[1]));
   if (CreateDomain("Quadrilateral",MidPoint,radius,4,4,YES)==NULL) return(1);
-
-  /* allocate the boundary segments */
   if (CreateBoundarySegment2D("south",1,0,0,0,1,1,0.0,1.0,
                               southBoundary,NULL)==NULL) return(1);
   if (CreateBoundarySegment2D("east", 1,0,1,1,2,1,0.0,1.0,
@@ -247,7 +228,6 @@ static INT InitQuadrilateral (void)
   if (CreateBoundarySegment2D("west", 0,1,3,0,3,1,0.0,1.0,
                               westBoundary, NULL)==NULL) return(1);
 
-  /* return ok */
   return(0);
 }
 
@@ -297,7 +277,7 @@ static INT InitTriangle (void)
 
 /****************************************************************************/
 /*                                                                          */
-/*  define the unit square with hole                                        */
+/*  define the puctured disc                                                */
 /*                                                                          */
 /****************************************************************************/
 
@@ -385,14 +365,14 @@ static INT LeftBoundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT InitSquareWithHole (void)
+static INT InitPuncturedDisc (void)
 {
   COORD radius,MidPoint[2];
 
   /* allocate new domain structure */
   MidPoint[0] = MidPoint[1] = 5.0;
   radius = 5.0;
-  if (CreateDomain("Square with hole",
+  if (CreateDomain("Punctured Disc",
                    MidPoint,radius,5,5,NO)==NULL) return(1);
 
   /* allocate the boundary segments */
@@ -870,6 +850,29 @@ static INT InitWolfgangsee (void)
    D*/
 /****************************************************************************/
 
+static INT ReadArgvPosition (char *name, INT argc, char **argv, COORD *pos)
+{
+  INT i;
+  char option[OPTIONLEN];
+  float x,y;
+
+  for (i=0; i<argc; i++)
+    if (argv[i][0]==name[0])
+    {
+      if (sscanf(argv[i],"%s %f %f",option,&x,&y)!=3)
+        continue;
+      if (strcmp(option,name) == 0)
+      {
+        pos[0] = x;
+        pos[1] = y;
+        UserWriteF("set %s to (%f,%f)\n",name,x,y);
+        return(0);
+      }
+    }
+
+  return(1);
+}
+
 INT STD_BVP_Configure (INT argc, char **argv)
 {
   STD_BVP *theBVP;
@@ -892,6 +895,30 @@ INT STD_BVP_Configure (INT argc, char **argv)
       if ((sscanf(argv[i],expandfmt(CONCAT3("d %",NAMELENSTR,"[ -~]")),
                   DomainName)!=1) || (strlen(DomainName)==0))
         continue;
+
+  if (strcmp(DomainName,"Quadrilateral") == 0)
+  {
+    if (ReadArgvPosition("x0",argc,argv,quad[0]))
+    {
+      quad[0][0] = 0.0;
+      quad[0][1] = 0.0;
+    }
+    if (ReadArgvPosition("x1",argc,argv,quad[1]))
+    {
+      quad[1][0] = 1.0;
+      quad[1][1] = 0.0;
+    }
+    if (ReadArgvPosition("x2",argc,argv,quad[2]))
+    {
+      quad[2][0] = 1.0;
+      quad[2][1] = 1.0;
+    }
+    if (ReadArgvPosition("x3",argc,argv,quad[3]))
+    {
+      quad[3][0] = 0.0;
+      quad[3][1] = 1.0;
+    }
+  }
 
   theDomain = GetDomain(DomainName);
 
@@ -927,9 +954,9 @@ INT STD_BVP_Configure (INT argc, char **argv)
       if (InitWolfgangsee())
         return(1);
     }
-    else if (strcmp(DomainName,"Square with hole") == 0)
+    else if (strcmp(DomainName,"Punctured Disc") == 0)
     {
-      if (InitSquareWithHole())
+      if (InitPuncturedDisc())
         return(1);
     }
     else
