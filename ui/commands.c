@@ -11315,7 +11315,7 @@ static INT PTestCommand (INT argc, char **argv)
 {
   MULTIGRID *theCurrMG;
 
-  theMG = currMG;
+  theCurrMG = currMG;
   if (theCurrMG==NULL)
   {
     PrintErrorMessage('W',"mglist","no multigrid open\n");
