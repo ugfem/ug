@@ -1,0 +1,128 @@
+#!/usr/bin/perl -I /home/klaus/UG/ug/pm 
+
+use ug;
+use df;
+
+####################################
+## check
+####################################
+@ARGV==2 or die "usage: up <dir-from> <dir-to>\n";
+if (-e "data")    { die("ERROR: directory 'data' existing\n"); }
+if (!-e $ARGV[0]) { die "ERROR: directory '$ARGV[0]' not existing\n"; }
+if (-e $ARGV[1])  { die "ERROR: directory '$ARGV[1]' existing\n"; }
+system("ln -s $ARGV[0] data");
+
+####################################
+## subs 
+####################################
+sub save { df 'savedata','name'=>'data','last'=>0,'w'=>'110','nb'=>$_[0],'t'=>1,'dt'=>1,'sdt'=>1,'r'=>0; }
+
+####################################
+## init
+####################################
+%param=(df('init','init.scr'),df('expert'));
+%param=(%param,df('logging',$param{"Output:Logging"}));
+$param{'Output:Logging'}=2;
+
+####################################
+## start
+####################################
+$dim=df 'fse';
+$exec="$ENV{'UGROOT'}/../df/gen/appl/df$dim"."d";
+if (!-e $exec) { die "ERROR: $dim"."d fse detected, but 'df$dim"."d' not found\n"; }
+if ($param{'Parallel:Procs'}==1)
+{
+    print ug 'start',$exec,'x';
+}
+else
+{
+    my ($com,@top,$node,$nproc,$i,$machines);
+
+    if ($param{'Parallel:Procs'}>1) { print "$param{'Parallel:Procs'} processors: "; }
+    else                             { print "Max. processors: "; }
+    $nproc=0; $machines=tmpfile;
+    open(MACHINES,">$machines");
+    PROC: for ($i=20; $i<=71; $i++)
+    {
+        if ($i==20) { next; }
+        print sprintf("%0.2d\b\b",$i);
+        $node=sprintf("node%0.2d",$i);
+        $com="rsh $node 'top -i -b -n1'"; ($com,$com)=split /COMMAND\s*\n/,`$com`; @top=split /\n/,$com;
+        for $com (@top) {if (!($com=~/top/)) {next PROC;}}
+        $com="rsh $node 'top -i -b -n1'"; ($com,$com)=split /COMMAND\s*\n/,`$com`; @top=split /\n/,$com;
+        for $com (@top) {if (!($com=~/top/)) {next PROC;}}
+        print MACHINES "$node\n"; print sprintf("%0.2d ",$i);; $nproc++;
+        if ($nproc>=$param{'Parallel:Procs'} && $param{'Parallel:Procs'}>0) {last;}
+    }
+    close(MACHINES);
+    if ($nproc==$param{'Parallel:Procs'}) {print ", got all\n";}
+    elsif($param{'Parallel:Procs'}<=0)    {print ", got $nproc\n";}
+    else {die "could not get all\n";}
+
+    ug 'start',"mpirun -machinefile $machines -nolocal -noblock -np $nproc $exec";
+}
+ug 'debug',0;
+
+####################################
+## add confinguration
+####################################
+%param=(%param,ug('set','conf'));
+
+####################################
+## param
+####################################
+if ($param{'parallel'}==0 || ($param{'Expert:Smoother'} ne 'ssor' && $param{'Expert:Smoother'} ne 'sor' && $param{'Expert:Smoother'} ne 'gs'))
+{
+	$param{'Expert:ParDiagMatCons'}=0;
+}
+
+####################################
+## format
+####################################
+$nmat=1;
+if ($param{'parallel'}==1)         {$nmat++;}
+if ($param{'Expert:Smoother'} eq 'ilu') {$nmat++;}
+if ($param{'Expert:ParDiagMatCons'}==1) {$nmat--; $fmatcons='$V n4: diag 1 $comp uvab';}  else {$fmatcons='';}
+ug 'ug','newformat df $V n2: nt 22 $comp cp $sub c c $sub p p '.$fmatcons.' $M implicit(nt): mt '.$nmat.' $I n2';
+
+####################################
+## load & refine
+####################################
+ug 'close';
+ug 'print loaddata data','t'=>'xdr','n'=>$param{'Solve:Restart'},'a'=>'sol/nt','f'=>'','h'=>$param{'General:Heap'};
+($dummy,$level)=float ug 'glist';
+print ug 'glist';
+if ($param{'parallel'}==1 && $level==$param{'Parallel:StartLevel'}) { df 'lb',%param; }
+print ug 'refine $a';
+print ug 'glist';
+
+####################################
+## num progs
+####################################
+%param=df 'npcreate',%param;
+%param=df 'interval',-1,%param;
+df 'npinit',%param;
+
+####################################
+## interpolate up
+####################################
+print ug 'npinit trans','display'=>'no','D'=>'','x'=>'sol','L'=>5;
+print ug 'npexecute trans $N';
+
+####################################
+## save
+####################################
+system("rm data");
+system("mkdir data");
+save(0);
+system("mv data $ARGV[1]");
+
+####################################
+## clean up
+####################################
+ug 'end';
+
+
+
+
+
