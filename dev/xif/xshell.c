@@ -286,7 +286,11 @@ int ShellOpen (ShellWindow *sh)
   /* first load font to know size of window */
   Fontname = XGetDefault(display,ug_name,"shellfont");
   if (Fontname==NULL)
+  {
+    printf("font 'shellfont' not found in Xdefaults\n"
+           "using default "DEFAULTFONT);
     strcpy(sh->font_name,DEFAULTFONT);
+  }
   else
     strcpy(sh->font_name,Fontname);
   if ( (sh->font_info=XLoadQueryFont(display,sh->font_name))==NULL)
