@@ -3726,7 +3726,7 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
   GRID *theGrid;
   ELEMENT **EList,*nbList[MAX_SIDES_OF_ELEM],*theElement;
   NODE **NList,*Nodes[MAX_CORNERS_OF_ELEM],*theNode;
-  INT sid,i,nel,nnd,k,n;
+  INT sid,i,nel,nnd,k,n,nid,eid;
 
         #ifdef ModelP
   if (me!=master)
@@ -3751,15 +3751,18 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
   NList = (NODE **) GetTmpMem(MGHEAP(theMG),nnd*sizeof(NODE *));
   if (NList == NULL) return(GM_ERROR);
 
+  nid=0;
   for (i=0; i<theMesh->nBndP; i++)
   {
     theNode = InsertBoundaryNode(theMG,theMesh->theBndPs[i]);
+    ID(theNode) = nid++;
     if (theNode == NULL) return(GM_ERROR);
     NList[i] = theNode;
   }
   for (i=0; i<theMesh->nInnP; i++)
   {
     theNode = InsertInnerNode(theMG,theMesh->Position[i]);
+    ID(theNode) = nid++;
     if (theNode == NULL) return(GM_ERROR);
     NList[i+theMesh->nBndP] = theNode;
   }
@@ -3776,7 +3779,7 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
       for (i=0; i<nel; i++) EList[i] = NULL;
   }
 
-  nel = 0;
+  nel = 0,eid=0;
   for (sid=1; sid<=theMesh->nSubDomains; sid++)
     for (i=0; i<theMesh->nElements[sid]; i++)
     {
@@ -3791,10 +3794,9 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
             nbList[k] = NULL;
 
       theElement = InsertElement (theMG,n,Nodes,nbList,NULL);
-      if (theElement == NULL)
-        return(GM_ERROR);
-      if (EList != NULL)
-        EList[nel++] = theElement;
+      ID(theElement) = eid++;
+      if (theElement == NULL) return(GM_ERROR);
+      if (EList != NULL) EList[nel++] = theElement;
     }
 
   return(GM_OK);
