@@ -4318,10 +4318,6 @@ static INT LmgcPostProcess (NP_ITER *theNP, INT level,
 
   np = (NP_LMGC *) theNP;
 
-  if (np->Transfer->PostProcess != NULL)
-    if ((*np->Transfer->PostProcess)
-          (np->Transfer,&(np->baselevel),level,x,b,A,result))
-      REP_ERR_RETURN(1);
 
   if (np->PreSmooth->PostProcess != NULL)
     for (i = np->baselevel+1; i <= level; i++)
@@ -4339,6 +4335,11 @@ static INT LmgcPostProcess (NP_ITER *theNP, INT level,
   if (np->BaseSolver->PostProcess != NULL)
     if ((*np->BaseSolver->PostProcess)
           (np->BaseSolver,np->baselevel,x,b,A,result))
+      REP_ERR_RETURN(1);
+
+  if (np->Transfer->PostProcess != NULL)
+    if ((*np->Transfer->PostProcess)
+          (np->Transfer,&(np->baselevel),level,x,b,A,result))
       REP_ERR_RETURN(1);
 
   return (0);
