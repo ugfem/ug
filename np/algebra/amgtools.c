@@ -1627,7 +1627,7 @@ INT IpVanek(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 
 /****************************************************************************/
 /*                                                                          */
-/* Function:  GalerkinCGMatrixFromInterpolation                             */
+/* Function:  AssembleGalerkinFromInterpolation                             */
 /*                                                                          */
 /* Purpose:   Given a prolongation this routine computes a Galerkin         */
 /*            coarse grid matrix.                                           */
@@ -1636,14 +1636,89 @@ INT IpVanek(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 /****************************************************************************/
 
 
-INT GalerkinCGMatrixFromInterpolation(GRID *theGrid,
-                                      MATDATA_DESC *A, MATDATA_DESC *I)
+INT FastGalerkinFromInterpolation(GRID *theGrid, MATDATA_DESC *A,
+                                  MATDATA_DESC *I, INT symmetric)
 {
-  /* dummy */
+  register INT mcomp;
+  INT icomp;
+  register DOUBLE IikAkl;
+  DOUBLE Iik;
+  GRID *coarseGrid;
+  register VECTOR *cvect,*cvect2;
+  VECTOR *vect,*vect2;
+  register MATRIX *cmat,*imat2;
+  MATRIX *mat,*imat;
 
-  return(DONE);
+  if (MD_IS_SCALAR(A)==FALSE)
+  {
+    PrintErrorMessage('E',"FastGalerkinFromInterpolation","not yet for systems, use AssembleGalerkinFromInterpolation");
+    REP_ERR_RETURN(NUM_ERROR);
+  }
+
+  mcomp=MD_SCALCMP(A);
+  icomp = 0;       /* preliminary, later this should be obtained via I */
+
+  coarseGrid=theGrid->coarser;
+
+  /* even if this should not be necessary for newly generated AMG grids */
+  for (cvect=FIRSTVECTOR(coarseGrid); cvect!=NULL; cvect=SUCCVC(cvect))
+    VISTART(cvect)=NULL;
+
+  for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
+  {
+    for (imat=VISTART(vect); imat!=NULL; imat=MNEXT(imat))
+    {
+      cvect=MDEST(imat);
+      Iik=MVALUE(imat,icomp);
+
+      /* to keep access to matrices fast we store the addresses of
+         coarse grid matrices cvect->cvect2 in VISTART(cvect2)!!! */
+      for (cmat=VSTART(cvect); cmat!=NULL; cmat=MNEXT(cmat))
+        VISTART(MDEST(cmat))=cmat;
+
+      for (mat=VSTART(vect); mat!=NULL; mat=MNEXT(mat))
+      {
+        vect2=MDEST(mat);
+        IikAkl=MVALUE(mat,mcomp)*Iik;
+        for (imat2=VISTART(vect2); imat2!=NULL; imat2=MNEXT(imat2))
+        {
+          cvect2=MDEST(imat2);
+          if ((cmat=VISTART(cvect2))==NULL)
+          {
+            if ((cmat=CreateExtraConnection(coarseGrid,cvect,cvect2))==NULL)
+            {
+              PrintErrorMessage('E',"GalerkinCGMatrixFromInterpolation","could not create stiffness matrix");
+              REP_ERR_RETURN(NUM_ERROR);
+            }
+            MVALUE(cmat,mcomp)=0.0;
+            MVALUE(MADJ(cmat),mcomp)=0.0;
+
+            /* and keep VISTART up to date! */
+            VISTART(cvect2)=cmat;
+          }
+          MVALUE(cmat,mcomp)+=IikAkl*MVALUE(imat2,icomp);
+        }
+      }
+
+      /* now it is necessary to clear the VISTART fields again!! */
+      for (mat=VSTART(cvect); mat!=NULL; mat=MNEXT(mat))
+        VISTART(MDEST(mat))=NULL;
+    }
+  }
+
+        #ifdef ModelP
+  if (l_ghostmatrix_collect(coarseGrid,A))
+    return(NUM_ERROR);
+        #endif
+
+  return(NUM_OK);
 }
 
+INT AssembleGalerkinFromInterpolation(GRID *theGrid, MATDATA_DESC *A,
+                                      MATDATA_DESC *I, INT symmetric)
+{
+  return(AssembleGalerkinByMatrix(theGrid,A,symmetric));
+}
 /****************************************************************************/
 /*                                                                          */
 /* Function:  SparsenCGMatrix                                               */

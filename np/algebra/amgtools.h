@@ -139,7 +139,10 @@ INT IpAverage             (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT IpRugeStueben         (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT IpPiecewiseConstant   (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT IpVanek               (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
-INT GalerkinCGMatrixFromInterpolation(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
+INT FastGalerkinFromInterpolation(GRID *theGrid, MATDATA_DESC *A,
+                                  MATDATA_DESC *I, INT symmetric);
+INT AssembleGalerkinFromInterpolation(GRID *theGrid, MATDATA_DESC *A,
+                                      MATDATA_DESC *I, INT symmetric);
 INT SparsenCGMatrix       (GRID *theGrid, MATDATA_DESC *A, INT lumpFlag);
 INT ReorderFineGrid       (GRID *theGrid, INT orderType);
 

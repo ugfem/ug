@@ -1643,7 +1643,7 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
             iv = MDEST(im);
             if (!(VDATATYPE(iv)&rmask))
               continue;
-            imvalue = MVALUE(im,0);
+            fac = mvalue*MVALUE(im,0);
             for (jm=VISTART(w); jm!= NULL; jm = NEXT(jm)) {
               jv = MDEST(jm);
               if (!(VDATATYPE(jv)&cmask))
@@ -1653,12 +1653,12 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
                 cm = CreateExtraConnection(CoarseGrid,iv,jv);
               if (cm !=NULL)
                 MVALUE(cm,mc) +=
-                  imvalue * mvalue * MVALUE(jm,0);
-              else {                                                   /* connection not in pattern */
+                  fac * MVALUE(jm,0);
+              else {                                           /* connection not in pattern */
                 cm = GetMatrix(iv,iv);
-                ASSERT(cm !=NULL);
+                ASSERT(cm != NULL);
                 MVALUE(cm,mc) +=
-                  imvalue * mvalue * MVALUE(jm,0);
+                  fac * MVALUE(jm,0);
               }
             }
           }
