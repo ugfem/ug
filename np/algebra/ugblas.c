@@ -487,6 +487,57 @@ D*/
 /****************************************************************************/
 
 #ifdef ModelP
+static int Gather_ProjectVectorComp (DDD_OBJ obj, void *data)
+{
+	VECTOR *pv = (VECTOR *)obj;
+	NODE *theNode;
+	INT i,type;
+	const SHORT *Comp;	
+
+	((INT *)data)[0] = 1;
+	if (VTYPE(pv) == NODEVECTOR) {
+	    theNode = SONNODE(MYNODE(pv));
+		if (theNode != NULL)
+		    if (DDD_InfoPriority(PARHDR(NVECTOR(theNode))) == PrioMaster) 
+			    ((INT *)data)[0] = 0;
+	}
+	if (((INT *)data)[0])
+		return (NUM_OK);
+	if (VD_IS_SCALAR(ConsVector)) {
+		if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
+		  ((DOUBLE *)data)[1] = VVALUE(pv,VD_SCALCMP(ConsVector));
+		return (NUM_OK);
+	}
+	type = VTYPE(pv);
+	Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
+	for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+		((DOUBLE *)data)[i+1] = VVALUE(pv,Comp[i]);
+
+	return (NUM_OK);
+}
+ 
+static int Scatter_ProjectVectorComp (DDD_OBJ obj, void *data)
+{
+	VECTOR *pv = (VECTOR *)obj;
+	INT i,type;
+	const SHORT *Comp;	
+
+	if (((INT *)data)[0])
+		return (NUM_OK);
+	if (VD_IS_SCALAR(ConsVector)) {
+  	    if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
+		    VVALUE(pv,VD_SCALCMP(ConsVector)) = ((DOUBLE *)data)[1];
+
+		return (NUM_OK);
+	}
+	type = VTYPE(pv);
+	Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
+	for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+	    VVALUE(pv,Comp[i]) = ((DOUBLE *)data)[i+1]; 
+
+	return (NUM_OK);
+}
+
 INT l_ghostvector_project (GRID *g, const VECDATA_DESC *x)
 {
     INT tp,m; 
@@ -496,11 +547,14 @@ INT l_ghostvector_project (GRID *g, const VECDATA_DESC *x)
 	m = 0;
 	for (tp=0; tp<NVECTYPES; tp++)
  	    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+	m++;
 
 	DDD_IFAOneway(OuterVectorIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
-				  Gather_VectorComp, Scatter_GhostVectorComp);
+				  Gather_ProjectVectorComp, Scatter_ProjectVectorComp);
 	DDD_IFAOneway(OuterVectorIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
-				  Gather_VectorComp, Scatter_GhostVectorComp);
+				  Gather_ProjectVectorComp, Scatter_ProjectVectorComp);
+	DDD_IFAOneway(OuterVectorIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
+				  Gather_ProjectVectorComp, Scatter_ProjectVectorComp);
 
 	return (NUM_OK);
 }
