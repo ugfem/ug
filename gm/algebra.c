@@ -3557,6 +3557,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
 
   /* cancel all BLOCKVECTORS */
   FreeAllBV(theGrid);
+  SETUSED(theGrid,0);
 
   /* init USED, N_INFLOW and N_OUTFLOW */
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
