@@ -99,7 +99,6 @@ clean: $(MODEL_TARGET)_clean
 	cd dev; make -f Makefile.dev clean; cd ..;
 	cd dom; make -f Makefile.dom clean; cd ..;
 	cd gm; make -f Makefile.gm clean; cd ..;
-	cd numerics; make -f Makefile.numerics clean; cd ..;
 	cd np; make -f Makefile.np clean; cd ..;
 	cd graphics; make -f Makefile.graphics clean; cd ..;
 	cd ui; make -f Makefile.ui clean; cd ..;
@@ -114,7 +113,6 @@ ar:
 
 ifdef: $(MODEL_TARGET)_clean
 	cd gm; make -f Makefile.gm clean; cd ..;
-	cd numerics; make -f Makefile.numerics clean; cd ..;
 	cd np; make -f Makefile.np clean; cd ..;
 	cd graphics; make -f Makefile.graphics clean; cd ..;
 	cd dom; make -f Makefile.dom clean; cd ..;
@@ -125,13 +123,13 @@ extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
 	cd low; make -f Makefile.low extract; cd ..;
 	cd gm; make -f Makefile.gm extract; cd ..;
-	cd numerics; make -f Makefile.numerics extract; cd ..;
+	cd np; make -f Makefile.np extract; cd ..;
 	cd graphics; make -f Makefile.graphics extract; cd ..;
 	cd ui; make -f Makefile.ui extract; cd ..;
 
 xmc:
 	cd low; make -f Makefile.low xmc; cd ..;
 	cd gm; make -f Makefile.gm xmc; cd ..;
-	cd numerics; make -f Makefile.numerics xmc; cd ..;
+	cd np; make -f Makefile.np xmc; cd ..;
 	cd graphics; make -f Makefile.graphics xmc; cd ..;
 	cd ui; make -f Makefile.ui xmc; cd ..;
