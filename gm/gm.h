@@ -989,7 +989,6 @@ struct multigrid {
 
   /* NodeElementPointerArray used for an O(n) InsertElement               */
   union element ***ndelemptrarray;                      /* pointer to the node element blocks   */
-  INT ndelemptrarrayflag;                       /* pointer to the node element blocks   */
 
   /* selection */
   INT NbOfSelections;                           /* number of selected objects			*/
@@ -2370,7 +2369,6 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define ELEMS_OF_NODE_MAX               75
 #define NDELEM_BLKS_MAX                 100
 #define NO_NODES_OF_BLK                 1000
-#define MGNDELEMPTRARRAYFLAG(p) ((p)->ndelemptrarrayflag)
 #define MGNDELEMPTRARRAY(p)             ((p)->ndelemptrarray)
 #define MGNDELEMBLK(p,i)                (*(((p)->ndelemptrarray)+i))
 #define MGNDELEMOFFS(i,o)               (i*ELEMS_OF_NODE_MAX+o)
@@ -2523,9 +2521,13 @@ FORMAT                   *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
                                         INT nodeelementlist, INT edata, INT ndata);
 
 /* create, saving and disposing a multigrid structure */
-MULTIGRID   *CreateMultiGrid        (char *MultigridName, char *BndValProblem, char *format, unsigned long heapSize);
-MULTIGRID       *LoadMultiGrid                  (char *MultigridName, char *name, char *type, char *BndValProblem, char *format, unsigned long heapSize, INT force);
-INT             SaveMultiGrid                   (MULTIGRID *theMG, char *FileName, char *type, char *comment);
+MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
+                            char *format, MEM heapSize, INT optimizedIE);
+MULTIGRID       *LoadMultiGrid  (char *MultigridName, char *name, char *type,
+                                 char *BndValProblem, char *format,
+                                 unsigned long heapSize,INT force,INT optimizedIE);
+INT             SaveMultiGrid   (MULTIGRID *theMG, char *FileName,
+                                 char *type, char *comment);
 INT         DisposeGrid             (GRID *theGrid);
 INT             DisposeMultiGrid                (MULTIGRID *theMG);
 INT         DisposeAMGLevel         (MULTIGRID *theMG);

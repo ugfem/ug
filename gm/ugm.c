@@ -2157,8 +2157,8 @@ MULTIGRID *GetNextMultigrid (const MULTIGRID *theMG)
    CreateMultiGrid - Return a pointer to new multigrid structure
 
    SYNOPSIS:
-   MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem,
-   char *format, unsigned long heapSize);
+   MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
+   char *format, MEM heapSize, INT optimizedIE);
 
    PARAMETERS:
    .  MultigridName - name of multigrid
@@ -2166,6 +2166,7 @@ MULTIGRID *GetNextMultigrid (const MULTIGRID *theMG)
    .  problem - name of problem description from environment
    .  format - name of format description from environment
    .  heapSize - size of heap to allocate for that multigrid in bytes
+   .  optimizedIE - alloccate NodeElementList
 
    DESCRIPTION:
    This function creates and initializes a new multigrid structure including
@@ -2180,7 +2181,7 @@ MULTIGRID *GetNextMultigrid (const MULTIGRID *theMG)
 /****************************************************************************/
 
 MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
-                            char *format, MEM heapSize)
+                            char *format, MEM heapSize, INT optimizedIE)
 {
   HEAP *theHeap,*theUserHeap;
   MULTIGRID *theMG;
@@ -2291,27 +2292,23 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
     GRID_ON_LEVEL(theMG,-i-1) = NULL;
   }
 
-  /* CAD */
-  /*
-          theMG->ndelemptrarray = GetMem(theHeap,NDELEM_BLKS_MAX*sizeof(ELEMENT**),FROM_TOP);
-   */
-  theMG->ndelemptrarray = malloc(NDELEM_BLKS_MAX*sizeof(ELEMENT**));
-  assert(theMG->ndelemptrarray != NULL);
-
-  for (i=0; i<NDELEM_BLKS_MAX; i++)
+  if(optimizedIE == TRUE)
   {
-    MGNDELEMBLK(theMG,i) = NULL;
+    if ((MGNDELEMPTRARRAY(theMG)=
+           GetTmpMem(theHeap,NDELEM_BLKS_MAX*sizeof(ELEMENT**)))==NULL)
+    {
+      ReleaseTmpMem(theHeap);
+      PrintErrorMessage('E',"CreateMultiGrid",
+                        "ERROR: could not allocate memory from the MGHeap");
+      return (NULL);
+    }
+    for (i=0; i<NDELEM_BLKS_MAX; i++)
+      MGNDELEMBLK(theMG,i) = NULL;
   }
-  IFDEBUG(gm,2)
-  printf("theMG=%x delemptrarray=%x\n",theMG,theMG->ndelemptrarray);
-  for (i=0; i<NDELEM_BLKS_MAX; i++)
+  else
   {
-    printf("i=%d ndblk=%x\n",i,MGNDELEMBLK(theMG,i));
-    fflush(stdout);
+    MGNDELEMPTRARRAY(theMG)=NULL;
   }
-  ENDDEBUG
-  MGNDELEMPTRARRAYFLAG(theMG) = 1;       /*by default the NoDeELEMentPoinTeRARRAY is used */
-  /* CAD */
 
   /* allocate level 0 grid */
   theGrid = CreateNewLevel(theMG,0);
@@ -2330,9 +2327,6 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
     DisposeMultiGrid(theMG);
     return(NULL);
   }
-
-  ReleaseTmpMem(theHeap);
-
   /* return ok */
   return(theMG);
 }
@@ -4587,8 +4581,6 @@ static INT CheckOrientation (INT n, VERTEX **vertices)
 }
 #endif
 
-
-
 static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, ELEMENT **Nbr)
 {
   INT i,j,k,l,m,index,fnd,num,IndexOfDivPart,IndexOfModPart;
@@ -4607,10 +4599,9 @@ static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, E
     }
 
     /*CAD*/
-    /* Ziel: theElement = ... */
     j=0;
 
-    /*fuelle interestingElements mit den Elements des ersten Nodes:*/
+    /*fill interestingElements with elements of first node:*/
     m = 0;index=0;
     IndexOfDivPart = ID(sideNode[0]) / NO_NODES_OF_BLK;
     IndexOfModPart = ID(sideNode[0]) % NO_NODES_OF_BLK;
@@ -4622,12 +4613,6 @@ static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, E
     }
     interestingElements[m] = NULL;
 
-    /*  an dieser Stelle hier ist
-       interestingElements[m]  nie ganz
-       gefuellt ist, sondern maximal mit (ELEMS_OF_NODE_MAX-1) Eintraegen.
-       Wenn es ganz voll ist, wird  oben schon durch die Abfrage
-                            "if (helpIndex == ELEMS_OF_NODE_MAX)"
-       in den O(n*n)-Alg. verzweigt. */
 
     j=1;             /*because the first node was already considered*/
 
@@ -4671,7 +4656,6 @@ static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, E
 
     theElement = interestingElements[0];
 
-    /* Ziel: theElement = foundElements[i]; */
     /*CAD*/
 
     if (theElement != NULL)
@@ -4811,17 +4795,16 @@ static INT NdElPtrArray_evalIndexes(INT n, INT *cornerID, MULTIGRID *theMG, INT 
       {
         /*only in this case  problems like Attention !!! Node has more than ELEMS_OF_NODE_MAX !!iare possible*/
 
-        while(  (MGNDELEMBLKENTRY(theMG,cornerID[IndexOfDivPart],Index) != NULL) && (MGNDELEMPTRARRAYFLAG(theMG) ==1) )
+        while(  (MGNDELEMBLKENTRY(theMG,cornerID[IndexOfDivPart],Index) != NULL) && (MGNDELEMPTRARRAY(theMG) != NULL) )
         {
           Index++;
           helpIndex = Index - merkeIndex;
           if (helpIndex == ELEMS_OF_NODE_MAX)
           {
             /* change to O(n*n)InsertElement ...*/
-            MGNDELEMPTRARRAYFLAG(theMG) = 0;                             /* set the O(n)InsertAlgFlag to zero*/
-            UserWrite("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
+            /*IE_MEM_PROB  2*/
+            MGNDELEMPTRARRAY(theMG) = NULL;                             /* set the O(n)InsertAlgFlag to zero*/
             UserWrite("Warning concerning InsertElement :\n");
-            UserWrite("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
             UserWrite("\n");
             UserWrite("The O(n) version of InsertElement cannot be continued \n");
             UserWrite("because some nodes have more than ELEMS_OF_NODE_MAX elements!\n");
@@ -4837,12 +4820,6 @@ static INT NdElPtrArray_evalIndexes(INT n, INT *cornerID, MULTIGRID *theMG, INT 
             UserWrite("\n");
             UserWrite("\n");
             UserWrite("    .  .  .  .  .  .  .  .  .  .  .  .  please wait \n");
-            UserWrite("\n");
-            UserWrite("\n");
-            UserWrite("\n");
-            UserWrite("\n");
-            UserWrite("\n");
-            UserWrite("\n");
             /* O(n*n)InsertElement ...*/
             if ( (retval = NeighborSearch_O_nn(n, Node, theGrid, NbrS, Nbr)) == 1 )
             {
@@ -4866,7 +4843,7 @@ static INT NdElPtrArray_evalIndexes(INT n, INT *cornerID, MULTIGRID *theMG, INT 
     }
                 #endif
 
-    if (MGNDELEMPTRARRAYFLAG(theMG) == 0)
+    if (MGNDELEMPTRARRAY(theMG) == NULL)
       j = CORNERS_OF_REF(n);
   }
   /*CAD*/
@@ -4914,10 +4891,13 @@ static INT NdElPtrArray_GetMemAndCheckIDs(INT n, MULTIGRID *theMG, INT *h_ID, NO
         while (j <= c_ID[IndexOfDivPart])
         {
           /*
-                                                  MGNDELEMBLK(theMG,j) = GetMem(theMG->theHeap,maxi,FROM_TOP);
+                                  theMG		MGNDELEMBLK(theMG,j) = GetMem(theMG->theHeap,maxi,FROM_TOP);
            */
-          MGNDELEMBLK(theMG,j) = malloc(maxi);
-          if ( MGNDELEMBLK(theMG,j) == NULL )
+          /*IE_MEM_PROB*/
+          /*
+             MGNDELEMBLK(theMG,j) = malloc(maxi);
+           */
+          if ((MGNDELEMBLK(theMG,j)=GetTmpMem(MGHEAP(theMG),maxi))==NULL)
           {
             PrintErrorMessage('E',"InsertElement","  ==> NdElPtrArray_GetMemAndCheckIDs( ) ERROR: No memory for MGNDELEMBLK(theMG,j)");
             return(1);
@@ -4964,9 +4944,6 @@ static INT NdElPtrArray_Update(INT *MIndex, INT *MBlock, ELEMENT *theElement, MU
 
   return(0);
 }
-
-
-
 
 ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, INT *NbgSdList)
 {
@@ -5136,19 +5113,22 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
       ElementType = BEOBJ;
   }
 
-  /*************************************************************************************/
-  /* here begins the revised(03/97) part of InsertElement ...	                         */
-  /*    documentation see ftp://ftp.ica3.uni-stuttgart.de/pub/text/dirk.               */
-  /*                                                                                   */
+  /**********************************************************************/
+  /* here begins the revised(03/97) part of InsertElement ...	        */
+  /* documentation see ftp://ftp.ica3.uni-stuttgart.de/pub/text/dirk.   */
+  /*                                                                    */
   if (ElemList == NULL)
   {
     /* find neighboring elements */
-    if(MGNDELEMPTRARRAYFLAG(theMG) ==1)
+    if(MGNDELEMPTRARRAY(theMG) != NULL)
     {
       /* initialisations for using the node-element-pointer-array */
-      if ( (rv = NdElPtrArray_GetMemAndCheckIDs(n, theMG, &highestid, cornerNode, cornerID, Node)) == 1 )
+      if ( (rv = NdElPtrArray_GetMemAndCheckIDs(n, theMG, &highestid,
+                                                cornerNode, cornerID,
+                                                Node)) == 1 )
       {
-        PrintErrorMessage('E',"InsertElement"," ERROR by calling NdElPtrArray_GetMemAndCheckIDs()");
+        PrintErrorMessage('E',"InsertElement",
+                          " ERROR by calling NdElPtrArray_GetMemAndCheckIDs()");
         return(NULL);
       }
       IFDEBUG(gm,2)
@@ -5162,14 +5142,17 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
         }
       }
       ENDDEBUG
-      if ( (rv = NdElPtrArray_evalIndexes(n, cornerID, theMG, MIndex, MBlock, Node, theGrid, NeighborSide, Neighbor))  == 1)
+      if ( (rv = NdElPtrArray_evalIndexes(n, cornerID, theMG, MIndex,
+                                          MBlock, Node, theGrid,
+                                          NeighborSide, Neighbor))  == 1)
       {
-        PrintErrorMessage('E',"InsertElement"," ERROR by calling NdElPtrArray_evalIndexes()");
+        PrintErrorMessage('E',"InsertElement",
+                          " ERROR by calling NdElPtrArray_evalIndexes()");
         return(NULL);
       }
     }
 
-    if ( (highestid < NDELEM_BLKS_MAX) && (MGNDELEMPTRARRAYFLAG(theMG) == 1) )
+    if ( (highestid < NDELEM_BLKS_MAX) && (MGNDELEMPTRARRAY(theMG) != NULL) )
     {
       /* using the fast O(n) algorithm */
       if( (rv = NeighborSearch_O_n(n, Node, theMG, NeighborSide, Neighbor)) == 1)
@@ -5204,19 +5187,16 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
     return(NULL);
   }
 
-  if (MGNDELEMPTRARRAYFLAG(theMG) == 1 && ElemList==NULL)
+  if (MGNDELEMPTRARRAY(theMG) != NULL && ElemList==NULL)
   {
     /* update of the node-element-pointer-array */
-    if ( (rv = NdElPtrArray_Update(MIndex, MBlock, theElement, theMG)) == 1)
+    if ( (rv = NdElPtrArray_Update(MIndex, MBlock, theElement, theMG))==1)
     {
-      PrintErrorMessage('E',"InsertElement"," ERROR by calling NdElPtrArray_Update()");
+      PrintErrorMessage('E',"InsertElement",
+                        " ERROR by calling NdElPtrArray_Update()");
       return(NULL);
     }
   }
-  /*                                                                                   */
-  /* ... here ends the revised(03/97) part of InsertElement                              */
-  /*************************************************************************************/
-
 
   IFDEBUG(dom,1)
   {
@@ -5271,16 +5251,6 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
 
   SET_EFATHER(theElement,NULL);
   SETECLASS(theElement,RED_CLASS);
-
-  /* create connection to other elements. ATTENTION: this function is O(n)*/
-  /* TODO: remove this
-     if (InsertedElementCreateConnection(theGrid,theElement))
-     {
-          PrintErrorMessage('E',"InsertElement",
-                                            "could not create algebra connections");
-          DisposeElement(theGrid,theElement,TRUE);
-          return(NULL);
-     }*/
 
   return(theElement);
 }
@@ -8013,6 +7983,7 @@ INT FixCoarseGrid (MULTIGRID *theMG)
     MG_COARSE_FIXED(theMG) = FALSE;
     REP_ERR_RETURN (GM_ERROR);
   }
+  ReleaseTmpMem(MGHEAP(theMG));
 
   return (GM_OK);
 }

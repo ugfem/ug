@@ -1410,7 +1410,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   return (0);
 }
 
-MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize, INT force)
+MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize, INT force, INT IEopt)
 {
   MULTIGRID *theMG;
   GRID *theGrid;
@@ -1506,7 +1506,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     if (heapSize==0) heapSize = mg_general.heapsize * 1024;
 
     /* create a virginenal multigrid on the BVP */
-    theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize);
+    theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize,IEopt);
     if (theMG==NULL)                                                                                                        {UserWrite("ERROR(ugio): cannot create multigrid\n"); CloseMGFile (); return (NULL);}
     MG_MAGIC_COOKIE(theMG) = mg_general.magic_cookie;
     if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
@@ -1532,7 +1532,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   if (heapSize==0) heapSize = mg_general.heapsize * 1024;
 
   /* create a virginenal multigrid on the BVP */
-  theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize);
+  theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize,IEopt);
   if (theMG==NULL)                                                                                                        {UserWrite("ERROR(ugio): cannot create multigrid\n"); CloseMGFile (); return (NULL);}
   MG_MAGIC_COOKIE(theMG) = mg_general.magic_cookie;
   theHeap = MGHEAP(theMG);
