@@ -1,24 +1,24 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  ugm.h                                                                                                                 */
-/*																			*/
+/*                                                                          */
+/* File:          ugm.h                                                                                                                 */
+/*                                                                          */
 /* Purpose:   unstructured grid manager header file                                             */
-/*			  internal interface in grid manager module                                     */
-/*																			*/
-/* Author:	  Peter Bastian                                                                                                 */
-/*			  Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen	*/
-/*			  Universitaet Heidelberg										*/
-/*			  Im Neuenheimer Feld 368										*/
-/*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de			                        */
-/*																			*/
-/* History:   09.03.92 begin, ug version 2.0								*/
-/*			  13.12.94 begin, ug version 3.0								*/
-/*																			*/
+/*                        internal interface in grid manager module                                     */
+/*                                                                                                                                                      */
+/* Author:        Peter Bastian                                                                                                 */
+/*                        Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
+/*                        Universitaet Heidelberg                                                                               */
+/*                        Im Neuenheimer Feld 368                                                                               */
+/*                        6900 Heidelberg                                                                                               */
+/*                        internet: ug@ica3.uni-stuttgart.de                                            */
+/*                                                                                                                                                      */
+/* History:   09.03.92 begin, ug version 2.0                                                            */
+/*                        13.12.94 begin, ug version 3.0                                                                */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -27,9 +27,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __UGM__
@@ -39,14 +39,25 @@
 #include "gm.h"
 #include "dlmgr.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define MAX_PAR_DIST    1.0E-6          /* max.dist between different parameter */
@@ -65,22 +76,22 @@
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported global variables                                                                      */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* init */
@@ -160,6 +171,10 @@ INT                     MGSetPerVecCount                        (MULTIGRID *mg);
 INT                     GridSetPerVecCount                      (GRID *g);
 INT                     SetPerVecVOBJECT                        (GRID *g);
 INT                     Grid_CheckPeriodicity           (GRID *g);
+#endif
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
 #endif
 
 #endif

@@ -65,10 +65,18 @@
 #include "xmain.h"
 #endif
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
 /*		  compile time constants defining static data size (i.e. arrays)	*/
 /*		  other constants													*/
 /*		  macros															*/
@@ -103,7 +111,7 @@
 
 #define Boolean int
 
-#define ISALPHA(c)                      (isalpha((int)c) || (((char) c) == '_') || (((char) c) == ':'))
+#define ISALPHA(c)                      (isalpha((int)c) || (((char)c) == '_') || (((char)c) == ':'))
 #define ISNUMBER(c)                      isdigit((int)c)
 
 static char blanks[]                    = " \t\n";

@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
+/*                                                                          */
 /* File:	  dataexplorer.c												*/
 /*																			*/
 /* Purpose:   dataexplorer output			                                                                */
@@ -59,6 +59,14 @@
 #include "udm.h"
 
 #include "dataexplorer.h"
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
 
 /****************************************************************************/
 /*																			*/
