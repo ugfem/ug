@@ -202,6 +202,14 @@ INT InitNumerics ()
     return (err);
   }
 
+#ifdef USE_FAMG
+  /* init famg solver */
+  if ((err=InitFAMG())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+#endif
+
   /* init order numproc */
   if ((err=InitOrder())!=0) {
     SetHiWrd(err,__LINE__);
