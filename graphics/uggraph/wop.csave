@@ -6928,7 +6928,7 @@ static INT PlotColorTriangle2D (ELEMENT *theElement, const COORD **CornersOfElem
     /* get values */
     for (i=0; i<DIM; i++)
       EvalPoint[i] = (TP0[i]+TP1[i]+TP2[i])/3.0;
-    if (GlobalToLocal2d(3,CornersOfElem,EvalPoint,LocalCoord)) return (1);
+    if (GlobalToLocal(3,CornersOfElem,EvalPoint,LocalCoord)) return (1);
     value = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
     Color = (long)(EScalar2D_V2C_factor*value+EScalar2D_V2C_offset);
     Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
@@ -7004,7 +7004,7 @@ static INT PlotColorQuadrilateral2D (ELEMENT *theElement, const COORD **CornersO
   if (depth<=0)
   {
     /* get values */
-    if (GlobalToLocal2d(4,CornersOfElem,EVP,LocalCoord)) return (1);
+    if (GlobalToLocal(4,CornersOfElem,EVP,LocalCoord)) return (1);
     value = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
     Color = (long)(EScalar2D_V2C_factor*value+EScalar2D_V2C_offset);
     Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
@@ -7126,13 +7126,13 @@ static INT PlotContourTriangle2D (ELEMENT *theElement, const COORD **CornersOfEl
   if (depth<=0)
   {
     /* get values at the corners */
-    if (GlobalToLocal2d(3,CornersOfElem,(COORD *)TP0,LocalCoord))
+    if (GlobalToLocal(3,CornersOfElem,(COORD *)TP0,LocalCoord))
       return (1);
     v0      = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal2d(3,CornersOfElem,(COORD *)TP1,LocalCoord))
+    if (GlobalToLocal(3,CornersOfElem,(COORD *)TP1,LocalCoord))
       return (1);
     v1      = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal2d(3,CornersOfElem,(COORD *)TP2,LocalCoord))
+    if (GlobalToLocal(3,CornersOfElem,(COORD *)TP2,LocalCoord))
       return (1);
     v2      = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
     vmin = MIN(v0,v1); vmin = MIN(vmin,v2);
@@ -7249,16 +7249,16 @@ static INT PlotContourQuadrilateral2D (ELEMENT *theElement, const COORD **Corner
   if (depth<=0)
   {
     /* get values at the corners */
-    if (GlobalToLocal2d(4,CornersOfElem,(COORD *)QP0,LocalCoord))
+    if (GlobalToLocal(4,CornersOfElem,(COORD *)QP0,LocalCoord))
       return (1);
     v0      = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal2d(4,CornersOfElem,(COORD *)QP1,LocalCoord))
+    if (GlobalToLocal(4,CornersOfElem,(COORD *)QP1,LocalCoord))
       return (1);
     v1      = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal2d(4,CornersOfElem,(COORD *)QP2,LocalCoord))
+    if (GlobalToLocal(4,CornersOfElem,(COORD *)QP2,LocalCoord))
       return (1);
     v2      = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal2d(4,CornersOfElem,(COORD *)QP3,LocalCoord))
+    if (GlobalToLocal(4,CornersOfElem,(COORD *)QP3,LocalCoord))
       return (1);
     v3      = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
     vmin = MIN(v0,v1); vmin = MIN(vmin,v2); vmin = MIN(vmin,v3);
@@ -7528,7 +7528,7 @@ static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   {
     DO_2c(theDO) = DO_RANGE; DO_inc(theDO); range = theDO; DO_inc_n(theDO,2);
 
-    if (GlobalToLocal2d(n,x,P[0],LocalCoord)) return (1);
+    if (GlobalToLocal(n,x,P[0],LocalCoord)) return (1);
     v = (*LINE2D_EvalFct)(theElement,x,LocalCoord);
     LINE2D_minValue = MIN(LINE2D_minValue,v);       LINE2D_maxValue = MAX(LINE2D_maxValue,v);
     A[0] = alpha[0];
@@ -7538,7 +7538,7 @@ static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     {
       beta = (COORD)i/(COORD)m;
       V2_LINCOMB(1.0-beta,P[0],beta,P[1],PEval)
-      if (GlobalToLocal2d(n,x,PEval,LocalCoord)) return (1);
+      if (GlobalToLocal(n,x,PEval,LocalCoord)) return (1);
       v = (*LINE2D_EvalFct)(theElement,x,LocalCoord);
       LINE2D_minValue = MIN(LINE2D_minValue,v);       LINE2D_maxValue = MAX(LINE2D_maxValue,v);
 
@@ -7834,7 +7834,7 @@ static INT EW_EVector2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   min = MAX_D; max = -MAX_D;
   for (i=0; i<nr; i++)
   {
-    if (GlobalToLocal2d(CORNERS_OF_ELEM(theElement),x,RasterPoint[i],LocalCoord)) return (1);
+    if (GlobalToLocal(CORNERS_OF_ELEM(theElement),x,RasterPoint[i],LocalCoord)) return (1);
     (*EVector_EvalFct)(theElement,x,LocalCoord,Arrow);
     V2_SCALE(EVector_V2L_factor,Arrow)
 
@@ -12018,19 +12018,19 @@ static INT PlotContourQuadrilateral3D (ELEMENT *theElement, COORD **CornersOfEle
   if (depth<=0)
   {
     /* get values at the corners */
-    if (GlobalToLocal3d(coe,(const COORD **)CornersOfElem,QP0,LocalCoord))
+    if (GlobalToLocal(coe,(const COORD **)CornersOfElem,QP0,LocalCoord))
       return (1);
     v0      = (*EScalar3D_EvalFct)(theElement,
                                    (const COORD **)CornersOfElem,LocalCoord);
-    if (GlobalToLocal3d(coe,(const COORD **)CornersOfElem,QP1,LocalCoord))
+    if (GlobalToLocal(coe,(const COORD **)CornersOfElem,QP1,LocalCoord))
       return (1);
     v1      = (*EScalar3D_EvalFct)(theElement,
                                    (const COORD **)CornersOfElem,LocalCoord);
-    if (GlobalToLocal3d(coe,(const COORD **)CornersOfElem,QP2,LocalCoord))
+    if (GlobalToLocal(coe,(const COORD **)CornersOfElem,QP2,LocalCoord))
       return (1);
     v2      = (*EScalar3D_EvalFct)(theElement,
                                    (const COORD **)CornersOfElem,LocalCoord);
-    if (GlobalToLocal3d(coe,(const COORD **)CornersOfElem,QP3,LocalCoord))
+    if (GlobalToLocal(coe,(const COORD **)CornersOfElem,QP3,LocalCoord))
       return (1);
     v3      = (*EScalar3D_EvalFct)(theElement,
                                    (const COORD **)CornersOfElem,LocalCoord);
@@ -12194,8 +12194,8 @@ static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 
   /* Find local coordinates of polygon verticies */
   for (i=0; i<n; ++i)
-    if (GlobalToLocal3d(CORNERS_OF_ELEM(theElement),
-                        (const COORD **)x,Poly[i],PolyLoc[i]))
+    if (GlobalToLocal(CORNERS_OF_ELEM(theElement),
+                      (const COORD **)x,Poly[i],PolyLoc[i]))
       PrintErrorMessage('W',"EW_EScalar3D",
                         "could not compute global coordinates");
 
@@ -12393,8 +12393,8 @@ static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   min = MAX_D; max = -MAX_D;
   for (i=0; i<nr; i++)
   {
-    if (GlobalToLocal3d(CORNERS_OF_ELEM(theElement),(const COORD **)x,
-                        RasterPoint[i],LocalCoord)) return (1);
+    if (GlobalToLocal(CORNERS_OF_ELEM(theElement),(const COORD **)x,
+                      RasterPoint[i],LocalCoord)) return (1);
     (*EVector_EvalFct)(theElement,(const COORD **)x,LocalCoord,Arrow);
     V3_SCALE(EVector_V2L_factor,Arrow)
 
