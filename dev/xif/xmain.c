@@ -67,6 +67,7 @@
 /* Xif includes */
 #include "xshell.h"
 #include "xgraph.h"
+#include "xmain.h"
 
 #ifdef __GUI__
 #include "gui.h"
@@ -119,6 +120,11 @@ unsigned int display_width;                             /* size of screen if nee
 unsigned int display_height;
 int if_argc;                                                            /* command line args			*/
 char **if_argv;
+#ifndef __GUI__
+int user_interface = XUI;                                       /* user interface to open       */
+#else
+int user_interface = GUI;                                       /* user interface to open       */
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -516,6 +522,8 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 {
   OUTPUTDEVICE *d;
   char buf[128];
+  char buffer[128];
+  int i;
         #ifdef USE_XAW
   int n;
   Arg args[20];
@@ -529,6 +537,22 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
   prog_name = argv[0];
   strcpy(buf,SHELLWINNAME);
   argv[0] = buf;
+
+  /* now set user interface */
+  for (i=1; i<if_argc; i++)
+    if (strcmp(if_argv[i],"-ui")==0)
+    {
+      if (sscanf(if_argv[i+1],"%s",buffer)!=1)
+      {
+        fprintf(stderr,"%s: invalid option -ui [selected_ui]\n",prog_name);
+        fprintf(stderr,"%s: choose for option -ui [xui|cui|gui|xgui]\n",prog_name);
+        exit(-1);
+      }
+      if (strcmp(buffer,XUI_STRING)==0) user_interface = XUI;
+      if (strcmp(buffer,CUI_STRING)==0) user_interface = CUI;
+      if (strcmp(buffer,GUI_STRING)==0) user_interface = GUI;
+      if (strcmp(buffer,XGUI_STRING)==0) user_interface = XGUI;
+    }
 
         #ifdef USE_XAW
   /* set input focus to true, due to problems with some
@@ -606,14 +630,17 @@ void ExitScreen (void)
 
 void WriteString (const char *s)
 {
-        #ifdef STDIF
-  fputs(s,stdout);
-        #ifdef Debug
-  fflush(stdout);
-        #endif
-  /* printf("%s",s); */
-        #else
-  ShellInsertString(&shell,s);
-  return;
-        #endif
+  if (CUI_ON)
+  {
+    fputs(s,stdout);
+                #ifdef Debug
+    fflush(stdout);
+                #endif
+    /* printf("%s",s); */
+  }
+  else
+  {
+    ShellInsertString(&shell,s);
+    return;
+  }
 }

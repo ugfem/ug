@@ -43,6 +43,19 @@
 /*																			*/
 /****************************************************************************/
 
+#define XUI             0x1
+#define CUI             0x2
+#define GUI             0x4
+#define XGUI            0x5
+
+#define XUI_STRING      "xui"
+#define CUI_STRING      "cui"
+#define GUI_STRING      "gui"
+#define XGUI_STRING     "xgui"
+
+#define CUI_ON          (user_interface & CUI)
+#define XUI_ON          (user_interface & XUI)
+#define GUI_ON          (user_interface & GUI)
 
 /****************************************************************************/
 /*																			*/
@@ -66,6 +79,7 @@ extern unsigned int display_width;                      /* size of screen if nee
 extern unsigned int display_height;
 extern int if_argc;                                             /* command line args			*/
 extern char **if_argv;
+extern int user_interface;                                      /* user interface to open       */
 
 
 /****************************************************************************/
