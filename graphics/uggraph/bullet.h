@@ -24,7 +24,7 @@
 /****************************************************************************/
 
 /* RCS_ID
-   $Header: /hosts/dom/cvs/UG/ug/graphics/uggraph/wop.h,v 1.1 1998/06/03 09:07:08 stefan Exp
+   $Header: /hosts/dom/cvs/UG/ug/graphics/uggraph/wop.h,v 1.2 1998/06/03 09:07:08 stefan Exp
    $
  */
 
@@ -64,6 +64,15 @@
 #define ZTYP         FLOAT             /* type for z buffer                 */
 #define ZEPS         (5.0*FLT_EPSILON) /* eps for ZTYP                      */
 #define FAR_AWAY     (-FLT_MAX)        /* a large negative number from ZTYP */
+
+/****************************************************************************/
+/*																			*/
+/*  exported variables	                                                                                                */
+/*																			*/
+/****************************************************************************/
+
+extern INT BulletDim;
+
 
 /****************************************************************************/
 /*																			*/

@@ -884,6 +884,7 @@ static INT WOP_lastID, WOP_nextID;             /* plot id of last/next element  
 static INT WOP_EXT_End;						   /* flag for end of working loop	   */
 #endif
 
+static INT do_bullet;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -902,6 +903,10 @@ static INT  PlotContourTriangle3D (ELEMENT *theElement, DOUBLE **CornersOfElem,
 								  DOUBLE *LTP0, DOUBLE *LTP1, DOUBLE *LTP2, 
 								  INT depth, DRAWINGOBJ **theDO);
 static INT ElementISLine (ELEMENT *theElement, DOUBLE *p1, DOUBLE *p2);
+
+static INT BulletDraw2D (DRAWINGOBJ *q);
+static INT BulletDraw3D (DRAWINGOBJ *q);
+
 
 /****************************************************************************/
 /*D
@@ -1387,7 +1392,17 @@ static ELEMENT *EW_GetNextElement_hor_fw_up (ELEMENT *theElement)
 			if (++currLevel>GElem_toLevel)
 				return (NULL);
 			else
+				#ifndef ModelP
 				theElement = FIRSTELEMENT(GRID_ON_LEVEL(GElem_MG,currLevel));
+				#else
+				do 
+				{
+					theElement = FIRSTELEMENT(GRID_ON_LEVEL(GElem_MG,currLevel));
+					if (theElement != NULL) break;
+					if (++currLevel>GElem_toLevel) return(NULL);
+				}	
+				while (1);
+				#endif
 		}
 		else
 			theElement = SUCCE(theElement);
@@ -2898,9 +2913,21 @@ static ELEMENT *EW_GetFirstElement_HGrid (MULTIGRID *theMG, INT fromLevel, INT t
     if (fromLevel<0) return (NULL);
     if (toLevel>TOPLEVEL(theMG)) return (NULL);
     if (toLevel<fromLevel) return (NULL);
+
+    #ifndef ModelP
     theElement=FIRSTELEMENT(EE2D_GRID[EE2D_CURRGRID]);
     if (theElement==NULL) return (NULL);
-    else if (USED(theElement)) return (theElement);
+    #else
+    do  
+    {
+        theElement=FIRSTELEMENT(EE2D_GRID[EE2D_CURRGRID]);
+        if (theElement!=NULL) break;
+    }
+    while (++EE2D_CURRGRID<=toLevel);
+    if (theElement==NULL) return (NULL);
+	#endif
+
+    if (USED(theElement)) return (theElement);
     else return (EW_GetNextElement_hor_fw_up(theElement));
 }
 
@@ -4058,6 +4085,8 @@ INT Draw2D (DRAWINGOBJ *q)
 	COORD_POINT a, b, point[MAX_POINTS_OF_POLY];
 	long color;
 	
+	if (do_bullet) return(BulletDraw2D(q));
+
 	end = 0;
 	while (!end)
 	{
@@ -4566,7 +4595,9 @@ INT Draw3D (DRAWINGOBJ *q)
 	DOUBLE help[3], intensity;
 	COORD_POINT a, b, point[MAX_POINTS_OF_POLY];
 	long color;
-	
+
+	if (do_bullet) return(BulletDraw3D(q));
+
 	end = 0;
 	while (!end)
 	{
@@ -4803,7 +4834,7 @@ static INT BulletDraw3D (DRAWINGOBJ *q)
 	DOUBLE a[3], b[3], points[3*MAX_POINTS_OF_POLY], *pp;
 	DOUBLE p1[3], p2[3], intensity;
 	long color, color2;
-	
+
 	end = 0;
 	while (!end)
 	{
@@ -9064,6 +9095,7 @@ static INT EW_ElementHEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		#endif
 	}
 
+if (0)
     if (OBJT(theElement)==BEOBJ)
         for (i=0; i<coe; i++)
         {
@@ -21364,7 +21396,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 	if (WOP_MG == NULL) return (1);
 	WOP_ViewDim 				= PO_DIM(PIC_PO(WOP_Picture));
 	if (WOP_ViewDim == NOT_DEFINED) return (1);
-	
+
 	/* if FINDWORK: is plot valid? */
 	if (W_ISSELECTWORK(WOP_Work))
 		if (PIC_VALID(WOP_Picture) == NO)
@@ -21506,6 +21538,10 @@ static INT BulletDrawWork(PICTURE *thePicture, WORK *theWork, DOUBLE zOffsetFact
 	WOP_ViewDim 				= PO_DIM(PIC_PO(WOP_Picture));
 	if (WOP_ViewDim == NOT_DEFINED) return (1);
 	
+	if (WOP_ViewDim == TYPE_2D)			BulletDim = 2;
+	else if (WOP_ViewDim == TYPE_3D)	BulletDim = 3;
+	else assert(0);
+	
 	/* build transformation */
 	if (BuildObsTrafo(WOP_Picture))
 	{
@@ -21595,12 +21631,15 @@ static INT BulletDrawWork(PICTURE *thePicture, WORK *theWork, DOUBLE zOffsetFact
 			for (; WOP_Element != NULL; 
 				 WOP_Element=(*WOP_EW_GetNextElementProc)(WOP_Element)) 
 			{
-				if ((*WOP_EW_EvaluateProc)(WOP_Element,WOP_DrawingObject)) return 1;
+				if ((*WOP_EW_EvaluateProc)(WOP_Element,WOP_DrawingObject))	return 1;
+				if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))				return (1);
+/*
 #ifdef __THREEDIM__
 				if (BulletDraw3D(WOP_DrawingObject)) return 1;
 #else
 				if (BulletDraw2D(WOP_DrawingObject)) return 1;
 #endif
+*/
 			}
 			break;
 
@@ -22950,9 +22989,13 @@ INT BulletDrawUgPicture(PICTURE *thePicture, DOUBLE zOffsetFactor)
 {
 	WORK theWork;
 	
+	do_bullet = 1;
+
 	theWork.WorkID = DRAW_WORK;
     if (BulletDrawWork(thePicture,&theWork,zOffsetFactor)) return (1);
 	
+	do_bullet = 0;
+
 	return (0);
 }
 

@@ -105,6 +105,14 @@ static INT DitherMatrix[DM_ROWS][DM_COLS] =
 
 /****************************************************************************/
 /*																			*/
+/* definition of variables global to this source file only (static!)		*/
+/*																			*/
+/****************************************************************************/
+
+INT BulletDim;
+
+/****************************************************************************/
+/*																			*/
 /* forward declarations of functions used before they are defined			*/
 /*																			*/
 /****************************************************************************/
@@ -158,11 +166,11 @@ INT BulletOpen(PICTURE *picture, DOUBLE factor)
 
   /* allocate buffers */
   NbPixels = Width*Height;
-#ifdef __THREEDIM__
-  Length = NbPixels + NbPixels*sizeof(ZTYP);
-#else
-  Length = NbPixels;
-#endif
+  if (BulletDim == 3)
+    Length = NbPixels + NbPixels*sizeof(ZTYP);
+  else
+    Length = NbPixels;
+
   heap = GetCurrentMultigrid()->theHeap;
   MarkTmpMem(heap, &MarkKey);
   err =  ((ZBuffer = GetTmpMem(heap, Length, MarkKey)) == NULL);
@@ -180,18 +188,19 @@ INT BulletOpen(PICTURE *picture, DOUBLE factor)
     return BULLET_NOMEM;
   }
 #endif
-#ifdef __THREEDIM__
+  if (BulletDim == 3)
+  {
+    /* init z buffer */
+    z = (ZTYP *)ZBuffer;
+    for (i = 0; i < NbPixels; i++)
+      *z++ = FAR_AWAY;
 
-  /* init z buffer */
-  z = (ZTYP *)ZBuffer;
-  for (i = 0; i < NbPixels; i++)
-    *z++ = FAR_AWAY;
+    /* init pixel buffer */
+    p = (char *)(PBuffer = (char *)z);
+  }
+  else
+    p = (char *)(PBuffer = ZBuffer);
 
-  /* init pixel buffer */
-  p = (char *)(PBuffer = (void *)z);
-#else
-  p = (char *)(PBuffer = ZBuffer);
-#endif
   for (i = 0; i < NbPixels; i++)
     *p++ = (char)OutputDevice->white;
 
@@ -235,29 +244,33 @@ static void MergeBuffers(void *buffer1, void *buffer2)
 {
   INT i;
   char *p1, *p2;
-#ifdef __THREEDIM__
   ZTYP *z1, *z2;
 
-  z1 = (ZTYP *)buffer1;        z2 = (ZTYP *)buffer2;
-  p1 = (char *)(z1+NbPixels);  p2 = (char *)(z2+NbPixels);
+  if (BulletDim == 3)
+  {
+    z1 = (ZTYP *)buffer1;        z2 = (ZTYP *)buffer2;
+    p1 = (char *)(z1+NbPixels);  p2 = (char *)(z2+NbPixels);
 
-  for (i = 0; i < NbPixels; i++) {
-    if (*z2 > *z1) {
-      *p1 = *p2;
-      *z1 = *z2;
+    for (i = 0; i < NbPixels; i++) {
+      if (*z2 > *z1) {
+        *p1 = *p2;
+        *z1 = *z2;
+      }
+      p1++;  p2++;
+      z1++;  z2++;
     }
-    p1++;  p2++;
-    z1++;  z2++;
   }
-#else
-  p1 = (char *)buffer1;
-  p2 = (char *)buffer2;
-  for (i = 0; i < NbPixels; i++) {
-    if (*p2 != (char)OutputDevice->white)
-      *p1 = *p2;
-    p1++;  p2++;
+  else
+  {
+    p1 = (char *)buffer1;
+    p2 = (char *)buffer2;
+    for (i = 0; i < NbPixels; i++) {
+      if (*p2 != (char)OutputDevice->white)
+        *p1 = *p2;
+      p1++;  p2++;
+    }
   }
-#endif
+
 }
 
 /****************************************************************************/
@@ -299,12 +312,15 @@ void BulletPlot(void)
   void *data;
 
   /* reuse z buffer if possible */
-#ifdef __THREEDIM__
-  if (sizeof(ZTYP) >= 4)
-    data = ZBuffer;
+  if (BulletDim == 3)
+  {
+    if (sizeof(ZTYP) >= 4)
+      data = ZBuffer;
+    else
+      data = NULL;
+  }
   else
-#endif
-  data = NULL;
+    data = NULL;
 
   /* merge buffers */
 #ifdef ModelP
@@ -334,15 +350,19 @@ static void DrawPoint(INT x, INT y, DOUBLE z, char c)
   ZTYP *zp;
 
   if (x < 0 || x >= Width || y < 0 || y >= Height) return;
-#ifdef __THREEDIM__
-  zp = Z_BUFFER(y)+x;
-  if (z >= (*zp)-ZEPS*ABS(*zp)) {
-    P_BUFFER(y)[x] = c;
-    *zp = z;
+
+  if (BulletDim == 3)
+  {
+    zp = Z_BUFFER(y)+x;
+    if (z >= (*zp)-ZEPS*ABS(*zp)) {
+      P_BUFFER(y)[x] = c;
+      *zp = z;
+    }
   }
-#else
-  P_BUFFER(y)[x]=c;
-#endif
+  else
+  {
+    P_BUFFER(y)[x]=c;
+  }
 }
 
 /*****************************************************************************
@@ -419,45 +439,53 @@ static void DrawSpan(INT x1, INT x2, INT y, DOUBLE z, DOUBLE dz, DOUBLE i, char 
   if (x1 <= x2) {
     for (x = x1; x <= x2; x++) {
       if (x >= 0 && x < Width) {
-#ifdef __THREEDIM__
-        if (z >= *pz) {
-          if (pd[x & (DM_COLS-1)] < threshold)
-            *pp = c;
-          else
-            *pp = (char)OutputDevice->black;
-          *pz = z;
+        if (BulletDim == 3)
+        {
+          if (z >= *pz) {
+            if (pd[x & (DM_COLS-1)] < threshold)
+              *pp = c;
+            else
+              *pp = (char)OutputDevice->black;;
+            *pz = z;
+          }
         }
-#else
-        *pp = c;
-#endif
+        else
+        {
+          *pp = c;
+        }
       }
       pp++;
-#ifdef __THREEDIM__
-      pz++;
-      z += dz;
-#endif
+      if (BulletDim == 3)
+      {
+        pz++;
+        z += dz;
+      }
     }
   }
   else {
     for (x = x1; x >=x2; x--) {
       if (x >= 0 && x < Width) {
-#ifdef __THREEDIM__
-        if (z >= *pz) {
-          if (pd[x & (DM_COLS-1)] < threshold)
-            *pp = c;
-          else
-            *pp = (char)OutputDevice->black;
-          *pz = z;
+        if (BulletDim == 3)
+        {
+          if (z >= *pz) {
+            if (pd[x & (DM_COLS-1)] < threshold)
+              *pp = c;
+            else
+              *pp = (char)OutputDevice->black;
+            *pz = z;
+          }
         }
-#else
-        *pp = c;
-#endif
+        else
+        {
+          *pp = c;
+        }
       }
       pp--;
-#ifdef __THREEDIM__
-      pz--;
-      z -= dz;
-#endif
+      if (BulletDim == 3)
+      {
+        pz--;
+        z -= dz;
+      }
     }
   }
 }
@@ -571,12 +599,15 @@ void BulletLine(DOUBLE *point1, DOUBLE *point2, long color)
   p1.y = (INT)(point1[1] - YShift + 0.5);
   p2.x = (INT)(point2[0] - XShift + 0.5);
   p2.y = (INT)(point2[1] - YShift + 0.5);
-#ifdef __THREEDIM__
-  z1   = point1[2];
-  z2   = point2[2];
-#else
-  z1 = z2 = 0.0;
-#endif
+  if (BulletDim == 3)
+  {
+    z1   = point1[2];
+    z2   = point2[2];
+  }
+  else
+  {
+    z1 = z2 = 0.0;
+  }
   DrawLine(p1, z1, p2, z2, color);
 }
 
@@ -607,7 +638,7 @@ void BulletPolyLine(DOUBLE *points, INT nb, long color)
 
   p0 = points;
   for (i = 0; i < nb-1; i++) {
-    p1 = points+DIM;
+    p1 = points+BulletDim;
     BulletLine(points, p1, color);
     points = p1;
   }
@@ -643,26 +674,27 @@ void BulletPolygon(DOUBLE *points, INT nb, DOUBLE intensity, long color)
 
   p0.x = (INT)((*points++) - XShift + 0.5);
   p0.y = (INT)((*points++) - YShift + 0.5);
-#ifdef __THREEDIM__
-  z0   = *points++;
-#else
-  z0 = 0.0;
-#endif
+  if (BulletDim == 3)
+  {
+    z0   = *points++;
+  }
+  else
+  {
+    z0 = 0.0;
+  }
   for (k = 1; k < nb-1; k++) {
     p1.x = (INT)((*points++) - XShift + 0.5);
     p1.y = (INT)((*points++) - YShift + 0.5);
-#ifdef __THREEDIM__
-    z1   = *points++;
-#else
-    z1   = 0.0;
-#endif
+    if (BulletDim == 3)
+      z1   = *points++;
+    else
+      z1   = 0.0;
     p2.x = (INT)((*points++) - XShift + 0.5);
     p2.y = (INT)((*points++) - YShift + 0.5);
-#ifdef __THREEDIM__
-    z2   = *points;
-#else
-    z2   = 0.0;
-#endif
+    if (BulletDim == 3)
+      z2   = *points;
+    else
+      z2   = 0.0;
     points -= 2;
     DrawTriangle(p0, z0, p1, z1, p2, z2, intensity, color);
   }
