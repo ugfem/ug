@@ -72,7 +72,8 @@ fi
 
 
 # call ident and pipe to bcheck awk-script
-ident $thefile | $AWK -f $UGROOT/bin/ugbcheck.awk \
+ident $thefile | $AWK -f $UGROOT/bin/ugbcheck_fix1.awk - | \
+	$AWK -f $UGROOT/bin/ugbcheck.awk \
 	toolname=`basename $0` filename=`basename $thefile` verbose=$verbose_mode -
 
 

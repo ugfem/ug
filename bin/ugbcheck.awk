@@ -30,6 +30,7 @@
 
 BEGIN {
 	last_filename = DUMMY;
+	expecting = "header";
 	no_headers = 0;
 	no_states = 0;
 }
@@ -38,14 +39,22 @@ BEGIN {
 ########################################################################
 
 /Header/ {
-	no_headers++;
-
-	# remember current filename
-	last_filename = $2;
 
 	# reset first and last entry
 	$1 = ""
 	$NF = ""
+
+
+	if (expecting!="header")
+	{
+		missing[headers[last_filename]] = no_headers;
+	}
+	expecting = "state";
+
+	no_headers++;
+
+	# remember current filename
+	last_filename = $2;
 
 	# remember RCS header for current filename
 	headers[last_filename] = $0;
@@ -54,6 +63,7 @@ BEGIN {
 
 
 /State/ {
+	expecting = "header";
 	no_states++;
 
 	# loop through items of type "PROPERTY=VALUE"
@@ -168,8 +178,7 @@ function print_verbose_report ()
 			inconsistent_values);
 
 	if (no_states<no_headers)
-		printf("%s: %d Headers, but only %s States!\n",
-			toolname, no_headers, no_states);
+		print_missing_states();
 
 	print "--------------------------------------------------";
 }
@@ -199,13 +208,29 @@ function print_error_report ()
 	}
 
 	if (no_states<no_headers)
-		printf("%s: %s has %d Headers, but only %s States!\n",
-			toolname, filename, no_headers, no_states);
+		print_missing_states();
 	else
 	{
 		if (inconsistent_values==0)
 			printf("%s: %s is consistent.\n",
 				toolname, filename);
+	}
+}
+
+
+########################################################################
+
+function print_missing_states ()
+{
+	if (no_states<no_headers)
+	{
+		printf("%s: %s has %d Headers, but only %s States! Missing:\n",
+			toolname, filename, no_headers, no_states);
+
+		for(m in missing)
+		{
+			print "      ", m;
+		}
 	}
 }
 
