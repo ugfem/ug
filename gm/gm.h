@@ -2192,7 +2192,7 @@ CONNECTION      *GetConnection                  (const VECTOR *FromVector, const
 #ifdef __INTERPOLATION_MATRIX__
 MATRIX      *GetIMatrix             (VECTOR *FineVector, VECTOR *CoarseVector);
 MATRIX      *CreateIMatrix          (GRID *theGrid, VECTOR *fvec, VECTOR *cvec);
-INT                     DisposeIMatrices                (GRID *theGrid, MATRIX *theMatrix);
+INT                     DisposeIMatrixList              (GRID *theGrid, VECTOR *theVector);
 #endif
 INT         GetAllVectorsOfElement  (GRID *theGrid, ELEMENT *theElement,
                                      VECTOR **vec);

@@ -265,6 +265,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, const BV_DESC_FORMAT *bvdf, VECTOR **v, INT stripes, INT vectors_per_stripe, GRID *grid );
 static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation, INT leaf_size );
+static INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix);
 
 /****************************************************************************/
 /*D
@@ -6327,7 +6328,7 @@ MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
    DisposeIMatrices - Remove interpolation matrix from the data structure
 
    SYNOPSIS:
-   INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix);
+   static INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix);
 
    PARAMETERS:
    .  theGrid - the grid to remove from
@@ -6344,7 +6345,7 @@ MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
    D*/
 /****************************************************************************/
 
-INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix)
+static INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix)
 {
   MATRIX *Matrix, *NextMatrix;
 
@@ -6357,6 +6358,13 @@ INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix)
   }
 
   return(0);
+}
+
+INT DisposeIMatrixList (GRID *theGrid, VECTOR *theVector)
+{
+  if (DisposeIMatrices(theGrid,VISTART(theVector)))
+    RETURN (1);
+  VISTART(theVector) = NULL;
 }
 
 /****************************************************************************/
