@@ -74,7 +74,7 @@
 #define HASH_STARTSIZE                          1000
 #define HASH_RESIZEFRAC             0.5
 #define ELEMPROCLISTSIZE                2000
-#define PROCLISTSIZE                    (ELEMPROCLISTSIZE*MAX_SONS * MAX(5,(int)(2.0+log((double)nparfiles))))
+#define PROCLISTSIZE(np)                (ELEMPROCLISTSIZE*MAX_SONS * MAX(5,(int)(2.0+log((double)(np)))))
 #define VERBOSE
 #define MERGE_DEBUG
 
@@ -116,6 +116,15 @@ typedef struct {
   int sonex;
 } MERGE_REFINEMENT;
 
+typedef struct {
+  int nparfiles;
+  HASH_TABLE *ht_gol;
+  int **in_lid2gid;
+  char out[128];
+} DATA_MAP;
+
+
+
 typedef int (*HashEntryProc)(void **object);
 typedef int (*RefinementProcPtr)(MERGE_REFINEMENT *ref);
 
@@ -133,7 +142,6 @@ typedef int (*RefinementProcPtr)(MERGE_REFINEMENT *ref);
 /*																			*/
 /****************************************************************************/
 
-static int nparfiles;
 static int debug=0;
 
 #ifdef MERGE_DEBUG
@@ -215,6 +223,22 @@ HASH_TABLE *CreateHashTable (HASH_TABLE **hth, int size)
   ht->mem=sizeof(HASH_TABLE)+(table_len-1)*sizeof(ENTRY*);
 
   return (ht);
+}
+
+int FreeHashTable (HASH_TABLE **hth)
+{
+  int i;
+  HASH_TABLE *ht;
+
+  if (hth==NULL || *hth==NULL) return (1);
+  ht=*hth;
+  for (i=0; i<ht->table_len; i++)
+    if (ht->entry[i]==NULL)
+      free(ht->entry[i]);
+  free(ht);
+  *hth=NULL;
+
+  return (0);
 }
 
 HASH_TABLE *ResizeHashTable (HASH_TABLE *ht, int add_obj)
@@ -631,23 +655,6 @@ int HT_ShiftEntry (void **obj)
   return (0);
 }
 
-void write_cge_gnu(FILE *stream, MGIO_CG_ELEMENT *elem, struct mgio_cg_point_seq *cg_point_out)
-{
-  int i,id;
-
-  for (i=0; i<3; i++)
-  {
-    id=elem->cornerid[i];
-    fprintf(stream,"%f %f;\n",cg_point_out[id].position[0],cg_point_out[id].position[1]);
-    id=elem->cornerid[(i+1)%3];
-    fprintf(stream,"%f %f;\n",cg_point_out[id].position[0],cg_point_out[id].position[1]);
-    fprintf(stream,"\n");
-  }
-  fprintf(stream,"\n");
-
-  return;
-}
-
 #ifdef MERGE_DEBUG
 static HASH_TABLE *ht_ref_crosscheck=NULL;
 static int ref_crosscheck=0;
@@ -707,10 +714,22 @@ int CountRefinements (MERGE_REFINEMENT *ref)
   return (0);
 }
 
-int MergeMultigrid (char *in, int rename)
+int FreeDataMap (DATA_MAP *map)
 {
-  HASH_TABLE *ht_cgv,*ht_ref,*ht_bnp, *ht_cgvlid;
-  HASH_TABLE *ht_bn_l0, *ht_in_l0, *ht_gol,*ht_cge;
+  int i;
+
+  for (i=0; i<map->nparfiles; i++)
+    free(map->in_lid2gid[i]);
+  free(map->in_lid2gid);
+  FreeHashTable(&(map->ht_gol));
+
+  return (0);
+}
+
+int MergeMultigrid (char *in, DATA_MAP *map)
+{
+  HASH_TABLE *ht_cgv,*ht_ref,*ht_bnp;
+  HASH_TABLE *ht_bn_l0,*ht_in_l0,*ht_cge;
   HASH_STAT hst;
   MGIO_MG_GENERAL mg_general,*mg_general_list,mg_general_dummy;
   MGIO_GE_GENERAL ge_general;
@@ -719,22 +738,19 @@ int MergeMultigrid (char *in, int rename)
   MGIO_RR_RULE *rr_rules;
   MGIO_CG_GENERAL *cg_general,cg_general_out;
   MGIO_CG_POINT **cg_point;
+  static unsigned short *ProcList;
   struct mgio_cg_point_seq *cg_point_out;
   MGIO_CG_ELEMENT **cg_element,*o_element,*elem;
   MGIO_BD_GENERAL *bd_general,bd_general_out;
   MGIO_PARINFO cg_pinfo;
   MERGE_REFINEMENT ***refinement;
   MGIO_REFINEMENT loc_ref,*ref;
-  unsigned short *ProcList;
-  BNDP **BndPList;
-  char prefix[128],appdix[128],outname[128],tmp[128],tmp2[28],*p;
-  int i,j,k,l,s,t,non,foid,tag,*vidlist,key[MGIO_MAX_CORNERS_OF_ELEM+1],*ncge,n_ref_tot,nref_read,level,*in_lid2gid;
+  BNDP ***BndPList,**BndPList_out;
+  char prefix[128],appdix[128],tmp[128],tmp2[28],*p;
+  int i,j,k,l,s,t,non,foid,tag,*vidlist,key[MGIO_MAX_CORNERS_OF_ELEM+1],*ncge,n_ref_tot,nref_read,level;
   int nc[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS],*o_element_im,out_blid_offset,out_ilid_offset,nid_l0_max,vid_l0_max,vid_bl0_max,lid,error;
   int found,n_bn_l0,n_in_l0,id,gecid[MGIO_MAX_CORNERS_OF_ELEM],crosscheck_nref_tot;
   void *object;
-  FILE *stream;
-
-  stream=fopen("foo","w");
 
   /*************************************************************************/
   /************************ read input file ********************************/
@@ -745,16 +761,20 @@ int MergeMultigrid (char *in, int rename)
   if (Read_OpenMGFile(tmp))                                               {printf("ERROR in 'MergeMultigrid': cannot open proc 0 file\n");return (1);}
   if (Read_MG_General(&mg_general))                               {printf("ERROR in 'MergeMultigrid': cannot read mg_general 0 file\n");return (1);}
   if (strcmp(mg_general.version,MGIO_VERSION)!=0) {printf("ERROR in 'MergeMultigrid': version mismatch\n");return (1);}
-  nparfiles=mg_general.nparfiles;
-  if (nparfiles<=0)                                                               {printf("ERROR in 'MergeMultigrid': cannot merge %d parfile\n",nparfiles);return (1);}
+  map->nparfiles=mg_general.nparfiles;
+  if (map->nparfiles<=0)                                                  {printf("ERROR in 'MergeMultigrid': cannot merge %d parfile\n",map->nparfiles);return (1);}
   if (CloseMGFile())                                                              {printf("ERROR in 'MergeMultigrid': cannot close proc 0 file\n");return (1);}
 
+  /* allocate ProcList */
+  ProcList = (unsigned short*)ht_malloc(PROCLISTSIZE(map->nparfiles)*sizeof(unsigned short),"const");
+  if (ProcList==NULL) {printf("ERROR in 'MergeMultigrid': cannot allocate 'ProcList'\n",i);return (1);}
+
   /* allocate dynamic lists */
-  mg_general_list=(MGIO_MG_GENERAL*)ht_malloc(nparfiles*sizeof(MGIO_MG_GENERAL),"const");
+  mg_general_list=(MGIO_MG_GENERAL*)ht_malloc(map->nparfiles*sizeof(MGIO_MG_GENERAL),"const");
   if (mg_general_list==NULL)                                              {printf("ERROR in 'MergeMultigrid': cannot allocate mg_general_list\n");return (1);}
 
   /* read all mg_generals */
-  for (i=0; i<nparfiles; i++)
+  for (i=0; i<map->nparfiles; i++)
   {
     sprintf(tmp,"%s/mg.%04d",in,i);
     if (Read_OpenMGFile(tmp))                                       {printf("ERROR in 'MergeMultigrid': cannot open proc %d file\n",i);return (1);}
@@ -771,7 +791,7 @@ int MergeMultigrid (char *in, int rename)
   mg_general.me=0;
   mg_general.nLevel=mg_general_list[0].nLevel;
   mg_general.nNode=mg_general.nPoint=mg_general.nElement=0;
-  for (i=0; i<nparfiles; i++)
+  for (i=0; i<map->nparfiles; i++)
   {
     mg_general.nNode+=mg_general_list[i].nNode;
     mg_general.nPoint+=mg_general_list[i].nPoint;
@@ -781,7 +801,7 @@ int MergeMultigrid (char *in, int rename)
   strcpy(mg_general.DomainName,mg_general_list[0].DomainName);
   strcpy(mg_general.MultiGridName,mg_general_list[0].MultiGridName);
   strcpy(mg_general.Formatname,mg_general_list[0].Formatname);
-  mg_general.heapsize=nparfiles*mg_general_list[0].heapsize;
+  mg_general.heapsize=map->nparfiles*mg_general_list[0].heapsize;
   mg_general.VectorTypes=mg_general_list[0].VectorTypes;
 
   /* prepare hashes */
@@ -790,34 +810,38 @@ int MergeMultigrid (char *in, int rename)
   ht_bnp = NULL;
   ht_bn_l0 = NULL;
   ht_in_l0 = NULL;
-  ht_gol = NULL;
+  map->ht_gol = NULL;
 
   /* scan each input file */
-  cg_general=(MGIO_CG_GENERAL*)ht_malloc(nparfiles*sizeof(MGIO_CG_GENERAL),"const");
+  cg_general=(MGIO_CG_GENERAL*)ht_malloc(map->nparfiles*sizeof(MGIO_CG_GENERAL),"const");
   if (cg_general==NULL)                                                                   {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'cg_general' \n");return (1);}
-  cg_point=(MGIO_CG_POINT**)ht_malloc(nparfiles*sizeof(MGIO_CG_POINT*),"const");
+  cg_point=(MGIO_CG_POINT**)ht_malloc(map->nparfiles*sizeof(MGIO_CG_POINT*),"const");
   if (cg_point==NULL)                                                                             {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'cg_point' \n");return (1);}
-  cg_element=(MGIO_CG_ELEMENT**)ht_malloc(nparfiles*sizeof(MGIO_CG_ELEMENT*),"const");
+  cg_element=(MGIO_CG_ELEMENT**)ht_malloc(map->nparfiles*sizeof(MGIO_CG_ELEMENT*),"const");
   if (cg_element==NULL)                                                                   {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'cg_element' \n");return (1);}
-  bd_general=(MGIO_BD_GENERAL*)ht_malloc(nparfiles*sizeof(MGIO_BD_GENERAL),"const");
+  bd_general=(MGIO_BD_GENERAL*)ht_malloc(map->nparfiles*sizeof(MGIO_BD_GENERAL),"const");
   if (bd_general==NULL)                                                                   {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'bd_general' \n");return (1);}
-  refinement=(MERGE_REFINEMENT***)ht_malloc(nparfiles*sizeof(MERGE_REFINEMENT**),"const");
+  refinement=(MERGE_REFINEMENT***)ht_malloc(map->nparfiles*sizeof(MERGE_REFINEMENT**),"const");
   if (refinement==NULL)                                                                   {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'refinement' \n");return (1);}
-  ncge=(int*)ht_malloc(nparfiles*sizeof(int),"const");
+  ncge=(int*)ht_malloc(map->nparfiles*sizeof(int),"const");
   if (ncge==NULL)                                                                                 {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'ncge' \n");return (1);}
+  BndPList=(BNDP***)ht_malloc(map->nparfiles*sizeof(BNDP**),"const");
+  if (BndPList==NULL)                                                                             {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'BndPList' \n");return (1);}
+  map->in_lid2gid=(int**)ht_malloc(map->nparfiles*sizeof(int*),"const");
+  if (map->in_lid2gid==NULL)                                                              {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'in_lid2gid' \n");return (1);}
   printf("merging '%s': ",in);
   fflush(stdout);
-  for (i=0; i<nparfiles; i++)
+  for (i=0; i<map->nparfiles; i++)
   {
     sprintf(tmp,"%s/mg.%04d",in,i);
-    if (i<nparfiles-1) printf("[%d]",i);
+    if (i<map->nparfiles-1) printf("[%d]",i);
     else printf("[%d]\n",i);
     fflush(stdout);
     if (Read_OpenMGFile(tmp))                                                       {printf("ERROR in 'MergeMultigrid': cannot open proc %d file\n",i);return (1);}
     if (Read_MG_General(&mg_general_dummy))                         {printf("ERROR in 'MergeMultigrid': cannot read mg_general of proc %d file\n",i);return (1);}
-    in_lid2gid=(int*)ht_malloc(mg_general_dummy.nNode*sizeof(int),"procloc");
-    if (in_lid2gid==NULL)                                                                   {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'in_lid2gid' of proc %d file\n",i);return (1);}
-    for (j=0; j<mg_general_dummy.nNode; j++) in_lid2gid[j]=-1;
+    map->in_lid2gid[i]=(int*)ht_malloc(mg_general_dummy.nNode*sizeof(int),"procloc");
+    if (map->in_lid2gid[i]==NULL)                                           {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'in_lid2gid[%d]' of proc %d file\n",i);return (1);}
+    for (j=0; j<mg_general_dummy.nNode; j++) map->in_lid2gid[i][j]=-1;
     nid_l0_max=vid_l0_max=vid_bl0_max=-1;
     if (Read_GE_General(&ge_general))                       {printf("ERROR in 'MergeMultigrid': cannot read 'ge_general' of proc %d file\n",i);return (1);}
     if (Read_GE_Elements(TAGS,ge_element))                  {printf("ERROR in 'MergeMultigrid': cannot read 'ge_element' of proc %d file\n",i);return (1);}
@@ -850,15 +874,13 @@ int MergeMultigrid (char *in, int rename)
     if (Read_BD_General (bd_general+i))                                     {printf("ERROR in 'MergeMultigrid': cannot read 'bd_general' in proc %d file\n",i);return (1);}
     if (bd_general[i].nBndP>0)
     {
-      BndPList = (BNDP**)ht_malloc(bd_general[i].nBndP*sizeof(BNDP*),"const");
-      if (BndPList==NULL)                                                     {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'BndPList' of proc %d file\n",i);return (1);}
-      if (Read_PBndDesc (NULL,NULL,bd_general[i].nBndP,BndPList))
+      BndPList[i] = (BNDP**)ht_malloc(bd_general[i].nBndP*sizeof(BNDP*),"const");
+      if (BndPList[i]==NULL)                                                  {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'BndPList' of proc %d file\n",i);return (1);}
+      if (Read_PBndDesc (NULL,NULL,bd_general[i].nBndP,BndPList[i]))
       {printf("ERROR in 'MergeMultigrid': cannot read 'BndPList' of proc %d file\n",i);return (1);}
     }
     if (cg_general[i].nElement>0)
     {
-      ProcList = (unsigned short*)ht_malloc(PROCLISTSIZE*sizeof(unsigned short),"const");
-      if (ProcList==NULL)                                                             {printf("ERROR in 'MergeMultigrid': cannot allocate 'ProcList' of proc %d file\n",i);return (1);}
       cg_pinfo.proclist = ProcList;
       for (j=0; j<cg_general[i].nElement; j++)
       {
@@ -873,8 +895,8 @@ int MergeMultigrid (char *in, int rename)
             assert(o_element[j].cornerid[k]<mg_general_dummy.nNode);
             assert(o_element[j].cornerid[k]>=foid && o_element[j].cornerid[k]<foid+non);
             l=o_element[j].cornerid[k];
-            assert(in_lid2gid[l]==-1 || in_lid2gid[l]==cg_pinfo.n_ident[k]);
-            in_lid2gid[l]=cg_pinfo.n_ident[k];
+            assert(map->in_lid2gid[i][l]==-1 || map->in_lid2gid[i][l]==cg_pinfo.n_ident[k]);
+            map->in_lid2gid[i][l]=cg_pinfo.n_ident[k];
 #ifdef MERGE_DEBUG
             key[0]=1; key[1]=cg_pinfo.n_ident[k];
             if (PushHashEntry(&ht_nodes,key,NULL))                          {printf("ERROR in 'MergeMultigrid': cannot insert vertex in 'ht_nodes' of proc %d file\n",i);return (1);}
@@ -894,7 +916,7 @@ int MergeMultigrid (char *in, int rename)
               if (vid_l0_max<id) vid_l0_max=id;
               if (id<bd_general[i].nBndP)
               {
-                if (PushHashEntry(&ht_bnp,key,(void*)(BndPList[id])))
+                if (PushHashEntry(&ht_bnp,key,(void*)(BndPList[i][id])))
                 {printf("ERROR in 'MergeMultigrid': cannot insert vertex in 'ht_bnp' of proc %d file\n",i);return (1);}
                 if (vid_bl0_max<id) vid_bl0_max=id;
               }
@@ -906,7 +928,7 @@ int MergeMultigrid (char *in, int rename)
       if (refinement[i]==NULL)                                                        {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'refinement' \n");return (1);}
       for (j=0; j<cg_general[i].nElement; j++)
       {
-        if (o_element[j].nref==0) continue;
+        if (o_element[j].nref==0) {refinement[i][j]=NULL; continue;}
         refinement[i][j]=(MERGE_REFINEMENT*)ht_malloc(o_element[j].nref*sizeof(MERGE_REFINEMENT),"refinement");
         ref=&loc_ref;
         for (l=0; l<MGIO_MAX_SONS_OF_ELEM; l++)
@@ -936,8 +958,7 @@ int MergeMultigrid (char *in, int rename)
                 assert(ref->newcornerid[t]>=foid);
                 assert(ref->newcornerid[t]<mg_general_dummy.nNode);
                 t=ref->newcornerid[t];
-                in_lid2gid[t]=ref->pinfo[l].n_ident[s];
-                assert(in_lid2gid[t]==-1 || in_lid2gid[t]==ref->pinfo[l].n_ident[s]);
+                map->in_lid2gid[i][t]=ref->pinfo[l].n_ident[s];
 #ifdef MERGE_DEBUG
                 key[0]=1; key[1]=ref->pinfo[l].n_ident[s];
                 if (PushHashEntry(&ht_nodes,key,NULL))                          {printf("ERROR in 'MergeMultigrid': cannot insert vertex in 'ht_nodes' of proc %d file\n",i);return (1);}
@@ -985,8 +1006,8 @@ int MergeMultigrid (char *in, int rename)
     key[0]=1;
     for (j=foid; j<=nid_l0_max; j++)
     {
-      if (in_lid2gid[j]==-1) continue;
-      key[1]=in_lid2gid[j];
+      if (map->in_lid2gid[i][j]==-1) continue;
+      key[1]=map->in_lid2gid[i][j];
       k=vidlist[j-foid];
       if (k<=vid_bl0_max)
       {
@@ -1000,26 +1021,24 @@ int MergeMultigrid (char *in, int rename)
     }
     for (; j<mg_general_dummy.nNode; j++)
     {
-      if (in_lid2gid[j]==-1) continue;
-      key[1]=in_lid2gid[j];
-      if (PushHashEntry(&(ht_gol),key,NULL))  {printf("ERROR in 'MergeMultigrid': cannot insert bnd-node in 'ht_hn' of proc %d file\n",i);return (1);}
+      if (map->in_lid2gid[i][j]==-1) continue;
+      key[1]=map->in_lid2gid[i][j];
+      if (PushHashEntry(&(map->ht_gol),key,NULL))  {printf("ERROR in 'MergeMultigrid': cannot insert bnd-node in 'ht_hn' of proc %d file\n",i);return (1);}
     }
 
     /* free memory */
     if (cg_general[i].nElement>0) free((void*)o_element);
     if (cg_general[i].nElement>0) free((void*)o_element_im);
     free((void*)vidlist);
-    free((void*)in_lid2gid);
-
+    if (i<map->nparfiles-1) free(rr_rules);
 
     if (CloseMGFile())                                                              {printf("ERROR in 'MergeMultigrid': cannot close proc 0 file\n");return (1);}
-
   }
 
   HashTableStat(ht_bn_l0,&hst); n_bn_l0=hst.n_obj;
   HashTableStat(ht_in_l0,&hst); n_in_l0=hst.n_obj;
-  if (HashTableInsertAtBegin (&ht_gol,ht_in_l0)) {printf("ERROR in 'MergeMultigrid': cannot insert hash table\n");return (1);}
-  if (HashTableInsertAtBegin (&ht_gol,ht_bn_l0)) {printf("ERROR in 'MergeMultigrid': cannot insert hash table\n");return (1);}
+  if (HashTableInsertAtBegin (&(map->ht_gol),ht_in_l0)) {printf("ERROR in 'MergeMultigrid': cannot insert hash table\n");return (1);}
+  if (HashTableInsertAtBegin (&(map->ht_gol),ht_bn_l0)) {printf("ERROR in 'MergeMultigrid': cannot insert hash table\n");return (1);}
 
 #ifdef VERBOSE
   HashTablePrint(ht_cgv,"vtx");
@@ -1029,7 +1048,7 @@ int MergeMultigrid (char *in, int rename)
   HashTableStat(ht_ref,&hst);
   crosscheck_nref_tot=hst.n_obj;
 #endif
-  HashTablePrint(ht_gol,"gol");
+  HashTablePrint((map->ht_gol),"gol");
 #ifdef MERGE_DEBUG
   HashTablePrint(ht_nodes,"nds");
 #endif
@@ -1043,10 +1062,10 @@ int MergeMultigrid (char *in, int rename)
   strcpy(tmp,in);p=strtok(tmp,".");
   if (p==NULL)                                                                    {printf("ERROR in 'MergeMultigrid': cannot create outfilename\n");return (1);}
   p+=strlen(p)+1;
-  strcpy(outname,tmp);sprintf(tmp2,"_%d.",(int)nparfiles);strcat(outname,tmp2);strcat(outname,p);
+  strcpy(map->out,tmp);sprintf(tmp2,"_%d.",(int)map->nparfiles);strcat(map->out,tmp2);strcat(map->out,p);
 
   /* write part 0 to output file */
-  if (Write_OpenMGFile(outname,rename))                   {printf("ERROR in 'MergeMultigrid': cannot open output file\n");return (1);}
+  if (Write_OpenMGFile(map->out,1))                               {printf("ERROR in 'MergeMultigrid': cannot open output file\n");return (1);}
   if (Write_MG_General(&mg_general))                              {printf("ERROR in 'MergeMultigrid': cannot 'mg_general' to output file\n");return (1);}
   if (Write_GE_General(&ge_general))                          {printf("ERROR in 'MergeMultigrid': cannot 'ge_general' to output file\n");return (1);}
   if (Write_GE_Elements(TAGS,ge_element))             {printf("ERROR in 'MergeMultigrid': cannot 'ge_element' to output file\n");return (1);}
@@ -1060,7 +1079,7 @@ int MergeMultigrid (char *in, int rename)
   cg_general_out.nBndPoint=hst.n_obj;
   cg_general_out.nInnerPoint=cg_general_out.nPoint-cg_general_out.nBndPoint;
   cg_general_out.nElement=cg_general_out.nBndElement=0;
-  for (i=0; i<nparfiles; i++)
+  for (i=0; i<map->nparfiles; i++)
     for (j=0; j<ncge[i]; j++)
     {
       if (cg_element[i][j].ge < 0) continue;
@@ -1090,7 +1109,7 @@ int MergeMultigrid (char *in, int rename)
   {
     if (HashGet(ht_cgv,&object,key,&lid,&found))                    {printf("ERROR in 'MergeMultigrid': cannot 'HashGet' of 'ht_cgv' for output file\n");return (1);}
     if (!found) break;
-    if (LocalIndexHash(ht_gol,key,&lid))                    {printf("ERROR in 'MergeMultigrid': cannot 'LocalIndexHash'of 'ht_gol' for output file\n");return (1);}
+    if (LocalIndexHash((map->ht_gol),key,&lid))             {printf("ERROR in 'MergeMultigrid': cannot 'LocalIndexHash'of 'ht_gol' for output file\n");return (1);}
     assert(lid>=0);
     assert(lid<cg_general_out.nPoint);
     for (i=0; i<mg_general.dim; i++)
@@ -1100,7 +1119,7 @@ int MergeMultigrid (char *in, int rename)
   if (Write_CG_Points(cg_general_out.nPoint,(MGIO_CG_POINT*)cg_point_out))
   {printf("ERROR in 'MergeMultigrid': cannot write 'cg_point_out' to output file\n");return (1);}
   ht_cge=NULL;
-  for (i=0; i<nparfiles; i++)
+  for (i=0; i<map->nparfiles; i++)
     for (j=0; j<ncge[i]; j++)
       if (cg_element[i][j].ge!=-1)
       {
@@ -1111,7 +1130,7 @@ int MergeMultigrid (char *in, int rename)
 #ifdef MERGE_DEBUG
   HashTablePrint(ht_cge,"cge");
 #endif
-  for (i=0; i<nparfiles; i++)
+  for (i=0; i<map->nparfiles; i++)
     for (j=0; j<ncge[i]; j++)
       if (cg_element[i][j].ge!=-1)
       {
@@ -1135,7 +1154,7 @@ int MergeMultigrid (char *in, int rename)
         for (k=0; k<ge_element[elem->ge].nCorner; k++)
         {
           key[0]=1; key[1]=gecid[k]=elem->cornerid[k];
-          if (LocalIndexHash(ht_gol,key,&lid))        {printf("ERROR in 'MergeMultigrid': cannot 'LocalIndexHash'of 'ht_gol' for output file\n");return (1);}
+          if (LocalIndexHash((map->ht_gol),key,&lid))        {printf("ERROR in 'MergeMultigrid': cannot 'LocalIndexHash'of 'ht_gol' for output file\n");return (1);}
           assert(lid!=-1);
           elem->cornerid[k]=lid;
         }
@@ -1146,38 +1165,38 @@ int MergeMultigrid (char *in, int rename)
   if (Bio_Jump_From ())                                                                           {printf("ERROR in 'MergeMultigrid': cannot 'Bio_Jump_From' for output file\n");return (1);}
   bd_general_out.nBndP=cg_general_out.nBndPoint;
   if (Write_BD_General(&bd_general_out))                                          {printf("ERROR in 'MergeMultigrid': cannot 'Write_BD_General' for output file\n");return (1);}
-  BndPList=(BNDP**)ht_malloc(bd_general_out.nBndP*sizeof(BNDP*),"out");
-  if (BndPList==NULL)                                                                                     {printf("ERROR in 'MergeMultigrid': cannot allocate 'BndPList' for output file\n");return (1);}
+  BndPList_out=(BNDP**)ht_malloc(bd_general_out.nBndP*sizeof(BNDP*),"out");
+  if (BndPList_out==NULL)                                                                                 {printf("ERROR in 'MergeMultigrid': cannot allocate 'BndPList_out' for output file\n");return (1);}
 #ifdef MERGE_DEBUG
   for (i=0; i<bd_general_out.nBndP; i++)
-    BndPList[i]=NULL;
+    BndPList_out[i]=NULL;
 #endif
   if (BeginHashGet(ht_bnp))                                                                       {printf("ERROR in 'MergeMultigrid': cannot 'BeginHashGet' of 'ht_bnp' for output file\n");return (1);}
   while (1)
   {
     if (HashGet(ht_bnp,&object,key,&lid,&found))            {printf("ERROR in 'MergeMultigrid': cannot 'HashGet' of 'ht_cge' for output file\n");return (1);}
     if (!found) break;
-    if (LocalIndexHash(ht_gol,key,&lid))                    {printf("ERROR in 'MergeMultigrid': cannot 'LocalIndexHash'of 'ht_gol' for output file\n");return (1);}
+    if (LocalIndexHash((map->ht_gol),key,&lid))                     {printf("ERROR in 'MergeMultigrid': cannot 'LocalIndexHash'of 'ht_gol' for output file\n");return (1);}
     assert(lid>=0);
     assert(lid<bd_general_out.nBndP);
 #ifdef MERGE_DEBUG
-    assert(BndPList[lid]==NULL);
+    assert(BndPList_out[lid]==NULL);
 #endif
-    BndPList[lid]=(BNDP*)object;
+    BndPList_out[lid]=(BNDP*)object;
   }
   if (EndHashGet(ht_bnp))                                     {printf("ERROR in 'MergeMultigrid': cannot 'EndHashGet' of 'ht_bnp' for output file\n");return (1);}
 #ifdef MERGE_DEBUG
   for (i=0; i<bd_general_out.nBndP; i++)
-    assert(BndPList[i]!=NULL);
+    assert(BndPList_out[i]!=NULL);
 #endif
-  if (Write_PBndDesc(-bd_general_out.nBndP,BndPList))                     {printf("ERROR in 'MergeMultigrid': cannot 'Write_PBndDesc' of 'BndPList' for output file\n");return (1);}
+  if (Write_PBndDesc(-bd_general_out.nBndP,BndPList_out))         {printf("ERROR in 'MergeMultigrid': cannot 'Write_PBndDesc' of 'BndPList_out' for output file\n");return (1);}
   if (Bio_Jump_To ())                                                                             {printf("ERROR in 'MergeMultigrid': cannot 'Bio_Jump_To' for output file\n");return (1);}
-  WR_GOL=ht_gol;
+  WR_GOL=(map->ht_gol);
   WR_rr_rules=rr_rules;
 #ifdef MERGE_DEBUG
   ref_crosscheck=1;
 #endif
-  for (i=0; i<nparfiles; i++)
+  for (i=0; i<map->nparfiles; i++)
     for (j=0; j<ncge[i]; j++)
       if (cg_element[i][j].ge!=-1)
       {
@@ -1206,10 +1225,38 @@ int MergeMultigrid (char *in, int rename)
   printf("\n");
 #endif
 
-  fclose(stream);
-
   /* display memory requirements */
   if (ht_malloc_display()) return (1);
+
+  /* free hashtables */
+  FreeHashTable(&ht_cgv);
+  FreeHashTable(&ht_ref);
+  FreeHashTable(&ht_bnp);
+  FreeHashTable(&ht_bn_l0);
+  FreeHashTable(&ht_in_l0);
+  FreeHashTable(&ht_cge);
+  FreeHashTable(&ht_mem);
+  free(rr_rules);
+  for (i=0; i<map->nparfiles; i++) free(cg_point[i]);
+  free(mg_general_list);
+  free(ProcList);
+  for (i=0; i<map->nparfiles; i++)
+  {
+    free(cg_element[i]);
+    for (j=0; j<cg_general[i].nElement; j++)
+      if (refinement[i][j]!=NULL)
+        free(refinement[i][j]);
+  }
+  free(cg_general);
+  free(cg_point);
+  free(cg_element);
+  free(BndPList_out);
+  free(BndPList);
+  free(bd_general);
+  for (i=0; i<map->nparfiles; i++) free(refinement[i]);
+  free(refinement);
+  free(ncge);
+  free(cg_point_out);
 
   return (0);
 }
@@ -1220,10 +1267,13 @@ int MergeMultigrid (char *in, int rename)
 int main (int argc, char **argv)
 {
   char in[128];
+  DATA_MAP map;
 
   if (argc<2)                                                                     {printf("filename required\n"); return (0);}
   strcpy(in,argv[1]);
-  if (MergeMultigrid (in,0)) printf("some error\n");
+
+  if (MergeMultigrid (in,&map)) printf("some error\n");
+  if (FreeDataMap(&map)) printf("cannot free map\n");
 
   return (0);
 }
