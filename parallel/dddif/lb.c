@@ -32,11 +32,13 @@ static int TransferGridComplete (MULTIGRID *theMG, INT level)
       PARTITION(e) = 1;
   }
 
+  IFDEBUG(dddif,1);
   for (e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
   {
     UserWriteF("elem %08x has dest=%d\n",
                DDD_InfoGlobalId(PARHDRE(e)), PARTITION(e));
   }
+  ENDDEBUG
 
   return(0);
 }
@@ -71,7 +73,7 @@ void ddd_test (char *argv, MULTIGRID *theMG)
 {
   int mode,param,fromlevel,tolevel;
 
-  sscanf(argv,"%d %d %d",&param,&fromlevel,tolevel);
+  sscanf(argv,"%d %d %d",&param,&fromlevel,&tolevel);
   UserWriteF(PFMT "ddd_test() mode=%d fromlevel=%d tolevel=%d\n",
              me,mode,fromlevel,tolevel);
 
