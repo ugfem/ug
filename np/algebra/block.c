@@ -755,3 +755,75 @@ INT SolveFullMatrix2 (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
   }
   return(NUM_OK);
 }
+
+INT InvertFullMatrix_gen (INT n, DOUBLE *mat, DOUBLE *inv,
+                          DOUBLE *rhs, INT *ipv)
+{
+  MULTIGRID *theMG;
+  register DOUBLE dinv,piv,sum;
+  register i,j,k;
+
+  for (i=0; i<n; i++)
+    ipv[i] = i;
+
+  /* lr factorize mat */
+  for (i=0; i<n; i++)
+  {
+    k = i;
+    piv = ABS(mat[i*n+i]);
+    for (j=i+1; j<n; j++)
+    {
+      sum = ABS(mat[j*n+i]);
+      if (sum > piv)
+      {
+        k = j;
+        piv = sum;
+      }
+    }
+    if (k != i)
+    {
+      j = ipv[i];
+      ipv[i] = ipv[k];
+      ipv[k] = j;
+      for (j=0; j<n; j++)
+      {
+        sum = mat[k*n+j];
+        mat[k*n+j] = mat[i*n+j];
+        mat[i*n+j] = sum;
+      }
+    }
+
+    dinv = mat[i*n+i];
+    if (ABS(dinv)<SMALL_DET)
+      RETURN (NUM_SMALL_DIAG);
+    dinv = mat[i*n+i] = 1.0/dinv;
+    for (j=i+1; j<n; j++)
+    {
+      piv = (mat[j*n+i] *= dinv);
+      for (k=i+1; k<n; k++)
+        mat[j*n+k] -= mat[i*n+k] * piv;
+    }
+  }
+
+  /* solve */
+  for (k=0; k<n; k++)
+  {
+    for (i=0; i<n; i++)
+      rhs[i] = 0;
+    rhs[k] = 1.0;
+    for (i=0; i<n; i++)
+    {
+      for (sum=rhs[ipv[i]], j=0; j<i; j++)
+        sum -= mat[i*n+j] * inv[j*n+k];
+      inv[i*n+k] = sum;                         /* Lii = 1 */
+    }
+    for (i=n-1; i>=0; i--)
+    {
+      for (sum=inv[i*n+k], j=i+1; j<n; j++)
+        sum -= mat[i*n+j] * inv[j*n+k];
+      inv[i*n+k] = sum * mat[i*n+i];                    /* Uii = Inv(Mii) */
+    }
+  }
+
+  return (NUM_OK);
+}
