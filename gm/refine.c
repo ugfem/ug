@@ -180,7 +180,7 @@ static ELEMENT *debugelem=NULL;
 		ELEMENT	*theElement;                                                 \
                                                                              \
 		UserWriteF( s1 );                                                    \
-		for (theElement=FIRSTELEMENT(grid);                                  \
+		for (theElement=PFIRSTELEMENT(grid);                                  \
 			 theElement!=NULL;                                               \
 			 theElement=SUCCE(theElement))                                   \
 		{                                                                    \
@@ -202,7 +202,7 @@ static ELEMENT *debugelem=NULL;
 			ELEMENT	*theElement;                                             \
                                                                              \
 			UserWriteF( s2 );                                                \
-			for (theElement=FIRSTELEMENT(grid);                              \
+			for (theElement=PFIRSTELEMENT(grid);                              \
 				 theElement!=NULL;                                           \
 				 theElement=SUCCE(theElement))                               \
 			{                                                                \
@@ -673,16 +673,24 @@ static int Gather_ElemSideandEdgePattern (DDD_OBJ obj, void *data)
 	ELEMENT *theElement = (ELEMENT *)obj;
 	EDGE	*theEdge;
 
+	PRINTDEBUG(gm,4,("PFMT Gather_ElemSideandEdgePattern(): e=" EID_FMTX "\n",
+			 me,EID_PRTX(theElement)))
+	   
 	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
 	{
 		theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
 						  CORNER_OF_EDGE_PTR(theElement,i,1));
 		ASSERT(theEdge!=NULL);
 
+		PRINTDEBUG(gm,4,("PFMT Gather_ElemSideandEdgePattern(): edge=%d pattern=%d\n",
+				 me,i,PATTERN(theEdge)))
 		((INT *)data)[i] = PATTERN(theEdge);
 	}
 
+	PRINTDEBUG(gm,4,("PFMT Gather_ElemSideandEdgePattern(): sidepattern=%d markclass\n",
+			 me,SIDEPATTERN(theElement),MARKCLASS(theElement)))
 	((INT *)data)[4] = SIDEPATTERN(theElement);
+	((INT *)data)[5] = MARKCLASS(theElement);
 
 	return(GM_OK);
 }
@@ -693,25 +701,24 @@ static int Scatter_ElemSideandEdgePattern (DDD_OBJ obj, void *data)
 	ELEMENT *theElement = (ELEMENT *)obj;
 	EDGE	*theEdge;
 
+	PRINTDEBUG(gm,4,("PFMT Scatter_ElemSideandEdgePattern(): e=" EID_FMTX "\n",
+			 me,EID_PRTX(theElement)))
+
 	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
 	{
 		theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
 						  CORNER_OF_EDGE_PTR(theElement,i,1));
 		ASSERT(theEdge!=NULL);
 
+		PRINTDEBUG(gm,4,("PFMT Scatter_ElemSideandEdgePattern(): edge=%d pattern=%d\n",
+				 me,i,PATTERN(theEdge)))
 		SETPATTERN(theEdge,PATTERN(theEdge)|((INT *)data)[i]);
 	}
-
+	
+	PRINTDEBUG(gm,4,("PFMT Gather_ElemSideandEdgePattern(): sidepattern=%d markclass\n",
+			 me,SIDEPATTERN(theElement),MARKCLASS(theElement)))
 	SETSIDEPATTERN(theElement,SIDEPATTERN(theElement)|((INT *)data)[4]);
-
-	return(GM_OK);
-}
-
-static INT ExchangePatterns (GRID *theGrid)
-{
-	/* exchange sidepattern of edges */
-	DDD_IFAOneway(ElementIF,IF_FORWARD,GRID_ATTR(theGrid),5*sizeof(INT),
-		Gather_ElemSideandEdgePattern, Scatter_ElemSideandEdgePattern);
+	SETMARKCLASS(theElement,((INT *)data)[5]);
 
 	return(GM_OK);
 }
@@ -751,9 +758,17 @@ static int Scatter_ElemSidePattern (DDD_OBJ obj, void *data)
 
 	return(GM_OK);
 }
+#endif
 
 static INT ExchangePatterns (GRID *theGrid)
 {
+	#ifdef __TWODIM__
+	/* exchange sidepattern of edges */
+	DDD_IFAOneway(ElementIF,IF_FORWARD,GRID_ATTR(theGrid),6*sizeof(INT),
+		Gather_ElemSideandEdgePattern, Scatter_ElemSideandEdgePattern);
+	#endif
+
+	#ifdef __THREEDIM__
 	/* exchange patterns of edges */
 	DDD_IFAOneway(EdgeHIF,IF_FORWARD,GRID_ATTR(theGrid),sizeof(INT),
 		Gather_EdgePattern, Scatter_EdgePattern);
@@ -761,10 +776,10 @@ static INT ExchangePatterns (GRID *theGrid)
 	/* exchange sidepattern of edges */
 	DDD_IFAOneway(ElementIF,IF_FORWARD,GRID_ATTR(theGrid),sizeof(INT),
 		Gather_ElemSidePattern, Scatter_ElemSidePattern);
+	#endif
 
 	return(GM_OK);
 }
-#endif
 #endif
 
 static INT ComputePatterns (GRID *theGrid)
@@ -1165,15 +1180,6 @@ static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data)
 
 	return(GM_OK);
 }
-
-static INT ExchangeAddPatterns (GRID *theGrid)
-{
-	/* exchange addpatterns of edges */
-	DDD_IFAOneway(ElementIF,IF_FORWARD,GRID_ATTR(theGrid),4*sizeof(INT),
-		Gather_AddEdgePattern, Scatter_AddEdgePattern);
-
-	return(GM_OK);
-}
 #endif
 #ifdef __THREEDIM__
 static int Gather_EdgeAddPattern (DDD_OBJ obj, void *data)
@@ -1192,17 +1198,26 @@ static int Scatter_EdgeAddPattern (DDD_OBJ obj, void *data)
 
 	return(GM_OK);
 }
+#endif
 
 static INT ExchangeAddPatterns (GRID *theGrid)
 {
+#ifdef __TWODIM__
+	/* exchange addpatterns of edges */
+	DDD_IFAOneway(ElementIF,IF_FORWARD,GRID_ATTR(theGrid),4*sizeof(INT),
+		Gather_AddEdgePattern, Scatter_AddEdgePattern);
+#endif
+
+#ifdef __THREEDIM__
 	/* exchange addpatterns of edges */
 	DDD_IFAOneway(EdgeHIF,IF_FORWARD,GRID_ATTR(theGrid),sizeof(INT),
 		Gather_EdgeAddPattern, Scatter_EdgeAddPattern);
+#endif
 
 	return(GM_OK);
 }
 #endif
-#endif
+
 
 static INT SetAddPatterns (GRID *theGrid)
 {
@@ -1211,7 +1226,7 @@ static INT SetAddPatterns (GRID *theGrid)
 	EDGE	*theEdge;
 
 	/* set additional pattern on the edges */
-	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
+	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 		 theElement=SUCCE(theElement))
 	{
 		/* TODO: delete special debug */ PRINTELEMID(11668)
@@ -1373,7 +1388,7 @@ static int GridClosure (GRID *theGrid)
 	/* compute pattern on edges and elements */
 	if (ComputePatterns(theGrid) != GM_OK)		RETURN(GM_ERROR);
 
-    firstElement = FIRSTELEMENT(theGrid);
+    firstElement = PFIRSTELEMENT(theGrid);
 
 	if (fifoFlag) 
 		if (InitClosureFIFO() != GM_OK) return(GM_OK);
