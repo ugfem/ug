@@ -1952,7 +1952,7 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   }
 
   /*
-          theElement = InsertElement (MYMG(theGrid),n,Node,Neighbor,NeighborSide);
+          theElement = InsertElement (theGrid,n,Node,Neighbor,NeighborSide);
    */
   IFDEBUG(gm,2)
   printf("ggmain.c: theMG=%x InsertElement n=%d Node=%x\n",MYMG(theGrid),n,Node);
@@ -1971,7 +1971,7 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   ENDDEBUG
 
 
-    theElement = InsertElement (MYMG(theGrid),n,Node,NULL,NULL);
+    theElement = InsertElement (theGrid,n,Node,NULL,NULL);
   if (theElement == NULL) RETURN(GM_FATAL);
 
   SETSUBDOMAIN(theElement,theElementContext->SubdomainID);
@@ -2174,7 +2174,7 @@ static FRONTCOMP *CreateOrSelectFC (
   /* create a new FC including node and vertex */
   pos[0] = xt[2];
   pos[1] = yt[2];
-  theNode = InsertInnerNode (MYMG(theGrid),pos);
+  theNode = InsertInnerNode (theGrid,pos);
   if (theNode == NULL)
     return(NULL);
 
