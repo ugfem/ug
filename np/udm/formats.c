@@ -1160,6 +1160,8 @@ INT MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, MA
   SHORT *CmpsInType[NMATTYPES],SubComp[MAX_MAT_COMP];
   INT i,k,l,type,nc,nn,cmp;
   char SubName[2*MAX_MAT_COMP],buffer[NAMESIZE];
+  const SHORT *offset = MD_OFFSETPTR(md);
+  const SHORT *Comp = VM_COMPPTR(md);
 
   if (CompMDwithMT(md,mt))
     REP_ERR_RETURN(1);
@@ -1190,11 +1192,8 @@ INT MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, MA
       l = SUBM_MCMP_OF_MTYPE(subm,type,i);
       if (l>=nn)
         REP_ERR_RETURN (1);
-      PrintErrorMessageF('E',"MDsubDescFromVT","not yet implemented");
-      REP_ERR_RETURN (1);
-
-      /* #@@@@cmp = ...;*/
-      SubComp[k] = MD_MCMP_OF_MTYPE(md,type,cmp);
+      cmp = offset[type]+l;
+      SubComp[k] = Comp[cmp];
       SubName[2*k]   = MT_COMPNAME(mt,2*cmp);
       SubName[2*k+1] = MT_COMPNAME(mt,2*cmp+1);
       k++;
