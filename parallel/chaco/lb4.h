@@ -73,6 +73,9 @@ typedef struct cluster {
   SHORT depth;                              /* maxlevel = minlevel + depth      */
   unsigned SHORT level_size[MAXDEPTH];      /* weight on each level (from minl.)*/
   COORD sx,sy;                              /* center of mass                   */
+                #ifdef __THREEDIM__
+  COORD sz;                                 /* center of mass                   */
+                #endif
   ELEMENT  *root_element;                   /* root element for dual graph      */
   /* following part of struct is similar to struct vtx_data of Chaco      */
   int size;                                 /* total weight of cluster          */
