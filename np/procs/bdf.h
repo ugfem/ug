@@ -33,6 +33,8 @@
 #ifndef __BDF__
 #define __BDF__
 
+#include "db.h"
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
