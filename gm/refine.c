@@ -473,7 +473,7 @@ static int Gather_ElementRestriction (DDD_OBJ obj, void *data)
 {
 	ELEMENT *theElement = (ELEMENT *)obj;
 
-	PRINTDEBUG(gm,1,(PFMT "Gather_ElementRestriction(): e=" EID_FMTX "\n",
+	PRINTDEBUG(gm,4,(PFMT "Gather_ElementRestriction(): e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
 	((int *)data)[0] = USED(theElement);
 	   
@@ -485,11 +485,11 @@ static int Scatter_ElementRestriction (DDD_OBJ obj, void *data)
 	ELEMENT *theElement = (ELEMENT *)obj;
 	int used;
 
-	PRINTDEBUG(gm,1,(PFMT "Scatter_ElementRestriction(): e=" EID_FMTX "\n",
+	PRINTDEBUG(gm,4,(PFMT "Scatter_ElementRestriction(): e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
 	if (EMASTER(theElement))
 	{
-		PRINTDEBUG(gm,1,(PFMT "Scatter_ElementRestriction(): restricting sons of e=" EID_FMTX "\n",
+		PRINTDEBUG(gm,4,(PFMT "Scatter_ElementRestriction(): restricting sons of e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
 		used = MAX(USED(theElement),((int *)data)[0]);
 		SETUSED(theElement,used);
@@ -502,7 +502,7 @@ static int Gather_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, D
 {
 	ELEMENT *theElement = (ELEMENT *)obj;
 
-	PRINTDEBUG(gm,1,(PFMT "Gather_RestrictedPartition(): e=" EID_FMTX "\n",
+	PRINTDEBUG(gm,4,(PFMT "Gather_RestrictedPartition(): e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
 	((int *)data)[0] = PARTITION(theElement);
 	   
@@ -515,7 +515,7 @@ static int Scatter_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, 
 	int used;
 
 	ASSERT(EMASTERPRIO(prio));
-	PRINTDEBUG(gm,1,(PFMT "Scatter_ElementRestriction(): restricting sons of e=" EID_FMTX "\n",
+	PRINTDEBUG(gm,4,(PFMT "Scatter_ElementRestriction(): restricting sons of e=" EID_FMTX "\n",
 		 me,EID_PRTX(theElement)))
 	if (USED(theElement))
 		PARTITION(theElement) = ((int *)data)[0];
@@ -962,7 +962,7 @@ static int Gather_ElementClosureInfo (DDD_OBJ obj, void *data)
 	ELEMENT *theElement = (ELEMENT *)obj;
 	EDGE	*theEdge;
 
-	PRINTDEBUG(gm,1,(PFMT "Gather_ElementClosureInfo(): e=" EID_FMTX "\n",
+	PRINTDEBUG(gm,4,(PFMT "Gather_ElementClosureInfo(): e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
 	   
 	refinedata = 0;
@@ -975,7 +975,7 @@ static int Gather_ElementClosureInfo (DDD_OBJ obj, void *data)
 	GETCOARSENDATA(theElement,&refinedata);
 	((INT *)data)[0] = refinedata;
 
-	PRINTDEBUG(gm,1,(PFMT "Gather_ElementClosureInfo(): refinedata=%08x "
+	PRINTDEBUG(gm,4,(PFMT "Gather_ElementClosureInfo(): refinedata=%08x "
 		"sidepattern=%d markclass=%d mark=%d coarse=%d\n",me,refinedata,
 		SIDEPATTERN(theElement),MARKCLASS(theElement),MARK(theElement),COARSEN(theElement)))
 
@@ -988,7 +988,7 @@ static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data)
 	ELEMENT *theElement = (ELEMENT *)obj;
 	EDGE	*theEdge;
 
-	PRINTDEBUG(gm,1,(PFMT "Scatter_ElementClosureInfo(): e=" EID_FMTX "\n",
+	PRINTDEBUG(gm,4,(PFMT "Scatter_ElementClosureInfo(): e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
 
 	refinedata = ((INT *)data)[0];
@@ -1000,7 +1000,7 @@ static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data)
 	SETMARKDATA(theElement,refinedata);
 	SETCOARSENDATA(theElement,refinedata);
 
-	PRINTDEBUG(gm,1,(PFMT "Scatter_ElementClosureInfo(): refinedata=%08x "
+	PRINTDEBUG(gm,4,(PFMT "Scatter_ElementClosureInfo(): refinedata=%08x "
 		"sidepattern=%d markclass=%d mark=%d coarse=%d\n",me,refinedata,
 		SIDEPATTERN(theElement),MARKCLASS(theElement),MARK(theElement),COARSEN(theElement)))
 
@@ -1408,7 +1408,7 @@ static int Gather_AddEdgePattern (DDD_OBJ obj, void *data)
 
 	((INT *)data)[0] = pat;
 
-	PRINTDEBUG(gm,1,(PFMT "Gather_AddEdgePattern(): elem=" EID_FMTX "pat=%08x\n",
+	PRINTDEBUG(gm,4,(PFMT "Gather_AddEdgePattern(): elem=" EID_FMTX "pat=%08x\n",
 		me,EID_PRTX(theElement),pat));
 	return(GM_OK);
 }
@@ -1419,7 +1419,7 @@ static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data)
 	ELEMENT *theElement = (ELEMENT *)obj;
 	EDGE	*theEdge;
 
-	PRINTDEBUG(gm,1,(PFMT "Scatter_AddEdgePattern(): elem=" EID_FMTX "pat=%08x\n",
+	PRINTDEBUG(gm,4,(PFMT "Scatter_AddEdgePattern(): elem=" EID_FMTX "pat=%08x\n",
 		me,EID_PRTX(theElement),pat));
 
 	pat = ((INT *)data)[0];
@@ -1613,7 +1613,7 @@ static int Gather_ElementInfo (DDD_OBJ obj, void *Data)
 	ELEMENT *theElement = (ELEMENT *)obj;
 	char	*data = (char *)Data;
 
-	PRINTDEBUG(gm,2,(PFMT "Gather_ElementInfo(): elem=" EID_FMTX "\n",
+	PRINTDEBUG(gm,4,(PFMT "Gather_ElementInfo(): elem=" EID_FMTX "\n",
 		me,EID_PRTX(theElement)));
 
 	memcpy(data,theElement,sizeof(struct generic_element));
@@ -1676,7 +1676,7 @@ static int Scatter_ElementInfo (DDD_OBJ obj, void *Data)
 	memcpy(theMaster,data,sizeof(struct generic_element));
 	data += CEIL(sizeof(struct generic_element));
 
-	PRINTDEBUG(gm,2,(PFMT "Scatter_ElementInfo(): Comparing elem=" 
+	PRINTDEBUG(gm,4,(PFMT "Scatter_ElementInfo(): Comparing elem=" 
 		EID_FMTX " master=" EID_FMTX "\n",me,EID_PRTX(theElement),
 		EID_PRTX(theMaster)));
 
@@ -2745,6 +2745,14 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 		if ((CenterNode[0] = CreateCenterNode(theGrid,theElement)) == NULL)
 		  RETURN(GM_FATAL);
 	}
+
+#ifdef ModelP
+	/* mark nodes as needed */
+	for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)  
+	{
+		if (theElementContext[i] != NULL) SETUSED(theElementContext[i],1);
+	}
+#endif
 
 	IFDEBUG(gm,2)
 	if (CenterNode[0] != NULL) 
@@ -5322,7 +5330,7 @@ if (level == 0)
 
 CheckConsistency(theMG,level,debugstart,gmlevel,&check);
 
-if (0)
+		DDD_IdentifyBegin();
 }
 
 	DEBUG_TIME(0);
