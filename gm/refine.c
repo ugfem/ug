@@ -83,6 +83,9 @@
 #include "refine.h"
 #include "rm.h"
 #include "ugm.h"
+#ifdef DYNAMIC_MEMORY_ALLOCMODEL
+#include "mgheapmgr.h"
+#endif
 
 /* parallel modules */
 #ifdef ModelP
@@ -6104,6 +6107,52 @@ void Print_Adapt_Timer (int total_adapted)
 }
 #endif
 
+static INT	PreProcessAdaptMultiGrid(MULTIGRID *theMG)
+{
+	#ifdef DYNAMIC_MEMORY_ALLOCMODEL
+	if (DisposeBottomHeapTmpMemory(theMG)) REP_ERR_RETURN(1);
+	#endif
+
+	return(0);
+}
+
+static INT	PostProcessAdaptMultiGrid(MULTIGRID *theMG)
+{
+	START_TIMER(algebra_timer)
+	if (CreateAlgebra(theMG)) REP_ERR_RETURN(1);
+	SUM_TIMER(algebra_timer)
+
+	REFINE_MULTIGRID_LIST(1,theMG,"END AdaptMultiGrid():\n","","");
+
+/*
+	if (hFlag)
+		UserWriteF(" Number of green refinements not updated: "
+			"%d (%d green marks)\n",No_Green_Update,Green_Marks);
+*/
+	
+	/* increment step count */
+	SETREFINESTEP(REFINEINFO(theMG),REFINESTEP(REFINEINFO(theMG))+1);
+
+	SUM_TIMER(adapt_timer)
+/*
+CheckMultiGrid(theMG);
+*/
+
+/* TODO: temporarily to debug df 
+#ifdef ModelP
+if (GetVecDataDescByName(theMG,"sol") != NULL)
+	a_vector_vecskip(theMG,0,TOPLEVEL(theMG),GetVecDataDescByName(theMG,"sol"));
+#endif
+*/
+
+	#ifdef STAT_OUT
+	Print_Adapt_Timer(total_adapted);
+	Manage_Adapt_Timer(0);
+	#endif
+
+	return(0);
+}
+
 /****************************************************************************/
 /*
    AdaptMultiGrid - adapt whole multigrid structure
@@ -6141,6 +6190,8 @@ CheckMultiGrid(theMG);
 	/* check necessary condition */
 	if (!MG_COARSE_FIXED(theMG))
 		return (GM_COARSE_NOT_FIXED);
+
+	if (PreProcessAdaptMultiGrid(theMG)) REP_ERR_RETURN(1);
 
 #ifdef ModelP
 {
@@ -6355,9 +6406,11 @@ if (0)
 		{
 			START_TIMER(algebra_timer)
 
+			#ifndef DYNAMIC_MEMORY_ALLOCMODEL
 			/* now rebuild connections in neighborhood of elements which have EBUILDCON set */
 			/* This flag has been set either by GridDisposeConnection or by CreateElement	*/
 			if (GridCreateConnection(FinerGrid)) RETURN(GM_FATAL);
+			#endif
 			
 			/* and compute the vector classes on the new (or changed) level */
 			ClearVectorClasses(FinerGrid);
@@ -6390,39 +6443,7 @@ if (0)
 	if (TOPLEVEL(theMG) > 0) DisposeTopLevel(theMG);
 	CURRENTLEVEL(theMG) = TOPLEVEL(theMG);
 
-	START_TIMER(algebra_timer)
-
-	if (CreateAlgebra(theMG) != GM_OK)
-        REP_ERR_RETURN (GM_ERROR);
-	SUM_TIMER(algebra_timer)
-
-	REFINE_MULTIGRID_LIST(1,theMG,"END AdaptMultiGrid():\n","","");
-
-/*
-	if (hFlag)
-		UserWriteF(" Number of green refinements not updated: "
-			"%d (%d green marks)\n",No_Green_Update,Green_Marks);
-*/
-	
-	/* increment step count */
-	SETREFINESTEP(REFINEINFO(theMG),REFINESTEP(REFINEINFO(theMG))+1);
-
-	SUM_TIMER(adapt_timer)
-/*
-CheckMultiGrid(theMG);
-*/
-
-/* TODO: temporarily to debug df 
-#ifdef ModelP
-if (GetVecDataDescByName(theMG,"sol") != NULL)
-	a_vector_vecskip(theMG,0,TOPLEVEL(theMG),GetVecDataDescByName(theMG,"sol"));
-#endif
-*/
-
-	#ifdef STAT_OUT
-	Print_Adapt_Timer(total_adapted);
-	Manage_Adapt_Timer(0);
-	#endif
+	if (PostProcessAdaptMultiGrid(theMG)) REP_ERR_RETURN(1);
 
 	return(GM_OK);
 }
