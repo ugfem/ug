@@ -12884,16 +12884,12 @@ static INT RefreshOnCommand (INT argc, char **argv)
 {
   DOUBLE factor = 1.0;
 
-    #ifdef ModelP
-  UserWrite("refreshon: not implemented in parallel\n");
-    #else
   if (argc >= 2 && argv[1][0] == 'b') {
     sscanf(argv[1],"b %lf", &factor);
     SetRefreshState(ON, YES, factor);
   }
   else
     SetRefreshState(ON, NO, factor);
-    #endif
 
   return(OKCODE);
 }

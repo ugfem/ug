@@ -43,6 +43,8 @@
 #include "debug.h"
 #include "general.h"
 
+#include "xbc.h"
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -829,11 +831,17 @@ static INT ProcessEvent (char *String, INT EventMask)
   DOUBLE qw, qh, scaling;
   UGWINDOW *theUgW;
   PICTURE *thePic;
-  INT WinID, UGW_LLL_old[2], UGW_LUR_old[2], Offset[2], nfct;
+  INT WinID, UGW_LLL_old[2], UGW_LUR_old[2], Offset[2], nfct, r;
   static INT MousePosition[2];
 
-  if (GetNextUGEvent(&theEvent,EventMask))
-    return (PE_ERROR);
+#ifdef ModelP
+  if (me==master)
+#endif
+  r=GetNextUGEvent(&theEvent,EventMask);
+#ifdef ModelP
+  XBroadcast(2, &theEvent, sizeof(theEvent), &r, sizeof(r));
+#endif
+  if (r) return PE_ERROR;
 
   /* print event
      PrintEvent(theEvent); */
@@ -844,10 +852,12 @@ static INT ProcessEvent (char *String, INT EventMask)
     if (!(EventMask&PE_INTERRUPT))
     {
       /* update infobox */
+#ifdef ModelP
+      if (me == master)
+#endif
       if (theEvent.NoEvent.GraphWinActive!=0)
         DoInfoBox(  theEvent.NoEvent.GraphWinActive,
                     theEvent.NoEvent.Mouse);
-
       /* do current work (not if UserInterrupt is calling) */
       for (theUgW=GetFirstUgWindow(); theUgW!=NULL; theUgW=GetNextUgWindow(theUgW))
       {
@@ -926,27 +936,27 @@ static INT ProcessEvent (char *String, INT EventMask)
     WinID = theEvent.DocDrag.win;
     theUgW = WinID2UgWindow(WinID);
     if (theUgW == NULL) return (PE_OTHER);
-    V2_COPY(theEvent.DocDrag.Global_LL,UGW_GLL(theUgW))
-    V2_COPY(theEvent.DocDrag.Global_UR,UGW_GUR(theUgW))
+    V2_COPY(theEvent.DocDrag.Global_LL,UGW_GLL(theUgW));
+    V2_COPY(theEvent.DocDrag.Global_UR,UGW_GUR(theUgW));
     break;
   case DOC_GROW :
     WinID = theEvent.DocGrow.win;
     theUgW = WinID2UgWindow(WinID);
     if (theUgW == NULL) return (PE_OTHER);
-    V2_COPY(UGW_LLL(theUgW),UGW_LLL_old)
-    V2_COPY(UGW_LUR(theUgW),UGW_LUR_old)
-    V2_COPY(theEvent.DocGrow.Global_LL,UGW_GLL(theUgW))
-    V2_COPY(theEvent.DocGrow.Global_UR,UGW_GUR(theUgW))
-    V2_COPY(theEvent.DocGrow.Local_LL,UGW_LLL(theUgW))
-    V2_COPY(theEvent.DocGrow.Local_UR,UGW_LUR(theUgW))
+    V2_COPY(UGW_LLL(theUgW),UGW_LLL_old);
+    V2_COPY(UGW_LUR(theUgW),UGW_LUR_old);
+    V2_COPY(theEvent.DocGrow.Global_LL,UGW_GLL(theUgW));
+    V2_COPY(theEvent.DocGrow.Global_UR,UGW_GUR(theUgW));
+    V2_COPY(theEvent.DocGrow.Local_LL,UGW_LLL(theUgW));
+    V2_COPY(theEvent.DocGrow.Local_UR,UGW_LUR(theUgW));
 
     thePic=GetFirstPicture(theUgW);
     if (thePic == NULL) break;
     if (V2_ISEQUAL(UGW_LLL_old,PIC_GLL(thePic)) && V2_ISEQUAL(UGW_LUR_old,PIC_GUR(thePic)))
     {
       /* set new pixel range of picture */
-      V2_COPY(UGW_LLL(theUgW),PIC_GLL(thePic))
-      V2_COPY(UGW_LUR(theUgW),PIC_GUR(thePic))
+      V2_COPY(UGW_LLL(theUgW),PIC_GLL(thePic));
+      V2_COPY(UGW_LUR(theUgW),PIC_GUR(thePic));
 
       /* resize plane in physical space */
       if (ResizeViewPlane(PIC_VO(thePic),UGW_LLL_old,UGW_LUR_old,UGW_LLL(theUgW),UGW_LUR(theUgW))) return (PE_OTHER);
@@ -960,12 +970,12 @@ static INT ProcessEvent (char *String, INT EventMask)
       else scaling = MIN(qw,qh);
       for (thePic=GetFirstPicture(theUgW); thePic!=NULL; thePic=GetNextPicture(thePic))
       {
-        V2_SUBTRACT(PIC_GLL(thePic),UGW_LLL_old,Offset)
-        V2_SCALE(scaling,Offset)
-        V2_ADD(UGW_LLL(theUgW),Offset,PIC_GLL(thePic))
-        V2_SUBTRACT(PIC_GUR(thePic),UGW_LLL_old,Offset)
-        V2_SCALE(scaling,Offset)
-        V2_ADD(UGW_LLL(theUgW),Offset,PIC_GUR(thePic))
+        V2_SUBTRACT(PIC_GLL(thePic),UGW_LLL_old,Offset);
+        V2_SCALE(scaling,Offset);
+        V2_ADD(UGW_LLL(theUgW),Offset,PIC_GLL(thePic));
+        V2_SUBTRACT(PIC_GUR(thePic),UGW_LLL_old,Offset);
+        V2_SCALE(scaling,Offset);
+        V2_ADD(UGW_LLL(theUgW),Offset,PIC_GUR(thePic));
       }
     }
     break;
@@ -1028,6 +1038,9 @@ static INT ProcessEvent (char *String, INT EventMask)
     else
       PrintErrorMessage('W',"ProcessEvent","cannot change tool since curr pic not in window");
     UGW_BOXSTATE(theUgW) = BOX_INVALID;
+#ifdef ModelP
+    if (me == master)
+#endif
     DoInfoBox(WinID,theEvent.DocChangeTool.MousePosition);
     break;
   case DOC_CONTENTCLICK :
@@ -1040,6 +1053,9 @@ static INT ProcessEvent (char *String, INT EventMask)
     {
       SetCurrentPicture(thePic);
       UGW_BOXSTATE(theUgW) = BOX_INVALID;
+#ifdef ModelP
+      if (me == master)
+#endif
       DoInfoBox(WinID,theEvent.DocChangeTool.MousePosition);
       break;
     }
@@ -1112,7 +1128,7 @@ static INT ProcessEvent (char *String, INT EventMask)
 
         PARAMETERS:
    .   text - if an interrupt event was found and if 'text==NULL' 'YES' will be returned
-                        otherwise a promt "### user-interrupt in <text>? will be prompted and 'YES'
+                        otherwise a promt "### user-interrupt in <text>?" will be prompted and 'YES'
                         will be returned only if a 'y' was entered into the shell
 
         DESCRIPTION:
@@ -1130,38 +1146,16 @@ INT UserInterrupt (const char *text)
 {
   INT Code,EventMask,mutelevel;
   char buffer[128];
-        #ifdef ModelP
-  int status;
-  int fanout=1;
-        #endif
 
-        #ifndef STDIF
-    #ifdef ModelP
-  if (me == master)
-  {
-    #endif
-
+#ifndef ModelP
   EventMask = TERM_CMDKEY;
 
   Code = ProcessEvent(buffer,EventMask);
-
-        #ifdef ModelP
-  /* if UserInterrupt called in InterpretString() then the interrupt  */
-  /* is related to the master only !!									*/
-  /* TODO: check this condition in newer releases						*/
-  if (strcmp(text,"InterpretString")==0) fanout=0;
-
-  if (fanout) Broadcast(&Code,sizeof(INT));
-        #endif
 
   if (Code==PE_INTERRUPT)
   {
     if (text==NULL)
     {
-                        #ifdef ModelP
-      status = YES;
-      if (fanout) Broadcast(&status,sizeof(int));
-                        #endif
       return (YES);
     }
     else
@@ -1173,40 +1167,16 @@ INT UserInterrupt (const char *text)
       UserRead(buffer);
       if (buffer[0]=='y')
       {
-                #ifdef ModelP
-        status = YES;
-        if (fanout) Broadcast(&status,sizeof(int));
-                                #endif
         return (YES);
       }
       else
       {
-                #ifdef ModelP
-        status = NO;
-        if (fanout) Broadcast(&status,sizeof(int));
-                                #endif
         SetMuteLevel(mutelevel);
         return (NO);
       }
     }
   }
-    #ifdef ModelP
-}
-else
-{
-  if (strcmp(text,"InterpretString")!=0)
-  {
-    Broadcast(&Code,sizeof(INT));
-    if (Code==PE_INTERRUPT)
-    {
-      Broadcast(&status,sizeof(int));
-      return (status);
-    }
-  }
-}
-    #endif
-        #endif /* STDIF */
-
+#endif
   return (NO);
 }
 
@@ -1299,11 +1269,16 @@ INT UserIn (char *String)
   while (TRUE)
   {
     Code = ProcessEvent(String,EventMask);
+#ifdef ModelP
+    Broadcast(&Code, sizeof(Code));
+#endif
     if (Code == PE_ERROR) return (1);
-    if (Code == PE_STRING)
-    {
+    if (Code == PE_STRING) {
+#ifdef ModelP
+      if (me==master)
+#endif
       WriteLogFile(String);
-      return (0);
+      return 0;
     }
   }
 }
@@ -1342,10 +1317,15 @@ INT UserRead (char *String)
   while (TRUE)
   {
     Code = ProcessEvent(String,EventMask);
-    assert (Code!=PE_ERROR);
+#ifdef ModelP
+    Broadcast(&Code, sizeof(Code));
+#endif
+    ASSERT(Code!=PE_ERROR);
     if (Code == PE_ERROR) return (1);
-    if (Code == PE_STRING)
-    {
+    if (Code == PE_STRING) {
+#ifdef ModelP
+      if (me==master)
+#endif
       WriteLogFile(String);
       return (0);
     }

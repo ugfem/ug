@@ -1,6 +1,5 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-
 /****************************************************************************/
 /*																			*/
 /* File:	  cmdint.c                                                                                                              */
@@ -56,6 +55,7 @@
 #include "ugstruct.h"
 #include "cmdint.h"
 #include "uginterface.h"
+#include "cmdline.h"
 
 /* TODO: conflict with hierarchy */
 #include "initug.h"
@@ -163,6 +163,7 @@ INT cmdintbufsize=CMDINTBUFSIZE;
 /****************************************************************************/
 
 static int doneFlag;
+static int interactiveFlag=0;
 
 /* variables for command interpreter */
 static char *cmdPtr,*cmdStart;
@@ -2536,6 +2537,19 @@ static void PrintVersionString (void)
 
 
 #ifdef ModelP
+
+static INT InteractiveCommand(INT argc, char **argv)
+{
+  interactiveFlag=1;
+  return OKCODE;
+}
+
+static INT NonInteractiveCommand(INT argc, char **argv)
+{
+  interactiveFlag=0;
+  return OKCODE;
+}
+
 /****************************************************************************/
 /*D
    ParCommandLoop - Get next command to execute from master
@@ -2555,9 +2569,11 @@ static void PrintVersionString (void)
 void ParCommandLoop (char *inpLine)
 {
   INT error;
+  char dummy[256];
 
   while (GetDoneFlag() == FALSE)
   {
+    if (interactiveFlag) UserIn(dummy);
     error=ParExecCommand(inpLine);
     if (error==QUITCODE) SetDoneFlag();
   }
@@ -2606,11 +2622,11 @@ void CommandLoop (int argc, char **argv)
   }
   inpLine[0] = (char) 0;
 
-        #ifdef ModelP
+#ifdef ModelP
   if (me==master)
   {
     /* FOR MASTER PROCESSOR */
-        #endif
+#endif
 
   for (i=1; i<argc; i++)
     if (argv[i][0]!='-')
@@ -2651,12 +2667,18 @@ void CommandLoop (int argc, char **argv)
         WriteString("EOO\n");
       else
         WriteString(PROMPT);
+#ifdef ModelP
+      InterpretCommand("interactive");
+#endif
       if (UserIn(inpLine)!=0)
       {
         PrintErrorMessage('E',"CommandLoop","process event error");
         continue;
       }
       if (GetDoneFlag() == TRUE) break;
+#ifdef ModelP
+      InterpretCommand("noninteractive");
+#endif
       if ((error=InterpretCommand(inpLine))!=DONE)
       {
         if (error==QUITCODE)
@@ -2761,7 +2783,7 @@ void CommandLoop (int argc, char **argv)
     }
   }
 
-        #ifdef ModelP
+#ifdef ModelP
 }
 else
 {
@@ -2770,7 +2792,7 @@ else
   ParCommandLoop(inpLine);
 
 }
-        #endif
+#endif
 
   /* free input line buffer */
   free(inpLine);
@@ -2781,18 +2803,18 @@ else
   /* call ExitUg() at the end of CommandLoop in order to avoid that
      the application programmer will forget to call it at the end of
      the application. */
-        #ifdef __GUI__
+#ifdef __GUI__
   {
     int gui_on = GUI_ON;
-                #ifdef ModelP
+#ifdef ModelP
     Broadcast(&gui_on,sizeof(int));
-                #endif
+#endif
     if (!gui_on)
-        #endif
+#endif
   ExitUg();
-        #ifdef __GUI__
+#ifdef __GUI__
 }
-        #endif
+#endif
 }
 
 
@@ -2914,6 +2936,12 @@ INT InitCommandInterpreter (INT argc, char **argv)
   for (i=0; i<argc; i++)
     if(strcmp(argv[i],"-perl")==0)
       UseWithPerl=1;
+
+#ifdef ModelP
+  /* special commands to mark begin/end of interactive mode */
+  if (CreateCommand("interactive", InteractiveCommand)==NULL) return(__LINE__);
+  if (CreateCommand("noninteractive", NonInteractiveCommand)==NULL) return(__LINE__);
+#endif
 
   /* return to application */
   return(0);
