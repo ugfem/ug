@@ -121,17 +121,15 @@
 #endif
 
 #undef __GRAPE_TRUE__
-#ifdef _3
 #ifdef GRAPET
 #define __GRAPE_TRUE__
 #endif
-#endif
 
 #ifdef GRAPEF
-#define GRAPE "OFF"
+#define HAVE_GRAPE "OFF"
 #endif
 #ifdef GRAPET
-#define GRAPE "ON"
+#define HAVE_GRAPE "ON"
 #endif
 
 #ifdef NETGENF
