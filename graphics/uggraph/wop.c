@@ -42,6 +42,7 @@
 #include "cw.h"
 #include "graph.h"
 #include "gm.h"
+#include "refine.h"
 #include "ugm.h"
 #include "num.h"
 #include "shapes.h"
@@ -251,6 +252,8 @@ static INT EE2D_MaxLevel;               /* level considered to be the top level 
 static INT EE2D_ElemID;                 /* 1 if element ID has to be plotted		*/
 static INT EE2D_RefMark;                /* 1 if plot refinement marks				*/
 static long EE2D_ColorRefMark;  /* color of refinement marks				*/
+static INT EE2D_IndMark;                /* 1 if plot indicator marks				*/
+static long EE2D_ColorIndMark;  /* color of indicator marks	                        */
 
 
 /* 3D */
@@ -4642,6 +4645,8 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
   }
   EE2D_RefMark                                    = theGpo->PlotRefMarks;
   EE2D_ColorRefMark                               = theOD->magenta;
+  EE2D_IndMark                                    = theGpo->PlotIndMarks;
+  EE2D_ColorIndMark                               = theOD->red;
   EE2D_ElemID                                     = 0;
   if (theGpo->PlotElemID == YES)
     EE2D_ElemID                             = 1;
@@ -6517,7 +6522,7 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   INT i, j;
   COORD *x[MAX_CORNERS_OF_ELEM];
   COORD_VECTOR MidPoint;
-  INT coe;
+  INT coe,rule,side;
 
   coe = CORNERS_OF_ELEM(theElement);
 
@@ -6525,10 +6530,14 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   for (i=0; i<coe; i++)
     x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
+  if (EE2D_IndMark)
+    rule = MARKCLASS(theElement);
+
   /* store viewable sides on drawing obj */
   if (LEVEL(theElement)<EE2D_MaxLevel)
   {
-    if (EE2D_NoColor[COLOR_LOWER_LEVEL])
+    if (((EE2D_NoColor[COLOR_LOWER_LEVEL] && !EE2D_IndMark)) ||
+        (((rule != RED) && EE2D_IndMark)) )
     {
       DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO)
       DO_2c(theDO) = coe; DO_inc(theDO)
@@ -6537,7 +6546,11 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     {
       DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO)
       DO_2c(theDO) = coe; DO_inc(theDO)
-      DO_2l(theDO) = EE2D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO);
+      if (EE2D_IndMark)
+        DO_2l(theDO) = EE2D_ColorIndMark;
+      else
+        DO_2l(theDO) = EE2D_Color[COLOR_LOWER_LEVEL];
+      DO_inc(theDO);
     }
     DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
     for (j=0; j<coe; j++)
@@ -6548,7 +6561,8 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   }
   else
   {
-    if (EE2D_NoColor[ECLASS(theElement)])
+    if (((EE2D_NoColor[ECLASS(theElement)] && !EE2D_IndMark)) ||
+        (((rule != RED) && EE2D_IndMark)) )
     {
       DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO)
       DO_2c(theDO) = coe; DO_inc(theDO)
@@ -6557,7 +6571,11 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     {
       DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO)
       DO_2c(theDO) = coe; DO_inc(theDO)
-      DO_2l(theDO) = EE2D_Color[ECLASS(theElement)]; DO_inc(theDO);
+      if (EE2D_IndMark)
+        DO_2l(theDO) = EE2D_ColorIndMark;
+      else
+        DO_2l(theDO) = EE2D_Color[ECLASS(theElement)];
+      DO_inc(theDO);
     }
     DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
     for (j=0; j<coe; j++)

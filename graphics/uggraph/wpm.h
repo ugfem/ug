@@ -11,7 +11,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  internet: ug@ica3.uni-stuttgart.de                                            */
+/*			  internet: ug@ica3.uni-stuttgart.de                                                */
 /*																			*/
 /* History:   8.12.94 begin, ug3-version									*/
 /*																			*/
@@ -261,6 +261,7 @@ struct GridPlotObj2D {
   /* data for 2D-View of grid */
   INT PlotElemID;                                                       /* YES or NO									*/
   INT PlotRefMarks;                                                     /* YES or NO									*/
+  INT PlotIndMarks;                                                     /* YES or NO									*/
   INT PlotNodeID;                                                       /* YES or NO									*/
   INT PlotNodes;                                                        /* YES or NO									*/
   INT PlotBoundary;                                                     /* YES or NO									*/

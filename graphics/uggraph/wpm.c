@@ -2415,6 +2415,8 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->PlotElemID              = NO;
     theGpo->PlotNodeID              = NO;
     theGpo->PlotNodes               = NO;
+    theGpo->PlotRefMarks    = NO;
+    theGpo->PlotIndMarks    = NO;
   }
 
   /* color mode */
@@ -2484,6 +2486,19 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
       break;
     }
 
+  /* set mark of indicator option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='i')
+    {
+      if (sscanf(argv[i],"i %d",&iValue)!=1)
+        break;
+      if (iValue==1)
+        theGpo->PlotIndMarks = YES;
+      else if (iValue==0)
+        theGpo->PlotIndMarks = NO;
+      break;
+    }
+
   /* set elem id option */
   for (i=1; i<argc; i++)
     if (argv[i][0]=='e')
@@ -2522,6 +2537,16 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
         theGpo->PlotNodes = NO;
       break;
     }
+
+  if (theGpo->PlotIndMarks == YES)
+  {
+    if ((theGpo->ElemColored == YES) ||
+        (theGpo->PlotRefMarks == YES))
+    {
+      UserWrite("use i option only without c and r option\n");
+      return (NOT_ACTIVE);
+    }
+  }
 
   return (ACTIVE);
 }
@@ -2576,6 +2601,12 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"ref marks","YES");
   else
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"ref marks","NO");
+  UserWrite(buffer);
+
+  if (theGpo->PlotIndMarks == YES)
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"indicator marks","YES");
+  else
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"indicator marks","NO");
   UserWrite(buffer);
 
   if (theGpo->PlotElemID == YES)
