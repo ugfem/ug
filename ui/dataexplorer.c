@@ -179,7 +179,7 @@ static double clampf(double x)
 
    'dataexplorer <filename> [$ns <nep> $s <vd>]* [$nv <nep> $s <vd>]*
                                             [$cs <eep> $s <vd>]* [$cv <eep> $s <vd>]*
-                                                        [$b 0|1|2]* [$bin]* [$fgrid]*'
+                                                        [$b 0|1|2]* [$bin]* [$fgrid]* [$s [+|-]id]*'
 
    .  $ns...			- plot function for scalar nodal values
    .  $nv...			- plot function for vector nodal values
@@ -188,6 +188,12 @@ static double clampf(double x)
    .  $b...            - write boundary data 0=no (default) | 1=inner | 2=all
    .  $bin...          - write grid and data in binary format
    .  $fgrid...        - if not initial time step grid is not written
+   .  $s...             - write only specified subdomains. Positive id means that the
+                                        subdomain is written.  Negative ids means that the subdomain is
+                                        not included.  If you use $s, default is that subdomains are not
+                                        written unless specified.  However, if the first argument
+                                        to $s is negative, all subdomains are selected for output (except
+                                        the specified one).
 
    .  <vd>				- vecdata desc
    .  <nep>			- eval proc (nodal values)
@@ -271,7 +277,10 @@ static INT DataExplorerCommand (INT argc, char **argv)
   INT buffer_INT[8];
   FLOAT buffer_FLOAT[8];
   INT usedBuf;
-
+  INT *subdom=NULL;                             /* which subdomains to draw					*/
+  INT subdomains=0;                             /* flag: draw only some subdomains			*/
+  INT sdkey;
+  char inex;
   time_t ltime;
 
   INT oe,ov;
@@ -403,6 +412,30 @@ static INT DataExplorerCommand (INT argc, char **argv)
     /* write grid or use existing data file as reference? */
     if (strncmp(argv[i],"fgrid",5)==0)
       writeGrid=0;
+
+    if (strncmp(argv[i],"s",1)==0) {
+      if ( sscanf(argv[i],"s %d",&j) )
+      {
+        if ( subdom==NULL )
+        {
+          heap = mg->theHeap;
+          MarkTmpMem(heap, &sdkey);
+          subdom = (INT *)GetTmpMem(heap, (mg->theBVPD.nSubDomains+1)*sizeof(INT), sdkey);
+          if ( subdom==NULL ) {
+            ReleaseTmpMem(heap, sdkey);
+            PrintErrorMessage('E',"dataexplorer","could not allocate memory");
+            return(PARAMERRORCODE);
+          }
+          /* default is that all subdomains are used */
+          for (k=1; k<mg->theBVPD.nSubDomains; k++) subdom[k]=(j>0) ? 0 : 1;
+        }
+
+        k = (j>0) ? j : -j;
+        if ( j <= mg->theBVPD.nSubDomains && -j <= mg->theBVPD.nSubDomains ) subdom[k] = (j>0) ? 1 : 0;
+        else UserWriteF("There is no subdomain %d\n",k);
+        subdomains = 1;
+      }
+    }
   }
 
   if (ns==0 && nv==0 && ns_cell==0 && nv_cell==0)
@@ -507,6 +540,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
       if (!EstimateHere(el)) continue;
+      if ( subdomains && !subdom[SUBDOMAIN(el)] ) continue;
       for (i=0; i<CORNERS_OF_ELEM(el); i++) {
         vx = MYVERTEX(CORNER(el,i));
         if (USED(vx)) continue;
@@ -520,6 +554,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
       if (!EstimateHere(el)) continue;
+      if ( subdomains && !subdom[SUBDOMAIN(el)] ) continue;
       numElements++;
     }
 
@@ -558,10 +593,10 @@ static INT DataExplorerCommand (INT argc, char **argv)
   heap = mg->theHeap;
   MarkTmpMem(heap, &key);
   /* FIXME: false assumption that for n vertices ids are from 0..n-1 */
-  Id2Position = (INT *)GetTmpMem(heap, numVertices*sizeof(INT), key);
+  Id2Position = (INT *)GetTmpMem(heap, (numVertices+1)*sizeof(INT), key);
   if (Id2Position == NULL) {
     ReleaseTmpMem(heap, key);
-    UserWrite("dataexplorer: OOM\n");
+    UserWrite("dataexplorer: out of memory\n");
     return CMDERRORCODE;
   }
 
@@ -571,6 +606,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
     if (binaryOutput && !writeGrid) break;
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
       if (!EstimateHere(el)) continue;
+      if ( subdomains && !subdom[SUBDOMAIN(el)] ) continue;
 
       for (i=0; i<CORNERS_OF_ELEM(el); i++)
       {
@@ -623,6 +659,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
   for (k=0; k<=TOPLEVEL(mg); k++) {
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
       if (!EstimateHere(el)) continue;
+      if ( subdomains && !subdom[SUBDOMAIN(el)] ) continue;
 #ifdef __TWODIM__
       if (CORNERS_OF_ELEM(el)!=3) {
         notOnlyTetra = 1;
@@ -669,6 +706,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
     {
       if (!EstimateHere(el)) continue;
+      if ( subdomains && !subdom[SUBDOMAIN(el)] ) continue;
 
       switch(CORNERS_OF_ELEM(el))
       {
@@ -1208,6 +1246,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
       for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
       {
         if (!EstimateHere(el)) continue;
+        if ( subdomains && !subdom[SUBDOMAIN(el)] ) continue;
+
         for (i=0; i<CORNERS_OF_ELEM(el); i++)
           CornersCoord[i] = CVECT(MYVERTEX(CORNER(el,i)));
         for (i=0; i<CORNERS_OF_ELEM(el); i++)
@@ -1330,6 +1370,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
       for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
       {
         if (!EstimateHere(el)) continue;
+        if ( subdomains && !subdom[SUBDOMAIN(el)] ) continue;
+
         for (i=0; i<CORNERS_OF_ELEM(el); i++)
           CornersCoord[i] = CVECT(MYVERTEX(CORNER(el,i)));
         for (i=0; i<CORNERS_OF_ELEM(el); i++)
@@ -1466,6 +1508,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
       for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
       {
         if (!EstimateHere(el)) continue;
+        if ( subdomains && !subdom[SUBDOMAIN(el)] ) continue;
+
         for (i=0; i<CORNERS_OF_ELEM(el); i++)
           CornersCoord[i] = CVECT(MYVERTEX(CORNER(el,i)));
         for (j=0; j<DIM; j++) LocalCoord[j] = 0.0;
@@ -1587,6 +1631,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
       for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
       {
         if (!EstimateHere(el)) continue;
+        if ( subdomains && !subdom[SUBDOMAIN(el)] ) continue;
+
         for (i=0; i<CORNERS_OF_ELEM(el); i++)
           CornersCoord[i] = CVECT(MYVERTEX(CORNER(el,i)));
         for (j=0; j<DIM; j++) LocalCoord[j] = 0.0;
@@ -1714,6 +1760,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
     pfile_close_bin(pf_bin);
   else
     pfile_close(pf_txt);
+
+  ReleaseTmpMem(heap, sdkey);
 
   return(OKCODE);
 }
