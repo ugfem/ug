@@ -45,6 +45,7 @@
 #include "udm.h"
 #include "pargm.h"
 #include "debug.h"
+#include "mgheapmgr.h"
 
 #define SMALL_LOCAL    1.E-4
 
