@@ -709,7 +709,7 @@ static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
 static INT IdentifySideEdge (GRID *theGrid, EDGE *theEdge, ELEMENT *theElement, ELEMENT *theNeighbor, INT Vec)
 {
   INT nobject,nident;
-  INT *proclist;
+  int *proclist;
   DDD_HDR IdentObjectHdr[MAX_OBJECT];
   DDD_HDR IdentHdr[MAX_TOKEN];
   VECTOR *theVector;
@@ -864,7 +864,7 @@ static INT IdentifyEdge (GRID *theGrid,
         #ifdef __THREEDIM__
   INT edge,corner0,corner1;
         #endif
-  INT *proclist;
+  int *proclist;
   DDD_HDR IdentObjectHdr[MAX_OBJECT];
   DDD_HDR IdentHdr[MAX_TOKEN];
 
