@@ -97,7 +97,7 @@ struct lgm_sizes {
 
 struct lgm_subdomain_info {
 
-  char Name[128];                                               /* name of domain								*/
+  char Unit[128];                                               /* Unit-identification							*/
   int *LineNumber;                                              /* ids of the lines                                                     */
 };
 
@@ -152,7 +152,7 @@ struct lgm_sizes {
 
 struct lgm_subdomain_info {
 
-  char Name[128];                                               /* name of domain								*/
+  char Unit[128];                                               /* Unit-identification							*/
   int *SurfaceNumber;                                           /* ids of the surfaces                                                  */
 };
 

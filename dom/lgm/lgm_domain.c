@@ -166,7 +166,8 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   LGM_DOMAIN *theDomain;
   LGM_PROBLEM *theProblem;
   BndCondProcPtr BndCond;
-  INT i;
+  INT ret,i,nSubDom,conf_df_problem;
+  char **argv;
 
   if ((theDomain = (LGM_DOMAIN *)BVP_GetByName(name))==NULL)
   {
@@ -178,30 +179,36 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
 
     /* set problem */
     theProblem = Lgm_Problem_GetByName(LGM_DOMAIN_PROBLEMNAME(theDomain));
+    conf_df_problem = 0;
     if (theProblem==NULL)
     {
-      UserWrite("ERROR in BVP_Init: cannot find problem\n");
-      return (NULL);
+      theProblem = Lgm_Problem_GetByName("configurable");
+      if (theProblem==NULL)
+      {
+        UserWrite("ERROR in BVP_Init: cannot find problem\n");
+        return (NULL);
+      }
+      conf_df_problem = 1;
     }
     LGM_DOMAIN_PROBLEM(theDomain) = theProblem;
 
     /* initialize problem */
-    if (theProblem->InitProblem!=NULL)
+    if (conf_df_problem)
     {
-      INT ret, i, nSubDom = LGM_DOMAIN_NSUBDOM(theDomain);
-      char **argv;
-
-      argv = (char **) GetTmpMem(Heap, sizeof(char *) * (nSubDom+1));
-      /* TODO: check-mem */
-
-      for(i=1; i<=nSubDom; i++)
+      if (theProblem->InitProblem==NULL) return (NULL);
+      nSubDom = LGM_DOMAIN_NSUBDOM(theDomain);
+      argv = (char **) GetTmpMem(Heap, sizeof(char *)*(nSubDom+1));
+      if (argv==NULL)
       {
-        argv[i] = "QUARTAER";                          /* TODO !! */
+        UserWrite("ERROR in BVP_Init: cannot allocate argv\n");
+        return (NULL);
       }
-
-      ret = (*(theProblem->InitProblem))(nSubDom, argv,
-                                         "a.hyd", "a.bnd", "a.ini", "a.src");
-      /* TODO: filenamen besser ! */
+      for(i=1; i<=nSubDom; i++) argv[i] = LGM_SUBDOMAIN_UNIT(LGM_DOMAIN_SUBDOM(theDomain,i));
+      if ((*(theProblem->InitProblem))(nSubDom, argv,LGM_DOMAIN_PROBLEMNAME(theDomain)))
+      {
+        UserWrite("ERROR in BVP_Init: cannot initialize problem\n");
+        return (NULL);
+      }
     }
 
     /* set boundary conditions */

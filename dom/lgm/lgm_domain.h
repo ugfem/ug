@@ -131,6 +131,7 @@
 #define LGM_LINE_ID_2_LINE(i)                           (LinePtrArray[i])
 
 /* macros for LGM_SUBDOMAIN */
+#define LGM_SUBDOMAIN_UNIT(p)                           ((p)->Unit)
 #define LGM_SUBDOMAIN_ID(p)                                     ((p)->id)
 #define LGM_SUBDOMAIN_SDDATA(p)                         ((p)->SubDomData)
 #define LGM_SUBDOMAIN_NLINE(p)                          ((p)->nLines)
@@ -218,6 +219,7 @@
 #define LGM_SURFACE_ID_2_SURFACE(i)                     (SurfacePtrArray[i])
 
 /* macros for LGM_SUBDOMAIN */
+#define LGM_SUBDOMAIN_UNIT(p)                           ((p)->Unit)
 #define LGM_SUBDOMAIN_ID(p)                                     ((p)->id)
 #define LGM_SUBDOMAIN_SDDATA(p)                         ((p)->SubDomData)
 #define LGM_SUBDOMAIN_NSURFACE(p)                       ((p)->nSurface)
@@ -256,7 +258,7 @@
 
 #endif
 
-typedef INT (*InitProcPtr)(INT, char **, char *, char *, char *, char *);
+typedef INT (*InitProcPtr)(INT, char **, char *);
 typedef INT (*BndCondProcPtr)(DOUBLE *, DOUBLE *, INT *);
 typedef INT (*DomainSizeConfig)(DOUBLE *min, DOUBLE *max);
 
@@ -314,6 +316,7 @@ struct lgm_subdom_data {
 struct lgm_subdom {
 
   /* parameters */
+  char Unit[128];                                               /* unit-identification							*/
   INT id;                                                               /* unique id, beginning with 1					*/
   INT nLines;                                                           /* nb. of lines									*/
   struct lgm_subdom_data *SubDomData;           /* data for subdomain							*/
@@ -464,6 +467,7 @@ struct lgm_subdom_data {
 struct lgm_subdom {
 
   /* parameters */
+  char Unit[128];                                               /* unit-identification					*/
   INT id;                                                               /* unique id, beginning with 1			*/
   INT nSurface;                                                 /* nb. of surfaces						*/
   INT nPoint;                                                           /* nb. of points						*/

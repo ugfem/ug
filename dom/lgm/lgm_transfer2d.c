@@ -380,7 +380,7 @@ int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
     if (SkipBTN()) return (1);
     if (fscanf(stream,"right=%d;",&i)!=1) return (1);
     if (i==subdom_i) subdom_info->LineNumber[n++] = line_i;
-    strcpy(subdom_info->Name,"-");
+    strcpy(subdom_info->Unit,"-");
 
     if (SkipBTN()) return (1);
     if (fscanf(stream,"points: %d",&i)!=1) return (1);
@@ -404,7 +404,7 @@ int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
       if (i==subdom_i) found++;
     if (found>1) return (1);
     if (fscanf(stream,"%s",buffer)!=1) return (1);
-    strcpy(subdom_info->Name,buffer);
+    strcpy(subdom_info->Unit,buffer);
   }
   if (fsetpos(stream, &filepos)) return (1);
 
