@@ -86,6 +86,9 @@
 /*																			*/
 /****************************************************************************/
 
+/* DG local refinement hack */
+#undef _SCHALE_X_
+
 /* for LexAlgDep */
 #define ORDERRES                1e-3       /* resolution for LexAlgDep					*/
 
@@ -1714,6 +1717,8 @@ static INT DisposeConnectionFromElementInNeighborhood (GRID *theGrid, ELEMENT *t
 
   if (Depth < 0) RETURN (GM_ERROR);
 
+  if (theElement==NULL) RETURN (GM_OK);
+
   /* create connection at that depth */
         #ifndef DYNAMIC_MEMORY_ALLOCMODEL
   if(!EBUILDCON(theElement))
@@ -3118,15 +3123,19 @@ INT SetSurfaceClasses (MULTIGRID *theMG)
     ClearVectorClasses(theGrid);
     for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
          theElement=SUCCE(theElement))
+    {
       if (MinNodeClass(theElement)==3)
         SeedVectorClasses(theGrid,theElement);
+    }
     PropagateVectorClasses(theGrid);
     theGrid = GRID_ON_LEVEL(theMG,0);
     ClearNextVectorClasses(theGrid);
     for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
          theElement=SUCCE(theElement))
+    {
       if (MinNextNodeClass(theElement)==3)
         SeedNextVectorClasses(theGrid,theElement);
+    }
     PropagateNextVectorClasses(theGrid);
   }
   for (level--; level>0; level--)
@@ -4408,10 +4417,35 @@ static INT PropagatePeriodicVectorClass (GRID *theGrid, INT vclass)
 }
 #endif
 
+static INT PropagateVectorClassX (GRID *theGrid, INT vclass)
+{
+  VECTOR *theVector;
+  MATRIX *theMatrix;
+
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
+       theVector=SUCCVC(theVector))
+    if ((VCLASS(theVector)==vclass)&&(VSTART(theVector)!=NULL))
+      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
+           theMatrix=MNEXT(theMatrix))
+        if ((VCLASS(MDEST(theMatrix))<vclass)
+            &&(CEXTRA(MMYCON(theMatrix))!=1))
+          SETVCLASS(MDEST(theMatrix),vclass);
+
+  return(0);
+}
+
+
+
 INT PropagateVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
   MATRIX *theMatrix;
+
+
+  /* This call enlarges the set of 3-vector by one shell */
+  /* larger overlap needed according to theory of CW     */
+  /* added December 2000 for DG with local refinement    */
+  if (PropagateVectorClassX(theGrid,3)) REP_ERR_RETURN(1);
 
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses():"
@@ -4623,6 +4657,30 @@ static INT PropagateNextVectorClass (GRID *theGrid, INT vnclass)
   return(0);
 }
 
+#ifdef _SCHALE_X_
+static INT PropagateNextVectorClassX (GRID *theGrid, INT vnclass)
+{
+  VECTOR *theVector;
+  MATRIX *theMatrix;
+
+  /* set vector classes in the algebraic neighborhood to vnclass-1 */
+  /* use matrices to determine next vectors!!!!!                   */
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
+       theVector=SUCCVC(theVector))
+    if ((VNCLASS(theVector)==vnclass)&&(VSTART(theVector)!=NULL))
+      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
+           theMatrix=MNEXT(theMatrix))
+        if ((VNCLASS(MDEST(theMatrix))<vnclass)
+            &&(CEXTRA(MMYCON(theMatrix))!=1))
+          SETVNCLASS(MDEST(theMatrix),vnclass);
+
+  /* only for this values valid */
+  ASSERT(vnclass==3 || vnclass==2);
+
+  return(0);
+}
+#endif
+
 #ifdef __PERIODIC_BOUNDARY__
 static INT PropagatePeriodicNextVectorClass (GRID *theGrid)
 {
@@ -4646,10 +4704,18 @@ static INT PropagatePeriodicNextVectorClass (GRID *theGrid)
 }
 #endif
 
+
 INT PropagateNextVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
   MATRIX *theMatrix;
+
+#if defined(_SCHALE_X_)&&!defined(__PERIODIC_BOUNDARY__)
+  /* This call enlarges the set of 3-vector by one shell */
+  /* larger overlap needed according to theory of CW     */
+  /* added December 2000 for DG with local refinement    */
+  if (PropagateNextVectorClassX(theGrid,3)) REP_ERR_RETURN(1);
+#endif
 
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 1. communication\n",me))
