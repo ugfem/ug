@@ -2943,12 +2943,12 @@ INT NS_DIM_PREFIX CreateAlgebra (MULTIGRID *theMG)
 {
   GRID *g;
   FORMAT *fmt;
-  VECTOR *vec;
-  ELEMENT *elem;
+  VECTOR *vec,*nbvec;
+  ELEMENT *elem,*nbelem;
   NODE *nd;
   LINK *li;
   EDGE *ed;
-  INT side,i;
+  INT side,i,j,n;
 
   if (MG_COARSE_FIXED(theMG) == FALSE) {
     for (i=0; i<=TOPLEVEL(theMG); i++) {
@@ -3008,6 +3008,69 @@ INT NS_DIM_PREFIX CreateAlgebra (MULTIGRID *theMG)
             }
       }
     }
+#ifdef __THREEDIM__
+    /* dispose doubled side vectors */
+    if (FMT_USES_OBJ(fmt,SIDEVEC))
+      for (elem=PFIRSTELEMENT(g); elem!=NULL; elem=SUCCE(elem))
+      {
+        for(side=0; side<SIDES_OF_ELEM(elem); side++)
+        {
+          if(OBJT(elem)==BEOBJ)
+          {
+            if(INNER_SIDE(elem,side))
+            {
+              nbelem = NBELEM(elem,side);
+              ASSERT(nbelem!=NULL);
+              vec=SVECTOR(elem,side);
+              n=0;
+              for(j=0; j<SIDES_OF_ELEM(nbelem); j++)
+              {
+                nbvec=SVECTOR(nbelem,j);
+
+                /* doubled sidevectors ? */
+                if(NBELEM(nbelem,j)==elem)
+                {
+                  if(vec!=nbvec)
+                  {
+                    if(DisposeVector(g,nbvec))
+                      REP_ERR_RETURN(GM_ERROR);
+                    SET_SVECTOR(nbelem,j,vec);
+                    SETVCOUNT(vec,1);
+                  }
+                }
+              }
+              n++;
+              ASSERT(n==1);
+            }
+          }else
+          {
+            nbelem = NBELEM(elem,side);
+            ASSERT(nbelem!=NULL);
+            vec=SVECTOR(elem,side);
+            n=0;
+            for(j=0; j<SIDES_OF_ELEM(nbelem); j++)
+            {
+              nbvec=SVECTOR(nbelem,j);
+              ASSERT(nbvec!=NULL);
+
+              /* doubled sidevectors ? */
+              if(NBELEM(nbelem,j)==elem)
+              {
+                if(vec!=nbvec)
+                {
+                  if(DisposeVector(g,nbvec))
+                    REP_ERR_RETURN(GM_ERROR);
+                  SET_SVECTOR(nbelem,j,vec);
+                  SETVCOUNT(vec,1);
+                }
+              }
+            }
+            n++;
+            ASSERT(n==1);
+          }
+        }
+      }
+#endif
     MG_COARSE_FIXED(theMG) = TRUE;
 
     /* now connections */
