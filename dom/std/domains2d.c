@@ -2013,7 +2013,7 @@ static INT kreisBoundaryLower (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-#define INNEN_RADIUS 0.3
+#define INNEN_RADIUS 0.6
 
 static INT kreisBoundaryUpper1 (void *data, DOUBLE *param, DOUBLE *result)
 {
@@ -2141,50 +2141,51 @@ INT STD_BVP_Configure (INT argc, char **argv)
   DOMAIN *theDomain;
   char BVPName[NAMESIZE];
   char DomainName[NAMESIZE];
+  DOUBLE dalpha;
   INT i;
 
   /* get BVP name */
   if ((sscanf(argv[0],expandfmt(CONCAT3(" configure %",NAMELENSTR,"[ -~]")),
-              BVPName)!=1) || (strlen(BVPName)==0))
-    return(1);
+              BVPName)!=1) || (strlen(BVPName)==0)) {
+    for (i=0; i<argc; i++)
+      if (argv[i][0] == 'b')
+        if ((sscanf(argv[i],expandfmt(CONCAT3("b %",NAMELENSTR,"[ -~]")),
+                    BVPName)==1) && (strlen(BVPName)>0))
+          break;
+    if (i >= argc) RETURN(1);
+  }
 
   theBVP = (STD_BVP *) BVP_GetByName(BVPName);
   if (theBVP == NULL)
-    return(1);
+    RETURN(1);
 
   for (i=0; i<argc; i++)
-    if (argv[i][0] == 'd')
+    if ((argv[i][0] == 'd') && (argv[i][1] == ' '))
       if ((sscanf(argv[i],expandfmt(CONCAT3("d %",NAMELENSTR,"[ -~]")),
                   DomainName)!=1) || (strlen(DomainName)==0))
         continue;
 
-  if (strcmp(DomainName,"Quadrilateral") == 0)
-  {
-    if (ReadAndPrintArgvPosition("x0",argc,argv,x_quad[0]))
-    {
+  if (strcmp(DomainName,"Quadrilateral") == 0) {
+    if (ReadAndPrintArgvPosition("x0",argc,argv,x_quad[0])) {
       x_quad[0][0] = 0.0;
       x_quad[0][1] = 0.0;
     }
-    if (ReadAndPrintArgvPosition("x1",argc,argv,x_quad[1]))
-    {
+    if (ReadAndPrintArgvPosition("x1",argc,argv,x_quad[1])) {
       x_quad[1][0] = 1.0;
       x_quad[1][1] = 0.0;
     }
-    if (ReadAndPrintArgvPosition("x2",argc,argv,x_quad[2]))
-    {
+    if (ReadAndPrintArgvPosition("x2",argc,argv,x_quad[2])) {
       x_quad[2][0] = 1.0;
       x_quad[2][1] = 1.0;
     }
-    if (ReadAndPrintArgvPosition("x3",argc,argv,x_quad[3]))
-    {
+    if (ReadAndPrintArgvPosition("x3",argc,argv,x_quad[3])) {
       x_quad[3][0] = 0.0;
       x_quad[3][1] = 1.0;
     }
     if (ReadArgvDOUBLE("alpha",&alpha,argc,argv))
       alpha = 0.0;
   }
-  else if (strcmp(DomainName,"Two") == 0)
-  {
+  else if (strcmp(DomainName,"Two") == 0) {
     if (ReadAndPrintArgvPosition("x0",argc,argv,x_quad[0]))
     {
       x_quad[0][0] = 0.0;
@@ -2263,10 +2264,11 @@ INT STD_BVP_Configure (INT argc, char **argv)
       rad1 = 1.0;
     }
   }
-  else if (strcmp(DomainName,"Rings") == 0)
-  {
-    if (ReadArgvDOUBLE("alpha",&alpha,argc,argv))
-    {
+  else if (strcmp(DomainName,"Rings") == 0) {
+    if (ReadArgvDOUBLE("dalpha",&dalpha,argc,argv) == 0) {
+      alpha += dalpha;
+    }
+    else if (ReadArgvDOUBLE("alpha",&alpha,argc,argv)) {
       alpha = 0.0;
     }
   }
