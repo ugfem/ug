@@ -153,7 +153,7 @@ int NP_ElemSideOnBnd (NG_ELEMENT *Elem)
       ec1=Elem->c_id[j];
       ec2=Elem->c_id[(j+1)%Elem->n_c];
       if ((c1==ec1 && c2==ec2) || (c1==ec2 && c2==ec1))
-        esob|=pow(2,j);
+        esob|=1<<j;
     }
   }
   return (esob);

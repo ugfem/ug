@@ -37,6 +37,8 @@
 #include "lgm_domain.h"
 #include "lgm_load.h"
 #include "lgm_transfer.h"
+#include "misc.h"
+#include "general.h"
 #ifdef __TWODIM__
         #include "ng2d.h"
 #endif
@@ -44,12 +46,11 @@
         #include "ansys2lgm.h"
         #include "ng.h"
 #endif
-#include "misc.h"
-#include "general.h"
 #ifdef ModelP
 #include "debug.h"
 #include "parallel.h"
 #endif
+
 
 /****************************************************************************/
 /*																			*/
@@ -293,17 +294,70 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
 
 INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomain, INT MarkKey)
 {
+  INT i,j,size;
+  LGM_MESH_INFO lgm_mesh_info;
+  LGM_LINE *theLine;
+  LGM_BNDP *theBndP;
+
+  /* the very basic checks */
+  assert(sizeof(int)==sizeof(INT));
+
   /* if impossible to read mesh, return 1 */
   if (ReadMesh==NULL) return (1);
 
   /* do the right thing */
-  return (1);
-}
+  if ((*ReadMesh)(name,theHeap,&lgm_mesh_info,MarkKey)) return (1);
 
+  /* copy mesh_info to mesh and create BNDPs */
+  theMesh->mesh_status              = MESHSTAT_MESH;
+  theMesh->nBndP                    = lgm_mesh_info.nBndP;
+  theMesh->nInnP                    = lgm_mesh_info.nInnP;
+  theMesh->Position                 = lgm_mesh_info.InnPosition;
+  theMesh->nSubDomains              = lgm_mesh_info.nSubDomains;
+  theMesh->nSides                   = lgm_mesh_info.nSides;
+  theMesh->Side_corners             = NULL;
+  theMesh->xy_Side                                  = NULL;
+  theMesh->Side_corner_ids          = lgm_mesh_info.Side_corner_ids;
+  theMesh->nElements                = lgm_mesh_info.nElements;
+  theMesh->Element_corners          = lgm_mesh_info.Element_corners;
+  theMesh->Element_corner_ids       = lgm_mesh_info.Element_corner_ids;
+  theMesh->nbElements               = lgm_mesh_info.nbElements;
+  theMesh->ElemSideOnBnd            = lgm_mesh_info.Element_SideOnBnd;
+  theMesh->VertexLevel   = NULL;
+  theMesh->ElementLevel  = NULL;
+  theMesh->VertexPrio    = NULL;
+  theMesh->ElementPrio   = NULL;
+
+  /* allocate boundary points */
+  theMesh->theBndPs = (BNDP**)GetTmpMem(theHeap,lgm_mesh_info.nBndP*sizeof(LGM_BNDP*),MarkKey);
+  if (theMesh->theBndPs == NULL) return (1);
+
+  for (i=0; i<lgm_mesh_info.nBndP; i++)
+  {
+    size=sizeof(LGM_BNDP)+(lgm_mesh_info.BndP_nLine[i]-1)*sizeof(LGM_BNDP_PLINE);
+    theMesh->theBndPs[i] = (BNDP*)GetFreelistMemory(theHeap,size);                  if(theMesh->theBndPs[i]==NULL) return(1);
+    theBndP=(LGM_BNDP*)theMesh->theBndPs[i];
+    theBndP->n=lgm_mesh_info.BndP_nLine[i];
+    for (j=0; j<theBndP->n; j++)
+    {
+      for (theLine=FirstLine(theDomain); theLine!=NULL; theLine=NextLine(theDomain))
+        if (theLine->id==lgm_mesh_info.BndP_LineID[i][j])
+        {
+          theBndP->Line[j].theLine=theLine;
+          break;
+        }
+      if (theBndP->Line[j].theLine==NULL) {  UserWriteF("ERROR: line (id=%d) doesn't exist in domain\n",lgm_mesh_info.BndP_LineID[i][j]); return (1); }
+      theBndP->Line[j].local=lgm_mesh_info.BndP_lcoord[i][j];
+    }
+  }
+
+  return (0);
+}
 
 #endif
 
 #if (LGM_DIM==3)
+
 LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT DomainVarID, INT MarkKey)
 {
   LGM_DOMAIN *theDomain;
@@ -651,10 +705,9 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
   theMesh->ElementLevel  = NULL;
   theMesh->ElemSideOnBnd            = lgm_mesh_info.Element_SideOnBnd;
 
-  /*concerning boundary points ...*/
+  /* concerning boundary points ... */
   theMesh->theBndPs = (BNDP**)GetTmpMem(theHeap,sizeof(LGM_BNDP*)*((lgm_mesh_info.nBndP)+1),MarkKey);
-  if (theMesh->theBndPs == NULL)
-    return (1);
+  if (theMesh->theBndPs == NULL) return (1);
 
   for (i=0; i<lgm_mesh_info.nBndP; i++)
   {
