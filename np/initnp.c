@@ -42,8 +42,10 @@
 #include "udm.h"
 #include "formats.h"
 #include "dio.h"
+#include "newton.h"
 
 #include "initnp.h"
+#include "numproc.h"
 
 /****************************************************************************/
 /*																			*/
@@ -89,6 +91,10 @@ INT InitNumerics ()
     return (err);
   }
   if ((err=InitLinearSolver())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+  if ((err=InitNewtonSolver())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }
