@@ -194,6 +194,101 @@ OUTPUTDEVICE *GetDefaultOutputDevice (void)
 
 /****************************************************************************/
 /*D
+   UgSetPalette - set color/black-white/gray palette
+
+   SYNOPSIS:
+   void UgSetPalette (OUTPUTDEVICE *dev, INT palette);
+
+   PARAMETERS:
+   .  dev - outputdevice
+   .  palette - color/bw/gray
+
+   DESCRIPTION:
+   This function sets a color/black-white/gray palette.
+
+   RETURN VALUE:
+   INT
+   D*/
+/****************************************************************************/
+
+INT UgSetPalette (OUTPUTDEVICE *dev, INT palette)
+{
+  short red[256],green[256],blue[256];
+  short i;
+
+        #ifdef ModelP
+  if (me != master)
+    return (1);
+        #endif
+
+  if (dev==NULL)
+    return (1);
+
+  switch (palette)
+  {
+  case COLOR_PALETTE :
+  {
+    short res = 63;
+    short delta = 4;
+    short max = 252;
+    short r,g,b,j;
+
+    /* fixed colors */
+    i = 0;
+    red[i] = 255; green[i] = 255; blue[i++] = 255;                      /* 0 = white */
+    red[i] = 255; green[i] = 0      ; blue[i++] = 255;                          /* 1 = magenta */
+
+    /* color spectrum */
+    r = g = 0; b = max;
+    red[i] = r; green[i] = g; blue[i++] = b;                                    /* 2 = blue */
+
+    /* blue to cyan */
+    for (j=0; j<res; j++)
+    {
+      g += delta;
+      red[i] = r; green[i] = g; blue[i++] = b;
+    }                                                                           /* 65 = cyan */
+    /* cyan to green */
+    for (j=0; j<res; j++)
+    {
+      b -= delta;
+      red[i] = r; green[i] = g; blue[i++] = b;
+    }                                                                           /* 128 = green */
+    /* green to yellow */
+    for (j=0; j<res; j++)
+    {
+      r += delta;
+      red[i] = r; green[i] = g; blue[i++] = b;
+    }                                                                           /* 191 = yellow */
+    /* yellow to rot */
+    for (j=0; j<res; j++)
+    {
+      g -= delta;
+      red[i] = r; green[i] = g; blue[i++] = b;
+    }                                                                           /* 254 = red */
+    red[i] = 0; green[i] = 0  ; blue[i++] = 0;                                  /* 255 = black */
+    break;
+  }
+  case BLACK_WHITE_PALETTE :
+    red[0] = green[0] = blue[0] = 0;                                    /* white */
+    for (i=1; i<256; i++)
+      red[i] = green[i] = blue[i] = 1;                                  /* black */
+    break;
+  case GRAY_PALETTE :
+    for (i=0; i<256; i++)
+      red[i] = green[i] = blue[i] = i;                                  /* gray  */
+    break;
+  default :
+    return(1);
+  }
+
+  (*dev->SetNewPalette)(0,256,red,green,blue);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    OpenLogFile - open a log file
 
    SYNOPSIS:

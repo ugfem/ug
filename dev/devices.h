@@ -110,6 +110,12 @@
 #define DOC_CONTENTCLICK                11
 #define DOC_UPDATE                              12
 
+enum UG_PALETTE {
+
+  COLOR_PALETTE,
+  BLACK_WHITE_PALETTE,
+  GRAY_PALETTE
+};
 
 /****************************************************************************/
 /*																			*/
@@ -330,6 +336,9 @@ INT               GetMuteLevel                          (void);
 OUTPUTDEVICE *CreateOutputDevice                (char *name);
 OUTPUTDEVICE *GetOutputDevice                   (const char *name);
 OUTPUTDEVICE *GetDefaultOutputDevice    (void);
+
+/* changing the palette */
+INT                       UgSetPalette                          (OUTPUTDEVICE *dev, INT palette);
 
 /* text output to shell with log file mechanism */
 void              UserWrite                             (const char *s);
