@@ -100,11 +100,24 @@ INT GetElementsideIndices       (ELEMENT *theElement, INT side,
                                  const VECDATA_DESC *theTVD, INT *index);
 INT GetElementVPtrs             (ELEMENT *theElement, const VECDATA_DESC *theTVD,
                                  DOUBLE **vptr);
+INT GetElementVValues           (ELEMENT *theElement,
+                                 const VECDATA_DESC *theVD, DOUBLE *value);
+INT GetVlistVValues             (INT cnt, VECTOR **theVec,
+                                 const VECDATA_DESC *theVD, DOUBLE *value);
+INT AddVlistVValues             (INT cnt, VECTOR **theVec,
+                                 const VECDATA_DESC *theVD, DOUBLE *value);
+INT SetVlistVValues             (INT cnt, VECTOR **theVec,
+                                 const VECDATA_DESC *theVD, DOUBLE *value);
 INT GetElementVPtrsVecskip      (ELEMENT *theElement, const VECDATA_DESC *theTVD,
                                  DOUBLE **vptr, INT *vecskip);
 INT GetElementNewVPtrs          (ELEMENT *theElement, const VECDATA_DESC *theVD,
                                  DOUBLE **vptr, INT *new);
-INT GetElementMPtrs                             (ELEMENT *theElement, const MATDATA_DESC *theTMD, DOUBLE **mptr);
+INT GetElementMPtrs                             (ELEMENT *theElement,
+                                                 const MATDATA_DESC *theTMD, DOUBLE **mptr);
+INT GetVlistMValues             (INT cnt, VECTOR **theVec,
+                                 const MATDATA_DESC *theMD, DOUBLE *value);
+INT AddVlistMValues             (INT cnt, VECTOR **theVec,
+                                 const MATDATA_DESC *theMD, DOUBLE *value);
 INT GetElementVMPtrs            (ELEMENT *theElement,
                                  const VECDATA_DESC *theTVD, const MATDATA_DESC *theTMD,
                                  DOUBLE **vptr, DOUBLE **mptr);
@@ -131,9 +144,6 @@ INT AssembleDirichletBoundary   (GRID *theGrid, const MATDATA_DESC *Mat,
                                  const VECDATA_DESC *Sol, const VECDATA_DESC *Rhs);
 INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
                                     const VECDATA_DESC *Sol, const VECDATA_DESC *Rhs);
-
-INT GetElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
-                       DOUBLE *value);
 
 INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass);
 INT PrintSVector (MULTIGRID *mg, VECDATA_DESC *X);

@@ -382,6 +382,135 @@ INT GetElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
 
 /****************************************************************************/
 /*D
+   GetVlistVValue - get list of DOUBLE values for vectors
+
+   SYNOPSIS:
+   INT GetVlistVValues (INT cnt, VECTOR **theVec,
+   const VECDATA_DESC *theVD, DOUBLE *value);
+
+   PARAMETERS:
+   .  cnt - number of vectors
+   .  theVec - vector list
+   .  theVD - type vector descriptor
+   .  value - pointer to double values
+
+   DESCRIPTION:
+   This function gets all local vector values corresponding to an element.
+
+   RETURN VALUE:
+   INT
+   .n    number of components
+   .n    -1 if error occured
+   D*/
+/****************************************************************************/
+
+INT GetVlistVValues (INT cnt, VECTOR **theVec,
+                     const VECDATA_DESC *theVD, DOUBLE *value)
+{
+  DOUBLE *vptr;
+  INT i,j,m,vtype;
+
+  m = 0;
+  for (i=0; i<cnt; i++) {
+    vtype = VTYPE(theVec[i]);
+    vptr = VVALUEPTR(theVec[i],VD_CMP_OF_TYPE(theVD,vtype,0));
+    for (j=0; j<VD_NCMPS_IN_TYPE (theVD,vtype); j++) {
+      value[m++] = *vptr;
+      vptr++;
+    }
+  }
+
+  return (m);
+}
+
+/****************************************************************************/
+/*D
+   AddVlistVValues - get list of DOUBLE values for vectors
+
+   SYNOPSIS:
+   INT AddVlistVValues (INT cnt, VECTOR **theVec,
+   const VECDATA_DESC *theVD, DOUBLE *value);
+
+   PARAMETERS:
+   .  cnt - number of vectors
+   .  theVec - vector list
+   .  theVD - type vector descriptor
+   .  value - pointer to double values
+
+   DESCRIPTION:
+   This function adds all local vector values corresponding to an element.
+
+   RETURN VALUE:
+   INT
+   .n    number of components
+   .n    -1 if error occured
+   D*/
+/****************************************************************************/
+
+INT AddVlistVValues (INT cnt, VECTOR **theVec,
+                     const VECDATA_DESC *theVD, DOUBLE *value)
+{
+  DOUBLE *vptr;
+  INT i,j,m,vtype;
+
+  m = 0;
+  for (i=0; i<cnt; i++) {
+    vtype = VTYPE(theVec[i]);
+    vptr = VVALUEPTR(theVec[i],VD_CMP_OF_TYPE(theVD,vtype,0));
+    for (j=0; j<VD_NCMPS_IN_TYPE (theVD,vtype); j++) {
+      *vptr += value[m++];
+      vptr++;
+    }
+  }
+
+  return (m);
+}
+
+/****************************************************************************/
+/*D
+   SetVlistVValues - set list of DOUBLE values for vectors
+
+   SYNOPSIS:
+   INT SetVlistVValues (INT cnt, VECTOR **theVec,
+   const VECDATA_DESC *theVD, DOUBLE *value);
+
+   PARAMETERS:
+   .  cnt - number of vectors
+   .  theVec - vector list
+   .  theVD - type vector descriptor
+   .  value - pointer to double values
+
+   DESCRIPTION:
+   This function sets all local vector values corresponding to a vector list.
+
+   RETURN VALUE:
+   INT
+   .n    number of components
+   .n    -1 if error occured
+   D*/
+/****************************************************************************/
+
+INT SetVlistVValues (INT cnt, VECTOR **theVec,
+                     const VECDATA_DESC *theVD, DOUBLE *value)
+{
+  DOUBLE *vptr;
+  INT i,j,m,vtype;
+
+  m = 0;
+  for (i=0; i<cnt; i++) {
+    vtype = VTYPE(theVec[i]);
+    vptr = VVALUEPTR(theVec[i],VD_CMP_OF_TYPE(theVD,vtype,0));
+    for (j=0; j<VD_NCMPS_IN_TYPE (theVD,vtype); j++) {
+      *vptr = value[m++];
+      vptr++;
+    }
+  }
+
+  return (m);
+}
+
+/****************************************************************************/
+/*D
    GetElementVPtrsVecskip - get list of DOUBLE pointers for vectors
 
    SYNOPSIS:
@@ -559,6 +688,161 @@ INT GetElementMPtrs (ELEMENT *theElement, const MATDATA_DESC *theTMD,
           mptr[(m2+l)*m+m1+k] =
             MVALUEPTR(theMatrix,
                       MD_MCMP_OF_RT_CT(theTMD,vtype[i],vtype[j],l*vncomp[i]+k));
+      m2 += vncomp[j];
+    }
+    m1 += vncomp[i];
+  }
+
+  return (m);
+}
+
+/****************************************************************************/
+/*D
+   GetVlistMValues - get list of DOUBLE values for matrices
+
+   SYNOPSIS:
+   INT GetVlistMValues (INT cnt, VECTOR **theVec,
+   const MATDATA_DESC *theMD, DOUBLE *value);
+
+   PARAMETERS:
+   .  cnt - number of vectors
+   .  theVec - vector list
+   .  theMD - type matrix descriptor
+   .  value - pointer to double values
+
+   DESCRIPTION:
+   This function get all local matrix values corresponding to a vector list.
+
+   RETURN VALUE:
+   INT
+   .n    number of components
+   .n    -1 if error occured
+   D*/
+/****************************************************************************/
+
+INT GetVlistMValues (INT cnt, VECTOR **theVec,
+                     const MATDATA_DESC *theMD, DOUBLE *value)
+{
+  MATRIX *theMatrix;
+  INT vncomp[MAX_NODAL_VECTORS];
+  INT vtype[MAX_NODAL_VECTORS];
+  INT types[NVECTYPES];
+  const SHORT *Comp[MAX_NODAL_VECTORS][MAX_NODAL_VECTORS];
+  INT i,j,k,l,m,m1,m2;
+  DOUBLE *mptr;
+
+  m = 0;
+  for (i=0; i<cnt; i++) {
+    vtype[i] = VTYPE(theVec[i]);
+    vncomp[i] = MD_ROWS_IN_RT_CT(theMD,vtype[i],vtype[i]);
+    m += vncomp[i];
+  }
+  for (i=0; i<cnt; i++)
+    for (j=0; j<cnt; j++)
+      Comp[i][j] = MD_MCMPPTR_OF_MTYPE(theMD,MTP(vtype[i],vtype[j]));
+
+  m1 = 0;
+  for (i=0; i<cnt; i++) {
+    theMatrix = START(theVec[i]);
+    mptr = MVALUEPTR(theMatrix,0);
+    for (k=0; k<vncomp[i]; k++)
+      for (l=0; l<vncomp[i]; l++)
+        value[(m1+k)*m+m1+l] =
+          mptr[Comp[i][i][k*vncomp[i]+l]];
+    m2 = 0;
+    for (j=0; j<i; j++) {
+      if ((theMatrix = GetMatrix(theVec[i],theVec[j]))==NULL) {
+        for (k=0; k<vncomp[i]; k++)
+          for (l=0; l<vncomp[j]; l++)
+            value[(m1+k)*m+m2+l] = value[(m2+l)*m+m1+k] = 0.0;
+      }
+      else {
+        mptr = MVALUEPTR(theMatrix,0);
+        for (k=0; k<vncomp[i]; k++)
+          for (l=0; l<vncomp[j]; l++)
+            value[(m1+k)*m+m2+l] =
+              mptr[Comp[i][j][k*vncomp[j]+l]];
+        mptr = MVALUEPTR(MADJ(theMatrix),0);
+        for (k=0; k<vncomp[i]; k++)
+          for (l=0; l<vncomp[j]; l++)
+            value[(m2+l)*m+m1+k] =
+              mptr[Comp[i][j][l*vncomp[i]+k]];
+      }
+      m2 += vncomp[j];
+    }
+    m1 += vncomp[i];
+  }
+
+  return (m);
+}
+
+/****************************************************************************/
+/*D
+   AddVlistMValues - add list of DOUBLE values for matrices
+
+   SYNOPSIS:
+   INT AddVlistMValues (INT cnt, VECTOR **theVec,
+   const MATDATA_DESC *theMD, DOUBLE *value);
+
+   PARAMETERS:
+   .  cnt - number of vectors
+   .  theVec - vector list
+   .  theMD - type matrix descriptor
+   .  value - pointer to double values
+
+   DESCRIPTION:
+   This function adds all local matrix values corresponding to a vector list.
+
+   RETURN VALUE:
+   INT
+   .n    number of components
+   .n    -1 if error occured
+   D*/
+/****************************************************************************/
+
+INT AddVlistMValues (INT cnt, VECTOR **theVec,
+                     const MATDATA_DESC *theMD, DOUBLE *value)
+{
+  MATRIX *theMatrix;
+  INT vncomp[MAX_NODAL_VECTORS];
+  INT vtype[MAX_NODAL_VECTORS];
+  INT types[NVECTYPES];
+  const SHORT *Comp[MAX_NODAL_VECTORS][MAX_NODAL_VECTORS];
+  INT i,j,k,l,m,m1,m2;
+  DOUBLE *mptr;
+
+  m = 0;
+  for (i=0; i<cnt; i++) {
+    vtype[i] = VTYPE(theVec[i]);
+    vncomp[i] = MD_ROWS_IN_RT_CT(theMD,vtype[i],vtype[i]);
+    m += vncomp[i];
+  }
+  for (i=0; i<cnt; i++)
+    for (j=0; j<cnt; j++)
+      Comp[i][j] = MD_MCMPPTR_OF_MTYPE(theMD,MTP(vtype[i],vtype[j]));
+
+  m1 = 0;
+  for (i=0; i<cnt; i++) {
+    theMatrix = START(theVec[i]);
+    mptr = MVALUEPTR(theMatrix,0);
+    for (k=0; k<vncomp[i]; k++)
+      for (l=0; l<vncomp[i]; l++)
+        mptr[Comp[i][i][k*vncomp[i]+l]]
+          += value[(m1+k)*m+m1+l];
+    m2 = 0;
+    for (j=0; j<i; j++) {
+      if ((theMatrix = GetMatrix(theVec[i],theVec[j]))==NULL)
+        return (-1);
+      mptr = MVALUEPTR(theMatrix,0);
+      for (k=0; k<vncomp[i]; k++)
+        for (l=0; l<vncomp[j]; l++)
+          mptr[Comp[i][j][k*vncomp[j]+l]]
+            += value[(m1+k)*m+m2+l];
+      mptr = MVALUEPTR(MADJ(theMatrix),0);
+      for (k=0; k<vncomp[i]; k++)
+        for (l=0; l<vncomp[j]; l++)
+          mptr[Comp[i][j][l*vncomp[i]+k]]
+            += value[(m2+l)*m+m1+k];
       m2 += vncomp[j];
     }
     m1 += vncomp[i];
