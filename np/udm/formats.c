@@ -1445,7 +1445,7 @@ INT MDsubDescFromVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, INT rsu
          $M <matrix size list>: <matrix template name> <total needed>
                 [$comp <matrix comp names>]
         }
-                [$sub <sub name> {<rows>x<cols> <matrix comp name list>} | {implicit(<rsv>/<rvt>[,<csv>/<cvt>])}]
+                [$sub <sub name> {<rows>x<cols> <matrix comp name list>} | {implicit(<rsv>/<rvt>[,<csv>/<cvt>])} [$alloc <n>]]
         }+
     [$d <type name1>x<type name2><connection depth>]
     [$I <type name><mat_size>]
@@ -1461,7 +1461,7 @@ INT MDsubDescFromVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, INT rsu
    .     <object~list>				- <obj> {, <obj>}*
    .     <obj>						- nd | ed | el | si
 
-        NB:: If no T-option is found at all it is assumed that default types are defined:~
+        NB: If no T-option is found at all it is assumed that default types are defined:~
    .n    $T n in 0,...: nd $T k in 0,...: ed $T e in 0,...: el $T s in 0,...: si
         to ensure downward compatibilty.
 
@@ -1504,6 +1504,10 @@ INT MDsubDescFromVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, INT rsu
    .		csv - col sub vector name of
    .		cvt - col vector template name
         If ',<csv>/<cvt>' is omitted, the tensor product of <rsv>x<rsv> is take.
+
+        If additional storage allocation for submatrices is desired use option
+   .n    alloc~<n> - allocate storage for <n> extra submatrices
+        following immediately after a sub-matrix declaration.
 
         A second syntax for M-option(s) is still supported:~
    .     <matrix~size~list>		- {<matrix size> }+
@@ -2218,7 +2222,10 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
 
   if (checksub)
     /* check next args for subm */
-    while ((opt+1<argc) && (strncmp(argv[opt+1],"sub",3)==0)) {
+    while ((opt+1<argc) && (strncmp(argv[opt+1],"sub",3)==0))
+    {
+      INT ns;
+
       opt++;
       if (MT_NSUB(mt)>=MAX_SUB) {
         PrintErrorMessageF('E',"newformat",
@@ -2272,6 +2279,13 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
         if (ParseImplicitSMDeclaration(token,mt,subm))
           REP_ERR_RETURN(1);
 
+        /* check next arg for storage allocation */
+        if (sscanf(argv[opt+1],"alloc %d",&ns)==1)
+        {
+          opt++;
+          for (type=0; type<NMATTYPES; type++)
+            MatStorageNeeded[type] += ns*SUBM_RCOMP(subm,type)*SUBM_CCOMP(subm,type);
+        }
         continue;                               /* while ((opt+1<argc) && (strncmp(argv[opt+1],"sub",3)==0)) */
       }
 
@@ -2327,6 +2341,14 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
         SUBM_CCOMP(subm,type) = nc;
       }
       while ((token=strtok(NULL,BLANKS))!=NULL);
+
+      /* check next arg for storage allocation */
+      if (sscanf(argv[opt+1],"alloc %d",&ns)==1)
+      {
+        opt++;
+        for (type=0; type<NMATTYPES; type++)
+          MatStorageNeeded[type] += ns*SUBM_RCOMP(subm,type)*SUBM_CCOMP(subm,type);
+      }
     }
 
 
