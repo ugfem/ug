@@ -204,6 +204,16 @@ static void buggy_NodeShow (NODE *n)
   printf("%4d:    ID=%06d LEVEL=%02d\n", me,
          ID(n), LEVEL(n));
 
+  /* print coordinates of that node */
+  printf("%4d:    VERTEXID=%06d LEVEL=%02d", me,
+         ID(MYVERTEX(n)), LEVEL(MYVERTEX(n)));
+  for(i=0; i<DIM; i++)
+  {
+    printf(" x%1d=%11.4E",i, (float)(CVECT(MYVERTEX(n))[i]) );
+  }
+  printf("\n");
+
+
   if (NFATHER(n))
     printf("%4d:    father=%08x\n", me,
            DDD_InfoGlobalId(PARHDR((NODE *)NFATHER(n))));
