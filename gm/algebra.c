@@ -2244,6 +2244,7 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
 
   sprintf(msg,"error in connection between element %lu and %lu: ",(long)ID(Elem0),(long)ID(Elem1));
 
+  ReturnCode = GM_OK;
   cnt0 = GetAllVectorsOfElement(theGrid,Elem0,vec0);
   if (Elem0 == Elem1)
   {
