@@ -36,7 +36,19 @@
 extern "C" {
 #endif
 
+/****************************************************************************/
+/*                                                                          */
+/* predefines, may be overridden below                                      */
+/*                                                                          */
+/****************************************************************************/
+
 #define __MWCW__  /* this is the default */
+
+/* SMALL..: least number s.t. 1 + SMALL../SMALL_FAC != 1 */
+#define SMALL_FAC            10
+
+/* current time as DOUBLE value */
+#define CURRENT_TIME   ((DOUBLE)0.0)
 
 /****************************************************************************/
 /*                                                                          */
@@ -75,9 +87,6 @@ extern "C" {
 /*                                                                          */
 /****************************************************************************/
 
-/* SMALL..: least number s.t. 1 + SMALL../SMALL_FAC != 1 */
-#define SMALL_FAC            10
-
 #ifdef __MPW32__
 #undef __MWCW__
 
@@ -100,10 +109,6 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
-
-/* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
-
 
 /* Diese bloeden const pointer gehen immer noch nicht ! P.B. 27.7.95 */
 #define const
@@ -140,6 +145,7 @@ extern "C" {
 #define F77SYM(lsym,usym)  lsym ## _
 
 /* current time as DOUBLE value */
+#undef CURRENT_TIME
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
 #endif
@@ -173,6 +179,7 @@ extern "C" {
 #define F77SYM(lsym,usym)  lsym
 
 /* current time as DOUBLE value */
+#undef CURRENT_TIME
 #define CURRENT_TIME   (((DOUBLE)TimeNow())/((DOUBLE)CLOCK_TICK))
 
 #endif
@@ -205,9 +212,6 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
-
-/* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
 
 #endif
 
@@ -242,6 +246,7 @@ extern "C" {
 #define F77SYM(lsym,usym)  lsym ## _
 
 /* current time as DOUBLE value */
+#undef CURRENT_TIME
 #define CURRENT_TIME   ((DOUBLE)dclock())
 
 #endif
@@ -275,9 +280,6 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
 
-/* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
-
 #endif
 
 /****************************************************************************/
@@ -307,9 +309,6 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
-
-/* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
 
 #endif
 
@@ -343,6 +342,7 @@ extern "C" {
 #define F77SYM(lsym,usym)  lsym
 
 /* current time as DOUBLE value */
+#undef CURRENT_TIME
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
 #endif
@@ -374,9 +374,6 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
 
-/* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
-
 #endif
 
 
@@ -405,9 +402,6 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
-
-/* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
 
 #endif
 
@@ -439,9 +433,6 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
 
-/* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
-
 #endif
 
 
@@ -471,9 +462,6 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
-
-/* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
 
 #endif
 
@@ -508,6 +496,7 @@ extern "C" {
 #define F77SYM(lsym,usym)  usym
 
 /* current time as DOUBLE value */
+#undef CURRENT_TIME
 #define CURRENT_TIME ((DOUBLE)(((double)rtclock())/((double)sysconf(_SC_CLK_TCK))))
 
 #endif
@@ -544,6 +533,7 @@ extern "C" {
 #define F77SYM(lsym,usym)  usym
 
 /* current time as DOUBLE value */
+#undef CURRENT_TIME
 #define CURRENT_TIME ((DOUBLE)(((double)rtclock())/((double)sysconf(_SC_CLK_TCK))))
 
 #endif
@@ -574,9 +564,6 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
-
-/* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
 
 #endif
 
@@ -609,9 +596,6 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
 
-/* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
-
 #endif
 
 
@@ -640,9 +624,6 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
-
-/* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
 
 #endif
 
@@ -673,9 +654,6 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
-
-/* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
 
 #endif
 
@@ -709,9 +687,6 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym ## _
 
-/* current time as DOUBLE value */
-#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
-
 #endif
 
 
@@ -741,9 +716,6 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym ## _
-
-/* current time as DOUBLE value */
-#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
 #endif
 
@@ -778,6 +750,7 @@ extern "C" {
 #ifndef CLOCKS_PER_SEC
 #define CLOCKS_PER_SEC 1000000
 #endif
+#undef CURRENT_TIME
 #define CURRENT_TIME   (((DOUBLE)times(NULL))/((DOUBLE)CLK_TCK))
 
 #endif
@@ -785,7 +758,7 @@ extern "C" {
 
 /****************************************************************************/
 /*                                                                          */
-/* Definitions for Apple Power Macintosh                                    */
+/* Definitions for Apple Macintosh with CodeWarrior compiler                */
 /*                                                                          */
 /****************************************************************************/
 
@@ -820,7 +793,8 @@ extern "C" {
 #define F77SYM(lsym,usym)  lsym
 
 /* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
+#undef CURRENT_TIME
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
 #endif
 
@@ -837,12 +811,15 @@ extern "C" {
 
 #endif
 
-
 /****************************************************************************/
 /*                                                                          */
 /* some general definitions						                            */
 /*                                                                          */
 /****************************************************************************/
+
+#if (defined __MWCW__) || (defined __MPW32__)
+#define __MACINTOSH__
+#endif
 
 #define ARCH_VERSION "ARCH_1_0"
 static char compilerrcs_id[] = "$Id$";
