@@ -309,7 +309,12 @@ static int mgc (AMG_SolverContext *sc, int k, int depth,                        
     AMG_dcopy(d[k+1],b[k+1]);
     AMG_dset(x[k+1],0.0);
     for (i=0; i<AMG_MIN(sc->gamma,depth-k); i++)
+    {
       mgc(sc,k+1,depth,A,G,M,x,b,d);
+      if (i+1==AMG_MIN(sc->gamma,depth-k)) break;
+      AMG_dcopy(d[k+1],b[k+1]);                   /* because d must cont defect on entry */
+      AMG_dmatminus(d[k+1],A[k+1],x[k+1]);
+    }
     pc_prolongate_auto(G[k],x[k],x[k+1],sc->omega_p);
     for (i=0; i<sc->n2; i++)
     {
