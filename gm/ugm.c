@@ -343,9 +343,6 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid)
   /* insert in vertex list */
   GRID_LINK_VERTEX(theGrid,pv,PrioMaster);
 
-  /* counters */
-  theGrid->nVert++;
-
   return(pv);
 }
 
@@ -403,9 +400,6 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
 
   /* insert in vertex list */
   GRID_LINK_VERTEX(theGrid,pv,PrioMaster);
-
-  /* counters */
-  theGrid->nVert++;
 
   return(pv);
 }
@@ -482,9 +476,6 @@ static NODE *CreateNode (GRID *theGrid)
 
   /* insert in vertex list */
   GRID_LINK_NODE(theGrid,pn,PrioMaster);
-
-  /* counters */
-  theGrid->nNode++;
 
   return(pn);
 }
@@ -1190,11 +1181,12 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   GRID_LINK_ELEMENT(theGrid,pe,PrioMaster);
 
   SET_EFATHER(pe,Father);
+        #ifndef ModelP
   if (Father != NULL)
     SETPROP(pe,PROP(Father));
-
-  /* counters */
-  theGrid->nElem++;
+        #else
+  SETPROP(pe,me+1);
+        #endif
 
   /* return ok */
   return(pe);
@@ -1287,12 +1279,9 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
   CTRL(theGrid) = 0;
   SETOBJT(theGrid,GROBJ);
   theGrid->level = l;
-  theGrid->nVert = 0;
-  theGrid->nNode = 0;
   theGrid->nEdge = 0;
-  theGrid->nElem = 0;
-  theGrid->nVector = 0;
   theGrid->nCon = 0;
+  /* other counters are init in INIT fcts below */
 
 #ifdef __INTERPOLATION_MATRIX__
   theGrid->nIMat = 0;
@@ -1738,6 +1727,7 @@ static INT DisposeNode (GRID *theGrid, NODE *theNode)
 
   /* remove node from node list */
   GRID_UNLINK_NODE(theGrid,theNode);
+
   theVertex = MYVERTEX(theNode);
   father = NFATHER(theNode);
   if (father != NULL)
@@ -1769,8 +1759,6 @@ static INT DisposeNode (GRID *theGrid, NODE *theNode)
   PutFreeObject(theGrid->mg,theNode,size,NDOBJ);
 
   /* return ok */
-  (theGrid->nNode)--;
-
   return(0);
 }
 
@@ -1811,7 +1799,6 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
   else
     PutFreeObject(theGrid->mg,theVertex,sizeof(struct ivertex),IVOBJ);
 
-  theGrid->nVert--;
   return(0);
 }
 
@@ -1872,6 +1859,8 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
   {
     theEdge=GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)),
                     CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)));
+    ASSERT(theEdge!=NULL);
+
     if (NO_OF_ELEM(theEdge)<1)
       RETURN(GM_ERROR);
     if (NO_OF_ELEM(theEdge)==1)
@@ -1983,7 +1972,6 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
                   MAPPED_INNER_OBJT_TAG(tag));
   }
 
-  theGrid->nElem--;
   return(0);
 }
 
@@ -4351,9 +4339,9 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
   /******************************/
   /* print standard information */
   /******************************/
-  /* line 1 */ sprintf(buffer,"NODEID=" ID_FFMT " CTRL=%8lx IX=%8ld VEID=" VID_FFMT " LEVEL=%2d",
-                       ID_PRT(theNode),(long)CTRL(theNode),
-                       (long)INDEX(theNode),VID_PRT(theVertex),LEVEL(theNode));
+  /* line 1 */ sprintf(buffer,"NODEID=" ID_FFMTE " CTRL=%8lx IX=%8ld VEID=" VID_FFMTX " LEVEL=%2d",
+                       ID_PRTE(theNode),(long)CTRL(theNode),
+                       (long)INDEX(theNode),VID_PRTX(theVertex),LEVEL(theNode));
   UserWrite(buffer);
 
   /* print coordinates of that node */
@@ -4410,7 +4398,16 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
   {
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
     {
-      sprintf(buffer,"   NB=%5ld CTRL=%8lx ",(long)ID(NBNODE(theLink)),(long)CTRL(theLink));
+                        #if defined __THREEDIM__ && defined ModelP
+      sprintf(buffer,"   EDGE=%x/%08x ",MYEDGE(theLink),
+              DDD_InfoGlobalId(PARHDR(MYEDGE(theLink))));
+                        #else
+      sprintf(buffer,"   ");
+                        #endif
+      UserWrite(buffer);
+      sprintf(buffer,"NB=" ID_FMTX " CTRL=%8lx NO_OF_ELEM=%3d ",
+              ID_PRTX(NBNODE(theLink)),(long)CTRL(theLink),
+              NO_OF_ELEM(MYEDGE(theLink)));
       UserWrite(buffer);
 
       theVertex=MYVERTEX(NBNODE(theLink));
@@ -4530,7 +4527,7 @@ void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT dataopt, INT bopt, I
   NODE *theNode;
 
   for (level=0; level<=TOPLEVEL(theMG); level++)
-    for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,level)); theNode!=NULL; theNode=SUCCN(theNode))
+    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,level)); theNode!=NULL; theNode=SUCCN(theNode))
     {
       if ( (ID(theNode)>=from)&&(ID(theNode)<=to) )
         ListNode(theMG,theNode,dataopt,bopt,nbopt,vopt);
@@ -4604,7 +4601,7 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
     UserWrite("   ");
     for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     {
-      sprintf(buffer,"N%d=%ld ",i,(long)ID(CORNER(theElement,i)));
+      sprintf(buffer," N%d=" ID_FFMTX,i,ID_PRTX(CORNER(theElement,i)));
       UserWrite(buffer);
     }
     if (EFATHER(theElement)!=NULL)
@@ -4821,9 +4818,9 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
   if (VTYPE(theVector)==NODEVECTOR)
   {
     theNode = (NODE*)VOBJECT(theVector);
-    sprintf(buffer,"NODE-V IND=" VINDEX_FFMTE " nodeID=" ID_FFMT
+    sprintf(buffer,"NODE-V IND=" VINDEX_FFMTE " nodeID=" ID_FMTX
             "                VCLASS=%1d VNCLASS=%1d\n",
-            VINDEX_PRTE(theVector),ID_PRT(theNode),VCLASS(theVector),VNCLASS(theVector));
+            VINDEX_PRTE(theVector),ID_PRTX(theNode),VCLASS(theVector),VNCLASS(theVector));
     UserWrite(buffer);
   }
   if (VTYPE(theVector)==EDGEVECTOR)
@@ -5056,102 +5053,6 @@ void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT ma
     }
 }
 
-/****************************************************************************/
-/*D
-   CheckGrid - Check consistency of data structure
-
-   SYNOPSIS:
-   INT CheckGrid (GRID *theGrid);
-
-   PARAMETERS:
-   .  theGrid - grid to check
-
-   DESCRIPTION:
-   This function checks the consistency of data structure.
-
-   RETURN VALUE:
-   INT
-   .n   GM_OK if ok
-   .n   GM_ERROR if an error occured.
-   D*/
-/****************************************************************************/
-
-#ifdef ModelP
-void CheckLists (GRID *theGrid)
-{
-  int objs = 0;
-  ELEMENT *theElement;
-  NODE *theNode;
-  VECTOR  *theVector;
-
-  printf ("%d: checking elementlist:\n",me);
-  printf ("%d: efg=%x efg=%x efm=%x elm=%x\n",me,
-          LISTPART_FIRSTELEMENT(theGrid,0),LISTPART_LASTELEMENT(theGrid,0),
-          LISTPART_FIRSTELEMENT(theGrid,1),LISTPART_LASTELEMENT(theGrid,1));
-
-  objs = 0;
-  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
-    objs++;
-    if (theElement == LISTPART_LASTELEMENT(theGrid,0)) {
-      printf("%d: nEg=%d   ",me,objs);
-      objs = 0;
-    }
-  }
-  printf("%d: nEm=%d nelems=%d\n",me,objs,NT(theGrid));
-  printf("\n");
-
-  printf ("%d: checking nodelist:\n",me);
-  printf ("%d: nfg=%x nlg=%x nfb=%x nlb=%x nfm=%x nlm=%x\n",me,
-          LISTPART_FIRSTNODE(theGrid,0),LISTPART_LASTNODE(theGrid,0),
-          LISTPART_FIRSTNODE(theGrid,1),LISTPART_LASTNODE(theGrid,1),
-          LISTPART_FIRSTNODE(theGrid,2),LISTPART_LASTNODE(theGrid,2));
-
-  objs = 0;
-  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
-    objs++;
-    if (theNode == LISTPART_LASTNODE(theGrid,0)) {
-      if (SUCCN(LISTPART_LASTNODE(theGrid,0))!= LISTPART_FIRSTNODE(theGrid,1))
-        printf("%d first pointer of listpart 1 dead\n",me);
-      printf("%d: nNg=%d   ",me,objs);
-      objs = 0;
-    }
-    if (theNode == LISTPART_LASTNODE(theGrid,1)) {
-      if (SUCCN(LISTPART_LASTNODE(theGrid,1))!= LISTPART_FIRSTNODE(theGrid,2))
-        printf("%d first pointer of listpart 2 dead\n",me);
-      printf("%d: nNb=%d   ",me,objs);
-      objs = 0;
-    }
-  }
-  printf("%d: nNm=%d nnodes=%d\n",me,objs,NN(theGrid));
-  printf("\n");
-
-  printf ("%d: checking vectorlist:\n",me);
-  printf ("%d: vfg=%x vlg=%x vfb=%x vlb=%x vfm=%x vlm=%x\n",me,
-          LISTPART_FIRSTVECTOR(theGrid,0),LISTPART_LASTVECTOR(theGrid,0),
-          LISTPART_FIRSTVECTOR(theGrid,1),LISTPART_LASTVECTOR(theGrid,1),
-          LISTPART_FIRSTVECTOR(theGrid,2),LISTPART_LASTVECTOR(theGrid,2));
-
-  objs = 0;
-  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector)) {
-    objs++;
-    if (theVector == LISTPART_LASTVECTOR(theGrid,0)) {
-      if (SUCCVC(LISTPART_LASTVECTOR(theGrid,0))!= LISTPART_FIRSTVECTOR(theGrid,1))
-        printf("%d first pointer of listpart 1 dead\n",me);
-      printf("%d: nVg=%d   ",me,objs);
-      objs = 0;
-    }
-    if (theVector == LISTPART_LASTVECTOR(theGrid,1)) {
-      if (SUCCVC(LISTPART_LASTVECTOR(theGrid,1))!= LISTPART_FIRSTVECTOR(theGrid,2))
-        printf("%d first pointer of listpart 2 dead\n",me);
-      printf("%d: nVb=%d   ",me,objs);
-      objs = 0;
-    }
-  }
-  printf("%d: nVm=%d nvectors=%d\n",me,objs,NVEC(theGrid));
-  printf("\n");
-}
-#endif
-
 #ifdef __TWODIM__
 static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, INT *NodeError)
 {
@@ -5219,7 +5120,7 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
   return (0);
 }
 
-INT CheckGrid (GRID *theGrid) /* 2D VERSION */
+INT CheckGeometry (GRID *theGrid) /* 2D VERSION */
 {
   NODE *theNode;
   ELEMENT *theElement;
@@ -5228,11 +5129,11 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
   INT SideError, EdgeError, NodeError,count,n;
 
   /* reset used flags
-     for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+     for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
      {
      #ifdef Debug
      #ifdef ModelP
-          printf("%2d: CheckGrid:       n=%x\n",me,theNode);
+          printf("%2d: CheckGeometry:   n=%x\n",me,theNode);
      #endif
      #endif
 
@@ -5244,7 +5145,7 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
 
      #ifdef Debug
      #ifdef ModelP
-     printf("%2d: CheckGrid: all nodes and links are SETUSED\n",me);
+     printf("%2d: CheckGeometry: all nodes and links are SETUSED\n",me);
      #endif
    #endif */
 
@@ -5290,7 +5191,8 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
             UserWrite(buffer);
             if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
           }
-          UserWrite(") has no neighbour, element is BEOBJ but there is no SIDE\n");
+          UserWrite(") has no neighbour, element is BEOBJ, "
+                    "but there is no SIDE\n");
         }
       }
     if (EdgeError)
@@ -5306,7 +5208,9 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
       {
         if (NodeError & (1<<i))
         {
-          sprintf(buffer,"   CORNER " ID_FMT " is BVOBJ, ids from elementside and vertexsegment are not consistent\n", ID_PRT(CORNER(theElement,i)));
+          sprintf(buffer,"   CORNER " ID_FMT " is BVOBJ, "
+                  "ids from elementside and vertexsegment are "
+                  "not consistent\n", ID_PRT(CORNER(theElement,i)));
           UserWrite(buffer);
         }
         if (NodeError & (1<<(i+n)))
@@ -5333,7 +5237,8 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
       if (USED(theLink)!=1 || USED(REVERSE(theLink))!=1)
       {
                 #ifdef ModelP
-        UserWriteF("edge between " ID_FMT " and " ID_FMT " dead: USED=%d USEDREV=%d \n",
+        UserWriteF("edge between " ID_FMT " and " ID_FMT
+                   " dead: USED=%d USEDREV=%d \n",
                    ID_PRT(theNode), ID_PRT(NBNODE(theLink)),
                    USED(theLink),USED(REVERSE(theLink)));
                                 #endif
@@ -5349,12 +5254,12 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
   }
 
   /* look for dead nodes */
-  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     if (!USED(theNode))
     {
             #ifdef ModelP
-      sprintf(buffer,"node %ld is dead ",(long)ID(theNode));
+      sprintf(buffer,"node " ID_FMTX " is dead ",ID_PRTX(theNode));
       UserWrite(buffer);
       UserWrite("\n");
                         #endif
@@ -5561,27 +5466,23 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
   return (0);
 }
 
-
-INT CheckGrid (GRID *theGrid) /* 3D VERSION */
+INT CheckGeometry (GRID *theGrid) /* 3D VERSION */
 {
   NODE *theNode;
   ELEMENT *theElement;
   LINK *theLink;
   int i,j;
   INT SideError, EdgeError, NodeError, ESonError, NSonError, count;
-        #ifdef ModelP
   EDGE *theEdge;
-        #endif
 
   /* reset used flags */
-  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     SETUSED(theNode,0);
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
       SETUSED(MYEDGE(theLink),0);
   }
 
-  /* check neighbors and edges of elements */
   for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
     if (CheckElement(theElement,&SideError,&EdgeError,&NodeError,&ESonError,&NSonError)==0) continue;
@@ -5790,6 +5691,130 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
 }
 #endif
 
+INT CheckLists (GRID *theGrid)
+{
+  int objs = 0;
+  ELEMENT *theElement;
+  NODE *theNode;
+  VECTOR  *theVector;
+
+  GRID_CHECK_ELEMENT_LIST(theGrid);
+  GRID_CHECK_NODE_LIST(theGrid);
+  GRID_CHECK_VERTEX_LIST(theGrid);
+  GRID_CHECK_VECTOR_LIST(theGrid);
+
+  return(GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   CheckGrid - Check consistency of data structure
+
+   SYNOPSIS:
+   INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists, INT checkif)
+
+   PARAMETERS:
+   .  theGrid - grid to check
+   .  checkgeom - check geomtry
+   .  checkalgebra - check algebra
+   .  checklists - checklists
+   .  checkif - check the processor interfaces
+
+   DESCRIPTION:
+   This function checks the consistency of data structure.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR if an error occured.
+   D*/
+/****************************************************************************/
+
+#ifndef ModelP
+INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists)
+#else
+INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
+               INT checkif)
+#endif
+{
+  INT error = GM_OK;
+
+  /* check geometrical data structures */
+  if (checkgeom)
+  {
+    UserWrite(" geometry:");
+    fflush(stdout);
+
+    if (CheckGeometry(theGrid) != GM_OK)
+    {
+      error++;
+      UserWrite(" BAD");
+      fflush(stdout);
+    }
+    else
+    {
+      UserWrite(" ok");
+    }
+  }
+
+  /* check algebraic data structures */
+  if (checkalgebra)
+  {
+    UserWrite(", algebra:");
+    fflush(stdout);
+
+    if (CheckAlgebra(theGrid) != GM_OK)
+    {
+      error++;
+      UserWrite(" BAD");
+      fflush(stdout);
+    }
+    else
+    {
+      UserWrite(" ok");
+    }
+  }
+
+  /* check lists and counters */
+  if (checklists)
+  {
+    UserWrite(", lists:");
+    fflush(stdout);
+
+    if (CheckLists(theGrid) != GM_OK)
+    {
+      error++;
+      UserWrite(" BAD");
+      fflush(stdout);
+    }
+    else
+    {
+      UserWrite(" ok");
+    }
+  }
+
+        #ifdef ModelP
+  /* check interfaces to other procs */
+  if (checkif)
+  {
+    UserWrite(", interface:");
+    fflush(stdout);
+
+    if (CheckInterfaces(theGrid) != GM_OK)
+    {
+      error++;
+      UserWrite(" BAD");
+      fflush(stdout);
+    }
+    else
+    {
+      UserWrite(" ok");
+    }
+  }
+        #endif
+
+  return(error);
+}
 
 /****************************************************************************/
 /*D
