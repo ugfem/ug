@@ -108,6 +108,7 @@ void FAMGugMatrix::AddEntry(double mval, const FAMGugVectorEntry &row, const FAM
        	FAMGError(ostr);
 		assert(0);
    	}
+	MVALUE(MADJ(newmat),GetComp())=0.0;	// circumvent bug in ug-alloc
 	MVALUE(newmat,GetComp())=mval;
 	GetNLinks()++;
 }
