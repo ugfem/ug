@@ -1451,7 +1451,7 @@ INT     DisposeElementList (GRID *theGrid, NODE *theNode)
 
   pel = NODE_ELEMENT_LIST(theNode);
   while (pel != NULL) {
-
+    next = pel->next;
     if (PutFreeObject(theGrid->mg,pel,sizeof(ELEMENTLIST),-1))
       return(1);
     pel = next;
