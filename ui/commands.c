@@ -988,6 +988,9 @@ static INT SetCommand (INT argc, char **argv)
                   expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %16384[]\t\n -~]")));
    */
   res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %16384[]\t\n -~]")),name,buffer);
+        #ifdef __CC__
+  res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %16384[^]\t\n -~]")),name,buffer);
+        #endif
         #else
   res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %255[ -~]")),name,buffer);
         #endif /* ModelP */
