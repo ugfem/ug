@@ -154,6 +154,40 @@ extern "C" {
 
 #endif
 
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for Silicon Graphics Workstations (new 64 bit version)       */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __SGI10__
+#undef __MWCW__
+
+#define ARCHNAME        "SGI10"
+
+#include <time.h>
+
+/* basic types */
+#define SHORT  short
+#define INT    int
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+
+/* memory */
+#define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
+#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym ## _
+
+/* current time as DOUBLE value */
+#undef CURRENT_TIME
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
+
+#endif
+
 
 /****************************************************************************/
 /*                                                                          */
