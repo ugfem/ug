@@ -1893,63 +1893,6 @@ double Opti2FunctionValueGrad (const Vector & x, Vector & grad)
 }
 
 
-double Opti2EdgeFunctionValueGrad (const Vector & x, Vector & grad)
-{
-  int j, rot;
-  INDEX eli;
-  const Element * el;
-  Vec3d n1, n2, v1, v2, e1, e2, vgrad;
-  Point3d pp1;
-  Vec2d g1, g2, g3;
-  double badness, hbadness;
-
-  vgrad.X() = 0;
-  vgrad.Y() = 0;
-  vgrad.Z() = 0;
-  badness = 0;
-
-  pp1 = sp1 + x.Get(1) * t1;
-  meshthis -> ProjectPoint2 (surfi, surfi2, pp1);
-
-  for (j = 1; j <= locelements.Size(); j++)
-  {
-    eli = locelements.Get(j);
-    rot = locrots.Get(j);
-    el = &optelements->Get(eli);
-
-    v1 = optpoints->Get(el->PNumMod(rot + 1)) - pp1;
-    v2 = optpoints->Get(el->PNumMod(rot + 2)) - pp1;
-
-    e1 = v1;
-    e2 = v2;
-    e1 /= e1.Length();
-    e2 -= (e1 * e2) * e1;
-    e2 /= e2.Length();
-
-    CalcTriangleBadness ( (e1 * v1), (e1 * v2), (e2 * v2), locerr2, loch,
-                          hbadness, g1.X(), g1.Y());
-
-    badness += hbadness;
-
-    vgrad.X() += g1.X() * e1.X() + g1.Y() * e2.X();
-    vgrad.Y() += g1.X() * e1.Y() + g1.Y() * e2.Y();
-    vgrad.Z() += g1.X() * e1.Z() + g1.Y() * e2.Z();
-  }
-
-  meshthis -> GetNormalVector (surfi, pp1, n1);
-  meshthis -> GetNormalVector (surfi2, pp1, n2);
-
-  v1 = Cross (n1, n2);
-  v1 /= v1.Length();
-
-  //  vgrad -= (vgrad * n) * n;
-  //  grad.Elem(1) = vgrad * t1;
-  //  grad.Elem(2) = vgrad * t2;
-
-  grad.Elem(1) = (vgrad * v1) * (t1 * v1);
-
-  return badness;
-}
 
 void surfacemeshing :: ImproveMesh (ARRAY<Point3d> & points, const ARRAY<Element> & elements,
                                     int improveedges, int numboundarypoints, double h, int steps, int err2)
