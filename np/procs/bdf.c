@@ -39,6 +39,7 @@
 #include "ugstruct.h"
 #include "misc.h"
 #include "gm.h"
+#include "evm.h"
 #include "scan.h"
 #include "numproc.h"
 #include "pcr.h"
@@ -421,13 +422,18 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
             return(__LINE__);
         if (!nlresult.converged)
         {
-          bdf->dt *= 0.5;                               /* reduce time step     */
-          if (bdf->dt<bdf->dtmin) {
-            UserWrite("time step too small -- aborting\n");
-            return(__LINE__);
+          if (!bdf->ctn || llow<level || bdf->baselevel>=llow)
+          {
+            /* halfen time step */
+            bdf->dt *= 0.5;
+            if (bdf->dt<bdf->dtmin)
+            {
+              UserWrite("time step too small -- aborting\n");
+              return(__LINE__);
+            }
+            UserWrite("halfen time step\n");
+            bad=1;
           }
-          UserWrite("reduced time step\n");
-          bad=1;
           break;                                     /* and try all over again  */
         }
         else {
@@ -600,19 +606,12 @@ Continue:
   /* chose new dt for next time step */
   if ((bdf->optnlsteps) && (nlresult.converged))
   {
-    k = bdf->number_of_nonlinear_iterations -
-        last_number_of_nonlinear_iterations;
-    if (k <= 0)
-      bdf->dt *= 2.0;
-    else
-      bdf->dt *= bdf->optnlsteps / ((DOUBLE) k);
-    if (bdf->dt < bdf->dtmin)
-      bdf->dt = bdf->dtmin;
-    else if (bdf->dt > bdf->dtmax)
-      bdf->dt = bdf->dtmax;
-    PRINTDEBUG(np,1,("new time step %f k %d n %d l %d\n",
-                     bdf->dt,k,bdf->number_of_nonlinear_iterations,
-                     last_number_of_nonlinear_iterations));
+    k = bdf->number_of_nonlinear_iterations - last_number_of_nonlinear_iterations;
+    if (k <= 0) bdf->dt *= 2.0;
+    else bdf->dt *= SQRT(bdf->optnlsteps / ((DOUBLE) k));
+    if (bdf->dt < bdf->dtmin) bdf->dt = bdf->dtmin;
+    else if (bdf->dt > bdf->dtmax) bdf->dt = bdf->dtmax;
+    PRINTDEBUG(np,1,("new time step %f k %d n %d l %d\n",bdf->dt,k,bdf->number_of_nonlinear_iterations,last_number_of_nonlinear_iterations));
     *res = 0;
   }
   else if (eresult.step ==0.)
