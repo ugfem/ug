@@ -51,11 +51,14 @@
 
 #define NPTR_PRE(p)                             (((NP_TRANSFER*)(p))->PreProcess)
 #define NPTR_PREPROJ(p)                 (((NP_TRANSFER*)(p))->PreProcessProject)
+#define NPTR_PRESOL(p)                  (((NP_TRANSFER*)(p))->PreProcessSolution)
 #define NPTR_INTCOR(p)                  (((NP_TRANSFER*)(p))->InterpolateCorrection)
 #define NPTR_RESTRICT(p)                (((NP_TRANSFER*)(p))->RestrictDefect)
 #define NPTR_INTNEW(p)                  (((NP_TRANSFER*)(p))->InterpolateNewVectors)
 #define NPTR_PROJSOL(p)                 (((NP_TRANSFER*)(p))->ProjectSolution)
 #define NPTR_ADPTCOR(p)                 (((NP_TRANSFER*)(p))->AdaptCorrection)
+#define NPTR_POSTPROJ(p)                (((NP_TRANSFER*)(p))->PostProcessProject)
+#define NPTR_POSTSOL(p)                 (((NP_TRANSFER*)(p))->PostProcessSolution)
 #define NPTR_POST(p)                    (((NP_TRANSFER*)(p))->PostProcess)
 
 /****************************************************************************/

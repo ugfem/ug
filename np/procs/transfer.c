@@ -36,6 +36,7 @@
 #include "debug.h"
 #include "devices.h"
 #include "gm.h"
+#include "formats.h"
 #include "pcr.h"
 #include "np.h"
 #include "disctools.h"
@@ -51,6 +52,49 @@
 /*		  macros															*/
 /*																			*/
 /****************************************************************************/
+
+#define MAX_PT                          2
+#define MAX_VD                          5
+#define PT_NOT_INIT                     -1
+
+enum {
+  PT_PRE_x,
+  PT_PRE_b,
+
+  PT_PRESOL_x,
+
+  PT_REST_f,
+  PT_REST_t,
+
+  PT_ICOR_f,
+  PT_ICOR_t,
+
+  PT_INEW_x,
+
+  PT_PROJSOL_x,
+
+  PT_ACOR_c,
+  PT_ACOR_b,
+
+  PT_POSTSOL_x,
+
+  PT_POST_x,
+  PT_POST_b,
+
+  PT_N_IND
+};
+
+#define PT_MVT(pt)                              ((pt)->mvt)
+#define PT_NTRANS(pt)                   ((pt)->ntrans)
+#define PT_TRANS(pt,i)                  ((pt)->trans[i])
+#define PT_SVT(pt,i)                    ((pt)->svt[i])
+#define PT_SMD(pt,i)                    ((pt)->smd[i])
+#define PT_SMDI(pt,i)                   ((pt)->smdi[i])
+#define PT_NVD(pt)                              ((pt)->nvd)
+#define PT_MVD(pt,i)                    ((pt)->mvd[i])
+#define PT_IND(pt,i)                    ((pt)->ind[i])
+#define PT_SVD(pt,k,i)                  ((pt)->svd[k][i])
+#define PT_SVDI(pt,k,i)                 ((pt)->svdi[k][i])
 
 /****************************************************************************/
 /*																			*/
@@ -81,6 +125,28 @@ typedef struct
   INT meanvalue;                               /* in parallel for nonconforming */
   /* interpolation                 */
 } NP_STANDARD_TRANSFER;
+
+typedef struct
+{
+  NP_TRANSFER transfer;
+
+  /* additional data */
+  const VEC_TEMPLATE *mvt;                      /* main vector template					*/
+  INT ntrans;                                                   /* number of part transfer numprocs		*/
+  NP_TRANSFER *trans[MAX_PT];                   /* pointers to part transfer numprocs	*/
+  INT svt[MAX_PT];                                      /* indices of sub vector templates		*/
+
+  /* sub XXXDATA_DESCs needed */
+  MATDATA_DESC *smd[MAX_PT];                    /* sub descriptors of A					*/
+  MATDATA_DESC *smdi[MAX_PT];                   /* interface descs of A					*/
+
+  INT nvd;                                                      /* number of mains with constructed subs*/
+  const VECDATA_DESC *mvd[MAX_VD];      /* main VECDATA_DESCs					*/
+  INT ind[PT_N_IND];                                    /* indices to sub descriptors of mains	*/
+  VECDATA_DESC *svd[MAX_VD][MAX_PT];       /* sub descriptors of mains			*/
+  VECDATA_DESC *svdi[MAX_VD][MAX_PT];      /* interface descs of mains			*/
+
+} NP_PART_TRANSFER;
 
 /****************************************************************************/
 /*																			*/
@@ -791,6 +857,701 @@ static INT TransferConstruct (NP_BASE *theNP)
 }
 
 /****************************************************************************/
+/*D
+   parttransfer - num proc for grid transfer with domain parts
+
+   DESCRIPTION:
+   .vb
+   npinit <name> [$x <sol>] [$c <cor>] [$b <rhs>] [$A <mat>]
+              [$M] [$L] [$m] [$d {full|red|no}] [$S <cut>];
+   .ve
+
+   .  $x~<sol> - solution vector
+   .  $c~<sol> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $M - use iterpolation matrix for transfer (default: standard transfer)
+   .  $m - parallel nonconforming interpolation
+   .  $L - level optimization
+   .  $d - display modus
+   .  $S~<cut> - scaled restriction with cut (in combination with standard prologation)
+
+   'npexecute <name> [$i] [$R] [$I] [$N] [$P] [$p];'
+
+   .  $i - preprocess
+   .  $R - restrict defect
+   .  $I - interpolate correction
+   .  $N - interpolate new vectors
+   .  $P - project solution
+   .  $p - postprocess
+   D*/
+/****************************************************************************/
+
+static INT PartTransferInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_PART_TRANSFER *thePT;
+  NP_TRANSFER *trans;
+  FORMAT *fmt;
+  VEC_TEMPLATE *mvt;
+  INT i,ntrans,nsub;
+  char name[NAMESIZE],buffer[VALUELEN];
+
+  fmt = NP_FMT(theNP);
+
+  thePT = (NP_PART_TRANSFER *) theNP;
+
+  /* get name of main vector template */
+  if (ReadArgvChar("m",buffer,argc,argv)!=NULL)
+  {
+    PrintErrorMessage('E',"PartTransferInit","m option with main vector template not found");
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
+  }
+  mvt = GetVectorTemplate(fmt,buffer);
+  if (mvt == NULL)
+  {
+    PrintErrorMessageF('E',"PartTransferInit",
+                       "cannot find specified vector template '%s'",buffer);
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
+  }
+  PT_MVT(thePT) = mvt;
+
+  PT_NTRANS(thePT) = ntrans = nsub = 0;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 's' :
+      /* scan name of subvector of main vector template */
+      if (sscanf(argv[i],expandfmt(CONCAT3("s %",NAMELENSTR,"[ -~]")),name)!=1)
+      {
+        PrintErrorMessage('E',"PartTransferInit","specify a sub vector template with $s");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      for (i=0; i<VF_NSUB(mvt); i++)
+        if (strcmp(SUBV_NAME(VF_SUB(mvt,i)),name)==0)
+          break;
+      if (i>=VF_NSUB(mvt))
+      {
+        PrintErrorMessageF('E',"PartTransferInit","name '%s' of sub template not found",name);
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      PT_SVT(thePT,nsub++) = i;
+      break;
+
+    case 't' :
+      /* scan transfer numproc */
+      if (ntrans>=MAX_PT)
+      {
+        PrintErrorMessage('E',"PartTransferInit","max number of part transfer numprocs exceeded");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      if (sscanf(argv[i],expandfmt(CONCAT3("trans %",NAMELENSTR,"[ -~]")),name)!=1)
+      {
+        PrintErrorMessage('E',"PartTransferInit","specify a transfer numproc with $trans");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      trans = (NP_TRANSFER*) GetNumProcByName (NP_MG(theNP),name,TRANSFER_CLASS_NAME);
+      if (trans == NULL)
+      {
+        PrintErrorMessage('E',"PartTransferInit",
+                          "cannot find specified numerical procedure");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      PT_TRANS(thePT,ntrans++) = trans;
+      break;
+    }
+
+  if (ntrans==0)
+  {
+    PrintErrorMessage('E',"PartTransferInit","specify at least one transfer numproc with $trans");
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
+  }
+  if (nsub!=ntrans)
+  {
+    PrintErrorMessage('E',"PartTransferInit","number of sub templates and transfer numprocs have to be equal");
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
+  }
+  PT_NTRANS(thePT) = ntrans;
+
+  return (NPTransferInit(&thePT->transfer,argc,argv));
+}
+
+static INT PartTransferDisplay (NP_BASE *theNP)
+{
+  NP_PART_TRANSFER *thePT;
+  const VEC_TEMPLATE *mvt;
+  INT i;
+  char text1[16],text2[64];
+
+  thePT = (NP_PART_TRANSFER *) theNP;
+
+  NPTransferDisplay(&thePT->transfer);
+
+  mvt = PT_MVT(thePT);
+  UserWriteF(DISPLAY_NP_FORMAT_SS,"main tplt",ENVITEM_NAME(mvt));
+
+  UserWrite("\npart transfer numprocs and sub templates:\n");
+  for (i=0; i<PT_NTRANS(thePT); i++)
+  {
+    sprintf(text1,"trans+sub%d",i);
+    sprintf(text2,"%20s %20s",ENVITEM_NAME(PT_TRANS(thePT,i)),SUBV_NAME(VF_SUB(mvt,PT_SVT(thePT,i))));
+    UserWriteF(DISPLAY_NP_FORMAT_SS,text1,text2);
+  }
+
+  return (0);
+}
+
+static INT ConstructSubVD (NP_PART_TRANSFER *thePT, const VECDATA_DESC *x, INT *index)
+{
+  const VEC_TEMPLATE *mvt;
+  INT i,k,n;
+
+  if (*index==PT_NOT_INIT)
+  {
+    /* first check existing ones */
+    for (k=0; k<PT_NVD(thePT); k++)
+      if (VDequal(x,PT_MVD(thePT,k)))
+        break;
+    if (k<PT_NVD(thePT))
+      *index = k;
+  }
+
+  if (*index!=PT_NOT_INIT)
+    return (0);
+
+  /* x is new: store pointer to x and decompose it into sub descriptors */
+  n = PT_NTRANS(thePT);
+  k = PT_NVD(thePT);
+  ASSERT(k<MAX_VD);
+  PT_MVD(thePT,k) = x;
+  mvt = PT_MVT(thePT);
+  for (i=0; i<n; i++)
+  {
+    if (VDsubDescFromVT(x,mvt,PT_SVT(thePT,i),&PT_SVD(thePT,k,i)))
+      REP_ERR_RETURN(1);
+    if (VDinterfaceDesc(x,PT_SVD(thePT,k,i),&PT_SVDI(thePT,k,i)))
+      REP_ERR_RETURN(1);
+  }
+  PT_NVD(thePT)++;
+
+  *index = k;
+
+  return (0);
+}
+
+static INT ConstructSubMD (NP_PART_TRANSFER *thePT, const MATDATA_DESC *A)
+{
+  const VEC_TEMPLATE *mvt;
+  INT i,n;
+
+  n = PT_NTRANS(thePT);
+  mvt = PT_MVT(thePT);
+  for (i=0; i<n; i++)
+  {
+    if (MDsubDescFromVT(A,mvt,PT_SVT(thePT,i),&PT_SMD(thePT,i)))
+      REP_ERR_RETURN(1);
+    if (MDinterfaceDesc(A,PT_SMD(thePT,i),&PT_SMDI(thePT,i)))
+      REP_ERR_RETURN(1);
+  }
+  return (0);
+}
+
+static INT PartTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
+                                   VECDATA_DESC *x, VECDATA_DESC *b,
+                                   MATDATA_DESC *A, INT *result)
+{
+  NP_PART_TRANSFER *thePT;
+  NP_TRANSFER *trans;
+  SPID_DESC spid;
+  INT i;
+
+  thePT = (NP_PART_TRANSFER *) theNP;
+
+  /* indicate that decomposition into sub descriptors has to be done */
+  for (i=0; i<PT_N_IND; i++)
+    PT_IND(thePT,i) = PT_NOT_INIT;
+  PT_NVD(thePT) = 0;
+
+  /* get the VECDATA_DESCs needed */
+  if (ConstructSubVD(thePT,x,&PT_IND(thePT,PT_PRE_x)))
+    REP_ERR_RETURN(1);
+  if (ConstructSubVD(thePT,b,&PT_IND(thePT,PT_PRE_b)))
+    REP_ERR_RETURN(1);
+
+  /* get the MATDATA_DESC needed (once and for all) */
+  if (ConstructSubMD(thePT,A))
+    REP_ERR_RETURN(1);
+
+  SPID_NVD(&spid) = 2;
+  SPID_NMD(&spid) = 1;
+
+  /* call pre of part transfer numprocs */
+  for (i=0; i<PT_NTRANS(thePT); i++)
+  {
+    trans = PT_TRANS(thePT,i);
+    if (NPTR_PRE(trans)!=NULL)
+    {
+      SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_PRE_x),i);
+      SPID_VDI(&spid,0) = PT_SVDI(thePT,PT_IND(thePT,PT_PRE_x),i);
+      SPID_VD(&spid,1)  = PT_SVD(thePT,PT_IND(thePT,PT_PRE_b),i);
+      SPID_VDI(&spid,1) = PT_SVDI(thePT,PT_IND(thePT,PT_PRE_b),i);
+      SPID_MD(&spid,0)  = PT_SMD(thePT,i);
+      SPID_MDI(&spid,0) = PT_SMDI(thePT,i);
+      if (SwapPartInterfaceData(*fl,tl,&spid,SPID_FORTH))
+        REP_ERR_RETURN(1);
+
+      if (NPTR_PRE(trans) (trans,fl,tl,
+                           PT_SVD(thePT,PT_IND(thePT,PT_PRE_x),i),
+                           PT_SVD(thePT,PT_IND(thePT,PT_PRE_b),i),
+                           PT_SMD(thePT,i),
+                           result))
+        REP_ERR_RETURN(1);
+      if (SwapPartInterfaceData(*fl,tl,&spid,SPID_BACK))
+        REP_ERR_RETURN(1);
+    }
+  }
+
+  return (0);
+}
+
+static INT PartPreProcessProject (NP_TRANSFER *theNP,  INT fl, INT tl, INT *result)
+{
+  NP_PART_TRANSFER *thePT;
+  NP_TRANSFER *trans;
+  INT i;
+
+  thePT = (NP_PART_TRANSFER *) theNP;
+
+  /* call preprocess project of part transfer numprocs */
+  for (i=0; i<PT_NTRANS(thePT); i++)
+  {
+    trans = PT_TRANS(thePT,i);
+    if (NPTR_PREPROJ(trans)==NULL)
+      continue;
+
+    if (NPTR_PREPROJ(trans) (trans,fl,tl,result))
+      REP_ERR_RETURN(1);
+  }
+
+  return (0);
+}
+
+static INT PartPreProcessSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
+                                   VECDATA_DESC *x, INT *result)
+{
+  NP_PART_TRANSFER *thePT;
+  NP_TRANSFER *trans;
+  SPID_DESC spid;
+  INT i;
+
+  thePT = (NP_PART_TRANSFER *) theNP;
+
+  /* get the VECDATA_DESCs needed */
+  if (ConstructSubVD(thePT,x,&PT_IND(thePT,PT_PRESOL_x)))
+    REP_ERR_RETURN(1);
+
+  SPID_NVD(&spid) = 1;
+  SPID_NMD(&spid) = 0;
+
+  /* call preprocess solution of part transfer numprocs */
+  for (i=0; i<PT_NTRANS(thePT); i++)
+  {
+    trans = PT_TRANS(thePT,i);
+    if (NPTR_PRESOL(trans)==NULL)
+      continue;
+
+    /* swap interface data */
+    SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_PRESOL_x),i);
+    SPID_VDI(&spid,0) = PT_SVDI(thePT,PT_IND(thePT,PT_PRESOL_x),i);
+    if (SwapPartInterfaceData(fl,tl,&spid,SPID_FORTH))
+      REP_ERR_RETURN(1);
+
+    if (NPTR_PRESOL(trans) (trans,fl,tl,
+                            PT_SVD(thePT,PT_IND(thePT,PT_PRESOL_x),i),
+                            result))
+      REP_ERR_RETURN(1);
+
+    /* swap interface data back */
+    if (SwapPartInterfaceData(fl,tl,&spid,SPID_BACK))
+      REP_ERR_RETURN(1);
+  }
+
+  return (0);
+}
+
+static INT PartRestrictDefect (NP_TRANSFER *theNP, INT level,
+                               VECDATA_DESC *to, VECDATA_DESC *from,
+                               MATDATA_DESC *A, VEC_SCALAR damp,
+                               INT *result)
+{
+  NP_PART_TRANSFER *thePT;
+  NP_TRANSFER *trans;
+  SPID_DESC spid;
+  INT i;
+
+  thePT = (NP_PART_TRANSFER *) theNP;
+
+  /* get the VECDATA_DESCs needed */
+  if (ConstructSubVD(thePT,from,&PT_IND(thePT,PT_REST_f)))
+    REP_ERR_RETURN(1);
+  if (ConstructSubVD(thePT,to,  &PT_IND(thePT,PT_REST_t)))
+    REP_ERR_RETURN(1);
+
+  SPID_NVD(&spid) = 2;
+  SPID_NMD(&spid) = 1;
+
+  /* call restrict defect of part transfer numprocs */
+  for (i=0; i<PT_NTRANS(thePT); i++)
+  {
+    /* swap interface data */
+    SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_REST_t),i);
+    SPID_VDI(&spid,0) = PT_SVDI(thePT,PT_IND(thePT,PT_REST_t),i);
+    SPID_VD(&spid,1)  = PT_SVD(thePT,PT_IND(thePT,PT_REST_f),i);
+    SPID_VDI(&spid,1) = PT_SVDI(thePT,PT_IND(thePT,PT_REST_f),i);
+    SPID_MD(&spid,0)  = PT_SMD(thePT,i);
+    SPID_MDI(&spid,0) = PT_SMDI(thePT,i);
+    if (SwapPartInterfaceData(level,level,&spid,SPID_FORTH))
+      REP_ERR_RETURN(1);
+
+    trans = PT_TRANS(thePT,i);
+    if (NPTR_RESTRICT(trans) (trans,level,
+                              PT_SVD(thePT,PT_IND(thePT,PT_REST_t),i),
+                              PT_SVD(thePT,PT_IND(thePT,PT_REST_f),i),
+                              PT_SMD(thePT,i),
+                              damp,result))
+      REP_ERR_RETURN(1);
+
+    /* swap interface data back */
+    if (SwapPartInterfaceData(level,level,&spid,SPID_BACK))
+      REP_ERR_RETURN(1);
+  }
+
+  return (0);
+}
+
+static INT PartInterpolateCorrection (NP_TRANSFER *theNP, INT level,
+                                      VECDATA_DESC *to, VECDATA_DESC *from,
+                                      MATDATA_DESC *A, VEC_SCALAR damp,
+                                      INT *result)
+{
+  NP_PART_TRANSFER *thePT;
+  NP_TRANSFER *trans;
+  SPID_DESC spid;
+  INT i;
+
+  thePT = (NP_PART_TRANSFER *) theNP;
+
+  /* get the VECDATA_DESCs needed */
+  if (ConstructSubVD(thePT,from,&PT_IND(thePT,PT_ICOR_f)))
+    REP_ERR_RETURN(1);
+  if (ConstructSubVD(thePT,to,  &PT_IND(thePT,PT_ICOR_t)))
+    REP_ERR_RETURN(1);
+
+  SPID_NVD(&spid) = 2;
+  SPID_NMD(&spid) = 1;
+
+  /* call interpolate correction of part transfer numprocs */
+  for (i=0; i<PT_NTRANS(thePT); i++)
+  {
+    /* swap interface data */
+    SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_ICOR_t),i);
+    SPID_VDI(&spid,0) = PT_SVDI(thePT,PT_IND(thePT,PT_ICOR_t),i);
+    SPID_VD(&spid,1)  = PT_SVD(thePT,PT_IND(thePT,PT_ICOR_f),i);
+    SPID_VDI(&spid,1) = PT_SVDI(thePT,PT_IND(thePT,PT_ICOR_f),i);
+    SPID_MD(&spid,0)  = PT_SMD(thePT,i);
+    SPID_MDI(&spid,0) = PT_SMDI(thePT,i);
+    if (SwapPartInterfaceData(level,level,&spid,SPID_FORTH))
+      REP_ERR_RETURN(1);
+
+    trans = PT_TRANS(thePT,i);
+    if (NPTR_INTCOR(trans) (trans,level,
+                            PT_SVD(thePT,PT_IND(thePT,PT_ICOR_t),i),
+                            PT_SVD(thePT,PT_IND(thePT,PT_ICOR_f),i),
+                            PT_SMD(thePT,i),
+                            damp,result))
+      REP_ERR_RETURN(1);
+
+    /* swap interface data back */
+    if (SwapPartInterfaceData(level,level,&spid,SPID_BACK))
+      REP_ERR_RETURN(1);
+  }
+
+  return (0);
+}
+
+static INT PartInterpolateNewVectors (NP_TRANSFER *theNP,  INT fl, INT tl,
+                                      VECDATA_DESC *x, INT *result)
+{
+  NP_PART_TRANSFER *thePT;
+  NP_TRANSFER *trans;
+  SPID_DESC spid;
+  INT i;
+
+  thePT = (NP_PART_TRANSFER *) theNP;
+
+  /* get the VECDATA_DESCs needed */
+  if (ConstructSubVD(thePT,x,&PT_IND(thePT,PT_INEW_x)))
+    REP_ERR_RETURN(1);
+
+  SPID_NVD(&spid) = 1;
+  SPID_NMD(&spid) = 0;
+
+  /* call interpolate new of part transfer numprocs */
+  for (i=0; i<PT_NTRANS(thePT); i++)
+  {
+    /* swap interface data */
+    SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_INEW_x),i);
+    SPID_VDI(&spid,0) = PT_SVDI(thePT,PT_IND(thePT,PT_INEW_x),i);
+    if (SwapPartInterfaceData(fl,tl,&spid,SPID_FORTH))
+      REP_ERR_RETURN(1);
+
+    trans = PT_TRANS(thePT,i);
+    if (NPTR_INTNEW(trans) (trans,fl,tl,
+                            PT_SVD(thePT,PT_IND(thePT,PT_INEW_x),i),
+                            result))
+      REP_ERR_RETURN(1);
+
+    /* swap interface data back */
+    if (SwapPartInterfaceData(fl,tl,&spid,SPID_BACK))
+      REP_ERR_RETURN(1);
+  }
+
+  return (0);
+}
+
+static INT PartProjectSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
+                                VECDATA_DESC *x, INT *result)
+{
+  NP_PART_TRANSFER *thePT;
+  NP_TRANSFER *trans;
+  SPID_DESC spid;
+  INT i;
+
+  thePT = (NP_PART_TRANSFER *) theNP;
+
+  /* get the VECDATA_DESCs needed */
+  if (ConstructSubVD(thePT,x,&PT_IND(thePT,PT_PROJSOL_x)))
+    REP_ERR_RETURN(1);
+
+  SPID_NVD(&spid) = 1;
+  SPID_NMD(&spid) = 0;
+
+  /* call project solution of part transfer numprocs */
+  for (i=0; i<PT_NTRANS(thePT); i++)
+  {
+    trans = PT_TRANS(thePT,i);
+    if (NPTR_PROJSOL(trans)==NULL)
+      continue;
+
+    /* swap interface data */
+    SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_PROJSOL_x),i);
+    SPID_VDI(&spid,0) = PT_SVDI(thePT,PT_IND(thePT,PT_PROJSOL_x),i);
+    if (SwapPartInterfaceData(fl,tl,&spid,SPID_FORTH))
+      REP_ERR_RETURN(1);
+
+    if (NPTR_PROJSOL(trans) (trans,fl,tl,
+                             PT_SVD(thePT,PT_IND(thePT,PT_PROJSOL_x),i),
+                             result))
+      REP_ERR_RETURN(1);
+
+    /* swap interface data back */
+    if (SwapPartInterfaceData(fl,tl,&spid,SPID_BACK))
+      REP_ERR_RETURN(1);
+  }
+
+  return (0);
+}
+
+static INT PartAdaptCorrection (NP_TRANSFER *theNP, INT level,
+                                VECDATA_DESC *c, VECDATA_DESC *b,
+                                MATDATA_DESC *A, INT *result)
+{
+  NP_PART_TRANSFER *thePT;
+  NP_TRANSFER *trans;
+  SPID_DESC spid;
+  INT i;
+
+  thePT = (NP_PART_TRANSFER *) theNP;
+
+  /* get the VECDATA_DESCs needed */
+  if (ConstructSubVD(thePT,c,&PT_IND(thePT,PT_ACOR_c)))
+    REP_ERR_RETURN(1);
+  if (ConstructSubVD(thePT,b,&PT_IND(thePT,PT_ACOR_b)))
+    REP_ERR_RETURN(1);
+
+  SPID_NVD(&spid) = 2;
+  SPID_NMD(&spid) = 1;
+
+  /* call adapt correction of part transfer numprocs */
+  for (i=0; i<PT_NTRANS(thePT); i++)
+  {
+    trans = PT_TRANS(thePT,i);
+    if (NPTR_ADPTCOR(trans)==NULL)
+      continue;
+
+    /* swap interface data */
+    SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_ACOR_c),i);
+    SPID_VDI(&spid,0) = PT_SVDI(thePT,PT_IND(thePT,PT_ACOR_c),i);
+    SPID_VD(&spid,1)  = PT_SVD(thePT,PT_IND(thePT,PT_ACOR_b),i);
+    SPID_VDI(&spid,1) = PT_SVDI(thePT,PT_IND(thePT,PT_ACOR_b),i);
+    SPID_MD(&spid,0)  = PT_SMD(thePT,i);
+    SPID_MDI(&spid,0) = PT_SMDI(thePT,i);
+    if (SwapPartInterfaceData(level,level,&spid,SPID_FORTH))
+      REP_ERR_RETURN(1);
+
+    if (NPTR_ADPTCOR(trans) (trans,level,
+                             PT_SVD(thePT,PT_IND(thePT,PT_ACOR_c),i),
+                             PT_SVD(thePT,PT_IND(thePT,PT_ACOR_b),i),
+                             PT_SMD(thePT,i),
+                             result))
+      REP_ERR_RETURN(1);
+
+    /* swap interface data back */
+    if (SwapPartInterfaceData(level,level,&spid,SPID_BACK))
+      REP_ERR_RETURN(1);
+  }
+
+  return (0);
+}
+
+static INT PartPostProcessProject (NP_TRANSFER *theNP,  INT *fl, INT tl, INT *result)
+{
+  NP_PART_TRANSFER *thePT;
+  NP_TRANSFER *trans;
+  INT i;
+
+  thePT = (NP_PART_TRANSFER *) theNP;
+
+  /* call postprocess project of part transfer numprocs */
+  for (i=0; i<PT_NTRANS(thePT); i++)
+  {
+    trans = PT_TRANS(thePT,i);
+    if (NPTR_POSTPROJ(trans)==NULL)
+      continue;
+
+    if (NPTR_POSTPROJ(trans) (trans,fl,tl,result))
+      REP_ERR_RETURN(1);
+  }
+
+  return (0);
+}
+
+static INT PartPostProcessSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
+                                    VECDATA_DESC *x, INT *result)
+{
+  NP_PART_TRANSFER *thePT;
+  NP_TRANSFER *trans;
+  SPID_DESC spid;
+  INT i;
+
+  thePT = (NP_PART_TRANSFER *) theNP;
+
+  /* get the VECDATA_DESCs needed */
+  if (ConstructSubVD(thePT,x,&PT_IND(thePT,PT_POSTSOL_x)))
+    REP_ERR_RETURN(1);
+
+  SPID_NVD(&spid) = 1;
+  SPID_NMD(&spid) = 0;
+
+  /* call postprocess solution of part transfer numprocs */
+  for (i=0; i<PT_NTRANS(thePT); i++)
+  {
+    trans = PT_TRANS(thePT,i);
+    if (NPTR_POSTSOL(trans)==NULL)
+      continue;
+
+    /* swap interface data */
+    SPID_VD(&spid,0)  = PT_SVD(thePT,PT_IND(thePT,PT_POSTSOL_x),i);
+    SPID_VDI(&spid,0) = PT_SVDI(thePT,PT_IND(thePT,PT_POSTSOL_x),i);
+    if (SwapPartInterfaceData(fl,tl,&spid,SPID_FORTH))
+      REP_ERR_RETURN(1);
+
+    if (NPTR_POSTSOL(trans) (trans,fl,tl,
+                             PT_SVD(thePT,PT_IND(thePT,PT_POSTSOL_x),i),
+                             result))
+      REP_ERR_RETURN(1);
+
+    /* swap interface data back */
+    if (SwapPartInterfaceData(fl,tl,&spid,SPID_BACK))
+      REP_ERR_RETURN(1);
+  }
+
+  return (0);
+}
+
+static INT PartTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
+                                    VECDATA_DESC *x, VECDATA_DESC *b,
+                                    MATDATA_DESC *A, INT *result)
+{
+  NP_PART_TRANSFER *thePT;
+  NP_TRANSFER *trans;
+  INT i,k;
+
+  thePT = (NP_PART_TRANSFER *) theNP;
+
+  /* get the VECDATA_DESCs needed */
+  if (ConstructSubVD(thePT,x,&PT_IND(thePT,PT_POST_x)))
+    REP_ERR_RETURN(1);
+  if (ConstructSubVD(thePT,b,&PT_IND(thePT,PT_POST_b)))
+    REP_ERR_RETURN(1);
+
+  /* call post of part transfer numprocs */
+  for (i=0; i<PT_NTRANS(thePT); i++)
+  {
+    trans = PT_TRANS(thePT,i);
+    if (NPTR_POST(trans)!=NULL)
+      if (NPTR_POST(trans) (trans,fl,tl,
+                            PT_SVD(thePT,PT_IND(thePT,PT_POST_x),i),
+                            PT_SVD(thePT,PT_IND(thePT,PT_POST_b),i),
+                            PT_SMD(thePT,i),
+                            result))
+        REP_ERR_RETURN(1);
+  }
+
+  /* dispose the auxiliary XXXDATA_DESCs */
+  for (i=0; i<PT_NTRANS(thePT); i++)
+  {
+    if (DisposeMD(PT_SMD(thePT,i)))
+      REP_ERR_RETURN(1);
+    if (DisposeMD(PT_SMDI(thePT,i)))
+      REP_ERR_RETURN(1);
+    for (k=0; k<PT_NVD(thePT); k++)
+    {
+      if (DisposeVD(PT_SVD(thePT,k,i)))
+        REP_ERR_RETURN(1);
+      if (DisposeVD(PT_SVDI(thePT,k,i)))
+        REP_ERR_RETURN(1);
+    }
+  }
+
+  return (0);
+}
+
+static INT PartTransferConstruct (NP_BASE *theNP)
+{
+  NP_TRANSFER *np;
+
+  theNP->Init                                     = PartTransferInit;
+  theNP->Display                          = PartTransferDisplay;
+  theNP->Execute                          = NPTransferExecute;
+
+  np = (NP_TRANSFER *) theNP;
+
+  np->PreProcess                          = PartTransferPreProcess;
+  np->PreProcessProject           = PartPreProcessProject;
+  np->PreProcessSolution          = PartPreProcessSolution;
+  np->RestrictDefect                      = PartRestrictDefect;
+  np->InterpolateCorrection       = PartInterpolateCorrection;
+  np->InterpolateNewVectors       = PartInterpolateNewVectors;
+  np->ProjectSolution                     = PartProjectSolution;
+  np->AdaptCorrection                     = PartAdaptCorrection;
+  np->PostProcessProject          = PartPostProcessProject;
+  np->PostProcessSolution         = PartPostProcessSolution;
+  np->PostProcess                         = PartTransferPostProcess;
+
+  return(0);
+}
+
+/****************************************************************************/
 /*
    InitTransfer	- Init this file
 
@@ -814,6 +1575,10 @@ INT InitTransfer ()
 {
   if (CreateClass(TRANSFER_CLASS_NAME ".transfer",
                   sizeof(NP_STANDARD_TRANSFER),TransferConstruct))
+    return (__LINE__);
+
+  if (CreateClass(TRANSFER_CLASS_NAME ".parttransfer",
+                  sizeof(NP_PART_TRANSFER),PartTransferConstruct))
     return (__LINE__);
 
   return (0);
