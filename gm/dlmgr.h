@@ -177,7 +177,7 @@
 \
     IFDEBUG(gm,1) \
     printf("%d: GRID_LINK_" # OTYPE "():" # Object \
-           " has listpart=%d for prio=%d\n",me,listpart,Prio);\
+           " has listpart=%d for prio=%d %x\n",me,listpart,Prio,Object);\
     fflush(stdout);\
     ENDDEBUG \
 \
@@ -253,7 +253,7 @@
         SUCC(Object) = Object1;\
       }\
       else \
-        PRED(Object1) == Object;\
+        PRED(Object1) = Object;\
 \
       do {\
         listpartprev--;\
