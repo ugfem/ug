@@ -6041,7 +6041,8 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
         #ifdef ModelP
   INT             *infobuffer;
   INT             **lbinfo;
-  INT total_elements,sum_elements,master_elements,hghost_elements,vghost_elements;
+  INT total_elements,sum_elements;
+  INT master_elements,hghost_elements,vghost_elements,vhghost_elements;
   VChannelPtr mych;
   void *ptr;
         #endif
@@ -6062,16 +6063,17 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
   }
 
         #ifdef ModelP
-  infobuffer      = (INT *) malloc((procs+1)*(MAXLEVEL+1)*3*sizeof(INT));
+  infobuffer      = (INT *) malloc((procs+1)*(MAXLEVEL+1)*ELEMENT_PRIOS*sizeof(INT));
   if (infobuffer == NULL) assert(0);
 
   lbinfo          = (INT **) malloc((procs+1)*sizeof(INT));
   if (lbinfo == NULL) assert(0);
 
-  memset((void *)infobuffer,0,(procs+1)*(MAXLEVEL+1)*3*sizeof(INT));
+  memset((void *)infobuffer,0,(procs+1)*(MAXLEVEL+1)*ELEMENT_PRIOS*sizeof(INT));
   for (i=0; i<procs+1; i++)
-    lbinfo[i] = infobuffer+(i*(MAXLEVEL+1)*3);
-  total_elements = sum_elements = master_elements = hghost_elements = vghost_elements = 0;
+    lbinfo[i] = infobuffer+(i*(MAXLEVEL+1)*ELEMENT_PRIOS);
+  total_elements = sum_elements = 0;
+  master_elements = hghost_elements = vghost_elements = vhghost_elements = 0;
         #endif
 
   if (verbose && gridflag)
@@ -6139,20 +6141,24 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
         break;
       }
                         #ifdef ModelP
-      /* count master, hghost and vghost elements */
+      /* count master, hghost, vghost and vhghost elements */
       switch (EPRIO(theElement))
       {
       case PrioMaster :
-        lbinfo[me][3*i]++;
-        lbinfo[me][3*MAXLEVEL]++;
+        lbinfo[me][ELEMENT_PRIOS*i]++;
+        lbinfo[me][ELEMENT_PRIOS*MAXLEVEL]++;
         break;
       case PrioGhost :
-        lbinfo[me][3*i+1]++;
-        lbinfo[me][3*MAXLEVEL+1]++;
+        lbinfo[me][ELEMENT_PRIOS*i+1]++;
+        lbinfo[me][ELEMENT_PRIOS*MAXLEVEL+1]++;
         break;
       case PrioVGhost :
-        lbinfo[me][3*i+2]++;
-        lbinfo[me][3*MAXLEVEL+2]++;
+        lbinfo[me][ELEMENT_PRIOS*i+2]++;
+        lbinfo[me][ELEMENT_PRIOS*MAXLEVEL+2]++;
+        break;
+      case PrioVHGhost :
+        lbinfo[me][ELEMENT_PRIOS*i+3]++;
+        lbinfo[me][ELEMENT_PRIOS*MAXLEVEL+3]++;
         break;
       default :
         assert(0);
@@ -6344,13 +6350,13 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
       for (i=1; i<procs; i++)
       {
         mych =ConnSync(i,3917);
-        RecvSync(mych,(void *)lbinfo[i],(MAXLEVEL+1)*3*sizeof(INT));
+        RecvSync(mych,(void *)lbinfo[i],(MAXLEVEL+1)*ELEMENT_PRIOS*sizeof(INT));
         DiscSync(mych);
       }
     else
     {
       mych = ConnSync(master,3917);
-      SendSync(mych,(void *)lbinfo[me],(MAXLEVEL+1)*3*sizeof(INT));
+      SendSync(mych,(void *)lbinfo[me],(MAXLEVEL+1)*ELEMENT_PRIOS*sizeof(INT));
       DiscSync(mych);
       return(GM_OK);
     }
@@ -6360,9 +6366,10 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
     {
       for (j=0; j<TOPLEVEL(theMG)+1; j++)
       {
-        lbinfo[procs][3*j] += lbinfo[i][3*j];
-        lbinfo[procs][3*j+1] += lbinfo[i][3*j+1];
-        lbinfo[procs][3*j+2] += lbinfo[i][3*j+2];
+        lbinfo[procs][ELEMENT_PRIOS*j] += lbinfo[i][ELEMENT_PRIOS*j];
+        lbinfo[procs][ELEMENT_PRIOS*j+1] += lbinfo[i][ELEMENT_PRIOS*j+1];
+        lbinfo[procs][ELEMENT_PRIOS*j+2] += lbinfo[i][ELEMENT_PRIOS*j+2];
+        lbinfo[procs][ELEMENT_PRIOS*j+3] += lbinfo[i][ELEMENT_PRIOS*j+3];
       }
     }
 
@@ -6370,21 +6377,22 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
     if (lbflag >= 3)
     {
       UserWriteF(" LEVEL");
-      for (i=0; i<3*TOPLEVEL(theMG)+3; i++)
+      for (i=0; i<ELEMENT_PRIOS*(TOPLEVEL(theMG)+1); i++)
       {
-        UserWriteF(" %9d",i/3);
+        UserWriteF(" %9d",i/ELEMENT_PRIOS);
       }
       UserWrite("\n");
       UserWriteF("PROC  ");
-      for (i=0; i<3*TOPLEVEL(theMG)+3; i++)
+      for (i=0; i<ELEMENT_PRIOS*(TOPLEVEL(theMG)+1); i++)
       {
-        UserWriteF(" %9s",(i%3==0) ? "MASTER" : (i%3==1) ? "HGHOST" : "VGHOST");
+        UserWriteF(" %9s",(i%ELEMENT_PRIOS==0) ? "MASTER" : (i%ELEMENT_PRIOS==1) ? "HGHOST" :
+                   (i%ELEMENT_PRIOS==2) ? "VGHOST" : "VHGHOST");
       }
       UserWrite("\n");
       for (i=0; i<procs; i++)
       {
         UserWriteF("%4d  ",i);
-        for (j=0; j<3*TOPLEVEL(theMG)+3; j++)
+        for (j=0; j<ELEMENT_PRIOS*(TOPLEVEL(theMG)+1); j++)
         {
           UserWriteF(" %9d",lbinfo[i][j]);
         }
@@ -6397,29 +6405,35 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
     {
       float memeff;
 
-      UserWriteF("%5s %9s %9s %9s %9s %6s\n","LEVEL","SUM","MASTER","HGHOST","VGHOST","MEMEFF");
+      UserWriteF("%5s %9s %9s %9s %9s %9s %6s\n",
+                 "LEVEL","SUM","MASTER","HGHOST","VGHOST","VHGHOST","MEMEFF");
       for (i=0; i<=TOPLEVEL(theMG); i++)
       {
-        sum_elements = lbinfo[procs][3*i]+lbinfo[procs][3*i+1]+lbinfo[procs][3*i+2];
+        sum_elements = lbinfo[procs][ELEMENT_PRIOS*i]+lbinfo[procs][ELEMENT_PRIOS*i+1]+
+                       lbinfo[procs][ELEMENT_PRIOS*i+2]+lbinfo[procs][ELEMENT_PRIOS*i+3];
         if (sum_elements > 0)
-          memeff = ((float)lbinfo[procs][3*i])/sum_elements*100;
+          memeff = ((float)lbinfo[procs][ELEMENT_PRIOS*i])/sum_elements*100;
         else
           memeff = 0.0;
-        UserWriteF("%4d %9d %9d %9d %9d  %3.2f\n",i,sum_elements,
-                   lbinfo[procs][3*i],lbinfo[procs][3*i+1],lbinfo[procs][3*i+2],memeff);
+        UserWriteF("%4d %9d %9d %9d %9d %9d  %3.2f\n",i,sum_elements,
+                   lbinfo[procs][ELEMENT_PRIOS*i],lbinfo[procs][ELEMENT_PRIOS*i+1],
+                   lbinfo[procs][ELEMENT_PRIOS*i+2],lbinfo[procs][ELEMENT_PRIOS*i+3],memeff);
       }
       UserWrite("\n");
 
-      UserWriteF("%4s %9s %9s %9s %9s %6s\n","PROC","SUM","MASTER","HGHOST","VGHOST","MEMEFF");
+      UserWriteF("%4s %9s %9s %9s %9s %9s %6s\n",
+                 "PROC","SUM","MASTER","HGHOST","VGHOST","VHGHOST","MEMEFF");
       for (i=0; i<procs; i++)
       {
-        sum_elements = lbinfo[i][3*MAXLEVEL]+lbinfo[i][3*MAXLEVEL+1]+lbinfo[i][3*MAXLEVEL+2];
+        sum_elements = lbinfo[i][ELEMENT_PRIOS*MAXLEVEL]+lbinfo[i][ELEMENT_PRIOS*MAXLEVEL+1]+
+                       lbinfo[i][ELEMENT_PRIOS*MAXLEVEL+2]+lbinfo[i][ELEMENT_PRIOS*MAXLEVEL+3];
         if (sum_elements > 0)
-          memeff = ((float)lbinfo[i][3*MAXLEVEL])/sum_elements*100;
+          memeff = ((float)lbinfo[i][ELEMENT_PRIOS*MAXLEVEL])/sum_elements*100;
         else
           memeff = 0.0;
-        UserWriteF("%4d %9d %9d %9d %9d  %3.2f\n",i,sum_elements,
-                   lbinfo[i][3*MAXLEVEL],lbinfo[i][3*MAXLEVEL+1],lbinfo[i][3*MAXLEVEL+2],memeff);
+        UserWriteF("%4d %9d %9d %9d %9d %9d  %3.2f\n",i,sum_elements,
+                   lbinfo[i][ELEMENT_PRIOS*MAXLEVEL],lbinfo[i][ELEMENT_PRIOS*MAXLEVEL+1],
+                   lbinfo[i][ELEMENT_PRIOS*MAXLEVEL+2],lbinfo[i][ELEMENT_PRIOS*MAXLEVEL+3],memeff);
       }
       UserWrite("\n");
     }
@@ -6430,18 +6444,19 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 
       for (i=0; i<procs; i++)
       {
-        master_elements += lbinfo[i][3*MAXLEVEL];
-        hghost_elements += lbinfo[i][3*MAXLEVEL+1];
-        vghost_elements += lbinfo[i][3*MAXLEVEL+2];
+        master_elements += lbinfo[i][ELEMENT_PRIOS*MAXLEVEL];
+        hghost_elements += lbinfo[i][ELEMENT_PRIOS*MAXLEVEL+1];
+        vghost_elements += lbinfo[i][ELEMENT_PRIOS*MAXLEVEL+2];
+        vhghost_elements += lbinfo[i][ELEMENT_PRIOS*MAXLEVEL+3];
       }
       total_elements = master_elements + hghost_elements + vghost_elements;
       if (total_elements > 0)
         memeff = ((float)master_elements)/total_elements*100;
       else
         memeff = 0.0;
-      UserWriteF("%9s %9s %9s %9s %6s\n","TOTAL","MASTER","HGHOST","VGHOST","MEMEFF");
-      UserWriteF("%9d %9d %9d %9d  %3.2f\n",total_elements,master_elements,hghost_elements,
-                 vghost_elements,memeff);
+      UserWriteF("%9s %9s %9s %9s %9s %6s\n","TOTAL","MASTER","HGHOST","VGHOST","VHGHOST","MEMEFF");
+      UserWriteF("%9d %9d %9d %9d %9d  %3.2f\n",total_elements,master_elements,hghost_elements,
+                 vghost_elements,vhghost_elements,memeff);
     }
 
   }
