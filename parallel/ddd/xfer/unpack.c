@@ -664,9 +664,7 @@ static void AcceptObjFromMsg (
 	     		desc->handlerLDATACONSTRUCTOR(newcopy);
 #endif
 #ifdef CPP_FRONTEND
-printf("%4d: CallHandler LDATACONSTRUCTOR %08x\n",
-me, ((DDD_Object *)(ote->hdr))->InfoGlobalId());
-	     		CallHandler(ote->hdr,LDATACONSTRUCTOR) ();
+	     		CallHandler(desc,ote->hdr,LDATACONSTRUCTOR) ();
 #endif
 #ifdef F_FRONTEND
 			desc->handlerLDATACONSTRUCTOR(&newcopy);
@@ -1267,7 +1265,7 @@ static void CallUpdateHandler (LC_MSGHANDLE xm)
 				#endif
 
 				#ifdef CPP_FRONTEND
-				CallHandler(theObjTab[i].hdr,UPDATE) ();
+				CallHandler(desc,theObjTab[i].hdr,UPDATE) ();
 				#endif
 			}
 		}

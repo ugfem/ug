@@ -762,6 +762,12 @@ int       XferActive (void);
 void      XferRegisterDelete (DDD_HDR);
 
 
+/* join.c */
+void      ddd_JoinInit (void);
+void      ddd_JoinExit (void);
+int       ddd_JoinActive (void);
+
+
 /* ident.c */
 void      ddd_IdentInit (void);
 void      ddd_IdentExit (void);

@@ -34,6 +34,7 @@
 /*            96/09/06 kb  xfer-module completely rewritten                 */
 /*            96/11/28 kb  merged F_FRONTEND functionality from code branch */
 /*            97/02/10 kb  started with CPP_FRONTEND implementation         */
+/*            98/01/28 kb  new ddd-module: Join.                            */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -47,7 +48,7 @@
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.12"
+#define DDD_VERSION    "1.8.13"
 
 
 /****************************************************************************/
@@ -159,6 +160,7 @@ enum OptionType {
   OPT_QUIET_CONSCHECK=16,          /* do ConsCheck in a quiet manner            */
   OPT_DEBUG_XFERMESGS,             /* print debug info for xfer messages        */
   OPT_INFO_XFER,                   /* display some statistical info during xfer */
+  OPT_INFO_JOIN,                   /* display some statistical info during join */
   OPT_INFO_IF_WITH_ATTR,           /* display interfaces detailed (with attrs)  */
 
   OPT_XFER_PRUNE_DELETE,           /* prune del-cmd in del/xfercopy-combination */
@@ -186,6 +188,13 @@ enum OptConstXfer {
   XFER_SHOW_OBSOLETE = 0x0001,        /* show #obsolete xfer-commands           */
   XFER_SHOW_MEMUSAGE = 0x0002,        /* show sizes of message buffers          */
   XFER_SHOW_MSGSALL  = 0x0004         /* show message contents by LowComm stats */
+};
+
+enum OptConstJoin {
+  JOIN_SHOW_NONE     = 0x0000,        /* show no statistical infos              */
+  JOIN_SHOW_OBSOLETE = 0x0001,        /* show #obsolete join-commands           */
+  JOIN_SHOW_MEMUSAGE = 0x0002,        /* show sizes of message buffers          */
+  JOIN_SHOW_MSGSALL  = 0x0004         /* show message contents by LowComm stats */
 };
 
 
@@ -344,6 +353,7 @@ enum Handlers {
 /* handler prototypes */
 
 /* handlers related to certain DDD_TYPE (i.e., member functions) */
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
 typedef void (*HandlerLDATACONSTRUCTOR)(DDD_OBJ _FPTR);
 typedef void (*HandlerDESTRUCTOR)(DDD_OBJ _FPTR);
 typedef void (*HandlerDELETE)(DDD_OBJ _FPTR);
@@ -356,9 +366,30 @@ typedef void (*HandlerXFERGATHER)(DDD_OBJ _FPTR, int _FPTR, DDD_TYPE _FPTR, void
 typedef void (*HandlerXFERSCATTER)(DDD_OBJ _FPTR, int _FPTR, DDD_TYPE _FPTR, void *, int _FPTR);
 typedef void (*HandlerXFERGATHERX)(DDD_OBJ _FPTR, int _FPTR, DDD_TYPE _FPTR, char **);
 typedef void (*HandlerXFERSCATTERX)(DDD_OBJ _FPTR, int _FPTR, DDD_TYPE _FPTR, char **, int _FPTR);
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+#endif
+#if defined(C_FRONTEND)
 typedef void (*HandlerXFERCOPYMANIP)(DDD_OBJ _FPTR);
 #endif
+
+#if defined(CPP_FRONTEND)
+class DDD_Object;  // forward declaration
+
+typedef void (DDD_Object::*HandlerLDATACONSTRUCTOR)();
+typedef void (DDD_Object::*HandlerDESTRUCTOR)();
+typedef void (DDD_Object::*HandlerDELETE)();
+typedef void (DDD_Object::*HandlerUPDATE)();
+typedef void (DDD_Object::*HandlerOBJMKCONS)(int);
+typedef void (DDD_Object::*HandlerSETPRIORITY)(DDD_PRIO);
+typedef void (DDD_Object::*HandlerXFERCOPY)(DDD_PROC, DDD_PRIO);
+typedef void (DDD_Object::*HandlerXFERDELETE)();
+typedef void (DDD_Object::*HandlerXFERGATHER)(int, DDD_TYPE, void *);
+typedef void (DDD_Object::*HandlerXFERSCATTER)(int, DDD_TYPE, void *, int);
+typedef void (DDD_Object::*HandlerXFERGATHERX)(int, DDD_TYPE, char **);
+typedef void (DDD_Object::*HandlerXFERSCATTERX)(int, DDD_TYPE, char **, int);
+typedef void (DDD_Object::*HandlerXFERCOPYMANIP)();
+#endif
+
+
 #ifdef F_FRONTEND
 typedef void (*HandlerALLOCOBJ)(DDD_OBJ _FPTR);
 typedef void (*HandlerFREEOBJ)(DDD_OBJ _FPTR);
@@ -407,14 +438,14 @@ typedef int (*ComProcXPtr)(DDD_OBJ _FPTR, void *, DDD_PROC _FPTR, DDD_PRIO _FPTR
         C++ users should implement these access functions
         as inline functions.
  */
-#ifndef __cplusplus
+/*#ifndef __cplusplus*/
 #ifdef C_FRONTEND
 #define DDD_InfoPriority(ddd_hdr)    ((ddd_hdr)->prio)
-#endif
 #define DDD_InfoGlobalId(ddd_hdr)    ((ddd_hdr)->gid)
 #define DDD_InfoAttr(ddd_hdr)       ((ddd_hdr)->attr)
 #define DDD_InfoType(ddd_hdr)       ((ddd_hdr)->typ)
 #endif
+/*#endif*/
 
 
 /****************************************************************************/
@@ -1031,6 +1062,17 @@ void     DDD_XferCopyObj (_OBJREF, DDD_PROC _FPTR, DDD_PRIO _FPTR);
 void     DDD_XferCopyObjX (_OBJREF, DDD_PROC _FPTR, DDD_PRIO _FPTR, size_t _FPTR);
 void     DDD_XferDeleteObj (_OBJREF);
 #endif
+
+
+/*
+        Join Module
+ */
+#ifdef C_FRONTEND
+void     DDD_JoinBegin (void);
+void     DDD_JoinEnd (void);
+void     DDD_JoinObj (_OBJREF, DDD_PROC _FPTR, DDD_GID _FPTR);
+#endif
+
 
 /*
         Object Manager

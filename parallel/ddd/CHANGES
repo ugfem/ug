@@ -1,5 +1,31 @@
 ---------------------------
 
+CHANGES 1.8.12 -> 1.8.13
+
+---------------------------
+980128 kb
+new DDD module 'Join'.
+	- the Join module supports joining local object copies
+	  to distributed objects by contacting one of the
+	  distributed copies on an arbitrary processor which
+	  owns a copy.
+	- the current implementation is preliminary, not tested
+	  with large applications and not tuned for efficiency.
+	- if you are able to avoid Join and use Identify, do this.
+	  Join is an expensive operation.
+980121 kb
+added healing-feature to ConsCheck.
+	- with the "healing"-feature, the ConsCheck is able to detect
+	  local coupling inconsistencies and fix them by calling
+	  AddCoupling. However, such inconsistencies indicate
+	  consistency problems elsewhere (most of the cases the
+	  application based on DDD), which should be fixed by
+	  thinking hard and reimplement code which uses DDD
+	  functionality. Therefore, the healing feature has
+	  been switched off and kept in code just in case we
+	  need it at some (improbable) point in future.
+---------------------------
+
 CHANGES 1.8.11 -> 1.8.12
 
 ---------------------------

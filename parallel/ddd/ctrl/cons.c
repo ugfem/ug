@@ -147,7 +147,7 @@ static int ConsBuildMsgInfos (CONS_INFO *allItems, int nXferItems, CONSMSG **the
   nMsgs = 0;
   for(i=0; i<nXferItems; i++)
   {
-    /* eventually create new message item */
+    /* create new message item, if necessary */
     if (allItems[i].dest != lastdest)
     {
       cm = (CONSMSG *) AllocTmp(sizeof(CONSMSG));
@@ -452,6 +452,45 @@ static int Cons2CheckSingleMsg (LC_MSGHANDLE xm, DDD_HDR *locObjs)
             error_cnt++;
           }
         }
+
+
+        /* the next loop does the backward checking, i.e., it checks
+                the couplings symmetric to the previous loop. if inconsistencies
+                are detected, then these inconsistencies are a local phenomenon
+                and can be "healed" by adding a coupling locally. this feature
+                is switched off, because this healing indicates that the
+                data structure is inconsistent, which should be repaired
+                elsewhere (in the DDD application).
+         */
+                                #ifdef ConsCheckWithAutomaticHealing
+
+        for(i2=i; i2<nItems && theCplBuf[i2].gid==theCplBuf[i].gid; i2++)
+        {
+          if (theCplBuf[i2].proc!=me)
+          {
+            int ifound = -1;
+
+            for(j2=ObjCplList(locObjs[j]); j2!=NULL; j2=CPL_NEXT(j2))
+            {
+              if (theCplBuf[i2].proc==j2->proc)
+              {
+                ifound = i2;
+                break;
+              }
+            }
+
+            if (ifound==-1)
+            {
+              sprintf(cBuffer, "%4d: healing with AddCpl(%08x, %4d, %d)\n",
+                      me, theCplBuf[i].gid, theCplBuf[i2].proc, theCplBuf[i2].prio);
+              DDD_PrintLine(cBuffer);
+
+              AddCoupling(locObjs[j], theCplBuf[i2].proc, theCplBuf[i2].prio);
+            }
+          }
+        }
+                                #endif /* ConsCheckWithAutomaticHealing */
+
 
         for(; inext<nItems && theCplBuf[inext].gid==theCplBuf[i].gid; inext++)
           ;

@@ -206,6 +206,7 @@ DDD_Library::DDD_Library (int *argcp, char ***argvp)
   ddd_IdentInit();
   ddd_IFInit();
   ddd_XferInit();
+  ddd_JoinInit();
   ddd_ConsInit();
 
   /* reset all global counters */
@@ -223,6 +224,7 @@ DDD_Library::DDD_Library (int *argcp, char ***argvp)
   ddd_SetOption(OPT_IDENTIFY_MODE,         IDMODE_LISTS);
   ddd_SetOption(OPT_WARNING_REF_COLLISION, OPT_ON);
   ddd_SetOption(OPT_INFO_XFER,             XFER_SHOW_NONE);
+  ddd_SetOption(OPT_INFO_JOIN,             JOIN_SHOW_NONE);
   ddd_SetOption(OPT_WARNING_OLDSTYLE,      OPT_ON);
   ddd_SetOption(OPT_INFO_IF_WITH_ATTR,     OPT_OFF);
   ddd_SetOption(OPT_XFER_PRUNE_DELETE,     OPT_OFF);
@@ -266,6 +268,7 @@ DDD_Library::~DDD_Library (void)
 
   /* close up all DDD components */
   ddd_ConsExit();
+  ddd_JoinExit();
   ddd_XferExit();
   ddd_IFExit();
   ddd_IdentExit();

@@ -29,6 +29,7 @@ ddd_all: $(LibPth)/libddd.a
 IdentPth = $(SrcPth)/ident
 IfPth    = $(SrcPth)/if
 XferPth  = $(SrcPth)/xfer
+JoinPth  = $(SrcPth)/join
 MgrPth   = $(SrcPth)/mgr
 
 BasicPth = $(SrcPth)/basic
@@ -283,6 +284,33 @@ supp.o: $(SrcPth)/dddi.h	\
 ###########################################################
 
 
+
+### Join Module
+
+Join-o = join.o	\
+	jcmds.o
+
+
+
+$(JoinPth)/join.h:	$(BasicPth)/lowcomm.h	\
+		$(BasicPth)/oopp.h   \
+		$(BasicPth)/ooppcc.h
+	touch $(JoinPth)/join.h
+
+join.o: $(SrcPth)/dddi.h	\
+		$(JoinPth)/join.h	\
+		$(JoinPth)/join.c
+	$(DDD_CC) $(SrcOpt) $(JoinPth)/join.c
+
+jcmds.o: $(SrcPth)/dddi.h	\
+		$(JoinPth)/join.h	\
+		$(JoinPth)/jcmds.c
+	$(DDD_CC) $(SrcOpt) $(JoinPth)/jcmds.c
+
+
+###########################################################
+
+
 ### Main Module
 
 ddd.o: $(SrcPth)/dddi.h        \
@@ -325,6 +353,7 @@ DDD-o = $(Basic-o)	\
 	$(Ident-o)	\
 	$(If-o)	\
 	$(Xfer-o)	\
+	$(Join-o)	\
 	$(Misc-o)	\
 	f2c.o		\
 	ddd.o
