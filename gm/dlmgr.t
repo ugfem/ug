@@ -2,7 +2,7 @@
 /*                                                                          */
 /* File:      dlmgr.t                                                       */
 /*                                                                          */
-/* Purpose:   defines for dynamic linked list management                    */
+/* Purpose:   templates for dynamic linked list management                  */
 /*                                                                          */
 /* Author:    Stefan Lang                                                   */
 /*            Institut fuer Computeranwendungen III                         */
