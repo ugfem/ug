@@ -4915,7 +4915,8 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
 					else
 						nbList[k] = NULL;
 			
-			theElement = InsertElement (theMG,n,Nodes,nbList,NULL);
+			/*theElement = InsertElement (theMG,n,Nodes,nbList,NULL);*/
+			theElement = InsertElement (theMG,n,Nodes,NULL,NULL);
 			ID(theElement) = eid++;
 			if (theElement == NULL)		return(GM_ERROR);
 			if (EList != NULL)			EList[nel++] = theElement;
