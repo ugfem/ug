@@ -98,10 +98,14 @@
 #define XSTR(s) # s
 #define STR(s) XSTR(s)
 
-#define YES             1
+#ifndef YES
+    #define YES         1
+#endif
 #define ON              1
 
-#define NO              0
+#ifndef NO
+    #define NO          0
+#endif
 #define OFF             0
 
 #ifndef TRUE
