@@ -10,15 +10,15 @@ then
 	cd $UGROOT/../fe/appl
 	time ugrun fe3d 1 ugtest.scr
 fi
-if test -x $UGROOT/../ns/appl2d/ns2d
+if test -x $UGROOT/../ns/appl3d/ns3d
 then
 	cd $UGROOT/../ns/appl3d
 	time ugrun ns3d 1 ugtest.scr
 fi
-if test -x $UGROOT/../sc/appl2d/sc2d
+if test -x $UGROOT/../sc/appl3d/sc3d
 then
-	cd $UGROOT/../sc/appl2d
-	time ugrun scalar2d 1 model.scr
+	cd $UGROOT/../sc/appl3d
+	time ugrun sc3d 1 test.scr
 fi
 if test -x $UGROOT/../simple/simple
 then

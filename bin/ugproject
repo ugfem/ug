@@ -15,8 +15,7 @@ then
 	exit 1;
 fi
 
-# set -e to stop after the first error; otherwise you may miss errors.
-set -e
+EXECUTABLES=""
 
 ug2 () 
 {
@@ -38,23 +37,48 @@ appl2 ()
 	then
 		ugmake simple
 	fi
+	if test -x $UGROOT/../simple/simple
+	then
+		EXECUTABLES="$EXECUTABLES simple"
+	fi
+
     if test -d $UGROOT/../diff2d
 	then
 		ugmake diff2da
 	fi
+	if test -x $UGROOT/../diff2d/appl/diff2da
+	then
+		EXECUTABLES="$EXECUTABLES diff2da"
+	fi
+
     if test -d $UGROOT/../fe
 	then
 		ugmake fe
 	fi
+	if test -x $UGROOT/../fe/appl/fe2d
+	then
+		EXECUTABLES="$EXECUTABLES fe2d"
+	fi
+
     if test -d $UGROOT/../ns
 	then
 		ugmake ns
 		ugmake ns2d
 	fi
+	if test -x $UGROOT/../ns/appl2d/ns2d
+	then
+		EXECUTABLES="$EXECUTABLES ns2d"
+	fi
+
     if test -d $UGROOT/../sc
 	then
 		ugmake sc2d
 	fi
+	if test -x $UGROOT/../sc/appl2d/sc2d
+	then
+		EXECUTABLES="$EXECUTABLES sc2d"
+	fi
+
     if test -d $UGROOT/../df
 	then
 	    ugmake dom GSF
@@ -71,38 +95,54 @@ appl3 ()
 	then
 		ugmake fe
 	fi
+	if test -x $UGROOT/../fe/appl/fe3d
+	then
+		EXECUTABLES="$EXECUTABLES fe3d"
+	fi
+
     if test -d $UGROOT/../sc
 	then
 		ugmake sc3d
 	fi
+	if test -x $UGROOT/../sc/appl3d/sc3d
+	then
+		EXECUTABLES="$EXECUTABLES sc3d"
+	fi
+
     if test -d $UGROOT/../ns
 	then
 		ugmake ns3d
+	fi
+	if test -x $UGROOT/../ns/appl3d/ns3d
+	then
+		EXECUTABLES="$EXECUTABLES ns3d"
 	fi
 }
 
 if test "$1" = "ug2"
 then
 	ug2;
-	exit 1;
+	exit 0;
 fi
 
 if test "$1" = "ug3"
 then
 	ug3;
-	exit 1;
+	exit 0;
 fi
 
 if test "$1" = "appl2"
 then
 	appl2;
-	exit 1;
+	echo $EXECUTABLES 'created'
+	exit 0;
 fi
 
 if test "$1" = "appl3"
 then
 	appl3;
-	exit 1;
+	echo $EXECUTABLES 'created'
+	exit 0;
 fi
 
 # default
@@ -113,9 +153,9 @@ cp $UGROOT/ug.conf $UGROOT/ug.conf.tmp
 ugclean all
 ugconf 2
 ugconf NONETGEN
-( ug2 );
+ug2;
 ugmake dev
-( appl2 );
+appl2;
 
 ugconf 3
 if test "$1" = "netgen"
@@ -143,8 +183,8 @@ then
 	ugmake df -i clean
 fi
 
-( ug3 );
-( appl3 );
+ug3;
+appl3;
 
 # restore ug.conf
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
@@ -152,4 +192,10 @@ mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
 ugmake tools
 ugmake ug -i ifdef
 
-echo "simple, diff2da, ns2d, ns3d, fe2d, fe3d, sc2d, sc3d created"
+if test "x$EXECUTABLES" = "x"
+then
+	echo "$0: no executable created"
+	exit 1;
+fi
+
+echo $EXECUTABLES 'created'
