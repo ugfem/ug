@@ -458,8 +458,9 @@ static int Gather_VectorCompBS (DDD_OBJ obj, void *data)
   VECTOR *pv = (VECTOR *)obj;
 
   if( VMATCH(pv,ConsBvd, ConsBvdf) )
-  {printf(PFMT "Gather_VectorCompBS: v[%d][%d] = %g\n",me,VINDEX(pv),ConsComp,VVALUE(pv,ConsComp));
-   *((DOUBLE *)data) = VVALUE(pv,ConsComp);}
+    /*{printf(PFMT"Gather_VectorCompBS: v[%d][%d] = %g\n",me,VINDEX(pv),ConsComp,VVALUE(pv,ConsComp));*/
+    *((DOUBLE *)data) = VVALUE(pv,ConsComp);
+  /*}*/
   return (NUM_OK);
 }
 
@@ -468,10 +469,9 @@ static int Scatter_VectorCompBS (DDD_OBJ obj, void *data)
   VECTOR *pv = (VECTOR *)obj;
 
   if( VMATCH(pv,ConsBvd, ConsBvdf) )
-  {
+    /*{*/
     VVALUE(pv,ConsComp) += *((DOUBLE *)data);
-    printf(PFMT "Scatter_VectorCompBS: v[%d][%d] = %g\n",me,VINDEX(pv),ConsComp,VVALUE(pv,ConsComp));
-  }
+  /*printf(PFMT"Scatter_VectorCompBS: v[%d][%d] = %g\n",me,VINDEX(pv),ConsComp,VVALUE(pv,ConsComp));}*/
 
   return (NUM_OK);
 }
@@ -481,6 +481,10 @@ INT l_vector_consistentBS (GRID *g, const BV_DESC *bvd, const BV_DESC_FORMAT *bv
   ConsBvd = bvd;
   ConsBvdf = bvdf;
   ConsComp = x;
+
+  ASSERT(g!=NULL);
+  ASSERT(bvd!=NULL);
+  ASSERT(bvdf!=NULL);
 
   DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g), sizeof(DOUBLE),
                   Gather_VectorCompBS, Scatter_VectorCompBS);

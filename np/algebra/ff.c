@@ -418,6 +418,16 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
 #ifdef ModelP
   FFMultWithMInv( bv_source, bvd_source, bvdf, aux1_comp, aux1_comp, NULL, NULL );
   FFMultWithMInv( bv_source, bvd_source, bvdf, aux2_comp, aux2_comp, NULL, NULL );
+  if ( BVNUMBER(bv_source) == -100 )       /* bv_source == Lines */
+  {
+#ifdef FFCOMM
+    FFVectorConsistent( (BLOCKVECTOR*)bv_source, aux1_comp );
+    FFVectorConsistent( (BLOCKVECTOR*)bv_source, aux2_comp );
+#else
+    if( l_vector_consistentBS( grid, bvd_source, bvdf, aux1_comp )!=NUM_OK ) REP_ERR_RETURN (1);
+    if( l_vector_consistentBS( grid, bvd_source, bvdf, aux2_comp )!=NUM_OK ) REP_ERR_RETURN (1);
+#endif
+  }
 #else
   FFMultWithMInv( bv_source, bvd_source, bvdf, aux1_comp, aux1_comp );
   FFMultWithMInv( bv_source, bvd_source, bvdf, aux2_comp, aux2_comp );
@@ -980,8 +990,16 @@ INT FFDecomp( DOUBLE wavenr,
 
                         #ifdef ModelP
       ASSERT(grid!=NULL);
-      /* make Schur complement matrix consistent */
+      /* make Schur complement matrix for lines consistent */
+      printf(PFMT " vor\n",me);
+      printmBS(bv_i,bv_i,FF_comp);
+#ifdef FFCOMM
+      FFTridiagMatConsistent( bv_i, FF_comp );
+#else
       if( l_matrix_consistent( grid, DECOMP_MATDATA_DESC_ON_LEVEL(bv), MAT_CONS )!=NUM_OK ) REP_ERR_RETURN(NUM_ERROR);
+#endif
+      printf(PFMT " nach\n",me);
+      printmBS(bv_i,bv_i,FF_comp);
                         #endif
     }
     else
@@ -992,36 +1010,36 @@ INT FFDecomp( DOUBLE wavenr,
       if ( BVNUMBER(bv_i) == -101 )                     /* crosspoints */
       {
         ASSERT(grid!=NULL);
-        /* make Schur complement matrix consistent */
+        /* make Schur complement matrix for cross points consistent */
         if( l_matrix_consistent( grid, DECOMP_MATDATA_DESC_ON_LEVEL(bv), MAT_CONS )!=NUM_OK ) REP_ERR_RETURN(NUM_ERROR);
-                                #endif
+      }
+                        #endif
     }
-  }
 #else
     FFCalculateThetaAndUpdate( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
 #endif
-  /* update BVDs for the next loop */
-  bv_im1 = bv_i;
-  SWAP( bvd_i, bvd_im1, bvd_temp );
-  bv_i = BVSUCC( bv_i );
-  while( (bv_i != bv_end) && BV_IS_EMPTY( bv_i ) )                      /* search first nonempty bv */
+    /* update BVDs for the next loop */
+    bv_im1 = bv_i;
+    SWAP( bvd_i, bvd_im1, bvd_temp );
     bv_i = BVSUCC( bv_i );
-  if( bv_i != bv_end )
-  {
-    BVD_DISCARD_LAST_ENTRY( bvd_i );
-    BVD_PUSH_ENTRY( bvd_i, BVNUMBER(bv_i), bvdf );
+    while( (bv_i != bv_end) && BV_IS_EMPTY( bv_i ) )                    /* search first nonempty bv */
+      bv_i = BVSUCC( bv_i );
+    if( bv_i != bv_end )
+    {
+      BVD_DISCARD_LAST_ENTRY( bvd_i );
+      BVD_PUSH_ENTRY( bvd_i, BVNUMBER(bv_i), bvdf );
+    }
+    /* else: bv_i and bvd_i are never used;
+       thus the content of them have not to be updated */
   }
-  /* else: bv_i and bvd_i are never used;
-     thus the content of them have not to be updated */
-}
-/* now bv_im1 and bvd_im1 points to the last block */
+  /* now bv_im1 and bvd_im1 points to the last block */
 
-/* calculate the last (T_n)^-1 */
-FFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
+  /* calculate the last (T_n)^-1 */
+  FFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
 
-/*	printvBS(bv, tv1_comp);printvBS(bv, tv2_comp);*/
-/*printf("K_comp\n"); printmBS(bv,bv,K_comp);printf("FF_comp\n"); printmBS(bv,bv,FF_comp); printf("\n");*/
-return(NUM_OK);
+  /*	printvBS(bv, tv1_comp);printvBS(bv, tv2_comp);*/
+  /*printf("K_comp\n"); printmBS(bv,bv,K_comp);printf("FF_comp\n"); printmBS(bv,bv,FF_comp); printf("\n");*/
+  return(NUM_OK);
 }
 
 

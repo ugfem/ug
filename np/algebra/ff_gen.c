@@ -251,6 +251,9 @@ void printv( INT x_nr )
   for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
   {
     VectorPosition(v,pos);
+#ifdef ModelP
+    printf(PFMT,me);
+#endif
     printf("x=%5.2f y=%5.2f ",pos[0],pos[1]);
 #ifdef __THREEDIM__
     printf("z=%5.2f ",pos[2]);
@@ -274,6 +277,9 @@ void printvgrid( GRID *g, INT x_nr )
   for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
   {
     VectorPosition(v,pos);
+#ifdef ModelP
+    printf(PFMT,me);
+#endif
     printf("x=%5.2f y=%5.2f ",pos[0],pos[1]);
 #ifdef __THREEDIM__
     printf("z=%5.2f ",pos[2]);
@@ -297,6 +303,9 @@ void printvBS( const BLOCKVECTOR *bv, INT x_nr )
   for (v=BVFIRSTVECTOR(bv); v!= BVENDVECTOR(bv); v=SUCCVC(v))
   {
     VectorPosition(v,pos);
+#ifdef ModelP
+    printf(PFMT,me);
+#endif
     printf("x=%5.2f y=%5.2f ",pos[0],pos[1]);
 #ifdef __THREEDIM__
     printf("z=%5.2f ",pos[2]);
@@ -320,9 +329,15 @@ void printm( INT m_nr )
 
   g = GRID_ON_LEVEL(GetCurrentMultigrid(), CURRENTLEVEL(GetCurrentMultigrid()));
 
+#ifdef ModelP
+  printf(PFMT,me);
+#endif
   printf("comp (%d)\n",m_nr);
   for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
   {
+#ifdef ModelP
+    printf(PFMT,me);
+#endif
     for ( w = FIRSTVECTOR( g ); w != NULL; w = SUCCVC( w ) )
     {
       for (m=VSTART(v); m!=NULL; m = MNEXT(m))
@@ -346,9 +361,15 @@ void printmgrid( GRID *g, INT m_nr )
   register VECTOR *v, *w;
   register MATRIX *m;
 
+#ifdef ModelP
+  printf(PFMT,me);
+#endif
   printf("comp (%d)\n",m_nr);
   for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
   {
+#ifdef ModelP
+    printf(PFMT,me);
+#endif
     for ( w = FIRSTVECTOR( g ); w != NULL; w = SUCCVC( w ) )
     {
       for (m=VSTART(v); m!=NULL; m = MNEXT(m))
@@ -379,6 +400,9 @@ void printmMG( MULTIGRID *theMG, INT m_nr )
     printf("comp (%d)\n",m_nr);
     for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
     {
+#ifdef ModelP
+      printf(PFMT,me);
+#endif
       for ( w = FIRSTVECTOR( g ); w != NULL; w = SUCCVC( w ) )
       {
         for (m=VSTART(v); m!=NULL; m = MNEXT(m))
@@ -403,6 +427,9 @@ void printmBS( const BLOCKVECTOR *bv_row, const BLOCKVECTOR *bv_col, INT m_nr )
   register VECTOR *v, *w;
   register MATRIX *m;
 
+#ifdef ModelP
+  printf(PFMT,me);
+#endif
   printf("comp (%d)\n",m_nr);
 
   if ( BVNUMBEROFVECTORS( bv_row ) == 0 || BVNUMBEROFVECTORS( bv_col ) == 0 )
@@ -413,6 +440,9 @@ void printmBS( const BLOCKVECTOR *bv_row, const BLOCKVECTOR *bv_col, INT m_nr )
 
   for (v=BVFIRSTVECTOR(bv_row); v!= BVENDVECTOR(bv_row); v=SUCCVC(v))
   {
+#ifdef ModelP
+    printf(PFMT,me);
+#endif
     for ( w = BVFIRSTVECTOR(bv_col); w !=BVENDVECTOR(bv_col); w = SUCCVC( w ) )
     {
       for (m=VSTART(v); m!=NULL; m = MNEXT(m))
@@ -437,16 +467,25 @@ void printPatternBS( const BLOCKVECTOR *bv_row, const BLOCKVECTOR *bv_col, INT m
   register VECTOR *v, *w;
   register MATRIX *m;
 
+#ifdef ModelP
+  printf(PFMT,me);
+#endif
   printf("comp (%d)\n",m_nr);
 
   if ( BVNUMBEROFVECTORS( bv_row ) == 0 )
   {
+#ifdef ModelP
+    printf(PFMT,me);
+#endif
     printf( "empty\n" );
     return;
   }
 
   for (v=BVFIRSTVECTOR(bv_row); v!= BVENDVECTOR(bv_row); v=SUCCVC(v))
   {
+#ifdef ModelP
+    printf(PFMT,me);
+#endif
     for ( w = BVFIRSTVECTOR(bv_col); w !=BVENDVECTOR(bv_col); w = SUCCVC( w ) )
     {
       for (m=VSTART(v); m!=NULL; m = MNEXT(m))
@@ -488,6 +527,9 @@ static void printBVrec( BLOCKVECTOR *bv_first, char *indent, const BV_DESC *bvd_
 
   for ( bv = bv_first; bv != NULL; bv = BVSUCC( bv ) )
   {
+#ifdef ModelP
+    printf(PFMT,me);
+#endif
     printf( "%s Nr. %d ", indent, BVNUMBER(bv) );
     if ( BVNUMBEROFVECTORS(bv) != 0 )
     {
@@ -534,6 +576,9 @@ void printBV( const BV_DESC_FORMAT *bvdf )
 
   if ( bv == NULL )
   {
+#ifdef ModelP
+    printf(PFMT,me);
+#endif
     printf( "No blockvectors\n" );
     return;
   }
@@ -553,6 +598,9 @@ void printBVgrid( GRID *grid, const BV_DESC_FORMAT *bvdf )
 
   if ( bv == NULL )
   {
+#ifdef ModelP
+    printf(PFMT,me);
+#endif
     printf( "No blockvectors\n" );
     return;
   }
@@ -1297,7 +1345,7 @@ INT FFMultWithMInv(
   INT v_comp,
   INT b_comp
 #ifdef ModelP
-  ,const VECDATA_DESC *v,
+  ,const VECDATA_DESC *v,                                       /* braucht man nicht mehr! entfernen !!!!*/
   GRID *grid
 #endif
   )
@@ -1364,7 +1412,7 @@ INT FFMultWithMInv(
 
   /* set up stop-block (last non-empty block) */
   bv_stop = BVDOWNBVLAST(bv);
-  while( BV_IS_EMPTY( bv_stop ) && (bv_stop != BVDOWNBV(bv)) )          /* search first nonempty bv */
+  while( BV_IS_EMPTY( bv_stop ) && (bv_stop != BVDOWNBV(bv)) )          /* search last nonempty bv */
     bv_stop = BVPRED( bv_stop );
 
   /* set up first block */
@@ -1395,19 +1443,18 @@ INT FFMultWithMInv(
 #else
                 #ifdef ModelP
     FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, b_comp, NULL, NULL );
+
+    /* in the case of ModelP: make the new solution on the interface consistent */
+    if( BVNUMBER(bv_i) == -100 )             /* lines blockvector */
+#ifdef FFCOMM
+      FFVectorConsistent( bv_i, aux_comp );
+#else
+      if( l_vector_consistentBS( grid, bvd_i, bvdf, aux_comp )!=NUM_OK ) REP_ERR_RETURN (1);
+#endif
                 #else
     FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, b_comp );
                 #endif
 #endif
-
-#ifdef ModelP
-    if( BVNUMBER(bv_i) == -100 )             /* lines blockvector */
-    {
-      /* in the case of ModelP: make the new solution on the interface consistent */
-      if( l_vector_consistentBS( grid, bvd_i, bvdf, aux_comp )!=NUM_OK ) REP_ERR_RETURN (1);
-    }
-#endif
-
     /* b_i+1 -= L_(i+1,i) * aux_i */
     dmatmul_minusBS( bv_ip1, bvd_i, bvdf, b_comp, L_comp, aux_comp );
 
@@ -1437,19 +1484,22 @@ INT FFMultWithMInv(
 #else
         #ifdef ModelP
   FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, b_comp, NULL, NULL );
-        #else
+
+  /* lines or cross blockvector */
+  if( (BVNUMBER(bv_i) == -100) || (BVNUMBER(bv_i) == -101) )
+  {
+#ifdef FFCOMM
+    if ( BVNUMBER(bv_i) == -100 )
+      FFVectorConsistent( bv_i, v_comp );
+    else
+    if( l_vector_consistentBS( grid, bvd_i, bvdf, v_comp )!=NUM_OK ) REP_ERR_RETURN (1);
+#else
+    if( l_vector_consistentBS( grid, bvd_i, bvdf, v_comp )!=NUM_OK ) REP_ERR_RETURN (1);
+#endif
+  }
+#else
   FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, b_comp );
         #endif
-#endif
-
-#ifdef ModelP
-  if( BVNUMBER(bv_i) == -100 )       /* lines blockvector */
-  {
-    ASSERT( v != NULL );
-    ASSERT( grid != NULL );
-    /* in the case of ModelP: make the new solution on the interface consistent */
-    if( l_vector_consistentBS( grid, bvd_i, bvdf, v_comp )!=NUM_OK ) REP_ERR_RETURN (1);
-  }
 #endif
 
   /* solve upper triangular matrix; the last block is already calculated */
@@ -1490,6 +1540,14 @@ INT FFMultWithMInv(
 #else
                 #ifdef ModelP
     FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, v_comp, NULL, NULL );
+
+    /* in the case of ModelP: make the new solution on the interface consistent */
+    if( BVNUMBER(bv_i) == -100 )             /* lines blockvector */
+#ifdef FFCOMM
+      FFVectorConsistent( bv_i, v_comp );
+#else
+      if( l_vector_consistentBS( grid, bvd_i, bvdf, v_comp )!=NUM_OK ) REP_ERR_RETURN (1);
+#endif
                 #else
     FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, v_comp );
                 #endif

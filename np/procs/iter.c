@@ -3144,10 +3144,14 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
 {
   NP_FF *np;
   MULTIGRID *theMG;
-  INT i;
+  INT i, num_buffers;
 
   np = (NP_FF *) theNP;
   theMG = np->smoother.iter.base.mg;
+
+#ifdef FF_ModelP
+  num_buffers = FFStartComm( BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level)))), FFStartDeallocBuffer, FFCommNone, NULL );
+#endif
 
   if (NPFF_tv(np) != NULL)
     FreeVD(theMG,level,level,NPFF_tv(np));
@@ -3164,7 +3168,6 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
     FF_Mats[i] = DUMMY_COMP;
   }
 
-
   for( i=0; i<FF_MAX_VECS; i++ )
   {
     if ( FF_Vecs[i] != DUMMY_COMP )
@@ -3174,6 +3177,10 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
       FF_Vecs[i] = DUMMY_COMP;
     }
   }
+
+#ifdef FF_ModelP
+  FFFinishComm( BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level)))), FFFinishDeallocBuffer, NULL, num_buffers );
+#endif
 
   FreeAllBV( GRID_ON_LEVEL(theMG,level) );
   if (MGCreateConnection(theMG))        /* restore the disposed connections */

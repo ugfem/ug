@@ -79,6 +79,8 @@
 #define FREE_AUX_VEC(vec)                       (TOS_FF_Vecs--);
 #endif
 
+/* if defined, special BV communication routines are used */
+#define FFCOMM
 
 /* solve subproblems in MultWithMInv exactly by recursive solving */
 #define MINV_EXACTQQQ
@@ -119,11 +121,45 @@
 /* determine theta analytically as eigenvalue */
 #define THETA_ANAQQQ
 
+/* macros for communication buffer */
+#define FFMAX_TRIES     50000000  /* max. number of tries til timeout in communication */
+
+#define FFCommBufferBV(bv)      ((FFCommBuffer*)BVUSERDATA(bv))
+#define FFVChannel(bv)      (FFCommBufferBV(bv)->vc)
+#define FFMsgIn(bv)             (FFCommBufferBV(bv)->msgIn)
+#define FFMsgOut(bv)            (FFCommBufferBV(bv)->msgOut)
+#define FFBufferIn(bv)      (FFCommBufferBV(bv)->inbuffer)
+#define FFBufferOut(bv)     (FFCommBufferBV(bv)->outbuffer)
+
+#define FFHasCommBuffer(bv) ((bv)!=NULL && FFCommBufferBV(bv)!=NULL && FFBufferIn(bv)!=NULL && FFBufferOut(bv)!=NULL && FFVChannel(bv)!=NULL)
+
+#define FFCommTridiagMatSize(bv)        ((3 * BVNUMBEROFVECTORS(bv) - 2) * sizeof(DOUBLE))
+#define FFCommVecSize(bv)                       (BVNUMBEROFVECTORS(bv) * sizeof(DOUBLE))
+#define FFCommSize(bv,ffcommobjt)       ((ffcommobjt)==FFCommVec ? FFCommVecSize(bv) : (ffcommobjt)==FFCommTridiagMat ? FFCommTridiagMatSize(bv) : -1)
+#define FFCommMaxSize(bv)                       FFCommTridiagMatSize(bv)
+
 /****************************************************************************/
 /*																			*/
 /* data structures exported by the corresponding source file				*/
 /*																			*/
 /****************************************************************************/
+
+struct ffcommbuffer
+{
+  VChannelPtr vc;
+  msgid msgIn, msgOut;
+  char *inbuffer, *outbuffer;
+  DOUBLE bufferspace[1];                /* will be extended at allocation time! */
+  /* type DOUBLE neccessary for maximal alignment */
+};
+
+typedef struct ffcommbuffer FFCommBuffer;
+
+typedef enum ffcommobject {FFCommNone,FFCommVec,FFCommTridiagMat} FFCommObjectType;
+
+typedef void (*FFBufferProc)(char *bp, BLOCKVECTOR *bv);
+typedef INT (*FFStartProc)(BLOCKVECTOR *bv, FFCommObjectType ffcommobjt, FFBufferProc b_proc);
+typedef INT (*FFFinishFct)(BLOCKVECTOR *bv, FFBufferProc b_proc);
 
 /****************************************************************************/
 /*																			*/
@@ -175,6 +211,19 @@ extern INT aux6_COMP;
 /* function declarations													*/
 /*																			*/
 /****************************************************************************/
+
+#ifdef ModelP
+INT FFStartDeallocBuffer( BLOCKVECTOR *bv, FFCommObjectType ffcommobjt, FFBufferProc b_proc );
+INT FFFinishDeallocBuffer( BLOCKVECTOR *bv, FFBufferProc b_proc );
+
+INT FFStartComm( BLOCKVECTOR *bv, FFStartProc s_proc, FFCommObjectType ffcommobjt, FFBufferProc b_proc );
+void FFFinishComm( BLOCKVECTOR *bv, FFFinishFct f_fct, FFBufferProc b_proc, INT calls );
+void FFVectorConsistent( BLOCKVECTOR *bv, INT v_comp );
+void FFTridiagMatConsistent( BLOCKVECTOR *bv, INT m_comp );
+#endif
+
+
+
 INT     storeVectorBS( BLOCKVECTOR *bv, INT x_comp, GRID *grid );
 INT     restoreVectorBS( BLOCKVECTOR *bv, INT x_comp );
 
