@@ -615,64 +615,6 @@ EVECTOR *CreateElementVectorEvalProcFromCoeffProc (const char *name, CoeffProcPt
 
 /**************************************************************************/
 /*
-   NodeValue - generic plot funtion
-
-   SYNOPSIS:
-   static DOUBLE NodeValue (const ELEMENT *theElement,
-   const COORD **CornersCoord, COORD *LocalCoord);
-
-   PARAMETERS:
-   .  theElement - pointer to an element
-   .  CornersCoord - corner coordinates
-   .  LocalCoord - local coordinate
-
-   DESCRIPTION:
-   This function plots the values of a node vector, interpolated by the
-   standard shape functions.
-
-   RETURN VALUE:
-   DOUBLE  value
- */
-/*************************************************************************/
-
-static PreprocessNodeValue (const char *name, MULTIGRID *theMG)
-{
-  SYMBOL *theSymbol;
-  VECDATA_DESC *theVD;
-  INT i;
-
-  if ((theSymbol=GetSymbol(ENVITEM_NAME(MGFORMAT(theMG)),name))==NULL)
-    return (1);
-
-  if (!SYM_IS_VEC(theSymbol))
-    return (2);
-
-  theVD = SYM_VEC_DESC(theSymbol);
-
-  if (VD_NCMPS_IN_TYPE(theVD,NODEVECTOR)<1)
-    return (3);
-
-  nodecomp = VD_CMP_OF_TYPE(theVD,NODEVECTOR,0);
-
-  return (0);
-}
-
-static DOUBLE NodeValue (const ELEMENT *theElement,
-                         const COORD **CornersCoord, COORD *LocalCoord)
-{
-  INT i,n;
-  DOUBLE phi;
-
-  n = CORNERS_OF_ELEM(theElement);
-  phi = 0.0;
-  for (i=0; i<n; i++)
-    phi += GN(n,i,LocalCoord)*VVALUE(NVECTOR(CORNER(theElement,i)),nodecomp);
-
-  return(phi);
-}
-
-/**************************************************************************/
-/*
    NodeIndex - plots vector index of the node vectors
 
    SYNOPSIS:
@@ -782,75 +724,6 @@ static void GradNodeIndex (const ELEMENT *theElement, const COORD **theCorners, 
 
 #endif
 
-/**************************************************************************/
-/*
-   NodeVector - plots the vector of node values
-
-   SYNOPSIS:
-   static void NodeVector (const ELEMENT *theElement,
-   const COORD **theCorners, COORD *LocalCoord, DOUBLE *values);
-
-   PARAMETERS:
-   .  theElement - pointer to an element
-   .  CornersCoord - corner coordinates
-   .  LocalCoord - local coordinate
-   .  values - plot vector
-
-   DESCRIPTION:
-   This function plots the vector of node values.
-
-   RETURN VALUE:
-   void
- */
-/*************************************************************************/
-
-static PreprocessNodeVector (const char *name, MULTIGRID *theMG)
-{
-  SYMBOL *theSymbol;
-  VECDATA_DESC *theVD;
-  INT i;
-
-  if ((theSymbol=GetSymbol(ENVITEM_NAME(MGFORMAT(theMG)),name))==NULL)
-    return (1);
-
-  if (!SYM_IS_VEC(theSymbol))
-    return (2);
-
-  theVD = SYM_VEC_DESC(theSymbol);
-
-  if (VD_NCMPS_IN_TYPE(theVD,NODEVECTOR)<DIM)
-    return (3);
-
-  nodecomp = VD_CMP_OF_TYPE(theVD,NODEVECTOR,0);
-
-  for (i=1; i<DIM; i++)
-    if ((nodecomp+i) != VD_CMP_OF_TYPE(theVD,NODEVECTOR,i))
-      return (4);
-
-  return (0);
-}
-
-static void NodeVector (const ELEMENT *theElement, const COORD **theCorners,
-                        COORD *LocalCoord, DOUBLE *values)
-{
-  VECTOR *v;
-  INT i,j,n;
-  DOUBLE s;
-
-  n = CORNERS_OF_ELEM(theElement);
-  V_DIM_CLEAR(values);
-
-  for (i=0; i<n; i++)
-  {
-    v = NVECTOR(CORNER(theElement,i));
-    s = GN(n,i,LocalCoord);
-    for (j=0; j<DIM; j++)
-      values[i] += s*VVALUE(v,nodecomp+i);
-  }
-
-  return;
-}
-
 /****************************************************************************/
 /*
    InitEvalProc	- Init this file
@@ -917,9 +790,7 @@ INT InitEvalProc ()
 
   /* install general plot procs */
   if (CreateElementValueEvalProc("nindex",PreprocessNodeIndex,NodeIndex)==NULL) return(1);
-  if (CreateElementValueEvalProc("nvalue",PreprocessNodeValue,NodeValue)==NULL) return(1);
   if (CreateElementVectorEvalProc("gradnindex",PreprocessNodeIndex,GradNodeIndex,DIM)==NULL) return(1);
-  if (CreateElementVectorEvalProc("nvector",PreprocessNodeVector,NodeVector,DIM)==NULL) return(1);
 
   /* init variables used for CoeffProcElemEval */
   Couple_for_ElemValue.nUsed  = 0;
