@@ -521,11 +521,11 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
    InitScreen - Init rest of GUI and return ptr to screen outputdevice
 
    SYNOPSIS:
-   OUTPUTDEVICE *InitScreen (int argc, char **argv, INT *error);
+   OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error);
 
    PARAMETERS:
-   .  argc - argument counter
-   .  argv - argument vector
+   .  argcp - pointer to argument counter
+   .  argv  - argument vector
    .  error -
 
    DESCRIPTION:
@@ -539,7 +539,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
 
 /****************************************************************************/
 
-OUTPUTDEVICE *InitScreen (int argc, char **argv, INT *error)
+OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 {
   /* init shell etc */
   if (ShellInitAndOpen(&shell)!=0)
@@ -561,3 +561,8 @@ OUTPUTDEVICE *InitScreen (int argc, char **argv, INT *error)
   *error = 0;
   return (MacOutputDevice);
 }
+
+
+
+void ExitScreen (void)
+{}
