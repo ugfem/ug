@@ -267,12 +267,19 @@ static const char *ConvertFileName (const char *fname)
 #endif
 
 const char *BasedConvertedFilename (const char *fname)
+/* NOTE: once a filename has passed through BasedConvertedFilename() it is forbidden to
+                 call BasedConvertedFilename() a second time for this filename due to
+                 static result string.
+ */
 {
   PRINTDEBUG(low,2,("BasedConvertedFilename: fname= '%s'\n",fname));
   if (fname[0]!='/' && fname[0]!='~')                   /* use BasePath only if no absolute path specified */
   {
     static char based_filename[MAXPATHLENGTH];
 
+    assert(fname!=based_filename);              /* avoid that the result of a previous call to BasedConvertedFilename() is fed back;
+                                                                                   in this case the new result would interfere with the given input name and corrupt the result
+                                                                                   (for example only ./ would be returned)*/
     strcpy(based_filename,BasePath);
     strcat(based_filename,fname);
     SimplifyPath(based_filename);
@@ -286,7 +293,7 @@ const char *BasedConvertedFilename (const char *fname)
   }
 }
 
-FILE *fopen_r (const char *fname, const char *mode, int do_rename)
+static int rename_if_necessary( const char *fname, int do_rename)
 {
   FILE *f;
 
@@ -302,12 +309,111 @@ FILE *fopen_r (const char *fname, const char *mode, int do_rename)
     strcat(new_fname,".");
 
     if (stat(fname, &fstat)<0)
-      return(FT_UNKNOWN);
+      return(1);
     Time = fstat.st_mtime;
-    strftime(new_fname+strlen(fname)+1,64,"%y%m%d%H%M",localtime(&Time));
+    strftime(new_fname+strlen(fname)+1,64,"%y%m%d%H%M%S",localtime(&Time));
 
-    rename(fname,new_fname);                    /* TODO: check success? */
+    if (rename(fname,new_fname)!=0)
+      return(1);
   }
+  return (0);           /* ok */
+}
+
+
+/****************************************************************************/
+/*D
+        mkdir_r - create a directory incl. renaming option
+
+        SYNOPSIS:
+        int mkdir_r (const char *fname, mode_t mode, int do_rename)
+
+    PARAMETERS:
+   .   fname - directory name with path convention in UNIX-style; may not be passed through BasedConvertedFilename()
+   .   mode - creation mode in UNIX-style (see mkdir(2))
+   .   do_rename - if TRUE an already existing subdirectory will be renamed
+
+        DESCRIPTION:
+    This function creates an directory and renames an already existing one
+        instead of overwriting it if specified.
+        fname may not be passed through BasedConvertedFilename().
+
+        RETURN VALUE:
+        int
+   .n   0 sucessfull completion
+   .n      != 0 error occured
+
+        SEE ALSO:
+        mkdir(2), fopen_r
+   D*/
+/****************************************************************************/
+
+int mkdir_r (const char *fname, mode_t mode, int do_rename)
+{
+  const char *converted_name = BasedConvertedFilename(fname);
+
+  if (do_rename)
+  {
+    if (rename_if_necessary( converted_name, do_rename)!=0)
+      return (1);
+
+    return mkdir(converted_name,mode);
+  }
+  else
+  {
+    switch (filetype(fname))                    /* filetype needs an NOT BasedConvertedFilename'ed filename */
+    {
+    case FT_UNKNOWN :                           /* file doesn't exist, thus create it */
+      return mkdir(converted_name,mode);
+
+    case FT_DIR :
+      return 0;                                         /* OK, directory exists already */
+
+    case FT_FILE :
+      UserWriteF("mkdir_r(): file %s exists already as ordinary file; can't create directory with same name.\n",converted_name);
+      return 1;
+
+    case FT_LINK :
+      UserWriteF("mkdir_r(): file %s exists already as a link; can't create directory with same name.\n",converted_name);
+      return 1;
+
+    default :
+      UserWriteF("mkdir_r(): unknown file type %d for file %s\n",filetype(fname),converted_name);
+      return 1;
+    }
+  }
+}
+
+/****************************************************************************/
+/*D
+        fopen_r - create a file incl. renaming option
+
+        SYNOPSIS:
+        int fopen_r (const char *fname, const char *mode, int do_rename)
+
+    PARAMETERS:
+   .   fname - file name with path convention in UNIX-style
+   .   mode - file opening mode in UNIX-style (see fopen(2))
+   .   do_rename - if TRUE an already existing file will be renamed
+
+        DESCRIPTION:
+    This function opens a file and renames an already existing one
+        instead of overwriting it if specified.
+
+        RETURN VALUE:
+        int
+   .n   0 sucessfull completion
+   .n      != 0 error occured
+
+        SEE ALSO:
+        fopen(2), mkdir_r
+   D*/
+/****************************************************************************/
+
+FILE *fopen_r (const char *fname, const char *mode, int do_rename)
+{
+  if (rename_if_necessary( fname, do_rename)!=0)
+    return (NULL);
+
   return fopen(fname,mode);
 }
 
@@ -333,7 +439,6 @@ FILE *fopen_r (const char *fname, const char *mode, int do_rename)
    D*/
 /****************************************************************************/
 
-
 size_t filesize (const char *fname)
 {
   struct stat fstat;
@@ -354,11 +459,12 @@ size_t filesize (const char *fname)
         int filetype (const char *fname)
 
     PARAMETERS:
-   .   fname - filename with path convention in UNIX-style
+   .   fname - filename with path convention in UNIX-style; it may not be passed through BasedConvertedFilename()
 
         DESCRIPTION:
     This functon returns the type of the given file
     or FT_UNKNOWN if an error occurs.
+        fname may not be passed through BasedConvertedFilename().
 
         RETURN VALUE:
         int
@@ -555,6 +661,7 @@ INT ReadSearchingPaths (const char *filename, const char *paths)
 
   return (0);
 }
+
 /****************************************************************************/
 /*D
         DirCreateUsingSearchPaths - create a directory searching in the directories specified
@@ -564,7 +671,7 @@ INT ReadSearchingPaths (const char *filename, const char *paths)
         int DirCreateUsingSearchPaths (const char *fname, const char *paths);
 
         PARAMETERS:
-   .   fname - file name to be opened
+   .   fname - subdirectory name to be created
    .   paths - try paths specified in the environment item '/Paths/<paths> which was
                         set by --> 'ReadSearchingPaths'
 
@@ -584,44 +691,95 @@ INT ReadSearchingPaths (const char *filename, const char *paths)
    .n      != 0 error occured
 
         SEE ALSO:
-        mkdir(2)
+        DirCreateUsingSearchPaths_r, mkdir(2)
    D*/
 /****************************************************************************/
 
 int DirCreateUsingSearchPaths (const char *fname, const char *paths)
 {
+  return DirCreateUsingSearchPaths_r ( fname, paths, FALSE);            /* no renaming */
+}
+
+/****************************************************************************/
+/*D
+        DirCreateUsingSearchPaths_r - create a subdirectory searching in the directories specified
+                        in the environment item '/Paths/<paths>' incl. renaming option
+
+        SYNOPSIS:
+        int DirCreateUsingSearchPaths (const char *fname, const char *paths, int rename);
+
+        PARAMETERS:
+   .   fname - subdirectory name to be created
+   .   paths - try paths specified in the environment item '/Paths/<paths> which was
+                        set by --> 'ReadSearchingPaths'
+   .   rename - if TRUE an already existing subdirectory will be renamed
+
+        DESCRIPTION:
+        The functions trys to create a subdirectory with 'filename' using one by one the
+        paths specified in the environment item '/Paths/<paths> which was
+        set by --> 'ReadSearchingPaths'. It is used in several places in ug (all paths
+        are read from the standard --> 'defaults' file)":"
+
+   .n   'srciptpaths' is used by the interpreter for script execution
+   .n   'gridpaths' is used by ugio to read grids from (they are stored in the
+   .n   first path
+
+        RETURN VALUE:
+        int
+   .n   0 sucessfull completion
+   .n      != 0 error occured
+
+        SEE ALSO:
+        DirCreateUsingSearchPaths, mkdir(2)
+   D*/
+/****************************************************************************/
+
+int DirCreateUsingSearchPaths_r (const char *fname, const char *paths, int rename)
+{
   PATHS *thePaths;
+  FILE *parentDir;
 
   char fullname[MAXPATHLENGTH];
-  INT i,fnamelen,mode,error;
+  INT i,fnamelen,error;
+  mode_t mode;
 
   fnamelen = strlen(fname);
         #ifndef __MACINTOSH__
-  mode = S_IRUSR | S_IWUSR | S_IXUSR |
-         S_IRGRP | S_IXGRP;
+  mode = S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP;
         #else
   mode = 0;       /* ignored on Macintosh */
         #endif
 
   PRINTDEBUG(low,1,("DirCreateUsingSearchPaths\n"));
   if (paths == NULL)
-    if ((error=mkdir(BasedConvertedFilename(fname),mode))!=0) return (1);
+  {
+    if ((error=mkdir_r(fname,mode,rename))!=0)
+      return (1);
+    return (0);
+  }
 
   if ((thePaths=GetPaths(paths))==NULL)
-    return (0);
+    return (1);
 
   for (i=0; i<thePaths->nPaths; i++)
   {
+    /* test whether parent directory exists */
+    if ( (parentDir=fopen(thePaths->path[i],"r")) == NULL )
+      continue;                         /* this parent directory doesn't exist; try the next one */
+    if( (error=fclose(parentDir)) != 0 )
+      return (1);
+
     if (strlen(thePaths->path[i])+fnamelen>MAXPATHLENGTH)
-      return (0);
+      return (1);
 
     strcpy(fullname,thePaths->path[i]);
     strcat(fullname,fname);
 
-    if ((error=mkdir(BasedConvertedFilename(fullname),mode))!=0)
+    if ((error=mkdir_r(fullname,mode,rename))!=0)
       return (1);
+    return (0);                 /* subdirectory created sucessfully */
   }
-  return (0);
+  return (1);
 }
 
 /****************************************************************************/
@@ -653,50 +811,29 @@ int DirCreateUsingSearchPaths (const char *fname, const char *paths)
    .n   pointer to file opened, 'NULL' if error
 
         SEE ALSO:
-        ReadSearchingPaths, fileopen
+        FileOpenUsingSearchPaths_r, FileOpenUsingSearchPath, FileOpenUsingSearchPath_r, GetPaths, ReadSearchingPaths, fileopen
    D*/
 /****************************************************************************/
 
 FILE *FileOpenUsingSearchPaths (const char *fname, const char *mode, const char *paths)
 {
-  PATHS *thePaths;
-  FILE *theFile;
-  char fullname[MAXPATHLENGTH];
-  INT i,fnamelen;
-
-  fnamelen = strlen(fname);
-
-  if ((thePaths=GetPaths(paths))==NULL)
-    return (NULL);
-
-  for (i=0; i<thePaths->nPaths; i++)
-  {
-    if (strlen(thePaths->path[i])+fnamelen>MAXPATHLENGTH)
-      return (NULL);
-
-    strcpy(fullname,thePaths->path[i]);
-    strcat(fullname,fname);
-
-    if ((theFile=fileopen(fullname,mode))!=NULL)
-      return (theFile);
-  }
-
-  return (NULL);
+  return FileOpenUsingSearchPaths_r( fname, mode, paths, FALSE );       /* no renaming */
 }
 
 /****************************************************************************/
 /*D
-        FileOpenUsingSearchPaths - open file searching in the directories specified
-                        in the environment item '/Paths/<paths>'
+        FileOpenUsingSearchPaths_r - open file searching in the directories specified
+                        in the environment item '/Paths/<paths>' incl. renaming option
 
         SYNOPSIS:
-        FILE *FileOpenUsingSearchPaths (const char *fname, const char *mode, const char *paths)
+        FILE *FileOpenUsingSearchPaths_r (const char *fname, const char *mode, const char *paths, int rename)
 
     PARAMETERS:
    .   fname - file name to be opened
    .   mode - see ANSI-C 'fopen'
    .   paths - try paths specified in the environment item '/Paths/<paths> which was
                         set by --> 'ReadSearchingPaths'
+   .   rename - if TRUE an already existing file will be renamed (wise only for writing)
 
         DESCRIPTION:
         The functions trys to open the file with 'filename' using one by one the
@@ -713,7 +850,7 @@ FILE *FileOpenUsingSearchPaths (const char *fname, const char *mode, const char 
    .n   pointer to file opened, 'NULL' if error
 
         SEE ALSO:
-        ReadSearchingPaths, fileopen
+        FileOpenUsingSearchPaths, FileOpenUsingSearchPath, FileOpenUsingSearchPath_r, GetPaths, ReadSearchingPaths, fileopen
    D*/
 /****************************************************************************/
 
@@ -764,38 +901,27 @@ FILE *FileOpenUsingSearchPaths_r (const char *fname, const char *mode, const cha
    .n   pointer to file opened, 'NULL' if error
 
         SEE ALSO:
-        FileOpenUsingSearchPaths, fileopen
+        FileOpenUsingSearchPath_r, FileOpenUsingSearchPaths, FileOpenUsingSearchPaths_r, fileopen
    D*/
 /****************************************************************************/
 
 FILE *FileOpenUsingSearchPath (const char *fname, const char *mode, const char *path)
 {
-  FILE *theFile;
-  char fullname[MAXPATHLENGTH];
-
-  if (strlen(path)+strlen(fname)>MAXPATHLENGTH)
-    return (NULL);
-
-  strcpy(fullname,path);
-  strcat(fullname,fname);
-
-  if ((theFile=fileopen(fullname,mode))!=NULL)
-    return (theFile);
-
-  return (NULL);
+  return FileOpenUsingSearchPath_r( fname, mode, path, FALSE );         /* no renaming */
 }
 
 /****************************************************************************/
 /*D
-        FileOpenUsingSearchPath - try to open a file in the specified path
+        FileOpenUsingSearchPath_r - try to open a file in the specified path and renaming option
 
         SYNOPSIS:
-        FILE *FileOpenUsingSearchPath (const char *fname, const char *mode, const char *path)
+        FILE *FileOpenUsingSearchPath_r (const char *fname, const char *mode, const char *path, int rename)
 
     PARAMETERS:
    .   fname - open file with this name
    .   mode - see ANSI-C 'fopen'
    .   path - path to which fname is to be appended
+   .   rename - if TRUE an already existing file will be renamed (wise only for writing)
 
         DESCRIPTION:
         Try to open a file in the specified path.
@@ -805,7 +931,7 @@ FILE *FileOpenUsingSearchPath (const char *fname, const char *mode, const char *
    .n   pointer to file opened, 'NULL' if error
 
         SEE ALSO:
-        FileOpenUsingSearchPaths, fileopen
+        FileOpenUsingSearchPath, FileOpenUsingSearchPaths, FileOpenUsingSearchPaths_r, fileopen
    D*/
 /****************************************************************************/
 
@@ -869,12 +995,12 @@ int FileTypeUsingSearchPaths (const char *fname, const char *paths)
   fnamelen = strlen(fname);
 
   if ((thePaths=GetPaths(paths))==NULL)
-    return (0);
+    return (FT_UNKNOWN);
 
   for (i=0; i<thePaths->nPaths; i++)
   {
     if (strlen(thePaths->path[i])+fnamelen>MAXPATHLENGTH)
-      return (0);
+      return (FT_UNKNOWN);
 
     strcpy(fullname,thePaths->path[i]);
     strcat(fullname,fname);
