@@ -354,6 +354,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
+void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, INT *check);
+
 #ifdef ModelPTest
 
 
@@ -5633,10 +5635,10 @@ static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContex
 
 /****************************************************************************/
 /*
-   RefineGrid - refine one level of the grid
+   AdaptGrid - adapt one level of the multigrid
 
    SYNOPSIS:
-   static int RefineGrid (GRID *theGrid, INT *nadapted)
+   static int AdaptGrid (GRID *theGrid, INT *nadapted)
 
    PARAMETERS:
 .  theGrid - grid level to refine
@@ -5652,7 +5654,11 @@ static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContex
 */
 /****************************************************************************/
 
-static int RefineGrid (GRID *theGrid, INT *nadapted)
+#ifdef ModelP
+static int AdaptLocalGrid (GRID *theGrid, INT *nadapted)
+#else
+static int AdaptGrid (GRID *theGrid, INT *nadapted)
+#endif
 {
 	INT modified = 0;
 	ELEMENT *theElement;
@@ -5663,7 +5669,7 @@ static int RefineGrid (GRID *theGrid, INT *nadapted)
 	UpGrid = UPGRID(theGrid);
 	if (UpGrid==NULL) RETURN(GM_FATAL);
 
-	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),("RefineGrid(%d):\n",GLEVEL(theGrid)),"");
+	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),("AdaptGrid(%d):\n",GLEVEL(theGrid)),"");
 
 	#ifdef IDENT_ONLY_NEW
 	{
@@ -5800,12 +5806,113 @@ if (0)
 		RESETMGSTATUS(MYMG(UpGrid));
 	}
 	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),
-		("END RefineGrid(%d):\n",GLEVEL(theGrid)),"");
+		("END AdaptGrid(%d):\n",GLEVEL(theGrid)),"");
 
 	*nadapted = modified;
 
 	return(GM_OK);
 }
+
+#ifdef ModelP
+static int AdaptGrid (GRID *theGrid, INT toplevel, INT level, INT newlevel, INT *nadapted)
+{
+	GRID *FinerGrid = UPGRID(theGrid);
+
+	#ifdef UPDATE_FULLOVERLAP	
+	DDD_XferBegin();
+	{
+		ELEMENT *theElement;
+		for (theElement=PFIRSTELEMENT(FinerGrid);
+			 theElement!=NULL;
+			 theElement=SUCCE(theElement))
+		{
+			 if (EPRIO(theElement) == PrioHGhost) DisposeElement(FinerGrid,theElement,TRUE);
+		}
+	}
+	DDD_XferEnd();
+	#endif
+
+	DDD_IdentifyBegin();
+	DDD_XferBegin();
+
+DDD_CONSCHECK;
+
+	/* now really manipulate the next finer level */		
+	if (level<toplevel || newlevel)
+		if (AdaptLocalGrid(theGrid,nadapted)!=GM_OK)				RETURN(GM_FATAL);
+
+		DDD_XferEnd();
+
+DDD_CONSCHECK;
+
+{ 
+int check=1;
+int debugstart=3;
+int gmlevel=Debuggm;
+int dddiflevel;
+
+
+if (1)
+{
+	DDD_IdentifyEnd();
+
+	/* if no grid adaption has occured adapt next level */
+	*nadapted = UG_GlobalSumINT(*nadapted);
+	if (*nadapted == 0) return(GM_OK);
+
+	/* DDD_JoinBegin(); */
+	DDD_IdentifyBegin();
+}
+
+DDD_CONSCHECK;
+
+	if (Identify_SonNodesAndSonEdges(theGrid))	RETURN(GM_FATAL);
+
+
+	DDD_IdentifyEnd();
+	/* DDD_JoinEnd(); */
+
+
+DDD_CONSCHECK;
+
+
+	if (level<toplevel || newlevel)
+	{
+		DDD_XferBegin();
+		if (SetGridBorderPriorities(theGrid)) 		RETURN(GM_FATAL);
+		if (UpdateGridOverlap(theGrid))				RETURN(GM_FATAL);
+		DDD_XferEnd();
+
+DDD_CONSCHECK;
+
+		DDD_XferBegin();
+		if (ConnectGridOverlap(theGrid))			RETURN(GM_FATAL);
+		DDD_XferEnd();
+
+DDD_CONSCHECK;
+
+		/* this is needed due to special cases while coarsening */
+		/* sample scene: a ghost element is needed as overlap  	*/
+		/* for two master elements, one of the master elements  */
+		/* is coarsened, then the prio of nodes of the ghost    */
+		/* element must eventually be downgraded from master    */
+		/* to ghost prio (s.l. 971020)                          */
+		ConstructConsistentGrid(FinerGrid);
+	}
+
+DDD_CONSCHECK;
+
+
+CheckConsistency(MYMG(theGrid),level,debugstart,gmlevel,&check);
+
+
+}
+
+if (0) CheckGrid(FinerGrid,1,1,1,1);
+
+	return(GM_OK);
+}
+#endif
 
 
 #ifdef ModelP
@@ -5860,7 +5967,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 		/* neighbor (s.l. 971029)                                          */
 		/* sending of yellow copies is now done in each situation. To send */
 		/* a yellow copy only if needed, THEFLAG(theNeighbor) must be set  */
-		/* properly in RefineGrid() (980114 s.l.)                          */
+		/* properly in AdaptGrid() (980114 s.l.)                          */
 		#ifndef UPDATE_FULLOVERLAP
 		if ((REFINECLASS(theElement)==YELLOW_CLASS && !THEFLAG(theElement)) && 
 			!THEFLAG(theNeighbor)) continue;
@@ -5929,7 +6036,7 @@ if (0)
 */
 /****************************************************************************/
 
-static INT UpdateGridOverlap (GRID *theGrid)
+INT UpdateGridOverlap (GRID *theGrid)
 {
 	ELEMENT *theElement;
 
@@ -6034,7 +6141,7 @@ static INT DropUsedFlags (GRID *theGrid)
 */
 /****************************************************************************/
 
-static INT	ConnectGridOverlap (GRID *theGrid)
+INT	ConnectGridOverlap (GRID *theGrid)
 {
 	INT		i,j,Sons_of_Side,prio;
 	INT		SonSides[MAX_SIDE_NODES];
@@ -6094,7 +6201,7 @@ static INT	ConnectGridOverlap (GRID *theGrid)
 		/* check whether is a valid ghost, which as in minimum one */
 		/* master element as neighbor                              */
 		/* TODO: move this functionality to ComputeCopies          */
-		/* then disposing of theSon can be done in RefineGrid      */
+		/* then disposing of theSon can be done in AdaptGrid      */
 		/* and the extra Xfer env around ConnectGridOverlap()      */
 		/* can be deleted (s.l. 971029)                            */
 		{
@@ -6215,7 +6322,7 @@ void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel,
 	GRID *theGrid = GRID_ON_LEVEL(theMG,level);
 
 	IFDEBUG(gm,debugstart)
-		printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,(*check)++,level);
+		printf(PFMT "AdaptMultiGrid(): %d. ConsCheck() on level=%d\n",me,(*check)++,level);
 		Debuggm = GHOSTS;
 		CheckGrid(theGrid,GEOM,ALG,LIST,IF);
 		Debuggm=gmlevel;
@@ -6263,10 +6370,10 @@ static INT CheckMultiGrid (MULTIGRID *theMG)
 
 /****************************************************************************/
 /*
-   RefineMultiGrid - refine whole multigrid structure
+   AdaptMultiGrid - adapt whole multigrid structure
 
    SYNOPSIS:
-   INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest);
+   INT AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest);
 
    PARAMETERS:
 .  theMG - multigrid to refine 
@@ -6283,7 +6390,7 @@ static INT CheckMultiGrid (MULTIGRID *theMG)
 */ 
 /****************************************************************************/
 
-INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest)
+INT AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest)
 {
 	int level,toplevel,nrefined,nadapted;
 	int newlevel;
@@ -6356,7 +6463,7 @@ if (0)
 
 	toplevel = TOPLEVEL(theMG);
 
-	REFINE_MULTIGRID_LIST(1,theMG,"RefineMultiGrid()","","")
+	REFINE_MULTIGRID_LIST(1,theMG,"AdaptMultiGrid()","","")
 
 	/* compute modification of coarser levels from above */
 	for (level=toplevel; level>0; level--)
@@ -6369,7 +6476,7 @@ if (0)
 
 			if ((nrefined = GridClosure(GRID_ON_LEVEL(theMG,level)))<0)
 			{
-				PrintErrorMessage('E',"RefineMultiGrid","error in GridClosure");
+				PrintErrorMessage('E',"AdaptMultiGrid","error in GridClosure");
 				RETURN(GM_ERROR);
 			}
 
@@ -6412,7 +6519,7 @@ if (0)
 			/* determine regular and irregular elements on next level */
 			if ((nrefined = GridClosure(theGrid))<0)
 			{
-				PrintErrorMessage('E',"RefineMultiGrid","error in 2. GridClosure");
+				PrintErrorMessage('E',"AdaptMultiGrid","error in 2. GridClosure");
 				RETURN(GM_ERROR);
 			}
 
@@ -6463,101 +6570,21 @@ if (0)
 			FinerGrid = GRID_ON_LEVEL(theMG,toplevel+1);
 		}
 		
-		PRINTDEBUG(gm,1,(PFMT "RefineMultiGrid(): toplevel=%d nrefined=%d newlevel=%d\n",
+		PRINTDEBUG(gm,1,(PFMT "AdaptMultiGrid(): toplevel=%d nrefined=%d newlevel=%d\n",
 			me,toplevel,nrefined,newlevel));
 
 
-#ifdef ModelP
-	#ifdef UPDATE_FULLOVERLAP	
-	DDD_XferBegin();
-	{
-		ELEMENT *theElement;
-		for (theElement=PFIRSTELEMENT(FinerGrid);
-			 theElement!=NULL;
-			 theElement=SUCCE(theElement))
-		{
-			 if (EPRIO(theElement) == PrioHGhost) DisposeElement(FinerGrid,theElement,TRUE);
-		}
-	}
-	DDD_XferEnd();
-	#endif
-		DDD_IdentifyBegin();
-		DDD_XferBegin();
-#endif
-
-DDD_CONSCHECK;
-
 		/* now really manipulate the next finer level */		
 		if (level<toplevel || newlevel)
-			if (RefineGrid(theGrid,&nadapted)!=GM_OK)				RETURN(GM_FATAL);
-
-#ifdef ModelP
-		DDD_XferEnd();
-
-DDD_CONSCHECK;
-
-{ 
-int check=1;
-int debugstart=3;
-int gmlevel=Debuggm;
-int dddiflevel;
-if (1)
-{
-		DDD_IdentifyEnd();
+			#ifndef ModelP
+			if (AdaptGrid(theGrid,&nadapted)!=GM_OK)							RETURN(GM_FATAL);
+			#else
+			if (AdaptGrid(theGrid,toplevel,level,newlevel,&nadapted)!=GM_OK)	RETURN(GM_FATAL);
+			#endif
 
 		/* if no grid adaption has occured adapt next level */
 		nadapted = UG_GlobalSumINT(nadapted);
 		if (nadapted == 0) continue;
-
-		/* DDD_JoinBegin(); */
-		DDD_IdentifyBegin();
-}
-
-DDD_CONSCHECK;
-
-		if (Identify_SonNodesAndSonEdges(theGrid))	RETURN(GM_FATAL);
-
-
-
-		DDD_IdentifyEnd();
-		/* DDD_JoinEnd(); */
-
-
-DDD_CONSCHECK;
-
-
-		if (level<toplevel || newlevel)
-		{
-			DDD_XferBegin();
-			if (SetGridBorderPriorities(theGrid)) 		RETURN(GM_FATAL);
-			if (UpdateGridOverlap(theGrid))				RETURN(GM_FATAL);
-			DDD_XferEnd();
-
-DDD_CONSCHECK;
-
-			DDD_XferBegin();
-			if (ConnectGridOverlap(theGrid))			RETURN(GM_FATAL);
-			DDD_XferEnd();
-
-DDD_CONSCHECK;
-
-			/* this is needed due to special cases while coarsening */
-			/* sample scene: a ghost element is needed as overlap  	*/
-			/* for two master elements, one of the master elements  */
-			/* is coarsened, then the prio of nodes of the ghost    */
-			/* element must eventually be downgraded from master    */
-			/* to ghost prio (s.l. 971020)                          */
-			ConstructConsistentGrid(FinerGrid);
-		}
-
-DDD_CONSCHECK;
-
-
-CheckConsistency(theMG,level,debugstart,gmlevel,&check);
-
-
-}
-#endif
 
 		if (level<toplevel || newlevel)
 		{
@@ -6574,15 +6601,6 @@ CheckConsistency(theMG,level,debugstart,gmlevel,&check);
 
 			PropagateVectorClasses(FinerGrid);
 		}
-		/* TODO: delete special debug */ PRINTELEMID(-1)
-
-	DEBUG_TIME(0);
-
-	#ifdef ModelP
-if (0)
-	CheckGrid(FinerGrid,1,1,1,1);
-	#endif
-
 	}
 
 	#ifdef ModelP
@@ -6596,7 +6614,7 @@ if (0)
 	if (CreateAlgebra(theMG) != GM_OK)
         REP_ERR_RETURN (GM_ERROR);
 
-	REFINE_MULTIGRID_LIST(1,theMG,"END RefineMultiGrid():\n","","");
+	REFINE_MULTIGRID_LIST(1,theMG,"END AdaptMultiGrid():\n","","");
 
 /*
 	if (hFlag)
