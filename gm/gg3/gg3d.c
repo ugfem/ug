@@ -264,7 +264,8 @@ static INT AddBoundaryElement (INT n, INT *nodelist)
    D*/
 /****************************************************************************/
 
-INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth)
+INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
+                    INT display)
 {
   NODE *theNode;
   VERTEX *theVertex;
@@ -345,7 +346,7 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth)
     }
 
     #ifdef _NETGEN
-  if (StartNetgen(h,smooth)) return(1);
+  if (StartNetgen(h,smooth,display)) return(1);
     #endif
 
   return(0);

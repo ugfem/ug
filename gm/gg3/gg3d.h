@@ -42,6 +42,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth);
+INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
+                    INT display);
 
 #endif

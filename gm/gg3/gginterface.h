@@ -39,5 +39,5 @@ int AddTetrahedron (int node0, int node1, int node2, int node3);
 int AddSurfaceNode (int nodeid, double x, double y, double z);
 int AddSurfaceTriangle (int node0, int node1, int node2);
 int InitNetgen (char *rulefilename);
-int StartNetgen (double h,int smooth);
+int StartNetgen (double h,int smooth,int display);
 #endif
