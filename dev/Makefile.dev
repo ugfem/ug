@@ -28,6 +28,9 @@ all : $(OBJECTS) $(DEVICES) Makefile.dev
 NIF:
 	cd nif && make -f Makefile.nif
 
+MIF:
+	cd mif && make -j 2 -f Makefile.mif
+
 XIF:
 	cd xif && make -f Makefile.xif
 
