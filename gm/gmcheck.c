@@ -475,11 +475,17 @@ if (0)  /* this code is for special debugging (980204 s.l.) */
 
 						if (MIDNODE(FatherEdge) != theNode)
 						{
+#ifdef __TWODIM__
+							UserWriteF(PFMT " midnode=" ID_FMTX 
+								" has edge father with wrong backptr=%x\n", 
+								me,ID_PRTX(theNode),MIDNODE(FatherEdge));
+#else
 							UserWriteF(PFMT " midnode=" ID_FMTX 
 								" has edge  father=" ID_FMTX " with wrong backptr=%x\n", 
 								me,ID_PRTX(theNode),ID_PRTX(FatherEdge),MIDNODE(FatherEdge));
 /* TODO: this should be deleted */
 if (1) MIDNODE(FatherEdge) = theNode;
+#endif
 							nerrors++;
 						}
 					}
