@@ -13028,6 +13028,46 @@ static INT LB4Command (INT argc, char **argv)
 }
 #endif /* CHACOT */
 
+#ifdef __OVERLAP2__
+static INT pamgCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  int level;
+
+  theMG = currMG;
+  level = 0;
+  if (argv[1][0]=='l')
+  {
+    if (sscanf(argv[1],"l %d",&level)!=1)
+      return (CMDERRORCODE);
+  }
+
+  if (pamgDo( theMG, level ) > 0)
+    return(CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+static INT pamgCheckCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  int level;
+
+  theMG = currMG;
+  level = 0;
+  if (argv[1][0]=='l')
+  {
+    if (sscanf(argv[1],"l %d",&level)!=1)
+      return (CMDERRORCODE);
+  }
+
+  if (pamgCheckDo( theMG, level ) > 0)
+    return(CMDERRORCODE);
+
+  return (OKCODE);
+}
+#endif
+
 #endif /* ModelP */
 
 /****************************************************************************/
@@ -14311,6 +14351,11 @@ INT InitCommands ()
   if (CreateCommand("dlb_config",     DLB_Config_Command                  )==NULL      ) return(__LINE__);
   if (CreateCommand("dlb_eval",           DLB_EvalCommand                             )==NULL) return (__LINE__);
         #endif
+
+#ifdef __OVERLAP2__
+  if (CreateCommand("pamg",           pamgCommand                     )==NULL) return(__LINE__);
+  if (CreateCommand("pamgcheck",      pamgCheckCommand                )==NULL) return(__LINE__);
+#endif
 
 #endif /* ModelP */
 
