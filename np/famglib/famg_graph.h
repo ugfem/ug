@@ -437,11 +437,11 @@ inline int FAMGGraph::GetNF() const {
 inline int FAMGGraph::GetN() const {
   return n;
 }
-inline FAMGNode *FAMGGraph::GetNode(const FAMGVectorEntry &ve) const {
-  return GetNode(ve.GetIndex());
-}
 inline FAMGNode *FAMGGraph::GetNode(int index) const {
   assert(index<GetN());return node+index;
+}
+inline FAMGNode *FAMGGraph::GetNode(const FAMGVectorEntry &ve) const {
+  return GetNode(ve.GetIndex());
 }
 inline FAMGNode *FAMGGraph::GetNodePtr() const {
   return node;

@@ -307,9 +307,7 @@ class FAMGSystem
 {
 public:
   FAMGSystem();
-  int GetN() const {
-    return GetMatrix()->GetN();
-  }
+  int GetN() const;
   FAMGGridVector * GetGridVector() const;
   FAMGMatrixAlg * GetMatrix() const;
   FAMGMatrixAlg * GetConsMatrix() const;
@@ -363,6 +361,9 @@ inline FAMGGridVector *FAMGSystem::GetGridVector() const {
 }
 inline FAMGMatrixAlg *FAMGSystem::GetMatrix() const {
   return matrix;
+}
+inline int FAMGSystem::GetN() const {
+  return GetMatrix()->GetN();
 }
 inline FAMGMatrixAlg *FAMGSystem::GetConsMatrix() const {
   return Consmatrix;
