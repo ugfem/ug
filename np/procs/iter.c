@@ -1522,25 +1522,25 @@ static INT TSInit (NP_BASE *theNP, INT argc , char **argv)
   }
   np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
                                   "uu",argc,argv,&(np->uu_sub));
-  if (np->vt == NULL) {
+  if (np->mt == NULL) {
     UserWriteF("TSInit: no subtemplate uu found\n");
     return(NP_NOT_ACTIVE);
   }
   np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
                                   "up",argc,argv,&(np->up_sub));
-  if (np->vt == NULL) {
+  if (np->mt == NULL) {
     UserWriteF("TSInit: no subtemplate up found\n");
     return(NP_NOT_ACTIVE);
   }
   np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
                                   "pu",argc,argv,&(np->pu_sub));
-  if (np->vt == NULL) {
+  if (np->mt == NULL) {
     UserWriteF("TSInit: no subtemplate pu found\n");
     return(NP_NOT_ACTIVE);
   }
   np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
                                   "pp",argc,argv,&(np->pp_sub));
-  if (np->vt == NULL) {
+  if (np->mt == NULL) {
     UserWriteF("TSInit: no subtemplate pp found\n");
     return(NP_NOT_ACTIVE);
   }
