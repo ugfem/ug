@@ -297,6 +297,12 @@ int BalanceGridRCB (MULTIGRID *theMG)
 
   if (me==master)
   {
+    if (NT(theGrid) == 0)
+    {
+      UserWriteF("WARNING in BalanceGridRCB: no elements in grid\n");
+      return (1);
+    }
+
     Mark(theHeap,FROM_TOP);
     lbinfo = (LB_INFO *)
              GetMem(theHeap, NT(theGrid)*sizeof(LB_INFO), FROM_TOP);
@@ -304,7 +310,7 @@ int BalanceGridRCB (MULTIGRID *theMG)
     if (lbinfo==NULL)
     {
       Release(theHeap,FROM_TOP);
-      UserWrite("ERROR: could not allocate memory from the MGHeap\n");
+      UserWrite("ERROR in BalanceGridRCB: could not allocate memory from the MGHeap\n");
       return (1);
     }
 
