@@ -36,6 +36,10 @@
 #include "ugenv.h"
 #endif
 
+#ifdef __MWCW__
+#include "MWCW.cmdlinedefs"
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/

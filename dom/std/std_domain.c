@@ -40,6 +40,9 @@
 #include "ugenv.h"
 #include "misc.h"
 
+/* dev modules */
+#include "devices.h"
+
 /* domain module */
 #include "std_domain.h"
 #include "domain.h"
@@ -613,7 +616,7 @@ BVP *CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
 
   /* allocate new domain structure */
   n = (theProblem->numOfCoeffFct+theProblem->numOfUserFct-1)*sizeof(void*);
-  theBVP = (BVP *) MakeEnvItem (BVPName,theBVPDirID,sizeof(STD_BVP)+n);
+  theBVP = (STD_BVP *) MakeEnvItem (BVPName,theBVPDirID,sizeof(STD_BVP)+n);
   if (theBVP==NULL) return(NULL);
   if (ChangeEnvDir(BVPName)==NULL) return(NULL);
 
@@ -665,7 +668,7 @@ BVP *CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
     if (theTmp->theBSC[i].theBC==NULL) return (NULL);
     theBndCond = theTmp->theBSC[i].theBC;
     strcpy(name,ENVITEM_NAME(theSegment)); strcat(name,".p");
-    thePatch = (PATCH *) MakeEnvItem (name,thePatchVarID,sizeof(STD_PATCH));
+    thePatch = (STD_PATCH *) MakeEnvItem (name,thePatchVarID,sizeof(STD_PATCH));
     ENVITEM_LOCKED(thePatch) = 1;
 
     if (thePatch == NULL) return (NULL);

@@ -15,7 +15,7 @@ include ../../machines/mk.$(ARCHDIR)
 # load configuration switches
 include ../../ug.conf
 
-LCFLAGS = -I../std -I.. -I../../low
+LCFLAGS = -I../std -I.. -I../../low -I../../dev
 
 OBJECTS = std_domain.o
 
