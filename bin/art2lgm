@@ -85,6 +85,7 @@ sub ConvertFile	{
 	WriteLGMDomain($artfile);
 	if ($debug>0) { PrintElementList(); }
 	WriteLGMNet($artfile);
+	WriteBoundaryConditionsMap($artfile);
 }
 
 
@@ -832,6 +833,36 @@ sub WriteLGMNet {
 	
 	close(LGMNET)  or die "can't close $lgmnetfile";
 
+	
+}
+
+######################################################################
+######################################################################
+sub WriteBoundaryConditionsMap {
+	local($artfile) = @_;
+	local($bcfile,$f);
+	
+    # if art file ends in '.art' or '.net' remove the extension
+    $artbasename = $artfile;
+    if ( substr($artbasename,-4) eq ".art" || substr($artbasename,-4) eq ".net" ) {
+        substr($artbasename,-4) = "";
+    }
+
+	$bcfile    = $artbasename . ".bc";
+	print "Writing LGM boundary conditions to file of $bcfile\n";
+	
+	open(BCMAP, "> $bcfile")     or die "can't open LGM grid file $bcfile.";
+	
+	# Write size info
+	print BCMAP "size $lgmdomfaces\n";
+	
+	for $f (0 .. $faces-1)	{
+		if ( $face[$f][0]!=0 )	{
+			print BCMAP "$face[$f][4] $face[$f][0]\n"
+		}
+	}
+	
+	close(BCMAP)  or die "can't close $bcfile";
 	
 }
 
