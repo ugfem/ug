@@ -2136,12 +2136,13 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
 
 INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 {
-  INT i,j,tag;
+  INT i,j,edge,tag;
   VECTOR *theVector;
   NODE *theNode;
+  VERTEX *theVertex;
   EDGE *theEdge;
   ELEMENTSIDE *theElementSide;
-  ELEMENT *theNeighbor;
+  ELEMENT *theNeighbor,*theFather;
 
   HEAPFAULT(theElement);
 
@@ -2191,31 +2192,20 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
   for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
   {
     theNode = CORNER(theElement,j);
-    if (START(theNode) == NULL) {
-      if (NTYPE(theNode)==MID_NODE) {
-        ELEMENT *father;
-        INT edge,i;
-
-        father = EFATHER(theElement);
-        edge = ONEDGE(MYVERTEX(theNode));
-        for (i=0; i<EDGES_OF_ELEM(father); i++) {
-          theEdge = GetEdge(CORNER(father,
-                                   CORNER_OF_EDGE(father,i,0)),
-                            CORNER(father,
-                                   CORNER_OF_EDGE(father,i,1)));
-          ASSERT(theEdge!=NULL);
-          if (MIDNODE(theEdge)==theNode) break;
-        }
-        ASSERT(i<EDGES_OF_ELEM(father));
-        UserWriteF("RESETTING edgepointer for ID(father)=%d and i=%d ONEDGE=%d "
-                   "ID(Node)=%d ID(Vertex)=%d EDNODE0=%d EDNODE1=%d\n",ID(father),i,edge,
-                   ID(theNode),ID(MYVERTEX(theNode)),
-                   ID(CORNER(father,CORNER_OF_EDGE(father,edge,0))),
-                   ID(CORNER(father,CORNER_OF_EDGE(father,edge,1))));
-        ASSERT(MIDNODE(theEdge)==theNode);
+    if (START(theNode) == NULL)
+    {
+      if (NTYPE(theNode)==MID_NODE)
+      {
+        theVertex = MYVERTEX(theNode);
+        theFather = VFATHER(theVertex);
+        edge = ONEDGE(theVertex);
+        theEdge = GetEdge(CORNER(theFather,
+                                 CORNER_OF_EDGE(theFather,edge,0)),
+                          CORNER(theFather,
+                                 CORNER_OF_EDGE(theFather,edge,1)));
+        ASSERT(theEdge!=NULL);
         MIDNODE(theEdge) = NULL;
       }
-
       DisposeNode(theGrid,theNode);
     }
   }
@@ -5590,6 +5580,7 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
 static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, INT *NodeError, INT *ESonError, INT *NSonError)
 {
   int i,j,k;
+  NODE *theNode;
   EDGE *theEdge;
   ELEMENT *NbElement;
   ELEMENT *SonList[MAX_SONS];
@@ -5697,6 +5688,14 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
       *EdgeError |= 1<<i;
     else
       SETUSED(theEdge,1);
+    theNode = MIDNODE(theEdge);
+    if (theNode == NULL)
+      continue;
+    theVertex = MYVERTEX(theNode);
+    if (VFATHER(theVertex) != theElement)
+      continue;
+    if (i != ONEDGE(theVertex))
+      *EdgeError |= 1<<i;
   }
 
   if (NSONS(theElement)!=0)
