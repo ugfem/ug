@@ -28,7 +28,7 @@
 
 #include "interface.h"
 #include "system.h"
-  
+
 /* RCS_ID
 $Header$
 */
