@@ -11099,7 +11099,7 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 
   /* allocate memory for the element list on level 0 (but at least for maximal number of sons of an element) */
   theGrid = theMG->grids[0];
-  if (theGrid->nElem<2)
+  if (theGrid->nElem<1)
     return(0);
   theHeap = theMG->theHeap;
   Mark(theHeap,FROM_TOP);
