@@ -2708,6 +2708,26 @@ static int FReadRule (FILE *stream, REFRULE *theRule)
   return (0);
 }
 
+static int CorrectRule (REFRULE *theRule)
+{
+  int i;
+  int c0,n1;
+
+  for (i=0; i<9; i++)
+  {
+    if (i==1 || i==4 || i==7) {
+      c0 = theRule->sons[i].corners[0];
+      theRule->sons[i].corners[0] = theRule->sons[i].corners[1];
+      theRule->sons[i].corners[1] = c0;
+      n1 = theRule->sons[i].nb[1];
+      theRule->sons[i].nb[1] = theRule->sons[i].nb[2];
+      theRule->sons[i].nb[2] = n1;
+    }
+  }
+
+  return (0);
+}
+
 /****************************************************************************/
 /*																			*/
 /* Function:  InitRuleManager3D												*/
@@ -2812,6 +2832,9 @@ static INT InitRuleManager3D (void)
 
     fclose(stream);
   }
+
+  /* bug fix */
+  CorrectRule(&Rules[41]);
 
         #ifdef ModelP
   Broadcast(Rules,nRules*sizeof(REFRULE));
