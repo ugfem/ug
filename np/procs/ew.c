@@ -10,7 +10,7 @@
 /*			  Institut fuer Computeranwendungen III                                                 */
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
+/*			  70569 Stuttgart			                                                                */
 /*			  email: ug@ica3.uni-stuttgart.de						        */
 /*																			*/
 /* History:   Januar 7, 1997                                                                            */
@@ -33,6 +33,7 @@
 #include <math.h>
 
 #include "general.h"
+
 #include "debug.h"
 #include "ugstruct.h"
 #include "devices.h"
@@ -52,6 +53,12 @@
 #include "ls.h"
 
 #include "ew.h"
+
+#include "quadrature.h"
+#include "shapes.h"
+#include "evm.h"
+
+#include "project.h"
 
 /****************************************************************************/
 /*																			*/
@@ -79,6 +86,8 @@ typedef struct
 
   NP_LINEAR_SOLVER *LS;
   NP_TRANSFER *Transfer;
+
+  NP_PROJECT *Project;
 
   INT maxiter;
   INT baselevel;
@@ -113,6 +122,7 @@ typedef struct
 
 static VEC_SCALAR Factor_One;
 static INT global;
+static INT quadrature_order;
 
 REP_ERR_FILE;
 
@@ -384,43 +394,25 @@ static INT SetUnsymmetric (MULTIGRID *mg, INT fl, INT tl,
   return (NUM_OK);
 }
 
-static INT ProjectLaplaceNeumann (MULTIGRID *mg, INT fl, INT tl,
-                                  const VECDATA_DESC *x)
+static INT Ortho (MULTIGRID *theMG, INT level, INT m,
+                  VECDATA_DESC **ev, VECDATA_DESC *b, INT display)
 {
-  VECTOR *v;
-  DOUBLE mean;
-  INT l,vtype,ncomp,comp,j,cnt;
+  DOUBLE scalP;
+  INT i;
 
-  /* calc mean */
-  mean = 0.0;
-  cnt = 0;
-  for (l=fl; l<=tl; l++)
-    for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,l)); v!=NULL; v=SUCCVC(v)) {
-      vtype = VTYPE(v);
-      ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-      if (ncomp == 0) continue;
-      comp = VD_CMP_OF_TYPE(x,vtype,0);
-      for (j=0; j<ncomp; j++)
-        mean += VVALUE(v,comp+j);
-      cnt += ncomp;
-    }
-        #ifdef ModelP
-  mean = UG_GlobalSumDOUBLE(mean);
-  cnt = UG_GlobalSumINT(cnt);
-        #endif
-  if (cnt == 0) return(NUM_OK);
-  mean /= cnt;
-  for (l=fl; l<=tl; l++)
-    for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,l)); v!=NULL; v=SUCCVC(v)) {
-      vtype = VTYPE(v);
-      ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-      if (ncomp == 0) continue;
-      comp = VD_CMP_OF_TYPE(x,vtype,0);
-      for (j=0; j<ncomp; j++)
-        VVALUE(v,comp+j) -= mean;
-    }
+  for (i=0; i<m; i++) {
+    if (display == PCR_FULL_DISPLAY)
+      UserWriteF("%s ",ENVITEM_NAME(ev[i]));
+    if (ddot(theMG,0,level,ON_SURFACE,ev[i],b,&scalP) != NUM_OK)
+      return(1);
+    if (display == PCR_FULL_DISPLAY)
+      UserWriteF(" %lf",scalP);
+    if (daxpy(theMG,0,level,ALL_VECTORS,ev[m],-scalP,ev[i]) != NUM_OK)
+      return(1);
+  }
+  if ((display == PCR_FULL_DISPLAY) && (m > 0)) UserWrite("\n");
 
-  return (NUM_OK);
+  return(0);
 }
 
 static INT RayleighQuotient (MULTIGRID *theMG,
@@ -504,27 +496,6 @@ static INT RayleighDefect (MULTIGRID *theMG, VECDATA_DESC *r,
     return(1);
 
   return (0);
-}
-
-static INT Orthogonalize (MULTIGRID *theMG, INT level, INT m,
-                          VECDATA_DESC **ev, VECDATA_DESC *b, INT display)
-{
-  DOUBLE scalP;
-  INT i;
-
-  for (i=0; i<m; i++) {
-    if (display == PCR_FULL_DISPLAY)
-      UserWriteF("%s ",ENVITEM_NAME(ev[i]));
-    if (ddot(theMG,0,level,ON_SURFACE,ev[i],b,&scalP) != NUM_OK)
-      return(1);
-    if (display == PCR_FULL_DISPLAY)
-      UserWriteF(" %lf",scalP);
-    if (daxpy(theMG,0,level,ALL_VECTORS,ev[m],-scalP,ev[i]) != NUM_OK)
-      return(1);
-  }
-  if ((display == PCR_FULL_DISPLAY) && (m > 0)) UserWrite("\n");
-
-  return(0);
 }
 
 /****************************************************************************/
@@ -717,6 +688,7 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
     NP_RETURN(1,ewresult->error_code);
   ewresult->error_code = 0;
   i = 0;
+
   if (np->Neumann) {                   /* set ev[0] = 1 */
     if (dset(theMG,bl,level,ON_SURFACE,ev[0],1.0))
       NP_RETURN(1,ewresult->error_code);
@@ -736,9 +708,16 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
     ew[0] = 0.0;
     i++;
   }
+
   while (i < nev) {
     if (np->display == PCR_FULL_DISPLAY)
       UserWriteF("%s:\n",ENVITEM_NAME(ev[i]));
+
+    if (np->Project != NULL)
+      if (np->Project->Project(np->Project,bl,level,
+                               ev[i],&ewresult->error_code)
+          != NUM_OK)
+        NP_RETURN(1,ewresult->error_code);
 
     /* orthogonalize iteration vector */
     if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t))
@@ -748,6 +727,7 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
                                         ev[i],np->t,np->M,
                                         &ewresult->error_code))
         return(1);
+
       if (ew[i] < 0.0)
         if (dscal(theMG,bl,level,ALL_VECTORS,np->t,-1.0))
           NP_RETURN(1,ewresult->error_code);
@@ -763,11 +743,12 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
       NP_RETURN(1,ewresult->error_code);
             #endif
 
-    if (Orthogonalize(theMG,level,i,ev,np->t,np->display))
+    if (Ortho(theMG,level,i,ev,np->t,np->display))
       NP_RETURN(1,ewresult->error_code);
     if (Rayleigh(&(np->ew),level,ev[i],Assemble,a,&rq,
                  &ewresult->error_code))
       return(1);
+
     if (np->display == PCR_FULL_DISPLAY)
       UserWriteF("Rayleigh quotient %lf\n",rq);
     if (np->Orthogonalize) {
@@ -793,11 +774,14 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
       NP_RETURN(1,ewresult->error_code);
     if (DoPCR(PrintID,defect,PCR_CRATE))
       NP_RETURN(1,ewresult->error_code);
+
     for (iter=0; iter<np->maxiter; iter++) {
+
       if (sc_cmp(defect,defect2reach,np->t))
         break;
       if (sc_cmp(defect,abslimit,np->t))
         break;
+
       /* orthogonalize iteration vector */
       if (np->Orthogonalize) {
         if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
@@ -807,6 +791,7 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
         if (ew[i] < 0.0)
           if (dscal(theMG,bl,level,ALL_VECTORS,np->t,-1.0))
             NP_RETURN(1,ewresult->error_code);
+
       }
       else {
         if (dset(theMG,0,level,ON_SURFACE,np->t,0.0))
@@ -819,13 +804,15 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
       if (a_vector_collect(theMG,bl,level,np->t))
         NP_RETURN(1,ewresult->error_code);
             #endif
-      if (Orthogonalize(theMG,level,i,ev,np->t,np->display))
+      if (Ortho(theMG,level,i,ev,np->t,np->display))
         NP_RETURN(1,ewresult->error_code);
       if (Rayleigh(&(np->ew),level,ev[i],Assemble,a,&rq,
                    &ewresult->error_code))
         return(1);
+
       if (dscal(theMG,0,level,ALL_VECTORS,np->r,rq) != NUM_OK)
         NP_RETURN(1,ewresult->error_code);
+
       /* solve */
       if (np->Quadratic) {
         if (dcopy (theMG,bl,level,ALL_VECTORS,np->t,ev[i]) != NUM_OK)
@@ -871,6 +858,7 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
           NP_RETURN(1,ewresult->error_code);
       }
       else {
+
         if (FreeVD(theMG,bl,level,np->t))
           NP_RETURN(1,ewresult->error_code);
         if ((*np->LS->Defect)(np->LS,level,ev[i],np->r,np->M,
@@ -879,11 +867,32 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
         if ((*np->LS->Residuum)(np->LS,0,level,ev[i],np->r,np->M,
                                 &ewresult->lresult[i]))
           NP_RETURN(1,ewresult->error_code);
+
+        IFDEBUG(np,8)
+        UserWrite("Eigenvektor in EWSolver Stelle 1\n");
+        UserWriteF("Es ist der %d Eigenvektor \n",i);
+        PrintVector(GRID_ON_LEVEL(theMG,level),ev[i],3,3);
+        ENDDEBUG
+
         if ((*np->LS->Solver)(np->LS,level,ev[i],np->r,np->M,
                               abslimit,reduction,
                               &ewresult->lresult[i]))
           NP_RETURN(1,ewresult->error_code);
+
+        IFDEBUG(np,8)
+        UserWrite("Eigenvektor in EWSolver Stelle 2\n");
+        UserWriteF("Es ist der %d Eigenvektor \n",i);
+        PrintVector(GRID_ON_LEVEL(theMG,level),ev[i],3,3);
+        ENDDEBUG
+
       }
+
+      if (np->Project != NULL)
+        if (np->Project->Project(np->Project,bl,level,
+                                 ev[i],&ewresult->error_code)
+            != NUM_OK)
+          NP_RETURN(1,ewresult->error_code);
+
       if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t))
         NP_RETURN(1,ewresult->error_code);
       if (Rayleigh(&(np->ew),level,ev[i],Assemble,a,&rq,
@@ -957,6 +966,13 @@ static INT EWPostProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
     if ((*np->LS->PostProcess)(np->LS,level,ev[0],np->r,np->M,result))
       NP_RETURN(1,result[0]);
 
+  /*
+     if (np->Project != NULL)
+      if (np->Project->PostProcess != NULL)
+          if (np->Project->PostProcess(np->Project,result))
+                  NP_RETURN(1,result[0]);
+   */
+
   return (0);
 }
 
@@ -975,6 +991,9 @@ static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
     return(NP_NOT_ACTIVE);
   np->Transfer = (NP_TRANSFER *)
                  ReadArgvNumProc(theNP->mg,"T",TRANSFER_CLASS_NAME,argc,argv);
+
+  np->Project = (NP_PROJECT *)
+                ReadArgvNumProc(theNP->mg,"P",PROJECT_CLASS_NAME,argc,argv);
 
   np->M = ReadArgvMatDesc(theNP->mg,"M",argc,argv);
   np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
@@ -1100,7 +1119,7 @@ static INT EWExecute (NP_BASE *theNP, INT argc , char **argv)
     return (1);
   for (i=0; i<np->ew.nev; i++) {
     if (np->display > PCR_NO_DISPLAY)
-      UserWriteF("  ew%d = %10.5lf\n",i,np->ew.ew[i]);
+      UserWriteF("  ew%d = %10.5e \n",i,np->ew.ew[i]);
     if (SetStringValue(ENVITEM_NAME(np->ew.ev[i]),np->ew.ew[i]))
       return (1);
   }
