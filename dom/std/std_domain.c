@@ -133,6 +133,64 @@ static INT PatchGlobal (PATCH *p, DOUBLE *lambda, DOUBLE *global);
 
 /* Marc specials */
 
+
+/*
+   #define LARGE_MARC
+ */
+
+static INT ExpandLine (char *theLine)
+{
+  INT i,j,k,l;
+
+    #ifdef LARGE_MARC
+  i = 76;
+  j = 69;
+  for (l=0; l<3; l++) {
+    theLine[i] = ' ';
+    i--;
+    theLine[i] = theLine[j];
+    i--;
+    j--;
+    theLine[i] = theLine[j];
+    i--;
+    j--;
+    theLine[i] = 'e';
+    i--;
+    for (k=0; k<18; k++) {
+      theLine[i] = theLine[j];
+      i--;
+      j--;
+    }
+  }
+  theLine[i] = ' ';
+  /*printf("%s",theLine); */
+  return(0);
+    #endif
+
+  i = 41;
+  j = 34;
+  for (l=0; l<3; l++) {
+    theLine[i] = ' ';
+    i--;
+    theLine[i] = theLine[j];
+    i--;
+    j--;
+    theLine[i] = theLine[j];
+    i--;
+    j--;
+    theLine[i] = 'e';
+    i--;
+    for (k=0; k<8; k++) {
+      theLine[i] = theLine[j];
+      i--;
+      j--;
+    }
+  }
+  theLine[i] = ' ';
+
+  return(0);
+}
+
 #define MAX_LEN         200
 
 static char theLine[MAX_LEN+1];
@@ -161,6 +219,8 @@ static INT file_elements (FILE *f)
     /*printf("%s",theLine); */
 
     if (strlen(theLine) < 3) continue;
+
+#ifndef LARGE_MARC
 
     theLine[66] = 0;
     theLine[65] = ' ';
@@ -230,6 +290,8 @@ static INT file_elements (FILE *f)
     theLine[1] = theLine[1];
     theLine[0] = theLine[0];
 
+#endif
+
     if (sscanf(theLine,"%d %d",&id,&n) != 2) return(0);
 
     if (sscanf(theLine,"%d %d %d %d %d %d %d %d %d %d",
@@ -252,6 +314,8 @@ static INT file_corners (FILE *f)
 
   /* printf("%s",theLine);  */
 
+#ifndef LARGE_MARC
+
   theLine[12] = 0;
   theLine[11] = ' ';
   theLine[10] = theLine[9];
@@ -266,6 +330,8 @@ static INT file_corners (FILE *f)
   theLine[1] = theLine[1];
   theLine[0] = theLine[0];
 
+#endif
+
   if (sscanf(theLine,"%d %d",&N,&n) != 2) return(1);
 
   nCorners = 0;
@@ -274,49 +340,7 @@ static INT file_corners (FILE *f)
 
     /* printf(" %d %s",i,theLine);  */
 
-    theLine[42] = 0;
-    theLine[41] = ' ';
-    theLine[40] = theLine[34];
-    theLine[39] = theLine[33];
-    theLine[38] = 'e';
-    theLine[37] = theLine[32];
-    theLine[36] = theLine[31];
-    theLine[35] = theLine[30];
-    theLine[34] = theLine[29];
-    theLine[33] = theLine[28];
-    theLine[32] = theLine[27];
-    theLine[31] = theLine[26];
-    theLine[30] = theLine[25];
-    theLine[29] = ' ';
-    theLine[28] = theLine[24];
-    theLine[27] = theLine[23];
-    theLine[26] = 'e';
-    theLine[25] = theLine[22];
-    theLine[24] = theLine[21];
-    theLine[23] = theLine[20];
-    theLine[22] = theLine[19];
-    theLine[21] = theLine[18];
-    theLine[20] = theLine[17];
-    theLine[19] = theLine[16];
-    theLine[18] = theLine[15];
-    theLine[17] = ' ';
-    theLine[16] = theLine[14];
-    theLine[15] = theLine[13];
-    theLine[14] = 'e';
-    theLine[13] = theLine[12];
-    theLine[12] = theLine[11];
-    theLine[11] = theLine[10];
-    theLine[10] = theLine[9];
-    theLine[9] = theLine[8];
-    theLine[8] = theLine[7];
-    theLine[7] = theLine[6];
-    theLine[6] = theLine[5];
-    theLine[5] = ' ';
-    theLine[4] = theLine[4];
-    theLine[3] = theLine[3];
-    theLine[2] = theLine[2];
-    theLine[1] = theLine[1];
-    theLine[0] = theLine[0];
+    ExpandLine(theLine);
 
     if (sscanf(theLine,"%d %lg %lg %lg",
                &id,c,c+1,c+2) != 1+N) return(0);
@@ -381,55 +405,7 @@ static INT file_positions (FILE *f)
   do {
     fgets(theLine, MAX_LEN, f);
 
-    theLine[41] = ' ';
-    theLine[40] = theLine[34];
-    theLine[39] = theLine[33];
-    theLine[38] = 'e';
-    theLine[37] = theLine[32];
-    theLine[36] = theLine[31];
-    theLine[35] = theLine[30];
-    theLine[34] = theLine[29];
-    theLine[33] = theLine[28];
-    theLine[32] = theLine[27];
-    theLine[31] = theLine[26];
-    theLine[30] = theLine[25];
-    theLine[29] = ' ';
-    theLine[28] = theLine[24];
-    theLine[27] = theLine[23];
-    theLine[26] = 'e';
-    theLine[25] = theLine[22];
-    theLine[24] = theLine[21];
-    theLine[23] = theLine[20];
-    theLine[22] = theLine[19];
-    theLine[21] = theLine[18];
-    theLine[20] = theLine[17];
-    theLine[19] = theLine[16];
-    theLine[18] = theLine[15];
-    theLine[17] = ' ';
-    theLine[16] = theLine[14];
-    theLine[15] = theLine[13];
-    theLine[14] = 'e';
-    theLine[13] = theLine[12];
-    theLine[12] = theLine[11];
-    theLine[11] = theLine[10];
-    theLine[10] = theLine[9];
-    theLine[9] = theLine[8];
-    theLine[8] = theLine[7];
-    theLine[7] = theLine[6];
-    theLine[6] = theLine[5];
-    theLine[5] = ' ';
-    theLine[4] = theLine[4];
-    theLine[3] = theLine[3];
-    theLine[2] = theLine[2];
-    theLine[1] = theLine[1];
-    theLine[0] = theLine[0];
-
-    for (j=1; j<40; j++) {
-      if ((theLine[j] == '-')&&(theLine[j+1] == 'e')) {
-        theLine[j] = 'e';
-        theLine[j+1] = '-';
-      }
-    }
+    ExpandLine(theLine);
 
     if (sscanf(theLine,"%d %lg %lg %lg",&id,c,c+1,c+2) != 1+DIM)
       return(0);
@@ -448,6 +424,8 @@ static INT file_elements_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
   do {
     fgets(theLine, MAX_LEN, f);
     if (strlen(theLine) < 3) continue;
+
+#ifndef LARGE_MARC
 
     theLine[66] = 0;
     theLine[65] = ' ';
@@ -517,6 +495,8 @@ static INT file_elements_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
     theLine[1] = theLine[1];
     theLine[0] = theLine[0];
 
+#endif
+
     if (sscanf(theLine,"%d %d",&id,&n) != 2) return(0);
 
     if (sscanf(theLine,"%d %d %d %d %d %d %d %d %d %d",
@@ -565,6 +545,8 @@ static INT file_corners_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey,
   fgets(theLine, MAX_LEN, f);
   /* printf("%s",theLine); */
 
+#ifndef LARGE_MARC
+
   theLine[12] = 0;
   theLine[11] = ' ';
   theLine[10] = theLine[9];
@@ -579,6 +561,8 @@ static INT file_corners_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey,
   theLine[1] = theLine[1];
   theLine[0] = theLine[0];
 
+#endif
+
   if (sscanf(theLine,"%d %d",&N,&n) != 2) return(1);
 
   for (j=0; j<3; j++)
@@ -589,49 +573,7 @@ static INT file_corners_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey,
 
     /* printf("in\n%s\n",theLine); */
 
-    theLine[42] = 0;
-    theLine[41] = ' ';
-    theLine[40] = theLine[34];
-    theLine[39] = theLine[33];
-    theLine[38] = 'e';
-    theLine[37] = theLine[32];
-    theLine[36] = theLine[31];
-    theLine[35] = theLine[30];
-    theLine[34] = theLine[29];
-    theLine[33] = theLine[28];
-    theLine[32] = theLine[27];
-    theLine[31] = theLine[26];
-    theLine[30] = theLine[25];
-    theLine[29] = ' ';
-    theLine[28] = theLine[24];
-    theLine[27] = theLine[23];
-    theLine[26] = 'e';
-    theLine[25] = theLine[22];
-    theLine[24] = theLine[21];
-    theLine[23] = theLine[20];
-    theLine[22] = theLine[19];
-    theLine[21] = theLine[18];
-    theLine[20] = theLine[17];
-    theLine[19] = theLine[16];
-    theLine[18] = theLine[15];
-    theLine[17] = ' ';
-    theLine[16] = theLine[14];
-    theLine[15] = theLine[13];
-    theLine[14] = 'e';
-    theLine[13] = theLine[12];
-    theLine[12] = theLine[11];
-    theLine[11] = theLine[10];
-    theLine[10] = theLine[9];
-    theLine[9] = theLine[8];
-    theLine[8] = theLine[7];
-    theLine[7] = theLine[6];
-    theLine[6] = theLine[5];
-    theLine[5] = ' ';
-    theLine[4] = theLine[4];
-    theLine[3] = theLine[3];
-    theLine[2] = theLine[2];
-    theLine[1] = theLine[1];
-    theLine[0] = theLine[0];
+    ExpandLine(theLine);
 
     if (sscanf(theLine,"%d %lg %lg %lg",
                &id,c,c+1,c+2) != 1+N) return(0);
@@ -764,54 +706,7 @@ static INT file_positions_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
   do {
     fgets(theLine, MAX_LEN, f);
 
-    theLine[40] = theLine[34];
-    theLine[39] = theLine[33];
-    theLine[38] = ' ';
-    theLine[37] = theLine[32];
-    theLine[36] = theLine[31];
-    theLine[35] = theLine[30];
-    theLine[34] = theLine[29];
-    theLine[33] = theLine[28];
-    theLine[32] = theLine[27];
-    theLine[31] = theLine[26];
-    theLine[30] = theLine[25];
-    theLine[29] = ' ';
-    theLine[28] = theLine[24];
-    theLine[27] = theLine[23];
-    theLine[26] = 'e';
-    theLine[25] = theLine[22];
-    theLine[24] = theLine[21];
-    theLine[23] = theLine[20];
-    theLine[22] = theLine[19];
-    theLine[21] = theLine[18];
-    theLine[20] = theLine[17];
-    theLine[19] = theLine[16];
-    theLine[18] = theLine[15];
-    theLine[17] = ' ';
-    theLine[16] = theLine[14];
-    theLine[15] = theLine[13];
-    theLine[14] = 'e';
-    theLine[13] = theLine[12];
-    theLine[12] = theLine[11];
-    theLine[11] = theLine[10];
-    theLine[10] = theLine[9];
-    theLine[9] = theLine[8];
-    theLine[8] = theLine[7];
-    theLine[7] = theLine[6];
-    theLine[6] = theLine[5];
-    theLine[5] = ' ';
-    theLine[4] = theLine[4];
-    theLine[3] = theLine[3];
-    theLine[2] = theLine[2];
-    theLine[1] = theLine[1];
-    theLine[0] = theLine[0];
-
-    for (j=1; j<40; j++) {
-      if ((theLine[j] == '-')&&(theLine[j+1] == 'e')) {
-        theLine[j] = 'e';
-        theLine[j+1] = '-';
-      }
-    }
+    ExpandLine(theLine);
 
     if (sscanf(theLine,"%d %lg %lg %lg",&id,c,c+1,c+2) != 1+DIM)
       return(0);
