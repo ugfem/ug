@@ -177,6 +177,221 @@ void ADFRONT3 :: ResetClass (INDEX fi)
 
 
 
+int ADFRONT3 :: GetLocals_Tetrahedra_new (ARRAY<Point3d> & locpoints,
+                                          ARRAY<Element> & locfaces, // local index
+                                          ARRAY<INDEX> & pindex,
+                                          ARRAY<INDEX> & findex,
+                                          float xh,
+                                          float relh,
+                                          INDEX& facesplit,
+                                          int dummy)
+{
+  INDEX i, j;
+  INDEX fstind, pstind;
+  int hi;
+  INDEX pi;
+  Point3d midp, p0;
+  static ARRAY<int> invpindex;
+  double min,f;
+
+  static ARRAY<Element> locfaces2;           //all local faces in radius xh
+  static ARRAY<int> locfaces3;           // all faces in outer radius relh
+  static ARRAY<INDEX> findex2;
+
+  locfaces2.SetSize(0);
+  locfaces3.SetSize(0);
+  findex2.SetSize(0);
+
+  static int minval = -1;
+  static int lasti = 0;
+
+  if(dummy==0)
+  {
+    if (faces.Size() > 2 * nff)
+    {
+      // compress facelist
+
+      hi = 0;
+      for (i = 1; i <= faces.Size(); i++)
+        if (faces.Get(i).Valid())
+        {
+          hi++;
+          faces.Elem(hi) = faces.Get(i);
+        }
+
+      faces.SetSize (nff);
+      lasti = 0;
+    }
+
+    fstind = 0;
+
+    for (i = lasti+1; i <= faces.Size() && !fstind; i++)
+      if (faces.Elem(i).Valid())
+      {
+        hi = faces.Get(i).QualClass() +
+             points.Get(faces.Get(i).Face().PNum(1)).FrontNr() +
+             points.Get(faces.Get(i).Face().PNum(2)).FrontNr() +
+             points.Get(faces.Get(i).Face().PNum(3)).FrontNr();
+
+        if (hi <= minval)
+        {
+          minval = hi;
+          fstind = i;
+          lasti = fstind;
+        }
+      }
+
+    if (!fstind)
+    {
+      minval = INT_MAX;
+      for (i = 1; i <= faces.Size(); i++)
+        if (faces.Elem(i).Valid())
+        {
+          hi = faces.Get(i).QualClass() +
+               points.Get(faces.Get(i).Face().PNum(1)).FrontNr() +
+               points.Get(faces.Get(i).Face().PNum(2)).FrontNr() +
+               points.Get(faces.Get(i).Face().PNum(3)).FrontNr();
+
+          if (hi <= minval)
+          {
+            minval = hi;
+            fstind = i;
+            lasti = 0;
+          }
+        }
+    }
+  }
+  else
+  {
+    min = INT_MAX;
+    j = 1;
+    fstind = -1;
+    do
+    {
+      for (i = 1; i<= faces.Size(); i++)
+      {
+        if((faces.Get(i).QualClass()==j))
+        {
+          // Flaeche = Grundseite * Hoehe / 2
+          f = 0.5 * Dist(points.Get(faces.Get(i).Face().PNum(1)).P(),
+                         points.Get(faces.Get(i).Face().PNum(2)).P())
+              * Dist(points.Get(faces.Get(i).Face().PNum(3)).P(),
+                     Center(points.Get(faces.Get(i).Face().PNum(1)).P(),
+                            points.Get(faces.Get(i).Face().PNum(2)).P()));
+          f = f;
+          if (f < min)
+          {
+            min = f;
+            fstind = i;
+          }
+        }
+      }
+      j++;
+    }
+    while(fstind<0);
+  }
+
+  pstind = faces[fstind].Face().PNum(1);
+  p0 = points[pstind].P();
+
+  locfaces2.Append(faces[fstind].Face());
+  findex2.Append(fstind);
+
+  if (0)
+  {}
+  else
+  {
+    for (i = 1; i <= faces.Size(); i++)
+    {
+      const Element & face = faces.Get(i).Face();
+      if (faces.Get(i).Valid() && i != fstind)
+      {
+        const Point3d & p1 = points.Get(face.PNum(1)).P();
+        const Point3d & p2 = points.Get(face.PNum(2)).P();
+        const Point3d & p3 = points.Get(face.PNum(3)).P();
+
+        //	  midp = Center (p1, p2, p3);
+        midp.X() = (1.0/3.0) * (p1.X() + p2.X() + p3.X());
+        midp.Y() = (1.0/3.0) * (p1.Y() + p2.Y() + p3.Y());
+        midp.Z() = (1.0/3.0) * (p1.Z() + p2.Z() + p3.Z());
+
+
+        //	  if (Dist2 (midp, p0) <= xh*xh)
+        if ( (midp.X()-p0.X()) * (midp.X()-p0.X()) +
+             (midp.Y()-p0.Y()) * (midp.Y()-p0.Y()) +
+             (midp.Z()-p0.Z()) * (midp.Z()-p0.Z())   <= xh * xh)
+        {
+          locfaces2.Append(faces.Get(i).Face());
+          findex2.Append(i);
+        }
+      }
+    }
+  }
+
+  //local faces for inner radius:
+  for (i = 1; i <= locfaces2.Size(); i++)
+  {
+    /*
+       midp = Center (points.Get(locfaces2.Get(i).PNum(1)).P(),
+       points.Get(locfaces2.Get(i).PNum(2)).P());
+       if (Dist (midp, p0) <= relh || i==1)
+     */
+
+    const Element & face = locfaces2.Get(i);
+    const Point3d & p1 = points.Get(face.PNum(1)).P();
+    const Point3d & p2 = points.Get(face.PNum(2)).P();
+    const Point3d & p3 = points.Get(face.PNum(3)).P();
+
+    midp.X() = (1.0/3.0) * (p1.X() + p2.X() + p3.X());
+    midp.Y() = (1.0/3.0) * (p1.Y() + p2.Y() + p3.Y());
+    midp.Z() = (1.0/3.0) * (p1.Z() + p2.Z() + p3.Z());
+
+    if ( (midp.X()-p0.X()) * (midp.X()-p0.X()) +
+         (midp.Y()-p0.Y()) * (midp.Y()-p0.Y()) +
+         (midp.Z()-p0.Z()) * (midp.Z()-p0.Z())   <= relh * relh || i == 1)
+    {
+      locfaces.Append(locfaces2.Get(i));
+      findex.Append(findex2.Get(i));
+    }
+    else
+      locfaces3.Append (i);
+  }
+
+  facesplit=locfaces.Size();
+
+
+  //local faces for outer radius:
+  for (i = 1; i <= locfaces3.Size(); i++)
+  {
+    locfaces.Append (locfaces2.Get(locfaces3.Get(i)));
+    findex.Append (findex2.Get(locfaces3.Get(i)));
+  }
+
+
+  invpindex.SetSize (points.Size());
+  for (i = 1; i <= points.Size(); i++)
+    invpindex.Elem(i) = 0;
+
+  for (i = 1; i <= locfaces.Size(); i++)
+  {
+    for (j = 1; j <= 3; j++)
+    {
+      pi = locfaces.Get(i).PNum(j);
+      if (invpindex.Get(pi) == 0)
+      {
+        pindex.Append (pi);
+        invpindex.Elem(pi) = pindex.Size();
+        locfaces.Elem(i).PNum(j) = locpoints.Append (points.Get(pi).P());
+      }
+      else
+        locfaces.Elem(i).PNum(j) = invpindex.Get(pi);
+
+    }
+  }
+
+  return faces.Get(fstind).QualClass();
+}
+
 
 int ADFRONT3 :: GetLocals_Tetrahedra (ARRAY<Point3d> & locpoints,
                                       ARRAY<Element> & locfaces, // local index
@@ -184,162 +399,7 @@ int ADFRONT3 :: GetLocals_Tetrahedra (ARRAY<Point3d> & locpoints,
                                       ARRAY<INDEX> & findex,
                                       float xh)
 {
-  INDEX i, j, k;
-  INDEX fstind, pstind;
-  char found;
-  int minval, hi,fnr;
-  INDEX pi;
-  Point3d midp,p0,p1,p2,p3;
-  double min,f;
-
-  minval = INT_MAX;
-  min = INT_MAX;
-
-  // Auswahl nur nach QualityClass der Face
-
-  /*  for (i = 1; i<= faces.Size(); i++)
-      {
-                  if(faces.Get(i).Valid())
-                  {
-                      hi = faces.Get(i).QualClass();
-
-                      if (hi < minval || i == 1)
-                          {
-                                  minval = hi;
-                                  fstind = i;
-                          }
-                  }
-          }*/
-
-  // Auswahl nach QualityClass der Face und Abstand von
-  // der Ausgangsfront
-
-  for (i = 1; i<= faces.Size(); i++)
-  {
-    if(faces.Get(i).Valid())
-    {
-      hi = faces.Get(i).QualClass();
-      fnr = points.Get(faces.Get(i).Face().PNum(1)).FrontNr();
-      if(fnr>points.Get(faces.Get(i).Face().PNum(2)).FrontNr())
-        fnr = points.Get(faces.Get(i).Face().PNum(2)).FrontNr();
-      if(fnr>points.Get(faces.Get(i).Face().PNum(3)).FrontNr())
-        fnr = points.Get(faces.Get(i).Face().PNum(3)).FrontNr();
-      hi = faces.Get(i).QualClass() + 2 * fnr;
-
-      if (hi < minval || i == 1)
-      {
-        minval = hi;
-        fstind = i;
-      }
-    }
-  }
-
-  // kleinste Flaeche
-
-  /*	j = 1;
-          fstind = -1;
-          do
-          {
-                  for (i = 1; i<= faces.Size(); i++)
-                  {
-                          if((faces.Get(i).QualClass()==j))
-                          {
-                                  // Flaeche = Grundseite * Hoehe / 2
-                                  f = 0.5 * Dist(points.Get(faces.Get(i).Face().PNum(1)).P(),
-                                                             points.Get(faces.Get(i).Face().PNum(2)).P())
-   * Dist(points.Get(faces.Get(i).Face().PNum(3)).P(),
-                                                             Center(points.Get(faces.Get(i).Face().PNum(1)).P(),
-                                                                            points.Get(faces.Get(i).Face().PNum(2)).P()));
-                                  f = f;
-                                  if (f < min)
-                                  {
-                                          min = f;
-                                          fstind = i;
-                          }
-                          }
-                  }
-                  j++;
-          }
-          while(fstind<0);*/
-
-  pstind = faces[fstind].Face().PNum(1);
-  //  p0 = points[pstind].P();
-
-  p1 =  points[faces[fstind].Face().PNum(1)].P();
-  p2 =  points[faces[fstind].Face().PNum(2)].P();
-  p3 =  points[faces[fstind].Face().PNum(3)].P();
-  p0.X() = (p1.X()+p2.X()+p3.X())/3;
-  p0.Y() = (p1.Y()+p2.Y()+p3.Y())/3;
-  p0.Z() = (p1.Z()+p2.Z()+p3.Z())/3;
-
-  locfaces.Append(faces[fstind].Face());
-  findex.Append(fstind);
-
-  for (i = 1; i <= faces.Size(); i++)
-  {
-    if (faces.Get(i).Valid() && i != fstind)
-    {
-      //      midp = Center (points.Get(faces.Get(i).Face().PNum(1)).P(),
-      //                     points.Get(faces.Get(i).Face().PNum(2)).P());
-
-      p1 = points.Get(faces.Get(i).Face().PNum(1)).P();
-      p2 = points.Get(faces.Get(i).Face().PNum(2)).P();
-      p3 = points.Get(faces.Get(i).Face().PNum(3)).P();
-      midp.X() = (p1.X()+p2.X()+p3.X())/3;
-      midp.Y() = (p1.Y()+p2.Y()+p3.Y())/3;
-      midp.Z() = (p1.Z()+p2.Z()+p3.Z())/3;
-
-      // Center genauer !!!
-
-      if (Dist (midp, p0) <= xh)
-      {
-        locfaces.Append(faces.Get(i).Face());
-        findex.Append(i);
-      }
-    }
-  }
-
-  for (i = 1; i <= locfaces.Size(); i++)
-  {
-    for (j = 1; j <= locfaces.Get(i).NP(); j++)
-    {
-      found = 0;
-      pi = locfaces.Get(i).PNum(j);
-
-      for (k = 1; k <= pindex.Size() && !found; k++)
-      {
-        if (pindex.Get(k) == pi)
-        {
-          locfaces.Elem(i).PNum(j) = k;
-          found = 1;
-        }
-      }
-
-      if (!found)
-      {
-        pindex.Append (pi);
-        locfaces.Elem(i).PNum(j) = locpoints.Append (points.Get(pi).P());
-      }
-    }
-  }
-
-  /*
-     for (i = 1; i <= points.Size(); i++)
-      if (points.Elem(i).Valid() && Dist (points.Elem(i).p, p0) <= xh)
-        {
-        found = 0;
-        for (k = 1; k <= pindex.Size(); k++)
-          if (pindex[k] == i)
-            found = 1;
-
-        if (!found)
-          {
-          pindex.Append (i);
-          locpoints.Append (points.Get(i).p);
-          }
-        }
-   */
-  return faces.Get(fstind).QualClass();
+  return(0);
 }
 
 int ADFRONT3 :: GetLocals_Prism(ARRAY<Point3d> & locpoints,
@@ -350,16 +410,12 @@ int ADFRONT3 :: GetLocals_Prism(ARRAY<Point3d> & locpoints,
                                 ARRAY<int> & prism_flags)
 {
   INDEX i, j, k;
-  INDEX fstind, pstind;
-  char found;
-  int minval, hi;
+  INDEX fstind;
+  int minval, hi,found;
   INDEX pi;
   Point3d midp,p0,p1,p2,p3,p4;
-  double min,f;
 
   minval = INT_MAX;
-  min = INT_MAX;
-
   fstind = -1;
   for (i = 1; i<= faces.Size(); i++)
     if(faces.Get(i).Valid())
@@ -377,7 +433,6 @@ int ADFRONT3 :: GetLocals_Prism(ARRAY<Point3d> & locpoints,
     return(-1);
   else
   {
-    pstind = faces[fstind].Face().PNum(1);
     p1 =  points[faces[fstind].Face().PNum(1)].P();
     p2 =  points[faces[fstind].Face().PNum(2)].P();
     p3 =  points[faces[fstind].Face().PNum(3)].P();
@@ -460,15 +515,10 @@ int ADFRONT3 :: GetLocals_Pyramid(      ARRAY<Point3d> & locpoints,
                                         float xh)
 {
   INDEX i, j, k;
-  INDEX fstind, pstind;
+  INDEX fstind;
   char found;
-  int minval, hi;
   INDEX pi;
   Point3d midp,p0,p1,p2,p3,p4;
-  double min,f;
-
-  minval = INT_MAX;
-  min = INT_MAX;
 
   fstind = -1;
   for (i = 1; i<= faces.Size(); i++)
@@ -483,7 +533,6 @@ int ADFRONT3 :: GetLocals_Pyramid(      ARRAY<Point3d> & locpoints,
     return(-1);
   else
   {
-    pstind = faces[fstind].Face().PNum(1);
     p1 =  points[faces[fstind].Face().PNum(1)].P();
     p2 =  points[faces[fstind].Face().PNum(2)].P();
     p3 =  points[faces[fstind].Face().PNum(3)].P();
@@ -652,38 +701,40 @@ void ADFRONT3 :: Print () const
 {
   INDEX i,j,n;
 
-  printf("%s\n","Front:");
+  cout << "Front:" << endl;
   n = 0;
   for (i=1; i<=points.Size(); i++)
     if (points[i].Valid())
       n++;
 
-  printf("%s\n"," Points: ");
+  cout << n << " Points: " << endl;
   for (i=1; i<=points.Size(); i++)
     if (points[i].Valid())
-      printf("%d %f %f %f\n",i,points[i].P().X(),points[i].P().Y(),points[i].P().Z());
+      cout << i <<  " (" << points[i].P().X() << "," << points[i].P().Y() << "," << points[i].P().Z() << ")" << endl;
+  cout << endl;
 
   n = 0;
   for (i=1; i<=faces.Size(); i++)
     if (faces[i].Valid())
       n++;
 
-  printf("%d %s\n",n,"Faces: ");
+  cout << n << " Faces: " << endl;
   for (i=1; i<=faces.Size(); i++)
   {
     if (faces[i].Valid())
     {
       for(j=1; j<faces[i].Face().NP(); j++)
-        printf("%d %s",faces[i].Face().PNum(j)," - ");
-      printf("%d %d %d\n",faces[i].Face().PNum(faces[i].Face().NP()),faces[i].QualClass(),
-             faces[i].Valid());
+        cout << faces[i].Face().PNum(j) << " - ";
+      cout << faces[i].Face().PNum(faces[i].Face().NP()) << "      ";
+      cout << faces[i].QualClass() << "  " << faces[i].Valid() << endl;
     }
   }
+  cout << endl;
 }
 
 void ADFRONT3 :: Grape () const
 {
-  INDEX i,j,n;
+  INDEX i,n;
   FILE *file;
 
   file = fopen("grape", "w+");

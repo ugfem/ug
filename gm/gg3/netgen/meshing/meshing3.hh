@@ -12,6 +12,7 @@ class Meshing3
 protected:
   ADFRONT3 * adfront;
   ARRAY<vnetrule*> rules;
+  ARRAY<vnetrule_new*> rules_new;
   ARRAY<int> ruleused;
   ARRAY<char*> problems;
   double tolfak;
@@ -21,6 +22,7 @@ public:
   virtual ~Meshing3 ();
 
   void LoadRules (char * filename);
+  void LoadRules_new (char * filename);
   void Mesh (double gh,int prism);
 
   void ImproveMesh (ARRAY<Point3d> & points,

@@ -177,32 +177,10 @@ int ADFRONT2 :: GetLocals (ARRAY<Point3d> & locpoints,
   char found;
   INDEX pi;
   Point3d midp, p0,p1,p2,sp1,sp2,p;
-  int minval, hi, flag;
   double min,l;
-  int minn, qual;
+  int qual;
 
-  minval = INT_MAX;
   min = INT_MAX;
-
-  /*  for (i = 1; i<= lines.Size(); i++)
-      if (lines.Get(i).Valid())
-        {
-                  minn = points.Get(lines.Get(i).L().I1()).FrontNr();
-                  if(minn >points.Get(lines.Get(i).L().I1()).FrontNr())
-                   minn =	points.Get(lines.Get(i).L().I2()).FrontNr();
-        hi = lines.Get(i).LineClass() +
-              (points.Get(lines.Get(i).L().I1()).FrontNr()+
-                      points.Get(lines.Get(i).L().I2()).FrontNr())/2;
-        hi = lines.Get(i).LineClass()+minn;
-        //cout << lines.Get(i).LineClass() << "  "
-        //     << points.Get(lines.Get(i).L().I1()).FrontNr() << "  "
-        //     << points.Get(lines.Get(i).L().I2()).FrontNr() << endl;
-        if (hi < minval)
-          {
-          minval = hi;
-          lstind = i;
-          }
-        }*/
 
   // Neues Auswahlkriterium
 
@@ -285,23 +263,6 @@ int ADFRONT2 :: GetLocals (ARRAY<Point3d> & locpoints,
     }
   }
 
-  for(i=1; i<=points.Size(); i++)
-  {
-    p1 = points.Get(i).P();
-    flag = 0;
-    for(j=1; j<=locpoints.Size(); j++)
-    {
-      p2 = locpoints.Get(j);
-      if( (p1.X()==p2.X()) && (p1.Y()==p2.Y()) && (p1.Z()==p2.Z()) )
-        flag = 1;
-    }
-    /*		if(flag==0)
-                            if(Test_Point(p1,sp1,sp2,xh))
-                            {
-                                    pindex.Append (i);
-                                    locpoints.Append (points.Get(i).P());
-                            }*/
-  }
   return lines.Get(lstind).LineClass();
 
 }

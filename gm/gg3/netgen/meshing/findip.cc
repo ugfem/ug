@@ -45,9 +45,6 @@ int FindInnerPoint (const ARRAY<Point3d> & points,
 
   nf = faces.Size();
 
-  //  testout << "#faces  = " << faces.Size() << endl;
-  //  testout << "#points = " << points.Size() << endl;
-
   a.SetSize (nf);
   c.SetSize (nf);
 
@@ -82,20 +79,12 @@ int FindInnerPoint (const ARRAY<Point3d> & points,
           m.Elem(3, 3) = a.Get(i1).Z() - a.Get(i4).Z();
           rs.Elem(3) = c.Get(i4) - c.Get(i1);
 
-          /*
-                    testout << "i1, i2, i3, i4 = " << i1 << ", " << i2 << ", " << i3 << ", " << i4 << endl;
-                    testout << "m = " << m << endl;
-                    testout << "rs = " << rs << endl;
-                    testout << "det = " << m.Det() << endl;
-           */
           l = sqrt(rs.Elem(1)*rs.Elem(1) + rs.Elem(2)*rs.Elem(2) + rs.Elem(3)*rs.Elem(3));
 
           if ( (fabs (m.Det()) > 1e-10) && (l > 1e-10))
           {
             CalcInverse (m, inv);
             inv.Mult (rs, x);
-
-            //            testout << "x = " << x << endl;
 
             f = -1e10;
             for (i = 1; i <= nf; i++)
@@ -116,9 +105,6 @@ int FindInnerPoint (const ARRAY<Point3d> & points,
             }
           }
         }
-
-  //  testout << "fmin = " << fmin << endl;
-  //  testout << "pmin = " << pmin << endl;
 
   p = pmin;
   return (fmin < 0) ? 1 : 0;

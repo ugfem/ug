@@ -23,5 +23,3 @@ ROT3D rot;
 #endif
 
 #include <meshing/global.hh>
-
-ostream * testout;

@@ -96,6 +96,15 @@ public:
 
   int Empty () const;
 
+  int GetLocals_Tetrahedra_new (ARRAY<Point3d> & locpoints,
+                                ARRAY<Element> & locfaces, // local index
+                                ARRAY<INDEX> & pindex,
+                                ARRAY<INDEX> & findex,
+                                float xh,
+                                float relh,
+                                INDEX& facesplit,
+                                int dummy);
+
   int GetLocals_Tetrahedra (ARRAY<Point3d> & locpoints,
                             ARRAY<Element> & locfaces,               // local index
                             ARRAY<INDEX> & pindex,

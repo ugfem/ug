@@ -19,8 +19,8 @@ class netrule
   ARRAY<Element> elements;
   ARRAY<threefloat> tolerances, linetolerances;
   ARRAY<threeint> orientations;
-  SparseMatrix oldutonewu, oldutofreearea;
-  SparseMatrix freesetinequ;
+  //  SparseMatrix oldutonewu, oldutofreearea;
+  //  SparseMatrix freesetinequ;
 
   ARRAY<Vec2d> linevecs;
 
@@ -58,8 +58,8 @@ public:
 
   int GetPointNr (int ln, int endp) const { return lines.Get(ln).I(endp); }
 
-  const SparseMatrix & GetOldUToNewU () const { return oldutonewu; }
-  const SparseMatrix & GetOldUToFreeArea () const { return oldutofreearea; }
+  //  const SparseMatrix & GetOldUToNewU () const { return oldutonewu; }
+  //  const SparseMatrix & GetOldUToFreeArea () const { return oldutofreearea; }
   const char * Name () const { return name; }
 
   void LoadRule (istream & ist);

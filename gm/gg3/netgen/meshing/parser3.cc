@@ -39,19 +39,54 @@ void LoadVMatrixLine (istream & ist, DenseMatrix & m, int line)
     if (ch == 'z' || ch == 'Z')
       m(line, 3 * pnum    ) = f;
 
+    if (ch == 'p' || ch == 'P')
+    {
+      m(line  , 3 * pnum-2) = f;
+      m(line+1, 3 * pnum-1) = f;
+      m(line+2, 3 * pnum  ) = f;
+    }
+
     ist >> ch;
     if (ch == ',')
       ist >> ch;
   }
 }
 
-
-
-
-
-
-
 void vnetrule :: LoadRule (istream & ist)
+{}
+
+void Meshing3 :: LoadRules (char * filename)
+{}
+
+int vnetrule_new :: NeighbourTrianglePoint (const threeint & t1, const threeint & t2) const
+{
+  ARRAY<int> tr1(3);
+  ARRAY<int> tr2(3);
+  tr1.Elem(1)=t1.i1;
+  tr1.Elem(2)=t1.i2;
+  tr1.Elem(3)=t1.i3;
+  tr2.Elem(1)=t2.i1;
+  tr2.Elem(2)=t2.i2;
+  tr2.Elem(3)=t2.i3;
+
+  int ret=0;
+
+  for (int i=1; i<=3; i++)
+  {
+    for (int j=1; j<=3; j++)
+    {
+      if ((tr1.Get(i)==tr2.Get(j) && tr1.Get((i%3)+1)==tr2.Get((j%3)+1)) ||
+          (tr1.Get(i)==tr2.Get((j%3)+1) && tr1.Get((i%3)+1)==tr2.Get(j)))
+      {ret = tr2.Get((j+1)%3+1);}
+    }
+  }
+
+  return ret;
+
+}
+
+
+void vnetrule_new :: LoadRule(istream & ist)
 {
   char buf[256];
   char ch, ok;
@@ -59,10 +94,13 @@ void vnetrule :: LoadRule (istream & ist)
   Element face;
   int i, j, i1, i2, i3, fs, ii, ii1, ii2, ii3;
   twoint edge;
-  DenseMatrix tempoldutonewu(30, 20), tempoldutofreezone(30, 20);
+  DenseMatrix tempoldutonewu(30, 20),
+  tempoldutofreezone(30, 20),
+  tempoldutofreezonelimit(30, 20);
 
   tempoldutonewu = 0;
   tempoldutofreezone = 0;
+
 
   noldp = 0;
   noldf = 0;
@@ -140,7 +178,7 @@ void vnetrule :: LoadRule (istream & ist)
 
       while (ch == '(')
       {
-        face.SetNP(3);
+        face.SetNP (3);
         ist >> face.PNum(1);
         ist >> ch;    // ','
         ist >> face.PNum(2);
@@ -272,11 +310,11 @@ void vnetrule :: LoadRule (istream & ist)
       while (ch == '(')
       {
         ist >> p.X();
-        ist >> ch;    // ','
+        ist >> ch;        // ','
         ist >> p.Y();
-        ist >> ch;    // ','
+        ist >> ch;        // ','
         ist >> p.Z();
-        ist >> ch;    // ')'
+        ist >> ch;        // ')'
 
         freezone.Append (p);
 
@@ -288,11 +326,11 @@ void vnetrule :: LoadRule (istream & ist)
             LoadVMatrixLine (ist, tempoldutofreezone,
                              3 * freezone.Size() - 2);
 
-            ist >> ch; // '{'
+            ist >> ch;         // '{'
             LoadVMatrixLine (ist, tempoldutofreezone,
                              3 * freezone.Size() - 1);
 
-            ist >> ch; // '{'
+            ist >> ch;         // '{'
             LoadVMatrixLine (ist, tempoldutofreezone,
                              3 * freezone.Size()    );
           }
@@ -304,6 +342,113 @@ void vnetrule :: LoadRule (istream & ist)
       }
 
       ist.putback (ch);
+    }
+    else if (strcmp (buf, "freezone2") == 0)
+    {
+      int i, j, k, nfp;
+      Point3d p;
+
+      nfp = 0;
+      ist >> ch;
+
+      DenseMatrix hm1(3, 50), hm2(50, 50), hm3(50, 50);
+      hm3 = 0;
+
+      while (ch == '{')
+      {
+        hm1 = 0;
+        nfp++;
+        LoadVMatrixLine (ist, hm1, 1);
+
+        p.X() = p.Y() = p.Z() = 0;
+        for (i = 1; i <= points.Size(); i++)
+        {
+          p.X() += hm1.Get(1, 3*i-2) * points.Get(i).X();
+          p.Y() += hm1.Get(1, 3*i-2) * points.Get(i).Y();
+          p.Z() += hm1.Get(1, 3*i-2) * points.Get(i).Z();
+        }
+        freezone.Append (p);
+        freezonelimit.Append (p);
+
+        hm2 = 0;
+        for (i = 1; i <= 3 * noldp; i++)
+          hm2.Elem(i, i) = 1;
+        for (i = 1; i <= 3 * noldp; i++)
+          for (j = 1; j <= 3 * (points.Size() - noldp); j++)
+            hm2.Elem(j + 3 * noldp, i) = tempoldutonewu.Get(j, i);
+
+        for (i = 1; i <= 3; i++)
+          for (j = 1; j <= 3 * noldp; j++)
+          {
+            double sum = 0;
+            for (k = 1; k <= 3 * points.Size(); k++)
+              sum += hm1.Get(i, k) * hm2.Get(k, j);
+
+            hm3.Elem(i + 3 * (nfp-1), j) = sum;
+          }
+
+        while (ch != ';')
+          ist >> ch;
+
+        ist >> ch;
+      }
+
+      tempoldutofreezone = hm3;
+      tempoldutofreezonelimit = hm3;
+      ist.putback(ch);
+    }
+
+    else if (strcmp (buf, "freezonelimit") == 0)
+    {
+      int i, j, k, nfp;
+      Point3d p;
+
+      nfp = 0;
+      ist >> ch;
+
+      DenseMatrix hm1(3, 50), hm2(50, 50), hm3(50, 50);
+      hm3 = 0;
+
+      while (ch == '{')
+      {
+        hm1 = 0;
+        nfp++;
+        LoadVMatrixLine (ist, hm1, 1);
+
+        p.X() = p.Y() = p.Z() = 0;
+        for (i = 1; i <= points.Size(); i++)
+        {
+          p.X() += hm1.Get(1, 3*i-2) * points.Get(i).X();
+          p.Y() += hm1.Get(1, 3*i-2) * points.Get(i).Y();
+          p.Z() += hm1.Get(1, 3*i-2) * points.Get(i).Z();
+        }
+        freezonelimit.Elem(nfp) = p;
+
+        hm2 = 0;
+        for (i = 1; i <= 3 * noldp; i++)
+          hm2.Elem(i, i) = 1;
+        for (i = 1; i <= 3 * noldp; i++)
+          for (j = 1; j <= 3 * (points.Size() - noldp); j++)
+            hm2.Elem(j + 3 * noldp, i) = tempoldutonewu.Get(j, i);
+
+        for (i = 1; i <= 3; i++)
+          for (j = 1; j <= 3 * noldp; j++)
+          {
+            double sum = 0;
+            for (k = 1; k <= 3 * points.Size(); k++)
+              sum += hm1.Get(i, k) * hm2.Get(k, j);
+
+            hm3.Elem(i + 3 * (nfp-1), j) = sum;
+          }
+
+        while (ch != ';')
+          ist >> ch;
+
+        ist >> ch;
+      }
+
+      tempoldutofreezonelimit = hm3;
+      ist.putback(ch);
     }
 
     else if (strcmp (buf, "freeset") == 0)
@@ -412,19 +557,30 @@ void vnetrule :: LoadRule (istream & ist)
 
 
   oldutonewu.SetSize (3 * (points.Size() - noldp), 3 * noldp);
-  oldutofreezone.SetSize (3 * freezone.Size(), 3 * noldp);
+  oldutonewu = 0;
+
+  oldutofreezone = new SparseMatrixFlex (3 * freezone.Size(), 3 * noldp);
+  oldutofreezonelimit = new SparseMatrixFlex (3 * freezone.Size(), 3 * noldp);
+
+  oldutofreezone -> SetSymmetric(0);
+  oldutofreezonelimit -> SetSymmetric(0);
+
+  //  oldutofreezone = new DenseMatrix (3 * freezone.Size(), 3 * noldp);
+  //  oldutofreezonelimit = new DenseMatrix (3 * freezone.Size(), 3 * noldp);
 
   for (i = 1; i <= oldutonewu.Height(); i++)
     for (j = 1; j <= oldutonewu.Width(); j++)
-      if (tempoldutonewu(i, j) &&
-          j >= 4 && j != 5 && j != 6 && j != 9)
-        oldutonewu(i, j) = tempoldutonewu(i, j);
+      oldutonewu(i, j) = tempoldutonewu(i, j);
 
-  for (i = 1; i <= oldutofreezone.Height(); i++)
-    for (j = 1; j <= oldutofreezone.Width(); j++)
-      if (tempoldutofreezone(i, j) &&
-          j >= 4 && j != 5 && j != 6 && j != 9)
-        oldutofreezone(i, j) = tempoldutofreezone(i, j);
+  for (i = 1; i <= oldutofreezone->Height(); i++)
+    for (j = 1; j <= oldutofreezone->Width(); j++)
+      if (j == 4 || j >= 7)
+      {
+        if (tempoldutofreezone.Elem(i, j))
+          (*oldutofreezone)(i, j) = tempoldutofreezone(i, j);
+        if (tempoldutofreezonelimit.Elem(i, j))
+          (*oldutofreezonelimit)(i, j) = tempoldutofreezonelimit(i, j);
+      }
 
 
   for (i = 1; i <= elements.Size(); i++)
@@ -445,12 +601,9 @@ void vnetrule :: LoadRule (istream & ist)
   }
 
 
-  //  testout << "Freezone: " << endl;
   for (fs = 1; fs <= freesets.Size(); fs++)
   {
     freefaces.Append (new ARRAY<threeint>);
-
-    //    testout << "Freeset: " << endl;
 
     ARRAY<int> & freeset = *freesets[fs];
     ARRAY<threeint> & freesetfaces = *freefaces.Last();
@@ -486,8 +639,6 @@ void vnetrule :: LoadRule (istream & ist)
               freesetfaces.Last().i2 = i2;
               freesetfaces.Last().i3 = i3;
 
-              //              testout << "Freesetface: "
-              //                      << i1 << "  " << i2 << "  " << i3 << endl;
             }
           }
   }
@@ -536,18 +687,40 @@ void vnetrule :: LoadRule (istream & ist)
       fnearness[i] = 0;
       for (j = 1; j <= 3; j++)
         fnearness[i] += pnearness[GetPointNr (i, j)];
+
     }
   }
+
+  for (fs = 1; fs <= freesets.Size(); fs++)
+  {
+    freeedges.Append (new ARRAY<twoint>);
+
+    ARRAY<int> & freeset = *freesets[fs];
+    ARRAY<twoint> & freesetedges = *freeedges.Last();
+    ARRAY<threeint> & freesetfaces = *freefaces.Get(fs);
+    int k,l;
+    INDEX ind;
+
+    for (k = 1; k <= freesetfaces.Size(); k++)
+    {
+      threeint tr=freesetfaces.Get(k);
+      for (l = k+1; l <= freesetfaces.Size(); l++)
+      {
+        if (ind = NeighbourTrianglePoint(freesetfaces.Get(k),freesetfaces.Get(l)))
+        {
+          freesetedges.Append(twoint(k,ind));
+        }
+      }
+    }
+  }
+
 }
 
 
 
 
 
-
-
-
-void Meshing3 :: LoadRules (char * filename)
+void Meshing3 :: LoadRules_new (char * filename)
 {
   char buf[256];
   ifstream ist (filename);
@@ -565,9 +738,9 @@ void Meshing3 :: LoadRules (char * filename)
 
     if (strcmp (buf, "rule") == 0)
     {
-      vnetrule * rule = new vnetrule;
+      vnetrule_new * rule = new vnetrule_new;
       rule -> LoadRule(ist);
-      rules.Append (rule);
+      rules_new.Append (rule);
       if (!rule->TestOk())
       {
         cout << "Rule " << rules.Size() << " not ok" << endl;

@@ -19,40 +19,7 @@
 #include <meshing/meshing3.hh>
 // #include <meshing/meshtool.hh>
 
-#ifdef SOLIDGEOM
-#include <geom/solid.hh>
-#include <meshing/specpoin.hh>
-#include <meshing/edgeflw.hh>
-#endif
-
 #include <opti/opti.hh>
-
-
-#ifdef SOLIDGEOM
-extern ARRAY<Surface*> surfaces;
-#endif
-
-
-static double CalcVolume (const ARRAY<Point3d> & points,
-                          const ARRAY<Element> & elements)
-{
-  double vol;
-  int i;
-  Vec3d v1, v2, v3;
-
-  vol = 0;
-  for (i = 1; i <= elements.Size(); i++)
-  {
-    v1 = points.Get(elements.Get(i).PNum(2)) -
-         points.Get(elements.Get(i).PNum(1));
-    v2 = points.Get(elements.Get(i).PNum(3)) -
-         points.Get(elements.Get(i).PNum(1));
-    v3 = points.Get(elements.Get(i).PNum(4)) -
-         points.Get(elements.Get(i).PNum(1));
-    vol -= (Cross (v1, v2) * v3) / 6;
-  }
-  return vol;
-}
 
 static double CalcTetBadness (const Point3d & p1, const Point3d & p2,
                               const Point3d & p3, const Point3d & p4, double h)
@@ -205,274 +172,13 @@ double Opti3FreeMinFunction :: FuncGrad (const Vector & x, Vector & grad) const
 }
 
 
-
-
-#ifdef SOLIDGEOM
-class Opti3SurfaceMinFunction : public MinFunction
-{
-  const PointFunction & pf;
-  Point3d sp1;
-  int surf;
-  Vec3d t1, t2;
-
-public:
-  Opti3SurfaceMinFunction (const PointFunction & apf);
-
-  void SetPoint (int asurf, const Point3d & asp1);
-
-  void CalcNewPoint (const Vector & x, Point3d & np) const;
-  virtual double FuncGrad (const Vector & x, Vector & g) const;
-};
-
-
-Opti3SurfaceMinFunction :: Opti3SurfaceMinFunction (const PointFunction & apf)
-  : MinFunction(), pf(apf)
-{
-  ;
-}
-
-void Opti3SurfaceMinFunction :: SetPoint (int asurf, const Point3d & asp1)
-{
-  Vec3d n;
-  sp1 = asp1;
-  surf = asurf;
-
-  surfaces[surf] -> GetNormalVector (sp1, n);
-  n.GetNormal (t1);
-  t1 /= t1.Length();
-  t2 = Cross (n, t1);
-}
-
-
-void Opti3SurfaceMinFunction :: CalcNewPoint (const Vector & x,
-                                              Point3d & np) const
-{
-  np.X() = sp1.X() + x.Get(1) * t1.X() + x.Get(2) * t2.X();
-  np.Y() = sp1.Y() + x.Get(1) * t1.Y() + x.Get(2) * t2.Y();
-  np.Z() = sp1.Z() + x.Get(1) * t1.Z() + x.Get(2) * t2.Z();
-
-  surfaces[surf] -> Project (np);
-}
-
-double Opti3SurfaceMinFunction :: FuncGrad (const Vector & x, Vector & grad) const
-{
-  Vec3d n, vgrad;
-  Point3d pp1;
-  double badness;
-  static Vector freegrad(3);
-
-  CalcNewPoint (x, pp1);
-
-  badness = pf.PointFunctionValueGrad (pp1, freegrad);
-  vgrad.X() = freegrad.Get(1);
-  vgrad.Y() = freegrad.Get(2);
-  vgrad.Z() = freegrad.Get(3);
-
-  surfaces[surf] -> GetNormalVector (pp1, n);
-
-  vgrad -= (vgrad * n) * n;
-
-  grad.Elem(1) = vgrad * t1;
-  grad.Elem(2) = vgrad * t2;
-
-  return badness;
-}
-#endif
-
-
-
-
-
-
-
-
-#ifdef SOLIDGEOM
-class Opti3EdgeMinFunction : public MinFunction
-{
-  const PointFunction & pf;
-  Point3d sp1;
-  int surf1, surf2;
-  Vec3d t1;
-
-public:
-  Opti3EdgeMinFunction (const PointFunction & apf);
-
-  void SetPoint (int asurf1, int asurf2, const Point3d & asp1);
-  void CalcNewPoint (const Vector & x, Point3d & np) const;
-  virtual double FuncGrad (const Vector & x, Vector & g) const;
-};
-
-Opti3EdgeMinFunction :: Opti3EdgeMinFunction (const PointFunction & apf)
-  : MinFunction(), pf(apf)
-{
-  ;
-}
-
-void Opti3EdgeMinFunction :: SetPoint (int asurf1, int asurf2,
-                                       const Point3d & asp1)
-{
-  Vec3d n1, n2;
-  sp1 = asp1;
-  surf1 = asurf1;
-  surf2 = asurf2;
-
-  surfaces[surf1] -> GetNormalVector (sp1, n1);
-  surfaces[surf2] -> GetNormalVector (sp1, n2);
-  t1 = Cross (n1, n2);
-}
-
-void Opti3EdgeMinFunction :: CalcNewPoint (const Vector & x,
-                                           Point3d & np) const
-{
-  np.X() = sp1.X() + x.Get(1) * t1.X();
-  np.Y() = sp1.Y() + x.Get(1) * t1.Y();
-  np.Z() = sp1.Z() + x.Get(1) * t1.Z();
-  ProjectToEdge ( surfaces[surf1], surfaces[surf2], np);
-}
-
-
-double Opti3EdgeMinFunction :: FuncGrad (const Vector & x, Vector & grad) const
-{
-  Vec3d n1, n2, v1, vgrad;
-  Point3d pp1;
-  double badness;
-  static Vector freegrad(3);
-
-  CalcNewPoint (x, pp1);
-
-
-  badness = pf.PointFunctionValueGrad (pp1, freegrad);
-
-  vgrad.X() = freegrad.Get(1);
-  vgrad.Y() = freegrad.Get(2);
-  vgrad.Z() = freegrad.Get(3);
-
-  surfaces[surf1] -> GetNormalVector (pp1, n1);
-  surfaces[surf2] -> GetNormalVector (pp1, n2);
-
-  v1 = Cross (n1, n2);
-  v1 /= v1.Length();
-
-  grad.Elem(1) = (vgrad * v1) * (t1 * v1);
-  return badness;
-}
-#endif
-
-
-
-
-
-
-#ifdef SOLIDGEOM
-void Meshing3 :: ImproveMesh (ARRAY<Point3d> & points,
-                              const ARRAY<Element> & surfelements,
-                              const ARRAY<Element> & elements, double h)
-{
-  INDEX i, eli;
-  int j;
-
-  TABLE<INDEX> surfelementsonpoint(points.Size());
-  Vector x(3), xsurf(2), xedge(1);
-  int surf, surf1, surf2, surf3;
-
-  (*testout).precision(8);
-  // cout << "ImproveMesh" << endl;
-  // cout << "Vol = " << CalcVolume (points, elements) << endl;
-
-
-  for (i = 1; i <= surfelements.Size(); i++)
-    for (j = 1; j <= surfelements[i].NP(); j++)
-      surfelementsonpoint.Add (surfelements[i].PNum(j), i);
-
-
-  PointFunction pf(points, elements);
-  pf.SetLocalH (h);
-
-  Opti3FreeMinFunction freeminf(pf);
-  Opti3SurfaceMinFunction surfminf(pf);
-  Opti3EdgeMinFunction edgeminf(pf);
-
-  for (i = 1; i <= points.Size(); i++)
-  {
-    // cout << ".";
-
-    //    (*testout) << "Now point " << i << endl;
-    //    (*testout) << "Old: " << points.Get(i) << endl;
-
-    pf.SetPointIndex (i);
-    surf1 = surf2 = surf3 = 0;
-
-    for (j = 1; j <= surfelementsonpoint.EntrySize(i); j++)
-    {
-      eli = surfelementsonpoint.Get(i, j);
-      surf = surfelements.Get(eli).SurfaceIndex();
-
-      if (!surf1)
-        surf1 = surf;
-      else if (surf1 != surf)
-      {
-        if (!surf2)
-          surf2 = surf;
-        else if (surf2 != surf)
-          surf3 = surf;
-      }
-    }
-
-
-    if (surf2 && !surf3)
-    {
-      //      (*testout) << "On Edge" << endl;
-      xedge = 0;
-      edgeminf.SetPoint (surf1, surf2, points.Elem(i));
-      BFGS (xedge, edgeminf);
-
-      edgeminf.CalcNewPoint (xedge, points.Elem(i));
-    }
-
-    if (surf1 && !surf2)
-    {
-      //      (*testout) << "In Surface" << endl;
-      xsurf = 0;
-      surfminf.SetPoint (surf1, points.Get(i));
-      BFGS (xsurf, surfminf);
-
-      surfminf.CalcNewPoint (xsurf, points.Elem(i));
-    }
-
-    if (!surf1)
-    {
-      //      (*testout) << "In Volume" << endl;
-      x = 0;
-      freeminf.SetPoint (points.Elem(i));
-      BFGS (x, freeminf);
-
-      points.Elem(i).X() += x.Get(1);
-      points.Elem(i).Y() += x.Get(2);
-      points.Elem(i).Z() += x.Get(3);
-    }
-
-    //    (*testout) << "New Point: " << points.Elem(i) << endl << endl;
-
-  }
-  // cout << endl;
-
-  // cout << "Vol = " << CalcVolume (points, elements) << endl;
-}
-#endif
-
-
 void Meshing3 :: ImproveMesh (ARRAY<Point3d> & points,
                               const ARRAY<Element> & elements,
                               int nboundnodes, double h)
 {
   INDEX i;
 
-  (*testout) << "Improve Mesh" << endl;
-  // cout << "ImproveMesh" << endl;
-
   Vector x(3);
-
-  (*testout).precision(8);
 
   PointFunction pf(points, elements);
   pf.SetLocalH (h);
@@ -481,8 +187,6 @@ void Meshing3 :: ImproveMesh (ARRAY<Point3d> & points,
 
   for (i = nboundnodes+1; i <= points.Size(); i++)
   {
-    // cout << "." << flush;
-    //    if (elementsonpoint.EntrySize(i) == 0) continue;
 
     freeminf.SetPoint (points.Elem(i));
     pf.SetPointIndex (i);
@@ -494,7 +198,6 @@ void Meshing3 :: ImproveMesh (ARRAY<Point3d> & points,
     points.Elem(i).Y() += x.Get(2);
     points.Elem(i).Z() += x.Get(3);
   }
-  // cout << endl;
 }
 
 
@@ -524,11 +227,6 @@ void Meshing3 :: CombineImprove (ARRAY<Point3d> & points,
   ARRAY<Element*> hasonepoint;
   ARRAY<Element*> hasbothpoints;
 
-  // cout << "CombineImprove" << endl;
-  // cout << "nbp = " << nboundnodes << endl;
-
-  // cout << "Vol = " << CalcVolume (points, elements) << endl;
-
   for (i = 1; i <= elements.Size(); i++)
     for (j = 1; j <= elements.Get(i).NP(); j++)
       elementsonnode.Add (elements.Get(i).PNum(j), i);
@@ -536,7 +234,6 @@ void Meshing3 :: CombineImprove (ARRAY<Point3d> & points,
   bad1 = 0;
   for (i = 1; i <= elements.Size(); i++)
     bad1 += CalcBad (points, elements.Get(i), 0);
-  // cout << "Total badness = " << bad1 << endl;
 
   for (i = 1; i <= elements.Size(); i++)
   {
@@ -640,7 +337,6 @@ void Meshing3 :: CombineImprove (ARRAY<Point3d> & points,
           bad1 / (hasonepoint.Size()+hasbothpoints.Size())  )
       {
         points[pi1] = pnew;
-        // cout << "Connect point " << pi2 << " to " << pi1 << endl;
         for (k = 1; k <= elementsonnode.EntrySize(pi2); k++)
         {
           elem = &elements[elementsonnode.Get (pi2, k)];
@@ -659,14 +355,10 @@ void Meshing3 :: CombineImprove (ARRAY<Point3d> & points,
     }
   }
 
-  // cout << "Now deleting elements" << endl;
-
   for (k = elements.Size(); k >= 1; k--)
     if (elements[k].PNum(1) == 0)
       elements.DeleteElement(k);
 
-  // cout << "Elements now: " << elements.Size() << endl;
-  // cout << "Vol = " << CalcVolume (points, elements) << endl;
 }
 
 
@@ -688,13 +380,9 @@ void Meshing3 :: SplitImprove (ARRAY<Point3d> & points,
   INDEX_2_HASHTABLE<int> boundaryedges(surfelements.Size());
 
 
-  // cout << "SplitImprove" << endl;
-  // cout << "Vol = " << CalcVolume (points, elements) << endl;
-
   bad1 = 0;
   for (i = 1; i <= elements.Size(); i++)
     bad1 += CalcBad (points, elements.Get(i), 0);
-  // cout << "Total badness = " << bad1 << endl;
 
   for (i = 1; i <= surfelements.Size(); i++)
     for (j = 1; j <= 3; j++)
@@ -781,7 +469,6 @@ void Meshing3 :: SplitImprove (ARRAY<Point3d> & points,
       }
     }
   }
-  // cout << "Splitt - Improve done" << endl;
 }
 
 
@@ -794,7 +481,6 @@ void Meshing3 :: SwapImprove (ARRAY<Point3d> & points,
 {
   int i, j, k, l;
   INDEX_2 i2;
-  //  Point3d p1, p2, pnew;
   int elnr;
   int pi1, pi2, pi3, pi4, pi5, pi6;
   Element el21(4), el22(4), el31(4), el32(4), el33(4);
@@ -1133,5 +819,4 @@ void Meshing3 :: SwapImprove (ARRAY<Point3d> & points,
     if (elements[k].PNum(1) == 0)
       elements.DeleteElement(k);
 
-  // cout << "Vol = " << CalcVolume (points, elements) << endl;
 }

@@ -18,8 +18,6 @@ const int npoint = 5;
 const int aux_point = 0;
 
 const double search_radius = 1.75;
-const double min_angle = 0.53;
-const double min_distance = 0.55;
 static int DEBUG = 0;
 
 double Sphere_radius(double *p,double *p_opt,double *D,double *M);
@@ -29,14 +27,6 @@ int Check_All_Points(ARRAY<Point3d> & points,Element element);
 extern int Cross_Check( double *p1_0, double *p1_1, double *p1_2, int *id1,
                         double *p2_0, double *p2_1, double *p2_2, int *id2);
 
-
-static double ABS(double a)
-{
-  if(a>=0.0)
-    return(a);
-  else
-    return(-a);
-}
 
 static Vec3d Get_Normalvector_Triang(Point3d p1,Point3d p2,Point3d p3)
 {
@@ -88,7 +78,7 @@ int RemoveOrAdd_Triangle(       ARRAY<Element> & lfaces,
                                 ARRAY<INDEX> & delfaces,
                                 int id1,int id2,int id3)
 {
-  int i,flag;
+  int flag;
   Element element;
 
   flag = Search_TriangFace(lfaces,id1,id2,id3);
@@ -135,7 +125,7 @@ int RemoveOrAdd_Quadrilateral(  ARRAY<Element> & lfaces,
                                 ARRAY<INDEX> & delfaces,
                                 int id1,int id2,int id3,int id4)
 {
-  int i,flag;
+  int flag;
   Element element;
 
   flag = Search_QuadFace(lfaces,id1,id2,id3,id4);
@@ -160,7 +150,6 @@ int RemoveOrAdd_Quadrilateral(  ARRAY<Element> & lfaces,
 int Cut(int i1, int i2 ,int test_id, ARRAY<Point3d> & lpoints, ARRAY<Element> & lfaces, Point3d testpoint)
 {
   int j,flag;
-  FILE *file;
   int id1[3],id2[3];
   double p1_0[3], p1_1[3], p1_2[3], p2_0[3], p2_1[3], p2_2[3];
 
@@ -319,7 +308,6 @@ int Free_Prism( ARRAY<Point3d> & lpoints,ARRAY<Element> & lfaces,Element & eleme
                 ARRAY<int> & id_ASL,ARRAY<int> & id_BSL,ARRAY<int> & id_CSL,
                 Point3d AN,Point3d BN,Point3d CN)
 {
-  int i;
   if( (AL.Size()==0)&&(BL.Size()==0)&&(CL.Size()==0) )
   {
     element.PNum(1) = 1;
@@ -346,7 +334,7 @@ int Generate_Prism (ARRAY<Point3d> & lpoints, ARRAY<Element> & lfaces,
                     ARRAY<Element> & elements,
                     ARRAY<INDEX> & delfaces, ARRAY<int> & prism_flags)
 {
-  int i,j,flag,face_id, id1, id2, id3;
+  int i,face_id, id1, id2, id3;
   double max_l,l,dA,dB,dC;
   Point3d A,B,C,AN,BN,CN,M,dummy;
   Vec3d a,b,c,m,n,dist_A,dist_B,dist_C;
@@ -406,7 +394,7 @@ int Generate_Prism (ARRAY<Point3d> & lpoints, ARRAY<Element> & lfaces,
       m = lpoints[i] - M;
       dummy = lpoints[i];
       m /= m.Length();
-      if(m*n<0.0)
+      if(m*n<-0.0)
       {
         dist_A = lpoints[i] - A;
         dist_B = lpoints[i] - B;
@@ -468,25 +456,28 @@ int Generate_Prism (ARRAY<Point3d> & lpoints, ARRAY<Element> & lfaces,
     }
   }
 
-  /*	printf("%s\n","AL");
-          for(i=1;i<=AL.Size();i++)
-                  printf("%lf %lf %lf %d\n",AL[i].X(),AL[i].Y(),AL[i].Z(),id_AL[i]);
-          printf("%s\n","BL");
-          for(i=1;i<=BL.Size();i++)
-                  printf("%lf %lf %lf %d\n",BL[i].X(),BL[i].Y(),BL[i].Z(),id_BL[i]);
-          printf("%s\n","CL");
-          for(i=1;i<=CL.Size();i++)
-                  printf("%lf %lf %lf %d\n",CL[i].X(),CL[i].Y(),CL[i].Z(),id_CL[i]);
-          printf("%s\n","################");
-          printf("%s\n","ASL");
-          for(i=1;i<=ASL.Size();i++)
-                  printf("%lf %lf %lf %d\n",ASL[i].X(),ASL[i].Y(),ASL[i].Z(),id_ASL[i]);
-          printf("%s\n","BSL");
-          for(i=1;i<=BSL.Size();i++)
-                  printf("%lf %lf %lf %d\n",BSL[i].X(),BSL[i].Y(),BSL[i].Z(),id_BSL[i]);
-          printf("%s\n","CSL");
-          for(i=1;i<=CSL.Size();i++)
-                  printf("%lf %lf %lf %d\n",CSL[i].X(),CSL[i].Y(),CSL[i].Z(),id_CSL[i]);*/
+  if(DEBUG)
+  {
+    printf("%s\n","AL");
+    for(i=1; i<=AL.Size(); i++)
+      printf("%lf %lf %lf %d\n",AL[i].X(),AL[i].Y(),AL[i].Z(),id_AL[i]);
+    printf("%s\n","BL");
+    for(i=1; i<=BL.Size(); i++)
+      printf("%lf %lf %lf %d\n",BL[i].X(),BL[i].Y(),BL[i].Z(),id_BL[i]);
+    printf("%s\n","CL");
+    for(i=1; i<=CL.Size(); i++)
+      printf("%lf %lf %lf %d\n",CL[i].X(),CL[i].Y(),CL[i].Z(),id_CL[i]);
+    printf("%s\n","################");
+    printf("%s\n","ASL");
+    for(i=1; i<=ASL.Size(); i++)
+      printf("%lf %lf %lf %d\n",ASL[i].X(),ASL[i].Y(),ASL[i].Z(),id_ASL[i]);
+    printf("%s\n","BSL");
+    for(i=1; i<=BSL.Size(); i++)
+      printf("%lf %lf %lf %d\n",BSL[i].X(),BSL[i].Y(),BSL[i].Z(),id_BSL[i]);
+    printf("%s\n","CSL");
+    for(i=1; i<=CSL.Size(); i++)
+      printf("%lf %lf %lf %d\n",CSL[i].X(),CSL[i].Y(),CSL[i].Z(),id_CSL[i]);
+  }
 
   face_id = Search_PrismTriangle(lpoints,lfaces,ASL,BSL,CSL,id_ASL,id_BSL,id_CSL, prism_flags, id1, id2, id3);
   if(face_id==-1)
@@ -626,7 +617,7 @@ int Generate_Pyramid (  ARRAY<Point3d> & lpoints, ARRAY<Element> & lfaces,
                         ARRAY<Element> & elements,
                         ARRAY<INDEX> & delfaces, ARRAY<int> & prism_flags)
 {
-  int i,j,flag1,flag2,flag3,flag4,new_id,ok,save,test_id;
+  int i,j,flag1,flag2,flag3,flag4,new_id,test_id;
   double l,max_l,dist;
   Point3d A,B,C,D,M,dummy,P[1+npoint+aux_point],testpoint;
   Vec3d a,b,n,m,dist_vec;
@@ -706,7 +697,6 @@ int Generate_Pyramid (  ARRAY<Point3d> & lpoints, ARRAY<Element> & lfaces,
   Order_List3(lpoints,lfaces,Q,P,id_Q,distance,OL,id_OL);
 
   new_id = -1;
-  ok = 0;
   elem.SetSize(0);
 
   for(i=1; i<=OL.Size(); i++)
@@ -719,7 +709,6 @@ int Generate_Pyramid (  ARRAY<Point3d> & lpoints, ARRAY<Element> & lfaces,
     flag2 = Cut(2,3,test_id,lpoints,lfaces,testpoint);
     flag3 = Cut(3,4,test_id,lpoints,lfaces,testpoint);
     flag4 = Cut(4,1,test_id,lpoints,lfaces,testpoint);
-    save = 0;
     if( (flag1==0)&&(flag2==0)&&(flag3==0)&&(flag4==0) )
     {
       new_id = id_OL[i];

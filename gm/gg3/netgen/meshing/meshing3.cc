@@ -36,20 +36,15 @@ static ARRAY<Point3d> locpoints;
 static ARRAY<Element> locfaces;
 static ARRAY<INDEX> pindex, findex;
 static ARRAY<int> style;
-static int drawrad = 100;
 static int cntsucc = 0;
 static long cnttrials = 0;
 static int cntelem = 0;
-static char buf[100];
 static int qualclass;
-static float vol0, err;
-static int problemindex = 1;
+static float err;
 static int MESH_DEBUG = 0;
+static int NEW = 1;
 double h;
 
-static Meshing3 * meshing;
-
-// for useful point
 static ARRAY<Point3d> grouppoints;
 static ARRAY<Element> groupfaces;
 static ARRAY<INDEX> grouppindex, groupfindex;
@@ -58,19 +53,18 @@ extern int FindInnerPoint (const ARRAY<Point3d> & grouppoints,
                            const ARRAY<Element> & groupfaces,
                            Point3d & p);
 
-
 Meshing3 :: Meshing3 (char * rulefilename)
 {
   int i;
 
-  LoadRules (rulefilename);
   adfront = new ADFRONT3;
 
-  ruleused.SetSize (rules.Size());
+  LoadRules_new (rulefilename);
+  ruleused.SetSize (rules_new.Size());
   for (i = 1; i <= ruleused.Size(); i++)
     ruleused[i] = 0;
 
-  problems.SetSize (rules.Size());
+  problems.SetSize (rules_new.Size());
   for (i = 1; i <= problems.Size(); i++)
     problems[i] = new char[255];
 }
@@ -167,66 +161,7 @@ void DrawPnF(const ARRAY<Point3d> & pointl, const ARRAY<Element> & facel,
 
 
 void PlotVolMesh (const ROT3D & r, char key)
-{
-#ifdef MYGRAPH
-  int i, y;
-  char cbuf[20];
-
-  MyClearDevice();
-
-  MySetColor (BLUE);
-  y = 30;
-
-  //  sprintf (buf, "Trials:   %ld", cnttrials);
-  //  if (GSF_DEBUG) MyOutTextXY (20, y, buf);
-  //  y += 15;
-  //  sprintf (buf, "Success:  %d", cntsucc);
-  //  if (GSF_DEBUG) MyOutTextXY (20, y, buf);
-  //  y += 15;
-  sprintf (buf, "Elements: %d", cntelem);
-  if (GSF_DEBUG) MyOutTextXY (20, y, buf);
-  y += 15;
-  sprintf (buf, "Quality:  %d", qualclass);
-  if (GSF_DEBUG) MyOutTextXY (20, y, buf);
-  y += 15;
-  sprintf (buf, "Volume:   %4.1f %%", float(100 * meshing->adfront->Volume() / vol0));
-  if (GSF_DEBUG) MyOutTextXY (20, y, buf);
-  y += 15;
-  //  sprintf (buf, "Error:    %f", err);
-  //  if (GSF_DEBUG) MyOutTextXY (20, y, buf);
-  //  y += 15;
-  sprintf (buf, "Time:     %d", GetTime());
-  if (GSF_DEBUG) MyOutTextXY (20, y, buf);
-  y += 15;
-
-  DrawPnF(locpoints, locfaces, style, drawrad, r);
-
-
-  for (i = 1; i <= locpoints.Size(); i++)
-  {
-    MySetColor(BLUE);
-    MyPoint3D (locpoints[i], r);
-    if (testmode && i <= pindex.Size())
-    {
-      MySetColor(LIGHTBLUE);
-      sprintf (cbuf, "%d", pindex[i]);
-      if (GSF_DEBUG) MyOutTextXY (r.X(locpoints[i]), r.Y(locpoints[i]), cbuf);
-    }
-  }
-
-  if (testmode)
-  {
-    MySetColor (BLACK);
-    sprintf (buf, "Problem with rule %d: %s",
-             problemindex, meshing->rules[problemindex]->Name());
-    if (GSF_DEBUG) MyOutTextXY (120, 30, buf);
-    if (GSF_DEBUG) MyOutTextXY (120, 45, meshing->problems[problemindex]);
-  }
-
-  if (key == 's')
-    meshing -> adfront -> SaveSurface ("surf.out", h);
-#endif
-}
+{}
 
 
 void Meshing3 :: Mesh (double ah,int make_prism)
@@ -238,14 +173,15 @@ void Meshing3 :: Mesh (double ah,int make_prism)
   int i, j, oldnp, oldnf;
   int found,rotind;
   referencetransform trans;
-  int gen_prism, gen_pyramid, gen_tetrahedra, prism, pyramid,flag;
+  int gen_prism, gen_pyramid, prism, pyramid;
   INDEX globind;
   Point3d inp,bemp,bemp1,bemp2,bemp3;
   Point3d *hp1, *hp2, *hp3, *hp4, *hp5, *hp6;
   double in[5];
   float minerr;
-  int hasfound;
+  int hasfound,dummy;
   double tetvol,prismvol,pyramidvol;
+  INDEX locfacesplit;
 
   ARRAY<Point3d> tempnewpoints;
   ARRAY<Element> tempnewfaces;
@@ -253,16 +189,15 @@ void Meshing3 :: Mesh (double ah,int make_prism)
   ARRAY<Element> templocelements;
   ARRAY<int> prism_flags;
 
-  int pause = 1, redraw = 1, shouldredraw = 1;
-
-  //  ah = 15;
+  if(ah<0.0)
+    dummy = 1;
+  else
+    dummy = 0;
 
   h = ah;
-  meshing = this;
   adfront->SetStartFront ();
 
   found = 0;
-  vol0 = adfront -> Volume();
   tetvol = 0.0;
   prismvol = 0.0;
   pyramidvol = 0.0;
@@ -271,10 +206,6 @@ void Meshing3 :: Mesh (double ah,int make_prism)
   qualclass = 1;
   //	gen_prism = adfront->Prism();
   gen_prism = make_prism;
-  if(gen_prism)
-    gen_tetrahedra = 0;
-  else
-    gen_tetrahedra = 1;
 
   // generate prism if possible
   if(gen_prism)
@@ -376,14 +307,14 @@ void Meshing3 :: Mesh (double ah,int make_prism)
             locpoints[locelements[i].PNum(6)].Y() << "," <<
             locpoints[locelements[i].PNum(6)].Z() << ")" << endl;
 
-            /*	printf("%d %d %d %d %d %d\n",	locelements[i].PNum(1),
-                                                                                            locelements[i].PNum(2),
-                                                                                    locelements[i].PNum(3),
-                                                                                    locelements[i].PNum(4),
-                                                                                    locelements[i].PNum(5),
-                                                                                    locelements[i].PNum(6)
-                                                                                    );*/
-            printf("%s %d\n","nff:",adfront->NFF());
+            printf("%d %d %d %d %d %d\n",   locelements[i].PNum(1),
+                   locelements[i].PNum(2),
+                   locelements[i].PNum(3),
+                   locelements[i].PNum(4),
+                   locelements[i].PNum(5),
+                   locelements[i].PNum(6)
+                   );
+            //						printf("%s %d\n","nff:",adfront->NFF());
           }
           prismvol = prismvol
                      + (1.0 / 6.0) * ( Cross ( *hp2 - *hp1, *hp3 - *hp1) * (*hp4 - *hp1) )
@@ -435,7 +366,6 @@ void Meshing3 :: Mesh (double ah,int make_prism)
       if(pyramid==-1)
       {
         gen_pyramid = 0;
-        gen_tetrahedra = 1;
         break;
       }
 
@@ -529,13 +459,13 @@ void Meshing3 :: Mesh (double ah,int make_prism)
             locpoints[locelements[i].PNum(5)].Y() << "," <<
             locpoints[locelements[i].PNum(5)].Z() << ")" << endl;
 
-            /*printf("%d %d %d %d %d\n",	locelements[i].PNum(1),
-                                                                    locelements[i].PNum(2),
-                                                                    locelements[i].PNum(3),
-                                                                    locelements[i].PNum(4),
-                                                                    locelements[i].PNum(5)
-                                                                    );*/
-            printf("%s %d\n","nff:",adfront->NFF());
+            printf("%d %d %d %d %d\n",      locelements[i].PNum(1),
+                   locelements[i].PNum(2),
+                   locelements[i].PNum(3),
+                   locelements[i].PNum(4),
+                   locelements[i].PNum(5)
+                   );
+            //						printf("%s %d\n","nff:",adfront->NFF());
           }
           pyramidvol = pyramidvol
                        + (1.0 / 6.0) * ( Cross ( *hp2 - *hp1, *hp4 - *hp1) * (*hp5 - *hp1) )
@@ -585,10 +515,18 @@ void Meshing3 :: Mesh (double ah,int make_prism)
 
     h = ah;
     if(h>0.0)
-      qualclass = adfront -> GetLocals_Tetrahedra (locpoints, locfaces, pindex, findex, 3 * h);
+      if(NEW)
+        qualclass = adfront -> GetLocals_Tetrahedra_new (locpoints, locfaces,
+                                                         pindex, findex, 3.0 * h, 5.0 * h, locfacesplit,dummy);
+      else
+        qualclass = adfront -> GetLocals_Tetrahedra (locpoints, locfaces, pindex, findex, 3 * h);
     else
     {
-      qualclass = adfront -> GetLocals_Tetrahedra (locpoints, locfaces, pindex, findex, -3 * h);
+      if(NEW)
+        qualclass = adfront -> GetLocals_Tetrahedra_new (locpoints, locfaces,
+                                                         pindex, findex, 3.0 * h, 5.0 * h, locfacesplit,dummy);
+      else
+        qualclass = adfront -> GetLocals_Tetrahedra (locpoints, locfaces, pindex, findex, -3 * h);
 
       bemp1.X() = locpoints[locfaces[1].PNum(1)].X();
       bemp1.Y() = locpoints[locfaces[1].PNum(1)].Y();
@@ -614,7 +552,11 @@ void Meshing3 :: Mesh (double ah,int make_prism)
       in[2] = bemp.Z();
       in[3] = ah;
       Get_Local_h_3d(in,&h);
-      qualclass = adfront -> GetLocals_Tetrahedra (locpoints, locfaces, pindex, findex, 3 * h);
+      if(NEW)
+        qualclass = adfront -> GetLocals_Tetrahedra_new (locpoints, locfaces,
+                                                         pindex, findex, 3.0 * h, 5.0 * h, locfacesplit,dummy);
+      else
+        qualclass = adfront -> GetLocals_Tetrahedra (locpoints, locfaces, pindex, findex, 3 * h);
     }
 
     oldnp = locpoints.Size();
@@ -644,8 +586,6 @@ void Meshing3 :: Mesh (double ah,int make_prism)
         for (i = 1; i <= delfaces.Size(); i++)
           style[delfaces[i]] = 2;
         style[1] = 1;
-
-        pause = 0;
 
         delfaces.SetSize (0);
 
@@ -679,9 +619,12 @@ void Meshing3 :: Mesh (double ah,int make_prism)
       trans.ToPlain (locpoints, plainpoints);
 
       cnttrials++;
-
-      found = ApplyVRules (   rules, tolfak, plainpoints, locfaces, locelements,
-                              delfaces, qualclass, rotind, err, problems);
+      if(NEW)
+        found = ApplyVRules_new (rules_new, tolfak, plainpoints, locfaces, locfacesplit, locelements,
+                                 delfaces, qualclass, rotind, err, problems);
+      else
+        found = ApplyVRules (   rules, tolfak, plainpoints, locfaces, locelements,
+                                delfaces, qualclass, rotind, err, problems);
 
       if (found) cntsucc++;
 
@@ -705,51 +648,23 @@ void Meshing3 :: Mesh (double ah,int make_prism)
         ARRAY<Point3d> pts;
         Point3d hp;
 
-        pts.SetSize (rules[found]->GetTransFreeZone().Size());
+        if(NEW)
+          pts.SetSize (rules_new[found]->GetTransFreeZone().Size());
+        else
+          pts.SetSize (rules[found]->GetTransFreeZone().Size());
 
         for (i = 1; i <= pts.Size(); i++)
         {
-          trans.FromPlain (rules[found]->GetTransFreeZone().Get(i), hp);
+          if(NEW)
+            trans.FromPlain (rules_new[found]->GetTransFreeZone().Get(i), hp);
+          else
+            trans.FromPlain (rules[found]->GetTransFreeZone().Get(i), hp);
           pts.Set(i, hp);
         }
       }
 
-      if (testmode && found)
-      {
-        pause = 1;
-        redraw = 1;
-      }
-      if (found && shouldredraw)
-        redraw = 1;
-
-      if (qualclass > 30)
-        pause = 1;
-
-      if (found && rules[found]->TestFlag ('p'))
-      {
-        redraw = 1;
-        pause = 1;
-      }
-
-      redraw = 0;
-      pause = 0;
-
       if (found && (!hasfound || err < minerr) )
       {
-        if (testmode)
-        {
-          (*testout) << "testmode found" << endl;
-          for (i = 1; i <= plainpoints.Size(); i++)
-          {
-            (*testout) << "p";
-            if (i <= pindex.Size())
-              (*testout) << pindex[i] << ": ";
-            else
-              (*testout) << "new: ";
-            (*testout) << plainpoints[i] << endl;
-          }
-        }
-
         hasfound = found;
         minerr = err;
 
@@ -787,20 +702,6 @@ void Meshing3 :: Mesh (double ah,int make_prism)
         delfaces.Append (tempdelfaces[i]);
       for (i = 1; i <= templocelements.Size(); i++)
         locelements.Append (templocelements[i]);
-
-      if (testmode)
-      {
-        (*testout) << "testmode locpoints" << endl;
-        for (i = 1; i <= locpoints.Size(); i++)
-        {
-          (*testout) << "p";
-          if (i <= pindex.Size())
-            (*testout) << pindex[i] << ": ";
-          else
-            (*testout) << "new: ";
-          (*testout) << locpoints[i] << endl;
-        }
-      }
 
       pindex.SetSize(locpoints.Size());
 

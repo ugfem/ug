@@ -27,7 +27,7 @@ static double ABS(double a)
 int Element_Inside_Check(       double *p0, double *p1, double *p2,
                                 double *p3, double *p4)
 {
-  int i, j, flag;
+  int i;
   double a[3][3], rhs[3], sol[4];
 
   for(i=0; i<3; i++)
@@ -53,8 +53,8 @@ int Element_Inside_Check(       double *p0, double *p1, double *p2,
 
 double Delaunay(double *p1, double *p2, double *p3, double *p4, double *p5)
 {
-  int i, j;
-  double a[3][3], rhs[3], det, n[3], l1, l2, l3, l4;
+  int i;
+  double a[3][3], rhs[3], det, n[3], l1;
 
   rhs[0] = rhs[1] = rhs[2] = 0.0;
   for(i=0; i<3; i++)
@@ -131,21 +131,13 @@ double Delaunay(double *p1, double *p2, double *p3, double *p4, double *p5)
   /* check distance */
   Minus(n,p1,p5);
   l1 = Lenght(n);
-  Minus(n,p2,p5);
-  l2 = Lenght(n);
-  Minus(n,p3,p5);
-  l3 = Lenght(n);
-  Minus(n,p4,p5);
-  l4 = Lenght(n);
 
-  //	if(l1>10.0)
-  //		printf("%s\n", "BIG");
   return(l1);
 }
 
 double Calc_D_M(double *p1,double *p2,double *p3,double *D,double *M)
 {
-  int i,j;
+  int i;
   double dist,l,m[3];
 
   dist = 1000000000.0;
@@ -179,8 +171,8 @@ double Calc_D_M(double *p1,double *p2,double *p3,double *D,double *M)
 
 double Sphere_radius(double *Q,double *P,double *D,double *M)
 {
-  int i,j;
-  double dist1,dist2,dist3,m[3],lb,lc,lambda,PP[3];
+  int i;
+  double dist2,dist3,m[3],lb,lc,lambda,PP[3];
 
   lb =    ( D[0] - M[0] ) * ( D[0] - M[0] )
        +       ( D[1] - M[1] ) * ( D[1] - M[1] )
@@ -198,7 +190,7 @@ double Sphere_radius(double *Q,double *P,double *D,double *M)
 
   /* check */
   Minus(m,M,PP);
-  dist1 = Lenght(m);
+  dist2 = Lenght(m);
   Minus(m,D,PP);
   dist2 = Lenght(m);
   Minus(m,Q,PP);
@@ -274,26 +266,6 @@ static int Bounding_Box_3d(     double *p1_0,
   }
 }
 
-static int Bounding_Box_2d(     double *p1_0,
-                                double *p1_1,
-                                double *p2_0,
-                                double *p2_1)
-{
-  if( ( (MAX2(p1_0[0], p1_1[0])< MIN2(p2_0[0], p2_1[0]))
-        && (MAX2(p1_0[1], p1_1[1])< MIN2(p2_0[1], p2_1[1])) )
-      ||  ( (MIN2(p1_0[0], p1_1[0])< MAX2(p2_0[0], p2_1[0]))
-            && (MIN2(p1_0[1], p1_1[1])< MAX2(p2_0[1], p2_1[1])) ) )
-  {
-    //		printf("%s\n", "Bounding_Box_2d: keine Ueberschneidung");
-    return(0);                          /* keine Ueberschneidung der Bounding Boxes */
-  }
-  else
-  {
-    //		printf("%s\n", "Bounding_Box_2d: Ueberschneidung ist moeglich");
-    return(1);
-  }
-}
-
 int GetNormalVector(double *p0, double *p1, double *p2, double *n)
 {
   double n1[3], n2[3], l;
@@ -362,8 +334,8 @@ static int One_point_common(double *p1_0, double *p1_1, double *p1_2, int *id1,
                             double *p2_0, double *p2_1, double *p2_2, int *id2,
                             double p1[3][3], double p2[3][3], int *flag1)
 {
-  int i, j, flag, comp;
-  double n1[3], n2[3], m1[3], m2[3], m3[3], a, b, c;
+  int i, flag, comp;
+  double n1[3], n2[3], m2[3], m3[3],b, c;
   double p10[3], p11[3], p12[3], p20[3], p21[3], p22[3];
   double pt1[3], pt2[3], m[3], l, max;
 
@@ -502,10 +474,7 @@ static int Faces_on_the_same_side(      double *p1_0, double *p1_1, double *p1_2
 static int Faces_nearly_on_the_same_side(       double *p1_0, double *p1_1, double *p1_2, int *id1,
                                                 double *p2_0, double *p2_1, double *p2_2, int *id2)
 {
-  int i, j, flag;
   double n1[3], m1[3], m2[3], m3[3], a, b, c;
-  double p10[3], p11[3], p12[3], p20[3], p21[3], p22[3], p1[3][3], p2[3][3];
-  double p_10[2], p_11[2], p_12[2], p_20[2], p_21[2], p_22[2];
 
   GetNormalVector(p1_0, p1_1, p1_2, n1);
   Minus(m1, p1_0, p2_0);
@@ -566,7 +535,7 @@ static int Check_Two_points_common(     double p1[3][3], int *id1,
                                         double *p10, double *p11, double *p12,
                                         double *p20, double *p21, double *p22)
 {
-  int i, j;
+  int i;
 
   if( (id1[i0]==id2[j0])&&(id1[i1]==id2[j1])&&(id1[i2]!=id2[j2]) )
   {
@@ -588,7 +557,7 @@ static int Check_Two_points_common(     double p1[3][3], int *id1,
 
 static int Define_Tangential_Plane(double p[3][3])
 {
-  int i, j;
+  int i;
   double l, e1[3], e2[3];
 
   for(i=0; i<3; i++)
@@ -648,7 +617,6 @@ static int Project_Point_to_plane(double *p, double *p_plain)
 
 static int Check_Cross(double *ps, double *pe, double *p1, double *p2)
 {
-  int i, j;
   double m[2], n[2], l, c, v1, v2;
 
   /* HNF der Geraden durch ps und pe */
@@ -675,7 +643,7 @@ static int Check_Cross(double *ps, double *pe, double *p1, double *p2)
 static int In_Plane_Two_points_common(  double *p1_0, double *p1_1, double *p1_2, int *id1,
                                         double *p2_0, double *p2_1, double *p2_2, int *id2, int *flag)
 {
-  int i, j;
+  int i;
   double p10[3], p11[3], p12[3], p20[3], p21[3], p22[3], p1[3][3], p2[3][3];
   double p_10[2], p_11[2], p_12[2], p_20[2], p_21[2], p_22[2];
 
@@ -740,7 +708,7 @@ static int Check_One_point_common(      double p1[3][3], int *id1,
                                         double *p10, double *p11, double *p12,
                                         double *p20, double *p21, double *p22)
 {
-  int i, j;
+  int i;
 
   if( (id1[i0]==id2[j0])&&(id1[i1]!=id2[j1])&&(id1[i2]!=id2[j2]) )
   {
@@ -783,11 +751,12 @@ static double Get_Angle(double *n)
     return(4*p2-a);
   if( (a>=0)&&(a<p2)&&(b>=p2)&&(b<2*p2) )
     return(4*p2-a);
+  return(0.0);
 }
 
 static int Check_Angle(double *p, double *p1, double *p2, double *p3, double *p4)
 {
-  int i, j;
+  int i;
   double n1[2], n2[2], n3[2], n4[2], a1, a2, b1, b2, a[2];
 
   for(i=0; i<2; i++)
@@ -841,7 +810,7 @@ static int Check_Angle(double *p, double *p1, double *p2, double *p3, double *p4
 static int In_Plane_One_point_common(   double *p1_0, double *p1_1, double *p1_2, int *id1,
                                         double *p2_0, double *p2_1, double *p2_2, int *id2, int *flag)
 {
-  int i, j;
+  int i;
   double p10[3], p11[3], p12[3], p20[3], p21[3], p22[3], p1[3][3], p2[3][3];
   double p_10[2], p_11[2], p_12[2], p_20[2], p_21[2], p_22[2];
 
@@ -902,7 +871,6 @@ static int In_Plane_One_point_common(   double *p1_0, double *p1_1, double *p1_2
 
 static int Line_Cross_2d(double *p1_0, double *p1_1, double *p2_0, double *p2_1)
 {
-  int i, j;
   double n1[2], n2[2], l, m, a[2][2], rhs[2], sol[2], p1[2], p2[2];
 
   n1[0] = p1_1[0] - p1_0[0];
@@ -946,14 +914,13 @@ static int Line_Cross_2d(double *p1_0, double *p1_1, double *p2_0, double *p2_1)
 static int Cut_Test_2d( double *p1_0, double *p1_1, double *p1_2,
                         double *p2_0, double *p2_1, double *p2_2)
 {
-  int i, j, flag;
-  double p1[3][3], p2[3][3];
+  int i;
+  double p1[3][3];
   double p_10[2], p_11[2], p_12[2], p_20[2], p_21[2], p_22[2];
 
   for(i=0; i<3; i++)
   {
     p1[i][0] = p1_0[i]; p1[i][1] = p1_1[i]; p1[i][2] = p1_2[i];
-    p2[i][0] = p2_0[i]; p2[i][1] = p2_1[i]; p2[i][2] = p2_2[i];
   }
 
   Define_Tangential_Plane(p1);
@@ -1098,8 +1065,8 @@ static int Calculate_Point(double *n1, double *p1_0, double *n2, double *p2_0, d
 static int Cut_Test_3d(double *p1_0, double *p1_1, double *p1_2,
                        double *p2_0, double *p2_1, double *p2_2)
 {
-  int i, j, count, comp;
-  double n1[3], n2[3], n3[3], m1[3], m2[3], m3[3];
+  int i, count, comp;
+  double n1[3], n2[3];
   double spl[3], epl[3], sp1[2][3], ep1[2][3], sp2[2][3], ep2[2][3];
   double p1[3], p2[3], p3[3], p4[3], sp[3], ep[3];
   double m[3], l, max, x11, x12, x21, x22;
@@ -1248,8 +1215,8 @@ static int Three_Points_in_common(int *id1, int *id2)
 int Cross_Check(double *p1_0, double *p1_1, double *p1_2, int *id1,
                 double *p2_0, double *p2_1, double *p2_2, int *id2)
 {
-  int i, j, flag, flag1;
-  double p1[3][3], p2[3][3],s;
+  int flag, flag1;
+  double p1[3][3], p2[3][3];
 
   flag = 0;
   if(Three_Points_in_common(id1, id2))
