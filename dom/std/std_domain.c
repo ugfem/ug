@@ -158,6 +158,9 @@ static INT file_elements (FILE *f)
   nElem = 0;
   do {
     fgets(theLine, MAX_LEN, f);
+
+    /*printf("%s",theLine); */
+
     if (strlen(theLine) < 3) continue;
 
     theLine[66] = 0;
@@ -234,7 +237,7 @@ static INT file_elements (FILE *f)
                &id,&n,c,c+1,c+2,c+3,c+4,c+5,c+6,c+7) != 3+n) return(0);
     nElem++;
 
-    /* printf("%d %d %d %d %d\n",id,n,c[0],c[1],c[2]);  */
+    /* printf("file_elem %d %d %d %d %d\n",id,n,c[0],c[1],c[2]);  */
 
   } while (!feof(f));
 
@@ -247,7 +250,8 @@ static INT file_corners (FILE *f)
   double c[3];
 
   fgets(theLine, MAX_LEN, f);
-  /* printf("%s",theLine); */
+
+  /* printf("%s",theLine);  */
 
   theLine[12] = 0;
   theLine[11] = ' ';
@@ -268,6 +272,8 @@ static INT file_corners (FILE *f)
   nCorners = 0;
   for (i=0; i<n; i++) {
     fgets(theLine, MAX_LEN, f);
+
+    /* printf(" %d %s",i,theLine);  */
 
     theLine[42] = 0;
     theLine[41] = ' ';
@@ -354,10 +360,10 @@ static INT file_triangles (FILE *f)
     fgets(theLine, MAX_LEN, f);
     if (strlen(theLine) < 3) continue;
     if (sscanf(theLine,"%5d%5d%5d%5d%5d",
-               &id,&n,c,c+1,c+2) != 5) return(0);
+               &id,&n,c,c+1,c+2) != 2 + DIM) return(0);
     nTPatch++;
 
-    /*		printf("%d %d %d %d %d\n",id,n,c[0],c[1],c[2]); */
+    /*printf("%d %d %d %d %d\n",id,n,c[0],c[1],c[2]); */
 
   } while (!feof(f));
 
@@ -371,6 +377,7 @@ static INT file_positions (FILE *f)
   double c[3];
 
   fgets(theLine, MAX_LEN, f);
+  /* printf("%s",theLine);*/
   nPPatch = 0;
   do {
     fgets(theLine, MAX_LEN, f);
@@ -417,7 +424,7 @@ static INT file_positions (FILE *f)
     theLine[1] = theLine[1];
     theLine[0] = theLine[0];
 
-    if (sscanf(theLine,"%d %lg %lg %lg",&id,c,c+1,c+2) != 4)
+    if (sscanf(theLine,"%d %lg %lg %lg",&id,c,c+1,c+2) != 1+DIM)
       return(0);
 
     nPPatch++;
@@ -719,7 +726,7 @@ static INT file_triangles_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
     fgets(theLine, MAX_LEN, f);
     if (strlen(theLine) < 3) continue;
     if (sscanf(theLine,"%5d%5d%5d%5d%5d",
-               &id,&n,c,c+1,c+2) != 5) return(0);
+               &id,&n,c,c+1,c+2) != 2+DIM) return(0);
 
     p->type = MARC_2_PATCH_TYPE;
     p->c = n;
@@ -729,7 +736,7 @@ static INT file_triangles_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
 
     nTPatch++;
 
-    /*printf("%d id %d %d %d %d %d\n",id,p->id,n,c[0],c[1],c[2]);*/
+    /* printf("%d id %d %d %d %d %d\n",id,p->id,n,c[0],c[1],c[2]); */
 
   } while (!feof(f));
 
@@ -747,7 +754,6 @@ static INT file_positions_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
   nPPatch = 0;
   do {
     fgets(theLine, MAX_LEN, f);
-
 
     theLine[40] = theLine[34];
     theLine[39] = theLine[33];
@@ -791,7 +797,7 @@ static INT file_positions_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
     theLine[1] = theLine[1];
     theLine[0] = theLine[0];
 
-    if (sscanf(theLine,"%d %lg %lg %lg",&id,c,c+1,c+2) != 4)
+    if (sscanf(theLine,"%d %lg %lg %lg",&id,c,c+1,c+2) != 1+DIM)
       return(0);
 
     p = (M0_PATCH *)currBVP->patches[nPPatch];
@@ -874,50 +880,51 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
   stream = fileopen(theBVP->mesh_file,"r");
   if (stream == NULL) {
     PrintErrorMessage('F',"Init_MarcBVP","could not open file");
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
   }
   if (file_readline(stream,"connectivity")) {
     PrintErrorMessage('F',"Init_MarcBVP","could not read connectivity");
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
   }
   if (file_elements(stream)) {
     PrintErrorMessage('F',"Init_MarcBVP","could not read element");
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
   }
   if (file_corners(stream)) {
     PrintErrorMessage('F',"Init_MarcBVP","could not read corners");
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
   }
   if (file_readline(stream,"surface")) {
     PrintErrorMessage('F',"Init_MarcBVP","could not read surface");
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
   }
   if (file_contact(stream)) {
     PrintErrorMessage('F',"Init_MarcBVP","could not read contact");
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
   }
   fclose(stream);
   stream = fileopen(theBVP->bnd_file,"r");
   if (stream == NULL) {
     PrintErrorMessage('F',"Init_MarcBVP","could not open file");
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
   }
   if (file_readline(stream,"connectivity")) {
     PrintErrorMessage('F',"Init_MarcBVP","could not store connectivity");
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
   }
   if (file_triangles(stream)) {
     PrintErrorMessage('F',"Init_MarcBVP","could not store surface");
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
   }
   if (file_positions(stream)) {
     PrintErrorMessage('F',"Init_MarcBVP","could not store positions");
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
   }
   fclose(stream);
 
-  PRINTDEBUG(dom,1,("nCorners %d nBndP %d nElem %d nPPatch %d nTPatch %d\n",
-                    nCorners,nBndP,nElem,nPPatch,nTPatch));
+  PRINTDEBUG(dom,1,
+             ("A: nCorners %d nBndP %d nElem %d nPPatch %d nTPatch %d\n",
+              nCorners,nBndP,nElem,nPPatch,nTPatch));
 
 
         #ifdef ModelP
@@ -935,22 +942,23 @@ Broadcast(&nTPatch,sizeof(INT));
     Mesh->nBndP = nBndP;
     Mesh->theBndPs = (BNDP **)GetTmpMem(Heap,nBndP*sizeof(M_BNDP *),MarkKey);
     if (Mesh->theBndPs == NULL)
-      return (NULL);
+      REP_ERR_RETURN_PTR(NULL);
     for (i=0; i<nBndP; i++) {
       Mesh->theBndPs[i] = (BNDP *)GetFreelistMemory(Heap,sizeof(M_BNDP));
       if (Mesh->theBndPs[i] == NULL)
-        return (NULL);
+        REP_ERR_RETURN_PTR(NULL);
     }
     Mesh->nInnP = nCorners - nBndP;
     Mesh->Position = (DOUBLE **)
                      GetTmpMem(Heap,(nCorners-nBndP)*sizeof(DOUBLE *),MarkKey);
-    if (Mesh->Position == NULL)
-      return (NULL);
+    if (nCorners > nBndP)
+      if (Mesh->Position == NULL)
+        REP_ERR_RETURN_PTR(NULL);
     for (i=0; i<nCorners-nBndP; i++) {
       Mesh->Position[i] = (DOUBLE *)
                           GetTmpMem(Heap,3*sizeof(DOUBLE),MarkKey);
       if (Mesh->Position[i] == NULL)
-        return (NULL);
+        REP_ERR_RETURN_PTR(NULL);
     }
     Mesh->nSubDomains = 1;
     Mesh->nSides = NULL;
@@ -1000,53 +1008,53 @@ Broadcast(&nTPatch,sizeof(INT));
                          GetFreelistMemory(Heap,sizeof(M2_PATCH));
   currBVP->sideoffset = nPPatch + nLPatch;
 
-  PRINTDEBUG(dom,1,("nCorners %d nBndP %d nElem %d nPPatch %d nTPatch %d\n",
-                    nCorners,nBndP,nElem,nPPatch,nTPatch));
+  PRINTDEBUG(dom,1,
+             ("B: nCorners %d nBndP %d nElem %d nPPatch %d nTPatch %d\n",
+              nCorners,nBndP,nElem,nPPatch,nTPatch));
 
         #ifdef ModelP
   if (me == 0) {
         #endif
 
   stream = fileopen(theBVP->bnd_file,"r");
-  if (stream == NULL) return(NULL);
+  if (stream == NULL) REP_ERR_RETURN_PTR(NULL);
 
   if (file_readline(stream,"connectivity"))
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
 
   if (file_triangles_fill(stream,Heap,Mesh,MarkKey))
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
 
   if (file_positions_fill(stream,Heap,Mesh,MarkKey))
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
 
   fclose(stream);
 
   stream = fileopen(theBVP->mesh_file,"r");
-  if (stream == NULL) return(NULL);
+  if (stream == NULL) REP_ERR_RETURN_PTR(NULL);
 
   if (file_readline(stream,"connectivity"))
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
 
   if (file_elements_fill(stream,Heap,Mesh,MarkKey))
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
 
   if (file_corners_fill(stream,Heap,Mesh,MarkKey,
                         &(theBVP->radius),theBVP->MidPoint))
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
   if (file_readline(stream,"surface")) {
     PrintErrorMessage('F',"Init_MarcBVP","could not read surface");
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
   }
   if (file_contact_fill(stream,Heap,Mesh,MarkKey))
-    return(NULL);
+    REP_ERR_RETURN_PTR(NULL);
 
   fclose(stream);
 
-#       ifdef __THREEDIM__
+    #ifdef __THREEDIM__
   if (Mesh != NULL)
     RepairMesh(Heap,MarkKey,Mesh);
-#       endif
-
+    #endif
 
         #ifdef ModelP
 }
@@ -1058,13 +1066,12 @@ for (i=nPPatch+nLPatch; i<nPPatch+nLPatch+nTPatch; i++)
   Broadcast(theBVP->patches[i],sizeof(M2_PATCH));
         #endif
 
-
   STD_BVP_NDOMPART(theBVP) = 1;
   STD_BVP_NSUBDOM(theBVP) = 1;
   STD_BVP_S2P_PTR(theBVP) = (INT *)
                             GetFreelistMemory(Heap,(1+STD_BVP_NSUBDOM(theBVP))*sizeof(INT));
   if (STD_BVP_S2P_PTR(theBVP)==NULL)
-    return (NULL);
+    REP_ERR_RETURN_PTR(NULL);
   STD_BVP_S2P_PTR(theBVP)[0] = 0;
   STD_BVP_S2P_PTR(theBVP)[1] = 0;
 
@@ -1076,7 +1083,7 @@ static INT M_BNDP_Global (BNDP *bp, DOUBLE *global)
   M_BNDP *p = (M_BNDP *)bp;
   INT j;
 
-  for (j=0; j<3; j++)
+  for (j=0; j<DIM; j++)
     global [j] = p->pos[j];
 
   return(0);
@@ -1120,7 +1127,7 @@ static BNDS* M_BNDP_CreateBndS (HEAP *Heap, BNDP **theBndP, INT n)
   for (i=0; i<n; i++) {
     M_BNDP *b = (M_BNDP *)theBndP[i];
     p->p[i].patch_id = b->patch_id;
-    for (j=0; j<3; j++)
+    for (j=0; j<DIM; j++)
       p->p[i].pos[j] = b->pos[j];
   }
   p->n = n;
@@ -1138,7 +1145,7 @@ static BNDP* M_BNDP_CreateBndP (HEAP *Heap, BNDP *theBndP0,
 
   ASSERT(p != NULL);
 
-  for (j=0; j<3; j++)
+  for (j=0; j<DIM; j++)
     p->pos[j] = (1.0 - lcoord) * p0->pos[j] + lcoord * p1->pos[j];
 
   return((BNDP *)p);
