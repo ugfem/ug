@@ -51,6 +51,8 @@
 #define POW2(i)                  (1<<(i))
 #define ABSDIFF(a,b)             (fabs((a)-(b)))
 #define SIGNUM(x)                (((x)>0) ? 1 : ((x)<0) ? -1 : 0)
+#define EVEN(i)                  (!(i%2))
+#define ODD(i)                   ((i%2))
 
 #define HiWrd(aLong)             (((aLong) >> 16) & 0xFFFF)
 #define LoWrd(aLong)             ((aLong) & 0xFFFF)
