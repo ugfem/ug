@@ -73,7 +73,7 @@
 #include "ggm.h"
 #include "ggmain.h"
 #endif
-#ifdef __THREEDIM__
+#if defined __THREEDIM__ && defined NETGENT
 #include "gg3d.h"
 #endif
 
@@ -470,8 +470,7 @@ static INT HelpCommand (INT argc, char **argv)
     return (OKCODE);
 
   case HELP_NOT_FOUND :
-    sprintf(buffer," no help entry found for '%s'\n",buf);
-    UserWrite(buffer);
+    UserWriteF(" no help entry found for '%s'\n",buf);
     return (OKCODE);
 
   default :
@@ -1752,8 +1751,7 @@ static INT OpenProto (char *name, INT mode)
       }
       else if (mode==RENAME_PROTO)
       {
-        sprintf(buffer,"could't find a new name for '%s'",fullname);
-        PrintErrorMessage('E',"OpenProto",buffer);
+        PrintErrorMessageF('E',"OpenProto","could't find a new name for '%s'",fullname);
         return (1);
       }
       else
@@ -1769,8 +1767,7 @@ static INT OpenProto (char *name, INT mode)
 
   if (strcmp(realname+pathlen,name)!=0)
   {
-    sprintf(buffer,"opened protcol file '%s' (instead of '%s')",realname+pathlen,name);
-    PrintErrorMessage('W',"OpenProto",buffer);
+    PrintErrorMessageF('W',"OpenProto","opened protcol file '%s' (instead of '%s')",realname+pathlen,name);
   }
 
   return(0);
@@ -3762,6 +3759,10 @@ static INT SelectionListCommand (INT argc, char **argv)
     ListNodeSelection(theMG,dataopt,boundaryopt,neighbouropt,verboseopt);
     break;
 
+  case vectorSelection :
+    UserWrite("sorry, this service is not available for vector selections\n");
+    break;
+
   default :
     PrintErrorMessage('W',"slist","selectionmode ???");
     return (PARAMERRORCODE);
@@ -4123,8 +4124,7 @@ static INT InsertInnerNodeCommand (INT argc, char **argv)
 
   if (sscanf(argv[0],"in %f %f %f",x,x+1,x+2)!=DIM)
   {
-    sprintf(buffer,"specify %d coordinates for an inner node",(int)DIM);
-    PrintErrorMessage('E',"in",buffer);
+    PrintErrorMessageF('E',"in","specify %d coordinates for an inner node",(int)DIM);
     return (PARAMERRORCODE);
   }
   for (i=0; i<DIM; i++)
@@ -4405,8 +4405,7 @@ static INT MoveNodeCommand (INT argc, char **argv)
         break;
     if (theNode==NULL)
     {
-      sprintf(buffer,"node with ID %ld not found",(long)id);
-      PrintErrorMessage('E',"move",buffer);
+      PrintErrorMessageF('E',"move","node with ID %ld not found",(long)id);
       return (CMDERRORCODE);
     }
   }
@@ -4433,15 +4432,13 @@ static INT MoveNodeCommand (INT argc, char **argv)
     case 'i' :
       if (OBJT(MYVERTEX(theNode))!=IVOBJ)
       {
-        sprintf(buffer,"node with ID %ld is no inner node",(long)id);
-        PrintErrorMessage('E',"move",buffer);
+        PrintErrorMessageF('E',"move","node with ID %ld is no inner node",(long)id);
         return (CMDERRORCODE);
       }
       type = IVOBJ;
       if (sscanf(argv[i],"i %f %f %f",x,x+1,x+2)!=DIM)
       {
-        sprintf(buffer,"specify %d new coordinates for an inner node",(int)DIM);
-        PrintErrorMessage('E',"move",buffer);
+        PrintErrorMessageF('E',"move","specify %d new coordinates for an inner node",(int)DIM);
         return (PARAMERRORCODE);
       }
       for (j=0; j<DIM; j++)
@@ -4451,15 +4448,13 @@ static INT MoveNodeCommand (INT argc, char **argv)
     case 'b' :
       if (OBJT(MYVERTEX(theNode))!=BVOBJ)
       {
-        sprintf(buffer,"node with ID %ld is no boundary node",(long)id);
-        PrintErrorMessage('E',"move",buffer);
+        PrintErrorMessageF('E',"move","node with ID %ld is no boundary node",(long)id);
         return (CMDERRORCODE);
       }
       type = BVOBJ;
       if (sscanf(argv[i],"b %d %f %f",&segid,x,x+1)!=1+DIM_OF_BND)
       {
-        sprintf(buffer,"specify the segment if and %d new coordinates for a boundary node",(int)DIM_OF_BND);
-        PrintErrorMessage('E',"move",buffer);
+        PrintErrorMessageF('E',"move","specify the segment if and %d new coordinates for a boundary node",(int)DIM_OF_BND);
         return (PARAMERRORCODE);
       }
       for (j=0; j<DIM_OF_BND; j++)
@@ -4632,14 +4627,12 @@ static INT InsertElementCommand (INT argc, char **argv)
   {
     if (nNodes>=MAX_CORNERS_OF_ELEM)
     {
-      sprintf(buffer,"specify at most %d id's",(int)MAX_CORNERS_OF_ELEM);
-      PrintErrorMessage('E',"ie",buffer);
+      PrintErrorMessageF('E',"ie","specify at most %d id's",(int)MAX_CORNERS_OF_ELEM);
       return (PARAMERRORCODE);                                  /* too many items */
     }
     if (sscanf(token," %d",&id)!=1)
     {
-      sprintf(buffer,"could not read the id of corner no %d",(int)i);
-      PrintErrorMessage('E',"ie",buffer);
+      PrintErrorMessageF('E',"ie","could not read the id of corner no %d",(int)i);
       return (PARAMERRORCODE);                                  /* too many items */
     }
     Id[nNodes++] = id;
@@ -4894,8 +4887,7 @@ static INT RefineCommand (INT argc, char **argv)
   switch (rv)
   {
   case GM_OK :
-    sprintf(buffer," %s refined\n",ENVITEM_NAME(theMG));
-    UserWrite(buffer);
+    UserWriteF(" %s refined\n",ENVITEM_NAME(theMG));
     SetStringVar(":errno","0");
     return (OKCODE);
 
@@ -5142,8 +5134,7 @@ static INT MarkCommand (INT argc, char **argv)
 
     if (Rule==NO_RULE_SPECIFIED)
     {
-      sprintf(buffer,"unknown rule '%s'",rulename);
-      PrintErrorMessage('E',"mark",buffer);
+      PrintErrorMessageF('E',"mark","unknown rule '%s'",rulename);
       return (PARAMERRORCODE);
     }
 
@@ -5204,10 +5195,9 @@ static INT MarkCommand (INT argc, char **argv)
 
   /* print rule and side */
   if (Side==NO_SIDE_SPECIFIED)
-    sprintf(buffer,"   using rule %s (no side given)\n",rulename);
+    UserWriteF("   using rule %s (no side given)\n",rulename);
   else
-    sprintf(buffer,"   using rule %s, side %d\n",rulename,(int)Side);
-  UserWrite(buffer);
+    UserWriteF("   using rule %s, side %d\n",rulename,(int)Side);
 
   nmarked = 0;
   switch (mode)
@@ -5237,8 +5227,7 @@ static INT MarkCommand (INT argc, char **argv)
 
       if (theElement==NULL)
       {
-        sprintf(buffer,"element with ID %ld could not be found, nothing marked",id);
-        PrintErrorMessage('W',"mark",buffer);
+        PrintErrorMessageF('W',"mark","element with ID %ld could not be found, nothing marked",id);
         return (CMDERRORCODE);
       }
 
@@ -5268,13 +5257,11 @@ static INT MarkCommand (INT argc, char **argv)
     break;
   }
 
-  sprintf(buffer," %ld elements marked for refinement\n",nmarked);
-  UserWrite(buffer);
+  UserWriteF(" %ld elements marked for refinement\n",nmarked);
 
   if (rv && theElement)
   {
-    sprintf(buffer,"rule could not be applied for element with ID %ld, nothing marked",ID(theElement));
-    PrintErrorMessage('W',"mark",buffer);
+    PrintErrorMessageF('W',"mark","rule could not be applied for element with ID %ld, nothing marked",ID(theElement));
     return (CMDERRORCODE);
   }
   else
@@ -5413,16 +5400,14 @@ static INT SmoothGridCommand (INT argc, char **argv)
         GridReset=TRUE;
       else
       {
-        sprintf(buffer,"(invalid option '%s')",argv[i]);
-        PrintErrorMessage('E',"smoothgrid",buffer);
+        PrintErrorMessageF('E',"smoothgrid","(invalid option '%s')",argv[i]);
         return (PARAMERRORCODE);
       }
       break;
     case 'l' :
       if (sscanf(argv[i],"limit %f",&LimitLocDis)!=1)
       {
-        sprintf(buffer,"(invalid option '%s')",argv[i]);
-        PrintErrorMessage('E',"smoothgrid",buffer);
+        PrintErrorMessageF('E',"smoothgrid","(invalid option '%s')",argv[i]);
         return (PARAMERRORCODE);
       }
       if (LimitLocDis>=0.5 || LimitLocDis <=0)
@@ -5435,8 +5420,7 @@ static INT SmoothGridCommand (INT argc, char **argv)
     case 'g' :
       if (sscanf(argv[i],"g %d",&lowLevel)!=1)
       {
-        sprintf(buffer,"(invalid option '%s')",argv[i]);
-        PrintErrorMessage('E',"smoothgrid",buffer);
+        PrintErrorMessageF('E',"smoothgrid","(invalid option '%s')",argv[i]);
         return (PARAMERRORCODE);
       }
       if (ForceLevelSet==TRUE)
@@ -5450,8 +5434,7 @@ static INT SmoothGridCommand (INT argc, char **argv)
     case 'f' :
       if (sscanf(argv[i],"force %d",&forceLevel)!=1)
       {
-        sprintf(buffer,"(invalid option '%s')",argv[i]);
-        PrintErrorMessage('E',"smoothgrid",buffer);
+        PrintErrorMessageF('E',"smoothgrid","(invalid option '%s')",argv[i]);
         return (PARAMERRORCODE);
       }
       if (LowLevelSet==TRUE)
@@ -5463,8 +5446,7 @@ static INT SmoothGridCommand (INT argc, char **argv)
       break;
 
     default :
-      sprintf(buffer,"(invalid option '%s')",argv[i]);
-      PrintErrorMessage('E',"smoothgrid",buffer);
+      PrintErrorMessageF('E',"smoothgrid","(invalid option '%s')",argv[i]);
       return (PARAMERRORCODE);
     }
 
@@ -5486,8 +5468,7 @@ static INT SmoothGridCommand (INT argc, char **argv)
       theGrid = GRID_ON_LEVEL(theMG,lev);
       for (i=0; i<4; i++) MoveInfo[i] = 0;
       if (SmoothGridReset(theGrid,MoveInfo)!=0) return(CMDERRORCODE);
-      sprintf(buffer," %d center nodes and %d mid nodes reset on level %d \n",MoveInfo[0],MoveInfo[1],lev);
-      UserWrite(buffer);
+      UserWriteF(" %d center nodes and %d mid nodes reset on level %d \n",MoveInfo[0],MoveInfo[1],lev);
     }
   }
   else
@@ -5504,13 +5485,9 @@ static INT SmoothGridCommand (INT argc, char **argv)
       theGrid = GRID_ON_LEVEL(theMG,lev);
       for (i=0; i<4; i++) MoveInfo[i] = 0;
       if (SmoothGrid(theGrid,LimitLocDis,MoveInfo,ForceLevelSet)!=0) return(CMDERRORCODE);
-      sprintf(buffer," %d center nodes and %d mid nodes moved on level %d \n",MoveInfo[0],MoveInfo[1],lev);
-      UserWrite(buffer);
+      UserWriteF(" %d center nodes and %d mid nodes moved on level %d \n",MoveInfo[0],MoveInfo[1],lev);
       if (MoveInfo[2]!=0 || MoveInfo[3]!=0)
-      {
-        sprintf(buffer,"%d center nodes and %d mid nodes reached limit on level %d\n",MoveInfo[2],MoveInfo[3],lev);
-        UserWrite(buffer);
-      }
+        UserWriteF("%d center nodes and %d mid nodes reached limit on level %d\n",MoveInfo[2],MoveInfo[3],lev);
     }
   }
 
@@ -5682,8 +5659,7 @@ static INT OrderNodesCommand (INT argc, char **argv)
   {
     theGrid = GRID_ON_LEVEL(theMG,level);
 
-    sprintf(buffer," [%d:",level);
-    UserWrite(buffer);
+    UserWriteF(" [%d:",level);
 
     if (OrderNodesInGrid(theGrid,order,sign,AlsoOrderLinks)!=GM_OK)
     {
@@ -5859,8 +5835,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
   {
     theGrid = GRID_ON_LEVEL(theMG,level);
 
-    sprintf(buffer," [%d:",level);
-    UserWrite(buffer);
+    UserWriteF(" [%d:",level);
 
     if (LexOrderVectorsInGrid(theGrid,order,sign,which,SpecialTreatSkipVecs,AlsoOrderMatrices)!=GM_OK)
     {
@@ -6567,8 +6542,7 @@ static INT SelectCommand (INT argc, char **argv)
             break;
         if (theNode==NULL)
         {
-          sprintf(buffer,"node with ID %ld not found",(long)id);
-          PrintErrorMessage('E',"select",buffer);
+          PrintErrorMessageF('E',"select","node with ID %ld not found",(long)id);
           return (CMDERRORCODE);
         }
         if (AddNodeToSelection(theMG,theNode)!=GM_OK)
@@ -6588,8 +6562,7 @@ static INT SelectCommand (INT argc, char **argv)
           }
         if (theNode==NULL)
         {
-          sprintf(buffer,"node with ID %ld is not in selection",(long)id);
-          PrintErrorMessage('E',"select",buffer);
+          PrintErrorMessageF('E',"select","node with ID %ld is not in selection",(long)id);
           return (CMDERRORCODE);
         }
         if (RemoveNodeFromSelection(theMG,theNode)!=GM_OK)
@@ -6620,8 +6593,7 @@ static INT SelectCommand (INT argc, char **argv)
             break;
         if (theElement==NULL)
         {
-          sprintf(buffer,"element with ID %ld not found",(long)id);
-          PrintErrorMessage('E',"select",buffer);
+          PrintErrorMessageF('E',"select","element with ID %ld not found",(long)id);
           return (CMDERRORCODE);
         }
         if (AddElementToSelection(theMG,theElement)!=GM_OK)
@@ -6641,8 +6613,7 @@ static INT SelectCommand (INT argc, char **argv)
           }
         if (theElement==NULL)
         {
-          sprintf(buffer,"element with ID %ld is not in selection",(long)id);
-          PrintErrorMessage('E',"select",buffer);
+          PrintErrorMessageF('E',"select","element with ID %ld is not in selection",(long)id);
           return (CMDERRORCODE);
         }
         if (RemoveElementFromSelection(theMG,theElement)!=GM_OK)
@@ -6656,6 +6627,25 @@ static INT SelectCommand (INT argc, char **argv)
         PrintErrorMessage('E',"select","specify + or - with n option");
         return (PARAMERRORCODE);
       }
+      break;
+
+    case 'i' :
+      if (SELECTIONSIZE(theMG)==0)
+        UserWrite("nothing selected\n");
+      else switch (SELECTIONMODE(theMG))
+        {
+        case elementSelection :
+          UserWriteF("%d elements selected (use for example 'elist $s')\n",SELECTIONSIZE(theMG));
+          break;
+        case nodeSelection :
+          UserWriteF("%d nodes selected (use for example 'nlist $s')\n",SELECTIONSIZE(theMG));
+          break;
+        case vectorSelection :
+          UserWriteF("%d vectors selected (use for example 'vmlist $s')\n",SELECTIONSIZE(theMG));
+          break;
+        default :
+          UserWrite("unknown selection type\n");
+        }
       break;
 
     default :
@@ -7110,8 +7100,7 @@ static INT QualityCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  sprintf(buffer," min angle = %12.4f\n max angle = %12.4f\n",(float)minangle,(float)maxangle);
-  UserWrite(buffer);
+  UserWriteF(" min angle = %12.4f\n max angle = %12.4f\n",(float)minangle,(float)maxangle);
 
   return(OKCODE);
 }
@@ -7316,7 +7305,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
     }
         #endif
 
-        #ifdef __THREEDIM__
+        #if defined __THREEDIM__ && defined NETGENT
     if (ReadArgvINT("s",&smooth,argc,argv))
       smooth = 0;
     if (ReadArgvDOUBLE("h",&h,argc,argv))
@@ -7514,8 +7503,7 @@ static INT ScreenSizeCommand (INT argc, char **argv)
     return (OKCODE);
   }
 
-  sprintf(buffer," screen width: %d, screen height: %d\n",(int)size[0], (int)size[1]);
-  UserWrite(buffer);
+  UserWriteF(" screen width: %d, screen height: %d\n",(int)size[0], (int)size[1]);
 
   if (    (SetStringValue(":screensize:width",size[0])!=0)
           ||      (SetStringValue(":screensize:height",size[1])!=0))
@@ -7614,8 +7602,7 @@ static INT OpenWindowCommand (INT argc, char **argv)
       }
       if ((theOutDev=GetOutputDevice(devname))==NULL)
       {
-        sprintf(buffer,"there is no device named '%s'",devname);
-        PrintErrorMessage('E',"openwindow",buffer);
+        PrintErrorMessageF('E',"openwindow","there is no device named '%s'",devname);
         return (PARAMERRORCODE);
       }
       break;
@@ -7731,8 +7718,7 @@ static INT CloseWindowCommand (INT argc, char **argv)
       }
       if ((theWin=GetUgWindow(winname))==NULL)
       {
-        sprintf(buffer,"there is no window named '%s'",winname);
-        PrintErrorMessage('W',"closewindow",buffer);
+        PrintErrorMessageF('W',"closewindow","there is no window named '%s'",winname);
         return (OKCODE);
       }
       break;
@@ -7949,8 +7935,7 @@ static INT DrawTextCommand (INT argc, char **argv)
       }
       if ((theWin=GetUgWindow(winname))==NULL)
       {
-        sprintf(buffer,"there is no window named '%s'",winname);
-        PrintErrorMessage('E',"drawtext",buffer);
+        PrintErrorMessageF('E',"drawtext","there is no window named '%s'",winname);
         return (PARAMERRORCODE);
       }
       break;
@@ -8084,8 +8069,7 @@ static INT OpenPictureCommand (INT argc, char **argv)
       }
       if ((theWin=GetUgWindow(winname))==NULL)
       {
-        sprintf(buffer,"there is no window named '%s'",winname);
-        PrintErrorMessage('E',"openpicture",buffer);
+        PrintErrorMessageF('E',"openpicture","there is no window named '%s'",winname);
         return (PARAMERRORCODE);
       }
       break;
@@ -8218,8 +8202,7 @@ static INT ClosePictureCommand (INT argc, char **argv)
       }
       if ((theWin=GetUgWindow(winname))==NULL)
       {
-        sprintf(buffer,"there is no window named '%s'",winname);
-        PrintErrorMessage('E',"closepicture",buffer);
+        PrintErrorMessageF('E',"closepicture","there is no window named '%s'",winname);
         return (PARAMERRORCODE);
       }
       break;
@@ -8244,8 +8227,7 @@ static INT ClosePictureCommand (INT argc, char **argv)
     else if (strlen(picname)==0)
       if ((thePic=GetUgPicture(theWin,picname))==NULL)
       {
-        sprintf(buffer,"there is no picture named '%s'",picname);
-        PrintErrorMessage('E',"closepicture",buffer);
+        PrintErrorMessageF('E',"closepicture","there is no picture named '%s'",picname);
         return (PARAMERRORCODE);
       }
   }
@@ -8358,8 +8340,7 @@ static INT SetCurrentPictureCommand (INT argc, char **argv)
       }
       if ((theWin=GetUgWindow(winname))==NULL)
       {
-        sprintf(buffer,"there is no window named '%s'",winname);
-        PrintErrorMessage('E',"setcurrpicture",buffer);
+        PrintErrorMessageF('E',"setcurrpicture","there is no window named '%s'",winname);
         return (PARAMERRORCODE);
       }
       break;
@@ -8559,6 +8540,13 @@ static INT PicFrameCommand (INT argc, char **argv)
 
    .    $x <x> <y> [<z>]      - define an x-axis in the viewplane (which will be to the right in the picture)
 
+   .n  some 3D plot objects allow to define a cut. It can be defined by using the following options.
+    for initialization both hve to be specified
+
+   .    $P~<x>~<y>~<z>                  - a point on the cut plane
+   .    $N~<x>~<y>~<z>                  - the normal of the cut plane
+   .    $R								 - remove cut
+
    RETURN VALUE:
    INT
    .n    0 if ok
@@ -8572,12 +8560,14 @@ static INT SetViewCommand (INT argc, char **argv)
   VIEWEDOBJ *theViewedObj;
   DOUBLE *viewPoint,*targetPoint,*xAxis;
   DOUBLE vP[3],tP[3],xA[3];
+  DOUBLE PlanePoint[3],PlaneNormal[3];
+  DOUBLE *CutPoint,*CutNormal;
   INT *perspective;
   INT per;
-  INT i,j,veclen;
+  INT i,j,veclen,res,RemoveCut;
 
   /* following variables: keep type for sscanf */
-  float x[3];
+  float x[3],help[3];
 
         #ifdef ModelP
   if (!CONTEXT(me)) {
@@ -8601,6 +8591,8 @@ static INT SetViewCommand (INT argc, char **argv)
   /* check options */
   viewPoint = targetPoint = xAxis = NULL;
   perspective = NULL;
+  CutPoint = CutNormal = NULL;
+  RemoveCut = NO;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -8612,8 +8604,7 @@ static INT SetViewCommand (INT argc, char **argv)
       }
       if (sscanf(argv[i],"o %f %f %f",x,x+1,x+2)!=veclen)
       {
-        sprintf(buffer,"o option: %d coordinates required for a %dD object",(int)veclen,(int)veclen);
-        PrintErrorMessage('E',"setview",buffer);
+        PrintErrorMessageF('E',"setview","o option: %d coordinates required for a %dD object",(int)veclen,(int)veclen);
         return (PARAMERRORCODE);
       }
       for (j=0; j<veclen; j++)
@@ -8624,8 +8615,7 @@ static INT SetViewCommand (INT argc, char **argv)
     case 't' :
       if (sscanf(argv[i],"t %f %f %f",x,x+1,x+2)!=veclen)
       {
-        sprintf(buffer,"t option: %d coordinates required for a %dD object",(int)veclen,(int)veclen);
-        PrintErrorMessage('E',"setview",buffer);
+        PrintErrorMessageF('E',"setview","t option: %d coordinates required for a %dD object",(int)veclen,(int)veclen);
         return (PARAMERRORCODE);
       }
       for (j=0; j<veclen; j++)
@@ -8636,8 +8626,7 @@ static INT SetViewCommand (INT argc, char **argv)
     case 'x' :
       if (sscanf(argv[i],"x %f %f %f",x,x+1,x+2)!=veclen)
       {
-        sprintf(buffer,"x option: %d coordinates required for a %dD object",(int)veclen,(int)veclen);
-        PrintErrorMessage('E',"setview",buffer);
+        PrintErrorMessageF('E',"setview","x option: %d coordinates required for a %dD object",(int)veclen,(int)veclen);
         return (PARAMERRORCODE);
       }
       for (j=0; j<veclen; j++)
@@ -8672,13 +8661,49 @@ static INT SetViewCommand (INT argc, char **argv)
       VO_STATUS(theViewedObj) = NOT_INIT;
       break;
 
+    case 'R' :
+      RemoveCut = YES;
+      break;
+
+    case 'P' :
+      if (!PO_USESCUT(PIC_PO(thePic)))
+      {
+        PrintErrorMessage('E',"setview","plot object does not use a cut");
+        return(PARAMERRORCODE);
+      }
+      res = sscanf(argv[i],"P %g %g %g",help, help+1, help+2);
+      if (res!=3)
+      {
+        PrintErrorMessage('E',"setview","specify three values for cut plane point");
+        return(PARAMERRORCODE);
+      }
+      V3_COPY(help,PlanePoint);
+      CutPoint = PlanePoint;
+      break;
+
+    case 'N' :
+      if (!PO_USESCUT(PIC_PO(thePic)))
+      {
+        PrintErrorMessage('E',"setview","plot object does not use a cut");
+        return(PARAMERRORCODE);
+      }
+      res = sscanf(argv[i],"N %g %g %g",help, help+1, help+2);
+      if (res!=3)
+      {
+        PrintErrorMessage('E',"setview","specify three values for cut normal point");
+        return(PARAMERRORCODE);
+      }
+      V3_COPY(help,PlaneNormal);
+      CutNormal = PlaneNormal;
+      break;
+
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("setview",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
 
-  if (SetView(thePic,viewPoint,targetPoint,xAxis,perspective)!=0)
+  if (SetView(thePic,viewPoint,targetPoint,xAxis,perspective,RemoveCut,CutPoint,CutNormal)!=0)
   {
     PrintErrorMessage('E',"setview","error during SetView");
     return (CMDERRORCODE);
@@ -8742,14 +8767,14 @@ static INT DisplayViewCommand (INT argc, char **argv)
   /* check options */
   switch (argc)
   {
-  case 0 :
+  case 1 :
     if (DisplayViewOfViewedObject(thePic))
     {
       PrintErrorMessage('E',"vdisplay","error during DisplayView");
       return (CMDERRORCODE);
     }
     break;
-  case 1 :
+  case 2 :
     if (argv[1][0]!='s')
     {
       sprintf(buffer,"(invalid option '%s')",argv[1]);
@@ -8764,6 +8789,61 @@ static INT DisplayViewCommand (INT argc, char **argv)
   }
 
   return(OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   cpview - copy view settings of current picture to other ones
+
+   DESCRIPTION:
+   This command copies the view settings of current picture to all other pictures of
+   the same window (default) or all windows provided that they belong to the
+   same MG and they have the same dimension.
+
+   'cpview [$a] [$c]'
+   .  a - set views of all pictures in all windows
+   .  c - set also cut (if defined for plot object)
+   D*/
+/****************************************************************************/
+
+static INT CopyViewCommand (INT argc, char **argv)
+{
+  PICTURE *thePic;
+  INT i,all,cut;
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
+  /* current picture */
+  thePic = GetCurrentPicture();
+  if (thePic==NULL)
+  {
+    PrintErrorMessage('E',"cpview","there's no current picture");
+    return (CMDERRORCODE);
+  }
+  all = cut = FALSE;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'a' :
+      all = TRUE;
+      break;
+
+    case 'c' :
+      cut = TRUE;
+      break;
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintHelp("cpview",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
+
+  if (CopyView(thePic,all,cut))
+    return (CMDERRORCODE);
+
+  return (OKCODE);
 }
 
 /****************************************************************************/
@@ -8835,8 +8915,7 @@ static INT WalkCommand (INT argc, char **argv)
 
   if (sscanf(argv[0],"walk %f %f %f",x,x+1,x+2)!=veclen)
   {
-    sprintf(buffer,"%d coordinates required for a %dD object",(int)veclen,(int)veclen);
-    PrintErrorMessage('E',"walk",buffer);
+    PrintErrorMessageF('E',"walk","%d coordinates required for a %dD object",(int)veclen,(int)veclen);
     return (PARAMERRORCODE);
   }
   for (i=0; i<veclen; i++)
@@ -9302,9 +9381,6 @@ static INT TextFacCommand (INT argc, char **argv)
    .n                                        r  regular and up
    .n                                        a  all
 
-   .    $P~<x>~<y>~<z>                  - a point on the cut plane
-   .    $N~<x>~<y>~<z>                  - the normal of the cut plane
-
 
    'EScalar $e <ElemEvalProc> [$m {COLOR | CONTOURS_EQ}] [$f <fromValue>] [$t <toValue>] [$n <nContours>] [$P <x> <y> <z>] [$N <x> <y> <z>]'
 
@@ -9313,8 +9389,6 @@ static INT TextFacCommand (INT argc, char **argv)
    .    $m~{COLOR|CONTOURS_EQ}          - mode: COLOR-plot or CONTOUR-plot
    .    $f~<fromValue>~$t~<toValue>     - range [fromValue,toValue]
    .    $n~<nContours>                  - number of contours
-   .    $P~<x>~<y>~<z>                  - a point on the cut plane
-   .    $N~<x>~<y>~<z>                  - the normal of the cut plane
 
 
     'EVector $e <ElemEvalProc> [$c {0|1}] [$t <toValue>] [$r <rastersize>] [$P <x> <y> <z>] [$N <x> <y> <z>]'
@@ -9323,8 +9397,6 @@ static INT TextFacCommand (INT argc, char **argv)
    .    $c~{0|1}                        - cut vectors if to long
    .    $t~<toValue>                    - range: [0,toValue]
    .    $r~<rastersize>                 - physical meshsize of rasterpoints where
-   .    $P~<x>~<y>~<z>                  - a point on the cut plane
-   .    $N~<x>~<y>~<z>                  - the normal of the cut plane
                                     - vectors are plotted
 
    EXAMPLE:
@@ -9411,10 +9483,7 @@ static INT SetPlotObjectCommand (INT argc, char **argv)
   }
 
   if (theMG!=NULL)
-  {
-    sprintf(buffer," picture '%s' and multigrid '%s' coupled\n",ENVITEM_NAME(thePic),ENVITEM_NAME(theMG));
-    UserWrite(buffer);
-  }
+    UserWriteF(" picture '%s' and multigrid '%s' coupled\n",ENVITEM_NAME(thePic),ENVITEM_NAME(theMG));
 
   if (SpecifyPlotObjOfViewedObject(thePic,theMG,thePlotObjTypeName,argc,argv)!=0)
   {
@@ -9706,8 +9775,7 @@ static INT FindRangeCommand (INT argc, char **argv)
   W_FINDRANGE_WORK(theWork)->max = max;
         #endif
 
-  sprintf(buffer," FR_min = %10.3g\n FR_max = %10.3g\n",(float)min,(float)max);
-  UserWrite(buffer);
+  UserWriteF(" FR_min = %10.3g\n FR_max = %10.3g\n",(float)min,(float)max);
 
   if (put)
     if (InvalidatePicture(thePic))
@@ -10208,8 +10276,7 @@ static INT ReInitCommand (INT argc, char **argv)
     theBVP = BVP_GetByName(BVPName);
     if(theBVP==NULL)
     {
-      sprintf(buffer,"could not interpret '%s' as a BVP name",BVPName);
-      PrintErrorMessage('E',"reinit",buffer);
+      PrintErrorMessageF('E',"reinit","could not interpret '%s' as a BVP name",BVPName);
       return (CMDERRORCODE);
     }
   }
@@ -10359,8 +10426,7 @@ static INT ExecuteNumProcCommand (INT argc, char **argv)
 
   if ((err=ExecuteNumProc(theNumProc,theMG,argc,argv))!=0)
   {
-    sprintf(buffer,"execution of '%s' failed (error code %d)",theNumProcName,err);
-    PrintErrorMessage('E',"npexecute",buffer);
+    PrintErrorMessageF('E',"npexecute","execution of '%s' failed (error code %d)",theNumProcName,err);
     return (CMDERRORCODE);
   }
 
@@ -10869,8 +10935,7 @@ static INT ExecuteNumProcCommand (INT argc, char **argv)
   }
   if ((err=((*theNumProc->Execute)(theNumProc,argc,argv)))!=0)
   {
-    sprintf(buffer,"execution of '%s' failed (error code %d)",theNumProcName,err);
-    PrintErrorMessage('E',"npexecute",buffer);
+    PrintErrorMessageF('E',"npexecute","execution of '%s' failed (error code %d)",theNumProcName,err);
     return (CMDERRORCODE);
   }
 
@@ -10927,8 +10992,7 @@ static INT NumProcDisplayCommand (INT argc, char **argv)
   }
   if ((err=((*theNumProc->Display)(theNumProc)))!=0)
   {
-    sprintf(buffer,"execution of '%s' failed (error code %d)",theNumProcName,err);
-    PrintErrorMessage('E',"npexecute",buffer);
+    PrintErrorMessageF('E',"npexecute","execution of '%s' failed (error code %d)",theNumProcName,err);
     return (CMDERRORCODE);
   }
 
@@ -11869,8 +11933,7 @@ static INT LB4Command (INT argc, char **argv)
                &coarse,&mode);
   if (res!=13)
   {
-    sprintf(buffer,"Wrong number of arguments: need exactly 13!");
-    UserWrite(buffer);
+    UserWriteF("Wrong number of arguments: need exactly 13!");
     PrintHelp("lb4",HELPITEM,NULL);
     return(CMDERRORCODE);
   }
@@ -11880,98 +11943,84 @@ static INT LB4Command (INT argc, char **argv)
 
   if ((minlevel<0)||(minlevel>TOPLEVEL(theMG)))
   {
-    sprintf(buffer,"Choose <minlevel>: 0-%d (toplevel)\n",TOPLEVEL(theMG));
-    UserWrite(buffer);
+    UserWriteF("Choose <minlevel>: 0-%d (toplevel)\n",TOPLEVEL(theMG));
     cmd_error = 1;
   }
 
   if (strategy<1 || strategy>6)
   {
-    sprintf(buffer,"<strategy>: 1-6\n");
-    UserWrite(buffer);
+    UserWriteF("<strategy>: 1-6\n");
     cmd_error = 1;
   }
 
   if (eigen<0 || eigen>8)
   {
-    sprintf(buffer,"<eigen>: 0-8\n");
-    UserWrite(buffer);
+    UserWriteF("<eigen>: 0-8\n");
     cmd_error = 1;
   }
 
   if (loc<0 || loc>1)
   {
-    sprintf(buffer,"<loc>: 0 (no KL) / 1 (use KL local refinement)\n");
-    UserWrite(buffer);
+    UserWriteF("<loc>: 0 (no KL) / 1 (use KL local refinement)\n");
     cmd_error = 1;
   }
 
   if (dims<1 || dims>3)
   {
-    sprintf(buffer,"Choose <ndims>: 1-3, 1 bi-, 2 quadri-, 3 octasection\n");
-    UserWrite(buffer);
+    UserWriteF("Choose <ndims>: 1-3, 1 bi-, 2 quadri-, 3 octasection\n");
     cmd_error = 1;
   }
 
   if (weights<0 || weights>3)
   {
-    sprintf(buffer,"Choose <weights>: 0-3, 0 no, 1 vertex, 2 edge, 3 both weights\n");
-    UserWrite(buffer);
+    UserWriteF("Choose <weights>: 0-3, 0 no, 1 vertex, 2 edge, 3 both weights\n");
     cmd_error = 1;
   }
 
   if (strategy==1 && eigen>5)
   {
-    sprintf(buffer,"For multlevel strategy (1) choose <eigen>: 1-4\n");
-    UserWrite(buffer);
+    UserWriteF("For multlevel strategy (1) choose <eigen>: 1-4\n");
     cmd_error = 1;
   }
 
   if (strategy==2 && eigen==0)
   {
-    sprintf(buffer,"For spectral strategy (2) choose <eigen>: 1-8\n");
-    UserWrite(buffer);
+    UserWriteF("For spectral strategy (2) choose <eigen>: 1-8\n");
     cmd_error = 1;
   }
 
   if (strategy>2 && (eigen!=0 || coarse!=0))
   {
-    sprintf(buffer,"For inertial, linear, random, scattered strategy (3/4/5/6) set <eigen>, <coarse> = 0\n");
-    UserWrite(buffer);
+    UserWriteF("For inertial, linear, random, scattered strategy (3/4/5/6) set <eigen>, <coarse> = 0\n");
     cmd_error = 1;
   }
 
   if (strategy==1 && loc==0)
   {
-    sprintf(buffer,"For multlevel strategy (1) set <loc> = 1\n");
-    UserWrite(buffer);
+    UserWriteF("For multlevel strategy (1) set <loc> = 1\n");
     cmd_error = 1;
   }
 
   if ((strategy==1 || strategy==2 && eigen>4) && coarse<1)
   {
-    sprintf(buffer,"For multilevel method <coarse>: normally 50-500\n");
-    UserWrite(buffer);
+    UserWriteF("For multilevel method <coarse>: normally 50-500\n");
     cmd_error = 1;
   }
   else if (strategy==2 && eigen<5 && coarse!=0 )
   {
-    sprintf(buffer,"NOT using a multilevel method <coarse> = 0\n");
-    UserWrite(buffer);
+    UserWriteF("NOT using a multilevel method <coarse> = 0\n");
     cmd_error = 1;
   }
 
   if ((strategy>2 || strategy<6) && weights >1)
   {
-    sprintf(buffer,"For inertial, linear, random strategy choose <weights>: 0 no, 1 vertex weights\n");
-    UserWrite(buffer);
+    UserWriteF("For inertial, linear, random strategy choose <weights>: 0 no, 1 vertex weights\n");
     cmd_error = 1;
   }
 
   if (strategy==6 && weights>0)
   {
-    sprintf(buffer,"For scattered strategy set <weights> = 0\n");
-    UserWrite(buffer);
+    UserWriteF("For scattered strategy set <weights> = 0\n");
     cmd_error = 1;
   }
 
@@ -12086,9 +12135,7 @@ static INT RepErrCommand (INT argc, char **argv)
   NO_OPTION_CHECK(argc,argv);
 
   if (rep_err_count==0)
-  {
     UserWrite("no errors are reported\n");
-  }
   else
   {
     UserWrite("reported errors are:\n\n");
@@ -13221,6 +13268,7 @@ INT InitCommands ()
   if (CreateCommand("setcurrpicture", SetCurrentPictureCommand            )==NULL) return (__LINE__);
   if (CreateCommand("picwin",                     PictureWindowCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("setview",            SetViewCommand                                  )==NULL) return (__LINE__);
+  if (CreateCommand("cpview",                     CopyViewCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("vdisplay",           DisplayViewCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("walk",                       WalkCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("walkaround",         WalkAroundCommand                               )==NULL) return (__LINE__);
