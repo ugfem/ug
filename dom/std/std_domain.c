@@ -158,7 +158,6 @@ static INT file_elements (FILE *f)
   nElem = 0;
   do {
     fgets(theLine, MAX_LEN, f);
-
     /*printf("%s",theLine); */
 
     if (strlen(theLine) < 3) continue;
@@ -382,7 +381,6 @@ static INT file_positions (FILE *f)
   do {
     fgets(theLine, MAX_LEN, f);
 
-
     theLine[41] = ' ';
     theLine[40] = theLine[34];
     theLine[39] = theLine[33];
@@ -437,10 +435,6 @@ static INT file_positions (FILE *f)
       return(0);
 
     nPPatch++;
-    /*jjj
-                    printf("point %4d %9.6f %9.6f %9.6f r %6.3f\n",
-                                    id,c[0],c[1],c[2],c[0]*c[0]+c[1]*c[1]);
-     */
   } while (!feof(f));
 
   return(1);
@@ -537,10 +531,6 @@ static INT file_elements_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
     c[6] = c6;
     c[7] = c7;
 
-    /*		printf("out\n%s\nscan\n%d %d %d %d %d %d %d %d %d %d\n",
-                               theLine,id,n,c0,c1,c2,c3,c4,c5,c6,c7); */
-
-
     if (Mesh != NULL)
       if (c[0] == c[1]) {
         if (c[4] != c[5]) return(1);
@@ -551,17 +541,6 @@ static INT file_elements_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
         Mesh->Element_corner_ids[1][nElem][3] = c[4] - 1;
         Mesh->Element_corner_ids[1][nElem][4] = c[6] - 1;
         Mesh->Element_corner_ids[1][nElem][5] = c[7] - 1;
-
-        /*
-                        printf("%d : %d %d %d %d %d %d\n",
-                                   nElem,
-                                   Mesh->Element_corner_ids[1][nElem][0],
-                                   Mesh->Element_corner_ids[1][nElem][1],
-                                   Mesh->Element_corner_ids[1][nElem][2],
-                                   Mesh->Element_corner_ids[1][nElem][3],
-                                   Mesh->Element_corner_ids[1][nElem][4],
-                                   Mesh->Element_corner_ids[1][nElem][5]);
-         */
       }
       else {
         Mesh->Element_corners[1][nElem] = n+1;
@@ -1081,6 +1060,8 @@ for (i=nPPatch; i<nPPatch+nLPatch; i++)
   Broadcast(theBVP->patches[i],sizeof(M1_PATCH));
 for (i=nPPatch+nLPatch; i<nPPatch+nLPatch+nTPatch; i++)
   Broadcast(theBVP->patches[i],sizeof(M2_PATCH));
+Broadcast(&(theBVP->radius),sizeof(DOUBLE));
+Broadcast(theBVP->MidPoint,DIM*sizeof(DOUBLE));
         #endif
 
   STD_BVP_NDOMPART(theBVP) = 1;
