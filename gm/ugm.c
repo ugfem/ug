@@ -653,23 +653,31 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
 }
 
 /****************************************************************************/
-/*                                                                          */
-/* Function:  CreateMidNode                                                 */
-/*                                                                          */
-/* Purpose:   call CreateMidNode2D() or CreateMidNode3D()                   */
-/*                                                                          */
-/* Param:     ELEMENT *theElement: element to refine                        */
-/*            int edge: edge to refine                                      */
-/*            NODE *after: insert new node after that node                  */
-/*                                                                          */
-/* return:    NODE* : pointer to new node                                   */
-/*            NULL  : could not allocate                                    */
-/*                                                                          */
+/*D
+   CreateMidNode - Return pointer to a new node structure on an edge
+
+   SYNOPSIS:
+   NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge);
+
+   PARAMETERS:
+   .  theGrid - grid where vertex should be inserted
+   .  theElement - pointer to an element
+   .  edge - id of an element edge
+
+   DESCRIPTION:
+   This function creates and initializes a new node structure
+   at the midpoint of an element edge and returns a pointer to it.
+
+   RETURN VALUE:
+   NODE *
+   .n   pointer to requested object
+   .n   NULL if out of memory
+   D*/
 /****************************************************************************/
 
 #ifdef __TWODIM__
 
-NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after)
+NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT side, NODE *after)
 {
   ELEMENTSIDE *theSide;
   COORD x,y;
@@ -968,19 +976,26 @@ NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,int edge,NODE *after)
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* Function:  CreateSideNode	                                                                                        */
-/*																			*/
-/* Purpose:   allocate a new node on an side of an element. Includes vertex */
-/*			  best fit boundary coordinates and local coordinates.			*/
-/*																			*/
-/* Param:	  ELEMENT *theElement: element to refine						*/
-/*			  int side: side to refine										*/
-/*			  NODE *after: insert new node after that node					*/
-/*																			*/
-/* return:	  NODE* : pointer to new node									*/
-/*			  NULL	: could not allocate									*/
-/*																			*/
+/*D
+   CreateSideNode - Return pointer to a new node structure on a side (3d)
+
+   SYNOPSIS:
+   NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side);
+
+   PARAMETERS:
+   .  theGrid - grid where vertex should be inserted
+   .  theElement - pointer to an element
+   .  side - id of an element side
+
+   DESCRIPTION:
+   This function creates and initializes a new node structure
+   at the midpoint of an element side and returns a pointer to it.
+
+   RETURN VALUE:
+   NODE *
+   .n   pointer to requested object
+   .n   NULL if out of memory
+   D*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__
@@ -989,9 +1004,9 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
   ELEMENTSIDE *theSide;
   VSEGMENT *vs;
   PATCH *thePatch;
-  COORD *global,*local,*lambda;
-  COORD_VECTOR x;
-  INT n,j,k;
+  COORD *global,*local,*lambda,*x[MAX_CORNERS_OF_ELEM];
+  COORD_VECTOR bnd_global;
+  INT n,m,j,k;
   VERTEX *theVertex;
   NODE *theNode;
   DOUBLE fac, diff;
@@ -1037,15 +1052,17 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 
       thePatch = ES_PATCH(theSide);
       VS_PATCH(vs) = thePatch;
-      if (Patch_local2global(thePatch,lambda,x))
+      if (Patch_local2global(thePatch,lambda,bnd_global))
         return (NULL);
 
       /* check if moved */
-      V3_EUKLIDNORM_OF_DIFF(x,global,diff);
+      V3_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
       if (diff>MAX_PAR_DIST)
       {
         SETMOVED(theVertex,1);
-        V3_COPY(x,global);
+        V3_COPY(bnd_global,global);
+        CORNER_COORDINATES(theElement,m,x);
+        GlobalToLocal(m,x,global,local);
       }
     }
   }
@@ -1581,6 +1598,66 @@ ELEMENTSIDE *CreateElementSide (GRID *theGrid)
 
   /* return ok */
   return(ps);
+}
+
+/****************************************************************************/
+/*D
+   CreateSonElementSide - creates the element sides of son elements
+
+   SYNOPSIS:
+   INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
+   ELEMENT *theSon, INT son_side);
+
+   PARAMETERS:
+   .  theGrid - grid for which to create
+   .  theElement - pointer to a boundary element
+   .  side - side id of a side of the element
+   .  theSon - pointer to a son element
+   .  son_side - side id of a side of the son
+
+   DESCRIPTION:
+   This function creates and initializes an element side of a son element.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR when error occured.
+   D*/
+/****************************************************************************/
+
+INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
+                          ELEMENT *theSon, INT son_side)
+{
+  ELEMENTSIDE *oldSide,*newSide;
+  VSEGMENT *vs;
+  COORD *lambda;
+  INT i,j;
+
+  IFDEBUG(gm,0)
+  assert (OBJT(theElement) != BEOBJ);
+  assert (SIDE(theElement,side) != NULL);
+  ENDDEBUG
+
+    oldSide = SIDE(theElement,side);
+  newSide = CreateElementSide(theGrid);
+  if (newSide == NULL)
+    RETURN(GM_ERROR);
+  SET_SIDE(theSon,son_side,newSide);
+  ES_PATCH(newSide) = ES_PATCH(oldSide);
+  for (i=0; i<CORNERS_OF_SIDE(theSon,son_side); i++)
+  {
+    lambda = PARAMPTR(newSide,i);
+    for( vs=VSEG(MYVERTEX(CORNER(theSon,i))); vs!=NULL; vs = NEXTSEG(vs) )
+    {
+      if (VS_PATCH(vs) == ES_PATCH(oldSide))
+        break;
+    }
+    assert(vs!=NULL);
+    for (j=0; j<DIM-1; j++)
+      lambda[j] =  LAMBDA(vs,j);
+  }
+
+  return(GM_OK);
 }
 
 /****************************************************************************/
