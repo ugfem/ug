@@ -180,9 +180,6 @@ mark [$h | {[<rule> [<side>]] [$a | $i <Id> | $s]} | $c]
     $s                     # refine all elements from the current selection
     $h                     # show available rules
 
--gridscript > grid
-gridscript      # print script commands creating the level zero of the current multigrid to shell
-
 -extracon > connections extra grid delete
 extracon         # display number of extra connections (and delete them)
                  # stringvar :extraconratio is set to (# extra/# connections)
@@ -222,7 +219,7 @@ lexorderv ur|ul|dr|dl|ru|rd|lu|ld [$l <level>] [$m] [$s <|>|0]
                            # the remaining ones to the lexicographically ordered list
 
 -orderv > vector matrix order sort
-orderv           # order the vectors of the current multigrid
+orderv           # algebraically order the vectors of the current multigrid
 orderv $m FFCCLL | FCFCLL [$s <skip pattern>] $d <dep-proc> $o dep-proc options> [$c <cut proc>] [$a]
     $m FFCCLL | FCFCLL     # possible modes are FFCCLL or FCFCLL
     $s <skip pattern>      # if specified put vectors with skip pattern containing
@@ -231,6 +228,15 @@ orderv $m FFCCLL | FCFCLL [$s <skip pattern>] $d <dep-proc> $o dep-proc options>
     $o <dep-proc options>  # ...and passes these options to it
     $c <cut proc>          # user specified proc for cuts
     $a                     # order all levels of the current multigrid
+
+-lineorderv > vector matrix order sort
+lineorderv       # algebraically order the vectors of the current multigrid
+lineorderv $d <dep-proc> $o dep-proc options> [$c <cut proc>] [$a] [$v 0|1|2]
+    $d <dep-proc>          # the ordering algorithm uses this dependency procedure...
+    $o <dep-proc options>  # ...and passes these options to it
+    $c <cut proc>          # user specified proc for cuts
+    $a                     # order all levels of the current multigrid
+	$v 0|1|2               # verbose level (default 0, quiet mode)
 
 -shellorderv > vector matrix order sort
 shellorderv      # order vectors of the current level starting from a seed shell by shell
@@ -344,10 +350,11 @@ deln <Id> | $s
 
 -move > node grid multigrid shift
 move             # move a node of the multigrid to a new postion
-move {<Id> | $s} {$i <x> <y> <z> | $b <SegId> <s> <t>}
+move {<Id> | $s} {$i <x> <y> <z> | $b <SegId> <s> <t>} [$r]
     <Id>                   # Id of the node to be moved
     $i <x> <y> <z>         # specify as much coordinates as the space has dimensions
     $b <Id> <s> <t>        # specify as much boundary segment coordinates as the boundary has dimensions
+    $r                     # move relative to old position (inner nodes only)
 
 
 -ie > element insert grid multigrid
@@ -416,14 +423,25 @@ setcurrwindow <window name>
 
 -drawtext > text plot window
 drawtext         # draw text into a ug window
-drawtext <xpos> <ypos> <text> [$w <window name>] [$c] [$i] [$s <size>]
+drawtext <xpos> <ypos> <text> [$w <window name>] [$c] [$m reg[ular]|inv[erse]|ind[exed]] [$s <size>]
    <xpos>                  # x-coordinate in pixels (origin is the lower left corner)
    <ypos>                  # y-coordinate in pixels (origin is the lower left corner)
    <text>                  # text to draw
    $w <window name>        # draw text into this window (default: current window)
-   $i                      # draw text inverse
    $c                      # center text at <xpos> <ypos>
    $s <size>               # text size
+   $m ...                  # draw text
+                           #   reg: regular (default)
+						   #   inv: inverse
+						   #   ind: allow for indexing (sub- and superscripts)
+						   #        formatting by
+						   #          /N: regular
+						   #          /T: subscript
+						   #          /H: superscript
+						   #   example: 'ex/Tsub/Hsuper/Nnormal' will result in something like
+						   #                  super
+						   #            'ex        normal
+						   #               sub
 
 -openpicture > window picture plot graphics
 openpicture      # open a picture on a window (these will be the current window and picture then)
@@ -446,6 +464,10 @@ closepicture [$a | {$w <window name> {<picture name> | $a}}]
 setcurrpicture   # make a picture the current picture
 setcurrpicture <picture name> [$w <window name>]
     $w <window name>       # picture resides in this window (default: current window)
+
+-picwin > window picture plot graphics
+picwin           # create a new window for the current picture
+                 # (to seperate multiple pictures of one window)
 
 -wplist > window picture plot graphics
 wplist           # list all windows with their pictures
@@ -573,10 +595,6 @@ clear <symbol name> [$a] [$s] [$v <value>]
 -copy > solution symbol
 copy            # copy symbol to symbol on current level
 copy $f <from-symbol> $t <to-symbol>
-
--copyv > solution symbol
-copyv            # num proc to copy a vector
-npinit $f <from-symbol> $t <to-symbol>
 
 -interpolate > solution symbol
 interpolate     # interpolate to current level from level below
@@ -732,10 +750,6 @@ npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|r
        $damp <sc double list> $L <lu mat sym> $beta <sc double list>
        [$rest <rest vector symbol> [$ort <sc double list>]]
 
--pbic > smoother numproc ic
-for initialisation of the damped point-block incomplete Cholesky decomposition
-npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $D {no|red|full}
-
 -pbilubt > smoother numproc ilu-beta threshold
 for initialisation of the damped point-block ilu with beta modification and threshold use:
 npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
@@ -754,11 +768,6 @@ npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|r
        $L <lu mat sym>
 
 -ebgs > smoother numproc gauss-seidel
-for initialisation of the equation-block Gauss-Seidel use:
-npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
-       $Blocking <sc int list> $BlockOrder <ord list> $BlockIter <sc numproc list> $n 1 $D full;
-
--lbgs > smoother numproc gauss-seidel
 for initialisation of the equation-block Gauss-Seidel use:
 npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
        $Blocking <sc int list> $BlockOrder <ord list> $BlockIter <sc numproc list> $n 1 $D full;
@@ -791,13 +800,6 @@ npinit $x <sol sym> $b <rhs sym> $c <cor sym> $t <temp sym> $A <mat sym>
        $m <maxit> $l <baselevel> $g <gamma> $s <sm1 sm2 basesm> $D{no|red|full}
        $red <sc double list> [$p <cg sym>] [$abslimit <sc double list>]
 
--ew > numproc
-ew # eigenvalue and eigenvector computation
-for initialisation use:
-npinit $s <sym> $e <sym list> $t <temp sym> $d {no|red|full} $A <mat sym>
-       $l <linear solver> $a <assemble stiffness matrix> $b <assemble rhs> 
-       $m <maxit> $Rel_Limit <sc double list> $Damp <sc double list> [$O] [$N]
-
 -nl > numproc 
 nl # nonlinear solver
 for initialisation use:
@@ -807,7 +809,6 @@ npinit $n <new sym> $o <old sym> $t <temp sym> $d {NO|RED|FULL} $m <maxit>
 -tnl > numproc
 tnl                  # time solver
 npinit $n <new sym> $o <old sym> $t <temp sym> $d {NO|RED|FULL} $m <maxit> 
-       $l <linear solver> $r <assemble> $Rel_Limit <sc double list> 
-       $Damp <sc double list> 
+       $l <linear solver> $r <assemble> $Rel_Limit <sc double list> $Damp <sc double list> ??????
 
 
