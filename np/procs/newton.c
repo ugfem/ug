@@ -671,12 +671,17 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     if (use_second)
     {
       use_second=0;
-      if (sc_mul(defectmax,defect,newton->divFactor,newton->d))               {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
-    }
-    else
-    {
-      if (!sc_cmp(defect,defectmax,newton->d)) break;
-    }
+      if (sc_mul(defectmax,defect,newton->divFactor,newton->d))
+      {
+        res->error_code = __LINE__;
+        REP_ERR_RETURN(res->error_code);
+      }
+    }            /*
+                    else
+                    {
+                        if (!sc_cmp(defect,defectmax,newton->d)) break;
+                    }
+                  */
 
     /* compute new reduction factor, assuming quadratic convergence */
     for (i=0; i<n_unk; i++)
