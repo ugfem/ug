@@ -57,6 +57,7 @@
 
 /* interface includes */
 #include "compiler.h"
+#include "misc.h"
 #include "devices.h"
 #include "initdev.h"
 #include "defaults.h"
@@ -92,8 +93,6 @@
 #include "shell-icon"
 
 /* macros for access to text buffer */
-#define MIN(x,y)                (((x)<(y)) ? (x) : (y))
-#define MAX(x,y)                (((x)>(y)) ? (x) : (y))
 #define TEXTLINE(sh,i)          (sh)->lineStart[((sh)->topLine+(i))%((sh)->numLines)]
 #define XPOS(sh,i,j)    XTextWidth((sh)->font_info,TEXTLINE(sh,j),MIN(strlen(TEXTLINE(sh,j)),i))
 #define YPOS(sh,i,j)    (sh)->font_ascent+(j)*((sh)->font_height)
