@@ -1165,7 +1165,7 @@ static INT SetCommand (INT argc, char **argv)
 
   p = expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %255[\n -~]"));
         #endif
-  res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %4096[\n\t -~]")),name,buffer);
+  res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %4096[\t\n -~]")),name,buffer);
         #else
   res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %255[ -~]")),name,buffer);
         #endif /* ModelP */
@@ -6739,6 +6739,10 @@ static INT ScreenSizeCommand (INT argc, char **argv)
 {
   INT size[2];
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   NO_OPTION_CHECK(argc,argv);
 
   if (GetScreenSize(size)==FALSE)
@@ -6938,6 +6942,10 @@ static INT CloseWindowCommand (INT argc, char **argv)
   char winname[NAMESIZE];
   INT i,aopt;
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   currWin = GetCurrentUgWindow();
   theWin = currWin;
 
@@ -7088,6 +7096,10 @@ static INT SetCurrentWindowCommand (INT argc, char **argv)
   UGWINDOW *theWin;
   char winname[NAMESIZE];
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   NO_OPTION_CHECK(argc,argv);
 
   /* get window name */
@@ -7135,6 +7147,10 @@ static INT DrawTextCommand (INT argc, char **argv)
   char winname[NAMESIZE],text[NAMESIZE];
   COORD_POINT pos;
   INT i,invopt,centeropt,size;
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
 
   theWin = GetCurrentUgWindow();
   if (theWin==NULL)
@@ -7391,6 +7407,10 @@ static INT ClosePictureCommand (INT argc, char **argv)
   char picname[NAMESIZE],winname[NAMESIZE];
   INT i,aopt,wopt;
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   theWin = GetCurrentUgWindow();
   if (theWin==NULL)
   {
@@ -7527,6 +7547,10 @@ static INT SetCurrentPictureCommand (INT argc, char **argv)
   char picname[NAMESIZE], winname[NAMESIZE];
   INT i;
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   theWin = GetCurrentUgWindow();
   if (theWin==NULL)
   {
@@ -7615,6 +7639,10 @@ static INT ClearPictureCommand (INT argc, char **argv)
 {
   PICTURE *thePicture;
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   NO_OPTION_CHECK(argc,argv);
 
   thePicture = GetCurrentPicture();
@@ -7647,6 +7675,10 @@ static INT ClearPictureCommand (INT argc, char **argv)
 
 static INT PicFrameCommand (INT argc, char **argv)
 {
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   NO_OPTION_CHECK(argc,argv);
 
   if (strchr(argv[0],'0')!=NULL)
@@ -7876,6 +7908,10 @@ static INT DisplayViewCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   NO_OPTION_CHECK(argc,argv);
 
   /* current picture */
@@ -7944,6 +7980,10 @@ static INT WalkCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   float x[3];
 
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
 
   NO_OPTION_CHECK(argc,argv);
 
@@ -8038,6 +8078,10 @@ static INT WalkAroundCommand (INT argc, char **argv)
   float dirAngle,Angle;
 
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   NO_OPTION_CHECK(argc,argv);
 
   /* current picture */
@@ -8128,6 +8172,10 @@ static INT ZoomCommand (INT argc, char **argv)
   float factor;
 
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   NO_OPTION_CHECK(argc,argv);
 
   /* current picture */
@@ -8204,6 +8252,10 @@ static INT DragCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   float dx,dy;
 
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
 
   NO_OPTION_CHECK(argc,argv);
 
@@ -8283,6 +8335,10 @@ static INT RotateCommand (INT argc, char **argv)
   float angle;
 
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   NO_OPTION_CHECK(argc,argv);
 
   /* current picture */
@@ -8330,6 +8386,10 @@ static INT RotateCommand (INT argc, char **argv)
 static INT TextFacCommand (INT argc, char **argv)
 {
   float fValue;
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
 
   NO_OPTION_CHECK(argc,argv);
 
@@ -8566,6 +8626,10 @@ static INT SetPlotObjectCommand (INT argc, char **argv)
 static INT PlotObjectListCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
 
   NO_OPTION_CHECK(argc,argv);
 
@@ -8890,6 +8954,10 @@ static INT SetCurrentMultigridCommand (INT argc, char **argv)
 
 static INT UpdateDocumentCommand (INT argc, char **argv)
 {
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   NO_OPTION_CHECK(argc,argv);
 
   InvalidatePicturesOfMG(currMG);
