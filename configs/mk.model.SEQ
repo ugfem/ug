@@ -1,0 +1,6 @@
+# this file is for internal ug configuration. don't change it!
+
+MODEL_TARGET = SEQUENTIAL
+MODEL_CFLAGS =
+MODEL_LFLAGS =
+

@@ -1,0 +1,6 @@
+# this file is for internal ug configuration. don't change it!
+
+MODEL_TARGET = PARALLEL
+MODEL_CFLAGS = -DModelP
+MODEL_LFLAGS = $(UGROOT)/lib/libppif.a $(UGROOT)/lib/libddd.a \
+				$(UGROOT)/parallel/dddif/memmgr.o
