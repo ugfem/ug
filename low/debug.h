@@ -164,10 +164,10 @@ extern const char  *__debug_time_file[DEBUG_TIME_MAX];
 /****************************************************************************/
 
 void SetPrintDebugProc          (PrintfProcPtr print);
-void PrintDebug                         (const char *format, ...);
+int  PrintDebug                         (const char *format, ...);
 int  PrintDebugToFile           (const char *format, ...);
 int  SetPrintDebugToFile        (const char *fname);
-int  RemoveDebugFileIfEmpty (void);
+int  PostprocessDebugFile       (const char *newname);
 INT  PrintRepErrStack           (PrintfProcPtr print);
 
 #endif

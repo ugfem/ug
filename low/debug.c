@@ -127,7 +127,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-void PrintDebug (const char *format, ...)
+int PrintDebug (const char *format, ...)
 {
   char buffer[4096];
   va_list args;
@@ -155,6 +155,7 @@ else
         #endif
 
   va_end(args);
+  return (0);
 }
 
 void SetPrintDebugProc (PrintfProcPtr print)
@@ -191,7 +192,7 @@ int SetPrintDebugToFile (const char *fname)
   return (0);
 }
 
-int RemoveDebugFileIfEmpty (void)
+int PostprocessDebugFile (const char *newname)
 {
 #       ifndef ModelP
   char c;
@@ -206,9 +207,19 @@ int RemoveDebugFileIfEmpty (void)
     return (1);
   if ((c=getc(debugfile))==EOF)
   {
+    /* remove empty file */
     if (fclose(debugfile))
       return (1);
     if (remove(debugfilename))
+      return (1);
+  }
+  else if (newname!=NULL)
+  {
+    /* rename nonemty file */
+    if (fclose(debugfile))
+      return (1);
+    remove(newname);
+    if (rename(debugfilename,newname))
       return (1);
   }
 #       endif
