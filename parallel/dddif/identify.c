@@ -532,10 +532,10 @@ EDGE *FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge)
   case (CORNER_NODE) :
 
     ASSERT(pos0<ncorners);
-    if ( (pos0+1 == pos1) ||
+    if ( ((pos0+1)%ncorners == pos1) ||
          (pos0+ncorners == pos1) ) {
 
-      fatherEdge = GetEdge(NFATHER(Nodes[0]),NFATHER(SideNodes[pos0+1]));
+      fatherEdge = GetEdge(NFATHER(Nodes[0]),NFATHER(SideNodes[(pos0+1)%ncorners]));
       ASSERT(fatherEdge!=NULL);
     }
 
