@@ -157,13 +157,82 @@ static INT file_elements (FILE *f)
   do {
     fgets(theLine, MAX_LEN, f);
     if (strlen(theLine) < 3) continue;
+
+    theLine[66] = 0;
+    theLine[65] = ' ';
+    theLine[64] = theLine[54];
+    theLine[63] = theLine[53];
+    theLine[62] = theLine[52];
+    theLine[61] = theLine[51];
+    theLine[60] = theLine[50];
+    theLine[59] = ' ';
+    theLine[58] = theLine[49];
+    theLine[57] = theLine[48];
+    theLine[56] = theLine[47];
+    theLine[55] = theLine[46];
+    theLine[54] = theLine[45];
+    theLine[53] = ' ';
+    theLine[52] = theLine[44];
+    theLine[51] = theLine[43];
+    theLine[50] = theLine[42];
+    theLine[49] = theLine[41];
+    theLine[48] = theLine[40];
+    theLine[47] = ' ';
+    theLine[46] = theLine[39];
+    theLine[45] = theLine[38];
+    theLine[44] = theLine[37];
+    theLine[43] = theLine[36];
+    theLine[42] = theLine[35];
+    theLine[41] = ' ';
+    theLine[40] = theLine[34];
+    theLine[39] = theLine[33];
+    theLine[38] = theLine[32];
+    theLine[37] = theLine[31];
+    theLine[36] = theLine[30];
+    theLine[35] = ' ';
+    theLine[34] = theLine[29];
+    theLine[33] = theLine[28];
+    theLine[32] = theLine[27];
+    theLine[31] = theLine[26];
+    theLine[30] = theLine[25];
+    theLine[29] = ' ';
+    theLine[28] = theLine[24];
+    theLine[27] = theLine[23];
+    theLine[26] = theLine[22];
+    theLine[25] = theLine[21];
+    theLine[24] = theLine[20];
+    theLine[23] = ' ';
+    theLine[22] = theLine[19];
+    theLine[21] = theLine[18];
+    theLine[20] = theLine[17];
+    theLine[19] = theLine[16];
+    theLine[18] = theLine[15];
+    theLine[17] = ' ';
+    theLine[16] = theLine[14];
+    theLine[15] = theLine[13];
+    theLine[14] = theLine[12];
+    theLine[13] = theLine[11];
+    theLine[12] = theLine[10];
+    theLine[11] = ' ';
+    theLine[10] = theLine[9];
+    theLine[9] = theLine[8];
+    theLine[8] = theLine[7];
+    theLine[7] = theLine[6];
+    theLine[6] = theLine[5];
+    theLine[5] = ' ';
+    theLine[4] = theLine[4];
+    theLine[3] = theLine[3];
+    theLine[2] = theLine[2];
+    theLine[1] = theLine[1];
+    theLine[0] = theLine[0];
+
     if (sscanf(theLine,"%d %d",&id,&n) != 2) return(0);
 
-    if (sscanf(theLine,"%5d%5d%5d%5d%5d%5d%5d%5d%5d%5d",
+    if (sscanf(theLine,"%d %d %d %d %d %d %d %d %d %d",
                &id,&n,c,c+1,c+2,c+3,c+4,c+5,c+6,c+7) != 3+n) return(0);
     nElem++;
 
-    /*		printf("%d %d %d %d %d\n",id,n,c[0],c[1],c[2]); */
+    /* printf("%d %d %d %d %d\n",id,n,c[0],c[1],c[2]);  */
 
   } while (!feof(f));
 
@@ -178,23 +247,70 @@ static INT file_corners (FILE *f)
   fgets(theLine, MAX_LEN, f);
   /* printf("%s",theLine); */
 
+  theLine[12] = 0;
+  theLine[11] = ' ';
+  theLine[10] = theLine[9];
+  theLine[9] = theLine[8];
+  theLine[8] = theLine[7];
+  theLine[7] = theLine[6];
+  theLine[6] = theLine[5];
+  theLine[5] = ' ';
+  theLine[4] = theLine[4];
+  theLine[3] = theLine[3];
+  theLine[2] = theLine[2];
+  theLine[1] = theLine[1];
+  theLine[0] = theLine[0];
+
   if (sscanf(theLine,"%d %d",&N,&n) != 2) return(1);
 
   nCorners = 0;
   for (i=0; i<n; i++) {
     fgets(theLine, MAX_LEN, f);
-    k = 6;
-    for (j=35; j>4; j--) {
-      theLine[j+k] = theLine[j];
-      if ((theLine[j] == '+') || (theLine[j] == '-')) {
-        k--;
-        theLine[j+k] = 'e';
-      }
-      if ((j == 25) || (j == 15) || (j == 5)) {
-        k--;
-        theLine[j+k] = ' ';
-      }
-    }
+
+    theLine[42] = 0;
+    theLine[41] = ' ';
+    theLine[40] = theLine[34];
+    theLine[39] = theLine[33];
+    theLine[38] = 'e';
+    theLine[37] = theLine[32];
+    theLine[36] = theLine[31];
+    theLine[35] = theLine[30];
+    theLine[34] = theLine[29];
+    theLine[33] = theLine[28];
+    theLine[32] = theLine[27];
+    theLine[31] = theLine[26];
+    theLine[30] = theLine[25];
+    theLine[29] = ' ';
+    theLine[28] = theLine[24];
+    theLine[27] = theLine[23];
+    theLine[26] = 'e';
+    theLine[25] = theLine[22];
+    theLine[24] = theLine[21];
+    theLine[23] = theLine[20];
+    theLine[22] = theLine[19];
+    theLine[21] = theLine[18];
+    theLine[20] = theLine[17];
+    theLine[19] = theLine[16];
+    theLine[18] = theLine[15];
+    theLine[17] = ' ';
+    theLine[16] = theLine[14];
+    theLine[15] = theLine[13];
+    theLine[14] = 'e';
+    theLine[13] = theLine[12];
+    theLine[12] = theLine[11];
+    theLine[11] = theLine[10];
+    theLine[10] = theLine[9];
+    theLine[9] = theLine[8];
+    theLine[8] = theLine[7];
+    theLine[7] = theLine[6];
+    theLine[6] = theLine[5];
+    theLine[5] = ' ';
+    theLine[4] = theLine[4];
+    theLine[3] = theLine[3];
+    theLine[2] = theLine[2];
+    theLine[1] = theLine[1];
+    theLine[0] = theLine[0];
+
     if (sscanf(theLine,"%d %lg %lg %lg",
                &id,c,c+1,c+2) != 1+N) return(0);
     nCorners++;
@@ -209,7 +325,7 @@ static INT file_contact (FILE *f)
 {
   int id,c;
 
-  fgets(theLine, MAX_LEN, f);
+  /* fgets(theLine, MAX_LEN, f); */
 
   nBndP = 0;
   do {
@@ -221,7 +337,9 @@ static INT file_contact (FILE *f)
 
   } while (!feof(f));
 
-  return(1);
+  UserWrite("BVP: no contact\n");
+
+  return(0);
 }
 
 static INT file_triangles (FILE *f)
@@ -254,24 +372,55 @@ static INT file_positions (FILE *f)
   nPPatch = 0;
   do {
     fgets(theLine, MAX_LEN, f);
-    k = 6;
-    for (j=35; j>4; j--) {
-      theLine[j+k] = theLine[j];
-      if ((theLine[j] == '+') || (theLine[j] == '-')) {
-        k--;
-        theLine[j+k] = 'e';
-      }
-      if ((j == 25) || (j == 15) || (j == 5)) {
-        k--;
-        theLine[j+k] = ' ';
-      }
-    }
+
+    theLine[40] = theLine[34];
+    theLine[39] = theLine[33];
+    theLine[38] = ' ';
+    theLine[37] = theLine[32];
+    theLine[36] = theLine[31];
+    theLine[35] = theLine[30];
+    theLine[34] = theLine[29];
+    theLine[33] = theLine[28];
+    theLine[32] = theLine[27];
+    theLine[31] = theLine[26];
+    theLine[30] = theLine[25];
+    theLine[29] = ' ';
+    theLine[28] = theLine[24];
+    theLine[27] = theLine[23];
+    theLine[26] = 'e';
+    theLine[25] = theLine[22];
+    theLine[24] = theLine[21];
+    theLine[23] = theLine[20];
+    theLine[22] = theLine[19];
+    theLine[21] = theLine[18];
+    theLine[20] = theLine[17];
+    theLine[19] = theLine[16];
+    theLine[18] = theLine[15];
+    theLine[17] = ' ';
+    theLine[16] = theLine[14];
+    theLine[15] = theLine[13];
+    theLine[14] = 'e';
+    theLine[13] = theLine[12];
+    theLine[12] = theLine[11];
+    theLine[11] = theLine[10];
+    theLine[10] = theLine[9];
+    theLine[9] = theLine[8];
+    theLine[8] = theLine[7];
+    theLine[7] = theLine[6];
+    theLine[6] = theLine[5];
+    theLine[5] = ' ';
+    theLine[4] = theLine[4];
+    theLine[3] = theLine[3];
+    theLine[2] = theLine[2];
+    theLine[1] = theLine[1];
+    theLine[0] = theLine[0];
+
     if (sscanf(theLine,"%d %lg %lg %lg",&id,c,c+1,c+2) != 4)
       return(0);
 
     nPPatch++;
 
-    /* printf("%d %f %f %f nP %d\n",id,c[0],c[1],c[2],nPPatch);*/
+    /* printf("%d %f %f %f nP %d\n",id,c[0],c[1],c[2],nPPatch); */
 
   } while (!feof(f));
 
@@ -280,22 +429,125 @@ static INT file_positions (FILE *f)
 
 static INT file_elements_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
 {
-  char *buffer;
-  int id,n,i,c[8];
+  int id,n,i,c[8],c0,c1,c2,c3,c4,c5,c6,c7;
 
   nElem = 0;
   do {
     fgets(theLine, MAX_LEN, f);
     if (strlen(theLine) < 3) continue;
+
+    theLine[66] = 0;
+    theLine[65] = ' ';
+    theLine[64] = theLine[54];
+    theLine[63] = theLine[53];
+    theLine[62] = theLine[52];
+    theLine[61] = theLine[51];
+    theLine[60] = theLine[50];
+    theLine[59] = ' ';
+    theLine[58] = theLine[49];
+    theLine[57] = theLine[48];
+    theLine[56] = theLine[47];
+    theLine[55] = theLine[46];
+    theLine[54] = theLine[45];
+    theLine[53] = ' ';
+    theLine[52] = theLine[44];
+    theLine[51] = theLine[43];
+    theLine[50] = theLine[42];
+    theLine[49] = theLine[41];
+    theLine[48] = theLine[40];
+    theLine[47] = ' ';
+    theLine[46] = theLine[39];
+    theLine[45] = theLine[38];
+    theLine[44] = theLine[37];
+    theLine[43] = theLine[36];
+    theLine[42] = theLine[35];
+    theLine[41] = ' ';
+    theLine[40] = theLine[34];
+    theLine[39] = theLine[33];
+    theLine[38] = theLine[32];
+    theLine[37] = theLine[31];
+    theLine[36] = theLine[30];
+    theLine[35] = ' ';
+    theLine[34] = theLine[29];
+    theLine[33] = theLine[28];
+    theLine[32] = theLine[27];
+    theLine[31] = theLine[26];
+    theLine[30] = theLine[25];
+    theLine[29] = ' ';
+    theLine[28] = theLine[24];
+    theLine[27] = theLine[23];
+    theLine[26] = theLine[22];
+    theLine[25] = theLine[21];
+    theLine[24] = theLine[20];
+    theLine[23] = ' ';
+    theLine[22] = theLine[19];
+    theLine[21] = theLine[18];
+    theLine[20] = theLine[17];
+    theLine[19] = theLine[16];
+    theLine[18] = theLine[15];
+    theLine[17] = ' ';
+    theLine[16] = theLine[14];
+    theLine[15] = theLine[13];
+    theLine[14] = theLine[12];
+    theLine[13] = theLine[11];
+    theLine[12] = theLine[10];
+    theLine[11] = ' ';
+    theLine[10] = theLine[9];
+    theLine[9] = theLine[8];
+    theLine[8] = theLine[7];
+    theLine[7] = theLine[6];
+    theLine[6] = theLine[5];
+    theLine[5] = ' ';
+    theLine[4] = theLine[4];
+    theLine[3] = theLine[3];
+    theLine[2] = theLine[2];
+    theLine[1] = theLine[1];
+    theLine[0] = theLine[0];
+
     if (sscanf(theLine,"%d %d",&id,&n) != 2) return(0);
 
-    if (sscanf(theLine,"%5d%5d%5d%5d%5d%5d%5d%5d%5d%5d",
-               &id,&n,c,c+1,c+2,c+3,c+4,c+5,c+6,c+7) != 3+n) return(0);
+    if (sscanf(theLine,"%d %d %d %d %d %d %d %d %d %d",
+               &id,&n,&c0,&c1,&c2,&c3,&c4,&c5,&c6,&c7) != 3+n) return(0);
 
-    Mesh->Element_corners[1][nElem] = n+1;
-    for (i=0; i<=n; i++)
-      Mesh->Element_corner_ids[1][nElem][i] = c[i] - 1;
+    c[0] = c0;
+    c[1] = c1;
+    c[2] = c2;
+    c[3] = c3;
+    c[4] = c4;
+    c[5] = c5;
+    c[6] = c6;
+    c[7] = c7;
 
+    /*		printf("out\n%s\nscan\n%d %d %d %d %d %d %d %d %d %d\n",
+                               theLine,id,n,c0,c1,c2,c3,c4,c5,c6,c7); */
+
+
+    if (c[0] == c[1]) {
+      if (c[4] != c[5]) return(1);
+      Mesh->Element_corners[1][nElem] = 6;
+      Mesh->Element_corner_ids[1][nElem][0] = c[0] - 1;
+      Mesh->Element_corner_ids[1][nElem][1] = c[2] - 1;
+      Mesh->Element_corner_ids[1][nElem][2] = c[3] - 1;
+      Mesh->Element_corner_ids[1][nElem][3] = c[4] - 1;
+      Mesh->Element_corner_ids[1][nElem][4] = c[6] - 1;
+      Mesh->Element_corner_ids[1][nElem][5] = c[7] - 1;
+
+      /*
+                      printf("%d : %d %d %d %d %d %d\n",
+                                 nElem,
+                                 Mesh->Element_corner_ids[1][nElem][0],
+                                 Mesh->Element_corner_ids[1][nElem][1],
+                                 Mesh->Element_corner_ids[1][nElem][2],
+                                 Mesh->Element_corner_ids[1][nElem][3],
+                                 Mesh->Element_corner_ids[1][nElem][4],
+                                 Mesh->Element_corner_ids[1][nElem][5]);
+       */
+    }
+    else {
+      Mesh->Element_corners[1][nElem] = n+1;
+      for (i=0; i<=n; i++)
+        Mesh->Element_corner_ids[1][nElem][i] = c[i] - 1;
+    }
     nElem++;
 
     /*		printf("%d %d %d %d %d\n",id,n,c[0],c[1],c[2]); */
@@ -314,6 +566,20 @@ static INT file_corners_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey,
   fgets(theLine, MAX_LEN, f);
   /* printf("%s",theLine); */
 
+  theLine[12] = 0;
+  theLine[11] = ' ';
+  theLine[10] = theLine[9];
+  theLine[9] = theLine[8];
+  theLine[8] = theLine[7];
+  theLine[7] = theLine[6];
+  theLine[6] = theLine[5];
+  theLine[5] = ' ';
+  theLine[4] = theLine[4];
+  theLine[3] = theLine[3];
+  theLine[2] = theLine[2];
+  theLine[1] = theLine[1];
+  theLine[0] = theLine[0];
+
   if (sscanf(theLine,"%d %d",&N,&n) != 2) return(1);
 
   for (j=0; j<3; j++)
@@ -321,18 +587,53 @@ static INT file_corners_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey,
 
   for (i=0; i<n; i++) {
     fgets(theLine, MAX_LEN, f);
-    k = 6;
-    for (j=35; j>4; j--) {
-      theLine[j+k] = theLine[j];
-      if ((theLine[j] == '+') || (theLine[j] == '-')) {
-        k--;
-        theLine[j+k] = 'e';
-      }
-      if ((j == 25) || (j == 15) || (j == 5)) {
-        k--;
-        theLine[j+k] = ' ';
-      }
-    }
+
+    /* printf("in\n%s\n",theLine); */
+
+    theLine[42] = 0;
+    theLine[41] = ' ';
+    theLine[40] = theLine[34];
+    theLine[39] = theLine[33];
+    theLine[38] = 'e';
+    theLine[37] = theLine[32];
+    theLine[36] = theLine[31];
+    theLine[35] = theLine[30];
+    theLine[34] = theLine[29];
+    theLine[33] = theLine[28];
+    theLine[32] = theLine[27];
+    theLine[31] = theLine[26];
+    theLine[30] = theLine[25];
+    theLine[29] = ' ';
+    theLine[28] = theLine[24];
+    theLine[27] = theLine[23];
+    theLine[26] = 'e';
+    theLine[25] = theLine[22];
+    theLine[24] = theLine[21];
+    theLine[23] = theLine[20];
+    theLine[22] = theLine[19];
+    theLine[21] = theLine[18];
+    theLine[20] = theLine[17];
+    theLine[19] = theLine[16];
+    theLine[18] = theLine[15];
+    theLine[17] = ' ';
+    theLine[16] = theLine[14];
+    theLine[15] = theLine[13];
+    theLine[14] = 'e';
+    theLine[13] = theLine[12];
+    theLine[12] = theLine[11];
+    theLine[11] = theLine[10];
+    theLine[10] = theLine[9];
+    theLine[9] = theLine[8];
+    theLine[8] = theLine[7];
+    theLine[7] = theLine[6];
+    theLine[6] = theLine[5];
+    theLine[5] = ' ';
+    theLine[4] = theLine[4];
+    theLine[3] = theLine[3];
+    theLine[2] = theLine[2];
+    theLine[1] = theLine[1];
+    theLine[0] = theLine[0];
+
     if (sscanf(theLine,"%d %lg %lg %lg",
                &id,c,c+1,c+2) != 1+N) return(0);
 
@@ -351,7 +652,7 @@ static INT file_corners_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey,
       for (j=0; j<3; j++)
         Mesh->Position[i-nBndP][j] = c[j];
 
-    /* printf("%d %f %f %f\n",id,c[0],c[1],c[2]); */
+    /* printf("%d %f %f %f\n",id,c[0],c[1],c[2]);  */
   }
   s = 1.0 / nBndP;
   for (j=0; j<3; j++)
@@ -372,7 +673,7 @@ static INT file_contact_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
 {
   int id,c;
 
-  fgets(theLine, MAX_LEN, f);
+  /*	fgets(theLine, MAX_LEN, f); */
 
   nBndP = 0;
   do
@@ -389,7 +690,9 @@ static INT file_contact_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
 
   } while (!feof(f));
 
-  return(1);
+  UserWrite("BVP: no contact\n");
+
+  return(0);
 }
 
 static INT file_triangles_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
@@ -433,18 +736,50 @@ static INT file_positions_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
   nPPatch = 0;
   do {
     fgets(theLine, MAX_LEN, f);
-    k = 6;
-    for (j=35; j>4; j--) {
-      theLine[j+k] = theLine[j];
-      if ((theLine[j] == '+') || (theLine[j] == '-')) {
-        k--;
-        theLine[j+k] = 'e';
-      }
-      if ((j == 25) || (j == 15) || (j == 5)) {
-        k--;
-        theLine[j+k] = ' ';
-      }
-    }
+
+
+    theLine[40] = theLine[34];
+    theLine[39] = theLine[33];
+    theLine[38] = ' ';
+    theLine[37] = theLine[32];
+    theLine[36] = theLine[31];
+    theLine[35] = theLine[30];
+    theLine[34] = theLine[29];
+    theLine[33] = theLine[28];
+    theLine[32] = theLine[27];
+    theLine[31] = theLine[26];
+    theLine[30] = theLine[25];
+    theLine[29] = ' ';
+    theLine[28] = theLine[24];
+    theLine[27] = theLine[23];
+    theLine[26] = 'e';
+    theLine[25] = theLine[22];
+    theLine[24] = theLine[21];
+    theLine[23] = theLine[20];
+    theLine[22] = theLine[19];
+    theLine[21] = theLine[18];
+    theLine[20] = theLine[17];
+    theLine[19] = theLine[16];
+    theLine[18] = theLine[15];
+    theLine[17] = ' ';
+    theLine[16] = theLine[14];
+    theLine[15] = theLine[13];
+    theLine[14] = 'e';
+    theLine[13] = theLine[12];
+    theLine[12] = theLine[11];
+    theLine[11] = theLine[10];
+    theLine[10] = theLine[9];
+    theLine[9] = theLine[8];
+    theLine[8] = theLine[7];
+    theLine[7] = theLine[6];
+    theLine[6] = theLine[5];
+    theLine[5] = ' ';
+    theLine[4] = theLine[4];
+    theLine[3] = theLine[3];
+    theLine[2] = theLine[2];
+    theLine[1] = theLine[1];
+    theLine[0] = theLine[0];
+
     if (sscanf(theLine,"%d %lg %lg %lg",&id,c,c+1,c+2) != 4)
       return(0);
 
@@ -508,38 +843,54 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
   currBVP = theBVP;
   nPPatch = nLPatch = nTPatch = 0;
 
-
   /* read numbers of objects */
   stream = fileopen(theBVP->mesh_file,"r");
-  if (stream == NULL) return(NULL);
-
-  if (file_readline(stream,"connectivity"))
+  if (stream == NULL) {
+    PrintErrorMessage('F',"Init_MarcBVP","could not open file");
     return(NULL);
-
-  if (file_elements(stream))
+  }
+  if (file_readline(stream,"connectivity")) {
+    PrintErrorMessage('F',"Init_MarcBVP","could not read connectivity");
     return(NULL);
-
-  if (file_corners(stream))
+  }
+  if (file_elements(stream)) {
+    PrintErrorMessage('F',"Init_MarcBVP","could not read element");
     return(NULL);
-
-  if (file_contact(stream))
+  }
+  if (file_corners(stream)) {
+    PrintErrorMessage('F',"Init_MarcBVP","could not read corners");
     return(NULL);
-
+  }
+  if (file_readline(stream,"surface")) {
+    PrintErrorMessage('F',"Init_MarcBVP","could not read surface");
+    return(NULL);
+  }
+  if (file_contact(stream)) {
+    PrintErrorMessage('F',"Init_MarcBVP","could not read contact");
+    return(NULL);
+  }
   fclose(stream);
-
   stream = fileopen(theBVP->bnd_file,"r");
-  if (stream == NULL) return(NULL);
-
-  if (file_readline(stream,"connectivity"))
+  if (stream == NULL) {
+    PrintErrorMessage('F',"Init_MarcBVP","could not open file");
     return(NULL);
-
-  if (file_triangles(stream))
+  }
+  if (file_readline(stream,"connectivity")) {
+    PrintErrorMessage('F',"Init_MarcBVP","could not store connectivity");
     return(NULL);
-
-  if (file_positions(stream))
+  }
+  if (file_triangles(stream)) {
+    PrintErrorMessage('F',"Init_MarcBVP","could not store surface");
     return(NULL);
-
+  }
+  if (file_positions(stream)) {
+    PrintErrorMessage('F',"Init_MarcBVP","could not store positions");
+    return(NULL);
+  }
   fclose(stream);
+
+  PRINTDEBUG(dom,1,("nCorners %d nBndP %d nElem %d nPPatch %d nTPatch %d\n",
+                    nCorners,nBndP,nElem,nPPatch,nTPatch));
 
   /* fill mesh and patch infos */
   if (Mesh!=NULL) {
@@ -642,7 +993,10 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
   if (file_corners_fill(stream,Heap,Mesh,MarkKey,
                         &(theBVP->radius),theBVP->MidPoint))
     return(NULL);
-
+  if (file_readline(stream,"surface")) {
+    PrintErrorMessage('F',"Init_MarcBVP","could not read surface");
+    return(NULL);
+  }
   if (file_contact_fill(stream,Heap,Mesh,MarkKey))
     return(NULL);
 
