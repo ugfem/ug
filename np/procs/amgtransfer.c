@@ -967,31 +967,31 @@ static INT RestrictDefect (NP_TRANSFER *theNP, INT level,
   {
     if (np->SetupIR==IpWagner)
     {
-      if (result[0] = NBTransformDefect(GRID_ON_LEVEL(NP_MG(theNP),level),
-                                        np->p,from,A))
+      if ((result[0] = NBTransformDefect(GRID_ON_LEVEL(NP_MG(theNP),level),
+                                         np->p,from,A))!=0)
         REP_ERR_RETURN(result[0]);
     }
     else
     {
-      if (result[0]=dcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->p,from))
+      if ((result[0]=dcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->p,from))!=0)
         REP_ERR_RETURN(result[0]);
     }
-    if (result[0]=RestrictByMatrix_s (GRID_ON_LEVEL(NP_MG(theNP),level),
-                                      to,np->p,damp))
+    if ((result[0]=RestrictByMatrix_s (GRID_ON_LEVEL(NP_MG(theNP),level),
+                                       to,np->p,damp))!=0)
       REP_ERR_RETURN(result[0]);
   }
   else
   {
     if (np->symmIR)
     {
-      if (result[0]=RestrictByMatrix (GRID_ON_LEVEL(NP_MG(theNP),level),
-                                      to,from,damp))
+      if ((result[0]=RestrictByMatrix (GRID_ON_LEVEL(NP_MG(theNP),level),
+                                       to,from,damp))!=0)
         REP_ERR_RETURN(result[0]);
     }
     else
     {
-      if (result[0]=RestrictByMatrix_s (GRID_ON_LEVEL(NP_MG(theNP),level),
-                                        to,from,damp))
+      if ((result[0]=RestrictByMatrix_s (GRID_ON_LEVEL(NP_MG(theNP),level),
+                                         to,from,damp))!=0)
         REP_ERR_RETURN(result[0]);
     }
   }
@@ -1008,13 +1008,13 @@ static INT InterpolateCorrection (NP_TRANSFER *theNP, INT level,
 
   np = (NP_AMG_TRANSFER *) theNP;
 
-  if (result[0]=InterpolateCorrectionByMatrix (GRID_ON_LEVEL(NP_MG(theNP),level),
-                                               to,from,damp))
+  if ((result[0]=InterpolateCorrectionByMatrix (GRID_ON_LEVEL(NP_MG(theNP),level),
+                                                to,from,damp))!=0)
     REP_ERR_RETURN(result[0]);
 
   if (np->fgcstep)
-    if (result[0]=NBFineGridCorrection (GRID_ON_LEVEL(NP_MG(theNP),level),
-                                        to, np->p, A))
+    if ((result[0]=NBFineGridCorrection (GRID_ON_LEVEL(NP_MG(theNP),level),
+                                         to, np->p, A))!=0)
       REP_ERR_RETURN(result[0]);
 
   return(NUM_OK);

@@ -2397,7 +2397,7 @@ static INT GMRESPostProcess (NP_LINEAR_SOLVER *theNP, INT level,
 static INT l_vector_makeinconsistent (GRID *g, const VECDATA_DESC *x)
 {
   VECTOR *v;
-  INT vc,i,type,mask,n,m;
+  INT vc,i,type,mask,n;
   const SHORT *Comp;
 
   if (VD_IS_SCALAR(x)) {
