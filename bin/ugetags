@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if [ $# -ge 1 ]; then
+    echo "just type '`basename $0`' to create a TAGS file for Emacs"
+    exit 1
+fi
+
+if [ "x$UGROOT" = "x" ]; then
+    echo "you must set the shell environment variable UGROOT!"
+    exit 1
+fi
+
+cd $UGROOT
+find . -path './include' -prune -o -path './parallel/ddd/include' -prune \
+    -o -name '*.[ch]' -print | etags -
