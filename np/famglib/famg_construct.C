@@ -71,6 +71,9 @@ void prm(int level, int comp)
 	
 	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
 
+#ifdef ModelP 
+	printf(PFMT,me);
+#endif		
 	printf("Matrix on level %d: component %d\n", GLEVEL(g), comp);
 	for (v=PFIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
 	{
@@ -117,6 +120,9 @@ void prim(int level)
 	
 	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
 
+#ifdef ModelP 
+	printf(PFMT,me);
+#endif		
 	printf("Interpolation Matrix on level %d:\n", GLEVEL(g));
 	for (v=PFIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
 	{
@@ -181,6 +187,9 @@ void prv( int level, int x_nr )
 	
 	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
 	
+#ifdef ModelP 
+	printf(PFMT,me);
+#endif		
 	printf("Vector on level %d:\n",GLEVEL(g));
     for (v=PFIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
     {
