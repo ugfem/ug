@@ -17,10 +17,13 @@ UGLIBS      = $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a \
               $(UGROOT)/lib/libdev$(IF).a \
 			  $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a
 
-OBJECTS = ugpfm.o 
+OBJECTS = xugv.o m2ps.o ugmgs.o ugpfm.o
 
 all : $(OBJECTS) Makefile.tools
-	$(UG_LINK) ugpfm.o -o $(UGROOT)/bin/ugpfm $(UGLIBS) $(UG_LFLAGS)
+	$(UG_LINK) xugv.o  -o $(UGROOT)/bin/xugv  $(UG_LFLAGS)
+	$(UG_LINK) m2ps.o  -o $(UGROOT)/bin/m2ps  $(UG_LFLAGS) 
+	$(UG_LINK) ugmgs.o -o $(UGROOT)/bin/ugmgs $(UGLIBS) $(UG_LFLAGS) 
+	$(UG_LINK) ugpfm.o -o $(UGROOT)/bin/ugpfm $(UGLIBS) $(UG_LFLAGS) 
 
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) -I$(UGROOT)/include $<
