@@ -85,6 +85,8 @@ typedef DOUBLE DOUBLE_VECTOR[DIM];
 /*                                                                          */
 /****************************************************************************/
 
+static DOUBLE_VECTOR x_hex[8];
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -111,9 +113,18 @@ static INT southBoundary (void *data, DOUBLE *param, DOUBLE *result)
   if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
 
   /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = 0.0;
+  result[0] =   x_hex[0][0]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[1][0]*lambda1*(1.0-lambda2)
+              + x_hex[2][0]*lambda1*lambda2
+              + x_hex[3][0]*(1.0-lambda1)*lambda2;
+  result[1] =   x_hex[0][1]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[1][1]*lambda1*(1.0-lambda2)
+              + x_hex[2][1]*lambda1*lambda2
+              + x_hex[3][1]*(1.0-lambda1)*lambda2;
+  result[2] =   x_hex[0][2]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[1][2]*lambda1*(1.0-lambda2)
+              + x_hex[2][2]*lambda1*lambda2
+              + x_hex[3][2]*(1.0-lambda1)*lambda2;
 
   /* return ok */
   return(0);
@@ -130,9 +141,18 @@ static INT eastBoundary (void *data, DOUBLE *param, DOUBLE *result)
   if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
 
   /* fill result */
-  result[0] = 1.0;
-  result[1] = lambda1;
-  result[2] = lambda2;
+  result[0] =   x_hex[1][0]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[2][0]*lambda1*(1.0-lambda2)
+              + x_hex[6][0]*lambda1*lambda2
+              + x_hex[5][0]*(1.0-lambda1)*lambda2;
+  result[1] =   x_hex[1][1]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[2][1]*lambda1*(1.0-lambda2)
+              + x_hex[6][1]*lambda1*lambda2
+              + x_hex[5][1]*(1.0-lambda1)*lambda2;
+  result[2] =   x_hex[1][2]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[2][2]*lambda1*(1.0-lambda2)
+              + x_hex[6][2]*lambda1*lambda2
+              + x_hex[5][2]*(1.0-lambda1)*lambda2;
 
   /* return ok */
   return(0);
@@ -149,9 +169,18 @@ static INT northBoundary (void *data, DOUBLE *param, DOUBLE *result)
   if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
 
   /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = 1.0;
+  result[0] =   x_hex[4][0]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[5][0]*lambda1*(1.0-lambda2)
+              + x_hex[6][0]*lambda1*lambda2
+              + x_hex[7][0]*(1.0-lambda1)*lambda2;
+  result[1] =   x_hex[4][1]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[5][1]*lambda1*(1.0-lambda2)
+              + x_hex[6][1]*lambda1*lambda2
+              + x_hex[7][1]*(1.0-lambda1)*lambda2;
+  result[2] =   x_hex[4][2]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[5][2]*lambda1*(1.0-lambda2)
+              + x_hex[6][2]*lambda1*lambda2
+              + x_hex[7][2]*(1.0-lambda1)*lambda2;
 
   /* return ok */
   return(0);
@@ -168,9 +197,18 @@ static INT westBoundary (void *data, DOUBLE *param, DOUBLE *result)
   if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
 
   /* fill result */
-  result[0] = 0.0;
-  result[1] = lambda1;
-  result[2] = lambda2;
+  result[0] =   x_hex[0][0]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[3][0]*lambda1*(1.0-lambda2)
+              + x_hex[7][0]*lambda1*lambda2
+              + x_hex[4][0]*(1.0-lambda1)*lambda2;
+  result[1] =   x_hex[0][1]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[3][1]*lambda1*(1.0-lambda2)
+              + x_hex[7][1]*lambda1*lambda2
+              + x_hex[4][1]*(1.0-lambda1)*lambda2;
+  result[2] =   x_hex[0][2]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[3][2]*lambda1*(1.0-lambda2)
+              + x_hex[7][2]*lambda1*lambda2
+              + x_hex[4][2]*(1.0-lambda1)*lambda2;
 
   /* return ok */
   return(0);
@@ -187,9 +225,18 @@ static INT frontBoundary (void *data, DOUBLE *param, DOUBLE *result)
   if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
 
   /* fill result */
-  result[0] = lambda1;
-  result[1] = 0.0;
-  result[2] = lambda2;
+  result[0] =   x_hex[0][0]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[1][0]*lambda1*(1.0-lambda2)
+              + x_hex[5][0]*lambda1*lambda2
+              + x_hex[4][0]*(1.0-lambda1)*lambda2;
+  result[1] =   x_hex[0][1]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[1][1]*lambda1*(1.0-lambda2)
+              + x_hex[5][1]*lambda1*lambda2
+              + x_hex[4][1]*(1.0-lambda1)*lambda2;
+  result[2] =   x_hex[0][2]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[1][2]*lambda1*(1.0-lambda2)
+              + x_hex[5][2]*lambda1*lambda2
+              + x_hex[4][2]*(1.0-lambda1)*lambda2;
 
   /* return ok */
   return(0);
@@ -209,6 +256,18 @@ static INT backBoundary (void *data, DOUBLE *param, DOUBLE *result)
   result[0] = lambda1;
   result[1] = 1.0;
   result[2] = lambda2;
+  result[0] =   x_hex[3][0]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[2][0]*lambda1*(1.0-lambda2)
+              + x_hex[6][0]*lambda1*lambda2
+              + x_hex[7][0]*(1.0-lambda1)*lambda2;
+  result[1] =   x_hex[3][1]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[2][1]*lambda1*(1.0-lambda2)
+              + x_hex[6][1]*lambda1*lambda2
+              + x_hex[7][1]*(1.0-lambda1)*lambda2;
+  result[2] =   x_hex[3][2]*(1.0-lambda1)*(1.0-lambda2)
+              + x_hex[2][2]*lambda1*(1.0-lambda2)
+              + x_hex[6][2]*lambda1*lambda2
+              + x_hex[7][2]*(1.0-lambda1)*lambda2;
 
   /* return ok */
   return(0);
@@ -216,14 +275,26 @@ static INT backBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT InitHexahedron (void)
 {
-  INT point[CORNERS_OF_BND_SEG];
+  INT point[CORNERS_OF_BND_SEG],i,j;
   DOUBLE radius,MidPoint[3], alpha[DIM_OF_BND], beta[DIM_OF_BND];
 
   /* allocate new domain structure */
-  MidPoint[0] = 0.5;
-  MidPoint[1] = 0.5;
-  MidPoint[2] = 0.5;
-  radius = 0.87;
+  MidPoint[0] = 0.0;
+  MidPoint[1] = 0.0;
+  MidPoint[2] = 0.0;
+  for (i=0; i<8; i++) {
+    MidPoint[0] += x_hex[i][0];
+    MidPoint[1] += x_hex[i][1];
+    MidPoint[2] += x_hex[i][2];
+  }
+  MidPoint[0] /= 8;
+  MidPoint[1] /= 8;
+  MidPoint[2] /= 8;
+  radius = 0.0;
+  for (i=0; i<8; i++)
+    for (j=0; j<3; j++)
+      radius = MAX(radius,ABS(MidPoint[j]-x_hex[i][j]));
+
   if (CreateDomain("Hexahedron",MidPoint,radius,6,8,YES)==NULL) return(1);
 
   /* allocate the boundary segments */
@@ -865,6 +936,49 @@ INT STD_BVP_Configure (INT argc, char **argv)
         continue;
 
   theDomain = GetDomain(DomainName);
+
+  if (strcmp(DomainName,"Hexahedron") == 0) {
+    if (ReadArgvPosition("x0",argc,argv,x_hex[0])) {
+      x_hex[0][0] = 0.0;
+      x_hex[0][1] = 0.0;
+      x_hex[0][2] = 0.0;
+    }
+    if (ReadArgvPosition("x1",argc,argv,x_hex[1])) {
+      x_hex[1][0] = 1.0;
+      x_hex[1][1] = 0.0;
+      x_hex[1][2] = 0.0;
+    }
+    if (ReadArgvPosition("x2",argc,argv,x_hex[2])) {
+      x_hex[2][0] = 1.0;
+      x_hex[2][1] = 1.0;
+      x_hex[2][2] = 0.0;
+    }
+    if (ReadArgvPosition("x3",argc,argv,x_hex[3])) {
+      x_hex[3][0] = 0.0;
+      x_hex[3][1] = 1.0;
+      x_hex[3][2] = 0.0;
+    }
+    if (ReadArgvPosition("x4",argc,argv,x_hex[4])) {
+      x_hex[4][0] = 0.0;
+      x_hex[4][1] = 0.0;
+      x_hex[4][2] = 1.0;
+    }
+    if (ReadArgvPosition("x5",argc,argv,x_hex[5])) {
+      x_hex[5][0] = 1.0;
+      x_hex[5][1] = 0.0;
+      x_hex[5][2] = 1.0;
+    }
+    if (ReadArgvPosition("x6",argc,argv,x_hex[6])) {
+      x_hex[6][0] = 1.0;
+      x_hex[6][1] = 1.0;
+      x_hex[6][2] = 1.0;
+    }
+    if (ReadArgvPosition("x7",argc,argv,x_hex[7])) {
+      x_hex[7][0] = 0.0;
+      x_hex[7][1] = 1.0;
+      x_hex[7][2] = 1.0;
+    }
+  }
 
   if (theDomain == NULL)
   {

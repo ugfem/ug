@@ -53,7 +53,7 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define LINEAR_PATCH_TYPE                2
 #define PARAMETRIC_PATCH_TYPE            3
 
-#define MAX_CORNERS_OF_LINEAR_PATCH      4
+#define MAX_CORNERS_OF_LINEAR_PATCH      DIM
 #undef  CORNERS_OF_BND_SEG
 #define CORNERS_OF_BND_SEG               2*DIM_OF_BND
 
@@ -80,6 +80,11 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define PARAM_PATCH_BSD(p)      (p)->pa.bs_data
 #define PARAM_PATCH_BC(p)       (p)->pa.BndCond
 #define PARAM_PATCH_BCD(p)      (p)->pa.bc_data
+#define LINEAR_PATCH_LEFT(p)    (p)->lp.left
+#define LINEAR_PATCH_RIGHT(p)   (p)->lp.right
+#define LINEAR_PATCH_N(p)       (p)->lp.corners
+#define LINEAR_PATCH_POINTS(p,i) (p)->lp.points[i]
+#define LINEAR_PATCH_POS(p,i)    (p)->lp.pos[i]
 
 #define BND_PATCH_ID(p)         ((BND_PS *)p)->patch_id
 #define BND_N(p)                ((BND_PS *)p)->n
@@ -117,7 +122,7 @@ struct domain {
   INT numOfSegments;                                            /* number of boundary segments		*/
   INT numOfCorners;                                             /* number of corner points			*/
   INT domConvex;                                                /* is the domain convex?			*/
-} ;
+};
 
 struct boundary_segment {
 
@@ -133,7 +138,20 @@ struct boundary_segment {
   DOUBLE alpha[DIM_OF_BND],beta[DIM_OF_BND];              /* parameter interval used*/
   BndSegFuncPtr BndSegFunc;                       /* pointer to definition function     */
   void *data;                                             /* can be used by applic to find data */
-} ;
+};
+
+struct linear_segment {
+
+  /* fields for environment directory */
+  ENVVAR v;
+
+  /* fields for boundary segment */
+  INT left,right;                                         /* number of left and right subdomain */
+  INT id;                                                         /* unique id of that segment			*/
+  INT n;                                  /* number of corners                  */
+  INT points[MAX_CORNERS_OF_LINEAR_PATCH];       /* numbers of the vertices (ID)*/
+  DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM_OF_BND];            /* coordinates  */
+};
 
 /****************************************************************************/
 /*																			*/
@@ -255,13 +273,10 @@ struct linear_patch {
 
   INT type;                         /* patch type                           */
   INT id;                           /* unique id used for load/store        */
-
+  INT left,right;                                       /* id of left and right subdomain       */
   INT corners;                      /* number of corners                    */
-  DOUBLE pos[MAX_CORNERS_OF_LINEAR_PATCH][DIM];   /* position              */
-
-  /* fields for boundary condition */
-  BndCondProcPtr BndCond;                   /* function defining boundary condition */
-  void *bc_data;                                    /* additional data for bnd cond             */
+  INT points[MAX_CORNERS_OF_LINEAR_PATCH];    /* ids of points              */
+  DOUBLE pos[MAX_CORNERS_OF_LINEAR_PATCH][DIM];   /* position               */
 };
 
 struct parameter_patch {
@@ -291,6 +306,7 @@ struct bnd_ps {
 union patch {
   struct generic_patch ge;
   struct point_patch po;
+  struct linear_patch lp;
   struct parameter_patch pa;
     #ifdef __THREEDIM__
   struct line_patch li;
@@ -302,6 +318,7 @@ union patch {
 /* typedefs */
 #undef DOMAIN
 typedef struct domain DOMAIN;
+typedef struct linear_segment LINEAR_SEGMENT;
 typedef struct boundary_segment BOUNDARY_SEGMENT;
 typedef struct problem PROBLEM;
 typedef struct bndcond BOUNDARY_CONDITION;
@@ -342,6 +359,10 @@ BOUNDARY_SEGMENT   *CreateBoundarySegment2D     (char *name, int left, int right
                                                  DOUBLE alpha, DOUBLE beta,
                                                  BndSegFuncPtr BndSegFunc,
                                                  void *data);
+LINEAR_SEGMENT *CreateLinearSegment (char *name,
+                                     INT left, INT right,INT id,
+                                     INT n, INT *point,
+                                     DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM]);
 
 /* problem definition */
 PROBLEM                    *CreateProblem                       (char *domain, char *name,

@@ -120,6 +120,7 @@ static INT theBdryCondVarID;            /* env type for Problem vars			*/
 
 static INT theDomainDirID;                      /* env type for Domain dir				*/
 static INT theBdrySegVarID;             /* env type for bdry segment vars		*/
+static INT theLinSegVarID;                  /* env type for linear segment vars		*/
 
 static INT theBVPDirID;                         /* env type for BVP dir					*/
 
@@ -584,6 +585,92 @@ BOUNDARY_SEGMENT *CreateBoundarySegment2D (char *name, int left, int right,
 
 /****************************************************************************/
 /*D
+   CreateLinearSegment - Create a new LINEAR_SEGMENT
+
+   SYNOPSIS:
+   LINEAR_SEGMENT *CreateLinearSegment (char *name,
+   INT left, INT right,INT id,
+   INT n, INT *point,
+   DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM])
+
+
+   PARAMETERS:
+   .  name - name of the boundary segment
+   .  left - id of left subdomain
+   .  right - id of right subdomain
+   .  id - id of this boundary segment
+   .  n - number of corners
+   .  point - the endpoints of the boundary segment
+   .  x - coordinates
+
+   DESCRIPTION:
+   This function allocates and initializes a new LINER_SEGMENT
+   for the previously allocated DOMAIN structure.
+
+   RETURN VALUE:
+   LINEAR_SEGMENT *
+   .n     Pointer to a LINEAR_SEGMENT
+   .n     NULL if out of memory.
+   D*/
+/****************************************************************************/
+
+LINEAR_SEGMENT *CreateLinearSegment (char *name,
+                                     INT left, INT right,INT id,
+                                     INT n, INT *point,
+                                     DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM])
+{
+  LINEAR_SEGMENT *newSegment;
+  INT i,k;
+
+  if (n>MAX_CORNERS_OF_LINEAR_PATCH)
+    return(NULL);
+
+  /* allocate the boundary segment */
+  newSegment = (LINEAR_SEGMENT *)
+               MakeEnvItem (name,theLinSegVarID,sizeof(LINEAR_SEGMENT));
+  if (newSegment==NULL) return(NULL);
+
+  /* fill in data */
+  newSegment->left = left;
+  newSegment->right = right;
+  newSegment->id = id;
+  newSegment->n = n;
+  for (i=0; i<n; i++) {
+    newSegment->points[i] = point[i];
+    for (k=0; k<DIM; k++)
+      newSegment->x[i][k] = x[i][k];
+  }
+
+  return(newSegment);
+}
+
+static LINEAR_SEGMENT *GetNextLinearSegment (LINEAR_SEGMENT *theBSeg)
+{
+  ENVITEM *theItem;
+
+  theItem = (ENVITEM *) theBSeg;
+
+  do
+    theItem = NEXT_ENVITEM(theItem);
+  while ((theItem!=NULL) && (ENVITEM_TYPE(theItem)!=theLinSegVarID));
+
+  return ((LINEAR_SEGMENT*) theItem);
+}
+
+static LINEAR_SEGMENT *GetFirstLinearSegment (DOMAIN *theDomain)
+{
+  ENVITEM *theItem;
+
+  theItem = ENVITEM_DOWN(theDomain);
+
+  if (ENVITEM_TYPE(theItem)==theLinSegVarID)
+    return ((LINEAR_SEGMENT *) theItem);
+  else
+    return (GetNextLinearSegment((LINEAR_SEGMENT *) theItem));
+}
+
+/****************************************************************************/
+/*D
    CreateBVP - Create BoundaryValueProblem from Domain and Problem
 
    SYNOPSIS:
@@ -716,8 +803,7 @@ static INT CreateCornerPoints (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp)
   PATCH *p,*pp;
   INT i,j,m;
 
-  for (i=0; i<theBVP->ncorners; i++)
-  {
+  for (i=0; i<theBVP->ncorners; i++) {
     p = theBVP->patches[i];
     m = POINT_PATCH_N(p);
     ps = (BND_PS *)GetFreelistMemory(Heap,sizeof(BND_PS)
@@ -727,52 +813,74 @@ static INT CreateCornerPoints (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp)
       return(1);
     ps->patch_id = PATCH_ID(p);
 
-
-    for (j=0; j<m; j++)
-    {
+    for (j=0; j<m; j++) {
       pp = theBVP->patches[POINT_PATCH_PID(p,j)];
-
-
-      PRINTDEBUG(dom,1,("cp i %d r %f %f %f %f\n",i,
-                        PARAM_PATCH_RANGE(pp)[0][0],
-                        PARAM_PATCH_RANGE(pp)[0][1],
-                        PARAM_PATCH_RANGE(pp)[1][0],
-                        PARAM_PATCH_RANGE(pp)[1][1]));
-
-      switch (POINT_PATCH_CID(p,j))
-      {
-              #ifdef __TWODIM__
-      case 0 :
-        ps->local[j][0] = PARAM_PATCH_RANGE(pp)[0][0];
-        break;
-      case 1 :
-        ps->local[j][0] = PARAM_PATCH_RANGE(pp)[1][0];
-        break;
-                          #endif
-              #ifdef __THREEDIM__
-      case 0 :
-        ps->local[j][0] = PARAM_PATCH_RANGE(pp)[0][0];
-        ps->local[j][1] = PARAM_PATCH_RANGE(pp)[0][1];
-        break;
-      case 1 :
-        ps->local[j][0] = PARAM_PATCH_RANGE(pp)[1][0];
-        ps->local[j][1] = PARAM_PATCH_RANGE(pp)[0][1];
-        break;
-      case 2 :
-        ps->local[j][0] = PARAM_PATCH_RANGE(pp)[1][0];
-        ps->local[j][1] = PARAM_PATCH_RANGE(pp)[1][1];
-        break;
-      case 3 :
-        ps->local[j][0] = PARAM_PATCH_RANGE(pp)[0][0];
-        ps->local[j][1] = PARAM_PATCH_RANGE(pp)[1][1];
-        break;
-                          #endif
+      if (PATCH_TYPE(pp) == PARAMETRIC_PATCH_TYPE) {
+        PRINTDEBUG(dom,1,("cp i %d r %f %f %f %f\n",i,
+                          PARAM_PATCH_RANGE(pp)[0][0],
+                          PARAM_PATCH_RANGE(pp)[0][1],
+                          PARAM_PATCH_RANGE(pp)[1][0],
+                          PARAM_PATCH_RANGE(pp)[1][1]));
+        switch (POINT_PATCH_CID(p,j)) {
+                #ifdef __TWODIM__
+        case 0 :
+          ps->local[j][0] = PARAM_PATCH_RANGE(pp)[0][0];
+          break;
+        case 1 :
+          ps->local[j][0] = PARAM_PATCH_RANGE(pp)[1][0];
+          break;
+                #endif
+                #ifdef __THREEDIM__
+        case 0 :
+          ps->local[j][0] = PARAM_PATCH_RANGE(pp)[0][0];
+          ps->local[j][1] = PARAM_PATCH_RANGE(pp)[0][1];
+          break;
+        case 1 :
+          ps->local[j][0] = PARAM_PATCH_RANGE(pp)[1][0];
+          ps->local[j][1] = PARAM_PATCH_RANGE(pp)[0][1];
+          break;
+        case 2 :
+          ps->local[j][0] = PARAM_PATCH_RANGE(pp)[1][0];
+          ps->local[j][1] = PARAM_PATCH_RANGE(pp)[1][1];
+          break;
+        case 3 :
+          ps->local[j][0] = PARAM_PATCH_RANGE(pp)[0][0];
+          ps->local[j][1] = PARAM_PATCH_RANGE(pp)[1][1];
+          break;
+                #endif
+        }
+        PRINTDEBUG(dom,1,("mesh loc j %d pid %d cid %d loc %f %f\n",
+                          j,
+                          POINT_PATCH_PID(p,j),
+                          POINT_PATCH_CID(p,j),
+                          ps->local[j][0],ps->local[j][1]));
       }
-      PRINTDEBUG(dom,1,("mesh loc j %d pid %d cid %d loc %f %f\n",
-                        j,
-                        POINT_PATCH_PID(p,j),
-                        POINT_PATCH_CID(p,j),
-                        ps->local[j][0],ps->local[j][1]));
+      else if (PATCH_TYPE(pp) == LINEAR_PATCH_TYPE) {
+        switch (POINT_PATCH_CID(p,j)) {
+                #ifdef __TWODIM__
+        case 0 :
+          ps->local[j][0] = 0.0;
+          break;
+        case 1 :
+          ps->local[j][0] = 1.0;
+          break;
+                #endif
+                #ifdef __THREEDIM__
+        case 0 :
+          ps->local[j][0] = 0.0;
+          ps->local[j][1] = 0.0;
+          break;
+        case 1 :
+          ps->local[j][0] = 1.0;
+          ps->local[j][1] = 0.0;
+          break;
+        case 2 :
+          ps->local[j][0] = 0.0;
+          ps->local[j][1] = 1.0;
+          break;
+                #endif
+        }
+      }
     }
     bndp[i] = (BNDP *)ps;
   }
@@ -789,6 +897,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   DOMAIN *theDomain;
   PROBLEM *theProblem;
   BOUNDARY_SEGMENT *theSegment;
+  LINEAR_SEGMENT *theLinSegment;
   BOUNDARY_CONDITION *theBndCond;
   PATCH **corners,**sides,*thePatch;
   INT i,j,n,m,maxSubDomains,ncorners,nlines,nsides;
@@ -857,6 +966,35 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
       PRINTDEBUG(dom,1,("   corners %d",PARAM_PATCH_POINTS(thePatch,i)));
     PRINTDEBUG(dom,1,("\n"));
   }
+  for (theLinSegment=GetFirstLinearSegment(theDomain); theLinSegment!=NULL;
+       theLinSegment = GetNextLinearSegment(theLinSegment)) {
+    if ((theLinSegment->id<0)||(theLinSegment->id>=nsides))
+      return(NULL);
+    thePatch=(PATCH *)GetFreelistMemory(Heap,sizeof(LINEAR_PATCH));
+    if (thePatch == NULL)
+      return (NULL);
+    PATCH_TYPE(thePatch) = LINEAR_PATCH_TYPE;
+    PATCH_ID(thePatch) = theLinSegment->id;
+    LINEAR_PATCH_LEFT(thePatch) = theLinSegment->left;
+    LINEAR_PATCH_RIGHT(thePatch) = theLinSegment->right;
+    LINEAR_PATCH_N(thePatch) = theLinSegment->n;
+    for (j=0; j<theLinSegment->n; j++) {
+      LINEAR_PATCH_POINTS(thePatch,j) = theLinSegment->points[j];
+      for (i=0; i<DIM; i++)
+        LINEAR_PATCH_POS(thePatch,j)[i] = theLinSegment->x[j][i];
+    }
+    maxSubDomains = MAX(maxSubDomains,theLinSegment->left);
+    maxSubDomains = MAX(maxSubDomains,theLinSegment->right);
+    sides[theLinSegment->id] = thePatch;
+    PRINTDEBUG(dom,1,("sides id %d type %d left %d right %d\n",
+                      PATCH_ID(thePatch),PATCH_TYPE(thePatch),
+                      LINEAR_PATCH_LEFT(thePatch),
+                      LINEAR_PATCH_RIGHT(thePatch)));
+    if (theProblem != NULL) {
+      UserWrite("Use CreateBoundaryValueProblem!");
+      return(NULL);
+    }
+  }
   theBVP->numOfSubdomains = maxSubDomains;
   PRINTDEBUG(dom,1,(" bvp nsubcf %x\n",theBVP->numOfSubdomains));
   for (i=0; i<nsides; i++)
@@ -884,10 +1022,18 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   {
     m = 0;
     /* count parameter patchs */
-    for (j=0; j<nsides; j++)
-      for (n=0; n<2*DIM_OF_BND; n++)
-        if (PARAM_PATCH_POINTS(sides[j],n) == i)
-          m++;
+    for (j=0; j<nsides; j++) {
+      if (PATCH_TYPE(sides[j]) == LINEAR_PATCH_TYPE) {
+        for (n=0; n<LINEAR_PATCH_N(sides[j]); n++)
+          if (LINEAR_PATCH_POINTS(sides[j],n) == i)
+            m++;
+      }
+      else if (PATCH_TYPE(sides[j]) == PARAMETRIC_PATCH_TYPE) {
+        for (n=0; n<2*DIM_OF_BND; n++)
+          if (PARAM_PATCH_POINTS(sides[j],n) == i)
+            m++;
+      }
+    }
     thePatch=
       (PATCH *)GetFreelistMemory(Heap,sizeof(POINT_PATCH)
                                  +(m-1)*sizeof(struct point_on_patch));
@@ -896,14 +1042,25 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
     PATCH_TYPE(thePatch) = POINT_PATCH_TYPE;
     PATCH_ID(thePatch) = i;
     m = 0;
+    for (j=0; j<nsides; j++) {
+      if (PATCH_TYPE(sides[j]) == LINEAR_PATCH_TYPE) {
+        for (n=0; n<LINEAR_PATCH_N(sides[j]); n++)
+          if (LINEAR_PATCH_POINTS(sides[j],n) == i) {
+            POINT_PATCH_PID(thePatch,m) = j;
+            POINT_PATCH_CID(thePatch,m++) = n;
+          }
+      }
+      else if (PATCH_TYPE(sides[j]) == PARAMETRIC_PATCH_TYPE) {
+        for (n=0; n<2*DIM_OF_BND; n++)
+          if (PARAM_PATCH_POINTS(sides[j],n) == i) {
+            POINT_PATCH_PID(thePatch,m) = j;
+            POINT_PATCH_CID(thePatch,m++) = n;
+          }
+      }
+    }
+
     for (j=0; j<nsides; j++)
-      for (n=0; n<2*DIM_OF_BND; n++)
-        if (PARAM_PATCH_POINTS(sides[j],n) == i)
-        {
-          POINT_PATCH_PID(thePatch,m) = j;
-          POINT_PATCH_CID(thePatch,m++) = n;
-        }
-    POINT_PATCH_N(thePatch) = m;
+      POINT_PATCH_N(thePatch) = m;
     corners[i] = thePatch;
     PRINTDEBUG(dom,1,("corners id %d type %d n %d\n",
                       PATCH_ID(thePatch),PATCH_TYPE(thePatch),
@@ -1290,6 +1447,7 @@ static INT GetNumberOfPatches(PATCH *p)
   switch (PATCH_TYPE(p))
   {
   case PARAMETRIC_PATCH_TYPE :
+  case LINEAR_PATCH_TYPE :
     return(1);
   case POINT_PATCH_TYPE :
     return(POINT_PATCH_N(p));
@@ -2472,6 +2630,34 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
+static INT PatchGlobal (PATCH *p, DOUBLE *lambda, DOUBLE *global)
+{
+  if (PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE)
+    return((*PARAM_PATCH_BS (p))(PARAM_PATCH_BSD(p),lambda,global));
+  else if (PATCH_TYPE(p) == LINEAR_PATCH_TYPE) {
+        #ifdef __TWODIM__
+    global[0] = (1-lambda[0]) * LINEAR_PATCH_POS(p,0)[0]
+                + lambda[0] * LINEAR_PATCH_POS(p,1)[0];
+    global[1] = (1-lambda[0]) * LINEAR_PATCH_POS(p,0)[1]
+                + lambda[0] * LINEAR_PATCH_POS(p,1)[1];
+        #endif
+        #ifdef __THREEDIM__
+    global[0] = (1-lambda[0]-lambda[1]) * LINEAR_PATCH_POS(p,0)[0]
+                + lambda[0] * LINEAR_PATCH_POS(p,1)[0]
+                + lambda[1] * LINEAR_PATCH_POS(p,2)[0];
+    global[1] = (1-lambda[0]-lambda[1]) * LINEAR_PATCH_POS(p,0)[1]
+                + lambda[0] * LINEAR_PATCH_POS(p,1)[1]
+                + lambda[1] * LINEAR_PATCH_POS(p,2)[1];
+    global[2] = (1-lambda[0]-lambda[1]) * LINEAR_PATCH_POS(p,0)[2]
+                + lambda[0] * LINEAR_PATCH_POS(p,1)[2]
+                + lambda[1] * LINEAR_PATCH_POS(p,2)[2];
+        #endif
+    return(0);
+  }
+
+  return(1);
+}
+
 INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 {
   BND_PS *ps;
@@ -2486,7 +2672,8 @@ INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
   PRINTDEBUG(dom,1,(" Bnds global loc %f pid %d\n",
                     local[0],PATCH_ID(p)));
 
-  if (PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE)
+  if ((PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE) ||
+      (PATCH_TYPE(p) == LINEAR_PATCH_TYPE))
       #ifdef __TWODIM__
     lambda[0] = (1.0-local[0])*ps->local[0][0]+local[0]*ps->local[1][0];
       #endif
@@ -2514,13 +2701,9 @@ INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
     else
       return(1);
 
+  return(PatchGlobal(p,lambda,global));
 
-
-  (*PARAM_PATCH_BS (p))(PARAM_PATCH_BSD(p),lambda,global);
-  PRINTDEBUG(dom,1,(" Bnds global loc %f lam %f glo %f %f\n",
-                    local[0],lambda[0],global[0],global[1]));
-
-  return((*PARAM_PATCH_BS (p))(PARAM_PATCH_BSD(p),lambda,global));
+  return(1);
 }
 
 /****************************************************************************/
@@ -2565,7 +2748,8 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
 
   PRINTDEBUG(dom,1,(" BndCond %d %x\n",PATCH_TYPE(p),p));
 
-  if (PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE)
+  if ((PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE) ||
+      (PATCH_TYPE(p) == LINEAR_PATCH_TYPE))
       #ifdef __TWODIM__
     lambda[0] = (1.0-local[0])*ps->local[0][0] + local[0]*ps->local[1][0];
       #endif
@@ -2593,10 +2777,9 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
     else
       return(1);
 
-  if (currBVP->GeneralBndCond != NULL)
-  {
+  if (currBVP->GeneralBndCond != NULL) {
     type[0] = PATCH_ID(p) - currBVP->sideoffset;
-    if ((*PARAM_PATCH_BS (p))(PARAM_PATCH_BSD(p),lambda,global))
+    if (PatchGlobal(p,lambda,global))
       return(1);
     if (in == NULL)
       return((*(currBVP->GeneralBndCond))(NULL,NULL,global,value,type));
@@ -2621,10 +2804,14 @@ INT BNDS_BndSDesc (BNDS *theBndS, INT *left, INT *right)
   ps = (BND_PS *)theBndS;
   p = currBVP->patches[ps->patch_id];
 
-  if (PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE)
-  {
+  if (PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE) {
     *left = PARAM_PATCH_LEFT(p);
     *right = PARAM_PATCH_RIGHT(p);
+    return(0);
+  }
+  else if (PATCH_TYPE(p) == LINEAR_PATCH_TYPE) {
+    *left = LINEAR_PATCH_LEFT(p);
+    *right = LINEAR_PATCH_RIGHT(p);
     return(0);
   }
 
@@ -2670,7 +2857,8 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
   pp->patch_id = ps->patch_id;
   pp->n = 1;
 
-  if (PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE)
+  if ((PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE) ||
+      (PATCH_TYPE(p) == LINEAR_PATCH_TYPE))
       #ifdef __TWODIM__
     pp->local[0][0]=(1.0-local[0])*ps->local[0][0]+local[0]*ps->local[1][0];
       #endif
@@ -2697,7 +2885,6 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
        #endif
     else
       return(NULL);
-
 
   PRINTDEBUG(dom,1,(" BNDP s %d\n",pp->patch_id));
 
@@ -2749,12 +2936,8 @@ INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
   switch (PATCH_TYPE(p))
   {
   case PARAMETRIC_PATCH_TYPE :
-    (*PARAM_PATCH_BS (p))(PARAM_PATCH_BSD(p),ps->local[0],global);
-    PRINTDEBUG(dom,1,(" bndp param  loc %f %f gl %f %f %f\n",
-                      ps->local[0][0],
-                      ps->local[0][1],
-                      global[0],global[1],global[2]));
-    return((*PARAM_PATCH_BS (p))(PARAM_PATCH_BSD(p),ps->local[0],global));
+  case LINEAR_PATCH_TYPE :
+    return(PatchGlobal(p,ps->local[0],global));
   case POINT_PATCH_TYPE :
     s = currBVP->patches[POINT_PATCH_PID(p,0)];
     PRINTDEBUG(dom,1,(" bndp n %d %d loc %f %f gl \n",
@@ -2849,6 +3032,7 @@ INT BNDP_BndPDesc (BNDP *theBndP, INT *move)
   switch (PATCH_TYPE(p))
   {
   case PARAMETRIC_PATCH_TYPE :
+  case LINEAR_PATCH_TYPE :
     *move = DIM_OF_BND;
     return(0);
   case POINT_PATCH_TYPE :
@@ -3115,6 +3299,7 @@ INT BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size)
   switch (PATCH_TYPE(p))
   {
   case PARAMETRIC_PATCH_TYPE :
+  case LINEAR_PATCH_TYPE :
     pid -= currBVP->sideoffset;
     break;
   case POINT_PATCH_TYPE :
@@ -3187,6 +3372,7 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
   switch (PATCH_TYPE(p))
   {
   case PARAMETRIC_PATCH_TYPE :
+  case LINEAR_PATCH_TYPE :
     n[0] = 1;
     local = ps->local[0];
     break;
@@ -3217,7 +3403,7 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
   if (currBVP->GeneralBndCond != NULL)
   {
     type[0] = PATCH_ID(p) - currBVP->sideoffset;
-    if ((*PARAM_PATCH_BS (p))(PARAM_PATCH_BSD(p),local,global))
+    if (PatchGlobal(p,local,global))
       return(1);
     if (in == NULL)
       return((*(currBVP->GeneralBndCond))(NULL,NULL,global,value,type));
@@ -3397,6 +3583,7 @@ INT InitDom ()
     return(__LINE__);
   }
   theBdrySegVarID = GetNewEnvVarID();
+  theLinSegVarID = GetNewEnvVarID();
 
   /* install the /BVP directory */
   theBVPDirID = GetNewEnvDirID();
