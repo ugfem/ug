@@ -493,7 +493,6 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
       if (NT(grid)>0) XferGridWithOverlap(grid);
     }
   }
-
   DDD_XferEnd();
 
   /* set priorities of border nodes */
@@ -501,7 +500,7 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
               with grid distribution phase. */
   {
     int g;
-    for(g=TOPLEVEL(theMG); g>=0; g--)
+    for(g=0; g<=TOPLEVEL(theMG); g++)
     {
       GRID *grid = GRID_ON_LEVEL(theMG,g);
       ConstructConsistentGrid(grid);
