@@ -135,9 +135,10 @@
 static VECDATA_DESC *ConsVector;
 static MATDATA_DESC *ConsMatrix;
 static INT MaximumInconsMatrices;
-static MATRIX *MatArray1[MATARRAYSIZE];
-static MATRIX *MatArray2[MATARRAYSIZE];
+static MATRIX *MatArrayLocal[MATARRAYSIZE];
+static MATRIX *MatArrayRemote[MATARRAYSIZE];
 static INT MaxBlockSize;
+static size_t DataSizePerVector;
 #endif
 
 /* RCS string */
@@ -811,7 +812,8 @@ static int Gather_DiagMatrixComp (DDD_OBJ obj, void *data)
 
 	if (MD_IS_SCALAR(ConsMatrix)) {
 		if (MD_SCAL_RTYPEMASK(ConsMatrix) & VDATATYPE(pv)) 
-		    *((DOUBLE *)data) = MVALUE(VSTART(pv),MD_SCALCMP(ConsMatrix));
+		    if (!VECSKIP(pv))
+		    	*((DOUBLE *)data) = MVALUE(VSTART(pv),MD_SCALCMP(ConsMatrix));
 		return (NUM_OK);
 	}
 
@@ -860,32 +862,43 @@ static int Scatter_DiagMatrixComp (DDD_OBJ obj, void *data)
 	return (NUM_OK);
 }
 
+
 static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 									 DDD_PROC proc, DDD_PRIO prio)
 {
-	VECTOR *pv = (VECTOR *)obj;
-	MATRIX *m;
-	DOUBLE *msgbuf = (DOUBLE *)data;
+	VECTOR  *pv = (VECTOR *)obj;
+	MATRIX  *m;
+	DOUBLE  *msgbuf = (DOUBLE *)           data;
+	INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
+	DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
 	INT i, *proclist,mc,vtype,mtype,masc;
 	const SHORT *Comp;	
+
+	*maxgid = 0;
 
 	if (VSTART(pv) == NULL) return (NUM_OK);
 	if (MD_IS_SCALAR(ConsMatrix)) {
 		if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv)) {
+		    if (VECSKIP(pv) != 0) return (NUM_OK);
 		    mc = MD_SCALCMP(ConsMatrix);
 			masc =MD_SCAL_CTYPEMASK(ConsMatrix);
-			for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
+			for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
+				if (XFERMATX(m)==0) break;
 				if (masc  & VDATATYPE(MDEST(m))) {
-					if (XFERMATX(m)==0) break;
 					proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
 					for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
 							;
 				    if (((DDD_PROC)proclist[i])==proc &&
-						((DDD_PRIO)proclist[i+1]!=PrioGhost)) {
-					  *msgbuf = MVALUE(m,mc);
-					  msgbuf++;
+						((DDD_PRIO)proclist[i+1]!=PrioGhost))
+					{
+						*msgbuf = MVALUE(m,mc);
+						msgbuf++;
+
+						gidbuf[*maxgid] = DDD_InfoGlobalId(PARHDR(MDEST(m)));
+						(*maxgid)++;
 					}
 				}
+			}
 		}
 		return (NUM_OK);
 	}
@@ -897,13 +910,17 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 		for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
 		  ;
 		if (((DDD_PROC)proclist[i])==proc &&
-			((DDD_PRIO)proclist[i+1]!=PrioGhost)) {
+			((DDD_PRIO)proclist[i+1]!=PrioGhost))
+		{
 			mtype = MTP(vtype,MDESTTYPE(m));
 			Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
 			for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
 				   *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++)
-			  msgbuf[i] = MVALUE(m,Comp[i]);
+				msgbuf[i] = MVALUE(m,Comp[i]);
 			msgbuf+=MaxBlockSize;
+
+			gidbuf[*maxgid] = DDD_InfoGlobalId(PARHDR(MDEST(m)));
+			(*maxgid)++;
 		}
 	}
 
@@ -913,35 +930,42 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
 											DDD_PROC proc, DDD_PRIO prio)
 {
-	VECTOR *pv = (VECTOR *)obj;
-	MATRIX *m;
-	DOUBLE *msgbuf = (DOUBLE *)data;
+	VECTOR  *pv = (VECTOR *)obj;
+	MATRIX  *m;
+	DOUBLE  *msgbuf = (DOUBLE *)           data;
+	INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
+	DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
 	INT i, *proclist,mc,vtype,mtype,masc;
 	const SHORT *Comp;	
+
+	*maxgid = 0;
 
 	if (VSTART(pv) == NULL) return (NUM_OK);
 	if (MD_IS_SCALAR(ConsMatrix)) {
 		if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv)) {
+		    if (VECSKIP(pv) != 0) return (NUM_OK);
 		    mc = MD_SCALCMP(ConsMatrix);
 			masc =MD_SCAL_CTYPEMASK(ConsMatrix);
 			for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
+			{
+				if (XFERMATX(m)==0) break;
+
 				if (masc  & VDATATYPE(MDEST(m))) {
-					if (XFERMATX(m)==0) break;
 					proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
 					for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; 
 						i+=2)
 						;
 				    if (((DDD_PROC)proclist[i])==proc &&
-						((DDD_PRIO)proclist[i+1]!=PrioGhost)) {
+						((DDD_PRIO)proclist[i+1]!=PrioGhost))
+					{
 						*msgbuf = MVALUE(m,mc);
-/*
-printf("%4d:       POK  GATH " VINDEX_FMTX " -> " VINDEX_FMTX " :  %lf\n",
-me, VINDEX_PRTX(pv), VINDEX_PRTX(MDEST(m)), *msgbuf);
-fflush(stdout);
-*/
 						msgbuf++;
+
+						gidbuf[*maxgid] = DDD_InfoGlobalId(PARHDR(MDEST(m)));
+						(*maxgid)++;
 					}
 				}
+			}
 			for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
 				if (masc  & VDATATYPE(MDEST(m))) 
 					MVALUE(m,mc) = 0.0;
@@ -955,14 +979,19 @@ fflush(stdout);
 		proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
 		for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
 		  ;
+
 		if (((DDD_PROC)proclist[i])==proc &&
-			((DDD_PRIO)proclist[i+1]!=PrioGhost)) {
+			((DDD_PRIO)proclist[i+1]!=PrioGhost))
+		{
 			mtype = MTP(vtype,MDESTTYPE(m));
 			Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
 			for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
 					 *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++)
 				msgbuf[i] = MVALUE(m,Comp[i]);
 			msgbuf+=MaxBlockSize;
+
+			gidbuf[*maxgid] = DDD_InfoGlobalId(PARHDR(MDEST(m)));
+			(*maxgid)++;
 		}
 	}
 	for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
@@ -977,39 +1006,55 @@ fflush(stdout);
 	return (NUM_OK);
 }
 
+
 static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 									  DDD_PROC proc, DDD_PRIO prio)
 {
-	VECTOR *pv = (VECTOR *)obj;
-	MATRIX *m;
-	DOUBLE *msgbuf = (DOUBLE *)data;
+	VECTOR  *pv = (VECTOR *)obj;
+	MATRIX  *m;
+	DOUBLE  *msgbuf = (DOUBLE *)           data;
+	INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
+	DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
+	INT     igid = 0;
 	INT   i,j,k, *proclist,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
 	const SHORT *Comp;	
 
 	if (VSTART(pv) == NULL) return (NUM_OK);
 	if (MD_IS_SCALAR(ConsMatrix)) {
-		if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv)) {
+		if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv))
+		{
 		    if (VECSKIP(pv) != 0) return (NUM_OK);
 			mc = MD_SCALCMP(ConsMatrix);
 			masc =MD_SCAL_CTYPEMASK(ConsMatrix);
 			for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
+			{
+				if (XFERMATX(m)==0) break;
 			    if (masc  & VDATATYPE(MDEST(m))) {
-				    if (XFERMATX(m)==0) break;
 					proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
-					for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
+					for(i=2; proclist[i]>=0 &&
+						((DDD_PROC)proclist[i])!=proc; i+=2)
 					    ;
-					if (((DDD_PROC)proclist[i])==proc &&
-						((DDD_PRIO)proclist[i+1]!=PrioGhost)) {
-					  MVALUE(m,mc) += *msgbuf;
-/*
-printf("%4d:       POK  SCAT " VINDEX_FMTX " -> " VINDEX_FMTX " :  %lf\n",
-me, VINDEX_PRTX(pv), VINDEX_PRTX(MDEST(m)), *msgbuf);
-fflush(stdout);
-*/
 
-					  msgbuf++;
+					if (((DDD_PROC)proclist[i])==proc &&
+						((DDD_PRIO)proclist[i+1]!=PrioGhost))
+					{
+						DDD_GID dest = DDD_InfoGlobalId(PARHDR(MDEST(m)));
+
+						while (igid<*maxgid && (gidbuf[igid]<dest))
+						{
+							msgbuf++;
+							igid++;
+						}
+
+						if (igid<*maxgid && (gidbuf[igid]==dest))
+						{
+							MVALUE(m,mc) += *msgbuf;
+							msgbuf++;
+							igid++;
+						}
 					}
 				}
+			}
 		}
 		return (NUM_OK);
 	}
@@ -1023,13 +1068,27 @@ fflush(stdout);
 			proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
 			for (i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
 			    ; 
+
 			if (((DDD_PROC)proclist[i])==proc &&
-				((DDD_PRIO)proclist[i+1]!=PrioGhost)) {
-			    mtype = MTP(vtype,MDESTTYPE(m));
-				Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
-				for (j=0; j<MD_COLS_IN_MTYPE(ConsMatrix,mtype)*rcomp; j++)
-				    msgbuf[j] += MVALUE(m,Comp[j]);
-				msgbuf+=MaxBlockSize;
+				((DDD_PRIO)proclist[i+1]!=PrioGhost))
+			{
+				DDD_GID dest = DDD_InfoGlobalId(PARHDR(MDEST(m)));
+
+				while (igid<*maxgid && (gidbuf[igid]<dest))
+				{
+					msgbuf+=MaxBlockSize;
+					igid++;
+				}
+
+				if (igid<*maxgid && (gidbuf[igid]==dest))
+				{
+			    	mtype = MTP(vtype,MDESTTYPE(m));
+					Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
+					for (j=0; j<MD_COLS_IN_MTYPE(ConsMatrix,mtype)*rcomp; j++)
+				    	msgbuf[j] += MVALUE(m,Comp[j]);
+					msgbuf+=MaxBlockSize;
+					igid++;
+				}
 			}
 		}
 	else
@@ -1039,20 +1098,34 @@ fflush(stdout);
 			for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
 			    ;
 			if (((DDD_PROC)proclist[i])==proc &&
-			    ((DDD_PRIO)proclist[i+1]!=PrioGhost)) {
-			    mtype = MTP(vtype,MDESTTYPE(m));
-				ncomp = MD_COLS_IN_MTYPE(ConsMatrix,mtype);
-				Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
-				for (k=0; k<rcomp; k++)
-				  if (!(vecskip & (1<<k)))				
-				      for (j=k*ncomp; j<(k+1)*ncomp; j++)
-						  msgbuf[j] += MVALUE(m,Comp[j]);
-				msgbuf+=MaxBlockSize;
+			    ((DDD_PRIO)proclist[i+1]!=PrioGhost))
+			{
+				DDD_GID dest = DDD_InfoGlobalId(PARHDR(MDEST(m)));
+
+				while (igid<*maxgid && (gidbuf[igid]<dest))
+				{
+					msgbuf+=MaxBlockSize;
+					igid++;
+				}
+
+				if (igid<*maxgid && (gidbuf[igid]==dest))
+				{
+			    	mtype = MTP(vtype,MDESTTYPE(m));
+					ncomp = MD_COLS_IN_MTYPE(ConsMatrix,mtype);
+					Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
+					for (k=0; k<rcomp; k++)
+				  		if (!(vecskip & (1<<k)))				
+				      		for (j=k*ncomp; j<(k+1)*ncomp; j++)
+						  		msgbuf[j] += MVALUE(m,Comp[j]);
+					msgbuf+=MaxBlockSize;
+					igid++;
+				}
 			}
 		}
 
 	return (NUM_OK);
 }
+
 
 static int ClearOffDiagCompOfCopies (GRID *theGrid, const MATDATA_DESC *M)
 {
@@ -1106,43 +1179,56 @@ static int sort_MatArray (const void *e1, const void *e2)
 	return (NUM_OK);
 }
 
-static int CountInconsMatrices (DDD_OBJ obj)
+
+
+static int CountAndSortInconsMatrices (DDD_OBJ obj)
 {
 	VECTOR *pv = (VECTOR *)obj;
 	MATRIX *m;
-	int    iloc, idis, j;
+	int    nLocal, nRemote, j;
 
 	/* sort MATRIX-list according to gid of destination vector */
-	iloc=idis=0;
+	nLocal=nRemote=0;
 	if (VSTART(pv)!=NULL)
+	{
+		assert(MDEST(VSTART(pv))==pv);
+
 		for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
 		{
 			int i, *proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
 			for(i=2; proclist[i]>=0 && proclist[i+1]==PrioGhost; i+=2)
 				;
 
+			assert(MDEST(m)!=pv);
+			assert(proclist[1]==PrioMaster || proclist[1]==PrioBorder);
+
 			if (proclist[i]<0)
+			{
 				/* MDEST has only copies with PrioGhost (if any) */
-				MatArray1[iloc++] = m;
+				MatArrayLocal[nLocal++] = m;
+			}
 			else
+			{
 				/* MDEST has copies != PrioGhost */
-				MatArray2[idis++] = m;
+				MatArrayRemote[nRemote++] = m;
+			}
 		}
-	if (idis>0)
+	}
+	if (nRemote>0)
 	{
-		if (idis>1)
-			qsort(MatArray2,idis,sizeof(MATRIX *),sort_MatArray);
+		if (nRemote>1)
+			qsort(MatArrayRemote,nRemote,sizeof(MATRIX *),sort_MatArray);
 
 		m=VSTART(pv);
-		for(j=0; j<idis; j++)
+		for(j=0; j<nRemote; j++)
 		{
-			MNEXT(m) = MatArray2[j];
+			MNEXT(m) = MatArrayRemote[j];
 			m = MNEXT(m);
 			SETXFERMATX(m, 1);
 		}
-		for(j=0; j<iloc; j++)
+		for(j=0; j<nLocal; j++)
 		{
-			MNEXT(m) = MatArray1[j];
+			MNEXT(m) = MatArrayLocal[j];
 			m = MNEXT(m);
 			SETXFERMATX(m, 0);
 		}
@@ -1155,12 +1241,13 @@ static int CountInconsMatrices (DDD_OBJ obj)
 				SETXFERMATX(MNEXT(VSTART(pv)), 0);
 	}
 
-	/* TODO: MaximumInconsMatrices ist eigentlich <idis, naemlich
+	/* TODO: MaximumInconsMatrices ist eigentlich <nRemote, naemlich
 		das maximum der teilmenge aus der matrixliste mit einer
 		Kopie von MDEST auf processor proc, hier vernachlaessigt. */
-	if (MaximumInconsMatrices<idis)
-		MaximumInconsMatrices = idis;
+	if (MaximumInconsMatrices<nRemote)
+		MaximumInconsMatrices = nRemote;
 }
+
 
 /* TODO: perhaps it would make sense to have two routines,
 	one for diagonal matrix entries only and the other for
@@ -1170,6 +1257,7 @@ static int CountInconsMatrices (DDD_OBJ obj)
 INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 {
     INT mt;
+	size_t sizePerVector;
 
     ConsMatrix = (MATDATA_DESC *)M;
 	MaxBlockSize = 0;
@@ -1188,33 +1276,26 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 	/* now make off-diagonal entries consistent */
 	MaximumInconsMatrices=0;
-	DDD_IFAExecLocal(BorderVectorSymmIF, GLEVEL(g), CountInconsMatrices);
+	DDD_IFAExecLocal(BorderVectorSymmIF, GLEVEL(g), CountAndSortInconsMatrices);
 	MaximumInconsMatrices = UG_GlobalMaxINT(MaximumInconsMatrices);
+	DataSizePerVector = MaximumInconsMatrices * MaxBlockSize * sizeof(DOUBLE);
+	DataSizePerVector = CEIL(DataSizePerVector);
+
+	/* overall data sent per vector is its matrix entry data plus
+	   the number of valid entries plus a table of DDD-GIDs of 
+		destination vectors */
+	sizePerVector = DataSizePerVector +
+		sizeof(INT) + MaximumInconsMatrices*sizeof(DDD_GID);
+	sizePerVector = CEIL(sizePerVector);
+
     if (mode == MAT_CONS) 
-		DDD_IFAExchangeX(BorderVectorSymmIF, GLEVEL(g),
-						 MaxBlockSize*MaximumInconsMatrices*sizeof(DOUBLE),
+		DDD_IFAExchangeX(BorderVectorSymmIF, GLEVEL(g), sizePerVector,
 						 Gather_OffDiagMatrixComp, Scatter_OffDiagMatrixComp);
     else if (mode == MAT_MASTER_CONS) 
 	{
-/*
-Synchronize();
-fflush(stdout); fflush(stderr);
-Synchronize();
-printf("%4d: POKPOKPOK  START MaximumInconsMatrices=%d\n", me, MaximumInconsMatrices);
-fflush(stdout); fflush(stderr);
-*/
-
-		DDD_IFAOnewayX(BorderVectorIF,GLEVEL(g),IF_FORWARD,
-					   MaxBlockSize*MaximumInconsMatrices*sizeof(DOUBLE),
+		DDD_IFAOnewayX(BorderVectorIF,GLEVEL(g),IF_FORWARD, sizePerVector,
 					   Gather_OffDiagMatrixCompCollect,
 					   Scatter_OffDiagMatrixComp);
-
-/*
-printf("%4d: POKPOKPOK  STOP  MaximumInconsMatrices=%d\n", me, MaximumInconsMatrices);
-Synchronize();
-fflush(stdout); fflush(stderr);
-Synchronize();
-*/
 	}
 
 	return (NUM_OK);
