@@ -121,6 +121,16 @@ typedef struct
 
 } NP_SCALE_VEC;
 
+typedef struct
+{
+  NP_BASE base;
+
+  VECDATA_DESC *x;
+  DOUBLE min,max;
+  INT skip;
+
+} NP_RANDOM_VEC;
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
@@ -718,6 +728,89 @@ static INT SCALEV_Construct (NP_BASE *theNP)
 
 /****************************************************************************/
 /*D
+   rv - numproc random vector
+
+   DESCRIPTION:
+   The random vector numproc sets a vector to random values.
+
+   'npinit <name> $x <vec sym> $min <min value> $max <max value> $skip [0|1]'
+
+   .  <name> - num proc name
+   .  $x~<vec~sym> - name of a vector symbol
+   .  $min~<min~value> - minimal value, default 0
+   .  $max~<max~value> - maximum value,default  1
+   .  $skip~<skip> - 1 to skip SKIP-vectors,default 0
+
+   'npexecute <name>'
+
+   EXAMPLE:
+   .vb
+   npcreate rand $c rv;
+   npinit rand $x x $min -1 $max 1 $skip 0;
+
+   npexecute rand;
+   .ve
+   D*/
+/****************************************************************************/
+
+static INT RV_Init (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_RANDOM_VEC *np;
+
+  np = (NP_RANDOM_VEC*)theNP;
+  np->x = ReadArgvVecDesc(theNP->mg,"x",argc,argv);
+  if (np->x == NULL) return (NP_NOT_ACTIVE);
+  if (ReadArgvDOUBLE("min",&np->min,argc,argv)) np->min = 0.0;
+  if (ReadArgvDOUBLE("max",&np->max,argc,argv)) np->max = 1.0;
+  if (ReadArgvINT("skip",&np->skip,argc,argv)) np->skip = 0;
+
+  return (NP_EXECUTABLE);
+}
+
+static INT RV_Display (NP_BASE *theNP)
+{
+  NP_RANDOM_VEC *theRV;
+
+  theRV   = (NP_RANDOM_VEC*)theNP;
+  UserWrite("symbolic user data:\n");
+  if (theRV->x != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(theRV->x));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"x","---");
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"min",(float)theRV->min);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"max",(float)theRV->max);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"skip",(float)theRV->skip);
+
+  return (0);
+}
+
+static INT RV_Execute (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_RANDOM_VEC *theRV;
+  GRID *g;
+  INT i;
+
+  theRV   = (NP_RANDOM_VEC*)theNP;
+  if (theRV->x == NULL) return(1);
+
+  for (i=0; i<=CURRENTLEVEL(NP_MG(theNP)); i++)
+  {
+    g=GRID_ON_LEVEL(NP_MG(theNP),i);
+    if (l_dsetrandom2(g,theRV->x,EVERY_CLASS,theRV->min,theRV->max,theRV->skip)) return (1);
+  }
+
+  return (0);
+}
+
+static INT RV_Construct (NP_BASE *theNP)
+{
+  theNP->Init = RV_Init;
+  theNP->Display = RV_Display;
+  theNP->Execute = RV_Execute;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
    InitBasics - Enrol basics
 
    SYNOPSIS:
@@ -752,6 +845,8 @@ INT InitBasics (void)
   if (CreateClass(BASE_CLASS_NAME ".scpv",sizeof(NP_SCP_VEC),SCPV_Construct))
     return (__LINE__);
   if (CreateClass(BASE_CLASS_NAME ".scalev",sizeof(NP_SCALE_VEC),SCALEV_Construct))
+    return (__LINE__);
+  if (CreateClass(BASE_CLASS_NAME ".rv",sizeof(NP_RANDOM_VEC),RV_Construct))
     return (__LINE__);
 
   return (0);
