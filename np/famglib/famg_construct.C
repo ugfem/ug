@@ -840,7 +840,7 @@ int FAMGNode::CheckPaList(FAMGGraph *graph)
 int FAMGNode::Eliminate(FAMGGrid *grid)
 {
 	FAMGGraph *graph = grid->GetGraph();
-    FAMGPaList *pl, *minpl;
+    FAMGPaList *pl, *minpl = NULL;
     double weight, minweight;
 
     minweight = 1e+10;
