@@ -1870,6 +1870,66 @@ static char RCS_ID("$Header$",UG_RCS_STRING) ;
 
 #ifdef __THREEDIM__
 
+/****************************************************************************/
+/*
+   GetRule_AnisotropicRed -
+
+   SYNOPSIS:
+   INT GetRule_AnisotropicRed (ELEMENT *theElement, INT *Rule);
+
+   PARAMETERS:
+   .  theElement
+   .  Rule
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
+
+INT GetRule_AnisotropicRed (ELEMENT *theElement, INT *Rule)
+{
+  DOUBLE area,norm;
+  DOUBLE_VECTOR a,b,c;
+
+  switch (TAG(theElement))
+  {
+  case TETRAHEDRON :
+    *Rule=TET_RED;
+    return (0);
+
+  case PYRAMID :
+    *Rule=PYR_RED;
+    return (0);
+
+  case PRISM :
+    *Rule=PRI_RED;
+    V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,1))),CVECT(MYVERTEX(CORNER(theElement,0))),a);
+    V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,2))),CVECT(MYVERTEX(CORNER(theElement,0))),b);
+    V3_VECTOR_PRODUCT(a,b,c);
+    V3_EUKLIDNORM(c,area);
+    area *= 0.5;
+    V3_SUBTRACT(CVECT(MYVERTEX(CORNER(theElement,3))),CVECT(MYVERTEX(CORNER(theElement,0))),a);
+    V3_EUKLIDNORM(a,norm);
+    if (norm < 0.25*SQRT(area))
+    {
+      *Rule=PRI_QUADSECT;
+      return(1);
+    }
+    break;
+
+  case HEXAHEDRON :
+    *Rule=HEXA_RED;
+    return (0);
+
+  default :
+    assert(0);
+  }
+
+  return (0);
+}
+
 
 /****************************************************************************/
 /*D
@@ -2809,8 +2869,21 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
         SETMARKCLASS(theElement,RED_CLASS);
         break;
       case (RED) :
-        SETMARK(theElement,PRI_RED);
         SETMARKCLASS(theElement,RED_CLASS);
+
+                                                        #ifdef __ANISOTROPIC__
+        {
+          INT newrule;
+
+          if (GetRule_AnisotropicRed(theElement,&newrule))
+          {
+            SETMARK(theElement,newrule);
+            break;
+          }
+        }
+                                                        #endif
+
+        SETMARK(theElement,PRI_RED);
         break;
       case (PRISM_QUADSECT) :
         SETMARK(theElement,PRI_QUADSECT);
@@ -3109,8 +3182,11 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
     case (455) :
       return(PRI_QUADSECT);
     default :
-      PrintErrorMessage('E',"Patterns2Rules","no mapping for PYRAMID and this pattern!");
-      assert(0); return(-1);
+      PrintErrorMessage('E',"Patterns2Rules","no mapping for PRISM and this pattern!");
+                                                #ifndef __ANISOTROPIC__
+      assert(0);
+                                                #endif
+      return(-1);
     }
     break;
 

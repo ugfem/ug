@@ -369,7 +369,8 @@ ELEMENT         *ELEMENT_TO_MARK                (ELEMENT *theElement);
 #endif
 
 #ifdef __THREEDIM__
-INT SetAlignmentPtr (MULTIGRID *theMG, EVECTOR *direction);
+INT             SetAlignmentPtr                 (MULTIGRID *theMG, EVECTOR *direction);
+INT             GetRule_AnisotropicRed  (ELEMENT *theElement, INT *Rule);
 #endif
 
 #endif
