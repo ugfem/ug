@@ -1952,7 +1952,7 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   }
 
   theElement = InsertElement (MYMG(theGrid),n,Node,Neighbor,NeighborSide);
-  SETPROP(theElement,theElementContext->SubdomainID);
+  SETSUBDOMAIN(theElement,theElementContext->SubdomainID);
   theElementContext->thenewElement = theElement;
 
   /* alternativ O(N*N): InsertElement (MYMG(theGrid),n,Node,NULL,NULL);*/
