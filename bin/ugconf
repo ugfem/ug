@@ -187,7 +187,7 @@ PACKSUFFIX=Z
 
 grep_valid_entries()
 {
-	egrep '^[ ]*ARCH|^[ ]*MODEL |^[ ]*DIM|^[ ]*GRAPE |^[ ]*COVISE|^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE|^[ ]*CHACO|^[ ]*CAD|^[ ]*GUI' $1;
+	egrep '^[ ]*ARCH|^[ ]*MODEL |^[ ]*DIM|^[ ]*GRAPE |^[ ]*COVISE|^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE|^[ ]*OPTIM_MODE|^[ ]*CHACO|^[ ]*CAD|^[ ]*GUI' $1;
 }
 
 
@@ -463,6 +463,13 @@ edit_ugconf()
 		;;
 	NODEBUG)
 		sed 's/^DEBUG_MODE.*$/DEBUG_MODE = OFF/' $1 > $1.tmp
+		;;
+
+	OPTIM)
+		sed 's/^OPTIM_MODE.*$/OPTIM_MODE = ON/' $1 > $1.tmp
+		;;
+	NOOPTIM)
+		sed 's/^OPTIM_MODE.*$/OPTIM_MODE = OFF/' $1 > $1.tmp
 		;;
 
 	CHACO)
