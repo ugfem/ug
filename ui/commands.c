@@ -5007,7 +5007,7 @@ static INT OrderNodesCommand (INT argc, char **argv)
    .n                              u=up, d=down, r=right, l=left
    .   $m		   - also order matrices
    .   $w~s|n	   - order skip or nonskip vectors resp.
-   .   $s <|>	   - pput skip vectors at begin or end of the list resp.
+   .   $s <|>	   - put skip vectors at begin or end of the list resp.
 
    KEYWORDS:
    multigrid, order
@@ -9541,7 +9541,7 @@ static INT DeleteFormatCommand (INT argc, char **argv)
     return (PARAMERRORCODE);
   }
 
-  err = DeleteFormat(fmtname);
+  err = RemoveFormatWithSubs(fmtname);
 
   switch (err)
   {
