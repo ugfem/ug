@@ -7924,7 +7924,7 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
   /* prepare */
   if (TOPLEVEL(theMG)>0) REP_ERR_RETURN (GM_ERROR);
   theGrid = GRID_ON_LEVEL(theMG,0);
-  n = NT(theGrid);        if (n==0) REP_ERR_RETURN (GM_ERROR);
+  n = NT(theGrid);        if (n==0) return(0);
 
   /* allocate fifo and init */
   theHeap = MYMG(theGrid)->theHeap;

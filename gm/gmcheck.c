@@ -755,11 +755,13 @@ static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT
 		}
 		for (i=0; SonList[i]!=NULL || i<nsons; i++)
 		{
+		    IFDEBUG(gm,1)
 			if (REFINE(theElement)==0)
 			{
-				UserWriteF(PFMT "ELEM(" EID_FMTX "): element is not refined but "
-					"has NSONS=%d\n",me,EID_PRTX(theElement),nsons);
+				UserWriteF(PFMT "ELEM(" EID_FMTX "): element is not refined "
+					"but has NSONS=%d\n",me,EID_PRTX(theElement),nsons);
 			}
+			ENDDEBUG
 
 			if (i >= nsons)
 			{
@@ -782,10 +784,6 @@ static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT
 					me,i,EID_PRTX(theElement),EID_PRTX(SonList[i]));
 				*ESonError |= (1<<i);
 			}
-				
-			if (REFINE(theElement)==0)
-				UserWriteF("ELEM(" EID_FMTX "): element is not refined but "
-					"has NSONS=%d\n",EID_PRTX(theElement),nsons);
 		}
 	}
 

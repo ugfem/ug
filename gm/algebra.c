@@ -2700,7 +2700,7 @@ INT CreateAlgebra (GRID *g)
     REP_ERR_RETURN (GM_ERROR);
 
   if (NVEC(g)>0)
-    REP_ERR_RETURN (GM_ERROR);
+    return(0);
 
   fmt = MGFORMAT(MYMG(g));
 
