@@ -10,10 +10,10 @@
 # include configuration and all makefile macro definitions
 include ../../ug.conf
 
-OBJECTS = connectuggrape.o 
+OBJECTS = connectuggrape.o
 
 # local C compiler flags
-LCFLAGS = -I../../include
+LCFLAGS = -I../../include -I$(LD_LIBRARY_PATH)
 
 all : $(OBJECTS) Makefile.grape
 	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libug$(UG_LIBSUFFIX).a $(OBJECTS) 

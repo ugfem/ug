@@ -11,8 +11,7 @@
 #define Vector_float                                    2
 #define Vector_double                                   3
 
-#define MAX_SONS                                                12
-#define N_RULES                                                 242
+#define N_RULES                                         242
 #define MAX_VECTOR_ENTRIES                              10
 
 #define PATHDEPTHMASK 0xF0000000
