@@ -1835,14 +1835,12 @@ INT InitBVDF                                            ( BV_DESC_FORMAT *bvdf, 
 INT PushEntry                                           ( BV_DESC *bvd, BLOCKNUMBER bnr, const BV_DESC_FORMAT *bvdf );
 
 /* functions to create a BLOCKVECTOR structure for a regular rectangular grid */
-INT CreateBVStripe                                      ( GRID *grid, INT points, INT points_per_stripe );
-INT CreateBVDomainHalfening                     ( GRID *grid, INT side );
+INT CreateBVStripe                                      (GRID *grid, INT points, INT points_per_stripe );
+INT CreateBVDomainHalfening                     (GRID *grid, INT side );
 
 /* general functions for BLOCKVECTOR */
-INT CreateBlockvector                                   ( GRID *theGrid, BLOCKVECTOR **BVHandle );
-INT DisposeBlockvector                                  ( GRID *theGrid, BLOCKVECTOR *bv );
-void FreeAllBV                                          ( GRID *grid );
-void FreeBVList                                         ( GRID *grid, BLOCKVECTOR *bv );
+INT CreateBlockvector                           (GRID *theGrid, BLOCKVECTOR **BVHandle);
+INT DisposeBlockvector                          (GRID *theGrid, BLOCKVECTOR *bv);
 
 /* algebraic connections */
 #ifdef __version3__
@@ -1853,6 +1851,7 @@ CONNECTION      *GetConnection                  (const VECTOR *FromVector, const
 #ifdef __INTERPOLATION_MATRIX__
 MATRIX      *GetIMatrix             (VECTOR *FineVector, VECTOR *CoarseVector);
 MATRIX      *CreateIMatrix          (GRID *theGrid, VECTOR *fvec, VECTOR *cvec);
+INT                     DisposeIMatrices                (GRID *theGrid, MATRIX *theMatrix);
 #endif
 #endif
 #ifdef __version23__
