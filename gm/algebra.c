@@ -549,7 +549,7 @@ INT NS_DIM_PREFIX GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT si
     v0 = MYVERTEX(nd);
     if (OBJT(v0)==IVOBJ) {
       subdom = NSUBDOM(nd);
-      /*ASSERT(subdom>0);*/
+      ASSERT(subdom>0);
       part = s2p[subdom];
     }
     else
