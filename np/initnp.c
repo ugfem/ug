@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:	  initnp.c			                                                                                */
+/* File:      initnp.c                                                      */
 /*																			*/
 /* Purpose:   call the init routines of the numerics module		                        */
 /*																			*/
@@ -69,6 +69,8 @@
 #ifdef USE_FAMG
 #include "ug-famg.h"
 #endif
+
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */

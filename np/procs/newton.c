@@ -68,9 +68,9 @@ USING_UG_NAMESPACES
 #define CSTOP(t,c)  t+=(CURRENT_TIME_LONG-clock_start);c++
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 /* variables for timing measurement		*/
@@ -887,26 +887,17 @@ static INT NewtonConstruct (NP_BASE *theNP)
 
 
 /****************************************************************************/
-/*
-   InitNewtonSolver  - Init this file
+/** \brief Init this file
 
-   SYNOPSIS:
-   INT InitNewtonSolver (void);
+   This function inits the newton.c file.
 
-   PARAMETERS:
-   .  void -
-
-   DESCRIPTION:
-   This function inits this file.
-
-   RETURN VALUE:
-   INT
+   \return
    .n    0 if ok
    .n    __LINE__ if error occured.
  */
 /****************************************************************************/
 
-INT InitNewtonSolver (void)
+INT NS_PREFIX InitNewtonSolver (void)
 {
   if (CreateClass (NL_SOLVER_CLASS_NAME ".newton",
                    sizeof(NP_NEWTON), NewtonConstruct))

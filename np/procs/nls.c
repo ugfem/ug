@@ -42,7 +42,7 @@
 #include "ls.h"
 #include "nls.h"
 
-//USING_UG_NAMESPACES
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
