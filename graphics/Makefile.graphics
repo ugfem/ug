@@ -10,10 +10,20 @@
 # include configuration and all makefile macro definitions
 include ../ug.conf
 
+OBJECTS = graphics.o
+
+# local C compiler flags
+LCFLAGS = -I../include
+
 
 # $(GRAPE) is set to ON or OFF in ug.conf
 
-all: $(GRAPE) UGGRAPH
+all: $(OBJECTS) $(GRAPE) UGGRAPH $(COVISE_TARGET)
+	$(ARCH_AR)  $(ARCH_ARFLAGS) ../lib/libug$(DIM).a $(OBJECTS)
+
+.c.o:
+	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
+
 
 ar: $(GRAPE) 
 	cd uggraph; make -f Makefile.uggraph ar; cd ..;
@@ -30,7 +40,15 @@ OFF:
 	cd grape; make -f Makefile.grape; cd ..;
 
 
+COVISE_ON:
+	echo "creating covise-if"
+	cd covise; make -f Makefile.covise; cd ..;
+
+COVISE_OFF:
+
+
 clean:
+	rm -f *.o
 	cd uggraph; make -f Makefile.uggraph clean; cd ..;
 	cd grape; make -f Makefile.grape clean; cd ..;
 
@@ -39,3 +57,4 @@ extract:
 	cd grape; make -f Makefile.grape extract; cd ..;
 
 xmc: extract all clean
+
