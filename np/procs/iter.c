@@ -59,16 +59,33 @@
 /*																			*/
 /****************************************************************************/
 
-typedef struct
-{
+struct np_smoother {
+
   NP_ITER iter;
 
   VEC_SCALAR damp;
-  VEC_SCALAR beta;
   INT n;
 
   MATDATA_DESC *L;
   VECDATA_DESC *t;
+
+  INT (*Step)
+    (struct np_smoother *,                   /* pointer to (derived) object     */
+    INT,                                         /* level                           */
+    VECDATA_DESC *,                              /* correction vector               */
+    VECDATA_DESC *,                              /* defect vector                   */
+    MATDATA_DESC *,                              /* matrix                          */
+    VECDATA_DESC *,                              /* temporary vector                */
+    MATDATA_DESC *,                              /* temporary matrix                */
+    INT *);                                      /* result                          */
+};
+typedef struct np_smoother NP_SMOOTHER;
+
+typedef struct
+{
+  NP_SMOOTHER smoother;
+
+  VEC_SCALAR beta;
 
 } NP_ILU;
 
@@ -231,6 +248,259 @@ INT NPIterExecute (NP_BASE *theNP, INT argc , char **argv)
   return(0);
 }
 
+/* tools for all smoothers */
+
+static INT SmootherInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_SMOOTHER *np;
+  INT i;
+
+  np = (NP_SMOOTHER *) theNP;
+
+  for (i=0; i<MAX_VEC_COMP; i++) np->damp[i] = 1.0;
+  sc_read(np->damp,np->iter.b,"damp",argc,argv);
+  if (ReadArgvINT("n",&(np->n),argc,argv))
+    np->n = 1;
+  np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
+  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+
+  return (NPIterInit(&np->iter,argc,argv));
+}
+
+static INT SmootherDisplay (NP_BASE *theNP)
+{
+  NP_SMOOTHER *np;
+
+  np = (NP_SMOOTHER *) theNP;
+  NPIterDisplay(&np->iter);
+  UserWrite("configuration parameters:\n");
+  if (sc_disp(np->damp,np->iter.b,"damp")) return (1);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"n",(int)np->n);
+  if (np->L != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"L",ENVITEM_NAME(np->L));
+  if (np->t != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+
+  return (0);
+}
+
+static INT SmootherPreProcess  (NP_ITER *theNP, INT level,
+                                VECDATA_DESC *x, VECDATA_DESC *b,
+                                MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+        #ifdef ModelP
+  NP_SMOOTHER *np;
+  GRID *theGrid;
+
+  np = (NP_SMOOTHER *) theNP;
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) {
+    result[0] = __LINE__;
+    return (1);
+  }
+  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+  if (l_matrix_consistent(theGrid,np->L,TRUE) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+        #endif
+  *baselevel = level;
+
+  return (0);
+}
+
+static INT Smoother (NP_ITER *theNP, INT level,
+                     VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                     INT *result)
+{
+  NP_SMOOTHER *np;
+  GRID *theGrid;
+  INT i;
+
+  np = (NP_SMOOTHER *) theNP;
+  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  if (AllocVDFromVD(theNP->base.mg,level,level,x,&np->t)) {
+    result[0] = __LINE__;
+    return(1);
+  }
+  for (i=0; i<np->n; i++) {
+    if ((*np->Step)(np,level,x,b,A,np->t,np->L,result))
+      return (1);
+        #ifdef ModelP
+    if (l_vector_consistent(theGrid,np->t) != NUM_OK) {
+      result[0] = __LINE__;
+      return (1);
+    }
+        #endif
+    if (l_dscale(theGrid,np->t,ACTIVE_CLASS,np->damp) != NUM_OK) {
+      result[0] = __LINE__;
+      return (1);
+    }
+    if (l_daxpy(theGrid,x,ACTIVE_CLASS,Factor_One,np->t) != NUM_OK) {
+      result[0] = __LINE__;
+      return (1);
+    }
+    if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,np->t,ACTIVE_CLASS)
+        != NUM_OK) {
+      result[0] = __LINE__;
+      return (1);
+    }
+  }
+  FreeVD(theNP->base.mg,level,level,np->t);
+
+  return (0);
+}
+
+static INT SmootherPostProcess (NP_ITER *theNP, INT level,
+                                VECDATA_DESC *x, VECDATA_DESC *b,
+                                MATDATA_DESC *A, INT *result)
+{
+  NP_SMOOTHER *np;
+
+  np = (NP_SMOOTHER *) theNP;
+  if (np->L != NULL)
+    FreeMD(theNP->base.mg,level,level,np->L);
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   jac - numproc for Jacobi smoother
+
+   DESCRIPTION:
+   This numproc executes a block Jacobi smoother, using the blas routine
+   'l_jac'. It can be used in 'lmgc'.
+
+   .vb
+   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
+       $n <it> $damp <sc double list>
+   .ve
+
+   .  $c~<sol> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $n~<it> - number of iterations
+   .  $damp~<sc~double~list> - damping factors for each component
+
+   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
+
+   'npexecute <name> [$i] [$s] [$p]'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+   D*/
+/****************************************************************************/
+
+static INT JacobiStep (NP_SMOOTHER *theNP, INT level,
+                       VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                       VECDATA_DESC *t, MATDATA_DESC *L,
+                       INT *result)
+{
+    #ifdef ModelP
+  if (l_jac(GRID_ON_LEVEL(theNP->iter.base.mg,level),t,L,b) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+    #else
+  if (l_jac(GRID_ON_LEVEL(theNP->iter.base.mg,level),t,A,b) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+    #endif
+
+  return (0);
+}
+
+static INT JacobiConstruct (NP_BASE *theNP)
+{
+  NP_SMOOTHER *np;
+
+  theNP->Init = SmootherInit;
+  theNP->Display = SmootherDisplay;
+  theNP->Execute = NPIterExecute;
+
+  np = (NP_SMOOTHER *) theNP;
+  np->iter.PreProcess = SmootherPreProcess;
+  np->iter.Iter = Smoother;
+  np->iter.PostProcess = SmootherPostProcess;
+  np->Step = JacobiStep;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   gs - numproc for Gauss-Seidel smoother
+
+   DESCRIPTION:
+   This numproc executes a Gauss-Seidel smoother, using the blas routines
+   'l_lgs'. It can be used in 'lmgc'.
+
+   .vb
+   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
+       $n <it> $damp <sc double list> $beta <sc double list>
+   .ve
+
+   .  $c~<sol> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $n~<it> - number of iterations
+   .  $damp~<sc~double~list> - damping factors for each component
+
+   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
+
+   'npexecute <name> [$i] [$s] [$p]'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+   D*/
+/****************************************************************************/
+
+static INT GSStep (NP_SMOOTHER *theNP, INT level,
+                   VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                   VECDATA_DESC *t, MATDATA_DESC *L,
+                   INT *result)
+{
+    #ifdef ModelP
+  if (l_lgs(GRID_ON_LEVEL(theNP->iter.base.mg,level),t,L,b) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+    #else
+  if (l_lgs(GRID_ON_LEVEL(theNP->iter.base.mg,level),t,A,b) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+    #endif
+
+  return (0);
+}
+
+static INT GSConstruct (NP_BASE *theNP)
+{
+  NP_SMOOTHER *np;
+
+  theNP->Init = SmootherInit;
+  theNP->Display = SmootherDisplay;
+  theNP->Execute = NPIterExecute;
+
+  np = (NP_SMOOTHER *) theNP;
+  np->iter.PreProcess = SmootherPreProcess;
+  np->iter.Iter = Smoother;
+  np->iter.PostProcess = SmootherPostProcess;
+  np->Step = GSStep;
+
+  return(0);
+}
+
 /****************************************************************************/
 /*D
    ilu - numproc for point block beta-modified ilu smoother
@@ -259,77 +529,155 @@ INT NPIterExecute (NP_BASE *theNP, INT argc , char **argv)
    .  $i - preprocess
    .  $s - smooth
    .  $p - postprocess
-
-   EXAMPLE:
-   .vb
-   npcreate sm $t ilu;
-    npinit $n 1 $damp 1.0 $beta 0.0;
-   npcreate base $t ls;
-    npinit $m 10 $i ilu $d no $red 1e-4;
-   npcreate mgc $t lmgc;
-    npinit $g 1 $S sm sm base;
-   npcreate solver $t ls;
-    npinit $x x $b b $A MAT $m 20 $i mgc $d full $red 1e-4;
-
-   npexecute solver $i $d $r $s $p;
-   .ve
    D*/
 /****************************************************************************/
 
-static INT ILU_Init (NP_BASE *theNP, INT argc , char **argv)
+static INT ILUInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_ILU *np;
   INT i;
 
   np = (NP_ILU *) theNP;
 
-  for (i=0; i<MAX_VEC_COMP; i++) np->damp[i] = 1.0;
-  sc_read(np->damp,np->iter.b,"damp",argc,argv);
   for (i=0; i<MAX_VEC_COMP; i++) np->beta[i] = 0.0;
-  sc_read(np->damp,np->iter.b,"beta",argc,argv);
-  if (ReadArgvINT("n",&(np->n),argc,argv))
-    np->n = 1;
-  np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
-  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+  sc_read(np->beta,np->smoother.iter.b,"beta",argc,argv);
 
-  return (NPIterInit(&np->iter,argc,argv));
+  return (SmootherInit(theNP,argc,argv));
 }
 
-static INT ILU_Display (NP_BASE *theNP)
+static INT ILUDisplay (NP_BASE *theNP)
 {
   NP_ILU *np;
 
+  SmootherDisplay(theNP);
   np = (NP_ILU *) theNP;
-
-  NPIterDisplay(&np->iter);
-
-  UserWrite("configuration parameters:\n");
-  if (sc_disp(np->damp,np->iter.b,"damp")) return (1);
-  if (sc_disp(np->damp,np->iter.b,"beta")) return (1);
-  UserWriteF(DISPLAY_NP_FORMAT_SI,"n",(int)np->n);
-  if (np->L != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"L",ENVITEM_NAME(np->L));
-  if (np->t != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+  if (sc_disp(np->beta,np->smoother.iter.b,"beta")) return (1);
 
   return (0);
 }
 
-static INT ILU_PreProcess  (NP_ITER *theNP, INT level,
-                            VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                            INT *baselevel, INT *result)
+static INT ILUPreProcess (NP_ITER *theNP, INT level,
+                          VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                          INT *baselevel, INT *result)
 {
   NP_ILU *np;
   GRID *theGrid;
 
   np = (NP_ILU *) theNP;
 
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) {
+  if (SmootherPreProcess(theNP,level,x,b,A,baselevel,result))
+    return (1);
+  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  if (l_setindex(theGrid)) {
     result[0] = __LINE__;
     return (1);
   }
+        #ifndef ModelP /* in parallel all smoothers have a consistent matrix L */
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) {
+    result[0] = __LINE__;
+    return (1);
+  }
+  if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+        #endif
+  if (l_ilubthdecomp(theGrid,np->smoother.L,np->beta,NULL,NULL,NULL)
+      !=NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+
+  return (0);
+}
+
+static INT ILUStep (NP_SMOOTHER *theNP, INT level,
+                    VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                    VECDATA_DESC *t, MATDATA_DESC *L,
+                    INT *result)
+{
+    #ifdef ModelP
+  if (l_vector_collect(GRID_ON_LEVEL(theNP->iter.base.mg,level),b) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+    #endif
+  if (l_luiter(GRID_ON_LEVEL(theNP->iter.base.mg,level),t,L,b) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+
+  return (0);
+}
+
+static INT ILUConstruct (NP_BASE *theNP)
+{
+  NP_SMOOTHER *np;
+
+  theNP->Init = ILUInit;
+  theNP->Display = ILUDisplay;
+  theNP->Execute = NPIterExecute;
+
+  np = (NP_SMOOTHER *) theNP;
+  np->iter.PreProcess = ILUPreProcess;
+  np->iter.Iter = Smoother;
+  np->iter.PostProcess = SmootherPostProcess;
+  np->Step = ILUStep;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   lu - numproc for lu smoother
+
+   DESCRIPTION:
+   This numproc executes lu smoother, using the blas routines
+   'l_lrdecomp' and 'l_luiter'. It can be used in 'lmgc'.
+
+   .vb
+   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
+       $n <it> $damp <sc double list> $beta <sc double list>
+   .ve
+
+   .  $c~<sol> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $n~<it> - number of iterations
+   .  $damp~<sc~double~list> - damping factors for each component
+   .  $beta~<sc~double~list> - parameter for modification of the diagonal
+
+   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
+
+   'npexecute <name> [$i] [$s] [$p]'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+   D*/
+/****************************************************************************/
+
+static INT LUPreProcess (NP_ITER *theNP, INT level,
+                         VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                         INT *baselevel, INT *result)
+{
+  NP_SMOOTHER *np;
+  GRID *theGrid;
+  INT err;
+  char warn[255];
+
+  np = (NP_SMOOTHER *) theNP;
+
+  if (SmootherPreProcess(theNP,level,x,b,A,baselevel,result))
+    return (1);
   theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
   if (l_setindex(theGrid)) {
+    result[0] = __LINE__;
+    return (1);
+  }
+        #ifndef ModelP /* in parallel all smoothers have a consistent matrix L */
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) {
     result[0] = __LINE__;
     return (1);
   }
@@ -337,102 +685,52 @@ static INT ILU_PreProcess  (NP_ITER *theNP, INT level,
     result[0] = __LINE__;
     return (1);
   }
-        #ifdef ModelP
-  if (l_matrix_consistent(theGrid,np->L,TRUE) != NUM_OK) {
-    result[0] = __LINE__;
-    return (1);
-  }
         #endif
-  if (l_ilubthdecomp(theGrid,np->L,np->beta,NULL,NULL,NULL) !=NUM_OK) {
-    result[0] = __LINE__;
-    return (1);
+  err = l_lrdecomp(theGrid,np->L);
+  if (err != NUM_OK) {
+    if (err>0) {
+      switch (err) {
+      case NUM_OUT_OF_MEM :
+        PrintErrorMessage('E',"LUPreProcess","out of memory");
+        result[0] = __LINE__;
+        return (1);
+      default :
+        PrintErrorMessage('E',"LUPreProcess","err > 0");
+        result[0] = __LINE__;
+        return (1);
+      }
+    }
+    if (err!=-VINDEX(LASTVECTOR(theGrid))) {
+      sprintf(warn,"decomp failed: IDX %ld on level %d",
+              -err,GLEVEL(theGrid));
+      PrintErrorMessage('E',"LUPreProcess",warn);
+      UserWriteF(" - LASTVECTOR has IDX %ld\n",
+                 VINDEX(LASTVECTOR(theGrid)));
+      result[0] = __LINE__;
+      return (1);
+    }
+    if (l_lrregularize(theGrid,np->L) !=NUM_OK) {
+      result[0] = __LINE__;
+      return (1);
+    }
   }
-  *baselevel = level;
 
   return (0);
 }
 
-static INT ILU_Iter (NP_ITER *theNP, INT level,
-                     VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                     INT *result)
+static INT LUConstruct (NP_BASE *theNP)
 {
-  NP_ILU *np;
-  GRID *theGrid;
-  INT i;
+  NP_SMOOTHER *np;
 
-  np = (NP_ILU *) theNP;
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
-
-  if (AllocVDFromVD(theNP->base.mg,level,level,x,&np->t)) {
-    result[0] = __LINE__;
-    return(1);
-  }
-
-  for (i=0; i<np->n; i++) {
-        #ifdef ModelP
-    if (l_vector_collect(theGrid,b) != NUM_OK) {
-      result[0] = __LINE__;
-      return (1);
-    }
-            #endif
-    if (l_luiter(theGrid,np->t,np->L,b) != NUM_OK) {
-      result[0] = __LINE__;
-      return (1);
-    }
-        #ifdef ModelP
-    if (l_vector_consistent(theGrid,np->t) != NUM_OK) {
-      result[0] = __LINE__;
-      return (1);
-    }
-        #endif
-    if (l_luiter(theGrid,np->t,np->L,b) != NUM_OK) {
-      result[0] = __LINE__;
-      return (1);
-    }
-    if (l_dscale(theGrid,np->t,ACTIVE_CLASS,np->damp) != NUM_OK) {
-      result[0] = __LINE__;
-      return (1);
-    }
-    if (l_daxpy(theGrid,x,ACTIVE_CLASS,Factor_One,np->t) != NUM_OK) {
-      result[0] = __LINE__;
-      return (1);
-    }
-    if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,np->t,ACTIVE_CLASS)
-        != NUM_OK) {
-      result[0] = __LINE__;
-      return (1);
-    }
-  }
-  FreeVD(theNP->base.mg,level,level,np->t);
-
-  return (0);
-}
-
-static INT ILU_PostProcess (NP_ITER *theNP, INT level,
-                            VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                            INT *result)
-{
-  NP_ILU *np;
-
-  np = (NP_ILU *) theNP;
-
-  FreeMD(theNP->base.mg,level,level,np->L);
-
-  return(0);
-}
-
-static INT ILUConstruct (NP_BASE *theNP)
-{
-  NP_ITER *np;
-
-  theNP->Init = ILU_Init;
-  theNP->Display = ILU_Display;
+  theNP->Init = SmootherInit;
+  theNP->Display = SmootherDisplay;
   theNP->Execute = NPIterExecute;
 
-  np = (NP_ITER *) theNP;
-  np->PreProcess = ILU_PreProcess;
-  np->Iter = ILU_Iter;
-  np->PostProcess = ILU_PostProcess;
+  np = (NP_SMOOTHER *) theNP;
+  np->iter.PreProcess = LUPreProcess;
+  np->iter.Iter = Smoother;
+  np->iter.PostProcess = SmootherPostProcess;
+  np->Step = ILUStep;
 
   return(0);
 }
@@ -456,29 +754,15 @@ static INT ILUConstruct (NP_BASE *theNP)
    .  $T~<transfer> - transfer numproc
    .  $S~<pre~post~base> - numprocs for pre- and postsmoother, base solver
    .  $b~<baselevel> - baselevel where the base solver is called
-   .  $g~<gamma> - number of iterations of Lmgc per level
-   .  $n1~<it> - number of iterations of the presmoother
-   .  $n2~<it> - number of iteration of the postsmoother
+   .  $g~<gamma> - number of iterations of Lmgc per level (default gamma = 1)
+   .  $n1~<it> - number of iterations of the presmoother (default n1 = 1)
+   .  $n2~<it> - number of iteration of the postsmoother (default n2 = 1)
 
    'npexecute <name> [$i] [$s] [$p]'
 
    .  $i - preprocess
    .  $s - solve
    .  $p - postprocess
-
-   EXAMPLE:
-   .vb
-   npcreate sm $t ilu;
-    npinit $n 1 $damp 1.0 $beta 0.0;
-   npcreate base $t ls;
-    npinit $m 10 $i ilu $d no $red 1e-4;
-   npcreate mgc $t lmgc;
-    npinit $g 1 $S sm sm base;
-   npcreate solver $t ls;
-    npinit $x x $b b $A MAT $m 20 $i mgc $d full $red 1e-4;
-
-   npexecute solver $i $d $r $s $p;
-   .ve
    D*/
 /****************************************************************************/
 
@@ -740,9 +1024,15 @@ INT InitIter ()
 {
   INT i;
 
-  if (CreateClass(ITER_CLASS_NAME "ilu", sizeof(NP_ILU), ILUConstruct))
+  if (CreateClass(ITER_CLASS_NAME ".jac",sizeof(NP_SMOOTHER),JacobiConstruct))
     return (__LINE__);
-  if (CreateClass(ITER_CLASS_NAME "lmgc", sizeof(NP_LMGC), LmgcConstruct))
+  if (CreateClass(ITER_CLASS_NAME ".gs",sizeof(NP_SMOOTHER),GSConstruct))
+    return (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".ilu",sizeof(NP_ILU),ILUConstruct))
+    return (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".lu",sizeof(NP_SMOOTHER),LUConstruct))
+    return (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".lmgc",sizeof(NP_LMGC),LmgcConstruct))
     return (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;

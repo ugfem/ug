@@ -584,7 +584,7 @@ static INT TransferConstruct (NP_BASE *theNP)
 
 INT InitTransfer ()
 {
-  if (CreateClass(TRANSFER_CLASS_NAME "transfer",
+  if (CreateClass(TRANSFER_CLASS_NAME ".transfer",
                   sizeof(NP_STANDARD_TRANSFER),TransferConstruct))
     return (__LINE__);
 

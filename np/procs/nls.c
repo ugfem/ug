@@ -315,7 +315,7 @@ INT InitNonlinearSolver ()
 {
   INT i;
 
-  if (CreateClass (NL_SOLVER_CLASS_NAME "newton",
+  if (CreateClass (NL_SOLVER_CLASS_NAME ".newton",
                    sizeof(NP_NEWTON), NewtonConstruct))
     return (__LINE__);
 
