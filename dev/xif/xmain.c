@@ -206,7 +206,7 @@ INT GetNextUGEvent_CUI (EVENT *theEvent, INT EventMask)
   int cmdKey, onlyCmdKey;
 
   /* cancel X events */
-  GetNextUGEvent_XUI(theEvent,EventMask);
+  if(!NUI_ON) GetNextUGEvent_XUI(theEvent,EventMask);
 
   /* no event as default */
   theEvent->Type = NO_EVENT;
