@@ -5098,10 +5098,12 @@ static INT OrderVectorsCommand (INT argc, char **argv)
       }
       if (strcmp(modestr,"FCFCLL")==0)
         mode = GM_FCFCLL;
-      else if (strcmp(modestr,"FFCCLL")==0)
-        mode = GM_FFCCLL;
+      else if (strcmp(modestr,"FFLLCC")==0)
+        mode = GM_FFLLCC;
       else if (strcmp(modestr,"FFLCLC")==0)
         mode = GM_FFLCLC;
+      else if (strcmp(modestr,"CCFFLL")==0)
+        mode = GM_CCFFLL;
       else
       {
         PrintHelp("orderv",HELPITEM," (you have to specify FFCCLL or FCFCLL as mode)");
