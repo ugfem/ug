@@ -115,6 +115,9 @@ ENVITEM *MakeEnvItem    (const char *name, const INT type, const INT size);
 /* remove an item */
 INT      RemoveEnvItem    (ENVITEM *theItem);
 
+/* move an envitem to a new directory */
+INT              MoveEnvItem      (ENVITEM *item, ENVDIR *old, ENVDIR *new);
+
 /* search the environment for an item */
 ENVITEM *SearchEnv        (const char *name, const char *where, INT type, INT dirtype);
 

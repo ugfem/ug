@@ -405,6 +405,53 @@ INT RemoveEnvItem (ENVITEM *theItem)
   return(0);
 }
 
+/****************************************************************************/
+/*D
+   MoveEnvItem - move an environment item in the tree structure
+
+   SYNOPSIS:
+   INT MoveEnvItem (ENVITEM *item, ENVDIR *old, ENVDIR *new)
+
+   PARAMETERS:
+   .  item - pointer to item
+   .  old - directory containing the item
+   .  new - directory to which item has to be moved (if NULL move to root)
+
+   DESCRIPTION:
+   This function moves an environment item (or subtree) in the tree structure.
+
+   RETURN VALUE:
+   INT
+   .n    0 if OK
+   D*/
+/****************************************************************************/
+
+INT MoveEnvItem (ENVITEM *item, ENVDIR *old, ENVDIR *new)
+{
+  ENVITEM *anItem;
+
+  if (new==NULL)
+    new = path[0];
+
+  for (anItem=ENVDIR_DOWN(old); anItem!=NULL; anItem=NEXT_ENVITEM(anItem))
+    if (anItem==item) break;
+  if (anItem==NULL) return(1);
+
+  /* remove from old directory */
+  if (PREV_ENVITEM(item)!=NULL)
+    NEXT_ENVITEM(PREV_ENVITEM(item)) = NEXT_ENVITEM(item);
+  else
+    ENVDIR_DOWN(old) = NEXT_ENVITEM(item);
+  if (NEXT_ENVITEM(item)!=NULL)
+    PREV_ENVITEM(NEXT_ENVITEM(item)) = PREV_ENVITEM(item);
+
+  /* insert in new directory */
+  PREV_ENVITEM(item) = NULL;
+  NEXT_ENVITEM(item) = ENVDIR_DOWN(new);
+  ENVDIR_DOWN(new) = item;
+
+  return (0);
+}
 
 /****************************************************************************/
 /*D
