@@ -49,6 +49,7 @@
 #include <X11/Xaw/Dialog.h>
 #include <X11/Xaw/Command.h>
 #include "shades.h"
+#include "general.h"
 
 /* defines for opCodes */
 #define opNop                           0
@@ -83,7 +84,9 @@
 
 /* needed only for CRAY C90!!					*/
 /* because there is in error in fread() for short */
+#ifdef __C90__
 #define short long
+#endif
 
 /* The following macro is only valid for long and short data types */
 
@@ -120,10 +123,9 @@
 
 #define APPL_KLASSE    "Xugview"
 
-/* global variables */
-/* RCS_ID
-   $Header$
- */
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
+
 
 XtAppContext kontext;                     /* application kontext */
 Display      *display;                  /* display of the application */

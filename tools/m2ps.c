@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "general.h"
 
 /****************************************************************************/
 /*                                                                          */
@@ -122,6 +123,10 @@ static unsigned int IF_cc=0;
 static int ox,oy,sx,sy;
 static float tx,ty,mxx,myy,mxy,myx;
 static int landscape = 0;
+static int swap_bytes;
+
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*                                                                          */
@@ -551,11 +556,11 @@ int ConvertFile (FILE *stream)
   error = fread(&blockSize,4,1,stream); if (error!=1) return(1);       /* block size */
   error = fread(&fx,2,1,stream);            if (error!=1) return(1);       /* x size */
   error = fread(&fy,2,1,stream);        if (error!=1) return(1);       /* y size */
-#ifdef __SWAPBYTES__
-  swap_long(&blockSize);
-  swap_short(&fx);
-  swap_short(&fy);
-#endif
+  if (swap_bytes) {
+    swap_long(&blockSize);
+    swap_short(&fx);
+    swap_short(&fy);
+  }
 
   /* default values */
   lw = 1;
@@ -573,11 +578,11 @@ int ConvertFile (FILE *stream)
     /* read block parameters */
     error = fread(&blockUsed,4,1,stream);    if (error!=1) {free(buffer); return(1);}
     error = fread(&itemCounter,4,1,stream);  if (error!=1) {free(buffer); return(1);}
+    if (swap_bytes) {
+      swap_long(&blockUsed);
+      swap_long(&itemCounter);
+    }
     error = fread(buffer,blockUsed,1,stream);if (error!=1) {free(buffer); return(1);}
-#ifdef __SWAPBYTES__
-    swap_long(&blockUsed);
-    swap_long(&itemCounter);
-#endif
 
     /* init pointer to next item */
     data = buffer;
@@ -594,10 +599,10 @@ int ConvertFile (FILE *stream)
         data += 2;
         memcpy(&y,data,2);
         data += 2;
-#ifdef __SWAPBYTES__
-        swap_short(&x);
-        swap_short(&y);
-#endif
+        if (swap_bytes) {
+          swap_short(&x);
+          swap_short(&y);
+        }
         IF_MoveTo(x,y);
         break;
 
@@ -606,23 +611,39 @@ int ConvertFile (FILE *stream)
         data += 2;
         memcpy(&y,data,2);
         data += 2;
+        if (swap_bytes) {
+          swap_short(&x);
+          swap_short(&y);
+        }
         IF_DrawTo(x,y);
         break;
 
       case opPolyline :
         memcpy(&n,data,2);
         data += 2;
+        if (swap_bytes) {
+          swap_short(&n);
+        }
         if (n>=SIZE) {free(buffer); return(2);}
         size = n<<1;
         memcpy(xx,data,size);
         data += size;
         memcpy(yy,data,size);
         data += size;
+        if (swap_bytes) {
+          for (j=0; j<n; j++) {
+            swap_short(xx+j);
+            swap_short(yy+j);
+          }
+        }
         IF_PolyLine(n,xx,yy);
         break;
 
       case opPolygon :
         memcpy(&n,data,2);
+        if (swap_bytes) {
+          swap_short(&n);
+        }
         data += 2;
         if (n>=SIZE) {free(buffer); return(2);}
         size = n<<1;
@@ -630,24 +651,42 @@ int ConvertFile (FILE *stream)
         data += size;
         memcpy(yy,data,size);
         data += size;
+        if (swap_bytes) {
+          for (j=0; j<n; j++) {
+            swap_short(xx+j);
+            swap_short(yy+j);
+          }
+        }
         IF_Polygon(n,xx,yy);
         break;
 
       case opPolymark :
         memcpy(&n,data,2);
         data += 2;
+        if (swap_bytes) {
+          swap_short(&n);
+        }
         if (n>=SIZE) {free(buffer); return(2);}
         size = n<<1;
         memcpy(xx,data,size);
         data += size;
         memcpy(yy,data,size);
         data += size;
+        if (swap_bytes) {
+          for (j=0; j<n; j++) {
+            swap_short(xx+j);
+            swap_short(yy+j);
+          }
+        }
         for (j=0; j<n; j++) IF_Marker(m,ms,xx[j],yy[j]);
         break;
 
       case opText :
         memcpy(&n,data,2);
         data += 2;
+        if (swap_bytes) {
+          swap_short(&n);
+        }
         if (n>=CSIZE-1) {free(buffer); return(2);}
         memcpy(s,data,n);
         s[n] = 0;
@@ -658,10 +697,19 @@ int ConvertFile (FILE *stream)
       case opCenteredText :
         memcpy(&x,data,2);
         data += 2;
+        if (swap_bytes) {
+          swap_short(&x);
+        }
         memcpy(&y,data,2);
         data += 2;
+        if (swap_bytes) {
+          swap_short(&y);
+        }
         memcpy(&n,data,2);
         data += 2;
+        if (swap_bytes) {
+          swap_short(&n);
+        }
         if (n>=CSIZE-1) {free(buffer); return(2);}
         memcpy(s,data,n);
         s[n] = 0;
@@ -672,6 +720,9 @@ int ConvertFile (FILE *stream)
       case opSetLineWidth :
         memcpy(&n,data,2);
         data += 2;
+        if (swap_bytes) {
+          swap_short(&n);
+        }
         lw = n;
         IF_LineWidth(n);
         break;
@@ -679,6 +730,9 @@ int ConvertFile (FILE *stream)
       case opSetTextSize :
         memcpy(&n,data,2);
         data += 2;
+        if (swap_bytes) {
+          swap_short(&n);
+        }
         ts = n;
         IF_TextSize(n);
         break;
@@ -686,12 +740,18 @@ int ConvertFile (FILE *stream)
       case opSetMarker :
         memcpy(&n,data,2);
         data += 2;
+        if (swap_bytes) {
+          swap_short(&n);
+        }
         m = n;
         break;
 
       case opSetMarkerSize :
         memcpy(&n,data,2);
         data += 2;
+        if (swap_bytes) {
+          swap_short(&n);
+        }
         ms = n;
         break;
 
@@ -850,14 +910,26 @@ int ConvertFile (FILE *stream)
       case opShadedPolygon :
         memcpy(&n,data,2);
         data += 2;
+        if (swap_bytes) {
+          swap_short(&n);
+        }
         memcpy(&shd,data,2);
         data += 2;
+        if (swap_bytes) {
+          swap_short(&shd);
+        }
         if (n>=SIZE) {free(buffer); return(2);}
         size = n<<1;
         memcpy(xx,data,size);
         data += size;
         memcpy(yy,data,size);
         data += size;
+        if (swap_bytes) {
+          for (j=0; j<n; j++) {
+            swap_short(xx+j);
+            swap_short(yy+j);
+          }
+        }
         IF_ShadedPolygon(n,shd,xx,yy);
         break;
 
@@ -879,7 +951,11 @@ int GetFileScreen (FILE *stream, short *fx, short *fy)
   rewind(stream);
   error = fread(&blockSize,4,1,stream); if (error!=1) return(1);       /* block size */
   error = fread(fx,2,1,stream);             if (error!=1) return(1);       /* x size */
-  error = fread(fy,2,1,stream);        if (error!=1) return(1);       /* y size */
+  error = fread(fy,2,1,stream);         if (error!=1) return(1);       /* y size */
+  if (swap_bytes) {
+    swap_short(fx);
+    swap_short(fy);
+  }
   return(0);
 }
 
@@ -896,6 +972,12 @@ int main (int argc, char **argv)
   {
     printf("usage: m2ps <infile> [-o <outfile>] [-z x y] [-s x y] [-L]\n");
     return(0);
+  }
+
+  /* check if we must swap bytes */
+  {
+    int which_endian=1;
+    swap_bytes = *((char *)&which_endian);
   }
 
   /* scan options */
