@@ -2641,6 +2641,7 @@ static INT LDCSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
   LRESULT linsolresult;
   GRID *theGrid;
 
+  bl = 0;
   /* store passed reduction and abslimit */
   for (i=0; i<VD_NCOMP(x); i++)
   {
