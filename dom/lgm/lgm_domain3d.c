@@ -3008,18 +3008,6 @@ INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE
   local[0] = lam[0] + mi;
   local[1] = lam[1] + mi;
 
-  /*	printf("%f %f %d %f %f %f\n", local[0], local[1], mi, global[0], global[1], global[2]);*/
-
-  /*	if( ((global[0]-new_global[0])*(global[0]-new_global[0])
-   +    (global[1]-new_global[1])*(global[1]-new_global[1])
-   +    (global[2]-new_global[2])*(global[2]-new_global[2])) >0.1 )
-          {
-                  DOUBLE new_global[3];
-                  Surface_Local2Global(theSurface, new_global, local);
-                  printf("%f %f %f\n", global[0], global[1], global[2]);
-                  printf("%f %f %f\n", new_global[0], new_global[1], new_global[2]);
-                  assert(0);
-          }*/
   return(mi);
 }
 
@@ -5594,7 +5582,7 @@ static INT Points_in_Line(LGM_LINE *theLine, DOUBLE *globalp1, DOUBLE *globalp2)
 static DOUBLE Nearest_Surface(LGM_SURFACE **Surfaces, LGM_SURFACE **theNewSurface, INT count, DOUBLE *global)
 {
   DOUBLE min_d, d, nv[3], local[2], globalnew[3];
-  INT i, j;
+  INT i, j, mi;
   LGM_SURFACE *theSurface;
 
   min_d = MAXDOUBLE;
@@ -5602,15 +5590,18 @@ static DOUBLE Nearest_Surface(LGM_SURFACE **Surfaces, LGM_SURFACE **theNewSurfac
   {
     theSurface = Surfaces[i];
     V_DIM_CLEAR(nv);
-    GetLocalKoord(theSurface,global,local, nv);
-    Surface_Local2Global(theSurface, globalnew, local);
-    d = sqrt((global[0]-globalnew[0])*(global[0]-globalnew[0])
-             +    (global[1]-globalnew[1])*(global[1]-globalnew[1])
-             +    (global[2]-globalnew[2])*(global[2]-globalnew[2]));
-    if(min_d>d)
+    mi = GetLocalKoord(theSurface,global,local, nv);
+    if(mi!=-1)
     {
-      *theNewSurface = theSurface;
-      min_d = d;
+      Surface_Local2Global(theSurface, globalnew, local);
+      d = sqrt((global[0]-globalnew[0])*(global[0]-globalnew[0])
+               +    (global[1]-globalnew[1])*(global[1]-globalnew[1])
+               +    (global[2]-globalnew[2])*(global[2]-globalnew[2]));
+      if(min_d>d)
+      {
+        *theNewSurface = theSurface;
+        min_d = d;
+      }
     }
   }
   return(min_d);
@@ -5667,7 +5658,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
   LGM_BNDP *theBndP1, *theBndP2, *theBndP;
   LGM_SURFACE *theSurface,*s, *Surfaces[MAX_SURFACES], *theNewSurface;
   LGM_LINE *theLine, *Lines[MAX_LINES], *l1, *l2;
-  INT i,j, k,count,size, max, ilocal, ilocal1, flag, flag1, nlines, found, iold, jold;
+  INT i,j, k,count,size, max, ilocal, ilocal1, flag, flag1, nlines, found, iold, jold, mi;
   DOUBLE globalp1[3],globalp2[3],global[3],global1[3],g[3],local[2], slocal[2], nv[3], local1, local2, min_d, globalnew[3], d, midp[3], newlocal;
   DOUBLE localp1, localp2, av, bv, cv, dv, ev, fv, gv, hv, aw, bw, cw, dw;
 
@@ -5798,18 +5789,6 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
       for(j=0; j<LGM_SURFACE_NLINE(Surfaces[i]); j++)
         if(LGM_SURFACE_LINE(Surfaces[i], j)==theLine)
         {
-          /*					V_DIM_CLEAR(nv);
-                                                  GetLocalKoord(Surfaces[i],global,local, nv);
-                                                  Surface_Local2Global(Surfaces[i], globalnew, local);
-                                                  if( Check_Local_Coord(Surfaces[i], local) )
-                                                  {
-                                                          LGM_BNDP_SURFACE(theBndP,LGM_BNDP_N(theBndP)) = Surfaces[i];
-                                                          LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[0] = local[0];
-                                                          LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[1] = local[1];
-                                                          LGM_BNDP_N(theBndP)++;
-                                                          if( (local[0]<0.0) || (local[1]<0.0) )
-                                                                  assert(0);
-                                                  }*/
           Line_Global2Local(theLine, global, local);
           LGM_BNDP_SURFACE(theBndP,LGM_BNDP_N(theBndP)) = Surfaces[i];
                                         #ifdef NO_PROJECT
@@ -5846,27 +5825,31 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 
     Nearest_Surface(Surfaces, &theNewSurface, count, global);
     V_DIM_CLEAR(nv);
-    GetLocalKoord(theNewSurface,global,local, nv);
-    Surface_Local2Global(theNewSurface, globalnew, local);
-    if( Check_Local_Coord(theNewSurface, local) )
+    mi = GetLocalKoord(theNewSurface,global,local, nv);
+    if(mi!=-1)
     {
-      LGM_BNDP_SURFACE(theBndP,LGM_BNDP_N(theBndP)) = theNewSurface;
-                        #ifdef NO_PROJECT
-      LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[0] = midp[0];
-      LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[1] = midp[1];
-      LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[2] = midp[2];
-                        #else
-      LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[0] = local[0];
-      LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[1] = local[1];
-                        #endif
-      LGM_BNDP_N(theBndP)++;
+      Surface_Local2Global(theNewSurface, globalnew, local);
+      if( Check_Local_Coord(theNewSurface, local) )
+      {
+        LGM_BNDP_SURFACE(theBndP,LGM_BNDP_N(theBndP)) = theNewSurface;
+                                #ifdef NO_PROJECT
+        LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[0] = midp[0];
+        LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[1] = midp[1];
+        LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[2] = midp[2];
+                                #else
+        LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[0] = local[0];
+        LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[1] = local[1];
+                                #endif
+        LGM_BNDP_N(theBndP)++;
 
-      if( (local[0]<0.0) || (local[1]<0.0) )
+        if( (local[0]<0.0) || (local[1]<0.0) )
+          assert(0);
+      }
+      else
         assert(0);
     }
     else
       assert(0);
-
   }
 
   /* check */
@@ -6007,13 +5990,34 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 {
   LGM_BNDS *theBndS;
+  LGM_BNDP *theBndP1, *theBndP2, *theBndP3;
   LGM_SURFACE *theSurface;
+  INT mi;
+  DOUBLE nv[3];
 
   /* global coordinates */
   theBndS = BNDS2LGM(aBndS);
   theSurface = LGM_BNDS_SURFACE(theBndS);
 
-  Surface_Local2Global (theSurface,global,local);
+  global[0] =     (1.0 - local[0] - local[1] ) * LGM_BNDS_GLOBAL(theBndS,0,0)
+              +   (      local[0]            ) * LGM_BNDS_GLOBAL(theBndS,1,0)
+              +   (                 local[1] ) * LGM_BNDS_GLOBAL(theBndS,2,0);
+  global[1] =     (1.0 - local[0] - local[1] ) * LGM_BNDS_GLOBAL(theBndS,0,1)
+              +   (      local[0]            ) * LGM_BNDS_GLOBAL(theBndS,1,1)
+              +   (                 local[1] ) * LGM_BNDS_GLOBAL(theBndS,2,1);
+  global[2] =     (1.0 - local[0] - local[1] ) * LGM_BNDS_GLOBAL(theBndS,0,2)
+              +   (      local[0]            ) * LGM_BNDS_GLOBAL(theBndS,1,2)
+              +   (                 local[1] ) * LGM_BNDS_GLOBAL(theBndS,2,2);
+        #ifdef NO_PROJECT
+  /* nothing to do */
+        #else
+  V_DIM_CLEAR(nv);
+  mi = GetLocalKoord(theSurface,global,local, nv);
+  if(mi!=-1)
+    Surface_Local2Global(theSurface,global,local);
+  else
+    assert(0);
+        #endif
 
   return(0);
 }
@@ -6059,11 +6063,16 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   global[1] = (1-local[0]-local[1]) * global0[1] + local[0] * global1[1] + local[1] * global2[1];
   global[2] = (1-local[0]-local[1]) * global0[2] + local[0] * global1[2] + local[1] * global2[2];
 
+
+        #ifdef NO_PROJECT
+  new_global[0] = global[0];
+  new_global[1] = global[1];
+  new_global[2] = global[2];
+        #else
   V_DIM_CLEAR(nv);
   GetLocalKoord(theSurface,global,loc, nv);
-
-  if (BNDS_Global(aBndS,loc,new_global))
-    return (1);
+  Surface_Local2Global(theSurface, new_global, loc);
+        #endif
 
   if (in!=NULL)
   {
