@@ -444,7 +444,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
     /* solve linear system */
     CSTART();
-    for (i=0; i<n_unk; i++) linred[i] = red_factor[i];
+    for (i=0; i<n_unk; i++) linred[i] = red_factor[i];bl = 0;
     if (newton->solve->PreProcess!=NULL)
       if ((*newton->solve->PreProcess)(newton->solve,level,newton->v,newton->d,newton->J,&bl,&error)) {
         UserWriteF("NewtonSolver: solve->PreProcess failed, error code %d\n",error);
