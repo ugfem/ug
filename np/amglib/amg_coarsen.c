@@ -647,7 +647,7 @@ static int Admissible (AMG_GRAPH *g, int f, int clusternumber)
   return(1);
 }
 
-static int ClearStack ()
+static int ClearStack (void)
 {
   stacksize=0;
   stackhead=0;
