@@ -329,10 +329,26 @@ INT WriteLogFile (const char *text)
 
 void UserWrite (const char *s)
 {
-  if (logFile!=NULL) fputs(s,logFile);
+        #ifdef ModelP
+  if (me==master)
+  {
+        #endif
 
-  if (mutelevel>-1000)
-    WriteString(s);
+  WriteString(s);
+  if (logFile!=NULL) {
+    fputs(s,logFile);
+                #ifdef Debug
+    fflush(logFile);
+                #endif
+  }
+
+        #ifdef ModelP
+}
+else
+{
+  PRINTDEBUG(ui,1,("%d: %.77s\n", me,s))
+}
+        #endif
 }
 
 /****************************************************************************/

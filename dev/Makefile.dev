@@ -33,13 +33,13 @@ SIF:
 META:
 	cd meta; make -f Makefile.meta; cd ..;
 
-xif: $(OBJECTS) Makefile.dev
+xif:
 	rm -f ../lib/libdev.a
 	ar $(ARFLAGS) ../lib/libdev.a $(OBJECTS)
 	cd meta; make -f Makefile.meta; cd ..;
 	cd xif; make -f Makefile.xif; cd ..;
 
-sif: $(OBJECTS) Makefile.dev
+sif:
 	rm -f ../lib/libdev.a
 	ar $(ARFLAGS) ../lib/libdev.a $(OBJECTS)
 	cd meta; make -f Makefile.meta; cd ..;
