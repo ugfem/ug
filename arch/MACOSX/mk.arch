@@ -9,12 +9,9 @@ ARCH_TYPE     = __MACOSX__
 
 ARCH_MAKE     = gnumake
 ARCH_PMAKE     = gnumake -j 4
-ARCH_CC       = xlc
 ARCH_CC       = cc
-#ARCH_CC       = mwccppc
 ARCH_C++      = c++
-ARCH_LINK     = xlc
-ARCH_LINK     = cc
+ARCH_LINK     = c
 ARCH_AR       = ugarranlib ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = ugmacosxpostlink $(PROGNAME) $(APPL)
@@ -27,7 +24,7 @@ ARCH_FLIBS    =
 #ARCH_CFLAGS   = -Wchar-subscripts -Wformat -Wimplicit -Wparentheses -Wno-four-char-constants -Wreturn-type -Wswitch -Wtrigraphs -O -Wuninitialized
 ARCH_CFLAGS   = -gccincludes -ext o -I/usr/include -I/System/Library/Frameworks/System.framework/Versions/B/Headers
 ARCH_CFLAGS   = 
-ARCH_C++FLAGS = -Wenum-clash -Wreorder -Wtemplate-debugging
+ARCH_C++FLAGS = 
 ARCH_NOOPTIM  = -g
 ARCH_OPTIM    = -qarch=g5 -O5
 ARCH_OPTIM    = -O3
