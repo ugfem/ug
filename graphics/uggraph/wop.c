@@ -807,6 +807,7 @@ static DOUBLE				EVector_rastersize;
 static INT *                EVector2D_PicGLL;
 static INT *                EVector2D_PicGUR;
 static INT					EVector_cutvector;
+static INT					EVector_BlackArrows;
 static DOUBLE				EVector_V2L_factor;
 static DOUBLE				EVector_CutLenFactor;
 static DOUBLE				EVector_max;
@@ -18690,6 +18691,29 @@ static INT EXT_VecMatEval3D (DRAWINGOBJ *theDO, INT *end)
 .n    1 if error occured.
 */										
 /****************************************************************************/
+/* OS_CHANGED */
+static void UnmarkUndispElements3D(MULTIGRID *theMG, INT from, INT to, INT sd)
+{
+	ELEMENT *theElement;
+	INT i;
+	
+	if (sd == 0) return;
+	if (sd > 0)
+	{
+		for (i=from; i<=to; i++)
+			for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
+				if (SUBDOMAIN(theElement) == sd)
+					SETUSED(theElement,0);
+	}
+	else
+	{
+		for (i=from; i<=to; i++)
+			for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
+				if (SUBDOMAIN(theElement) != -sd)
+					SETUSED(theElement,0);
+	}
+	return;
+}
 
 static void ResetNodeUsed (MULTIGRID *theMG)
 {
@@ -18808,7 +18832,10 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 	EE3D_PlotSelection = theGpo->PlotSelection;
 	EE3D_EdgeColor = theGpo->EdgeColor;
 	if (MarkElements3D(theMG,0,CURRENTLEVEL(theMG))) return (1);
-	
+
+	/* umark all elements in the subdomain that is to undsiplay  OS_CHANGED */
+	UnmarkUndispElements3D(theMG,0,CURRENTLEVEL(theMG),theGpo->UndispSubDom);
+		
 	EE3D_Property = 0;
 	if (theGpo->ElemColored>=2)
 	{
@@ -19398,6 +19425,7 @@ static INT EW_PreProcess_EVector3D (PICTURE *thePicture, WORK *theWork)
 	V3_EUKLIDNORM(thePicture->theViewedObj.PlaneXDir,WCRange); WCRange*=2.0;
 	EVector_rastersize		= WCRange/PixRange*theEvpo->RasterSize;
 	EVector_cutvector		= theEvpo->CutVector;
+	EVector_BlackArrows		= theEvpo->BlackArrows;
 	EVector_CutLenFactor    = theEvpo->CutLenFactor;
 	EVector3D_projectvector = theEvpo->ProjectVector;
 	EVector_EvalFct 		= theEvpo->EvalFct->EvalProc;
@@ -20268,6 +20296,9 @@ static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 			Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
 			Color = MAX(Color,WOP_OutputDevice->spectrumStart);
 		}
+		if (EVector_BlackArrows)
+			Color = WOP_OutputDevice->black;
+		
 		V3_ADD(RasterPoint[i],Arrow,Arrow);
 		
 		/* draw arrow */

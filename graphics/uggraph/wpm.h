@@ -410,6 +410,7 @@ struct ElemVectorPlotObj3D {
   DOUBLE max;                                                           /* range                                                                                */
   DOUBLE RasterSize;                                                    /* size of raster used for arrows                               */
   INT CutVector;                                                        /* YES or NO                                                                    */
+  INT BlackArrows;                                                                      /* YES or NO									*/
   INT ProjectVector;                                                    /* YES or NO                                                                    */
   DOUBLE CutLenFactor;                                          /* vector will be cut if longer then                    */
   /*      'CutLenFactor*RasterSize'                                       */
@@ -447,6 +448,7 @@ struct GridPlotObj3D {
   INT PlotSelection;                                                    /* see above                                                                    */
   INT EdgeColor;                                                        /* color themselves (0) / color like element (1)*/
   DOUBLE AmbientLight;                          /* contribution of ambient light to face intensity */
+  INT UndispSubDom;                                     /* subdomain not displayed OS_CHANGED           */
 };
 
 union PlotObj {

@@ -4787,6 +4787,7 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->PlotSelection           = 0;
     theGpo->AmbientLight        = 1.0;
     theGpo->EdgeColor               = 0;
+    theGpo->UndispSubDom        = 0;
   }
 
   /* set shrink option */
@@ -4908,6 +4909,15 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   if (theGpo->AmbientLight < 0.0 || theGpo->AmbientLight > 1.0)
     theGpo->AmbientLight = 1.0;
 
+  /* undisplay subdomain option OS_CHANGED */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='u')
+    {
+      if (sscanf(argv[i],"u %d",&iValue)!=1) break;
+      theGpo->UndispSubDom = iValue;
+      break;
+    }
+
   return (ACTIVE);
 }
 
@@ -4968,6 +4978,10 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
   UserWriteF(DISPLAY_PO_FORMAT_SI,"node indices",(int)theGpo->NodeIndex);
   UserWriteF(DISPLAY_PO_FORMAT_SI,"vector markers",(int)theGpo->Vectors);
   UserWriteF(DISPLAY_PO_FORMAT_SI,"vector indices",(int)theGpo->VecIndex);
+  if (theGpo->UndispSubDom < 0)
+    UserWriteF(DISPLAY_PO_FORMAT_SI,"only subdom",(int)-theGpo->UndispSubDom);
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SI,"skip subdom",(int)theGpo->UndispSubDom);
   UserWriteF(DISPLAY_PO_FORMAT_SI,"plotselection",(int)theGpo->PlotSelection);
   for (i=0; i<MAXVOBJECTS; i++)
   {
@@ -5263,6 +5277,7 @@ static INT DisplayScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj)
    .    $r~<raster>			- raster size
    .    $l~<cut~len>			- cut off len relative to raster size (default 1 to avoid overlap)
    .    $c~0|1					- cut off vectors off/on
+   .    $b~0|1					- use black colored vector arrows off/on
    .    $p~0|1					- project vector off/on (?)
    .    $a~0..1                - contribution of ambient light to face intensity (back grid)
 
@@ -5292,6 +5307,7 @@ static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
   {
     theEvpo->max                    = 1.0;
     theEvpo->CutVector              = YES;
+    theEvpo->BlackArrows    = NO;
     theEvpo->ProjectVector  = YES;
     theEvpo->RasterSize     = PO_RADIUS(thePlotObj)/10.0;
     theEvpo->EvalFct                = NULL;
@@ -5355,6 +5371,19 @@ static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
         theEvpo->CutVector = YES;
       else if (iValue==0)
         theEvpo->CutVector = NO;
+      break;
+    }
+
+  /* set black+white option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='b')
+    {
+      if (sscanf(argv[i],"b %d",&iValue)!=1)
+        break;
+      if (iValue==1)
+        theEvpo->BlackArrows = YES;
+      else if (iValue==0)
+        theEvpo->BlackArrows = NO;
       break;
     }
 
