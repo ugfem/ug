@@ -1964,7 +1964,7 @@ INT Identify_SonObjects (GRID *theGrid)
         #endif
   }
 
-  if (1)
+  if (0)
   {
     printf(PFMT " 2. DDD_IdentifyEnd() in Identify_SonObjects()\n",me);
     fflush(stdout);
