@@ -724,17 +724,20 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     level = tl;
     while (level > np->levelLimit) {
       breakflag = 0;
-      theGrid=GRID_ON_LEVEL(theMG,level);
-      nVect=NVEC(theGrid);
+      theGrid = GRID_ON_LEVEL(theMG,level);
+      nVect = 0;
+      for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
+        nVect++;
       nMat=2*theGrid->nCon;
 
-      if (np->vectLimit!=0)
+      if (np->vectLimit!=0) {
+        nVect = UG_GlobalSumDOUBLE(nVect);
         if (nVect<=np->vectLimit) {
           breakflag = 1;
           PRINTDEBUG(np,1,("%3d: vectLimit reached",me));
           PRINTDEBUG(np,1,(" on level %d\n",level));
         }
-
+      }
       if (np->matLimit!=0)
         if (nMat<=np->matLimit) {
           breakflag = 1;
