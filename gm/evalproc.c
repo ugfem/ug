@@ -305,7 +305,7 @@ EVECTOR *GetElementVectorEvalProc (const char *name)
 }
 
 /****************************************************************************/
-/*D
+/*
    GetFirstElementVectorEvalProc - Get the first element evec proc
 
    SYNOPSIS:
@@ -320,7 +320,7 @@ EVECTOR *GetElementVectorEvalProc (const char *name)
    EVECTOR *
    .n      pointer to EVECTOR
    .n      NULL if there is no
-   D*/
+ */
 /****************************************************************************/
 
 EVECTOR *GetFirstElementVectorEvalProc (void)
