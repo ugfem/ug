@@ -4010,8 +4010,8 @@ INT l_bdpreprocess1 (GRID *g, MATDATA_DESC *A, MATDATA_DESC *L)
   return (0);
 }
 
-INT l_bdpreprocess (GRID *g, VECDATA_DESC *x,
-                    MATDATA_DESC *A, MATDATA_DESC *L)
+INT l_bdpreprocess2 (GRID *g, VECDATA_DESC *x,
+                     MATDATA_DESC *A, MATDATA_DESC *L)
 {
   ELEMENT *e;
   VECTOR *v;
@@ -4030,6 +4030,12 @@ INT l_bdpreprocess (GRID *g, VECDATA_DESC *x,
     /*
        for (i=0; i<m; i++)
         for (j=0; j<m; j++)
+              if (i!= j)
+                mat[i*m+j] = 0.0;
+     */
+    /*
+       for (i=0; i<m; i++)
+        for (j=0; j<m; j++)
                 rmat[i*m+j] = 0.0;
 
        for (j=0; j<m; j++)
@@ -4045,6 +4051,119 @@ INT l_bdpreprocess (GRID *g, VECDATA_DESC *x,
       imat[i] -= rmat[i];
 
     AddVlistMValues(g,cnt,v,L,imat);
+  }
+  for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+  {
+    INT type = VTYPE(v);
+    INT ncomp = VD_NCMPS_IN_TYPE (x,type);
+    INT i,j;
+
+    if (ncomp == 0) continue;
+    for (j=0; j<ncomp; j++)
+      if (VECSKIP(v) & (1<<j))
+      {
+        MATRIX *m = VSTART(v);
+
+        for (i=j*ncomp; i<(j+1)*ncomp; i++)
+          MVALUE(m,MD_MCMP_OF_RT_CT(L,type,type,i)) = 0.0;
+        for (m=MNEXT(m); m!=NULL; m=MNEXT(m))
+        {
+          INT dtype = MDESTTYPE(m);
+          INT dcomp = VD_NCMPS_IN_TYPE (x,dtype);
+
+          if (dcomp == 0) continue;
+          for (i=j*dcomp; i<(j+1)*dcomp; i++)
+            MVALUE(m,MD_MCMP_OF_RT_CT(L,type,dtype,i)) = 0.0;
+        }
+      }
+  }
+
+  return (0);
+}
+
+INT l_bdpreprocess (GRID *g, VECDATA_DESC *x,
+                    MATDATA_DESC *A, MATDATA_DESC *L)
+{
+  ELEMENT *e;
+  VECTOR *v;
+
+  dmatset(MYMG(g),LEVEL(g),LEVEL(g),ALL_VECTORS,L,0.0);
+
+  for (e=FIRSTELEMENT(g); e!=NULL; e=SUCCE(e)) {
+    VECTOR *v[MAX_NODAL_VECTORS];
+    INT cnt = GetAllVectorsOfElementOfType(e,v,x);
+    DOUBLE mat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
+    DOUBLE imat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
+    DOUBLE rmat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
+    INT m = GetVlistMValues(cnt,v,A,mat);
+    INT i,j,k,ci,cj;
+
+    for (i=0; i<m*m; i++)
+      rmat[i] = 0.0;
+    for (j=0; j<m; j++)
+      rmat[j*m+j] = 1.0;
+
+    GetVlistMValues(cnt,v,L,imat);
+
+    ci = 0;
+    for (i=0; i<m; i++)
+    {
+      INT vitype = VTYPE(v[i]);
+      INT vincomp = VD_NCMPS_IN_TYPE (x,vitype);
+
+      cj = 0;
+      for (j=0; j<m; j++)
+      {
+        MATRIX *m1,*m2;
+        DOUBLE s[MAX_SINGLE_MAT_COMP];
+        INT vjtype = VTYPE(v[j]);
+        INT vjncomp = VD_NCMPS_IN_TYPE (x,vjtype);
+        INT i1,i2,i3;
+
+        for (i1=0; i1<vincomp; i1++)
+          for (i2=0; i2<vjncomp; i2++)
+            s[i1*vjncomp+i2] = 0;
+        for (m1=VSTART(v[i]); m1!=NULL; m1=MNEXT(m1))
+          for (m2=VSTART(v[j]); m2!=NULL; m2=MNEXT(m2)) {
+            INT vktype;
+            INT vkncomp = VD_NCMPS_IN_TYPE (x,vktype);
+
+            if (MDEST(m1) != MDEST(m2)) continue;
+            vktype = VTYPE(MDEST(m1));
+            for (i1=0; i1<vincomp; i1++)
+              for (i2=0; i2<vjncomp; i2++)
+              {
+                DOUBLE t = 0.0;
+
+                for (i3=0; i3<vkncomp; i3++)
+                  t +=
+                    MVALUE(m1,MD_MCMP_OF_RT_CT(L,vitype,vktype,i1*vkncomp+i3)) *
+                    MVALUE(MADJ(m2),MD_MCMP_OF_RT_CT(A,vktype,vjtype,i3*vjncomp+i2));
+                s[i1*vjncomp+i2] += t;
+              }
+          }
+
+
+        for (i1=0; i1<vincomp; i1++)
+          for (i2=0; i2<vjncomp; i2++)
+            rmat[(ci+i1)*m+cj+i2] -= s[i1*vjncomp+i2];
+        cj += vjncomp;
+      }
+      ci += vincomp;
+    }
+
+    if (InvertFullMatrix_piv(m,mat,imat))
+      return(1);
+    for (i=0; i<m; i++)
+      for (j=0; j<m; j++)
+      {
+        DOUBLE s = 0.0;
+
+        for (k=0; k<m; k++)
+          s += rmat[i*m+k] * imat[k*m+j];
+        mat[i*m+j] = s;
+      }
+    AddVlistMValues(g,cnt,v,L,mat);
   }
   for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
   {
@@ -4116,10 +4235,12 @@ static INT BDStep (NP_SMOOTHER *theNP, INT level,
   }
     #endif
 
+  /* PrintVector(theGrid,b,3,3); */
+
   if (dmatmul(NP_MG(theNP),level,level,ON_SURFACE,x,L,b) != NUM_OK)
     NP_RETURN(1,result[0]);
-  if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,x,theNP->damp) != NUM_OK)
-    NP_RETURN(1,result[0]);
+
+  /* PrintVector(theGrid,x,3,3); */
 
   return (0);
 }
