@@ -593,7 +593,11 @@ static short MN_Resolution;     /* resolution           					*/
 
 /*---------- working variables of 'EW_BndEval2d' ---------------------------*/
 static short BND_PlotBoundary;	/* plot boundary if TRUE					*/
+static short BND_PlotNewFree;	/* plot new free boundary if TRUE			*/
+static VECDATA_DESC *BND_NewFree;/* vd describing globals of new free bdry	*/
 static long BND_BndColor;		/* use this color for the outer boundary	*/
+static long BND_FreeBndColor;	/* use this color for the free boundary		*/
+static long BND_NewFreeColor;	/* use this color for the new free boundary	*/
 static long BND_InnerBndColor;	/* use this color for interior boundaries	*/
 static short BND_BndLineWidth;	/* use this line width						*/
 static short BND_Resolution;     /* resolution           					*/
@@ -6161,8 +6165,12 @@ static INT EW_PreProcess_Bnd2D (PICTURE *thePicture, WORK *theWork)
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theMG  = PO_MG(PIC_PO(thePicture));
 	
-	BND_PlotBoundary				= theGpo->PlotBoundary;
-	BND_BndColor					= theOD->blue;
+	BND_PlotBoundary			= theGpo->PlotBoundary;
+	BND_PlotNewFree				= (theGpo->FreeBnd!=NULL);
+	BND_NewFree					= theGpo->FreeBnd;
+	BND_BndColor				= theOD->blue;
+	BND_FreeBndColor			= theOD->green;
+	BND_NewFreeColor			= theOD->red;
 	BND_InnerBndColor			= theOD->cyan;
 	BND_Resolution       		= 10;
 	
@@ -6186,7 +6194,9 @@ static INT EW_PreProcess_VecMatBnd2D (PICTURE *thePicture, WORK *theWork)
 	theMG  = PO_MG(PIC_PO(thePicture));
 	
 	BND_PlotBoundary			= theVmo->Boundary;
+	BND_PlotNewFree				= FALSE;
 	BND_BndColor				= theOD->blue;
+	BND_FreeBndColor			= theOD->green;
 	BND_InnerBndColor			= theOD->cyan;
 	
 	BND_MG						= theMG;
@@ -6198,31 +6208,65 @@ static INT EW_PreProcess_VecMatBnd2D (PICTURE *thePicture, WORK *theWork)
 
 static INT EW_BndEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
+	VERTEX *v0,*v1;
 	DOUBLE alpha,beta,delta,lambda;
 	INT res;
 	DOUBLE_VECTOR x0,x1;
 	long Color;
 	BNDS *theSide;
-	INT i,j,left,right,part;
+	INT i,j,n,left,right,part;
 
 	if (!BND_PlotBoundary || OBJT(theElement)==IEOBJ)
 	{
 		DO_2c(theDO) = DO_NO_INST;
 		#ifdef ModelP
-	        WOP_DObjPnt = theDO;
-	        #endif
+	    WOP_DObjPnt = theDO;
+	    #endif
 		return (0);
 	}
 	
 	/* plot boundary segments and their ids (if) */
-	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+	n = SIDES_OF_ELEM(theElement);
+	for (i=0; i<n; i++)
 	  {
 		theSide = ELEM_BNDS(theElement,i);
 		if (theSide == NULL)
 		  continue;
 		BNDS_BndSDesc(theSide,&left,&right,&part);
 		if ((left==0)||(right==0))
-			Color = BND_BndColor;
+		{
+			v0 = MYVERTEX(CORNER(theElement,i));
+			v1 = MYVERTEX(CORNER(theElement,(i+1)%n));
+			if ((MOVE(v0)==DIM) || ((MOVE(v1)==DIM)))
+			{
+				/* plot a straight line */
+				DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+				DO_2l(theDO) = BND_FreeBndColor; DO_inc(theDO);
+				V2_COPY(CVECT(v0),DO_2Cp(theDO)); DO_inc_n(theDO,2);
+				V2_COPY(CVECT(v1),DO_2Cp(theDO)); DO_inc_n(theDO,2);	
+				
+				if (BND_PlotNewFree)
+				{
+					VECTOR *vc0= NVECTOR(CORNER(theElement,i)),
+						   *vc1= NVECTOR(CORNER(theElement,(i+1)%n));
+					INT vt0= VTYPE(vc0),
+						vt1= VTYPE(vc1);
+					
+					if (VD_ISDEF_IN_TYPE(BND_NewFree,vt0) && VD_ISDEF_IN_TYPE(BND_NewFree,vt1))
+					{
+						/* plot a straight line */
+						DO_2c(theDO) = DO_LINE; DO_inc(theDO)
+						DO_2l(theDO) = BND_NewFreeColor; DO_inc(theDO);
+						V2_COPY(VVALUEPTR(vc0,VD_CMP_OF_TYPE(BND_NewFree,vt0,0)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
+						V2_COPY(VVALUEPTR(vc1,VD_CMP_OF_TYPE(BND_NewFree,vt1,0)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
+					}
+				}
+				
+				continue;
+			}
+			else
+				Color = BND_BndColor;
+		}
 		else
 			Color = BND_InnerBndColor;
 		alpha  = 0.0;
@@ -6235,7 +6279,7 @@ static INT EW_BndEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		if (BNDS_Global(theSide,&lambda,x0)) 
 		  return (1);
 		for (j=1; j<=res; j++)
-		  {
+		{
 			lambda += delta;
 			if (j==res) 
 			  lambda = beta;
@@ -6246,7 +6290,7 @@ static INT EW_BndEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 			V2_COPY(x0,DO_2Cp(theDO)); DO_inc_n(theDO,2);
 			V2_COPY(x1,DO_2Cp(theDO)); DO_inc_n(theDO,2);	
 			V2_COPY(x1,x0);
-		  }
+		}
 	  }
 
 	DO_2c(theDO) = DO_NO_INST;
@@ -15443,12 +15487,13 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 {
 	HEAP *heap;
 	GRID *grid;
+	INT err;
+	#ifdef ModelP
 	ELEMENT *p;
-	INT err, n, k;
-	#ifndef ModelP
-	ELEMENT **table;
-	#else
+	INT n;
 	INT *table;
+	#else
+	ELEMENT **table;
 	#endif
 
 	heap = mg->theHeap;

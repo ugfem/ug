@@ -292,6 +292,7 @@ struct GridPlotObj2D {
   INT PlotSubdomain;                                                    /* YES or NO									*/
   INT WhichElem;                                                        /* see above									*/
   INT ElemColored;                                                      /* YES or NO									*/
+  VECDATA_DESC *FreeBnd;                                        /* global coords of new free boundary			*/
 };
 
 struct VecMatPlotObj2D {

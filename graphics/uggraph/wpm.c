@@ -2679,6 +2679,7 @@ static INT DisplayMatrixPlotObject (PLOTOBJ *thePlotObj)
    .    $m~0|1					- plot node markers off/on
    .    $s~<shrink>			- factor to shrink elements
    .    $p~<shrink>			- parallel only: factor to shrink processor partition
+   .    $free~<vd>				- vec data desc describing new global coordinates of free boundary
 
    KEYWORDS:
    graphics, plot, window, picture, plotobject, multigrid, elements
@@ -2688,6 +2689,7 @@ static INT DisplayMatrixPlotObject (PLOTOBJ *thePlotObj)
 static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
   BVP_DESC *theBVPDesc;
+  VECDATA_DESC *vd;
   struct GridPlotObj2D *theGpo;
   char buffer[VALUELEN];
 
@@ -2711,6 +2713,7 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->PlotNodes                       = NO;
     theGpo->PlotRefMarks            = NO;
     theGpo->PlotIndMarks            = NO;
+    theGpo->FreeBnd                 = NULL;
   }
 
   /* scan options */
@@ -2733,6 +2736,8 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   ReadArgvINT   ("n",&theGpo->PlotNodeID,         argc,argv);
   ReadArgvINT   ("m",&theGpo->PlotNodes,          argc,argv);
 
+  vd = ReadArgvVecDesc(PO_MG(thePlotObj),"free",argc,argv);
+  if (vd!=NULL) theGpo->FreeBnd = vd;
         #ifdef ModelP
   ReadArgvDOUBLE("p",&theGpo->PartShrinkFactor,argc,argv);
   if (theGpo->PartShrinkFactor<=0.0 || theGpo->PartShrinkFactor>1.0)
@@ -2751,6 +2756,15 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
       UserWrite("use i option only without c and r option\n");
       return (NOT_ACTIVE);
     }
+  }
+
+  if (theGpo->FreeBnd!=NULL)
+  {
+    if (VD_ncmps_in_otype_mod(theGpo->FreeBnd,NODEVEC,NON_STRICT)!=DIM)
+      return (NOT_ACTIVE);
+
+    if (!VD_SUCC_COMP(theGpo->FreeBnd))
+      return (NOT_ACTIVE);
   }
 
   return (ACTIVE);
@@ -2816,6 +2830,11 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
   }
 
   UserWriteF(DISPLAY_PO_FORMAT_SI,"COLORED",(int)theGpo->ElemColored);
+
+  if (theGpo->FreeBnd!=NULL)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"free bnd",ENVITEM_NAME(theGpo->FreeBnd));
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"free bnd","NO");
 
   return (0);
 }
