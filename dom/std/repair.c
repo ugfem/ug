@@ -166,8 +166,41 @@ static REFERENCE_ELEMENT Hexahedron = {
    {2,3,7,6},{3,0,4,7},{4,5,6,7}}
 };
 
+INT CheckPrisms (INT *corner, INT n0, INT n1 , INT n2, INT n3)
+{
+  INT i,j,k,m,s[4];
 
-static INT CheckOnSide(INT *corner, INT n, INT **ids, INT *flag)
+  s[0] = n0;
+  s[1] = n1;
+  s[2] = n2;
+  s[3] = n3;
+
+  for (j=0; j<6; j++)
+  {
+    INT side[4];
+
+    for (k=0; k<4; k++)
+      side[k] = corner[Hexahedron.corner_of_side[j][k]];
+
+    for (i=0; i<4; i++)
+      if (side[i] == s[0]) {
+
+        /*
+                printf("s %d %d %d %d\n",s[0],s[1],s[2],s[3]);
+                printf("t %d %d %d %d\n",side[0],side[1],side[2],side[3]);
+         */
+
+        for (k=1; k<4; k++)
+          if (side[(4+i-k)%4] != s[k])
+            break;
+        if (k == 4) return(1);
+      }
+  }
+  return(0);
+}
+
+
+INT CheckOnSide (INT *corner, INT n, INT **ids, INT *flag)
 {
   INT rv = 0;
   INT i,j,k,m;

@@ -133,10 +133,11 @@ static INT PatchGlobal (PATCH *p, DOUBLE *lambda, DOUBLE *global);
 
 /* Marc specials */
 
-
 /*
    #define LARGE_MARC
  */
+
+#define PRISM_MOD
 
 static INT ExpandLine (char *theLine)
 {
@@ -194,7 +195,7 @@ static INT ExpandLine (char *theLine)
 #define MAX_LEN         200
 
 static char theLine[MAX_LEN+1];
-static INT nCorners,nBndP,nElem,nPPatch,nLPatch,nTPatch;
+static INT nCorners,nBndP,nElem,nPPatch,nLPatch,nTPatch,nPri,nFound;
 
 static INT file_readline (FILE *f, char *key)
 {
@@ -214,6 +215,7 @@ static INT file_elements (FILE *f)
   int id,n,i,c[8];
 
   nElem = 0;
+  nPri = 0;
   do {
     fgets(theLine, MAX_LEN, f);
     /*printf("%s",theLine); */
@@ -296,6 +298,12 @@ static INT file_elements (FILE *f)
 
     if (sscanf(theLine,"%d %d %d %d %d %d %d %d %d %d",
                &id,&n,c,c+1,c+2,c+3,c+4,c+5,c+6,c+7) != 3+n) return(0);
+
+
+    if (c[0] == c[1])
+      if (c[4] == c[5])
+        nPri++;
+
     nElem++;
 
     /* printf("file_elem %d %d %d %d %d\n",id,n,c[0],c[1],c[2]);  */
@@ -416,11 +424,32 @@ static INT file_positions (FILE *f)
   return(1);
 }
 
+static INT Marc_GetPosition (MESH *Mesh,  INT i, DOUBLE *x)
+{
+  INT k;
+
+  if (i < nBndP)
+  {
+    M_BNDP *p = (M_BNDP *)Mesh->theBndPs[i];
+
+    for (k=0; k<DIM; k++)
+      x[k] = p->pos[k];
+  }
+  else
+    for (k=0; k<DIM; k++)
+      x[k] = Mesh->Position[i-nBndP][k];
+  /*printf("i %6d nBndP %d x %6.3f %6.3f %6.3f\n",i,nBndP,x[0],x[1],x[2]);*/
+
+  return(0);
+}
+
 static INT file_elements_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
 {
   int id,n,i,c[8],c0,c1,c2,c3,c4,c5,c6,c7;
 
   nElem = 0;
+  nPri = 0;
+  nFound = 0;
   do {
     fgets(theLine, MAX_LEN, f);
     if (strlen(theLine) < 3) continue;
@@ -521,6 +550,114 @@ static INT file_elements_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
         Mesh->Element_corner_ids[1][nElem][3] = c[4] - 1;
         Mesh->Element_corner_ids[1][nElem][4] = c[6] - 1;
         Mesh->Element_corner_ids[1][nElem][5] = c[7] - 1;
+
+        nPri++;
+
+            #ifdef PRISM_MOD
+
+        if ((nPri%2) == 0)
+        {
+          INT l,d[6];
+          DOUBLE_VECTOR pos;
+
+          for (l=0; l<6; l++)
+            d[l] = Mesh->Element_corner_ids[1][nElem-1][l];
+          c[0] = c[0] - 1;
+          c[1] = c[2] - 1;
+          c[2] = c[3] - 1;
+          c[3] = c[4] - 1;
+          c[4] = c[6] - 1;
+          c[5] = c[7] - 1;
+
+          Marc_GetPosition(Mesh,d[0],pos);
+          for (l=0; l<DIM; l++)
+            Mesh->Position[nCorners-nBndP][l] = 0.25*pos[l];
+          Marc_GetPosition(Mesh,d[1],pos);
+          for (l=0; l<DIM; l++)
+            Mesh->Position[nCorners-nBndP][l] += 0.25*pos[l];
+          Marc_GetPosition(Mesh,d[3],pos);
+          for (l=0; l<DIM; l++)
+            Mesh->Position[nCorners-nBndP][l] += 0.25*pos[l];
+          Marc_GetPosition(Mesh,d[4],pos);
+          for (l=0; l<DIM; l++)
+            Mesh->Position[nCorners-nBndP][l] += 0.25*pos[l];
+
+
+          IFDEBUG(dom,2)
+          assert(Mesh->Element_corners[1][nElem-1] == 6);
+
+          for (l=0; l<nElem; l++)
+            if (Mesh->Element_corners[1][l] == 8)
+              if (CheckPrisms(Mesh->Element_corner_ids[1][l],
+                              Mesh->Element_corner_ids[1][nElem-1][2],
+                              Mesh->Element_corner_ids[1][nElem-1][1],
+                              Mesh->Element_corner_ids[1][nElem][1],
+                              Mesh->Element_corner_ids[1][nElem-1][0]))
+                nFound++;
+          assert(Mesh->Element_corner_ids[1][nElem-1][0]
+                 ==Mesh->Element_corner_ids[1][nElem][0]);
+          assert(Mesh->Element_corner_ids[1][nElem-1][3]
+                 ==Mesh->Element_corner_ids[1][nElem][3]);
+          assert(Mesh->Element_corner_ids[1][nElem-1][1]
+                 ==Mesh->Element_corner_ids[1][nElem][2]);
+          assert(Mesh->Element_corner_ids[1][nElem-1][4]
+                 ==Mesh->Element_corner_ids[1][nElem][5]);
+          ENDDEBUG
+
+            nElem--;
+
+          Mesh->Element_corners[1][nElem] = 5;
+          Mesh->Element_corner_ids[1][nElem][0] = c[0];
+          Mesh->Element_corner_ids[1][nElem][1] = c[1];
+          Mesh->Element_corner_ids[1][nElem][2] = c[2];
+          Mesh->Element_corner_ids[1][nElem][3] = d[2];
+          Mesh->Element_corner_ids[1][nElem][4] = nCorners;
+          nElem++;
+          Mesh->Element_corners[1][nElem] = 5;
+          Mesh->Element_corner_ids[1][nElem][0] = d[0];
+          Mesh->Element_corner_ids[1][nElem][1] = d[2];
+          Mesh->Element_corner_ids[1][nElem][2] = d[5];
+          Mesh->Element_corner_ids[1][nElem][3] = d[3];
+          Mesh->Element_corner_ids[1][nElem][4] = nCorners;
+          nElem++;
+          Mesh->Element_corners[1][nElem] = 5;
+          Mesh->Element_corner_ids[1][nElem][0] = d[5];
+          Mesh->Element_corner_ids[1][nElem][1] = d[2];
+          Mesh->Element_corner_ids[1][nElem][2] = d[1];
+          Mesh->Element_corner_ids[1][nElem][3] = d[4];
+          Mesh->Element_corner_ids[1][nElem][4] = nCorners;
+          nElem++;
+          Mesh->Element_corners[1][nElem] = 5;
+          Mesh->Element_corner_ids[1][nElem][0] = c[0];
+          Mesh->Element_corner_ids[1][nElem][1] = c[3];
+          Mesh->Element_corner_ids[1][nElem][2] = c[4];
+          Mesh->Element_corner_ids[1][nElem][3] = c[1];
+          Mesh->Element_corner_ids[1][nElem][4] = nCorners;
+          nElem++;
+          Mesh->Element_corners[1][nElem] = 5;
+          Mesh->Element_corner_ids[1][nElem][0] = c[1];
+          Mesh->Element_corner_ids[1][nElem][1] = c[4];
+          Mesh->Element_corner_ids[1][nElem][2] = c[5];
+          Mesh->Element_corner_ids[1][nElem][3] = c[2];
+          Mesh->Element_corner_ids[1][nElem][4] = nCorners;
+          nElem++;
+          Mesh->Element_corners[1][nElem] = 4;
+          Mesh->Element_corner_ids[1][nElem][0] = d[3];
+          Mesh->Element_corner_ids[1][nElem][1] = d[5];
+          Mesh->Element_corner_ids[1][nElem][2] = d[4];
+          Mesh->Element_corner_ids[1][nElem][3] = nCorners;
+          nElem++;
+          Mesh->Element_corners[1][nElem] = 4;
+          Mesh->Element_corner_ids[1][nElem][0] = c[3];
+          Mesh->Element_corner_ids[1][nElem][1] = c[5];
+          Mesh->Element_corner_ids[1][nElem][2] = c[4];
+          Mesh->Element_corner_ids[1][nElem][3] = nCorners;
+
+          nCorners++;
+
+
+        }
+              #endif
       }
       else {
         Mesh->Element_corners[1][nElem] = n+1;
@@ -564,6 +701,8 @@ static INT file_corners_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey,
 #endif
 
   if (sscanf(theLine,"%d %d",&N,&n) != 2) return(1);
+
+  nCorners = n;
 
   for (j=0; j<3; j++)
     midpoint[j] = 0.0;
@@ -834,9 +973,14 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
   fclose(stream);
 
   PRINTDEBUG(dom,1,
-             ("A: nCorners %d nBndP %d nElem %d nPPatch %d nTPatch %d\n",
-              nCorners,nBndP,nElem,nPPatch,nTPatch));
+             ("A: nCorners %d nBndP %d nElem %d nPPatch %d nTPatch %d nPri %d\n",
+              nCorners,nBndP,nElem,nPPatch,nTPatch,nPri));
 
+#ifdef PRISM_MOD
+  nPri = nPri /2;
+  nElem += 5 * nPri;
+  nCorners += nPri;
+#endif
 
   nPPatch = MAX(nPPatch,nBndP);
 
@@ -951,15 +1095,24 @@ Broadcast(&nTPatch,sizeof(INT));
   stream = fileopen(theBVP->mesh_file,"r");
   if (stream == NULL) REP_ERR_RETURN_PTR(NULL);
 
+  if (file_readline(stream,"coordinates"))
+    REP_ERR_RETURN_PTR(NULL);
+
+  if (file_corners_fill(stream,Heap,Mesh,MarkKey,
+                        &(theBVP->radius),theBVP->MidPoint))
+    REP_ERR_RETURN_PTR(NULL);
+
+  fclose(stream);
+
+  stream = fileopen(theBVP->mesh_file,"r");
+  if (stream == NULL) REP_ERR_RETURN_PTR(NULL);
+
   if (file_readline(stream,"connectivity"))
     REP_ERR_RETURN_PTR(NULL);
 
   if (file_elements_fill(stream,Heap,Mesh,MarkKey))
     REP_ERR_RETURN_PTR(NULL);
 
-  if (file_corners_fill(stream,Heap,Mesh,MarkKey,
-                        &(theBVP->radius),theBVP->MidPoint))
-    REP_ERR_RETURN_PTR(NULL);
   if (file_readline(stream,"surface")) {
     PrintErrorMessage('F',"Init_MarcBVP","could not read surface");
     REP_ERR_RETURN_PTR(NULL);
@@ -996,6 +1149,11 @@ Broadcast(theBVP->MidPoint,DIM*sizeof(DOUBLE));
     REP_ERR_RETURN_PTR(NULL);
   STD_BVP_S2P_PTR(theBVP)[0] = 0;
   STD_BVP_S2P_PTR(theBVP)[1] = 0;
+
+
+  PRINTDEBUG(dom,1,
+             ("C: nCorners %d nBndP %d nElem %d nPPatch %d nTPatch %d nFound %d\n",
+              nCorners,nBndP,nElem,nPPatch,nTPatch,nFound));
 
   return ((BVP*)theBVP);
 }
@@ -5051,9 +5209,9 @@ INT BNDP_SaveBndP (BNDP *BndP)
   return(0);
 }
 
-/*
-   #define IO_MARC
- */
+
+#define IO_MARC
+
 
 INT BNDP_SaveBndP_Ext (BNDP *BndP)
 {
