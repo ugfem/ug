@@ -1,5 +1,19 @@
 ---------------------------
 
+CHANGES 1.7.1 -> 1.7.2
+
+---------------------------
+970115 kb
+changed xfer-unpack implementation.
+	- up to ddd-1.7.1, the unpack-handlers (i.e. UPDATE, XFERSCATTER,
+	  SETPRIORITY, OBJMKCONS) where called for each incoming message
+	  in turn. now, all UPDATE handlers are called, then all XFERSCATTER
+	  handlers and so on (SETPRIORITY, OBJMKCONS).
+	- this is a temporary solution. in later versions, the handler
+	  calls will be reworked; efficiency will be improved by cleaning
+	  up the loop structure in xfer-unpack.
+---------------------------
+
 CHANGES 1.7 -> 1.7.1
 
 ---------------------------

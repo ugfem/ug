@@ -941,7 +941,7 @@ static void PropagateIncomings (
 /****************************************************************************/
 
 
-static void UnpackSingleMsg (LC_MSGHANDLE xm,
+static void LocalizeObjects (LC_MSGHANDLE xm,
                              OBJTAB_ENTRY **allRecObjs, int nRecObjs,
                              DDD_HDR *localCplObjs, int nLocalCplObjs)
 {
@@ -1066,26 +1066,19 @@ static void UnpackSingleMsg (LC_MSGHANDLE xm,
   fflush(stdout);
 #       endif
 
-
-  /*
-          at this point all new objects are established,
-          their references point correctly to the neighbour objects.
-          note: the references from neighbours to the new objects
-          are not actualized yet! this has to be done via the
-          application handler OBJMKCONS.
-   */
-
-  STAT_INCTIMER4(22); STAT_RESET4;
+}
 
 
-  /* KB 941109
-          the order of the next two steps is crucial:
-          1. update objects via handler
-          2. add additional data items
-          3. update consistency
 
-          these three loops may be unified for efficiency reasons...
-   */
+
+static void CallUpdateHandler (LC_MSGHANDLE xm)
+{
+  OBJTAB_ENTRY *theObjTab;
+  int lenObjTab = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
+  int i;
+
+  /* get table addresses inside message buffer */
+  theObjTab = (OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id);
 
   /* initialize new objects corresponding to application: update */
   for(i=0; i<lenObjTab; i++)               /* for all message items */
@@ -1100,12 +1093,26 @@ static void UnpackSingleMsg (LC_MSGHANDLE xm,
         desc->handler[HANDLER_UPDATE](obj);
     }
   }
+}
 
 
-#       if DebugUnpack<=3
-  sprintf(cBuffer, "%4d: scattering additional data\n",me);
-  DDD_PrintDebug(cBuffer);
-#       endif
+
+static void UnpackAddData (LC_MSGHANDLE xm)
+{
+  SYMTAB_ENTRY *theSymTab;
+  OBJTAB_ENTRY *theObjTab;
+  char         *theObjects;
+  int i;
+  char         *data;
+  int lenSymTab = (int) LC_GetTableLen(xm, xferGlobals.symtab_id);
+  int lenObjTab = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
+
+
+  /* get table addresses inside message buffer */
+  theSymTab = (SYMTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.symtab_id);
+  theObjTab = (OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id);
+  theObjects = (char *)        LC_GetPtr(xm, xferGlobals.objmem_id);
+
 
   /* scatter additional data via handler */
   for(i=0; i<lenObjTab; i++)               /* for all message items */
@@ -1114,9 +1121,10 @@ static void UnpackSingleMsg (LC_MSGHANDLE xm,
     {
       TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
       DDD_OBJ obj   = HDR2OBJ(theObjTab[i].hdr, desc);
+
       /*
          printf("%4d: scatter %d/%d, addLen=%d, objadr=%08x gid=%08x\n",
-         me,i,lenObjTab,theObjTab[i].addLen,obj,theObjTab[i].gid);
+              me,i,lenObjTab,theObjTab[i].addLen,obj,theObjTab[i].gid);
          fflush(stdout);
        */
 
@@ -1132,26 +1140,36 @@ static void UnpackSingleMsg (LC_MSGHANDLE xm,
       PutDepData(data, desc, obj, theSymTab);
     }
   }
+}
 
 
 
-  /*
-          if RULE C3a has been applied, the old object's priority
-          was lower than the incoming object's priority. the object
-          has been marked PARTNEW and the two copies have been merged.
-          in order to allow application reactions on this priority
-          upgrade, the SETPRIORITY-handler is called.
+/*
+        if RULE C3a has been applied, the old object's priority
+        was lower than the incoming object's priority. the object
+        has been marked PARTNEW and the two copies have been merged.
+        in order to allow application reactions on this priority
+        upgrade, the SETPRIORITY-handler is called.
 
-          TODO: is this really a reason for calling SETPRIORITY? or
-          should there be a separate handler for this task?
+        TODO: is this really a reason for calling SETPRIORITY? or
+        should there be a separate handler for this task?
 
-          NOTE: due to the current implementation, the new priority
-          has already been set in the local object's DDD_HEADER.
-          but the SETPRIORITY-handler has to get the old priority inside
-          the object and the new one as second argument. so we restore
-          the old prio before calling the handler and set the newprio
-          afterwards.
-   */
+        NOTE: due to the current implementation, the new priority
+        has already been set in the local object's DDD_HEADER.
+        but the SETPRIORITY-handler has to get the old priority inside
+        the object and the new one as second argument. so we restore
+        the old prio before calling the handler and set the newprio
+        afterwards.
+ */
+static void CallSetPriorityHandler (LC_MSGHANDLE xm)
+{
+  OBJTAB_ENTRY *theObjTab;
+  int lenObjTab = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
+  int i;
+
+  /* get table addresses inside message buffer */
+  theObjTab = (OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id);
+
   for(i=0; i<lenObjTab; i++)               /* for all message items */
   {
     if (theObjTab[i].is_new==PARTNEW)
@@ -1171,7 +1189,20 @@ static void UnpackSingleMsg (LC_MSGHANDLE xm,
       }
     }
   }
+}
 
+
+
+static void CallObjMkConsHandler (LC_MSGHANDLE xm)
+{
+  OBJTAB_ENTRY *theObjTab;
+  int lenObjTab = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
+  int i;
+
+  STAT_RESET4;
+
+  /* get table addresses inside message buffer */
+  theObjTab = (OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id);
 
 
   /* initialize new objects corresponding to application: consistency */
@@ -1190,17 +1221,6 @@ static void UnpackSingleMsg (LC_MSGHANDLE xm,
 
 
   STAT_INCTIMER4(23);
-
-#       if DebugUnpack<=4
-  sprintf(cBuffer, "%4d: UnpackSingleMessage, phase 2 ready\n",me);
-  DDD_PrintDebug(cBuffer);
-#       endif
-
-
-#if DebugXfer>1
-  if (DDD_GetOption(OPT_DEBUG_XFERMESGS)==OPT_ON)
-#endif
-  XferDisplayMsg("OR", xm);
 }
 
 
@@ -1383,12 +1403,58 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
   }
 
 
+
+  /*
+          TODO: the following loops can be implemented more
+          efficiently. in each loop, there is another loop
+          across all objects inside the message. for each object,
+          the TypeDesc is computed. the typedesc pointers should
+          be computed once and stored somewhere. kb 970115
+   */
+
   /* unpack all messages and update local topology */
   for(i=0; i<nRecvMsgs; i++)
-  {
-    UnpackSingleMsg(theMsgs[i], unionObjTab, lenObjTab,
+    LocalizeObjects(theMsgs[i], unionObjTab, lenObjTab,
                     localCplObjs, nLocalCplObjs);
+
+  /*
+          at this point all new objects are established,
+          their references point correctly to the neighbour objects.
+          note: the references from neighbours to the new objects
+          are not actualized yet! this has to be done via the
+          application handler OBJMKCONS.
+   */
+
+  /* KB 941109
+          the order of the next steps is crucial:
+          1. update objects via handler
+          2. add additional data items
+          3. call set-prio handlers
+          4. update consistency
+   */
+
+  for(i=0; i<nRecvMsgs; i++)
+    CallUpdateHandler(theMsgs[i]);
+
+  for(i=0; i<nRecvMsgs; i++)
+    UnpackAddData(theMsgs[i]);
+
+  for(i=0; i<nRecvMsgs; i++)
+    CallSetPriorityHandler(theMsgs[i]);
+
+  for(i=0; i<nRecvMsgs; i++)
+    CallObjMkConsHandler(theMsgs[i]);
+
+
+
+#       if DebugXfer>1
+  if (DDD_GetOption(OPT_DEBUG_XFERMESGS)==OPT_ON)
+#       endif
+  {
+    for(i=0; i<nRecvMsgs; i++)
+      XferDisplayMsg("OR", theMsgs[i]);
   }
+
 
 
   /* unpack all OldCpl-tabs */
