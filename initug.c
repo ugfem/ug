@@ -35,6 +35,7 @@
 #include "initlow.h"
 #include "misc.h"
 #include "general.h"
+#include "defaults.h"
 
 /* parallelization module */
 #ifdef ModelP
@@ -65,6 +66,18 @@
 
 /* TODO: delete this */
 #include "debug.h"
+
+/****************************************************************************/
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*        compile time constants defining static data size (i.e. arrays)    */
+/*        other constants                                                   */
+/*        macros                                                            */
+/*                                                                          */
+/****************************************************************************/
+
+#define UGDEBUGRFILE            "debugfile"
 
 /****************************************************************************/
 /*                                                                          */
@@ -99,6 +112,10 @@ RCSID("$Header$",UG_RCS_STRING)
 INT InitUg (int *argcp, char ***argvp)
 {
   INT err;
+        #if (defined Debug && defined __MWCW__)
+  char buffer[256];
+  char debugfilename[NAMESIZE];
+        #endif
 
   /* init the low module */
   if ((err=InitLow())!=0)
@@ -131,6 +148,25 @@ INT InitUg (int *argcp, char ***argvp)
 
     return (1);
   }
+
+        #if (defined Debug && defined __MWCW__)
+  if ((GetDefaultValue(DEFAULTSFILENAME,UGDEBUGRFILE,buffer)==0)
+      && (sscanf(buffer," %s ",&debugfilename)==1))
+  {
+    if (SetPrintDebugToFile(debugfilename)!=0)
+    {
+      printf("ERROR while opening debug file '%s'\n",debugfilename);
+      printf ("aborting ug\n");
+      return (1);
+    }
+    UserWriteF("debug info is captured to file '%s'\n",debugfilename);
+  }
+  else
+  {
+    SetPrintDebugProc(UserWriteF);
+    UserWriteF("debug info is printed to ug's shell window\n");
+  }
+        #endif
 
   /* init the domain module */
   if ((err=InitDom())!=0)
