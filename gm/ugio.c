@@ -2535,6 +2535,23 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     if (Connect_Sons_of_ElementSide(UPGRID(theGrid),theElement,i,Sons_of_Side,theSonElem,SonSides,1)) REP_ERR_RETURN(1);
   }
 
+  /* correct subdomain ID for boundary edges */
+  for (i=0; i<theRule->nsons; i++)
+  {
+    if (MGIO_PARFILE && !((ref->sonex>>i)&1)) continue;
+#ifdef __TWODIM__
+    for (j=0; j<EDGES_OF_ELEM(theSonList[i]); j++)
+      if (EDGE_ON_BND(theSonList[i],j))
+        SETEDSUBDOM(GetEdge(CORNER_OF_EDGE_PTR(theSonList[i],j,0),CORNER_OF_EDGE_PTR(theSonList[i],j,1)),0);
+#endif
+#ifdef __THREEDIM__
+    for (j=0; j<SIDES_OF_ELEM(theSonList[i]); j++)
+      if ((OBJT(theSonList[i])==BEOBJ) && SIDE_ON_BND(theSonList[i],j))
+        for (k=0; k<EDGES_OF_SIDE(theSonList[i],j); k++)
+          SETEDSUBDOM(GetEdge(CORNER_OF_EDGE_PTR(theSonList[i],EDGE_OF_SIDE(theSonList[i],j,k),0),CORNER_OF_EDGE_PTR(theSonList[i],EDGE_OF_SIDE(theSonList[i],j,k),1)),0);
+#endif
+  }
+
   /* connect to orphan-neighbors */
   if (MGIO_PARFILE)
     for (i=0; i<theRule->nsons; i++)
