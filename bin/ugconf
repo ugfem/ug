@@ -20,6 +20,7 @@ then
 	echo "         SOLARIS (set ARCH = SOLARIS)";
 	echo "         SUN4GCC (set ARCH = SUN4GCC)";
 	echo "         T3D (set ARCH = T3D)";
+	echo "         NECSX4 (set ARCH = NECSX4)";
 	echo "         SEQ (set MODEL = SEQ)";
 	echo "         MPI (set MODEL = MPI)";
 	echo "         NX (set MODEL = NX)";
@@ -155,6 +156,12 @@ fi
 if test "$1" = "T3D"
 then
 sed 's/^ARCH.*$/ARCH = T3D/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
+mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+fi			
+
+if test "$1" = "NECSX4"
+then
+sed 's/^ARCH.*$/ARCH = NECSX4/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
 fi			
 
