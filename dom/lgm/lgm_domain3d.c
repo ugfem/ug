@@ -45,7 +45,7 @@
 #include "lgm_macros.h"
 #include "lgm_gginterface.h"
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "values.h"
 
 /****************************************************************************/
