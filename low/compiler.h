@@ -1,22 +1,25 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*	                                                                        */
+/*                                                                          */
 /* File:      compiler.h                                                    */
 /*                                                                          */
 /* Purpose:   define simple data types and standard include files           */
 /*                                                                          */
-/* Author:      Peter Bastian                                               */
-/*              Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen */
-/*              Universitaet Heidelberg                                     */
-/*              Im Neuenheimer Feld 368                                     */
-/*              6900 Heidelberg                                             */
+/* Author:    Peter Bastian, Klaus Birken, Stefan Lang                      */
+/*            Institut fuer Computeranwendungen 3 ( ICA3 )                  */
+/*            Pfaffenwaldring 27                                            */
+/*            Universitaet Stuttgart                                        */
+/*            70569 Stuttgart                                               */
 /*                                                                          */
 /* History:   29.01.92 begin, ug version 2.0                                */
-/*                                                                          */
-/* Revision:  04.09.95                                                      */
+/*            19.08.92 begin PARIX version                                  */
+/*            02.06.93 begin PARAGON version                                */
+/*            02.12.94 begin CRAY_T3D version                               */
+/*            05.10.95 added GC (Explorer PowerPC) version                  */
 /*                                                                          */
 /****************************************************************************/
+
 
 #ifndef __COMPILER__
 #define __COMPILER__
@@ -24,17 +27,34 @@
 #include <limits.h>
 #include <float.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define __MWCW__  /* this is the default */
 
 /****************************************************************************/
-/*                                                                              */
-/* #define exactly one of the following constants:                          */
 /*                                                                          */
-/*            __MPW32__     Apple MacIntosh Programmers Workshop version 3.2 */
-/*            __SUN4GCC__  SUN Workstation SunOS version >= 4.0, gnu c comp! */
-/*            __IRIS__     Silicon Graphics Workstations                    */
-/*	                                                                        */
+/* #define exactly one of the following constants: (in Makefile)            */
+/*                                                                          */
+/*          __MPW32__    Apple MacIntosh Programmers Workshop version 3.2   */
+/*          __INDIGO__   IRIS Indigo version                                */
+/*          __PARIX__    PARIX Transputer version                           */
+/*          __AIX__      AIX version (IBM)                                  */
+/*          __PARAGON__  Intel Paragon version                              */
+/*          __SUN4GCC__  Sun station 4 version                              */
+/*          __HP__       HP Workstations                                    */
+/*          __PC__       IBM compatible PC                                  */
+/*          __T3D__      CRAY T3D version                                   */
+/*          __POWERGC__  XPLORER (PowerPC)                                  */
+/*          __MWCW__     Apple Power Macintosh                              */
+/*                                                                          */
+/* #define this if you are using NXLib                                      */
+/*          __NXLIB__    NXLIB Paragon Library                              */
+/*                                                                          */
 /****************************************************************************/
+
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -68,29 +88,6 @@
 
 #endif
 
-/****************************************************************************/
-/*                                                                          */
-/* Definitions for Sun Version                                              */
-/*                                                                          */
-/****************************************************************************/
-
-#ifdef __SUN4GCC__
-#undef __MWCW__
-#include <stddef.h>
-
-/* basic types */
-#define SHORT  short
-#define INT    int
-#define FLOAT  float
-#define DOUBLE double
-#define COORD  float
-#define SCREEN_COORD  float
-
-/* memory */
-#define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
-#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
-
-#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -115,13 +112,14 @@
 
 #endif
 
+
 /****************************************************************************/
 /*                                                                          */
-/* Definitions for HP Workstations                                          */
+/* Definitions for PARIX Transputer version                                 */
 /*                                                                          */
 /****************************************************************************/
 
-#ifdef __GCC__
+#ifdef __PARIX__
 #undef __MWCW__
 
 /* basic types */
@@ -131,16 +129,94 @@
 #define DOUBLE double
 #define COORD  float
 #define SCREEN_COORD float
+#define __SWAPBYTES__ 1
 
 /* memory */
-#define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) ! */
-#define ALIGNMASK 0xFFFFFFFC            /* compatible to alignment */
+#define ALIGNMENT 4                                         /* power of 2 and >= sizeof(int) !  */
+#define ALIGNMASK 0xFFFFFFFC                    /* compatible to alignment			*/
 
 #endif
 
+
 /****************************************************************************/
 /*                                                                          */
-/* Definitions for HP Workstations                                          */
+/* Definitions for AIX                                                      */
+/*                                                                          */
+/****************************************************************************/
+
+
+#ifdef __AIX__
+#undef __MWCW__
+
+/* basic types */
+#define SHORT  short
+#define INT    int
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+#define __SWAPBYTES__ 1
+
+/* memory */
+#define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) !  */
+#define ALIGNMASK 0xFFFFFFFC            /* compatible to alignment          */
+
+#endif
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for Intel Paragon version                                    */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __PARAGON__
+#undef __MWCW__
+
+/* basic types */
+#define SHORT  short
+#define INT    int
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+#define __SWAPBYTES__ 1
+
+/* memory */
+#define ALIGNMENT 8                                         /* power of 2 and >= sizeof(int) !  */
+#define ALIGNMASK 0xFFFFFFF8                    /* compatible to alignment			*/
+
+#endif
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for Sun station 4 version                                    */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __SUN4GCC__
+#undef __MWCW__
+#include <stddef.h>
+
+/* basic types */
+#define SHORT  short
+#define INT    int
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+
+/* memory */
+#define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
+#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
+
+#endif
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for Hewlett Packard HP700 series                             */
 /*                                                                          */
 /****************************************************************************/
 
@@ -160,6 +236,81 @@
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
 
 #endif
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for IBM compatible Personal Computer                         */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __PC__
+#undef __MWCW__
+
+/* basic types */
+#define SHORT  short
+#define INT    int
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+#define __SWAPBYTES__ 1
+
+/* memory */
+#define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) !  */
+#define ALIGNMASK 0xFFFFFFFC            /* compatible to alignment          */
+
+#endif
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for CRAY T3D                                                 */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __T3D__
+#undef __MWCW__
+
+/* basic types */
+#define SHORT  short
+#define INT    int
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+
+/* memory */
+#define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
+#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
+
+#endif
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for XPLORER (PowerPC)  version                               */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __POWERGC__
+#undef __MWCW__
+
+/* basic types */
+#define SHORT  short
+#define INT    int
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+
+/* memory */
+#define ALIGNMENT 8               /* power of 2 and >=sizeof(int) !  */
+#define ALIGNMASK 0xFFFFFFF8     /*  compatible to alignment */
+
+#endif
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -194,9 +345,23 @@
 
 #endif
 
+
 /****************************************************************************/
 /*                                                                          */
-/* some general definitions                                                 */
+/* Definitions for NXLIB 1.1 version                                        */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __NXLIB__
+
+#include <nxmalloc.h>                   /* redefine malloc and related calls*/
+
+#endif
+
+
+/****************************************************************************/
+/*                                                                          */
+/* some general definitions						                            */
 /*                                                                          */
 /****************************************************************************/
 
@@ -210,4 +375,8 @@
 #define MAX_C            FLT_MAX
 #define SMALL_C         (FLT_EPSILON*SMALL_FAC)
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif
