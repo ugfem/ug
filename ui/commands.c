@@ -9912,9 +9912,11 @@ static INT ExecuteNumProcCommand (INT argc, char **argv)
    This command displays a NumProc.
    It calls the function 'DisplayNumProc'.
 
-   'npdisplay [<num proc name>]'
+   'npdisplay [<num proc name>] [$c [<class>] | $a]'
 
    .  <num~proc~name> - name of an existing NumProc (default is the current NumProc)
+   .  $c~[<class>]    - list all num procs of <class> or list classes if <class> omitted
+   .  $a              - list all num procs
 
    KEYWORDS:
    multigrid, numerics, userdata, vecdata, matdata, numproc, display, show, print
@@ -10385,9 +10387,11 @@ static INT SymListCommand (INT argc, char **argv)
    This command associates a command key with a ug command.
    It calls the function 'SetCmdKey'.
 
-   'setkey $<command char> $"<command sequence>"*'
+   'setkey $<command char> [$c <comment text>] [$-] $"<command sequence>"*'
 
    .  $k~<command~char>      - specifiy a single character which will be the command key
+   .  $c~<coment~text>       - will be displayed by keylist rather than command(s)
+   .  $-                     - keylist prints a hor bar befor this key
    .  $"<command~sequence>"  - give an arbitrary sequence of statements which is to be executed when the command key is pressed
 
    EXAMPLE:
@@ -10556,7 +10560,9 @@ static INT DeleteCommandKeyCommand (INT argc, char **argv)
    This command lists all existing command keys.
    It calls the function 'ListCmdKeys'.
 
-   'keylist'
+   'keylist [$l]'
+
+   .  $l - show commands and comment (iff)
 
    KEYWORDS:
    shortcut, hotkey, list, show, display, print
