@@ -637,7 +637,7 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VE
   }
   if (!lresult->converged)
     lresult->number_of_linear_iterations=i;
-  FreeVD(NP_MG(theNP),bl,level,np->c);
+  if (FreeVD(NP_MG(theNP),bl,level,np->c)) REP_ERR_RETURN(1);
   if (np->Close != NULL)
     if ((*np->Close)(np,level,&lresult->error_code))
       REP_ERR_RETURN (1);
@@ -870,7 +870,7 @@ static INT CGUpdate (NP_LS *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *c,
     NP_RETURN(1,result[0]);
   if (daxpy(theMG,theNP->baselevel,level,ALL_VECTORS,b,- np->rho / lambda,np->t)!= NUM_OK)
     NP_RETURN(1,result[0]);
-  FreeVD(theNP->ls.base.mg,theNP->baselevel,level,np->t);
+  if (FreeVD(theNP->ls.base.mg,theNP->baselevel,level,np->t)) REP_ERR_RETURN(1);
   if (theNP->display == PCR_FULL_DISPLAY)
     UserWriteF("      rho %-.4g \n",np->rho);
 
@@ -882,7 +882,7 @@ static INT CGClose (NP_LS *theNP, INT level, INT *result)
   NP_CG *np;
 
   np = (NP_CG *) theNP;
-  FreeVD(theNP->ls.base.mg,theNP->baselevel,level,np->p);
+  if (FreeVD(theNP->ls.base.mg,theNP->baselevel,level,np->p)) REP_ERR_RETURN(1);
 
   return(0);
 }
@@ -1023,9 +1023,9 @@ static INT CRPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, V
   NP_CR *np;
 
   np = (NP_CR *) theNP;
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->p);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->pp);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->t);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->p)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->pp)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->t)) REP_ERR_RETURN(1);
 
   if (np->Iter!=NULL)
   {
@@ -1165,9 +1165,9 @@ static INT CRSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDAT
       break;
     }
   }
-  FreeVD(NP_MG(theNP),bl,level,np->h1);
-  FreeVD(NP_MG(theNP),bl,level,np->h2);
-  FreeVD(NP_MG(theNP),bl,level,np->h3);
+  if (FreeVD(NP_MG(theNP),bl,level,np->h1)) REP_ERR_RETURN(1);
+  if (FreeVD(NP_MG(theNP),bl,level,np->h2)) REP_ERR_RETURN(1);
+  if (FreeVD(NP_MG(theNP),bl,level,np->h3)) REP_ERR_RETURN(1);
   if (np->display > PCR_NO_DISPLAY)
   {
     if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) NP_RETURN(1,lresult->error_code);
@@ -1295,9 +1295,9 @@ static INT BCGPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, 
   NP_BCG *np;
 
   np = (NP_BCG *) theNP;
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->p);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->pb);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->rb);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->p)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->pb)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->rb)) REP_ERR_RETURN(1);
 
   return(0);
 }
@@ -1376,7 +1376,7 @@ static INT BCGSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDA
       break;
     }
   }
-  FreeVD(NP_MG(theNP),level,level,np->h);
+  if (FreeVD(NP_MG(theNP),level,level,np->h)) REP_ERR_RETURN(1);
   if (np->display > PCR_NO_DISPLAY)
   {
     if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) NP_RETURN(1,lresult->error_code);
@@ -1526,12 +1526,12 @@ static INT BCGSPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x,
   NP_BCGS *np;
 
   np = (NP_BCGS *) theNP;
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->r);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->p);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->v);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->s);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->t);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->q);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->r)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->p)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->v)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->s)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->t)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->q)) REP_ERR_RETURN(1);
 
   if (np->Iter!=NULL)
   {
@@ -1893,15 +1893,15 @@ static INT GMRESPostProcess (NP_LINEAR_SOLVER *theNP, INT level,
   INT i;
 
   np = (NP_GMRES *) theNP;
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->c);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->r);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->p);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->c)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->r)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->p)) REP_ERR_RETURN(1);
   for (i=0; i<=np->restart; i++)
-    FreeVD(np->ls.base.mg,np->baselevel,level,np->v[i]);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->s);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->t);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->q);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->w);
+    if (FreeVD(np->ls.base.mg,np->baselevel,level,np->v[i])) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->s)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->t)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->q)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->w)) REP_ERR_RETURN(1);
 
   if (np->Iter!=NULL) {
     if (np->Iter->PostProcess == NULL) return(0);
@@ -2352,10 +2352,10 @@ static INT SQCGPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x,
   NP_SQCG *np;
 
   np = (NP_SQCG *) theNP;
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->r);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->p);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->h);
-  FreeVD(np->ls.base.mg,np->baselevel,level,np->d);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->r)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->p)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->h)) REP_ERR_RETURN(1);
+  if (FreeVD(np->ls.base.mg,np->baselevel,level,np->d)) REP_ERR_RETURN(1);
 
   return(0);
 }
@@ -2676,8 +2676,8 @@ static INT LDCSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
       break;
     }
   }
-  FreeVD(NP_MG(theNP),np->baselevel,level,np->b);
-  FreeVD(NP_MG(theNP),np->baselevel,level,np->c);
+  if (FreeVD(NP_MG(theNP),np->baselevel,level,np->b)) REP_ERR_RETURN(1);
+  if (FreeVD(NP_MG(theNP),np->baselevel,level,np->c)) REP_ERR_RETURN(1);
   if (np->display > PCR_NO_DISPLAY)
   {
     if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) NP_RETURN(1,lresult->error_code);
