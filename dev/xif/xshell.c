@@ -53,6 +53,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
+#include <ctype.h>
 
 /* interface includes */
 #include "compiler.h"
