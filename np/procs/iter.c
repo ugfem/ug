@@ -56,7 +56,7 @@
 
 #include "ff_gen.h"
 #include "ff.h"
-
+#include "block.h"
 
 /****************************************************************************/
 /*																			*/
@@ -161,6 +161,43 @@ typedef struct
   INT depth;
 
 } NP_PGS;
+
+typedef struct
+{
+  NP_ITER iter;
+
+  VEC_SCALAR damp;
+  VECDATA_DESC *u;
+  VECDATA_DESC *t;
+  VECDATA_DESC *s;
+  MATDATA_DESC *L;
+  MATDATA_DESC *S;
+  VECDATA_DESC *ux;
+  VECDATA_DESC *px;
+  VECDATA_DESC *ub;
+  VECDATA_DESC *pb;
+  MATDATA_DESC *uuA;
+  MATDATA_DESC *upA;
+  MATDATA_DESC *puA;
+  MATDATA_DESC *ppA;
+
+  VEC_TEMPLATE *vt;
+  INT u_sub;
+  INT p_sub;
+  MAT_TEMPLATE *mt;
+  INT uu_sub;
+  INT pu_sub;
+  INT up_sub;
+  INT pp_sub;
+
+  NP_ITER *u_iter;
+  NP_ITER *p_iter;
+
+    #ifdef ModelP
+  INT cons_mode;
+    #endif
+
+} NP_TS;
 
 typedef struct
 {
@@ -1277,6 +1314,409 @@ static INT PGSConstruct (NP_BASE *theNP)
   np->PreProcess = PGSPreProcess;
   np->Iter = PGSSmoother;
   np->PostProcess = PGSPostProcess;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   ts - transforming smoother
+
+   DESCRIPTION:
+   This numproc executes a transforming smoother for
+   a saddle point problem.
+
+   .vb
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>]
+       $damp <sc double list> $u <ucomp> $p <vcomp>
+       $UI <smoother1> $PI <smoother2>;
+   .ve
+
+   .  $c~<cor> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $damp~<sc~double~list> - damping factors for each component
+
+   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
+   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
+
+   'npexecute <name> [$i] [$s] [$p];'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+   D*/
+/****************************************************************************/
+
+static INT TSInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_TS *np;
+  INT i;
+
+  np = (NP_TS *) theNP;
+  np->u = ReadArgvVecDesc(theNP->mg,"r",argc,argv);
+  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+  np->s = ReadArgvVecDesc(theNP->mg,"s",argc,argv);
+  np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
+
+  np->vt = ReadArgvVecTemplateSub(MGFORMAT(theNP->mg),
+                                  "u",argc,argv,&(np->u_sub));
+  if (np->vt == NULL) {
+    UserWriteF("TSInit: no subtemplate u found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->vt = ReadArgvVecTemplateSub(MGFORMAT(theNP->mg),
+                                  "p",argc,argv,&(np->p_sub));
+  if (np->vt == NULL) {
+    UserWriteF("TSInit: no subtemplate p found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
+                                  "uu",argc,argv,&(np->uu_sub));
+  if (np->vt == NULL) {
+    UserWriteF("TSInit: no subtemplate uu found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
+                                  "up",argc,argv,&(np->up_sub));
+  if (np->vt == NULL) {
+    UserWriteF("TSInit: no subtemplate up found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
+                                  "pu",argc,argv,&(np->pu_sub));
+  if (np->vt == NULL) {
+    UserWriteF("TSInit: no subtemplate pu found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
+                                  "pp",argc,argv,&(np->pp_sub));
+  if (np->vt == NULL) {
+    UserWriteF("TSInit: no subtemplate pp found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  for (i=0; i<MAX_VEC_COMP; i++) np->damp[i] = 1.0;
+  sc_read(np->damp,NP_FMT(np),np->iter.b,"damp",argc,argv);
+  np->u_iter = (NP_ITER *)
+               ReadArgvNumProc(theNP->mg,"UI",ITER_CLASS_NAME,argc,argv);
+  if (np->u_iter == NULL) {
+    UserWriteF("TSInit: no iter UI found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->p_iter = (NP_ITER *)
+               ReadArgvNumProc(theNP->mg,"PI",ITER_CLASS_NAME,argc,argv);
+  if (np->p_iter == NULL) {
+    UserWriteF("TSInit: no iter PI found\n");
+    return(NP_NOT_ACTIVE);
+  }
+    #ifdef ModelP
+  if (ReadArgvOption("M",argc,argv))
+    np->cons_mode = MAT_CONS;
+  else if (ReadArgvOption("D",argc,argv))
+    np->cons_mode = MAT_DIAG_CONS;
+  else
+    np->cons_mode = MAT_MASTER_CONS;
+        #endif
+
+  return (NPIterInit(&np->iter,argc,argv));
+}
+
+static INT TSDisplay (NP_BASE *theNP)
+{
+  NP_TS *np;
+
+  np = (NP_TS *) theNP;
+
+  NPIterDisplay(&np->iter);
+  UserWrite("configuration parameters:\n");
+  if (sc_disp(np->damp,np->iter.b,"damp")) REP_ERR_RETURN (1);
+    #ifdef ModelP
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"cons_mode",(int)np->cons_mode);
+        #endif
+  if (np->u_iter != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"UI",ENVITEM_NAME(np->u_iter));
+  if (np->p_iter != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"PI",ENVITEM_NAME(np->p_iter));
+  if (np->u != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"r",ENVITEM_NAME(np->u));
+  if (np->t != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+  if (np->s != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"s",ENVITEM_NAME(np->s));
+  if (np->L != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"L",ENVITEM_NAME(np->L));
+  if (np->S != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"S",ENVITEM_NAME(np->S));
+  if (np->vt != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"vt",ENVITEM_NAME(np->vt));
+  if (np->mt != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"mt",ENVITEM_NAME(np->mt));
+  if (np->ux != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"ux",ENVITEM_NAME(np->ux));
+  if (np->px != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"px",ENVITEM_NAME(np->px));
+  if (np->ub != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"ub",ENVITEM_NAME(np->ub));
+  if (np->pb != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"pb",ENVITEM_NAME(np->pb));
+  if (np->uuA != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"uuA",ENVITEM_NAME(np->uuA));
+  if (np->puA != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"puA",ENVITEM_NAME(np->puA));
+  if (np->upA != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"upA",ENVITEM_NAME(np->upA));
+  if (np->ppA != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"ppA",ENVITEM_NAME(np->ppA));
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"u_sub",(int)np->u_sub);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"p_sub",(int)np->p_sub);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"uu_sub",(int)np->uu_sub);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"up_sub",(int)np->up_sub);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"pu_sub",(int)np->pu_sub);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"pp_sub",(int)np->pp_sub);
+
+  return (0);
+}
+
+static INT ConstructSchurComplement (GRID *theGrid,
+                                     MATDATA_DESC *uuA,
+                                     MATDATA_DESC *upA,
+                                     MATDATA_DESC *puA,
+                                     MATDATA_DESC *ppA,
+                                     MATDATA_DESC *S)
+{
+  VECTOR *v,*w,*z;
+  MATRIX *m,*m0,*m1;
+  DOUBLE *sval,InvMat[MAX_SINGLE_MAT_COMP],sum,*puval,*upval;
+  INT i,j,k,l,vtype,wtype,ztype,vncomp,wncomp,zncomp;
+  SHORT *pu,*up,*s;
+
+  if (dmatcopy(MYMG(theGrid),GLEVEL(theGrid),GLEVEL(theGrid),
+               ALL_VECTORS,S,ppA) != NUM_OK)
+    REP_ERR_RETURN (1);
+  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+    vtype = VTYPE(v);
+    vncomp = MD_ROWS_IN_RT_CT(puA,vtype,vtype);
+    if (vncomp == 0) continue;
+    for (m=START(v); m!=NULL; m=NEXT(m)) {
+      w = MDEST(m);
+      wtype = VTYPE(w);
+      wncomp = MD_COLS_IN_RT_CT(upA,vtype,wtype);
+      if (wncomp == 0) continue;
+      s = MD_MCMPPTR_OF_RT_CT(S,vtype,wtype);
+      sval = MVALUEPTR(m,0);
+      for (m0=START(v); m0!=NULL; m0=NEXT(m0)) {
+        z = MDEST(m0);
+        ztype = VTYPE(z);
+        zncomp = MD_COLS_IN_RT_CT(puA,vtype,ztype);
+        if (zncomp == 0) continue;
+        for (m1=START(w); m1!=NULL; m1=NEXT(m1))
+          if (MDEST(m1) == z) break;
+        if (m1 == NULL) continue;
+        ASSERT(zncomp == MD_COLS_IN_RT_CT(uuA,ztype,ztype));
+        if (InvertSmallBlock(zncomp,
+                             MD_MCMPPTR_OF_RT_CT(uuA,ztype,ztype),
+                             MVALUEPTR(VSTART(z),0),InvMat))
+          REP_ERR_RETURN (1);
+        pu = MD_MCMPPTR_OF_RT_CT(puA,vtype,ztype);
+        up = MD_MCMPPTR_OF_RT_CT(puA,wtype,ztype);
+        puval = MVALUEPTR(m0,0);
+        upval = MVALUEPTR(m1,0);
+        /*
+           printf("pu %d %d   %d %d   %d %d   %x  %d %d %d\n",
+                   VINDEX(v),vtype,VINDEX(w),wtype,VINDEX(z),ztype,NEXT(m0),
+                   vncomp,wncomp,zncomp);
+           for (i=0; i<vncomp; i++) {
+           for (j=0; j<zncomp; j++) printf("%8.4f", puval[pu[i*zncomp+j]]);
+           printf("\n");
+           }
+         */
+        for (i=0; i<vncomp; i++)
+          for (j=0; j<wncomp; j++) {
+            sum = 0.0;
+            for (k=0; k<zncomp; k++)
+              for (l=0; l<zncomp; l++)
+                sum += puval[pu[i*zncomp+k]]
+                       * InvMat[k*zncomp+l]
+                       * puval[up[j*zncomp+l]];
+            sval[s[i*wncomp+j]] -= sum;
+          }
+      }
+    }
+  }
+
+  return (0);
+}
+
+static INT TSPreProcess  (NP_ITER *theNP, INT level,
+                          VECDATA_DESC *x, VECDATA_DESC *b,
+                          MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+  NP_TS *np;
+  GRID *theGrid;
+
+  np = (NP_TS *) theNP;
+  theGrid = NP_GRID(theNP,level);
+  if (VDsubDescFromVT(x,np->vt,np->u_sub,&np->ux))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(x,np->vt,np->p_sub,&np->px))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(b,np->vt,np->u_sub,&np->ub))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(b,np->vt,np->p_sub,&np->pb))
+    NP_RETURN(1,result[0]);
+  if (MDsubDescFromMT(A,np->mt,np->uu_sub,&np->uuA))
+    NP_RETURN(1,result[0]);
+  if (MDsubDescFromMT(A,np->mt,np->up_sub,&np->upA))
+    NP_RETURN(1,result[0]);
+  if (MDsubDescFromMT(A,np->mt,np->pu_sub,&np->puA))
+    NP_RETURN(1,result[0]);
+  if (MDsubDescFromMT(A,np->mt,np->pp_sub,&np->ppA))
+    NP_RETURN(1,result[0]);
+        #ifdef ModelP
+  if (AllocMDFromMD(NP_MG(theNP),level,level,np->uuA,&np->L))
+    NP_RETURN(1,result[0]);
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,np->uuA)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
+    NP_RETURN(1,result[0]);
+        #else
+  np->L = np->uuA;
+        #endif
+  if (AllocMDFromMD(NP_MG(theNP),level,level,np->ppA,&np->S))
+    NP_RETURN(1,result[0]);
+  if (ConstructSchurComplement(theGrid,np->uuA,np->upA,np->puA,np->ppA,
+                               np->S))
+    NP_RETURN(1,result[0]);
+        #ifdef ModelP
+  FreeMD(NP_MG(theNP),level,level,np->L);
+        #endif
+  *baselevel = level;
+
+  if (np->u_iter->PreProcess != NULL)
+    if ((*np->u_iter->PreProcess)
+          (np->u_iter,level,np->ux,np->ub,np->uuA,baselevel,result))
+      REP_ERR_RETURN(1);
+  if (np->p_iter->PreProcess != NULL)
+    if ((*np->p_iter->PreProcess)
+          (np->p_iter,level,np->px,np->pb,np->S,baselevel,result))
+      REP_ERR_RETURN(1);
+
+  return (0);
+}
+
+static INT TSSmoother (NP_ITER *theNP, INT level,
+                       VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                       INT *result)
+{
+  NP_TS *np;
+  MULTIGRID *theMG;
+
+  np = (NP_TS *) theNP;
+  theMG = NP_MG(theNP);
+
+  /* get storage for extra temp */
+  if (VDsubDescFromVT(x,np->vt,np->u_sub,&np->ux))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(x,np->vt,np->p_sub,&np->px))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theMG,level,level,np->ux,&np->u))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theMG,level,level,np->ux,&np->t))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theMG,level,level,np->px,&np->s))
+    NP_RETURN(1,result[0]);
+
+  if (dcopy(theMG,level,level,ALL_VECTORS,np->t,np->ub) != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (dcopy(theMG,level,level,ALL_VECTORS,np->s,np->pb) != NUM_OK)
+    NP_RETURN(1,result[0]);
+    #ifdef ModelP
+  if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),np->t)!=NUM_OK)
+    NP_RETURN(1,result[0]);
+    #endif
+  if ((*np->u_iter->Iter)(np->u_iter,level,np->ux,np->t,np->uuA,result))
+    REP_ERR_RETURN(1);
+    #ifdef ModelP
+  if (l_vector_consistent(GRID_ON_LEVEL(theMG,level),np->ux)!=NUM_OK)
+    NP_RETURN(1,result[0]);
+    #endif
+  if (dmatmul_minus(theMG,level,level,ALL_VECTORS,np->s,np->puA,np->ux)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+    #ifdef ModelP
+  if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),np->s)!=NUM_OK)
+    NP_RETURN(1,result[0]);
+    #endif
+  if ((*np->p_iter->Iter)(np->p_iter,level,np->px,np->s,np->S,result))
+    REP_ERR_RETURN(1);
+    #ifdef ModelP
+  if (l_vector_consistent(GRID_ON_LEVEL(theMG,level),np->px)!=NUM_OK)
+    NP_RETURN(1,result[0]);
+    #endif
+  if (dmatmul(theMG,level,level,ALL_VECTORS,np->t,np->upA,np->px)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+    #ifdef ModelP
+  if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),np->t)!=NUM_OK)
+    NP_RETURN(1,result[0]);
+    #endif
+  if ((*np->u_iter->Iter)(np->u_iter,level,np->u,np->t,np->uuA,result))
+    REP_ERR_RETURN(1);
+    #ifdef ModelP
+  if (l_vector_consistent(GRID_ON_LEVEL(theMG,level),np->u)!=NUM_OK)
+    NP_RETURN(1,result[0]);
+    #endif
+  if (dsub(theMG,level,level,ALL_VECTORS,np->ux,np->u) != NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  /* damp */
+  if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,x,np->damp)!= NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  /* update defect */
+  if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,x)!= NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  FreeVD(NP_MG(theNP),level,level,np->u);
+  FreeVD(NP_MG(theNP),level,level,np->t);
+  FreeVD(NP_MG(theNP),level,level,np->s);
+
+  return (0);
+}
+
+static INT TSPostProcess (NP_ITER *theNP, INT level,
+                          VECDATA_DESC *x, VECDATA_DESC *b,
+                          MATDATA_DESC *A, INT *result)
+{
+  NP_TS *np;
+
+  np = (NP_TS *) theNP;
+  if (np->u_iter->PostProcess != NULL)
+    if ((*np->u_iter->PostProcess)
+          (np->u_iter,level,x,b,A,result))
+      REP_ERR_RETURN(1);
+  if (np->p_iter->PostProcess != NULL)
+    if ((*np->p_iter->PostProcess)
+          (np->p_iter,level,x,b,A,result))
+      REP_ERR_RETURN(1);
+
+  return(0);
+}
+
+static INT TSConstruct (NP_BASE *theNP)
+{
+  NP_ITER *np;
+
+  theNP->Init = TSInit;
+  theNP->Display = TSDisplay;
+  theNP->Execute = NPIterExecute;
+
+  np = (NP_ITER *) theNP;
+  np->PreProcess = TSPreProcess;
+  np->Iter = TSSmoother;
+  np->PostProcess = TSPostProcess;
 
   return(0);
 }
@@ -4415,6 +4855,8 @@ INT InitIter ()
   if (CreateClass(ITER_CLASS_NAME ".sgs",sizeof(NP_SGS),SGSConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".pgs",sizeof(NP_PGS),PGSConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".ts",sizeof(NP_TS),TSConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".sor",sizeof(NP_SMOOTHER),SORConstruct))
     REP_ERR_RETURN (__LINE__);
