@@ -2642,11 +2642,11 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
   /* create parameter patches */
   maxSubDomains = 0;
   sides = (PATCH **) GetTmpMem (Heap, nsides * sizeof (PATCH *), MarkKey);
-  for (i = 0; i < nsides; i++)
-    sides[i] = NULL;
-
   if (sides == NULL)
     return (NULL);
+
+  for (i = 0; i < nsides; i++)
+    sides[i] = NULL;
   theBVP->nsides = nsides;
   for (theSegment = GetFirstBoundarySegment (theDomain); theSegment != NULL;
        theSegment = GetNextBoundarySegment (theSegment))
