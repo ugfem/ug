@@ -13665,6 +13665,11 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 							DO_2l(theDO) = edgecolor;
 							DO_inc(theDO);
 						}
+						else if (EE3D_EdgeColor & 4 )
+						{
+							DO_2l(theDO) = EE3D_Color[COLOR_EDGE];
+							DO_inc(theDO);
+						}
 						else
 						{
 							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE];
@@ -13730,6 +13735,11 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 						if (EE3D_EdgeColor & 2 && edgecolor != -1)
 						{
 							DO_2l(theDO) = edgecolor;
+							DO_inc(theDO);
+						}
+						else if (EE3D_EdgeColor & 4 )
+						{
+							DO_2l(theDO) = EE3D_Color[COLOR_EDGE];
 							DO_inc(theDO);
 						}
 						else
@@ -14396,6 +14406,11 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 							DO_2l(theDO) = edgecolor;
 							DO_inc(theDO);
 						}
+						else if (EE3D_EdgeColor & 4 )
+						{
+							DO_2l(theDO) = EE3D_Color[COLOR_EDGE];
+							DO_inc(theDO);
+						}
 						else
 						{
 							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE];
@@ -14463,6 +14478,11 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 						if (EE3D_EdgeColor & 2 && edgecolor != -1)
 						{
 							DO_2l(theDO) = edgecolor;
+							DO_inc(theDO);
+						}
+						else if (EE3D_EdgeColor & 4 )
+						{
+							DO_2l(theDO) = EE3D_Color[COLOR_EDGE];
 							DO_inc(theDO);
 						}
 						else
