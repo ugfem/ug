@@ -2685,8 +2685,8 @@ static INT SaveDataCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   char FileName[NAMESIZE],VDName[NAMESIZE];
-  VECDATA_DESC *theVDList[1];
-  INT i,n;
+  VECDATA_DESC *theVDList[5];
+  INT n;
 
   theMG = currMG;
   if (theMG==NULL) {PrintErrorMessage('E',"savedata","no open multigrid"); return (CMDERRORCODE);}
@@ -2695,9 +2695,14 @@ static INT SaveDataCommand (INT argc, char **argv)
   if (sscanf(argv[0],expandfmt(CONCAT3(" savedata %",NAMELENSTR,"[ -~]")),FileName)!=1) { PrintErrorMessage('E',"save","cannot read filename"); return (CMDERRORCODE);}
 
   /* get vecdatadesc */
-  theVDList[0] = ReadArgvVecDesc(theMG,"v",argc,argv);
-  if (theVDList[0]==NULL ) {PrintErrorMessage('E',"save","cannot find vecdata desc"); return (CMDERRORCODE);}
-  n = 1;
+  n=0;
+  if ((theVDList[n]=ReadArgvVecDesc(theMG,"a",argc,argv))!=NULL)
+    if ((theVDList[++n]=ReadArgvVecDesc(theMG,"b",argc,argv))!=NULL)
+      if ((theVDList[++n]=ReadArgvVecDesc(theMG,"c",argc,argv))!=NULL)
+        if ((theVDList[++n]=ReadArgvVecDesc(theMG,"d",argc,argv))!=NULL)
+          if ((theVDList[++n]=ReadArgvVecDesc(theMG,"e",argc,argv))!=NULL)
+            n++;
+  if (n<=0) return (PARAMERRORCODE);
   if (SaveData(theMG,FileName,n,theVDList)) return (PARAMERRORCODE);
 
   return(OKCODE);
@@ -2735,8 +2740,8 @@ static INT LoadDataCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   char FileName[NAMESIZE],VDName[NAMESIZE];
-  VECDATA_DESC *theVDList[1];
-  INT i,n;
+  VECDATA_DESC *theVDList[5];
+  INT n;
 
   theMG = currMG;
   if (theMG==NULL) {PrintErrorMessage('E',"loaddata","no open multigrid"); return (CMDERRORCODE);}
@@ -2745,9 +2750,14 @@ static INT LoadDataCommand (INT argc, char **argv)
   if (sscanf(argv[0],expandfmt(CONCAT3(" loaddata %",NAMELENSTR,"[ -~]")),FileName)!=1) { PrintErrorMessage('E',"save","cannot read filename"); return (CMDERRORCODE);}
 
   /* get vecdatadesc */
-  theVDList[0] = ReadArgvVecDesc(theMG,"v",argc,argv);
-  if (theVDList[0]==NULL ) {PrintErrorMessage('E',"loaddata","cannot find vecdata desc"); return (CMDERRORCODE);}
-  n = 1;
+  n=0;
+  if ((theVDList[n]=ReadArgvVecDesc(theMG,"a",argc,argv))!=NULL)
+    if ((theVDList[++n]=ReadArgvVecDesc(theMG,"b",argc,argv))!=NULL)
+      if ((theVDList[++n]=ReadArgvVecDesc(theMG,"c",argc,argv))!=NULL)
+        if ((theVDList[++n]=ReadArgvVecDesc(theMG,"d",argc,argv))!=NULL)
+          if ((theVDList[++n]=ReadArgvVecDesc(theMG,"e",argc,argv))!=NULL)
+            n++;
+  if (n<=0) return (PARAMERRORCODE);
   if (LoadData(theMG,FileName,n,theVDList)) return (PARAMERRORCODE);
 
   return(OKCODE);
