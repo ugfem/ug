@@ -752,26 +752,28 @@ static DOUBLE		EScalar3D_minValue;
 static DOUBLE		EScalar3D_maxValue;
 
 
-/*---------- working variables of 'EW_Line2D' ---------------------------*/
-static ElementEvalProcPtr LINE2D_EvalFct;
-static DOUBLE		LINE2D_V2Y_factor;
-static DOUBLE		LINE2D_V2Y_offset;
-static long			LINE2D_Color;
-static INT			LINE2D_depth;
-static DOUBLE		LINE2D_minValue;
-static DOUBLE		LINE2D_maxValue;
-static COORD_POINT	LINE2D_Begin;
-static COORD_POINT	LINE2D_End;
-static COORD_POINT	LINE2D_BeginRot;
-static COORD_POINT	LINE2D_EndRot;
-static INT			LINE2D_nHit;
-static INT			LINE2D_YLOG;
-static DOUBLE		LINE2D_minCut;
-static DOUBLE		LINE2D_maxCut;
-static DOUBLE		LINE2D_xmin;
-static DOUBLE		LINE2D_xscl;
-static INT          LINE2D_GnuFile;
-static FILE *       LINE2D_GnuStream;
+/*---------- working variables of 'EW_Line' ---------------------------*/
+static ElementEvalProcPtr LINE_EvalFct;
+static DOUBLE		LINE_V2Y_factor;
+static DOUBLE		LINE_V2Y_offset;
+static long			LINE_Color;
+static INT			LINE_depth;
+static DOUBLE		LINE_minValue;
+static DOUBLE		LINE_maxValue;
+static COORD_POINT	LINE_Begin;
+static COORD_POINT	LINE_End;
+static COORD_POINT	LINE_BeginRot;
+static COORD_POINT	LINE_EndRot;
+static DOUBLE * 	LINE_Begin_D;
+static DOUBLE * 	LINE_End_D;
+static INT			LINE_nHit;
+static INT			LINE_YLOG;
+static DOUBLE		LINE_minCut;
+static DOUBLE		LINE_maxCut;
+static DOUBLE		LINE_xmin;
+static DOUBLE		LINE_xscl;
+static INT          LINE_GnuFile;
+static FILE *       LINE_GnuStream;
 
 /*---------- working variables of 'EW_EVector3D' ---------------------------*/
 #define RASTERPOINTS_MAX		200
@@ -884,6 +886,7 @@ static INT  PlotContourTriangle3D (ELEMENT *theElement, DOUBLE **CornersOfElem,
 								  DOUBLE *TP0, DOUBLE *TP1, DOUBLE *TP2, 
 								  DOUBLE *LTP0, DOUBLE *LTP1, DOUBLE *LTP2, 
 								  INT depth, DRAWINGOBJ **theDO);
+static INT ElementISLine (ELEMENT *theElement, DOUBLE *p1, DOUBLE *p2);
 
 /****************************************************************************/
 /*D
@@ -2303,24 +2306,6 @@ static INT MarkElements_MGS (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 */
 /****************************************************************************/
 
-static INT ElementISLine2D (ELEMENT *theElement, DOUBLE *p1, DOUBLE *p2)
-{
-	INT i, n;
-	COORD_POINT P1, P2, P3, P4;
-	DOUBLE alpha, beta;
-	
-	P1.x=p1[0]; P1.y=p1[1]; P2.x=p2[0]; P2.y=p2[1];
-	n = CORNERS_OF_ELEM(theElement);
-	P3.x=CVECT(MYVERTEX(CORNER(theElement,n-1)))[0]; P3.y=CVECT(MYVERTEX(CORNER(theElement,n-1)))[1];
-	for (i=0; i<n; i++)
-	{
-		P4.x=CVECT(MYVERTEX(CORNER(theElement,i)))[0]; P4.y=CVECT(MYVERTEX(CORNER(theElement,i)))[1];
-		if (CalcCrossingPoint(P1,P2,P3,P4,&alpha,&beta)) return (1);
-		P3.x=P4.x; P3.y=P4.y;
-	}
-	return (0);
-}
-
 static INT MarkElements_MGS_On_Line (MULTIGRID *theMG, INT fromLevel, INT toLevel, DOUBLE *p1, DOUBLE *p2)
 {
 	ELEMENT *theElement;
@@ -2331,13 +2316,13 @@ static INT MarkElements_MGS_On_Line (MULTIGRID *theMG, INT fromLevel, INT toLeve
 	
 	for (i=fromLevel; i<toLevel; i++)
 		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
-			if (!IS_REFINED(theElement) && ElementISLine2D(theElement,p1,p2))
+			if (!IS_REFINED(theElement) && ElementISLine(theElement,p1,p2))
 				SETUSED(theElement,1);
 			else
 				SETUSED(theElement,0);
 	
 	for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,toLevel)); theElement!=NULL; theElement=SUCCE(theElement))
-		if (ElementISLine2D(theElement,p1,p2))
+		if (ElementISLine(theElement,p1,p2))
 			SETUSED(theElement,1);
 		else
 			SETUSED(theElement,0);
@@ -4158,7 +4143,7 @@ static INT LineDraw2D (DRAWINGOBJ *q)
 	long color;
 
 	if (Draw2D(q)) RETURN(1);
-	if (!LINE2D_GnuFile) return (0);
+	if (!LINE_GnuFile) return (0);
 	
 #ifdef ModelP
 	if (me!=master) return (0);
@@ -4182,9 +4167,9 @@ static INT LineDraw2D (DRAWINGOBJ *q)
 			case DO_LINE:
 				DO_inc(q)
 				DO_inc(q);
-				fprintf (LINE2D_GnuStream,"%f %f;\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
+				fprintf (LINE_GnuStream,"%f %f;\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
 				DO_inc_n(q,2);
-				fprintf (LINE2D_GnuStream,"%f %f;\n\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
+				fprintf (LINE_GnuStream,"%f %f;\n\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
 				DO_inc_n(q,2);
 				break;
 			default:
@@ -5492,11 +5477,336 @@ INT SetOrderStrategy (INT OrderStrategy)
 	return (0);
 }
 	
+/****************************************************************************/
+/*
+   EW_PreProcess_Line - Initialize for line plot
+
+   SYNOPSIS:
+   static INT EW_PreProcess_Line (PICTURE *thePicture, WORK *theWork);
+
+   PARAMETERS:
+.  thePicture -
+.  theWork -
+
+   DESCRIPTION:
+   This function initializes for line plot.	
+
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+*/
+/****************************************************************************/
+
+static INT EW_PreProcess_Line (PICTURE *thePicture, WORK *theWork)
+{
+	struct LinePlotObj *theLpo;
+	OUTPUTDEVICE *theOD;
+	MULTIGRID *theMG;
+	
+	theLpo = &(PIC_PO(thePicture)->theLpo);
+	theOD  = PIC_OUTPUTDEV(thePicture);
+	theMG  = PO_MG(PIC_PO(thePicture));
+	
+	theLpo->nHit = 0;
+	
+	/* set value->color fct, eval fct */
+	if (theLpo->max - theLpo->min <= 0.0)
+		if (W_ID(theWork) != FINDRANGE_WORK)
+		{
+			UserWrite("maxValue has to be larger than minValue\n");
+			return (1);
+		}
+	
+	LINE_EvalFct	  = theLpo->EvalFct->EvalProc;
+	LINE_V2Y_factor = theLpo->aspectratio/(theLpo->max - theLpo->min);
+	LINE_V2Y_offset = - LINE_V2Y_factor * theLpo->min;
+	LINE_depth 	  = theLpo->depth;
+	LINE_Color	  = (long)theOD->spectrumStart + theLpo->color*(theOD->spectrumEnd - theOD->spectrumStart);
+	LINE_Begin.x	  = theLpo->left[0];  LINE_Begin.y	  = theLpo->left[1];
+	LINE_End.x	  = theLpo->right[0]; LINE_End.y	  	  = theLpo->right[1];
+	LINE_BeginRot.x = theLpo->left[0];  LINE_BeginRot.y	  = 1.0001*theLpo->left[1];
+	LINE_EndRot.x	  = theLpo->right[0]; LINE_EndRot.y	  = 1.0001*theLpo->right[1];
+	LINE_Begin_D	  = theLpo->left;
+	LINE_End_D	  = theLpo->right;
+	LINE_YLOG		  = theLpo->yLog;
+	
+	LINE_nHit		  = 0;
+	LINE_minCut	  = 1.0;
+	LINE_maxCut	  = 0.0;
+	
+	if (theLpo->xmin>=theLpo->xmax)
+	{
+		LINE_xmin	  = 0.0;
+		LINE_xscl	  = 1.0;
+	}
+	else
+	{
+		LINE_xmin	  = theLpo->xmin;
+		LINE_xscl	  = theLpo->xmax-theLpo->xmin;
+	}
+	
+	/* mark suface elements on boundary */
+	if (MarkElements_MGS_On_Line(theMG,0,CURRENTLEVEL(theMG),theLpo->left,theLpo->right)) return (1);
+	
+	/* prepare evaluation routine */
+	if (theLpo->EvalFct->PreprocessProc!=NULL)
+		if ((*theLpo->EvalFct->PreprocessProc)(PO_NAME(theLpo),theMG)) 
+			return (1);
+
+	/* gnuplot-option */
+	LINE_GnuFile=0;
+#ifdef ModelP 
+	if (me==master)
+#endif
+	if (theLpo->Gnuplot && W_ID(theWork)==DRAW_WORK)
+	{
+		LINE_GnuFile=1;
+		if (gnuplotpathes_set) LINE_GnuStream=FileOpenUsingSearchPaths(theLpo->Gnufilename,"w","gnuplotpaths");
+		else LINE_GnuStream=fileopen(theLpo->Gnufilename,"w");
+		if (LINE_GnuStream==NULL) theLpo->Gnuplot=LINE_GnuFile=0;
+	}
+
+	return (0);
+}
+	
+/****************************************************************************/
+/*
+   EW_PreProcess_Line_FR - Initialize for findrange of line plot	
+
+   SYNOPSIS:
+   static INT EW_PreProcess_Line_FR (PICTURE *thePicture, WORK *theWork);
+
+   PARAMETERS:
+.  thePicture - 
+.  theWork -
+
+   DESCRIPTION:
+   This function initializes for findrange of scalar plot.
+
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+*/							
+/****************************************************************************/
+
+static INT EW_PreProcess_Line_FR (PICTURE *thePicture, WORK *theWork)
+{
+	if (EW_PreProcess_Line (thePicture,theWork)) 
+		return (1);
+
+	/* reset min and max values */
+	GEN_FR_put = W_FINDRANGE_WORK(theWork)->put;
+	GEN_FR_min = MAX_D;
+	GEN_FR_max = -MAX_D;	
+	
+	return (0);
+}
+	
+/****************************************************************************/
+/*																			*/
+/* Function: EW_PostProcess_Line 											*/
+/*																			*/
+/* Purpose:   invert node selection 										*/
+/*																			*/
+/* Input:	  PICTURE *thePicture, WORK *theWork							*/
+/*																			*/
+/* Output:	  INT 0: ok 													*/
+/*				  1: error													*/
+/*																			*/
+/****************************************************************************/
+
+static INT EW_PostProcess_Line (PICTURE *thePicture, WORK *theWork)
+{
+	OUTPUTDEVICE *theOD;
+	struct LinePlotObj *theLpo;
+	DOUBLE_VECTOR p;
+	DRAWINGOBJ *theDO;
+
+	#ifdef ModelP
+	if (me != master) return 0;
+    #endif
+
+	theOD  = PIC_OUTPUTDEV(thePicture);
+	theLpo = &(PIC_PO(thePicture)->theLpo);
+	
+	theLpo->nHit = LINE_nHit;
+	
+	/* draw y-axis */
+	theDO = WOP_DrawingObject;
+	DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+	DO_2l(theDO) = theOD->black; DO_inc(theDO);
+	p[0] = 0.0; p[1] = 0.0;
+	V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+	p[0] = 0.0; p[1] = theLpo->aspectratio;
+	V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+	DO_2c(theDO) = DO_NO_INST;
+	Draw2D(WOP_DrawingObject);	
+
+	if (LINE_V2Y_offset<0.0)
+	{
+		/* draw x-axis */
+		theDO = WOP_DrawingObject;
+		DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+		DO_2l(theDO) = theOD->red; DO_inc(theDO);
+		p[0] = 0.0; p[1] = 0.0;
+		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		p[0] = 1.0; p[1] = 0.0;
+		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		DO_2c(theDO) = DO_NO_INST;
+		Draw2D(WOP_DrawingObject);
+	}
+	else if (LINE_V2Y_offset>theLpo->aspectratio)
+	{
+		/* draw x-axis */
+		theDO = WOP_DrawingObject;
+		DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+		DO_2l(theDO) = theOD->red; DO_inc(theDO);
+		p[0] = 0.0; p[1] = theLpo->aspectratio;
+		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		p[0] = 1.0; p[1] = theLpo->aspectratio;
+		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		DO_2c(theDO) = DO_NO_INST;
+		Draw2D(WOP_DrawingObject);
+	}
+	else
+	{
+		/* draw zero-axis */
+		theDO = WOP_DrawingObject;
+		DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+		DO_2l(theDO) = theOD->black; DO_inc(theDO);
+		p[0] = 0.0; p[1] = LINE_V2Y_offset;
+		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		p[0] = 1.0; p[1] = LINE_V2Y_offset;
+		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		DO_2c(theDO) = DO_NO_INST;
+		Draw2D(WOP_DrawingObject);
+	}
+
+#ifdef ModelP
+	if (me==master)
+#endif
+	if (LINE_GnuFile  && W_ID(theWork)==DRAW_WORK)
+	{
+		if (fclose(LINE_GnuStream)==EOF) return (1);
+	}
+
+	return (0);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  GEN_PostProcess_Line_FR	 									*/
+/*																			*/
+/* Purpose:   postprocess for findrange of scalar plot						*/
+/*																			*/
+/* Input:	  PICTURE *thePicture, WORK *theWork							*/
+/*																			*/
+/* Return:	  INT 0: ok 													*/
+/*			  INT 1: an error occurred										*/
+/*																			*/
+/****************************************************************************/
+
+static INT GEN_PostProcess_Line_FR (PICTURE *thePicture, WORK *theWork)
+{
+	struct FindRange_Work *FR_Work;
+	DOUBLE m,l;
+	OUTPUTDEVICE *theOD;
+	struct LinePlotObj *theLpo;
+
+	theOD  = PIC_OUTPUTDEV(thePicture);
+	theLpo = &(PIC_PO(thePicture)->theLpo);
+	
+	theLpo->nHit = LINE_nHit;
+	theLpo->xmin = LINE_minCut;
+	theLpo->xmax = LINE_maxCut;
+	
+	FR_Work = W_FINDRANGE_WORK(theWork);
+
+    #ifdef ModelP
+	GEN_FR_min = UG_GlobalMinDOUBLE(GEN_FR_min);
+	GEN_FR_max = UG_GlobalMaxDOUBLE(GEN_FR_max);
+	#endif	
+
+	if (GEN_FR_min>GEN_FR_max)
+	{
+		UserWrite("findrange failed\n");
+		return (0);
+	}
+	
+	/* postprocess findrange */
+	if (FR_Work->symmetric==YES)
+	{
+		GEN_FR_max = MAX(ABS(GEN_FR_min),ABS(GEN_FR_max));
+		GEN_FR_min = -GEN_FR_max;
+	}
+	if (FR_Work->zoom!=1.0)
+	{
+		m = 0.5*(GEN_FR_max + GEN_FR_min);
+		l = 0.5*(GEN_FR_max - GEN_FR_min);
+		GEN_FR_min = m - FR_Work->zoom*l;
+		GEN_FR_max = m + FR_Work->zoom*l;
+	}
+	FR_Work->min = GEN_FR_min;
+	FR_Work->max = GEN_FR_max;
+	
+	/* store if */
+	if (GEN_FR_put == YES)
+	{
+		PIC_PO(thePicture)->theLpo.min = GEN_FR_min;
+		PIC_PO(thePicture)->theLpo.max = GEN_FR_max;
+	}
+	
+	return (0);
+}
+
 /**********************************************************************************************************/
 /************************************ Part only for 2D Version ********************************************/
 /**********************************************************************************************************/
 
 #ifdef __TWODIM__
+
+/****************************************************************************/
+/*
+   ElementISLine - Get intersection of line with element
+
+   SYNOPSIS:
+   static INT ElementISLine (ELEMENT *theElement, DOUBLE *p1, DOUBLE *p2)
+
+   PARAMETERS:
+.  theElement - theElemetn
+.  p1,p2 - the endpoints of the line
+
+   DESCRIPTION:
+   This function tells if a line intersects an element
+
+   RETURN VALUE:
+   INT
+
+   0 no intersection
+
+   1 intersection
+   */
+/****************************************************************************/
+
+static INT ElementISLine (ELEMENT *theElement, DOUBLE *p1, DOUBLE *p2)
+{
+	INT i, n;
+	COORD_POINT P1, P2, P3, P4;
+	DOUBLE alpha, beta;
+	
+	P1.x=p1[0]; P1.y=p1[1]; P2.x=p2[0]; P2.y=p2[1];
+	n = CORNERS_OF_ELEM(theElement);
+	P3.x=CVECT(MYVERTEX(CORNER(theElement,n-1)))[0]; P3.y=CVECT(MYVERTEX(CORNER(theElement,n-1)))[1];
+	for (i=0; i<n; i++)
+	{
+		P4.x=CVECT(MYVERTEX(CORNER(theElement,i)))[0]; P4.y=CVECT(MYVERTEX(CORNER(theElement,i)))[1];
+		if (CalcCrossingPoint(P1,P2,P3,P4,&alpha,&beta)) return (1);
+		P3.x=P4.x; P3.y=P4.y;
+	}
+	return (0);
+}
 
 /****************************************************************************/
 /*
@@ -7519,163 +7829,6 @@ static INT InvertNodeSelection2D (PICTURE *thePicture, WORK *theWork)
 
 /****************************************************************************/
 /*																			*/
-/* Function: InvertNodeSelection2D 											*/
-/*																			*/
-/* Purpose:   invert node selection 										*/
-/*																			*/
-/* Input:	  PICTURE *thePicture, WORK *theWork							*/
-/*																			*/
-/* Output:	  INT 0: ok 													*/
-/*				  1: error													*/
-/*																			*/
-/****************************************************************************/
-
-static INT EW_PostProcess_Line2D (PICTURE *thePicture, WORK *theWork)
-{
-	OUTPUTDEVICE *theOD;
-	struct LinePlotObj2D *theLpo;
-	DOUBLE_VECTOR p;
-	DRAWINGOBJ *theDO;
-
-	#ifdef ModelP
-	if (me != master) return 0;
-    #endif
-
-	theOD  = PIC_OUTPUTDEV(thePicture);
-	theLpo = &(PIC_PO(thePicture)->theLpo);
-	
-	theLpo->nHit = LINE2D_nHit;
-	
-	/* draw y-axis */
-	theDO = WOP_DrawingObject;
-	DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
-	DO_2l(theDO) = theOD->black; DO_inc(theDO);
-	p[0] = 0.0; p[1] = 0.0;
-	V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-	p[0] = 0.0; p[1] = theLpo->aspectratio;
-	V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-	DO_2c(theDO) = DO_NO_INST;
-	Draw2D(WOP_DrawingObject);	
-
-	if (LINE2D_V2Y_offset<0.0)
-	{
-		/* draw x-axis */
-		theDO = WOP_DrawingObject;
-		DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
-		DO_2l(theDO) = theOD->red; DO_inc(theDO);
-		p[0] = 0.0; p[1] = 0.0;
-		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-		p[0] = 1.0; p[1] = 0.0;
-		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-		DO_2c(theDO) = DO_NO_INST;
-		Draw2D(WOP_DrawingObject);
-	}
-	else if (LINE2D_V2Y_offset>theLpo->aspectratio)
-	{
-		/* draw x-axis */
-		theDO = WOP_DrawingObject;
-		DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
-		DO_2l(theDO) = theOD->red; DO_inc(theDO);
-		p[0] = 0.0; p[1] = theLpo->aspectratio;
-		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-		p[0] = 1.0; p[1] = theLpo->aspectratio;
-		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-		DO_2c(theDO) = DO_NO_INST;
-		Draw2D(WOP_DrawingObject);
-	}
-	else
-	{
-		/* draw zero-axis */
-		theDO = WOP_DrawingObject;
-		DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
-		DO_2l(theDO) = theOD->black; DO_inc(theDO);
-		p[0] = 0.0; p[1] = LINE2D_V2Y_offset;
-		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-		p[0] = 1.0; p[1] = LINE2D_V2Y_offset;
-		V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-		DO_2c(theDO) = DO_NO_INST;
-		Draw2D(WOP_DrawingObject);
-	}
-
-#ifdef ModelP
-	if (me==master)
-#endif
-	if (LINE2D_GnuFile  && W_ID(theWork)==DRAW_WORK)
-	{
-		if (fclose(LINE2D_GnuStream)==EOF) return (1);
-	}
-
-	return (0);
-}
-
-/****************************************************************************/
-/*																			*/
-/* Function:  GEN_PostProcess_Line_FR	 									*/
-/*																			*/
-/* Purpose:   postprocess for findrange of scalar plot						*/
-/*																			*/
-/* Input:	  PICTURE *thePicture, WORK *theWork							*/
-/*																			*/
-/* Return:	  INT 0: ok 													*/
-/*			  INT 1: an error occurred										*/
-/*																			*/
-/****************************************************************************/
-
-static INT GEN_PostProcess_Line_FR (PICTURE *thePicture, WORK *theWork)
-{
-	struct FindRange_Work *FR_Work;
-	DOUBLE m,l;
-	OUTPUTDEVICE *theOD;
-	struct LinePlotObj2D *theLpo;
-
-	theOD  = PIC_OUTPUTDEV(thePicture);
-	theLpo = &(PIC_PO(thePicture)->theLpo);
-	
-	theLpo->nHit = LINE2D_nHit;
-	theLpo->xmin = LINE2D_minCut;
-	theLpo->xmax = LINE2D_maxCut;
-	
-	FR_Work = W_FINDRANGE_WORK(theWork);
-
-    #ifdef ModelP
-	GEN_FR_min = UG_GlobalMinDOUBLE(GEN_FR_min);
-	GEN_FR_max = UG_GlobalMaxDOUBLE(GEN_FR_max);
-	#endif	
-
-	if (GEN_FR_min>GEN_FR_max)
-	{
-		UserWrite("findrange failed\n");
-		return (0);
-	}
-	
-	/* postprocess findrange */
-	if (FR_Work->symmetric==YES)
-	{
-		GEN_FR_max = MAX(ABS(GEN_FR_min),ABS(GEN_FR_max));
-		GEN_FR_min = -GEN_FR_max;
-	}
-	if (FR_Work->zoom!=1.0)
-	{
-		m = 0.5*(GEN_FR_max + GEN_FR_min);
-		l = 0.5*(GEN_FR_max - GEN_FR_min);
-		GEN_FR_min = m - FR_Work->zoom*l;
-		GEN_FR_max = m + FR_Work->zoom*l;
-	}
-	FR_Work->min = GEN_FR_min;
-	FR_Work->max = GEN_FR_max;
-	
-	/* store if */
-	if (GEN_FR_put == YES)
-	{
-		PIC_PO(thePicture)->theLpo.min = GEN_FR_min;
-		PIC_PO(thePicture)->theLpo.max = GEN_FR_max;
-	}
-	
-	return (0);
-}
-
-/****************************************************************************/
-/*																			*/
 /* Function:  PlotVecMatData2D				 								*/
 /*																			*/
 /* Purpose:   plot user data of a vector and his matrices 					*/
@@ -8331,97 +8484,6 @@ static INT EW_PreProcess_EScalar2D (PICTURE *thePicture, WORK *theWork)
 	
 /****************************************************************************/
 /*
-   EW_PreProcess_Line2D - Initialize for line plot
-
-   SYNOPSIS:
-   static INT EW_PreProcess_Line2D (PICTURE *thePicture, WORK *theWork);
-
-   PARAMETERS:
-.  thePicture -
-.  theWork -
-
-   DESCRIPTION:
-   This function initializes for line plot.	
-
-   RETURN VALUE:
-   INT
-.n    0 if ok
-.n    1 if error occured.
-*/
-/****************************************************************************/
-
-static INT EW_PreProcess_Line2D (PICTURE *thePicture, WORK *theWork)
-{
-	struct LinePlotObj2D *theLpo;
-	OUTPUTDEVICE *theOD;
-	MULTIGRID *theMG;
-	
-	theLpo = &(PIC_PO(thePicture)->theLpo);
-	theOD  = PIC_OUTPUTDEV(thePicture);
-	theMG  = PO_MG(PIC_PO(thePicture));
-	
-	theLpo->nHit = 0;
-	
-	/* set value->color fct, eval fct */
-	if (theLpo->max - theLpo->min <= 0.0)
-		if (W_ID(theWork) != FINDRANGE_WORK)
-		{
-			UserWrite("maxValue has to be larger than minValue\n");
-			return (1);
-		}
-	
-	LINE2D_EvalFct	  = theLpo->EvalFct->EvalProc;
-	LINE2D_V2Y_factor = theLpo->aspectratio/(theLpo->max - theLpo->min);
-	LINE2D_V2Y_offset = - LINE2D_V2Y_factor * theLpo->min;
-	LINE2D_depth 	  = theLpo->depth;
-	LINE2D_Color	  = (long)theOD->spectrumStart + theLpo->color*(theOD->spectrumEnd - theOD->spectrumStart);
-	LINE2D_Begin.x	  = theLpo->left[0];  LINE2D_Begin.y	  = theLpo->left[1];
-	LINE2D_End.x	  = theLpo->right[0]; LINE2D_End.y	  	  = theLpo->right[1];
-	LINE2D_BeginRot.x = theLpo->left[0];  LINE2D_BeginRot.y	  = 1.0001*theLpo->left[1];
-	LINE2D_EndRot.x	  = theLpo->right[0]; LINE2D_EndRot.y	  = 1.0001*theLpo->right[1];
-	LINE2D_YLOG		  = theLpo->yLog;
-	
-	LINE2D_nHit		  = 0;
-	LINE2D_minCut	  = 1.0;
-	LINE2D_maxCut	  = 0.0;
-	
-	if (theLpo->xmin>=theLpo->xmax)
-	{
-		LINE2D_xmin	  = 0.0;
-		LINE2D_xscl	  = 1.0;
-	}
-	else
-	{
-		LINE2D_xmin	  = theLpo->xmin;
-		LINE2D_xscl	  = theLpo->xmax-theLpo->xmin;
-	}
-	
-	/* mark suface elements on boundary */
-	if (MarkElements_MGS_On_Line(theMG,0,CURRENTLEVEL(theMG),theLpo->left,theLpo->right)) return (1);
-	
-	/* prepare evaluation routine */
-	if (theLpo->EvalFct->PreprocessProc!=NULL)
-		if ((*theLpo->EvalFct->PreprocessProc)(PO_NAME(theLpo),theMG)) 
-			return (1);
-
-	/* gnuplot-option */
-	LINE2D_GnuFile=0;
-#ifdef ModelP 
-	if (me==master)
-#endif
-	if (theLpo->Gnuplot && W_ID(theWork)==DRAW_WORK)
-	{
-		LINE2D_GnuFile=1;
-		if (gnuplotpathes_set) LINE2D_GnuStream=FileOpenUsingSearchPaths(theLpo->Gnufilename,"w","gnuplotpaths");
-		else LINE2D_GnuStream=fileopen(theLpo->Gnufilename,"w");
-		if (LINE2D_GnuStream==NULL) theLpo->Gnuplot=LINE2D_GnuFile=0;
-	}
-
-	return (0);
-}
-	
-/****************************************************************************/
-/*
    PlotColorTriangle2D -  Plot on triangle color(2D coord) with depth
 
    SYNOPSIS:
@@ -9030,13 +9092,13 @@ static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 	
 	/* draw polygon with depth */
-	LINE2D_minValue = MAX_D; LINE2D_maxValue = -MAX_D; 
+	LINE_minValue = MAX_D; LINE_maxValue = -MAX_D; 
 	found = 0;
 	P1.x=x[n-1][0]; P1.y=x[n-1][1];
 	for (i=0; i<n; i++)
 	{
 		P2.x=x[i][0]; P2.y=x[i][1];
-		if (CalcCrossingPoint(LINE2D_Begin,LINE2D_End,P1,P2,alpha+found,beta+found))
+		if (CalcCrossingPoint(LINE_Begin,LINE_End,P1,P2,alpha+found,beta+found))
 		{
 			P[found][0] = (1.0-beta[found])*P1.x + beta[found]*P2.x;
 			P[found][1] = (1.0-beta[found])*P1.y + beta[found]*P2.y;
@@ -9052,7 +9114,7 @@ static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		for (i=0; i<n; i++)
 		{
 			P2.x=x[i][0]; P2.y=x[i][1];
-			if (CalcCrossingPoint(LINE2D_BeginRot,LINE2D_EndRot,P1,P2,alpha+found,beta+found))
+			if (CalcCrossingPoint(LINE_BeginRot,LINE_EndRot,P1,P2,alpha+found,beta+found))
 			{
 				P[found][0] = (1.0-beta[found])*P1.x + beta[found]*P2.x;
 				P[found][1] = (1.0-beta[found])*P1.y + beta[found]*P2.y;
@@ -9066,44 +9128,44 @@ static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		/* check tolerance to not detect an element corner */
 		if (!((fabs(beta[0]-1.0)<SMALL_C) && (fabs(beta[2])<SMALL_C) && ((s[0]+1)%n==s[1])))
 		{
-			LINE2D_nHit++;
-			LINE2D_minCut = MIN(LINE2D_minCut,alpha[0]);
-			LINE2D_minCut = MIN(LINE2D_minCut,alpha[1]);
-			LINE2D_maxCut = MAX(LINE2D_maxCut,alpha[0]);
-			LINE2D_maxCut = MAX(LINE2D_maxCut,alpha[1]);
+			LINE_nHit++;
+			LINE_minCut = MIN(LINE_minCut,alpha[0]);
+			LINE_minCut = MIN(LINE_minCut,alpha[1]);
+			LINE_maxCut = MAX(LINE_maxCut,alpha[0]);
+			LINE_maxCut = MAX(LINE_maxCut,alpha[1]);
 			
 	    	DO_2c(theDO) = DO_RANGE; DO_inc(theDO); range = theDO; DO_inc_n(theDO,2);
 			
 			if (UG_GlobalToLocal(n,x,P[0],LocalCoord)) return (1);
-			v = (*LINE2D_EvalFct)(theElement,x,LocalCoord);
-			if (LINE2D_YLOG) v = log10(MAX(fabs(v),1e-100));
-			LINE2D_minValue = MIN(LINE2D_minValue,v);	LINE2D_maxValue = MAX(LINE2D_maxValue,v);
+			v = (*LINE_EvalFct)(theElement,x,LocalCoord);
+			if (LINE_YLOG) v = log10(MAX(fabs(v),1e-100));
+			LINE_minValue = MIN(LINE_minValue,v);	LINE_maxValue = MAX(LINE_maxValue,v);
 			A[0] = alpha[0];
-			A[1] = LINE2D_V2Y_factor*v + LINE2D_V2Y_offset;
-			A[0] = (A[0]-LINE2D_xmin)/LINE2D_xscl;	/* transform x-interval to [0,1] */
-			m = POW(2,LINE2D_depth);
+			A[1] = LINE_V2Y_factor*v + LINE_V2Y_offset;
+			A[0] = (A[0]-LINE_xmin)/LINE_xscl;	/* transform x-interval to [0,1] */
+			m = POW(2,LINE_depth);
 			for (i=1; i<=m; i++)
 			{
 				a = (DOUBLE)i/(DOUBLE)m;
 				V2_LINCOMB(1.0-a,P[0],a,P[1],PEval)
 				if (UG_GlobalToLocal(n,x,PEval,LocalCoord)) return (1);
-				v = (*LINE2D_EvalFct)(theElement,x,LocalCoord);
-				if (LINE2D_YLOG) v = log10(MAX(fabs(v),1e-100));
-				LINE2D_minValue = MIN(LINE2D_minValue,v);	LINE2D_maxValue = MAX(LINE2D_maxValue,v);
+				v = (*LINE_EvalFct)(theElement,x,LocalCoord);
+				if (LINE_YLOG) v = log10(MAX(fabs(v),1e-100));
+				LINE_minValue = MIN(LINE_minValue,v);	LINE_maxValue = MAX(LINE_maxValue,v);
 	
 				B[0] = (1.0-a)*alpha[0] + a*alpha[1] ;
-				B[1] = LINE2D_V2Y_factor*v + LINE2D_V2Y_offset;
-				B[0] = (B[0]-LINE2D_xmin)/LINE2D_xscl;	/* transform x-interval to [0,1] */
+				B[1] = LINE_V2Y_factor*v + LINE_V2Y_offset;
+				B[0] = (B[0]-LINE_xmin)/LINE_xscl;	/* transform x-interval to [0,1] */
 				DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
-				DO_2l(theDO) = LINE2D_Color; DO_inc(theDO);
+				DO_2l(theDO) = LINE_Color; DO_inc(theDO);
 				V2_COPY(A,DO_2Cp(theDO)); DO_inc_n(theDO,2);
 				V2_COPY(B,DO_2Cp(theDO)); DO_inc_n(theDO,2);
 				
 				V2_COPY(B,A)
 			}
 			
-			DO_2C(range) = LINE2D_minValue; DO_inc(range);
-			DO_2C(range) = LINE2D_maxValue;
+			DO_2C(range) = LINE_minValue; DO_inc(range);
+			DO_2C(range) = LINE_maxValue;
 		
 		}
 	DO_2c(theDO) = DO_NO_INST;
@@ -9144,40 +9206,6 @@ static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 static INT EW_PreProcess_EScalar2D_FR (PICTURE *thePicture, WORK *theWork)
 {
 	if (EW_PreProcess_EScalar2D (thePicture,theWork)) 
-		return (1);
-
-	/* reset min and max values */
-	GEN_FR_put = W_FINDRANGE_WORK(theWork)->put;
-	GEN_FR_min = MAX_D;
-	GEN_FR_max = -MAX_D;	
-	
-	return (0);
-}
-	
-/****************************************************************************/
-/*
-   EW_PreProcess_Line2D_FR - Initialize for findrange of line plot	
-
-   SYNOPSIS:
-   static INT EW_PreProcess_Line2D_FR (PICTURE *thePicture, WORK *theWork);
-
-   PARAMETERS:
-.  thePicture - 
-.  theWork -
-
-   DESCRIPTION:
-   This function initializes for findrange of scalar plot.
-
-   RETURN VALUE:
-   INT
-.n    0 if ok
-.n    1 if error occured.
-*/							
-/****************************************************************************/
-
-static INT EW_PreProcess_Line2D_FR (PICTURE *thePicture, WORK *theWork)
-{
-	if (EW_PreProcess_Line2D (thePicture,theWork)) 
 		return (1);
 
 	/* reset min and max values */
@@ -9598,6 +9626,35 @@ static INT EW_PreProcess_EVector2D_FR (PICTURE *thePicture, WORK *theWork)
 /*********************** Part only for 3D Version **********************/
 
 #ifdef __THREEDIM__
+
+/****************************************************************************/
+/*
+   ElementISLine - Get intersection of line with element
+
+   SYNOPSIS:
+   static INT ElementISLine (ELEMENT *theElement, DOUBLE *p1, DOUBLE *p2)
+
+   PARAMETERS:
+.  theElement - theElemetn
+.  p1,p2 - the endpoints of the line
+
+   DESCRIPTION:
+   This function tells if a line intersects an element
+
+   RETURN VALUE:
+   INT
+
+   0 no intersection
+
+   1 intersection
+   */
+/****************************************************************************/
+
+static INT ElementISLine (ELEMENT *theElement, DOUBLE *p1, DOUBLE *p2)
+{
+	/* all elements intersect */
+	return (1);
+}
 
 static INT SideCornerIndexPYR (ELEMENT *theElement, INT side, INT NodeOrder, INT i[4], INT icon[4][2])
 {
@@ -18795,6 +18852,112 @@ static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	return (0);
 }
 
+/****************************************************************************/
+/*
+   EW_LineElement3D	- line plot 
+
+   SYNOPSIS:
+   static INT EW_LineElement3D (ELEMENT *theElement, DRAWINGOBJ *theDO);
+
+   PARAMETERS:
+.  theElement - 
+.  theDO - 
+
+   DESCRIPTION:
+   This function plots line plot.
+
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+*/
+/****************************************************************************/
+
+static INT EW_LineElement3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
+{
+	INT i, n, m, found, s;
+	const DOUBLE *x[MAX_CORNERS_OF_ELEM];
+	DRAWINGOBJ *range;
+	DOUBLE_VECTOR LocalCoord, GlobalCoord;
+	DOUBLE v,lambda,lambda_min,lambda_max,A[2],B[2];
+	#ifdef __DO_HEAP_USED__
+	DRAWINGOBJ *p;
+	#endif
+	
+	n = CORNERS_OF_ELEM(theElement);
+	
+	/* get coordinates of corners of the element */
+	n = CORNERS_OF_ELEM(theElement);
+	for (i=0; i<n; i++)
+		x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
+	
+	/* draw polygon with depth */
+	LINE_minValue = MAX_D; LINE_maxValue = -MAX_D; 
+	found = 0; lambda_min=2.0; lambda_max=-1.0;
+	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+	{
+		if (LineISTriangle3D(x[CORNER_OF_SIDE(theElement,i,0)],x[CORNER_OF_SIDE(theElement,i,1)],x[CORNER_OF_SIDE(theElement,i,2)],LINE_Begin_D,LINE_End_D,&lambda))
+		{
+			lambda_min=MIN(lambda_min,lambda);
+			lambda_max=MAX(lambda_max,lambda);
+			found++;
+		}
+		if (CORNERS_OF_SIDE(theElement,i)==4)
+			if (LineISTriangle3D(x[CORNER_OF_SIDE(theElement,i,2)],x[CORNER_OF_SIDE(theElement,i,3)],x[CORNER_OF_SIDE(theElement,i,0)],LINE_Begin_D,LINE_End_D,&lambda))
+			{
+				lambda_min=MIN(lambda_min,lambda);
+				lambda_max=MAX(lambda_max,lambda);
+				found++;
+			}
+	}
+
+	if (found>=2)
+	{
+		LINE_nHit++;
+	    DO_2c(theDO) = DO_RANGE; DO_inc(theDO); range = theDO; DO_inc_n(theDO,2);
+		V3_LINCOMB(1.0-lambda_min,LINE_Begin_D,lambda_min,LINE_End_D,GlobalCoord);
+		if (UG_GlobalToLocal(n,x,GlobalCoord,LocalCoord)) return (1);
+		v = (*LINE_EvalFct)(theElement,x,LocalCoord);
+		if (LINE_YLOG) v = log10(MAX(fabs(v),1e-100));
+		LINE_minValue = MIN(LINE_minValue,v);	LINE_maxValue = MAX(LINE_maxValue,v);
+		A[0] = lambda_min;
+		A[1] = LINE_V2Y_factor*v + LINE_V2Y_offset;
+		m = POW(2,LINE_depth);
+		for (i=1; i<=m; i++)
+		{
+			lambda = (DOUBLE)i/(DOUBLE)m*(lambda_max-lambda_min) + lambda_min;
+			V3_LINCOMB(1.0-lambda,LINE_Begin_D,lambda,LINE_End_D,GlobalCoord);
+			if (UG_GlobalToLocal(n,x,GlobalCoord,LocalCoord)) return (1);
+			v = (*LINE_EvalFct)(theElement,x,LocalCoord);
+			if (LINE_YLOG) v = log10(MAX(fabs(v),1e-100));
+			LINE_minValue = MIN(LINE_minValue,v);	LINE_maxValue = MAX(LINE_maxValue,v);
+	
+			B[0] = lambda;
+			B[1] = LINE_V2Y_factor*v + LINE_V2Y_offset;
+			DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+			DO_2l(theDO) = LINE_Color; DO_inc(theDO);
+			V2_COPY(A,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+			V2_COPY(B,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+				
+			V2_COPY(B,A)
+		}
+		DO_2C(range) = LINE_minValue; DO_inc(range);
+		DO_2C(range) = LINE_maxValue;
+	}
+	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
+	
+#ifdef __DO_HEAP_USED__
+		n = (INT)theDO - (INT)p;
+		Heap_Used_Min = MIN(Heap_Used_Min,n);
+		Heap_Used_Max = MAX(Heap_Used_Max,n);
+#endif
+	return (0);
+}
+
 #endif /* __THREEDIM__ */
 
 /****************************************************************************/
@@ -21923,12 +22086,12 @@ INT InitWOP (void)
 		theWP = POH_WORKPROGS(thePOH,DRAW_WORK,0);
 		WP_WORKMODE(theWP) = ELEMENTWISE;
 		theEWW = WP_ELEMWISE(theWP);
-		theEWW->EW_PreProcessProc				= EW_PreProcess_Line2D;
+		theEWW->EW_PreProcessProc				= EW_PreProcess_Line;
 		theEWW->EW_GetFirstElementProcProc		= EW_GetFirstElement_vert_fw_up_Proc;
 		theEWW->EW_GetNextElementProcProc		= EW_GetNextElement_vert_fw_up_Proc;
 		theEWW->EW_EvaluateProc 				= EW_LineElement2D;
 		theEWW->EW_ExecuteProc					= LineDraw2D;
-		theEWW->EW_PostProcessProc				= EW_PostProcess_Line2D;
+		theEWW->EW_PostProcessProc				= EW_PostProcess_Line;
 		
 		/* findrange work */
 		POH_NBCYCLES(thePOH,FINDRANGE_WORK) = 1;
@@ -21936,7 +22099,7 @@ INT InitWOP (void)
 		theWP = POH_WORKPROGS(thePOH,FINDRANGE_WORK,0);
 		WP_WORKMODE(theWP) = ELEMENTWISE;
 		theEWW = WP_ELEMWISE(theWP);
-		theEWW->EW_PreProcessProc				= EW_PreProcess_Line2D_FR;
+		theEWW->EW_PreProcessProc				= EW_PreProcess_Line_FR;
 		theEWW->EW_GetFirstElementProcProc		= EW_GetFirstElement_vert_fw_up_Proc;
 		theEWW->EW_GetNextElementProcProc		= EW_GetNextElement_vert_fw_up_Proc;
 		theEWW->EW_EvaluateProc 				= EW_LineElement2D;
@@ -22150,6 +22313,36 @@ INT InitWOP (void)
 		theEWW->EW_ExecuteProc					= FindRange3D;
 		theEWW->EW_PostProcessProc				= GEN_PostProcess_Vector_FR;
 		
+
+		/* create WorkHandling for 'Line' */
+		if ((thePOH=CreatePlotObjHandling ("Line"))	   == NULL) return (__LINE__);
+		
+		/* draw work */
+		POH_NBCYCLES(thePOH,DRAW_WORK) = 1;
+		
+		theWP = POH_WORKPROGS(thePOH,DRAW_WORK,0);
+		WP_WORKMODE(theWP) = ELEMENTWISE;
+		theEWW = WP_ELEMWISE(theWP);
+		theEWW->EW_PreProcessProc				= EW_PreProcess_Line;
+		theEWW->EW_GetFirstElementProcProc		= EW_GetFirstElement_vert_fw_up_Proc;
+		theEWW->EW_GetNextElementProcProc		= EW_GetNextElement_vert_fw_up_Proc;
+		theEWW->EW_EvaluateProc 				= EW_LineElement3D;
+		theEWW->EW_ExecuteProc					= LineDraw2D;
+		theEWW->EW_PostProcessProc				= EW_PostProcess_Line;
+		
+		/* findrange work */
+		POH_NBCYCLES(thePOH,FINDRANGE_WORK) = 1;
+		
+		theWP = POH_WORKPROGS(thePOH,FINDRANGE_WORK,0);
+		WP_WORKMODE(theWP) = ELEMENTWISE;
+		theEWW = WP_ELEMWISE(theWP);
+		theEWW->EW_PreProcessProc				= EW_PreProcess_Line_FR;
+		theEWW->EW_GetFirstElementProcProc		= EW_GetFirstElement_vert_fw_up_Proc;
+		theEWW->EW_GetNextElementProcProc		= EW_GetNextElement_vert_fw_up_Proc;
+		theEWW->EW_EvaluateProc 				= EW_LineElement3D;
+		theEWW->EW_ExecuteProc					= FindRange2D;
+		theEWW->EW_PostProcessProc				= GEN_PostProcess_Line_FR;
+	
 	#endif
 		
 	/* set PlotObjTypes of PlotObjHandlings */

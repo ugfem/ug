@@ -242,6 +242,25 @@ struct MatrixPlotObj {
   DOUBLE space;                                                         /* gap between line segments in dashed lines*/
 };
 
+struct LinePlotObj {
+
+  struct PlotObjHead theHead;                           /* the head                                                                     */
+
+  /* data for 2D-View of line field */
+  EVALUES *EvalFct;                                                     /* evaluation proceedure						*/
+  DOUBLE min, max;                                                      /* range										*/
+  INT yLog;                                                                     /* draw y-axis in logarithmic scale				*/
+  DOUBLE_VECTOR left, right;                                    /* line in 2D physical space					*/
+  INT depth;                                                                    /* depth of recoursive subdevision of elements	*/
+  DOUBLE color;                                                         /* value between 0 and 1 specifiing the color   */
+  DOUBLE aspectratio;                                                   /* ratio of the picture							*/
+  INT nHit;                                                                     /* # elements hit by the line					*/
+  DOUBLE xmin;                                                          /* min intersection between grid and line	    */
+  DOUBLE xmax;                                                          /* max intersection between grid and line	    */
+  INT Gnuplot;                                  /* 1 for gnuplot-output                         */
+  char Gnufilename[NAMELEN];                    /* filename for gnuplot-output                  */
+};
+
 struct ExternPlotObject {
 
   struct PlotObjHead theHead;                           /* the head                                                                     */
@@ -319,25 +338,6 @@ struct VecMatPlotObj2D {
   INT Boundary;                                                         /* YES or NO									*/
   VECDATA_DESC *vd;                                                     /* NULL or vector                                                       */
   MATDATA_DESC *md;                                                     /* NULL or matrix                                                       */
-};
-
-struct LinePlotObj2D {
-
-  struct PlotObjHead theHead;                           /* the head                                                                     */
-
-  /* data for 2D-View of line field */
-  EVALUES *EvalFct;                                                     /* evaluation proceedure						*/
-  DOUBLE min, max;                                                      /* range										*/
-  INT yLog;                                                                     /* draw y-axis in logarithmic scale				*/
-  DOUBLE_VECTOR left, right;                                    /* line in 2D physical space					*/
-  INT depth;                                                                    /* depth of recoursive subdevision of elements	*/
-  DOUBLE color;                                                         /* value between 0 and 1 specifiing the color   */
-  DOUBLE aspectratio;                                                   /* ratio of the picture							*/
-  INT nHit;                                                                     /* # elements hit by the line					*/
-  DOUBLE xmin;                                                          /* min intersection between grid and line	    */
-  DOUBLE xmax;                                                          /* max intersection between grid and line	    */
-  INT Gnuplot;                                  /* 1 for gnuplot-output                         */
-  char Gnufilename[NAMELEN];                    /* filename for gnuplot-output                  */
 };
 
 /*----------- application dimension 3 PlotObjs -----------------------------*/
@@ -421,7 +421,7 @@ union PlotObj {
   struct ElemVectorPlotObj2D theEvpo;
   struct GridPlotObj2D theGpo;
   struct VecMatPlotObj2D theVmo;
-  struct LinePlotObj2D theLpo;
+  struct LinePlotObj theLpo;
 #endif
 
 #ifdef __THREEDIM__
@@ -432,6 +432,7 @@ union PlotObj {
   struct ElemVectorPlotObj3D theEvpo;
   struct VecMatPlotObj3D theVmo;
   struct GridPlotObj3D theGpo;
+  struct LinePlotObj theLpo;
 #endif
 
 };

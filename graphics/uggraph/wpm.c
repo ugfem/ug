@@ -2826,6 +2826,300 @@ static INT DisplayMatrixPlotObject (PLOTOBJ *thePlotObj)
   return (0);
 }
 
+/****************************************************************************/
+/*
+   InitLinePlotObject	- Initialization of 2D line object
+
+   SYNOPSIS:
+   static INT InitLinePlotObject (PLOTOBJ *thePlotObj, INT argc,
+   char **argv);
+
+   PARAMETERS:
+   .  thePlotObj -
+   .  argc -
+   .  argv -
+
+   DESCRIPTION:
+   This function makes an initialization of 2D line object.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if error occured.
+ */
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   Line - plot object to show a section through a 2D scalar grid function
+
+   DESCRIPTION:
+   The Line plot object shows a section through a 2D scalar grid function.
+
+   Mandatory options are:~
+   .    $e~<vec~eval~proc>		- either specify <vec eval proc>
+   .    $s~<vecdata~desc>		- or			 <vecdata desc> (standard eval proc, nodal values only)
+
+   Possible options:~
+   .    $f~<from>				- from value
+   .    $t~<to>				- to value
+   .    $d~<depth>				- integer for recursive depth (default 0,
+                                                          CAUTION: may slow down dramatically!)
+   .    $a~<ratio>				- use anisotropic scaling of x- and y-axis
+   .    $c~<value>				- use this color
+   .    $l~<x>~<y>				- starting point
+   .    $r~<x>~<y>				- end point
+   .    $Ly~0|1				- use logarithmic scaale for values off/on
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, vecdesc, section
+   D*/
+/****************************************************************************/
+
+static INT InitLinePlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
+{
+  BVP_DESC *theBVPDesc;
+  struct LinePlotObj *theLpo;
+  INT i, ret;
+  int iValue;
+  float fValue[DIM];
+  DOUBLE dist;
+  char buffer[128];
+
+  theLpo = &(thePlotObj->theLpo);
+  theBVPDesc = MG_BVPD(PO_MG(thePlotObj));
+  PO_MIDPOINT(thePlotObj)[0] = PO_MIDPOINT(thePlotObj)[1] = 0.5;
+  PO_RADIUS(thePlotObj) = 0.70711;
+  ret = ACTIVE;
+
+  theLpo->nHit = 0;
+  theLpo->xmin = 1.0;
+  theLpo->xmax = 0.0;
+
+  /* defaults */
+  if (PO_STATUS(thePlotObj)==NOT_INIT)
+  {
+    theLpo->min                                                             = 0.0;
+    theLpo->max                                                             = 1.0;
+    theLpo->yLog                                                    = 0;
+    for (i=0; i<DIM; i++) theLpo->left[i]   = 0.0;
+    for (i=0; i<DIM; i++) theLpo->right[i]  = 0.0;
+    theLpo->color                                                   = 0.0;
+    theLpo->aspectratio                                             = 1.0;
+    theLpo->EvalFct                                                 = NULL;
+    theLpo->Gnuplot                         = 0;
+    strcpy(theLpo->Gnufilename,"test.gnu");
+  }
+
+  /* set from option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='f')
+    {
+      if (sscanf(argv[i],"f %g",fValue)!=1)
+        break;
+      theLpo->min = fValue[0];
+      break;
+    }
+
+  /* set to option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='t')
+    {
+      if (sscanf(argv[i],"t %g",fValue)!=1)
+        break;
+      theLpo->max = fValue[0];
+      break;
+    }
+  if (theLpo->min >= theLpo->max )
+  {
+    UserWrite("minValue is bigger than maxValue\n");
+    ret = NOT_ACTIVE;
+  }
+
+  /* set left option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='l')
+    {
+      if (sscanf(argv[i],"l %g %g %g",fValue,fValue+1,fValue+2)!=DIM)
+        break;
+      V_DIM_COPY(fValue,theLpo->left)
+      break;
+    }
+
+  /* set right option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='r')
+    {
+      if (sscanf(argv[i],"r %g %g %g",fValue,fValue+1,fValue+2)!=DIM)
+        break;
+      V_DIM_COPY(fValue,theLpo->right)
+      break;
+    }
+  V_DIM_EUKLIDNORM_OF_DIFF(theLpo->left,theLpo->right,dist)
+  if (dist==0.0)
+  {
+    UserWrite("left and right have to be different\n");
+    ret = NOT_ACTIVE;
+  }
+
+  /* set color option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='c')
+    {
+      if (sscanf(argv[i],"c %g",fValue)!=1)
+        break;
+      theLpo->color = fValue[0];
+      break;
+    }
+  if (theLpo->color<0.0 || theLpo->color>1.0)
+  {
+    UserWrite("color is not valid\n");
+    ret = NOT_ACTIVE;
+  }
+
+  /* set aspectratio option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='a')
+    {
+      if (sscanf(argv[i],"a %g",fValue)!=1)
+        break;
+      theLpo->aspectratio = fValue[0];
+      break;
+    }
+  if (theLpo->aspectratio<=0.0)
+  {
+    UserWrite("aspect ratio is not valid\n");
+    ret = NOT_ACTIVE;
+  }
+
+  /* log-y option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='L')
+      if (sscanf(argv[i],"Ly %d",&iValue)==1)
+      {
+        theLpo->yLog = iValue;
+        break;
+      }
+
+  /* set depth option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='d')
+    {
+      if (sscanf(argv[i],"d %d",&iValue)!=1)
+        break;
+      theLpo->depth = iValue;
+      break;
+    }
+  if (theLpo->depth<0 || theLpo->depth>4)
+  {
+    UserWrite("depth is not valid\n");
+    ret = NOT_ACTIVE;
+  }
+
+  /* get plot procedure */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='e')
+    {
+      if (sscanf(argv[i],"e %s",buffer)!=1)
+        break;
+      if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(PO_NAME(theLpo),buffer);
+      theLpo->EvalFct = GetElementValueEvalProc(buffer);
+      break;
+    }
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='s')
+    {
+      if (sscanf(argv[i],"s %s",buffer)!=1)
+        break;
+      if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(PO_NAME(theLpo),buffer);
+      if (theLpo->EvalFct == NULL)
+        theLpo->EvalFct = GetElementValueEvalProc("nvalue");
+      break;
+    }
+  if (theLpo->EvalFct == NULL)
+  {
+    UserWrite("cannot find plot procedure\n");
+    ret = NOT_ACTIVE;
+  }
+
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='G')
+    {
+      if (sscanf(argv[i],"G %s",buffer)!=1)
+        break;
+      if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(theLpo->Gnufilename,buffer);
+      theLpo->Gnuplot=1;
+      break;
+    }
+
+  /* midpoint and radius */
+  PO_MIDPOINT(thePlotObj)[0] = 0.5; PO_MIDPOINT(thePlotObj)[1] = 0.5*theLpo->aspectratio;
+  PO_RADIUS(thePlotObj) = 0.5 * SQRT(1.0 + theLpo->aspectratio*theLpo->aspectratio);
+
+  return (ret);
+}
+
+/****************************************************************************/
+/*
+   DisplayLinePlotObject - Display content of line object
+
+   SYNOPSIS:
+   static INT DisplayLinePlotObject (PLOTOBJ *thePlotObj);
+
+   PARAMETERS:
+   .  thePlotObj -
+
+   DESCRIPTION:
+   This function displays content of 2D line object.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if error occured.
+ */
+/****************************************************************************/
+
+static INT DisplayLinePlotObject (PLOTOBJ *thePlotObj)
+{
+  struct LinePlotObj *theLpo;
+
+  theLpo = &(thePlotObj->theLpo);
+
+  /* print content */
+  if (theLpo->EvalFct != NULL)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theLpo->EvalFct));
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc","---");
+
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"name",PO_NAME(theLpo));
+
+  UserWriteF(DISPLAY_PO_FORMAT_SFF,"Range",(float)theLpo->min,(float)theLpo->max);
+#ifdef __TWODIM__
+  UserWriteF(DISPLAY_PO_FORMAT_SFF,"left",(float)theLpo->left[0],(float)theLpo->left[1]);
+  UserWriteF(DISPLAY_PO_FORMAT_SFF,"right",(float)theLpo->right[0],(float)theLpo->right[1]);
+#endif
+#ifdef __THREEDIM__
+  UserWriteF(DISPLAY_PO_FORMAT_SFFF,"left",(float)theLpo->left[0],(float)theLpo->left[1],(float)theLpo->left[2]);
+  UserWriteF(DISPLAY_PO_FORMAT_SFFF,"right",(float)theLpo->right[0],(float)theLpo->right[1],(float)theLpo->right[2]);
+#endif
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"y-log",(int)theLpo->yLog);
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"color",(float)theLpo->color);
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"asp.ratio",(float)theLpo->aspectratio);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"Depth",(int)theLpo->depth);
+  UserWrite("\ncomputed values:\n");
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"nHit",(int)theLpo->nHit);
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"x-min",(float)theLpo->xmin);
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"x-max",(float)theLpo->xmax);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"Gnuplot",(int)theLpo->Gnuplot);
+  if (theLpo->Gnuplot)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"filename",theLpo->Gnufilename);
+
+  return (0);
+}
+
 #ifdef __TWODIM__
 
 /****************************************************************************/
@@ -3861,294 +4155,6 @@ static INT DisplayVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj)
   }
   else
     UserWriteF(DISPLAY_PO_FORMAT_SS,"CutVectors","NO");
-
-  return (0);
-}
-
-/****************************************************************************/
-/*
-   InitLinePlotObject_2D	- Initialization of 2D line object
-
-   SYNOPSIS:
-   static INT InitLinePlotObject_2D (PLOTOBJ *thePlotObj, INT argc,
-   char **argv);
-
-   PARAMETERS:
-   .  thePlotObj -
-   .  argc -
-   .  argv -
-
-   DESCRIPTION:
-   This function makes an initialization of 2D line object.
-
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 if error occured.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/*D
-   Line - plot object to show a section through a 2D scalar grid function
-
-   DESCRIPTION:
-   The Line plot object shows a section through a 2D scalar grid function.
-
-   Mandatory options are:~
-   .    $e~<vec~eval~proc>		- either specify <vec eval proc>
-   .    $s~<vecdata~desc>		- or			 <vecdata desc> (standard eval proc, nodal values only)
-
-   Possible options:~
-   .    $f~<from>				- from value
-   .    $t~<to>				- to value
-   .    $d~<depth>				- integer for recursive depth (default 0,
-                                                          CAUTION: may slow down dramatically!)
-   .    $a~<ratio>				- use anisotropic scaling of x- and y-axis
-   .    $c~<value>				- use this color
-   .    $l~<x>~<y>				- starting point
-   .    $r~<x>~<y>				- end point
-   .    $Ly~0|1				- use logarithmic scaale for values off/on
-
-   KEYWORDS:
-   graphics, plot, window, picture, plotobject, vecdesc, section
-   D*/
-/****************************************************************************/
-
-static INT InitLinePlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
-{
-  BVP_DESC *theBVPDesc;
-  struct LinePlotObj2D *theLpo;
-  INT i, ret;
-  int iValue;
-  float fValue[2];
-  DOUBLE dist;
-  char buffer[128];
-
-  theLpo = &(thePlotObj->theLpo);
-  theBVPDesc = MG_BVPD(PO_MG(thePlotObj));
-  PO_MIDPOINT(thePlotObj)[0] = PO_MIDPOINT(thePlotObj)[1] = 0.5;
-  PO_RADIUS(thePlotObj) = 0.70711;
-  ret = ACTIVE;
-
-  theLpo->nHit = 0;
-  theLpo->xmin = 1.0;
-  theLpo->xmax = 0.0;
-
-  /* defaults */
-  if (PO_STATUS(thePlotObj)==NOT_INIT)
-  {
-    theLpo->min                                                             = 0.0;
-    theLpo->max                                                             = 1.0;
-    theLpo->yLog                                                    = 0;
-    theLpo->left[0] = theLpo->left[1]               = 0.0;
-    theLpo->right[0] = theLpo->right[1]     = 1.0;
-    theLpo->color                                                   = 0.0;
-    theLpo->aspectratio                                             = 1.0;
-    theLpo->EvalFct                                                 = NULL;
-    theLpo->Gnuplot                         = 0;
-    strcpy(theLpo->Gnufilename,"test.gnu");
-  }
-
-  /* set from option */
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='f')
-    {
-      if (sscanf(argv[i],"f %g",fValue)!=1)
-        break;
-      theLpo->min = fValue[0];
-      break;
-    }
-
-  /* set to option */
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='t')
-    {
-      if (sscanf(argv[i],"t %g",fValue)!=1)
-        break;
-      theLpo->max = fValue[0];
-      break;
-    }
-  if (theLpo->min >= theLpo->max )
-  {
-    UserWrite("minValue is bigger than maxValue\n");
-    ret = NOT_ACTIVE;
-  }
-
-  /* set left option */
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='l')
-    {
-      if (sscanf(argv[i],"l %g %g",fValue,fValue+1)!=2)
-        break;
-      V2_COPY(fValue,theLpo->left)
-      break;
-    }
-
-  /* set right option */
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='r')
-    {
-      if (sscanf(argv[i],"r %g %g",fValue,fValue+1)!=2)
-        break;
-      V2_COPY(fValue,theLpo->right)
-      break;
-    }
-  V2_EUKLIDNORM_OF_DIFF(theLpo->left,theLpo->right,dist)
-  if (dist==0.0)
-  {
-    UserWrite("left and right have to be different\n");
-    ret = NOT_ACTIVE;
-  }
-
-  /* set color option */
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='c')
-    {
-      if (sscanf(argv[i],"c %g",fValue)!=1)
-        break;
-      theLpo->color = fValue[0];
-      break;
-    }
-  if (theLpo->color<0.0 || theLpo->color>1.0)
-  {
-    UserWrite("color is not valid\n");
-    ret = NOT_ACTIVE;
-  }
-
-  /* set aspectratio option */
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='a')
-    {
-      if (sscanf(argv[i],"a %g",fValue)!=1)
-        break;
-      theLpo->aspectratio = fValue[0];
-      break;
-    }
-  if (theLpo->aspectratio<=0.0)
-  {
-    UserWrite("aspect ratio is not valid\n");
-    ret = NOT_ACTIVE;
-  }
-
-  /* log-y option */
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='L')
-      if (sscanf(argv[i],"Ly %d",&iValue)==1)
-      {
-        theLpo->yLog = iValue;
-        break;
-      }
-
-  /* set depth option */
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='d')
-    {
-      if (sscanf(argv[i],"d %d",&iValue)!=1)
-        break;
-      theLpo->depth = iValue;
-      break;
-    }
-  if (theLpo->depth<0 || theLpo->depth>4)
-  {
-    UserWrite("depth is not valid\n");
-    ret = NOT_ACTIVE;
-  }
-
-  /* get plot procedure */
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='e')
-    {
-      if (sscanf(argv[i],"e %s",buffer)!=1)
-        break;
-      if (strlen(buffer)>=NAMESIZE) break;
-      strcpy(PO_NAME(theLpo),buffer);
-      theLpo->EvalFct = GetElementValueEvalProc(buffer);
-      break;
-    }
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='s')
-    {
-      if (sscanf(argv[i],"s %s",buffer)!=1)
-        break;
-      if (strlen(buffer)>=NAMESIZE) break;
-      strcpy(PO_NAME(theLpo),buffer);
-      if (theLpo->EvalFct == NULL)
-        theLpo->EvalFct = GetElementValueEvalProc("nvalue");
-      break;
-    }
-  if (theLpo->EvalFct == NULL)
-  {
-    UserWrite("cannot find plot procedure\n");
-    ret = NOT_ACTIVE;
-  }
-
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='G')
-    {
-      if (sscanf(argv[i],"G %s",buffer)!=1)
-        break;
-      if (strlen(buffer)>=NAMESIZE) break;
-      strcpy(theLpo->Gnufilename,buffer);
-      theLpo->Gnuplot=1;
-      break;
-    }
-
-  /* midpoint and radius */
-  PO_MIDPOINT(thePlotObj)[0] = 0.5; PO_MIDPOINT(thePlotObj)[1] = 0.5*theLpo->aspectratio;
-  PO_RADIUS(thePlotObj) = 0.5 * SQRT(1.0 + theLpo->aspectratio*theLpo->aspectratio);
-
-  return (ret);
-}
-
-/****************************************************************************/
-/*
-   DisplayLinePlotObject_2D - Display content of 2D line object
-
-   SYNOPSIS:
-   static INT DisplayLinePlotObject_2D (PLOTOBJ *thePlotObj);
-
-   PARAMETERS:
-   .  thePlotObj -
-
-   DESCRIPTION:
-   This function displays content of 2D line object.
-
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 if error occured.
- */
-/****************************************************************************/
-
-static INT DisplayLinePlotObject_2D (PLOTOBJ *thePlotObj)
-{
-  struct LinePlotObj2D *theLpo;
-
-  theLpo = &(thePlotObj->theLpo);
-
-  /* print content */
-  if (theLpo->EvalFct != NULL)
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theLpo->EvalFct));
-  else
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc","---");
-
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"name",PO_NAME(theLpo));
-
-  UserWriteF(DISPLAY_PO_FORMAT_SFF,"Range",(float)theLpo->min,(float)theLpo->max);
-  UserWriteF(DISPLAY_PO_FORMAT_SFF,"left",(float)theLpo->left[0],(float)theLpo->left[1]);
-  UserWriteF(DISPLAY_PO_FORMAT_SFF,"right",(float)theLpo->right[0],(float)theLpo->right[1]);
-  UserWriteF(DISPLAY_PO_FORMAT_SI,"y-log",(int)theLpo->yLog);
-  UserWriteF(DISPLAY_PO_FORMAT_SF,"color",(float)theLpo->color);
-  UserWriteF(DISPLAY_PO_FORMAT_SF,"asp.ratio",(float)theLpo->aspectratio);
-  UserWriteF(DISPLAY_PO_FORMAT_SI,"Depth",(int)theLpo->depth);
-  UserWrite("\ncomputed values:\n");
-  UserWriteF(DISPLAY_PO_FORMAT_SI,"nHit",(int)theLpo->nHit);
-  UserWriteF(DISPLAY_PO_FORMAT_SF,"x-min",(float)theLpo->xmin);
-  UserWriteF(DISPLAY_PO_FORMAT_SF,"x-max",(float)theLpo->xmax);
-  UserWriteF(DISPLAY_PO_FORMAT_SI,"Gnuplot",(int)theLpo->Gnuplot);
-  if (theLpo->Gnuplot)
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"filename",theLpo->Gnufilename);
 
   return (0);
 }
@@ -5191,6 +5197,11 @@ INT InitPlotObjTypes (void)
   thePOT->SetPlotObjProc                  = InitMatrixPlotObject;
   thePOT->DispPlotObjProc                 = DisplayMatrixPlotObject;
 
+  if ((thePOT=GetPlotObjType("Line")) == NULL) return (1);
+  thePOT->Dimension                               = TYPE_2D;
+  thePOT->SetPlotObjProc                  = InitLinePlotObject;
+  thePOT->DispPlotObjProc                 = DisplayLinePlotObject;
+
   /* set data and procedures of PLOTOBJTYPE */
         #ifdef __TWODIM__
   if ((thePOT=GetPlotObjType("EScalar")) == NULL) return (1);
@@ -5212,11 +5223,6 @@ INT InitPlotObjTypes (void)
   thePOT->Dimension                               = TYPE_2D;
   thePOT->SetPlotObjProc                  = InitVecMat_2D;
   thePOT->DispPlotObjProc                 = DisplayVecMat_2D;
-
-  if ((thePOT=GetPlotObjType("Line")) == NULL) return (1);
-  thePOT->Dimension                               = TYPE_2D;
-  thePOT->SetPlotObjProc                  = InitLinePlotObject_2D;
-  thePOT->DispPlotObjProc                 = DisplayLinePlotObject_2D;
         #endif
 
         #ifdef __THREEDIM__
