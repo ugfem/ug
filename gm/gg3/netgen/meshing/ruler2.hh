@@ -3,6 +3,8 @@
 #ifndef FILE_NETRULE
 #define FILE_NETRULE
 
+#include <iostream.h>
+
 class netrule
 {
   typedef struct tf { float f1, f2, f3; } threefloat;

@@ -2,6 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream.h>
 #include <fstream.h>
 #include <math.h>
 

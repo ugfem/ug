@@ -2,6 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream.h>
 #include <fstream.h>
 #include <math.h>
 #include <limits.h>
@@ -108,7 +109,7 @@ INDEX ADFRONT2 :: AddLine (INDEX pi1, INDEX pi2, int asurfaceind)
   p1.AddLine();
   p2.AddLine();
 
-  minfn = min (p1.FrontNr(), p2.FrontNr());
+  minfn = ng_min (p1.FrontNr(), p2.FrontNr());
   p1.DecFrontNr (minfn+1);
   p2.DecFrontNr (minfn+1);
 

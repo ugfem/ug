@@ -134,10 +134,10 @@ public:
   const Point2d & P1() const { return p1; }
   const Point2d & P2() const { return p2; }
 
-  double XMax() const { return max (p1.X(), p2.X()); }
-  double YMax() const { return max (p1.Y(), p2.Y()); }
-  double XMin() const { return min (p1.X(), p2.X()); }
-  double YMin() const { return min (p1.Y(), p2.Y()); }
+  double XMax() const { return ng_max (p1.X(), p2.X()); }
+  double YMax() const { return ng_max (p1.Y(), p2.Y()); }
+  double XMin() const { return ng_min (p1.X(), p2.X()); }
+  double YMin() const { return ng_min (p1.Y(), p2.Y()); }
 
 
   Vec2d Delta () const { return Vec2d (p2.X()-p1.X(), p2.Y()-p1.Y()); }
@@ -175,10 +175,10 @@ public:
   const Point2d & P1() const { return *p1; }
   const Point2d & P2() const { return *p2; }
 
-  double XMax() const { return max (p1->X(), p2->X()); }
-  double YMax() const { return max (p1->Y(), p2->Y()); }
-  double XMin() const { return min (p1->X(), p2->X()); }
-  double YMin() const { return min (p1->Y(), p2->Y()); }
+  double XMax() const { return ng_max (p1->X(), p2->X()); }
+  double YMax() const { return ng_max (p1->Y(), p2->Y()); }
+  double XMin() const { return ng_min (p1->X(), p2->X()); }
+  double YMin() const { return ng_min (p1->Y(), p2->Y()); }
 
 
   Vec2d Delta () const { return Vec2d (p2->X()-p1->X(), p2->Y()-p1->Y()); }
@@ -249,10 +249,10 @@ public:
   const Point2d & P2() const { return p2; }
   const Point2d & P3() const { return p3; }
 
-  double XMax() const { return max (p1.X(), p2.X(), p3.X()); }
-  double YMax() const { return max (p1.Y(), p2.Y(), p3.Y()); }
-  double XMin() const { return min (p1.X(), p2.X(), p3.X()); }
-  double YMin() const { return min (p1.Y(), p2.Y(), p3.Y()); }
+  double XMax() const { return ng_max (p1.X(), p2.X(), p3.X()); }
+  double YMax() const { return ng_max (p1.Y(), p2.Y(), p3.Y()); }
+  double XMin() const { return ng_min (p1.X(), p2.X(), p3.X()); }
+  double YMin() const { return ng_min (p1.Y(), p2.Y(), p3.Y()); }
 
   inline Point2d Center () const
   { return Point2d( (p1.X()+p2.X()+p3.X())/3, (p1.Y()+p2.Y()+p3.Y())/3); }
@@ -288,10 +288,10 @@ public:
   const Point2d * P2() const { return p2; }
   const Point2d * P3() const { return p3; }
 
-  double XMax() const { return max (p1->X(), p2->X(), p3->X()); }
-  double YMax() const { return max (p1->Y(), p2->Y(), p3->Y()); }
-  double XMin() const { return min (p1->X(), p2->X(), p3->X()); }
-  double YMin() const { return min (p1->Y(), p2->Y(), p3->Y()); }
+  double XMax() const { return ng_max (p1->X(), p2->X(), p3->X()); }
+  double YMax() const { return ng_max (p1->Y(), p2->Y(), p3->Y()); }
+  double XMin() const { return ng_min (p1->X(), p2->X(), p3->X()); }
+  double YMin() const { return ng_min (p1->Y(), p2->Y(), p3->Y()); }
 
   Point2d Center () const
   { return Point2d( (p1->X()+p2->X()+p3->X())/3, (p1->Y()+p2->Y()+p3->Y())/3); }

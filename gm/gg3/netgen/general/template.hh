@@ -33,33 +33,31 @@ class threeint { public: int i1, i2, i3; threeint() {}; };
 class fourint { public: int i1, i2, i3, i4; fourint() {}; };
 
 
-#ifndef CPP4
 template <class T>
-inline T min (T a, T b)
+inline T ng_min (T a, T b)
 {
   return (a < b) ? a : b;
 }
 template <class T>
-inline T max (T a, T b)
+inline T ng_max (T a, T b)
 {
   return (a > b) ? a : b;
 }
-#endif
 template <class T>
-inline T min (T a, T b, T c)
+inline T ng_min (T a, T b, T c)
 {
   return (a < b) ? (a < c) ? a : c
          : (b < c) ? b : c;
 }
 template <class T>
-inline T max (T a, T b, T c)
+inline T ng_max (T a, T b, T c)
 {
   return (a > b) ? ((a > c) ? a : c)
          : ((b > c) ? b : c);
 }
 
 template <class T>
-inline void swap (T & a, T & b)
+inline void ng_swap (T & a, T & b)
 {
   T temp = a;
   a = b;

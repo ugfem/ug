@@ -252,7 +252,7 @@ void Meshing3 :: CombineImprove (ARRAY<Point3d> & points,
       case 6 : pi1 = elem->PNum(3); pi2 = elem->PNum(4); break;
       }
 
-      if (pi2 < pi1) swap (pi1, pi2);
+      if (pi2 < pi1) ng_swap (pi1, pi2);
 
       hasonepoint.SetSize(0);
       hasbothpoints.SetSize(0);
@@ -389,7 +389,7 @@ void Meshing3 :: SplitImprove (ARRAY<Point3d> & points,
     {
       i2.I1() = surfelements.Get(i).PNumMod(j);
       i2.I2() = surfelements.Get(i).PNumMod(j+1);
-      if (i2.I1() > i2.I2()) swap (i2.I1(), i2.I2());
+      if (i2.I1() > i2.I2()) ng_swap (i2.I1(), i2.I2());
       boundaryedges.Set (i2, 1);
     }
 
@@ -412,7 +412,7 @@ void Meshing3 :: SplitImprove (ARRAY<Point3d> & points,
       case 6 : pi1 = elem->PNum(3); pi2 = elem->PNum(4); break;
       }
 
-      if (pi2 < pi1) swap (pi1, pi2);
+      if (pi2 < pi1) ng_swap (pi1, pi2);
 
       if (pi2 > elementsonnode.Size()) continue;
 
@@ -508,7 +508,7 @@ void Meshing3 :: SwapImprove (ARRAY<Point3d> & points,
     {
       i2.I1() = surfelements.Get(i).PNumMod(j);
       i2.I2() = surfelements.Get(i).PNumMod(j+1);
-      if (i2.I1() > i2.I2()) swap (i2.I1(), i2.I2());
+      if (i2.I1() > i2.I2()) ng_swap (i2.I1(), i2.I2());
       boundaryedges.Set (i2, 1);
     }
 
@@ -533,7 +533,7 @@ void Meshing3 :: SwapImprove (ARRAY<Point3d> & points,
       case 6 : pi1 = elem->PNum(3); pi2 = elem->PNum(4); break;
       }
 
-      if (pi2 < pi1) swap (pi1, pi2);
+      if (pi2 < pi1) ng_swap (pi1, pi2);
 
       i2.I1() = pi1;
       i2.I2() = pi2;
@@ -579,7 +579,7 @@ void Meshing3 :: SwapImprove (ARRAY<Point3d> & points,
         el31.PNum(4) = pi4;
         if (CalcBad (points, el31, 0) > 1e8)
         {
-          swap (pi3, pi4);
+          ng_swap (pi3, pi4);
           el31.PNum(3) = pi3;
           el31.PNum(4) = pi4;
         }
@@ -663,7 +663,7 @@ void Meshing3 :: SwapImprove (ARRAY<Point3d> & points,
         el1.PNum(4) = pi4;
         if (CalcBad (points, el1, 0) > 1e8)
         {
-          swap (pi3, pi4);
+          ng_swap (pi3, pi4);
           el1.PNum(3) = pi3;
           el1.PNum(4) = pi4;
         }

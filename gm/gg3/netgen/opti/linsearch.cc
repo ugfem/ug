@@ -130,8 +130,8 @@ void lines (
                                         + sqrt (sqr(phi1prime - mu1 * phi0prime) -
                                                 4 * (phi1 - phi0 - mu1 * alpha1 * phi0prime) * c));
 
-      alphahat = max (alphahat, alpha1 + tau * (alpha2 - alpha1));
-      alphahat = min (alphahat, alpha2 - tau * (alpha2 - alpha1));
+      alphahat = ng_max (alphahat, alpha1 + tau * (alpha2 - alpha1));
+      alphahat = ng_min (alphahat, alpha2 - tau * (alpha2 - alpha1));
     }
 
     else
@@ -155,13 +155,13 @@ void lines (
 
         if (flag)
         {
-          alphaincr = max (alphaincr, xi1 * (alphahat-alpha1));
-          alphaincr = min (alphaincr, xi2 * (alphahat-alpha1));
+          alphaincr = ng_max (alphaincr, xi1 * (alphahat-alpha1));
+          alphaincr = ng_min (alphaincr, xi2 * (alphahat-alpha1));
         }
         else
         {
-          alphaincr = max (alphaincr, tau1 * (alpha2 - alphahat));
-          alphaincr = min (alphaincr, tau2 * (alpha2 - alphahat));
+          alphaincr = ng_max (alphaincr, tau1 * (alpha2 - alphahat));
+          alphaincr = ng_min (alphaincr, tau2 * (alpha2 - alphahat));
         }
 
         alpha1 = alphahat;

@@ -3,6 +3,7 @@
 #ifndef FILE_RULER3
 #define FILE_RULER3
 
+#include <iostream.h>
 
 class vnetrule
 {

@@ -2,6 +2,7 @@
 // NOTE: It contained invalid syntax that could not be processed by uncrustify.
 
 #include <stdlib.h> 
+#include <iostream.h>
 #include <fstream.h>
 #include <string.h>
 #include <math.h>
@@ -473,7 +474,7 @@ void SparseMatrix :: AddElementMatrix (const ARRAY<INDEX> & pnum,
   for (i = 1; i <= n; i++)
     for (j = 1; j <= n-1; j++)
       if (spnum.Elem(j) > spnum.Elem(j+1))
-	swap (spnum.Elem(j), spnum.Elem(j+1));
+	ng_swap (spnum.Elem(j), spnum.Elem(j+1));
 
   for (i = 1; i <= n; i++)
     for (j = 1; j <= n; j++)
@@ -622,7 +623,7 @@ char SparseMatrix :: Used (INDEX i, INDEX j) const
 
 double SparseMatrix :: Get(INDEX i, INDEX j) const
   {
-  if (Symmetric() && (j > i)) swap (i, j);
+  if (Symmetric() && (j > i)) ng_swap (i, j);
     
   int pos = graph->GetPosition(i, j);
   if (pos)
@@ -669,7 +670,7 @@ void SparseMatrix :: Set(INDEX i, INDEX j, double v)
 
 double & SparseMatrix :: Elem(INDEX i, INDEX j)
   {
-  if (Symmetric() && j > i) swap (i, j);
+  if (Symmetric() && j > i) ng_swap (i, j);
   
   int pos = graph->GetPosition (i, j);
   if (!pos)
@@ -1009,7 +1010,7 @@ SparseMatrix & SparseMatrix :: operator*= (double v)
 
 char SparseMatrix :: Used (INDEX i, INDEX j) const
   {
-  if (Symmetric() && j > i) swap (i, j);
+  if (Symmetric() && j > i) ng_swap (i, j);
 
   if (i < 1 || i > height) return 0;
 
@@ -1026,7 +1027,7 @@ char SparseMatrix :: Used (INDEX i, INDEX j) const
 
 double SparseMatrix :: Get(INDEX i, INDEX j) const
   {
-  if (Symmetric() && j > i) swap (i, j);
+  if (Symmetric() && j > i) ng_swap (i, j);
 
   const colstruct * col = lins.Get(i).col;
   INDEX max = lins.Get(i).size;
@@ -1073,7 +1074,7 @@ void SparseMatrix :: Set(INDEX i, INDEX j, double v)
 
 double & SparseMatrix :: Elem(INDEX i, INDEX j)
   {
-  if (Symmetric() && j > i) swap (i, j);
+  if (Symmetric() && j > i) ng_swap (i, j);
 
   linestruct * lin = &lins.Elem(i);
   colstruct * col, *ncol;
@@ -1210,7 +1211,7 @@ void SparseMatrix :: DeleteElem (INDEX i, INDEX j)
   int nr;
   int dec = 0;
 
-  if (Symmetric() && j > i) swap (i, j);
+  if (Symmetric() && j > i) ng_swap (i, j);
 
   colstruct * col = lins[i].col;
 

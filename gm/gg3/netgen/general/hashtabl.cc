@@ -22,14 +22,14 @@
 
 void INDEX_2 :: Sort ()
 {
-  if (i1 > i2) swap (i1, i2);
+  if (i1 > i2) ng_swap (i1, i2);
 }
 
 void INDEX_3 :: Sort ()
 {
-  if (i1 > i2) swap (i1, i2);
-  if (i2 > i3) swap (i2, i3);
-  if (i1 > i2) swap (i1, i2);
+  if (i1 > i2) ng_swap (i1, i2);
+  if (i2 > i3) ng_swap (i2, i3);
+  if (i1 > i2) ng_swap (i1, i2);
 }
 
 int BASE_INDEX_2_HASHTABLE :: Position (int bnr, const INDEX_2 & ind) const

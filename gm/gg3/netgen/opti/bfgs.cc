@@ -227,14 +227,14 @@ void BFGS (
 
     // Calculate stop conditions
 
-    hd = eps * max (typf, fabs (f));
+    hd = eps * ng_max (typf, fabs (f));
     a1crit = 1;
     for (i = 1; i <= n; i++)
-      if ( fabs (g.Elem(i)) * max (typx.Elem(i), fabs (x.Elem(i))) > hd)
+      if ( fabs (g.Elem(i)) * ng_max (typx.Elem(i), fabs (x.Elem(i))) > hd)
         a1crit = 0;
 
 
-    a3acrit = (fold - f <= tauf * max (typf, fabs (f)));
+    a3acrit = (fold - f <= tauf * ng_max (typf, fabs (f)));
 
   }
   while (!a1crit || !a3acrit);

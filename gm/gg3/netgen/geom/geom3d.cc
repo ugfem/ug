@@ -196,7 +196,7 @@ void box3d :: CalcDiamCenter ()
   c.Y() = 0.5 * (miny + maxy);
   c.Z() = 0.5 * (minz + maxz);
 
-  inner = min ( min (maxx - minx, maxy - miny), maxz - minz) / 2;
+  inner = ng_min ( ng_min (maxx - minx, maxy - miny), maxz - minz) / 2;
 }
 
 

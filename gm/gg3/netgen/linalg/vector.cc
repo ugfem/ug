@@ -1,6 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 #include <stdlib.h>
+#include <iostream.h>
 #include <fstream.h>
 #include <string.h>
 #include <math.h>
@@ -321,7 +322,7 @@ void Vector :: ChangeLength (INDEX alength)
     delete [] olddata;
   }
 
-  memcpy (data, olddata, min(alength, length));
+  memcpy (data, olddata, ng_min(alength, length));
 
   delete [] olddata;
   length = alength;
@@ -734,8 +735,8 @@ BaseVector * Vector :: Copy () const
 void Vector :: Swap (BaseVector & v2)
 {
   Vector & hv2 = v2.CastToVector();
-  swap (length, hv2.length);
-  swap (data, hv2.data);
+  ng_swap (length, hv2.length);
+  ng_swap (data, hv2.data);
 }
 
 

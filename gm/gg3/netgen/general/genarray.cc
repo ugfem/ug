@@ -59,7 +59,7 @@ void BASE_ARRAY :: ReSize (INDEX minsize, int elementsize)
   if (data)
   {
     p = new char [nsize * elementsize];
-    memcpy (p, data, (min (nsize, actsize)) * elementsize);
+    memcpy (p, data, (ng_min (nsize, actsize)) * elementsize);
 
     delete data;
     data = p;

@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 #include <stdlib.h>
-// #include <iostream.h>
+#include <iostream.h>
 #include <fstream.h>
 #include <math.h>
 #include <string.h>
@@ -668,7 +668,7 @@ void vnetrule_new :: LoadRule(istream & ist)
       {
         minn = 1000;
         for (j = 1; j <= 3; j++)
-          minn = min (minn, pnearness[GetPointNr (i, j)]);
+          minn = ng_min (minn, pnearness[GetPointNr (i, j)]);
 
         for (j = 1; j <= 3; j++)
           if (pnearness[GetPointNr (i, j)] > minn+1)

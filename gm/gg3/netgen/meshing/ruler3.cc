@@ -2,6 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 #include <stdlib.h>
 #include <stdio.h>
+#include <iostream.h>
 #include <fstream.h>
 #include <math.h>
 
@@ -164,12 +165,12 @@ int ApplyVRules_new
     const Point3d & p1 = lpoints.Get(face.PNum(1));
     const Point3d & p2 = lpoints.Get(face.PNum(2));
     const Point3d & p3 = lpoints.Get(face.PNum(3));
-    triminx.Elem(i) = min (p1.X(), p2.X(), p3.X());
-    trimaxx.Elem(i) = max (p1.X(), p2.X(), p3.X());
-    triminy.Elem(i) = min (p1.Y(), p2.Y(), p3.Y());
-    trimaxy.Elem(i) = max (p1.Y(), p2.Y(), p3.Y());
-    triminz.Elem(i) = min (p1.Z(), p2.Z(), p3.Z());
-    trimaxz.Elem(i) = max (p1.Z(), p2.Z(), p3.Z());
+    triminx.Elem(i) = ng_min (p1.X(), p2.X(), p3.X());
+    trimaxx.Elem(i) = ng_max (p1.X(), p2.X(), p3.X());
+    triminy.Elem(i) = ng_min (p1.Y(), p2.Y(), p3.Y());
+    trimaxy.Elem(i) = ng_max (p1.Y(), p2.Y(), p3.Y());
+    triminz.Elem(i) = ng_min (p1.Z(), p2.Z(), p3.Z());
+    trimaxz.Elem(i) = ng_max (p1.Z(), p2.Z(), p3.Z());
   }
 
 
