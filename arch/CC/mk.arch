@@ -19,6 +19,6 @@ ARCH_C++FLAGS =
 ARCH_LFLAGS   = 
 ARCH_ARFLAGS  = ru
 
-ARCH_XINCLUDES = 
-ARCH_XLIBS     = 
+ARCH_XINCLUDES = -I/epx/epx/nK/include
+ARCH_XLIBS     = -L/epx/epx/nK/lib -lX11 -lXt -lXaw -lXmu -lXext -lSM -lICE
 
