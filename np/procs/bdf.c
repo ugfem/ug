@@ -473,7 +473,7 @@ Continue:
               if (ClearMarksOnLevel(GRID_ON_LEVEL(mg,i),-1)!=GM_OK)
                 return(__LINE__);
 
-          if (bdf->copyall>=0) {
+          if (bdf->copyall) {
             if (RefineMultiGrid(mg,GM_COPY_ALL,
                                 GM_REFINE_PARALLEL,
                                 GM_REFINE_NOHEAPTEST) != GM_OK)
@@ -816,7 +816,12 @@ static INT BDFDisplay (NP_BASE *theNumProc)
   if (bdf->error != NULL)
   {
     UserWriteF(DISPLAY_NP_FORMAT_SS,"E",ENVITEM_NAME(bdf->error));
-    UserWriteF(DISPLAY_NP_FORMAT_SI,"err_toplevel",(int)bdf->err_toplevel);
+    UserWriteF(DISPLAY_NP_FORMAT_SI,"err_toplevel",
+               (int)bdf->err_toplevel);
+    UserWriteF(DISPLAY_NP_FORMAT_SI,"err_baselevel",
+               (int)bdf->err_baselevel);
+    UserWriteF(DISPLAY_NP_FORMAT_SI,"copyall",
+               (int)bdf->copyall);
   }
   else
     UserWriteF(DISPLAY_NP_FORMAT_SS,"E","---");
