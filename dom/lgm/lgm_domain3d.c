@@ -47,7 +47,6 @@
 
 #include "devices.h"
 #include "values.h"
-
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -92,7 +91,7 @@ static INT DiscretizeDomain                     (HEAP *Heap, LGM_DOMAIN *theDoma
 static INT DiscretizeSurface                    (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h, LGM_POINT *pointlist, INT norp, INT MarkKey);
 static INT TransferSurfaces2Mesh                (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h);
 static INT P_Dist(DOUBLE *p1, DOUBLE *p2);
-static DOUBLE Distance(DOUBLE *p1, DOUBLE *p2);
+static DOUBLE E_Distance(DOUBLE *p1, DOUBLE *p2);
 
 extern INT GenerateSurfaceGrid (HEAP *theHeap, INT MarkKey, LGM_SURFACE *aSurface, DOUBLE h, INT smooth,INT display);
 extern INT InitSurface(CoeffProcPtr Coeff);
@@ -4282,7 +4281,7 @@ static INT P_Dist(DOUBLE *p1, DOUBLE *p2)
     return(0);
 }
 
-static DOUBLE Distance(DOUBLE *p1, DOUBLE *p2)
+static DOUBLE E_Distance(DOUBLE *p1, DOUBLE *p2)
 {
   DOUBLE d;
 
@@ -4368,12 +4367,12 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   /*	if(area<0.01)
                   printf("%s\n", "area");*/
 
-  if(Distance(globalp2, globalp0)<SMALL)
-    assert(Distance(globalp2, globalp0)>SMALL);
-  if(Distance(globalp2, globalp1)<SMALL)
-    assert(Distance(globalp2, globalp1)>SMALL);
-  if(Distance(globalp1, globalp0)<SMALL)
-    assert(Distance(globalp1, globalp0)>SMALL);
+  if(E_Distance(globalp2, globalp0)<SMALL)
+    assert(E_Distance(globalp2, globalp0)>SMALL);
+  if(E_Distance(globalp2, globalp1)<SMALL)
+    assert(E_Distance(globalp2, globalp1)>SMALL);
+  if(E_Distance(globalp1, globalp0)<SMALL)
+    assert(E_Distance(globalp1, globalp0)>SMALL);
 
   global[0] = ( globalp0[0] + globalp1[0] +  globalp2[0] ) / 3;
   global[1] = ( globalp0[1] + globalp1[1] +  globalp2[1] ) / 3;
@@ -4421,7 +4420,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
             if(mi!=-1)
             {
               Surface_Local2Global(theSurface, globalnew, local);
-              d = Distance(global, globalnew);
+              d = E_Distance(global, globalnew);
             }
             else
               d = MAXDOUBLE;
@@ -4728,7 +4727,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
           printf("%lf %lf %lf\n", globalp2[0], globalp2[1], globalp2[2]);	*/
 
   /* check */
-  assert(Distance(globalp1, globalp2)>SMALL);
+  assert(E_Distance(globalp1, globalp2)>SMALL);
 
   midp[0] = global[0] = ( globalp1[0] + globalp2[0] ) / 2;
   midp[1] = global[1] = ( globalp1[1] + globalp2[1] ) / 2;
@@ -4889,12 +4888,12 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
   }
 
   /* check */
-  if(Distance(globalp1, global)<SMALL)
-    assert(Distance(globalp1, global)>SMALL);
-  if(Distance(globalp2, global)<SMALL)
-    assert(Distance(globalp2, global)>SMALL);
-  if(Distance(globalp1, globalp2)<SMALL)
-    assert(Distance(globalp1, globalp2)>SMALL);
+  if(E_Distance(globalp1, global)<SMALL)
+    assert(E_Distance(globalp1, global)>SMALL);
+  if(E_Distance(globalp2, global)<SMALL)
+    assert(E_Distance(globalp2, global)>SMALL);
+  if(E_Distance(globalp1, globalp2)<SMALL)
+    assert(E_Distance(globalp1, globalp2)>SMALL);
 
   return((BNDP *)theBndP);
 
