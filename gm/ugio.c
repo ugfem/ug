@@ -2459,7 +2459,7 @@ static INT CheckCGKeys (INT ne, ELEMENT** eid_e, MGIO_CG_ELEMENT *cg_elem)
   return (0);
 }
 #else
-static INT CheckCGKeys ()
+static INT CheckCGKeys (INT ne, ELEMENT** eid_e, MGIO_CG_ELEMENT *cg_elem)
 {
   return (0);
 }
@@ -3125,10 +3125,6 @@ nparfiles = UG_GlobalMinINT(nparfiles);
  */
 /****************************************************************************/
 
-static DOUBLE LocalCoord[2][4][2]=
-{ {{ 0, 0},{1, 0},{0,1},{ 0,0}},
-  {{-1,-1},{1,-1},{1,1},{-1,1}} };
-
 INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, char *tag)
 {
   ELEMENT *theElement;
@@ -3195,7 +3191,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
         CORNER_COORDINATES(theElement,n,CoordOfCornerPtr);
         for (i=0; i<n; i++)
         {
-          val=(*PlotProcInfo->EvalProc)(theElement, (const DOUBLE **) CoordOfCornerPtr, (DOUBLE *) &(LocalCoord[n-3,i,0]));
+          val=(*PlotProcInfo->EvalProc)(theElement, (const DOUBLE **) CoordOfCornerPtr, LOCAL_COORD_OF_ELEM(theElement,i));
           min = MIN(val,min);
           max = MAX(val,max);
         }
@@ -3280,7 +3276,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
         {
           theVertex=MYVERTEX(CORNER(theElement,i));
           if (USED(theVertex)) continue;
-          val=(*PlotProcInfo->EvalProc)(theElement, (const DOUBLE **) CoordOfCornerPtr, (DOUBLE *) &(LocalCoord[n-3,i,0]));
+          val=(*PlotProcInfo->EvalProc)(theElement, (const DOUBLE **) CoordOfCornerPtr,  LOCAL_COORD_OF_ELEM(theElement,i));
           fprintf(stream," %15.8lE",val);
           id++;
           if (id%5==0) fprintf(stream,"\n");
