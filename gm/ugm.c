@@ -300,6 +300,8 @@ void *GetMemoryForObjectNew (HEAP *theHeap, INT size, INT type)
     }
                 #endif
     obj = GetMem(theHeap,size,FROM_BOTTOM);
+    if (obj != NULL)
+      memset(obj,0,size);
   }
 
         #ifdef Debug
