@@ -445,6 +445,10 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
   int i, son;
   int g;
 
+  /* dispose negative levels */
+  if (level < 1)
+    if (DisposeAMGLevels(theMG) != 0)
+      return 1;
 
   /* send son elements to destination of father element */
   if (0)
