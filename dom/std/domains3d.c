@@ -47,6 +47,9 @@
 /* domain module */
 #include "std_domain.h"
 
+/* TODO: this violates the subsystem hierarchy */
+#include "scan.h"
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -57,7 +60,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-typedef DOUBLE DOUBLE_VECTOR[DIM];
+/* needed again if scan.h removed: typedef DOUBLE DOUBLE_VECTOR[DIM];*/
 
 #define V3_EUKLIDNORM(A,b)                              (b) = (sqrt((double)((A)[0]*(A)[0]+(A)[1]*(A)[1]+(A)[2]*(A)[2])));
 
