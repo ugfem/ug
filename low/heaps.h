@@ -82,11 +82,9 @@ namespace UG3d {
 /****************************************************************************/
 
 /** \brief Smallest heap to allocate       */
-#define MIN_HEAP_SIZE   256              /* smallest heap to allocate       */
-#define MARK_STACK_SIZE 128              /* max depth of mark/release calls */
-
+#define MIN_HEAP_SIZE   256
 /** \brief Max depth of mark/release calls */
-#define MARK_STACK_SIZE  20
+#define MARK_STACK_SIZE 128
 
 enum {GENERAL_HEAP,                  /**< Heap with alloc/free mechanism  */
       SIMPLE_HEAP                  /**< Heap with mark/release mechanism*/
