@@ -201,8 +201,8 @@ INT         BNDP_BndPDesc         (BNDP *theBndP, INT *move);
 BNDS*       BNDP_CreateBndS       (HEAP *Heap, BNDP **theBndP, INT n);
 BNDP*       BNDP_CreateBndP       (HEAP *Heap, BNDP *theBndP0, BNDP *theBndP1, COORD lcoord);
 INT         BNDP_Dispose          (HEAP *Heap, BNDP *theBndP);
-INT         BNDP_SaveBndP         (BNDP *theBndP, FILE *stream);
-BNDP       *BNDP_LoadBndP         (BVP *theBVP, HEAP *Heap, FILE *stream);
+INT         BNDP_SaveBndP         (BNDP *theBndP);
+BNDP       *BNDP_LoadBndP         (BVP *theBVP, HEAP *Heap);
 
 /* functions for BNDS */
 INT         BNDS_Global           (BNDS *theBndS, COORD *local, COORD *global);
