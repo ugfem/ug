@@ -301,6 +301,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     return (NULL);
 
   /* allocate and initialize the LGM_DOMAIN */
+  if (ChangeEnvDir("/LGM_BVP")==NULL) return (NULL);
   theDomain = (LGM_DOMAIN *) MakeEnvItem(name,DomainVarID,sizeof(LGM_DOMAIN)+(theDomInfo.nSubDomain-1)*sizeof(void*));
   if (theDomInfo.Dimension != LGM_DIM) {UserWrite("cannot load domain: wrong dimension\n"); return (NULL);}
   LGM_DOMAIN_CONVEX(theDomain)            = theDomInfo.Convex;
