@@ -1873,7 +1873,7 @@ BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id, BndCondProcPtr 
 #endif
 
 /* format definition */
-FORMAT                   *GetFormat                             (char *name);
+FORMAT                   *GetFormat                             (const char *name);
 #ifdef __version23__
 FORMAT                   *CreateFormat                          (char *name,int sVertex,int sNode,int sDiag,int sElement,int sLink,int sEdge, int sMultiGrid,
                                                                  ConversionProcPtr SaveVertex,ConversionProcPtr SaveNode,ConversionProcPtr SaveDiag,
@@ -2011,6 +2011,7 @@ ALG_DEP         *CreateAlgebraicDependency (char *name, DependencyProcPtr Depend
 FIND_CUT        *CreateFindCutProc              (char *name, FindCutProcPtr FindCutProc);
 INT                     LexOrderVectorsInGrid   (GRID *theGrid, const INT *order, const INT *sign, INT SpecSkipVecs, INT AlsoOrderMatrices);
 INT             OrderVectors                    (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat, const char *dependency, const char *dep_options, const char *findcut);
+INT                     ShellOrderVectors               (GRID *theGrid, VECTOR *seed);
 
 /* functions for evaluation-fct management */
 INT              InitEvalProc                                                           ();
