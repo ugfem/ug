@@ -56,10 +56,6 @@
 #include "ugenv.h"
 #endif
 
-#ifndef __SWITCH__
-#include "switch.h"
-#endif
-
 #ifndef __MISC__
 #include "misc.h"
 #endif
@@ -71,6 +67,94 @@
 #ifndef __PARGM_H__
 #include "pargm.h"
 #endif
+
+/****************************************************************************/
+/*																			*/
+/* consistency of commandline defines										*/
+/*																			*/
+/****************************************************************************/
+
+#if (!defined _2) && (!defined _3)
+#error ****	define dimension _2 or _3		****
+#endif
+
+#ifdef _2
+        #ifdef _3
+        #error ****	define EITHER dimension _2 OR _3	   ****
+        #endif
+#define two
+#endif
+
+#ifdef _3
+#define three
+#endif
+
+#ifdef two
+#ifdef three
+#error ****	define at most dimension two OR three		****
+#endif
+#endif
+
+#ifndef two
+#ifndef three
+#error ****	define at least dimension two OR three		****
+#endif
+#endif
+
+#ifdef two
+#ifdef Sideon
+#error ****   two dimensional case cannot have side data	****
+#endif
+#endif
+
+/****************************************************************************/
+/*																			*/
+/* derive additional switches from commandline specified basic switches		*/
+/*																			*/
+/****************************************************************************/
+
+#ifdef two
+#define __TWODIM__
+#endif
+
+#ifdef three
+#define __THREEDIM__
+#endif
+
+#ifdef ModelP
+#define MODEL "PARALLEL"
+#else
+#define MODEL "SEQUENTIAL"
+#endif
+
+#undef __GRAPE_TRUE__
+#ifdef _GRAPE
+#define __GRAPE_TRUE__
+#endif
+
+#ifdef _GRAPE
+#define GRAPE_SUPPORT "ON"
+#else
+#define GRAPE_SUPPORT "OFF"
+#endif
+
+#ifdef _NETGEN
+#define NETGEN_SUPPORT "ON"
+#else
+#define NETGEN_SUPPORT "OFF"
+#endif
+
+#ifdef Debug
+#define DEBUG_MODE "ON"
+#else
+#define DEBUG_MODE "OFF"
+#endif
+
+/****************************************************************************/
+/*																			*/
+/* "hard" switches for interpolation matrix and block-vectors				*/
+/*																			*/
+/****************************************************************************/
 
 /* if interpolation matrix is stored */
 #define __INTERPOLATION_MATRIX__
@@ -92,6 +176,8 @@
 #undef DOMAIN
 
 /* some size parameters */
+#define DIM_MAX                                 3       /* maximal space dimension				*/
+#define DIM_OF_BND_MAX                  2       /* maximal dimension of boundary surface*/
 #define MAXLEVEL                                32      /* maximum depth of triangulation		*/
 #define MAXOBJECTS                              32      /* use 5 bits for object identification */
 #define MAXSELECTION               100  /* max number of elements in selection	*/
@@ -115,22 +201,50 @@
 
 #define MAX_NDOF_MOD_32         3           /* max number of doubles in a vector or matrix mod 32 */
 
+/****************************************************************************/
+/*																			*/
+/* switch-define dependent defines											*/
+/*																			*/
+/****************************************************************************/
 
-/* some useful variables */
-typedef COORD COORD_VECTOR[DIM];
-typedef COORD COORD_VECTOR_2D[2];
-typedef COORD COORD_VECTOR_3D[3];
-typedef DOUBLE DOUBLE_VECTOR[DIM];
-typedef DOUBLE DOUBLE_VECTOR_2D[2];
-typedef DOUBLE DOUBLE_VECTOR_3D[3];
+#ifdef __TWODIM__
+        #define DIM                                             2                       /* space dimension								*/
+        #define DIM_OF_BND                                      1                       /* dimension of boundary surface				*/
+#endif
 
-/* result codes of user supplied functions	0 = OK as usual */
-#define OUT_OF_RANGE                    1       /* coordinate out of range				*/
-#define CANNOT_INIT_PROBLEM     1       /* configProblem could not init problem */
+#ifdef __THREEDIM__
+        #define DIM                                             3                       /* space dimension								*/
+        #define DIM_OF_BND                                      2                       /* dimension of boundary surface				*/
+#endif
 
-/* some numbers for algebra */
-#define MAXMATRICES             ((MAXVECTORS*(MAXVECTORS+1))/2) /* max number of diff. matrix types */
-#define MAXCONNECTIONS  (MAXMATRICES + MAXVECTORS)              /* max number of diff. connections  */
+/****************************************************************************/
+/*																			*/
+/* defines for algebra														*/
+/*																			*/
+/****************************************************************************/
+
+#define MAXVOBJECTS                                             4                       /* four different data types					*/
+#define MAXVECTORS                                              4                       /* max number of abstract vector types			*/
+/* MAXVOBJECTS <= MAXVECTORS <= (2<<VTYPE_LEN)	*/
+#define NOVTYPE                                                 -1                      /* to indicate type not defined					*/
+#define MAXDOMPARTS                                             4                       /* MAXDOMPARTS <= (1<<VPART_LEN)				*/
+
+#define BITWISE_TYPE(t) (1<<(t))                                        /* transforms type into bitpattern				*/
+
+/* derived sizes for algebra */
+#define MAXMATRICES             ((MAXVECTORS*(MAXVECTORS+1))/2) /* max number of diff. matrix types			*/
+#define MAXCONNECTIONS  (MAXMATRICES + MAXVECTORS)              /* max number of diff. connections              */
+
+/* defines for vectors */
+#define NODEVEC                                                 0                       /* vector associated to a node					*/
+#define EDGEVEC                                                 1                       /* vector associated to an edge                                 */
+#define ELEMVEC                                                 2                       /* vector associated to an element				*/
+#define SIDEVEC                                                 3                       /* vector associated to an elementside			*/
+
+/* some constants for abstract vector type names */
+#define FROM_VTNAME                                             '0'
+#define TO_VTNAME                                               'z'
+#define MAXVTNAMES                                              (1+TO_VTNAME-FROM_VTNAME)
 
 /* constants for blockvector description (BVD) */
 #define NO_BLOCKVECTOR ((BLOCKNUMBER) ~0)        /* number for "there is no blockvector"; largest number of type BLOCKNUMBER */
@@ -147,6 +261,16 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 #define BV1DTV                  0       /* symbolic value for BVTVTYPE */
 #define BV2DTV                  1       /* symbolic value for BVTVTYPE */
 
+
+/****************************************************************************/
+/*																			*/
+/* various defines															*/
+/*																			*/
+/****************************************************************************/
+
+/* result codes of user supplied functions	0 = OK as usual */
+#define OUT_OF_RANGE                    1       /* coordinate out of range				*/
+#define CANNOT_INIT_PROBLEM     1       /* configProblem could not init problem */
 
 /* use of GSTATUS (for grids), use power of 2 */
 #define GRID_CHANGED                    1
@@ -188,6 +312,7 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 #define MID_NODE        1
 #define SIDE_NODE       2
 #define CENTER_NODE     3
+#define LEVEL_0_NODE    4
 
 /* macros for the control word management									*/
 #define MAX_CONTROL_WORDS       20              /* maximum number of control words		*/
@@ -209,9 +334,26 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 /*																			*/
 /****************************************************************************/
 
+/*----------- general typedefs ---------------------------------------------*/
+
+typedef DOUBLE DOUBLE_VECTOR[DIM];
+typedef DOUBLE DOUBLE_VECTOR_2D[2];
+typedef DOUBLE DOUBLE_VECTOR_3D[3];
+
+
 /*----------- typedef for functions ----------------------------------------*/
 
-typedef INT (*ConversionProcPtr)(void *, const char *, char *);
+typedef INT (*ConversionProcPtr)(               /* print user data --> string		*/
+  void *,                                                               /* pointer to user data				*/
+  const char *,                                                 /* prefix for each line				*/
+  char *                                                                /* resulting string					*/
+  );
+typedef INT (*TaggedConversionProcPtr)( /* tagged print user data --> string*/
+  INT,                                                                  /* tag for data identification		*/
+  void *,                                                               /* pointer to user data				*/
+  const char *,                                                 /* prefix for each line				*/
+  char *                                                                /* resulting string					*/
+  );
 
 
 /*----------- definition of structs ----------------------------------------*/
@@ -222,31 +364,52 @@ struct format {
   ENVDIR d;
 
   /* variables of format */
-  INT sVertex;                                   /* size of vertex user data struc. in bytes */
-  INT sMultiGrid;                        /* size of mg user data structure in bytes	 */
-  INT VectorSizes[MAXVECTORS];       /* number of doubles in vectors                     */
-  INT MatrixSizes[MAXMATRICES];      /* number of doubles in matrices			 */
+  INT sVertex;                                   /* size of vertex user data struc. in bytes*/
+  INT sMultiGrid;                        /* size of mg user data structure in bytes	*/
+  INT VectorSizes[MAXVECTORS];       /* number of doubles in vectors                    */
+  char VTypeNames[MAXVECTORS];       /* a single char for abstract type name    */
+  INT MatrixSizes[MAXMATRICES];      /* number of doubles in matrices			*/
 #ifdef __INTERPOLATION_MATRIX__
-  INT IMatrixSizes[MAXMATRICES];      /* number of doubles in matrices	         */
+  INT IMatrixSizes[MAXMATRICES];      /* number of doubles in matrices	        */
 #endif
-  INT ConnectionDepth[MAXMATRICES];      /* depth of connection for matrices     */
-  INT MaxConnectionDepth;                  /* maximal connection depth               */
-  INT NeighborhoodDepth;                   /* geometrical depth corresponding		 */
-  /* algebraic con with depth 1			 */
+  INT ConnectionDepth[MAXMATRICES];      /* depth of connection for matrices    */
   INT elementdata;
   INT nodeelementlist;
   INT nodedata;
-  ConversionProcPtr PrintVertex;       /* print user data to string	             */
+
+  /* print user data to string */
+  ConversionProcPtr PrintVertex;
   ConversionProcPtr PrintGrid;
   ConversionProcPtr PrintMultigrid;
-  ConversionProcPtr PrintVector[MAXVECTORS];
-  ConversionProcPtr PrintMatrix[MAXVECTORS][MAXVECTORS];
+  TaggedConversionProcPtr PrintVector;          /* tag indicates VTYPE			*/
+  TaggedConversionProcPtr PrintMatrix;          /* tag indicates MTP			*/
+
+  /* table connecting parts, objects and types */
+  INT po2t[MAXDOMPARTS][MAXVOBJECTS];                   /* (part,obj) --> vtype,		*/
+  /* -1 if not defined			*/
+
+  /* derived components */
+  INT MaxConnectionDepth;               /* maximal connection depth                     */
+  INT NeighborhoodDepth;                /* geometrical depth corresponding		        */
+  /* algebraic con with depth 1			        */
+  /* both derived from ConnectionDepth		*/
+  INT t2p[MAXVECTORS];                  /* type --> part, bitwise, not unique		*/
+  INT t2o[MAXVECTORS];                  /* type --> object, bitwise, not unique		*/
+  /* both derived from po2t					*/
+  char t2n[MAXVECTORS];                 /* type --> type name						*/
+  INT n2t[MAXVTNAMES];                  /* type name --> type						*/
+  INT OTypeUsed[MAXVOBJECTS];           /* 0 if vector not needed for geom object	*/
+  INT MaxPart;                                  /* largest part used						*/
+  /* both derived from po2t					*/
+  INT MaxType;                                  /* largest type used						*/
+  /* derived from VectorSizes					*/
 } ;
 
 typedef struct {
-  int pos;                                              /* which position is described here             */
+  int tp;                                               /* abstract type is described here	                */
+  /* description only complete with po2t info	*/
+  char name;                                            /* a single char as name of abstract type	*/
   int size;                                             /* data size in bytes						*/
-  ConversionProcPtr print;              /* function to print data					*/
 } VectorDescriptor ;
 
 typedef struct {
@@ -255,7 +418,6 @@ typedef struct {
   int size;                                             /* with size bytes per connection			*/
   int isize;                                            /* size of interpolation matrices			*/
   int depth;                                            /* connect with depth in dual graph             */
-  ConversionProcPtr print;              /* function to print data					*/
 } MatrixDescriptor ;
 
 /****************************************************************************/
@@ -464,7 +626,6 @@ struct edge {                                           /* undirected edge of th
         #endif
 
   struct node *midnode;                         /* pointer to mid node on next finer gri*/
-
 
   /* WARNING: the allocation of the vector pointer depends on the format      */
 
@@ -815,6 +976,7 @@ struct multigrid {
   INT currentLevel;                                     /* level we are working on				*/
   INT bottomLevel;                                      /* bottom level for AMG                 */
   BVP *theBVP;                                          /* pointer to BndValProblem				*/
+  BVP_DESC theBVPD;                                     /* description of BVP-properties		*/
   struct format *theFormat;                     /* pointer to format definition                 */
   HEAP *theHeap;                                        /* associated heap structure			*/
   INT nProperty;                                        /* max nb of properties used in elements*/
@@ -842,6 +1004,8 @@ struct multigrid {
   /* i/o handing */
   INT saved;                                                    /* 1 if multigrid saved					*/
   char filename[NAMESIZE];                      /* filename if saved					*/
+
+  INT CoarseGridFixed;                          /* coarse grid complete					*/
 } ;
 
 /****************************************************************************/
@@ -1024,7 +1188,7 @@ extern CONTROL_ENTRY
 /* all objects:                                                                                                                         */
 /*																			*/
 /* vectors:                                                                                                                             */
-/* VTYPE	 |0 - 1 |*| | node-,edge-,side- or elemvector					*/
+/* VOTYPE	 |0 - 1 |*| | node-,edge-,side- or elemvector					*/
 /* VCFLAG	 |3		|*| | flag for general use								*/
 /* VCUSED	 |4		|*| | flag for general use								*/
 /* VCOUNT	 |5-6	|*| |                                                                                                   */
@@ -1042,6 +1206,9 @@ extern CONTROL_ENTRY
 /* VCNEW	 |20	|*| | 1 if vector has a new connection					*/
 /* VCNB		 |21-25	|*| |                                                                                                   */
 /* VCCUT	 |26	|*| |                                                                                                   */
+/* VTYPE	 |27-28 |*| | abstract vector type								*/
+/* VPART	 |29-30 |*| | domain part										*/
+/* VCCOARSE  |31    |*| | indicate algebraic part of VECTOR-MATRIX graph	*/
 /*																			*/
 /* matrices:																*/
 /* MOFFSET	 |0     | |*| 0 if first matrix in connection else 1			*/
@@ -1080,11 +1247,23 @@ extern CONTROL_ENTRY
 #define VECTOR_OFFSET                           0
 
 /* predefined control word entries */
-#define VTYPE_CE                                        0
-#define VTYPE_SHIFT                             0
+#define VOTYPE_CE                                       0
+#define VOTYPE_SHIFT                            0
+#define VOTYPE_LEN                                      2
+#define VOTYPE(p)                                       CW_READ_STATIC(p,VOTYPE_,VECTOR_)
+#define SETVOTYPE(p,n)                          CW_WRITE_STATIC(p,VOTYPE_,VECTOR_,n)
+
+#define VTYPE_CE                                        80
+#define VTYPE_SHIFT                             27
 #define VTYPE_LEN                                       2
 #define VTYPE(p)                                        CW_READ_STATIC(p,VTYPE_,VECTOR_)
 #define SETVTYPE(p,n)                           CW_WRITE_STATIC(p,VTYPE_,VECTOR_,n)
+
+#define VPART_CE                                        82
+#define VPART_SHIFT                             29
+#define VPART_LEN                                       2
+#define VPART(p)                                        CW_READ_STATIC(p,VPART_,VECTOR_)
+#define SETVPART(p,n)                           CW_WRITE_STATIC(p,VPART_,VECTOR_,n)
 
 #define VCFLAG_CE                                       36
 #define VCFLAG_SHIFT                            3
@@ -1152,8 +1331,8 @@ extern CONTROL_ENTRY
 #define VCCUT(p)                                        CW_READ_STATIC(p,VCCUT_,VECTOR_)
 #define SETVCCUT(p,n)                           CW_WRITE_STATIC(p,VCCUT_,VECTOR_,n)
 
-#define VCCOARSE_CE                                     80
-#define VCCOARSE_SHIFT                          27
+#define VCCOARSE_CE                                     83
+#define VCCOARSE_SHIFT                          31
 #define VCCOARSE_LEN                            1
 #define VCCOARSE(p)                                     CW_READ_STATIC(p,VCCOARSE_,VECTOR_)
 #define SETVCCOARSE(p,n)                        CW_WRITE_STATIC(p,VCCOARSE_,VECTOR_,n)
@@ -1176,6 +1355,7 @@ extern CONTROL_ENTRY
 #define PREDVC(v)                                       ((v)->pred)
 #define SUCCVC(v)                                       ((v)->succ)
 #define VINDEX(v)                                       ((v)->index)
+#define V_IN_DATATYPE(v,dt)                     (VDATATYPE(v) & (dt))
 #define VSKIPME(v,n)                            ((((v)->skip)>>n) & 1)
 #define VVECSKIP(v,n)                           ((((v)->skip)>>n) & 15)
 #define VFULLSKIP(v,n)                          (VVECSKIP(v,n)==15)
@@ -1371,11 +1551,11 @@ extern CONTROL_ENTRY
 #define BVLEVEL(bv)                                             CW_READ_STATIC(bv,BVLEVEL_,BLOCKVECTOR_)
 #define SETBVLEVEL(bv,n)                                CW_WRITE_STATIC(bv,BVLEVEL_,BLOCKVECTOR_,n)
 
-#define BVTVTYPE_CE                                     81
+#define BVTVTYPE_CE                                             84
 #define BVTVTYPE_SHIFT                                  6
 #define BVTVTYPE_LEN                                    1
 #define BVTVTYPE(bv)                                    CW_READ_STATIC(bv,BVTVTYPE_,BLOCKVECTOR_)
-#define SETBVTVTYPE(bv,n)                       CW_WRITE_STATIC(bv,BVTVTYPE_,BLOCKVECTOR_,n)
+#define SETBVTVTYPE(bv,n)                               CW_WRITE_STATIC(bv,BVTVTYPE_,BLOCKVECTOR_,n)
 
 /* access to members of struct blockvector */
 #define BVNUMBER(bv)                                    ((bv)->number)
@@ -1421,7 +1601,7 @@ extern CONTROL_ENTRY
 /* OBJT          |27-31 |*|*|*|*|*|*|object type identification                                 */
 /* TAG		 |24-26 |*|*|*|*|*|*|general purpose tag field					*/
 /* USED          |23	|*|*|*|*|*|*|object visited, leave them as you found 'em*/
-/* LEVEL	 |17-22 | |*| |*| | |level of a node/element (imp. for copies)	*/
+/* LEVEL	 |17-22 |*|*| |*| | |level of a node/element (imp. for copies)	*/
 /* THEFLAG	 |16	|*|*|*|*|*|*|general purp.,  leave them as you found 'em*/
 /*																			*/
 /* vertices:																*/
@@ -1430,6 +1610,7 @@ extern CONTROL_ENTRY
 /* ONEDGE	 |3 - 6 |*| | | | | |no. of edge in father element				*/
 /* ONSIDE	 |3 - 5 |*| | | | | |no. of side in father element				*/
 /* ONNBSIDE	 |6 - 8 |*| | | | | |no. of side in the neigbor of the father   */
+/* NOOFNODE	 |9 -13 |*| | | | | |???									    */
 /*																			*/
 /* nodes:																	*/
 /* CLASS	 |0-2	| |*| | | | |class of node on current level                     */
@@ -1440,8 +1621,10 @@ extern CONTROL_ENTRY
 /*																			*/
 /* links and edges:                                                                                                             */
 /* LOFFSET	 |0     | | |*| | | |position of link in links array			*/
-/* NOOFELEM  |2-9	| | |*| | | |nb. of elem. the edge is part of			*/
-/* AUXEDGE	 |10	|														*/
+/* EDGENEW	 |1     | | |*| | | |status of edge								*/
+/* NOOFELEM  |2-8	| | |*| | | |nb. of elem. the edge is part of			*/
+/* AUXEDGE	 |9		|														*/
+/* EDSUBDOM  |12-15 | | | |*| | |subdomain of edge if inner edge, 0 else	*/
 /*																			*/
 /* elements:																*/
 /* ECLASS	 |8-9	| | | |*| | |element class from enumeration type		*/
@@ -1552,7 +1735,6 @@ extern CONTROL_ENTRY
 #define SETONEDGE(p,n)                          CW_WRITE_STATIC(p,ONEDGE_,VERTEX_,n)
 
 #define ONSIDE_CE                               73
-#define ONSIDE_CE                               73
 #define ONSIDE_SHIFT                            3
 #define ONSIDE_LEN                                      3
 #define ONSIDE(p)                                       CW_READ_STATIC(p,ONSIDE_,VERTEX_)
@@ -1659,7 +1841,6 @@ extern CONTROL_ENTRY
 #define SONNODE(p)      (p)->son
 #define MYVERTEX(p) (p)->myvertex
 #define NDATA(p)        (p)->data
-#define NDIAG(p)        (p)->matelem
 #define NVECTOR(p)      (p)->vector
 
 #define NODE_ELEMENT_LIST(p)    ((ELEMENTLIST *)(p)->data)
@@ -1731,10 +1912,17 @@ extern CONTROL_ENTRY
 #define SETAUXEDGE(p,n)                         CW_WRITE(p,AUXEDGE_CE,n)
 
 #define EDGENEW_CE                                      41
-#define EDGENEW_SHIFT                           16
+#define EDGENEW_SHIFT                           1
 #define EDGENEW_LEN                             1
 #define EDGENEW(p)                                      CW_READ(p,EDGENEW_CE)
 #define SETEDGENEW(p,n)                         CW_WRITE(p,EDGENEW_CE,n)
+
+/* boundary edges will be indicated by a subdomain id of 0 */
+#define EDSUBDOM_CE                                     81
+#define EDSUBDOM_SHIFT                          12
+#define EDSUBDOM_LEN                            4
+#define EDSUBDOM(p)                                     CW_READ(p,EDSUBDOM_CE)
+#define SETEDSUBDOM(p,n)                        CW_WRITE(p,EDSUBDOM_CE,n)
 
 #define LINK0(p)        (&((p)->links[0]))
 #define LINK1(p)        (&((p)->links[1]))
@@ -2143,8 +2331,8 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define NS(p)                           ((p)->nSide)
 #define NVEC(p)                         ((p)->nVector)
 #define NC(p)                           ((p)->nCon)
+#define VEC_DEF_IN_OBJ_OF_GRID(p,tp)     ((p)->mg->theFormat->OTypeUsed[(tp)]>0)
 #define NIMAT(p)                        ((p)->nIMat)
-#define TYPE_DEF_IN_GRID(p,tp) ((p)->mg->theFormat->VectorSizes[(tp)]>0)
 #define NELIST_DEF_IN_GRID(p)  ((p)->mg->theFormat->nodeelementlist)
 #define EDATA_DEF_IN_GRID(p)   ((p)->mg->theFormat->elementdata)
 #define NDATA_DEF_IN_GRID(p)   ((p)->mg->theFormat->nodedata)
@@ -2171,6 +2359,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MGFORMAT(p)                     ((p)->theFormat)
 #define DATAFORMAT(p)                   ((p)->theFormat)
 #define MG_BVP(p)                               ((p)->theBVP)
+#define MG_BVPD(p)                              (&((p)->theBVPD))
 #define MGBNDSEGDESC(p,i)               (&((p)->segments[i]))
 #define MGVERTEX(p,k)                   ((p)->corners[k])
 #define MGNOOFCORNERS(p)                ((p)->numOfCorners)
@@ -2194,13 +2383,52 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MG_USER_HEAP(p)                 ((p)->UserHeap)
 #define GEN_MGUD(p)                     ((p)->GenData)
 #define GEN_MGUD_ADR(p,o)               ((void *)(((char *)((p)->GenData))+(o)))
-#define TYPE_DEF_IN_MG(p,tp)    ((p)->theFormat->VectorSizes[(tp)]>0)
+#define VEC_DEF_IN_OBJ_OF_MG(p,tp)       ((p)->theFormat->OTypeUsed[(tp)]>0)
 #define NELIST_DEF_IN_MG(p)     ((p)->theFormat->nodeelementlist)
 #define EDATA_DEF_IN_MG(p)      ((p)->theFormat->elementdata)
 #define NDATA_DEF_IN_MG(p)      ((p)->theFormat->nodedata)
 #define MG_GENPURP(p)                   ((p)->genpurp)
 #define MG_SAVED(p)                             ((p)->saved)
 #define MG_FILENAME(p)                  ((p)->filename)
+#define MG_COARSE_FIXED(p)              ((p)->CoarseGridFixed)
+
+/****************************************************************************/
+/*																			*/
+/* macros for formats														*/
+/*																			*/
+/****************************************************************************/
+
+#define FMT_ELEM_DATA(f)                                ((f)->elementdata)
+#define FMT_NODE_DATA(f)                                ((f)->nodedata)
+#define FMT_NODE_ELEM_LIST(f)                   ((f)->nodeelementlist)
+#define FMT_S_VERTEX(f)                                 ((f)->sVertex)
+#define FMT_S_MG(f)                                             ((f)->sMultiGrid)
+#define FMT_S_VEC_TP(f,t)                               ((f)->VectorSizes[t])
+#define FMT_VTYPE_NAME(f,t)                             ((f)->VTypeNames[t])
+#define FMT_S_MAT_TP(f,t)                               ((f)->MatrixSizes[t])
+#define FMT_S_MATPTR(f)                                 ((f)->MatrixSizes)
+#define FMT_S_IMAT_TP(f,t)                              ((f)->IMatrixSizes[t])
+#define FMT_CONN_DEPTH_TP(f,t)                  ((f)->ConnectionDepth[t])
+#define FMT_CONN_DEPTH_PTR(f)                   ((f)->ConnectionDepth)
+#define FMT_CONN_DEPTH_MAX(f)                   ((f)->MaxConnectionDepth)
+#define FMT_NB_DEPTH(f)                                 ((f)->NeighborhoodDepth)
+#define FMT_PR_VERTEX(f)                                ((f)->PrintVertex)
+#define FMT_PR_GRID(f)                                  ((f)->PrintGrid)
+#define FMT_PR_MG(f)                                    ((f)->PrintMultigrid)
+#define FMT_PR_VEC(f)                                   ((f)->PrintVector)
+#define FMT_PR_MAT(f)                                   ((f)->PrintMatrix)
+#define FMT_PO2T(f,p,o)                                 ((f)->po2t[p][o])
+#define FMT_T2P(f,t)                                    ((f)->t2p[t])
+#define FMT_TYPE_IN_PART(f,t,o)                 ((f)->t2p[o] & (1<<o))
+#define FMT_T2O(f,o)                                    ((f)->t2o[o])
+#define FMT_TYPE_USES_OBJ(f,t,o)                ((f)->t2o[o] & (1<<o))
+#define FMT_USES_OBJ(f,o)                               ((f)->OTypeUsed[o])
+#define FMT_MAX_PART(f)                                 ((f)->MaxPart)
+#define FMT_MAX_TYPE(f)                                 ((f)->MaxType)
+
+#define FMT_N2T(f,c)                                    (((c)<FROM_VTNAME) ? NOVTYPE : ((c)>TO_VTNAME) ? NOVTYPE : (f)->n2t[(c)-FROM_VTNAME])
+#define FMT_SET_N2T(f,c,t)                              ((f)->n2t[(c)-FROM_VTNAME] = t)
+#define FMT_T2N(f,t)                                    (((f)->t2n[t]))
 
 /* constants for USED flags of objects */
 #define MG_ELEMUSED     1
@@ -2280,13 +2508,18 @@ FORMAT                   *GetFormat                             (const char *nam
 FORMAT                   *GetFirstFormat                        (void);
 FORMAT                   *GetNextFormat                         (FORMAT * fmt);
 INT                               ChangeToFormatDir                     (const char *name);
-FORMAT                  *CreateFormat           (char *name, INT sVertex, INT sMultiGrid,
-                                                 ConversionProcPtr PrintVertex,ConversionProcPtr PrintGrid,ConversionProcPtr PrintMultigrid,
-                                                 INT nvDesc, VectorDescriptor *vDesc,INT nmDesc, MatrixDescriptor *mDesc);
-FORMAT                  *Ugly_CreateFormat (char *name,INT sVertex, INT sMultiGrid, INT *VectorSizes,
-                                            INT *FromType, INT *ToType, INT *MatrixSizes, INT *ConnectionDepth,
-                                            ConversionProcPtr PrintVertex, ConversionProcPtr PrintGrid,ConversionProcPtr PrintMultigrid,
-                                            ConversionProcPtr PrintVector[MAXVECTORS], ConversionProcPtr PrintMatrix[MAXVECTORS][MAXVECTORS] );
+INT                               DeleteFormat                          (const char *name);
+FORMAT                   *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
+                                        ConversionProcPtr PrintVertex,
+                                        ConversionProcPtr PrintGrid,
+                                        ConversionProcPtr PrintMultigrid,
+                                        TaggedConversionProcPtr PrintVector,
+                                        TaggedConversionProcPtr PrintMatrix,
+                                        INT nvDesc, VectorDescriptor *vDesc,
+                                        INT nmDesc, MatrixDescriptor *mDesc,
+                                        SHORT ImatTypes[],
+                                        INT po2t[MAXDOMPARTS][MAXVOBJECTS],
+                                        INT nodeelementlist, INT edata, INT ndata);
 
 /* create, saving and disposing a multigrid structure */
 MULTIGRID   *CreateMultiGrid        (char *MultigridName, char *BndValProblem, char *format, unsigned long heapSize);
@@ -2329,6 +2562,7 @@ INT         GetMidNodeParam         (NODE * theNode, DOUBLE *lambda);
 INT         GetCenterNodeParam      (NODE * theNode, DOUBLE *lambda);
 #ifdef __THREEDIM__
 NODE            GetSideNodeParam        (NODE * theNode, DOUBLE *lambda);
+INT                     GetSideIDFromScratch    (ELEMENT *theElement, NODE *theNode);
 #endif
 INT         MoveMidNode             (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda);
 INT         MoveCenterNode          (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda);
@@ -2449,7 +2683,7 @@ INT                     LexOrderVectorsInGrid                   (GRID *theGrid, 
 INT             OrderVectors                                    (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat, const char *dependency, const char *dep_options, const char *findcut);
 INT                     ShellOrderVectors                               (GRID *theGrid, VECTOR *seed);
 INT                     PrepareForLineorderVectors              (GRID *theGrid);
-INT                     MarkBeginEndForLineorderVectors (ELEMENT *elem, const INT *type, const INT *mark);
+INT                     MarkBeginEndForLineorderVectors (ELEMENT *elem, INT dt, INT ot, const INT *mark);
 INT                     LineOrderVectors                                (MULTIGRID *theMG, INT levels, const char *dependency, const char *dep_options, const char *findcut, INT verboselevel);
 INT                     RevertVecOrder                                  (GRID *theGrid);
 
@@ -2469,10 +2703,13 @@ EVECTOR         *GetFirstElementVectorEvalProc                          (void);
 EVECTOR         *GetNextElementVectorEvalProc                           (EVECTOR *EvecProc);
 
 /* miscellaneous */
-INT             RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, INT *foid, INT *non);
-INT                     OrderNodesInGrid                (GRID *theGrid, const INT *order, const INT *sign, INT AlsoOrderLinks);
-INT             PutAtEndOfList          (GRID *theGrid, INT cnt, ELEMENT **elemList);
-INT         MGSetVectorClasses      (MULTIGRID *theMG);
-INT             SetSubdomainIDfromBndInfo (MULTIGRID *theMG);
+INT             RenumberMultiGrid                                       (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, INT *foid, INT *non);
+INT                     OrderNodesInGrid                                        (GRID *theGrid, const INT *order, const INT *sign, INT AlsoOrderLinks);
+INT             PutAtEndOfList                                          (GRID *theGrid, INT cnt, ELEMENT **elemList);
+INT         MGSetVectorClasses                              (MULTIGRID *theMG);
+INT         SetEdgeSubdomainFromElements        (GRID *theGrid);
+INT         SetSubdomainIDfromBndInfo           (MULTIGRID *theMG);
+INT         FixCoarseGrid                       (MULTIGRID *theMG);
+INT                     ClearMultiGridUsedFlags                         (MULTIGRID *theMG, INT FromLevel, INT ToLevel, INT mask);
 
 #endif
