@@ -848,6 +848,7 @@ static INT ShortestInteriorEdge (ELEMENT *theElement)
   case 6 :                                              /* Dist_1_3 < Dist_2_4 < Dist_0_5 */
     return (FULL_REFRULE_1_3);
   }
+  return (-1);
 }
 
 /****************************************************************************/
@@ -1021,7 +1022,6 @@ static INT BestLaplaceMMatrix (ELEMENT *theElement)
   COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM];
   INT i,j,k,l,imin,TBFR,refrule;
   COORD Angle[MAX_EDGES_OF_ELEM],Length[MAX_EDGES_OF_ELEM],sum,Min;
-  char buffer[64];
 
   /* get physical position of the corners */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -1110,9 +1110,8 @@ static INT MaxPerpendicular (ELEMENT *theElement)
 {
   COORD *Corners[MAX_CORNERS_OF_ELEM];
   COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM],a,b,c;
-  INT i,j,k,l,imin,TBFR,refrule;
-  COORD Angle[MAX_EDGES_OF_ELEM],Length[MAX_EDGES_OF_ELEM],sprd,Max;
-  char buffer[64];
+  INT i,j,imin,TBFR,refrule;
+  COORD sprd,Max;
 
   /* get physical position of the corners */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -1184,10 +1183,9 @@ static INT MaxPerpendicular (ELEMENT *theElement)
 static INT MaxRightAngle (ELEMENT *theElement)
 {
   COORD *Corners[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM],a,b,c;
-  INT i,j,k,l,imin,TBFR,refrule;
-  COORD Angle[MAX_EDGES_OF_ELEM],Length[MAX_EDGES_OF_ELEM],sprd,Min;
-  char buffer[64];
+  COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM],a,b;
+  INT i,j,imin,TBFR,refrule;
+  COORD sprd,Min;
 
   /* get physical position of the corners */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -1258,9 +1256,8 @@ static INT MaxArea (ELEMENT *theElement)
 {
   COORD *Corners[MAX_CORNERS_OF_ELEM];
   COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM],a,b,c;
-  INT i,j,k,l,imin,TBFR,refrule;
-  COORD Angle[MAX_EDGES_OF_ELEM],Length[MAX_EDGES_OF_ELEM],norm,Max;
-  char buffer[64];
+  INT i,j,imin,TBFR,refrule;
+  COORD norm,Max;
 
   /* get physical position of the corners */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -1330,7 +1327,7 @@ static INT Alignment (ELEMENT *theElement)
   COORD *Corners[MAX_CORNERS_OF_ELEM];
   COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM], help, MidPoint;
   DOUBLE_VECTOR Velocity;
-  INT i, flags, imax;
+  INT i, imax;
   COORD Dist_0_5, Dist_1_3, Dist_2_4, max;
 
   /* get physical position of the corners */
@@ -1371,6 +1368,7 @@ static INT Alignment (ELEMENT *theElement)
   case 5 : if (Dist_1_3<Dist_2_4) return (FULL_REFRULE_1_3);
     else return (FULL_REFRULE_2_4);
   }
+  return (-1);
 }
 
 /****************************************************************************/
@@ -1389,7 +1387,7 @@ static INT YAlignment (ELEMENT *theElement)
 {
   COORD *Corners[MAX_CORNERS_OF_ELEM];
   COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM], help;
-  INT i, flags, imax;
+  INT i, imax;
   COORD Dist_0_5, Dist_1_3, Dist_2_4, max;
 
   /* get physical position of the corners */
@@ -1426,6 +1424,7 @@ static INT YAlignment (ELEMENT *theElement)
   case 5 : if (Dist_1_3<Dist_2_4) return (FULL_REFRULE_1_3);
     else return (FULL_REFRULE_2_4);
   }
+  return (-1);
 }
 #endif /* __THREEDIM__ */
 
@@ -1446,7 +1445,9 @@ static INT YAlignment (ELEMENT *theElement)
 
 INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
 {
+        #ifdef __TWODIM__
   INT side;
+        #endif
 
   SETCOARSEN(theElement,0);
 
@@ -1945,7 +1946,7 @@ static INT PrintSonData(struct sondata theSonData)
 INT ShowRefRule (INT tag, INT nb)
 {
   char buffer[128];
-  INT i,j;
+  INT i;
   REFRULE *theRule;
 
   if (MaxRules[tag]<=nb)
@@ -2127,9 +2128,9 @@ static int FReadRule (FILE *stream, REFRULE *theRule)
 /****************************************************************************/
 
 #ifdef __THREEDIM__
-INT InitRuleManager3D (void)
+static INT InitRuleManager3D (void)
 {
-  int nRules, nPatterns, err, i, P2R;
+  int nRules, nPatterns, i, P2R;
   FILE *stream;
   FULLREFRULE *newFRR;
   REFRULE *Rules;
@@ -2336,9 +2337,9 @@ INT SetAlignementPtr (MULTIGRID *theMG, EVECTOR *direction)
 /****************************************************************************/
 
 #ifdef __TWODIM__
-INT InitRuleManager2D (void)
+static INT InitRuleManager2D (void)
 {
-  int nRules, nPatterns, err, i, P2R;
+  int nPatterns;
 
   /************************************************************************/
   /*																		*/
@@ -2459,4 +2460,5 @@ INT InitRuleManager (void)
     SetHiWrd(err,__LINE__);
     return(err);;
   }
+  return (0);
 }
