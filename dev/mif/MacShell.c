@@ -544,7 +544,8 @@ void MacWriteString (char *s)
   int nLinesBefore,nLinesAfter,linesToDelete,linesToScroll;
   GrafPtr savePort;
 
-#ifdef __MWCW_oldVersion__
+#       if GENERATING68K
+
   /*
           NB: this is not necessary for CW C-compiler version 1.2 if 'MPW newlines' is checked
                   in the 'Language' preferences
@@ -556,7 +557,7 @@ void MacWriteString (char *s)
   for (cp=s; *cp!='\0'; cp++)
     if (*cp=='\n')
       *cp = '\r';
-#endif
+#       endif
 
   nLinesBefore = (**(shell->textH)).nLines;
 
