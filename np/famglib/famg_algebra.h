@@ -27,15 +27,19 @@
    $Header$
  */
 
+//
+// vector stuff
+//
+
 class FAMGVectorEntryRef
 {       // abstract base class
 public:
   virtual FAMGVectorEntryRef* clone() = NULL;
 
-  virtual FAMGVectorEntryRef & operator++ () = NULL;                    // prefix
-  FAMGVectorEntryRef & operator++ (int) {FAMGVectorEntryRef& tmp = *this; ++*this; return tmp;};              // postfix
-  virtual FAMGVectorEntryRef & operator-- () = NULL;                    // prefix
-  FAMGVectorEntryRef & operator-- (int) {FAMGVectorEntryRef& tmp = *this; --*this; return tmp;};              // postfix
+  virtual FAMGVectorEntryRef& operator++ () = NULL;                     // prefix
+  FAMGVectorEntryRef& operator++ (int) {FAMGVectorEntryRef& tmp = *this; ++*this; return tmp;};              // postfix
+  virtual FAMGVectorEntryRef& operator-- () = NULL;                     // prefix
+  FAMGVectorEntryRef& operator-- (int) {FAMGVectorEntryRef& tmp = *this; --*this; return tmp;};              // postfix
 };
 
 class FAMGVectorEntry
@@ -65,18 +69,17 @@ private:
 class FAMGVector
 {
 public:
-  virtual double & operator[] (FAMGVectorEntry& ve) = NULL;
-  virtual int is_valid(FAMGVectorEntry& ve) = NULL;
-  virtual int is_end(FAMGVectorEntry& ve) = NULL;
+  virtual double& operator[] ( FAMGVectorEntry& ve ) = NULL;
+  virtual int is_valid( FAMGVectorEntry& ve ) = NULL;
+  virtual int is_end( FAMGVectorEntry& ve ) = NULL;
   virtual FAMGVectorEntry firstEntry() = NULL;
   virtual const FAMGVectorEntry endEntry() = NULL;
-
 };
 
 class FAMGVectorIter
 {
 public:
-  FAMGVectorIter( FAMGVector& v) : myvector(v), current_ve(v.firstEntry()) {};
+  FAMGVectorIter( FAMGVector& v ) : myvector(v), current_ve(v.firstEntry()) {};
 
   int operator() ( FAMGVectorEntry& ve ) {
     int res = !myvector.is_end(ve=current_ve); if(res) ++current_ve;return res;
@@ -85,5 +88,65 @@ public:
 private:
   FAMGVector& myvector;
   FAMGVectorEntry current_ve;
+};
+
+//
+// matrix stuff
+//
+
+class FAMGMatrixEntryRef
+{       // abstract base class
+public:
+  virtual FAMGMatrixEntryRef* clone() = NULL;
+
+  virtual FAMGMatrixEntryRef& operator++ () = NULL;                     // prefix
+  FAMGMatrixEntryRef& operator++ (int) {FAMGMatrixEntryRef& tmp = *this; ++*this; return tmp;};              // postfix
+};
+
+class FAMGMatrixEntry
+{
+public:
+  FAMGMatrixEntry() : matentry(NULL) {};
+  FAMGMatrixEntry( const FAMGMatrixEntry & me ) : matentry(me.getpointer()->clone()) {};
+  FAMGMatrixEntry( FAMGMatrixEntryRef* mep ) : matentry(mep) {};
+  ~FAMGMatrixEntry() {
+    delete matentry;
+  };
+
+  FAMGMatrixEntry& operator=( const FAMGMatrixEntry & me ) {if(this!=&me) {delete matentry; matentry=me.getpointer()->clone();} return *this;};
+  FAMGMatrixEntry& operator++ () {++(*matentry); return *this;};                // prefix
+  void operator++ (int) {++(*matentry); };                                                              // postfix
+
+  FAMGMatrixEntryRef* getpointer() const {
+    return matentry;
+  };
+
+private:
+  FAMGMatrixEntryRef* matentry;
+};
+
+class FAMGMatrixAlg
+{
+public:
+  virtual double& operator[] ( FAMGMatrixEntry& me ) = NULL;
+  virtual int is_valid( FAMGVectorEntry& row_ve, FAMGMatrixEntry& me ) = NULL;
+  virtual int is_end( FAMGVectorEntry& row_ve, FAMGMatrixEntry& me ) = NULL;
+  virtual FAMGMatrixEntry firstEntry( FAMGVectorEntry& row_ve ) = NULL;
+  virtual const FAMGMatrixEntry endEntry( FAMGVectorEntry& row_ve ) = NULL;
+};
+
+class FAMGMatrixIter
+{
+public:
+  FAMGMatrixIter( FAMGMatrixAlg& m, FAMGVectorEntry& row_ve) : myMatrix(m), myrow_ve(row_ve), current_me(m.firstEntry(row_ve)) {};
+
+  int operator() ( FAMGMatrixEntry& me ) {
+    int res = !myMatrix.is_end(myrow_ve,me=current_me); if(res) ++current_me;return res;
+  };
+
+private:
+  FAMGMatrixAlg& myMatrix;
+  FAMGVectorEntry& myrow_ve;
+  FAMGMatrixEntry current_me;
 };
 #endif
