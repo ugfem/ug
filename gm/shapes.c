@@ -525,9 +525,9 @@ INT JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM
 		*detJ = det;
 
 		/* invert jacobian */
-		Jinv[0][0] =  (J22*J33-J23*J32)/det; Jinv[0][1] = -(J21*J33-J23*J31)/det; Jinv[0][2] =  (J21*J32-J22*J31)/det;	    	
-		Jinv[1][0] = -(J12*J33-J13*J32)/det; Jinv[1][1] =  (J11*J33-J13*J31)/det; Jinv[1][2] = -(J11*J32-J12*J31)/det;	    	
-		Jinv[2][0] =  (J12*J13-J22*J23)/det; Jinv[2][1] = -(J11*J23-J13*J21)/det; Jinv[2][2] =  (J11*J22-J12*J21)/det;	    	
+		Jinv[0][0] =  (J22*J33-J23*J32)/det; Jinv[0][1] = -(J12*J33-J13*J32)/det; Jinv[0][2] =  (J12*J23-J13*J22)/det;	    	
+		Jinv[1][0] = -(J21*J33-J23*J31)/det; Jinv[1][1] =  (J11*J33-J13*J31)/det; Jinv[1][2] = -(J11*J23-J13*J21)/det;	    	
+		Jinv[2][0] =  (J21*J32-J22*J31)/det; Jinv[2][1] = -(J11*J32-J12*J31)/det; Jinv[2][2] =  (J11*J22-J12*J21)/det;	    	
 
 		return(0);
 	}
