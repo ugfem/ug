@@ -62,7 +62,7 @@ static SURFACE_POSITION SurfPos;
 static BND_NODE BndNode;
 static INNER_NODE InnerNode;
 static ELEM_FACE ElemFace;
-static ELEMENT Elem;
+static NG_ELEMENT Elem;
 
 
 
@@ -71,7 +71,7 @@ static ELEMENT Elem;
 typedef union
 {
   /* put RCS string here in order to get it into yacc-generated header file
-     static char RCS_ID("$Header: /hosts/dom/cvs/df/gen/problems/dfcfg/dfcfg.y,v 1.1
+     static char RCS_ID("$Header: /hosts/dom/cvs/df/gen/problems/dfcfg/dfcfg.y,v 1.2
      1998/02/20 16:58:46 birken Exp $",UG_RCS_STRING);
    */
 
@@ -85,7 +85,7 @@ typedef union
   BND_NODE *bs;
   INNER_NODE *in;
   ELEM_FACE *ef;
-  ELEMENT *el;
+  NG_ELEMENT *el;
 } YYSTYPE;
 #include <stdio.h>
 
