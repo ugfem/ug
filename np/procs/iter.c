@@ -2332,7 +2332,7 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
   if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),np->t)!=NUM_OK)
     NP_RETURN(1,result[0]);
     #endif
-  if (dset(theMG,level,level,ALL_VECTORS,np->ux,0.0)!= NUM_OK)
+  if (dset(theMG,level,level,ALL_VECTORS,x,0.0)!= NUM_OK)
     NP_RETURN(1,result[0]);
 
   II_uuA = np->uuA;
@@ -2346,6 +2346,7 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
 
   if ((*np->u_iter->Iter)(np->u_iter,level,np->ux,np->t,np->uuA,result))
     REP_ERR_RETURN(1);
+
   if (dmatmul_minus(theMG,level,level,ALL_VECTORS,np->s,np->puA,np->ux)
       != NUM_OK)
     NP_RETURN(1,result[0]);
@@ -2383,7 +2384,7 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
     np->q = np->s;
     np->r = np->px;
   }
-  if (dset(theMG,level,level,ALL_VECTORS,np->px,0.0)!= NUM_OK)
+  if (dset(theMG,level,level,ALL_VECTORS,np->r,0.0)!= NUM_OK)
     NP_RETURN(1,result[0]);
 
   if ((*np->p_iter->Iter)(np->p_iter,level,np->r,np->q,np->S,result))
@@ -2479,9 +2480,11 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
     if (PostPCR(PrintID,NULL))
       NP_RETURN(1,result[0]);
   }
+
   if (dmatmul(theMG,level,level,ALL_VECTORS,np->t,np->upA,np->px)
       != NUM_OK)
     NP_RETURN(1,result[0]);
+
     #ifdef ModelP
   if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),np->t)!=NUM_OK)
     NP_RETURN(1,result[0]);
@@ -5117,7 +5120,7 @@ static INT FFConstruct (NP_BASE *theNP)
 static INT LmgcInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_LMGC *np;
-  INT i;
+  INT i,ret;
   char post[VALUELEN],pre[VALUELEN],base[VALUELEN];
 
   np = (NP_LMGC *) theNP;
@@ -5152,11 +5155,13 @@ static INT LmgcInit (NP_BASE *theNP, INT argc , char **argv)
   if (np->PostSmooth == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
   if (np->BaseSolver == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
 
-  if (sc_read(np->damp,NP_FMT(np),NULL,"damp",argc,argv))
+  ret = NPIterInit(&np->iter,argc,argv);
+
+  if (sc_read(np->damp,NP_FMT(np),np->iter.b,"damp",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++)
       np->damp[i] = 1.0;
 
-  return (NPIterInit(&np->iter,argc,argv));
+  return (ret);
 }
 
 static INT LmgcDisplay (NP_BASE *theNP)
@@ -5192,6 +5197,9 @@ static INT LmgcDisplay (NP_BASE *theNP)
 
   if (np->t != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+
+  if (sc_disp(np->damp,np->iter.b,"damp"))
+    REP_ERR_RETURN (1);
 
   return (0);
 }
@@ -5293,7 +5301,6 @@ static INT Lmgc (NP_ITER *theNP, INT level,
     if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK)
       NP_RETURN(1,result[0]);
   }
-
   IFDEBUG(np,1)
   dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
   UserWriteF("after presmoothing : %f\n",eunorm);
@@ -5340,7 +5347,6 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   if ((*np->Transfer->InterpolateCorrection)
         (np->Transfer,level,np->t,c,A,np->damp,result))
     REP_ERR_RETURN(1);
-
   IFDEBUG(np,4)
   dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,np->t,&eunorm);
   UserWriteF("norm of interpolated correction : %f\n",eunorm);
