@@ -409,10 +409,10 @@ static int Clustering (MULTIGRID *mg, int minlevel, int cluster_depth, int thres
 					c->sz += ZC(MYVERTEX(CORNER(e,i)));
 					#endif
 				}
-				c->sx /= ((COORD)(TAG(e)));
-				c->sy /= ((COORD)(TAG(e)));
+				c->sx /= ((COORD)(CORNERS_OF_ELEM(e)));
+				c->sy /= ((COORD)(CORNERS_OF_ELEM(e)));
 				#ifdef __THREEDIM__
-				c->sz /= ((COORD)(TAG(e)));
+				c->sz /= ((COORD)(CORNERS_OF_ELEM(e)));
 				#endif
 				c->root_element = e;
 			}
@@ -606,8 +606,8 @@ static int ScatterClusterNumber (DDD_OBJ theCoupling, void *data)
 	if (DDD_InfoPriority(PARHDRE(theElement))==PrioMaster && cptr!=NULL)
 	{
 		if (cptr->root_element!=theElement) return(0);
-		while (cptr->edges[i]!=0 && i<=TAG(theElement)) i++;
-		if (i>TAG(theElement)) 
+		while (cptr->edges[i]!=0 && i<SIDES_OF_ELEM(theElement)) i++;
+		if (i>=SIDES_OF_ELEM(theElement)) 
 		{
 			sprintf(buffer,"ScatterClusterNumber: #neighbors=%d, i=%d", TAG(theElement),i);  
 			UserWrite(buffer);
@@ -689,7 +689,7 @@ static int ComputeGraphInfo (MULTIGRID *mg)
 			return(1);
 		} 
 
-		for (l=0; l<TAG(theElement); l++)
+		for (l=0; l<SIDES_OF_ELEM(theElement); l++)
 		{
 			/* more sides than possible */
 			if (j>MAX_SIDES_OF_ELEM) return(1);
@@ -1148,6 +1148,7 @@ static int balance_ccptm (MULTIGRID *mg, int Const, int strategy, int eigen,
 
 		/* check whether partitioning succeeded */
 		check_assign(sort_clusters+first, goal, x, y, assign, nc);
+		
 
 		/* convert tree id's in clusters to processor id's */
 		/* this is done here, since the configuration size */
