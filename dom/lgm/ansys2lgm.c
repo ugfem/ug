@@ -5,11 +5,11 @@
 /*                                                                          */
 /* File:      ansys2lgm.c                                                   */
 /*                                                                          */
-/* Purpose:   convert Ansys-files to the UG-Domain-structure		    */
+/* Purpose:   convert Ansys-files to the UG-Domain-structure		   */
 /*                                                                          */
-/* Author:    Dirk Feuchter                			            */
-/*			  Institut fuer Computeranwendungen III	        	*/
-/*			  Universitaet Stuttgart				*/
+/* Author:    Dirk Feuchter                			            			*/
+/*			  Institut fuer Computeranwendungen III	        				*/
+/*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27					*/
 /*			  70569 Stuttgart, Germany				*/
 /*			  email: ug@ica3.uni-stuttgart.de			*/
@@ -173,6 +173,49 @@ INT nmb_of_triangles;
 
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
+
+
+
+#ifdef STATISTICAL_INFORMATIONS
+	static int ST_INF_Anz_SFE;
+	static int ST_INF_Anz_ds;
+	static int ST_INF_Anz_SFE_real;
+	static int ST_INF_m;
+	static int ST_INF_gef;
+	static double ST_INF_fg;
+	static double ST_INF_Kollishf;
+	static int ST_INF_2er;
+	static double ST_INF_2er_P;
+	static int ST_INF_3er;
+	static double ST_INF_3er_P;
+	static int ST_INF_4er;
+	static double ST_INF_4er_P;
+	static int ST_INF_5er;
+	static double ST_INF_5er_P;
+	static int ST_INF_maxK;
+	static int ST_INF_Klsstellen;
+	static int ST_INF_Kollis;
+	static int ST_INF_Anz_LI;
+	/*static int ST_INF_Anz_dl;*/
+	static int ST_INF_Anz_LI_real;
+	static double ST_INF_LI_real_durch_SFE_real;
+	static int ST_INF_mL;
+	static int ST_INF_gefL;
+	static double ST_INF_fgL;
+	static double ST_INF_KhL;
+	static int ST_INF_2erL;
+	static double ST_INF_2erL_P;
+	static int ST_INF_3erL;
+	static double ST_INF_3erL_P;
+	static int ST_INF_4erL;
+	static double ST_INF_4erL_P;
+	static int ST_INF_5erL;
+	static double ST_INF_5erL_P;
+	static int ST_INF_maxKL;
+	static int ST_INF_KlsstellenL;
+	static int ST_INF_KollisL;
+#endif
+
 
 
 /****************************************************************************/
@@ -1592,9 +1635,16 @@ D*/
 /****************************************************************************/
 INT The_SFE_hashfunction(INT val1, INT val2, INT val3)
 {
-	unsigned int hash_value, help;
-	
-	
+	unsigned int hash_value, help, bits;
+/*  beste Hasfunktion :*/
+/*  beste Hashfunktion: Fuellgrad bei m = 2 * #SFEs == 30 bis 40 Prozent
+    je mehr CAD-Flaechen aufeinander liegen, desto niedriger ist der 
+    Fuellgrad . 
+    Die Kollisionshaeufigkeit betraegt 16 bis 21 Prozent . Der hoechste Wert
+    wird bei einem EinzeolKomponentenGeometrie erreicht*/
+    /*Die untersuchten Geometrien waren
+    a2l_01_fein, a2l_100, a2l_80, a2l_72 und a2l_200 */
+
 	hash_value = val1;
 	hash_value = hash_value << 16;
 	hash_value = hash_value ^ val2;
@@ -1602,7 +1652,36 @@ INT The_SFE_hashfunction(INT val1, INT val2, INT val3)
 	help = help << 8;
 	hash_value = hash_value ^ help;
 	hash_value = hash_value % SFE_p;
-	
+
+/* andere Hashfunktionen:  auskommentiert !!!
+       hash_value = val1 + val2 + val3 + val1 * val1 + val2 * val2 + val3 * val3;
+	hash_value = hash_value % SFE_p;
+*/
+
+
+/* noch eine andere Hashfunktion
+	hash_value = val1;
+	help = val2;
+	bits = 1;
+	while(help != 1)
+	{
+		help = help >>1;
+		bits ++;
+	}
+	hash_value = hash_value << bits;
+	hash_value = hash_value ^ val2;
+	help = val3;
+	bits = 1;
+	while(help != 1)
+	{
+		help = help >>1;
+		bits ++;
+	}
+	hash_value = hash_value << bits;
+	hash_value = hash_value ^ val3;
+	hash_value = hash_value % SFE_p;
+	*/
+
 	return (INT)(hash_value);
 	/*die eigentliche Hashfunktion - TODO Gibt es noch eine bessere ???*/
 }	
@@ -1635,12 +1714,38 @@ D*/
 INT the_LI_hashfunction(INT val1, INT val2)
 {
 	unsigned int hash_value;
-	
-	
+	unsigned int help, bits;
+/*  beste Hashfunktion: Fuellgrad bei m = 3 * #LIs == 30 bis 40 Prozent
+    je mehr CAD-Flaechen aufeinander liegen, desto niedriger ist der 
+    Fuellgrad . 
+    Die Kollisionshaeufigkeit betraegt 13 bis 19 Prozent . Der hoechste Wert
+    wird bei einem EinzeolKomponentenGeometrie erreicht
+/*    Die untersuchten Geometrien waren
+    a2l_01_fein, a2l_100, a2l_80, a2l_72 und a2l_200 */
 	hash_value = val1;
 	hash_value = hash_value << 16;
 	hash_value = hash_value ^ val2;
 	hash_value = hash_value % LI_p;
+	
+	
+	/* andere Hash funktion
+	hash_value = val1 + val2 + val1 * val1 + val2 * val2;
+	hash_value = hash_value % LI_p;
+*/
+/* weitere Hashfunktion
+	hash_value = val1;
+	help = val2;
+	bits = 1;
+	while(help != 1)
+	{
+		help = help >>1;
+		bits ++;
+	}
+	hash_value = hash_value << bits;
+	hash_value = hash_value ^ val2;
+	hash_value = hash_value % LI_p;
+	*/
+
 	
 	return (INT)(hash_value);
 	/*die eigentliche Hashfunktion - TODO Gibt es noch eine bessere 
@@ -1924,17 +2029,24 @@ INT Ansys2lgmInit()
 	
 	SFE_p = EXCHNG_TYP1_NMB_OF_SFES(ExchangeVar_1_Pointer) * 2;
 	LI_p = EXCHNG_TYP1_NMB_OF_SFES(ExchangeVar_1_Pointer) * 3;
+	/*das waeren schlechte Zahlen :SFE_p = 1024; fuehrten zu zahlreichen Kollisionen !!! in LI-HsTab
+	LI_p = 1024;*/
+	
 	if ((rv = NextGoodPrimeNumber(&SFE_p)) == 1) 
 	{
 		PrintErrorMessage('E',"Ansys2lgmInit","got ERROR from function NextGoodPrimeNumber");
 		return(1);
 	}
+
+
 	
 	if ((rv = NextGoodPrimeNumber(&LI_p)) == 1) 
 	{
 		PrintErrorMessage('E',"Ansys2lgmInit","got ERROR from function NextGoodPrimeNumber");
 		return(1);
 	}
+
+
 	
 	
 	if ((rv = SortBndSegArray()) == 1) 
@@ -2110,7 +2222,7 @@ SFE_KNOTEN_TYP *Hash_SFE(INT i, INT j, INT k, INT id4, DOUBLE s)
 	hw = The_SFE_hashfunction(i,j,k);
 	hp = (EXCHNG_TYP2_SFE_HASHTAB(ExchangeVar_2_Pointer))[hw];
 	
-	if (hp == NULL) /*wenn es dieser Stelle der Hashtabelle noch gar keinen Eintrag gibt*/
+	if (hp == NULL) /*wenn es an dieser Stelle der Hashtabelle noch gar keinen Eintrag gibt*/
 	{
 		if ((thenewmem = GetMemAndFillNewSFE(i,j,k,id4,s)) == NULL)
 		{
@@ -2488,10 +2600,52 @@ INT Ansys2lgmCreateHashTables()
 	LI_KNOTEN_TYP *actual_line_ptr;
 	DOUBLE sfcidf;
 	INT id_i,id_j,id_k, id_4;
+	
+	#ifdef STATISTICAL_INFORMATIONS
+	SFE_KNOTEN_TYP *sfeptr;
+	INT lff,zaehler,zaehlerL;
+	INT LI_HT_Index;
+	LI_KNOTEN_TYP *li_ptr;
+	#endif
+
 
 	/*only for debugging*/
 	SFE_KNOTEN_TYP **hilfusSFE;
 	LI_KNOTEN_TYP **hilfusLI;
+	
+	#ifdef STATISTICAL_INFORMATIONS
+		/*Initialisierungen*/
+		ST_INF_Anz_SFE = EXCHNG_TYP1_NMB_OF_SFES(ExchangeVar_1_Pointer);
+		ST_INF_Anz_LI = ST_INF_Anz_SFE *3;
+		ST_INF_Anz_ds = 0;
+		/*ST_INF_Anz_dl = 0;*/
+		ST_INF_2er = 0;
+		ST_INF_3er = 0;
+		ST_INF_4er = 0;
+		ST_INF_5er = 0;
+		ST_INF_maxK = 1;
+		ST_INF_maxKL = 1;
+		ST_INF_Klsstellen = 0;
+		ST_INF_Kollis = 0;
+		ST_INF_2erL = 0;
+		ST_INF_3erL = 0;
+		ST_INF_4erL = 0;
+		ST_INF_5erL = 0;
+		ST_INF_KlsstellenL = 0;
+		ST_INF_KollisL = 0;
+		
+		ST_INF_m = SFE_p; 
+		ST_INF_gef = 0;
+		ST_INF_mL = LI_p;
+		ST_INF_gefL = 0;
+		
+		ST_INF_Anz_LI_real = 0;
+
+	#endif
+
+
+	 
+
 	
 	for(lf=0; lf<(EXCHNG_TYP1_NMB_OF_SFES(ExchangeVar_1_Pointer)); lf++) /*laufe über alle SFE's*/
 	{
@@ -2550,6 +2704,220 @@ INT Ansys2lgmCreateHashTables()
 	{
 		hilfusLI[lf] = (EXCHNG_TYP2_LI_HASHTAB(ExchangeVar_2_Pointer))[lf];
 	}
+	
+	
+	#ifdef STATISTICAL_INFORMATIONS
+		/*Berechnungen*/
+		
+		/*laufe ueber die gesamte SFE-Hashtabelle*/
+		/*laeuft ueber die gesamte SFE-Hashtabelle*/
+		for(lff=0; lff < SFE_p; lff++)  
+		{
+			/*wenn an dieser Stelle ueberhaupt ein Eintrag erfolgte*/
+			if ((EXCHNG_TYP2_SFE_HASHTAB(ExchangeVar_2_Pointer))[lff] != NULL) 
+			{
+					/*an dieser Stelle der SFE-Hashtabelle steht etwas*/
+					ST_INF_gef ++;
+				
+				sfeptr = (EXCHNG_TYP2_SFE_HASHTAB(ExchangeVar_2_Pointer))[lff];
+				
+				/*wenn es hier mehr als diesen einen Eintrag gibt . . . */
+				if(SFE_NEXT(sfeptr) != NULL)
+				{
+					/*dann liegt hier eine Kollisionsstelle vor.*/
+					ST_INF_Klsstellen++;
+					/*laufe ueber alle Eintraege an dieser Stelle der Hashtabelle*/
+					zaehler = 0;
+					while(sfeptr != NULL) 
+					{
+						zaehler++;
+						/*wenn hier eine Doppelsurface vorliegt*/
+						if(SFE_IDF_1(sfeptr) != SEC_SFC_NAME_DEFAULT_VAL)
+						{
+							ST_INF_Anz_ds++;
+						}
+						
+						
+						/*weiter gehts mit dem naechsten SFE Eintrag an dieser Stelle der SFE-Hashtabelle*/
+						sfeptr = SFE_NEXT(sfeptr);
+					}
+					
+					if(zaehler > ST_INF_maxK)
+					{
+						ST_INF_maxK = zaehler;
+					}
+					
+					/*Update der Kollisionsanzahl:*/
+					ST_INF_Kollis = ST_INF_Kollis + zaehler -1; 
+					
+					switch(zaehler)
+					{
+						case 0:	PrintErrorMessage('E',"Ansys2lgmCreateHashTables","STATISTICAL_INFORMATIONS: 0 not possible");
+								return (1);
+								break;
+						case 1:	PrintErrorMessage('E',"Ansys2lgmCreateHashTables","STATISTICAL_INFORMATIONS: 1 not possible");
+								return (1);
+								break;
+						case 2: ST_INF_2er++;
+								break;
+						case 3: ST_INF_3er++;
+								break;
+						case 4: ST_INF_4er++;
+								break;
+						default:/*d.h. >= 5*/
+								ST_INF_5er++;
+					}
+					
+				}
+				else
+				{
+					/*wenn hier eine Doppelsurface vorliegt*/
+					if(SFE_IDF_1(sfeptr) != SEC_SFC_NAME_DEFAULT_VAL)
+					{
+						ST_INF_Anz_ds++;
+					}
+				}
+			}
+		}
+		
+		/*weitere statistische Berechnungen*/
+		ST_INF_Anz_SFE_real = ST_INF_Anz_SFE - ST_INF_Anz_ds;
+		ST_INF_fg = ((double)ST_INF_gef) / ((double)SFE_p);
+		ST_INF_Kollishf = ((double)ST_INF_Kollis) / ((double)ST_INF_Anz_SFE_real);
+		ST_INF_2er_P = ((double)ST_INF_2er) / ((double)ST_INF_Klsstellen);
+		ST_INF_3er_P = ((double)ST_INF_3er) / ((double)ST_INF_Klsstellen);
+		ST_INF_4er_P = ((double)ST_INF_4er) / ((double)ST_INF_Klsstellen);
+		ST_INF_5er_P = ((double)ST_INF_5er) / ((double)ST_INF_Klsstellen);
+		
+	
+		
+		
+		/*here begins the LI-Part : . . .*/
+		/*laufe ueber die gesamte LI-Hashtabelle*/
+		for(LI_HT_Index = 0; LI_HT_Index < LI_p; LI_HT_Index++)
+		{
+			/*Existiert hier ueberhaupt ein Eintrag ?*/
+			li_ptr = (EXCHNG_TYP2_LI_HASHTAB(ExchangeVar_2_Pointer))[LI_HT_Index];
+			if(li_ptr != NULL)
+			{
+				ST_INF_gefL ++;
+				ST_INF_Anz_LI_real++; /*mind eine Line*/
+				/*wenn es hier mehr als diesen einen Eintrag gibt . . . */
+				if(LI_NEXT(li_ptr) != NULL)
+				{
+					/*dann liegt hier eine Kollisionsstelle vor.*/
+					ST_INF_KlsstellenL++;
+					/*laufe ueber alle Eintraege an dieser Stelle der Hashtabelle*/
+					/*laufe ueber die lineare Liste, die mit diesem Hashpointer li_ptr beginnt*/
+					zaehlerL = 0;
+					while(li_ptr != NULL)
+					{
+						zaehlerL++;
+							
+						li_ptr = LI_NEXT(li_ptr);
+					}
+					ST_INF_Anz_LI_real = ST_INF_Anz_LI_real + zaehlerL - 1;
+					if(zaehlerL > ST_INF_maxKL)
+					{
+						ST_INF_maxKL = zaehlerL;
+					}
+	
+					/*Update der Kollisionsanzahl:*/
+					ST_INF_KollisL = ST_INF_KollisL + zaehlerL -1; 
+					
+					switch(zaehlerL)
+					{
+						case 0:	PrintErrorMessage('E',"Ansys2lgmCreateHashTables","STATISTICAL_INFORMATIONS: 0 LI not possible");
+								return (1);
+								break;
+						case 1:	PrintErrorMessage('E',"Ansys2lgmCreateHashTables","STATISTICAL_INFORMATIONS: 1 LI not possible");
+								return (1);
+								break;
+						case 2: ST_INF_2erL++;
+								break;
+						case 3: ST_INF_3erL++;
+								break;
+						case 4: ST_INF_4erL++;
+								break;
+						default:/*d.h. >= 5*/
+								ST_INF_5erL++;
+					}
+	
+				}
+			}
+		}
+		
+		/*weitere statistische Berechnungen*/
+		ST_INF_fgL = ((double)ST_INF_gefL) / ((double)LI_p);
+		ST_INF_KhL = ((double)ST_INF_KollisL) / ((double)ST_INF_Anz_LI_real);
+		ST_INF_2erL_P = ((double)ST_INF_2erL) / ((double)ST_INF_KlsstellenL);
+		ST_INF_3erL_P = ((double)ST_INF_3erL) / ((double)ST_INF_KlsstellenL);
+		ST_INF_4erL_P = ((double)ST_INF_4erL) / ((double)ST_INF_KlsstellenL);
+		ST_INF_5erL_P = ((double)ST_INF_5erL) / ((double)ST_INF_KlsstellenL);
+		
+		/*jetzt moeglich:*/
+		ST_INF_LI_real_durch_SFE_real = ((double)ST_INF_Anz_LI_real) / ((double)ST_INF_Anz_SFE_real);
+
+		
+		
+	#endif
+
+	
+	
+
+	#ifdef STATISTICAL_INFORMATIONS
+		UserWrite("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n");
+		UserWrite("Statistical Informations about the two hashtables are following :   \n");
+		UserWrite("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n");
+		UserWriteF("Anz_SFE                 %d \n",(int)ST_INF_Anz_SFE);
+		UserWriteF("Anz_ds                  %d \n",(int)ST_INF_Anz_ds);
+		UserWriteF("Anz_SFE_real            %d \n",(int)ST_INF_Anz_SFE_real);
+		UserWriteF("m                       %d \n",(int)ST_INF_m);
+			ST_INF_fg = (floor((ST_INF_fg * 1000) + 0.5)/10);
+		UserWriteF("fg                      %f \n",(double)ST_INF_fg);
+			ST_INF_Kollishf = (floor((ST_INF_Kollishf * 1000) + 0.5)/10);
+		UserWriteF("Kollishf                %f \n",(double)ST_INF_Kollishf);
+		UserWriteF("2er                     %d \n",(int)ST_INF_2er);
+			ST_INF_2er_P = (floor((ST_INF_2er_P * 1000) + 0.5)/10);
+		UserWriteF("2erP                     %f \n",(double)ST_INF_2er_P);
+		UserWriteF("3er                     %d \n",(int)ST_INF_3er);
+			ST_INF_3er_P = (floor((ST_INF_3er_P * 1000) + 0.5)/10);
+		UserWriteF("3erP                     %f \n",(double)ST_INF_3er_P);
+		UserWriteF("4er                     %d \n",(int)ST_INF_4er);
+			ST_INF_4er_P = (floor((ST_INF_4er_P * 1000) + 0.5)/10);
+		UserWriteF("4erP                     %f \n",(double)ST_INF_4er_P);
+		UserWriteF("5er                     %d \n",(int)ST_INF_5er);
+			ST_INF_5er_P = (floor((ST_INF_5er_P * 1000) + 0.5)/10);
+		UserWriteF("5erP                     %f \n",(double)ST_INF_5er_P);
+		UserWriteF("maxK                    %d \n",(int)ST_INF_maxK);
+		UserWriteF("Klsstellen              %d \n",(int)ST_INF_Klsstellen);
+		UserWriteF("Anz_LI                  %d \n",(int)ST_INF_Anz_LI);
+		/*UserWriteF("Anz_dl                  %d \n",(int)ST_INF_Anz_dl);*/
+		UserWriteF("LI_real                 %d \n",(int)ST_INF_Anz_LI_real);
+		UserWriteF("mL                       %d \n",(int)ST_INF_mL);
+		UserWriteF("LI_real_durch_SFE_real  %f \n",(double)ST_INF_LI_real_durch_SFE_real);
+			ST_INF_fgL = (floor((ST_INF_fgL * 1000) + 0.5)/10);
+		UserWriteF("fgL                     %f \n",(double)ST_INF_fgL);
+			ST_INF_KhL = (floor((ST_INF_KhL * 1000) + 0.5)/10);
+		UserWriteF("KhL                     %f \n",(double)ST_INF_KhL);
+		UserWriteF("2erL                    %d \n",(int)ST_INF_2erL);
+			ST_INF_2erL_P = (floor((ST_INF_2erL_P * 1000) + 0.5)/10);
+		UserWriteF("2erLP                    %f \n",(double)ST_INF_2erL_P);
+		UserWriteF("3erL                    %d \n",(int)ST_INF_3erL);
+			ST_INF_3erL_P = (floor((ST_INF_3erL_P * 1000) + 0.5)/10);
+		UserWriteF("3erLP                    %f \n",(double)ST_INF_3erL_P);
+		UserWriteF("4erL                    %d \n",(int)ST_INF_4erL);
+			ST_INF_4erL_P = (floor((ST_INF_4erL_P * 1000) + 0.5)/10);
+		UserWriteF("4erLP                    %f \n",(double)ST_INF_4erL_P);
+		UserWriteF("5erL                    %d \n",(int)ST_INF_5erL);
+			ST_INF_5erL_P = (floor((ST_INF_5erL_P * 1000) + 0.5)/10);
+		UserWriteF("5erLP                    %f \n",(double)ST_INF_5erL_P);
+		UserWriteF("maxKL                   %d \n",(int)ST_INF_maxKL);
+		UserWriteF("KlsstellenL             %d \n",(int)ST_INF_KlsstellenL);
+	#endif
+
+	
+	
 	
 	return(0); /*alles glatt durchgelaufen*/	
 }
@@ -3289,7 +3657,7 @@ INT Ansys2lgmCreateSbdsSfcsTriaRelations()
 	TRIANGLE_TYP *triangle;
 	
 	/*laeuft ueber die gesamte SFE-Hashtabelle*/
-	for(lff=0; lff < SFE_p; lff++) 
+	for(lff=0; lff < SFE_p; lff++)  
 	{
 		/*wenn an dieser Stelle ueberhaupt ein Eintrag erfolgte*/
 		if ((EXCHNG_TYP2_SFE_HASHTAB(ExchangeVar_2_Pointer))[lff] != NULL) 
@@ -3299,6 +3667,7 @@ INT Ansys2lgmCreateSbdsSfcsTriaRelations()
 			/*laufe ueber alle Eintraege an dieser Stelle der Hashtabelle*/
 			while(sfeptr != NULL) 
 			{
+
 				/* erzeuge Subdomain bzgl. des ersten Identifiers des SFEs*/
 				if((sd0 = CreateSD(sfeptr,0)) == NULL) 
 				{
@@ -4447,11 +4816,6 @@ INT Ansys2lgmCreatePloylines()
 			while(li_ptr != NULL)
 			{
 			
-				/*just for debugging*/
-				if((IDF_VAL(LI_IDFS(li_ptr)) == 1.4)&&(IDF_VAL(IDF_NXT(LI_IDFS(li_ptr))) ==1.5))
-				{
-					justfordebugging +=1;
-				}
 				
 				/*Liegt diese Line ueberhaupt auf einer Polyline?*/
 				if((rv = Check_If_Line_On_Polyline(LI_IDFS(li_ptr))) == T)

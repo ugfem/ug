@@ -331,6 +331,14 @@ typedef struct {
 
 #define USE_SFC_DETECTOR        1
 
+/*#define STATISTICAL_INFORMATIONS      1*/
+/* if defined  ===> characteristic values of the hashtable
+    are written in ug_shell
+    specified informations see
+    http://dom.ica3.uni-stuttgart.de/~dirk/
+ */
+/*explanation of char*/
+
 /****************************************************************************/
 /*                                                                          */
 /* function declarations                                                    */
