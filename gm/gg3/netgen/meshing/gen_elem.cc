@@ -406,7 +406,7 @@ int Generate_Prism (ARRAY<Point3d> & lpoints, ARRAY<Element> & lfaces,
       m = lpoints[i] - M;
       dummy = lpoints[i];
       m /= m.Length();
-      if(m*n<-0.1)
+      if(m*n<0.0)
       {
         dist_A = lpoints[i] - A;
         dist_B = lpoints[i] - B;
