@@ -122,6 +122,7 @@ static FILE *currMF=NULL;                       /* current meta file					*/
 static short red[256];
 static short green[256];
 static short blue[256];
+static long saveColor;
 
 /* RCS string */
 RCSID("$Header$",UG_RCS_STRING)
@@ -260,8 +261,16 @@ static void MetaInversePolygon (SHORT_POINT *points, INT nb)
   return;
 }
 
+static void MetaSetColor (long index);
+
 static void MetaErasePolygon (SHORT_POINT *points, INT nb)
 {
+  long saved;
+
+  saved = saveColor;
+  MetaSetColor(0);
+  MetaPolygon(points,nb);
+  MetaSetColor(saved);
   return;
 }
 
@@ -379,6 +388,7 @@ static void MetaSetColor (long index)
   unsigned char i;
 
   i = index%256;
+  saveColor=index;
   if (currMW->blockUsed+2>METABUFFERSIZE) flush_block();
   *currMW->data = opSetColor;
   currMW->data++;
