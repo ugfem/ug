@@ -51,7 +51,7 @@
 
 #define SMALL_DET      1e-50
 #define SMALL_DIFF     1e-4
-#define MAX_ITER       10
+#define MAX_ITER       20
 
 /* some useful abbreviations */
 #define Xi  ((DOUBLE)ip_local[0])
