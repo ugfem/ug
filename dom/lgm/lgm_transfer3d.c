@@ -42,6 +42,8 @@ static FILE *stream;
 static INT lgmdomainpathes_set;
 static HEAP *theHeap;
 
+static INT LGM_DEBUG = 0;
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
