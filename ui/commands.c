@@ -1558,20 +1558,20 @@ static INT DeleteStructCommand (INT argc, char **argv)
    'protocol {$i[ ]<verbatim text> | $n[ ]<verbatim text> | $t[ ]<verbatim text> | $f}*'
 
    .vb
-    $\i   append <verbatim text> to protocol file
-    $\n   write a line feed and append <verbatim text> to protocol file
-    $\t   write a tab and append <verbatim text> to protocol file
+    $%i   append <verbatim text> to protocol file
+    $%n   write a line feed and append <verbatim text> to protocol file
+    $%t   write a tab and append <verbatim text> to protocol file
           NOTE: the first space (if there) following the option character is skipped
 
-    $\f   flush the file buffer
+    $%f   flush the file buffer
    .ve
 
    EXAMPLE:
    .vb
    x = exp(1);
    protoOn exp.proto;
-   protocol $\i the value of exp(1) is $\t @x;
-   protocol $\n you can use $s in protocol;
+   protocol $%i the value of exp(1) is $%t @x;
+   protocol $%n you can use $s in protocol;
    protoOff
    .ve
 
@@ -1581,37 +1581,6 @@ static INT DeleteStructCommand (INT argc, char **argv)
    .ve
 
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ProtocolCommand - Print strings to protocol file
-
-   SYNOPSIS:
-   static INT ProtocolCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function prints strings to protocol file.
-   It writes formatted ouput to the open protocol file.
-
-   protocol {$i[ ]<verbatim text> | $n[ ]<verbatim text> | $t[ ]<verbatim text> | $f}*
-
-   .   $\i                     - append <verbatim text> to protocol file
-   .   $\n                     - write a line feed and append <verbatim text> to protocol file
-   .   $\t                     - write a tab and append <verbatim text> to protocol file
-   .n                         NOTE: the first space (if there) following the option character is skipped
-
-   .   $\f                     - flush the file buffer
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT ProtocolCommand (INT argc, char **argv)
@@ -1630,7 +1599,7 @@ static INT ProtocolCommand (INT argc, char **argv)
 
   for (i=1; i<argc; i++)
   {
-    if (argv[i][0]!='\\')
+    if (argv[i][0]!='%')
     {
       PrintErrorMessage('E',"protocol","protocol options have to begin with %");
       return (PARAMERRORCODE);
@@ -4162,7 +4131,7 @@ static INT MoveNodeCommand (INT argc, char **argv)
 
   if (type==IVOBJ)
   {
-    if (MoveInnerNode(theMG,theNode,xc)!=GM_OK)
+    if (MoveNode(theMG,theNode,xc)!=GM_OK)
     {
       PrintErrorMessage('E',"move","failed moving the node");
       return (CMDERRORCODE);
@@ -4170,11 +4139,8 @@ static INT MoveNodeCommand (INT argc, char **argv)
   }
   else if (type==BVOBJ)
   {
-    if (MoveBoundaryNode(theMG,theNode,segid,xc)!=GM_OK)
-    {
-      PrintErrorMessage('E',"move","failed moving the node");
-      return (CMDERRORCODE);
-    }
+    PrintErrorMessage('E',"move","failed moving the node");
+    return (CMDERRORCODE);
   }
   else
   {
@@ -4279,7 +4245,7 @@ static INT InsertElementCommand (INT argc, char **argv)
   /* got the nodes via s option? */
   if (nNodes>0)
   {
-    if (InsertElement(theMG,nNodes,theNodes)!=GM_OK)
+    if (InsertElement(theMG,nNodes,theNodes,NULL)!=GM_OK)
     {
       PrintErrorMessage('E',"ie","inserting the element failed");
       return (CMDERRORCODE);
