@@ -115,7 +115,7 @@ typedef struct message MESSAGE ;
 /****************************************************************************/
 
 /* Revision Control System string */
-RCSID($Header$,PPIF_RCS_STRING)
+RCSID("$Header$",PPIF_RCS_STRING)
 
 
 /****************************************************************************/

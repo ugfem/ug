@@ -289,7 +289,7 @@ enum directions {north,east,south,west,up,down};
 /****************************************************************************/
 
 /* Revision Control System string */
-RCSID($Header$,PPIF_RCS_STRING)
+RCSID("$Header$",PPIF_RCS_STRING)
 
 
 /****************************************************************************/
