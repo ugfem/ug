@@ -24,6 +24,7 @@ OBJECTS = initug.o
 # make all
 all: include $(MODULES) $(OBJECTS)
 	make $(UG_LIB) 	
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 	echo "libug, libdom and libdev compiled"
 
 uglib: include $(UGMODULES)
@@ -37,9 +38,9 @@ UGD: include $(UGDMODULES) ugd.o
 	echo "ugd compiled"
 
 init: $(OBJECTS)
-	make $(UG_LIB) 	
+	make $(UG_LIB)
 
-$(UG_LIB): $(OBJECTS) 
+$(UG_LIB): $(OBJECTS)
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 
 ##############################################################################
