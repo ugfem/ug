@@ -1524,7 +1524,7 @@ INT FAMGRestrictDefect (NP_TRANSFER *theNP, INT level,
 	
 #ifdef ModelP
 	// TODO: sollte eigentlich ueberfluessig sein: defect sollte auf border vectoren eh schon 0 sein!
-	if (l_vector_collect(GRID_ON_LEVEL(np->amg_trans.transfer.base.mg,famglevel),from)!=NUM_OK) 
+	if (l_vector_collect(GRID_ON_LEVEL(np->amg_trans.transfer.base.mg,level),from)!=NUM_OK) 
 		NP_RETURN(1,result[0]);
 #endif
 	
