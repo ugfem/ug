@@ -13,7 +13,7 @@
 /*			  69120 Heidelberg                                              */
 /*			  Email: Michael.Lampe@iwr.uni-heidelberg.de                    */
 /*																			*/
-/* History:   19.10.04 begin, ug3-version                                   */
+/* History:   30.10.04 begin, ug3-version                                   */
 /*																			*/
 /* Remarks:                                                                                                                             */
 /*																			*/
@@ -46,7 +46,7 @@ START_UGDIM_NAMESPACE
 /*																			*/
 /****************************************************************************/
 
-#define MAXPOLY 6
+#define MAXPOLY 12
 
 /****************************************************************************/
 /*																			*/
