@@ -82,7 +82,7 @@
 /****************************************************************************/
 
 static FILE *stream;                            /* file                                                 */
-static int datapaths_set;                       /* pathes used in ug			*/
+static int datapathes_set;                      /* pathes used in ug			*/
 static char buffer[DIO_BUFFERSIZE]; /* general purpose buffer		*/
 static int intList[DIO_INTSIZE];        /* general purpose integer list */
 
@@ -387,9 +387,9 @@ int DIO_Init (void)
   INT error=0;
 
   /* path to grid-dirs */
-  datapaths_set = 0;
+  datapathes_set = 0;
   if (ReadSearchingPaths(DEFAULTSFILENAME,"datapaths")==0)
-    datapaths_set = 1;
+    datapathes_set = 1;
 
   /* create struct and fill stringvars */
   if (MakeStruct(":IO")!=0)
