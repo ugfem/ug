@@ -989,11 +989,14 @@ INT UserInterrupt (const char *text)
 }
 else
 {
-  Broadcast(&Code,sizeof(INT));
-  if (Code==PE_INTERRUPT)
+  if (strcmp(text,"InterpretString")!=0)
   {
-    Broadcast(&status,sizeof(int));
-    return (status);
+    Broadcast(&Code,sizeof(INT));
+    if (Code==PE_INTERRUPT)
+    {
+      Broadcast(&status,sizeof(int));
+      return (status);
+    }
   }
 }
     #endif
