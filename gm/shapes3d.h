@@ -69,20 +69,20 @@ typedef INT (*UpwindProcPtr)(COORD **, COORD_VECTOR *,DOUBLE_VECTOR *, COORD_VEC
 /*																			*/
 /****************************************************************************/
 
-DOUBLE  N                                       (INT i, COORD_VECTOR LocalCoord);
-INT     GlobalToLocal3d         (COORD **Corners,COORD_VECTOR EvalPoint, COORD_VECTOR LocalCoord);
+DOUBLE  N                                       (const INT i, const COORD_VECTOR LocalCoord);
+INT     GlobalToLocal3d         (const COORD **Corners, const COORD_VECTOR EvalPoint, COORD_VECTOR LocalCoord);
 INT     TetraDerivative         (const COORD **theCorners, COORD_VECTOR theGradient[MAX_CORNERS_OF_ELEM]);
-INT     TetraVolume             (COORD **theCorners, COORD *volume);
-INT     FV_TetInfo                      (COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM]);
-INT     FV_TetInfo_for_conv (COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM], COORD_VECTOR conv);
-INT     FV_AliTetInfo           (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv, COORD_VECTOR GIP[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
-INT     Side_TetInfo            (COORD **theCorners, INT side, COORD_VECTOR Area, COORD_VECTOR GIP[3]);
-INT     GetSkewedUIP            (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
-INT     GFUIP                           (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
-INT     GCUIP                           (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
-INT     COPYIP                          (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
-INT     TetraSideNormals        (COORD **theCorners, COORD_VECTOR theNormals[MAX_SIDES_OF_ELEM]);
-INT     TetMaxSideAngle         (COORD **theCorners, COORD *MaxAngle);
-INT     TetAngleAndLength       (COORD **theCorners, COORD *Angle, COORD *Length);
+INT     TetraVolume             (const COORD **theCorners, COORD *volume);
+INT     FV_TetInfo                      (const COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM]);
+INT     FV_TetInfo_for_conv (const COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM], COORD_VECTOR conv);
+INT     FV_AliTetInfo           (const COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv, COORD_VECTOR GIP[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
+INT     Side_TetInfo            (const COORD **theCorners, INT side, COORD_VECTOR Area, COORD_VECTOR GIP[3]);
+INT     GetSkewedUIP            (const COORD_VECTOR *theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], const DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
+INT     GFUIP                           (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
+INT     GCUIP                           (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
+INT     COPYIP                          (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
+INT     TetraSideNormals        (const COORD **theCorners, COORD_VECTOR theNormals[MAX_SIDES_OF_ELEM]);
+INT     TetMaxSideAngle         (const COORD **theCorners, COORD *MaxAngle);
+INT     TetAngleAndLength       (const COORD **theCorners, COORD *Angle, COORD *Length);
 
 #endif

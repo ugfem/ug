@@ -112,7 +112,7 @@ static char rcsid[] = "$Header$";
 D*/
 /****************************************************************************/
 
-DOUBLE N (INT i, COORD *LocalCoord)
+DOUBLE N (INT i, const COORD *LocalCoord)
 {
 	switch (i)
 	{
@@ -151,7 +151,7 @@ DOUBLE N (INT i, COORD *LocalCoord)
 D*/
 /****************************************************************************/
 
-INT GlobalToLocal3d (COORD **Corners,COORD *EvalPoint, COORD *LocalCoord)
+INT GlobalToLocal3d (const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord)
 {
 	COORD_VECTOR a;
 	COORD M[9],I[9];
@@ -187,7 +187,7 @@ INT GlobalToLocal3d (COORD **Corners,COORD *EvalPoint, COORD *LocalCoord)
 D*/
 /****************************************************************************/
 
-INT TetraSideNormals (COORD **theCorners, COORD_VECTOR theNormals[MAX_SIDES_OF_ELEM])
+INT TetraSideNormals (const COORD **theCorners, COORD_VECTOR theNormals[MAX_SIDES_OF_ELEM])
 {
 	COORD_VECTOR a, b;
 	COORD h;
@@ -232,7 +232,7 @@ INT TetraSideNormals (COORD **theCorners, COORD_VECTOR theNormals[MAX_SIDES_OF_E
 D*/
 /****************************************************************************/
 
-INT TetMaxSideAngle (COORD **theCorners, COORD *MaxAngle)
+INT TetMaxSideAngle (const COORD **theCorners, COORD *MaxAngle)
 {
 	COORD_VECTOR theNormal[MAX_SIDES_OF_ELEM];
 	COORD max,help;
@@ -274,7 +274,7 @@ INT TetMaxSideAngle (COORD **theCorners, COORD *MaxAngle)
 D*/
 /****************************************************************************/
 
-INT TetAngleAndLength (COORD **theCorners, COORD *Angle, COORD *Length)
+INT TetAngleAndLength (const COORD **theCorners, COORD *Angle, COORD *Length)
 {
 	COORD_VECTOR theNormals[MAX_SIDES_OF_ELEM],theEdge[MAX_EDGES_OF_ELEM];
 	COORD h;
@@ -370,7 +370,7 @@ INT TetraDerivative (const COORD **theCorners, COORD_VECTOR theGradient[MAX_CORN
 D*/
 /****************************************************************************/
 
-INT TetraVolume (COORD **theCorners, COORD *volume)
+INT TetraVolume (const COORD **theCorners, COORD *volume)
 {
 	COORD_VECTOR a, b, n;
 
@@ -410,7 +410,7 @@ INT TetraVolume (COORD **theCorners, COORD *volume)
 D*/
 /****************************************************************************/
 
-INT FV_TetInfo (COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM])
+INT FV_TetInfo (const COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM])
 {
 	COORD_VECTOR emp[MAX_EDGES_OF_ELEM], diff, a, b;
 	COORD sp;
@@ -451,7 +451,7 @@ INT FV_TetInfo (COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_
 /*																			*/
 /****************************************************************************/
 
-static INT FindCrossParam3D (COORD_VECTOR p1, COORD_VECTOR p2, COORD_VECTOR p3, COORD_VECTOR p4, DOUBLE_VECTOR v, COORD_VECTOR param)
+static INT FindCrossParam3D (const COORD_VECTOR p1, const COORD_VECTOR p2, const COORD_VECTOR p3, const COORD_VECTOR p4, DOUBLE_VECTOR v, COORD_VECTOR param)
 {
 	COORD M[9], I[9];
 	
@@ -466,7 +466,7 @@ static INT FindCrossParam3D (COORD_VECTOR p1, COORD_VECTOR p2, COORD_VECTOR p3, 
 	return (0);
 }
 
-static INT MirrorAtPlane (COORD *in, COORD *pp, COORD *pn, COORD *out)
+static INT MirrorAtPlane (const COORD *in, const COORD *pp, const COORD *pn, COORD *out)
 {
 	COORD_VECTOR a;
 	
@@ -484,7 +484,7 @@ static INT MirrorAtPlane (COORD *in, COORD *pp, COORD *pn, COORD *out)
 										(e)[1] = 0.25*((a)[1]+(b)[1]+(c)[1]+(d)[1]);\
 										(e)[2] = 0.25*((a)[2]+(b)[2]+(c)[2]+(d)[2]);}
 
-INT FV_AliTetInfo (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv, COORD_VECTOR GIP[MAX_EDGES_OF_ELEM], COORD_VECTOR LIP[MAX_EDGES_OF_ELEM])
+INT FV_AliTetInfo (const COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv, COORD_VECTOR GIP[MAX_EDGES_OF_ELEM], COORD_VECTOR LIP[MAX_EDGES_OF_ELEM])
 {
 	COORD sp, alpha, check[2], M[9], Inv[9];
 	COORD_VECTOR a, b, c, d, e, cm, normal, param, EdgeMidPoints[6], SideMidPoints[4];
@@ -1181,12 +1181,12 @@ INT FV_AliTetInfo (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], D
 /*																			*/
 /****************************************************************************/
 
-INT FV_TetInfo_for_conv (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM], COORD_VECTOR conv)
+INT FV_TetInfo_for_conv (const COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM], COORD_VECTOR conv)
 {
 	COORD sp, spn, spz, alpha1, alpha2;
-	COORD_VECTOR a, b, c, normal, ex, ey;
+	COORD_VECTOR a, b, c, normal;
 	COORD_VECTOR EdgeMidPoints[6], SideMidPoints[4];
-	INT i, j, k, help, noutflow, ninflow, outflow[4], inflow[4], edge, inverted, side;
+	INT i, j, help, noutflow, ninflow, outflow[4], inflow[4], edge, inverted, side;
 	
 	/* reset areas and integrationpoints */
 	for (i=0; i<MAX_EDGES_OF_ELEM; i++)
@@ -1364,7 +1364,7 @@ INT FV_TetInfo_for_conv (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_EL
 D*/
 /****************************************************************************/
 
-INT Side_TetInfo (COORD **theCorners, INT side, COORD_VECTOR Area, COORD_VECTOR GIP[3])
+INT Side_TetInfo (const COORD **theCorners, INT side, COORD_VECTOR Area, COORD_VECTOR GIP[3])
 {
 	COORD_VECTOR a,b,c;
 	COORD scalarprd;
@@ -1426,7 +1426,7 @@ INT Side_TetInfo (COORD **theCorners, INT side, COORD_VECTOR Area, COORD_VECTOR 
 D*/			
 /****************************************************************************/
 
-INT GetSkewedUIP (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT GetSkewedUIP (const COORD_VECTOR *theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], const DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
 {
 	COORD_VECTOR lconv;
 	COORD alpha;
@@ -1626,7 +1626,7 @@ INT GetSkewedUIP (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBL
 D*/
 /****************************************************************************/
 
-INT GFUIP (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT GFUIP (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
 {
 	COORD_VECTOR lconv;
 	COORD sp, min;
@@ -1691,7 +1691,7 @@ INT GFUIP (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTO
 D*/
 /****************************************************************************/
 
-INT GCUIP (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT GCUIP (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
 {
 	COORD_VECTOR a, lconv, SUIP;
 	COORD alpha, sp, min;
@@ -1903,7 +1903,7 @@ INT GCUIP (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTO
 D*/
 /****************************************************************************/
 
-INT COPYIP (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT COPYIP (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
 {
 	INT i;
 	
