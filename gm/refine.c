@@ -6198,6 +6198,48 @@ static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
 	  }
 	}
 
+	/* flag all periodic vectors consistently */
+	for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
+	  if (EstimateHere(elem)) {
+		INT edge, side, marked;
+
+		for (edge=0; edge<EDGES_OF_ELEM(elem); edge++) {
+		  VECTOR *vec;
+		  INT co;
+		  
+		  marked = 0;
+
+		  co=CORNER_OF_EDGE(elem,edge,0);
+		  vec=NVECTOR(CORNER(elem,co));
+		  if (USED(vec)) marked++;
+
+		  co=CORNER_OF_EDGE(elem,edge,1);
+		  vec=NVECTOR(CORNER(elem,co));
+		  if (USED(vec)) marked++;
+		  
+		  if (marked>1) break;
+		}
+		
+		if (marked>1) {
+		  INT co;
+		  
+		  /* flag all vectors of newly marked element */
+		  for (co=0; co<CORNERS_OF_ELEM(elem); co++) {
+			NODE *node;
+			VECTOR *vec;
+
+			node = CORNER(elem,co);
+			vec = NVECTOR(node);
+		  
+			if (THEFLAG(vec)) {	/* periodic vector */
+			  SETUSED(vec,TRUE);
+			  PRINTDEBUG(gm,1,("Elem %8d: periodic vec %8d\n",ID(elem),VINDEX(vec)));
+			}
+		  }
+		}
+	  }
+	}
+
 	/* mark all periodic elements consistently */
 	for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
 	  if (EstimateHere(elem)) {
@@ -6226,20 +6268,6 @@ static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
 		  MarkForRefinement(elem,RED,0);
 
 		  PRINTDEBUG(gm,1,("Elem %8d marked red\n",ID(elem)));
-
-		  /* flag all vectors of newly marked element */
-		  for (co=0; co<CORNERS_OF_ELEM(elem); co++) {
-			NODE *node;
-			VECTOR *vec;
-
-			node = CORNER(elem,co);
-			vec = NVECTOR(node);
-		  
-			if (THEFLAG(vec)) {	/* periodic vector */
-			  SETUSED(vec,TRUE);
-			  PRINTDEBUG(gm,1,("Elem %8d: periodic vec %8d\n",ID(elem),VINDEX(vec)));
-			}
-		  }
 		}
 	  }
 	}
