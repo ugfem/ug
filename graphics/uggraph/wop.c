@@ -519,6 +519,11 @@ static char rcsid[] = "$Header$";
 /*																			*/
 /****************************************************************************/
 
+static INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem,
+                                  COORD *TP0, COORD *TP1, COORD *TP2,
+                                  COORD *LTP0, COORD *LTP1, COORD *LTP2,
+                                  INT depth, DRAWINGOBJ **theDO);
+
 /****************************************************************************/
 /*D
    CreatePlotObjHandling - Allocate a new PLOTOBJHANDLING
@@ -7041,9 +7046,7 @@ static INT PlotColorQuadrilateral2D (ELEMENT *theElement, const COORD **CornersO
    PointOnLine2D - Cals point between two points with contourValue
 
    SYNOPSIS:
-   static INT PointOnLine2D (DOUBLE contourValue, DOUBLE value0,
-   DOUBLE value1, COORD_VECTOR vec0, COORD_VECTOR vec1,
-   COORD_VECTOR p);
+   static INT PointOnLine2D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, const COORD *vec0, const COORD *vec1, COORD *p);
 
    PARAMETERS:
    .  contourValue -
@@ -7063,7 +7066,7 @@ static INT PlotColorQuadrilateral2D (ELEMENT *theElement, const COORD **CornersO
  */
 /****************************************************************************/
 
-static INT PointOnLine2D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, const COORD_VECTOR vec0, const COORD_VECTOR vec1, COORD_VECTOR p)
+static INT PointOnLine2D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, const COORD *vec0, const COORD *vec1, COORD *p)
 {
   DOUBLE alpha;
 
@@ -7123,11 +7126,14 @@ static INT PlotContourTriangle2D (ELEMENT *theElement, const COORD **CornersOfEl
   if (depth<=0)
   {
     /* get values at the corners */
-    if (GlobalToLocal2d(3,CornersOfElem,TP0,LocalCoord)) return (1);
+    if (GlobalToLocal2d(3,CornersOfElem,(COORD *)TP0,LocalCoord))
+      return (1);
     v0      = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal2d(3,CornersOfElem,TP1,LocalCoord)) return (1);
+    if (GlobalToLocal2d(3,CornersOfElem,(COORD *)TP1,LocalCoord))
+      return (1);
     v1      = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal2d(3,CornersOfElem,TP2,LocalCoord)) return (1);
+    if (GlobalToLocal2d(3,CornersOfElem,(COORD *)TP2,LocalCoord))
+      return (1);
     v2      = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
     vmin = MIN(v0,v1); vmin = MIN(vmin,v2);
     vmax = MAX(v0,v1); vmax = MAX(vmax,v2);
@@ -7154,9 +7160,12 @@ static INT PlotContourTriangle2D (ELEMENT *theElement, const COORD **CornersOfEl
 
       /* calculate points on each side of triangle having the right value */
       n=0;
-      if (PointOnLine2D(EScalar2D_ContValues[i],v0,v1,TP0,TP1,Point[n])) n++;
-      if (PointOnLine2D(EScalar2D_ContValues[i],v1,v2,TP1,TP2,Point[n])) n++;
-      if (PointOnLine2D(EScalar2D_ContValues[i],v2,v0,TP2,TP0,Point[n])) n++;
+      if (PointOnLine2D(EScalar2D_ContValues[i],v0,v1,TP0,TP1,Point[n]))
+        n++;
+      if (PointOnLine2D(EScalar2D_ContValues[i],v1,v2,TP1,TP2,Point[n]))
+        n++;
+      if (PointOnLine2D(EScalar2D_ContValues[i],v2,v0,TP2,TP0,Point[n]))
+        n++;
 
       /* draw */
       switch (n)
@@ -7240,13 +7249,17 @@ static INT PlotContourQuadrilateral2D (ELEMENT *theElement, const COORD **Corner
   if (depth<=0)
   {
     /* get values at the corners */
-    if (GlobalToLocal2d(4,CornersOfElem,QP0,LocalCoord)) return (1);
+    if (GlobalToLocal2d(4,CornersOfElem,(COORD *)QP0,LocalCoord))
+      return (1);
     v0      = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal2d(4,CornersOfElem,QP1,LocalCoord)) return (1);
+    if (GlobalToLocal2d(4,CornersOfElem,(COORD *)QP1,LocalCoord))
+      return (1);
     v1      = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal2d(4,CornersOfElem,QP2,LocalCoord)) return (1);
+    if (GlobalToLocal2d(4,CornersOfElem,(COORD *)QP2,LocalCoord))
+      return (1);
     v2      = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal2d(4,CornersOfElem,QP3,LocalCoord)) return (1);
+    if (GlobalToLocal2d(4,CornersOfElem,(COORD *)QP3,LocalCoord))
+      return (1);
     v3      = (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
     vmin = MIN(v0,v1); vmin = MIN(vmin,v2); vmin = MIN(vmin,v3);
     vmax = MAX(v0,v1); vmax = MAX(vmax,v2); vmax = MAX(vmax,v3);
@@ -7273,10 +7286,14 @@ static INT PlotContourQuadrilateral2D (ELEMENT *theElement, const COORD **Corner
 
       /* calculate points on each side of triangle having the right value */
       n=0;
-      if (PointOnLine2D(EScalar2D_ContValues[i],v0,v1,QP0,QP1,Point[n])) n++;
-      if (PointOnLine2D(EScalar2D_ContValues[i],v1,v2,QP1,QP2,Point[n])) n++;
-      if (PointOnLine2D(EScalar2D_ContValues[i],v2,v3,QP2,QP3,Point[n])) n++;
-      if (PointOnLine2D(EScalar2D_ContValues[i],v3,v0,QP3,QP0,Point[n])) n++;
+      if (PointOnLine2D(EScalar2D_ContValues[i],v0,v1,QP0,QP1,
+                        Point[n])) n++;
+      if (PointOnLine2D(EScalar2D_ContValues[i],v1,v2,QP1,QP2,
+                        Point[n])) n++;
+      if (PointOnLine2D(EScalar2D_ContValues[i],v2,v3,QP2,QP3,
+                        Point[n])) n++;
+      if (PointOnLine2D(EScalar2D_ContValues[i],v3,v0,QP3,QP0,
+                        Point[n])) n++;
 
       /* draw */
       switch (n)
@@ -10419,7 +10436,7 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
   ELEMENT *NbElement, *SonElement, *SonList[MAX_SONS];
 
   /* get son list (not stored in element) */
-  if (GetSons(theElement,SonList)!=0) return;
+  if (GetSons(theElement,SonList)!=0) return(1);
 
   /* init list and numbers */
   LastShellBegin = 0;
@@ -11467,7 +11484,8 @@ static INT PlotColorTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, COOR
       EvalPoint[i] = (TP0[i]+TP1[i]+TP2[i])/3.0;
       LocalCoord[i]= (LP0[i]+LP1[i]+LP2[i])/3.0;
     }
-    value = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LocalCoord);
+    value = (*EScalar3D_EvalFct)(theElement,
+                                 (const COORD **)CornersOfElem,LocalCoord);
     Color = (long)(EScalar3D_V2C_factor*value+EScalar3D_V2C_offset);
     Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
     Color = MAX(Color,WOP_OutputDevice->spectrumStart);
@@ -11545,7 +11563,8 @@ static INT PlotColorQuadrilateral3D (ELEMENT *theElement, COORD **CornersOfElem,
   if (depth<=0)
   {
     /* get values */
-    value = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LEVP);
+    value = (*EScalar3D_EvalFct)(theElement,
+                                 (const COORD **)CornersOfElem,LEVP);
     Color = (long)(EScalar3D_V2C_factor*value+EScalar3D_V2C_offset);
     Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
     Color = MAX(Color,WOP_OutputDevice->spectrumStart);
@@ -11684,8 +11703,10 @@ static INT PointOnLine3D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, COO
    PlotContourTriangle3D - Plot on triangle contourlines (3D coord) with depth
 
    SYNOPSIS:
-   INT PlotContourTriangle3D (ELEMENT *theElement,
-   COORD **CornersOfElem, COORD *TP0, COORD *TP1, COORD *TP2,
+   static INT PlotContourTriangle3D (ELEMENT *theElement,
+   COORD **CornersOfElem,
+   COORD *TP0, COORD *TP1, COORD *TP2,
+   COORD *LTP0, COORD *LTP1, COORD *LTP2,
    INT depth, DRAWINGOBJ **theDO);
 
    PARAMETERS:
@@ -11707,8 +11728,10 @@ static INT PointOnLine3D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, COO
  */
 /****************************************************************************/
 
-INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *TP0, COORD *TP1, COORD *TP2,
-                           COORD *LTP0, COORD *LTP1, COORD *LTP2, INT depth, DRAWINGOBJ **theDO)
+static INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem,
+                                  COORD *TP0, COORD *TP1, COORD *TP2,
+                                  COORD *LTP0, COORD *LTP1, COORD *LTP2,
+                                  INT depth, DRAWINGOBJ **theDO)
 {
   COORD_VECTOR LocalCoord, MP0, MP1, MP2, LMP0, LMP1, LMP2,PointMid, Point[3];
   INT i, j, n, min, max;
@@ -11718,9 +11741,12 @@ INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *TP
   if (depth<=0)
   {
     /* get values at the corners */
-    v0      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LTP0);
-    v1      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LTP1);
-    v2      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LTP2);
+    v0      = (*EScalar3D_EvalFct)(theElement,
+                                   (const COORD **)CornersOfElem,LTP0);
+    v1      = (*EScalar3D_EvalFct)(theElement,
+                                   (const COORD **)CornersOfElem,LTP1);
+    v2      = (*EScalar3D_EvalFct)(theElement,
+                                   (const COORD **)CornersOfElem,LTP2);
     vmin = MIN(v0,v1); vmin = MIN(vmin,v2);
     vmax = MAX(v0,v1); vmax = MAX(vmax,v2);
 
@@ -11832,14 +11858,22 @@ static INT PlotContourQuadrilateral3D (ELEMENT *theElement, COORD **CornersOfEle
   if (depth<=0)
   {
     /* get values at the corners */
-    if (GlobalToLocal3d(coe,CornersOfElem,QP0,LocalCoord)) return (1);
-    v0      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal3d(coe,CornersOfElem,QP1,LocalCoord)) return (1);
-    v1      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal3d(coe,CornersOfElem,QP2,LocalCoord)) return (1);
-    v2      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal3d(coe,CornersOfElem,QP3,LocalCoord)) return (1);
-    v3      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LocalCoord);
+    if (GlobalToLocal3d(coe,(const COORD **)CornersOfElem,QP0,LocalCoord))
+      return (1);
+    v0      = (*EScalar3D_EvalFct)(theElement,
+                                   (const COORD **)CornersOfElem,LocalCoord);
+    if (GlobalToLocal3d(coe,(const COORD **)CornersOfElem,QP1,LocalCoord))
+      return (1);
+    v1      = (*EScalar3D_EvalFct)(theElement,
+                                   (const COORD **)CornersOfElem,LocalCoord);
+    if (GlobalToLocal3d(coe,(const COORD **)CornersOfElem,QP2,LocalCoord))
+      return (1);
+    v2      = (*EScalar3D_EvalFct)(theElement,
+                                   (const COORD **)CornersOfElem,LocalCoord);
+    if (GlobalToLocal3d(coe,(const COORD **)CornersOfElem,QP3,LocalCoord))
+      return (1);
+    v3      = (*EScalar3D_EvalFct)(theElement,
+                                   (const COORD **)CornersOfElem,LocalCoord);
     vmin = MIN(v0,v1); vmin = MIN(vmin,v2); vmin = MIN(vmin,v3);
     vmax = MAX(v0,v1); vmax = MAX(vmax,v2); vmax = MAX(vmin,v3);
 
@@ -12202,9 +12236,9 @@ static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   min = MAX_D; max = -MAX_D;
   for (i=0; i<nr; i++)
   {
-    if (GlobalToLocal3d(CORNERS_OF_ELEM(theElement),
-                        x,RasterPoint[i],LocalCoord)) return (1);
-    (*EVector_EvalFct)(theElement,x,LocalCoord,Arrow);
+    if (GlobalToLocal3d(CORNERS_OF_ELEM(theElement),(const COORD **)x,
+                        RasterPoint[i],LocalCoord)) return (1);
+    (*EVector_EvalFct)(theElement,(const COORD **)x,LocalCoord,Arrow);
     V3_SCALE(EVector_V2L_factor,Arrow)
 
     /* find color and size of arrow, define its endpoint on the cutplane */
