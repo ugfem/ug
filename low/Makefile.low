@@ -13,7 +13,7 @@ include ../ug.conf
 # architecture-dependent makefile entries
 include ../machines/mk.$(ARCHDIR)
 
-OBJECTS = ugenv.o heaps.o fifo.o misc.o defaults.o initlow.o fileopen.o ugstruct.o
+OBJECTS = ugenv.o heaps.o fifo.o misc.o defaults.o initlow.o fileopen.o ugstruct.o debug.o
 
 all : $(OBJECTS) Makefile.low
 	ar $(ARFLAGS) ../lib/libug$(LIBSUFFIX).a $(OBJECTS) 
