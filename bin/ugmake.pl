@@ -17,7 +17,7 @@ $debug = 0;
 @ugmods = ( "ug", "dev", "meta", "xif", "gm", "sif", "mif",
 "graphics", "low", "np", "ui", "gg2", "gg3", "dom", "std", "lgm", "gen", "netgen",
 	"diff2d", "diff2da", "cd", "cda", "fem", "fema", "ns", "ns2d", "ns3d", "simple",
-	"scalar", "tools"
+	"scalar", "tools", "tutor"
 );
 
 # if '-help' appears on the command line, we show the help, and do nothing else
@@ -87,11 +87,6 @@ if ($debug) {print "'make' is $make\n";}
 $globaloptions = "";
 @modules = ();
 
-print "*****\n";
-print "@ARGV\n";
-for ($i=0; $i<@ARGV; $i++) { print "$ARGV[$i]\n"; } 
-print "*****\n";
-
 for ($i=0; $i<@ARGV; $i++) {
 	$mfound=0;
 	foreach $ugmod (@ugmods)	{
@@ -109,9 +104,9 @@ for ($i=0; $i<@ARGV; $i++) {
 # make option
 
 $makeclean = 0;	# the $makeclean variable is used below.  Some ug files are
-				# explicitly compiled (initug.c and initnp.c), because they 
-				# are sometimes forgotten. (TODO: why? has probably to do with Makefile)
-				# If $makeclean is on, we can avoid compiling them.
+                # explicitly compiled (initug.c and initnp.c), because they 
+                # are sometimes forgotten. (TODO: why? has probably to do with Makefile)
+                # If $makeclean is on, we can avoid compiling them.
 for ( ; $i<@ARGV; $i++)	{
     $globaloptions = $globaloptions." ".$ARGV[$i];
 	if ($ARGV[$i] eq "clean") { $makeclean=1; }
@@ -202,7 +197,8 @@ if (@ARGV==0) {
 	"fem" => "../fem/pclib",
 	"fema" => "../fem/appl",
 	"tools" => "tools",
-	"simple" => "../simple"
+	"simple" => "../simple",
+	"tutor" => "../tutor/appl"
 );
 
 if ($debug && 0) {
