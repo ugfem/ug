@@ -38,6 +38,8 @@
 #include "gm.h"
 #endif
 
+#include "debug.h"
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -84,8 +86,14 @@
 										(C)[1] = (A)[1] + (B)[1];}
 #define V2_ADD1(A,C)				   {(C)[0] += (A)[0];\
 										(C)[1] += (A)[1];}
+#define V2_AVG2(A,B,C)				   {(C)[0] = 0.5*((A)[0] + (B)[0]);\
+	                                    (C)[1] = 0.5*((A)[1] + (B)[1]);}
+#define V2_AVG4(A,B,C,D,E)			   {(E)[0] = 0.25*((A)[0]+(B)[0]+(C)[0]+(D)[0]);\
+                                     	(E)[1] = 0.25*((A)[1]+(B)[1]+(C)[1]+(D)[1]);}
 #define V2_SCALE(c,C)				   {(C)[0] = (c)*(C)[0];\
 										(C)[1] = (c)*(C)[1];}
+#define V2_NORMAL(A,B)				   {(A)[0] =  (B)[1];\
+										(A)[1] = -(B)[0];}
 #define V2_SCALEADD1(c,A,C)			   {(C)[0] += (c)*(A)[0];\
 										(C)[1] += (c)*(A)[1];}
 #define V2_SCALESET(c,A,C)			   {(C)[0] = (c)*(A)[0];\
@@ -124,6 +132,8 @@
 										(C)[3] = (A)[3]+(B)[3];}
 #define M2_COPY(A,C) {(C)[0] = (A)[0]; (C)[1] = (A)[1];\
 	(C)[2] = (A)[2]; (C)[3] = (A)[3];}
+#define MM2_COPY(A,C) {(C)[0][0] = (A)[0][0]; (C)[1][0] = (A)[1][0];\
+	(C)[0][1] = (A)[0][1]; (C)[1][1] = (A)[1][1];}
 #define M2_LINCOMB(a,A,b,B,C)		   {(C)[0] = (a)*(A)[0]+(b)*(B)[0];\
 										(C)[1] = (a)*(A)[1]+(b)*(B)[1]);\
 										(C)[2] = (a)*(A)[2]+(b)*(B)[2]);\
@@ -136,7 +146,7 @@
 { DOUBLE invdet;                                  \
   det = (M)[0][0]*(M)[1][1]-(M)[1][0]*(M)[0][1];  \
   if (ABS((det))<SMALL_D*SMALL_D)                 \
-	return(1);                                    \
+	RETURN(1);                                    \
   invdet = 1.0 / (det);                           \
   (IM)[0][0] =  (M)[1][1]*invdet;                 \
   (IM)[1][0] = -(M)[0][1]*invdet;                 \
@@ -153,6 +163,12 @@
 #define V3_SUBTRACT(A,B,C)			   {(C)[0] = (A)[0] - (B)[0];\
 										(C)[1] = (A)[1] - (B)[1];\
 										(C)[2] = (A)[2] - (B)[2];}
+#define V3_AVG2(A,B,C)				   {(C)[0] = 0.5*((A)[0] + (B)[0]);\
+										(C)[1] = 0.5*((A)[1] + (B)[1]);\
+										(C)[2] = 0.5*((A)[2] + (B)[2]);}
+#define V3_AVG4(A,B,C,D,E)			   {(E)[0] = 0.25*((A)[0]+(B)[0]+(C)[0]+(D)[0]);\
+										(E)[1] = 0.25*((A)[1]+(B)[1]+(C)[1]+(D)[1]);\
+										(E)[2] = 0.25*((A)[2]+(B)[2]+(C)[2]+(D)[2]);}
 #define V3_ADD(A,B,C)				   {(C)[0] = (A)[0] + (B)[0];\
 										(C)[1] = (A)[1] + (B)[1];\
 										(C)[2] = (A)[2] + (B)[2];}
@@ -177,6 +193,7 @@
 #define V3_EUKLIDNORM_OF_DIFF(A,B,b)	(b) = (sqrt((double)(((A)[0]-(B)[0])*((A)[0]-(B)[0])+((A)[1]-(B)[1])*((A)[1]-(B)[1])+((A)[2]-(B)[2])*((A)[2]-(B)[2]))));
 #define V3_CLEAR(A) 				   {(A)[0] = 0.0; (A)[1]= 0.0; (A)[2] = 0.0;}
 #define V3_SCALAR_PRODUCT(A,B,c)		(c) = ((A)[0]*(B)[0]+(A)[1]*(B)[1]+(A)[2]*(B)[2]);
+#define V3_SCAL_PROD(A,B)		        ((A)[0]*(B)[0]+(A)[1]*(B)[1]+(A)[2]*(B)[2])
 #define V3_ISZERO(A)					((A)[0]==0.0 && (A)[1]==0.0 && (A)[2]==0.0)
 #define V3_SUP(v,s)                    {s = MAX(ABS(v[0]),MAX(ABS(v[1]),ABS(v[2])));}
 
@@ -219,6 +236,9 @@
 #define M3_COPY(A,C) {(C)[0] = (A)[0]; (C)[1] = (A)[1]; (C)[2] = (A)[2];\
 (C)[3] = (A)[3]; (C)[4] = (A)[4]; (C)[5] = (A)[5];\
 (C)[6] = (A)[6]; (C)[7] = (A)[7]; (C)[8] = (A)[8];}
+#define MM3_COPY(A,C) {(C)[0][0] = (A)[0][0]; (C)[1][0] = (A)[1][0]; (C)[2][0] = (A)[2][0];\
+(C)[0][1] = (A)[0][1]; (C)[1][1] = (A)[1][1]; (C)[2][1] = (A)[2][1];\
+(C)[0][2] = (A)[0][2]; (C)[1][2] = (A)[1][2]; (C)[2][2] = (A)[2][2];}
 #define M3_LINCOMB(a,A,b,B,C)		   {(C)[0] = (a)*(A)[0]+(b)*(B)[0];\
 										(C)[1] = (a)*(A)[1]+(b)*(B)[1];\
 										(C)[2] = (a)*(A)[2]+(b)*(B)[2];\
@@ -247,7 +267,7 @@
 		  - (M)[0][0]*(M)[1][2]*(M)[2][1]         \
 			- (M)[0][1]*(M)[1][0]*(M)[2][2];      \
   if (ABS((det))<SMALL_D*SMALL_D)                 \
-	return(1);                                    \
+	RETURN(1);                                    \
   invdet = 1.0 / (det);                           \
   (IM)[0][0] = ( (M)[1][1]*(M)[2][2] - (M)[1][2]*(M)[2][1]) * invdet;  \
   (IM)[0][1] = (-(M)[1][0]*(M)[2][2] + (M)[1][2]*(M)[2][0]) * invdet;  \
@@ -294,6 +314,8 @@
 #define V_DIM_SUBTRACT(A,B,C)			V2_SUBTRACT(A,B,C)
 #define V_DIM_ADD(A,B,C)			    V2_ADD(A,B,C)
 #define V_DIM_ADD1(A,C)		            V2_ADD1(A,C)
+#define V_DIM_AVG2(A,B,C)			    V2_AVG2(A,B,C)
+#define V_DIM_AVG4(A,B,C,D,E)			V2_AVG4(A,B,C,D,E)
 #define V_DIM_SCALE(c,C)			    V2_SCALE(c,C)
 #define V_DIM_SCALEADD1(c,A,C)			V2_SCALEADD1(c,A,C)
 #define V_DIM_SCALESET(c,A,C)			V2_SCALESET(c,A,C)
@@ -311,6 +333,7 @@
 #define MD_TIMES_V_DIM(M,A,B)	      	MD2_TIMES_V2(M,A,B)
 #define M_DIM_ADD(A,B,C)			    M2_ADD(A,B,C)
 #define M_DIM_COPY(A,C)				    M2_COPY(A,C)
+#define MM_DIM_COPY(A,C)				MM2_COPY(A,C)
 #define M_DIM_SCALE(c,M)			    M2_SCALE(c,M)
 #define V_DIM_Normalize(a)			    V2_Normalize(a)
 #define M_DIM_INVERT(M,IM,det)			M2_INVERT(M,IM,det)
@@ -324,6 +347,8 @@
 #define V_DIM_COPY(A,C)				    V3_COPY(A,C)
 #define V_DIM_SUBTRACT(A,B,C)			V3_SUBTRACT(A,B,C)
 #define V_DIM_ADD(A,B,C)			    V3_ADD(A,B,C)
+#define V_DIM_AVG2(A,B,C)			    V3_AVG2(A,B,C)
+#define V_DIM_AVG4(A,B,C,D,E)			V3_AVG4(A,B,C,D,E)
 #define V_DIM_ADD1(A,C)			        V3_ADD1(A,C)
 #define V_DIM_SCALE(c,C)			    V3_SCALE(c,C)
 #define V_DIM_SCALEADD1(c,A,C)			V3_SCALEADD1(c,A,C)
@@ -342,6 +367,7 @@
 #define MD_TIMES_V_DIM(M,A,B)			MD3_TIMES_V3(M,A,B)
 #define M_DIM_ADD(A,B,C) 		   	    M3_ADD(A,B,C)
 #define M_DIM_COPY(A,C)				    M3_COPY(A,C)
+#define MM_DIM_COPY(A,C)				MM3_COPY(A,C)
 #define M_DIM_SCALE(c,M)			    M3_SCALE(c,M)
 #define V_DIM_Normalize(a)			    V3_Normalize(a)
 #define M_DIM_INVERT(M,IM,det)			M3_INVERT(M,IM,det)

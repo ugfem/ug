@@ -32,6 +32,7 @@
 #include "switch.h"
 #include "gm.h"
 #include "ugm.h"
+#include "fvgeom.h"  /* TODO: move this! */
 
 #ifdef ModelP
 #include "parallel.h"
@@ -834,6 +835,13 @@ INT InitElementTypes (MULTIGRID *theMG)
   InitCurrMG(theMG);
   InitDDDTypes();
 #endif
+
+  /* set interpolation point */
+  if ((err=InitFiniteVolumeGeom())!=0)
+  {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
 
   return(GM_OK);
 }
