@@ -661,7 +661,6 @@ int InitParallel (int *argc, char ***argv)
   int i;
 
   DDD_Init(argc, argv);
-  printf("%4d: bin da!\n", me);
 
   /* initialize context */
   /* TODO: malloc() should be replaced by HEAPs or ddd_memmgr */
