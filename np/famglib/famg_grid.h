@@ -24,8 +24,8 @@
 
 #include "famg_algebra.h"
 #include "famg_decomp.h"
-#include "famg_transfer.h"
 #include "famg_graph.h"
+#include "famg_transfer.h"
 
 /* RCS_ID
    $Header$
@@ -37,6 +37,8 @@ const int FAMGDEFECT=2;
 const int FAMGTVA=3;
 const int FAMGTVB=4;
 const int FAMGMAXVECTORS=5;
+
+class FAMGTransfer;
 
 class FAMGGrid
 {

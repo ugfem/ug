@@ -326,6 +326,7 @@ private:
 
 #endif  // ONLY_ONE_ALGEBRA_DS
 
+
 //
 // template functions to profit by special implementations
 //		implementation in algebra.C
@@ -394,5 +395,9 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg );
 #endif
 
 #endif  // ONLY_ONE_ALGEBRA_DS
+
+#ifdef __KCC
+#include "famg_algebra.C"       // enable automatic template instantiation with explicit inclusion; remove famg_algebra.o from Makefile
+#endif
 
 #endif
