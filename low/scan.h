@@ -80,6 +80,7 @@
 /* scanning argument lists                                                  */
 INT ReadArgvDOUBLE (const char *name, DOUBLE *a, INT argc, char **argv);
 INT ReadArgvINT (const char *name, INT *j, INT argc, char **argv);
+INT ReadArgvDOUBLE_INT (const char *name, DOUBLE *a, INT *j, INT argc, char **argv);
 INT ReadArgvChar (const char *name, char *buffer, INT argc, char **argv);
 INT ReadArgvMEM (const char *name, MEM *mem_size, INT argc, char **argv);
 INT ReadArgvOption (const char *name, INT argc, char **argv);
