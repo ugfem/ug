@@ -90,6 +90,7 @@
 #include "parallel.h"
 #include "identify.h"
 #include "pargm.h"
+#include "cmdint.h"
 #endif
 
 /* TODO: temporarily included to make vecskips consistent for df */
@@ -115,9 +116,6 @@ INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
    not ensured.
 #define UPDATE_FULLOVERLAP
 */
-
-/* define for identification in several stages to 1 */
-#define IDENT_IN_STEPS  1
 
 /* define for use of DDD_ConsCheck() */
 /*
@@ -342,6 +340,12 @@ static INT No_Green_Update;				/* counter for green refinements	*/
 static INT Green_Marks;					/* green refined element counter	*/
 static INT refine_seq = 0;				/* 0/1: do/do not parallel part		*/
 static INT fifoloop = 0;				/* counter for FIFO loops			*/
+
+
+/* timing variables */
+static DOUBLE ident_begin,ident_end,t_ident;
+static DOUBLE overlap_begin,overlap_end,t_overlap;
+
 /* determine number of edge from reduced (i.e. restricted to one side) edgepattern */
 /* if there are two edges marked for bisection, if not deliver -1. If the edge-    */
 /* is not reduced (i.e. marked edges lying on more than one side) deliver -2       */
@@ -803,6 +807,31 @@ static INT PrintEdgeInfo (GRID *theGrid, char* string, INT level)
 	return(GM_OK);
 }
 
+/****************************************************************************/
+/*
+   Refinement_Changes - changes refinement of element
+
+   SYNOPSIS:
+   INT Refinement_Changes (ELEMENT *theElement)
+
+   PARAMETERS:
+.  theElement - pointer to element 
+
+   DESCRIPTION:
+   This function return a boolean value to indicate, whether an element
+   changes its refinement (1) or not (0).
+  
+   RETURN VALUE:
+   INT 
+.n   0 if element will not change refinement
+.n   1 if it will
+*/
+/****************************************************************************/
+
+INT Refinement_Changes (ELEMENT *theElement)
+{
+	return(REFINEMENT_CHANGES(theElement));
+}
 
 /****************************************************************************/
 /*
@@ -843,6 +872,12 @@ static INT PrepareGridClosure (GRID *theGrid)
 		/* TODO: delete special debug */ PRINTELEMID(11668)
 
 		SETUSED(theElement,0);
+        if (EGHOST(theElement))
+        {
+            SETCOARSEN(theElement,0);
+            SETMARK(theElement,NO_REFINEMENT);
+            SETMARKCLASS(theElement,0);
+        }
 
 		for (j=0; j<EDGES_OF_ELEM(theElement); j++)
 		{
@@ -5812,14 +5847,20 @@ if (0) {
 	Synchronize();
 }
 	DDD_IdentifyEnd();
+}
 
 	/* if no grid adaption has occured adapt next level */
 	*nadapted = UG_GlobalSumINT(*nadapted);
-	if (*nadapted == 0) return(GM_OK);
+	if (*nadapted == 0)
+	{
+		if (!IDENT_IN_STEPS)
+			DDD_IdentifyEnd();
+		return(GM_OK);
+	}
 
 	/* DDD_JoinBegin(); */
+if (IDENT_IN_STEPS)
 	DDD_IdentifyBegin();
-}
 
 DDD_CONSCHECK;
 
@@ -5831,7 +5872,13 @@ if (0) {
 	fflush(stdout);
 	Synchronize();
 }
+
+	ident_begin = CURRENT_TIME;
+
 	DDD_IdentifyEnd();
+
+	ident_end = CURRENT_TIME;
+	t_ident += (ident_end-ident_begin);
 	/* DDD_JoinEnd(); */
 
 
@@ -5841,9 +5888,17 @@ DDD_CONSCHECK;
 	if (level<toplevel || newlevel)
 	{
 		DDD_XferBegin();
+if (0)  /* delete sine this is already done in     */
+		/* ConstructConsistentGrid() (s.l. 980522) */
 		if (SetGridBorderPriorities(theGrid)) 		RETURN(GM_FATAL);
 		if (UpdateGridOverlap(theGrid))				RETURN(GM_FATAL);
+
+		overlap_begin = CURRENT_TIME;
+
 		DDD_XferEnd();
+
+		overlap_end = CURRENT_TIME;
+		t_overlap += (overlap_end-overlap_begin);
 
 DDD_CONSCHECK;
 
@@ -5859,7 +5914,11 @@ DDD_CONSCHECK;
 		/* is coarsened, then the prio of nodes of the ghost    */
 		/* element must eventually be downgraded from master    */
 		/* to ghost prio (s.l. 971020)                          */
+		/* this is done as postprocessing step, since this needs      */
+		/* 2 XferBegin/Ends here per modified gridlevel (s.l. 980522) */
+		#ifndef NEW_GRIDCONS_STYLE
 		ConstructConsistentGrid(FinerGrid);
+		#endif
 	}
 
 DDD_CONSCHECK;
@@ -5870,7 +5929,7 @@ CheckConsistency(MYMG(theGrid),level,debugstart,gmlevel,&check);
 
 }
 
-if (0) CheckGrid(FinerGrid,1,1,1,1);
+if (0) CheckGrid(FinerGrid,1,0,1,1);
 
 	return(GM_OK);
 }
@@ -5983,31 +6042,36 @@ static INT CheckMultiGrid (MULTIGRID *theMG)
 INT AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest)
 {
 	INT level,toplevel,nrefined,nadapted;
+	INT total_adapted = 0; /* count of adapted elements */
 	INT newlevel;
 	NODE *theNode;
 	GRID *theGrid, *FinerGrid;
 	ELEMENT *theElement;
-
-	DEBUG_TIME(0);
+	DOUBLE adapt_begin, adapt_end;
 
 /*
 CheckMultiGrid(theMG);
 */
-
 	/* check necessary condition */
 	if (!MG_COARSE_FIXED(theMG))
 		return (GM_COARSE_NOT_FIXED);
 
 #ifdef ModelP
+{
 	/* check and restrict partitioning of elements */
 	if (CheckPartitioning(theMG))
 	{
-		assert(0);
 		if (RestrictPartitioning(theMG)) RETURN(GM_FATAL);
+		if (CheckPartitioning(theMG)) assert(0);
 if (0)
 		return(GM_OK);
 	}
+}
 #endif
+
+	adapt_begin = CURRENT_TIME;
+	t_ident = 0.0;
+	t_overlap = 0.0;
 
 	/* set up information in refine_info */
 	#ifndef ModelP
@@ -6179,8 +6243,9 @@ if (0)
 			#endif
 
 		/* if no grid adaption has occured adapt next level */
-		nadapted = UG_GlobalSumINT(nadapted);
 		if (nadapted == 0) continue;
+
+		total_adapted += nadapted;
 
 		if (level<toplevel || newlevel)
 		{
@@ -6201,6 +6266,12 @@ if (0)
 
 	#ifdef ModelP
 	IdentifyExit();
+
+	#ifdef NEW_GRIDCONS_STYLE
+	/* now repair inconsistencies                   */
+	/* former done on each grid level (s.l. 980522) */
+	ConstructConsistentMultiGrid(theMG);
+	#endif
 	#endif
 
 	DisposeTopLevel(theMG);
@@ -6221,6 +6292,7 @@ if (0)
 	/* increment step count */
 	SETREFINESTEP(REFINEINFO(theMG),REFINESTEP(REFINEINFO(theMG))+1);
 
+	adapt_end = CURRENT_TIME;
 /*
 CheckMultiGrid(theMG);
 */
@@ -6232,6 +6304,11 @@ if (GetVecDataDescByName(theMG,"sol") != NULL)
 #endif
 */
 
+	#ifdef STAT_OUT
+	UserWriteF("ADAPT: total_adapted=%d t_adapt=%.2f t_overlap=%.2f "
+		"t_ident=%.2f\n",
+		total_adapted,adapt_end-adapt_begin,t_overlap,t_ident);
+	#endif
 
 	return(GM_OK);
 }
