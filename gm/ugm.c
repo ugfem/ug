@@ -24,10 +24,6 @@
 #pragma segment ugm
 #endif
 
-#ifdef __NECSX4__
-#define SIZE_T_TOO_SMALL
-#endif
-
 /****************************************************************************/
 /*																			*/
 /*		defines to exclude functions										*/
@@ -1395,9 +1391,6 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   BVP_DESC theBVPDesc;
   MESH mesh;
   FORMAT *theFormat;
-#ifdef SIZE_T_TOO_SMALL
-  unsigned long heap_temp;
-#endif
 
   theFormat = GetFormat(format);
   if (theFormat==NULL)
@@ -1417,17 +1410,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   }
 
   /* allocate the heap */
-#ifdef SIZE_T_TOO_SMALL
-  heap_temp = heapSize;
-  heapSize /= 1024;
-  if ( (heapSize * 1024) < heap_temp )
-    heapSize++;
-  theHeap = NewHeap(SIMPLE_HEAP, heapSize*1024, calloc(heapSize,1024));
-  heapSize *= 1024;
-  assert(heapSize!=0);
-#else
   theHeap = NewHeap(SIMPLE_HEAP, heapSize, malloc(heapSize));
-#endif
   if (theHeap==NULL)
   {
     PRINTDEBUG(gm,0,("CreateMultiGrid: cannot allocate %ld bytes\n",
@@ -3964,7 +3947,7 @@ void ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const INT longformat)
   theBVP = MG_BVP(theMG);
   if (BVP_SetBVPDesc(theBVP,&theBVPDesc))
   {
-    PrintErrorMessage('E',"InsertElement","cannot evaluate BVP");
+    PrintErrorMessage('E',"ListMultiGrid","cannot evaluate BVP");
     return;
   }
 
@@ -4017,7 +4000,7 @@ void ListGrids (const MULTIGRID *theMG)
 
   cl = CURRENTLEVEL(theMG);
 
-  sprintf(buffer,"grids of '%s':\n",ENVITEM_NAME(theMG));
+  UserWriteF("grids of '%s':\n",ENVITEM_NAME(theMG));
 
   UserWrite("level maxlevel    #vert    #node    #edge    #elem    #side    #vect    #conn  minedge  maxedge\n");
   for (l=0; l<=TOPLEVEL(theMG); l++)
@@ -4152,10 +4135,17 @@ void ListGrids (const MULTIGRID *theMG)
   heap = HeapFreelistUsed(MGHEAP(theMG));
   used = HeapUsed(MGHEAP(theMG)) - heap;
   free = HeapSize(MGHEAP(theMG)) - used;
-  if (0 == heap)
-    UserWriteF("\n%d bytes used out of %d allocated\n",used,used+free);
+#ifdef MEM_SIZE_ULL
+  if (heap == 0)
+    UserWriteF("\n%llu bytes used out of %d allocated\n",used,used+free);
   else
-    UserWriteF("\n%d ( %d + %d ) bytes used out of %d allocated\n",used+heap,used,heap,used+free);
+    UserWriteF("\n%llu ( %llu + %llu ) bytes used out of %llu allocated\n",used+heap,used,heap,used+free);
+#else
+  if (heap == 0)
+    UserWriteF("\n%lu bytes used out of %d allocated\n",used,used+free);
+  else
+    UserWriteF("\n%lu ( %lu + %lu ) bytes used out of %lu allocated\n",used+heap,used,heap,used+free);
+#endif
 }
 
 /****************************************************************************/
