@@ -42,6 +42,7 @@
 #include <limits.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <time.h>
 
 #ifndef __COMPILER__
 #include "compiler.h"
@@ -2017,7 +2018,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MULTIGRID_STATUS_OFFSET                 (sizeof(ENVVAR))
 
 #define MGSTATUS(p)                     ((p)->status)
-#define RESETMGSTATUS(p)                {(p)->status=0; (p)->magic_cookie = rand();}
+#define RESETMGSTATUS(p)                {(p)->status=0; (p)->magic_cookie = (int)time(NULL);}
 #define MG_MAGIC_COOKIE(p)              ((p)->magic_cookie)
 #define VIDCNT(p)                       ((p)->vertIdCounter)
 #define NIDCNT(p)                       ((p)->nodeIdCounter)
