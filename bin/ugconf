@@ -153,6 +153,10 @@ objdb_restore_new()
 	then
 		echo "restoring old object tree from object database"
 
+		# remove all existing obj-files
+		cd $UGROOT
+		find . -name '*.o' -exec rm {} \;
+
 		# restore object tree
 		cd $UGROOT
 		$UNPACKER $OBJDIR/`build_objdb_name $UGROOT/ug.conf`/obj.tar.$PACKSUFFIX  | \
