@@ -1761,7 +1761,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
   else
     pfile_close(pf_txt);
 
-  ReleaseTmpMem(heap, sdkey);
+  if ( subdomains )
+    ReleaseTmpMem(heap, sdkey);
 
   return(OKCODE);
 }
