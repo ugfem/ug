@@ -38,12 +38,13 @@
 #include "devices.h"     /* for UserWrite, PrintErrorMessage */
 #include "commands.h"    /* for GetCurrentMultigrid              */
 #include "cmdint.h"      /* for CreateCommand                */
+#include "debug.h"
 
 #include "num.h"
 #include "ugblas.h"
 
 #include "ff_gen.h"
-#include "tff.h"
+#include "ff.h"
 
 #ifdef T
 #undef T
@@ -83,6 +84,18 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /* mute level for FFs */
 INT mute_level  = 0;
+
+/* value below them a division is refused calculating a testvector */
+DOUBLE FFsmallTV = 1e-3;
+
+/* ratio for a jump to be detected */
+DOUBLE FFmuchBigger = 100.0;
+
+/* value below them a number is considered as 0.0 */
+DOUBLE FFEPS = 1e-16;
+
+/* value below them an approximation error is considered as ok */
+DOUBLE FFaccuracy = 1e-10;
 
 /* auxiliary component; only for checking the results (if CHECK_CALCULATION is on) */
 INT aux2_COMP = DUMMY_COMP;
@@ -590,7 +603,7 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
 
   if ( n * n != nn )
   {
-    PrintErrorMessage( 'E', "FF_PrepareSolver", "grid is not a square!" );
+    PrintErrorMessage( 'E', "FF_PrepareGrid", "grid is not a square!" );
     return 1;
   }
 
@@ -599,7 +612,7 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
 
   if ( CreateBVStripe2D( grid, n*n, n ) != GM_OK )
   {
-    PrintErrorMessage( 'F', "FF_PrepareSolver", "can not build blockvector structure" );
+    PrintErrorMessage( 'F', "FF_PrepareGrid", "can not build blockvector structure" );
     return 1;
   }
 
@@ -610,7 +623,7 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
 
   if ( n * n * n != nn )
   {
-    PrintErrorMessage( 'E', "FF_PrepareSolver", "grid is not a cube!" );
+    PrintErrorMessage( 'E', "FF_PrepareGrid", "grid is not a cube!" );
     return 1;
   }
 
@@ -619,7 +632,7 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
 
   if ( CreateBVStripe3D( grid, n*n*n, n, n ) != GM_OK )
   {
-    PrintErrorMessage( 'F', "FF_PrepareSolver", "can not build blockvector structure" );
+    PrintErrorMessage( 'F', "FF_PrepareGrid", "can not build blockvector structure" );
     return 1;
   }
 
@@ -649,24 +662,24 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
         mnext = MNEXT( m );
         if ( (fabs(MVALUE(m,K_comp)) < 1e-15) && (fabs(MVALUE(MADJ(m),K_comp)) < 1e-15) )
           if ( DisposeConnection( grid, MMYCON( m ) ) != 0 )
-            PrintErrorMessage( 'E', "FF_PrepareSolver", "error in disposing connection ############\n" );
+            PrintErrorMessage( 'E', "FF_PrepareGrid", "error in disposing connection ############\n" );
       }
   }
 
-  TFFmuchBigger = 100.0;
-  TFFsmallTV = 1e-3;
-  TFFaccuracy = 1e-10;
+  FFmuchBigger = 100.0;
+  FFsmallTV = 1e-3;
+  FFaccuracy = 1e-10;
 
   mute_level = GetMuteLevel();
 
 #ifdef weglassen
 
 #ifdef __TWODIM__
-  UserWrite( "TFF2D prepared.\n" );
+  UserWrite( "FF2D prepared.\n" );
 #endif
 
 #ifdef __THREEDIM__
-  UserWrite( "TFF3D prepared.\n" );
+  UserWrite( "FF3D prepared.\n" );
 #endif
 
 #ifdef THETA_EXACT
@@ -699,4 +712,526 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
 
   return 0;
 }
+
+
+/****************************************************************************/
+/*D
+   FFConstructTestvector - construct a sine-shaped testvector (2D/3D)
+
+   SYNOPSIS:
+   void FFConstructTestvector( const BLOCKVECTOR *bv, INT tv_comp,
+                                                           DOUBLE wavenr, DOUBLE wavenr_3D );
+
+   PARAMETERS:
+   .  bv - root of the blockvector tree in 2D/3D (plane/cube)
+   .  tv_comp - component for the testvector in the vector-data
+   .  wavenr - number of sine half-oszillations along one gridline (2D (sub)problems)
+   .  wavenr3D - number of sine half-oszillations along the planes (only 3D problems)
+
+   DESCRIPTION:
+   Calculate the entries of a testvector to a given frequency with respect
+   to the meshwidth (calculated as the number of vectors within 1 gridline).
+   2D: let h be the meshwidth, (ih,jh) a grid point,
+   then tv(i,j) = sin( i*h*wavenr*pi )
+   3D: let h be the meshwidth, (ih,jh,kh) a grid point,
+   then tv(i,j,k) = sin( i*h*wavenr*pi ) * sin( j*h*wavenr*pi )
+
+   'wavenr3D' is used only in the 3D case.
+
+   RESTRICTIONS:
+   The grid must be ordered by a blockvector structure as created by
+   'CreateBVStripe2D'/'3D'. Especially the leaf-blockvectors must have
+   the right 'BVNUMBEROFVECTORS' and in 3D the sons of 'bv' must be numbered
+   consecutively to determine the right meshwidth.
+
+   The spcial dimension is determined staticly by '__TWODIM'/'__THREEDIM'.
+
+   The grid should be regular (i.e. each line/plane contains the same number of
+   vectors).
+
+   WARNING:
+   In 3D some lines may consist entirely of testvector entries 0.0. To
+   circumvent this problem use 'FFConstructTestvector_loc'.
+
+   SEE ALSO:
+   FFConstructTestvector_loc, CreateBVStripe2D, CreateBVStripe3D
+
+   RETURN VALUE:
+   .n   void
+   D*/
+/*************************************************************************/
+
+void FFConstructTestvector( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, DOUBLE wavenr_3D )
+{
+  register DOUBLE hkpi, pos, plane_pos, tensor;
+  register VECTOR *v, *end_v;
+  register BLOCKVECTOR *bv_i, *bv_end, *bv_glob_end;
+  INT length, plane_length;
+  DOUBLE plane_hkpi;
+
+  bv_glob_end = BVDOWNBVEND(bv);
+  bv = BVDOWNBV(bv);
+  for ( ; bv != bv_glob_end; bv = BVSUCC(bv) )       /* over all lines resp. planes */
+  {
+#ifdef __TWODIM__
+    assert( BVDOWNTYPE(bv) == BVDOWNTYPEVECTOR );
+    length = BVNUMBEROFVECTORS(bv) + 1;
+    hkpi = pos = ( PI * wavenr ) / (DOUBLE)length;
+    end_v = BVENDVECTOR( bv );
+    BLOCK_L_VLOOP( v, BVFIRSTVECTOR(bv), end_v )                /* over all points in the line */
+    {
+      VVALUE( v, tv_comp ) = sin( pos );
+      pos += hkpi;
+    }
+#else
+    assert( BVDOWNTYPE(bv) == BVDOWNTYPEBV );
+    bv_i = BVDOWNBV(bv);
+    bv_end = BVDOWNBVEND(bv);
+
+    plane_length = BVNUMBER(BVDOWNBVLAST(bv)) - BVNUMBER(bv_i) + 2;
+    plane_hkpi = plane_pos = (PI * wavenr_3D) / (double)plane_length;
+    tensor = sin ( plane_pos );
+
+    for ( ; bv_i != bv_end; bv_i = BVSUCC(bv_i) )               /* over all lines */
+    {
+      length = BVNUMBEROFVECTORS(bv_i) + 1;
+      hkpi = pos = ( PI * wavenr ) / (DOUBLE)length;
+      end_v = BVENDVECTOR( bv_i );
+      BLOCK_L_VLOOP( v, BVFIRSTVECTOR(bv_i), end_v )                    /* over all points in the line */
+      {
+        VVALUE( v, tv_comp ) = tensor * sin( pos );
+        pos += hkpi;
+      }
+      plane_pos += plane_hkpi;
+      tensor = sin( plane_pos );
+    }
+#endif
+  }
+}
+
+/****************************************************************************/
+/*D
+   FFConstructTestvector_loc - construct a sine-shaped testvector (2D/3D)
+
+   SYNOPSIS:
+   void FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp,
+                                                                   DOUBLE wavenr, DOUBLE wavenr_3D );
+
+   PARAMETERS:
+   .  bv - root of the blockvector tree in 2D/3D (plane/cube)
+   .  tv_comp - component for the testvector in the vector-data
+   .  wavenr - number of sine half-oszillations along one gridline (2D (sub)problems)
+   .  wavenr3D - number of sine half-oszillations along the planes (only 3D problems)
+
+   DESCRIPTION:
+   Calculate the entries of a testvector to a given frequency with respect
+   to the meshwidth (calculated as the number of vectors within 1 gridline).
+   The distinction whether 'bv' represents a plane (2D) or a cube (3D) is made
+   dynamically by the blockvector structure itself: if 'bv' has only one
+   further level of blockvectors (representing grid lines!) it is
+   considered as a plane, otherwise as a cube.
+   plane: let h be the meshwidth, (ih,jh) a grid point,
+   then tv(i,j) = sin( i*h*wavenr*pi )
+   cube: let h be the meshwidth, (ih,jh,kh) a grid point,
+   then tv(i,j,k) = sin( i*h*wavenr*pi ) * sin( j*h*wavenr*pi )
+
+   In 3D some lines may consist entirely of testvector entries 0.0 only
+   in the case of the global decomposition; in the case of decomposing
+   local problems no 0-lines can occur!
+   'wavenr3D' is used only in the 3D case.
+
+   WARNING:
+   The local subproblems do not use the global testvector, but a local one.
+
+   RESTRICTIONS:
+   The grid must be ordered by a blockvector structure as created by
+   'CreateBVStripe2D'/'3D'.
+
+   The grid should be regular (i.e. each line/plane contains the same number of
+   vectors).
+
+   SEE ALSO:
+   FFConstructTestvector, CreateBVStripe2D, CreateBVStripe3D
+
+   RETURN VALUE:
+   .n   void
+   D*/
+/*************************************************************************/
+
+void FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, DOUBLE wavenr_3D )
+{
+  register DOUBLE hkpi, pos, plane_pos, tensor;
+  register VECTOR *v, *end_v;
+  register BLOCKVECTOR *bv_i, *bv_end;
+  INT length, plane_length;
+  DOUBLE plane_hkpi;
+
+  if ( BV_IS_LEAF_BV( bv ) )
+  /* 2D block */
+  {
+    /* zick-zack instead of sin */
+    /*DOUBLE incr = (2.0 * wavenr) / (BVNUMBEROFVECTORS(bv) + 1.0 );
+            DOUBLE pos = incr;
+
+            end_v = BVENDVECTOR( bv );
+            BLOCK_L_VLOOP( v, BVFIRSTVECTOR(bv), end_v )
+            {
+                    VVALUE( v, tv_comp ) = pos;
+                    if ( fabs(pos) > 0.999 ) incr *= -1.0;
+                    pos += incr;
+            }
+            return;
+     */
+
+    length = BVNUMBEROFVECTORS(bv) + 1;
+    hkpi = pos = ( PI * wavenr ) / (DOUBLE)length;
+    end_v = BVENDVECTOR( bv );
+    BLOCK_L_VLOOP( v, BVFIRSTVECTOR(bv), end_v )                /* over all points in the line */
+    {
+      /*printf("pos %g  sin %g\n", pos, sin(pos) );*/
+      VVALUE( v, tv_comp ) = sin( pos );
+      pos += hkpi;
+    }
+  }
+  else
+  /* 3D block */
+  {
+    assert( BVDOWNTYPE(bv) == BVDOWNTYPEBV );
+    bv_i = BVDOWNBV(bv);
+    bv_end = BVDOWNBVEND(bv);
+
+    plane_length = BVNUMBER(BVDOWNBVLAST(bv)) - BVNUMBER(bv_i) + 2;
+    plane_hkpi = plane_pos = (PI * wavenr_3D) / (double)plane_length;
+    tensor = sin ( plane_pos );
+
+    for ( ; bv_i != bv_end; bv_i = BVSUCC(bv_i) )               /* over all lines */
+    {
+      length = BVNUMBEROFVECTORS(bv_i) + 1;
+      hkpi = pos = ( PI * wavenr ) / (DOUBLE)length;
+      end_v = BVENDVECTOR( bv_i );
+      /*printf("tensor %g\n", tensor );*/
+      BLOCK_L_VLOOP( v, BVFIRSTVECTOR(bv_i), end_v )                    /* over all points in the line */
+      {
+        VVALUE( v, tv_comp ) = tensor * sin( pos );
+        pos += hkpi;
+      }
+      plane_pos += plane_hkpi;
+      tensor = sin( plane_pos );
+    }
+
+  }
+}
+
+
+/****************************************************************************/
+/*D
+   FFMultWithM - for a frequency filtered matrix M calculate y := M * x
+
+   SYNOPSIS:
+   INT FFMultWithM( const BLOCKVECTOR *bv,
+                                         const BV_DESC *bvd,
+                                         const BV_DESC_FORMAT *bvdf,
+                                         INT y_comp,
+                                         INT T_comp,
+                                         INT L_comp,
+                                         INT Tinv_comp,
+                                         INT x_comp,
+                                         INT aux_comp,
+                                         INT auxsub_comp,
+                                         INT Lsub_comp );
+
+   PARAMETERS:
+   .  bv - blockvector covering M
+   .  bvd - description of the blockvector
+   .  bvdf - format to interpret the 'bvd'
+   .  y_comp - position of the result in the VECTOR-data
+   .  T_comp - position of the frequency filtered diagonal blocks of the stiffness matrix
+   .  L_comp - position of the off-diagonal blocks of the stiffness matrix
+   .  Tinv_comp - position of the LU-decomposed diagonal blocks
+   .  x_comp - position of the vector to be multiplied in the VECTOR-data
+   .  aux_comp - position of the auxiliary-component in the VECTOR-data
+   .  auxsub_comp - position of the auxiliary-component for subproblems (only 3D)
+   .  Lsub_comp - position of the off-diagonal blocks of the subproblem-matrix (only 3D)
+
+   DESCRIPTION:
+   'M' is an frequency filtered decomposed matrix as produced by 'TFFDecomp'
+   or 'FFDecomp', i.e. M = ( L + T ) * T^-1 * ( T + U ).
+   This function calculates the product 'y := M * x'. Do not mix up this
+   function with 'FFMultWithMInv'!
+
+   Both the lower ('L') and upper ('U') off-diagonal part is stored in the
+   same component 'L_comp' in the MATRIX-data.
+
+   'auxsub_comp', 'Tsub_comp' and 'Lsub_comp' are used only in the 3D case;
+   in 2D you can use an arbitrary number.
+
+   WARNING:
+   'x_comp', 'y_comp' and 'aux_comp' must be pairwise different!
+
+   REMARK:
+   This function is needed only for experimenting, not for the pure solving
+   of a PDE.
+
+   SEE ALSO:
+   TFFDecomp, FFDecomp, FFMultWithMInv
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   D*/
+/****************************************************************************/
+
+INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT y_comp, INT T_comp, INT L_comp, INT Tinv_comp, INT x_comp, INT aux_comp, INT auxsub_comp, INT Lsub_comp )
+{
+  register BLOCKVECTOR *bv_i, *bv_ip1, *bv_stop;
+  register BV_DESC *bvd_i, *bvd_ip1, *bvd_temp;
+  BV_DESC bvd1, bvd2;
+
+  /* To minimize the incrementation of BVDs there are used two (one for
+     index i and the other for index i+1) which are swapped in the loop;
+     thus only one incrementation by 2 is necessary */
+  bvd1 = bvd2 = *bvd;
+  bvd_i = &bvd1;
+  bvd_ip1 = &bvd2;
+  BVD_PUSH_ENTRY( bvd_i, 0, bvdf );
+  BVD_PUSH_ENTRY( bvd_ip1, 1, bvdf );
+
+  /* calculate aux := T^-1*(U + T) * x = (T^-1 * U) * x + x */
+  bv_stop = BVDOWNBVLAST( bv );
+  for ( bv_i = BVDOWNBV(bv), bv_ip1 = BVSUCC( bv_i );
+        bv_i != bv_stop;                        /* except the last blockvector */
+        bv_i = bv_ip1, bv_ip1 = BVSUCC( bv_ip1 ) )
+  {
+    /* aux_i := 0 */
+    dsetBS( bv_i, aux_comp, 0.0 );
+
+    /* aux_i += U_(i,i+1) * x_i+1 */
+    dmatmulBS( bv_i, bvd_ip1, bvdf, aux_comp, L_comp, x_comp );
+
+    /* aux_i := (T_i)^-1 * aux_i */
+    FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, Lsub_comp, Tinv_comp, aux_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+
+    /* aux_i += x_i */
+    daddBS( bv_i, aux_comp, x_comp );
+
+    /* prepare BVDs for next loop */
+    SWAP( bvd_i, bvd_ip1, bvd_temp );
+    BVD_INC_LAST_ENTRY( bvd_ip1, 2, bvdf );
+  }
+  /* aux_last :=  T^-1*(U + T) * x_last = x_last */
+  dcopyBS( bv_i, aux_comp, x_comp );
+
+  bv_ip1 = bv_i;
+  bv_i = BVPRED(bv_ip1);
+  SWAP( bvd_i, bvd_ip1, bvd_temp );
+  BVD_DEC_LAST_ENTRY( bvd_i, 2, bvdf );
+  /* now i+1 points to the last blockvector, i to its predecessor */
+
+  /* calculate y := (L + T) * aux */
+  /* note the reverse direction of the calculation; this prevents y_i-1
+     from beeing overriden in the i.th step, since it is needed in the
+     step i-1 again. */
+  bv_stop = BVDOWNBV(bv);
+  for ( ;
+        bv_ip1 != bv_stop;              /* except blockvector 0 */
+        bv_ip1 = bv_i, bv_i = BVPRED( bv_ip1 ) )
+  {
+    /* y_i+1 := 0 */
+    dsetBS( bv_ip1, y_comp, 0.0 );
+
+    /* y_i+1 += T_i+1 * aux_i+1 */
+    dmatmulBS( bv_ip1, bvd_ip1, bvdf, y_comp, T_comp, aux_comp );
+
+    /* y_i+1 += L_(i+1,i) * aux_i */
+    dmatmulBS( bv_ip1, bvd_i, bvdf, y_comp, L_comp, aux_comp );
+
+    /* prepare BVDs for next loop */
+    SWAP( bvd_i, bvd_ip1, bvd_temp );
+    BVD_DEC_LAST_ENTRY( bvd_i, 2, bvdf );
+  }
+  /* y_0 := 0 */
+  dsetBS( bv_ip1, y_comp, 0.0 );
+
+  /* y_0 += T_0 * aux_0 */
+  dmatmulBS( bv_ip1, bvd_ip1, bvdf, y_comp, T_comp, aux_comp );
+
+  return NUM_OK;
+}
+
+
+/****************************************************************************/
+/*D
+   FFMultWithMInv - for a frequency filtered matrix M calculate v := M^-1 * b
+
+   SYNOPSIS:
+   INT FFMultWithMInv( const BLOCKVECTOR *bv,
+                                                const BV_DESC *bvd,
+                                                const BV_DESC_FORMAT *bvdf,
+                                                INT v_comp,
+                                                INT L_comp,
+                                                INT Tinv_comp,
+                                                INT b_comp,
+                                                INT aux_comp,
+                                                INT auxsub_comp,
+                                                INT Lsub_comp );
+
+   PARAMETERS:
+   .  bv - blockvector covering M
+   .  bvd - description of the blockvector
+   .  bvdf - format to interpret the 'bvd'
+   .  v_comp - position of the result in the VECTOR-data
+   .  L_comp - position of the off-diagonal blocks of the stiffness matrix
+   .  Tinv_comp - position of the LU-decomposed diagonal blocks
+   .  b_comp - position of the right hand side vector in the VECTOR-data
+   .  aux_comp - position of the auxiliary-component in the VECTOR-data
+   .  auxsub_comp - position of the auxiliary-component for subproblems (only 3D)
+   .  Lsub_comp - position of the off-diagonal blocks of the subproblem-matrix (only 3D)
+
+   DESCRIPTION:
+   'M' is an frequency filtered decomposed matrix as produced by 'TFFDecomp'
+   or 'FFDecomp', i.e. M = ( L + T ) * T^-1 * ( T + U ).
+   This function calculates 'v := M^-1 * b', i.e. solves 'M * v = b' for v.
+   Do not mix up this function with 'FFMultWithM'!
+
+   Both the lower ('L') and upper ('U') off-diagonal part is stored in the
+   same component 'L_comp' in the MATRIX-data.
+
+   'v_comp' and 'b_comp' may be equal.
+
+   Destroys 'b_comp'.
+
+   'auxsub_comp' and 'Lsub_comp' are used only in the 3D case;
+   in 2D you can use an arbitrary number.
+   The distinction whether 'bv' represents a plane (2D) or a cube (3D) is made
+   dynamically by the blockvector structure itself: if 'bv' has only one
+   further level of blockvectors (representing grid lines!) it is
+   considered as a plane, otherwise as a cube.
+
+   To do certain experiments there can be activated variants of the usual
+   algorithm by defining macro-names. See the code.
+
+   SEE ALSO:
+   TFFDecomp, FFDecomp, FFMultWithM
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    error code from 'solveLUMatBS'
+   D*/
+/****************************************************************************/
+
+INT FFMultWithMInv( const BLOCKVECTOR *bv,
+                    const BV_DESC *bvd,
+                    const BV_DESC_FORMAT *bvdf,
+                    INT v_comp,
+                    INT L_comp,
+                    INT Tinv_comp,
+                    INT b_comp,
+                    INT aux_comp,
+                    INT auxsub_comp,
+                    INT Lsub_comp )
+{
+  register BLOCKVECTOR *bv_i, *bv_ip1, *bv_stop;
+  register BV_DESC *bvd_i, *bvd_ip1, *bvd_temp;
+  BV_DESC bvd1, bvd2;
+
+  if ( BV_IS_LEAF_BV(bv) )
+    return solveLUMatBS( bv, bvd, bvdf, v_comp, Tinv_comp, b_comp );
+
+  ASSERT( v_comp != aux_comp );
+  ASSERT( b_comp != aux_comp );
+  ASSERT( L_comp != Tinv_comp );
+
+  IFDEBUG(np,0)
+  if ( auxsub_comp != DUMMY_COMP )
+  {
+    ASSERT( auxsub_comp != v_comp );
+    ASSERT( auxsub_comp != b_comp );
+    ASSERT( auxsub_comp != aux_comp );
+    ASSERT( Lsub_comp != DUMMY_COMP );
+    ASSERT( Lsub_comp != L_comp );
+    ASSERT( Lsub_comp != Tinv_comp );
+  }
+  ENDDEBUG
+
+  /* To minimize the incrementation of BVDs there are used two (one for
+     index i and the other for index i+1) which are swapped in the loop;
+     thus only one incrementation by 2 is necessary */
+    bvd1 = bvd2 = *bvd;
+  bvd_i = &bvd1;
+  bvd_ip1 = &bvd2;
+  BVD_PUSH_ENTRY( &bvd1, 0, bvdf );
+  BVD_PUSH_ENTRY( &bvd2, 1, bvdf );
+
+  /* solve lower triangular matrix; except the last block in this loop */
+  /* aux := ( L + T )^-1 * b */
+  bv_stop = BVDOWNBVLAST(bv);
+  for ( bv_i = BVDOWNBV(bv), bv_ip1 = BVSUCC( bv_i );
+        bv_i != bv_stop;
+        bv_i = bv_ip1, bv_ip1 = BVSUCC( bv_ip1 ) )
+  {
+    /* aux_i := (T_i)^-1 * b_i */
+#ifdef MINV_2D_EXACT
+    if( L_comp == 0 )
+      gs_solveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF_COMP, aux_comp, b_comp, aux5_COMP, TRUE );
+    else
+      /*gs_solveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF3D_COMP, aux_comp, b_comp, aux5_COMP, TRUE );*/
+      FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, Lsub_comp, Tinv_comp, b_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+#else
+    FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, Lsub_comp, Tinv_comp, b_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+#endif
+
+    /* b_i+1 -= L_(i+1,i) * aux_i */
+    dmatmul_minusBS( bv_ip1, bvd_i, bvdf, b_comp, L_comp, aux_comp );
+
+    /* prepare BVDs for next loop */
+    SWAP( bvd_i, bvd_ip1, bvd_temp );
+    BVD_INC_LAST_ENTRY( bvd_ip1, 2, bvdf );
+  }
+  /* special treatment: v_last = (T_last)^-1 * b_last */
+#ifdef MINV_2D_EXACT
+  if( L_comp == 0 )
+    gs_solveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF_COMP, aux_comp, b_comp, aux5_COMP, TRUE );
+  else
+    /*gssolveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF3D_COMP, aux_comp, b_comp, aux5_COMP, TRUE );*/
+    FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, Lsub_comp, Tinv_comp, b_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+#else
+  FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, Lsub_comp, Tinv_comp, b_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+#endif
+
+  /* solve upper triangular matrix; the last block is already calculated */
+  /* v := (T^-1*U + I )^-1 * aux */
+  assert( bv_i == BVDOWNBVLAST(bv) );
+  SWAP( bvd_i, bvd_ip1, bvd_temp );
+  BVD_DEC_LAST_ENTRY( bvd_i, 2, bvdf );
+  bv_stop = BVPRED( BVDOWNBV(bv) );
+  for ( bv_i = BVPRED( bv_i ); bv_i != bv_stop; bv_i = BVPRED( bv_i ) )
+  {
+    /* v_i := L_(i,i+1) * v_i+1 */
+    dsetBS( bv_i, v_comp, 0.0 );
+    dmatmulBS( bv_i, bvd_ip1, bvdf, v_comp, L_comp, v_comp );
+
+    /* v_i := (T_i)^-1 * v_i */
+#ifdef MINV_2D_EXACT
+    dcopyBS( bv_i, aux4_COMP, v_comp );
+    if( L_comp == 0 )
+      gs_solveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF_COMP, v_comp, aux4_COMP, aux5_COMP, TRUE );
+    else
+      /*gs_solveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF3D_COMP, v_comp, aux4_COMP, aux5_COMP, TRUE );*/
+      FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, Lsub_comp, Tinv_comp, v_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+#else
+    FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, Lsub_comp, Tinv_comp, v_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+#endif
+
+    /* v_i := aux_i - v_i */
+    dminusaddBS( bv_i, v_comp, aux_comp );
+
+    /* prepare BVDs for next loop */
+    SWAP( bvd_i, bvd_ip1, bvd_temp );
+    BVD_DEC_LAST_ENTRY( bvd_i, 2, bvdf );
+  }
+
+  return NUM_OK;
+}
+
 #endif /* __BLOCK_VECTOR_DESC__ */

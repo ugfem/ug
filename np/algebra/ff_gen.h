@@ -103,6 +103,18 @@
 
 extern INT mute_level;
 
+/* value below them a division is refused calculating a testvector */
+extern DOUBLE FFsmallTV;
+
+/* ratio for a jump to be detected */
+extern DOUBLE FFmuchBigger;
+
+/* value below them a number is considered as 0.0 */
+extern DOUBLE FFEPS;
+
+/* value below them an approximation error is considered as ok */
+extern DOUBLE FFaccuracy;
+
 /* auxiliary component; only for checking the results (if CHECK_CALCULATION is on) */
 extern INT aux2_COMP;
 
@@ -141,6 +153,21 @@ void printBVgrid( GRID *grid, const BV_DESC_FORMAT *bvdf );
 
 DOUBLE FFMeshwidthOfGrid( GRID *grid );
 INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_comp, INT b_comp, const BV_DESC_FORMAT *bvdf );
+
+void FFConstructTestvector( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, DOUBLE wavenr_3D );
+void FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, DOUBLE wavenr_3D );
+
+INT FFMultWithMInv( const BLOCKVECTOR *bv,
+                    const BV_DESC *bvd,
+                    const BV_DESC_FORMAT *bvdf,
+                    INT v_comp, INT L_comp,
+                    INT Tinv_comp,
+                    INT b_comp,
+                    INT aux_comp,
+                    INT auxsub_comp,
+                    INT Lsub_comp );
+
+INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT y_comp, INT T_comp, INT L_comp, INT Tinv_comp, INT x_comp, INT aux_comp, INT auxsub_comp, INT Lsub_comp );
 
 INT InitFF (void);
 

@@ -4,7 +4,7 @@
 /*																			*/
 /* File:	  tff.h															*/
 /*																			*/
-/* Purpose:   tangential frequency filtering decompostion routines          */
+/* Purpose:   (tangential) frequency filtering decompostion routines        */
 /*																			*/
 /* Author:	  Christian Wrobel                                                                              */
 /*			  Institut fuer Computeranwendungen III                                                 */
@@ -52,33 +52,11 @@
 /*																			*/
 /****************************************************************************/
 
-/* value below them a division is refused calculating a testvector */
-extern DOUBLE TFFsmallTV;
-
-/* ratio for a jump to be detected */
-extern DOUBLE TFFmuchBigger;
-
-/* value below them a number is considered as 0.0 */
-extern DOUBLE TFFEPS;
-
-/* value below them an approximation error is considered as ok */
-extern DOUBLE TFFaccuracy;
-
 /****************************************************************************/
 /*																			*/
 /* function declarations													*/
 /*																			*/
 /****************************************************************************/
-
-INT TFFMultWithMInv( const BLOCKVECTOR *bv,
-                     const BV_DESC *bvd,
-                     const BV_DESC_FORMAT *bvdf,
-                     INT v_comp, INT L_comp,
-                     INT Tinv_comp,
-                     INT b_comp,
-                     INT aux_comp,
-                     INT auxsub_comp,
-                     INT Lsub_comp );
 
 INT TFFDecomp( DOUBLE wavenr,
                DOUBLE wavenr3D,
@@ -93,6 +71,40 @@ INT TFFDecomp( DOUBLE wavenr,
                INT auxsub_comp,
                INT FFsub_comp,
                GRID *grid );
+
+INT FFDecomp( DOUBLE wavenr,
+              DOUBLE wavenr3D,
+              const BLOCKVECTOR *bv,
+              const BV_DESC *bvd,
+              const BV_DESC_FORMAT *bvdf,
+              INT LU_comp,
+              INT FF_comp,
+              INT K_comp,
+              INT tv1_comp,
+              INT tv2_comp,
+              INT aux1_comp,
+              INT aux2_comp,
+              INT auxsub1_comp,
+              INT auxsub2_comp,
+              INT FFsub_comp,
+              GRID *grid );
+
+INT FFDecomp( DOUBLE wavenr,
+              DOUBLE wavenr3D,
+              const BLOCKVECTOR *bv,
+              const BV_DESC *bvd,
+              const BV_DESC_FORMAT *bvdf,
+              INT LU_comp,
+              INT FF_comp,
+              INT K_comp,
+              INT tv1_comp,
+              INT tv2_comp,
+              INT aux1_comp,
+              INT aux2_comp,
+              INT auxsub1_comp,
+              INT auxsub2_comp,
+              INT FFsub_comp,
+              GRID *grid );
 
 INT TFFPrepareSolver( GRID *grid,
                       INT K_comp,
