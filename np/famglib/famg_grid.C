@@ -1397,8 +1397,8 @@ static int SendToOverlap1( DDD_OBJ obj)
 
 			for( matw=VSTART(w); matw!=NULL; matw=MNEXT(matw) )
 			{
-				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,proclist_w[0],VINDEX_PRTX(wn)));
 				wn = MDEST(matw);
+				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,proclist_w[0],VINDEX_PRTX(wn)));
                 size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(wn));
 				TransferVector(wn, proclist_w[0], PrioBorder, size);
 			}
@@ -1413,9 +1413,10 @@ void FAMGGrid::ConstructOverlap()
 // the vectorlist will be renumbered
 {
 	VECTOR *vec, *mv;
-	INT i;
+	INT i, mc = MD_SCALCMP(((FAMGugMatrix*)GetMatrix())->GetMatDesc());
 	FAMGMatrixAlg *matrix_tmp;
-	
+	MATRIX *mat;
+
 	if(GLEVEL(mygrid)==0)
 	{	
 		/* change ghosts to border */
@@ -1426,6 +1427,9 @@ void FAMGGrid::ConstructOverlap()
 			DDD_XferPrioChange( PARHDR((NODE*)VOBJECT(vec)), PrioBorder ); /* TODO: cancel this line; its only for beauty in checks */
 			#endif
 			DDD_XferPrioChange( PARHDR(vec), PrioBorder );
+
+			for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+				MVALUE(mat,mc) = 0.0;
 		}
 		/* elements with old ghostprios cause errors in check; but that's ok */
 		DDD_XferEnd();
