@@ -742,7 +742,7 @@ static void IFDisplay (DDD_IF i)
 
   if (theIF[i].name[0]!=0)
   {
-    sprintf(cBuffer, "        '%s'\n", theIF[i].name);
+    sprintf(cBuffer, "|       '%s'\n", theIF[i].name);
     DDD_PrintLine(cBuffer);
   }
 
@@ -778,6 +778,14 @@ void DDD_IFDisplay (DDD_IF *_ifId)
 {
   DDD_IF ifId = *_ifId;
 #endif
+
+  if (ifId<0 || ifId>=nIFs)
+  {
+    sprintf(cBuffer, "invalid IF %02d in DDD_IFDisplay", ifId);
+    DDD_PrintError('W', 4050, cBuffer);
+    return;
+  }
+
 
   sprintf(cBuffer, "|\n| DDD_IF-Info for proc=%03d\n", me);
   DDD_PrintLine(cBuffer);
