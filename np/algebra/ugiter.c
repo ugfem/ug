@@ -59,7 +59,6 @@
 /* switch on blasm calls */
 #undef _SPARSE_
 
-
 #define SMALL_DET                       1e-15
 #define MAX_DEPTH           MAX_NODAL_VECTORS
 #define V_BVNUMBER(v,n)         (VINDEX(v)/n)
@@ -2668,7 +2667,7 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
               for (m=0; m<nc; m++)
                 sum += fabs(CorMat[l*nc+m]*j_Normalization[l]*k_Normalization[m]);
               if (sum>TypeThresh[l])
-                if (CreateExtraConnection(g,vj,vk)==NULL)
+                if ((Mjk=CreateExtraConnection(g,vj,vk))==NULL)
                   REP_ERR_RETURN (NUM_OUT_OF_MEM)
                   else
                     break;
