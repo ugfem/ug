@@ -11164,7 +11164,7 @@ static INT SymListCommand (INT argc, char **argv)
       /* print all vectors */
       for (vd = GetFirstVector(theMG); vd != NULL; vd = GetNextVector(vd))
       {
-
+        DisplayVecDataDesc(vd,buffer);
         UserWrite(buffer);
       }
       return (OKCODE);
@@ -11172,6 +11172,7 @@ static INT SymListCommand (INT argc, char **argv)
     for (vd = GetFirstVector(theMG); vd != NULL; vd = GetNextVector(vd))
       if (strcmp(ENVITEM_NAME(vd),name)==0)
       {
+        DisplayVecDataDesc(vd,buffer);
         UserWrite(buffer);
         return (OKCODE);
       }
