@@ -67,6 +67,8 @@
 #define F 0
 
 #define NUOFCLMS 60
+#define NU_SFCES_BNDP 6
+
 #define FALS 0
 #define TRU 1
 
@@ -81,6 +83,8 @@ static EXCHNG_TYP2 ExchangeVar_2;
 static EXCHNG_TYP2 *ExchangeVar_2_Pointer;
 static INT SFE_p, LI_p	;
 static INT nmb_of_trias_of_sf; /*wird verwendet in Ansys2lgmCreateTriaOrientations*/
+
+static nbofnds;
 
 /*just for debugging*/
 SD_TYP *sd_global;
@@ -181,6 +185,7 @@ static INT *el_array;
 	/*      NbourElem_ijk, NbourElem_ijl, NbourElemt_jkl and NbourElem_ilk          */
 static DOUBLE *n_koord_array_UG;
 static INT *point_array;
+static INT *point_array_UG_CAD;
 static int nmbOfTetrhdrOfThisSbd;
 static int nmbOfSidesOfThisSbd;
 static int *el_besucht_array;
@@ -906,7 +911,7 @@ INT ReadAnsysFile(char *filename)
 	INT offsSGI;
 	INT offsHP;
 	INT offsMac;
-	INT nbofnds,nbofelms;
+	INT nbofelms;
 	INT cntbnodes,cntinodes;
 	INT idlist[4];
 	
@@ -1081,6 +1086,15 @@ INT ReadAnsysFile(char *filename)
 		return(1);
 	}
 	memset(point_array,0,(statistik[0]+1)*sizeof(INT));
+/***************/
+/* point_array_UG_CAD */
+	point_array_UG_CAD = GetTmpMem(theHeap,(statistik[0])*sizeof(INT),ANS_MarkKey);
+	if ( point_array_UG_CAD == NULL ) 
+	{ 
+		PrintErrorMessage('E',"cadconvert"," ERROR: No memory for point_array_UG_CAD");
+		return(1);
+	}
+	memset(point_array,0,(statistik[0])*sizeof(INT));
 /*******************/
 /* UGID_NdPtrarray */
 UGID_NdPtrarray = GetTmpMem(theHeap,(statistik[0]+1)*sizeof(NODE*),ANS_MarkKey);
@@ -1281,13 +1295,28 @@ KomponentenNamenArray = "< NOT SET IN ANSYS-FILE >";
 	{
 		if(nodeflag_array[i] == 0)	  /* inner node !!! */
 		{
-			point_array[i] = cntinodes++;
+			point_array[i] = cntinodes;
+			point_array_UG_CAD[cntinodes] = i;
+			cntinodes++;
 		}
 		else	  /* bnd node !!! */
 		{
-			point_array[i] = cntbnodes++;
+			point_array[i] = cntbnodes;
+			point_array_UG_CAD[cntbnodes] = i;
+			cntbnodes++;
 		}
 	}
+	/*Probe just for debugging :*/
+	for(i=0;i<nbofnds;i++)
+	{
+		if(point_array_UG_CAD[i] == 0)
+		{
+			PrintErrorMessage('E',"ReadCADFile","point_array_UG_CAD contains 0!");
+			return (1);
+		}
+	}
+	
+	
 /*NOT YET	
 	alpha[0]=0.0; alpha[1]=0.0;
 	beta[0] =1.0; beta[1] =1.0;
@@ -6043,6 +6072,7 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
 	if(lauf_sd_sfces == NULL)
 	{
 		PrintErrorMessage('E',"SplitSurface","lauf_sd_sfces is NULL at begin and theSurface was not found yet ");
+		
 		return (1);
 	}
 	while(SFC_SURF(lauf_sd_sfces) != theSurface)
@@ -7104,6 +7134,150 @@ INT Ansys2lgmEvalSurfaceInformations()
 
 
 
+char GetCharact(int input)
+{
+	switch(input)
+	{
+		case 0: return('0');break;
+		case 1: return('1');break;
+		case 2: return('2');break;
+		case 3: return('3');break;
+		case 4: return('4');break;
+		case 5: return('5');break;
+		case 6: return('6');break;
+		case 7: return('7');break;
+		case 8: return('8');break;
+		case 9: return('9');
+	}
+}
+
+
+/****************************************************************************/
+/*D
+   SurfaceNamer - evaluates a String out of CAD-Surface-Identifiers	
+
+   SYNOPSIS:
+   INT SurfaceNamer(double sfce_name1, double sfce_name2, char *The_String, int *mft)
+
+   PARAMETERS:
+.  sfce_name1 - Surface Identifer 1
+.  sfce_name1 - Surface Identifer 2 extra number if double surface, else 0.0
+.  The_String - reference Parameter, used for the evaluated String
+.  mft - Pointer on flag : with or without first triangle
+
+   DESCRIPTION:
+   evalates an Output String with 19+1 chars ==> necessary for the user
+   of the CAD-Interfcace to distinguish between different LGM-Surfaces
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+ INT SurfaceNamer(double sfce_name1, double sfce_name2, char *The_String, int *mft)
+ {
+ 	int hilf;
+ 
+ 
+	The_String[19] = '\0'; 
+	The_String[9] = '_';/*Trenner zwischen erster und zweiter Surface Zahl*/
+	The_String[4] = '.';/*GleitkommazahlPunkt*/
+	The_String[14] = '.';/*GleitkommazahlPunkt*/
+
+/*erster Surfaceidentifier*/	
+  /*Vorkommastellen :*/
+	/*Besetzung von The_String[0]*/
+	hilf = ( floor(sfce_name1)) / 1000;
+	The_String[0] = GetCharact(hilf);
+	
+	/*Besetzung von The_String[1]*/
+	sfce_name1 = sfce_name1 - (double)(hilf * 1000);
+	hilf = (floor(sfce_name1)) / 100;
+	The_String[1] = GetCharact(hilf);
+	
+	/*Besetzung von The_String[2]*/
+	sfce_name1 = sfce_name1 - (double)(hilf * 100);
+	hilf = (floor(sfce_name1)) / 10;
+	The_String[2] = GetCharact(hilf);
+	
+	/*Besetzung von The_String[3]*/
+	sfce_name1 = sfce_name1 - (double)(hilf * 10);
+	hilf = (floor(sfce_name1));
+	The_String[3] = GetCharact(hilf);
+
+  /*Nachkommastellen :*/
+	/*Besetzung von The_String[5]*/
+	sfce_name1 = (floor(0.5 + 10000 *(sfce_name1 - (double)hilf))/10000) * 10.0;
+	hilf = (floor(sfce_name1));
+	The_String[5] = GetCharact(hilf);
+
+	/*Besetzung von The_String[6]*/
+	sfce_name1 = (floor(0.5 + 10000 *(sfce_name1 - (double)hilf))/10000) * 10.0;
+	hilf = (floor(sfce_name1));
+	The_String[6] = GetCharact(hilf);
+	
+	/*Besetzung von The_String[7]*/
+	sfce_name1 = (floor(0.5 + 10000 *(sfce_name1 - (double)hilf))/10000) * 10.0;
+	hilf = (floor(sfce_name1));
+	The_String[7] = GetCharact(hilf);
+
+	/*Besetzung von The_String[8]*/
+	sfce_name1 = (floor(0.5 + 10000 *(sfce_name1 - (double)hilf))/10000) * 10.0;
+	hilf = (floor(sfce_name1));
+	if(hilf >0)
+	{
+		*mft = 1;
+	}
+	The_String[8] = GetCharact(hilf);
+	
+
+/*zweiter Surfaceidentifier*/	
+  /*Vorkommastellen :*/
+	/*Besetzung von The_String[10]*/
+	hilf = (floor(sfce_name2)) / 1000;
+	The_String[10] = GetCharact(hilf);
+	
+	/*Besetzung von The_String[11]*/
+	sfce_name2 = sfce_name2 - (double)(hilf * 1000);
+	hilf = (floor(sfce_name2)) / 100;
+	The_String[11] = GetCharact(hilf);
+	
+	/*Besetzung von The_String[12]*/
+	sfce_name2 = sfce_name2 - (double)(hilf * 100);
+	hilf = (floor(sfce_name2)) / 10;
+	The_String[12] = GetCharact(hilf);
+	
+	/*Besetzung von The_String[13]*/
+	sfce_name2 = sfce_name2 - (double)(hilf * 10);
+	hilf = (floor(sfce_name2));
+	The_String[13] = GetCharact(hilf);
+
+  /*Nachkommastellen :*/
+	/*Besetzung von The_String[15]*/
+	sfce_name2 = (floor(0.5 + 10000 *(sfce_name2 - (double)hilf))/10000) * 10.0;
+	hilf = (floor(sfce_name2));
+	The_String[15] = GetCharact(hilf);
+
+	/*Besetzung von The_String[16]*/
+	sfce_name2 = (floor(0.5 + 10000 *(sfce_name2 - (double)hilf))/10000) * 10.0;
+	hilf = (floor(sfce_name2));
+	The_String[16] = GetCharact(hilf);
+	
+	/*Besetzung von The_String[17]*/
+	sfce_name2 = (floor(0.5 + 10000 *(sfce_name2 - (double)hilf))/10000) * 10.0;
+	hilf = (floor(sfce_name2));
+	The_String[17] = GetCharact(hilf);
+
+	/*Besetzung von The_String[18]*/
+	sfce_name2 = (floor(0.5 + 10000 *(sfce_name2 - (double)hilf))/10000) * 10.0;
+	hilf = (floor(sfce_name2));
+	The_String[18] = GetCharact(hilf);
+
+	
+ 	return(0);
+ }/*end of SurfaceNamer*/
+
 
 
 
@@ -7135,8 +7309,19 @@ INT Ansys2lgmUpdateSbdmIDs()
 {
 	SD_TYP *sd_pointer;
 	SFC_TYP *scf_of_sbdm;
-	int i, bisherige_ID,hlp;
+	int i, bisherige_ID,hlp,rv,mit_first_tria,a,b,c;
 	SF_TYP *lauf_sfce;
+
+/*DIRKS NEU*/
+	char TheString[20];
+	
+	int cad_id[2];
+/*ALT	int lf;
+	int cad_id_gefunden[2];
+	int anzahlgefundene;
+ALT*/
+
+	
 	
 	UserWrite("\n");
 	UserWrite("-------------------------------------------\n");
@@ -7202,12 +7387,96 @@ INT Ansys2lgmUpdateSbdmIDs()
 	/*laufe ueber alle Surfaces und multipliziere die LinksRechts-Infosmit -1
 	  damit */
 	lauf_sfce = EXCHNG_TYP2_ROOT_SFC (ExchangeVar_2_Pointer);
+	/* DIRKS NEW : Ausgabe der Surfacinformationen . . .*/
+	UserWrite("\n");
+	UserWrite("\n");
+	UserWrite("\n");
+	UserWrite("-------------------------------------------\n");
+	UserWrite("CAD-Surface-ID       =>   LGM-Surface-ID \n");
+	/**********12345678901234567890*/
 	for(i=0; i<NMB_OF_SFCES(DomainInfo_Pointer); i++)
 	{
 		if(lauf_sfce != NULL)
 		{
 			SF_RIGHT_SBD(lauf_sfce) = (-1) * SF_RIGHT_SBD(lauf_sfce);
 			SF_LEFT_SBD(lauf_sfce) = (-1) * SF_LEFT_SBD(lauf_sfce);
+			
+	
+			mit_first_tria = 0;
+			if((rv = SurfaceNamer(SF_NAME1(lauf_sfce), SF_NAME2(lauf_sfce),TheString,&mit_first_tria)) == 1)
+		    {
+				UserWrite("ERROR: in Ansys2lgmUpdateSbdmIDs : SurfaceNamer returns ERROR.");
+				return (1);
+		    }
+	
+			if(mit_first_tria > 0) 
+			{
+				a = SFE_NDID1(TRIA_SFE_KN(SF_TRIAS(lauf_sfce)));
+				
+				b = SFE_NDID2(TRIA_SFE_KN(SF_TRIAS(lauf_sfce)));
+				c = SFE_NDID3(TRIA_SFE_KN(SF_TRIAS(lauf_sfce)));
+				/*Achtung, a,b,c*/
+/* ALT ...	*/			
+				/*just for debugging*/
+				/*Bestimmung des ersten Ausgabewertes der Fehlermeldung*/
+				
+				/*point_array durchlaufen und CAD-ID zu "i" suchen !!!!*/
+/*				lf = 1;
+				cad_id_gefunden[0] = F;
+				cad_id_gefunden[1] = F;
+				cad_id_gefunden[2] = F;
+				anzahlgefundene = 0;
+*/				/*TODO u.U. kann die folgende do Schleife 
+				  weggelassen werden ud durch Koordausgabe
+				  ersetzt werden*/
+/*				while( (lf <= nbofnds) && (anzahlgefundene < 3) )
+				{
+					if(point_array[lf] == a)
+					{
+						cad_id[0] = lf;
+						cad_id_gefunden[0] = T;
+						anzahlgefundene++;
+					}
+					else if(point_array[lf] == b)
+					{
+						cad_id[1] = lf;
+						cad_id_gefunden[1] = T;
+						anzahlgefundene++;
+					}
+					else if(point_array[lf] == c)
+					{
+						cad_id[2] = lf;
+						cad_id_gefunden[2] = T;
+						anzahlgefundene++;
+					}
+				
+					lf++;
+				}
+				
+				if ((cad_id_gefunden[0] == F) || (cad_id_gefunden[1] == F) || (cad_id_gefunden[2] == F))
+				{
+					PrintErrorMessage('E',"ansys2lgm","Ansys2lgmUpdateSbdmIDs : cad_id_gefunden[i] == F nicht alle gefunden");
+					return(1);
+				}
+*//* ... ALT*/		
+
+/* NEU ...*/
+			cad_id[0] = point_array_UG_CAD[a];
+			cad_id[1] = point_array_UG_CAD[b];
+			cad_id[2] = point_array_UG_CAD[c];
+/* ... NEU */
+				
+				
+				
+				UserWriteF("%s                     %d          FirstTria:%d,%d,%d\n",&(TheString[0]),i,cad_id[0],cad_id[1],cad_id[2]); 
+			}
+			else
+			{
+				UserWriteF("%s                     %d          \n",&(TheString[0]),i); 
+			}
+			/**********12345678901234567890*/
+				/* . . .DIRKS NEW : Ausgabe der Surfacinformationen */
+				
 		}
 		else
 		{
@@ -7219,15 +7488,15 @@ INT Ansys2lgmUpdateSbdmIDs()
 	
 	
 	return(0);
-}	
-	
-	
-	
+}
+
+
+
 
 /****************************************************************************/
 /*D
    Ansys2lgm - converts an ANSYS output file to an ug-understandable Domain	
-
+   
    SYNOPSIS:
    INT Ansys2lgm();
 
@@ -8347,7 +8616,7 @@ FillSubdomainInformations - fills MeshStructure for UG with Subdomaininformation
 
    PARAMETERS:
 .  theMesh - Pointer to mesh-structure
-.  SbdName - CAD-ID of the corresp. Sbd
+.  SbdName - ug_lgm_id-ID of the corresp. Sbd
 .  ug_lgm_id - LGM-ID of the corresp. Sbd
    
    DESCRIPTION:
@@ -8374,13 +8643,14 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
 	SD_TYP *sbd;
 	int nmbofsides,sides_zaehler,elems_zaehler, stelle, stelle2,help;
 	SFC_TYP *sd_sfc;
-	int ug_lgm_id_minus_1,lf,elem_lf; 
+	int lf,elem_lf; 
+	/*int ug_lgm_id_minus_1*/
 	int ug_sd_offs[3];
 	/*only for debugging */
 	int hilfszaehler;	
 	/* bestimme Nmbofsides Info aus den bestehenden Austauschstrukturen*/
 	nmbofsides = 0;sides_zaehler =0;elems_zaehler=0;;
-	ug_lgm_id_minus_1 = ug_lgm_id -1;
+	/*ug_lgm_id_minus_1 = ug_lgm_id -1;*/
 	sbd = EXCHNG_TYP2_ROOT_SBD(ExchangeVar_2_Pointer);
 	while (SD_NAME(sbd) != SbdName)
 	{
@@ -8394,49 +8664,49 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
 	}
 	/*Zuweisung Number of Sides*/
 	nmbOfSidesOfThisSbd = nmbofsides; 
-	/* TO ASK KLAUS : eine Spalte freilassen, da keine SbdID 0 ? vermutlich nein*/
-	(theMesh->nSides)[ug_lgm_id_minus_1] = nmbofsides;
+	/* TO ASK KLAUS : eine Spalte freilassen, da keine SbdID 0 ? vermutlich nein ===> DOCH*/
+	(theMesh->nSides)[ug_lgm_id] = nmbofsides;
 	
-	if(((theMesh->Side_corners)[ug_lgm_id_minus_1] = GetTmpMem(theHeap,(nmbofsides)*sizeof(INT), ANS_MarkKey)) == NULL)
+	if(((theMesh->Side_corners)[ug_lgm_id] = GetTmpMem(theHeap,(nmbofsides)*sizeof(INT), ANS_MarkKey)) == NULL)
 	{ 
-		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Side_corners)[ug_lgm_id_minus_1]");
+		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Side_corners)[ug_lgm_id]");
 		return(1);
 	}
-	memset(((theMesh->Side_corners)[ug_lgm_id_minus_1]),CORNERS_OF_BND_SIDE,(nmbofsides)*sizeof(INT));/*hier immer 3 da Tetraederseiten gemeint sind*/
+	memset(((theMesh->Side_corners)[ug_lgm_id]),CORNERS_OF_BND_SIDE,(nmbofsides)*sizeof(INT));/*hier immer 3 da Tetraederseiten gemeint sind*/
 	
-	if(((theMesh->Side_corner_ids)[ug_lgm_id_minus_1] = GetTmpMem(theHeap,(nmbofsides)*sizeof(INT*), ANS_MarkKey)) == NULL)
+	if(((theMesh->Side_corner_ids)[ug_lgm_id] = GetTmpMem(theHeap,(nmbofsides)*sizeof(INT*), ANS_MarkKey)) == NULL)
 	{ 
-		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Side_corner_ids)[ug_lgm_id_minus_1]");
+		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Side_corner_ids)[ug_lgm_id]");
 		return(1);
 	}
 	for(lf = 0; lf <nmbofsides; lf++)
 	{
-		if((((theMesh->Side_corner_ids)[ug_lgm_id_minus_1])[lf] = GetTmpMem(theHeap,(CORNERS_OF_BND_SIDE)*sizeof(INT), ANS_MarkKey)) == NULL)
+		if((((theMesh->Side_corner_ids)[ug_lgm_id])[lf] = GetTmpMem(theHeap,(CORNERS_OF_BND_SIDE)*sizeof(INT), ANS_MarkKey)) == NULL)
 		{ 
-			PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for ((theMesh->Side_corner_ids)[ug_lgm_id_minus_1])[lf]");
+			PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for ((theMesh->Side_corner_ids)[ug_lgm_id])[lf]");
 			return(1);
 		}
 	}
 	
 
 	/*elements*/
-	if(((theMesh->Element_corners)[ug_lgm_id_minus_1] = GetTmpMem(theHeap,(nmbOfTetrhdrOfThisSbd)*sizeof(INT), ANS_MarkKey)) == NULL)
+	if(((theMesh->Element_corners)[ug_lgm_id] = GetTmpMem(theHeap,(nmbOfTetrhdrOfThisSbd)*sizeof(INT), ANS_MarkKey)) == NULL)
 	{ 
-		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Element_corners)[ug_lgm_id_minus_1]");
+		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Element_corners)[ug_lgm_id]");
 		return(1);
 	}
-	memset(((theMesh->Element_corners)[ug_lgm_id_minus_1]),CORNERS_OF_ELEMENT,(nmbOfTetrhdrOfThisSbd)*sizeof(INT));/*hier immer 3 da Tetraederseiten gemeint sind*/
+	memset(((theMesh->Element_corners)[ug_lgm_id]),CORNERS_OF_ELEMENT,(nmbOfTetrhdrOfThisSbd)*sizeof(INT));/*hier immer 3 da Tetraederseiten gemeint sind*/
 
-	if(((theMesh->Element_corner_ids)[ug_lgm_id_minus_1] = GetTmpMem(theHeap,(nmbOfTetrhdrOfThisSbd)*sizeof(INT*), ANS_MarkKey)) == NULL)
+	if(((theMesh->Element_corner_ids)[ug_lgm_id] = GetTmpMem(theHeap,(nmbOfTetrhdrOfThisSbd)*sizeof(INT*), ANS_MarkKey)) == NULL)
 	{ 
-		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Element_corner_ids)[ug_lgm_id_minus_1]");
+		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Element_corner_ids)[ug_lgm_id]");
 		return(1);
 	}
 	for(lf = 0; lf <nmbOfTetrhdrOfThisSbd; lf++)
 	{
-		if((((theMesh->Element_corner_ids)[ug_lgm_id_minus_1])[lf] = GetTmpMem(theHeap,(CORNERS_OF_ELEMENT)*sizeof(INT), ANS_MarkKey)) == NULL)
+		if((((theMesh->Element_corner_ids)[ug_lgm_id])[lf] = GetTmpMem(theHeap,(CORNERS_OF_ELEMENT)*sizeof(INT), ANS_MarkKey)) == NULL)
 		{ 
-			PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for ((theMesh->Element_corner_ids)[ug_lgm_id_minus_1])[lf]");
+			PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for ((theMesh->Element_corner_ids)[ug_lgm_id])[lf]");
 			return(1);
 		}
 	}
@@ -8457,7 +8727,7 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
 			/*trage die 4 ElementNdIDs ein*/
 			for (lf=0; lf<4; lf++)
 			{
-				(((theMesh->Element_corner_ids)[ug_lgm_id_minus_1])[elems_zaehler])[lf] = point_array[el_array[stelle]];
+				(((theMesh->Element_corner_ids)[ug_lgm_id])[elems_zaehler])[lf] = point_array[el_array[stelle]];
 				stelle++;
 			}
 			
@@ -8484,7 +8754,7 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
 						}/*"switch (lf)"*/	
 						for (help=0; help<3; help++)/*ueber die 3 sidenodeIDs*/
 						{
-							(((theMesh->Side_corner_ids)[ug_lgm_id_minus_1])[sides_zaehler])[help] = point_array[el_array[stelle2 + ug_sd_offs[help]]];
+							(((theMesh->Side_corner_ids)[ug_lgm_id])[sides_zaehler])[help] = point_array[el_array[stelle2 + ug_sd_offs[help]]];
 						}
 						hilfszaehler ++;	
 						sides_zaehler ++;
@@ -8513,6 +8783,333 @@ int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id
 
 	return(0);
 }/*end of FillSubdomainInformations*/
+
+
+
+
+/****************************************************************************/
+/*
+FillBndPointInformations - fills the  BNDP-Part of the lgmExchangestructure
+   
+   SYNOPSIS:
+   int FillBndPointInformations(LGM_MESH_INFO *theMesh, int *bnd_pnt_srfc, int *bnd_pnt_cntr, int *bnd_pnt_cor_TrID, int *bnd_pnt_case)
+
+   PARAMETERS:
+.  theMesh - mesh structure which will be filled.
+.  bnd_pnt_srfc - includes all surfaces to each BNDP.
+.  bnd_pnt_cntr - includes numbers of surfaces of each BNDP.
+.  bnd_pnt_cor_TrID - includes triangleIDs of each BNDPsurfaceRelation.
+.  bnd_pnt_case - includes caseIDs of each BNDPsurfaceTriangleRelation.
+   
+   DESCRIPTION:
+   Using the input data structures bnd_pnt_srfc, bnd_pnt_cntr, bnd_pnt_cor_TrID and bnd_pnt_case
+   FillBndPointInformations fills the  BNDP-Part of the lgmExchangestructure
+   
+   RETURN VALUE:
+   INT
+.n      0 if ok 
+.n      1 if read error.						
+   
+   SEE ALSO:
+ */
+/****************************************************************************/
+int FillBndPointInformations(LGM_MESH_INFO *theMesh, int *bnd_pnt_srfc, int *bnd_pnt_cntr, int *bnd_pnt_cor_TrID, int *bnd_pnt_case)
+{
+	 /* int nBndP;*/                       /* nb. of boundary points              */
+    /* int *BndP_nSurf;*/                 /* nb. of surfaces per bound. point    */
+    /* int **BndP_SurfID;*/               /* id of each surface                  */
+    /* int **BndP_Cor_TriaID;*/           /* id of corresponding triangle of each surface*/
+    /* float ***BndP_lcoord;*/            /* local coord of BndP on each surface */
+    
+    int b,s,stelle;
+    /* Speicher holen für int *BndP_nSurf*/
+	if((theMesh->BndP_nSurf = GetTmpMem(theHeap,statistik[1]*sizeof(INT), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for theMesh->BndP_nSurf !!!");
+		return(1);
+	}
+	
+    /* Speicher holen für int **BndP_SurfID*/
+	if((theMesh->BndP_SurfID = GetTmpMem(theHeap,statistik[1]*sizeof(INT*), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for theMesh->BndP_SurfID !!!");
+		return(1);
+	}
+
+    /* Speicher holen für int **BndP_Cor_TriaID*/
+	if((theMesh->BndP_Cor_TriaID = GetTmpMem(theHeap,statistik[1]*sizeof(INT*), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for theMesh->BndP_Cor_TriaID !!!");
+		return(1);
+	}
+
+    /* Speicher holen für int ***BndP_lcoord*/
+	if((theMesh->BndP_lcoord = GetTmpMem(theHeap,statistik[1]*sizeof(float**), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for theMesh->BndP_lcoord !!!");
+		return(1);
+	}
+	
+	/* Lauf über die statistik[1] BoundaryPoints . . .*/
+    for(b = 0; b < statistik[1]; b++)
+    {
+	    /* Anzahl Surfaces je BndP setzen */
+    	(theMesh->BndP_nSurf)[b] = bnd_pnt_cntr[b];
+
+	    /* Speicher holen für int *BndP_SurfID */
+		if(((theMesh->BndP_SurfID)[b] = GetTmpMem(theHeap,bnd_pnt_cntr[b]*sizeof(INT), ANS_MarkKey)) == NULL)
+		{ 
+			PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for (theMesh->BndP_SurfID)[b] !!!");
+			return(1);
+		}
+		
+	    /* Speicher holen für int *BndP_Cor_TriaID */
+		if(((theMesh->BndP_Cor_TriaID)[b] = GetTmpMem(theHeap,bnd_pnt_cntr[b]*sizeof(INT), ANS_MarkKey)) == NULL)
+		{ 
+			PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for (theMesh->BndP_Cor_TriaID)[b] !!!");
+			return(1);
+		}
+		
+	    /* Speicher holen für int **BndP_lcoord */
+		if(((theMesh->BndP_lcoord)[b] = GetTmpMem(theHeap,bnd_pnt_cntr[b]*sizeof(float*), ANS_MarkKey)) == NULL)
+		{ 
+			PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for (theMesh->BndP_lcoord)[b] !!!");
+			return(1);
+		}
+
+		stelle = NU_SFCES_BNDP * b;
+		for (s = 0; s < bnd_pnt_cntr[b]; s++)
+		{
+	    	/*  einen der bnd_pnt_cntr[b] Surface-IDs fuer den b-ten BndP setzen */
+	    	((theMesh->BndP_SurfID)[b])[s] = bnd_pnt_srfc[stelle];
+	    	/*  die zugehörige TriangleID setzen */
+	    	((theMesh->BndP_Cor_TriaID)[b])[s] = bnd_pnt_cor_TrID[stelle];
+	    	/*Speicher holen für die zugehörigen lokalen Koordinaten *BndP_lcoord */
+			if((((theMesh->BndP_lcoord)[b])[s] = GetTmpMem(theHeap,NMBOFLOCLCOORDS*sizeof(float), ANS_MarkKey)) == NULL)
+			{ 
+				PrintErrorMessage('E',"FillBndPointInformations"," ERROR: No memory for ((theMesh->BndP_lcoord)[b])[s] !!!");
+				return(1);
+			}
+			/*lokaleKoordinaten setzen*/
+			switch (bnd_pnt_case[stelle]) 
+			{
+				case 0: 
+					(((theMesh->BndP_lcoord)[b])[s])[0] = 0.0;
+					(((theMesh->BndP_lcoord)[b])[s])[1] = 0.0;
+					break;
+				case 1: 
+					(((theMesh->BndP_lcoord)[b])[s])[0] = 1.0;
+					(((theMesh->BndP_lcoord)[b])[s])[1] = 0.0;
+					break;
+				case 2: 
+					(((theMesh->BndP_lcoord)[b])[s])[0] = 0.0;
+					(((theMesh->BndP_lcoord)[b])[s])[1] = 1.0;
+					break;
+				default:	
+					PrintErrorMessage('E',"FillBndPointInformations","kein Standardfall <0,1,2> bzgl.lok. Koords");
+					return (1);
+			}	
+	    	stelle++;
+		}
+    }	/* endof Lauf über die statistik[1] BoundaryPoints . . .*/
+	return(0);
+}/*end of FillBndPointInformations*/
+
+
+
+/****************************************************************************/
+/*
+EvalBndPointInformations - reads necessary informations for boundary points
+   
+   SYNOPSIS:
+   int	EvalBndPointInformations(LGM_MESH_INFO *theMesh)
+
+   PARAMETERS:
+.  theMesh - mesh structure which will be filled.
+   
+   DESCRIPTION:
+   reads necessary informations for boundary points
+   
+   RETURN VALUE:
+   INT
+.n      0 if ok 
+.n      1 if read error.						
+   
+   SEE ALSO:
+ */
+/****************************************************************************/
+int	EvalBndPointInformations(LGM_MESH_INFO *theMesh)
+{
+	int *boundary_point_counter;/*zählt Anzahl Surfaces pro BndP*/
+	int *boundary_point_surface_array;/*beinhaltet Surfaces für jeden BndPoint*/
+	int *boundary_point_case_array;/*beinhaltet die Fallzahl <1,2 oder3> für jede BNDPSFC-Rel.*/
+	int *boundary_point_corresp_TriaID_array;/*beinhaltet zu jeder BNDP-Sfce Relation die zugeh. TriaID*/
+	int Sfc_ID, Tria_ID, i, BndPID, BndPID_UG, stelle, maxstelle,einfuegestellegefunden, gibtsschon ;
+	SF_TYP *Surface;
+	TRIANGLE_TYP *Triangle;
+	int cad_id;
+/*alt	int lf, cad_id_gefunden;*/
+
+
+	/* Fetch Memory ...*/
+	
+	boundary_point_counter = GetTmpMem(theHeap,statistik[1]*sizeof(int),ANS_MarkKey);
+	if ( boundary_point_counter == NULL ) 
+	{ 
+		PrintErrorMessage('E',"ansys2lgm"," ERROR: No memory for boundary_point_counter in EvalBndPointInformations ");
+		return(1);
+	}
+	memset(boundary_point_counter,0,(statistik[1])*sizeof(int));
+
+	boundary_point_surface_array = GetTmpMem(theHeap,statistik[1]*NU_SFCES_BNDP*sizeof(int),ANS_MarkKey);
+	if ( boundary_point_surface_array == NULL ) 
+	{ 
+		PrintErrorMessage('E',"ansys2lgm"," ERROR: No memory for boundary_point_surface_array in EvalBndPointInformations ");
+		return(1);
+	}
+	/*Achtung Init mit -1 da Surface "0" existiert*/
+	memset(boundary_point_surface_array,-1,(statistik[1])*NU_SFCES_BNDP*sizeof(int));
+	
+	boundary_point_case_array = GetTmpMem(theHeap,statistik[1]*NU_SFCES_BNDP*sizeof(int),ANS_MarkKey);
+	if ( boundary_point_case_array == NULL ) 
+	{ 
+		PrintErrorMessage('E',"ansys2lgm"," ERROR: No memory for boundary_point_case_array in EvalBndPointInformations ");
+		return(1);
+	}
+	/*Achtung Init mit -1, da es den Fall "0" gibt*/
+	memset(boundary_point_case_array,-1,(statistik[1])*NU_SFCES_BNDP*sizeof(int));
+
+	boundary_point_corresp_TriaID_array = GetTmpMem(theHeap,statistik[1]*NU_SFCES_BNDP*sizeof(int),ANS_MarkKey);
+	if ( boundary_point_corresp_TriaID_array == NULL ) 
+	{ 
+		PrintErrorMessage('E',"ansys2lgm"," ERROR: No memory for boundary_point_corresp_TriaID_array in EvalBndPointInformations ");
+		return(1);
+	}
+	/*Achtung Init mit -1 da es Trias mit ID "0" gibt*/
+	memset(boundary_point_corresp_TriaID_array,-1,(statistik[1])*NU_SFCES_BNDP*sizeof(int));
+	
+	
+	/*Laufe über die Surfaces*/
+	Surface = EXCHNG_TYP2_ROOT_SFC(ExchangeVar_2_Pointer); 
+	for (Sfc_ID = 0; Sfc_ID < NMB_OF_SFCES(DomainInfo_Pointer); Sfc_ID++)
+	{
+		/*just for debugging - kann später gelöscht werden*/
+		if (Surface == NULL)
+		{
+			PrintErrorMessage('E',"EvalBndPointInformations","Surface-Laufpointer is NULL !!");
+			return (1);
+		}
+		
+		/*Laufe über die bereits orientierten Triangles jeder Surface*/
+		Triangle = SF_TRIAS(Surface);
+		for(Tria_ID = 0; Tria_ID < SF_NMB_OF_TRIAS(Surface); Tria_ID++)
+		{
+			/*just for debugging - kann später gelöscht werden*/
+			if (Triangle == NULL)
+			{
+				PrintErrorMessage('E',"EvalBndPointInformations","Triangle-Laufpointer is NULL !!");
+				return (1);
+			}
+			
+			/*Laufe über die 3 BndPoints*/
+			for(i=0; i<3; i++)
+			{
+				BndPID_UG = (TRIA_SFE_KN(Triangle))->nodeid[i];
+				/*BndPID_UG =	point_array[BndPID];*/
+				
+				/*laufe beginnend bei boundary_point_surface_array[BndPID_UG*NU_SFCES_BNDP]
+				bis zum ersten unbesetzten Feld <-1 !> und prüfe dabei, ob es
+				diese BndP-Surface-Relation nicht schon gibt ...*/
+				stelle = NU_SFCES_BNDP * BndPID_UG;
+				maxstelle = stelle + NU_SFCES_BNDP;
+				gibtsschon = 0; einfuegestellegefunden = -1;
+				do
+				{
+					if(boundary_point_surface_array[stelle] == -1)/*wenn noch kein SfcID-Eintrag*/
+					{
+						einfuegestellegefunden = stelle;
+					}
+					else if(boundary_point_surface_array[stelle] == Sfc_ID)/*wenn genau diese Surface bereits eingetragen wurde*/
+					{
+						gibtsschon = 1;
+					}
+					else
+					{
+						stelle++;
+					}
+				}while((einfuegestellegefunden == -1) && (gibtsschon == 0) && (stelle < maxstelle));
+				
+				if(stelle == maxstelle)
+				{
+					PrintErrorMessage('E',"ansys2lgm"," NU_SFCES_BNDP ist zu klein in EvalBndPointInformations");
+					return(1);
+				}
+				else if(gibtsschon == 0) /*wenn es die Surface bei diesem BNDP noch nicht gibt*/
+				{
+					/*just for debug : dann muss aber auch eine Einfuegestelle gefunden worden sein*/
+					if(einfuegestellegefunden == -1)
+					{
+						PrintErrorMessage('E',"ansys2lgm","<einfuegestellegefunden == -1> kann nicht sein in EvalBndPointInformations");
+						return(1);
+					}
+					/*Es wird eine neue BndP-Surface-Relation eingetragen ... */
+					boundary_point_surface_array[einfuegestellegefunden] = Sfc_ID;
+					boundary_point_counter[BndPID_UG] ++;
+					boundary_point_corresp_TriaID_array[einfuegestellegefunden] = Tria_ID;
+					boundary_point_case_array[einfuegestellegefunden] = i; /*Fall 0,1 oder 2; je nachdem*/
+				} /*von: wenn es die Surface bei diesem BNDP noch nicht gibt*/
+			}/*vom Lauf über die 3 BoundaryPoints*/
+			Triangle = TRIA_NEXT(Triangle);
+		}/* vom Lauf über die Triangles der Surface */
+		Surface = SFC_NEXT(Surface);		
+	}/* vom Lauf über die Surfaces*/
+	
+	/*just for debug Probe*/
+	/*Probe: Ist ein BoundaryPoint unbesetzt geblieben ?*/
+	for(i = 0; i< statistik[1]; i++)
+	{
+		if(boundary_point_counter[i] == 0) /*d.h. Gehört dieser BoundaryPoint zu keiner Surface ?*/
+		{
+			/*just for debugging*/
+			/*Bestimmung des ersten Ausgabewertes der Fehlermeldung*/
+			
+			/*point_array durchlaufen und CAD-ID zu "i" suchen !!!!*/
+/*	alt		lf = 1;
+			cad_id_gefunden = F;
+			do 
+			{
+				if(point_array[lf] == i)
+				{
+					cad_id = lf;
+					cad_id_gefunden = T;
+				}
+				lf++;
+			}while((lf <= nbofnds)&&(cad_id_gefunden == F));
+			
+			if (cad_id_gefunden == F)
+			{
+				PrintErrorMessage('E',"ansys2lgm","EvalBndPointInformations : cad_id_gefunden == F");
+				return(1);
+			}*/
+			
+/*neu :*/
+			cad_id = point_array_UG_CAD[i];
+			
+			
+			UserWriteF("CAD_BndP%d bzw. UGBndP%d gehört zu keiner Surface ?!?! ERROR in EvalBndPointInformations\n",(int)cad_id,(int)i);
+			return(1);
+		}
+	}
+	
+	/* Nun können die neuen Komponenten von lgm_mesh_info gefüllt werden: */
+	if (FillBndPointInformations(theMesh,boundary_point_surface_array,boundary_point_counter,boundary_point_corresp_TriaID_array,boundary_point_case_array) != 0) 
+	{
+		PrintErrorMessage('E',"EvalBndPointInformations->FillBndPointInformations","execution failed");
+		return (1);
+	}
+	
+	return(0);
+}/*end of EvalBndPointInformations*/
 
 
 
@@ -8584,37 +9181,37 @@ int LGM_ANSYS_ReadMesh (HEAP *Heappointer, LGM_MESH_INFO *theMesh, int MarkKey) 
 	/*the number of Subdomains:*/
 	theMesh->nSubDomains = NMB_OF_SBDMS(DomainInfo_Pointer);
 	/*allocate array for nmbofsides per sbd*/
-	if((theMesh->nSides = GetTmpMem(theHeap,(NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT), ANS_MarkKey)) == NULL)
+	if((theMesh->nSides = GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT), ANS_MarkKey)) == NULL)
 	{ 
 		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->nSides !!!");
 		return(1);
 	}
 	/*allocate array for nmbofelems per sbd*/
-	if((theMesh->nElements = GetTmpMem(theHeap,(NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT), ANS_MarkKey)) == NULL)
+	if((theMesh->nElements = GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT), ANS_MarkKey)) == NULL)
 	{ 
 		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->nElements !!!");
 		return(1);
 	}
 	/*allocate array for SideCorners*/
-	if((theMesh->Side_corners = GetTmpMem(theHeap,(NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int*), ANS_MarkKey)) == NULL)
+	if((theMesh->Side_corners = GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int*), ANS_MarkKey)) == NULL)
 	{ 
 		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->nSides !!!");
 		return(1);
 	}
 	/*allocate array for SideCornerIds*/
-	if((theMesh->Side_corner_ids = GetTmpMem(theHeap,(NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int**), ANS_MarkKey)) == NULL)
+	if((theMesh->Side_corner_ids = GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int**), ANS_MarkKey)) == NULL)
 	{ 
 		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->Side_corner_ids !!!");
 		return(1);
 	}
 	/*allocate array for Element_corners*/
-	if((theMesh->Element_corners = GetTmpMem(theHeap,(NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int*), ANS_MarkKey)) == NULL)
+	if((theMesh->Element_corners = GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int*), ANS_MarkKey)) == NULL)
 	{ 
 		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->Element_corners !!!");
 		return(1);
 	}
 	/*allocate array for Element_corner_ids*/
-	if((theMesh->Element_corner_ids = GetTmpMem(theHeap,(NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int**), ANS_MarkKey)) == NULL)
+	if((theMesh->Element_corner_ids = GetTmpMem(theHeap,(1 + NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int**), ANS_MarkKey)) == NULL)
 	{ 
 		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->Element_corner_ids !!!");
 		return(1);
@@ -8675,7 +9272,7 @@ int LGM_ANSYS_ReadMesh (HEAP *Heappointer, LGM_MESH_INFO *theMesh, int MarkKey) 
 			}
 			
 			
-			(theMesh->nElements)[i-1] = nmbOfTetrhdrOfThisSbd; 
+			(theMesh->nElements)[i] = nmbOfTetrhdrOfThisSbd; 
 			
 			if (FillSubdomainInformations(theMesh,SbdName,i) != 0) /*uses nmbOfTetrhdrOfThisSbd and el_besucht_array*/
 			{
@@ -8704,7 +9301,13 @@ int LGM_ANSYS_ReadMesh (HEAP *Heappointer, LGM_MESH_INFO *theMesh, int MarkKey) 
 		}
 	}
 	
-    UserWrite("ERROR: in LGM_ANSYS_ReadMesh: return1, da not finshed yet");
+	if (EvalBndPointInformations(theMesh) != 0) 
+	{
+		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh/EvalBndPointInformations","execution failed");
+		return (1);
+	}
+	
+    UserWrite("ERROR: in LGM_ANSYS_ReadMesh: return1, da not finshed yet\n");
     return (1);
     /* TODO  BoundaryPoints !!! DIRKS NEU return 0  !!!*/
 }
