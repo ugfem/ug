@@ -3413,9 +3413,9 @@ INT DisposeTopLevel (MULTIGRID *theMG)
   theGrid = GRID_ON_LEVEL(theMG,l);
 
   /* is level empty */
-  if (FIRSTELEMENT(theGrid)!=NULL) DO_NOT_DISPOSE;
-  if (FIRSTVERTEX(theGrid)!=NULL) DO_NOT_DISPOSE;
-  if (FIRSTNODE(theGrid)!=NULL) DO_NOT_DISPOSE;
+  if (PFIRSTELEMENT(theGrid)!=NULL) DO_NOT_DISPOSE;
+  if (PFIRSTVERTEX(theGrid)!=NULL) DO_NOT_DISPOSE;
+  if (PFIRSTNODE(theGrid)!=NULL) DO_NOT_DISPOSE;
 
         #ifdef ModelP
   dispose = UG_GlobalMinINT(dispose);
@@ -3473,16 +3473,16 @@ INT DisposeGrid (GRID *theGrid)
   if (GLEVEL(theGrid)==0 && theMG->bottomLevel<0) return (1);
 
   /* clear level */
-  while (FIRSTELEMENT(theGrid)!=NULL)
-    if (DisposeElement(theGrid,FIRSTELEMENT(theGrid),1))
+  while (PFIRSTELEMENT(theGrid)!=NULL)
+    if (DisposeElement(theGrid,PFIRSTELEMENT(theGrid),1))
       return(2);
 
-  while (FIRSTNODE(theGrid)!=NULL)
-    if (DisposeNode(theGrid,FIRSTNODE(theGrid)))
+  while (PFIRSTNODE(theGrid)!=NULL)
+    if (DisposeNode(theGrid,PFIRSTNODE(theGrid)))
       return(2);
 
-  while (FIRSTVERTEX(theGrid)!=NULL)
-    if (DisposeVertex(theGrid,FIRSTVERTEX(theGrid)))
+  while (PFIRSTVERTEX(theGrid)!=NULL)
+    if (DisposeVertex(theGrid,PFIRSTVERTEX(theGrid)))
       return(4);
 
   /* level 0 can not be deleted */
@@ -3639,6 +3639,15 @@ INT DisposeAMGLevels (MULTIGRID *theMG)
 
 INT DisposeMultiGrid (MULTIGRID *theMG)
 {
+  INT level;
+
+  if (DisposeAMGLevels(theMG))
+    RETURN(1);
+
+  for (level = TOPLEVEL(theMG); level >= 0; level --)
+    if (DisposeGrid(GRID_ON_LEVEL(theMG,level)))
+      RETURN(1);
+
   if (MGHEAP(theMG)!=NULL)
     free(MGHEAP(theMG));
 
