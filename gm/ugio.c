@@ -158,7 +158,7 @@ static char rcsid[] = "$Header$";
 /*																			*/
 /****************************************************************************/
 
-static INT MGSetVectorClasses (MULTIGRID *theMG)
+INT MGSetVectorClasses (MULTIGRID *theMG)
 {
   INT i;
   GRID *theGrid;
@@ -549,6 +549,8 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
   long version;
   INT point,onside;
   unsigned INT cw1, cw2;
+  INT maxNsubdomain,minNsubdomain,Nsubdomain,err;
+  INT *counter;
 
   /* open file */
   if (gridpaths_set)
@@ -776,21 +778,69 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
   }
 
   /* check if all pointers are correctly defined */
+  maxNsubdomain = -MAX_I;
+  minNsubdomain =  MAX_I;
   for (i=0; i<n; i++)
   {
-    if (theMG->segments[i].theSegment==NULL)
+    theSegment = theMG->segments[i].theSegment;
+
+    if (theSegment==NULL)
     {
-      PrintErrorMessage('E',"LoadMultiGrid","segment not defined");
+      PrintErrorMessage('E',"LoadMultiGrid","boundary segment not found");
       DisposeMultiGrid(theMG);
-      fclose(stream); return(NULL);
+      return(NULL);
     }
     if (theMG->segments[i].theBoundaryCondition==NULL)
     {
-      PrintErrorMessage('E',"LoadMultiGrid","boundary condition not defined");
+      PrintErrorMessage('E',"LoadMultiGrid","boundary conditionnot found");
       DisposeMultiGrid(theMG);
-      fclose(stream); return(NULL);
+      return(NULL);
     }
+    if (theSegment->left==theSegment->right)
+    {
+      sprintf(buffer,"ERROR: left==right for segment %d",i);
+      PrintErrorMessage('E',"LoadMultiGrid",buffer);
+      DisposeMultiGrid(theMG);
+      return(NULL);
+    }
+    maxNsubdomain = MAX(maxNsubdomain,MAX(theSegment->left,theSegment->right));
+    minNsubdomain = MIN(minNsubdomain,MIN(theSegment->left,theSegment->right));
   }
+
+  /* check subdomains */
+
+  if (minNsubdomain!=0)
+  {
+    PrintErrorMessage('E',"LoadMultiGrid","ERROR: subdomain IDs must be >= 0");
+    DisposeMultiGrid(theMG);
+    return(NULL);
+  }
+
+  /* get storage for subdomain counters */
+  Nsubdomain = maxNsubdomain+1;
+  Mark(theHeap,FROM_TOP);
+  counter = (INT *) GetMem(theHeap,Nsubdomain*sizeof(INT),FROM_TOP);
+  for (i=0; i<Nsubdomain; i++) counter[i] = 0;
+  for (i=0; i<n; i++)
+  {
+    counter[LEFT(theMG->segments+i)]++;
+    counter[RIGHT(theMG->segments+i)]++;
+  }
+  err = 0;
+  for (i=0; i<Nsubdomain; i++)
+    if (counter[i]<=0)
+    {
+      err++;
+      sprintf(buffer,"ERROR: subdomain ID %d not used\n",i);
+      UserWrite(buffer);
+    }
+  Release(theHeap,FROM_TOP);
+  if (err)
+  {
+    free(theHeap);
+    return (NULL);
+  }
+  theMG->numOfSubdomains = Nsubdomain;
 
   /* load corner vertices ids */
   n = theDomain->numOfCorners;
@@ -1042,6 +1092,8 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
       NFATHER(theNode) = (NODE *) i3;
       SONNODE(theNode) = (NODE *) i4;
       MYVERTEX(theNode) = (VERTEX *) i5;
+      if (CLASS(theNode)>=2)
+        TOPNODE(MYVERTEX(theNode)) = theNode;
 
       if (version<=23)                   /* then we have data fields (possibly empty) */
       {
