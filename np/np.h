@@ -97,6 +97,7 @@
 #define VD_NCMPS_IN_TYPE(vd,tp)             (VD_NCMPPTR(vd)[tp])
 #define VD_CMP_OF_TYPE(vd,tp,i)             ((vd)->CmpsInType[tp][i])
 #define VD_CMPPTR_OF_TYPE(vd,tp)            ((vd)->CmpsInType[tp])
+#define VD_CMPPTR_OF_TYPE(vd,tp)            ((vd)->CmpsInType[tp])
 
 #define VD_IS_SCALAR(vd)                    ((vd)->IsScalar)
 #define VD_SCALCMP(vd)                                          ((vd)->ScalComp)
@@ -140,8 +141,10 @@
 #define VS_CMP_AT_OFFSET(vs,os,i)                       (vs[(os)+(i)])
 #define VS_CMP_OF_TYPE(vs,vd,tp,i)                      VS_CMP_AT_OFFSET(vs,VD_OFFSET(vd,tp),i)
 
-#define VM_COMP_NAMEPTR(s)                 ((s)->compNames)
-#define VM_COMP_NAME(s,i)                  (VM_COMP_NAMEPTR(s)[i])
+#define VM_COMP_NAMEPTR(p)                 ((p)->compNames)
+#define VM_COMP_NAME(p,i)                  (VM_COMP_NAMEPTR(p)[i])
+#define VM_COMPPTR(p)                      ((p)->Components)
+#define VM_LOCKED(p)                       ((p)->locked)
 
 /****************************************************************************/
 /*																			*/
@@ -203,11 +206,13 @@ typedef INT (*InterpolateSolutionProcPtr)(GRID *, const VECDATA_DESC *);
 /****************************************************************************/
 
 #ifdef ModelP
-INT l_vector_consistent (GRID *g, const VECDATA_DESC *x);
-INT a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
-INT l_vector_collect    (GRID *g, const VECDATA_DESC *x);
-INT a_vector_collect    (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
-INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT offdiag);
+INT l_vector_consistent   (GRID *g, const VECDATA_DESC *x);
+INT a_vector_consistent   (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
+INT l_vector_collect      (GRID *g, const VECDATA_DESC *x);
+INT a_vector_collect      (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
+INT l_matrix_consistent   (GRID *g, const MATDATA_DESC *M, INT offdiag);
+INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x);
+INT l_vector_meanvalue    (GRID *g, const VECDATA_DESC *x);
 #endif
 
 /* blas level 1 (vector operations) */
@@ -429,23 +434,6 @@ NP_BASE    *GetFirstNumProcType                 (void);
 NP_BASE    *GetNextNumProcType                  (NP_BASE *);
 NP_BASE   *GetFirstNumProc                              (void);
 NP_BASE   *GetNextNumProc                               (NP_BASE *);
-
-/* helpfull functions */
-INT                     ConstructVecOffsets                     (const SHORT *NCmpInType, SHORT *offset);
-INT                     ConstructMatOffsets                     (const SHORT *RowsInType, const SHORT *ColsInType, SHORT *offset);
-INT                     FillRedundantComponentsOfVD     (VECDATA_DESC *vd);
-INT                     FillRedundantComponentsOfMD     (MATDATA_DESC *md);
-INT                     CenterInPattern                         (char *str, INT PatLen, const char *text, char p, const char *end);
-INT                     GetStrINTinRange                        (const char *str, INT min, INT max, INT *value);
-INT                     GetStrDOUBLEinRange                     (const char *str, DOUBLE min, DOUBLE max, DOUBLE *value);
-INT                     ReadVecTypeINTs                         (char *str, INT n, INT nINT[MAXVECTORS], INT theINTs[][MAXVECTORS]);
-INT                     ReadVecTypeDOUBLEs                      (char *str, INT n, INT nDOUBLE[MAXVECTORS], DOUBLE theDOUBLEs[][MAXVECTORS]);
-INT                     ReadVecTypeNUMPROCs                     (char *str, INT n, INT nNUMPROC[MAXVECTORS], NP_BASE *theNUMPROCs[][MAXVECTORS]);
-INT                     ReadVecTypeOrder                        (char *str, INT n, INT MaxPerType, INT *nOrder, INT theOrder[]);
-
-INT             PreparePCR                                      (VECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID);
-INT             PostPCR                                         (INT ID, char *path);
-INT             DoPCR                                           (INT ID, VEC_SCALAR Defect, INT PrintMode);
 
 /* miscellaneous */
 INT             ExecuteNumProc                          (NP_BASE *theNumProc, MULTIGRID *theMG, INT argc, char **argv);

@@ -39,7 +39,9 @@
 #include "nls.h"
 #include "error.h"
 
+#include "fvgeom.h"
 
+#include "udm.h"
 
 #include "initnp.h"
 
@@ -109,6 +111,12 @@ INT InitNumerics ()
 
   /* init finite volumes */
   if ((err=InitFiniteVolumeGeom())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* init user data manager */
+  if ((err=InitUserDataManager())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }
