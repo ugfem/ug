@@ -16,7 +16,7 @@ include ../machines/mk.$(ARCHDIR)
 OBJECTS = ugenv.o heaps.o fifo.o misc.o defaults.o initlow.o fileopen.o ugstruct.o debug.o
 
 # local C compiler flags
-LCFLAGS = -I . -I ../dddif
+LCFLAGS = -I .
 
 all : $(OBJECTS) Makefile.low
 	ar $(ARFLAGS) ../lib/libug$(LIBSUFFIX).a $(OBJECTS) 

@@ -5,3 +5,10 @@
 ARCHDIR = HP
 #ARCHDIR = GCC
 #ARCHDIR = SGI
+
+# edit the next line to set the basic parallel programming model
+# use SEQ when compiling sequential version
+PMODEL = SEQ
+#PMODEL = MPI
+#PMODEL = PVM
+#PMODEL = NX

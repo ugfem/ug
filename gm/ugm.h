@@ -82,6 +82,10 @@ INT              GetFreeOBJT                    ();
 INT              ReleaseOBJT                    (INT type);
 void            *GetMemoryForObject             (MULTIGRID *theMG, INT size, INT type);
 INT              PutFreeObject                  (MULTIGRID *theMG, void *object, INT size, INT type);
+#ifdef ModelP
+void            *GetMemoryLocal                 (MULTIGRID *theMG, INT size, INT type);
+INT              PutFreeObjectLocal             (MULTIGRID *theMG, void *object, INT size, INT type);
+#endif
 
 /* create basic objects */
 VERTEX          *CreateBoundaryVertex   (GRID *theGrid, VERTEX *after);

@@ -19,7 +19,7 @@ include ../ug.conf
 LCFLAGS = -I../low -I../gm -I../dddif -I../dom
 
 # object files
-OBJECTS = initddd.o memmgr.o handler.o test.o debugger.o
+OBJECTS = initddd.o memmgr.o handler.o test.o debugger.o lbrcb.o
 
 # main rules
 DDDIF : $(OBJECTS) Makefile.dddif

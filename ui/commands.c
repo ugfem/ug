@@ -45,6 +45,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <values.h>
 #include <assert.h>
 
 /* low module */
@@ -85,6 +86,12 @@
 
 /* own header */
 #include "commands.h"
+
+
+#ifdef ModelP
+#include "parallel.h"
+#endif
+
 
 /****************************************************************************/
 /*																			*/
@@ -2847,6 +2854,10 @@ static INT GListCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
 
+        #ifdef ModelP
+  if (!CONTEXT(me)) return(OKCODE);
+        #endif
+
   NO_OPTION_CHECK(argc,argv);
 
   theMG = currMG;
@@ -2921,6 +2932,10 @@ static INT NListCommand (INT argc, char **argv)
 
   /* following variables: keep type for sscanf */
   long f,t;
+
+        #ifdef ModelP
+  if (!CONTEXT(me)) return(OKCODE);
+        #endif
 
   theMG = currMG;
   if (theMG==NULL)
@@ -3086,6 +3101,10 @@ static INT EListCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   long f,t;
 
+        #ifdef ModelP
+  if (!CONTEXT(me)) return(OKCODE);
+        #endif
+
   theMG = currMG;
   if (theMG==NULL)
   {
@@ -3241,6 +3260,10 @@ static INT SelectionListCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   INT i,dataopt,boundaryopt,neighbouropt,verboseopt;
 
+        #ifdef ModelP
+  if (!CONTEXT(me)) return(OKCODE);
+        #endif
+
   theMG = currMG;
   if (theMG==NULL)
   {
@@ -3361,6 +3384,10 @@ static INT VMListCommand (INT argc, char **argv)
 
   /* following variables: keep type for sscanf */
   long f,t;
+
+        #ifdef ModelP
+  if (!CONTEXT(me)) return(OKCODE);
+        #endif
 
   theMG = currMG;
   if (theMG==NULL)
@@ -3547,6 +3574,10 @@ static INT InsertInnerNodeCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   float x[DIM_MAX];
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   NO_OPTION_CHECK(argc,argv);
 
   theMG = currMG;
@@ -3630,6 +3661,10 @@ static INT InsertBoundaryNodeCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   float x[DIM_OF_BND_MAX];
   int patch_id;
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
 
   NO_OPTION_CHECK(argc,argv);
 
@@ -3996,6 +4031,10 @@ static INT InsertElementCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   int id;
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   theMG = currMG;
   if (theMG==NULL)
   {
@@ -4236,6 +4275,10 @@ static INT RefineCommand (INT argc, char **argv)
   INT i,mode,rv;
   EVECTOR *theElemEvalDirection;
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   theMG = currMG;
   if (theMG==NULL)
   {
@@ -4369,6 +4412,10 @@ static INT MarkCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   int id,idfrom,idto,Side;
   float x,y,z;
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
 
   theMG = currMG;
   if (theMG==NULL)
@@ -6570,6 +6617,10 @@ static INT OpenWindowCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   int x,y,w,h;
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
 
   /* scan parameters */
   if (sscanf(argv[0],"openwindow %d %d %d %d",&x,&y,&w,&h)!=4)
@@ -7002,6 +7053,10 @@ static INT OpenPictureCommand (INT argc, char **argv)
 
   /* following variables: keep type for sscanf */
   int h,v,dh,dv;
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
 
 
   theWin = GetCurrentUgWindow();
@@ -7474,6 +7529,10 @@ static INT SetViewCommand (INT argc, char **argv)
 
   /* following variables: keep type for sscanf */
   float x[3];
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
 
   /* current picture */
   thePic = GetCurrentPicture();
@@ -8217,6 +8276,10 @@ static INT SetPlotObjectCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   char potname[NAMESIZE],*thePlotObjTypeName;
 
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
   /* current picture */
   thePic = GetCurrentPicture();
   if (thePic==NULL)
@@ -8360,6 +8423,10 @@ static INT PlotCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
   WORK myWork,*theWork;
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
 
   NO_OPTION_CHECK(argc,argv);
 
@@ -10252,20 +10319,20 @@ static INT PTestCommand (INT argc, char **argv)
     return (OKCODE);
   }
 
+  if (argc==2)
+    ddd_test(atoi(argv[1]), theCurrMG);
+  else
+    ddd_test(0, theCurrMG);
 
-  if (argc!=2)
-    return (CMDERRORCODE);
-
-  ddd_test(atoi(argv[1]), theCurrMG);
   return(OKCODE);
 }
 
 
 /****************************************************************************/
 /*                                                                          */
-/* Function:  FocusCommand                                                                                      */
+/* Function:  ContextCommand                                                                                    */
 /*                                                                          */
-/* Purpose:   set current processor focus				                        */
+/* Purpose:   manipulate set current processor context	                        */
 /*                                                                          */
 /* Input:     INT argc: number of arguments (incl. its own name)            */
 /*            char **argv: array of strings giving the arguments            */
@@ -10274,19 +10341,25 @@ static INT PTestCommand (INT argc, char **argv)
 /*                                                                          */
 /****************************************************************************/
 
-static INT FocusCommand (INT argc, char **argv)
+static INT ContextCommand (INT argc, char **argv)
 {
-  char buffer[20];
+  INT proc = MAXINT;
 
-  if (argc>2)
-    return (CMDERRORCODE);
-  if (argc==1)
+  /*if (p = ReadArgvOption("$+",argc,argv)) */
+
+  ReadArgvINT("context", &proc, argc, argv);
+  if (proc<0 || proc>=procs)
   {
-    sprintf(buffer,"DebugProc = %d\n",theDebugProc);
-    UserWrite(buffer);
+    if (proc!=MAXINT)
+      UserWriteF("context: invalid processor id (procs=%d)\n", procs);
+  }
+  else
+  {
+    /* switch context for proc on/off */
+    CONTEXT(proc) = 1-CONTEXT(proc);
   }
 
-  theDebugProc = atoi(argv[1]);
+  ddd_DisplayContext();
   return(OKCODE);
 }
 
@@ -10547,7 +10620,7 @@ INT InitCommands ()
 #ifdef ModelP
   /* commands for parallel version */
   if (CreateCommand("ptest",                      PTestCommand                                )==NULL) return (__LINE__);
-  if (CreateCommand("focus",                      FocusCommand                                )==NULL) return (__LINE__);
+  if (CreateCommand("context",            ContextCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("pstat",                      PStatCommand                                )==NULL) return (__LINE__);
 #endif /* ModelP */
 

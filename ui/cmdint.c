@@ -2569,15 +2569,15 @@ void CommandLoop (int argc, char **argv)
 }
 else
 {
-  if (argc<2 || argv[1][1] == 's')
+  if (TRUE /***argc<2 || argv[1][1] == 's'***/)         /* TODO quick fix */
   {
-    doneFlag = 0;
+    doneFlag = FALSE;
     while (!doneFlag)
     {
       if (doneFlag) break;
       error=ParExecCommand(inpLine);
       if (error==QUITCODE)
-        doneFlag=1;
+        doneFlag=TRUE;
     }
   }
   /* TODO: control this might be wrong in batch mode */

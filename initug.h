@@ -27,4 +27,4 @@
 /****************************************************************************/
 
 /* initialisation of the ug library */
-INT InitUg (int argc, char **argv);
+INT InitUg (int *argcp, char ***argvp);

@@ -34,9 +34,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#ifdef ModelP
-#include "parallel.h"
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -66,14 +63,19 @@ typedef int (*PrintDebugProcPtr)(const char *, ...);
 /****************************************************************************/
 
 int Debuginit           =       0;
-int Debugdddif              =       0;
+int Debugdddif              =       6;      /* temporary setting for debugging ModelP */
 int Debugdev                =       0;
 int Debuggm                 =       0;
 int Debuggraph              =       0;
 int Debuglow                =       0;
 int Debugmachines   =       0;
 int Debugnumerics   =       0;
-int Debugui                 =       0;
+int Debugui                 =       2;      /* temporary setting for debugging ModelP */
+
+
+/* from dddif/ppif.h */
+extern int me, master;
+
 
 /****************************************************************************/
 /*																			*/

@@ -6,7 +6,7 @@
 /*																			*/
 /* Purpose:   defines for parallel ugp version 3							*/
 /*																			*/
-/* Author:	  Stefan Lang                                                                           */
+/* Author:	  Stefan Lang, Klaus Birken                                                             */
 /*			  Institut fuer Computeranwendungen III                                                 */
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
@@ -34,19 +34,15 @@
 #include "heaps.h"
 #endif
 
+#ifdef ModelP
+#include "ppif.h"
+#include "ddd.h"
+#endif
+
 #ifndef __GM__
 #include "gm.h"
 #endif
 
-#ifdef ModelP
-#ifndef __PPIF__
-#include "ppif.h"
-#endif
-#endif
-
-#ifndef __DDD__
-#include "ddd.h"
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -58,66 +54,44 @@
 /*																			*/
 /****************************************************************************/
 
-#ifdef __TWODIM__
-#define TAG2TYPE(t)
-#define TYPE2TAG(t)
-#endif
 
-#ifdef __THREEDIM__
-#define TAG2TYPE(t)
-#define TYPE2TAG(t)
-#endif
+#define MAXDDDTYPES   32
+
+enum Priorities
+{
+  PrioNone   = 0,
+  PrioGhost  = 5,
+  PrioMaster = 7
+};
+
+
 
 #ifdef ModelP
-#define GetMemVector(h,s,f)       GetObjMem(TypeVector,(h),(s),(f))
-#define GetMemIVertex(h,s,f)      GetObjMem(TypeIVertex,(h),(s),(f))
-#define GetMemBVertex(h,s,f)      GetObjMem(TypeBVertex,(h),(s),(f))
-#define GetMemNode(h,s,f)         GetObjMem(TypeNode,(h),(s),(f))
-#ifdef __TWODIM__
-#define GetMemIElement(h,s,f)     GetObjMem(((tag==3) ? 4 : 6),(h),(s),(f))
-#define GetMemBElement(h,s,f)     GetObjMem(((tag==3) ? 5 : 7),(h),(s),(f))
-#endif /* __TWODIM__ */
-#ifdef __THREEDIM__
-#define GetMemIElement(h,s,f)     GetObjMem(((tag==4) ? 4 : -1),(h),(s),(f))
-#define GetMemBElement(h,s,f)     GetObjMem(((tag==4) ? 5 : -1),(h),(s),(f))
-#endif /* __THREEDIM__ */
 
 /* defines for control word entries */
-#define DDD_OFFSET  4 /* size of DDD_HEADER in unsigned INT */
 #define TOUCHED     2 /* object is eventually to be copied  */
-#define COPY        1 /* object is definetly to be copied   */
+#define COPY        1 /* object is definitely to be copied   */
 #define CLEAR       0 /* clear xfer flag					*/
 
-#define VECTOR_CTRL(p)          (p->control)
-#define VERTEX_CTRL(p)          (p->iv.control)
-#define NODE_CTRL(p)            (p->control)
-#define ELEMENT_CTRL(p)         (p->ge.control)
 
-#define VECTOR_ID(p)            (p->id)
-#define VERTEX_ID(p)            (p->iv.id)
-#define NODE_ID(p)                      (p->id)
-#define ELEMENT_ID(p)           (p->ge.id)
+/* map pointer to structure onto a pointer to its DDD_HDR */
+#define PARHDR(obj)    (&((obj)->ddd))
 
-#else   /* ModelS */
 
-#define GetMemVector(h,s,f)       GetMem(h,s,f)
-#define GetMemIVertex(h,s,f)      GetMem(h,s,f)
-#define GetMemBVertex(h,s,f)      GetMem(h,s,f)
-#define GetMemNode(h,s,f)         GetMem(h,s,f)
-#define GetMemIElement(h,s,f)     GetMem(h,s,f)
-#define GetMemBElement(h,s,f)     GetMem(h,s,f)
+/* macros for processor-synchronized output */
+#define SYNC_ALL   { int _p; for(_p=0; _p<procs; _p++) { \
+                       Synchronize(); if(_p==me) {
+#define SYNC_CONTEXT   { int _p; for(_p=0; _p<procs; _p++) { \
+                           Synchronize(); if((_p==me)&&CONTEXT(me)) {
+#define SYNC_END  }}}
 
-#define DDD_OFFSET      0 /* size of DDD_HEADER in unsigned INT */
 
-#define VECTOR_CTRL(p)          CTRL(p)
-#define VERTEX_CTRL(p)          CTRL(p)
-#define NODE_CTRL(p)            CTRL(p)
-#define ELEMENT_CTRL(p)         CTRL(p)
+#define UGTYPE(t)          (dddctrl.ugtypes[(t)])
+#define DDDTYPE(t)         (dddctrl.types[(t)])
+#define HAS_DDDHDR(t)      (dddctrl.dddObj[(t)])
+#define CONTEXT(p)         (dddctrl.context[(p)])
 
-#define VECTOR_ID(p)            ID(p)
-#define VERTEX_ID(p)            ID(p)
-#define NODE_ID(p)                      ID(p)
-#define ELEMENT_ID(p)           ID(p)
+
 #endif /* ModelP */
 
 
@@ -147,16 +121,44 @@ extern DDD_TYPE TypeTrElem, TypeTrBElem,
 
 #ifdef __THREEDIM__
 extern DDD_TYPE TypeTeElem, TypeTeBElem;
+extern DDD_TYPE TypePyElem, TypePyBElem;
+extern DDD_TYPE TypeHeElem, TypeHeBElem;
 #endif
 
 /* DDD data objects */
-extern DDD_TYPE TypeConnection;
+extern DDD_TYPE TypeMatrix;
 extern DDD_TYPE TypeVSegment;
 extern DDD_TYPE TypeEdge;
 extern DDD_TYPE TypeElementSide;
 
-/* debug processor */
-extern int theDebugProc;
+
+
+/* DDD Global Controls */
+typedef struct
+{
+  /* data from ug */
+  MULTIGRID *currMG;
+  int nodeData;
+  int edgeData;
+  int elemData;
+  int sideData;
+
+  /* data for memmgr */
+  MULTIGRID *memmgrMG;
+
+  INT ugtypes[MAXDDDTYPES];                  /* dddtype -> ugtype */
+  DDD_TYPE types[MAXOBJECTS];                /* ugtype -> dddtype */
+  int dddObj[MAXOBJECTS];
+
+  /* status of DDDIF */
+  int allTypesDefined;
+
+  /* context information, will be allocated with size=procs */
+  int  *context;
+} DDD_CTRL;
+
+extern DDD_CTRL dddctrl;
+
 #endif
 
 /****************************************************************************/
@@ -166,23 +168,26 @@ extern int theDebugProc;
 /****************************************************************************/
 
 #ifdef ModelP
+
 /* from initddd.c */
-int  InitParallel (int, char **);
+int  InitParallel (int *, char ***);
 void ExitParallel (void);
+void InitDDDTypes (void);
+void InitCurrMG (MULTIGRID *);
 
-/* from memmgr.c */
-void * GetObjMem (DDD_TYPE, HEAP *, MEM, int);
-void InitMemMgr(HEAP *);
-
-/* from debug.c */
-void ddd_pstat (int cmd);
+/* from debugger.c */
+void ddd_pstat (int);
+void ddd_DisplayContext (void);
 
 /* from test.c */
 void ddd_test ();
 
 /* from handler.c */
 void ddd_handlerInit (void);
-void InitCurrMG(MULTIGRID *MG)
-#endif /* ModelP */
 
-#endif /* PARALLEL */
+/* from lbrcb.c */
+int BalanceGrid (MULTIGRID *);
+
+
+#endif /* ModelP */
+#endif /* __PARALLEL_H__ */

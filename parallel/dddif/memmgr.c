@@ -34,11 +34,7 @@
 #include <stdio.h>
 
 #include "compiler.h"
-#include "ppif.h"
-#include "ddd.h"
-#include "heaps.h"
 
-#include "gm.h"
 #include "parallel.h"
 
 
@@ -69,8 +65,6 @@
 /* definition of exported global variables                                  */
 /*                                                                          */
 /****************************************************************************/
-
-extern MULTIGRID *DDD_currMG;
 
 
 
@@ -104,62 +98,26 @@ void memmgr_FreePMEM (void *buffer)
 }
 
 
-static HEAP *memmgr_theHeap;
-static MEM memmgr_n;
-
-void InitMemMgr(HEAP *theHeap)
-{
-  memmgr_theHeap = theHeap;
-}
-
-void * GetObjMem (DDD_TYPE type, HEAP *theHeap, MEM n, int mode)
-{
-  INT ds, Size;
-
-  /* TODO: untiges ist wahrscheinlich zu langsam,
-                   klappt gar nicht fuer Xfer! */
-
-  memmgr_theHeap = theHeap;        /* wieviele heaps gibs?  */
-  /* TODO: check whether this is to implement
-          if (type == TypeVector)
-          {
-                  ds = DDD_currMG->theFormat->VectorSizes[NODEVECTOR];
-                  Size = sizeof(VECTOR)-sizeof(DOUBLE)+ds;
-                  memmgr_n = Size;
-          }
-          else
-   */
-  memmgr_n = n;                   /* kann bis auf vector aus typ berechnet werden */
 
 
-  return (DDD_ObjGetX(type,memmgr_n));
-}
-
-void *memmgr_AllocOMEM (unsigned long size, int id)
+void *memmgr_AllocOMEM (size_t size, int ddd_type, int prio, int attr)
 {
   void   *buffer;
 
-  /*
-     if (id==TypeBElement)
-     memmgr_n = sizeof(struct belement);
-   */
+  buffer = GetMemoryLocal(dddctrl.currMG, size, UGTYPE(ddd_type));
 
-  printf("%4d: AllocOMem: size=%04d  id=%02d\n",me,size,id);
-  buffer = GetMem(memmgr_theHeap, size, FROM_BOTTOM);
+  printf("%4d: memmgr_AllocOMem: size=%05d ddd_type=%02d prio=%d attr=%d\n",
+         me,size,ddd_type,prio,attr);
 
   return(buffer);
 }
 
 
-void memmgr_FreeOMEM (void *buffer, int id)
+void memmgr_FreeOMEM (void *buffer, size_t size, int ddd_type)
 {
-        #ifdef Debug
-  printf("%d: memmgr_FreeOMEM(): buffer=%x, id=%d\n",me,buffer,id);
-        #endif
-  /* TODO: delete this */
-  return;
+  printf("%d: memmgr_FreeOMEM(): buffer=%x, ddd_type=%d\n", me, buffer, ddd_type);
 
-  free(buffer);
+  PutFreeObjectLocal(dddctrl.currMG, buffer, size, UGTYPE(ddd_type));
 }
 
 
@@ -220,6 +178,10 @@ void memmgr_ReleaseHMEM (void)
 
 
 void memmgr_Init (void)
-{}
+{
+  printf("memmgr_Init aufgerufen.\n");
+}
+
+
 
 #endif /* ModelP */

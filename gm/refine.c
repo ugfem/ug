@@ -540,7 +540,7 @@ FIFOSTART:
 		#endif
 
 		NewPattern = MARK2PAT(theElement,Mark);
-		PRINTDEBUG(gm,1,("   MyPattern=%d NewPattern=%d Mark=%d\n",MyPattern,NewPattern,Mark))
+		PRINTDEBUG(gm,1,("   MyPattern=%d NewPattern=%d Mark=%d\n",MyPattern,NewPattern,Mark));
 
 		if (fifoFlag) {
           if (MARKCLASS(theElement)==RED && MyPattern != NewPattern) {

@@ -6,16 +6,12 @@
 /*                                                                          */
 /* Purpose:   header file for parallel processor interface                  */
 /*                                                                          */
-/* Author:    Peter Bastian                                                 */
-/*            Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
-/*            Universitaet Heidelberg                                       */
-/*            Im Neuenheimer Feld 368                                       */
-/*            6900 Heidelberg                                               */
-/*            internet: bastian@iwr1.iwr.uni-heidelberg.de                  */
+/* Author:    Peter Bastian / Klaus Birken                                  */
 /*                                                                          */
 /* History:   17 Aug 1992 begin                                             */
 /*            14 Sep 1993 pass argc, argv from main to InitPPIF             */
 /*            16 Sep 1993 async send/recv return msgid now                  */
+/*            951106 kb  changed parameters for InitPPIF()                  */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -89,7 +85,7 @@ extern int slvcnt[];                   /* number of processors in subtree       
 /****************************************************************************/
 
 /* initialization & shutdown */
-int         InitPPIF         (int argc, char **argv);
+int         InitPPIF         (int *argcp, char ***argvp);
 int         ExitPPIF         (void);
 
 /* tree oriented functions */

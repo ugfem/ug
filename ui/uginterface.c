@@ -1016,19 +1016,19 @@ int ParExecCommand (char *s)
   int error;
   int l,n;
 
-  PRINTDEBUG(ui,2,("%d: ParExecCommand(%.30s)...\n",me,s))
+  PRINTDEBUG(ui,4,("%d: ParExecCommand(%.30s)...\n",me,s))
 
   /* broadcast command line to all processors */
-  PRINTDEBUG(ui,2,("%d:         Broadcast(%.30s)...\n",me,s))
+  PRINTDEBUG(ui,4,("%d:         Broadcast(%.30s)...\n",me,s))
   s[MAXCMDSIZE-1] = (char) 0;
   Broadcast(s,MAXCMDSIZE);
 
   /* execute command on each processor */
-  PRINTDEBUG(ui,2,("%d:         ExecCommand(%.30s)...\n",me,s))
+  PRINTDEBUG(ui,4,("%d:         ExecCommand(%.30s)...\n",me,s))
   error = ExecCommand(s);
 
   /* collect result code */
-  PRINTDEBUG(ui,2,("%d:         (Get)Concentrate(%.30s)...\n",me,s))
+  PRINTDEBUG(ui,4,("%d:         (Get)Concentrate(%.30s)...\n",me,s))
   for (l=degree-1; l>=0; l--)
   {
     GetConcentrate(l,&n,sizeof(int));
@@ -1037,10 +1037,10 @@ int ParExecCommand (char *s)
   Concentrate(&error,sizeof(int));
 
   /* fanout error code */
-  PRINTDEBUG(ui,2,("%d:         Broadcast(%d)...\n",me,error))
+  PRINTDEBUG(ui,4,("%d:         Broadcast(%d)...\n",me,error))
   Broadcast(&error,sizeof(int));
 
-  PRINTDEBUG(ui,2,("%d: ...end ParExecCommand(%.30s)...\n",me,s))
+  PRINTDEBUG(ui,4,("%d: ...end ParExecCommand(%.30s)...\n",me,s))
 
   /* return global status */
   return(error);

@@ -63,6 +63,10 @@
 /* include refine because of macros accessed in list functions */
 #include "refine.h"
 
+#ifdef ModelP
+#include "parallel.h"
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -206,7 +210,32 @@ INT ReleaseOBJT (INT type)
    D*/
 /****************************************************************************/
 
+#ifdef ModelP
 void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
+{
+  void *obj = GetMemoryLocal(theMG, size, type);
+
+  if (type!=NOOBJ)
+  {
+    /* link this object to DDD management */
+    if (HAS_DDDHDR(type))
+    {
+      DDD_TYPE dddtype = DDDTYPE(type);
+      DDD_HDR dddhdr = (DDD_HDR)(((char *)obj) + DDD_InfoHdrOffset(dddtype));
+      DDD_HdrConstructor(dddhdr, dddtype, PrioMaster, 0);
+    }
+  }
+
+  return obj;
+}
+
+
+/* in ModelP, this function creates local memory. */
+void *GetMemoryLocal (MULTIGRID *theMG, INT size, INT type)
+#else
+
+void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
+#endif
 {
   void **ptr, *obj;
   INT i,j,k,l;
@@ -274,7 +303,29 @@ void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
    D*/
 /****************************************************************************/
 
+#ifdef ModelP
 INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type)
+{
+  if (type!=NOOBJ)
+  {
+    /* unlink object from DDD management */
+    if (HAS_DDDHDR(type))
+    {
+      DDD_HDR dddhdr = (DDD_HDR)
+                       (((char *)object)+DDD_InfoHdrOffset(DDDTYPE(type)));
+      DDD_HdrDestructor(dddhdr);
+    }
+  }
+
+  return (PutFreeObjectLocal(theMG, object, size, type));
+}
+
+
+INT PutFreeObjectLocal (MULTIGRID *theMG, void *object, INT size, INT type)
+#else
+
+INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type)
+#endif
 {
   void **ptr;
   INT i,j,k,l;
@@ -520,7 +571,7 @@ VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after)
 
    RETURN VALUE:
    NODE *
-   .n   poiinter to requested object
+   .n   pointer to requested object
    .n   NULL if out of memory
    D*/
 /****************************************************************************/
@@ -530,9 +581,9 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
   NODE *pn;
   VECTOR *pv;
 
-  /* create vector */
   if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
   {
+    /* create node and vector */
     pn = GetMemoryForObject(MYMG(theGrid),sizeof(NODE),NDOBJ);
     if (pn==NULL) return(NULL);
     if (CreateVector (theGrid,NULL,NODEVECTOR,&pv))
@@ -546,6 +597,7 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
   }
   else
   {
+    /* create node */
     pn = GetMemoryForObject(MYMG(theGrid),
                             sizeof(NODE)-sizeof(VECTOR*),NDOBJ);
     if (pn==NULL) return(NULL);
@@ -1277,6 +1329,9 @@ ELEMENT *CreateBoundaryElement (GRID *theGrid, ELEMENT *after, INT tag)
   PARSETOBJT(pe,BEOBJ);
   PARSETTAG(pe,tag);
   SETLEVEL(pe,theGrid->level);
+        #ifdef ModelP
+  DDD_AttrSet(PARHDRE(pe),theGrid->level);
+        #endif
   SETEBUILDCON(pe,1);
         #ifdef __THREEDIM__
   /* TODO: check control word:	SETNEWEL(pe,TRUE); */
@@ -1312,25 +1367,25 @@ ELEMENT *CreateBoundaryElement (GRID *theGrid, ELEMENT *after, INT tag)
     SET_EVECTOR(pe,(void*)pv);
   }
 
-  /* create side vectors if *
-     #ifdef __THREEDIM__
-     if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
-     for (i=0; i<SIDES_OF_ELEM(pe); i++)
-          {
-            if (CreateVector (theGrid,NULL,SIDEVECTOR,&pv))
-                  {
-                    DisposeElement (theGrid,pe);
-                    return (NULL);
-                  }
-            assert (pv != NULL);
-            VOBJECT(pv) = (void*)pe;
-            SET_SVECTOR(pe,i,(void*)pv);
-            SETVECTORSIDE(pv,i);
-            SETVCOUNT(pv,1);
-          }
-     #endif
+  /* create side vectors if */
+        #ifdef __THREEDIM__
+  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+    for (i=0; i<SIDES_OF_ELEM(pe); i++)
+    {
+      if (CreateVector (theGrid,NULL,SIDEVECTOR,&pv))
+      {
+        DisposeElement (theGrid,pe);
+        return (NULL);
+      }
+      assert (pv != NULL);
+      VOBJECT(pv) = (void*)pe;
+      SET_SVECTOR(pe,i,(void*)pv);
+      SETVECTORSIDE(pv,i);
+      SETVCOUNT(pv,1);
+    }
+        #endif
 
-     /* insert in element list */
+  /* insert in element list */
   if (after==NULL)
   {
     SUCCE(pe) = theGrid->elements;
@@ -1389,6 +1444,7 @@ ELEMENT *CreateInnerElement (GRID *theGrid, ELEMENT *after, INT tag)
 
   pe = GetMemoryForObject(MYMG(theGrid),INNER_SIZE(tag),
                           MAPPED_INNER_OBJT(tag));
+
   if (pe==NULL) return(NULL);
 
   /* initialize data */
@@ -1397,6 +1453,9 @@ ELEMENT *CreateInnerElement (GRID *theGrid, ELEMENT *after, INT tag)
   PARSETOBJT(pe,IEOBJ);
   PARSETTAG(pe,tag);
   SETLEVEL(pe,theGrid->level);
+        #ifdef ModelP
+  DDD_AttrSet(PARHDRE(pe),theGrid->level);
+        #endif
   SETEBUILDCON(pe,1);
         #ifdef __THREEDIM__
   /* TODO: check control word:	SETNEWEL(pe,TRUE); */
@@ -1925,7 +1984,36 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
   }
 
         #ifdef ModelP
-  if (me!=master) return(theMG);
+  /* identify boundary nodes and vertices on different procs */
+  DDD_IdentifyBegin();
+  for (i=0; i<n; i++)
+  {
+    int proc;
+    for (proc=0; proc<procs; proc++)
+      if (proc!=me)
+      {
+        NODE *node = TOPNODE(pv[i]);
+
+        /* take number of vertex i as DDD identifier (id=i*3),
+           (id+0 is vertex, id+1 is node, id+2 is vector) */
+
+        DDD_IdentifyNumber(PARHDRV(pv[i]), proc, i*3);
+        DDD_IdentifyNumber(PARHDR(node), proc, i*3+1);
+
+        /* identify vectors of nodes */
+        if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+        {
+          DDD_IdentifyNumber(PARHDR(NVECTOR(node)), proc, i+3+2);
+        }
+      }
+  }
+  DDD_IdentifyEnd();
+
+  if (me!=master)
+  {
+    Release(theHeap,FROM_TOP);
+    return(theMG);
+  }
         #endif
 
   /* create and fill segment data of vertex */
@@ -2329,7 +2417,6 @@ INT DisposeElementSide  (GRID *theGrid, ELEMENTSIDE *theElementSide)
     PREDS(SUCCS(theElementSide)) = PREDS(theElementSide);
 
   PutFreeObject(theGrid->mg,theElementSide,sizeof(ELEMENTSIDE),ESOBJ);
-
   theGrid->nSide--;
   return(0);
 }
@@ -5623,6 +5710,10 @@ void ListGrids (const MULTIGRID *theMG)
     UserWrite(buffer);
   }
 
+#ifdef ModelP    /* TODO temporary version, due to crash for me>0 */
+  if (me==master) {
+#endif
+
   /* surface grid up to current level */
   minl = cl;
   hmin = MAX_C;
@@ -5717,6 +5808,13 @@ void ListGrids (const MULTIGRID *theMG)
              "---",(long)nn,(long)ne,(long)nt,
              (long)ns,(long)nvec,(long)nc,(float)hmin,(float)hmax);
 
+#ifdef ModelP    /* TODO temporary version, due to crash for me>0 */
+}
+else {
+  UserWrite("\nlisting of surface grid not implemented yet.\n");
+}
+#endif
+
   /* storage */
   sprintf(buffer,"\n%lu bytes used out of %lu allocated\n",HeapUsed(MGHEAP(theMG)),HeapSize(MGHEAP(theMG)));
   UserWrite(buffer);
@@ -5763,6 +5861,14 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
   /* line 1 */ sprintf(buffer,"NODEID=%9ld CTRL=%8lx IX=%8ld VEID=%9ld LEVEL=%2d",(long)ID(theNode),(long)CTRL(theNode),
                        (long)INDEX(theNode),(long)ID(theVertex),LEVEL(theNode));
   UserWrite(buffer);
+
+        #ifdef ModelP
+  sprintf(buffer," NGID=%08x VGID=%08x",
+          DDD_InfoGlobalId(PARHDR(theNode)),
+          DDD_InfoGlobalId(PARHDRV(theVertex))
+          );
+  UserWrite(buffer);
+        #endif
 
   /* print coordinates of that node */
   for(i=0; i<DIM; i++)
@@ -5993,6 +6099,12 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
           (long)CTRL(theElement),(long)FLAG(theElement),REFINE(theElement),MARK(theElement),LEVEL(theElement));
   UserWrite(buffer);
   if (COARSEN(theElement)) UserWrite(" COARSEN");
+
+        #ifdef ModelP
+  sprintf(buffer," EGID=%08x",DDD_InfoGlobalId(PARHDRE(theElement)));
+  UserWrite(buffer);
+        #endif
+
   UserWrite("\n");
 
   if (vopt)
@@ -6052,7 +6164,7 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
           {
                                                 #ifdef __THREEDIM__
                         #ifdef ModelP
-            sprintf(buffer,"  NODE[ID=%ld]: ",(long)(NODE_ID(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j)))));
+            sprintf(buffer,"  NODE[ID=%ld]: ",(long)(ID(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j)))));
             UserWrite(buffer);
                                                 #endif
                                                 #endif
@@ -6660,7 +6772,7 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
           (PARUSED(REVERSE(theLink))&&!PARUSED(theLink)))
       {
                 #ifdef ModelP
-        sprintf(buffer,"edge between %ld and %ld dead ",(long)NODE_ID(theNode),(long)NODE_ID(NBNODE(theLink)));
+        sprintf(buffer,"edge between %ld and %ld dead ",(long)ID(theNode),(long)ID(NBNODE(theLink)));
                                 #endif
         UserWrite(buffer);
         UserWrite("\n");
@@ -6685,7 +6797,7 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
     if (!USED(theNode))
     {
             #ifdef ModelP
-      sprintf(buffer,"node %ld is dead ",(long)NODE_ID(theNode));
+      sprintf(buffer,"node %ld is dead ",(long)ID(theNode));
       UserWrite(buffer);
       UserWrite("\n");
                         #endif
@@ -6951,7 +7063,7 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
       {
         if (!(EdgeError & 1<<i)) continue;
                                 #ifdef ModelP
-        sprintf(buffer,"   EDGE(%ld,%ld) is missing\n",(long)NODE_ID(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0))),(long)NODE_ID(CORNER(theElement,CORNER_OF_EDGE(theElement,i,1))));
+        sprintf(buffer,"   EDGE(%ld,%ld) is missing\n",(long)ID(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0))),(long)ID(CORNER(theElement,CORNER_OF_EDGE(theElement,i,1))));
         UserWrite(buffer);
                                 #endif
       }
@@ -7020,12 +7132,12 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
     {
                     #ifdef ModelP
-      if (NODE_ID(NBNODE(theLink))>NODE_ID(theNode))
+      if (ID(NBNODE(theLink))>ID(theNode))
       {
         theEdge = MYEDGE(theLink);
         if (!PARUSED(theEdge))
         {
-          sprintf(buffer,"edge between %ld and %ld dead, NO_OF_ELEM=%d ",(long)NODE_ID(theNode),(long)NODE_ID(NBNODE(theLink)),NO_OF_ELEM(theEdge));
+          sprintf(buffer,"edge between %ld and %ld dead, NO_OF_ELEM=%d ",(long)ID(theNode),(long)ID(NBNODE(theLink)),NO_OF_ELEM(theEdge));
           UserWrite(buffer);
           UserWrite("\n");
         }
@@ -7042,7 +7154,7 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
     if (!USED(theNode))
     {
                     #ifdef ModelP
-      sprintf(buffer,"node %ld is dead ",(long)NODE_ID(theNode));
+      sprintf(buffer,"node %ld is dead ",(long)ID(theNode));
       UserWrite(buffer);
       UserWrite("\n");
                         #endif

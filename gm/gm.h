@@ -67,9 +67,7 @@
 #endif
 
 #ifdef ModelP
-#ifndef __PARALLEL_H__
-#include "parallel.h"
-#endif
+#include "pargm.h"
 #endif
 
 /* if interpolation matrix is stored */
@@ -259,12 +257,12 @@ typedef struct blockvector_description BV_DESC;
 
 struct vector {
 
-        #ifdef ModelP
-  DDD_HEADER;
-        #endif
-
   unsigned INT control;                         /* object identification, various flags */
   union geom_object *object;                    /* associated object					*/
+
+        #ifdef ModelP
+  DDD_HEADER ddd;
+        #endif
 
   struct vector *pred,*succ;                    /* double linked list of vectors		*/
 
@@ -324,15 +322,15 @@ typedef struct blockvector BLOCKVECTOR;
 
 struct ivertex {                                        /* inner vertex structure				*/
 
-        #ifdef ModelP
-  DDD_HEADER;
-        #endif
-
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
   COORD x[DIM];                                         /* vertex position						*/
   COORD xi[DIM];                                        /* local coordinates in father element	*/
+
+        #ifdef ModelP
+  DDD_HEADER ddd;
+        #endif
 
   /* pointers */
   union vertex *pred,*succ;                     /* double linked list of vertices		*/
@@ -353,15 +351,15 @@ struct vsegment {
 
 struct bvertex {                                        /* boundary vertex structure			*/
 
-        #ifdef ModelP
-  DDD_HEADER;
-        #endif
-
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
   COORD x[DIM];                                         /* vertex position						*/
   COORD xi[DIM];                                        /* local coordinates in father element	*/
+
+        #ifdef ModelP
+  DDD_HEADER ddd;
+        #endif
 
   /* pointers */
   union vertex *pred,*succ;                     /* double linked list of vertices		*/
@@ -379,14 +377,14 @@ union vertex {                                          /* only used to define p
 
 struct node {                                           /* level dependent part of a vertex     */
 
-        #ifdef ModelP
-  DDD_HEADER;
-        #endif
-
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
   INT index;                                                    /* discrete coordinates for ordering	*/
+
+        #ifdef ModelP
+  DDD_HEADER ddd;
+        #endif
 
   /* pointers */
   struct node *pred,*succ;                      /* double linked list of nodes per level*/
@@ -426,15 +424,16 @@ struct edge {                                           /* undirected edge of th
 
 struct generic_element {            /* no difference between inner and bndel*/
 
-        #ifdef ModelP
-  DDD_HEADER;
-        #endif
-
   /* variables */
   unsigned INT control;             /* object identification, various flags */
   INT id;                           /* unique id used for load/store        */
   unsigned INT flag;                /* additional flags for elements        */
   INT property;                         /* to store NodeOrder for hexahedrons   */
+
+        #ifdef ModelP
+  DDD_HEADER ddd;
+  INT ptmp;
+        #endif
 
   /* pointers */
   union element *pred, *succ;       /* double linked list of elements       */
@@ -443,15 +442,16 @@ struct generic_element {            /* no difference between inner and bndel*/
 
 struct triangle {
 
-        #ifdef ModelP
-  DDD_HEADER;
-        #endif
-
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
   unsigned INT flag;                            /* additional flags for elements		*/
   INT property;                                 /* we need more bits ...				*/
+
+        #ifdef ModelP
+  DDD_HEADER ddd;
+  INT ptmp;
+        #endif
 
   /* pointers */
   union element *pred, *succ;           /* doubly linked list of elements		*/
@@ -463,9 +463,9 @@ struct triangle {
   /* WARNING: the allocation of the vector pointer depends on the format      */
   /* void *ptr[4] would be possible too:                                      */
   /* if there are no element vectors, the sides will be ptr[0],ptr[1],ptr[2]  */
-  /* Use the macros to find the correct address!                              *
+  /* Use the macros to find the correct address!                              */
 
-          /* associated vector */
+  /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
 
   struct elementside *side[3];          /* only on bnd, NULL if interior side	*/
@@ -473,15 +473,16 @@ struct triangle {
 
 struct quadrilateral {
 
-        #ifdef ModelP
-  DDD_HEADER;
-        #endif
-
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
   unsigned INT flag;                            /* additional flags for elements		*/
   INT property;                                 /* we need more bits ...				*/
+
+        #ifdef ModelP
+  DDD_HEADER ddd;
+  INT ptmp;
+        #endif
 
   /* pointers */
   union element *pred, *succ;           /* doubly linked list of elements		*/
@@ -493,9 +494,9 @@ struct quadrilateral {
   /* WARNING: the allocation of the vector pointer depends on the format      */
   /* void *ptr[5] would be possible too:                                      */
   /* if there are no element vectors, the sides will be ptr[0],ptr[1], ..     */
-  /* Use the macros to find the correct address!                              *
+  /* Use the macros to find the correct address!                              */
 
-          /* associated vector */
+  /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
 
   struct elementside *side[4];          /* only on bnd, NULL if interior side	*/
@@ -503,15 +504,16 @@ struct quadrilateral {
 
 struct tetrahedron {
 
-        #ifdef ModelP
-  DDD_HEADER;
-        #endif
-
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
   unsigned INT flag;                            /* additional flags for elements		*/
   INT property;                                 /* we need more bits ...				*/
+
+        #ifdef ModelP
+  DDD_HEADER ddd;
+  INT ptmp;
+        #endif
 
   /* pointers */
   union element *pred, *succ;           /* doubly linked list of elements		*/
@@ -523,9 +525,9 @@ struct tetrahedron {
   /* WARNING: the allocation of the vector pointer depends on the format      */
   /* void *ptr[9] would be possible too:                                      */
   /* if there are no element vectors, the sides will be ptr[0],ptr[1], ..     */
-  /* Use the macros to find the correct address!                              *
+  /* Use the macros to find the correct address!                              */
 
-          /* associated vector */
+  /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
 
   /* associated vector */
@@ -536,15 +538,16 @@ struct tetrahedron {
 
 struct pyramid {
 
-        #ifdef ModelP
-  DDD_HEADER;
-        #endif
-
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
   unsigned INT flag;                            /* additional flags for elements		*/
   INT property;                                 /* we need more bits ...				*/
+
+        #ifdef ModelP
+  DDD_HEADER ddd;
+  INT ptmp;
+        #endif
 
   /* pointers */
   union element *pred, *succ;           /* doubly linked list of elements		*/
@@ -556,9 +559,9 @@ struct pyramid {
   /* WARNING: the allocation of the vector pointer depends on the format      */
   /* void *ptr[11] would be possible too:                                     */
   /* if there are no element vectors, the sides will be ptr[0],ptr[1], ..     */
-  /* Use the macros to find the correct address!                              *
+  /* Use the macros to find the correct address!                              */
 
-          /* associated vector */
+  /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
 
   /* associated vector */
@@ -569,15 +572,16 @@ struct pyramid {
 
 struct hexahedron {
 
-        #ifdef ModelP
-  DDD_HEADER;
-        #endif
-
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
   unsigned INT flag;                            /* additional flags for elements		*/
   INT property;                                 /* we need more bits ...				*/
+
+        #ifdef ModelP
+  DDD_HEADER ddd;
+  INT ptmp;
+        #endif
 
   /* pointers */
   union element *pred, *succ;           /* doubly linked list of elements		*/
@@ -589,9 +593,9 @@ struct hexahedron {
   /* WARNING: the allocation of the vector pointer depends on the format      */
   /* void *ptr[13] would be possible too:                                     */
   /* if there are no element vectors, the sides will be ptr[0],ptr[1], ..     */
-  /* Use the macros to find the correct address!                              *
+  /* Use the macros to find the correct address!                              */
 
-          /* associated vector */
+  /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
 
   /* associated vector */
@@ -843,15 +847,7 @@ extern CONTROL_ENTRY
 #define CW_READ(p,ce)      ((ControlWord(p,ce) & control_entries[ce].mask)>>control_entries[ce].offset_in_word)
 #define CW_WRITE(p,ce,n)   ControlWord(p,ce) = (ControlWord(p,ce)&control_entries[ce].xor_mask)|(((n)<<control_entries[ce].offset_in_word)&control_entries[ce].mask)
 
-#ifndef ModelP
-#define DDD_OFFSET 0
-#endif
 
-/* in serial case DDD_OFFSET=0, therefor ParControlWord matches ControlWord */
-#define ParControlWord(p,ce)  (((unsigned INT *)(p))[control_entries[ce].offset_in_object+DDD_OFFSET])
-
-#define PARCW_READ(p,ce)           ((ParControlWord(p,ce) & control_entries[ce].mask)>>control_entries[ce].offset_in_word)
-#define PARCW_WRITE(p,ce,n)   ParControlWord(p,ce) = (ParControlWord(p,ce)&control_entries[ce].xor_mask)|(((n)<<control_entries[ce].offset_in_word)&control_entries[ce].mask)
 
 /****************************************************************************/
 /*																			*/
@@ -913,7 +909,7 @@ extern CONTROL_ENTRY
 
 /* control word identifier */
 #define VECTOR_CW                                       0
-#define VECTOR_OFFSET                           (0+DDD_OFFSET)
+#define VECTOR_OFFSET                           0
 
 /* predefined control word entries */
 #define VTYPE_CE                                        0
@@ -983,7 +979,7 @@ extern CONTROL_ENTRY
 #define SETVCCUT(p,n)                           CW_WRITE(p,VCCUT_CE,n)
 
 #ifdef ModelP
-#define XFERVECTOR_CE                           60
+#define XFERVECTOR_CE                           69
 #define XFERVECTOR_SHIFT                        21
 #define XFERVECTOR_LEN                          2
 #define XFERVECTOR(p)                           CW_READ(p,XFERVECTOR_CE)
@@ -1085,7 +1081,7 @@ extern CONTROL_ENTRY
 #define MSIZE(p)                                        CW_READ(p,MSIZE_CE)
 #define SETMSIZE(p,n)                           CW_WRITE(p,MSIZE_CE,n)
 
-#define XFERMATX_CE                                     65
+#define XFERMATX_CE                                     70
 #define XFERMATX_SHIFT                          26
 #define XFERMATX_LEN                            2
 #define XFERMATX(p)                             CW_READ(p,XFERMATX_CE)
@@ -1275,16 +1271,6 @@ extern CONTROL_ENTRY
 /*																			*/
 /****************************************************************************/
 
-/* remark for PARALLEL version:                                              */
-/* in serial case all control words for the general macros are at the same   */
-/* position. In parallel case there is need to change the offset for the     */
-/* control word in objects with DDD_HEADER. Since the urgent objects have a  */
-/* DDD_HEADER to the normal offset of ControlWord(p,ce) DDD_OFFSET is        */
-/* added. For objects without header new ParControlWord(p,ce) gives their    */
-/* controlword. This is used for PARCW_READ(p,ce) and PARCW_WRITE            */
-/* CAUTION: for new structs intoduced which have no DDD_HEADER there is need */
-/* to change the general makros used for them to the one beginning with PAR  */
-
 /* macros for handling of flags, not recommended to use anymore ! */
 #define SET_FLAG(flag,bitpattern)               (flag |=  (bitpattern))
 #define CLEAR_FLAG(flag,bitpattern)     (flag &= ~(bitpattern))
@@ -1394,6 +1380,12 @@ extern CONTROL_ENTRY
 #define FIRSTLAMBDA(p)  (VSEG(p)->lambda[0])
 #define FIRSTPVECT(p)   (VSEG(p)->lambda)
 
+/* parallel macros */
+#ifdef ModelP
+#define PARHDRV(p)                      (&((p)->iv.ddd))
+#endif
+
+
 /****************************************************************************/
 /*																			*/
 /* macros for vertex segments												*/
@@ -1413,7 +1405,7 @@ extern CONTROL_ENTRY
 
 /* control word identifier */
 #define NODE_CW                                         4
-#define NODE_OFFSET                                     (0+DDD_OFFSET)
+#define NODE_OFFSET                                     0
 
 #define NODE_GEN                                        28
 
@@ -1441,7 +1433,7 @@ extern CONTROL_ENTRY
 #define NPROP(p)                                        CW_READ(p,NPROP_CE)
 #define SETNPROP(p,n)                           CW_WRITE(p,NPROP_CE,n)
 
-#define XFERNODE_CE                             61
+#define XFERNODE_CE                             71
 #define XFERNODE_SHIFT                          7
 #define XFERNODE_LEN                            2
 #define XFERNODE(p)                             CW_READ(p,XFERNODE_CE)
@@ -1479,7 +1471,7 @@ extern CONTROL_ENTRY
 #define SETLOFFSET(p,n)                         CW_WRITE(p,LOFFSET_CE,n)
 
 #ifdef ModelP
-#define XFERLINK_CE                                     59
+#define XFERLINK_CE                                     72
 #define XFERLINK_SHIFT                          10
 #define XFERLINK_LEN                            2
 #define XFERLINK(p)                             CW_READ(p,XFERLINK_CE)
@@ -1557,9 +1549,9 @@ extern CONTROL_ENTRY
 
 /* control word identifier */
 #define ELEMENT_CW                                              7
-#define ELEMENT_OFFSET                                  (0+DDD_OFFSET)
+#define ELEMENT_OFFSET                                  0
 #define FLAG_CW                                                 8
-#define FLAG_OFFSET                                             (2+DDD_OFFSET)
+#define FLAG_OFFSET                                             2
 
 #define ELEMENT_GEN                                     43
 #define FLAG_GEN                                                44
@@ -1585,6 +1577,14 @@ extern CONTROL_ENTRY
 
 /* macros for flag word                           */
 /* are obviously all for internal use */
+
+
+/* parallel macros */
+#ifdef ModelP
+#define PARTITION(p)                    ((p)->ge.ptmp)
+#define PARHDRE(p)                      (&((p)->ge.ddd))
+#endif
+
 
 /*******************************/
 /* the general element concept */
@@ -1643,7 +1643,6 @@ extern INT sons_offset[TAGS];
 extern INT nb_offset[TAGS];
 extern INT evector_offset[TAGS];
 extern INT svector_offset[TAGS];
-extern INT data_offset[TAGS];
 extern INT side_offset[TAGS];
 
 /* the element descriptions are also globally available, these are pointers ! */

@@ -6,12 +6,39 @@
 #include <stdio.h>
 
 
-#include "gm.h"
 #include "parallel.h"
 
 
+void ddd_DisplayContext (void)
+{
+  int i, last=-1;
+  char sep[2] = "";
+  char buf[20];
 
-int theDebugProc = 0;
+  /* only master should display context */
+  if (me!=master)
+    return;
+
+  UserWrite("current context: (");
+  for(i=0; i<procs+1; i++)
+  {
+    if (i>=procs || !CONTEXT(i))
+    {
+      if (last+1==i-1)
+      {
+        sprintf(buf, "%s%d", sep, last+1); UserWrite(buf);
+        sep[0] = ',';
+      }
+      if (last+1<i-1)
+      {
+        sprintf(buf, "%s%d-%d", sep, last+1, i-1); UserWrite(buf);
+        sep[0] = ',';
+      }
+      last = i;
+    }
+  }
+  UserWrite(")\n");
+}
 
 
 
@@ -21,24 +48,29 @@ void ddd_pstat (int cmd)
   {
   case 'c' :
     DDD_ConsCheck();
+    UserWrite("\n");
     break;
 
   case 's' :
-    if (me!=theDebugProc) return;
+    SYNC_CONTEXT;
     DDD_Status();
+    UserWrite("\n");
+    SYNC_END;
     break;
 
   case 'i' :
-    if (me!=theDebugProc) return;
-    DDD_DisplayIF();
+    SYNC_CONTEXT;
+    DDD_IFDisplay();
+    UserWrite("\n");
+    SYNC_END;
     break;
 
   case 'l' :
-    if (me!=theDebugProc) return;
+    SYNC_CONTEXT;
     DDD_ListLocalObjects();
+    UserWrite("\n");
+    SYNC_END;
   }
-
-  if (me==theDebugProc) UserWrite("\n");
 }
 
 #endif /* ModelP */

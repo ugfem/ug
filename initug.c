@@ -82,11 +82,11 @@ static char rcsid[] = "$Header$";
    InitUg - Call of the initfunctions for all the ug modules
 
    SYNOPSIS:
-   INT InitUg (int argc, char **argv);
+   INT InitUg (int *argcp, char ***argvp);
 
    PARAMETERS:
-   .  argc - argument counter
-   .  argv - argument vector
+   .  argcp - pointer to argument counter
+   .  argvp - pointer to argument vector
 
    DESCRIPTION:
    This function initializes.
@@ -98,7 +98,7 @@ static char rcsid[] = "$Header$";
    D*/
 /****************************************************************************/
 
-INT InitUg (int argc, char **argv)
+INT InitUg (int *argcp, char ***argvp)
 {
   INT err;
 
@@ -115,7 +115,7 @@ INT InitUg (int argc, char **argv)
   /* init parallelization module */
         #ifdef ModelP
   PRINTDEBUG(init,1,("%d:     InitParallel()...\n",me))
-  if ((err=InitParallel(argc, argv))!=0)
+  if ((err=InitParallel(argcp, argvp))!=0)
   {
     printf("ERROR in InitUg while InitParallel (line %d): called routine line %d\n",(int) HiWrd(err), (int) LoWrd(err));
     printf ("aborting ug\n");
@@ -125,7 +125,7 @@ INT InitUg (int argc, char **argv)
     #endif
 
   /* init the devices module */
-  if ((err=InitDevices(argc,argv))!=0)
+  if ((err=InitDevices(*argcp,*argvp))!=0)
   {
     printf("ERROR in InitUg while InitDevices (line %d): called routine line %d\n",
            (int) HiWrd(err), (int) LoWrd(err));

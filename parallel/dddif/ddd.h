@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/*            DDD V1.3                                                      */
+/*            DDD V1.6                                                      */
 /*                                                                          */
 /* File:      ddd.h                                                         */
 /*                                                                          */
@@ -27,6 +27,10 @@
 /*            95/03/08 kb  added UserData features                          */
 /*            95/03/21 kb  added variable-sized Objects                     */
 /*            95/05/22 kb  added var-sized AddData features                 */
+/*            95/11/04 kb  complete redesign of ObjMgr and Registering      */
+/*            95/11/06 kb  changed parameters of DDD_Init()                 */
+/*            95/11/15 kb  ddd_hdr with arbitrary offset (started)          */
+/*            96/01/08 kb  renamed range to attr                            */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -39,7 +43,19 @@ extern "C" {
 #endif
 
 
-#define DDD_VERSION    "1.3beta"
+/* temporary setting, set default = C_FRONTEND */
+/* (as long as F_FRONTEND is on its way)       */
+#ifndef C_FRONTEND
+#define C_FRONTEND
+#endif
+
+
+
+#define DDD_VERSION    "1.6"
+
+
+/* for size_t */
+#include <stddef.h>
 
 
 /****************************************************************************/
@@ -51,22 +67,25 @@ extern "C" {
 
 
 /* types of elements for StructRegister */
+/* (use negative values for combination with positive DDD_TYPEs) */
 enum ElemType {
-  EL_GDATA    = 1,                      /* element type: global data            */
-  EL_LDATA    = 2,                      /* element type: local data             */
-  EL_DATAPTR  = 3,                      /* element type: data pointer           */
-  EL_OBJPTR   = 4,                      /* element type: object pointer         */
-  EL_END      = 0                       /* end of element definition list       */
+  EL_DDDHDR   =  0,                     /* element type: DDD header             */
+  EL_GDATA    = -1,                     /* element type: global data            */
+  EL_LDATA    = -2,                     /* element type: local data             */
+  EL_DATAPTR  = -3,                     /* element type: data pointer           */
+  EL_OBJPTR   = -4,                     /* element type: object pointer         */
+  EL_CONTINUE = -5,                     /* continued element definition list    */
+  EL_END      = -6                      /* end of element definition list       */
 };
 
 
 
 /* types of handlers for HandlerRegister */
 enum HandlerType {
-  HANDLER_OBJINIT = 0,                  /* handler: init object                 */
-  HANDLER_OBJUPDATE,                    /* handler: update objects internals    */
+  HANDLER_LDATACONSTRUCTOR = 0,         /* handler: construct ldata             */
+  HANDLER_UPDATE,                       /* handler: update object internals     */
+  HANDLER_DESTRUCTOR,                   /* handler: destruct object             */
   HANDLER_OBJMKCONS,                    /* handler: make obj consistent         */
-  HANDLER_OBJDELETE,                    /* handler: delete object               */
   HANDLER_XFERCOPY,                     /* handler: copy cmd during xfer        */
   HANDLER_XFERDELETE,                   /* handler: delete cmd during xfer      */
   HANDLER_XFERGATHER,                   /* handler: send additional data        */
@@ -74,8 +93,21 @@ enum HandlerType {
   HANDLER_XFERGATHERX,                  /* handler: send add. data, var-sized   */
   HANDLER_XFERSCATTERX,                 /* handler: recv add. data, var-sized   */
   HANDLER_COPYMANIP,                    /* handler: manipulate incoming copy    */
-  HANDLER_LDATARESTORE,                 /* handler: restore LDATA after copying */
   HANDLER_END                           /* end of handler list                  */
+};
+
+
+
+/* options for DDD_SetOption */
+enum OptionType {
+  OPT_WARNING_VARSIZE_OBJ = 0,        /* option: warning on differing obj sizes */
+  OPT_END
+};
+
+
+enum SwitchType {
+  OPT_OFF = 0,
+  OPT_ON  = 1
 };
 
 
@@ -87,13 +119,18 @@ enum IFDirection {
 };
 
 
-
-/* no of (predefined) standard interface */
-#define STD_INTERFACE     0
+/* ID of (predefined) standard interface */
+enum IFConstants {
+  STD_INTERFACE = 0
+};
 
 
 /* DDD_TYPE USER_DATA: send stream of bytes with XferAddData */
-#define USER_DATA        -1
+enum XferConstants {
+  DDD_USER_DATA = -1
+};
+
+
 
 
 
@@ -109,10 +146,7 @@ enum IFDirection {
 
         Some remarks:
 
-           - include macro DDD_HEADER as first line in all structure
-             definitions in the application program
-
-           - don't touch the member elements of OBJ_HEADER in the
+           - don't touch the member elements of DDD_HEADER in the
              application program, they will be changed in further
              DDD versions!
 
@@ -120,18 +154,19 @@ enum IFDirection {
              elements which are not accessible via the DDD functional interface
              should not be accessed by the application program anyway,
  */
-typedef struct obj_header {
+typedef struct _DDD_HEADER
+{
   /* control word elements */
   unsigned char typ;
   unsigned char prio;
-  unsigned char range;
+  unsigned char attr;
   unsigned char flags;
 
   unsigned int myIndex;         /* global object array index */
   unsigned int gid;             /* global id */
 
   char empty[4];                /* 4 unused bytes in current impl. */
-} OBJ_HEADER;
+} DDD_HEADER;
 
 
 
@@ -139,13 +174,21 @@ typedef struct obj_header {
         new DDD types, used during access of DDD functional interface
  */
 typedef int DDD_TYPE;
-typedef int INTERFACE;
-typedef int PROC_ID;
-typedef OBJ_HEADER       *OBJECT;
-typedef OBJ_HEADER       *HEADER;
+typedef int DDD_IF;
+typedef unsigned int DDD_GID;
+typedef int DDD_PROC;
+typedef int DDD_PRIO;
+typedef int DDD_ATTR;
+#ifdef C_FRONTEND
+typedef char           * DDD_OBJ;
+#else
+typedef int DDD_OBJ;
+#endif
+typedef DDD_HEADER     * DDD_HDR;
+typedef int DDD_OPTION;
 typedef void (*HandlerPtr)();
-typedef int (*ComProcPtr)(OBJECT theObject, void *data);
-typedef int (*ComProcXPtr)(OBJECT theObject, void *data, int proc, int prio);
+typedef int (*ComProcPtr)(DDD_OBJ, void *);
+typedef int (*ComProcXPtr)(DDD_OBJ, void *, DDD_PROC, DDD_PRIO);
 
 
 
@@ -156,18 +199,29 @@ typedef int (*ComProcXPtr)(OBJECT theObject, void *data, int proc, int prio);
 /****************************************************************************/
 
 
-/* referencing header from object */
-#define DDD_OBJ(o)    ((OBJ_HEADER *) o)
+/*
+        temporary macro in order to access header
+
+        the application program should implement a
+        DDD_HEADER access function itself.
+
+        this will be removed in future versions.
+ */
+#define DDD_OBJ(o)     (&((o)->ddd))
 
 
-/* DDD_HEADER for declaration of shared data structs */
-#define DDD_HEADER    OBJ_HEADER ddd_hdr
 
+/*
+        external access of elements in DDD_HEADER
 
-/* external usage of fields in ddd_hdr */
-#define DDD_InfoPriority(o)    ((o)->ddd_hdr.prio)
-#define DDD_InfoGlobalId(o)    ((o)->ddd_hdr.gid)
-#define DDD_InfoRange(o)       ((o)->ddd_hdr.range)
+        C++ users should implement these access functions
+        as inline functions.
+ */
+#ifndef __cplusplus
+#define DDD_InfoPriority(ddd_hdr)    ((ddd_hdr)->prio)
+#define DDD_InfoGlobalId(ddd_hdr)    ((ddd_hdr)->gid)
+#define DDD_InfoAttr(ddd_hdr)       ((ddd_hdr)->attr)
+#endif
 
 
 
@@ -181,100 +235,123 @@ typedef int (*ComProcXPtr)(OBJECT theObject, void *data, int proc, int prio);
 /*
         General DDD Module
  */
-void      DDD_Init (int argc, char **argv);
-void      DDD_Exit (void);
-void      DDD_Status (void);
+void     DDD_Init (int *argcp, char ***argvp);
+void     DDD_Exit (void);
+void     DDD_Status (void);
+void     DDD_SetOption (DDD_OPTION, int);
+
 
 /*
         Redirect line-oriented output, new in V1.2
  */
-void      DDD_LineOutRegister (void (*func)(char *s));
+void     DDD_LineOutRegister (void (*func)(char *s));
 
 
 /*
-        Definition Module
+        Type Manager Module
  */
-DDD_TYPE  DDD_StructRegister (char *name, OBJ_HEADER *hdr, ...);
-void      DDD_HandlerRegister (DDD_TYPE id, ...);
-void      DDD_StructDisplay (DDD_TYPE id);
+#ifdef C_FRONTEND
+DDD_TYPE DDD_TypeDeclare (char *name);
+void     DDD_TypeDefine (DDD_TYPE, ...);
+void     DDD_TypeDisplay (DDD_TYPE);
+void     DDD_HandlerRegister (DDD_TYPE, ...);
+int      DDD_InfoTypes (void);
+int      DDD_InfoHdrOffset (DDD_TYPE);
+#else
+#ifdef __sgi
+#define  DDD_TypeDeclare ddd_typedeclare_
+#define  DDD_TypeDefine ddd_typedefine_
+#define  DDD_TypeDisplay ddd_typedisplay_
+#define  DDD_HandlerRegister ddd_handlerregister_
+#define  DDD_InfoTypes ddd_infotypes_
+#endif
+
+void     DDD_TypeDeclare (char *name, int *size, DDD_TYPE *type);
+void     DDD_TypeDefine (DDD_TYPE *, ...);
+void     DDD_TypeDisplay (DDD_TYPE *);
+void     DDD_HandlerRegister (DDD_TYPE *, ...);
+int      DDD_InfoTypes (void);
+#endif
 
 
 
 /*
         Object Properties
  */
-void      DDD_PrioritySet (OBJECT obj, int prio);
-void      DDD_RangeSet (OBJ_HEADER *obj, int range);
-int  *    DDD_InfoProcList (OBJECT obj);
+void     DDD_PrioritySet (DDD_HDR, DDD_PRIO);
+/* void     DDD_AttrSet (DDD_HDR, DDD_ATTR); not allowed */
+int  *   DDD_InfoProcList (DDD_HDR);
 
 
 
 /*
         Identification Module
  */
-void      DDD_IdentifyBegin (void);
-void      DDD_IdentifyEnd (void);
-void      DDD_IdentifyNumber (OBJECT obj, PROC_ID proc, int ident);
-void      DDD_IdentifyString (OBJECT obj, PROC_ID proc, char *ident);
-void      DDD_IdentifyObject (OBJECT obj, PROC_ID proc, OBJECT ident);
+void     DDD_IdentifyBegin (void);
+void     DDD_IdentifyEnd (void);
+void     DDD_IdentifyNumber (DDD_HDR, DDD_PROC, int);
+void     DDD_IdentifyString (DDD_HDR, DDD_PROC, char *);
+void     DDD_IdentifyObject (DDD_HDR, DDD_PROC, DDD_HDR);
 
 
 
 /*
         Interface Module
  */
-INTERFACE DDD_IFDefine (int nO, int O[], int nA, int A[], int nB, int B[]);
-void      DDD_DisplayIF (void);
-void      DDD_IFExchange (INTERFACE ifId,
-                          int itemSize, ComProcPtr GatherProc, ComProcPtr ScatterProc);
-void      DDD_IFOneway (INTERFACE ifId, int dir,
-                        int itemSize, ComProcPtr GatherProc, ComProcPtr ScatterProc);
+DDD_IF   DDD_IFDefine (int nO, int O[], int nA, int A[], int nB, int B[]);
+void     DDD_IFDisplay (void);
+void     DDD_IFExchange (DDD_IF, size_t, ComProcPtr GatherP, ComProcPtr ScatterP);
+void     DDD_IFOneway (DDD_IF, int dir,
+                       size_t, ComProcPtr GatherP, ComProcPtr ScatterP);
 
 /*
-        Range-oriented communication, new in V1.1
+        Attr-oriented communication, new in V1.1
  */
-void      DDD_IFRExchange (INTERFACE ifId, int range,
-                           int itemSize, ComProcPtr GatherProc, ComProcPtr ScatterProc);
-void      DDD_IFROneway (INTERFACE ifId, int range, int dir,
-                         int itemSize, ComProcPtr GatherProc, ComProcPtr ScatterProc);
+void     DDD_IFRExchange (DDD_IF, DDD_ATTR,
+                          size_t, ComProcPtr GatherP, ComProcPtr ScatterP);
+void     DDD_IFROneway (DDD_IF, DDD_ATTR, int dir,
+                        size_t, ComProcPtr GatherP, ComProcPtr ScatterP);
 
 /*
         Extended communication, new in V1.1
  */
-void      DDD_IFExchangeX (INTERFACE ifId,
-                           int itemSize, ComProcXPtr GatherProc, ComProcXPtr ScatterProc);
-void      DDD_IFOnewayX (INTERFACE ifId, int dir,
-                         int itemSize, ComProcXPtr GatherProc, ComProcXPtr ScatterProc);
+void     DDD_IFExchangeX (DDD_IF,
+                          size_t, ComProcXPtr GatherP, ComProcXPtr ScatterP);
+void     DDD_IFOnewayX (DDD_IF, int dir,
+                        size_t, ComProcXPtr GatherP, ComProcXPtr ScatterP);
 
 
 
 /*
         Transfer Module
  */
-void      DDD_XferBegin (void);
-void      DDD_XferEnd (void);
-void      DDD_XferCopyObj (OBJECT obj, PROC_ID proc, int prio);
-void      DDD_XferCopyObjX (OBJECT obj, PROC_ID proc, int prio, int size);
-void      DDD_XferAddData (int cnt, DDD_TYPE typ);
-void      DDD_XferAddDataX (int cnt, DDD_TYPE typ, int sizes[]);
-void      DDD_XferDeleteObj (OBJECT obj);
+void     DDD_XferBegin (void);
+void     DDD_XferEnd (void);
+void     DDD_XferCopyObj (DDD_HDR, DDD_PROC, DDD_PRIO);
+void     DDD_XferCopyObjX (DDD_HDR, DDD_PROC, DDD_PRIO, size_t);
+void     DDD_XferAddData (int cnt, DDD_TYPE);
+void     DDD_XferAddDataX (int cnt, DDD_TYPE, size_t sizes[]);
+void     DDD_XferDeleteObj (DDD_HDR);
 
 
 /*
         Object Manager
  */
-void *    DDD_ObjGet (DDD_TYPE id);
-void *    DDD_ObjGetX (DDD_TYPE id, int size);       /* new in V1.2 */
-void      DDD_ObjDelete (OBJECT obj);
-void      DDD_ObjMoveTo (OBJECT obj, char *mem);
-void      DDD_ObjUnlink (OBJECT obj);
+DDD_OBJ  DDD_ObjNew (size_t, DDD_TYPE, DDD_PRIO, DDD_ATTR);
+void     DDD_ObjDelete (void *, size_t, DDD_TYPE);
+void     DDD_HdrConstructor (DDD_HDR, DDD_TYPE, DDD_PRIO, DDD_ATTR);
+void     DDD_HdrDestructor (DDD_HDR);
+void     DDD_HdrConstructorMove (DDD_HDR, DDD_HDR);
+DDD_OBJ  DDD_ObjGet (size_t, DDD_TYPE, DDD_PRIO, DDD_ATTR);
+void     DDD_ObjUnGet (DDD_HDR, size_t);
+
 
 
 /*
         Maintainance & Debugging
  */
-void      DDD_ConsCheck (void);
-void      DDD_ListLocalObjects (void);
+void     DDD_ConsCheck (void);
+void     DDD_ListLocalObjects (void);
 
 
 

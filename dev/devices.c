@@ -353,7 +353,7 @@ void UserWrite (const char *s)
 }
 else
 {
-  PRINTDEBUG(ui,1,("%d: %.77s\n", me,s))
+  PRINTDEBUG(ui,1,("%d: %s\n", me,s))
 }
         #endif
 }
@@ -390,8 +390,22 @@ int UserWriteF (const char *format, ...)
 
   vsprintf(buffer,format,args);
 
+        #ifdef ModelP
+  if (me==master)
+  {
+        #endif
+
   if (mutelevel>-1000)
     WriteString(buffer);
+
+        #ifdef ModelP
+}
+else
+{
+  PRINTDEBUG(ui,1,("%d: %s\n", me,buffer))
+}
+        #endif
+
   if (logFile!=NULL) fputs(buffer,logFile);
 
   /* garbage collection */

@@ -33,6 +33,9 @@
 #include "refine.h"
 #include "cw.h"
 
+
+
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -189,7 +192,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {0,0,0,0,0},
   {0,0,0,0,0},
   {0,0,0,0,0},
-}; /* last entry used: 68 for VCCUT_CE */
+}; /* last entry used: 72 for XFERLINK_CE */
 
 /****************************************************************************/
 /*                                                                          */
