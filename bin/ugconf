@@ -13,6 +13,7 @@ then
 	echo "         NONETGEN (set NETGEN = OFF)";
 	echo "         NOGRAPE (set GRAPE = OFF)";
 	echo "         HP (set ARCH = HP)";
+	echo "         DEC (set ARCH = DEC)";
 	echo "         PARAGON (set ARCH = PARAGON)";
 	echo "         PC (set ARCH = PC)";
 	echo "         POWERGC (set ARCH = POWERGC)";
@@ -100,6 +101,12 @@ fi
 if test "$1" = "HP"
 then
 sed 's/^ARCH.*$/ARCH = HP/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
+mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+fi			
+
+if test "$1" = "DEC"
+then
+sed 's/^ARCH.*$/ARCH = DEC/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
 fi			
 
