@@ -31,6 +31,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <math.h>
 
 #include "graph.h"
@@ -70,10 +71,10 @@
 static OUTPUTDEVICE *CurrentOutputDevice;               /* current output device	*/
 static COORD_POINT CurrCursor;                                  /* current cursor position	*/
 
-COORD currClipRegionMaxX;                               /* corner of ViewPort having the	*/
-COORD currClipRegionMaxY;                               /*largest values for each component */
-COORD currClipRegionMinX;                               /* corner of ViewPort having the	*/
-COORD currClipRegionMinY;                               /*smallest values for each component*/
+static COORD currClipRegionMaxX;                /* corner of ViewPort having the	*/
+static COORD currClipRegionMaxY;                /*largest values for each component */
+static COORD currClipRegionMinX;                /* corner of ViewPort having the	*/
+static COORD currClipRegionMinY;                /*smallest values for each component*/
 
 static COORD_POINT currClipRegionCorner[4];     /* corners of the view port */
 
@@ -207,6 +208,45 @@ INT PrepareGraph (const PICTURE *thePicture)
 
   /* activate IF Window */
   if ((*CurrentOutputDevice->ActivateOutput)(UGW_IFWINDOW(PIC_UGW(thePicture)))) return (1);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  PrepareGraphWindow											*/
+/*																			*/
+/* Purpose:   set current view and its port                                                             */
+/*																			*/
+/* Input:	  VIEW *theView: set graph context for that view				*/
+/*																			*/
+/* Output:	  INT 0: ok                                                                                                     */
+/*				  1: error													*/
+/*																			*/
+/****************************************************************************/
+
+INT PrepareGraphWindow (const UGWINDOW *theWindow)
+{
+  /* set current output device */
+  CurrentOutputDevice = UGW_OUTPUTDEV(theWindow);
+
+  /* set position of currClipRegion */
+  currClipRegionMaxX = MAX(UGW_LUR(theWindow)[0],UGW_LLL(theWindow)[0]);
+  currClipRegionMaxY = MAX(UGW_LUR(theWindow)[1],UGW_LLL(theWindow)[1]);
+  currClipRegionMinX = MIN(UGW_LUR(theWindow)[0],UGW_LLL(theWindow)[0]);
+  currClipRegionMinY = MIN(UGW_LUR(theWindow)[1],UGW_LLL(theWindow)[1]);
+
+  currClipRegionCorner[0].x = currClipRegionMinX;
+  currClipRegionCorner[1].x = currClipRegionMaxX;
+  currClipRegionCorner[2].x = currClipRegionMaxX;
+  currClipRegionCorner[3].x = currClipRegionMinX;
+  currClipRegionCorner[0].y = currClipRegionMaxY;
+  currClipRegionCorner[1].y = currClipRegionMaxY;
+  currClipRegionCorner[2].y = currClipRegionMinY;
+  currClipRegionCorner[3].y = currClipRegionMinY;
+
+  /* activate IF Window */
+  if ((*CurrentOutputDevice->ActivateOutput)(UGW_IFWINDOW(theWindow))) return (1);
 
   return (0);
 }
@@ -1148,4 +1188,35 @@ void UgClearViewPort (void)
 void UgFlush (void)
 {
   (*CurrentOutputDevice->Flush)();
+}
+
+/****************************************************************************/
+/*D
+   UgWait - wait for a time specified in (parts of) seconds
+
+   SYNOPSIS:
+   INT UgWait (DOUBLE wait)
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+   This function waits for a time specified in (parts of) seconds.
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void UgWait (DOUBLE wait)
+{
+  time_t end,time,delta;
+
+  delta = wait*CLOCKS_PER_SEC;
+  end   = clock() + delta;
+  while ((time=clock())<end)
+    if ((end>2*delta) && (time<delta))
+      break;                                    /* after wrap around */
+
+  return;
 }

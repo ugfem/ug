@@ -28,6 +28,7 @@
 #ifndef __GRAPH__
 #define __GRAPH__
 
+#include <time.h>
 
 #ifndef __COMPILER__
 #include "compiler.h"
@@ -57,6 +58,9 @@
 
 #define MAX_POINTS_OF_POLY                      32
 
+/* for the UgWait function */
+#define WAIT_001                                        MAX(0.01,1.0/CLOCKS_PER_SEC)
+
 /****************************************************************************/
 /*																			*/
 /* data structures exported by the corresponding source file				*/
@@ -71,6 +75,7 @@
 
 /* misc. functions */
 INT     PrepareGraph                            (const PICTURE *thePicture);
+INT     PrepareGraphWindow                      (const UGWINDOW *theWindow);
 
 /* low level drawing functions */
 void    UgMove                                          (COORD_POINT in);
@@ -95,5 +100,6 @@ void    UgSetLineWidth                          (short width);
 
 /* miscellenious */
 void    UgFlush                                         (void);
+void    UgWait                                          (DOUBLE wait_sec);
 
 #endif
