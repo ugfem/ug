@@ -55,6 +55,10 @@ case $MODEL in
 		echo px3 run -a ccall $PROC $1;
 		px3 run -a ccall $PROC $1;
         ;;
+	SHMEM)
+		echo mpprun -n $PROC $1;
+		mpprun -n $PROC $1;
+		;;
 	SEQ)
 		$1 $3 $4;
         ;;
