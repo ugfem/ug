@@ -176,7 +176,7 @@ struct outputdevice {
   void (*ErasePolygon)(SHORT_POINT *, INT );                            /* erase a polygon w. curr. col         */
   void (*Polymark)(short, SHORT_POINT *);                                       /* place markers					*/
   void (*InvPolymark)(short, SHORT_POINT *);                                    /* place inverse markers			*/
-  void (*Text)(const char *, INT);                                                      /* draw text in current size/font	*/
+  void (*DrawText)(const char *, INT);                                                  /* draw text in current size/font	*/
   void (*CenteredText)(SHORT_POINT, const char *, INT);         /* draw text centered at x,y		*/
   void (*ClearViewPort)(void);                                                          /* clear a view port				*/
 
