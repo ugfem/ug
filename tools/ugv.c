@@ -72,6 +72,7 @@
 #define opNewPolymark           18
 #define opNewText               19
 #define opNewCenteredText       20
+#define opShadedPolygon     21
 
 #define SIZE                    50
 #define CSIZE                   256
@@ -110,7 +111,7 @@ typedef struct {
 /****************************************************************************/
 
 static AWindowRecord myWindow;
-
+static short cc;
 
 /****************************************************************************/
 /*                                                                          */
@@ -246,7 +247,7 @@ int RasterizeFile (FILE *stream, AWindowRecord *myWindow)
   short fx,fy;                                                  /* file screen size					*/
   int i,error,j,size;
   char opCode;
-  short x,y,r,g,b,n,lw,ts,m,ms,w,x1,y1,x2,y2;
+  short x,y,r,g,b,n,lw,ts,m,ms,si,w,x1,y1,x2,y2;
   short xx[SIZE],yy[SIZE];
   char s[CSIZE];
   unsigned char c;
@@ -406,7 +407,8 @@ int RasterizeFile (FILE *stream, AWindowRecord *myWindow)
         break;
 
       case opSetColor :
-        c = *((unsigned char *)data);
+        c  = *((unsigned char *)data);
+        cc = c;
         data++;
         RGBcolor(myWindow->red[c],myWindow->green[c],myWindow->blue[c]);
         break;
@@ -557,6 +559,29 @@ int RasterizeFile (FILE *stream, AWindowRecord *myWindow)
         RGBcolor(myWindow->red[c],myWindow->green[c],myWindow->blue[c]);
         cmov2s(x,y);
         charstr(s);
+        break;
+
+      case opShadedPolygon :
+        memcpy(&n,data,2);
+        data += 2;
+        if (n>=SIZE) {free(buffer); return(2);}
+        memcpy(&si,data,2);
+        data += 2;
+        r = ((int)myWindow->red[cc]  *(int)si)/1000;
+        g = ((int)myWindow->green[cc]*(int)si)/1000;
+        b = ((int)myWindow->blue[cc] *(int)si)/1000;
+        if (n>=SIZE) {free(buffer); return(2);}
+        size = n<<1;
+        memcpy(xx,data,size);
+        data += size;
+        memcpy(yy,data,size);
+        data += size;
+        if (n<3) break;
+        RGBcolor(r,g,b);
+        bgnpolygon();
+        for (j=0; j<n; j++) { vector[0]=xx[j];vector[1]=yy[j];v2s(vector); }
+        endpolygon();
+        RGBcolor(myWindow->red[cc],myWindow->green[cc],myWindow->blue[cc]);
         break;
 
       default :

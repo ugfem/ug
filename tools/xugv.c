@@ -972,11 +972,13 @@ int RasterizeFile(FILE *stream)
           xy[j].y = fy-yy[j];
         }
         snb = (int)(0.5+(float)(NO_PATTERNS-1)*(float)(shd)/1000.0);
+        XSetBackground(display ,gc, BlackPixel(display, screen));
         XSetFillStyle(display, gc, FillOpaqueStippled);
         XSetStipple(display, gc, pattern[snb]);
         XFillPolygon(display, pixmap, gc,
                      xy, n, Convex, CoordModeOrigin);
         XSetFillStyle(display, gc, FillSolid);
+        XSetBackground(display ,gc, WhitePixel(display, screen));
         x_cur = xy[n-1].x;
         y_cur = xy[n-1].y;
         break;
@@ -1543,11 +1545,13 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
           xy[j].y = fy-yy[j];
         }
         snb = (int)(0.5+(float)(NO_PATTERNS-1)*(float)(shd)/1000.0);
+        XSetBackground(display ,gc, BlackPixel(display, screen));
         XSetFillStyle(display, gc, FillOpaqueStippled);
         XSetStipple(display, gc, pattern[snb]);
         XFillPolygon(display, pixmap, gc,
                      xy, n, Convex, CoordModeOrigin);
         XSetFillStyle(display, gc, FillSolid);
+        XSetBackground(display ,gc, WhitePixel(display, screen));
         x_cur = xy[n-1].x;
         y_cur = xy[n-1].y;
         break;

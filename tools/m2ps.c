@@ -277,7 +277,7 @@ void IF_ShadedPolygon (short n, short shd, short *x, short *y)
   float intensity;
 
   intensity = (float)(shd)/1000.0;
-  fprintf(psfile, "%6.5f I\n", intensity);
+  fprintf(psfile, "%4.3f I\n", intensity);
   fprintf(psfile,"N\n");
   fprintf(psfile,"%g %g M\n",TRFMX(x[0],y[0]),TRFMY(x[0],y[0]));
   for (i=1; i<n; i++)
