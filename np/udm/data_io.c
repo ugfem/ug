@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:	  dio.c															*/
+/* File:	  data_io.c	                                                                                                */
 /*																			*/
 /* Purpose:   input/output of data			                                                                */
 /*																			*/
@@ -101,6 +101,85 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
+static int ElementCompare (ELEMENT **e0, ELEMENT **e1)
+{
+  INT n0 = CORNERS_OF_ELEM(*e0);
+  INT n1 = CORNERS_OF_ELEM(*e0);
+  INT i;
+
+  for (i=0; i<MIN(n0,n1); i++)
+    if      (ID(CORNER(*e0,i))>ID(CORNER(*e1,i))) return(1);
+    else if (ID(CORNER(*e0,i))<ID(CORNER(*e1,i))) return(-1);
+
+  if (n0 == n1) return(0);
+
+  /* error case */
+  assert(0);
+}
+
+static LoadElementData (MULTIGRID *theMG)
+{
+  HEAP *Heap = MGHEAP(theMG);
+  INT m = EDATA_DEF_IN_MG(theMG) / sizeof(DOUBLE);
+  INT level;
+
+  if (m == 0) return(0);
+
+  for (level=0; level<=TOPLEVEL(theMG); level++)
+  {
+    GRID *theGrid = GRID_ON_LEVEL(theMG,level);
+    INT i,n;
+    ELEMENT **EList,*e;
+    INT MarkKey;
+
+    for (n=0, e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e)) n++;
+    MarkTmpMem(Heap,&MarkKey);
+    EList = (ELEMENT**) GetTmpMem(Heap,sizeof(ELEMENT *)*n,MarkKey);
+    for (n=0, e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e)) EList[n++] = e;
+    qsort(EList,n,sizeof(ELEMENT*),(int (*)(const void *, const void *))ElementCompare);
+    for (i=0; i<n; i++)
+      if (Bio_Read_mdouble(m,EDATA(EList[i])))
+        return (1);
+    ReleaseTmpMem(Heap,MarkKey);
+  }
+    #ifdef ModelP
+  a_elementdata_consistent(theMG,0,TOPLEVEL(theMG));
+    #endif
+
+  return(0);
+}
+
+static SaveElementData (MULTIGRID *theMG)
+{
+  HEAP *Heap = MGHEAP(theMG);
+  INT m = EDATA_DEF_IN_MG(theMG) / sizeof(DOUBLE);
+  INT level;
+
+  if (m == 0) return(0);
+
+  for (level=0; level<=TOPLEVEL(theMG); level++)
+  {
+    GRID *theGrid = GRID_ON_LEVEL(theMG,level);
+    INT i,n;
+    ELEMENT **EList,*e;
+    INT MarkKey;
+
+    for (n=0, e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e)) n++;
+    MarkTmpMem(Heap,&MarkKey);
+    EList = (ELEMENT**) GetTmpMem(Heap,sizeof(ELEMENT *)*n,MarkKey);
+    for (n=0, e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e)) EList[n++] = e;
+    qsort(EList,n,sizeof(ELEMENT*),(int (*)(const void *, const void *))ElementCompare);
+    for (i=0; i<n; i++)
+      if (Bio_Write_mdouble(m,EDATA(EList[i])))
+        return (1);
+    ReleaseTmpMem(Heap,MarkKey);
+  }
+    #ifdef ModelP
+  a_elementdata_consistent(theMG,0,TOPLEVEL(theMG));
+    #endif
+
+  return(0);
+}
 
 /****************************************************************************/
 /*D
@@ -408,6 +487,11 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     copied_until += ncomp;
   }
   ReleaseTmpMem(theHeap,MarkKey);
+
+  /* load the data field of the elements */
+  if (EDATA_DEF_IN_MG(theMG))
+    if (LoadElementData(theMG))
+    {CloseDTFile(); UserWrite("ERROR: load element data failed\n"); return (1);}
 
   /* close file */
   if (CloseDTFile()) return (1);
@@ -781,6 +865,11 @@ INT SaveData (MULTIGRID *theMG, char *name, INT rename, char *type, INT number, 
     }
   }
   ReleaseTmpMem(theHeap,MarkKey);
+
+  /* save the data field of the elements */
+  if (EDATA_DEF_IN_MG(theMG))
+    if (SaveElementData(theMG))
+    {CloseDTFile(); UserWrite("ERROR: save element data failed\n"); return (1);}
 
   /* close file */
   if (CloseDTFile()) return (1);
