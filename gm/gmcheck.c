@@ -679,7 +679,10 @@ PAR(
 			{
 				if (SIDE_ON_BND(theElement,i))
 				{
-					if (INNER_BOUNDARY(theElement,i)) {
+				  #ifdef ModelP
+				  if (EMASTER(theElement))
+				  #endif
+					 if (INNER_BOUNDARY(theElement,i)) {
 						*SideError |= (1<<(i+2*MAX_SIDES_OF_ELEM));
 						UserWriteF(PFMT "no nb Element for inner boundary, el =  " EID_FMTX "\n",
 								   me,EID_PRTX(theElement));
