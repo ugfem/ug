@@ -233,7 +233,6 @@ static MARKRULE myMR[NO_OF_RULES]=      /* name and ID of available rules	*/
  /* rules for tetrahedra */
                                          #ifndef TET_RULESET
  {"tet2hex",TETRA_RED_HEX},
- {"pri2hex",PRISM_RED_HEX},
                                          #endif
  /* rules for prisms */
  {"pri_quadsect",PRISM_QUADSECT},
