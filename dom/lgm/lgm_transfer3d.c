@@ -121,6 +121,7 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, IN
 {
   int i,i0,i1,i2;
   char buffer[256];
+  fpos_t filepos_tmp;
 
   /* store heapptr */
   if (Heap==NULL) return (1);
@@ -167,6 +168,19 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, IN
   if (fgetpos(stream, &UnitInfoFilepos)) return (1);
   while (fscanf(stream,"unit %d",&i)==1)
     if (SkipEOL()) return (1);
+
+  /* read Subdomain-Info if */
+  if (fgetpos(stream, &filepos_tmp)) return (1);
+  if (ReadCommentLine("Subdomain-Info"))
+  {
+    if (fsetpos(stream,&filepos_tmp)) return (1);
+  }
+  else
+  {
+    if (SkipBTN()) return (1);
+    while (fscanf(stream,"subdomain %s",buffer)==1)
+      if (SkipEOL()) return (1);
+  }
 
   /* get number of subdomains, surfaces and lines */
   if (SkipBTN()) return (1);
