@@ -345,7 +345,7 @@ void              UserWrite                             (const char *s);
 int               UserWriteF                            (const char *format, ...);
 void              PrintErrorMessage             (char type, const char *procName, const char *text);
 void              PrintErrorMessageF            (char type, const char *procName, const char *format, ...);
-INT               OpenLogFile                           (const char *name);
+INT               OpenLogFile                           (const char *name, int rename);
 INT               CloseLogFile                          (void);
 INT                       SetLogFile                            (FILE *file);
 INT               WriteLogFile                          (const char *text);
