@@ -1,22 +1,29 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/** \defgroup lgm The LGM Domain
+ * \ingroup dom
+ */
+/*! \file lgm_domain.h
+ * \ingroup lgm
+ */
+
 /****************************************************************************/
-/*																			*/
-/* File:	  lgm_domain.h													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          lgm_domain.h                                                                                                  */
+/*                                                                                                                                                      */
 /* Purpose:   header file for lgm_domain                                                                        */
-/*																			*/
-/* Author:	  Klaus Johannsen                                                                                               */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70550 Stuttgart												*/
-/*			  email: klaus@ica3.uni-stuttgart.de							*/
-/*																			*/
-/* History:   07.09.96 begin												*/
-/*																			*/
+/*                                                                                                                                                      */
+/* Author:        Klaus Johannsen                                                                                               */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70550 Stuttgart                                                                                               */
+/*                        email: klaus@ica3.uni-stuttgart.de                                                    */
+/*                                                                                                                                                      */
+/* History:   07.09.96 begin                                                                                            */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -25,9 +32,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __LGM_DOM__
@@ -68,19 +75,19 @@
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/*	defines for basic configuration											*/
-/*																			*/
+/*                                                                                                                                                      */
+/*      defines for basic configuration                                                                                 */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifdef _2
@@ -92,9 +99,9 @@
 #endif
 
 /****************************************************************************/
-/*																			*/
-/*	other																	*/
-/*																			*/
+/*                                                                                                                                                      */
+/*      other                                                                                                                                   */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define LGM_PROBLEM_NAME(p)                                     ENVITEM_NAME(p)
@@ -313,9 +320,9 @@ typedef INT (*DomainSizeConfig)(DOUBLE *min, DOUBLE *max);
 
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct lgm_problem {
@@ -325,36 +332,36 @@ struct lgm_problem {
 
   /* fields for problem */
   InitProcPtr InitProblem;          /* procedure to initialize problem          */
-  ConfigProcPtr ConfigProblem;      /* procedure to reinitialize problem		*/
+  ConfigProcPtr ConfigProblem;      /* procedure to reinitialize problem                */
   DomainSizeConfig ConfigDomainSize;      /* procedure to reinitialize size of d*/
-  BndCondProcPtr BndCond;               /* global boundary condition				*/
-  INT numOfCoeffFct;                            /* number of coefficient functions			*/
-  INT numOfUserFct;                             /* number of User functions					*/
-  void *CU_ProcPtr[1];                  /* coefficient functions					*/
+  BndCondProcPtr BndCond;               /* global boundary condition                            */
+  INT numOfCoeffFct;                            /* number of coefficient functions                      */
+  INT numOfUserFct;                             /* number of User functions                                     */
+  void *CU_ProcPtr[1];                  /* coefficient functions                                        */
 };
 
 
 #if (LGM_DIM==2)
 /****************************************************************************/
-/*																			*/
-/*	2D structures															*/
-/*																			*/
+/*                                                                                                                                                      */
+/*      2D structures                                                                                                                   */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct lgm_point {
 
-  DOUBLE position[LGM_DIM];                             /* position of corner							*/
+  DOUBLE position[LGM_DIM];                             /* position of corner                                                   */
 };
 
 struct lgm_line {
 
-  INT id;                                                               /* id of the line		*/
-  INT flag;                                                             /* general purpose flag							*/
-  INT nPoint;                                                           /* nb. of points on the line					*/
-  INT left, right;                                              /* subdomain on left and right side				*/
-  INT begin, end;                                               /* global id's starting from 0	                                */
-  BndCondProcPtr Bndcond;                               /* boundary condition							*/
-  struct lgm_point point[1];                            /* points of line stored here					*/
+  INT id;                                                               /* id of the line               */
+  INT flag;                                                             /* general purpose flag                                                 */
+  INT nPoint;                                                           /* nb. of points on the line                                    */
+  INT left, right;                                              /* subdomain on left and right side                             */
+  INT begin, end;                                               /* global id's starting from 0                                  */
+  BndCondProcPtr Bndcond;                               /* boundary condition                                                   */
+  struct lgm_point point[1];                            /* points of line stored here                                   */
 };
 
 struct lgm_subdom_data {
@@ -365,13 +372,13 @@ struct lgm_subdom_data {
 struct lgm_subdom {
 
   /* parameters */
-  char Unit[128];                                               /* unit-identification							*/
-  INT id;                                                               /* unique id, beginning with 1					*/
-  INT nLines;                                                           /* nb. of lines									*/
-  struct lgm_subdom_data *SubDomData;           /* data for subdomain							*/
+  char Unit[128];                                               /* unit-identification                                                  */
+  INT id;                                                               /* unique id, beginning with 1                                  */
+  INT nLines;                                                           /* nb. of lines                                                                 */
+  struct lgm_subdom_data *SubDomData;           /* data for subdomain                                                   */
 
   /* references */
-  struct lgm_line *line[1];                             /* begin of line reference field				*/
+  struct lgm_line *line[1];                             /* begin of line reference field                                */
 };
 
 struct lgm_dom_data {
@@ -388,38 +395,38 @@ struct lgm_domain {
   HEAP *theHeap;
 
   /* parameters */
-  INT convex;                                                           /* 0 (no) or 1 (yes)							*/
-  float radius, midpoint[LGM_DIM];              /* sphere of which domain is a subset			*/
-  INT nSubDomain;                                               /* nb. of subdomains							*/
-  INT nDomParts;                                                /* nb. of domain parts							*/
-  INT *s2p;                                                             /* pointer to table subbdom --> part			*/
-  INT nPoint;                                                           /* nb. of points								*/
-  struct lgm_dom_data *DomainData;              /* data for domain								*/
+  INT convex;                                                           /* 0 (no) or 1 (yes)                                                    */
+  float radius, midpoint[LGM_DIM];              /* sphere of which domain is a subset                   */
+  INT nSubDomain;                                               /* nb. of subdomains                                                    */
+  INT nDomParts;                                                /* nb. of domain parts                                                  */
+  INT *s2p;                                                             /* pointer to table subbdom --> part                    */
+  INT nPoint;                                                           /* nb. of points                                                                */
+  struct lgm_dom_data *DomainData;              /* data for domain                                                              */
 
   /* problem */
-  char ProblemName[128];                                /* name of problem								*/
-  struct lgm_problem *theProblem;               /* ptr to problem								*/
+  char ProblemName[128];                                /* name of problem                                                              */
+  struct lgm_problem *theProblem;               /* ptr to problem                                                               */
 
   /* reference to domain data */
-  struct lgm_subdom *theSubdom[1];              /* begin of subdom reference field				*/
+  struct lgm_subdom *theSubdom[1];              /* begin of subdom reference field                              */
 };
 
 struct lgm_bndp_line {
 
-  struct lgm_line *theLine;                             /* line											*/
-  DOUBLE local;                                                 /* local coordinate								*/
+  struct lgm_line *theLine;                             /* line                                                                                 */
+  DOUBLE local;                                                 /* local coordinate                                                             */
 };
 
 struct lgm_bndp {
 
   INT n;                                /* number of lines                                      */
-  struct lgm_bndp_line Line[1];         /* line(s)					                    */
+  struct lgm_bndp_line Line[1];         /* line(s)                                                          */
 };
 
 struct lgm_bnds {
 
-  struct lgm_line *theLine;                             /* line											*/
-  DOUBLE local[2];                                              /* local coordinates							*/
+  struct lgm_line *theLine;                             /* line                                                                                 */
+  DOUBLE local[2];                                              /* local coordinates                                                    */
 };
 
 typedef struct lgm_point LGM_POINT;
@@ -438,14 +445,14 @@ typedef struct lgm_bnds LGM_BNDS;
 
 #if (LGM_DIM==3)
 /****************************************************************************/
-/*									    */
-/*	3D structures															*/
-/*						                            */
+/*                                                                          */
+/*      3D structures                                                                                                                   */
+/*                                                                          */
 /****************************************************************************/
 
 struct lgm_point {
 
-  DOUBLE position[LGM_DIM];                     /* position of corner						*/
+  DOUBLE position[LGM_DIM];                     /* position of corner                                           */
 };
 
 struct linepoint
@@ -467,57 +474,57 @@ typedef struct linediscnew LINEDISCNEW;
 
 struct linedisc {
 
-  INT npoint;                                                   /* nb. of discretization points on the line	*/
-  DOUBLE *local;                                        /* local coorddinates of the points			*/
+  INT npoint;                                                   /* nb. of discretization points on the line     */
+  DOUBLE *local;                                        /* local coorddinates of the points                     */
 };
 
 struct lgm_line {
   INT id;                                                       /* id of the line */
-  INT flag;                                                     /* general purpose flag		*/
-  INT nPoint;                                                   /* nb. of points on the line	*/
-  INT begin, end;                                       /* global id's starting from 0	*/
-  struct linedisc *ldisc;                       /* discretization of the line	*/
-  LINEDISCNEW *ldiscnew;                        /* discretization of the line	*/
+  INT flag;                                                     /* general purpose flag         */
+  INT nPoint;                                                   /* nb. of points on the line    */
+  INT begin, end;                                       /* global id's starting from 0  */
+  struct linedisc *ldisc;                       /* discretization of the line   */
+  LINEDISCNEW *ldiscnew;                        /* discretization of the line   */
 
   /* specials for grape */
         #ifdef Grape
   INT active;
         #endif
   INT used;
-  struct lgm_point point[1];                    /* points of line stored here	*/
+  struct lgm_point point[1];                    /* points of line stored here   */
 };
 
 struct surfdisc {
 
   INT npoint;                                                   /* nb. of discretization points on the surface*/
-  INT ntriangle;                                        /* nb. of ggtriangles on the surface		*/
-  DOUBLE **local;                                       /* local coorddinates of the points			*/
-  INT *mesh_id;                                         /* id of point in mesh-structure			*/
-  INT **triangle;                                       /* triangle-list							*/
-  INT *xy_id;                                                   /* triangle-list							*/
-  INT **neighbour;                                      /* triangle-neighbour-list							*/
+  INT ntriangle;                                        /* nb. of ggtriangles on the surface            */
+  DOUBLE **local;                                       /* local coorddinates of the points                     */
+  INT *mesh_id;                                         /* id of point in mesh-structure                        */
+  INT **triangle;                                       /* triangle-list                                                        */
+  INT *xy_id;                                                   /* triangle-list                                                        */
+  INT **neighbour;                                      /* triangle-neighbour-list                                                      */
   INT dummy;                                                    /* to fill according to the needs                       */
 };
 
 struct lgm_triangle {
 
-  struct lgm_point *corner[3];          /* corners of the triangle					*/
+  struct lgm_point *corner[3];          /* corners of the triangle                                      */
   int cornerid[3];
-  int neighbor[3];                                      /* neighbors of the triangle				*/
+  int neighbor[3];                                      /* neighbors of the triangle                            */
 };
 
 struct lgm_surface {
 
   INT id;
-  INT flag;                                                             /* general purpose flag		                        */
-  INT nPoint;                                                           /* nb. of points on the surface			*/
-  INT nTriangle;                                                /* nb. of triangles on the surface		*/
-  INT nLine;                                                            /* nb. of lines on the surface			*/
-  INT left, right;                                              /* subdomain on left and right side		*/
-  BndCondProcPtr Bndcond;                               /* boundary condition					*/
-  struct surfdisc *sdisc;                               /* discretization of the surface		*/
-  struct lgm_point *point;                              /* ptr to first point					*/
-  struct lgm_triangle *triangle;                /* ptr to first triangle				*/
+  INT flag;                                                             /* general purpose flag                                 */
+  INT nPoint;                                                           /* nb. of points on the surface                 */
+  INT nTriangle;                                                /* nb. of triangles on the surface              */
+  INT nLine;                                                            /* nb. of lines on the surface                  */
+  INT left, right;                                              /* subdomain on left and right side             */
+  BndCondProcPtr Bndcond;                               /* boundary condition                                   */
+  struct surfdisc *sdisc;                               /* discretization of the surface                */
+  struct lgm_point *point;                              /* ptr to first point                                   */
+  struct lgm_triangle *triangle;                /* ptr to first triangle                                */
 
   /* specials for grape */
         #ifdef Grape
@@ -525,7 +532,7 @@ struct lgm_surface {
         #endif
 
   /* references */
-  struct lgm_line *line[1];                             /* ptr to lines							*/
+  struct lgm_line *line[1];                             /* ptr to lines                                                 */
 };
 
 struct lgm_subdom_data {
@@ -536,15 +543,15 @@ struct lgm_subdom_data {
 struct lgm_subdom {
 
   /* parameters */
-  char Unit[128];                                               /* unit-identification					*/
-  INT id;                                                               /* unique id, beginning with 1			*/
-  INT nSurface;                                                 /* nb. of surfaces						*/
-  INT nPoint;                                                           /* nb. of points						*/
-  struct lgm_subdom_data *SubDomData;           /* data for subdomain					*/
+  char Unit[128];                                               /* unit-identification                                  */
+  INT id;                                                               /* unique id, beginning with 1                  */
+  INT nSurface;                                                 /* nb. of surfaces                                              */
+  INT nPoint;                                                           /* nb. of points                                                */
+  struct lgm_subdom_data *SubDomData;           /* data for subdomain                                   */
 
   /* problem */
-  char ProblemName[128];                                /* name of problem						*/
-  struct lgm_problem *theProblem;               /* ptr to problem						*/
+  char ProblemName[128];                                /* name of problem                                              */
+  struct lgm_problem *theProblem;               /* ptr to problem                                               */
 
   /* specials for grape */
         #ifdef Grape
@@ -553,7 +560,7 @@ struct lgm_subdom {
         #endif
 
   /* references */
-  struct lgm_surface *surface[1];               /* begin of surface reference field		*/
+  struct lgm_surface *surface[1];               /* begin of surface reference field             */
 };
 
 struct lgm_dom_data {
@@ -570,66 +577,66 @@ struct lgm_domain {
   HEAP *theHeap;
 
   /* parameters */
-  INT convex;                                                           /* 0 (no) or 1 (yes)							*/
-  float radius, midpoint[LGM_DIM];              /* sphere of which domain is a subset			*/
-  INT nSubDomain;                                               /* nb. of subdomains							*/
-  INT nDomParts;                                                /* nb. of domain parts							*/
-  INT *s2p;                                                             /* pointer to table subbdom --> part			*/
-  INT nPoint;                                                           /* nb. of points								*/
-  struct lgm_dom_data *DomainData;              /* data for domain								*/
+  INT convex;                                                           /* 0 (no) or 1 (yes)                                                    */
+  float radius, midpoint[LGM_DIM];              /* sphere of which domain is a subset                   */
+  INT nSubDomain;                                               /* nb. of subdomains                                                    */
+  INT nDomParts;                                                /* nb. of domain parts                                                  */
+  INT *s2p;                                                             /* pointer to table subbdom --> part                    */
+  INT nPoint;                                                           /* nb. of points                                                                */
+  struct lgm_dom_data *DomainData;              /* data for domain                                                              */
 
   /* problem */
-  char ProblemName[128];                                /* name of problem								*/
-  struct lgm_problem *theProblem;               /* ptr to problem								*/
+  char ProblemName[128];                                /* name of problem                                                              */
+  struct lgm_problem *theProblem;               /* ptr to problem                                                               */
 
   /* reference to domain data */
-  struct lgm_subdom *theSubdom[1];              /* begin of subdom reference field				*/
+  struct lgm_subdom *theSubdom[1];              /* begin of subdom reference field                              */
 };
 
 struct lgm_bndp_line {
 
-  struct lgm_line *theLine;                             /* line										*/
+  struct lgm_line *theLine;                             /* line                                                                         */
         #ifdef NO_PROJECT
-  DOUBLE global_left[3];                                /* global coordinate of the left neighbor	*/
-  DOUBLE global_right[3];                               /* global coordinate of the right neighbor	*/
+  DOUBLE global_left[3];                                /* global coordinate of the left neighbor       */
+  DOUBLE global_right[3];                               /* global coordinate of the right neighbor      */
         #else
-  DOUBLE local_left;                                            /* local coordinate of the left neighbor	*/
-  DOUBLE local_right;                                           /* local coordinate of the right neighbor	*/
+  DOUBLE local_left;                                            /* local coordinate of the left neighbor        */
+  DOUBLE local_right;                                           /* local coordinate of the right neighbor       */
         #endif
 };
 
 struct lgm_bndp_surf {
 
-  struct lgm_surface *theSurf;                  /* surface										*/
+  struct lgm_surface *theSurf;                  /* surface                                                                              */
         #ifdef NO_PROJECT
-  DOUBLE global[3];                                                     /* global coordinate								*/
+  DOUBLE global[3];                                                     /* global coordinate                                                            */
         #else
-  DOUBLE local[2];                                                      /* local coordinate								*/
+  DOUBLE local[2];                                                      /* local coordinate                                                             */
     #endif
 };
 
 struct lgm_bndp {
 
-  INT nlines;                                                           /* number of lines								*/
-  struct lgm_bndp_line *Line;                           /* line(s)										*/
+  INT nlines;                                                           /* number of lines                                                              */
+  struct lgm_bndp_line *Line;                           /* line(s)                                                                              */
   INT nsurf;                                /* number of surfaces                                       */
-  struct lgm_bndp_surf *Surf;           /* surface(s)					                */
+  struct lgm_bndp_surf *Surf;           /* surface(s)                                                   */
 };
 
 struct lgm_bnds_triangle {
 
-  struct lgm_triangle *triangle;                /* ptr to triangle								*/
-  DOUBLE local[2];                                              /* local coordinate								*/
+  struct lgm_triangle *triangle;                /* ptr to triangle                                                              */
+  DOUBLE local[2];                                              /* local coordinate                                                             */
 };
 
 struct lgm_bnds {
 
   INT nn;
-  struct lgm_surface *theSurf;                  /* surface										*/
+  struct lgm_surface *theSurf;                  /* surface                                                                              */
         #ifdef NO_PROJECT
-  DOUBLE global[4][3];                                  /* global coordinates							*/
+  DOUBLE global[4][3];                                  /* global coordinates                                                   */
         #else
-  DOUBLE local[3][2];                                           /* local coordinates							*/
+  DOUBLE local[3][2];                                           /* local coordinates                                                    */
         #endif
 };
 
@@ -661,16 +668,16 @@ typedef struct Domain3d
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported global variables                                                                      */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 #if (LGM_DIM==2)
 LGM_LINE                                *FirstLine                      (LGM_DOMAIN *theDomain);
