@@ -495,7 +495,6 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 /* basic types */
 #define SHORT  short
 #define INT    int
-#define INT64  long long
 #define FLOAT  float
 #define DOUBLE double
 #define COORD  float
