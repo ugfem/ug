@@ -160,6 +160,7 @@
 #define FFCROSSMAT(r,c)                         FFCrossMatMem[2*FFCrossBw*(r)+(c)]
 
 #define FFCrossVC(pe)                           (PEInfoArray[pe].vc)
+#define FFCrossVC_IS_VALID(pe)          (PEInfoArray!=NULL)
 #define FFCrossRow(pe)                          (PEInfoArray[pe].row)
 #define FFCrossCol(pe)                          (PEInfoArray[pe].col)
 #define FFCrossFirstPos(pe)                     (PEInfoArray[pe].fpos)
@@ -284,6 +285,11 @@ void FFFinishComm( BLOCKVECTOR *bv, FFBufferFunc b_func, FFCommObjectType ffcomm
 void FFMakeConsistent( BLOCKVECTOR *bv, FFCommObjectType ffcommobjt, INT comp );
 #define FFVectorConsistent(bv,v_comp)           (FFMakeConsistent(bv,FFCommVec,v_comp))
 #define FFTridiagMatConsistent(bv,m_comp)       (FFMakeConsistent(bv,FFCommTridiagMat,m_comp))
+INT FFOrderTridiagMat( BLOCKVECTOR *bv, FFCommObjectType ffcommobjt );
+INT FFCheckOrderTridiagMat( BLOCKVECTOR *bv, FFCommObjectType ffcommobjt );
+
+INT PFFPreProcessIter( GRID *grid, DOUBLE *meshwidth, INT K_comp, INT u_comp, INT f_comp, const BV_DESC_FORMAT *bvdf );
+INT PFFPostProcessIter( GRID *grid );
 
 void FFInitCrossComm( BLOCKVECTOR *bv );
 void FFFinishCrossComm( void );

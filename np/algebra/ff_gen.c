@@ -114,7 +114,7 @@ INT aux5_COMP = DUMMY_COMP;
 INT aux6_COMP = DUMMY_COMP;
 
 #ifdef ModelP
-PEInfo *PEInfoArray;    /* dyn. allocacted array for each slave pe */
+PEInfo *PEInfoArray = NULL;     /* dyn. allocacted array for each slave pe */
 int FFFarmer;                   /* pe number of the master for cross system calculation */
 VChannelPtr FFFarmerVC; /* for slave: channel to the farmer */
 DOUBLE *FFCrossVecMem;  /* mem for global cross point vector */
@@ -669,6 +669,7 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
   *meshwidth = FFMeshwidthOfGrid( grid );
 
   nn = NVEC( grid );
+  printf(PFMT "%d vectors in grid\n",me,nn);
 
   /* if there exists already a blockvector list in the grid, dispose it first */
   FreeAllBV( grid );

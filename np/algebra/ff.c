@@ -505,6 +505,124 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
 }
 
 
+INT FFO0CalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
+                                 const BLOCKVECTOR *bv_source,
+                                 const BV_DESC *bvd_dest,
+                                 const BV_DESC *bvd_source,
+                                 const BV_DESC_FORMAT *bvdf,
+                                 INT tv_comp,
+                                 GRID *grid)
+/* Gabriels FF 0. Ordnung */
+{
+  register VECTOR *vi, *end_v;
+  register DOUBLE tvval, pred_val, succ_val, val;
+  INT aux_comp, K_comp, T_comp, missed;
+
+  aux_comp = GET_AUX_VEC;
+  ASSERT( aux_comp>-1 );
+  K_comp = STIFFMAT_ON_LEVEL_BLOCKWISE(bv_dest);
+  T_comp = DECOMPMAT_ON_LEVEL_BLOCKWISE(bv_dest);
+
+  ASSERT( aux_comp != DUMMY_COMP );
+  ASSERT( tv_comp != DUMMY_COMP );
+  ASSERT( K_comp != DUMMY_COMP );
+  ASSERT( T_comp != DUMMY_COMP );
+  ASSERT( K_comp != T_comp );
+  ASSERT( aux_comp != tv_comp );
+  /*ASSERT( K_comp == STIFFMAT_ON_LEVEL_BLOCKWISE(bv_source) );*/
+  /*ASSERT( T_comp == DECOMPMAT_ON_LEVEL_BLOCKWISE(bv_source) );*/
+
+  /* aux_i := L_(i,i+1) * tv_i+1 */
+  dsetBS( bv_source, aux_comp, 0.0 );
+  dmatmul_addBS( bv_source, bvd_dest, bvdf, aux_comp, K_comp, tv_comp );
+
+  /* aux_i = (T_i)^-1 * aux_i */
+#ifdef ModelP
+  FFMultWithMInv( bv_source, bvd_source, bvdf, aux_comp, aux_comp, NULL, NULL );
+  if ( BVNUMBER(bv_source) == FF_LINES_NR )       /* bv_source == Lines */
+  {
+#ifdef FFCOMM
+    FFVectorConsistent( (BLOCKVECTOR*)bv_source, aux_comp );
+#else
+    if( l_vector_consistentBS( grid, bvd_source, bvdf, aux_comp )!=NUM_OK ) REP_ERR_RETURN (1);
+#endif
+  }
+#else
+  FFMultWithMInv( bv_source, bvd_source, bvdf, aux_comp, aux_comp );
+#endif
+
+  /* aux_i+1 := L_(i+1,i) * aux_i */
+  dsetBS( bv_dest, aux_comp, 0.0 );
+  dmatmul_addBS( bv_dest, bvd_source, bvdf, aux_comp, K_comp, aux_comp );
+
+
+  /* calculate Theta */
+  /* Theta must fulfill the equation Theta * tv = aux = L * T^-1 * L * tv */
+
+  dmatsetBS( bv_dest, bvd_dest, bvdf, T_comp, 0.0 );
+
+  end_v = BVENDVECTOR( bv_dest );
+
+  missed=0;
+  BLOCK_L_VLOOP( vi, BVFIRSTVECTOR(bv_dest), end_v )
+  {
+    tvval = VVALUE( vi, tv_comp );
+    if ( fabs(tvval) < SMALL_D )
+    {
+      SETVCUSED( vi, TRUE );
+      missed++;
+      /*PRINTDEBUG( np, 0, ("FFO0CalculateThetaAndUpdate: testvector entry was 0\n") );
+         printf("tv\n"); printvBS(bv_dest, tv_comp);
+         REP_ERR_RETURN(NUM_ERROR);*/
+    }
+    else
+    {
+      SETVCUSED( vi, FALSE );
+      MVALUE( VSTART(vi), T_comp ) = MVALUE( VSTART(vi), K_comp ) -
+                                     VVALUE( vi, aux_comp ) / tvval;
+    }
+  }
+
+  /* treat the missed members */
+  vi = BVFIRSTVECTOR(bv_dest);
+  ASSERT( !VCUSED(vi) );        /* first entry must be set before; otherwise complicated searching will be necessary */
+  while( missed > 0 )
+  {
+    if (VCUSED(vi))
+    /* this vector was skipped before */
+    {
+      /* the skipped entry must be isolated in the sense, that the predvc and succvc were NOT skipped;
+         otherwise complicated searching will be necessary */
+      ASSERT(PREDVC(vi)!=NULL);
+      ASSERT(!VCUSED(PREDVC(vi)));
+      ASSERT(SUCCVC(vi)!=NULL);
+      ASSERT(!VCUSED(SUCCVC(vi)));
+
+      pred_val = MVALUE( VSTART(PREDVC(vi)), T_comp );
+      succ_val = MVALUE( VSTART(SUCCVC(vi)), T_comp );
+
+      if( fabs(pred_val-succ_val)> 1e-6 )
+        printf( "FFO0CalculateThetaAndUpdate: pred = %g   succ = %g\n", pred_val, succ_val);
+
+      if ( fabs(pred_val) > FFmuchBigger * fabs(succ_val ) )
+        val = succ_val;
+      else if ( fabs(succ_val) > FFmuchBigger * fabs(pred_val ) )
+        val = pred_val;
+      else
+        val = (pred_val + succ_val) * 0.5;
+      MVALUE( VSTART(vi), T_comp ) = val;
+      missed--;
+    }
+
+    vi = SUCCVC(vi);
+  }
+
+  FREE_AUX_VEC(aux_comp);
+
+  return(NUM_OK);
+}
+
+
 /****************************************************************************/
 /*D
    TFFUpdateDiagBlock - calculate the filtered diagonal block
@@ -900,6 +1018,9 @@ INT FFDecomp( DOUBLE wavenr,
   register BV_DESC *bvd_i, *bvd_im1, *bvd_temp;
   BV_DESC bvd1, bvd2;
   INT K_comp, FF_comp;
+#ifdef FFCOMM
+  INT nr_conns;         /* store number of connections */
+#endif
 
   ASSERT( !BV_IS_EMPTY(bv) );
 
@@ -967,7 +1088,7 @@ INT FFDecomp( DOUBLE wavenr,
 
     /* calculate Theta_(i,i);
        result on digonal blocks of FF_comp */
-    if ( BVNUMBER(bv_i)== FF_CROSS_NR )
+    if ( BVNUMBER(bv_i) == FF_CROSS_NR )
     {                   /* cross point sysytem aus ptff.c */
       FFConstructTestvector_loc( bv_i, tv1_comp, 1.0, 1.0 );
       FFConstructTestvector_loc( bv_i, tv2_comp, 2.0, 2.0 );
@@ -983,10 +1104,22 @@ INT FFDecomp( DOUBLE wavenr,
 #if (defined FF_ModelP) || (defined FF_PARALLEL_SIMULATION)
     if ( BVNUMBER(bv_i) == FF_LINES_NR )                /* lines */
     {
+#ifdef FFCOMM
+      nr_conns = NC(grid);                      /* store number of connections */
+#endif
+
       /* construct FF filtered approximation of the leaf blocks of the schur complement */
       /* the determination of the "lines" block is only a quick hack!!! */
 
       ConstructSchurFFApprox( bv_im1, bv_i, bvd_im1, bvd_i, bvdf, tv1_comp, tv2_comp, grid );
+
+#ifdef FFCOMM
+      if( nr_conns != NC(grid) )
+      {
+        /* number of connections have changed; thus reorder */
+        FFStartComm( bv_i, FFOrderTridiagMat, FFCommNone );                             /* NO finishing call neccessary! */
+      }
+#endif
 
                         #ifdef ModelP
       /* make Schur complement matrix for lines consistent */
@@ -1000,23 +1133,38 @@ INT FFDecomp( DOUBLE wavenr,
       /*printf(PFMT" nach\n",me);printmBS(bv_i,bv_i,FF_comp);*/
                         #endif
     }
-    else
+    else if ( BVNUMBER(bv_i) == FF_CROSS_NR )                   /* crosspoints */
+    {
+#ifdef FFCOMM
+      nr_conns = NC(grid);                      /* store number of connections */
+#endif
+#ifdef FF_CROSS_SCHUR_DIAG_APPROX
+      FFO0CalculateThetaAndUpdate( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv1_comp, grid );
+#else
+      FFCalculateThetaAndUpdate( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
+#endif
+
+#ifdef FFCOMM
+      if( nr_conns != NC(grid) )
+      {
+        /* number of connections have changed; thus reorder */
+        FFStartComm( bv_i, FFOrderTridiagMat, FFCommNone );                             /* NO finishing call neccessary! */
+      }
+#endif
+                        #ifdef ModelP
+      /* make Schur complement matrix for cross points consistent */
+#ifdef FFCOMM
+      /*FFTridiagMatConsistent( bv_i, FF_comp );*/
+      FFGatherCrossMat( bv_i, FF_comp );
+#else
+      ASSERT(grid!=NULL);
+      if( l_matrix_consistent( grid, DECOMP_MATDATA_DESC_ON_LEVEL(bv), MAT_CONS )!=NUM_OK ) REP_ERR_RETURN(NUM_ERROR);
+#endif
+                        #endif
+    }
+    else                /* in the inner of the subdomain */
     {
       FFCalculateThetaAndUpdate( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
-
-                        #ifdef ModelP
-      if ( BVNUMBER(bv_i) == FF_CROSS_NR )                      /* crosspoints */
-      {
-        /* make Schur complement matrix for cross points consistent */
-#ifdef FFCOMM
-        /*FFTridiagMatConsistent( bv_i, FF_comp );*/
-        FFGatherCrossMat( bv_i, FF_comp );
-#else
-        ASSERT(grid!=NULL);
-        if( l_matrix_consistent( grid, DECOMP_MATDATA_DESC_ON_LEVEL(bv), MAT_CONS )!=NUM_OK ) REP_ERR_RETURN(NUM_ERROR);
-#endif
-      }
-                        #endif
     }
 #else
     FFCalculateThetaAndUpdate( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
@@ -1040,7 +1188,7 @@ INT FFDecomp( DOUBLE wavenr,
   /* calculate the last (T_n)^-1 */
   FFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
 
-  /*	printvBS(bv, tv1_comp);printvBS(bv, tv2_comp);*/
+  /*printvBS(bv, tv1_comp);printvBS(bv, tv2_comp);*/
   /*printf("K_comp\n"); printmBS(bv,bv,K_comp);printf("FF_comp\n"); printmBS(bv,bv,FF_comp); printf("\n");*/
   return(NUM_OK);
 }

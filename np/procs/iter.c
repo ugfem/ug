@@ -3944,7 +3944,7 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
 #else
 
 #ifdef ModelP
-  n = 2;
+  n = 3;                /* 2 for BPS, 3 for general */
 #else
   n = 1;
 #endif
@@ -3988,7 +3988,9 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
   if ( NPFF_DO_FF(np) )
     n *= 2;
 
+#ifdef __TWODIM__
   n+=10; /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! temp fuer CHECK_CALCS */
+#endif
 
   for( i=0; i<n; i++ )
   {
@@ -4018,7 +4020,7 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
               NP_RETURN(1,result[0]);
    */
 
-  if ( PTFFPrepareSolver( theGrid, &meshwidth, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
+  if ( PFFPreProcessIter( theGrid, &meshwidth, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
   {
     PrintErrorMessage('E',"FFPreProcess","preparation of the grid failed for ParSim");
     NP_RETURN(1,result[0]);
@@ -4026,7 +4028,7 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
 #elif defined FF_PARALLEL_SIMULATION
   if ( NPFF_ParSim(np) )
   {
-    if ( PTFFPrepareSolver( theGrid, &meshwidth, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
+    if ( PFFPreProcessIter( theGrid, &meshwidth, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
     {
       PrintErrorMessage('E',"FFPreProcess","preparation of the grid failed for ParSim");
       NP_RETURN(1,result[0]);
@@ -4126,18 +4128,16 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
   NP_FF *np;
   MULTIGRID *theMG;
   INT i;
-#ifdef FF_ModelP
-  INT num_buffers, num_buffers_cross;
-#endif
 
   np = (NP_FF *) theNP;
   theMG = np->smoother.iter.base.mg;
 
 #ifdef FF_ModelP
-  num_buffers = FFStartComm( BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level)))), FFStartDeallocBuffer, FFCommNone );        /* lines */
-  #ifndef FFCOMM
-  num_buffers_cross = FFStartComm( BVSUCC(BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level))))), FFStartDeallocBuffer, FFCommNone );          /* cross */
-  #endif
+  if ( PFFPostProcessIter(GRID_ON_LEVEL(theMG,level))!=NUM_OK)
+  {
+    PrintErrorMessage('E',"FFPostProcess","postprocessing of the grid failed in PFFPostProcessIter");
+    NP_RETURN(1,result[0]);
+  }
 #endif
 
   if (NPFF_tv(np) != NULL)
@@ -4164,15 +4164,6 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
       FF_Vecs[i] = DUMMY_COMP;
     }
   }
-
-#ifdef FF_ModelP
-  FFFinishComm( BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level)))), FFFinishDeallocBuffer, FFCommNone, num_buffers );       /* lines */
-  #ifdef FFCOMM
-  FFFinishCrossComm();       /* cross */
-  #else
-  FFFinishComm( BVSUCC(BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level))))), FFFinishDeallocBuffer, FFCommNone, num_buffers_cross );       /* cross */
-  #endif
-#endif
 
   FreeAllBV( GRID_ON_LEVEL(theMG,level) );
   if (MGCreateConnection(theMG))        /* restore the disposed connections */
@@ -4346,9 +4337,12 @@ static INT FFIter (NP_ITER *theNP, INT level,
 #ifdef ModelP
         UserWrite( "ONLY LOCAL:" );                             /* otherwise communication is necessary for the residuum */
 #endif
-        UserWriteF( "Wnr plane = %4g Wnr line = %4g new defect = %12lg "
-                    "conv. rate = %12lg\n", wavenr, wavenr, new_norm,
-                    new_norm/start_norm );
+        if( fabs(start_norm)<1e-20)
+          printf(PFMT " start_norm == 0\n",me);
+        else
+          UserWriteF( "Wnr plane = %4g Wnr line = %4g new defect = %12lg "
+                      "conv. rate = %12lg\n", wavenr, wavenr, new_norm,
+                      new_norm/start_norm );
       }
     }
 
@@ -4357,7 +4351,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
 
   /* set all vectors with VCLASS < ACTIVE_CLASS to 0.0
      since in the FF routines all inner vectors are calculated, only the
-     dirichlet boundary vectos remain as < ACTIVE_CLASS
+     dirichlet boundary vectors remain as < ACTIVE_CLASS
      BVSUCC(GFIRSTBV(theGrid)) are exactly the dirichlet boundary vectors */
   dsetBS( BVSUCC(GFIRSTBV(theGrid)), VD_SCALCMP( x ), 0.0 );
 
