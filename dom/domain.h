@@ -574,6 +574,27 @@ typedef struct mesh MESH;
 
 /****************************************************************************/
 /*D
+   BNDP_SurfaceId - gets surface ids for a BNDP
+
+   SYNOPSIS:
+   INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i)
+
+   PARAMETERS:
+   .  aBndP - BNDP structure
+   .  i	 - evaluate on patch i
+   .  n     - number of BNDS
+
+   DESCRIPTION:
+   This function returns surface ids of the n surfaces on which
+   the BNDP resides
+
+   RETURN VALUE:
+   INT surface id
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
    BNDP_BndPDesc - sets descriptor for BNDP
 
    SYNOPSIS:
@@ -877,6 +898,7 @@ INT         BNDS_BndSDesc         (BNDS *theBndS, INT *id, INT *nbid, INT *part)
 BNDP*       BNDS_CreateBndP       (HEAP *Heap, BNDS *theBndS, DOUBLE *local);
 BVP        *BVP_GetFirst          (void);
 INT         BNDS_Dispose          (HEAP *Heap, BNDS *theBndS);
+INT         BNDP_SurfaceId        (BNDP *aBndP, INT *n, INT i);
 
 
 #ifdef ModelP
