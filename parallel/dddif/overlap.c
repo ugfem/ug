@@ -422,6 +422,7 @@ INT     ConnectGridOverlap (GRID *theGrid)
           {
             ok = 1;
           }
+          /* reset unsymmetric pointer relation ship */
           /* TODO: delete this is done in gridcons.c
                                                   else
                                                   {
@@ -429,35 +430,34 @@ INT     ConnectGridOverlap (GRID *theGrid)
                                                           {
                                                                   if (NBELEM(NbSon,k)==theSon) break;
                                                           }
-                                                          /* reset unsymmetric pointer relation ship */
-          if (k>=SIDES_OF_ELEM(NbSon)) SET_NBELEM(theSon,j,NULL);
+                                                          if (k>=SIDES_OF_ELEM(NbSon)) SET_NBELEM(theSon,j,NULL);
+                                                  }
+           */
         }
-        */
-      }
-      if (!ok)
-      {
-        if (ECLASS(theSon) == YELLOW_CLASS)
+        if (!ok)
         {
-          UserWriteF(PFMT "ConnectGridOverlap(): disposing useless yellow ghost  e=" EID_FMTX
-                     "f=" EID_FMTX "this ghost is useless!\n",
-                     me,EID_PRTX(theSon),EID_PRTX(theElement));
-          DisposeElement(UPGRID(theGrid),theSon,TRUE);
-        }
-        else
-        {
-          UserWriteF(PFMT "ConnectGridOverlap(): ERROR e=" EID_FMTX
-                     "f=" EID_FMTX "this ghost is useless!\n",
-                     me,EID_PRTX(theSon),EID_PRTX(theElement));
+          if (ECLASS(theSon) == YELLOW_CLASS)
+          {
+            UserWriteF(PFMT "ConnectGridOverlap(): disposing useless yellow ghost  e=" EID_FMTX
+                       "f=" EID_FMTX "this ghost is useless!\n",
+                       me,EID_PRTX(theSon),EID_PRTX(theElement));
+            DisposeElement(UPGRID(theGrid),theSon,TRUE);
+          }
+          else
+          {
+            UserWriteF(PFMT "ConnectGridOverlap(): ERROR e=" EID_FMTX
+                       "f=" EID_FMTX "this ghost is useless!\n",
+                       me,EID_PRTX(theSon),EID_PRTX(theElement));
 
-          /* TODO: better do this
-             assert(0); */
+            /* TODO: better do this
+               assert(0); */
+          }
         }
       }
     }
   }
-}
 
-return(GM_OK);
+  return(GM_OK);
 }
 
 
