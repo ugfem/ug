@@ -40,15 +40,19 @@
 
 #define UG_VERSION "ug 3.3"
 
-#define UG_RCS_STRING UGRCSSTRING(UG_VERSION,ARCH_VERSION,DIM,GRAPE,NETGEN,DOM_MODULE,DEBUG_MODE)
-#define UGRCSSTRING(ug_version,arch_version,dim,grape,netgen,dom_module,debug_mode)\
-  UGRCSSTRINGAUX(ug_version,arch_version,dim,grape,netgen,dom_module,debug_mode)
-#define UGRCSSTRINGAUX(ug_version,arch_version,dim,grape,netgen,dom_module,debug_mode)\
-  "$" "State: UG_VERSION=" # ug_version " ARCH_VERSION=" # arch_version " DIM=" # dim " GRAPE=" # grape\
+#define UG_RCS_STRING UGRCSSTRING(UG_VERSION,ARCH_VERSION,DIM,MODEL,GRAPE,NETGEN,DOM_MODULE,DEBUG_MODE)
+
+#define UGRCSSTRING(ug_version,arch_version,dim,model,grape,netgen,dom_module,debug_mode)\
+  UGRCSSTRINGAUX(ug_version,arch_version,dim,model,grape,netgen,dom_module,debug_mode)
+
+#define UGRCSSTRINGAUX(ug_version,arch_version,dim,model,grape,netgen,dom_module,debug_mode)\
+  "$" "State: UG_VERSION=" # ug_version " ARCH_VERSION=" # arch_version " DIM=" # dim\
+  " GRAPE=" # grape " MODEL=" # model\
   " NETGEN=" # netgen " DOM_MODULE=" # dom_module\
   " DEBUG_MODE=" # debug_mode " $"
 
 #define RCSID(header,module_rcs_string) RCSIDAUX(header,module_rcs_string)
+
 #define RCSIDAUX(header,module_rcs_string) static char rcsid[] = header ## module_rcs_string;
 
 
