@@ -56,6 +56,7 @@
 #include "elements.h"
 #include "shapes.h"
 #include "rm.h"
+#include "mgio.h"
 
 /* include refine because of macros accessed  */
 #include "refine.h"
@@ -184,7 +185,7 @@ INT MGSetVectorClasses (MULTIGRID *theMG)
    D*/
 /****************************************************************************/
 
-INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
+INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
 {
   FILE *stream;
   GRID *theGrid;
@@ -288,6 +289,143 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   fprintf(stream,EOF_FMT);
   fclose(stream);
   return(GM_OK);
+}
+
+INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
+{
+  GRID *theGrid;
+  VERTEX *theVertex;
+  ELEMENT *theElement;
+  HEAP *theHeap;
+  MGIO_MG_GENERAL mg_general;
+  BVP_DESC theBVPDesc;
+  MGIO_GE_GENERAL ge_general;
+  MGIO_GE_ELEMENT ge_element[TAGS];
+  MGIO_RR_GENERAL rr_general;
+  MGIO_CG_GENERAL cg_general;
+  MGIO_CG_POINT *cg_point;
+  MGIO_CG_ELEMENT *cg_element;
+  INT i,j,k,niv,nbv,nie,nbe,n;
+  char *p;
+
+  /* check */
+  if (theMG==NULL) return (1);
+
+  /* open file */
+  if (Write_OpenFile (name)) return (1);
+
+  /* write general information */
+  if (BVP_SetBVPDesc(MG_BVP(theMG),&theBVPDesc)) return (1);
+  theGrid = GRID_ON_LEVEL(theMG,0);
+  p = name + strlen(name) - 4;
+  if (strcmp(p,".asc")==0) mg_general.mode = 0;
+  else if (strcmp(p,".bin")==0) mg_general.mode = 1;
+  else return (1);
+  mg_general.nLevel               = 1;
+  mg_general.nNode                = NN(theGrid);
+  mg_general.nPoint               = NV(theGrid);
+  mg_general.nElement             = NT(theGrid);
+  strcpy(mg_general.DomainName,BVPD_NAME(theBVPDesc));
+  strcpy(mg_general.Formatname,ENVITEM_NAME(MGFORMAT(theMG)));
+  mg_general.VectorTypes  = 0;
+  if (Write_MG_General(&mg_general)) return (1);
+
+  /* write information about general elements */
+  ge_general.nGenElement = TAGS;
+  if (Write_GE_General(&ge_general)) return (1);
+  for (i=0; i<TAGS; i++)
+  {
+    ge_element[i].tag = i;
+    ge_element[i].nCorner = element_descriptors[i]->corners_of_elem;
+    ge_element[i].nEdge = element_descriptors[i]->edges_of_elem;
+    ge_element[i].nSide = element_descriptors[i]->sides_of_elem;
+    for (j=0; j<MGIO_MAX_EDGES_OF_ELEM; j++)
+    {
+      ge_element[i].CornerOfEdge[j][0] = element_descriptors[i]->corner_of_edge[j][0];
+      ge_element[i].CornerOfEdge[j][1] = element_descriptors[i]->corner_of_edge[j][1];
+    }
+    for (j=0; j<MGIO_MAX_SIDES_OF_ELEM; j++)
+      for (k=0; k<MGIO_MAX_CORNERS_OF_SIDE; k++)
+        ge_element[i].CornerOfSide[j][k] = element_descriptors[i]->corner_of_side[j][k];
+  }
+  if (Write_GE_Elements(TAGS,ge_element)) return (1);
+
+  /* write information about refrules used */
+  rr_general.nRules = 0;
+  if (Write_RR_General(&rr_general)) return (1);
+
+  /* write general information about coarse grid */
+  theGrid = GRID_ON_LEVEL(theMG,0);
+  cg_general.nPoint = NV(theGrid);
+  niv=nbv=0;
+  for (theVertex=FIRSTVERTEX(theGrid); theVertex!=NULL; theVertex=SUCCV(theVertex))
+  {
+    if (OBJT(theVertex)==IVOBJ) niv++;
+    else if (OBJT(theVertex)==BVOBJ) nbv++;
+    else return (1);
+  }
+  cg_general.nBndPoint = nbv;
+  cg_general.nInnerPoint = niv;
+  cg_general.nElement = NT(theGrid);
+  nie=nbe=0;
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+  {
+    if (OBJT(theElement)==IEOBJ) nie++;
+    else if (OBJT(theElement)==BEOBJ) nbe++;
+    else return (1);
+  }
+  cg_general.nBndElement = nbe;
+  cg_general.nInnerElement = nie;
+  if (Write_CG_General(&cg_general)) return (1);
+
+  /* write coarse grid points */
+  theGrid = GRID_ON_LEVEL(theMG,0);
+  theHeap = MGHEAP(theMG);
+  MarkTmpMem(theHeap);
+  n = NV(theGrid)*sizeof(MGIO_CG_POINT);
+  cg_point = (MGIO_CG_POINT *)GetTmpMem(theHeap,n);
+  for (theVertex=FIRSTVERTEX(theGrid),i=0; theVertex!=NULL; theVertex=SUCCV(theVertex),i++)
+    for (j=0; j<MGIO_DIM; j++)
+      cg_point[i].position[j] = CVECT(theVertex)[j];
+  if (Write_CG_Points((int)NV(theGrid),cg_point)) return (1);
+  ReleaseTmpMem(theHeap);
+
+  /* write coarse grid elements */
+  theGrid = GRID_ON_LEVEL(theMG,0);
+  theHeap = MGHEAP(theMG);
+  MarkTmpMem(theHeap);
+  n = NT(theGrid)*sizeof(MGIO_CG_ELEMENT);
+  cg_element = (MGIO_CG_ELEMENT*)GetTmpMem(theHeap,n);
+  ReleaseTmpMem(theHeap);
+
+  /* close file */
+  if (CloseFile ()) return (1);
+
+  return (0);
+}
+
+INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
+{
+  char *p;
+  INT mode;
+
+  /* check name convention */
+  p = name + strlen(name) - 4;
+  if (strcmp(p,".scr")==0)
+  {
+    if (SaveMultiGrid_SCR (theMG,name,comment)) return (1);
+  }
+  else if (strcmp(p,".asc")==0 || strcmp(p,".bin")==0)
+  {
+    if (SaveMultiGrid_SPF (theMG,name,comment)) return (1);
+  }
+  else
+  {
+    UserWrite("filename must end with '.scr', '.asc' or '.bin'\n");
+    return (1);
+  }
+
+  return (0);
 }
 
 /****************************************************************************/

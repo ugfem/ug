@@ -10,7 +10,7 @@
 # include configuration and all makefile macro definitions
 include ../ug.conf
 
-OBJECTS = algebra.o enrol.o evm.o ugio.o\
+OBJECTS = algebra.o enrol.o evm.o mgio.o ugio.o\
 		 ugm.o cw.o initgm.o elements.o\
 		 shapes.o evalproc.o rm.o refine.o
 

@@ -28,6 +28,8 @@
 #ifndef __DOMAIN__
 #define __DOMAIN__
 
+#include <stdio.h>
+
 #ifndef __COMPILER__
 #include "compiler.h"
 #endif
@@ -198,8 +200,8 @@ INT         BNDP_BndPDesc         (BNDP *theBndP, INT *move);
 BNDS*       BNDP_CreateBndS       (HEAP *Heap, BNDP **theBndP, INT n);
 BNDP*       BNDP_CreateBndP       (HEAP *Heap, BNDP *theBndP0, BNDP *theBndP1, COORD lcoord);
 INT         BNDP_Dispose          (HEAP *Heap, BNDP *theBndP);
-INT         BNDP_SaveBndP         (BNDP *theBndP, char *data, INT *data_size);
-BNDP       *BNDP_LoadBndP         (HEAP *Heap, char *data, INT *data_size);
+INT         BNDP_SaveBndP         (BNDP *theBndP, FILE *stream);
+BNDP       *BNDP_LoadBndP         (HEAP *Heap, FILE *stream);
 
 /* functions for BNDS */
 INT         BNDS_Global           (BNDS *theBndS, COORD *local, COORD *global);
@@ -207,8 +209,8 @@ INT         BNDS_BndCond          (BNDS *theBndS, COORD *local, COORD *in, DOUBL
 INT         BNDS_BndSDesc         (BNDS *theBndS, INT *left, INT *right);
 BNDP*       BNDS_CreateBndP       (HEAP *Heap, BNDS *theBndS, COORD *local);
 INT         BNDS_Dispose          (HEAP *Heap, BNDS *theBndS);
-INT         BNDS_SaveBndS         (HEAP *Heap, BNDS *theBndS, char *data, INT *data_size);
-BNDS       *BNDS_LoadBndS         (HEAP *Heap, char *data, INT *data_size);
+INT         BNDS_SaveBndS         (BNDS *theBndS, FILE *stream);
+BNDS       *BNDS_LoadBndS         (HEAP *Heap, FILE *stream);
 
 /* miscellanious */
 INT         InitDom               (void);
