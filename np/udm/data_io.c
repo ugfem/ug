@@ -123,6 +123,8 @@ static LoadElementData (MULTIGRID *theMG)
   INT m = EDATA_DEF_IN_MG(theMG) / sizeof(DOUBLE);
   INT level;
 
+  return(0);
+
   if (m == 0) return(0);
 
   for (level=0; level<=TOPLEVEL(theMG); level++)
@@ -177,6 +179,109 @@ static SaveElementData (MULTIGRID *theMG)
     #ifdef ModelP
   a_elementdata_consistent(theMG,0,TOPLEVEL(theMG));
     #endif
+
+  return(0);
+}
+
+static int EdgeCompare (EDGE **ed0, EDGE **ed1)
+{
+  INT n0 = ID(NBNODE(LINK0(*ed0)));
+  INT n1 = ID(NBNODE(LINK0(*ed1)));
+
+  if (n0 < n1)
+    return(1);
+  else if (n0 > n1)
+    return(-1);
+
+  if (ID(NBNODE(LINK1(*ed0))) < ID(NBNODE(LINK1(*ed1))))
+    return(1);
+
+  return(-1);
+}
+
+static LoadEdgeData (MULTIGRID *theMG, VECDATA_DESC *v)
+{
+  HEAP *Heap = MGHEAP(theMG);
+  INT m = VD_NCMPS_IN_TYPE(v,EDGEVEC);
+  INT level;
+
+  if (m == 0) return(0);
+
+  for (level=0; level<=TOPLEVEL(theMG); level++)
+  {
+    GRID *theGrid = GRID_ON_LEVEL(theMG,level);
+    INT i,n;
+    ELEMENT *e;
+    EDGE **ed;
+    INT MarkKey;
+    INT c = VD_CMP_OF_TYPE(v,EDGEVEC,0);
+
+    for (n=0, e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
+      for (i=0; i<EDGES_OF_ELEM(e); i++)
+        /*  if (ID(CORNER(e,CORNER_OF_EDGE(e,i,0)))
+                      < ID(CORNER(e,CORNER_OF_EDGE(e,i,1)))) */
+        n++;
+    MarkTmpMem(Heap,&MarkKey);
+    ed = (EDGE**) GetTmpMem(Heap,sizeof(EDGE *)*n,MarkKey);
+    for (n=0, e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
+      for (i=0; i<EDGES_OF_ELEM(e); i++)
+        /* if (ID(CORNER(e,CORNER_OF_EDGE(e,i,0)))
+                    < ID(CORNER(e,CORNER_OF_EDGE(e,i,1)))) */
+        ed[n++] =
+          GetEdge(CORNER(e,CORNER_OF_EDGE(e,i,0)),
+                  CORNER(e,CORNER_OF_EDGE(e,i,1)));
+    qsort(ed,n,sizeof(EDGE*),
+          (int (*)(const void *, const void *))EdgeCompare);
+    for (i=0; i<n; i++)
+      if (Bio_Read_mdouble(m,(double*)VVALUEPTR(EDVECTOR(ed[i]),c)))
+        return (1);
+    ReleaseTmpMem(Heap,MarkKey);
+        #ifdef ModelP
+    l_ghostvector_consistent(theGrid,v);
+        #endif
+  }
+
+  return(0);
+}
+
+static SaveEdgeData (MULTIGRID *theMG, VECDATA_DESC *v)
+{
+  HEAP *Heap = MGHEAP(theMG);
+  INT m = VD_NCMPS_IN_TYPE(v,EDGEVEC);
+  INT level;
+
+  if (m == 0) return(0);
+
+  for (level=0; level<=TOPLEVEL(theMG); level++)
+  {
+    GRID *theGrid = GRID_ON_LEVEL(theMG,level);
+    INT i,n;
+    ELEMENT *e;
+    EDGE **ed;
+    INT MarkKey;
+    INT c = VD_CMP_OF_TYPE(v,EDGEVEC,0);
+
+    for (n=0, e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
+      for (i=0; i<EDGES_OF_ELEM(e); i++)
+        /*   if (ID(CORNER(e,CORNER_OF_EDGE(e,i,0)))
+                       < ID(CORNER(e,CORNER_OF_EDGE(e,i,1)))) */
+        n++;
+    MarkTmpMem(Heap,&MarkKey);
+    ed = (EDGE**) GetTmpMem(Heap,sizeof(EDGE *)*n,MarkKey);
+    for (n=0, e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
+      for (i=0; i<EDGES_OF_ELEM(e); i++)
+        /* if (ID(CORNER(e,CORNER_OF_EDGE(e,i,0)))
+                      < ID(CORNER(e,CORNER_OF_EDGE(e,i,1)))) */
+        ed[n++] =
+          GetEdge(CORNER(e,CORNER_OF_EDGE(e,i,0)),
+                  CORNER(e,CORNER_OF_EDGE(e,i,1)));
+    qsort(ed,n,sizeof(EDGE*),
+          (int (*)(const void *, const void *))EdgeCompare);
+    for (i=0; i<n; i++)
+      if (Bio_Write_mdouble(m,(double*)VVALUEPTR(EDVECTOR(ed[i]),c)))
+        return (1);
+    ReleaseTmpMem(Heap,MarkKey);
+  }
 
   return(0);
 }
@@ -492,6 +597,18 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   if (EDATA_DEF_IN_MG(theMG))
     if (LoadElementData(theMG))
     {CloseDTFile(); UserWrite("ERROR: load element data failed\n"); return (1);}
+
+  /* load edge vector data (if exists) */
+  for (i=0; i<n; i++)
+  {
+    if (theVDList[i]==NULL) continue;
+    if (VD_NCMPS_IN_TYPE(theVDList[i],EDGEVEC) > 0)
+      if (LoadEdgeData(theMG,theVDList[i])) {
+        CloseDTFile();
+        UserWrite("ERROR: save element data failed\n");
+        return (1);
+      }
+  }
 
   /* close file */
   if (CloseDTFile()) return (1);
@@ -870,6 +987,18 @@ INT SaveData (MULTIGRID *theMG, char *name, INT rename, char *type, INT number, 
   if (EDATA_DEF_IN_MG(theMG))
     if (SaveElementData(theMG))
     {CloseDTFile(); UserWrite("ERROR: save element data failed\n"); return (1);}
+
+  /* save edge vector data (if exists) */
+  for (i=0; i<n; i++)
+  {
+    if (theVDList[i]==NULL) continue;
+    if (VD_NCMPS_IN_TYPE(theVDList[i],EDGEVEC) > 0)
+      if (SaveEdgeData(theMG,theVDList[i])) {
+        CloseDTFile();
+        UserWrite("ERROR: save element data failed\n");
+        return (1);
+      }
+  }
 
   /* close file */
   if (CloseDTFile()) return (1);
