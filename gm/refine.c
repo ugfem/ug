@@ -2689,6 +2689,27 @@ static INT RestrictElementMark(ELEMENT *theElement)
 }
 
 #ifdef __PERIODIC_BOUNDARY__
+#ifdef ModelP
+static int Gather_USEDflag (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+
+  ((INT *)data)[0] = USED(pv);
+  return (0);
+}
+
+static int Scatter_USEDflag (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+  INT flag1,flag = ((INT *)data)[0];
+
+  if (flag || USED(pv)) SETUSED(pv,1);
+  			 
+  return (0);
+}
+#endif
+
+
 static INT Grid_RestrictPeriodicMarks(GRID *grid)
 {
   ELEMENT *elem;
@@ -2845,11 +2866,18 @@ static INT RestrictMarks (GRID *theGrid)
 	}
 	/* TODO: delete special debug */ PRINTELEMID(-1);
 #ifdef __PERIODIC_BOUNDARY__
+	#ifdef ModelP
+	PRINTDEBUG(gm,1,("\n" PFMT "exchange USED flag for restrict marks\n",me));
+	/* exchange USED flag of periodic vectors to indicate marked elements */
+	DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),Gather_USEDflag, Scatter_USEDflag);
+	#endif
+	
 	/* if an element at a periodic boundary is marked,
 	   the corresponding element on the other side has to be marked too */
 	if (Grid_RestrictPeriodicMarks(theGrid))
 	  RETURN (GM_ERROR);
 #endif
+
 	return(GM_OK);
 }
 
@@ -6129,7 +6157,7 @@ DDD_CONSCHECK;
 
 #ifdef __PERIODIC_BOUNDARY__
 	/* TODO modification for adaptive refinement in parallel */
-	if (newlevel)
+	if (level<toplevel || newlevel)
 	{
 		ASSERT(FinerGrid != NULL);
 		Grid_GeometricToPeriodic(FinerGrid);
@@ -6398,6 +6426,13 @@ static INT Grid_MakePeriodicMarksConsistent(GRID *grid)
 	}
   }
 
+  #ifdef ModelP
+  /* exchange USED flag for periodic vectors */
+  PRINTDEBUG(gm,1,("\n" PFMT "exchange USED flag for restrict marks in Grid_MakePeriodicMarksConsistent 1. comm.\n",me));
+  /* exchange USED flag of periodic vectors to indicate marked elements */
+  DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(grid),sizeof(INT),Gather_USEDflag, Scatter_USEDflag);
+  #endif
+
   /* flag all periodic vectors consistently */
   for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
 	if (EstimateHere(elem)) {
@@ -6437,6 +6472,13 @@ static INT Grid_MakePeriodicMarksConsistent(GRID *grid)
 	  }
 	}
   }
+
+  #ifdef ModelP
+  /* exchange USED flag for periodic vectors */
+  PRINTDEBUG(gm,1,("\n" PFMT "exchange USED flag for restrict marks in Grid_MakePeriodicMarksConsistent 2. comm.\n",me));
+  /* exchange USED flag of periodic vectors to indicate marked elements */
+  DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(grid),sizeof(INT),Gather_USEDflag, Scatter_USEDflag);
+  #endif
 
   /* mark all periodic elements consistently */
   for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
