@@ -615,6 +615,11 @@ for initialisation of the damped point-block Gauss-Seidel use:
 npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
        $damp <sc double list>
 
+-sympbgs > smoother numproc gauss-seidel
+for initialisation of the symmertic damped point-block Gauss-Seidel use:
+npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
+       $damp <sc double list>
+
 -pbsor > smoother numproc sor
 for initialisation of the damped point-block sor (successive overrelaxation) use:
 npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
@@ -681,4 +686,10 @@ nl # nonlinear solver
 for initialisation use:
 npinit $n <new sym> $o <old sym> $t <temp sym> $d {NO|RED|FULL} $m <maxit> 
        $l <linear solver> $r <assemble> $Rel_Limit <sc double list> $Damp <sc double list>
+
+-TNLSolve > numproc
+TNLSolve                  # time solver
+npinit $n <new sym> $o <old sym> $t <temp sym> $d {NO|RED|FULL} $m <maxit> 
+       $l <linear solver> $r <assemble> $Rel_Limit <sc double list> $Damp <sc double list> ??????
+
 
