@@ -413,7 +413,7 @@ void MakeRefMarkandMarkClassConsistent (int level)
 }
 #endif
 
-#ifdef ModelPTest
+#ifdef ModelP
 /****************************************************************************/
 /*																			*/
 /* Function:  CheckPartitioning												*/
@@ -439,10 +439,10 @@ INT CheckPartitioning (MULTIGRID *theMG)
 	restrict = 0;
 
 	/* reset used flags */
-	for (i=TOPLEVEL(theMG); i>=0; i--)
+	for (i=TOPLEVEL(theMG); i>0; i--)
 	{
 		theGrid = GRID_ON_LEVEL(theMG,i);
-		for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
+		for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
 			 theElement=SUCCE(theElement))
 		{
 			if (LEAFELEM(theElement))
@@ -452,11 +452,12 @@ INT CheckPartitioning (MULTIGRID *theMG)
 				{
 					theFather = EFATHER(theFather);
 				}
-				while (theFather!=NULL || REFINECLASS(theFather)==RED_CLASS);
+				while (EMASTER(theFather) && REFINECLASS(theFather)!=RED_CLASS 
+					   && LEVEL(theFather)>0);
 			
 				/* if father with red refine class does not exist */ 
-				/* partitioning must be restricted                */
-				if (theFather == NULL)
+				/* or is ghost -> partitioning must be restricted */
+				if (!EMASTER(theFather))
 					restrict = 1;
 			}
 		}
@@ -464,7 +465,10 @@ INT CheckPartitioning (MULTIGRID *theMG)
 
 	restrict = UG_GlobalMaxINT(restrict); 
 	if (me==master && restrict==1)
+	{
 		UserWriteF("CheckPartitioning(): partitioning is not valid for refinement\n");
+		UserWriteF("                     cleaning up ...\n");
+	}
 
 	return(restrict);
 }
@@ -502,9 +506,12 @@ static int Gather_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, D
 {
 	ELEMENT *theElement = (ELEMENT *)obj;
 
-	PRINTDEBUG(gm,4,(PFMT "Gather_RestrictedPartition(): e=" EID_FMTX "\n",
+	if (EMASTER(theElement))
+	{
+		PRINTDEBUG(gm,4,(PFMT "Gather_RestrictedPartition(): e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
-	((int *)data)[0] = PARTITION(theElement);
+		((int *)data)[0] = PARTITION(theElement);
+	}
 	   
 	return(GM_OK);
 }
@@ -512,13 +519,20 @@ static int Gather_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, D
 static int Scatter_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
 	ELEMENT *theElement = (ELEMENT *)obj;
-	int used;
+	ELEMENT *SonList[MAX_SONS];
+	int i,partition;
 
-	ASSERT(EMASTERPRIO(prio));
-	PRINTDEBUG(gm,4,(PFMT "Scatter_ElementRestriction(): restricting sons of e=" EID_FMTX "\n",
-		 me,EID_PRTX(theElement)))
-	if (USED(theElement))
-		PARTITION(theElement) = ((int *)data)[0];
+	if (USED(theElement) && EMASTERPRIO(prio))
+	{
+		PRINTDEBUG(gm,4,(PFMT "Scatter_ElementRestriction(): restricting sons of e=" EID_FMTX "\n",
+			 me,EID_PRTX(theElement)))
+
+		partition = ((int *)data)[0];
+		/* send master sons to master elmement partition */
+		if (GetSons(theElement,SonList)) RETURN(GM_ERROR);
+		for (i=0; SonList[i]!=NULL; i++) 
+			PARTITION(SonList[i]) = partition;
+	}
 	   
 	return(GM_OK);
 }
@@ -550,26 +564,27 @@ INT RestrictPartitioning (MULTIGRID *theMG)
 			 theElement=SUCCE(theElement))
 		{
 			if (GLEVEL(theGrid) == 0) break;
-			if (LEAFELEM(theElement))
+			if (LEAFELEM(theElement) || USED(theElement))
 			{
 				theFather = theElement;
 				do
 				{
 					theFather = EFATHER(theFather);
 				}
-				while (EMASTER(theFather) || REFINECLASS(theFather)!=RED_CLASS);
+				while (EMASTER(theFather) && REFINECLASS(theFather)!=RED_CLASS
+					   && LEVEL(theFather)>0);
 			
 				/* if father with red refine class is not master */ 
 				/* partitioning must be restricted                */
 				if (!EMASTER(theFather))
 				{
-					/* the son of father will be sent to partition of father */
+					/* the sons of father will be sent to partition of father */
 					SETUSED(theFather,1);
 				}
 			}
 		}
 		/* transfer restriction flags to master copies of father */
-		DDD_IFAOneway(ElementVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+		DDD_IFAOneway(ElementVHIF,GRID_ATTR(theGrid),IF_BACKWARD,sizeof(INT),
 			Gather_ElementRestriction, Scatter_ElementRestriction);
 	}
 
@@ -579,7 +594,7 @@ INT RestrictPartitioning (MULTIGRID *theMG)
 		theGrid = GRID_ON_LEVEL(theMG,i);
 
 		/* transfer (new) partitions of elements to non master copies */
-		DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+		DDD_IFAOnewayX(ElementVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
 			Gather_RestrictedPartition, Scatter_RestrictedPartition);
 
 		for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
@@ -588,10 +603,12 @@ INT RestrictPartitioning (MULTIGRID *theMG)
 			if (!USED(theElement)) continue;
 
 			/* push partition to the sons */
-			GetSons(theElement,SonList);
+			GetAllSons(theElement,SonList);
 			for (i=0; SonList[i]!=NULL; i++)
 			{
-				PARTITION(SonList[i]) = PARTITION(theElement);
+				SETUSED(SonList[i],1);
+				if (EMASTER(SonList[i]))
+					PARTITION(SonList[i]) = PARTITION(theElement);
 			}
 		}
 	}
@@ -5192,10 +5209,13 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 	/* check and restrict partitioning of elements */
 	if (CheckPartitioning(theMG))
 	{
-#ifdef ModelPTest	
+		if (RestrictPartitioning(theMG,COARSENED)) RETURN(GM_FATAL);
 if (0)
 		return(GM_OK);
+	}
 		if (RestrictPartitioning(theMG)) RETURN(GM_FATAL);
+	/* set up information in refine_info */
+	if (TOPLEVEL(theMG) == 0)
 		SETREFINESTEP(REFINEINFO(theMG),0);
 	/* set info for refinement prediction */
 	SetRefineInfo(theMG);
