@@ -1689,8 +1689,16 @@ INT GetSonEdges (EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES])
   Node0 = NBNODE(LINK0(theEdge));
   Node1 = NBNODE(LINK1(theEdge));
 
-  SonNode0 = SONNODE(Node0);
-  SonNode1 = SONNODE(Node1);
+  if (GID(Node0)<GID(Node1))
+  {
+    SonNode0 = SONNODE(Node0);
+    SonNode1 = SONNODE(Node1);
+  }
+  else
+  {
+    SonNode0 = SONNODE(Node1);
+    SonNode1 = SONNODE(Node0);
+  }
   MidNode = MIDNODE(theEdge);
 
   /* parallel note:                                                */
@@ -1709,10 +1717,7 @@ INT GetSonEdges (EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES])
       SonEdges[0] = GetEdge(SonNode0,MidNode);
 
     if (SonNode1!=NULL)
-    {
-      if (SonEdges[0] == NULL) SonEdges[0] = GetEdge(MidNode,SonNode1);
-      else SonEdges[1] = GetEdge(MidNode,SonNode1);
-    }
+      SonEdges[1] = GetEdge(MidNode,SonNode1);
   }
 
   if (SonEdges[0] != NULL) nedges++;
