@@ -15,6 +15,7 @@
 /*																			*/
 /* History:   Feb 18 1996 begin, ug version 3.1								*/
 /*            Sep 12 1996 ug version 3.4                                                                */
+/*			  Apr  9 1998 first step to Marc                                                        */
 /*																			*/
 /* Remarks:                                                                                                                             */
 /*																			*/
@@ -68,9 +69,9 @@
 #define SMALL_DIFF   SMALL_C*100
 #define RESOLUTION   100
 
-#define OPTIONLEN                       32
-
 #define DEFAULTDOMMEMORY 50000
+
+#define OPTIONLEN 32
 
 #define V2_LINCOMB(a,A,b,B,C)              {(C)[0] = (a)*(A)[0] + (b)*(B)[0];\
                                             (C)[1] = (a)*(A)[1] + (b)*(B)[1];}
@@ -395,17 +396,19 @@ static INT file_triangles_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
 {
   char *buffer;
   int id,n,i,c[3];
-  M2_PATCH *p;
 
   nTPatch = 0;
-  do {
+  do
+  {
+    M2_PATCH *p = (M2_PATCH *)currBVP->patches[nPPatch+nTPatch];
+
     fgets(theLine, MAX_LEN, f);
     if (strlen(theLine) < 3) continue;
     if (sscanf(theLine,"%5d%5d%5d%5d%5d",
                &id,&n,c,c+1,c+2) != 5) return(0);
 
-    p = (M2_PATCH *)currBVP->patches[nPPatch+nTPatch];
     p->type = MARC_2_PATCH_TYPE;
+    p->c = n;
     p->id = nTPatch+nPPatch;
     for (i=0; i<3; i++)
       p->p[i] = c[i] - 1;
@@ -460,6 +463,43 @@ static INT file_positions_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
   return(1);
 }
 
+static INT Marc_Configure (INT argc, char **argv)
+{
+  STD_BVP *theBVP;
+  char BVPName[NAMESIZE];
+  INT i;
+  char name[NAMESIZE];
+
+  /* get BVP name */
+  if ((sscanf(argv[0],expandfmt(CONCAT3(" configure %",NAMELENSTR,"[ -~]")),
+              BVPName)!=1) || (strlen(BVPName)==0)) {
+    for (i=0; i<argc; i++)
+      if (argv[i][0] == 'b')
+        if ((sscanf(argv[i],expandfmt(CONCAT3("b %",NAMELENSTR,"[ -~]")),
+                    BVPName)==1) && (strlen(BVPName)>0))
+          break;
+    if (i >= argc) RETURN(1);
+  }
+  theBVP = (STD_BVP *) BVP_GetByName(BVPName);
+  if (theBVP == NULL)
+    RETURN(1);
+
+  for (i=1; i<argc; i++) {
+    if (argv[i][0]=='m') {
+      if (sscanf(argv[i],"mesh %s",name) != 1)
+        continue;
+      strcpy(theBVP->mesh_file,name);
+    }
+    if (argv[i][0]=='b') {
+      if (sscanf(argv[i],"bnd %s",name) != 1)
+        continue;
+      strcpy(theBVP->bnd_file,name);
+    }
+  }
+
+  return(0);
+}
+
 static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
 {
   FILE *stream;
@@ -470,8 +510,7 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
 
 
   /* read numbers of objects */
-
-  stream = fileopen("u.feb","r");
+  stream = fileopen(theBVP->mesh_file,"r");
   if (stream == NULL) return(NULL);
 
   if (file_readline(stream,"connectivity"))
@@ -488,7 +527,7 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
 
   fclose(stream);
 
-  stream = fileopen("u.fem","r");
+  stream = fileopen(theBVP->bnd_file,"r");
   if (stream == NULL) return(NULL);
 
   if (file_readline(stream,"connectivity"))
@@ -572,12 +611,12 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
   for (i=nPPatch+nLPatch; i<nPPatch+nLPatch+nTPatch; i++)
     theBVP->patches[i] = (PATCH *)
                          GetFreelistMemory(Heap,sizeof(M2_PATCH));
+  currBVP->sideoffset = nPPatch + nLPatch;
 
-
-  PRINTDEBUG(dom,0,("nCorners %d nBndP %d nElem %d nPPatch %d nTPatch %d\n",
+  PRINTDEBUG(dom,1,("nCorners %d nBndP %d nElem %d nPPatch %d nTPatch %d\n",
                     nCorners,nBndP,nElem,nPPatch,nTPatch));
 
-  stream = fileopen("u.fem","r");
+  stream = fileopen(theBVP->bnd_file,"r");
   if (stream == NULL) return(NULL);
 
   if (file_readline(stream,"connectivity"))
@@ -591,7 +630,7 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
 
   fclose(stream);
 
-  stream = fileopen("u.feb","r");
+  stream = fileopen(theBVP->mesh_file,"r");
   if (stream == NULL) return(NULL);
 
   if (file_readline(stream,"connectivity"))
@@ -611,20 +650,15 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
 
   STD_BVP_NDOMPART(theBVP) = 1;
   STD_BVP_NSUBDOM(theBVP) = 1;
-  STD_BVP_S2P_PTR(theBVP) = (INT*)GetFreelistMemory(Heap,(1+STD_BVP_NSUBDOM(theBVP))*sizeof(INT));
+  STD_BVP_S2P_PTR(theBVP) = (INT *)
+                            GetFreelistMemory(Heap,(1+STD_BVP_NSUBDOM(theBVP))*sizeof(INT));
   if (STD_BVP_S2P_PTR(theBVP)==NULL)
     return (NULL);
   STD_BVP_S2P_PTR(theBVP)[0] = 0;
   STD_BVP_S2P_PTR(theBVP)[1] = 0;
 
-
-
-
   return ((BVP*)theBVP);
 }
-
-#define IF_MARC(p) \
-  if (PATCH_TYPE(currBVP->patches[BND_PATCH_ID(p)]) >= MARC_0_PATCH_TYPE)
 
 static INT M_BNDP_Global (BNDP *bp, DOUBLE *global)
 {
@@ -669,7 +703,12 @@ static INT M_BNDP_BndEDesc (BNDP *theBndP0, BNDP *theBndP1, INT *part)
 
 static BNDS* M_BNDP_CreateBndS (HEAP *Heap, BNDP **theBndP, INT n)
 {
-  M_BNDS *p = GetFreelistMemory(Heap,sizeof(M_BNDS));
+  M_BNDS *p = (M_BNDS *)GetFreelistMemory(Heap,M_BNDS_NSIZE(n));
+  INT i;
+
+  for (i=0; i<n; i++)
+    p->p[i] = (M_BNDP *)theBndP[i];
+  p->n = n;
 
   return((BNDS *)p);
 }
@@ -677,9 +716,17 @@ static BNDS* M_BNDP_CreateBndS (HEAP *Heap, BNDP **theBndP, INT n)
 static BNDP* M_BNDP_CreateBndP (HEAP *Heap, BNDP *theBndP0,
                                 BNDP *theBndP1, DOUBLE lcoord)
 {
-  printf("not implemented line %d\n",__LINE__);
+  M_BNDP *p0 = (M_BNDP *)theBndP0;
+  M_BNDP *p1 = (M_BNDP *)theBndP1;
+  M_BNDP *p  = (M_BNDP *)GetFreelistMemory(Heap,sizeof(M_BNDP));
+  INT j;
 
-  return(NULL);
+  ASSERT(p != NULL);
+
+  for (j=0; j<3; j++)
+    p->pos[j] = (1.0 - lcoord) * p0->pos[j] + lcoord * p1->pos[j];
+
+  return((BNDP *)p);
 }
 
 static INT M_BNDP_Dispose (HEAP *Heap, BNDP *theBndP)
@@ -711,14 +758,55 @@ static BNDP *M_BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 
 static INT M_BNDS_Global (BNDS *theBndS, DOUBLE *local, DOUBLE *global)
 {
-  printf("not implemented line %d\n",__LINE__);
+  M_BNDS *p = (M_BNDS *)theBndS;
+  INT i;
 
-  return(1);
+    #ifdef __TWODIM__
+  for (i=0; i<DIM; i++)
+    global[i] = (1.0 - local[0]) * p->p[0]->pos[i]
+                + local[0] * p->p[1]->pos[i];
+    #endif
+    #ifdef __THREEDIM__
+  if (p->n == 4)
+    for (i=0; i<DIM; i++)
+      global[i] = (1.0 - local[0]) *  (1.0 - local[1]) * p->p[0]->pos[i]
+                  + local[0] *  (1.0 - local[1]) * p->p[1]->pos[i]
+                  + local[0] * local[1] * p->p[2]->pos[i]
+                  + (1.0 - local[0]) * local[1] * p->p[3]->pos[i];
+  else if (p->n == 3)
+    for (i=0; i<DIM; i++)
+      global[i] = (1.0 - local[0] - local[1]) * p->p[0]->pos[i]
+                  + local[0] * p->p[1]->pos[i]
+                  + local[1] * local[1] * p->p[2]->pos[i];
+    #endif
+
+  return(0);
 }
 
 static INT M_BNDS_BndCond (BNDS *theBndS, DOUBLE *local,
                            DOUBLE *in, DOUBLE *value, INT *type)
 {
+  M_BNDS *p = (M_BNDS *)theBndS;
+
+  ASSERT(p != NULL);
+
+  if (currBVP->GeneralBndCond != NULL)
+  {
+    DOUBLE_VECTOR global;
+    INT i;
+    M2_PATCH *patch = (M2_PATCH *)currBVP->patches[p->patch_id];
+
+    type[0] = patch->c;
+    M_BNDS_Global(theBndS,local,global);
+    if (in == NULL)
+      return((*(currBVP->GeneralBndCond))(NULL,NULL,global,value,type));
+
+    for (i=0; i<DIM; i++)
+      in[i] = global[i];
+
+    return((*(currBVP->GeneralBndCond))(NULL,NULL,in,value,type));
+  }
+
   printf("not implemented line %d\n",__LINE__);
 
   return(1);
@@ -735,14 +823,23 @@ static INT M_BNDS_BndSDesc (BNDS *theBndS, INT *id, INT *nbid, INT *part)
 
 static BNDP* M_BNDS_CreateBndP (HEAP *Heap, BNDS *theBndS, DOUBLE *local)
 {
-  printf("not implemented line %d\n",__LINE__);
+  M_BNDS *ps = (M_BNDS *)theBndS;
+  M_BNDP *p  = (M_BNDP *)GetFreelistMemory(Heap,sizeof(M_BNDP));
+  INT i;
 
-  return(NULL);
+  ASSERT(ps != NULL);
+  ASSERT(ps->n == 4);
+  ASSERT(p != NULL);
+
+  M_BNDS_Global(theBndS,local,p->pos);
+  p->patch_id = ps->patch_id;
+
+  return((BNDP *)p);
 }
 
 static INT M_BNDS_Dispose (HEAP *Heap, BNDS *theBndS)
 {
-  return(PutFreelistMemory(Heap,theBndS,sizeof(M_BNDS)));
+  return(PutFreelistMemory(Heap,theBndS,M_BNDS_SIZE(theBndS)));
 }
 
 
@@ -1371,7 +1468,7 @@ BVP *Create_MarcBVP (char *BVPName, BndCondProcPtr theBndCond,
 
   theBVP->Domain = NULL;
   theBVP->Problem = NULL;
-  theBVP->ConfigProc = STD_BVP_Configure;
+  theBVP->ConfigProc = Marc_Configure;
   theBVP->GeneralBndCond = theBndCond;
 
   theBVP->type = BVP_MARC;

@@ -33,13 +33,12 @@
 #ifndef __STD_DOMAIN__
 #define __STD_DOMAIN__
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
 
-#ifndef __DOMAIN__
+#include "ugenv.h"
+
 #include "domain.h"
-#endif
+
 
 /****************************************************************************/
 /*																			*/
@@ -182,6 +181,12 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define BND_N(p)                (((BND_PS *)p)->n)
 #define BND_LOCAL(p,i)          (((BND_PS *)p)->local[i])
 #define BND_SIZE(p)             ((((BND_PS *)p)->n-1)*sizeof(COORD_BND_VECTOR)+sizeof(BND_PS))
+#define M_BNDS_NSIZE(n)         (((n)-1)*sizeof(M_BNDP)+sizeof(M_BNDS))
+#define M_BNDS_SIZE(p)          M_BNDS_NSIZE(((M_BNDS *)(p))->n)
+
+
+#define IF_MARC(p) \
+  if (PATCH_TYPE(currBVP->patches[BND_PATCH_ID(p)]) >= MARC_0_PATCH_TYPE)
 
 /****************************************************************************/
 /*																			*/
@@ -312,6 +317,9 @@ struct std_BoundaryValueProblem
   struct domain *Domain;             /* domain pointer                      */
   struct problem *Problem;           /* problem pointer                     */
 
+  char bnd_file[NAMESIZE];               /* file name for boundary infos        */
+  char mesh_file[NAMESIZE];              /* file name for meshinfos             */
+
   /* domain part */
   DOUBLE MidPoint[DIM];              /* sphere in which the domain lies     */
   DOUBLE radius;
@@ -439,6 +447,7 @@ struct marc_2_patch {
   INT state;                        /* fixed/bnd of free/free               */
   INT id;                           /* unique id used for load/store        */
 
+  INT c;                                /* bnd cond                             */
   INT p[3];                             /* triangle of three points             */
 };
 
@@ -472,7 +481,8 @@ struct marc_bndp {
 struct marc_bnds {
 
   INT patch_id;                     /* associated patch                     */
-  DOUBLE pos[3];                                /* position                             */
+  INT n;                                /* number of corners                    */
+  struct marc_bndp *p[1];               /* corners                              */
 };
 
 /*----------- typedef for structs ------------------------------------------*/
