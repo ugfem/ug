@@ -81,6 +81,7 @@ typedef DOUBLE DOUBLE_VECTOR[DIM];
 /****************************************************************************/
 
 static DOUBLE_VECTOR x_quad[6];
+static DOUBLE alpha;
 
 static DOUBLE Rand[54][2] = {
   {189,22.5},
@@ -163,6 +164,8 @@ static INT southBoundary (void *data, DOUBLE *param, DOUBLE *result)
   if ((lambda<0.0)||(lambda>1.0)) return(1);
   result[0] = (1.0-lambda)*x_quad[0][0] + lambda*x_quad[1][0];
   result[1] = (1.0-lambda)*x_quad[0][1] + lambda*x_quad[1][1];
+  if (alpha != 0.0)
+    result[1] += alpha*result[0]*result[0]*(1-result[0])*(1-result[0]);
 
   return(0);
 }
@@ -1198,6 +1201,8 @@ INT STD_BVP_Configure (INT argc, char **argv)
       x_quad[3][0] = 0.0;
       x_quad[3][1] = 1.0;
     }
+    if (ReadArgvDOUBLE("alpha",&alpha,argc,argv))
+      alpha = 0.0;
   }
   else if (strcmp(DomainName,"Two") == 0)
   {
