@@ -6638,6 +6638,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 			}
 			break;
 
+		#ifdef __THREEDIM__
 		case (SIDE_NODE):
 			if (theFather == NULL)
 			{
@@ -6666,6 +6667,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 				}
 			}
 			break;
+        #endif
 
 		case (CENTER_NODE):
 			if (theFather == NULL)
