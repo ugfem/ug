@@ -368,8 +368,8 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
         {
           /* matrix diagonal entry, no other vector is involved */
           CONNECTION *conn = (CONNECTION *)
-                             GetMem(dddctrl.currMG->theHeap,
-                                    MSIZE(mcopy), FROM_BOTTOM);
+                             GetFreelistMemory(MGHEAP(dddctrl.currMG), MSIZE(mcopy));
+
           nconn++; newconn++;
 
           if (conn==NULL)
@@ -415,8 +415,8 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
           {
             MATRIX *otherm;
             CONNECTION *conn = (CONNECTION *)
-                               GetMem(dddctrl.currMG->theHeap,
-                                      2 * MSIZE(mcopy), FROM_BOTTOM);
+                               GetFreelistMemory(dddctrl.currMG->theHeap,
+                                                 2 * MSIZE(mcopy));
             nconn++; newconn++;
 
             if (conn==NULL)
