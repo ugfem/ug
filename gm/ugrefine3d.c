@@ -532,11 +532,13 @@ static NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,int edge,NODE *aft
           lambda[0] = 0.5*(lambda1[0] + lambda2[0]);
           lambda[1] = 0.5*(lambda1[1] + lambda2[1]);
 
-          if (Patch_local2global(thePatch,lambda,ropt)) return (NULL);
+          if (Patch_local2global(thePatch,lambda,ropt))
+            return (NULL);
 
           V3_EUKLIDNORM_OF_DIFF(x,ropt,smin)
 
-          if (smin>MAX_PAR_DIST)                               /* perhaps not the midpoint */
+          /* perhaps not the midpoint */
+          if (smin>MAX_PAR_DIST)
           {
             l[0] = lambda1[0];
             l[1] = lambda1[1];
@@ -547,7 +549,8 @@ static NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,int edge,NODE *aft
 
             for (i=0; i<=RESOLUTION; i++)
             {
-              if (Patch_local2global(thePatch,l,r)) return (NULL);
+              if (Patch_local2global(thePatch,l,r))
+                continue;
               V3_EUKLIDNORM_OF_DIFF(x,r,s)
               if (s<smin)
               {
