@@ -1945,11 +1945,13 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
     RETURN(GM_FATAL);
   }
 
+        #ifdef ModelP
   IFDEBUG(gm,4)
   UserWriteF("Sons_of_Side=%d\n",*Sons_of_Side);
   for (i=0; i<*Sons_of_Side; i++)
     UserWriteF("son[%d]=%08x/%x\n",i,DDD_InfoGlobalId(PARHDRE(SonList[i])),SonList[i]);
   ENDDEBUG
+        #endif
 
   for (i=*Sons_of_Side; i<MAX_SONS; i++)
     SonList[i] = NULL;
@@ -3706,13 +3708,41 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG)
   NODE *theNode;
   GRID *theGrid;
 
+  DDD_XferBegin();
+  /* set node priorities */
+  for (l=0; l<TOPLEVEL(theMG); l++) {
+    theGrid = GRID_ON_LEVEL(theMG,l);
+
+    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
+      SETXFERNODE(theNode,CLEAR);
+      DDD_PrioritySet(PARHDR(theNode),PrioGhost);
+    }
+  }
+  DDD_XferEnd();
+
+  DDD_XferBegin();
+  /* set node priorities */
+  for (l=0; l<TOPLEVEL(theMG); l++) {
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
+      for (i=0; i<CORNERS_OF_ELEM(theElement); i++) {
+        if((prio=DDD_InfoPriority(PARHDRE(theElement))) == PrioMaster) {
+          theNode = CORNER(theElement,i);
+          DDD_PrioritySet(PARHDR(theNode),PrioMaster);
+        }
+      }
+    }
+  }
+  DDD_XferEnd();
+
+  DDD_ConsCheck();
+  DDD_IFDisplay();
+
   DDD_IdentifyBegin();
 
   /* identify nodes */
   for (l=0; l<TOPLEVEL(theMG); l++) {
     theGrid = GRID_ON_LEVEL(theMG,l);
-    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-      SETXFERNODE(theNode,CLEAR);
+
     for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
 
       if (!IS_REFINED(theElement) ||
@@ -3763,8 +3793,18 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG)
               proclist += 2;
               n = 0;
               while (*proclist != -1) {
+                /* ghost nodes have no sons because ghost elements are not refined */
+                if(*(proclist+1) == PrioGhost) {
+                  proclist += 2;
+                  continue;
+                }
+
                 PRINTDEBUG(gm,0,("%d: ...proc=%d n=%d \n",me,*proclist,n));
+
                 DDD_IdentifyObject(PARHDR(theNode), *proclist,
+                                   PARHDR(NFATHER(theNode)));
+
+                DDD_IdentifyObject(PARHDR(NVECTOR(theNode)), *proclist,
                                    PARHDR(NFATHER(theNode)));
                 n++;
                 assert(n<procs);
@@ -3788,7 +3828,8 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG)
               proclist = DDD_InfoProcList(PARHDRE(theNeighbor));
                                                                 #endif
                                                                 #ifdef __THREEDIM__
-              /* TODO: for 3D take mimimal set of equal processors of the two cornernodes */
+              /* TODO: for 3D take mimimal set of equal processors
+                      of the two cornernodes */
               assert(0);
                                                                 #endif
               proclist += 2;
@@ -3802,7 +3843,8 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG)
                 }
 
                 PRINTDEBUG(gm,0,("%d: ...proc=%d n=%d \n",me,*proclist,n));
-                /* identify midnode and vertex of midnode */
+                /* TODO: identify edge vectors */
+                /* identify midnode, vertex and vector of midnode */
                 if (DDD_InfoGlobalId(PARHDR(NFATHER(SideNodes[0]))) <
                     DDD_InfoGlobalId(PARHDR(NFATHER(SideNodes[1])))) {
 
@@ -3815,6 +3857,11 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG)
                                      DDD_InfoGlobalId(PARHDR(NFATHER(SideNodes[0]))));
                   DDD_IdentifyNumber(PARHDRV(MYVERTEX(theNode)), *proclist,
                                      DDD_InfoGlobalId(PARHDR(NFATHER(SideNodes[1]))));
+
+                  DDD_IdentifyNumber(PARHDR(NVECTOR(theNode)), *proclist,
+                                     DDD_InfoGlobalId(PARHDR(NFATHER(SideNodes[0]))));
+                  DDD_IdentifyNumber(PARHDR(NVECTOR(theNode)), *proclist,
+                                     DDD_InfoGlobalId(PARHDR(NFATHER(SideNodes[1]))));
                 }
                 else {
                   DDD_IdentifyObject(PARHDR(theNode), *proclist,
@@ -3825,6 +3872,11 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG)
                   DDD_IdentifyNumber(PARHDRV(MYVERTEX(theNode)), *proclist,
                                      DDD_InfoGlobalId(PARHDR(NFATHER(SideNodes[1]))));
                   DDD_IdentifyNumber(PARHDRV(MYVERTEX(theNode)), *proclist,
+                                     DDD_InfoGlobalId(PARHDR(NFATHER(SideNodes[0]))));
+
+                  DDD_IdentifyNumber(PARHDR(NVECTOR(theNode)), *proclist,
+                                     DDD_InfoGlobalId(PARHDR(NFATHER(SideNodes[1]))));
+                  DDD_IdentifyNumber(PARHDR(NVECTOR(theNode)), *proclist,
                                      DDD_InfoGlobalId(PARHDR(NFATHER(SideNodes[0]))));
                 }
                 n++;
