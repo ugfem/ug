@@ -29,7 +29,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <rpc/xdr.h>
+#include <rpc/rpc.h>
 
 #include "general.h"
 #include "gm.h"
