@@ -18,7 +18,7 @@ make
 #make
 # build 3TFFF lib
 cp $UGROOT/configs/3TFFF.conf $UGROOT/ug.conf
-ugmake ug -i clean
+ugmake ug -i ifdef
 ugmake ug
 cd $UGROOT/../cd3d/pclib
 make
@@ -26,7 +26,7 @@ cd $UGROOT/../cd3d/appl
 make
 # build 2FTFF lib
 cp $UGROOT/configs/2FTFF.conf $UGROOT/ug.conf
-ugmake ug -i clean
+ugmake ug -i ifdef
 ugmake ug
 cd $UGROOT/../fem/pclib
 make
@@ -35,5 +35,5 @@ make
 # Test is ready
 # restore original state
 mv $UGROOT/ug.conf.orig $UGROOT/ug.conf 
-ugmake ug -i clean
-ugmake
+ugmake ug -i ifdef
+
