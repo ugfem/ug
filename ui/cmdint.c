@@ -2327,7 +2327,9 @@ static INT InterpretString (void)
 
       if (commandItem==NULL)
       {
-        PrintErrorMessage('E',"InterpretString","command not found");
+        char buf[64];
+        sprintf(buf,"command %s not found",ENVITEM_NAME(commandItem));
+        PrintErrorMessage('E',"InterpretString",buf);
         return (8510);
       }
 
