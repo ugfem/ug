@@ -47,7 +47,7 @@
 /****************************************************************************/
 
 /* uncomment this if you want to use the fule rule set for tetrahedra */
-/* -> recompile rm.c refine.c ugm.c                                   */
+/* -> recompile rm.c refine.c ugm.c commands.c                        */
 /*
    #define TET_RULESET
  */

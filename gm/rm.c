@@ -2260,10 +2260,10 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
       return(0);
     case (63) :
       return(TET_RED);
-    case (2095) :
+    case (1023) :
       return(TET_RED_HEX);
     default :
-      PrintErrorMessage('E',"Patterns2Rules","no mapping for PYRAMID and this pattern!");
+      PrintErrorMessage('E',"Patterns2Rules","no mapping for TETRAHEDRON and this pattern!");
       assert(0); return(-1);
     }
     break;
