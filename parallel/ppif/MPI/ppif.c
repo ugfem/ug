@@ -81,10 +81,10 @@
 #define MAXVCHAN        256     /* maximum number of channels               */
 #define PTYPE_ANY       -1L     /* process type: any process                */
 
-#define ID_ARRAY        100L    /* channel id: array                        */
-#define ID_TREE         101L    /* channel id: tree                         */
-#define ID_GLOBAL       102L    /* channel id: global                       */
-#define ID_MAIL         103L    /* channel id: mail                         */
+#define ID_ARRAY        100     /* channel id: array                        */
+#define ID_TREE         101     /* channel id: tree                         */
+#define ID_GLOBAL       102     /* channel id: global                       */
+#define ID_MAIL         103     /* channel id: mail                         */
 
 #define ABS(i)          (((i)<0) ? (-(i)) : (i))
 
@@ -92,8 +92,8 @@
 #define YPOS(aid)       ((aid&0xFF00)>>8)       /* ypos from compact form   */
 #define ZPOS(aid)       ((aid&0xFF0000)>>16)    /* zpos from compact form   */
 
-#define PPIF_SUCCESS    0L      /* Return value for success                 */
-#define PPIF_FAILURE    1L      /* Return value for failure            `    */
+#define PPIF_SUCCESS    0       /* Return value for success                 */
+#define PPIF_FAILURE    1       /* Return value for failure                 */
 
 /****************************************************************************/
 /*                                                                          */
@@ -174,7 +174,7 @@ int RecvSync (VChannelPtr vc, void *data, int size);
 /*                                                                          */
 /****************************************************************************/
 
-int InitVChan (void)
+static long InitVChan (void)
 {
   int i;
 
@@ -186,11 +186,11 @@ int InitVChan (void)
     vc_free=0;
   }
 
-  return ((int) VChan);
+  return ((long) VChan);
 }
 
 
-VChannelPtr NewVChan (int p, int id)
+static VChannelPtr NewVChan (int p, int id)
 
 {
   int i;
@@ -223,7 +223,7 @@ VChannelPtr NewVChan (int p, int id)
 }
 
 
-void DeleteVChan (VChannelPtr myChan)
+static void DeleteVChan (VChannelPtr myChan)
 
 {
   myChan->used = FALSE;
