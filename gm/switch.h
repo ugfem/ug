@@ -22,15 +22,10 @@
 #ifndef __SWITCH__
 #define __SWITCH__
 
-
-#ifndef __GENERAL__
 #include "general.h"
-#endif
-
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
 
+/****************************************************************************/
 /*D
    switch - switch header file, extracts makefile switches and sets some constants
 
@@ -54,7 +49,6 @@
    .vb
    DIM
    DIM_OF_BND
-   CORNERS_OF_BND_SEG
    MAXVECTORS
    .ve
 
@@ -73,6 +67,7 @@
    These constants encode the geometric position of a 'VECTOR'.
 
    D*/
+/****************************************************************************/
 
 
 /****************************************************************************/
@@ -173,14 +168,12 @@
 #ifdef __TWODIM__
         #define DIM                                     2                               /* space dimension								*/
         #define DIM_OF_BND                              1                               /* dimension of boundary surface				*/
-        #define CORNERS_OF_BND_SEG              2                               /* number of corners of a boundary side                 */
         #define MAXVECTORS                              3                               /* three different data types					*/
 #endif
 
 #ifdef __THREEDIM__
         #define DIM                                     3                               /* space dimension								*/
         #define DIM_OF_BND                              2                               /* dimension of boundary surface				*/
-        #define CORNERS_OF_BND_SEG              4                               /* number of corners of a boundary side                 */
         #define MAXVECTORS                              4                               /* four different data types					*/
 #endif
 
