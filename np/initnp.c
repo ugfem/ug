@@ -3,7 +3,7 @@
 /****************************************************************************/
 /*                                                                          */
 /* File:      initnp.c                                                      */
-/*																			*/
+/*                                                                          */
 /* Purpose:   call the init routines of the numerics module		                        */
 /*																			*/
 /* Author:	  Klaus Johannsen		                                                                                */
@@ -60,6 +60,7 @@
 #include "reinit.h"
 #include "els.h"
 #include "eiter.h"
+#include "blocking.h"
 
 #include "initnp.h"
 #include "numproc.h"
