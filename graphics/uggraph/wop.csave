@@ -6181,8 +6181,8 @@ static INT InvertElementSelection2D (PICTURE *thePicture, WORK *theWork)
 }
 
 /****************************************************************************/
-/*
-   /* Function: InvertNodeSelection2D                                                                                   */
+/*                                                                          */
+/* Function: InvertNodeSelection2D                                                                                      */
 /*																			*/
 /* Purpose:   invert node selection                                                                             */
 /*																			*/
@@ -6221,8 +6221,8 @@ static INT InvertNodeSelection2D (PICTURE *thePicture, WORK *theWork)
 }
 
 /****************************************************************************/
-/*
-   /* Function: InvertNodeSelection2D                                                                                   */
+/*																			*/
+/* Function: InvertNodeSelection2D                                                                                      */
 /*																			*/
 /* Purpose:   invert node selection                                                                             */
 /*																			*/
@@ -11684,7 +11684,7 @@ static INT PointOnLine3D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, COO
    PlotContourTriangle3D - Plot on triangle contourlines (3D coord) with depth
 
    SYNOPSIS:
-   static INT PlotContourTriangle3D (ELEMENT *theElement,
+   INT PlotContourTriangle3D (ELEMENT *theElement,
    COORD **CornersOfElem, COORD *TP0, COORD *TP1, COORD *TP2,
    INT depth, DRAWINGOBJ **theDO);
 
@@ -11707,8 +11707,8 @@ static INT PointOnLine3D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, COO
  */
 /****************************************************************************/
 
-static INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *TP0, COORD *TP1, COORD *TP2,
-                                  COORD *LTP0, COORD *LTP1, COORD *LTP2, INT depth, DRAWINGOBJ **theDO)
+INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *TP0, COORD *TP1, COORD *TP2,
+                           COORD *LTP0, COORD *LTP1, COORD *LTP2, INT depth, DRAWINGOBJ **theDO)
 {
   COORD_VECTOR LocalCoord, MP0, MP1, MP2, LMP0, LMP1, LMP2,PointMid, Point[3];
   INT i, j, n, min, max;
@@ -11822,22 +11822,23 @@ static INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, CO
 static INT PlotContourQuadrilateral3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *QP0, COORD *QP1, COORD *QP2, COORD *QP3, INT depth, DRAWINGOBJ **theDO)
 {
   COORD_VECTOR EVP, LocalCoord, MP0, MP1, MP2, MP3, PointMid, Point[4];
-  INT i, j, n, min, max;
+  INT i, j, n, min, max, coe;
   long Color;
   DOUBLE v0, v1, v2, v3, vmin, vmax;
 
+  coe = CORNERS_OF_ELEM(theElement);
   for (i=0; i<DIM; i++)
     EVP[i] = (QP0[i]+QP1[i]+QP2[i]+QP3[i])*0.25;
   if (depth<=0)
   {
     /* get values at the corners */
-    if (GlobalToLocal3d(CornersOfElem,QP0,LocalCoord)) return (1);
+    if (GlobalToLocal3d(coe,CornersOfElem,QP0,LocalCoord)) return (1);
     v0      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal3d(CornersOfElem,QP1,LocalCoord)) return (1);
+    if (GlobalToLocal3d(coe,CornersOfElem,QP1,LocalCoord)) return (1);
     v1      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal3d(CornersOfElem,QP2,LocalCoord)) return (1);
+    if (GlobalToLocal3d(coe,CornersOfElem,QP2,LocalCoord)) return (1);
     v2      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal3d(CornersOfElem,QP3,LocalCoord)) return (1);
+    if (GlobalToLocal3d(coe,CornersOfElem,QP3,LocalCoord)) return (1);
     v3      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LocalCoord);
     vmin = MIN(v0,v1); vmin = MIN(vmin,v2); vmin = MIN(vmin,v3);
     vmax = MAX(v0,v1); vmax = MAX(vmax,v2); vmax = MAX(vmin,v3);
@@ -12201,7 +12202,8 @@ static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   min = MAX_D; max = -MAX_D;
   for (i=0; i<nr; i++)
   {
-    if (GlobalToLocal3d(x,RasterPoint[i],LocalCoord)) return (1);
+    if (GlobalToLocal3d(CORNERS_OF_ELEM(theElement),
+                        x,RasterPoint[i],LocalCoord)) return (1);
     (*EVector_EvalFct)(theElement,x,LocalCoord,Arrow);
     V3_SCALE(EVector_V2L_factor,Arrow)
 
