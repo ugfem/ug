@@ -442,11 +442,11 @@ INT DoPCR (INT ID, VEC_SCALAR Defect, INT PrintMode)
       if (PCR_DispMode[ID]==PCR_FULL_DISPLAY)
       {
         PCR_printed[ID] = TRUE;
-        UserWriteF(" %-3d  %c: %-12.7e   %-12.7s\n",PCR_nb[ID],PCR_compNames[ID][0],Defect[0],"---");
+        UserWriteF(" %-3d  %c: %-12.7e   %-12.7s\n",(int)PCR_nb[ID],PCR_compNames[ID][0],(float)Defect[0],"---");
         for (i=1; i<PCR_nComp[ID]; i++)
-          UserWriteF("      %c: %-12.7e   %-12.7s\n",PCR_compNames[ID][i],Defect[i],"---");
+          UserWriteF("      %c: %-12.7e   %-12.7s\n",PCR_compNames[ID][i],(float)Defect[i],"---");
         if (PCR_nComp[ID]>1 && PrintMode==PCR_CRATE_SD)
-          UserWriteF("   norm: %-12.7e   %-12.7s\n",s,"---");
+          UserWriteF("   norm: %-12.7e   %-12.7s\n",(float)s,"---");
         if (PCR_nComp[ID]>1) UserWrite("\n");
       }
     }
@@ -455,18 +455,18 @@ INT DoPCR (INT ID, VEC_SCALAR Defect, INT PrintMode)
       PCR_printed[ID] = TRUE;
       PrintHeaderIff(ID);
       if (PCR_OldDefect[ID][0]!=0.0)
-        UserWriteF(" %-3d  %c: %-12.7e   %-12.7e\n",PCR_nb[ID],PCR_compNames[ID][0],Defect[0],Defect[0]/PCR_OldDefect[ID][0]);
+        UserWriteF(" %-3d  %c: %-12.7e   %-12.7e\n",(int)PCR_nb[ID],PCR_compNames[ID][0],(float)Defect[0],(float)(Defect[0]/PCR_OldDefect[ID][0]));
       else
-        UserWriteF(" %-3d  %c: %-12.7e   %-12.7s\n",PCR_nb[ID],PCR_compNames[ID][0],Defect[0],"NaN");
+        UserWriteF(" %-3d  %c: %-12.7e   %-12.7s\n",(int)PCR_nb[ID],PCR_compNames[ID][0],(float)Defect[0],"NaN");
       for (i=1; i<PCR_nComp[ID]; i++)
       {
         if (PCR_OldDefect[ID][i]!=0.0)
-          UserWriteF("      %c: %-12.7e   %-12.7e\n",PCR_compNames[ID][i],Defect[i],Defect[i]/PCR_OldDefect[ID][i]);
+          UserWriteF("      %c: %-12.7e   %-12.7e\n",PCR_compNames[ID][i],(float)Defect[i],(float)(Defect[i]/PCR_OldDefect[ID][i]));
         else
-          UserWriteF("      %c: %-12.7e   %-12.7s\n",PCR_compNames[ID][i],Defect[i],"NaN");
+          UserWriteF("      %c: %-12.7e   %-12.7s\n",PCR_compNames[ID][i],(float)Defect[i],"NaN");
       }
       if (PCR_nComp[ID]>1 && PrintMode==PCR_CRATE_SD)
-        UserWriteF("   norm: %-12.7e   %-12.7e\n",s,s/PCR_OldNorm[ID]);
+        UserWriteF("   norm: %-12.7e   %-12.7e\n",(float)s,(float)(s/PCR_OldNorm[ID]));
       if (PCR_nComp[ID]>1) UserWrite("\n");
     }
     for (j=0; j<PCR_nComp[ID]; j++) PCR_OldDefect[ID][j] = Defect[j];
@@ -481,18 +481,18 @@ INT DoPCR (INT ID, VEC_SCALAR Defect, INT PrintMode)
     PrintHeaderIff(ID);
     if (PCR_DispMode[ID]==PCR_FULL_DISPLAY) UserWrite("\n");
     if (PCR_InitDefect[ID][0]!=0.0)
-      UserWriteF(" %-3d avg:  %c: %-12.7e   %-12.7e   %-12.7e\n",PCR_nb[ID]-1,PCR_compNames[ID][0],PCR_InitDefect[ID][0],Defect[0],POW(Defect[0]/PCR_InitDefect[ID][0],1.0/(PCR_nb[ID]-1)));
+      UserWriteF(" %-3d avg:  %c: %-12.7e   %-12.7e   %-12.7e\n",(int)(PCR_nb[ID]-1),PCR_compNames[ID][0],(float)PCR_InitDefect[ID][0],(float)Defect[0],(float)POW(Defect[0]/PCR_InitDefect[ID][0],1.0/(PCR_nb[ID]-1)));
     else
-      UserWriteF(" %-3d avg:  %c: %-12.7e   %-12.7e   %-12.7s\n",PCR_nb[ID]-1,PCR_compNames[ID][0],PCR_InitDefect[ID][0],Defect[0],"NaN");
+      UserWriteF(" %-3d avg:  %c: %-12.7e   %-12.7e   %-12.7s\n",(int)(PCR_nb[ID]-1),PCR_compNames[ID][0],(float)PCR_InitDefect[ID][0],(float)Defect[0],"NaN");
     for (i=1; i<PCR_nComp[ID]; i++)
     {
       if (PCR_InitDefect[ID][i]!=0.0)
-        UserWriteF("           %c: %-12.7e   %-12.7e   %-12.7e\n",PCR_compNames[ID][i],PCR_InitDefect[ID][i],Defect[i],POW(Defect[i]/PCR_InitDefect[ID][i],1.0/(PCR_nb[ID]-1)));
+        UserWriteF("           %c: %-12.7e   %-12.7e   %-12.7e\n",PCR_compNames[ID][i],(float)PCR_InitDefect[ID][i],(float)Defect[i],(float)POW(Defect[i]/PCR_InitDefect[ID][i],1.0/(PCR_nb[ID]-1)));
       else
-        UserWriteF("           %c: %-12.7e   %-12.7e   %-12.7s\n",PCR_compNames[ID][i],PCR_InitDefect[ID][i],Defect[i],"NaN");
+        UserWriteF("           %c: %-12.7e   %-12.7e   %-12.7s\n",PCR_compNames[ID][i],(float)PCR_InitDefect[ID][i],(float)Defect[i],"NaN");
     }
     if (PCR_nComp[ID]>1 && PrintMode==PCR_AVERAGE_SD)
-      UserWriteF("        norm: %-12.7e   %-12.7e   %-12.7e\n",PCR_InitNorm[ID],s,POW(s/PCR_InitNorm[ID],1.0/(PCR_nb[ID]-1)));
+      UserWriteF("        norm: %-12.7e   %-12.7e   %-12.7e\n",(float)PCR_InitNorm[ID],(float)s,(float)POW(s/PCR_InitNorm[ID],1.0/(PCR_nb[ID]-1)));
     UserWrite("\n");
     break;
   case PCR_INTERN :
