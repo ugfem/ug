@@ -3380,8 +3380,9 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT Also
   BVP_DESC theBVPDesc;
 
   theMG   = MYMG(theGrid);
-  firstID = ID(FIRSTNODE(theGrid));
   entries = NN(theGrid);
+  if (entries == 0) return (0);
+  firstID = ID(FIRSTNODE(theGrid));
   theBVP = MG_BVP(theMG);
   if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) RETURN (1);
 
