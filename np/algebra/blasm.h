@@ -80,6 +80,9 @@
   #define __BLAS__
 #endif
 
+/* Switch between sparse/standard block storage: */
+#undef _SPARSE_
+
 /**************************************************/
 /* A namespace for the c++ version                */
 /**************************************************/

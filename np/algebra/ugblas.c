@@ -84,8 +84,6 @@ using namespace UG3d;
 /*                                                                          */
 /****************************************************************************/
 
-#undef _SPARSE_
-
 #undef _XXL_SKIPFLAGS_
 
 #define VERBOSE_BLAS    10

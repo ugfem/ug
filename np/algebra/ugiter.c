@@ -65,9 +65,6 @@ using namespace UG3d;
 /*																			*/
 /****************************************************************************/
 
-/* switch on blasm calls */
-#undef _SPARSE_
-
 #define SMALL_DET                       1e-15
 #define MAX_DEPTH           MAX_NODAL_VECTORS
 #define V_BVNUMBER(v,n)         (VINDEX(v)/n)
@@ -7394,6 +7391,7 @@ static INT SolveInverseSparseBlock (SPARSE_MATRIX *sm, MATRIX *mat,
 /****************************************************************************/
 INT NS_PREFIX l_iluspbldecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta)
 {
+#ifdef _SPARSE_
   VECTOR *vi,*vj,*vk;
   MATRIX *Mii,*Mij,*Mji,*Mjk,*Mik;
   SPARSE_MATRIX *sm;
@@ -7409,10 +7407,6 @@ INT NS_PREFIX l_iluspbldecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR 
   INT type,ctype,rtype,PivIsZero;
   INT i,n;
   INT mattype,colind,ind,current;
-
-  /* If the blocks are not sparse, call the usual decomposition: */
-  if (! MD_IS_SPARSE(M))
-    return(l_ilubthdecomp(g,M,beta,NULL,NULL,NULL));
 
   /* consistency check: diagonal blocks are supposed to be square matrices */
 
@@ -7575,6 +7569,10 @@ INT NS_PREFIX l_iluspbldecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR 
   }
 
   return (NUM_OK);
+#else
+  /* If the blocks are not sparse, call the usual decomposition: */
+  return(l_ilubthdecomp(g,M,beta,NULL,NULL,NULL));
+#endif
 }
 
 /****************************************************************************/
@@ -7607,6 +7605,7 @@ INT NS_PREFIX l_iluspbldecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR 
 
 INT NS_PREFIX l_iluspbliter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
+#ifdef _SPARSE_
   VECTOR *vec,*w,*first_vec,*last_vec;
   INT rtype,ctype,myindex;
   register MATRIX *mat;
@@ -7616,10 +7615,6 @@ INT NS_PREFIX l_iluspbliter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC 
   register DOUBLE sum;
   DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
   SPARSE_MATRIX *sm;
-
-  /* If the matrix is not sparse, call the usual function: */
-  if (! MD_IS_SPARSE(M))
-    return(l_luiter(g,v,M,d));
 
   first_vec = FIRSTVECTOR(g);
   last_vec  = LASTVECTOR(g);
@@ -7717,4 +7712,8 @@ INT NS_PREFIX l_iluspbliter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC 
   }
 
   return (NUM_OK);
+#else
+  /* If the matrix is not sparse, call the usual function: */
+  return(l_luiter(g,v,M,d));
+#endif
 }
