@@ -1,0 +1,36 @@
+#!/bin/sh
+if test $# -eq 0 -o $# -ge 5 -o "$1" = "-help"
+then
+	echo "usage: $0 <applicationname> <dim_x> [<dim_y>] [<dim_z>]";
+	echo "purpose: start ug application on parallel machine";
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then 
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+# determine MODEL
+MODEL=`grep '^MODEL[ \t]' $UGROOT/ug.conf | awk '{ print $3 }' -`
+
+# determine processor topology
+PROC=$2
+
+case $MODEL in
+	PVM)
+		echo $1 -sz $PROC 1;
+		$1 -sz $PROC 1;
+		;;
+	MPI)
+		echo mpirun -np $PROC	$1;
+		mpirun -np $PROC	$1;
+        ;;
+    *)
+        echo "MODEL $MODEL not supported";
+        exit 1;
+        ;;
+    esac;
+
+
