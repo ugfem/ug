@@ -1520,14 +1520,19 @@ INT GetSonEdges (EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES])
   /* MIDNODE pointer is set to MidNode. (s.l. 980227)              */
   if (MidNode == NULL)
   {
-    SonEdges[0] = GetEdge(SonNode0,SonNode1);
+    if (SonNode0!=NULL && SonNode1!=NULL)
+      SonEdges[0] = GetEdge(SonNode0,SonNode1);
   }
   else
   {
-    SonEdges[0] = GetEdge(SonNode0,MidNode);
+    if (SonNode0!=NULL)
+      SonEdges[0] = GetEdge(SonNode0,MidNode);
 
-    if (SonEdges[0] == NULL) SonEdges[0] = GetEdge(MidNode,SonNode1);
-    else SonEdges[1] = GetEdge(MidNode,SonNode1);
+    if (SonNode1!=NULL)
+    {
+      if (SonEdges[0] == NULL) SonEdges[0] = GetEdge(MidNode,SonNode1);
+      else SonEdges[1] = GetEdge(MidNode,SonNode1);
+    }
   }
 
   if (SonEdges[0] != NULL) nedges++;
