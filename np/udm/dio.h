@@ -91,6 +91,8 @@ struct dio_general {
   int mode;                                                     /* macros see above						*/
   char version[DIO_NAMELEN];                    /* version of i/o						*/
   char mgfile[DIO_NAMELEN];                     /* corresponding multigrid file                 */
+  int nparfiles;                                        /* number of processors					*/
+  int me;                                                       /* id of my processor					*/
   double time;                                          /* time, -1.0 means no time specified!  */
   double dt;                                                    /* previous time-step                                   */
   double ndt;                                                   /* next time-step (suggestion)                  */

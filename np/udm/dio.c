@@ -257,9 +257,11 @@ int     Read_DT_General (DIO_GENERAL *dio_general)
   if (Bio_Read_mdouble(1,&(dio_general->time))) return (1);
   if (Bio_Read_mdouble(1,&(dio_general->dt))) return (1);
   if (Bio_Read_mdouble(1,&(dio_general->ndt))) return (1);
-  if (Bio_Read_mint(2,intList)) return (1);
-  dio_general->magic_cookie       = intList[0];
-  dio_general->nVD                        = intList[1];
+  if (Bio_Read_mint(4,intList)) return (1);
+  dio_general->nparfiles          = intList[0];
+  dio_general->me                         = intList[1];
+  dio_general->magic_cookie       = intList[2];
+  dio_general->nVD                        = intList[3];
   for (i=0; i<dio_general->nVD; i++)
   {
     if (Bio_Read_string(dio_general->VDname[i])) return (1);
@@ -316,9 +318,11 @@ int     Write_DT_General (DIO_GENERAL *dio_general)
   if (Bio_Write_mdouble(1,&(dio_general->time))) return (1);
   if (Bio_Write_mdouble(1,&(dio_general->dt))) return (1);
   if (Bio_Write_mdouble(1,&(dio_general->ndt))) return (1);
-  intList[0] = dio_general->magic_cookie;
-  intList[1] = dio_general->nVD;
-  if (Bio_Write_mint(2,intList)) return (1);
+  intList[0] = dio_general->nparfiles;
+  intList[1] = dio_general->me;
+  intList[2] = dio_general->magic_cookie;
+  intList[3] = dio_general->nVD;
+  if (Bio_Write_mint(4,intList)) return (1);
   for (i=0; i<dio_general->nVD; i++)
   {
     if (Bio_Write_string(dio_general->VDname[i])) return (1);

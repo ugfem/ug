@@ -132,21 +132,49 @@ MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *D
   MULTIGRID *mg;
   DIO_GENERAL dio_general;
   char FileName[NAMESIZE],*mgname,*mgtype,NumberString[6],*p;
-  INT close,load;
+  INT close,load,nparfiles;
+  char buf[64];
 
-  /* open file */
-  strcpy(FileName,DataFileName);
-  if (number!=-1)
+  if (me == master)
   {
-    sprintf(NumberString,".%04d",(int)number);
-    strcat(FileName,NumberString);
-  }
-  strcat(FileName,".ug.data.");
-  strcat(FileName,type);
-  if (Read_OpenDTFile (FileName))                                                                                 {CloseDTFile(); return (NULL);}
+    /* open file */
+    strcpy(FileName,DataFileName);
+    if (number!=-1)
+    {
+      sprintf(NumberString,".%04d",(int)number);
+      strcat(FileName,NumberString);
+    }
+    strcat(FileName,".ug.data.");
+    strcat(FileName,type);
+    nparfiles = 1;
+    if (DTIO_filetype(FileName) == FT_DIR)
+    {
+      sprintf(buf,"/data.%04d",(int)me);
+      strcat(FileName,buf);
+      if (Read_OpenDTFile (FileName))                                                                         {nparfiles = -1;}
+      else
+      if (Read_DT_General(&dio_general))                                                              {nparfiles = -1;}
+      nparfiles = dio_general.nparfiles;
+      if (nparfiles>procs)                                                                                            {UserWrite("ERROR: too many processors needed\n"); nparfiles = -1;}
+      assert(dio_general.me == me);
+    }
+    else if(DTIO_filetype(FileName) == FT_FILE)
+    {
+      if (Read_OpenDTFile (FileName))                                                                         {nparfiles = -1;}
+      else
+      if (Read_DT_General(&dio_general))                                                              {nparfiles = -1;}
+    }
+    else
+      nparfiles = -1;
 
-  /* read general information */
-  if (Read_DT_General (&dio_general))                                                                     {CloseDTFile(); return (NULL);}
+    CloseDTFile();
+  }
+
+  Broadcast(&nparfiles,sizeof(INT));
+  if (nparfiles == -1) return(NULL);
+
+  Broadcast(&dio_general,sizeof(DIO_GENERAL));
+
   if (theMG==NULL)
   {
     close = 0;
@@ -167,31 +195,30 @@ MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *D
   /* dispose multigrid */
   if (close)
     if (DisposeMultiGrid(theMG))
-    {CloseDTFile(); return (NULL);}
+      return (NULL);
 
   /* reload multigrid */
   if (load)
   {
     p = strstr(dio_general.mgfile,".ug.mg.");
-    if (p==NULL)                                                                                                                                    {CloseDTFile(); return (NULL);}
+    if (p==NULL) return (NULL);
     else
     {
-      mgtype = p+strlen(p)-3;
       p[0] = '\0';
+      p+=7;
+      p[3]='\0';
+      mgtype = p;
       mgname = dio_general.mgfile;
     }
     mg = LoadMultiGrid (NULL,mgname,mgtype,NULL,NULL,0,0,0);
   }
-
-  /* close file */
-  CloseDTFile();
 
   return (mg);
 }
 
 INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDATA_DESC **theVDList)
 {
-  INT i,j,ncomp,s,*entry,copied_until,copy_until,still_to_read,read,nvec,id;
+  INT i,j,ncomp,s,*entry,copied_until,copy_until,still_to_read,read,nvec,id,nparfiles;
   unsigned long m;
   DIO_GENERAL dio_general;
   HEAP *theHeap;
@@ -202,6 +229,7 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
   SHORT *cp[DIO_VDMAX];
   INT ncmp[DIO_VDMAX];
   char FileName[NAMESIZE], NumberString[6];
+  char buf[64];
 
   if (theMG==NULL) return (1);
   theHeap = MGHEAP(theMG);
@@ -228,13 +256,61 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
   }
   strcat(FileName,".ug.data.");
   strcat(FileName,type);
-  if (Read_OpenDTFile (FileName)) return (1);
+#ifdef ModelP
+  if (me == master)
+  {
+#endif
+  nparfiles = 1;
+  if (DTIO_filetype(FileName) == FT_DIR)
+  {
+    sprintf(buf,"/data.%04d",(int)me);
+    strcat(FileName,buf);
+    if (Read_OpenDTFile (FileName))                                                                         {nparfiles = -1;}
+    else
+    if (Read_DT_General(&dio_general))                                                              {CloseDTFile (); nparfiles = -1;}
+    nparfiles = dio_general.nparfiles;
+    if (nparfiles>procs)                                                                                            {UserWrite("ERROR: too many processors needed\n");CloseDTFile (); nparfiles = -1;}
+    assert(dio_general.me == me);
+  }
+  else if(DTIO_filetype(FileName) == FT_FILE)
+  {
+    if (Read_OpenDTFile (FileName))                                                                         {nparfiles = -1;}
+    else
+    if (Read_DT_General(&dio_general))                                                              {CloseDTFile (); nparfiles = -1;}
+  }
+  else
+    nparfiles = -1;
+#ifdef ModelP
+  Broadcast(&nparfiles,sizeof(int));
+}
+else
+{
+  Broadcast(&nparfiles,sizeof(int));
+  if (me < nparfiles)
+  {
+    sprintf(buf,"/data.%04d",(int)me);
+    strcat(FileName,buf);
+    if (Read_OpenDTFile (FileName))                                                                         {nparfiles = -1;}
+    else
+    if (Read_DT_General(&dio_general))                                                              {CloseDTFile (); nparfiles = -1;}
+  }
+}
+nparfiles = UG_GlobalMinINT(nparfiles);
+#endif
+  if (nparfiles == -1) return(1);
 
-  /* read general information */
-  if (Read_DT_General (&dio_general))                                     {CloseDTFile(); return (1);}
+  if (procs>nparfiles)
+  {
+    Broadcast(&dio_general,sizeof(DIO_GENERAL));
+    if (me < nparfiles)
+      dio_general.me = me;
+  }
   if (SetStringValue(":IO:TIME",dio_general.time))                {CloseDTFile(); return (1);}
   if (SetStringValue(":IO:DT",dio_general.dt))                    {CloseDTFile(); return (1);}
   if (SetStringValue(":IO:NDT",dio_general.ndt))                  {CloseDTFile(); return (1);}
+  if (me >= nparfiles) return (0);
+
+  /* read general information */
   if (strcmp(dio_general.version,DIO_VERSION)!=0)                 {CloseDTFile(); UserWrite("ERROR: wrong version\n"); return (1);}
   if (dio_general.magic_cookie != MG_MAGIC_COOKIE(theMG)) {CloseDTFile(); UserWrite("m-c-error"); return (1);}
   if (dio_general.nVD != n)                                                               {CloseDTFile(); UserWrite("ERROR: wrong nb of VectorData\n"); return (1);}
@@ -257,7 +333,7 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
   for (i=0; i<=TOPLEVEL(theMG); i++)
   {
     theGrid = GRID_ON_LEVEL(theMG,i);
-    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+    for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
     {
       theV = NVECTOR(theNode);
       id = ID(theNode);
@@ -367,12 +443,16 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   char FileName[NAMESIZE],NumberString[6];
   char buf[64];
   SHORT *cp[DIO_VDMAX];
-  INT ncmp[DIO_VDMAX],blocksize,free,fb,lb,nblock;
+  INT ncmp[DIO_VDMAX],blocksize,free,fb,lb,nblock,saved;
   DTIO_BLOCK *block,*bptr;
 
   /* init */
   if (theMG==NULL) return (1);
-  if (!MG_SAVED(theMG))
+  saved = MG_SAVED(theMG);
+#ifdef ModelP
+  saved = UG_GlobalMinINT(saved);
+#endif
+  if (!saved)
   {
     if (SaveMultiGrid (theMG,NULL,NULL,NULL,1))
     {
@@ -461,6 +541,8 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
     dio_general.dt = -1.0;
     dio_general.ndt = -1.0;
   }
+  dio_general.nparfiles           = procs;
+  dio_general.me                  = me;
   dio_general.magic_cookie = MG_MAGIC_COOKIE(theMG);
   dio_general.nVD = n;
   ncomp = 0; store_from_eval = 0;
@@ -560,7 +642,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
     for (i=0; i<=TOPLEVEL(theMG); i++)
     {
       theGrid = GRID_ON_LEVEL(theMG,i);
-      for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
       {
         tag = TAG(theElement);
         coe = CORNERS_OF_ELEM(theElement);
@@ -601,7 +683,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
         for (i=0; i<=TOPLEVEL(theMG); i++)
         {
           theGrid = GRID_ON_LEVEL(theMG,i);
-          for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+          for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
           {
             tag = TAG(theElement);
             coe = CORNERS_OF_ELEM(theElement);
@@ -629,7 +711,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
         for (i=0; i<=TOPLEVEL(theMG); i++)
         {
           theGrid = GRID_ON_LEVEL(theMG,i);
-          for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+          for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
           {
             tag = TAG(theElement);
             coe = CORNERS_OF_ELEM(theElement);
