@@ -50,6 +50,7 @@
 #include "numproc.h"
 #include "np.h"
 #include "scan.h"
+#include "npscan.h"
 #include "field.h"
 
 /************************************************************************/
