@@ -54,6 +54,7 @@
 #include "elements.h"
 #include "shapes.h"
 #include "mgio.h"
+#include "dio.h"
 
 /****************************************************************************/
 /*																			*/
@@ -108,10 +109,11 @@
 int main (int argc, char **argv)
 {
   MGIO_MG_GENERAL mg_general;
+  DIO_GENERAL dio_general;
 
-  if (argc!=2)
+  if (argc!=2 && argc!=3)
   {
-    printf("usage: ugmgs <file>\n");
+    printf("usage: ugmgs <mg-file> [<data-file>]\n");
     return (0);
   }
 
@@ -162,6 +164,32 @@ int main (int argc, char **argv)
 
   /* close file */
   if (CloseMGFile ()) return (1);
+
+  /* return if only mg-file */
+  if (argc == 2) return (0);
+
+  /* open file */
+  if (Read_OpenDTFile (argv[2]))
+  {
+    printf("ERROR: cannot open file %s\n",argv[2]);
+    return (1);
+  }
+
+  /* read general information */
+  if (Read_DT_General (&dio_general))
+  {
+    printf("ERROR: file %s is probably not an data-file\n",argv[2]);
+    CloseDTFile();
+    return (1);
+  }
+
+  /* output */
+  printf("--------------- consistency ------------------\n\n");
+  if (mg_general.magic_cookie == dio_general.magic_cookie)
+    printf("<%s> and <%s> ARE consistent\n",argv[1],argv[2]);
+  else
+    printf("<%s> and <%s> ARE NOT consistent\n",argv[1],argv[2]);
+  printf("\n");
 
   return (0);
 }
