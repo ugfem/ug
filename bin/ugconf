@@ -19,6 +19,8 @@ then
 	echo "         PC (set ARCH = PC)";
 	echo "         POWERGC (set ARCH = POWERGC)";
 	echo "         CC (set ARCH = CC)";
+	echo "         AIX (set ARCH = AIX)";
+	echo "         AIXGCC (set ARCH = AIXGCC)";
 	echo "         SOLARIS (set ARCH = SOLARIS)";
 	echo "         SUN4GCC (set ARCH = SUN4GCC)";
 	echo "         T3D (set ARCH = T3D)";
@@ -214,6 +216,9 @@ edit_ugconf()
 		;;
 	AIX)
 		sed 's/^ARCH.*$/ARCH = AIX/' $1 > $1.tmp
+		;;
+	AIXGCC)
+		sed 's/^ARCH.*$/ARCH = AIXGCC/' $1 > $1.tmp
 		;;
 	PARAGON)
 		sed 's/^ARCH.*$/ARCH = PARAGON/' $1 > $1.tmp
