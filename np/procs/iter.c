@@ -143,6 +143,16 @@ typedef struct
 
 typedef struct
 {
+  NP_SMOOTHER smoother;
+
+  VECDATA_DESC *t;
+  INT mode;
+  INT depth;
+
+} NP_PGS;
+
+typedef struct
+{
   INT tp;                                                       /* block type							*/
   INT fc;                                                       /* first block comp in type				*/
   INT tc;                                                       /* last block comp +1 in type			*/
@@ -628,16 +638,20 @@ static INT GSPreProcess  (NP_ITER *theNP, INT level,
                           VECDATA_DESC *x, VECDATA_DESC *b,
                           MATDATA_DESC *A, INT *baselevel, INT *result)
 {
-        #ifdef ModelP
   NP_SMOOTHER *np;
   GRID *theGrid;
 
-  np = (NP_SMOOTHER *) theNP;
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) NP_RETURN(1,result[0]);
   theGrid = NP_GRID(theNP,level);
+        #ifdef ModelP
+  np = (NP_SMOOTHER *) theNP;
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L))
+    NP_RETURN(1,result[0]);
   if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS) != NUM_OK)
+    NP_RETURN(1,result[0]);
         #endif
+  if (l_setindex(theGrid))
+    NP_RETURN(1,result[0]);
   *baselevel = level;
 
   return (0);
@@ -959,19 +973,21 @@ static INT SGSPreProcess  (NP_ITER *theNP, INT level,
                            VECDATA_DESC *x, VECDATA_DESC *b,
                            MATDATA_DESC *A, INT *baselevel, INT *result)
 {
-        #ifdef ModelP
   NP_SMOOTHER *np;
   GRID *theGrid;
 
+  theGrid = NP_GRID(theNP,level);
+        #ifdef ModelP
   np = (NP_SMOOTHER *) theNP;
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L))
     NP_RETURN(1,result[0]);
-  theGrid = NP_GRID(theNP,level);
   if (l_dmatcopy(theGrid,np->L,A) != NUM_OK)
     NP_RETURN(1,result[0]);
   if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS) != NUM_OK)
     NP_RETURN(1,result[0]);
         #endif
+  if (l_setindex(theGrid))
+    NP_RETURN(1,result[0]);
   *baselevel = level;
 
   /* get storage for extra temp */
@@ -1064,6 +1080,166 @@ static INT SGSConstruct (NP_BASE *theNP)
   np->PreProcess = SGSPreProcess;
   np->Iter = SGSSmoother;
   np->PostProcess = SGSPostProcess;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   pgs - numproc for patch Gauss-Seidel smoother
+
+   DESCRIPTION:
+   This numproc executes a patch Gauss-Seidel smoother,
+   using the blas routine 'l_pgs'.
+   It depends strongly on the order in the matrix list.
+
+   .vb
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>]
+       $damp <sc double list> $mode <mode> $depth <depth>;
+   .ve
+
+   .  $c~<cor> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $damp~<sc~double~list> - damping factors for each component
+   .  $depth~<depth> - number of patch vectors
+   .  $mode~<mode> - overlapping mode
+
+   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
+   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
+
+   'npexecute <name> [$i] [$s] [$p];'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+   D*/
+/****************************************************************************/
+
+static INT PGSInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_PGS *np;
+
+  np = (NP_PGS *) theNP;
+  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+  if (ReadArgvINT("mode",&(np->mode),argc,argv))
+    np->mode = 0;
+  if (ReadArgvINT("depth",&(np->depth),argc,argv))
+    np->depth = 2;
+
+  return (SmootherInit(theNP,argc,argv));
+}
+
+static INT PGSDisplay (NP_BASE *theNP)
+{
+  NP_PGS *np;
+
+  SmootherDisplay(theNP);
+  np = (NP_PGS *) theNP;
+  if (np->t != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"mode",(int)np->mode);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"depth",(int)np->depth);
+
+  return (0);
+}
+
+static INT PGSPreProcess  (NP_ITER *theNP, INT level,
+                           VECDATA_DESC *x, VECDATA_DESC *b,
+                           MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+  NP_PGS *np;
+  GRID *theGrid;
+
+  np = (NP_PGS *) theNP;
+  theGrid = NP_GRID(theNP,level);
+        #ifdef ModelP
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L))
+    NP_RETURN(1,result[0]);
+  if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (l_matrix_consistent(theGrid,np->smoother.L,MAT_CONS) != NUM_OK)
+    NP_RETURN(1,result[0]);
+        #endif
+  if (l_setindex(theGrid))
+    NP_RETURN(1,result[0]);
+  *baselevel = level;
+
+  /* get storage for extra temp */
+  if (AllocVDFromVD(theNP->base.mg,level,level,x,&np->t))
+    NP_RETURN(1,result[0]);
+
+  return (0);
+}
+
+static INT PGSSmoother (NP_ITER *theNP, INT level,
+                        VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                        INT *result)
+{
+  NP_PGS *np;
+  GRID *theGrid;
+
+  /* store passed XXXDATA_DESCs */
+  NPIT_A(theNP) = A;
+  NPIT_c(theNP) = x;
+  NPIT_b(theNP) = b;
+
+  np = (NP_PGS *) theNP;
+  theGrid = NP_GRID(theNP,level);
+
+  /* iterate forward */
+    #ifdef ModelP
+  if (l_vector_collect(theGrid,b)!=NUM_OK) NP_RETURN(1,result[0]);
+  if (l_pgs(theGrid,x,np->smoother.L,b,np->depth,np->mode)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (l_vector_consistent(theGrid,x) != NUM_OK)
+    NP_RETURN(1,result[0]);
+    #else
+  if (l_pgs(theGrid,x,A,b,np->depth,np->mode))
+    NP_RETURN(1,result[0]);
+    #endif
+
+  /* damp */
+  if (l_dscale(theGrid,x,ACTIVE_CLASS,np->smoother.damp)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  /* update defect */
+  if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,x,ACTIVE_CLASS)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  return (0);
+}
+
+static INT PGSPostProcess (NP_ITER *theNP, INT level,
+                           VECDATA_DESC *x, VECDATA_DESC *b,
+                           MATDATA_DESC *A, INT *result)
+{
+  NP_PGS *np;
+
+  np = (NP_PGS *) theNP;
+  if (np->smoother.L != NULL)
+    FreeMD(theNP->base.mg,level,level,np->smoother.L);
+  FreeVD(NP_MG(theNP),level,level,np->t);
+
+  return(0);
+}
+
+static INT PGSConstruct (NP_BASE *theNP)
+{
+  NP_ITER *np;
+
+  theNP->Init = PGSInit;
+  theNP->Display = PGSDisplay;
+  theNP->Execute = NPIterExecute;
+
+  np = (NP_ITER *) theNP;
+  np->PreProcess = PGSPreProcess;
+  np->Iter = PGSSmoother;
+  np->PostProcess = PGSPostProcess;
 
   return(0);
 }
@@ -3891,6 +4067,8 @@ INT InitIter ()
   if (CreateClass(ITER_CLASS_NAME ".bcgss",sizeof(NP_BCGSSMOOTHER),BCGSSConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".sgs",sizeof(NP_SGS),SGSConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".pgs",sizeof(NP_PGS),PGSConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".sor",sizeof(NP_SMOOTHER),SORConstruct))
     REP_ERR_RETURN (__LINE__);
