@@ -121,7 +121,7 @@ INT CenterInPattern (char *str, INT PatLen, const char *text, char p, const char
   for (i=TextBegin; i<TextEnd; i++)
     str[i] = *(text++);
   str[i++] = ' ';
-  for (i=TextEnd; i<PatLen; i++)
+  for (; i<PatLen; i++)
     str[i] = p;
   str[PatLen] = '\0';
   strcat(str,end);
