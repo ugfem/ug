@@ -1125,24 +1125,18 @@ static void PropagateIncomings (
 /****************************************************************************/
 
 
-static void LocalizeObjects (LC_MSGHANDLE xm,
+
+static void LocalizeSymTab (LC_MSGHANDLE xm,
 	OBJTAB_ENTRY **allRecObjs, int nRecObjs,
 	DDD_HDR *localCplObjs, int nLocalCplObjs)
 {
 	SYMTAB_ENTRY *theSymTab;
-	OBJTAB_ENTRY *theObjTab;
-	char         *theObjects;
 	int          i, j;
 	int          lenSymTab = (int) LC_GetTableLen(xm, xferGlobals.symtab_id);
-	int          lenObjTab = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
-
-	/*STAT_RESET4;*/
 
 
 	/* get table addresses inside message buffer */
 	theSymTab = (SYMTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.symtab_id);
-	theObjTab = (OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id);
-	theObjects = (char *)        LC_GetPtr(xm, xferGlobals.objmem_id);
 
 
 	/* insert pointers to known objects into SymTab */
@@ -1182,14 +1176,25 @@ static void LocalizeObjects (LC_MSGHANDLE xm,
 			theSymTab[i].adr.hdr = allRecObjs[j]->hdr;
 		}
 	}
+}
 
 
-#	if DebugUnpack<=3
-		sprintf(cBuffer, "%4d: converting pointers\n",me);
-		DDD_PrintDebug(cBuffer);
-#	endif
+static void LocalizeNewObjects (LC_MSGHANDLE xm)
+{
+	SYMTAB_ENTRY *theSymTab;
+	OBJTAB_ENTRY *theObjTab;
+	char         *theObjects;
+	int          i;
+	int          lenObjTab = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
 
-	/* convert pointers */
+
+	/* get table addresses inside message buffer */
+	theSymTab = (SYMTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.symtab_id);
+	theObjTab = (OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id);
+	theObjects = (char *)        LC_GetPtr(xm, xferGlobals.objmem_id);
+
+
+	/* convert pointers to TOTALNEW objects */
 	for(i=0; i<lenObjTab; i++)         /* for all message items */
 	{
 		if (theObjTab[i].is_new==TOTALNEW)
@@ -1205,22 +1210,34 @@ static void LocalizeObjects (LC_MSGHANDLE xm,
 					theSymTab);
 			}
 		}
+	}
+}
 
 
+static void LocalizeKnownObjects (LC_MSGHANDLE xm)
+{
+	SYMTAB_ENTRY *theSymTab;
+	OBJTAB_ENTRY *theObjTab;
+	char         *theObjects;
+	int          i;
+	int          lenObjTab = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
+
+	#ifdef MERGE_MODE_IN_TESTZUSTAND
+
+	/* get table addresses inside message buffer */
+	theSymTab = (SYMTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.symtab_id);
+	theObjTab = (OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id);
+	theObjects = (char *)        LC_GetPtr(xm, xferGlobals.objmem_id);
+
+
+	/* convert pointers to non-TOTALNEW objects */
+	for(i=0; i<lenObjTab; i++)         /* for all message items */
+	{
 		/*
-			TODO: hier geht das wissen aus etwaigen anderen kopien
-			mit is_new==OTHERMSG verloren. referenzen aus diesen kopien,
-			die in der entsprechenden kopie mit is_new==TOTAL_NEW
-			nicht vorhanden waren, sind zwar in theSymTab der aktuellen
-			msg bekannt, werden jedoch einfach ignoriert.
-			hier muesste also strenggenommen eine art verschmelzung der
-			information aus den verschiedenen symboltabellen hin.
-			960509 KB
 			implemented merge_mode for Localize. references from all copies
 			will be merged into the local copy. 960813 KB
 		*/
 
-		#ifdef MERGE_MODE_IN_TESTZUSTAND
 		if (theObjTab[i].is_new!=TOTALNEW)
 		{
 			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
@@ -1240,15 +1257,9 @@ static void LocalizeObjects (LC_MSGHANDLE xm,
 					theSymTab);
 			}
 		}
-		#endif
 	}
 
-#	if DebugUnpack<=4
-		sprintf(cBuffer, "%4d: UnpackSingleMessage, Phase 1 ready\n",me);
-		DDD_PrintDebug(cBuffer);
-		fflush(stdout);
-#	endif
-
+	#endif
 }
 
 
@@ -1699,10 +1710,14 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 		be computed once and stored somewhere. kb 970115
 	*/
 
-	/* unpack all messages and update local topology */
+	/* insert local references into symtabs */
 	for(i=0; i<nRecvMsgs; i++)
-		LocalizeObjects(theMsgs[i], unionObjTab, lenObjTab,
+		LocalizeSymTab(theMsgs[i], unionObjTab, lenObjTab,
 			localCplObjs, nLocalCplObjs);
+
+	/* unpack all messages and update local topology */
+	for(i=0; i<nRecvMsgs; i++) LocalizeNewObjects(theMsgs[i]);
+	for(i=0; i<nRecvMsgs; i++) LocalizeKnownObjects(theMsgs[i]);
 
 	/*
 		at this point all new objects are established,

@@ -1,5 +1,13 @@
 ---------------------------
 
+CHANGES 1.8.7 -> 1.8.8
+
+---------------------------
+970704
+bugfix in Xfer module.
+	- reference-merging does now work also with rule XFER-C2 in all situations.
+---------------------------
+
 CHANGES 1.8.6 -> 1.8.7
 
 ---------------------------
