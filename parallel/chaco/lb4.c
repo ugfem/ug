@@ -132,7 +132,7 @@ static int set_cnt;                       /* number of cluster sets stored  */
 static int total_cnt;                     /* total number of clusters stored*/
 static int startid;						  /* startid for unique clusternumb */
 static INT *load;                         /* total load on all levels&proc!!*/
-static INT MarkKeyTop, MarkKeyBottom;     /* mark-keys for mem management   */
+static INT MarkKeyBottom;     			  /* mark-key for mem management    */
 static INT quiet;
 
 /****************************************************************************/
@@ -155,10 +155,9 @@ static INT quiet;
 /*                                                                          */
 /****************************************************************************/
 
-static int InitClustering (MULTIGRID *mg, ELEMENT ***elements)
+static int InitClustering (MULTIGRID *mg)
 {
 	int i;
-	INT ne;
 
 	/* allocate storage for clusters in each processor */
 	PRINTDEBUG(dddif,1,("%d: InitClustering() GetMem bytes=%d\n",me,MAXCLUSTERS*sizeof(CLUSTER)));
@@ -189,17 +188,6 @@ static int InitClustering (MULTIGRID *mg, ELEMENT ***elements)
 	#endif
 
 	if (sort_clusters==NULL) return(1);
-
-	/* allocate memory for array of pointers to elements used in load transfer */
-	/* This memory is allocated from top since bottom is released before       */
-	/* load transfer.                                                          */
-	ne = 0;
-	for (i=0; i<=TOPLEVEL(mg); i++)
-		if (GRID_ON_LEVEL(mg,i)!=NULL)
-			ne += NT(GRID_ON_LEVEL(mg,i));
-	PRINTDEBUG(dddif,1,("%d: InitClustering() GetMem nitems=%d bytes=%d\n",me,ne,ne*sizeof(ELEMENT *)));
-	*elements = (ELEMENT **) GetMemUsingKey(MGHEAP(mg),ne*sizeof(ELEMENT *),FROM_TOP,MarkKeyTop);
-	if (*elements==NULL && ne>0) return(1);
 
 	return(0);
 }
@@ -1463,7 +1451,6 @@ static int BroadcastDestinations (void)
 /*                                                                          */
 /* Input:     MULTIGRID *mg         whole data structure                    */
 /*            int minlevel          lowest level to balance                 */
-/*            ELEMENT **elements    pointer array to be filled              */
 /*            INT *ne               #entries used in pointer array          */
 /*                                                                          */
 /* Output:    0: if OK                                                      */
@@ -1471,17 +1458,13 @@ static int BroadcastDestinations (void)
 /*                                                                          */
 /****************************************************************************/
 
-static void recursive_set_dest (ELEMENT *e, CLUSTER *c, ELEMENT **elements, 
-                                INT *ne)
+static void recursive_set_dest (ELEMENT *e, CLUSTER *c)
 {
 	int i;
 	
 	/* if e is not in cluster c then return */
 	if (MY_CLUSTER(e)!=c) return;
 	
-	/* now e is in cluster c, if dest!=me put it in elements */
-	if (c->destination!=me)	elements[(*ne)++] = e;
-
 	/* set destination in e */
 	SET_PARTITION(e,c->destination);
 	
@@ -1499,23 +1482,19 @@ static void recursive_set_dest (ELEMENT *e, CLUSTER *c, ELEMENT **elements,
 			ELEMENT *s = SonList[i];
 			
 			if (s!=NULL)
-				recursive_set_dest(s,c,elements,ne);
+				recursive_set_dest(s,c);
 			else
 				break;
 		}
 	}
 }
 	
-static int SetDestinations (MULTIGRID *mg, int minlevel, ELEMENT **elements, 
-                            INT *ne)
+static int SetDestinations (MULTIGRID *mg, int minlevel)
 {
 	int k;
 	GRID *g;
 	ELEMENT *e;
 	CLUSTER *c;
-	
-	/* reset number of elements */
-	*ne = 0;
 	
 	/* find destination for all elements */
 	for (k=minlevel; k<=TOPLEVEL(mg); k++)
@@ -1533,7 +1512,7 @@ static int SetDestinations (MULTIGRID *mg, int minlevel, ELEMENT **elements,
 			
 			/* set destinations recursively */
 			c = MY_CLUSTER(e);
-			recursive_set_dest(e,c,elements,ne);
+			recursive_set_dest(e,c);
 		}
 	}
 
@@ -1576,8 +1555,7 @@ int Balance_CCPTM (MULTIGRID *mg,                                 /* data    */
 {
 	extern double *MEM_OK;   /* variable for memory overflow exeception */
 	int error,l;
-	ELEMENT **elements;
-	INT ne,nc,i;
+	INT nc,i;
 	DOUBLE Begin,End;
 	char buf[60];
 
@@ -1590,14 +1568,13 @@ int Balance_CCPTM (MULTIGRID *mg,                                 /* data    */
 	/* element array for load transfer is allocated   */
 	/* from top.                                      */
 	Mark(MGHEAP(mg),FROM_BOTTOM, &MarkKeyBottom);
-	Mark(MGHEAP(mg),FROM_TOP, &MarkKeyTop);
 
 	/* reset error flag and memory error flag*/
 	error = 0;
 	MEM_OK = (double *)0x1L;
 
 	/* allocate all memory we might need now */
-	error = InitClustering(mg,&elements);
+	error = InitClustering(mg);
 	if (error>0) goto stage1;
 	error = InitMemLB1(mg);
 	if (error>0) goto stage1;
@@ -1619,14 +1596,12 @@ stage1: /* compute total number of clusters or error */
 	Broadcast(&nc,sizeof(INT));
 	if (nc<0)
 	{
-		Release(MGHEAP(mg),FROM_TOP, MarkKeyTop);
 		Release(MGHEAP(mg),FROM_BOTTOM, MarkKeyBottom);
 		UserWrite("error in stage 1\n");
 		return(1);
 	}
 	if (nc>=MAXCLUSTERS)
 	{
-		Release(MGHEAP(mg),FROM_TOP, MarkKeyTop);
 		Release(MGHEAP(mg),FROM_BOTTOM, MarkKeyBottom);
 		sprintf(buf,"Not enough cluster memory: MAXCLUSTERS=%d\n",
                         MAXCLUSTERS);
@@ -1665,7 +1640,7 @@ stage1: /* compute total number of clusters or error */
 	error = BroadcastDestinations();
 
 	/* now assign each element to its destination */
-	error = SetDestinations(mg,minlevel,elements,&ne);
+	error = SetDestinations(mg,minlevel);
 
 	/* release memory for clusters */
 	Release(MGHEAP(mg),FROM_BOTTOM, MarkKeyBottom);
@@ -1684,9 +1659,6 @@ stage1: /* compute total number of clusters or error */
 
 mem_err: /* if memory error has occured leave everything unchanged */
 	if (!MEM_OK) Release(MGHEAP(mg),FROM_BOTTOM, MarkKeyBottom);
-	
-	/* release memory for elements array */
-	Release(MGHEAP(mg),FROM_TOP, MarkKeyTop);
 	
 	return(error);
 }
