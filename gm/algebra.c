@@ -2622,12 +2622,14 @@ INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString, VECTOR *theVector, 
           {
             UserWriteF("%d: %s vector ID=%ld is referenced by obj0=%x, but points to wrong obj1=%x\n",
                        me, ObjectString, (long) ID(theVector), theObject, VecObject);
+                                                #ifdef ModelP
             if (strcmp(ObjectString,"EDGE")==0)
               UserWriteF("%d: obj0: n0=%d n1=%d  obj1: n0=%d n1=%d\n",me,
                          DDD_InfoGlobalId(PARHDR(NBNODE(LINK0(&(theObject->ed))))),
                          DDD_InfoGlobalId(PARHDR(NBNODE(LINK1(&(theObject->ed))))),
                          DDD_InfoGlobalId(PARHDR(NBNODE(LINK0(&(VecObject->ed))))),
                          DDD_InfoGlobalId(PARHDR(NBNODE(LINK1(&(VecObject->ed))))) );
+                                                #endif
             error = GM_ERROR;
           }
         }
