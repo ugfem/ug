@@ -249,7 +249,7 @@ void ddd_pstat (char *);
 void ddd_DisplayContext (void);
 
 /* from test.c */
-void ddd_test ();
+void ddd_test (char *argv, MULTIGRID *theMG);
 
 /* from handler.c */
 void            ddd_HandlerInit (INT);
@@ -262,9 +262,17 @@ int BalanceGridRCB (MULTIGRID *, int);
 void    SetOverlapPriorities            (GRID *theGrid);
 void    ConstructConsistentGrid         (GRID *theGrid);
 INT             CheckInterfaces                         (GRID *theGrid);
+void    SetGhostObjectPriorities    (GRID *theGrid);
 
 /* from transfer.c */
 int TransferGridFromLevel (MULTIGRID *theMG, INT level);
+
+/* from identify.c */
+INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel);
+
+/* form memmgr.c */
+void memmgr_Init (void);
+void memmgr_Report (void);
 
 #endif /* ModelP */
 #endif /* __PARALLEL_H__ */

@@ -39,6 +39,7 @@
 
 #include "debug.h"
 #include "compiler.h"
+#include "devices.h"
 #include "domain.h"
 #include "evm.h"
 #include "parallel.h"

@@ -34,6 +34,7 @@
 #include "evm.h"
 #include "general.h"
 #include "ugm.h"
+#include "devices.h"
 
 /****************************************************************************/
 /*																			*/

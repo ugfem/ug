@@ -34,6 +34,7 @@
 #include <assert.h>
 
 #include "parallel.h"
+#include "gm.h"
 #include "evm.h"
 #include "general.h"
 #include "ugm.h"
@@ -254,7 +255,7 @@ static int Scatter_VHGhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
   if (PARTITION(theElement) == me) return(0);
 
   /* if a son resides as master keep element as vghost */
-  if (GetAllSons(theElement,SonList) != GM_OK) return;
+  if (GetAllSons(theElement,SonList) != GM_OK) return(0);
   i = 0;
   while (SonList[i] != NULL)
   {

@@ -37,8 +37,10 @@
 #include "parallel.h"
 #include "general.h"
 #include "gm.h"
+#include "ugm.h"
 #include "evm.h"
 #include "shapes.h"
+#include "devices.h"
 
 /****************************************************************************/
 /*																			*/
@@ -139,7 +141,7 @@ static int ComputeNodeBorderPrios (DDD_OBJ obj)
   }
 
   if (min_proc==procs)
-    return;
+    return(0);
 
   if (me!=min_proc)
     DDD_PrioritySet(PARHDR(node), PrioBorder);
@@ -162,7 +164,7 @@ static int ComputeVectorBorderPrios (DDD_OBJ obj)
   }
 
   if (min_proc==procs)
-    return;
+    return(0);
 
   if (me!=min_proc)
     DDD_PrioritySet(PARHDR(vector), PrioBorder);
@@ -186,7 +188,7 @@ static int ComputeEdgeBorderPrios (DDD_OBJ obj)
   }
 
   if (min_proc==procs)
-    return;
+    return(0);
 
   if (me!=min_proc)
     DDD_PrioritySet(PARHDR(edge), PrioBorder);
