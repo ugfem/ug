@@ -387,9 +387,14 @@ INT ClearIMatrix (GRID *g, VECDATA_DESC *theVD);
 INT InterpolateCorrectionByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
                                    const VECDATA_DESC *from,
                                    const DOUBLE *damp);
+INT InterpolateCorrectionByMatrix_NoSkip (GRID *FineGrid, const VECDATA_DESC *to,
+                                          const VECDATA_DESC *from,
+                                          const DOUBLE *damp);
 INT RestrictByMatrix              (GRID *FineGrid, const VECDATA_DESC *to,
                                    const VECDATA_DESC *from,
                                    const DOUBLE *damp);
+INT RestrictByMatrix_s                    (GRID *FineGrid, const VECDATA_DESC *to,
+                                           const VECDATA_DESC *from, const DOUBLE *damp);
 INT InterpolateNewVectorsByMatrix (GRID *FineGrid, const VECDATA_DESC *sol);
 INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat);
 #endif
