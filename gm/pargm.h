@@ -47,6 +47,10 @@
 #include "dimension.h"
 #endif
 
+#include "namespace.h"
+
+START_UG_NAMESPACE
+
 /****************************************************************************/
 /*                                                                                                                                                      */
 /* defines in the following order                                                                                       */
@@ -453,5 +457,7 @@ void   UG_GlobalSumNDOUBLE (INT n, DOUBLE *x);
 void   UG_GlobalMaxNDOUBLE (INT n, DOUBLE *x);
 void   UG_GlobalMinNDOUBLE (INT n, DOUBLE *x);
 #endif
+
+END_NAMESPACE
 
 #endif /* __PARGM_H__ */

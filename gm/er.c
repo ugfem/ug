@@ -1087,7 +1087,7 @@ static INT ExtractInterfaceRules (MULTIGRID *mg)
 
       /* REMARK (HRR 971207): storage could be Marked and Released in pieces if necessary
                                                       to allow BOTTOM-storage to grow */
-      global.interface_rules = GetTmpMem(global.heap,(global.if_elems+1)*sizeof(ERULE),MarkKey);
+      global.interface_rules = (ERULE*)GetTmpMem(global.heap,(global.if_elems+1)*sizeof(ERULE),MarkKey);
       if (global.interface_rules==NULL)
         REP_ERR_RETURN(1);
 

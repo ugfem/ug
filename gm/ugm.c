@@ -284,7 +284,7 @@ INT NS_DIM_PREFIX ReleaseOBJT (INT type)
 /****************************************************************************/
 
 #ifdef ModelP
-void NS_DIM_PREFIX ConstructDDDObject (void *obj, INT size, INT type)
+static void ConstructDDDObject (void *obj, INT size, INT type)
 {
   if (obj!=NULL && type!=NOOBJ)
   {
@@ -373,7 +373,7 @@ void * NS_DIM_PREFIX GetMemoryForObjectNew (HEAP *theHeap, INT size, INT type)
 /****************************************************************************/
 
 #ifdef ModelP
-void NS_DIM_PREFIX DestructDDDObject(void *object, INT type)
+static void DestructDDDObject(void *object, INT type)
 {
   if (type!=NOOBJ)
   {
@@ -8126,7 +8126,7 @@ INT NS_DIM_PREFIX MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag
     {
       VChannelPtr     *mych;
 
-      mych = malloc(procs*sizeof(VChannelPtr));
+      mych = (VChannelPtr*)malloc(procs*sizeof(VChannelPtr));
 
       for (i=1; i<procs; i++)
       {
