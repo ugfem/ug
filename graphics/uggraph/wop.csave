@@ -13860,7 +13860,7 @@ static void ComputeOS_Data(MULTIGRID *mg)
 */
 /****************************************************************************/
 
-static INT OrderFathersXSH_New (MULTIGRID *mg, ELEMENT **table)
+static INT OrderFathersXSH (MULTIGRID *mg, ELEMENT **table)
 {
 	ELEMENT *p, *q;
 	GRID *grid;
@@ -14034,7 +14034,7 @@ static INT OrderFathersXSH_New (MULTIGRID *mg, ELEMENT **table)
    return 0;
 }
 
-static INT OrderFathersXSH(GRID *grid, HEAP *heap, ELEMENT **table)
+static INT OrderFathersXSH_OLD (GRID *grid, HEAP *heap, ELEMENT **table)
 {
 	ELEMENT *p, *q;
 	ILIST *h;
