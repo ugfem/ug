@@ -246,8 +246,8 @@ INT SPS_ENLAssembleDefect (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *
   EVDD_E(d,tl,0)=r-sps->scale*sps->last_nls_nt;
 
   dset(NP_MG(sps),fl,tl,ALL_VECTORS,d->vd,0.0);
-  if ((*tass->TAssembleDefect)(tass,fl,tl,0.0,-1.0,0.0,current_pstep->sol_p1->vd,d->vd,NULL,res)) NP_RETURN(1,*res);
-  if ((*tass->TAssembleDefect)(tass,fl,tl,TIME_INFTY,1.0,-TIME_INFTY,u->vd,d->vd,J->mm,res)) NP_RETURN(1,*res);
+  if ((*tass->TAssembleDefect)(tass,fl,tl,0.0,-1.0,0.0,current_pstep->sol_p1->vd,d->vd,NULL,res)) { *res=1; REP_ERR_RETURN(1); }   /* NP_RETURN(1,*res);*/
+  if ((*tass->TAssembleDefect)(tass,fl,tl,TIME_INFTY,1.0,-TIME_INFTY,u->vd,d->vd,J->mm,res))              { *res=1; REP_ERR_RETURN(1); }       /* NP_RETURN(1,*res);*/
 
   return(0);
 }
