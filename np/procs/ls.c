@@ -33,6 +33,8 @@
 
 #include "devices.h"
 #include "general.h"
+#include "debug.h"
+#include "ugstruct.h"
 #include "gm.h"
 #include "scan.h"
 #include "numproc.h"
@@ -117,6 +119,8 @@ typedef struct
 
 static VEC_SCALAR Factor_One;
 
+REP_ERR_FILE;
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -191,9 +195,9 @@ INT NPLinearSolverDisplay (NP_LINEAR_SOLVER *np)
   UserWrite("configuration parameters:\n");
   if (np->x != NULL)
     if (sc_disp(np->reduction,np->x,"red"))
-      return (1);
+      REP_ERR_RETURN (1);
   if (sc_disp(np->abslimit,np->x,"abslimit"))
-    return (1);
+    REP_ERR_RETURN (1);
 
   return(0);
 }
@@ -209,75 +213,75 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 
   if (np->x == NULL) {
     PrintErrorMessage('E',"NPLinearSolverExecute","no vector x");
-    return (1);
+    REP_ERR_RETURN (1);
   }
   if (np->b == NULL) {
     PrintErrorMessage('E',"NPLinearSolverExecute","no vector b");
-    return (1);
+    REP_ERR_RETURN (1);
   }
   if (np->A == NULL) {
     PrintErrorMessage('E',"NPLinearSolverExecute","no matrix A");
-    return (1);
+    REP_ERR_RETURN (1);
   }
 
   if (ReadArgvOption("i",argc,argv)) {
     if (np->PreProcess == NULL) {
       PrintErrorMessage('E',"NPLinearSolverExecute","no PreProcess");
-      return (1);
+      REP_ERR_RETURN (1);
     }
     if ((*np->PreProcess)(np,level,np->x,np->b,np->A,&bl,&result)) {
       UserWriteF("NPLinearSolverExecute: PreProcess failed, error code %d\n",
                  result);
-      return (1);
+      REP_ERR_RETURN (1);
     }
   }
 
   if (ReadArgvOption("d",argc,argv)) {
     if (np->Defect == NULL) {
       PrintErrorMessage('E',"NPLinearSolverExecute","no Defect");
-      return (1);
+      REP_ERR_RETURN (1);
     }
     if ((*np->Defect)(np,level,np->x,np->b,np->A,&result)) {
       UserWriteF("NPLinearSolverExecute: Defect failed, error code %d\n",
                  result);
-      return (1);
+      REP_ERR_RETURN (1);
     }
   }
 
   if (ReadArgvOption("r",argc,argv)) {
     if (np->Residuum == NULL) {
       PrintErrorMessage('E',"NPLinearSolverExecute","no Residuum");
-      return (1);
+      REP_ERR_RETURN (1);
     }
     if ((*np->Residuum)(np,bl,level,np->x,np->b,np->A,&lresult)) {
       UserWriteF("NPLinearSolverExecute: Residuum failed, error code %d\n",
                  result);
-      return (1);
+      REP_ERR_RETURN (1);
     }
   }
 
   if (ReadArgvOption("s",argc,argv)) {
     if (np->Solver == NULL) {
       PrintErrorMessage('E',"NPLinearSolverExecute","no Solver");
-      return (1);
+      REP_ERR_RETURN (1);
     }
     if ((*np->Solver)(np,level,np->x,np->b,np->A,
                       np->abslimit,np->reduction,&lresult)) {
       UserWriteF("NPLinearSolverExecute: Solver failed, error code %d\n",
                  lresult.error_code);
-      return (1);
+      REP_ERR_RETURN (1);
     }
   }
 
   if (ReadArgvOption("p",argc,argv)) {
     if (np->PostProcess == NULL) {
       PrintErrorMessage('E',"NPLinearSolverExecute","no PostProcess");
-      return (1);
+      REP_ERR_RETURN (1);
     }
     if ((*np->PostProcess)(np,level,np->x,np->b,np->A,&result)) {
       UserWriteF("NPLinearSolverExecute: PostProcess failed, error code %d\n",
                  result);
-      return (1);
+      REP_ERR_RETURN (1);
     }
   }
   return(0);
@@ -292,13 +296,13 @@ static INT LinearSolverInit (NP_BASE *theNP, INT argc , char **argv)
   np = (NP_LS *) theNP;
 
   if (ReadArgvINT("m",&(np->maxiter),argc,argv))
-    return(NP_NOT_ACTIVE);
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
 
   np->display = ReadArgvDisplay(argc,argv);
   np->Iter = (NP_ITER *)
              ReadArgvNumProc(theNP->mg,"I",ITER_CLASS_NAME,argc,argv);
   if (np->Iter == NULL)
-    return(NP_NOT_ACTIVE);
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
   np->baselevel = 0;
   np->c = ReadArgvVecDesc(theNP->mg,"c",argc,argv);
 
@@ -337,10 +341,15 @@ static INT LinearSolverPreProcess (NP_LINEAR_SOLVER *theNP, INT level,
 {
   NP_LS *np;
 
+  /* store passed XXXDATA_DESCs */
+  NPLS_A(theNP) = A;
+  NPLS_x(theNP) = x;
+  NPLS_b(theNP) = b;
+
   np = (NP_LS *) theNP;
   if (np->Iter->PreProcess != NULL)
     if ((*np->Iter->PreProcess)(np->Iter,level,x,b,A,baselevel,result))
-      return(1);
+      REP_ERR_RETURN(1);
   np->baselevel = MIN(*baselevel,level);
 
   return(0);
@@ -356,7 +365,7 @@ static INT LinearDefect (NP_LINEAR_SOLVER *theNP, INT level,
   if (s_dmatmul_minus(theNP->base.mg,np->baselevel,level,b,A,x,EVERY_CLASS)
       != NUM_OK) {
     result[0] = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   return (0);
 }
@@ -371,12 +380,12 @@ static INT LinearResiduum (NP_LINEAR_SOLVER *theNP, INT bl, INT level,
         #ifdef ModelP
   if (a_vector_collect(theNP->base.mg,bl,level,b)) {
     lresult->error_code = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
         #endif
   if (s_eunorm(theNP->base.mg,bl,level,b,lresult->last_defect)) {
     lresult->error_code = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
 
   return(0);
@@ -392,41 +401,48 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
   INT i,bl,PrintID;
   char text[DISPLAY_WIDTH+4];
 
+  /* store passed reduction and abslimit */
+  for (i=0; i<VD_NCOMP(x); i++)
+  {
+    NPLS_red(theNP)[i] = reduction[i];
+    NPLS_abs(theNP)[i] = abslimit[i];
+  }
+
   np = (NP_LS *) theNP;
   bl = np->baselevel;
   if (np->Iter->Iter == NULL) {
     lresult->error_code = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   if (np->Update == NULL) {
     lresult->error_code = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   if (AllocVDFromVD(theNP->base.mg,bl,level,x,&np->c)) {
     lresult->error_code = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   if (np->Prepare != NULL)
     if ((*np->Prepare)(np,level,x,&lresult->error_code))
-      return (1);
+      REP_ERR_RETURN (1);
 
   /* print defect */
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
   if (np->display > PCR_NO_DISPLAY)
     if (PreparePCR(x,np->display,text,&PrintID)) {
       lresult->error_code = __LINE__;
-      return(1);
+      REP_ERR_RETURN(1);
     }
   for (i=0; i<VD_NCOMP(x); i++)
     lresult->first_defect[i] = lresult->last_defect[i];
   if (sc_mul_check(defect2reach,lresult->first_defect,reduction,b)) {
     lresult->error_code = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   if (np->display > PCR_NO_DISPLAY)
     if (DoPCR(PrintID,lresult->first_defect,PCR_CRATE)) {
       lresult->error_code = __LINE__;
-      return(1);
+      REP_ERR_RETURN(1);
     }
   if (sc_cmp(lresult->first_defect,abslimit,b)) lresult->converged = 1;
   else lresult->converged = 0;
@@ -436,18 +452,18 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
     if (l_dset(GRID_ON_LEVEL(theNP->base.mg,level),np->c,EVERY_CLASS,0.0)
         != NUM_OK) {
       lresult->error_code = __LINE__;
-      return(1);
+      REP_ERR_RETURN(1);
     }
     if ((*np->Iter->Iter)(np->Iter,level,np->c,b,A,&lresult->error_code))
-      return (1);
+      REP_ERR_RETURN (1);
     if ((*np->Update)(np,level,x,np->c,b,A,&lresult->error_code))
-      return (1);
+      REP_ERR_RETURN (1);
     if (LinearResiduum(theNP,bl,level,x,b,A,lresult))
-      return(1);
+      REP_ERR_RETURN(1);
     if (np->display > PCR_NO_DISPLAY)
       if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE)) {
         lresult->error_code = __LINE__;
-        return (1);
+        REP_ERR_RETURN (1);
       }
     if (sc_cmp(lresult->last_defect,abslimit,b) ||
         sc_cmp(lresult->last_defect,defect2reach,b)) {
@@ -458,19 +474,19 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
   FreeVD(theNP->base.mg,bl,level,np->c);
   if (np->Close != NULL)
     if ((*np->Close)(np,level,&lresult->error_code))
-      return (1);
+      REP_ERR_RETURN (1);
   if (np->display > PCR_NO_DISPLAY) {
     if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) {
       lresult->error_code = __LINE__;
-      return (1);
+      REP_ERR_RETURN (1);
     }
     if (PostPCR(PrintID,":ls:avg")) {
       lresult->error_code = __LINE__;
-      return (1);
+      REP_ERR_RETURN (1);
     }
     if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1))) {
       lresult->error_code = __LINE__;
-      return (1);
+      REP_ERR_RETURN (1);
     }
   }
 
@@ -541,7 +557,7 @@ static INT LSUpdate (NP_LS *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *c,
   if (a_daxpy (theNP->ls.base.mg,theNP->baselevel,level,
                x,EVERY_CLASS,Factor_One,c) != NUM_OK) {
     result[0] = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
 
   return(0);
@@ -640,12 +656,12 @@ static INT CGPrepare (NP_LS *theNP, INT level, VECDATA_DESC *x, INT *result)
   np = (NP_CG *) theNP;
   if (AllocVDFromVD(theNP->ls.base.mg,theNP->baselevel,level,x,&np->p)) {
     result[0] = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   if (a_dset(theNP->ls.base.mg,theNP->baselevel,level,np->p,EVERY_CLASS,0.0)
       != NUM_OK) {
     result[0] = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   np->rho = 1.0;
 
@@ -666,25 +682,25 @@ static INT CGUpdate (NP_LS *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *c,
   ncomp = VD_NCOMP(x);
   if (AllocVDFromVD(theMG,theNP->baselevel,level,x,&np->t)) {
     result[0] = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   if (a_dset(theMG,theNP->baselevel,level,np->t,EVERY_CLASS,0.0) != NUM_OK) {
     result[0] = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   for (j=theNP->baselevel; j<=level; j++)
     if (l_dmatmul(GRID_ON_LEVEL(theMG,j),np->t,EVERY_CLASS,A,c,EVERY_CLASS)
         !=NUM_OK) {
       result[0] = __LINE__;
-      return(1);
+      REP_ERR_RETURN(1);
     }
   if (a_daxpy(theMG,theNP->baselevel,level,b,EVERY_CLASS,Factor_One,np->t)) {
     result[0] = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   if (s_ddot(theMG,theNP->baselevel,level,c,b,scal) !=NUM_OK) {
     result[0] = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   lambda = 0.0;
   for (j=0; j<ncomp; j++) lambda += scal[j];
@@ -693,26 +709,26 @@ static INT CGUpdate (NP_LS *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *c,
   if (a_dscale(theMG,theNP->baselevel,level,np->p,EVERY_CLASS,scal)
       != NUM_OK) {
     result[0] = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   if (a_daxpy (theMG,theNP->baselevel,level,np->p,EVERY_CLASS,Factor_One,c)
       != NUM_OK) {
     result[0] = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   if (a_dset(theMG,theNP->baselevel,level,np->t,EVERY_CLASS,0.0) != NUM_OK) {
     result[0] = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   for (j=theNP->baselevel; j<=level; j++)
     if (l_dmatmul (GRID_ON_LEVEL(theMG,j),np->t,EVERY_CLASS,
                    A,np->p,EVERY_CLASS) != NUM_OK) {
       result[0] = __LINE__;
-      return(1);
+      REP_ERR_RETURN(1);
     }
   if (s_ddot (theMG,theNP->baselevel,level,np->t,np->p,scal) != NUM_OK) {
     result[0] = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   lambda = 0.0;
   for (j=0; j<ncomp; j++) lambda += scal[j];
@@ -720,13 +736,13 @@ static INT CGUpdate (NP_LS *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *c,
   if (a_daxpy(theMG,theNP->baselevel,level,x,EVERY_CLASS,scal,np->p)
       != NUM_OK) {
     result[0] = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   for (j=0; j<ncomp; j++) scal[j] = - np->rho / lambda;
   if (a_daxpy (theMG,theNP->baselevel,level,b,EVERY_CLASS,scal,np->t)
       != NUM_OK) {
     result[0] = __LINE__;
-    return(1);
+    REP_ERR_RETURN(1);
   }
   FreeVD(theNP->ls.base.mg,theNP->baselevel,level,np->t);
   if (theNP->display == PCR_FULL_DISPLAY)
@@ -792,13 +808,13 @@ INT InitLinearSolver ()
   INT i;
 
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".ls",sizeof(NP_LS),LSConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".cg",sizeof(NP_CG),CGConstruct))
-    return (__LINE__);
+    REP_ERR_RETURN (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
-  if (MakeStruct(":ls")) return(__LINE__);
-  if (MakeStruct(":ls:avg")) return(__LINE__);
+  if (MakeStruct(":ls")) REP_ERR_RETURN(__LINE__);
+  if (MakeStruct(":ls:avg")) REP_ERR_RETURN(__LINE__);
 
   return (0);
 }
