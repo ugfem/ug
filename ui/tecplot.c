@@ -40,6 +40,7 @@
 #include "compiler.h"
 #include "misc.h"
 #include "general.h"
+#include "pfile.h"
 
 #include "gm.h"
 #include "ugenv.h"
@@ -88,6 +89,113 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
+#ifdef ModelP
+static INT get_offset (INT n)
+{
+  INT i,subtreesize[50],sum,offset;
+
+  /* get number of objects downtree */
+  sum = n;
+  for (i=0; i<degree; i++) {
+    GetConcentrate(i,subtreesize+i,sizeof(INT));
+    sum += subtreesize[i];
+  }
+
+  /* get offset */
+  if (me==master)
+  {
+    offset = 0;
+  }
+  else
+  {
+    Concentrate(&sum,sizeof(INT));
+    GetSpread(&offset,sizeof(INT));
+  }
+
+  /* send offsets for downtree nodes */
+  sum = offset+n;
+  for (i=0; i<degree; i++) {
+    Spread(i,&sum,sizeof(INT));
+    sum += subtreesize[i];
+  }
+
+  return(offset);
+}
+
+static INT GloballyUniqueIDs (MULTIGRID *theMG)
+{
+  GRID *theGrid;
+  VERTEX *theVertex;
+  NODE *theNode;
+  ELEMENT *theElement;
+  INT nv,nn,ne;
+  INT ov,on,oe;
+  int k,j;
+
+  nv = ne = nn = 0;
+
+  j = theMG->topLevel;
+  for (k=0; k<=j; k++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,k);
+
+    /* vertices */
+    for (theVertex=FIRSTVERTEX(theGrid); theVertex!=NULL; theVertex=SUCCV(theVertex))
+      ID(theVertex) = nv++;
+
+    /* nodes */
+    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+      ID(theNode) = nn++;
+
+    /* elements */
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      ID(theElement) = ne++;
+  }
+
+  theMG->vertIdCounter = nv;
+  theMG->nodeIdCounter = nn;
+  theMG->elemIdCounter = ne;
+
+  ov = get_offset(nv);
+  on = get_offset(nn);
+  oe = get_offset(ne);
+
+  for (k=0; k<=j; k++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,k);
+
+    /* vertices */
+    for (theVertex=FIRSTVERTEX(theGrid); theVertex!=NULL; theVertex=SUCCV(theVertex))
+      ID(theVertex) += ov;
+
+    /* nodes */
+    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+      ID(theNode) += on;
+
+    /* elements */
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      ID(theElement) += oe;
+  }
+
+  return(0);
+}
+
+static INT TPL_GlobalSumINT (INT i)
+{
+  int l;
+  INT n;
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,&n,sizeof(INT));
+    i += n;
+  }
+  Concentrate(&i,sizeof(INT));
+  Broadcast(&i,sizeof(INT));
+  return(i);
+}
+#endif
+
 /****************************************************************************/
 /*D
    tecplot - file output in tecplot format
@@ -103,12 +211,16 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 static INT TecplotCommand (INT argc, char **argv)
 {
   INT i,j,k,v;                                  /* counters etc.							*/
+  INT counter;                      /* for formatting output                    */
+  char item[1024],it[256];      /* item buffers                             */
+  INT ic=0;                     /* item length                              */
   VECTOR *vc;                                           /* a vector pointer							*/
   ELEMENT *el;                                  /* an element pointer						*/
 
   MULTIGRID *mg;                                /* our multigrid							*/
   char filename[NAMESIZE];      /* file name for output file				*/
-  FILE *stream;                                 /* the output file pointer					*/
+  PFILE *pf;                    /* the output file pointer                  */
+
 
   INT nv;                                               /* number of variables (eval functions)		*/
   EVALUES *ev[MAXVARIABLES];            /* pointers to eval function descriptors	*/
@@ -116,6 +228,8 @@ static INT TecplotCommand (INT argc, char **argv)
   char s[NAMESIZE];                             /* name of eval proc						*/
   INT numNodes;                                 /* number of data points					*/
   INT numElements;                              /* number of elements						*/
+  INT gnumNodes;                /* number of data points globally           */
+  INT gnumElements;             /* number of elements globallay             */
   PreprocessingProcPtr pre;             /* pointer to prepare function				*/
   ElementEvalProcPtr eval;              /* pointer to evaluation function			*/
   DOUBLE *CornersCoord[MAX_CORNERS_OF_ELEM];       /* pointers to coordinates    */
@@ -123,6 +237,7 @@ static INT TecplotCommand (INT argc, char **argv)
   DOUBLE local[DIM];                            /* local coordinate in DOUBLE				*/
   DOUBLE value;                                 /* returned by user eval proc				*/
   INT maxCorners;                               /* dimension dependent                                          */
+  INT oe,on,n;
 
   INT saveGeometry;                             /* save geometry flag						*/
 
@@ -179,19 +294,29 @@ static INT TecplotCommand (INT argc, char **argv)
     PrintErrorMessage('E',"tecplot","could not read name of logfile");
     return(PARAMERRORCODE);
   }
-  stream = fopen(filename,"w");
-  if (stream==NULL) return(PARAMERRORCODE);
+  pf = pfile_open(filename);
+  if (pf==NULL) return(PARAMERRORCODE);
 
   /********************************/
   /* TITLE                                              */
   /********************************/
 
-  fprintf(stream,"TITLE = \"UG TECPLOT OUTPUT\"\n");
-  fprintf(stream,"VARIABLES = \"X\", \"Y\"");
-  if (DIM==3) fprintf(stream,", \"Z\"");
-  for (i=0; i<nv; i++)
-    fprintf(stream,", \"%s\"",ev[i]->v.name);
-  fprintf(stream,"\n");
+  ic = 0;
+  sprintf(it,"TITLE = \"UG TECPLOT OUTPUT\"\n");
+  strcpy(item+ic,it); ic+=strlen(it);
+  sprintf(it,"VARIABLES = \"X\", \"Y\"");
+  strcpy(item+ic,it); ic+=strlen(it);
+  if (DIM==3) {
+    sprintf(it,", \"Z\"");
+    strcpy(item+ic,it); ic+=strlen(it);
+  }
+  for (i=0; i<nv; i++) {
+    sprintf(it,", \"%s\"",ev[i]->v.name);
+    strcpy(item+ic,it); ic+=strlen(it);
+  }
+  sprintf(it,"\n");
+  strcpy(item+ic,it); ic+=strlen(it);
+  pfile_master_puts(pf,item); ic=0;
 
   /********************************/
   /* compute sizes				*/
@@ -207,7 +332,7 @@ static INT TecplotCommand (INT argc, char **argv)
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
     {
-      if (NSONS(el)>0) continue;                        /* process finest level elements only */
+      if (!EstimateHere(el)) continue;                          /* process finest level elements only */
       numElements++;                                            /* increase element counter */
       for (i=0; i<CORNERS_OF_ELEM(el); i++)
       {
@@ -219,6 +344,19 @@ static INT TecplotCommand (INT argc, char **argv)
       }
     }
 
+        #ifdef ModelP
+  gnumNodes = TPL_GlobalSumINT(numNodes);
+  gnumElements = TPL_GlobalSumINT(numElements);
+  on=get_offset(numNodes);
+  oe=get_offset(numElements);
+  GloballyUniqueIDs(mg);   /* renumber objects */
+    #else
+  gnumNodes = numNodes;
+  gnumElements = numElements;
+  oe=on=0;
+    #endif
+
+
   /********************************/
   /* write ZONE data				*/
   /* uses FEPOINT for data		*/
@@ -227,8 +365,10 @@ static INT TecplotCommand (INT argc, char **argv)
   /********************************/
 
   /* write zone record header */
-  if (DIM==2) fprintf(stream,"ZONE N=%d, E=%d, F=FEPOINT, ET=QUADRILATERAL\n",numNodes,numElements);
-  if (DIM==3) fprintf(stream,"ZONE N=%d, E=%d, F=FEPOINT, ET=BRICK\n",numNodes,numElements);
+  if (DIM==2) sprintf(it,"ZONE N=%d, E=%d, F=FEPOINT, ET=QUADRILATERAL\n",gnumNodes,gnumElements);
+  if (DIM==3) sprintf(it,"ZONE N=%d, E=%d, F=FEPOINT, ET=BRICK\n",gnumNodes,gnumElements);
+  strcpy(item+ic,it); ic+=strlen(it);
+  pfile_master_puts(pf,item); ic=0;
 
   /* write data in FEPOINT format, i.e. all variables of a node per line*/
 
@@ -236,10 +376,11 @@ static INT TecplotCommand (INT argc, char **argv)
     for (vc=FIRSTVECTOR(GRID_ON_LEVEL(mg,k)); vc!=NULL; vc=SUCCVC(vc))
       SETVCFLAG(vc,0);           /* clear all flags */
 
+  counter=0;
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
     {
-      if (NSONS(el)>0) continue;                /* process finest level elements only */
+      if (!EstimateHere(el)) continue;                  /* process finest level elements only */
 
       for (i=0; i<CORNERS_OF_ELEM(el); i++)
         CornersCoord[i] = CVECT(MYVERTEX(CORNER(el,i)));                        /* x,y,z of corners */
@@ -250,10 +391,15 @@ static INT TecplotCommand (INT argc, char **argv)
         if (VCFLAG(vc)) continue;                       /* we have this one alre ady */
         SETVCFLAG(vc,1);                                /* tag vector as visited */
 
-        fprintf(stream,"%g",(double)XC(MYVERTEX(CORNER(el,i))));
-        fprintf(stream," %g",(double)YC(MYVERTEX(CORNER(el,i))));
+        sprintf(it,"%g",(double)XC(MYVERTEX(CORNER(el,i))));
+        strcpy(item+ic,it); ic+=strlen(it);
+        sprintf(it," %g",(double)YC(MYVERTEX(CORNER(el,i))));
+        strcpy(item+ic,it); ic+=strlen(it);
         if (DIM == 3)
-          fprintf(stream," %g",(double)ZC(MYVERTEX(CORNER(el,i))));
+        {
+          sprintf(it," %g",(double)ZC(MYVERTEX(CORNER(el,i))));
+          strcpy(item+ic,it); ic+=strlen(it);
+        }
 
         /* now all the user variables */
 
@@ -275,24 +421,33 @@ static INT TecplotCommand (INT argc, char **argv)
 
           /* call eval function */
           value = eval(el,(const DOUBLE **)CornersCoord,LocalCoord);
-          fprintf(stream," %g",value);
+          sprintf(it," %g",value);
+          strcpy(item+ic,it); ic+=strlen(it);
         }
-        fprintf(stream,"\n");
+        sprintf(it,"\n");
+        strcpy(item+ic,it); ic+=strlen(it);
+        pfile_tagged_puts(pf,item,counter+on);
+        counter++;
       }
     }
-  fprintf(stream,"\n");
+  pfile_sync(pf);       /* end of segment */
+
+  sprintf(it,"\n");
+  strcpy(item+ic,it); ic+=strlen(it);
+  pfile_master_puts(pf,item); ic=0;
 
   /* finally write the connectivity list */
+  counter=0;
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
     {
-      if (NSONS(el)>0) continue;           /* process finest level elements only */
+      if (!EstimateHere(el)) continue;           /* process finest level elements only */
 
       switch(DIM) {
       case 2 :
         switch(TAG(el)) {
         case TRIANGLE :
-          fprintf(stream,"%d %d %d %d\n",
+          sprintf(it,"%d %d %d %d\n",
                   VINDEX(NVECTOR(CORNER(el,0))),
                   VINDEX(NVECTOR(CORNER(el,1))),
                   VINDEX(NVECTOR(CORNER(el,2))),
@@ -300,7 +455,7 @@ static INT TecplotCommand (INT argc, char **argv)
                   );
           break;
         case QUADRILATERAL :
-          fprintf(stream,"%d %d %d %d\n",
+          sprintf(it,"%d %d %d %d\n",
                   VINDEX(NVECTOR(CORNER(el,0))),
                   VINDEX(NVECTOR(CORNER(el,1))),
                   VINDEX(NVECTOR(CORNER(el,2))),
@@ -316,7 +471,7 @@ static INT TecplotCommand (INT argc, char **argv)
       case 3 :
         switch(TAG(el)) {
         case HEXAHEDRON :
-          fprintf(stream,"%d %d %d %d "
+          sprintf(it,"%d %d %d %d "
                   "%d %d %d %d\n",
                   VINDEX(NVECTOR(CORNER(el,0))),
                   VINDEX(NVECTOR(CORNER(el,1))),
@@ -329,7 +484,7 @@ static INT TecplotCommand (INT argc, char **argv)
                   );
           break;
         case TETRAHEDRON :
-          fprintf(stream,"%d %d %d %d "
+          sprintf(it,"%d %d %d %d "
                   "%d %d %d %d\n",
                   VINDEX(NVECTOR(CORNER(el,0))),
                   VINDEX(NVECTOR(CORNER(el,1))),
@@ -342,7 +497,7 @@ static INT TecplotCommand (INT argc, char **argv)
                   );
           break;
         case PYRAMID :
-          fprintf(stream,"%d %d %d %d "
+          sprintf(it,"%d %d %d %d "
                   "%d %d %d %d\n",
                   VINDEX(NVECTOR(CORNER(el,0))),
                   VINDEX(NVECTOR(CORNER(el,1))),
@@ -355,7 +510,7 @@ static INT TecplotCommand (INT argc, char **argv)
                   );
           break;
         case PRISM :
-          fprintf(stream,"%d %d %d %d "
+          sprintf(it,"%d %d %d %d "
                   "%d %d %d %d\n",
                   VINDEX(NVECTOR(CORNER(el,0))),
                   VINDEX(NVECTOR(CORNER(el,1))),
@@ -374,8 +529,13 @@ static INT TecplotCommand (INT argc, char **argv)
         }
         break;
       }
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_tagged_puts(pf,item,counter+oe); ic=0;
+      counter++;
 
     }
+
+  pfile_sync(pf);       /* end of segment */
 
   /********************************/
   /* GEOMETRY                                   */
@@ -383,7 +543,7 @@ static INT TecplotCommand (INT argc, char **argv)
   /* domain interface will change */
   /********************************/
 
-  fclose(stream);
+  pfile_close(pf);
 
   return(OKCODE);
 }
