@@ -643,7 +643,7 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   theMG = NP_MG(theNP);
 
   if (np->amg != NULL) {
-    if (*fl == 0)
+    if (*fl <= 0)
       if (np->amg->PreProcess(np->amg,fl,0,x,b,A,result))
         REP_ERR_RETURN(1);
         #ifdef ModelP
