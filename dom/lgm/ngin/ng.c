@@ -500,6 +500,8 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
   NG_FOPEN(ngin,ngname);
   if (ngin==NULL) return (1);
 
+  NG_Print("Reading '%s'.",ngname);
+
   /* parse cycle 0 */
   mode=0;
   n_bn=n_in=lineid_max=subdom_max=0;
@@ -569,7 +571,7 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
   if (theMesh->Element_corner_ids==NULL) NG_HEAPFAULT;
 
   /* output */
-  NG_Print("Parse: [0]");
+  NG_Print("\nParse: [0]");
 
   /* parse 1 */
   rewind(ngin);
