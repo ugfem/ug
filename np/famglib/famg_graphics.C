@@ -63,7 +63,6 @@ static long SpectrumColor, FixedColor;
 #ifdef ModelP
 static int DrawBorderVec;
 static long GreenColor; /* Green for non master vectors */
-static VECDATA_DESC *ConsVector;
 
 static int Gather_CoordVectorComp (DDD_OBJ obj, void *data)
 {
@@ -85,13 +84,9 @@ static int Scatter_CoordVectorComp (DDD_OBJ obj, void *data)
 
 INT l_coord_project (GRID *g, const VECDATA_DESC *x)
 {
-	int n;
-	
 	if( g==NULL )
 		return NUM_OK;
 	
-	ConsVector = (VECDATA_DESC *)x;
-
 	DDD_IFAOneway(BorderVectorIF, GRID_ATTR(g), IF_BACKWARD, DIM * sizeof(DOUBLE),
 				  Gather_CoordVectorComp, Scatter_CoordVectorComp);
 
@@ -181,7 +176,7 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
 {
 	OUTPUTDEVICE *theOD;
     struct FAMGPlotObject *theObj;
-    int level,maxlevel;
+    int level;
     GRID *grid;
     MULTIGRID *mg;
     
@@ -263,7 +258,6 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
     if( (theObj->CoordVec != NULL) && ( level < 0 ) ) 
     {
 		INT i, n;
-	    VERTEX *vertex;
 		NODE *node;
 		DOUBLE *vertex_coord, *vector_coord, *vcoarse_coord;
 		MATRIX *im;
@@ -312,9 +306,9 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
 {
     VERTEX *vertex, *nbvertex;
     DOUBLE_VECTOR mypos,nbpos;
-    int j, CircleSize;
+    int CircleSize;
     VECTOR *nbvec;
-    MATRIX *mat, *imat;
+    MATRIX *mat;
 	long VectorColor;
 
     if(vec == NULL)
@@ -422,9 +416,8 @@ static INT EvalFAMGGraph2 (DRAWINGOBJ *theDO, VECTOR *vec)
 {
     VERTEX *vertex, *nbvertex;
     DOUBLE_VECTOR mypos,nbpos;
-    int j;
     VECTOR *nbvec;
-    MATRIX *mat, *imat;
+    MATRIX *imat;
 
     if(vec == NULL)
 		goto EvalFAMGGraph2_finish;
@@ -503,10 +496,10 @@ static INT EvalFAMGGraph (DRAWINGOBJ *theDO, INT *end)
 }
 
     
-static INT PostProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
-{
-    return(0);
-}
+// WEG static INT PostProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
+//{
+//    return(0);
+//}
 
 
 INT InitFAMGGraph (void)

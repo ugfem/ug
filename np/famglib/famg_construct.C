@@ -68,7 +68,6 @@ void prm(int level, int comp)
 #ifdef USE_UG_DS
 	VECTOR *v;
 	MATRIX *m;
-	FAMGTransferEntry *trans;
 	
 	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
 

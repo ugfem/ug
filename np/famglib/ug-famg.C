@@ -218,7 +218,8 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 	MATRIX *m, *newmat;
 	NODE *node;
 	INT nrVec = 0, nrLinks = 0, lev, ll, found, i;
-	SHORT xc,bc,mc,xmask,bmask;	
+	SHORT mc,xmask,bmask;	
+	// WEG SHORT xc,bc;	
     
 	#ifdef ModelP
 	assert(0); // not for parallel
@@ -228,9 +229,9 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 	
     if (MD_IS_SCALAR(A) && VD_IS_SCALAR(x) && VD_IS_SCALAR(b))
 	{
-		xc    = VD_SCALCMP(x);
+		// WEG xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(A);
-		bc    = VD_SCALCMP(b);
+		// WEG bc    = VD_SCALCMP(b);
 		xmask  = VD_SCALTYPEMASK(x);
 		bmask  = VD_SCALTYPEMASK(b);
     }
@@ -598,17 +599,18 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
     VECTOR *vec;
 	MATRIX *m;
 	INT nrVec = 0, nrLinks = 0, i;
-	SHORT xc,bc,mc,xmask,bmask;	
+	SHORT mc,bmask;	
+	// WEG SHORT xc,bc,xmask;	
     
     MarkTmpMem(MGHEAP(mg),mark_key); /* release in PostProcess */
 	
 	    
     if (MD_IS_SCALAR(A) && MD_IS_SCALAR(ACons) && VD_IS_SCALAR(x) && VD_IS_SCALAR(b))
 	{
-		xc    = VD_SCALCMP(x);
+		// WEG xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(A);
-		bc    = VD_SCALCMP(b);
-		xmask  = VD_SCALTYPEMASK(x);
+		// WEG bc    = VD_SCALCMP(b);
+		// WEG xmask  = VD_SCALTYPEMASK(x);
 		bmask  = VD_SCALTYPEMASK(b);
     }
     else
@@ -1219,14 +1221,10 @@ static INT FAMGIterSolve (NP_ITER *theNP, INT level,
 	MULTIGRID *mg;
     GRID *grid;
     NODE *snode;
-    VERTEX *vertex;
-    VECTOR *vec,*w,*svec,*fvec;
-	MATRIX *mat;
-	SHORT cc,bc,mc,cmask;
+    VECTOR *vec,*svec;
+	SHORT cc,bc,cmask;
 	INT i, n, lev;
-    DOUBLE norm,step,eps,x,y;
     FAMGVector *unknown, *rhs, *tv, *tvT, *defect;
-    PICTURE *thePic;
 
 	mg = NP_MG(theNP);
     grid = GRID_ON_LEVEL(mg,level);
@@ -1234,7 +1232,7 @@ static INT FAMGIterSolve (NP_ITER *theNP, INT level,
     if (MD_IS_SCALAR(A) && VD_IS_SCALAR(c) && VD_IS_SCALAR(b))
 	{
 		cc    = VD_SCALCMP(c);
-		mc    = MD_SCALCMP(A);
+		// WEG mc    = MD_SCALCMP(A);
 		bc    = VD_SCALCMP(b);
 		cmask  = VD_SCALTYPEMASK(c);
     }
@@ -1508,7 +1506,6 @@ static INT FAMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 {
 	MULTIGRID *theMG;
 	NP_FAMG_TRANSFER *np;
-	INT level;
 
 	result[0]=0;
 	np = (NP_FAMG_TRANSFER *) theNP;

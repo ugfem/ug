@@ -104,7 +104,6 @@ void FAMGGrid::Restriction(FAMGGrid *cg) const
 	FAMGVector &fgdefect = *GetVector(FAMGDEFECT);
 	FAMGVector &cgdefect = *(cg->GetVector(FAMGDEFECT));
 	FAMGVectorEntry fvec;
-	FAMGTransferEntry *transfc;
 	const FAMGTransfer &transfer = *GetTransfer();
 	FAMGTransferEntry *transfg;
 	
@@ -154,7 +153,6 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, FAMGVector *c)
 	FAMGVector &fgdefect = *GetVector(FAMGDEFECT);
 	const FAMGVector &cgsol = *(cg->GetVector(FAMGUNKNOWN));
 	FAMGVectorEntry fvec;
-	FAMGTransferEntry *transfc;
 	const FAMGTransfer &transfer = *GetTransfer();
 	FAMGTransferEntry *transfg;
 	register double sum;
@@ -685,7 +683,6 @@ void FAMGGrid::GetSmoother()
 int FAMGGrid::InitLevel0(const class FAMGSystem &system)
 {
     int i;
-	FAMGVector *new_vector;
 
 	n = system.GetN();
     nf = 0;
@@ -855,7 +852,7 @@ void FAMGGrid::Deconstruct()
 
 int FAMGGrid::Construct(FAMGGrid *fg)
 {
-    int i, j;
+    int j;
 
     FAMGMatrixAlg *fmatrix = fg->GetMatrix();
     int fn = fg->GetN();
@@ -904,7 +901,7 @@ int FAMGGrid::Construct(FAMGGrid *fg)
     if(vertexfg != NULL)
     {
         j = 0;
-        for(i = 0; i < fn; i++)
+        for(int i = 0; i < fn; i++)
         {
             if(fmatrix->GetType(i) == 0)
             {
@@ -977,7 +974,6 @@ int FAMGGrid::ConstructTransfer()
 	// in parallel now only the nodes in the border of the core partition are in the list
 	
 	VECTOR *vec;
-	MATRIX *mat;
 	FAMGNode *nodei;
 	int BorderCycles;
 	
@@ -1429,7 +1425,8 @@ static int SendToOverlap1( DDD_OBJ obj)
 {
 	VECTOR *vec = (VECTOR *)obj, *w, *wn;
 	MATRIX *mat, *matw;
-	int *proclist_vec, *proclist_w, i, found, size;
+	int *proclist_vec, *proclist_w, i, size;
+//temp weg 	int found;
 	
 	if( !IS_FAMG_MASTER(vec) )
 		return 0;		// we want only border vectors here
@@ -1454,11 +1451,11 @@ static int SendToOverlap1( DDD_OBJ obj)
 				continue;
 			
 			// search whether vec has already a copy on the PE of the neighbor border copy
-			found = FALSE;
+			//temp weg found = FALSE;
 			for( i=0; proclist_vec[i]!=-1; i+=2 )
 				if( proclist_w[0] == proclist_vec[i] )
 				{
-					found = TRUE;
+					//temp weg found = TRUE;
 					break;
 				}
 		
@@ -1488,7 +1485,7 @@ void FAMGGrid::ConstructOverlap()
 // extend the overlap as far as necessary; at least 2 links deep
 // the vectorlist will be renumbered
 {
-	VECTOR *vec, *mv;
+	VECTOR *vec;
 	INT i, mc = MD_SCALCMP(((FAMGugMatrix*)GetMatrix())->GetMatDesc());
 	FAMGMatrixAlg *matrix_tmp;
 	MATRIX *mat;

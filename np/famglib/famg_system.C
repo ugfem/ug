@@ -31,8 +31,10 @@
 #include "famg_misc.h"
 
 static FAMGParameter *famgparaptr;
-static int famgfirsti=0; // first index (0 or 1 ?)
+// WEG static int famgfirsti=0; // first index (0 or 1 ?)
+#ifdef FAMG_GMRES
 const int famgnv = 50; // maximum number of Arnoldi vectors
+#endif
 
 /* RCS_ID
 $Header$
@@ -205,7 +207,7 @@ int FAMGSystem::Construct( FAMGGridVector *gridvector, FAMGMatrixAlg* stiffmat, 
 int FAMGSystem::Solve(FAMGVector *rhs, FAMGVector *defect, FAMGVector *unknown)
 {
     FAMGVector *d, *u;
-    int i, u_alloc = 0, d_alloc = 0;
+    int u_alloc = 0, d_alloc = 0;
     int status;
 
     if (rhs == NULL)
@@ -300,7 +302,7 @@ int FAMGSystem::Deconstruct()
 #ifdef FAMG_REORDERCOLUMN	
     if(matrix->ReorderColumns(colmap)) RETURN(1);
 #endif
-    // ??? matrix->RemodifyIndex(famgfirsti);
+    // WEG matrix->RemodifyIndex(famgfirsti);
 	
     FAMGReleaseHeap(FAMG_FROM_BOTTOM);
     FAMGReleaseHeap(FAMG_FROM_TOP);
@@ -310,15 +312,15 @@ int FAMGSystem::Deconstruct()
 
 int FAMGSystem::DeconstructSimple()
 {
+#ifdef FAMG_REORDERCOLUMN	
     FAMGMultiGrid *mg0=mg[0];
 
-#ifdef FAMG_REORDERCOLUMN	
     if(mg0 != NULL) if(mg0->Reorder()) RETURN(1);
 
     // repair matrix
     if(matrix->ReorderColumns(colmap)) RETURN(1);
 #endif
-    // ??? matrix->RemodifyIndex(colmap,famgfirsti);
+    // WEG matrix->RemodifyIndex(colmap,famgfirsti);
     FAMGReleaseHeap(FAMG_FROM_BOTTOM);
     return 0;
 }
