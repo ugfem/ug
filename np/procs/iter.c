@@ -1910,6 +1910,7 @@ static INT LUConstruct (NP_BASE *theNP)
            $display {no|red|full} $wr all $wr3D 0
            $aux2 <temp2 sym> $aux3 <temp3 sym> $aux4 <temp4 sym>
            $aux5 <temp5 sym> $aux6 <temp6 sym>
+           and the other parameters from SMOOTHER
    .ve
 
    .  $FF~<FF-mat~sym> - symbol for the frequency filtered matrix
@@ -2306,7 +2307,6 @@ static INT TFFPreProcess (NP_ITER *theNP, INT level,
   }
 #endif
 
-
   if (FF_PrepareGrid( theGrid, &meshwidth, TRUE, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPTFF_BVDF(np) )!=NUM_OK)
   {
     PrintErrorMessage('E',"TFFPreProcess","preparation of the grid failed");
@@ -2476,8 +2476,8 @@ static INT TFFIter (NP_ITER *theNP, INT level,
                          MD_SCALCMP( np->smoother.L ),
                          VD_SCALCMP( NPTFF_aux(np) ),
                          VD_SCALCMP( NPTFF_tv(np) ),
-                         NPTFF_aux3D(np)==NULL ? 0 : VD_SCALCMP( NPTFF_aux3D(np) ),
-                         NPTFF_FF3D(np)==NULL ? 0 : MD_SCALCMP( NPTFF_FF3D(np) ) ) != NUM_OK)
+                         NPTFF_aux3D(np)==NULL ? -1 : VD_SCALCMP( NPTFF_aux3D(np) ),
+                         NPTFF_FF3D(np)==NULL ? -1 : MD_SCALCMP( NPTFF_FF3D(np) ) ) != NUM_OK)
     {
       PrintErrorMessage('E',"TFFStep","inversion failed");
       NP_RETURN(1,result[0]);
@@ -2514,15 +2514,15 @@ static INT TFFIter (NP_ITER *theNP, INT level,
       }
 
       /* copy defect to aux because TFFMultWithMInv destroys its defect */
-      dcopyBS( GFIRSTBV(theGrid), VD_SCALCMP( NPTFF_aux(np) ), VD_SCALCMP( b ) );
+      dcopyBS( GFIRSTBV(theGrid), VD_SCALCMP( NPTFF_t(np) ), VD_SCALCMP( b ) );
       if (TFFMultWithMInv( GFIRSTBV(theGrid), &bvd, NPTFF_BVDF(np),
                            VD_SCALCMP( NPTFF_t(np) ),
                            MD_SCALCMP( A ),
                            MD_SCALCMP( np->smoother.L ),
+                           VD_SCALCMP( NPTFF_t(np) ),
                            VD_SCALCMP( NPTFF_aux(np) ),
-                           VD_SCALCMP( NPTFF_tv(np) ),
-                           NPTFF_aux3D(np)==NULL ? 0 : VD_SCALCMP( NPTFF_aux3D(np) ),
-                           NPTFF_FF3D(np)==NULL ? 0 : MD_SCALCMP( NPTFF_FF3D(np) ) ) != NUM_OK)
+                           NPTFF_aux3D(np)==NULL ? -1 : VD_SCALCMP( NPTFF_aux3D(np) ),
+                           NPTFF_FF3D(np)==NULL ? -1 : MD_SCALCMP( NPTFF_FF(np) ) ) != NUM_OK)
       {
         PrintErrorMessage('E',"TFFStep","inversion failed");
         NP_RETURN(1,result[0]);
@@ -2540,7 +2540,9 @@ static INT TFFIter (NP_ITER *theNP, INT level,
         start_norm = new_norm;
         if(eunormBS( GFIRSTBV(theGrid), VD_SCALCMP( b ), &new_norm ) ) NP_RETURN(1,result[0]);
 
-        UserWriteF( "Wnr plane = %4g Wnr line = %4g new defect = %12lg conv. rate = %12lg\n", wavenr, wavenr, new_norm, new_norm/start_norm );
+        UserWriteF( "Wnr plane = %4g Wnr line = %4g new defect = %12lg "
+                    "conv. rate = %12lg\n", wavenr, wavenr, new_norm,
+                    new_norm/start_norm );
 
       }
     }
