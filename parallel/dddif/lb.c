@@ -69,9 +69,30 @@ static int TransferGridToMaster (MULTIGRID *theMG)
   return(0);
 }
 
+static int CollectElementsNearSegment(MULTIGRID *theMG,
+                                      int level, int part, int p)
+{
+  GRID *theGrid = GRID_ON_LEVEL(theMG,level);
+  ELEMENT *theElement;
+  INT dompart,side,sid,nbsid;
+
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
+       theElement=SUCCE(theElement))
+    if (OBJT(theElement) == BEOBJ)
+      for (side=0; side<SIDES_OF_ELEM(theElement); side++) {
+        if (INNER_SIDE(theElement,side))
+          continue;
+        BNDS_BndSDesc(ELEM_BNDS(theElement,side),&sid,&nbsid,&dompart);
+        if (part == dompart)
+          PARTITION(theElement) = 0;
+      }
+
+  return(0);
+}
+
 void ddd_test (char *argv, MULTIGRID *theMG)
 {
-  int mode,param,fromlevel,tolevel;
+  int mode,param,fromlevel,tolevel,part;
 
   mode = param = fromlevel = tolevel = 0;
 
@@ -146,6 +167,13 @@ void ddd_test (char *argv, MULTIGRID *theMG)
       UserWriteF(PFMT "ddd_test(): ERROR fromlevel=%d "
                  "tolevel=%d\n",me,fromlevel,tolevel);
     }
+    break;
+
+  /* dies balanciert ein GRID mit RCB */
+  case (5) :
+    if (sscanf(argv,"%d %d",&param,&part) != 2) break;
+    fromlevel = CURRENTLEVEL(theMG);
+    CollectElementsNearSegment(theMG,fromlevel,part,0);
     break;
 
   default : break;

@@ -1478,8 +1478,7 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
     /* copy edge vector pointer */
     if (newness == XFER_NEW)
       if (dddctrl.edgeData)
-        if (GetVectorSize(theGrid,EDGEVEC,(GEOM_OBJECT *)enew) > 0)
-        {
+        if (EDVECTOR(ecopy) != NULL) {
           EDVECTOR(enew) = EDVECTOR(ecopy);
           VOBJECT(EDVECTOR(enew)) = (GEOM_OBJECT *)enew;
         }
