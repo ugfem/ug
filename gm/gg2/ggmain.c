@@ -2685,15 +2685,6 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
   SetStringValue(":gg:nElem",(double) theGrid->nElem);
   SetStringValue(":gg:nNode",(double) theGrid->nNode);
 
-  /* create algebraic objects */
-  /* TODO: remove (and maybe call FixCoarseGrid)
-     if (MGCreateConnection(theMG))
-     {
-          UserWrite("could not create connection in multigrid\n");
-          DisposeMultiGrid(theMG);
-          return(0);
-     }*/
-
   if (display>0) UserWrite("\n");
 
   if (doAngle || doEdge)
