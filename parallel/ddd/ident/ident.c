@@ -608,7 +608,10 @@ static void ResolveDependencies (
            refd[j]->id.object == tupels[i].infos[0]->msg.gid)
     {
       ID_REFDBY *rby = (ID_REFDBY *)AllocTmp(sizeof(ID_REFDBY));
-      /* TODO memory management, error checking */
+      if (rby==NULL) {
+        DDD_PrintError('E', 3301, ERR_ID_NOMEM_RESOLV);
+        return;
+      }
 
       /* remember that idp[i] is referenced by refd[j] */
       rby->by        = refd[j];
