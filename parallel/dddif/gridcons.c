@@ -222,11 +222,6 @@ void SetGhostObjectPriorities (GRID *theGrid)
        theElement=SUCCE(theElement))
   {
     SETUSED(theElement,0); SETTHEFLAG(theElement,0);
-    for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-    {
-      theNode = CORNER(theElement,i);
-      SETUSED(theNode,0); SETTHEFLAG(theNode,0);
-    }
     for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     {
       theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
@@ -240,6 +235,13 @@ void SetGhostObjectPriorities (GRID *theGrid)
         theVector = SVECTOR(theElement,i);
         SETUSED(theVector,0); SETTHEFLAG(theVector,0);
       }
+  }
+  /* to reset also nodes which are at corners of the boundary */
+  /* reset nodes through the node list                        */
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+  {
+    SETUSED(theNode,0); SETTHEFLAG(theNode,0);
+    SETMODIFIED(theNode,0);
   }
 
   /* set FLAG for objects of vertical overlap */
@@ -274,6 +276,9 @@ void SetGhostObjectPriorities (GRID *theGrid)
         break;
       }
     }
+
+    /* one or both of vghost and hghost should be true here   */
+    /* except for elements which will be disposed during Xfer */
 
     if (vghost) SETTHEFLAG(theElement,1);
     if (hghost) SETUSED(theElement,1);
@@ -313,6 +318,7 @@ void SetGhostObjectPriorities (GRID *theGrid)
     {
       theNode = CORNER(theElement,i);
       SETUSED(theNode,0); SETTHEFLAG(theNode,0);
+      SETMODIFIED(theNode,1);
     }
     for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     {
@@ -350,23 +356,6 @@ void SetGhostObjectPriorities (GRID *theGrid)
       }
     }
 
-    for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-    {
-      theNode = CORNER(theElement,i);
-
-      /* check if its a master node */
-      if (USED(theNode) || THEFLAG(theNode))
-      {
-        PRINTDEBUG(dddif,3,(PFMT " dddif_SetGhostObjectPriorities():"
-                            " downgrade node=" ID_FMTX " from=%d to PrioGhost\n",
-                            me,ID_PRTX(theNode),prio));
-
-        /* set node priorities of node to ghost */
-        NODE_PRIORITY_SET(theGrid,theNode,PRIO_CALC(theNode))
-      }
-    }
-
-
     if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC) || DIM==3)
     {
       /* set edge priorities */
@@ -399,6 +388,27 @@ void SetGhostObjectPriorities (GRID *theGrid)
                         #endif
     }
   }
+  /* to set also nodes which are at corners of the boundary   */
+  /* set them through the node list                           */
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+  {
+    /* check if its a master node */
+    if (USED(theNode) || THEFLAG(theNode))
+    {
+      PRINTDEBUG(dddif,3,(PFMT " dddif_SetGhostObjectPriorities():"
+                          " downgrade node=" ID_FMTX " from=%d to PrioGhost\n",
+                          me,ID_PRTX(theNode),prio));
+
+      /* set node priorities of node to ghost */
+      NODE_PRIORITY_SET(theGrid,theNode,PRIO_CALC(theNode))
+    }
+    else if (MODIFIED(theNode) == 0)
+    {
+      /* this is a node of the boundary without connection to master elements */
+      NODE_PRIORITY_SET(theGrid,theNode,PrioGhost)
+    }
+  }
+
 }
 
 
@@ -435,6 +445,15 @@ void ConstructConsistentGrid (GRID *theGrid)
   EDGE    *theEdge;
   VERTEX  *theVertex;
 
+  /* the setting of the priorities has to be done in two waves after */
+  /* completion of the grid transfer, since                          */
+  /* - decisions about vghost prio can only be done if all sons are  */
+  /*   available in SetGhostObjectPriorities()                       */
+  /* - setting of the border priorities can only be done if all      */
+  /*   ghost objects have their proper priority                      */
+  DDD_XferBegin();
+  SetGhostObjectPriorities(theGrid);
+  DDD_XferEnd();
   DDD_XferBegin();
   SetBorderPriorities(theGrid);
   DDD_XferEnd();
@@ -443,7 +462,8 @@ void ConstructConsistentGrid (GRID *theGrid)
   for (theVertex = PFIRSTVERTEX(theGrid); theVertex != NULL;
        theVertex = SUCCV(theVertex))
     if (OBJT(theVertex) == BVOBJ)
-      if (MOVED(theVertex)) {
+      if (MOVED(theVertex))
+      {
         INT n;
         DOUBLE *x[MAX_CORNERS_OF_ELEM];
 
@@ -453,6 +473,7 @@ void ConstructConsistentGrid (GRID *theGrid)
         UG_GlobalToLocal(n,(const DOUBLE **)x,
                          CVECT(theVertex),LCVECT(theVertex));
       }
+
         #endif
 
   /* reconstruct VFATHER pointers */
@@ -466,7 +487,11 @@ void ConstructConsistentGrid (GRID *theGrid)
       theVertex = MYVERTEX(theNode);
       theFather = EFATHER(theElement);
 
-      if (VFATHER(theVertex)==NULL || EPRIO(VFATHER(theVertex))==PrioGhost)
+      /* this is too few for arbitrary load balancing, since
+              VFATHER pointer may have changed (970828 s.l.)
+                              if (VFATHER(theVertex)==NULL || EPRIO(VFATHER(theVertex))==PrioGhost)
+       */
+      if (VFATHER(theVertex)==NULL || EPRIO(theFather)!=PrioGhost)
       {
         switch (NTYPE(theNode))
         {
@@ -480,7 +505,18 @@ void ConstructConsistentGrid (GRID *theGrid)
                               CORNER(theFather,CORNER_OF_EDGE(theFather,j,1)));
             if (MIDNODE(theEdge) == theNode) break;
           }
-          ASSERT(j<EDGES_OF_ELEM(theFather));
+          /* here should be an assertion, but not in each situation the
+             midnode pointer is set (970829 s.l.)
+                                                          ASSERT(j<EDGES_OF_ELEM(theFather));
+           */
+          if (j>=EDGES_OF_ELEM(theFather))
+          {
+            PRINTDEBUG(dddif,0,("ConstructConsitentGrid(): WARN  vertex="
+                                VID_FMTX " recalculation of VFATHER impossible\n",
+                                VID_PRTX(theVertex)));
+            break;
+          }
+
 
           /* reconstruct local coordinates of vertex */
           co0 = CORNER_OF_EDGE(theFather,j,0);
