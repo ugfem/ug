@@ -1,9 +1,8 @@
 # $Id$
 
-SUBDIRS = algebra amglib field procs udm
+SUBDIRS = algebra amglib field procs udm slu
 
 # famglib ist auch im alten Makefile nicht drin
-# slu wird wohl nicht mehr gebraucht (laut Stefan Lang)
 
 include_HEADERS = np.h
 
