@@ -121,8 +121,8 @@ static GENERAL_ELEMENT def_tetrahedron = {
   {3,3,3,3,-1,-1},                                                      /* edges for each side	(2D!)	*/
   {3,3,3,3,-1,-1},                                                      /* corners for each side		*/
   2,                                                                                    /* an edge has 2 corners		*/
-  {{0,1,2,-1},{1,5,4,-1},{2,3,5,-1},{0,4,3,-1}},       /* number of edge j of side i   */
-  {{0,1,2,-1},{1,2,3,-1},{2,3,0,-1},{3,0,1,-1}},       /* number of corner j of side i */
+  {{2,1,0,-1},{1,5,4,-1},{3,5,2,-1},{0,4,3,-1}},       /* number of edge j of side i   */
+  {{0,2,1,-1},{1,2,3,-1},{0,3,2,-1},{0,1,3,-1}},       /* number of corner j of side i */
   {{0,1},{1,2},{0,2},{0,3},{1,3},{2,3} }        /* number of corner j of edge i */
 } ;
 
