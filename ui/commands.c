@@ -2506,9 +2506,9 @@ static INT SaveDataCommand (INT argc, char **argv)
         return(PARAMERRORCODE);
       }
       number = iValue;
-      if (number<0 || number > 9999)
+      if (number<0 || number > 999999)
       {
-        PrintHelp("savedata",HELPITEM," (number out of range [0,9999])");
+        PrintHelp("savedata",HELPITEM," (number out of range [0,9999999])");
         return(PARAMERRORCODE);
       }
       break;
