@@ -2464,7 +2464,6 @@ INT InsertInnerNode (MULTIGRID *theMG, COORD *pos)
   NODE *theNode;
   INT i;
 
-
   /* check level */
   if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
   {
@@ -2521,62 +2520,49 @@ INT InsertInnerNode (MULTIGRID *theMG, COORD *pos)
    D*/
 /****************************************************************************/
 
-INT InsertBoundaryNode (MULTIGRID *theMG, INT patch_id, COORD *pos)
+INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
 {
   GRID *theGrid;
   NODE *theNode;
   VERTEX *theVertex;
   VSEGMENT *vsnew1;
-  BVP *theBVP;
-  BVP_DESC theBVPDesc;
-  PATCH *thePatch;
   PATCH_DESC thePatchDesc;
-  int i;
-
+  INT i;
 
   /* check level */
   if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
   {
-    PrintErrorMessage('E',"InsertBoundaryNode","only a multigrid with exactly one level can be edited");
+    PrintErrorMessage('E',"InsertBoundaryNodeFromPatch","only a multigrid with exactly one level can be edited");
     return(GM_ERROR);
   }
   theGrid = GRID_ON_LEVEL(theMG,0);
 
-  /* get BVP description */
-  theBVP = MG_BVP(theMG);
-  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (GM_ERROR);
-
-  /* scan input */
-  if ((patch_id<0)||(patch_id>=BVPD_NPATCHES(theBVPDesc)))
-  {
-    PrintErrorMessage('E',"InsertBoundaryNode","segment id out of range");
-    return(GM_ERROR);
-  }
-  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
-  {
-    if(Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(GM_ERROR);
-    if (PATCH_ID(thePatchDesc)==patch_id) break;
-  }
   if (thePatch==NULL)
   {
-    PrintErrorMessage('E',"InsertBoundaryNode","segment not found");
+    PrintErrorMessage('E',"InsertBoundaryNodeFromPatch","segment not found");
     return(GM_ERROR);
   }
+  if(Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(GM_ERROR);
 
-  /* check range of parameters */
-  for(i=0; i<DIM_OF_BND; i++)
-    if ( (pos[0]<PATCH_LCVECT(thePatchDesc,0)[i])||(pos[0]> PATCH_LCVECT(thePatchDesc,1)[i]) )
-    {
-      PrintErrorMessage('E',"InsertBoundaryNode","parameter not in range of segment");
-      return(GM_ERROR);
-    }
+  /* check range of parameters
+     for(i=0; i<DIM_OF_BND; i++)
+          if ( (pos[0]<PATCH_LCVECT(thePatchDesc,0)[i])||(pos[0]> PATCH_LCVECT(thePatchDesc,1)[i]) )
+          {
+                  PrintErrorMessage('E',"InsertBoundaryNodeFromPatch","parameter not in range of segment");
+                  return(GM_ERROR);
+          }*/
 
   /* check distance from corner */
   if (DIM==2)
   {
+    if ( (pos[0]<PATCH_LCVECT(thePatchDesc,0)[0])||(pos[0]> PATCH_LCVECT(thePatchDesc,1)[0]) )
+    {
+      PrintErrorMessage('E',"InsertBoundaryNodeFromPatch","parameter not in range of segment");
+      return(GM_ERROR);
+    }
     if (  (fabs(pos[0]-PATCH_LCVECT(thePatchDesc,0)[0])<SMALL_C) || (fabs(pos[0]-PATCH_LCVECT(thePatchDesc,1)[0])<SMALL_C) )
     {
-      PrintErrorMessage('E',"InsertBoundaryNode","parameter describes one of the corners of the segment");
+      PrintErrorMessage('E',"InsertBoundaryNodeFromPatch","parameter describes one of the corners of the segment");
       return(GM_ERROR);
     }
   }
@@ -2589,7 +2575,7 @@ INT InsertBoundaryNode (MULTIGRID *theMG, INT patch_id, COORD *pos)
     if (fabs(pos[0]-PATCH_LCVECT(thePatchDesc,3)[0])+fabs(pos[1]-PATCH_LCVECT(thePatchDesc,3)[1])<SMALL_C) i = 1;
     if (i)
     {
-      PrintErrorMessage('E',"InsertBoundaryNode","parameter describes one of the corners of the segment");
+      PrintErrorMessage('E',"InsertBoundaryNodeFromPatch","parameter describes one of the corners of the segment");
       return(GM_ERROR);
     }
   }
@@ -2598,14 +2584,14 @@ INT InsertBoundaryNode (MULTIGRID *theMG, INT patch_id, COORD *pos)
   theVertex = CreateBoundaryVertex(theGrid,NULL);
   if (theVertex==NULL)
   {
-    PrintErrorMessage('E',"InsertBoundaryNode","cannot create vertex");
+    PrintErrorMessage('E',"InsertBoundaryNodeFromPatch","cannot create vertex");
     return(GM_ERROR);
   }
   theNode = CreateNode(theGrid,NULL);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
-    PrintErrorMessage('E',"InsertBoundaryNode","cannot create node");
+    PrintErrorMessage('E',"InsertBoundaryNodeFromPatch","cannot create node");
     return(GM_ERROR);
   }
   vsnew1 = CreateVertexSegment(theGrid,theVertex);
@@ -2613,7 +2599,7 @@ INT InsertBoundaryNode (MULTIGRID *theMG, INT patch_id, COORD *pos)
   {
     DisposeVertex(theGrid,theVertex);
     DisposeNode(theGrid, theNode);
-    PrintErrorMessage('E',"InsertBoundaryNode","cannot create vertexsegment");
+    PrintErrorMessage('E',"InsertBoundaryNodeFromPatch","cannot create vertexsegment");
     return(GM_ERROR);
   }
 
@@ -2630,6 +2616,35 @@ INT InsertBoundaryNode (MULTIGRID *theMG, INT patch_id, COORD *pos)
   return(GM_OK);
 }
 
+INT InsertBoundaryNode (MULTIGRID *theMG, INT patch_id, COORD *pos)
+{
+  NODE *theNode;
+  VERTEX *theVertex;
+  VSEGMENT *vsnew1;
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
+  PATCH *thePatch;
+  PATCH_DESC thePatchDesc;
+  int i;
+
+  /* get BVP description */
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (GM_ERROR);
+
+  /* scan input */
+  if ((patch_id<0)||(patch_id>=BVPD_NPATCHES(theBVPDesc)))
+  {
+    PrintErrorMessage('E',"InsertBoundaryNode","segment id out of range");
+    return(GM_ERROR);
+  }
+  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
+  {
+    if(Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(GM_ERROR);
+    if (PATCH_ID(thePatchDesc)==patch_id) break;
+  }
+
+  return(InsertBoundaryNodeFromPatch(theMG,thePatch,pos));
+}
 
 /****************************************************************************/
 /*D
