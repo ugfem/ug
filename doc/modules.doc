@@ -120,47 +120,171 @@ EXPERIMENTAL ENVIRONMENT:
 UG3 PACKAGE:
    The whole directory structure of the ug3 package is:~
 .vb
-ug3/
-|----cd3d/
+ug31
+|----cd/
 |    |----appl/
+|    |    |----grids/
+|    |    |----gs/
+|    |    |----logfiles/
+|    |    |----metas/
+|    |    |----protos/
+|    |    \----scripts/
 |    |----man/
-|    |    \...
+|    |    |----mana/
+|    |    \----manc/
 |    \----pclib/
 |----diff2d/
 |    |----appl/
 |    |----man/
-|    |    \...
+|    |    |----mana/
+|    |    \----manb/
 |    \----pclib/
 |----fem/
 |    |----appl/
+|    |    |----input/
+|    |    |----misc/
+|    |    \----results/
+|    |        |----aniso/
+|    |        \----std/
 |    |----man/
-|    |    \...
+|    |    |----mana/
+|    |    \----mand/
 |    \----pclib/
 |----ns2d/
 |    |----appl/
+|    |    |----Cylinder/
+|    |    |----DrivenCavity/
+|    |    |----backstep/
+|    |    |----check/
 |    |    |----corner/
-|    |    |----example/
+|    |    |----dc_nl/
+|    |    |----first_example/
 |    |    |----grids/
-|    |    \----plotscripts/
+|    |    |----misc/
+|    |    |----plotscripts/
+|    |    |----results/
+|    |    \----upwind_stencils/
 |    |----man/
-|    |    \...
+|    |    |----mana/
+|    |    \----mane/
 |    \----pclib/
+|----scalar/
+|    |----appl2d/
+|    |----appl3d/
+|    \----pclib/
+|----simple/
 \----ug/
+    |----arch/
+    |    |----AIX/
+    |    |----C90/
+    |    |----DEC/
+    |    |----HP/
+    |    |----NECSX4/
+    |    |----PARAGON/
+    |    |----PC/
+    |    |----POWERGC/
+    |    |----SGI/
+    |    |----SOLARIS/
+    |    |----SUN4GCC/
+    |    \----T3D/
     |----bin/
     |----configs/
     |----dev/
     |    |----meta/
     |    |----mif/
+    |    |----ps/
+    |    |----rif/
+    |    |----sif/
     |    \----xif/
     |----doc/
+    |    |----texman/
+    |    \----ug3/
+    |        |----cd/
+    |        |    |----appl/
+    |        |    |----overview/
+    |        |    \----pclib/
+    |        |----diff2d/
+    |        |    |----appl/
+    |        |    |----overview/
+    |        |    \----pclib/
+    |        |----fem/
+    |        |    |----appl/
+    |        |    |----overview/
+    |        |    \----pclib/
+    |        |----ns2d/
+    |        |    |----appl/
+    |        |    |----overview/
+    |        |    \----pclib/
+    |        \----ug/
+    |            |----admin/
+    |            |----commands/
+    |            |----dev/
+    |            |    |----meta/
+    |            |    |----ps/
+    |            |    |----sif/
+    |            |    \----xif/
+    |            |----dom/
+    |            |    \----std/
+    |            |----gm/
+    |            |    |----gg2/
+    |            |    \----gg3/
+    |            |----graphics/
+    |            |    |----grape/
+    |            |    \----uggraph/
+    |            |----low/
+    |            |----numerics/
+    |            |----overview/
+    |            \----ui/
+    |----dom/
+    |    \----std/
     |----gm/
-    |----graph/
+    |    |----gg2/
+    |    \----gg3/
+    |        \----netgen/
+    |            |----general/
+    |            |----geom/
+    |            |----linalg/
+    |            |----meshing/
+    |            \----opti/
+    |----graphics/
+    |    |----grape/
+    |    \----uggraph/
+    |----include/
     |----lib/
+    |    \----ugdata/
     |----low/
-    |    \----doc/
-    |----machines/
+    |----man/
+    |    |----man1/
+    |    |----man2/
+    |    |----man3/
+    |    |----man4/
+    |    |----man5/
+    |    |----man6/
+    |    |----man7/
+    |    |----man8/
+    |    \----man9/
     |----numerics/
-    |    \----numerics/
+    |----parallel/
+    |    |----ddd/
+    |    |    |----analyser/
+    |    |    |----basic/
+    |    |    |----ctrl/
+    |    |    |----f77/
+    |    |    |----ident/
+    |    |    |----if/
+    |    |    |----include/
+    |    |    |----mgr/
+    |    |    \----xfer/
+    |    |----dddif/
+    |    |----dddobj/
+    |    \----ppif/
+    |        |----DUMMY/
+    |        |----MPI/
+    |        |----NX/
+    |        |----NXLIB/
+    |        |----PARIX/
+    |        |----PVM/
+    |        \----SHMEMT3D/
     \----ui/
 .ve
    
@@ -218,7 +342,12 @@ D*/
       pathname specifications relatively to the current working directory or
       absolute, terminate each name with "/". Note that environment 
       variables such as '$UGROOT' are not interpreted; do not use them!
-      
+.  arraypaths -  searchpaths to files in which arrays are stored ('*.array').
+	  Give blank separated
+	  pathname specifications relatively to the current working directory or
+	  absolute, terminate each name with "/". Note that environment
+	  variables such as '$UGROOT' are not interpreted; do not use them!
+
    VARIABLES RECOGNIZED BY UG ONLY ON MACINTOSH:
 .  guimemory - memory for window management
 .  scrollback - line buffer for shell
@@ -242,6 +371,7 @@ logfilesdir     ./example/
 protocoldir     ./example/
 metafilesdir    ./example/
 scriptpaths     ./example/ ./ ./plotscripts/
+arraypaths      ./example
 
 guimemory       32000
 scrollback      500
