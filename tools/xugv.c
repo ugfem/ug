@@ -2018,22 +2018,42 @@ FILE *auto_fopen (char *name)
   FILE *f;
 
   home=getenv("HOME"); sprintf(lock,"%s/.xugv_tail",home);
-  if (auto_nb<0)
+  if (auto_nb==-2)
   {
-    for (i=0,f=NULL; i<10000; i++)
+    /* initialize 'auto_nb' */
+    for (i=0; i<10000; i++)
     {
       sprintf(name_ext,"%s.%0.4d",name,i);
       f=fopen(name_ext,"r");
-      if (i==0 && f==NULL) return(NULL);
-      else if (f==NULL) { i--; break; }
+      if (f==NULL) { i-=2; break; }
       fclose(f);
     }
-    auto_nb=i;
+    auto_nb=i; if (auto_nb<-1) auto_nb=-1;
+
+    /* open metafile */
     return (auto_fopen(name));
   }
   else
   {
-    while(1)
+    /* open metafile with highest number > auto_nb existing */
+    auto_nb++;
+    while(1)             /* waiting until auto_nb+1 exists */
+    {
+      sprintf(name_ext,"%s.%0.4d",name,auto_nb);
+      f=fopen(name_ext,"r");
+      if (f==NULL) { sleep(sleep_seconds); continue; }
+      fclose(f); break;
+    }
+    while(1)             /* check if higher files exist */
+    {
+      sprintf(name_ext,"%s.%0.4d",name,auto_nb+1);
+      f=fopen(name_ext,"r");
+      if (f!=NULL) { fclose(f); auto_nb++; continue; }
+      break;
+    }
+    if (auto_nb>9999) exit(0);
+
+    while(1)             /* open file auto_nb when '.xugv_tail' pops up */
     {
       sleep(sleep_seconds);
       f=fopen(lock,"r"); if (f==NULL) continue;
@@ -2060,8 +2080,6 @@ static Boolean tail_film (void)
   short xshift, yshift;
 
   /* try next meta-file */
-  auto_nb++;
-  if (auto_nb>9999) exit(0);
   mstream[0]=auto_fopen(file);
   GetFileScreen (mstream[0],mfx,mfy);
 
@@ -2249,7 +2267,7 @@ char* argv[];
       {
         if (i_pic==0 && n_pic==1)
         {
-          auto_nb=-1;
+          auto_nb=-2;
           mstream[0]=auto_fopen(argv[f_offset]);
           if (mstream[0]==NULL) { printf("Can't open file %s\n", file); exit(-1); }
         }
