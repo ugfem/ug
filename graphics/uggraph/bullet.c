@@ -266,7 +266,7 @@ static void MergeBuffers(void *buffer1, void *buffer2)
    .  none
 
    DESCRIPTION:
-   BulletPlot plots the pixel buffer via the output device's PlotPixelBuffer
+   BulletPlot plots the pixel buffer via the output devices PlotPixelBuffer
    method. The parallel version first merges the buffers from all procs.
 
    RETURN VALUE:
