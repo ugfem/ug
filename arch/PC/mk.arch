@@ -18,7 +18,7 @@ ARCH_LIBS     = -lm
 
 ARCH_CFLAGS   = -pipe
 ARCH_NOOPTIM  = -g -Wall -Wno-unused -Wno-parentheses
-ARCH_OPTIM    = -s -O3 -march=i686 -fomit-frame-pointer -funroll-loops -fstrict-aliasing -ffast-math
+ARCH_OPTIM    = -s -O3 -march=i686 -fomit-frame-pointer -funroll-loops -fstrict-aliasing
 ARCH_C++FLAGS = # -fpermissive
 ARCH_LFLAGS   =
 ARCH_ARFLAGS  = rus
