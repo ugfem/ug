@@ -72,6 +72,7 @@ INT InitFAMG (void);
 #include "ug-famg.h"
 
 #ifdef USE_UG_DS
+#include "famg_algebra.h"
 #include "famg_ugalgebra.h"
 #else
 #include "famg_arrayalgebra.h"
@@ -210,7 +211,6 @@ static void FAMGReadStringParameter(void)
     GetStringValueInt(":famg:coloringmethod",&(famg_parameter.coloringmethod));
 
 }
-
 
 static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 							VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
@@ -581,6 +581,8 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 	// init testvectors 
 	*famg_interface.vector[FAMG_TVA] = 1.0;
 	*famg_interface.vector[FAMG_TVB] = 1.0;
+	//SetValueSkip(*famg_interface.vector[FAMG_TVA], 1.0); // perhaps sometimes useful to set tv=0 for dirichlet vectors
+	//SetValueSkip(*famg_interface.vector[FAMG_TVB], 1.0);
 
 	FAMGConstructParameter(&famg_parameter);
 
@@ -590,7 +592,6 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 
 	return NUM_OK;
 }
-
 
 
 #ifdef FAMG_SPARSE_BLOCK
@@ -789,13 +790,11 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
 	
 	// init testvectors
     // test
-    double *val = new double[3];
-    double *valT = new double[3];
+    double val[3], valT[3];
     val[0] = 1.0; val[1] = -0.5; val[2] = 1.0;
     valT[0] = -1.5; valT[1] = 1.0; valT[2] = 1.0;
  	SetValueSkip(*famg_interface.vector[FAMG_TVA],val);
  	SetValueSkip(*famg_interface.vector[FAMG_TVB],valT);
-    delete val;
     // 	SetValueSkip(*famg_interface.vector[FAMG_TVA],1.0);
  	// SetValueSkip(*famg_interface.vector[FAMG_TVB],1.0);
 
@@ -823,7 +822,6 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
     
     MarkTmpMem(MGHEAP(mg),mark_key); /* release in PostProcess */
 	
-	    
     if (MD_IS_SCALAR(A) && MD_IS_SCALAR(ACons) && VD_IS_SCALAR(x) && VD_IS_SCALAR(b))
 	{
 		// WEG xc    = VD_SCALCMP(x);
@@ -937,9 +935,11 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
 	// init testvectors
 	*famg_interface.vector[FAMG_TVA] = 1.0;
 	*famg_interface.vector[FAMG_TVB] = 1.0;
-
- 	// SetValueSkip(*famg_interface.vector[FAMG_TVA],1.0);  
- 	// SetValueSkip(*famg_interface.vector[FAMG_TVB],1.0);
+	//SetValueSkip(*famg_interface.vector[FAMG_TVA], 1.0);	// perhaps sometimes useful to set tv=0 for dirichlet vectors
+	//SetValueSkip(*famg_interface.vector[FAMG_TVB], 1.0);
+	//printf("TVa = %d TVb = %d\n", VD_SCALCMP(famg_interface.vector[FAMG_TVA]->GetUgVecDesc()), VD_SCALCMP(famg_interface.vector[FAMG_TVB]->GetUgVecDesc()) );
+	//prv( 0, VD_SCALCMP(famg_interface.vector[FAMG_TVA]->GetUgVecDesc()) );
+	//prv( 0, VD_SCALCMP(famg_interface.vector[FAMG_TVB]->GetUgVecDesc()) );
 
 	FAMGConstructParameter(&famg_parameter);
 
@@ -1651,13 +1651,13 @@ INT FAMGTransferInit (NP_BASE *theNP, INT argc, char **argv)
 	if (ReadArgvINT("coarsegridagglo",&(famgtrans->coarsegridagglo),argc,argv))
         famgtrans->coarsegridagglo = 0;
 	
+	famgtrans->ConsMat = ReadArgvMatDesc(famgtrans->amg_trans.transfer.base.mg,"ConsMat",argc,argv);
+
 #ifdef FAMG_SPARSE_BLOCK
 	famgtrans->D = ReadArgvMatDesc(theNP->mg, "D", argc, argv);
 	famgtrans->tv = ReadArgvVecDesc(theNP->mg, "tv", argc, argv);
 	famgtrans->tvT = ReadArgvVecDesc(theNP->mg, "tvT", argc, argv);
 #endif
-
-	// famgtrans->ConsMat = ReadArgvMatDesc(famgtrans->amg_trans.transfer.base.mg,"ConsMat",argc,argv);
 
 	famgtrans->smooth_sol = NULL;	// default to detect errors
 	famgtrans->smooth_def = NULL;	// default to detect errors
@@ -1814,7 +1814,6 @@ INT FAMGRestrictDefect (NP_TRANSFER *theNP, INT level,
 		famglevel = -level;
 	else
 		famglevel = -1-level;
-	
 #ifdef ModelP
 	// TODO: sollte eigentlich ueberfluessig sein: defect sollte auf border vectoren eh schon 0 sein!
 	if (l_vector_collect(GRID_ON_LEVEL(np->amg_trans.transfer.base.mg,level),from)!=NUM_OK) 

@@ -89,12 +89,10 @@ void SetValueSkip(FAMGugVector &v, double val )
 	// typename is a new C++ keyword!
 	FAMGugVectorIter viter(v);
 	FAMGugVectorEntry ve; 
-    VECTOR *vector;
     
 	while(viter(ve))
     {
-        vector = ve.myvector();	
-		if(VSKIPME(vector,0)) v[ve] = 0.0;
+		if(VECSKIP(ve.myvector())) v[ve] = 0.0;
         else  v[ve] = val;
     }
 }
