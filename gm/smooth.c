@@ -49,7 +49,7 @@
 
 #define SMALL_LOCAL    1.E-4
 
-#define LOCAL_EQUAL(A,V)     (ABS((A)-(V))< (1E-3))
+#define LOCAL_EQUAL(A,V)     (ABS((A)-(V))< (SMALL_LOCAL))
 #define IS_VALUE2(A,V)     (ABS((A)-(V))< (SMALL_C))
 #define IS_0_OR_1(V)   (LOCAL_EQUAL(V,0) || LOCAL_EQUAL(V,1))
 #define V2_LOCAL_EQUAL(A,B) ((ABS((A)[0]-(B)[0])<SMALL_LOCAL)&&(ABS((A)[1]-(B)[1])<SMALL_LOCAL))
