@@ -1966,11 +1966,25 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
   return (NUM_OK);
 }
 
+static int PrepareCountAndSortInconsMatrices (DDD_OBJ obj)
+/* set VCUSED=1; thus each vector will be processed only once
+   in CountAndSortInconsMatrices */
+{
+  VECTOR *pv = (VECTOR *)obj;
+
+  SETVCUSED( pv, 1 );
+}
+
 static int CountAndSortInconsMatrices (DDD_OBJ obj)
 {
   VECTOR *pv = (VECTOR *)obj;
   MATRIX *m;
   int nLocal, nRemote, j;
+
+  /* process each vector only once */
+  if( VCUSED(pv)==0 )
+    return (0);                 /* already visited */
+  SETVCUSED( pv, 0 );
 
   /* sort MATRIX-list according to gid of destination vector */
   nLocal=nRemote=0;
@@ -2068,6 +2082,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
   /* now make off-diagonal entries consistent */
   MaximumInconsMatrices=0;
+  DDD_IFAExecLocal(BorderVectorSymmIF, GRID_ATTR(g), PrepareCountAndSortInconsMatrices);
   DDD_IFAExecLocal(BorderVectorSymmIF, GRID_ATTR(g), CountAndSortInconsMatrices);
   MaximumInconsMatrices = UG_GlobalMaxINT(MaximumInconsMatrices);
   DataSizePerVector = MaximumInconsMatrices * MaxBlockSize * sizeof(DOUBLE);
