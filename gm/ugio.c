@@ -1847,7 +1847,7 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
         SETPRIO(theEdge,prio);
         if (edvec)
         {
-          theVector = EVECTOR(theElement);
+          theVector = EDVECTOR(theEdge);
           GRID_UNLINK_VECTOR(theGrid,theVector);
           SETPRIO(EDVECTOR(theEdge),prio);
           GRID_LINK_VECTOR(theGrid,theVector,prio);
