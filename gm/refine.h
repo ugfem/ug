@@ -101,15 +101,11 @@
 #define REFINECLASS(p)                                  CW_READ(p,REFINECLASS_CE)
 #define SETREFINECLASS(p,n)                     CW_WRITE(p,REFINECLASS_CE,n)
 
-/* TODO: delete this
-   #define EDGEPATTERN_CE					54
-   #define EDGEPATTERN_SHIFT				0
- */
-#define EDGEPATTERN_LEN                                 6
-/* TODO: delete this
-   #define EDGEPATTERN(p)					CW_READ(p,EDGEPATTERN_CE)
-   #define SETEDGEPATTERN(p,n)                  CW_WRITE(p,EDGEPATTERN_CE,n)
- */
+#define UPDATE_GREEN_CE                                 54
+#define UPDATE_GREEN_SHIFT                              8
+#define UPDATE_GREEN_LEN                                1
+#define UPDATE_GREEN(p)                                 CW_READ(p,UPDATE_GREEN_CE)
+#define SETUPDATE_GREEN(p,n)                    CW_WRITE(p,UPDATE_GREEN_CE,n)
 
 #define SIDEPATTERN_CE                                  55
 #define SIDEPATTERN_SHIFT                               0
