@@ -4681,7 +4681,6 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
   DOUBLE **line_points, **lcoord_lpoints;
 
   ptrlst = (LGM_POINT**)GetTmpMem(Heap,(LGM_SURFACE_NPOINT(theSurface)+1)*sizeof(LGM_POINT*),MarkKey);
-
   if(ptrlst==NULL)
   {
     printf("%s\n", "Not enough memory");
@@ -5408,12 +5407,12 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   LGM_BNDS_GLOBAL(theBndS,0,0) = LGM_BNDP_GLOBAL(theBndP1,i0)[0];
   LGM_BNDS_GLOBAL(theBndS,0,1) = LGM_BNDP_GLOBAL(theBndP1,i0)[1];
   LGM_BNDS_GLOBAL(theBndS,0,2) = LGM_BNDP_GLOBAL(theBndP1,i0)[2];
-  LGM_BNDS_GLOBAL(theBndS,1,0) = LGM_BNDP_GLOBAL(theBndP1,j0)[0];
-  LGM_BNDS_GLOBAL(theBndS,1,1) = LGM_BNDP_GLOBAL(theBndP1,j0)[1];
-  LGM_BNDS_GLOBAL(theBndS,1,2) = LGM_BNDP_GLOBAL(theBndP1,j0)[2];
-  LGM_BNDS_GLOBAL(theBndS,2,0) = LGM_BNDP_GLOBAL(theBndP1,k0)[0];
-  LGM_BNDS_GLOBAL(theBndS,2,1) = LGM_BNDP_GLOBAL(theBndP1,k0)[1];
-  LGM_BNDS_GLOBAL(theBndS,2,2) = LGM_BNDP_GLOBAL(theBndP1,k0)[2];
+  LGM_BNDS_GLOBAL(theBndS,1,0) = LGM_BNDP_GLOBAL(theBndP2,j0)[0];
+  LGM_BNDS_GLOBAL(theBndS,1,1) = LGM_BNDP_GLOBAL(theBndP2,j0)[1];
+  LGM_BNDS_GLOBAL(theBndS,1,2) = LGM_BNDP_GLOBAL(theBndP2,j0)[2];
+  LGM_BNDS_GLOBAL(theBndS,2,0) = LGM_BNDP_GLOBAL(theBndP3,k0)[0];
+  LGM_BNDS_GLOBAL(theBndS,2,1) = LGM_BNDP_GLOBAL(theBndP3,k0)[1];
+  LGM_BNDS_GLOBAL(theBndS,2,2) = LGM_BNDP_GLOBAL(theBndP3,k0)[2];
         #else
   LGM_BNDS_LOCAL(theBndS,0,0) = LGM_BNDP_LOCAL(theBndP1,i0)[0];
   LGM_BNDS_LOCAL(theBndS,0,1) = LGM_BNDP_LOCAL(theBndP1,i0)[1];
