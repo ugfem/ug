@@ -159,3 +159,27 @@ DOUBLE UG_GlobalSumDOUBLE (DOUBLE x)
   Broadcast(&x,sizeof(DOUBLE));
   return(x);
 }
+
+
+
+
+void UG_GlobalSumNDOUBLE (INT n, DOUBLE *xs)
+{
+  int l, i, size=sizeof(DOUBLE)*n;
+  DOUBLE *ys;
+
+  ys = (DOUBLE *)memmgr_AllocTMEM(size);
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,ys,size);
+
+    /* execute reduction operation */
+    for(i=0; i<n; i++)
+      xs[i] += ys[i];
+  }
+  Concentrate(xs,size);
+  Broadcast(xs,size);
+
+  memmgr_FreeTMEM(ys);
+}

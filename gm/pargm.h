@@ -112,7 +112,9 @@ extern DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF;
 /*                                                                          */
 /****************************************************************************/
 
+/* functions implemented in parallel/dddif/support.c */
 DOUBLE UG_GlobalSumDOUBLE (DOUBLE);
 INT UG_GlobalMaxINT (INT);
+void UG_GlobalSumNDOUBLE (INT, DOUBLE *);
 
 #endif /* __PARGM_H__ */
