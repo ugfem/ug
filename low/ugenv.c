@@ -425,7 +425,10 @@ INT RemoveEnvItem (ENVITEM *theItem)
    D*/
 /****************************************************************************/
 
-static INT RemoveEnvDirContent (ENVITEM *theItem)
+#ifndef __T3E__
+static
+#endif
+INT RemoveEnvDirContent (ENVITEM *theItem)
 {
   ENVITEM *Item,*Next;
 
