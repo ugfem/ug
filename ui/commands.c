@@ -6650,7 +6650,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
 
   /* check options */
 #ifdef __TWODIM__
-  args.doanimate = args.doupdate = args.dostep = args.equilateral = args.plotfront = args.printelem = args.doangle = args.doEdge = args.doAngle =  NO;
+  args.doanimate = args.doupdate = args.dostep = args.equilateral = args.plotfront = args.printelem = args.doangle = args.doEdge = args.doAngle = args.doConstDel =  NO;
   args.doedge = YES;
   ElemID = -1;
 #endif
