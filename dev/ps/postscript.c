@@ -699,7 +699,8 @@ static WINDOWID OpenPSWindow (const char *title, INT x, INT y, INT width, INT he
   WritePSHeader(currPSF,title,x,y,sx*width,sy*height);
 
   /* write pallette */
-  /*PSSetPalette(0,256,red,green,blue);						  /* default palette */
+  /* PSSetPalette(0,256,red,green,blue); */
+  /* default palette */
 
   PSSetLineWidth(1);
   PSSetTextSize(10);
