@@ -13280,7 +13280,7 @@ static INT OrderFathersSEL(MULTIGRID *mg, ELEMENT **table)
 	ELEMENT *p;
 	GRID *grid;
 
-	grid = mg->grids[0];
+	grid = GRID_ON_LEVEL(mg,0);
 	n = 0;
 	for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
 		table[n++] = p;
@@ -13342,7 +13342,7 @@ static INT OrderFathersNNS (MULTIGRID *mg, ELEMENT **table)
     
 	/* copy elements */
 	n = 0;
-	grid = mg->grids[0];
+	grid = GRID_ON_LEVEL(mg,0);
 	for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
 		table[n++] = p;
 
@@ -13915,7 +13915,7 @@ static INT OrderFathersXSH (MULTIGRID *mg, ELEMENT **table)
 
 	/* count boundary elements */
 	OE_nBndElem = 0;
-	grid = mg->grids[0];
+	grid = GRID_ON_LEVEL(mg,0);
 	for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
 		if (OBJT(p) == BEOBJ)
 			OE_nBndElem++;
@@ -14149,7 +14149,7 @@ static void ComputeOS_Data(MULTIGRID *mg)
 	ELEMENT *p, *sonList[MAX_SONS];
 
 	for (i = mg->topLevel; i >= 0; i--) {
-		grid = mg->grids[i];
+		grid = GRID_ON_LEVEL(mg,i);
 		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p)) {
 			prio = DDD_InfoPriority(PARHDRE(p));
 			if (prio == PrioGhost) continue;
@@ -14598,7 +14598,7 @@ static INT SortLevelsLocally(MULTIGRID *mg)
 	heap = mg->theHeap;
 	for (i = 1; i <= mg->topLevel; i++) 
 	{
-		grid = mg->grids[i];
+		grid = GRID_ON_LEVEL(mg,i);
 
 		/* count master elems */
 		n = 0;
@@ -14681,7 +14681,7 @@ static INT OrderHirarchically(MULTIGRID *mg)
 	{
 		/* local case */
 
-		grid = mg->grids[i];
+		grid = GRID_ON_LEVEL(mg,i);
 		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
 		{
             #ifdef ModelP
@@ -14714,7 +14714,7 @@ static INT OrderHirarchically(MULTIGRID *mg)
 		}
 
 		/* order remote sons */
-		grid = mg->grids[i];
+		grid = GRID_ON_LEVEL(mg,i);
 		for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
 			if (SH_LINK(p) != NULL)
 			    if (OrderRemoteSons(p)) {
@@ -14769,7 +14769,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	if (me == master) {
 	#endif
 		heap = mg->theHeap;
-		grid = mg->grids[0];
+		grid = GRID_ON_LEVEL(mg,0);
 		Mark(heap, FROM_TOP);
 		table = (ELEMENT **)GetMem(heap, (grid->nElem)*sizeof(ELEMENT *), FROM_TOP);
 		if (table != NULL)
@@ -14892,7 +14892,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 		
 	/* calculate the viewable sides of all elements on all levels */
 	for (i = 0; i <= mg->topLevel; i++)	
-		CalcViewableSidesOnGrid(mg->grids[i]);
+		CalcViewableSidesOnGrid(GRID_ON_LEVEL(mg,i));
 	
 	/* allocate memory for and compute OS_Data (parallel case only) */
 	#ifdef ModelP
@@ -14900,7 +14900,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 	Mark(heap, FROM_TOP);
 	err = 0;
 	for (i = 0; i <= mg->topLevel; i++) {
-		grid = mg->grids[i];
+		grid = GRID_ON_LEVEL(mg,i);
 		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
 			if (DDD_InfoPriority(PARHDRE(p)) != PrioGhost)
 				if ((OS_LINK(p) = (OS_DATA *) GetMem(heap, sizeof(OS_DATA), FROM_TOP)) == NULL) {
@@ -14939,7 +14939,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 	#ifdef ModelP
 	/* store PlotID in element ID */
 	for (i = 0; i <= mg->topLevel; i++) {
-		grid = mg->grids[i];
+		grid = GRID_ON_LEVEL(mg,i);
 		for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
 				ID(p) = PLOT_ID(p);
 	}
