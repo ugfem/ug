@@ -144,9 +144,9 @@ static int PrepareCplMsgs (
   int iDC, iMC, iAC, nMsgs=0;
 
 #       if DebugCplMsg<=3
-  printf("%4d: PrepareCplMsgs, nXIDelCpl=%d nXIModCpl=%d nXIAddCpl=%d\n",
-         me, nDC, nMC, nAC);
-  fflush(stdout);
+  sprintf(cBuffer,"%4d: PrepareCplMsgs, nXIDelCpl=%d nXIModCpl=%d nXIAddCpl=%d\n",
+          me, nDC, nMC, nAC);
+  DDD_PrintDebug(cBuffer);
 #       endif
 
 

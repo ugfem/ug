@@ -144,8 +144,8 @@ static int PrepareCmdMsgs (XICopyObj **itemsCO, int nCO, CMDMSG **theMsgs)
     return(0);
 
 #       if DebugCmdMsg<=3
-  printf("%4d: PreparePrune, nCopyObj=%d\n", me, nCO);
-  fflush(stdout);
+  sprintf(cBuffer,"%4d: PreparePrune, nCopyObj=%d\n", me, nCO);
+  DDD_PrintDebug(cBuffer);
 #       endif
 
 
@@ -345,8 +345,8 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
         SET_OBJ_RESENT(localCplObjs[iLCO], 0);
 
 #                               if DebugCmdMsg<=0
-        printf("%4d: PruneDelCmds. %08x without resent.\n", me, OBJ_GID(localCplObjs[iLCO]));
-        fflush(stdout);
+        sprintf(cBuffer,"%4d: PruneDelCmds. %08x without resent1.\n", me, OBJ_GID(localCplObjs[iLCO]));
+        DDD_PrintDebug(cBuffer);
 #                               endif
 
         iLCO++;
@@ -357,8 +357,8 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
         SET_OBJ_RESENT(localCplObjs[iLCO], 1);
 
 #                               if DebugCmdMsg<=1
-        printf("%4d: PruneDelCmds. %08x will be resent.\n", me, OBJ_GID(localCplObjs[iLCO]));
-        fflush(stdout);
+        sprintf(cBuffer,"%4d: PruneDelCmds. %08x will be resent.\n", me, OBJ_GID(localCplObjs[iLCO]));
+        DDD_PrintDebug(cBuffer);
 #                               endif
 
         iLCO++;
@@ -371,8 +371,8 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
       SET_OBJ_RESENT(localCplObjs[iLCO], 0);
 
 #                       if DebugCmdMsg<=0
-      printf("%4d: PruneDelCmds. %08x without resent.\n", me, OBJ_GID(localCplObjs[iLCO]));
-      fflush(stdout);
+      sprintf(cBuffer,"%4d: PruneDelCmds. %08x without resent2.\n", me, OBJ_GID(localCplObjs[iLCO]));
+      DDD_PrintDebug(cBuffer);
 #                       endif
 
       iLCO++;
@@ -397,8 +397,8 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
       SET_OBJ_PRUNED(itemsDC[iDC]->hdr, 1);
 
 #                       if DebugCmdMsg<=1
-      printf("%4d: PruneDelCmds. pruned %08x\n", me, gidDC);
-      fflush(stdout);
+      sprintf(cBuffer,"%4d: PruneDelCmds. pruned %08x\n", me, gidDC);
+      DDD_PrintDebug(cBuffer);
 #                       endif
     }
     else
@@ -410,8 +410,8 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
   nPruned = nDC-jDC;
 
 #       if DebugCmdMsg<=3
-  printf("%4d: PruneDelCmds. nPruned=%d/%d\n", me, nPruned, nDC);
-  fflush(stdout);
+  sprintf(cBuffer,"%4d: PruneDelCmds. nPruned=%d/%d\n", me, nPruned, nDC);
+  DDD_PrintDebug(cBuffer);
 #       endif
 
 

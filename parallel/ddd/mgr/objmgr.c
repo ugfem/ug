@@ -359,7 +359,6 @@ DDD_OBJ DDD_ObjNew (size_t aSize, DDD_TYPE aType, DDD_PRIO aPrio, DDD_ATTR aAttr
 #               ifdef DebugCreation
     sprintf(cBuffer, "%d: Allocated obj %d of type %d\n", me, obj, aType);
     DDD_PrintDebug(cBuffer);
-    fflush(stdout);
 #               endif
   }
 

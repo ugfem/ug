@@ -1,5 +1,14 @@
 ---------------------------
 
+CHANGES 1.8.24 -> 1.8.25
+---------------------------
+990202 kb
+fixed bug which lead to PrioBegin/End error.
+	- the std-interface was not sorted correctly, because of
+	  invalid initialization of the CPLDIR-flags. This is fixed now.
+	- added some debug info in prio/pcmds.c
+---------------------------
+
 CHANGES 1.8.23 -> 1.8.24
 ---------------------------
 980922 kb

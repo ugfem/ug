@@ -456,7 +456,7 @@ static XFERMSG *AccumXINewCpl (XFERMSG *currxm, int *nMsgs, int *nItems,
     XINewCpl *xi = items[i];
     sprintf(cBuffer, "%4d: PrepareObjMsgs, proc=%d"
             " i=%d/%d (%08x)\n",
-            me, dest, i, nmax, xi->te.gid);
+            me, dest, i, nmax, NewCpl_GetGid(xi->te));
     DDD_PrintDebug(cBuffer);
   }
 #               else
@@ -535,9 +535,9 @@ int PrepareObjMsgs (XICopyObjPtrArray *arrayO,
 
 
 #       if DebugXfer<=3
-  printf("%4d: PrepareObjMsgs, nXICopyObj=%d nXINewCpl=%d nXIOldCpl=%d\n",
-         me, nO, nNC, nOC);
-  fflush(stdout);
+  sprintf(cBuffer,"%4d: PrepareObjMsgs, nXICopyObj=%d nXINewCpl=%d nXIOldCpl=%d\n",
+          me, nO, nNC, nOC);
+  DDD_PrintDebug(cBuffer);
 #       endif
 
 
@@ -614,8 +614,8 @@ int PrepareObjMsgs (XICopyObjPtrArray *arrayO,
 
 
 #       if DebugXfer<=3
-  printf("%4d: PrepareObjMsgs, nMsgs=%d\n", me, nMsgs);
-  fflush(stdout);
+  sprintf(cBuffer,"%4d: PrepareObjMsgs, nMsgs=%d\n", me, nMsgs);
+  DDD_PrintDebug(cBuffer);
 #       endif
 
   return(nMsgs);

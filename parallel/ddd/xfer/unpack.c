@@ -1736,7 +1736,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 		for(i=0; i<nNewCpl; i++)
 		{
 			sprintf(cBuffer, "%4d: TAB allNewCpl %08x on %4d/%d\n",me,
-				allNewCpl[i].gid,allNewCpl[i].dest,allNewCpl[i].prio);
+				NewCpl_GetGid(allNewCpl[i]),NewCpl_GetDest(allNewCpl[i]),NewCpl_GetPrio(allNewCpl[i]));
 			DDD_PrintDebug(cBuffer);
 		}
 #	endif

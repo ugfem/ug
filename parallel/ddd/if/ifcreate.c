@@ -330,6 +330,7 @@ static COUPLING ** IFCollectStdCouplings (void)
     for(cpl=IdxCplList(index); cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
       cplarray[n] = cpl;
+      SETCPLDIR(cpl,0);
       n++;
     }
   }

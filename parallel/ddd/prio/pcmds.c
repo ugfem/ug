@@ -115,10 +115,8 @@ typedef struct _PRIO_GLOBALS
 /*                                                                          */
 /****************************************************************************/
 
-
 /* Revision Control System string */
 RCSID("$Header$",DDD_RCS_STRING)
-
 
 /* one instance of PRIO_GLOBALS */
 static PRIO_GLOBALS prioGlobals;
@@ -256,10 +254,13 @@ void DDD_PrioChange (DDD_HDR hdr, DDD_PRIO prio)
   /* change priority of object directly, for local objects this
      is all what we need. */
   {
-    DDD_PRIO newprio;
-    PriorityMerge(&theTypeDefs[OBJ_TYPE(hdr)],
-                  OBJ_PRIO(hdr), prio, &newprio);
-    OBJ_PRIO(hdr) = newprio;
+    /*
+                    DDD_PRIO newprio;
+                    PriorityMerge(&theTypeDefs[OBJ_TYPE(hdr)],
+                            OBJ_PRIO(hdr), prio, &newprio);
+                    OBJ_PRIO(hdr) = newprio;
+     */
+    OBJ_PRIO(hdr) = prio;
   }
 
   /* handle distributed objects
@@ -289,6 +290,12 @@ void DDD_PrioChange (DDD_HDR hdr, DDD_PRIO prio)
 
 static int GatherPrio (DDD_HDR obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
+#       if DebugPrio<=1
+  sprintf(cBuffer, "%4d: DDD_PrioEnd/GatherPrio %08x, prio=%d. Send to copy on proc %3d/p%d)\n",
+          me, OBJ_GID(obj), OBJ_PRIO(obj), proc, prio);
+  DDD_PrintDebug(cBuffer);
+#       endif
+
   *((DDD_PRIO *)data) = OBJ_PRIO(obj);
   return(0);
 }
@@ -299,7 +306,27 @@ static int ScatterPrio (DDD_HDR obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 
   /* if prio on other processor has been changed, we adapt it here. */
   if (real_prio!=prio)
+  {
+#               if DebugPrio<=1
+    sprintf(cBuffer, "%4d: DDD_PrioEnd/ScatterPrio %08x/%d, "
+            "copy on proc %3d/p%d changed prio %d -> %d\n",
+            me, OBJ_GID(obj), OBJ_PRIO(obj),
+            proc, prio, prio, real_prio);
+    DDD_PrintDebug(cBuffer);
+#               endif
+
     ModCoupling(obj, proc, real_prio);
+  }
+#       if DebugPrio<=1
+  else
+  {
+    sprintf(cBuffer, "%4d: DDD_PrioEnd/ScatterPrio %08x/%d, "
+            "copy on proc %3d/p%d keeps prio %d\n",
+            me, OBJ_GID(obj), OBJ_PRIO(obj),
+            proc, prio, prio);
+    DDD_PrintDebug(cBuffer);
+  }
+#       endif
 
   return(0);
 }
