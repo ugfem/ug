@@ -141,6 +141,11 @@ static INT theFindCutVarID;                     /* env type for FIND_CUT vars   
 
 static FindCutProcPtr FindCutSet;       /* pointer to find cut procedure		*/
 
+static MULTIGRID *GBNV_mg;                      /* multigrid							*/
+static INT GBNV_n;                                      /* list items							*/
+static INT GBNV_curr;                           /* curr pos								*/
+static VECTOR **GBNV_list=NULL;         /* list pointer							*/
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
@@ -2071,7 +2076,7 @@ INT DataTypeFilterVList (INT dt, VECTOR **vec, INT *cnt)
    GetVectorsOfDataTypesInObjects - get vector list including all vectors of specified vtypes
 
    SYNOPSIS:
-   INT GetVectorsOfDataTypesInObjects (const ELEMENT *theElement, INT dt, INT obj, INT *cnt, VECTOR **vec)
+   INT GetVectorsOfDataTypesInObjects (const ELEMENT *theElement, INT dt, INT obj, INT *cnt, VECTOR *VecList[])
 
    PARAMETERS:
    .  theElement - pointer to an element
@@ -2090,7 +2095,7 @@ INT DataTypeFilterVList (INT dt, VECTOR **vec, INT *cnt)
    D*/
 /****************************************************************************/
 
-INT GetVectorsOfDataTypesInObjects (const ELEMENT *theElement, INT dt, INT obj, INT *cnt, VECTOR **vec)
+INT GetVectorsOfDataTypesInObjects (const ELEMENT *theElement, INT dt, INT obj, INT *cnt, VECTOR *VecList[])
 {
   INT i,n;
 
@@ -2098,21 +2103,21 @@ INT GetVectorsOfDataTypesInObjects (const ELEMENT *theElement, INT dt, INT obj, 
 
   if (obj & BITWISE_TYPE(NODEVEC))
   {
-    if (GetVectorsOfNodes(theElement,&i,vec) != GM_OK)
+    if (GetVectorsOfNodes(theElement,&i,VecList) != GM_OK)
       return(GM_ERROR);
     n += i;
   }
 
   if (obj & BITWISE_TYPE(EDGEVEC))
   {
-    if (GetVectorsOfEdges(theElement,&i,vec+n) != GM_OK)
+    if (GetVectorsOfEdges(theElement,&i,VecList+n) != GM_OK)
       return(GM_ERROR);
     n += i;
   }
 
   if (obj & BITWISE_TYPE(ELEMVEC))
   {
-    if (GetVectorsOfElement(theElement,&i,vec+n) != GM_OK)
+    if (GetVectorsOfElement(theElement,&i,VecList+n) != GM_OK)
       return(GM_ERROR);
     n += i;
   }
@@ -2120,7 +2125,7 @@ INT GetVectorsOfDataTypesInObjects (const ELEMENT *theElement, INT dt, INT obj, 
     #ifdef __THREEDIM__
   if (obj & BITWISE_TYPE(SIDEVEC))
   {
-    if (GetVectorsOfSides(theElement,&i,vec+n) != GM_OK)
+    if (GetVectorsOfSides(theElement,&i,VecList+n) != GM_OK)
       return(GM_ERROR);
     n += i;
   }
@@ -2129,9 +2134,239 @@ INT GetVectorsOfDataTypesInObjects (const ELEMENT *theElement, INT dt, INT obj, 
   *cnt = n;
 
   /* remove vectors of types not needed */
-  DataTypeFilterVList(dt,vec,cnt);
+  DataTypeFilterVList(dt,VecList,cnt);
 
   return (GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   PrepareGetBoundaryNeighbourVectors - prepare 'GetBoundaryNeighbourVectors'
+
+   SYNOPSIS:
+   INT PrepareGetBoundaryNeighbourVectors (GRID *theGrid, INT *MaxListLen)
+
+   PARAMETERS:
+   .  theGrid - grid level
+   .  MaxListLen - max size of neighbourhood and therefore max list lenght of the
+                                VecList array of 'GetBoundaryNeighbourVectors'
+
+   DESCRIPTION:
+   This function stores lists of boundary vector neighbourhoods in temp storage
+   of the multigrid. The neighborhoods of the boundary vectors can be received
+   via a call of 'GetBoundaryNeighbourVectors' one by one.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    >0 else
+
+   SEE ALSO:
+   'GetBoundaryNeighbourVectors', 'ResetGetBoundaryNeighbourVectors', 'FinishBoundaryNeighbourVectors'
+   D*/
+/****************************************************************************/
+
+INT PrepareGetBoundaryNeighbourVectors (GRID *theGrid, INT *MaxListLen)
+{
+#ifdef __TWODIM__
+  ELEMENT *elem;
+  VECTOR *vec,*v0,*v1;
+  INT i;
+
+  if (GBNV_list!=NULL)
+    /* last process not finished properly by call of 'GetBoundaryNeighbourVectors' */
+    REP_ERR_RETURN(1);
+
+  /* count boundary node vectors */
+  GBNV_n = 0;
+  for (vec=FIRSTVECTOR(theGrid); vec!=NULL; vec=SUCCVC(vec))
+    if (VOTYPE(vec)==NODEVEC)
+      if (OBJT(MYVERTEX((NODE*)VOBJECT(vec)))==BVOBJ)
+        GBNV_n++;
+
+  /* allocate list storage: 3 pointers each */
+  GBNV_mg = MYMG(theGrid);
+  MarkTmpMem(MGHEAP(GBNV_mg));
+  GBNV_list = (VECTOR **) GetTmpMem(MGHEAP(GBNV_mg),3*GBNV_n*sizeof(VECTOR *));
+  if (GBNV_list==NULL)
+    REP_ERR_RETURN(1);
+
+  /* store offset in vector index field */
+  i = 0;
+  for (vec=FIRSTVECTOR(theGrid); vec!=NULL; vec=SUCCVC(vec))
+    if (VOTYPE(vec)==NODEVEC)
+      if (OBJT(MYVERTEX((NODE*)VOBJECT(vec)))==BVOBJ)
+      {
+        VINDEX(vec) = i;
+        GBNV_list[i] = vec;
+        i += 3;
+      }
+
+  /* loop elements and fill neighbours */
+  /* TODO: parallel also orphan(?) elements to be complete */
+  for (elem=FIRSTELEMENT(theGrid); elem!=NULL; elem=SUCCE(elem))
+    if (OBJT(elem)==BEOBJ)
+      for (i=0; i<SIDES_OF_ELEM(elem); i++)
+        if (ELEM_BNDS(elem,i)!=NULL)
+        {
+          /* 2D: two corners */
+          v0 = NVECTOR(CORNER(elem,CORNER_OF_SIDE(elem,i,0)));
+          v1 = NVECTOR(CORNER(elem,CORNER_OF_SIDE(elem,i,1)));
+
+          ASSERT(GBNV_list[VINDEX(v0)]==v0);
+          ASSERT(GBNV_list[VINDEX(v1)]==v1);
+          GBNV_list[VINDEX(v0)+2] = v1;
+          GBNV_list[VINDEX(v1)+1] = v0;
+        }
+  GBNV_curr = 0;
+
+  /* this is simple in 2D: center, pred and succ in positive sense */
+  *MaxListLen = 3;
+
+  return (0);
+
+#endif /* __TWODIM__ */
+
+#ifdef __THREEDIM__
+  /* 3D requires somewhat more work! */
+
+  /* but it should be possible to create an oriented list
+     of neighbours for each boundary vector */
+
+  REP_ERR_RETURN (1);
+#endif /* __THREEDIM__ */
+}
+
+/****************************************************************************/
+/*D
+   ResetGetBoundaryNeighbourVectors - reset current neighbourhood to begin of list
+
+   SYNOPSIS:
+   INT ResetGetBoundaryNeighbourVectors (void)
+
+   PARAMETERS:
+   .  void - none
+
+   DESCRIPTION:
+   This function resets the pointer to the current neighbourhood to the beginning of
+   the list. 'GetBoundaryNeighbourVectors' will start again with the first one.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    >0 else
+
+   SEE ALSO:
+   'GetBoundaryNeighbourVectors', 'PrepareGetBoundaryNeighbourVectors', 'FinishBoundaryNeighbourVectors'
+   D*/
+/****************************************************************************/
+
+INT ResetGetBoundaryNeighbourVectors (void)
+{
+  if (GBNV_list==NULL)
+    REP_ERR_RETURN(1);
+
+  GBNV_curr = 0;
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   GetBoundaryNeighbourVectors - get a neighbourhood of boundary vectors
+
+   SYNOPSIS:
+   INT GetBoundaryNeighbourVectors (INT dt, INT obj, INT *cnt, VECTOR *VecList[], INT *end)
+
+   PARAMETERS:
+   .  dt - datatypes of center vectors (bitwise)
+   .  obj - object types of center vectors (bitwise)
+   .  cnt - vector list length
+   .  VecList - vector list
+   .  end - if YES the currently returned list was the last one
+
+   DESCRIPTION:
+   This function returns a neighbourhood of boundary vectors, center first and the
+   remainder oriented in positiv sense. The boundary vector heighbourhood lists
+   are created by a call of 'PrepareGetBoundaryNeighbourVectors'. Use
+   'ResetGetBoundaryNeighbourVectors' to begin again with the first
+   neighbourhood and finish processing the boundary vectors with a call of
+   'FinishBoundaryNeighbourVectors' which releases the temporary storage
+   occupied by 'PrepareGetBoundaryNeighbourVectors'..
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    >0 else
+
+   SEE ALSO:
+   'PrepareGetBoundaryNeighbourVectors', 'ResetGetBoundaryNeighbourVectors', 'FinishBoundaryNeighbourVectors'
+   D*/
+/****************************************************************************/
+
+INT GetBoundaryNeighbourVectors (INT dt, INT obj, INT *cnt, VECTOR *VecList[], INT *end)
+{
+  VECTOR *vec;
+
+  *cnt = 0;
+  *end = NO;
+
+  if (GBNV_list==NULL)
+    REP_ERR_RETURN(1);
+
+  vec = GBNV_list[GBNV_curr];
+
+  if (!(BITWISE_TYPE(VTYPE(vec)) & dt))
+    /* no further checks: nothing to do */
+    return (0);
+
+  if (VOTYPE(vec)!=NODEVEC)
+    REP_ERR_RETURN(1);
+
+  /* vector, pre and succ in positive sense */
+  VecList[(*cnt)++] = GBNV_list[GBNV_curr];
+  VecList[(*cnt)++] = GBNV_list[GBNV_curr+1];
+  VecList[(*cnt)++] = GBNV_list[GBNV_curr+2];
+
+  /* move on to next position */
+  GBNV_curr += 3;
+  if (GBNV_curr>=3*GBNV_n)
+    *end = YES;
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   FinishBoundaryNeighbourVectors - finish processing of boundary vectors
+
+   SYNOPSIS:
+   INT FinishBoundaryNeighbourVectors (void)
+
+   PARAMETERS:
+   .  void - nonw
+
+   DESCRIPTION:
+   This function releases the temporary memory allocated by 'PrepareGetBoundaryNeighbourVectors'
+   from the multigrid heap.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    >0 else
+
+   SEE ALSO:
+   'PrepareGetBoundaryNeighbourVectors', 'ResetGetBoundaryNeighbourVectors', 'GetBoundaryNeighbourVectors'
+   D*/
+/****************************************************************************/
+
+INT FinishBoundaryNeighbourVectors (void)
+{
+  if (ReleaseTmpMem(MGHEAP(GBNV_mg)))
+    REP_ERR_RETURN(1);
+
+  GBNV_list = NULL;
+
+  return (0);
 }
 
 /****************************************************************************/

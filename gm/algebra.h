@@ -150,7 +150,11 @@ INT             GetVectorsOfEdges                               (const ELEMENT *
 INT             GetVectorsOfNodes                               (const ELEMENT *theElement, INT *cnt, VECTOR **vList);
 INT                     GetVectorsOfOType                               (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vList);
 INT                     DataTypeFilterVList                             (INT dt, VECTOR **vec, INT *cnt);
-INT                     GetVectorsOfDataTypesInObjects  (const ELEMENT *theElement, INT dt, INT obj, INT *cnt, VECTOR **vec);
+INT                     GetVectorsOfDataTypesInObjects  (const ELEMENT *theElement, INT dt, INT obj, INT *cnt, VECTOR *VecList[]);
+INT                     PrepareGetBoundaryNeighbourVectors (GRID *theGrid, INT *MaxListLen);
+INT                     ResetGetBoundaryNeighbourVectors (void);
+INT                     GetBoundaryNeighbourVectors             (INT dt, INT obj, INT *cnt, VECTOR *VecList[], INT *end);
+INT                     FinishBoundaryNeighbourVectors  (void);
 INT             GetElementInfoFromSideVector    (const VECTOR *theVector, ELEMENT **Elements, INT *Sides);
 #ifdef ModelP
 INT         GetVectorSize                   (GRID *theGrid, INT VectorObjType, GEOM_OBJECT *object);
