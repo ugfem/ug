@@ -212,7 +212,7 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
   switch (Eventmask)
   {
   case EVERY_EVENT :
-    if (!XCheckIfEvent(display,&report,callback,s)) return(0);
+    if (!XCheckIfEvent(display,&report,callback,NULL)) return(0);
     PRINTDEBUG(dev,1,("XCheckIfEvent(): matching event found count=%d\n",count++));
     onlyCmdKey = 0;
     break;
