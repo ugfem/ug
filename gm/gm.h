@@ -2679,6 +2679,7 @@ void            ListVectorRange                 (MULTIGRID *theMG,              
 
 /* query */
 LINK            *GetLink                                (NODE *from, NODE *to);
+EDGE            *GetSonEdge                             (EDGE *theEdge);
 #ifdef __THREEDIM__
 EDGE            *FatherEdge                             (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge);
 #endif
