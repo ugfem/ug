@@ -44,8 +44,9 @@
 #include "amg_coarsen.h"
 #include "amg_solve.h"
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
+/* RCS string
+   static char RCS_ID("$Header$",UG_RCS_STRING);
+ */
 
 /****************************************************************************/
 /*																			*/
