@@ -92,8 +92,8 @@
                                      	(E)[1] = 0.25*((A)[1]+(B)[1]+(C)[1]+(D)[1]);}
 #define V2_SCALE(c,C)				   {(C)[0] = (c)*(C)[0];\
 										(C)[1] = (c)*(C)[1];}
-#define V2_NORMAL(A,B)				   {(A)[0] =  (B)[1];\
-										(A)[1] = -(B)[0];}
+#define V2_NORMAL(A,B)				   {(B)[0] =  (A)[1];\
+										(B)[1] = -(A)[0];}
 #define V2_SCALEADD1(c,A,C)			   {(C)[0] += (c)*(A)[0];\
 										(C)[1] += (c)*(A)[1];}
 #define V2_SCALESET(c,A,C)			   {(C)[0] = (c)*(A)[0];\
