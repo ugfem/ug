@@ -191,7 +191,7 @@ static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, DOUBLE *
     nbn = 0;
     for (theLink=START(theNode[n]); theLink!=0; theLink=NEXT(theLink))
     {
-      if (NTYPE(NBNODE(theLink))==CORNER_NODE)
+      if (CORNERTYPE(NBNODE(theLink)))
       {
         cornerNode[nbn] = NBNODE(theLink);
         nbn++;
@@ -774,7 +774,7 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
   for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     /* skip node if it is a copy from a lower level */
-    if (NFATHER(theNode) != NULL) continue;
+    if (CORNERTYPE(theNode)) continue;
 
     /* skip node if it is not a center node */
     if (NTYPE(theNode)!=CENTER_NODE) continue;
@@ -847,7 +847,7 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
   for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     /* skip node if it is a copy from a lower level */
-    if (NFATHER(theNode) != NULL) continue;
+    if (CORNERTYPE(theNode)) continue;
 
     /* skip node if it is not a mid node (mid point of an edge) */
     if (NTYPE(theNode)!=MID_NODE) continue;
@@ -1063,7 +1063,7 @@ INT SmoothGridReset (GRID *theGrid, INT *MoveInfo)
   for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     /* skip node if it is a copy from a lower level */
-    if (NFATHER(theNode) != NULL) continue;
+    if (CORNERTYPE(theNode)) continue;
 
     /* skip node if it is not a mid node (mid point of an edge) */
     if (NTYPE(theNode)!=MID_NODE) continue;
@@ -1074,7 +1074,7 @@ INT SmoothGridReset (GRID *theGrid, INT *MoveInfo)
     ceN = 0;
     for (theLink=START(theNode); theLink!=0; theLink=NEXT(theLink))
     {
-      if (NTYPE(NBNODE(theLink))==CORNER_NODE)
+      if (CORNERTYPE(NBNODE(theLink)))
       {
         CornerNodes[coN] = NBNODE(theLink);
         coN++;
@@ -1115,7 +1115,7 @@ INT SmoothGridReset (GRID *theGrid, INT *MoveInfo)
   for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     /* skip node if it is a copy from a lower level */
-    if (NFATHER(theNode) != NULL) continue;
+    if (CORNERTYPE(theNode)) continue;
 
     /* skip node if it is not a center node */
     if (NTYPE(theNode)!=CENTER_NODE) continue;
@@ -1215,7 +1215,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
       /* update global coordinates of new nodes */
       if (l!=0)
         for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
-          if (NFATHER(node)==NULL)
+          if (!CORNERTYPE(node))
           {
             vptr=MYVERTEX(node);
             if ((OBJT(vptr)!=BVOBJ)||(bdryFlag!=0))
@@ -1228,7 +1228,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
       for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
       {
         /* skip node if it is a copy from a lower level */
-        if (NFATHER(node) != NULL)
+        if (CORNERTYPE(node))
           continue;
         vptr = MYVERTEX(node);
         /* skip node if it on the boundary */

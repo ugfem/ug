@@ -190,6 +190,12 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 #define OFFSET_IN_MGUD(id)              (GetMGUDBlockDescriptor(id)->offset)
 #define IS_MGUDBLOCK_DEF(id)    (GetMGUDBlockDescriptor(id)!=NULL)
 
+/* REMARK: TOPNODE no more available since 970411
+   because of problems in parallelisation
+   to use it in serial version uncomment define
+   #define TOPNODE(p)		(p)->iv.topnode
+ */
+
 /****************************************************************************/
 /*																			*/
 /* format definition data structure                                                                             */
@@ -361,7 +367,12 @@ struct ivertex {                                        /* inner vertex structur
   union vertex *pred,*succ;                     /* double linked list of vertices		*/
   void *data;                                           /* associated user data structure		*/
   union element *father;                        /* father element						*/
+        #ifdef TOPNODE
+  /* REMARK: TOPNODE no more available since 970411
+          because of problems in parallelisation
+          to use it in serial version uncomment define TOPNODE */
   struct node *topnode;                         /* highest node where defect is valid	*/
+        #endif
 } ;
 
 struct bvertex {                                        /* boundary vertex structure			*/
@@ -380,7 +391,12 @@ struct bvertex {                                        /* boundary vertex struc
   union vertex *pred,*succ;                     /* double linked list of vertices		*/
   void *data;                                           /* associated user data structure		*/
   union element *father;                        /* father element						*/
+        #ifdef TOPNODE
+  /* REMARK: TOPNODE no more available since 970411
+          because of problems in parallelisation
+          to use it in serial version uncomment define TOPNODE */
   struct node *topnode;                         /* highest node where defect is valid	*/
+        #endif
 
   BNDP *bndp;                                       /* pointer boundary point decriptor		*/
 } ;
@@ -488,7 +504,11 @@ struct triangle {
   union element *pred, *succ;           /* doubly linked list of elements		*/
   struct node *n[3];                                    /* corners of that element				*/
   union element *father;                        /* father element on coarser grid		*/
-  union element *sons[4];                       /* element tree                                                 */
+        #ifdef ModelP
+  union element *sons[2];                       /* element tree                                                 */
+        #else
+  union element *sons[1];                       /* element tree                                                 */
+        #endif
   union element *nb[3];                         /* dual graph							*/
 
   /* WARNING: the allocation of the vector pointer depends on the format      */
@@ -524,7 +544,11 @@ struct quadrilateral {
   union element *pred, *succ;           /* doubly linked list of elements		*/
   struct node *n[4];                                    /* corners of that element				*/
   union element *father;                        /* father element on coarser grid		*/
-  union element *sons[4];                       /* element tree                                                 */
+        #ifdef ModelP
+  union element *sons[2];                       /* element tree                                                 */
+        #else
+  union element *sons[1];                       /* element tree                                                 */
+        #endif
   union element *nb[4];                         /* dual graph							*/
 
   /* WARNING: the allocation of the vector pointer depends on the format      */
@@ -558,7 +582,11 @@ struct tetrahedron {
   union element *pred, *succ;           /* doubly linked list of elements		*/
   struct node *n[4];                                    /* corners of that element				*/
   union element *father;                        /* father element on coarser grid		*/
+        #ifdef ModelP
+  union element *sons[2];                       /* element tree                                                 */
+        #else
   union element *sons[1];                       /* element tree                                                 */
+        #endif
   union element *nb[4];                         /* dual graph							*/
 
   /* WARNING: the allocation of the vector pointer depends on the format      */
@@ -595,7 +623,11 @@ struct pyramid {
   union element *pred, *succ;           /* doubly linked list of elements		*/
   struct node *n[5];                                    /* corners of that element				*/
   union element *father;                        /* father element on coarser grid		*/
+        #ifdef ModelP
+  union element *sons[2];                       /* element tree                                                 */
+        #else
   union element *sons[1];                       /* element tree                                                 */
+        #endif
   union element *nb[5];                         /* dual graph							*/
 
   /* WARNING: the allocation of the vector pointer depends on the format      */
@@ -632,7 +664,11 @@ struct prism {
   union element *pred, *succ;           /* doubly linked list of elements		*/
   struct node *n[6];                                    /* corners of that element				*/
   union element *father;                        /* father element on coarser grid		*/
+        #ifdef ModelP
+  union element *sons[2];                       /* element tree                                                 */
+        #else
   union element *sons[1];                       /* element tree                                                 */
+        #endif
   union element *nb[5];                         /* dual graph							*/
 
   /* WARNING: the allocation of the vector pointer depends on the format      */
@@ -669,7 +705,11 @@ struct hexahedron {
   union element *pred, *succ;           /* doubly linked list of elements		*/
   struct node *n[8];                                    /* corners of that element				*/
   union element *father;                        /* father element on coarser grid		*/
+        #ifdef ModelP
+  union element *sons[2];                       /* element tree                                                 */
+        #else
   union element *sons[1];                       /* element tree                                                 */
+        #endif
   union element *nb[6];                         /* dual graph							*/
 
   /* WARNING: the allocation of the vector pointer depends on the format      */
@@ -1484,6 +1524,17 @@ extern CONTROL_ENTRY
 #define ONNBSIDE(p)                                     CW_READ_STATIC(p,ONNBSIDE_,VERTEX_)
 #define SETONNBSIDE(p,n)                        CW_WRITE_STATIC(p,ONNBSIDE_,VERTEX_,n)
 
+#define NOOFNODE_CE                             79
+#define NOOFNODE_SHIFT                          9
+#define NOOFNODEMAX                                     32
+#if (MAXLEVEL > NOOFNODEMAX)
+#error  ****  set NOOFNODEMAX/_LEN appropriate to MAXLEVEL: 2^NOOFNODE_LEN = NOOFNODEMAX >= MAXLEVEL ****
+#endif
+#define NOOFNODE_LEN                            5
+#define NOOFNODE(p)                                     CW_READ_STATIC(p,NOOFNODE_,VERTEX_)
+#define SETNOOFNODE(p,n)                        CW_WRITE_STATIC(p,NOOFNODE_,VERTEX_,n)
+#define INCNOOFNODE(p)                          SETNOOFNODE(p,NOOFNODE(p)+1)
+#define DECNOOFNODE(p)                          SETNOOFNODE(p,NOOFNODE(p)-1)
 
 #define PREDV(p)                (p)->iv.pred
 #define SUCCV(p)                (p)->iv.succ
@@ -1497,7 +1548,6 @@ extern CONTROL_ENTRY
 #define NU(p)                   (p)->iv.xi[2]
 #define VDATA(p)                (p)->iv.data
 #define VFATHER(p)              (p)->iv.father
-#define TOPNODE(p)              (p)->iv.topnode
 
 /* for boundary vertices */
 #define V_BNDP(p)               (p)->bv.bndp
@@ -1553,7 +1603,19 @@ extern CONTROL_ENTRY
 #define SUCCN(p)        (p)->succ
 #define INDEX(p)        (p)->index
 #define START(p)        (p)->start
-#define NFATHER(p)      (p)->father
+
+#define NFATHER(p)                      (p)->father
+#define SETNFATHER(p,n)         (p)->father = n
+/*
+   #define NFATHER(p)			((NTYPE(p) == CORNER_NODE) ? (p)->father : NULL)
+   #define NFATHEREDGE(p)		((NTYPE(p) == MID_NODE) ? (EDGE *)(p)->father : NULL)
+   #define SETNFATHEREDGE(p,e)	(p)->father = (NODE *) e
+ */
+#define CORNERTYPE(p)   (NTYPE(p) == CORNER_NODE)
+#define MIDTYPE(p)              (NTYPE(p) == MID_NODE)
+#define SIDETYPE(p)             (NTYPE(p) == SIDE_NODE)
+#define CENTERTYPE(p)   (NTYPE(p) == CENTER_NODE)
+
 #define SONNODE(p)      (p)->son
 #define MYVERTEX(p) (p)->myvertex
 #define NDATA(p)        (p)->data
@@ -2129,6 +2191,8 @@ extern const BV_DESC_FORMAT three_level_bvdf;   /* bvdf for 3 blocklevels	*/
 #define GM_COPY_ALL                             3
 #define GM_REFINE_NOT_CLOSED            4
 #define GM_USE_HEXAHEDRA                        8
+#define GM_REFINE_PARALLEL                      0
+#define GM_REFINE_SEQUENTIAL            1
 #define GM_FCFCLL                                       1
 #define GM_FFCCLL                                       2
 #define GM_FFLLCC                                       3
@@ -2193,7 +2257,7 @@ INT             DeleteElement                   (MULTIGRID *theMG, ELEMENT *theE
 INT             EstimateHere                    (ELEMENT *theElement);
 INT         MarkForRefinement       (ELEMENT *theElement, INT rule, void *data);
 INT             GetRefinementMark               (const ELEMENT *theElement, INT *rule, void *data);
-INT             RefineMultiGrid                 (MULTIGRID *theMG, INT flag);
+INT             RefineMultiGrid                 (MULTIGRID *theMG, INT flag, INT seq);
 NODE            *GetFineNodeOnEdge              (const ELEMENT *theElement, INT side);
 /*INT			GetFineSidesTouchingCoarseSide (const ELEMENT *theElement, INT side, INT *nfine, ELEMENT *Elements[MAX_SIDES_TOUCHING], INT Sides[MAX_SIDES_TOUCHING]);*/
 
@@ -2279,6 +2343,9 @@ EDGE            *FatherEdge                             (NODE **SideNodes, INT n
 #endif
 EDGE            *GetEdge                                (NODE *from, NODE *to);
 INT             GetSons                                 (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);
+#ifdef ModelP
+INT             GetAllSons                              (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);
+#endif
 INT             VectorPosition                  (const VECTOR *theVector, DOUBLE *position);
 INT             VectorInElement                 (ELEMENT *theElement, VECTOR *theVector);
 INT             MinMaxAngle                     (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax);

@@ -823,10 +823,20 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
 
   /* the sons */
   sons_offset[tag] = 0;
-        #ifdef __TWODIM__
-  sons_offset[tag] = p_count; p_count += el->max_sons_of_elem;
-        #endif
-        #ifdef __THREEDIM__
+  /*
+     #ifdef __TWODIM__
+                  sons_offset[tag] = p_count; p_count += el->max_sons_of_elem;
+     #endif
+     #ifdef __THREEDIM__
+                  sons_offset[tag] = p_count; p_count++;
+     #endif
+   */
+  /* for 2D/3D one son pointer is stored in serial case     */
+  /* for 2D/3D two son pointer are stored in parallel case: */
+  /*    one to master elements, other to (h/v) ghosts       */
+        #ifdef ModelP
+  sons_offset[tag] = p_count; p_count+=2;
+        #else
   sons_offset[tag] = p_count; p_count++;
         #endif
 

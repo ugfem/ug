@@ -11,9 +11,7 @@
 /*            Universitaet Stuttgart                                        */
 /*            Pfaffenwaldring 27                                            */
 /*            70550 Stuttgart                                               */
-/*            email: stefan@ica3.uni-stuttgart.de                           */
-/*            phone: 0049-(0)711-685-7003                                   */
-/*            fax  : 0049-(0)711-685-7000                                   */
+/*            email: ug@ica3.uni-stuttgart.de                                   */
 /*                                                                          */
 /* History:   960915 sl  start of dynamic list management					*/
 /*                                                                          */
@@ -75,10 +73,12 @@
 /* define header prototypes */
 #define UNLINK(OTYPE)    void CAT(GRID_UNLINK_, OTYPE ) (GRID *Grid, OTYPE *Object)
 #define LINK(OTYPE)      void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
+#define LINKX(OTYPE)     void CAT(GRID_LINKX_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio, OTYPE *After)
 #define INIT(OTYPE)      void CAT3(GRID_INIT_,OTYPE,_LIST(GRID *Grid))
 #define CHECK(OTYPE)     void CAT3(GRID_CHECK_,OTYPE,_LIST(GRID *Grid))
 
 LINK(ELEMENT);
+LINKX(ELEMENT);
 UNLINK(ELEMENT);
 INIT(ELEMENT);
 CHECK(ELEMENT);

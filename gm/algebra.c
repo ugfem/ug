@@ -2436,8 +2436,8 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
   char msg[128];
   INT errors = 0;
 
-  sprintf(msg,"ERROR: missing connection between element %lu and %lu: ",
-          (long)ID(Elem0),(long)ID(Elem1));
+  sprintf(msg,PFMT " ERROR: missing connection between elem0=" EID_FMTX " elem1=" EID_FMTX,
+          me,EID_PRTX(Elem0),EID_PRTX(Elem1));
 
   cnt0 = GetAllVectorsOfElement(theGrid,Elem0,vec0);
   if (Elem0 == Elem1)
@@ -2454,11 +2454,10 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
             if (theCon==NULL)
             {
               errors++;
-              UserWrite(msg);
-              UserWriteF("vec0[%d]=" VINDEX_FMTX
+              UserWriteF("%s vec0[%d]=" VINDEX_FMTX
                          " to vec0[%d]=" VINDEX_FMTX "\n",
-                         i,VINDEX_PRT(vec0[i]),
-                         j,VINDEX_PRT(vec0[j]));
+                         msg,i,VINDEX_PRTX(vec0[i]),
+                         j,VINDEX_PRTX(vec0[j]));
             }
             else
             {
@@ -2466,10 +2465,9 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
               if (theCon==NULL)
               {
                 errors++;
-                UserWrite(msg);
-                UserWriteF("vec0[%d]=" VINDEX_FMTX
+                UserWriteF("%s vec0[%d]=" VINDEX_FMTX
                            " to vec0[%d]=" VINDEX_FMTX "\n",
-                           j,VINDEX_PRTX(vec0[j]),
+                           msg,j,VINDEX_PRTX(vec0[j]),
                            i,VINDEX_PRTX(vec0[i]));
               }
               else
@@ -2495,10 +2493,9 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
           if (theCon==NULL)
           {
             errors++;
-            UserWrite(msg);
-            UserWriteF("vec0[%d]=" VINDEX_FMTX
+            UserWriteF("%s vec0[%d]=" VINDEX_FMTX
                        " to vec1[%d]=" VINDEX_FMTX "\n",
-                       i,VINDEX_PRTX(vec0[i]),
+                       msg,i,VINDEX_PRTX(vec0[i]),
                        j,VINDEX_PRTX(vec1[j]));
           }
           else
@@ -2507,10 +2504,9 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
             if (theCon == NULL)
             {
               errors++;
-              UserWrite(msg);
-              UserWriteF("vec1[%d]=" VINDEX_FMTX
+              UserWriteF("%s vec1[%d]=" VINDEX_FMTX
                          " to vec0[%d]=%x/" VINDEX_FMTX "\n",
-                         j,VINDEX_PRTX(vec1[j]),
+                         msg,j,VINDEX_PRTX(vec1[j]),
                          i,VINDEX_PRTX(vec0[i]));
             }
             else
@@ -2669,17 +2665,25 @@ static INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString,
     if (VecObject == NULL)
     {
       errors++;
-      UserWriteF("%d: vector ID=%ld %s ID=%ld  has NO BACKPTR\n",
-                 me, (long) ID(theVector), ObjectString, (long) ID(theObject));
+      UserWriteF("%d: vector=" VINDEX_FMTX " %s GID=" GIDFMT " has NO BACKPTR\n",
+                 me, VINDEX_PRTX(theVector), ObjectString,
+                 (OBJT(theObject)==BEOBJ || OBJT(theObject)==IEOBJ) ?
+                 EGID(&(theObject->el)) : (OBJT(theObject)==NDOBJ) ?
+                 GID(&(theObject->nd)) :
+                                #ifdef __TWODIM__
+                 ((int *)(theObject))[0]);
+                                #else
+                 GID(&(theObject->ed)));
+                                #endif
     }
     else
     {
       if (VTYPE(theVector) != VectorType)
       {
         errors++;
-        UserWriteF("%d: %s vector ID=%ld has incompatible type=%d, "
+        UserWriteF("%d: %s vector=" VINDEX_FMTX " has incompatible type=%d, "
                    "should be type=%d\n",
-                   me, ObjectString, (long) ID(theVector), VTYPE(theVector),
+                   me, ObjectString, VINDEX_PRTX(theVector), VTYPE(theVector),
                    VectorType);
       }
 
@@ -2687,11 +2691,47 @@ static INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString,
       {
         if (OBJT(VecObject) != OBJT(theObject))
         {
-          errors++;
-          UserWriteF("%d: vector ID=%ld has type %s, but points "
-                     "to wrong obj=%x type OBJT=%ld\n",
-                     me, (long) ID(theVector), VecObject,
-                     (long) OBJT(VecObject));
+          int error = 1;
+
+          /* both objects may be elements */
+          if ((OBJT(VecObject)==BEOBJ || OBJT(VecObject)==IEOBJ) &&
+              (OBJT(theObject)==BEOBJ || OBJT(theObject)==IEOBJ) )
+          {
+            ELEMENT *theElement = (ELEMENT *)theObject;
+            ELEMENT *vecElement = (ELEMENT *)VecObject;
+            int i;
+
+                                                #ifdef ModelP
+            if (EMASTER(theElement) ||
+                EMASTER(vecElement) )
+            {
+                                                #endif
+            for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+              if (NBELEM(theElement,i) == vecElement)
+              {
+                /* they are neighbors -> ok */
+                error = 0;
+                break;
+              }
+                                                #ifdef ModelP
+          }
+                                                #endif
+            if (error)
+            {
+              UserWriteF("%d: vector=" VINDEX_FMTX " has type %s, but points "
+                         "to wrong vecobj=" EID_FMTX " NO NB of obj=" EID_FMTX "\n",
+                         me,VINDEX_PRTX(theVector),ObjectString,
+                         EID_PRTX(vecElement),EID_PRTX(theElement));
+            }
+          }
+          else
+          {
+            errors++;
+            UserWriteF("%d: vector=" VINDEX_FMTX " has type %s, but points "
+                       "to wrong obj=%d type OBJT=%d\n",
+                       me,VINDEX_PRTX(theVector),ObjectString,ID(VecObject),
+                       OBJT(VecObject));
+          }
         }
         else
         {
@@ -2704,22 +2744,18 @@ static INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString,
                                         #endif
           {
             errors++;
-            UserWriteF("%d: %s vector ID=%ld is referenced by "
+            UserWriteF("%d: %s vector=" VINDEX_FMTX " is referenced by "
                        "obj0=%x, but points to wrong obj1=%x\n",
-                       me, ObjectString, (long) ID(theVector),
+                       me, ObjectString, VINDEX_PRTX(theVector),
                        theObject, VecObject);
                                                 #ifdef ModelP
             if (strcmp(ObjectString,"EDGE")==0)
               UserWriteF("%d: obj0: n0=%d n1=%d  obj1: "
                          "n0=%d n1=%d\n",me,
-                         DDD_InfoGlobalId(PARHDR(NBNODE(
-                                                   LINK0(&(theObject->ed))))),
-                         DDD_InfoGlobalId(PARHDR(NBNODE(
-                                                   LINK1(&(theObject->ed))))),
-                         DDD_InfoGlobalId(PARHDR(NBNODE(
-                                                   LINK0(&(VecObject->ed))))),
-                         DDD_InfoGlobalId(PARHDR(NBNODE(
-                                                   LINK1(&(VecObject->ed))))) );
+                         GID(NBNODE(LINK0(&(theObject->ed)))),
+                         GID(NBNODE(LINK1(&(theObject->ed)))),
+                         GID(NBNODE(LINK0(&(VecObject->ed)))),
+                         GID(NBNODE(LINK1(&(VecObject->ed)))) );
                                                 #endif
           }
         }

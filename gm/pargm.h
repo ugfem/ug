@@ -50,7 +50,8 @@
 enum Priorities
 {
   PrioNone     = 0,
-  PrioGhost    = 2,
+  PrioGhost    = 1,
+  PrioVGhost   = 2,
   PrioBorder   = 3,
   PrioMaster   = 4
 };
@@ -73,10 +74,12 @@ enum Priorities
 /* define mapping from object priority to position in linked list */
 #define PRIO2LISTPART(listtype,prio) \
   ((listtype == ELEMENT_LIST) ? ((prio == PrioGhost) ? 0 :\
+                                 (prio == PrioVGhost) ? 0 :\
                                  (prio == PrioMaster) ? 1 : -1) :\
-   ((prio == PrioGhost) ? 0 : (prio == PrioBorder) ? 2 : \
-      (prio == PrioMaster) ? 2 : -1))
+   ((prio == PrioGhost) ? 0 : (prio ==PrioVGhost) ? 0 :\
+      (prio == PrioBorder) ? 2 : (prio == PrioMaster) ? 2 : -1))
 
+/* define mapping from position in linked list to object priority */
 #define LISTPART2PRIO(listtype,listpart,prios)                               \
   {                                                                        \
     INT Entry;                                                           \
@@ -84,12 +87,20 @@ enum Priorities
     Entry = 0;                                                           \
     if (listtype == ELEMENT_LIST)                                        \
     {                                                                    \
-      if (listpart == 0) prios[Entry++] = PrioGhost;              \
+      if (listpart == 0)                                               \
+      {                                                                \
+        prios[Entry++] = PrioGhost;                                  \
+        prios[Entry++] = PrioVGhost;                                 \
+      }                                                                \
       else if(listpart == 1) prios[Entry++] = PrioMaster;             \
     }                                                                    \
     else                                                                 \
     {                                                                    \
-      if (listpart == 0) prios[Entry++] = PrioGhost;              \
+      if (listpart == 0)                                               \
+      {                                                                \
+        prios[Entry++] = PrioGhost;                                  \
+        prios[Entry++] = PrioVGhost;                                 \
+      }                                                                \
       else if (listpart == 2)                                          \
       {                                                                \
         prios[Entry++] = PrioBorder;                                 \
@@ -97,6 +108,11 @@ enum Priorities
       }                                                                \
     }                                                                    \
   }
+
+/* define mapping from element priority to index in son array of father */
+#define PRIO2INDEX(prio) \
+  ((prio==PrioGhost || prio==PrioVGhost) ? 1 : \
+   (prio == PrioMaster) ? 0 : -1)
 
 /* map pointer to structure onto a pointer to its DDD_HDR */
 #define PARHDR(obj)    (&((obj)->ddd))
@@ -110,6 +126,15 @@ enum Priorities
 #define NODEPRIOS                       1
 #define VECTORPRIOS                     1
 #define VERTEXPRIOS                     1
+
+/* define mapping from object priority to position in linked list */
+#define PRIO2LISTPART(listtype,prio) 0
+
+/* define mapping from position in linked list to object priority */
+#define LISTPART2PRIO(listtype,listpart,prios) 0
+
+/* define mapping from position in linked list to object priority */
+#define PRIO2INDEX(prio)  0
 
 #endif
 
@@ -151,9 +176,9 @@ enum Priorities
 #define VID_FMTE    ID_FMTE
 #define VID_FFMTE   ID_FFMTE
 #define VID_PRTE(x) ((long)ID(x)),DDD_InfoGlobalId(PARHDRV(x)),DDD_InfoPriority(PARHDRV(x))
-#define VID_FMTX    ID_FMTX
-#define VID_FFMTX   ID_FFMTX
-#define VID_PRTX(x) x,((long)ID(x)),DDD_InfoGlobalId(PARHDRV(x)),DDD_InfoPriority(PARHDRV(x))
+#define VID_FMTX    ID_FMTX "/%d"
+#define VID_FFMTX   ID_FFMTX "/%d"
+#define VID_PRTX(x) x,((long)ID(x)),DDD_InfoGlobalId(PARHDRV(x)),DDD_InfoPriority(PARHDRV(x)),LEVEL(x)
 
 #define EID_FMT     ID_FMT
 #define EID_FFMT    ID_FFMT
@@ -161,9 +186,9 @@ enum Priorities
 #define EID_FMTE    ID_FMTE
 #define EID_FFMTE   ID_FFMTE
 #define EID_PRTE(x) ((long)ID(x)),DDD_InfoGlobalId(PARHDRE(x)),DDD_InfoPriority(PARHDRE(x))
-#define EID_FMTX    ID_FMTX
-#define EID_FFMTX   ID_FFMTX
-#define EID_PRTX(x) x,((long)ID(x)),DDD_InfoGlobalId(PARHDRE(x)),DDD_InfoPriority(PARHDRE(x))
+#define EID_FMTX    ID_FMTX "/%d"
+#define EID_FFMTX   ID_FFMTX "/%d"
+#define EID_PRTX(x) x,((long)ID(x)),DDD_InfoGlobalId(PARHDRE(x)),DDD_InfoPriority(PARHDRE(x)),TAG(x)
 
 #define VINDEX_FMT     ID_FMT
 #define VINDEX_FFMT    ID_FFMT
@@ -175,7 +200,38 @@ enum Priorities
 #define VINDEX_FFMTX   ID_FFMTX
 #define VINDEX_PRTX(x) x,((long)VINDEX(x)),DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
 
+#ifdef __TWODIM__
+#define EDID_FMT     "%08x"
+#define EDID_FFMT    EDID_FMT
+#define EDID_PRT(x)  (x)
+#define EDID_FMTE    "%08x"
+#define EDID_FFMTE   EDID_FMTE
+#define EDID_PRTE(x) (x)
+#define EDID_FMTX    "%08x"
+#define EDID_FFMTX   EDID_FMTX
+#define EDID_PRTX(x) (x)
+#endif
+
+#ifdef __THREEDIM__
+#define EDID_FMT     "%08x"
+#define EDID_FFMT    EDID_FMT
+#define EDID_PRT(x)  DDD_InfoGlobalId(PARHDR(x))
+#define EDID_FMTE    "%08x/%d"
+#define EDID_FFMTE   EDID_FMTE
+#define EDID_PRTE(x) DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
+#define EDID_FMTX    "%x/%08x/%d"
+#define EDID_FFMTX   EDID_FMTX
+#define EDID_PRTX(x) x,DDD_InfoGlobalId(PARHDR(x)),DDD_InfoPriority(PARHDR(x))
+#endif
+
+
 #define PFMT            "%3d:"
+
+/* PAR/ENDPAR parallel preprocessor statements   */
+/* to select code only valid for ModelP          */
+#define PAR(x)          x
+#define ENDPAR
+
 #else
 
 #define ID_FMT      "%ld"
@@ -218,7 +274,31 @@ enum Priorities
 #define VINDEX_FFMTX   ID_FFMTX
 #define VINDEX_PRTX(x) VINDEX_PRT(x)
 
+#define EDID_FMT     "%08x"
+#define EDID_FFMT    EDID_FMT
+#define EDID_PRT(x)  (x)
+#define EDID_FMTE    "%08x"
+#define EDID_FFMTE   EDID_FMTE
+#define EDID_PRTE(x) (x)
+#define EDID_FMTX    "%08x"
+#define EDID_FFMTX   EDID_FMTX
+#define EDID_PRTX(x) (x)
+
 #define PFMT            "%1d:"
+#define GIDFMT          "%1d"
+
+/* dummies for global id */
+#define EGID(e)     ID(e)
+#define GID(e)      ((OBJT(e)==VEOBJ) ? VINDEX((VECTOR *)e) : ID(e))
+#define VGID(e)     ID(e)
+
+/* PAR/ENDPAR parallel preprocessor statements   */
+/* for serial case expanded to code x is ignored */
+#define PAR(x)
+#define ENDPAR
+
+#define GetAllSons(e,s)         GetSons(e,s)
+
 #endif
 
 
@@ -230,9 +310,14 @@ enum Priorities
 
 #ifdef ModelP
 /* DDD Interfaces */
-extern DDD_IF ElementIF, ElementSymmIF;
-extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF;
-extern DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF;
+extern DDD_IF ElementIF, ElementSymmIF, ElementVIF, ElementSymmVIF,
+              ElementVHIF, ElementSymmVHIF;
+extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF;
+extern DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF,
+              VectorVIF, VectorVAllIF;
+#ifdef __THREEDIM__
+extern DDD_IF EdgeIF, BorderEdgeSymmIF;
+#endif
 #endif
 
 

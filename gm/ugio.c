@@ -1072,7 +1072,6 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   }
 
   /* insert elements */
-  SETNSONS(theElement,theRule->nsons);
   for (i=0; i<theRule->nsons; i++)
   {
     SonData = theRule->sons+i;
@@ -1091,12 +1090,6 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     SETECLASS(theSonElem[i],ref->refclass);
     SETSUBDOMAIN(theSonElem[i],SUBDOMAIN(theElement));
   }
-#ifdef __TWODIM__
-  for (i=0; i<theRule->nsons; i++) SET_SON(theElement,i,theSonElem[i]);
-#endif
-#ifdef __THREEDIM__
-  SET_SON(theElement,0,theSonElem[0]);
-#endif
 
   /* set neighbor relation between sons */
   for (i=0; i<theRule->nsons; i++)

@@ -42,7 +42,7 @@ UNLINK(OTYPE)
 		INT listpart1	= listpart;
 		OTYPE *Object1	= NULL;
 
-		IFDEBUG(gm,1) 
+		IFDEBUG(gm,2) 
 			printf("%d: GRID_UNLINK_" STR(OTYPE) "():" STR(OTYPE) 
 				" has listpart=%d for prio=%d\n",me,listpart,Prio);
 			fflush(stdout);
@@ -56,7 +56,7 @@ UNLINK(OTYPE)
 			ASSERT(0);
 		}
 
-		IFDEBUG(gm,2)
+		IFDEBUG(gm,4)
 		{
 			INT n = 0;
 			printf(PFMT " GRID_UNLINK_" STR(OTYPE)  "_LIST before is:\n",me);
@@ -170,7 +170,7 @@ UNLINK(OTYPE)
 	CAT(COUNT,OTYPE(Grid))--;
 	ASSERT(CAT(COUNT,OTYPE(Grid))>=0);
 
-	IFDEBUG(gm,2)
+	IFDEBUG(gm,4)
 	/* debug loop in list */
 	{
 		INT n = 0;
@@ -247,7 +247,7 @@ LINK(OTYPE)
 		ASSERT(Object != NULL);
 		ASSERT(Prio >= 0);
 
-		IFDEBUG(gm,1) 
+		IFDEBUG(gm,2) 
 			printf("%d: GRID_LINK_" STR(OTYPE) "():" STR(OTYPE) 
 				" has listpart=%d for prio=%d obj=%x\n",me,listpart,Prio,Object);
 			fflush(stdout);
@@ -354,7 +354,7 @@ LINK(OTYPE)
 	/* increment counter */
 	CAT(COUNT,OTYPE(Grid))++;
 
-	IFDEBUG(gm,2)
+	IFDEBUG(gm,4)
 	/* debug loop in list */
 	{
 		INT n = 0;
@@ -415,6 +415,159 @@ LINK(OTYPE)
 #endif
 
 #ifdef ModelP
+LINKX(OTYPE)
+{
+	INT listpart		= PRIO2LISTPART(CAT(OTYPE,_LIST),Prio);
+	INT listpartprev	= listpart;
+	INT listpartnext	= listpart;
+	OTYPE *Object1		= NULL;
+
+	ASSERT(Grid != NULL);
+	ASSERT(Object != NULL);
+	ASSERT(Prio >= 0);
+
+	if (After == NULL)
+	{
+		IFDEBUG(gm,2)
+		printf(PFMT " GRID_LINKX_" STR(OTYPE) "():" STR(OTYPE) 
+			" calling GRID_LINK_" STR(OTYPE) "(): Object=%x After=%x \n",me,Object,After);
+		ENDDEBUG
+
+		CAT(GRID_LINK_,OTYPE) (Grid,Object,Prio);
+		return;
+	}
+
+	#ifdef Debug
+	/* this conistency is not true since elements have already their new 
+	   priorities, but the handlers for them must not have been called 
+	   at this point */
+	if (0)
+	{
+		INT listpartafter;	
+
+		/* After object must be in same list as Object */
+		listpartafter = PRIO2LISTPART(CAT(OTYPE,_LIST),DDD_InfoPriority(HDR(OTYPE)(After)));
+		ASSERT(listpart == listpartafter);
+	}
+	#endif
+
+	IFDEBUG(gm,2) 
+		printf("%d: GRID_LINKX_" STR(OTYPE) "():" STR(OTYPE) 
+			" has listpart=%d for prio=%d obj=%x\n",me,listpart,Prio,Object);
+		fflush(stdout);
+	ENDDEBUG 
+
+	#ifdef Debug
+	if (listpart<0 || listpart>LASTPART_OF_LIST(OTYPE))
+	{
+		printf("%d: GRID_LINKX_" STR(OTYPE) "(): ERROR " STR(OTYPE) 
+			" has no valid listpart=%d for prio=%d\n",me,listpart,Prio);
+		fflush(stdout);
+		ASSERT(0);
+	}
+	#endif
+
+	SUCC(Object) = SUCC(After);
+	if (SUCC(Object) != NULL)
+	{
+		if (PRED(SUCC(Object)) == After)
+			PRED(SUCC(Object)) = Object;
+	}
+	SUCC(After)  = Object;
+	PRED(Object) = After;
+
+	if (After == CAT(LISTPART_LAST,OTYPE(Grid,listpart)))
+	{
+		CAT(LISTPART_LAST,OTYPE(Grid,listpart)) = Object;
+	}
+
+	/* increment counter */
+	CAT(COUNT,OTYPE(Grid))++;
+
+	IFDEBUG(gm,4)
+	/* debug loop in list */
+	{
+		INT n = 0;
+		for (Object1 = CAT(PFIRST,OTYPE(Grid));
+			 Object1 != NULL;
+			 Object1 = SUCC(Object1))
+		{
+			n++;	
+			if (n>10000)
+			{
+				printf("%d: GRID_LINKX_" STR(OTYPE) "(): LOOPERROR " STR(OTYPE) 
+					" has listpart=%d for prio=%d\n",me,listpart,Prio);
+				fflush(stdout);
+				assert(0);
+			}
+		
+		}
+
+		/* object number error detection */
+		if (n != CAT(COUNT,OTYPE(Grid)))
+		{
+			printf("%d: GRID_LINKX_" STR(OTYPE) "(): COUNTERERROR " STR(OTYPE) 
+					" has listpart=%d for prio=%d n=%d count=%d\n",
+					me,listpart,Prio,n,CAT(COUNT,OTYPE(Grid)));
+			fflush(stdout);
+			assert(0);
+		}
+
+	}
+	ENDDEBUG
+}
+#else
+
+LINKX(OTYPE)
+{
+	INT listpart		= PRIO2LISTPART(CAT(OTYPE,_LIST),Prio);
+	INT listpartprev	= listpart;
+	INT listpartnext	= listpart;
+	OTYPE *Object1		= NULL;
+
+	ASSERT(Grid != NULL);
+	ASSERT(Object != NULL);
+	ASSERT(Prio >= 0);
+
+	if (After == NULL)
+	{
+		IFDEBUG(gm,2)
+		printf(PFMT " GRID_LINKX_" STR(OTYPE) "():" STR(OTYPE) 
+			" calling GRID_LINK_" STR(OTYPE) "(): Object=%x After=%x \n",me,Object,After);
+		ENDDEBUG
+
+		CAT(GRID_LINK_,OTYPE) (Grid,Object,Prio);
+		return;
+	}
+
+	IFDEBUG(gm,2) 
+		printf("%d: GRID_LINKX_" STR(OTYPE) "():" STR(OTYPE) 
+			" has listpart=%d for prio=%d obj=%x\n",me,listpart,Prio,Object);
+		fflush(stdout);
+	ENDDEBUG 
+
+	SUCC(Object) = SUCC(After);
+	if (SUCC(Object) != NULL)
+	{
+		if (PRED(SUCC(Object)) == After)
+			PRED(SUCC(Object)) = Object;
+	}
+	SUCC(After)  = Object;
+	PRED(Object) = After;
+
+	if (After == CAT(LAST,OTYPE(Grid)))
+	{
+		CAT(LAST,OTYPE(Grid)) = Object;
+	}
+
+	/* increment counter */
+	CAT(COUNT,OTYPE(Grid))++;
+
+}
+
+#endif
+
+#ifdef ModelP
 INIT(OTYPE)
 {
 	INT i;
@@ -461,9 +614,11 @@ CHECK(OTYPE)
 	INT   i,objs = 0;
 	OTYPE *Object;
 
-	printf (PFMT " GRID_CHECK_" STR(OTYPE) "_LIST:\n",me);
+	PRINTDEBUG(gm,2,(PFMT " GRID_CHECK_" STR(OTYPE) "_LIST:\n",me));
 
+	IFDEBUG(gm,2)	
 	CAT(PRINT_LIST_STARTS_,OTYPE)(Grid,CAT(OTYPE,PRIOS));
+	ENDDEBUG
 
 	for (Object = CAT(PFIRST,OTYPE(Grid));
 		 Object != NULL;
@@ -497,7 +652,10 @@ CHECK(OTYPE)
 			prio_error = 1;
 			for (j=0; j<MAXPRIOS; j++)
 				if (prios[j] == prio)
+				{
 					prio_error = 0;
+					break;
+				}
 
 			if (prio_error) 
 			{
@@ -529,7 +687,8 @@ CHECK(OTYPE)
 						}
 				}
 
-				printf(PFMT "  listpart=%d prio=%d has nobjs=%d\n",me,i,prio,objs);
+				PRINTDEBUG(gm,2,(PFMT "  listpart=%d prio=%d has nobjs=%d\n",
+					me,i,prio,objs));
 			}
 		}
 	}

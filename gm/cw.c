@@ -136,6 +136,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {2,ONEDGE_CE,           VERTEX_CW,      ONEDGE_SHIFT,           ONEDGE_LEN              },
   {2,ONSIDE_CE,           VERTEX_CW,      ONSIDE_SHIFT,           ONSIDE_LEN              },
   {2,ONNBSIDE_CE,         VERTEX_CW,      ONNBSIDE_SHIFT,         ONNBSIDE_LEN    },
+  {2,NOOFNODE_CE,         VERTEX_CW,      NOOFNODE_SHIFT,         NOOFNODE_LEN    },
 
   {2,NODE_GEN,            NODE_CW,        GENERAL_SHIFT,          GENERAL_LEN             },
   {2,CLASS_CE,            NODE_CW,        CLASS_SHIFT,            CLASS_LEN               },
@@ -192,8 +193,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {0,0,0,0,0},
   {0,0,0,0,0},
   {0,0,0,0,0},
-  {0,0,0,0,0},
-}; /* last entry used: 78 for BVLEVEL_CE */
+}; /* last entry used: 79 for NOOFNODE_CE */
 
 /****************************************************************************/
 /*                                                                          */
