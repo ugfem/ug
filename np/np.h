@@ -345,7 +345,7 @@ INT InstallInterpolationMatrix  (GRID *FineGrid, const MATDATA_DESC *Mat);
 
 INT ScaledMGRestrict                       (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp);
 INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOUBLE cut);
-INT DiagonalScaleSystem                    (GRID *FineGrid, const MATDATA_DESC *Mat, const VECDATA_DESC *rhs);
+INT DiagonalScaleSystem                    (GRID *FineGrid, const MATDATA_DESC *Mat, const MATDATA_DESC *ConsMat, const VECDATA_DESC *rhs);
 
 /* miscellaneous */
 INT l_matflset (GRID *g, INT f);
