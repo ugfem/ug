@@ -140,6 +140,16 @@ INT InitUg (int *argcp, char ***argvp)
   }
     #endif
 
+  /* create struct for configuration parameters */
+  if (MakeStruct(":conf"))
+    return(__LINE__);
+  /* set variable for parallel modus */
+  if (SetStringValue("conf:parallel",0.0))
+    return(__LINE__);
+        #ifdef ModelP
+  if (SetStringValue("conf:parallel",1.0))
+    return(__LINE__);
+    #endif
 
   /* init the devices module */
   if ((err=InitDevices(argcp,*argvp))!=0)
@@ -150,8 +160,6 @@ INT InitUg (int *argcp, char ***argvp)
 
     return (1);
   }
-
-
 
         #if (defined Debug && defined __MWCW__)
   if ((GetDefaultValue(DEFAULTSFILENAME,UGDEBUGRFILE,buffer)==0)
