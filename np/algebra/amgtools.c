@@ -1284,7 +1284,7 @@ INT CoarsenVanek(GRID *theGrid)
 
 INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
-  INT icomp,mcomp,ncomp,i,j,n;
+  INT icomp,mcomp,ncomp,i,j,n,nmax;
   DOUBLE s,t,sum,factor;
   GRID *newGrid;
   VECTOR *vect,*dest,*newVect;
@@ -1299,7 +1299,8 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
     }
 
   newGrid=theGrid->coarser;
-  PRINTDEBUG(np,1,("%d:Ip\n",me));
+  nmax = 1 + NVEC(theGrid) / NVEC(newGrid);
+  PRINTDEBUG(np,1,("%d:Ip nmax %d\n",me,nmax));
   for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
     if (VCCOARSE(vect) == 0) {
       for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat))
@@ -1326,11 +1327,13 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
             }
       }
       else
-        for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat))
+        for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
           if (VCCOARSE(MDEST(mat))==1) {
             SETMUSED(mat,1);
             n++;
           }
+          if (n >= nmax) break;
+        }
       PRINTDEBUG(np,1,("%d:%d ->",VINDEX(vect),n));
       if (n == 0) {
         PrintErrorMessage('E',"IpAverage",
