@@ -113,10 +113,10 @@ static void M_BElementXferBndS (BNDS **bnds, int n, int proc, int prio)
       size0 = M_BNDS_SIZE(bnds[i]);
       size += CEIL(size0) + CEIL(sizeof(INT));
 
-      PRINTDEBUG(dom,1,("BElementXferBndS(): Xfer  me %x "
+      PRINTDEBUG(dom,2,("BElementXferBndS(): Xfer  me %x "
                         "%d pid %d n %d size %d\n",
                         me,bnds[i],BND_PATCH_ID(bnds[i]),
-                        BND_N(bnds[i]),BND_SIZE(bnds[i])));
+                        (int)(((M_BNDS *)(bnds[i]))->n),size0));
 
     }
 
@@ -130,14 +130,14 @@ static void M_BElementGatherBndS (BNDS **bnds, int n, int cnt, char *data)
   for (i=0; i<n; i++)
     if (bnds[i] != NULL)
     {
+      size = M_BNDS_SIZE(bnds[i]);
 
-      PRINTDEBUG(dom,1,("BElementGatherBndS(): %d  "
+      PRINTDEBUG(dom,2,("BElementGatherBndS(): %d  "
                         "me %d %x pid %d n %d size %d\n",i,
                         me,bnds[i],BND_PATCH_ID(bnds[i]),
-                        BND_N(bnds[i]),BND_SIZE(bnds[i])));
+                        (int)(((M_BNDS *)(bnds[i]))->n),size));
 
 
-      size = M_BNDS_SIZE(bnds[i]);
       memcpy(data,&i,sizeof(INT));
       data += CEIL(sizeof(INT));
       memcpy(data,bnds[i],size);
@@ -178,7 +178,7 @@ static void M_BVertexXferBndP (BNDP *bndp, int proc, int prio)
 
   size = sizeof(M_BNDP);
 
-  PRINTDEBUG(dom,1,("BVertexXferBndP():  me %x %d pid %d n %d size %d\n",
+  PRINTDEBUG(dom,2,("BVertexXferBndP():  me %x %d pid %d n %d size %d\n",
                     me,bndp,BND_PATCH_ID(bndp),BND_N(bndp),BND_SIZE(bndp)));
 
   DDD_XferAddData(size,DDD_DOMAIN_DATA);
@@ -186,7 +186,7 @@ static void M_BVertexXferBndP (BNDP *bndp, int proc, int prio)
 
 static void M_BVertexGatherBndP (BNDP *bndp, int cnt, char *data)
 {
-  PRINTDEBUG(dom,1,("BVertexGatherBnd():  me %d pid %d "
+  PRINTDEBUG(dom,2,("BVertexGatherBnd():  me %d pid %d "
                     "n %d size %d cnt %d\n",
                     me,BND_PATCH_ID(bndp),
                     BND_N(bndp),BND_SIZE(bndp),cnt));
@@ -202,7 +202,7 @@ static void M_BVertexScatterBndP (BNDP **bndp, int cnt, char *data)
   {
     *bndp = (BNDP *) memmgr_AllocOMEM((size_t)cnt,TypeBndP,0,0);
     memcpy(*bndp,data,cnt);
-    PRINTDEBUG(dom,1,("BVertexScatterBndP():  me %d pid "
+    PRINTDEBUG(dom,2,("BVertexScatterBndP():  me %d pid "
                       "%d n %d size %d cnt %d\n",
                       me,BND_PATCH_ID(*bndp),
                       BND_N(*bndp),BND_SIZE(*bndp),cnt));

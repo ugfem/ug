@@ -184,7 +184,6 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define M_BNDS_NSIZE(n)         (((n)-1)*sizeof(M_BNDP)+sizeof(M_BNDS))
 #define M_BNDS_SIZE(p)          M_BNDS_NSIZE(((M_BNDS *)(p))->n)
 
-
 #define IF_MARC(p) \
   if (PATCH_TYPE(currBVP->patches[BND_PATCH_ID(p)]) >= MARC_0_PATCH_TYPE)
 
@@ -482,7 +481,7 @@ struct marc_bnds {
 
   INT patch_id;                     /* associated patch                     */
   INT n;                                /* number of corners                    */
-  struct marc_bndp *p[1];               /* corners                              */
+  struct marc_bndp p[1];                /* corners                              */
 };
 
 /*----------- typedef for structs ------------------------------------------*/
