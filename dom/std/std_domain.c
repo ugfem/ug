@@ -40,6 +40,7 @@
 #include "compiler.h"
 #include "heaps.h"
 #include "ugenv.h"
+#include "bio.h"
 #include "misc.h"
 #include "defaults.h"
 #include "general.h"
@@ -3240,18 +3241,24 @@ BVP *BVP_Load (char *name, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-INT BNDP_SaveBndP (BNDP *BndP, FILE *stream)
+INT BNDP_SaveBndP (BNDP *BndP)
 {
   BND_PS *bp;
   INT i,j;
+  int iList[2];
+  double dList[Dim-1];
 
-  if (fprintf(stream,"%d %d ",(int)BND_PATCH_ID(BndP),(int)BND_N(BndP)) < 0)
-    return (1);
+  iList[0] = BND_PATCH_ID(BndP);
+  iList[1] = BND_N(BndP);
+  if (Bio_Write_mint(2,iList)) return (1);
+
   bp = (BND_PS *)BndP;
   for (i=0; i<BND_N(BndP); i++)
+  {
     for (j=0; j<DIM-1; j++)
-      if (fprintf(stream,"%lf ",(double)bp->local[i][j])<0)
-        return (1);
+      dList[j] = bp->local[i][j];
+    if (Bio_Write_mdouble(DIM-1,dList)) return (1);
+  }
 
   return(0);
 }
@@ -3278,78 +3285,27 @@ INT BNDP_SaveBndP (BNDP *BndP, FILE *stream)
    D*/
 /****************************************************************************/
 
-BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap, FILE *stream)
+BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 {
   BND_PS *bp;
   int i,j,pid,n;
   double local;
+  int iList[2];
+  double dList[DIM-1]
 
-  if (fscanf(stream,"%d %d ",&pid,&n) != 2)
-    return (NULL);
-  bp = (BND_PS *)GetFreelistMemory(Heap,(n-1)*sizeof(COORD_BND_VECTOR)
-                                   + sizeof(BND_PS));
+  if (Bio_Read_mint(2,iList)) return (1);
+  pid = iList[0]; n = iList[1];
+  bp = (BND_PS *)GetFreelistMemory(Heap,(n-1)*sizeof(COORD_BND_VECTOR) + sizeof(BND_PS));
   bp->n = n;
   bp->patch_id = pid;
   for (i=0; i<n; i++)
-    for (j=0; j<DIM-1; j++) {
-      if (fscanf(stream,"%lf ",&local) != 1)
-        return (NULL);
-      bp->local[i][j] = local;
-    }
+  {
+    if (Bio_Read_mdouble(DiIM-1,dList)) return (1);
+    for (j=0; j<DIM-1; j++)
+      bp->local[i][j] = dList[j];
+  }
 
   return((BNDP *)bp);
-}
-
-/****************************************************************************/
-/*D
-   BNDS_SaveBndS - save BNDS
-
-   SYNOPSIS:
-   INT BNDS_SaveBndS (BNDS *theBndS, FILE *stream);
-
-   PARAMETERS:
-   .  theBndS - BNDS struct
-   .  stream - file
-
-   DESCRIPTION:
-   This function saves a BNDS
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
-INT BNDS_SaveBndS (BNDS *theBndS, FILE *stream)
-{
-  return(1);
-}
-
-/****************************************************************************/
-/*D
-   BNDS_LoadBndS - load BNDS
-
-   SYNOPSIS:
-   BNDS *BNDS_LoadBndS (HEAP *Heap, char *data, INT *data_size);
-
-   PARAMETERS:
-   .  Heap - heap
-   .  stream - file
-
-   DESCRIPTION:
-   This function loads a BNDS
-
-   RETURN VALUE:
-   BNDS *
-   .n   ptr to BNDS.
-   .n   NULL if error.
-   D*/
-/****************************************************************************/
-
-BNDS *BNDS_LoadBndS (HEAP *Heap, FILE *stream)
-{
-  return(NULL);
 }
 
 /****************************************************************************/
