@@ -1031,25 +1031,19 @@ INT CreateFormatCmd (INT argc, char **argv)
   newFormat->nodedata = ndata;
 
   /* move tempaltes into the new directory */
-  if ((dir=(ENVDIR*)ChangeEnvDir("/newformat")) == NULL)
+  dir = ChangeEnvDir("/newformat");
+  if (dir == NULL)
     return (1);
   for (item=ENVITEM_DOWN(dir); item!=NULL; item=NEXT_ENVITEM(item))
     if (MoveEnvItem (item,dir,(ENVDIR *)newFormat))     {
       PrintErrorMessage('E',"newformat","failed moving template");
       return (4);
     }
-  if (ChangeEnvDir("/")==NULL)
-  {
-    PrintErrorMessage('F',"InitFormats","could not changedir to root");
-    return(__LINE__);
-  }
-  if (RemoveEnvDir("/newformat"))
+  if (RemoveEnvDir((ENVITEM *)dir))
     PrintErrorMessage('W',"InitFormats","could not remove newformat dir");
 
   return (0);
 }
-
-
 
 /****************************************************************************/
 /*                                                                          */
