@@ -141,7 +141,7 @@ static INT StandardRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
 
   /* reset coarser defect at positions where a new defect is restricted */
   dt = VD_DATA_TYPES(to);
-  for (v=FIRSTVECTOR(CoarseGrid); v!= NULL; v=SUCCVC(v))
+  for (v=PFIRSTVECTOR(CoarseGrid); v!= NULL; v=SUCCVC(v))
     if ((VOTYPE(v)==NODEVEC) && V_IN_DATATYPE(v,dt))
       if (VNCLASS(v)>=NEWDEF_CLASS)
         for (i=0; i<ncomp; i++)
@@ -614,7 +614,7 @@ INT StandardProject (GRID *CoarseGrid, const VECDATA_DESC *to,
     return (NUM_BLOCK_TOO_LARGE);
 
   dt = VD_DATA_TYPES(to);
-  for (v=FIRSTVECTOR(CoarseGrid); v!= NULL; v=SUCCVC(v))
+  for (v=PFIRSTVECTOR(CoarseGrid); v!= NULL; v=SUCCVC(v))
     if (V_IN_DATATYPE(v,dt))
     {
       if (VOTYPE(v) == NODEVEC)
@@ -689,7 +689,7 @@ INT ClearIMatrix (GRID *g, VECDATA_DESC *theVD)
   if (VD_IS_SCALAR(theVD)) {
     register SHORT mask = VD_SCALTYPEMASK(theVD);
 
-    for (v = FIRSTVECTOR(g); v != NULL; v = SUCCVC(v)) {
+    for (v = PFIRSTVECTOR(g); v != NULL; v = SUCCVC(v)) {
       VINDEX(v) = 0;
       if (VDATATYPE(v)&mask) {
         for (m = VISTART(v); m != NULL; m = NEXT(m))
@@ -698,7 +698,7 @@ INT ClearIMatrix (GRID *g, VECDATA_DESC *theVD)
     }
     return (NUM_OK);
   }
-  for (v = FIRSTVECTOR(g); v != NULL; v = SUCCVC(v)) {
+  for (v = PFIRSTVECTOR(g); v != NULL; v = SUCCVC(v)) {
     INT j,rcomp;
     DOUBLE *mptr;
 
@@ -746,7 +746,7 @@ INT ScaleIMatrix (GRID *g, VECDATA_DESC *theVD)
   i = 0;
   if (VD_IS_SCALAR(theVD))
   {
-    for (v = FIRSTVECTOR(g); v != NULL; v = SUCCVC(v))
+    for (v = PFIRSTVECTOR(g); v != NULL; v = SUCCVC(v))
     {
       if (VINDEX(v) > 1)
       {
@@ -759,7 +759,7 @@ INT ScaleIMatrix (GRID *g, VECDATA_DESC *theVD)
     return (NUM_OK);
   }
 
-  for (v = FIRSTVECTOR(g); v != NULL; v = SUCCVC(v))
+  for (v = PFIRSTVECTOR(g); v != NULL; v = SUCCVC(v))
   {
     if (VINDEX(v) > 1)
     {
@@ -802,7 +802,7 @@ INT ClearIVector (GRID *g)
 {
   VECTOR *v;
 
-  for (v = FIRSTVECTOR(g); v != NULL; v = SUCCVC(v))
+  for (v = PFIRSTVECTOR(g); v != NULL; v = SUCCVC(v))
     VINDEX(v) = 0;
 
   return (NUM_OK);
@@ -840,7 +840,7 @@ INT ScaleIVector (GRID *g, VECDATA_DESC *theVD)
   if (VD_IS_SCALAR(theVD))
   {
     comp = VD_SCALCMP(theVD);
-    for (v = FIRSTVECTOR(g); v != NULL; v = SUCCVC(v))
+    for (v = PFIRSTVECTOR(g); v != NULL; v = SUCCVC(v))
     {
       if (VINDEX(v) > 1)
         VVALUE(v,comp) *= (1.0 / VINDEX(v));
@@ -849,7 +849,7 @@ INT ScaleIVector (GRID *g, VECDATA_DESC *theVD)
     return (NUM_OK);
   }
 
-  for (v = FIRSTVECTOR(g); v != NULL; v = SUCCVC(v))
+  for (v = PFIRSTVECTOR(g); v != NULL; v = SUCCVC(v))
   {
     if (VINDEX(v) > 1)
     {
@@ -1130,7 +1130,7 @@ INT RestrictByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
     xmask = VD_SCALTYPEMASK(to);
     ymask = VD_SCALTYPEMASK(from);
 
-    for (w=FIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
+    for (w=PFIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
       if ( (VDATATYPE(w)&xmask) && (VNCLASS(w)>=NEWDEF_CLASS) )
         VVALUE(w,xc) = 0.0;
 
@@ -1143,14 +1143,14 @@ INT RestrictByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
             VVALUE(w,xc) += MVALUE(m,0) * VVALUE(v,yc);
         }
     if (damp[0] != 1.0)
-      for (w=FIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
+      for (w=PFIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
         if ( (VDATATYPE(w)&xmask) && (VNCLASS(w)>=NEWDEF_CLASS) )
           VVALUE(w,xc) *= damp[0];
 
     return (NUM_OK);
   }
 
-  for (w=FIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
+  for (w=PFIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
     if (VNCLASS(w)>=NEWDEF_CLASS)
     {
       wtype = VTYPE(w);
@@ -1198,7 +1198,7 @@ INT RestrictByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
   if (CheckDamp(VD_NCOMP(to),damp))
   {
     offset = VD_OFFSETPTR(to);
-    for (w=FIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
+    for (w=PFIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
       if (VNCLASS(w)>=NEWDEF_CLASS)
       {
         wtype = VTYPE(w);
@@ -1232,7 +1232,7 @@ INT RestrictByMatrix_s (GRID *FineGrid, const VECDATA_DESC *to,
     xmask = VD_SCALTYPEMASK(to);
     ymask = VD_SCALTYPEMASK(from);
 
-    for (w=FIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
+    for (w=PFIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
       if ( (VDATATYPE(w)&xmask) && (VNCLASS(w)>=NEWDEF_CLASS) )
         VVALUE(w,xc) = 0.0;
 
@@ -1245,14 +1245,14 @@ INT RestrictByMatrix_s (GRID *FineGrid, const VECDATA_DESC *to,
             VVALUE(w,xc) += MVALUE(m,1) * VVALUE(v,yc);
         }
     if (damp[0] != 1.0)
-      for (w=FIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
+      for (w=PFIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
         if ( (VDATATYPE(w)&xmask) && (VNCLASS(w)>=NEWDEF_CLASS) )
           VVALUE(w,xc) *= damp[0];
 
     return (NUM_OK);
   }
 
-  for (w=FIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
+  for (w=PFIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
     if (VNCLASS(w)>=NEWDEF_CLASS)
     {
       wtype = VTYPE(w);
@@ -1300,7 +1300,7 @@ INT RestrictByMatrix_s (GRID *FineGrid, const VECDATA_DESC *to,
   if (CheckDamp(VD_NCOMP(to),damp))
   {
     offset = VD_OFFSETPTR(to);
-    for (w=FIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
+    for (w=PFIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
       if (VNCLASS(w)>=NEWDEF_CLASS)
       {
         wtype = VTYPE(w);
@@ -1874,7 +1874,7 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
         }
       }
     }
-    for (v=FIRSTVECTOR(CoarseGrid); v!=NULL; v=SUCCVC(v)) {
+    for (v=PFIRSTVECTOR(CoarseGrid); v!=NULL; v=SUCCVC(v)) {
       vtype = VTYPE(v);
       ivindex = VINDEX(v);
       for (cm=VSTART(v); cm!=NULL; cm=MNEXT(cm)) {
@@ -1973,7 +1973,7 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
         }
       }
     }
-    for (v=FIRSTVECTOR(CoarseGrid); v!=NULL; v=SUCCVC(v)) {
+    for (v=PFIRSTVECTOR(CoarseGrid); v!=NULL; v=SUCCVC(v)) {
       vtype = VTYPE(v);
       ivindex = VINDEX(v);
       for (cm=VSTART(v); cm!=NULL; cm=MNEXT(cm)) {
@@ -2047,7 +2047,7 @@ static INT ScaledMGRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
 
   /* reset coarser defect at positions where a new defect is restricted */
   dt = VD_DATA_TYPES(to);
-  for (v=FIRSTVECTOR(CoarseGrid); v!= NULL; v=SUCCVC(v))
+  for (v=PFIRSTVECTOR(CoarseGrid); v!= NULL; v=SUCCVC(v))
     if ((VOTYPE(v)==NODEVEC) && V_IN_DATATYPE(v,dt))
       if (VNCLASS(v)>=NEWDEF_CLASS)
         for (i=0; i<ncomp; i++)
