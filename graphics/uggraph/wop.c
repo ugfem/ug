@@ -520,6 +520,7 @@ static INT	EE3D_Elem2Plot[10];	/* 1 if element has to be plotted			*/
 static long EE3D_NoColor[10];	/* 1 if no color (background color) used	*/
 static long EE3D_Color[10];		/* colors used								*/
 static INT	EE3D_MaxLevel;		/* level considered to be the top level 	*/
+static INT 	EE3D_PlotSelection;	/* 1 to plot only selection */
 static DOUBLE EE3D_ShrinkFactor;/* shrink factor, 1.0 if normal plot		*/
 static INT	EE3D_Property;		/* 1 if plot property						*/
 static INT	EE3D_NProperty;		/* nb of properties							*/
@@ -2417,20 +2418,34 @@ static INT MarkElements3D (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	fromLevel = MAX(fromLevel,0);
 	toLevel = MIN(toLevel,CURRENTLEVEL(theMG));
 	
-	if (EE3D_Elem2Plot[PLOT_ALL])
-	{
-		for (i=fromLevel; i<toLevel; i++)
-			for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
-				if (!IS_REFINED(theElement) && EE3D_Elem2Plot[ECLASS(theElement)])
-					SETUSED(theElement,1);
-				else
-					SETUSED(theElement,0);
-	}
-	else
+	if (EE3D_PlotSelection && SELECTIONMODE(theMG)==elementSelection)
 	{
 		for (i=fromLevel; i<toLevel; i++)
 			for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 				SETUSED(theElement,0);
+		for (i=0; i<SELECTIONSIZE(theMG); i++)
+		{
+			theElement = (ELEMENT *)SELECTIONOBJECT(theMG,i);
+			SETUSED(theElement,1);
+		}
+	}
+	else
+	{
+		if (EE3D_Elem2Plot[PLOT_ALL])
+		{
+			for (i=fromLevel; i<toLevel; i++)
+				for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
+					if (!IS_REFINED(theElement) && EE3D_Elem2Plot[ECLASS(theElement)])
+						SETUSED(theElement,1);
+					else
+						SETUSED(theElement,0);
+		}
+		else
+		{
+			for (i=fromLevel; i<toLevel; i++)
+				for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
+					SETUSED(theElement,0);
+		}
 	}
 	
 	for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,toLevel)); theElement!=NULL; theElement=SUCCE(theElement))
@@ -16122,6 +16137,7 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 	
 	/* mark surface elements */
 	EE3D_MaxLevel = CURRENTLEVEL(theMG);
+	EE3D_PlotSelection = theGpo->PlotSelection;
 	if (MarkElements3D(theMG,0,CURRENTLEVEL(theMG))) return (1);
 	
 	EE3D_Property = 0;

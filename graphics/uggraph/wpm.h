@@ -394,6 +394,7 @@ struct GridPlotObj3D {
   INT OType[MAXVOBJECTS];                                       /* which object types if Vectors set			*/
   INT ElemColored;                                                      /* YES or NO									*/
   INT WhichElem;                                                        /* see above									*/
+  INT PlotSelection;                                                            /* see above									*/
 };
 
 union PlotObj {

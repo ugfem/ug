@@ -4271,6 +4271,7 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
       theGpo->OType[i]                = VEC_DEF_IN_OBJ_OF_MG(theMG,i);
     theGpo->ElemColored             = NO;
     theGpo->WhichElem                       = PO_ALL;
+    theGpo->PlotSelection           = 0;
   }
 
   /* set shrink option */
@@ -4308,6 +4309,14 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
       break;
     }
   if (theGpo->ElemColored<0 || theGpo->ElemColored>2) return (NOT_ACTIVE);
+
+  /* selection option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='S')
+    {
+      theGpo->PlotSelection = 1;
+      break;
+    }
 
   /* node markers and indices */
   for (i=1; i<argc; i++)
