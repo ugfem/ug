@@ -201,11 +201,35 @@ int FAMGSolveSystem(FAMG_Interface *interface)
     return status;
 }
 
+int FAMG_RestrictDefect( int fine_level )
+{
+	// map ug-amg level (-1,-2,-3,...) to famg gridlevel (0,1,2,3,...)
+	FAMGGrid &fg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(-1-fine_level);
+	FAMGGrid &cg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(-fine_level);
+	
+	fg.Restriction(&cg);
+	
+	return 0;
+}
+
+
+int FAMG_ProlongCorrection( int fine_level )
+{
+	// map ug-amg level (-1,-2,-3,...) to famg gridlevel (0,1,2,3,...)
+	FAMGGrid &fg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(-1-fine_level);
+	FAMGGrid &cg = *FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(-fine_level);
+	
+	fg.Prolongation(&cg);
+	
+	return 0;
+}
+
+
 int FAMG_GetN(int level)
 {
     int n;
 
-    n = famgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetN();
+    n = FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(level)->GetN();
     return n;
 }
 
@@ -213,7 +237,7 @@ int FAMG_GetNF(int level)
 {
     int nf;
 
-    nf = famgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetNF();
+    nf = FAMG_GetSystem()->GetMultiGrid(0)->GetGrid(level)->GetNF();
     return nf;
 }
 
