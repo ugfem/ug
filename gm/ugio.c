@@ -2158,6 +2158,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   INT i,j,k,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],
   **Element_corner_ids_uniq_subdom,*Element_corner_ids,max,**Element_nb_uniq_subdom,
   *Element_nb_ids,id,level;
+  INT *Element_SideOnBnd_uniq_subdom,*ESoBusdp[2];
   char buf[64],itype[10];
   int *vidlist;
   INT MarkKey;
@@ -2445,7 +2446,21 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
   /* nb of corners of elements */
   Element_corner_uniq_subdom  = (INT*)GetTmpMem(theHeap,cg_general.nElement*sizeof(INT),MarkKey);
-  if (Element_corner_uniq_subdom==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for Element_corner_uniq_subdom\n",(int)cg_general.nElement*sizeof(INT)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Element_corner_uniq_subdom==NULL)
+  {
+    UserWriteF("ERROR: cannot allocate %d bytes for Element_corner_uniq_subdom\n",(int)cg_general.nElement*sizeof(INT));
+    CloseMGFile ();
+    DisposeMultiGrid(theMG);
+    return (NULL);
+  }
+  Element_SideOnBnd_uniq_subdom  = (INT*)GetTmpMem(theHeap,cg_general.nElement*sizeof(INT),MarkKey);
+  if (Element_SideOnBnd_uniq_subdom==NULL)
+  {
+    UserWriteF("ERROR: cannot allocate %d bytes for Element_SideOnBnd_uniq_subdom\n",(int)cg_general.nElement*sizeof(INT));
+    CloseMGFile ();
+    DisposeMultiGrid(theMG);
+    return (NULL);
+  }
   max = 0;
   for (i=0; i<cg_general.nElement; i++)
   {
@@ -2455,9 +2470,12 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     max = MAX(max,ge_element[cge->ge].nSide);
     if (MGIO_PARFILE) theMesh.ElementLevel[1][i] = cge->level;
     else theMesh.ElementLevel[1][i] = 0;
+    Element_SideOnBnd_uniq_subdom[i] = cge->side_on_bnd;
   }
   Ecusdp[1] = Element_corner_uniq_subdom;
   theMesh.Element_corners = Ecusdp;
+  ESoBusdp[1] = Element_SideOnBnd_uniq_subdom;
+  theMesh.ElemSideOnBnd = ESoBusdp;
 
   /* corners ids of elements */
   Element_corner_ids_uniq_subdom  = (INT**)GetTmpMem(theHeap,cg_general.nElement*sizeof(INT*),MarkKey);
@@ -2497,7 +2515,6 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   }
   Enusdp[1] = Element_nb_uniq_subdom;
   theMesh.nbElements = Enusdp;
-  theMesh.ElemSideOnBnd = NULL;
 
   /* create levels */
   for (i=1; i<mg_general.nLevel; i++)

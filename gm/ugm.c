@@ -5676,6 +5676,7 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
   NODE **NList,*Nodes[MAX_CORNERS_OF_ELEM],*ListNode;
   VERTEX **VList;
   INT i,k,n,nv,j,maxlevel,l,move,part;
+  INT ElemSideOnBnd[MAX_SIDES_OF_ELEM];
   INT MarkKey = MG_MARK_KEY(theMG);
 
   if (theMesh == NULL) return(GM_OK);
@@ -5773,7 +5774,13 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
           Nodes[l] = ListNode;
         }
       }
-      theElement = InsertElement (theGrid,n,Nodes,NULL,NULL,NULL);
+      if (theMesh->ElemSideOnBnd==NULL)
+        theElement = InsertElement (theGrid,n,Nodes,NULL,NULL,NULL);
+      else
+      {
+        for (l=0; l<SIDES_OF_REF(n); l++) ElemSideOnBnd[l] = (theMesh->ElemSideOnBnd[j][k]&(1<<l));
+        theElement = InsertElement (theGrid,n,Nodes,NULL,NULL,ElemSideOnBnd);
+      }
     }
 
   return(GM_OK);
