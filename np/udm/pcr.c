@@ -42,6 +42,7 @@
 #include "algebra.h"
 #include "evm.h"
 #include "ugstruct.h"
+#include "debug.h"
 #include "general.h"
 #include "np.h"
 
@@ -80,6 +81,8 @@
 
 /* general purpose text buffer */
 static char buffer[256];
+
+REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -210,8 +213,7 @@ INT GetStrDOUBLEinRange (const char *str, DOUBLE min, DOUBLE max, DOUBLE *value)
    WriteVEC_SCALAR - Write VEC_SCALAR on sreen and to stringvariables
 
    SYNOPSIS:
-   INT WriteVEC_SCALAR (VECDATA_DESC *theVDT, VEC_SCALAR Scalar,
-   char *structdir);
+   INT WriteVEC_SCALAR (const VECDATA_DESC *theVDT, const VEC_SCALAR Scalar, const char *structdir);
 
    PARAMETERS:
    .  theVDT - type vector descriptor
@@ -228,10 +230,24 @@ INT GetStrDOUBLEinRange (const char *str, DOUBLE min, DOUBLE max, DOUBLE *value)
    D*/
 /****************************************************************************/
 
-INT WriteVEC_SCALAR (VECDATA_DESC *theVDT, VEC_SCALAR Scalar, char *structdir)
+INT WriteVEC_SCALAR (const VECDATA_DESC *theVDT, const VEC_SCALAR Scalar, const char *structdir)
 {
-  /* TODO: repair */
+  INT i;
+  char name[2];
 
+  for (i=0; i<VD_NCOMP(theVDT); i++)
+    UserWriteF("%c: %-12.7e\n",VM_COMP_NAME(theVDT,i),Scalar[i]);
+
+  if (structdir[0]!='\0')
+  {
+    if (ChangeStructDir(structdir)==NULL) REP_ERR_RETURN (1);
+    for (i=0; i<VD_NCOMP(theVDT); i++)
+    {
+      sprintf(name,"%c",VM_COMP_NAME(theVDT,i));
+      if (SetStringValue(name,Scalar[i])) REP_ERR_RETURN (1);
+    }
+    if (ChangeStructDir(":")==NULL) REP_ERR_RETURN (1);
+  }
   return (0);
 }
 
@@ -449,7 +465,7 @@ static INT NormIdentVS_of_VS (const VEC_SCALAR in, SHORT ncmp, SHORT nid, SHORT 
   for (i=0; i<ncmp; i++)
     out[i] = in[i];
 
-  return (1);
+  return (0);
 }
 
 INT DoPCR (INT ID, VEC_SCALAR InDefect, INT PrintMode)
