@@ -78,6 +78,17 @@
   } \
   }
 
+#define NEWEL_LOOP_BEGIN(mg, e) \
+  { \
+    int _i; \
+    for (_i = 0; _i <= TOPLEVEL(mg); _i++) \
+      for (e = FIRSTELEMENT(GRID_ON_LEVEL(mg, _i)); e != NULL; e = SUCCE(e)) { \
+        if (!NEWEL(e)) continue;
+
+#define NEWEL_LOOP_END \
+  } \
+  }
+
 /****************************************************************************/
 /*                                                                          */
 /* data structures used in this source file (exported data structures are   */
@@ -480,7 +491,7 @@ static INT SaveFieldCommand(INT argc, char **argv)
   fclose(stream.file);
   return OKCODE;
 failed:
-  PrintErrorMessage('E',"savefield", "something went wrong\n");
+  PrintErrorMessage('E',"savefield", "something's gone wrong\n");
   return CMDERRORCODE;
 }
 
@@ -501,7 +512,7 @@ static void StatisticsR(MULTIGRID *mg, int *ne, double range[DIM][2])
     range[i][0] =  MAX_D;
     range[i][1] = -MAX_D;
   }
-  SURFACE_LOOP_BEGIN(mg, e)
+  NEWEL_LOOP_BEGIN(mg, e)
   n++;
   for (i = 0; i < CORNERS_OF_ELEM(e); i++) {
     v = MYVERTEX(CORNER(e, i));
@@ -510,7 +521,7 @@ static void StatisticsR(MULTIGRID *mg, int *ne, double range[DIM][2])
       range[j][1] = MAX(range[j][1], v->iv.x[j]);
     }
   }
-  SURFACE_LOOP_END
+  NEWEL_LOOP_END
   *ne = n;
 }
 
@@ -588,16 +599,28 @@ static int MakeBoxTree(MULTIGRID *mg, int no_el, INT key, BOXTREE *tree)
   array = array0 = (MY_BT_OBJECT **)GetTmpMem(heap, no_el*sizeof(void *), key);
   if (array == NULL)
     return 1;
-  SURFACE_LOOP_BEGIN(mg, e)
+  NEWEL_LOOP_BEGIN(mg, e)
   *array = (MY_BT_OBJECT *)GetTmpMem(heap, sizeof(MY_BT_OBJECT), key);
   if (*array == NULL)
     return 1;
   (*array)->e = e;
   BBoxOfElement(e, (*array)->bto.range);
   array++;
-  SURFACE_LOOP_END
+  SETNEWEL(e, 0);
+  NEWEL_LOOP_END
   BT_Init((BT_OBJECT **)array0, no_el, tree);
   return 0;
+}
+
+static void ClearNewEVector(MULTIGRID *mg, int o, int n)
+{
+  ELEMENT *e;
+  int i;
+
+  NEWEL_LOOP_BEGIN(mg, e)
+  for (i = 0; i < n; i++)
+    VVALUE(EVECTOR(e), o + i) = 0.0;
+  NEWEL_LOOP_END
 }
 
 static int ParseArgumentsR(int argc, char **argv, MULTIGRID *mg, char *fname,
@@ -608,36 +631,36 @@ static int ParseArgumentsR(int argc, char **argv, MULTIGRID *mg, char *fname,
 {
   VECDATA_DESC *vd;
   INT dummy;
-  int i;
+  int i, k;
 
   *no_ns = *no_nv = *no_es = *no_ev = 0;
   for(i=1; i<argc; i++) {
     if (strncmp(argv[i],"ns",2) == 0) {
       vd = ReadArgvVecDescX(mg, "ns", argc, argv, NO);
       if (vd == NULL) return 1;
-      dset(mg, 0, TOPLEVEL(mg), ON_SURFACE, vd, 0.0);
+      /* clear some vectors somehow... */
       ns[*no_ns] = VD_ncmp_cmpptr_of_otype(vd, NODEVEC, &dummy)[0];
       (*no_ns)++;
     }
     else if (strncmp(argv[i],"nv",2) == 0) {
       vd = ReadArgvVecDescX(mg, "nv", argc, argv, NO);
       if (vd == NULL) return 1;
-      dset(mg, 0, TOPLEVEL(mg), ON_SURFACE, vd, 0.0);
+      /* clear some vectors somehow... */
       nv[*no_nv] = VD_ncmp_cmpptr_of_otype(vd, NODEVEC, &dummy)[0];
       (*no_nv)++;
     }
     else if (strncmp(argv[i],"es",2) == 0) {
       vd = ReadArgvVecDescX(mg, "es", argc, argv, NO);
       if (vd == NULL) return 1;
-      dset(mg, 0, TOPLEVEL(mg), ON_SURFACE, vd, 0.0);
-      es[*no_es] = VD_ncmp_cmpptr_of_otype(vd, ELEMVEC, &dummy)[0];
+      es[*no_es] = k = VD_ncmp_cmpptr_of_otype(vd, ELEMVEC, &dummy)[0];
+      ClearNewEVector(mg, k, 1);
       (*no_es)++;
     }
     else if (strncmp(argv[i],"ev",2) == 0) {
       vd = ReadArgvVecDescX(mg, "ev", argc, argv, NO);
       if (vd == NULL) return 1;
-      dset(mg, 0, TOPLEVEL(mg), ON_SURFACE, vd, 0.0);
-      ev[*no_ev] = VD_ncmp_cmpptr_of_otype(vd, ELEMVEC, &dummy)[0];
+      ev[*no_ev] = k = VD_ncmp_cmpptr_of_otype(vd, ELEMVEC, &dummy)[0];
+      ClearNewEVector(mg, k, DIM);
       (*no_ev)++;
     }
   }
@@ -726,7 +749,7 @@ static void IE_Callback(BT_OBJECT *o, void *d)
   int i, j, n;
   QUADRATURE *quadrature;
 
-  const int order = 5;
+  const int order = 2;
 
   bto  = (MY_BT_OBJECT *)o;
   data = (IE_DATA *)d;
@@ -822,6 +845,7 @@ static INT LoadFieldCommand(INT argc, char **argv)
     return CMDERRORCODE;
   }
   StatisticsR(mg, &no_dest_elements, dest_bbox);
+  if (no_dest_elements == 0) return OKCODE;
   heap = mg->theHeap;
   MarkTmpMem(heap, &key);
   if (MakeBoxTree(mg, no_dest_elements, key, &tree)) {
@@ -874,7 +898,7 @@ skip:
   ReleaseTmpMem(heap, key);
   return OKCODE;
 failed:
-  PrintErrorMessage('E',"loadfield", "something went wrong\n");
+  PrintErrorMessage('E',"loadfield", "something's gone wrong\n");
   return CMDERRORCODE;
 }
 
