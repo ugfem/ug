@@ -9,7 +9,7 @@
 # include configuration and all makefile macro definitions
 include $(UGROOT)/ug.conf
 
-OBJECTS = nls.o ls.o assemble.o basics.o iter.o transfer.o error.o newton.o ts.o bdf.o ew.o amgtransfer.o freebnd.o db.o fas.o nliter.o project.o
+OBJECTS = nls.o ls.o assemble.o basics.o iter.o transfer.o error.o newton.o ts.o bdf.o ew.o amgtransfer.o freebnd.o db.o fas.o nliter.o project.o order.o
 
 $(UG_LIB) : $(OBJECTS) Makefile.procs
 	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
