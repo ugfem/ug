@@ -215,6 +215,44 @@ static void NodeVector (const ELEMENT *theElement, const DOUBLE **theCorners,
   return;
 }
 
+/**************************************************************************/
+/*D
+   RefMarks - plot funtion for refinement marks
+
+   SYNOPSIS:
+   static DOUBLE RefMarks (const ELEMENT *theElement,
+   const DOUBLE **CornersCoord, DOUBLE *LocalCoord);
+
+   PARAMETERS:
+   .  theElement - pointer to an element
+   .  CornersCoord - corner coordinates
+   .  LocalCoord - local coordinate
+
+   DESCRIPTION:
+   This function plots the marks returns by 'GetRefienmentMark'.
+
+   RETURN VALUE:
+   DOUBLE  1.0  for rule == RED
+           0.0  for rule == NO_REFINEMENT
+                  -1.0  for rule == COARSE
+   D*/
+/*************************************************************************/
+
+static DOUBLE RefMarks (const ELEMENT *theElement,
+                        const DOUBLE **CornersCoord, DOUBLE *LocalCoord)
+{
+  INT rule,side;
+
+  GetRefinementMark(theElement,&rule,(void *)&side);
+
+  switch (rule) {
+  case RED :           return( 1.0);
+  case NO_REFINEMENT : return( 0.0);
+  case COARSE :        return(-1.0);
+  }
+  return(0.0);
+}
+
 /****************************************************************************/
 /*
    InitPlotProc	- Init this file
@@ -239,10 +277,12 @@ INT InitPlotProc ()
 {
   /* install general plot procs */
   if (CreateElementValueEvalProc("nvalue",PreprocessNodeValue,
-                                 NodeValue)==NULL)
+                                 NodeValue) == NULL)
     return(1);
   if (CreateElementVectorEvalProc("nvector",PreprocessNodeVector,
-                                  NodeVector,DIM)==NULL)
+                                  NodeVector,DIM) == NULL)
+    return(1);
+  if (CreateElementValueEvalProc("refmarks",NULL,RefMarks) == NULL)
     return(1);
 
   return (0);
