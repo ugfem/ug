@@ -1876,6 +1876,9 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
 
 INT EstimateHere (ELEMENT *theElement)
 {
+        #ifdef ModelP
+  if (EGHOST(theElement)) return(0);
+        #endif
   return(LEAFELEM(theElement));
 }
 
@@ -2333,24 +2336,30 @@ static INT InitRuleManager3D (void)
   /************************************************************************/
 
   /* open file */
-  if (GetDefaultValue(DEFAULTSFILENAME,"refrulefile",buffer)==0)
-    stream = fileopen(buffer,"r");
-  else
-    stream = fileopen("RefRules.data","r");
-  if (stream==NULL)
+  if (me == master)
   {
-    UserWrite("ERROR: could not open file 'RefRules.data'\n");
-    fclose(stream);
-    return (__LINE__);
+    if (GetDefaultValue(DEFAULTSFILENAME,"refrulefile",buffer)==0)
+      stream = fileopen(buffer,"r");
+    else
+      stream = fileopen("RefRules.data","r");
+    if (stream==NULL)
+    {
+      UserWrite("ERROR: could not open file 'RefRules.data'\n");
+      fclose(stream);
+      return (__LINE__);
+    }
+
+    /* read Rules and nPatterns from file */
+    if (fscanf(stream,"%d %d\n",&nRules,&nPatterns)!=2)
+    {
+      UserWrite("ERROR: failed to read Rules and nPatterns\n");
+      fclose(stream);
+      return (__LINE__);
+    }
   }
 
-  /* read Rules and nPatterns from file */
-  if (fscanf(stream,"%d %d\n",&nRules,&nPatterns)!=2)
-  {
-    UserWrite("ERROR: failed to read Rules and nPatterns\n");
-    fclose(stream);
-    return (__LINE__);
-  }
+  Broadcast(&nRules,sizeof(nRules));
+  Broadcast(&nPatterns,sizeof(nPatterns));
 
   /* get storage for Rules */
   Rules = (REFRULE *) malloc(nRules*sizeof(REFRULE));
@@ -2371,24 +2380,30 @@ static INT InitRuleManager3D (void)
   }
   for (i=0; i<nPatterns; i++) Pattern2Rule[TETRAHEDRON][i] = -1;
 
-  /* read Rules */
-  for (i=0; i<nRules; i++)
+  if (me == master)
   {
-    Rules[i] = Empty_Rule;
-    Rules[i].mark = i;
-    Rules[i].class = RED_CLASS|GREEN_CLASS;
-    if (FReadRule(stream,Rules+i)) return (__LINE__);
+    /* read Rules */
+    for (i=0; i<nRules; i++)
+    {
+      Rules[i] = Empty_Rule;
+      Rules[i].mark = i;
+      Rules[i].class = RED_CLASS|GREEN_CLASS;
+      if (FReadRule(stream,Rules+i)) return (__LINE__);
+    }
+
+    /* read Pattern2Rule */
+    for (i=0; i<nPatterns; i++)
+    {
+      if (fscanf(stream,"%d",&P2R)!=1) return (__LINE__);
+      Pattern2Rule[TETRAHEDRON][i] = P2R;
+      PRINTDEBUG(gm,4,("Pattern2Rules[%4x]=%4d\n",i,P2R))
+    }
+
+    fclose(stream);
   }
 
-  /* read Pattern2Rule */
-  for (i=0; i<nPatterns; i++)
-  {
-    if (fscanf(stream,"%d",&P2R)!=1) return (__LINE__);
-    Pattern2Rule[TETRAHEDRON][i] = P2R;
-    PRINTDEBUG(gm,4,("Pattern2Rules[%4x]=%4d\n",i,P2R))
-  }
-
-  fclose(stream);
+  Broadcast(Rules,nRules*sizeof(REFRULE));
+  Broadcast(Pattern2Rule[TETRAHEDRON],nPatterns*sizeof(SHORT));
 
   /* now make rules for tetrahedrons globally available */
   MaxRules[TETRAHEDRON] = nRules;

@@ -108,7 +108,7 @@
 #define MAX_SONS_3D    12
 #define MAX_SONS_DIM CONCAT(MAX_SONS_,DIM,D)
 
-#define LEAFELEM(e)                     (NSONS(e)==0)
+#define LEAFELEM(e)                     IS_REFINED(e)
 #define IS_REFINED(e)           (REFINE(e)!=NO_REFINEMENT)
 #define ELEMENT_TO_MARK(e)  ((NSONS(e)>1) ? NULL :               \
                              (ECLASS(e) == RED_CLASS) ? e :       \
