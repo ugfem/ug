@@ -1456,15 +1456,15 @@ static INT SSORSmoother (NP_ITER *theNP, INT level,
 		    NP_RETURN(1,result[0]);
 	}
 	if (np->smoother.AutoDamp) {
-	    if (l_lsor_ld(theGrid,np->t,np->smoother.L,b,
+	    if (l_usor_ld(theGrid,x,np->smoother.L,b,
 					  np->smoother.DampVector) != NUM_OK)
 		    NP_RETURN(1,result[0]);
 	}
 	else {
-	    if (l_lsor(theGrid,np->t,np->smoother.L,b,np->omega) != NUM_OK) 
+	    if (l_usor(theGrid,x,np->smoother.L,b,np->omega) != NUM_OK) 
 		    NP_RETURN(1,result[0]);
 	}
-	if (l_vector_consistent(theGrid,np->t)) != NUM_OK) 
+	if (l_vector_consistent(theGrid,x)) != NUM_OK) 
 		NP_RETURN(1,result[0]);
     #else
 	if (np->smoother.AutoDamp) {
