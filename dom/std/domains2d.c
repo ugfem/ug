@@ -510,6 +510,10 @@ static INT BVar2Boundary (void *data, DOUBLE *param, DOUBLE *result)
   result[0] = top  + rad1*cos(PI*(1.0-lambda));
   result[1] = rad1*sin(PI*lambda);
 
+  /* straight for error bounds */
+  result[0] = top  + rad1*(2*lambda-1.0);
+  result[1] = rad1*2*lambda;
+
   return(0);
 }
 
