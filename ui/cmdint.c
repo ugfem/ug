@@ -2503,14 +2503,14 @@ void CommandLoop (int argc, char **argv)
 
 
   /* execute init script */
-  if (GetDefaultValue(DEFAULTSFILENAME,"initscript",buffer)==0)
-  {
-    strcpy(inpLine,"execute ");
-    strcat(inpLine,buffer);
-    error = InterpretCommand(inpLine);
-    if (error==QUITCODE)
-      doneFlag=TRUE;
-  }
+  if (argc != -1)
+    if (GetDefaultValue(DEFAULTSFILENAME,"initscript",buffer)==0) {
+      strcpy(inpLine,"execute ");
+      strcat(inpLine,buffer);
+      error = InterpretCommand(inpLine);
+      if (error==QUITCODE)
+        doneFlag=TRUE;
+    }
 
   if (argc<2 || strcmp(argv[1],"-sz")==0)
   {
@@ -2585,7 +2585,7 @@ void CommandLoop (int argc, char **argv)
         InterpretCommand(inpLine);         /* execute command line argument */
         if (i + 1 < argc)
           if (strcmp(argv[i+1],"-noquit") == 0)
-            CommandLoop(0,NULL);
+            CommandLoop(-1,NULL);
         InterpretCommand("quit\n");        /* end program */
         i++;
         continue;
