@@ -201,7 +201,7 @@ INT CheckVectorPrio (ELEMENT *theElement, VECTOR *theVector)
   /* master copy has to be unique */
   if ((nmaster = CheckProcListCons(PROCLIST(theVector),PrioMaster)) > 1)
   {
-    UserWriteF("NODE=" ID_FMTX " ERROR: master copy not unique, nmaster=%d:",
+    UserWriteF("VECTOR=" ID_FMTX " ERROR: master copy not unique, nmaster=%d:",
                ID_PRTX(theVector),nmaster);
     ListProcList(PROCLIST(theVector),PrioMaster);
     UserWriteF("\n");
