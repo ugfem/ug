@@ -511,8 +511,22 @@ static INT BVar2Boundary (void *data, DOUBLE *param, DOUBLE *result)
   result[1] = rad1*sin(PI*lambda);
 
   /* straight for error bounds */
-  result[0] = top  + rad1*(2*lambda-1.0);
+  result[0] = top  - rad1;
   result[1] = rad1*2*lambda;
+
+  return(0);
+}
+
+static INT BVar2aBoundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>0.5)) return(1);
+
+  /* straight for error bounds */
+  result[0] = top  + rad1*(2*lambda-1.0);
+  result[1] = rad1;
 
   return(0);
 }
@@ -562,7 +576,7 @@ static INT InitVDisc (void)
   MidPoint[1] = 0.5*left;
   radius = 0.5*sqrt((top*top)+(left*left)) + 0.1;
   if (CreateDomain("Variable Disc",
-                   MidPoint,radius,5,5,NO)==NULL) return(1);
+                   MidPoint,radius,6,6,NO)==NULL) return(1);
 
   /* allocate the boundary segments */
   if (CreateBoundarySegment2D("bvar1",1,0,
@@ -574,17 +588,21 @@ static INT InitVDisc (void)
                               0.0,0.5,
                               BVar2Boundary, NULL)==NULL) return(1);
   if (CreateBoundarySegment2D("bvar3",1,0,
-                              2,2,3,1,
+                              2,3,4,1,
                               0.0,1.0,
                               BVar3Boundary,NULL)==NULL) return(1);
   if (CreateBoundarySegment2D("bvar4", 1,0,
-                              3,3,4,1,
+                              3,4,5,1,
                               0.0,1.0,
                               BVar4Boundary, NULL)==NULL) return(1);
   if (CreateBoundarySegment2D("bvar5", 1,0,
-                              4,4,0,1,
+                              4,5,0,1,
                               0.0,1.0,
                               BVar5Boundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("bvar2a", 1,0,
+                              5,2,3,20,
+                              0.0,0.5,
+                              BVar2aBoundary, NULL)==NULL) return(1);
 
   /* return ok */
   return(0);
