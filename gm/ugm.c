@@ -1124,6 +1124,8 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
         V_DIM_LINCOMB(1.0,global,0.5,diff,global);
         SETMOVED(VertexOnEdge[OPPOSITE_EDGE(theElement,j)],1);
         UG_GlobalToLocal(n,(const DOUBLE **)x,global,LCVECT(theVertex));
+        SETONEDGE(theVertex,OPPOSITE_EDGE(theElement,j));
+        VFATHER(theVertex) = theElement;
       }
     }
   }
