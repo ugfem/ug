@@ -15194,7 +15194,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
     COORD_POINT t;
     DOUBLE *corner[8];
 	DOUBLE_VECTOR temp;
-    INT i, j, k, l, count, root, pos, lastBegin, newBegin, prevlastBegin, prevnewBegin;
+    INT i, j, k, l, count, root, pos, lastBegin, newBegin, prevnewBegin;
 
 	/* count boundary elements */
 	OE_nBndElem = 0;
@@ -15276,19 +15276,28 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
 	
 	/* create new shell from last one */
 	lastBegin = 0;
+	prevnewBegin = 0;
 	newBegin  = pos;
 
 	while (lastBegin<newBegin || pos<2*OE_nGlobalCGelems)  {
+	    for (i=0; i<pos; i+=2)
+		    PRINTDEBUG(graph,1,("pos %d table[%d] %d n %d\n",
+								pos,i,table[i],OE_nGlobalCGelems));
+
 		if (lastBegin==newBegin)
 		{
 			while (newBegin==pos) 
 			{
 				for (i=prevnewBegin; i>=0; i-=2)
 				{
+				    /* TODO: remove this */
+				    while (i>=pos) i-= 2;
+
 					l = table[i];
 					for (j = 0; j < CGG_NAD(l); j++) {
 						k = Gid2Index(CGG_ADJACENT(l)[j]);
 						if (--CGG_CNT(k) == 0) {
+						    ASSERT(k<OE_nGlobalCGelems);
 							table[pos] = k;
 							pos+=2;
 							break;
@@ -15298,6 +15307,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
 						for (h = HIDDEN_BY(l); h != NULL; h = h->next) {
 							j = h->index;
 							if (--CGG_CNT(j) == 0) {
+							    ASSERT(j<OE_nGlobalCGelems);
 								table[pos] = j;
 								pos+=2;
 								break;
@@ -15313,6 +15323,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
 				for (j = 0; j < CGG_NAD(l); j++) {
 					k = Gid2Index(CGG_ADJACENT(l)[j]);
 					if (--CGG_CNT(k) == 0) {
+						ASSERT(k<OE_nGlobalCGelems);
 						table[pos] = k;
 						pos+=2;
 					}
@@ -15321,13 +15332,13 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
 					for (h = HIDDEN_BY(l); h != NULL; h = h->next) {
 						j = h->index;
 						if (--CGG_CNT(j) == 0) {
+						    ASSERT(j<OE_nGlobalCGelems);
 							table[pos] = j;
 							pos+=2;
 						}
 					}
 			}
 		}
-		prevlastBegin = lastBegin;
 		prevnewBegin = newBegin;
 		lastBegin = newBegin;
 		newBegin  = pos;
