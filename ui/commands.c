@@ -7890,7 +7890,7 @@ static INT SetViewCommand (INT argc, char **argv)
   DOUBLE *viewPoint,*targetPoint,*xAxis;
   DOUBLE vP[3],tP[3],xA[3];
   DOUBLE PlanePoint[3],PlaneNormal[3];
-  DOUBLE *CutPoint,*CutNormal,vscale;
+  DOUBLE *CutPoint,*CutNormal,*scaleptr, scale[3];
   INT *perspective;
   INT per;
   INT i,j,veclen,res,RemoveCut;
@@ -7922,7 +7922,7 @@ static INT SetViewCommand (INT argc, char **argv)
   perspective = NULL;
   CutPoint = CutNormal = NULL;
   RemoveCut = NO;
-  vscale = 1.0;
+  scaleptr = NULL;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -7953,13 +7953,15 @@ static INT SetViewCommand (INT argc, char **argv)
       targetPoint = tP;
       break;
 
-    case 'v' :
-      if (sscanf(argv[i],"v %f",x)!=1)
+    case 's' :
+      if (sscanf(argv[i],"s %f %f %f",x,x+1,x+2)!=veclen)
       {
-        PrintErrorMessageF('E',"setview","v option: one option required");
+        PrintErrorMessageF('E',"setview","s option: %d scalings required for a %dD object",(int)veclen,(int)veclen);
         return (PARAMERRORCODE);
       }
-      vscale = x[0];
+      for (j=0; j<veclen; j++)
+        scale[j] = x[j];
+      scaleptr = scale;
       break;
 
     case 'x' :
@@ -8054,7 +8056,7 @@ static INT SetViewCommand (INT argc, char **argv)
       return (PARAMERRORCODE);
     }
 
-  if (SetView(thePic,viewPoint,targetPoint,xAxis,perspective,RemoveCut,CutPoint,CutNormal,vscale)!=0)
+  if (SetView(thePic,viewPoint,targetPoint,xAxis,perspective,RemoveCut,CutPoint,CutNormal,scaleptr)!=0)
   {
     PrintErrorMessage('E',"setview","error during SetView");
     return (CMDERRORCODE);
