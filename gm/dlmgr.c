@@ -2,9 +2,9 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      dlmgr.h                                                       */
+/* File:      dlmgr.c                                                       */
 /*                                                                          */
-/* Purpose:   defines for dynamic linked list management                    */
+/* Purpose:   functions for dynamic linked list management                  */
 /*                                                                          */
 /* Author:    Stefan Lang                                                   */
 /*            Institut fuer Computeranwendungen III                         */
@@ -15,7 +15,7 @@
 /*            phone: 0049-(0)711-685-7003                                   */
 /*            fax  : 0049-(0)711-685-7000                                   */
 /*                                                                          */
-/* History:   960915 sl  start of dynamic list management					*/
+/* History:   961216 sl  start of dynamic list management					*/
 /*                                                                          */
 /* Remarks:                                                                 */
 /*            Management of dynamic linked lists, which consist of          */
@@ -35,26 +35,42 @@
 /*                                                                          */
 /****************************************************************************/
 
-#ifndef __DLMGR_H__
-
+#include "dlmgr.h"
 #include "gm.h"
-#include "misc.h"
-#include "debug.h"
 
 #ifdef ModelP
 #include "parallel.h"
 #endif
 
-#ifdef ModelP
+/* element */
+#define OTYPE  ELEMENT
+#define PRED   PREDE
+#define SUCC   SUCCE
+#include "dlmgrproto.h"
+#undef OTYPE
+#undef PRED
+#undef SUCC
 
-#define FIRSTPART_OF_LIST               0
-#define LASTPART_OF_LIST(OTYPE) ((CAT(OTYPE,PRIOS)) -1)
+/* node */
+#define OTYPE  NODE
+#define PRED   PREDN
+#define SUCC   SUCCN
+#include "dlmgrproto.h"
+#undef OTYPE
+#undef PRED
+#undef SUCC
 
-#define HDRELEMENT      PARHDRE
-#define HDRNODE         PARHDR
-#define HDRVERTEX       PARHDRV
-#define HDRVECTOR       PARHDR
-#define HDR(OTYPE)      CAT(HDR,OTYPE)
-#endif
+/* vertex */
+#define OTYPE  VERTEX
+#define PRED   PREDV
+#define SUCC   SUCCV
+#include "dlmgrproto.h"
+#undef OTYPE
+#undef PRED
+#undef SUCC
 
-#endif /* __DLMGR_H__ */
+/* vertex */
+#define OTYPE  VECTOR
+#define PRED   PREDVC
+#define SUCC   SUCCVC
+#include "dlmgrproto.h"

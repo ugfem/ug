@@ -1298,10 +1298,10 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
 #endif
 
   theGrid->status       = 0;
-  GRID_INIT_ELEMENT_LIST(theGrid)
-  GRID_INIT_NODE_LIST(theGrid)
-  GRID_INIT_VERTEX_LIST(theGrid)
-  GRID_INIT_VECTOR_LIST(theGrid)
+  GRID_INIT_ELEMENT_LIST(theGrid);
+  GRID_INIT_NODE_LIST(theGrid);
+  GRID_INIT_VERTEX_LIST(theGrid);
+  GRID_INIT_VECTOR_LIST(theGrid);
   GFIRSTBV(theGrid) = NULL;
   GLASTBV(theGrid) = NULL;
   if (l>0)
@@ -5391,16 +5391,18 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
     }
     count++;
   }
-  if (PREDE(FIRSTELEMENT(theGrid)) != NULL)
-  {
-    sprintf(buffer,"first element of the grid has a previous 'element'\n");
-    UserWrite(buffer);
-  }
-  if (SUCCE(LASTELEMENT(theGrid)) != NULL)
-  {
-    sprintf(buffer,"last element of the grid has a following 'element'\n");
-    UserWrite(buffer);
-  }
+  if (FIRSTELEMENT(theGrid)!=NULL)
+    if (PREDE(FIRSTELEMENT(theGrid)) != NULL)
+    {
+      sprintf(buffer,"first element of the grid has a previous 'element'\n");
+      UserWrite(buffer);
+    }
+  if (LASTELEMENT(theGrid)!=NULL)
+    if (SUCCE(LASTELEMENT(theGrid)) != NULL)
+    {
+      sprintf(buffer,"last element of the grid has a following 'element'\n");
+      UserWrite(buffer);
+    }
   if (count != theGrid->nElem)
   {
     sprintf(buffer,"there are %ld elements but %ld expected\n",(long)(count),(long)theGrid->nElem);

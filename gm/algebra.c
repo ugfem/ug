@@ -585,7 +585,7 @@ VECTOR *CreateVector (GRID *theGrid, INT VectorType, GEOM_OBJECT *object)
   VINDEX(pv) = (long)theGrid->nVector;
   SUCCVC(pv) = FIRSTVECTOR(theGrid);
 
-  GRID_LINK_VECTOR(theGrid,pv,PrioMaster)
+  GRID_LINK_VECTOR(theGrid,pv,PrioMaster);
 
   /* counters */
   theGrid->nVector++;
@@ -995,17 +995,7 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
 #endif
 
   /* now remove vector from vector list */
-  GRID_UNLINK_VECTOR(theGrid,theVector)
-  /* TODO: delete this
-          if (PREDVC(theVector)!=NULL)
-                  SUCCVC(PREDVC(theVector)) = SUCCVC(theVector);
-          else
-                  FIRSTVECTOR(theGrid) = SUCCVC(theVector);
-          if (SUCCVC(theVector)!=NULL)
-                  PREDVC(SUCCVC(theVector)) = PREDVC(theVector);
-          else
-                  LASTVECTOR(theGrid) = PREDVC(theVector);
-   */
+  GRID_UNLINK_VECTOR(theGrid,theVector);
 
   /* reset count flags */
   SETVCOUNT(theVector,0);
