@@ -2377,26 +2377,26 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
 static INT Gather_EClasses (DDD_OBJ obj, void *data)
 {
   ELEMENT *p;
-  char *d;
+  int *d;
 
   p  = (ELEMENT *)obj;
-  d  = (char *)data;
+  d  = (int *)data;
   *d = ECLASS(p);
 }
 
 static INT Scatter_EClasses(DDD_OBJ obj, void *data)
 {
   ELEMENT *p;
-  char *d;
+  int *d;
 
   p = (ELEMENT *)obj;
-  d = (char *)data;
+  d = (int *)data;
   SETECLASS(p,*d);
 }
 
 void CommunicateEClasses (MULTIGRID *theMG)
 {
-  DDD_IFOneway(ElementVHIF,IF_FORWARD,sizeof(char),
+  DDD_IFOneway(ElementVHIF,IF_FORWARD,sizeof(int),
                Gather_EClasses, Scatter_EClasses);
   return;
 }
