@@ -276,11 +276,10 @@ struct VecMatPlotObj2D {
   INT Idx;                                                                      /* YES or NO									*/
   INT Order;                                                                    /* YES or NO									*/
   INT Dependency;                                                       /* YES or NO									*/
+  INT ConnectVectors;                                                   /* YES or NO									*/
   INT Boundary;                                                         /* YES or NO									*/
-  INT VecData;                                                          /* YES or NO									*/
-  INT MatData;                                                          /* YES or NO									*/
-  TYPE_VEC_DESC vec;                                                    /* meaningful if VecData YES					*/
-  TYPE_MAT_DESC mat;                                                    /* meaningful if MatData YES					*/
+  SYMBOL *vs;                                                                   /* NULL or vector symbol						*/
+  SYMBOL *ms;                                                                   /* NULL or matrix symbol						*/
 };
 
 /*----------- application dimension 3 PlotObjs -----------------------------*/
