@@ -17,8 +17,8 @@
 #include <array.hh>
 #include <table.hh>
 #include <hashtabl.hh>
-#include <symbolta.hh>
+//  #include <symbolta.hh>
 #include <bitarray.hh>
-#include <spbita2d.hh>
+//  #include <spbita2d.hh>
 
 #endif
