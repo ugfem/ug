@@ -45,14 +45,17 @@
 
 /* define this to protocol all alloc/free requests via hashtable */
 /*
-   #define WITH_HASH_CONTROL
  */
+#define WITH_HASH_CONTROL
 
 /* define this to map all PMEM, AMEM and TMEM requests to a UG general heap */
 /*
    #define WITH_GENERAL_HEAP
  */
 
+
+#define HARD_EXIT assert(0)
+/*#define HARD_EXIT exit(1)*/
 
 
 /****************************************************************************/
@@ -205,7 +208,7 @@ static void PushHash (void *ptr, size_t size, char info)
       UserWriteF("%4d: MEMMGR-ERROR, double alloc at %08x, size %ld (%c, %c)\n",
                  me, ptr, (unsigned long)size,
                  he->info, info);
-      exit(1);
+      HARD_EXIT;
     }
 
     he->next = NewHashEntry(ptr, size, info);
@@ -238,7 +241,7 @@ static size_t PopHash (void *ptr, char info)
       {
         UserWriteF("%4d: MEMMGR-ERROR, wrong free-type %c for alloc %c\n",
                    me, info, he->info);
-        assert(0);
+        HARD_EXIT;
       }
 
       FreeHashEntry(he);
@@ -247,7 +250,7 @@ static size_t PopHash (void *ptr, char info)
   }
 
   UserWriteF("%4d: MEMMGR-ERROR, no alloc for free %c at %08x\n", me, info, ptr);
-  assert(0);
+  HARD_EXIT;
 
   return(0);       /* never reached */
 }
