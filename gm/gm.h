@@ -143,6 +143,7 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 /* constants for BLOCKVECTOR */
 #define BVDOWNTYPEVECTOR        0       /* symbolic value for BVDOWNTYPE */
 #define BVDOWNTYPEBV            1       /* symbolic value for BVDOWNTYPE */
+#define BVDOWNTYPEDIAG          2       /* symbolic value for BVDOWNTYPE */
 
 
 /* use of GSTATUS (for grids), use power of 2 */
@@ -986,7 +987,7 @@ extern CONTROL_ENTRY
 /* MNEW          |28	| |*| 1 if matrix/connection is new                                     */
 /* CEXTRA	 |29	| |*| 1 if is extra connection							*/
 /*																			*/
-/* Use of the control word in 'BLOCKVECTOR':									*/
+/* Use of the control word in 'BLOCKVECTOR':								*/
 /* BVDOWNTYPE 0	 BVDOWNTYPEVECTOR if the down component points to a vector,	*/
 /*				 BVDOWNTYPEBV if it points to a further blockvector (son)	*/
 /*																			*/
@@ -1287,9 +1288,15 @@ extern CONTROL_ENTRY
 
 #define BVDOWNTYPE_CE                                   67
 #define BVDOWNTYPE_SHIFT                                0
-#define BVDOWNTYPE_LEN                                  1
+#define BVDOWNTYPE_LEN                                  2
 #define BVDOWNTYPE(bv)                                  CW_READ_STATIC(bv,BVDOWNTYPE_,BLOCKVECTOR_)
 #define SETBVDOWNTYPE(bv,n)                     CW_WRITE_STATIC(bv,BVDOWNTYPE_,BLOCKVECTOR_,n)
+
+#define BVLEVEL_CE                                              78
+#define BVLEVEL_SHIFT                                   2
+#define BVLEVEL_LEN                                     4
+#define BVLEVEL(bv)                                             CW_READ_STATIC(bv,BVLEVEL_,BLOCKVECTOR_)
+#define SETBVLEVEL(bv,n)                                CW_WRITE_STATIC(bv,BVLEVEL_,BLOCKVECTOR_,n)
 
 /* access to members of struct blockvector */
 #define BVNUMBER(bv)                                    ((bv)->number)
@@ -1319,6 +1326,7 @@ extern CONTROL_ENTRY
 
 /* operations on struct block */
 #define BV_IS_LEAF_BV(bv)                               (BVDOWNTYPE(bv)==BVDOWNTYPEVECTOR)
+#define BV_IS_DIAG_BV(bv)                               (BVDOWNTYPE(bv)==BVDOWNTYPEDIAG)
 
 /****************************************************************************/
 /*																			*/
@@ -2043,12 +2051,11 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MULTIGRID_STATUS_OFFSET           ((sizeof(ENVDIR))/sizeof(unsigned INT))
 
 #define MGSTATUS(p)                     ((p)->status)
-#define SETMGSTATUS(p,n)                ((p)->status|=n)
 #define RESETMGSTATUS(p)                {(p)->status=0; (p)->magic_cookie = (int)time(NULL); (p)->saved=0;}
 #define MG_MAGIC_COOKIE(p)              ((p)->magic_cookie)
-#define VIDCNT(p)                               ((p)->vertIdCounter)
-#define NIDCNT(p)                               ((p)->nodeIdCounter)
-#define EIDCNT(p)                               ((p)->elemIdCounter)
+#define VIDCNT(p)                       ((p)->vertIdCounter)
+#define NIDCNT(p)                       ((p)->nodeIdCounter)
+#define EIDCNT(p)                       ((p)->elemIdCounter)
 #define TOPLEVEL(p)                     ((p)->topLevel)
 #define CURRENTLEVEL(p)                 ((p)->currentLevel)
 #define MGFORMAT(p)                     ((p)->theFormat)
@@ -2060,7 +2067,6 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MGHEAP(p)                               ((p)->theHeap)
 #define MG_NPROPERTY(p)                 ((p)->nProperty)
 #define GRID_ON_LEVEL(p,i)              ((p)->grids[i])
-
 /* macros for the NodeElementsBlockArray . . .  */
 #define ELEMS_OF_NODE_MAX               75
 #define NDELEM_BLKS_MAX                 100
@@ -2223,6 +2229,7 @@ INT CreateBlockvector                           ( GRID *theGrid, BLOCKVECTOR **B
 INT CreateBlockvector_l0                        ( GRID *theGrid, BLOCKVECTOR **BVHandle, BLOCKVECTOR *insertBV, INT after);
 INT DisposeBlockvector                          ( GRID *theGrid, BLOCKVECTOR *bv );
 void FreeAllBV                                          ( GRID *grid );
+void SetLevelnumberBV                           ( BLOCKVECTOR *bv, INT level );
 
 /* algebraic connections */
 CONNECTION      *CreateExtraConnection  (GRID *theGrid, VECTOR *from, VECTOR *to);

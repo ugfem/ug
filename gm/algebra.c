@@ -5622,6 +5622,48 @@ static INT StrongLexAlgDep (GRID *theGrid, const char *data)
 
 #ifdef __BLOCK_VECTOR_DESC__
 /****************************************************************************/
+/*D
+   SetLevelnumberBV - set the level-field in a blockvector-tree
+
+   SYNOPSIS:
+   void SetLevelnumberBV( BLOCKVECTOR *bv, INT level );
+
+   PARAMETERS:
+   .  bv - first of the blockvectors whose levelnumber should be set
+   .  level - levelnumber of this blockvector
+
+   DESCRIPTION:
+   The blockvectors form a hierarchical structure; thus each blockvector can
+   be assigned a 'level'. This function traverses the blockvector-tree
+   starting at the given 'bv' and sets in each blockvector the level field
+   starting with the given 'level'. In this way it is possible to number also
+   parts of the global blockvector-tree (to skip for example meaningless
+   administrative, covering blocks).
+
+   SEE ALSO:
+   BLOCKVECTOR
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void SetLevelnumberBV( BLOCKVECTOR *bv, INT level )
+{
+  ASSERT( level < (1<<BVLEVEL_LEN) );           /* increase BVLEVEL_LEN in gm.h */
+
+  if ( bv == NULL )
+    return;
+
+  SETBVLEVEL(bv,level);
+
+  if ( !BV_IS_LEAF_BV( bv ) )
+    for ( bv = BVDOWNBV(bv); bv != NULL; bv = BVSUCC(bv) )
+      SetLevelnumberBV( bv, level + 1 );
+}
+
+
+/****************************************************************************/
 /* (without *D, since only internal function)
 
    CreateBVPlane - Creates a stripewise decomposition of a 2D rectangular domain with a regular mesh
@@ -5785,6 +5827,9 @@ static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, cons
    blockvector with number 1 (this overlapping vectors might be for
    example dirichlet boundary vectors).
 
+   For the blockvectors in the tree with root 'all inner' the level-field is
+   set beginning with 0.
+
    REQUIREMENTS:
    The macro '__BLOCK_VECTOR_DESC__' must be defined in 'gm.h' to enable
    blockvector descriptions.
@@ -5864,6 +5909,7 @@ INT CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_stripe )
   for ( ; v != NULL; v = SUCCVC( v ) )
     VBVD( v ) = bvd;
 
+  SetLevelnumberBV( bv_inner, 0 );
   return GM_OK;
 #else
   return(1);
@@ -6025,6 +6071,8 @@ INT CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT 
 
   if ( BVNUMBEROFVECTORS(bv_inner) != nr_planes*stripes_per_plane*vectors_per_stripe )
     return GM_INCONSISTANCY;
+
+  SetLevelnumberBV( bv_inner, 0 );
 
   return GM_OK;
 
