@@ -751,7 +751,8 @@ INT GetVlistMValues (INT cnt, VECTOR **theVec,
           mptr[Comp[i][i][k*vncomp[i]+l]];
     m2 = 0;
     for (j=0; j<i; j++) {
-      if ((theMatrix = GetMatrix(theVec[i],theVec[j]))==NULL) {
+      GET_MATRIX(theVec[i],theVec[j],theMatrix);
+      if (theMatrix == NULL) {
         for (k=0; k<vncomp[i]; k++)
           for (l=0; l<vncomp[j]; l++)
             value[(m1+k)*m+m2+l] = value[(m2+l)*m+m1+k] = 0.0;
@@ -807,7 +808,7 @@ INT AddVlistMValues (INT cnt, VECTOR **theVec,
   INT vncomp[MAX_NODAL_VECTORS];
   INT vtype[MAX_NODAL_VECTORS];
   INT types[NVECTYPES];
-  const SHORT *Comp[MAX_NODAL_VECTORS][MAX_NODAL_VECTORS];
+  const SHORT *Comp[MAX_NODAL_VECTORS][MAX_NODAL_VECTORS],*comp;
   INT i,j,k,l,m,m1,m2;
   DOUBLE *mptr;
 
@@ -825,24 +826,25 @@ INT AddVlistMValues (INT cnt, VECTOR **theVec,
   for (i=0; i<cnt; i++) {
     theMatrix = START(theVec[i]);
     mptr = MVALUEPTR(theMatrix,0);
+    comp = Comp[i][i];
     for (k=0; k<vncomp[i]; k++)
       for (l=0; l<vncomp[i]; l++)
-        mptr[Comp[i][i][k*vncomp[i]+l]]
+        mptr[comp[k*vncomp[i]+l]]
           += value[(m1+k)*m+m1+l];
     m2 = 0;
     for (j=0; j<i; j++) {
-      if ((theMatrix = GetMatrix(theVec[i],theVec[j]))==NULL)
+      GET_MATRIX(theVec[i],theVec[j],theMatrix);
+      if (theMatrix == NULL)
         return (-1);
       mptr = MVALUEPTR(theMatrix,0);
+      comp = Comp[i][j];
       for (k=0; k<vncomp[i]; k++)
         for (l=0; l<vncomp[j]; l++)
-          mptr[Comp[i][j][k*vncomp[j]+l]]
-            += value[(m1+k)*m+m2+l];
+          mptr[comp[k*vncomp[j]+l]] += value[(m1+k)*m+m2+l];
       mptr = MVALUEPTR(MADJ(theMatrix),0);
       for (k=0; k<vncomp[i]; k++)
         for (l=0; l<vncomp[j]; l++)
-          mptr[Comp[i][j][l*vncomp[i]+k]]
-            += value[(m2+l)*m+m1+k];
+          mptr[comp[l*vncomp[i]+k]] += value[(m2+l)*m+m1+k];
       m2 += vncomp[j];
     }
     m1 += vncomp[i];
