@@ -6036,10 +6036,9 @@ static INT EW_PreProcess_MarkElement2D (PICTURE *thePicture, WORK *theWork)
 
 static INT EW_MarkElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
-	DOUBLE help[2],*corner;
+	DOUBLE help[2];
 	DOUBLE_VECTOR cm;
 	COORD_POINT a;
-	INT i,coe;
 	
 	ME2D_found = FALSE;
 	ME2D_elem  = theElement;
