@@ -31,6 +31,27 @@ ugtex applmanual.tex
 dvips progmanual.dvi -o progmanual.ps
 dvips refmanual.dvi -o refmanual.ps
 dvips applmanual.dvi -o applmanual.ps
-#ugproject
-#ugtest
-#ugclean all
+gzip progmanual.ps
+gzip refmanual.ps
+gzip applmanual.ps
+
+if test $# -ge 1 
+then
+	cd ${UGROOT}
+	cd ..
+	cd ..
+	mkdir ug-$1
+	mv ${UGROOT}/gm/gm.h ug-$1
+	mv ${UGROOT}/gm/gg3/netgen/meshing/ruler3.cc ug-$1
+	cp ${UGROOT}/doc/progmanual.ps.gz ug-$1
+	cp ${UGROOT}/doc/applmanual.ps.gz ug-$1
+	cp ${UGROOT}/doc/refmanual.ps.gz ug-$1
+	mv UG ug-$1/ug-$1
+	cd ug-$1
+	tar cvf ug-$1.tar ug-$1
+	gzip ug-$1.tar
+	cd ..
+	ls -R ug-$1
+	echo "server version prepared"
+fi
+
