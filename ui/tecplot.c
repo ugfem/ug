@@ -140,13 +140,33 @@ static INT TPL_GlobalSumINT (INT i)
 
 /****************************************************************************/
 /*D
-   tecplot - file output in tecplot format
+   tecplot - file output in Tecplot format
 
    DESCRIPTION:
-   ...
+   The tecplot command writes the grid and scalar
+   grid functions in Tecplot readable format to a file.
+   The data in the written file as tecplot-zone in FEPOINT format,
+   the plot funtion is evaluated at the nodes of the elements.
+
+   'tecplot <filename> [$e <nep> $s <vd>]* $z <zonename>'
+
+   .  $e...			- plot function for scalar node values
+   .  $s...			- pass this vecdatadesc to the plot function
+   .  $z...			- specify a name for the zone-record written in filename
+   .  $g...			- save geometry, this flag is parsed but not any action on it is implemented
+
+
+   <vd>   - vecdata desc
+   <nep>  - eval proc (nodal values)
+   <zonename>  -  string which appears in the zone-header of the written file
 
    KEYWORDS:
    graphics, plot, file, output, tecplot
+
+   EXAMPLE:
+   'tecplot tplfilm $e evalue $s sol $z @TIME'
+   Here it is assumed that in a time depend calculation the variable TIME is defined
+   and to be used to identify the zones in tecplot.
    D*/
 /****************************************************************************/
 
@@ -168,6 +188,8 @@ static INT TecplotCommand (INT argc, char **argv)
   EVALUES *ev[MAXVARIABLES];            /* pointers to eval function descriptors	*/
   char ev_name[MAXVARIABLES][NAMESIZE];         /* names for eval functions     */
   char s[NAMESIZE];                             /* name of eval proc						*/
+  char zonename[NAMESIZE+7] = {};               /* name for zone (initialized to
+                                                                                empty string)						*/
   INT numNodes;                                 /* number of data points					*/
   INT numElements;                              /* number of elements						*/
   INT gnumNodes;                /* number of data points globally           */
@@ -219,6 +241,12 @@ static INT TecplotCommand (INT argc, char **argv)
       else
         strcpy(ev_name[nv],ev[nv]->v.name);
       nv++;
+      break;
+
+    case 'z' :
+      sscanf(argv[i],"z %s", zonename+3);
+      memcpy(zonename, "T=\"", 3);
+      memcpy(zonename+strlen(zonename), "\", \0", 4);
       break;
 
     case 'g' :
@@ -326,8 +354,8 @@ static INT TecplotCommand (INT argc, char **argv)
   /********************************/
 
   /* write zone record header */
-  if (DIM==2) sprintf(it,"ZONE N=%d, E=%d, F=FEPOINT, ET=QUADRILATERAL\n",gnumNodes,gnumElements);
-  if (DIM==3) sprintf(it,"ZONE N=%d, E=%d, F=FEPOINT, ET=BRICK\n",gnumNodes,gnumElements);
+  if (DIM==2) sprintf(it,"ZONE %sN=%d, E=%d, F=FEPOINT, ET=QUADRILATERAL\n", zonename, gnumNodes,gnumElements);
+  if (DIM==3) sprintf(it,"ZONE %sN=%d, E=%d, F=FEPOINT, ET=BRICK\n", zonename, gnumNodes,gnumElements);
   strcpy(item+ic,it); ic+=strlen(it);
   pfile_master_puts(pf,item); ic=0;
 
