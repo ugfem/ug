@@ -309,7 +309,7 @@ static INT TecplotCommand (INT argc, char **argv)
           for (j=0; j<DIM; j++) LocalCoord[j] = local[j];
 
           /* call eval function */
-          value = eval(el,CornersCoord,LocalCoord);
+          value = eval(el,(const COORD **)CornersCoord,LocalCoord);
           fprintf(stream,"%lg ",value);
           counter++;                                                                    /* count values	*/
           if (counter%VALUES_PER_LINE==0)
