@@ -2115,21 +2115,11 @@ static INT NewCommand (INT argc, char **argv)
       break;
 
     case 'h' :
-      if (sscanf(argv[i],"h %lu",&heapSize)!=1)
+      if (ReadMemSizeFromString(argv[i]+1,&heapSize)!=0)                           /* skip leading 'h' in argv */
       {
         PrintHelp("new",HELPITEM," (cannot read heapsize specification)");
         return(PARAMERRORCODE);
       }
-      lastchar = argv[i][strlen(argv[i])-1];
-      /* check for [kK]ilobyte-notation */
-      if ( lastchar=='k' || lastchar=='K' )
-        heapSize *= (MEM)KBYTE;
-      /* check for [mM]igabyte-notation */
-      if ( lastchar=='m' || lastchar=='M' )
-        heapSize *= (MEM)MBYTE;
-      /* check for [gG]igabyte-notation */
-      if ( lastchar=='g' || lastchar=='G' )
-        heapSize *= (MEM)GBYTE;
       hopt = TRUE;
       break;
 
@@ -2195,7 +2185,7 @@ static INT OpenCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   char Multigrid[NAMESIZE],File[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE],type[NAMESIZE];
   char *theBVP,*theFormat,*theMGName;
-  unsigned long heapSize;
+  MEM heapSize;
   INT i,force,IEopt,autosave;
 
   /* get multigrid name */
@@ -2260,7 +2250,7 @@ static INT OpenCommand (INT argc, char **argv)
       break;
 
     case 'h' :
-      if (sscanf(argv[i],"h %lu",&heapSize)!=1)
+      if (ReadMemSizeFromString(argv[i]+1,&heapSize)!=0)                           /* skip leading 'h' in argv */
       {
         PrintHelp("open",HELPITEM," (cannot read heapsize specification)");
         return(PARAMERRORCODE);
