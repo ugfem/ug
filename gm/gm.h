@@ -287,10 +287,7 @@
 #define CANNOT_INIT_PROBLEM     1       /* configProblem could not init problem */
 
 /* use of GSTATUS (for grids), use power of 2 */
-#define GRID_CHANGED                    1
-#define GRID_ASSEMBLED                  2
-#define GRID_FULLACTIVE                 4
-#define GRID_NEWDEFECT          8
+#define GSTATUS_BDF                             1
 
 /* selection mode */
 #define nodeSelection                   1                       /* objects selected are nodes			*/
@@ -2257,10 +2254,10 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define GRID_OFFSET                                             0
 #define GRID_STATUS_OFFSET                              1
 
-#define GLEVEL(p)                       ((p)->level)
-#define GSTATUS(p)                      ((p)->status)
-#define SETGSTATUS(p,n)         ((p)->status|=n)
-#define RESETGSTATUS(p,n)       ((p)->status&=(~n))
+#define GLEVEL(p)                                       ((p)->level)
+#define SETGLOBALGSTATUS(p)             ((p)->status=~0)
+#define GSTATUS(p,n)                            ((p)->status&(n))
+#define RESETGSTATUS(p,n)                       ((p)->status&=~(n))
 
 #ifdef ModelP
 #define PFIRSTELEMENT(p)                                ((LISTPART_FIRSTELEMENT(p,0)!=NULL) ?\
