@@ -59,6 +59,11 @@
 /* TODO: conflict with hierarchy */
 #include "initug.h"
 
+#ifdef __GUI__
+#include <X11/Xlib.h>
+#include "xmain.h"
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -147,6 +152,7 @@ typedef union Operand OPERAND;
 /****************************************************************************/
 
 INT cmdintbufsize=CMDINTBUFSIZE;
+
 
 /****************************************************************************/
 /*																			*/
@@ -2527,6 +2533,36 @@ static void PrintVersionString (void)
 }
 
 
+#ifdef ModelP
+/****************************************************************************/
+/*D
+   ParCommandLoop - Get next command to execute from master
+
+   SYNOPSIS:
+   void ParCommandLoop (char *inpLine);
+
+   DESCRIPTION:
+   This function receives the next command which should be
+   executed from master processor, unitl QUITCODE is returned.
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void ParCommandLoop (char *inpLine)
+{
+  INT error;
+
+  while (GetDoneFlag() == FALSE)
+  {
+    error=ParExecCommand(inpLine);
+    if (error==QUITCODE) SetDoneFlag();
+  }
+
+  return;
+}
+#endif
 
 /****************************************************************************/
 /*D
@@ -2557,9 +2593,8 @@ void CommandLoop (int argc, char **argv)
   char *strStart;
   int batch = FALSE;
 
-  for (i=1; i<argc; i++)
-    if (argv[i][0]!='-')
-      batch = TRUE;
+  /* reset doneFlag */
+  ResetDoneFlag();
 
   /* alloc input line buffer */
   if ((inpLine=(char *)malloc(cmdintbufsize))==NULL)
@@ -2575,11 +2610,11 @@ void CommandLoop (int argc, char **argv)
     /* FOR MASTER PROCESSOR */
         #endif
 
+  for (i=1; i<argc; i++)
+    if (argv[i][0]!='-')
+      batch = TRUE;
+
   PrintVersionString();
-
-  /* reset doneFlag */
-  doneFlag=FALSE;
-
 
   /* if (argc==-1): second start of CommandLoop */
   if (argc != -1)
@@ -2601,14 +2636,14 @@ void CommandLoop (int argc, char **argv)
       }
       error = InterpretCommand(inpLine);
       if (error==QUITCODE)
-        doneFlag=TRUE;
+        SetDoneFlag();
     }
   }
 
 
   if (!batch)
   {
-    while (!doneFlag)
+    while (GetDoneFlag() == FALSE)
     {
       WriteString(PROMPT);
       if (UserIn(inpLine)!=0)
@@ -2616,11 +2651,11 @@ void CommandLoop (int argc, char **argv)
         PrintErrorMessage('E',"CommandLoop","process event error");
         continue;
       }
-      if (doneFlag) break;
+      if (GetDoneFlag() == TRUE) break;
       if ((error=InterpretCommand(inpLine))!=DONE)
       {
         if (error==QUITCODE)
-          doneFlag=TRUE;
+          SetDoneFlag();
         else
         {
           UserWrite("Error position: ");
@@ -2670,7 +2705,7 @@ void CommandLoop (int argc, char **argv)
   else
   {
     i = 1;             /* first argument */
-    while (i<argc && !doneFlag)
+    while (i<argc && GetDoneFlag()==FALSE)
     {
       /* execute batch file */
       if (argv[i][0]!='-')
@@ -2681,6 +2716,8 @@ void CommandLoop (int argc, char **argv)
         if (i + 1 < argc)
           if (strcmp(argv[i+1],"-noquit") == 0) {
             CommandLoop(-1,NULL);
+            /* free command line buffer */
+            free(inpLine);
             return;
           }
         InterpretCommand("quit\n");                /* end program */
@@ -2725,40 +2762,47 @@ else
 {
   /* FOR PROCESSORS WITH ME!=MASTER */
 
-  /* reset doneFlag */
-  doneFlag = FALSE;
+  ParCommandLoop(inpLine);
 
-
-  while (!doneFlag)
-  {
-    if (doneFlag) break;
-    error=ParExecCommand(inpLine);
-    if (error==QUITCODE)
-      doneFlag=TRUE;
-  }
 }
         #endif
 
+  /* free input line buffer */
+  free(inpLine);
+
+  /* reset doneFlag */
+  ResetDoneFlag();
 
   /* call ExitUg() at the end of CommandLoop in order to avoid that
      the application programmer will forget to call it at the end of
      the application. */
+        #ifdef __GUI__
+  {
+    int gui_on = GUI_ON;
+                #ifdef ModelP
+    Broadcast(&gui_on,sizeof(int));
+                #endif
+    if (!gui_on)
+        #endif
   ExitUg();
+        #ifdef __GUI__
+}
+        #endif
 }
 
 
 /****************************************************************************/
 /*
-   SetDoneFlag -
+   SetDoneFlag/ResetDoneFlag -
 
    SYNOPSIS:
-   void SetDoneFlag ();
+   void SetDoneFlag (void); void ResetDoneFlag (void);
 
    PARAMETERS:
    .  none
 
    DESCRIPTION:
-   Sets done flag to 1.
+   Sets done flag to TRUE/FALSE
 
    RETURN VALUE:
    none
@@ -2767,7 +2811,17 @@ else
 
 void SetDoneFlag (void)
 {
-  doneFlag = 1;
+  doneFlag = TRUE;
+}
+
+void ResetDoneFlag (void)
+{
+  doneFlag = FALSE;
+}
+
+int GetDoneFlag (void)
+{
+  return(doneFlag);
 }
 
 

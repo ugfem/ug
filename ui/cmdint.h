@@ -81,7 +81,12 @@ extern INT cmdintbufsize;
 /****************************************************************************/
 
 void    CommandLoop                     (int argc, char **argv);
+#ifdef ModelP
+void    ParCommandLoop                  (char *inpLine);
+#endif
 void    SetDoneFlag                     (void);
+void    ResetDoneFlag                   (void);
+int             GetDoneFlag                     (void);
 FILE   *FOpenScript                             (const char *script, const char *mode);
 
 INT     InterpretCommand                (char *cmds);
