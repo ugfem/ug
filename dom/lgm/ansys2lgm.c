@@ -2592,6 +2592,7 @@ SF_TYP *GetMemandFillNewSF(DOUBLE *surfacename)
 	SF_RIGHT_SBD(Surface)  = SF_RL_SBD_NOT_SET_YET;
 	SF_LEFT_SBD(Surface)   = SF_RL_SBD_NOT_SET_YET;
 	SF_NMB_OF_POLYLINES(Surface) = 0;
+	SF_POLYLINES(Surface) = NULL;
 
 	/*Update of statistical Domain Info*/
 	NMB_OF_SFCES(DomainInfo_Pointer) = NMB_OF_SFCES(DomainInfo_Pointer) + 1;
