@@ -288,6 +288,8 @@ struct ElemScalarPlotObj2D {
   INT depth;                                                                    /* depth of recoursive subdevision of elements	*/
   INT numOfContours;                                                    /* nb of contourlines if used					*/
   DOUBLE contValues[PO_MAXCONTOURS];                    /* contour values if used						*/
+  INT Gnuplot;                                  /* 1 for gnuplot-output, only for COUNTOURS     */
+  char Gnufilename[NAMELEN];                    /* filename for gnuplot-output                  */
 };
 
 struct ElemVectorPlotObj2D {

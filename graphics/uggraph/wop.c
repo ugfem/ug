@@ -4533,6 +4533,81 @@ static INT LineDraw2D (DRAWINGOBJ *q)
 	return (0);
 }
 
+/****************************************************************************/
+/*
+   GnuplotDraw2D - Draw line-content to 'LINE_GnuStream'
+
+   SYNOPSIS:
+   static INT GnuplotDraw2D (DRAWINGOBJ *q)
+
+   PARAMETERS:
+.  q - the drawing object
+
+   DESCRIPTION:
+   This function writes the line-content to 'LINE_GnuStream'
+
+   RETURN VALUE:
+   INT
+
+   0 when ok
+
+   1 when error occured
+   */
+/****************************************************************************/
+
+static INT GnuplotDraw2D (DRAWINGOBJ *q)
+{
+    INT end,n,j;
+
+	assert(LINE_GnuFile);
+	assert(LINE_GnuStream!=NULL);
+	
+#ifdef ModelP
+    if (me!=master) return (0);
+#endif
+
+    end = 0;
+    while (!end)
+    {
+        switch (DO_2c(q))
+        {
+            case DO_NO_INST:
+                end = 1;
+                break;
+            case DO_WAIT:
+                DO_inc(q);
+                UgWait(WAIT_001);
+                break;
+            case DO_RANGE:
+                DO_inc_RANGE(q);
+                break;
+            case DO_LINE:
+                DO_inc(q)
+                DO_inc(q);
+                fprintf (LINE_GnuStream,"%f %f;\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
+                DO_inc_n(q,2);
+                fprintf (LINE_GnuStream,"%f %f;\n\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
+                DO_inc_n(q,2);
+                break;
+			case DO_POLYLINE:
+                DO_inc(q)
+                n = DO_2c(q); DO_inc(q)
+                DO_inc(q)
+                DO_inc_n(q,2);
+                for (j=1; j<n; j++)
+                {
+                    DO_inc_n(q,2);
+                }
+                break;
+            default:
+				printf("CODE: %d\n",DO_2c(q));
+                RETURN(1);
+        }
+    }
+
+    return (0);
+}
+
 
 /****************************************************************************/
 /*																			*/
@@ -5822,7 +5897,7 @@ static INT PlotMatrixEntry (
 	return (0);
 }
 
-static PlotPointBlockMatrixEntry (
+static INT PlotPointBlockMatrixEntry (
 				DOUBLE rowi, DOUBLE coli,
 				DOUBLE row, DOUBLE col,
 				INT nr, INT nc,
@@ -9452,6 +9527,32 @@ static INT EW_PreProcess_EScalar2D (PICTURE *thePicture, WORK *theWork)
 			return (1);;
 
 	return (0);
+}
+
+static INT EW_GnuPreProcess_EScalar2D (PICTURE *thePicture, WORK *theWork)
+{
+	struct ElemScalarPlotObj2D *theEspo;
+	
+	theEspo = &(PIC_PO(thePicture)->theEspo);
+    if (theEspo->Gnuplot && W_ID(theWork)==DRAW_WORK)
+    {
+        LINE_GnuFile=1;
+        if (gnuplotpathes_set) LINE_GnuStream=FileOpenUsingSearchPaths(theEspo->Gnufilename,"w","gnuplotpaths");
+        else LINE_GnuStream=fileopen(theEspo->Gnufilename,"w");
+        if (LINE_GnuStream==NULL) theEspo->Gnuplot=LINE_GnuFile=0;
+    }
+	else return(1);
+	
+	return(EW_PreProcess_EScalar2D(thePicture,theWork));
+}
+
+static INT EW_GnuPostProcess_EScalar2D (PICTURE *thePicture, WORK *theWork)
+{
+    if (LINE_GnuFile  && W_ID(theWork)==DRAW_WORK)
+    {
+        if (fclose(LINE_GnuStream)==EOF) return (1);
+    }
+	return(0);
 }
 	
 /****************************************************************************/
@@ -23417,7 +23518,7 @@ INT InitWOP (void)
 		POH_DYNAMIC_INFO(thePOH) = DynInfo_EScalar2D;
 		
 		/* draw work */
-		POH_NBCYCLES(thePOH,DRAW_WORK) = 4;
+		POH_NBCYCLES(thePOH,DRAW_WORK) = 5;
 		
 		theWP = POH_WORKPROGS(thePOH,DRAW_WORK,0);
 		WP_WORKMODE(theWP) = ELEMENTWISE;
@@ -23439,7 +23540,17 @@ INT InitWOP (void)
 		theEWW->EW_ExecuteProc					= Draw2D;
 		theEWW->EW_PostProcessProc				= NULL;
 
-		theWP = POH_WORKPROGS(thePOH,DRAW_WORK,2);
+        theWP = POH_WORKPROGS(thePOH,DRAW_WORK,2);
+        WP_WORKMODE(theWP) = ELEMENTWISE;
+        theEWW = WP_ELEMWISE(theWP);
+        theEWW->EW_PreProcessProc               = EW_GnuPreProcess_EScalar2D;
+        theEWW->EW_GetFirstElementProcProc      = EW_GetFirstElement_vert_fw_up_Proc;
+        theEWW->EW_GetNextElementProcProc       = EW_GetNextElement_vert_fw_up_Proc;
+        theEWW->EW_EvaluateProc                 = EW_EScalar2D;
+        theEWW->EW_ExecuteProc                  = GnuplotDraw2D;
+        theEWW->EW_PostProcessProc              = EW_GnuPostProcess_EScalar2D;
+
+		theWP = POH_WORKPROGS(thePOH,DRAW_WORK,3);
 		WP_WORKMODE(theWP) = ELEMENTWISE;
 		theEWW = WP_ELEMWISE(theWP);
 		theEWW->EW_PreProcessProc				= EW_PreProcess_PlotBlackBnd2D;
@@ -23449,7 +23560,7 @@ INT InitWOP (void)
 		theEWW->EW_ExecuteProc					= Draw2D;
 		theEWW->EW_PostProcessProc				= NULL;
 		
-		theWP = POH_WORKPROGS(thePOH,DRAW_WORK,3);
+		theWP = POH_WORKPROGS(thePOH,DRAW_WORK,4);
 		WP_WORKMODE(theWP) = ELEMENTWISE;
 		theEWW = WP_ELEMWISE(theWP);
 		theEWW->EW_PreProcessProc				= EW_PreProcess_PlotGridAfter2D;

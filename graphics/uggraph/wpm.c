@@ -3953,6 +3953,8 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
     theEspo->depth                  = 0;
     theEspo->numOfContours  = 10;
     theEspo->EvalFct = NULL;
+    theEspo->Gnuplot        = 0;
+    strcpy(theEspo->Gnufilename,"test.gnu");
   }
 
   ReadArgvINT ("b", &theEspo->PlotBoundary, argc, argv);
@@ -4091,6 +4093,18 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
     ret = NOT_ACTIVE;
   }
 
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='G')
+    {
+      if (sscanf(argv[i],"G %s",buffer)!=1)
+        break;
+      if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(theEspo->Gnufilename,buffer);
+      theEspo->Gnuplot=1;
+      break;
+    }
+  if (theEspo->mode != PO_CONTOURS_EQ) theEspo->Gnuplot=0;
+
   /* do what is to do */
   if (theEspo->mode == PO_CONTOURS_EQ && ret == ACTIVE)
   {
@@ -4105,7 +4119,7 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
         theEspo->contValues[i] = cv[i];
     }
   }
-  /* return */
+
   return (ret);
 }
 
@@ -4159,6 +4173,8 @@ static INT DisplayScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj)
     UserWriteF(DISPLAY_PO_FORMAT_SS,"PlotMode","CONTOURS_EQ");
     UserWriteF(DISPLAY_PO_FORMAT_SI,"NbOfCont",(int)theEspo->numOfContours);
   }
+  if (theEspo->Gnuplot)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"filename",theEspo->Gnufilename);
 
   return (0);
 }
