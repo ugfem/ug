@@ -368,7 +368,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
       else
         strcpy(es_name[ns],es[ns]->v.name);
 
-      if (sscanf(argv[i+2],"v %s", s) == 1)
+      if (sscanf(argv[i+1],"v %s", s) == 1)
       {
         strcpy(es_var[ns],s);
         i++;
@@ -403,7 +403,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
       else
         strcpy(ev_name[nv],ev[nv]->v.name);
 
-      if (sscanf(argv[i+2],"v %s", s) == 1)
+      if (sscanf(argv[i+1],"v %s", s) == 1)
       {
         strcpy(ev_var[nv],s);
         i++;
@@ -438,7 +438,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
       else
         strcpy(es_cell_name[ns_cell],es_cell[ns_cell]->v.name);
 
-      if (sscanf(argv[i+2],"v %s", s) == 1)
+      if (sscanf(argv[i+1],"v %s", s) == 1)
       {
         strcpy(es_cell_var[ns_cell],s);
         i++;
@@ -473,7 +473,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
       else
         strcpy(ev_cell_name[nv_cell],ev_cell[nv_cell]->v.name);
 
-      if (sscanf(argv[i+2],"v %s", s) == 1)
+      if (sscanf(argv[i+1],"v %s", s) == 1)
       {
         strcpy(ev_cell_var[nv_cell],s);
         i++;
@@ -1935,8 +1935,29 @@ static INT DataExplorerCommand (INT argc, char **argv)
     sprintf(it,"\nobject \"default\" class group\n");
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
-    for (i = 1; i < blocks; i++) {
-      sprintf(it,"member \"data%d\" value \"data%d\"\n", i, i);
+    k=0;
+    for (i = 0; i < ns; i++) {
+      sprintf(it,"member \"data%d\" value \"%s\"\n", ++k, es_var[i]);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
+    for (i = 0; i < nv; i++) {
+      sprintf(it,"member \"data%d\" value \"%s\"\n", ++k, ev_var[i]);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
+    for (i = 0; i < ns_cell; i++) {
+      sprintf(it,"member \"data%d\" value \"%s\"\n", ++k, es_cell_var[i]);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
+    for (i = 0; i < nv_cell; i++) {
+      sprintf(it,"member \"data%d\" value \"%s\"\n", ++k, ev_cell_var[i]);
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
+    for (i = 0; i < nv_bcell; i++) {
+      sprintf(it,"member \"data%d\" value \"%s\"\n", ++k, ev_bcell_var[i]);
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
     }
