@@ -1239,7 +1239,6 @@ INT RemoveStructTree (ENVDIR *homeDir, ENVDIR *theDir)
 
 static INT DirOut (const ENVDIR *theDir, char *buffer, int bufLen, int ropt)
 {
-  INT error;
   int bufPos, i, n;
   static ENVITEM *theItem;
   static int status,pathPos;
@@ -1392,7 +1391,7 @@ static INT DirOut (const ENVDIR *theDir, char *buffer, int bufLen, int ropt)
 
 static INT VarOut (const STRVAR *StrVar, char *buffer, int bufLen)
 {
-  static char *str;
+  static const char *str;
 
   if (bufLen<MAXENVPATH+NAMESIZE+10)
     return(1);                  /* buffer too small */
