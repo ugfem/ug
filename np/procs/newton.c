@@ -60,7 +60,7 @@
 /****************************************************************************/
 
 #define MAX_LINE_SEARCH                 10
-#define LINE_SEAARCH_REDUCTION  0.5
+#define LINE_SEARCH_REDUCTION   0.5
 
 REP_ERR_FILE;
 
@@ -109,6 +109,8 @@ typedef struct
   /* and XDATA_DESCs */
   MATDATA_DESC *J;                              /* the Matrix to be solved						*/
   VECDATA_DESC *d;                              /* nonlinear defect								*/
+  VECDATA_DESC *dold;                           /* old nonlinear defect			                        */
+  VECDATA_DESC *dsave;                  /* last nonlinear defect			                        */
   VECDATA_DESC *v;                              /* correction computed by newton step                   */
   VECDATA_DESC *s;                              /* saved nonlinear solution						*/
 
@@ -242,12 +244,15 @@ static INT NonLinearDefect (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x,
 
   /* compute new nonlinear defect */
   CSTART();
-  for (i=0; i<=level; i++) l_dset(GRID_ON_LEVEL(mg,i),newton->d,EVERY_CLASS,0.0);
+  for (i=0; i<=level; i++)
+    l_dset(GRID_ON_LEVEL(mg,i),newton->d,EVERY_CLASS,0.0);
   if ((*ass->NLAssembleDefect)(ass,0,level,x,newton->d,newton->J,&error)) {
     error = __LINE__;
     REP_ERR_RETURN(error);
   }
   CSTOP(defect_t,defect_c);
+  if (newton->lineSearch == 3)
+    a_dcopy(mg,0,level,newton->dsave,EVERY_CLASS,newton->d);
   if (UG_math_error) {
     UserWrite("math error in NLAssembleDefect\n");
     UG_math_error = 0;
@@ -306,7 +311,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   INT PrintID;                                                  /* print id for PCR						*/
   VEC_SCALAR defect, defect2reach;              /* component--wise norm					*/
   INT n_unk;                                                            /* number of components in solution		*/
-  DOUBLE s, sprime, s2reach, sred;              /* combined defect norm					*/
+  DOUBLE s,sold,sprime,s2reach,sred;            /* combined defect norm					*/
   INT reassemble=1;                                             /* adaptive computation of jacobian		*/
   VEC_SCALAR linred;                                            /* parameters for linear solver			*/
   DOUBLE red_factor[MAX_VEC_COMP];              /* convergence factor for linear iter	*/
@@ -319,6 +324,10 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   INT bl;                                                               /* baselevel returned by preprocess		*/
   INT error;                                                            /* for return value						*/
   LRESULT lr;                                                           /* result of linear solver				*/
+  DOUBLE lambda_old;                    /* last accepted lamda                  */
+  DOUBLE lambda_min;                    /* minimal lamda                        */
+  DOUBLE mu;                            /* guess for lambda                     */
+  DOUBLE s_tmp;                         /* tmp norm                             */
 
   /* get status */
   newton = (NP_NEWTON *) nls;      /* cast from abstract base class to final class*/
@@ -338,7 +347,11 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   /* initialize timers and counters */
   defect_c = newton_c = linear_c = 0;
   defect_t = newton_t = linear_t = 0.0;
-
+  if (newton->lineSearch == 3) {
+    lambda_min = lambda_old = 1.0;
+    for (kk=1; kk<=newton->maxLineSearch; kk++)
+      lambda_min = LINE_SEARCH_REDUCTION * lambda_min;
+  }
   /* check function pointers in numprocs */
   if (newton->trans->ProjectSolution==NULL)
   {
@@ -380,10 +393,16 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   /* dynamic XDATA_DESC allocation */
   if (ass->A == NULL)
     ass->A = newton->J;
-  if (AllocVDFromVD(mg,0,level,x,  &(newton->v))) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
-  if (AllocVDFromVD(mg,0,level,x,  &(newton->d))) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
-  if (AllocVDFromVD(mg,0,level,x,  &(newton->s))) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
-
+  if (AllocVDFromVD(mg,0,level,x,  &(newton->v)))
+  {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
+  if (AllocVDFromVD(mg,0,level,x,  &(newton->d)))
+  {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
+  if (newton->lineSearch == 3) {
+    if (AllocVDFromVD(mg,0,level,x,  &(newton->dold)))
+    {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
+    if (AllocVDFromVD(mg,0,level,x,  &(newton->dsave)))
+    {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
+  }
   /* get number of components */
   n_unk = VD_NCOMP(x);
 
@@ -403,10 +422,13 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
   /* compute single norm */
   s = 0.0; for (i=0; i<n_unk; i++) s += defect[i]*defect[i];s = sqrt(s);
+  sprime = s;
+  sold = s * sqrt(2.0);
   sred = 1.0E10; for (i=0; i<n_unk; i++) sred = MIN(sred,reduction[i]);
   s2reach = s*sred;
   if (newton->lineSearch)
-    UserWriteF(" ++ s=%12.4lE Initial nonlinear residual\n",s);
+    if (newton->displayMode == PCR_FULL_DISPLAY)
+      UserWriteF(" ++ s=%12.4lE Initial nonlinear residual\n",s);
 
   /* check if iteration is necessary */
   if (sc_cmp(defect,abslimit,newton->d)) {
@@ -507,14 +529,91 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     res->max_linear_iterations = MAX(res->max_linear_iterations,lr.number_of_linear_iterations);
 
     if (newton->lineSearch)
-      UserWriteF(" ++ newton step %3d\n",r);
+      if (newton->displayMode == PCR_FULL_DISPLAY)
+        UserWriteF(" ++ newton step %3d\n",r);
 
     /* save current solution for line search */
+    if (AllocVDFromVD(mg,0,level,x,  &(newton->s)))
+    {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
     a_dcopy(mg,0,level,newton->s,EVERY_CLASS,x);
 
     /* do a line search */
     la = newton->lambda; accept=0;
     for (kk=1; kk<=newton->maxLineSearch; kk++) {
+
+      if (newton->lineSearch == 3) {
+        if (lambda_old == 1.0) {
+          if (kk == 1)
+            mu = sold*sold*0.5 / (s*s);
+          else
+            mu = sold * 0.5 / sprime;
+          UserWriteF("lambda_old %f s %f sold %f sprime %f mu %f\n",
+                     lambda_old,s,sold,sprime,mu);
+          la = MIN(1.0,mu);
+        }
+        else {
+
+
+          if (s_ddot(mg,0,level,newton->dold,newton->dold,Factor)
+              !=NUM_OK)
+            NP_RETURN(1,res->error_code);
+          s_tmp = 0.0;
+          for (i=0; i<n_unk; i++) s_tmp += Factor[i];
+          s_tmp = sqrt(s_tmp);
+          UserWriteF("kk %d s_old %f\n",kk,s_tmp);
+
+          if (s_ddot(mg,0,level,newton->dsave,newton->dsave,Factor)
+              !=NUM_OK)
+            NP_RETURN(1,res->error_code);
+          s_tmp = 0.0;
+          for (i=0; i<n_unk; i++) s_tmp += Factor[i];
+          s_tmp = sqrt(s_tmp);
+          UserWriteF("kk %d s_save %f\n",kk,s_tmp);
+
+          for (i=0; i<n_unk; i++) Factor[i] = lambda_old - 1.0;
+          if (a_dscale(mg,0,level,newton->dold,EVERY_CLASS,Factor))
+            REP_ERR_RETURN (1);
+          for (i=0; i<n_unk; i++) Factor[i] = 1.0;
+          if (a_daxpy(mg,0,level,newton->dold,EVERY_CLASS,
+                      Factor,newton->dsave) != NUM_OK)
+            REP_ERR_RETURN (1);
+          if (s_ddot(mg,0,level,newton->dold,newton->dold,Factor)
+              !=NUM_OK)
+            NP_RETURN(1,res->error_code);
+          s_tmp = 0.0;
+          for (i=0; i<n_unk; i++) s_tmp += Factor[i];
+          for (i=0; i<n_unk; i++) Factor[i] = -1.0;
+          if (a_daxpy(mg,0,level,newton->dold,EVERY_CLASS,
+                      Factor,newton->dsave) != NUM_OK)
+            REP_ERR_RETURN (1);
+          for (i=0; i<n_unk; i++) Factor[i] = 1.0 / (lambda_old - 1.0);
+          if (a_dscale(mg,0,level,newton->dold,EVERY_CLASS,Factor))
+            REP_ERR_RETURN (1);
+          if (s_tmp <= 0.0)
+            la = lambda_old * LINE_SEARCH_REDUCTION;
+          else {
+            s_tmp = sqrt(s_tmp);
+            UserWriteF("kk %d s_tmp %f %f\n",kk,s_tmp,
+                       sold*(lambda_old-1)+s);
+            if (kk == 1)
+              mu=lambda_old*lambda_old*sold*sold*0.5/(s*s_tmp);
+            else
+              mu = lambda_old*lambda_old*s*0.5 / s_tmp;
+            UserWriteF("lambda_old %f s %f sold %f sprime %f mu %f\n",
+                       lambda_old,s,sold,sprime,mu);
+            la = MIN(1.0,mu);
+          }
+
+          mu = sold * 0.5 *lambda_old / sprime;
+
+        }
+        if (kk == 1)
+          if (newton->lineSearch == 3)
+            a_dcopy(mg,0,level,newton->dold,EVERY_CLASS,newton->dsave);
+        la = MAX(la,lambda_min);
+        lambda_old = la;
+      }
+
 
       /* set lambda factor */
       for (i=0; i<n_unk; i++) Factor[i] = -la;
@@ -530,22 +629,27 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
       }
 
       /* compute single norm */
-      sprime = 0.0; for (i=0; i<n_unk; i++) sprime += defect[i]*defect[i];
+      sold = sprime;
+      sprime = 0.0; for (i=0; i<n_unk; i++)
+        sprime += defect[i]*defect[i];
       sprime = sqrt(sprime);
 
       rho[kk] = sprime/s;
 
       /* print results */
       if (newton->lineSearch)
-        UserWriteF(" ++ ls=%2d, s=%12.4lE, rho=%8.4lg, lambda= %8.4lg\n",kk,sprime,rho[kk],fabs(la));
+        if (newton->displayMode == PCR_FULL_DISPLAY)
+          UserWriteF(" ++ ls=%2d, s=%12.4lE, rho=%8.4lg, lambda= %8.4lg\n",
+                     kk,sprime,rho[kk],fabs(la));
 
       if (sprime/s<=1-0.25*fabs(la) || !newton->lineSearch) {
+        lambda_old = la;
         accept=1;
         break;
       }
 
       /* else reduce lambda */
-      la = LINE_SEAARCH_REDUCTION*la;
+      la = LINE_SEARCH_REDUCTION*la;
     }
 
     /* if not accepted */
@@ -556,6 +660,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
         /* break iteration */
         UserWrite("line search not accepted, Newton diverged\n");
         res->error_code = 0;
+        FreeVD(mg,0,level,newton->s);
         goto exit;
 
       case 2 :
@@ -571,8 +676,9 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
         UserWriteF(" ++ accepting linesearch %d\n",best_ls);
 
         /* set lambda factor */
-        la = newton->lambda * pow(LINE_SEAARCH_REDUCTION,best_ls-1);
+        la = newton->lambda * pow(LINE_SEARCH_REDUCTION,best_ls-1);
         for (i=0; i<n_unk; i++) Factor[i] = -la;
+        lambda_old = la;
 
         /* update solution */
         a_dcopy(mg,0,level,x,EVERY_CLASS,newton->s);
@@ -587,7 +693,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
         /*default: accept */
       }
-
+    FreeVD(mg,0,level,newton->s);
 
     /* print norm of defect */
     if (DoPCR(PrintID,defect,PCR_CRATE)) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
@@ -615,6 +721,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     }
 
     /* accept new iterate */
+    sold = s;
     s = sprime;
   }
 
@@ -645,8 +752,10 @@ exit:
   /* deallocate local XDATA_DESCs */
   FreeVD(mg,0,level,newton->d);
   FreeVD(mg,0,level,newton->v);
-  FreeVD(mg,0,level,newton->s);
-
+  if (newton->lineSearch == 3) {
+    FreeVD(mg,0,level,newton->dold);
+    FreeVD(mg,0,level,newton->dsave);
+  }
   if (res->error_code==0)
     return (0);
   else
@@ -665,6 +774,8 @@ static INT NewtonInit (NP_BASE *base, INT argc, char **argv)
   newton->d = ReadArgvVecDesc(base->mg,"d",argc,argv);
   newton->v = ReadArgvVecDesc(base->mg,"v",argc,argv);
   newton->s = ReadArgvVecDesc(base->mg,"s",argc,argv);
+  newton->dold = ReadArgvVecDesc(base->mg,"dold",argc,argv);
+  newton->dsave = ReadArgvVecDesc(base->mg,"dsave",argc,argv);
 
   /* read other numprocs */
   newton->trans = (NP_TRANSFER *) ReadArgvNumProc(base->mg,"T",TRANSFER_CLASS_NAME,
@@ -696,8 +807,8 @@ static INT NewtonInit (NP_BASE *base, INT argc, char **argv)
     newton->lineSearch = 0;
     newton->maxLineSearch=1;
   }
-  if ((newton->lineSearch<0)||(newton->lineSearch>2)) {
-    PrintErrorMessage('E',"NewtonInit","line = 0 or 2");
+  if ((newton->lineSearch<0)||(newton->lineSearch>3)) {
+    PrintErrorMessage('E',"NewtonInit","line = 0,1,2 or 3");
     REP_ERR_RETURN(NP_NOT_ACTIVE);
   }
   if (ReadArgvINT("maxit",&(newton->maxit),argc,argv))
@@ -747,6 +858,8 @@ static INT NewtonDisplay (NP_BASE *theNumProc)
   if (newton->J != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"J",ENVITEM_NAME(newton->J));
   if (newton->v != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"v",ENVITEM_NAME(newton->v));
   if (newton->d != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"d",ENVITEM_NAME(newton->d));
+  if (newton->dold != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"dold",ENVITEM_NAME(newton->dold));
+  if (newton->dsave != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"dsave",ENVITEM_NAME(newton->dsave));
   if (newton->s != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"s",ENVITEM_NAME(newton->s));
 
   if (newton->solve != NULL)
