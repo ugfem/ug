@@ -19,6 +19,10 @@
 /*																			*/
 /****************************************************************************/
 
+#ifndef __INITUG__
+#define __INITUG__
+
+#include "compiler.h"
 
 /****************************************************************************/
 /*																			*/
@@ -28,3 +32,5 @@
 
 /* initialisation of the ug library */
 INT InitUg (int *argcp, char ***argvp);
+
+#endif
