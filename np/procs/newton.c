@@ -270,14 +270,25 @@ static INT NonLinearDefect (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x,
   return (0);
 }
 
-static INT NewtonPreProcess  (NP_NL_SOLVER *solve, INT level, INT *result)
+static INT NewtonPreProcess  (NP_NL_SOLVER *solve, INT level, VECDATA_DESC *x, INT *result)
 {
+  NP_NEWTON *newton;
+
+  newton = (NP_NEWTON *) solve;
+  if (AllocMDFromVD(solve->base.mg,0,level,x,x,&newton->J))
+    NP_RETURN(1,result[0]);
+
   return(0);
 }
 
 
 static INT NewtonPostProcess (NP_NL_SOLVER *solve, INT level, VECDATA_DESC *x, INT *result)
 {
+  NP_NEWTON *newton;
+
+  newton = (NP_NEWTON *) solve;
+  FreeMD(solve->base.mg,0,level,newton->J);
+
   return(0);
 }
 
@@ -367,7 +378,6 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   }
 
   /* dynamic XDATA_DESC allocation */
-  if (AllocMDFromVD(mg,0,level,x,x,&(newton->J))) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
   if (ass->A == NULL)
     ass->A = newton->J;
   if (AllocVDFromVD(mg,0,level,x,  &(newton->v))) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
@@ -630,7 +640,6 @@ exit:
   FreeVD(mg,0,level,newton->d);
   FreeVD(mg,0,level,newton->v);
   FreeVD(mg,0,level,newton->s);
-  FreeMD(mg,0,level,newton->J);
 
   if (res->error_code==0)
     return (0);

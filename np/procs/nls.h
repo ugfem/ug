@@ -77,6 +77,7 @@ struct np_nl_solver {
   INT (*PreProcess)
     (struct np_nl_solver *,                  /* pointer to (derived) object     */
     INT,                                         /* level                           */
+    VECDATA_DESC *,                              /* solution vector                 */
     INT *);                                      /* result                          */
   INT (*Solver)                          /* b := b - Ax                     */
     (struct np_nl_solver *,                  /* pointer to (derived) object     */
@@ -95,7 +96,7 @@ struct np_nl_solver {
 typedef struct np_nl_solver NP_NL_SOLVER;
 
 typedef INT (*PreProcessNLSolverProcPtr)                                    \
-  (NP_NL_SOLVER *, INT, INT *);
+  (NP_NL_SOLVER *, INT, VECDATA_DESC *, INT *);
 typedef INT (*Solver)                                                       \
   (NP_NL_SOLVER *, INT, VECDATA_DESC *, NP_NL_ASSEMBLE *, VEC_SCALAR *,      \
   VEC_SCALAR *, NLRESULT *);

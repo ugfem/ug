@@ -385,7 +385,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
 
       /* solve nonlinear problem on level k */
       if (nlsolve->PreProcess!=NULL)
-        if ( (*nlsolve->PreProcess)(nlsolve,k,res) )
+        if ( (*nlsolve->PreProcess)(nlsolve,k,bdf->y_p1,res) )
           return(__LINE__);
       if ( (*nlsolve->Solver)(nlsolve,k,bdf->y_p1,&bdf->tsolver.nlass,nlsolve->abslimit,nlsolve->reduction,&nlresult) )
         return(__LINE__);
@@ -437,6 +437,9 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
               (bdf->error,level,bdf->t_p1,&dt_0,bdf->y_p1,bdf->y_0,
               bdf->tsolver.nlass.A,&eresult))
           NP_RETURN(1,res[0]);
+        if (nlsolve->PostProcess!=NULL)
+          if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
+            NP_RETURN(1,res[0]);
         if (bdf->error->PostProcess != NULL)
           if ((*bdf->error->PostProcess)(bdf->error,level,res))
             NP_RETURN(1,res[0]);
@@ -464,7 +467,12 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
               NP_RETURN(1,res[0]);
           nlinterpolate--;
         }
-        else nlinterpolate = 0;
+        else {
+          nlinterpolate = 0;
+          if (nlsolve->PostProcess!=NULL)
+            if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
+              NP_RETURN(1,res[0]);
+        }
       }
     }
     if (bdf->trans->PostProcessProject!=NULL)

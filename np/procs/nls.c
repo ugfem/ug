@@ -128,6 +128,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
         INT (*PreProcess)
              (struct np_nl_solver *,         // pointer to (derived) object
                   INT,                           // level
+                  VECDATA_DESC *,                // solution vector
                   INT *);                        // result
     INT (*Solver)                        // b := b - Ax
              (struct np_nl_solver *,         // pointer to (derived) object
@@ -216,7 +217,7 @@ INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 
   if (ReadArgvOption("i",argc,argv)) {
     if (np->PreProcess != NULL)
-      if ((*np->PreProcess)(np,level,&result)) {
+      if ((*np->PreProcess)(np,level,np->x,&result)) {
         UserWriteF("NPNLSolverExecute: PreProcess failed, error code %d\n",
                    result);
         return (1);
