@@ -32,6 +32,7 @@
 /*            18 Feb 1993, Indigo version                                   */
 /*            02 Jun 1993, Paragon OSF/1 version                            */
 /*            14 Sep 1995, MPI version                                      */
+/*            29 Jan 2003, pV3 concentrator support                         */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -53,8 +54,6 @@
 #include <time.h>
 #include <math.h>
 
-
-
 /* MPI library */
 /*
    #include <mpp/mpi.h>
@@ -64,6 +63,12 @@
 #include "../ppif_general.h"
 
 /*#include "compiler.h"*/
+
+/*#define _PV3*/
+
+#ifdef _PV3
+#include <pV3.h>
+#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -94,6 +99,12 @@
 
 #define PPIF_SUCCESS    0       /* Return value for success                 */
 #define PPIF_FAILURE    1       /* Return value for failure                 */
+
+#ifndef _PV3
+#define COMM MPI_COMM_WORLD
+#else
+#define COMM Comm
+#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -158,6 +169,9 @@ static int vc_free=0;           /* rotating pointer to find free VChan      */
 
 static char buf[100];           /* string buffer for debugging              */
 
+#ifdef _PV3
+static MPI_Comm Comm;
+#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -314,11 +328,19 @@ int InitPPIF (int *argcp, char ***argvp)
     if (mpierror) MPI_Abort( MPI_COMM_WORLD, mpierror);
     PPIFBeganMPI = 1;
   }
-
-
-  MPI_Comm_rank (MPI_COMM_WORLD, &me);
-  MPI_Comm_size (MPI_COMM_WORLD, &procs);
-
+#ifdef _PV3
+  else
+  {
+    printf("MPI already initialized, InitPPIF() faild.\n");
+    return PPIF_FAILURE;
+  }
+  if (pV_MPIStart(MPI_COMM_WORLD, 1, 0, 0, &Comm) != 0) {
+    printf("pV3 Concentrator cannot be selected. InitPPIF() faild.\n");
+    return PPIF_FAILURE;
+  }
+#endif
+  MPI_Comm_rank (COMM, &me);
+  MPI_Comm_size (COMM, &procs);
 
   master = 0;
 
@@ -418,12 +440,12 @@ int InitPPIF (int *argcp, char ***argvp)
   succ=1;
   for(i=0; i<degree; i++)
   {
-    MPI_Recv ((void *) &(slvcnt[i]), (int) sizeof(int), MPI_BYTE, downtree[i]->p, ID_TREE, MPI_COMM_WORLD, &status);
+    MPI_Recv ((void *) &(slvcnt[i]), (int) sizeof(int), MPI_BYTE, downtree[i]->p, ID_TREE, COMM, &status);
     succ += slvcnt[i];
   }
   if (me>0)
   {
-    MPI_Send ((void *) &succ, (int) sizeof(int), MPI_BYTE, (int)(me-1)/2, ID_TREE, MPI_COMM_WORLD);
+    MPI_Send ((void *) &succ, (int) sizeof(int), MPI_BYTE, (int)(me-1)/2, ID_TREE, COMM);
   }
 
   return (PPIF_SUCCESS);
@@ -436,6 +458,9 @@ void ExitPPIF (void)
 
   if (PPIFBeganMPI)
   {
+#ifdef _PV3
+    pV_MPISTOP();
+#endif
     mpierror = MPI_Finalize();
     if (mpierror) MPI_Abort(MPI_COMM_WORLD, mpierror);
     PPIFBeganMPI = 0;
@@ -452,7 +477,7 @@ void ExitPPIF (void)
 int Broadcast (void *data, int size)
 
 {
-  if (MPI_SUCCESS != MPI_Bcast (data, size, MPI_BYTE, master, MPI_COMM_WORLD) )
+  if (MPI_SUCCESS != MPI_Bcast (data, size, MPI_BYTE, master, COMM) )
     return (PPIF_FAILURE);
 
   return (PPIF_SUCCESS);
@@ -499,7 +524,7 @@ int GetSpread (void *data, int size)
 int Synchronize (void)
 
 {
-  if (MPI_SUCCESS != MPI_Barrier (MPI_COMM_WORLD) ) return (PPIF_FAILURE);
+  if (MPI_SUCCESS != MPI_Barrier (COMM) ) return (PPIF_FAILURE);
 
   return (PPIF_SUCCESS);
 }
@@ -528,7 +553,7 @@ int DiscSync (VChannelPtr vc)
 int SendSync (VChannelPtr vc, void *data, int size)
 
 {
-  if (MPI_SUCCESS == MPI_Ssend (data, size, MPI_BYTE, vc->p, vc->chanid, MPI_COMM_WORLD) )
+  if (MPI_SUCCESS == MPI_Ssend (data, size, MPI_BYTE, vc->p, vc->chanid, COMM) )
     return (size);
   else
     return (-1);
@@ -540,7 +565,7 @@ int RecvSync (VChannelPtr vc, void *data, int size)
   int count = -1;
   MPI_Status status;
 
-  if (MPI_SUCCESS == MPI_Recv (data, size, MPI_BYTE, vc->p, vc->chanid, MPI_COMM_WORLD, &status) )
+  if (MPI_SUCCESS == MPI_Recv (data, size, MPI_BYTE, vc->p, vc->chanid, COMM, &status) )
     MPI_Get_count (&status, MPI_BYTE, &count);
 
   return (count);
@@ -589,7 +614,7 @@ msgid SendASync (VChannelPtr vc, void *data, int size, int *error)
 
   if (req = malloc (sizeof (MPI_Request) ) )
   {
-    if (MPI_SUCCESS == MPI_Isend (data, size, MPI_BYTE, vc->p, vc->chanid, MPI_COMM_WORLD, req) )
+    if (MPI_SUCCESS == MPI_Isend (data, size, MPI_BYTE, vc->p, vc->chanid, COMM, req) )
     {
       *error = FALSE;
       return ((msgid) req);
@@ -598,7 +623,7 @@ msgid SendASync (VChannelPtr vc, void *data, int size, int *error)
 
 #  else
   MPI_Request Req;
-  if (MPI_SUCCESS == MPI_Isend (data, size, MPI_BYTE, vc->p, vc->chanid, MPI_COMM_WORLD, &Req) )
+  if (MPI_SUCCESS == MPI_Isend (data, size, MPI_BYTE, vc->p, vc->chanid, COMM, &Req) )
   {
     *error = FALSE;
     return ((msgid) Req);
@@ -618,7 +643,7 @@ msgid RecvASync (VChannelPtr vc, void *data, int size, int *error)
 
   if (req = malloc (sizeof (MPI_Request) ) )
   {
-    if (MPI_SUCCESS == MPI_Irecv (data, size, MPI_BYTE, vc->p, vc->chanid, MPI_COMM_WORLD, req) )
+    if (MPI_SUCCESS == MPI_Irecv (data, size, MPI_BYTE, vc->p, vc->chanid, COMM, req) )
     {
       *error = FALSE;
       return ((msgid) req);
@@ -628,7 +653,7 @@ msgid RecvASync (VChannelPtr vc, void *data, int size, int *error)
 #  else
   MPI_Request Req;
 
-  if (MPI_SUCCESS == MPI_Irecv (data, size, MPI_BYTE, vc->p, vc->chanid, MPI_COMM_WORLD, &Req) )
+  if (MPI_SUCCESS == MPI_Irecv (data, size, MPI_BYTE, vc->p, vc->chanid, COMM, &Req) )
   {
     *error = FALSE;
     return ((msgid) Req);
@@ -711,7 +736,7 @@ int InfoARecv (VChannelPtr vc, msgid m)
 int SendMail (int destId, int reqId, void *data, int size)
 
 {
-  if (MPI_SUCCESS == MPI_Send (data, size, MPI_BYTE, destId, ID_MAIL, MPI_COMM_WORLD) )
+  if (MPI_SUCCESS == MPI_Send (data, size, MPI_BYTE, destId, ID_MAIL, COMM) )
     return (PPIF_SUCCESS);
 
   return (PPIF_FAILURE);
@@ -723,14 +748,14 @@ int GetMail (int *sourceId, int *reqId, void *data, int *size)
   MPI_Status status;
   int flag;
 
-  MPI_Iprobe (MPI_ANY_SOURCE, ID_MAIL, MPI_COMM_WORLD, &flag, &status);
+  MPI_Iprobe (MPI_ANY_SOURCE, ID_MAIL, COMM, &flag, &status);
 
   if (!flag) return (0);
 
   *sourceId = status.MPI_SOURCE;
   *reqId    = ID_MAIL;
 
-  if (MPI_SUCCESS != MPI_Recv (data, RAND_MSG_SIZE, MPI_BYTE, *sourceId, ID_MAIL, MPI_COMM_WORLD, &status) )
+  if (MPI_SUCCESS != MPI_Recv (data, RAND_MSG_SIZE, MPI_BYTE, *sourceId, ID_MAIL, COMM, &status) )
   {
     printf ("GetMail: %d no mesg!\n", me);
     return (-1);

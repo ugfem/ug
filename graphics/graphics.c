@@ -52,6 +52,9 @@
 #ifdef _COVISE
 #include "coviseif.h"
 #endif
+#ifdef _PV3
+#include "pv3if.h"
+#endif
 
 /* own header */
 #include "graphics.h"
@@ -134,6 +137,12 @@ INT InitGraphics (void)
         #ifdef _COVISE
   /* init Covise interface */
   error = InitCoviseIF();
+  if (error!=0)
+    return(error);
+        #endif
+
+        #ifdef _PV3
+  error = InitPV3();
   if (error!=0)
     return(error);
         #endif

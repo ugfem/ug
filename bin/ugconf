@@ -121,6 +121,8 @@ then
 	echo "             NOGRAPE (set GRAPE = OFF)";
 	echo "             COVISE (set COVISE = ON)";
 	echo "             NOCOVISE (set COVISE = OFF)";
+	echo "             PV3 (set PV3 = ON)"
+	echo "             NOPV3 (set PV3 = OFF)"
 
 	echo "         interface to CAD";
 	echo "             CAD (set CAD = ON)";
@@ -202,7 +204,7 @@ PACKSUFFIX=Z
 
 grep_valid_entries()
 {
-	egrep '^[ ]*ARCH|^[ ]*MODEL |^[ ]*DIM|^[ ]*GRAPE |^[ ]*COVISE|^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE|^[ ]*OPTIM_MODE|^[ ]*CHACO|^[ ]*CAD|^[ ]*GUI' $1;
+	egrep '^[ ]*ARCH|^[ ]*MODEL |^[ ]*DIM|^[ ]*GRAPE |^[ ]*COVISE|^[ ]*PV3|^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE|^[ ]*OPTIM_MODE|^[ ]*CHACO|^[ ]*CAD|^[ ]*GUI' $1;
 }
 
 
@@ -332,6 +334,12 @@ edit_ugconf()
 		;;
 	NOCOVISE)
 		sed 's/^COVISE.*$/COVISE = OFF/' $1 > $1.tmp
+		;;
+	PV3)
+		sed 's/^PV3.*$/PV3 = ON/' $1 > $1.tmp
+		;;
+	NOPV3)
+		sed 's/^PV3.*$/PV3 = OFF/' $1 > $1.tmp
 		;;
 
 	RIF)

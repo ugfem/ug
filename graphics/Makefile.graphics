@@ -18,7 +18,7 @@ LCFLAGS = -I../include
 
 # $(GRAPE) is set to ON or OFF in ug.conf
 
-all: $(OBJECTS) $(GRAPE) UGGRAPH $(COVISE_TARGET)
+all: $(OBJECTS) $(GRAPE) UGGRAPH $(COVISE_TARGET) $(PV3_TARGET)
 	$(ARCH_AR)  $(ARCH_ARFLAGS) ../lib/libug$(DIM).a $(OBJECTS)
 
 .c.o:
@@ -46,15 +46,24 @@ COVISE_ON:
 
 COVISE_OFF:
 
+PV3_ON:
+	echo "creating pV3-if"
+	cd pv3 && make -f Makefile.pv3
+
+PV3_OFF:
 
 clean:
 	rm -f *.o
 	cd uggraph && make -f Makefile.uggraph clean
 	cd grape && make -f Makefile.grape clean
+	cd covise && make -f Makefile.covise clean
+	cd pv3 && make -f Makefile.pv3 clean
 
 extract:
 	cd uggraph && make -f Makefile.uggraph extract
 	cd grape && make -f Makefile.grape extract
+	cd covise && make -f Makefile.covise extract
+	cd pv3 && make -f Makefile.pv3 extract
 
 xmc: extract all clean
 
