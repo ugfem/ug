@@ -2953,6 +2953,10 @@ INT SetSurfaceClasses (MULTIGRID *theMG)
       if (FINE_GRID_DOF(v))
         fullrefine = level;
     }
+        #ifdef ModelP
+  fullrefine = UG_GlobalMinINT(fullrefine);
+        #endif
+
   FULLREFINELEVEL(theMG) = fullrefine;
 
   return(0);
