@@ -1,34 +1,47 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/*! \file bio.c
+ * \ingroup low
+ */
+
+/** \addtogroup low
+ *
+ * @{
+ */
+
 /****************************************************************************/
-/*																			*/
-/* File:	  bio.c															*/
-/*																			*/
-/* Purpose:   basic input/output                                                                                        */
-/*																			*/
-/* Author:	  Klaus Johannsen                                                                                               */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70550 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de								*/
-/*																			*/
-/* History:   09.12.96 begin,												*/
-/*																			*/
-/* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                          */
+/* File:      bio.c                                                         */
+/*                                                                          */
+/* Purpose:   basic input/output                                            */
+/*                                                                          */
+/* Author:    Klaus Johannsen                                               */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70550 Stuttgart                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
+/* History:   09.12.96 begin,                                               */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* include files															*/
-/*			  system include files											*/
-/*			  application include files                                                                     */
-/*																			*/
+/*                                                                          */
+/* include files                                                            */
+/* system include files                                                     */
+/* application include files                                                */
+/*                                                                          */
 /****************************************************************************/
 
 #include <stdio.h>
 #include <string.h>
+
+/* For NS_PREFIX */
+#include <domain.h>
+
 #ifndef __MWCW__
 #include <rpc/rpc.h>    /* to include xdr.h in a portable way */
 #endif
@@ -38,20 +51,20 @@
 #include "bio.h"
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*    compile time constants defining static data size (i.e. arrays)        */
+/*    other constants                                                       */
+/*    macros                                                                */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* data structures used in this source file (exported data structures are	*/
-/*		  in the corresponding include file!)								*/
-/*																			*/
+/*                                                                          */
+/* data structures used in this source file (exported data structures are   */
+/* in the corresponding include file!)                                      */
+/*                                                                          */
 /****************************************************************************/
 
 typedef int (*RW_mint_proc)(int n, int *intList);
@@ -59,15 +72,15 @@ typedef int (*RW_mdouble_proc)(int n, double *doubleList);
 typedef int (*RW_string_proc)(char *string);
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 /* file */
@@ -87,15 +100,15 @@ static RW_string_proc Read_string, Write_string;
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*																			*/
-/* forward declarations of functions used before they are defined			*/
-/*																			*/
+/*                                                                          */
+/* forward declarations of functions used before they are defined           */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* debug i/o																*/
-/*																			*/
+/*                                                                          */
+/* debug i/o                                                                */
+/*                                                                          */
 /****************************************************************************/
 #ifndef __MWCW__
 
@@ -186,9 +199,9 @@ static int XDR_Write_string (char *string)
 }
 #endif
 /****************************************************************************/
-/*																			*/
-/* ascii i/o																*/
-/*																			*/
+/*                                                                          */
+/* ascii i/o                                                                */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -274,9 +287,9 @@ static int ASCII_Write_string (char *string)
 }
 
 /****************************************************************************/
-/*																			*/
-/* binary i/o																*/
-/*																			*/
+/*                                                                          */
+/* binary i/o                                                               */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -343,12 +356,12 @@ static int BIN_Write_string (char *string)
   return (0);
 }
 /****************************************************************************/
-/*																			*/
-/* exported i/o																*/
-/*																			*/
+/*                                                                          */
+/* exported i/o                                                             */
+/*                                                                          */
 /****************************************************************************/
 
-int Bio_Initialize (FILE *file, int mode, char rw)
+int NS_PREFIX Bio_Initialize (FILE *file, int mode, char rw)
 {
   stream = file;
 
@@ -390,37 +403,37 @@ int Bio_Initialize (FILE *file, int mode, char rw)
   return (0);
 }
 
-int Bio_Read_mint (int n, int *intList)
+int NS_PREFIX Bio_Read_mint (int n, int *intList)
 {
   return ((*Read_mint)(n,intList));
 }
 
-int Bio_Write_mint (int n, int *intList)
+int NS_PREFIX Bio_Write_mint (int n, int *intList)
 {
   return ((*Write_mint)(n,intList));
 }
 
-int Bio_Read_mdouble (int n, double *doubleList)
+int NS_PREFIX Bio_Read_mdouble (int n, double *doubleList)
 {
   return ((*Read_mdouble)(n,doubleList));
 }
 
-int Bio_Write_mdouble (int n, double *doubleList)
+int NS_PREFIX Bio_Write_mdouble (int n, double *doubleList)
 {
   return ((*Write_mdouble)(n,doubleList));
 }
 
-int Bio_Read_string (char *string)
+int NS_PREFIX Bio_Read_string (char *string)
 {
   return ((*Read_string)(string));
 }
 
-int Bio_Write_string (char *string)
+int NS_PREFIX Bio_Write_string (char *string)
 {
   return ((*Write_string)(string));
 }
 
-int Bio_Jump_From (void)
+int NS_PREFIX Bio_Jump_From (void)
 {
   n_byte = 0;
   if (fgetpos(stream,&pos)) return (1);
@@ -429,7 +442,7 @@ int Bio_Jump_From (void)
   return (0);
 }
 
-int Bio_Jump_To (void)
+int NS_PREFIX Bio_Jump_To (void)
 {
   fpos_t act;
 
@@ -441,7 +454,7 @@ int Bio_Jump_To (void)
   return (0);
 }
 
-int Bio_Jump (int dojump)
+int NS_PREFIX Bio_Jump (int dojump)
 {
   int jump;
 
@@ -455,3 +468,5 @@ int Bio_Jump (int dojump)
 
   return (0);
 }
+
+/** @} */

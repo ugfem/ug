@@ -1,31 +1,40 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/*! \file initlow.c
+ * \ingroup low
+ */
+
+/** \addtogroup low
+ *
+ * @{
+ */
+
 /****************************************************************************/
-/*																			*/
-/* File:	  initlow.c                                                                                                     */
-/*																			*/
-/* Purpose:   call the init routines of the low module						*/
-/*																			*/
-/* Author:	  Henrik Rentz-Reichert                                                                                 */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
-/*																			*/
-/* History:   27.02.95 begin, ug version 3.0								*/
-/*																			*/
-/* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                          */
+/* File:      initlow.c                                                     */
+/*                                                                          */
+/* Purpose:   call the init routines of the low module                      */
+/*                                                                          */
+/* Author:    Henrik Rentz-Reichert                                         */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
+/* History:   27.02.95 begin, ug version 3.0                                */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 
 /****************************************************************************/
-/*																			*/
-/* include files															*/
-/*			  system include files											*/
-/*			  application include files                                                                     */
-/*																			*/
+/*                                                                          */
+/* include files                                                            */
+/* system include files                                                     */
+/* application include files                                                */
+/*                                                                          */
 /****************************************************************************/
 
 /* ANSI-C includes */
@@ -61,25 +70,7 @@ using namespace UG3d;
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-/****************************************************************************/
-/*D
-   InitLow - Call the inits for the low module
 
-   SYNOPSIS:
-   INT InitLow ();
-
-   PARAMETERS:
-   .  void -
-
-   DESCRIPTION:
-   This function calls the inits for the low module.
-
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 if error occured.
-   D*/
-/****************************************************************************/
 
 #ifdef ModelP
 #define DEFAULTENVSIZE  512000  /* size of environment if no default value	*/
@@ -87,7 +78,18 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 #define DEFAULTENVSIZE  128000  /* size of environment if no default value	*/
 #endif
 
-INT InitLow ()
+/****************************************************************************/
+/** \brief Call the inits for the low module
+ *
+ * This function calls the inits for the low module.
+ *
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error occured </li>
+ * </ul>
+ */
+/****************************************************************************/
+INT NS_PREFIX InitLow ()
 {
   INT err;
   char buffer[BUFFSIZE];
@@ -131,3 +133,5 @@ INT InitLow ()
 
   return (0);
 }
+
+/** @} */

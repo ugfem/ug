@@ -1,22 +1,31 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/*! \file bio.h
+ * \ingroup low
+ */
+
+/** \addtogroup low
+ *
+ * @{
+ */
+
 /****************************************************************************/
-/*																			*/
-/* File:	  bio.h															*/
-/*																			*/
-/* Purpose:   header file for bio.c		                                                                        */
-/*																			*/
-/* Author:	  Klaus Johannsen                                                                                               */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70550 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de								*/
-/*																			*/
-/* History:   09.12.96 begin												*/
-/*																			*/
-/* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                          */
+/* File:      bio.h                                                         */
+/*                                                                          */
+/* Purpose:   header file for bio.c                                         */
+/*                                                                          */
+/* Author:    Klaus Johannsen                                               */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70550 Stuttgart                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
+/* History:   09.12.96 begin                                                */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -25,9 +34,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __BIO__
@@ -35,21 +44,32 @@
 
 #include <stdio.h>
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 
 /****************************************************************************/
-/*																			*/
-/* configuration of interface                                                                                           */
-/*																			*/
+/*                                                                          */
+/* configuration of interface                                               */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*    compile time constants defining static data size (i.e. arrays)        */
+/*    other constants                                                       */
+/*    macros                                                                */
+/*                                                                          */
 /****************************************************************************/
 
 /* mode of file */
@@ -58,25 +78,26 @@
 #define BIO_BIN                                         2
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                          */
+/* data structures exported by the corresponding source file                */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                          */
+/* function declarations                                                    */
+/*                                                                          */
 /****************************************************************************/
 
+/** \ingroup low \brief Hallo Welt! */
 int Bio_Initialize                      (FILE *file, int mode, char rw);
 int Bio_Read_mint                       (int n, int *intList);
 int Bio_Write_mint                      (int n, int *intList);
@@ -90,4 +111,9 @@ int Bio_Jump                            (int dojump);
 
 
 
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
+
+/** @} */
 #endif
