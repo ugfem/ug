@@ -2642,11 +2642,13 @@ static INT LoadDataCommand (INT argc, char **argv)
         return(PARAMERRORCODE);
       }
       number = iValue;
-      if (number<0 || number > 9999)
+      if (number<0 || number > 999999)
       {
-        PrintHelp("loaddata",HELPITEM," (number out of range [0,9999])");
+        PrintHelp("loaddata",HELPITEM," (number out of range [0,999999])");
         return(PARAMERRORCODE);
       }
+      break;
+
     case 'h' :
       if (ReadMemSizeFromString(argv[i]+1,&heapSize)!=0)                           /* skip leading 'h' in argv */
       {
