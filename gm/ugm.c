@@ -789,9 +789,10 @@ NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,int edge,NODE *after)
   ELEMENT           *BoundaryElement;
   COORD s,smin;
   COORD x[3],r[3], ropt[3], l[2], dl[2], Inverse[9], Matrix[9];
+  COORD         **Corners;
   COORD_VECTOR HelpVector;
   COORD             *lambda, *lambda1, *lambda2, *cvect;
-  int i,ni0,ni1,iopt;
+  INT n,i,ni0,ni1,iopt;
   VERTEX            *theVertex, *v1, *v2;
   VSEGMENT          *vs1,*vs2, *vs;
   NODE              *theNode;
@@ -943,18 +944,18 @@ NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,int edge,NODE *after)
     }
     else
     {
-      /* Compute transformation coeffisients */
-      TransformCoefficients(theElement);
-
       /* Get global coordinates */
       V3_COPY(CVECT(theVertex),x);
+
+      /* Get global coordinates */
+      CORNER_COORDINATES(theElement,n,Corners);
 
       /* Set initial guess to local coordinates, */
       /* as if the node was not moved.           */
       V3_LINCOMB(0.5,LOCAL_COORD_OF_ELEM(theElement,ni0),0.5,LOCAL_COORD_OF_ELEM(theElement,ni1),r)
 
       /* Compute local coordinates */
-      if (GlobalToLocalHEX(x, r)!=0) {
+      if (GlobalToLocal3d(n,Corners,x,r)!=0) {
         UserWrite(" *** CreateMidNodeHEX: can't move node !\n");
         return (NULL);
       }
@@ -992,8 +993,8 @@ NODE *CreateSideNode (GRID *theGrid,ELEMENT *theElement,NODE *Node0, NODE *Node1
   COORD s,smin;
   COORD x[3], r[3], ropt[3], l[2], dl[2], Inverse[9], Matrix[9];
   COORD_VECTOR HelpVector;
-  COORD             *lambda, *lambda1, *lambda2, *cvect;
-  int i,ni0,ni1,iopt;
+  COORD             *lambda, *lambda1, *lambda2, *cvect, **Corners;
+  INT n,i,ni0,ni1,iopt;
   VERTEX            *theVertex, *v1, *v2;
   VSEGMENT          *vs1,*vs2, *vs;
   NODE              *theNode;
@@ -1126,8 +1127,8 @@ NODE *CreateSideNode (GRID *theGrid,ELEMENT *theElement,NODE *Node0, NODE *Node1
   }
   else
   {
-    /* Compute transformation coeffisients */
-    TransformCoefficients(theElement);
+    /* Get global coordinates */
+    CORNER_COORDINATES(theElement,n,Corners);
 
     /* Get global coordinates */
     V3_COPY(CVECT(theVertex),x);
@@ -1139,7 +1140,7 @@ NODE *CreateSideNode (GRID *theGrid,ELEMENT *theElement,NODE *Node0, NODE *Node1
     r[2] = 0.5*(NU(v1)+NU(v2));
 
     /* Compute local coordinates */
-    if (GlobalToLocalHEX(x, r)!=0)
+    if (GlobalToLocal3d(n,Corners,x,r)!=0)
     {
       UserWrite(" *** CreateSideNode: can't move node !\n");
       return (NULL);

@@ -68,7 +68,7 @@ INT evector_offset[TAGS];
 INT svector_offset[TAGS];
 INT side_offset[TAGS];
 
-GENERAL_ELEMENT *element_descriptors[TAGS];
+GENERAL_ELEMENT *element_descriptors[TAGS],     *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
 
 /****************************************************************************/
 /*																			*/
@@ -712,6 +712,7 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
 
   /* make description globally available */
   element_descriptors[tag] = el;
+  reference_descriptors[el->corners_of_elem] = el;
 
   /* get a free object id for free list */
   el->mapped_inner_objt = GetFreeOBJT();

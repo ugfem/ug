@@ -1654,7 +1654,7 @@ extern INT svector_offset[TAGS];
 extern INT side_offset[TAGS];
 
 /* the element descriptions are also globally available, these are pointers ! */
-extern GENERAL_ELEMENT *element_descriptors[TAGS];
+extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
 #endif
 
 #define SIDES_OF_ELEM(p)                (element_descriptors[TAG(p)]->sides_of_elem)
@@ -1685,9 +1685,29 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define EDGES_OF_CORNER(p,c,k)          (element_descriptors[TAG(p)]->edges_of_corner[(c)][(k)])
 #define CORNER_OF_OPPEDGE(p,e,c)        (element_descriptors[TAG(p)]->corner_of_oppedge[(e)][(c)])
 #define CORNER_OPP_TO_SIDE(p,s)         (element_descriptors[TAG(p)]->corner_opp_to_side[(s)])
-#define OPPOSITE_EDGE(p,e)              (element_descriptors[TAG(p)]->opposite_edge[(e)])
+#define OPPOSITE_EDGE(p,e)                  (element_descriptors[TAG(p)]->opposite_edge[(e)])
 #define SIDE_OPP_TO_CORNER(p,c)         (element_descriptors[TAG(p)]->side_opp_to_corner[(c)])
 #define EDGE_OF_CORNER(p,c,e)           (element_descriptors[TAG(p)]->edge_of_corner[(c)][(e)])
+
+#define SIDES_OF_REF(n)                   (reference_descriptors[n]->sides_of_elem)
+#define EDGES_OF_REF(n)                   (reference_descriptors[n]->edges_of_elem)
+#define CORNERS_OF_REF(n)                 (reference_descriptors[n]->corners_of_elem)
+#define LOCAL_COORD_OF_REF(n,c)           (reference_descriptors[n]->local_corner[(c)])
+#define EDGES_OF_SIDE_REF(n,i)            (reference_descriptors[n]->edges_of_side[(i)])
+#define CORNERS_OF_SIDE_REF(n,i)          (reference_descriptors[n]->corners_of_side[(i)])
+#define EDGE_OF_SIDE_REF(n,s,e)           (reference_descriptors[n]->edge_of_side[(s)][(e)])
+#define EDGE_OF_TWO_SIDES_REF(n,s,t)  (reference_descriptors[n]->edge_of_two_sides[(s)][(t)])
+#define CORNER_OF_SIDE_REF(n,s,c)         (reference_descriptors[n]->corner_of_side[(s)][(c)])
+#define CORNER_OF_EDGE_REF(n,e,c)         (reference_descriptors[n]->corner_of_edge[(e)][(c)])
+#define EDGE_WITH_CORNERS_REF(n,c0,c1) (reference_descriptors[n]->edge_with_corners[(c0)][(c1)])
+#define SIDE_WITH_EDGE_REF(n,e,k)         (reference_descriptors[n]->side_with_edge[(e)][(k)])
+#define CORNER_OF_SIDE_INV_REF(n,s,c) (reference_descriptors[n]->corner_of_side_inv[(s)][(c)])
+#define EDGES_OF_CORNER_REF(n,c,k)        (reference_descriptors[n]->edges_of_corner[(c)][(k)])
+#define CORNER_OF_OPPEDGE_REF(n,e,c)  (reference_descriptors[n]->corner_of_oppedge[(e)][(c)])
+#define CORNER_OPP_TO_SIDE_REF(n,s)       (reference_descriptors[n]->corner_opp_to_side[(s)])
+#define OPPOSITE_EDGE_REF(n,e)            (reference_descriptors[n]->opposite_edge[(e)])
+#define SIDE_OPP_TO_CORNER_REF(n,c)       (reference_descriptors[n]->side_opp_to_corner[(c)])
+#define EDGE_OF_CORNER_REF(n,c,e)         (reference_descriptors[n]->edge_of_corner[(c)][(e)])
 
 #define CTRL2(p)        ((p)->ge.flag)
 #define FLAG(p)                 (p)->ge.flag

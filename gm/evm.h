@@ -12,7 +12,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  internet: ug@ica3.uni-stuttgart.de 						*/
+/*			  internet: ug@ica3.uni-stuttgart.de 					    	*/
 /*																			*/
 /* History:   8.12.94 begin, ug3-version									*/
 /*																			*/
@@ -116,6 +116,16 @@
 										(C)[1] = (A)[1]*(B)[0]+(A)[3]*(B)[1];\
 										(C)[2] = (A)[0]*(B)[2]+(A)[2]*(B)[3];\
 										(C)[3] = (A)[1]*(B)[2]+(A)[3]*(B)[3];}
+#define M2_INVERT(M,IM)                           \
+{ DOUBLE det,invdet;                              \
+  det = (M)[0][0]*(M)[1][1]-(M)[1][0]*(M)[0][1];  \
+  if (ABS(det)<SMALL_D*SMALL_D)                   \
+	return(1);                                    \
+  invdet = 1.0/det;                               \
+  (IM)[0][0] =  (M)[1][1]*invdet;                 \
+  (IM)[1][0] = -(M)[0][1]*invdet;                 \
+  (IM)[0][1] = -(M)[1][0]*invdet;                 \
+  (IM)[1][1] =  (M)[0][0]*invdet;}
 
 /* macros for vector operations */
 #define V3_LINCOMB(a,A,b,B,C)		   {(C)[0] = (a)*(A)[0] + (b)*(B)[0];\
@@ -190,6 +200,27 @@
 										(C)[7] = (A)[1]*(B)[6]+(A)[4]*(B)[7]+(A)[7]*(B)[8];\
 										(C)[8] = (A)[2]*(B)[6]+(A)[5]*(B)[7]+(A)[8]*(B)[8];}
 
+#define M3_INVERT(M,IM)                           \
+{ DOUBLE det,invdet;                              \
+  det = (M)[0][0]*(M)[1][1]*(M)[2][2]             \
+	+ (M)[0][1]*(M)[1][2]*(M)[2][0]               \
+	  + (M)[0][2]*(M)[1][0]*(M)[2][1]             \
+		- (M)[0][2]*(M)[1][1]*(M)[2][0]           \
+		  - (M)[0][0]*(M)[1][2]*(M)[2][1]         \
+			- (M)[0][1]*(M)[1][0]*(M)[2][2];      \
+  if (ABS(det)<SMALL_D*SMALL_D)                   \
+	return(1);                                    \
+  invdet = 1.0/det;                               \
+  (IM)[0][0] = ( (M)[1][1]*(M)[2][2] - (M)[1][2]*(M)[2][1]) * invdet;  \
+  (IM)[0][1] = (-(M)[1][0]*(M)[2][2] + (M)[1][2]*(M)[2][0]) * invdet;  \
+  (IM)[0][2] = ( (M)[1][0]*(M)[2][1] - (M)[1][1]*(M)[2][0]) * invdet;  \
+  (IM)[1][0] = (-(M)[0][1]*(M)[2][2] + (M)[0][2]*(M)[2][1]) * invdet;  \
+  (IM)[1][1] = ( (M)[0][0]*(M)[2][2] - (M)[0][2]*(M)[2][0]) * invdet;  \
+  (IM)[1][2] = (-(M)[0][0]*(M)[2][1] + (M)[0][1]*(M)[2][0]) * invdet;  \
+  (IM)[2][0] = ( (M)[0][1]*(M)[1][2] - (M)[0][2]*(M)[1][1]) * invdet;  \
+  (IM)[2][1] = (-(M)[0][0]*(M)[1][2] + (M)[0][2]*(M)[1][0]) * invdet;  \
+  (IM)[2][2] = ( (M)[0][0]*(M)[1][1] - (M)[0][1]*(M)[1][0]) * invdet;}
+
 #ifdef __MPW32__
 #define M4_TIMES_M4(A,B,C)				{int i,j,k; for (i=0;i<4;i++) for (j=0;j<4;j++) for (k=0;k<4;k++) \
 																(C)[i+4*j] = (A)[i+4*k] * (B)[k+4*j];}
@@ -239,6 +270,7 @@
 #define M_DIM_COPY(A,C)				M2_COPY(A,C)
 #define M_DIM_SCALE(c,M)			M2_SCALE(c,M)
 #define V_DIM_Normalize(a)			V2_Normalize(a)
+#define M_DIM_INVERT(M,IM)			M2_INVERT(M,IM)
 
 #endif
 
@@ -263,6 +295,7 @@
 #define M_DIM_COPY(A,C)				M3_COPY(A,C)
 #define M_DIM_SCALE(c,M)			M3_SCALE(c,M)
 #define V_DIM_Normalize(a)			V3_Normalize(a)
+#define M_DIM_INVERT(M,IM)			M3_INVERT(M,IM)
 
 #endif
 

@@ -48,7 +48,60 @@
 /*																			*/
 /****************************************************************************/
 
-#define SMALL_DET 1e-50
+#define SMALL_DET      1e-50
+#define SMALL_DIFF     1e-4
+#define MAX_ITER       10
+
+/* some useful abbreviations */
+#define Xi  ((DOUBLE)ip_local[0])
+#define Eta ((DOUBLE)ip_local[1])
+#define Mu  ((DOUBLE)ip_local[2])
+
+#define J11 J[0][0]
+#define J12 J[0][1]
+#define J13 J[0][2]
+#define J21 J[1][0]
+#define J22 J[1][1]
+#define J23 J[1][2]
+#define J31 J[2][0]
+#define J32 J[2][1]
+#define J33 J[2][2]
+
+#define X0  co_global[0][0]
+#define X1  co_global[1][0]
+#define X2  co_global[2][0]
+#define X3  co_global[3][0]
+#define X4  co_global[4][0]
+#define X5  co_global[5][0]
+#define X6  co_global[6][0]
+#define X7  co_global[7][0]
+
+#define Y0  co_global[0][1]
+#define Y1  co_global[1][1]
+#define Y2  co_global[2][1]
+#define Y3  co_global[3][1]
+#define Y4  co_global[4][1]
+#define Y5  co_global[5][1]
+#define Y6  co_global[6][1]
+#define Y7  co_global[7][1]
+
+#define Z0  co_global[0][2]
+#define Z1  co_global[1][2]
+#define Z2  co_global[2][2]
+#define Z3  co_global[3][2]
+#define Z4  co_global[4][2]
+#define Z5  co_global[5][2]
+#define Z6  co_global[6][2]
+#define Z7  co_global[7][2]
+
+#define U0  nodal_values[0]
+#define U1  nodal_values[1]
+#define U2  nodal_values[2]
+#define U3  nodal_values[3]
+#define U4  nodal_values[4]
+#define U5  nodal_values[5]
+#define U6  nodal_values[6]
+#define U7  nodal_values[7]
 
 /****************************************************************************/
 /*																			*/
@@ -57,30 +110,11 @@
 /*																			*/
 /****************************************************************************/
 
-
-
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
 /*																			*/
 /****************************************************************************/
-
-#ifdef __THREEDIM__
-COORD_VECTOR HexRefCoord[MAX_CORNERS_OF_ELEM] = {{0.0,0.0,0.0},{1.0,0.0,0.0},
-						 {1.0,1.0,0.0},{0.0,1.0,0.0},
-						 {0.0,0.0,1.0},{1.0,0.0,1.0},
-						 {1.0,1.0,1.0},{0.0,1.0,1.0}};
-
-/* Coordinates of the central points in reference hexahedron of inner surfaces 
-   where integration is done in finite-volume discretization.        
-   Used in "AssembleElementHEX_FV".  */ 
-COORD_VECTOR CenterOfIntergrSurf[MAX_EDGES_OF_ELEM] = {
-  {0.5,0.25,0.25},{0.75,0.5,0.25},{0.5,0.75,0.25},{0.25,0.5,0.25},
-  {0.5,0.25,0.75},{0.75,0.5,0.75},{0.5,0.75,0.75},{0.25,0.5,0.75},
-  {0.75,0.25,0.5},{0.25,0.25,0.5},{0.75,0.75,0.5},{0.25,0.75,0.5}};	   
-
-COORD_VECTOR TransfCoeff[MAX_CORNERS_OF_ELEM]; 
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -89,11 +123,11 @@ COORD_VECTOR TransfCoeff[MAX_CORNERS_OF_ELEM];
 /****************************************************************************/
 
 /* local midpoints */
-static COORD_VECTOR_2D LMP_Triangle 		= {0.3333333333333, 0.3333333333333};
+static COORD_VECTOR_2D LMP_Triangle 		= {0.33333333333, 0.33333333333};
 static COORD_VECTOR_2D LMP_Quadrilateral	= {0.5, 0.5};
 static COORD_VECTOR_3D LMP_Tetrahedron		= {0.25, 0.25, 0.25};
-
-
+static COORD_VECTOR_3D LMP_Pyramid   		= {0.5, 0.5, 0.33333333333333333};
+static COORD_VECTOR_3D LMP_Hexahedron		= {0.5, 0.5, 0.5};
 
 /* data for CVS */
 static char rcsid[] = "$Header$";
@@ -107,10 +141,514 @@ static char rcsid[] = "$Header$";
 
 /****************************************************************************/
 /*D
+   LocalCornerCoordinates - Return corners of reference element
+
+   SYNOPSIS:
+   INT LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *result);
+
+   PARAMETERS:
+.  dim - space dimension, 2D can elements can be used in 3D
+.  tag - identifier for element type
+.  corner - corner for which the coordinates should be returned
+.  result - vector to store result
+
+   DESCRIPTION:
+   This routine returns the coordinates of the corners of the reference element.
+   The function is currently implemented in two dimensions for triangles (tag=3)
+   and quadrilaterals (tag=4).
+
+   RETURN VALUES:
+   0 when o.k.
+
+   1 if an error occured.
+D*/
+/****************************************************************************/
+
+INT LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *result)
+{
+	if (dim==2) 
+	{
+		if (tag==TRIANGLE)
+			switch (corner) {
+				case 0: result[0] = 0.0; result[1] = 0.0; return(0);
+				case 1: result[0] = 1.0; result[1] = 0.0; return(0);
+				case 2: result[0] = 0.0; result[1] = 1.0; return(0);
+				default: return(1);
+			}
+		if (tag==QUADRILATERAL)
+			switch (corner) {
+				case 0: result[0] = 0.0; result[1] = 0.0; return(0);
+				case 1: result[0] = 1.0; result[1] = 0.0; return(0);
+				case 2: result[0] = 1.0; result[1] = 1.0; return(0);
+				case 3: result[0] = 0.0; result[1] = 1.0; return(0);
+				default: return(1);
+			}
+	}
+	if (dim==3)
+	{
+		switch (tag) {
+			case TETRAHEDRON:
+				switch (corner) {
+					case 0: result[0] = 0.0; result[1] = 0.0; result[2] = 0.0; return(0);
+					case 1: result[0] = 1.0; result[1] = 0.0; result[2] = 0.0; return(0);
+					case 2: result[0] = 0.0; result[1] = 1.0; result[2] = 0.0; return(0);
+					case 3: result[0] = 0.0; result[1] = 0.0; result[2] = 1.0; return(0);
+					default: return(1);
+				}
+			case PYRAMID:
+				switch (corner) {
+					case 0: result[0] = 0.0; result[1] = 0.0; result[2] = 0.0; return(0);
+					case 1: result[0] = 1.0; result[1] = 0.0; result[2] = 0.0; return(0);
+					case 2: result[0] = 1.0; result[1] = 1.0; result[2] = 0.0; return(0);
+					case 3: result[0] = 0.0; result[1] = 1.0; result[2] = 0.0; return(0);
+					case 4: result[0] = 0.0; result[1] = 0.0; result[2] = 1.0; return(0);
+					default: return(1);
+				}
+			case PRISM:
+				switch (corner) {
+					case 0: result[0] = 0.0; result[1] = 0.0; result[2] = 0.0; return(0);
+					case 1: result[0] = 1.0; result[1] = 0.0; result[2] = 0.0; return(0);
+					case 2: result[0] = 0.0; result[1] = 1.0; result[2] = 0.0; return(0);
+					case 4: result[0] = 0.0; result[1] = 0.0; result[2] = 1.0; return(0);
+					case 5: result[0] = 1.0; result[1] = 0.0; result[2] = 1.0; return(0);
+					case 6: result[0] = 0.0; result[1] = 1.0; result[2] = 1.0; return(0);
+					default: return(1);
+				}
+			case HEXAHEDRON:
+				switch (corner) {
+					case 0: result[0] = 0.0; result[1] = 0.0; result[2] = 0.0; return(0);
+					case 1: result[0] = 1.0; result[1] = 0.0; result[2] = 0.0; return(0);
+					case 2: result[0] = 1.0; result[1] = 1.0; result[2] = 0.0; return(0);
+					case 3: result[0] = 0.0; result[1] = 1.0; result[2] = 0.0; return(0);
+					case 4: result[0] = 0.0; result[1] = 0.0; result[2] = 1.0; return(0);
+					case 5: result[0] = 1.0; result[1] = 0.0; result[2] = 1.0; return(0);
+					case 6: result[0] = 1.0; result[1] = 1.0; result[2] = 1.0; return(0);
+					case 7: result[0] = 0.0; result[1] = 1.0; result[2] = 1.0; return(0);
+					default: return(1);
+				}
+			default: return(1);
+		}
+	}				
+
+	return (1);
+
+}
+
+/****************************************************************************/
+/*D
+   InterpolateFEFunction - Interpolate a finite element function 
+
+   SYNOPSIS:
+   INT InterpolateFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
+        DOUBLE nodal_values[MAX_CORNERS_OF_ELEM], DOUBLE *result);
+
+   PARAMETERS:
+.  dim - space dimension, 2D can elements can be used in 3D
+.  tag - identifier for element type
+.  ip_local - point in coordinates of the reference element where FE function should be evaluated
+.  nodal_values - values of finite element function in corners
+.  result - where to store result
+
+   DESCRIPTION:
+   This function interpolates a finite element function given by its nodal
+   values. Currently standard linear elements for triangles (tag=3) and
+   bilinear elements for quadrilaterals (tag=4) are implemented.
+
+   RETURN VALUE:
+   0 when o.k.
+
+   1 if an error occured.
+D*/
+/****************************************************************************/
+
+INT InterpolateFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
+        DOUBLE nodal_values[MAX_CORNERS_OF_ELEM], DOUBLE *result)
+{
+	if (dim==2)
+	{
+		if (tag==TRIANGLE) {
+			*result = U0 + Xi*(U1-U0) + Eta*(U2-U0);
+			return (0);
+		}
+		if (tag==QUADRILATERAL) {
+			*result = U0 + Xi*(U1-U0) + Eta*(U3-U0) + Xi*Eta*(U0-U1+U2-U3);
+			return (0);
+		}
+	}
+	if ((dim==3)&&(DIM==3))
+	{
+		switch (tag) {
+			case TETRAHEDRON:
+				*result = (1-Xi-Eta-Mu) * nodal_values[0]
+				        +      Xi       * nodal_values[1]
+				        +      Eta      * nodal_values[2]
+				        +      Mu       * nodal_values[3];
+				return(0);
+			case PYRAMID:
+				if (Xi > Eta)
+				  {
+					*result = ((1.0-Xi)*(1.0-Eta)-Mu*(1.0-Eta))*nodal_values[0]
+					  +(Xi*(Eta-1.0)-Mu*Eta)*nodal_values[1]
+						+(-Xi*Eta+Mu*Eta)*nodal_values[2]
+						  +(Xi-1.0-Mu*Eta)*nodal_values[3]
+							+Mu*nodal_values[4];
+    				return (0);
+				  }
+				else
+				  {
+					*result = ((1.0-Xi)*(1.0-Eta)-Mu*(1.0-Xi))*nodal_values[0]
+					  +(Xi*(Eta-1.0)-Mu*Xi)*nodal_values[1]
+						+(-Xi*Eta+Mu*Xi)*nodal_values[2]
+						  +(Xi-1.0-Mu*Xi)*nodal_values[3]
+							+Mu*nodal_values[4];
+    				return (0);
+				  }
+			case PRISM:
+				*result = (1-Xi-Eta)*(1-Mu) * nodal_values[0]
+				        + Xi*(1-Mu)         * nodal_values[1]
+				        + Eta*(1-Mu)        * nodal_values[2]
+				        + (1-Xi-Eta)*Mu     * nodal_values[3]
+				        + Xi*Mu             * nodal_values[4]
+				        + Eta*Mu            * nodal_values[5];
+				return(0);
+			case HEXAHEDRON:
+				*result = (1-Xi)*(1-Eta)*(1-Mu) * nodal_values[0]
+				        +  (Xi) *(1-Eta)*(1-Mu) * nodal_values[1]
+				        +  (Xi) * (Eta) *(1-Mu) * nodal_values[2]
+				        + (1-Xi)* (Eta) *(1-Mu) * nodal_values[3]
+						+ (1-Xi)*(1-Eta)* (Mu)  * nodal_values[4]
+				        +  (Xi) *(1-Eta)* (Mu)  * nodal_values[5]
+				        +  (Xi) * (Eta) * (Mu)  * nodal_values[6]
+				        + (1-Xi)* (Eta) * (Mu)  * nodal_values[7];
+				return(0);
+			default: return(1);
+		}
+	}				
+	
+	return (1);
+}
+
+/****************************************************************************/
+/*D
+   LinearTrafo - return whether coordinate trafo is linear or not
+
+   SYNOPSIS:
+   INT LinearTrafo (INT dim, INT tag);
+
+   PARAMETERS:
+.  dim - space dimension, 2D can elements can be used in 3D
+.  tag - identifier for element type
+
+   DESCRIPTION:
+   This function returns TRUE when the coordinate transformation from the
+   reference element to the general element is linear. In that case the
+   Jacobian need only be evaluated once per element.
+
+   RETURN VALUES:
+   TRUE when transformation is linear
+
+   FALSE when transformation is nonlinear
+D*/
+/****************************************************************************/
+
+INT LinearTrafo (INT dim, INT tag)
+{
+	if (dim==2)
+	{
+		if (tag==TRIANGLE) return(1);
+		if (tag==QUADRILATERAL) return(0);
+	}
+	if (dim==3)
+	{
+		if (tag==TETRAHEDRON) return(1);
+		if (tag==PYRAMID) return(0);
+		if (tag==PRISM) return(0);
+		if (tag==HEXAHEDRON) return(0);
+	}
+		
+	return(0);
+}
+
+/****************************************************************************/
+/*D
+   JacobianInverse - compute inverse of jacobian
+
+   SYNOPSIS:
+   INT JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
+       DOUBLE ip_local[DIM], DOUBLE Jinv[DIM][DIM], DOUBLE *detJ);
+
+   PARAMETERS:
+.  dim - space dimension, 2D can elements can be used in 3D
+.  tag - identifier for element type
+.  co_global - global coordintes of corners of the element
+.  ip_local - point in coordinates of the reference element where Jacobian should be evaluated
+.  Jinv - where to store resulting inverse of Jacobian
+.  detJ - where to store determinant of Jacobian
+
+   DESCRIPTION:
+   Let T be the coordinate transformation from the reference element to a
+   general element.
+   This function computes the determinant of the Jacobian of T and
+   the inverse of the Jacobian of T at a given point in reference coordinates. 
+   Currently triangles (tag=3) and
+   quadrilaterals (tag=4) are implemented.
+
+   RETURN VALUES:
+   0 when o.k.
+
+   1 if an error occured (e.g. determinant is very small)
+
+   SEE ALSO:
+   GradientFEFunction, LinearTrafo
+D*/
+/****************************************************************************/
+
+INT JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
+       DOUBLE ip_local[DIM], DOUBLE Jinv[DIM][DIM], DOUBLE *detJ)
+{
+	DOUBLE det;
+	DOUBLE x[MAX_CORNERS_OF_ELEM], y[MAX_CORNERS_OF_ELEM];
+	INT i;
+	DOUBLE J[DIM][DIM],xi,eta;
+	DOUBLE sub0123, sub0145, sub0347, sub10234567;
+
+	if (dim==2)
+	{
+		for (i=0; i<tag; i++) {
+			x[i] = co_global[i][0]; y[i] = co_global[i][1];
+		}
+		xi = ip_local[0]; eta = ip_local[1];
+	
+		if (tag==TRIANGLE) {
+	    	J[0][0] = x[1]-x[0]; J[0][1] = y[1]-y[0];
+	    	J[1][0] = x[2]-x[0]; J[1][1] = y[2]-y[0];
+		}
+	
+		if (tag==QUADRILATERAL) {
+			J[0][0] = -(1-eta)*x[0] + (1-eta)*x[1] + eta*x[2] - eta*x[3];
+			J[0][1] = -(1-eta)*y[0] + (1-eta)*y[1] + eta*y[2] - eta*y[3];
+			J[1][0] = -(1-xi)*x[0] - xi*x[1] + xi*x[2] + (1-xi)*x[3];
+			J[1][1] = -(1-xi)*y[0] - xi*y[1] + xi*y[2] + (1-xi)*y[3];
+		}
+	
+	    det = J[0][0]*J[1][1] - J[0][1]*J[1][0];
+	 	if (fabs(det)<=1.0E-15) return (1);
+	
+		/* fill inverse */
+	    Jinv[0][0] =  J[1][1]/det; Jinv[0][1] = -J[0][1]/det;
+	    Jinv[1][0] = -J[1][0]/det; Jinv[1][1] =  J[0][0]/det;
+	
+		/* return determinant */
+		*detJ = det;
+		return(0);
+	}
+	if ((dim==3)&&(DIM==3))
+	{
+		/* fill jacobian */
+		switch (tag) {
+			case TETRAHEDRON:
+				J11 = X1-X0;	J12 = Y1-Y0;	J13 = Z1-Z0;
+				J21 = X2-X0;	J22 = Y2-Y0;	J23 = Z2-Z0;
+				J31 = X3-X0;	J32 = Y3-Y0;	J33 = Z3-Z0;
+				break;
+			case PYRAMID:
+				if (Xi > Eta)
+				  {
+					J11= -(1.0-Eta)*X0 +(1.0-Eta)*X1+Eta*X2    -Eta*X3;
+					J21= (Mu-1.0+Xi)*X0-(Xi+Mu)*X1  +(Xi+Mu)*X2+(1.0-Xi-Mu)*X3;
+					J31= -(1.0-Eta)*X0 -Eta*X1;     +Eta*X2    -Eta*X3     +X4;
+					J12= -(1.0-Eta)*Y0 +(1.0-Eta)*Y1+Eta*Y2    -Eta*Y3;
+					J22= (Mu-1.0+Xi)*Y0-(Xi+Mu)*Y1  +(Xi+Mu)*Y2+(1.0-Xi-Mu)*Y3;
+					J32= -(1.0-Eta)*Y0 -Eta*Y1;     +Eta*Y2    -Eta*Y3     +Y4;
+					J13= -(1.0-Eta)*Z0 +(1.0-Eta)*Z1+Eta*Z2    -Eta*Z3;
+					J23= (Mu-1.0+Xi)*Z0-(Xi+Mu)*Z1  +(Xi+Mu)*Z2+(1.0-Xi-Mu)*Z3;
+					J33= -(1.0-Eta)*Z0 -Eta*Z1;     +Eta*Z2    -Eta*Z3     +Z4;
+					break;
+				  }
+				else
+				  {
+					J11=(Mu+Eta-1.0)*X0+(1.0-Eta-Mu)*X1+(Eta+Mu)*X2-(Eta+Mu)*X3;
+					J21=-(1.0-Xi)*X0   -Xi*X1          +Xi*X2      +(1.0-Xi)*X3;
+					J31=-(1.0-Xi)*X0   -Xi*X1          +Xi*X2      -Xi*X3   +X4;
+					J12=(Mu+Eta-1.0)*Y0+(1.0-Eta-Mu)*Y1+(Eta+Mu)*Y2-(Eta+Mu)*Y3;
+					J22=-(1.0-Xi)*Y0   -Xi*Y1          +Xi*Y2      +(1.0-Xi)*Y3;
+					J32=-(1.0-Xi)*Y0   -Xi*Y1          +Xi*Y2      -Xi*Y3   +Y4;
+					J13=(Mu+Eta-1.0)*Z0+(1.0-Eta-Mu)*Z1+(Eta+Mu)*Z2-(Eta+Mu)*Z3;
+					J23=-(1.0-Xi)*Z0   -Xi*Z1          +Xi*Z2      +(1.0-Xi)*Z3;
+					J33=-(1.0-Xi)*Z0   -Xi*Z1          +Xi*Z2      -Xi*Z3   +Z4;
+					break;
+				  }
+			  case PRISM:
+				J11=-(1.0-Mu)*X0+(1.0-Mu)*X1     -Mu*X3+Mu*X4;
+				J21=-(1.0-Mu)*X0+(1.0-Mu)*X2     -Mu*X3+Mu*X4;
+				J31=-(1.0-Xi-Eta)*X0-Xi*X1-Eta*X2+(1.0-Xi-Eta)*X3+Xi*X4+Eta*X4;
+				J12=-(1.0-Mu)*Y0+(1.0-Mu)*Y1     -Mu*Y3+Mu*Y4;
+				J22=-(1.0-Mu)*Y0+(1.0-Mu)*Y2     -Mu*Y3+Mu*Y4;
+				J32=-(1.0-Xi-Eta)*Y0-Xi*Y1-Eta*Y2+(1.0-Xi-Eta)*Y3+Xi*Y4+Eta*Y4;
+				J13=-(1.0-Mu)*Z0+(1.0-Mu)*Z1     -Mu*Z3+Mu*Z4;
+				J23=-(1.0-Mu)*Z0+(1.0-Mu)*Z2     -Mu*Z3+Mu*Z4;
+				J33=-(1.0-Xi-Eta)*Z0-Xi*Z1-Eta*Z2+(1.0-Xi-Eta)*Z3+Xi*Z4+Eta*Z4;
+				break;
+			case HEXAHEDRON:
+				sub0123 = X0-X1+X2-X3;
+				sub0145 = X0-X1-X4+X5;
+				sub0347 = X0-X3-X4+X7;
+				sub10234567 = X1-X0-X2+X3+X4-X5+X6-X7;
+				J11 = X1-X0 + Eta*(sub0123) + Mu *(sub0145) + Eta*Mu*(sub10234567);
+				J21 = X3-X0 + Xi *(sub0123) + Mu *(sub0347) + Xi *Mu*(sub10234567);
+				J31 = X4-X0 + Xi *(sub0145) + Eta*(sub0347) + Xi*Eta*(sub10234567);
+
+				sub0123 = Y0-Y1+Y2-Y3;
+				sub0145 = Y0-Y1-Y4+Y5;
+				sub0347 = Y0-Y3-Y4+Y7;
+				sub10234567 = Y1-Y0-Y2+Y3+Y4-Y5+Y6-Y7;
+				J12 = Y1-Y0 + Eta*(sub0123) + Mu *(sub0145) + Eta*Mu*(sub10234567);
+				J22 = Y3-Y0 + Xi *(sub0123) + Mu *(sub0347) + Xi *Mu*(sub10234567);
+				J32 = Y4-Y0 + Xi *(sub0145) + Eta*(sub0347) + Xi*Eta*(sub10234567);
+
+				sub0123 = Z0-Z1+Z2-Z3;
+				sub0145 = Z0-Z1-Z4+Z5;
+				sub0347 = Z0-Z3-Z4+Z7;
+				sub10234567 = Z1-Z0-Z2+Z3+Z4-Z5+Z6-Z7;
+				J13 = Z1-Z0 + Eta*(sub0123) + Mu *(sub0145) + Eta*Mu*(sub10234567);
+				J23 = Z3-Z0 + Xi *(sub0123) + Mu *(sub0347) + Xi *Mu*(sub10234567);
+				J33 = Z4-Z0 + Xi *(sub0145) + Eta*(sub0347) + Xi*Eta*(sub10234567);
+				break;
+			default: return(1);
+		}
+		
+		/* compute determinant */
+		det = J11*J22*J33 + J12*J23*J31 + J13*J21*J32
+		    - J13*J22*J31 - J11*J23*J32 - J12*J21*J33;
+	 	if (fabs(det)<=1.0E-15) return (1);
+		*detJ = det;
+
+		/* invert jacobian */
+		Jinv[0][0] =  (J22*J33-J23*J32)/det; Jinv[0][1] = -(J21*J33-J23*J31)/det; Jinv[0][2] =  (J21*J32-J22*J31)/det;	    	
+		Jinv[1][0] = -(J12*J33-J13*J32)/det; Jinv[1][1] =  (J11*J33-J13*J31)/det; Jinv[1][2] = -(J11*J32-J12*J31)/det;	    	
+		Jinv[2][0] =  (J12*J13-J22*J23)/det; Jinv[2][1] = -(J11*J23-J13*J21)/det; Jinv[2][2] =  (J11*J22-J12*J21)/det;	    	
+
+		return(0);
+	}
+
+	return(0);
+}
+
+/****************************************************************************/
+/*D
+   GradientFEFunction - compute gradient of finite element function 
+
+   SYNOPSIS:
+   INT GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM], 
+       DOUBLE Jinv[DIM][DIM], DOUBLE nodal_values[MAX_CORNERS_OF_ELEM],
+       DOUBLE result[DIM]);
+
+   PARAMETERS:
+.  dim - space dimension, 2D can elements can be used in 3D
+.  tag - identifier for element type
+.  ip_local - point in coordinates of the reference element where gradient should be evaluated
+.  Jinv - inverse of Jacobian
+.  nodal_values - values of finite element function in corners
+.  result - where to store result
+
+   DESCRIPTION:
+   This function computes the gradient of a finite element function in a point
+   given in reference coordinates.
+
+   RETURN VALUES:
+   0 when o.k.
+
+   1 if an error occured.
+
+   SEE ALSO:
+   JacobianInverse
+D*/
+/****************************************************************************/
+
+INT GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM], 
+       DOUBLE Jinv[DIM][DIM], DOUBLE nodal_values[MAX_CORNERS_OF_ELEM],
+       DOUBLE result[DIM])
+{
+	DOUBLE GradRef[DIM],sub1,sub2,sub3,sub4;
+	INT i;
+
+	if (dim==2)
+	{
+		/* Gradients of basis function on reference element */
+		if (tag==TRIANGLE) {
+			GradRef[0] = U1-U0; 
+			GradRef[1] = U2-U0; 
+		}
+		if (tag==QUADRILATERAL) {
+			sub1 = U0-U1+U2-U3;
+			GradRef[0] = U1-U0 + Eta*sub1; 
+			GradRef[1] = U3-U0 + Xi *sub1; 
+		}
+	
+		/* transform gradient to (x,y) coordinates */
+		result[0] = Jinv[0][0]*GradRef[0] + Jinv[0][1]*GradRef[1];
+		result[1] = Jinv[1][0]*GradRef[0] + Jinv[1][1]*GradRef[1];
+		return (0);
+	}
+	if ((dim==3)&&(DIM==3))
+	{
+		switch (tag) {
+			case TETRAHEDRON:
+				GradRef[0] = U1-U0; 
+				GradRef[1] = U2-U0; 
+				GradRef[2] = U3-U0; 
+				break;
+			case PYRAMID:
+				sub1 = U0-U1+U2-U3;
+				if (Xi > Eta)
+				  {
+					GradRef[0] = U1-U0 + Eta*sub1; 
+					GradRef[1] = U3-U0 + (Xi + Mu)*sub1; 
+					GradRef[2] = U4-U0 + Eta*sub1;
+					break;
+				  }
+				else
+				  {
+					GradRef[0] = U1-U0 + (Eta + Mu)*sub1; 
+					GradRef[1] = U3-U0 + Xi *sub1; 
+					GradRef[2] = U4-U0 + Xi *sub1; 
+					break;
+				  }
+			case PRISM:
+				sub1 = U0-U1+U3-U4;
+				sub2 = U0-U2+U3-U5;
+				GradRef[0] = U1-U0 + Mu * sub1; 
+				GradRef[1] = U3-U0 + Mu * sub2; 
+				GradRef[2] = U4-U0 + Xi * sub1 + Eta * sub2; 
+				break;
+			case HEXAHEDRON:
+				sub1 = U0-U1+U2-U3;
+				sub2 = U0-U1-U4+U5;
+				sub3 = U0-U3-U4+U7;
+				sub4 = U1-U0-U2+U3+U4-U5+U6-U7;
+				GradRef[0] = U1-U0 + Eta*sub1 +Mu *sub2 +Eta*Mu*sub4; 
+				GradRef[1] = U3-U0 + Xi *sub1 +Mu *sub3 +Xi*Mu *sub4; 
+				GradRef[2] = U4-U0 + Xi *sub2 +Eta*sub3 +Xi*Eta*sub4; 
+				break;
+			default: return(1);
+		}
+
+		/* transform gradient to (x,y) coordinates */
+		result[0] = Jinv[0][0]*GradRef[0] + Jinv[0][1]*GradRef[1] + Jinv[0][2]*GradRef[2];
+		result[1] = Jinv[1][0]*GradRef[0] + Jinv[1][1]*GradRef[1] + Jinv[1][2]*GradRef[2];
+		result[2] = Jinv[2][0]*GradRef[0] + Jinv[2][1]*GradRef[1] + Jinv[2][2]*GradRef[2];
+		return (0);
+	}
+	
+	return (0);	
+}
+
+/****************************************************************************/
+/*D
    GN - General Shape function for nodes
 
    SYNOPSIS:
-   DOUBLE GN (INT n, INT i, COORD local);
+   DOUBLE GN (INT n, INT i, COORD ip_local);
 
    PARAMETERS:
 .  n - number of corners of the element
@@ -118,18 +656,10 @@ static char rcsid[] = "$Header$";
 .  local - local COORDinates
 
    DESCRIPTION:
-   This function finds the linear/bilinear shape functions Ni(local) to approximate the
-   solution u in the integration point ip for triangles/quadrilaterals/tetrahedra
-   
-.n   uip(local) = SUM Ni(local)*ui
+   This function finds the value of the shape function i for the reference 
+   elements at the given local coordinate.
 
-   where the sum runs over all nodes of the element to which the considered
-   ip belongs. The shape function is defined as
-   
-   - for all elements who do not have the node i as a corner
-.n   Ni = 0
-
-   - for the elements
+   The shape functions fullfill
 .n   Ni(node i) = 1
 .n   Ni(node k) = 0, if k is not equal i.
    
@@ -139,50 +669,439 @@ static char rcsid[] = "$Header$";
 D*/   
 /****************************************************************************/
 
-DOUBLE GN (INT n, INT i, COORD *local)
+DOUBLE GN (INT n, INT i, COORD *ip_local)
 {
-#ifdef __TWODIM__
-	switch (n)
-	{
-		case 3:
-			switch (i)
-			{
-				case 0 : return((DOUBLE)(1-local[0]-local[1]));
-				case 1 : return((DOUBLE)local[0]);
-				case 2 : return((DOUBLE)local[1]);
+    #ifdef __TWODIM__
+    switch (n)
+	  {
+	  case 3:
+		switch (i)
+		  {
+		  case 0 : return(1.0-Xi-Eta);
+		  case 1 : return(Xi);
+		  case 2 : return(Eta);
+		  }
+	  case 4:
+		switch (i)
+		  {
+			case 0 : return((1.0-Xi)*(1.0-Eta));
+			case 1 : return(Xi*(1.0-Eta));
+			case 2 : return(Xi*Eta);
+			case 3 : return((1.0-Xi)*Eta);
 			}
-		case 4:
-			switch (i)
-			{
-/*				case 0 : return((DOUBLE)(0.25*(1-local[0])*(1-local[1])));
-				case 1 : return((DOUBLE)(0.25*(1+local[0])*(1-local[1])));
-				case 2 : return((DOUBLE)(0.25*(1+local[0])*(1+local[1])));
-				case 3 : return((DOUBLE)(0.25*(1-local[0])*(1+local[1])));*/
-				case 0 : return((DOUBLE)((1-local[0])*(1-local[1])));
-				case 1 : return((DOUBLE)(local[0]*(1-local[1])));
-				case 2 : return((DOUBLE)(local[0]*local[1]));
-				case 3 : return((DOUBLE)((1-local[0])*local[1]));
-			}
-		default:
-			return (-1.0);
-	}
-#endif
+	  default:
+		return (-1.0);
+	  }
+    #endif
 	
-#ifdef __THREEDIM__
+    #ifdef __THREEDIM__
 	switch (n)
-	{
-		case 4:
-			switch (i)
-			{
-				case 0 : return((DOUBLE)(1.0-local[0]-local[1]-local[2]));
-				case 1 : return((DOUBLE)local[0]);
-				case 2 : return((DOUBLE)local[1]);
-				case 3 : return((DOUBLE)local[2]);
+	  {
+	  case 4:
+		switch (i)
+		  {
+		  case 0 : return(1.0-Xi-Eta-Mu);
+		  case 1 : return(Xi);
+		  case 2 : return(Eta);
+		  case 3 : return(Mu);
 			}
-		default:
-			return (-1.0);
-	}
+	  case 5:
+		switch (i)
+		  {
+		  case 0 : 
+			if (Xi > Eta)
+			  return((1.0-Xi)*(1.0-Eta) - Mu*(1.0-Eta));
+			else
+			  return((1.0-Xi)*(1.0-Eta) - Mu*(1.0-Xi));
+		  case 1 : 
+			if (Xi > Eta)
+			  return(Xi*(Eta-1.0)       - Mu*Eta);
+			else
+			  return(Xi*(Eta-1.0)       - Mu*Xi);
+		  case 2 : 
+			if (Xi > Eta)
+			  return(-Xi*Eta          + Mu*Eta);
+			else
+			  return(-Xi*Eta          + Mu*Xi);
+		  case 3 : 			  
+			if (Xi > Eta)
+			  return((Xi-1.0)         - Mu*Eta);
+			else
+			  return((Xi-1.0)         - Mu*Xi);
+		  case 4 : return(Mu);
+		  }
+	  case 6:
+		switch (i)
+		  {
+		  case 0 : return((1.0-Xi-Eta)*(1.0-Mu));
+		  case 1 : return(Xi*(1.0-Mu));
+		  case 2 : return(Eta*(1.0-Mu));
+		  case 3 : return((1.0-Xi-Eta)*Mu);
+		  case 4 : return(Xi*Mu);
+		  case 5 : return(Eta*Mu);
+		  }
+	  case 8:
+		switch (i)
+		  {
+		  case 0 : return((1.0-Xi)*(1.0-Eta)*(1.0-Mu));
+		  case 1 : return(Xi*(1.0-Eta)*(1.0-Mu));
+		  case 2 : return(Xi*Eta*(1.0-Mu));
+		  case 3 : return((1.0-Xi)*Eta*(1.0-Mu));
+		  case 4 : return((1.0-Xi)*(1.0-Eta)*Mu);
+		  case 5 : return(Xi*(1.0-Eta)*Mu);
+		  case 6 : return(Xi*Eta*Mu);
+		  case 7 : return((1.0-Xi)*Eta*Mu);
+		  }
+	  default:
+		return (-1.0);
+	  }
 #endif
+}
+
+/****************************************************************************/
+/*D
+   GNs - General Shape function for nodes
+
+   SYNOPSIS:
+   INT GNs (INT n, COORD *ip_local, DOUBLE *result)
+
+   PARAMETERS:
+.  n - number of corners of the element
+.  local - local COORDinates
+.  result - vector of values
+
+   DESCRIPTION:
+   This function finds the value of the shape functions for the reference 
+   elements at the given local coordinate.
+
+   The shape functions fullfill
+.n   Ni(node i) = 1
+.n   Ni(node k) = 0, if k is not equal i.
+   
+   RETURN VALUE:
+   INT
+.n    0 if ok 
+.n    1 if determinant of coordinate transformation too small.
+D*/   
+/****************************************************************************/
+
+INT GNs (INT n, COORD *ip_local, DOUBLE *result)
+{
+    #ifdef __TWODIM__
+    switch (n)
+	  {
+	  case 3:
+		result[0] = 1.0-Xi-Eta;
+		result[1] = Xi;
+		result[2] = Eta;
+		return (0);
+	  case 4:
+		result[0] = (1.0-Xi)*(1.0-Eta);
+		result[1] = Xi*(1.0-Eta);
+		result[2] = Xi*Eta;
+		result[3] = (1.0-Xi)*Eta;
+		return (0);
+	  default:
+		return (1);
+	  }
+    #endif
+	
+    #ifdef __THREEDIM__
+	switch (n)
+	  {
+	  case 4:
+		result[0] = 1.0-Xi-Eta-Mu;
+		result[1] = Xi;
+		result[2] = Eta;
+		result[3] = Mu;
+	  case 5:
+		if (Xi > Eta)
+		  {
+			result[0] = (1.0-Xi)*(1.0-Eta) - Mu*(1.0-Eta);
+			result[1] = Xi*(Eta-1.0)       - Mu*Eta;
+			result[2] = -Xi*Eta          + Mu*Eta;
+			result[3] = (Xi-1.0)         - Mu*Eta;
+			result[4] = Mu;
+			return (0);
+		  }
+		else
+		  {
+			result[0] = (1.0-Xi)*(1.0-Eta) - Mu*(1.0-Xi);
+			result[1] = Xi*(Eta-1.0)       - Mu*Xi;
+			result[2] = -Xi*Eta          + Mu*Xi;
+			result[3] = (Xi-1.0)         - Mu*Xi;
+			result[4] = Mu;
+			return (0);
+		  }
+	  case 6:
+		result[0] = (1.0-Xi-Eta)*(1.0-Mu);
+		result[1] = Xi*(1.0-Mu);
+		result[2] = Eta*(1.0-Mu);
+		result[3] = (1.0-Xi-Eta)*Mu;
+		result[4] = Xi*Mu;
+		result[5] = Eta*Mu;
+		return (0);
+	  case 8:
+		result[0] = (1.0-Xi)*(1.0-Eta)*(1.0-Mu);
+		result[1] = Xi*(1.0-Eta)*(1.0-Mu);
+		result[2] = Xi*Eta*(1.0-Mu);
+		result[3] = (1.0-Xi)*Eta*(1.0-Mu);
+		result[4] = (1.0-Xi)*(1.0-Eta)*Mu;
+		result[5] = Xi*(1.0-Eta)*Mu;
+		result[6] = Xi*Eta*Mu;
+		result[7] = (1.0-Xi)*Eta*Mu;
+		return (0);
+	  default:
+		return (1);
+	  }
+#endif
+}
+
+/****************************************************************************/
+/*D
+   D_GN - General Shape function for nodes
+
+   SYNOPSIS:
+   INT D_GN (INT n, INT i, COORD *ip_local, DOUBLE *derivative);
+
+   PARAMETERS:
+.  n - number of corners of the element
+.  i - corner number (corner number [0..n-1])
+.  ip_local - local COORDinates
+.  derivative - derivative
+
+   DESCRIPTION:
+   This function computes the derivative of the shape functions GN.
+   
+   RETURN VALUE:
+   INT
+.n    0 if ok 
+.n    1 if determinant of coordinate transformation too small.
+D*/   
+/****************************************************************************/
+
+INT D_GN (INT n, INT i, COORD *ip_local, DOUBLE *derivative)
+{
+    #ifdef __TWODIM__
+	switch (n)
+	  {
+	  case 3:
+		switch (i) 
+		  {
+		  case 0: 
+			derivative[0] = -1.0;
+			derivative[1] = -1.0;
+			return(0);
+		  case 1: 
+			derivative[0] = 1.0;
+			derivative[1] = 0.0;
+			return(0);
+		  case 2: 
+			derivative[0] = 0.0;
+			derivative[1] = 1.0;
+			return(0);
+		  }
+	  case 4:
+		switch (i) 
+		  {
+		  case 0: 
+			derivative[0] = -1.0+Eta;
+			derivative[1] = -1.0+Xi;
+			return(0);
+		  case 1: 
+			derivative[0] = 1.0-Eta;
+			derivative[1] = -Xi;
+			return(0);
+		  case 2: 
+			derivative[0] = -Eta;
+			derivative[1] = 1.0-Xi;
+			return(0);
+		  case 3: 
+			derivative[0] = Eta;
+			derivative[1] = Xi;
+			return(0);
+		  }
+	  }
+    #endif
+
+    #ifdef __THREEDIM__
+	switch (n)
+	  {
+	  case 4:
+		switch (i) 
+		  {
+		  case 0: 
+			derivative[0] = -1.0;
+			derivative[1] = -1.0;
+			derivative[2] = -1.0;
+			return(0);
+		  case 1: 
+			derivative[0] = 1.0;
+			derivative[1] = 0.0;
+			derivative[2] = 0.0;
+			return(0);
+		  case 2: 
+			derivative[0] = 0.0;
+			derivative[1] = 1.0;
+			derivative[2] = 0.0;
+			return(0);
+		  case 3: 
+			derivative[0] = 0.0;
+			derivative[1] = 0.0;
+			derivative[2] = 1.0;
+			return(0);
+		  }
+	  case 5:
+		switch (i) 
+		  {
+		  case 0: 
+			if (Xi > Eta)
+			  {
+				derivative[0] = -(1.0-Eta);
+				derivative[1] = -(1.0-Xi) + Mu;
+				derivative[2] = -(1.0-Eta);
+				return(0);
+			  }
+			else
+			  {
+				derivative[0] = -(1.0-Eta) + Mu;
+				derivative[1] = -(1.0-Xi);
+				derivative[2] = -(1.0-Xi);
+				return(0);
+			  }
+		  case 1: 
+			if (Xi > Eta)
+			  {
+				derivative[0] = (1.0-Eta);
+				derivative[1] = -Xi - Mu;
+				derivative[2] = -Eta;
+				return(0);
+			  }
+			else
+			  {
+				derivative[0] = (1.0-Eta) - Mu;
+				derivative[1] = -Xi;
+				derivative[2] = -Xi;
+				return(0);
+			  }
+		  case 2:
+			if (Xi > Eta)
+			  {
+				derivative[0] = Eta;
+				derivative[1] = Xi + Mu;
+				derivative[2] = Eta;
+				return(0);
+			  }
+			else
+			  {
+				derivative[0] = Eta + Mu;
+				derivative[1] = Xi;
+				derivative[2] = Xi;
+				return(0);
+			  } 
+		  case 3: 
+			if (Xi > Eta)
+			  {
+				derivative[0] = -Eta;
+				derivative[1] = 1.0-Xi - Mu;
+				derivative[2] = -Eta;
+				return(0);
+			  }
+			else
+			  {
+				derivative[0] = -Eta - Mu;
+				derivative[1] = 1.0-Xi;
+				derivative[2] = -Xi;
+				return(0);
+			  } 
+          case 4:
+			derivative[0] = 0.0;
+			derivative[1] = 0.0;
+			derivative[2] = 1.0;
+			return(0);
+		  }
+	  case 6:
+		switch (i) 
+		  {
+		  case 0: 
+			derivative[0] = -(1.0-Mu);
+			derivative[1] = -(1.0-Mu);
+			derivative[2] = -(1.0-Xi-Eta);
+			return(0);
+		  case 1: 
+			derivative[0] = (1.0-Mu);
+			derivative[1] = 0.0;
+			derivative[2] = -Xi;
+			return(0);
+		  case 2: 
+			derivative[0] = 0.0;
+			derivative[1] = (1.0-Mu);
+			derivative[2] = -Eta;
+			return(0);
+		  case 3: 
+			derivative[0] = -Mu;
+			derivative[1] = -Mu;
+			derivative[2] = 1.0-Xi-Eta;
+            return(0);
+          case 4:
+			derivative[0] = Mu;
+			derivative[1] = 0.0;
+			derivative[2] = Xi;
+			return(0);
+          case 5:
+			derivative[0] = 0.0;
+			derivative[1] = Mu;
+			derivative[2] = Eta;
+			return(0);
+		  }
+	  case 8:
+		switch (i) 
+		  {
+		  case 0: 
+			derivative[0] = -(1.0-Eta)*(1.0-Mu);
+			derivative[1] = -(1.0-Xi)*(1.0-Mu);
+			derivative[2] = -(1.0-Xi)*(1.0-Eta);
+			return(0);
+		  case 1: 
+			derivative[0] = (1.0-Eta)*(1.0-Mu);
+			derivative[1] = -(Xi)*(1.0-Mu);
+			derivative[2] = -(Xi)*(1.0-Eta);
+			return(0);
+		  case 2: 
+			derivative[0] = (Eta)*(1.0-Mu);
+			derivative[1] = (Xi)*(1.0-Mu);
+			derivative[2] = -Xi*Eta;
+			return(0);
+		  case 3: 
+			derivative[0] = -(Eta)*(1.0-Mu);
+			derivative[1] = (1.0-Xi)*(1.0-Mu);
+			derivative[2] = -(1.0-Xi)*(Eta);
+            return(0);
+          case 4:
+			derivative[0] = -(1.0-Eta)*(-Mu);
+			derivative[1] = -(1.0-Xi)*(-Mu);
+			derivative[2] = (1.0-Xi)*(1.0-Eta);
+			return(0);
+		  case 5: 
+			derivative[0] = (1.0-Eta)*(-Mu);
+			derivative[1] = -(Xi)*(-Mu);
+			derivative[2] = (Xi)*(-Eta);
+			return(0);
+		  case 6: 
+			derivative[0] = (Eta)*(-Mu);
+			derivative[1] = (Xi)*(-Mu);
+			derivative[2] = Xi*Eta;
+			return(0);
+		  case 7: 
+			derivative[0] = -(Eta)*(-Mu);
+			derivative[1] = (1.0-Xi)*(-Mu);
+			derivative[2] = (1.0-Xi)*(Eta);
+            return(0);
+		  }
+	  }
+    #endif
+
+    return(1);
 }
 
 /****************************************************************************/
@@ -218,9 +1137,165 @@ COORD *LMP (INT n)
 	switch (n)
 	{
 		case 4:	return (LMP_Tetrahedron);
+		case 5:	return (LMP_Pyramid);
+		case 8:	return (LMP_Hexahedron);
 	}
 #endif
 }
+
+/****************************************************************************/
+/*D
+   LocalToGlobal?d - Transform local coordinates to global 	 
+
+   SYNOPSIS:
+   INT LocalToGlobal?d (INT n, const COORD **Corners, 
+   const COORD_VECTOR EvalPoint, COORD_VECTOR GlobalCoord);
+
+   PARAMETERS:
+.  n - corner number (3 or 4) 
+.  Corners - coordinates of corners
+.  EvalPoint - local coordinates
+.  GlobalCoord - resulting global coordinates
+
+   DESCRIPTION:
+   This function computes the shape functions in an evaluated point and 
+   transforms the local coordinates to global coordinates.
+
+   RETURN VALUE:
+   INT
+.n    0 if ok 
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+
+#ifdef __TWODIM__
+INT LocalToGlobal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint, COORD_VECTOR GlobalCoord)
+{
+	if (n==3)
+	  LOCAL_TO_GLOBAL_TRIANGLE(Corners,EvalPoint,GlobalCoord)
+	else if (n==4)
+	  LOCAL_TO_GLOBAL_QUADRILATERAL(Corners,EvalPoint,GlobalCoord)
+	else
+	  return (1);
+
+	return (0);
+}
+#endif
+
+#ifdef __THREEDIM__
+INT LocalToGlobal3d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint, COORD_VECTOR GlobalCoord)
+{
+	if (n==4)
+	  LOCAL_TO_GLOBAL_TETRAHEDRON(Corners,EvalPoint,GlobalCoord)
+	else if (n==5)
+	  LOCAL_TO_GLOBAL_PYRAMID(Corners,EvalPoint,GlobalCoord)
+	else if (n==8)
+	  LOCAL_TO_GLOBAL_HEXAHEDRON(Corners,EvalPoint,GlobalCoord)
+	else
+	  return (1);
+
+	return (0);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   GlobalToLocal?d - Transform global coordinates to local
+
+   SYNOPSIS:
+   INT GlobalToLocal?d (INT n, const COORD **Corners, const COORD *EvalPoint, 
+   COORD *LocalCoord);
+
+   PARAMETERS:
+.  n - number of corners
+.  Corners - coordinates of corners 
+.  EvalPoint - global coordinates
+.  LocalCoord - local coordinates 
+
+   DESCRIPTION:
+   This function transforms global coordinates to local in an evaluated point
+   in 3D.
+
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+
+#ifdef __TWODIM__						 
+INT GlobalToLocal2d (INT n, const COORD **Corners, 
+					 const COORD *EvalPoint, COORD *LocalCoord)
+{
+	COORD_VECTOR tmp,diff,M[DIM],IM[DIM];
+	DOUBLE s;
+	INT i;
+	
+	V_DIM_SUBTRACT(EvalPoint,Corners[0],diff);
+	if (n == 3)
+	  {
+		TRANSFORMATION_OF_TRIANGLE(Corners,M);
+		M_DIM_INVERT(M,IM);
+		MM_TIMES_V_DIM(IM,diff,LocalCoord);	
+		return(0);
+	  }
+	V_DIM_CLEAR(LocalCoord);
+	TRANSFORMATION(n,Corners,LocalCoord,M);
+	M_DIM_INVERT(M,IM);
+	MM_TIMES_V_DIM(IM,diff,LocalCoord);	
+	for (i=0; i<MAX_ITER; i++)
+	  {
+		LOCAL_TO_GLOBAL (n,Corners,LocalCoord,tmp);
+		V_DIM_SUBTRACT(tmp,EvalPoint,diff);
+		V_DIM_EUKLIDNORM(diff,s);
+		if (s <= SMALL_DIFF) 
+			return (0);
+		TRANSFORMATION(n,Corners,LocalCoord,M);
+		M_DIM_INVERT(M,IM);
+		MM_TIMES_V_DIM(IM,diff,tmp);
+		V_DIM_SUBTRACT(LocalCoord,tmp,LocalCoord);
+	  }
+
+	return(1);
+}
+#endif
+
+#ifdef __THREEDIM__						 
+INT GlobalToLocal3d (INT n, const COORD **Corners, 
+					 const COORD *EvalPoint, COORD *LocalCoord)
+{
+	COORD_VECTOR tmp,diff,M[DIM],IM[DIM];
+	DOUBLE s;
+	INT i;
+	
+	V_DIM_SUBTRACT(EvalPoint,Corners[0],diff);
+	if (n == 4)
+	  {
+		TRANSFORMATION_OF_TETRAHEDRON(Corners,M);
+		M_DIM_INVERT(M,IM);
+		MM_TIMES_V_DIM(IM,diff,LocalCoord);	
+		return(0);
+	  }
+	V_DIM_CLEAR(LocalCoord);
+	TRANSFORMATION(n,Corners,LocalCoord,M);
+	M_DIM_INVERT(M,IM);
+	MM_TIMES_V_DIM(IM,diff,LocalCoord);	
+	for (i=0; i<MAX_ITER; i++)
+	  {
+		LOCAL_TO_GLOBAL (n,Corners,LocalCoord,tmp);
+		V_DIM_SUBTRACT(tmp,EvalPoint,diff);
+		V_DIM_EUKLIDNORM(diff,s);
+		if (s <= SMALL_DIFF) 
+			return (0);
+		TRANSFORMATION(n,Corners,LocalCoord,M);
+		M_DIM_INVERT(M,IM);
+		MM_TIMES_V_DIM(IM,diff,tmp);
+		V_DIM_SUBTRACT(LocalCoord,tmp,LocalCoord);
+	  }
+
+	return(1);
+}
+#endif
 
 /****************************************************************************/
 /*D
@@ -510,59 +1585,6 @@ INT Gradients (INT n, const COORD **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_V
 }
 #endif
 
-/****************************************************************************/
-/*D
-   LocalToGlobal2d - Transform local coordinates to global 												
-
-   SYNOPSIS:
-   INT LocalToGlobal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint, 
-   COORD_VECTOR GlobalCoord);
-
-   PARAMETERS:
-.  n - corner number (3 or 4) 
-.  Corners - coordinates of corners
-.  EvalPoint - local coordinates
-.  GlobalCoord - resulting global coordinates
-
-   DESCRIPTION:
-   This function computes the shape functions in an evaluated point and transforms
-   the local coordinates to global in triangular and quadrilateral elements.
-
-   RETURN VALUE:
-   INT
-.n    0 if ok 
-.n    1 if error occured.
-D*/
-/****************************************************************************/
-
-#ifdef __TWODIM__
-INT LocalToGlobal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint, COORD_VECTOR GlobalCoord)
-{
-	COORD N0,N1,N2,N3;
-	
-	if (n==3)
-	{
-		N0 = N(3,0,EvalPoint[0],EvalPoint[1]);
-		N1 = N(3,1,EvalPoint[0],EvalPoint[1]);
-		N2 = N(3,2,EvalPoint[0],EvalPoint[1]);
-		V2_LINCOMB(N0,Corners[0],N1,Corners[1],GlobalCoord)
-		V2_LINCOMB(1.0,GlobalCoord,N2,Corners[2],GlobalCoord)
-		return (0);
-	}
-	if (n==4)
-	{
-		N0 = N(4,0,EvalPoint[0],EvalPoint[1]);
-		N1 = N(4,1,EvalPoint[0],EvalPoint[1]);
-		N2 = N(4,2,EvalPoint[0],EvalPoint[1]);
-		N3 = N(4,3,EvalPoint[0],EvalPoint[1]);
-		V2_LINCOMB(N0,Corners[0],N1,Corners[1],GlobalCoord)
-		V2_LINCOMB(1.0,GlobalCoord,N2,Corners[2],GlobalCoord)
-		V2_LINCOMB(1.0,GlobalCoord,N3,Corners[3],GlobalCoord)
-		return (0);
-	}
-	return (1);
-}
-#endif
 
 /****************************************************************************/
 /*D
@@ -632,666 +1654,6 @@ INT L2GDerivative2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint,
 		return (0);
 	}
 	return (1);
-}
-#endif
-
-/****************************************************************************/
-/*D
-   GlobalToLocal2d - Transforms global coordinates to local 
-
-   SYNOPSIS:
-   INT GlobalToLocal2d (INT n, const COORD **Corners, 
-   const COORD_VECTOR EvalPoint, COORD_VECTOR LocalCoord);
-
-   PARAMETERS:
-.  n - corner number
-.  Corners - coordinates of the element corners
-.  EvalPoint - global coordinates
-.  LocalCoord - resulting local coordinates
-
-   DESCRIPTION:
-   This function transforms global coordinates to local in triangular and
-   quadrilateral element. The global point has to be inside the triangle/quadrilateral.
-
-   RETURN VALUE:
-   INT
-.n     0 if ok
-.n     1 if error occured.
-D*/
-/****************************************************************************/
-
-static COORD x_dot_y (const COORD x[2], const COORD y[2])
-{
-	return (x[0]*y[0]+x[1]*y[1]);
-}
-
-static INT set_x_plus_ay (COORD res[2], const COORD x[2], const COORD s, const COORD y[2])
-{
-	res[0] = x[0]+s*y[0];
-	res[1] = x[1]+s*y[1];
-	
-	return (0);
-}
-
-static COORD x_dot_normal_to_y (const COORD x[2], const COORD y[2])
-{
-	return (x[0]*y[1]-x[1]*y[0]);
-}
-
-#ifdef __TWODIM__
-INT GlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint, COORD_VECTOR LocalCoord)
-{
-	COORD xs[2],xt[2],xst[2],x0[2],aux1[2],aux2[2];
-	COORD xtdnxst,xsdnxst,a,b,c,t1,t2;
-	COORD t1x,t2x,t3x,t1y,t2y,t3y,D;
-	
-	
-	if (n==3)
-	{
-		/* its a triangle */
-		t1x = Corners[1][0]-Corners[0][0];
-		t2x = Corners[2][0]-Corners[0][0];
-		t3x = Corners[0][0];
-		t1y = Corners[1][1]-Corners[0][1];
-		t2y = Corners[2][1]-Corners[0][1];
-		t3y = Corners[0][1];
-		
-		D = t1x*t2y-t2x*t1y;
-		
-		if (D<0.0)
-			return(1);
-		
-		LocalCoord[0] = (t2y*(EvalPoint[0]-t3x)-t2x*(EvalPoint[1]-t3y))/D;
-		LocalCoord[1] = (-t1y*(EvalPoint[0]-t3x)+t1x*(EvalPoint[1]-t3y))/D;
-		
-		return (0);
-	}
-	
-	if (n!=4)
-		return (2);
-	
-	/* coeefficients of the local coordinates s,t in the bilinear form:
-	   EvalPoint = sum_i N_i(s,t) Corners_i */
-	
-	/* vector from center of mass to EvalPoint */
-	x0[0]  = EvalPoint[0] - 0.25 * ( Corners[0][0]+Corners[1][0]+Corners[2][0]+Corners[3][0]);
-	x0[1]  = EvalPoint[1] - 0.25 * ( Corners[0][1]+Corners[1][1]+Corners[2][1]+Corners[3][1]);
-	
-	/* vector from mid of side 3 to side 1 */
-	xs[0]  = 0.25 * (-Corners[0][0]+Corners[1][0]+Corners[2][0]-Corners[3][0]);
-	xs[1]  = 0.25 * (-Corners[0][1]+Corners[1][1]+Corners[2][1]-Corners[3][1]);
-	
-	/* vector from mid of side 2 to side 0 */
-	xt[0]  = 0.25 * (-Corners[0][0]-Corners[1][0]+Corners[2][0]+Corners[3][0]);
-	xt[1]  = 0.25 * (-Corners[0][1]-Corners[1][1]+Corners[2][1]+Corners[3][1]);
-	
-	/* vector from mid of diagonal 1 to diagonal 0 */
-	xst[0] = 0.25 * ( Corners[0][0]-Corners[1][0]+Corners[2][0]-Corners[3][0]);
-	xst[1] = 0.25 * ( Corners[0][1]-Corners[1][1]+Corners[2][1]-Corners[3][1]);
-	
-	
-	/* scalarproducts with normal vectors (if vanishing ==> vectors parallel) */
-	xtdnxst = x_dot_normal_to_y(xt,xst);
-	xsdnxst = x_dot_normal_to_y(xs,xst);
-	
-	/* NB: xs || xt only in the degenerate case */
-	
-	/* case 1: xst = (0,0)-vector --- this is the case of a parallelogram */
-	if (x_dot_y(xst,xst)<SMALL_C)
-	{
-		a = x_dot_normal_to_y(xs,xt);
-		
-		LocalCoord[0] =  x_dot_normal_to_y(x0,xt) / a;
-		LocalCoord[1] = -x_dot_normal_to_y(x0,xs) / a;		/* xddny = -nxdy */
-		
-
-		LocalCoord[0] =  0.5 * (1.0 + LocalCoord[0]);
-		LocalCoord[1] =  0.5 * (1.0 + LocalCoord[1]);
-
-		return (0);
-	}
-	
-	/* case 2: xs || xst --- this is the case of a trapezoid, side 0 parallel side 2 */
-	if (fabs(xsdnxst)<SMALL_C)
-	{
-		LocalCoord[1] = x_dot_normal_to_y(x0,xst) / xtdnxst;
-		
-		set_x_plus_ay(aux1,x0,-LocalCoord[1],xt);
-		set_x_plus_ay(aux2,xs,LocalCoord[1],xst);
-		
-		LocalCoord[0] = x_dot_y(aux1,aux2) / x_dot_y(aux2,aux2);
-		
-
-		LocalCoord[0] =  0.5 * (1.0 + LocalCoord[0]);
-		LocalCoord[1] =  0.5 * (1.0 + LocalCoord[1]);
-
-		return (0);
-	}
-	
-	/* case 3: xt || xst --- this is the case of a trapezoid, side 1 parallel side 3 */
-	if (fabs(xtdnxst)<SMALL_C)
-	{
-		LocalCoord[0] = x_dot_normal_to_y(x0,xst) / xsdnxst;
-		
-		set_x_plus_ay(aux1,x0,-LocalCoord[0],xs);
-		set_x_plus_ay(aux2,xt,LocalCoord[0],xst);
-		
-		LocalCoord[1] = x_dot_y(aux1,aux2) / x_dot_y(aux2,aux2);
-
-		LocalCoord[0] =  0.5 * (1.0 + LocalCoord[0]);
-		LocalCoord[1] =  0.5 * (1.0 + LocalCoord[1]);
-		
-		return (0);
-	}
-	
-	/* the general case */
-	a = 0.5*(x_dot_normal_to_y(xt,xs) - x_dot_normal_to_y(x0,xst)) / xtdnxst;
-	b = -x_dot_normal_to_y(x0,xs) / xtdnxst;
-	c = a*a - b;
-	
-	if (c<0.0)
-		return (3);
-	c = sqrt(c);
-	
-	t1 = -a + c;
-	t2 = -a - c;
-	
-	if ((-1.1<=t1) && (t1<=1.1))
-	{
-		LocalCoord[1] = t1;
-		
-		set_x_plus_ay(aux1,x0,-t1,xt);
-		LocalCoord[0] = x_dot_normal_to_y(aux1,xst) / xsdnxst;
-	}
-	else if ((-1.1<=t2) && (t2<=1.1))
-	{
-		LocalCoord[1] = t2;
-		
-		set_x_plus_ay(aux1,x0,-t2,xt);
-		LocalCoord[0] = x_dot_normal_to_y(aux1,xst) / xsdnxst;
-	}
-	else
-		return (4);
-
-		LocalCoord[0] =  0.5 * (1.0 + LocalCoord[0]);
-		LocalCoord[1] =  0.5 * (1.0 + LocalCoord[1]);
-
-	return(0);
-	
-	if ((-1.1<=LocalCoord[0]) && (LocalCoord[0]<=1.1))
-		return (0);
-	else
-		return (5);
-}
-#endif
-
-/*****************************************************************/
-/*                                                               */
-/*    NiHex: shape functions in the reference hexahedron         */						
-/*                                                               */
-/*****************************************************************/
-
-#ifdef __THREEDIM__						
-DOUBLE NiHex (int i, COORD *alpha)
-{
-	switch (i)
-	{
-		case (0): return((DOUBLE)(-(-1.0+alpha[0])*(-1.0+alpha[1])*(-1.0+alpha[2])));
-		case (1): return((DOUBLE)(alpha[0]*(alpha[1]-1.0)*(alpha[2]-1.0)));
-		case (2): return((DOUBLE)(-alpha[0]*alpha[1]*(alpha[2]-1.0)));
-		case (3): return((DOUBLE)((alpha[0]-1.0)*alpha[1]*(alpha[2]-1.0)));
-		case (4): return((DOUBLE)((alpha[0]-1.0)*(alpha[1]-1.0)*alpha[2]));
-		case (5): return((DOUBLE)(-alpha[0]*(alpha[1]-1.0)*alpha[2]));
-		case (6): return((DOUBLE)(alpha[0]*alpha[1]*alpha[2]));
-		case (7): return((DOUBLE)(-(alpha[0]-1.0)*alpha[1]*alpha[2]));
-	}
-}
-#endif
-
-/*****************************************************************/
-/*                                                               */
-/* NiHexDer: derivatives of the shape functions in ref.hex.      */
-/*                                                               */
-/*****************************************************************/
-
-#ifdef __THREEDIM__
-DOUBLE NiHexDer (int i, int j, COORD *alpha)
-{
-	switch (i)
-	{
-		case (0):
-			switch (j)
-			{
-				case (0): return((DOUBLE)(-(alpha[1]-1.0)*(alpha[2]-1.0)));
-				case (1): return((DOUBLE)(-(alpha[0]-1.0)*(alpha[2]-1.0)));
-				case (2): return((DOUBLE)(-(alpha[0]-1.0)*(alpha[1]-1.0)));
-			}
-		case (1):
-			switch (j)
-			{
-				case (0): return((DOUBLE)((alpha[1]-1.0)*(alpha[2]-1.0)));
-				case (1): return((DOUBLE)(alpha[0]*(alpha[2]-1.0)));
-				case (2): return((DOUBLE)(alpha[0]*(alpha[1]-1.0)));
-			}
-		case (2):
-			switch (j)
-			{
-				case (0): return((DOUBLE)(-alpha[1]*(alpha[2]-1.0)));
-				case (1): return((DOUBLE)(-alpha[0]*(alpha[2]-1.0)));
-				case (2): return((DOUBLE)(-alpha[0]*alpha[1]));			
-			}
-		case (3):
-			switch (j)
-			{
-				case (0): return((DOUBLE)(alpha[1]*(alpha[2]-1.0)));
-				case (1): return((DOUBLE)((alpha[0]-1.0)*(alpha[2]-1.0)));
-				case (2): return((DOUBLE)((alpha[0]-1.0)*alpha[1]));
-			}
-		case (4):
-			switch (j)
-			{
-				case (0): return((DOUBLE)((alpha[1]-1.0)*alpha[2]));
-				case (1): return((DOUBLE)((alpha[0]-1.0)*alpha[2]));
-				case (2): return((DOUBLE)((alpha[0]-1.0)*(alpha[1]-1.0)));
-			}
-		case (5):
-			switch (j)
-			{
-				case (0): return((DOUBLE)(-(alpha[1]-1.0)*alpha[2]));
-				case (1): return((DOUBLE)(-alpha[0]*alpha[2]));
-				case (2): return((DOUBLE)(-alpha[0]*(alpha[1]-1.0)));
-			}
-		case (6):
-			switch (j)
-			{
-				case (0): return((DOUBLE)(alpha[1]*alpha[2]));
-				case (1): return((DOUBLE)(alpha[0]*alpha[2]));
-				case (2): return((DOUBLE)(alpha[0]*alpha[1]));
-			}
-		case (7):
-			switch (j)
-			{
-				case (0): return((DOUBLE)(-alpha[1]*alpha[2]));
-				case (1): return((DOUBLE)(-(alpha[0]-1.0)*alpha[2]));
-				case (2): return((DOUBLE)(-(alpha[0]-1.0)*alpha[1]));
-			}
-	}
-}
-#endif
-						
-/*****************************************************************************/
-/*                                                                           */
-/* TransformCoefficients: computes coefficients of trasformation             */
-/*                        of theElement to unit cube :                       */
-/*  			  x = a_0 + a_1*alpha + a_2*beta + a_3*gamma + ...           */
-/*                        y = ...                                            */
-/*                        z = ...                                            */
-/*                        (x,y,z)-global coordinates of hexahedron vertecies */
-/*                        (alpha,beta,gamma) - local.                        */
-/*	                            										     */
-/* Input:                 pointer to theElement                              */
-/* Output:                extern TransCoeff                                  */
-/*****************************************************************************/
-
-#ifdef __THREEDIM__						 
-INT TransformCoefficients (ELEMENT *theElement)
-{
-	int i;
-	COORD *x[MAX_CORNERS_OF_ELEM];
-	
-	for (i=0; i<CORNERS_OF_ELEM(theElement); ++i)
-		x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
-		
-	V3_COPY(x[0],TransfCoeff[0]);
-	
-	V3_SUBTRACT(x[1],x[0],TransfCoeff[1]);
-	V3_SUBTRACT(x[3],x[0],TransfCoeff[2]);
-	V3_SUBTRACT(x[4],x[0],TransfCoeff[3]);
-	
-	V3_SUBTRACT(x[2],x[1],TransfCoeff[4]);
-	V3_SUBTRACT(x[7],x[3],TransfCoeff[5]);
-	V3_ADD(TransfCoeff[4],TransfCoeff[5],TransfCoeff[7]);
-	
-	V3_SUBTRACT(TransfCoeff[4],TransfCoeff[2],TransfCoeff[4]);
-	V3_SUBTRACT(x[5],x[1],TransfCoeff[6]);
-	V3_SUBTRACT(TransfCoeff[6],TransfCoeff[3],TransfCoeff[6]);	
-	V3_SUBTRACT(TransfCoeff[5],TransfCoeff[3],TransfCoeff[5]);
-	
-	V3_SUBTRACT(TransfCoeff[3],TransfCoeff[7],TransfCoeff[7]);
-	V3_SUBTRACT(TransfCoeff[7],x[5],TransfCoeff[7]);
-	V3_ADD(TransfCoeff[7],x[6],TransfCoeff[7]);
-	
-	return (0);
-} 
-#endif
-
-/*************************************************************************/
-/*                                                                       */
-/*  JacobiMatrix: computes Jacobi matrix of trasformation                */
-/*                  x = Fx(alpha[0],alpha[1],alpha[2]);                  */
-/*                  y = Fy(alpha[0],alpha[1],alpha[2]);                  */ 
-/*                  z = Fz(alpha[0],alpha[1],alpha[2]);                  */ 
-/*                                                                       */
-/*  Input:  local coordinates alpha[0],alpha[1],alpha[2].                */
-/*  Output: Jacobi matrix  Matrix[9]                                     */
-/*                                                                       */
-/*************************************************************************/
-
-#ifdef __THREEDIM__						 
-INT JacobiMatrix (COORD_VECTOR alpha, COORD *Matrix)
-{
-	COORD grad[3];
-	
-	   GradientsOfTransormation (alpha, grad, 0);
-	   Matrix[0] = grad[0]; Matrix[3] = grad[1]; Matrix[6] = grad[2];
-	   GradientsOfTransormation (alpha, grad, 1);
-	   Matrix[1] = grad[0]; Matrix[4] = grad[1]; Matrix[7] = grad[2];
-	   GradientsOfTransormation (alpha, grad, 2);
-	   Matrix[2] = grad[0]; Matrix[5] = grad[1]; Matrix[8] = grad[2];
-	   
-	return (0);
-}
-
-DOUBLE JacobiMatrixDet (COORD *Matrix)
-{
-	COORD Inverse[9];
-	INT i,i1,i2, j,j1,j2;
-	
-	for (i=0; i<3; i++) 
-	{
-		i1 = (i+1)%3;
-		i2 = (i+2)%3;
-		for ( j=0; j<3; j++)
-		{
-			j1 = (j+1)%3;
-			j2 = (j+2)%3;
-			Inverse[j+3*i] = Matrix[i1+3*j1]*Matrix[i2+3*j2] - Matrix[i1+3*j2]*Matrix[i2+3*j1];
-		}
-	}
-	return ((DOUBLE)(Inverse[0]*Matrix[0] + Inverse[3]*Matrix[1] + Inverse[6]*Matrix[2]));	
-}
-
-INT GradientsOfTransormation (COORD_VECTOR alpha, COORD_VECTOR grad, int i)
-{
-	grad[0] = TransfCoeff[1][i] + TransfCoeff[4][i]*alpha[1] + TransfCoeff[6][i]*alpha[2] + TransfCoeff[7][i]*alpha[1]*alpha[2];
-	grad[1] = TransfCoeff[2][i] + TransfCoeff[4][i]*alpha[0] + TransfCoeff[5][i]*alpha[2] + TransfCoeff[7][i]*alpha[0]*alpha[2]; 
-	grad[2] = TransfCoeff[3][i] + TransfCoeff[5][i]*alpha[1] + TransfCoeff[6][i]*alpha[0] + TransfCoeff[7][i]*alpha[0]*alpha[1]; 
-
-	return (0);
-}
-	
-INT LocalToGlobalHEX (COORD_VECTOR Local, COORD_VECTOR Global)
-{
-	int i;
-	
-	for (i=0; i<3; ++i)
-		Global[i] = TransfCoeff[0][i] + TransfCoeff[1][i]*Local[0] + 
-		                                TransfCoeff[2][i]*Local[1] + 
-		                                TransfCoeff[3][i]*Local[2] +
-			                        TransfCoeff[4][i]*Local[0]*Local[1] +
-			                        TransfCoeff[5][i]*Local[2]*Local[1] +
-			                        TransfCoeff[6][i]*Local[2]*Local[0] +
-			                        TransfCoeff[7][i]*Local[2]*Local[0]*Local[1];
-	return (0);			                        
-}	
-#endif
-	
-/*****************************************************************************/
-/*                                                                           */
-/* GlobalToLocalHEX: finds local coordinates in reference hexahedron         */
-/*            Input: Global[3] physical coordinates in global system;        */
-/*           Output: Local[3] coordinates in reference hexahedron;           */
-/*                   at the beginning Local[3] contains initial guess        */
-/* Before calling this program 	TransformCoefficients (ELEMENT *theElement)  */
-/* must be called                                                            */
-/*                                                                           */
-/*****************************************************************************/
-
-#ifdef __THREEDIM__						 	
-INT GlobalToLocalHEX (COORD_VECTOR Global, COORD_VECTOR Local)
-{
-	COORD jm[9],jmi[9];
-	COORD tmp[3], rhs[3];
-	COORD diff=0.0;
-	int iter=0;
-	
-newiter:
-	++iter;
-	LocalToGlobalHEX (Local, tmp);
-	V3_EUKLIDNORM_OF_DIFF(Global,tmp,diff);
-	if ((diff<=1e-6)) return (0);
-	if ((iter>50)) return (1);
-	
-	JacobiMatrix (Local, jm);
-	
-	M3_TIMES_V3(jm,Local,rhs);
-	V3_SUBTRACT(tmp,rhs,tmp);
-	V3_SUBTRACT(Global,tmp,rhs);
-	
-	M3_Invert (jmi,jm);
-	M3_TIMES_V3(jmi,rhs,Local);
-	goto newiter;
-}
-#endif
-
-/************************************************************************/
-/*                                                                      */
-/* HexaDerivatives: computes the derivatives of the shape functions     */
-/*                  in global coordinates (x,y,z) in the point          */
-/*                  (alpha[0],alpha[1],alpha[2]) in local coordinates.  */
-/*                                                                      */
-/* Input:local coordinates in the refr.hexah. alpha[0],alpha[1],alpha[2]*/
-/* Output: theGradient[MAX_CORNERS_OF_ELEM][3] - gradients.             */
-/*                                                                      */
-/************************************************************************/
-
-#ifdef __THREEDIM__						 
-INT HexaDerivatives (COORD *alpha, COORD_VECTOR theGradient[MAX_CORNERS_OF_ELEM])
-{
-	int i,j;
-	COORD JMat[9], JMatInv[9], r[3];
-	
-	JacobiMatrix (alpha,JMat);
-	
-	/* Transpose Jacobi matrix */
-	r[0] = JMat[3]; JMat[3] = JMat[1]; JMat[1] = r[0];
-	r[0] = JMat[6]; JMat[6] = JMat[2]; JMat[2] = r[0];
-	r[0] = JMat[7]; JMat[7] = JMat[5]; JMat[5] = r[0];
-	
-	M3_Invert (JMatInv,JMat); 
-	
-	for (i=0; i<8; ++i)    /* 8 = number of hexa corners */
-	{
-		for (j=0; j<3; ++j)
-			r[j] = (COORD) NiHexDer (i, j, alpha);
-			
-		M3_TIMES_V3(JMatInv,r,theGradient[i]);		
-	}	
-}
-
-INT FV_HexInfo (ELEMENT *theElement, COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM])
-{
-	int i,j;
-	COORD CenterOfMassElement[3], CetrerOfMassSides[MAX_SIDES_OF_ELEM][3], emp[MAX_EDGES_OF_ELEM][3];
-	COORD a[3], b[3], c[3], sp;
-	
-	/* compute center of mass of the element */
-	V3_CLEAR(CenterOfMassElement)
-	for (i=0; i<CORNERS_OF_ELEM(theElement); ++i) 
-		V3_ADD(theCorners[i],CenterOfMassElement,CenterOfMassElement)
-	V3_SCALE(0.125,CenterOfMassElement)
-	
-	/* compute centers of mass of the sides */
-	for (i=0; i<SIDES_OF_ELEM(theElement); ++i)
-	{
-		V3_CLEAR(CetrerOfMassSides[i])
-		for (j=0; j<CORNERS_OF_SIDE(theElement,i); ++j)
-			V3_ADD(theCorners[CORNER_OF_SIDE(theElement,i,j)],CetrerOfMassSides[i],CetrerOfMassSides[i])
-		V3_SCALE(0.25,CetrerOfMassSides[i])
-	} 
-	
-	for (i=0; i<EDGES_OF_ELEM(theElement); ++i)
-	{
-		V3_LINCOMB(0.5,theCorners[CORNER_OF_EDGE(theElement,i,0)],0.5,theCorners[CORNER_OF_EDGE(theElement,i,1)],emp[i])
-		V3_SUBTRACT(CenterOfMassElement,emp[i],a)
-		V3_SUBTRACT(CetrerOfMassSides[SIDE_WITH_EDGE(theElement,i,0)],emp[i],b)
-		V3_SUBTRACT(CetrerOfMassSides[SIDE_WITH_EDGE(theElement,i,1)],emp[i],c)
-		
-		V3_VECTOR_PRODUCT(a,b,Area[i])
-		V3_VECTOR_PRODUCT(c,a,b)
-		V3_LINCOMB (0.5,Area[i],0.5,b,Area[i])
-		
-		V3_SUBTRACT (theCorners[CORNER_OF_EDGE(theElement,i,1)],theCorners[CORNER_OF_EDGE(theElement,i,0)],a)
-		V3_SCALAR_PRODUCT(Area[i],a,sp)
-		if (sp<0.0){
-			Area[i][0]=-Area[i][0];  Area[i][1]=-Area[i][1];  Area[i][2]=-Area[i][2];
-		}
-	}
-	
-	/*  compute GIP */
-	/* ...          */
-	
-	return (0);
-}
-#endif
-
-/***********************************************************************/
-/*                                                                     */
-/*    HexaVolume: computes hexahedron volume by computing volumes      */
-/*                of 5 tetrahedrons which form it.                     */
-/*                                                                     */
-/***********************************************************************/
-
-#ifdef __THREEDIM__						 
-INT HexaVolume (COORD **theCorners, COORD *volume)
-{
-	COORD *Tcorners[4]; /* 4 = corners of tetrahedron */
-	COORD Tvolume;
-	
-	*volume = 0.0;
-	
-	Tcorners[0] = theCorners[0]; Tcorners[2] = theCorners[3];
-	Tcorners[1] = theCorners[1]; Tcorners[3] = theCorners[4];
-	TetraVolume((const COORD **)Tcorners,&Tvolume);
-	*volume += Tvolume;
-
-	Tcorners[0] = theCorners[5]; Tcorners[2] = theCorners[4];
-	Tcorners[1] = theCorners[6]; Tcorners[3] = theCorners[1];
-	TetraVolume((const COORD **)Tcorners,&Tvolume);
-	*volume += Tvolume;
-
-	Tcorners[0] = theCorners[2]; Tcorners[2] = theCorners[3];
-	Tcorners[1] = theCorners[1]; Tcorners[3] = theCorners[6];
-	TetraVolume((const COORD **)Tcorners,&Tvolume);
-	*volume += Tvolume;
-
-	Tcorners[0] = theCorners[7]; Tcorners[2] = theCorners[4];
-	Tcorners[1] = theCorners[3]; Tcorners[3] = theCorners[6];
-	TetraVolume((const COORD **)Tcorners,&Tvolume);
-	*volume += Tvolume;
-
-	Tcorners[0] = theCorners[3]; Tcorners[2] = theCorners[1];
-	Tcorners[1] = theCorners[6]; Tcorners[3] = theCorners[4];
-	TetraVolume((const COORD **)Tcorners,&Tvolume);
-	*volume += Tvolume;
-	
-	return (0);
-}
-#endif
-
-/***************************************************************************/
-/*                                                                         */
-/*     TransformGlobalToLocal3D: computes transformation from global to    */
-/*                               local coordinates.                        */
-/*                                                                         */
-/*     No difference between tetrahedrons ans hexahedrons!                 */
-/*                                                                         */
-/***************************************************************************/
-
-#ifdef __THREEDIM__						 
-INT TransformGlobalToLocal3D(ELEMENT *theElement, COORD_VECTOR Global, COORD_VECTOR Local)
-{
-    INT i;
-    COORD *x[MAX_CORNERS_OF_ELEM];
-
-    if(TAG(theElement)==TETRAHEDRON) {
-        for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-            x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
-        return(GlobalToLocal3d(4,(const COORD **)x,Global,Local));
-    }
-    if(TAG(theElement)==HEXAHEDRON){
-        TransformCoefficients (theElement);
-        return(GlobalToLocalHEX(Global,Local));
-    }
-}
-#endif
-
-/****************************************************************************/
-/*D
-   GlobalToLocal3d - Transform global coordinates to local
-
-   SYNOPSIS:
-   INT GlobalToLocal3d (INT n, const COORD **Corners, const COORD *EvalPoint, 
-   COORD *LocalCoord);
-
-   PARAMETERS:
-.  n - number of corners
-.  Corners - coordinates of corners 
-.  EvalPoint - global coordinates
-.  LocalCoord - local coordinates 
-
-   DESCRIPTION:
-   This function transforms global coordinates to local in an evaluated point
-   in 3D.
-
-   RETURN VALUE:
-   INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
-/****************************************************************************/
-
-#ifdef __THREEDIM__						 
-INT GlobalToLocal3d (INT n, const COORD **Corners, 
-					 const COORD *EvalPoint, COORD *LocalCoord)
-{
-	COORD_VECTOR a;
-	COORD M[9],I[9];
-
-	if (n == 4)
-	  {
-		V3_SUBTRACT(EvalPoint,Corners[0],a);
-		V3_SUBTRACT(Corners[1],Corners[0],M);
-		V3_SUBTRACT(Corners[2],Corners[0],M+3);
-		V3_SUBTRACT(Corners[3],Corners[0],M+6);
-		if (M3_Invert(I,M)) return (1);
-		M3_TIMES_V3(I,a,LocalCoord);
-
-		return(0);
-	  }
-	else if (n == 8)
-	  {
-		V3_COPY(Corners[0],TransfCoeff[0]);
-		
-		V3_SUBTRACT(Corners[1],Corners[0],TransfCoeff[1]);
-		V3_SUBTRACT(Corners[3],Corners[0],TransfCoeff[2]);
-		V3_SUBTRACT(Corners[4],Corners[0],TransfCoeff[3]);
-		
-		V3_SUBTRACT(Corners[2],Corners[1],TransfCoeff[4]);
-		V3_SUBTRACT(Corners[7],Corners[3],TransfCoeff[5]);
-		V3_ADD(TransfCoeff[4],TransfCoeff[5],TransfCoeff[7]);
-		
-		V3_SUBTRACT(TransfCoeff[4],TransfCoeff[2],TransfCoeff[4]);
-		V3_SUBTRACT(Corners[5],Corners[1],TransfCoeff[6]);
-		V3_SUBTRACT(TransfCoeff[6],TransfCoeff[3],TransfCoeff[6]);	
-		V3_SUBTRACT(TransfCoeff[5],TransfCoeff[3],TransfCoeff[5]);
-		
-		V3_SUBTRACT(TransfCoeff[3],TransfCoeff[7],TransfCoeff[7]);
-		V3_SUBTRACT(TransfCoeff[7],Corners[5],TransfCoeff[7]);
-		V3_ADD(TransfCoeff[7],Corners[6],TransfCoeff[7]);
-	
-		return(GlobalToLocalHEX((COORD *)EvalPoint,LocalCoord));
-	  } 
 }
 #endif
 
