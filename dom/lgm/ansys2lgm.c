@@ -153,6 +153,7 @@ INT *bisherige_ID_array;    /* diese Array beinhaltet die Subdomain/Komponenten 
 char *KomponentenNamenArray;
 
 static HEAP *theHeap;
+static INT ANS_MarkKey;
 
 static INT ansysfilepathes_set;
 
@@ -1016,7 +1017,7 @@ INT ReadAnsysFile(char *filename)
 /* Get memory for different  arrays for the "IntermediateFormat ... --> */
 /************************************************************************/
 /* nodeflag_array */
-	nodeflag_array = GetTmpMem(theHeap,(statistik[0]+1)*sizeof(INT));
+	nodeflag_array = GetTmpMem(theHeap,(statistik[0]+1)*sizeof(INT),ANS_MarkKey);
 	if ( nodeflag_array == NULL ) 
 	{ 
 		PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
@@ -1026,7 +1027,7 @@ INT ReadAnsysFile(char *filename)
 /***************/
 /* point_array */
 	nbofnds = statistik[0];
-	point_array = GetTmpMem(theHeap,(statistik[0]+1)*sizeof(INT));
+	point_array = GetTmpMem(theHeap,(statistik[0]+1)*sizeof(INT),ANS_MarkKey);
 	if ( point_array == NULL ) 
 	{ 
 		PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
@@ -1035,7 +1036,7 @@ INT ReadAnsysFile(char *filename)
 	memset(point_array,0,(statistik[0]+1)*sizeof(INT));
 /*******************/
 /* UGID_NdPtrarray */
-UGID_NdPtrarray = GetTmpMem(theHeap,(statistik[0]+1)*sizeof(NODE*));
+UGID_NdPtrarray = GetTmpMem(theHeap,(statistik[0]+1)*sizeof(NODE*),ANS_MarkKey);
 if ( UGID_NdPtrarray == NULL )
 {
     PrintErrorMessage('E',"cadconvert"," ERROR: No memory for UGID_NdPtrarray");
@@ -1045,7 +1046,7 @@ memset(UGID_NdPtrarray,NULL,(statistik[0]+1)*sizeof(NODE*));
 /******************/
 /* elemflag_array */
 	totalels = statistik[2];
-	elemflag_array = GetTmpMem(theHeap,(totalels+1)*sizeof(INT));
+	elemflag_array = GetTmpMem(theHeap,(totalels+1)*sizeof(INT),ANS_MarkKey);
 	if ( elemflag_array == NULL ) 
 	{ 
 		PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
@@ -1055,7 +1056,7 @@ memset(UGID_NdPtrarray,NULL,(statistik[0]+1)*sizeof(NODE*));
 /************/
 /* el_array */
 	nbofelms = statistik[2];
-	el_array = GetTmpMem(theHeap,(statistik[2]+1)*sizeof(INT)*8);
+	el_array = GetTmpMem(theHeap,(statistik[2]+1)*sizeof(INT)*8,ANS_MarkKey);
 	if ( el_array == NULL ) 
 	{ 
 		PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
@@ -1064,7 +1065,7 @@ memset(UGID_NdPtrarray,NULL,(statistik[0]+1)*sizeof(NODE*));
 	memset(el_array,0,(statistik[2]+1)*sizeof(INT)*8);
 /****************/
 /* bndseg_array */
-	bndseg_array = GetTmpMem(theHeap,(statistik[4]+1)*sizeof(BND_SFE_TYP));
+	bndseg_array = GetTmpMem(theHeap,(statistik[4]+1)*sizeof(BND_SFE_TYP),ANS_MarkKey);
 	if ( bndseg_array == NULL ) 
 	{ 
 		PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
@@ -1078,7 +1079,7 @@ memset(UGID_NdPtrarray,NULL,(statistik[0]+1)*sizeof(NODE*));
 	}
 /****************/
 /* CAD_SFE_Part */
-	CAD_SFE_Part = GetTmpMem(theHeap,(statistik[4])*sizeof(CAD_SFE_TYP));
+	CAD_SFE_Part = GetTmpMem(theHeap,(statistik[4])*sizeof(CAD_SFE_TYP),ANS_MarkKey);
 	if ( CAD_SFE_Part == NULL ) 
 	{ 
 		PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
@@ -1095,7 +1096,7 @@ memset(UGID_NdPtrarray,NULL,(statistik[0]+1)*sizeof(NODE*));
 	
 /********************/
 /* bndcndflag_array */
-	bndcndflag_array = GetTmpMem(theHeap,(statistik[4])*sizeof(DOUBLE));
+	bndcndflag_array = GetTmpMem(theHeap,(statistik[4])*sizeof(DOUBLE),ANS_MarkKey);
     if (statistik[4] != 0)
 		if ( bndcndflag_array == NULL ) 
 		{ 
@@ -1105,7 +1106,7 @@ memset(UGID_NdPtrarray,NULL,(statistik[0]+1)*sizeof(NODE*));
 	memset(bndcndflag_array,-1.0,(statistik[4]+1)*sizeof(DOUBLE));
 /***********************/
 /* node_element_matrix */
-	node_element_matrix = GetTmpMem(theHeap,(statistik[0]+1)*sizeof(INT)*NUOFCLMS);
+	node_element_matrix = GetTmpMem(theHeap,(statistik[0]+1)*sizeof(INT)*NUOFCLMS,ANS_MarkKey);
 	if ( node_element_matrix == NULL ) 
 	{ 
 		PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
@@ -1114,7 +1115,7 @@ memset(UGID_NdPtrarray,NULL,(statistik[0]+1)*sizeof(NODE*));
 	memset(node_element_matrix,0,(statistik[0]+1)*sizeof(INT)*NUOFCLMS);
 /*****************/
 /* n_koord_array */
-	n_koord_array = GetTmpMem(theHeap,(statistik[0]+1)*sizeof(DOUBLE)*3);
+	n_koord_array = GetTmpMem(theHeap,(statistik[0]+1)*sizeof(DOUBLE)*3,ANS_MarkKey);
 	if ( n_koord_array == NULL ) 
 	{ 
 		PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
@@ -1123,7 +1124,7 @@ memset(UGID_NdPtrarray,NULL,(statistik[0]+1)*sizeof(NODE*));
 	memset(n_koord_array,-1.0,(statistik[0]+1)*sizeof(DOUBLE)*3);
 /*****************/
 /* n_koord_array_UG */
-	n_koord_array_UG = GetTmpMem(theHeap,(statistik[0])*sizeof(DOUBLE)*3);
+	n_koord_array_UG = GetTmpMem(theHeap,(statistik[0])*sizeof(DOUBLE)*3,ANS_MarkKey);
 	if ( n_koord_array_UG == NULL ) 
 	{ 
 		PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
@@ -1132,7 +1133,7 @@ memset(UGID_NdPtrarray,NULL,(statistik[0]+1)*sizeof(NODE*));
 	memset(n_koord_array_UG,-1.0,(statistik[0])*sizeof(DOUBLE)*3);
 /***************/
 /* koord_array */
-	koord_array = GetTmpMem(theHeap,(statistik[4]+1)*sizeof(DOUBLE)*9);
+	koord_array = GetTmpMem(theHeap,(statistik[4]+1)*sizeof(DOUBLE)*9,ANS_MarkKey);
 	if ( koord_array == NULL ) 
 	{ 
 		PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
@@ -1144,7 +1145,7 @@ memset(UGID_NdPtrarray,NULL,(statistik[0]+1)*sizeof(NODE*));
 /************************************************************************/
 /*Neu Initialisierung der Variablen fuer die SubdomainIdentifizierung mit Namen*/
 komponentenzaehler = 0;
-KomponentenIndexArray = GetTmpMem(theHeap,(MAX_NUB_OF_SBDMS)*sizeof(INT)); 
+KomponentenIndexArray = GetTmpMem(theHeap,(MAX_NUB_OF_SBDMS)*sizeof(INT),ANS_MarkKey); 
 if ( KomponentenIndexArray == NULL ) 
 { 
 	PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
@@ -1152,7 +1153,7 @@ if ( KomponentenIndexArray == NULL )
 }
 memset(KomponentenIndexArray,-1,(MAX_NUB_OF_SBDMS)*sizeof(INT));
 
-bisherige_ID_array  = GetTmpMem(theHeap,(MAX_NUB_OF_SBDMS)*sizeof(INT)); 
+bisherige_ID_array  = GetTmpMem(theHeap,(MAX_NUB_OF_SBDMS)*sizeof(INT),ANS_MarkKey); 
 if ( bisherige_ID_array == NULL ) 
 { 
 	PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
@@ -1160,7 +1161,7 @@ if ( bisherige_ID_array == NULL )
 }
 memset(bisherige_ID_array,-1,(MAX_NUB_OF_SBDMS)*sizeof(INT));
 
-KomponentenNamenArray = GetTmpMem(theHeap,(MAX_NUB_OF_SBDMS)*31*sizeof(char));
+KomponentenNamenArray = GetTmpMem(theHeap,(MAX_NUB_OF_SBDMS)*31*sizeof(char),ANS_MarkKey);
 if ( KomponentenNamenArray == NULL ) 
 { 
 	PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
@@ -1878,7 +1879,7 @@ INT NextGoodPrimeNumber(INT *TheNumber)
 	wurzel2 = floor(2*sqrt(*TheNumber));
 
 	 
-	if ((primzahlarray = GetTmpMem(theHeap,wurzel2*sizeof(int)))==NULL) 
+	if ((primzahlarray = GetTmpMem(theHeap,wurzel2*sizeof(int),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"NextGoodPrimeNumber","  ERROR: No memory for primzahlarray");
 		return(1);
@@ -2051,7 +2052,7 @@ INT Ansys2lgmInit()
 	
 	/*SFE_HashTable initialisieren!!! */ 
 	/* OLD SFE_HashTable =	malloc(SFE_p * sizeof(SFE_KNOTEN_TYP));*/
-	if ((EXCHNG_TYP2_SFE_HASHTAB(ExchangeVar_2_Pointer) = GetTmpMem(theHeap,SFE_p * sizeof(SFE_KNOTEN_TYP*)))==NULL) 
+	if ((EXCHNG_TYP2_SFE_HASHTAB(ExchangeVar_2_Pointer) = GetTmpMem(theHeap,SFE_p * sizeof(SFE_KNOTEN_TYP*),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"Ansys2lgmInit","  ERROR: No memory for SFE-Hashtable");
 		return(1);
@@ -2064,7 +2065,7 @@ INT Ansys2lgmInit()
 	
 	/*LI_HashTable initialisiern!!! */ 
 	/*LI_HashTable =	malloc(LI_p * sizeof(LI_KNOTEN_TYP));*/
-	if ((EXCHNG_TYP2_LI_HASHTAB(ExchangeVar_2_Pointer) = GetTmpMem(theHeap,LI_p * sizeof(LI_KNOTEN_TYP*)))==NULL) 
+	if ((EXCHNG_TYP2_LI_HASHTAB(ExchangeVar_2_Pointer) = GetTmpMem(theHeap,LI_p * sizeof(LI_KNOTEN_TYP*),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"Ansys2lgmInit","  ERROR: No memory for LI-Hashtable");
 		return(1);
@@ -2114,7 +2115,7 @@ SFE_KNOTEN_TYP *GetMemAndFillNewSFE(INT ii, INT jj, INT kk, INT id_4, DOUBLE ss)
 {
 	SFE_KNOTEN_TYP *newsfemem;
 	
-	if ((newsfemem = GetTmpMem(theHeap,sizeof(SFE_KNOTEN_TYP)))==NULL) 
+	if ((newsfemem = GetTmpMem(theHeap,sizeof(SFE_KNOTEN_TYP),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"GetMemAndFillNewSFE","  ERROR: No memory for a SFE_Hashtab_Entry, see ansys2lgm.c");
 		return(NULL);
@@ -2308,7 +2309,7 @@ IDF_TYP *GetMemandFillNewIDF(INT k, DOUBLE s,SFE_KNOTEN_TYP *act_tria)
 {
 	IDF_TYP *idf_new;
 
-	if ((idf_new = GetTmpMem(theHeap,sizeof(IDF_TYP)))==NULL) 
+	if ((idf_new = GetTmpMem(theHeap,sizeof(IDF_TYP),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"GetMemandFillNewIDF","  ERROR: No memory for a IDF_TYP_Entry, see ansys2lgm.c");
 		return(NULL);
@@ -2411,7 +2412,7 @@ LI_KNOTEN_TYP *GetMemAndFillNewLI(INT i, INT j, INT k, DOUBLE s, SFE_KNOTEN_TYP 
 {
 	LI_KNOTEN_TYP *line_new;
 
-	if ((line_new = GetTmpMem(theHeap,sizeof(LI_KNOTEN_TYP)))==NULL) 
+	if ((line_new = GetTmpMem(theHeap,sizeof(LI_KNOTEN_TYP),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"GetMemAndFillNewLI","  ERROR: No memory for a LI_Hashtab_Entry, see ansys2lgm.c");
 		return(NULL);
@@ -2680,12 +2681,12 @@ INT Ansys2lgmCreateHashTables()
 	}
 	
 	/*for debugging*/
-	if ((hilfusSFE = GetTmpMem(theHeap,SFE_p * sizeof(SFE_KNOTEN_TYP*)))==NULL) 
+	if ((hilfusSFE = GetTmpMem(theHeap,SFE_p * sizeof(SFE_KNOTEN_TYP*),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"Ansys2lgmCreateHashTables","  ERROR: No memory for hilfusSFE");
 		return(1);
 	}
-	if ((hilfusLI = GetTmpMem(theHeap,LI_p * sizeof(LI_KNOTEN_TYP*)))==NULL) 
+	if ((hilfusLI = GetTmpMem(theHeap,LI_p * sizeof(LI_KNOTEN_TYP*),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"Ansys2lgmCreateHashTables","  ERROR: No memory for hilfusLI");
 		return(1);
@@ -2944,7 +2945,7 @@ SF_TYP *GetMemandFillNewSF(DOUBLE *surfacename)
 	SF_TYP *Surface;
 
 
-	if((Surface = GetTmpMem(theHeap,sizeof(SF_TYP))) == NULL)
+	if((Surface = GetTmpMem(theHeap,sizeof(SF_TYP),ANS_MarkKey))== NULL)
 	{
 		PrintErrorMessage('E',"GetMemandFillNewSF","got  no memory  for a new Surface !???!");
 		return(NULL);
@@ -3072,7 +3073,7 @@ SFC_TYP *GetMemandFillNewSFC(SF_TYP *theSurface)
 {
 	SFC_TYP *SfceEntry;
 
-	if ((SfceEntry = GetTmpMem(theHeap,sizeof(SFC_TYP)))==NULL) 
+	if ((SfceEntry = GetTmpMem(theHeap,sizeof(SFC_TYP),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"GetMemandFillNewSFC","  got no Memory out of GetTmpMem..., see ansys2lgm.c");
 		return(NULL);
@@ -3295,7 +3296,7 @@ SD_TYP *GetMemandFillNewSD(INT SubdomName)
 	
 	/* neuen Speicher allokieren */ 
 
-	if ((Subdomain = GetTmpMem(theHeap,sizeof(SD_TYP)))==NULL) 
+	if ((Subdomain = GetTmpMem(theHeap,sizeof(SD_TYP),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"GetMemandFillNewSD","  got no MEM for the new subdomain, see ansys2lgm.c");
 		return(NULL);
@@ -3424,7 +3425,7 @@ INT ConnectSfcTria(SF_TYP *sf, SFE_KNOTEN_TYP *sfeptr)
 	
 	merketria = SF_TRIAS(sf);
 
-	if ((newtria = GetTmpMem(theHeap,sizeof(TRIANGLE_TYP)))==NULL) 
+	if ((newtria = GetTmpMem(theHeap,sizeof(TRIANGLE_TYP),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"ConnectSfcTria","  got no MEM for a new triangle, see ansys2lgm.c");
 		return(NULL);
@@ -3966,7 +3967,7 @@ PL_LINE_TYP *GetMemFillAddNewPolylineLine(LI_KNOTEN_TYP *linepointer, PL_TYP *po
 	
 	merkefirstpl_line = PL_LINES(polylinepointer);
 	
-	if ((newpl_line = GetTmpMem(theHeap,sizeof(PL_LINE_TYP)))==NULL) 
+	if ((newpl_line = GetTmpMem(theHeap,sizeof(PL_LINE_TYP),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"GetMemFillAddNewPolylineLine","did not receive  memory for the new polyline_Line");
 		return (NULL);
@@ -4011,7 +4012,7 @@ PL_TYP *GetMemFillAddNewPolyline(LI_KNOTEN_TYP *linepointer)
 	
 	merkeplptr = EXCHNG_TYP2_ROOT_PLY(ExchangeVar_2_Pointer);
 
-	if ((new_pl = GetTmpMem(theHeap,sizeof(PL_TYP)))==NULL) 
+	if ((new_pl = GetTmpMem(theHeap,sizeof(PL_TYP),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"GetMemFillAddNewPolyline","did not receive  memory for the new polyline");
 		return (NULL);
@@ -4087,7 +4088,7 @@ IDF_SHORT_TYP *CopyCharacteristicList2HelpList(IDF_TYP *charact_identifiers)
 	}
 	
 	/*das erste Listenelement*/
-	if ((thedoubledlist = GetTmpMem(theHeap,sizeof(IDF_SHORT_TYP)))==NULL) 
+	if ((thedoubledlist = GetTmpMem(theHeap,sizeof(IDF_SHORT_TYP),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"CopyCharacteristicList2HelpList","no memory obtained from GetMem(sizeof(IDF_SHORT_TYP))");
 		return (NULL);
@@ -4103,7 +4104,7 @@ IDF_SHORT_TYP *CopyCharacteristicList2HelpList(IDF_TYP *charact_identifiers)
 	{
 		merke = thedoubledlist; /*merkt sich das Listenende*/
 
-		if ((thedoubledlist = GetTmpMem(theHeap,sizeof(IDF_SHORT_TYP)))==NULL) 
+		if ((thedoubledlist = GetTmpMem(theHeap,sizeof(IDF_SHORT_TYP),ANS_MarkKey))==NULL) 
 		{
 			PrintErrorMessage('E',"CopyCharacteristicList2HelpList","no memory obtained from GetMem(sizeof(IDF_SHORT_TYP))");
 			return (NULL);
@@ -4205,7 +4206,7 @@ SFPL_TYP *MakeNewSfcPlEntry(PL_TYP *plptr, SF_TYP *sfce)
 	/*merke Dir den Anfang der Polylineeintraege von der Surface sfce*/
 	mp = SF_POLYLINES(sfce);
 
-	if((SF_POLYLINES(sfce) = GetTmpMem(theHeap,sizeof(SFPL_TYP))) == NULL) 
+	if((SF_POLYLINES(sfce) = GetTmpMem(theHeap,sizeof(SFPL_TYP),ANS_MarkKey))== NULL) 
 	{
 		PrintErrorMessage('E',"MakeNewSfcPlEntry","no memory obtained from GetMem(sizeof(SFPL_TYP))");
 		return (NULL);
@@ -4502,7 +4503,7 @@ INT PolylineSplit(PL_LINE_TYP **anfang, PL_LINE_TYP **rechtesMuster, PL_TYP *Pol
 	/*mit der abgespaltenen eine neue anlegen ...*/
 	   /*laeuft von idl2 bis endeabgespPL.*/
 	merkeplptr = EXCHNG_TYP2_ROOT_PLY(ExchangeVar_2_Pointer);
-	if((neuePolyline = GetTmpMem(theHeap,sizeof(PL_TYP))) == NULL)
+	if((neuePolyline = GetTmpMem(theHeap,sizeof(PL_TYP),ANS_MarkKey))== NULL)
 	{
 		PrintErrorMessage('E',"PolylineSplit","got no mem for the new polyline, which splitted");
 		return (1);
@@ -4951,7 +4952,7 @@ INT GetMemAndFillNewPlz(SFPL_TYP **anfang,SFPL_TYP **rechtesMuster,SF_TYP *theSu
 	/*mit der abgespaltenen eine neue anlegen ...*/
 	   /*laeuft von idl2 bis endeabgespSF_PLs.*/
 	merkeplzptr = SF_POLYLI_ZYK(theSurface);
-	if((neuerPolylinezyk = GetTmpMem(theHeap,sizeof(PLZ_TYP))) == NULL)
+	if((neuerPolylinezyk = GetTmpMem(theHeap,sizeof(PLZ_TYP),ANS_MarkKey))== NULL)
 	{
 		PrintErrorMessage('E',"GetMemAndFillNewPlz","got no mem for the new polylinecycle");
 		return (1);
@@ -5482,7 +5483,7 @@ INT GetMemAndFillNewRlSfc(PLZ_TYP **anfang,PLZ_TYP **rechtesMuster,SF_TYP *theSu
 	/*mit der abgespaltenen eine neue anlegen ...*/
 	   /*laeuft von idl2 bis endeabgespSF_PLZs.*/
 	merkeplzptr = SF_REALSFCS(theSurface);
-	if((neueRealSurface = GetTmpMem(theHeap,sizeof(RS_TYP))) == NULL)
+	if((neueRealSurface = GetTmpMem(theHeap,sizeof(RS_TYP),ANS_MarkKey))== NULL)
 	{
 		PrintErrorMessage('E',"GetMemAndFillNewRlSfc","got no mem for the new realsurface");
 		return (1);
@@ -5868,7 +5869,7 @@ INT FetchAllTriangles(SFE_KNOTEN_TYP *dasDreieck)
 			{
 				/* Dreieck vorne in Liste einfuegen ... */
 				merke_triangle_pointer = New_Triangle_List;
-				if((New_Triangle_List = GetTmpMem(theHeap,sizeof(TRIANGLE_TYP))) == NULL)
+				if((New_Triangle_List = GetTmpMem(theHeap,sizeof(TRIANGLE_TYP),ANS_MarkKey))== NULL)
 				{
 					PrintErrorMessage('E',"SplitSurface","got  no memory  for  New_Triangle_List !???!");
 					return(1);
@@ -6032,7 +6033,7 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
 		
 		/*erzeuge neue surface und trage sie vorne in SF-Liste ein.*/
 			merkeSurface = EXCHNG_TYP2_ROOT_SFC(ExchangeVar_2_Pointer);
-			if((newSurface = GetTmpMem(theHeap,sizeof(SF_TYP))) == NULL)
+			if((newSurface = GetTmpMem(theHeap,sizeof(SF_TYP),ANS_MarkKey))== NULL)
 			{
 				PrintErrorMessage('E',"SplitSurface","got  no memory  for  newSurface !???!");
 				return(1);
@@ -6127,7 +6128,7 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
 			
 			nmb_of_triangles = 0;
 			/*New_Triangle_List ist global und wird in der Funktion FetchAllTriangles weiter gefuellt*/
-			if((New_Triangle_List = GetTmpMem(theHeap,sizeof(TRIANGLE_TYP))) == NULL)
+			if((New_Triangle_List = GetTmpMem(theHeap,sizeof(TRIANGLE_TYP),ANS_MarkKey))== NULL)
 			{
 				PrintErrorMessage('E',"SplitSurface","got  no memory  for  New_Triangle_List !???!");
 				return(1);
@@ -6190,7 +6191,7 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
 			/*  das noch prgrammieren*/
 			/*trage neue surfaces auch bei the_sbd ein*/
 			/* the_sbd->NMBsurfaces ++*/
-			if((neue_sfc_of_sbd = GetTmpMem(theHeap,sizeof(SFC_TYP))) == NULL)
+			if((neue_sfc_of_sbd = GetTmpMem(theHeap,sizeof(SFC_TYP),ANS_MarkKey))== NULL)
 			{
 				PrintErrorMessage('E',"SplitSurface","got  no SFC_TYP memory  for  neue_sfc_of_sbd !???!");
 				return(1);
@@ -6825,7 +6826,7 @@ INT EvalNmbOfPointsOfSfcs()
 	
 	/*einmal fuer alle Surfaces ein temporaeres Hilfsfeld anlegen:*/
 	/*erster Eintrag steht fuer keienn Node*/
-	if ((TempNodeArray = GetTmpMem(theHeap,EXCHNG_TYP1_NMB_OF_BNDNDS(ExchangeVar_1_Pointer)*sizeof(INT)))==NULL) 
+	if ((TempNodeArray = GetTmpMem(theHeap,EXCHNG_TYP1_NMB_OF_BNDNDS(ExchangeVar_1_Pointer)*sizeof(INT),ANS_MarkKey))==NULL) 
 	{
 		PrintErrorMessage('E',"EvalNmbOfPointsOfSfcs","  got no MEM for the TempNodeArray, see ansys2lgm.c");
 		return(1);
@@ -7294,7 +7295,7 @@ static fpos_t filepos;
 static fpos_t fileposline;
 static fpos_t filepossurface;*/
 
-int LGM_ANSYS_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info)
+int LGM_ANSYS_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, INT MarkKey)
 {
 	INT ret_val;
 	char helpstring[50];
@@ -7305,9 +7306,10 @@ int LGM_ANSYS_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_in
 	ExchangeVar_1_Pointer = &ExchangeVar_1;
 	DomainInfo_Pointer   = &DomainInfo;
 
-	/* store heapptr */
+	/* store heapptr and MarkKey */
 	if (Heap==NULL) return (1);
 	theHeap = Heap; /*static heap pointer setzen*/
+	ANS_MarkKey = MarkKey;
  
 	/*OLDif((ret_val =ReadAnsysFile(filename)) == 1)*/
 
@@ -7634,7 +7636,7 @@ int LGM_ANSYS_ReadSurface (int sfcnumber, LGM_SURFACE_INFO *surface_info)
 	if (TmpMemArray == NULL) /*wenn noch NULL*/
 	{
 		/*... dann hole Speicher ...*/
-		if((TmpMemArray = GetTmpMem(theHeap,EXCHNG_TYP1_NMB_OF_BNDNDS(ExchangeVar_1_Pointer) * sizeof(char))) == NULL) 
+		if((TmpMemArray = GetTmpMem(theHeap,EXCHNG_TYP1_NMB_OF_BNDNDS(ExchangeVar_1_Pointer) * sizeof(char),ANS_MarkKey))== NULL) 
 		{
 			PrintErrorMessage('E',"LGM_ANSYS_ReadSurface","no memory obtained for TmpMemArray");
 			return (NULL);
