@@ -157,10 +157,6 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge);
 #define SMALL_DOUBLE 1e-4
 #define MAX_PERIODIC_PROCS      128
 
-/* node counter for periodic vector */
-#define PVCOUNT VCOUNT
-#define SETPVCOUNT      SETVCOUNT
-
 /* vid is unique id of vector */
 #ifndef ModelP
 #define PVID VINDEX
@@ -8502,6 +8498,8 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
     if (NVECTOR(theNode) != NULL)
       UserWriteF(" vec=" VINDEX_FMTX "\n",
                  VINDEX_PRTX(NVECTOR(theNode)));
+
+    UserWriteF(" classes: NCLASS = %d  NNCLASS = %d\n",NCLASS(theNode),NNCLASS(theNode));
   }
 
   /******************************/
@@ -9967,6 +9965,34 @@ INT MaxNextNodeClass (ELEMENT *theElement)
   return (m);
 }
 
+#ifdef __PERIODIC_BOUNDARY__
+INT MaxPeriodicNextNodeClass (ELEMENT *theElement)
+{
+  INT m = 0;
+  INT i;
+
+  if (PeriodicBoundaryInfo==NULL)
+    return (0);
+
+  /* check if it is a periodic element */
+  if (OBJT(theElement)==BEOBJ) {
+    for (i=0; i<CORNERS_OF_ELEM(theElement); i++) {
+      INT c = NNCLASS(CORNER(theElement,i));
+      INT nbnd,per_ids[MAX_PERIODIC_OBJ];
+      DOUBLE_VECTOR coord,percoord[MAX_PERIODIC_OBJ];
+      VERTEX *vtx = MYVERTEX(CORNER(theElement,i));
+
+      if (OBJT(vtx)==BVOBJ)
+        if ((PeriodicBoundaryInfo)(vtx,&nbnd,per_ids,coord,percoord))
+          m = MAX(m,c);
+    }
+    return (m);
+  }
+  else
+    return (0);
+}
+#endif
+
 /****************************************************************************/
 /*D
    MinNodeClass - Returns minimal Node class of a dof on next level
@@ -10164,6 +10190,27 @@ static INT PropagateNodeClass (GRID *theGrid, INT nclass)
           SETNCLASS(theNode,nclass-1);
       }
 
+        #ifdef __PERIODIC_BOUNDARY__
+  {
+    /* due to periodicity node class for periodic nodes has to be made consistent */
+    VECTOR *vec;
+    NODE *node;
+
+    for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node)) {
+      vec=NVECTOR(node);
+
+      SETVCLASS(vec,MAX(NCLASS(node),VCLASS(vec)));
+    }
+
+    for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node)) {
+      vec=NVECTOR(node);
+
+      SETNCLASS(node,MAX(VCLASS(vec),NCLASS(node)));
+    }
+
+  }
+        #endif
+
   /* only for this values valid */
   ASSERT(nclass==3 || nclass==2);
 
@@ -10176,6 +10223,7 @@ static INT PropagatePeriodicNodeClass (GRID *theGrid, INT nclass)
   ELEMENT *theElement;
   INT i;
 
+  PRINTDEBUG(gm,1,("PropagatePeriodicNodeClass on grid %d\n",GLEVEL(theGrid)));
   for (theElement=FIRSTELEMENT(theGrid);
        theElement!= NULL; theElement = SUCCE(theElement))
     if (MaxNodeClass(theElement) == nclass)
@@ -10220,17 +10268,30 @@ INT PropagateNodeClasses (GRID *theGrid)
   /* set Node classes in the algebraic neighborhood to 1 */
   if (PropagateNodeClass(theGrid,2)) REP_ERR_RETURN(1);
 
-#ifdef __PERIODIC_BOUNDARY__
-  /* set Node classes in periodic neighbourhood to 1 */
-  if (PropagatePeriodicNodeClass(theGrid,1)) REP_ERR_RETURN(1);
-#endif
-
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateNodeClasses(): 3. communication\n",
                    me))
   /* exchange NCLASS of Nodes */
   DDD_IFAExchange(BorderNodeSymmIF,GRID_ATTR(theGrid),sizeof(INT),
                   Gather_NodeClass, Scatter_NodeClass);
+        #endif
+
+#ifdef __PERIODIC_BOUNDARY__
+  if (1) {
+    /* set Node classes in periodic neighbourhood to 1 */
+    if (PropagatePeriodicNodeClass(theGrid,1)) REP_ERR_RETURN(1);
+
+    #ifdef ModelP
+    PRINTDEBUG(gm,1,("\n" PFMT "PropagateNodeClasses(): 4. communication\n",
+                     me))
+    /* exchange NCLASS of Nodes */
+    DDD_IFAExchange(BorderNodeSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                    Gather_NodeClass, Scatter_NodeClass);
+        #endif
+  }
+#endif
+
+        #ifdef ModelP
   /* send NCLASS to ghosts */
   DDD_IFAOneway(NodeIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
                 Gather_NodeClass, Scatter_GhostNodeClass);
@@ -10371,6 +10432,7 @@ static INT PropagateNextNodeClass (GRID *theGrid, INT nnclass)
 
         #ifdef __PERIODIC_BOUNDARY__
   {
+    /* due to periodicity periodic next node class for periodic nodes has to be made consistent */
     VECTOR *vec;
     NODE *node;
 
@@ -10394,6 +10456,30 @@ static INT PropagateNextNodeClass (GRID *theGrid, INT nnclass)
 
   return(0);
 }
+
+#ifdef __PERIODIC_BOUNDARY__
+static INT PropagatePeriodicNextNodeClass (GRID *theGrid, INT nnclass)
+{
+  /* set NNCLASS=1 in periodic neighbourhood to set class consistently */
+  ELEMENT *theElement;
+  INT i;
+
+  for (theElement=FIRSTELEMENT(theGrid);
+       theElement!= NULL; theElement = SUCCE(theElement))
+    if (MaxPeriodicNextNodeClass(theElement) == nnclass)
+      for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+      {
+        NODE *theNode = CORNER(theElement,i);
+
+        if (NNCLASS(theNode) < nnclass)
+          SETNNCLASS(theNode,nnclass);
+      }
+
+  ASSERT(nnclass==1);
+
+  return (0);
+}
+#endif
 
 INT PropagateNextNodeClasses (GRID *theGrid)
 {
@@ -10423,6 +10509,21 @@ INT PropagateNextNodeClasses (GRID *theGrid)
   /* exchange NNCLASS of Nodes */
   DDD_IFAExchange(BorderNodeSymmIF,GRID_ATTR(theGrid),sizeof(INT),
                   Gather_NextNodeClass, Scatter_NextNodeClass);
+        #endif
+
+#ifdef __PERIODIC_BOUNDARY__
+  /* set next node class to 1 in periodic neighbourhood */
+  if (PropagatePeriodicNextNodeClass(theGrid,1)) REP_ERR_RETURN (1);
+
+    #ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextNodeClasses(): 4. communication\n",me))
+  /* exchange NNCLASS of Nodes */
+  DDD_IFAExchange(BorderNodeSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_NextNodeClass, Scatter_NextNodeClass);
+        #endif
+#endif
+
+        #ifdef ModelP
   /* send NNCLASSn to ghosts */
   DDD_IFAOneway(NodeIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
                 Gather_NextNodeClass, Scatter_GhostNextNodeClass);
@@ -11056,39 +11157,6 @@ static int sort_entries_old (const void *e1, const void *e2)
   return (0);
 }
 
-
-static int sort_entries_new (const void *e1, const void *e2)
-{
-  INT i;
-  PERIODIC_ENTRIES *v1 = (PERIODIC_ENTRIES *)e1;
-  PERIODIC_ENTRIES *v2 = (PERIODIC_ENTRIES *)e2;
-
-  /* periodic ids */
-  if (v1->periodic_id < v2->periodic_id) return (-1);
-  if (v1->periodic_id > v2->periodic_id) return (1);
-
-  if (v1->n == 0)
-  {
-    for (i=0; i<DIM; i++)
-    {
-      if (v1->coord[i] < v2->coord[i] - SMALL_DOUBLE) return (-1);
-      if (v1->coord[i] > v2->coord[i] + SMALL_DOUBLE) return (1);
-    }
-    return (0);
-  }
-
-  if (v1->n < v2->n) return (-1);
-  if (v1->n > v2->n) return (1);
-
-  for (i=0; i<v1->n; i++)
-  {
-    if (PVID(v1->vp[i]) < PVID(v2->vp[i])) return (-1);
-    if (PVID(v1->vp[i]) > PVID(v2->vp[i])) return (1);
-  }
-
-  return(0);
-}
-
 static int sort_entries (const void *e1, const void *e2)
 {
   INT i;
@@ -11113,7 +11181,6 @@ static int sort_entries (const void *e1, const void *e2)
     if (v1->coord[i] < v2->coord[i] - SMALL_DOUBLE) return (-1);
     if (v1->coord[i] > v2->coord[i] + SMALL_DOUBLE) return (1);
   }
-  return (0);
 
   return(0);
 }
@@ -11148,10 +11215,25 @@ INT GridSetPerVecCount (GRID *g)
     SETPVCOUNT(NVECTOR(n),0);
 
   for (n=PFIRSTNODE(g); n!=NULL; n=SUCCN(n))
+    SETPVCOUNT(NVECTOR(n),(PVCOUNT(NVECTOR(n))+1));
+
+  IFDEBUG(gm,1)
   {
-    assert(PVCOUNT(NVECTOR(n))<3);
-    SETPVCOUNT(NVECTOR(n),PVCOUNT(NVECTOR(n))+ 1);
+    INT max_nodes_per_vec=0;
+    VECTOR *vec;
+
+    for (n=PFIRSTNODE(g); n!=NULL; n=SUCCN(n)) {
+      max_nodes_per_vec=MAX(max_nodes_per_vec,PVCOUNT(NVECTOR(n)));
+    }
+    PrintDebug(" at most %d nodes per vector on level %d !!\n",max_nodes_per_vec,GLEVEL(g));
+
+    if (max_nodes_per_vec>1) {
+      for (vec=PFIRSTVECTOR(g); vec!=NULL; vec=SUCCVC(vec))
+        if (PVCOUNT(vec)==max_nodes_per_vec)
+          PrintDebug(" vec(%08x)= " VINDEX_FMTX " with PVCOUNT=%d\n",vec,VINDEX_PRTX(vec),PVCOUNT(vec));
+    }
   }
+  ENDDEBUG
 
   return(0);
 }
@@ -11188,7 +11270,9 @@ static INT ModifyVectorPointer (GRID *g, PERIODIC_ENTRIES *list, INT i, INT j)
   m = START(w);
   n = START(v);
 
-  if (m != NULL)
+  if (m != NULL) {
+    PRINTDEBUG(gm,1,("ModifyVectorPointer list[%d]:\n",j));
+
     for (m=NEXT(m); m != NULL; m=NEXT(m))
     {
       INT periodic_ids[MAX_PERIODIC_OBJ];
@@ -11219,9 +11303,11 @@ static INT ModifyVectorPointer (GRID *g, PERIODIC_ENTRIES *list, INT i, INT j)
 
         if (IsOnSamePerBnd)
         {
+          PRINTDEBUG(gm,1,("%d perid=%d: do not create connection to pos %f %f %f\n",i,list[i].periodic_id,XC(vtx),YC(vtx),ZC(vtx)));
           continue;
         }
       }
+      PRINTDEBUG(gm,1,("%d perid=%d: create connection to pos %f %f %f\n",i,list[i].periodic_id,XC(vtx),YC(vtx),ZC(vtx)));
 
       n = GetMatrix(v,d);
       if (n == NULL)
@@ -11231,6 +11317,7 @@ static INT ModifyVectorPointer (GRID *g, PERIODIC_ENTRIES *list, INT i, INT j)
         if (n == NULL) assert(0);
       }
     }
+  }
 
   return(0);
 }
@@ -11251,18 +11338,15 @@ static INT DisposeAndModVector(GRID *g, PERIODIC_ENTRIES *list, INT i, INT j)
   /* modify vector pointer */
   NVECTOR(list[j].node) = NVECTOR(list[i].node);
 
-  /* dispose vector */
-  if (0)
-  {
-    m = START(vec);
-    for (m=NEXT(m); m != NULL; m=NEXT(m))
-      MDEST(MADJ(m)) = NVECTOR(list[i].node);
-  }
+  /* dispose vector and increase node count */
+  SETPVCOUNT(NVECTOR(list[i].node),(PVCOUNT(NVECTOR(list[i].node))+1));
+
+  PRINTDEBUG(gm,1,("increased node count for vec(%08x) = "VINDEX_FMTX ": %d\n",NVECTOR(list[i].node),VINDEX_PRTX(NVECTOR(list[i].node)),PVCOUNT(NVECTOR(list[i].node))));
 
   PRINTDEBUG(gm,1,(PFMT "DisposeAndModVector perid=%d vtx=%d node="
-                   ID_FMTX " vec=" VINDEX_FMTX " pos %lf %lf %lf level %d\n",
+                   ID_FMTX " vec(%08x)=" VINDEX_FMTX " partner vec(%08x)=" VINDEX_FMTX " pos %lf %lf %lf level %d\n",
                    me,list[j].periodic_id,ID(MYVERTEX(list[j].node)),
-                   ID_PRTX(list[j].node),VINDEX_PRTX(vec),
+                   ID_PRTX(list[j].node),vec,VINDEX_PRTX(vec),(NVECTOR(list[i].node)),VINDEX_PRTX(NVECTOR(list[i].node)),
                    XC(MYVERTEX(list[j].node)),
                    YC(MYVERTEX(list[j].node)),
                    ZC(MYVERTEX(list[j].node)),GLEVEL(g)));
@@ -11398,7 +11482,6 @@ static INT MatchingPeriodicEntries (PERIODIC_ENTRIES *coordlist, INT i, INT j)
   return(0);
 }
 
-#ifdef ModelP
 INT SetPerVecVOBJECT(GRID *g)
 {
   NODE *n;
@@ -11407,10 +11490,11 @@ INT SetPerVecVOBJECT(GRID *g)
   {
     if (VOBJECT(NVECTOR(n)) == NULL)
     {
+      PRINTDEBUG(gm,1,("SetPerVecVOBJECT for node NGID=%08x and vec=%08x (at pos %f %f %f)\n",GID(n),GID(NVECTOR(n)),XC(MYVERTEX(n)),YC(MYVERTEX(n)),ZC(MYVERTEX(n))));
       VOBJECT(NVECTOR(n)) = (GEOM_OBJECT *)n;
     }
   }
-
+#ifdef ModelP
   for (n=PFIRSTNODE(g); n!=FIRSTNODE(g); n=SUCCN(n))
   {
     if (VOBJECT(NVECTOR(n)) == NULL)
@@ -11418,7 +11502,7 @@ INT SetPerVecVOBJECT(GRID *g)
       VOBJECT(NVECTOR(n)) = (GEOM_OBJECT *)n;
     }
   }
-
+#endif
         #ifdef Debug
   for (n=PFIRSTNODE(g); n!=NULL; n=SUCCN(n))
   {
@@ -11429,7 +11513,7 @@ INT SetPerVecVOBJECT(GRID *g)
   return(0);
 }
 
-
+#ifdef ModelP
 static INT SelectCorProc (VECTOR **vp, INT pos, INT p, int *np, int *theprocs)
 {
   int *proclist = PROCLIST(vp[pos]);
@@ -11523,7 +11607,7 @@ static INT Identify_PeriodicVector (PERIODIC_ENTRIES *coordlist, INT i)
 {
   int p,j,theprocs[MAX_PERIODIC_PROCS],np;
 
-  PRINTDEBUG(gm,1,("IPV: GetMatchingProcs\n"));
+  PRINTDEBUG(gm,1,("%d IPV: GetMatchingProcs\n",i));
 
   np = 0;
   if (GetMatchingProcs(coordlist,i,&np,theprocs)) return(1);
@@ -11598,8 +11682,6 @@ INT Grid_GeometricToPeriodic (GRID *g)
     UserWriteF("Grid_GeometricToPeriodic: no function *PeriodicBoundaryInfo\n");
     return(GM_OK);
   }
-
-  GridSetPerVecCount(g);
 
         #ifndef ModelP
   /* set PVID of vectors */
@@ -11694,7 +11776,7 @@ INT Grid_GeometricToPeriodic (GRID *g)
     }
   }
 
-  PRINTDEBUG(gm,1,("Grid_GeometricToPeriodic identify nn=%d\n",nn))
+  PRINTDEBUG(gm,1,("Grid_GeometricToPeriodic identify nn=%d, level %d\n",nn,level))
 
   /* sort list */
   qsort(coordlist,nn,sizeof(PERIODIC_ENTRIES),sort_entries);
@@ -11728,6 +11810,9 @@ INT Grid_GeometricToPeriodic (GRID *g)
   assert(nn%2==0);
         #endif
 
+  /* initialize PVCOUNT */
+  GridSetPerVecCount(g);
+
   /* identify */
   for (i=0; i<nn-1; i++)
   {
@@ -11736,36 +11821,20 @@ INT Grid_GeometricToPeriodic (GRID *g)
       INT mode = 0;
       DOUBLE diff;
 
-      if (GLEVEL(g) == 0)
-      {
-        V_DIM_EUKLIDNORM_OF_DIFF(coordlist[i].coord,coordlist[i+1].coord,diff);
-        if (diff > SMALL_DOUBLE) {
-          PRINTDEBUG(gm,0,("%d: diff = %g",i,diff));
-          assert(0);
-        }
-
-        V_DIM_EUKLIDNORM_OF_DIFF(coordlist[i].coord,CVECT(MYVERTEX(coordlist[i].node)),diff);
-        if (diff < SMALL_DOUBLE) mode = 1;
-      }
-      else
-      {
-        INT j,error = 0;
-
-        if (coordlist[i].n != coordlist[i+1].n) error = 1;
-        for (j=0; j<coordlist[i].n; j++)
-          if (PVID(coordlist[i].vp[j]) != PVID(coordlist[i+1].vp[j])) error = 1;
-
-        if (error) assert(0);
-      }
+      V_DIM_EUKLIDNORM_OF_DIFF(coordlist[i].coord,CVECT(MYVERTEX(coordlist[i].node)),diff);
+      if (diff < SMALL_DOUBLE) mode = 1;
 
       if (mode)
       {
         if (ModifyVectorPointer(g,coordlist,i,i+1))
           return (1);
       }
-      else
-      if (ModifyVectorPointer(g,coordlist,i+1,i))
-        return (1);
+      else {
+        if (ModifyVectorPointer(g,coordlist,i+1,i))
+          return (1);
+      }
+      /* increase counter since matching pair already found -> step to next possible pair */
+      i++;
     }
   }
 
@@ -11776,6 +11845,7 @@ INT Grid_GeometricToPeriodic (GRID *g)
   DDD_ObjMgrBegin();
     #endif
     #endif
+
   for (i=0; i<nn-1; i++)
   {
     if (MatchingPeriodicEntries(coordlist,i,i+1))
@@ -11791,9 +11861,13 @@ INT Grid_GeometricToPeriodic (GRID *g)
         if (DisposeAndModVector(g,coordlist,i,i+1))
           return (1);
       }
-      else
-      if (DisposeAndModVector(g,coordlist,i+1,i))
-        return (1);
+      else {
+        if (DisposeAndModVector(g,coordlist,i+1,i))
+          return (1);
+      }
+
+      /* increase counter since matching pair already found -> step to next possible pair */
+      i++;
     }
   }
         #ifdef ModelP
@@ -11815,6 +11889,7 @@ INT Grid_GeometricToPeriodic (GRID *g)
                  VINDEX_PRTX(NVECTOR(coordlist[i].node)),
                  VINDEX_PRTX(NVECTOR(coordlist[i+1].node)),
                  coordlist[i].n);
+      i++;
     }
   }
   ENDDEBUG
@@ -11847,6 +11922,10 @@ INT Grid_GeometricToPeriodic (GRID *g)
   else
     free(coordlist);
 
+  IFDEBUG(gm,1);
+  GridSetPerVecCount(g);
+  ENDDEBUG
+
   return (GM_OK);
 }
 
@@ -11862,9 +11941,9 @@ INT Grid_GeometricToPeriodic (GRID *g)
    .  mg - multigrid to work on
 
    DESCRIPTION:
-   This function does all that is necessary to identity vectors on
-   periodic boundaries. The node-vector pointers are unsymmetic.
-   The vector points to one of the nodes, which point to the single
+   This function does all that is necessary to identify vectors on
+   periodic boundaries. The node-vector pointers are unsymmetric.
+   The vector points to one of the nodes, which points to the single
    periodic vector.
 
    RETURN VALUE:
@@ -11883,6 +11962,84 @@ INT MG_GeometricToPeriodic (MULTIGRID *mg, INT fl, INT tl)
     GRID *g = GRID_ON_LEVEL(mg,level);
 
     if (Grid_GeometricToPeriodic(g)) return(GM_ERROR);
+  }
+
+  return (GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   Grid_CheckPeriodicity - check if periodicity is correct
+
+   SYNOPSIS:
+   INT Grid_CheckPeriodicity (GRID *grid)
+
+   PARAMETERS:
+   .  grid - grid to work on
+
+   DESCRIPTION:
+   This function checks all connections at periodic boundaries.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+INT Grid_CheckPeriodicity (GRID *grid)
+{
+  NODE *node;
+  INT nn;
+
+  if (PeriodicBoundaryInfo == NULL)
+  {
+    UserWriteF("Grid_CheckPeriodicity: no function *PeriodicBoundaryInfo\n");
+    return(GM_OK);
+  }
+
+  PRINTDEBUG(gm,1,("Grid_CheckPeriodicity p=%d: level=%d\n",me,GLEVEL(grid)));
+
+  nn=0;
+  for (node=PFIRSTNODE(grid); node!=NULL; node=SUCCN(node)) {
+    VERTEX *vtx;
+    DOUBLE_VECTOR own_coord, periodic_coords[MAX_PERIODIC_OBJ];
+    INT n,periodic_ids[MAX_PERIODIC_OBJ];
+
+    vtx = MYVERTEX(node);
+
+    if (vtx==NULL) continue;
+
+    if (OBJT(vtx)!=BVOBJ) continue;
+
+    /* only boundary vertices */
+    n=0;
+    if ((*PeriodicBoundaryInfo)(vtx,&n,periodic_ids,own_coord,periodic_coords)) {
+      MATRIX *mat;
+
+      /* print all information available */
+      PRINTDEBUG(gm,0,("#%8d: per_node GID= %08x VGID= %08x PRIO=%d coord: ( %f %f %f )\n",nn,GID(node),GID(NVECTOR(node)), PRIO(NVECTOR(node)), own_coord[0],own_coord[1],own_coord[2]));
+      nn++;
+
+      if (((NODE *)VOBJECT(NVECTOR(node)))==NULL) {
+        PRINTDEBUG(gm,0,("nodevector has no node!!!!!!\n"));
+        return (GM_ERROR);
+      }
+
+      if (VSTART(NVECTOR(node))==NULL) {
+        PRINTDEBUG(gm,0,("no matrix! -> continue\n"));
+        continue;
+      }
+
+      PRINTDEBUG(gm,0,("connected to: \n"));
+      for (mat=MNEXT(VSTART(NVECTOR(node))); mat!=NULL; mat=MNEXT(mat)) {
+        if (MDEST(mat)==NULL) {
+          PRINTDEBUG(gm,0,("no destination vector -> continue\n"));
+          continue;
+        }
+        PRINTDEBUG(gm,0,("\tGID=%08x PRIO=%d\n",GID(MDEST(mat)),PRIO(MDEST(mat))));
+      }
+    }
   }
 
   return (GM_OK);
@@ -11931,7 +12088,7 @@ static INT ListPeriodicNodeAndVec (GRID *g, INT vgid)
     if (n == nref) sprintf(pbuf+strlen(pbuf),"	X ");
     else sprintf(pbuf+strlen(pbuf),"	  ");
 
-    sprintf(pbuf+strlen(pbuf),"c %lf %lf %lf ",cv[0],cv[1],cv[2]);
+    sprintf(pbuf+strlen(pbuf),"c %f %f %f ",cv[0],cv[1],cv[2]);
     sprintf(pbuf+strlen(pbuf),"n=" ID_FMTX " ",ID_PRTX(n));
 
     proclist = PROCLIST(n);

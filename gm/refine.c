@@ -99,7 +99,7 @@
 /* TODO: temporarily included to make vecskips consistent for df */
  
 #include "udm.h"
-INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
+/*  INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x); */
 
 #endif
 
@@ -1607,13 +1607,13 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 
 		#ifdef __TWODIM__
 		thePattern = theEdgePattern;
-		PRINTDEBUG(gm,1,(PFMT "SetElementRules(): e=" EID_FMTX " edgepattern=%d\n",
+		PRINTDEBUG(gm,2,(PFMT "SetElementRules(): e=" EID_FMTX " edgepattern=%d\n",
 			me,EID_PRTX(theElement),theEdgePattern));
 		#endif
 		#ifdef __THREEDIM__
 		theSidePattern = SIDEPATTERN(theElement);
 		thePattern = theSidePattern<<EDGES_OF_ELEM(theElement) | theEdgePattern;
-		PRINTDEBUG(gm,1,(PFMT "SetElementRules(): e=" EID_FMTX 
+		PRINTDEBUG(gm,2,(PFMT "SetElementRules(): e=" EID_FMTX 
 			" edgepattern=%03x sidepattern=%02x\n",
 			me,EID_PRTX(theElement),theEdgePattern,theSidePattern));
 		#endif
@@ -1695,7 +1695,7 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 
 		/* get new pattern from mark */
 		NewPattern = MARK2PAT(theElement,Mark);
-		IFDEBUG(gm,1)
+		IFDEBUG(gm,2)
 		UserWriteF("   thePattern=%d EdgePattern=%d SidePattern=%d NewPattern=%d Mark=%d\n",
 			thePattern,theEdgePattern,theSidePattern,NewPattern,Mark);
 		ENDDEBUG
@@ -2688,6 +2688,38 @@ static INT RestrictElementMark(ELEMENT *theElement)
 	return(GM_OK);
 }
 
+#ifdef __PERIODIC_BOUNDARY__
+static INT Grid_RestrictPeriodicMarks(GRID *grid)
+{
+  ELEMENT *elem;
+  
+  for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
+	  INT side, marked;
+
+	  for (side=0; side<SIDES_OF_ELEM(elem); side++) {
+		VECTOR *vec;
+		INT co;
+		  
+		marked = 0;
+
+		for (co=0; co<CORNERS_OF_SIDE(elem,side); co++) {
+		  vec=NVECTOR(CORNER(elem,CORNER_OF_SIDE(elem,side,co)));
+		  if (USED(vec)) marked++;
+		}
+
+		if (marked==CORNERS_OF_SIDE(elem,side)) break;
+		else marked = 0;
+	  }
+		
+	  if (marked>0) {
+		if (RestrictElementMark(elem))
+		  return (1);
+	  }
+  }
+  
+  return (0);
+}
+#endif
 
 /****************************************************************************/
 /*
@@ -2755,6 +2787,16 @@ static INT RestrictMarks (GRID *theGrid)
 					if (MARK(SonList[i])>NO_REFINEMENT)
 					{
 						if (RestrictElementMark(theElement)) RETURN(GM_ERROR);
+#ifdef __PERIODIC_BOUNDARY__
+						{
+						  /* set flags at periodic vectors */
+						  INT co;
+
+						  for (co=0; co<CORNERS_OF_ELEM(theElement); co++)
+							if (THEFLAG(NVECTOR(CORNER(theElement,co))))
+							  SETUSED(NVECTOR(CORNER(theElement,co)),TRUE);
+						}
+#endif
 
 						/* this must be done only once for each element */
 						break;
@@ -2801,8 +2843,13 @@ static INT RestrictMarks (GRID *theGrid)
 		SETMARKCLASS(theElement,NO_CLASS);
 		SETCOARSEN(theElement,1);
 	}
-	/* TODO: delete special debug */ PRINTELEMID(-1)
-
+	/* TODO: delete special debug */ PRINTELEMID(-1);
+#ifdef __PERIODIC_BOUNDARY__
+	/* if an element at a periodic boundary is marked,
+	   the corresponding element on the other side has to be marked too */
+	if (Grid_RestrictPeriodicMarks(theGrid))
+	  RETURN (GM_ERROR);
+#endif
 	return(GM_OK);
 }
 
@@ -2887,6 +2934,7 @@ static int ComputeCopies (GRID *theGrid)
     #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 	ClearNextNodeClasses(theGrid);
 	#ifdef __PERIODIC_BOUNDARY__
+	/* for periodic boundaries also the vector classes have to be initialized */
 	ClearNextVectorClasses(theGrid);
 	#endif
     #else
@@ -2904,6 +2952,11 @@ static int ComputeCopies (GRID *theGrid)
 		{
             #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 			SeedNextNodeClasses(theElement);
+			#ifdef __PERIODIC_BOUNDARY__
+			/* for periodic boundaries seed also for vector classes
+			   to ensure a proper behaviour in periodic direction */
+			SeedNextVectorClasses(theGrid,theElement);
+			#endif
             #else
 			SeedNextVectorClasses(theGrid,theElement);
             #endif 
@@ -2931,6 +2984,15 @@ static int ComputeCopies (GRID *theGrid)
 	else
 	{
         #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+#ifdef __PERIODIC_BOUNDARY__
+	  {
+		/* for periodic boundaries the seed has to be copied to periodic nodes */
+		NODE *node;
+
+		for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
+		  SETNNCLASS(node,MAX(NNCLASS(node),VNCLASS(NVECTOR(node))));
+	  }
+#endif
 		PropagateNextNodeClasses(theGrid);
         #else
 		PropagateNextVectorClasses(theGrid);
@@ -2963,9 +3025,11 @@ static int ComputeCopies (GRID *theGrid)
 				me,LEVEL(theElement),EID_PRTX(theElement),MARK(theElement),maxclass)); 
 		}
 	}
-	#ifdef __PERIODIC_BOUNDARY__
+
+#ifdef __PERIODIC_BOUNDARY__
+	/* additional copies for periodic elements */
 	cnt += ComputePeriodicCopies(theGrid);
-	#endif
+#endif
 
 	return(cnt);
 }
@@ -5930,6 +5994,18 @@ if (0)
 		SETCOARSEN(theElement,0);
 	}
 
+#ifdef __PERIODIC_BOUNDARY__
+	if (SetPerVecVOBJECT(UpGrid))
+	  RETURN(GM_ERROR);
+	
+#ifndef ModelP
+	PRINTDEBUG(gm,1,("after grid adaption: periodic identification\n"));
+	if (modified)
+	  if (Grid_GeometricToPeriodic(UpGrid))
+		RETURN(GM_ERROR);
+#endif
+#endif
+
 	if (UG_GlobalMaxINT(modified))
 	{
 		/* reset (multi)grid status */
@@ -6052,6 +6128,7 @@ if (0) {
 DDD_CONSCHECK;
 
 #ifdef __PERIODIC_BOUNDARY__
+	/* TODO modification for adaptive refinement in parallel */
 	if (newlevel)
 	{
 		ASSERT(FinerGrid != NULL);
@@ -6244,131 +6321,167 @@ void Print_Adapt_Timer (int total_adapted)
 #endif
 
 #ifdef __PERIODIC_BOUNDARY__
-static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
+/* initialize USED and THE flag on next lower grid level
+ to indicate which elements in periodic direction have to be additionally marked */
+static INT InitializePeriodicFlags(GRID *grid)
 {
   PeriodicBoundaryInfoProcPtr IsPeriodicBnd;
-  INT level;
+  NODE *node;
+  VECTOR *vec;
 
   GetPeriodicBoundaryInfoProcPtr(&IsPeriodicBnd);
   if (IsPeriodicBnd==NULL)
 	return (0);
 
-  for (level=0; level<=TOPLEVEL(mg); level++) {
-	GRID *grid;
-	ELEMENT *elem;
-	VECTOR *vec;
+  for (vec=PFIRSTVECTOR(grid); vec!=NULL; vec=SUCCVC(vec)) {
+	SETUSED(vec,FALSE);
+	SETTHEFLAG(vec,FALSE);
+  }
 
-	grid=GRID_ON_LEVEL(mg,level);
+  for (node=PFIRSTNODE(grid); node!=NULL; node=SUCCN(node)) {
+	VERTEX *vtx;
+	INT n,per_ids[MAX_PERIODIC_OBJ];
+	DOUBLE_VECTOR coord, pcoords[MAX_PERIODIC_OBJ];
 
-	for (vec=FIRSTVECTOR(grid); vec!=NULL; vec=SUCCVC(vec)) {
-	  SETUSED(vec,FALSE);		/* vector of marked element */
-	  SETTHEFLAG(vec,FALSE);	/* periodic vector */
+	vtx=MYVERTEX(node);
+	if (OBJT(vtx)!=BVOBJ) continue;
+	if ((*IsPeriodicBnd)(vtx,&n,per_ids,coord,pcoords))
+	  SETTHEFLAG(NVECTOR(node),TRUE);
+  }
+
+  return (0);
+}
+
+static INT Grid_MakePeriodicMarksConsistent(GRID *grid)
+{
+  PeriodicBoundaryInfoProcPtr IsPeriodicBnd;
+  ELEMENT *elem;
+  VECTOR *vec;
+
+  GetPeriodicBoundaryInfoProcPtr(&IsPeriodicBnd);
+  if (IsPeriodicBnd==NULL)
+	return (0);
+
+  for (vec=FIRSTVECTOR(grid); vec!=NULL; vec=SUCCVC(vec)) {
+	SETUSED(vec,FALSE);		/* vector of marked element */
+	SETTHEFLAG(vec,FALSE);	/* periodic vector */
+  }
+
+  /* check if element has points on periodic boundary and set flags */
+  for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
+	if (EstimateHere(elem)) {
+	  INT co, mark, side;
+
+	  if (GetRefinementMark(elem, &mark, &side)==-1)
+		REP_ERR_RETURN (GM_ERROR);
+	  
+	  for (co=0; co<CORNERS_OF_ELEM(elem); co++) {
+		VERTEX *vtx;
+		NODE *node;
+		VECTOR *vec;
+		INT n,per_ids[MAX_PERIODIC_OBJ];
+		DOUBLE_VECTOR coord, pcoords[MAX_PERIODIC_OBJ];
+
+		node = CORNER(elem,co);
+		vtx = MYVERTEX(node);
+		vec = NVECTOR(node);
+		
+		if (OBJT(vtx)!=BVOBJ) continue;
+		if ((*IsPeriodicBnd)(vtx,&n,per_ids,coord,pcoords)) {
+		  SETTHEFLAG(vec,TRUE);
+		  if (mark==RED) {
+			SETUSED(vec,TRUE);
+			PRINTDEBUG(gm,1,("periodic vec %8d on level %d: used at %d bndries\n",VINDEX(vec),GLEVEL(grid),n));
+		  }
+		}
+	  }
 	}
+  }
 
-	/* check if element has points on periodic boundary and set flags */
-	for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
-	  if (EstimateHere(elem)) {
-		INT co, mark, side;
+  /* flag all periodic vectors consistently */
+  for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
+	if (EstimateHere(elem)) {
+	  INT edge, side, marked;
 
-		if (GetRefinementMark(elem, &mark, &side)==-1)
-		  REP_ERR_RETURN (GM_ERROR);
+	  for (side=0; side<SIDES_OF_ELEM(elem); side++) {
+		VECTOR *vec;
+		INT co;
+		  
+		marked = 0;
 
+		for (co=0; co<CORNERS_OF_SIDE(elem,side); co++) {
+		  vec=NVECTOR(CORNER(elem,CORNER_OF_SIDE(elem,side,co)));
+		  if (USED(vec)) marked++;
+		}
+
+		if (marked==CORNERS_OF_SIDE(elem,side)) break;
+		else marked = 0;
+	  }
+		
+	  if (marked>0) {
+		INT co;
+		  
+		/* flag all vectors of newly marked element */
 		for (co=0; co<CORNERS_OF_ELEM(elem); co++) {
-		  VERTEX *vtx;
 		  NODE *node;
 		  VECTOR *vec;
-		  INT n,per_ids[MAX_PERIODIC_OBJ];
-		  DOUBLE_VECTOR coord, pcoords[MAX_PERIODIC_OBJ];
 
 		  node = CORNER(elem,co);
-		  vtx = MYVERTEX(node);
 		  vec = NVECTOR(node);
 		  
-		  if (OBJT(vtx)!=BVOBJ) continue;
-		  if ((*IsPeriodicBnd)(vtx,&n,per_ids,coord,pcoords)) {
-			SETTHEFLAG(vec,TRUE);
-			if (mark==RED) {
-			  SETUSED(vec,TRUE);
-			  PRINTDEBUG(gm,1,("periodic vec %8d on level %d: used at %d bndries\n",VINDEX(vec),level,n));
-			}
+		  if (THEFLAG(vec)) {	/* periodic vector */
+			SETUSED(vec,TRUE);
+			PRINTDEBUG(gm,1,("Elem %8d on level %d: periodic vec %8d\n",ID(elem),GLEVEL(grid),VINDEX(vec)));
 		  }
 		}
 	  }
 	}
+  }
 
-	/* flag all periodic vectors consistently */
-	for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
-	  if (EstimateHere(elem)) {
-		INT edge, side, marked;
+  /* mark all periodic elements consistently */
+  for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
+	if (EstimateHere(elem)) {
+	  INT edge, side, marked;
 
-		for (side=0; side<SIDES_OF_ELEM(elem); side++) {
-		  VECTOR *vec;
-		  INT co;
+	  for (side=0; side<SIDES_OF_ELEM(elem); side++) {
+		VECTOR *vec;
+		INT co;
 		  
-		  marked = 0;
+		marked = 0;
 
-		  for (co=0; co<CORNERS_OF_SIDE(elem,side); co++) {
-			vec=NVECTOR(CORNER(elem,CORNER_OF_SIDE(elem,side,co)));
-			if (USED(vec)) marked++;
-		  }
-
-		  if (marked==CORNERS_OF_SIDE(elem,side)) break;
-		  else marked = 0;
+		for (co=0; co<CORNERS_OF_SIDE(elem,side); co++) {
+		  vec=NVECTOR(CORNER(elem,CORNER_OF_SIDE(elem,side,co)));
+		  if (USED(vec)) marked++;
 		}
-		
-		if (marked>0) {
-		  INT co;
-		  
-		  /* flag all vectors of newly marked element */
-		  for (co=0; co<CORNERS_OF_ELEM(elem); co++) {
-			NODE *node;
-			VECTOR *vec;
 
-			node = CORNER(elem,co);
-			vec = NVECTOR(node);
-		  
-			if (THEFLAG(vec)) {	/* periodic vector */
-			  SETUSED(vec,TRUE);
-			  PRINTDEBUG(gm,1,("Elem %8d on level %d: periodic vec %8d\n",ID(elem),level,VINDEX(vec)));
-			}
-		  }
-		}
+		if (marked==CORNERS_OF_SIDE(elem,side)) break;
+		else marked=0;
 	  }
-	}
-
-	/* mark all periodic elements consistently */
-	for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
-	  if (EstimateHere(elem)) {
-		INT edge, side, marked;
-
-		for (side=0; side<SIDES_OF_ELEM(elem); side++) {
-		  VECTOR *vec;
-		  INT co;
-		  
-		  marked = 0;
-
-		  for (co=0; co<CORNERS_OF_SIDE(elem,side); co++) {
-			vec=NVECTOR(CORNER(elem,CORNER_OF_SIDE(elem,side,co)));
-			if (USED(vec)) marked++;
-		  }
-
-		  if (marked==CORNERS_OF_SIDE(elem,side)) break;
-		  else marked=0;
-		}
 		
-		if (marked>0) {
-		  INT co;
-		  
-		  MarkForRefinement(elem,RED,0);
+	  if (marked>0) {
+		INT co;
 
-		  PRINTDEBUG(gm,1,("Elem %8d marked red\n",ID(elem)));
-		}
+		MarkForRefinement(elem,RED,0);
+
+		PRINTDEBUG(gm,1,("Elem %8d: marked red on level %2d\n",ID(elem),LEVEL(elem)));
 	  }
 	}
   }
   
   return (0);
 }
+
+static INT MG_MakePeriodicMarksConsistent(MULTIGRID *mg)
+{
+  INT level;
+
+  for (level=0; level<=TOPLEVEL(mg); level++)
+	if (Grid_MakePeriodicMarksConsistent(GRID_ON_LEVEL(mg,level)))
+	  return (1);
+		
+  return (0);
+}
+
 #endif
 
 static INT	PreProcessAdaptMultiGrid(MULTIGRID *theMG)
@@ -6378,8 +6491,8 @@ static INT	PreProcessAdaptMultiGrid(MULTIGRID *theMG)
 	#endif
 
 	#ifdef __PERIODIC_BOUNDARY__
-if (0)
-	if (MakePeriodicMarksConsistent(theMG)) REP_ERR_RETURN(1);
+if (1)
+	if (MG_MakePeriodicMarksConsistent(theMG)) REP_ERR_RETURN(1);
 	#endif
 	
 	return(0);
@@ -6390,14 +6503,6 @@ static INT	PostProcessAdaptMultiGrid(MULTIGRID *theMG)
 	START_TIMER(algebra_timer)
 	if (CreateAlgebra(theMG)) REP_ERR_RETURN(1);
 	SUM_TIMER(algebra_timer)
-
-#ifdef __PERIODIC_BOUNDARY__
-{
-if (0)
-	MG_GeometricToPeriodic(theMG,TOPLEVEL(theMG),TOPLEVEL(theMG));
-}
-
-#endif
 
 	REFINE_MULTIGRID_LIST(1,theMG,"END AdaptMultiGrid():\n","","");
 
@@ -6569,6 +6674,12 @@ if (0)
 			ExchangeElementRefine(theGrid);
 		}
 		#endif
+#ifdef __PERIODIC_BOUNDARY__
+if (1)
+		/* initialize USED flag on next lower grid level */
+		if (InitializePeriodicFlags(GRID_ON_LEVEL(theMG,level-1)))
+			RETURN(GM_ERROR);
+#endif
 
 		/* restrict marks on next lower grid level */
 		if (RestrictMarks(GRID_ON_LEVEL(theMG,level-1))!=GM_OK) RETURN(GM_ERROR);
@@ -6598,6 +6709,7 @@ if (0)
 		for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) SETMODIFIED(theNode,0);
 
 		#ifdef __PERIODIC_BOUNDARY__
+		/* count periodically identified vectors */
 		if (GRID_ON_LEVEL(theMG,level+1) != NULL)
 			GridSetPerVecCount(GRID_ON_LEVEL(theMG,level+1));
 		#endif
@@ -6629,7 +6741,6 @@ if (0)
 		}
 		#endif
 		
-
 		nrefined += ComputeCopies(theGrid);
 
 		if (hFlag)
@@ -6690,7 +6801,7 @@ if (0)
 			#endif
 
 		SUM_TIMER(gridadapt_timer)
-
+		  
 		/* if no grid adaption has occured adapt next level */
 		if (nadapted == 0) continue;
 
@@ -6709,17 +6820,26 @@ if (0)
 			/* and compute the vector classes on the new (or changed) level */
             #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 			ClearNodeClasses(FinerGrid);
+			#ifdef __PERIODIC_BOUNDARY__
+			/* for periodic case also clear vector classes */
+			ClearVectorClasses(FinerGrid);
+			#endif
             #else
 			ClearVectorClasses(FinerGrid);
             #endif
 			for (theElement=FIRSTELEMENT(FinerGrid); theElement!=NULL; theElement=SUCCE(theElement))
-				if (ECLASS(theElement)>=GREEN_CLASS || (rFlag==GM_COPY_ALL)) 
-                  #ifdef DYNAMIC_MEMORY_ALLOCMODEL
-				  SeedNodeClasses(theElement);
-                  #else
-				  SeedVectorClasses(FinerGrid,theElement);
-                  #endif
-
+			  if (ECLASS(theElement)>=GREEN_CLASS || (rFlag==GM_COPY_ALL)) {
+#ifdef DYNAMIC_MEMORY_ALLOCMODEL
+				SeedNodeClasses(theElement);
+				#ifdef __PERIODIC_BOUNDARY__
+				/* for periodic nodes also initialize vector class */
+				SeedVectorClasses(FinerGrid,theElement);
+				#endif
+#else
+				SeedVectorClasses(FinerGrid,theElement);
+#endif
+			  }
+			
             #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 			PropagateNodeClasses(FinerGrid);
             #else
@@ -6752,11 +6872,3 @@ if (0)
 
 	return(GM_OK);
 }
-
-
-
-
-
-
-
-

@@ -112,12 +112,6 @@ static INT ce_VCSTRONG;
 #define VCSTRONG(p)                                             CW_READ(p,ce_VCSTRONG)
 #define SETVCSTRONG(p,n)                                CW_WRITE(p,ce_VCSTRONG,n)
 
-#ifdef __PERIODIC_BOUNDARY__
-/* node counter for periodic vector */
-#define PVCOUNT VCOUNT
-#define SETPVCOUNT SETVCOUNT
-#endif
-
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -734,7 +728,7 @@ static INT CreateVectorInPart (GRID *theGrid, INT DomPart, INT VectorObjType,
         #endif
 
   VOBJECT(pv) = object;
-  VINDEX(pv) = (long)theGrid->nVector;
+  VINDEX(pv) = (long)NVEC(theGrid);
   SUCCVC(pv) = FIRSTVECTOR(theGrid);
   VECSKIP(pv) = 0;
   VSTART(pv) = NULL;
@@ -3296,8 +3290,15 @@ INT CreateAlgebra (MULTIGRID *theMG)
         #endif
 
         #ifdef __PERIODIC_BOUNDARY__
-  if (0) MG_GeometricToPeriodic(theMG,0,TOPLEVEL(theMG));
+  IFDEBUG(gm,1)
+  INT i;
+
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    if (Grid_CheckPeriodicity(GRID_ON_LEVEL(theMG,i)))
+      return (GM_ERROR);
+  ENDDEBUG
         #endif
+
   SetSurfaceClasses(theMG);
 
   return(GM_OK);
@@ -4441,11 +4442,12 @@ INT PropagateVectorClasses (GRID *theGrid)
   VECTOR *theVector;
   MATRIX *theMatrix;
 
-
+#if defined(_SCHALE_X_)&&!defined(__PERIODIC_BOUNDARY__)
   /* This call enlarges the set of 3-vector by one shell */
   /* larger overlap needed according to theory of CW     */
   /* added December 2000 for DG with local refinement    */
   if (PropagateVectorClassX(theGrid,3)) REP_ERR_RETURN(1);
+#endif
 
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses():"
@@ -4471,8 +4473,7 @@ INT PropagateVectorClasses (GRID *theGrid)
 
 #ifdef __PERIODIC_BOUNDARY__
   /* set vector classes in the periodic neighbourhood to 1 */
-  if (1)
-    if (PropagatePeriodicVectorClass(theGrid,1)) REP_ERR_RETURN(1);
+  if (PropagatePeriodicVectorClass(theGrid,1)) REP_ERR_RETURN(1);
 #endif
 
     #ifdef ModelP
@@ -4735,13 +4736,19 @@ INT PropagateNextVectorClasses (GRID *theGrid)
 
   if (PropagateNextVectorClass(theGrid,2)) REP_ERR_RETURN(1);
 
+    #ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 3. communication\n",me))
+  /* exchange VNCLASS of vectors */
+  DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_VectorVNClass, Scatter_VectorVNClass);
+        #endif
+
 #ifdef __PERIODIC_BOUNDARY__
-  if (1)
-    if (PropagatePeriodicNextVectorClass(theGrid)) REP_ERR_RETURN(1);
+  if (PropagatePeriodicNextVectorClass(theGrid)) REP_ERR_RETURN(1);
 #endif
 
     #ifdef ModelP
-  PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 3. communication\n",me))
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 4. communication\n",me))
   /* exchange VNCLASS of vectors */
   DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
                   Gather_VectorVNClass, Scatter_VectorVNClass);

@@ -185,7 +185,7 @@
 #endif
 
 /* if periodic boundaries are used */
-/* #define __PERIODIC_BOUNDARY__ */
+/*  #define __PERIODIC_BOUNDARY__ */
 
 /****************************************************************************/
 /*																			*/
@@ -1170,6 +1170,10 @@ typedef struct AlgebraicDependency ALG_DEP;
 /****************************************************************************/
 
 #ifdef __PERIODIC_BOUNDARY__
+
+/* node counter for periodic vector */
+#define PVCOUNT(p)              VINDEX(p)
+#define SETPVCOUNT(p,n) (VINDEX(p)=(n))
 
 /* maximal count of periodic objects */
 #define MAX_PERIODIC_OBJ        DIM+1
