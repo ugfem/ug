@@ -45,6 +45,15 @@
 
 #define PI                       3.141592653589793238462643383279
 
+
+/* cleanup old definitions of macros */
+#ifdef MIN
+#undef MIN
+#end
+#ifdef MAX
+#undef MAX
+#end
+
 #define ABS(i)                   (((i)<0) ? (-(i)) : (i))
 #define MIN(x,y)                 (((x)<(y)) ? (x) : (y))
 #define MAX(x,y)                 (((x)>(y)) ? (x) : (y))
