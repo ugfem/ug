@@ -2111,18 +2111,18 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
 
   /* we handle only node vectors here ! */
   comps = MD_nr_nc_mcmpptr_of_ro_co(Mat,NODEVEC,NODEVEC,&ncomp,&nc);
-  if (ncomp <= 0) return(__LINE__);
-  if (ncomp>MAX_SINGLE_VEC_COMP) return (__LINE__);
+  if (ncomp <= 0) REP_ERR_RETURN(1);
+  if (ncomp>MAX_SINGLE_VEC_COMP) REP_ERR_RETURN(NUM_ERROR);
 
   /* check matrix format and get components */
-  if (nc!=ncomp) return(__LINE__);
+  if (nc!=ncomp) REP_ERR_RETURN(1);
 
   A = comps[0];
   for (i=0; i<ncomp*ncomp; i++)
     if (comps[i]!=A+i)
     {
       PrintErrorMessage('E',"InstallRestrictionMatrix","matrix format incorrect");
-      return(__LINE__);
+      REP_ERR_RETURN(1);
     }
 
   /* compute contributions of fine node to coarse nodes */
@@ -2145,7 +2145,7 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
       if (InvertSmallBlock(ncomp,comps,Dcoarse,Dcoarseinv)!=NUM_OK)
       {
         UserWriteF("ncomp=%d, comps[0]=%d, Dcoarse=%lf\n",ncomp,comps[0],*Dcoarse);
-        return (__LINE__);
+        REP_ERR_RETURN(1);
       }
       for (i=0; i<ncomp; i++)
         for (j=0; j<ncomp; j++) {
@@ -2167,7 +2167,7 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
         im = CreateIMatrix(FineGrid,vf,vc);
         if (im==NULL) {
           UserWrite("Could not create interpolation matrix\n");
-          return(__LINE__);
+          REP_ERR_RETURN(1);
         }
       }
       for (i=0; i<ncomp*ncomp; i++) MVALUE(im,i) = Q[i];
@@ -2218,7 +2218,7 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
           im = CreateIMatrix(FineGrid,vf,vc);
           if (im==NULL) {
             UserWrite("Could not create interpolation matrix\n");
-            return(__LINE__);
+            REP_ERR_RETURN(1);
           }
         }
         for (i=0; i<ncomp*ncomp; i++) MVALUE(im,i) = Q[i]*c[l];
@@ -2293,18 +2293,18 @@ INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const MATDATA_
 
   /* rhs */
   p    = VD_ncmp_cmpptr_of_otype(rhs,NODEVEC,&n);
-  if (n <= 0) REP_ERR_RETURN(__LINE__);
-  if (n>MAX_SINGLE_VEC_COMP) REP_ERR_RETURN (__LINE__);
+  if (n <= 0) REP_ERR_RETURN(1);
+  if (n>MAX_SINGLE_VEC_COMP) REP_ERR_RETURN (1);
 
   /* Mat */
   comps = MD_nr_nc_mcmpptr_of_ro_co(Mat,NODEVEC,NODEVEC,&ncomp,&nc);
-  if (ncomp != n) REP_ERR_RETURN(__LINE__);
-  if (nc    != n) REP_ERR_RETURN(__LINE__);
+  if (ncomp != n) REP_ERR_RETURN(1);
+  if (nc    != n) REP_ERR_RETURN(1);
 
   /* ConsMat */
   ConsComps = MD_nr_nc_mcmpptr_of_ro_co(ConsMat,NODEVEC,NODEVEC,&ncomp,&nc);
-  if (ncomp != n) REP_ERR_RETURN(__LINE__);
-  if (nc    != n) REP_ERR_RETURN(__LINE__);
+  if (ncomp != n) REP_ERR_RETURN(1);
+  if (nc    != n) REP_ERR_RETURN(1);
 
   /* check subsequence of components */
   b = p[0];

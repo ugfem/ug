@@ -675,43 +675,37 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   if (np->mode == SCALEDMG_MODE)
   {
                 #ifdef ModelP
-    if (AllocMDFromMD(NP_MG(theNP),*fl,tl,A,&np->L)) {
-      result[0] = __LINE__;
-      return (1);
-    }
-    if (dmatcopy(theMG,*fl,tl,ALL_VECTORS,np->L,A) != NUM_OK) {
-      result[0] = __LINE__;
-      return (1);
-    }
+    if (AllocMDFromMD(NP_MG(theNP),*fl,tl,A,&np->L))
+      NP_RETURN(1,result[0]);
+    if (dmatcopy(theMG,*fl,tl,ALL_VECTORS,np->L,A) != NUM_OK)
+      NP_RETURN(1,result[0]);
     for (i=tl; i>=*fl; i--)
     {
       theGrid = GRID_ON_LEVEL(theMG,i);
-      if (l_matrix_consistent(theGrid,np->L,MAT_GHOST_DIAG_CONS) != NUM_OK) {
-        result[0] = __LINE__;
-        return (1);
-      }
+      if (l_matrix_consistent(theGrid,np->L,MAT_GHOST_DIAG_CONS)
+          != NUM_OK)
+        NP_RETURN(1,result[0]);
     }
                 #else
     np->L = A;
                 #endif
     /* create restriction matrices */
-    for (i=tl; i>*fl; i--)
-    {
-      err = InstallScaledRestrictionMatrix(GRID_ON_LEVEL(theMG,i),np->L,np->cut);
+    for (i=tl; i>*fl; i--) {
+      err = InstallScaledRestrictionMatrix(GRID_ON_LEVEL(theMG,i),
+                                           np->L,np->cut);
       if (err!=NUM_OK) {
-        UserWriteF("InstallScaledRestrictionMatrix failed in %d\n",err);
-        result[0] = __LINE__;
-        return(1);
+        UserWriteF("InstallScaledRestrictionMatrix failed in %d\n",
+                   err);
+        NP_RETURN(1,result[0]);
       }
     }
     /* scale equations */
     for (i=tl; i>=*fl; i--)
-      if (DiagonalScaleSystem(GRID_ON_LEVEL(theMG,i),A,np->L,b)!=NUM_OK) {
-        result[0] = __LINE__;
-        return (1);
-      }
+      if (DiagonalScaleSystem(GRID_ON_LEVEL(theMG,i),A,np->L,b)!=NUM_OK)
+        NP_RETURN(1,result[0]);
                 #ifdef ModelP
-    if (FreeMD(NP_MG(theNP),*fl,tl,np->L)) REP_ERR_RETURN(1);
+    if (FreeMD(NP_MG(theNP),*fl,tl,np->L))
+      NP_RETURN(1,result[0]);
                 #endif
   }
 
