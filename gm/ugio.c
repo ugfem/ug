@@ -98,6 +98,9 @@
 /* orphan condition for elements */
 #define EORPHAN(e)              (EFATHER(e)==NULL || THEFLAG(e))
 
+/* macro for test of degenerated load balancings */
+#define PARALLEL_ONEPROC_HASGRID
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -1957,10 +1960,10 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     DDD_IdentifyBegin();
     DDD_IdentifyEnd();
     /* create levels */
-    for (i=0; i<mg_general.nLevel; i++)
+    for (i=1; i<mg_general.nLevel; i++)
     {
       if (CreateNewLevel(theMG,0)==NULL)      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-      ConstructConsistentGrid(theGrid);
+      ConstructConsistentGrid(GRID_ON_LEVEL(theMG,i));
     }
     return(theMG);
   }
