@@ -64,6 +64,11 @@ then
 	doctext -quotefmt -mpath $UGROOT/man/man5 -ext 5 -heading ug/gg *.c *.h
 	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/gg *.doc
 
+	# generate gg3d man pages
+	cd $UGROOT/gg3d;
+	doctext -quotefmt -mpath $UGROOT/man/man5 -ext 5 -heading ug/gg3d *.c *.h
+	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/gg3d *.doc
+
 	# generate graph man pages
 	cd $UGROOT/graph;
 	doctext -quotefmt -mpath $UGROOT/man/man6 -ext 6 -heading ug/graph *.c *.h

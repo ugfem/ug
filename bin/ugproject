@@ -6,7 +6,9 @@ cp $UGROOT/ug.conf $UGROOT/ug.conf.orig
 # build 2TFFF lib
 cp $UGROOT/configs/2TFFF.conf $UGROOT/ug.conf
 ugmake ug -i clean
-ugmake ug
+ugmake ug uglib
+ugmake dev
+ugmake dom
 cd $UGROOT/../diff2d/pclib
 make
 cd $UGROOT/../diff2d/appl
@@ -19,7 +21,8 @@ make
 # build 3TFFF lib
 cp $UGROOT/configs/3TFFF.conf $UGROOT/ug.conf
 ugmake ug -i ifdef
-ugmake ug
+ugmake ug uglib
+ugmake dom
 cd $UGROOT/../cd/appl
 make -i ifdef
 make 2d
@@ -28,7 +31,7 @@ make 3d
 # build 2FTFF lib
 cp $UGROOT/configs/2FTFF.conf $UGROOT/ug.conf
 ugmake ug -i ifdef
-ugmake ug
+ugmake ug uglib
 cd $UGROOT/../fem/appl
 make -i ifdef
 make nd
@@ -37,7 +40,7 @@ make ed
 # restore original state
 cp $UGROOT/configs/2TTFF.conf $UGROOT/ug.conf
 ugmake ug -i ifdef
-ugmake ug
+ugmake ug uglib
 mv $UGROOT/ug.conf.orig $UGROOT/ug.conf 
 ugmake ug -i ifdef
 echo "diff2da, ns2da, cda, cd2d, fema, femn created"

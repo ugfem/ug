@@ -6,8 +6,8 @@ then
 	echo "Options are";
 	echo " <ugmodule>: the module which you want to compile";
 	echo "             where <ugmodule> is one of ug, dev, meta, xif";
-	echo "             gm, graph, low, numerics, ui, gg, dom, std";
-	echo "             diff2d, diff2da,cd, cda, fem, fema, ns2d, ns2da";
+	echo "             gm, graph, low, numerics, ui, gg, gg3d, dom, std";
+	echo "             diff2d, diff2da,cd, cda, fem, fema, ns2d, ns2da,netgen";
 	echo " <makeoptions>: the options which you want to pass to \"make\"";
 	exit 1;
 fi
@@ -35,7 +35,7 @@ fi
 if test $# -ge 1 
 then
 	# check whether first  option is ug module 
-	if test "$1" = "ug" -o "$1" = "dev" -o "$1" = "meta" -o "$1" = "xif" -o "$1" = "gm" -o "$1" = "graph" -o "$1" = "low" -o "$1" = "numerics" -o "$1" = "ui" -o "$1" = "gg" -o "$1" = "dom" -o "$1" = "std"
+	if test "$1" = "ug" -o "$1" = "dev" -o "$1" = "meta" -o "$1" = "xif" -o "$1" = "gm" -o "$1" = "graph" -o "$1" = "low" -o "$1" = "numerics" -o "$1" = "ui" -o "$1" = "gg" -o "$1" = "gg3d" -o "$1" = "dom" -o "$1" = "std"
 	then
 		if test "$1" = "ug"
 		then 
@@ -55,6 +55,18 @@ then
 		fi
 		shift;
 	fi
+
+	if test "$1" = "netgen"
+	then
+		if test -d $UGROOT/gg3d/netgen
+		then
+			cd $UGROOT/gg3d/netgen
+		else 
+			echo "no directory for netgen found!";
+			exit 1;
+		fi				
+		shift;
+	fi			
 
 	# check whether first option is problem class or application
 	if test "$1" = "diff2d" -o "$1" = "diff2da" 
