@@ -15,7 +15,7 @@ then
 	cd $UGROOT/../ns/appl3d
 	time ugrun ns3d 1 ugtest.scr
 fi
-if test -x $UGROOT/../sc/appl2d/scalar2d
+if test -x $UGROOT/../sc/appl2d/sc2d
 then
 	cd $UGROOT/../sc/appl2d
 	time ugrun scalar2d 1 model.scr
@@ -30,8 +30,3 @@ then
 	cd $UGROOT/../diff2d/appl
 	time ugrun diff2da 1 classic.scr
 fi
-
-
-
-
-
