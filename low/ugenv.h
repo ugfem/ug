@@ -57,6 +57,7 @@
 #define NEXT_ENVITEM(p)         (((ENVITEM *)(p))->v.next)
 #define PREV_ENVITEM(p)         (((ENVITEM *)(p))->v.previous)
 #define ENVITEM_TYPE(p)         (((ENVITEM *)(p))->v.type)
+#define IS_ENVDIR(p)            (ENVITEM_TYPE(p)%2==1)
 #define ENVITEM_NAME(p)         (((ENVITEM *)(p))->v.name)
 #define ENVITEM_LOCKED(p)         (((ENVITEM *)(p))->v.locked)
 
@@ -114,6 +115,9 @@ ENVITEM *MakeEnvItem    (const char *name, const INT type, const INT size);
 
 /* remove an item */
 INT      RemoveEnvItem    (ENVITEM *theItem);
+
+/* remove an complete directory */
+INT      RemoveEnvDir     (ENVITEM *theItem);
 
 /* move an envitem to a new directory */
 INT              MoveEnvItem      (ENVITEM *item, ENVDIR *old, ENVDIR *new);

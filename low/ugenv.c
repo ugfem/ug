@@ -407,6 +407,40 @@ INT RemoveEnvItem (ENVITEM *theItem)
 
 /****************************************************************************/
 /*D
+   RemoveEnvDir - Deallocate an environment directory
+
+   SYNOPSIS:
+   INT RemoveEnvItem (ENVITEM *theItem);
+
+   PARAMETERS:
+   .  theItem - pointer to item
+
+   DESCRIPTION:
+   This function deallocates an environment directory.
+
+   RETURN VALUE:
+   INT
+   .n    0 if OK
+   .n    3 if attempt is done to delete locked item.
+   D*/
+/****************************************************************************/
+
+INT RemoveEnvDir (ENVITEM *theItem)
+{
+  ENVITEM *Item,*Next;
+
+  if (IS_ENVDIR(theItem))
+    for (Item = ENVITEM_DOWN(theItem); Item != NULL; Item = Next) {
+      Next = NEXT_ENVITEM(theItem);
+      RemoveEnvDir(Item);
+    }
+  RemoveEnvItem(theItem);
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
    MoveEnvItem - move an environment item in the tree structure
 
    SYNOPSIS:
