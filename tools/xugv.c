@@ -169,6 +169,7 @@ int n_pic, i_pic, f_offset, nbreak;
 char *mfile[MAX_FILES];
 static int run_max, run_count;
 static unsigned int sleep_seconds = 1;
+static int auto_nb;
 
 static int littleEndian = 1; /* needed for check LITTLE/BIG-ENDIAN */
 
@@ -2010,6 +2011,98 @@ static Boolean run_film (void)
   return(False);
 }
 
+FILE *auto_fopen (char *name)
+{
+  int i;
+  char name_ext[1024],*home,lock[256];
+  FILE *f;
+
+  home=getenv("HOME"); sprintf(lock,"%s/.xugv_tail",home);
+  if (auto_nb<0)
+  {
+    for (i=0,f=NULL; i<10000; i++)
+    {
+      sprintf(name_ext,"%s.%0.4d",name,i);
+      f=fopen(name_ext,"r");
+      if (i==0 && f==NULL) return(NULL);
+      else if (f==NULL) { i--; break; }
+      fclose(f);
+    }
+    auto_nb=i;
+    return (auto_fopen(name));
+  }
+  else
+  {
+    while(1)
+    {
+      sleep(sleep_seconds);
+      f=fopen(lock,"r"); if (f==NULL) continue;
+      sprintf(lock,"rm %s/.xugv_tail",home); system(lock);
+      sprintf(name_ext,"%s.%0.4d",name,auto_nb);
+      f=fopen(name_ext,"r");
+      if (f!=NULL)
+      {
+        printf("xugv: displaying '%s'\n",name_ext);
+        return (f);
+      }
+    }
+  }
+}
+
+static Boolean tail_film (void)
+{
+  XGCValues gcv;
+  XPoint edges[4];
+  Arg args[10];
+  Cardinal n;
+  int j;
+  char command[200];
+  short xshift, yshift;
+
+  /* try next meta-file */
+  auto_nb++;
+  if (auto_nb>9999) exit(0);
+  mstream[0]=auto_fopen(file);
+  GetFileScreen (mstream[0],mfx,mfy);
+
+  /* create graphic context */
+  gcv.foreground = WhitePixel(display, screen);
+  gcv.background = WhitePixel(display, screen);
+  gc = XCreateGC( XtDisplay(picture) , XtWindow(picture), GCForeground|GCBackground, &gcv);
+
+  /* clear pixmap's area */
+  edges[0].x = 0;
+  edges[0].y = 0;
+  edges[1].x = 0;
+  edges[1].y = pheight;
+  edges[2].x = pwidth;
+  edges[2].y = pheight;
+  edges[3].x = pwidth;
+  edges[3].y = 0;
+
+  XFillPolygon(display, pixmap, gc, edges, 4, Convex, CoordModeOrigin);
+
+  /* draw picture into pixmap */
+  xshift = 0; yshift = -fy_max;
+  for (i_pic=0; i_pic<n_pic; i_pic++)
+  {
+    if (i_pic%nbreak == 0)
+    {
+      xshift = 0;
+      yshift += fy_max;
+    }
+    else
+      xshift += fx_max;
+
+    stream = mstream[i_pic];
+    RasterizePositionedFile(stream,xshift,yshift);
+    fclose(stream);
+  }
+
+  XCopyArea(display, pixmap, XtWindow(picture), gc, 0, 0, pwidth, pheight , 0, 0);
+
+  return(False);
+}
 
 /* main */
 main (argc, argv)
@@ -2024,7 +2117,7 @@ char* argv[];
   long bs;                   /* maximum blocksize */
   short xshift, yshift;
   int i, nopt;
-  XtWorkProcId film_work_id;
+  XtWorkProcId film_work_id, tail_work_id;
 
   /* check for little/big endian storage type */
   littleEndian = !(*((char *) &littleEndian));
@@ -2149,21 +2242,19 @@ char* argv[];
 
   if (!film)
   {
-    i_pic=0;
-    while (NULL!=(mstream[i_pic]=fopen (argv[f_offset+i_pic],"r"))) i_pic++;
-    if (i_pic<1)
+    for (i_pic=0; i_pic<n_pic; i_pic++ )
     {
-      printf("Can't open file %s\n", file);
-      exit(-1);
-    }
-    if (n_pic != i_pic)
-    {
-      printf("cannot open %s files\n", n_pic);
-      exit(-1);
-    }
-    if (i_pic>1)
-    {
-      printf("opened %d files\n", n_pic);
+      mstream[i_pic]=fopen(argv[f_offset+i_pic],"r");
+      if (mstream[i_pic]==NULL)
+      {
+        if (i_pic==0 && n_pic==1)
+        {
+          auto_nb=-1;
+          mstream[0]=auto_fopen(argv[f_offset]);
+          if (mstream[0]==NULL) { printf("Can't open file %s\n", file); exit(-1); }
+        }
+        else { printf("cannot open %s files\n", n_pic); exit(-1); }
+      }
     }
 
     fx_max = 0; fy_max = 0;
@@ -2183,42 +2274,23 @@ char* argv[];
     XtSetArg(args[n], XtNallowHoriz, True); n++;
     XtSetArg(args[n], XtNallowVert, True);  n++;
 
-
     /* create viewport widget */
-    viewport = XtCreateManagedWidget ("viewport", viewportWidgetClass,
-                                      applShell, args, n);
+    viewport = XtCreateManagedWidget ("viewport", viewportWidgetClass,applShell,args,n);
 
     /* set size of drawing widget */
     n = 0;
     XtSetArg(args[n], XtNwidth, pwidth); n++;
     XtSetArg(args[n], XtNheight, pheight); n++;
 
-
     /* create drawing widget */
-    picture = XtCreateManagedWidget ("picture", simpleWidgetClass,
-                                     viewport, args, n);
-
-    /* initialize dialog widget: deactivated, doesn't work anyway. (ml)
-       n = 0;
-       XtSetArg(args[n], XtNlabel, "new filename:\n  \n"); n++;
-       XtSetArg(args[n], XtNvalue, ".meta"); n++;
-
-       dial = XtCreateWidget ("dial", dialogWidgetClass,
-                                 viewport, args, n);
-
-       XawDialogAddButton(dial, "confirm", dialog_confirm, (XtPointer)NULL);
-       XawDialogAddButton(dial, "cancel", dialog_cancel, (XtPointer)NULL);
-     */
+    picture = XtCreateManagedWidget ("picture", simpleWidgetClass,viewport,args,n);
 
     /* establish exit dialog */
     n = 0;
     XtSetArg(args[n], XtNlabel, "Do you really want\n to exit xugv?"); n++;
-
     XtSetArg(args[n], XtNx, 25); n++;
     XtSetArg(args[n], XtNy, 25); n++;
-
-    xexit = XtCreateWidget ("exit", dialogWidgetClass,
-                            viewport, args, n);
+    xexit = XtCreateWidget ("exit", dialogWidgetClass,viewport,args,n);
 
     /* add some nice buttons */
     XawDialogAddButton(xexit, "confirm", exit_confirm, (XtPointer)NULL);
@@ -2226,27 +2298,16 @@ char* argv[];
 
     /* add event handler for expose events */
     XtAddEventHandler( picture, ExposureMask, FALSE, (XtEventHandler) exposeCB, (XtPointer)NULL);
-
-    /* add event handler for button press event */
-
-    /* deactivated, doesn't work anyway. (ml)
-       XtAddEventHandler(viewport, ButtonPressMask, FALSE, (XtEventHandler) manage_dial, (XtPointer)NULL);
-     */
-
     XtAddEventHandler(viewport, ButtonPressMask, FALSE, (XtEventHandler) exit_dial, (XtPointer)NULL);
+
+    /* install work if film is tailed */
+    if (auto_nb>=0)
+    {
+      tail_work_id = XtAppAddWorkProc(kontext,(XtWorkProc)tail_film,applShell);
+    }
 
     /* realize widget tree */
     XtRealizeWidget (applShell);
-
-    /* use backing store for window
-       {
-            XSetWindowAttributes attr;
-            unsigned long mask;
-
-       attr.backing_store = Always;
-       mask = CWBackingStore;
-       XChangeWindowAttributes(display, XtWindow(picture), mask, &attr);
-       } */
 
     /* create colormap and graphic context */
     createGraphics();
