@@ -713,7 +713,7 @@ static INT ComputeTransformation (PSWINDOW *PSWindow,INT *ox,INT *oy,INT *sx,INT
  */
 /****************************************************************************/
 
-static WINDOWID OpenPSWindow (const char *title, INT x, INT y, INT width, INT height, INT *Global_LL, INT *Global_UR, INT *Local_LL, INT *Local_UR, INT *error)
+static WINDOWID OpenPSWindow (const char *title, INT rename, INT x, INT y, INT width, INT height, INT *Global_LL, INT *Global_UR, INT *Local_LL, INT *Local_UR, INT *error)
 {
   PSWINDOW *PSWindow;
   char pspath[BUFFLEN];
@@ -727,7 +727,7 @@ static WINDOWID OpenPSWindow (const char *title, INT x, INT y, INT width, INT he
 
   /* init postscript window */
   if (GetDefaultValue(DEFAULTSFILENAME,"psfilesdir",pspath)==0)
-    PSWindow->psfile = FileOpenUsingSearchPath(title,"w",pspath);
+    PSWindow->psfile = FileOpenUsingSearchPath_r(title,"w",pspath,rename);
   else
     PSWindow->psfile = fileopen(title,"w");
   if (PSWindow->psfile==NULL)
