@@ -1,70 +1,151 @@
 #!/bin/sh
+
+
+##################################################################
+
+### subroutines for listing help texts
+
+list_options_dim()
+{
+	echo "         problem dimension";
+	echo "             2 (two-dimensional problem)";
+	echo "             3 (three-dimensional problem)";
+}
+
+list_options_arch()
+{
+	echo "         hardware & compiler (in alphabetical order)";
+	echo "             AIX (set ARCH = AIX)";
+	echo "             AIXGCC (set ARCH = AIXGCC)";
+	echo "             C90 (set ARCH = C90)";
+	echo "             CC (set ARCH = CC)";
+	echo "             DEC (set ARCH = DEC)";
+	echo "             HP (set ARCH = HP)";
+	echo "             HP20 (set ARCH = HP20)";
+	echo "             HPUX9 (set ARCH = HPUX9)";
+	echo "             MKLINUX (set ARCH = MKLINUX)";
+	echo "             NECSX4 (set ARCH = NECSX4)";
+	echo "             NEXTSTEP (set ARCH = NEXTSTEP)";
+	echo "             OPENSTEP (set ARCH = OPENSTEP)";
+	echo "             PARAGON (set ARCH = PARAGON)";
+	echo "             PC (set ARCH = PC)";
+	echo "             POWERGC (set ARCH = POWERGC)";
+	echo "             SOLARIS (set ARCH = SOLARIS)";
+	echo "             SOLARISGCC (set ARCH = SOLARISGCC)";
+	echo "             SP2 (set ARCH = SP2)";
+	echo "             SR2201 (set ARCH = SR2201)";
+	echo "             SUN4GCC (set ARCH = SUN4GCC)";
+	echo "             T3D (set ARCH = T3D)";
+	echo "             T3E (set ARCH = T3E)";
+	echo "             YMP (set ARCH = YMP)";
+}
+
+list_options_ui()
+{
+	echo "         user interface";
+	echo "             SIF (set IF=S, REMOTE_IF = OFF)";
+	echo "             XIF (set IF=X, REMOTE_IF = OFF)";
+	echo "             RIF (set IF=R, REMOTE_IF = ON)";
+	echo "             XRIF (set IF=X, REMOTE_IF = ON)";
+	echo "             NORIF (set REMOTE_IF = OFF)";
+	echo "             GUI (set GUI = ON)";
+	echo "             NOGUI (set GUI = OFF)";
+}
+
+list_options_model()
+{
+	echo "         sequential version or parallel model";
+	echo "             SEQ      (sequential version)";
+	echo "             MPI      (Message Passing Interface, the standard)";
+	echo "             NX       (Intel's message passing)";
+	echo "             NXLIB    (NX simulation for workstation clusters)";
+	echo "             PARIX    (Parsytec's message passing)";
+	echo "             PVM      (Parallel Virtual Machine, ancestor of MPI)";
+	echo "             SHMEM    (Cray T3E's shared-memory model)";
+	echo "             SHMEMT3D (Cray T3D's shared-memory model)";
+
+}
+
+
+##################################################################
+
+if test "$1" = "-progname"
+then
+	PROGNAME=$2;
+	shift;
+	shift;
+else
+	PROGNAME=$0;
+fi
+
+
 if test "$1" = "-help"
 then
-	echo "usage: $0 [-o] [<conf>]";
-	echo "purpose: copy a config file to ug.conf";
+	echo "usage: $PROGNAME [-o] [<conf>]";
+	echo "purpose: modify config file $UGROOT/ug.conf";
 	echo "Options are";
 	echo " -o:     use object database. trade time against diskspace.";
-	echo " <conf>: 2 (set DIM = 2)";
-	echo "         3 (set DIM = 3)";
-	echo "         NETGEN (set NETGEN = ON)";
-	echo "         NONETGEN (set NETGEN = OFF)";
-	echo "         GRAPE (set GRAPE = ON)";
-	echo "         NOGRAPE (set GRAPE = OFF)";
-	echo "         COVISE (set COVISE = ON)";
-	echo "         NOCOVISE (set COVISE = OFF)";
-	echo "         RIF (set IF=R, REMOTE_IF = ON)";
-	echo "         SIF (set IF=S, REMOTE_IF = OFF)";
-	echo "         XIF (set IF=X, REMOTE_IF = OFF)";
-	echo "         XRIF (set IF=X, REMOTE_IF = ON)";
-	echo "         NORIF (set REMOTE_IF = OFF)";
-	echo "         GUI (set GUI = ON)";
-	echo "         NOGUI (set GUI = OFF)";
-	echo "         HP (set ARCH = HP)";
-	echo "         HP20 (set ARCH = HP20)";
-	echo "         HPUX9 (set ARCH = HPUX9)";
-	echo "         DEC (set ARCH = DEC)";
-	echo "         PARAGON (set ARCH = PARAGON)";
-	echo "         PC (set ARCH = PC)";
-	echo "         MKLINUX (set ARCH = MKLINUX)";
-	echo "         POWERGC (set ARCH = POWERGC)";
-	echo "         CC (set ARCH = CC)";
-	echo "         C90 (set ARCH = C90)";
-	echo "         YMP (set ARCH = YMP)";
-	echo "         AIX (set ARCH = AIX)";
-	echo "         AIXGCC (set ARCH = AIXGCC)";
-	echo "         SOLARIS (set ARCH = SOLARIS)";
-	echo "         SOLARISGCC (set ARCH = SOLARISGCC)";
-	echo "         SUN4GCC (set ARCH = SUN4GCC)";
-	echo "         SP2 (set ARCH = SP2)";
-	echo "         SR2201 (set ARCH = SR2201)";
-	echo "         T3D (set ARCH = T3D)";
-	echo "         T3E (set ARCH = T3E)";
-	echo "         NECSX4 (set ARCH = NECSX4)";
-	echo "         NEXTSTEP (set ARCH = NEXTSTEP)";
-	echo "         OPENSTEP (set ARCH = OPENSTEP)";
-	echo "         SEQ (set MODEL = SEQ)";
-	echo "         MPI (set MODEL = MPI)";
-	echo "         NX (set MODEL = NX)";
-	echo "         NXLIB (set MODEL = NXLIB)";
-	echo "         PARIX (set MODEL = PARIX)";
-	echo "         PVM (set MODEL = PVM)";
-	echo "         SHMEM (set MODEL = SHMEM)";
-	echo "         SHMEMT3D (set MODEL = SHMEMT3D)";
-	echo "         STD_DOMAIN (set DOM_MODUL = STD_DOMAIN)";
-	echo "         LGM_DOMAIN (set DOM_MODUL = LGM_DOMAIN)";
-	echo "         DEBUG (set DEBUG_MODE = ON)";
-	echo "         NODEBUG (set DEBUG_MODE = OFF)";
-	echo "         CHACO (set CHACO = ON)";
-	echo "         NOCHACO (set CHACO = OFF)";
-	echo "         CAD (set CAD = ON)";
-	echo "         NOCAD (set CAD = OFF)";
+	echo " <conf>:";
+
+	list_options_dim;
+	list_options_arch;
+	list_options_ui;
+	list_options_model;
+
+	echo "         domain representation library";
+	echo "             STD_DOMAIN (set DOM_MODUL = STD_DOMAIN)";
+	echo "             LGM_DOMAIN (set DOM_MODUL = LGM_DOMAIN)";
+
+	echo "         grid generation in 3D";
+	echo "             NETGEN (set NETGEN = ON)";
+	echo "             NONETGEN (set NETGEN = OFF)";
+
+	echo "         load balancing tool (for parallel version)";
+	echo "             CHACO (set CHACO = ON)";
+	echo "             NOCHACO (set CHACO = OFF)";
+
+	echo "         interfaces to postprocessing tools";
+	echo "             GRAPE (set GRAPE = ON)";
+	echo "             NOGRAPE (set GRAPE = OFF)";
+	echo "             COVISE (set COVISE = ON)";
+	echo "             NOCOVISE (set COVISE = OFF)";
+
+	echo "         interface to CAD";
+	echo "             CAD (set CAD = ON)";
+	echo "             NOCAD (set CAD = OFF)";
+
+	echo "         debug flag";
+	echo "             DEBUG (set DEBUG_MODE = ON)";
+	echo "             NODEBUG (set DEBUG_MODE = OFF)";
 	exit 1;
 fi
 
 if test "x$UGROOT" = "x"
 then
-	echo "$0: to use $0 set shell environment variable UGROOT!";
+	echo "$PROGNAME: to use $PROGNAME set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+
+##################################################################
+
+# internal option '-list <what>' in order to show portions of help 
+if test "$1" = "-list"
+then
+	case $2 in
+	dim)
+		list_options_dim;
+		;;
+	arch)
+		list_options_arch;
+		;;
+	ui)
+		list_options_ui;
+		;;
+	model)
+		list_options_model;
+		;;
+	esac;
 	exit 1;
 fi
 
@@ -101,12 +182,15 @@ PACKSUFFIX=Z
 # subroutines
 ##################################################################
 
+### subroutines for configuration
 
 grep_valid_entries()
 {
 	egrep '^[ ]*ARCH|^[ ]*MODEL |^[ ]*DIM|^[ ]*GRAPE |^[ ]*COVISE|^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE|^[ ]*CHACO|^[ ]*CAD|^[ ]*GUI' $1;
 }
 
+
+### subroutines for obj-database
 
 build_objdb_name()
 {
@@ -201,6 +285,7 @@ objdb_restore_new()
 
 
 # edit_ugconf (ug.conf-filename, cmdline-argument)
+
 edit_ugconf()
 {
 	case $2 in
@@ -210,6 +295,7 @@ edit_ugconf()
 	3)
 		sed 's/^DIM.*$/DIM = 3/' $1 > $1.tmp
 		;;
+
 	NETGEN)
 		sed 's/^NETGEN.*$/NETGEN = ON/' $1 > $1.tmp
 		mv $1.tmp $1
@@ -218,6 +304,7 @@ edit_ugconf()
 	NONETGEN)
 		sed 's/^NETGEN.*$/NETGEN = OFF/' $1 > $1.tmp
 		;;
+
 	GRAPE)
 		sed 's/^GRAPE.*$/GRAPE = ON/' $1 > $1.tmp
 		;;
@@ -230,6 +317,7 @@ edit_ugconf()
 	NOCOVISE)
 		sed 's/^COVISE.*$/COVISE = OFF/' $1 > $1.tmp
 		;;
+
 	RIF)
 		sed 's/^IF.*$/IF = R/' $1 > $1.tmp
 		mv $1.tmp $1
@@ -259,6 +347,7 @@ edit_ugconf()
 	NOGUI)
 		sed 's/^GUI[ ].*$/GUI = OFF/' $1 > $1.tmp
 		;;
+
 	HP)
 		sed 's/^ARCH.*$/ARCH = HP/' $1 > $1.tmp
 		;;
@@ -331,6 +420,7 @@ edit_ugconf()
 	OPENSTEP)
 		sed 's/^ARCH.*$/ARCH = OPENSTEP/' $1 > $1.tmp
 		;;
+
 	SEQ)
 		sed 's/^MODEL[ \t].*$/MODEL = SEQ/' $1 > $1.tmp
 		;;
@@ -355,32 +445,37 @@ edit_ugconf()
 	SHMEMT3D)
 		sed 's/^MODEL[ \t].*$/MODEL = SHMEMT3D/' $1 > $1.tmp
 		;;
+
 	STD_DOMAIN)
 		sed 's/^DOM_MODULE.*$/DOM_MODULE = STD_DOMAIN/' $1 > $1.tmp
 		;;
 	LGM_DOMAIN)
 		sed 's/^DOM_MODULE.*$/DOM_MODULE = LGM_DOMAIN/' $1 > $1.tmp
 		;;
+
 	DEBUG)
 		sed 's/^DEBUG_MODE.*$/DEBUG_MODE = ON/' $1 > $1.tmp
 		;;
 	NODEBUG)
 		sed 's/^DEBUG_MODE.*$/DEBUG_MODE = OFF/' $1 > $1.tmp
 		;;
+
 	CHACO)
 		sed 's/^CHACO.*$/CHACO = ON/' $1 > $1.tmp
 		;;
 	NOCHACO)
 		sed 's/^CHACO.*$/CHACO = OFF/' $1 > $1.tmp
 		;;
+
 	CAD)
 		sed 's/^CAD.*$/CAD = ON/' $1 > $1.tmp
 		;;
 	NOCAD)
 		sed 's/^CAD.*$/CAD = OFF/' $1 > $1.tmp
 		;;
+
 	*)
-		echo "error: unrecognized option '" $2 "'. use 'ugconf -help' for help.";
+		echo "error: unrecognized option '" $2 "'. use '$PROGNAME -help' for help.";
 		cp $1 $1.tmp
 	esac;
 
@@ -422,17 +517,29 @@ fi
 
 # process arguments and edit ug.conf.new
 cp $UGROOT/ug.conf $UGROOT/ug.conf.new
+
+FLAG_QUIET="false";
 while [ $# -gt 0 ]; do
-	( edit_ugconf $UGROOT/ug.conf.new $1; )
+	if test "$1" = "-q"
+	then
+		FLAG_QUIET="true";
+	else
+		( edit_ugconf $UGROOT/ug.conf.new $1; )
+	fi
+
 	shift;
 done
+
 
 # decide whether ug.conf has really been changed
 grep_valid_entries $UGROOT/ug.conf > $UGROOT/ug.conf.old.1
 grep_valid_entries $UGROOT/ug.conf.new > $UGROOT/ug.conf.new.1
 if `diff $UGROOT/ug.conf.old.1 $UGROOT/ug.conf.new.1 >/dev/null `
 then
-	echo "nothing changed by these parameters."
+	if test $FLAG_QUIET = "false"
+	then
+		echo "nothing changed by these parameters.";
+	fi
 	rm $UGROOT/ug.conf.old.1 $UGROOT/ug.conf.new.1
 	rm $UGROOT/ug.conf.new
 	exit 0;
