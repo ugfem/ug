@@ -127,6 +127,7 @@ static COORD_VECTOR_2D LMP_Triangle 		= {0.33333333333, 0.33333333333};
 static COORD_VECTOR_2D LMP_Quadrilateral	= {0.5, 0.5};
 static COORD_VECTOR_3D LMP_Tetrahedron		= {0.25, 0.25, 0.25};
 static COORD_VECTOR_3D LMP_Pyramid   		= {0.5, 0.5, 0.33333333333333333};
+static COORD_VECTOR_3D LMP_Prism    		= {0.33333333333,0.3333333333,0.5};
 static COORD_VECTOR_3D LMP_Hexahedron		= {0.5, 0.5, 0.5};
 
 /* data for CVS */
@@ -1138,6 +1139,7 @@ COORD *LMP (INT n)
 	{
 		case 4:	return (LMP_Tetrahedron);
 		case 5:	return (LMP_Pyramid);
+		case 6:	return (LMP_Prism);
 		case 8:	return (LMP_Hexahedron);
 	}
 #endif
@@ -1149,7 +1151,7 @@ COORD *LMP (INT n)
 
    SYNOPSIS:
    INT LocalToGlobal?d (INT n, const COORD **Corners, 
-   const COORD_VECTOR EvalPoint, COORD_VECTOR GlobalCoord);
+   const COORD *EvalPoint, COORD *GlobalCoord);
 
    PARAMETERS:
 .  n - corner number (3 or 4) 
@@ -1169,7 +1171,7 @@ D*/
 /****************************************************************************/
 
 #ifdef __TWODIM__
-INT LocalToGlobal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint, COORD_VECTOR GlobalCoord)
+INT LocalToGlobal2d (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *GlobalCoord)
 {
 	if (n==3)
 	  LOCAL_TO_GLOBAL_TRIANGLE(Corners,EvalPoint,GlobalCoord)
@@ -1183,7 +1185,7 @@ INT LocalToGlobal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint,
 #endif
 
 #ifdef __THREEDIM__
-INT LocalToGlobal3d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint, COORD_VECTOR GlobalCoord)
+INT LocalToGlobal3d (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *GlobalCoord)
 {
 	if (n==4)
 	  LOCAL_TO_GLOBAL_TETRAHEDRON(Corners,EvalPoint,GlobalCoord)

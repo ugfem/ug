@@ -596,15 +596,15 @@ INT 	Derivatives 	(INT n, const DOUBLE *px, const DOUBLE *py, DOUBLE ips, DOUBLE
 INT		Gradients		(INT n, const COORD **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_VECTOR Gradient[MAX_CORNERS_OF_ELEM], DOUBLE *DetJ);
 
 INT		L2GDerivative2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint, COORD *Derivative);
-INT		LocalToGlobal2d	(INT n, const COORD **Corners, const COORD_VECTOR EvalPoint, COORD_VECTOR GlobalCoord);
-INT 	GlobalToLocal2d (INT n,const  COORD **Corners, const COORD_VECTOR EvalPoint, COORD_VECTOR LocalCoord);
+INT		LocalToGlobal2d	(INT n, const COORD **Corners, const COORD *EvalPoint, COORD *GlobalCoord);
+INT 	GlobalToLocal2d (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);
 #endif
 
 #ifdef __THREEDIM__						 
-INT		LocalToGlobal3d	(INT n, const COORD **Corners, const COORD_VECTOR EvalPoint, COORD_VECTOR GlobalCoord);
+INT		LocalToGlobal3d	(INT n, const COORD **Corners, const COORD *EvalPoint, COORD *GlobalCoord);
+INT     GlobalToLocal3d     (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);
 INT GetSkewedUIP (const COORD_VECTOR *theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], const DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
 DOUBLE  N                   (const INT i, const COORD *LocalCoord);
-INT     GlobalToLocal3d     (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);
 INT     TetraDerivative     (ELEMENT *theElement, const COORD **theCorners, COORD_VECTOR theGradient[MAX_CORNERS_OF_ELEM]);
 INT     TetraVolume         (const COORD **theCorners, COORD *volume);
 INT     FV_TetInfo          (const COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM]);
