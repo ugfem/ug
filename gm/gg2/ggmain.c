@@ -343,7 +343,10 @@ static INT HandleSubdomain (INDEPFRONTLIST *theIFL, NODE **Nodes,
   while (1)
   {
     /* new node */
-    PRINTDEBUG(dom,1,("  cnt nid %ld \n",ID(NodeHandle[cnt])));
+    PRINTDEBUG(dom,1,("  cnt nid %4d pos %6.3f %6.3f\n",
+                      ID(NodeHandle[cnt]),
+                      XC(MYVERTEX(NodeHandle[cnt])),
+                      YC(MYVERTEX(NodeHandle[cnt]))));
     for (j=0; j<n; j++)
       if (NodeHandle[cnt] == Nodes[node_id[j][0]] && j!=oldside)
       {
@@ -420,7 +423,7 @@ static INT AssembleFrontLists (MULTIGRID *theMG, MESH *mesh, INT MarkKey)
 
   for (i=0, theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
-    PRINTDEBUG(dom,1,("  nid %ld \n",ID(theNode)));
+    PRINTDEBUG(dom,2,("  nid %ld \n",ID(theNode)));
     if (V_BNDP(MYVERTEX(theNode)) != mesh->theBndPs[i])
       return(1);
     Nodes[i++] = theNode;
@@ -2796,13 +2799,13 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
     elem_context_list = NULL;
     mesh_2d.nElements = (INT *) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(INT),MarkKey);
     if (mesh_2d.nElements == NULL)
-      return(NULL);
+      return(1);
     mesh_2d.Element = (ELEMENT_2D**) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(ELEMENT_2D*),MarkKey);
     if (mesh_2d.Element == NULL)
-      return(NULL);
+      return(1);
     mesh_2d.start = (ELEMENT_2D**) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(ELEMENT_2D*),MarkKey);
     if (mesh_2d.start == NULL)
-      return(NULL);
+      return(1);
     for(i=1; i<=theMG->theBVPD.nSubDomains; i++)
     {
       mesh_2d.Element[i] = NULL;
@@ -2998,7 +3001,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
 
           elem_2d = (ELEMENT_2D *) GetTmpMem(theMG->theHeap,sizeof(ELEMENT_2D),MarkKey);
           if (elem_2d == NULL)
-            return(NULL);
+            return(1);
           elem_2d->succel = NULL;
 
           if (FillElementContext(FlgForAccel, &(elem_2d->elem_context), theFC, PREDFC(theFC), the_old_succ))
@@ -3055,7 +3058,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
 
         elem_2d = (ELEMENT_2D *) GetTmpMem(theMG->theHeap,sizeof(ELEMENT_2D),MarkKey);
         if (elem_2d == NULL)
-          return(NULL);
+          return(1);
         elem_2d->succel = NULL;
 
         if (FillElementContext(FlgForAccel, &(elem_2d->elem_context), theFC, thenewFC, the_old_succ))
