@@ -1,0 +1,36 @@
+##############################################################################
+#                                                                            #
+#   Makefile for module 'dddif' of ugp version 3                             #
+#                                                                            #
+#   created 09 May 1995                                                      #
+#                                                                            #
+##############################################################################
+
+# load architecture dependent makefile  
+include ../ug.arch
+
+# architecture-dependent makefile entries
+include	../machines/mk.$(ARCHDIR)
+
+# load configuration switches  
+include ../ug.conf
+
+# local C compiler flags
+LCFLAGS = -I../low -I../gm -I../dddif
+
+# object files
+OBJECTS = initddd.o memmgr.o handler.o test.o debugger.o
+
+# main rules
+DDDIF : $(OBJECTS) Makefile.dddif
+	ar $(ARFLAGS) ../lib/libug$(LIBSUFFIX).a $(OBJECTS) 
+
+
+# default rule 
+.c.o:
+	$(CC) $(UGDEFINES) $(CFLAGS) $(LCFLAGS) $<
+
+# clean up
+clean:
+	rm $(OBJECTS)
+ 
