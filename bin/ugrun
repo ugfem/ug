@@ -49,7 +49,7 @@ case $MODEL in
         ;;
 	NX)
 		echo isub -sz $PROC   $1;
-		isub -sz $PROC   $1;
+		isub -sz $PROC   $1  $3 $4;
         ;;
 	SEQ)
 		$1 $3 $4;
