@@ -76,13 +76,11 @@ static INT ScObj;
 static INT QfclObj;
 static INT EttObj;
 
-
 /****************************************************************************/
 /*                                                                          */
 /* forward declarations of functions used before they are defined           */
 /*                                                                          */
 /****************************************************************************/
-
 
 
 /****************************************************************************/
@@ -823,14 +821,11 @@ static void insert(QFCLISTTYP *p_new, QUADTREETYP *q_place,
   else
   {
     /* there is already (!)another node(!) */
-    q_pointer = GetFreeObject( MG, QuObj);
+    q_pointer = GetMemoryForObject( MG, sizeof(QUADTREETYP), QuObj);
     if ( q_pointer == NULL )
     {
-      q_pointer = GetMem(MG->theHeap,sizeof(QUADTREETYP),FROM_TOP);
-      if ( q_pointer == NULL )
-      {
-        PrintErrorMessage('E',"bnodes"," ERROR: No memory !!! error in quadtreefunction <insert>");
-      }
+      PrintErrorMessage('E',"bnodes"," ERROR: No memory !!! error in quadtreefunction <insert>");
+      return;
     }
     SETOBJT(q_pointer,QuObj);
     for (lauf=0; lauf<=3; lauf++)
@@ -983,13 +978,14 @@ static void delete_node(QUADTREETYP *q_pointer, FRONTCOMP *p_del, COORD width,
     if ( nodepointer_qfcl == NULL )             /* there is no node at all !!! */
     {
       PrintErrorMessage('E',"bnodes","Error: I cannot delete a node, which  doesn«t exist!!!");
+      return;
     }
     else
     {               /* here we are !!! */
       if ( FROC(nodepointer_qfcl) == p_del )
       {
         q_pointer->q_array[place] = NXT(nodepointer_qfcl);
-        PutFreeObject(MG,nodepointer_qfcl);
+        PutFreeObject(MG,nodepointer_qfcl,sizeof(QFCLISTTYP),QfclObj);
       }
       else
       {
@@ -1006,7 +1002,7 @@ static void delete_node(QUADTREETYP *q_pointer, FRONTCOMP *p_del, COORD width,
         while ( FROC(nodepointer_qfcl) != p_del );
 
         NXT(onebefore) = NXT(nodepointer_qfcl);
-        PutFreeObject(MG, nodepointer_qfcl);
+        PutFreeObject(MG, nodepointer_qfcl,sizeof(QFCLISTTYP),QfclObj);
       }
 
     }
@@ -1056,7 +1052,7 @@ static void delete_node(QUADTREETYP *q_pointer, FRONTCOMP *p_del, COORD width,
       nodepointer_qfcl = q_pointer->q_array[place];
       *nd_mem = nodepointer_qfcl;
 
-      PutFreeObject( MG, q_pointer);
+      PutFreeObject( MG, q_pointer, sizeof(QUADTREETYP), QuObj);
 
     }
     else *stop = 1;
@@ -1102,7 +1098,7 @@ static void delete_quadtree(QUADTREETYP *q_pointer)
     }
   }
 
-  PutFreeObject( MG, q_pointer);
+  PutFreeObject( MG, q_pointer, sizeof(QUADTREETYP), QuObj);
 }
 
 /******************** end of function delete_quadtree ***********************/
@@ -1172,13 +1168,11 @@ static void InsertQuadtree(FRONTCOMP *pon, int ncomp)
   QUADTREETYP *qz_s;
   COORD actual_width;
 
-
-  srce = GetFreeObject( MG, ScObj);
+  srce = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
   if ( srce == NULL )
   {
-    srce = GetMem(MG->theHeap,sizeof(SOURCETYP),FROM_TOP);
-    if ( srce == NULL )
-    {PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");}
+    PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");
+    return;
   }
   else
     i=1;
@@ -1191,15 +1185,12 @@ static void InsertQuadtree(FRONTCOMP *pon, int ncomp)
     actual_width = startwidth/2;
     qz_s = search( startpointer, srce, &actual_width, &pon[i]);
 
-    p_new = GetFreeObject( MG, QfclObj);
+    p_new = GetMemoryForObject( MG, sizeof(QFCLISTTYP), QfclObj);
 
     if ( p_new == NULL )
     {
-      p_new = GetMem(MG->theHeap,sizeof(QFCLISTTYP),FROM_TOP);
-      if ( p_new == NULL )
-      {
-        PrintErrorMessage('E',"bnodes","ERR:No memory! -> quadtreefunction <InsertQuadtree>");
-      }
+      PrintErrorMessage('E',"bnodes","ERR:No memory! -> quadtreefunction <InsertQuadtree>");
+      return;
     }
 
     SETOBJT(p_new,QfclObj);
@@ -1208,7 +1199,7 @@ static void InsertQuadtree(FRONTCOMP *pon, int ncomp)
 
     insert(p_new, qz_s, srce, actual_width);
   }
-  PutFreeObject(MG, srce);
+  PutFreeObject(MG, srce, sizeof(SOURCETYP), ScObj);
 }
 
 /******************* end of function InsertQuadtree *************************/
@@ -1234,13 +1225,11 @@ static void DELETE_ND ( FRONTCOMP *delete_p )
   SOURCETYP *srce;
   QFCLISTTYP *nd_mem;
 
-
-  srce = GetFreeObject( MG, ScObj);
+  srce = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
   if ( srce == NULL )
   {
-    srce = GetMem(MG->theHeap,sizeof(SOURCETYP),FROM_TOP);
-    if ( srce == NULL )
-    {PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");}
+    PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");
+    return;
   }
   SETOBJT(srce, ScObj);
 
@@ -1248,8 +1237,7 @@ static void DELETE_ND ( FRONTCOMP *delete_p )
   srce->x = source->x; srce->y = source->y;
   nd_mem = NULL;
   delete_node( startpointer, delete_p, startwidth/2, srce, &aufhoeren, &nd_mem);
-  PutFreeObject(MG, srce);
-
+  PutFreeObject(MG, srce, sizeof(SOURCETYP), ScObj);
 }
 
 /********************** end of function DELETE_ND ***************************/
@@ -1277,15 +1265,13 @@ static void btree_ins(FRONTCOMP *basefc, float x, BALTREETYP **p, int *h)
 
   if ( *p == NULL )
   {
-    *p = GetFreeObject( MG, EttObj);
+    *p = GetMemoryForObject( MG, sizeof(BALTREETYP), EttObj);
     if ( *p == NULL )
     {
-      *p = GetMem(MG->theHeap,sizeof(BALTREETYP),FROM_TOP);
-      if ( *p == NULL )
-      {PrintErrorMessage('E',"bnodes"," ERROR: No memory !!! in btree_ins");}
+      PrintErrorMessage('E',"bnodes"," ERROR: No memory !!! in btree_ins");
+      return;
     }
     SETOBJT(*p, EttObj);
-
 
     *h = 1;
     (*p)->eFC = basefc;
@@ -1294,7 +1280,6 @@ static void btree_ins(FRONTCOMP *basefc, float x, BALTREETYP **p, int *h)
     (*p)->right = NULL;
     (*p)->bal = 0;
   }
-
   else if ( x <= (*p)->key)
   {
     btree_ins(basefc, x, &((*p)->left), h);
@@ -1913,12 +1898,11 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
 
   InitAccelObjs(MG);
   del_edg_fnd = 0;
-  startpointer = GetFreeObject( MG, QuObj);
+  startpointer = GetMemoryForObject( MG, sizeof(QUADTREETYP), QuObj);
   if ( startpointer == NULL )
   {
-    startpointer = GetMem(MG->theHeap,sizeof(QUADTREETYP),FROM_TOP);
-    if ( startpointer == NULL )
-    {PrintErrorMessage('E',"bnodes","ERROR: No memory !!!");}
+    PrintErrorMessage('E',"bnodes","ERROR: No memory !!!");
+    return(1);
   }
 
   SETOBJT(startpointer,QuObj);
@@ -1928,12 +1912,11 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
     startpointer->q_array[l] = NULL;
   }
 
-  source = GetFreeObject( MG, ScObj);
+  source = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
   if ( source == NULL )
   {
-    source = GetMem(MG->theHeap,sizeof(SOURCETYP),FROM_TOP);
-    if ( source == NULL )
-    {PrintErrorMessage('E',"bnodes","ERROR: No memory !!!");return(1);}
+    PrintErrorMessage('E',"bnodes","ERROR: No memory !!!");return(1);
+    return(1);
   }
   SETOBJT(source,ScObj);
   source->x = BVPD_MIDPOINT(theBVPDesc)[0] - BVPD_RADIUS(theBVPDesc);
@@ -2018,54 +2001,48 @@ int AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOIN
   float maxsidelength;
   int foundpoints, ii;
 
-
-  srce = GetFreeObject( MG, ScObj);
+  srce = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
   if ( srce == NULL )
   {
-    srce = GetMem(MG->theHeap,sizeof(SOURCETYP),FROM_TOP);
-    if ( srce == NULL )
-    {PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");}
+    PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");
+    return(1);
   }
+
   SETOBJT(srce, ScObj);
   srce->x = source->x; srce->y = source->y;
 
-  search_sq_ru = GetFreeObject( MG, ScObj);
+  search_sq_ru = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
   if ( search_sq_ru == NULL )
   {
-    search_sq_ru = GetMem(MG->theHeap,sizeof(SOURCETYP),FROM_TOP);
-    if ( search_sq_ru == NULL )
-    {PrintErrorMessage('E',"bnodes","No memory !!! in InsertQuadtree");}
+    PrintErrorMessage('E',"bnodes","No memory !!! in InsertQuadtree");
+    return(1);
   }
   SETOBJT(search_sq_ru, ScObj);
 
-  search_sq_ld = GetFreeObject( MG, ScObj);
+  search_sq_ld = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
   if ( search_sq_ld == NULL )
   {
-    search_sq_ld = GetMem(MG->theHeap,sizeof(SOURCETYP),FROM_TOP);
-    if ( search_sq_ld == NULL )
-    {PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");}
+    PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");
+    return(1);
   }
   SETOBJT(search_sq_ld, ScObj);
 
 
-  big_search_sq_ru = GetFreeObject( MG, ScObj);
+  big_search_sq_ru = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
   if ( big_search_sq_ru == NULL )
   {
-    big_search_sq_ru = GetMem(MG->theHeap,sizeof(SOURCETYP),FROM_BOTTOM);
-    if ( big_search_sq_ru == NULL )
-    {PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");}
+    PrintErrorMessage('E',"bnodes","ERROR: No memory !!! in InsertQuadtree");
+    return(1);
   }
   SETOBJT(big_search_sq_ru, ScObj);
 
-  big_search_sq_ld = GetFreeObject( MG, ScObj);
+  big_search_sq_ld = GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
   if ( big_search_sq_ld == NULL )
   {
-    big_search_sq_ld = GetMem(MG->theHeap,sizeof(SOURCETYP),FROM_BOTTOM);
-    if ( big_search_sq_ld == NULL )
-    {PrintErrorMessage('E',"bnodes"," ERROR: No memory !!! in InsertQuadtree");}
+    PrintErrorMessage('E',"bnodes"," ERROR: No memory !!! in InsertQuadtree");
+    return(1);
   }
   SETOBJT(big_search_sq_ld, ScObj);
-
 
 
   /* Now we build the searching rectangle !!! */
@@ -2095,9 +2072,9 @@ int AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOIN
                       theIntersectfoundPoints, startwidth/2, search_sq_ld,
                       search_sq_ru, big_search_sq_ld, big_search_sq_ru, xt, yt,
                       searchradis, &foundpoints, &ii );
-  PutFreeObject(MG, srce);
-  PutFreeObject(MG, search_sq_ru);
-  PutFreeObject(MG, search_sq_ld);
+  PutFreeObject(MG, srce, sizeof(SOURCETYP), ScObj);
+  PutFreeObject(MG, search_sq_ru, sizeof(SOURCETYP), ScObj);
+  PutFreeObject(MG, search_sq_ld, sizeof(SOURCETYP), ScObj);
 
   return (foundpoints);
 
