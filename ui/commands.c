@@ -7158,6 +7158,112 @@ static INT MakeGridCommand  (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   cadconvert - convert predefined CADgrid
+
+   DESCRIPTION:
+   This command converts a predefined CADgrid to an UG-multigrid.
+   The complete boundary descriptions are created automatically.
+   Additionally boundary conditions can be chosen from a boundary condition class library.
+
+   'cadconvert $<filename> $h<heapsize>'
+
+   .  $ <filename>          - filename = name of CADOutputfile ("*.ans", ANSYS/PREP7-Format)
+   .  $f <format>            - one of the enroled formats matching with <problem>
+   .  $h <heapsize>          - the heapsize to be allocated
+
+
+   EXAMPLE:
+   .vb
+   cadconvert $ wuerfel.ans $h 12000;
+   .ve
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  CADGridConvertCommand                                             */
+/*                                                                          */
+/* Purpose:   converts a predefined CADgrid to an UG-multigrid				*/
+/*                                                                          */
+/* Input:     INT argc: number of arguments (incl. its own name             */
+/*            char **argv: array of strings giving the arguments            */
+/*                                                                          */
+/* Output:    INT return code see header file                               */
+/*                                                                          */
+/****************************************************************************/
+
+#if defined(CAD) && defined(__THREEDIM__)
+static INT CADGridConvertCommand(INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  char CADOutputFileName[NAMESIZE];
+
+  char Format[NAMESIZE];
+  char *theFormat;
+
+  unsigned long heapSize;
+  INT i,hopt;
+
+  /* get CADfile name */
+  if ((sscanf(argv[0],expandfmt(CONCAT3(" cadconvert %",NAMELENSTR,"[ -~]")),CADOutputFileName)!=1) || (strlen(CADOutputFileName)==0))
+    sprintf(CADOutputFileName,"untitled-%d",(int)untitledCounter++);
+
+  /* get problem, domain and format */
+  theFormat = NULL;
+  heapSize = 0;
+  hopt = FALSE;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'f' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("f %",NAMELENSTR,"[ -~]")),Format)!=1)
+      {
+        PrintHelp("open",HELPITEM," (cannot read format specification)");
+        return(PARAMERRORCODE);
+      }
+      theFormat = Format;
+      break;
+
+    case 'h' :
+      if (sscanf(argv[i],"h %lu",&heapSize)!=1)
+      {
+        PrintHelp("new",HELPITEM," (cannot read heapsize specification)");
+        return(PARAMERRORCODE);
+      }
+      hopt = TRUE;
+      break;
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintHelp("new",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
+
+  if (!(hopt))
+  {
+    PrintHelp("new",HELPITEM," (the d, p, f and h arguments are mandatory)");
+    return(PARAMERRORCODE);
+  }
+
+  /* check options */
+  theMG = ConvertCADGrid(theFormat, CADOutputFileName, heapSize);
+  if (theMG == NULL)
+  {
+    PrintErrorMessage('E',"cadconvert","execution failed");
+    return (CMDERRORCODE);
+  }
+
+  if (SetCurrentMultigrid(theMG)!=0)
+    return (CMDERRORCODE);
+
+
+
+  return (OKCODE);
+}
+#endif
+
+/****************************************************************************/
+/*D
    screensize - print the size of the monitor screen in pixels
 
    DESCRIPTION:
@@ -12819,6 +12925,10 @@ INT InitCommands ()
   if (CreateCommand("vmlist",             VMListCommand                                   )==NULL) return (__LINE__);
   if (CreateCommand("quality",            QualityCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("makegrid",           MakeGridCommand                                 )==NULL) return (__LINE__);
+
+#if defined(CAD) && defined(__THREEDIM__)
+  if (CreateCommand("cadconvert",     CADGridConvertCommand           )==NULL) return (__LINE__);
+#endif
 
   /* commands for grape */
   if (CreateCommand("grape",                      CallGrapeCommand                                )==NULL) return (__LINE__);
