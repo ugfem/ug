@@ -829,7 +829,8 @@ static INT ProcessEvent (char *String, INT EventMask)
   DOUBLE qw, qh, scaling;
   UGWINDOW *theUgW;
   PICTURE *thePic;
-  INT WinID, UGW_LLL_old[2], UGW_LUR_old[2], Offset[2], nfct, r;
+  WINDOWID WinID;
+  INT UGW_LLL_old[2], UGW_LUR_old[2], Offset[2], nfct, r;
   static INT MousePosition[2];
 
 #ifdef ModelP
