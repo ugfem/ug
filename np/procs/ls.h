@@ -53,6 +53,8 @@
 #define NPLS_x(p)                       (((NP_LINEAR_SOLVER*)(p))->x)
 #define NPLS_red(p)                     (((NP_LINEAR_SOLVER*)(p))->reduction)
 #define NPLS_abs(p)                     (((NP_LINEAR_SOLVER*)(p))->abslimit)
+#define NPLS_setbasetime(p)                     (((NP_LINEAR_SOLVER*)(p))->setbasetime)
+#define NPLS_printbasetime(p)           (((NP_LINEAR_SOLVER*)(p))->printbasetime)
 
 /****************************************************************************/
 /*																			*/
@@ -78,6 +80,8 @@ struct np_linear_solver {
   MATDATA_DESC *A;                       /* matrix                          */
   VEC_SCALAR reduction;                      /* reduction factor                */
   VEC_SCALAR abslimit;                       /* absolute limit for the defect   */
+  INT setbasetime;                                               /* collect time portions for base level solver */
+  INT printbasetime;                                             /* print collected time for base level solver */
 
   /* functions */
   INT (*PreProcess)

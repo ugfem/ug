@@ -269,6 +269,7 @@ typedef struct np_ldcs NP_LDCS;
 /****************************************************************************/
 
 static DOUBLE clock_start;
+static DOUBLE basetime;
 
 REP_ERR_FILE;
 
@@ -383,6 +384,16 @@ INT NPLinearSolverInit (NP_LINEAR_SOLVER *np, INT argc , char **argv)
   if ((np->x == NULL) || (np->b == NULL) || (np->A == NULL))
     return(NP_ACTIVE);
 
+  if (ReadArgvINT("setbasetime",&NPLS_setbasetime(np),argc,argv))
+  {
+    NPLS_setbasetime(np) = 0;
+  }
+
+  if (ReadArgvINT("printbasetime",&NPLS_printbasetime(np),argc,argv))
+  {
+    NPLS_printbasetime(np) = 0;
+  }
+
   return(NP_EXECUTABLE);
 }
 
@@ -404,6 +415,8 @@ INT NPLinearSolverDisplay (NP_LINEAR_SOLVER *np)
       REP_ERR_RETURN (1);
   if (sc_disp(np->abslimit,np->x,"abslimit"))
     REP_ERR_RETURN (1);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"setbasetime",(int)NPLS_setbasetime(np));
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"printbasetime",(int)NPLS_printbasetime(np));
 
   return(0);
 }
@@ -638,6 +651,8 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VE
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
   if (np->display > PCR_NO_DISPLAY)
     if (PreparePCR(x,np->display,text,&PrintID)) NP_RETURN(1,lresult->error_code);
+  if(NPLS_printbasetime(theNP))
+    basetime = 0.0;
   CSTART(); ti=0; ii=0;
   for (i=0; i<VD_NCOMP(x); i++)
     lresult->first_defect[i] = lresult->last_defect[i];
@@ -670,6 +685,8 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VE
     if ((*np->Close)(np,level,&lresult->error_code))
       REP_ERR_RETURN (1);
   CSTOP(ti,ii);
+  if(NPLS_setbasetime(theNP))
+    basetime += ti;
 
   if (np->display > PCR_NO_DISPLAY)
   {
@@ -680,9 +697,15 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VE
     if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1)))
       NP_RETURN(1,lresult->error_code);
     if (lresult->number_of_linear_iterations != 0)
-      UserWriteF("LS  : L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g\n",level,
-                 lresult->number_of_linear_iterations,ti,
-                 ti/lresult->number_of_linear_iterations);
+      if(NPLS_printbasetime(theNP))
+        UserWriteF("LS  : L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g TBASE=%g\n",level,
+                   lresult->number_of_linear_iterations,ti,
+                   ti/lresult->number_of_linear_iterations,
+                   basetime);
+      else
+        UserWriteF("LS  : L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g\n",level,
+                   lresult->number_of_linear_iterations,ti,
+                   ti/lresult->number_of_linear_iterations);
     else
       UserWriteF("LS  : L=%2d N=%2d TSOLVE=%10.4g\n",level,
                  lresult->number_of_linear_iterations,ti);
@@ -1673,6 +1696,8 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
   /* print defect */
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
   if (np->display > PCR_NO_DISPLAY) if (PreparePCR(x,np->display,text,&PrintID)) NP_RETURN(1,lresult->error_code);
+  if(NPLS_printbasetime(theNP))
+    basetime = 0.0;
 
   CSTART(); ti=0; ii=0;
 
@@ -1810,6 +1835,8 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     }
   }
   CSTOP(ti,ii);
+  if(NPLS_setbasetime(theNP))
+    basetime += ti;
 
   if (np->display > PCR_NO_DISPLAY)
   {
@@ -1820,9 +1847,15 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1)))
       NP_RETURN(1,lresult->error_code);
     if (lresult->number_of_linear_iterations > 0)
-      UserWriteF("BCGS: L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g\n",level,
-                 lresult->number_of_linear_iterations,ti,
-                 ti/lresult->number_of_linear_iterations);
+      if(NPLS_printbasetime(theNP))
+        UserWriteF("BCGS: L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g TBASE=%g\n",level,
+                   lresult->number_of_linear_iterations,ti,
+                   ti/lresult->number_of_linear_iterations,
+                   basetime);
+      else
+        UserWriteF("BCGS: L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g\n",level,
+                   lresult->number_of_linear_iterations,ti,
+                   ti/lresult->number_of_linear_iterations);
   }
 
   return (0);
@@ -2026,6 +2059,8 @@ static INT BCGS_LSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VE
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
   if (np->display > PCR_NO_DISPLAY)
     if (PreparePCR(x,np->display,text,&PrintID)) NP_RETURN(1,lresult->error_code);
+  if(NPLS_printbasetime(theNP))
+    basetime = 0.0;
 
   CSTART(); ti=0; ii=0;
 
@@ -2254,6 +2289,8 @@ update:
     }
   }
   CSTOP(ti,ii);
+  if(NPLS_setbasetime(theNP))
+    basetime += ti;
   if (np->display > PCR_NO_DISPLAY)
   {
     if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE))
@@ -2263,9 +2300,15 @@ update:
     if (SetStringValue(":ls:avg:iter",(DOUBLE) (k+1)))
       NP_RETURN(1,lresult->error_code);
     if (lresult->number_of_linear_iterations > 0)
-      UserWriteF("BCGS(%2d): L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g\n",np->restart,level,
-                 lresult->number_of_linear_iterations,ti,
-                 ti/lresult->number_of_linear_iterations);
+      if(NPLS_printbasetime(theNP))
+        UserWriteF("BCGS(%2d): L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g TBASE=%g\n",np->restart,level,
+                   lresult->number_of_linear_iterations,ti,
+                   ti/lresult->number_of_linear_iterations,
+                   basetime);
+      else
+        UserWriteF("BCGS(%2d): L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g\n",np->restart,level,
+                   lresult->number_of_linear_iterations,ti,
+                   ti/lresult->number_of_linear_iterations);
   }
 
   return (0);
@@ -2559,6 +2602,9 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
   if (np->display > PCR_NO_DISPLAY)
     if (PreparePCR(x,np->display,text,&PrintID))
       NP_RETURN(1,lresult->error_code);
+  if(NPLS_printbasetime(theNP))
+    basetime = 0.0;
+
   CSTART(); ti=0; ii=0;
   for (i=0; i<VD_NCOMP(x); i++)
     lresult->first_defect[i] = lresult->last_defect[i];
@@ -2782,6 +2828,8 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
 
   }       /* end: GMRES outer loop:it*/
   CSTOP(ti,ii);
+  if(NPLS_setbasetime(theNP))
+    basetime += ti;
 
   if (np->display > PCR_NO_DISPLAY) {
     if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE))
@@ -2790,9 +2838,16 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
       NP_RETURN(1,lresult->error_code);
     if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1)))
       NP_RETURN(1,lresult->error_code);
-    UserWriteF("GMRES(%2d)  : L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g\n",np->restart,level,
-               lresult->number_of_linear_iterations,ti,
-               ti/lresult->number_of_linear_iterations);
+    if (lresult->number_of_linear_iterations != 0)
+      if(NPLS_printbasetime(theNP))
+        UserWriteF("GMRES(%2d)  : L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g TBASE=%g\n",np->restart,level,
+                   lresult->number_of_linear_iterations,ti,
+                   ti/lresult->number_of_linear_iterations,
+                   basetime);
+      else
+        UserWriteF("GMRES(%2d)  : L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g\n",np->restart,level,
+                   lresult->number_of_linear_iterations,ti,
+                   ti/lresult->number_of_linear_iterations);
   }
 
   return (0);
