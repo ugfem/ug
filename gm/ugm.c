@@ -1679,11 +1679,13 @@ static
 #endif
 EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
 {
-  EDGE *pe;
+  ELEMENT *theFather;
+  EDGE *pe,*father;
   NODE *from,*to;
   LINK *link0,*link1;
+  VERTEX *theVertex;
   VECTOR *pv;
-  INT part;
+  INT j,part;
 
   from = CORNER(theElement,CORNER_OF_EDGE(theElement,i,0));
   to = CORNER(theElement,CORNER_OF_EDGE(theElement,i,1));
@@ -1723,6 +1725,41 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
   SET_NO_OF_ELEM(pe,1);
   SETEDGENEW(pe,1);
   SETEDSUBDOM(pe,SUBDOMAIN(theElement));
+  if ((NSUBDOM(from) == 0) && (NSUBDOM(to) == 0)) {
+    if (MIDTYPE(to))
+      father = (EDGE*)NFATHER(to);
+    if (father != NULL) {
+      if ((SONNODE(NBNODE(LINK0(father)))==from)
+          ||(SONNODE(NBNODE(LINK1(father)))==from))
+        SETEDSUBDOM(pe,EDSUBDOM(father));
+    }
+    else if ((MIDTYPE(from)) &&
+             (father = (EDGE *)NFATHER(from)) != NULL) {
+      if ((SONNODE(NBNODE(LINK0(father)))==to)
+          ||(SONNODE(NBNODE(LINK1(father)))==to))
+        SETEDSUBDOM(pe,EDSUBDOM(father));
+    }
+
+                #ifdef __TREEDIM__
+    else if ((theFather = EFATHER(theElement)) != NULL)
+      if (OBJT(theFather) == BEOBJ) {
+        for (j=0; j<SIDES_OF_ELEM(theFather); j++) {
+
+          assert(0);
+
+        }
+        if (SIDETYPE(from)) {
+          theVertex = MYVERTEX(from);
+          if (VFATHER(theVertex) == theFather)
+            j = ONSIDE(theVertex);
+          else
+            j = ONNBSIDE(theVertex);
+          if (SIDE_ON_BND(theFather,j))
+            assert(0);
+        }
+      }
+                #endif
+  }
 
   /* create vector if */
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
@@ -1841,6 +1878,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
   /* subdomain id */
   s_id = (Father != NULL) ? SUBDOMAIN(Father) : 0;
   SETSUBDOMAIN(pe,s_id);
+  SET_EFATHER(pe,Father);
 
   /* set corner nodes */
   for (i=0; i<CORNERS_OF_ELEM(pe); i++)
@@ -1894,7 +1932,6 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
   /* insert in element list */
   GRID_LINK_ELEMENT(theGrid,pe,PrioMaster);
 
-  SET_EFATHER(pe,Father);
   if (theGrid->level>0)
   {
     INT where = PRIO2INDEX(PrioMaster);
