@@ -5981,12 +5981,34 @@ INT PointInElement (const DOUBLE *global, const ELEMENT *theElement)
 
 ELEMENT *FindElementFromPosition (GRID *theGrid, DOUBLE *pos)
 {
-  ELEMENT *theElement;
+  ELEMENT *theElement,*theFather,*Sons[MAX_SONS];
+  INT i;
 
-  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
-       theElement=SUCCE(theElement))
-    if (PointInElement(pos,theElement) == 1)
-      return(theElement);
+  if (GLEVEL(theGrid) == 0) {
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
+         theElement=SUCCE(theElement))
+      if (PointInElement(pos,theElement) == 1)
+        return(theElement);
+    return(NULL);
+  }
+  theFather = FindElementFromPosition(DOWNGRID(theGrid),pos);
+  if (theFather == NULL) {
+    if (OBJT(theFather) == IEOBJ) return(NULL);
+    else {
+      for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
+           theElement=SUCCE(theElement))
+        if (PointInElement(pos,theElement) == 1)
+          return(theElement);
+      return(NULL);
+    }
+  }
+  if (GetSons(theFather,Sons)) {
+    ASSERT(0);
+    return(NULL);
+  }
+  for (i=0; i<NSONS(theFather); i++)
+    if (PointInElement(pos,Sons[i]) == 1)
+      return(Sons[i]);
 
   return(NULL);
 }
@@ -7554,6 +7576,23 @@ void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT ma
         ListVector(theMG,theVector,matrixopt,dataopt);
     }
 }
+
+/*
+   void ListConnections (GRID *theGrid)
+   {
+        VECTOR *v;
+        MATRIX *m;
+        INT len;
+    buffer[256];
+
+        for (v=PFIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+                len = sprintf(buffer,"%d: prio=%d  %8d ->",me,PRIO(v),GID(v));
+                for (m=START(v); m!=NULL; m=MNEXT(m))
+                    len += sprintf(buffer+len," %8d",GID(MDEST(m)));
+                printf("%s\n",buffer);
+        }
+   }
+ */
 
 /****************************************************************************/
 /*D
