@@ -6611,7 +6611,15 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     DO_2c(theDO) = TEXT_CENTERED; DO_inc(theDO)
     DO_2s(theDO) = EE2D_TEXTSIZE; DO_inc(theDO);
     V2_COPY(MidPoint,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-    sprintf(DO_2cp(theDO),"%d",(int)ID(theElement)); DO_inc_str(theDO);
+                #ifdef ModelP
+    sprintf(DO_2cp(theDO),"%d/%x",
+            (int)ID(theElement),
+            (long)DDD_InfoGlobalId(PARHDRE(theElement)));
+    DO_inc_str(theDO);
+                #else
+    sprintf(DO_2cp(theDO),"%d",(int)ID(theElement));
+    DO_inc_str(theDO);
+                #endif
   }
 
   DO_2c(theDO) = DO_NO_INST;
