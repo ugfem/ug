@@ -567,13 +567,13 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   NP_AMG_TRANSFER *np;
   MULTIGRID *theMG;
   GRID *theGrid,*newGrid;
-  INT level,nVect,nMat,unifiedlevel;
+  INT level,nVect,nMat,agglevel,breakflag;
   char varname[32];
   char text[DISPLAY_WIDTH+4];
 
   /* Set flag to indicate that everything is stored on one processor
      on this level (and below). */
-  unifiedlevel = -MAXLEVEL-1;
+  agglevel = -MAXLEVEL-1;
 
   if (tl!=0) {
     PrintErrorMessage('E',"AMGTransferPreProcess",
@@ -612,50 +612,58 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     }
     /* coarsen until criteria are fulfilled */
     while (theMG->bottomLevel > np->levelLimit) {
+      breakflag = 0;
       level=theMG->bottomLevel;
       theGrid=GRID_ON_LEVEL(theMG,level);
       nVect=theGrid->nVector;
       nMat=2*theGrid->nCon;
-      /* If there are <= vectLimit vectors on each processor, we
-         1) break if we already have the coarse grid on one processor
-         2) agglomerate all vectors to the master processor (if this
-            hasn't been done yet)
-       */
-                        #ifdef ModelP
-      if (level <= unifiedlevel)
-        if (np->vectLimit!=0 && nVect <= np->vectLimit)
-          break;
-        else
-        if (np->vectLimit != 0 && UG_GlobalMaxINT(nVect) <= np->vectLimit) {
+
+      if (np->vectLimit!=0)
+        if (nVect<=np->vectLimit) {
+          breakflag = 1;
+          PRINTDEBUG(np,1,("%3d: vectLimit reached",me));
+          PRINTDEBUG(np,1,(" on level %d\n",level));
+        }
+
+      if (np->matLimit!=0)
+        if (nMat<=np->matLimit) {
+          breakflag = 1;
+          PRINTDEBUG(np,1,("%3d: matLimit reached",me));
+          PRINTDEBUG(np,1,(" on level %d\n",level));
+        }
+
+      if (np->bandLimit!=0.0)
+        if ((DOUBLE)nMat/(DOUBLE)nVect>np->bandLimit) {
+          breakflag = 1;
+          PRINTDEBUG(np,1,("%3d: bandLimit reached",me));
+          PRINTDEBUG(np,1,(" on level %d\n",level));
+        }
+
+            #ifdef ModelP
+      breakflag = UG_GlobalSumINT(breakflag);
+                        #endif
+
+      if (breakflag>0) {
+                #ifdef ModelP
+        /* Do agglomeration only if it hasn't been done yet and if
+               aggLimit has been set to a value that indicates that
+               coarse grid agglomeration is desired. */
+        if (level>agglevel && np->levelLimit>=np->aggLimit) {
           AMGAgglomerate(theMG);
           l_amgmatrix_collect(theGrid,A);
-          unifiedlevel = level;
-          break;
+          agglevel = level;
+          PRINTDEBUG(np,1,("%3d: Coarse Grid agglomeration",me));
+          PRINTDEBUG(np,1,(" on level %d\n",level));
         }
-                        #else
-      if (np->vectLimit!=0)
-        if (nVect<=np->vectLimit)
-          break;
-                        #endif
-      if (np->matLimit!=0)
-        if (nMat<=np->matLimit)
-          break;
-      if (np->bandLimit!=0.0)
-        if ((DOUBLE)nMat/(DOUBLE)nVect>np->bandLimit)
-          break;
+                #endif
+        break;
+      }
+
       if (np->MarkStrong != NULL) {
         UnmarkAll(theGrid,NULL,0.0);
         if ((result[0]=(np->MarkStrong)(theGrid,A,np->thetaS))!=0)
           REP_ERR_RETURN(result[0]);
       }
-                        #ifdef ModelP
-      /* Do agglomeration (only if it has not been done yet). */
-      if (level <= np->aggLimit && unifiedlevel < -MAXLEVEL) {
-        AMGAgglomerate(theMG);
-        l_amgmatrix_collect(theGrid,A);
-        unifiedlevel = level;
-      }
-                        #endif
 
       if ((result[0]=(np->Coarsen)(theGrid))!=0)
         break;
@@ -713,21 +721,37 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       SetStringValue(varname,(double)theGrid->nIMat);
       SetStringValue(":amg:blevel",(double)theMG->bottomLevel);
 
-      if (np->vRedLimit!=0.0)
+                        #ifdef ModelP
+      /* Do agglomeration (only if it has not been done yet). */
+      if (level-1==np->aggLimit && agglevel<-MAXLEVEL) {
+        AMGAgglomerate(theMG);
+        l_amgmatrix_collect(newGrid,A);
+        agglevel = level;
+        PRINTDEBUG(np,1,("%3d: Coarse Grid agglomeration",me));
+        PRINTDEBUG(np,1,(" on level %d",level-1));
+        PRINTDEBUG(np,1,(" due to aggLimit criterion\n"));
+      }
+                        #endif
+
+      breakflag = 0;
+      if (np->vRedLimit!=0.0) {
         if ((DOUBLE)newGrid->nVector/(DOUBLE)nVect > np->vRedLimit)
-          break;
-      if (np->mRedLimit!=0.0)
-        if ((DOUBLE)2*newGrid->nCon/(DOUBLE)nVect > np->mRedLimit)
-          break;
+          breakflag = 1;
+        PRINTDEBUG(np,1,("%3d: bandLimit reached",me));
+        PRINTDEBUG(np,1,(" on level %d\n",level));
+      }
+      if (np->mRedLimit!=0.0) {
+        if ((DOUBLE)(2*newGrid->nCon)/(DOUBLE)nMat > np->mRedLimit)
+          breakflag = 1;
+        PRINTDEBUG(np,1,("%3d: bandLimit reached",me));
+        PRINTDEBUG(np,1,(" on level %d\n",level));
+      }
+
+                        #ifdef ModelP
+      breakflag = UG_GlobalSumINT(breakflag);
+                        #endif
+      if (breakflag>0) break;
     }
-                #ifdef ModelP
-    /* If bottomlevel is still stored on several processors agglomerate */
-    if (unifiedlevel < -MAXLEVEL && np->aggLimit >= np->levelLimit) {
-      AMGAgglomerate(theMG);
-      l_amgmatrix_collect(DOWNGRID(theGrid),A);
-      unifiedlevel = level;
-    }
-                #endif
   }
   else {
     for (level=0; level>theMG->bottomLevel; level--) {

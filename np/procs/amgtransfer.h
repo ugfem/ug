@@ -105,7 +105,7 @@ typedef struct
   DOUBLE mRedLimit;                          /* stop if matReduction<mRedLimit  */
   INT levelLimit;                            /* stop if -level>levelLimit       */
   INT aggLimit;                              /* agglomerate to one processor    */
-  /* if level < aggLimit.            */
+  /* if level <= aggLimit            */
   INT symmetric;                             /* symmetric stiffness matrix      */
 
   INT explicitFlag;                          /* clear only by npexecute         */
