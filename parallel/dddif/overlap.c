@@ -363,7 +363,12 @@ INT     ConnectGridOverlap (GRID *theGrid)
       if (!THEFLAG(theElement) && !THEFLAG(theNeighbor)) continue;
 
       /* connect only TO master copies */
+                        #ifdef __TWODIM__
       if (!IS_REFINED(theNeighbor) || !MASTERPRIO(prio)) continue;
+                        #endif
+                        #ifdef __THREEDIM__
+      if (!IS_REFINED(theNeighbor)) continue;
+                        #endif
 
       if (Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,
                                   Sons_of_Side_List,SonSides,1,0)!=GM_OK) RETURN(GM_FATAL);
@@ -384,13 +389,19 @@ INT     ConnectGridOverlap (GRID *theGrid)
         RETURN(GM_FATAL);
     }
 
-    /* yellow_class specific code:                             */
+    /* 1. yellow_class specific code:                          */
     /* check whether is a valid ghost, which as in minimum one */
     /* master element as neighbor                              */
     /* TODO: move this functionality to ComputeCopies          */
-    /* then disposing of theSon can be done in AdaptGrid      */
+    /* then disposing of theSon can be done in AdaptGrid       */
     /* and the extra Xfer env around ConnectGridOverlap()      */
     /* can be deleted (s.l. 971029)                            */
+
+    /* 2. ghost-ghost neighborship specific code:              */
+    /* reset in 3D all unsymmetric neighbor relationships      */
+    /* to avoid referencing of zombie pointers.                */
+    /* this happened e.g. in CorrectElementSidePattern()       */
+    /* (s.l. 980223)                                           */
     {
       ELEMENT *SonList[MAX_SONS];
 
@@ -402,32 +413,51 @@ INT     ConnectGridOverlap (GRID *theGrid)
         if (!EHGHOST(theSon)) continue;
         for (j=0; j<SIDES_OF_ELEM(theSon); j++)
         {
-          if (NBELEM(theSon,j)!=NULL && EMASTER(NBELEM(theSon,j))) ok = 1;
-        }
-        if (!ok)
-        {
-          if (ECLASS(theSon) == YELLOW_CLASS)
-          {
-            UserWriteF(PFMT "ConnectGridOverlap(): disposing useless yellow ghost  e=" EID_FMTX
-                       "f=" EID_FMTX "this ghost is useless!\n",
-                       me,EID_PRTX(theSon),EID_PRTX(theElement));
-            DisposeElement(UPGRID(theGrid),theSon,TRUE);
-          }
-          else
-          {
-            UserWriteF(PFMT "ConnectGridOverlap(): ERROR e=" EID_FMTX
-                       "f=" EID_FMTX "this ghost is useless!\n",
-                       me,EID_PRTX(theSon),EID_PRTX(theElement));
+          INT k;
+          ELEMENT *NbSon = NBELEM(theSon,j);
 
-            /* TODO: better do this
-               assert(0); */
+          if (NbSon == NULL) continue;
+
+          if (EMASTER(NbSon))
+          {
+            ok = 1;
           }
+          /* TODO: delete this is done in gridcons.c
+                                                  else
+                                                  {
+                                                          for (k=0; k<SIDES_OF_ELEM(NbSon); k++)
+                                                          {
+                                                                  if (NBELEM(NbSon,k)==theSon) break;
+                                                          }
+                                                          /* reset unsymmetric pointer relation ship */
+          if (k>=SIDES_OF_ELEM(NbSon)) SET_NBELEM(theSon,j,NULL);
+        }
+        */
+      }
+      if (!ok)
+      {
+        if (ECLASS(theSon) == YELLOW_CLASS)
+        {
+          UserWriteF(PFMT "ConnectGridOverlap(): disposing useless yellow ghost  e=" EID_FMTX
+                     "f=" EID_FMTX "this ghost is useless!\n",
+                     me,EID_PRTX(theSon),EID_PRTX(theElement));
+          DisposeElement(UPGRID(theGrid),theSon,TRUE);
+        }
+        else
+        {
+          UserWriteF(PFMT "ConnectGridOverlap(): ERROR e=" EID_FMTX
+                     "f=" EID_FMTX "this ghost is useless!\n",
+                     me,EID_PRTX(theSon),EID_PRTX(theElement));
+
+          /* TODO: better do this
+             assert(0); */
         }
       }
     }
   }
+}
 
-  return(GM_OK);
+return(GM_OK);
 }
 
 
