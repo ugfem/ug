@@ -2323,6 +2323,36 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
   assert(0); return(-1);
 }
 
+#ifdef RESTRICT_BY_FUNCTION
+
+/****************************************************************************/
+/*																			*/
+/* Function:  ELEMENT_TO_MARK                                                                                           */
+/*																			*/
+/* Purpose:   gets the element which has to be marked						*/
+/*																			*/
+/* Param:	  ELEMENT *MarkElement: element to be estimated                                 */
+/*																			*/
+/* return:	  ELEMENT *theElement to mark                                                                   */
+/*			  NULL: MarkElement was no surface element                      */
+/*			  !NULL: first element downward with class RED_CLASS            */
+/*																			*/
+/****************************************************************************/
+
+ELEMENT *ELEMENT_TO_MARK (ELEMENT *theElement)
+{
+  if (IS_REFINED(theElement)) return(NULL);
+
+  while (ECLASS(theElement) != RED_CLASS)
+  {
+    theElement = EFATHER(theElement);
+    ASSERT(theElement != NULL);
+  }
+
+  return(theElement);
+}
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* Function:  GetRefinementMark                                                                                         */
@@ -2338,7 +2368,7 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
 /*																			*/
 /****************************************************************************/
 
-INT GetRefinementMark (const ELEMENT *theElement, INT *rule, void *data)
+INT GetRefinementMark (ELEMENT *theElement, INT *rule, void *data)
 {
   INT *side = data;
   INT mark;
@@ -2400,7 +2430,7 @@ INT GetRefinementMark (const ELEMENT *theElement, INT *rule, void *data)
 /*																			*/
 /****************************************************************************/
 
-INT GetRefinementMarkType (const ELEMENT *theElement)
+INT GetRefinementMarkType (ELEMENT *theElement)
 {
   INT rule;
   INT side;
