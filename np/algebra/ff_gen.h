@@ -51,6 +51,10 @@
 #define FFCOMM
 #endif
 
+/* if set, the schur complement of the cross system is approximated as a
+   diagonal matrix */
+#define FF_CROSS_SCHUR_DIAG_APPROX
+
 #ifndef M_LN2
 #define M_LN2         0.69314718055994530942
 #endif
@@ -79,7 +83,7 @@
 #ifdef Debug
 #define GET_AUX_VEC                                     ( (TOS_FF_Vecs<FF_MAX_VECS) ? FF_Vecs[TOS_FF_Vecs++] : -1 )
 /* tricky: enforce, that TOS_FF_Vecs-- and ASSERT(FALSE) have the same type */
-#define FREE_AUX_VEC(vec)                       ( (vec==FF_Vecs[TOS_FF_Vecs-1]) ? (TOS_FF_Vecs--) : 0,ASSERT(FALSE) );
+#define FREE_AUX_VEC(vec)                       ( (vec==FF_Vecs[TOS_FF_Vecs-1]) ? (TOS_FF_Vecs--) : (ASSERT(FALSE),0) );
 #else
 #define GET_AUX_VEC                                     (FF_Vecs[TOS_FF_Vecs++])
 #define FREE_AUX_VEC(vec)                       (TOS_FF_Vecs--);
