@@ -9205,14 +9205,6 @@ static INT PlotCommand (INT argc, char **argv)
   PICTURE *thePic;
   WORK myWork,*theWork;
 
-        #ifdef ModelP
-  if (!CONTEXT(me) && me!=master) {
-    PRINTDEBUG(ui,0,("%2d: PlotCommand(): me not in Context,"\
-                     " nothing plotted\n",me))
-    return(OKCODE);
-  }
-        #endif
-
   NO_OPTION_CHECK(argc,argv);
 
   theWork = &myWork;
