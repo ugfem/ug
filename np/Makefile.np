@@ -15,7 +15,8 @@ MODULES = PROCS ALGEBRA UDM FIELD AMGLIB
 # object files for both dimensions
 OBJECTS = initnp.o
 
-all: $(MODULES) Makefile.np
+all: $(OBJECTS) $(MODULES) Makefile.np
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
 	make -f Makefile.np $(UG_LIB) 
 
 $(UG_LIB): $(OBJECTS) 
