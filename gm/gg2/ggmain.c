@@ -1691,7 +1691,7 @@ static INT RedistributeFLs (FRONTLIST *myList,FRONTLIST *thenewFL)
 /*                                                                          */
 /****************************************************************************/
 
-static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myList,FRONTCOMP *theFC,FRONTCOMP *thenewFC, int* FlgForAccel, FRONTCOMP *the_old_succ, FRONTCOMP **disp_FC, FRONTLIST **disp_FL)
+static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myList,FRONTCOMP *theFC,FRONTCOMP *thenewFC, INT* FlgForAccel, FRONTCOMP *the_old_succ, FRONTCOMP **disp_FC, FRONTLIST **disp_FL)
 {
 
   MULTIGRID *theMG;
