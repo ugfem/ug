@@ -1,0 +1,36 @@
+#!/usr/bin/perl
+
+# This command is used to call 'ranlib' after 'ar' commands.
+# (ranlib has to be invoked on MacOS X systems)
+#
+# Set AR to 'ugarranlib <ar>' in your mk.arch file to use this skript.
+# <ar> is the 'ar' program you want to use.
+#
+# This skript won't work if the option list for ar contains more than
+# one item.
+
+if ( $ENV{'OSTYPE'}!='rhapsody' )
+{
+    print "This command is only needed for MacOS X systems\n";
+    exit 0;
+}
+
+$ENV{'UGROOT'} or die "define environment variable 'UGROOT'\n";
+
+if (!@ARGV) {die "usage: ugarranlib <ar> <ar-options> <library> object-file ...\n";} 
+
+$n=@ARGV;
+
+$arcall    = $ARGV[0] . ' ';
+$ranlibcall= 'ranlib ' . $ARGV[2];
+
+for ($i=1; $i<$n; $i++)
+{
+    $arcall = $arcall . $ARGV[$i] . ' ';
+}
+
+print "$arcall \n";
+system($arcall);
+
+print "$ranlibcall \n";
+system($ranlibcall);
