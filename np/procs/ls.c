@@ -127,6 +127,24 @@ typedef struct
 
 } NP_CR;
 
+typedef struct
+{
+  NP_LINEAR_SOLVER ls;
+
+  INT maxiter;
+  INT baselevel;
+  INT display;
+  INT restart;
+
+  DOUBLE rbr;
+  VEC_SCALAR weight;
+  VECDATA_DESC *rb;
+  VECDATA_DESC *p;
+  VECDATA_DESC *pb;
+  VECDATA_DESC *h;
+
+} NP_BCG;
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
@@ -1008,6 +1026,230 @@ static INT CRConstruct (NP_BASE *theNP)
 }
 
 /****************************************************************************/
+/*D
+   bcg - numproc for the bi conjugate gradient method
+
+   DESCRIPTION:
+   This numproc executes the bi-conjugate gradient method.
+
+   .vb
+   npinit [$x <sol>] [$b <rhs>] [$A <mat>]
+       [$p <p>] [$pb <p-bar>] [$rb <r-bar>] [$h <help>]
+       [$d {full|red|no}] [$weight <VEC_SCALAR>]
+   .ve
+
+   .  $c~<sol> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $P~<iteration> - preconditioner
+   .  $d - display modus
+
+   'npexecute <name> [$i] [$d] [$r] [$s] [$p]'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+
+   EXAMPLE:
+   .vb
+   npcreate pre $c ilu;           npinit pre;
+   npcreate post $c ilu;          npinit post;
+   npcreate base $c ilu;          npinit base $n 3;
+   npcreate basesolver $c cg;     npinit basesolver $red 0.001 $I base;
+   npcreate transfer $c transfer; npinit transfer;
+   npcreate lmgc $c lmgc;         npinit lmgc $S pre post basesolver $T transfer;
+   npcreate mgs $c cr;            npinit mgs $A MAT $x sol $b rhs
+                                          $red 0.00001 $I lmgc $d full;
+   .ve
+   D*/
+/****************************************************************************/
+
+static INT BCGInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_BCG *np;
+  INT i;
+
+  np = (NP_BCG *) theNP;
+  if (sc_read (np->weight,NULL,"weight",argc,argv))
+    for (i=0; i<MAX_VEC_COMP; i++) np->weight[i] = 1.0;
+  np->p  = ReadArgvVecDesc(theNP->mg,"p",argc,argv);
+  np->pb = ReadArgvVecDesc(theNP->mg,"pb",argc,argv);
+  np->rb = ReadArgvVecDesc(theNP->mg,"rb",argc,argv);
+  np->h = ReadArgvVecDesc(theNP->mg,"h",argc,argv);
+  if (ReadArgvINT("m",&(np->maxiter),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (ReadArgvINT("r",&(np->restart),argc,argv))
+    np->restart = 0;
+  if (np->restart<0) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  np->display = ReadArgvDisplay(argc,argv);
+  np->baselevel = 0;
+
+  return (NPLinearSolverInit(&np->ls,argc,argv));
+}
+
+static INT BCGDisplay (NP_BASE *theNP)
+{
+  NP_BCG *np;
+
+  np = (NP_BCG *) theNP;
+  NPLinearSolverDisplay(&np->ls);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"m",(int)np->maxiter);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"r",(int)np->restart);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)np->baselevel);
+  if (np->display == PCR_NO_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
+  else if (np->display == PCR_RED_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
+  else if (np->display == PCR_FULL_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
+  if (np->p != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"p",ENVITEM_NAME(np->p));
+  if (np->pb != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"pp",ENVITEM_NAME(np->pb));
+  if (np->rb != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"h1",ENVITEM_NAME(np->rb));
+  if (np->h != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"h2",ENVITEM_NAME(np->h));
+  if (np->p != NULL) if (sc_disp(np->weight,np->p,"weight")) REP_ERR_RETURN (1);
+
+  return (0);
+}
+
+static INT BCGPreProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+  NP_BCG *np;
+  INT i;
+
+  np = (NP_BCG *) theNP;
+
+  if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->p)) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->pb)) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->rb)) NP_RETURN(1,result[0]);
+
+  return(0);
+}
+
+static INT BCGPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  NP_BCG *np;
+
+  np = (NP_BCG *) theNP;
+  FreeVD(np->ls.base.mg,np->baselevel,level,np->p);
+  FreeVD(np->ls.base.mg,np->baselevel,level,np->pb);
+  FreeVD(np->ls.base.mg,np->baselevel,level,np->rb);
+
+  return(0);
+}
+
+static INT BCGSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, VEC_SCALAR abslimit, VEC_SCALAR reduction, LRESULT *lresult)
+{
+  NP_BCG *np;
+  VEC_SCALAR defect2reach,scal,alpha;
+  INT i,j,bl,PrintID,restart;
+  char text[DISPLAY_WIDTH+4];
+  DOUBLE s,t;
+
+  /* store passed reduction and abslimit */
+  for (i=0; i<VD_NCOMP(x); i++)
+  {
+    NPLS_red(theNP)[i] = reduction[i];
+    NPLS_abs(theNP)[i] = abslimit[i];
+  }
+
+  /* prepare */
+  np = (NP_BCG *) theNP;
+  if (AllocVDFromVD(theNP->base.mg,level,level,x,&np->h)) NP_RETURN(1,lresult->error_code);
+
+  /* print defect */
+  CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
+  if (np->display > PCR_NO_DISPLAY) if (PreparePCR(x,np->display,text,&PrintID)) NP_RETURN(1,lresult->error_code);
+  for (i=0; i<VD_NCOMP(x); i++)
+    lresult->first_defect[i] = lresult->last_defect[i];
+  if (sc_mul_check(defect2reach,lresult->first_defect,reduction,b)) NP_RETURN(1,lresult->error_code);
+  if (np->display > PCR_NO_DISPLAY) if (DoPCR(PrintID,lresult->first_defect,PCR_CRATE)) NP_RETURN(1,lresult->error_code);
+  if (sc_cmp(lresult->first_defect,abslimit,b)) lresult->converged = 1;
+  else lresult->converged = 0;
+  lresult->number_of_linear_iterations = 0;
+
+  /* go */
+  restart = 1;
+  for (i=0; i<np->maxiter; i++)
+  {
+    if (lresult->converged) break;
+
+    /* restart ? */
+    if ((np->restart>0 && i%np->restart==0) || restart)
+    {
+      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->rb,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->p,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->pb,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (s_ddot (theNP->base.mg,np->baselevel,level,np->rb,b,scal)!=NUM_OK) REP_ERR_RETURN (1);
+      np->rbr=0.0; for (j=0; j<VD_NCOMP(x); j++) np->rbr += np->weight[j]*np->weight[j]*scal[j];
+      restart = 0;
+    }
+
+    /* update x, b */
+    if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->h,A,np->p,EVERY_CLASS)) REP_ERR_RETURN (1);
+    if (s_ddot (theNP->base.mg,np->baselevel,level,np->h,np->pb,scal)!=NUM_OK) REP_ERR_RETURN (1);
+    t=0.0; for (j=0; j<VD_NCOMP(x); j++) t += np->weight[j]*np->weight[j]*scal[j];
+    if (ABS(np->rbr)>1e3*ABS(t))
+    {
+      restart=1;
+      continue;
+    }
+    for (j=0; j<VD_NCOMP(x); j++) alpha[j] = -np->rbr/t;
+    if (s_daxpy (theNP->base.mg,np->baselevel,level,b,alpha,np->h)!= NUM_OK) REP_ERR_RETURN (1);
+    if (s_dtpmatmul_set(theNP->base.mg,np->baselevel,level,np->h,A,np->pb,EVERY_CLASS)) REP_ERR_RETURN (1);
+    if (s_daxpy (theNP->base.mg,np->baselevel,level,np->rb,alpha,np->h)!= NUM_OK) REP_ERR_RETURN (1);
+    for (j=0; j<VD_NCOMP(x); j++) alpha[j] = -alpha[j];
+    if (s_daxpy (theNP->base.mg,np->baselevel,level,x,alpha,np->p)!= NUM_OK) REP_ERR_RETURN (1);
+    if (s_ddot (theNP->base.mg,np->baselevel,level,np->rb,b,scal)!=NUM_OK) REP_ERR_RETURN (1);
+    t=0.0; for (j=0; j<VD_NCOMP(x); j++) t += np->weight[j]*np->weight[j]*scal[j];
+    if (ABS(t)>1e3*ABS(np->rbr))
+    {
+      restart=1;
+      continue;
+    }
+    for (j=0; j<VD_NCOMP(x); j++) alpha[j] = t/np->rbr;
+    np->rbr = t;
+    if (s_dscale (theNP->base.mg,np->baselevel,level,np->p,alpha)) REP_ERR_RETURN (1);
+    if (s_daxpy (theNP->base.mg,np->baselevel,level,np->p,Factor_One,b)!= NUM_OK) REP_ERR_RETURN (1);
+    if (s_dscale (theNP->base.mg,np->baselevel,level,np->pb,alpha)) REP_ERR_RETURN (1);
+    if (s_daxpy (theNP->base.mg,np->baselevel,level,np->pb,Factor_One,np->rb)!= NUM_OK) REP_ERR_RETURN (1);
+
+    /* redisuum */
+    if (LinearResiduum(theNP,bl,level,x,b,A,lresult)) REP_ERR_RETURN (1);
+    if (np->display > PCR_NO_DISPLAY)
+      if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE)) NP_RETURN(1,lresult->error_code);
+    if (sc_cmp(lresult->last_defect,abslimit,b) || sc_cmp(lresult->last_defect,defect2reach,b))
+    {
+      lresult->converged = 1;
+      lresult->number_of_linear_iterations=i+1;
+      break;
+    }
+  }
+  FreeVD(theNP->base.mg,level,level,np->h);
+  if (np->display > PCR_NO_DISPLAY)
+  {
+    if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) NP_RETURN(1,lresult->error_code);
+    if (PostPCR(PrintID,":ls:avg")) NP_RETURN(1,lresult->error_code);
+    if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1))) NP_RETURN(1,lresult->error_code);
+  }
+
+  return (0);
+}
+
+static INT BCGConstruct (NP_BASE *theNP)
+{
+  NP_BCG *np;
+
+  theNP->Init = BCGInit;
+  theNP->Display = BCGDisplay;
+  theNP->Execute = NPLinearSolverExecute;
+
+  np = (NP_BCG *) theNP;
+  np->ls.PreProcess = BCGPreProcess;
+  np->ls.Defect = LinearDefect;
+  np->ls.Residuum = LinearResiduum;
+  np->ls.Solver = BCGSolver;
+  np->ls.PostProcess = BCGPostProcess;
+
+  return(0);
+}
+
+/****************************************************************************/
 /*
    InitLinearSolver	- Init this file
 
@@ -1036,6 +1278,8 @@ INT InitLinearSolver ()
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".cg",sizeof(NP_CG),CGConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".cr",sizeof(NP_CR),CRConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".bcg",sizeof(NP_CR),BCGConstruct))
     REP_ERR_RETURN (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
