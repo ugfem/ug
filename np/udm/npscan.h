@@ -79,19 +79,19 @@
 /*																			*/
 /****************************************************************************/
 
-INT ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE *pos);
+INT ReadArgvPosition                                    (const char *name, INT argc, char **argv, DOUBLE *pos);
 
-/* reading VECDESC and MATDESC                                              */
+VECDATA_DESC *ReadArgvVecDesc                   (MULTIGRID *theMG, const char *name,
+                                                 INT argc, char **argv);
+VEC_TEMPLATE *ReadArgvVecTemplate               (const FORMAT *fmt, const char *name,
+                                                 INT argc, char **argv);
+VEC_TEMPLATE *ReadArgvVecTemplateSub    (const FORMAT *fmt, const char *name,
+                                         INT argc, char **argv, INT *sub);
+MATDATA_DESC *ReadArgvMatDesc                   (MULTIGRID *theMG, const char *name,
+                                                 INT argc, char **argv);
 
-VECDATA_DESC *ReadArgvVecDesc      (MULTIGRID *theMG, const char *name,
-                                    INT argc, char **argv);
-VEC_TEMPLATE *ReadArgvVecTemplate  (MULTIGRID *theMG, const char *name,
-                                    INT argc, char **argv);
-MATDATA_DESC *ReadArgvMatDesc      (MULTIGRID *theMG, const char *name,
-                                    INT argc, char **argv);
-
-NP_BASE      *ReadArgvNumProc      (MULTIGRID *theMG, const char *name, const char *class,
-                                    INT argc, char **argv);
+NP_BASE      *ReadArgvNumProc                   (MULTIGRID *theMG, const char *name, const char *class,
+                                                 INT argc, char **argv);
 
 /* for reading damping factors etc. */
 INT ReadVecTypeINTs             (const FORMAT *fmt, char *str, INT n, INT nINT[MAXVECTORS], INT theINTs[][MAXVECTORS]);
@@ -99,7 +99,7 @@ INT ReadVecTypeDOUBLEs  (const FORMAT *fmt, char *str, INT n, INT nDOUBLE[MAXVEC
 INT ReadVecTypeOrder    (const FORMAT *fmt, char *str, INT n, INT MaxPerType, INT *nOrder, INT theOrder[]);
 INT ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, char *class_name, INT n, INT nNUMPROC[MAXVECTORS], NP_BASE *theNUMPROCs[][MAXVECTORS]);
 
-/* tools for VEC_SCALAR                                                     */
+/* tools for VEC_SCALAR */
 INT sc_read          (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const char *name, INT argc, char **argv);
 INT sc_disp      (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name);
 INT sc_cmp           (VEC_SCALAR x, const VEC_SCALAR y, const VECDATA_DESC *theVD);

@@ -167,7 +167,7 @@ INT ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE *pos)
    This call locks the vector descriptor for dynamic allocation.
 
    SYNTAX:
-   $s <vec desc name>[/<template name>]
+   '$<name> <vec desc name>[/<template name>]'
 
    RETURN VALUE:
    VECDATA_DESC *
@@ -205,28 +205,24 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
 
 /****************************************************************************/
 /*D
-   ReadArgvVecDesc - Read command strings
+   ReadArgvVecTemplate - read vec template from command string
 
    SYNOPSIS:
-   VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
-                                  INT argc, char **argv);
+   VEC_TEMPLATE *ReadArgvVecTemplate (const FORMAT *fmt, const char *name,
+                                                           INT argc, char **argv)
 
    PARAMETERS:
-   .  theMG - pointer to a multigrid
+   .  fmt - pointer to a format
    .  name - name of the argument
    .  argc - argument counter
    .  argv - argument vector
 
    DESCRIPTION:
-   This function reads a symbol name from the command strings and returns
-   a pointer to the corresponding vector descriptor.
-
-   CAUTION: If no template is specified the first vector template is used.
-
-   This call locks the vector descriptor for dynamic allocation.
+   This function reads a vector template name from the command strings and returns
+   a pointer to the corresponding vector template.
 
    SYNTAX:
-   $s <vec desc name>[/<template name>]
+   '$<name> <vec template name>'
 
    RETURN VALUE:
    VECDATA_DESC *
@@ -235,7 +231,7 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
    D*/
 /****************************************************************************/
 
-VEC_TEMPLATE *ReadArgvVecTemplate (MULTIGRID *theMG, const char *name,
+VEC_TEMPLATE *ReadArgvVecTemplate (const FORMAT *fmt, const char *name,
                                    INT argc, char **argv)
 {
   char value[VALUELEN],vtname[NAMESIZE];
@@ -246,7 +242,65 @@ VEC_TEMPLATE *ReadArgvVecTemplate (MULTIGRID *theMG, const char *name,
   if (sscanf(value,expandfmt(CONCAT3("%",NAMELENSTR,"[a-zA-Z0-9_]")),vtname)!=1)
     REP_ERR_RETURN (NULL);
 
-  return(GetVectorTemplate(MGFORMAT(theMG),vtname));
+  return(GetVectorTemplate(fmt,vtname));
+}
+
+/****************************************************************************/
+/*D
+   ReadArgvVecTemplateSub - read vec template sub descriptor from command string
+
+   SYNOPSIS:
+   VEC_TEMPLATE *ReadArgvVecTemplateSub (const FORMAT *fmt, const char *name,
+                                                                           INT argc, char **argv, INT *sub)
+
+   PARAMETERS:
+   .  fmt - pointer to a format
+   .  name - name of the argument
+   .  argc - argument counter
+   .  argv - argument vector
+   .  sub - index of sub descriptor in template
+
+   DESCRIPTION:
+   This function reads a vector template name and the name of one of its sub descriptors
+   from the command strings and returns a pointer to the corresponding vector template plus
+   the index of the sub descriptor in the template.
+
+   SYNTAX:
+   '$<name> <vec template name> <sub descriptor name>'
+
+   RETURN VALUE:
+   VECDATA_DESC *
+   .n    pointer to vector descriptor
+   .n    NULL if error occurs
+   D*/
+/****************************************************************************/
+
+VEC_TEMPLATE *ReadArgvVecTemplateSub (const FORMAT *fmt, const char *name,
+                                      INT argc, char **argv, INT *sub)
+{
+  VEC_TEMPLATE *vt;
+  INT i;
+  char value[VALUELEN],vtname[NAMESIZE],subname[NAMESIZE];
+
+  if (ReadArgvChar(name,value,argc,argv))
+    REP_ERR_RETURN (NULL);
+
+  if (sscanf(value,expandfmt(CONCAT5("%",NAMELENSTR,"[a-zA-Z0-9_] %",NAMELENSTR,"[a-zA-Z0-9_]")),vtname,subname)!=2)
+    REP_ERR_RETURN (NULL);
+
+  vt = GetVectorTemplate(fmt,vtname);
+  if (vt==NULL)
+    REP_ERR_RETURN(NULL);
+
+  for (i=0; i<VT_NSUB(vt); i++)
+    if (strcmp(SUBV_NAME(VT_SUB(vt,i)),subname)==0)
+      break;
+  if (i>=VT_NSUB(vt))
+    REP_ERR_RETURN(NULL);
+
+  *sub = i;
+
+  return (vt);
 }
 
 /****************************************************************************/
