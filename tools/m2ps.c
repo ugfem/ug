@@ -180,6 +180,16 @@ FILE  *OpenPSFile(char *filename, char *title, int x, int y, int w, int h )
 
   fprintf(file,"\n");
 
+  /* defines */
+  fprintf(file,"/M {moveto} def\n");
+  fprintf(file,"/S {lineto stroke} def\n");
+  fprintf(file,"/L {lineto} def\n");
+  fprintf(file,"/C {closepath fill} def\n");
+  fprintf(file,"/N {newpath} def\n");
+  fprintf(file,"/R {setrgbcolor} def\n");
+
+  fprintf(file,"\n");
+
   /* write end of prolog */
   fprintf(file,"%%%%Endprolog\n%%\n");
   fprintf(file,"%%%%Page: 1 1\n%%\n\n");
@@ -226,7 +236,7 @@ void IF_MoveTo (short x, short y)
 
 void IF_DrawTo (short x, short y)
 {
-  fprintf(psfile,"%g %g moveto %g %g lineto stroke\n",
+  fprintf(psfile,"%g %g M %g %g S\n",
           TRFMX(IF_cx,IF_cy),TRFMY(IF_cx,IF_cy),TRFMX(x,y),TRFMY(x,y));
   IF_cx = x; IF_cy = y;
   return;
@@ -236,10 +246,10 @@ void IF_PolyLine (short n, short *x, short *y)
 {
   int i;
 
-  fprintf(psfile,"newpath\n");
-  fprintf(psfile,"%g %g moveto\n",TRFMX(x[0],y[0]),TRFMY(x[0],y[0]));
+  fprintf(psfile,"N\n");
+  fprintf(psfile,"%g %g M\n",TRFMX(x[0],y[0]),TRFMY(x[0],y[0]));
   for (i=1; i<n; i++)
-    fprintf(psfile,"%g %g lineto\n",TRFMX(x[i],y[i]),TRFMY(x[i],y[i]));
+    fprintf(psfile,"%g %g L\n",TRFMX(x[i],y[i]),TRFMY(x[i],y[i]));
   fprintf(psfile,"stroke\n");
 
   return;
@@ -249,11 +259,11 @@ void IF_Polygon (short n, short *x, short *y)
 {
   int i;
 
-  fprintf(psfile,"newpath\n");
-  fprintf(psfile,"%g %g moveto\n",TRFMX(x[0],y[0]),TRFMY(x[0],y[0]));
+  fprintf(psfile,"N\n");
+  fprintf(psfile,"%g %g M\n",TRFMX(x[0],y[0]),TRFMY(x[0],y[0]));
   for (i=1; i<n; i++)
-    fprintf(psfile,"%g %g lineto\n",TRFMX(x[i],y[i]),TRFMY(x[i],y[i]));
-  fprintf(psfile,"closepath fill\n");
+    fprintf(psfile,"%g %g L\n",TRFMX(x[i],y[i]),TRFMY(x[i],y[i]));
+  fprintf(psfile,"C\n");
 
   return;
 }
@@ -414,7 +424,7 @@ void IF_Foreground (unsigned char n)
 {
   if (IF_cc==n) return;
 
-  fprintf(psfile,"%.3f %.3f %.3f setrgbcolor\n",red[n],green[n],blue[n]);
+  fprintf(psfile,"%.3f %.3f %.3f R\n",red[n],green[n],blue[n]);
   IF_cc = n;
   return;
 }
@@ -424,7 +434,7 @@ void IF_SetEntry (unsigned char n, short r, short g, short b)
   red[n] = ((float)r)/255.0;
   green[n] = ((float)g)/255.0;
   blue[n] = ((float)b)/255.0;
-  fprintf(psfile,"%.3f %.3f %.3f setrgbcolor\n",red[n],green[n],blue[n]);
+  fprintf(psfile,"%.3f %.3f %.3f R\n",red[n],green[n],blue[n]);
   IF_cc = n;
   return;
 }
@@ -439,7 +449,7 @@ void IF_SetPalette (short x, short y, short *r, short *g, short *b)
     green[i] = ((float)g[i-x])/255.0;
     blue[i] = ((float)b[i-x])/255.0;
   }
-  fprintf(psfile,"%.3f %.3f %.3f setrgbcolor\n",red[x],green[x],blue[x]);
+  fprintf(psfile,"%.3f %.3f %.3f R\n",red[x],green[x],blue[x]);
   IF_cc = (unsigned char) x;
   return;
 }
