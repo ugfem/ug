@@ -1203,6 +1203,23 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
   DOUBLE fac,*local;
   INT i,k,n;
 
+  /*
+     if (NSONS(theElement) != 0)
+     {
+      ELEMENT *SonList[MAX_SONS],*theSon;
+
+          if (GetAllSons(theElement,SonList) == GM_OK)
+              for (i=0; SonList[i]!=NULL; i++) {
+                      theSon = SonList[i];
+                          for (k=0; k<CORNERS_OF_ELEM(theSon); k++) {
+                              theNode = CORNER(theSon,k);
+                                  if (NTYPE(theNode) != SIDE_NODE) continue;
+                                  if (side == GetSideIDFromScratch(theSon,theNode))
+                                      return(theNode);
+                          }
+                  }
+     }
+   */
   n = 0;
   for (i=0; i<EDGES_OF_SIDE(theElement,side); i++) {
     theNode = GetMidNode(theElement,EDGE_OF_SIDE(theElement,side,i));
@@ -1290,11 +1307,13 @@ INT GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
       GetEdge(CORNER(theFather,CORNER_OF_EDGE(theFather,i,0)),
               CORNER(theFather,CORNER_OF_EDGE(theFather,i,1))));
   for (j=0; j<SIDES_OF_ELEM(theElement); j++) {
+    if (3 == CORNERS_OF_SIDE(theElement,j)) continue;
     for (l=0; l<CORNERS_OF_SIDE(theElement,j); l++)
       if (theNode == CORNER(theElement,CORNER_OF_SIDE(theElement,j,l)))
         break;
     if (l == CORNERS_OF_SIDE(theElement,j)) continue;
     for (i=0; i<SIDES_OF_ELEM(theFather); i++) {
+      if (3 == CORNERS_OF_SIDE(theFather,i)) continue;
       cnt = 0;
       for (k=0; k<EDGES_OF_SIDE(theFather,i); k++)
         for (l=0; l<CORNERS_OF_SIDE(theElement,j); l++) {
@@ -1306,6 +1325,18 @@ INT GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
         }
     }
   }
+  for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+  {
+    ELEMENT *nb = NBELEM(theElement,j);
+
+    if (3 == CORNERS_OF_SIDE(theElement,j)) continue;
+    if (nb == NULL) continue;
+
+    for (l=0; l<CORNERS_OF_ELEM(nb); l++)
+      if (theNode == CORNER(nb,l))
+        return(GetSideIDFromScratch(nb,theNode));
+  }
+
   return(SIDES_OF_ELEM(theFather));
 }
 
@@ -2409,6 +2440,10 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
         SET_SON(Father,where,pe);
       SETNSONS(Father,NSONS(Father)+1);
     }
+  }
+
+  if (me == -1) {
+    assert(KeyForObject((KEY_OBJECT *)pe) != -66529);
   }
 
   /* return ok */
@@ -3803,7 +3838,7 @@ INT Collapse (MULTIGRID *theMG)
       theVertex = PFIRSTVERTEX(theGrid);
       GRID_UNLINK_VERTEX(theGrid,theVertex);
       GRID_LINK_VERTEX(GRID_ON_LEVEL(theMG,tl),
-                       theVertex,PRIO(theVertex));
+                       theVertex,VXPRIO(theVertex));
     }
     GRID_ON_LEVEL(theMG,l) = NULL;
   }
