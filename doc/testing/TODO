@@ -1,11 +1,34 @@
-20040115:
-	1. introduce cp into testboard for web page
-	2. switching compilers
+20040113:
+*	1. introduce cp into testboard for web page
+*	2. switching compilers (Thimo)
 	3. integration of test into UG Makefile mechanism
-	4. distinction between not applicable (NA) tests and failed builds (NOTRUN)
-		-> may modifications in Dart/Source/Client/test.tcl  and Dart/Source/Server/Dashboard.xsl
-			are necessary
-	5. restructuring of BUILD TEST SUBMIT cycle
-		-> perform all possible builds + perform all possible test
-		-> this avoids 4.
-	6. script for EXPERIMENTAL builds and tests
+*	4. distinction between not applicable (NA) tests and failed builds (NOTRUN)
+*		-> may modifications in Dart/Source/Client/test.tcl  and Dart/Source/Server/Dashboard.xsl
+*			are necessary
+*	5. restructuring of BUILD TEST SUBMIT cycle
+*		-> perform all possible builds + perform all possible test
+*		-> this avoids 4.
+*	6. script for EXPERIMENTAL builds and tests
+
+20040126:
+*	1. DONE
+*	6. DONE
+*	7. Copy of the SITES directory
+*	8. Testen von binnew NIGHTLY and EXPERIMENTAL
+	9. im DartConfiguration.tcl: ConfigureCommand: ..../ugconf_dart
+	10. extensions for application testing
+		- integration of testing into Makefiles: make test
+		- target test inside Makefile:
+			test:
+				ugconf $UG_BUILD_OPTIONS
+				ug_dart_conf.pl $APPL_DIRECTORY
+		- application developer creates his own DartTestfile
+
+20040202:
+*	4. 10. avoids 4.
+*	5. 10. avoids 5.
+*	7. DONE
+*	8. DONE
+	11. Copying of TestingResults/Javascript/ for Calendar
+	12. Wiring between  NIGHTLY and EXPERIMENTAL Dashboards
+	13. GCOV info NOT for PC
