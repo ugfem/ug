@@ -1,6 +1,6 @@
 /****************************************************************************/
 /*																			*/
-/* File:      matrix.C														*/
+/* File:      famg_matrix.C													*/
 /*																			*/
 /* Purpose:   famg matrix classes functions									*/
 /*																			*/
@@ -21,10 +21,10 @@
 
 #include <iostream.h>
 #include <math.h>
-#include "misc.h"
-#include "matrix.h"
-#include "heap.h"
-#include "grid.h"
+#include "famg_misc.h"
+#include "famg_matrix.h"
+#include "famg_heap.h"
+#include "famg_grid.h"
 
 /* RCS_ID
 $Header$

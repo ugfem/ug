@@ -1,6 +1,6 @@
 /****************************************************************************/
 /*																			*/
-/* File:      interface.C													*/
+/* File:      famg_interface.C												*/
 /*																			*/
 /* Purpose:   famg interface												*/
 /*																			*/
@@ -19,9 +19,9 @@
 /*																			*/
 /****************************************************************************/
 
-#include "system.h"
-#include "heap.h"
-#include "interface.h"
+#include "famg_system.h"
+#include "famg_heap.h"
+#include "famg_interface.h"
 
 /* RCS_ID
 $Header$

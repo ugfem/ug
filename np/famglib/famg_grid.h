@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:      grid.h														*/
+/* File:      famg_grid.h													*/
 /*																			*/
 /* Purpose:   famg grid classes												*/
 /*                                                                          */
@@ -22,10 +22,10 @@
 #ifndef __FAMG_GRID__
 #define __FAMG_GRID__
 
-#include "matrix.h"
-#include "decomp.h"
-#include "transfer.h"
-#include "graph.h"
+#include "famg_matrix.h"
+#include "famg_decomp.h"
+#include "famg_transfer.h"
+#include "famg_graph.h"
 
 /* RCS_ID
    $Header$

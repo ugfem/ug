@@ -1,6 +1,6 @@
 /****************************************************************************/
 /*																			*/
-/* File:      transfer.C													*/
+/* File:      famg_transfer.C												*/
 /*																			*/
 /* Purpose:   famg transfer classes functions								*/
 /*																			*/
@@ -19,10 +19,10 @@
 /*																			*/
 /****************************************************************************/
 
-#include "transfer.h"
-#include "heap.h"
-#include "misc.h"
-#include "grid.h"
+#include "famg_transfer.h"
+#include "famg_heap.h"
+#include "famg_misc.h"
+#include "famg_grid.h"
 
 /* RCS_ID
 $Header$

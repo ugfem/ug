@@ -1,6 +1,6 @@
 /****************************************************************************/
 /*																			*/
-/* File:      uginterface.C													*/
+/* File:      famg_uginterface.C											*/
 /*																			*/
 /* Purpose:   famg - ug interface											*/
 /*																			*/
@@ -23,9 +23,9 @@ extern "C"
 {
 #include "famginterface.h"
 }
-#include "matrix.h"
-#include "system.h"
-#include "heap.h"
+#include "famg_matrix.h"
+#include "famg_system.h"
+#include "famg_heap.h"
 
 /* RCS_ID
 $Header$

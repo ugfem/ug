@@ -26,8 +26,8 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "interface.h"
-#include "system.h"
+#include "famg_interface.h"
+#include "famg_system.h"
 
 /* RCS_ID
 $Header$

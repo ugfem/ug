@@ -1,6 +1,6 @@
 /****************************************************************************/
 /*																			*/
-/* File:      grid.C														*/
+/* File:      famg_grid.C													*/
 /*																			*/
 /* Purpose:   FAMG grid classes functions									*/
 /*																			*/
@@ -23,14 +23,14 @@
 #include <strstream.h>
 #include <math.h>
 
-#include "misc.h"
-#include "grid.h"
-#include "graph.h"
-#include "matrix.h"
-#include "decomp.h"
-#include "transfer.h"
-#include "heap.h"
-#include "system.h"
+#include "famg_misc.h"
+#include "famg_grid.h"
+#include "famg_graph.h"
+#include "famg_matrix.h"
+#include "famg_decomp.h"
+#include "famg_transfer.h"
+#include "famg_heap.h"
+#include "famg_system.h"
 
 
 #ifdef UG_DRAW

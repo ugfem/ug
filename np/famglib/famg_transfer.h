@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:      matrix.h														*/
+/* File:      famg_matrix.h													*/
 /*																			*/
 /* Purpose:   famg tranfer classes											*/
 /*																			*/

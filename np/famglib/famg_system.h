@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:      system.h														*/
+/* File:      famg_system.h													*/
 /*																			*/
 /* Purpose:   famg system class												*/
 /*																			*/
@@ -25,9 +25,9 @@
 #define __FAMG_SYSTEM__
 
 #include <string.h>
-#include "matrix.h"
-#include "grid.h"
-#include "multigrid.h"
+#include "famg_matrix.h"
+#include "famg_grid.h"
+#include "famg_multigrid.h"
 
 /* RCS_ID
    $Header$

@@ -1,6 +1,6 @@
 /****************************************************************************/
 /*																			*/
-/* File:      heap.C														*/
+/* File:      famg_heap.C													*/
 /*																			*/
 /* Purpose:   famg heap class functions										*/
 /*                                                                          */
@@ -21,9 +21,9 @@
 #include <strstream.h>
 #include <math.h>
 #include <stdlib.h>
-#include "misc.h"
-#include "system.h"
-#include "heap.h"
+#include "famg_misc.h"
+#include "famg_system.h"
+#include "famg_heap.h"
 
 /* RCS_ID
 $Header$

@@ -1,6 +1,6 @@
 /****************************************************************************/
 /*																			*/
-/* File:      decomp.C														*/
+/* File:      famg_decomp.C													*/
 /*																			*/
 /* Purpose:   famg decomp classes functions									*/
 /*																			*/
@@ -20,10 +20,10 @@
 /****************************************************************************/
 
 #include <iostream.h>
-#include "decomp.h"
-#include "heap.h"
-#include "misc.h"
-#include "system.h"
+#include "famg_decomp.h"
+#include "famg_heap.h"
+#include "famg_misc.h"
+#include "famg_system.h"
 
 /* RCS_ID
 $Header$

@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:      misc.h														*/
+/* File:      famg_misc.h													*/
 /*																			*/
 /* Purpose:   misc definitions												*/
 /*																			*/

@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:      decomp.h														*/
+/* File:      famg_decomp.h													*/
 /*																			*/
 /* Purpose:   famg decomp classes											*/
 /*																			*/
@@ -24,7 +24,7 @@
 #ifndef __FAMG_DECOMP__
 #define __FAMG_DECOMP__
 
-#include "matrix.h"
+#include "famg_matrix.h"
 
 /* RCS_ID
    $Header$

@@ -1,6 +1,6 @@
 /****************************************************************************/
 /*																			*/
-/* File:      construct.C													*/
+/* File:      famg_construct.C												*/
 /*																			*/
 /* Purpose:   famg graph classes functions									*/
 /*																			*/
@@ -22,12 +22,12 @@
 #include <iostream.h>
 #include <math.h>
 
-#include "misc.h"
-#include "matrix.h"
-#include "heap.h"
-#include "grid.h"
-#include "graph.h"
-#include "system.h"
+#include "famg_misc.h"
+#include "famg_matrix.h"
+#include "famg_heap.h"
+#include "famg_grid.h"
+#include "famg_graph.h"
+#include "famg_system.h"
 
    
 #ifdef UG_DRAW

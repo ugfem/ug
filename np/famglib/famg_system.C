@@ -1,6 +1,6 @@
 /****************************************************************************/
 /*																			*/
-/* File:      system.C														*/
+/* File:      famg_system.C													*/
 /*																			*/
 /* Purpose:   famg system class functions									*/
 /*																			*/
@@ -25,10 +25,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include "system.h"
-#include "heap.h"
-#include "grid.h"
-#include "misc.h"
+#include "famg_system.h"
+#include "famg_heap.h"
+#include "famg_grid.h"
+#include "famg_misc.h"
 
 static FAMGParameter *famgparaptr;
 static int famgfirsti=0; // first index (0 or 1 ?)

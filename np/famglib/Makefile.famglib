@@ -13,8 +13,9 @@ include $(UGROOT)/ug.conf
 # path to library
 FAMGLIB      = $(UG_LIB)
 
-OBJECTS = heap.o misc.o matrix.o decomp.o transfer.o graph.o approx.o \
-          construct.o grid.o multigrid.o system.o uginterface.o ug-famg.o
+OBJECTS = famg_heap.o famg_misc.o famg_matrix.o famg_decomp.o famg_transfer.o \
+		  famg_graph.o famg_approx.o famg_construct.o famg_grid.o \
+		  famg_multigrid.o famg_system.o famg_uginterface.o ug-famg.o
 
 
 # paths to include files

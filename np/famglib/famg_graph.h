@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:      graph.h														*/
+/* File:      famg_graph.h													*/
 /*																			*/
 /* Purpose:   famg graph classes											*/
 /*																			*/
@@ -23,7 +23,7 @@
 #ifndef __FAMG_GRAPH__
 #define __FAMG_GRAPH__
 
-#include "matrix.h"
+#include "famg_matrix.h"
 
 /* RCS_ID
    $Header$
