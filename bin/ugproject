@@ -52,7 +52,7 @@ appl2 ()
 	fi
     if test -d $UGROOT/../ns2d
 	then
-		ugmake ns2d
+		ugmake ns2da
 	fi
     if test -d $UGROOT/../scalar2d
 	then
