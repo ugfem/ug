@@ -1386,7 +1386,7 @@ int FAMGGrid::ConstructTransfer()
 	while( !finished )
 	{
 		#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
-		//cout<<me<<": #"<<step<<endl; printlist(graph);
+		cout<<me<<": #"<<step<<endl; printlist(graph);
 		#endif
 
 		// taken from FAMGGrid::EliminateNodes
@@ -2455,6 +2455,55 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 			{
 				RETURN(1);
 			}
+
+#ifdef Debug
+			// check that palist is part of node->GetPaList()
+			int foundpa = 0;
+			FAMGPaList *nodepalist;
+		
+			//if( palist->GetNp() == 0 ) cout <<me<<": check "<<node->GetId()<<": 0 np"<<endl;
+			//else if( palist->GetNp() == 1 ) cout <<me<<": check "<<node->GetId()<<": 1 pa "<<palist->GetPa(0)<<endl;
+			//else if( palist->GetNp() == 2 ) cout <<me<<": check "<<node->GetId()<<": 2 pa "<<palist->GetPa(0)<<" "<<palist->GetPa(1)<<endl;
+
+			for( nodepalist = node->GetPaList(); !foundpa && nodepalist!=NULL; nodepalist = nodepalist->GetNext() )
+			{
+			
+				//if( nodepalist->GetNp() == 0 ) cout <<me<<":    0 np"<<endl;
+				//else if( nodepalist->GetNp() == 1 ) cout <<me<<":    1 pa "<<nodepalist->GetPa(0)<<endl;
+				//else if( nodepalist->GetNp() == 2 ) cout <<me<<":    2 pa "<<nodepalist->GetPa(0)<<" "<<nodepalist->GetPa(1)<<endl;
+
+				if( palist->GetNp() == 1 )
+				{
+					if( nodepalist->GetNp() == 1 )
+					{
+						foundpa = ( palist->GetPa(0) == nodepalist->GetPa(0) );
+					}
+					else
+					{
+						assert( nodepalist->GetNp() == 2 );
+						foundpa = ( palist->GetPa(0) == nodepalist->GetPa(0) ) || ( palist->GetPa(0) == nodepalist->GetPa(1) );
+					}
+				}
+				else if( palist->GetNp() == 2 ) 
+				{
+					if( nodepalist->GetNp() == 2 )
+					{
+						foundpa = ( palist->GetPa(0) == nodepalist->GetPa(0) && palist->GetPa(1) == nodepalist->GetPa(1) ) || ( palist->GetPa(1) == nodepalist->GetPa(0) && palist->GetPa(0) == nodepalist->GetPa(1) );
+					}
+					// else no comparison possible
+				}
+				else 
+				{
+					assert( palist->GetNp() == 0 );
+					foundpa = (nodepalist->GetNp() == 0);
+				}
+			}
+
+			assert(foundpa);
+
+#endif // Debug
+
+			Communication_Graph->UpdateNSons(palist, node->GetPaList(), Communication_Grid);
 			Communication_Graph->ClearPaList(node->GetPaList());		
 			node->SetPaList(palist);
 		
