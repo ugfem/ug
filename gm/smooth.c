@@ -140,6 +140,7 @@ static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, DOUBLE *
 {
   INT i,j,n,nmoved,found;
   ELEMENT *sonElement;
+  ELEMENT *SonList[MAX_SONS];
   NODE *theNode[MAX_SIDES_OF_ELEM];
   VERTEX *bndVertex[MAX_SIDES_OF_ELEM],*theVertex;
 #ifdef __TWODIM__
@@ -154,11 +155,11 @@ static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, DOUBLE *
   return(1);
 #endif
   nmoved = 0;
-  /*  printf("fatherElement %ld, centerNode %ld, x , y %f %f \n",ID(theElement),ID(centerNode),XC(MYVERTEX(centerNode)),YC(MYVERTEX(centerNode))); */
   /* find boundary sides with moved vertices */
+  GetAllSons(theElement, SonList);
   for (i=0; i<NSONS(theElement); i++)
   {
-    sonElement = SON(theElement,i);
+    sonElement = SonList[i];
     for (j=0; j<CORNERS_OF_ELEM(sonElement); j++)
     {
       /* take only midnodes */
@@ -257,12 +258,14 @@ static INT MovedNode (ELEMENT *theElement)
 {
   INT i,j;
   ELEMENT *sonElement;
+  ELEMENT *SonList[MAX_SONS];
   NODE *theNode;
   VERTEX *theVertex;
   /*  printf("MovedNode? fatherElement %ld \n",ID(theElement));*/
+  GetAllSons(theElement, SonList);
   for (i=0; i<NSONS(theElement); i++)
   {
-    sonElement = SON(theElement,i);
+    sonElement = SonList[i];
     for (j=0; j<CORNERS_OF_ELEM(sonElement); j++)
     {
       theNode = CORNER(sonElement,j);
@@ -583,6 +586,7 @@ static INT LambdaFromQuad (ELEMENT *theElement,VERTEX *centerVertex,
   DOUBLE *LocalCoord;
   INT i,j,k,coe,node_found,coord,curved;
   ELEMENT *sonElement;
+  ELEMENT *SonList[MAX_SONS];
   NODE *midNode[2];
   LINK *theLink;
 
@@ -623,6 +627,7 @@ static INT LambdaFromQuad (ELEMENT *theElement,VERTEX *centerVertex,
   if (curved==FALSE) return(0);
 
   /* search for mid nodes linked to the cornerNodes */
+  GetAllSons(theElement, SonList);
   for (k=0; k<2; k++)
   {
     node_found=FALSE;
@@ -630,7 +635,7 @@ static INT LambdaFromQuad (ELEMENT *theElement,VERTEX *centerVertex,
     {
       for (i=0; i<NSONS(theElement); i++)
       {
-        sonElement = SON(theElement,i);
+        sonElement = SonList[i];
         for (j=0; j<CORNERS_OF_ELEM(sonElement); j++)
         {
           if (NBNODE(theLink)==CORNER(sonElement,j))
@@ -754,6 +759,7 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
 {
   MULTIGRID *theMG;
   ELEMENT *fatherElement,*nbElement[MAX_SIDES_OF_ELEM];
+  ELEMENT *SonList[MAX_SONS];
   VERTEX *theVertex;
   NODE *theNode;
   DOUBLE *CornerPtrs[MAX_CORNERS_OF_ELEM],LocalCenter[3]={0.5,0.5,0.5};
@@ -790,9 +796,10 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
       if (REFINE(fatherElement)==RED && LEVEL(theNode)<CURRENTLEVEL(theMG))
       {
         OnlyRedSons = TRUE;
+        GetAllSons(fatherElement, SonList);
         for (i=0; i<NSONS(fatherElement); i++)
         {
-          if (REFINE(SON(fatherElement,i))!=RED) OnlyRedSons=FALSE;
+          if (REFINE(SonList[i])!=RED) OnlyRedSons=FALSE;
         }
         if (OnlyRedSons==TRUE)
         {

@@ -3378,16 +3378,18 @@ D*/
 static INT RecreateBNDSofNode (MULTIGRID *theMG, NODE *theNode)
 {
     ELEMENT *theElement, *sonElem, *NBElem;
+    ELEMENT *SonList[MAX_SONS];
     BNDS *bnds;
     BNDP *bndp, *sidebndp[MAX_CORNERS_OF_SIDE];
     INT m,i,j,k,l,patch_id;
 
 	/* first scan father element of theNode */ 
     theElement = VFATHER(MYVERTEX(theNode));
+    GetAllSons(theElement, SonList);
     for (i=0;i<NSONS(theElement);i++)
     {
         /* search side in son element with theNode as a corner */
-        sonElem = SON(theElement,i);
+        sonElem = SonList[i];
         if (OBJT(sonElem)!=BEOBJ) continue;
         for (j=0;j<SIDES_OF_ELEM(sonElem);j++)
             for (k=0;k<CORNERS_OF_SIDE(sonElem,j);k++)
@@ -3413,10 +3415,11 @@ static INT RecreateBNDSofNode (MULTIGRID *theMG, NODE *theNode)
         NBElem = NBELEM(theElement,m);
         if (NBElem==NULL) continue;
         if (OBJT(NBElem)!=BEOBJ) continue;
+        GetAllSons(NBElem, SonList);
         for (i=0;i<NSONS(NBElem);i++)
         {
             /* search side in son element with theNode as a corner */
-            sonElem = SON(NBElem,i);
+            sonElem = SonList[i];
             if (OBJT(sonElem)!=BEOBJ) continue;
             for (j=0;j<SIDES_OF_ELEM(sonElem);j++)
                 for (k=0;k<CORNERS_OF_SIDE(sonElem,j);k++)
@@ -3837,7 +3840,7 @@ INT GetMidNodeParam (NODE * theNode, DOUBLE *lambda)
     return(GM_ERROR);
 #endif
 
-    if (NFATHER(theNode) != NULL) {
+    if (!MIDTYPE(theNode)) {
         PrintErrorMessage('E',"GetMidNodeParam","node not a midnode");
         return(GM_ERROR);
     }
