@@ -490,18 +490,18 @@ INT MinimizeLevel (GRID *theGrid, VECDATA_DESC *c, VECDATA_DESC *b,
   ncomp = VD_NCOMP(c);
   if (l_dset(theGrid,t,EVERY_CLASS,0.0) != NUM_OK)
     return(1);
-  if (l_dmatmul(theGrid,t,NEWDEF_CLASS,A,c,ACTIVE_CLASS) != NUM_OK)
+  if (l_dmatmul(theGrid,t,EVERY_CLASS,A,c,EVERY_CLASS) != NUM_OK)
     return(1);
     #ifdef ModelP
   if (l_vector_collect(theGrid,t) != NUM_OK)
     return (1);
     #endif
-  if (l_ddot (theGrid,t,NEWDEF_CLASS,b,scal) != NUM_OK)
+  if (l_ddot (theGrid,t,EVERY_CLASS,b,scal) != NUM_OK)
     return(1);
   a0 = 0.0;
   for (j=0; j<ncomp; j++)
     a0 += scal[j];
-  if (l_ddot (theGrid,t,NEWDEF_CLASS,t,scal) != NUM_OK)
+  if (l_ddot (theGrid,t,EVERY_CLASS,t,scal) != NUM_OK)
     return(1);
   a1 = 0.0;
   for (j=0; j<ncomp; j++)
@@ -512,11 +512,11 @@ INT MinimizeLevel (GRID *theGrid, VECDATA_DESC *c, VECDATA_DESC *b,
     UserWriteF("       min  %7.4lf\n",1+a0/a1);
   for (j=0; j<ncomp; j++)
     scal[j] = 1 + a0 / a1;
-  if (l_dscale (theGrid,c,ACTIVE_CLASS,scal))
+  if (l_dscale (theGrid,c,EVERY_CLASS,scal))
     return(1);
   for (j=0; j<ncomp; j++)
     scal[j] = - a0 / a1;
-  if (l_daxpy (theGrid,b,NEWDEF_CLASS,scal,t))
+  if (l_daxpy (theGrid,b,EVERY_CLASS,scal,t))
     return(1);
 
   return(0);

@@ -2684,10 +2684,10 @@ static INT LDCSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     /* dc smoother */
     for (j=0; j<np->ndc; j++)
     {
-      if (l_dcopy(theGrid,np->b,NEWDEF_CLASS,b)!= NUM_OK) REP_ERR_RETURN(1);
+      if (l_dcopy(theGrid,np->b,EVERY_CLASS,b)!= NUM_OK) REP_ERR_RETURN(1);
       if ((*np->DCSmooth->Iter)(np->DCSmooth,level,np->c,np->b,np->DC,&result)) REP_ERR_RETURN(1);
-      if (l_daxpy(theGrid,x,ACTIVE_CLASS,Factor_One,np->c) != NUM_OK) REP_ERR_RETURN(1);
-      if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,np->c,ACTIVE_CLASS)) REP_ERR_RETURN(1);
+      if (l_daxpy(theGrid,x,EVERY_CLASS,Factor_One,np->c) != NUM_OK) REP_ERR_RETURN(1);
+      if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,np->c,EVERY_CLASS)) REP_ERR_RETURN(1);
     }
 
     /* solve first */

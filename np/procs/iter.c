@@ -524,8 +524,9 @@ static INT Smoother (NP_ITER *theNP, INT level,
     #ifdef ModelP
   if (l_vector_consistent(theGrid,x) != NUM_OK) NP_RETURN(1,result[0]);
     #endif
-  if (l_dscale(theGrid,x,ACTIVE_CLASS,np->damp) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,x,ACTIVE_CLASS)
+  if (l_dscale(theGrid,x,EVERY_CLASS,np->damp) != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,x,EVERY_CLASS)
       != NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
@@ -1062,12 +1063,12 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
     #endif
 
   /* damp */
-  if (l_dscale(theGrid,NP_SGS_t(np),ACTIVE_CLASS,np->smoother.damp)
+  if (l_dscale(theGrid,NP_SGS_t(np),EVERY_CLASS,np->smoother.damp)
       != NUM_OK)
     NP_RETURN(1,result[0]);
 
   /* update defect */
-  if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,NP_SGS_t(np),ACTIVE_CLASS)
+  if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,NP_SGS_t(np),EVERY_CLASS)
       != NUM_OK) NP_RETURN(1,result[0]);
 
   /* iterate backward */
@@ -1088,14 +1089,14 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
     #endif
 
   /* damp */
-  if (l_dscale(theGrid,x,ACTIVE_CLASS,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_dscale(theGrid,x,EVERY_CLASS,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
 
   /* update defect */
-  if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,x,ACTIVE_CLASS)
+  if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,x,EVERY_CLASS)
       != NUM_OK) NP_RETURN(1,result[0]);
 
   /* now add the two corrections */
-  if (l_daxpy(theGrid,x,ACTIVE_CLASS,Factor_One,NP_SGS_t(np)) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_daxpy(theGrid,x,EVERY_CLASS,Factor_One,NP_SGS_t(np)) != NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
 }
@@ -1248,12 +1249,12 @@ static INT PGSSmoother (NP_ITER *theNP, INT level,
     #endif
 
   /* damp */
-  if (l_dscale(theGrid,x,ACTIVE_CLASS,np->smoother.damp)
+  if (l_dscale(theGrid,x,EVERY_CLASS,np->smoother.damp)
       != NUM_OK)
     NP_RETURN(1,result[0]);
 
   /* update defect */
-  if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,x,ACTIVE_CLASS)
+  if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,x,EVERY_CLASS)
       != NUM_OK)
     NP_RETURN(1,result[0]);
 
@@ -1374,7 +1375,7 @@ static INT SORSmoother (NP_ITER *theNP, INT level,
     #ifdef ModelP
   if (l_vector_consistent(theGrid,x) != NUM_OK) NP_RETURN(1,result[0]);
     #endif
-  if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,x,ACTIVE_CLASS)
+  if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,x,EVERY_CLASS)
       != NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
@@ -1791,9 +1792,9 @@ static INT SBGSSmoother (NP_ITER *theNP, INT level,
        the corr-field is updated already
        we have to update the remaining defects */
 
-    if (l_dmatmul_minus(theGrid,SBGS_VD_ro(theSBGS,bl),NEWDEF_CLASS,
+    if (l_dmatmul_minus(theGrid,SBGS_VD_ro(theSBGS,bl),EVERY_CLASS,
                         SBGS_MD_Ao(theSBGS,bl),
-                        SBGS_VD_cd(theSBGS),ACTIVE_CLASS)) NP_RETURN (1,result[0]);
+                        SBGS_VD_cd(theSBGS),EVERY_CLASS)) NP_RETURN (1,result[0]);
   }
 
   return (0);
@@ -3487,7 +3488,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   for (i=0; i<np->nu1; i++) {
     if ((*np->PreSmooth->Iter)(np->PreSmooth,level,np->t,b,A,result))
       REP_ERR_RETURN(1);
-    if (l_daxpy(theGrid,c,ACTIVE_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
+    if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
   }
 
         #ifdef _DEBUG_ITER_
@@ -3511,7 +3512,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   UserWriteF("norm of interpolated correction : %f\n",eunorm);
         #endif
   if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,np->t,EVERY_CLASS) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,np->t,EVERY_CLASS) != NUM_OK) NP_RETURN(1,result[0]);
         #ifdef _DEBUG_ITER_
   l_eunorm(theGrid,b,EVERY_CLASS,&eunorm);
   UserWriteF("defect after CG correction : %f\n",eunorm);
@@ -3519,7 +3520,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   for (i=0; i<np->nu2; i++) {
     if ((*np->PostSmooth->Iter)(np->PostSmooth,level,np->t,b,A,result))
       REP_ERR_RETURN(1);
-    if (l_daxpy(theGrid,c,ACTIVE_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
+    if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
   }
         #ifdef _DEBUG_ITER_
   l_eunorm(theGrid,b,EVERY_CLASS,&eunorm);
@@ -3738,7 +3739,7 @@ static INT Addmgc (NP_ITER *theNP, INT level,
       if ((*np->PreSmooth->Iter)
             (np->PreSmooth,mylevel,np->t,b,A,result))
         REP_ERR_RETURN(1);
-      if (l_daxpy(theGrid,c,ACTIVE_CLASS,Factor_One,np->t) != NUM_OK)
+      if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK)
         NP_RETURN(1,result[0]);
     }
     FreeVD(theNP->base.mg,mylevel,mylevel,np->t);
@@ -3755,7 +3756,7 @@ static INT Addmgc (NP_ITER *theNP, INT level,
       REP_ERR_RETURN(1);
     if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK)
       NP_RETURN(1,result[0]);
-    if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,np->t,EVERY_CLASS)
+    if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,np->t,EVERY_CLASS)
         != NUM_OK) NP_RETURN(1,result[0]);
     FreeVD(theNP->base.mg,mylevel,mylevel,np->t);
   }
@@ -4249,10 +4250,10 @@ static INT EXSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC 
   }
 
   /* damp */
-  if (l_dscale(theGrid,x,ACTIVE_CLASS,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_dscale(theGrid,x,EVERY_CLASS,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
 
   /* update defect */
-  if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,x,ACTIVE_CLASS)!= NUM_OK) NP_RETURN(1,result[0]);
+  if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,x,EVERY_CLASS)!= NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
 }
