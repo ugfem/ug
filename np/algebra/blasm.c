@@ -361,22 +361,22 @@ static INT Matrix_Loop_M(GRID *grid, unsigned int _vroot_mask_, unsigned int _vr
                          int mode, const DOUBLE *value, const DOUBLE *value_D )
 {
   /* most important in registers */
-  register int j;
-  register DOUBLE *M_ptr;
-  register const DOUBLE *v_ptr;
-  register const ptrdiff_t *M_diff_ptr;
+  int j;
+  DOUBLE *M_ptr;
+  const DOUBLE *v_ptr;
+  const ptrdiff_t *M_diff_ptr;
 
   /* next important in registers */
-  register int nm1;
-  register int operation;
-  register MATRIX *mat;
-  register unsigned int mat_mask  = _mat_mask_;
-  register unsigned int mat_value = _mat_value_;
-  register VECTOR *vect;
-  register VECTOR *vect2;
-  register const DOUBLE *v_start_ptr = value;
-  register ptrdiff_t M_start_offset = M_start_off;
-  register const ptrdiff_t *M_diff_start = M_diff;
+  int nm1;
+  int operation;
+  MATRIX *mat;
+  unsigned int mat_mask  = _mat_mask_;
+  unsigned int mat_value = _mat_value_;
+  VECTOR *vect;
+  VECTOR *vect2;
+  const DOUBLE *v_start_ptr = value;
+  ptrdiff_t M_start_offset = M_start_off;
+  const ptrdiff_t *M_diff_start = M_diff;
 
   /* not important in registers */
   unsigned int vroot_mask = _vroot_mask_;
@@ -403,7 +403,7 @@ static INT Matrix_Loop_M(GRID *grid, unsigned int _vroot_mask_, unsigned int _vr
           switch (operation)
           {
           case BLAS_M_CLEAR :
-            Block_Loop_M(*M_ptr=0.0,);
+            Block_Loop_M(*M_ptr=0.0,;);
             break;
           case BLAS_M_SET :
             v_ptr = value_D;
@@ -427,7 +427,7 @@ static INT Matrix_Loop_M(GRID *grid, unsigned int _vroot_mask_, unsigned int _vr
             switch (operation)
             {
             case BLAS_M_CLEAR :
-              Block_Loop_M(*M_ptr=0.0,);
+              Block_Loop_M(*M_ptr=0.0,;);
               break;
             case BLAS_M_SET :
               v_ptr = v_start_ptr;
@@ -465,26 +465,26 @@ static INT Matrix_Loop_MN(GRID *grid, unsigned int _vroot_mask_, unsigned int _v
                           int mode, const DOUBLE *value, const DOUBLE *value_D)
 {
   /* most important in registers */
-  register int j;
-  register DOUBLE *M_ptr;
-  register const DOUBLE *N_ptr;
-  register const ptrdiff_t *M_diff_ptr;
-  register const ptrdiff_t *N_diff_ptr;
-  register const DOUBLE *v_ptr;
+  int j;
+  DOUBLE *M_ptr;
+  const DOUBLE *N_ptr;
+  const ptrdiff_t *M_diff_ptr;
+  const ptrdiff_t *N_diff_ptr;
+  const DOUBLE *v_ptr;
 
   /* next important in registers */
-  register int nm1;
-  register int operation;
-  register MATRIX *mat;
-  register unsigned int mat_mask  = _mat_mask_;
-  register unsigned int mat_value = _mat_value_;
-  register VECTOR *vect;
-  register VECTOR *vect2;
-  register const DOUBLE *v_start_ptr = value;
-  register ptrdiff_t M_start_offset = M_start_off;
-  register const ptrdiff_t *M_diff_start = M_diff;
-  register ptrdiff_t N_start_offset = N_start_off;
-  register const ptrdiff_t *N_diff_start = N_diff;
+  int nm1;
+  int operation;
+  MATRIX *mat;
+  unsigned int mat_mask  = _mat_mask_;
+  unsigned int mat_value = _mat_value_;
+  VECTOR *vect;
+  VECTOR *vect2;
+  const DOUBLE *v_start_ptr = value;
+  ptrdiff_t M_start_offset = M_start_off;
+  const ptrdiff_t *M_diff_start = M_diff;
+  ptrdiff_t N_start_offset = N_start_off;
+  const ptrdiff_t *N_diff_start = N_diff;
 
   /* not important in registers */
   unsigned int vroot_mask = _vroot_mask_;
@@ -513,13 +513,13 @@ static INT Matrix_Loop_MN(GRID *grid, unsigned int _vroot_mask_, unsigned int _v
           switch (operation)
           {
           case BLAS_M_COPY :
-            Block_Loop_MN(*M_ptr=*N_ptr,);
+            Block_Loop_MN(*M_ptr=*N_ptr,;);
             break;
           case BLAS_M_ADD1 :
-            Block_Loop_MN(*M_ptr+=*N_ptr,);
+            Block_Loop_MN(*M_ptr+=*N_ptr,;);
             break;
           case BLAS_M_MINUS1 :
-            Block_Loop_MN(*M_ptr-=*N_ptr,);
+            Block_Loop_MN(*M_ptr-=*N_ptr,;);
             break;
           case BLAS_M_SCALMUL :
             v_ptr = value_D;
@@ -605,34 +605,34 @@ static INT Matrix_Loop_Mxy(GRID *grid, unsigned int _vroot_mask_, unsigned int _
                            int mode, /*const DOUBLE *value_start,*/ DOUBLE *result)
 {
   /* most important in registers */
-  register int j;
-  register const DOUBLE *M_ptr;
-  register const DOUBLE *y_ptr;
-  register const ptrdiff_t *M_diff_ptr;
-  register const ptrdiff_t *y_diff_ptr;
-  register DOUBLE sum;
-  /* register const DOUBLE *v_ptr; */
+  int j;
+  const DOUBLE *M_ptr;
+  const DOUBLE *y_ptr;
+  const ptrdiff_t *M_diff_ptr;
+  const ptrdiff_t *y_diff_ptr;
+  DOUBLE sum;
+  /* const DOUBLE *v_ptr; */
 
   /* next important in registers */
-  register const int nr = _nr_;
-  register const int *ncol_ptr;
-  register DOUBLE *x_ptr;
-  register int i;
+  const int nr = _nr_;
+  const int *ncol_ptr;
+  DOUBLE *x_ptr;
+  int i;
 
   /* not very important in registers */
-  register int operation;
-  register MATRIX *mat;
-  register unsigned int mat_mask  = _mat_mask_;
-  register unsigned int mat_value = _mat_value_;
-  register VECTOR *vect;
-  register VECTOR *vect2;
-  /* register const DOUBLE *v_start_ptr = value_start; */
-  register ptrdiff_t M_start_offset = M_start_off;
-  register const ptrdiff_t *M_diff_start = M_diff;
-  register ptrdiff_t y_start_offset = y_start_off;
-  register const ptrdiff_t *y_diff_start = y_diff;
-  register ptrdiff_t x_start_offset = x_start_off;
-  register DOUBLE global_sum;
+  int operation;
+  MATRIX *mat;
+  unsigned int mat_mask  = _mat_mask_;
+  unsigned int mat_value = _mat_value_;
+  VECTOR *vect;
+  VECTOR *vect2;
+  /* const DOUBLE *v_start_ptr = value_start; */
+  ptrdiff_t M_start_offset = M_start_off;
+  const ptrdiff_t *M_diff_start = M_diff;
+  ptrdiff_t y_start_offset = y_start_off;
+  const ptrdiff_t *y_diff_start = y_diff;
+  ptrdiff_t x_start_offset = x_start_off;
+  DOUBLE global_sum;
 
   /* not important in registers */
   MATRIX *matD=NULL;
@@ -864,10 +864,10 @@ static INT Matrix_Loop_Mxy(GRID *grid, unsigned int _vroot_mask_, unsigned int _
 static INT Matrix_Loop (FORMAT *format, GRID *grid,
                         unsigned int _vroot_mask_, unsigned int _vroot_value_,
                         unsigned int _mat_mask_, unsigned int _mat_value_,
-                        const int *_n_, const int *_nr_, const int **_NC_,
-                        const ptrdiff_t *_M_start_off_, const ptrdiff_t **_M_diff_,
-                        const ptrdiff_t *_N_start_off_, const ptrdiff_t **_N_diff_,
-                        const ptrdiff_t *_y_start_off_, const ptrdiff_t **_y_diff_,
+                        const int *_n_, const int *_nr_, int **_NC_,
+                        const ptrdiff_t *_M_start_off_, ptrdiff_t **_M_diff_,
+                        const ptrdiff_t *_N_start_off_, ptrdiff_t **_N_diff_,
+                        const ptrdiff_t *_y_start_off_, ptrdiff_t **_y_diff_,
                         const ptrdiff_t *_y_0_off_, const ptrdiff_t *_x_start_off_,
                         int mode, const DOUBLE **_value_,
                         DOUBLE *result)
