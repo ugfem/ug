@@ -19,6 +19,7 @@ then
 	echo "         PARAGON (set ARCH = PARAGON)";
 	echo "         PC (set ARCH = PC)";
 	echo "         POWERGC (set ARCH = POWERGC)";
+	echo "         CC (set ARCH = CC)";
 	echo "         SOLARIS (set ARCH = SOLARIS)";
 	echo "         SUN4GCC (set ARCH = SUN4GCC)";
 	echo "         T3D (set ARCH = T3D)";
@@ -170,6 +171,13 @@ fi
 if test "$1" = "POWERGC"
 then
 sed 's/^ARCH.*$/ARCH = POWERGC/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
+mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
+fi			
+
+if test "$1" = "CC"
+then
+sed 's/^ARCH.*$/ARCH = CC/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
 exit 0;
 fi			
