@@ -91,6 +91,8 @@ void FAMGPaList::Init(FAMGPaList *next, int np, const int p[], double c[], doubl
     SetNext(next);
     SetNp(np);
     SetApprox(error);
+	SetNewCG(0.0);
+	SetNewLinks(0);
 	
     for(z = 0; z < np; z++)
     {
