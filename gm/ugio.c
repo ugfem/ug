@@ -468,6 +468,9 @@ INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **SonList, 
   ELEMENT *NonorderedSonList[MAX_SONS];
   NODE *theNode;
 
+  for (i=0; i<MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM; i++)
+    printf("GetOrderedSons(): %08x\n",NodeContext[i]);
+
   nfound = nmax[0] = 0;
   theRule = RefRules[TAG(theElement)] + REFINE(theElement);
   if (GetAllSons(theElement,NonorderedSonList)) return (1);
@@ -480,7 +483,12 @@ INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **SonList, 
         found=0;
         break;
       }
-    if (!found) continue;
+    if (!found)
+    {
+      SonList[i] = NULL;
+      continue;
+    }
+    printf("GetOrderedSons(): found!");
 
     /* identify (hopefully) an element of SonList */
     for (j=0; j<NSONS(theElement); j++)
@@ -499,9 +507,11 @@ INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **SonList, 
       if (found==CORNERS_OF_TAG(SON_TAG_OF_RULE(theRule,i)))
       {
         SonList[i] = NonorderedSonList[j];
-        nmax[0]++;
+        nmax[0] = i+1;
         break;
       }
+      else
+        SonList[i] = NULL;
     }
   }
 
@@ -514,6 +524,7 @@ static INT SetRefinement (ELEMENT *theElement, NODE **NodeContext, ELEMENT *SonL
   NODE *theNode;
   INT i,j,n,sonRefined,sonex;
 
+  printf("SetRefinement(): nmax=%d\n",(int)nmax);
   if (nmax==0) return (0);
   refinement->refrule = REFINE(theElement) + RefRuleOffset[TAG(theElement)];
   theRule = RefRules[TAG(theElement)] + REFINE(theElement);
@@ -550,6 +561,7 @@ static INT SetRefinement (ELEMENT *theElement, NODE **NodeContext, ELEMENT *SonL
   }
   refinement->sonref = sonRefined;
   if (MGIO_PARFILE) refinement->sonex = sonex;
+  printf("SetRefinement(): sonex=%d\n",(int)sonex);
 
   /* not movable at the moment */
   refinement->nmoved = 0;
@@ -1193,7 +1205,7 @@ static INT IO_GridCons(MULTIGRID *theMG)
 
 static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT *refinement, int *RefRuleOffset)
 {
-  INT i,j,l_entry,r_index,nedge,type,sonRefined,n0,n1,Sons_of_Side,SonSides[MAX_SONS];
+  INT i,j,k,l_entry,r_index,nedge,type,sonRefined,n0,n1,Sons_of_Side,SonSides[MAX_SONS];
   ELEMENT *theSonElem[MAX_SONS];
   ELEMENT *theSonList[MAX_SONS];
   NODE *NodeList[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
@@ -1290,7 +1302,11 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   /* insert elements */
   for (i=0; i<theRule->nsons; i++)
   {
-    if (MGIO_PARFILE && !((ref->sonex>>i)&1)) continue;
+    if (MGIO_PARFILE && !((ref->sonex>>i)&1))
+    {
+      theSonList[i] = NULL;
+      continue;
+    }
     SonData = theRule->sons+i;
     type = IEOBJ;
     if (OBJT(theElement)==BEOBJ)
@@ -1325,7 +1341,12 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   /* connect to neighbors */
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
-    for (j=0; j<theRule->nsons; j++) theSonElem[j] = theSonList[j];theSonElem[j] = NULL;
+    for (k=0,j=0; j<theRule->nsons; j++)
+    {
+      if (!MGIO_PARFILE || ((ref->sonex>>i)&1))
+        theSonElem[k++] = theSonList[j];
+    }
+    theSonElem[k] = NULL;
     if (Get_Sons_of_ElementSide (theElement,i,&Sons_of_Side,theSonElem,SonSides,0)) return (1);
     if (Connect_Sons_of_ElementSide(UPGRID(theGrid),theElement,i,Sons_of_Side,theSonElem,SonSides,0)) return (1);
   }
@@ -1357,7 +1378,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     {
       if (InsertLocalTree (upGrid,theSonList[i],NULL,RefRuleOffset)) return (1);
     }
-    else
+    else if (theSonList[i] != NULL)
     {
       SETREFINE(theSonList[i],NO_REFINEMENT);
     }
