@@ -1,0 +1,78 @@
+#!/bin/sh
+#
+#  ugbcheck - check binary file for consistent version parameters
+#
+#  960625 kb  created
+#
+
+if test "x$UGROOT" = "x"
+then
+        echo "$0: to use $0 set shell environment variable UGROOT!";
+        exit 1;
+fi
+
+
+case `/bin/uname` in
+	HP-UX)
+		AWK=awk
+		;;
+	*)
+		AWK=nawk
+		;;
+esac;
+
+
+
+usage="Usage: $0 [-hv] <file>\n
+where\n
+\040\040<file>\040\040is object, library or executable\n
+\040\040-v\040\040toggles verbose mode\n
+\040\040-h\040\040displays this help message\n"
+
+
+# init default values
+verbose_mode=0
+
+
+# Scan for options
+set -- `getopt hv $*`
+
+if [ $? -ne 0 ]; then
+   echo $usage 1>&2
+   exit 1
+fi
+
+
+while [ $# -gt 0 -a ! $1 = "--" ]; do
+    case $1 in
+    -v)
+        verbose_mode=1
+		shift
+        ;;
+    *)
+        echo $usage 1>&2
+        exit 1
+        ;;
+    esac
+done
+shift 
+
+if [ $# -lt 1 ] ; then
+    echo $usage 1>&2
+    exit 1
+else
+    thefile=$1
+fi
+
+
+if [ ! -r $thefile ] ; then
+	echo "$0: cannot open input file $thefile."
+	exit 1
+fi
+
+
+# call ident and pipe to bcheck awk-script
+ident $thefile | $AWK -f $UGROOT/bin/ugbcheck.awk \
+	toolname=`basename $0` filename=`basename $thefile` verbose=$verbose_mode -
+
+
