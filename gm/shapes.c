@@ -51,7 +51,7 @@
 /****************************************************************************/
 
 #define SMALL_DET      1e-50
-#define SMALL_DIFF     1e-15
+#define SMALL_DIFF     1e-20
 #define MAX_ITER       20 
 
 /* some useful abbreviations */
