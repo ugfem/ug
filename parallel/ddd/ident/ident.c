@@ -949,7 +949,6 @@ static int IdentifySort (IDENTINFO **id, int nIds,
   /* note: this array has to be freed in the calling function! */
   *indexmap_out = tupels;
 
-
   return(nTupels);
 }
 
@@ -1313,7 +1312,7 @@ void DDD_Library::IdentifyEnd (void)
 /****************************************************************************/
 
 
-static IdEntry *IdentifyIdEntry (DDD_HDR hdr, DDD_PROC proc)
+static IdEntry *IdentifyIdEntry (DDD_HDR hdr, DDD_PROC proc, int typeId)
 {
   IdEntry     *id;
   ID_PLIST        *plist;
@@ -1353,7 +1352,7 @@ static IdEntry *IdentifyIdEntry (DDD_HDR hdr, DDD_PROC proc)
     plist = (ID_PLIST *) AllocTmpReq(sizeof(ID_PLIST),TMEM_IDENT);
     if (plist==NULL) {
       DDD_PrintError('F', 3210, ERR_ID_NOMEM_IDENTRY);
-      return;
+      return(NULL);
     }
 
     plist->proc = proc;
@@ -1368,14 +1367,15 @@ static IdEntry *IdentifyIdEntry (DDD_HDR hdr, DDD_PROC proc)
 
   /* insert into current plist */
   id =  IdEntrySegmList_NewItem(plist->entries);
+  id->msg.typeId   = typeId;
+  id->msg.hdr      = hdr;
+  id->msg.msg.gid  = OBJ_GID(hdr);
+
   plist->nEntries++;
-  if (id->msg.typeId==ID_OBJECT)
-  {
+  if (id->msg.typeId==ID_OBJECT) {
     plist->nIdentObjs++;
   }
 
-  id->msg.hdr      = hdr;
-  id->msg.msg.gid  = OBJ_GID(hdr);
 
   /* NOTE: priority can change between Identify-command and IdentifyEnd!
      therefore, scan priorities at the beginning of IdentifyEnd, and not
@@ -1441,19 +1441,18 @@ void orgDDD_IdentifyNumber (DDD_HDR hdr, DDD_PROC proc, int ident)
 #endif
 IdEntry *id;
 
-        #if DebugIdent<=2
-printf("%4d: IdentifyIdEntry %08x %02d with %4d num %d\n", me,
-       OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.number);
-        #endif
-
-id = IdentifyIdEntry(hdr, proc);
+id = IdentifyIdEntry(hdr, proc, ID_NUMBER);
 if (id==NULL) {
   DDD_PrintError('F', 3200, ERR_ID_NOMEM_IDNUMBER);
   return;
 }
 
-id->msg.typeId = ID_NUMBER;
 id->msg.id.number = ident;
+
+        #if DebugIdent<=2
+printf("%4d: IdentifyNumber %08x %02d with %4d num %d\n", me,
+       OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.number);
+        #endif
 }
 
 
@@ -1509,19 +1508,18 @@ void orgDDD_IdentifyString (DDD_HDR hdr, DDD_PROC proc, char *ident)
 #endif
 IdEntry *id;
 
-        #if DebugIdent<=2
-printf("%4d: IdentifyIdEntry %08x %02d with %4d str %s\n", me,
-       OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.string);
-        #endif
-
-id = IdentifyIdEntry(hdr, proc);
+id = IdentifyIdEntry(hdr, proc, ID_STRING);
 if (id==NULL) {
   DDD_PrintError('F', 3201, ERR_ID_NOMEM_IDSTRING);
   return;
 }
 
-id->msg.typeId = ID_STRING;
 id->msg.id.string = ident;
+
+        #if DebugIdent<=2
+printf("%4d: IdentifyString %08x %02d with %4d str %s\n", me,
+       OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.string);
+        #endif
 }
 
 
@@ -1584,18 +1582,11 @@ void orgDDD_IdentifyObject (DDD_HDR hdr, DDD_PROC proc, DDD_HDR ident)
 #endif
 IdEntry *id;
 
-        #if DebugIdent<=2
-printf("%4d: IdentifyIdEntry %08x %02d with %4d gid %08x\n", me,
-       OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.object);
-        #endif
-
-id = IdentifyIdEntry(hdr, proc);
+id = IdentifyIdEntry(hdr, proc, ID_OBJECT);
 if (id==NULL) {
   DDD_PrintError('F', 3202, ERR_ID_NOMEM_IDOBJ);
   return;
 }
-
-id->msg.typeId = ID_OBJECT;
 
 /* use OBJ_GID as estimate for identification value, this estimate
    might be replaced when the corresponding object is identified
@@ -1603,6 +1594,11 @@ id->msg.typeId = ID_OBJECT;
    remember identification value in order to replace above estimate,
    if necessary (i.e., remember ptr to ddd-hdr) */
 id->msg.id.object = OBJ_GID(ident);
+
+        #if DebugIdent<=2
+printf("%4d: IdentifyObject %08x %02d with %4d gid %08x\n", me,
+       OBJ_GID(hdr), OBJ_TYPE(hdr), proc, id->msg.id.object);
+        #endif
 }
 
 
