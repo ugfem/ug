@@ -1416,14 +1416,8 @@ static INT SSORPreProcess  (NP_ITER *theNP, INT level,
   GRID *theGrid=NP_GRID(theNP,level);
   NP_SMOOTHER *np=(NP_SMOOTHER *) theNP;
   NP_SSOR *ssor = (NP_SSOR *) theNP;
+  MATDATA_DESC *myMat;
 
-  if (np->AutoDamp)
-  {
-    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector))
-      NP_RETURN(1,result[0]);
-    if (SetAutoDamp(theGrid,A,ssor->omega,np->DampVector))
-      NP_RETURN(1,result[0]);
-  }
         #ifdef ModelP
   if (np->cons_mode == MAT_DIAG_VEC_CONS) {
     CopyDiagMatrix(theGrid,A,np->diag);
@@ -1440,9 +1434,20 @@ static INT SSORPreProcess  (NP_ITER *theNP, INT level,
       NP_RETURN(1,result[0]);
     np->diag = NULL;
   }
+  myMat = np->L;
+        #else
+  myMat = A;
         #endif
+
+  if (np->AutoDamp)
+  {
+    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector))
+      NP_RETURN(1,result[0]);
+    if (SetAutoDamp(theGrid,myMat,ssor->omega,np->DampVector))
+      NP_RETURN(1,result[0]);
+  }
   if (np->Order!=NULL)
-    if ((*np->Order->Order)(np->Order,level,A,result)) NP_RETURN(1,result[0]);
+    if ((*np->Order->Order)(np->Order,level,myMat,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid))
     NP_RETURN(1,result[0]);
   *baselevel = level;
@@ -3154,14 +3159,10 @@ static INT SORPreProcess  (NP_ITER *theNP, INT level,
 {
   NP_SMOOTHER *np;
   GRID *theGrid;
+  MATDATA_DESC *myMat;
 
   np = (NP_SMOOTHER *) theNP;
   theGrid = NP_GRID(theNP,level);
-  if (np->AutoDamp)
-  {
-    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector)) NP_RETURN(1,result[0]);
-    if (SetAutoDamp(theGrid,A,np->damp,np->DampVector)) NP_RETURN(1,result[0]);
-  }
         #ifdef ModelP
   if (np->cons_mode == MAT_DIAG_VEC_CONS) {
     CopyDiagMatrix(theGrid,A,np->diag);
@@ -3178,9 +3179,18 @@ static INT SORPreProcess  (NP_ITER *theNP, INT level,
       NP_RETURN(1,result[0]);
     np->diag = NULL;
   }
+  myMat = np->L;
+        #else
+  myMat = A;
         #endif
+
+  if (np->AutoDamp)
+  {
+    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector)) NP_RETURN(1,result[0]);
+    if (SetAutoDamp(theGrid,myMat,np->damp,np->DampVector)) NP_RETURN(1,result[0]);
+  }
   if (np->Order!=NULL)
-    if ((*np->Order->Order)(np->Order,level,A,result)) NP_RETURN(1,result[0]);
+    if ((*np->Order->Order)(np->Order,level,myMat,result)) NP_RETURN(1,result[0]);
   if (l_setindex(theGrid))
     *baselevel = level;
 
@@ -6595,6 +6605,7 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   np->pp_failed=0;
   if (n == 0)
   {
+#ifdef ModelP
     /* exit premature; but nevertheless participate all communications in this function */
     outOfMem = 0;
 
@@ -6606,14 +6617,11 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
       i++;
     for( ; i>0; i-- )
     {
-#ifdef ModelP
       globalOutOfMem = UG_GlobalMaxINT( outOfMem );
-#else
-      globalOutOfMem = outOfMem;
-#endif
       if( globalOutOfMem )
         REP_ERR_RETURN(1);
     }
+#endif
     return(0);
   }
 
@@ -6818,6 +6826,7 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   {
     np->mem = np->nv*(2*bw+1)*sizeof(DOUBLE);
     np->DMat[np->count] = (DOUBLE*)GetTmpMem(theHeap,np->mem,np->MarkKey[np->count]);
+    outOfMem = ( np->DMat[np->count]==NULL );
 #ifdef ModelP
     globalOutOfMem = UG_GlobalMaxINT( outOfMem );
 #else
