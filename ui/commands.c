@@ -6687,7 +6687,7 @@ static INT CheckCommand (INT argc, char **argv)
                 #ifndef ModelP
     if (CheckGrid(theGrid,checkgeom,checkalgebra,checklists)!=GM_OK)
                 #else
-    if (0 /*CheckGrid(theGrid,checkgeom,checkalgebra,checklists,checkif)!=GM_OK*/)
+    if (CheckGrid(theGrid,checkgeom,checkalgebra,checklists,checkif)!=GM_OK)
                 #endif
       err++;
 
