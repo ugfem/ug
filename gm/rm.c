@@ -3280,7 +3280,7 @@ ELEMENT *ELEMENT_TO_MARK (ELEMENT *theElement)
 
 INT GetRefinementMark (ELEMENT *theElement, INT *rule, void *data)
 {
-  INT *side = data;
+  INT *side = (INT*)data;
   INT mark;
 
   if (LEAFELEM(theElement) &&
@@ -3494,7 +3494,7 @@ INT ShowRefRuleX (INT tag, INT nb, PrintfProcPtr Printf)
   Printf("RefRule %3d:\n",nb);
 
   /* nsons, mark and class */
-  Printf("   tag=%d mark=%3d class=%2d, nsons=%d\n",(int)theRule->tag,(int)theRule->mark,(int)theRule->class,(int)theRule->nsons);
+  Printf("   tag=%d mark=%3d class=%2d, nsons=%d\n",(int)theRule->tag,(int)theRule->mark,(int)theRule->rclass,(int)theRule->nsons);
 
   /* pattern */
   Printf("   pattern= ");

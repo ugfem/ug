@@ -677,7 +677,7 @@ int     Read_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
   for (i=0; i<n; i++)
   {
     if (Bio_Read_mint(2,intList)) return (1);
-    prr->class = intList[0];
+    prr->rclass = intList[0];
     prr->nsons = intList[1];
     m = MGIO_MAX_NEW_CORNERS+2*MGIO_MAX_NEW_CORNERS+prr->nsons*(1+MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_SIDES_OF_ELEM+1);
     if (Bio_Read_mint(m,intList)) return (1);
@@ -736,7 +736,7 @@ int     Write_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
   for (i=0; i<n; i++)
   {
     s=0;
-    intList[s++] = prr->class;
+    intList[s++] = prr->rclass;
     intList[s++] = prr->nsons;
     for (j=0; j<MGIO_MAX_NEW_CORNERS; j++)
       intList[s++] = prr->pattern[j];

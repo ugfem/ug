@@ -1583,7 +1583,7 @@ static void HRule2Mrule (const HRULE *hr, MGIO_RR_RULE *mr)
 
   /* extracted rules are always irregular */
   /* TODO (HRR 971208): is that really ok (actually not used)? */
-  mr->class = GREEN_CLASS;
+  mr->rclass = GREEN_CLASS;
   mr->nsons = HR_NSONS(hr);
 
   {int i; for (i=0; i<MGIO_MAX_NEW_CORNERS; i++)
@@ -1707,7 +1707,7 @@ static void URule2Mrule (const URULE *ur, MGIO_RR_RULE *mr)
 {
   int j,k;
 
-  mr->class = ur->class;
+  mr->rclass = ur->rclass;
   mr->nsons = ur->nsons;
   for (j=0; j<MGIO_MAX_NEW_CORNERS; j++)
     mr->pattern[j] = ur->pattern[j];

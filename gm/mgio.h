@@ -222,7 +222,7 @@ struct mgio_sondata {
 
 struct mgio_rr_rule {
 
-  int class;                                            /* class of rule:3bits for COPY, IREG, REG      */
+  int rclass;                                           /* class of rule:3bits for COPY, IREG, REG      */
   int nsons;                                            /* number of sons rule creates                  */
   int pattern[MGIO_MAX_NEW_CORNERS];                    /* stores which edges are refined               */
   int sonandnode[MGIO_MAX_NEW_CORNERS][2];              /* for each new node the number of the son      */

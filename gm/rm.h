@@ -231,11 +231,11 @@
 #define TAG_OF_RULE(r)              ((r)->tag)
 #define MARK_OF_RULE(r)             ((r)->mark)
 #ifdef __SR2201__
-#define CLASS_OF_RULE(r)            ((*(r)).class)
+#define CLASS_OF_RULE(r)            ((*(r)).rclass)
 #define NSONS_OF_RULE(r)            ((*(r)).nsons)
 #define SON_OF_RULE(r,s)            (&((*(r)).sons[(s)]))
 #else
-#define CLASS_OF_RULE(r)            ((r)->class)
+#define CLASS_OF_RULE(r)            ((r)->rclass)
 #define NSONS_OF_RULE(r)            ((r)->nsons)
 #define SON_OF_RULE(r,s)            (&((r)->sons[(s)]))
 #endif
@@ -323,7 +323,7 @@ struct sondata {
 struct refrule {
   SHORT tag;                                                        /* which element type this rule can refine */
   SHORT mark;                                                       /* the mark of this rule                   */
-  SHORT class;                                                      /* class of rule:3bits for COPY, IREG, REG */
+  SHORT rclass;                                                     /* class of rule:3bits for COPY, IREG, REG */
   SHORT nsons;                                              /* number of sons rule creates             */
   SHORT pattern[MAX_NEW_CORNERS_DIM];                       /* stores which edges are refined          */
   INT pat;                                                      /* bitwise format of pattern               */

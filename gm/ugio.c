@@ -847,7 +847,7 @@ static INT Write_RefRules (MULTIGRID *theMG, INT *RefRuleOffset, INT MarkKey)
     ug_refrule = RefRules[t];
     for (i=0; i<MaxRules[t]; i++)
     {
-      Refrule->class = ug_refrule->class;
+      Refrule->rclass = ug_refrule->rclass;
       Refrule->nsons = ug_refrule->nsons;
       for (j=0; j<MGIO_MAX_NEW_CORNERS; j++)
         Refrule->pattern[j] = ug_refrule->pattern[j];
@@ -3517,10 +3517,10 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
 
   fprintf(stream,">MIN\n");
   fprintf(stream," %s\n",tag);
-  fprintf(stream," %15.8LE\n",min);
+  fprintf(stream," %15.8E\n",min);
   fprintf(stream,">MAX\n");
   fprintf(stream," %s\n,tag");
-  fprintf(stream," %15.8LE\n",max);
+  fprintf(stream," %15.8E\n",max);
   fprintf(stream,">FIN\n");
 
   /* write x values now */
