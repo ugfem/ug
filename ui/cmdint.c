@@ -73,7 +73,7 @@
 #define BUFSIZE                         32
 #define MAXREPEAT                       16
 #define MAXTOKENLENGTH          64
-#define MAXCMDSIZE                      256
+#define MAXCMDSIZE                      512
 #define MAXSTRINGSIZE           256
 #define EXECUTEBUFSIZE          32000
 #define PROGRAMBUFSIZE          8000
