@@ -182,6 +182,36 @@ INT GetAllVectorsOfElementOfType (ELEMENT *theElement, VECTOR **vec,
   return (cnt);
 }
 
+INT GetAllVectorsOfElementsideOfType (ELEMENT *theElement, INT side,
+                                      VECTOR **vec,
+                                      const VECDATA_DESC *theVD)
+{
+  VECTOR *v[MAX_NODAL_VECTORS];
+  INT i,cnt,cnt1;
+
+  if (GetVectorsOfDataTypesInObjects(theElement,VD_DATA_TYPES(theVD),
+                                     VD_OBJ_USED(theVD),&cnt,v))
+    return (-1);
+
+  cnt = cnt1 = 0;
+  if (VD_NCMPS_IN_TYPE(theVD,NODEVEC)) {
+    for (i=0; i<CORNERS_OF_SIDE(theElement,side); i++)
+      vec[cnt++] = v[CORNER_OF_SIDE(theElement,side,i)];
+    cnt1 += CORNERS_OF_ELEM(theElement);
+  }
+  if (VD_NCMPS_IN_TYPE(theVD,EDGEVEC)) {
+    for (i=0; i<EDGES_OF_SIDE(theElement,side); i++)
+      vec[cnt++] = v[cnt1+EDGE_OF_SIDE(theElement,side,i)];
+    cnt1 += EDGES_OF_ELEM(theElement);
+  }
+    #ifdef __THREEDIM__
+  if (VD_NCMPS_IN_TYPE(theVD,SIDEVEC))
+    vec[cnt++] = v[cnt1];
+    #endif
+
+  return (cnt);
+}
+
 /****************************************************************************/
 /*D
    GetElementsideIndices - compute vector indices of an element side

@@ -110,6 +110,9 @@ UserProcPtr MG_GetUserFct       (MULTIGRID *theMG, INT n);
 INT GetElementVertices          (ELEMENT *theElement, DOUBLE **x);
 INT GetAllVectorsOfElementOfType(ELEMENT *theElement, VECTOR **vec,
                                  const VECDATA_DESC *theVD);
+INT GetAllVectorsOfElementsideOfType (ELEMENT *theElement, INT side,
+                                      VECTOR **vec,
+                                      const VECDATA_DESC *theVD);
 INT GetElementsideIndices       (ELEMENT *theElement, INT side,
                                  const VECDATA_DESC *theTVD, INT *index);
 
