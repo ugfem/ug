@@ -37,6 +37,7 @@
 #include "debug.h"
 #include "ugenv.h"
 #include "scan.h"
+#include "misc.h"
 
 /****************************************************************************/
 /*																			*/
@@ -210,6 +211,70 @@ INT ReadArgvChar (const char *name, char *buffer, INT argc, char **argv)
       if (strcmp(option,name) == 0) {
         strcpy(buffer,value);
         return(0);
+      }
+    }
+
+  return (1);
+}
+
+/****************************************************************************/
+/*D
+   ReadArgvMEM - Read command strings for (memory) size specification
+
+   SYNOPSIS:
+   INT ReadArgvMEM (const char *name, MEM *mem_size, INT argc, char **argv);
+
+   PARAMETERS:
+   .  name - name of the argument
+   .  mem_size - integer value
+   .  argc - argument counter
+   .  argv - argument vector
+
+   DESCRIPTION:
+   This function reads command strings and returns an MEM value in 'mem_size'.
+   It converts a (memory)size specification from String to
+   type MEM (an integer type).
+   The size specification contains an integer number followed by an
+   optional unit specifier:
+      G for gigabyte
+      M for megabyte
+      K for kilobyte
+   (also the lower case char's are recognized).
+
+   EXAMPLE:
+      "10M" is converted to 10485760 (10 mega byte).
+
+   RETURN VALUE:
+   INT
+   .n    0 ok (the argument was found and a value could be read)
+   .n    1 integer could not be read or invalid unit specifier
+
+   SEE ALSO:
+      MEM
+   D*/
+/****************************************************************************/
+
+INT ReadArgvMEM (const char *name, MEM *mem_size, INT argc, char **argv)
+{
+  INT i;
+  char option[OPTIONLEN],size_input[20];
+
+  for (i=0; i<argc; i++)
+    if (argv[i][0]==name[0])
+    {
+      if (sscanf(argv[i],"%s %s",option,size_input)!=2)
+        continue;
+      if (strcmp(option,name) == 0)
+      {
+        switch(ReadMemSizeFromString( size_input, mem_size ))
+        {
+        case 0 : return(0);
+        case 1 : PrintErrorMessage( 'E', "ReadArgvMEM", "invalid integer number read" );
+          return(1);
+        case 2 : PrintErrorMessage( 'E', "ReadArgvMEM", "invalid unit specifier read" );
+          return(1);
+        default : assert(0);
+        }
       }
     }
 

@@ -40,6 +40,7 @@
 #include "compiler.h"
 #include "general.h"
 #include "misc.h"
+#include "heaps.h"
 
 /****************************************************************************/
 /*                                                                          */
@@ -558,6 +559,66 @@ void SelectionSort (void *base, INT n, INT size, int (*cmp)(const void *, const 
     Copy(Base+k1*size,Smallest,size);
   }
 }
+
+
+/****************************************************************************/
+/*D
+    ReadMemSizeFromString - Convert a (memory)size specification from String to MEM (long int)
+
+   SYNOPSIS:
+   INT ReadMemSizeFromString( char *s, MEM *mem_size );
+
+   PARAMETERS:
+   .  s - input string
+   .  mem_size - the specified mem size in byte
+
+   DESCRIPTION:
+   This function converts a (memory)size specification from String to type MEM (an integer type).
+   The size specification contains an integer number followed by an optional unit specifier:
+      G for gigabyte
+      M for megabyte
+      K for kilobyte
+   (also the lower case char's are recognized).
+
+   EXAMPLE:
+      "10M" is converted to 10485760 (10 mega byte).
+
+   RETURN VALUE:
+   INT: 0 ok
+        1 integer could not be read
+        2 invalid unit specifier
+
+   SEE ALSO:
+   MEM
+   D*/
+/****************************************************************************/
+
+INT ReadMemSizeFromString( char *s, MEM *mem_size )
+{
+  unsigned long mem;
+
+  if (sscanf( s, "%lu",&mem)!=1)
+    return(1);
+
+  switch( s[strlen(s)-1] )
+  {
+  case 'k' : case 'K' :             /* check for [kK]ilobyte-notation */
+    *mem_size = (MEM)mem * (MEM)KBYTE;
+    return(0);
+  case 'm' : case 'M' :             /* check for [mM]egabyte-notation */
+    *mem_size = (MEM)mem * (MEM)MBYTE;
+    return(0);
+  case 'g' : case 'G' :             /* check for [gG]igabyte-notation */
+    *mem_size = (MEM)mem * (MEM)GBYTE;
+    return(0);
+  case '0' : case '1' : case '2' : case '3' : case '4' : case '5' : case '6' : case '7' : case '8' : case '9' :     /* no recognized mem unit character recognized */
+    *mem_size = (MEM)mem;
+    return(0);
+  default :              /* unknown mem unit character */
+    return(2);
+  }
+}
+
 
 /* may be later on ugshell better ... */
 #define UserWriteF printf

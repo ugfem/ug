@@ -38,6 +38,9 @@
 #include "compiler.h"
 #endif
 
+#include "heaps.h"
+
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -157,6 +160,7 @@ void        SelectionSort       (void *base, INT n, INT size, int (*cmp)(const v
 /* this function is no external for the MetroWerks CodeWarrior: so just define it */
 int                     matherr                         (struct exception *x);
 #endif
+INT                     ReadMemSizeFromString   ( char *s, MEM *mem_size );
 INT                     MemoryParameters        (void);
 
 #endif
