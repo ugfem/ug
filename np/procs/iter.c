@@ -4456,14 +4456,14 @@ static INT LmgcPostProcess (NP_ITER *theNP, INT level,
   np = (NP_LMGC *) theNP;
 
   if (np->PreSmooth->PostProcess != NULL)
-    for (i = np->baselevel+1; i <= level; i++)
+    for (i = level; i >= np->baselevel+1; i--)
       if ((*np->PreSmooth->PostProcess)
             (np->PreSmooth,i,x,b,A,result))
         REP_ERR_RETURN(1);
 
   if (np->PreSmooth != np->PostSmooth)
     if (np->PostSmooth->PostProcess != NULL)
-      for (i = np->baselevel+1; i <= level; i++)
+      for (i = level; i >= np->baselevel+1; i--)
         if ((*np->PreSmooth->PostProcess)
               (np->PostSmooth,i,x,b,A,result))
           REP_ERR_RETURN(1);
