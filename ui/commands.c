@@ -4345,6 +4345,10 @@ static INT VMListCommand (INT argc, char **argv)
       matrixopt = TRUE;
       break;
 
+    case 'z' :
+      matrixopt = -TRUE;
+      break;
+
     case 'p' :
     case 'o' :
       /* handled by ReadArgvINT */
@@ -5453,6 +5457,33 @@ static INT FixCoarseGridCommand (INT argc, char **argv)
 
   PRINTDEBUG(ui,2,("%d: FixCoarseGrid currMG %x fixed %d\n",
                    me,theMG,MG_COARSE_FIXED(theMG)));
+
+  return(OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   collapse - construct coarse grid from surface
+
+   DESCRIPTION:
+   The coarse grid is build from all surface elements.
+
+   SYNTAX:
+   'collapse'
+   D*/
+/****************************************************************************/
+
+static INT CollapseCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+
+  theMG = currMG;
+
+  if (theMG==NULL) {
+    PrintErrorMessage('E',"collapse","no open multigrid");
+    return (CMDERRORCODE);
+  }
+  if (Collapse(theMG)) return (CMDERRORCODE);
 
   return(OKCODE);
 }
@@ -14226,6 +14257,7 @@ INT InitCommands ()
   if (CreateCommand("refine",             AdaptCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("adapt",                      AdaptCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("fixcoarsegrid",      FixCoarseGridCommand                    )==NULL) return (__LINE__);
+  if (CreateCommand("collapse",           CollapseCommand                         )==NULL) return (__LINE__);
   if (CreateCommand("mark",                       MarkCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("find",                       FindCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("select",             SelectCommand                                   )==NULL) return (__LINE__);

@@ -2664,6 +2664,7 @@ INT         DisposeGrid             (GRID *theGrid);
 INT             DisposeMultiGrid                (MULTIGRID *theMG);
 INT         DisposeAMGLevel         (MULTIGRID *theMG);
 INT         DisposeAMGLevels        (MULTIGRID *theMG);
+INT         Collapse                (MULTIGRID *theMG);
 #ifdef __TWODIM__
 INT                     SaveCnomGridAndValues (MULTIGRID *theMG, char *FileName, char *plotprocName, char *tagName);
 #endif
