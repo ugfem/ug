@@ -92,7 +92,7 @@ DDD_TYPE TypeEdge;
 DDD_TYPE TypeElementSide;
 
 /* DDD interfaces needed for distributed computation */
-DDD_IF ElementIF, NodeIF, VertexIF;
+DDD_IF ElementIF, BorderNodeIF, OuterNodeIF, VertexIF;
 DDD_IF VectorIF;
 
 
@@ -534,13 +534,19 @@ static void ddd_IfInit (void)
 
   O[0] = TypeTrElem;
   O[1] = TypeTrBElem;
-  A[0] = 7;       /*  A[1] = 7; */
-  B[0] = 5;       /*  B[1] = 7; */
+  A[0] = PrioMaster;
+  B[0] = PrioGhost;
   ElementIF = DDD_IFDefine(2,O,1,A,1,B);
 
   O[0] = TypeNode;
-  A[0] = PrioNode;
-  NodeIF = DDD_IFDefine(1,O,1,A,1,A);
+  A[0] = PrioMaster;
+  B[0] = PrioMaster;
+  BorderNodeIF = DDD_IFDefine(1,O,1,A,1,B);
+
+  O[0] = TypeNode;
+  A[0] = PrioMaster;
+  B[0] = PrioGhost;
+  OuterNodeIF = DDD_IFDefine(1,O,1,A,1,B);
 
   O[0] = TypeIVertex;
   O[1] = TypeBVertex;
@@ -614,7 +620,7 @@ void InitDDDTypes (void)
   DDD_TypeDisplay(TypeElementSide);
   ENDDEBUG
 
-  ddd_HandlerInit();
+  ddd_HandlerInit(HSET_XFER);
 }
 
 
@@ -678,9 +684,7 @@ int InitParallel (int *argc, char ***argv)
   DDD_SetOption(OPT_WARNING_SMALLSIZE, OPT_OFF);
 
   /* show messages during transfer, for debugging */
-  /*
-          DDD_SetOption(OPT_DEBUG_XFERMESGS, OPT_ON);
-   */
+  DDD_SetOption(OPT_DEBUG_XFERMESGS, OPT_OFF);
 
   /* initialize context */
   /* TODO: malloc() should be replaced by HEAPs or ddd_memmgr */

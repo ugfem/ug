@@ -1259,7 +1259,27 @@ void ElemScatterB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 
 /****************************************************************************/
 
-void ElementObjMkCons(DDD_OBJ obj)
+
+/* two versions of ElementObjMkCons ... */
+
+
+void ElementObjMkCons_Xfer (DDD_OBJ obj)
+{
+	int i;
+	ELEMENT  *pe	=	(ELEMENT *)obj;
+
+	/* reconstruct pointer from vectors */
+	if (dddctrl.elemData) VOBJECT(EVECTOR(pe)) = (void*)pe;
+
+	if (dddctrl.sideData)
+	{
+		for (i=0; i<SIDES_OF_ELEM(pe); i++) VOBJECT(SVECTOR(pe,i)) = (void*)pe;
+	}
+}
+
+
+
+void ElementObjMkCons_Refine (DDD_OBJ obj)
 {
 	int i;
 	ELEMENT  *pe	=	(ELEMENT *)obj;
@@ -1274,14 +1294,13 @@ void ElementObjMkCons(DDD_OBJ obj)
 
 	/* connect with father */
 	{
-	ELEMENT *father = EFATHER(pe);
-	if (father != NULL) {
-		assert(NSONS(father)<NSONS_OF_RULE(MARK2RULEADR(father,REFINE(father))));
-		SET_SON(father,NSONS(father),pe);
-		SETNSONS(father,NSONS(father)+1);
+		ELEMENT *father = EFATHER(pe);
+		if (father != NULL) {
+			assert(NSONS(father)<NSONS_OF_RULE(MARK2RULEADR(father,REFINE(father))));
+			SET_SON(father,NSONS(father),pe);
+			SETNSONS(father,NSONS(father)+1);
+		}
 	}
-	}
-
 }
 
 
@@ -1317,23 +1336,40 @@ void EdgeUpdate (DDD_OBJ obj)
 
 
 /* init handlers for all element */
-static void ElemHandlerInit (DDD_TYPE etype)
+static void ElemHandlerInit (DDD_TYPE etype, INT handlerSet)
 {
 	DDD_HandlerRegister(etype,
 		HANDLER_LDATACONSTRUCTOR, ElementLDataConstructor,
 		HANDLER_DELETE,           ElementDelete,
 		HANDLER_XFERCOPY,		  ElementXferCopy,
-		HANDLER_OBJMKCONS,        ElementObjMkCons,
 		HANDLER_END
 	);
+
+
+	switch (handlerSet)
+	{
+		case HSET_XFER:
+			DDD_HandlerRegister(etype,
+				HANDLER_OBJMKCONS,        ElementObjMkCons_Xfer,
+				HANDLER_END
+			);
+			break;
+
+		case HSET_REFINE:
+			DDD_HandlerRegister(etype,
+				HANDLER_OBJMKCONS,        ElementObjMkCons_Refine,
+				HANDLER_END
+			);
+			break;
+	}
 }
 
 
 /* init handlers for inner element */
-static void IElemHandlerInit (DDD_TYPE etype)
+static void IElemHandlerInit (DDD_TYPE etype, INT handlerSet)
 {
 	/* init standard elem handlers */
-	ElemHandlerInit(etype);
+	ElemHandlerInit(etype, handlerSet);
 
 	/* init additional handlers, necessary for inside management */
 	DDD_HandlerRegister(etype,
@@ -1345,10 +1381,10 @@ static void IElemHandlerInit (DDD_TYPE etype)
 
 
 /* init handlers for boundary element */
-static void BElemHandlerInit (DDD_TYPE etype)
+static void BElemHandlerInit (DDD_TYPE etype, INT handlerSet)
 {
 	/* init standard elem handlers */
-	ElemHandlerInit(etype);
+	ElemHandlerInit(etype, handlerSet);
 
 	/* init additional handlers, necessary for boundary management */
 	DDD_HandlerRegister(etype,
@@ -1364,9 +1400,8 @@ static void BElemHandlerInit (DDD_TYPE etype)
 
 
 /* init all handlers necessary for grid xfer */
-void ddd_HandlerInit (void)
+void ddd_HandlerInit (INT handlerSet)
 {
-
 	DDD_HandlerRegister(TypeVector,
 		HANDLER_UPDATE,		    VectorUpdate,
 		HANDLER_DELETE,         VectorDelete,
@@ -1405,21 +1440,20 @@ void ddd_HandlerInit (void)
 
 
 	#ifdef __TWODIM__
-	IElemHandlerInit(TypeTrElem);
-	BElemHandlerInit(TypeTrBElem);
+	IElemHandlerInit(TypeTrElem, handlerSet);
+	BElemHandlerInit(TypeTrBElem, handlerSet);
 
-	IElemHandlerInit(TypeQuElem);
-	BElemHandlerInit(TypeQuBElem);
+	IElemHandlerInit(TypeQuElem, handlerSet);
+	BElemHandlerInit(TypeQuBElem, handlerSet);
 	#endif
 
 	#ifdef __THREEDIM__
-	IElemHandlerInit(TypeTeElem);
-	BElemHandlerInit(TypeTeBElem);
+	IElemHandlerInit(TypeTeElem, handlerSet);
+	BElemHandlerInit(TypeTeBElem, handlerSet);
 
 	/* TODO: achtung, hier fehlen handler! */
 
 	#endif
-
 
 
 	DDD_HandlerRegister(TypeEdge,

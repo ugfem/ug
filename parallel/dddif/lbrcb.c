@@ -82,6 +82,7 @@ typedef struct {
 /* RCS string */
 RCSID("$Header$",UG_RCS_STRING)
 
+
 /****************************************************************************/
 /*																			*/
 /* forward declarations of functions used before they are defined			*/
@@ -403,6 +404,7 @@ int BalanceGrid (MULTIGRID *theMG)
 
 
   /* start physical transfer */
+  ddd_HandlerInit(HSET_XFER);
   DDD_XferBegin();
   if (me==master)
   {

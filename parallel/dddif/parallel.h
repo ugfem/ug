@@ -69,6 +69,12 @@ enum Priorities
 };
 
 
+enum HandlerSets
+{
+  HSET_XFER = 0,
+  HSET_REFINE
+};
+
 
 #ifdef ModelP
 
@@ -140,6 +146,8 @@ extern DDD_TYPE TypeVSegment;
 extern DDD_TYPE TypeEdge;
 extern DDD_TYPE TypeElementSide;
 
+/* DDD Interfaces */
+extern DDD_IF BorderNodeIF, OuterNodeIF;
 
 
 /* DDD Global Controls */
@@ -192,7 +200,7 @@ void ddd_DisplayContext (void);
 void ddd_test ();
 
 /* from handler.c */
-void ddd_handlerInit (void);
+void ddd_HandlerInit (INT);
 
 /* from lbrcb.c */
 int BalanceGrid (MULTIGRID *);
