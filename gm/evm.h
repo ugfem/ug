@@ -100,6 +100,12 @@
 #define V1_SUP(v,s)                    {s = v[0]);}
 #define V1_NORMAL(s,n)				   {(n)[0] = (s)[0];}
 
+#define M1_INVERT(M,IM,det)				{det = (IM)[0];							\
+										 if (ABS((det))<SMALL_D*SMALL_D)		\
+										 	RETURN(1);							\
+										 (M)[0] = 1./det;}
+#define MT1_TIMES_V1(M,A,B)			   {(B)[0] = (M)[0][0]*(A)[0];}
+
 /* macros for 2D vector operations */
 #define V2_LINCOMB(a,A,b,B,C)		   {(C)[0] = (a)*(A)[0] + (b)*(B)[0];\
 										(C)[1] = (a)*(A)[1] + (b)*(B)[1];}
@@ -400,6 +406,9 @@
 #define V_BDIM_SUP(v,s)			        V1_SUP(v,s)
 #define V_BDIM_Normalize(a)			    V1_Normalize(a)
 
+#define M_BDIM_INVERT(M,IM,det)			M1_INVERT(M,IM,det)
+#define MT_TIMES_V_BDIM(M,A,B)			MT1_TIMES_V1(M,A,B)
+
 #define V_DIM_LINCOMB(a,A,b,B,C)		V2_LINCOMB(a,A,b,B,C)
 #define V_DIM_SET(a,A)				    V2_SET(a,A)
 #define V_DIM_COPY(A,C)				    V2_COPY(A,C)
@@ -465,6 +474,9 @@
 #define V_BDIM_ISZERO(A)				V2_ISZERO(A)
 #define V_BDIM_SUP(v,s)			        V2_SUP(v,s)
 #define V_BDIM_Normalize(a)			    V2_Normalize(a)
+
+#define M_BDIM_INVERT(M,IM,det)			M2_INVERT(M,IM,det)
+#define MT_TIMES_V_BDIM(M,A,B)			MT2_TIMES_V2(M,A,B)
 
 #define V_DIM_LINCOMB(a,A,b,B,C)		V3_LINCOMB(a,A,b,B,C)
 #define V_DIM_SET(a,A)				    V3_SET(a,A)

@@ -2043,11 +2043,12 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MULTIGRID_STATUS_OFFSET                 (sizeof(ENVDIR))
 
 #define MGSTATUS(p)                     ((p)->status)
+#define SETMGSTATUS(p,n)                ((p)->status|=n)
 #define RESETMGSTATUS(p)                {(p)->status=0; (p)->magic_cookie = (int)time(NULL); (p)->saved=0;}
 #define MG_MAGIC_COOKIE(p)              ((p)->magic_cookie)
-#define VIDCNT(p)                       ((p)->vertIdCounter)
-#define NIDCNT(p)                       ((p)->nodeIdCounter)
-#define EIDCNT(p)                       ((p)->elemIdCounter)
+#define VIDCNT(p)                               ((p)->vertIdCounter)
+#define NIDCNT(p)                               ((p)->nodeIdCounter)
+#define EIDCNT(p)                               ((p)->elemIdCounter)
 #define TOPLEVEL(p)                     ((p)->topLevel)
 #define CURRENTLEVEL(p)                 ((p)->currentLevel)
 #define MGFORMAT(p)                     ((p)->theFormat)
@@ -2059,6 +2060,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MGHEAP(p)                               ((p)->theHeap)
 #define MG_NPROPERTY(p)                 ((p)->nProperty)
 #define GRID_ON_LEVEL(p,i)              ((p)->grids[i])
+
 /* macros for the NodeElementsBlockArray . . .  */
 #define ELEMS_OF_NODE_MAX               75
 #define NDELEM_BLKS_MAX                 100
