@@ -860,7 +860,7 @@ static INT LambdaOrthoBnd2D(const ELEMENT *fatherElement, const INT edge, const 
     V_DIM_SCALE(1./veclen,MPVec);
 
     /* calculate vector product */
-    V_DIM_VECTOR_PRODUCT(MPVec,NormVec,area);
+    V2_VECTOR_PRODUCT(MPVec,NormVec,area);
     if (area==0.) break;
     if (area>0)
       Lambda0 = midLambda;

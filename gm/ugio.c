@@ -99,7 +99,9 @@
 #define EORPHAN(e)              (EFATHER(e)==NULL || THEFLAG(e))
 
 /* macro for test of degenerated load balancings */
+#ifdef ModelP
 #define PARALLEL_ONEPROC_HASGRID
+#endif
 
 /****************************************************************************/
 /*																			*/
