@@ -31,6 +31,7 @@
 #include <stdio.h>
 
 #include "np.h"
+#include "general.h"
 #include "basics.h"
 #include "amgtransfer.h"
 #include "transfer.h"

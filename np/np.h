@@ -36,7 +36,7 @@
 #include "ugenv.h"
 #include "udm.h"
 #include "numproc.h"
-#include "scan.h"
+#include "npscan.h"
 
 /****************************************************************************/
 /*																			*/
