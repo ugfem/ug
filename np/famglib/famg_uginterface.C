@@ -137,7 +137,7 @@ int FAMGSolveSystem(FAMG_Interface *interface, FAMG_Parameter *in_parameter)
 
     status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
 
-	FAMGDeconstruct();
+	FAMGDeconstructSimple();
 
 	FAMGDeconstructParameter();
  
