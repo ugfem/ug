@@ -254,14 +254,14 @@ static int PartitionElementsForDD(GRID *theGrid, int hor_boxes, int vert_boxes )
     }
     ASSERT(xmax>0.0 && xmax<1.00001);                   /* this function works only for the unit square! */
     ASSERT(ymax>0.0 && ymax<1.00001);
-    printf( PFMT "element coord %g %g %d %d\n", me, xmax, ymax, hor_boxes, vert_boxes );
+    /*printf( PFMT "element coord %g %g %d %d\n", me, xmax, ymax, hor_boxes, vert_boxes );*/
 
     /* the according subdomain is determined by the upper right corner
        the idea: for each dimension: calculate from the element coord the position in the
                                                      corresponding array dimension
                              then map the array coordinates onto a PE number */
     PARTITION(theElement) = (int)((ymax-0.00001)*vert_boxes) * hor_boxes + (int)((xmax-0.00001)*hor_boxes);
-    printf( PFMT "element partition %d\n", me, PARTITION(theElement) );
+    /*printf( PFMT "element partition %d\n", me, PARTITION(theElement) );*/
   }
 
   return(0);
