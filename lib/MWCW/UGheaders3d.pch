@@ -1,0 +1,51 @@
+/****************************************************************************/
+/*																			*/
+/* File:	  UGheaders3d.pch												*/
+/*																			*/
+/* Purpose:   source file for generating a precompiled version of UG's 		*/
+/*			  header files													*/
+/*																			*/
+/*			  UGHeaders3d may replace ug3d_pefix.h in the C/C++ preferences	*/
+/*																			*/
+/* Author:	  Henrik Rentz-Reichert			 								*/
+/*			  Institut fuer Computeranwendungen III 						*/
+/*			  Universitaet Stuttgart										*/
+/*			  Pfaffenwaldring 27											*/
+/*			  70550 Stuttgart												*/
+/*			  email: ug@ica3.uni-stuttgart.de								*/
+/*																			*/
+/* History:   05.05.98 begin, ug version 3.7								*/
+/*																			*/
+/* Remarks: 																*/
+/*																			*/
+/****************************************************************************/
+
+
+/* RCS_ID
+$Header$
+*/
+
+/****************************************************************************/
+/*																			*/
+/* first #include Macintosh headers											*/
+/*																			*/
+/****************************************************************************/
+
+#pragma precompile_target "UGHeaders3d"
+#pragma once on
+
+#define USE_PRECOMPILED_MAC_HEADERS		0
+
+#include <ansi_prefix.mac.h>
+
+/****************************************************************************/
+/*																			*/
+/* now #include all of UG's headers											*/
+/*																			*/
+/****************************************************************************/
+
+#include "general_prefix.h"
+
+#define _3				// space dimension
+
+#include "UGheaders.h"
