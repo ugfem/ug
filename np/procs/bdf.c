@@ -582,7 +582,9 @@ Continue:
              bdf->step,bdf->t_0,bdf->dt,bdf->exec_time,bdf->number_of_nonlinear_iterations,
              bdf->total_linear_iterations,bdf->max_linear_iterations);
 
-  if ((bdf->optnlsteps) && (nlresult.converged)) {
+  /* chose new dt for next time step */
+  if ((bdf->optnlsteps) && (nlresult.converged))
+  {
     k = bdf->number_of_nonlinear_iterations -
         last_number_of_nonlinear_iterations;
     if (k <= 0)
@@ -597,22 +599,19 @@ Continue:
                      bdf->dt,k,bdf->number_of_nonlinear_iterations,
                      last_number_of_nonlinear_iterations));
     *res = 0;
-    return(0);
   }
-
-  /* chose new dt for next time step */
-  if (eresult.step ==0.)
+  else if (eresult.step ==0.)
   {
     if (verygood && (!bad) && bdf->dt*2<=bdf->dtmax)
     {
       bdf->dt *= 2.0;
       UserWrite("doubling time step\n");
-      *res=0; return(*res);
+      *res=0;
     }
-    if ((!bad) && bdf->dt*bdf->dtscale<=bdf->dtmax && bdf->dt*bdf->dtscale>=bdf->dtmin)
+    else if ((!bad) && bdf->dt*bdf->dtscale<=bdf->dtmax && bdf->dt*bdf->dtscale>=bdf->dtmin)
     {
       bdf->dt *= bdf->dtscale;
-      *res=0; return(*res);
+      *res=0;
     }
   }
   else if (eresult.step > bdf->dt && (!bad))
@@ -643,6 +642,7 @@ Continue:
   }
 
   /* save suggested timestep */
+  sprintf(buffer,"%12.4lE",bdf->dt);
   SetStringVar(":BDF:SDT",buffer);
 
   return(0);
