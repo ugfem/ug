@@ -170,10 +170,14 @@ MATDATA_DESC *CreateMatDescOfTemplate   (MULTIGRID *theMG,
 INT VDmatchesVT                                                 (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt);
 INT MDmatchesMT                                                 (const MATDATA_DESC *md, const MAT_TEMPLATE *mt);
 INT MDmatchesVT                                                 (const MATDATA_DESC *md, const VEC_TEMPLATE *vt);
+INT MDmatchesVTxVT                                              (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, const VEC_TEMPLATE *cvt);
 
-INT VDsubDescFromVT                                             (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, CONST_VECDATA_DESC_PTR *subvd);
-INT MDsubDescFromVT                                             (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CONST_MATDATA_DESC_PTR *submd);
-INT MDsubDescFromMT                                             (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, CONST_MATDATA_DESC_PTR *submd);
+INT VDsubDescFromVT                                             (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, VECDATA_DESC **subvd);
+INT MDsubDescFromVT                                             (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, MATDATA_DESC **submd);
+INT MDsubDescFromVTxVT                                  (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, INT rsub,
+                                                         const VEC_TEMPLATE *cvt, INT csub,
+                                                         MATDATA_DESC **submd);
+INT MDsubDescFromMT                                             (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, MATDATA_DESC **submd);
 
 INT CreateFormatCmd                                             (INT argc, char **argv);
 INT RemoveFormatWithSubs                                (const char *name);

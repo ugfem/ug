@@ -57,17 +57,17 @@
 /*                                                                          */
 /****************************************************************************/
 
-#define MAX_PRINT_SYM           5
+#define MAX_PRINT_SYM                                   5
 
 /* format for PrintVectorData and PrintMatrixData */
-#define VFORMAT                         " %c=%11.4lE"
-#define MFORMAT                         " %c%c=%11.4lE"
+#define VFORMAT                                                 " %c=%11.4lE"
+#define MFORMAT                                                 " %c%c=%11.4lE"
 
 /* seperators */
-#define NAMESEP                         ':'
-#define BLANKS                          " \t"
-#define LIST_SEP                        " \t,"
-#define IN_PARTS                        "in"
+#define NAMESEP                                                 ':'
+#define BLANKS                                                  " \t"
+#define LIST_SEP                                                " \t,"
+#define IN_PARTS                                                "in"
 
 /****************************************************************************/
 /*																			*/
@@ -451,7 +451,7 @@ VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
                       "cannot create vector descriptor");
     REP_ERR_RETURN(NULL);
   }
-  VM_LOCKED(vd) = 1;
+  if (LockVD(vd)) REP_ERR_RETURN(NULL);
 
   /* now create sub vec descs */
   offset = VD_OFFSETPTR(vd);
@@ -480,7 +480,7 @@ VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
                         "cannot create subvector descriptor");
       REP_ERR_RETURN(NULL);
     }
-    VM_LOCKED(svd) = 1;
+    if (LockVD(svd)) REP_ERR_RETURN(NULL);
   }
 
   return (vd);
@@ -591,7 +591,7 @@ MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
                       "cannot create matrix descriptor");
     REP_ERR_RETURN(NULL);
   }
-  VM_LOCKED(md) = 1;
+  if (LockMD(md)) REP_ERR_RETURN(NULL);
 
   /* now create sub mat descs */
   offset = MD_OFFSETPTR(md);
@@ -623,7 +623,7 @@ MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
                         "cannot create submatrix descriptor");
       REP_ERR_RETURN(NULL);
     }
-    VM_LOCKED(smd) = 1;
+    if (LockMD(smd)) REP_ERR_RETURN(NULL);
   }
 
   return (md);
@@ -769,7 +769,7 @@ INT VDmatchesVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt)
         VDsubDescFromVT - create a VECDATA_DESC as a sub descriptor from a vector template
 
         SYNOPSIS:
-        INT VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, CONST_VECDATA_DESC_PTR *subvd)
+        INT VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, VECDATA_DESC **subvd)
 
     PARAMETERS:
    .   vd			- make a sub desc of this VECDATA_DESC
@@ -788,7 +788,7 @@ INT VDmatchesVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt)
    D*/
 /****************************************************************************/
 
-INT VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, CONST_VECDATA_DESC_PTR *subvd)
+INT VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, VECDATA_DESC **subvd)
 {
   FORMAT *fmt;
   SUBVEC *subv;
@@ -799,12 +799,19 @@ INT VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, CO
 
   if (!VDmatchesVT(vd,vt))
     REP_ERR_RETURN(1);
+
+  ASSERT(sub<VT_NSUB(vt));
+
   subv = VT_SUB(vt,sub);
+
+  /* generate name and see if desc already exists */
   strcpy(buffer,SUBV_NAME(subv));
+  strcat(buffer,GENERATED_NAMES_SEPERATOR);
   strcat(buffer,ENVITEM_NAME(vd));
   *subvd = GetVecDataDescByName(MD_MG(vd),buffer);
   if (*subvd != NULL) {
-    if (VM_LOCKED(vd)) VM_LOCKED((VECDATA_DESC *)*subvd) = 1;
+    if (TransmitLockStatusVD(vd,*subvd))
+      REP_ERR_RETURN(1);
     return(0);
   }
 
@@ -833,6 +840,8 @@ INT VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, CO
   *subvd = CreateSubVecDesc(VD_MG(vd),buffer,SUBV_NCOMPS(subv),SubComp,SubName);
   if (*subvd == NULL)
     REP_ERR_RETURN (1);
+  if (TransmitLockStatusVD(vd,*subvd))
+    REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -916,10 +925,78 @@ INT MDmatchesVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt)
 
 /****************************************************************************/
 /*D
+        MDmatchesVTxVT - check whether MATDATA_DESC and VEC_TEMPLATE x VEC_TEMPLATE match (tensor product)
+
+        SYNOPSIS:
+        INT MDmatchesVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, const VEC_TEMPLATE *cvt)
+
+    PARAMETERS:
+   .   md			- matrix data descriptor
+   .   rvt			- row vector template
+   .   cvt			- col vector template
+
+        DESCRIPTION:
+        This function checks whether a MATDATA_DESC and a VEC_TEMPLATE x VEC_TEMPLATE
+        match, i.e. the number of components per type coincide in the sense that md is a
+        tensor product of rvt and cvt.
+
+        RETURN VALUE:
+        INT
+   .n   YES: md and vt match
+   .n   NO:  md and vt do not match
+   D*/
+/****************************************************************************/
+
+INT MDmatchesVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, const VEC_TEMPLATE *cvt)
+{
+  INT rt,ct,mt,nr,nc;
+
+  for (rt=0; rt<NVECTYPES; rt++)
+    for (ct=0; ct<NVECTYPES; ct++)
+    {
+      nr = VT_COMP(rvt,rt);
+      nc = VT_COMP(cvt,ct);
+      if (nr*nc==0)
+        nr = nc = 0;
+
+      mt = MTP(rt,ct);
+      if (MD_ROWS_IN_MTYPE(md,mt)!=nr)
+        return (NO);
+      if (MD_COLS_IN_MTYPE(md,mt)!=nc)
+        return (NO);
+    }
+
+  return (YES);
+}
+
+static INT MTmatchesVTxVT (const MAT_TEMPLATE *mt, const VEC_TEMPLATE *rvt, const VEC_TEMPLATE *cvt)
+{
+  INT rt,ct,mtp,nr,nc;
+
+  for (rt=0; rt<NVECTYPES; rt++)
+    for (ct=0; ct<NVECTYPES; ct++)
+    {
+      nr = VT_COMP(rvt,rt);
+      nc = VT_COMP(cvt,ct);
+      if (nr*nc==0)
+        nr = nc = 0;
+
+      mtp = MTP(rt,ct);
+      if (MT_RCOMP(mt,mtp)!=nr)
+        return (NO);
+      if (MT_CCOMP(mt,mtp)!=nc)
+        return (NO);
+    }
+
+  return (YES);
+}
+
+/****************************************************************************/
+/*D
         MDsubDescFromMT - create a MATDATA_DESC as a sub descriptor from a matrix template
 
         SYNOPSIS:
-        INT MDsubDescFromMT (const MATDATA_DESC *vd, const MAT_TEMPLATE *vt, INT sub, CONST_MATDATA_DESC_PTR *subvd)
+        INT MDsubDescFromMT (const MATDATA_DESC *vd, const MAT_TEMPLATE *vt, INT sub, MATDATA_DESC *subvd)
 
     PARAMETERS:
    .   vd			- make a sub desc of this MATDATA_DESC
@@ -938,7 +1015,7 @@ INT MDmatchesVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt)
    D*/
 /****************************************************************************/
 
-INT MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, CONST_MATDATA_DESC_PTR *submd)
+INT MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, MATDATA_DESC **submd)
 {
   FORMAT *fmt;
   SUBMAT *subm;
@@ -949,12 +1026,17 @@ INT MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, CO
 
   if (!MDmatchesMT(md,mt))
     REP_ERR_RETURN(1);
+
   subm = MT_SUB(mt,sub);
+
+  /* generate name and see if desc already exists */
   strcpy(buffer,SUBM_NAME(subm));
+  strcat(buffer,GENERATED_NAMES_SEPERATOR);
   strcat(buffer,ENVITEM_NAME(md));
   *submd = GetMatDataDescByName(MD_MG(md),buffer);
   if (*submd != NULL) {
-    if (VM_LOCKED(md)) VM_LOCKED((MATDATA_DESC *)*submd) = 1;
+    if (TransmitLockStatusMD(md,*submd))
+      REP_ERR_RETURN(1);
     return(0);
   }
   fmt = MGFORMAT(MD_MG(md));
@@ -984,6 +1066,8 @@ INT MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, CO
                             SUBM_CCOMPS(subm),SubComp,SubName);
   if (*submd == NULL)
     REP_ERR_RETURN (1);
+  if (TransmitLockStatusMD(md,*submd))
+    REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -993,7 +1077,7 @@ INT MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, CO
         MDsubDescFromVT - create a MATDATA_DESC as a sub descriptor from a vector template
 
         SYNOPSIS:
-        INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CONST_MATDATA_DESC_PTR *submd)
+        INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, MATDATA_DESC **submd)
 
     PARAMETERS:
    .   md			- make a sub desc of this MATDATA_DESC
@@ -1012,7 +1096,7 @@ INT MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, CO
    D*/
 /****************************************************************************/
 
-INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CONST_MATDATA_DESC_PTR *submd)
+INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, MATDATA_DESC **submd)
 {
   FORMAT *fmt;
   SUBVEC *subv;
@@ -1021,11 +1105,26 @@ INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CO
   SHORT RComp[NMATTYPES];
   SHORT CComp[NMATTYPES];
   INT i,j,k,l,rt,ct,mt,nr,nc,NC,nn,cmp;
-  char SubName[MAX_MAT_COMP];
+  char SubName[MAX_MAT_COMP],buffer[NAMESIZE];
 
   fmt    = MGFORMAT(MD_MG(md));
 
+  ASSERT(sub<VT_NSUB(vt));
+
   subv   = VT_SUB(vt,sub);
+
+  /* generate name and see if desc already exists */
+  strcpy(buffer,SUBV_NAME(subv));
+  strcat(buffer,SUBV_NAME(subv));
+  strcat(buffer,GENERATED_NAMES_SEPERATOR);
+  strcat(buffer,ENVITEM_NAME(md));
+  *submd = GetMatDataDescByName(MD_MG(md),buffer);
+  if (*submd != NULL) {
+    if (TransmitLockStatusMD(md,*submd))
+      REP_ERR_RETURN(1);
+    return(0);
+  }
+
   offset = MD_OFFSETPTR(md);
   Comp   = VM_COMPPTR(md);
 
@@ -1060,9 +1159,163 @@ INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CO
         }
     }
 
-  *submd = CreateSubMatDesc(MD_MG(md),NULL,RComp,RComp,SubComp,SubName);
+  *submd = CreateSubMatDesc(MD_MG(md),buffer,RComp,CComp,SubComp,SubName);
   if (*submd == NULL)
     REP_ERR_RETURN (1);
+  if (TransmitLockStatusMD(md,*submd))
+    REP_ERR_RETURN(1);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+        MDsubDescFromVTxVT - create a MATDATA_DESC as a sub descriptor from a vector template
+
+        SYNOPSIS:
+        INT MDsubDescFromVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, INT rsub,
+                                                                                                        const VEC_TEMPLATE *cvt, INT csub,
+                                                                                                        MATDATA_DESC **submd)
+
+    PARAMETERS:
+   .   md			- make a sub desc of this MATDATA_DESC
+   .   rvt			- template containing row sub descriptor
+   .   rsub		- index of row sub descriptor in template
+   .   cvt			- template containing col sub descriptor
+   .   csub		- index of col sub descriptor in template
+   .   submd		- handle to created sub descriptor
+
+        DESCRIPTION:
+        This function creates a sub descriptor to a given MATDATA_DESC according to the given
+        subv of a vector template. The matrix is composed as tensor product of the subv descriptors.
+
+        RETURN VALUE:
+        INT
+   .n   0: ok
+   .n      n: if an error occured
+   D*/
+/****************************************************************************/
+
+INT MDsubDescFromVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, INT rsub,
+                        const VEC_TEMPLATE *cvt, INT csub,
+                        MATDATA_DESC **submd)
+{
+  FORMAT *fmt;
+  const VEC_TEMPLATE *vt;
+  SUBVEC *rsubv,*csubv,*subv;
+  SHORT SubComp[MAX_MAT_COMP];
+  const SHORT *offset,*Comp;
+  SHORT RComp[NMATTYPES];
+  SHORT CComp[NMATTYPES];
+  INT i,j,k,l,rt,ct,mt,nr,nc,NC,nn,cmp,type,n;
+  char SubName[MAX_MAT_COMP],buffer[NAMESIZE];
+
+  fmt    = MGFORMAT(MD_MG(md));
+
+  if (!MDmatchesVTxVT(md,rvt,cvt))
+    REP_ERR_RETURN(1);
+
+  if ((rsub==FULL_TPLT) && (csub==FULL_TPLT))
+    REP_ERR_RETURN(1);
+
+  if ((rsub==FULL_TPLT) || (csub==FULL_TPLT))
+  {
+    /* create subv identical to template */
+    subv = AllocEnvMemory(sizeof(SUBVEC));
+    if (subv==NULL)
+      REP_ERR_RETURN(1);
+
+    memset(subv,0,sizeof(SUBVEC));
+
+    if (rsub==FULL_TPLT)
+    {
+      vt = rvt;
+      rsubv = subv;
+      ASSERT(csub<VT_NSUB(cvt));
+      csubv   = VT_SUB(cvt,csub);
+    }
+    else
+    {
+      vt = cvt;
+      csubv = subv;
+      ASSERT(rsub<VT_NSUB(rvt));
+      rsubv   = VT_SUB(rvt,rsub);
+    }
+    for (type=0; type<NVECTYPES; type++)
+    {
+      n = SUBV_NCOMP(subv,type) = VT_COMP(vt,type);
+      for (i=0; i<n; i++)
+        SUBV_COMP(subv,type,i) = i;
+    }
+  }
+  else
+  {
+    ASSERT(rsub<VT_NSUB(rvt));
+    rsubv   = VT_SUB(rvt,rsub);
+    ASSERT(csub<VT_NSUB(cvt));
+    csubv   = VT_SUB(cvt,csub);
+  }
+
+  /* generate name and see if desc already exists */
+  if (rsub==FULL_TPLT)
+    strcpy(buffer,ENVITEM_NAME(rvt));
+  else
+    strcpy(buffer,SUBV_NAME(rsubv));
+  if (csub==FULL_TPLT)
+    strcpy(buffer,ENVITEM_NAME(cvt));
+  else
+    strcat(buffer,SUBV_NAME(csubv));
+  strcat(buffer,GENERATED_NAMES_SEPERATOR);
+  strcat(buffer,ENVITEM_NAME(md));
+  *submd = GetMatDataDescByName(MD_MG(md),buffer);
+  if (*submd != NULL) {
+    if (TransmitLockStatusMD(md,*submd))
+      REP_ERR_RETURN(1);
+    return(0);
+  }
+
+  offset = MD_OFFSETPTR(md);
+  Comp   = VM_COMPPTR(md);
+
+  /* compute sub components */
+  k  = 0;
+  for (rt=0; rt<NVECTYPES; rt++)
+    for (ct=0; ct<NVECTYPES; ct++)
+    {
+      nr = SUBV_NCOMP(rsubv,rt);
+      nc = SUBV_NCOMP(csubv,ct);
+      mt = MTP(rt,ct);
+      if (nr*nc==0)
+      {
+        RComp[mt] = CComp[mt] = 0;
+        continue;
+      }
+      RComp[mt] = nr;
+      CComp[mt] = nc;
+      NC = MD_COLS_IN_RT_CT(md,rt,ct);
+      nn = MD_ROWS_IN_RT_CT(md,rt,ct) * NC;
+      for (i=0; i<nr; i++)
+        for (j=0; j<nc; j++)
+        {
+          l = SUBV_COMP(rsubv,rt,i) * NC + SUBV_COMP(csubv,ct,j);
+          if (l>=nn)
+            REP_ERR_RETURN (1);
+          cmp = offset[mt]+l;
+          SubComp[k] = Comp[cmp];
+          SubName[2*k]   = VM_COMP_NAME(md,2*cmp);
+          SubName[2*k+1] = VM_COMP_NAME(md,2*cmp+1);
+          k++;
+        }
+    }
+
+  if ((rsub==FULL_TPLT) || (csub==FULL_TPLT))
+    FreeEnvMemory(subv);
+
+  *submd = CreateSubMatDesc(MD_MG(md),buffer,RComp,CComp,SubComp,SubName);
+  if (*submd == NULL)
+    REP_ERR_RETURN (1);
+  if (TransmitLockStatusMD(md,*submd))
+    REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -1084,12 +1337,12 @@ INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CO
                         [$ident <comp identification>]
                         [$sub <sub name> <vector comp name list>]*]
         }+
-        {{$M implicit(<vt>): <matrix template name> <total needed>
+        {{$M implicit(<rvt>[,<cvt>]): <matrix template name> <total needed>
  |
          $M <matrix size list>: <matrix template name> <total needed>
                 [$comp <matrix comp names>]
         }
-                [$sub <sub name> {<rows>x<cols> <matrix comp name list>} | {implicit(<vec sub name>/<vt>)}]
+                [$sub <sub name> {<rows>x<cols> <matrix comp name list>} | {implicit(<rsv>/<rvt>[,<csv>/<cvt>])}]
         }+
     [$d <type name1>x<type name2><connection depth>]
     [$I <type name><mat_size>]
@@ -1128,8 +1381,10 @@ INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CO
         vector templates:~
    .     <vector~comp~name~list>	- any combination of characters from <comp~names>
 
-        Use M-option(s) to define matrix templates as tensor product <vt>x<vt>:~
-   .     <vt>						- vector template names defined above
+        Use M implicit-option(s) to define matrix templates as tensor product <rvt>x<cvt>:~
+   .     <rvt>						- row vector template name (defined above in a V-option)
+   .     <cvt>						- col vector template name (defined above in a V-option)
+        If ',<cvt' is omitted, the tensor product <rvt>x<rvt> is take.
 
         Use sub-option similar to those for vector templates (component names are defined in
         canonic way):~
@@ -1139,8 +1394,13 @@ INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CO
                                                                         above!) indicating row and col
 
         Alternatively specify sub-matrices by an implicit declaration deriving the sub-matrix
-        as tensor product of a sub-vector <vec sub name> for a certain vector template <vt>:~
-   .n    implicit(<vec~sub~name>/<vt>
+        as tensor product of one (or two) sub-vectors for certain vector templates:~
+   .n    implicit(<rsv>/<rvt>[,<csv>/<cvt>])
+   .		rsv - row sub vector name of
+   .		rvt - row vector template name
+   .		csv - col sub vector name of
+   .		cvt - col vector template name
+        If ',<csv>/<cvt>' is omitted, the tensor product of <rsv>x<rsv> is take.
 
         A second syntax for M-option(s) is still supported:~
    .     <matrix~size~list>		- {<matrix size> }+
@@ -1193,7 +1453,7 @@ static INT ScanVecOption (      INT argc, char **argv,                  /* optio
   INT i,j,type,nsc[NMATTYPES];
   INT opt;
   SHORT offset[NMATOFFSETS];
-  char tpltname[NAMESIZE],*names,*token,tp;
+  char tpltname[NAMESIZE],*names,*token,*p,tp;
   char ident[V_COMP_NAMES];
   int n;
 
@@ -1217,6 +1477,13 @@ static INT ScanVecOption (      INT argc, char **argv,                  /* optio
   if (sscanf(names,"%s",tpltname) != 1)
   {
     PrintErrorMessageF('E',"newformat","no default name specified (in '$%s')",argv[opt]);
+    REP_ERR_RETURN (1);
+  }
+  if (strstr(tpltname,GENERATED_NAMES_SEPERATOR)!=NULL)
+  {
+    PrintErrorMessageF('E',"newformat",
+                       "vector template name '%s' is not allowed to contain '%s' (in '$%s')",
+                       tpltname,GENERATED_NAMES_SEPERATOR,argv[opt]);
     REP_ERR_RETURN (1);
   }
   (*nvec)++;
@@ -1269,6 +1536,14 @@ static INT ScanVecOption (      INT argc, char **argv,                  /* optio
                            "number of vector comp names != number of comps (in '$%s')",argv[opt]);
         REP_ERR_RETURN (1);
       }
+      /* check uniqueness */
+      for (p=VT_COMPNAMES(vt); *p!='\0'; p++)
+        if (strchr(p+1,*p)!=NULL)
+        {
+          PrintErrorMessageF('E',"newformat",
+                             "vec component names are not unique (in '$%s')",argv[opt]);
+          REP_ERR_RETURN (1);
+        }
 
       /* check next arg for ident */
       if (opt+1 < argc)
@@ -1324,7 +1599,23 @@ static INT ScanVecOption (      INT argc, char **argv,                  /* optio
                              "specify name of subv (in '$%s')",argv[opt]);
           REP_ERR_RETURN (1);
         }
+        if (strstr(token,GENERATED_NAMES_SEPERATOR)!=NULL)
+        {
+          PrintErrorMessageF('E',"newformat",
+                             "sub vector name '%s' is not allowed to contain '%s' (in '$%s')",
+                             token,GENERATED_NAMES_SEPERATOR,argv[opt]);
+          REP_ERR_RETURN (1);
+        }
         strcpy(SUBV_NAME(subv),token);
+
+        /* check uniqueness of name */
+        for (i=0; i<VT_NSUB(vt)-1; i++)
+          if (strcmp(SUBV_NAME(VT_SUB(vt,i)),SUBV_NAME(subv))==0)
+          {
+            PrintErrorMessageF('E',"newformat",
+                               "subv name not unique (in '$%s')",argv[opt]);
+            REP_ERR_RETURN (1);
+          }
 
         /* subv comps */
         for (type=0; type<NVECTYPES; type++) nsc[type] = 0;
@@ -1394,6 +1685,287 @@ static INT ScanVecOption (      INT argc, char **argv,                  /* optio
   return (0);
 }
 
+static INT ParseImplicitMTDeclaration (const char *str, MAT_TEMPLATE *mt)
+{
+  ENVDIR *dir;
+  ENVITEM *item;
+  VEC_TEMPLATE *rvt,*cvt;
+  INT j,k,type,rtype,ctype;
+  INT nr,nc;
+  SHORT roffset[NMATOFFSETS],coffset[NMATOFFSETS];
+  const char *p;
+  char *t,tpltname[NAMESIZE];
+
+  /* parse row template in implicit(rvt[,cvt]) */
+  if ((p=strchr(str,'('))==NULL)
+    REP_ERR_RETURN(1);
+  for (t=tpltname, p++; *p!='\0' && *p!=',' && *p!=')'; p++)
+    *(t++) = *p;
+  *t = '\0';
+
+  if ((dir=ChangeEnvDir("/newformat"))==NULL)
+    REP_ERR_RETURN(2);
+  for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
+    if (ENVITEM_TYPE(item) == theVecVarID)
+      if (strcmp(ENVITEM_NAME(item),tpltname)==0)
+        break;
+  if ((rvt=(VEC_TEMPLATE *)item)==NULL)
+  {
+    PrintErrorMessageF('E',"ParseImplicitMTDeclaration",
+                       "row vec template in '%s' not found (in '%s')",tpltname,str);
+    REP_ERR_RETURN (2);
+  }
+
+  if (*p==',')
+  {
+    /* parse col template in implicit(rvt[,cvt]) */
+    for (t=tpltname, p++; *p!='\0' && *p!=')'; p++)
+      *(t++) = *p;
+    *t = '\0';
+
+    if ((dir=ChangeEnvDir("/newformat"))==NULL)
+      REP_ERR_RETURN(2);
+    for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
+      if (ENVITEM_TYPE(item) == theVecVarID)
+        if (strcmp(ENVITEM_NAME(item),tpltname)==0)
+          break;
+    if ((cvt=(VEC_TEMPLATE *)item)==NULL)
+    {
+      PrintErrorMessageF('E',"ParseImplicitMTDeclaration",
+                         "col vec template in '%s' not found (in '%s')",tpltname,str);
+      REP_ERR_RETURN (2);
+    }
+  }
+  else
+    cvt = rvt;
+
+  /* define matrix template implicitly by (rvt x cvt) */
+  for (rtype=0; rtype<NVECTYPES; rtype++)
+    for (ctype=0; ctype<NVECTYPES; ctype++)
+    {
+      nr = VT_COMP(rvt,rtype);
+      nc = VT_COMP(cvt,ctype);
+      if (nr*nc<=0) continue;
+      type = MTP(rtype,ctype);
+      MT_RCOMP(mt,type) = nr;
+      MT_CCOMP(mt,type) = nc;
+    }
+
+  MT_COMPNAMES(mt)[0] = '\0';
+  if ((VT_COMPNAMES(rvt)[0]!=' ') && VT_COMPNAMES(cvt)[0]!=' ')
+  {
+    /* define also compnames */
+    ConstructVecOffsets(VT_COMPS(rvt),roffset);
+    ConstructVecOffsets(VT_COMPS(cvt),coffset);
+
+    t = MT_COMPNAMES(mt);
+    for (rtype=0; rtype<NVECTYPES; rtype++)
+      for (ctype=0; ctype<NVECTYPES; ctype++)
+      {
+        nr = VT_COMP(rvt,rtype);
+        nc = VT_COMP(cvt,ctype);
+        for (j=0; j<nr; j++)
+          for (k=0; k<nc; k++)
+          {
+            *(t++) = VT_COMPNAMES(rvt)[roffset[rtype]+j];
+            *(t++) = VT_COMPNAMES(cvt)[coffset[ctype]+k];
+          }
+      }
+    *t = '\0';
+  }
+  return (0);
+}
+
+static INT ParseImplicitSMDeclaration (const char *str, const MAT_TEMPLATE *mt, SUBMAT *subm)
+{
+  ENVDIR *dir;
+  ENVITEM *item;
+  VEC_TEMPLATE *rvt,*cvt,*vt;
+  SUBVEC *rsubv,*csubv,*subv;
+  INT i,j,k,type,rtype,ctype;
+  INT n,nr,nc,NC,r_sub,c_sub;
+  const char *p;
+  char *t,tpltname[NAMESIZE],subname[NAMESIZE];
+
+  /* parse row sub in implicit(<rsv>/<rvt>[,<csv>/<cvt>]) */
+  if ((p=strchr(str,'('))==NULL)
+  {
+    PrintErrorMessageF('E',"ParseImplicitSMDeclaration",
+                       "left bracket missing (in '%s')",str);
+    REP_ERR_RETURN (2);
+  }
+  for (t=subname, p++; *p!='\0' && *p!=',' && *p!=')' && *p!='/'; p++)
+    *(t++) = *p;
+  *t = '\0';
+
+  if (*p=='/')
+  {
+    /* parse row template in implicit(<rsv>/<rvt>[,<csv>/<cvt>]) */
+    for (t=tpltname, p++; *p!='\0' && *p!=',' && *p!=')'; p++)
+      *(t++) = *p;
+    *t = '\0';
+    r_sub = TRUE;
+  }
+  else
+  {
+    /* subname actually is meant as a tpltname */
+    strcpy(tpltname,subname);
+    r_sub = FALSE;
+  }
+
+  /* get vector template */
+  if ((dir=ChangeEnvDir("/newformat"))==NULL)
+    REP_ERR_RETURN(2);
+  for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
+    if (ENVITEM_TYPE(item) == theVecVarID)
+      if (strcmp(ENVITEM_NAME(item),tpltname)==0)
+        break;
+  if ((rvt=(VEC_TEMPLATE *)item)==NULL)
+  {
+    PrintErrorMessageF('E',"newformat",
+                       "vec template in '%s' not found (in '%s')",tpltname,str);
+    REP_ERR_RETURN (2);
+  }
+
+  if (r_sub)
+  {
+    /* get sub vector */
+    for (i=0; i<VT_NSUB(rvt); i++)
+      if (strcmp(SUBV_NAME(VT_SUB(rvt,i)),subname)==0)
+        break;
+    if (i>=VT_NSUB(rvt))
+    {
+      PrintErrorMessageF('E',"ParseImplicitSMDeclaration",
+                         "sub vector '%s' of template '%s' not found (in '%s')",subname,tpltname,str);
+      REP_ERR_RETURN (2);
+    }
+    rsubv = VT_SUB(rvt,i);
+  }
+
+  if (*p==',')
+  {
+    /* parse col sub in implicit(<rsv>/<rvt>[,<csv>/<cvt>]) */
+    for (t=subname, p++; *p!='\0' && *p!=',' && *p!=')' && *p!='/'; p++)
+      *(t++) = *p;
+    *t = '\0';
+
+    if (*p=='/')
+    {
+      /* parse col template in implicit(<rsv>/<rvt>[,<csv>/<cvt>]) */
+      for (t=tpltname, p++; *p!='\0' && *p!=',' && *p!=')'; p++)
+        *(t++) = *p;
+      *t = '\0';
+      c_sub = TRUE;
+    }
+    else
+    {
+      /* subname actually is meant as a tpltname */
+      strcpy(tpltname,subname);
+      c_sub = FALSE;
+    }
+
+    /* get vector template */
+    if ((dir=ChangeEnvDir("/newformat"))==NULL)
+      REP_ERR_RETURN(2);
+    for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
+      if (ENVITEM_TYPE(item) == theVecVarID)
+        if (strcmp(ENVITEM_NAME(item),tpltname)==0)
+          break;
+    if ((cvt=(VEC_TEMPLATE *)item)==NULL)
+    {
+      PrintErrorMessageF('E',"newformat",
+                         "col vec template in '%s' not found (in '%s')",tpltname,str);
+      REP_ERR_RETURN (2);
+    }
+
+    if (c_sub)
+    {
+      /* get sub vector */
+      for (i=0; i<VT_NSUB(cvt); i++)
+        if (strcmp(SUBV_NAME(VT_SUB(cvt,i)),subname)==0)
+          break;
+      if (i>=VT_NSUB(cvt))
+      {
+        PrintErrorMessageF('E',"ParseImplicitSMDeclaration",
+                           "col sub vector '%s' of col template '%s' not found (in '%s')",subname,tpltname,str);
+        REP_ERR_RETURN (2);
+      }
+      csubv = VT_SUB(cvt,i);
+    }
+  }
+  else
+  {
+    cvt = rvt;
+    csubv = rsubv;
+    c_sub = r_sub;
+  }
+
+  if (!r_sub && !c_sub)
+  {
+    PrintErrorMessageF('E',"ParseImplicitSMDeclaration",
+                       "neither row nor col sub specified: matrix sub would be identical to matrix template (in '%s')",str);
+    REP_ERR_RETURN (2);
+  }
+
+  /* check compatibility of vec templates with mat templates */
+  if (!MTmatchesVTxVT(mt,rvt,cvt))
+  {
+    PrintErrorMessageF('E',"ParseImplicitSMDeclaration",
+                       "row template and col template do not match matrix template (in '%s')",str);
+    REP_ERR_RETURN(1);
+  }
+
+  if (!r_sub || !c_sub)
+  {
+    /* create subv identical to template */
+    subv = AllocEnvMemory(sizeof(SUBVEC));
+    if (subv==NULL)
+      REP_ERR_RETURN(1);
+    memset(subv,0,sizeof(SUBVEC));
+
+    if (!r_sub)
+    {
+      vt = rvt;
+      rsubv = subv;
+    }
+    else
+    {
+      vt = cvt;
+      csubv = subv;
+    }
+    for (type=0; type<NVECTYPES; type++)
+    {
+      n = SUBV_NCOMP(subv,type) = VT_COMP(vt,type);
+      for (i=0; i<n; i++)
+        SUBV_COMP(subv,type,i) = i;
+    }
+  }
+
+  /* fill sub matrix template */
+  for (rtype=0; rtype<NVECTYPES; rtype++)
+    for (ctype=0; ctype<NVECTYPES; ctype++)
+    {
+      nr = SUBV_NCOMP(rsubv,rtype);
+      nc = SUBV_NCOMP(csubv,ctype);
+      if (nr*nc<=0)
+        nr = nc = 0;
+      type = MTP(rtype,ctype);
+      SUBM_RCOMP(subm,type) = nr;
+      SUBM_CCOMP(subm,type) = nc;
+
+      NC = MT_CCOMP(mt,type);
+      k  = 0;
+      for (i=0; i<nr; i++)
+        for (j=0; j<nc; j++)
+          SUBM_COMP(subm,type,k++) = SUBV_COMP(rsubv,rtype,i)*NC + SUBV_COMP(csubv,ctype,j);
+    }
+
+  if (!r_sub || !c_sub)
+    FreeEnvMemory(subv);
+
+  return (0);
+}
+
 static INT ScanMatOption (      INT argc, char **argv,                  /* option list						*/
                                 INT *curropt,                                                           /* next option to scan				*/
                                 INT po2t[][MAXVOBJECTS],                                    /* part-obj to type table			*/
@@ -1403,16 +1975,12 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
                                 INT *nmat,                                                                      /* just an index for templates		*/
                                 SHORT MatStorageNeeded[])                                       /* to accumulate storage per type	*/
 {
-  ENVDIR *dir;
-  ENVITEM *item;
-  VEC_TEMPLATE *vt;
-  SUBVEC *subv;
   MAT_TEMPLATE *mt,*mm;
   SUBMAT *subm;
-  INT opt,i,j,k,checksub,type,currtype,rtype,ctype,nsc[NMATTYPES];
+  INT opt,i,j,checksub,type,currtype,rtype,ctype,nsc[NMATTYPES];
   SHORT offset[NMATOFFSETS];
-  char tpltname[NAMESIZE],subname[NAMESIZE],*names,*token,rt,ct,*p;
-  int n,nr,nc,NC;
+  char tpltname[NAMESIZE],*names,*token,rt,ct,*p;
+  int n,nr,nc;
 
   opt = *curropt;
 
@@ -1437,6 +2005,13 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
     REP_ERR_RETURN (1);
   }
   (*nmat)++;
+  if (strstr(tpltname,GENERATED_NAMES_SEPERATOR)!=NULL)
+  {
+    PrintErrorMessageF('E',"newformat",
+                       "matrix template name '%s' is not allowed to contain '%s' (in '$%s')",
+                       tpltname,GENERATED_NAMES_SEPERATOR,argv[opt]);
+    REP_ERR_RETURN (1);
+  }
   mt = CreateMatTemplate(tpltname);
   if (mt == NULL) {
     PrintErrorMessageF('E',"newformat",
@@ -1449,59 +2024,21 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
   for (type=0; type<NMATTYPES; type++)
     MT_RCOMP(mt,type) = MT_CCOMP(mt,type) = 0;
   token = strtok(argv[opt]+1,BLANKS);
-  if (sscanf(token,"implicit(%s)",tpltname)==1)
+  if (token==NULL)
   {
-    /* define matrix template implicitly by (vt x vt) */
-
-    /* strip trailing ')' and get template */
-    if ((p=strchr(tpltname,')'))!=NULL)
-      *p = '\0';
-    if ((dir=ChangeEnvDir("/newformat"))==NULL)
-      REP_ERR_RETURN(2);
-    for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
-      if (ENVITEM_TYPE(item) == theVecVarID)
-        if (strcmp(ENVITEM_NAME(item),tpltname)==0)
-          break;
-    if ((vt=(VEC_TEMPLATE *)item)==NULL)
-    {
-      PrintErrorMessageF('E',"newformat",
-                         "vec template in 'implicit(%s)' not found (in '$%s')",tpltname,argv[opt]);
-      REP_ERR_RETURN (2);
-    }
-    for (rtype=0; rtype<NVECTYPES; rtype++)
-      for (ctype=0; ctype<NVECTYPES; ctype++)
-      {
-        nr = VT_COMP(vt,rtype);
-        nc = VT_COMP(vt,ctype);
-        if (nr*nc<=0) continue;
-        type = MTP(rtype,ctype);
-        MT_RCOMP(mt,type) = nr;
-        MT_CCOMP(mt,type) = nc;
-      }
-
-    if (VT_COMPNAMES(vt)[0]!=' ')
-    {
-      /* define also compnames */
-      ConstructVecOffsets(VT_COMPS(vt),offset);
-
-      p = MT_COMPNAMES(mt);
-      for (rtype=0; rtype<NVECTYPES; rtype++)
-        for (ctype=0; ctype<NVECTYPES; ctype++)
-        {
-          nr = VT_COMP(vt,rtype);
-          nc = VT_COMP(vt,ctype);
-          for (j=0; j<nr; j++)
-            for (k=0; k<nc; k++)
-            {
-              *(p++) = VT_COMPNAMES(vt)[offset[rtype]+j];
-              *(p++) = VT_COMPNAMES(vt)[offset[ctype]+k];
-            }
-        }
-      checksub = TRUE;
-    }
+    PrintErrorMessageF('E',"newformat","empty definition in matrix template declaration (in '$%s')",argv[opt]);
+    REP_ERR_RETURN (1);
+  }
+  if (strncmp(token,"implicit",8)==0)
+  {
+    if (ParseImplicitMTDeclaration(token,mt))
+      REP_ERR_RETURN(1);
 
     ConstructMatOffsets(MT_RCOMPS(mt),
                         MT_CCOMPS(mt),offset);
+
+    if (strlen(MT_COMPNAMES(mt))==2*offset[NMATTYPES])
+      checksub = TRUE;
   }
   else
   {
@@ -1562,6 +2099,16 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
                              "number of matrix comp names != number of comps (in '$%s')",argv[opt]);
           REP_ERR_RETURN (1);
         }
+        /* check uniqueness */
+        for (i=0; i<strlen(MT_COMPNAMES(mt)); i+=2)
+          for (j=i+2; j<strlen(MT_COMPNAMES(mt)); j+=2)
+            if (MT_COMPNAMES(mt)[i]==MT_COMPNAMES(mt)[j])
+              if (MT_COMPNAMES(mt)[i+1]==MT_COMPNAMES(mt)[j+1])
+              {
+                PrintErrorMessageF('E',"newformat",
+                                   "mat component names are not unique (in '$%s')",argv[opt]);
+                REP_ERR_RETURN (1);
+              }
         checksub = TRUE;
       }
   }
@@ -1592,7 +2139,23 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
                            "specify name of subm (in '$%s')",argv[opt]);
         REP_ERR_RETURN (1);
       }
+      if (strstr(token,GENERATED_NAMES_SEPERATOR)!=NULL)
+      {
+        PrintErrorMessageF('E',"newformat",
+                           "sub matrix name '%s' is not allowed to contain '%s' (in '$%s')",
+                           token,GENERATED_NAMES_SEPERATOR,argv[opt]);
+        REP_ERR_RETURN (1);
+      }
       strcpy(SUBM_NAME(subm),token);
+
+      /* check uniqueness of name */
+      for (i=0; i<MT_NSUB(mt)-1; i++)
+        if (strcmp(SUBM_NAME(MT_SUB(mt,i)),SUBM_NAME(subm))==0)
+        {
+          PrintErrorMessageF('E',"newformat",
+                             "subm name not unique (in '$%s')",argv[opt]);
+          REP_ERR_RETURN (1);
+        }
 
       /* check next token first for implicit declaration */
       if ((token=strtok(NULL,BLANKS))==NULL)
@@ -1601,52 +2164,10 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
                            "implicit declaration or size expected (in '$%s')",argv[opt]);
         REP_ERR_RETURN (1);
       }
-      if (sscanf(token,expandfmt("implicit(%[a-zA_Z0-9_]/%[a-zA_Z0-9_])"),subname,tpltname)==2)
+      if (strncmp(token,"implicit",8)==0)
       {
-        /* define sub-matrix implicitly by (s/vt x s/vt) */
-
-        /* get vector template */
-        if ((dir=ChangeEnvDir("/newformat"))==NULL)
-          REP_ERR_RETURN(2);
-        for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
-          if (ENVITEM_TYPE(item) == theVecVarID)
-            if (strcmp(ENVITEM_NAME(item),tpltname)==0)
-              break;
-        if ((vt=(VEC_TEMPLATE *)item)==NULL)
-        {
-          PrintErrorMessageF('E',"newformat",
-                             "vec template in 'implicit(%s/%s)' not found (in '$%s')",subname,tpltname,argv[opt]);
-          REP_ERR_RETURN (2);
-        }
-
-        /* get sub vector */
-        for (i=0; i<VT_NSUB(vt); i++)
-          if (strcmp(SUBV_NAME(VT_SUB(vt,i)),subname)==0)
-            break;
-        if (i>=VT_NSUB(vt))
-        {
-          PrintErrorMessageF('E',"newformat",
-                             "sub vector '%s' of template '%s' not found (in '$%s')",subname,tpltname,argv[opt]);
-          REP_ERR_RETURN (2);
-        }
-        subv = VT_SUB(vt,i);
-
-        for (rtype=0; rtype<NVECTYPES; rtype++)
-          for (ctype=0; ctype<NVECTYPES; ctype++)
-          {
-            nr = SUBV_NCOMP(subv,rtype);
-            nc = SUBV_NCOMP(subv,ctype);
-            if (nr*nc<=0) continue;
-            type = MTP(rtype,ctype);
-            SUBM_RCOMP(subm,type) = nr;
-            SUBM_CCOMP(subm,type) = nc;
-
-            NC = MT_CCOMP(mt,type);
-            k  = 0;
-            for (i=0; i<nr; i++)
-              for (j=0; j<nc; j++)
-                SUBM_COMP(subm,type,k++) = SUBV_COMP(subv,rtype,i)*NC + SUBV_COMP(subv,ctype,j);
-          }
+        if (ParseImplicitSMDeclaration(token,mt,subm))
+          REP_ERR_RETURN(1);
 
         continue;                               /* while ((opt+1<argc) && (strncmp(argv[opt+1],"sub",3)==0)) */
       }
