@@ -393,6 +393,7 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
   ELEMENT *t;
   DOUBLE *List,min,max,est,rf,cr;
   INT k,toplevel,nel,mfr,mfc,ncomp;
+  INT MarkKey;
 
   ncomp = VD_ncmps_in_otype(theVD,NODEVEC);
   if (ncomp <= 0)
@@ -421,8 +422,8 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
           MarkForRefinement(t,NO_REFINEMENT,0);
       }
 
-  Mark(MGHEAP(theMG),FROM_TOP);
-  List = (DOUBLE*) GetMem(MGHEAP(theMG),nel*sizeof(DOUBLE),FROM_TOP);
+  MarkTmpMem(MGHEAP(theMG),&MarkKey);
+  List = (DOUBLE*) GetTmpMem(MGHEAP(theMG),nel*sizeof(DOUBLE),MarkKey);
   if (List == NULL)
     return(-1);
 
@@ -484,7 +485,7 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
           mfc++;
         }
       }
-  Release(MGHEAP(theMG),FROM_TOP);
+  ReleaseTmpMem(MGHEAP(theMG),MarkKey);
 
         #ifdef ModelP
   mfr = UG_GlobalSumINT(mfr);
