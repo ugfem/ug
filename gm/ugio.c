@@ -1253,7 +1253,9 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
       l = strtok(NULL,".");           if (l==NULL) REP_ERR_RETURN(1);
       l = strtok(NULL,".");           if (l==NULL) REP_ERR_RETURN(1);
       strtok(l,"/");
-      if (sscanf(s,"%d",&lastnumber)!=1) REP_ERR_RETURN(1);if (lastnumber<0) REP_ERR_RETURN(1);lastnumber++;
+      if (sscanf(s,"%d",&lastnumber)!=1) REP_ERR_RETURN(1);
+      if (lastnumber<0) REP_ERR_RETURN(1);
+      lastnumber++;
       strcpy(itype,l);
       sprintf(buf,".%06d",lastnumber);
       strcat(filename,buf);
@@ -1419,6 +1421,10 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
 
     /* close file */
     if (CloseMGFile ()) REP_ERR_RETURN(1);
+
+    /* saved */
+    MG_SAVED(theMG) = 1;
+    strcpy(MG_FILENAME(theMG),filename);
 
     return(0);
   }
@@ -2569,6 +2575,37 @@ static INT CheckCGKeys (INT ne, ELEMENT** eid_e, MGIO_CG_ELEMENT *cg_elem)
 #endif
 
 MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize, INT force, INT optimizedIE, INT autosave)
+/* Documentation of the intended programm flow resp. communication requirements.
+   Functions introducing a global communication (all processors without any exception)
+   are:
+        UG_GlobalMin* and DDD_XferBegin/End
+   the corresponding topics in the following lists are preceeded by "#"
+   The sequence of main topics is:
+                read coarse grid data
+                create all grid levels
+                insert coarse mesh
+
+   #CreateAlgebra				(incl. DDD_IF* and
+                                                   SetSurfaceClasses incl. UG_GlobalMinINT)
+                PrepareAlgebraModification
+
+                DDD_IdentifyBegin
+                        read parinfo of coarse-grid
+                        read refinements and build local tree (fine grid)
+                DDD_IdentifyEnd
+
+                repair inconsistencies:
+                        CommunicateEClasses		(incl. DDD_IF*)
+   #IO_GridCons				(incl. ConstructConsistentGrid
+                                                   incl. DDD_IF* and DDD_XferBegin/End )
+                        Propagate*VectorClasses (incl. DDD_IF*)
+                        PrepareAlgebraModification
+   #SetSurfaceClasses		(incl. UG_GlobalMinINT)
+
+        if you must/will leave this sequence premature ENSURE THE COMMUNICATION PATTERN!!!
+        i.e. do all global communications as dummies and
+                all element orientated communication (like DDD_IF*) if there exist elements
+ */
 {
   MULTIGRID *theMG;
   GRID *theGrid;
@@ -2689,7 +2726,11 @@ else
 }
 nparfiles = UG_GlobalMinINT(nparfiles);
 #endif
-  if (nparfiles == -1) return(NULL);
+  if (nparfiles == -1)
+  {
+    UserWriteF("ERROR in LoadMultiGrid: could not open file %s.\n", filename );
+    return(NULL);
+  }
 
   if (procs>nparfiles)
   {
@@ -2727,30 +2768,35 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
   if (me >= nparfiles)
   {
-    if (DisposeGrid(GRID_ON_LEVEL(theMG,0))) {
-      CloseMGFile ();
-      DisposeMultiGrid(theMG);
-      return (NULL);
-    }
+
+    if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
     for (i=0; i<mg_general.nLevel; i++)
-      if (CreateNewLevel(theMG,0)==NULL) {
-        CloseMGFile ();
-        DisposeMultiGrid(theMG);
-        return (NULL);
-      }
+      if (CreateNewLevel(theMG,0)==NULL)              {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+
+    /* no coarse mesh */
+
+    if (CreateAlgebra (theMG))                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+    if (PrepareAlgebraModification(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+
         #ifdef ModelP
     DDD_IdentifyBegin();
+    /* no elements to insert */
     DDD_IdentifyEnd();
-    if (MGIO_PARFILE)
-      for (i=0; i<mg_general.nLevel; i++)
-        ConstructConsistentGrid(GRID_ON_LEVEL(theMG,i));
 
-        #endif
-    if (CreateAlgebra (theMG)) {
-      CloseMGFile ();
-      DisposeMultiGrid(theMG);
-      return (NULL);
+    if (MGIO_PARFILE)
+    {
+      /* replaced by IO_GridCons because of uniformity; Christian Wrobel 980311. TODO remove:
+         for (i=0; i<mg_general.nLevel; i++)
+          ConstructConsistentGrid(GRID_ON_LEVEL(theMG,i));
+       */
+      if (IO_GridCons(theMG))                                 {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
     }
+                #endif
+
+    if (SetSurfaceClasses (theMG))                          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+
+    if (CloseMGFile ())                                             {DisposeMultiGrid(theMG); return (NULL);}
+
     /* saved */
     MG_SAVED(theMG) = 1;
     strcpy(MG_FILENAME(theMG),filename);
@@ -2783,25 +2829,44 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 #ifdef ModelP
   /* this proc has no elements */
   if (cg_general.nElement == 0)
-  {
+  {             /* no elements for me; may skip element orientated communication routines */
+
     ReleaseTmpMem(theHeap,MarkKey);
-    CloseMGFile ();
-    DDD_IdentifyBegin();
-    DDD_IdentifyEnd();
-    if (CreateAlgebra (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-    ConstructConsistentGrid(GRID_ON_LEVEL(theMG,0));
+
+    /* no coarse mesh */
+
+    /* replaced by IO_GridCons because of uniformity; Christian Wrobel 980311. TODO remove:
+       ConstructConsistentGrid(GRID_ON_LEVEL(theMG,0));
+     */
     /* create levels */
     for (i=1; i<mg_general.nLevel; i++)
     {
       if (CreateNewLevel(theMG,0)==NULL)      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-      ConstructConsistentGrid(GRID_ON_LEVEL(theMG,i));
+      /* replaced by IO_GridCons because of uniformity; Christian Wrobel 980311. TODO remove:
+         ConstructConsistentGrid(GRID_ON_LEVEL(theMG,i));
+       */
     }
+
+    if (CreateAlgebra (theMG))                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+    if (PrepareAlgebraModification(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+
+    DDD_IdentifyBegin();
+    /* no elements to insert */
+    DDD_IdentifyEnd();
+
+    if (MGIO_PARFILE)
+      if (IO_GridCons(theMG))                                 {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+
+
+    if (SetSurfaceClasses (theMG))                          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+
+    if (CloseMGFile ())                                             {DisposeMultiGrid(theMG); return (NULL);}
 
     /* saved */
     MG_SAVED(theMG) = 1;
     strcpy(MG_FILENAME(theMG),filename);
 
-    return(theMG);
+    return (theMG);
   }
 #endif
 
@@ -2845,11 +2910,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
       DisposeMultiGrid(theMG);
       return (NULL);
     }
-    if (Read_PBndDesc (theBVP,theHeap,bd_general.nBndP,BndPList)) {
-      CloseMGFile ();
-      DisposeMultiGrid(theMG);
-      return (NULL);
-    }
+    if (Read_PBndDesc (theBVP,theHeap,bd_general.nBndP,BndPList)) {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   }
 
   /* create and insert coarse mesh: prepare */
@@ -3013,6 +3074,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
               SETEDSUBDOM(GetEdge(CORNER_OF_EDGE_PTR(theElement,EDGE_OF_SIDE(theElement,j,k),0),CORNER_OF_EDGE_PTR(theElement,EDGE_OF_SIDE(theElement,j,k),1)),0);
 
 #endif
+        /* now CreateAlgebra  is necessary to have the coarse grid nodevectors for DDD identification in Evaluate_pinfo */
         if (CreateAlgebra (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (PrepareAlgebraModification(theMG))                                                          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
@@ -3026,7 +3088,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   if (MGIO_PARFILE)
   {
     ActProcListPos = ProcList = (unsigned short*)GetTmpMem(theHeap,PROCLISTSIZE*sizeof(unsigned short),MarkKey);
-    if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(unsigned short)); return (NULL);}
+    if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(unsigned short)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
     cg_pinfo.proclist = ProcList;
     for (level=0; level<=TOPLEVEL(theMG); level++)
@@ -3037,24 +3099,25 @@ nparfiles = UG_GlobalMinINT(nparfiles);
         /* store succe because Evaluate_pinfo() relinks the element list */
         ENext = SUCCE(theElement);
         cge = MGIO_CG_ELEMENT_PS(cg_element,ID(theElement));
-        if (Read_pinfo (TAG(theElement),&cg_pinfo)) return (NULL);
-        if (Evaluate_pinfo(theGrid,theElement,&cg_pinfo)) return (NULL);
+        if (Read_pinfo (TAG(theElement),&cg_pinfo))     {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+        if (Evaluate_pinfo(theGrid,theElement,&cg_pinfo))       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
       }
     }
   }
 
   /* are we ready ? */
   if (mg_general.nLevel==1)
-  {
+  {             /* if we are here now, all other processors (wich haven't returned yet) are here TOO
+                   because mg_general.nLevel is a global quantity. */
+
+    /* no fine grid elements */
+
     /* close identification context */
     DDD_IdentifyEnd();
 
     /* repair inconsistencies */
     if (MGIO_PARFILE)
-      if (IO_GridCons(theMG)) return(NULL);
-
-    ReleaseTmpMem(theHeap,MarkKey);
-    if (CloseMGFile ())                                                                                             {DisposeMultiGrid(theMG); return (NULL);}
+      if (IO_GridCons(theMG))                                 {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
     for (theVector=PFIRSTVECTOR(GRID_ON_LEVEL(theMG,0));
          theVector!=NULL; theVector=SUCCVC(theVector)) {
@@ -3063,6 +3126,11 @@ nparfiles = UG_GlobalMinINT(nparfiles);
       SETNEW_DEFECT(theVector,1);
       SETFINE_GRID_DOF(theVector,1);
     }
+
+    if (SetSurfaceClasses (theMG))                          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+
+    ReleaseTmpMem(theHeap,MarkKey);
+    if (CloseMGFile ())                                             {DisposeMultiGrid(theMG); return (NULL);}
 
     /* saved */
     MG_SAVED(theMG) = 1;
@@ -3106,7 +3174,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   if (MGIO_PARFILE)
   {
     ProcList = (unsigned short*)malloc(PROCLISTSIZE*sizeof(unsigned short));
-    if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(unsigned short)); return (NULL);}
+    if (ProcList==NULL)     {UserWriteF("ERROR: cannot allocate %d bytes for ProcList\n",(int)PROCLISTSIZE*sizeof(unsigned short)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
     for (i=0; i<MAX_SONS; i++) refinement->pinfo[i].proclist = ProcList+i*ELEMPROCLISTSIZE;
   }
   for (j=0; j<cg_general.nElement; j++)
@@ -3128,7 +3196,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 #endif
       continue;
     }
-    if (InsertLocalTree(theGrid,theElement,refinement,rr_general.RefRuleOffset))    {DisposeMultiGrid(theMG); return (NULL);}
+    if (InsertLocalTree(theGrid,theElement,refinement,rr_general.RefRuleOffset)) {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   }
 
   /* close identification context */
@@ -3140,7 +3208,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 #ifdef ModelP
     CommunicateEClasses(theMG);
 #endif
-    if (IO_GridCons(theMG)) return(NULL);
+    if (IO_GridCons(theMG))                         {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   }
 
   /* postprocess */
@@ -3165,11 +3233,11 @@ nparfiles = UG_GlobalMinINT(nparfiles);
           for (k=0; k<SIDES_OF_ELEM(theNeighbor); k++)
             if (NBELEM(theNeighbor,k)==theElement)
               break;
-          if (k==SIDES_OF_ELEM(theNeighbor))                                                                      {DisposeMultiGrid(theMG); return (NULL);}
-          if (DisposeDoubledSideVector (theGrid,theElement,j,theNeighbor,k))      {DisposeMultiGrid(theMG); return (NULL);}
+          if (k==SIDES_OF_ELEM(theNeighbor))      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+          if (DisposeDoubledSideVector (theGrid,theElement,j,theNeighbor,k)) {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
         }
 #endif
-    if (GridCreateConnection(theGrid))                                                              {DisposeMultiGrid(theMG); return (NULL);}
+    if (GridCreateConnection(theGrid))                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   }
   for (i=0; i<=TOPLEVEL(theMG); i++)
   {
@@ -3194,6 +3262,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   /* close file */
   ReleaseTmpMem(theHeap,MarkKey);
   if (CloseMGFile ())                                                                                                                             {DisposeMultiGrid(theMG); return (NULL);}
+
 
   /* saved */
   MG_SAVED(theMG) = 1;
