@@ -196,7 +196,7 @@ INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
   NODE *theNode;
   ELEMENT *theElement;
   VERTEX *theVertex;
-  COORD *global;
+  DOUBLE *global;
   time_t Time;
   char *fmt;
   char buffer[BUFFERSIZE];
@@ -1075,7 +1075,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   MGIO_BD_GENERAL bd_general;
   MGIO_REFINEMENT *refinement;
   BNDP **BndPList;
-  COORD **PositionList, *Positions;
+  DOUBLE **PositionList, *Positions;
   char sysCom[NAMESIZE];
   char *p;
   BVP *theBVP;
@@ -1163,10 +1163,10 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   theMesh.nInnP = cg_general.nInnerPoint;
   if (cg_general.nInnerPoint>0)
   {
-    theMesh.Position = (COORD**)GetTmpMem(theHeap,cg_general.nInnerPoint*sizeof(COORD*));
-    if (theMesh.Position==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for theMesh.Position\n",(int)cg_general.nInnerPoint*sizeof(COORD*)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-    Positions = (COORD*)GetTmpMem(theHeap,MGIO_DIM*cg_general.nInnerPoint*sizeof(COORD));
-    if (Positions==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for Positions\n",(int)MGIO_DIM*cg_general.nInnerPoint*sizeof(COORD)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+    theMesh.Position = (DOUBLE**)GetTmpMem(theHeap,cg_general.nInnerPoint*sizeof(DOUBLE*));
+    if (theMesh.Position==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for theMesh.Position\n",(int)cg_general.nInnerPoint*sizeof(DOUBLE*)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+    Positions = (DOUBLE*)GetTmpMem(theHeap,MGIO_DIM*cg_general.nInnerPoint*sizeof(DOUBLE));
+    if (Positions==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for Positions\n",(int)MGIO_DIM*cg_general.nInnerPoint*sizeof(DOUBLE)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   }
   for (i=0; i<cg_general.nInnerPoint; i++)
     theMesh.Position[i] = Positions+MGIO_DIM*i;
@@ -1335,7 +1335,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
  */
 /****************************************************************************/
 
-static COORD LocalCoord[2][4][2]=
+static DOUBLE LocalCoord[2][4][2]=
 { {{ 0, 0},{1, 0},{0,1},{ 0,0}},
   {{-1,-1},{1,-1},{1,1},{-1,1}} };
 
@@ -1347,7 +1347,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
   long nv,ne,id;
   int i,j,k,n;
   double min,max,val;
-  COORD *CoordOfCornerPtr[8];
+  DOUBLE *CoordOfCornerPtr[8];
   FILE *stream;
   EVALUES *PlotProcInfo;
 
@@ -1405,7 +1405,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
         CORNER_COORDINATES(theElement,n,CoordOfCornerPtr);
         for (i=0; i<n; i++)
         {
-          val=(*PlotProcInfo->EvalProc)(theElement, (const COORD **) CoordOfCornerPtr, (COORD *) &(LocalCoord[n-3,i,0]));
+          val=(*PlotProcInfo->EvalProc)(theElement, (const DOUBLE **) CoordOfCornerPtr, (DOUBLE *) &(LocalCoord[n-3,i,0]));
           min = MIN(val,min);
           max = MAX(val,max);
         }
@@ -1490,7 +1490,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
         {
           theVertex=MYVERTEX(CORNER(theElement,i));
           if (USED(theVertex)) continue;
-          val=(*PlotProcInfo->EvalProc)(theElement, (const COORD **) CoordOfCornerPtr, (COORD *) &(LocalCoord[n-3,i,0]));
+          val=(*PlotProcInfo->EvalProc)(theElement, (const DOUBLE **) CoordOfCornerPtr, (DOUBLE *) &(LocalCoord[n-3,i,0]));
           fprintf(stream," %15.8lE",val);
           id++;
           if (id%5==0) fprintf(stream,"\n");
