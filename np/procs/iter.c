@@ -354,15 +354,17 @@ static INT JacobiPreProcess  (NP_ITER *theNP, INT level,
                               VECDATA_DESC *x, VECDATA_DESC *b,
                               MATDATA_DESC *A, INT *baselevel, INT *result)
 {
+        #ifdef ModelP
+  NP_SMOOTHER *np;
+  GRID *theGrid;
+        #endif
+
   /* store passed XXXDATA_DESCs */
   NPIT_A(theNP) = A;
   NPIT_c(theNP) = x;
   NPIT_b(theNP) = b;
 
         #ifdef ModelP
-  NP_SMOOTHER *np;
-  GRID *theGrid;
-
   np = (NP_SMOOTHER *) theNP;
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) {
     result[0] = __LINE__;
@@ -490,7 +492,6 @@ static INT GSStep (NP_SMOOTHER *theNP, INT level,
     result[0] = __LINE__;
     return (1);
   }
-
   if (l_lgs(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,L,b) != NUM_OK) {
     result[0] = __LINE__;
     return (1);
