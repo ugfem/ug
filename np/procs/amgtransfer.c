@@ -643,6 +643,8 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       breakflag = UG_GlobalSumINT(breakflag);
                         #endif
 
+      PRINTDEBUG(np,1,("%d: breakflag limit %d\n",me,breakflag));
+
       if (breakflag>0) {
                 #ifdef ModelP
         /* Do agglomeration only if it hasn't been done yet and if
@@ -665,11 +667,15 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
           REP_ERR_RETURN(result[0]);
       }
 
-      if ((result[0]=(np->Coarsen)(theGrid))!=0)
-        break;
+      breakflag = (*np->Coarsen)(theGrid);
+            #ifdef ModelP
+      breakflag = UG_GlobalSumINT(breakflag);
+                        #endif
+      if (breakflag) break;
+
       newGrid=theGrid->coarser;
-      if (newGrid==NULL)
-        break;
+      ASSERT(newGrid!=NULL);
+
             #ifdef ModelP
       if (a_vector_vecskip(theMG,level-1,level-1,x) != NUM_OK) {
         result[0]=1;
@@ -678,7 +684,6 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
             #endif
       if ((result[0]=(np->SetupIR)(theGrid,A,NULL /*preliminary!*/))!=0)
         REP_ERR_RETURN(result[0]);
-
       if (AllocMDFromMD(theMG,level-1,level-1,A,&A)) {
         result[0]=1;
         REP_ERR_RETURN(1);
@@ -690,7 +695,6 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       if ((result[0]=(np->SetupCG)(theGrid,A,NULL /* preliminary!! */,
                                    np->symmetric))!=0)
         REP_ERR_RETURN(result[0]);
-
       if (np->MarkKeep!=NULL) {
         UnmarkAll(newGrid,NULL,0.0);
         if ((result[0]=(np->MarkKeep)(newGrid,A,np->thetaK))!=0)
@@ -724,12 +728,14 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                         #ifdef ModelP
       /* Do agglomeration (only if it has not been done yet). */
       if (level-1==np->aggLimit && agglevel<-MAXLEVEL) {
+        PRINTDEBUG(np,1,("%d: AGG %d\n",me,level-1));
         AMGAgglomerate(theMG);
+        PRINTDEBUG(np,1,("%d: amg_collect\n",me));
         l_amgmatrix_collect(newGrid,A);
         agglevel = level;
-        PRINTDEBUG(np,1,("%3d: Coarse Grid agglomeration",me));
-        PRINTDEBUG(np,1,(" on level %d",level-1));
-        PRINTDEBUG(np,1,(" due to aggLimit criterion\n"));
+        PRINTDEBUG(np,1,("%3d: Coarse Grid agglomeration"
+                         " on level %d due to aggLimit criterion\n",
+                         me,level-1));
       }
                         #endif
 
@@ -746,9 +752,9 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         PRINTDEBUG(np,1,("%3d: bandLimit reached",me));
         PRINTDEBUG(np,1,(" on level %d\n",level));
       }
-
                         #ifdef ModelP
       breakflag = UG_GlobalSumINT(breakflag);
+      PRINTDEBUG(np,1,("%d: breakflag bandlimit %d\n",me,breakflag));
                         #endif
       if (breakflag>0) break;
     }
