@@ -3603,9 +3603,7 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 		}
 
 		case GREEN_CLASS:
-		#ifdef ModelP
 		case RED_CLASS:
-		#endif
 		{
 			/* determine sonnodes of side */
 			NODE *SideNodes[MAX_SIDE_NODES];
@@ -3772,10 +3770,15 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 			break;
 		}
 
-/* old style           */
+/* old style 
+This case would work for the sequential case if SonList is ordered according to
+rule (e.g. introduce GetOrderedSonList()). The upper case, used now in each 
+situation, is a factor of 2
+slower for uniform refinement!! (s.l. 981016)
 		#ifndef ModelP
 		case RED_CLASS:
 		#endif
+*/
 		{
 			SONDATA *sondata;
 
@@ -6045,8 +6048,6 @@ void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel,
 
 /****************************************************************************/
 /*
-   CheckMultiGrid - 
-
    SYNOPSIS:
    static INT CheckMultiGrid (MULTIGRID *theMG);
 
@@ -6060,7 +6061,7 @@ void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel,
 */
 /****************************************************************************/
 
-static INT CheckMultiGrid (MULTIGRID *theMG)
+INT CheckMultiGrid (MULTIGRID *theMG)
 {
 	INT level;
 
