@@ -261,7 +261,7 @@ RCSID("$Header$",UG_RCS_STRING)
 /*																			*/
 /****************************************************************************/
 
-static INT CreateBVPlane( BLOCKVECTOR **bv_plane, BV_DESC *bvd_plane, BV_DESC_FORMAT *bvdf, VECTOR **v, INT stripes, INT points_per_stripe, GRID *grid );
+static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, const BV_DESC_FORMAT *bvdf, VECTOR **v, INT stripes, INT vectors_per_stripe, GRID *grid );
 static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation, INT leaf_size );
 
 /****************************************************************************/
@@ -486,15 +486,16 @@ INT PushEntry( BV_DESC *bvd, BLOCKNUMBER bnr, const BV_DESC_FORMAT *bvdf )
    D*/
 /****************************************************************************/
 
-BLOCKVECTOR *FindBV( const GRID *grid, BV_DESC *bvd, const BV_DESC_FORMAT *bvdf )
+BLOCKVECTOR *FindBV( const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf )
 {
   register BLOCKVECTOR *bv;
   register BLOCKNUMBER nr;
+  BV_DESC copy_bvd = *bvd;
 
   /* initialize the search with the topmost blockvector in the grid */
   bv = GFIRSTBV( grid );
-  BVD_INIT_SEQ_READ( bvd );
-  nr = BVD_READ_NEXT_ENTRY( bvd, bvdf );
+  BVD_INIT_SEQ_READ( &copy_bvd );
+  nr = BVD_READ_NEXT_ENTRY( &copy_bvd, bvdf );
 
   /* search trough all blockvector levels defined in bvd */
   while ( TRUE )
@@ -507,7 +508,7 @@ BLOCKVECTOR *FindBV( const GRID *grid, BV_DESC *bvd, const BV_DESC_FORMAT *bvdf 
     }
 
     /* block with number nr found, prepare search on next block level */
-    nr = BVD_READ_NEXT_ENTRY( bvd, bvdf  );
+    nr = BVD_READ_NEXT_ENTRY( &copy_bvd, bvdf  );
     if ( nr != NO_BLOCKVECTOR )
       /* there is a further blockvector level specified */
       if ( BV_IS_LEAF_BV( bv ) )
@@ -5083,7 +5084,7 @@ static INT StrongLexAlgDep (GRID *theGrid, const char *data)
    CreateBVPlane - Creates a stripewise decomposition of a 2D rectangular domain with a regular mesh
 
    SYNOPSIS:
-   static INT CreateBVPlane( BLOCKVECTOR **bv_plane, BV_DESC *bvd_plane, const BV_DESC_FORMAT *bvdf, VECTOR **v, INT stripes, INT vectors_per_stripe, GRID *grid );
+        static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, const BV_DESC_FORMAT *bvdf, VECTOR **v, INT stripes, INT vectors_per_stripe, GRID *grid );
 
    PARAMETERS:
    .  bv_plane - handle for the blockvector covering the plane
@@ -5139,7 +5140,7 @@ static INT StrongLexAlgDep (GRID *theGrid, const char *data)
    D*/
 /****************************************************************************/
 
-static INT CreateBVPlane( BLOCKVECTOR **bv_plane, BV_DESC *bvd_plane, const BV_DESC_FORMAT *bvdf, VECTOR **v, INT stripes, INT vectors_per_stripe, GRID *grid )
+static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, const BV_DESC_FORMAT *bvdf, VECTOR **v, INT stripes, INT vectors_per_stripe, GRID *grid )
 {
   BLOCKVECTOR *bv;
   register BLOCKVECTOR *prev;
@@ -5276,6 +5277,9 @@ INT CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_stripe )
 #ifdef __BLOCK_VECTOR_DESC__
   BV_DESC bvd;
 
+  if ( GFIRSTBV( grid ) != NULL )
+    FreeAllBV( grid );
+
   /* number of blockvectors to be constructed */
   nr_blocks = ( vectors + vectors_per_stripe - 1) / vectors_per_stripe;
 
@@ -5387,6 +5391,9 @@ INT CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT 
   INT i, nr_planes, nr_vectors, ret;
 #ifdef __BLOCK_VECTOR_DESC__
   BV_DESC bvd;
+
+  if ( GFIRSTBV( grid ) != NULL )
+    FreeAllBV( grid );
 
   /* number of planes to be constructed */
   nr_planes = ( inner_vectors + stripes_per_plane*vectors_per_stripe - 1) / (stripes_per_plane*vectors_per_stripe);
@@ -5536,6 +5543,9 @@ INT CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
   register VECTOR *v, *end_v;
 
 #ifdef __BLOCK_VECTOR_DESC__
+  if ( GFIRSTBV( grid ) != NULL )
+    FreeAllBV( grid );
+
   /* create first block of the hierarchy */
   if ( CreateBlockvector( grid, &bv ) != GM_OK )
     return GM_OUT_OF_MEM;
