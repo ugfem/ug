@@ -436,16 +436,16 @@ static INT BDFTimeStep (NP_T_SOLVER *ts, INT level, INT *res)
     if ( (*tass->TAssemblePreProcess)(tass,0,level,
                                       bdf->t_p1,bdf->t_0,bdf->t_m1,
                                       bdf->y_p1,bdf->y_0,bdf->y_m1,res) )
-      return(__LINE__);
+      RETURN(__LINE__);
 
     /* set Dirichlet conditions in predicted solution */
     if ( (*tass->TAssembleSolution)(tass,0,low,bdf->t_p1,bdf->y_p1,res) )
-      return(__LINE__);
+      RETURN(__LINE__);
 
     /* do nested iteration on new time step */
     if (bdf->trans->PreProcessProject!=NULL)
       if ((*bdf->trans->PreProcessProject)(bdf->trans,0,level,res))
-        return(__LINE__);
+        RETURN(__LINE__);
     for (llow=low,changed=0;;)
     {
       for (k=llow; k<=level; k++)
@@ -457,22 +457,22 @@ static INT BDFTimeStep (NP_T_SOLVER *ts, INT level, INT *res)
         if (bdf->order==1)
         {
           if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_0,-1.0,0.0,bdf->y_0,bdf->b,NULL,res) )
-            return(__LINE__);
+            RETURN(__LINE__);
         }
         else
         {
           if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_0,g_0/g_p1,0.0,bdf->y_0,bdf->b,NULL,res) )
-            return(__LINE__);
+            RETURN(__LINE__);
           if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_m1,g_m1/g_p1,0.0,bdf->y_m1,bdf->b,NULL,res) )
-            return(__LINE__);
+            RETURN(__LINE__);
         }
 
         /* solve nonlinear problem on level k */
         if (nlsolve->PreProcess!=NULL)
           if ( (*nlsolve->PreProcess)(nlsolve,k,bdf->y_p1,res) )
-            return(__LINE__);
+            RETURN(__LINE__);
         if ( (*nlsolve->Solver)(nlsolve,k,bdf->y_p1,&bdf->tsolver.nlass,nlsolve->abslimit,nlsolve->reduction,&nlresult) )
-          return(__LINE__);
+          RETURN(__LINE__);
 
         /* update statisitics */
         bdf->number_of_nonlinear_iterations += nlresult.number_of_nonlinear_iterations;
@@ -482,7 +482,7 @@ static INT BDFTimeStep (NP_T_SOLVER *ts, INT level, INT *res)
 
         if (nlsolve->PostProcess!=NULL)
           if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
-            return(__LINE__);
+            RETURN(__LINE__);
         if (!nlresult.converged)
         {
           if (!bdf->ctn || llow<level || bdf->baselevel>=llow)
@@ -502,7 +502,7 @@ static INT BDFTimeStep (NP_T_SOLVER *ts, INT level, INT *res)
               else
               {
                 UserWrite("time step too small -- aborting\n");
-                return(__LINE__);
+                RETURN(__LINE__);
               }
             }
             UserWrite("halfen time step\n");
@@ -527,10 +527,10 @@ noabort:
         {
           for (i=0; i<n_unk; i++) Factor[i] = 1.0;
           if ((*bdf->trans->InterpolateCorrection)(bdf->trans,k+1,bdf->y_p1,bdf->y_p1,NULL,Factor,res))
-            return(__LINE__);
+            RETURN(__LINE__);
           /* set Dirichlet conditions in predicted solution */
           if ( (*tass->TAssembleSolution)(tass,k+1,k+1,bdf->t_p1,bdf->y_p1,res) )
-            return(__LINE__);
+            RETURN(__LINE__);
         }
         else if (nlinterpolate > 0) {
           if (bdf->error->PreProcess != NULL)
@@ -656,7 +656,7 @@ Continue:
     }
     if (bdf->trans->PostProcessProject!=NULL)
       if ((*bdf->trans->PostProcessProject)(bdf->trans,0,level,res))
-        return(__LINE__);
+        RETURN(__LINE__);
 
     /* check convergence */
     if (!nlresult.converged) continue;                  /* start again with smaller time step   */
@@ -665,7 +665,7 @@ Continue:
   if ( (*tass->TAssemblePostProcess)(tass,0,level,
                                      bdf->t_p1,bdf->t_0,bdf->t_m1,
                                      bdf->y_p1,bdf->y_0,bdf->y_m1,res) )
-    return(__LINE__);
+    RETURN(__LINE__);
 
   /* accept new time step */
   dcopy(mg,0,level,ALL_VECTORS,bdf->y_m1,bdf->y_0 );
@@ -846,6 +846,7 @@ output:         /* output */
 
   return(0);
 }
+
 
 INT BDFTimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
 {

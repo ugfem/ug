@@ -324,7 +324,7 @@ INT EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
 
   default :
     PrintErrorMessage('E',"EvaluateFVGeometry","unknown element");
-    return(__LINE__);
+    RETURN(__LINE__);
   }
 
   IFDEBUG(np,0)
@@ -361,7 +361,7 @@ INT EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
     {
       UserWriteF("W: scvf normal w. edge negative e=%5d i=%2d j=%2d\n",
                  ID(e),i,j);
-      return(__LINE__);
+      RETURN(__LINE__);
     }
     ENDDEBUG
   }
