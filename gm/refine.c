@@ -4825,6 +4825,7 @@ static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContex
 
 static int RefineGrid (GRID *theGrid)
 {
+	INT modified = 0;
 	ELEMENT *theElement;
 	ELEMENT *NextElement;
 	ELEMENTCONTEXT theContext;
@@ -4900,8 +4901,7 @@ static int RefineGrid (GRID *theGrid)
 			#endif
 
 			/* this grid is modified */
-			SETGLOBALGSTATUS(UpGrid);
-			RESETMGSTATUS(MYMG(UpGrid));
+			modified = 1;
 		}
 		else 
 		{
@@ -4929,6 +4929,13 @@ static int RefineGrid (GRID *theGrid)
 
 		/* reset coarse flag */
 		SETCOARSEN(theElement,0);
+	}
+
+	if (UG_GlobalMaxINT(modified))
+	{
+		/* reset (multi)grid status */
+		SETGLOBALGSTATUS(UpGrid);
+		RESETMGSTATUS(MYMG(UpGrid));
 	}
 
 	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),("END RefineGrid(%d):\n",GLEVEL(theGrid)),"");
@@ -5135,6 +5142,20 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 /****************************************************************************/
 /*
    CheckMultiGrid - 
+INT CheckMultiGrid (MULTIGRID *theMG)
+
+	for (level=0; level<=TOPLEVEL(theMG); level++)
+		#ifdef ModelP
+		CheckGrid(GRID_ON_LEVEL(theMG,level),1,1,1);
+		#endif
+
+	UserWriteF("CheckMultiGrid() end\n");
+
+	return(0);
+}
+/****************************************************************************/
+/*
+   RefineMultiGrid - refine whole multigrid structure
    SYNOPSIS:
 /*																			*/
 /* Function:  RefineMultiGrid												*/
@@ -5158,7 +5179,11 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 	DEBUG_TIME(0);
 
 /*
-	
+CheckMultiGrid(theMG);
+	/* check necessary condition */
+	if (!MG_COARSE_FIXED(theMG))
+		return (GM_COARSE_NOT_FIXED);
+
 #ifdef ModelP
 	/* check and restrict partitioning of elements */
 	if (CheckPartitioning(theMG))
@@ -5413,4 +5438,8 @@ CheckConsistency(theMG,level,debugstart,gmlevel,&check);
 /*
 CheckMultiGrid(theMG);
 */
+
+	DEBUG_TIME(0);
+
+	return(GM_OK);
 }
