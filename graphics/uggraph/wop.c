@@ -411,6 +411,8 @@ static DOUBLE				ez[3] = {0.0, 0.0, 1.0};
 
 /*----------- variables describing transformations -------------------------*/
 static DOUBLE					ObsTrafo[16], InvObsTrafo[16];
+static DOUBLE					ScaleTrafo[16];
+static DOUBLE					NormObsTrafo;
 static DOUBLE					CutTrafo[16], InvCutTrafo[16];
 static INT						CUT_CutExisting;
 static DOUBLE					CUT_CutNormal[3];
@@ -757,6 +759,8 @@ static DOUBLE		LINE2D_xscl;
 
 static ElementVectorProcPtr EVector_EvalFct;
 static DOUBLE				EVector_rastersize;
+static INT *                EVector2D_PicGLL;
+static INT *                EVector2D_PicGUR;
 static INT					EVector_cutvector;
 static DOUBLE				EVector_V2L_factor;
 static DOUBLE				EVector_CutLenFactor;
@@ -1005,10 +1009,10 @@ static INT BuildObsTrafo (PICTURE *thePicture)
 {
 	VIEWEDOBJ *theViewedObj;
 	PLOTOBJ *thePlotObj;
-	DOUBLE VRS_2_PHS[16], PHS_2_VRS[16], VRS_2_SCS[16];
+	DOUBLE VRS_2_PHS[16], PHS_2_VRS[16], VRS_2_SCS[16], SCALE[16], HELP[16];
 	DOUBLE pt[2],cpt[2];
-	DOUBLE ZD[3];
-	DOUBLE *MP, *XD, *YD;
+	DOUBLE ZD[3],n1,n2;
+	DOUBLE *MP, *XD, *YD, *SXD, *SYD, *SZD;
 	INT *LL, *UR;
 	
 	theViewedObj = PIC_VO(thePicture);
@@ -1019,10 +1023,24 @@ static INT BuildObsTrafo (PICTURE *thePicture)
 	MP = VO_PMP(theViewedObj);
 	XD = VO_PXD(theViewedObj);
 	YD = VO_PYD(theViewedObj);
+	SXD = VO_SXD(theViewedObj);
+	SYD = VO_SYD(theViewedObj);
+	SZD = VO_SZD(theViewedObj);
 	
 	switch (PO_DIM(thePlotObj))
 	{
 		case TYPE_2D:
+			
+			/* set trafo from phys. space to phys. space: scale-implementation */
+			VRS_2_PHS[0] = 2.0*SXD[0];		VRS_2_PHS[3] = 2.0*SYD[0];		VRS_2_PHS[6] = MP[0]-SXD[0]-SYD[0];
+			VRS_2_PHS[1] = 2.0*SXD[1];		VRS_2_PHS[4] = 2.0*SYD[1];		VRS_2_PHS[7] = MP[1]-SXD[1]-SYD[1];
+			VRS_2_PHS[2] = 0.0; 			VRS_2_PHS[5] = 0.0; 			VRS_2_PHS[8] = 1.0;
+			if (M3_Invert(PHS_2_VRS,VRS_2_PHS)) return (1);
+			SCALE[0] = VO_SCALE(theViewedObj)[0];	SCALE[3] = 0.0;							SCALE[6] = 0.0;
+			SCALE[1] = 0.0;							SCALE[4] = VO_SCALE(theViewedObj)[1];	SCALE[7] = 0.0;
+			SCALE[2] = 0.0; 						SCALE[5] = 0.0; 						SCALE[8] = 1.0;
+			M3_TIMES_M3(SCALE,PHS_2_VRS,HELP);	
+			M3_TIMES_M3(VRS_2_PHS,HELP,ScaleTrafo);				
 			
 			/* set trafo from phys. space to view reference system */
 			VRS_2_PHS[0] = 2.0*XD[0];		VRS_2_PHS[3] = 2.0*YD[0];		VRS_2_PHS[6] = MP[0]-XD[0]-YD[0];
@@ -1036,9 +1054,25 @@ static INT BuildObsTrafo (PICTURE *thePicture)
 			VRS_2_SCS[2] = 0.0; 			VRS_2_SCS[5] = 0.0; 			VRS_2_SCS[8] = 1.0;
 			
 			/* set ObsTrafo and its inverse */
-			M3_TIMES_M3(VRS_2_SCS,PHS_2_VRS,ObsTrafo)	
+			M3_TIMES_M3(VRS_2_SCS,PHS_2_VRS,HELP);	
+			M3_TIMES_M3(HELP,ScaleTrafo,ObsTrafo);	
 			if (M3_Invert(InvObsTrafo,ObsTrafo)) return (1);
 			OBS_ProjectProc = NormalProjection;
+			
+			/* get norm of 'ObsTrafo' */
+			if (VO_SCALE(theViewedObj)[0]>VO_SCALE(theViewedObj)[1])
+			{
+				V2_EUKLIDNORM(SXD,n1);
+				V2_TRAFOM3_V2_NT(SXD,ObsTrafo,HELP);
+				V2_EUKLIDNORM(HELP,n2);
+			}
+			else
+			{
+				V2_EUKLIDNORM(SYD,n1);
+				V2_TRAFOM3_V2_NT(SYD,ObsTrafo,HELP);
+				V2_EUKLIDNORM(HELP,n2);
+			}
+			NormObsTrafo = n2/n1;
 			
 			/* calculate phys. rectangle to be plotted */
 			pt[_X_] = LL[_X_]; pt[_Y_] = LL[_Y_];
@@ -9017,10 +9051,12 @@ static INT EW_PreProcess_EVector2D (PICTURE *thePicture, WORK *theWork)
 	EVector_rastersize	  = theEvpo->RasterSize;
 	EVector_cutvector	  = theEvpo->CutVectors;
 	EVector_EvalFct 	  = theEvpo->EvalFct->EvalProc;
-	EVector_V2L_factor	  = EVector_rastersize/theEvpo->max;				/* scale length of vectors			*/
+	EVector_V2L_factor	  = EVector_rastersize/theEvpo->max/NormObsTrafo;	
 	EVector_CutLenFactor  = theEvpo->CutLenFactor;
 	EVector_ColorCut	  = theOD->red;
 	EVector2D_ColorNormal = theOD->black;
+	EVector2D_PicGLL	  = PIC_GLL(thePicture);
+	EVector2D_PicGUR	  = PIC_GUR(thePicture);
 	
 	/* mark suface elements on boundary */
 	if (MarkElements_MGS(theMG,0,CURRENTLEVEL(theMG))) return (1);
@@ -9058,7 +9094,7 @@ static INT EW_PreProcess_EVector2D (PICTURE *thePicture, WORK *theWork)
 */
 /****************************************************************************/
 
-static INT FindRasterPoints2D (DOUBLE RasterSize, const DOUBLE **Polygon, INT Number, DOUBLE_VECTOR *RasterPoints, INT *RPNumber)
+static INT FindRasterPoints2D_old (DOUBLE RasterSize, const DOUBLE **Polygon, INT Number, DOUBLE_VECTOR *RasterPoints, INT *RPNumber)
 {
 	INT i, j, k, i0, i1, j0, j1, c0, c1;
 	DOUBLE xmin, xmax, ymin, ymax;
@@ -9098,6 +9134,63 @@ static INT FindRasterPoints2D (DOUBLE RasterSize, const DOUBLE **Polygon, INT Nu
 			{
 				RasterPoints[*RPNumber][0] = RasterSize*(DOUBLE)(i);
 				RasterPoints[*RPNumber][1] = RasterSize*(DOUBLE)(j);
+				(*RPNumber)++;
+			}
+			if (*RPNumber>=RASTERPOINTS_MAX)
+				return (0);
+		}
+	
+	return (0);
+}
+
+static INT FindRasterPoints2D (DOUBLE RasterSize, const DOUBLE **Polygon, INT Number, DOUBLE_VECTOR *RasterPoints, INT *RPNumber)
+{
+	INT i, j, k, i0, i1, j0, j1, c0, c1;
+	DOUBLE xmin, xmax, ymin, ymax, in[2], out[2];
+	DOUBLE diff[MAX_POINTS_OF_POLY][2], PixPolygon[MAX_POINTS_OF_POLY][2], test[2];
+	
+	*RPNumber = 0;
+	if (Number<2) return (0);
+	
+	for (i=0; i<Number; i++)
+	{
+		V2_TRAFOM3_V2(Polygon[i],ObsTrafo,PixPolygon[i]);
+	}	
+		
+	xmin = ymin = MAX_C;
+	xmax = ymax = -MAX_C;
+	for (i=0; i<Number; i++)
+	{
+		xmin = MIN(xmin,PixPolygon[i][0]);
+		xmax = MAX(xmax,PixPolygon[i][0]);
+		ymin = MIN(ymin,PixPolygon[i][1]);
+		ymax = MAX(ymax,PixPolygon[i][1]);
+		diff[i][0] = PixPolygon[(i+1)%Number][0] - PixPolygon[i][0];
+		diff[i][1] = PixPolygon[(i+1)%Number][1] - PixPolygon[i][1];
+	}
+	i0 = (INT)ceil(xmin/RasterSize);
+	i1 = (INT)floor(xmax/RasterSize);
+	j0 = (INT)ceil(ymin/RasterSize);
+	j1 = (INT)floor(ymax/RasterSize);
+	
+	for (i=i0; i<=i1; i++)
+		for (j=j0; j<=j1; j++)
+		{
+			c0 = c1 = 0;
+			for (k=0; k<Number; k++)
+			{
+				test[0] = RasterSize*(DOUBLE)(i) - PixPolygon[k][0];
+				test[1] = RasterSize*(DOUBLE)(j) - PixPolygon[k][1];
+				if (diff[k][0]*test[1]>=diff[k][1]*test[0]) c0++;
+				if (diff[k][0]*test[1]<=diff[k][1]*test[0]) c1++;
+			}
+			if (c0==Number || c1==Number)
+			{
+				in[0] = RasterSize*(DOUBLE)(i);
+				in[1] = RasterSize*(DOUBLE)(j);
+				V2_TRAFOM3_V2(in,InvObsTrafo,out);
+				RasterPoints[*RPNumber][0] = out[0];
+				RasterPoints[*RPNumber][1] = out[1];
 				(*RPNumber)++;
 			}
 			if (*RPNumber>=RASTERPOINTS_MAX)
@@ -9158,7 +9251,7 @@ static INT EW_EVector2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	DOUBLE norm;
 	long Color;
 	DOUBLE min, max;
-	DOUBLE_VECTOR Arrow;
+	DOUBLE_VECTOR Arrow,SArrow;
 	
 	/* get coordinates of corners of the element and their z coordinates in cut system */
 	found = FALSE;
@@ -9201,18 +9294,18 @@ static INT EW_EVector2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	min = MAX_D; max = -MAX_D;
 	for (i=0; i<nr; i++)
 	{
+		/* get arrow and store range */
 		if (UG_GlobalToLocal(CORNERS_OF_ELEM(theElement),x,RasterPoint[i],LocalCoord)) return (1);
 		(*EVector_EvalFct)(theElement,x,LocalCoord,Arrow);
+		V2_TRAFOM3_V2_NT(Arrow,ScaleTrafo,SArrow);
+		V2_EUKLIDNORM(Arrow,norm);
+		max = MAX(max,norm); min = MIN(min,norm);
 		V2_SCALE(EVector_V2L_factor,Arrow)
 				
-		/* find color and size of arrow, define its endpoint on the cutplane */
-		V2_EUKLIDNORM(Arrow,norm)
-		max = MAX(max,norm/EVector_V2L_factor); min = MIN(min,norm/EVector_V2L_factor);
-			
-		if ((norm>EVector_rastersize*EVector_CutLenFactor) && EVector_cutvector)
+		if ((norm*EVector_V2L_factor>EVector_rastersize*EVector_CutLenFactor) && EVector_cutvector)
 		{
 			Color = EVector_ColorCut;
-			V2_SCALE(EVector_rastersize*EVector_CutLenFactor/norm,Arrow)
+			V2_SCALE(EVector_rastersize*EVector_CutLenFactor/norm/EVector_V2L_factor,Arrow)
 		}
 		else
 			Color = EVector2D_ColorNormal;
@@ -9828,8 +9921,6 @@ static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, DOUBLE **Corners,
 					{
 						case (0):
 						case (1):
-							/* quick bug fix, this case shouldn't happen */
-							return(0);
 							RETURN(1);
 						case (2):
 						case (3):
@@ -10230,8 +10321,6 @@ static INT GetPolyElemSideISHalfSpaceHEX (ELEMENT *theElement, DOUBLE **Corners,
 			{
 				case (0):
 				case (1):
-					/* quick bug fix, this case shouldn't happen */
-					return(0);
 					RETURN(1);
 				case (2):
 				case (3):
@@ -10254,8 +10343,6 @@ static INT GetPolyElemSideISHalfSpaceHEX (ELEMENT *theElement, DOUBLE **Corners,
 			switch (count2)
 			{
 				case (0):
-					/* quick bug fix, this case shouldn't happen */
-					return(0);
 					RETURN(1);
 				case (1):
 					V3_COPY(x[1], Poly[0])
