@@ -4123,7 +4123,7 @@ static INT InitRuleManager3D (void)
     {
       Rules[i] = Empty_Rule;
       Rules[i].mark = i;
-      Rules[i].class = RED_CLASS|GREEN_CLASS;
+      Rules[i].rclass = RED_CLASS|GREEN_CLASS;
       if (FReadRule(stream,Rules+i)) return (__LINE__);
     }
 
