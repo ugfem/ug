@@ -18,7 +18,8 @@ ARCH_POSTLINK = true
 ARCH_LIBS     = -lm
 ARCH_FLIBS     = -lf
 
-ARCH_CFLAGS   = -nx -O1 -Mallow_spacing -Xc # -g -Mnoperfmon -Mvect
+
+ARCH_CFLAGS   = -nx -g -Mallow_spacing -Xc # -O1 -g -Mnoperfmon -Mvect
 ARCH_C++FLAGS =
 ARCH_FFLAGS =
 ARCH_LFLAGS   = -nx # -Mdebug -Mframe -O0
