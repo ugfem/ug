@@ -180,6 +180,7 @@ INT a_dxdy                      (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DE
 INT s_dxdy                      (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const DOUBLE *a, const VECDATA_DESC *y);
 
 INT l_ddot                      (const GRID *g,                                           const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
+INT l_ddot_sv           (const GRID *g,                                           const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv);
 INT a_ddot                      (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
 INT s_ddot                      (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const VECDATA_DESC *y, DOUBLE *sp);
 INT s_ddot_sv           (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv);
@@ -256,6 +257,7 @@ INT l_dmatadd           (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2
 
 INT l_dmatmul           (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
 INT l_dmatmul_minus     (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
+INT l_dmatmul_set       (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
 INT s_dmatmul           (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
 INT s_dmatmul_minus     (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
 INT s_dmatmul_set       (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
