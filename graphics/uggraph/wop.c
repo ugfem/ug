@@ -14979,7 +14979,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 		/* work */
 		if (WOP_GEN_PreProcessProc!=NULL)
 			if ((*WOP_GEN_PreProcessProc)(WOP_Picture,WOP_Work))
-				break;
+				continue;
 
 		switch (WOP_WorkMode)
 		{
