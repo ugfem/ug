@@ -10926,13 +10926,17 @@ static INT SymListCommand (INT argc, char **argv)
     {
       /* print all vectors */
       for (vd = GetFirstVector(theMG); vd != NULL; vd = GetNextVector(vd))
-        DisplayVecDataDesc(vd);
+      {
+        DisplayVecDataDesc(vd,buffer);
+        UserWrite(buffer);
+      }
       return (OKCODE);
     }
     for (vd = GetFirstVector(theMG); vd != NULL; vd = GetNextVector(vd))
       if (strcmp(ENVITEM_NAME(vd),name)==0)
       {
-        DisplayVecDataDesc(vd);
+        DisplayVecDataDesc(vd,buffer);
+        UserWrite(buffer);
         return (OKCODE);
       }
     break;
@@ -10943,13 +10947,17 @@ static INT SymListCommand (INT argc, char **argv)
     {
       /* print all matrices */
       for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md))
-        DisplayMatDataDesc(md);
+      {
+        DisplayMatDataDesc(md,buffer);
+        UserWrite(buffer);
+      }
       return (OKCODE);
     }
     for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md))
       if (strcmp(ENVITEM_NAME(md),name)==0)
       {
-        DisplayMatDataDesc(md);
+        DisplayMatDataDesc(md,buffer);
+        UserWrite(buffer);
         return (OKCODE);
       }
     break;
