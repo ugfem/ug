@@ -611,3 +611,28 @@ npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|r
 <<item> list>     := <item>{:<item>}*
 <item>            := <double>|<int>|<numproc>
 
+-cv > numproc tvd
+cv  # clear vector
+cv <vec sym>
+
+-cm > numproc 
+cm  # clear matrix
+cm <Mat sym>
+
+-eu > numproc 
+eu  # compute Eucilian norm
+eu <vec sym>
+
+-lmgc > numproc 
+lmgc # linear multigrid cycle
+for initialisation use:
+npinit $x <sol sym> $b <rhs sym> $c <cor sym> $t <temp sym> $A <mat sym> 
+       $m <maxit> $l <baselevel> $g <gamma> $s <sm1 sm2 basesm> $D{no|red|full}
+       $red <sc double list>
+
+-nl > numproc 
+nl # nonlinear solver
+for initialisation use:
+npinit $n <new sym> $o <old sym> $t <temp sym> $d {NO|RED|FULL} $m <maxit> 
+       $l <linear solver> $r <assemble> $Rel_Limit <sc double list> $Damp <sc double list>
+
