@@ -3763,6 +3763,7 @@ static INT DisplayVecMat_2D (PLOTOBJ *thePlotObj)
                                                           CAUTION: may slow down dramatically!)
    .    $m COLOR|CONTOURS_EQ	- mode: color or equidistant contour lines
    .    $n~<levels>			- number of levels for contour lines
+   .    $v~<val1>...<val10>        - explizit values for contour lines (max. 10 values)
    .    $g~0|1					- show grid off/on
 
    KEYWORDS:
