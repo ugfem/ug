@@ -328,7 +328,7 @@ extern "C" {
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
 
 /* fortran interfacing */
-#define F77SYM(lsym,usym)  lsym
+#define F77SYM(lsym,usym)  lsym ## _
 
 #endif
 
