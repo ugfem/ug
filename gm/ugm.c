@@ -10282,6 +10282,7 @@ static INT PropagateNextNodeClass (GRID *theGrid, INT nnclass)
   return(0);
 }
 
+
 INT PropagateNextNodeClasses (GRID *theGrid)
 {
   NODE *theNode;
@@ -11309,9 +11310,8 @@ INT FixCoarseGrid (MULTIGRID *theMG)
     REP_ERR_RETURN (GM_ERROR);
 
 #ifdef __PERIODIC_BOUNDARY__
-  if (1)
-    if (MG_GeometricToPeriodic(theMG,0,0))
-      REP_ERR_RETURN (GM_ERROR);
+  if (MG_GeometricToPeriodic(theMG,0,0))
+    REP_ERR_RETURN (GM_ERROR);
 #endif
 
   /* here all temp memory since CreateMultiGrid is released */
