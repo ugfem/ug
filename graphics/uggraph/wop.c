@@ -13109,7 +13109,7 @@ static INT EW_PreProcess_EVector3D (PICTURE *thePicture, WORK *theWork)
 	
 	/* prepare evaluation routine */
 	if (theEvpo->EvalFct->PreprocessProc!=NULL)
-		if ((*theEvpo->EvalFct->PreprocessProc)(PO_NAME(theEvpo),theMG)) return (1);;
+		if ((*theEvpo->EvalFct->PreprocessProc)(PO_NAME(theEvpo),theMG)) return (1);
 
 	return (0);
 }
@@ -13129,8 +13129,24 @@ static INT EW_PreProcess_EVector3D (PICTURE *thePicture, WORK *theWork)
 
 static INT EW_PreProcess_EVector3D_FR (PICTURE *thePicture, WORK *theWork)
 {
-	if (EW_PreProcess_EVector3D(thePicture,theWork))
-		return (1);
+	struct ElemVectorPlotObj3D *theEvpo;
+	MULTIGRID *theMG;
+	
+	theEvpo = &(PIC_PO(thePicture)->theEvpo);
+	theMG  = PO_MG(PIC_PO(thePicture));
+
+	/* build cut trafo */
+	if (BuildCutTrafo(&(theEvpo->theCut),OBS_ViewDirection)) return (1);
+
+	/* order nodes */
+	if (OrderNodes(theMG,1.0)) return (1);
+	
+	/* init min and max values */
+	GEN_FR_min = 0.0;
+	GEN_FR_max = 1.0;	
+	
+	/* prepare like vector plot */
+	if (EW_PreProcess_EVector3D(thePicture,theWork))	return (1);
 	
 	/* reset min and max values */
 	GEN_FR_put = W_FINDRANGE_WORK(theWork)->put;
