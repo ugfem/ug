@@ -333,7 +333,7 @@ public:
     assert(MD_IS_SCALAR(md));
   }                                                                                                                                                            // CAUTION: set N and NLinks explicitly
   FAMGugMatrix( GRID *grid, const FAMGugMatrix &pattern_mat) : FAMGMatrixAlg(0,0), mygrid(grid) {
-    matdesc = pattern_mat.GetMatDesc(); assert(matdesc!=NULL); assert(MD_IS_SCALAR(matdesc)); comp = MD_SCALCMP(matdesc);
+    matdesc = NULL; if(pattern_mat.GetMatDesc()->locked) matdesc = pattern_mat.GetMatDesc();else AllocMDFromMD(MYMG(grid), GLEVEL(grid), GLEVEL(grid), pattern_mat.GetMatDesc(), &matdesc);assert(matdesc!=NULL); assert(MD_IS_SCALAR(matdesc)); comp = MD_SCALCMP(matdesc);
   }
   ~FAMGugMatrix() {
     if (FreeMD(MYMG(GetMyGrid()),GLEVEL(GetMyGrid()),GLEVEL(GetMyGrid()),GetMatDesc())) assert(0);

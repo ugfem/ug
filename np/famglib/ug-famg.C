@@ -1417,7 +1417,7 @@ INT FAMGTransferInit (NP_BASE *theNP, INT argc, char **argv)
 	if (ReadArgvINT("coarsegridsolver",&(famgtrans->coarsegridsolver),argc,argv))
         famgtrans->coarsegridsolver = 1;
 	
-	famgtrans->ConsMat = ReadArgvMatDesc(famgtrans->amg_trans.transfer.base.mg,"ConsMat",argc,argv);
+	//famgtrans->ConsMat = ReadArgvMatDesc(famgtrans->amg_trans.transfer.base.mg,"ConsMat",argc,argv);
 
 	famgtrans->smooth_sol = NULL;	// default to detect errors
 	famgtrans->smooth_def = NULL;	// default to detect errors
@@ -1451,12 +1451,19 @@ INT FAMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 	// in order to be able to construct a consistent interpolationmatrix
 	
 	ACons = np->ConsMat;
-	if (ACons==NULL) 
+	if (ACons==NULL)
 	{
-		ostrstream ostr; ostr  << __FILE__ << ", line " << __LINE__ << ": can not read ConsMat symbol" << endl;
-		FAMGError(ostr);
-		assert(0);
+		if( AllocMDFromMD(NP_MG(theNP),tl,tl,A,&ACons) || (ACons==NULL) )	
+		{
+			ostrstream ostr; ostr  << __FILE__ << ", line " << __LINE__ << ": can not read ConsMat symbol" << endl;
+			FAMGError(ostr);
+			assert(0);
+		}
+		np->ConsMat = ACons;
+		np->ConsMatTempAllocated = 1;
 	}
+	else 
+		np->ConsMatTempAllocated = 0;
 #else
 	ACons = A;
 #endif
@@ -1501,6 +1508,14 @@ static INT FAMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 	np = (NP_FAMG_TRANSFER *) theNP;
 	theMG = NP_MG(theNP);
 
+	if (np->ConsMatTempAllocated)
+	{
+		if( FreeMD(theMG,*fl,tl,np->ConsMat)) 
+			NP_RETURN(1,result[0]);
+		np->ConsMat = NULL;
+		np->ConsMatTempAllocated = 0;
+	}
+	
     ReleaseTmpMem(MGHEAP(theMG),np->famg_mark_key); /* mark in PreProcess */
 	FAMGFreeHeap();
 	// all memory released? TODO

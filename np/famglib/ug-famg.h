@@ -65,7 +65,8 @@ typedef struct
 
   VECDATA_DESC *smooth_sol;                     /* for the fine grid smoother */
   VECDATA_DESC *smooth_def;                     /* for the fine grid smoother */
-  MATDATA_DESC *ConsMat;                        /* (pertly) consistent matrix */
+  MATDATA_DESC *ConsMat;                        /* (partly) consistent matrix */
+  int ConsMatTempAllocated;
 } NP_FAMG_TRANSFER;
 
 /****************************************************************************/
