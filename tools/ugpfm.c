@@ -222,9 +222,6 @@ HASH_TABLE *ResizeHashTable (HASH_TABLE *ht, int add_obj)
   HASH_TABLE *nht;
   int i,ncol,nmerge;
 
-#ifdef VERBOSE
-  printf("Resizing hashtable\n");
-#endif
   nht=CreateHashTable(&ht,ht->n_obj+add_obj);
   if (nht==NULL) return (NULL);
   for (i=ht->next_get; i<ht->table_len; i++)
@@ -703,17 +700,6 @@ int WriteRefinement (MERGE_REFINEMENT *ref)
   return (0);
 }
 
-int PrintRefinementCID (MERGE_REFINEMENT *ref)
-{
-  int i;
-
-  for (i=0; i<ref->ref.nnewcorners; i++)
-    printf("%d\n",ref->ref.newcornerid[i]);
-  printf("\n");
-
-  return (0);
-}
-
 static int CR_nref;
 int CountRefinements (MERGE_REFINEMENT *ref)
 {
@@ -819,9 +805,14 @@ int MergeMultigrid (char *in, int rename)
   if (refinement==NULL)                                                                   {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'refinement' \n");return (1);}
   ncge=(int*)ht_malloc(nparfiles*sizeof(int),"const");
   if (ncge==NULL)                                                                                 {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'ncge' \n");return (1);}
+  printf("merging '%s': ",in);
+  fflush(stdout);
   for (i=0; i<nparfiles; i++)
   {
     sprintf(tmp,"%s/mg.%04d",in,i);
+    if (i<nparfiles-1) printf("[%d]",i);
+    else printf("[%d]\n",i);
+    fflush(stdout);
     if (Read_OpenMGFile(tmp))                                                       {printf("ERROR in 'MergeMultigrid': cannot open proc %d file\n",i);return (1);}
     if (Read_MG_General(&mg_general_dummy))                         {printf("ERROR in 'MergeMultigrid': cannot read mg_general of proc %d file\n",i);return (1);}
     in_lid2gid=(int*)ht_malloc(mg_general_dummy.nNode*sizeof(int),"procloc");
