@@ -188,6 +188,7 @@ INT         BVP_Dispose           (BVP *theBVP);
 INT         BVP_SetBVPDesc        (BVP *theBVP, BVP_DESC *theBVPDesc);
 INT         BVP_SetCoeffFct       (BVP *theBVP, INT n, CoeffProcPtr *CoeffFct);
 INT         BVP_SetUserFct        (BVP *theBVP, INT n, UserProcPtr *UserFct);
+INT             BVP_Check                         (BVP *aBVP);
 
 /* functions called by script commands */
 BNDP*           BVP_InsertBndP            (HEAP *Heap, BVP *theBVP, INT argc, char **argv);
