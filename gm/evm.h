@@ -550,6 +550,7 @@ INT 		PointInTriangle 					(const COORD_POINT *Points, const COORD_POINT Point);
 INT 		PointInPolygon						(const COORD_POINT *Points, INT n, COORD_POINT Point);
 INT 		PointInPolygonC 					(const DOUBLE_VECTOR_2D *Points, INT n, const DOUBLE_VECTOR_2D Point);
 INT 		PolyArea 							(INT n, DOUBLE_VECTOR_2D *Polygon, DOUBLE *Area);
+INT 		QuadraticFittedMin 					(DOUBLE *x, DOUBLE *y, INT n, DOUBLE *minx);
 
 
 /* 2D routines */

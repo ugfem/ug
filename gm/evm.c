@@ -1075,3 +1075,58 @@ INT M4_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
   }
   return(1);
 }
+
+/****************************************************************************/
+/*D
+   QuadraticFittedMin - determines the minimum-position of a function y=f(x)
+
+   SYNOPSIS:
+   INT QuadraticFittedMin (DOUBLE *x, DOUBLE *y, INT n, DOUBLE *minx);
+
+   PARAMETERS:
+   .  x1,y1 - coordinates of a 2D vector
+   .  x2,y2 - coordinates of a 2D vector
+
+   DESCRIPTION:
+   This function determines the minimum-position of a function y=f(x)
+   fitted by n points
+
+   RETURN VALUE:
+   INT  0: o.k.
+            1: over or underflow of n
+                2: no quadratic funct with minimum can be fitted
+   D*/
+/****************************************************************************/
+
+INT QuadraticFittedMin (DOUBLE *x, DOUBLE *y, INT n, DOUBLE *minx)
+{
+  INT i,j,k;
+  DOUBLE mat[50][3],rhs[3],qm[9],qmi[9],coeff[3];
+
+  if (n>50 || n<3) return (1);
+
+  for (i=0; i<n; i++)
+  {
+    mat[i][0] = 1.0;
+    mat[i][1] = x[i];
+    mat[i][2] = x[i]*x[i];
+  }
+  for (i=0; i<3; i++)
+  {
+    for (j=0; j<3; j++)
+    {
+      qm[i+3*j] = 0.0;
+      for (k=0; k<n; k++)
+        qm[i+3*j] += mat[k][i]*mat[k][j];
+    }
+    rhs[i] = 0.0;
+    for (j=0; j<n; j++)
+      rhs[i] += mat[j][i]*y[j];
+  }
+  if (M3_Invert (qmi,qm)) return (2);
+  M3_TIMES_V3(qmi,rhs,coeff);
+  if (coeff[2]<=0.0) return (2);
+  *minx = -0.5*coeff[1]/coeff[2];
+
+  return (0);
+}
