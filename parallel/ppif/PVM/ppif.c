@@ -55,8 +55,6 @@
 
 #include "compiler.h"
 
-/* arch include files */
-#include "compiler.h"
 
 /****************************************************************************/
 /*                                                                          */
@@ -116,8 +114,8 @@ typedef struct message MESSAGE ;
 /*                                                                          */
 /****************************************************************************/
 
-/* Revison Control System string */
-RCSID(Header: $,PPIF_RCS_STRING)
+/* Revision Control System string */
+RCSID($Header$,PPIF_RCS_STRING)
 
 
 /****************************************************************************/
