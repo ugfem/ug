@@ -173,7 +173,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
   {
     if ((theDomain = LGM_LoadDomain(name,name,Heap,theLGMDomainVarID,MarkKey))==NULL)
     {
-      UserWrite("ERROR in BVP_Init: cannot load domain\n");
+      UserWriteF("ERROR in BVP_Init: cannot load domain '%s'\n",name);
       return (NULL);
     }
 
