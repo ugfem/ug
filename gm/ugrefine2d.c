@@ -48,6 +48,8 @@
 #include "cw.h"
 #include "gm.h"
 #include "misc.h"
+#include "evm.h"
+#include "shapes2d.h"
 #include "ugm.h"
 #include "ugrefine.h"
 #include "ugrefine2d.h"
@@ -1696,7 +1698,9 @@ static INT RefineElement (GRID *theGrid, ELEMENT *theElement, ElementContext *th
   ELEMENT ***BackPtrs;                          /* locations where neighbs store my adr */
   ELEMENTSIDE *Sides[8];
   ELEMENTSIDE *oldSide,*newSide0,*newSide1;
-  INT boundaryelement;
+  COORD_VECTOR pos,diff,corr;
+  COORD *corners[MAX_CORNERS_OF_ELEM];
+  INT boundaryelement,found;
   REFRULE *rule;
         #ifdef __version23__
   EDGE *theEdge;
@@ -1714,7 +1718,7 @@ static INT RefineElement (GRID *theGrid, ELEMENT *theElement, ElementContext *th
     Nodes[i] = theContext->Nodes[i];
     Nodes[i+4] = theContext->MidNodes[i];
   }
-  if (n==4) Nodes[8] = theContext->Interior;
+  if (n==4) Nodes[8] = theContext->Interior;            /* only possible for quadrilaterals */
 
 
   /* check if T4 on the boundary should be switched to T3 */
@@ -1752,13 +1756,38 @@ static INT RefineElement (GRID *theGrid, ELEMENT *theElement, ElementContext *th
     sx = sy = 0.0;
     for (j=0; j<n; j++)
     {
-      sx += XC(MYVERTEX(Nodes[j]));
-      sy += YC(MYVERTEX(Nodes[j]));
+      corners[j] = CVECT(MYVERTEX(Nodes[j]));
+      sx += corners[j][_X_];
+      sy += corners[j][_Y_];
     }
+    /* standard coordinates of the midnode */
     XC(theVertex) = 0.25*sx;
     YC(theVertex) = 0.25*sy;
     XI(theVertex) = 0.0;
     ETA(theVertex) = 0.0;
+    /* adjust the midnode for quadrilaterals with boundary sides */
+    found = 0;
+    V2_CLEAR(corr);
+    if (OBJT(theElement)==BEOBJ)
+      for (j=0; j<n; j++)
+        if (Nodes[j+4]!=NULL)
+          if (SIDE(theElement,j)!=NULL)
+          {
+            /* the midnode lies on a boundary side */
+            found++;
+            /* calculate difference to sidemid */
+            V2_LINCOMB(0.5,corners[j],0.5,corners[(j+1)%n],pos);
+            V2_LINCOMB(0.5,CVECT(MYVERTEX(Nodes[j+4])),-0.5,pos,diff);
+            V2_ADD(corr,diff,corr);
+          }
+    if (found)
+    {
+      /* now shift the midnode */
+      V2_ADD(CVECT(theVertex),corr,CVECT(theVertex));
+
+      /* calc local coordinates in the father element */
+      if (GlobalToLocal2d(n,corners,CVECT(theVertex),LCVECT(theVertex))!=0) return (1);
+    }
     VFATHER(theVertex) = theElement;
     NFATHER(theNode) = NULL;
     MYVERTEX(theNode) = theVertex;
