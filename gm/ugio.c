@@ -1308,6 +1308,11 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   {
     ReleaseTmpMem(theHeap);
     if (CloseMGFile ())                                                                                             {DisposeMultiGrid(theMG); return (NULL);}
+
+    /* saved */
+    MG_SAVED(theMG) = 1;
+    strcpy(MG_FILENAME(theMG),filename);
+
     return (theMG);
   }
 
