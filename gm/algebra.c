@@ -7690,7 +7690,13 @@ INT NS_DIM_PREFIX DisposeIMatricesInMultiGrid (MULTIGRID *theMG)
   for (i=0; i<=TOPLEVEL(theMG); i++)
   {
     theGrid = GRID_ON_LEVEL(theMG,i);
-    if (DisposeIMatricesInGrid(theGrid)) REP_ERR_RETURN(1);
+    /* It seems pointless to have this check here, but when calling newcommand
+       from Dune requesting more memory than there is we end up here
+       with TOPLEVEL == 0 and theGrid on level 0 inexistent */
+    if (theGrid==NULL)
+      REP_ERR_RETURN(1);
+    if (DisposeIMatricesInGrid(theGrid))
+      REP_ERR_RETURN(1);
   }
 
   return(0);
