@@ -630,7 +630,7 @@ PAR(
 	if (GLEVEL(theGrid) != LEVEL(theElement))
 	{
 		UserWriteF(PFMT "elem=" EID_FMTX " ERROR level=%2d but gridlevel=%2d\n",
-				me,EID_PRTX(theElement),LEVEL(theElement),LEVEL(theGrid));
+				me,EID_PRTX(theElement),LEVEL(theElement),GLEVEL(theGrid));
 		nerrors++;
 	}
 
@@ -1698,7 +1698,7 @@ static INT CheckElementList (GRID *theGrid)
 {
 	ELEMENT *theElement;
 
-	if (LEVEL(theGrid) <= 0) return(0);
+	if (GLEVEL(theGrid) <= 0) return(0);
 
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 		 theElement=SUCCE(theElement))
