@@ -2909,10 +2909,10 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
 
     /* both nodes are on same patch with unique parameters */
     thePatch[i] = VS_PATCH(aUniqueSeg);
+    if (Patch_GetPatchDesc(thePatch[i],&thePatchDesc)) return (GM_ERROR);
     from[i] = LAMBDA(aUniqueSeg,0); to[i] = LAMBDA(bUniqueSeg,0);
     if (from[i]<to[i])
     {
-      if (Patch_GetPatchDesc(thePatch[i],&thePatchDesc)) return (GM_ERROR);
       if (PATCH_LEFT(thePatchDesc)<=0)
       {
         PrintErrorMessage('E',"InsertElement","element outside of domain");
