@@ -4075,7 +4075,7 @@ static INT CreateGridOverlap (MULTIGRID *theMG, INT FromLevel)
       for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
         SETUSED(EFATHER(theElement),1);
         if (USED(theElement) == 1) {
-          REFINE_ELEMENT_LIST(0,theElement,"drop mark");
+          REFINE_ELEMENT_LIST(1,theElement,"drop mark");
           assert(EFATHER(theElement)!=NULL);
           SETUSED(EFATHER(theElement),1);
           SETUSED(theElement,0);

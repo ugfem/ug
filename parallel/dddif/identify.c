@@ -637,7 +637,7 @@ static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor, NODE **SideN
 
   Nodes[0] = CORNER(Son,corner0);
   Nodes[1] = CORNER(Son,corner1);
-  PRINTDEBUG(dddif,0,("%4d: edge=%d corner0=%d corner1=%d Nodes[0]=%d Nodes[1]=%d\n",
+  PRINTDEBUG(dddif,5,("%4d: edge=%d corner0=%d corner1=%d Nodes[0]=%d Nodes[1]=%d\n",
                       me,edge, corner0, corner1, ID(Nodes[0]), ID(Nodes[1])));
         #endif
 
