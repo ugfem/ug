@@ -33,4 +33,4 @@ OFF:
 
 clean:
 	rm -f $(OBJECTS)
-
+	cd netgen; make -f Makefile.netgen clean; cd ..;
