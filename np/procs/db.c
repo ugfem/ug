@@ -183,7 +183,7 @@ static INT ListPostProcess (NP_DATA_BASE *theNP, INT *result)
   return(0);
 }
 
-INT ListSize (NP_DATA_BASE *theNP, INT *n, INT *result)
+static INT ListSize (NP_DATA_BASE *theNP, INT *n, INT *result)
 {
   NP_LIST *np;
 
@@ -193,7 +193,7 @@ INT ListSize (NP_DATA_BASE *theNP, INT *n, INT *result)
   return(0);
 }
 
-INT ListData (NP_DATA_BASE *theNP, INT i, void **data, INT *result)
+static INT ListData (NP_DATA_BASE *theNP, INT i, void **data, INT *result)
 {
   NP_LIST *np;
 
