@@ -39,6 +39,12 @@ extern "C"
 // vector stuff
 //
 
+#ifdef ModelP
+// auxiliaries for ug VECTOR
+#define IS_FAMG_MASTER(vec) (PRIO(vec)==PrioMaster)
+#define IS_FAMG_GHOST(vec)  (PRIO(vec)!=PrioMaster)
+#endif
+
 class FAMGugVectorEntryRef : public FAMGVectorEntryRef
 {
   friend class FAMGugVector;
@@ -102,7 +108,7 @@ public:
     return ((FAMGugVectorEntryRef*)ve.GetPointer())->myvector()==NULL;
   }
   virtual FAMGVectorEntry firstEntry() const {
-    return FAMGVectorEntry( new FAMGugVectorEntryRef(FIRSTVECTOR(mygrid)));
+    return FAMGVectorEntry( new FAMGugVectorEntryRef(PFIRSTVECTOR(mygrid)));
   }
   virtual FAMGVectorEntry lastEntry() const {
     return FAMGVectorEntry( new FAMGugVectorEntryRef(LASTVECTOR(mygrid)));
@@ -233,10 +239,10 @@ private:
 class FAMGugVectorIter
 {
 public:
-  FAMGugVectorIter( const FAMGugGridVector & gv ) : first_vp(FIRSTVECTOR(gv.mygrid)) {
+  FAMGugVectorIter( const FAMGugGridVector & gv ) : first_vp(PFIRSTVECTOR(gv.mygrid)) {
     current_vp=first_vp;
   }
-  FAMGugVectorIter( const FAMGugVector & v ) : first_vp(FIRSTVECTOR(((FAMGugGridVector&)(v.GetGridVector())).mygrid)) {
+  FAMGugVectorIter( const FAMGugVector & v ) : first_vp(PFIRSTVECTOR(((FAMGugGridVector&)(v.GetGridVector())).mygrid)) {
     current_vp=first_vp;
   }
 
@@ -253,7 +259,7 @@ private:
 class FAMGugVectorRevIter
 {
 public:
-  FAMGugVectorRevIter( const FAMGugGridVector & gv ) : last_vp(FIRSTVECTOR(gv.mygrid)) {
+  FAMGugVectorRevIter( const FAMGugGridVector & gv ) : last_vp(PFIRSTVECTOR(gv.mygrid)) {
     current_vp=last_vp;
   }
   FAMGugVectorRevIter( const FAMGugVector & v ) : last_vp(LASTVECTOR(((FAMGugGridVector&)(v.GetGridVector())).mygrid)) {

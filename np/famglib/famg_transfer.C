@@ -30,6 +30,10 @@ extern "C"
 {
 #include "gm.h"
 #include "algebra.h"
+	#ifdef ModelP
+	#include "parallel.h"
+	#include "np.h"
+	#endif
 }
 #endif
 

@@ -37,10 +37,13 @@
 	#endif
 #endif
 
+#ifdef USE_UG_DS
 extern "C"
 {
+#include "parallel.h"
 #include "commands.h" /* for GetCurrentMultigrid for debuggung */
 }
+#endif
 
 #ifdef UG_DRAW
 
@@ -70,9 +73,12 @@ void printm(int level)
 	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
 
 	printf("Matrix:\n");
-	for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+	for (v=PFIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
 	{
-		printf("vec[%4d] ", VINDEX(v));
+#ifdef ModelP 
+		printf(PFMT"(P%d)",me,PRIO(v));
+#endif		
+		printf("v[%4d] ", VINDEX(v));
 		for (m=VSTART(v); m!=NULL; m = MNEXT(m))
 		{
 			printf("\t%g(->%d)",MVALUE(m,0),VINDEX(MDEST(m)));
@@ -91,7 +97,7 @@ void printm(int level)
 	printf("Matrix:\n");
     for(int i = 0; i < n; i++)
     {
-		printf("vec[%4d] ", i);
+		printf("v[%4d] ", i);
 		end = 1;
 		for( matij=M.GetStart(i); end; end=matij.GetNext() )
 		{
@@ -113,9 +119,12 @@ void printim(int level)
 	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
 
 	printf("Interpolation Matrix:\n");
-	for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+	for (v=PFIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
 	{
-		printf("vec[%4d] %c ", VINDEX(v), VCCOARSE(v)?'C':'F' );
+#ifdef ModelP 
+		printf(PFMT"(P%d)",me,PRIO(v));
+#endif		
+		printf("v[%4d] %c ", VINDEX(v), VCCOARSE(v)?'C':'F' );
 		for (m=VISTART(v); m!=NULL; m = MNEXT(m))
 		{
 			trans = (FAMGTransferEntry*)m;
@@ -137,7 +146,7 @@ void printim(int level)
 	printf("Interpolation Matrix:\n");
     for(i = 0; i < n; i++)
     {
-		printf("vec[%4d] ", i);
+		printf("v[%4d] ", i);
 		if (matrix->GetType(i)) // FG Node
 		{
 			for(transij = trans->GetRow(i)->GetNext(); transij != NULL; transij = transij->GetNext())
@@ -174,11 +183,11 @@ void printv( int level, int x_nr )
 	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
 	
 	printf("Vector:\n");
-    for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+    for (v=PFIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
     {
 		VectorPosition(v,pos);
 #ifdef ModelP 
-		printf(PFMT,me);
+		printf(PFMT"(P%d)",me,PRIO(v));
 #endif		
 		printf("x=%5.2f y=%5.2f ",pos[0],pos[1]);
 #ifdef __THREEDIM__
@@ -944,6 +953,19 @@ int FAMGGraph::EliminateNodes(FAMGGrid *gridptr)
     return 0;
 }
 
+int FAMGGraph::InsertNode(FAMGGrid *gridptr, FAMGNode *nodei)
+{
+	if(nodei->IsFGNode()) 
+		return 0;
+	Remove(nodei);  // might be inserted by UpdateNeighborsCG
+	nodei->CountNewLinks(gridptr, this);
+	nodei->CountNewCG(this);
+	nodei->ComputeTotalWeight();
+	if(Insert(nodei))
+		return 1;
+	return 0;
+}
+		
 int FAMGGraph::Construct(FAMGGrid *gridptr)
 {
 	FAMGGraph *graph = gridptr->GetGraph();
@@ -982,26 +1004,41 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
         nodei->SetPaList(palist);
     }
     InitNSons();
+	
+#ifdef ModelP
+	// in the first step eliminate only nodes in the border of the core partition
+	// the remaining nodes must be processed in a second step (see FAMGGrid:ConstructTransfer)
+	VECTOR *vec;
+	MATRIX *mat;
+	
     for(i = 0; i < n; i++)
     {
         nodei = graph->GetNode(i);
-        if(nodei->IsFGNode()) 
-			continue;
-        Remove(nodei);  // might be inserted by UpdateNeighborsCG
-        // if(nodei->GetPaList() == NULL)
-        // {
-        //     MarkCGNode(nodei);
-        //     gridptr->UpdateNeighborsCG(i);
-        // }
-        // else
-        {
-            nodei->CountNewLinks(gridptr, this);
-            nodei->CountNewCG(this);
-            nodei->ComputeTotalWeight();
-            if(Insert(nodei)) return 1;
-        }
+		vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
+		
+		if( IS_FAMG_GHOST(vec) )
+			continue; // only master vectors can be in border the of the core partition
+		
+		// vec lies in the border of the core partition if he has a ghost or border neighbor
+		for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+			if( IS_FAMG_GHOST(MDEST(mat)) )
+				break;
+		
+		if( mat != NULL )
+			// a ghost neighbor was found
+			if(InsertNode(gridptr, nodei))
+				return 0;
     }
-
+#else
+	// put all nodes into the list
+    for(i = 0; i < n; i++)
+    {
+        nodei = graph->GetNode(i);
+		if(InsertNode(gridptr, nodei))
+			return 0;
+    }
+#endif
+	
     return 0;
 }
 
@@ -1012,6 +1049,10 @@ int FAMGGraph::Construct2(FAMGGrid *gridptr)
     FAMGPaList *palist;
     int i;
 
+#ifdef ModelP
+	assert(0); // should not be called for parallel
+#endif
+	
 #ifdef UG_DRAW
     /* debug */
     PICTURE *thePic;

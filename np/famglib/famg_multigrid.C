@@ -46,9 +46,11 @@ int FAMGMultiGrid::Init(const FAMGSystem &system)
     for(i = 0; i < FAMGMAXGRIDS; i++) grid[i] = NULL;
 
     grid0 = (FAMGGrid *) FAMGGetMem(sizeof(FAMGGrid),FAMG_FROM_TOP);
-    if(grid0 == NULL) return(NULL);
+    if(grid0 == 0)
+		return(NULL);
 
-    if( grid0->InitLevel0(system)) return 1;
+    if( grid0->InitLevel0(system))
+		return 1;
     grid[n] = grid0;
     n++;
 
@@ -100,7 +102,7 @@ int FAMGMultiGrid::Construct()
         // if (nnc == 0) return 0; 
         cg = (FAMGGrid *) FAMGGetMem(sizeof(FAMGGrid),FAMG_FROM_TOP);
         if(cg == NULL)
-			return(NULL);
+			return(0);
         if(cg->Init(nnc,*g))
 			return 1;
         if(cg->Construct(g))
@@ -211,7 +213,7 @@ int FAMGMultiGrid::Step(int level)
         }
 
     }
-
+	
     return 0;
 }
 

@@ -56,6 +56,15 @@ extern "C"
 $Header$
 */
 
+#ifdef ModelP
+// forward declaration for ug functions
+extern "C"{
+void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio);
+void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data);
+void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, int newness);
+}
+#endif
+
 // Class FAMGGrid
  
 void FAMGGrid::Defect() const
@@ -795,131 +804,38 @@ int FAMGGrid::ConstructTransfer()
     if (graph->Init(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
     if (graph->Construct(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
 	
-//////////////////////////////////////////
-#ifdef WEG
-	// war nur testen drin
-	FAMGNode *node;
-	FAMGPaList* pa, *pf;
-	int p1, p2, m;
-	double d;
+#ifdef ModelP
+	// in parallel now only the nodes in the border of the core partition are in the list
 	
-	node = graph->GetNode(10);
-	p1=3; p2=17;	
-	for(pa = node->GetPaList(); pa!=NULL; pa = pa->GetNext() )
-		if( !((pa->GetPa(0)==p1 && pa->GetPa(1)==p2) || (pa->GetPa(0)==p2 && pa->GetPa(1)==p1)))
-			pa->SetApprox(99999.0);
-		else
-		{
-			pf = node->GetPaList();
-			
-			m=pa->GetNp(); pa->SetNp(pf->GetNp()); pf->SetNp(m);
-			assert(m==2);
-			m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(1)); pf->SetPa(1,m);
-			m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(0)); pf->SetPa(0,m);
-			d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(1)); pf->SetCoeff(1,d);
-			d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(0)); pf->SetCoeff(0,d);
-			d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(1)); pf->SetCoefft(1,d);
-			d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(0)); pf->SetCoefft(0,d);
-			//m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(0)); pf->SetPa(0,m);
-			//m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(1)); pf->SetPa(1,m);
-			//d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(0)); pf->SetCoeff(0,d);
-			//d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(1)); pf->SetCoeff(1,d);
-			//d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(0)); pf->SetCoefft(0,d);
-			//d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(1)); pf->SetCoefft(1,d);
-			d=pa->GetApprox(); pa->SetApprox(pf->GetApprox()); pf->SetApprox(d);
-			m=pa->GetNewLinks(); pa->SetNewLinks(pf->GetNewLinks()); pf->SetNewLinks(m);
-			d=pa->GetNewCG(); pa->SetNewCG(pf->GetNewCG()); pf->SetNewCG(d);
-			
-		}
+	VECTOR *vec;
+	MATRIX *mat;
+	FAMGNode *nodei;
 	
-	node = graph->GetNode(22);
-	p1=15; p2=29;	
-	for(pa = node->GetPaList(); pa!=NULL; pa = pa->GetNext() )
-		if( !((pa->GetPa(0)==p1 && pa->GetPa(1)==p2) || (pa->GetPa(0)==p2 && pa->GetPa(1)==p1)))
-			pa->SetApprox(99999.0);
-		else
+	for ( int p=0; p<procs; p++)
+	{
+		if( me == p )
 		{
-			pf = node->GetPaList();
-			
-			m=pa->GetNp(); pa->SetNp(pf->GetNp()); pf->SetNp(m);
-			assert(m==2);
-			m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(1)); pf->SetPa(1,m);
-			m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(0)); pf->SetPa(0,m);
-			d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(1)); pf->SetCoeff(1,d);
-			d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(0)); pf->SetCoeff(0,d);
-			d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(1)); pf->SetCoefft(1,d);
-			d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(0)); pf->SetCoefft(0,d);
-			//m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(0)); pf->SetPa(0,m);
-			//m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(1)); pf->SetPa(1,m);
-			//d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(0)); pf->SetCoeff(0,d);
-			//d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(1)); pf->SetCoeff(1,d);
-			//d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(0)); pf->SetCoefft(0,d);
-			//d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(1)); pf->SetCoefft(1,d);
-			d=pa->GetApprox(); pa->SetApprox(pf->GetApprox()); pf->SetApprox(d);
-			m=pa->GetNewLinks(); pa->SetNewLinks(pf->GetNewLinks()); pf->SetNewLinks(m);
-			d=pa->GetNewCG(); pa->SetNewCG(pf->GetNewCG()); pf->SetNewCG(d);
-			
+		    if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+    		if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
 		}
+		
+		CommunicateNodeStatus();
 	
-	node = graph->GetNode(26);
-	p1=19; p2=33;	
-	for(pa = node->GetPaList(); pa!=NULL; pa = pa->GetNext() )
-		if( !((pa->GetPa(0)==p1 && pa->GetPa(1)==p2) || (pa->GetPa(0)==p2 && pa->GetPa(1)==p1)))
-			pa->SetApprox(99999.0);
-		else
-		{
-			pf = node->GetPaList();
-			
-			m=pa->GetNp(); pa->SetNp(pf->GetNp()); pf->SetNp(m);
-			assert(m==2);
-			m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(1)); pf->SetPa(1,m);
-			m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(0)); pf->SetPa(0,m);
-			d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(1)); pf->SetCoeff(1,d);
-			d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(0)); pf->SetCoeff(0,d);
-			d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(1)); pf->SetCoefft(1,d);
-			d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(0)); pf->SetCoefft(0,d);
-			//m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(0)); pf->SetPa(0,m);
-			//m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(1)); pf->SetPa(1,m);
-			//d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(0)); pf->SetCoeff(0,d);
-			//d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(1)); pf->SetCoeff(1,d);
-			//d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(0)); pf->SetCoefft(0,d);
-			//d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(1)); pf->SetCoefft(1,d);
-			d=pa->GetApprox(); pa->SetApprox(pf->GetApprox()); pf->SetApprox(d);
-			m=pa->GetNewLinks(); pa->SetNewLinks(pf->GetNewLinks()); pf->SetNewLinks(m);
-			d=pa->GetNewCG(); pa->SetNewCG(pf->GetNewCG()); pf->SetNewCG(d);
-			
-		}
-	
-	node = graph->GetNode(38);
-	p1=31; p2=45;	
-	for(pa = node->GetPaList(); pa!=NULL; pa = pa->GetNext() )
-		if( !((pa->GetPa(0)==p1 && pa->GetPa(1)==p2) || (pa->GetPa(0)==p2 && pa->GetPa(1)==p1)))
-			pa->SetApprox(99999.0);
-		else
-		{
-			pf = node->GetPaList();
-			
-			m=pa->GetNp(); pa->SetNp(pf->GetNp()); pf->SetNp(m);
-			assert(m==2);
-			m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(1)); pf->SetPa(1,m);
-			m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(0)); pf->SetPa(0,m);
-			d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(1)); pf->SetCoeff(1,d);
-			d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(0)); pf->SetCoeff(0,d);
-			d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(1)); pf->SetCoefft(1,d);
-			d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(0)); pf->SetCoefft(0,d);
-			//m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(0)); pf->SetPa(0,m);
-			//m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(1)); pf->SetPa(1,m);
-			//d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(0)); pf->SetCoeff(0,d);
-			//d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(1)); pf->SetCoeff(1,d);
-			//d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(0)); pf->SetCoefft(0,d);
-			//d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(1)); pf->SetCoefft(1,d);
-			d=pa->GetApprox(); pa->SetApprox(pf->GetApprox()); pf->SetApprox(d);
-			m=pa->GetNewLinks(); pa->SetNewLinks(pf->GetNewLinks()); pf->SetNewLinks(m);
-			d=pa->GetNewCG(); pa->SetNewCG(pf->GetNewCG()); pf->SetNewCG(d);
-			
-		}
+	    for(i = 0; i < n; i++)
+    	{
+        	nodei = graph->GetNode(i);
+			vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
+		
+			if( IS_FAMG_GHOST(vec) )
+				continue; // only master vectors can be in border the of the core partition
+		
+			// now only the unmarked nodes must be inserted into the list
+			if( !nodei->IsCGNode() && !nodei->IsFGNode() )
+				if(graph->InsertNode(this, nodei))
+					return 0;
+	    }
+	}	
 #endif
-//////////////////////////////////////////
 	
     if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
     
@@ -946,6 +862,11 @@ int FAMGGrid::ConstructTransfer()
 
     if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
     
+#ifdef ModelP
+	// update the ghost and border nodes
+	CommunicateNodeStatus();
+#endif
+	
     nf = graph->GetNF();
     // not neceassary any more: matrix->MarkUnknowns(graph);
  
@@ -1095,5 +1016,262 @@ int FAMGGrid::Reorder()
     }
 
     return 0;
+}
+#endif
+
+// *****************************************************************************
+// *********** parallel extensions *********************************************
+// *****************************************************************************
+
+#ifdef ModelP
+void FAMGVectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
+// derived from dddif/handler.c/VectorXferCopy()
+{
+	INT		nmat	= 0;
+	MATRIX	*imat;
+	VECTOR	*pv		= (VECTOR *)obj;
+	INT		level		= ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(pv)));
+	GRID		*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
+	/* TODO: define this static global                    */
+	/* TODO: take size as maximum of possible connections */
+	size_t	sizeArray[256];
+	INT flag;
+
+	PRINTDEBUG(dddif,1,(PFMT " FAMGVectorXferCopy(): v=" VINDEX_FMTX " proc=%d "
+		"prio=%d vtype=%d\n",me,VINDEX_PRTX(pv),proc,prio,VTYPE(pv)))
+	
+    if (DDD_XferWithAddData()) {
+	    for(imat=VISTART(pv); imat!=NULL; imat=MNEXT(imat)) {
+		    ASSERT(nmat<256);
+			sizeArray[nmat++] = MSIZE(imat);
+		}
+		PRINTDEBUG(dddif,2,(PFMT " FAMGVectorXferCopy(): v=" VINDEX_FMTX 
+							" AddData nmat=%d\n",me,VINDEX_PRTX(pv),nmat))
+		DDD_XferAddDataX(nmat,TypeMatrix,sizeArray);
+	}
+	else
+	{
+		PRINTDEBUG(dddif,2,(PFMT " FAMGVectorXferCopy(): no AddData\n"))
+	}
+}
+
+void FAMGVectorGatherIMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data)
+// derived from dddif/handler.c/FAMGVectorGatherMatX()
+{
+	VECTOR	*vec = (VECTOR *)obj;
+	MATRIX	*imat;
+	INT		nmat = 0;
+
+	PRINTDEBUG(dddif,3,(PFMT " FAMGVectorGatherIMatX(): v=" VINDEX_FMTX 
+		" VOBJID=%d cnt=%d type=%d veobj=%d vtype=%d\n",
+		me,VINDEX_PRTX(vec),ID(VOBJECT(vec)),cnt,type_id,
+		OBJT(vec),VTYPE(vec)))
+
+	if (cnt<=0) return;
+
+	for (imat=VISTART((VECTOR *) vec); imat!=NULL; imat=MNEXT(imat))
+	{
+		int Size;
+
+		IFDEBUG(dddif,0)
+		if (cnt<nmat+1)
+		{
+			PRINTDEBUG(dddif,0,(PFMT " FAMGVectorGatherIMatX(): v=" VINDEX_FMTX 
+				" cnt=%d nmat=%d type=%d veobj=%d\n",
+				me,VINDEX_PRTX(vec),cnt,nmat,type_id,OBJT(vec)))
+			assert(0);
+		}
+		ENDDEBUG
+
+		Size = MSIZE(imat);
+		memcpy(Data[nmat],imat,Size);
+
+		PRINTDEBUG(dddif,3,(PFMT " FAMGVectorGatherIMatX(): v=" VINDEX_FMTX 
+			" mat=%x Size=%d vectoID=" VINDEX_FMTX "\n",
+			me,VINDEX_PRTX(vec),imat,Size,VINDEX_PRTX(MDEST(imat))))
+
+		nmat++;
+	}
+}
+
+
+void FAMGVectorScatterIMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, int newness)
+// derived from dddif/handler.c/FAMGVectorScatterConnX()
+{
+	VECTOR		*vec		= (VECTOR *)obj;
+	CONNECTION	*first		= NULL,
+				*last		= NULL;
+	INT			level		= ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(vec)));
+	GRID		*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
+	INT			prio 		= PRIO(vec);
+	INT			i;
+	INT			nconn		= 0;
+	INT			newconn		= 0;
+
+	PRINTDEBUG(dddif,3,(PFMT " FAMGVectorScatterIMatX(): v=" VINDEX_FMTX 
+		" cnt=%d type=%d veobj=%d vtype=%d\n",\
+		me,VINDEX_PRTX(vec),cnt,type_id,OBJT(vec),VTYPE(vec)))
+	
+	if (cnt<=0) return;
+
+	for (i=0; i<cnt; i++)
+	{
+		MATRIX *mcopy = (MATRIX *)Data[i];
+
+		/* reset MNEXT */
+		MNEXT(mcopy) = NULL;
+
+		if (MDEST(mcopy)==NULL)
+		{
+			/* destination vector is not on this processor  */
+			/* -> matrix entry is useless, throw away       */
+			PRINTDEBUG(dddif,4,(PFMT " FAMGVectorScatterIMatX(): v=" VINDEX_FMTX
+				" mat=%x Size=%d, USELESS no dest vector \n",
+				me,VINDEX_PRTX(vec),mcopy,MSIZE(mcopy)))
+			continue;
+		}
+
+		{
+			MATRIX *m,*mat=NULL;
+
+			/* does matrix entry already exist? */
+			/* TODO not nice, linear search, change this! */
+			for (m=VISTART((VECTOR *)vec); 
+				 m!=NULL && (mat==NULL); 
+				 m=MNEXT(m))
+			{
+				if (MDEST(m)==MDEST(mcopy)) mat=m;
+			}
+
+			/* matrix entry is really new */
+			if (mat == NULL)
+			{
+				/* handle diagonal entry */
+				if (MDIAG(mcopy))
+				{
+					/* matrix diagonal entry, no other vector is involved */
+					assert(0);
+				}
+				/* handle off-diagonal entry */
+				else
+				{
+					/* matrix off-diagonal entry, another vector is involved */
+					VECTOR *other = MDEST(mcopy);
+					MATRIX *m, *back=NULL, *newm;
+	
+					/* does connection already exist for other vec? no, can not be here for Imats*/
+					{
+						MATRIX *otherm;
+						CONNECTION *conn = (CONNECTION *)
+						#ifndef DYNAMIC_MEMORY_ALLOCMODEL
+							GetFreelistMemory(dddctrl.currMG->theHeap,
+											  MSIZE(mcopy));
+						#else
+					  		GetMemoryForObject(dddctrl.currMG,MSIZE(mcopy),MAOBJ);
+						#endif
+
+						nconn++; newconn++;
+
+						if (conn==NULL)
+						{
+							ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << me << ":  FAMGVectorScatterIMatX(): can't get mem for mat=" << &mcopy << endl;
+							FAMGError(ostr);
+							return;
+						}
+	
+
+						if (MOFFSET(mcopy))
+						{
+							assert(0);
+						}
+						else
+						{
+							newm = (MATRIX *) conn;
+							PRINTDEBUG(dddif,4,(PFMT " FAMGVectorScatterIMatX(): v="
+							VINDEX_FMTX " conn=%x newm=%x Size=%d vectoID=" 
+							VINDEX_FMTX " GETMEM\n",
+							me,VINDEX_PRTX(vec),conn,newm, MSIZE(mcopy),
+							VINDEX_PRTX(MDEST(mcopy))))
+						}
+					}
+
+					/* TODO: define clearly     
+					memcpy(newm,mcopy,MSIZE(mcopy)); */
+					memset(newm,0,MSIZE(mcopy));
+					memcpy(newm,mcopy,sizeof(MATRIX)-sizeof(DOUBLE));
+
+					if (first==NULL) first = newm;
+					else MNEXT(last) = newm;
+					last = newm;
+				}
+			}
+			/* matrix entry does already exist */
+			else
+			{
+				PRINTDEBUG(dddif,4,(PFMT " FAMGVectorScatterIMatX(): v="
+					VINDEX_FMTX " mat=%x Size=%d vectoID=" VINDEX_FMTX 
+					" FOUND\n",me,VINDEX_PRTX(vec),mat,MSIZE(mcopy),
+					VINDEX_PRTX(MDEST(mcopy))))
+			}
+		}
+	}
+
+	/* enter matrix list at the beginning of existing list for this vector */
+	// is already done
+	
+		#ifdef Debug
+/*
+		{
+		MATRIX *mat;
+        PRINTDEBUG(dddif,4,(PFMT " FAMGVectorScatterIMatX():  v="
+                VINDEX_FMTX "new matrices:\n",me,VINDEX_PRTX(vec)));
+		for (mat=first; mat!=NULL; mat=MNEXT(mat))
+		{
+        	PRINTDEBUG(dddif,4,(PFMT "     mat=%x dest=" EID_FMTX "\n",me,mat,VINDEX_PRTX(MDEST(mat))));
+		}
+		}
+*/
+		#endif
+}
+
+void FAMGGrid::CommunicateNodeStatus()
+// idea: send a copy of the vec to all its already existing copies because then 
+//       the I-matrix entries can be copied too (as the stiffness matrix entries
+//		 are handled in the original VectorXfer routine).
+{
+	INT i, size;
+	int *proclist;
+	VECTOR *vec;
+	FAMGNode *nodei;
+	
+	// set my own handlers
+	DDD_SetHandlerXFERCOPY         (TypeVector, FAMGVectorXferCopy);
+	DDD_SetHandlerXFERGATHERX      (TypeVector, FAMGVectorGatherIMatX);
+	DDD_SetHandlerXFERSCATTERX     (TypeVector, FAMGVectorScatterIMatX);
+
+	DDD_XferBegin();
+	
+    for(i = 0; i < n; i++)
+   	{
+       	nodei = graph->GetNode(i);
+		vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
+		size = sizeof(VECTOR)-sizeof(DOUBLE)
+					  +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
+		proclist = DDD_InfoProcList(PARHDR(vec));
+		proclist += 2;	// skip the entry for this instance itself
+		while( *proclist != -1 )
+		{
+			DDD_XferCopyObjX(PARHDR(vec), proclist[0], proclist[1], size);
+			proclist += 2;
+		}
+
+	}
+	
+	DDD_XferEnd();
+	
+	// restore the ug handlers
+	DDD_SetHandlerXFERCOPY         (TypeVector, VectorXferCopy);
+	DDD_SetHandlerXFERGATHERX      (TypeVector, VectorGatherMatX);
+	DDD_SetHandlerXFERSCATTERX     (TypeVector, VectorScatterConnX);
 }
 #endif

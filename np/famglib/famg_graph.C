@@ -347,8 +347,6 @@ int FAMGGraph::SavePaList(FAMGPaList *&list, int np, const int pa[], double c[],
     return 0;
 }   
 
-
-
 void FAMGGraph::MarkFGNode(FAMGNode *fgnode)
 {
     if(fgnode->IsFGNode()) return;

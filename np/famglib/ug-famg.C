@@ -243,7 +243,7 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
     // create vectors on first AMG level
     for (lev=FULLREFINELEVEL(mg); lev<level; lev++)
     {    
-        for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
+        for (vec=PFIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
         {
             if( (!VSKIPME(vec,0)) &&  (VDATATYPE(vec)&bmask) && (FINE_GRID_DOF(vec)))
             {
@@ -275,7 +275,7 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
     }
 
     grid =  GRID_ON_LEVEL(mg,level);
-    for (vec=FIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
+    for (vec=PFIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
     {
         if( (!VSKIPME(vec,0)) && (VDATATYPE(vec)&bmask) && (NEW_DEFECT(vec)))
         {
@@ -308,7 +308,7 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
     // copy matrix entries to first AMG level
     for (lev=FULLREFINELEVEL(mg); lev<level; lev++)
     {    
-        for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
+        for (vec=PFIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
         {
             if( (!VSKIPME(vec,0)) &&  (VDATATYPE(vec)&bmask) && (FINE_GRID_DOF(vec)))
             {
@@ -422,7 +422,7 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
     }
 
     grid =  GRID_ON_LEVEL(mg,level);
-    for (vec=FIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
+    for (vec=PFIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
     {
         if( (!VSKIPME(vec,0)) && (VDATATYPE(vec)&bmask) && (NEW_DEFECT(vec)))
         {
@@ -502,12 +502,12 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 
     // restore the geom_object info in the vectors on geometric levels
     for (lev=FULLREFINELEVEL(mg); lev<level; lev++)
-        for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
+        for (vec=PFIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
             if( (!VSKIPME(vec,0)) &&  (VDATATYPE(vec)&bmask) && (FINE_GRID_DOF(vec)))
 				VOBJECT(vec) = VOBJECT((VECTOR *)(vec->object));
 
     grid =  GRID_ON_LEVEL(mg,level);
-    for (vec=FIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
+    for (vec=PFIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
         if( (!VSKIPME(vec,0)) && (VDATATYPE(vec)&bmask) && (NEW_DEFECT(vec)))
 				VOBJECT(vec) = VOBJECT((VECTOR *)(vec->object));
 
@@ -610,12 +610,10 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
 
     grid = GRID_ON_LEVEL(mg,0);
 	assert(grid!=NULL);
-printm(0);
 	if (AssembleDirichletBoundary (grid,A,x,b))
         NP_RETURN(1,result[0]);
-printm(0);
 
-    for (vec=FIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
+    for (vec=PFIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
     {
 		VINDEX(vec) = nrVec;
 		nrVec++;
@@ -814,7 +812,7 @@ static INT FAMGIterPreProcess  (NP_ITER *theNP, INT level,
     n = 0;
     for (lev=FULLREFINELEVEL(mg); lev<level; lev++)
     {    
-        for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
+        for (vec=PFIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
         {
             if( (!VSKIPME(vec,0)) &&  (VDATATYPE(vec)&xmask) && (FINE_GRID_DOF(vec)))
             {
@@ -825,7 +823,7 @@ static INT FAMGIterPreProcess  (NP_ITER *theNP, INT level,
     }
 		
     grid =  GRID_ON_LEVEL(mg,level);  
-    for (vec=FIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
+    for (vec=PFIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
     {
         if( (!VSKIPME(vec,0)) &&  (VDATATYPE(vec)&xmask) && (NEW_DEFECT(vec)))
         {
@@ -846,7 +844,7 @@ static INT FAMGIterPreProcess  (NP_ITER *theNP, INT level,
     i = 0;
     for (lev=FULLREFINELEVEL(mg); lev<level; lev++)
     {    
-        for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
+        for (vec=PFIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
         {
             if( (!VSKIPME(vec,0)) &&  (VDATATYPE(vec)&xmask) && (FINE_GRID_DOF(vec)))
             {
@@ -857,7 +855,7 @@ static INT FAMGIterPreProcess  (NP_ITER *theNP, INT level,
     }
 		
     grid =  GRID_ON_LEVEL(mg,level);  
-    for (vec=FIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
+    for (vec=PFIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
     {
         if( (!VSKIPME(vec,0)) &&  (VDATATYPE(vec)&xmask) && (NEW_DEFECT(vec)))
         {
@@ -891,7 +889,7 @@ static INT FAMGIterPreProcess  (NP_ITER *theNP, INT level,
     start[0] = 0;
     for (lev=FULLREFINELEVEL(mg); lev<level; lev++)
     {    
-        for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
+        for (vec=PFIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
         {
             if( (!VSKIPME(vec,0)) &&  (VDATATYPE(vec)&bmask) && (FINE_GRID_DOF(vec)))
             {
@@ -958,7 +956,7 @@ static INT FAMGIterPreProcess  (NP_ITER *theNP, INT level,
         }
     }
     grid =  GRID_ON_LEVEL(mg,level);
-    for (vec=FIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
+    for (vec=PFIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
     {
         if( (!VSKIPME(vec,0)) && (VDATATYPE(vec)&bmask) && (NEW_DEFECT(vec)))
         {
@@ -1028,7 +1026,7 @@ static INT FAMGIterPreProcess  (NP_ITER *theNP, INT level,
     i = 0; offset = 0;
     for (lev=FULLREFINELEVEL(mg); lev<level; lev++)
     {    
-        for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
+        for (vec=PFIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
         {
             if( (!VSKIPME(vec,0)) &&  (VDATATYPE(vec)&bmask) && (FINE_GRID_DOF(vec)))
             {
@@ -1108,7 +1106,7 @@ static INT FAMGIterPreProcess  (NP_ITER *theNP, INT level,
     }
 
     grid =  GRID_ON_LEVEL(mg,level);
-    for (vec=FIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
+    for (vec=PFIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
     {
         if( (!VSKIPME(vec,0)) && (VDATATYPE(vec)&bmask) && (NEW_DEFECT(vec)))
         {
@@ -1226,7 +1224,7 @@ static INT FAMGIterSolve (NP_ITER *theNP, INT level,
 	n=0;
     for (lev=FULLREFINELEVEL(mg); lev<level; lev++)
     {    
-        for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
+        for (vec=PFIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
         {
             if( (!VSKIPME(vec,0)) &&  (VDATATYPE(vec)&cmask) && (FINE_GRID_DOF(vec)))
             {
@@ -1240,7 +1238,7 @@ static INT FAMGIterSolve (NP_ITER *theNP, INT level,
     }
 		
     grid =  GRID_ON_LEVEL(mg,level);  
-    for (vec=FIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
+    for (vec=PFIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
     {
         if( (!VSKIPME(vec,0)) &&  (VDATATYPE(vec)&cmask) && (NEW_DEFECT(vec)))
         {
@@ -1267,7 +1265,7 @@ static INT FAMGIterSolve (NP_ITER *theNP, INT level,
 	viter.reset();
     for (lev=FULLREFINELEVEL(mg); lev<level; lev++)
     {    
-        for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
+        for (vec=PFIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!= NULL; vec=SUCCVC(vec))
         {
             if((VDATATYPE(vec)&cmask) && (FINE_GRID_DOF(vec)))
             {
@@ -1302,7 +1300,7 @@ static INT FAMGIterSolve (NP_ITER *theNP, INT level,
         
 		
     grid =  GRID_ON_LEVEL(mg,level);  
-    for (vec=FIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
+    for (vec=PFIRSTVECTOR(grid); vec!= NULL; vec=SUCCVC(vec))
     {
         if((VDATATYPE(vec)&cmask) && (NEW_DEFECT(vec)))
         {
@@ -1414,6 +1412,14 @@ INT FAMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 	/* we set the baselevel for the following cycle!! */
 	*fl = mg->bottomLevel;
 
+#ifdef ModelP
+	// coarse grid agglomeration
+	AMGAgglomerate(mg);
+	l_amgmatrix_collect(GRID_ON_LEVEL(mg,mg->bottomLevel),A);
+	UserWrite("coarse grid agglomerated\n");
+	printf("coarse grid agglomerated\n");
+#endif
+	
 	return res;
 }
 

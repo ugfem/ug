@@ -140,6 +140,9 @@ public:
   void PreSmooth();
   void PostSmooth();
   void GetSmoother();
+#ifdef ModelP
+  void CommunicateNodeStatus();
+#endif
 
 private:
 

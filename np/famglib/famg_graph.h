@@ -380,6 +380,7 @@ public:
   void SetGridVector(FAMGGridVector *gv) {
     gridvec = gv;
   }
+  int InsertNode(FAMGGrid *gridptr, FAMGNode *nodei);
 #ifdef FAMG_ILU
   int OrderILUT(FAMGMatrix *matrix);
 #endif
