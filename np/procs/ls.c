@@ -325,7 +325,7 @@ static INT LinearSolverDisplay (NP_BASE *theNP)
   else if (np->display == PCR_FULL_DISPLAY)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
   if (np->c != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(np->c));
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"c",ENVITEM_NAME(np->c));
 
   return (0);
 }
@@ -597,6 +597,31 @@ static INT LSConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
+static INT CGInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_CG *np;
+
+  np = (NP_CG *) theNP;
+  np->p = ReadArgvVecDesc(theNP->mg,"c",argc,argv);
+  np->t = ReadArgvVecDesc(theNP->mg,"c",argc,argv);
+
+  return (LinearSolverInit(theNP,argc,argv));
+}
+
+static INT CGDisplay (NP_BASE *theNP)
+{
+  NP_CG *np;
+
+  np = (NP_CG *) theNP;
+  LinearSolverDisplay(theNP);
+  if (np->t != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+  if (np->p != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"p",ENVITEM_NAME(np->p));
+
+  return (0);
+}
+
 static INT CGPrepare (NP_LS *theNP, INT level, VECDATA_DESC *x, INT *result)
 {
   NP_CG *np;
@@ -688,6 +713,7 @@ static INT CGUpdate (NP_LS *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *c,
     result[0] = __LINE__;
     return(1);
   }
+  FreeVD(theNP->ls.base.mg,theNP->baselevel,level,np->t);
   if (theNP->display == PCR_FULL_DISPLAY)
     UserWriteF("      rho %-.4g \n",np->rho);
 
@@ -708,8 +734,8 @@ static INT CGConstruct (NP_BASE *theNP)
 {
   NP_LS *np;
 
-  theNP->Init = LinearSolverInit;
-  theNP->Display = LinearSolverDisplay;
+  theNP->Init = CGInit;
+  theNP->Display = CGDisplay;
   theNP->Execute = NPLinearSolverExecute;
 
   np = (NP_LS *) theNP;
