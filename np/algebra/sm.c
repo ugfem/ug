@@ -554,7 +554,7 @@ INT SM_Compute_Diff_From_Offset (INT N, SHORT *offset, ptrdiff_t *Diff)
    PARAMETERS:
    .  N - size of col_ind-field
    .  col_ind - pointer to col_ind field
-   .  cmp_off - pointer to y's offset field
+   .  cmp_off - pointer to y''s offset field
    .  Diff - pointer to ptrdiff_t field
 
    .  sm - sparse matrix
@@ -572,6 +572,7 @@ INT SM_Compute_Diff_From_Offset (INT N, SHORT *offset, ptrdiff_t *Diff)
    INT
    .n 0 ok
    .n -1 an error ocurred
+
    D*/
 /****************************************************************************/
 

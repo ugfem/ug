@@ -82,7 +82,8 @@ REP_ERR_FILE;
    These routines marks the links in the matrix graph as lower or upper.
    If operation==1, it additionally sorts the links (not yet used and tested).
    It should be called by all routines that are changing the order of vectors
-   and/or matrices (if the correct setting can't be done locally)!
+   and/or matrices (if the correct setting can''t be done locally)!
+
    D*/
 /****************************************************************************/
 

@@ -182,6 +182,7 @@ static void Sort(BT_OBJECT **box, int dim, int left, int right,
 
    RETURN VALUE:
    .  none
+
    D*/
 /****************************************************************************/
 
@@ -254,6 +255,7 @@ static void SearchP(BT_OBJECT *root, int dim, double *x, BT_FUNC func, void *dat
 
    RETURN VALUE:
    .  none
+
    D*/
 /****************************************************************************/
 
@@ -280,6 +282,7 @@ void BT_Search(BOXTREE *tree, double range[DIM][2], BT_FUNC func, void *data)
 
    RETURN VALUE:
    .  none
+
    D*/
 /****************************************************************************/
 

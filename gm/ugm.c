@@ -506,7 +506,7 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid)
   SETMOVE(pv,DIM_OF_BND);
         #ifdef ModelP
   DDD_AttrSet(PARHDRV(pv),GRID_ATTR(theGrid));
-  /*SETVXPRIO(pv,PrioMaster);*/
+  /* SETVXPRIO(pv,PrioMaster); */
         #endif
 
   /* insert in vertex list */
@@ -565,7 +565,7 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
   SETMOVE(pv,DIM);
         #ifdef ModelP
   DDD_AttrSet(PARHDRV(pv),GRID_ATTR(theGrid));
-  /*SETVXPRIO(pv,PrioMaster);*/
+  /* SETVXPRIO(pv,PrioMaster); */
         #endif
   for (i=0; i<DIM; i++) LCVECT(pv)[i] = 0.0;
 
@@ -621,7 +621,7 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
   SETLEVEL(pn,theGrid->level);
         #ifdef ModelP
   DDD_AttrSet(PARHDR(pn),GRID_ATTR(theGrid));
-  /*SETPRIO(pn,PrioMaster);*/
+  /* SETPRIO(pn,PrioMaster); */
         #endif
   ID(pn) = (theGrid->mg->nodeIdCounter)++;
   START(pn) = NULL;
@@ -2162,7 +2162,7 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
   SETLEVEL(pe,GLEVEL(theGrid));
         #if (defined ModelP) && (defined __THREEDIM__)
   DDD_AttrSet(PARHDR(pe), GRID_ATTR(theGrid));
-  /*SETPRIO(pe,PrioMaster);*/
+  /* SETPRIO(pe,PrioMaster); */
         #endif
         #ifdef IDENT_ONLY_NEW
   if (GET_IDENT_MODE() == IDENT_ON)
@@ -2442,7 +2442,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
   SETLEVEL(pe,theGrid->level);
         #ifdef ModelP
   DDD_AttrSet(PARHDRE(pe),GRID_ATTR(theGrid));
-  /*SETEPRIO(pe,PrioMaster);*/
+  /* SETEPRIO(pe,PrioMaster); */
   PARTITION(pe) = me;
         #endif
   SETEBUILDCON(pe,1);
@@ -6236,7 +6236,7 @@ static INT NdElPtrArray_GetMemAndCheckIDs(INT n, MULTIGRID *theMG, INT *h_ID, NO
     if (*h_ID < c_ID[IndexOfDivPart])
       *h_ID = c_ID[IndexOfDivPart];
 
-    /*Speicher bereitstellen !!!*/
+    /* Speicher bereitstellen !!! */
     if (c_ID[IndexOfDivPart] < NDELEM_BLKS_MAX)
     {
       if (MGNDELEMBLK(theMG,c_ID[IndexOfDivPart]) == NULL)                           /* wenn es noch gar keinen Speicherblock dafuer gibt ! */

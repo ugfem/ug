@@ -316,7 +316,7 @@ INT RestrictValue (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *f
    .n   nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
    .n   if only a single value is specified, this will be used for all components
 
-   'npexecute <name> [$i] [$s] [$p];
+   'npexecute <name> [$i] [$s] [$p];'
 
    .  $i - preprocess
    .  $s - solve

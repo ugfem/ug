@@ -45,7 +45,7 @@ EXTRACTING THE SOURCE CODE:
 .vb
      > gzip -d ug3##.tar.gz
      > tar xvf ug3##.tar
-.ve 
+.ve
 
    The result of these two commands should be a new subdirectory 'ug3##/'
    in your current directory.
@@ -84,7 +84,7 @@ EDITING YOUR RESOURCE FILE:
 
 .vb
         export UGROOT=$HOME/ug3##/ug
-        export PATH=$PATH:$UGROOT/bin'
+        export PATH=$PATH:$UGROOT/bin
 .ve
 
    and start a new shell
@@ -179,5 +179,6 @@ RELATED FILES:
 
 SEE ALSO:
    ug, LicenseAgreement, compiler, makefiles, modules, gzip(1), tar(1)
-   
+
 D*/
+

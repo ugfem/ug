@@ -117,7 +117,7 @@ typedef struct
 
 /****************************************************************************/
 /*D
-   newton - nonlinear solver numproc
+   enewton - nonlinear solver numproc
 
    DESCRIPTION:
    This numproc executes a newton iteration based on the linearizazion
@@ -126,7 +126,6 @@ typedef struct
    iteration as well.
    This numproc can be configuered for several damping and line search
    strategies.
-   .ve
    D*/
 /****************************************************************************/
 

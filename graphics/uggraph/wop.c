@@ -13101,7 +13101,7 @@ static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT V
 			
 			/* we don't have to check VCUSED flag */
 			vec = SVECTOR(theElement,i);
-			/*SETVCUSED(vec,TRUE);*/
+			/* SETVCUSED(vec,TRUE); */
 			EE3D_sdv[nplotSDV++] = vec;
 			if (IsVectorSelected(GElem_MG,vec))
 				InvSDV[ninvSDV++] = vec;
