@@ -285,6 +285,11 @@ static INT Table_Init (NP_BASE *theNP, INT argc, char **argv)
   }
   if (ReadArgvChar ("f",np->name,argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
   file = fileopen(np->name,"r");
+  if (file == NULL) {
+    UserWriteF("ERROR in initialization of list:"
+               " cannot open file %s\n",np->name);
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+  }
   for (i=0; i<np->n; i++) {
     fscanf(file,"%f",&a);
     np->list[i] = a;
@@ -343,6 +348,23 @@ static INT Table_GetListEntry_Index (NP_ORDERED_LIST *theNP,
   return(0);
 }
 
+static INT Table_GetListEntry_NextHigherEntry (NP_ORDERED_LIST *theNP,
+                                               DOUBLE value, DOUBLE *Entry,
+                                               INT *result)
+{
+  NP_LIST *np = (NP_LIST *)theNP;
+  INT i;
+
+  *result = 0;
+  for (i=0; i<np->n; i++) {
+    *Entry = np->list[i];
+    if (*Entry > value) return(0);
+  }
+  *result = 1;
+
+  return(0);
+}
+
 static INT Table_Construct (NP_BASE *theNP)
 {
   NP_ORDERED_LIST *np;
@@ -354,7 +376,7 @@ static INT Table_Construct (NP_BASE *theNP)
   np = (NP_ORDERED_LIST *)theNP;
   np->PreProcess                                          = List_PreProcess;
   np->GetListEntry_Index                          = Table_GetListEntry_Index;
-  np->GetListEntry_NextHigherEntry        = NULL;
+  np->GetListEntry_NextHigherEntry        = Table_GetListEntry_NextHigherEntry;
   np->PostProcess                                         = List_PostProcess;
 
   return(0);

@@ -282,6 +282,19 @@ INT BDFTimeInit (NP_T_SOLVER *ts, INT level, INT *res)
     else
       bdf->disabled_timestep = -1.0;
   }
+  if (bdf->optnlsteps == -1)
+    if (bdf->TimeControl != NULL)
+    {
+      if ((*bdf->TimeControl->GetListEntry_Index)
+            (bdf->TimeControl,bdf->step,&tp,&tc_res)) return(1);
+      if (tc_res) {
+        bdf->disabled_timestep = bdf->dt;
+        bdf->dt = tp - bdf->t_0;
+        bdf->t_p1 = tp;
+      }
+      else
+        bdf->disabled_timestep = -1.0;
+    }
 
   /* set initial values and boundary conditions in y_0 */
   *res = 1;
@@ -704,7 +717,21 @@ Continue:
 
   /* chose new dt for next time step */
   dt_old = bdf->dt;
-  if ((bdf->optnlsteps) && (nlresult.converged) && (bdf->TimeControl==NULL || (bdf->TimeControl!=NULL && bdf->disabled_timestep<=0.0)))
+  if ((bdf->optnlsteps == -1) && (bdf->TimeControl != NULL))
+  {
+    if ((*bdf->TimeControl->GetListEntry_Index)
+          (bdf->TimeControl,bdf->step,&tp,&tc_res)) return(1);
+    if (tc_res)
+    {
+      bdf->dt = tp - bdf->t_0;
+      bdf->t_p1 = tp;
+    }
+    else
+    {
+      bdf->t_p1 += bdf->dt;
+    }
+  }
+  else if ((bdf->optnlsteps>0) && (nlresult.converged) && (bdf->TimeControl==NULL || (bdf->TimeControl!=NULL && bdf->disabled_timestep<=0.0)))
   {
     qfm = 0;
     if (bdf->hist>2)
@@ -956,7 +983,7 @@ INT BDFInit (NP_BASE *base, INT argc, char **argv)
   }
   if ((bdf->nested<0)||(bdf->nested>1)) return(NP_NOT_ACTIVE);
   if (ReadArgvINT("optnlsteps",&(bdf->optnlsteps),argc,argv)) bdf->optnlsteps = 0;
-  if (bdf->optnlsteps < 0) return(NP_NOT_ACTIVE);
+  if (bdf->optnlsteps < 0) bdf->optnlsteps = -1;
   if (bdf->optnlsteps==1)
   {
     bdf->hist = 4;
