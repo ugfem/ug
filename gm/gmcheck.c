@@ -804,7 +804,11 @@ PAR(
 						== CORNER(NbElement,CORNER_OF_SIDE(NbElement,j,0)))
 						break;
 				if (k == n)
+				{
 					*SideError |= (1<<i);
+						UserWriteF(PFMT "no matching corner for CORNER_OF_SIDE(NbElement,j,0)=" ID_FMTX "\n",
+								   me, ID_PRTX(CORNER(NbElement,CORNER_OF_SIDE(NbElement,j,0))));
+				}
 				if (TAG(theElement)!=TETRAHEDRON 
 				#ifdef Debug
 				|| Debuggm>=1
@@ -816,6 +820,11 @@ PAR(
 						!= CORNER(NbElement,CORNER_OF_SIDE(NbElement,j,l)))
 					{
 						*SideError |= (1<<i);
+						UserWriteF(PFMT "corner mismatch side=%d cos=%d corner_el=" ID_FMTX " side=%d cos=%d corner_nb=" ID_FMTX " el = " EID_FMTX "\n",
+								   me,i,(n+k-l)%n,
+									ID_PRTX(CORNER(theElement,CORNER_OF_SIDE(theElement,i,(n+k-l)%n))),
+									j,l,
+									ID_PRTX(CORNER(NbElement,CORNER_OF_SIDE(NbElement,j,l))),EID_PRTX(theElement));
 					}
 			}
 		}
