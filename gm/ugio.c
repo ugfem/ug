@@ -1119,15 +1119,25 @@ static INT SetHierRefinement (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMEN
 
 static INT nRefinements (ELEMENT *theElement, INT *n)
 {
-  INT i;
+  INT i,nmax;
+  ELEMENT *theSon;
   ELEMENT *SonList[MAX_SONS];
+  NODE *NodeContext[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
+  MGIO_RR_RULE *theRule;
 
   if (REFINE(theElement)==NO_REFINEMENT) return (0);
-  if (GetAllSons(theElement,SonList)) REP_ERR_RETURN(1);
-  if (RemoveOrphanSons(SonList,NULL)) REP_ERR_RETURN(1);
+  if (GetNodeContext(theElement,NodeContext)) REP_ERR_RETURN(1);
+  theRule = rr_rules + rr_rule_offsets[TAG(theElement)] + REFINE(theElement);
+  if (GetOrderedSons(theElement,theRule,NodeContext,SonList,&nmax)) REP_ERR_RETURN(1);
+  if (RemoveOrphanSons(SonList,&nmax)) REP_ERR_RETURN(1);
   (*n)++;
-  for (i=0; SonList[i]!=NULL; i++)
-    if (nRefinements(SonList[i],n)) REP_ERR_RETURN(1);
+  for (i=0; i<nmax; i++)
+  {
+    theSon = SonList[i];
+    if (theSon==NULL) continue;
+    if (REFINE(theSon)!=NO_REFINEMENT)
+      if (nRefinements(theSon,n)) REP_ERR_RETURN(1);
+  }
 
   return (0);
 }
