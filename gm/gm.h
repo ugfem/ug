@@ -166,6 +166,9 @@
 /*																			*/
 /****************************************************************************/
 
+/* define to have matrices > 4KB (control word too small, adds integer to matrix struct) */
+#undef __XXL_MSIZE__
+
 /* if interpolation matrix is stored */
 #define __INTERPOLATION_MATRIX__
 
@@ -519,6 +522,10 @@ typedef struct vector VECTOR;
 
 struct matrix {
   unsigned INT control;                         /* object identification, various flags */
+
+#ifdef __XXL_MSIZE__
+  unsigned INT xxl_msize;               /* for people needing large matrices    */
+#endif
 
   struct matrix *next;                          /* row list                                                     */
   struct vector *vect;                          /* destination vector					*/
@@ -1663,9 +1670,15 @@ enum LV_ID_TYPES {
 
 #define MSIZE_SHIFT                             13
 #define MSIZE_LEN                                       12
+#ifndef __XXL_MSIZE__
 #define MSIZEMAX                                        (POW2(MSIZE_LEN)-1)
 #define MSIZE(p)                                        (CW_READ(p,MSIZE_CE)+sizeof(MATRIX)-sizeof(DOUBLE))
 #define SETMSIZE(p,n)                           CW_WRITE(p,MSIZE_CE,(n-sizeof(MATRIX)+sizeof(DOUBLE)))
+#else
+#define MSIZEMAX                                        10000000
+#define MSIZE(p)                                        ((p)->xxl_msize)
+#define SETMSIZE(p,n)                           (p)->xxl_msize = (n)
+#endif
 
 #define MTYPE(p)                                        (MDIAG(p) ? (MAXMATRICES+MROOTTYPE(p)) : (MROOTTYPE(p)*MAXVECTORS+MDESTTYPE(p)))
 
