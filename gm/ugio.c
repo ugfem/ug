@@ -592,7 +592,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
     mg_general.nElement             += NT(theGrid);
   }
   strcpy(mg_general.version,MGIO_VERSION);
-  p = GetStringVar ("IDENTIFICATION");
+  p = GetStringVar (":IDENTIFICATION");
   if (p!=NULL) strcpy(mg_general.ident,p);
   else strcpy(mg_general.ident,"---");
   strcpy(mg_general.DomainName,BVPD_NAME(theBVPDesc));
@@ -692,7 +692,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   if (Write_CG_Elements((int)n,cg_element)) return (1);
 
   /* write general bnd information */
-  if (Bio_Jump_From ()) return (1);
+  /*if (Bio_Jump_From ()) return (1);*/
   bd_general.nBndP = nbv;
   if (Write_BD_General (&bd_general)) return (1);
 
@@ -706,7 +706,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
       BndPList[ID(theNode)] = V_BNDP(MYVERTEX(theNode));
     }
   if (Write_PBndDesc (nbv,BndPList)) return (1);
-  if (Bio_Jump_To ()) return (1);
+  /*if (Bio_Jump_To ()) return (1);*/
 
   /* save refinement */
   refinement = (MGIO_REFINEMENT *)GetTmpMem(theHeap,hr_max*sizeof(MGIO_REFINEMENT));
@@ -1149,7 +1149,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   if (Read_CG_Elements(cg_general.nElement,cg_element))                           {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   /* read general bnd information */
-  if (Bio_Jump (0))                                                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  /*if (Bio_Jump (0))                                                                                                   {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}*/
   if (Read_BD_General (&bd_general))                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   /* read bnd points */

@@ -134,17 +134,37 @@ static int DEBUG_Write_mdouble (int n, double *doubleList)
 
 static int DEBUG_Read_string (char *string)
 {
-  if (fscanf(stream,"%s\n",string)!=1) return (1);
+  int i,len;
+
+  if (fscanf(stream,"%d ",&len)!=1) return (1);
+  for (i=0; i<len; i++)
+  {
+    string[i] = fgetc(stream);
+    if (string[i]==EOF)
+      return (1);
+  }
+  string[i] = fgetc(stream);
+  if (string[i]!='\n') return (1);
+  string[i] = '\0';
+
   return (0);
 }
 
 static int DEBUG_Write_string (char *string)
 {
-  int m;
+  int i,m,len;
 
-  m = fprintf(stream,"%s\n",string);
+  len = strlen(string);
+  m = fprintf(stream,"%d ",len);
   if (m<0) return (1);
   n_byte += m;
+  for (i=0; i<len; i++)
+    if (fputc(string[i],stream)==EOF)
+      return (1);
+  m = fprintf(stream,"\n");
+  if (m<0) return (1);
+  n_byte += len+m;
+
   return (0);
 }
 
@@ -203,17 +223,37 @@ static int ASCII_Write_mdouble (int n, double *doubleList)
 
 static int ASCII_Read_string (char *string)
 {
-  if (fscanf(stream,"%s ",string)!=1) return (1);
+  int i,len;
+
+  if (fscanf(stream,"%d ",&len)!=1) return (1);
+  for (i=0; i<len; i++)
+  {
+    string[i] = fgetc(stream);
+    if (string[i]==EOF)
+      return (1);
+  }
+  string[i] = fgetc(stream);
+  if (string[i]!=' ') return (1);
+  string[i] = '\0';
+
   return (0);
 }
 
+
 static int ASCII_Write_string (char *string)
 {
-  int m;
+  int i,m,len;
 
-  m = fprintf(stream,"%s ",string);
+  len = strlen(string);
+  m = fprintf(stream,"%d ",len);
   if (m<0) return (1);
   n_byte += m;
+  for (i=0; i<len; i++)
+    if (fputc(string[i],stream)==EOF)
+      return (1);
+  m = fprintf(stream," ");
+  if (m<0) return (1);
+  n_byte += len+m;
 
   return (0);
 }
@@ -253,20 +293,40 @@ static int BIN_Write_mdouble (int n, double *doubleList)
 
 static int BIN_Read_string (char *string)
 {
-  if (fscanf(stream,"%s ",string)!=1) return (1);
+  int i,len;
+
+  if (fscanf(stream,"%d ",&len)!=1) return (1);
+  for (i=0; i<len; i++)
+  {
+    string[i] = fgetc(stream);
+    if (string[i]==EOF)
+      return (1);
+  }
+  string[i] = fgetc(stream);
+  if (string[i]!=' ') return (1);
+  string[i] = '\0';
+
   return (0);
 }
+
 
 static int BIN_Write_string (char *string)
 {
-  int m;
+  int i,m,len;
 
-  m = fprintf(stream,"%s ",string);
+  len = strlen(string);
+  m = fprintf(stream,"%d ",len);
   if (m<0) return (1);
   n_byte += m;
+  for (i=0; i<len; i++)
+    if (fputc(string[i],stream)==EOF)
+      return (1);
+  m = fprintf(stream," ");
+  if (m<0) return (1);
+  n_byte += len+m;
+
   return (0);
 }
-
 /****************************************************************************/
 /*																			*/
 /* exported i/o																*/
