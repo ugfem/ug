@@ -1473,16 +1473,10 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 				}
 			ENDDEBUG
 
-if (0) {
 			if (toDelete)
 			{
-				/* this node has no links any more delete it */
-				if (START(SideNodes[i])==NULL)
-				{
-					SideNodes[i] = NULL;
-				}
+				SideNodes[i] = NULL;
 			}
-}
 
 			if (toCreate)
 			{
@@ -3006,8 +3000,13 @@ static int RefineGrid (GRID *theGrid)
 				continue; 
 			}
 			IFDEBUG(gm,1)
-			printf("REFINING element ID=%d TAG=%d REFINECLASS=%d MARKCLASS=%d REFINE=%d MARK=%d NSONS=%d\n",ID(theElement),TAG(theElement),REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),NSONS(theElement));
-			UserWriteF("REFINING element ID=%d TAG=%d REFINECLASS=%d MARKCLASS=%d REFINE=%d MARK=%d\n",ID(theElement),TAG(theElement),REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement));
+			printf("REFINING element ID=%d TAG=%d REFINECLASS=%d MARKCLASS=%d REFINE=%d "
+				"MARK=%d NSONS=%d COARSEN=%d\n",
+				ID(theElement),TAG(theElement),REFINECLASS(theElement),MARKCLASS(theElement),
+				REFINE(theElement),MARK(theElement),NSONS(theElement),COARSEN(theElement));
+			UserWriteF("REFINING element ID=%d TAG=%d REFINECLASS=%d MARKCLASS=%d REFINE=%d "
+				MARK=%d COARSEN=%d\n",ID(theElement),TAG(theElement),REFINECLASS(theElement),
+				MARKCLASS(theElement),REFINE(theElement),MARK(theElement),COARSEN(theElement));
 			ENDDEBUG
 
 			if (UnrefineElement(fineGrid,theElement))  RETURN(GM_FATAL);
