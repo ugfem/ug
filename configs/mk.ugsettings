@@ -89,9 +89,9 @@ UG_LIB    = $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a
 
 UG_LIBS   = $(UG_LIB) \
 			$(UGROOT)/lib/libdom$(UG_DOMSUFFIX).a \
-			$(UGROOT)/lib/libgrape$(GRAPE)$(UG_LIBSUFFIX).a \
-			$(UGROOT)/lib/libgg$(UG_LIBSUFFIX).a \
-			$(UGROOT)/lib/libdev$(IF)$(UG_LIBSUFFIX).a
+			$(UGROOT)/lib/libgrape$(GRAPE)$(DIM).a \
+			$(UGROOT)/lib/libgg$(DIM).a \
+			$(UGROOT)/lib/libdev$(IF).a
 
 UG_POSTLINK = $(ARCH_POSTLINK) ; ugbcheck
 
