@@ -41,6 +41,8 @@
 #include "shapes.h"
 #include "num.h"
 
+#include "plotproc.h"
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -73,7 +75,7 @@
 static INT nodecomp;
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -198,7 +200,7 @@ static void NodeVector (const ELEMENT *theElement, const DOUBLE **theCorners,
     v = NVECTOR(CORNER(theElement,i));
     s = GN(n,i,LocalCoord);
     for (j=0; j<DIM; j++)
-      values[i] += s*VVALUE(v,nodecomp+i);
+      values[j] += s*VVALUE(v,nodecomp+j);
   }
 
   return;
