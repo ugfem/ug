@@ -216,7 +216,7 @@ const BV_DESC_FORMAT two_level_bvdf =
                 (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
                 (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
                 (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff},
-  { (BVD_ENTRY_TYPE)0xffff0000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  { (BVD_ENTRY_TYPE)0xffff0000, (BVD_ENTRY_TYPE)0x0000ffff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
 const BV_DESC_FORMAT three_level_bvdf =
@@ -237,8 +237,8 @@ const BV_DESC_FORMAT three_level_bvdf =
                 (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
                 (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
                 (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff},
-  { (BVD_ENTRY_TYPE)0xfffffc00, (BVD_ENTRY_TYPE)0xfff00000,
-            (BVD_ENTRY_TYPE)0xc0000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  { (BVD_ENTRY_TYPE)0xfffffc00, (BVD_ENTRY_TYPE)0xfff003ff,
+            (BVD_ENTRY_TYPE)0xc00fffff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
 /****************************************************************************/
@@ -5085,7 +5085,7 @@ static INT StrongLexAlgDep (GRID *theGrid, const char *data)
    .  bv_plane - handle for the blockvector covering the plane
    .  bvd_plane - blockvector description for the block 'bv_plane'
    .  bvdf - blockvector description format for 'bvd_plane'
-   .  v - input: handle to the first vector; output: handle to the next vector after this plane
+   .  v - input: handle to the first vector; output: handle to the 'last' vector in this plane
    .  stripes  - number of stripes to be constructed
    .  vectors_per_stripe - number of vectors a stripe should contain
    .  grid - the grid containing the vectors to be structured
@@ -5194,7 +5194,8 @@ static INT CreateBVPlane( BLOCKVECTOR **bv_plane, BV_DESC *bvd_plane, const BV_D
   }
   BVSUCC( bv ) = NULL;                          /* end of the blockvector list */
 
-  BVLASTVECTOR( *bv_plane ) = pred_v;
+  *v = pred_v;
+  BVLASTVECTOR( *bv_plane ) = *v;
   BVDOWNBVLAST( *bv_plane ) = bv;
   BVNUMBEROFVECTORS( *bv_plane ) = stripes * vectors_per_stripe - j;
 
@@ -5283,6 +5284,7 @@ INT CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_stripe )
     FreeBVList( grid, bv_inner );
     return ret;
   }
+  v = SUCCVC( v );
 
   (void)CreateBlockvector( grid, &bv_boundary );
   if ( bv_boundary == NULL )
@@ -5419,6 +5421,9 @@ INT CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT 
   nr_vectors = 0;
   for ( i = 0; (i < nr_planes) && (v != NULL); i++ )
   {
+    if ( i != 0 )
+      v = SUCCVC( v );                   /* set v from the last vector of the previous block to the first of the current block */
+
     ret = CreateBVPlane( &bv_plane, &bvd, &three_level_bvdf, &v, stripes_per_plane, vectors_per_stripe, grid );
     if ( ret == GM_OUT_OF_MEM )
     {
@@ -5450,7 +5455,8 @@ INT CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT 
   BVDOWNBVLAST( bv_inner ) = bv_plane;
   BVNUMBEROFVECTORS( bv_inner ) = nr_vectors;
 
-  BVFIRSTVECTOR( bv_boundary ) = SUCCVC( v );
+  v = SUCCVC( v );
+  BVFIRSTVECTOR( bv_boundary ) = v;
   BVLASTVECTOR( bv_boundary ) = LASTVECTOR( grid );
   BVNUMBEROFVECTORS( bv_boundary ) = NVEC( grid ) - BVNUMBEROFVECTORS( bv_inner );
 
