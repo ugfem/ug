@@ -73,6 +73,7 @@ public:
   char* Getpostsmoother();
   char* Getcgsmoother();
   int Read();
+  int GetColoringMethod();
   void Setheap(int i);
   void Setnv(int i);
   void Setgamma(int i);
@@ -101,6 +102,7 @@ public:
   void Setpresmoother(char *presmoother);
   void Setpostsmoother(char *postsmoother);
   void Setcgsmoother(char *cgsmoother);
+  void SetColoringMethod(int cm);
 private:
   int heap;
   int nv;
@@ -130,6 +132,7 @@ private:
   char presmoother[10];
   char postsmoother[10];
   char cgsmoother[10];
+  int coloringmethod;                           // see file famg_coloring.C for details; only for ModelP
 };
 
 inline int FAMGParameter::Getheap() {
@@ -216,6 +219,9 @@ inline char* FAMGParameter::Getpostsmoother() {
 inline char* FAMGParameter::Getcgsmoother() {
   return cgsmoother;
 }
+inline int FAMGParameter::GetColoringMethod() {
+  return coloringmethod;
+}
 
 inline void FAMGParameter::Setheap(int i) {
   heap = i;
@@ -301,7 +307,9 @@ inline void FAMGParameter::Setpostsmoother(char *ptr) {
 inline void FAMGParameter::Setcgsmoother(char *ptr) {
   strcpy(cgsmoother,ptr);
 }
-
+inline void FAMGParameter::SetColoringMethod(int cm) {
+  coloringmethod = cm;
+}
 
 class FAMGSystem
 {

@@ -203,6 +203,9 @@ static void FAMGReadArgvParameter(INT argc, char **argv)
     str = GetStringVar(":famg:cgsmoother");
     if(str != NULL) strcpy(famg_parameter.cgsmoother,str);
 
+    famg_parameter.coloringmethod = 3;
+    GetStringValueInt(":famg:coloringmethod",&(famg_parameter.coloringmethod));
+
 }
 
 

@@ -106,6 +106,7 @@ static void ReadParameter(FAMGParameter *parameter, FAMGParameter_ug *in_paramet
     parameter->Setpresmoother(in_parameter->presmoother);
     parameter->Setpostsmoother(in_parameter->postsmoother);
     parameter->Setcgsmoother(in_parameter->cgsmoother);
+    parameter->SetColoringMethod(in_parameter->coloringmethod);
 }    
 
 

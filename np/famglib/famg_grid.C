@@ -32,6 +32,10 @@
 #include "famg_heap.h"
 #include "famg_system.h"
 
+#ifdef ModelP
+#include "famg_coloring.h"
+#endif
+
 #ifdef USE_UG_DS
 extern "C"
 {
@@ -43,7 +47,6 @@ extern "C"
 #endif
 
 #ifdef UG_DRAW
-
 extern "C"
 {
 #include "wpm.h"
@@ -51,7 +54,6 @@ extern "C"
 #include "connectuggrape.h"
 #include "uginterface.h"
 }
-
 #endif
 
 /* RCS_ID
@@ -940,10 +942,29 @@ int FAMGGrid::ConstructTransfer()
 	VECTOR *vec;
 	MATRIX *mat;
 	FAMGNode *nodei;
+	int BorderCycles;
+	double StartTime = CURRENT_TIME;
 	
-	for ( int p=0; p<procs; p++)
+	if( ConstructColoringGraph(GRID_ATTR(mygrid)) )
 	{
-		if( me == p )
+		cout << "FAMGGrid::ConstructTransfer(): ERROR in constructing the coloring graph"<<endl<<fflush;
+		FAMGReleaseHeap(FAMG_FROM_BOTTOM);
+		return 1;
+	}
+		
+	if( ConstructColoring( FAMGGetParameter()->GetColoringMethod() ) )
+	{
+		cout << "FAMGGrid::ConstructTransfer(): ERROR in coloring the graph"<<endl<<fflush;
+		FAMGReleaseHeap(FAMG_FROM_BOTTOM);
+		return 1;
+	}
+
+	BorderCycles = UG_GlobalMaxINT((int)FAMGMyColor);
+	cout <<me<<": level = "<<level<<" my color = "<<FAMGMyColor<<" max. color = "<<BorderCycles<<" ColoringMethod = "<<FAMGGetParameter()->GetColoringMethod()<<" time for graph coloring = "<<CURRENT_TIME-StartTime<<endl;
+	
+	for ( int color = 0; color <= BorderCycles; color++)
+	{
+		if( FAMGMyColor == color )
 		{
 		    if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
 		    if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
@@ -965,7 +986,10 @@ int FAMGGrid::ConstructTransfer()
 			vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
 			if( IS_FAMG_MASTER(vec) ) // only master vectors can be in border the of the core partition
 				if(graph->InsertNode(this, nodei))
-					return 0;
+				{
+					FAMGReleaseHeap(FAMG_FROM_BOTTOM);
+					return 1;
+				}
 		}
     }
 #endif
@@ -974,9 +998,9 @@ int FAMGGrid::ConstructTransfer()
 	FAMGNode *nodei;
 	VECTOR *vec;
 	
-		    if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
-		    if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
-    		if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+	if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+	if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+	if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
 	// put the undecided nodes from the core partition into the list
     for(i = 0; i < n; i++)
    	{
@@ -987,7 +1011,10 @@ int FAMGGrid::ConstructTransfer()
 		{
 			vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
 				if(graph->InsertNode(this, nodei))
-					return 0;
+				{
+					FAMGReleaseHeap(FAMG_FROM_BOTTOM);
+					return 1;
+				}
 		}
     }
 #endif

@@ -91,6 +91,7 @@ struct FAMGParameter_ug
   char presmoother[10];
   char postsmoother[10];
   char cgsmoother[10];
+  int coloringmethod;
 };
 
 #ifdef UG_DRAW

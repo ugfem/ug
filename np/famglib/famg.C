@@ -225,7 +225,8 @@ int FAMGParameter::Read()
     strcpy(presmoother,"fgs");
     strcpy(postsmoother,"bgs");
     strcpy(cgsmoother,"ilut");
-
+	coloringmethod = 3;
+	
 	const int bufLen=80;
 	char buf[bufLen], pastr[30];
 
@@ -357,6 +358,10 @@ int FAMGParameter::Read()
             else if(strcmp(pastr,"cgsmoother") == 0)
             {
                 if(!(ist >> cgsmoother)) strcpy(cgsmoother,"ilut");
+            }
+            else if(strcmp(pastr,"coloringmethod") == 0)
+            {
+                if(!(ist >> coloringmethod)) coloringmethod = 3;
             }
        }
     }
