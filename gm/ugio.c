@@ -86,6 +86,15 @@ USING_UG_NAMESPACE
 /*																			*/
 /****************************************************************************/
 
+/* define LOCAL_FILE_SYSTEM if each processor has a local (own) filesystem
+   #define LOCAL_FILE_SYSTEM
+ */
+
+/* define OPTIMIZED_IO to use optimized configuration */
+#ifdef ModelP
+#define OPTIMIZED_IO
+#endif
+
 #define BUFFERSIZE                              512     /* size of the general purpose text buff*/
 
 #define HEADER_FMT               "# grid on level 0 for %s\n# saved %s\n# %s\n# %s\n"
@@ -143,6 +152,9 @@ static NODE **vid_n;                                            /* mapping: orph
 static INT nov;                                                         /* number of orphan vertices */
 static ELEMENT **eid_e;
 static int nparfiles;                                           /* nb of parallel files		*/
+#ifdef  __MGIO_PE_INFO__
+static int npe_info;                                            /* partitioning information? */
+#endif
 static int proc_list_size = -1;                         /* hold the computed value for PROCLISTSIZE; initialized with crazy dummy */
 
 /* RCS string */
@@ -902,6 +914,37 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
   refinement->sonref = sonRefined;
   if (MGIO_PARFILE) refinement->sonex = sonex;
 
+#ifdef  __MGIO_PE_INFO__
+  if (npe_info > 1)
+  {
+    int i;
+
+    if (nmax == theRule->nsons)
+      refinement->pe_info = 0;
+    else
+      refinement->pe_info = 1;
+
+    for (i=0; i<theRule->nsons; i++)
+    {
+      if (i<nmax && SonList[i]!=NULL)
+      {
+        refinement->pes[i] = PARTITION(SonList[i]);
+        if (!EMASTER(SonList[i])) refinement->pe_info = 1;
+      }
+      else
+      {
+        refinement->pe_info = 1;
+        refinement->pes[i] = -1;
+        ASSERT(MGIO_PARFILE);
+      }
+    }
+  }
+  else
+  {
+    refinement->pe_info = 0;
+  }
+#endif
+
   /* not movable at the moment */
   refinement->nmoved = 0;
 
@@ -1291,6 +1334,14 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   INT MarkKey;
 #ifdef ModelP
   int error;
+        #ifdef STAT_OUT
+  DOUBLE ugio_begin,ugio_end;
+        #endif
+#endif
+
+
+        #ifdef STAT_OUT
+  ugio_begin = CURRENT_TIME;
 #endif
 
   /* check */
@@ -1360,11 +1411,15 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   strcat(filename,itype);
 #ifdef ModelP
   error = 0;
+        #ifndef LOCAL_FILE_SYSTEM
   if (me == master)
-    if (MGIO_PARFILE)
-      if (MGIO_dircreate(filename,(int)rename))
-        error = -1;
-
+        #endif
+  if (MGIO_PARFILE)
+    if (MGIO_dircreate(filename,(int)rename))
+      error = -1;
+        #ifdef LOCAL_FILE_SYSTEM
+  error = UG_GlobalMinINT(error);
+        #endif
   Broadcast(&error,sizeof(int));
   if (error == -1)
   {
@@ -1408,6 +1463,11 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   /* parallel part */
   mg_general.nparfiles = nparfiles;
   mg_general.me = me;
+#ifdef __MGIO_PE_INFO__
+  mg_general.npe_info = nparfiles;
+  npe_info = mg_general.npe_info;
+#endif
+
 
   if (Write_MG_General(&mg_general)) REP_ERR_RETURN(1);
 
@@ -1567,6 +1627,10 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
           cge->se_on_bnd |= (1<<(SIDES_OF_ELEM(theElement)+j));
       }
       cge->subdomain = SUBDOMAIN(theElement);
+#ifdef  __MGIO_PE_INFO__
+      cge->pe = PARTITION(theElement);
+#endif
+
 
 #if (MGIO_DEBUG>0)
       /* write debug extension */
@@ -1656,6 +1720,12 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
 
         #if EXTRACT_RULES
   ResetRefineTagsBeyondRuleManager(theMG);
+        #endif
+
+        #ifdef STAT_OUT
+  ugio_end = CURRENT_TIME;
+
+  UserWriteF("UGIO: t_iosave=%.2lf\n", ugio_end-ugio_begin);
         #endif
 
   return (0);
@@ -1972,9 +2042,16 @@ static INT IO_GridCons(MULTIGRID *theMG)
     if (SpreadGridNodeTypes(theGrid) != GM_OK) RETURN(GM_FATAL);
 
     /* repair parallel information */
+#ifndef OPTIMIZED_IO
     ConstructConsistentGrid(theGrid);
 #endif
+#endif
   }
+#ifdef ModelP
+#ifdef OPTIMIZED_IO
+  ConstructConsistentMultiGrid(theMG);
+#endif
+#endif
 
   return(GM_OK);
 }
@@ -2746,6 +2823,11 @@ MULTIGRID * NS_DIM_PREFIX LoadMultiGrid (char *MultigridName, char *name, char *
   ELEMENT *theNeighbor;
   INT k;
 #endif
+        #ifdef STAT_OUT
+  DOUBLE ugio_begin, ugio_end;
+
+  ugio_begin = CURRENT_TIME;
+        #endif
 
   if (autosave)
   {
@@ -3325,7 +3407,13 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   }
 
   /* close identification context */
+#ifdef OPTIMIZED_IO
+  DDD_SetOption(OPT_IF_CREATE_EXPLICIT,OPT_ON);
+#endif
   DDD_IdentifyEnd();
+#ifdef OPTIMIZED_IO
+  DDD_SetOption(OPT_IF_CREATE_EXPLICIT,OPT_OFF);
+#endif
 
   /* repair inconsistencies */
   if (MGIO_PARFILE)
