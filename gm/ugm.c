@@ -149,7 +149,6 @@ INT GetFreeOBJT ()
     return (-1);
 }
 
-
 /****************************************************************************/
 /*D
    ReleaseOBJT - Release an object type id not needed anymore
@@ -189,20 +188,21 @@ INT ReleaseOBJT (INT type)
   return (GM_OK);
 }
 
-
 /****************************************************************************/
 /*D
-   GetFreeObject - Get an object from free list if possible
+   GetMemoryForObject - Get an object from free list if possible
 
    SYNOPSIS:
-   void *GetFreeObject (MULTIGRID *theMG, int n);
+   void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type);
 
    PARAMETERS:
    .  theMG - pointer to multigrid
-   .  n - type of the requested object
+   .  size - size of the object
+   .  type - type of the requested object
 
    DESCRIPTION:
-   This function gets an object of type `n` from free list if possible.
+   This function gets an object of type `type` from free list if possible,
+   otherwise it allocates memory from the multigrid heap using 'GetMem'.
 
    RETURN VALUE:
    void *
@@ -211,21 +211,83 @@ INT ReleaseOBJT (INT type)
    D*/
 /****************************************************************************/
 
-void *GetFreeObject (MULTIGRID *theMG, int n)
+void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
 {
-  void **ptr;
+  void **ptr, *obj;
+  INT i;
+  FORMAT *theFormat;
 
-  if ((n<0)||(n>=MAXOBJECTS)) return(NULL);
-  if (theMG->freeObjects[n]==NULL) return(NULL);
+  if (size == 0)
+    return(NULL);
+  obj = NULL;
 
-  /* 'ptr' will be set equal to 'theMG->freeObjects[n]' but with			*/
+  if (type >= MAXOBJECTS)
+  {
+    theFormat = MGFORMAT(theMG);
+    if (type == COOBJ)
+    {
+      for (i=0; i<MAXVECTORS; i++)
+        if (size == sizeof(MATRIX)-sizeof(DOUBLE)
+            +theFormat->MatrixSizes[MatrixType[i][i]])
+        {
+          ptr = (void **) theMG->freeConnections[i];
+          theMG->freeVectors[i] = ptr[0];
+          break;
+        }
+      for (i=0; i<MAXMATRICES; i++)
+        if (size == 2*(sizeof(MATRIX)-sizeof(DOUBLE)
+                       +theFormat->MatrixSizes[i]))
+        {
+          ptr = (void **) theMG->freeConnections[MAXVECTORS+i];
+          theMG->freeVectors[MAXVECTORS+i] = ptr[0];
+          break;
+        }
+    }
+    else if (type == VCOBJ)
+    {
+      for (i=0; i<MAXVECTORS; i++)
+        if (size == sizeof(VECTOR)-sizeof(DOUBLE)
+            +theMG->theFormat->VectorSizes[i])
+        {
+          ptr = (void **) theMG->freeVectors[i];
+          theMG->freeVectors[i] = ptr[0];
+          break;
+        }
+    }
+        #ifdef __INTERPOLATION_MATRIX__
+    else if (type == IMOBJ)
+    {
+      for (i=0; i<MAXMATRICES; i++)
+        if (size == sizeof(MATRIX)-sizeof(DOUBLE)
+            +theMG->theFormat->IMatrixSizes[i])
+        {
+          ptr = (void **) theMG->freeIMatrices[i];
+          theMG->freeIMatrices[i] = ptr[0];
+          break;
+        }
+    }
+                #endif
+  }
+  /* 'ptr' will be set equal to 'theMG->freeObjects[type]' but with	        */
   /* different interpretation: void ** instead of void *. 'ptr'			*/
   /* points to the first two bytes of the object (i.e. unsigned INT ctrl	*/
   /* and INT id) but will be interpreted as a void * pointer, witch points*/
   /* to the next free object.                                                                                   */
-  ptr = (void **) theMG->freeObjects[n];
-  theMG->freeObjects[n] = ptr[0];
-  return((void *)ptr);
+  else if (type>=0)
+    if (theMG->freeObjects[type]!=NULL)
+    {
+      ptr = (void **) theMG->freeObjects[type];
+      theMG->freeObjects[type] = ptr[0];
+      obj = (void *) ptr;
+    }
+
+  if (obj == NULL)
+    obj = GetMem(MGHEAP(theMG),(MEM *)size,FROM_BOTTOM);
+
+  if (obj != NULL)
+    memset(obj,0,size);
+
+  return(obj);
 }
 
 
@@ -234,11 +296,13 @@ void *GetFreeObject (MULTIGRID *theMG, int n)
    PutFreeObject - Put an object in the free list
 
    SYNOPSIS:
-   INT PutFreeObject (MULTIGRID *theMG, void *object);
+   INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type);
 
    PARAMETERS:
    .  theMG - pointer to multigrid
    .  object - object to insert in free list
+   .  size - size of the object
+   .  type - type of the requested object
 
    DESCRIPTION:
    This function puts an object in the free list.
@@ -250,29 +314,79 @@ void *GetFreeObject (MULTIGRID *theMG, int n)
    D*/
 /****************************************************************************/
 
-INT PutFreeObject (MULTIGRID *theMG, void *object)
+INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type)
 {
   void **ptr;
-  int n;
+  INT i;
+  FORMAT *theFormat;
 
-  n = OBJT(object);
-  if ((n<0)||(n>=MAXOBJECTS))
+  ptr = (void **) object;
+
+  if (type >= MAXOBJECTS)
+  {
+    theFormat = MGFORMAT(theMG);
+    if (type == COOBJ)
+    {
+      for (i=0; i<MAXVECTORS; i++)
+        if (size == sizeof(MATRIX)-sizeof(DOUBLE)
+            +theFormat->MatrixSizes[MatrixType[i][i]])
+        {
+          ptr[0] = theMG->freeConnections[i];
+          theMG->freeConnections[i] = (void *)object;
+          break;
+        }
+      for (i=0; i<MAXMATRICES; i++)
+        if (size == 2*(sizeof(MATRIX)-sizeof(DOUBLE)
+                       +theFormat->MatrixSizes[i]))
+        {
+          ptr[0] = theMG->freeConnections[MAXVECTORS+i];
+          theMG->freeConnections[MAXVECTORS+i] = (void *)object;
+          break;
+        }
+    }
+    else if (type == VCOBJ)
+    {
+      for (i=0; i<MAXVECTORS; i++)
+        if (size == sizeof(VECTOR)-sizeof(DOUBLE)
+            +theMG->theFormat->VectorSizes[i])
+        {
+          ptr[0] = theMG->freeVectors[i];
+          theMG->freeVectors[i] = (void *)object;
+          break;
+        }
+    }
+        #ifdef __INTERPOLATION_MATRIX__
+    else if (type == IMOBJ)
+    {
+      for (i=0; i<MAXMATRICES; i++)
+        if (size == sizeof(MATRIX)-sizeof(DOUBLE)
+            +theMG->theFormat->IMatrixSizes[i])
+        {
+          ptr[0] = theMG->freeIMatrices[i];
+          theMG->freeIMatrices[i] = (void *)object;
+          break;
+        }
+    }
+                #endif
+  }
+  /* 'ptr' will be set equal to 'object' but with different inter-		*/
+  /* pretation: void ** instead of void *. 'ptr' points to the first		*/
+  /* two bytes of the object (i.e. unsigned INT ctrl	and INT id) but         */
+  /* will be interpreted as a void * pointer, witch will be set equal   */
+  /* to 'theMG->freeObjects[type]' i.e. the first free object.			*/
+  else if (type >= 0)
+  {
+    ptr[0] = theMG->freeObjects[type];
+    theMG->freeObjects[type] = object;
+  }
+  else
   {
     UserWrite("wrong object given to PutFreeObject\n");
     return(1);
   }
 
-  /* 'ptr' will be set equal to 'object' but with different inter-		*/
-  /* pretation: void ** instead of void *. 'ptr' points to the first		*/
-  /* two bytes of the object (i.e. unsigned INT ctrl	and INT id) but         */
-  /* will be interpreted as a void * pointer, witch will be set equal   */
-  /* to 'theMG->freeObjects[n]' i.e. the first free object.				*/
-  ptr = (void **) object;
-  ptr[0] = theMG->freeObjects[n];
-  theMG->freeObjects[n] = object;
   return(0);
 }
-
 
 /****************************************************************************/
 /*D
@@ -298,14 +412,11 @@ INT PutFreeObject (MULTIGRID *theMG, void *object)
 VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex)
 {
   VSEGMENT *vs;
-  int i;
+  INT i;
 
-  vs = (VSEGMENT *)GetFreeObject(theGrid->mg,VSOBJ);
-  if (vs==NULL)
-  {
-    vs = (VSEGMENT *)GetMem(theGrid->mg->theHeap,sizeof(struct vsegment),FROM_BOTTOM);
-    if (vs==NULL) return (NULL);
-  }
+  vs = (VSEGMENT *)GetMemoryForObject(MYMG(theGrid),sizeof(struct vsegment),
+                                      VSOBJ);
+  if (vs==NULL) return (NULL);
 
   /* initialize data */
   CTRL(vs) = 0;
@@ -347,26 +458,17 @@ VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after)
 {
   VERTEX *pv;
   INT ds;
-  int i;
+  INT i;
 
-        #ifdef ModelP
-  pv = NULL;
-        #else
-  pv = GetFreeObject(theGrid->mg,BVOBJ);
-        #endif
-  if (pv==NULL)
+  pv = GetMemoryForObject(MYMG(theGrid),sizeof(struct bvertex),BVOBJ);
+  if (pv==NULL) return(NULL);
+  if ((ds=theGrid->mg->theFormat->sVertex)>0)
   {
-    pv = GetMem(theGrid->mg->theHeap,sizeof(struct bvertex),FROM_BOTTOM);
-    if (pv==NULL) return(NULL);
-    if ((ds=theGrid->mg->theFormat->sVertex)>0)
-    {
-      VDATA(pv) = GetMem(theGrid->mg->theHeap,ds,FROM_BOTTOM);
-      if (VDATA(pv)==NULL) return(NULL);
-      memset(VDATA(pv),0,ds);
-    }
-    else
-      VDATA(pv) = NULL;
+    VDATA(pv) = GetMemoryForObject(MYMG(theGrid),ds,NOOBJ);
+    if (VDATA(pv)==NULL) return(NULL);
   }
+  else
+    VDATA(pv) = NULL;
 
   /* initialize data */
   CTRL(pv) = 0;
@@ -404,7 +506,6 @@ VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after)
   return(pv);
 }
 
-
 /****************************************************************************/
 /*D
    CreateInnerVertex - Return pointer to a new inner vertex structure
@@ -431,26 +532,17 @@ VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after)
 {
   VERTEX *pv;
   INT ds;
-  int i;
+  INT i;
 
-        #ifdef ModelP
-  pv = NULL;
-        #else
-  pv = GetFreeObject(theGrid->mg,IVOBJ);
-        #endif
-  if (pv==NULL)
+  pv = GetMemoryForObject(MYMG(theGrid),sizeof(struct ivertex),IVOBJ);
+  if (pv==NULL) return(NULL);
+  if ((ds=theGrid->mg->theFormat->sVertex)>0)
   {
-    pv = GetMem(theGrid->mg->theHeap,sizeof(struct ivertex),FROM_BOTTOM);
-    if (pv==NULL) return(NULL);
-    if ((ds=theGrid->mg->theFormat->sVertex)>0)
-    {
-      VDATA(pv) = GetMem(theGrid->mg->theHeap,ds,FROM_BOTTOM);
-      if (VDATA(pv)==NULL) return(NULL);
-      memset(VDATA(pv),0,ds);
-    }
-    else
-      VDATA(pv) = NULL;
+    VDATA(pv) = GetMemoryForObject(MYMG(theGrid),ds,NOOBJ);
+    if (VDATA(pv)==NULL) return(NULL);
   }
+  else
+    VDATA(pv) = NULL;
 
   /* initialize data */
   CTRL(pv) = 0;
@@ -513,23 +605,11 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
   NODE *pn;
   VECTOR *pv;
 
-        #ifdef ModelP
-  pn = NULL;
-        #else
-  pn = GetFreeObject(theGrid->mg,NDOBJ);
-        #endif
-  if (pn==NULL)
-  {
-    if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
-      pn = GetMem(theGrid->mg->theHeap,sizeof(NODE),FROM_BOTTOM);
-    else
-      pn = GetMem(theGrid->mg->theHeap,sizeof(NODE)-sizeof(VECTOR*),FROM_BOTTOM);
-    if (pn==NULL) return(NULL);
-  }
-
   /* create vector */
   if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
   {
+    pn = GetMemoryForObject(MYMG(theGrid),sizeof(NODE),NDOBJ);
+    if (pn==NULL) return(NULL);
     if (CreateVector (theGrid,NULL,NODEVECTOR,&pv))
     {
       DisposeNode (theGrid,pn);
@@ -538,6 +618,12 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
     assert (pv != NULL);
     VOBJECT(pv) = (void*)pn;
     NVECTOR(pn) = (void*)pv;
+  }
+  else
+  {
+    pn = GetMemoryForObject(MYMG(theGrid),
+                            sizeof(NODE)-sizeof(VECTOR*),NDOBJ);
+    if (pn==NULL) return(NULL);
   }
 
   /* initialize data */
@@ -1150,15 +1236,11 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to)
   /* check if edge exists already */
   if( (pe = GetEdge(from, to)) != NULL ) return(pe);
 
-  pe = GetFreeObject(theGrid->mg,EDOBJ);
-  if (pe==NULL)
-  {
-    if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
-      pe = GetMem(theGrid->mg->theHeap,sizeof(EDGE),FROM_BOTTOM);
-    else
-      pe = GetMem(theGrid->mg->theHeap,sizeof(EDGE)-sizeof(VECTOR*),FROM_BOTTOM);
-    if (pe==NULL) return(NULL);
-  }
+  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+    pe = GetMemoryForObject(theGrid->mg,sizeof(EDGE),EDOBJ);
+  else
+    pe = GetMemoryForObject(theGrid->mg,sizeof(EDGE)-sizeof(VECTOR*),EDOBJ);
+  if (pe==NULL) return(NULL);
 
   /* initialize data */
   link0 = LINK0(pe);
@@ -1269,18 +1351,10 @@ ELEMENT *CreateBoundaryElement (GRID *theGrid, ELEMENT *after, INT tag)
   MULTIGRID *theMG;
   VECTOR *pv;
 
-        #ifdef ModelP
-  pe = NULL;
-        #else
   theMG = theGrid->mg;
   i = MAPPED_BND_OBJT(tag);
-  pe = GetFreeObject(theMG,i);
-        #endif
-  if (pe==NULL)
-  {
-    pe = GetMem(theGrid->mg->theHeap,BND_SIZE(tag),FROM_BOTTOM);
-    if (pe==NULL) return(NULL);
-  }
+  pe = GetMemoryForObject(theMG,BND_SIZE(tag),i);
+  if (pe==NULL) return(NULL);
 
   /* initialize data */
   CTRL(pe) = 0;
@@ -1398,17 +1472,9 @@ ELEMENT *CreateInnerElement (GRID *theGrid, ELEMENT *after, INT tag)
   INT i;
   VECTOR *pv;
 
-        #ifdef ModelP
-  pe = NULL;
-        #else
-  pe = GetFreeObject(theGrid->mg,MAPPED_INNER_OBJT(tag));
-        #endif
-
-  if (pe==NULL)
-  {
-    pe = GetMem(theGrid->mg->theHeap,INNER_SIZE(tag),FROM_BOTTOM);
-    if (pe==NULL) return(NULL);
-  }
+  pe = GetMemoryForObject(MYMG(theGrid),INNER_SIZE(tag),
+                          MAPPED_INNER_OBJT(tag));
+  if (pe==NULL) return(NULL);
 
   /* initialize data */
   CTRL(pe) = 0;
@@ -1497,7 +1563,6 @@ ELEMENT *CreateInnerElement (GRID *theGrid, ELEMENT *after, INT tag)
   return(pe);
 }
 
-
 /****************************************************************************/
 /*D
    CreateElementSide - Return pointer to a new element side structure
@@ -1523,12 +1588,8 @@ ELEMENTSIDE *CreateElementSide (GRID *theGrid)
 {
   ELEMENTSIDE *ps;
 
-  ps = GetFreeObject(theGrid->mg,ESOBJ);
-  if (ps==NULL)
-  {
-    ps = GetMem(theGrid->mg->theHeap,sizeof(ELEMENTSIDE),FROM_BOTTOM);
-    if (ps==NULL) return(NULL);
-  }
+  ps = GetMemoryForObject(MYMG(theGrid),sizeof(ELEMENTSIDE),ESOBJ);
+  if (ps==NULL) return(NULL);
 
   /* initialize data */
   CTRL(ps) = 0;
@@ -1547,7 +1608,6 @@ ELEMENTSIDE *CreateElementSide (GRID *theGrid)
   /* return ok */
   return(ps);
 }
-
 
 /****************************************************************************/
 /*D
@@ -1580,13 +1640,8 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
   l = theMG->topLevel+1;
 
   /* allocate grid object */
-  theGrid = GetFreeObject(theMG, GROBJ);
-  if (theGrid==NULL)
-  {
-    theGrid = GetMem(theMG->theHeap,sizeof(GRID),FROM_BOTTOM);
-    if (theGrid==NULL) return(NULL);
-  }
-  memset(theGrid,0,sizeof(GRID));
+  theGrid = GetMemoryForObject(theMG,sizeof(GRID),GROBJ);
+  if (theGrid==NULL) return(NULL);
 
   /* fill in data */
   CTRL(theGrid) = 0;
@@ -1629,7 +1684,6 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
   return(theGrid);
 }
 
-
 /****************************************************************************/
 /*D
    MakeMGItem - Create a multigrid environment item
@@ -1649,7 +1703,6 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
    .n   NULL if error occured
    D*/
 /****************************************************************************/
-
 
 MULTIGRID *MakeMGItem (const char *name)
 {
@@ -1685,7 +1738,6 @@ MULTIGRID *GetMultigrid (const char *name)
 {
   return ((MULTIGRID *) SearchEnv(name,"/Documents",theMGVarID,theDocDirID));
 }
-
 
 /****************************************************************************/
 /*D
@@ -1928,9 +1980,8 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
   for (i=0; i<MAXCONNECTIONS; i++) theMG->freeConnections[i] = NULL;
 
 #ifdef __INTERPOLATION_MATRIX__
-  for (i=0; i<MAXVECTORS; i++)
-    for (j=0; j<MAXVECTORS; j++)
-      theMG->freeIMatrices[i][j] = NULL;
+  for (i=0; i<MAXMATRICES; i++)
+    theMG->freeIMatrices[i] = NULL;
 #endif
 
   /* allocate level 0 grid */
@@ -2053,7 +2104,6 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
   return(theMG);
 }
 
-
 /****************************************************************************/
 /*D
    DisposeEdge - Remove edge from the data structure
@@ -2080,7 +2130,7 @@ INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
 {
   LINK *link0,*link1,*pl;
   NODE *from,*to;
-  int found;
+  INT found;
 
   /* reconstruct data */
   link0 = LINK0(theEdge);
@@ -2129,15 +2179,13 @@ INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
 
   /* dispose vector and its matrices from edge-vector if */
   if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+  {
     if (DisposeVector (theGrid,EDVECTOR(theEdge)))
       return(1);
-
-        #ifdef ModelP
-  DDD_ObjDelete((OBJECT)theEdge);
-    #else
-  /* free edge object */
-  if (PutFreeObject(theGrid->mg,theEdge)>0) return(1);
-    #endif
+    PutFreeObject(theGrid->mg,theEdge,sizeof(EDGE),EDOBJ);
+  }
+  else
+    PutFreeObject(theGrid->mg,theEdge,sizeof(EDGE)-sizeof(VECTOR*),EDOBJ);
 
   /* check error condition */
   if (found!=2) return(1);
@@ -2245,9 +2293,14 @@ INT DisposeNode (GRID *theGrid, NODE *theNode)
     pl = NEXT(pl);
     /* dispose vector and its matrices from edge-vector if */
     if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+    {
       if (DisposeVector (theGrid,EDVECTOR(pe)))
         return(1);
-    if (PutFreeObject(theGrid->mg,pe)==0) theGrid->nEdge--;
+      PutFreeObject(theGrid->mg,pe,sizeof(EDGE),EDOBJ);
+    }
+    else
+      PutFreeObject(theGrid->mg,pe,sizeof(EDGE)-sizeof(VECTOR*),EDOBJ);
+    theGrid->nEdge--;
   }
 
   /* remove node from node list */
@@ -2262,15 +2315,13 @@ INT DisposeNode (GRID *theGrid, NODE *theNode)
 
   /* dispose vector and its matrices from node-vector */
   if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+  {
     if (DisposeVector (theGrid,NVECTOR(theNode)))
       return(1);
-
-        #ifdef ModelP
-  DDD_ObjDelete((OBJECT)theNode);
-    #else
-  /* delete the node itself */
-  if (PutFreeObject(theGrid->mg,theNode)>0) return(1);
-    #endif
+    PutFreeObject(theGrid->mg,theNode,sizeof(NODE),NDOBJ);
+  }
+  else
+    PutFreeObject(theGrid->mg,theNode,sizeof(NODE)-sizeof(VECTOR*),NDOBJ);
 
   /* check error condition */
   if (found!=0) return(1);
@@ -2279,7 +2330,6 @@ INT DisposeNode (GRID *theGrid, NODE *theNode)
   (theGrid->nNode)--;
   return(0);
 }
-
 
 /****************************************************************************/
 /*D
@@ -2323,21 +2373,17 @@ INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
     theVSeg = VSEG(theVertex);
     while( theVSeg != NULL )
     {
-      PutFreeObject(theGrid->mg,theVSeg);
+      PutFreeObject(theGrid->mg,theVSeg,sizeof(struct vsegment),VSOBJ);
       theVSeg = NEXTSEG(theVSeg);
     }
+    PutFreeObject(theGrid->mg,theVertex,sizeof(struct bvertex),BVOBJ);
   }
-
-        #ifdef ModelP
-  DDD_ObjDelete((OBJECT)theVertex);
-    #else
-  if (PutFreeObject(theGrid->mg,theVertex)>0) return(1);
-    #endif
+  else
+    PutFreeObject(theGrid->mg,theVertex,sizeof(struct ivertex),IVOBJ);
 
   theGrid->nVert--;
   return(0);
 }
-
 
 /****************************************************************************/
 /*D
@@ -2360,7 +2406,6 @@ INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
    D*/
 /****************************************************************************/
 
-
 INT DisposeElementSide  (GRID *theGrid, ELEMENTSIDE *theElementSide)
 {
   /* remove elementside from elementside list */
@@ -2371,11 +2416,7 @@ INT DisposeElementSide  (GRID *theGrid, ELEMENTSIDE *theElementSide)
   if (SUCCS(theElementSide)!=NULL)
     PREDS(SUCCS(theElementSide)) = PREDS(theElementSide);
 
-        #ifdef ModelP
-  DDD_ObjDelete((OBJECT)theElementSide);
-    #else
-  if (PutFreeObject(theGrid->mg,theElementSide)>0) return(1);
-    #endif
+  PutFreeObject(theGrid->mg,theElementSide,sizeof(ELEMENTSIDE),ESOBJ);
 
   theGrid->nSide--;
   return(0);
@@ -2407,7 +2448,7 @@ INT DisposeElementSide  (GRID *theGrid, ELEMENTSIDE *theElementSide)
 
 INT DisposeElement (GRID *theGrid, ELEMENT *theElement)
 {
-  INT i,j;
+  INT i,j,tag;
   VECTOR *theVector;
   ELEMENT *theNeighbor;
 
@@ -2462,21 +2503,23 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement)
 
   /* dispose element */
   /* give it a new tag ! (I know this is somewhat ugly) */
+  tag = TAG(theElement);
   if (OBJT(theElement)==BEOBJ)
-    PARSETOBJT(theElement,MAPPED_BND_OBJT(TAG(theElement)));
+  {
+    PARSETOBJT(theElement,MAPPED_BND_OBJT(tag));
+    PutFreeObject(theGrid->mg,theElement,
+                  BND_SIZE(tag),MAPPED_BND_OBJT(tag));
+  }
   else
-    PARSETOBJT(theElement,MAPPED_INNER_OBJT(TAG(theElement)));
-
-        #ifdef ModelP
-  DDD_ObjDelete((OBJECT)theElement);
-    #else
-  if (PutFreeObject(theGrid->mg,theElement)>0) return(1);
-    #endif
+  {
+    PARSETOBJT(theElement,MAPPED_INNER_OBJT(tag));
+    PutFreeObject(theGrid->mg,theElement,INNER_SIZE(tag),
+                  MAPPED_INNER_OBJT(tag));
+  }
 
   theGrid->nElem--;
   return(0);
 }
-
 
 /****************************************************************************/
 /*D
@@ -2520,11 +2563,7 @@ INT DisposeTopLevel (MULTIGRID *theMG)
   (theMG->topLevel)--;
   if (theMG->currentLevel>theMG->topLevel) theMG->currentLevel = theMG->topLevel;
 
-        #ifdef ModelP
-  DDD_ObjDelete((OBJECT)theGrid);
-    #else
-  if (PutFreeObject(theGrid->mg,theGrid)>0) return(1);
-    #endif
+  PutFreeObject(theGrid->mg,theGrid,sizeof(GRID),GROBJ);
 
   return(0);
 }

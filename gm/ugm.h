@@ -80,8 +80,8 @@ INT              InitUGManager                  ();
 /* object handling */
 INT              GetFreeOBJT                    ();
 INT              ReleaseOBJT                    (INT type);
-void            *GetFreeObject                  (MULTIGRID *theMG, int n);
-INT              PutFreeObject                  (MULTIGRID *theMG, void *object);
+void            *GetMemoryForObject             (MULTIGRID *theMG, INT size, INT type);
+INT              PutFreeObject                  (MULTIGRID *theMG, void *object, INT size, INT type);
 
 /* create basic objects */
 VERTEX          *CreateBoundaryVertex   (GRID *theGrid, VERTEX *after);

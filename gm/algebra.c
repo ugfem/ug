@@ -185,8 +185,6 @@ const BV_DESC_FORMAT one_level_bvdf =
 /*																			*/
 /****************************************************************************/
 
-static INT ConnectionType [2][MAXVECTORS][MAXVECTORS];
-
 /* for LexOrderVectorsInGrid */
 static const INT *Order,*Sign;
 static INT SkipV;
@@ -459,160 +457,6 @@ BLOCKVECTOR *FindBV( const GRID *grid, BV_DESC *bvd, const BV_DESC_FORMAT *bvdf 
 
 /****************************************************************************/
 /*D
-   GetFreeVector - Get an object from free list if possible
-
-   SYNOPSIS:
-   static VECTOR *GetFreeVector (MULTIGRID *theMG, INT VectorType);
-
-   PARAMETERS:
-   .  theMG - multigrid structure to extend
-   .  VectorType - NODEVECTOR, ENGEVECTOR, SIDEVECTOR or ELEMENTVECTOR
-
-   DESCRIPTION:
-   This function gets an object from free list if possible.
-
-   RETURN VALUE:
-   VECTOR *
-   .n        pointer to a free vector
-   .n        NULL if no object available.
-
-   D*/
-/****************************************************************************/
-
-static VECTOR *GetFreeVector (MULTIGRID *theMG, INT VectorType)
-{
-  void **ptr;
-
-  if ((VectorType<0)||(VectorType>=MAXVECTORS)) return(NULL);
-  if (theMG->freeVectors[VectorType]==NULL) return(NULL);
-  ptr = (void **) theMG->freeVectors[VectorType];
-  theMG->freeVectors[VectorType] = ptr[0];
-  return((VECTOR *)ptr);
-}
-
-/****************************************************************************/
-/*D
-   GetFreeConnection - Get an object from free list if possible
-
-   SYNOPSIS:
-   static CONNECTION *GetFreeConnection (MULTIGRID *theMG, INT Diag, INT RootType,
-   INT DestType);
-
-   PARAMETERS:
-   .  theMG - multigrid structure to extend
-   .  Diag - flag for diagonal entry
-   .  RootType - type of source vector
-   .  DestType - type of destination vector
-
-   DESCRIPTION:
-   This function gets an object from free list of free connections if possible.
-   Diag should 1 if the connection connects a 'VECTOR' with itself ('RootType'
-   and 'DestType' should be the same then) and 0 else.
-
-   RETURN VALUE:
-   CONNECTION *
-   .n          pointer to object
-   .n          NULL if no object available.
-
-   D*/
-/****************************************************************************/
-
-static CONNECTION *GetFreeConnection (MULTIGRID *theMG, INT Diag, INT RootType, INT DestType)
-{
-  void **ptr;
-  INT ConType;
-
-  ConType = ConnectionType[Diag][RootType][DestType];
-  if (ConType == -1) return(NULL);
-  if (theMG->freeConnections[ConType]==NULL) return(NULL);
-  ptr = (void **) theMG->freeConnections[ConType];
-  theMG->freeConnections[ConType] = ptr[0];
-  return((CONNECTION *)ptr);
-}
-
-/****************************************************************************/
-/*D
-   PutFreeVector - Put an object in the free list
-
-   SYNOPSIS:
-   static INT PutFreeVector (MULTIGRID *theMG, VECTOR *object);
-
-   PARAMETERS:
-   .  theMG - mg structure to extend
-   .  object - pointer to 'VECTOR' to be freed.
-
-   DESCRIPTION:
-   This function puts an object in the free list.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    INT>0 if no valid object number.
-   D*/
-/****************************************************************************/
-
-static INT PutFreeVector (MULTIGRID *theMG, VECTOR *object)
-{
-  void **ptr;
-  INT VectorType;
-
-  VectorType = VTYPE(object);
-  if ((VectorType<0)||(VectorType>=MAXVECTORS))
-  {
-    UserWrite("wrong object given to PutFreeVector\n");
-    return(1);
-  }
-
-  ptr = (void **) object;
-  ptr[0] = theMG->freeVectors[VectorType];
-  theMG->freeVectors[VectorType] = (void *)object;
-  return(0);
-}
-
-/****************************************************************************/
-/*D
-   PutFreeConnection -  Put an object in the free list
-
-   SYNOPSIS:
-   static INT PutFreeConnection (MULTIGRID *theMG, CONNECTION *object);
-
-
-   PARAMETERS:
-   .  theMG - mg structure to extend
-   .  object - Pointer to 'CONNECTION' to be freed.
-
-   DESCRIPTION:
-   This function puts an object in the free list.
-
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     INT>0 if no valid object number.
-   D*/
-/****************************************************************************/
-
-static INT PutFreeConnection (MULTIGRID *theMG, CONNECTION *object)
-{
-  void **ptr;
-  INT ConType;
-  MATRIX *Matrix;
-
-  Matrix = (MATRIX*)object;
-  ConType = ConnectionType[MDIAG(Matrix)][MROOTTYPE(Matrix)][MDESTTYPE(Matrix)];
-  if ((ConType<0)||(ConType>=MAXCONNECTIONS))
-  {
-    UserWrite("wrong object given to PutFreeConnection\n");
-    return(1);
-  }
-
-  ptr = (void **) object;
-  ptr[0] = theMG->freeConnections[ConType];
-  theMG->freeConnections[ConType] = (void *)object;
-  return(0);
-}
-
-/****************************************************************************/
-/*D
    CreateVector -  Return pointer to a new vector structure
 
    SYNOPSIS:
@@ -646,21 +490,13 @@ INT CreateVector (GRID *theGrid, VECTOR *After, INT VectorType, VECTOR **VectorH
 
   theMG = MYMG(theGrid);
   ds = theMG->theFormat->VectorSizes[VectorType];
+  *VectorHandle = NULL;
   if (ds == 0)
-  {
-    *VectorHandle = NULL;
     return (0);
-  }
   Size = sizeof(VECTOR)-sizeof(DOUBLE)+ds;
-  pv = GetFreeVector(theMG,VectorType);
+  pv = GetMemoryForObject(theMG,Size,VCOBJ);
   if (pv==NULL)
-  {
-    pv = (VECTOR *) GetMem(theMG->theHeap,Size,FROM_BOTTOM);
-    if (pv==NULL)
-      return(1);
-  }
-  memset(pv,0,Size);
-
+    return(1);
   *VectorHandle = pv;
 
   /* initialize data */
@@ -743,18 +579,12 @@ INT CreateBlockvector( GRID *theGrid, BLOCKVECTOR **BVHandle )
   theMG = MYMG(theGrid);
 
   /* try to find an entry in the free list */
-  if ( ( bv = (BLOCKVECTOR*)GetFreeObject( theMG, BLOCKVOBJ ) ) == NULL )
-    /* if not found, allocate new memory */
-    if ( ( bv = GetMem( MGHEAP(theMG), sizeof(BLOCKVECTOR), FROM_BOTTOM ) )
-         == NULL )
-    {
-      *BVHandle = NULL;
-      return GM_OUT_OF_MEM;
-    }
+  *BVHandle = NULL;
+  bv = (BLOCKVECTOR*)GetMemoryForObject(theMG,sizeof(BLOCKVECTOR),BLOCKVOBJ);
+  if (bv == NULL)
+    return GM_OUT_OF_MEM;
 
-  memset( bv, 0, sizeof(BLOCKVECTOR) );
   SETOBJT(bv,BLOCKVOBJ);
-
   *BVHandle = bv;
 
   return GM_OK;
@@ -899,7 +729,6 @@ static INT CutBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *theBV, INT makeVC)
   return (GM_OK);
 }
 
-
 /****************************************************************************/
 /*D
    CreateConnection -  Return pointer to a new connection structure
@@ -946,6 +775,7 @@ CONNECTION *CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to)
   if (ds == 0)
     return (NULL);
   Size = sizeof(MATRIX)-sizeof(DOUBLE)+ds;
+  if (MSIZEMAX<Size) return (NULL);
   assert (Size % ALIGNMENT == 0);
 
   /* is there already the desired connection ? */
@@ -956,21 +786,11 @@ CONNECTION *CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to)
     return (pc);
   }
 
-  pc = GetFreeConnection(theMG,Diag,RootType,DestType);
-  if (pc==NULL)
-  {
-    if (MSIZEMAX<Size) return (NULL);
-    if (Diag)
-      pc = (CONNECTION*)GetMem(theHeap,Size,FROM_BOTTOM);
-    else
-      pc = (CONNECTION*)GetMem(theHeap,2*Size,FROM_BOTTOM);
-    if (pc==NULL)
-      return (NULL);
-  }
   if (Diag)
-    memset(pc,0,Size);
+    pc = (CONNECTION*)GetMemoryForObject(theMG,Size,COOBJ);
   else
-    memset(pc,0,2*Size);
+    pc = (CONNECTION*)GetMemoryForObject(theMG,2*Size,COOBJ);
+  if (pc==NULL) return (NULL);
 
   /* initialize data */
   SETCEXTRA(pc,0);
@@ -1108,6 +928,7 @@ CONNECTION      *CreateExtraConnection  (GRID *theGrid, VECTOR *from, VECTOR *to
 INT DisposeVector (GRID *theGrid, VECTOR *theVector)
 {
   MATRIX *theMatrix;
+  INT Size;
 
   if (theVector == NULL)
     return(0);
@@ -1135,8 +956,11 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
   /* reset count flags */
   SETVCOUNT(theVector,0);
 
+
   /* delete the vector itself */
-  if (PutFreeVector(theGrid->mg,theVector))
+  Size = sizeof(VECTOR)-sizeof(DOUBLE)
+         +theGrid->mg->theFormat->VectorSizes[VTYPE(theVector)];
+  if (PutFreeObject(theGrid->mg,theVector,Size,VCOBJ))
     return(1);
 
   theGrid->nVector--;
@@ -1168,7 +992,7 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
 
 INT DisposeBlockvector( GRID *theGrid, BLOCKVECTOR *bv )
 {
-  return PutFreeObject( MYMG(theGrid), bv);
+  return PutFreeObject( MYMG(theGrid), bv,sizeof(BLOCKVECTOR),BLOCKVOBJ);
 }
 
 /****************************************************************************/
@@ -1278,8 +1102,10 @@ INT DisposeConnection (GRID *theGrid, CONNECTION *theConnection)
   Matrix = CMATRIX0(theConnection);
   to = MDEST(Matrix);
   if (MDIAG(Matrix))
-    /* from == to */
+  {
+    from = to;
     VSTART(to) = MNEXT(Matrix);
+  }
   else
   {
     ReverseMatrix = CMATRIX1(theConnection);
@@ -1299,8 +1125,10 @@ INT DisposeConnection (GRID *theGrid, CONNECTION *theConnection)
   }
 
   /* free connection object */
-  if (PutFreeConnection(theGrid->mg,theConnection))
-    return(1);
+  if (MDIAG(Matrix))
+    PutFreeObject(MYMG(theGrid),Matrix,MSIZE(Matrix),COOBJ);
+  else
+    PutFreeObject(MYMG(theGrid),Matrix,2*MSIZE(Matrix),COOBJ);
 
   /* return ok */
   theGrid->nCon--;
@@ -4839,6 +4667,147 @@ INT MoveVector (GRID *theGrid, VECTOR *moveVector, VECTOR *destVector, INT after
   return (0);
 }
 
+#ifdef __INTERPOLATION_MATRIX__
+
+/****************************************************************************/
+/*D
+   CreateIMatrix -  Return pointer to a new interpolation matrix structure
+
+   SYNOPSIS:
+   MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec);
+
+   PARAMETERS:
+   .  TheGrid - grid where matrix should be inserted
+   .  fvec - fine grid vector
+   .  cvec - coarse grid vector
+
+   DESCRIPTION:
+   This function allocates a new 'MATRIX' structures in the
+   'imatrix' list of 'fvec'.
+
+   RETURN VALUE:
+   MATRIX *
+   .n    pointer to the new matrix
+   .n    NULL if error occured.
+   D*/
+/****************************************************************************/
+
+MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
+{
+  MULTIGRID *theMG;
+  HEAP *theHeap;
+  MATRIX *pm;
+  INT RootType, DestType, MType, ds, Size;
+
+  pm = GetIMatrix(fvec,cvec);
+  if (pm != NULL)
+    return(pm);
+
+  RootType = VTYPE(fvec);
+  DestType = VTYPE(cvec);
+  MType = MatrixType[RootType][DestType];
+
+  /* check expected size */
+  theMG = MYMG(theGrid);
+  theHeap = theMG->theHeap;
+  ds = theMG->theFormat->IMatrixSizes[MType];
+  if (ds == 0)
+    return (NULL);
+  Size = sizeof(MATRIX)-sizeof(DOUBLE)+ds;
+  if (MSIZEMAX<Size) return (NULL);
+  assert (Size % ALIGNMENT == 0);
+  pm = GetMemoryForObject (theMG,Size,IMOBJ);
+  if (pm==NULL)
+    return (NULL);
+
+  CTRL(pm) = 0;
+  SETMTYPE(pm,MType);
+  SETMROOTTYPE(pm,RootType);
+  SETMDESTTYPE(pm,DestType);
+  SETMSIZE(pm,Size);
+  MDEST(pm) = cvec;
+  MNEXT(pm) = VISTART(fvec);
+  VISTART(fvec) = pm;
+
+  /* counters */
+  theGrid->nIMat++;
+  return(pm);
+}
+
+/****************************************************************************/
+/*D
+   DisposeIMatrices - Remove interpolation matrix from the data structure
+
+   SYNOPSIS:
+   INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix);
+
+   PARAMETERS:
+   .  theGrid - the grid to remove from
+   .  theMatrix - start of matrix list to dispose
+
+   DESCRIPTION:
+   This function removes an interpolation  matrix list from the data
+   structure.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix)
+{
+  MATRIX *Matrix, *NextMatrix;
+
+  for (Matrix=theMatrix; Matrix!=NULL; )
+  {
+    NextMatrix = NEXT(Matrix);
+    PutFreeObject(theGrid->mg,Matrix,MSIZE(Matrix),IMOBJ);
+    theGrid->nIMat--;
+    Matrix = NextMatrix;
+  }
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   GetIMatrix - Return pointer to interpolation matrix if it exists
+
+   SYNOPSIS:
+   MATRIX *GetIMatrix (VECTOR *FineVector, VECTOR *CoarseVector);
+
+   PARAMETERS:
+   .  FineVector - fine grid vector
+   .  CoarseVector - coarse grid vector
+
+   DESCRIPTION:
+   This function returns pointer to interpolation matrix.
+   If it does not exist already, it returns NULL.
+
+   RETURN VALUE:
+   MATRIX *
+   .n       pointer to Matrix,
+   .n       NULL if no Matrix exists.
+   D*/
+/****************************************************************************/
+
+MATRIX *GetIMatrix (VECTOR *FineVector, VECTOR *CoarseVector)
+{
+  MATRIX *theMatrix;
+
+  for (theMatrix=VISTART(FineVector); theMatrix!=NULL;
+       theMatrix = MNEXT(theMatrix))
+    if (MDEST(theMatrix)==CoarseVector)
+      return (theMatrix);
+
+  return (NULL);
+}
+
+#endif
+/* __INTERPOLATION_MATRIX__ */
+
 /****************************************************************************/
 /*
    InitAlgebra - Init algebra
@@ -4903,16 +4872,6 @@ INT InitAlgebra (void)
   if (n != MAXMATRICES)
     return (__LINE__);
 
-  /* set ConnectionType-field */
-  for (i=0; i<MAXVECTORS; i++)
-    for (j=0; j<MAXVECTORS; j++)
-    {
-      ConnectionType[0][i][j] = MatrixType[i][j] + MAXVECTORS;
-      if (i ==j)
-        ConnectionType[1][i][j] = i;
-      else
-        ConnectionType[1][i][j] = -1;
-    }
   if (n+MAXVECTORS != MAXCONNECTIONS)
     return (__LINE__);
 
@@ -4924,217 +4883,3 @@ INT InitAlgebra (void)
 
   return (0);
 }
-
-#ifdef __INTERPOLATION_MATRIX__
-
-/****************************************************************************/
-/*D
-   GetFreeIMatrix - Get an object from free list if possible
-
-   SYNOPSIS:
-   static MATRIX *GetFreeIMatrix (MULTIGRID *theMG, INT RootType, INT DestType);
-
-   PARAMETERS:
-   .  theMG - multigrid structure to extend
-   .  RootType - type of source vector
-   .  DestType - type of destination vector
-
-   DESCRIPTION:
-   This function gets an object from free list of free connections if possible.
-
-   RETURN VALUE:
-   CONNECTION *
-   .n          pointer to object
-   .n          NULL if no object available.
-
-   D*/
-/****************************************************************************/
-
-static MATRIX *GetFreeIMatrix (MULTIGRID *theMG, INT RootType, INT DestType)
-{
-  void **ptr;
-
-  if (theMG->freeIMatrices[RootType][DestType]==NULL)
-    return(NULL);
-  ptr = (void **) theMG->freeIMatrices[RootType][DestType];
-  theMG->freeIMatrices[RootType][DestType] = ptr[0];
-  return((MATRIX *)ptr);
-}
-
-/****************************************************************************/
-/*D
-   PutFreeIMatrix -  Put an object in the free list
-
-   SYNOPSIS:
-   static INT PutFreeIMatrix (MULTIGRID *theMG, MATRIX *object);
-
-   PARAMETERS:
-   .  theMG - mg structure to extend
-   .  object - Pointer to 'MATRIX' to be freed.
-
-   DESCRIPTION:
-   This function puts an object in the free list.
-
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     INT>0 if no valid object number.
-   D*/
-/****************************************************************************/
-
-static INT PutFreeIMatrix (MULTIGRID *theMG, MATRIX *object)
-{
-  void **ptr;
-
-  ptr = (void **) object;
-  ptr[0] = theMG->freeIMatrices[MROOTTYPE(object)][MDESTTYPE(object)];
-  theMG->freeIMatrices[MROOTTYPE(object)][MDESTTYPE(object)]
-    = (void *)object;
-  return(0);
-}
-
-/****************************************************************************/
-/*D
-   CreateIMatrix -  Return pointer to a new interpolation matrix structure
-
-   SYNOPSIS:
-   MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec);
-
-   PARAMETERS:
-   .  TheGrid - grid where matrix should be inserted
-   .  fvec - fine grid vector
-   .  cvec - coarse grid vector
-
-   DESCRIPTION:
-   This function allocates a new 'MATRIX' structures in the
-   'imatrix' list of 'fvec'.
-
-   RETURN VALUE:
-   MATRIX *
-   .n    pointer to the new matrix
-   .n    NULL if error occured.
-   D*/
-/****************************************************************************/
-
-MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
-{
-  MULTIGRID *theMG;
-  HEAP *theHeap;
-  MATRIX *pm;
-  INT RootType, DestType, MType, ds, Size;
-
-  pm = GetIMatrix(fvec,cvec);
-  if (pm != NULL)
-    return(pm);
-
-  RootType = VTYPE(fvec);
-  DestType = VTYPE(cvec);
-  MType = MatrixType[RootType][DestType];
-
-  /* check expected size */
-  theMG = MYMG(theGrid);
-  theHeap = theMG->theHeap;
-  ds = theMG->theFormat->IMatrixSizes[MType];
-  if (ds == 0)
-    return (NULL);
-  Size = sizeof(MATRIX)-sizeof(DOUBLE)+ds;
-  assert (Size % ALIGNMENT == 0);
-  pm = GetFreeIMatrix (theMG,RootType,DestType);
-  if (pm==NULL)
-  {
-    if (MSIZEMAX<Size) return (NULL);
-    pm = (MATRIX*)GetMem(theHeap,Size,FROM_BOTTOM);
-    if (pm==NULL)
-      return (NULL);
-  }
-  memset(pm,0,Size);
-
-  CTRL(pm) = 0;
-  SETMTYPE(pm,MType);
-  SETMROOTTYPE(pm,RootType);
-  SETMDESTTYPE(pm,DestType);
-  SETMSIZE(pm,Size);
-  MDEST(pm) = cvec;
-  MNEXT(pm) = VISTART(fvec);
-  VISTART(fvec) = pm;
-
-  /* counters */
-  theGrid->nIMat++;
-  return(pm);
-}
-
-/****************************************************************************/
-/*D
-   DisposeIMatrices - Remove interpolation matrix from the data structure
-
-   SYNOPSIS:
-   INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix);
-
-   PARAMETERS:
-   .  theGrid - the grid to remove from
-   .  theMatrix - start of matrix list to dispose
-
-   DESCRIPTION:
-   This function removes an interpolation  matrix list from the data
-   structure.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
-/****************************************************************************/
-
-INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix)
-{
-  MATRIX *Matrix, *NextMatrix;
-
-  for (Matrix=theMatrix; Matrix!=NULL; )
-  {
-    NextMatrix = NEXT(Matrix);
-    /* free connection object */
-    if (PutFreeIMatrix(theGrid->mg,Matrix))
-      return(1);
-    theGrid->nIMat--;
-    Matrix = NextMatrix;
-  }
-
-  return(0);
-}
-
-/****************************************************************************/
-/*D
-   GetIMatrix - Return pointer to interpolation matrix if it exists
-
-   SYNOPSIS:
-   MATRIX *GetIMatrix (VECTOR *FineVector, VECTOR *CoarseVector);
-
-   PARAMETERS:
-   .  FineVector - fine grid vector
-   .  CoarseVector - coarse grid vector
-
-   DESCRIPTION:
-   This function returns pointer to interpolation matrix.
-   If it does not exist already, it retruns NULL.
-
-   RETURN VALUE:
-   MATRIX *
-   .n       pointer to Matrix,
-   .n       NULL if no Matrix exists.
-   D*/
-/****************************************************************************/
-
-MATRIX *GetIMatrix (VECTOR *FineVector, VECTOR *CoarseVector)
-{
-  MATRIX *theMatrix;
-
-  for (theMatrix=VISTART(FineVector); theMatrix!=NULL;
-       theMatrix = MNEXT(theMatrix))
-    if (MDEST(theMatrix)==CoarseVector)
-      return (theMatrix);
-
-  return (NULL);
-}
-
-#endif
-/* __INTERPOLATION_MATRIX__ */

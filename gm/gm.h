@@ -690,7 +690,7 @@ struct multigrid {
   void *freeVectors[MAXVECTORS];        /* pointer to allocated but unused objs */
   void *freeConnections[MAXCONNECTIONS];      /* ptr to alloc. but unused objs	*/
 #ifdef __INTERPOLATION_MATRIX__
-  void *freeIMatrices[MAXVECTORS][MAXVECTORS];
+  void *freeIMatrices[MAXMATRICES];
   /* pointer to allocated but unused objs */
 #endif
 
@@ -1258,8 +1258,14 @@ extern CONTROL_ENTRY
 /* object numbers for algebra */
 #define VEOBJ 10                                                /* vector object					*/
 #define MAOBJ 11                                                /* matrix object					*/
-#define BLOCKVOBJ 12                                            /* blockvector object                           */
+#define BLOCKVOBJ 12                    /* blockvector object               */
 #define NPREDEFOBJ 13                                   /* no of predefined objects             */
+
+#define IMOBJ (MAXOBJECTS+1)                    /* interpolation matrix object		*/
+#define COOBJ (MAXOBJECTS+2)                    /* connection object	                */
+#define VCOBJ (MAXOBJECTS+3)                    /* vector object					*/
+
+#define NOOBJ -1
 
 /****************************************************************************/
 /*																			*/

@@ -264,7 +264,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   if (BVP_GetBVPDesc(MG_BVP(theMG),&theBVPDesc)) return (GM_ERROR);
 
   /* NB: keep first two ints written for compatibility mode (former controlword) */
-  fprintf(stream,"(MG %d %d %ld %ld %ld %ld %ld %ld \n\"%s\"\n\"%s\"\n\"%s\"\n",
+  fprintf(stream,"(MG %d %d %ld %ld %ld %ld %ld %ld \n\"%s\"\n\"%s\"\n",
           0,
           0,
           (long) theMG->status,
@@ -700,9 +700,8 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
   for (i=0; i<MAXCONNECTIONS; i++) theMG->freeConnections[i] = NULL;
 
 #ifdef __INTERPOLATION_MATRIX__
-  for (i=0; i<MAXVECTORS; i++)
-    for (j=0; j<MAXVECTORS; j++)
-      theMG->freeIMatrices[i][j] = NULL;
+  for (i=0; i<MAXMATRICES; i++)
+    theMG->freeIMatrices[i] = NULL;
 #endif
 
   /* load corner vertices ids */
