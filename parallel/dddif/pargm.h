@@ -36,7 +36,6 @@
 #include "ddd.h"
 #endif
 
-
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -47,5 +46,43 @@
 /*																			*/
 /****************************************************************************/
 
+/* object priorties */
+enum Priorities
+{
+  PrioNone     = 0,
+  PrioGhost    = 2,
+  PrioBorder   = 3,
+  PrioMaster   = 4
+};
+
+/* define dynamic lists */
+#define ELEMENT_LIST     0
+#define NODE_LIST        1
+#define VECTOR_LIST      2
+#define VERTEX_LIST      3
+
+#ifdef ModelP
+
+/* define the number of prioities for objects */
+#define ELEMENTPRIOS            2
+#define NODEPRIOS                       3
+#define VECTORPRIOS                     3
+#define VERTEXPRIOS                     2
+
+/* define mapping from object priority to position in linked list */
+#define PRIO2LISTPART(listtype,prio) \
+  ((listtype == ELEMENT_LIST) ? ((prio == PrioGhost) ? 0 : (prio == PrioMaster) ? 1 : -1) :\
+   ((prio == PrioGhost) ? 0 : (prio == PrioBorder) ? 1 : \
+      (prio == PrioMaster) ? 2 : -1))
+
+#else
+
+/* define the number of prioities for objects */
+#define ELEMENTPRIOS            1
+#define NODEPRIOS                       1
+#define VECTORPRIOS                     1
+#define VERTEXPRIOS                     1
+
+#endif
 
 #endif /* __PARGM_H__ */
