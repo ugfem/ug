@@ -841,6 +841,19 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
   INT i;
 
   currBVP = theBVP;
+
+  STD_BVP_NDOMPART(theBVP) = 1;
+  STD_BVP_NSUBDOM(theBVP) = 1;
+  STD_BVP_S2P_PTR(theBVP) = (INT *)
+                            GetFreelistMemory(Heap,(1+STD_BVP_NSUBDOM(theBVP))*sizeof(INT));
+  if (STD_BVP_S2P_PTR(theBVP)==NULL)
+    return (NULL);
+  STD_BVP_S2P_PTR(theBVP)[0] = 0;
+  STD_BVP_S2P_PTR(theBVP)[1] = 0;
+
+  if (Mesh == NULL)
+    return ((BVP*)theBVP);
+
   nPPatch = nLPatch = nTPatch = 0;
 
   /* read numbers of objects */
@@ -1094,9 +1107,19 @@ static INT M_BNDP_Dispose (HEAP *Heap, BNDP *theBndP)
 
 static INT M_BNDP_SaveBndP (BNDP *theBndP)
 {
-  printf("not implemented line %d\n",__LINE__);
+  M_BNDP *p = (M_BNDP *)theBndP;
+  INT j;
+  int iList[1];
+  double dList[DIM];
 
-  return(1);
+  iList[0] = p->patch_id;
+  if (Bio_Write_mint(1,iList)) return (1);
+
+  for (j=0; j<DIM; j++)
+    dList[j] = p->pos[j];
+  if (Bio_Write_mdouble(DIM,dList)) return (1);
+
+  return(0);
 }
 
 static INT M_BNDP_SaveInsertedBndP (BNDP *theBndP,
@@ -1109,9 +1132,19 @@ static INT M_BNDP_SaveInsertedBndP (BNDP *theBndP,
 
 static BNDP *M_BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 {
-  printf("not implemented line %d\n",__LINE__);
+  M_BNDP *p  = (M_BNDP *)GetFreelistMemory(Heap,sizeof(M_BNDP));
+  INT j;
+  int iList[1];
+  double dList[DIM];
 
-  return(NULL);
+  if (Bio_Read_mint(1,iList)) return (NULL);
+  p->patch_id = iList[0];
+  if (Bio_Read_mdouble(DIM,dList)) return (NULL);
+
+  for (j=0; j<DIM; j++)
+    p->pos[j] = dList[j];
+
+  return((BNDP *)p);
 }
 
 static INT M_BNDS_Global (BNDS *theBndS, DOUBLE *local, DOUBLE *global)
@@ -4859,6 +4892,9 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
   int i,j,pid,n;
   int iList[2];
   double dList[DIM-1];
+
+  if (((STD_BVP *)theBVP)->type == BVP_MARC)
+    return(M_BNDP_LoadBndP(theBVP,Heap));
 
   if (Bio_Read_mint(2,iList)) return (NULL);
   pid = iList[0]; n = iList[1];

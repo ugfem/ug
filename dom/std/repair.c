@@ -241,12 +241,39 @@ static INT CheckOnSide(INT *corner, INT n, INT **ids, INT *flag)
 
   return(rv);
 }
+
+static INT CheckOrientation (INT i, INT n,
+                             DOUBLE *x, DOUBLE *y, DOUBLE *z, DOUBLE *w)
+{
+  DOUBLE_VECTOR diff[3],rot;
+  DOUBLE det;
+  INT j;
+
+  V3_SUBTRACT(y,x,diff[0]);
+  V3_SUBTRACT(z,x,diff[1]);
+  V3_SUBTRACT(w,x,diff[2]);
+  V3_VECTOR_PRODUCT(diff[0],diff[1],rot);
+  V3_SCALAR_PRODUCT(rot,diff[2],det);
+
+  if (det < 0.0) {
+    UserWriteF(" ID(Elem)=%d n=%d  det %f\n",i,n,det);
+    for (j=0; j<3; j++)
+      UserWriteF("        diff[%d]=%5.2f %5.2f %5.2f\n",
+                 j,diff[j][0],diff[j][1],diff[j][2]);
+    UserWriteF("\n");
+
+    return(1);
+  }
+  return(0);
+}
 #endif
 
 INT RepairMesh (HEAP *Heap, INT MarkKey, MESH *Mesh)
 {
   INT i,sd;
   DOUBLE **pos = Mesh->Position;
+  DOUBLE **p;
+  INT c[8];
 
 #ifdef __THREEDIM__
 
@@ -255,12 +282,70 @@ INT RepairMesh (HEAP *Heap, INT MarkKey, MESH *Mesh)
   for (i=0; i<Mesh->nInnP; i++)
     Mesh->Position[i] = pos[i];
 
+  p = (DOUBLE **)
+      GetTmpMem(Heap,(Mesh->nInnP+Mesh->nBndP)*sizeof(DOUBLE *),MarkKey);
+
+  for (i=0; i<Mesh->nBndP; i++) {
+    p[i] = (DOUBLE *)
+           GetTmpMem(Heap,3*sizeof(DOUBLE),MarkKey);
+    BNDP_Global(Mesh->theBndPs[i],p[i]);
+  }
+  for (i=Mesh->nBndP; i<Mesh->nBndP+Mesh->nInnP; i++)
+    p[i] = pos[i-Mesh->nBndP];
+
   for (sd=1; sd<=Mesh->nSubDomains; sd++)
   {
     INT nElem = Mesh->nElements[sd];
     INT *corners = Mesh->Element_corners[sd];
-    INT **corner = Mesh->Element_corner_ids[1];
+    INT **corner = Mesh->Element_corner_ids[sd];
     INT j,k,nPrism;
+
+
+    if (0)
+      for (i=0; i<nElem; i++) {
+        if (corners[i] == 6) {
+          CheckOrientation(i,6,
+                           p[corner[i][0]],p[corner[i][1]],
+                           p[corner[i][2]],p[corner[i][3]]);
+
+          /*
+             UserWriteF(" ID(Elem)=%d\n",i);
+             for (j=0; j<6; j++)
+             UserWriteF("        pos[%d]=%5.2f %5.2f %5.2f\n",
+                                   j,p[corner[i][j]][0],
+                                   p[corner[i][j]][1],
+                                   p[corner[i][j]][2]);
+           */
+
+        }
+        if (corners[i] == 8) {
+          if (CheckOrientation(i,8,
+                               p[corner[i][0]],p[corner[i][1]],
+                               p[corner[i][2]],p[corner[i][4]])) {
+
+            for (j=0; j<8; j++)
+              c[j] = corner[i][j];
+            for (j=0; j<4; j++) {
+              corner[i][j] = c[j+4];
+              corner[i][j+4] = c[j];
+            }
+          }
+          CheckOrientation(i,8,
+                           p[corner[i][0]],p[corner[i][1]],
+                           p[corner[i][2]],p[corner[i][4]]);
+
+
+          /*
+             UserWriteF(" ID(Elem)=%d\n",i);
+             for (j=0; j<8; j++)
+             UserWriteF("        pos[%d]=%5.2f %5.2f %5.2f\n",
+                                   j,p[corner[i][j]][0],
+                                   p[corner[i][j]][1],
+                                   p[corner[i][j]][2]);
+           */
+
+        }
+      }
 
     nPrism = 0;
     for (i=0; i<nElem; i++)

@@ -523,7 +523,7 @@ typedef struct marc_bnds M_BNDS;
 #       ifdef __THREEDIM__
 INT RepairMesh (HEAP *Heap, INT MarkKey, MESH *mesh);
 #       endif
-
+void SetBVPType(INT type);
 
 /* domain definition */
 DOMAIN                     *CreateDomainWithParts       (char *name, DOUBLE *MidPoint,
