@@ -107,7 +107,7 @@ ifdef: $(MODEL_TARGET)_clean
 	cd numerics; make -f Makefile.numerics clean; cd ..;
 	cd graphics; make -f Makefile.graphics clean; cd ..;
 	cd dom; make -f Makefile.dom clean; cd ..;
-	cd ui; rm commands.o ; cd ..;
+	cd ui; rm -f commands.o avs.o tecplot.o; cd ..;
 	rm -f initug.o;
 
 extract:
