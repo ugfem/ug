@@ -2887,7 +2887,8 @@ static EW_GetFirstElementProcPtr EW_GetFirstElement_hor_fw_up_Proc (VIEWEDOBJ *t
 /****************************************************************************/
 
 static GRID *EE2D_GRID[MAXLEVEL];
-static INT EE2D_CURRGRID;
+static INT EE2D_CURRGRID,EE2D_INT_CL;
+static DOUBLE EE2D_INT_BASE;
 
 static ELEMENT *EW_GetFirstElement_HGrid (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 {
@@ -6891,6 +6892,9 @@ static INT EW_PreProcess_HPlotElements2D (PICTURE *thePicture, WORK *theWork)
 	}
 	#endif
 
+	EE2D_INT_BASE=0.95;
+	EE2D_INT_CL=CURRENTLEVEL(theMG);
+
 	return (0);
 }
 
@@ -8945,7 +8949,7 @@ static INT EW_ElementHEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, j;
 	long edgecolor = -1;
-	DOUBLE *x[MAX_CORNERS_OF_ELEM],Element_Z;
+	DOUBLE *x[MAX_CORNERS_OF_ELEM],Element_Z,intensity;
 	DOUBLE_VECTOR MidPoint,help;
 	INT coe,rule;
 	void *data;
@@ -8955,6 +8959,9 @@ static INT EW_ElementHEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 
 	coe = CORNERS_OF_ELEM(theElement);
 	Element_Z = EE2D_ZScale*LEVEL(theElement);
+	intensity = POW(EE2D_INT_BASE,EE2D_INT_CL-LEVEL(theElement));
+	intensity = MAX(intensity,0.5);
+	intensity = MIN(intensity,1.0);
 
 	/* get coordinates of corners of the element */
 	for (i=0; i<coe; i++)
@@ -8986,13 +8993,14 @@ static INT EW_ElementHEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		}
 		else
 		{
-			DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
+			DO_2c(theDO) = DO_SURR_SHADED_POLYGON; DO_inc(theDO) 
 			DO_2c(theDO) = coe; DO_inc(theDO) 
 			if (EE2D_IndMark)
 			  DO_2l(theDO) = edgecolor = EE2D_ColorIndMark;
 			else
 			  DO_2l(theDO) = edgecolor = EE2D_Color[ECLASS(theElement)]; 
 			DO_inc(theDO);
+			DO_2Cp(theDO)[0]=intensity; DO_inc(theDO);
 		}
 	}
 
