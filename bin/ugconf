@@ -26,6 +26,7 @@ list_options_arch()
 	echo "             HP20 (set ARCH = HP20)";
 	echo "             HPUX9 (set ARCH = HPUX9)";
 	echo "             LINUXPPC (set ARCH = LINUXPPC)";
+	echo "             MACOSXSERVER (set ARCH = MACOSXSERVER)";
 	echo "             MKLINUX (set ARCH = MKLINUX)";
 	echo "             NECSX4 (set ARCH = NECSX4)";
 	echo "             NEXTSTEP (set ARCH = NEXTSTEP)";
@@ -429,6 +430,9 @@ edit_ugconf()
 		;;
 	NECSX4)
 		sed 's/^ARCH.*$/ARCH = NECSX4/' $1 > $1.tmp
+		;;
+	MACOSXSERVER)
+		sed 's/^ARCH.*$/ARCH = MACOSXSERVER/' $1 > $1.tmp
 		;;
 	NEXTSTEP)
 		sed 's/^ARCH.*$/ARCH = NEXTSTEP/' $1 > $1.tmp
