@@ -46,6 +46,9 @@ then
 	meta | xif | ps | sif)
 		cd $UGROOT/dev/$1
 		;;
+	udm | algrbra | procs)
+		cd $UGROOT/np/$1
+		;;
 	std)
 		cd $UGROOT/dom/$1
 		;;
