@@ -1563,14 +1563,13 @@ EDGE *GetEdge (NODE *from, NODE *to)
    CreateEdge - Return pointer to a new edge structure
 
    SYNOPSIS:
-   EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector);
+   EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector);
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
-   .  from - starting node of new edge
-   .  to - end node of new edge
+   .  theElement - pointer to element
+   .  i - number of edge
    .  with_vector - also create vector for edge (TRUE/FALSE)
-   .  subdom_id - id for corresponding subdomain
 
    DESCRIPTION:
    This function returns a pointer to a new edge structure.
@@ -1585,21 +1584,23 @@ EDGE *GetEdge (NODE *from, NODE *to)
 #ifndef ModelP
 static
 #endif
-EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
+EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
 {
   EDGE *pe;
+  NODE *from,*to;
   LINK *link0,*link1;
   VECTOR *pv;
   INT part;
 
+  from = CORNER(theElement,CORNER_OF_EDGE(theElement,i,0));
+  to = CORNER(theElement,CORNER_OF_EDGE(theElement,i,1));
+
   /* check if edge exists already */
-  if( (pe = GetEdge(from, to)) != NULL )
-  {
+  if( (pe = GetEdge(from, to)) != NULL ) {
     if (NO_OF_ELEM(pe)<NO_OF_ELEM_MAX-1)
       INC_NO_OF_ELEM(pe);
     else
       ASSERT(0);
-
     return(pe);
   }
 
@@ -1628,32 +1629,12 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
   NBNODE(link1) = from;
   SET_NO_OF_ELEM(pe,1);
   SETEDGENEW(pe,1);
-  SETEDSUBDOM(pe,NSUBDOM(from));
-  if (NSUBDOM(from) != NSUBDOM(to))
-    SETEDSUBDOM(pe,0);
-  else {
-    if ((OBJT(MYVERTEX(from)) == BVOBJ) && (OBJT(MYVERTEX(to)) == BVOBJ)) {
-      /* in parallel, it cannot be guaranteed that the boundary
-         information is available */
-                    #ifdef ModelP
-      if (V_BNDP(MYVERTEX(from)) == NULL)
-        SETEDSUBDOM(pe,0);
-      else if (V_BNDP(MYVERTEX(to)) == NULL)
-        SETEDSUBDOM(pe,0);
-      else
-                        #endif
-      if (BNDP_BndEDesc(V_BNDP(MYVERTEX(from)),
-                        V_BNDP(MYVERTEX(to)),&part) == 0)
-        SETEDSUBDOM(pe,0);
-    }
-  }
+  SETEDSUBDOM(pe,SUBDOMAIN(theElement));
 
   /* create vector if */
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
-    if (with_vector)
-    {
-      if (CreateVector (theGrid,EDGEVEC,(GEOM_OBJECT *)pe,&pv))
-      {
+    if (with_vector) {
+      if (CreateVector (theGrid,EDGEVEC,(GEOM_OBJECT *)pe,&pv)) {
         DisposeEdge (theGrid,pe);
         return (NULL);
       }
@@ -1738,7 +1719,6 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
                         ELEMENT *Father, INT with_vector)
 {
   ELEMENT *pe;
-  EDGE *ed;
   INT i,s_id;
   VECTOR *pv;
   void *q;
@@ -1774,22 +1754,10 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
 
   /* create edges */
   for (i=0; i<EDGES_OF_ELEM(pe); i++)
-  {
-    if (GetEdge(nodes[CORNER_OF_EDGE(pe,i,0)],nodes[CORNER_OF_EDGE(pe,i,1)])!=NULL)
-    {
-      CreateEdge(theGrid,nodes[CORNER_OF_EDGE(pe,i,0)],nodes[CORNER_OF_EDGE(pe,i,1)],FALSE);
-      continue;
+    if (CreateEdge (theGrid,pe,i,FALSE) == NULL) {
+      DisposeElement(theGrid,pe,TRUE);
+      return(NULL);
     }
-    else
-    {
-      if ((ed=CreateEdge(theGrid,nodes[CORNER_OF_EDGE(pe,i,0)],nodes[CORNER_OF_EDGE(pe,i,1)],FALSE)) == NULL)
-      {
-        DisposeElement(theGrid,pe,TRUE);
-        return(NULL);
-      }
-      SETEDSUBDOM(ed,s_id);
-    }
-  }
 
   /* create element vector if */
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
