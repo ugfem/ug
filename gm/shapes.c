@@ -289,18 +289,18 @@ INT InterpolateFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
 				if (Xi > Eta)
 				  {
 					*result = ((1.0-Xi)*(1.0-Eta)-Mu*(1.0-Eta))*nodal_values[0]
-					  +(Xi*(Eta-1.0)-Mu*Eta)*nodal_values[1]
-						+(-Xi*Eta+Mu*Eta)*nodal_values[2]
-						  +(Xi-1.0-Mu*Eta)*nodal_values[3]
+					  +(Xi*(1.0-Eta)-Mu*Eta)*nodal_values[1]
+						+(Xi*Eta+Mu*Eta)*nodal_values[2]
+						  +((1.0-Xi)*Eta-Mu*Eta)*nodal_values[3]
 							+Mu*nodal_values[4];
     				return (0);
 				  }
 				else
 				  {
 					*result = ((1.0-Xi)*(1.0-Eta)-Mu*(1.0-Xi))*nodal_values[0]
-					  +(Xi*(Eta-1.0)-Mu*Xi)*nodal_values[1]
-						+(-Xi*Eta+Mu*Xi)*nodal_values[2]
-						  +(Xi-1.0-Mu*Xi)*nodal_values[3]
+					  +(Xi*(1.0-Eta)-Mu*Xi)*nodal_values[1]
+						+(Xi*Eta+Mu*Xi)*nodal_values[2]
+						  +((1.0-Xi)*Eta-Mu*Xi)*nodal_values[3]
 							+Mu*nodal_values[4];
     				return (0);
 				  }
@@ -716,19 +716,19 @@ DOUBLE GN (INT n, INT i, COORD *ip_local)
 			  return((1.0-Xi)*(1.0-Eta) - Mu*(1.0-Xi));
 		  case 1 : 
 			if (Xi > Eta)
-			  return(Xi*(Eta-1.0)       - Mu*Eta);
+			  return(Xi*(1.0-Eta)       - Mu*Eta);
 			else
-			  return(Xi*(Eta-1.0)       - Mu*Xi);
+			  return(Xi*(1.0-Eta)       - Mu*Xi);
 		  case 2 : 
 			if (Xi > Eta)
-			  return(-Xi*Eta          + Mu*Eta);
+			  return(Xi*Eta             + Mu*Eta);
 			else
-			  return(-Xi*Eta          + Mu*Xi);
+			  return(Xi*Eta             + Mu*Xi);
 		  case 3 : 			  
 			if (Xi > Eta)
-			  return((Xi-1.0)         - Mu*Eta);
+			  return((1.0-Xi)*Eta       - Mu*Eta);
 			else
-			  return((Xi-1.0)         - Mu*Xi);
+			  return((1.0-Xi)*Eta       - Mu*Xi);
 		  case 4 : return(Mu);
 		  }
 	  case 6:
@@ -819,18 +819,18 @@ INT GNs (INT n, COORD *ip_local, DOUBLE *result)
 		if (Xi > Eta)
 		  {
 			result[0] = (1.0-Xi)*(1.0-Eta) - Mu*(1.0-Eta);
-			result[1] = Xi*(Eta-1.0)       - Mu*Eta;
-			result[2] = -Xi*Eta          + Mu*Eta;
-			result[3] = (Xi-1.0)         - Mu*Eta;
+			result[1] = Xi*(1.0-Eta)       - Mu*Eta;
+			result[2] = Xi*Eta             + Mu*Eta;
+			result[3] = (1.0-Xi)*Eta       - Mu*Eta;
 			result[4] = Mu;
 			return (0);
 		  }
 		else
 		  {
 			result[0] = (1.0-Xi)*(1.0-Eta) - Mu*(1.0-Xi);
-			result[1] = Xi*(Eta-1.0)       - Mu*Xi;
-			result[2] = -Xi*Eta          + Mu*Xi;
-			result[3] = (Xi-1.0)         - Mu*Xi;
+			result[1] = Xi*(1.0-Eta)       - Mu*Xi;
+			result[2] = Xi*Eta             + Mu*Xi;
+			result[3] = (1.0-Xi)*Eta       - Mu*Xi;
 			result[4] = Mu;
 			return (0);
 		  }
