@@ -14,11 +14,17 @@ ARCH_SUFFIX   =
 ARCH_POSTLINK = ugmacosxpostlink $(PROGNAME) $(APPL)
 
 ARCH_LIBS     = 
+ARCH_PLIBS    =
+ARCH_FLIBS    =
 
-ARCH_CFLAGS   = -g
+ARCH_CFLAGS   = -g -Wall
 ARCH_C++FLAGS =
+ARCH_NOOPTIM  = -g -Wall
+ARCH_OPTIM    = -O3 -fexpensive-optimizations -finline-functions -funroll-loops
 ARCH_LFLAGS   = -L../pclib -sectcreate __ICON __header $(APPL).iconheader -segprot __ICON r r -sectcreate __ICON app /System/Library/Frameworks/AppKit.framework/Resources/NSDefaultApplicationIcon.tiff -framework AppKit -framework Foundation
 ARCH_ARFLAGS  = ru
+ARCH_FFLAGS   =
+ARCH_EXFLAGS  =
 
 ARCH_XINCLUDES =
 ARCH_XLIBS     = 
