@@ -1,0 +1,45 @@
+############################################################################
+#
+#  Program:         SuperLU
+#
+#  Module:          Makefile
+#
+#  Purpose:         Top-level Makefile
+#
+#  Creation date:   October 2, 1995
+#
+#  Modified:        February 4, 1997  Version 1.0
+#		    November 15, 1997 Version 1.1
+#		    September 1, 1999 Version 2.0
+#
+############################################################################
+
+# include specification of ug via make.inv
+include make.inc
+
+# modules of SuperLU
+MODULES = CBLAS SUPERLU
+
+# object files
+OBJECTS = slu.o
+
+all: $(OBJECTS) $(MODULES) Makefile.slu
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
+	make -f Makefile.slu $(UG_LIB)
+
+$(UG_LIB): $(OBJECTS)
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
+
+CBLAS:
+	cd cblas; make; cd ..;
+
+SUPERLU:
+	cd src; make; cd ..;
+
+.c.o:
+	$(ARCH_CC) $(UG_CFLAGS) $<
+
+
+
+
+
