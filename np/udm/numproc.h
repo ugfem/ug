@@ -50,6 +50,7 @@
 
 /* macros for NP_BASE access */
 #define NP_MG(p)                                (((NP_BASE*)(p))->mg)
+#define NP_GRID(p,l)                    GRID_ON_LEVEL(NP_MG(p),l)
 #define NP_STATUS(p)                    (((NP_BASE*)(p))->status)
 #define NP_INIT(p)                              (((NP_BASE*)(p))->Init)
 #define NP_DISPLAY(p)                   (((NP_BASE*)(p))->Display)
