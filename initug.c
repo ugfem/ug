@@ -114,11 +114,10 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 INT InitUg (int *argcp, char ***argvp)
 {
   INT err;
-  char buffer[256];
         #if (defined Debug && defined __MWCW__)
+  char buffer[256];
   char debugfilename[NAMESIZE];
         #endif
-  int ival;
 
         #ifdef ModelP
   if ((err=InitPPIF(argcp, argvp)) != PPIF_SUCCESS)
@@ -186,12 +185,6 @@ INT InitUg (int *argcp, char ***argvp)
     printf ("aborting ug\n");
 
     return (1);
-  }
-
-  /* get cmdintbufsize from defaults file */
-  if (GetDefaultValue(DEFAULTSFILENAME,"mutelevel",buffer)==0) {
-    sscanf(buffer," %d ",&ival);
-    SetMuteLevel ((INT) ival);
   }
 
         #if (defined Debug && defined __MWCW__)
