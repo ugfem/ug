@@ -9110,11 +9110,6 @@ static INT DragCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   float dx,dy;
 
-
-        #ifdef ModelP
-  if (me!=master) return (OKCODE);
-        #endif
-
   NO_OPTION_CHECK(argc,argv);
 
   /* current picture */
@@ -9418,9 +9413,10 @@ static INT PlotObjectListCommand (INT argc, char **argv)
    its specifications.
    It calls the function 'WorkOnPicture'.
 
-   'plot [$o] [$a]'
+   'plot [$o [0|1|2]] [$b [<factor>]] [$a]'
 
    .   $o	- ordering strategy (only used for 3D hidden surface)
+   .   $b  - use bullet plotter
    .   $a  - plot all pictures in all windows
 
    KEYWORDS:
@@ -9432,11 +9428,14 @@ static INT PlotCommand (INT argc, char **argv)
 {
   UGWINDOW *theUgW;
   PICTURE *thePic,*currPic;
-  INT i,OrderStrategy,all;
+  INT i,OrderStrategy,all,bullet;
+  DOUBLE zOffsetFactor;
 
-  /* set ordering strategy for coarse grid */
+  /* scan for options */
+
   OrderStrategy = 0;
-  all = NO;
+  all = bullet = NO;
+  zOffsetFactor = 1.0;
 
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -9452,6 +9451,10 @@ static INT PlotCommand (INT argc, char **argv)
     case 'a' :
       all = YES;
       break;
+    case 'b' :
+      bullet = YES;
+      sscanf(argv[i],"b %lf", &zOffsetFactor);
+      break;
     default :
       break;
     }
@@ -9464,10 +9467,19 @@ static INT PlotCommand (INT argc, char **argv)
     for (theUgW=GetFirstUgWindow(); theUgW!=NULL; theUgW=GetNextUgWindow(theUgW))
       for (thePic=GetFirstPicture(theUgW); thePic!=NULL; thePic=GetNextPicture(thePic))
       {
-        if (DrawUgPicture(thePic)!=0)
-        {
-          PrintErrorMessage('E',"plot","error during WorkOnPicture");
-          return (CMDERRORCODE);
+        if (bullet) {
+          if (BulletDrawUgPicture(thePic, zOffsetFactor)!=0)
+          {
+            PrintErrorMessage('E',"plot","error during WorkOnPicture");
+            return (CMDERRORCODE);
+          }
+        }
+        else {
+          if (DrawUgPicture(thePic)!=0)
+          {
+            PrintErrorMessage('E',"plot","error during WorkOnPicture");
+            return (CMDERRORCODE);
+          }
         }
 
                                 #ifdef ModelP
@@ -9491,10 +9503,19 @@ static INT PlotCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (DrawUgPicture(thePic)!=0)
-  {
-    PrintErrorMessage('E',"plot","error during WorkOnPicture");
-    return (CMDERRORCODE);
+  if (bullet) {
+    if (BulletDrawUgPicture(thePic, zOffsetFactor)!=0)
+    {
+      PrintErrorMessage('E',"plot","error during WorkOnPicture");
+      return (CMDERRORCODE);
+    }
+  }
+  else {
+    if (DrawUgPicture(thePic)!=0)
+    {
+      PrintErrorMessage('E',"plot","error during WorkOnPicture");
+      return (CMDERRORCODE);
+    }
   }
 
         #ifdef ModelP
