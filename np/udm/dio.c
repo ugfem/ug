@@ -37,7 +37,7 @@
 
         #include "defaults.h"
         #include "fileopen.h"
-        #include "num.h"
+        #include "np.h"
 
 #endif
 
