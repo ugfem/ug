@@ -253,14 +253,14 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
     {
                                 #ifdef USE_XAW
       if (XtDispatchEvent(&report)== FALSE)
-        PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"))
-        else
-          PRINTDEBUG(dev,1,("XtDispatchEvent(): handler for this event found\n"))
+        PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"));
+      else
+        PRINTDEBUG(dev,1,("XtDispatchEvent(): handler for this event found\n"));
                                 #else /* USE_XAW */
       ShellHandleResizeEvent(&shell,&report);
       theEvent->NoEvent.InterfaceEvent = 1;
                                 #endif /* USE_XAW */
-          break;
+      break;
     }
     gw = WhichGW(report.xconfigure.window);
     if (gw==NULL) break;
@@ -413,27 +413,27 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
         #ifdef USE_XAW
   /* Send all events to shell widget */
   if (XtDispatchEvent(&report)== FALSE)
-    PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"))
-    else
-      PRINTDEBUG(dev,1,("XtDispatchEvent(): Handler for this event found\n"))
+    PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"));
+  else
+    PRINTDEBUG(dev,1,("XtDispatchEvent(): Handler for this event found\n"));
 
-      switch (report.type)
+  switch (report.type)
+  {
+  case ButtonRelease :
+    if (report.xbutton.window == shell.win)
+    {
+      if (report.xbutton.button == Button1)
+        CutBeginPos = XawTextGetInsertionPoint(shell.wid);
+
+      if (report.xbutton.button == Button1 ||
+          report.xbutton.button == Button3 )
       {
-      case ButtonRelease :
-        if (report.xbutton.window == shell.win)
-        {
-          if (report.xbutton.button == Button1)
-            CutBeginPos = XawTextGetInsertionPoint(shell.wid);
-
-          if (report.xbutton.button == Button1 ||
-              report.xbutton.button == Button3 )
-          {
-            XawTextSetInsertionPoint(shell.wid,CursorPos);
-            XawTextDisplayCaret(shell.wid,TRUE);
-          }
-        }
-        break;
+        XawTextSetInsertionPoint(shell.wid,CursorPos);
+        XawTextDisplayCaret(shell.wid,TRUE);
       }
+    }
+    break;
+  }
         #endif
 
   return(0);
