@@ -1110,25 +1110,16 @@ NODE *CreateSideNode (GRID *theGrid,ELEMENT *theElement,NODE *Node0, NODE *Node1
 
 EDGE *GetEdge (NODE *from, NODE *to)
 {
-  EDGE *pe;
   LINK *pl;
 
   /* run through neighbor list */
   for (pl=START(from); pl!=NULL; pl = NEXT(pl))
     if (NBNODE(pl)==to)
-    {
-                        #ifdef ModelP
-      pe = MYEDGE(pl);
-                        #else /* ModelP */
-      pe = (EDGE *) (pl-LOFFSET(pl));
-                        #endif /* ModelP */
-      return(pe);
-    }
+      return(MYEDGE(pl));
 
   /* return not found */
   return(NULL);
 }
-
 
 /****************************************************************************/
 /*D
@@ -1210,7 +1201,6 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to)
   /* return ok */
   return(pe);
 }
-
 
 /****************************************************************************/
 /*D
@@ -4169,10 +4159,6 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
               x[0]+=XC(vptr);
               x[1]+=YC(vptr);
               N+=1;
-
-              UserWriteF(" link %f %f\n",XC(vptr),YC(vptr));
-
-
             }
             else
             {
@@ -4182,12 +4168,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
             }
           }
 
-          UserWriteF("old %f %f new %f %f\n",
-                     XC(vptr0),YC(vptr0),(x[0]/N),(x[1]/N));
-
           XC(vptr0)=x[0]/N; YC(vptr0)=x[1]/N;
-
-          return(GM_OK);
 
           /* if there is a father element, change local variables */
           if (l!=0)
@@ -4230,8 +4211,68 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
 #ifdef __THREEDIM__
 INT  SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
 {
-  UserWrite("SmoothMultiGrid not implemented in 3D version jet\n");
-  return (0);
+  INT l,i,n,sides;
+  DOUBLE ratio;
+  DOUBLE N;
+  COORD lambda,lambda0,lambda1,lambda2,lambdaa,lambdae;
+  GRID *theGrid;
+  NODE *node,*node2;
+  ELEMENT *eptr;
+  VERTEX *vptr0,*vptr1,*vptr2,*vptra,*vptre,*vptr;
+  LINK *lptr;
+  COORD_VECTOR x;
+
+  n = niter;
+  if (n<=0) n = 1;
+  if (n>50) n = 50;
+
+  ratio=.5;
+
+  if (theMG->topLevel > 0)
+  {
+    UserWrite("SmoothMultiGrid not implemented in 3D version jet\n");
+    return (0);
+  }
+
+  theGrid=theMG->grids[0];
+  for (i=0; i<n; i++)
+  {
+    for (node=theGrid->firstNode; node!=NULL; node=SUCCN(node))
+    {
+      /* skip node if it is a copy from a lower level */
+      if (NFATHER(node)!=NULL) continue;
+
+      vptr0=MYVERTEX(node);
+      {
+        x[0]=x[1]=0; N=0;
+
+        for (lptr=START(node); lptr!=NULL; lptr=NEXT(lptr))
+        {
+          node2=NBNODE(lptr);
+          vptr=MYVERTEX(node2);
+
+          if (EXTRA(MYEDGE(lptr))==0)
+          {
+            x[0]+=XC(vptr);
+            x[1]+=YC(vptr);
+            x[2]+=ZC(vptr);
+            N+=1;
+          }
+          else
+          {
+            x[0]+=ratio*XC(vptr);
+            x[1]+=ratio*YC(vptr);
+            x[2]+=ratio*ZC(vptr);
+            N+= ratio;
+          }
+        }
+
+        XC(vptr0)=x[0]/N; YC(vptr0)=x[1]/N; ZC(vptr0)=x[2]/N;
+      }
+    }
+  }
+
+  return(GM_OK);
 }
 #endif
 
@@ -5388,7 +5429,7 @@ INT PointInElement (const COORD *x, const ELEMENT *theElement) /* 2D version */
 #endif
 
 #ifdef __THREEDIM__
-static INT PointInElement (COORD *global, ELEMENT *theElement)
+static INT PointInElement (const COORD *global, const ELEMENT *theElement)
 {
   COORD *x[MAX_CORNERS_OF_ELEM];
   COORD_VECTOR a,b,rot;
@@ -7529,14 +7570,13 @@ INT MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
   *amin = MAX_D; *amax = -MAX_D;
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
   {
-    *amax = MAX(*amax,angle[i]) * 360.0;
-    *amin = MIN(*amin,angle[i]) * 360.0;
+    *amax = MAX(*amax,angle[i]);
+    *amin = MIN(*amin,angle[i]);
   }
 
   return(GM_OK);
 }
 #endif
-
 
 /****************************************************************************/
 /*D
