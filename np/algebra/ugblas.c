@@ -1001,7 +1001,7 @@ INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
                       Gather_VectorVecskip, Scatter_VectorVecskip);
 
   if ((fl==BOTTOMLEVEL(mg)) && (tl==TOPLEVEL(mg)))
-    DDD_IFOneway(BorderVectorSymmIF, IF_FORWARD, m * sizeof(DOUBLE),
+    DDD_IFOneway(VectorVIF, IF_FORWARD, m * sizeof(DOUBLE),
                  Gather_VectorVecskip, Scatter_GhostVectorVecskip);
   else
     for (level=fl; level<=tl; level++)

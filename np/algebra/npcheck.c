@@ -36,6 +36,11 @@
 #include "debug.h"
 #include "general.h"
 
+#include "pargm.h"
+#ifdef ModelP
+#include "parallel.h"
+#endif
+
 #include "npcheck.h"
 
 /****************************************************************************/
@@ -67,9 +72,12 @@
 /*                                                                          */
 /****************************************************************************/
 
+#ifdef ModelP
+static INT pcheck;
+#endif
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
-
 
 INT CheckSymmetryOfMatrix (GRID *theGrid, MATDATA_DESC *A)
 {
@@ -102,33 +110,229 @@ INT CheckSymmetryOfMatrix (GRID *theGrid, MATDATA_DESC *A)
   return(0);
 }
 
-INT CheckVector(theGrid,theVector)
+static INT CheckVector (GRID *theGrid, VECTOR *v)
 {
+  FORMAT *theFormat;
+  NODE *theNode;
+  VECTOR *w;
   INT nerr = 0;
 
   /* get format */
+  theFormat = MGFORMAT(MYMG(theGrid));
+  if (FMT_S_MATPTR(theFormat)[MatrixType[VTYPE(v)][VTYPE(v)]]
+      && (!GHOST(v))) {
+    if (VSTART(v) == NULL) {
+      UserWriteF(PFMT "ERROR: no diagonal matrix vec=" VINDEX_FMTX "\n",
+                 me,VINDEX_PRTX(v));
+      nerr++;
+    }
+    else if (!MDIAG(VSTART(v))) {
+      UserWriteF(PFMT "ERROR: VSTART no diagonal matrix vec="
+                 VINDEX_FMTX "\n",
+                 me,VINDEX_PRTX(v));
+      nerr++;
+    }
+  }
 
   /* check flags locally */
-
+  if (NEW_DEFECT(v) != (VCLASS(v)>=2)) {
+    UserWriteF(PFMT "ERROR: VSTART no diagonal matrix vec="
+               VINDEX_FMTX " NEW_DEFECT %d VCLASS %d\n",
+               me,VINDEX_PRTX(v),NEW_DEFECT(v),VCLASS(v));
+    nerr++;
+  }
+  if (FINE_GRID_DOF(v) != ((VCLASS(v)>=2)&&(VNCLASS(v)<=1))) {
+    UserWriteF(PFMT "ERROR: VSTART no diagonal matrix vec="
+               VINDEX_FMTX " FINE_GRID_DOF %d VNCLASS %d VCLASS %d\n",
+               me,VINDEX_PRTX(v),FINE_GRID_DOF(v),VNCLASS(v),VCLASS(v));
+    nerr++;
+  }
+  if (FINE_GRID_DOF(v))
+    if (FULLREFINELEVEL(MYMG(theGrid)) > GLEVEL(theGrid)) {
+      UserWriteF(PFMT "ERROR: FULLREFINELEVEL too large vec="
+                 VINDEX_FMTX " FINE_GRID_DOF %d FULLREFINELEVEL %d\n",
+                 me,VINDEX_PRTX(v),FINE_GRID_DOF(v),
+                 FULLREFINELEVEL(MYMG(theGrid)));
+      nerr++;
+    }
+  if (VOTYPE(v) == NODEVEC) {
+    theNode = (NODE *) VOBJECT(v);
+    if (theNode == NULL) {
+      if (GLEVEL(theGrid) >= 0) {
+        UserWriteF(PFMT "ERROR: nodevector has no NODE vec="
+                   VINDEX_FMTX " \n",
+                   me,VINDEX_PRTX(v));
+        nerr++;
+      }
+    }
+    else {
+      if (OBJT(theNode) != NDOBJ) {
+        UserWriteF(PFMT "ERROR: nodevector has no NODE object vec="
+                   VINDEX_FMTX " OBJT %d\n",
+                   me,VINDEX_PRTX(v),OBJT(theNode));
+        nerr++;
+      }
+      if (NTYPE(theNode) == CORNER_NODE) {
+        theNode = (NODE *)NFATHER(theNode);
+        if (theNode != NULL) {
+          w = NVECTOR(theNode);
+          if (w == NULL) {
+            UserWriteF(PFMT "ERROR:"
+                       " cornernode vector has no father vec="
+                       VINDEX_FMTX "\n",
+                       me,VINDEX_PRTX(v));
+            nerr++;
+          }
+          if (VNCLASS(w) != VCLASS(v)) {
+            UserWriteF(PFMT "ERROR:"
+                       " VCALSS and VNCLASS not matches vec="
+                       VINDEX_FMTX " VCLASS %d father vec "
+                       VINDEX_FMTX " VNCLASS %d\n",
+                       me,VINDEX_PRTX(v),VCLASS(v),
+                       VINDEX_PRTX(v));
+            nerr++;
+          }
+        }
+      }
+    }
+  }
   return(nerr);
 }
 
-INT CheckVectors (GRID *theGrid)
+static INT CheckVectors (GRID *theGrid)
 {
   INT nerr = 0;
   VECTOR *theVector;
 
-  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
-  {
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL;
+       theVector=SUCCVC(theVector)) {
     nerr += CheckVector(theGrid,theVector);
   }
   return(nerr);
 }
 
+#ifdef ModelP
+static int Gather_VectorFlags (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+  INT *idata = (INT *)data;
+
+  idata[0] = VECSKIP(pv);
+  idata[1] = VCLASS(pv);
+  idata[2] = VNCLASS(pv);
+  idata[3] = NEW_DEFECT(pv);
+  idata[4] = FINE_GRID_DOF(pv);
+  idata[5] = VTYPE(pv);
+  idata[6] = VOTYPE(pv);
+  idata[7] = VDATATYPE(pv);
+  idata[8] = VNEW(pv);
+  idata[9] = VECTORSIDE(pv);
+  idata[10] = VPART(pv);
+
+  return (0);
+}
+
+static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+  INT *idata = (INT *)data;
+
+  if (idata[0] != VECSKIP(pv)) {
+    printf(PFMT "ERROR:"
+           " VECSKIP not matches vec="
+           VINDEX_FMTX " %d master %d\n",
+           VINDEX_PRTX(pv),VECSKIP(pv),idata[0]);
+    pcheck++;
+    ASSERT(0);
+  }
+  if (idata[1] != VCLASS(pv)) {
+    printf(PFMT "ERROR:"
+           " VCLASS not matches vec="
+           VINDEX_FMTX " %d master %d\n",
+           VINDEX_PRTX(pv),VCLASS(pv),idata[1]);
+    ASSERT(0);
+  }
+  if (idata[2] != VNCLASS(pv)) {
+    printf(PFMT "ERROR:"
+           " VNCLASS not matches vec="
+           VINDEX_FMTX " %d master %d\n",
+           VINDEX_PRTX(pv),VNCLASS(pv),idata[2]);
+    pcheck++;
+    ASSERT(0);
+  }
+  if (idata[3] != NEW_DEFECT(pv)) {
+    printf(PFMT "ERROR:"
+           " NEW_DEFECT not matches vec="
+           VINDEX_FMTX " %d master %d\n",
+           VINDEX_PRTX(pv),NEW_DEFECT(pv),idata[3]);
+    pcheck++;
+    ASSERT(0);
+  }
+  if (idata[4] != FINE_GRID_DOF(pv)) {
+    printf(PFMT "ERROR:"
+           " FINE_GRID_DOF not matches vec="
+           VINDEX_FMTX " %d master %d\n",
+           VINDEX_PRTX(pv),FINE_GRID_DOF(pv),idata[4]);
+    pcheck++;
+    ASSERT(0);
+  }
+  if (idata[5] != VTYPE(pv)) {
+    printf(PFMT "ERROR:"
+           " VTYPE not matches vec="
+           VINDEX_FMTX " %d master %d\n",
+           VINDEX_PRTX(pv),VTYPE(pv),idata[5]);
+    pcheck++;
+    ASSERT(0);
+  }
+  if (idata[6] != VOTYPE(pv)) {
+    printf(PFMT "ERROR:"
+           " VOTYPE not matches vec="
+           VINDEX_FMTX " %d master %d\n",
+           VINDEX_PRTX(pv),VOTYPE(pv),idata[6]);
+    pcheck++;
+    ASSERT(0);
+  }
+  if (idata[7] != VDATATYPE(pv)) {
+    printf(PFMT "ERROR:"
+           " VDATATYPE not matches vec="
+           VINDEX_FMTX " %d master %d\n",
+           VINDEX_PRTX(pv),VDATATYPE(pv),idata[7]);
+    pcheck++;
+    ASSERT(0);
+  }
+  if (idata[8] != VNEW(pv)) {
+    printf(PFMT "ERROR:"
+           " VNEW not matches vec="
+           VINDEX_FMTX " %d master %d\n",
+           VINDEX_PRTX(pv),VNEW(pv),idata[8]);
+    pcheck++;
+    ASSERT(0);
+  }
+  if (idata[9] != VECTORSIDE(pv)) {
+    printf(PFMT "ERROR:"
+           " VECTORSIDE not matches vec="
+           VINDEX_FMTX " %d master %d\n",
+           VINDEX_PRTX(pv),VECTORSIDE(pv),idata[9]);
+    pcheck++;
+    ASSERT(0);
+  }
+  if (idata[10] != VPART(pv)) {
+    printf(PFMT "ERROR:"
+           " VPART not matches vec="
+           VINDEX_FMTX " %d master %d\n",
+           VINDEX_PRTX(pv),VPART(pv),idata[10]);
+    pcheck++;
+    ASSERT(0);
+  }
+
+  return (0);
+}
+#endif
+
 INT CheckNP (MULTIGRID *theMG, INT argc, char **argv)
 {
   MATDATA_DESC *A;
-  INT level;
+  INT level,nerr;
   char value[VALUELEN];
 
   if (ReadArgvChar("A",value,argc,argv) == 0) {
@@ -139,9 +343,28 @@ INT CheckNP (MULTIGRID *theMG, INT argc, char **argv)
           UserWriteF("matrix %s not symmetric on level %d\n",
                      ENVITEM_NAME(A),level);
   }
+  for (level=theMG->bottomLevel; level<=TOPLEVEL(theMG); level++) {
+    UserWriteF("[%d: numeric: ",level);
+    nerr = CheckVectors(GRID_ON_LEVEL(theMG,level));
+        #ifdef ModelP
+    nerr = UG_GlobalSumINT(nerr);
+        #endif
+    if (nerr)
+      UserWriteF("ERROR: vector flags not correctly set] ");
+    else
+      UserWrite("ok] ");
+  }
+    #ifdef ModelP
+  pcheck = 0;
+  DDD_IFOneway(VectorVAllIF, IF_FORWARD, 11 * sizeof(INT),
+               Gather_VectorFlags, Scatter_VectorFlags);
+  pcheck = UG_GlobalSumINT(pcheck);
+  if (pcheck == 0)
+    UserWriteF("[parallel numeric: ok]");
+  else
+    UserWriteF("[parallel numeric: %d errors]",pcheck);
+        #endif
+  UserWrite("\n");
 
-  for (level=theMG->bottomLevel; level<=TOPLEVEL(theMG); level++)
-    if (CheckVectors(GRID_ON_LEVEL(theMG,level)))
-      UserWriteF("ERROR: vector flags not correctly set");
   return(0);
 }
