@@ -6324,6 +6324,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
   ELEMENT *theElement;
   GRID    *theGrid;
         #ifdef ModelP
+  INT MarkKey;
   INT             *infobuffer;
   INT             **lbinfo;
   INT total_elements,sum_elements;
@@ -6348,10 +6349,11 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
   }
 
         #ifdef ModelP
-  infobuffer      = (INT *) malloc((procs+1)*(MAXLEVEL+1)*ELEMENT_PRIOS*sizeof(INT));
+  MarkTmpMem(MGHEAP(theMG),&MarkKey);
+  infobuffer      = (INT *) GetTmpMem(MGHEAP(theMG),(procs+1)*(MAXLEVEL+1)*ELEMENT_PRIOS*sizeof(INT),MarkKey);
   if (infobuffer == NULL) assert(0);
 
-  lbinfo          = (INT **) malloc((procs+1)*sizeof(INT));
+  lbinfo          = (INT **) GetTmpMem(MGHEAP(theMG),(procs+1)*sizeof(INT),MarkKey);
   if (lbinfo == NULL) assert(0);
 
   memset((void *)infobuffer,0,(procs+1)*(MAXLEVEL+1)*ELEMENT_PRIOS*sizeof(INT));
@@ -6745,8 +6747,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
     }
 
   }
-  free(infobuffer);
-  free(lbinfo);
+  ReleaseTmpMem(MGHEAP(theMG),MarkKey);
         #endif
 
   return (GM_OK);
