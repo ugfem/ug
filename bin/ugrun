@@ -24,8 +24,8 @@ case $MODEL in
 		$1 -sz $PROC 1;
 		;;
 	MPI)
-		echo mpirun -np $PROC	$1;
-		mpirun -np $PROC	$1;
+		echo mpirun -np $PROC	./$1;
+		mpirun -np $PROC	./$1;
         ;;
 	NX)
 		echo isub -sz $PROC   $1;
