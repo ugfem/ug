@@ -115,6 +115,68 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
+MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *DataFileName)
+{
+  MULTIGRID *mg;
+  DIO_GENERAL dio_general;
+  char FileName[NAMESIZE],*mgname,*mgtype,NumberString[6],*p;
+  INT close,load;
+
+  /* open file */
+  strcpy(FileName,DataFileName);
+  strcat(FileName,".ug.data.");
+  if (number!=-1)
+  {
+    sprintf(NumberString,"%04d.",(int)number);
+    strcat(FileName,NumberString);
+  }
+  strcat(FileName,type);
+  if (Read_OpenDTFile (FileName))                                                                                 {CloseDTFile(); return (NULL);}
+
+  /* read general information */
+  if (Read_DT_General (&dio_general))                                                                     {CloseDTFile(); return (NULL);}
+  if (theMG==NULL)
+  {
+    close = 0;
+    load = 1;
+  }
+  else if (!MG_SAVED(theMG) || dio_general.magic_cookie!=MG_MAGIC_COOKIE(theMG))
+  {
+    close = 1;
+    load = 1;
+  }
+  else
+  {
+    close = 0;
+    load = 0;
+    mg = theMG;
+  }
+
+  /* dispose multigrid */
+  if (close)
+    if (DisposeMultiGrid(theMG))
+    {CloseDTFile(); return (NULL);}
+
+  /* reload multigrid */
+  if (load)
+  {
+    p = strstr(dio_general.mgfile,".ug.mg.");
+    if (p==NULL)                                                                                                                                    {CloseDTFile(); return (NULL);}
+    else
+    {
+      mgtype = p+strlen(p)-3;
+      p[0] = '\0';
+      mgname = dio_general.mgfile;
+    }
+    mg = LoadMultiGrid (NULL,mgname,mgtype,NULL,NULL,0,0,0);
+  }
+
+  /* close file */
+  CloseDTFile();
+
+  return (mg);
+}
+
 INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDATA_DESC **theVDList)
 {
   INT i,j,ncomp,s,*entry,copied_until,copy_until,still_to_read,read,nvec,id;
@@ -295,8 +357,16 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   if (theMG==NULL) return (1);
   if (!MG_SAVED(theMG))
   {
-    UserWrite("ERROR: first save multigrid\n");
-    return (1);
+    if (SaveMultiGrid (theMG,NULL,NULL,NULL,1))
+    {
+      UserWrite("ERROR: cannot autosave multigrid\n");
+      return (1);
+    }
+    if (!MG_SAVED(theMG))
+    {
+      UserWrite("ERROR: autosave of multigrid failed\n");
+      return (1);
+    }
   }
   theHeap = MGHEAP(theMG);
   if (n<1) return (1);

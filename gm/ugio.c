@@ -827,7 +827,7 @@ static INT WriteElementParInfo (ELEMENT *theElement, MGIO_PARINFO *pinfo)
 }
 #endif
 
-static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char * type, char *comment)
+static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave)
 {
   GRID *theGrid;
   NODE *theNode;
@@ -847,26 +847,69 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char * type, char *c
   INT i,j,k,niv,nbv,nie,nbe,n,nhe,hr_max,mode,level,n_inc,n_max,id,foid,non,tl,Err;
   INT RefRuleOffset[TAGS];
   int *vidlist,ftype,error,*cg_ident;
-  char *p;
+  char *p,*f,*s,*l;
   BNDP **BndPList;
   char filename[NAMESIZE];
-  char buf[64];
+  char buf[64],itype[10];
+  int lastnumber;
 
   /* check */
   if (theMG==NULL) return (1);
   theHeap = MGHEAP(theMG);
   MarkTmpMem(theHeap);
 
+  /* something to do ? */
+  if (MG_SAVED(theMG))
+  {
+    UserWriteF("WARNING: multigrid already saved as %s\n",MG_FILENAME(theMG));
+    return (0);
+  }
+
   /* open file */
   nparfiles = procs;
-  if (strcmp(type,"dbg")==0) mode = BIO_DEBUG;
-  else if (strcmp(type,"asc")==0) mode = BIO_ASCII;
-  else if (strcmp(type,"bin")==0) mode = BIO_BIN;
-  else return (1);
-  strcpy(filename,name);
+  if (autosave)
+  {
+    if (name==NULL)
+    {
+      if (type!=NULL) return (1);
+      strcpy(filename,MG_FILENAME(theMG));
+      f = strtok(filename,".");       if (f==NULL) return (1);
+      s = strtok(NULL,".");           if (s==NULL) return (1);
+      l = strtok(NULL,".");           if (l==NULL) return (1);
+      l = strtok(NULL,".");           if (l==NULL) return (1);
+      l = strtok(NULL,".");           if (l==NULL) return (1);
+      if (sscanf(s,"%d",&lastnumber)!=1) return (1);if (lastnumber<0) return (1);lastnumber++;
+      strcpy(itype,l);
+      sprintf(buf,".%04d",lastnumber);
+      strcat(filename,buf);
+    }
+    else
+    {
+      if (type==NULL) return (1);
+      if (strcmp(type,"dbg")==0) mode = BIO_DEBUG;
+      else if (strcmp(type,"asc")==0) mode = BIO_ASCII;
+      else if (strcmp(type,"bin")==0) mode = BIO_BIN;
+      else return (1);
+      strcpy(itype,type);
+      if (name==NULL) return (1);
+      strcpy(filename,name);
+      strcat(filename,".0000");
+    }
+  }
+  else
+  {
+    if (type==NULL) return (1);
+    if (strcmp(type,"dbg")==0) mode = BIO_DEBUG;
+    else if (strcmp(type,"asc")==0) mode = BIO_ASCII;
+    else if (strcmp(type,"bin")==0) mode = BIO_BIN;
+    else return (1);
+    strcpy(itype,type);
+    if (name==NULL) return (1);
+    strcpy(filename,name);
+  }
   sprintf(buf,".ug.mg.");
   strcat(filename,buf);
-  strcat(filename,type);
+  strcat(filename,itype);
 #ifdef ModelP
   error = 0;
   if (me == master)
@@ -1113,19 +1156,16 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char * type, char *c
   return (0);
 }
 
-INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment)
+INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave)
 {
-  char *p;
-
   /* check name convention */
-  p = name + strlen(name) - 4;
-  if (strcmp(p,".scr")==0)
+  if (name==NULL || strcmp(name+strlen(name)-4,".scr")!=0)
   {
-    if (SaveMultiGrid_SCR (theMG,name,comment)) return (1);
+    if (SaveMultiGrid_SPF (theMG,name,type,comment,autosave)) return (1);
   }
   else
   {
-    if (SaveMultiGrid_SPF (theMG,name,type,comment)) return (1);
+    if (SaveMultiGrid_SCR (theMG,name,comment)) return (1);
   }
   return (0);
 }

@@ -2561,11 +2561,11 @@ FORMAT                   *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
 /* create, saving and disposing a multigrid structure */
 MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
                             char *format, MEM heapSize, INT optimizedIE);
+MULTIGRID   *OpenMGFromDataFile(MULTIGRID *theMG, INT number, char *type, char *DataFileName);
 MULTIGRID       *LoadMultiGrid  (char *MultigridName, char *name, char *type,
                                  char *BndValProblem, char *format,
                                  unsigned long heapSize,INT force,INT optimizedIE);
-INT             SaveMultiGrid   (MULTIGRID *theMG, char *FileName,
-                                 char *type, char *comment);
+INT             SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave);
 INT         DisposeGrid             (GRID *theGrid);
 INT             DisposeMultiGrid                (MULTIGRID *theMG);
 INT         DisposeAMGLevel         (MULTIGRID *theMG);
