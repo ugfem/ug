@@ -38,6 +38,7 @@
 #include "evm.h"
 #include "general.h"
 #include "ugm.h"
+#include "refine.h"
 #include "algebra.h"
 #include "debug.h"
 #include "devices.h"
