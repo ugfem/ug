@@ -98,7 +98,7 @@ done in the separate application command "setperiodic".
 UG/ug/np:
 --------
 
-Q: How to compile UG/ug/np in sparse format to compute large coupled
+Q: How to compile UG/ug/np with large format to compute large coupled
    systems?
 
 A: 
