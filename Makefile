@@ -31,11 +31,11 @@ OBJECTS = initug.o
 # make all
 all: $(MODULES) $(OBJECTS)
 	ar $(ARFLAGS) lib/libug$(LIBSUFFIX).a $(OBJECTS)
-	echo "ug 3 compiled"
+	echo "libug, libdom and libdev compiled"
 
 uglib: $(UGMODULES) $(OBJECTS)
 	ar $(ARFLAGS) lib/libug$(LIBSUFFIX).a $(OBJECTS)
-	echo "uglib compiled"
+	echo "libug compiled"
 
 LOW:
 	cd low; make -f Makefile.low; cd ..;
@@ -70,7 +70,7 @@ GG:
 	$(CC) $(UGDEFINES) $(CFLAGS) $(LCFLAGS) $<
 
 clean:
-	rm $(OBJECTS)
+	rm -f $(OBJECTS)
 	cd low; make -f Makefile.low clean; cd ..;
 	cd dev; make -f Makefile.dev clean; cd ..;
 	cd dom; make -f Makefile.dom clean; cd ..;
@@ -87,5 +87,14 @@ ifdef:
 	cd graph; make -f Makefile.graph clean; cd ..;
 	cd dom; make -f Makefile.dom clean; cd ..;
 	cd ui; rm commands.o ; cd ..;
-	rm initug.o;
+	rm -f initug.o;
+
+
+
+
+
+
+
+
+
 
