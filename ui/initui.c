@@ -44,6 +44,7 @@
 #include "commands.h"
 #include "tecplot.h"
 #include "avs.h"
+#include "teti.h"
 
 /* own header */
 #include "initui.h"
@@ -156,6 +157,13 @@ INT InitUi ()
 
   /* avs output */
   if ((err=InitAVS())!=0)
+  {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* grape test output */
+  if ((err=InitTeti())!=0)
   {
     SetHiWrd(err,__LINE__);
     return (err);

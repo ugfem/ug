@@ -11,7 +11,7 @@
 include ../ug.conf
 
 OBJECTS = uginterface.o initui.o cmdint.o cmdline.o \
-		  commands.o helpmsg.o avs.o tecplot.o
+		  commands.o helpmsg.o avs.o tecplot.o teti.o
 
 # local C compiler flags
 LCFLAGS = -I../include
