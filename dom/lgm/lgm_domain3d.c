@@ -77,9 +77,9 @@ static INT SAVE_SURFACE;
 static INT SURFACE_ADAPT;
 static DOUBLE LINE_DISTANCE = 0.05;
 #define SMALL_FAK 1e-6
-DOUBLE SMALL;
+static DOUBLE SMALL;
 static INT VAR_H = 1;
-#define SMALL1 1e-8
+#define SMALL1 1e-6
 
 /*static DOUBLE cosAngle = 0.99;		komplex3d */
 /*static DOUBLE cosAngle = 0.99999;	*/
