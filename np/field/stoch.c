@@ -1481,7 +1481,7 @@ static INT NPStochFieldInit(NP_BASE *theNP, INT argc , char **argv)
     for (i=0; i<DIM; i++)
       NumOfDouble *= np->size[i];
     np->FldSize = NumOfDouble*sizeof(DOUBLE);
-    if ((theField=GetFreelistMemory(theHeap,np->FldSize))==NULL)
+    if ((theField=(DOUBLE*)GetFreelistMemory(theHeap,np->FldSize))==NULL)
     {
       PrintErrorMessage('E',"NPStochFieldInit","not enough memory");
       ret = NP_NOT_ACTIVE;

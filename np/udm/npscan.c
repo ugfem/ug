@@ -526,7 +526,7 @@ MATDATA_DESC *ReadArgvMatDescX (MULTIGRID *theMG, const char *name,
    D*/
 /****************************************************************************/
 
-NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, const char *class,
+NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, const char *npclass,
                           INT argc, char **argv)
 {
   char value[VALUELEN];
@@ -536,7 +536,7 @@ NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, const char *class,
   if (ReadArgvChar(name,value,argc,argv))
     return (NULL);
 
-  return(GetNumProcByName(theMG,value,class));
+  return(GetNumProcByName(theMG,value,npclass));
 }
 
 /****************************************************************************/

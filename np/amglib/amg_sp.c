@@ -106,24 +106,24 @@
 
 AMG_VECTOR *AMG_NewVector (int n, int b, char *name)
 {
-  AMG_VECTOR *new;
+  AMG_VECTOR *New;
   double *values;
 
   /* allocate vector structure */
-  new = AMG_Malloc(sizeof(AMG_VECTOR));
-  if (new==NULL) return(AMG_NULL);
+  New = (AMG_VECTOR*)AMG_Malloc(sizeof(AMG_VECTOR));
+  if (New==NULL) return(AMG_NULL);
 
   /* allocate data */
-  values = AMG_Malloc(n*b*sizeof(double));
+  values = (double*)AMG_Malloc(n*b*sizeof(double));
   if (values==NULL) return(AMG_NULL);
 
   /* fill data structure */
-  AMG_VECTOR_N(new) = n;
-  AMG_VECTOR_B(new) = b;
-  strncpy(AMG_VECTOR_NAME(new),name,AMG_NAME_SIZE-1);
-  AMG_VECTOR_X(new) = values;
+  AMG_VECTOR_N(New) = n;
+  AMG_VECTOR_B(New) = b;
+  strncpy(AMG_VECTOR_NAME(New),name,AMG_NAME_SIZE-1);
+  AMG_VECTOR_X(New) = values;
 
-  return(new);
+  return(New);
 }
 
 /****************************************************************************/
@@ -161,7 +161,7 @@ AMG_VECTOR *AMG_NewVector (int n, int b, char *name)
 
 AMG_MATRIX *AMG_NewMatrix (int n, int b, int nonzeros, int system_as_scalar, char *name)
 {
-  AMG_MATRIX *new;
+  AMG_MATRIX *New;
   double *a;
   int *r,*j;
   int i,k;
@@ -173,40 +173,40 @@ AMG_MATRIX *AMG_NewMatrix (int n, int b, int nonzeros, int system_as_scalar, cha
   }
 
   /* allocate matrix structure */
-  new = AMG_Malloc(sizeof(AMG_MATRIX));
-  if (new==NULL) return(AMG_NULL);
+  New = (AMG_MATRIX*)AMG_Malloc(sizeof(AMG_MATRIX));
+  if (New==NULL) return(AMG_NULL);
 
   /* allocate data */
-  a = AMG_Malloc(nonzeros*b*b*sizeof(double));
+  a = (double*)AMG_Malloc(nonzeros*b*b*sizeof(double));
   if (a==NULL) return(AMG_NULL);
 
   /* col index array */
-  j = AMG_Malloc(nonzeros*sizeof(int));
+  j = (int*)AMG_Malloc(nonzeros*sizeof(int));
   if (j==NULL) return(AMG_NULL);
 
   /* row entry array */
-  r = AMG_Malloc(n*sizeof(int));
+  r = (int*)AMG_Malloc(n*sizeof(int));
   if (r==NULL) return(AMG_NULL);
 
   /* fill data structure */
-  strncpy(AMG_MATRIX_NAME(new),name,AMG_NAME_SIZE-1);
-  AMG_MATRIX_N(new) = n;
-  AMG_MATRIX_B(new) = b;
-  AMG_MATRIX_BB(new) = b*b;
-  AMG_MATRIX_SAS(new) = system_as_scalar;
-  AMG_MATRIX_NONZEROS(new) = nonzeros;
-  AMG_MATRIX_CONNECTIONS(new) = 0;
-  AMG_MATRIX_BW(new) = -1;
-  AMG_MATRIX_RA(new) = r;
-  AMG_MATRIX_JA(new) = j;
-  AMG_MATRIX_A(new) = a;
+  strncpy(AMG_MATRIX_NAME(New),name,AMG_NAME_SIZE-1);
+  AMG_MATRIX_N(New) = n;
+  AMG_MATRIX_B(New) = b;
+  AMG_MATRIX_BB(New) = b*b;
+  AMG_MATRIX_SAS(New) = system_as_scalar;
+  AMG_MATRIX_NONZEROS(New) = nonzeros;
+  AMG_MATRIX_CONNECTIONS(New) = 0;
+  AMG_MATRIX_BW(New) = -1;
+  AMG_MATRIX_RA(New) = r;
+  AMG_MATRIX_JA(New) = j;
+  AMG_MATRIX_A(New) = a;
 
   /* initialize data structure */
   for (i=0; i<n; i++) r[i] = -1;
   for (k=0; k<nonzeros; k++) j[k] = -1;
   for (k=0; k<nonzeros*b*b; k++) a[k] = 0.0;
 
-  return(new);
+  return(New);
 }
 
 /****************************************************************************/

@@ -95,7 +95,7 @@ INT InitUgEnv (INT heapSize)
   if ((envHeap=NewHeap(GENERAL_HEAP,heapSize,buffer))==NULL) return(__LINE__);
 
   /* allocate root directory */
-  if ((root=GetMem(envHeap,sizeof(ENVDIR),0))==NULL) return(__LINE__);
+  if ((root=(ENVDIR*)GetMem(envHeap,sizeof(ENVDIR),0))==NULL) return(__LINE__);
   root->type = ROOT_DIR;
   root->next = root->previous = root->down = NULL;
   strcpy(root->name,"root");

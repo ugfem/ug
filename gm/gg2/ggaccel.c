@@ -382,7 +382,7 @@ static QUADTREETYP* search(QUADTREETYP *q_pointer, SOURCETYP *so, DOUBLE *wi,
       if ( helpc == 0 )                   /* Quadreepointer  !!! */
       {
         *wi = (*wi)/2;
-        q_pointer = search( q_pointer->q_array[0], so, wi, new_p);
+        q_pointer = search( (QUADTREETYP*)(q_pointer->q_array[0]), so, wi, new_p);
         return(q_pointer);
       }
       else                   /* Nodepointer !!! */
@@ -405,7 +405,7 @@ static QUADTREETYP* search(QUADTREETYP *q_pointer, SOURCETYP *so, DOUBLE *wi,
       {
         so->x = so->x + *wi;
         *wi = (*wi)/2;
-        q_pointer = search( q_pointer->q_array[1], so, wi, new_p );
+        q_pointer = search( (QUADTREETYP*)(q_pointer->q_array[1]), so, wi, new_p );
         return(q_pointer);
       }
       else
@@ -432,7 +432,7 @@ static QUADTREETYP* search(QUADTREETYP *q_pointer, SOURCETYP *so, DOUBLE *wi,
         so->x = so->x + *wi;
         so->y = so->y + *wi;
         *wi = (*wi)/2;
-        q_pointer = search( q_pointer->q_array[2], so, wi, new_p );
+        q_pointer = search( (QUADTREETYP*)(q_pointer->q_array[2]), so, wi, new_p );
         return(q_pointer);
       }
       else
@@ -456,7 +456,7 @@ static QUADTREETYP* search(QUADTREETYP *q_pointer, SOURCETYP *so, DOUBLE *wi,
       {
         so->y = so->y + *wi;
         *wi = (*wi)/2;
-        q_pointer = search( q_pointer->q_array[3], so, wi, new_p );
+        q_pointer = search( (QUADTREETYP*)(q_pointer->q_array[3]), so, wi, new_p );
         return(q_pointer);
       }
       else
@@ -568,7 +568,7 @@ static void environment_search(INDEPFRONTLIST *theIFL,
       if (helpc == 0)                    /* if "quadtreepointer" */
       {
         wi = wi/2;
-        environment_search( theIFL, q_pointer->q_array[i], so,
+        environment_search( theIFL, (QUADTREETYP*)(q_pointer->q_array[i]), so,
                             thefoundPoints, theIntersectfoundPoints,
                             wi, search_sq_ld, search_sq_ru,
                             big_search_sq_ld, big_search_sq_ru,
@@ -579,7 +579,7 @@ static void environment_search(INDEPFRONTLIST *theIFL,
 
       else
       {
-        hn_pointer = q_pointer->q_array[i];
+        hn_pointer = (QFCLISTTYP*)(q_pointer->q_array[i]);
         /* this is the way, how the nodepointer of the quadtree becomes */
         /*  a void-pointer !!!                                    */
 
@@ -794,7 +794,7 @@ static void insert(QFCLISTTYP *p_new, QUADTREETYP *q_place,
 
   helpc1= q_place->q_flag;
   helpc1 >>= 4;
-  n_zeiger = q_place->q_array[helpc1];        /* in wich square ? --> helpc1*/
+  n_zeiger = (QFCLISTTYP*)(q_place->q_array[helpc1]);        /* in wich square ? --> helpc1*/
   if ( n_zeiger == NULL )
   {
     /* in this quadrant there are no nodes !!!*/
@@ -962,12 +962,12 @@ static void delete_node(QUADTREETYP *q_pointer, FRONTCOMP *p_del, DOUBLE width,
 
   if (helpc == 0)  /*  here is a quadtreepointer !!! */
   {
-    delete_node( q_pointer->q_array[place] , p_del, width/2, so, stop, nd_mem);
+    delete_node( (QUADTREETYP*)(q_pointer->q_array[place]) , p_del, width/2, so, stop, nd_mem);
   }
 
   else  /* the node should be here */
   {
-    nodepointer_qfcl = q_pointer->q_array[place];
+    nodepointer_qfcl = (QFCLISTTYP*)(q_pointer->q_array[place]);
     if ( nodepointer_qfcl == NULL )             /* there is no node at all !!! */
     {
       PrintErrorMessage('E',"bnodes","Error: I cannot delete a node, which  doesn't exist!!!");
@@ -1042,7 +1042,7 @@ static void delete_node(QUADTREETYP *q_pointer, FRONTCOMP *p_del, DOUBLE width,
     /* 3) and we are not at the startlevel !!!                            */
     {
 
-      nodepointer_qfcl = q_pointer->q_array[place];
+      nodepointer_qfcl = (QFCLISTTYP*)(q_pointer->q_array[place]);
       *nd_mem = nodepointer_qfcl;
 
       PutFreeObject( MG, q_pointer, sizeof(QUADTREETYP), QuObj);
@@ -1087,7 +1087,7 @@ static void delete_quadtree(QUADTREETYP *q_pointer)
 
     if (helpc == 0)
     {
-      delete_quadtree(q_pointer->q_array[i]);
+      delete_quadtree((QUADTREETYP*)(q_pointer->q_array[i]));
     }
   }
 
@@ -1550,11 +1550,11 @@ static void del( BALTREETYP **r, int *h )
 /*                                                                          */
 /****************************************************************************/
 
-static void delete( FRONTCOMP* basefc, float x, BALTREETYP **p, int *h )
+static void Delete( FRONTCOMP* basefc, float x, BALTREETYP **p, int *h )
 {
   if ( ( x < (*p)->key ) && ( (*p)->left != NULL ) )
   {
-    delete( basefc, x, &((*p)->left), h );
+    Delete( basefc, x, &((*p)->left), h );
     if ( del_edg_fnd == 1 )
       if ( *h == 1 )
         balance1( p, h );
@@ -1562,7 +1562,7 @@ static void delete( FRONTCOMP* basefc, float x, BALTREETYP **p, int *h )
 
   else if ( ( x > (*p)->key ) && ( (*p)->right != NULL ) )
   {
-    delete( basefc, x, &((*p)->right), h );
+    Delete( basefc, x, &((*p)->right), h );
     if ( del_edg_fnd == 1 )
       if ( *h == 1 )
         balance2( p, h );
@@ -1572,7 +1572,7 @@ static void delete( FRONTCOMP* basefc, float x, BALTREETYP **p, int *h )
   {
     if ( ( del_edg_fnd == 0  ) && ( (*p)->left != NULL ) )
     {
-      delete( basefc, x, &((*p)->left), h );
+      Delete( basefc, x, &((*p)->left), h );
       if ( del_edg_fnd == 1 )
         if ( *h == 1 )
           balance1( p, h );
@@ -1580,7 +1580,7 @@ static void delete( FRONTCOMP* basefc, float x, BALTREETYP **p, int *h )
 
     if ( ( del_edg_fnd == 0  ) && ( (*p)->right != NULL ) )
     {
-      delete( basefc, x, &((*p)->right), h );
+      Delete( basefc, x, &((*p)->right), h );
       if ( del_edg_fnd == 1 )
         if ( *h == 1 )
           balance2( p, h );
@@ -1624,7 +1624,7 @@ static void delete( FRONTCOMP* basefc, float x, BALTREETYP **p, int *h )
 
 }
 
-/************************* end of function delete ******************************/
+/************************* end of function Delete ******************************/
 
 
 
@@ -1659,7 +1659,7 @@ static void BaseTreeUpdate( FRONTCOMP* P, FRONTCOMP* Q, FRONTCOMP* S, int ch,
     if ( ch == 0 )
     {
       del_edg_fnd = 0;
-      delete( Q, angle_wth, &btree_rootpointer, &h );
+      Delete( Q, angle_wth, &btree_rootpointer, &h );
       if ( del_edg_fnd == 0 )
       {PrintErrorMessage('E',"bnodes","ERROR: node not found in Edgetree");}
     }
@@ -1675,7 +1675,7 @@ static void BaseTreeUpdate( FRONTCOMP* P, FRONTCOMP* Q, FRONTCOMP* S, int ch,
     if ( ch == 0 )
     {
       del_edg_fnd = 0;
-      delete( Q, edge_lth, &btree_rootpointer, &h );
+      Delete( Q, edge_lth, &btree_rootpointer, &h );
       if ( del_edg_fnd == 0 )
       {PrintErrorMessage('E',"bnodes","ERROR: node not found in Edgetree");}
     }

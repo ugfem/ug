@@ -249,7 +249,7 @@ INT DragShellWin (EventRecord *theEvent)
 
 static pascal void MyShellScrollAction (ControlHandle c, short p)
 {
-  short new;
+  short New;
 
   /* outside original partcode ? */
   if (p==0) return;
@@ -259,24 +259,24 @@ static pascal void MyShellScrollAction (ControlHandle c, short p)
     switch (p)
     {
     case kControlUpButtonPart :
-      new = MAX(GetControlMinimum(c),shell->line-1);
+      New = MAX(GetControlMinimum(c),shell->line-1);
       break;
     case kControlDownButtonPart :
-      new = MIN(GetControlMaximum(c),shell->line+1);
+      New = MIN(GetControlMaximum(c),shell->line+1);
       break;
     case kControlPageUpPart :
-      new = MAX(GetControlMinimum(c),shell->line-(shell->lines+1));
+      New = MAX(GetControlMinimum(c),shell->line-(shell->lines+1));
       break;
     case kControlPageDownPart :
-      new = MIN(GetControlMaximum(c),shell->line+(shell->lines+1));
+      New = MIN(GetControlMaximum(c),shell->line+(shell->lines+1));
       break;
     }
-    if (shell->line!=new)
+    if (shell->line!=New)
     {
-      TEScroll(0,shell->lineHeight*(shell->line-new),shell->textH);
-      shell->line = new;
+      TEScroll(0,shell->lineHeight*(shell->line-New),shell->textH);
+      shell->line = New;
     }
-    SetControlValue(c,new);
+    SetControlValue(c,New);
     DrawControls(MAC_WIN(shell));
   }
   if (c==shell->hScrollBar)
@@ -284,24 +284,24 @@ static pascal void MyShellScrollAction (ControlHandle c, short p)
     switch (p)
     {
     case kControlUpButtonPart :
-      new = MAX(GetControlMinimum(c),shell->col-1);
+      New = MAX(GetControlMinimum(c),shell->col-1);
       break;
     case kControlDownButtonPart :
-      new = MIN(GetControlMaximum(c),shell->col+1);
+      New = MIN(GetControlMaximum(c),shell->col+1);
       break;
     case kControlPageUpPart :
-      new = MAX(GetControlMinimum(c),shell->col-(shell->cols+1));
+      New = MAX(GetControlMinimum(c),shell->col-(shell->cols+1));
       break;
     case kControlPageDownPart :
-      new = MIN(GetControlMaximum(c),shell->col+(shell->cols+1));
+      New = MIN(GetControlMaximum(c),shell->col+(shell->cols+1));
       break;
     }
-    if (shell->col!=new)
+    if (shell->col!=New)
     {
-      TEScroll(shell->charWidth*(shell->col-new),0,shell->textH);
-      shell->col = new;
+      TEScroll(shell->charWidth*(shell->col-New),0,shell->textH);
+      shell->col = New;
     }
-    SetControlValue(c,new);
+    SetControlValue(c,New);
     DrawControls(MAC_WIN(shell));
   }
 }
@@ -323,7 +323,7 @@ void ShellWinContentClick (WindowPtr theWindow,EventRecord *theEvent)
 {
   ControlHandle whichControl;
   short part1,part2;
-  short new;
+  short New;
 
   SetPort(theWindow);
   GlobalToLocal(&(theEvent->where));
@@ -339,16 +339,16 @@ void ShellWinContentClick (WindowPtr theWindow,EventRecord *theEvent)
   case kControlIndicatorPart :
     if (TrackControl(whichControl,theEvent->where,(ControlActionUPP)-1)!=0)
     {
-      new = GetControlValue(whichControl);
-      if ((whichControl==shell->vScrollBar)&&(shell->line!=new))
+      New = GetControlValue(whichControl);
+      if ((whichControl==shell->vScrollBar)&&(shell->line!=New))
       {
-        TEScroll(0,shell->lineHeight*(shell->line-new),shell->textH);
-        shell->line = new;
+        TEScroll(0,shell->lineHeight*(shell->line-New),shell->textH);
+        shell->line = New;
       }
-      if ((whichControl==shell->hScrollBar)&&(shell->col!=new))
+      if ((whichControl==shell->hScrollBar)&&(shell->col!=New))
       {
-        TEScroll(shell->charWidth*(shell->col-new),0,shell->textH);
-        shell->col = new;
+        TEScroll(shell->charWidth*(shell->col-New),0,shell->textH);
+        shell->col = New;
       }
     }
     break;

@@ -4201,7 +4201,7 @@ static INT VMListCommand (INT argc, char **argv)
         /* get selection list */
         if ((SELECTIONMODE(theMG)==vectorSelection) && (SELECTIONSIZE(theMG)>=1))
         {
-          VECTOR **vlist = malloc((SELECTIONSIZE(theMG)+1)*sizeof(VECTOR*));
+          VECTOR **vlist = (VECTOR**)malloc((SELECTIONSIZE(theMG)+1)*sizeof(VECTOR*));
           if (vlist!=NULL)
           {
             int i;
@@ -7286,7 +7286,7 @@ static INT ExtraConnectionCommand (INT argc, char **argv)
   GRID *theGrid;
   VECTOR *vec;
   MATRIX *mat;
-  INT delete,i,nextra,nc;
+  INT Delete,i,nextra,nc;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -7296,12 +7296,12 @@ static INT ExtraConnectionCommand (INT argc, char **argv)
   }
 
   /* check options */
-  delete = FALSE;
+  Delete = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'd' :
-      delete = TRUE;
+      Delete = TRUE;
       break;
 
     default :
@@ -7330,7 +7330,7 @@ static INT ExtraConnectionCommand (INT argc, char **argv)
 
   SetStringValue(":extraconratio",nextra/((DOUBLE)nc));
 
-  if (delete)
+  if (Delete)
   {
     if (DisposeExtraConnections(theGrid)!=GM_OK)
     {
@@ -7781,7 +7781,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
     MarkTmpMem(MGHEAP(theMG),&MarkKey);
     MG_MARK_KEY(theMG) = MarkKey;
     if ((MGNDELEMPTRARRAY(theMG) =
-           GetTmpMem(MGHEAP(theMG),NDELEM_BLKS_MAX*sizeof(ELEMENT**),MarkKey))==NULL)
+           (ELEMENT***)GetTmpMem(MGHEAP(theMG),NDELEM_BLKS_MAX*sizeof(ELEMENT**),MarkKey))==NULL)
     {
       ReleaseTmpMem(MGHEAP(theMG),MarkKey);
       PrintErrorMessage('E',"makegrid","ERROR: could not allocate memory from the MGHeap");

@@ -1223,7 +1223,7 @@ static INT bfs (FIFO *Fifo, VECTOR *theSeedVector,
 
   while (!fifo_empty (Fifo))
   {
-    vi = fifo_out (Fifo);
+    vi = (VECTOR*)fifo_out (Fifo);
 #ifdef DebugAMG
     UserWriteF("pop  vector %d (node %d) from fifo\n", VINDEX(vi),ID(VMYNODE(vi)));
 #endif

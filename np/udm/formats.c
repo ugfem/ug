@@ -330,7 +330,7 @@ static INT PrintTypeVectorData (INT type, void *data, const char *indent, char *
   INT i;
 
   for (i=0; i<NPrintVectors; i++)
-    s = DisplayVecDD(PrintVector[i],type,data,indent,s);
+    s = DisplayVecDD(PrintVector[i],type,(double*)data,indent,s);
 
   /* remove last \n */
   *s = '\0';
@@ -389,7 +389,7 @@ static INT PrintTypeMatrixData (INT type, void *data, const char *indent, char *
   INT i;
 
   for (i=0; i<NPrintMatrixs; i++)
-    s = DisplayMatDD(PrintMatrix[i],type,data,indent,s);
+    s = DisplayMatDD(PrintMatrix[i],type,(double*)data,indent,s);
 
   /* remove last \n */
   *s = '\0';
@@ -397,7 +397,7 @@ static INT PrintTypeMatrixData (INT type, void *data, const char *indent, char *
   return(0);
 }
 
-VEC_TEMPLATE *GetVectorTemplate (const FORMAT *theFmt, const char *template)
+VEC_TEMPLATE *GetVectorTemplate (const FORMAT *theFmt, const char *theTmplt)
 {
   ENVITEM *item,*dir;
   VEC_TEMPLATE *first;
@@ -405,10 +405,10 @@ VEC_TEMPLATE *GetVectorTemplate (const FORMAT *theFmt, const char *template)
   if (ChangeEnvDir("/Formats") == NULL) REP_ERR_RETURN (NULL);
   dir = (ENVITEM *)ChangeEnvDir(ENVITEM_NAME(theFmt));
   if (dir == NULL) REP_ERR_RETURN (NULL);
-  if (template != NULL)
+  if (theTmplt != NULL)
     for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
       if (ENVITEM_TYPE(item) == theVecVarID)
-        if (strcmp(ENVITEM_NAME(item),template)==0)
+        if (strcmp(ENVITEM_NAME(item),theTmplt)==0)
           return ((VEC_TEMPLATE *)item);
 
   /* no (or nonexisting) template specified: just take first vector template */
@@ -455,7 +455,7 @@ VEC_TEMPLATE *GetVectorTemplate (const FORMAT *theFmt, const char *template)
 /****************************************************************************/
 
 VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
-                                       const char *name, const char *template)
+                                       const char *name, const char *theTmplt)
 {
   VECDATA_DESC *vd,*svd;
   VEC_TEMPLATE *vt;
@@ -465,8 +465,8 @@ VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
   INT i,j,k,nc,cmp,type;
   char buffer[NAMESIZE];
 
-  if (template != NULL)
-    vt = GetVectorTemplate(MGFORMAT(theMG),template);
+  if (theTmplt != NULL)
+    vt = GetVectorTemplate(MGFORMAT(theMG),theTmplt);
   else
     vt = GetVectorTemplate(MGFORMAT(theMG),name);
   if (vt == NULL) {
@@ -517,16 +517,16 @@ VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
 
 INT CreateVecDescCmd (MULTIGRID *theMG, INT argc, char **argv)
 {
-  char *token,*template,buffer[NAMESIZE];
+  char *token,*theTmplt,buffer[NAMESIZE];
 
   if (ReadArgvChar("t",buffer,argc,argv))
-    template = NULL;
+    theTmplt = NULL;
   else
-    template = buffer;
+    theTmplt = buffer;
   token = strtok(argv[0],BLANKS);
   token = strtok(NULL,BLANKS);
   while (token!=NULL) {
-    if (CreateVecDescOfTemplate(theMG,token,template) == NULL) {
+    if (CreateVecDescOfTemplate(theMG,token,theTmplt) == NULL) {
       PrintErrorMessage('E'," CreateVecDescCmd",
                         "cannot create vector descriptor");
       REP_ERR_RETURN(1);
@@ -537,7 +537,7 @@ INT CreateVecDescCmd (MULTIGRID *theMG, INT argc, char **argv)
   return (NUM_OK);
 }
 
-MAT_TEMPLATE *GetMatrixTemplate (const FORMAT *theFmt, const char *template)
+MAT_TEMPLATE *GetMatrixTemplate (const FORMAT *theFmt, const char *theTmplt)
 {
   ENVITEM *item,*dir;
   MAT_TEMPLATE *first;
@@ -545,10 +545,10 @@ MAT_TEMPLATE *GetMatrixTemplate (const FORMAT *theFmt, const char *template)
   if (ChangeEnvDir("/Formats") == NULL) REP_ERR_RETURN (NULL);
   dir = (ENVITEM *)ChangeEnvDir(ENVITEM_NAME(theFmt));
   if (dir == NULL) REP_ERR_RETURN (NULL);
-  if (template != NULL)
+  if (theTmplt != NULL)
     for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
       if (ENVITEM_TYPE(item) == theMatVarID)
-        if (strcmp(ENVITEM_NAME(item),template)==0)
+        if (strcmp(ENVITEM_NAME(item),theTmplt)==0)
           return ((MAT_TEMPLATE *)item);
 
   /* no (or nonexisting) template specified: just take first matrix template */
@@ -594,7 +594,7 @@ MAT_TEMPLATE *GetMatrixTemplate (const FORMAT *theFmt, const char *template)
 /****************************************************************************/
 
 MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
-                                       const char *name, const char *template)
+                                       const char *name, const char *theTmplt)
 {
   MATDATA_DESC *md,*smd;
   MAT_TEMPLATE *mt;
@@ -604,8 +604,8 @@ MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
   char SubName[2*MAX_MAT_COMP];
   char buffer[NAMESIZE];
 
-  if (template != NULL)
-    mt = GetMatrixTemplate(MGFORMAT(theMG),template);
+  if (theTmplt != NULL)
+    mt = GetMatrixTemplate(MGFORMAT(theMG),theTmplt);
   else
     mt = GetMatrixTemplate(MGFORMAT(theMG),name);
   if (mt == NULL) {
@@ -660,16 +660,16 @@ MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
 
 INT CreateMatDescCmd (MULTIGRID *theMG, INT argc, char **argv)
 {
-  char *token,*template,buffer[NAMESIZE];
+  char *token,*theTmplt,buffer[NAMESIZE];
 
   if (ReadArgvChar("t",buffer,argc,argv))
-    template = NULL;
+    theTmplt = NULL;
   else
-    template = buffer;
+    theTmplt = buffer;
   token = strtok(argv[0],BLANKS);
   token = strtok(NULL,BLANKS);
   while (token!=NULL) {
-    if (CreateMatDescOfTemplate(theMG,token,template) == NULL) {
+    if (CreateMatDescOfTemplate(theMG,token,theTmplt) == NULL) {
       PrintErrorMessage('E'," CreateMatDescCmd",
                         "cannot create matrix descriptor");
       REP_ERR_RETURN(1);
@@ -1329,7 +1329,7 @@ INT MDsubDescFromVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, INT rsu
   if ((rsub==FULL_TPLT) || (csub==FULL_TPLT))
   {
     /* create subv identical to template */
-    subv = AllocEnvMemory(sizeof(SUBVEC));
+    subv = (SUBVEC*)AllocEnvMemory(sizeof(SUBVEC));
     if (subv==NULL)
       REP_ERR_RETURN(1);
 
@@ -1694,7 +1694,7 @@ static INT ScanVecOption (      INT argc, char **argv,                  /* optio
                              "max number of vector subs exceeded (in '$%s')",argv[opt]);
           REP_ERR_RETURN (1);
         }
-        subv = AllocEnvMemory(sizeof(SUBVEC));
+        subv = (SUBVEC*)AllocEnvMemory(sizeof(SUBVEC));
         if (subv == NULL) {
           PrintErrorMessageF('E',"newformat",
                              "could not allocate environment storage (in '$%s')",argv[opt]);
@@ -2030,7 +2030,7 @@ static INT ParseImplicitSMDeclaration (const char *str, const MAT_TEMPLATE *mt, 
   if (!r_sub || !c_sub)
   {
     /* create subv identical to template */
-    subv = AllocEnvMemory(sizeof(SUBVEC));
+    subv = (SUBVEC*)AllocEnvMemory(sizeof(SUBVEC));
     if (subv==NULL)
       REP_ERR_RETURN(1);
     memset(subv,0,sizeof(SUBVEC));
@@ -2237,7 +2237,7 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
                            "max number of matrix subs exceeded (in '$%s')",argv[opt]);
         REP_ERR_RETURN (1);
       }
-      subm = AllocEnvMemory(sizeof(SUBMAT));
+      subm = (SUBMAT*)AllocEnvMemory(sizeof(SUBMAT));
       if (subm == NULL) {
         PrintErrorMessageF('E',"newformat",
                            "could not allocate environment storage (in '$%s')",argv[opt]);

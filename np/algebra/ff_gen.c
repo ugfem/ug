@@ -163,7 +163,7 @@ INT     storeVectorBS( BLOCKVECTOR *bv, INT x_comp, GRID *grid )
       REP_ERR_RETURN(GM_OUT_OF_MEM);
 
     }
-    if ( (mem = GetMem( MGHEAP(MYMG(grid)), BVNUMBEROFVECTORS(bv)*sizeof(DOUBLE), FROM_BOTTOM )) == NULL )
+    if ( (mem = (DOUBLE*)GetMem( MGHEAP(MYMG(grid)), BVNUMBEROFVECTORS(bv)*sizeof(DOUBLE), FROM_BOTTOM )) == NULL )
     {
       PrintErrorMessage( 'E', "storeVectorBS", "Not enough memory to store the vector" );
       REP_ERR_RETURN(GM_OUT_OF_MEM);

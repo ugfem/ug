@@ -723,7 +723,7 @@ static WINDOWID OpenPSWindow (const char *title, INT rename, INT x, INT y, INT w
   *error = 0;
 
   /* create PSWINDOW structure */
-  PSWindow = malloc(sizeof(PSWINDOW));
+  PSWindow = (PSWINDOW*)malloc(sizeof(PSWINDOW));
   if (PSWindow==NULL) {*error=1; return(0);}
 
   /* init postscript window */

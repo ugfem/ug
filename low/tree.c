@@ -27,7 +27,9 @@
 
 #include <limits.h>
 #include <stdlib.h>
+#ifndef __MWCW__
 #include <sys/types.h>
+#endif
 
 #include "compiler.h"
 #include "general.h"
@@ -185,7 +187,7 @@ INT DeleteTree(TREE *theTree)
   return(0);
 }
 
-INT PointInTNODE(TREE_ENTRY *entry, DOUBLE *pos, INT dim)
+static INT PointInTNODE(TREE_ENTRY *entry, DOUBLE *pos, INT dim)
 {
   INT i;
 
@@ -224,7 +226,7 @@ INT PointInTNODE(TREE_ENTRY *entry, DOUBLE *pos, INT dim)
    D*/
 
 /****************************************************************************/
-INT SearchInsertPoint(TREE *theTree, DOUBLE *position, TREE_ENTRY **insertPoint)
+static INT SearchInsertPoint(TREE *theTree, DOUBLE *position, TREE_ENTRY **insertPoint)
 {
   TREE_ENTRY *act, *father;
 
@@ -598,7 +600,7 @@ TREE_ENTRY *GetFirstLeafinQuader(TREE *theTree, DOUBLE *ll, DOUBLE *ur)
   fifo_in(theTree->fifo,TREEROOT(theTree));
   while(!fifo_empty(theTree->fifo))
   {
-    entry = fifo_out(theTree->fifo);
+    entry = (TREE_ENTRY*)fifo_out(theTree->fifo);
     inside = 1;
     if (TNODETYPE(entry) == TREELEAF)
     {
@@ -654,7 +656,7 @@ TREE_ENTRY *GetNextLeafinQuader(TREE *theTree)
   /* Search! */
   while(!fifo_empty(theTree->fifo))
   {
-    entry = fifo_out(theTree->fifo);
+    entry = (TREE_ENTRY*)fifo_out(theTree->fifo);
     inside = 1;
     if (TNODETYPE(entry) == TREELEAF)
     {

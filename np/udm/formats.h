@@ -160,13 +160,13 @@ INT DisplayPrintingFormat                               (void);
 INT SetPrintingFormatCmd                                (const MULTIGRID *mg, INT argc, char **argv);
 INT ResetPrintingFormat                                 (void);
 
-VEC_TEMPLATE *GetVectorTemplate                 (const FORMAT *theFmt, const char *template);
-MAT_TEMPLATE *GetMatrixTemplate                 (const FORMAT *theFmt, const char *template);
+VEC_TEMPLATE *GetVectorTemplate                 (const FORMAT *theFmt, const char *tmplt);
+MAT_TEMPLATE *GetMatrixTemplate                 (const FORMAT *theFmt, const char *tmplt);
 
 VECDATA_DESC *CreateVecDescOfTemplate   (MULTIGRID *theMG,
-                                         const char *name, const char *template);
+                                         const char *name, const char *tmplt);
 MATDATA_DESC *CreateMatDescOfTemplate   (MULTIGRID *theMG,
-                                         const char *name, const char *template);
+                                         const char *name, const char *tmplt);
 
 INT VDmatchesVT                                                 (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt);
 INT MDmatchesMT                                                 (const MATDATA_DESC *md, const MAT_TEMPLATE *mt);

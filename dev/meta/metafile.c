@@ -627,7 +627,7 @@ static WINDOWID OpenMetaWindow (const char *title, INT rename, INT x, INT y, INT
   *error = 0;
 
   /* create METAWINDOW structure */
-  MetaWindow = malloc(sizeof(METAWINDOW));
+  MetaWindow = (METAWINDOW*)malloc(sizeof(METAWINDOW));
   if (MetaWindow==NULL) {*error=1; return(0);}
 
   /* init metawindow */

@@ -238,7 +238,7 @@ static AMG_MATRIX *prepare_ex (AMG_MATRIX *A)
   int i,n=A->n,k,start,end;
   int *ra=A->ra, *ja=A->ja;
   double *a=A->a,*lu;
-  AMG_MATRIX *new;
+  AMG_MATRIX *New;
 
   /* compute bandwith */
   bw=0;
@@ -250,10 +250,10 @@ static AMG_MATRIX *prepare_ex (AMG_MATRIX *A)
   }
 
   /* allocate new matrix */
-  new = AMG_NewMatrix(n,1,n*(2*bw+1),AMG_MATRIX_SAS(A),"ex matrix");
-  if (new==NULL) return(new);
-  lu=new->a;
-  AMG_MATRIX_BW(new)=bw;
+  New = AMG_NewMatrix(n,1,n*(2*bw+1),AMG_MATRIX_SAS(A),"ex matrix");
+  if (New==NULL) return(New);
+  lu=New->a;
+  AMG_MATRIX_BW(New)=bw;
 
   /* insert & copy entries */
   for (i=0; i<n*(2*bw+1); i++) lu[i]=0.0;
@@ -269,7 +269,7 @@ static AMG_MATRIX *prepare_ex (AMG_MATRIX *A)
   if (AMG_EXDecomposeMatrix(lu,bw,n)) return(AMG_NULL);
 
   /* return matrix */
-  return(new);
+  return(New);
 }
 
 

@@ -185,7 +185,7 @@ INT BulletOpen(PICTURE *picture, DOUBLE factor)
   /* init pixel buffer */
   p = PBuffer = (char *)z;
 #else
-  p = PBuffer = (char *)ZBuffer;
+  p = (char *)(PBuffer = ZBuffer);
 #endif
   for (i = 0; i < NbPixels; i++)
     *p++ = (char)OutputDevice->white;

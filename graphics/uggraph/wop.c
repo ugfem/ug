@@ -341,7 +341,7 @@ typedef void (*ProjectionProcPtr) (const DOUBLE *, COORD_POINT *);
 /* function to compute rotation matrix from new and old mouse psoition */
 typedef INT (*RotObsTrafoProcPtr) (const DOUBLE *mid,	/* midpoint of picture	*/
 								   const INT *old,		/* start mouse position	*/
-								   const INT *new,		/* current mouse pos	*/
+								   const INT *New,		/* current mouse pos	*/
 								   DOUBLE dx, DOUBLE dy,/* picture size			*/
 								   DOUBLE *rot);			/* returned rot matrix	*/
 
@@ -21718,7 +21718,7 @@ static void InvertTripod2d (const DOUBLE *sc, const DOUBLE *ph, const DOUBLE *Tr
 
 static INT RotObsTrafo2d (const DOUBLE *mid,
 						  const INT *old,
-						  const INT *new,
+						  const INT *New,
 						  DOUBLE *rot)
 {
 	DOUBLE a[2],b[2],c[2];
@@ -21729,7 +21729,7 @@ static INT RotObsTrafo2d (const DOUBLE *mid,
 	V2_SUBTRACT(mid,old,a);
 	V2_EUKLIDNORM(a,la);
 	V2_NORMAL(a,c);
-	V2_SUBTRACT(mid,new,b);
+	V2_SUBTRACT(mid,New,b);
 	V2_EUKLIDNORM(b,lb);
 	
 	Cos = V2_SCAL_PROD(a,b)/(la*lb);
@@ -21746,7 +21746,7 @@ static INT RotObsTrafo2d (const DOUBLE *mid,
 
 static INT InitRotObsTrafo2d (const DOUBLE *mid,
 							  const INT *old,
-							  const INT *new,
+							  const INT *New,
 							  DOUBLE *rot)
 {
 	rot[0] = 1.0; rot[1] = 0.0;
@@ -22193,17 +22193,17 @@ static void InvertControl (DOUBLE xa, DOUBLE xb, DOUBLE ym, DOUBLE curr)
 	UgInverseLine(fr,to);
 }
 
-static void InvertSlider (DOUBLE xm, DOUBLE dx, DOUBLE ym, DOUBLE curr, DOUBLE new)
+static void InvertSlider (DOUBLE xm, DOUBLE dx, DOUBLE ym, DOUBLE curr, DOUBLE New)
 {
 	COORD_POINT fr,to;
 	char buffer[64];
 	
 	/* slider at new cut position */
-	fr.x = new; fr.y = ym-SLIDER_SIZE;
-	to.x = new; to.y = ym+SLIDER_SIZE;
+	fr.x = New; fr.y = ym-SLIDER_SIZE;
+	to.x = New; to.y = ym+SLIDER_SIZE;
 	UgInverseLine(fr,to);
 	
-	sprintf(buffer,"old: %+1.2f new: %+1.2f",2*(curr-xm)/dx,2*(new-xm)/dx);
+	sprintf(buffer,"old: %+1.2f new: %+1.2f",2*(curr-xm)/dx,2*(New-xm)/dx);
 	DrawInfoBox(UGW_IFWINDOW(myWin),buffer);
 }
 

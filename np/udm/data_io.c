@@ -138,7 +138,7 @@ static LoadElementData (MULTIGRID *theMG)
     for (n=0, e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e)) EList[n++] = e;
     qsort(EList,n,sizeof(ELEMENT*),(int (*)(const void *, const void *))ElementCompare);
     for (i=0; i<n; i++)
-      if (Bio_Read_mdouble(m,EDATA(EList[i])))
+      if (Bio_Read_mdouble(m,(double*)EDATA(EList[i])))
         return (1);
     ReleaseTmpMem(Heap,MarkKey);
   }
@@ -170,7 +170,7 @@ static SaveElementData (MULTIGRID *theMG)
     for (n=0, e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e)) EList[n++] = e;
     qsort(EList,n,sizeof(ELEMENT*),(int (*)(const void *, const void *))ElementCompare);
     for (i=0; i<n; i++)
-      if (Bio_Write_mdouble(m,EDATA(EList[i])))
+      if (Bio_Write_mdouble(m,(double*)EDATA(EList[i])))
         return (1);
     ReleaseTmpMem(Heap,MarkKey);
   }

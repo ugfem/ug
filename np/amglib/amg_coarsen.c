@@ -149,44 +149,44 @@ static char buf[256];
 
 static AMG_GRAPH *NewGraph (AMG_MATRIX *A)
 {
-  AMG_GRAPH *new;
+  AMG_GRAPH *New;
   int i,n,e,*ca;
   char *na,*la;
   float *da;
 
   /* allocate matrix structure */
-  new = AMG_Malloc(sizeof(AMG_GRAPH));
-  if (new==NULL) return(AMG_NULL);
+  New = (AMG_GRAPH*)AMG_Malloc(sizeof(AMG_GRAPH));
+  if (New==NULL) return(AMG_NULL);
 
   n = AMG_MATRIX_N(A);
   e = AMG_MATRIX_NONZEROS(A);
 
   /* allocate cluster array */
-  ca = AMG_Malloc(n*sizeof(int));
+  ca = (int*)AMG_Malloc(n*sizeof(int));
   if (ca==NULL) return(AMG_NULL);
 
   /* allocate node array */
-  na = AMG_Malloc(n*sizeof(char));
+  na = (char*)AMG_Malloc(n*sizeof(char));
   if (na==NULL) return(AMG_NULL);
 
   /* allocate link array */
-  la = AMG_Malloc(e*sizeof(char));
+  la = (char*)AMG_Malloc(e*sizeof(char));
   if (la==NULL) return(AMG_NULL);
 
   /* allocate damping array */
-  da = AMG_Malloc(n*sizeof(float));
+  da = (float*)AMG_Malloc(n*sizeof(float));
   if (da==NULL) return(AMG_NULL);
 
   /* fill data structure */
-  new->n = n;
-  new->e = e;
-  new->ra = AMG_MATRIX_RA(A);
-  new->ja = AMG_MATRIX_JA(A);
-  new->ca = ca;
-  new->na = na;
-  new->la = la;
-  new->da = da;
-  new->system_as_scalar = AMG_MATRIX_SAS(A);
+  New->n = n;
+  New->e = e;
+  New->ra = AMG_MATRIX_RA(A);
+  New->ja = AMG_MATRIX_JA(A);
+  New->ca = ca;
+  New->na = na;
+  New->la = la;
+  New->da = da;
+  New->system_as_scalar = AMG_MATRIX_SAS(A);
 
   /* initialize data structure */
   for (i=0; i<n; i++) ca[i] = -1;
@@ -194,7 +194,7 @@ static AMG_GRAPH *NewGraph (AMG_MATRIX *A)
   for (i=0; i<n; i++) da[i] = 1.0;
   for (i=0; i<e; i++) la[i] = 0;
 
-  return(new);
+  return(New);
 }
 
 /****************************************************************************/
@@ -1517,7 +1517,7 @@ static AMG_MATRIX *Coarsen (AMG_MATRIX *A, AMG_GRAPH *g, AMG_CoarsenContext *cc)
 {
   int i,k,n=g->n;
   int nonzeros,clusters;
-  AMG_MATRIX *new;
+  AMG_MATRIX *New;
   int start,end;
   int *ra=g->ra, *ja=g->ja, *ca=g->ca;
   char *na=g->na;
@@ -1578,8 +1578,8 @@ static AMG_MATRIX *Coarsen (AMG_MATRIX *A, AMG_GRAPH *g, AMG_CoarsenContext *cc)
   }
 
   /* allocate the matrix */
-  new = AMG_NewMatrix(clusters,AMG_MATRIX_B(A),nonzeros,AMG_MATRIX_SAS(A),"auto coarsen");
-  if (new==NULL)
+  New = AMG_NewMatrix(clusters,AMG_MATRIX_B(A),nonzeros,AMG_MATRIX_SAS(A),"auto coarsen");
+  if (New==NULL)
   {
     AMG_Print("could not allocate matrix\n");
     return(AMG_NULL);
@@ -1593,14 +1593,14 @@ static AMG_MATRIX *Coarsen (AMG_MATRIX *A, AMG_GRAPH *g, AMG_CoarsenContext *cc)
   {
     if (VISITED(na[i])) continue;             /* we have this cluster already */
     if (ConstructConnectivity(g,i)!=AMG_OK) return(AMG_NULL);
-    if (AMG_SetRowLength(new,clusters,connectsize)!=AMG_OK)
+    if (AMG_SetRowLength(New,clusters,connectsize)!=AMG_OK)
     {
       AMG_Print("could not set row length\n");
       return(AMG_NULL);
     }
 
     for (k=0; k<connectsize; k++)
-      if (AMG_InsertEntry(new,clusters,connect[k])<0)
+      if (AMG_InsertEntry(New,clusters,connect[k])<0)
       {
         AMG_Print("could not insert entry\n");
         return(AMG_NULL);
@@ -1613,13 +1613,13 @@ static AMG_MATRIX *Coarsen (AMG_MATRIX *A, AMG_GRAPH *g, AMG_CoarsenContext *cc)
   for (i=0; i<n; i++)
   {
     start = ra[i]; end = start+ja[start];
-    if (AMG_AddValues(new,ca[i],ca[i],a+(bb*start))<0)
+    if (AMG_AddValues(New,ca[i],ca[i],a+(bb*start))<0)
     {
       AMG_Print("could not add values\n");
       return(AMG_NULL);
     }
     for (k=start+1; k<end; k++)
-      if (AMG_AddValues(new,ca[i],ca[ja[k]],a+(bb*k))<0)
+      if (AMG_AddValues(New,ca[i],ca[ja[k]],a+(bb*k))<0)
       {
         AMG_Print("could not add values\n");
         return(AMG_NULL);
@@ -1639,7 +1639,7 @@ static AMG_MATRIX *Coarsen (AMG_MATRIX *A, AMG_GRAPH *g, AMG_CoarsenContext *cc)
     AMG_Print("M");
   }
 
-  return(new);
+  return(New);
 }
 
 /****************************************************************************/

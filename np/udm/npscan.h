@@ -92,7 +92,7 @@ MAT_TEMPLATE *ReadArgvMatTemplateSub    (const FORMAT *fmt, const char *name,
 MATDATA_DESC *ReadArgvMatDescX                  (MULTIGRID *theMG, const char *name,
                                                  INT argc, char **argv, INT CreateIfNonExistent);
 
-NP_BASE      *ReadArgvNumProc                   (MULTIGRID *theMG, const char *name, const char *class,
+NP_BASE      *ReadArgvNumProc                   (MULTIGRID *theMG, const char *name, const char *cls,
                                                  INT argc, char **argv);
 
 #define ReadArgvVecDesc(mg,n,ac,av)             ReadArgvVecDescX(mg,n,ac,av,YES)
