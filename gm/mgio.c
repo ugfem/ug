@@ -811,7 +811,8 @@ int Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
       s=0;
     }
   }
-  if (Bio_Write_mdouble(s,doubleList)) return (1);
+  if (s>0)
+    if (Bio_Write_mdouble(s,doubleList)) return (1);
 
   return (0);
 }
