@@ -3990,34 +3990,41 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG, INT FromLevel)
   NODE *theNode;
   GRID *theGrid;
 
-  DDD_XferBegin();
-  /* set node priorities */
-  for (l=FromLevel; l<TOPLEVEL(theMG); l++) {
-    theGrid = GRID_ON_LEVEL(theMG,l);
 
-    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
-      SETXFERNODE(theNode,CLEAR);
-      DDD_PrioritySet(PARHDR(theNode),PrioGhost);
+  /* this quickfix is not necessary anymore. ddd is now capable of
+     multiple priority assignments for same object. KB 960906 */
+  if (0) {
+    DDD_XferBegin();
+    /* set node priorities */
+    for (l=FromLevel; l<TOPLEVEL(theMG); l++) {
+      theGrid = GRID_ON_LEVEL(theMG,l);
+
+      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
+        SETXFERNODE(theNode,CLEAR);
+        DDD_PrioritySet(PARHDR(theNode),PrioGhost);
+      }
     }
-  }
-  DDD_XferEnd();
+    DDD_XferEnd();
 
-  DDD_XferBegin();
-  /* set node priorities */
-  for (l=FromLevel; l<TOPLEVEL(theMG); l++) {
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
-      for (i=0; i<CORNERS_OF_ELEM(theElement); i++) {
-        if((prio=DDD_InfoPriority(PARHDRE(theElement))) == PrioMaster) {
-          theNode = CORNER(theElement,i);
-          DDD_PrioritySet(PARHDR(theNode),PrioMaster);
+    DDD_XferBegin();
+    /* set node priorities */
+    for (l=FromLevel; l<TOPLEVEL(theMG); l++) {
+      for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
+        for (i=0; i<CORNERS_OF_ELEM(theElement); i++) {
+          if((prio=DDD_InfoPriority(PARHDRE(theElement))) == PrioMaster) {
+            theNode = CORNER(theElement,i);
+            DDD_PrioritySet(PARHDR(theNode),PrioMaster);
+          }
         }
       }
     }
-  }
-  DDD_XferEnd();
+    DDD_XferEnd();
 
-  DDD_ConsCheck();
-  DDD_IFDisplay();
+    DDD_ConsCheck();
+    DDD_IFDisplay();
+  } /* if (0) */
+
+
 
   DDD_IdentifyBegin();
 
@@ -4632,11 +4639,12 @@ DisposeTopLevel(theMG);
   INT FromLevel = TOPLEVEL(theMG)-1;
 
   /* identify multiply created objects */
-  if (0) IdentifyProcBoundaryObjects(theMG,FromLevel);
+  IdentifyProcBoundaryObjects(theMG,FromLevel);
 
   /* create one-element-overlapping for multigrid */
-  if (0) CreateGridOverlap(theMG,FromLevel);
-  if (0) ConnectNewOverlap(theMG,FromLevel);
+  CreateGridOverlap(theMG,FromLevel);
+  ConnectNewOverlap(theMG,FromLevel);
+  dddif_SetBorderPriorities(GRID_ON_LEVEL(theMG,TOPLEVEL(theMG)));
 }
         #endif
 
