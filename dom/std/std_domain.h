@@ -767,7 +767,7 @@ struct bnd_ps {
   /** \brief Associated patch                     */
   INT patch_id;
 
-  /** \brief E.g. global coordiantes, pointers... */
+  /** \brief E.g. global coordinates, pointers... */
   void *data;
 
   /** \brief Number of arguments                  */
@@ -873,7 +873,7 @@ BOUNDARY_SEGMENT   *CreateBoundarySegment2D     (char *name, int left, int right
 LINEAR_SEGMENT *CreateLinearSegment (char *name,
                                      INT left, INT right,INT id,
                                      INT n, INT *point,
-                                     DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM]);
+                                     DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM_OF_BND]);
 
 /* problem definition */
 PROBLEM                    *CreateProblem                       (char *domain, char *name,
