@@ -199,20 +199,6 @@ typedef struct mesh MESH;
 /*                                                                          */
 /****************************************************************************/
 
-#ifdef ModelP
-
-void DomInitParallel     (INT TypeBndP, INT TypeBndS);
-void DomHandlerInit      (INT handlerSet);
-
-void BElementXferBndS    (BNDS **bnds, int n, int proc, int prio);
-void BElementGatherBndS  (BNDS **bnds, int n, int cnt, char *data);
-void BElementScatterBndS (BNDS **bnds, int n, int cnt, char *data);
-
-void BVertexXferBndP     (BNDP *bndp, int proc, int prio);
-void BVertexGatherBndP   (BNDP *bndp, int cnt, char *data);
-void BVertexScatterBndP  (BNDP **bndp, int cnt, char *data);
-
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -240,14 +226,13 @@ void BVertexScatterBndP  (BNDP **bndp, int cnt, char *data);
    .n   NULL if not found.
    D*/
 /****************************************************************************/
-BVP        *BVP_GetFirst          (void);
 
 /****************************************************************************/
 /*D
    BVP_GetNext - Return a pointer to the next BVP
 
    SYNOPSIS:
-   BVP *BVP_GetNext (BVP *theBVP);
+   BVP *BVP_GetNext (BVP *theBVP)
 
    PARAMETERS:
    .  theBVP - BVP structure
@@ -262,14 +247,13 @@ BVP        *BVP_GetFirst          (void);
    .n   NULL if not found.
    D*/
 /****************************************************************************/
-BVP        *BVP_GetNext           (BVP *theBVP);
 
 /****************************************************************************/
 /*D
    BVP_Save - save a BVP
 
    SYNOPSIS:
-   INT BVP_Save (BVP *theBVP, char *name, char argc, char **argv);
+   INT BVP_Save (BVP *theBVP, char *name, char argc, char **argv)
 
    PARAMETERS:
    .  theBVP - BVP structure
@@ -285,14 +269,13 @@ BVP        *BVP_GetNext           (BVP *theBVP);
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT         BVP_Save              (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv);
 
 /****************************************************************************/
 /*D
    BVP_Load - load a BVP
 
    SYNOPSIS:
-   BVP *BVP_Load (char *name, INT argc, char **argv);
+   BVP *BVP_Load (char *name, INT argc, char **argv)
 
    PARAMETERS:
    .  name - name of file
@@ -307,14 +290,13 @@ INT         BVP_Save              (BVP *theBVP, char *name, char *mgname, HEAP *
    .n   NULL if error.
    D*/
 /****************************************************************************/
-BVP        *BVP_Load              (char *name, INT argc, char **argv);
 
 /****************************************************************************/
 /*D
    BVP_GetByName - get pointer to BVP by name
 
    SYNOPSIS:
-   BVP *BVP_GetByName (char *name);
+   BVP *BVP_GetByName (char *name)
 
    PARAMETERS:
    .  name - name of BVP
@@ -328,14 +310,13 @@ BVP        *BVP_Load              (char *name, INT argc, char **argv);
    .n   NULL if error.
    D*/
 /****************************************************************************/
-BVP        *BVP_GetByName         (char *name);
 
 /****************************************************************************/
 /*
    BVP_Init - initialize a BVP and return a mesh
 
    SYNOPSIS:
-   INT BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey);
+   INT BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
 
    PARAMETERS:
    .  filename - name of file
@@ -353,14 +334,13 @@ BVP        *BVP_GetByName         (char *name);
    SEE ALSO:
  */
 /****************************************************************************/
-BVP        *BVP_Init              (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey);
 
 /****************************************************************************/
 /*D
    BVP_Dispose - dispose a BVP
 
    SYNOPSIS:
-   INT BVP_Dispose (BVP *theBVP);
+   INT BVP_Dispose (BVP *theBVP)
 
    PARAMETERS:
    .  theBVP - BVP structure
@@ -374,14 +354,13 @@ BVP        *BVP_Init              (char *name, HEAP *Heap, MESH *Mesh, INT MarkK
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT         BVP_Dispose           (BVP *theBVP);
 
 /****************************************************************************/
 /*D
    BVP_SetBVPDesc - set BVP-descriptor
 
    SYNOPSIS:
-   INT BVP_SetBVPDesc (BVP *theBVP, BVP_DESC *theBVPDesc);
+   INT BVP_SetBVPDesc (BVP *theBVP, BVP_DESC *theBVPDesc)
 
    PARAMETERS:
    .  theBVP - BVP structure
@@ -396,14 +375,13 @@ INT         BVP_Dispose           (BVP *theBVP);
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT         BVP_SetBVPDesc        (BVP *theBVP, BVP_DESC *theBVPDesc);
 
 /****************************************************************************/
 /*D
    BVP_SetCoeffFct - set coefficient function(s)
 
    SYNOPSIS:
-   INT BVP_SetCoeffFct (BVP *theBVP, INT n, CoeffProcPtr *CoeffFct);
+   INT BVP_SetCoeffFct (BVP *theBVP, INT n, CoeffProcPtr *CoeffFct)
 
    PARAMETERS:
    .  theBVP - BVP structure
@@ -418,14 +396,13 @@ INT         BVP_SetBVPDesc        (BVP *theBVP, BVP_DESC *theBVPDesc);
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT         BVP_SetCoeffFct       (BVP *theBVP, INT n, CoeffProcPtr *CoeffFct);
 
 /****************************************************************************/
 /*D
    BVP_SetUserFct - set coefficient function(s)
 
    SYNOPSIS:
-   INT BVP_SetUserFct (BVP *theBVP, INT n, UserProcPtr *UserFct);
+   INT BVP_SetUserFct (BVP *theBVP, INT n, UserProcPtr *UserFct)
 
    PARAMETERS:
    .  theBVP - BVP structure
@@ -440,14 +417,13 @@ INT         BVP_SetCoeffFct       (BVP *theBVP, INT n, CoeffProcPtr *CoeffFct);
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT         BVP_SetUserFct        (BVP *theBVP, INT n, UserProcPtr *UserFct);
 
 /****************************************************************************/
 /*D
    BVP_Check - check consistency of BVP
 
    SYNOPSIS:
-   INT BVP_Check (BVP *aBVP);
+   INT BVP_Check (BVP *aBVP)
 
    PARAMETERS:
    .  aBVP - BVP structure
@@ -462,7 +438,6 @@ INT         BVP_SetUserFct        (BVP *theBVP, INT n, UserProcPtr *UserFct);
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT             BVP_Check                         (BVP *aBVP);
 
 
 /****************************************************************************/
@@ -476,7 +451,7 @@ INT             BVP_Check                         (BVP *aBVP);
    BVP_InsertBndP - sets a BNDP from command input
 
    SYNOPSIS:
-   BNDP *BVP_InsertBndP (HEAP *Heap, BVP *theBVP, INT argc, char **argv);
+   BNDP *BVP_InsertBndP (HEAP *Heap, BVP *theBVP, INT argc, char **argv)
 
    PARAMETERS:
    .  theBVP - BVP structure
@@ -493,14 +468,13 @@ INT             BVP_Check                         (BVP *aBVP);
    .n   1 if error.
    D*/
 /****************************************************************************/
-BNDP*           BVP_InsertBndP            (HEAP *Heap, BVP *theBVP, INT argc, char **argv);
 
 /****************************************************************************/
 /*D
    BNDP_SaveInsertedBndP - write command to insert this BNDP
 
    SYNOPSIS:
-   INT BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size);
+   INT BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size)
 
    PARAMETERS:
    .  theBndP - BNDP structure
@@ -516,8 +490,6 @@ BNDP*           BVP_InsertBndP            (HEAP *Heap, BVP *theBVP, INT argc, ch
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT         BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size);
-MESH       *BVP_GenerateMesh      (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey);
 
 /****************************************************************************/
 /*																			*/
@@ -530,7 +502,7 @@ MESH       *BVP_GenerateMesh      (HEAP *Heap, BVP *aBVP, INT argc, char **argv,
    BNDP_Global - return global coordinates of BNDP
 
    SYNOPSIS:
-   INT BNDP_Global (BNDP *aBndP, DOUBLE *global);
+   INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
 
    PARAMETERS:
    .  aBndP - BNDP structure
@@ -545,14 +517,13 @@ MESH       *BVP_GenerateMesh      (HEAP *Heap, BVP *aBVP, INT argc, char **argv,
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT         BNDP_Global           (BNDP *theBndP, DOUBLE *global);
 
 /****************************************************************************/
 /*D
    BNDP_Move - change global coordinates of free boundary point
 
    SYNOPSIS:
-   INT BNDP_Move (BNDP *aBndP, const DOUBLE global[]);
+   INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
 
    PARAMETERS:
    .  aBndP - BNDP structure
@@ -569,7 +540,6 @@ INT         BNDP_Global           (BNDP *theBndP, DOUBLE *global);
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT BNDP_Move (BNDP *aBndP, const DOUBLE global[]);
 
 /****************************************************************************/
 /*D
@@ -577,7 +547,7 @@ INT BNDP_Move (BNDP *aBndP, const DOUBLE global[]);
 
    SYNOPSIS:
    INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i,
-   DOUBLE *in, DOUBLE *value, INT *type);
+   DOUBLE *in, DOUBLE *value, INT *type)
 
    PARAMETERS:
    .  aBndP - BNDP structure
@@ -596,14 +566,13 @@ INT BNDP_Move (BNDP *aBndP, const DOUBLE global[]);
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT         BNDP_BndCond          (BNDP *theBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *type);
 
 /****************************************************************************/
 /*D
    BNDP_BndPDesc - sets descriptor for BNDP
 
    SYNOPSIS:
-   INT BNDP_BndPDesc (BNDP *theBndP, INT *move, INT *part);
+   INT BNDP_BndPDesc (BNDP *theBndP, INT *move, INT *part)
 
    PARAMETERS:
    .  aBndP - BNDP structure
@@ -619,7 +588,6 @@ INT         BNDP_BndCond          (BNDP *theBndP, INT *n, INT i, DOUBLE *in, DOU
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT         BNDP_BndPDesc         (BNDP *theBndP, INT *move, INT *part);
 
 /****************************************************************************/
 /*D
@@ -642,14 +610,13 @@ INT         BNDP_BndPDesc         (BNDP *theBndP, INT *move, INT *part);
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT         BNDP_BndEDesc         (BNDP *theBndP0, BNDP *theBndP1, INT *part);
 
 /****************************************************************************/
 /*D
    BNDP_CreateBndS - creates a BNDS from a nb of BNDPs
 
    SYNOPSIS:
-   BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n);
+   BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 
    PARAMETERS:
    .  Heap  - heap to allocate from
@@ -665,14 +632,13 @@ INT         BNDP_BndEDesc         (BNDP *theBndP0, BNDP *theBndP1, INT *part);
    .n   NULL if the points describe an inner side
    D*/
 /****************************************************************************/
-BNDS*       BNDP_CreateBndS       (HEAP *Heap, BNDP **theBndP, INT n);
 
 /****************************************************************************/
 /*D
    BNDP_CreateBndP - sets BNDP from a two of BNDPs
 
    SYNOPSIS:
-   BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord);
+   BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 
    PARAMETERS:
    .  aBndP0 - first BNDP
@@ -688,14 +654,13 @@ BNDS*       BNDP_CreateBndS       (HEAP *Heap, BNDP **theBndP, INT n);
    .n   NULL if the points describe an inner point
    D*/
 /****************************************************************************/
-BNDP*       BNDP_CreateBndP       (HEAP *Heap, BNDP *theBndP0, BNDP *theBndP1, DOUBLE lcoord);
 
 /****************************************************************************/
 /*D
    BNDP_Dispose - dispose a BNDP
 
    SYNOPSIS:
-   INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP);
+   INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
 
    PARAMETERS:
    .  Heap - heap
@@ -710,14 +675,13 @@ BNDP*       BNDP_CreateBndP       (HEAP *Heap, BNDP *theBndP0, BNDP *theBndP1, D
    .n      1 if error.
    D*/
 /****************************************************************************/
-INT         BNDP_Dispose          (HEAP *Heap, BNDP *theBndP);
 
 /****************************************************************************/
 /*D
    BNDP_SaveBndP - save a BNDP
 
    SYNOPSIS:
-   INT BNDP_SaveBndP (BNDP *theBndP, FILE *stream);
+   INT BNDP_SaveBndP (BNDP *theBndP, FILE *stream)
 
    PARAMETERS:
    .  theBndP - BNDP
@@ -732,14 +696,13 @@ INT         BNDP_Dispose          (HEAP *Heap, BNDP *theBndP);
    .n      1 if error.
    D*/
 /****************************************************************************/
-INT         BNDP_SaveBndP         (BNDP *theBndP);
 
 /****************************************************************************/
 /*D
    BVP_LoadBndP - load a BNDP
 
    SYNOPSIS:
-   BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap, FILE *stream);
+   BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap, FILE *stream)
 
    PARAMETERS:
    .  theBVP - BVP structure
@@ -756,7 +719,6 @@ INT         BNDP_SaveBndP         (BNDP *theBndP);
    .n      1 if error.
    D*/
 /****************************************************************************/
-BNDP       *BNDP_LoadBndP         (BVP *theBVP, HEAP *Heap);
 
 
 /****************************************************************************/
@@ -770,7 +732,7 @@ BNDP       *BNDP_LoadBndP         (BVP *theBVP, HEAP *Heap);
    BNDS_Global - gets global coordinates of local position on BNDS
 
    SYNOPSIS:
-   INT BNDS_Local2Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global);
+   INT BNDS_Local2Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 
    PARAMETERS:
    .  aBndS  - BNDS structure
@@ -786,7 +748,6 @@ BNDP       *BNDP_LoadBndP         (BVP *theBVP, HEAP *Heap);
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT         BNDS_Global           (BNDS *theBndS, DOUBLE *local, DOUBLE *global);
 
 /****************************************************************************/
 /*D
@@ -794,7 +755,7 @@ INT         BNDS_Global           (BNDS *theBndS, DOUBLE *local, DOUBLE *global)
 
    SYNOPSIS:
    INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in,
-   INT *type, DOUBLE *value);
+   INT *type, DOUBLE *value)
 
    PARAMETERS:
    .  aBndS - BNDS structure
@@ -812,7 +773,6 @@ INT         BNDS_Global           (BNDS *theBndS, DOUBLE *local, DOUBLE *global)
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT         BNDS_BndCond          (BNDS *theBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type);
 
 /****************************************************************************/
 /*D
@@ -837,14 +797,13 @@ INT         BNDS_BndCond          (BNDS *theBndS, DOUBLE *local, DOUBLE *in, DOU
    .n   1 if error.
    D*/
 /****************************************************************************/
-INT         BNDS_BndSDesc         (BNDS *theBndS, INT *id, INT *nbid, INT *part);
 
 /****************************************************************************/
 /*D
    BNDS_CreateBndP - create BNDP on BNDS
 
    SYNOPSIS:
-   BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local);
+   BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 
    PARAMETERS:
    .  Heap  - heap to allocate from
@@ -861,14 +820,13 @@ INT         BNDS_BndSDesc         (BNDS *theBndS, INT *id, INT *nbid, INT *part)
    .n   1 if error.
    D*/
 /****************************************************************************/
-BNDP*       BNDS_CreateBndP       (HEAP *Heap, BNDS *theBndS, DOUBLE *local);
 
 /****************************************************************************/
 /*D
    BNDS_Dispose - dispose BNDS
 
    SYNOPSIS:
-   INT BNDS_Dispose (HEAP *Heap, BNDS *theBndS);
+   INT BNDS_Dispose (HEAP *Heap, BNDS *theBndS)
 
    PARAMETERS:
    .  Heap - heap
@@ -883,7 +841,52 @@ BNDP*       BNDS_CreateBndP       (HEAP *Heap, BNDS *theBndS, DOUBLE *local);
    .n   1 if error.
    D*/
 /****************************************************************************/
+BVP        *BVP_GetNext           (BVP *theBVP);
+INT         BVP_Save              (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv);
+BVP        *BVP_Load              (char *name, INT argc, char **argv);
+BVP        *BVP_GetByName         (char *name);
+BVP        *BVP_Init              (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey);
+INT         BVP_Dispose           (BVP *theBVP);
+INT         BVP_SetBVPDesc        (BVP *theBVP, BVP_DESC *theBVPDesc);
+INT         BVP_SetCoeffFct       (BVP *theBVP, INT n, CoeffProcPtr *CoeffFct);
+INT         BVP_SetUserFct        (BVP *theBVP, INT n, UserProcPtr *UserFct);
+INT             BVP_Check                         (BVP *aBVP);
+BNDP*           BVP_InsertBndP            (HEAP *Heap, BVP *theBVP, INT argc, char **argv);
+INT         BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size);
+MESH       *BVP_GenerateMesh      (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey);
+INT         BNDP_Global           (BNDP *theBndP, DOUBLE *global);
+INT                     BNDP_Move                         (BNDP *aBndP, const DOUBLE global[]);
+INT         BNDP_BndCond          (BNDP *theBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *type);
+INT         BNDP_BndCond          (BNDP *theBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *type);
+INT         BNDP_BndPDesc         (BNDP *theBndP, INT *move, INT *part);
+INT         BNDP_BndEDesc         (BNDP *theBndP0, BNDP *theBndP1, INT *part);
+BNDS*       BNDP_CreateBndS       (HEAP *Heap, BNDP **theBndP, INT n);
+BNDP*       BNDP_CreateBndP       (HEAP *Heap, BNDP *theBndP0, BNDP *theBndP1, DOUBLE lcoord);
+INT         BNDP_Dispose          (HEAP *Heap, BNDP *theBndP);
+INT         BNDP_SaveBndP         (BNDP *theBndP);
+BNDP       *BNDP_LoadBndP         (BVP *theBVP, HEAP *Heap);
+INT         BNDS_Global           (BNDS *theBndS, DOUBLE *local, DOUBLE *global);
+INT         BNDS_BndCond          (BNDS *theBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type);
+INT         BNDS_BndSDesc         (BNDS *theBndS, INT *id, INT *nbid, INT *part);
+BNDP*       BNDS_CreateBndP       (HEAP *Heap, BNDS *theBndS, DOUBLE *local);
+BVP        *BVP_GetFirst          (void);
 INT         BNDS_Dispose          (HEAP *Heap, BNDS *theBndS);
+
+
+#ifdef ModelP
+
+void DomInitParallel     (INT TypeBndP, INT TypeBndS);
+void DomHandlerInit      (INT handlerSet);
+
+void BElementXferBndS    (BNDS **bnds, int n, int proc, int prio);
+void BElementGatherBndS  (BNDS **bnds, int n, int cnt, char *data);
+void BElementScatterBndS (BNDS **bnds, int n, int cnt, char *data);
+
+void BVertexXferBndP     (BNDP *bndp, int proc, int prio);
+void BVertexGatherBndP   (BNDP *bndp, int cnt, char *data);
+void BVertexScatterBndP  (BNDP **bndp, int cnt, char *data);
+
+#endif
 
 /* miscellaneous */
 INT         InitDom               (void);
