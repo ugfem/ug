@@ -442,18 +442,26 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
       }
   Release(MGHEAP(theMG),FROM_TOP);
 
+
+        #ifdef ModelP
+  mfr = UG_GlobalSumDOUBLE((DOUBLE)mfr);
+  mfc = UG_GlobalSumDOUBLE((DOUBLE)mfc);
+        #endif
+
   if (SetStringValue("indicator:mfr",(DOUBLE)mfr))
     return (-1);
   if (SetStringValue("indicator:mfc",(DOUBLE)mfc))
     return (-1);
 
   /* print result */
-  UserWrite("Indicator:");
+  if (mfr + mfc > 0)
+    UserWrite("Indicator:");
   if (mfr > 0)
     UserWriteF(" %d elements marked for refinement",mfr);
   if (mfc > 0)
     UserWriteF("    %d elements marked for coarsening",mfc);
-  UserWrite("\n");
+  if (mfr + mfc > 0)
+    UserWrite("\n");
 
   /* return number of flagged elements */
   eresult->nel = nel;
