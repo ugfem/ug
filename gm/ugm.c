@@ -647,7 +647,6 @@ NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after)
     LAMBDA(vsnew,0) = lambdaopt;
     if (Patch_local2global(thePatch,PVECT(vsnew),CVECT(theVertex))) return (NULL);
     z = (lambdaopt-lambda0)/(lambda1-lambda0);
-    ZETA(vsnew) = z;
     SETONEDGE(theVertex,side);
     VS_PATCH(vsnew) = thePatch;
     if (n==3)
@@ -3424,9 +3423,11 @@ static ELEMENT *FindFather(VERTEX *vptr)
 #ifdef __TWODIM__
 static INT Local2Global (MULTIGRID *theMG, VERTEX *vptr)
 {
-  short i,n,side;
+  ELEMENTSIDE *theSide;
+  SHORT i,n,side;
   COORD x[DIM],xi,eta;
   COORD lambda1,lambda2,lambdaa,lambdae;
+  COORD lambda,z,lm0,lm1,lmopt,smin,dlambda,xc,yc,r[DIM],lambdaopt,s;
   ELEMENT *eptr;
   VERTEX *vptr1,*vptr2,*vptra,*vptre;
   VSEGMENT *vseg;
@@ -3466,8 +3467,27 @@ static INT Local2Global (MULTIGRID *theMG, VERTEX *vptr)
     else
       lambda2=LAMBDA(VSEG(vptr2),0);
 
-
-    LAMBDA(vseg,0)=(1-ZETA(vseg))*lambda1+ZETA(vseg)*lambda2;
+    theSide = SIDE(eptr,side);
+    smin = 1.0E10;
+    lm0 = PARAM(theSide,0,0);
+    lm1 = PARAM(theSide,1,0);
+    xc = 0.5*(XC(vptr1)+XC(vptr2));
+    yc = 0.5*(YC(vptr1)+YC(vptr2));
+    dlambda = (lm1-lm0)/((COORD) RESOLUTION);
+    lambda = lm0;
+    for (i=1; i<RESOLUTION; i++)
+    {
+      lambda += dlambda;
+      if (Patch_local2global(thePatch,&lambda,r)) return (NULL);
+      s = (r[0]-xc)*(r[0]-xc)+(r[1]-yc)*(r[1]-yc);
+      if (s<smin)
+      {
+        smin = s;
+        lambdaopt = lambda;
+      }
+    }
+    z = (lambdaopt-lm0)/(lm1-lm0);
+    LAMBDA(vseg,0)=(1-z)*lambda1+z*lambda2;
     if (Patch_local2global(thePatch,PVECT(vseg),CVECT(vptr))) return(8041);
   }
   else
@@ -3538,8 +3558,10 @@ static INT Global2Local (MULTIGRID *theMG, VERTEX *vptr)
     vptr1=MYVERTEX(CORNER(eptr,side));
     vptr2=MYVERTEX(CORNER(eptr,(side+1)%n));
 
-    vptra=theMG->corners[PATCH_CID(thePatchDesc,0)]; lambdaa=PATCH_LCVECT(thePatchDesc,0)[0];
-    vptre=theMG->corners[PATCH_CID(thePatchDesc,1)]; lambdae=PATCH_LCVECT(thePatchDesc,1)[0];
+    vptra=theMG->corners[PATCH_CID(thePatchDesc,0)];
+    lambdaa=PATCH_LCVECT(thePatchDesc,0)[0];
+    vptre=theMG->corners[PATCH_CID(thePatchDesc,1)];
+    lambdae=PATCH_LCVECT(thePatchDesc,1)[0];
 
     if (vptr1==vptra)
       lambda1=lambdaa;
@@ -3557,22 +3579,8 @@ static INT Global2Local (MULTIGRID *theMG, VERTEX *vptr)
     else
       lambda2=LAMBDA(VSEG(vptr2),0);
 
-    /* falls sich Projektion auf Edge als sinnvoller erweist
-       x = XC(vptr); y = YC(vptr);
-       x1 = XC(vptr1); y1 = YC(vptr1);
-       x2 = XC(vptr2); y2 = YC(vptr2);
-       a=sqrt(pow(x2-x1,2)+pow(y2-y1,2));
-       b=sqrt(pow(x-x1,2)+pow(y-y1,2));
-       assert(errno==0);
-       if (a*b==0)
-            return(8052);
-       c=((x-x1)*(x2-x1)+(y-y1)*(y2-y1))/(a*b);
-       if ((c<.1)||(c>.9))
-            return(8053);
-     */
-
     /* set local boundary coordinate */
-    ZETA(vseg)=c=(LAMBDA(vseg,0)-lambda1)/(lambda2-lambda1);
+    c=(LAMBDA(vseg,0)-lambda1)/(lambda2-lambda1);
 
     /* set local coordinates */
     switch(n)
