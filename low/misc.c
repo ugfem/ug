@@ -42,6 +42,10 @@
 #include <sys/syssx.h>
 #endif
 
+#ifdef __AIX__
+#include <sys/timeb.h>
+#endif
+
 #include "compiler.h"
 #include "general.h"
 #include "misc.h"
@@ -861,11 +865,20 @@ INT MemoryParameters (void)
 DOUBLE nec_clock( void )
 {
   struct htms timebuf;
-  DOUBLE dtime;
 
   if (syssx (HTIMES, (struct htms *)&timebuf) < 0)
     return -1.0;
-  dtime = (timebuf.hutime / 1000000.0)+(timebuf.hstime / 1000000.0);
-  return (dtime);
+  return ((timebuf.hutime + timebuf.hstime) * 1e-6);
+}
+#endif
+
+#ifdef __AIX__
+/* special long time system for AIX */
+DOUBLE aix_long_clock( void )
+{
+  struct timeb timebuf;
+
+  ftime(&timebuf);
+  return (timebuf.time + timebuf.millitm * 1e-3);
 }
 #endif

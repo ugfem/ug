@@ -43,8 +43,12 @@ extern "C" {
 /* SMALL..: least number s.t. 1 + SMALL../SMALL_FAC != 1 */
 #define SMALL_FAC            10
 
-/* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
+/* current time as DOUBLE value
+   CURRENT_TIME should be the most accurate time (usually in micro seconds)
+   CURRENT_TIME_LONG should be a time which measures some days without overflow
+ */
+#define CURRENT_TIME            ((DOUBLE)0.0)
+#define CURRENT_TIME_LONG       CURRENT_TIME
 
 /* ANSI-printf does not support %lX, where x is eEgGf */
 #define _fmt_le                 "le"
@@ -254,6 +258,8 @@ extern "C" {
 /* current time as DOUBLE value */
 #undef CURRENT_TIME
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
+#undef CURRENT_TIME_LONG
+#define CURRENT_TIME_LONG   aix_long_time();
 
 #endif
 
