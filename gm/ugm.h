@@ -137,6 +137,17 @@ INT PutFreeObject_par (HEAP *theHeap, void *object, INT size, INT type);
 #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 void *GetMemoryForObjectNew (HEAP *theHeap, INT size, INT type);
 INT PutFreeObjectNew (HEAP *theHeap, void *object, INT size, INT type);
+
+/* determination of node classes */
+INT             ClearNodeClasses                        (GRID *theGrid);
+INT             SeedNodeClasses                     (ELEMENT *theElement);
+INT             PropagateNodeClasses            (GRID *theGrid);
+INT             ClearNextNodeClasses            (GRID *theGrid);
+INT             SeedNextNodeClasses             (ELEMENT *theElement);
+INT             PropagateNextNodeClasses        (GRID *theGrid);
+INT             MaxNextNodeClass                        (ELEMENT *theElement);
+INT             MinNodeClass                            (ELEMENT *theElement);
+INT             MinNextNodeClass                        (ELEMENT *theElement);
 #endif
 
 #endif
