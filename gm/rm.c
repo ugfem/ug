@@ -1834,6 +1834,7 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
     return(Pattern2Rule[TAG(theElement)][pattern]);
 
   case (PYRAMID) :
+    if (MARKCLASS(theElement) != RED_CLASS) return(0);
     switch (pattern) {
     /* copy rule */
     case (0) :
@@ -2261,7 +2262,7 @@ static INT InitRuleManager3D (void)
   /*																		*/
   /************************************************************************/
 
-  nRules = 2;
+  nRules = 3;
 
   /* make rules for tetrahedrons globally available */
   MaxRules[PYRAMID] = nRules;
