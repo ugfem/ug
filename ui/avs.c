@@ -639,7 +639,7 @@ static INT AVSCommand (INT argc, char **argv)
 
     /* now all scalar variables */
     for (i=0; i<ns; i++) {
-      sprintf(it,"%s, \n",es_name[i]);           /* no units */
+      sprintf(it,"%s, \n",ENVITEM_NAME(es[i]));           /* no units */
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
     }
@@ -647,7 +647,7 @@ static INT AVSCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
     for (i=0; i<nv; i++) {
-      sprintf(it,"%s, \n",ev_name[i]);           /* no units */
+      sprintf(it,"%s, \n",ENVITEM_NAME(ev[i]));           /* no units */
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
     }
@@ -776,12 +776,12 @@ static INT AVSCommand (INT argc, char **argv)
 
     /* now all scalar variables */
     for (i=0; i<ns_cell; i++) {
-      sprintf(it,"%s, \n",es_cell_name[i]);           /* no units */
+      sprintf(it,"%s, \n",ENVITEM_NAME(es_cell[i]));           /* no units */
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
     }
     for (i=0; i<nv_cell; i++) {
-      sprintf(it,"%s, \n",ev_cell_name[i]);           /* no units */
+      sprintf(it,"%s, \n",ENVITEM_NAME(ev_cell[i]));           /* no units */
       strcpy(item+ic,it); ic+=strlen(it);
       pfile_master_puts(pf,item); ic=0;
     }
