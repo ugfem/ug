@@ -832,8 +832,6 @@ static int Gather_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
   NODE *theNode = (NODE *)obj;
 
   /* identification is only done between master objects */
-  ASSERT(MASTER(theNode));
-  ASSERT(MASTERPRIO(prio));
   ASSERT(identlevel-1 == LEVEL(theNode));
 
   if (SONNODE(theNode) != NULL)
@@ -851,8 +849,6 @@ static int Scatter_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO
   INT has_sonnode     = *((int *)data);
 
   /* identification is only done between master objects */
-  ASSERT(MASTER(theNode));
-  ASSERT(MASTERPRIO(prio));
   ASSERT(identlevel-1 == LEVEL(theNode));
 
   if (SonNode != NULL)
@@ -882,9 +878,8 @@ static int Gather_SonEdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
   EDGE *theEdge = (EDGE *)obj;
   EDGE *SonEdge;
 
-  /* identification is only done between master objects */
-  ASSERT(MASTER(theEdge));
-  ASSERT(MASTERPRIO(prio));
+  /* identification has to be done between all copies of an objects */
+  /* otherwise this can result in unsymmetric interfaces            */
   ASSERT(identlevel-1 == LEVEL(theEdge));
 
   SonEdge = GetSonEdge(theEdge);
@@ -902,9 +897,8 @@ static int Scatter_SonEdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO
   EDGE    *SonEdge;
   INT has_sonedge     = *((int *)data);
 
-  /* identification is only done between master objects */
-  ASSERT(MASTER(theEdge));
-  ASSERT(MASTERPRIO(prio));
+  /* identification has to be done between all copies of an objects */
+  /* otherwise this can result in unsymmetric interfaces            */
   ASSERT(identlevel-1 == LEVEL(theEdge));
 
   SonEdge = GetSonEdge(theEdge);
@@ -936,12 +930,12 @@ INT Identify_SonNodesAndSonEdges (GRID *theGrid)
   identlevel = GLEVEL(theGrid)+1;
         #endif
 
-  DDD_IFAOnewayX(BorderNodeSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(int),
+  DDD_IFAOnewayX(NodeAllIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(int),
                  Gather_SonNodeInfo,Scatter_SonNodeInfo);
 
         #ifdef __THREEDIM__
   /* identify the sonedges */
-  DDD_IFAOnewayX(BorderEdgeSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(int),
+  DDD_IFAOnewayX(EdgeAllIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(int),
                  Gather_SonEdgeInfo,Scatter_SonEdgeInfo);
         #endif
   return(GM_OK);
