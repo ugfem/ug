@@ -15,10 +15,19 @@ $VERSION = 1.0;
 ##############################################
 
 use IPC::Open2;
-sub submit
+BEGIN
 {
-	if ($_[0]=~/quit/) {die "ERROR: quit command is blocked, use 'end'\n";}
-    print IN $_[0];
+	my $debug=0;
+	sub debug
+	{
+		$debug=$_[0];
+	}
+	sub submit
+	{
+		if ($_[0]=~/quit/) {die "ERROR: quit command is blocked, use 'end'\n";}
+	    print IN $_[0];
+		if ($debug) { print "UG-CMD: $_[0]"} ;
+	}
 }
 sub out
 {
@@ -39,29 +48,41 @@ sub set
 }
 sub ug
 {
-	my ($i,$cmd,$print,$command,$ui);
+	my ($i,$cmd,$print,$command,$ui,$stat);
+
+	# basic check
 	if (@_<=0) 
 	{
 		die "ERROR: provide ug command\n";
 	} 
+
+	# detect internal print
 	$command=$_[0]; $print=0;
-	if ($command=~/^print\s+/) 
+	if ($command=~/^\s*print\s+/) 
 	{
 		$print=1; 
-		$command=~s/^print\s+//g;
+		$command=~s/\s*^print\s+//g;
 		if ($command eq "") {die "ERROR: print must come with ug command\n";}
 	}
+
+	# check for I/O channels
+	if ($command ne "start")
+	{
+		1==stat IN and 1==stat OUT or die "ERROR: IN/OUT channel missing\n";
+		1==stat IN or die "ERROR: IN channel missing\n";
+		1==stat OUT or die "ERROR: OUT channel missing\n";
+	}
+
 	SWITCH:
 	{
-		# command 'set'
-		if ($command eq "set")
+		# debug
+		if ($command eq "debug")
 		{
-			if(@_!=2)
-            {   
-                die "ERROR: provide one option with 'set'\n";
+			if (@_!=2 || ($_[1]!=0 && $_[1]!=1))
+            {
+                die "ERROR: provide [0|1] with 'debug'\n";
             }
-			print IN "set $_[1]\n";
-			return split /[=\s]+/,out($print);
+			debug $_[1];
 		}
 
 		# command 'end'
@@ -75,6 +96,17 @@ sub ug
         	close(IN);
         	close(OUT);
 			return;
+		}
+
+		# command 'set'
+		if ($command eq "set")
+		{
+			if(@_!=2)
+            {   
+                die "ERROR: provide one option with 'set'\n";
+            }
+			print IN "set $_[1]\n";
+			return split /[=\s]+/,out($print);
 		}
 
 		# command 'start'
@@ -111,7 +143,7 @@ sub ug
 		}
 		$cmd.="\n";
 		submit $cmd;
-		return wantarray ? (out($print),set($command)) : out($print);
+		return out($print);
 	}
 }
 
