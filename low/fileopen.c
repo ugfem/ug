@@ -872,8 +872,8 @@ int AppendTrailingSlash (char *path)
 
 char *SimplifyPath (char *path)
 {
-  const char *pf = path;
-  char       *pt = path;
+  const char *pf;
+  char       *pt;
 
   /* cancel ./ (not first one) */
   pf = pt = strchr(path,'/');
@@ -894,6 +894,7 @@ char *SimplifyPath (char *path)
   }
 
   /* cancel ../ where possible */
+  pf = pt = path;
   for (; *pf; pf++,pt++)
   {
     if (pf[0]=='.' && pf[1]=='.' && pf[2]=='/')
