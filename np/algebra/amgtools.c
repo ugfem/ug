@@ -583,6 +583,9 @@ static INT GenerateNewGrid(GRID *theGrid)
     #ifdef ModelP
   DDD_IdentifyBegin();
   DDD_XferBegin();
+    #ifdef DDDOBJMGR
+  DDD_ObjMgrBegin();
+    #endif
         #endif
 
   /* generate vectors of newGrid */
@@ -651,6 +654,9 @@ static INT GenerateNewGrid(GRID *theGrid)
   }
 
     #ifdef ModelP
+    #ifdef DDDOBJMGR
+  DDD_ObjMgrEnd();
+    #endif
   DDD_XferEnd();
   DDD_IdentifyEnd();
         #endif
