@@ -559,7 +559,7 @@ INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
 OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 {
   OUTPUTDEVICE *d;
-  char buf[128];
+  static char buf[128];
   char buffer[128];
   int i,j;
         #ifdef USE_XAW

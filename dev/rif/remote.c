@@ -647,7 +647,8 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
   struct sockaddr_in serv_addr;
   int i;
   OUTPUTDEVICE   *d;
-  char buf[128], *hoststr, *portstr;
+  static char buf[128];
+  char           *hoststr, *portstr;
   int port;
   unsigned long inaddr;
   struct hostent *hp;
