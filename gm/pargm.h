@@ -55,7 +55,7 @@ enum Priorities
   PrioMaster   = 4
 };
 
-/* define dynamic lists */
+/* define dynamic lists ids */
 #define ELEMENT_LIST     0
 #define NODE_LIST        1
 #define VECTOR_LIST      2
@@ -63,11 +63,11 @@ enum Priorities
 
 #ifdef ModelP
 
-/* define the number of prioities for objects */
+/* define the number of priorities for objects */
 #define ELEMENTPRIOS            2
 #define NODEPRIOS                       3
 #define VECTORPRIOS                     3
-#define VERTEXPRIOS                     2
+#define VERTEXPRIOS                     3
 
 /* define mapping from object priority to position in linked list */
 #define PRIO2LISTPART(listtype,prio) \

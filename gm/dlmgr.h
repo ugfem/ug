@@ -50,6 +50,7 @@
 
 #define HDRELEMENT      PARHDRE
 #define HDRNODE         PARHDR
+#define HDRVERTEX       PARHDRV
 #define HDRVECTOR       PARHDR
 #define HDR(OTYPE)      HDR ## OTYPE
 
@@ -329,6 +330,16 @@
 
 #define GRID_INIT_NODE_LIST(Grid)\
   GRID_INIT_OBJECT_LIST(Grid,NODE)
+
+/* vertex */
+#define GRID_UNLINK_VERTEX(Grid,Vertex) \
+  GRID_UNLINK_OBJECT(Grid,Vertex,VERTEX,PREDV,SUCCV)
+
+#define GRID_LINK_VERTEX(Grid,Vertex,Prio) \
+  GRID_LINK_OBJECT(Grid,Vertex,Prio,VERTEX,PREDV,SUCCV)
+
+#define GRID_INIT_VERTEX_LIST(Grid)\
+  GRID_INIT_OBJECT_LIST(Grid,VERTEX)
 
 /* vector */
 #define GRID_UNLINK_VECTOR(Grid,Vector) \

@@ -702,8 +702,8 @@ struct grid {
   /* pointers */
   union  element *elements[ELEMENTPRIOS];       /* pointer to first element     */
   union  element *lastelement[ELEMENTPRIOS];       /* pointer to last element	*/
-  union  vertex *vertices;                      /* pointer to first vertex				*/
-  union  vertex *lastvertex;                    /* pointer to last vertex				*/
+  union  vertex *vertices[VERTEXPRIOS];         /* pointer to first vertex		*/
+  union  vertex *lastvertex[VERTEXPRIOS];       /* pointer to last vertex		*/
   struct node *firstNode[NODEPRIOS];            /* pointer to first node			*/
   struct node *lastNode[NODEPRIOS];             /* pointer to last node                         */
   VECTOR *firstVector[VECTORPRIOS];             /* pointer to first vector			*/
@@ -1862,8 +1862,31 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define PLASTELEMENT(p)         LASTELMENT(p)
 #endif
 
-#define FIRSTVERTEX(p)          ((p)->vertices)
-#define LASTVERTEX(p)           ((p)->lastvertex)
+#ifdef ModelP
+#define PFIRSTVERTEX(p)                                 ((LISTPART_FIRSTVERTEX(p,0)!=NULL) ?\
+                                                         (LISTPART_FIRSTVERTEX(p,0)) :\
+                                                         ((LISTPART_FIRSTVERTEX(p,1)!=NULL) ?\
+                                                          (LISTPART_FIRSTVERTEX(p,1)) : (FIRSTVERTEX(p))))
+#define PRIO_FIRSTVERTEX(p,prio)                ((p)->vertices[PRIO2LISTPART(VERTEX_LIST,prio)])
+#define LISTPART_FIRSTVERTEX(p,part)    ((p)->vertices[part])
+#define FIRSTVERTEX(p)                                  (((p)->vertices[PRIO2LISTPART(VERTEX_LIST,\
+                                                                                      PrioBorder)]!=NULL) ?\
+                                                         (p)->vertices[PRIO2LISTPART(VERTEX_LIST,PrioBorder)] :\
+                                                         (p)->vertices[PRIO2LISTPART(VERTEX_LIST,PrioMaster)])
+#define SFIRSTVERTEX(p)                                  (p)->vertices[PRIO2LISTPART(VERTEX_LIST,PrioMaster)]
+
+#define PLASTVERTEX(p)                                  LASTVERTEX(p)
+#define PRIO_LASTVERTEX(p,prio)                 ((p)->lastvertex[PRIO2LISTPART(VERTEX_LIST,prio)])
+#define LISTPART_LASTVERTEX(p,part)     ((p)->lastvertex[part])
+#define LASTVERTEX(p)                                   ((p)->lastvertex[PRIO2LISTPART(VERTEX_LIST,PrioMaster)])
+#else
+#define FIRSTVERTEX(p)          ((p)->vertices[0])
+#define PFIRSTVERTEX(p)         FIRSTVERTEX(p)
+#define SFIRSTVERTEX(p)         FIRSTVERTEX(p)
+#define LASTVERTEX(p)           ((p)->lastvertex[0])
+#define PLASTVERTEX(p)          LASTVERTEX(p)
+#endif
+
 #define FIRSTELEMSIDE(p)        ((p)->sides)
 
 #ifdef ModelP

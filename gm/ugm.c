@@ -344,11 +344,7 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid)
         #endif
 
   /* insert in vertex list */
-  SUCCV(pv) = FIRSTVERTEX(theGrid);
-  PREDV(pv) = NULL;
-  if (SUCCV(pv)!=NULL) PREDV(SUCCV(pv)) = pv;
-  else LASTVERTEX(theGrid) = pv;
-  FIRSTVERTEX(theGrid) = pv;
+  GRID_LINK_VERTEX(theGrid,pv,PrioMaster);
 
   /* counters */
   theGrid->nVert++;
@@ -409,11 +405,7 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
   for (i=0; i<DIM; i++) LCVECT(pv)[i] = 0.0;
 
   /* insert in vertex list */
-  SUCCV(pv) = FIRSTVERTEX(theGrid);
-  PREDV(pv) = NULL;
-  if (SUCCV(pv)!=NULL) PREDV(SUCCV(pv)) = pv;
-  else LASTVERTEX(theGrid) = pv;
-  FIRSTVERTEX(theGrid) = pv;
+  GRID_LINK_VERTEX(theGrid,pv,PrioMaster);
 
   /* counters */
   theGrid->nVert++;
@@ -1205,9 +1197,8 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
   theGrid->status       = 0;
   GRID_INIT_ELEMENT_LIST(theGrid)
   GRID_INIT_NODE_LIST(theGrid)
+  GRID_INIT_VERTEX_LIST(theGrid)
   GRID_INIT_VECTOR_LIST(theGrid)
-  theGrid->vertices = NULL;
-  theGrid->vertices = NULL;
   GFIRSTBV(theGrid) = NULL;
   GLASTBV(theGrid) = NULL;
   if (l>0)
@@ -1654,7 +1645,7 @@ static INT DisposeNode (GRID *theGrid, NODE *theNode)
   assert(SONNODE(theNode) == NULL);
 
   /* remove node from node list */
-  GRID_UNLINK_NODE(theGrid,theNode)
+  GRID_UNLINK_NODE(theGrid,theNode);
   theVertex = MYVERTEX(theNode);
   father = NFATHER(theNode);
   if (father != NULL)
@@ -1709,15 +1700,7 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
   HEAPFAULT(theVertex);
 
   /* remove vertex from vertex list */
-  if (PREDV(theVertex)!=NULL)
-    SUCCV(PREDV(theVertex)) = SUCCV(theVertex);
-  else
-    FIRSTVERTEX(theGrid) = SUCCV(theVertex);
-
-  if (SUCCV(theVertex)!=NULL)
-    PREDV(SUCCV(theVertex)) = PREDV(theVertex);
-  else
-    LASTVERTEX(theGrid) = PREDV(theVertex);
+  GRID_UNLINK_VERTEX(theGrid,theVertex);
 
   if( OBJT(theVertex) == BVOBJ )
   {
@@ -1770,15 +1753,7 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 
   HEAPFAULT(theElement);
 
-  /* remove element from element list */
-  if (PREDE(theElement)!=NULL)
-    SUCCE(PREDE(theElement)) = SUCCE(theElement);
-  else
-    FIRSTELEMENT(theGrid) = SUCCE(theElement);
-  if (SUCCE(theElement)!=NULL)
-    PREDE(SUCCE(theElement)) = PREDE(theElement);
-  else
-    LASTELEMENT(theGrid) = PREDE(theElement);
+  GRID_UNLINK_ELEMENT(theGrid,theElement);
 
   /* remove element sides if it's a boundary element */
   if (OBJT(theElement)==BEOBJ)
@@ -5172,36 +5147,32 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
   }
 
   /* look for dead edges */
-  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
     {
       SETUSED(theLink,1);
     }
   }
-  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
     {
       if (USED(theLink)!=1 || USED(REVERSE(theLink))!=1)
       {
                 #ifdef ModelP
-        UserWriteF("edge between %ld and %ld dead \n",(long)ID(theNode),(long)ID(NBNODE(theLink)));
+        UserWriteF("edge between %ld and %ld dead: USED=%d USEDREV=%d \n",(long)ID(theNode),(long)ID(NBNODE(theLink)),USED(theLink),USED(REVERSE(theLink)));
                                 #endif
-      }
-      else
-      {
-        SETUSED(theLink,0);
-        SETUSED(REVERSE(theLink),0);
       }
     }
   }
-
-        #ifdef Debug
-        #ifdef ModelP
-  printf("%2d: CheckGrid(): no dead edges found!\n",me);
-        #endif
-        #endif
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+  {
+    for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
+    {
+      SETUSED(theLink,0);
+    }
+  }
 
   /* look for dead nodes */
   for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
@@ -5217,12 +5188,6 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
     else
       SETUSED(theNode,0);
   }
-
-        #ifdef Debug
-        #ifdef ModelP
-  printf("%2d: CheckGrid(): no dead nodes found!\n",me);
-        #endif
-        #endif
 
   /* check number of elem and their pointers */
   count = 0;
