@@ -135,7 +135,7 @@ static GRID *GetGridOnDemand (MULTIGRID *mg, int level)
 	while (level > TOPLEVEL(mg))
 	{
 		PRINTDEBUG(dddif,1,(PFMT " CreateNewLevel toplevel=%d",me,TOPLEVEL(mg)));
-		if (CreateNewLevel(mg)==NULL) assert(0);
+		if (CreateNewLevel(mg,0)==NULL) assert(0);
 	}
 
 	return GRID_ON_LEVEL(mg,level);
@@ -1546,8 +1546,6 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
 			co1 = CORNER_OF_EDGE(pe,i,1);
 
 			/* local coordinates have to be local towards pe */
-/* TODO: delete this
-			V_DIM_COPY(global,CVECT(theVertex)); */
 			V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(pe,co0),
 						  0.5, LOCAL_COORD_OF_ELEM(pe,co1),
 						  LCVECT(theVertex));
