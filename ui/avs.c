@@ -52,6 +52,7 @@
 #include "shapes.h"
 #include "cmdline.h"
 #include "num.h"
+#include "rm.h"
 
 #include "avs.h"
 
@@ -464,7 +465,7 @@ static INT AVSCommand (INT argc, char **argv)
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
     {
-      if (NSONS(el)>0) continue;                        /* process finest level elements only */
+      if (!IS_REFINED(el)) continue;                    /* process finest level elements only */
       numElements++;                                            /* increase element counter */
       for (i=0; i<CORNERS_OF_ELEM(el); i++)
       {
@@ -523,7 +524,7 @@ static INT AVSCommand (INT argc, char **argv)
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
     {
-      if (NSONS(el)>0) continue;                        /* process finest level elements only */
+      if (!IS_REFINED(el)) continue;                    /* process finest level elements only */
       for (i=0; i<CORNERS_OF_ELEM(el); i++)
         CornersCoord[i] = CVECT(MYVERTEX(CORNER(el,i)));         /* x,y,z of corners */
       for (i=0; i<CORNERS_OF_ELEM(el); i++)
@@ -576,7 +577,7 @@ static INT AVSCommand (INT argc, char **argv)
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
     {
-      if (NSONS(el)>0) continue;                        /* process finest level elements only */
+      if (!IS_REFINED(el)) continue;                    /* process finest level elements only */
 
       /* cell number and material id */
                         #ifdef ModelP
@@ -736,7 +737,7 @@ static INT AVSCommand (INT argc, char **argv)
     for (k=0; k<=TOPLEVEL(mg); k++)
       for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
       {
-        if (NSONS(el)>0) continue;                              /* process finest level elements only */
+        if (!IS_REFINED(el)) continue;                          /* process finest level elements only */
         for (i=0; i<CORNERS_OF_ELEM(el); i++)
           CornersCoord[i] = CVECT(MYVERTEX(CORNER(el,i)));                       /* x,y,z of corners */
         for (i=0; i<CORNERS_OF_ELEM(el); i++)
@@ -866,7 +867,7 @@ static INT AVSCommand (INT argc, char **argv)
     for (k=0; k<=TOPLEVEL(mg); k++)
       for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
       {
-        if (NSONS(el)>0) continue;                              /* process finest level elements only */
+        if (!IS_REFINED(el)) continue;                          /* process finest level elements only */
         for (i=0; i<CORNERS_OF_ELEM(el); i++)
           CornersCoord[i] = CVECT(MYVERTEX(CORNER(el,i)));                       /* x,y,z of corners */
         /* compute center in local coordinates */
