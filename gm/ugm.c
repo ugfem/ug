@@ -83,6 +83,7 @@
 /****************************************************************************/
 
 #define ORDERRES                1e-3    /* resolution for OrderNodesInGrid			*/
+#define LINKTABLESIZE   32              /* max number of inks per node for ordering	*/
 
 /****************************************************************************/
 /*																			*/
@@ -1334,7 +1335,7 @@ MULTIGRID *GetNextMultigrid (const MULTIGRID *theMG)
 
 MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, char *format, unsigned long heapSize)
 {
-  HEAP *theHeap;
+  HEAP *theHeap,*theUserHeap;
   MULTIGRID *theMG;
   GRID *theGrid;
   BOUNDARY_SEGMENT *theSegment;
@@ -1397,35 +1398,26 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, ch
       DisposeMultiGrid(theMG);
       return(NULL);
     }
+    /* clearing this heap provides the possibility of checking the initialization */
     memset(GEN_MGUD(theMG),0,ds);
   }
   else
     GEN_MGUD(theMG) = NULL;
 
-  /* 2: individual user data space */
+  /* 2: user heap */
   ds = theFormat->sMultiGrid;
   if (ds!=0)
   {
-    INDIV_MGUDM(theMG) = (VIRT_HEAP_MGMT*) GetMem(theHeap,SIZEOF_VHM,FROM_BOTTOM);
-    if (INDIV_MGUDM(theMG)==NULL)
+    theUserHeap = NewHeap(SIMPLE_HEAP, ds, GetMem(theHeap,ds,FROM_BOTTOM));
+    if (theUserHeap==NULL)
     {
       DisposeMultiGrid(theMG);
       return(NULL);
     }
-    InitVirtualHeapManagement (INDIV_MGUDM(theMG),ds);
-    INDIV_MGUD(theMG) = GetMem(theHeap,ds,FROM_BOTTOM);
-    if (INDIV_MGUD(theMG)==NULL)
-    {
-      DisposeMultiGrid(theMG);
-      return(NULL);
-    }
-    memset(INDIV_MGUD(theMG),0,ds);
+    MG_USER_HEAP(theMG) = theUserHeap;
   }
   else
-  {
-    INDIV_MGUDM(theMG) = NULL;
-    INDIV_MGUD(theMG)  = NULL;
-  }
+    MG_USER_HEAP(theMG) = NULL;
 
   /* fill multigrid structure */
   theMG->status = 0;
@@ -2142,7 +2134,7 @@ INT RenumberMultiGrid (MULTIGRID *theMG)
 
    PARAMETERS:
    .  pnode1 - first node to compare
-   .  pnode2 - secion node to compare
+   .  pnode2 - second node to compare
 
    DESCRIPTION:
    This function defines a relation for lexicographic ordering
@@ -2185,8 +2177,40 @@ static int LexCompare (NODE **pnode1, NODE **pnode2)
 
 
 /****************************************************************************/
+/*
+   LinkCompare - Define relation for lexicographic ordering of links
+
+   SYNOPSIS:
+   static int LinkCompare (LINK **LinkHandle1, LINK **LinkHandle2)
+
+   PARAMETERS:
+   .  LinkHandle1 - first link to compare
+   .  LinkHandle2 - second link to compare
+
+   DESCRIPTION:
+   This function defines a relation for lexicographic ordering of links
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
+
+static int LinkCompare (LINK **LinkHandle1, LINK **LinkHandle2)
+{
+  INT ID1,ID2;;
+
+  ID1 = ID(NBNODE(*LinkHandle1));
+  ID2 = ID(NBNODE(*LinkHandle2));
+
+  if (ID1>ID2)
+    return ( 1);
+  else
+    return (-1);
+}
+
+/****************************************************************************/
 /*D
-   OrderNodesInGrid - Reorder double linked node list
+   OrderNodesInGrid - reorder double linked ÔNODEÔ list
 
    SYNOPSIS:
    INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign);
@@ -2195,10 +2219,12 @@ static int LexCompare (NODE **pnode1, NODE **pnode2)
    .  theGrid - grid to order
    .  order - precedence of coordinate directions
    .  sign - respective ordering direction
+   .  AlsoOrderLinks - if 'TRUE' also order links
 
    DESCRIPTION:
-   This function reorders a double linked node list with qsort and order
-   criteria LexCompare().
+   This function reorders the double linked 'NODE' list of the grid with
+   qsort and order criteria LexCompare(). If specified the 'LINK's are ordered
+   corresponding to the 'NODE' order.
 
    RETURN VALUE:
    INT
@@ -2207,12 +2233,13 @@ static int LexCompare (NODE **pnode1, NODE **pnode2)
    D*/
 /****************************************************************************/
 
-INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign)
+INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT AlsoOrderLinks)
 {
   MULTIGRID *theMG;
   NODE **table,*theNode;
+  LINK *theLink,*LinkTable[LINKTABLESIZE];
   DOMAIN *theDomain;
-  INT i,entries,firstID;
+  INT i,entries,firstID,nl;
   HEAP *theHeap;
 
   theMG   = MYMG(theGrid);
@@ -2223,7 +2250,6 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign)
   theDomain = MGDOMAIN(theMG);
   if (theDomain==NULL) return (1);
   InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / theDomain->radius;
-  assert(errno==0);
 
   /* allocate memory for the node list */
   theHeap = MGHEAP(theMG);
@@ -2264,6 +2290,32 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign)
 
 
   Release(theHeap,FROM_TOP);
+
+  if (!AlsoOrderLinks)
+    return (0);
+
+  /* now we also order the links of each node the same way (just using the new IDs) */
+  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+  {
+    /* fill array for qsort */
+    for (nl=0, theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
+    {
+      if (nl>=LINKTABLESIZE)
+        return (1);
+
+      LinkTable[nl++] = theLink;
+    }
+    qsort(LinkTable,nl,sizeof(LINK*),(int (*)(const void *, const void *))LinkCompare);
+
+    /* establish pointer connections */
+    NEXT(LinkTable[--nl]) = NULL;
+    while (nl>0)
+    {
+      NEXT(LinkTable[nl-1]) = LinkTable[nl];
+      --nl;
+    }
+    START(theNode) = LinkTable[0];
+  }
 
   return (0);
 }
@@ -4343,7 +4395,6 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
         #endif
   if (VTYPE(theVector)==ELEMVECTOR)
   {
-    UserWrite("ELEMVECTOR ");
     theElement = (ELEMENT*)VOBJECT(theVector);
     sprintf(buffer,"ELEM-V IND=%7ld elemID=%ld                VCLASS=%1d VNCLASS=%1d\n",VINDEX(theVector),ID(theElement),VCLASS(theVector),VNCLASS(theVector));
     UserWrite(buffer);
@@ -5476,21 +5527,17 @@ INT MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
 
 /****************************************************************************/
 /*D
-   DefineMGUDBlock - Define block in MG user data space
+   DefineMGUDBlock - Define block in general MG user data space
 
    SYNOPSIS:
-   INT DefineMGUDBlock (INT where, MULTIGRID *theMG, BLOCK_ID id, MEM size);
+   INT DefineMGUDBlock (BLOCK_ID id, MEM size);
 
    PARAMETERS:
-   .  where - IN_GENERAL_MGUD or IN_INDIVID_MGUD
-   .  theMG - not considered if where==IN_GENERAL_MGUD
-          otherwise all MGs if theMG==IN_ALL_MGS
-          otherwise only theMG
    .  id - the id of the block to be allocated
    .  size - size of the data block
 
    DESCRIPTION:
-   This function defines a block in the MG user data space.
+   This function defines a block in the general MG user data space.
 
    RETURN VALUE:
    INT
@@ -5499,29 +5546,9 @@ INT MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
    D*/
 /****************************************************************************/
 
-INT DefineMGUDBlock (INT where, MULTIGRID *theMG, BLOCK_ID id, MEM size)
+INT DefineMGUDBlock (BLOCK_ID id, MEM size)
 {
-  if (where==IN_GENERAL_MGUD)
-  {
-    if (DefineBlock(theGenMGUDM,id,size)!=0)
-      return (GM_ERROR);
-    return (GM_OK);
-  }
-
-  if (where!=IN_INDIVID_MGUD)
-    return (GM_ERROR);
-
-  if (theMG==IN_ALL_MGS)
-  {
-    /* allocate this block in all multigrids */
-    for (theMG=GetFirstMultigrid(); theMG!=NULL; theMG=GetNextMultigrid(theMG))
-      if (DefineBlock(INDIV_MGUDM(theMG),id,size)!=0)
-        return (GM_ERROR);
-    return (GM_OK);
-  }
-
-  /* allocate this block in theMG */
-  if (DefineBlock(INDIV_MGUDM(theMG),id,size)!=0)
+  if (DefineBlock(theGenMGUDM,id,size)!=0)
     return (GM_ERROR);
 
   return (GM_OK);
@@ -5530,20 +5557,16 @@ INT DefineMGUDBlock (INT where, MULTIGRID *theMG, BLOCK_ID id, MEM size)
 
 /****************************************************************************/
 /*D
-   FreeMGUDBlock - Free block in MG user data space
+   FreeMGUDBlock - Free block in general MG user data space
 
    SYNOPSIS:
-   INT FreeMGUDBlock (INT where, MULTIGRID *theMG, BLOCK_ID id);
+   INT FreeMGUDBlock (BLOCK_ID id);
 
    PARAMETERS:
-   .   where - IN_GENERAL_MGUD or IN_INDIVID_MGUD
-   .   theMG - not considered if where==IN_GENERAL_MGUD
-            otherwise: all MGs if theMG==IN_ALL_MGS
-            otherwise only theMG
    .  id: the id of the block to be allocated
 
    DESCRIPTION:
-   This function frees a block in the MG user data space.
+   This function frees a block in the general MG user data space.
 
    RETURN VALUE:
    INT
@@ -5552,29 +5575,9 @@ INT DefineMGUDBlock (INT where, MULTIGRID *theMG, BLOCK_ID id, MEM size)
    D*/
 /****************************************************************************/
 
-INT FreeMGUDBlock (INT where, MULTIGRID *theMG, BLOCK_ID id)
+INT FreeMGUDBlock (BLOCK_ID id)
 {
-  if (where==IN_GENERAL_MGUD)
-  {
-    if (FreeBlock(theGenMGUDM,id)!=0)
-      return (GM_ERROR);
-    return (GM_OK);
-  }
-
-  if (where!=IN_INDIVID_MGUD)
-    return (GM_ERROR);
-
-  if (theMG==IN_ALL_MGS)
-  {
-    /* free this block in all multigrids */
-    for (theMG=GetFirstMultigrid(); theMG!=NULL; theMG=GetNextMultigrid(theMG))
-      if (FreeBlock(INDIV_MGUDM(theMG),id)!=0)
-        return (GM_ERROR);
-    return (GM_OK);
-  }
-
-  /* free this block in theMG */
-  if (FreeBlock(INDIV_MGUDM(theMG),id)!=0)
+  if (FreeBlock(theGenMGUDM,id)!=0)
     return (GM_ERROR);
 
   return (GM_OK);
@@ -5589,9 +5592,6 @@ INT FreeMGUDBlock (INT where, MULTIGRID *theMG, BLOCK_ID id)
    BLOCK_DESC  *GetMGUDBlockDescriptor (INT where, MULTIGRID *theMG, BLOCK_ID id);
 
    PARAMETERS:
-   .  where: IN_GENERAL_MGUD or IN_INDIVID_MGUD
-   .  theMG: not considered if where==IN_GENERAL_MGUD
-          otherwise only theMG (theMG==IN_ALL_MGS: ERROR)
    .  id - the id of the block to be allocated
 
    DESCRIPTION:
@@ -5604,19 +5604,9 @@ INT FreeMGUDBlock (INT where, MULTIGRID *theMG, BLOCK_ID id)
    D*/
 /****************************************************************************/
 
-BLOCK_DESC      *GetMGUDBlockDescriptor (INT where, MULTIGRID *theMG, BLOCK_ID id)
+BLOCK_DESC      *GetMGUDBlockDescriptor (BLOCK_ID id)
 {
-  if (where==IN_GENERAL_MGUD)
-    return (GetBlockDesc(theGenMGUDM,id));
-
-  if (where!=IN_INDIVID_MGUD)
-    return (NULL);
-
-  if (theMG==IN_ALL_MGS)
-    return (NULL);
-
-  /* allocate this block in theMG */
-  return (GetBlockDesc(INDIV_MGUDM(theMG),id));
+  return (GetBlockDesc(theGenMGUDM,id));
 }
 
 VIRT_HEAP_MGMT *GetGenMGUDM()
