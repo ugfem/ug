@@ -530,6 +530,70 @@ FORMAT *GetFormat (const char *name)
   return((FORMAT *) SearchEnv(name,"/Formats",theFormatDirID,theFormatDirID));
 }
 
+/****************************************************************************/
+/*D
+   GetFirstFormat - Get first format definition
+
+   SYNOPSIS:
+   FORMAT *GetFirstFormat (void);
+
+   PARAMETERS:
+   .  void - none
+
+   DESCRIPTION:
+   This function returns the first format definition.
+
+   RETURN VALUE:
+   FORMAT *
+   .n     pointer to a FORMAT
+   .n     NULL if not found or error.
+   D*/
+/****************************************************************************/
+
+FORMAT *GetFirstFormat (void)
+{
+  ENVITEM *fmt;
+
+  if ((fmt=(ENVITEM*)ChangeEnvDir("/Formats")) == NULL) return (NULL);
+
+  for (fmt=ENVITEM_DOWN(fmt); fmt!=NULL; fmt=NEXT_ENVITEM(fmt))
+    if (ENVITEM_TYPE(fmt) == theFormatDirID)
+      return ((FORMAT*)fmt);
+  return (NULL);
+}
+
+/****************************************************************************/
+/*D
+   GetNextFormat - Get next format definition
+
+   SYNOPSIS:
+   FORMAT *GetNextFormat (void);
+
+   PARAMETERS:
+   .  fmt - predecessor format
+
+   DESCRIPTION:
+   This function returns the next format definition following the specified one.
+
+   RETURN VALUE:
+   FORMAT *
+   .n     pointer to a FORMAT
+   .n     NULL if not found or error.
+   D*/
+/****************************************************************************/
+
+FORMAT *GetNextFormat (FORMAT *fmt)
+{
+  ENVITEM *nextfmt;
+
+  if (fmt == NULL) return (NULL);
+
+  for (nextfmt=NEXT_ENVITEM(fmt); nextfmt!=NULL; nextfmt=NEXT_ENVITEM(nextfmt))
+    if (ENVITEM_TYPE(nextfmt) == theFormatDirID)
+      return ((FORMAT*)nextfmt);
+  return (NULL);
+}
+
 /****************************************************/
 /*D
    ChangeToFormatDir - change to format directory with name
