@@ -2287,9 +2287,6 @@ static INT InterpretString()
       {
         if (GetMuteLevel()<0)
           SetMuteLevel(mutelevel=0);
-
-        if (error==PARAMERRORCODE)
-          UserWrite("ERROR: bad parameters\n");
         return(error);
       }
 
