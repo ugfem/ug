@@ -790,13 +790,15 @@ int InitParallel (int *argc, char ***argv)
 /*																			*/
 /****************************************************************************/
 
-void ExitParallel (void)
+int ExitParallel (void)
 {
   /* free memory allocated by InitParallel */
   if (dddctrl._context!=NULL)
     free(dddctrl._context);
 
   DDD_Exit();
+
+  return 0;          /* no error */
 }
 
 #endif /* ModelP */

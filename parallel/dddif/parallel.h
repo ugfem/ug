@@ -174,7 +174,7 @@ extern DDD_CTRL dddctrl;
 
 /* from initddd.c */
 int  InitParallel (int *, char ***);
-void ExitParallel (void);
+int  ExitParallel (void);
 void InitDDDTypes (void);
 void InitCurrMG (MULTIGRID *);
 
