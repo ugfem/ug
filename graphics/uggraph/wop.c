@@ -18110,8 +18110,6 @@ static INT EW_PreProcess_EScalar3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	EE3D_PartShrinkFactor			= 1.0;
 	#endif
 	
-	EE3D_PlotCut                    = 0;
-
 	/* build cut trafo */
 	theCut = VO_CUT(PIC_VO(thePicture));
 	if (BuildCutTrafo(theCut,OBS_ViewDirection)) return (1);
@@ -18124,10 +18122,13 @@ static INT EW_PreProcess_EScalar3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	if (theEspo->mode == PO_COLOR)
 	{
 		if (MarkElements_MGS_Bnd(theMG,0,CURRENTLEVEL(theMG))) return (1);
+		EE3D_PlotCut = 0;
 	}
 	else
+	{
 		if (MarkElements_MGS_Bnd_Cut(theMG,0,CURRENTLEVEL(theMG))) return (1);
-		
+		EE3D_PlotCut = 1;
+	}
 	return (0);
 }
 	
@@ -18242,7 +18243,7 @@ static INT EW_PreProcess_EVector3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	EE3D_PartShrinkFactor			= 1.0;
 	#endif
 
-	EE3D_PlotCut                    = 0;
+	EE3D_PlotCut                    = 1;
 
 	/* build cut trafo */
 	theCut = VO_CUT(PIC_VO(thePicture));
