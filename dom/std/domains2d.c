@@ -2908,7 +2908,6 @@ static INT east6_2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-/* */
 static INT south6_1skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda;
@@ -3066,6 +3065,155 @@ static INT InitSkin (void)
 
   return(0);
 }
+
+static const INT skin1_sd2p[8] = {0,0,0,0,0,0,0,0};
+static const INT skin1_sg2p[52] = {0,0,0,2,2,0,2,2,2,2,
+                                   0,2,2,0,2,2,2,2,0,2,
+                                   2,0,0,0,0,1,1,1,1,0,
+                                   0,1,1,1,1,1,1,0,0,1,
+                                   1,1,1,0,1,1,1,1,1,1,
+                                   1,1};
+static const INT skin1_pt2p[52] = {0,3,3,0,3,3,3,3,3,3,
+                                   3,3,3,3,3,3,3,3,3,3,
+                                   0,3,3,0,
+                                   1,1,1,1,1,1,
+                                   1,1,1,1,1,1,1,1,1,1,
+                                   1,1,1,1,1,1,1,1,1,1,
+                                   1,1};
+
+static const DOMAIN_PART_INFO skin1_dpi = {skin1_sd2p,skin1_sg2p,skin1_pt2p};
+
+static INT InitSkin1 (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  MidPoint[0] = L*0.75 + h*0.5 ;
+  MidPoint[1] = h + D ;
+  radius = sqrt(MidPoint[0] * MidPoint[0] + MidPoint[1] * MidPoint[1]) ;
+
+  if (CreateDomainWithParts("Skin1",MidPoint,radius,52,52,YES,3,&skin1_dpi)
+      ==NULL)
+    return(1);
+
+  if (CreateBoundarySegment2D("south0", 1, 7, 6, 4, 5,1,0.0,1.0,
+                              south0skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east0",  1, 7, 3, 5, 1,1,0.0,1.0,
+                              east0skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north0", 1, 0, 0, 1, 0,1,0.0,1.0,
+                              north0skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west0",  1, 0, 2, 0, 4,1,0.0,1.0,
+                              west0skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("south1", 2, 7, 7, 6, 7,1,0.0,1.0,
+                              south1skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east1",  2, 0, 5, 7, 3,1,0.0,1.0,
+                              east1skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north1", 2, 0, 1, 3, 2,1,0.0,1.0,
+                              north1skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west1",  2, 7, 4, 2, 6,1,0.0,1.0,
+                              west1skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("south2", 3, 7,14,12,13,1,0.0,1.0,
+                              south2skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east2",  3, 7,11,13, 9,1,0.0,1.0,
+                              east2skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north2", 3, 7, 8, 9, 8,1,0.0,1.0,
+                              north2skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west2",  3, 0,10, 8,12,1,0.0,1.0,
+                              west2skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("south3", 4, 7,15,14,15,1,0.0,1.0,
+                              south3skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east3",  4, 0,13,15,11,1,0.0,1.0,
+                              east3skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north3", 4, 7, 9,11,10,1,0.0,1.0,
+                              north3skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west3",  4, 7,12,10,14,1,0.0,1.0,
+                              west3skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("south4", 5, 0,22,20,21,1,0.0,1.0,
+                              south4skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east4",  5, 7,19,21,17,1,0.0,1.0,
+                              east4skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north4", 5, 7,16,17,16,1,0.0,1.0,
+                              north4skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west4",  5, 0,18,16,20,1,0.0,1.0,
+                              west4skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("south5", 6, 0,23,22,23,1,0.0,1.0,
+                              south5skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east5",  6, 0,21,23,19,1,0.0,1.0,
+                              east5skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north5", 6, 7,17,19,18,1,0.0,1.0,
+                              north5skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west5",  6, 7,20,18,22,1,0.0,1.0,
+                              west5skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("south6_1", 7, 0,43,42,43,1,0.0,1.0,
+                              south6_1skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east6_1" , 6, 7,42,40,43,1,0.0,1.0,
+                              west5skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_2", 6, 7,40,41,40,1,0.0,1.0,
+                              north5skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east6_2" , 7, 0,38,41,37,1,0.0,1.0,
+                              east6_2skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("north6_11", 7, 4,49,37,49,1,0.0,1.0,
+                              north6_11skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north6_12", 7, 4,48,49,48,1,0.0,1.0,
+                              north6_12skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north6_13", 7, 4,36,48,36,1,0.0,1.0,
+                              north6_13skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east6_3" , 4, 7,34,32,36,1,0.0,1.0,
+                              west3skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_31", 7, 4,32,32,46,1,0.0,1.0,
+                              south6_31skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_32", 7, 4,46,46,47,1,0.0,1.0,
+                              south6_32skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_33", 7, 4,47,47,33,1,0.0,1.0,
+                              south6_33skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east6_4" , 7, 0,30,33,29,1,0.0,1.0,
+                              east6_4skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("north6_2", 2, 7,28,28,29,1,0.0,1.0,
+                              south1skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("east6_5" , 2, 7,26,25,28,1,0.0,1.0,
+                              west1skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north6_3", 7, 0,24,25,24,1,0.0,1.0,
+                              north6_3skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west6_1" , 1, 7,25,27,24,1,0.0,1.0,
+                              east0skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("north6_41", 7, 1,45,27,45,1,0.0,1.0,
+                              north6_41skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north6_42", 7, 1,44,45,44,1,0.0,1.0,
+                              north6_42skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("north6_43", 7, 1,27,44,26,1,0.0,1.0,
+                              north6_43skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west6_2" , 7, 0,29,26,30,1,0.0,1.0,
+                              west6_2skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_4", 3, 7,31,31,30,1,0.0,1.0,
+                              north2skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west6_3" , 3, 7,33,35,31,1,0.0,1.0,
+                              east2skBoundary, NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("north6_5", 3, 7,35,34,35,1,0.0,1.0,
+                              south2skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west6_4" , 7, 0,37,34,38,1,0.0,1.0,
+                              west6_4skBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_51", 7, 5,39,38,50,1,0.0,1.0,
+                              south6_51skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_52", 7, 5,50,50,51,1,0.0,1.0,
+                              south6_52skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("south6_53", 7, 5,51,51,39,1,0.0,1.0,
+                              south6_53skBoundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("west6_5" , 5, 7,41,42,39,1,0.0,1.0,
+                              east4skBoundary, NULL)==NULL) return(1);
+
+  return(0);
+}
+
+
 /* end of skin-domain-definition */
 
 
@@ -3696,6 +3844,20 @@ INT STD_BVP_Configure (INT argc, char **argv)
       h = 0.5 ;
     }
   }
+  else if (strcmp(DomainName,"Skin1") == 0) {
+    if (ReadArgvDOUBLE("L",&L,argc,argv))
+    {
+      L = 10.0;
+    }
+    if (ReadArgvDOUBLE("D",&D,argc,argv))
+    {
+      D = 5.0 ;
+    }
+    if (ReadArgvDOUBLE("h",&h,argc,argv))
+    {
+      h = 0.5 ;
+    }
+  }
 
   theDomain = GetDomain(DomainName);
 
@@ -3784,6 +3946,11 @@ INT STD_BVP_Configure (INT argc, char **argv)
     else if (strcmp(DomainName,"Skin") == 0)
     {
       if (InitSkin())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Skin1") == 0)
+    {
+      if (InitSkin1())
         return(1);
     }
     else if (strcmp(DomainName,"Composed1") == 0)
