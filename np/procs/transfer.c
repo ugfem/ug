@@ -559,7 +559,10 @@ static INT TransferInit (NP_BASE *theNP, INT argc , char **argv)
 
   if (ReadArgvOption("M",argc,argv)) {
     np->mode = IMAT_MODE;
-    np->res = RestrictByMatrix;
+    if (ReadArgvOption("R",argc,argv))
+      np->res = RestrictByMatrix_s;
+    else
+      np->res = RestrictByMatrix;
     np->intcor = InterpolateCorrectionByMatrix;
     np->intnew = InterpolateNewVectorsByMatrix;
   }
