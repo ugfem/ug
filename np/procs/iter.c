@@ -4051,18 +4051,18 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   np = (NP_EX *) theNP;
   *baselevel = level;
   theGrid = NP_GRID(theNP,level);
+  n = 0;
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) n++;
+  np->nv = n;
 
-        #ifdef ModelP
-  if (FIRSTELEMENT(theGrid) == NULL)
+  if (n == 0)
     return(0);
-        #endif
 
   theHeap = MGHEAP(NP_MG(theNP));
   if (np->optimizeBand)
   {
     /* reorder vector-list */
     MarkTmpMem(theHeap);
-    n = NVEC(theGrid);
     buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
     vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
     fifo_init(&myfifo,buffer,sizeof(VECTOR*)*n);
@@ -4114,7 +4114,6 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
       }
     }
     np->bw = bw;
-    np->nv = NVEC(theGrid);
   }
   else
   {
@@ -4223,13 +4222,11 @@ static INT EXSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC 
   np = (NP_EX *) theNP;
   theGrid = NP_GRID(theNP,level);
 
-        #ifdef ModelP
-  if (FIRSTELEMENT(theGrid) == NULL)
-    return(0);
-        #endif
-
   /* init */
   n               = np->nv;
+  if (n == 0)
+    return(0);
+
   bw              = np->bw;
   Vec             = np->Vec;
 
@@ -4283,6 +4280,9 @@ static INT EXSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC 
   if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,x,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
 
   /* update defect */
+    #ifdef ModelP
+  if (l_vector_consistent(theGrid,x) != NUM_OK) NP_RETURN(1,result[0]);
+    #endif
   if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,x)!= NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
