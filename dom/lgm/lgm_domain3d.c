@@ -83,7 +83,7 @@ static INT Get_NBNDS_Per_Subdomain              (HEAP *Heap, LGM_DOMAIN *theDoma
 static INT DiscretizeLine                               (HEAP *Heap, LGM_LINE *theLine, DOUBLE h, LGM_POINT *pointlist, INT norp);
 static INT Get_NBNDP                                    (LGM_DOMAIN *theDomain, INT *nBND, DOUBLE h);
 static INT DiscretizeDomain                     (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DOUBLE h);
-static INT DiscretizeSurface                    (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h, LGM_POINT *pointlist, INT norp);
+static INT DiscretizeSurface                    (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h, LGM_POINT *pointlist, INT norp, INT MarkKey);
 static INT TransferLines2Mesh                   (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DOUBLE h);
 static INT TransferSurfaces2Mesh                (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h);
 
@@ -1517,7 +1517,7 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
       {
         PrintLineInfo(LGM_SURFACE_LINE(theSurface,j));
       }
-    if (DiscretizeSurface(Heap,theSurface,mesh,h,pointlist,  norp))
+    if (DiscretizeSurface(Heap,theSurface,mesh,h,pointlist,  norp, MarkKey))
       return(NULL);
     if (LGM_DEBUG)
     {
@@ -1913,8 +1913,6 @@ INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
   DOUBLE a[9],b[3],c[3];
   DOUBLE aa[4],bb[2],cc[2];
   DOUBLE lam[3], dist, min_dist, new_lam[3], A, B, m, point[3], dist_vec[3],pp0[3], pp1[3], new_global[3];
-  min = MAXDOUBLE;
-  min_dist = MAXDOUBLE;
 
   dist_i = -1;
   mi = -1;
@@ -3030,7 +3028,7 @@ static INT Get_Direction(LGM_SURFACE *theSurface, LGM_LINE *theLine)
   return(direction);
 }
 
-static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h, LGM_POINT *pointlist, INT norp)
+static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h, LGM_POINT *pointlist, INT norp, INT MarkKey)
 {
   INT i,n,ni,j,k,offset,nils,id,ls_offset;
   LGM_BNDP *theBndPList, *theBndP;
@@ -3066,7 +3064,7 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
   LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)) = 0;
   LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)) = 0;
 
-  ptrlst = (LGM_POINT**)GetTmpMem(Heap,LGM_SURFACE_NPOINT(theSurface)*sizeof(LGM_POINT*));
+  ptrlst = (LGM_POINT**)GetTmpMem(Heap,LGM_SURFACE_NPOINT(theSurface)*sizeof(LGM_POINT*),MarkKey);
 
   if(ptrlst==NULL)
     return(1);
@@ -3273,7 +3271,7 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
 
 #else
 
-static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h, LGM_POINT *pointlist, INT norp)
+static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h, LGM_POINT *pointlist, INT norp, INT MarkKey)
 {
   return (1);
 }
