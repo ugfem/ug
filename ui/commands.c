@@ -9854,19 +9854,19 @@ static INT MFLOPSCommand (INT argc, char **argv)
   }
 
   /* initialize */
-  l_dset(g,x,EVERY_CLASS,1.0);
-  l_dset(g,y,EVERY_CLASS,0.0);
-  l_dmatset(g,A,0.0);
+  dset(theMG,l,l,ALL_VECTORS,x,1.0);
+  dset(theMG,l,l,ALL_VECTORS,y,1.0);
+  dmatset(theMG,l,l,ALL_VECTORS,A,1.0);
 
   /* loop */
   time_ddot = CURRENT_TIME;
   for (i=1; i<=loop; i++)
-    l_ddot(g,y,EVERY_CLASS,x,scal);
+    ddot(theMG,l,l,ALL_VECTORS,x,x,scal);
   time_ddot = CURRENT_TIME - time_ddot;
 
   time_matmul = CURRENT_TIME;
   for (i=1; i<=loop; i++)
-    l_dmatmul(g,y,EVERY_CLASS,A,x,EVERY_CLASS);
+    dmatmul(theMG,l,l,ALL_VECTORS,y,A,x);
   time_matmul = CURRENT_TIME - time_matmul;
 
   if (FreeMD(theMG,l,l,A)) REP_ERR_RETURN(CMDERRORCODE);
