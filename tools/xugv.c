@@ -1916,8 +1916,7 @@ static Boolean run_film (void)
     system(command);
   }
   else if (g_opt) {
-    sprintf(command, "xwd -name xugv -silent | xwdtopnm 2>/dev/null |
-                        ppmtogif >%s_.%04d 2>/dev/null", file, frame_number);
+    sprintf(command, "xwd -name xugv -silent | xwdtopnm 2>/dev/null | ppmtogif >%s_.%04d 2>/dev/null", file, frame_number);
     system(command);
   }
 

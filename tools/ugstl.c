@@ -68,6 +68,10 @@
 /*																			*/
 /****************************************************************************/
 
+/* UG_RCS_STRING
+   $Header$
+ */
+
 int Marc_Extended = 0;
 
 static int ExpandLine (char *theLine)
