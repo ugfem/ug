@@ -1,0 +1,41 @@
+##############################################################################
+#                                                                            #
+#   Makefile for the ppif library                                            #
+#                                                                            #
+#   created  93/03/22 kb                                                     #
+#                                                                            #
+##############################################################################
+
+# in:
+#	ARCH_DIR, ARCH, PPIF_DIR, PPIF, LIBDIR
+
+
+# build complete pathes
+ARCH_PATH = $(ARCH_DIR)/$(ARCH)
+PPIF_PATH = $(PPIF_DIR)/$(PPIF)
+
+
+# include make options from sub-modules
+include $(ARCH_PATH)/mk.arch
+include $(PPIF_PATH)/mk.ppif
+
+
+PPIF_LCFLAGS  = -D$(ARCH_TYPE) $(ARCH_CFLAGS) $(PPIF_CFLAGS)
+PPIF_LINCLUDE = -I./include $(PPIF_INCLUDES)
+PPIF_LOBJ = $(PPIF_PATH)/ppif.o
+
+
+$(LIBDIR)/libppif.a : $(PPIF_LOBJ) $(PPIF_PATH)/mk.ppif
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(LIBDIR)/libppif.a $(PPIF_LOBJ)
+ 
+
+$(PPIF_PATH)/ppif.o:
+	rm -f $(PPIF_PATH)/ppif.o
+	$(PPIF_CC) $(PPIF_LCFLAGS) $(PPIF_LINCLUDE) -c $(PPIF_PATH)/ppif.c
+	mv -f ppif.o $(PPIF_PATH)/ppif.o
+
+
+clean:
+	rm -f $(PPIF_LOBJ)
+	rm -f $(LIBDIR)/libppif.a
+ 
