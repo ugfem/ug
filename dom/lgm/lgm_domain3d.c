@@ -1519,10 +1519,6 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
     if (LGM_DEBUG) PrintSurfaceInfo(theSurface);
   }
 
-  mesh->theBndPs = (BNDP**)GetTmpMem(Heap,sizeof(LGM_BNDP*)*npoints);
-  if (mesh->theBndPs == NULL)
-    return (NULL);
-
   /* discretize domain */
   if (DiscretizeDomain(Heap,theDomain,mesh,h))
     return(NULL);
