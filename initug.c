@@ -122,8 +122,7 @@ RCS_ID
  */
 /****************************************************************************/
 
-INT NS_PREFIX
-InitUg (int *argcp, char ***argvp)
+INT NS_DIM_PREFIX InitUg (int *argcp, char ***argvp)
 {
   INT err;
 #ifdef Debug
@@ -325,7 +324,7 @@ InitUg (int *argcp, char ***argvp)
  */
 /****************************************************************************/
 
-INT NS_PREFIX
+INT NS_DIM_PREFIX
 ExitUg (void)
 {
   INT err;

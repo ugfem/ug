@@ -86,7 +86,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /** \brief Offset of additional parameters for boundary condition function call */
 enum DOM_IN_PARAMS {
@@ -349,7 +349,7 @@ BVP        *BVP_GetNext           (BVP *theBVP);
  * </ul>
  */
 /****************************************************************************/
-INT         BVP_Save              (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv);
+INT BVP_Save (BVP *theBVP, char *name, char *mgname, NS_PREFIX HEAP *theHeap, INT argc, char **argv);
 
 /****************************************************************************/
 /** \brief Load a BVP
@@ -397,7 +397,7 @@ BVP        *BVP_GetByName         (char *name);
  * </ul>
  */
 /****************************************************************************/
-BVP        *BVP_Init              (char *filename, HEAP *theHeap, MESH *Mesh, INT MarkKey);
+BVP *BVP_Init (char *filename, NS_PREFIX HEAP *theHeap, MESH *Mesh, INT MarkKey);
 
 /****************************************************************************/
 /** \brief Dispose a BVP
@@ -493,7 +493,7 @@ INT             BVP_Check                         (BVP *aBVP);
  * </ul>
  */
 /****************************************************************************/
-BNDP*           BVP_InsertBndP            (HEAP *Heap, BVP *theBVP, INT argc, char **argv);
+BNDP* BVP_InsertBndP (NS_PREFIX HEAP *Heap, BVP *theBVP, INT argc, char **argv);
 
 /****************************************************************************/
 /** \brief Write command to insert this BNDP
@@ -511,7 +511,7 @@ BNDP*           BVP_InsertBndP            (HEAP *Heap, BVP *theBVP, INT argc, ch
 /****************************************************************************/
 INT         BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size);
 
-MESH       *BVP_GenerateMesh      (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey);
+MESH       *BVP_GenerateMesh (NS_PREFIX HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey);
 
 /****************************************************************************/
 /** \brief Return global coordinates of BNDP
@@ -610,7 +610,7 @@ INT         BNDP_BndEDesc         (BNDP *theBndP0, BNDP *theBndP1, INT *part);
  *   <li> NULL if the points describe an inner side </li>
  * </ul> */
 /****************************************************************************/
-BNDS*       BNDP_CreateBndS       (HEAP *Heap, BNDP **theBndP, INT n);
+BNDS* BNDP_CreateBndS (NS_PREFIX HEAP *Heap, BNDP **theBndP, INT n);
 
 /****************************************************************************/
 /** \brief Sets BNDP from a two of BNDPs
@@ -626,7 +626,7 @@ BNDS*       BNDP_CreateBndS       (HEAP *Heap, BNDP **theBndP, INT n);
  *   <li> NULL if the points describe an inner point </li>
  * </ul> */
 /****************************************************************************/
-BNDP*       BNDP_CreateBndP       (HEAP *Heap, BNDP *theBndP0, BNDP *theBndP1, DOUBLE lcoord);
+BNDP*       BNDP_CreateBndP (NS_PREFIX HEAP *Heap, BNDP *theBndP0, BNDP *theBndP1, DOUBLE lcoord);
 
 /****************************************************************************/
 /** \brief Dispose a BNDP
@@ -641,7 +641,7 @@ BNDP*       BNDP_CreateBndP       (HEAP *Heap, BNDP *theBndP0, BNDP *theBndP1, D
  *   <li>    1 if error.    </li>
  * </ul> */
 /****************************************************************************/
-INT         BNDP_Dispose          (HEAP *Heap, BNDP *theBndP);
+INT         BNDP_Dispose          (NS_PREFIX HEAP *Heap, BNDP *theBndP);
 
 /****************************************************************************/
 /** \brief Save a BNDP
@@ -674,7 +674,7 @@ INT         BNDP_SaveBndP_Ext     (BNDP *theBndP);
  *   <li>    1 if error.      </li>
  * </ul> */
 /****************************************************************************/
-BNDP       *BNDP_LoadBndP         (BVP *theBVP, HEAP *Heap);
+BNDP       *BNDP_LoadBndP         (BVP *theBVP, NS_PREFIX HEAP *Heap);
 BNDP       *BNDP_LoadBndP_Ext     (void);
 
 /****************************************************************************/
@@ -743,7 +743,7 @@ INT         BNDS_BndSDesc         (BNDS *theBndS, INT *id, INT *nbid, INT *part)
  *   <li> 1 if error. </li>
  * </ul> */
 /****************************************************************************/
-BNDP*       BNDS_CreateBndP       (HEAP *Heap, BNDS *theBndS, DOUBLE *local);
+BNDP*       BNDS_CreateBndP       (NS_PREFIX HEAP *Heap, BNDS *theBndS, DOUBLE *local);
 
 /****************************************************************************/
 /** \brief Return a pointer to the first BVP
@@ -771,7 +771,7 @@ BVP        *BVP_GetFirst          (void);
  *   <li> 1 if error. </li>
  * </ul> */
 /****************************************************************************/
-INT         BNDS_Dispose          (HEAP *Heap, BNDS *theBndS);
+INT         BNDS_Dispose          (NS_PREFIX HEAP *Heap, BNDS *theBndS);
 
 /****************************************************************************/
 /** \brief Gets surface ids for a BNDP
