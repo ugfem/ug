@@ -191,6 +191,7 @@ public:
   virtual void SGSSmoother( const FAMGMatrixAlg &mat, FAMGVector &def );
   virtual void JacobiSmoothFG( const FAMGMatrixAlg &mat, const FAMGVector &def );
 
+  VECDATA_DESC *GetUgVecDesc () const;
   // only for specialized functions
   double& operator[] ( const FAMGugVectorEntry & ve );
   double operator[] ( const FAMGugVectorEntry & ve ) const;
@@ -484,6 +485,10 @@ inline void FAMGugVector::SetCG( const FAMGugVectorEntry& ve ) {
 }
 inline void FAMGugVector::SetFG( const FAMGugVectorEntry& ve ) {
   ((FAMGugGridVector&)GetGridVector()).SetFG(ve);
+}
+
+inline VECDATA_DESC *FAMGugVector::GetUgVecDesc () const {
+  return mydesc;
 }
 
 inline void FAMGugVector::AddScaledVec( double scale, const FAMGVector &source )
