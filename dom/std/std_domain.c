@@ -645,7 +645,17 @@ static INT file_corners_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey,
       {
         M_BNDP *p = (M_BNDP *)Mesh->theBndPs[i];
 
-        for (j=0; j<3; j++)
+        /* TODO remove  */
+        M0_PATCH *patch = (M0_PATCH *)currBVP->patches[i];
+
+        patch->type = MARC_0_PATCH_TYPE;
+        patch->id = i;
+        for (j=0; j<DIM; j++)
+          patch->pos[j] = c[j];
+        /*   */
+
+        p->patch_id = i;
+        for (j=0; j<DIM; j++)
           p->pos[j] = c[j];
       }
       else
@@ -680,6 +690,9 @@ static INT file_corners_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey,
 static INT file_contact_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
 {
   int id,c;
+
+  /* TODO: adapt for surface mesh */
+  return(0);
 
   /*	fgets(theLine, MAX_LEN, f); */
 
@@ -742,6 +755,9 @@ static INT file_positions_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
   int id,j,k;
   double c[3];
   M0_PATCH *p;
+
+  /* TODO: adapt for surface mesh */
+  return(0);
 
   fgets(theLine, MAX_LEN, f);
   nPPatch = 0;
@@ -927,6 +943,8 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
               nCorners,nBndP,nElem,nPPatch,nTPatch));
 
 
+  nPPatch = MAX(nPPatch,nBndP);
+
         #ifdef ModelP
 }
 Broadcast(&nCorners,sizeof(INT));
@@ -1051,10 +1069,12 @@ Broadcast(&nTPatch,sizeof(INT));
 
   fclose(stream);
 
-    #ifdef __THREEDIM__
-  if (Mesh != NULL)
-    RepairMesh(Heap,MarkKey,Mesh);
-    #endif
+  /*
+     #ifdef __THREEDIM__
+     if (Mesh != NULL)
+          RepairMesh(Heap,MarkKey,Mesh);
+     #endif
+   */
 
         #ifdef ModelP
 }
@@ -4522,14 +4542,13 @@ static INT BndPointGlobal (BNDP *aBndP, DOUBLE *global)
 /* domain interface function: for description see domain.h */
 INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
 {
-  BND_PS *ps;
+  BND_PS *ps = (BND_PS *)aBndP;
   DOUBLE *pos;
   INT i;
 
   IF_MARC(aBndP)
   return(M_BNDP_Global(aBndP,global));
 
-  ps = (BND_PS *)aBndP;
   if (!PATCH_IS_FIXED(currBVP->patches[ps->patch_id]))
   {
     /* copy globals */
