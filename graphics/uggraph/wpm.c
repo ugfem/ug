@@ -3070,35 +3070,17 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theVmo->Extra           = NO;
   }
 
-  /* check compatibility of vec and mat desc */
-  if (theVmo->vd || theVmo->md)
+  if (theVmo->vd && theVmo->md)
+    /* check compatibility of vec and mat desc */
     for (rt=0; rt<NVECTYPES; rt++)
       if (theVmo->Type[rt])
-      {
-        if (theVmo->vd)
-          if (!VD_ISDEF_IN_TYPE(theVmo->vd,rt))
-          {
-            UserWrite("vec desc does not include types of specified types\n");
-            return (NOT_ACTIVE);
-          }
-        if (theVmo->md)
-          for (ct=0; ct<NVECTYPES; ct++)
-            if (theVmo->Type[ct])
+        for (ct=0; ct<NVECTYPES; ct++)
+          if (theVmo->Type[ct])
+            if (VD_NCMPS_IN_TYPE(theVmo->vd,ct)!=MD_ROWS_IN_RT_CT(theVmo->md,rt,ct))
             {
-              if (!MD_ISDEF_IN_RT_CT(theVmo->md,rt,ct))
-              {
-                UserWrite("mat desc does not include column types of specified types\n");
-                return (NOT_ACTIVE);
-              }
-              if (theVmo->vd)
-                if (VD_NCMPS_IN_TYPE(theVmo->vd,ct)!=MD_ROWS_IN_RT_CT(theVmo->md,rt,ct))
-                {
-                  UserWrite("vec desc and mat desc incompatible\n");
-                  return (NOT_ACTIVE);
-                }
+              UserWrite("vec desc and mat desc incompatible\n");
+              return (NOT_ACTIVE);
             }
-      }
-
   return (ACTIVE);
 }
 
