@@ -726,6 +726,18 @@ static INT SimpleCut (GRID *g, VECTOR **vlist, INT *ncut)
   return(0);
 }
 
+static INT CutAll (GRID *g, VECTOR **vlist, INT *ncut)
+{
+  INT n;
+  VECTOR *v;
+
+  for (v=FIRSTVECTOR(g),n=0; v!=NULL; v=SUCCVC(v))
+    vlist[n++]=v;
+  *ncut=n;
+
+  return(0);
+}
+
 static void FirstInsertInVList (GRID *g, VECTOR *v, VECTOR **vlist, INT n, INT unlink)
 {
   MATRIX *theM;
@@ -771,12 +783,12 @@ static INT OrderSO (NP_ORDER *theNP, INT level, MATDATA_DESC *A, INT *result)
   np = (NP_ORDER_SO *) theNP;
   np->ncut = np->ncyc = 0;
   theGrid = NP_GRID(theNP,level);
-  A = np->order.A;
-  if (A==NULL) return (1);
+  np->order.A = A;
+  if (A==NULL) NP_RETURN(1,result[0]);
   comp = MD_MCMP_OF_MTYPE(A,MTP(NODEVEC,NODEVEC),np->comp);
 
   /* set matrix dependencies */
-  if (MatrixDep_Adjoint(theGrid,A,comp)) return (1);
+  if (MatrixDep_Adjoint(theGrid,A,comp)) NP_RETURN(1,result[0]);
 
   /* count matrix dependencies */
   for (theV=FIRSTVECTOR(theGrid),n=0; theV!=NULL; theV=SUCCVC(theV),n++)
@@ -849,7 +861,7 @@ static INT OrderSO (NP_ORDER *theNP, INT level, MATDATA_DESC *A, INT *result)
         }
 
     /* insert cut as first set */
-    if (SimpleCut(theGrid,vlist+fni,&ncut)) return(1);
+    if (CutAll(theGrid,vlist+fni,&ncut)) NP_RETURN(1,result[0]);
     assert(ncut>0); assert(ncut<=lni-fni+1);
     np->ncut+=ncut; np->ncyc++;
     for (i=fni; i<fni+ncut; i++)
