@@ -200,7 +200,7 @@ static void PSShadedPolygon(SHORT_POINT *points, INT nb, DOUBLE intensity)
 {
   int i;
 
-  fprintf(currPSF,"%6.5f I\n",intensity);
+  fprintf(currPSF,"%4.3f I\n",intensity);
   fprintf(currPSF,"N\n");
   fprintf(currPSF,"%g %g M\n",TRFMX(points[0]),TRFMY(points[0]));
   for (i=1; i<nb; i++)
