@@ -1652,7 +1652,7 @@ static ELEMENT *EW_GetNextElement_vert_fw_up (ELEMENT *theElement)
 		GElem_NextInLevel[k] = SUCCE(theElement);
 
 		/* unflag if non-consecutive PID */
-		if (ID(theElement) != GElem_LastPID+1)
+		if (ID(theElement)-GElem_LastPID > 1)
 			GElem_Consecutive = NO;
 
 		GElem_LastPID = ID(theElement);
