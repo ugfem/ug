@@ -17,6 +17,7 @@ then
 	echo "         XRIF (set IF=X, REMOTE_IF = ON)";
 	echo "         NORIF (set REMOTE_IF = OFF)";
 	echo "         HP (set ARCH = HP)";
+	echo "         HP20 (set ARCH = HP20)";
 	echo "         HPUX9 (set ARCH = HPUX9)";
 	echo "         DEC (set ARCH = DEC)";
 	echo "         PARAGON (set ARCH = PARAGON)";
@@ -243,6 +244,9 @@ edit_ugconf()
 		;;
 	HP)
 		sed 's/^ARCH.*$/ARCH = HP/' $1 > $1.tmp
+		;;
+	HP20)
+		sed 's/^ARCH.*$/ARCH = HP20/' $1 > $1.tmp
 		;;
 	HPUX9)
 		sed 's/^ARCH.*$/ARCH = HPUX9/' $1 > $1.tmp
