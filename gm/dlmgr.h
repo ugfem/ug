@@ -237,22 +237,22 @@
     }\
   }
 #else
-#define GRID_LINK_OBJECT(Grid,Object,Prio,OTYPE,PRED,SUCC)\
-  {\
-    OTYPE *after;\
-\
-    after = LAST ## OTYPE(Grid);\
-    SUCC(Object) = NULL;
-if (after==NULL) {\
-  PRED(Object) = NULL;\
-  LAST ## OTYPE(Grid) = Object;\
-  FIRST ## OTYPE(Grid) = Object;\
-}\
-  else {\
-  PRED(Object) = after;\
-  LAST ## OTYPE(Grid) = Object;\
-  SUCC(after) = Object;\
-  }\
+#define GRID_LINK_OBJECT(Grid,Object,Prio,OTYPE,PRED,SUCC)   \
+  {                                                        \
+    OTYPE *after;                                        \
+                                                             \
+    after = LAST ## OTYPE(Grid);                         \
+    SUCC(Object) = NULL;                                 \
+    if (after==NULL) {                                   \
+      PRED(Object) = NULL;                             \
+      LAST ## OTYPE(Grid) = Object;                    \
+      FIRST ## OTYPE(Grid) = Object;                   \
+    }                                                    \
+    else {                                               \
+      PRED(Object) = after;                            \
+      LAST ## OTYPE(Grid) = Object;                    \
+      SUCC(after) = Object;                            \
+    }                                                    \
   }
 #endif
 
