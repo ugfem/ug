@@ -624,7 +624,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 	}
 
 	/* dispose connections for geom levels not for amg levels */
-	if (level<0)
+	if (level>=0)
 		if (new==PrioGhost || new==PrioVGhost)
 		{
 			MATRIX *theMatrix,*next;
