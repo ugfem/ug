@@ -127,7 +127,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *DataFileName, INT Force)
+MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *DataFileName)
 {
   MULTIGRID *mg;
   DIO_GENERAL dio_general;
@@ -180,7 +180,7 @@ MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *D
     close = 0;
     load = 1;
   }
-  else if (!MG_SAVED(theMG) || (!Force && dio_general.magic_cookie!=MG_MAGIC_COOKIE(theMG)))
+  else if (!MG_SAVED(theMG) || dio_general.magic_cookie!=MG_MAGIC_COOKIE(theMG))
   {
     close = 1;
     load = 1;
@@ -216,7 +216,7 @@ MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *D
   return (mg);
 }
 
-INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDATA_DESC **theVDList, INT Force)
+INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDATA_DESC **theVDList)
 {
   INT i,j,ncomp,s,*entry,copied_until,copy_until,still_to_read,read,nvec,id,nparfiles;
   unsigned long m;
@@ -312,8 +312,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
   /* read general information */
   if (strcmp(dio_general.version,DIO_VERSION)!=0)                 {CloseDTFile(); UserWrite("ERROR: wrong version\n"); return (1);}
-  if (!Force)
-    if (dio_general.magic_cookie != MG_MAGIC_COOKIE(theMG)) {CloseDTFile(); UserWrite("m-c-error"); return (1);}
+  if (dio_general.magic_cookie != MG_MAGIC_COOKIE(theMG)) {CloseDTFile(); UserWrite("m-c-error"); return (1);}
   if (dio_general.nVD != n)                                                               {CloseDTFile(); UserWrite("ERROR: wrong nb of VectorData\n"); return (1);}
   ncomp = 0;
   for (i=0; i<n; i++)
