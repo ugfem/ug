@@ -2306,13 +2306,12 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT Also
   return (0);
 }
 
-
 /****************************************************************************/
 /*D
-   PutAtStartOfList - reorder a given set of elements and put them first in the list
+   PutAtEndOfList - reorder a given set of elements and put them first in the list
 
    SYNOPSIS:
-   INT PutAtStartOfList (GRID *theGrid, INT cnt, ELEMENT **elemList);
+   INT PutAtEndOfList (GRID *theGrid, INT cnt, ELEMENT **elemList);
 
    PARAMETERS:
    .  theGrid - elements are part of that level (not checked)
@@ -2320,7 +2319,7 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT Also
    .  elemList - list of elements to reorder
 
    DESCRIPTION:
-   This function reorders a given set of elements and put them first in the list.
+   This function reorders a given set of elements and put them last in the list.
 
    RETURN VALUE:
    INT
@@ -2328,7 +2327,7 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT Also
    D*/
 /****************************************************************************/
 
-INT PutAtStartOfList (GRID *theGrid, INT cnt, ELEMENT **elemList)
+INT PutAtEndOfList (GRID *theGrid, INT cnt, ELEMENT **elemList)
 {
   ELEMENT *theElement;
   INT i;
@@ -2337,14 +2336,7 @@ INT PutAtStartOfList (GRID *theGrid, INT cnt, ELEMENT **elemList)
   for (i=0; i<cnt; i++)
   {
     theElement = elemList[i];
-    if (PREDE(theElement)!=NULL)
-      SUCCE(PREDE(theElement)) = SUCCE(theElement);
-    else
-      FIRSTELEMENT(theGrid) = SUCCE(theElement);
-    if (SUCCE(theElement)!=NULL)
-      PREDE(SUCCE(theElement)) = PREDE(theElement);
-    else
-      LASTELEMENT(theGrid) = PREDE(theElement);
+    GRID_UNLINK_ELEMENT(theGrid,theElement);
   }
 
   /* reorder elements locally */
@@ -2356,15 +2348,12 @@ INT PutAtStartOfList (GRID *theGrid, INT cnt, ELEMENT **elemList)
     PREDE(elemList[i+1]) = elemList[i];
   }
 
-  /* and insert them at the start of the element list */
-  if (FIRSTELEMENT(theGrid)!=NULL) PREDE(FIRSTELEMENT(theGrid)) = elemList[cnt-1];
-  SUCCE(elemList[cnt-1]) = FIRSTELEMENT(theGrid);
-  FIRSTELEMENT(theGrid) = elemList[0];
-  if (LASTELEMENT(theGrid)==NULL) LASTELEMENT(theGrid)=elemList[cnt-1];
+  /* and insert them at the end of the element list */
+  for (i=0; i<cnt; i++)
+    GRID_LINK_ELEMENT(theGrid,elemList[i],PrioMaster);
 
   return(GM_OK);
 }
-
 
 /****************************************************************************/
 /*D

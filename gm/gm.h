@@ -2243,7 +2243,7 @@ EVECTOR         *GetNextElementVectorEvalProc                           (EVECTOR
 /* miscellaneous */
 INT             RenumberMultiGrid               (MULTIGRID *theMG);
 INT                     OrderNodesInGrid                (GRID *theGrid, const INT *order, const INT *sign, INT AlsoOrderLinks);
-INT             PutAtStartOfList                (GRID *theGrid, INT cnt, ELEMENT **elemList);
+INT             PutAtEndOfList          (GRID *theGrid, INT cnt, ELEMENT **elemList);
 INT         MGSetVectorClasses      (MULTIGRID *theMG);
 
 #endif
