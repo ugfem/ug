@@ -1,12 +1,18 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/************************************************************************/
+/*                                                                      */
+/* This file is a part of NETGEN                                        */
+/*                                                                      */
+/* File:   bfgs.cc                                                      */
+/* Author: Joachim Schoeberl                                            */
+/*                                                                      */
+/************************************************************************/
+
 /***************************************************************************/
 /*                                                                         */
-/* Vorlesung Optimierung I, Gfrerer, WS94/95                               */
+/* Vorlesung Optimierung I, Gfrerer, JKU-Linz, WS94/95                     */
 /* BFGS-Verfahren zur Lösung freier nichtlinearer Optimierungsprobleme     */
-/*                                                                         */
-/* Programmautor:  Joachim Schöberl                                        */
-/* Matrikelnummer: 9155284                                                 */
 /*                                                                         */
 /***************************************************************************/
 

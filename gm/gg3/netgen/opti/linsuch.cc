@@ -1,19 +1,24 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/************************************************************************/
+/*                                                                      */
+/* This file is a part of NETGEN                                        */
+/*                                                                      */
+/* File:   linsuch.cc                                                   */
+/* Author: Joachim Schoeberl                                            */
+/*                                                                      */
+/************************************************************************/
+
+
+
 /***************************************************************************/
-/*                                                                         */
-/* Problem:        Liniensuche                                             */
-/*                                                                         */
-/* Programmautor:  Joachim Schöberl                                        */
-/* Matrikelnummer: 9155284                                                 */
 /*                                                                         */
 /* Algorithmus nach:                                                       */
 /*                                                                         */
-/*   Optimierung I, Gfrerer, WS94/95                                       */
+/*   Optimierung I, Gfrerer, JKU-Linz, WS94/95                             */
 /*   Algorithmus 2.1: Liniensuche Problem (ii)                             */
 /*                                                                         */
 /***************************************************************************/
-
 
 
 #include <stdlib.h>
