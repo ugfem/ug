@@ -1,0 +1,15 @@
+Automake.global
+Makefile
+Makefile.in
+.deps
+config.*
+configure
+aclocal.m4
+autom4te.cache
+depcomp
+install-sh
+missing
+mkinstalldirs
+libtool
+stamp-h*
+libug.pc
