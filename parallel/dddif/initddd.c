@@ -165,10 +165,12 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
                    EL_OBJPTR, r+evector_offset[tag], ps*1,     TypeVector,
                    EL_CONTINUE);
 
+        #ifdef __THREEDIM__
   if (dddctrl.sideData)
     DDD_TypeDefine(dddType, ge,
                    EL_OBJPTR, r+svector_offset[tag], ps*desc->sides_of_elem, TypeVector,
                    EL_CONTINUE);
+        #endif
 
   if (etype==Inside)
   {
@@ -331,7 +333,8 @@ static void ddd_DefineTypes (void)
                  /* (e.g., edge). therefore, 'object' must be updated by MKCONS-  */
                  /* handler of associated object. 960404 KB */
                  /* TODO: decide whether LDATA or OBJPTR for different VectorTypes*/
-                 EL_OBJPTR, ELDEF(v.object), TypeNode,
+                 /* EL_OBJPTR, ELDEF(v.object), TypeNode, */
+                 EL_LDATA,  ELDEF(v.object),
                  EL_LDATA,  ELDEF(v.pred),
                  EL_LDATA,  ELDEF(v.succ),
                  EL_GDATA,  ELDEF(v.index),
@@ -486,7 +489,7 @@ static void ddd_DefineTypes (void)
 
   if (dddctrl.edgeData)
     DDD_TypeDefine(TypeEdge, &e,
-                   EL_LDATA,  ELDEF(e.vector), TypeVector,
+                   EL_OBJPTR, ELDEF(e.vector), TypeVector,
                    EL_CONTINUE);
 
   DDD_TypeDefine(TypeEdge, &e, EL_END, &e+1);
