@@ -2711,7 +2711,8 @@ INT BNDS_BndSDesc (BNDS *theBndS, INT *id, INT *nbid, INT *part)
   if (STD_BVP_NDOMPART(currBVP)>1)
   {
     *part = DPI_SG2P(DOMAIN_PARTINFO(STD_BVP_DOMAIN(currBVP)),
-                     PATCH_ID(p)-STD_BVP_SIDEOFFSET(currBVP));                                          /* <-- this expression yields the segment id */
+                     PATCH_ID(p)-STD_BVP_SIDEOFFSET(currBVP));
+    /* this expression yields the segment id */
   }
   else
     /* default is 0 */
@@ -2952,7 +2953,7 @@ INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
   /* find common patch(es) of boundary points */
   cnt = GetNumberOfCommonPatches(p0,p1,&pid);
   if (cnt == 0)
-    REP_ERR_RETURN (1);
+    return(1);
 
     #ifdef __THREEDIM__
   if (cnt > 1)
