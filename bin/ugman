@@ -1,7 +1,7 @@
 #!/bin/sh
 if test $UGROOT
 then
-    MANPATH=$UGROOT/catman
+    MANPATH=$UGROOT/man
     export MANPATH
     man $*
 else
