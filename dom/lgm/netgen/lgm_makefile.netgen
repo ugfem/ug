@@ -1,0 +1,34 @@
+##############################################################################
+#																			 #
+#	Makefile for all modules of ug version 3								 #
+#																			 #
+#	created 16 December 1994												 #
+#																			 #
+##############################################################################
+
+
+# include configuration and all makefile macro definitions
+include ../../../ug.conf
+
+OBJECTS = lgm.o nginterface3d.o surface.o
+
+.PRECIOUS:   .cc
+.SUFFIXES:   .cc
+
+# local C compiler flags
+LCFLAGS = -I../../../gm/gg3/netgen -I../../../gm/gg3/netgen/general
+
+3 : $(OBJECTS) lgm_makefile.netgen
+	$(ARCH_AR) $(ARCH_ARFLAGS) ../../../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS) 
+
+2: 	
+	echo "no netgen"
+	
+.c.o:
+	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
+
+.cc.o:
+	$(ARCH_C++) $(UG_C++FLAGS) $(LCFLAGS) $<
+
+clean:
+	rm -f *.o
