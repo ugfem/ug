@@ -1,0 +1,39 @@
+#!/bin/sh
+if test $# -eq 0 -o $# -ge 2 -o "$1" = "-help"
+then
+    echo "usage: $0 <texfile>|-remove";
+    echo "purpose: call tex with modified input path";
+    echo "Options are";
+    echo " <texfile>: the texfile you want to compile";
+    echo "             where <texfile> is one of progmanual.tex, refmanual.tex";
+    echo "             or applmanual.tex";
+    echo " remove: remove all auxilary files of texfiles mentioned above";
+    exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+# set the latex manual 
+TEXINPUTS=${TEXINPUTS}:$UGROOT/doc/texman
+export TEXINPUTS;
+
+if test "$1" = "-remove"
+then
+	cd $UGROOT/doc;
+	for i in *manual.aux *manual.dvi *manual.idx *manual.log *manual.toc
+	do
+		rm $i;
+	done
+	echo "all tex auxilary files removed";
+	exit 0;
+fi
+
+if test $# -eq 1
+then
+	latex $1
+fi
+

@@ -1,0 +1,31 @@
+#!/bin/sh
+if test $# -ge 2 -o "$1" = "-help"
+then
+    echo "usage: $0 [all]";
+    echo "purpose: clean source code [and ug libraries]";
+    echo "Options are";
+	echo " all: clean all ug libraries, too";
+    exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then
+    echo "$0: to use $0 set shell environment variable UGROOT!";
+    exit 1;
+fi
+
+cd $UGROOT;
+ugmake -i clean
+ugmake diff2d -i clean
+ugmake diff2da -i clean
+ugmake cd3d -i clean
+ugmake cd3da -i clean
+ugmake fem -i clean
+ugmake fema -i clean
+cd $UGROOT;
+
+if test "$1" = "all"
+then
+	rm -f lib/*.a
+fi
+

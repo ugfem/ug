@@ -1,0 +1,175 @@
+#!/bin/sh
+
+if test $# -ge 2 -o "$1" = "-help"
+then
+    echo "usage: $0 [-remove]";
+    echo "purpose: create directory trees for man/latex pages";
+	echo "Options are";
+	echo " -remove: remove all directories I created"; 
+	echo "          including directories NOT empty!";
+    exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then
+    echo "$0: to use $0 set shell environment variable UGROOT!";
+    exit 1;
+fi
+
+# define function "ugmkdir"
+ugmkdir () 
+{
+	if test -d $1
+	then
+		echo "$1 exists already!";
+	else
+		mkdir $1
+	fi
+}
+
+if test $# -eq 0
+then
+
+	# create man page trees
+	cd $UGROOT;
+	ugmkdir man;
+
+	cd man;
+	if test ! -f mandesc
+	then
+		cp ../doc/mandesc .
+	fi
+
+	for i in 1 2 3 4 5 6 7 8 9 
+	do
+		ugmkdir man$i;
+	done
+
+	cd $UGROOT;
+	if test ! -d ..
+	then
+		exit 1;
+	fi
+
+	for i in diff2d cd3d fem
+	do 
+		if test -d ../$i
+		then
+			cd ../$i;
+			
+			ugmkdir man;
+			cd man;
+
+			ugmkdir mana;
+
+			if test ! -f mandesc
+			then
+				cp $UGROOT/doc/mandesc .;
+			else
+				echo "mandesc for $i exists";
+			fi
+
+			if test "$i" = "diff2d"
+			then
+				ugmkdir manb;
+				ugmkdir manc; 
+			fi
+
+			if test "$i" = "cd3d"
+			then
+				ugmkdir mand;
+				ugmkdir mane; 
+			fi
+
+			if test "$i" = "fem"
+			then
+				ugmkdir manf;
+				ugmkdir mang; 
+			fi
+			cd ..;
+		else 
+			echo "no directory $i";
+		fi
+	done
+
+	# create tree for latex pages
+	cd $UGROOT/doc;
+
+	ugmkdir texman;
+	ugmkdir ug3;
+
+	cd ug3
+	ugmkdir ug;
+
+	cd ug;
+	ugmkdir admin;
+	ugmkdir commands;
+	ugmkdir dev;
+	ugmkdir gm;
+	ugmkdir graph;
+	ugmkdir low;
+	ugmkdir numerics;
+	ugmkdir overview;
+	ugmkdir ui;
+
+	cd ..;
+	for i in cd3d diff2d fem
+	do
+		ugmkdir $i;
+		cd $i;
+		ugmkdir appl;
+		ugmkdir overview;
+		ugmkdir pclib;
+		cd ..;
+	done
+	echo "all man/latex directories created";
+fi
+
+if test "$1" = "-remove"
+then
+	# remove man page directories
+	cd $UGROOT;
+	if test -d man
+	then
+		rm -rf man;
+	else
+		echo "no directory man";
+	fi
+
+	if test ! -d ..
+	then
+		exit 1;
+	fi
+
+	for i in diff2d cd3d fem
+	do
+		if test -d ../$i
+		then
+			cd ../$i
+			if test -d man
+			then
+				rm -rf man;
+			fi
+		else
+			echo "no directory $i";
+		fi
+	done
+
+	# remove latex page directory
+	cd $UGROOT/doc
+	if test -d texman
+	then
+		rm -rf texman;
+	else 
+			echo "no directory texman";
+	fi
+	if test -d ug3
+	then
+		rm -rf ug3;
+	else
+			echo "no directory ug3";
+	fi
+	echo "all man/latex directories removed";
+fi
+	
+	

@@ -1,0 +1,26 @@
+##############################################################################
+#																			 #
+#	Makefile for the ug library (UNIX version)								 #
+#																			 #
+#	created 20.07.92														 #
+#																			 #
+##############################################################################
+
+# load architecture dependent makefile	
+include ../ug.arch
+include ../ug.conf
+
+# architecture-dependent makefile entries
+include ../machines/mk.$(ARCHDIR)
+
+OBJECTS = ugenv.o heaps.o fifo.o misc.o defaults.o initlow.o fileopen.o ugstruct.o
+
+all : $(OBJECTS) Makefile.low
+	ar $(ARFLAGS) ../lib/libug$(LIBSUFFIX).a $(OBJECTS) 
+
+.c.o:
+	$(CC) $(CFLAGS) $(UGDEFINES) $<
+
+clean:
+	rm $(OBJECTS)
+

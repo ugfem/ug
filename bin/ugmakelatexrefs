@@ -1,0 +1,36 @@
+#!/bin/sh
+
+if test $# -eq 0 -o $# -ge 2 -o "$1" = "help"
+then
+	echo "usage: $0 -remove | -new";
+	echo "purpose: generate for each manual section an \\input list";
+	echo "         and create links to all latex pages";
+	echo "Options are";
+	echo " -remove: remove old links";
+	echo " -new: remove old links, generate new \input list and create new links";
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then
+    echo "$0: to use $0 set shell environment variable UGROOT!";
+    exit 1;
+fi
+
+if test "$1" = "-remove" -o "$1" = "-new"
+then
+	for i in $UGROOT/doc/texman/*
+	do
+		if test -h $i
+		then
+			rm $i;
+		fi
+	done
+	echo "$0: old links removed!"
+fi
+
+if test "$1" = "-new"
+then
+	ugrecurse 'ugmakeref' $UGROOT/doc/ug3
+fi
+

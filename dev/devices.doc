@@ -1,0 +1,340 @@
+/****************************************************************************/
+/*D
+    devices - the devices module defines an interface to machine dependent window
+                and event handling
+    
+    PURPOSE:
+    The devices module defines an interface for graphics ouput on windows and for
+    the event handling. Interfaces with window and event handling are defined for
+    XWindows and Macintosh computers up to now but should be easily extendable to
+    other platforms like Microsoft Windows or others.
+    
+    Additionally there exists the possibility to write graphical ouput in form of 
+    a special graphics commands format to file which later can be view using the
+    program 'xugv' or converting it to PostScript using the 'm2ps' tool.
+    
+    The machine interface is splitted into two parts':'
+
+.n      a) output to the shell
+.n      b) event handling (including input from shell), window management and graphics
+    
+    The first is defined via the interface functions
+
+.n      UserWrite
+.n      UserWriteF
+.n      PrintErrorMessage
+.n      WriteString
+
+    while the input from shell is connected with the event handling (--> 'EVENT'). (machines
+    without event handling can nevertheless define a standard interface which only returns events
+    of type 'TERM_STRING_EVENT'.) For details see also 'ProcessEvent'.
+    
+    For the event handling c.f. 'ProcessEvent' and the description of the 'EVENT' data structure.
+    
+    The graphics interface is defined by a data structure called --> 'OUTPUTDEVICE' and
+    can be either the monitor screen using the machines window management
+    or a file to which graphics commands are written. This struct requires basic plotting
+    functions, color palette handling and functions for window handling.
+    
+    STRUCTURE:
+    The devices module consists of a file 'devices.c' providing some interface functions
+    for':'
+    
+.n      - enroling output devices at initialization time
+.n      - output on the shell window
+.n      - printing of error messages
+.n      - log file mechanism (shell output can be protocoled)
+.n      - defining a mutelevel which controls how verbose output of functions is
+.n      - opening the shell window at initialšization time
+    
+    Then there are some subdirectories that contain different output devices for
+    graphics output':'
+    
+.n      xif - here is the source code for the XWindows interface
+.n      mif - here is the source code for the Macintosh interface
+.n      meta - here is the source code for the (machine independent) metafile interface
+    
+    SEE ALSO:
+    EVENT, OUTPUTDEVICE, ProcessEvent
+D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+    OUTPUTDEVICE - data structure to define an interface to output devices
+    
+    PURPOSE:
+    The struct 'OUTPUTDEVICE' defines an interface to an output device with
+    graphics capabilites. ug uses a default output device which usually is your
+    computer monitor. Additionally there can be defined several other output devices.
+    
+    Up to now there is implemented an interface to XWindows of UNIX and to the
+    Macintosh OS with the possibilties of window handling and plotting.
+    They serve as default output device.
+    
+    Another output is the 'meta' ouput device. This is a format to write graphics commands
+    to file which later can be view with the 'xugv' tool or that can be translated to PostScript
+    format using the 'm2ps' tool. It is a lean storage format
+    suited quite well for producing and viewing "films" with many pictures of time dependent solutions.
+    It is also a helpful tool for production runs on large problems which often will run
+    in batch mode.
+    
+    In the near future probably also a PostScript output device will exist.
+    
+    The output device struct requires functions for opening, closing, activating and updating
+    a window on the device. Then there is a collection of graphics functions to set color,
+    line width move the cursor, draw lines and higher level functions to plot filled polygons
+    and text.
+    
+    Additionally there is information specified on the color palette used and some standard
+    colors are defined.
+    
+    DEFINITION:
+.vb
+// abstract graphical output device 
+struct outputdevice {
+
+    // This is an environment variable 
+    ENVVAR v;
+
+    // properties 
+    long black;                         // value for black                                      
+    long white;                         // value for white                                      
+    long red;                           // value for red                                        
+    long green;                         // value for green                                      
+    long blue;                          // value for blue                                       
+    long cyan;                          // value for cyan                                       
+    long orange;                        // value for orange                                     
+    long yellow;                        // value for yellow                                     
+    long darkyellow;                    // value for yellow                                     
+    long magenta;                       // value for magenta                                    
+    short hasPalette;                   // 1 if device has a color lookup table                 
+    long range;                         // # of possible color indices                          
+    long spectrumStart;                 // usable range for a continuous                        
+    long spectrumEnd;                   // color spectrum                                       
+    COORD PixelRatio;                   // ratio of (physical) hight to width of a pixel        
+
+    // pointers to basic drawing functions 
+    void (*Move) (SHORT_POINT);             // move in device coordinates       
+    void (*Draw) (SHORT_POINT);             // draw from current point to given 
+    void (*Polyline) (SHORT_POINT *, INT ); // draw a polyline                  
+    void (*InversePolyline) (SHORT_POINT *, INT );          
+                                            // draw an inverted polyline        
+    void (*Polygon) (SHORT_POINT *, INT );  // fill a polygon w. curr. col      
+    void (*InversePolygon) (SHORT_POINT *, INT );           
+                                            // invert a polygon w. curr. col    
+    void (*ErasePolygon) (SHORT_POINT *, INT );             
+                                            // erase a polygon w. curr. col     
+    void (*Polymark) (short, SHORT_POINT *);// place markers                    
+    
+    void (*Text) (const char *, INT);       // draw text in current size/font
+    void (*CenteredText) (SHORT_POINT, const char *, INT);  
+                                            // draw text centered at x,y        
+                                            // possible text modes are TEXT_REGULAR 
+                                            // and TEXT_INVERSE (the last argument)
+    
+    void (*ClearViewPort)(void);            // clear a view port                
+    
+    // pointers to set functions 
+    void (*SetLineWidth) (short);           // line width in pixels (points)    
+    void (*SetTextSize) (short);            // text size in pixels (points)     
+    void (*SetMarker) (short);              // set marker id                    
+    void (*SetMarkerSize) (short);          // marker size in pixels (points)   
+    void (*SetColor) (long);                // arg is index or direct col value 
+    void (*SetPaletteEntry) (long,short,short,short);       
+                                            // set index to value               
+    void (*SetNewPalette) (long,long,short*,short*,short*); 
+                                            // replace entry                    
+    
+    // pointers to miscellaneous functions 
+    void (*GetPaletteEntry) (long,short *,short *,short *); 
+                                            // read color table                 
+    void (*Flush) (void);                   // flush graphics buffer            
+    
+    // operations for managing windows 
+    OpenOutputPtr OpenOutput;               // function to open a window                              
+    CloseOutputPtr CloseOutput;             // function to close a window                             
+    ActivateOutputPtr ActivateOutput;       // function to activate window                            
+    UpdateOutputPtr UpdateOutput;           // function to draw outline with tool
+                                            // and info box        
+};
+
+typedef struct outputdevice     OUTPUTDEVICE;
+
+// type for device coordinates 
+typedef struct
+{
+    short x;
+    short y;
+} SHORT_POINT ;
+
+// identification of windows 
+typedef INT WINDOWID;
+
+// function types exported by OUTPUTDEVICE 
+typedef WINDOWID (*OpenOutputPtr)     (const char *title,
+                      INT x, INT y, INT width, INT height,
+                      INT *Global_LL, INT *Global_UR, INT *Local_LL, INT *Local_UR, INT *error); 
+typedef INT      (*CloseOutputPtr)    (WINDOWID win);
+typedef INT      (*ActivateOutputPtr) (WINDOWID win);
+typedef INT      (*UpdateOutputPtr)   (WINDOWID win, char *s, INT tool);
+.ve
+
+    STRUCT COMPONENTS:
+    We only explain the function pointers together with their arguments and types in correct order.
+    
+.   Move            - move the current cursor position: 'SHORT_POINT position'
+.   Draw            - draw a line with the current color and the current line width
+                        from the current cursor position to: 'SHORT_POINT endposition'.
+.   Polyline        - draw a polygonal line (not closed) connecting 'SHORT_POINT points[], INT nPoints' in total
+.   InversePolyline - draw an inverse polygonal line (not closed) connecting 'SHORT_POINT points[], INT nPoints' in total
+.   Polygon         - draw a filled polygon (closed) connecting 'SHORT_POINT points[], INT nPoints' in total
+.   InversePolygon  - draw an inverse filled polygon (closed) connecting 'SHORT_POINT points[], INT nPoints' in total
+.   ErasePolygon    - erase filled polygon (closed) connecting 'SHORT_POINT points[], INT nPoints' in total
+.   Polymark        - plot 'short nMarkers' at 'SHORT_POINT points[]'
+.   Text            - write text at 'SHORT_POINT position' with 'INT mode' TEXT_REGULAR or TEXT_INVERSE
+.   CenteredText    - write centered text at'SHORT_POINT position' with 'INT mode' TEXT_REGULAR or TEXT_INVERSE
+.   ClearViewPort   - clear the whole view port of the window
+.   SetLineWidth    - set current line width to 'short width'
+.   SetTextSize     - set current text size to 'short size'
+.   SetMarker       - set current marker id to 'short id'
+.   SetMarkerSize   - set current marker size to 'short size'
+.   SetColor        - set current color to 'short color'
+.   SetPaletteEntry - set palette entry 'long entry' to ('short red', 'short green', 'short blue')
+.   SetNewPalette   - init palette entries in the range 'long start' to 'long end' with colors
+                        ('short red[]', 'short green[]', 'short blue[]')
+.   GetPaletteEntry - return current rgb values of entry 'long entry' in 'short *red', 'short *green', 'short *blue'
+.   Flush           - flush the graphics buffer (iff)
+
+.   OpenOutput      - open a window with 'char title[]', lower left corner at ('INT x, INT y') with
+                        'INT width' and 'INT heigth'. The global coordinates (in the screen) and the local
+                        coordinates (in the window) of the view port (lower left and upper right corner)
+                        are stored in 'INT Global_LL[2]' etc. The return values is the window id.
+.   CloseOutput     - close the window with 'WINDOWID id'
+.   ActivateOutput  - activate the window with 'WINDOWID id'
+.   UpdateOutput    - update the window with 'WINDOWID id', write string 'char *s' into the info
+                        box and display 'INT tool' as current tool
+    
+    The remaining struct components are suppose to be self explanatory.
+    
+    SEE ALSO:
+    devices 
+
+D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+    EVENT - data structure for the ug event handling
+    
+    PURPOSE:
+    The event handling of ug defines several possible event types the interface
+    function 'GetNextUGEvent' can return to 'ProcessEvent'. Depending on the
+    event type data are transferred by the correspnding component in the union.
+    The events are distinguished by the 'Type' component in the 'EVENT'
+    
+    DEFINITION:
+.vb
+typedef union {
+    INT Type;
+    NO_UGEVENT              NoEvent;
+    TERM_GOAWAY_EVENT       TermGoAway;
+    TERM_CMDKEY_EVENT       TermCmdKey;
+    TERM_STRING_EVENT       TermString;
+    DOC_GOAWAY_EVENT        DocGoAway;
+    DOC_ACTIVATE_EVENT      DocActivate;
+    DOC_DRAG_EVENT          DocDrag;
+    DOC_GROW_EVENT          DocGrow;
+    DOC_CHANGETOOL_EVENT    DocChangeTool;
+    DOC_CONTENTCLICK_EVENT  DocContentClick;
+    DOC_UPDATE_EVENT        DocUpdate;
+} EVENT;
+
+typedef struct {                    // no event                                 
+    INT Type;                       // event type                               
+    
+    // data 
+    INT InterfaceEvent;             // 1 if the interface event was handled     
+} NO_UGEVENT;
+
+typedef struct {                    // go away event for terminal window        
+    INT Type;                       // event type                               
+} TERM_GOAWAY_EVENT;
+
+typedef struct {                    // cmd key event for terminal window        
+    INT Type;                       // event type                               
+    
+    // data 
+    char CmdKey;                    // character from keyboard                  
+} TERM_CMDKEY_EVENT;
+
+typedef struct {                    // string event for terminal window         
+    INT Type;                       // event type                               
+    
+    // data 
+    char String[INPUTBUFFERLEN];    // string from keyboard                     
+} TERM_STRING_EVENT;
+
+typedef struct {                    // go away event for view                   
+    INT Type;                       // event type                               
+    
+    // data 
+    WINDOWID win;                   // the window                               
+} DOC_GOAWAY_EVENT;
+
+typedef struct {                    // activate event for view                  
+    INT Type;                       // event type                               
+    
+    // data 
+    WINDOWID win;                   // the window                               
+} DOC_ACTIVATE_EVENT;
+
+typedef struct {                    // drag event for view                      
+    INT Type;                       // event type                               
+    
+    // data 
+    WINDOWID win;                   // the window                               
+    INT Global_LL[2];               // new absolute position of window on screen
+    INT Global_UR[2];               //                                          
+} DOC_DRAG_EVENT;
+
+typedef struct {                    // grow event for view                      
+    INT Type;                       // event type                               
+    
+    // data 
+    WINDOWID win;                   // the window                               
+    INT Global_LL[2];               // new absolute position of window on screen
+    INT Global_UR[2];               //                                          
+    INT Local_LL[2];                // range of pixels used for plotting (view port)        
+    INT Local_UR[2];                //                                          
+} DOC_GROW_EVENT;
+
+typedef struct {                    // change tool event for view               
+    INT Type;                       // event type                               
+    
+    // data 
+    WINDOWID win;                   // the window                               
+    INT Tool;                       // change to that tool                      
+} DOC_CHANGETOOL_EVENT;
+
+typedef struct {                    // content click event for view             
+    INT Type;                       // event type                               
+    
+    // data 
+    WINDOWID win;                   // the window                               
+    INT MousePosition[2];           // mouse position                           
+} DOC_CONTENTCLICK_EVENT;
+
+typedef struct {                    // update event for view                    
+    INT Type;                       // event type                               
+    
+    // data 
+    WINDOWID win;                   // the window                               
+} DOC_UPDATE_EVENT;
+.ve
+
+    SEE ALSO:
+    ProcessEvent, GetNextUGEvent
+
+D*/
+/****************************************************************************/

@@ -1,0 +1,107 @@
+#!/bin/sh
+if test "$1" = "-help"
+then
+	echo "usage: $0 [<ugmodule>] [makeoptions]";
+	echo "purpose: compile by calling \"make\" with the right Makefile[.<ugmodule>]";
+	echo "Options are";
+	echo " <ugmodule>: the module which you want to compile";
+	echo "             where <ugmodule> is one of ug, dev, meta, xif";
+	echo "             gm, graph, low, numerics, ui, diff2d, diff2da,";
+	echo "             cd3d, cd3da, fem, fema";
+	echo " <makeoptions>: the options which you want tp pass to \"make\"";
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+# if no parameter is specified make in current directory
+if test $# -eq 0 
+then
+	if test `ls Makefile*|wc -l` -eq 1 
+	then
+		make -f `ls Makefile*`;
+		exit 0;
+	else
+		echo "$0: Makefile not found or not unique!"; 
+		exit 1;
+	fi
+fi
+
+# if parameter are specified make the specified module
+if test $# -ge 1 
+then
+	# check whether first  option is ug module 
+	if test "$1" = "ug" -o "$1" = "dev" -o "$1" = "meta" -o "$1" = "xif" -o "$1" = "gm" -o "$1" = "graph" -o "$1" = "low" -o "$1" = "numerics" -o "$1" = "ui"
+	then
+		if test "$1" = "ug"
+		then 
+			cd $UGROOT;
+		else
+			if test "$1" = "meta" -o "$1" = "xif"
+			then
+				cd $UGROOT/dev/$1;
+			else
+				cd $UGROOT/$1;
+			fi
+		fi
+		shift;
+	fi
+
+	# check whether first option is problem class or application
+	if test "$1" = "diff2d" -o "$1" = "diff2da" 
+	then
+		if test -d $UGROOT/../diff2d
+		then
+			cd $UGROOT/../diff2d;
+		else 
+			echo "no directory for diff2d found!";
+		fi				
+	fi			
+			
+	if test "$1" = "cd3d" -o "$1" = "cd3d" 
+	then
+		if test -d $UGROOT/../cd3d
+		then
+			cd $UGROOT/../cd3d;
+		else 
+			echo "no directory for cd3d found!";
+		fi				
+	fi			
+			
+	if test "$1" = "fem" -o "$1" = "fema" 
+	then
+		if test -d $UGROOT/../fem
+		then
+			cd $UGROOT/../fem;
+		else 
+			echo "no directory for cd3d found!";
+		fi				
+	fi			
+			
+	if test "$1" = "diff2d" -o "$1" = "cd3d" -o "$1" = "fem"
+	then
+		cd pclib;
+		shift;
+	fi
+
+	if test "$1" = "diff2da" -o "$1" = "cd3da" -o "$1" = "fema"
+	then
+		cd appl;
+		shift;
+	fi
+
+	# call make with the right makefile
+	if test `ls Makefile*|wc -l` -eq 1 
+	then
+		make -f `ls Makefile*` $*;
+		exit 0;
+	else
+		echo "$0: Makefile not found or not unique!"; 
+	fi
+fi
+
+exit 0;

@@ -1,0 +1,49 @@
+-
+*****************************************************************************************
+*                                                                                       *
+*                         ug3d.help: built-in commands                                  *
+*                                                                                       *
+*****************************************************************************************
+
+-
+############################## general commands #########################################
+
+
+-
+##############################  PlotObjectTypes  #########################################
+
+-grid > setplotobject setview plot
+Grid                 # name of PlotObjType for plot of a grid: 3D
+Grid [$c {0|1}] [$w {0|1}] [$P <x> <y> <z>] [$N <x> <y> <z>]
+    $c {0|1}                        # plot colored: no/yes
+    $w {c/i/r/a}                    # which elements to plot: 
+                                        c  copies and up
+                                        i  irregular and up
+                                        r  regular and up
+                                        a  all
+    $P <x> <y> <z>                  # a point on the cut plane
+    $N <x> <y> <z>                  # the normal of the cut plane
+
+										
+-escalar > setplotobject setview plot
+EScalar           # name of PlotObjType for plot of a scalar value: 3D
+EScalar $e <ElemEvalProc> [$m {COLOR | CONTOURS_EQ}] [$f <fromValue>] [$t <toValue>] [$n <nContours>] [$P <x> <y> <z>] [$N <x> <y> <z>]
+    $e <ElemEvalProc>               # name of element scalar evaluation procedure
+    $d <depth>                      # depth of plot
+    $m {COLOR | CONTOURS_EQ}        # mode: COLOR-plot or CONTOUR-plot
+    $f <fromValue> $t <toValue>     # range [fromValue,toValue]
+    $n <nContours>                  # number of contours
+    $P <x> <y> <z>                  # a point on the cut plane
+    $N <x> <y> <z>                  # the normal of the cut plane
+
+	
+-evector > setplotobject setview plot
+EVector           # name of PlotObjType for plot of a vector value: 3D
+EVector $e <ElemEvalProc> [$c {0|1}] [$t <toValue>] [$r <rastersize>] [$P <x> <y> <z>] [$N <x> <y> <z>]
+    $e <ElemEvalProc>               # name of element vector evaluation procedure
+    $c {0|1}                        # cut vectors if to long
+    $t <toValue>                    # range: [0,toValue]
+    $r <rastersize>                 # physical meshsize of rasterpoints where
+    $P <x> <y> <z>                  # a point on the cut plane
+    $N <x> <y> <z>                  # the normal of the cut plane
+                                    # vectors are plotted

@@ -1,0 +1,38 @@
+/****************************************************************************/
+/*D
+   fifo.c - Functions to handle a fifo (first in, first out) structure.
+
+   SYNOPSIS:
+   fifo_init    (FIFO  *myfifo, void *buffer, INT size)
+   
+   fifo_clear   (FIFO  *myfifo)
+   
+   fifo_empty   (const FIFO *myfifo)
+   
+   fifo_full    (const FIFO *myfifo)
+   
+   fifo_in      (FIFO *myfifo, void *newelement)
+   
+   *fifo_out    (FIFO *myfifo)   
+   
+
+   DESCRIPTION:
+   These function support the handling of a fifo (first in, first out) structure.
+   
+   For a  detailed description see the manuals of each function.
+
+D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   fifo.h - Header file of 'fifo.c'.
+
+   DESCRIPTION:
+   The function given in 'fifo.c' support the handling of a fifo
+   (first in, first out) structure.
+   
+   For further information see 'fifo.c'.
+
+D*/
+/****************************************************************************/

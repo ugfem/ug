@@ -1,0 +1,47 @@
+-
+*****************************************************************************************
+*                                                                                       *
+*                         ug2d.help: built-in commands                                  *
+*                                                                                       *
+*****************************************************************************************
+
+-
+############################## general commands #########################################
+
+
+-
+##############################  PlotObjectTypes  #########################################
+
+-grid > setplotobject setview plot
+Grid                 # name of PlotObjType for plot of a grid: 2D
+Grid [$c {0|1}] [$e {0|1}] [$n {0|1}] [$w {0|1}]
+    $c {0|1}                        # plot colored: no/yes
+    $e {0|1}                        # plot ElemIDs:	no/yes
+    $n {0|1}                        # plot NodeIDs: no/yes
+    $w {c/i/r/a}                    # which elements to plot: 
+                                        c  copies and up
+                                        i  irregular and up
+                                        r  regular and up
+                                        a  all
+
+										
+-escalar > setplotobject setview plot
+EScalar           # name of PlotObjType for plot of a scalar value: 2D
+EScalar $e <ElemEvalProc> [$m {COLOR | CONTOURS_EQ}] [$f <fromValue>] [$t <toValue>] [$n <nContours>]
+    $e <ElemEvalProc>               # name of element scalar evaluation procedure
+    $d <depth>                      # depth of plot
+    $m {COLOR | CONTOURS_EQ}        # mode: COLOR-plot or CONTOUR-plot
+    $f <fromValue> $t <toValue>     # range [fromValue,toValue]
+    $n <nContours>                  # number of contours
+
+	
+-evector > setplotobject setview plot
+EVector           # name of PlotObjType for plot of a vector value: 2D
+EVector $e <ElemEvalProc> [$c {0|1}] [$t <toValue>] [$r <rastersize>] [$l <cutlength>]
+    $e <ElemEvalProc>               # name of element vector evaluation procedure
+    $c {0|1}                        # cut vectors if to long
+    $t <toValue>                    # range: [0,toValue]
+    $r <rastersize>                 # physical meshsize of rasterpoints where
+                                    # vectors are plotted
+    $l <cutlength>                  # cutlength in units of rastersize
+

@@ -1,0 +1,40 @@
+\documentstyle[epsf,twoside]{article}
+
+% Voreinstellungen
+\input{const.tex}
+\input{refman.sty}
+\pagestyle{myheadings}
+\sloppy
+\makeindex
+
+\begin{document}
+\newcommand{\sectitle}{\mbox{}}
+\setcounter{page}{0}
+
+\title{UG Version 3.0 Programming manual\\
+       Dated: \today}
+\author{The UG Group}
+\maketitle
+{
+\small
+\tableofcontents
+}
+\clearpage
+
+% include the different sections
+\pagestyle{plain}
+\section{Installation and Administation of ug}
+\renewcommand{\sectitle}{Installation and Administation}
+\input{ug3/ug/admin/refman}
+
+\pagestyle{plain}
+\section{Commands of ug}
+\renewcommand{\sectitle}{Commands}
+\input{ug3/ug/commands/refman}
+
+\pagestyle{plain}
+\section{An introduction to ug's modules and data structures}
+\renewcommand{\sectitle}{modules and data structures}
+\input{ug3/ug/overview/refman}
+
+\end{document}

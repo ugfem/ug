@@ -1,0 +1,7 @@
+# ug.arch
+# edit this file to set your architecture
+# exactly one of the following lines must be active (consider the
+#    exception for MacIntosh, see the manual for Makefiles):
+ARCHDIR = HP
+# ARCHDIR = GCC
+# ARCHDIR = SGI

@@ -1,0 +1,3 @@
+make -f ug.make CleanAll > makeout
+makeout
+delete makeout

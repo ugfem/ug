@@ -1,0 +1,11 @@
+Echo "deleting binaries"
+for file in `files -r -f -o -s -t "OBJ "` `files -r -f -o -s -t "APPL"` `files -r -f -o -s -t "MPSY"`
+delete -p {file}
+end
+
+Echo "deleting makeouts"
+Set Exit 0
+Delete -p :Åmakeout 
+Delete -p :Å:Åmakeout 
+Delete -p :Å:Å:Åmakeout
+Set Exit 1

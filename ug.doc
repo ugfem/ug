@@ -1,0 +1,134 @@
+/****************************************************************************/
+/*D
+   ug - software library for the development of applications solving partial differential equations
+
+   OVERVIEW:
+	This man page discusses the main concepts of the software library `ug`
+	and shall give helpful hints for understanding how an application is
+	constructed using this library. Furhermore this page should be the
+	starting point for getting hierarchically a deeper sight into the internal
+	structure of the different `ug` modules. At last there is given some practical
+	information for using `ug`.
+
+   APPLICATION STRUCTURE:
+	A typical application developed using the `ug` library can be divided into three 
+	layers: application layer, problem class layer and ug layer. The layers perform
+	the following tasks.
+
+.   application~layer - descrption of the domain shape and the boundary conditions.
+.   problem~class~layer - implements the partial defferential equation with a set of different 
+	solvers, estimators and discretisations
+.   ug~layer - the ug layer itself consists of different modules each performs a specific task 
+
+.vb
+      
+                           layers of an ug application
+
+        ________________________________________________________________________
+       |                                                                        | 
+       |                        application layer                               | 
+       |                                                                        | 
+        ------------------------------------------------------------------------
+       |                                                                        | 
+       |                                                                        | 
+       |                        problem class layer                             | 
+       |                                                                        | 
+        ------------------------------------------------------------------------
+       |                                                                        | 
+       |                            ug layer:                                   | 
+       |                                                                        | 
+       |      grid management      graphics      user interface    devices      | 
+       |                                                                        | 
+       |              numerical procedures     low tasks                        | 
+       |________________________________________________________________________| 
+.ve
+
+	Since `ug` is provided with some sample applications, experiments with the
+	problems (partial differential equation, domain definition and boundary conditions)
+	defined here can be done without any programming. For example see man pages diff2da, cd3da.
+
+	If you just want to concern with a modified domain or different boundary conditions the
+	only thing to do is to modify the file of the application layer. These are in the case of
+	module diff2d and cd3d the corresponding source files diff2da.c and cd3da.c.
+
+	To write an own application treating your specific problem you need to change the two upper layers.
+	The problem class layer defines the mathematical tools to handle the equation, e.g. 
+	discretisation, solver, estimator. For the realisation of these mathematical algorithms the ug
+	layer provides a powerful interface by providing well defined abstract operations and functions, e.g.  
+	for the acess to the data structures of the multigrid (elements, nodes) as also for building up a
+	new solver.
+	Definition of the domain shape and boundary conditions for a new application should be done
+	in the application layer as mentioned above, this is the basis for a series of experiments with one
+	class of differential equation. 
+	As examples how to use the ug layer for your own needs, see man pages for diff2d and cd3d.
+
+	MODULES:
+	A module is considered in the 
+	context of `ug` as a set of one or more source files which realize a specific functionality. 
+	This viewpoint is closely related to the abstract data type (ADT) with data structures and 
+	operations on them. The implementation of `ug` tries to follow the ADT concept 
+	in a rather strict manner with the goal of high independency between the single modules.
+	This should ensure the typical software engineering demands and create a basis for flexible 
+	software which is portable and can be modified or extended to your needs with a small amount of work.  
+
+	Now let us have a closer look at the modules in the ug layer.
+
+.   'grid~management~(gm)' - The grid manager module performs all operations which manipulate the grid. It controls the creation 
+	and deletion of new elements during refine and provides a well defined interface to the layers above.
+	For more details see man page gm.
+
+.   'graphics~(graph)' -
+	This module of `ug` realizes a small 2/3D color graphics model. Some features are skalar or vector plots 
+	with arbitrary viewpoint and cutplanes on the viewed domain,solution or grid.
+
+.   'user~interface~(ui)' -
+	The core of 'ui' is a command interpreter which provides a skript languages and gives access to 
+	commands of your application. This allows to type in all commands directly into the command line
+	interface furthermore it is possible to gathe a series of commands and control statements of the skript
+	language in separate file. This skript file can then be executed as one unity.
+
+.   'devices~(dev)' -
+	`devices` defines an abstract device interface with a fixed functionality. The drivers for different real 
+	devices as X11 or the `ug` internal graphics meta format are implemented in separate modules. All access 
+	to X11 is for example managed by the submodule `xif`.
+
+.   'numerical~procedures~(numerics)' -
+	The numerical procedures are a toolset for the construction of new solvers on very high languages level.
+	Since they are implemented as commands, it is possible to access them on the skript or command line level.
+	This allows a quick and easy formulation of your appropriate solver and rapid prototyping of new ideas.
+
+.   'low~tasks~(low)' -
+	This modules handles low tasks as providing memory management, treating machine architecture and operation system 
+	dependencies. 
+
+
+    OBTAINING THE CODE:
+	`ug` is beginning at version 3.0 a licensed software product. If you want your own copy of the 
+	ug sources you can get it via ftp from the ftp server 'dom.ica3.uni-stuttgart.de'. You will get there the ug sources including some 
+	problem class libraries and application examples. Fill out two copies of the licsence agreement and send them to
+.n   Sekretariat 
+.n   Institut fuer Computeranwendungen 3
+.n   Universitaet Stuttgart
+.n   Pfaffenwaldring 27
+.n   70569 Stuttgart
+
+	As soon as possible you will get one copy of the licsense back. Futhermore we will send you one header file that you
+	need to compile `ug`.
+	For more information on license conditions and restrictions read 'license'.
+	
+
+    INSTALLATION:
+	For installation purposes read the manual page 'installation'. It will give you a
+	detailed desciption about the easy installation and compilation process of `ug` and related applications.
+
+	COMPILATION:
+	If you want to modify a module of the `ug` library itself, you just invoke the ugmake commnad in the directory
+	you have edited. If you have created new source files just add the file name to the Makefile.<module>. 
+	More information on Makefiles is in the man page makefiles.
+
+	SEE ALSO:
+	application, dev, gm, graph, installation, license, low, makefiles, numerics, ui
+
+D*/
+/****************************************************************************/
+

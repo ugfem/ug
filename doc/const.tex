@@ -1,0 +1,108 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                             ug documentation                              %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Sizes
+\textwidth=155mm
+\textheight=220mm
+\headheight25pt
+\headsep=12mm
+\oddsidemargin=9mm
+\evensidemargin=-4mm
+% workstation:
+\topmargin=-25mm
+% Mac:
+%\topmargin=0mm
+\textfloatsep15mm
+\parindent0mm
+\setlength{\parskip}{6pt plus1pt minus2pt}
+\leftmargin8mm
+\renewcommand{\textfraction}{0.15}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.9}
+\renewcommand{\floatpagefraction}{0.9}
+
+%Rainer
+\newcommand{\br}{15.5cm}                     % Textbreite fÅr Boxen
+\newcommand{\GRAD}{\, \mbox{\rm \bf grad} \,}        % schînes "grad"
+\newcommand{\DIV}{\, \mbox{\rm div} \,}          % schînes "div"
+\newcommand{\ds}[1]{\displaystyle{#1}}
+\newcommand{\JAK}{\, {{\bf J}_{Jak}}}
+\newcommand{\JI}{\, {{\bf J}_{Jak}^{-1}}}
+\newcommand{\J}{\, \mbox{\rm det} \, {\bf J}_{Jak}}
+\newcommand{\np}{n_{phas}}
+\newcommand{\nel}{n_{elem}}
+\newcommand{\nk}{n_{kno}}
+\newcommand{\Sum}{\sum\limits}
+\newcommand{\Int}{\int\limits}
+\newcommand{\na}{\sc}
+\newcommand{\au}{\sf}
+\newcommand{\K}{{\, \bf K}}
+\newcommand{\FAK}{F\!a\!k}
+
+
+
+% Theorems
+\newtheorem{algo}{\noindent\bf Algorithm}[section]
+\newtheorem{remark}{\noindent\bf Remark}[section]
+\newtheorem{definition}{\noindent\bf Definition}[section]
+\newtheorem{lemma}{\noindent\bf Lemma}[section]
+\newtheorem{unit}{\mbox{}}[section]
+
+% Macros
+\newcommand{\Abb}[4]{
+   \begin{figure}[#1]
+   \centerline{\epsffile{#2}}
+   \caption{#4}
+   \label{#3}
+   \end{figure}
+}
+\newcommand{\Absatz}[1]{
+   {\medskip\noindent\bf #1}
+}
+\newcommand{\DoubleBox}[2]{%
+\begin{minipage}[t]{6cm} #1 \end{minipage}\hfill
+\begin{minipage}[t]{9cm} #2 \end{minipage}
+}
+\newcommand{\headerfile}[1]{
+   {\parindent10mm\bf #1}
+}
+
+% Abkuerzungen
+\newcommand{\spann}{\mbox{span}}
+\newcommand{\meas}{\mbox{meas}}
+%\newcommand{\DIV}{\mbox{div}}
+\newcommand{\TT}{{\cal T}}
+\newcommand{\CC}{{\cal C}}
+\newcommand{\SS}{{\cal S}}
+\newcommand{\AAA}{{\cal A}}
+\newcommand{\QQ}{{\cal Q}}
+\newcommand{\RR}{{\cal R}}
+\newcommand{\PP}{{\cal P}}
+\newcommand{\VV}{{\cal V}}
+\newcommand{\LL}{{\cal L}}
+\newcommand{\BB}{{\cal B}}
+\newcommand{\EE}{{\cal E}}
+\newcommand{\II}{{\cal I}}
+\newcommand{\OO}{{\cal O}}
+\newcommand{\Real}{\mbox{\bf R}}
+\newcommand{\Natural}{\mbox{\bf N}}
+\newcommand{\Integer}{\mbox{\bf Z}}
+\newcommand{\SP}{\hspace{5mm}}
+\newcommand{\bigsp}{\hspace{5mm}}
+\newcommand{\ssp}{\hspace{1em}}
+\newcommand{\UG}{{\sl UG }}
+\newcommand{\Prio}{\mbox{prio}}
+\newcommand{\Mark}{\mbox{mark}}
+\newcommand{\diag}{\mbox{diag}}
+\newcommand{\blockdiag}{\mbox{blockdiag}}
+\newcommand{\Bottom}{\mbox{bottom}}
+\newcommand{\Top}{\mbox{top}}
+\newcommand{\Root}{\mbox{root}}
+\newcommand{\mod}{\mbox{mod}}
+\newcommand{\Regular}{\mbox{regular}}
+\newcommand{\Temporary}{\mbox{temporary}}
+\newcommand{\Copy}{\mbox{copy}}
+\newcommand{\Level}{\mbox{level}}
+
+\frenchspacing

@@ -1,0 +1,54 @@
+/****************************************************************************/
+/*D																		
+   makefiles - maintain, update, and regenerate `ug` libraries 
+
+   SYNOPSIS:
+   makefiles 
+
+   DESCRIPTION:
+.  local~makefile - Each `ug` source code directory contains its own local 
+   makefile named Makefile.<dir>. 
+   At present the following subdirectories do exist in $UGROOT: low/, dev/ and 
+   the version dependent gm/, graph/ and ui/. For example
+   a makefile in directory ui/ would be named Makefile.ui. 
+
+.  version~dependencies -
+   Version dependencies like dimension (2 or 3) and positions of dregrees 
+   of freedom are to be specified in the file $UGROOT/ug.conf. Herein a library 
+   name suffix $(LIBSUFFIX) is created, which will be added to a name of a
+   library by a local makefile. One example library suffix shall be given as 
+   lib2TFFF, with the number 2 indicating the dimension and the following 
+   four letters indicating which degrees of freedom (NODEDATA, EDGEDATA, 
+   SIDEDATA, and ELEMDATA) are used in the corresponding geometric object.
+   T stands for TRUE while F matches FALSE.
+
+.  includes -
+   Three basic files are included by any local makefile in `ug`,
+   $UGROOT/ug.conf, $UGROOT/ug.arch and $UGROOT/machines/mk.<m>.
+   While the purpose of ug.conf was already discussed above, ug.arch bears
+   the name of the architecture `ug` will be compiled for, e.g. ARCHDIR = HP
+   for HP workstations. 
+   $UGROOT/machines/mk.<m>, takes care of all architecture dependent makefile 
+   entries like library pathnames for XLIB, compile an link flags etc.
+   Here <m> specifies the machine used (e.g. mk.HP).
+
+.  global~makefile -
+   The global makefile /ug/Makefile executes all local `ug` makefiles 
+   in hierarchical order and generates the version dependent 
+   `ug` library $UGROOT/lib/libug$(LIBSUFFIX).a. 
+ 
+.  executables -
+   In order to receive two executable demonstration 
+   programs, make ug3/ your current directory and execute the command 
+   <Project>.
+   <Project> is a shellscript which firstly will execute the global makefile 
+   in ug/, in order to build a two and a three-dimensional version of the 
+   `ug` library $UGROOT/lib/libug$(LIBSUFFIX).a. Secondly four additional 
+   makefiles will be executed to set up the problem class librairies 
+   libdiff$(LIBSSUFFIX).a, libcd$(LIBSSUFFIX).a, libns$(LIBSSUFFIX).a and 
+   libnc$(LIBSSUFFIX).a in directory diff2d/, cd3d/, ns2d/ and nc2d/ 
+   respectively. Finally the executables appl will be generated in the
+   corresponding directories matching the demonstration programs.
+
+D*/																			
+/****************************************************************************/

@@ -1,0 +1,44 @@
+##############################################################################
+#																			 #
+#	Makefile for all modules of ug version 3								 #
+#																			 #
+#	created 16 December 1994												 #
+#																			 #
+##############################################################################
+
+# load architecture dependent makefile	
+include ../ug.arch
+
+# architecture-dependent makefile entries
+include ../machines/mk.$(ARCHDIR)
+
+# load configuration switches
+include ../ug.conf
+
+# local C compiler flags
+LCFLAGS = -I../low -I../dev -I../gm
+
+# object files for both dimensions
+OBJECTS = plotproc.o wpm.o graph.o wop.o initgraph.o
+
+# objects for 2D version
+OBJECTS2 =
+
+# objects for 3D version
+OBJECTS3 =
+
+# main rules
+2Dversion : $(OBJECTS) $(OBJECTS2) Makefile.graph
+	ar $(ARFLAGS) ../lib/libug$(LIBSUFFIX).a $(OBJECTS) 
+
+3Dversion : $(OBJECTS) $(OBJECTS3) Makefile.graph
+	ar $(ARFLAGS) ../lib/libug$(LIBSUFFIX).a $(OBJECTS) 
+
+# default rule
+.c.o:
+	$(CC) $(UGDEFINES) $(CFLAGS) $(LCFLAGS) $<
+
+# clean up
+clean:
+	rm $(OBJECTS)
+

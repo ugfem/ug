@@ -1,0 +1,149 @@
+#!/bin/sh
+
+if test $# -ge 2 -o \( $# -eq 1 -a ! \( "$1" = "-remove" -o "$1" = "-new" \) \)
+then
+	echo "usage: $0 [-remove | -new]";
+	echo "purpose: generate latex pages for ug";
+	echo "Options are";
+	echo " -remove: remove the old latex pages";
+	echo " -new: remove old and generate new latex pages";
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+if test "$1" = "-remove" -o "$1" = "-new"
+then
+	for i in $UGROOT/doc/ug3/*/*.3 $UGROOT/doc/ug3/*/*/*.3
+	do
+		if test -f $i
+		then
+			rm $i;
+		fi
+	done
+	echo "$0: old latex pages removed!"
+fi
+
+#if no parameter is specified make the specified module
+if test $# -eq 0 -o "$1" = "-new" 
+then
+	#generate ug man pages
+	cd $UGROOT;
+	for i in *.c *.h
+	do
+		doctext -latex -mpath $UGROOT/doc/ug3/ug -heading ug/dev -quotefmt $i
+	done
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug -quotefmt *.doc
+
+	# generate dev man pages
+	cd $UGROOT/dev;
+	for i in *.c *.h
+	do
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/dev -heading ug/dev -quotefmt $i
+	done
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/dev -quotefmt *.doc
+
+	# generate gm man pages
+	cd $UGROOT/gm;
+	for i in *.c *.h
+	do
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/gm -heading ug/gm -quotefmt $i
+	done
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/gm -quotefmt *.doc
+
+	# generate graph man pages
+	cd $UGROOT/graph;
+	for i in *.c *.h
+	do
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/graph -heading ug/graph -quotefmt $i
+	done
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/graph -quotefmt *.doc
+
+	# generate low man pages
+	cd $UGROOT/low;
+	for i in *.c *.h
+	do
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/low -heading ug/low -quotefmt $i
+	done
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/low -quotefmt *.doc
+
+	# generate numerics man pages
+	cd $UGROOT/numerics;
+	for i in *.c *.h
+	do 
+		if test "$i" = "basics.c" -o "$i" = "mgsolver.c" -o "$i" = "nlsolver.c" -o "$i" = "smoother.c"
+		then
+			doctext -latex -heading ug/numerics -quotefmt $i
+			mv [a-z][a-z].3 $UGROOT/doc/ug3/ug/commands; 
+			mv [a-z][a-z][a-z]*.3 $UGROOT/doc/ug3/ug/commands; 
+			for j in *.3
+			do 
+				mv $j $UGROOT/doc/ug3/ug/numerics;
+			done
+		else
+			doctext -latex -mpath $UGROOT/doc/ug3/ug/numerics  -heading ug/numerics -quotefmt $i
+		fi
+	done
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/numerics -quotefmt *.doc
+
+	# generate ui man pages
+	cd $UGROOT/ui;
+	for i in *.c *.h
+	do
+		if test "$i" = "commands.c"
+		then
+	  		doctext -latex -heading ug/ui -quotefmt $i
+			mv [a-z]*.3 $UGROOT/doc/ug3/ug/commands;
+			for j in *.3
+			do 
+				mv $j $UGROOT/doc/ug3/ug/ui;
+			done
+		else
+	  		doctext -latex -mpath $UGROOT/doc/ug3/ug/ui -heading ug/ui -quotefmt $i
+		fi
+	done
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/ui -quotefmt *.doc
+
+	#generate administration man pages
+	if test -d $UGROOT/..
+	then
+		cd $UGROOT/..
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/admin -heading admin -quotefmt *.doc
+	fi
+	cd $UGROOT/bin
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/admin -heading admin -quotefmt *.doc
+	cd $UGROOT/doc
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/admin -heading admin -quotefmt *.doc
+
+	#generate man pages for diff2d
+	cd $UGROOT/../diff2d
+	doctext -latex -mpath $UGROOT/doc/ug3/diff2d/overview -heading diff2d -quotefmt *.doc
+	cd $UGROOT/../diff2d/pclib
+	doctext -latex -mpath $UGROOT/doc/ug3/diff2d/pclib -heading diff2d/pclib -quotefmt *.c *.h
+	cd $UGROOT/../diff2d/appl
+	doctext -latex -mpath $UGROOT/doc/ug3/diff2d/appl -heading diff2d/appl -quotefmt *.c *.h
+
+	#generate man pages for cd3d
+	cd $UGROOT/../cd3d
+	doctext -latex -mpath $UGROOT/doc/ug3/cd3d/overview -heading cd3d -quotefmt *.doc
+	cd $UGROOT/../cd3d/pclib
+	doctext -latex -mpath $UGROOT/doc/ug3/cd3d/pclib -heading cd3d/pclib -quotefmt *.c *.h
+	cd $UGROOT/../cd3d/appl
+	doctext -latex -mpath $UGROOT/doc/ug3/cd3d/appl -heading cd3d/appl -quotefmt *.c *.h
+
+	#generate man pages for fem
+	cd $UGROOT/../fem
+	doctext -latex -mpath $UGROOT/doc/ug3/fem/overview -heading fem -quotefmt *.doc
+	cd $UGROOT/../fem/pclib
+	doctext -latex -mpath $UGROOT/doc/ug3/fem/pclib -heading fem/pclib -quotefmt *.c *.h
+	cd $UGROOT/../fem/appl
+	doctext -latex -mpath $UGROOT/doc/ug3/fem/appl -heading fem/appl -quotefmt *.c *.h
+
+	echo "$0: latex pages for ug created!";
+	exit 0;
+fi
+

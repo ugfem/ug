@@ -1,0 +1,187 @@
+/* installation.doc */
+/* Caution: a few tricks were neccessary to achieve a good layout */
+/*D
+   Installation - How to install ug3 in an UNIX environment
+   
+   DESCRIPTION:
+   This document explains, how to install the ug3 software in an 
+   UNIX environment. The first part
+   describes the installation of the pure ug (the kernel), the second the
+   installation of an experimenting environment (application).
+   
+   INSTALLATION~OF~THE~PURE~UG:
+.  `Get~the~file` -
+   Suppose you have the archived and compressed ug3 software 'ug3.tar.gz'. 
+   How to get this see the licence regulations in the man page `licence`
+   or the file 'readme.licence' in the root directory of the ug3 software.
+
+.  `Place~the~file` -  
+   Place the file 'ug.tar.gz' in the directory where the root of the
+   ug3 directory tree should lie. Let this directory be '/usr' in this
+   example. Goto this directory.
+.n	'~~~~~cp ug3.tar.gz /usr'
+.n	'~~~~~cd /usr'
+
+.  `Decompress` -  Decompress 
+   the archive file with 'gzip' to get the file 'ug3.tar'
+.n	'~~~~~gzip -d ug3.tar.gz'
+   
+.  `Restore~from~archive`
+   Extract the files from the archive. This produces the entire directory
+   tree relatively to the current directory with all files of ug 
+   '/usr/ug3/ug/*' and experimenting environments (applications) 
+   '/usr/ug3/cd3d' etc.
+.n	'~~~~~tar xvf ug3.tar'
+
+   If this was successful, you can remove 'ug3.tar' or keep it as a backup.
+   
+.  `Adapt~ug~to~your~hardware` - Change 
+   to the ug directory in the ug3 software; in the example this is
+   '/usr/ug3/ug'.
+.n	'~~~~~cd ug3/ug'
+. `~` - If 
+   you have one of the preinstalled machines (see `machines`) you 
+   have only to acitvate exactly the corresponding entry in the file 
+   'ug.arch'. For MacIntosh see the manual `makefiles`. In all other cases
+   you have to define a new name for your architecture in 'ug.arch' (for
+   example 'ARCH=SUPER++') and create a file 'machines/mk.$(ARCH)' for 
+   the make-mechanism (in the example 'machines/mk.SUPER++'); for the 
+   content of this file refer to the manual page `makefiles`. Add 
+   appropriate definitions ot the file 'compiler.h' (refer to manual 
+   page `compiler.h`).
+   
+.  `Configure~ug` - For 
+   that purpose edit the file 'ug.conf' (in the example in the 
+   directory '/usr/ug3/ug') or copy one of the prepared files in 
+   '$UGROOT/configs/*.conf' to the file 'ug.conf' if you find an
+   appropriate one. After editing be sure to copy your file to the
+   pool of configurations files ('$UGROOT/configs/*.conf') with the
+   corresponding name (see below) to have a backup copy; watch the BUG!
+. `~` -  Set  
+   the dimension of the domain you want to use. 2 and 3 dimensional
+   calculations can be done. You can not change the dimension at any
+   other place in the software.
+. `~` - Data   
+   can be placed in nodes, edges, sides and elements. For each location
+   you want to have data for set the corresponding entry to 'T' otherwise
+   to 'F'. Consider that each enabled data location consumes memory even
+   if actually no data is used in the program, so define the data locations
+   sparingly. 
+. `~` - To       
+   pass flags to the compiler add them to the 'UGDEFINES' variable. Be sure
+   to add only flags and do not remove or change one of the predefined
+   flags. In order to get code with additional debug information add the
+   flag '-g' to the definition of 'UGDEFINES' for the common C compilers.
+. `~` -  According         
+   to your declarations the internal data structures are
+   generated and the compiled library get a supplement in the name: the prefix
+   is 'libug' as usual but then follows the dimension (2 or 3) and flags ('T'
+   or 'F') for data enabled/disabled in nodes, edges, sides and elements 
+   before the suffix '.a'. For example: for a 3 dimensional calculation with 
+   data only in nodes the library 'libug3TFFF.a' will be generated. In 
+   this way you can provide different versions of ug for different requirements
+   relative to the dimension and data locations.
+
+.  `Configure~environment` - Before    
+   you can compile ug you have to configure your environment. 
+   The best way to do this is to edit your shell resource file in your
+   home directory and update the content of the current environment.
+. `~` - For     
+   C Shells (csh or tcsh) insert in the file '$HOME/.cshrc' respectively
+   '$HOME/.tcshrc' the following 3 lines and update the environment
+.n	'~~~~~setenv UGROOT '`directory of the ug software` 
+.n	'~~~~~setenv UGMAN $UGROOT/man'
+.n	'~~~~~set path = ( $path $UGROOT/bin )'
+.n	'~~~~~source $HOME/.cshrc' respectively 'source $HOME/.tcshrc' or start a new shell
+.n	'~~~~~'(first line in our example is 'setenv UGROOT /usr/ug3/ug').
+. `~` - For     
+   POSIX or Bourne shells (sh), Korn shell (ksh) and Keyshell (keysh) insert
+   in the file '$HOME/.profile' the following 3 lines and update the environment
+.n	'~~~~~export UGROOT='`directory of pure ug` 
+.n	'~~~~~export UGMAN=$UGROOT/man'
+.n	'~~~~~export PATH=$PATH:$UGROOT/bin'
+.n	'~~~~~. $HOME/.profile' or start a new shell
+.n	'~~~~~'(first line in in our example is 'export UGROOT=/usr/ug3/ug').
+
+.  `Fulfill~the~licence~regulations`
+   How to fulfill the licence regulations is explained in the file 
+   '$UGROOT/../readme.licence' (in our example '/usr/ug3/readme.licence') or
+   in the manual page `licence`. With the licence agreement you will 
+   receive the `key file` 'gm.h'. This file is to be placed in the directory
+   '$UGROOT/gm' (in our example '/usr/ug3/ug/gm').
+   
+.   `Make` - Now
+   all things are prepared to compile ug. In any place you
+   can invoke
+.n	'~~~~~ugmake ug'
+   
+   Now ug is ready.
+   
+   INSTALLATION~OF~AN~EXPERIMENTING~ENVIRONMENT~(APPLICATION):
+   Note that there must be at least one experimenting environment 
+   be installed to get
+   ug start. The structure of an experimenting environment is in 
+   the manual page `modules` described.
+   
+   If you installed ug in the above way the files of the standard
+   experimenting environments of the 
+   ug package are now extracted too. If you have another application
+   perform the 4 steps in the above instruction to get the files into
+   your file system. Assume for example that the experimenting environment
+   is in the directory '/usr/cd3d'.
+
+.  `Configure~an~experimenting~environment` - Edit the file 'defaults'
+   according to the description in the manual page 'defaults'.
+      
+.  `Configure~environment` - In the same way as above you have to extend
+   one environment variable. And do not forget to update the 
+   environment.
+. `~` - For     
+   C Shells (csh or tcsh) insert in the file '$HOME/.cshrc' respectively
+   '$HOME/.tcshrc' the following line `after` the corresponding line of 
+   the pure ug and update the environment
+.n	'~~~~~setenv UGMAN $UGMAN:'`directory of the experimenting environment man pages` 
+.n	'~~~~~source $HOME/.cshrc' respectively 'source $HOME/.tcshrc' or start a new shell
+.n	'~~~~~'(e.g. 'setenv UGMAN $UGMAN:/usr/cd3d/man')      
+. `~` - For     
+   POSIX or Bourne shells (sh), Korn shell (ksh) and Keyshell (keysh) insert
+   in the file '$HOME/.profile' the following line `after` the corresponding
+   line of the pure ug and update the environment
+.n	'~~~~~UGMAN=$UGMAN:'`directory of the experimenting environment man pages` 
+.n	'~~~~~. $HOME/.profile' or start a new shell
+.n	'~~~~~'(e.g. 'UGMAN=$UGMAN:/usr/cd3d/man')      
+
+.  `Make` - You have to make first the problem class library and then the
+   application itself. Go to the correspondig directories and call 'make'.
+   In our example
+.n	'~~~~~cd /usr/cd3d/pclib; make'
+.n	'~~~~~cd /usr/cd3d/appl; make'
+
+   DEPENDENCIES:
+.  gm.h - This is the `key file` for the ug3 software. Without haveing it 
+   installed you can not compile the software. How to get this file see 
+   above.
+.  gzip(1),~tar(1) - These two UNIX commands are neccessary to get the files
+   out of the packed archive file within the ug3 software is shipped.
+.  nroff(1),~neqn(1),~tbl(1) - These UNIX utilities are neccessary to 
+   format the manual pages with the 'ugman' respectively 'xugman' command.
+.  X window - ug needs the X window system.
+.  hardware - For hardware dependencies refer to the manual pages `machines`
+   and `installation`.
+
+   RELATED~FILES:
+   A copy of this text is contained in the root directory of the ug3 software 
+   (in our example '/usr/ug3/README.INSTALL'). It is a unformatted plain
+   ascii text.
+
+   BUGS:
+.  ug.conf - This file may be overriden in some circumstances (e. g. by
+   'ugproject'). Thus keep always a backup copy in the 
+   directory '$UGROOT/configs/'.
+.  ugman/xugman - The man pages of the experimenting environments are available
+   only by 'xugman' and not by 'ugman'.
+         
+   SEE ALSO:
+   licence, machines, defaults, compiler.h, makefiles, modules, gzip(1), tar(1)
+   
+D*/

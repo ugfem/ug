@@ -1,0 +1,259 @@
+/***************************************************************************/
+/*D
+   compiler - Header file for defining standard types and constants (machine dependent)
+
+   DESCRIPTION:
+   In the definitions of the `CFLAGS` in the file 'mk.machine' the
+   key word for a special machine has to be chosen. For example by the 
+   compiler option '-D__HP__' ug is about to run on a HP computer. 
+   Concerning this option the corresponding definitions of the standard 
+   types in the file 'compiler.h' are taken.
+
+   As this header file 'compiler.h' defines the standard types used in ug
+   it has to be included in `all` source codes of ug !!! 
+
+   The basic types (normally 'short', 'int', 'float' and 'double') are 
+   replaced by 'SHORT', 'INT', 'FLOAT' and 'DOUBLE'. The type 'COORD' 
+   is used for all Cartesian coordinates of the (x,y,z)-directions of 
+   the grids and 'SCREEN_COORD' is used for all transformed coordinates 
+   of the graphic interface.
+
+   The constant 'ALIGNMENT' has to set equal to '4' or '8' depending on 
+   the 32 or 64 bit architecture of the used machine. It is also related 
+   to the constant 'ALIGNMASK', which has correspondingly to be set equal 
+   to '0xFFFFFFFC' or '0xFFFFFFF8' to clear the last three or four bits 
+   of the alignment of the memory blocks.
+ 
+D*/
+/***************************************************************************/
+
+/****************************************************************************/
+/*D
+   fifo - Functions to handle a fifo (first in, first out) structure.
+
+   DESCRIPTION:
+   These function support the handling of a fifo (first in, first out) structure.
+   
+   For a  detailed description see the manuals of each function.
+
+   SEE ALSO:
+   fifo_init, fifo_clear, fifo_empty, fifo_full, fifo_in, fifo_out
+D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   heaps - Memory handling by the use of 'heaps'
+
+   DESCRIPTION:
+   All these functions initialize ('InitHeaps', 'NewHeap') and support the
+   handling of the dynamic storage of memory used by 'ug'. The main idea
+   is that ug allocates only once for one problem a big portion of memory,
+   and administrates the internal, dynamic memory use with 'heaps' by itself.
+
+   Three different types of 'heaps' are possible: 'SIMPLE_HEAP',
+   'GENERAL_HEAP' and 'VIRTUAL_HEAP'
+
+   If the heap type is 'SIMPLE_HEAP' new blocks in the allocated memory
+   ('GetMem') can be taken either from the top or from the bottom using two
+   different pointers. They are in- or decremented block-wise for each
+   internal memory allocation ('Mark', 'Release'). These blocks can also be
+   handled recursively in the same way. In other words the total memory
+   block to be provided for ug is used from both sides by introducing
+   recursively new, smaller blocks, as shown below.
+
+.vb
+      --------------------------------
+      | 1 | 3 |  4  |           |  2 |   total allocated memory for ug
+      --------------------------------
+      used blocks are #1,#2,#3 and #4
+
+      -----
+      |5|6|   block #4 is separated also in block #5 and #6
+      -----
+
+.ve
+
+   If the heap type is 'GENERAL_HEAP' new blocks to be introduced in the
+   total allocated memory for ug are laid at the position where enough
+   memory is free ('GetMem'). The search for this position is done by
+   running round the total allocated memory, looking for the equivalent
+   space and introducing the new block, as shown below. These blocks can be
+   erased by 'DisposeMem'.
+   
+.vb
+      --------------------------------
+      |   |  1  |               |  2 |   total allocated memory for ug
+      --------------------------------
+      used blocks are #1 and #2
+      
+      block to be introduced #3:  |  3  |
+      start position at the beginning
+   
+      --------------------------------
+      |   |  1  |  3  |         |  2 |   total allocated memory for ug
+      --------------------------------
+
+.ve
+      
+   If the heap type is 'VIRTUAL_HEAP' some memory can be allocated virtually
+   for later use and can be handled independently of the heaps. For example 
+   the memory management can be told to use a certain amout of memory at each
+   time when a new heap is installed. As the management can handle virtual 
+   heaps it offers the possibility to treat several heaps completely analogous. 
+   The total size should then be determined by a call of 'CalcAndFixTotalSize' 
+   when the first of those heaps is actually allocated. Blocks are installed 
+   by 'DefineBlock' and erased by 'FreeBlock'.
+
+   There are two reasons for employing the virtual heap management.
+
+   Creating a block partitioning before the heap is allocated: For a
+   reservation of memory for higher modules the lower module will first have
+   to pass a pointer to the memory allocated for the virtual heap management
+   (with size 'SIZEOF_BHM') to the 'InitVirtualHeapManagement'. 'GetNewBlockID'
+   is called to get a unique ID for a block descriptor. Then 'DefineBlock'
+   is called to tell the virtual heap management the size this block has
+   to assume. This way each higher module can have its own block in the heap
+   to be allocated. After the call of 'CalcAndFixTotalSize' to determine and
+   fix the total size of the heap it will be allocated.
+
+   Getting information about blocks by the heap management: When 
+   a higher module has access to a certain kind of heaps
+   (with same and known size) allocated by a lower module the virtual heap
+   management offers the possibility of querying whether a block
+   has been defined for a certain heap. If it is defined a question for
+   the offset is done, if not it will be defined right now.
+
+   Be careful! As the location of the block descriptors is not fixed in the
+   heap management, get always its address with 'GetBlockDesc()' if needed.
+
+   SEE ALSO:
+   InitHeaps, NewHeap, GetMem, DisposeMem, Mark, Release, HeapSize,
+   HeapUsed, InitVirtualHeapManagement, CalcAndFixTotalSize, GetNewBlockID,
+   GetBlockDesc, DefineBlock, FreeBlock 
+D*/
+/****************************************************************************/
+
+/***************************************************************************/
+/*D
+    ugenv - general data management concept in a tree structure
+    
+    PURPOSE:
+    The environment management of ug provides the possibility to store data in
+    a tree structure. The storage is taken from a 'GENERAL_HEAP' allocated at
+    initialization time with the size specified by 'envmemory' in the 'defaults'
+    file (if now 'defaults' file is available 'DEFAULTENVSIZE' is used).
+    
+    The data structures of the environment allow to create directories and items
+    of specified size. Both data structures start with a general head (among
+    others a name by which one can refer to it). The remaining memory up to the
+    specified size can be used in arbitrary way.
+    
+    The head is identical with the struct 'ENVVAR:'
+
+.vb
+typedef struct {                // user defined variable                    
+    INT type;                   // even number by GetNewEnvVarID            
+    INT locked;                 // may not be changed or deleted            
+    union envitem *next;
+    union envitem *previous;    // double linked list of environment items  
+    char name[NAMESIZE];        // name of that item                        
+                                
+//  ...                            may be longer, but of no interest for env
+
+} ENVVAR;
+.ve
+    
+    All items are members of doubly linked lists.
+    
+    The data structure for the directory has just an extra component to the
+    start of a list which is the directory contents (and can consist of
+    directories itself, of course).
+    
+.vb
+
+typedef struct {                // directory                                
+    INT type;                   // odd number by GetNewEnvDirID     
+    INT locked;                 // may not be changed or deleted            
+    union envitem *next;
+    union envitem *previous;    // double linked list of environment items  
+    char name[NAMESIZE];        // name of that item                        
+    union envitem *down;        // one level down in the tree               
+                                
+//  ...                            may be longer, but of no interest for env
+
+} ENVDIR;
+.ve
+    
+    The tree starts with a root directory "/" and there is always a current
+    or working directory. Paths are specified in UNIX-style. The current
+    directory can be changed using 'ChangeEnvDir' while 'GetCurrentDir'
+    returns a pointer to the current directory. The routine
+    'MakeEnvItem' creates the specified item in the current directory and
+    it is possible to 'RemoveEnvItem's created previously.
+    
+    Finally 'SearchEnv' offers the possibility to hierarchically search
+    the environment tree for an item specified by its name.
+    
+    SEE ALSO:
+    ENVITEM, ChangeEnvDir, GetCurrentDir, GetPathName, MakeEnvItem, RemoveEnvItem,
+    SearchEnv, GetNewEnvDirID, GetNewEnvVarID
+D*/
+/****************************************************************************/
+
+/***************************************************************************/
+/*D
+    ENVITEM - data structure for objects in the environment tree
+    
+    DEFINITION:
+.vb
+union envitem {
+    ENVVAR v;
+    ENVDIR d;
+};
+
+typedef struct {                // user defined variable                    
+    INT type;                   // one of the variable types above          
+    INT locked;                 // may not be changed or deleted            
+    union envitem *next;
+    union envitem *previous;    // double linked list of environment items  
+    char name[NAMESIZE];        // name of that item                        
+                                // may be longer, but of no interest for env
+} ENVVAR;
+
+typedef struct {                // directory                                
+    INT type;                   // one of the directory types above         
+    INT locked;                 // may not be changed or deleted            
+    union envitem *next;
+    union envitem *previous;    // double linked list of environment items  
+    char name[NAMESIZE];        // name of that item                        
+    union envitem *down;        // one level down in the tree               
+} ENVDIR;
+.ve
+
+    DEFINES:
+.   NAMESIZE    - the size of the name strings of environment items
+.   NAMELEN     - maximal length of the name strins (NAMELEN-1)
+.   NAMELENSTR  - 'NAMELEN' as string "'NAMELEN'"
+.   SEARCHALL   - argument for 'SearchEnv'
+.   DIRSEP      - the directory seperator character
+    
+    MACROS:
+.vb
+#define ENVITEM_DOWN(d)         (((ENVITEM *)(p))->d.down)
+#define ENVDIR_DOWN(d)          ((p)->down)
+#define NEXT_ENVITEM(p)         (((ENVITEM *)(p))->v.next)
+#define PREV_ENVITEM(p)         (((ENVITEM *)(p))->v.previous)
+#define ENVITEM_TYPE(p)         (((ENVITEM *)(p))->v.type)
+#define ENVITEM_NAME(p)         (((ENVITEM *)(p))->v.name)
+#define ENVITEM_LOCKED(p)       (((ENVITEM *)(p))->v.locked)
+.ve
+    
+    MACRO PARAMETERS:
+.   d - 'ENVDIR *'
+.   p - 'ENVITEM *'
+    
+    SEE ALSO:
+    ugenv
+D*/
+/****************************************************************************/

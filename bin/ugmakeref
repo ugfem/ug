@@ -1,0 +1,59 @@
+#!/bin/sh
+
+if test -f refman.tex
+then 
+	rm refman.tex;
+fi
+
+#check whether there is a latex file
+if test `ls *.3|wc -l` -eq 0
+then
+	echo nothing to do;
+	exit 0;
+fi
+
+# edit this text to your needs
+echo "The following list contains the functions documented for this module." >> refman.tex
+echo "This list is ordered alphabetically (uppercase before lowercase) corresponding to the order of the manpages in this section." >> refman.tex
+echo "The manuals which are available on the next pages cover the functions:" >> refman.tex
+
+echo '\\b'egin\{itemize\} >> refman.tex
+echo '\\'footnotesize >>refman.tex
+for i in `ls -1 *.3 | sort -f`
+do
+	if test -f $i
+	then
+		echo \\item `echo $i|sed 's/_/\\\_/g'|sed 's/\.3//'`\(\) >> refman.tex
+	fi
+done
+echo \\end\{itemize\} >> refman.tex
+
+echo '\\n'ewpage >> refman.tex
+echo \\pagestyle\{myheadings\} >> refman.tex
+
+for i in `ls -1 *.3 | sort -f`
+do
+    if test -f $i
+    then
+        if test -h $UGROOT/doc/texman/$i
+        then
+			echo modify;
+			num=`cat $i | wc -w`;
+			echo Anzahl Zeilen ${num};
+			echo `pwd`;
+			if test  -h $UGROOT/doc/texman/${i}${num}
+			then
+				echo "file name substitution failed for $i${num}";
+			else
+            	echo \\input\{${i}${num}\} >> refman.tex
+				ln -s `pwd`/$i $UGROOT/doc/texman/${i}${num} 
+            	#mv $i $UGROOT/doc/texman/${i}${num}
+			fi
+        else
+            echo \\input\{$i\} >> refman.tex
+			ln -s `pwd`/$i $UGROOT/doc/texman/$i 
+            #mv $i $UGROOT/doc/texman/$i
+        fi
+    fi
+done
+

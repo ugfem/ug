@@ -1,0 +1,83 @@
+\documentstyle[epsf,twoside]{article}
+
+% Voreinstellungen
+\input{const.tex}
+\input{refman.sty}
+\pagestyle{myheadings}
+\sloppy
+\makeindex
+
+% Titelseite
+
+
+\begin{document}
+\newcommand{\sectitle}{\mbox{}}
+\setcounter{page}{0}
+
+\title{UG Version 3.0 Reference Manual \\
+	   Dated: \today}
+\author{The UG Group}
+\maketitle
+{
+\small
+\tableofcontents
+}
+\clearpage
+
+% include the different sections
+\thispagestyle{plain}
+\section{manpages for module ''ug''}
+\renewcommand{\sectitle}{ug}
+\input{ug3/ug/refman}
+
+\thispagestyle{plain}
+\section{manpages for module ''ug/dev''}
+\renewcommand{\sectitle}{ug/dev}
+\input{ug3/ug/dev/refman}
+
+% shall not be documanted!
+%\thispagestyle{plain}
+%\section{manpages for module ''ug/dev/meta''}
+%\renewcommand{\sectitle}{ug/dev/meta}
+%\input{ug3/ug/dev/meta/refman}
+
+% shall not be documanted!
+%\thispagestyle{plain}
+%\section{manpages for module ''ug/dev/mif''}
+%\renewcommand{\sectitle}{ug/dev/mif}
+%\input{ug3/ug/dev/mif/refman}
+
+% shall not be documanted!
+%\thispagestyle{plain}
+%\section{manpages for module ''ug/dev/xif''}
+%\renewcommand{\sectitle}{ug/dev/xif}
+%\input{ug3/ug/dev/xif/refman}
+
+\thispagestyle{plain}
+\section{manpages for module ''ug/gm''}
+\renewcommand{\sectitle}{ug/gm}
+\input{ug3/ug/gm/refman}
+
+\thispagestyle{plain}
+\section{manpages for module ''ug/graph''}
+\renewcommand{\sectitle}{ug/graph}
+\input{ug3/ug/graph/refman}
+
+\thispagestyle{plain}
+\section{manpages for module ''ug/low''}
+\renewcommand{\sectitle}{ug/low}
+\input{ug3/ug/low/refman}
+
+\thispagestyle{plain}
+\section{manpages for module ''ug/numerics''}
+\renewcommand{\sectitle}{ug/numerics}
+\input{ug3/ug/numerics/refman}
+
+\thispagestyle{plain}
+\section{manpages for module ''ug/ui''}
+\renewcommand{\sectitle}{ug/ui}
+\input{ug3/ug/ui/refman}
+
+
+\end{document}
+

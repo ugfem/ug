@@ -1,0 +1,568 @@
+-
+*****************************************************************************************
+*                                                                                       *
+*                         ug.help: built-in commands                                    *
+*                                                                                       *
+*****************************************************************************************
+
+-
+############################## general commands #########################################
+
+-quit > all end bye exit
+quit            # end the application without saving open multigrids
+
+-help > all ?
+help            # get online help for commands etc.
+help [[<helpitem>] $k]
+    no option               # this is  equivalent to 'help help'
+    <helpitem>              # print help for <helpitem> (string)
+    $k                      # search for keyword <helpitem>
+
+-checkhelp
+checkhelp       # prints all commands for which help does NOT exist
+
+-resetclock > all time clock
+resetclock      # reset the execution time clock to zero
+
+-readclock > all time clock
+readclock       # prints the execution time since the last 'resetclock' to
+                # string variable ':CLOCK'
+
+-mute > all output verbose
+mute            # set a certain verbose level for the command interpreter (and for user commands)
+mute <mutelevel>
+    <mutelevel>             # <mutelevel> has to signed integer
+                            # 0 means full (regular) output
+                            # 1 or > mean supressing output more and more
+                            # -1 or < mean verbosing more and more
+
+-date > datum time year month
+date            # print current date and time
+date [$s]
+    $s                      # print date to string variable :date rather than to shell
+
+-
+############################## list environment #########################################
+
+-cd > all environment change directory
+cd              # change environment directory to specified path
+cd [<path>]
+    <path>                  # <path> contains the relative or absolute path in UNIX-style
+                            # if <path> is omitted: cd to root (cd /)
+
+-ls > all environment list directory
+ls              # list environment directory
+ls [<path>]
+    <path>                  # <path> contains the relative or absolute path in UNIX-style
+                            # if <path> is omitted: ls <the current directory>
+
+-pwd > all environment working directory
+pwd             # print environment working directory
+pwd
+
+-structpath
+<structdir> := [:]{<dirname>:}*
+<struct>    := [<structdir>]<structname>
+
+-ms > all environment struct string variable
+ms              # create a new string variable struct
+ms <structdir>
+    <structdir>             # the <structdir> consists of a complete path related to the
+                            # current struct dir or the string variable root in the environment
+                            # (see also: help structpath)
+
+-cs > all environment struct string variable
+cs      # change to a struct
+cs <structdir>
+   <structdir>             # the <structdir> consists of a complete path related to the
+
+-pws > all environment struct string variable
+pws     # prints the path of a struct 
+
+-ds > all environment struct string variable
+ds              # delete an existing struct directory
+ds <structdir>
+    <structdir>             # the <structdir> consists of a complete path related to the
+                            # current struct dir or the string variable root in the environment
+                            # (see also: help structpath)
+
+-set > all environment struct string variable
+set             # set or print the contents of a struct or struct directory
+set {<struct> <value>} | {[<structdir> | <struct>] [$r]}
+    <struct> <value>        # assign <value> (just a string of arbitraray length) to <struct>
+    [<structdir> | <struct>] [$r]
+                            # display contents of <struct> or <structdir> (default: current struct dir
+                            # if $r is specified the directory contents is listed recursively
+                            # (see also: help structpath)
+
+-
+################################ protocol and log #######################################
+
+-protoon > all file output format open
+protoOn         # open a protocol file for specially formatted output to file
+protoOn <filename> [$r[!] | $a]
+    $r!                     # if a file named <filename> exist already, rename it to <filename>.saved
+                            # break if the renaming fails
+    $r                      # like above but proceed even if renaming fails
+    $a                      # append to existing file named <filename>
+
+-protooff > all file output format close
+protoOff        # close the protocol file (see the 'protoOn' command)
+
+-protocol > file output format write
+protocol        # write formatted ouput to the open protocol file
+protocol {$i[ ]<verbatim text> | $n[ ]<verbatim text> | $t[ ]<verbatim text> | $f}*
+    $i                     # append <verbatim text> to protocol file
+    $n                     # write a line feed and append <verbatim text> to protocol file
+    $t                     # write a tab and append <verbatim text> to protocol file
+                           # NOTE: the first space (if there) following the option character is skipped
+    $f                     # flush the file buffer
+
+-logon > all file output write
+logon           # direct total shell output also to a logfile
+logon <logfilename> [$p]
+    $p                     # append to already open protocol file (write 'beginlog' mark)
+
+-logoff > file output write
+logoff          # switch off the logging mechanism
+    $p                     # quit appending to already open protocol file (write 'endlog' mark)
+
+-
+################################ grid management ########################################
+
+-new > grid multigrid
+new              # allocate heap and new multigrid structure
+new [<mgname>] $d <domain> $p <problem> $f <format> $h <heapsize>
+    <mgname>               # the name of the multigrid (default is 'untitled-<nb>')
+    $d <domain>            # one of the enroled domains
+    $p <problem>           # one of the problems enroled for <domain>
+    $f <format>            # one of the enroled formats matching with <problem>
+    $h <heapsize>          # the heapsize to be allocated
+
+-open > grid multigrid
+open             # allocate heap and new multigrid structure
+open <mgname> [$d <domain> [$p <problem>]] [$f <format>] $h <heapsize>
+    <mgname>               # the name of the multigrid
+    $d <domain>            # one of the enroled domains
+    $p <problem>           # one of the problems enroled for <domain>
+    $f <format>            # one of the enroled formats matching with <problem>
+    $h <heapsize>          # the heapsize to be allocated
+
+-envinfo > all environment struct string variable
+envinfo # prints the used and size of the environment heap on the shell.
+
+-close > grid multigrid
+close            # close the current (or all) open multigrid(s) and free their heaps
+close [$a]
+    $a                     # close all multigrids
+
+-save > grid multigrid saveas
+save             # save the current multigrid
+save [<name>] [$c <comment>]
+   <name>                  # name to save with (default is the mgname)
+   $c <comment>            # optionally specify a comment string
+
+-refine > grid multigrid mark
+refine           # refine the multigrid according to the refinement marks set in the elements
+refine [$g]                # copy non refined regions to new level
+
+-mark > grid multigrid refine
+mark             # mark one (or several) elements for refinement
+mark [$h | {[<rule> [<side>]] [$a | $i <Id> | $s]} | $c]
+    <rule>                 # specify a refinement rule ("red" is default)
+    <side>                 # has to be specified if the corresponding rule can be
+                           # applied in several orientations
+    $a                     # refine all (leave) elements
+    $i <Id>                # refine the element with <Id>
+    $s                     # refine all elements from the current selection
+    $h                     # show available rules
+    $c                     # clear all refinement tags
+
+-check > grid multigrid algebra vector matrix
+check            # check consistency of grid (and algebraic) datastrcuture
+check [$c]
+   $c                      # additionally to grid check algebra
+
+-quality > grid multigrid element angle
+quality          # check the min and max angles of the elements in the grid
+quality $a | $s | {$i <fromID> [<toID>]} [$< <angle>] [$> <angle>]
+    $a                     # check angles of all elements in the multigrid
+    $s                     # check angles of the selected elements
+    $i                     # check angles of elements with an ID in the range <fromID> through <toID>
+                           # if <fromID> is omitted only the element with <fromID> is listed
+    $< <angle>             # print info for all elements the minangle of which is < <angle>
+    $> <angle>             # print info for all elements the maxangle of which is > <angle>
+
+-smooth > node grid multigrid shift vertex
+smooth           # hierarchical grid smoothing
+smooth <nIt> [$b]
+    <nIt>                  # number of iterations
+    $b                     # also smooth boundary nodes
+
+-orderv > vector matrix order sort
+orderv           # order the vectors of the current multigrid
+orderv $m FFCCLL | FCFCLL $d <dep-proc> $o dep-proc options> [$a]
+    $m FFCCLL | FCFCLL     # possible modes are FFCCLL or FCFCLL
+    $d <dep-proc>          # the ordering algorithm uses this dependency procedure...
+    $o <dep-proc options>  # ...and passes these options to it
+    $a                     # order all levels of the current multigrid
+
+-ordernodes > nodes grid order sort
+ordernodes       # reorder nodes lexicographically
+ordernodes ur|ul|dr|dl|ru|rd|lu|ld
+                          # where u=up, d=down, r=right, l=left
+
+-setcurrmg > grid multigrid current
+setcurrmg        # change the current multigrid
+setcurrmg <mgname>
+    <mgname>               # mgname of the open multigrid which will be the current one
+
+-level > grid multigrid level
+level           # change the working (current) level of the current multigrid
+level <level> | + | -
+
+-renumber > grid multigrid level
+renumber        # assign consecutive id's to all objects
+
+-mglist > grid multigrid info list
+mglist          # list all open multigrids
+mglist [$l]
+    $l                     # list long format
+
+-glist
+glist           # print grid statistics for the current multigrid
+glist 
+
+-nlist > node grid multigrid info list
+nlist           # print info for the specified nodes
+nlist $s | {$i <fromID> [<toID>]} [$d] [$b] [$n] [$v] [$a]
+    $s                     # list info for the selected nodes
+    $i                     # list info for nodes with an ID in the range <fromID> through <toID>
+                           # if <fromID> is omitted only the node with <fromID> is listed
+    $d                     # up to version 2.3 ONLY: list also user data space
+    $b                     # print additional info for boundary nodes
+    $n                     # list also neighbours of each node
+    $v                     # print extended info (verbose mode)
+    $a                     # list all nodes
+
+-elist > element grid multigrid info list
+elist           # print info for the specified elements
+elist $s | {$i <fromID> [<toID>]} [$d] [$b] [$n] [$v] [$a]
+    $s                     # list info for the selected elements
+    $i                     # list info for elements with an ID in the range <fromID> through <toID>
+                           # if <fromID> is omitted only the element with <fromID> is listed
+    $d                     # up to version 2.3 ONLY: list also user data space
+    $b                     # print additional info for boundary elements
+    $n                     # list also neighbours of each element
+    $v                     # print extended info (verbose mode)
+    $l                     # list only elements of current level
+    $a                     # list all elements
+
+-slist > element grid multigrid info list
+slist          # list the contents of the selction buffer (elist/nlist format resp.)
+slist [$d] [$b] [$n] [$v]
+    $d                     # up to version 2.3 ONLY: list also user data space
+    $b                     # print additional info for boundary nodes/elements
+    $n                     # list also neighbours of each node/element
+    $v                     # print extended info (verbose mode)
+
+-vmlist > vector matrix grid multigrid info list
+vmlist           # print info for the specified vectors (possibly including associated matrix entries)
+vmlist $s | {$i <fromID> [<toID>]} [$m] [$d] [$a] [$l <f> <t>]
+    $s                     # list info for the selected vectors
+    $i                     # list info for vectors with an ID in the range <fromID> through <toID>
+                           # if <fromID> is omitted only the vector with <fromID> is listed
+    $m                     # list also the associated matrix entries
+    $d                     # list also the user data
+    $a                     # list all vectors
+    $l <f> <t>             # process levels f <= l <= t
+
+-in > node insert grid multigrid
+in               # insert an inner node into a multigrid with only level 0
+in <x> <y> <z>
+     <x> <y> <z>            # specify as much coordinates as the space has dimensions
+
+-bn > node insert grid multigrid
+bn               # insert a boundary node into a multigrid with only level 0
+bn <Id> <s> <t>
+    <Id>                   # insert a boundary node on the boundary segment with <Id>
+    <s> <t>                # specify as much boundary segment coordinates as the boundary has dimensions
+
+-deln > node delete grid multigrid
+deln             # delete a node from the multigrid
+deln <Id> | $s
+    <Id>                   # ID of the node to be deleted
+    $s                     # delete ALL nodes from the selection
+
+-move > node grid multigrid shift
+move             # move a node of the multigrid to a new postion
+move {<Id> | $s} {$i <x> <y> <z> | $b <SegId> <s> <t>}
+    <Id>                   # Id of the node to be moved
+    $i <x> <y> <z>         # specify as much coordinates as the space has dimensions
+    $b <Id> <s> <t>        # specify as much boundary segment coordinates as the boundary has dimensions
+
+
+-ie > element insert grid multigrid
+ie               # insert an element for specified corner nodes
+ie {<Id>}+ | $s
+    {<Id>}+                # specify at least three corner nodes, the coresponding (unique) element will
+                           # be created
+
+-dele > element delete grid multigrid
+dele             # delete an element from the multigrid including edges not deeded anymore
+dele <Id> | $s
+    <Id>                   # ID of the element to be deleted
+    $s                     # delete ALL elements from the selection
+
+-find > node element grid multigrid selection
+find             # find a node (element) on the current level of the current multigrid
+find <x> <y> <z> {$n <tol> | $e} [$s]
+    <x> <y> <z>            # specify as much coordinates as the space has dimensions
+    $n <tol>               # find a node maching the position with tolerance <tol>
+    $e                     # find an element maching the position
+    $s                     # add the selected node (element) to the selection buffer
+                           # (if not specified the node is just listed)
+
+-select > node element grid multigrid selection
+select           # add/remove nodes/elements from the selction buffer of the current multigrid
+select $c | $n {+|-} <Id> | $e {+|-} <Id>
+    $c                     # clear the selection buffer
+    $n {+|-} <Id>          # add (+) or remove (-) the node with <Id> to (from) the selection buffer
+    $e {+|-} <Id>          # add (+) or remove (-) the element with <Id> to (from) the selection buffer
+
+-
+################################ view management ########################################
+
+-standardrefsys
+The standardRefSys has pos x-axis extending rightward and pos y-axis extending upward.
+For the monitor screen the origin is located in the lower left corner and the maximum
+size you will be told by the --> screensize command
+
+-viewrefsys
+The viewRefSys in 3D is defined by the x-axis in the viewplane and the z-axis in the
+direction target-observer.
+The viewRefSys in 2D is defined by the x-axis.
+
+-screensize > screen monitor window
+screensize       # print the size in pixels of the screen (if there) ==> max window size
+
+-openwindow > window picture plot graphics
+openwindow       # open an ug-window on an outputdevice (this will be the current window then)
+openwindow <h> <v> <dh> <dv> [$d <output device>] [$n <window name>]
+    <h> <v>                # the lower left corner of the plotting region in the --> standardRefSys
+    <dh> <dv>              # the width and height resp. of the plotting region of the window
+    $d <output device>     # specify the name of an output device (default: screen)
+    $n <window name>       # optionally you can specify the window's name
+
+-closewindow > window picture plot graphics
+closewindow      # close one (or all) ug-window(s) (including the pictures residing there, of course)
+closewindow [$n <window name> | $a]
+    $n <window name>       # close the window with the specified name
+                           # (default: the current window)
+    $a                     # close all open windows
+
+-setcurrwindow > window picture plot graphics
+setcurrwindow    # make a window the current window
+setcurrwindow <window name>
+
+-openpicture > window picture plot graphics
+openpicture      # open a picture on a window (these will be the current window and picture then)
+openpicture [$w <window name>] [$s <h> <v> <dh> <dv>] [$n <picture name>]
+    $w <window name>       # open a picture on this window (default: current window)
+    $s <h> <v> <dh> <dv>   # specify the location and size in the --> standardRefSys with the
+                           # origin located in the lower left corner of the parent window
+                           # (default: picture size = parent window size)
+    $n <picture name>      # optionally you can specify the picture's name
+
+-closepicture > window picture plot graphics
+closepicture     # close one (or all) picture(s) on a window
+closepicture [$a | {$w <window name> {<picture name> | $a}}]
+                           # default: the current picture
+    $a                     # close all pictures of the current window
+    $w <window name>       # close a picture of this window
+    {<picture name> | $a}  # close the picture with the specified name or all pictures of that window
+
+-setcurrpicture > window picture plot graphics
+setcurrpicture   # make a picture the current picture
+setcurrpicture <picture name> [$w <window name>]
+    $w <window name>       # picture resides in this window (default: current window)
+
+-wplist > window picture plot graphics
+wplist           # list all windows with their pictures
+
+-clearpicture > window picture plot graphics
+clearpicture     # clear current picture
+
+-setview > window picture plot graphics
+setview          # specify or change the observer's view of the object of the current picture
+    2D: setview [$t <x> <y>] [$x  <x> <y>]
+    3D: setview [$o <x> <y> <z> $t <x> <y> <z>] [$x <x> <y> [<z>]] [$p < | =]
+                           # all coordinates have to be given in physical coordinates
+
+    $o <x> <y> <z>         # 3D objects ONLY: specify the observer's stand
+    $p < | =               # 3D objects ONLY: choose central (<) or parallel (=) perspective
+    $t <x> <y> [<z>]       # specify the target point in the viewplane
+                           # (NB: the viewplane is then defined to be normal to the line observer-target)
+
+    $x <x> <y> [<z>]       # define an x-axis in the viewplane (which will be to the right in the picture)
+
+-walk > window picture plot graphics
+walk             # let the observer walk relative to the --> viewRefSys in the current picture
+walk <x> <y> [<z>]
+
+-walkaround > window picture plot graphics
+walkaround       # 3D ONLY: let the observer walk on a sphere around the target point in the current picture
+walkaround <viewplane angle> <rotation angle>    # angles in degree
+    <viewplane angle>      # this angle runs in the view plane math pos from the x-axis and defines
+                           # together with the target-observer direction a plane
+    <rotation angle>       # the observer will be rotated around the target point in the above plane
+
+-zoom > window picture plot graphics
+zoom             # zoom the current picture
+zoom <factor>              # values < 1 magnify picture !
+
+-drag > window picture plot graphics
+drag             # drag the projection plane of the current picture relative to its x-axis
+drag <dx> <dy>
+
+-rotate > window picture plot graphics
+rotate           # rotate the projection plane of the current picture around the target point
+rotate <angle>
+    <angle>                # <angle> runs in the view plane math pos from the x-axis
+
+-setplotobject > window picture plot graphics
+setplotobject    # specify the object which will be plotted in the current picture and associate
+                 # the current multigrid with it (if not done yet)
+setplotobject [<object type name>] ...
+    <object type name>     # possible are: Grid, EScalar, EVector
+                           # see seperate help for these.
+    ...                    # the remaining options depend on which object you specified
+
+-polist > window picture plot graphics
+polist           # print the specifications of the object defined in the current picture
+
+-plot > window picture plot graphics
+plot             # plot the object of the current picture according to its specifications
+
+-vdisplay >
+vdisplay # display view of current picture
+
+-cmfn > meta plot
+cmfn     #  creates a string containing the name of a metafile name for animation by xugv.
+cmfn <name> <var>
+  <name> # first part of the metafile names
+  <var>  # the contents of var will be appended to the name
+
+-findrange > window picture plot graphics
+findrange        # find the range of values to be plotted for the object in the current picture
+                 # the result will be printed and stored into :findrange:min and :findrange:max
+findrange [$z <zoom factor>] [$s] [$p]
+    $z <zoom factor>       # zoom the range by this factor
+    $s                     # symmetrize the range (min=max)
+    $p                     # store range in plot object
+
+-updatedoc > window picture plot graphics
+updateDoc        # redraw all pictures of the current multigrid
+
+-
+################################# miscellaneous #########################################
+
+-clear > vector matrix userdata
+clear            # clear or assign a constant value to a user defined symbol
+clear <symbol name> [$a] [$u] [$v <value>]
+    $a                     # from level 0 through current level (default: current level only)
+    $u                     # consider the skip fields
+    $v <value>             # assign this value (instead of 0.0)
+
+-reinit > problem multigrid
+reinit           # reinitialize a problem
+reinit [$d <domain> $p <problem>]
+    $d <domain>            # domain to initialize (default is the domain of the current mg)
+    $p <problem>           # problem to initialize (default is the problem of the current mg)
+
+-setkey > command delkey
+setkey           # create a command key and assign executable statements to it
+setkey $<command char> $" <command sequence>"
+    $k <command char>      # specifiy a single character which will be the command key
+    $" <command sequence>" # give an arbitrary sequence of statements which is to be
+                           # executed when the command key is pressed
+
+-delkey > command setkey
+delkey           # remove a command key allocated before
+delkey $all | $<command char>
+    $all                   # delete all command keys allocated before
+    $<command char>        # delete only the command key associated with <command char>
+
+-keylist > command setkey list
+keylist          # list all command keys defined together with their contents
+
+-refreshon > view multigrid refreshoff
+refreshon        # pictures on the screen device will be updated instantaneously
+
+-refreshoff > view multigrid refreshon
+refreshoff       # pictures on the screen device will be updated ONLY explicitely
+
+-
+############################### numerical procedures #####################################
+
+-npcreate > numproc
+npcreate         # create a num proc from a num proc type
+npcreate <num proc name> $t <num proc type> $f <format>
+
+-npinit > numproc
+npinit           # initialise current numproc
+npinit <argument list to be passed>
+
+-npexecute > numproc
+npexecute        # execute a num proc
+npexecute [<num proc name>] <argument list to be passed>
+
+-npdisplay > numproc
+npdisplay        # display current num proc
+
+-scnp > numproc
+scnp             # set current num proc
+scnp <num proc name>
+
+-nplist > numproc
+nplist   # list numprocs
+
+-pbjac > smoother numproc jacobi
+for initialisation of the damped point-block Jacobi use:
+npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
+       $damp <sc double list>
+
+-pbgs > smoother numproc gauss-seidel
+for initialisation of the damped point-block Gauss-Seidel use:
+npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
+       $damp <sc double list>
+
+-pbsor > smoother numproc sor
+for initialisation of the damped point-block sor (successive overrelaxation) use:
+npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
+       $damp <sc double list>
+
+-pbilu > smoother numproc ilu-beta
+for initialisation of the damped point-block ilu-beta use:
+npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
+       $damp <sc double list> $L <lu mat sym> $beta <sc double list>
+
+-pblu > smoother numproc lu lr
+for initialisation of the point-block lu (with threshold and damping) use:
+npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
+       $damp <sc double list> $L <lu mat sym> $thresh <sc double list>
+
+-ebgs > smoother numproc gauss-seidel
+for initialisation of the equation-block Gauss-Seidel use:
+npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
+       $Blocking <sc int list> $BlockOrder <ord list> $BlockIter <sc numproc list> $n 1 $D full;
+
+-sc > typevecdesc scalar tvd numproc
+<sc double list>  := [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+<sc int list>     := [nd <int     list>] | [ed <int     list>] | [el <int     list>] | [si <int     list>]
+<sc numproc list> := [nd <numproc list>] | [ed <numproc list>] | [el <numproc list>] | [si <numproc list>]
+<ord list>        := nd|ed|el|sd<number>{ nd|ed|el|sd<number>}+
+
+<<item> list>     := <item>{:<item>}*
+<item>            := <double>|<int>|<numproc>
+

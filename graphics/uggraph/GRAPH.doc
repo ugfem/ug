@@ -1,0 +1,1028 @@
+/*****************************************************************************/
+/*D
+
+   PLOTPROC - graph-submodule for enroling plotprocedures
+   
+   PURPOSE:
+   Creates in the ug environment and fetchs from the ug environment the names 
+   connected with the routines needed for plotting different kind of data
+   (scalar or vector) 
+   which are associated with 'NODE's, 'ELEMENT's, 'MATRIX's etc. It also contans
+   general plot procedures.
+   
+   ELEMENT DATA:   
+.  'EVALUES~*CreateElementValuePlotProc~(const~char~*name,~PreprocessingProcPtr~PreProc,~ElementPlotProcPtr~PlotProc)'
+   - creates in the ug environment 'name' connected with the preprocessing 
+   routine 'PreProc' and working routine 'PlotProc' for evaluation
+   of scalar data assosiated with the 'ELEMENT'; 
+.  'EVALUES~*GetElementValuePlotProc~(const~char~*name)' - gets the 'name'
+    from ug environment and associates it with plot procedure. Available
+    names of data (procedures)  to plot: 'solution', 'correction', 'defect', 'temporary',
+    see also 'CDTOOLS.doc'.
+            
+.  'EVECTOR~*CreateElementVectorPlotProc~(const~char~*name,~PreprocessingProcPtr~PreProc,~ElementVectorProcPtr~PlotProc,~INT~d)'
+   - creates in the ug environment 'name' connected with the preprocessing 
+   routine 'PreProc' and working routine 'PlotProc' for evaluation
+   of vector data of the dimension 'd' assosiated with the 'ELEMENT'; 
+.  'EVECTOR~*GetElementVectorPlotProc~(const~char~*name)' - gets the 'name'
+    from ug environment and associates it with plot procedure. 
+    Available names (procedures) of data to plot: 'gradientvector', see also
+    'CDTOOLS.doc'.
+
+   MATRIX DATA:
+.  'MVALUES~*CreateMatrixValuePlotProc~(const~char~*name,~PreprocessingProcPtr~PreProc,~MatrixPlotProcPtr~PlotProc)'
+   - creates in the ug environment 'name' connected with the preprocessing 
+   routine 'PreProc' and working routine 'PlotProc' for evaluation
+   of data assosiated with the 'MATRIX'; 
+.  'MVALUES~*GetMatrixValuePlotProc~(const~char~*name)' -gets the 'name'
+    from ug environment and associates it with plot procedure. Till now
+    not available.
+   
+   NODE DATA (GENERAL PLOT PROCEDURES):
+.  'static~INT~PreprocessNodeIndex~(MULTIGRID~*theMG)' - 
+   preprocessing function for plotting NodeVector Order.
+.  'static~DOUBLE~NodeIndex~(const~ELEMENT~*theElement,const~COORD~**CornersCoord,~COORD~*LocalCoord)'
+   - plot function for NodeVector Order.
+  
+   SEE ALSO:
+   'CDTOOLS.doc' 
+D*/
+/**************************************************************************/
+
+/**************************************************************************/
+/*D
+
+  LL_GRAPH - graph-submodule for low level plot functions
+   
+   PURPOSE:
+   Provides low level graphic routines with a continiuos input of pixel
+   positions. They are realized by means of interface low level plot
+   functions in the 'OUTPUTDEVICE'. All routines can be devided in three
+   groups: cliping functions, low level drawing functions and set function.
+   
+   CLIPING FUNCTIONS:
+.vb
+static INT ClipPoint (COORD_POINT in, SHORT_POINT *out, INT *reject),
+static INT ClipLine  (COORD_POINT in1,   COORD_POINT in2, 		
+                      SHORT_POINT *out1, SHORT_POINT *out2, 		
+                      INT *reject, INT *side1, INT *side2),
+static INT ClipPolygon (COORD_POINT *in,  INT nin,
+                        SHORT_POINT *out, INT *nout)
+.ve			   		
+   Cliping functions check if the the drawing object (point, line or polygon),
+   defined by coordinate points,
+   fits in the dimension of the current view and returns the part (or the whole object) 
+   of this object (line, polygon) which fits. They also transform 
+   the 'COORD_POINT' format of incoming data to the 'SHORT_POINT' format 
+   appropriate to the X-library functions.
+	   
+   LOW LEVEL DRAWING FUNCTIONS:
+.  'void~UgMove~(COORD_POINT~in)' - moves the cursor to a given screen point 'in';
+.  'void~UgDraw~(COORD_POINT~point)' - draws line from current cursor position 
+    to 'point' and puts cursor to the end point (not clipping end point);        
+.  'void~UgLine~(COORD_POINT~point1,~COORD_POINT~point2)' - draws line from 'point1' to 'point2' in the colour
+    set by 'UgSetColor';
+.  'void~UgInverseLine~(COORD_POINT~point1,~COORD_POINT~point2)' - draws the line from 'point1' to 'point2'
+    using inverse colour;
+.  'void~UgPolyLine~(COORD_POINT~*points,~INT~n)' - draws lines from point 'points[0]'
+    to points 'points[1],...,points[n-1]';
+.  'void~UgPolygon~(COORD_POINT~*points,~INT~n)' - draw polygon with corners 'point[0],...,point[n-1]' in the 
+    coluor set by 'UgSetColor';
+.  'void~UgInversePolygon~(COORD_POINT~*points,~INT~n)' - draw polygon with corners 'point[0],...,point[n-1]'
+    using inverse colours;
+.  'void~UgErasePolygon~(COORD_POINT~*points,~INT~n)' - draw polygon with the colours set to the background;  
+.  'void~UgPolymark~(COORD_POINT~*points,~INT~n)' - draws 'n' marks at 'points[0],...,points[n-1]';
+.  'void~UgText~(const~char~*s,~INT~mode)' - draws text 's';
+.  'void~UgCenteredText~(COORD_POINT~point,~const~char~*s,~INT~mode)' - draws text 's' centered with the
+    respect to the 'point';
+.  'void~UgClearViewPort~(void)' - clears the window;
+
+    Low level drawing functions call the necessary cliping functions and pass
+    the trasformed arguments to the corresponding X-library functions.
+
+  SET FUNCTIONS:
+.  'void~UgSetColor~(long~colorIndex)' - sets color to 'colorIndex';
+.  'void~UgSetMarker~(short~index)'    - sets marker to 'Index';
+.  'void~UgSetMarkerSize~(short~Index)' - sets marker size to 'Index';
+.  'void~UgSetTextSize~(short~size)' - sets text size to 'size';
+.  'void~UgSetLineWidth~(short~width)' - sets the width of the line to 'width'.
+
+   Set functions pass the corresponding parameters to the X-library functions.
+  
+
+D*/
+/**************************************************************************/
+
+/****************************************************************************/
+/*D
+    GRAPH - ug-module for graphics
+    
+    PURPOSE OF THE GRAPH-MODULE:
+    The module provides a high-level-window-management (opening, resizing and 
+    closing windows) realized by means of interface-functions in the 'OUTPUTDEVICE'.
+    Additionally the module provides the implementation of the graphics (2D or 3D)
+    on the base of low-level-plot-routines ('Move', 'Draw', 'Polygon', ...) also realized
+    by means of interface-functions in the 'OUTPUTDEVICE'. 
+    
+    The graphic-abilities arise from the concept of 'PLOTOBJ' (plotobject) and 'WORK'.
+    
+.   'PLOTOBJ' - is an abtract description of a geometrical object and /or numerical object.
+    Every 'PLOTOBJ' refers to a 'MULTIGRID', serving as a database.
+.   2D-examples - 'Grid' - 2D-representation of a multigrid
+.n 'EScalar' - representation of a scalar-solution-plot
+
+.   3D-examples - 'Grid' - 3D-representation of a multigrid, eventually cutted by a
+     plane (see 'CUT')
+.n 'EScalar' - representation of a scalar-solution-plot on the surface optained by
+.n  cutting the geometrical object 'MULTIGRID' by a plane (see 'CUT'), ...
+    
+.   'WORK' - specification of a work applied to a 'PLOTOBJ'.
+.   Example~specifications~of~'WORK' - 'DRAW_WORK': draw the 'PLOTOBJ'
+.n  'FINDRANGE_WORK': find the range of the values of a 'PLOTOBJ' (for example scalar values
+.n  for 'EScalar' 'PLOTOBJ'
+.n  'SELECTELEMENT_WORK': select an element displayed previously by 'DRAW_WORK'
+
+
+	From all executable combinations 'PLOTOBJ' - 'WORK' (signed by an 'x' in the following 
+    tabular) are arising the graphic-abilities of this module. 
+	
+.vb
+
+
+            \WORK| DRAW_WORK | FINDRANGE_WORK | SELECTELEMENT_WORK | ...
+     PLOTOBJ \   |           |                |                    |
+    __________\__|___________|________________|____________________|_ ..
+                 |           |                |                    |
+     Grid        |    x      |                |        x           |
+    _____________|___________|________________|____________________|_ ..
+                 |           |                |                    |
+     EScalar     |    x      |        x       |                    |
+    _____________|___________|________________|____________________|_ ..
+                 |           |                |                    |
+       ..        .           .                .                    .
+                 .           .                .                    .
+.ve
+ 
+    The GRAPH-module provides create-, delete-, init- and displayroutines for every
+    'PLOTOBJ'. A 'PLOTOBJ' has usually a set of parameters to specify (for instance the
+    color of the 'Grid', the size of the plot of the 'PLOTOBJ', i.e. plotting the hole 
+	'PLOTOBJ' or only a part, ...). The specification of the 'WORK' is easier;
+    there are no routines helping the specification. Anyway, usually any specification of
+    'PLOTOBJ' or 'WORK' structs are realized by commands (see 'COMMANDS').
+ 
+    STRUCTURE OF THE GRAPH-MODULE:
+    The purpose of the GRAPH-module is realized by means of five files. In the order
+    from the more elementary to the more abstract there are
+
+.   ll_graph.c/h - provides lowlevel-graphic-routines with a continous input of pixel
+    positions. Clipping to the size of the window are carried out.
+.   plotproc.c/h - provides functions to enrol user-defined (callback)functions evaluating
+    for example values from an element. These user-defined functions make usually use of the 
+    storidge management defined by the 'FORMAT'.
+.n  Additionally some general (callback)functions are defined and enrolled here (NodeIndex,
+.n  GradNodeIndex, ...).
+	
+.   wpm.c/h - Window-Picture-Manager, i.e. the management of 'UGWINDOW's (windows in the
+    usual sense), 'PICTURE's (the frame in which a 'PLOTOBJ' is plotted) as well as the (abstract)
+	definition of 'PLOTOBJ' their initialization, display (of the initialization), ... .
+.   wop.c/h - WorkOnPicture, definition of different types of WORK, and their realization
+    
+    EXTENSIONS OF THE GRAPH-MODULE:
+    An enlargement of the abilities of the GRAPH-module can be carried out in two
+    different directions
+	
+.   new~'WORK' - to add a new work to the existing for at least one 'PLOTOBJ's means to 
+    implement new working routines in the wop.c/h. Only these two files are affected by the 
+    change. For instance a "PIC_VALUE_WORK", picking up the value from a 'EScalar-PLOTOBJ', 
+    i.e. taking a value by mouse-click of a plotted 'PLOTOBJ'.
+	
+.   new~'PLOTOBJ' - to add a new 'PLOTOBJ'. First definition (wpm.h) and handling-routines
+    (init, display) have to be implemented (wmp.c). Second, at least one WORK on it has to 
+	be implemented (wop.c).
+    
+    FUTURE EXTENSIONS OF THE GRAPH-MODULE:
+    Introduction of a explcite 'DATABASE' concept. Here the usual 'MULTIGRID' would be only one part
+    ( asubstructure of the 'DATABASE'). Other possible database members are `STRUCTURED_MULTIGRID`, 
+	`ALEBRAIC_MULTIGRID`, `1D-PARAMETERLIST` (display of calculated data, such as a relation 
+	convergence-parameter).  In this way different kinds of information is displayable by the
+	GRAPH-module.
+    
+    FAST IMPLEMENTATION OF THE GRAPHIC:
+    Since the definition of the 'PLOTOBJ' and the 'WORK' is abstract, i.e. independent of the actual
+    implementation of the execution of the 'WORK', the files wop.c/h and ll_graph.c/h can
+    be replaced by faster implementations using for instance the GL-lib., or something similar.
+D*/
+/****************************************************************************/
+	
+/****************************************************************************/
+/*D
+    WPM - graph-submodule for window-picture-management
+	
+	PURPOSE OF THE WPM-SUBMODULE:
+	The submodule provides the management of the structs 'UGWINDOW', 'PICTURE's, 'VIEWEDOBJ',
+	'PLOTOBJ', 'PLOTOBJTYPE'. That means opening, closing, adjusting, initializing them.
+	
+	STRUCTS OF THE WPM-SUBMODULE AND ITS IDEAS:
+.   'PLOTOBJ' - an abstract definition of an geometrical and/or numerical
+	object. To initialize such an object, a list of parameters (depending of the
+	type of 'PLOTOBJ', i.e. 'PLOTOBJTYPE') has to be specified. A fully specified
+	'PLOTOBJ' is for instance a 'MULTIGRID' with IDs for the elements, in which the
+	elements are colored according to the elementclasses (see 'ELEMCLASS'). The
+	specification (initialization) of the 'PLOTOBJ's (as well as the display of the
+	parameterlist) is done by execution of the initialization function (or display 
+	function) of the associated 'PLOTOBJTYPE'. The latter is a named template for the
+	'PLOTOBJ'. In the example above, the type of the 'PLOTOBJ' is the 'PLOTOBJTYPE' with
+	name `Grid` and the specification "plot element IDs; plot all colors".
+	The available 'PLOTOBJTYPE's are listed in the 'ENVDIR' `PlotObjTypes`.
+
+.   'PLOTOBJTYPE' - defines a class of 'PLOTOBJ's, i.e. defines its dimension (note, that
+    the dimension of a 'PLOTOBJ' is not neccessary the same as the dimension of the
+	corrisponding 'MULTIGRID') and how to initialize or display its parameters (by means
+	of function-calls, function-pointers are stored in the 'PLOTOBJTYPE').
+	
+.   'VIEWEDOBJ' - includes a 'PLOTOBJ', so it is a further specification of it. 
+    Additionally it contains the information about the observer and his/her sight to the 'PLOTOBJ'. 
+    (2D: the targetpoint to which the observer looks and the orientation of the observers
+    reference system with respect to the reference system of the 'PLOTOBJ', 
+    3D: the observers stand- and targetpoint, and the orientation of the observers
+    reference system with respect to the reference system of the 'PLOTOBJ', if the
+    view is `PARALLEL` or `PERSPECTIVE`).
+	
+	A fully initialized 'VIEWEDOBJ' determines completely the observers view of the
+	'PLOTOBJ'.
+	
+.   'PICTURE' - includes a 'VIEWEDOBJ', so it is a further specification of it.
+    Additionally it contains the information about its position on the canvas, i.e.
+    the pixelspace available from the 'UGWINDOW'. This is specified by some pixel
+    coordinates and a reference to the 'UGWINDOW'.
+	
+.   'UGWINDOW' - datastructure describing for instance a usual window on the screen
+	of your monitor. It contains a reference to the list of 'PICTURE's on it, some 
+	pixelcoordinates which describe its position on the screen and the available pixelspace
+	for the 'PICTURE's, the numbers of 'PICTURE's on it and the currently chosen
+	tool, which specifies the interactive work, which can be executed by mouse-click.
+
+.   'CUT' - description of a cutplane (only 3-dimensional plots). This structure should be
+    used for describing cutplanes because the initialization as well as its display is
+	supported by special function, which garantie a constant format (see the static routines 
+	`SetCutPlane`, `DisplayCutPlane` in the file `wpm.c`)
+		
+	SEE ALSO:
+    'CreateUgWindow', 'DisposeUgWindow', 'GetFirstUgWindow', 'GetNextUgWindow', 'CreatePicture', 'DisposePicture',
+	'GetFirstPicture', 'GetNextPicture', 'InvalidatePicture', 'InvalidatePicturesOfMG',
+	'InvalidatePicturesOfUgWindow', 'UpdateUgWindow', 'InvalidateUgWindow', 'InvalidateUgWindowsOfMG',
+	'CopyViewedObjToPicture', 'SetView', 'DisplayViewOfViewedObject', 'Walk', 'RunAroundTargetPoint', 'Zoom',
+	'DragProjectionPlane', 'RotateProjectionPlane', 'SpecifyPlotObjOfViewedObject', 'DisplayObject',
+	'WinID2UgWindow', 'GetUgWindow', 'ListUgWindow', 'GetUgPicture', 'ListPicture', 'Mouse2Picture', 'GetPlotObjType',
+	'CreatePlotObjType', 'GetFirstPlotObjType', 'GetNextPlotObjType', 'ResizeViewPlane', 'ListWindowPictureHeader',
+	'InitPlotObjTypes', 'InitWPM',	
+D*/
+/****************************************************************************/
+	
+/****************************************************************************/
+/*D
+    PLOTOBJ - Data type describing a plotobject
+	
+	STRUCTURES:
+.vb
+struct PlotObjHead {                        // head of all PlotObjs
+ 
+    INT status;                             // see above
+    struct PlotObjType *thePlotObjType;     // type of PlotObj
+    MULTIGRID *theMG;                       // the data base
+    COORD theMidPoint[3];                   // MidPoint of covering 2/3D sphere
+    COORD theRadius;                        // radius of covering 2/3D sphere
+    INT clearBevoreDraw;                    // YES or NO
+};
+
+union PlotObj {
+
+    struct PlotObjHead				theHead;
+	
+#ifdef __TWODIM__
+    struct MatrixPlotObj            theMpo; 		
+    struct ExternPlotObject         theExternObject;
+    struct ElemScalarPlotObj2D      theEspo;
+    struct ElemVectorPlotObj2D      theEvpo;
+    struct GridPlotObj2D            theGpo; 
+#endif
+	
+#ifdef __THREEDIM__
+    struct MatrixPlotObj            theMpo; 	
+    struct ExternPlotObject         theExternObject;
+    struct DomainPlotObj3D          theDpo;
+    struct ElemScalarPlotObj3D      theEspo;
+    struct ElemVectorPlotObj3D      theEvpo;
+    struct GridPlotObj3D            theGpo; 	
+#endif
+};
+
+typedef union  PlotObj              PLOTOBJ;
+.ve
+
+	DESCRIPTION:
+	The 'PLOTOBJ' structure describes an abstract object in two- or three-dimensional space.
+	The description is used by work functions (WorkOnPicture, ...) to execute different
+	kinds of WORKs. This can be for example a simple plot of the 'PLOTOBJ'. 
+	
+	The substructure `PlotObjHead` is also a substructure of any of the other substructures
+	of the 'PLOTOBJ' (`MatrixPlotObj, ExternPlotObject, ElemScalarPlotObj2D, ... `). It is allways
+	valid and specifies by means of its component `thePlotObjType` which of the further
+	substructures is valid (exactly one if it is initialized). There exist only for the substructure
+	`ElemScalarPlotObj3D` an detailed description.
+	
+.   'status' - NOT_INIT: 'PLOTOBJ' is not initialized, type (further substructure) is not defined
+.n  		 NOT_ACTIVE: 'PLOTOBJ' is not fully initialized, type (further substructure) is defined
+.n  		 ACTIVE: 'PLOTOBJ' is fully initialized, type (further substructure) is defined
+
+.   'thePlotObjType' - pointer to 'PLOTOBJTYPE', a template containing function pointer to initialize
+                     the 'PLOTOBJ'
+.   'theMG' - pointer to the MULTIGRID structure, the database of the 'PLOTOBJ'
+.   'theMidPoint',~'theRadius' - defines the ball in which the 'PLOTOBJ' lies, in 3D a movement into the
+						         ball is impossible, often initialized from the information of
+							     'DOMAIN'
+
+.   'clearBevoreDraw' - screen is cleared before plotting if 'YES'
+
+	MACROS:
+	The macros for 'PLOTOBJ', all beginning with 'PO_',are defined in`wmp.h`
+	
+	SEE ALSO:
+	SpecifyPlotObjOfViewedObject, DisplayObject, ElemScalarPlotObj3D
+D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+	ElemVectorPlotObj3D - Data type describing the 3D element-scalar-plotobject
+	
+	STRUCTURES:
+.vb
+struct ElemScalarPlotObj3D {
+
+    struct PlotObjHead theHead;             // the head
+	
+    // data for 3D-View of elem scalar field
+    struct Cut theCut;                      // description of the cut
+    EVALUES *EvalFct;                       // evaluation proceedure
+    DOUBLE min, max;                        // range
+    INT mode;                               // COLOR or CONTOURS_EQ
+    INT depth;                              // depth of recoursive subdevision of element
+    INT numOfContours;                      // nb of contourlines if used
+    DOUBLE contValues[PO_MAXCONTOURS];      // contour values if used
+};
+.ve
+
+	DESCRIPTION:
+	apart of the substructure `theHead` (see 'PLOTOBJ'), the structure describes
+	the non-general part of the 'PLOTOBJ' for a 3-dimensional plotobject of a scalar
+	solution on a cutplane (see 'CUT') in a 3-dimensional 'MULTIGRID'.
+	
+.   theCut - ptr. to description of cutplane (see 'CUT').
+.   EvalFct - ptr. to evaluation function (user defined), which reads values (scalars or vectors) 
+    from 'ELEMENT's or values from 'MATRIX's (see 'PLOTPROC').
+.   min,~max - range of the color distribution. the min-value corresponds to `blue`, the max-value
+    to `red`. The color-range is similar to the usual visual spectrum. Values being lower than 
+	min-value will be mapped to `blu`, values larger than max-value to 'red'.
+.   mode,~depth,~numOfContours,~contValues - two possible values: 'COLOR' and 'CONTOURS_EQ'. A
+    'COLOR'-plot gives to every position on the cutplane a color (every polygon arising from a
+    cut of an 'ELEMENT' will be 'depth' times recursively subdivided into four pices, 'depth' has
+    to be from [0,4]). A 'CONTOURS_EQ'-plot will plot a number of contourlines ('numOfContours' >= 2)
+    having the color from the spectrum according to its value (stored in 'contValues'). The resolution
+	of these lines is again defined by recursive division of cuts arising from 'ELEMENT's. 
+    
+	MACROS:
+	No macros, this structure is managed by the functions from the corrisponding 'PLOTOBJTYPE'
+	`EScalar` and it extension 'PLOTOBJHANDLING'.
+	
+	SEE ALSO:
+	'CUT', 'PLOTOBJTYPE', 'PLOTOBJHANDLING'
+D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+	CUT - data type describing a cutplane for 3-dimensional plots
+	
+	STRUCTURES:
+.vb
+struct Cut {
+
+    INT status;                             // see above
+    COORD   PlaneNormal[3];                 // normal vector of the plane
+    COORD   PlanePoint[3];                  // point on the plane
+};
+
+typedef struct Cut                   CUT;
+.ve
+
+	DESCRIPTION:
+	The structure describes a cutplane for 3-dimensional plots. It is usually
+	initialzed and displayed by the static functions from`wpm.c`: `SetCutPlane`,
+	`DisplayCutPlane`. Designing a new 'PLOTOBJ' it shoulsd be used.
+
+.   'status' - NOT_INIT: 'CUT' is not initialized
+.n  		   NOT_ACTIVE: 'CUT' is not fully initialized
+.n  		   ACTIVE: 'CUT' is fully initialized
+
+.   'PlaneNormal' - normal vector of the plane, usually all parts of the 'PLOTOBJ'
+    lying in front of it, i.e. the side to which the normal points, are cutted off
+.   'PlanePoint' - an arbitrary point on the cutplane
+    
+	MACROS:
+	macros are defined in `wpm.h`. They begin with 'CUT_' 
+	
+	SEE ALSO:
+	`SetCutPlane`, `DisplayCutPlane`, 'ElemVectorPlotObj3D'
+D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+	VIEWEDOBJ - data type describing the plotobject with a view to it
+	
+	STRUCTURES:
+.vb
+struct ViewedObj {
+
+    // the object
+    union PlotObj thePlotObj;               // plot object
+
+    // the view	
+    INT status;                             // see above
+    INT perspective;                        // YES or NO
+    COORD   ViewPoint[3];                   // Observer Stand
+    COORD   ViewTarget[3];                  // View target point
+    COORD   PlaneMidpoint[3];               // description of projection plane (the
+    COORD   PlaneXDir[3], PlaneYDir[3];     // infiniteextension touches the ViewTarget)
+};
+
+typedef struct ViewedObj             VIEWEDOBJ;
+.ve
+
+	DESCRIPTION:
+	The 'VIEWEDOBJ' is an extension of the 'PLOTOBJ'. Additionally it contains
+	information about the view an observer has to the 'PLOTOBJ'.
+	
+.   thePlotObj - the 'PLOTOBJ'
+.   'status' - NOT_INIT: 'VIEWEDOBJ' is not initialized
+.n  		   NOT_ACTIVE: 'VIEWEDOBJ' is not correctly initialized
+.n  		   ACTIVE: 'VIEWEDOBJ' is fully initialized
+
+.   'perspective' - only for 3D-'PLOTOBJ': YES means PERSPECTIVE view, NO means PARALLEL-PROJECTION
+.   'ViewPoint' - only for 3D-'PLOTOBJ': standpoint of the observer
+.   'ViewTarget' - 2D or 3D-'PLOTOBJ': point to which the observer looks
+.   'PlaneMidpoint' - midpoint of the projectionplane (2D or 3D)
+.   'PlaneXDir',~'PlaneYDir' - (2D or 3D vector) giving the x- resp. y-direction of the
+    projectionplane in physical coordinates
+
+	MACROS:
+	Macros are defined in `wpm.h`, allways beginning with 'VO_'
+	
+	SEE ALSO:
+	'PLOTOBJ', 'PICTURE', 'UGWINDOW'
+D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+	PICTURE - data type describing the plotobject how it appears on the 'UGWINDOW'
+	
+	STRUCTURES:
+.vb
+struct PICture {
+
+    ENVVAR v;                                   // envitem of the picture
+	
+    // specification of the picture
+    struct UgWindow *theUgWindow;               // window of that canvas
+    INT Global_LL[2], Global_UR[2];             // size of picture w.r.t. parent
+                                                // i.e.the ugwindow local pixel sp
+    INT sign_x, sign_y;                         // 1 if right/up system, -1 if left/down system
+    INT Valid;                                  // YES or NO
+    struct ViewedObj theViewedObj;              // the object as you see it
+};
+
+typedef struct PICture              PICTURE;
+.ve
+
+	DESCRIPTION:
+	The 'PICTURE' is an extension of the 'VIEWEDOBJ'. It contains additionally
+	information about how the projectionplane (see 'VIEWEDOBJ') is related to
+	the 'UGWINDOW' (usually a window on the monitor or a meta-file (see 'META')).
+
+.   'v' - Makes the 'PICTURE' an environment variable, stores also the name of the 'PICTURE'.
+.   theUgWindow - reference to the 'UGWINDOW' on which the 'PICTURE' is opened
+.   'Global_LL',~'Global_UR' - pixel coordinates of lower-left and upper-right corner
+    of the 'PICTURE' in the local pixel coordinates of the corresponding 'UGWINDOW'
+	(local means the pixel space which has to be used for plotting)
+.   'sign_x',~'sign_y' - additional technical information: if the x- or y-axis in local
+    'UGWINDOW'-pixel coordinates is horizontal-right resp. vertical-up (1) or
+	horizontal-left resp. vertical-down (-1)
+.   'Valid' - YES if the content of the 'PICTURE' is valid, i.e. it has not to be
+    replotted
+.   'theViewedObj' - the 'VIEWEDOBJ'
+    
+	MACROS:
+	Macros are defined in `wpm.h`, beginning allways with 'PIC_'
+	
+	SEE ALSO:
+	'VIEWEDOBJ', 'UGWINDOW', 'PLOTOBJ'
+D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+    UGWINDOW - data type describing
+	
+    STRUCTURES:
+.vb
+struct UgWindow {
+	
+    ENVDIR d;                                   // envitem of the UgWindow
+
+    struct outputdevice *theOutputDevice;       // corresponding Output Device
+    WINDOWID theIFWindow;                       // identification of interface window
+    INT Valid;                                  // YES or NO
+    INT NbPictures;                             // number of pictures for that ugwindow
+    INT currTool;                               // current tool chosen
+    INT Global_LL[2], Global_UR[2];             // size of Ugwindow w.r.t. parent i.e.the
+                                                // ug-screen pixelspace
+    INT Local_LL[2], Local_UR[2];               // real pixelrange of UgWindow, given by
+                                                // LowerLeft, UpperRight
+};
+
+typedef struct UgWindow              UGWINDOW;
+.ve
+
+	DESCRIPTION:
+	The structure describes a window, which can be opened on the 'OUTPUTDEVICE' (usually
+	the monitor or the metafile (see 'META')). On the 'UGWINDOW' can be opened one or more
+	'PICTURE's. The 'PICTURE's are (if existing, i.e. openend) 'ENVVAR's in the 'ENVDIR'ectory
+	of the 'UGWINDOW' (substructure). Every 'UGWINDOW' has exactly one 'TOOL', which specify
+	the interactive 'WORK' you can perform on it. Of course, the 'UGWINDOW' contains a description
+	of its position on the screen (monitor-screen, metafile-screen, ...).
+	
+.   'v' - Makes the 'UGWINDOW' an environment directory, stores also the name of the 'UGWINDOW'.
+.   'theIFWindow' - identification used by the 'DEVICE'.
+.   'Valid' - YES if the 'UGWINDOW' is valid, i.e. the 'TOOL' and the infobox is displayed
+    correctly, otherwise NO.
+.   'NbPictures' - number of 'PICTURE's opened on that 'UGWINDOW', stored as 'ENVVAR's in the 'ENVDIR'.
+.   'currTool' - number of current 'TOOL'.
+.   'Global_LL',~'Global_UR' - lower-left and upper-right outter corner-position on the screen, the real
+    pixel coordinates used on the screen (for example a monitor has usually a y-axis going down in
+	positive direction). In this way it is realized that the content of a 'PICTURE' on the 'UGWINDOW' 
+	is not upside down.
+.   'Local_LL',~'Local_UR' - lower-left and upper-right inner corner-position in pixel coordinates that
+    are used for plotting. Often you find the point (0,0) to be the upper-left.
+    
+	MACROS:
+	Macros are defined in`wpm.h`, beginning allways with 'UGW_'.
+	
+	SEE ALSO:
+    'OUTPUTDEVICE', 'META', 'TOOL', 'DEVICE', 'PICTURE'	
+D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+    PLOTOBJTYPE - Data type describing a plotobject type
+	
+	STRUCTURES:
+.vb
+typedef INT (*DispPlotObjProcPtr) (union PlotObj *thePlotObj);
+typedef INT (*SetPlotObjProcPtr) (union PlotObj *thePlotObj, INT argc, char **argv);
+
+struct PlotObjType {
+	
+	ENVVAR v;									/* envitem of the UgWindow										*/
+	
+	INT Dimension;								/* see above													*/
+	SetPlotObjProcPtr SetPlotObjProc;			/* proc for initializing the PlotObj							*/
+	DispPlotObjProcPtr DispPlotObjProc; 		/* proc for displaying the PlotObj								*/
+};
+
+typedef struct PlotObjType			PLOTOBJTYPE;
+.ve
+
+	DESCRIPTION:
+    The data structure provides the `abstract` functionallity for the 'PLOTOBJ' from
+    whom it is referenced. It is initialized at initialization-time of the program, and
+	will never be changed later. It defines the dimension of the 'PLOTOBJ' and contains 
+	the initialization- and display-routines for the `abstract` parameters of the 'PLOTOBJ'.
+	There is an extension of this structure to 'PLOTOBJHANDLING', holding the pointers to 
+    realize different 'WORK's. This does not take place in the file `wpm.c/h`, because
+	they just give an abstract caracterization of an 'PLOTOBJ'.
+
+.   'v' - Makes the 'PLOTOBJTYPE' an environment variable, stores also the name of the 'PLOTOBJTYPE'.
+.   'Dimension' - dimension of the corrisponding 'PLOTOBJ', unchangeable.
+.   'SetPlotObjProc' - ptr. to function which initializes the parameters of the corresponding
+    'PLOTOBJ'. The arguments 'argc' and 'argv' are input parameters from the 'COMMANDS'. Their
+    format is described there.
+.   'DispPlotObjProc' - ptr. to function which displays the parameters of the corresponding
+    'PLOTOBJ'.
+
+	MACROS:
+    macros are defined in `wpm.h`. They begin with 'POT_' 
+	
+	SEE ALSO:
+    'WORK', 'COMMANDS', 'GetPlotObjType', 'CreatePlotObjType', 'GetFirstPlotObjType',
+	'GetNextPlotObjType', 'InitPlotObjTypes'
+D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+    WOP - graph-submodule for work on picture
+	
+	PURPOSE OF THE WOP-SUBMODULE:
+    The submodule provides the  ideas of different works on plotobjects and their
+    implementation by means of the interface-functions defined in the 'OUTPUTDEVICE'.   
+    The function 'WorkOnPicture' provides to the wop-user (i.e. the one who wants to work
+    on a plotobject)  nearly all graphical abilities. Wop-users are in this context the
+    'COMMANDS'.
+	
+    WORK-ON-PICTURE ---- THE CONCEPT:
+	First, the submodule gives an abstract definition of work, specified by a few parameters,
+	like the idea `draw` or `select an element`. The datastructure representing the work
+	is 'WORK'. The following 'WORK's are available (modulo further extensions)
+
+.   noniteractive~'WORK' - 'DRAW_WORK', plots the 'PLOTOBJ'
+.n           'FINDRANGE_WORK', finds the numerical range of every solution-plot
+
+.   iteractive~'WORK'~(induced~by~mouse-action) - 'SELECTNODE_WORK', searches a 'NODE' in a grid-plot
+.n           'SELECTELEMENT_WORK', searches an 'ELEMENT' in a grid-plot
+.n           'MARKELEMENT_WORK', marks an 'ELEMENT' in a grid-plot for 'refinement'
+.n           'INSERTNODE_WORK', inserte an inner 'NODE' in a grid-plot
+.n           'MOVENODE_WORK', moves a 'NODE' in a grid-plot
+.n           'INSERTBNDNODE_WORK', inserte an boundary 'NODE' in a grid-plot
+	
+
+    Second, the submodule provides an administrational structure which holds
+	pointers to routines executing a work on a plotobject (see also 'PLOTOBJ'). This
+	structure is called 'PLOTOBJHANDLING', it is an extension of the structure 'PLOTOBJTYPE'
+	defined in `wpm.h`, which holds the pointers the the initialization- and displayfunctions
+	for the 'PLOTOBJ'. Third, it contains all functions realizing a special work on a special
+	plotobject. 
+	
+	In general, not every work is applicable to every plotobject. For instance, 
+	the 'SELECTELEMENT_WORK' can not be applied to a plotobject `EScalar`, since the latter 
+	represents an a solution, in which no 'ELEMENT's are represented. One (or the only)
+	exception is the 'DRAW_WORK', it is applicable to every plotobject, since a plotobject
+	is as a concept something to be drawn.
+ 
+	What was said previously is displayed in the following tabular. There an 'x' signs if
+	the special work is applicable to a special plotobject.
+.vb
+
+            \WORK| DRAW_WORK | FINDRANGE_WORK | SELECTELEMENT_WORK | ...
+     PLOTOBJ \   |           |                |                    |
+    __________\__|___________|________________|____________________|_ ..
+     Grid        |    x      |                |        x           |
+    _____________|___________|________________|____________________|_ ..
+     EScalar     |    x      |        x       |                    |
+    _____________|___________|________________|____________________|_ ..
+                 |           |                |                    |
+       ..        .           .                .                    .
+.ve
+
+    As mentioned before, the structure 'PLOTOBJHANDLING' holds the function-pointers which
+	realize the work-functionality for a special plotobject ('PLOTOBJHANDLING' is an extension
+	of the 'PLOTOBJTYPE' to which any plotobject has a reference). To find the realization 
+	of a work for a plotobject, the reference to the 'PLOTOBJ' and its extension 'PLOTOBJHANDLING'
+	is used. The latter can be regarded as a list of functionalities (for this type of 'PLOTOBJ')
+	and every functionality represents a kind of work. Every functionality is realized by means 
+	of a run over a number of (usually 1 to 3) cycles. Every cycle is mainly characterized by
+	its `WORKMODE` (i.e. if the work is done 'ELEMENT'-wise, 'NODE'-wise, 'VECTOR'-wise or 
+	'EXTERN'-wise) and within the `WORKMODE` by some evaluation- and executionfunction.
+
+    STRUCTURES:
+	'PLOTOBJHANDLING', 'WORK'
+    
+	SEE ALSO:
+	'WORK', 'PLOTOBJHANDLING', 'PLOTOBJ'
+D*/
+/****************************************************************************/
+	
+/****************************************************************************/
+/*D
+	WORK - data type describing the work
+	
+	STRUCTURES:
+.vb
+struct Draw_Work {
+
+    INT WorkID;                 // unique ID of the work
+};
+
+struct FindRange_Work {
+	
+    INT WorkID;                 // unique ID of the work
+
+    // specification of the work
+    INT put;                    // store values on PlotObj if YES
+    INT symmetric;              // symmetrisize range if YES
+    DOUBLE zoom;                // factor to zoom the range
+
+    // the result of the work
+    DOUBLE min, max;            // range found
+};
+
+struct SelectNode_Work {
+	
+    INT WorkID;                 // unique ID of the work
+
+    // specification of the work
+    short PixelX;               // x pixel coordinate
+    short PixelY;               // y pixel coordinate
+};
+
+struct SelectElement_Work {
+	
+    INT WorkID;                 // unique ID of the work
+
+    // specification of the work
+    short PixelX;               // x pixel coordinate
+    short PixelY;               // y pixel coordinate
+};
+
+struct MarkElement_Work {
+	
+    INT WorkID;                 // unique ID of the work
+
+    // specification of the work
+    short PixelX;               // x pixel coordinate
+    short PixelY;               // y pixel coordinate
+};
+
+
+
+
+struct InsertNode_Work {
+	
+    INT WorkID;                 // unique ID of the work
+
+    // specification of the work
+    short PixelX;               // x pixel coordinate
+    short PixelY;               // y pixel coordinate
+};
+
+struct InsertBndNode_Work {
+	
+    INT WorkID;                 // unique ID of the work
+
+    // specification of the work
+    short PixelX;               // x pixel coordinate
+    short PixelY;               // y pixel coordinate
+};
+
+struct MoveNode_Work {
+	
+    INT WorkID;                 // unique ID of the work
+
+    // specification of the work
+    short PixelX;               // x pixel coordinate
+    short PixelY;               // y pixel coordinate
+};
+
+union Work {
+	
+    INT WorkID;                                     // unique ID of the work
+    struct Draw_Work theDrawWork;                   // desc. for drawing an object
+    struct FindRange_Work theFindRangeWork;         // desc. for finding the range of an object
+    struct SelectNode_Work theSelectNodeWork;       // desc. for selecting a node of an object
+    struct SelectElement_Work theSelectElementWork; // desc. for selecting an element of an obj.
+    struct MarkElement_Work theMarkElementWork;     // desc. for marking an element of an obj.
+    struct InsertNode_Work theInsertNodeWork;       // desc. for inserting an inner node in obj.
+    struct InsertBndNode_Work theInsertBndNodeWork; // desc. for inserting an bnd node in obj.
+    struct MoveNode_Work theMoveNodeWork;           // desc. for moving an node of an obj.
+};
+
+typedef union  Work                 WORK;
+.ve
+
+	DESCRIPTION:
+	The structure describes eight different kinds of work and its parameters. The first field
+	in every substructure is the `WorkID`, it tells (by ID) the type of the work (see MACROs':' 
+	DRAW_WORK, ... ,MOVENODE_WORK). By this ID the corresponding substructure is specified.
+	
+.   theDrawWork - draws the specified 'PLOTOBJ', no further specification.
+.   theFindRangeWork - finds the numerical range of of a solution-plot (scalar or vector).
+                       'put' - YES or NO, the result is filled into the 'PLOTOBJ', so that 
+                       the range is adjusted. 'symmetric' - YES or NO, the range found is 
+					   extended to the smallest symmetric (w.r.t. 0) intervall containing the range.
+                       'zoom' - multiplies the range w.r.t. the midpoint of the range by the
+                       factor 'zoom'. 'min, max' - range evaluated for scalar values, for vector 
+					   values 'max' equals the euklidian norm and 'min' equals zero.
+
+.   theSelectNodeWork - selects a 'NODE', inverts its image on the screen, and stores it in the
+                        'SELECTIONBUFFER'. 'PixelX, PixelY' - pixel input-values optained by mouse-click.
+.   theSelectElementWork - selects an 'ELEMENT', inverts its image on the screen, and stores it in the
+                        'SELECTIONBUFFER'.  'PixelX, PixelY' - pixel input-values optained by mouse-click.
+.   theMarkElementWork - marks an 'ELEMENT' for refinement and shows its refinement on the screen.
+                        'PixelX, PixelY' - pixel input-values optained by mouse-click.
+.   theInsertNodeWork - inserts an inner 'NODE' at mouse-position. 'PixelX, PixelY' - pixel input-values
+                        optained by mouse-click.
+.   theInsertBndNodeWork - inserts an boundary 'NODE' at mouse-position. 'PixelX, PixelY' - pixel input-values
+                           optained by mouse-click.
+.   theMoveNodeWork - moves an boundary 'NODE' according to the mouse-position. 'PixelX, PixelY' - pixel
+                      input-values optained by mouse-click.
+
+	
+ 	MACROS:
+    Macros are defined in `wop.h`. They begin with 'W_'.
+	
+.   macros~for~WorkID~values - 'DRAW_WORK', 'FINDRANGE_WORK', 'SELECTNODE_WORK', 'SELECTELEMENT_WORK',
+                               'MARKELEMENT_WORK', 'INSERTNODE_WORK', 'INSERTBNDNODE_WORK', 'MOVENODE_WORK'
+	
+	SEE ALSO:
+	'WorkOnPicture'
+D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+	PLOTOBJHANDLING - data type holding the work-pointers for an plotobject
+	
+	STRUCTURES:
+.vb
+// general procedure ptr
+typedef INT                        (*GEN_PreProcessProcPtr)          (PICTURE *, union Work *);
+typedef INT                        (*GEN_ExecuteProcPtr)             (DRAWINGOBJ *);
+typedef INT                        (*GEN_PostProcessProcPtr)         (PICTURE *, union Work *);
+
+// elementwise procedure ptr
+typedef ELEMENT *                  (*EW_GetFirstElementProcPtr)      (MULTIGRID *, INT, INT);
+typedef ELEMENT *                  (*EW_GetNextElementProcPtr)       (ELEMENT *);
+typedef EW_GetFirstElementProcPtr  (*EW_GetFirstElementProcProcPtr)  (VIEWEDOBJ *);
+typedef EW_GetNextElementProcPtr   (*EW_GetNextElementProcProcPtr)   (VIEWEDOBJ *);
+typedef INT                        (*EW_EvaluateProcPtr)             (ELEMENT *, DRAWINGOBJ *);
+
+// nodewise procedure ptr
+typedef NODE *                     (*NW_GetFirstNodeProcPtr)         (MULTIGRID *, INT, INT);
+typedef NODE *                     (*NW_GetNextNodeProcPtr)          (NODE *);
+typedef NW_GetFirstNodeProcPtr     (*NW_GetFirstNodeProcProcPtr)     (VIEWEDOBJ *);
+typedef NW_GetNextNodeProcPtr      (*NW_GetNextNodeProcProcPtr)      (VIEWEDOBJ *);
+typedef INT                        (*NW_EvaluateProcPtr)             (NODE *, DRAWINGOBJ *);
+
+// vectorwise procedure ptr
+typedef VECTOR *                   (*VW_GetFirstVectorProcPtr)       (MULTIGRID *, INT, INT);
+typedef VECTOR *                   (*VW_GetNextVectorProcPtr)        (VECTOR *); 
+typedef VW_GetFirstVectorProcPtr   (*VW_GetFirstVectorProcProcPtr)   (VIEWEDOBJ *);
+typedef VW_GetNextVectorProcPtr    (*VW_GetNextVectorProcProcPtr)    (VIEWEDOBJ *);
+typedef INT                        (*VW_EvaluateProcPtr)             (VECTOR *, DRAWINGOBJ *);
+
+// extern procedure ptr
+typedef INT                        (*EXT_EvaluateProcPtr)            (DRAWINGOBJ *, INT *);
+
+struct ElemWiseWork {
+
+    INT WorkMode;
+    GEN_PreProcessProcPtr           EW_PreProcessProc;
+    GEN_ExecuteProcPtr              EW_ExecuteProc;
+    GEN_PostProcessProcPtr          EW_PostProcessProc;
+
+    EW_GetFirstElementProcProcPtr   EW_GetFirstElementProcProc;
+    EW_GetNextElementProcProcPtr    EW_GetNextElementProcProc;
+    EW_EvaluateProcPtr              EW_EvaluateProc;
+};
+
+struct NodeWiseWork {
+
+    INT WorkMode;
+    GEN_PreProcessProcPtr			NW_PreProcessProc;
+    GEN_ExecuteProcPtr				NW_ExecuteProc;
+    GEN_PostProcessProcPtr			NW_PostProcessProc;
+
+    NW_GetFirstNodeProcProcPtr		NW_GetFirstNodeProcProc;
+    NW_GetNextNodeProcProcPtr		NW_GetNextNodeProcProc;
+    NW_EvaluateProcPtr				NW_EvaluateProc;	
+};
+
+struct VectorWiseWork {
+
+    INT WorkMode;
+    GEN_PreProcessProcPtr           VW_PreProcessProc;
+    GEN_ExecuteProcPtr              VW_ExecuteProc;	
+    GEN_PostProcessProcPtr          VW_PostProcessProc;	
+
+    VW_GetFirstVectorProcProcPtr    VW_GetFirstVectorProcProc;
+    VW_GetNextVectorProcProcPtr     VW_GetNextVectorProcProc;
+    VW_EvaluateProcPtr              VW_EvaluateProc;
+};	
+
+struct ExternWork {
+
+    INT WorkMode;
+    GEN_PreProcessProcPtr           EXT_PreProcessProc;
+    GEN_ExecuteProcPtr              EXT_ExecuteProc;	
+    GEN_PostProcessProcPtr          EXT_PostProcessProc;	
+
+    EXT_EvaluateProcPtr             EXT_EvaluateProc;
+};
+
+union WorkProcs {
+	
+    INT WorkMode;
+    struct ElemWiseWork             ElemWiseWorkProcs;
+    struct NodeWiseWork             NodeWiseWorkProcs;
+    struct VectorWiseWork           VectorWiseWorkProcs;
+    struct ExternWork               ExternWorkProcs;		
+};	
+
+struct PlotObjHandling {
+	
+    PLOTOBJTYPE                     thePlotObjType; 
+    INT                             NbOfCycles[NB_WORK];
+    union WorkProcs                 theWorkProcs[NB_WORK][MAX_NO_CYCLES];
+};
+		
+.ve
+
+	DESCRIPTION:
+	The 'PLOTOBJHANDLING' is an extension of 'PLOTOBJTYPE'. It holds additionally
+	pointers to functions which realize diferent kinds of 'WORK' on the corresponding
+	'PLOTOBJ's. For every kind of 'WORK' there is a (at inialization time) fixed 
+	number of cycles to be executed, stored in the field 'NbOfCycles[WorkID]' ('WorkID'
+	is the ID of the 'WORK' to be executed). If this number is zero, the 'WORK' is not
+	executable. The work of one cycle is specified by the substructure `theWorkProcs[WorkID][i]`
+    ('WorkID' again is the ID of the 'WORK' to be executed, i-th cycle). The mode in which
+	one cycle works is specified by the subsubstructure `WorkMode`, the possible values
+	are':' 'ELEMENTWISE', 'NODEWISE', 'VECTORWISE', 'EXTERN'. According to this value a
+	cycle means a run over 'ELEMENT's (in general all 'ELEMENT's of the 'MULTIGRID'), a run
+	over the 'NODE's (in general all 'NODE's of the 'MULTIGRID'), a run over 'VECTOR's
+	(in general all 'VECTOR's of the 'MULTIGRID') or a extern execution. An extern execution
+	is defined by a user, who want to do something not realizable by one of the previous.
+	In this way one subsubstructure of `ElemWiseWork`,`NodeWiseWork`,`VectorWiseWork`,`ExternWork`
+	determine the work to do. Apart of the last `ExternWork`, the way a cycle is executed is
+	similar':' First a '??_PreProcessProc'edure is executed, then a run over, say, the 'ELEMENT'-List
+	is performed. The stepping through the 'ELEMENT'-List is carried out by means of stepfunctions
+	('GetFirstElement', 'GetNextElement') which you get form evaluation of the pointers
+	'EW_GetFirstElementProcProc', 'EW_GetNextElementProcProc' (This indirection is neccessary because 
+	the way one has to run over the 'ELEMENT's can depent of the view the observer has). Every 'ELEMENT'
+	is evaluated and the result is an information stored on an intermediate format, called 'DRAWINGOBJ'ect,
+	which contains only elementary geometrical commands like `draw line`. The geometrical information
+	has the same dimension as the plot, and no transformation to a transformed (for example pixel-space)
+	was carried out. After every 'ELEMENT'evaluation an 'EW_ExecuteProc'edure takes the information
+	from the 'DRAWINGOBJ'ect and transforms it to 2-dimensional pixel coordinates, which are the 
+	plotted by means of the lowlevel-plot-routines from file `ll-graph.c`. Finally a
+	'EW_PostProcessProc'edure is executed to complete the plot (for example a plot of a coordinate
+	system). To understand the external work, we trust in the reader.
+	
+	MACROS:
+.    for~WorkProcs - 'WP_WORKMODE', 'WP_ELEMWISE', 'WP_NODEWISE', ,WP_VECTORWISE','WP_EXTERNWISE(p)
+.    for ~'PLOTOBJHANDLING' - 'POH_PLOTOBJTYPE', 'POH_NBCYCLES', 'POH_WORKPROGS(p,m,n)'
+
+	EXAMPLE OF INITIALIZATION:
+	This exaple shows an initialization of one kind of work, the 'DRAW_WORK' for
+	an `EScalar`-'PLOTOBJTYPE'. First a 'PLOTOBJHANDLING' is created, then the nb.
+	of cycles (3) for this work is fixed. Then you see three block, in each of them
+	first the `WorkMode` (here 'ELEMENTWISE') is stored and then the six allready
+	mentioned function-pointers are stored.
+	
+.vb
+
+    // create WorkHandling for 'EScalar'
+    if ((thePOH=CreatePlotObjHandling ("EScalar"))	== NULL) return (__LINE__);
+
+    // draw work
+    POH_NBCYCLES(thePOH,DRAW_WORK) = 3;
+		
+    theWP = POH_WORKPROGS(thePOH,DRAW_WORK,0);
+    WP_WORKMODE(theWP) = ELEMENTWISE;
+    theEWW = WP_ELEMWISE(theWP);
+    theEWW->EW_PreProcessProc               = EW_PreProcess_EScalar3D_BackGrid;
+    theEWW->EW_GetFirstElementProcProc      = EW_GetFirstElement_vert_fw_up_Proc;
+    theEWW->EW_GetNextElementProcProc       = EW_GetNextElement_vert_fw_up_Proc;
+    theEWW->EW_EvaluateProc                 = EW_ElementEval3D;
+    theEWW->EW_ExecuteProc                  = Draw3D;
+    theEWW->EW_PostProcessProc              = NULL;
+
+    theWP = POH_WORKPROGS(thePOH,DRAW_WORK,1);
+    WP_WORKMODE(theWP) = ELEMENTWISE;
+    theEWW = WP_ELEMWISE(theWP);
+    theEWW->EW_PreProcessProc               = EW_PreProcess_EScalar3D;
+    theEWW->EW_GetFirstElementProcProc      = EW_GetFirstElement_vert_fw_up_Proc;
+    theEWW->EW_GetNextElementProcProc       = EW_GetNextElement_vert_fw_up_Proc;
+    theEWW->EW_EvaluateProc                 = EW_EScalar3D;
+    theEWW->EW_ExecuteProc                  = Draw3D;
+    theEWW->EW_PostProcessProc              = NULL;
+
+    theWP = POH_WORKPROGS(thePOH,DRAW_WORK,2);
+    WP_WORKMODE(theWP) = ELEMENTWISE;
+    theEWW = WP_ELEMWISE(theWP);
+    theEWW->EW_PreProcessProc               = EW_PreProcess_CutBnd3D;
+    theEWW->EW_GetFirstElementProcProc      = EW_GetFirstElement_vert_fw_up_Proc;
+    theEWW->EW_GetNextElementProcProc       = EW_GetNextElement_vert_fw_up_Proc;
+    theEWW->EW_EvaluateProc                 = EW_ECutBnd3D;
+    theEWW->EW_ExecuteProc                  = Draw3D;
+    theEWW->EW_PostProcessProc              = NULL;
+
+.ve
+	
+	SEE ALSO:
+	'WOP'
+D*/
+/****************************************************************************/
+
+

@@ -1,0 +1,52 @@
+\newcommand{\mantitle}[3]{
+\markboth{Formatted: #3}{#1(#2) \hfil \sectitle \hfil #1(#2)}
+\addcontentsline{toc}{subsection}{#1}
+\index{#1}
+}
+
+\newcommand{\manname}[1]{
+{\bf NAME} 
+\begin{list}{\mbox{}}{\topsep0cm \partopsep0cm \leftmargin1cm}
+\item[\mbox{}] #1
+}
+
+\newcommand{\subhead}[1]{\nopagebreak
+\end{list}
+\vspace{4mm}
+\pagebreak[2]
+{\bf #1} 
+\begin{list}{\mbox{}}{\topsep0cm \partopsep0cm \leftmargin1cm}
+\item[\mbox{}] 
+%\mbox{}
+}
+
+\newcommand{\startarg}[2]{
+\vspace{3mm}
+{\em #1} 
+\begin{list}{\mbox{}}{\topsep0cm \partopsep0cm \leftmargin1cm}
+\item[\mbox{}] 
+\mbox{} 
+#2
+\end{list}
+}
+
+\newcommand{\startvb}{ \vspace{0mm} }
+
+\newcommand{\myendvb}{ \mbox{} }
+
+\newcommand{\nextline}{ \par \hspace*{1cm} }
+
+\newcommand{\location}[1]{
+\end{list}
+\vspace{4mm}
+{\bf LOCATION} 
+\begin{list}{\mbox{}}{\topsep0cm \partopsep0cm \leftmargin1cm}
+\item[\mbox{}] #1
+}
+
+\newcommand{\myendmanpage}{%
+\end{list}
+\vfill
+\clearpage
+}
+

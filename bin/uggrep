@@ -1,0 +1,24 @@
+#!/bin/sh
+if test $# -eq 0 -o $# -ge 3 -o "$1" = "-help"
+then
+	echo "usage: $0 <expression> [<ugmodule>]";
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then 
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+# if one parameter is specified search all ug modules for $1
+if test $# -eq 1
+then
+	find ${UGROOT} \( -name '*.h' -o -name '*.c' \) -exec grep -e $1 {} \; -print
+fi
+
+# if two parameters are specified search the specific module for $1
+if test $# -eq 2
+then
+	find ${UGROOT}/$2 \( -name '*.h' -o -name '*.c' \) -exec grep -e $1 {} \; -print
+fi

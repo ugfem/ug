@@ -1,0 +1,9 @@
+#!/bin/sh
+if test $UGMAN
+then
+    MANPATH=$UGMAN
+    export MANPATH
+    man $*
+else
+    echo "ERROR: to get the man pages of ug set the environment variable UGMAN"
+fi

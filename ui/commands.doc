@@ -1,0 +1,88 @@
+/***********************************************************/
+/*D
+	Commands - user commands for the ug shell script
+	
+	DESCRIPTION:	
+	Commands are used on the shell or in a script to perform ug functions
+    and to pass parameters, e. g. 
+
+.n  'clear x $a $v 0'
+
+    resets 'x' on a specified value. The parameters are seperated by '$'.
+    Here, the first parameter follows after the command name,
+	the option '$a' performs this command on all levels and '$v'
+	specifies the value.
+	
+	All ug commands can be found in 'commands.c'. On the shell,
+	'help <command>' will give information on the command,
+	'checkhelp' prints a list of all commands where the help entry is 
+    missing.
+
+	HOW TO CREATE USER COMMANDS:
+	To include a new command to `ug3` one has provide a 
+	Command funcion. The Command function has a fixed form.
+	The fixed form in detail is described in the example above. 
+	The only purpose of the command function is to read the parameters
+    and to call the corresponding ug functions.
+	A command function has as arguments only the variables
+	'INT arg' and 'char **argv' to pass the parameters. 
+	The command function has to give back
+	'return' values, that means error codes, in a mode typical to `ug3`.
+	The possible and expected 'return' values are 'OKCODE',
+	'PARAMERRCODE' and 'CMDERRORCODE'.
+	Finally, the user has to enter the command function in an initialization 
+	process.
+	There the user has to include the new command with the 'CreateCommand' 
+	function.
+	
+	EXAMPLE:
+	As guided example the embedding of the 'MakeStructCommand' is 
+	demonstrated step by step.	
+	
+.vb
+static INT MakeStructCommand (INT argc, char **argv)
+  {	
+    INT res;
+    char name[LONGSTRSIZE];
+	
+    NO_OPTION_CHECK(argc,argv);
+	
+    res = sscanf(argv[0],expandfmt(CONCAT3(" ms %",LONGSTRLENSTR,
+	               "[0-9:.a-zA-Z_]")),name);
+    if (res!=1)
+      {
+        PrintHelp("ms",HELPITEM," (could not read name of struct)");
+          return(PARAMERRORCODE);
+      }
+	
+    if (MakeStruct(name)!=0)
+      return (CMDERRORCODE);
+    else
+      return (OKCODE);
+    }
+.ve
+	
+	INITIALIZATION:
+	All commands has to be built with 'CreateCommand'. All ug commands 
+    are inizialized in 'commands.c', the problem specific commands 
+    can be created in the corresponding 'pclib'.
+	
+.vb
+INT InitCommands ()
+  {
+    if (CreateCommand("ms",MakeStructCommand)==NULL) return (__LINE__);
+    ...
+    return(0);
+  }
+.ve
+
+ 	In this case, the name of the command is `ms`.
+
+    SEE ALSO:
+	'interpreter', 'unixcommands'
+
+D*/
+
+
+
+

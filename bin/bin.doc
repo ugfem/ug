@@ -1,0 +1,92 @@
+/* ug/bin/bin.doc */
+
+/*D
+   unixcommands - UNIX shell commands provided by ug (only for UNIX)
+   
+   DESCRIPTION:
+   ug provides a couple of commands to be invoked from a UNIX shell to
+   lighten the handling of the ug software:~
+   
+.  ugman - print out a ug manual entry (equivalent to 'man')
+.  ugproject - checks soundness of all standard experimenting environment
+.  xugman - browser for ug manual entries (equivalent to 'xman')
+.  ugclean - clean source code [and ug libraries]
+.  ugmake - call make with the right Makefile*
+
+   DEPENDENCIES:
+   This commands are available only in an UNIX environment.
+   
+   SEE ALSO:
+   commands, ugman, ugproject, xugman, installation, machines
+D*/
+
+/*D
+   ugman - prints out an ug manual entry (only for UNIX)
+   
+   CALL:
+   'ugman [section] title ...'
+   
+   or all other variants your 'man' command allows   
+   
+   DESCRIPTION:
+   'ugman' accesses information from the on-line version of the ug
+   documentation. Since it passes all the arguments to the 'man'
+   command of your operating system you can use all supported
+   variants of your common 'man' command. For further explanations see
+   there.
+   
+   Before you can use the 'ugman' command you have to define the paths
+   to the ug and application manual pages in the environment variable
+   '$UGMAN'. For details see the manual for `installation`.
+   
+   DEPENDENCIES:
+.  $UGMAN - The environment variable '$UGMAN' must point to the paths where
+   the manual pages are stored. See manual page for `install`.
+.  man - Because 
+   ugman uses the 'man' command it is not available on MacIntosh.
+.  nroff - The 
+   manual pages are not pre-formatted by nroff. So the UNIX
+   utilities 'nroff', 'neqn' and 'tbl' must be present to format 
+   the current page. On SGI 'nroff' is available only as an extra to
+   pay product in the "Documentors Work Bench". The call sequence 
+   would be e.g.
+.n '~~~~~neqn' `page.1` '| tbl | nroff -man >' `page`'; pack -f' `page`
+
+. MacIntosh - 'man' is not available on MacIntosh.
+.  SGI - On SGI 'nroff' is available only as an extra to
+   pay product in the "Documentors Work Bench".
+   
+   BUGS:
+   Due to limitations of the 'man' command concerning the searched 
+   directory names 
+   it is not possible to view manual pages of any experimenting environment.
+   Use instead of it the 'xugman' command.
+   
+   SEE ALSO:
+   unixcommands, installation, machines, man(1), nroff(1), neqn(1), 
+   tbl(1), xman(1)
+
+D*/
+
+/*D
+   ugproject - checks soundness of all standard experimenting environments
+
+   DESCRIPTION:
+   Compiles all standard experimenting environments in order to check the
+   compilability of the ug3 software. This command should be invoked after
+   each change to the ug kernel or the standard problemclass libraries.
+   Watch the bug!
+   
+   BUG:
+   If an error occurs during the compilation the 'ugproject' command aborts
+   leaving an inconsistent state of ug: your 'ug.conf' file is stored
+   as 'ug.conf.orig' and the ug library has the state due to the incomplete
+   compilation. To repair this inconsistancy move back the config file and
+   rebuild ug:~
+   
+.n  mv $UGROOT/ug.conf.orig $UGROOT/ug.conf
+.n  ugmake
+
+   SEE ALSO:
+   unixcommands, ugmake, install
+D*/
