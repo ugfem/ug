@@ -587,7 +587,7 @@ INIT(OTYPE)
 #endif
 			
 #ifdef ModelP
-CAT(PRINT_LIST_STARTS_,OTYPE) (GRID *Grid, INT prios)
+void CAT(PRINT_LIST_STARTS_,OTYPE) (GRID *Grid, INT prios)
 {
 	if (prios==2)
 	{
