@@ -20,9 +20,9 @@
 /****************************************************************************/
 
 /*D
-   Interpreter - Description of UGs command interpreter
+   Interpreter - UGs command interpreter
 
-   SHORT~DESCRIPTION:
+   SHORT DESCRIPTION:
    The interpreter provides `ug` with a simple programming language 
    similar to C to enhance its flexibility while allowing its
    core routines to remain simple.
@@ -40,12 +40,12 @@
        solve $d;            # ug: solve
        repeat
        {
-              feerror;      # ug: prints the total error
+              feerror;      # ug: print the total error
               estimate;     # ug: mark elements for refinement
               if (:est:cnt==0) break;     # nothing to refine
               if (:l==:maxstep) break;    # reached max. nr. of steps
               refine;                     # ug: refine
-              :l=:l+1;               # increase counter
+              :l=:l+1;               # increment counter
               print 'STEP ', :l;     # print step
               interpolate;           # ug: interpolate to new regions
               assemble $a;           # ug: assemble (all)
@@ -54,9 +54,9 @@
 .ve
    Because of the comments this routine is self-explaining. The
    terminating ';' and the use of the brackets '{}' for grouping several
-   statements into a single one, is exactly as in the C-language. But remark
-   the difference to C in the repeat loop, which has no 'until' but
-   has to be left with 'break'. The colon in the variable names is
+   statements into a single one, is exactly as in the C-language. Observe
+   that one can exit a repeat loop only by using the 'break' statement.
+   The colon in the variable names is
    explained in the section about structures. Remark the calling of
    the `ug`-commands, and that the number of refined elements was
    returned to the interpreter in the variable 'cnt' (lying inside
@@ -66,14 +66,14 @@
    In the scripts this routine is defined as a string which then
    is executed via the @-operator, see the section about `Substitution`.
 
-   COMMAND~SEPERATION~AND~COMMENTS:
-   Like in the C language, commands are seperated with the character ';'
+   COMMAND SEPERATION AND COMMENTS:
+   Like in the C language, commands are seperated by the character ';'
    and grouped to a single one with the brackets '{}'.
    For compatibility with older scripts, `ug`-commands can additionally be
-   terminated by the '/n' character (CRLF), which allows to combine
+   terminated by the '\n' character (CRLF), which allows to combine
    several `ug`-commands to one interpreter command. Yet it is recommendable to
    terminate also `ug`-commands with ';', since it might be useful to allow
-   '/n' as a formatting character in later versions.
+   '\n' as a formatting character in later versions.
    
    Comments may be given at the end of the line. They start with the
    character '#' and terminate with the end of the line.
@@ -96,17 +96,17 @@
     if (a>b) c=a; else c=b;
 .ve
    which sets 'c' to the maximum of 'a' and 'b'. There is a slight bug,
-   which will be covered in a future release, namely if the second statement is
+   which will be fixed in a future release, namely if the second statement is
    again an if-then-else-construct, you have to set it in brackets to
    work correctly.
 
    VARIABLES:
    The interpreter knows only text variables and directories
    of those, which are called structures. All these are
-   located in the '/Strings'-directory which is allocated by initialization
+   located in the '/Strings'-directory which is allocated during initialization
    of the interpreter.
    The syntax rules for variable and structure names is the same as in C,
-   i.e. they start with an alphanumeric, may contain numbers and are
+   i.e. they start with an alphabetical character, may contain numbers and are
    case sensitive.
    
    Variables are created (if they do not yet exist) by the assignment command
@@ -115,8 +115,7 @@
 .ve
    Examples are 'a=1', 'a="Hallo"', 'a=3*c+b'
    Alternatively one can express the first two cases using the historically
-   earlier form 'set a=2' resp. 'set a=Hallo'. The 'set' command also provides
-   a possibility of deleting variables with 'set a=', and together with the
+   earlier form 'set a 2' resp. 'set a Hallo'. Together with the
    'print' command described in section `Input and Output` one can look
    at their values with 'set a' (or 'print a').
    Constant strings may be enclosed either in single or double quotes, which
@@ -143,14 +142,15 @@
    the whole path name of a variable starting from the root structure
    corresponding to the '/Strings' directory. Nevertheless, if
    (for example inside a procedure, see section `Substitution`) one is
-   not sure what is the working structure, one should use the long form.
+   not sure what is the working structure, one should prefer the absolute path
+   to the relative one.
    
    The contents of a structure with name 'name' may be listed by the command
    'set name', 'set' alone gives the contents of the working structure.
    The parameter '$r' makes the command to print recursively also the
    contents of the structures that are contained in the initial one.
 
-   ARITHMETIC~OPERATORS:
+   ARITHMETIC OPERATORS:
    It is possible to perform all basic arithmetic operations
    '+', '-', '*', '/', and also to determine the order of evaluation
    with the brackets '()'. If variables are used, they should
@@ -185,20 +185,20 @@
 .ve
    which prints first expr1, then expr2 and so on immediately after each
    other (so spaces must be explicitly given in the list).
-   At the end a '/n'-character (i.e. CRLF) is sent.
+   At the end a '\n'-character (i.e. CRLF) is sent.
 
    SUBSTITUTION:
    With the character '@' the following token is interpreted as
    a variable name and its value is inserted. This can be used in
    
-   INDIRECT~REFERENCING:
+   INDIRECT REFERENCING:
    If a variable 'x' is the name of another variable, say 'y' then
    @x may be used instead of y inside of expressions.
    
    Inside of variable names an expansion is possible by using the square
    brackets '[]'. In this case the value of the expression inside the
    brackets is inserted into the name.
-   This makes possible a simulation of arrays. For example, one can
+   This allows a simulation of arrays. For example, one can
    access the variables 'x1', 'x2', ... with 'x[i]' if 'i' contains
    a suitable integer.
 
@@ -226,8 +226,8 @@
 .ve
    is possible.
    
-   UG~COMMANDS:
-   If the interpreter runs upon a token it does not understand, it
+   UG COMMANDS:
+   If the interpreter finds a token it does not understand, it
    tries to interpret it as an `ug`-command. This is done in a first
    pass by searching exactly the word given in the list of `ug`-commands,
    which are located in the '/menu' directory. If it does not succeed
@@ -247,9 +247,9 @@
    one can use the methods described below. 
 
    You can easily install a new `ug`-command.
-   This is described on the man page 'commands'.
+   This is described in the man page 'commands'.
 
-   VARIABLE~EXCHANGE~1:
+   VARIABLE EXCHANGE 1:
    The C-functions of `ug` or one of its applications
    can access the interpreter variables by using the C-functions
 .vb
@@ -268,7 +268,7 @@ INT   GetStringINTInRange    (const char *name, INT min, INT max, INT *value);
    For a more detailed description you should read the man pages
    for the procedures themselves.
    
-   VARIABLE~EXCHANGE~2:
+   VARIABLE EXCHANGE 2:
    The expansion of variables may also be used to use variable
    values as arguments of `ug`-commands. For example
 .vb
@@ -277,9 +277,9 @@ INT   GetStringINTInRange    (const char *name, INT min, INT max, INT *value);
    may be useful.
 
    MISCELLANEOUS:
-   The command 'mute 1' cancels the echoing of `ug`-commands, 'mute 0'
-   restores the echoing (whhich is the default state). 'mute 2' suppresses
-   also the output of `ug`commands.
+   The command 'mute -1' cancels the echoing of `ug`-commands, 'mute 0'
+   restores the echoing (which is the default state). 'mute -1000' suppresses
+   also the output of `ug` commands.
    
    'exit 0' makes the interpreter to proceed even when errors of
    `ug`-commands occur (the error code is put into the variable

@@ -19,9 +19,9 @@
     missing.
 
 	HOW TO CREATE USER COMMANDS:
-	To include a new command to `ug3` one has provide a 
+	To include a new command to `ug3` one has to provide a 
 	Command funcion. The Command function has a fixed form.
-	The fixed form in detail is described in the example above. 
+	The fixed form in detail is described in the example below. 
 	The only purpose of the command function is to read the parameters
     and to call the corresponding ug functions.
 	A command function has as arguments only the variables
@@ -41,7 +41,7 @@
 	
 .vb
 static INT MakeStructCommand (INT argc, char **argv)
-  {	
+{	
     INT res;
     char name[LONGSTRSIZE];
 	
@@ -50,30 +50,30 @@ static INT MakeStructCommand (INT argc, char **argv)
     res = sscanf(argv[0],expandfmt(CONCAT3(" ms %",LONGSTRLENSTR,
 	               "[0-9:.a-zA-Z_]")),name);
     if (res!=1)
-      {
+    {
         PrintHelp("ms",HELPITEM," (could not read name of struct)");
-          return(PARAMERRORCODE);
-      }
+        return(PARAMERRORCODE);
+    }
 	
     if (MakeStruct(name)!=0)
-      return (CMDERRORCODE);
+        return (CMDERRORCODE);
     else
-      return (OKCODE);
-    }
+        return (OKCODE);
+}
 .ve
 	
 	INITIALIZATION:
-	All commands has to be built with 'CreateCommand'. All ug commands 
+	All commands have to be built with 'CreateCommand'. All ug commands 
     are inizialized in 'commands.c', the problem specific commands 
     can be created in the corresponding 'pclib'.
 	
 .vb
 INT InitCommands ()
-  {
+{
     if (CreateCommand("ms",MakeStructCommand)==NULL) return (__LINE__);
     ...
     return(0);
-  }
+}
 .ve
 
  	In this case, the name of the command is `ms`.
