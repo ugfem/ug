@@ -110,13 +110,8 @@ enum DOM_IN_PARAMS {
 /** \brief Subdomain of BC evaluation unknown */
 #define DOM_EVAL_SD_UNKNOWN             -1.0
 
-/** @name Boundary types */
-/*@{*/
-#define FIXED         0
-#define FREE          1
-#define PERIODIC      2
-#define NON_PERIODIC  3
-/*@}*/
+/** \brief Boundary types */
+enum BoundaryType {FIXED, FREE, PERIODIC, NON_PERIODIC};
 
 /** @name Status for mesh */
 /*@{*/

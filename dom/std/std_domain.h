@@ -851,21 +851,25 @@ DOMAIN                     *CreateDomainWithParts       (char *name, DOUBLE *Mid
                                                          DOUBLE radius, INT segments,
                                                          INT corners, INT Convex,
                                                          INT nParts, const DOMAIN_PART_INFO *dpi);
+
 DOMAIN                     *CreateDomain                        (char *name, DOUBLE *MidPoint,
                                                                  DOUBLE radius, INT segments,
                                                                  INT corners, INT Convex);
+
 DOMAIN *GetDomain                           (char *name);
 BOUNDARY_SEGMENT   *CreateBoundarySegment       (char *name, INT left, INT right,
-                                                 INT id, INT type, INT res,
+                                                 INT id, BoundaryType type, INT res,
                                                  INT *point,
                                                  DOUBLE *alpha, DOUBLE *beta,
                                                  BndSegFuncPtr BndSegFunc,
                                                  void *data);
+
 BOUNDARY_SEGMENT   *CreateBoundarySegment2D     (char *name, int left, int right,
                                                  int id, int from, int to, int res,
                                                  DOUBLE alpha, DOUBLE beta,
                                                  BndSegFuncPtr BndSegFunc,
                                                  void *data);
+
 LINEAR_SEGMENT *CreateLinearSegment (char *name,
                                      INT left, INT right,INT id,
                                      INT n, INT *point,
@@ -878,6 +882,7 @@ PROBLEM                    *CreateProblem                       (char *domain, c
                                                                  CoeffProcPtr coeffs[],
                                                                  int numOfUserFct,
                                                                  UserProcPtr userfct[]);
+
 BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id,
                                              BndCondProcPtr theBndCond,
                                              void *Data);
