@@ -99,21 +99,13 @@ INT NS_PREFIX check_of_putcallstack = 0;
 #endif
 
 /****************************************************************************/
-/*D
-   HeapStat - Get information on heap
+/** \brief Get information on heap
 
-   SYNOPSIS:
-   MEM HeapStat (const HEAP *theHeap)
+   \param theHeap - heap to get information
 
-   PARAMETERS:
-   .  theHeap - heap to get information
-
-   DESCRIPTION:
    This function gets information on heap (objects and memory in freelists).
 
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
 void NS_PREFIX HeapStat (const HEAP *theHeap)
@@ -161,24 +153,16 @@ void NS_PREFIX HeapStat (const HEAP *theHeap)
 
 
 /****************************************************************************/
-/*D
-   InitHeaps - Initialize memory management module
+/** \brief Initialize memory management module
 
-   SYNOPSIS:
-   INT InitHeaps ();
-
-   PARAMETERS:
-   void
-
-   DESCRIPTION:
    This function initializes memory management module.
+   (Supposedly.  Currently it only contains a 'return 0'.
 
    CAUTION: code may be machine dependent.
 
-   RETURN VALUE:
-   INT
-   .n     0 if module initialized correctly
-   D*/
+   \return
+   0 if module initialized correctly
+ */
 /****************************************************************************/
 
 INT NS_PREFIX InitHeaps ()
@@ -188,28 +172,22 @@ INT NS_PREFIX InitHeaps ()
 
 
 /****************************************************************************/
-/*D
-   NewHeap - Install a new heap structure
+/** \brief Install a new heap structure
 
-   SYNOPSIS:
-   HEAP *NewHeap (INT type, MEM size, void *buffer);
+   \param type - type of heap
+   \param size - size of new heap in bytes
+   \param buffer - 4-aligned memory for the heap
 
-   PARAMETERS:
-   .  type - type of heap
-   .  size - size of new heap in bytes
-   .  buffer - 4-aligned memory for the heap
-
-   DESCRIPTION:
    This function installs a new heap structure.
    Valid 'type' is either 'SIMPLE_HEAP' or 'GENERAL_HEAP'.
    The allocation of memory starts at the address given by
    '*buffer' and is of 'size' bytes.
 
-   RETURN VALUE:
-   HEAP *
-   .n      pointer to HEAP
-   .n      NULL if not enough space available
-   D*/
+   \return <ul>
+   <li>    pointer to HEAP </li>
+   <li>    NULL if not enough space available </li>
+   </ul>
+ */
 /****************************************************************************/
 
 HEAP *NS_PREFIX NewHeap (INT type, MEM size, void *buffer)
@@ -246,18 +224,12 @@ HEAP *NS_PREFIX NewHeap (INT type, MEM size, void *buffer)
 }
 
 /****************************************************************************/
-/*D
-   GetMem - Allocate memory from heap, depending on heap type
+/** \brief Allocate memory from heap, depending on heap type
 
-   SYNOPSIS:
-   void *GetMem (HEAP *theHeap, MEM n, INT mode);
+   \param theHeap - heap to allocate from
+   \param n - number of bytes to allocate
+   \param mode - allocation position for mark/release heap
 
-   PARAMETERS:
-   .  theHeap - heap to allocate from
-   .  n - number of bytes to allocate
-   .  mode - allocation position for mark/release heap
-
-   DESCRIPTION:
    This function allocates memory from 'HEAP', depending on heap type.
 
    If the heap type (theHeap->type) is 'SIMPLE_HEAP' new blocks in the
@@ -266,7 +238,7 @@ HEAP *NS_PREFIX NewHeap (INT type, MEM size, void *buffer)
    the total memory block to be provided for ug is used from both sides by
    introducing recursively new, smaller blocks.
 
-   .vb
+   \verbatim
       --------------------------------
  | 1 | 3 |  4  |           |  2 |   total allocated memory for ug
       --------------------------------
@@ -275,14 +247,14 @@ HEAP *NS_PREFIX NewHeap (INT type, MEM size, void *buffer)
       -----
  ||5|6|   block #4 is separated also in block #5 and #6
       -----
-   .ve
+   \endverbatim
 
    If the heap type (theHeap->type) is 'GENERAL_HEAP' new blocks to be
    introduced in the total allocated memory for ug are laid at the position
    where enough memory is free. The search for this position is done by
    running round the memory and looking for the equivalent space.
 
-   .vb
+   \verbatim
       --------------------------------
  |   |  1  |               |  2 |   total allocated memory for ug
       --------------------------------
@@ -294,15 +266,15 @@ HEAP *NS_PREFIX NewHeap (INT type, MEM size, void *buffer)
       --------------------------------
  |   |  1  |  3  |         |  2 |   total allocated memory for ug
       --------------------------------
-   .ve
+   \endverbatim
 
-   RETURN VALUE:
-   void *
-   .n        NULL pointer                   if error occurs
-   .n        'theBlock'                     if OK by type of 'SIMPLE_HEAP'
-   .n        '((char *)newBlock)+ALIGNMENT' or
-   .n        '((char *)theBlock)+ALIGNMENT' if OK by type of 'GENERAL_HEAP'
-   D*/
+   \return <ul>
+   <li>      NULL pointer                   if error occurs </li>
+   <li>      'theBlock'                     if OK by type of 'SIMPLE_HEAP' </li>
+   <li>      '((char *)newBlock)+ALIGNMENT' or </li>
+   <li>      '((char *)theBlock)+ALIGNMENT' if OK by type of 'GENERAL_HEAP' </li>
+   </ul>
+ */
 /****************************************************************************/
 
 void *NS_PREFIX GetMem (HEAP *theHeap, MEM n, INT mode)
@@ -463,23 +435,15 @@ void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, INT mode, INT key)
 }
 
 /****************************************************************************/
-/*D
-   DisposeMem - Free memory previously allocated from that heap
+/** \brief Free memory previously allocated from that heap
 
-   SYNOPSIS:
-   void DisposeMem (HEAP *theHeap, void *buffer);
+   \param theHeap - heap from which memory has been allocated
+   \param buffer - memory area previously allocated
 
-   PARAMETERS:
-   .  theHeap - heap from which memory has been allocated
-   .  buffer - memory area previously allocated
-
-   DESCRIPTION:
    This function creates free memory previously allocated from that heap.
    This function is only valid for a heap of type GENERAL_HEAP.
 
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
 void NS_PREFIX DisposeMem (HEAP *theHeap, void *buffer)
@@ -618,26 +582,20 @@ void NS_PREFIX DisposeMem (HEAP *theHeap, void *buffer)
 }
 
 /****************************************************************************/
-/*D
-   GetFreelistMemory - Get an object from free list if possible
+/** \brief Get an object from free list if possible
 
-   SYNOPSIS:
-   void *GetFreelistMemory (HEAP *theHeap, INT size);
+   \param theHeap - pointer to Heap
+   \param size - size of the object
+   \param type - type of the requested object
 
-   PARAMETERS:
-   .  theHeap - pointer to Heap
-   .  size - size of the object
-   .  type - type of the requested object
-
-   DESCRIPTION:
    This function gets an object of type `type` from free list if possible,
    otherwise it allocates memory from the heap using 'GetMem'.
 
-   RETURN VALUE:
-   void *
-   .n   pointer to an object of the requested type
-   .n   NULL if object of requested type is not available
-   D*/
+   \return <ul>
+   <li> pointer to an object of the requested type </li>
+   <li> NULL if object of requested type is not available </li>
+   </ul>
+ */
 /****************************************************************************/
 
 void *NS_PREFIX GetFreelistMemory (HEAP *theHeap, INT size)
@@ -698,25 +656,19 @@ void *NS_PREFIX GetFreelistMemory (HEAP *theHeap, INT size)
 }
 
 /****************************************************************************/
-/*D
-   PutFreelistMemory - Put an object in the free list
+/** \brief Put an object in the free list
 
-   SYNOPSIS:
-   INT PutFreelistMemory (HEAP *theHeap, void *object, INT size);
+   \param theHeap - pointer to Heap
+   \param object - object to insert in free list
+   \param size - size of the object
 
-   PARAMETERS:
-   .  theHeap - pointer to Heap
-   .  object - object to insert in free list
-   .  size - size of the object
-
-   DESCRIPTION:
    This function puts an object in the free list.
 
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 when error occured.
-   D*/
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> 1 when error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX PutFreelistMemory (HEAP *theHeap, void *object, INT size)
@@ -770,25 +722,19 @@ INT NS_PREFIX PutFreelistMemory (HEAP *theHeap, void *object, INT size)
 }
 
 /****************************************************************************/
-/*D
-   Mark - Mark heap position for future release
+/** \brief Mark heap position for future release
 
-   SYNOPSIS:
-   INT Mark (HEAP *theHeap, INT mode, INT *key);
+   \param theHeap - heap to mark
+   \param mode - 'FROM_TOP' or 'FROM_BOTTOM' of the block
 
-   PARAMETERS:
-   .  theHeap - heap to mark
-   .  mode - 'FROM_TOP' or 'FROM_BOTTOM' of the block
-
-   DESCRIPTION:
    This function marks heap position for future release. Only valid in
    the 'SIMPLE_HEAP' type.
 
-   RETURN VALUE:
-   INT
-   .n     0 if OK
-   .n     1 if mark stack full or wrong heap type
-   D*/
+   \return <ul>
+   <li>   0 if OK </li>
+   <li>   1 if mark stack full or wrong heap type </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX Mark (HEAP *theHeap, INT mode, INT *key)
@@ -819,25 +765,19 @@ INT NS_PREFIX Mark (HEAP *theHeap, INT mode, INT *key)
 }
 
 /****************************************************************************/
-/*D
-   Release - Release to next stack position
+/** \brief Release to next stack position
 
-   SYNOPSIS:
-   INT Release (HEAP *theHeap, INT mode, INT key);
+   \param theHeap - heap to release
+   \param mode - 'FROM_TOP' or 'FROM_BOTTOM' of the block
 
-   PARAMETERS:
-   .  theHeap - heap to release
-   .  mode - 'FROM_TOP' or 'FROM_BOTTOM' of the block
-
-   DESCRIPTION:
    This function releases to the next stack position. Only valid in the
    'SIMPLE_HEAP' type.
 
-   RETURN VALUE:
-   INT
-   .n     0 if OK
-   .n     1 if mark stack empty or wrong heap type.
-   D*/
+   \return <ul>
+   <li>   0 if OK </li>
+   <li>   1 if mark stack empty or wrong heap type. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX Release (HEAP *theHeap, INT mode, INT key)
@@ -905,22 +845,12 @@ INT NS_PREFIX Release (HEAP *theHeap, INT mode, INT key)
 }
 
 /****************************************************************************/
-/*D
-   HeapSize - Get heap size
+/** \brief Get heap size
 
-   SYNOPSIS:
-   MEM HeapSize (const HEAP *theHeap)
+   \param theHeap - heap to get heap size
 
-   PARAMETERS:
-   .  theHeap - heap to get heap size
-
-   DESCRIPTION:
    This function gets the heap size.
-
-   RETURN VALUE:
-   MEM
-   .n    theHeap->size
-   D*/
+ */
 /****************************************************************************/
 
 MEM NS_PREFIX HeapSize (const HEAP *theHeap)
@@ -929,22 +859,13 @@ MEM NS_PREFIX HeapSize (const HEAP *theHeap)
 }
 
 /****************************************************************************/
-/*D
-   HeapUsed - Get used memory of heap
+/** \brief Get used memory of heap
 
-   SYNOPSIS:
-   MEM HeapUsed (const HEAP *theHeap)
+   \param theHeap - heap to get used memory of heap
 
-   PARAMETERS:
-   .  theHeap - heap to get used memory of heap
-
-   DESCRIPTION:
    This function gets the used memory of heap.
 
-   RETURN VALUE:
-   MEM
-   .n    theHeap->used
-   D*/
+ */
 /****************************************************************************/
 
 MEM NS_PREFIX HeapUsed (const HEAP *theHeap)
@@ -953,23 +874,16 @@ MEM NS_PREFIX HeapUsed (const HEAP *theHeap)
 }
 
 /****************************************************************************/
-/*D
-   HeapFree - Get free memory of heap (without free lists)
+/** \brief Get free memory of heap (without free lists)
 
-   SYNOPSIS:
-   MEM HeapFree (const HEAP *theHeap)
+   \param theHeap - heap to get free memory of heap
 
-   PARAMETERS:
-   .  theHeap - heap to get free memory of heap
-
-   DESCRIPTION:
    This function gets the free memory of heap. The free momory in the free lists is
    not taken into account
 
-   RETURN VALUE:
-   MEM
-   .n    theHeap->size-theHeap->used
-   D*/
+   \return
+   theHeap->size-theHeap->used
+ */
 /****************************************************************************/
 
 MEM NS_PREFIX HeapFree (const HEAP *theHeap)
@@ -978,22 +892,13 @@ MEM NS_PREFIX HeapFree (const HEAP *theHeap)
 }
 
 /****************************************************************************/
-/*D
-   HeapFreelistUsed - Get memory of heap in freelists
+/** \brief Get memory of heap in freelists
 
-   SYNOPSIS:
-   MEM HeapFreelistUsed (const HEAP *theHeap)
+   \param theHeap - heap to get used memory of heap
 
-   PARAMETERS:
-   .  theHeap - heap to get used memory of heap
-
-   DESCRIPTION:
    This function gets the used memory of heap which is available in the freelists.
 
-   RETURN VALUE:
-   MEM
-   .n    theHeap->freelistmem
-   D*/
+ */
 /****************************************************************************/
 
 MEM NS_PREFIX HeapFreelistUsed (const HEAP *theHeap)
@@ -1002,22 +907,13 @@ MEM NS_PREFIX HeapFreelistUsed (const HEAP *theHeap)
 }
 
 /****************************************************************************/
-/*D
-   HeapTotalFree - Get memory of heap in freelists
+/** \brief Get memory of heap in freelists
 
-   SYNOPSIS:
-   MEM HeapTotalFree (const HEAP *theHeap)
+   \param theHeap - heap to get used memory of heap
 
-   PARAMETERS:
-   .  theHeap - heap to get used memory of heap
-
-   DESCRIPTION:
    This function gets the used memory of heap which is available in the freelists.
 
-   RETURN VALUE:
-   MEM
-   .n    theHeap->size-theHeap->used+theHeap->freelistmem
-   D*/
+ */
 /****************************************************************************/
 
 MEM NS_PREFIX HeapTotalFree (const HEAP *theHeap)
@@ -1026,26 +922,20 @@ MEM NS_PREFIX HeapTotalFree (const HEAP *theHeap)
 }
 
 /****************************************************************************/
-/*D
-   InitVirtualHeapManagement - Initialize the VIRT_HEAP_MGMT data structure
+/** \brief Initialize the VIRT_HEAP_MGMT data structure
 
-   SYNOPSIS:
-   INT InitVirtualHeapManagement (VIRT_HEAP_MGMT *theVHM, MEM TotalSize);
+   \param theVHM - pointer to the storage to initialize
+   \param TotalSize - the total size of the heap to manage
 
-   PARAMETERS:
-   .  theVHM - pointer to the storage to initialize
-   .  TotalSize - the total size of the heap to manage
-
-   DESCRIPTION:
    This function initializes the VIRT_HEAP_MGMT data structure that provides
    additional memory independently of the 'SIMPLE_HEAP' and 'GENERAL_HEAP' for
    further use by handling virtual heaps.
 
-   RETURN VALUE:
-   INT
-   .n    'BHM_OK' if OK
-   .n          99 if error occurred.
-   D*/
+   \return <ul>
+   <li>  'BHM_OK' if OK </li>
+   <li>        99 if error occurred. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX InitVirtualHeapManagement (VIRT_HEAP_MGMT *theVHM, MEM TotalSize)
@@ -1072,25 +962,19 @@ INT NS_PREFIX InitVirtualHeapManagement (VIRT_HEAP_MGMT *theVHM, MEM TotalSize)
 }
 
 /****************************************************************************/
-/*D
-   CalcAndFixTotalSize - Sum up the sizes of the blocks, set 'TotalSize' and
+/** \brief Sum up the sizes of the blocks, set 'TotalSize' and
    lock it
 
-   SYNOPSIS:
-   MEM CalcAndFixTotalSize (VIRT_HEAP_MGMT *theVHM)
+   \param theVHM - pointer to the storage to init
 
-   PARAMETERS:
-   .  theVHM - pointer to the storage to init
-
-   DESCRIPTION:
    This function should be called while initializing virtual heaps. It
    sums up the sizes of all the heaps and returns the 'TotalSize' of all.
 
-   RETURN VALUE:
-   MEM
-   .n    'theVHM->TotalSize' if OK
-   .n                     99 if error occurred.
-   D*/
+   \return <ul>
+   <li>  'theVHM->TotalSize' if OK </li>
+   <li>                   99 if error occurred. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 MEM NS_PREFIX CalcAndFixTotalSize (VIRT_HEAP_MGMT *theVHM)
@@ -1109,22 +993,13 @@ MEM NS_PREFIX CalcAndFixTotalSize (VIRT_HEAP_MGMT *theVHM)
 }
 
 /****************************************************************************/
-/*D
-   GetNewBlockID - Return a unique block ID starting with FIRST_BLOCK_ID
+/** \brief Return a unique block ID starting with FIRST_BLOCK_ID
 
-   SYNOPSIS:
-   BLOCK_ID GetNewBlockID ()
-
-   PARAMETERS:
-   void
-
-   DESCRIPTION:
    This function returns a unique block ID starting with the FIRST_BLOCK_ID.
 
-   RETURN VALUE:
-   BLOCK_ID
-   .n    'newID'
-   D*/
+   \return
+   'newID'
+ */
 /****************************************************************************/
 
 BLOCK_ID NS_PREFIX GetNewBlockID ()
@@ -1135,26 +1010,19 @@ BLOCK_ID NS_PREFIX GetNewBlockID ()
 }
 
 /****************************************************************************/
-/*D
-   GetBlockDesc - Return a pointer to the block descriptor with 'id'
+/** \brief Return a pointer to the block descriptor with 'id'
 
-   SYNOPSIS:
-   BLOCK_DESC *GetBlockDesc (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id)
+   \param theVHM - pointer to the virtual heap management
+   \param id - id of the desired block
 
-   PARAMETERS:
-   .  theVHM - pointer to the virtual heap management
-   .  id - id of the desired block
-
-   DESCRIPTION:
    As the location of the block descriptors is not fixed in the heap
    management 'GetBlockDesc' returns the address of the block descriptor.
 
-   RETURN VALUE:
-   BLOCK_DESC *
-   .n    NULL if not defined in theVHM
-   .n    'theVHM->BlockDesc' pointer to block descriptor
-
-   D*/
+   \return <ul>
+   <li>  NULL if not defined in theVHM </li>
+   <li>  'theVHM->BlockDesc' pointer to block descriptor  </li>
+   </ul>
+ */
 /****************************************************************************/
 
 BLOCK_DESC *NS_PREFIX GetBlockDesc (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id)
@@ -1175,28 +1043,22 @@ BLOCK_DESC *NS_PREFIX GetBlockDesc (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id)
 }
 
 /****************************************************************************/
-/*D
-   DefineBlock - Set size and offset of a new block
+/** \brief Set size and offset of a new block
 
-   SYNOPSIS:
-   INT DefineBlock (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id, MEM size);
+   \param theVHM - pointer to the virtual heap management
+   \param id - id of the block to define
+   \param size - size to be allocated
 
-   PARAMETERS:
-   .  theVHM - pointer to the virtual heap management
-   .  id - id of the block to define
-   .  size - size to be allocated
-
-   DESCRIPTION:
    This function sets size and offset of a new block. It tries to fill gaps.
 
-   RETURN VALUE:
-   INT
-   .n    'BHM_OK'        if OK
-   .n    'HEAP_FULL'     if heap is full
-   .n    'BLOCK_DEFINED' if block is already defined
-   .n    'NO_FREE_BLOCK' if number of 'MAXNBLOCKS' reached
-   .n     99             if error occurred.
-   D*/
+   \return <ul>
+   <li>  'BHM_OK'        if OK </li>
+   <li>  'HEAP_FULL'     if heap is full </li>
+   <li>  'BLOCK_DEFINED' if block is already defined </li>
+   <li>  'NO_FREE_BLOCK' if number of 'MAXNBLOCKS' reached </li>
+   <li>   99             if error occurred. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX DefineBlock (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id, MEM size)
@@ -1304,25 +1166,19 @@ INT NS_PREFIX DefineBlock (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id, MEM size)
 }
 
 /****************************************************************************/
-/*D
-   FreeBlock - Free a block in the bhm defined before
+/** \brief Free a block in the bhm defined before
 
-   SYNOPSIS:
-   INT FreeBlock (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id);
+   \param theVHM - pointer to the virtual heap management
+   \param id - id of the block to free
 
-   PARAMETERS:
-   .  theVHM - pointer to the virtual heap management
-   .  id - id of the block to free
-
-   DESCRIPTION:
    This function frees a block in the bhm defined before.
 
-   RETURN VALUE:
-   INT
-   .n    'BHM_OK'            if OK
-   .n    'BLOCK_NOT_DEFINED' if block is not defined, nothing to free
-   .n     99                 if error occurred.
-   D*/
+   \return <ul>
+   <li>  'BHM_OK'            if OK </li>
+   <li>  'BLOCK_NOT_DEFINED' if block is not defined, nothing to free </li>
+   <li>   99                 if error occurred. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX FreeBlock (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id)
