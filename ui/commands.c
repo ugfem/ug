@@ -9812,7 +9812,7 @@ static INT NumProcCreateCommand (INT argc, char **argv)
     case 'f' :
       if (sscanf(argv[i],expandfmt(CONCAT3("f %",NAMELENSTR,"[ -~]")),theFormatName)!=1)
       {
-        PrintHelp("socreate",HELPITEM," (cannot read format name)");
+        PrintHelp("npcreate",HELPITEM," (cannot read format name)");
         return(PARAMERRORCODE);
       }
       fopt = 1;
