@@ -5764,6 +5764,9 @@ INT PointInElement (const DOUBLE *global, const ELEMENT *theElement)
   DOUBLE det;
   INT n,i;
 
+  /* check element */
+  if (theElement==NULL) return(0);
+
   CORNER_COORDINATES(theElement,n,x);
 
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
