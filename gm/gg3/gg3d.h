@@ -1,5 +1,12 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/** \defgroup gg3 A 3d Grid Generator
+ * \ingroup gm
+ */
+/*! \file gg3d.h
+ * \ingroup gg3
+ */
+
 /****************************************************************************/
 /*                                                                          */
 /* File:      gg3d.h                                                        */

@@ -1,6 +1,10 @@
 // NOTE: The current revision of this file was left untouched when the DUNE source files were reindented!
 // NOTE: It contained invalid syntax that could not be processed by uncrustify.
 
+/*! \file evm.h
+ * \ingroup gm
+*/
+
 /****************************************************************************/
 /*                                                                          */  
 /* File:      evm.h                                                         */
