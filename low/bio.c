@@ -119,7 +119,7 @@ static int DEBUG_Read_mdouble (int n, double *doubleList)
   int i;
 
   for (i=0; i<n; i++)
-    if (fscanf(stream,"%lf\n",doubleList+i)!=1) return (1);
+    if (fscanf(stream,"%lg\n",doubleList+i)!=1) return (1);
   return (0);
 }
 
@@ -129,7 +129,7 @@ static int DEBUG_Write_mdouble (int n, double *doubleList)
 
   for (i=0; i<n; i++)
   {
-    m = fprintf(stream,"%lf\n",doubleList[i]);
+    m = fprintf(stream,"%lg\n",doubleList[i]);
     if (m<0) return (1);
     n_byte += m;
   }
@@ -206,7 +206,7 @@ static int ASCII_Read_mdouble (int n, double *doubleList)
   int i;
 
   for (i=0; i<n; i++)
-    if (fscanf(stream,"%lf ",doubleList+i)!=1) return (1);
+    if (fscanf(stream,"%lg ",doubleList+i)!=1) return (1);
   return (0);
 }
 
@@ -216,7 +216,7 @@ static int ASCII_Write_mdouble (int n, double *doubleList)
 
   for (i=0; i<n; i++)
   {
-    m = fprintf(stream,"%lf ",doubleList[i]);
+    m = fprintf(stream,"%lg ",doubleList[i]);
     if (m<0) return (1);
     n_byte += m;
   }
