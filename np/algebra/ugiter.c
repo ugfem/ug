@@ -5928,14 +5928,19 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
     UserWriteF("l_pgs: MAX_DEPTH too small\n");
     REP_ERR_RETURN (__LINE__);
   }
+  for (vec=FIRSTVECTOR(g); vec!= NULL; vec=SUCCVC(vec))
+    SETVCUSED(vec,0);
   for (vec=FIRSTVECTOR(g); vec!= NULL; vec=SUCCVC(vec)) {
+    if (VCUSED(vec)) continue;
     if (START(vec) == NULL) continue;
     if (VCLASS(vec) < ACTIVE_CLASS) continue;
     cnt = 1;
     vlist[0] = vec;
     if (depth > 1)
       for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat)) {
-        vlist[cnt++] = MDEST(mat);
+        w = MDEST(mat);
+        if (VCUSED(w)) continue;
+        vlist[cnt++] = w;
         if (cnt >= depth) break;
       }
     m = GetVlistMValues(cnt,vlist,M,Mval);
@@ -5944,19 +5949,13 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
                  m,GetVlistVValues(cnt,vlist,d,dval));
       REP_ERR_RETURN (__LINE__);
     }
-    index = VINDEX(vlist[0]);
-    for (i=1; i<cnt; i++) {
-      j = VINDEX(vlist[i]);
-      index = MIN(j,index);
-    }
     vcnt = 0;
     for (i=0; i<cnt; i++) {
       vtype = VTYPE(vlist[i]);
       ncomp = VD_NCMPS_IN_TYPE(d,vtype);
       for (mat=MNEXT(VSTART(vlist[i])); mat!=NULL; mat=MNEXT(mat)) {
         w = MDEST(mat);
-        myindex = VINDEX(w);
-        if (index < myindex) continue;
+        if (!VCUSED(w)) continue;
         if (VCLASS(w) < ACTIVE_CLASS) continue;
         wtype = VTYPE(w);
         Comp = MD_MCMPPTR_OF_MTYPE(M,MTP(vtype,wtype));
@@ -5974,6 +5973,8 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
       REP_ERR_RETURN (__LINE__);
     }
     SetVlistVValues(cnt,vlist,v,vval);
+    for (i=0; i<cnt; i++)
+      SETVCUSED(vec,1);
   }
 
   return (NUM_OK);
