@@ -784,7 +784,8 @@ static INT IdentifyEdge (GRID *theGrid,
         #endif
   if (Vec)
     if (GetVectorSize(theGrid,EDGEVEC,(GEOM_OBJECT *)theEdge) > 0)
-      IdentObjectHdr[nobject++] = PARHDR(EDVECTOR(theEdge));
+      if (EDVECTOR(theEdge) != NULL)
+        IdentObjectHdr[nobject++] = PARHDR(EDVECTOR(theEdge));
 
         #ifdef __TWODIM__
   /* identify to proclist of neighbor */
