@@ -76,9 +76,6 @@ enum HandlerSets
 
 
 
-/* map pointer to structure onto a pointer to its DDD_HDR */
-#define PARHDR(obj)    (&((obj)->ddd))
-
 
 /* macros for processor-synchronized output */
 #define SYNC_ALL   { int _p; for(_p=0; _p<procs; _p++) { \

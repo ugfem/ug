@@ -64,20 +64,22 @@
 
 /* some useful functions by Peter Bastian, from ugp/ug/ugcom.c */
 
-/*
-   int ddd_GlobalMaxInt (int i)
-   {
-        int l,n;
+INT UG_GlobalMaxINT (INT i)
+{
+  int l;
+  INT n;
 
-        for (l=degree-1; l>=0; l--)
-        {
-                GetConcentrate(l,&n,sizeof(int));
-                i = MAX(i,n);
-        }
-        Concentrate(&i,sizeof(int));
-        Broadcast(&i,sizeof(int));
-        return(i);
-   }
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,&n,sizeof(INT));
+    i = MAX(i,n);
+  }
+  Concentrate(&i,sizeof(INT));
+  Broadcast(&i,sizeof(INT));
+  return(i);
+}
+
+/*
 
    int ddd_GlobalMinInt (int i)
    {
