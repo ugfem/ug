@@ -291,6 +291,7 @@ typedef struct {
 #define SEG_TRI                         1
 
 
+#define MAX_NUB_OF_SBDMS        101
 
 
 
