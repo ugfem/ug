@@ -5,29 +5,34 @@
 
 ARCH_TYPE     = __MACOSX__
 
-ARCH_MAKE     = make
-ARCH_PMAKE    = make -j 6
+ARCH_MAKE     = gnumake
+ARCH_PMAKE     = gnumake -j 4
 ARCH_CC       = cc
-ARCH_C++      = cc++
+#ARCH_CC       = mwccppc
+ARCH_C++      = c++
 ARCH_LINK     = cc
 ARCH_AR       = ugarranlib ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = ugmacosxpostlink $(PROGNAME) $(APPL)
+#ARCH_POSTLINK =
 
 ARCH_LIBS     = 
 ARCH_PLIBS    =
 ARCH_FLIBS    =
 
 #ARCH_CFLAGS   = -Wchar-subscripts -Wformat -Wimplicit -Wparentheses -Wno-four-char-constants -Wreturn-type -Wswitch -Wtrigraphs -O -Wuninitialized
+ARCH_CFLAGS   = -gccincludes -ext o -I/usr/include -I/System/Library/Frameworks/System.framework/Versions/B/Headers
 ARCH_CFLAGS   = 
 ARCH_C++FLAGS = -Wenum-clash -Wreorder -Wtemplate-debugging
 ARCH_NOOPTIM  = -g
 ARCH_OPTIM    = -O3 -fexpensive-optimizations -finline-functions -funroll-loops
-ARCH_LFLAGS   = 
-#ARCH_LFLAGS   = -L../pclib -sectcreate __ICON __header $(APPL).iconheader -segprot __ICON r r -sectcreate __ICON app /System/Library/Frameworks/AppKit.framework/Resources/NSDefaultApplicationIcon.tiff -framework AppKit -framework Foundation
+#ARCH_LFLAGS   = 
+ARCH_LFLAGS   = -L../pclib -sectcreate __ICON __header $(APPL).iconheader -segprot __ICON r r -sectcreate __ICON app $(UGROOT)/dev/mif/UGIcon.tiff -framework AppKit -framework Foundation
 ARCH_ARFLAGS  = ru
 ARCH_FFLAGS   =
 ARCH_EXFLAGS  =
 
 ARCH_XINCLUDES =
-ARCH_XLIBS     = 
+ARCH_XLIBS     =
+ARCH_XINCLUDES = -I /usr/X11R6/include/
+ARCH_XLIBS     = -L/usr/X11R6/lib -lXaw -lXt -lX11 -lXmu -lXext -lICE -lXau -lSM
