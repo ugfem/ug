@@ -37,6 +37,7 @@
 #include "refine.h"
 #include "ddd.h"
 #include "parallel.h"
+#include "identify.h"
 
 /****************************************************************************/
 /*																			*/
@@ -690,7 +691,7 @@ static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
    IdentifySideEdge - idenify edge shared only between two neighbor elements
 
    SYNOPSIS:
-   static INT IdentifySideEdge (GRID *theGrid, EDGE *theEdge, ELEMENT *theNeighbor, INT Vec);
+   static INT IdentifySideEdge (GRID *theGrid, EDGE *theEdge, ELEMENT *theElement, ELEMENT *theNeighbor, INT Vec);
 
    PARAMETERS:
    .  theGrid
@@ -705,7 +706,7 @@ static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
  */
 /****************************************************************************/
 
-static INT IdentifySideEdge (GRID *theGrid, EDGE *theEdge, ELEMENT *theNeighbor, INT Vec)
+static INT IdentifySideEdge (GRID *theGrid, EDGE *theEdge, ELEMENT *theElement, ELEMENT *theNeighbor, INT Vec)
 {
   INT nobject,nident;
   INT *proclist;
@@ -1085,7 +1086,7 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
                             CORNER_OF_EDGE_PTR(SonList[j],edge,1));
           ASSERT(theEdge!=NULL);
 
-          IdentifySideEdge(theGrid, theEdge, theNeighbor,
+          IdentifySideEdge(theGrid, theEdge, theElement, theNeighbor,
                            VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC));
         }
       }
@@ -2132,32 +2133,36 @@ INT Identify_SonObjects (GRID *theGrid)
   {
     if (Identify_SonNodes (theGrid) != GM_OK) RETURN(GM_ERROR);
   }
+        #ifdef __THREEDIM__
   else
   {
-        #ifdef __THREEDIM__
     if (Identify_SonEdges (theGrid) != GM_OK) RETURN(GM_ERROR);
-        #endif
   }
 
-  if (0)
+  if (IDENT_IN_STEPS)
   {
-    printf(PFMT " 2. DDD_IdentifyEnd() in Identify_SonObjects()\n",me);
-    fflush(stdout);
-    Synchronize();
+    if (0)
+    {
+      printf(PFMT " 2. DDD_IdentifyEnd() in Identify_SonObjects()\n",me);
+      fflush(stdout);
+      Synchronize();
+    }
     DDD_IdentifyEnd();
     DDD_IdentifyBegin();
   }
-
-  if (NODESFIRST)
-  {
-        #ifdef __THREEDIM__
-    if (Identify_SonEdges (theGrid) != GM_OK) RETURN(GM_ERROR);
         #endif
-  }
-  else
+
+
+  if (!NODESFIRST)
   {
     if (Identify_SonNodes (theGrid) != GM_OK) RETURN(GM_ERROR);
   }
+        #ifdef __THREEDIM__
+  else
+  {
+    if (Identify_SonEdges (theGrid) != GM_OK) RETURN(GM_ERROR);
+  }
+        #endif
 
   return (GM_OK);
 }
