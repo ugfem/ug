@@ -1459,6 +1459,10 @@ INT FAMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 	np = (NP_FAMG_TRANSFER *) theNP;
 	mg = NP_MG(theNP);
 	
+	if( GRID_ON_LEVEL(mg,-1) != NULL )		// remove AMG grids if not done
+		if( DisposeAMGLevels(mg) )
+			NP_RETURN(1,result[0]);
+	
 #ifdef ModelP
 	// check assumptions for IS_FAMG_MASTER and IS_FAMG_GHOST
 	assert(PrioMaster>PrioBorder);
@@ -1524,7 +1528,8 @@ static INT FAMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 {
 	MULTIGRID *theMG;
 	NP_FAMG_TRANSFER *np;
-
+	INT i;
+	
 	result[0]=0;
 	np = (NP_FAMG_TRANSFER *) theNP;
 	theMG = NP_MG(theNP);
@@ -1536,6 +1541,10 @@ static INT FAMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 		np->ConsMat = NULL;
 		np->ConsMatTempAllocated = 0;
 	}
+	
+	for(i = 0; i < FAMG_NVECTORS; i++)
+		delete famg_interface.vector[i];	// free temp allocated symbols
+	delete famg_interface.gridvector;
 	
     ReleaseTmpMem(MGHEAP(theMG),np->famg_mark_key); /* mark in PreProcess */
 	FAMGFreeHeap();
