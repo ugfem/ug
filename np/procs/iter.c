@@ -354,6 +354,11 @@ static INT JacobiPreProcess  (NP_ITER *theNP, INT level,
                               VECDATA_DESC *x, VECDATA_DESC *b,
                               MATDATA_DESC *A, INT *baselevel, INT *result)
 {
+  /* store passed XXXDATA_DESCs */
+  NPIT_A(theNP) = A;
+  NPIT_c(theNP) = x;
+  NPIT_b(theNP) = b;
+
         #ifdef ModelP
   NP_SMOOTHER *np;
   GRID *theGrid;
@@ -513,6 +518,129 @@ static INT GSConstruct (NP_BASE *theNP)
   np->iter.Iter = Smoother;
   np->iter.PostProcess = SmootherPostProcess;
   np->Step = GSStep;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   sor - numproc for SOR smoother
+
+   DESCRIPTION:
+   This numproc executes an SOR (successive over relaxation) smoother,
+   using the blas routine
+   'l_lsor'. It can be used in 'lmgc'.
+
+   .vb
+   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
+       $n <it> $damp <sc double list> $beta <sc double list>
+   .ve
+
+   .  $c~<sol> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $n~<it> - number of iterations
+   .  $damp~<sc~double~list> - damping factors for each component
+
+   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
+
+   'npexecute <name> [$i] [$s] [$p]'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+   D*/
+/****************************************************************************/
+
+static INT SORPreProcess  (NP_ITER *theNP, INT level,
+                           VECDATA_DESC *x, VECDATA_DESC *b,
+                           MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+        #ifdef ModelP
+  NP_SMOOTHER *np;
+  GRID *theGrid;
+
+  np = (NP_SMOOTHER *) theNP;
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) {
+    result[0] = __LINE__;
+    return (1);
+  }
+  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+  if (l_matrix_consistent(theGrid,np->L,TRUE) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+        #endif
+  *baselevel = level;
+
+  return (0);
+}
+
+
+static INT SORStep (NP_SMOOTHER *theNP, INT level,
+                    VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                    MATDATA_DESC *L,
+                    INT *result)
+{
+    #ifdef ModelP
+  if (l_lsor(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,L,b,theNP->damp) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+    #else
+  if (l_lsor(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,A,b,theNP->damp) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+    #endif
+
+  return (0);
+}
+
+static INT SORSmoother (NP_ITER *theNP, INT level,
+                        VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                        INT *result)
+{
+  NP_SMOOTHER *np;
+  GRID *theGrid;
+
+  np = (NP_SMOOTHER *) theNP;
+  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  if ((*np->Step)(np,level,x,b,A,np->L,result))
+    return (1);
+    #ifdef ModelP
+  if (l_vector_consistent(theGrid,x) != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+    #endif
+  if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,x,ACTIVE_CLASS)
+      != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+
+  return (0);
+}
+
+static INT SORConstruct (NP_BASE *theNP)
+{
+  NP_SMOOTHER *np;
+
+  theNP->Init = SmootherInit;
+  theNP->Display = SmootherDisplay;
+  theNP->Execute = NPIterExecute;
+
+  np = (NP_SMOOTHER *) theNP;
+  np->iter.PreProcess = SORPreProcess;
+  np->iter.Iter = SORSmoother;
+  np->iter.PostProcess = SmootherPostProcess;
+  np->Step = SORStep;
 
   return(0);
 }
@@ -686,7 +814,13 @@ static INT LUPreProcess (NP_ITER *theNP, INT level,
   INT err;
   char warn[255];
 
+  /* store passed XXXDATA_DESCs */
+  NPIT_A(theNP) = A;
+  NPIT_c(theNP) = x;
+  NPIT_b(theNP) = b;
+
   np = (NP_SMOOTHER *) theNP;
+
   theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
   if (l_setindex(theGrid)) {
     result[0] = __LINE__;
@@ -873,6 +1007,11 @@ static INT LmgcPreProcess  (NP_ITER *theNP, INT level,
   NP_LMGC *np;
   INT i;
 
+  /* store passed XXXDATA_DESCs */
+  NPIT_A(theNP) = A;
+  NPIT_c(theNP) = x;
+  NPIT_b(theNP) = b;
+
   np = (NP_LMGC *) theNP;
 
   if (np->Transfer->PreProcess != NULL)
@@ -1058,6 +1197,8 @@ INT InitIter ()
   if (CreateClass(ITER_CLASS_NAME ".jac",sizeof(NP_SMOOTHER),JacobiConstruct))
     return (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".gs",sizeof(NP_SMOOTHER),GSConstruct))
+    return (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".sor",sizeof(NP_SMOOTHER),SORConstruct))
     return (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ilu",sizeof(NP_ILU),ILUConstruct))
     return (__LINE__);

@@ -42,6 +42,11 @@
 
 #define ITER_CLASS_NAME "iter"
 
+/* access macros */
+#define NPIT_A(p)                       (((NP_ITER*)(p))->A)
+#define NPIT_b(p)                       (((NP_ITER*)(p))->b)
+#define NPIT_c(p)                       (((NP_ITER*)(p))->c)
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported data structures									*/
