@@ -75,35 +75,38 @@
 
 #define NODE_OF_RULE(e,m,i)     (MARK2RULEADR(e,m)->sonandnode[i][0]!=-1)
 
+#define CONCAT(a,b,c)            CONCAT_AUX(a,b,c)
+#define CONCAT_AUX(a,b,c)        a ## b ## c
+
 /* dimension dependent MAX_CORNERS_OF_ELEM */
 #define MAX_CORNERS_OF_ELEM_2D  4
 #define MAX_CORNERS_OF_ELEM_3D  8
-#define MAX_CORNERS_OF_ELEM_DIM CONCAT3(MAX_CORNERS_OF_ELEM_,DIM,D)
+#define MAX_CORNERS_OF_ELEM_DIM CONCAT(MAX_CORNERS_OF_ELEM_,DIM,D)
 
 /* dimension dependent MAX_EDGES_OF_ELEM */
 #define MAX_EDGES_OF_ELEM_2D    4
 #define MAX_EDGES_OF_ELEM_3D    12
-#define MAX_EDGES_OF_ELEM_DIM CONCAT3(MAX_EDGES_OF_ELEM_,DIM,D)
+#define MAX_EDGES_OF_ELEM_DIM CONCAT(MAX_EDGES_OF_ELEM_,DIM,D)
 
 /* dimension dependent MAX_NEW_CORNERS */
 #define MAX_NEW_CORNERS_2D    5
 #define MAX_NEW_CORNERS_3D   19
-#define MAX_NEW_CORNERS_DIM CONCAT3(MAX_NEW_CORNERS_,DIM,D)
+#define MAX_NEW_CORNERS_DIM CONCAT(MAX_NEW_CORNERS_,DIM,D)
 
 /* dimension dependent MAX_NEW_EDGES */
 #define MAX_NEW_EDGES_2D   12
 #define MAX_NEW_EDGES_3D   54
-#define MAX_NEW_EDGES_DIM CONCAT3(MAX_NEW_EDGES_,DIM,D)
+#define MAX_NEW_EDGES_DIM CONCAT(MAX_NEW_EDGES_,DIM,D)
 
 /* dimension dependent MAX_SIDES_OF_ELEM */
 #define MAX_SIDES_OF_ELEM_2D    4
 #define MAX_SIDES_OF_ELEM_3D    6
-#define MAX_SIDES_OF_ELEM_DIM CONCAT3(MAX_SIDES_OF_ELEM_,DIM,D)
+#define MAX_SIDES_OF_ELEM_DIM CONCAT(MAX_SIDES_OF_ELEM_,DIM,D)
 
 /* dimension dependent MAX_SONS */
 #define MAX_SONS_2D    4
 #define MAX_SONS_3D    12
-#define MAX_SONS_DIM CONCAT3(MAX_SONS_,DIM,D)
+#define MAX_SONS_DIM CONCAT(MAX_SONS_,DIM,D)
 
 #define LEAFELEM(e)             (NSONS(e)==0)
 

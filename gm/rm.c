@@ -2455,7 +2455,7 @@ INT InitRuleManager (void)
   INT err;
 
   /* init 2- or 3D rulemanager */
-  if ((err=CONCAT3(InitRuleManager,DIM,D) ()) != GM_OK)
+  if ((err=CONCAT(InitRuleManager,DIM,D) ()) != GM_OK)
   {
     SetHiWrd(err,__LINE__);
     return(err);;
