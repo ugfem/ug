@@ -73,6 +73,9 @@
 /* if interpolation matrix is stored */
 #define __INTERPOLATION_MATRIX__
 
+/* if node-element list is used */
+#define __NODE_ELEMENT_LIST__
+
 /* if block vector descriptors are used
  #define __BLOCK_VECTOR_DESC__ */
 
@@ -387,6 +390,11 @@ union vertex {                                          /* only used to define p
   struct bvertex bv;
 } ;
 
+struct elementlist {
+  union element *el;
+  struct elementlist *next;
+} ;
+
 struct node {                                           /* level dependent part of a vertex     */
 
   /* variables */
@@ -396,6 +404,10 @@ struct node {                                           /* level dependent part 
 
         #ifdef ModelP
   DDD_HEADER ddd;
+        #endif
+
+        #ifdef __NODE_ELEMENT_LIST__
+  struct elementlist *first;
         #endif
 
   /* pointers */
@@ -731,6 +743,7 @@ typedef struct format FORMAT;
 
 typedef union  vertex VERTEX;
 typedef struct vsegment VSEGMENT;
+typedef struct elementlist ELEMENTLIST;
 typedef struct node NODE;
 typedef union  element ELEMENT;
 typedef struct elementside ELEMENTSIDE;
@@ -1452,6 +1465,11 @@ extern CONTROL_ENTRY
 #define NDATA(p)        (p)->data
 #define NDIAG(p)        (p)->matelem
 #define NVECTOR(p)      (p)->vector
+
+#ifdef __NODE_ELEMENT_LIST__
+#define NODE_ELEMENT_LIST(p)    ((p)->first)
+#define ELEMENT_PTR(p)                  ((p)->el)
+#endif
 
 /****************************************************************************/
 /*																			*/
