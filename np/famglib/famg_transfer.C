@@ -189,7 +189,7 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 	MATRIX *imat;
 	GRID *ugfg = fg.GetugGrid();
 	GRID *ugcg = cg.GetugGrid();
-	
+
     #ifdef ModelP
 	DDD_IdentifyBegin();
 	DDD_XferBegin();
@@ -217,10 +217,8 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 			SETPRIO(ugnew_vec,PRIO(ugfg_vec));
 			VECSKIP(ugnew_vec)=VECSKIP(ugfg_vec);
 			SETVCCOARSE(ugnew_vec,0);
-#ifdef DYNAMIC_MEMORY_ALLOCMODEL
 			VSTART(ugnew_vec) = NULL;
 			VISTART(ugnew_vec) = NULL;
-#endif
 
 			#ifdef ModelP
 			if (DDD_InfoPrioCopies(PARHDR(ugfg_vec)) > 0) {
@@ -239,8 +237,9 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 					}
 					proclist += 2;
 				}
-				PRINTDEBUG(np,3,(" prio %d, attr %d\n",
+				PRINTDEBUG(np,3,(" prio new %d, prio old %d, attr %d\n",
 								 DDD_InfoPriority(PARHDR(ugnew_vec)),
+								 DDD_InfoPriority(PARHDR(ugfg_vec)),
 								 DDD_InfoAttr(PARHDR(ugnew_vec))));
 
 				PRINTDEBUG(np,3,("\n"));
