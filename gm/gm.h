@@ -289,6 +289,7 @@
 /* use of GSTATUS (for grids), use power of 2 */
 #define GSTATUS_BDF                             1
 #define GSTATUS_INTERPOLATE             2
+#define GSTATUS_ASSEMBLED               4
 
 /* selection mode */
 #define nodeSelection                   1                       /* objects selected are nodes			*/
