@@ -866,7 +866,6 @@ MESH       *BVP_GenerateMesh      (HEAP *Heap, BVP *aBVP, INT argc, char **argv,
 INT         BNDP_Global           (BNDP *theBndP, DOUBLE *global);
 INT                     BNDP_Move                         (BNDP *aBndP, const DOUBLE global[]);
 INT         BNDP_BndCond          (BNDP *theBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *type);
-INT         BNDP_BndCond          (BNDP *theBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *type);
 INT         BNDP_BndPDesc         (BNDP *theBndP, INT *move, INT *part);
 INT         BNDP_BndEDesc         (BNDP *theBndP0, BNDP *theBndP1, INT *part);
 BNDS*       BNDP_CreateBndS       (HEAP *Heap, BNDP **theBndP, INT n);
