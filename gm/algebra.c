@@ -1801,6 +1801,65 @@ INT GetVectorsOfType (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vL
   return (GM_ERROR);
 }
 
+
+/****************************************************************************/
+/*D
+   GetAllVectorsOfElement - get vector list
+
+   SYNOPSIS:
+   INT GetAllVectorsOfElement (GRID *theGrid, ELEMENT *theElement, VECTOR **vec);
+
+   PARAMETERS:
+   .  theGrid - pointer to a grid
+   .  theElement - pointer to an element
+   .  vec - vector list
+
+   DESCRIPTION:
+   This function gets a list of vectors corresponding to an element.
+
+   RETURN VALUE:
+   INT
+   .n    number of components
+   .n    -1 if error occured
+   D*/
+/****************************************************************************/
+
+INT GetAllVectorsOfElement (GRID *theGrid, ELEMENT *theElement, VECTOR **vec)
+{
+  INT i;
+  INT cnt;
+
+  cnt = 0;
+  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+  {
+    if (GetVectorsOfNodes(theElement,&i,vec) == GM_ERROR)
+      return(-1);
+    cnt += i;
+  }
+  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+  {
+    if (GetVectorsOfEdges(theElement,&i,vec+cnt) == GM_ERROR)
+      return(-1);
+    cnt += i;
+  }
+  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
+  {
+    if (GetVectorsOfElement(theElement,&i,vec+cnt) == GM_ERROR)
+      return(-1);
+    cnt += i;
+  }
+    #ifdef __THREEDIM__
+  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+  {
+    if (GetVectorsOfSides(theElement,&i,vec+cnt) == GM_ERROR)
+      return(-1);
+    cnt += i;
+  }
+    #endif
+
+  return (cnt);
+}
+
 /****************************************************************************/
 /*D
    DisposeExtraConnections - Remove all extra connections from the grid
@@ -1870,158 +1929,34 @@ INT DisposeExtraConnections (GRID *theGrid)
 
 static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, INT ActDepth, INT *ConDepth, INT *MatSize)
 {
-  INT i,j;
-  INT elemCnt0, sideCnt0, edgeCnt0, nodeCnt0;
-  INT elemCnt1, sideCnt1, edgeCnt1, nodeCnt1;
-  VECTOR *elemVec0[12], *sideVec0[12], *edgeVec0[12], *nodeVec0[12];
-  VECTOR *elemVec1[12], *sideVec1[12], *edgeVec1[12], *nodeVec1[12];
+  INT cnt0,cnt1,i,j,mtype;
+  VECTOR *vec0[MAX_SIDES_OF_ELEM+MAX_EDGES_OF_ELEM+MAX_CORNERS_OF_ELEM+1];
+  VECTOR *vec1[MAX_SIDES_OF_ELEM+MAX_EDGES_OF_ELEM+MAX_CORNERS_OF_ELEM+1];
 
-  /* initialize pointer arrays */
-  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
+  cnt0 = GetAllVectorsOfElement(theGrid,Elem0,vec0);
+  if (Elem0 == Elem1)
   {
-    if (GetVectorsOfElement(Elem0,&elemCnt0,elemVec0)) return(GM_ERROR);
-    if (GetVectorsOfElement(Elem1,&elemCnt1,elemVec1)) return(GM_ERROR);
-  }
-    #ifdef __THREEDIM__
-  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
-  {
-    if (GetVectorsOfSides(Elem0,&sideCnt0,sideVec0)) return(GM_ERROR);
-    if (GetVectorsOfSides(Elem1,&sideCnt1,sideVec1)) return(GM_ERROR);
-  }
-    #endif
-  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
-  {
-    if (GetVectorsOfEdges(Elem0,&edgeCnt0,edgeVec0)) return(GM_ERROR);
-    if (GetVectorsOfEdges(Elem1,&edgeCnt1,edgeVec1)) return(GM_ERROR);
-  }
-  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
-  {
-    if (GetVectorsOfNodes(Elem0,&nodeCnt0,nodeVec0)) return(GM_ERROR);
-    if (GetVectorsOfNodes(Elem1,&nodeCnt1,nodeVec1)) return(GM_ERROR);
+    for (i=0; i<cnt0; i++)
+      for (j=i; j<cnt0; j++)
+      {
+        mtype = MatrixType[VTYPE(vec0[i])][VTYPE(vec0[j])];
+        if (MatSize[mtype] > 0)
+          if (ActDepth <= ConDepth[mtype])
+            if (CreateConnection(theGrid,vec0[i],vec0[j])==NULL)
+              return(GM_ERROR);
+      }
+    return (0);
   }
 
-  /* create node node connection */
-  if (ActDepth <= ConDepth[MatrixType[NODEVECTOR][NODEVECTOR]])
-    if (0 < MatSize[MatrixType[NODEVECTOR][NODEVECTOR]])
-      for (i=0; i<nodeCnt0; i++)
-        for (j=0; j<nodeCnt1; j++)
-          if (CreateConnection(theGrid,nodeVec0[i],nodeVec1[j])==NULL)
+  cnt1 = GetAllVectorsOfElement(theGrid,Elem1,vec1);
+  for (i=0; i<cnt0; i++)
+    for (j=0; j<cnt1; j++)
+    {
+      mtype = MatrixType[VTYPE(vec0[i])][VTYPE(vec1[j])];
+      if (MatSize[mtype] > 0)
+        if (ActDepth <= ConDepth[mtype])
+          if (CreateConnection(theGrid,vec0[i],vec1[j])==NULL)
             return(GM_ERROR);
-
-  /* create node edge connection */
-  if (ActDepth <= ConDepth[MatrixType[NODEVECTOR][EDGEVECTOR]])
-    if (0 < MatSize[MatrixType[NODEVECTOR][EDGEVECTOR]])
-    {
-      /* edges in 0 with nodes in 1 */
-      for (i=0; i<edgeCnt0; i++)
-        for (j=0; j<nodeCnt1; j++)
-          if (CreateConnection(theGrid,edgeVec0[i],nodeVec1[j])==NULL)
-            return(GM_ERROR);
-      /* edges 1 with nodes in 0 */
-      for (i=0; i<edgeCnt1; i++)
-        for (j=0; j<nodeCnt0; j++)
-          if (CreateConnection(theGrid,edgeVec1[i],nodeVec0[j])==NULL)
-            return(GM_ERROR);
-    }
-
-  /* create node side connection */
-  if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[NODEVECTOR][SIDEVECTOR]]))
-    if (0 < MatSize[MatrixType[NODEVECTOR][SIDEVECTOR]])
-    {
-      for (i=0; i<nodeCnt0; i++)
-        for (j=0; j<sideCnt1; j++)
-          if (CreateConnection(theGrid,nodeVec0[i],sideVec1[j])==NULL)
-            return (GM_ERROR);
-      for (i=0; i<nodeCnt1; i++)
-        for (j=0; j<sideCnt0; j++)
-          if (CreateConnection(theGrid,nodeVec1[i],sideVec0[j])==NULL)
-            return (GM_ERROR);
-    }
-
-  /* create node elem connection */
-  if (ActDepth <= ConDepth[MatrixType[NODEVECTOR][ELEMVECTOR]])
-    if (0 < MatSize[MatrixType[NODEVECTOR][ELEMVECTOR]])
-    {
-      for (i=0; i<nodeCnt0; i++)
-        for (j=0; j<elemCnt1; j++)
-          if (CreateConnection(theGrid,nodeVec0[i],elemVec1[j])==NULL)
-            return (GM_ERROR);
-      for (i=0; i<nodeCnt1; i++)
-        for (j=0; j<elemCnt0; j++)
-          if (CreateConnection(theGrid,nodeVec1[i],elemVec0[j])==NULL)
-            return (GM_ERROR);
-    }
-
-  /* create edge edge connection */
-  if (ActDepth <= ConDepth[MatrixType[EDGEVECTOR][EDGEVECTOR]])
-    if (0 < MatSize[MatrixType[EDGEVECTOR][EDGEVECTOR]])
-    {
-      for (i=0; i<edgeCnt0; i++)
-        for (j=0; j<edgeCnt1; j++)
-          if (CreateConnection(theGrid,edgeVec0[i],edgeVec1[j])==NULL)
-            return (GM_ERROR);
-    }
-
-  /* create edge side connection */
-  if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[EDGEVECTOR][SIDEVECTOR]]))
-    if (0 < MatSize[MatrixType[EDGEVECTOR][SIDEVECTOR]])
-    {
-      for (i=0; i<edgeCnt0; i++)
-        for (j=0; j<sideCnt1; j++)
-          if (CreateConnection(theGrid,edgeVec0[i],sideVec1[j])==NULL)
-            return (GM_ERROR);
-      for (i=0; i<edgeCnt1; i++)
-        for (j=0; j<sideCnt0; j++)
-          if (CreateConnection(theGrid,edgeVec1[i],sideVec0[j])==NULL)
-            return (GM_ERROR);
-    }
-
-  /* create edge elem connection */
-  if (ActDepth <= ConDepth[MatrixType[EDGEVECTOR][ELEMVECTOR]])
-    if (0 < MatSize[MatrixType[EDGEVECTOR][ELEMVECTOR]])
-    {
-      for (i=0; i<edgeCnt0; i++)
-        for (j=0; j<elemCnt1; j++)
-          if (CreateConnection(theGrid,edgeVec0[i],elemVec1[j])==NULL)
-            return (GM_ERROR);
-      for (i=0; i<edgeCnt1; i++)
-        for (j=0; j<elemCnt0; j++)
-          if (CreateConnection(theGrid,edgeVec1[i],elemVec0[j])==NULL)
-            return (GM_ERROR);
-    }
-
-  /* create side side connection */
-  if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[SIDEVECTOR][SIDEVECTOR]]))
-    if (0 < MatSize[MatrixType[SIDEVECTOR][SIDEVECTOR]])
-    {
-      for (i=0; i<sideCnt0; i++)
-        for (j=0; j<sideCnt1; j++)
-          if (CreateConnection(theGrid,sideVec0[i],sideVec1[j])==NULL)
-            return (GM_ERROR);
-    }
-
-  /* create side elem connection */
-  if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[SIDEVECTOR][ELEMVECTOR]]))
-    if (0 < MatSize[MatrixType[SIDEVECTOR][ELEMVECTOR]])
-    {
-      for (i=0; i<sideCnt0; i++)
-        for (j=0; j<elemCnt1; j++)
-          if (CreateConnection(theGrid,sideVec0[i],elemVec1[j])==NULL)
-            return (GM_ERROR);
-      for (i=0; i<sideCnt1; i++)
-        for (j=0; j<elemCnt0; j++)
-          if (CreateConnection(theGrid,sideVec1[i],elemVec0[j])==NULL)
-            return (GM_ERROR);
-    }
-
-  /* create elem elem connection */
-  if (ActDepth <= ConDepth[MatrixType[ELEMVECTOR][ELEMVECTOR]])
-    if (0 < MatSize[MatrixType[ELEMVECTOR][ELEMVECTOR]])
-    {
-      for (i=0; i<elemCnt0; i++)
-        for (j=0; j<elemCnt1; j++)
-          if (CreateConnection(theGrid,elemVec0[i],elemVec1[j])==NULL)
-            return (GM_ERROR);
     }
 
   return (0);
@@ -2450,13 +2385,15 @@ INT PrepareAlgebraModification (MULTIGRID *theMG)
    ElementElementCheck - Check connection of two elements
 
    SYNOPSIS:
-   static INT ElementElementCheck (ELEMENT *Elem0, ELEMENT *Elem1,
-   INT ActDepth, INT *ConDepth);
+   static INT ElementElementCheck (GRID *theGrid,
+   ELEMENT *Elem0, ELEMENT *Elem1, INT ActDepth, INT *ConDepth, INT *MatSize);
 
    PARAMETERS:
+   .  theGrid -  grid level to check
    .  Elem0,Elem1 - elements to be checked.
    .  ActDepth - recursion depth
-   .  ConDepth - connection depth as provided by format
+   .  ConDepth - connection depth as provided by format.
+   .  MatSize - matrix sizes as provided by format
 
    DESCRIPTION:
    This function recursively checks connection of two elements.
@@ -2468,299 +2405,65 @@ INT PrepareAlgebraModification (MULTIGRID *theMG)
    D*/
 /****************************************************************************/
 
-static INT ElementElementCheck (ELEMENT *Elem0, ELEMENT *Elem1, INT ActDepth, INT *ConDepth)
+static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, INT ActDepth, INT *ConDepth, INT *MatSize)
 {
-  INT i,j;
-  INT elemCnt0, sideCnt0, edgeCnt0, nodeCnt0;
-  INT elemCnt1, sideCnt1, edgeCnt1, nodeCnt1;
-  VECTOR *elemVec0[12], *sideVec0[12], *edgeVec0[12], *nodeVec0[12];
-  VECTOR *elemVec1[12], *sideVec1[12], *edgeVec1[12], *nodeVec1[12];
+  INT cnt0,cnt1,i,j,mtype;
+  VECTOR *vec0[MAX_SIDES_OF_ELEM+MAX_EDGES_OF_ELEM+MAX_CORNERS_OF_ELEM+1];
+  VECTOR *vec1[MAX_SIDES_OF_ELEM+MAX_EDGES_OF_ELEM+MAX_CORNERS_OF_ELEM+1];
   CONNECTION *theCon;
   char buffer[256], msg[128];
   INT ReturnCode;
 
-  if (GetVectorsOfElement(Elem0,&elemCnt0,elemVec0)) return(GM_ERROR);
-  if (GetVectorsOfElement(Elem1,&elemCnt1,elemVec1)) return(GM_ERROR);
-    #ifdef __THREEDIM__
-  if (GetVectorsOfSides(Elem0,&sideCnt0,sideVec0)) return(GM_ERROR);
-  if (GetVectorsOfSides(Elem1,&sideCnt1,sideVec1)) return(GM_ERROR);
-    #endif
-  if (GetVectorsOfEdges(Elem0,&edgeCnt0,edgeVec0)) return(GM_ERROR);
-  if (GetVectorsOfEdges(Elem1,&edgeCnt1,edgeVec1)) return(GM_ERROR);
-  if (GetVectorsOfNodes(Elem0,&nodeCnt0,nodeVec0)) return(GM_ERROR);
-  if (GetVectorsOfNodes(Elem1,&nodeCnt1,nodeVec1)) return(GM_ERROR);
-
   sprintf(msg,"error in connection between element %lu and %lu: ",(long)ID(Elem0),(long)ID(Elem1));
 
-  /* reset return code */
-  ReturnCode = GM_OK;
-
-  /* check node node connection */
-  if (ActDepth <= ConDepth[MatrixType[NODEVECTOR][NODEVECTOR]])
-    for (i=0; i<nodeCnt0; i++)
-      for (j=0; j<nodeCnt1; j++)
-      {
-        theCon = GetConnection(nodeVec0[i],nodeVec1[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"nodeVec0[%d] to nodeVec1[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else
-        {
-          SETCUSED(theCon,1);
-        }
-      }
-
-
-  /* check node edge connection */
-  if (ActDepth <= ConDepth[MatrixType[NODEVECTOR][EDGEVECTOR]])
+  cnt0 = GetAllVectorsOfElement(theGrid,Elem0,vec0);
+  if (Elem0 == Elem1)
   {
-    /* edges in 0 with nodes in 1 */
-    for (i=0; i<edgeCnt0; i++)
-      for (j=0; j<nodeCnt1; j++)
+    for (i=0; i<cnt0; i++)
+      for (j=i; j<cnt0; j++)
       {
-        theCon = GetConnection(edgeVec0[i],nodeVec1[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"edgeVec0[%d] to nodeVec1[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else SETCUSED(theCon,1);
+        mtype = MatrixType[VTYPE(vec0[i])][VTYPE(vec0[j])];
+        if (MatSize[mtype] > 0)
+          if (ActDepth <= ConDepth[mtype])
+          {
+            theCon = GetConnection(vec0[i],vec0[j]);
+            if (theCon==NULL)
+            {
+              UserWrite(msg);
+              sprintf(buffer,"vec0[%d] to vec0[%d]\n",i,j);
+              UserWrite(buffer);
+              ReturnCode = GM_ERROR;
+            }
+            else SETCUSED(theCon,1);
+          }
       }
-    /* edges 1 with nodes in 0 */
-    for (i=0; i<edgeCnt1; i++)
-      for (j=0; j<nodeCnt0; j++)
-      {
-        theCon = GetConnection(edgeVec1[i],nodeVec0[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"edgeVec1[%d] to nodeVec0[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else SETCUSED(theCon,1);
-      }
+    return (ReturnCode);
   }
 
-  /* check node side connection */
-  if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[NODEVECTOR][SIDEVECTOR]]))
-  {
-    for (i=0; i<nodeCnt0; i++)
-      for (j=0; j<sideCnt1; j++)
-      {
-        theCon = GetConnection(nodeVec0[i],sideVec1[j]);
-        if (theCon==NULL)
+  cnt1 = GetAllVectorsOfElement(theGrid,Elem1,vec1);
+  for (i=0; i<cnt0; i++)
+    for (j=0; j<cnt1; j++)
+    {
+      mtype = MatrixType[VTYPE(vec0[i])][VTYPE(vec1[j])];
+      if (MatSize[mtype] > 0)
+        if (ActDepth <= ConDepth[mtype])
         {
-          UserWrite(msg);
-          sprintf(buffer,"nodeVec0[%d] to sideVec1[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
+          theCon = GetConnection(vec0[i],vec1[j]);
+          if (theCon==NULL)
+          {
+            UserWrite(msg);
+            sprintf(buffer,"vec0[%d] to vec1[%d]\n",i,j);
+            UserWrite(buffer);
+            ReturnCode = GM_ERROR;
+          }
+          else SETCUSED(theCon,1);
         }
-        else SETCUSED(theCon,1);
-      }
-    for (i=0; i<nodeCnt1; i++)
-      for (j=0; j<sideCnt0; j++)
-      {
-        theCon = GetConnection(nodeVec1[i],sideVec0[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"nodeVec1[%d] to sideVec0[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else SETCUSED(theCon,1);
-      }
-  }
+    }
 
-  /* check node elem connection */
-  if (ActDepth <= ConDepth[MatrixType[NODEVECTOR][ELEMVECTOR]])
-  {
-    for (i=0; i<nodeCnt0; i++)
-      for (j=0; j<elemCnt1; j++)
-      {
-        theCon = GetConnection(nodeVec0[i],elemVec1[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"nodeVec0[%d] to elemVec1[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else SETCUSED(theCon,1);
-      }
-    for (i=0; i<nodeCnt1; i++)
-      for (j=0; j<elemCnt0; j++)
-      {
-        theCon = GetConnection(nodeVec1[i],elemVec0[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"nodeVec1[%d] to elemVec0[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else SETCUSED(theCon,1);
-      }
-  }
-
-  /* check edge edge connection */
-  if (ActDepth <= ConDepth[MatrixType[EDGEVECTOR][EDGEVECTOR]])
-  {
-    for (i=0; i<edgeCnt0; i++)
-      for (j=0; j<edgeCnt1; j++)
-      {
-        theCon = GetConnection(edgeVec0[i],edgeVec1[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"edgeVec0[%d] to edgeVec1[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else SETCUSED(theCon,1);
-      }
-  }
-
-  /* check edge side connection */
-  if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[EDGEVECTOR][SIDEVECTOR]]))
-  {
-    for (i=0; i<edgeCnt0; i++)
-      for (j=0; j<sideCnt1; j++)
-      {
-        theCon = GetConnection(edgeVec0[i],sideVec1[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"edgeVec0[%d] to sideVec1[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else SETCUSED(theCon,1);
-      }
-    for (i=0; i<edgeCnt1; i++)
-      for (j=0; j<sideCnt0; j++)
-      {
-        theCon = GetConnection(edgeVec1[i],sideVec0[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"edgeVec1[%d] to sideVec0[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else SETCUSED(theCon,1);
-      }
-  }
-
-  /* check edge elem connection */
-  if (ActDepth <= ConDepth[MatrixType[EDGEVECTOR][ELEMVECTOR]])
-  {
-    for (i=0; i<edgeCnt0; i++)
-      for (j=0; j<elemCnt1; j++)
-      {
-        theCon = GetConnection(edgeVec0[i],elemVec1[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"edgeVec0[%d] to elemVec1[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else SETCUSED(theCon,1);
-      }
-    for (i=0; i<edgeCnt1; i++)
-      for (j=0; j<elemCnt0; j++)
-      {
-        theCon = GetConnection(edgeVec1[i],elemVec0[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"edgeVec1[%d] to elemVec0[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else SETCUSED(theCon,1);
-      }
-  }
-
-  /* check side side connection */
-  if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[SIDEVECTOR][SIDEVECTOR]]))
-  {
-    for (i=0; i<sideCnt0; i++)
-      for (j=0; j<sideCnt1; j++)
-      {
-        theCon = GetConnection(sideVec0[i],sideVec1[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"sideVec0[%d] to sideVec1[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else SETCUSED(theCon,1);
-      }
-  }
-
-  /* check side elem connection */
-  if ((DIM==3)&&(ActDepth <= ConDepth[MatrixType[SIDEVECTOR][ELEMVECTOR]]))
-  {
-    for (i=0; i<sideCnt0; i++)
-      for (j=0; j<elemCnt1; j++)
-      {
-        theCon = GetConnection(sideVec0[i],elemVec1[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"sideVec0[%d] to elemVec1[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else SETCUSED(theCon,1);
-      }
-    for (i=0; i<sideCnt1; i++)
-      for (j=0; j<elemCnt0; j++)
-      {
-        theCon = GetConnection(sideVec1[i],elemVec0[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"sideVec1[%d] to elemVec0[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else SETCUSED(theCon,1);
-      }
-  }
-
-  /* check elem elem connection */
-  if (ActDepth <= ConDepth[MatrixType[ELEMVECTOR][ELEMVECTOR]])
-  {
-    for (i=0; i<elemCnt0; i++)
-      for (j=0; j<elemCnt1; j++)
-      {
-        theCon = GetConnection(elemVec0[i],elemVec1[j]);
-        if (theCon==NULL)
-        {
-          UserWrite(msg);
-          sprintf(buffer,"elemVec0[%d] to elemVec1[%d]\n",i,j);
-          UserWrite(buffer);
-          ReturnCode = GM_ERROR;
-        }
-        else SETCUSED(theCon,1);
-      }
-  }
-
-  return(ReturnCode);
+  return (ReturnCode);
 }
 
-static ELEMENT *CheckNeighborhood (ELEMENT *theElement, ELEMENT *centerElement, INT *ConDepth, INT ActDepth, INT MaxDepth)
+static ELEMENT *CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *centerElement, INT *ConDepth, INT ActDepth, INT MaxDepth, INT *MatSize)
 {
   int i;
 
@@ -2769,13 +2472,13 @@ static ELEMENT *CheckNeighborhood (ELEMENT *theElement, ELEMENT *centerElement, 
 
   /* action */
   if (ActDepth>=0)
-    if (ElementElementCheck(centerElement,theElement,ActDepth,ConDepth))
+    if (ElementElementCheck(theGrid,centerElement,theElement,ActDepth,ConDepth,MatSize))
       return (centerElement);
 
   /* call all neighbors recursively */
   if (ActDepth<MaxDepth)
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-      return(CheckNeighborhood(NBELEM(theElement,i),centerElement,ConDepth,ActDepth+1,MaxDepth));
+      return(CheckNeighborhood(theGrid,NBELEM(theElement,i),centerElement,ConDepth,ActDepth+1,MaxDepth,MatSize));
 
   return (NULL);
 }
@@ -2808,15 +2511,17 @@ ELEMENT *ElementCheckConnection (GRID *theGrid, ELEMENT *theElement)
   MULTIGRID *theMG;
   INT MaxDepth;
   INT *ConDepth;
+  INT *MatSize;
 
   /* set pointers */
   theMG = theGrid->mg;
   theFormat = theMG->theFormat;
   MaxDepth = theFormat->MaxConnectionDepth;
   ConDepth = theFormat->ConnectionDepth;
+  MatSize = theFormat->MatrixSizes;
 
   /* call elements recursivly */
-  return(CheckNeighborhood (theElement,theElement,ConDepth,0,MaxDepth));
+  return(CheckNeighborhood (theGrid,theElement,theElement,ConDepth,0,MaxDepth,MatSize));
 }
 
 /****************************************************************************/
