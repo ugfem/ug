@@ -8,11 +8,11 @@
 /*                                                                          */
 /* Author:    Peter Bastian                                                 */
 /*            Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
-/*			  Universitaet Heidelberg										*/
-/*			  Im Neuenheimer Feld 368										*/
-/*			  6900 Heidelberg												*/
-/*			  email: ug@ica3.uni-stuttgart.de	                                        */
-/*																			*/
+/*            Universitaet Heidelberg                                       */
+/*            Im Neuenheimer Feld 368                                       */
+/*            6900 Heidelberg                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
 /* History:   09.03.92 begin, ug version 2.0								*/
 /*			  Aug 28 1996, ug version 3.4                                                                   */
 /*																			*/
@@ -109,11 +109,24 @@ using namespace UG3d;
 #undef _SCHALE_X_
 
 /****************************************************************************/
-/*																			*/
-/* data structures used in this source file (exported data structures are	*/
-/*		  in the corresponding include file!)								*/
-/*																			*/
+/*                                                                          */
+/* data structures used in this source file (exported data structures are   */
+/*		  in the corresponding include file!)                         */
+/*                                                                          */
 /****************************************************************************/
+
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+  control_entries[MAX_CONTROL_ENTRIES];
+
+extern INT n_offset[TAGS];
+extern INT nb_offset[TAGS];
+extern INT side_offset[TAGS];
+extern INT father_offset[TAGS];
+extern INT evector_offset[TAGS];
+extern INT data_offset[TAGS];
+extern INT svector_offset[TAGS];
+extern INT sons_offset[TAGS];
 
 /****************************************************************************/
 /*																			*/
