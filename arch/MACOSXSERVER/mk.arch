@@ -9,15 +9,15 @@ ARCH_MAKE     = make
 ARCH_CC       = cc
 ARCH_C++      = cc++
 ARCH_LINK     = cc
-ARCH_AR       = ar
+ARCH_AR       = ugarranlib ar
 ARCH_SUFFIX   = 
-ARCH_POSTLINK = true
+ARCH_POSTLINK = ugmacosxpostlink $(PROGNAME) $(APPL)
 
 ARCH_LIBS     = 
 
 ARCH_CFLAGS   = -g
 ARCH_C++FLAGS =
-ARCH_LFLAGS   = -L../pclib
+ARCH_LFLAGS   = -L../pclib -sectcreate __ICON __header $(APPL).iconheader -segprot __ICON r r -sectcreate __ICON app /System/Library/Frameworks/AppKit.framework/Resources/NSDefaultApplicationIcon.tiff -framework AppKit -framework Foundation
 ARCH_ARFLAGS  = ru
 
 ARCH_XINCLUDES =
