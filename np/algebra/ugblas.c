@@ -946,7 +946,6 @@ static int Gather_AMGMatrixCollect (DDD_OBJ obj, void *data)
 	int i, *proclist,mc,vtype,mtype,masc;
 	const SHORT *Comp;	
 
-    printf("%3d: In Gather...\n",me);
 	*maxgid = 0;
 
 	if (VSTART(pv) == NULL) {
@@ -974,7 +973,6 @@ static int Gather_AMGMatrixCollect (DDD_OBJ obj, void *data)
 		}
 	}
 
-	printf("%3d: MD_IS not _SCALAR\n",me);
 	vtype = VTYPE(pv);
 	for (m=(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
 		mtype = MTP(vtype,MDESTTYPE(m));
@@ -1009,7 +1007,6 @@ static int Scatter_AMGMatrixCollect (DDD_OBJ obj, void *data)
 	int     i,j,k, *proclist,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
 	const SHORT *Comp;	
 
-    PRINTDEBUG(np,0,("%3d: In Scatter...\n",me));
 
 	if (VSTART(pv) == NULL) return (NUM_OK);
 	if (MD_IS_SCALAR(ConsMatrix)) {
@@ -1079,7 +1076,7 @@ static int Scatter_AMGMatrixCollect (DDD_OBJ obj, void *data)
 			}
 		}
 
-	IFDEBUG(np,0)
+	IFDEBUG(np,2)
 	igid = 0;
 	msgbuf = (DOUBLE *)data;
 	for (m=(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
@@ -1126,12 +1123,8 @@ static int CountAndSortMatrices (DDD_OBJ obj)
 	MATRIX *m;
 	int    n, j;
 
-	if (PRIO(pv) != PrioVGhost)   {
-	    PRINTDEBUG(np,0,("%3d: I'm not counting\n",me));
+	if (PRIO(pv) != PrioVGhost)
 	    return(0);
-	}
-
-	PRINTDEBUG(np,0,("%3d: Counting and sorting matrices\n",me));
 
 	/* sort MATRIX-list according to gid of destination vector */
     n = 0;
@@ -1155,8 +1148,8 @@ INT l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A)
     INT mt;
 	size_t sizePerVector;
 
-	PRINTDEBUG(np,0,("%3d: entering l_amgmatrix_collect...\n",me));
-	PRINTDEBUG(np,0,("%3d: Gridlevel %d\n",me,GLEVEL(g)));
+	PRINTDEBUG(np,2,("%3d: entering l_amgmatrix_collect...\n",me));
+	PRINTDEBUG(np,2,("%3d: Gridlevel %d\n",me,GLEVEL(g)));
 
     ConsMatrix = (MATDATA_DESC *)A;
 	MaxBlockSize = 0;
@@ -1169,9 +1162,9 @@ INT l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A)
 	DataSizePerVector = MaximumInconsMatrices * MaxBlockSize * sizeof(DOUBLE);
 	DataSizePerVector = CEIL(DataSizePerVector);
 
-	PRINTDEBUG(np,0,("%3d: MaximumInconsMatrices: %d\n",me,MaximumInconsMatrices));
-	PRINTDEBUG(np,0,("%3d: MaxBlockSize: %d\n",me,MaxBlockSize));
-	PRINTDEBUG(np,0,("%3d: DataSizePerVector: %d\n",me,DataSizePerVector));
+	PRINTDEBUG(np,2,("%3d: MaximumInconsMatrices: %d\n",me,MaximumInconsMatrices));
+	PRINTDEBUG(np,2,("%3d: MaxBlockSize: %d\n",me,MaxBlockSize));
+	PRINTDEBUG(np,2,("%3d: DataSizePerVector: %d\n",me,DataSizePerVector));
 
 	/* overall data sent per vector is its matrix entry data plus
 	   the number of valid entries plus a table of DDD-GIDs of 
@@ -1180,12 +1173,12 @@ INT l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A)
 		            + MaximumInconsMatrices*sizeof(DDD_GID);
 	sizePerVector = CEIL(sizePerVector);
 
-	PRINTDEBUG(np,0,("%3d: sizePerVector: %d\n",me,sizePerVector));
+	PRINTDEBUG(np,2,("%3d: sizePerVector: %d\n",me,sizePerVector));
 
 	DDD_IFAOneway(VectorVIF, GRID_ATTR(g), IF_BACKWARD, sizePerVector,
 				  Gather_AMGMatrixCollect, Scatter_AMGMatrixCollect);
 
-	PRINTDEBUG(np,0,("%3d: exiting l_amgmatrix_collect...\n",me));
+	PRINTDEBUG(np,2,("%3d: exiting l_amgmatrix_collect...\n",me));
 
 	return (NUM_OK);
 }
