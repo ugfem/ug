@@ -312,7 +312,15 @@ INT WriteLogFile (const char *text)
 {
   if (logFile==NULL) return(1);
 
-  fputs(text,logFile);
+  if ( fputs(text,logFile) < 0 )
+  {
+    UserWrite( "ERROR in writing logfile\n" );
+                #ifdef Debug
+    printf( "ERROR in writing logfile\n" );
+    fflush(logFile);
+                #endif
+    return 1;
+  }
         #ifdef Debug
   fflush(logFile);
         #endif
@@ -348,7 +356,14 @@ void UserWrite (const char *s)
   if (mutelevel>-1000)
     WriteString(s);
   if (logFile!=NULL) {
-    fputs(s,logFile);
+    if ( fputs(s,logFile) < 0 )
+    {
+      UserWrite( "ERROR in writing logfile\n" );
+                        #ifdef Debug
+      printf( "ERROR in writing logfile\n" );
+      fflush(logFile);
+                        #endif
+    }
                 #ifdef Debug
     fflush(logFile);
                 #endif
@@ -361,7 +376,12 @@ else
   PRINTDEBUG(ui,1,("%d: %s\n", me,s))
   IFDEBUG(ui,0)
   if (logFile!=NULL) {
-    fputs(s,logFile);
+    if ( fputs(s,logFile) < 0 )
+    {
+      UserWrite( "ERROR in writing logfile\n" );
+      printf( "ERROR in writing logfile\n" );
+      fflush(logFile);
+    }
     fflush(logFile);
   }
   ENDDEBUG
@@ -416,14 +436,31 @@ else
   PRINTDEBUG(ui,1,("%d: %s\n", me,buffer))
   IFDEBUG(ui,0)
   if (logFile!=NULL) {
-    fputs(buffer,logFile);
+    if ( fputs(buffer,logFile) < 0 )
+    {
+      UserWrite( "ERROR in writing logfile\n" );
+      printf( "ERROR in writing logfile\n" );
+    }
     fflush(logFile);
   }
   ENDDEBUG
 }
         #endif
 
-  if (logFile!=NULL) fputs(buffer,logFile);
+  if (logFile!=NULL)
+    if ( fputs(buffer,logFile) < 0 )
+    {
+      UserWrite( "ERROR in writing logfile\n" );
+                        #ifdef Debug
+      printf( "ERROR in writing logfile\n" );
+      fflush(logFile);
+                        #endif
+      va_end(args);
+      return 1;
+    }
+                #ifdef Debug
+  fflush(logFile);
+                #endif
 
   /* garbage collection */
   va_end(args);
