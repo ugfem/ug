@@ -852,7 +852,7 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
 
     #ifndef __EXCHANGE_CONNECTIONS__
         #ifdef DYNAMIC_MEMORY_ALLOCMODEL
-  if (alreadydisposed==0) ;
+  if (alreadydisposed==0)
         #endif
   MGCreateConnection(theMG);
         #endif
@@ -871,7 +871,8 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
         #endif
 
         #ifdef Debug
-  DDD_ConsCheck();
+  if (0)
+    DDD_ConsCheck();
         #endif
 
   return 0;
