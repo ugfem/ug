@@ -14,7 +14,12 @@ fi
 # if one parameter is specified search all ug modules for $1
 if test $# -eq 1
 then
-	find ${UGROOT} \( -path ${UGROOT}/include -prune -o -path ${UGROOT}/doc -prune -o -path ${UGROOT}/man -prune -o -name '*.h' \) -follow -exec egrep $1 {} \; -print
+	find ${UGROOT} \
+			-type d -name include -prune -o \
+			-type d -name doc -prune -o \
+			-type d -name man -prune -o \
+			-name '*.h' \
+			-follow -exec egrep $1 {} \; -print
 fi
 
 # if two parameters are specified search the specific module for $1
