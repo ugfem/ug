@@ -1366,9 +1366,10 @@ void CountOverlap (GRID *g)	// only for testing; TODO: remove
 	printf ("\n");
 }
 
-static void TransferVector( VECTOR *v, DDD_PROC dest_pe, DDD_PRIO dest_prio, int size )
+static void TransferVector( VECTOR *v, DDD_PROC dest_pe )
 {	
-	DDD_XferCopyObjX(PARHDR(v), dest_pe, dest_prio, size);
+	int size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(v));
+	DDD_XferCopyObjX(PARHDR(v), dest_pe, PrioBorder, size);
 	
 #ifndef FAMG_SEND_NODES
 	if( OverlapForLevel0 )
@@ -1381,9 +1382,9 @@ static void TransferVector( VECTOR *v, DDD_PROC dest_pe, DDD_PRIO dest_prio, int
 		if( obj != NULL )
 			if (VOTYPE(v) == NODEVEC)
 			{
-				PRINTDEBUG(dddif,2,(PFMT " TransferVector(): vec= " VINDEX_FMTX" n=" ID_FMTX " Xfer v=" 
+				PRINTDEBUG(dddif,2,(PFMT " TransferVector(): node for vec= " VINDEX_FMTX" n=" ID_FMTX " Xfer v=" 
 					VID_FMTX "\n",me,VINDEX_PRTX(v),ID_PRTX((NODE*)obj),VID_PRTX(MYVERTEX((NODE*)obj))))
-				DDD_XferCopyObj(PARHDR((NODE*)obj), dest_pe, dest_prio);
+				DDD_XferCopyObj(PARHDR((NODE*)obj), dest_pe, PrioBorder);
 			}
 			else
 				assert(0); /* unrecognized vector type; extend code if necessary */	
@@ -1423,34 +1424,16 @@ static int SendToMaster( DDD_OBJ obj)
 		}
 	assert(masterPe!=(DDD_PROC)me);	// a master copy must exist on an other processor
 
+	PRINTDEBUG(np,1,("%d: SendToMaster %d: myself "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(vec)));
+	
 	// It seems to be necessary to send also the vec itself to let new 
 	// connection be constructed from both (vec and its neighbor)
-	PRINTDEBUG(np,1,("%d: SendToMaster %d: myself "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(vec)));
-	size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
-	TransferVector(vec, masterPe, PrioMaster, size);
-	
 	for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
 	{
 		w = MDEST(mat);
-		
-		// search whether w has a copy on masterPe
-		//proclist = DDD_InfoProcList(PARHDR(w)); FEHLER, nicht verschachteln!
-		//found = FALSE;
-		//for( i=0; proclist[i]!=-1; i+=2 )
-		//	if( masterPe == proclist[i] )
-		//	{
-		//		found = TRUE;
-		//		break;
-		//	}
-		
-		//if( !found )	// if it has no copy send w to masterPe
-		//{
-			PRINTDEBUG(np,1,("%d: SendToMaster %d:     -> "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(w)));
-			size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(w));
-			TransferVector(w, masterPe, PrioBorder, size);
-		//}
-		//else
-		//	PRINTDEBUG(np,1,("%d: SendToMaster %d:     is "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(w)));
+
+		PRINTDEBUG(np,1,("%d: SendToMaster %d:     -> "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(w)));
+		TransferVector(w, masterPe);
 	}
 	
 	return 0;
@@ -1509,8 +1492,7 @@ static int SendToOverlap1( DDD_OBJ obj)
 			{
 				w = MDEST(mat);
 				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,dest_pe,VINDEX_PRTX(w)));
-                size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(w));
-				TransferVector(w, dest_pe, PrioBorder, size);
+				TransferVector(w, dest_pe);
 			}
 			
 			break; // check next copy of vec
