@@ -551,7 +551,7 @@ static void ddd_DefineTypes (void)
                  );
 
   /* compute global fields it control word entry */
-  gbits = ~(((1<<NOOFELEM_LEN)-1)<<NOOFELEM_SHIFT);
+  gbits = ~(((1<<NO_OF_ELEM_LEN)-1)<<NO_OF_ELEM_SHIFT);
   PRINTDEBUG(dddif,1,("ddd_DefineTypes(): TypeEdge gbits=%08x size=%d\n",
                       gbits,sizeof(e.links[0].control)));
 
