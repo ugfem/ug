@@ -182,6 +182,7 @@ INT s_dxdy                      (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DE
 INT l_ddot                      (const GRID *g,                                           const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
 INT a_ddot                      (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
 INT s_ddot                      (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const VECDATA_DESC *y, DOUBLE *sp);
+INT s_ddot_sv           (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv);
 
 INT l_mean                      (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *sp);
 
