@@ -768,7 +768,7 @@ static INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **So
   ELEMENT *NonorderedSonList[MAX_SONS];
   NODE *theNode;
 
-  nfound = nmax[0] = 0;
+  nfound = *nmax = 0;
   theRule = RefRules[TAG(theElement)] + REFINE(theElement);
   if (GetAllSons(theElement,NonorderedSonList)) REP_ERR_RETURN(1);
   for (i=0; i<NSONS_OF_RULE(theRule); i++)
@@ -803,7 +803,7 @@ static INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **So
       if (found==CORNERS_OF_TAG(SON_TAG_OF_RULE(theRule,i)))
       {
         SonList[i] = NonorderedSonList[j];
-        nmax[0] = i+1;
+        *nmax = i+1;
         break;
       }
       else
@@ -853,11 +853,17 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
   for (i=0,n=0; i<nmax; i++)
   {
     if (SonList[i]==NULL) continue;
-    GetAllSons(SonList[i],SonSonList);
-    refined = 0;
-    for (j=0; SonSonList[j]!=NULL; j++)
-      if (!EORPHAN(SonSonList[j])) refined = 1;
-    if (REFINE(SonList[i])!=NO_REFINEMENT && refined) sonRefined |= (1<<i);
+
+    /*
+            GetAllSons(SonList[i],SonSonList);
+
+            refined = 0;
+            for (j=0; SonSonList[j]!=NULL; j++)
+                    if (!EORPHAN(SonSonList[j]))	refined = 1;
+            if (REFINE(SonList[i])!=NO_REFINEMENT && refined)		sonRefined |= (1<<i);
+     */
+
+    if (REFINE(SonList[i])!=NO_REFINEMENT) sonRefined |= (1<<i);
     if (MGIO_PARFILE)
     {
       sonex |= (1<<i);
@@ -916,6 +922,43 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
       }
     }
   }
+
+#if (MGIO_DEBUG>0)
+  /* write mykey */
+  refinement->mykey = KeyForObject((KEY_OBJECT *)theElement);
+
+  /* write nbkey[] */
+  for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+    refinement->nbkey[j] = KeyForObject((KEY_OBJECT *)NBELEM(theElement,j));
+
+  n=0;
+
+  refinement->mycorners = CORNERS_OF_ELEM(theElement);
+
+  /* write mycornerkey[], mycornerfatherkey[] and mycornersonkey[] */
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+  {
+    refinement->mycornerkey[n] = KeyForObject((KEY_OBJECT *)CORNER(theElement,i));
+    refinement->mycornerfatherkey[n] = KeyForObject((KEY_OBJECT *)NFATHER(CORNER(theElement,i)));
+    refinement->mycornersonkey[n] = KeyForObject((KEY_OBJECT *)SONNODE(CORNER(theElement,i)));
+    n++;
+  }
+
+  if (MGIO_PARFILE)
+  {
+    for (i=0; i<nmax; i++)
+    {
+      if ((sonex>>i)&1)
+      {                         /* son exists */
+        refinement->sonskey[i] = KeyForObject((KEY_OBJECT *)SonList[i]);
+        for (j=0; j<SIDES_OF_ELEM(SonList[i]); j++)
+          refinement->sonsnbkey[i][j] = KeyForObject((KEY_OBJECT *)NBELEM(SonList[i],j));
+      }
+      else
+        refinement->sonskey[i] = -1;
+    }
+  }
+#endif
 
   return (0);
 }
@@ -1002,7 +1045,7 @@ static INT SetHierRefinement (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMEN
   return (0);
 }
 
-static INT nHierElements (ELEMENT *theElement, INT *n)
+static INT nRefinements (ELEMENT *theElement, INT *n)
 {
   INT i;
   ELEMENT *SonList[MAX_SONS];
@@ -1012,7 +1055,7 @@ static INT nHierElements (ELEMENT *theElement, INT *n)
   if (RemoveOrphanSons(SonList,NULL)) REP_ERR_RETURN(1);
   (*n)++;
   for (i=0; SonList[i]!=NULL; i++)
-    if (nHierElements(SonList[i],n)) REP_ERR_RETURN(1);
+    if (nRefinements(SonList[i],n)) REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -1169,7 +1212,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   MGIO_REFINEMENT *refinement;
   MGIO_BD_GENERAL bd_general;
   MGIO_PARINFO cg_pinfo;
-  INT i,j,k,niv,nbv,nie,nbe,n,nhe,hr_max,mode,level,id,foid,non,tl,saved;
+  INT i,j,k,niv,nbv,nie,nbe,n,nref,hr_max,mode,level,id,foid,non,tl,saved;
   INT RefRuleOffset[TAGS];
   int *vidlist;
   char *p,*f,*s,*l;
@@ -1424,10 +1467,10 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
 
       /* --- */
       cge->ge = TAG(theElement);
-      nhe=0;
-      if (nHierElements (theElement,&nhe)) REP_ERR_RETURN(1);
-      hr_max = MAX(hr_max,nhe);
-      cge->nhe = nhe;
+      nref=0;
+      if (nRefinements (theElement,&nref)) REP_ERR_RETURN(1);
+      hr_max = MAX(hr_max,nref);
+      cge->nref = nref;
       for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
         cge->cornerid[j] = ID(CORNER(theElement,j));
       for (j=0; j<SIDES_OF_ELEM(theElement); j++)
@@ -1442,8 +1485,18 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
             cge->side_on_bnd |= (1<<j);
       cge->subdomain = SUBDOMAIN(theElement);
 
+#if (MGIO_DEBUG>0)
+      /* write debug extension */
+      cge->mykey = KeyForObject((KEY_OBJECT *)theElement);
+      cge->fatherkey = KeyForObject((KEY_OBJECT *)EFATHER(theElement));
+      for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+        cge->nodekey[j] = KeyForObject((KEY_OBJECT *)CORNER(theElement,j));
+      for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+        cge->neighborkey[j] = KeyForObject((KEY_OBJECT *)NBELEM(theElement,j));
+#endif
+
       /* increment counters */
-      i++; id++;                                                                                                        /* id this is the id of theElement, according to RenumberEments (ugm.c) */
+      i++; id++;                                                                                                        /* id this is the id of theElement, according to RenumberElements (ugm.c) */
     }
   if (Write_CG_Elements((int)i,cg_element)) REP_ERR_RETURN(1);
 
@@ -1493,6 +1546,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   if (refinement==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for refinement\n",(int)hr_max*sizeof(MGIO_REFINEMENT)); REP_ERR_RETURN(1);}
   if (procs>1) tl=TOPLEVEL(theMG);
   else tl=0;
+
   id=0;
   for (level=0; level<=tl; level++) {
     theGrid = GRID_ON_LEVEL(theMG,level);
@@ -1500,8 +1554,10 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
          theElement!=NULL; theElement=SUCCE(theElement)) {
       if (!EORPHAN(theElement)) continue;
       assert(id==ID(theElement));
-      if (SetHierRefinement(theGrid,theElement,refinement,RefRuleOffset))
-        REP_ERR_RETURN(1);
+      if (REFINE(theElement)!=NO_REFINEMENT)
+        /* write refinement only if it is neccessary */
+        if(SetHierRefinement(theGrid,theElement,refinement,RefRuleOffset))
+          REP_ERR_RETURN(1);
       id++;
     }
   }
@@ -1837,6 +1893,185 @@ static INT IO_GridCons(MULTIGRID *theMG)
   return(GM_OK);
 }
 
+#if (MGIO_DEBUG>0)
+static INT CheckLocalElementKeys (ELEMENT *theElement, MGIO_REFINEMENT *ref, INT must_exist)
+/* check as many consistencies as possible. Various keys (for neibhbours,
+   sons, ...) are stored in the debug mode and are now compared to the
+   existing objects in the memory.
+   if must_exist == TRUE all sons must exist. */
+{
+  INT i, j, key, nmax;
+  NODE *corner_node;
+  ELEMENT *SonList[MAX_SONS];
+
+  /* check consistency of element key */
+  key = KeyForObject((KEY_OBJECT *)theElement);
+  if (key!=ref->mykey)
+  {
+    printf(PFMT " IO_Loc: element key, element: " EID_FMTX ": exp.key %d does not match\n",me,EID_PRTX(theElement),ref->mykey);
+    assert(0);
+  }
+
+  /* check corners */
+  if (CORNERS_OF_ELEM(theElement)!=ref->mycorners)
+  {
+    printf(PFMT " IO_Loc: number of corners, element: " EID_FMTX ": exp.key %d does not matchas %d corners but expected %dh\n",me,EID_PRTX(theElement),CORNERS_OF_ELEM(theElement),ref->mycorners);
+    assert(0);
+  }
+  for (j=0; j<ref->mycorners; j++)
+  {
+    corner_node = CORNER(theElement,j);
+    if (corner_node!=NULL)
+    {
+      if (ref->mycornerkey[j] != KeyForObject((KEY_OBJECT *)corner_node))
+      {
+        printf(PFMT " IO_Loc: corner relation, element: " EID_FMTX ", corner %d: " ID_FMTX " :exp.key %d does not match\n",
+               me,EID_PRTX(theElement),j,ID_PRTX(corner_node),ref->mycornerkey[j]);
+        assert(0);
+      }
+
+      /* check father corner */
+      if (NFATHER(corner_node)!=NULL)
+      {
+        if ( ref->mycornerfatherkey[j] != KeyForObject((KEY_OBJECT *)NFATHER(corner_node)) )
+        {
+          printf(PFMT " IO_Loc: father corner relation, element: " EID_FMTX ", corner[%d]: " ID_FMTX " fathercorner: " ID_FMTX ":exp.key %d does not match\n",
+                 me,EID_PRTX(theElement),j,ID_PRTX(corner_node),ID_PRTX(NFATHER(corner_node)),ref->mycornerfatherkey[j]);
+          assert(0);
+        }
+      }
+      else
+      {
+        if ( ref->mycornerfatherkey[j]!=-1 )
+        {
+          printf(PFMT " IO_Loc: father corner relation, element: " EID_FMTX " corner %d doesn't exist but key %d expected\n",me,EID_PRTX(theElement),j,ref->mycornerfatherkey[j]);
+          assert(0);
+        }
+      }
+
+      /* check son corner */
+      if (SONNODE(corner_node)!=NULL)
+      {
+        if ( ref->mycornersonkey[j] != KeyForObject((KEY_OBJECT *)SONNODE(corner_node)) )
+        {
+          printf(PFMT " IO_Loc: son corner relation, element: " EID_FMTX ", corner[%d]: " ID_FMTX " soncorner: " ID_FMTX ":exp.key %d does not match\n",
+                 me,EID_PRTX(theElement),j,ID_PRTX(corner_node),ID_PRTX(SONNODE(corner_node)),ref->mycornersonkey[j]);
+          assert(0);
+        }
+      }
+      /* you cannot expect that the sonnodes are already existing
+         else
+         {
+              if ( ref->mycornersonkey[j]!=-1 && must_exist)
+              {
+                      printf(PFMT " IO_Loc: son corner relation, element: " EID_FMTX ", corner[%d] " ID_FMTX ": son corner doesn't exist but key %d expected\n",me,EID_PRTX(theElement),j,ID_PRTX(corner_node),ref->mycornersonkey[j]);
+                      assert(0);
+              }
+         }
+       */
+    }
+    else
+    {
+      if ( ref->mycornerkey[j]!=-1 )
+      {
+        printf(PFMT " IO_Loc: corner relation, element: " EID_FMTX ", corner %d doesn't exist but key %d expected\n",me,EID_PRTX(theElement),j,ref->mycornerkey[j]);
+        assert(0);
+      }
+    }
+
+  }
+
+  /* check nbkey[] */
+  for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+    if (NBELEM(theElement,j)!=NULL)
+    {
+      if ( ref->nbkey[j] != KeyForObject((KEY_OBJECT *)NBELEM(theElement,j)) )
+      {
+        printf(PFMT " IO_Loc: neighbor relation, element: " EID_FMTX ", neighbor[%d]: " EID_FMTX " :exp.key %d does not match\n",
+               me,EID_PRTX(theElement),j,EID_PRTX(NBELEM(theElement,j)),ref->nbkey[j]);
+        assert(0);
+      }
+    }
+  /* you cannot expect that the neighbors are already existing
+          else
+          {
+                  if ( ref->nbkey[j]!=-1 && must_exist )
+                  {
+                          printf(PFMT " IO_Loc: neighbor relation, element: " EID_FMTX ", neighbor %d doesn't exist but key %d expected\n",me,EID_PRTX(theElement),j,ref->mykey);
+                          assert(0);
+                  }
+          }
+   */
+
+  if (MGIO_PARFILE)
+  {
+    NODE *NodeContext[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
+
+    if (GetNodeContext(theElement,NodeContext)) REP_ERR_RETURN(1);
+    if (GetOrderedSons(theElement,NodeContext,SonList,&nmax)) REP_ERR_RETURN(1);
+
+    /* check the sons */
+    for (i; i<nmax; i++)
+    {
+      if ( SonList[i]==NULL )
+      {
+        if (!must_exist)
+          continue;
+
+        if (((1<<i) & ref->sonex)!=0)
+        {
+          printf(PFMT " IO_Loc: sonlist relation, element: " EID_FMTX ", son %d doesn't exist but sonex 0x%x set\n",me,EID_PRTX(theElement),i,ref->sonex);
+          assert(0);
+        }
+        if ( ref->sonskey[i] != -1 )
+        {
+          printf(PFMT " IO_Loc: sonlist relation, element: " EID_FMTX ", son %d doesn't exist but key %d expected\n",me,EID_PRTX(theElement),i,ref->sonskey[i]);
+          assert(0);
+        }
+        continue;
+      }
+
+      if (((1<<i) & ref->sonex)==0)
+      {
+        /* son exists, but is not set in sonex */
+        /* TODO: check whether SonList[i] is really a (orphan) coarse grid element */
+        continue;
+      }
+
+
+      /* check consistency of son element key */
+      key = KeyForObject((KEY_OBJECT *)SonList[i]);
+      if (key!=ref->sonskey[i])
+      {
+        printf(PFMT " IO_Loc: son element key, element: " EID_FMTX ", son[%d] " EID_FMTX ": exp.key %d does not match\n",me,EID_PRTX(theElement),i,EID_PRTX(SonList[i]),ref->sonskey[i]);
+        assert(0);
+      }
+
+      for (j=0; j<SIDES_OF_ELEM(SonList[i]); j++)
+        if (NBELEM(SonList[i],j)!=NULL)
+        {
+          key = KeyForObject((KEY_OBJECT *)NBELEM(SonList[i],j));
+          if (key!=ref->sonsnbkey[i][j])
+          {
+            printf(PFMT " IO_Loc: son neighbor element key, element: " EID_FMTX ", son[%d] " EID_FMTX ", neighbor[%d] " EID_FMTX ": exp.key %d does not match\n",
+                   me,EID_PRTX(theElement),i,EID_PRTX(SonList[i]),j,EID_PRTX(NBELEM(SonList[i],j)),ref->sonsnbkey[i][j]);
+            assert(0);
+          }
+        }
+      /* you cannot expect that the son neighbors are already existing */
+    }
+  }
+
+  return (0);
+}
+#else
+static INT CheckLocalElementKeys (ELEMENT *el, MGIO_REFINEMENT *ref, INT must_exist)
+{
+  return (0);
+}
+#endif
+
+
 static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT *ref, int *RefRuleOffset)
 {
   INT i,j,k,r_index,nedge,type,sonRefined,n0,n1,Sons_of_Side,SonSides[MAX_SONS],offset;
@@ -1850,13 +2085,17 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   MGIO_RR_RULE *theRule;
   struct mgio_sondata *SonData;
   INT nbside,nex;
-
+#if (MGIO_DEBUG>0)
+  MGIO_REFINEMENT ref_copy;
+#endif
 
   /* read refinement */
   if (Read_Refinement(ref,rr_rules)) REP_ERR_RETURN(1);
+#if (MGIO_DEBUG>0)
+  ref_copy = *ref;      /* copy the read ref. into local buffer for subsequent checks */
+#endif
 
   /*PRINTDEBUG(gm,0,(PFMT "InsertLocalTree(): level=%d elem=" EID_FMTX " REFINECLASS %d\n",me,LEVEL(theGrid),EID_PRTX(theElement),ref->refclass));*/
-
 
   /* init */
   if (ref->refrule==-1) REP_ERR_RETURN(1);
@@ -2114,11 +2353,23 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
           }
       }
 
+#if (MGIO_DEBUG>0)
+  if (CheckLocalElementKeys(theElement, &ref_copy, FALSE)==0)
+  {
+    PRINTDEBUG(gm,4,("InsertLocalTree: preliminary CheckLocalElementKeys ok.\n"));
+  }
+  else
+  {
+    PrintErrorMessage('E',"InsertLocalTree","preliminary CheckLocalElementKeys failed\n");
+  }
+#endif
+
   /* jump to the sons ? */
   sonRefined = ref->sonref;
 
-  /* call recoursively */
+  /* call recursively */
   for (i=0; i<theRule->nsons; i++)
+  {
     if (sonRefined & (1<<i))
     {
       if (InsertLocalTree (upGrid,theSonList[i],ref,RefRuleOffset)) REP_ERR_RETURN(1);
@@ -2128,8 +2379,127 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
       SETREFINE(theSonList[i],NO_REFINEMENT);
     }
 
+#if (MGIO_DEBUG>0)
+    if (CheckLocalElementKeys(theElement, &ref_copy, TRUE)==0)
+    {
+      PRINTDEBUG(gm,4,("InsertLocalTree: after son %d intermediate CheckLocalElementKeys ok.\n",i));
+    }
+    else
+    {
+      PrintErrorMessage('E',"InsertLocalTree","intermediate CheckLocalElementKeys failed\n");
+    }
+#endif
+  }
+
+#if (MGIO_DEBUG>0)
+  if (CheckLocalElementKeys(theElement, &ref_copy, TRUE)==0)
+  {
+    PRINTDEBUG(gm,4,("InsertLocalTree: final CheckLocalElementKeys ok.\n"));
+  }
+  else
+  {
+    PrintErrorMessage('E',"InsertLocalTree","final CheckLocalElementKeys failed\n");
+  }
+#endif
+
   return (0);
 }
+
+static INT Gather_EClasses (DDD_OBJ obj, void *data)
+{
+  ELEMENT *p;
+  char *d;
+
+  p  = (ELEMENT *)obj;
+  d  = (char *)data;
+  *d = ECLASS(p);
+}
+
+static INT Scatter_EClasses(DDD_OBJ obj, void *data)
+{
+  ELEMENT *p;
+  char *d;
+
+  p = (ELEMENT *)obj;
+  d = (char *)data;
+  SETECLASS(p,*d);
+}
+
+void CommunicateEClasses (MULTIGRID *theMG)
+{
+  DDD_IFOneway(ElementVHIF,IF_FORWARD,sizeof(char),
+               Gather_EClasses, Scatter_EClasses);
+  return;
+}
+
+#if (MGIO_DEBUG>0)
+static INT CheckCGKeys (INT ne, ELEMENT** eid_e, MGIO_CG_ELEMENT *cg_elem)
+{
+  INT i,j,key;
+  MGIO_CG_ELEMENT *cge;
+  ELEMENT *theElement;
+
+  for (i=0; i<ne; i++)
+  {
+    cge = MGIO_CG_ELEMENT_PS(cg_elem,i);
+    theElement = eid_e[i];
+
+    /* check consistency of keys */
+    key = KeyForObject((KEY_OBJECT *)theElement);
+    if (key!=-1 && key!=cge->mykey)
+    {
+      printf(PFMT " IO_CG: element key, element: " EID_FMTX ": exp.key %d does not match\n",me,EID_PRTX(theElement),cge->mykey);
+      assert(0);
+    }
+
+    key = KeyForObject((KEY_OBJECT *)EFATHER(theElement));
+    if (key!=-1 && key!=cge->fatherkey)
+    {
+      if (EFATHER(theElement)==NULL)
+        printf(PFMT " IO_CG: father relation, element: " EID_FMTX ", father --- : exp.key %d does not match\n",
+               me,EID_PRTX(theElement),cge->fatherkey);
+      else
+        printf(PFMT " IO_CG: father relation, element: " EID_FMTX ", father: " EID_FMTX " :exp.key %d does not match\n",
+               me,EID_PRTX(theElement),EID_PRTX(EFATHER(theElement)),cge->fatherkey);
+
+      assert(0);
+    }
+
+    for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+    {
+      key = KeyForObject((KEY_OBJECT *)CORNER(theElement,j));
+      if (key!=-1 && key!=cge->nodekey[j])
+      {
+        printf(PFMT " IO_CG: corner relation, element: " EID_FMTX ", corner[%d]: " ID_FMTX " :exp.key %d does not match\n",
+               me,EID_PRTX(theElement),j,ID_PRTX(CORNER(theElement,j)),cge->nodekey[j]);
+        assert(0);
+      }
+    }
+
+    for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+    {
+      key = KeyForObject((KEY_OBJECT *)NBELEM(theElement,j));
+      if (key!=-1 && key!=cge->neighborkey[j])
+      {
+        if (NBELEM(theElement,j)!=NULL)
+          printf(PFMT " IO_CG: neighbor relation, element: " EID_FMTX ", neighbor[%d]: " EID_FMTX " :exp.key %d does not match\n",
+                 me,EID_PRTX(theElement),j,EID_PRTX(NBELEM(theElement,j)),cge->neighborkey[j]);
+        else
+          printf(PFMT " IO_CG: neighbor relation, element: " EID_FMTX ", neighbor[%d]: --- :exp.key %d does not match\n",
+                 me,EID_PRTX(theElement),j,cge->neighborkey[j]);
+        assert(0);
+      }
+    }
+  }
+
+  return (0);
+}
+#else
+static INT CheckCGKeys ()
+{
+  return (0);
+}
+#endif
 
 MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize, INT force, INT optimizedIE, INT autosave)
 {
@@ -2637,6 +3007,15 @@ nparfiles = UG_GlobalMinINT(nparfiles);
       eid_e[ID(theElement)] = theElement;
     }
 
+  if (CheckCGKeys(cg_general.nElement, eid_e, cg_element)==0)
+  {
+    PRINTDEBUG(gm,4,("CheckCGKeys ok.\n"));
+  }
+  else
+  {
+    PrintErrorMessage('E',"LoadMultiGrid","CheckCGKeys failed\n");
+  }
+
   /* read hierarchical elements */
   refinement = (MGIO_REFINEMENT*)malloc(MGIO_REFINEMENT_SIZE);
   if (refinement==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for refinement\n",(int)MGIO_REFINEMENT_SIZE); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
@@ -2651,15 +3030,17 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     theElement = eid_e[j];
     theGrid = GRID_ON_LEVEL(theMG,LEVEL(theElement));
     cge = MGIO_CG_ELEMENT_PS(cg_element,j);
-    if (cge->nhe==0)
+    if (cge->nref==0)
     {
       SETREFINE(theElement,NO_REFINEMENT);
       SETREFINECLASS(theElement,NO_CLASS);
       SETMARK(theElement,NO_REFINEMENT);
       SETMARKCLASS(theElement,NO_CLASS);
       if (LEVEL(theElement)==0) SETECLASS(theElement,RED_CLASS);
-#ifndef Debug
-      else assert(0);
+#ifdef ModelP
+      else assert(EGHOST(theElement));                          /* masters elements must have a father or be on level 0 */
+#else
+      else assert(0);                           /* all orphans must be on level 0 in sequential mode */
 #endif
       continue;
     }
@@ -2671,7 +3052,10 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
   /* repair inconsistencies */
   if (MGIO_PARFILE)
+  {
+    CommunicateEClasses(theMG);
     if (IO_GridCons(theMG)) return(NULL);
+  }
 
   /* postprocess */
   for (i=0; i<TOPLEVEL(theMG); i++)
