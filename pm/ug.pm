@@ -183,7 +183,7 @@ sub ug
 			$argv{'n'}>0 or die "ERROR: nb of processors out of range\n"; 
 			$argv{'x'}==0 || $argv{'x'}==1 or die "ERROR: wrong specification of 'x'-option\n";
             @name=split /\//,$argv{'p'}; $appl=$name[@name-1];
-			if ($argv{'x'}==1) { $ui="-ui cn"; } else { $ui="-ui cn"; }
+			if ($argv{'x'}==1) { $ui="-ui c"; } else { $ui="-ui cn"; }
 
 			# determine appl-mode
 			$model=`strings $argv{'p'} | grep 'Model:'`;
