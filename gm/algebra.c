@@ -1145,6 +1145,7 @@ INT DisposeConnection (GRID *theGrid, CONNECTION *theConnection)
 INT DisposeDoubledSideVector (GRID *theGrid, ELEMENT *Elem0, INT Side0, ELEMENT *Elem1, INT Side1)
 {
   VECTOR *Vector0, *Vector1;
+  int vc0,vc1;
 
   if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
   {
@@ -1153,6 +1154,8 @@ INT DisposeDoubledSideVector (GRID *theGrid, ELEMENT *Elem0, INT Side0, ELEMENT 
     Vector1 = SVECTOR(Elem1,Side1);
     if (Vector0 == Vector1)
       return (0);
+    vc0=VCOUNT(Vector0);
+    vc1=VCOUNT(Vector1);
     assert(VCOUNT(Vector0)==1 && VCOUNT(Vector1)==1);
     assert(VSTART(Vector0)==NULL || VSTART(Vector1)==NULL);
     if (VSTART(Vector0)==NULL)
