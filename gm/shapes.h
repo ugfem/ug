@@ -487,15 +487,6 @@
 
 #endif
 
-#ifdef __TWODIM__
-#define GlobalToLocal2d(n,c,e,l)	 GlobalToLocal (n,c,e,l)
-#define LocalToGlobal2d(n,c,e,l)	 LocalToGlobal (n,c,e,l)
-#endif
-#ifdef __THREEDIM__
-#define GlobalToLocal3d(n,c,e,l)	 GlobalToLocal (n,c,e,l)
-#define LocalToGlobal3d(n,c,e,l)	 LocalToGlobal (n,c,e,l)
-#endif
-
 /****************************************************************************/
 /*																			*/
 /* data structures exported by the corresponding source file				*/
@@ -518,6 +509,7 @@ DOUBLE 		GN 		(INT n, INT i, COORD *ip_local);
 INT 		GNs 	(INT n, COORD *ip_local, DOUBLE *result);
 INT 		D_GN 	(INT n, INT i, COORD *ip_local, DOUBLE *derivative);
 COORD 	   *LMP 	(INT n);
+INT 	    GlobalToLocal   (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);
 
 INT LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *result);
 /*****************************************************************************
@@ -599,13 +591,9 @@ INT 	Derivatives 	(INT n, const DOUBLE *px, const DOUBLE *py, DOUBLE ips, DOUBLE
 INT		Gradients		(INT n, const COORD **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_VECTOR Gradient[MAX_CORNERS_OF_ELEM], DOUBLE *DetJ);
 
 INT		L2GDerivative2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint, COORD *Derivative);
-INT		LocalToGlobal2d	(INT n, const COORD **Corners, const COORD *EvalPoint, COORD *GlobalCoord);
-INT 	GlobalToLocal2d (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);
 #endif
 
 #ifdef __THREEDIM__						 
-INT		LocalToGlobal3d	(INT n, const COORD **Corners, const COORD *EvalPoint, COORD *GlobalCoord);
-INT     GlobalToLocal3d     (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);
 INT GetSkewedUIP (const COORD_VECTOR *theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], const DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
 DOUBLE  N                   (const INT i, const COORD *LocalCoord);
 INT     TetraDerivative     (ELEMENT *theElement, const COORD **theCorners, COORD_VECTOR theGradient[MAX_CORNERS_OF_ELEM]);
