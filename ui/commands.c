@@ -656,7 +656,7 @@ static INT ReadClockCommand (INT argc, char **argv)
 
   NO_OPTION_CHECK(argc,argv);
 
-  Time = CURRENT_TIME - Time0;
+  Time = CURRENT_TIME_LONG - Time0;
 
   if (SetStringValue(":CLOCK",Time)!=0) {
     PrintErrorMessage('E',"readclock",
@@ -689,7 +689,7 @@ static INT ResetClockCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
 
-  Time0 = CURRENT_TIME;
+  Time0 = CURRENT_TIME_LONG;
 
   return (OKCODE);
 }
@@ -717,7 +717,7 @@ static INT ResetClockCommand (INT argc, char **argv)
 
 static INT InitClock(void)
 {
-  Time0 = CURRENT_TIME;
+  Time0 = CURRENT_TIME_LONG;
 
   return(0);
 }
