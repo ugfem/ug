@@ -122,6 +122,8 @@ ifdef: $(MODEL_TARGET)_clean
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
 	cd low; make -f Makefile.low extract; cd ..;
+	cd dev; make -f Makefile.dev extract; cd ..;
+	cd dom; make -f Makefile.dom extract; cd ..;
 	cd gm; make -f Makefile.gm extract; cd ..;
 	cd np; make -f Makefile.np extract; cd ..;
 	cd graphics; make -f Makefile.graphics extract; cd ..;
@@ -129,6 +131,8 @@ extract:
 
 xmc:
 	cd low; make -f Makefile.low xmc; cd ..;
+	cd dev; make -f Makefile.dev xmc; cd ..;
+	cd dom; make -f Makefile.dom xmc; cd ..;
 	cd gm; make -f Makefile.gm xmc; cd ..;
 	cd np; make -f Makefile.np xmc; cd ..;
 	cd graphics; make -f Makefile.graphics xmc; cd ..;
