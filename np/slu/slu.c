@@ -215,7 +215,7 @@ void *superlu_malloc (int);
 /*																			*/
 /****************************************************************************/
 
-int ReadMatrix (SuperMatrix *A, GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *J)
+static int ReadMatrix (SuperMatrix *A, GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *J)
 {
   INT i,j,n,rindex,rtype,rcomp,nnz,ctype,ccomp,cindex;
   SHORT *comp;
