@@ -455,11 +455,13 @@ static INT SetRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, INT 
   NODE *theNode;
   INT i,j,n;
   int sonRefined;
+  ELEMENT *SonList[MAX_SONS];
 
   if (REFINE(theElement)==NO_REFINEMENT) return (1);
   refinement->refrule = REFINE(theElement) + RefRuleOffset[TAG(theElement)];
   theRule = RefRules[TAG(theElement)] + REFINE(theElement);
   refinement->refclass = ECLASS(SON(theElement,0));
+  GetSons(theElement,SonList);
 
   /* store new corner ids */
   for (i=0,n=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -474,7 +476,7 @@ static INT SetRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, INT 
     if (i<=EDGES_OF_ELEM(theElement)) j=i;
     else j=CENTER_NODE_INDEX(theElement);
     if (theRule->pattern[j]!=1) continue;
-    theNode = CORNER(SON(theElement,theRule->sonandnode[j][0]),theRule->sonandnode[j][1]);
+    theNode = CORNER(SonList[theRule->sonandnode[j][0]],theRule->sonandnode[j][1]);
     if (theNode==NULL) return (1);
     refinement->newcornerid[n++] = ID(theNode);
   }
@@ -482,8 +484,8 @@ static INT SetRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, INT 
 
   /* sons are refined ? */
   sonRefined=0;
-  for (i=0,n=0; i<NSONS(theElement); i++)
-    if (REFINE(SON(theElement,i))!=NO_REFINEMENT)
+  for (i=0; SonList[i]!=NULL; i++)
+    if (REFINE(SonList[i])!=NO_REFINEMENT)
       sonRefined |= (1<<i);
   refinement->sonref = sonRefined;
 
@@ -496,7 +498,7 @@ static INT SetRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, INT 
 static INT SetHierRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, INT *RefRuleOffset)
 {
   INT i;
-  ELEMENT *theSon;
+  ELEMENT *SonList[MAX_SONS];
   static MGIO_REFINEMENT *actualPosition;
 
   if (refinement!=NULL) actualPosition = refinement;
@@ -504,11 +506,11 @@ static INT SetHierRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, 
   if (REFINE(theElement)==NO_REFINEMENT) return (1);
   if (SetRefinement (theElement,actualPosition,RefRuleOffset)) return (1);
   actualPosition++;
-  for (i=0; i<NSONS(theElement); i++)
+  GetSons(theElement,SonList);
+  for (i=0; SonList[i]!=NULL; i++)
   {
-    theSon = SON(theElement,i);
-    if (REFINE(theSon)==NO_REFINEMENT) continue;
-    if (SetHierRefinement(theSon,NULL,RefRuleOffset)) return (1);
+    if (REFINE(SonList[i])==NO_REFINEMENT) continue;
+    if (SetHierRefinement(SonList[i],NULL,RefRuleOffset)) return (1);
   }
 
   return (0);
@@ -517,15 +519,15 @@ static INT SetHierRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, 
 static INT nHierElements (ELEMENT *theElement, INT *n)
 {
   INT i;
-  ELEMENT *theSon;
+  ELEMENT *SonList[MAX_SONS];
 
   if (REFINE(theElement)==NO_REFINEMENT) return (0);
   (*n)++;
-  for (i=0; i<NSONS(theElement); i++)
+  GetSons(theElement,SonList);
+  for (i=0; SonList[i]!=NULL; i++)
   {
-    theSon = SON(theElement,i);
-    if (REFINE(theSon)!=NO_REFINEMENT)
-      if (nHierElements(theSon,n)) return (1);
+    if (REFINE(SonList[i])!=NO_REFINEMENT)
+      if (nHierElements(SonList[i],n)) return (1);
   }
 
   return (0);
@@ -957,7 +959,7 @@ static INT IO_Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_
   theRule = rr_rules + REFINE(theElement);
 
 #ifdef __TWODIM__
-  for (i=0; i<NSONS(theElement); i++) SonList[i] = SON(theElement,i);
+  GetSons (theElement,SonList);
 #endif
 #ifdef __THREEDIM__
   if (IO_GetSons(theElement,SonList) != GM_OK) RETURN(GM_FATAL);
