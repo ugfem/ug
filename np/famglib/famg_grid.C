@@ -1996,7 +1996,10 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 				if( mat==NULL )
 				{
 					continue; // this parent node is not on this processor
-					// is skippping OK  ?????????
+					// The missing node must be out of core partition and out of
+					// overlap 2 (otherwise it would be present).
+					// Skipping it is ok since the solution process requires values only
+					// in the core partition and in overlap of depth 1. 
 				}
 
 				assert( pos<FAMGMAXPARENTS );
