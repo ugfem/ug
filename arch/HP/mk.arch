@@ -9,6 +9,7 @@ ARCH_TYPE     = __HP__
 ARCH_MAKE     = make
 ARCH_CC       = /opt/ansic/bin/cc
 ARCH_C++      = CC
+ARCH_F77      = f77
 ARCH_LINK     = cc
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
@@ -20,6 +21,7 @@ ARCH_PLIBS    = /usr/lib/libV3.a
 ARCH_CFLAGS   = -Aa +w2 -D_HPUX_SOURCE -g -z # +O2 +Onolimit 
 ARCH_C++FLAGS = -y -Aa -g -z
 ARCH_LFLAGS   = -z /opt/langtools/lib/end.o 
+ARCH_FFLAGS   = 
 ARCH_ARFLAGS  = ru
 
 ARCH_XINCLUDES = -I/usr/contrib/X11R5/include   
