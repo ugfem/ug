@@ -3444,7 +3444,7 @@ INT BNDS_Dispose (HEAP *Heap, BNDS *theBndS)
 
 /* the following interface functions are not available in std_domain.c */
 
-INT BVP_Save (BVP *theBVP, char *name, INT argc, char **argv)
+INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv)
 {
   UserWrite("ERROR: std domain cannot be saved\n");
   return (1);
