@@ -913,26 +913,16 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT
  */
 /****************************************************************************/
 
-NODE *GetSideNode (ELEMENT *theElement, INT side)
+static NODE *GetSideNodeX (ELEMENT *theElement, INT side, INT n,
+                           NODE **MidNodes)
 {
   ELEMENT *theFather;
   NODE *theNode;
-  NODE *MidNodes[MAX_EDGES_OF_SIDE];
   VERTEX *theVertex;
   LINK *theLink0,*theLink1,*theLink2,*theLink3;
   DOUBLE fac,*local;
-  INT i,n,m;
+  INT i,m;
 
-  m = EDGES_OF_SIDE(theElement,side);
-  n = 0;
-  for (i=0; i<m; i++) {
-    theNode = GetMidNode(theElement,EDGE_OF_SIDE(theElement,side,i));
-    if (theNode != NULL)
-      MidNodes[n++] = theNode;
-                #ifndef ModelP
-    else return(NULL);
-                #endif
-  }
   if (n == 4) {
     for (theLink0=START(MidNodes[0]); theLink0!=NULL;
          theLink0=NEXT(theLink0)) {
@@ -953,10 +943,20 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
               continue;
             theVertex = MYVERTEX(theNode);
             theFather = VFATHER(theVertex);
-            if (theFather == theElement)
+            if (theFather == theElement) {
+                        #ifndef ModelP
+              /* HEAPFAULT in theFather possible,
+                 if in a previous call of DisposeElement
+                 some son is not reached by GetAllSons */
               assert(ONSIDE(theVertex) == side);
-            else if (theFather == NBELEM(theElement,side))
+                        #endif
+              SETONSIDE(theVertex,side);
+              return(theNode);
+            }
+            else if (theFather == NBELEM(theElement,side)) {
               SETONNBSIDE(theVertex,side);
+              return(theNode);
+            }
             else if (theFather == NULL) {
               VFATHER(theVertex) = theElement;
               SETONSIDE(theVertex,side);
@@ -971,9 +971,15 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
                                                   CORNER_OF_SIDE(theElement,side,i)),
                               local);
               }
+              return(theNode);
             }
+                        #ifndef ModelP
+            /* HEAPFAULT in theFather possible,
+               if in a previous call of DisposeElement
+               some son is not reached by GetAllSons */
             else
               assert(0);
+                        #endif
             return(theNode);
           }
         }
@@ -999,14 +1005,25 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
           if (theFather == theElement) {
             if (ONSIDE(theVertex) == side)
               return(theNode);
+                        #ifdef ModelP
+            SETONSIDE(theVertex,side);
+            return(theNode);
+                        #endif
           }
-          else if (theFather == NBELEM(theElement,side)) {
-            int nbside = SideOfNbElement(theElement,side);
+          else if (theFather == NBELEM(theElement,side))
+          {
+            INT nbside = SideOfNbElement(theElement,side);
             if (nbside==ONSIDE(theVertex))
             {
               SETONNBSIDE(theVertex,side);
               return(theNode);
             }
+                        #ifdef ModelP
+            VFATHER(theVertex) = theElement;
+            SETONSIDE(theVertex,side);
+            SETONNBSIDE(theVertex,nbside);
+            return(theNode);
+                        #endif
           }
           else if (theFather == NULL) {
             VFATHER(theVertex) = theElement;
@@ -1024,6 +1041,11 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
             }
             return(theNode);
           }
+                    #ifdef ModelP
+          else {
+            return(theNode);
+          }
+                    #endif
         }
       }
     }
@@ -1044,28 +1066,13 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
         if (theFather == theElement) {
           if (ONSIDE(theVertex) == side)
             return(theNode);
+          SETONSIDE(theVertex,side);
+          return(theNode);
         }
         else if (theFather == NBELEM(theElement,side)) {
           SETONNBSIDE(theVertex,side);
           return(theNode);
         }
-      }
-    }
-  }
-  else if (n == 1) {
-    for (theLink0=START(MidNodes[0]); theLink0!=NULL;
-         theLink0=NEXT(theLink0)) {
-      theNode = NBNODE(theLink0);
-      if (NTYPE(theNode) != SIDE_NODE)
-        continue;
-      theVertex = MYVERTEX(theNode);
-      theFather = VFATHER(theVertex);
-      if (theFather == theElement) {
-        if (ONSIDE(theVertex) == side)
-          return(theNode);
-      }
-      else if (theFather == NBELEM(theElement,side)) {
-        SETONNBSIDE(theVertex,side);
         return(theNode);
       }
     }
@@ -1073,6 +1080,71 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
     #endif
 
   return(NULL);
+}
+
+NODE *GetSideNode (ELEMENT *theElement, INT side)
+{
+  ELEMENT *theFather;
+  NODE *theNode;
+  NODE *MidNodes[MAX_EDGES_OF_SIDE];
+  VERTEX *theVertex;
+  LINK *theLink0,*theLink1,*theLink2,*theLink3;
+  DOUBLE fac,*local;
+  INT i,k,n;
+
+  n = 0;
+  for (i=0; i<EDGES_OF_SIDE(theElement,side); i++) {
+    theNode = GetMidNode(theElement,EDGE_OF_SIDE(theElement,side,i));
+    if (theNode != NULL)
+      MidNodes[n++] = theNode;
+                #ifndef ModelP
+    else return(NULL);
+                #endif
+  }
+  PRINTDEBUG(gm,2,(PFMT " GetSideNode(): elem=" EID_FMTX
+                   " side=%d nb. of midnodes=%d\n",
+                   me,EID_PRTX(theElement),side,n));
+  theNode = GetSideNodeX(theElement,side,n,MidNodes);
+    #ifdef ModelP
+  if (theNode != NULL)
+    return(theNode);
+  if (n < 3)
+    return(NULL);
+  for (i=0; i<n; i++)
+  {
+    NODE *MidNodes1[MAX_EDGES_OF_SIDE-1];
+    INT j,m;
+
+    m = 0;
+    for (j=0; j<n; j++) {
+      if (i == j) continue;
+      MidNodes1[m++] = MidNodes[j];
+    }
+    theNode = GetSideNodeX(theElement,side,n-1,MidNodes1);
+    if (theNode != NULL)
+      return(theNode);
+  }
+  if (n < 4)
+    return(NULL);
+  for (i=1; i<n; i++)
+    for (k=0; k<i; k++)
+    {
+      NODE *MidNodes1[MAX_EDGES_OF_SIDE-2];
+      INT j,m;
+
+      m = 0;
+      for (j=0; j<n; j++) {
+        if (i == j) continue;
+        if (k == j) continue;
+        MidNodes1[m++] = MidNodes[j];
+      }
+      theNode = GetSideNodeX(theElement,side,n-2,MidNodes1);
+      if (theNode != NULL)
+        return(theNode);
+    }
+    #endif
+
+  return(theNode);
 }
 
 /****************************************************************************/
@@ -2156,7 +2228,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
 
   /* create edges */
   for (i=0; i<EDGES_OF_ELEM(pe); i++)
-    if (CreateEdge (theGrid,pe,i,FALSE) == NULL) {
+    if (CreateEdge (theGrid,pe,i,with_vector) == NULL) {
       DisposeElement(theGrid,pe,TRUE);
       return(NULL);
     }
@@ -3393,47 +3465,29 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
     {
       if (NTYPE(theNode)==MID_NODE)
       {
-        theVertex = MYVERTEX(theNode);
-
-        /* in serial case VFATHER pointer must always be present  */
-        /* in parallel case only this MIDNODE pointer of          */
-        /* edges have to be searched over EFATHER pointer,        */
-        /* since VFATHER pointer can be NULL                      */
-        /* overall MIDNODE pointer may be already NULL for ghosts */
-#ifdef ModelP
-        /* TODO: delete this */
-        if (0)
+        if (NFATHER(theNode)!=NULL)
+        {
+          MIDNODE((EDGE *)NFATHER(theNode)) = NULL;
+        }
+                #ifndef ModelP
+        /* HEAPFAULT in theFather possible, if in a previous call
+           some son is not reached by GetAllSons */
+        else
+        {
+          theVertex = MYVERTEX(theNode);
+          theFather = VFATHER(theVertex);
           if (theFather != NULL)
           {
-            INT i;
-
-            for (i=0; i<EDGES_OF_ELEM(theFather); i++)
-            {
-              theEdge = GetEdge(CORNER(theFather,
-                                       CORNER_OF_EDGE(theFather,i,0)),
-                                CORNER(theFather,
-                                       CORNER_OF_EDGE(theFather,i,1)));
-              ASSERT(theEdge!=NULL);
-
-              if (MIDNODE(theEdge) == theNode)
-              {
-                MIDNODE(theEdge) = NULL;
-                break;
-              }
-            }
-            ASSERT(i<EDGES_OF_ELEM(theFather) ||
-                   EGHOST(theElement));
+            INT edge = ONEDGE(theVertex);
+            theEdge = GetEdge(CORNER(theFather,
+                                     CORNER_OF_EDGE(theFather,edge,0)),
+                              CORNER(theFather,
+                                     CORNER_OF_EDGE(theFather,edge,1)));
+            ASSERT(theEdge!=NULL);
+            MIDNODE(theEdge) = NULL;
           }
-#else
-        theFather = VFATHER(theVertex);
-        edge = ONEDGE(theVertex);
-        theEdge = GetEdge(CORNER(theFather,
-                                 CORNER_OF_EDGE(theFather,edge,0)),
-                          CORNER(theFather,
-                                 CORNER_OF_EDGE(theFather,edge,1)));
-        ASSERT(theEdge!=NULL);
-        MIDNODE(theEdge) = NULL;
-#endif
+        }
+                #endif
       }
       DisposeNode(theGrid,theNode);
     }
