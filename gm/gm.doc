@@ -139,9 +139,9 @@ Graphical representation of the data structure with references.
 
 D*/
 
-/*D
+/*! \struct domain
 
-DOMAIN - Data type describing a domain.
+ \brief Data type describing a domain.
 
 STRUCTURES:
 
@@ -307,10 +307,10 @@ SEE ALSO:
 
 'BOUNDARY_SEGMENT', 'CreateDomain', 'CreateBoundarySegment2D', 'CreateBoundarySegment'.
 
-D*/
+*/
 
 
-/*D
+/*! \struct boundary_segment
 BOUNDARY_SEGMENT - Data structure defining part of the boundary of a domain
 
 STRUCTURES:
@@ -453,8 +453,9 @@ Boundary segments in 3D.
 .ce
 D*/
 
-/*D
-PROBLEM - Data type describing a problem.
+/*! \struct problem
+
+ \brief Data type describing a problem.
 
 STRUCTURES:
 
@@ -575,7 +576,7 @@ For a detailed example see the 'diff2d' and 'cd3d' description.
 SEE ALSO:
 'BOUNDARY_CONDITION', 'CreateProblem', 'CreateBoundaryCondition'.
 
-D*/
+*/
 
 /*D
 BOUNDARY_CONDITION - Data type defining a boundary condition.
@@ -640,37 +641,9 @@ SEE ALSO:
 
 D*/
 
-/*D
-FORMAT - Data type that describes parameters of the UG data structure
+/*! \struct format
 
-STRUCTURES:
-
-.vb
-typedef INT (*ConversionProcPtr) (void *, const char *, char *);
-
-struct format {
-
-    // fields for enironment variable
-    ENVDIR d;
-
-    // variables of format
-    INT sVertex;                        // size of vertex user data struc. in bytes 
-    INT sMultiGrid;                     // size of mg user data structure in bytes 
-    INT VectorSizes[MAXVECTORS];        // number of doubles in vectors          
-    INT MatrixSizes[MAXMATRICES];       // number of doubles in matrices     
-    INT ConnectionDepth[MAXMATRICES];   // depth of connection for matrices   
-    INT MaxConnectionDepth;             // maximal connection depth    
-    INT NeighborhoodDepth;              // geometrical depth corresponding  
-                                        // algebraic con with depth 1    
-    ConversionProcPtr PrintVertex;      // print user data to string  
-    ConversionProcPtr PrintGrid;
-    ConversionProcPtr PrintMultigrid;
-    ConversionProcPtr PrintVector[MAXVECTORS];
-    ConversionProcPtr PrintMatrix[MAXVECTORS][MAXVECTORS];
-} ;
-.ve
-
-DESCRIPTION:
+ * \brief Data type that describes parameters of the UG data structure
 
 The 'FORMAT' data type is used to describe parameters of the UG data structure.
 Several different formats can be defined at initialization time or later. Which format
@@ -830,11 +803,9 @@ INT InitFullScalarFormat (void)
 }
 .ve
 
-SEE ALSO: 
- 
-'CreateFormat'
+@sa 'CreateFormat'
 
-D*/
+*/
 
 /*D
 VERTEX - Data type storing level-independent node information
@@ -1371,8 +1342,9 @@ SEE ALSO:
 D*/
 
 
-/*D
-ELEMENT - Data type representing an element in the mesh
+/*! struct element
+
+ \brief Data type representing an element in the mesh
 
 STRUCTURES:
 
@@ -1748,33 +1720,12 @@ SEE ALSO:
 
 'ELEMENT SIDE', 'NODE', 'VECTOR'.
 
-D*/
+*/
 
-/*D
-VECTOR - Data type for unknowns in sparse matrix structure
+/*! \struct vector
 
-STRUCTURES:
-.vb
-struct vector {
-    unsigned INT control;       // object identification, various flags 
-    union geom_object *object;  // associated object                    
-    
-    struct vector *pred,*succ;  // double linked list of vectors        
-    
-    unsigned INT index;         // ordering of unknowns                 
-    unsigned INT skip;          // used bitwise to skip unknowns        
-    struct matrix *start;       // implements matrix                    
-    
-	BV_DESC block_descr;		// membership to the blockvector levels
-	
-    // user data 
-    DOUBLE value[1];            // array of doubles                     
-};
+ \brief Data type for unknowns in sparse matrix structure
 
-typedef struct vector VECTOR;
-.ve
-
-DESCRIPTION:
 
 The 'VECTOR' data type is part of the sparse matrix vector data structure.
 A 'VECTOR' stores a user definable number of 'DOUBLE' values (see 'FORMAT') and
@@ -1976,32 +1927,12 @@ SETVCNEW (VECTOR *v, INT n);                  connection in refinement
 -----------------------------------------------------------------------------
 .ve
 
-SEE ALSO:
+\sa MATRIX, NODE, EDGE, ELEMENT, BLOCKVECTOR.
 
-'MATRIX', 'NODE', 'EDGE', 'ELEMENT', 'BLOCKVECTOR'.
+*/
 
-D*/
-
-/*D
-MATRIX - Data type realizing sparse matrix structure
-
-STRUCTURES:
-
-.vb
-struct matrix {
-    unsigned INT control;   // object identification, various flags 
-    
-    struct matrix *next;    // row list                             
-    struct vector *vect;    // destination vector                   
-    
-    // user data 
-    DOUBLE value[1];        // array of doubles                     
-};
-
-typedef struct matrix MATRIX;
-.ve
-
-DESCRIPTION:
+/*! \struct matrix
+ \brief Data type realizing sparse matrix structure
 
 The 'MATRIX' data type is part of UGs sparse matrix vector data structure.
 A 'MATRIX' stores all the matrix entries coupling two 'VECTOR's (which can be identical - this
@@ -2143,11 +2074,9 @@ SETMUP (MATRIX *p,INT n);
 -----------------------------------------------------------------------------
 .ve
 
-SEE ALSO:
+\sa VECTOR, CONNECTION.
 
-'VECTOR', 'CONNECTION'.
-
-D*/
+*/
 
 /*D
 CONNECTION - Data type combing one or two 'MATRIX' structures
@@ -2187,28 +2116,10 @@ SEE ALSO:
 D*/
 
 
-/*D
-BLOCKVECTOR - Data type for substructuring a 'VECTOR' list
+/*! \struct blockvector
 
-STRUCTURES:
-.vb
-struct blockvector
-{
-    unsigned INT control;           // object identification, various flags
+ \brief Data type for substructuring a VECTOR list
 
-    BLOCKNUMBER number;	            // logical blockvectornumber
-    struct blockvector *pred,*succ; // double linked list of blockvectors
-    VECTOR *first_vec;              // start vector of this blockvector
-    VECTOR *end_vec;                // succ. of the last vector of this blockvector
-
-    struct blockvector *first_son;  // start of blockvector list on next level
-    struct blockvector *last_son;   // end of blockvector list on next level
-};
-
-typedef struct blockvector BLOCKVECTOR;
-.ve
-
-DESCRIPTION:
 
 The 'BLOCKVECTOR' data structure realizes a mechanism to substructure a
 'VECTOR' list as it is part of the sparse matrix vector data structure.
@@ -2403,13 +2314,11 @@ The second variant uses a 'BV_DESC' instead of the pointer:~
     }
 .ve
 
-SEE ALSO:
+\sa VECTOR, MATRIX, BV_DESC, BV_DESC_FORMAT, BLOCKNUMBER, BLOCKLEVEL,
+CreateBlockvector, DisposeBlockvector, FreeAllBV, FreeBVList, FindBV,
+CreateBVStripe, CreateBVDomainHalfening , blas_routines.
 
-'VECTOR', 'MATRIX', 'BV_DESC', 'BV_DESC_FORMAT', 'BLOCKNUMBER', 'BLOCKLEVEL',
-'CreateBlockvector', 'DisposeBlockvector', 'FreeAllBV', 'FreeBVList', 'FindBV',
-'CreateBVStripe', 'CreateBVDomainHalfening ', 'blas_routines'.
-
-D*/
+*/
 
 
 /*D
@@ -2748,46 +2657,9 @@ SEE ALSO:
 D*/
 
 
-/*D
-GRID - Data type giving access to all objects on a grid level
+/*! \struct grid
 
-STRUCTURES:
-
-.vb
-struct grid {
-
-    // variables 
-    unsigned INT control;           // object identification, various flags 
-    INT status;                     // possible values see defines above    
-    INT level;                      // level of that grid                   
-    INT nVert;                      // number of vertices                   
-    INT nNode;                      // number of nodes                      
-    INT nElem;                      // number of elements                   
-    INT nEdge;                      // number of edges                      
-    INT nVector;                    // number of vectors                    
-    INT nCon;                       // number of Connections                
-    INT nSide;                      // number of element sides              
-    
-    // pointers 
-    union  element *elements;       // pointer to first element             
-    union  element *lastelement;    // pointer to last element              
-    union  vertex *vertices;        // pointer to first vertex              
-    union  vertex *lastvertex;      // pointer to last vertex               
-    struct elementside *sides;      // pointer to first boundary side       
-    struct node *firstNode;         // pointer to first node                
-    struct node *lastNode;          // pointer to last node                 
-    VECTOR *firstVector;            // pointer to first vector              
-    VECTOR *lastVector;             // pointer to last vector               
-	BLOCKVECTOR *firstblockvector;	// pointer to the first blockvector
-	BLOCKVECTOR *lastblockvector;	// pointer to the last blockvector
-    struct grid *coarser, *finer;   // coarser and finer grids              
-    struct multigrid *mg;           // corresponding multigrid structure    
-} ;
-
-typedef struct grid GRID;
-.ve
-
-DESCRIPTION:
+ \brief Data type giving access to all objects on a grid level
 
 The 'GRID' data type provides access to all objects defined on a grid level.
 All the pointers to the first list elements are there.
@@ -2917,60 +2789,13 @@ CONTROL WORDS:
 
 No entries of the control word are currently used.
 
-SEE ALSO:
+\sa MULTIGRID, ELEMENT, NODE, VERTEX, VECTOR, MATRIX.
 
-'MULTIGRID', 'ELEMENT', 'NODE', 'VERTEX', 'VECTOR', 'MATRIX'.
+*/
 
-D*/
+/*! \struct multigrid
+ * \brief Data type representing a complete multigrid structure
 
-/*D
-MULTIGRID - Data type representing a complete multigrid structure
-
-STRUCTURES:
-
-.vb
-struct multigrid {
-
-    // env item 
-    ENVVAR v;
-    
-    // variables 
-    INT status;                     // possible values, see above           
-    INT vertIdCounter;              // count objects in that multigrid      
-    INT nodeIdCounter;              // count objects in that multigrid      
-    INT elemIdCounter;              // count objects in that multigrid      
-    INT topLevel;                   // depth of the element tree            
-    INT currentLevel;               // level we are working on              
-    struct domain *theDomain;       // pointer to domain definition         
-    struct format *theFormat;       // pointer to format definition         
-    struct problem *theProblem;     // pointer to problem definition        
-    struct bndsegdesc *segments;    // array of combined boundary descriptio
-    INT numOfSegments;              // number of entries in the array above 
-	INT numOfSubdomains;			// number of subdomains
-    union vertex **corners;         // pointer to array of pointers to corne
-    INT numOfCorners;               // number of entries in the array above 
-    HEAP *theHeap;                  // associated heap structure            
-
-    // pointers 
-    struct grid *grids[MAXLEVEL];   // pointers to the grids                
-    void *freeObjects[MAXOBJECTS];  // pointer to allocated but unused objs 
-    void *freeVectors[MAXVECTORS];  // pointer to allocated but unused objs 
-    void *freeConnections[MAXCONNECTIONS];// ptr to alloc. but unused objs  
-
-    // selection 
-    INT NbOfSelections;             // number of selected objects           
-    INT SelectionMode;              // selectionmode (see above)            
-    union selection_object *Selection[MAXSELECTION]; // pointer to selec. objects
-    
-    // user data 
-	void *GenData;					// general user data space
-	HEAP *UserHeap;					// user heap
-} ;
-
-typedef struct multigrid MULTIGRID;
-.ve
-
-DESCRIPTION: 
 
 Data type providing access to all information about the complete
 multigrid hierarchy, problem description and memory management information.
@@ -2979,8 +2804,6 @@ This is the root of all.
 . v - The 'MULTIGRID' is an environment item, i.e. it resides in the environment
 tree. 'v' stores also the name of the 'MULTIGRID' as it is declared in the 'new'
 and 'open' commands.
-
-. status - Multigrid status word.
 
 . vertIdCounter,nodeIdCounter,elemIdCounter - Counters used to assign unique
 identification numbers to 'VERTEX', 'NODE' and 'ELEMENT' objects. The counter
@@ -3155,22 +2978,13 @@ user data.
 Example':'
 .n  'GEN_MGUD_ADR(myMG,OFFSET_IN_MGUD(myBlock))' will yield the desired memory address
 
-SEE ALSO:
+\sa DOMAIN, PROBLEM, FORMAT, GRID, HEAP, GEOM_OBJECT.
 
-'DOMAIN', 'PROBLEM', 'FORMAT', 'GRID', 'HEAP', 'GEOM_OBJECT'.
+*/
 
-D*/
+/*! \union geom_object
 
-/*D
-	GEOM_OBJECT - Union of all geometric objects
-
-	STRUCTURES:
-.vb
-union geom_object {    // objects that can hold a vector
-    struct node nd;
-    struct edge ed;
-    union element el;
-} ;
+ \brief Union of all geometric objects
 
 typedef union geom_object GEOM_OBJECT;
 .ve
@@ -3181,7 +2995,7 @@ typedef union geom_object GEOM_OBJECT;
 
     MACROS:
     No macros are provided to for that data type.
-D*/
+*/
 
 /*D
 LIMITS - Constants defining limitations of the data structure

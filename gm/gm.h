@@ -1,44 +1,44 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/****************************************************************************/
-/*																			*/
-/* File:	  gm.h															*/
-/*																			*/
-/* Purpose:   grid manager header file (the heart of ug)					*/
-/*																			*/
-/* Author:	  Peter Bastian, Klaus Johannsen								*/
-/*																			*/
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
-/*																			*/
-/*			  blockvector data structure:									*/
-/*			  Christian Wrobel                                                                              */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de					            */
-/*																			*/
-/* History:   09.03.92 begin, ug version 2.0  (as ugtypes2.h)				*/
-/*			  13.12.94 begin, ug version 3.0								*/
-/*			  27.09.95 blockvector implemented (Christian Wrobel)			*/
-/*																			*/
-/* Remarks:                                                                                                                             */
-/*																			*/
-/*																			*/
-/****************************************************************************/
+/******************************************************************************/
+/*                                                                            */
+/* File:          gm.h                                                        */
+/*                                                                            */
+/* Purpose:   grid manager header file (the heart of ug)                      */
+/*                                                                            */
+/* Author:        Peter Bastian, Klaus Johannsen                              */
+/*                                                                            */
+/*                        Institut fuer Computeranwendungen III               */
+/*                        Universitaet Stuttgart                              */
+/*                        Pfaffenwaldring 27                                  */
+/*                        70569 Stuttgart                                     */
+/*                        email: ug@ica3.uni-stuttgart.de                     */
+/*                                                                            */
+/*                        blockvector data structure:                         */
+/*                        Christian Wrobel                                    */
+/*                        Institut fuer Computeranwendungen III               */
+/*                        Universitaet Stuttgart                              */
+/*                        Pfaffenwaldring 27                                  */
+/*                        70569 Stuttgart                                     */
+/*                        email: ug@ica3.uni-stuttgart.de                     */
+/*                                                                            */
+/* History:   09.03.92 begin, ug version 2.0  (as ugtypes2.h)                 */
+/*                        13.12.94 begin, ug version 3.0                      */
+/*                        27.09.95 blockvector implemented (Christian Wrobel) */
+/*                                                                            */
+/* Remarks:                                                                   */
+/*                                                                            */
+/*                                                                            */
+/******************************************************************************/
 
 /* RCS_ID
    $Header$
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __GM__
@@ -79,18 +79,18 @@
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* consistency of commandline defines										*/
-/*																			*/
+/*                                                                          */
+/* consistency of commandline defines                                       */
+/*                                                                          */
 /****************************************************************************/
 
 #if (!defined _2) && (!defined _3)
-#error ****	define dimension _2 or _3		****
+#error ****     define dimension _2 or _3               ****
 #endif
 
 #ifdef _2
         #ifdef _3
-        #error ****	define EITHER dimension _2 OR _3	   ****
+        #error ****     define EITHER dimension _2 OR _3           ****
         #endif
 #define two
 #endif
@@ -101,26 +101,26 @@
 
 #ifdef two
 #ifdef three
-#error ****	define at most dimension two OR three		****
+#error ****     define at most dimension two OR three           ****
 #endif
 #endif
 
 #ifndef two
 #ifndef three
-#error ****	define at least dimension two OR three		****
+#error ****     define at least dimension two OR three          ****
 #endif
 #endif
 
 #ifdef two
 #ifdef Sideon
-#error ****   two dimensional case cannot have side data	****
+#error ****   two dimensional case cannot have side data        ****
 #endif
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* derive additional switches from commandline specified basic switches		*/
-/*																			*/
+/*                                                                          */
+/* derive additional switches from commandline specified basic switches     */
+/*                                                                          */
 /****************************************************************************/
 
 #ifdef two
@@ -161,18 +161,18 @@
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* "hard" switches for interpolation matrix and block-vectors				*/
-/*																			*/
+/*                                                                          */
+/* "hard" switches for interpolation matrix and block-vectors               */
+/*                                                                          */
 /****************************************************************************/
 
-/* define to have matrices > 4KB (control word too small, adds integer to matrix struct) */
+/** \brief Define to have matrices > 4KB (control word too small, adds integer to matrix struct) */
 #define __XXL_MSIZE__
 
-/* if interpolation matrix is stored */
+/** \brief If interpolation matrix is stored */
 #define __INTERPOLATION_MATRIX__
 
-/* if block vector descriptors are used*/
+/** \brief If block vector descriptors are used*/
 #define __BLOCK_VECTOR_DESC__
 
 /* define USE_FAMG to use the frequencyfiltering algebraic multigrid in np/famglib */
@@ -188,136 +188,208 @@
 /*  #define __PERIODIC_BOUNDARY__ */
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*    compile time constants defining static data size (i.e. arrays)        */
+/*    other constants                                                       */
+/*    macros                                                                */
+/*                                                                          */
 /****************************************************************************/
 
-/* necessary for most C runtime libraries */
+/* Necessary for most C runtime libraries */
 #undef DOMAIN
 
-/* some size parameters */
-#define DIM_MAX                                 3       /* maximal space dimension				*/
-#define DIM_OF_BND_MAX                  2       /* maximal dimension of boundary surface*/
-#define MAXLEVEL                                32      /* maximum depth of triangulation		*/
-#define MAXOBJECTS                              32      /* use 5 bits for object identification */
-#define MAXSELECTION               100  /* max number of elements in selection	*/
-#define TAGS                                     8      /* number of different element types	*/
+/** @name Some size parameters */
+/*@{*
+   /** \brief  maximal space dimension                              */
+#define DIM_MAX                                 3
+/** \brief  maximal dimension of boundary surface*/
+#define DIM_OF_BND_MAX                  2
+/** \brief  maximum depth of triangulation               */
+#define MAXLEVEL                                32
+/** \brief  use 5 bits for object identification */
+#define MAXOBJECTS                              32
+/** \brief  max number of elements in selection  */
+#define MAXSELECTION               100
+/** \brief Number of different element types    */
+#define TAGS                                     8
+/*@}*/
 
-/* some size macros for allocation purposes */
-#define MAX_SIDES_OF_ELEM               6                       /* max number of sides of an elem	*/
-#define MAX_EDGES_OF_ELEM               12                      /* max number of edges of an element*/
-#define MAX_CORNERS_OF_ELEM             8                       /* max number of corners of an eleme*/
-#define MAX_EDGES_OF_SIDE               4           /* max number of edges of a side	*/
-#define MAX_EDGES_OF_CORNER             4                       /* max number of edges meeting in co*/
-#define MAX_CORNERS_OF_SIDE     4           /* max number of corners of a side  */
-#define MAX_CORNERS_OF_EDGE             2                       /* an edge has always two corners.. */
-#define MAX_SIDES_OF_EDGE               2                       /* two sides have one edge in common*/
-#define MAX_SONS                        30          /* max number of sons of an element */
-#define MAX_SIDE_NODES                  9                       /* max number of nodes on elem side */
-#define MAX_SON_EDGES                   2           /* max number of son edges of edge  */
+/** @name Some size macros for allocation purposes */
+/*@{*
+   /** \brief max number of sides of an elem       */
+#define MAX_SIDES_OF_ELEM               6
+/** \brief max number of edges of an element*/
+#define MAX_EDGES_OF_ELEM               12
+/** \brief max number of corners of an eleme*/
+#define MAX_CORNERS_OF_ELEM             8
+/** \brief max number of edges of a side    */
+#define MAX_EDGES_OF_SIDE               4
+/** \brief max number of edges meeting in co*/
+#define MAX_EDGES_OF_CORNER             4
+/** \brief max number of corners of a side  */
+#define MAX_CORNERS_OF_SIDE     4
+/** \brief an edge has always two corners.. */
+#define MAX_CORNERS_OF_EDGE             2
+/** \brief two sides have one edge in common*/
+#define MAX_SIDES_OF_EDGE               2
+/** \brief max number of sons of an element */
+#define MAX_SONS                        30
+/** \brief max number of nodes on elem side */
+#define MAX_SIDE_NODES                  9
+/** \brief max number of son edges of edge  */
+#define MAX_SON_EDGES                   2
+/** \brief max #fine sides touching a coarse*/
+#define MAX_SIDES_TOUCHING              10
 
-#define MAX_SIDES_TOUCHING              10                      /* max #fine sides touching a coarse*/
-
+/** \todo Please doc me! */
 #define MAX_ELEM_VECTORS                (MAX_CORNERS_OF_ELEM+MAX_EDGES_OF_ELEM+1+MAX_SIDES_OF_ELEM)
-
-#define MAX_NDOF_MOD_32        256           /* max number of doubles in a vector or matrix mod 32 */
+/** \brief max number of doubles in a vector or matrix mod 32 */
+#define MAX_NDOF_MOD_32        256
+/** \brief max number of doubles in a vector or matrix */
 #define MAX_NDOF 32*MAX_NDOF_MOD_32
-/****************************************************************************/
-/*																			*/
-/* switch-define dependent defines											*/
-/*																			*/
+/*@}*
+
+   /****************************************************************************/
+/*                                                                          */
+/* switch-define dependent defines                                          */
+/*                                                                          */
 /****************************************************************************/
 
 #ifdef __TWODIM__
-        #define DIM                                             2                       /* space dimension								*/
-        #define DIM_OF_BND                                      1                       /* dimension of boundary surface				*/
+        #define DIM                                             2                       /* space dimension                                                              */
+        #define DIM_OF_BND                                      1                       /* dimension of boundary surface                                */
 #endif
 
 #ifdef __THREEDIM__
-        #define DIM                                             3                       /* space dimension								*/
-        #define DIM_OF_BND                                      2                       /* dimension of boundary surface				*/
+        #define DIM                                             3                       /* space dimension                                                              */
+        #define DIM_OF_BND                                      2                       /* dimension of boundary surface                                */
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* defines for algebra														*/
-/*																			*/
+/*                                                                          */
+/* defines for algebra                                                      */
+/*                                                                          */
 /****************************************************************************/
 
-#define MAXVOBJECTS                                             4                       /* four different data types					*/
-#define MAXVECTORS                                              4                       /* max number of abstract vector types			*/
+/** \brief Number of different data types                                    */
+#define MAXVOBJECTS                                             4
+/** \brief max number of abstract vector types                  */
+#define MAXVECTORS                                              4
 #if (MAXVECTORS<MAXVOBJECTS)
         #error *** MAXVECTORS must not be smaller than MAXVOBJECTS ***
 #endif
-#define NOVTYPE                                                 -1                      /* to indicate type not defined					*/
-#define MAXDOMPARTS                                             4                       /* max number of geometric domain parts			*/
 
-#define BITWISE_TYPE(t) (1<<(t))                                        /* transforms type into bitpattern				*/
+/** \brief to indicate type not defined                                 */
+#define NOVTYPE                                                 -1
+/** \brief max number of geometric domain parts                 */
+#define MAXDOMPARTS                                             4
+
+/** \brief transforms type into bitpattern                              */
+#define BITWISE_TYPE(t) (1<<(t))
 
 /* derived sizes for algebra */
-#define MAXMATRICES             MAXVECTORS*MAXVECTORS       /* max number of diff. matrix types			*/
-#define MAXCONNECTIONS  (MAXMATRICES + MAXVECTORS)      /* max number of diff. connections              */
+/** \brief max number of diff. matrix types                 */
+#define MAXMATRICES             MAXVECTORS*MAXVECTORS
+/** \brief max number of diff. connections              */
+#define MAXCONNECTIONS  (MAXMATRICES + MAXVECTORS)
 
+/** \todo Please doc me! */
 #define MATRIXTYPE(rt,ct)   ((rt)*MAXVECTORS+(ct))
+/** \todo Please doc me! */
 #define DIAGMATRIXTYPE(rt)  (MAXMATRICES+rt)
 
-/* defines for vectors */
-#define NODEVEC                                                 0                       /* vector associated to a node					*/
-#define EDGEVEC                                                 1                       /* vector associated to an edge                                 */
-#define ELEMVEC                                                 2                       /* vector associated to an element				*/
-#define SIDEVEC                                                 3                       /* vector associated to an elementside			*/
+/** @name Defines for vectors */
+/*@{*/
+/** \brief vector associated to a node                                  */
+#define NODEVEC                                                 0
+/** \brief vector associated to an edge                                 */
+#define EDGEVEC                                                 1
+/** \brief vector associated to an element                              */
+#define ELEMVEC                                                 2
+/** \brief vector associated to an elementside                  */
+#define SIDEVEC                                                 3
+/*@}*/
 
-/* some constants for abstract vector type names */
+/** @name Some constants for abstract vector type names */
+/*@{*/
+/** \todo Please doc me! */
 #define FROM_VTNAME                                             '0'
+/** \todo Please doc me! */
 #define TO_VTNAME                                               'z'
+/** \todo Please doc me! */
 #define MAXVTNAMES                                              (1+TO_VTNAME-FROM_VTNAME)
+/*@}*/
 
-/* constants for blockvector description (BVD) */
-#define NO_BLOCKVECTOR ((BLOCKNUMBER) ~0)        /* number for "there is no blockvector"; largest number of type BLOCKNUMBER */
-#define MAX_BV_NUMBER (NO_BLOCKVECTOR - 1)      /* largest admissible blockvector number */
-#define MAX_BV_LEVEL UCHAR_MAX                          /* largest admissible blockvector level number */
-#define BVD_MAX_ENTRIES (sizeof(BVD_ENTRY_TYPE)*CHAR_BIT)       /* maximum number
-                                                                   of entries in a BVD; NOTE: the actual available
-                                                                   number of entries depends on the range of each entry */
+/** @name Constants for blockvector description (BVD) */
+/*@{*/
+/** \brief number for "there is no blockvector"; largest number of type BLOCKNUMBER */
+#define NO_BLOCKVECTOR ((BLOCKNUMBER) ~0)
+/** \brief largest admissible blockvector number */
+#define MAX_BV_NUMBER (NO_BLOCKVECTOR - 1)
+/** \brief largest admissible blockvector level number */
+#define MAX_BV_LEVEL UCHAR_MAX
+/** \brief Maximum number
+   of entries in a BVD; NOTE: the actual available
+   number of entries depends on the range of each entry */
+#define BVD_MAX_ENTRIES (sizeof(BVD_ENTRY_TYPE)*CHAR_BIT)
+/*@}*/
 
+/** @name Constants for BLOCKVECTOR */
+/*@{*/
 /* constants for BLOCKVECTOR */
-#define BVDOWNTYPEVECTOR        0       /* symbolic value for BVDOWNTYPE */
-#define BVDOWNTYPEBV            1       /* symbolic value for BVDOWNTYPE */
-#define BVDOWNTYPEDIAG          2       /* symbolic value for BVDOWNTYPE */
-#define BV1DTV                          0       /* symbolic value for BVTVTYPE */
-#define BV2DTV                          1       /* symbolic value for BVTVTYPE */
-#define BVNOORIENTATION         0       /* no special orientation for BVORIENTATION */
-#define BVHORIZONTAL            1       /* vectors form a horizontal line for BVORIENTATION */
-#define BVVERTICAL                      2       /* vectors form a vertical line for BVORIENTATION */
-
+/** \brief symbolic value for BVDOWNTYPE */
+#define BVDOWNTYPEVECTOR        0
+/** \brief symbolic value for BVDOWNTYPE */
+#define BVDOWNTYPEBV            1
+/** \brief symbolic value for BVDOWNTYPE */
+#define BVDOWNTYPEDIAG          2
+/** \brief symbolic value for BVTVTYPE */
+#define BV1DTV                          0
+/** \brief symbolic value for BVTVTYPE */
+#define BV2DTV                          1
+/** \brief no special orientation for BVORIENTATION */
+#define BVNOORIENTATION         0
+/** \brief vectors form a horizontal line for BVORIENTATION */
+#define BVHORIZONTAL            1
+/** \brief vectors form a vertical line for BVORIENTATION */
+#define BVVERTICAL                      2
+/*@}*/
 
 /****************************************************************************/
-/*																			*/
-/* various defines															*/
-/*																			*/
+/*                                                                          */
+/* various defines                                                          */
+/*                                                                          */
 /****************************************************************************/
 
-/* result codes of user supplied functions	0 = OK as usual */
-#define OUT_OF_RANGE                    1       /* coordinate out of range				*/
-#define CANNOT_INIT_PROBLEM     1       /* configProblem could not init problem */
+/**      0 = OK as usual */
+/** @name result codes of user supplied functions*/
+/*@{*/
+/** \brief coordinate out of range                              */
+#define OUT_OF_RANGE                    1
+/** \brief configProblem could not init problem */
+#define CANNOT_INIT_PROBLEM     1
 
 /* use of GSTATUS (for grids), use power of 2 */
 #define GSTATUS_BDF                             1
 #define GSTATUS_INTERPOLATE             2
 #define GSTATUS_ASSEMBLED               4
 #define GSTATUS_ORDERED             8
+/*@}*/
 
-/* selection mode */
-#define nodeSelection                   1                       /* objects selected are nodes			*/
-#define elementSelection                2                       /* objects selected are elements		*/
-#define vectorSelection                 3                       /* objects selected are vectors			*/
+/** @name Selection mode */
+/*@{*/
+/** \brief objects selected are nodes                   */
+#define nodeSelection                   1
+/** \brief objects selected are elements                */
+#define elementSelection                2
+/** \brief objects selected are vectors                 */
+#define vectorSelection                 3
+/*@}*/
 
-/* possible values for rule in MarkForRefinement */
+/** @name Possible values for rule in MarkForRefinement */
+/*@{*/
 #define NO_REFINEMENT           0
 #define COPY                            1
 #define RED                                     2
@@ -355,33 +427,44 @@
 #define HEX_BISECT_HEXPRI1      16
 
 #endif
+/*@}*/
 
-/* values for element class */
+/** @name Values for element class */
+/*@{*/
 #define NO_CLASS                0
 #define YELLOW_CLASS    1
 #define GREEN_CLASS             2
 #define RED_CLASS               3
 #define SWITCH_CLASS    4
+/*@}*/
 
-/* values for node types (relative to the father element of the vertex) */
+/** @name Values for node types (relative to the father element of the vertex) */
+/*@{*/
 #define CORNER_NODE             0
 #define MID_NODE        1
 #define SIDE_NODE       2
 #define CENTER_NODE     3
 #define LEVEL_0_NODE    4
+/*@}*/
 
-/* macros for the control word management									*/
-#define MAX_CONTROL_WORDS       20              /* maximum number of control words		*/
-#define MAX_CONTROL_ENTRIES 100         /* max number of entries				*/
+/** @name Macros for the control word management */
+/*@{*/
+/** \brief maximum number of control words              */
+#define MAX_CONTROL_WORDS       20
+/** \brief max number of entries                                */
+#define MAX_CONTROL_ENTRIES 100
+/*@}*/
 
-/* macros for the multigrid user data space management						*/
+/** @name Macros for the multigrid user data space management */
+/*@{*/
 #define OFFSET_IN_MGUD(id)              (GetMGUDBlockDescriptor(id)->offset)
 #define IS_MGUDBLOCK_DEF(id)    (GetMGUDBlockDescriptor(id)!=NULL)
+/*@}*/
 
 /* REMARK: TOPNODE no more available since 970411
    because of problems in parallelisation
    to use it in serial version uncomment define
-   #define TOPNODE(p)		((p)->iv.topnode)
+   #define TOPNODE(p)              ((p)->iv.topnode)
  */
 
 /* modes for LexOrderVectorsInGrid */
@@ -389,102 +472,163 @@
 #define OV_POLAR                        1
 
 /****************************************************************************/
-/*																			*/
-/* format definition data structure                                                                             */
-/*																			*/
+/*                                                                          */
+/* format definition data structure                                         */
+/*                                                                          */
 /****************************************************************************/
 
 /*----------- general typedefs ---------------------------------------------*/
 
+/** @name General typedefs */
+/*@{*/
 typedef DOUBLE DOUBLE_VECTOR[DIM];
 typedef DOUBLE DOUBLE_VECTOR_2D[2];
 typedef DOUBLE DOUBLE_VECTOR_3D[3];
-
+/*@}*/
 
 /*----------- typedef for functions ----------------------------------------*/
 
-typedef INT (*ConversionProcPtr)(               /* print user data --> string		*/
-  void *,                                                               /* pointer to user data				*/
-  const char *,                                                 /* prefix for each line				*/
-  char *                                                                /* resulting string					*/
-  );
-typedef INT (*TaggedConversionProcPtr)( /* tagged print user data --> string*/
-  INT,                                                                  /* tag for data identification		*/
-  void *,                                                               /* pointer to user data				*/
-  const char *,                                                 /* prefix for each line				*/
-  char *                                                                /* resulting string					*/
-  );
+/** \brief Print user data --> string
+ * @param pointer to user data
+ * @param Prefix for each line
+ * @param resulting string
+ */
+typedef INT (*ConversionProcPtr)(void *, const char *, char *);
+
+/** \brief Tagged print user data --> string
+ *
+ */
+typedef INT (*TaggedConversionProcPtr)(INT,                             /* tag for data identification          */
+                                       void *,                          /* pointer to user data                         */
+                                       const char *,            /* prefix for each line                         */
+                                       char *                           /* resulting string                                     */
+                                       );
 
 
 /*----------- definition of structs ----------------------------------------*/
 
+/* struct documentation is in gm.doc */
 struct format {
 
-  /* fields for environment variable */
+  /** \brief fields for environment variable */
   ENVDIR d;
 
   /* variables of format */
-  INT sVertex;                                   /* size of vertex user data struc. in bytes*/
-  INT sMultiGrid;                        /* size of mg user data structure in bytes	*/
-  INT VectorSizes[MAXVECTORS];       /* number of doubles in vectors                    */
-  char VTypeNames[MAXVECTORS];       /* a single char for abstract type name    */
-  INT MatrixSizes[MAXCONNECTIONS];      /* number of doubles in matrices		*/
+  /** \brief size of vertex user data struc. in bytes*/
+  INT sVertex;
+
+  /** \brief size of mg user data structure in bytes     */
+  INT sMultiGrid;
+
+  /** \brief number of doubles in vectors                    */
+  INT VectorSizes[MAXVECTORS];
+
+  /** \brief a single char for abstract type name    */
+  char VTypeNames[MAXVECTORS];
+
+  /** \brief number of doubles in matrices                */
+  INT MatrixSizes[MAXCONNECTIONS];
+
 #ifdef __INTERPOLATION_MATRIX__
-  INT IMatrixSizes[MAXMATRICES];      /* number of doubles in matrices	        */
+  /** \brief number of doubles in matrices          */
+  INT IMatrixSizes[MAXMATRICES];
 #endif
-  INT ConnectionDepth[MAXCONNECTIONS];      /* depth of connection for matrices	*/
+
+  /** \brief depth of connection for matrices */
+  INT ConnectionDepth[MAXCONNECTIONS];
+
+  /** \todo Please doc me! */
   INT elementdata;
+  /** \todo Please doc me! */
   INT nodeelementlist;
+  /** \todo Please doc me! */
   INT nodedata;
 
-  /* print user data to string */
+  /** \brief print user data to string */
   ConversionProcPtr PrintVertex;
+  /** \todo Please doc me! */
   ConversionProcPtr PrintGrid;
+  /** \todo Please doc me! */
   ConversionProcPtr PrintMultigrid;
-  TaggedConversionProcPtr PrintVector;          /* tag indicates VTYPE			*/
-  TaggedConversionProcPtr PrintMatrix;          /* tag indicates MTP			*/
+
+  /** \todo Please doc me!
+   *
+   * tag indicates VTYPE
+   */
+  TaggedConversionProcPtr PrintVector;
+
+  /** \todo Please doc me!
+   *
+   * tag indicates MTP
+   */
+  TaggedConversionProcPtr PrintMatrix;
 
   /* table connecting parts, objects and types */
-  INT po2t[MAXDOMPARTS][MAXVOBJECTS];                   /* (part,obj) --> vtype,		*/
-  /* -1 if not defined			*/
+
+  /** \brief (part,obj) --> vtype, -1 if not defined */
+  INT po2t[MAXDOMPARTS][MAXVOBJECTS];
 
   /* derived components */
-  INT MaxConnectionDepth;               /* maximal connection depth                     */
-  INT NeighborhoodDepth;                /* geometrical depth corresponding		        */
-  /* algebraic con with depth 1			        */
-  /* both derived from ConnectionDepth		*/
-  INT t2p[MAXVECTORS];                  /* type --> part, bitwise, not unique		*/
-  INT t2o[MAXVECTORS];                  /* type --> object, bitwise, not unique		*/
-  /* both derived from po2t					*/
-  char t2n[MAXVECTORS];                 /* type --> type name						*/
-  INT n2t[MAXVTNAMES];                  /* type name --> type						*/
-  INT OTypeUsed[MAXVOBJECTS];           /* 0 if vector not needed for geom object	*/
-  INT MaxPart;                                  /* largest part used						*/
-  /* both derived from po2t					*/
-  INT MaxType;                                  /* largest type used						*/
-  /* derived from VectorSizes					*/
+  /** \brief maximal connection depth                     */
+  INT MaxConnectionDepth;
+  /** \brief geometrical depth corresponding                      */
+  INT NeighborhoodDepth;
+
+  /* algebraic con with depth 1                           */
+  /* both derived from ConnectionDepth            */
+  /** \brief type --> part, bitwise, not unique           */
+  INT t2p[MAXVECTORS];
+  /** \brief type --> object, bitwise, not unique         */
+  INT t2o[MAXVECTORS];
+
+  /* both derived from po2t                                       */
+  /** \brief type --> type name                                           */
+  char t2n[MAXVECTORS];
+
+  /** \brief type name --> type                                           */
+  INT n2t[MAXVTNAMES];
+
+  /** \brief 0 if vector not needed for geom object       */
+  INT OTypeUsed[MAXVOBJECTS];
+
+  /** \brief largest part used                                            */
+  INT MaxPart;
+  /* both derived from po2t                                       */
+
+  /** \brief largest type used */
+  INT MaxType;
+  /* derived from VectorSizes                                     */
 };
 
 typedef struct {
-  int tp;                                               /* abstract type is described here	                */
-  /* description only complete with po2t info	*/
-  char name;                                            /* a single char as name of abstract type	*/
-  int size;                                             /* data size in bytes						*/
+
+  /** \brief Abstract type is described here
+   *
+   * description only complete with po2t info
+   */
+  int tp;
+
+  /* a single char as name of abstract type */
+  char name;
+
+  /* data size in bytes */
+  int size;
+
 } VectorDescriptor ;
 
 typedef struct {
-  int from;                                             /* This connection goes from position from	*/
-  int to;                                               /* to position to							*/
+  int from;                                             /* This connection goes from position from      */
+  int to;                                               /* to position to                                                       */
   int diag;                                             /* 1 if diagonal, 0 if not                  */
-  int size;                                             /* with size bytes per connection			*/
-  int isize;                                            /* size of interpolation matrices			*/
+  int size;                                             /* with size bytes per connection                       */
+  int isize;                                            /* size of interpolation matrices                       */
   int depth;                                            /* connect with depth in dual graph             */
 } MatrixDescriptor ;
 
 /****************************************************************************/
-/*																			*/
-/* matrix/vector/blockvector data structure									*/
-/*																			*/
+/*                                                                          */
+/* matrix/vector/blockvector data structure                                 */
+/*                                                                          */
 /****************************************************************************/
 
 /* data structure for BlockvectorDescription */
@@ -494,90 +638,131 @@ typedef unsigned char BLOCKLEVEL;       /* valid levels are 0..MAX_BV_LEVEL */
 
 struct blockvector_description_format           /* describes how a struct of type
                                                                                            blockvector_description is to
-                                                                                           be interpreted				*/
+                                                                                           be interpreted                               */
 {
   INT bits;                                                                       /* bits per blocknumber entry */
-  BLOCKLEVEL max_level;                                                   /* max. number of entries	*/
+  BLOCKLEVEL max_level;                                                   /* max. number of entries     */
   BVD_ENTRY_TYPE level_mask[BVD_MAX_ENTRIES];
-  /* level_mask[i] = mask entries for levels 0..i		*/
+  /* level_mask[i] = mask entries for levels 0..i         */
   BVD_ENTRY_TYPE neg_digit_mask[BVD_MAX_ENTRIES];
-  /* neg_digit_mask[i] = masks out entry for level i	*/
+  /* neg_digit_mask[i] = masks out entry for level i      */
 };
 typedef struct blockvector_description_format BV_DESC_FORMAT;
 
-struct blockvector_description  /* describes the position of a blockvector	*/
-{                                                               /* in a hierarchy of blockvectors			*/
-  BVD_ENTRY_TYPE entry;                 /* sequence of block levels	according to	*/
-  /* a certain blockvector_description_format	*/
-  BLOCKLEVEL current;                           /* levels 0..current-1 currently valid		*/
-  BLOCKLEVEL read;                              /* level read is next to be read			*/
+struct blockvector_description  /* describes the position of a blockvector      */
+{                                                               /* in a hierarchy of blockvectors                       */
+  BVD_ENTRY_TYPE entry;                 /* sequence of block levels     according to    */
+  /* a certain blockvector_description_format */
+  BLOCKLEVEL current;                           /* levels 0..current-1 currently valid          */
+  BLOCKLEVEL read;                              /* level read is next to be read                        */
 };
 typedef struct blockvector_description BV_DESC;
 
+/* Struct documentation in gm.doc */
 struct vector {
 
-  unsigned INT control;                         /* object identification, various flags */
-  union geom_object *object;                    /* associated object					*/
+  /** \brief object identification, various flags */
+  unsigned INT control;
 
-        #ifdef ModelP
+  /** \brief associated object */
+  union geom_object *object;
+
+#ifdef ModelP
+  /** \todo Please doc me! */
   DDD_HEADER ddd;
-        #endif
+#endif
 
-  struct vector *pred,*succ;                    /* double linked list of vectors		*/
+  /** \brief double linked list of vectors                */
+  struct vector *pred,*succ;
 
-  unsigned INT index;                           /* ordering of unknowns                                 */
-  unsigned INT skip;                                    /* used bitwise to skip unknowns		*/
-  struct matrix *start;                         /* implements matrix					*/
+  /** \brief ordering of unknowns                                 */
+  unsigned INT index;
 
-    #ifdef __BLOCK_VECTOR_DESC__
-  BV_DESC block_descr;                          /* membership to the blockvector levels	*/
-        #endif
+  /** \brief used bitwise to skip unknowns                */
+  unsigned INT skip;
 
-    #ifdef __INTERPOLATION_MATRIX__
-  struct matrix *istart;            /* implements interpolation matrix      */
-    #endif
+  /** \brief implements matrix                                    */
+  struct matrix *start;
 
-  /* user data */
-  DOUBLE value[1];                                      /* array of doubles                                     */
+#ifdef __BLOCK_VECTOR_DESC__
+  /** \brief membership to the blockvector levels */
+  BV_DESC block_descr;
+#endif
+
+#ifdef __INTERPOLATION_MATRIX__
+  /** \brief implements interpolation matrix      */
+  struct matrix *istart;
+#endif
+
+  /** \brief User data */
+  DOUBLE value[1];
 };
 typedef struct vector VECTOR;
 
+
+/* Struct documentation in gm.doc */
 struct matrix {
-  unsigned INT control;                         /* object identification, various flags */
+
+  /** \brief object identification, various flags */
+  unsigned INT control;
 
 #ifdef __XXL_MSIZE__
-  unsigned INT xxl_msize;               /* for people needing large matrices    */
+  /** \brief for people needing large matrices    */
+  unsigned INT xxl_msize;
 #endif
 
-  struct matrix *next;                          /* row list                                                     */
-  struct vector *vect;                          /* destination vector					*/
+  /** \brief row list */
+  struct matrix *next;
 
-  /* user data */
-  DOUBLE value[1];                                      /* array of doubles                                     */
+  /** \brief destination vector */
+  struct vector *vect;
+
+  /** \brief User data */
+  DOUBLE value[1];
 };
+
 typedef struct matrix MATRIX;
 typedef struct matrix CONNECTION;
 
+/* Struct documentation in gm.doc */
 struct blockvector
 {
-  unsigned INT control;                         /* object identification, various flags	  */
 
-  BLOCKNUMBER number;                                   /* logical blockvectornumber			  */
-  struct blockvector *pred,*succ;       /* double linked list of blockvectors	  */
-  VECTOR *first_vec;                                    /* start vector of this blockvector       */
-  VECTOR *last_vec;                                     /* last vector of this blockvector		  */
-  INT vec_number;                                       /* number of covered VECTORs			  */
-  void *user_data;                                      /* pointer to any data					  */
+  /* object identification, various flags   */
+  unsigned INT control;
 
-  struct blockvector *first_son;        /* start of blockvector list on next level*/
-  struct blockvector *last_son;         /* end of blockvector list on next level  */
+  /* logical blockvectornumber */
+  BLOCKNUMBER number;
+
+  /* double linked list of blockvectors     */
+  struct blockvector *pred,*succ;
+
+  /* start vector of this blockvector       */
+  VECTOR *first_vec;
+
+  /* last vector of this blockvector                */
+  VECTOR *last_vec;
+
+  /* number of covered VECTORs                      */
+  INT vec_number;
+
+  /* pointer to any data */
+  void *user_data;
+
+  /* start of blockvector list on next level*/
+  struct blockvector *first_son;
+
+  /* end of blockvector list on next level  */
+  struct blockvector *last_son;
+
 };
+
 typedef struct blockvector BLOCKVECTOR;
 
 /****************************************************************************/
-/*																			*/
-/* unstructured grid data structures										*/
-/*																			*/
+/*                                                                                                                                                      */
+/* unstructured grid data structures                                                                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /*----------- typedef for functions ----------------------------------------*/
@@ -585,164 +770,241 @@ typedef struct blockvector BLOCKVECTOR;
 
 /*----------- definition of structs ----------------------------------------*/
 
-struct ivertex {                                        /* inner vertex structure				*/
+/** \brief Inner vertex data structure */
+struct ivertex {
 
   /* variables */
-  unsigned INT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store		*/
-  DOUBLE x[DIM];                                        /* vertex position						*/
-  DOUBLE xi[DIM];                                       /* local coordinates in father element	*/
+  /* object identification, various flags */
+  unsigned INT control;
 
-        #ifdef ModelP
+  /* unique id used for load/store                */
+  INT id;
+
+  /* vertex position                                              */
+  DOUBLE x[DIM];
+
+  /* local coordinates in father element  */
+  DOUBLE xi[DIM];
+
+#ifdef ModelP
+  /** \todo Please doc me! */
   DDD_HEADER ddd;
-        #endif
+#endif
 
   /* pointers */
-  union vertex *pred,*succ;                     /* double linked list of vertices		*/
-  void *data;                                           /* associated user data structure		*/
-  union element *father;                        /* father element						*/
-        #ifdef TOPNODE
+  /* double linked list of vertices */
+  union vertex *pred,*succ;
+
+  /* associated user data structure */
+  void *data;
+
+  /* father element */
+  union element *father;
+
+#ifdef TOPNODE
   /* REMARK: TOPNODE no more available since 970411
-          because of problems in parallelisation
-          to use it in serial version uncomment define TOPNODE */
-  struct node *topnode;                         /* highest node where defect is valid	*/
-        #endif
+     because of problems in parallelisation
+     to use it in serial version uncomment define TOPNODE */
+  /* highest node where defect is valid   */
+  struct node *topnode;
+#endif
 };
 
-struct bvertex {                                        /* boundary vertex structure			*/
+/** \brief Boundary vertex data structure */
+struct bvertex {
 
   /* variables */
-  unsigned INT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store		*/
-  DOUBLE x[DIM];                                        /* vertex position						*/
-  DOUBLE xi[DIM];                                       /* local coordinates in father element	*/
+  /** \brief Object identification, various flags */
+  unsigned INT control;
 
-        #ifdef ModelP
+  /** \brief Unique id used for load/store */
+  INT id;
+
+  /** \brief vertex position */
+  DOUBLE x[DIM];
+
+  /** \brief local coordinates in father element  */
+  DOUBLE xi[DIM];
+
+#ifdef ModelP
   DDD_HEADER ddd;
-        #endif
+#endif
 
   /* pointers */
-  union vertex *pred,*succ;                     /* double linked list of vertices		*/
-  void *data;                                           /* associated user data structure		*/
-  union element *father;                        /* father element						*/
-        #ifdef TOPNODE
-  /* REMARK: TOPNODE no more available since 970411
-          because of problems in parallelisation
-          to use it in serial version uncomment define TOPNODE */
-  struct node *topnode;                         /* highest node where defect is valid	*/
-        #endif
+  /** \brief double linked list of vertices               */
+  union vertex *pred,*succ;
 
-  BNDP *bndp;                                       /* pointer boundary point decriptor		*/
+  /** \brief associated user data structure */
+  void *data;
+
+  /** \brief father element */
+  union element *father;
+
+#ifdef TOPNODE
+  /* REMARK: TOPNODE no more available since 970411
+     because of problems in parallelisation
+     to use it in serial version uncomment define TOPNODE */
+  /** \brief highest node where defect is valid   */
+  struct node *topnode;
+#endif
+
+  /** \brief pointer boundary point decriptor */
+  BNDP *bndp;
 };
 
-union vertex {                                          /* only used to define pointer to vertex*/
+/** \brief Only used to define pointer to vertex */
+union vertex {
   struct ivertex iv;
   struct bvertex bv;
 };
 
+/** \brief A simply linked list of elements */
 struct elementlist {
   union element *el;
   struct elementlist *next;
 };
 
-struct node {                                           /* level dependent part of a vertex     */
+/** \brief Level-dependent part of a vertex */
+struct node {
 
   /* variables */
-  unsigned INT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store		*/
+  /** \brief object identification, various flags */
+  unsigned INT control;
 
-        #ifdef ModelP
+  /** \brief unique id used for load/store                */
+  INT id;
+
+#ifdef ModelP
   DDD_HEADER ddd;
-        #endif
+#endif
 
   /* pointers */
-  struct node *pred,*succ;                      /* double linked list of nodes per level*/
-  struct link *start;                           /* list of links						*/
-  union geom_object *father;                    /* node or edge on coarser level
-                                                             (NULL if none) */
-  struct node *son;                                     /* node on finer level (NULL if none)	*/
-  union vertex *myvertex;                       /* corresponding vertex structure		*/
+  /** \brief double linked list of nodes per level*/
+  struct node *pred,*succ;
 
-  /* WARNING: the allocation of the vector pointer depends on the format      */
+  /** \brief list of links                                                */
+  struct link *start;
 
-  /* associated vector */
-  VECTOR *vector;                                       /* associated vector					*/
+  /** \brief node or edge on coarser level (NULL if none) */
+  union geom_object *father;
 
-  /* WARNING: the allocation of the data pointer depends on the format        */
-  void *data;                                       /* associated data pointer              */
+  /** \brief node on finer level (NULL if none)   */
+  struct node *son;
+
+  /** \brief corresponding vertex structure               */
+  union vertex *myvertex;
+
+  /** \brief associated vector
+   *
+   * WARNING: the allocation of the vector pointer depends on the format */
+  VECTOR *vector;
+
+  /** \brief associated data pointer
+   *
+   * WARNING: the allocation of the data pointer depends on the format */
+  void *data;
 };
 
+/** \brief ???? */
 struct link {
 
   /* variables */
-  unsigned INT control;                         /* object identification, various flags */
-  struct link *next;                                    /* ptr to next link                                     */
-  struct node *nbnode;                          /* ptr to neighbor node                                 */
+  /** \brief object identification, various flags */
+  unsigned INT control;
+
+  /** \brief ptr to next link                                     */
+  struct link *next;
+
+  /** \brief ptr to neighbor node                                 */
+  struct node *nbnode;
+
 };
 
-
-struct edge {                                           /* undirected edge of the grid graph	*/
+/** \brief Undirected edge of the grid graph    */
+struct edge {
 
   /* variables */
-  struct link links[2];                         /* two links							*/
+  /* two links */
+  struct link links[2];
 
-        #if defined(ModelP) && defined(__THREEDIM__)
+#if defined(ModelP) && defined(__THREEDIM__)
   DDD_HEADER ddd;
-        #endif
+#endif
 
-  struct node *midnode;                         /* pointer to mid node on next finer gri*/
+  /* pointer to mid node on next finer grid */
+  struct node *midnode;
 
-  /* WARNING: the allocation of the vector pointer depends on the format      */
-
-  /* associated vector */
-  VECTOR *vector;                                       /* associated vector					*/
+  /** \brief associated vector
+   *
+   * WARNING: the allocation of the vector pointer depends on the format */
+  VECTOR *vector;
 };
 
+/** \brief A generic grid element */
 struct generic_element {            /* no difference between inner and bndel*/
 
   /* variables */
-  unsigned INT control;             /* object identification, various flags */
-  INT id;                           /* unique id used for load/store        */
-  unsigned INT flag;                /* additional flags for elements        */
-  INT property;                         /* to store NodeOrder for hexahedrons   */
 
-        #ifdef ModelP
+  /* object identification, various flags */
+  unsigned INT control;
+
+  /* unique id used for load/store        */
+  INT id;
+
+  /* additional flags for elements        */
+  unsigned INT flag;
+
+  /* to store NodeOrder for hexahedrons   */
+  INT property;
+
+#ifdef ModelP
   DDD_HEADER ddd;
-  INT ptmp;                                             /* stores parition information			*/
-  INT ptmp1;                                            /* stores cluster pointer				*/
-  INT ptmp2;                                            /* stores number of descendents			*/
-        #endif
+
+  /* stores parition information                  */
+  INT ptmp;
+
+  /* stores cluster pointer                               */
+  INT ptmp1;
+
+  /* stores number of descendents */
+  INT ptmp2;
+#endif
 
   /* pointers */
-  union element *pred, *succ;       /* double linked list of elements       */
-  void *refs[1];                                        /* variable length array managed by ug  */
+
+  /* double linked list of elements       */
+  union element *pred, *succ;
+
+  /* variable length array managed by ug  */
+  void *refs[1];
+
 };
 
 struct triangle {
 
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store		*/
-  unsigned INT flag;                            /* additional flags for elements		*/
-  INT property;                                 /* we need more bits ...				*/
+  INT id;                                                       /* unique id used for load/store                */
+  unsigned INT flag;                            /* additional flags for elements                */
+  INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
   DDD_HEADER ddd;
-  INT ptmp;                                             /* stores parition information			*/
-  INT ptmp1;                                            /* stores cluster pointer				*/
-  INT ptmp2;                                            /* stores number of descendents			*/
+  INT ptmp;                                             /* stores parition information                  */
+  INT ptmp1;                                            /* stores cluster pointer                               */
+  INT ptmp2;                                            /* stores number of descendents                 */
         #endif
 
   /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements		*/
-  struct node *n[3];                                    /* corners of that element				*/
-  union element *father;                        /* father element on coarser grid		*/
+  union element *pred, *succ;           /* doubly linked list of elements               */
+  struct node *n[3];                                    /* corners of that element                              */
+  union element *father;                        /* father element on coarser grid               */
         #ifdef ModelP
   union element *sons[2];                       /* element tree                                                 */
         #else
   union element *sons[1];                       /* element tree                                                 */
         #endif
-  union element *nb[3];                         /* dual graph							*/
+  union element *nb[3];                         /* dual graph                                                   */
 
   /* WARNING: the allocation of the vector pointer depends on the format      */
   /* void *ptr[4] would be possible too:                                      */
@@ -750,9 +1012,9 @@ struct triangle {
   /* Use the macros to find the correct address!                              */
 
   /* associated vector */
-  VECTOR *vector;                                       /* associated vector					*/
+  VECTOR *vector;                                       /* associated vector                                    */
 
-  BNDS *bnds[3];                        /* only on bnd, NULL if interior side	*/
+  BNDS *bnds[3];                        /* only on bnd, NULL if interior side   */
 
   /* WARNING: the allocation of the data pointer depends on the format        */
   void *data;                                       /* associated data pointer              */
@@ -762,27 +1024,27 @@ struct quadrilateral {
 
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store		*/
-  unsigned INT flag;                            /* additional flags for elements		*/
-  INT property;                                 /* we need more bits ...				*/
+  INT id;                                                       /* unique id used for load/store                */
+  unsigned INT flag;                            /* additional flags for elements                */
+  INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
   DDD_HEADER ddd;
-  INT ptmp;                                             /* stores parition information			*/
-  INT ptmp1;                                            /* stores cluster pointer				*/
-  INT ptmp2;                                            /* stores number of descendents			*/
+  INT ptmp;                                             /* stores parition information                  */
+  INT ptmp1;                                            /* stores cluster pointer                               */
+  INT ptmp2;                                            /* stores number of descendents                 */
         #endif
 
   /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements		*/
-  struct node *n[4];                                    /* corners of that element				*/
-  union element *father;                        /* father element on coarser grid		*/
+  union element *pred, *succ;           /* doubly linked list of elements               */
+  struct node *n[4];                                    /* corners of that element                              */
+  union element *father;                        /* father element on coarser grid               */
         #ifdef ModelP
   union element *sons[2];                       /* element tree                                                 */
         #else
   union element *sons[1];                       /* element tree                                                 */
         #endif
-  union element *nb[4];                         /* dual graph							*/
+  union element *nb[4];                         /* dual graph                                                   */
 
   /* WARNING: the allocation of the vector pointer depends on the format      */
   /* void *ptr[5] would be possible too:                                      */
@@ -790,9 +1052,9 @@ struct quadrilateral {
   /* Use the macros to find the correct address!                              */
 
   /* associated vector */
-  VECTOR *vector;                                       /* associated vector					*/
+  VECTOR *vector;                                       /* associated vector                                    */
 
-  BNDS *bnds[4];                        /* only on bnd, NULL if interior side	*/
+  BNDS *bnds[4];                        /* only on bnd, NULL if interior side   */
 
   /* WARNING: the allocation of the data pointer depends on the format        */
   void *data;                                       /* associated data pointer              */
@@ -802,9 +1064,9 @@ struct tetrahedron {
 
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store		*/
-  unsigned INT flag;                            /* additional flags for elements		*/
-  INT property;                                 /* we need more bits ...				*/
+  INT id;                                                       /* unique id used for load/store                */
+  unsigned INT flag;                            /* additional flags for elements                */
+  INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
   DDD_HEADER ddd;
@@ -812,15 +1074,15 @@ struct tetrahedron {
         #endif
 
   /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements		*/
-  struct node *n[4];                                    /* corners of that element				*/
-  union element *father;                        /* father element on coarser grid		*/
+  union element *pred, *succ;           /* doubly linked list of elements               */
+  struct node *n[4];                                    /* corners of that element                              */
+  union element *father;                        /* father element on coarser grid               */
         #ifdef ModelP
   union element *sons[2];                       /* element tree                                                 */
         #else
   union element *sons[1];                       /* element tree                                                 */
         #endif
-  union element *nb[4];                         /* dual graph							*/
+  union element *nb[4];                         /* dual graph                                                   */
 
   /* WARNING: the allocation of the vector pointer depends on the format      */
   /* void *ptr[9] would be possible too:                                      */
@@ -828,12 +1090,12 @@ struct tetrahedron {
   /* Use the macros to find the correct address!                              */
 
   /* associated vector */
-  VECTOR *vector;                                       /* associated vector					*/
+  VECTOR *vector;                                       /* associated vector                                    */
 
   /* associated vector */
-  VECTOR *sidevector[4];                        /* associated vectors for sides			*/
+  VECTOR *sidevector[4];                        /* associated vectors for sides                 */
 
-  BNDS *bnds[4];                        /* only on bnd, NULL if interior side	*/
+  BNDS *bnds[4];                        /* only on bnd, NULL if interior side   */
 
   /* WARNING: the allocation of the data pointer depends on the format        */
   void *data;                                       /* associated data pointer              */
@@ -843,9 +1105,9 @@ struct pyramid {
 
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store		*/
-  unsigned INT flag;                            /* additional flags for elements		*/
-  INT property;                                 /* we need more bits ...				*/
+  INT id;                                                       /* unique id used for load/store                */
+  unsigned INT flag;                            /* additional flags for elements                */
+  INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
   DDD_HEADER ddd;
@@ -853,15 +1115,15 @@ struct pyramid {
         #endif
 
   /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements		*/
-  struct node *n[5];                                    /* corners of that element				*/
-  union element *father;                        /* father element on coarser grid		*/
+  union element *pred, *succ;           /* doubly linked list of elements               */
+  struct node *n[5];                                    /* corners of that element                              */
+  union element *father;                        /* father element on coarser grid               */
         #ifdef ModelP
   union element *sons[2];                       /* element tree                                                 */
         #else
   union element *sons[1];                       /* element tree                                                 */
         #endif
-  union element *nb[5];                         /* dual graph							*/
+  union element *nb[5];                         /* dual graph                                                   */
 
   /* WARNING: the allocation of the vector pointer depends on the format      */
   /* void *ptr[11] would be possible too:                                     */
@@ -869,12 +1131,12 @@ struct pyramid {
   /* Use the macros to find the correct address!                              */
 
   /* associated vector */
-  VECTOR *vector;                                       /* associated vector					*/
+  VECTOR *vector;                                       /* associated vector                                    */
 
   /* associated vector */
-  VECTOR *sidevector[5];                        /* associated vectors for sides			*/
+  VECTOR *sidevector[5];                        /* associated vectors for sides                 */
 
-  BNDS *bnds[5];                        /* only on bnd, NULL if interior side	*/
+  BNDS *bnds[5];                        /* only on bnd, NULL if interior side   */
 
   /* WARNING: the allocation of the data pointer depends on the format        */
   void *data;                                       /* associated data pointer              */
@@ -884,9 +1146,9 @@ struct prism {
 
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store		*/
-  unsigned INT flag;                            /* additional flags for elements		*/
-  INT property;                                 /* we need more bits ...				*/
+  INT id;                                                       /* unique id used for load/store                */
+  unsigned INT flag;                            /* additional flags for elements                */
+  INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
   DDD_HEADER ddd;
@@ -894,15 +1156,15 @@ struct prism {
         #endif
 
   /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements		*/
-  struct node *n[6];                                    /* corners of that element				*/
-  union element *father;                        /* father element on coarser grid		*/
+  union element *pred, *succ;           /* doubly linked list of elements               */
+  struct node *n[6];                                    /* corners of that element                              */
+  union element *father;                        /* father element on coarser grid               */
         #ifdef ModelP
   union element *sons[2];                       /* element tree                                                 */
         #else
   union element *sons[1];                       /* element tree                                                 */
         #endif
-  union element *nb[5];                         /* dual graph							*/
+  union element *nb[5];                         /* dual graph                                                   */
 
   /* WARNING: the allocation of the vector pointer depends on the format      */
   /* void *ptr[11] would be possible too:                                     */
@@ -910,12 +1172,12 @@ struct prism {
   /* Use the macros to find the correct address!                              */
 
   /* associated vector */
-  VECTOR *vector;                                       /* associated vector					*/
+  VECTOR *vector;                                       /* associated vector                                    */
 
   /* associated vector */
-  VECTOR *sidevector[5];                        /* associated vectors for sides			*/
+  VECTOR *sidevector[5];                        /* associated vectors for sides                 */
 
-  BNDS *bnds[5];                        /* only on bnd, NULL if interior side	*/
+  BNDS *bnds[5];                        /* only on bnd, NULL if interior side   */
 
   /* WARNING: the allocation of the data pointer depends on the format        */
   void *data;                                       /* associated data pointer              */
@@ -925,9 +1187,9 @@ struct hexahedron {
 
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
-  INT id;                                                       /* unique id used for load/store		*/
-  unsigned INT flag;                            /* additional flags for elements		*/
-  INT property;                                 /* we need more bits ...				*/
+  INT id;                                                       /* unique id used for load/store                */
+  unsigned INT flag;                            /* additional flags for elements                */
+  INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
   DDD_HEADER ddd;
@@ -935,15 +1197,15 @@ struct hexahedron {
         #endif
 
   /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements		*/
-  struct node *n[8];                                    /* corners of that element				*/
-  union element *father;                        /* father element on coarser grid		*/
+  union element *pred, *succ;           /* doubly linked list of elements               */
+  struct node *n[8];                                    /* corners of that element                              */
+  union element *father;                        /* father element on coarser grid               */
         #ifdef ModelP
   union element *sons[2];                       /* element tree                                                 */
         #else
   union element *sons[1];                       /* element tree                                                 */
         #endif
-  union element *nb[6];                         /* dual graph							*/
+  union element *nb[6];                         /* dual graph                                                   */
 
   /* WARNING: the allocation of the vector pointer depends on the format      */
   /* void *ptr[13] would be possible too:                                     */
@@ -951,12 +1213,12 @@ struct hexahedron {
   /* Use the macros to find the correct address!                              */
 
   /* associated vector */
-  VECTOR *vector;                                       /* associated vector					*/
+  VECTOR *vector;                                       /* associated vector                                    */
 
   /* associated vector */
-  VECTOR *sidevector[6];                        /* associated vectors for sides			*/
+  VECTOR *sidevector[6];                        /* associated vectors for sides                 */
 
-  BNDS *bnds[6];                        /* only on bnd, NULL if interior side	*/
+  BNDS *bnds[6];                        /* only on bnd, NULL if interior side   */
 
   /* WARNING: the allocation of the data pointer depends on the format        */
   void *data;                                       /* associated data pointer              */
@@ -976,19 +1238,19 @@ union element {
         #endif
 };
 
-union geom_object {                                             /* objects that can hold a vector		*/
+union geom_object {                                             /* objects that can hold a vector               */
   struct node nd;
   struct edge ed;
   union element el;
 };
 
-union selection_object {                                        /* objects than can be selected			*/
+union selection_object {                                        /* objects than can be selected                 */
   struct node nd;
   union element el;
   struct vector ve;
 };
 
-union object_with_key {                                         /* objects that can have a key			*/
+union object_with_key {                                         /* objects that can have a key                  */
   struct node nd;
   union element el;
   struct vector ve;
@@ -1008,15 +1270,15 @@ struct grid {
 
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
-  INT attribut;                                         /* level + 32; needed for controll word check not detecting HEAPFAULT	*/
-  INT status;                                           /* possible values see defines above	*/
-  INT level;                                                    /* level of that grid					*/
-  INT nVert[MAX_PRIOS];                         /* number of vertices					*/
-  INT nNode[MAX_PRIOS];                         /* number of nodes						*/
-  INT nElem[MAX_PRIOS];                         /* number of elements					*/
-  INT nEdge;                                                    /* number of edges						*/
-  INT nVector[MAX_PRIOS];                       /* number of vectors					*/
-  INT nCon;                                                     /* number of Connections				*/
+  INT attribut;                                         /* level + 32; needed for controll word check not detecting HEAPFAULT   */
+  INT status;                                           /* possible values see defines above    */
+  INT level;                                                    /* level of that grid                                   */
+  INT nVert[MAX_PRIOS];                         /* number of vertices                                   */
+  INT nNode[MAX_PRIOS];                         /* number of nodes                                              */
+  INT nElem[MAX_PRIOS];                         /* number of elements                                   */
+  INT nEdge;                                                    /* number of edges                                              */
+  INT nVector[MAX_PRIOS];                       /* number of vectors                                    */
+  INT nCon;                                                     /* number of Connections                                */
 #ifdef __INTERPOLATION_MATRIX__
   INT nIMat;                        /* number of interpolation matrices     */
 #endif
@@ -1025,73 +1287,125 @@ struct grid {
   /* pointers */
   union  element *elements[ELEMENT_LISTPARTS];       /* pointer to first element*/
   union  element *lastelement[ELEMENT_LISTPARTS];      /*pointer to last element*/
-  union  vertex *vertices[VERTEX_LISTPARTS];            /* pointer to first vertex	*/
-  union  vertex *lastvertex[VERTEX_LISTPARTS];      /* pointer to last vertex	*/
-  struct node *firstNode[NODE_LISTPARTS];       /* pointer to first node		*/
+  union  vertex *vertices[VERTEX_LISTPARTS];            /* pointer to first vertex      */
+  union  vertex *lastvertex[VERTEX_LISTPARTS];      /* pointer to last vertex   */
+  struct node *firstNode[NODE_LISTPARTS];       /* pointer to first node                */
   struct node *lastNode[NODE_LISTPARTS];        /* pointer to last node                 */
-  VECTOR *firstVector[VECTOR_LISTPARTS];        /* pointer to first vector		*/
-  VECTOR *lastVector[VECTOR_LISTPARTS];         /* pointer to last vector		*/
-  BLOCKVECTOR *firstblockvector;        /* pointer to the first blockvector		*/
-  BLOCKVECTOR *lastblockvector;         /* pointer to the last blockvector		*/
-  struct grid *coarser, *finer;         /* coarser and finer grids				*/
-  struct multigrid *mg;                         /* corresponding multigrid structure	*/
+  VECTOR *firstVector[VECTOR_LISTPARTS];        /* pointer to first vector              */
+  VECTOR *lastVector[VECTOR_LISTPARTS];         /* pointer to last vector               */
+  BLOCKVECTOR *firstblockvector;        /* pointer to the first blockvector             */
+  BLOCKVECTOR *lastblockvector;         /* pointer to the last blockvector              */
+  struct grid *coarser, *finer;         /* coarser and finer grids                              */
+  struct multigrid *mg;                         /* corresponding multigrid structure    */
 };
 
 struct multigrid {
 
-  /* env item */
+  /** \brief env item */
   ENVDIR v;
 
   /* variables */
-  INT status;                                           /* possible values, see above			*/
-  INT magic_cookie;                                     /* used for identification			    */
-        #ifdef DYNAMIC_MEMORY_ALLOCMODEL
-  INT bottomtmpmem;                             /* is bottom memory temp allocated?     */
-        #endif
-  INT vertIdCounter;                                    /* count objects in that multigrid		*/
-  INT nodeIdCounter;                                    /* count objects in that multigrid		*/
-  INT elemIdCounter;                                    /* count objects in that multigrid		*/
-  INT topLevel;                                         /* depth of the element tree			*/
-  INT currentLevel;                                     /* level we are working on				*/
-  INT fullrefineLevel;                          /* last level with complete surface     */
-  INT bottomLevel;                                      /* bottom level for AMG                 */
-  BVP *theBVP;                                          /* pointer to BndValProblem				*/
-  BVP_DESC theBVPD;                                     /* description of BVP-properties		*/
-  struct format *theFormat;                     /* pointer to format definitions                */
-  HEAP *theHeap;                                        /* associated heap structure			*/
-  INT nProperty;                                        /* max nb of properties used in elements*/
+  /** \brief Multigrid status word */
+  INT status;
 
-  DATA_STATUS data_status;          /* memory management for vectors|matrix */
-                                    /* status for consistent and collect    */
+  /** \brief used for identification                          */
+  INT magic_cookie;
+
+#ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  /** \brief is bottom memory temp allocated?     */
+  INT bottomtmpmem;
+#endif
+
+  /** \brief count objects in that multigrid              */
+  INT vertIdCounter;
+
+  /** \brief count objects in that multigrid              */
+  INT nodeIdCounter;
+
+  /** \brief count objects in that multigrid              */
+  INT elemIdCounter;
+
+  /** \brief depth of the element tree                    */
+  INT topLevel;
+
+  /** \brief level we are working on                              */
+  INT currentLevel;
+
+  /** \brief last level with complete surface     */
+  INT fullrefineLevel;
+
+  /** \brief bottom level for AMG                 */
+  INT bottomLevel;
+
+  /** \brief pointer to BndValProblem                             */
+  BVP *theBVP;
+
+  /** \brief description of BVP-properties                */
+  BVP_DESC theBVPD;
+
+  /** \brief pointer to format definitions                */
+  struct format *theFormat;
+
+  /** \brief associated heap structure                    */
+  HEAP *theHeap;
+
+  /** \brief max nb of properties used in elements*/
+  INT nProperty;
+
+
+  /** \brief memory management for vectors|matrix
+   * status for consistent and collect */
+  DATA_STATUS data_status;
+
   /* pointers */
-  struct grid *amggrids[MAXLEVEL];      /* pointers to the grids				*/
-  struct grid *grids[MAXLEVEL];         /* pointers to the grids				*/
+  /** \brief pointers to the grids                                */
+  struct grid *amggrids[MAXLEVEL];
+
+  /** \brief pointers to the grids                                */
+  struct grid *grids[MAXLEVEL];
 
   /* NodeElementPointerArray used for an O(n) InsertElement               */
-  union element ***ndelemptrarray;                      /* pointer to the node element blocks   */
+  /** \brief pointer to the node element blocks   */
+  union element ***ndelemptrarray;
 
   /* selection */
-  INT NbOfSelections;                           /* number of selected objects			*/
-  INT SelectionMode;                                    /* selectionmode (see above)			*/
-  union selection_object *Selection[MAXSELECTION];       /* pointer to selec obj*/
+  /** \brief number of selected objects                   */
+  INT NbOfSelections;
+
+  /** \brief selectionmode (see above)                    */
+  INT SelectionMode;
+
+  /** \brief pointer to selec obj*/
+  union selection_object *Selection[MAXSELECTION];
 
   /* user data */
-  void *GenData;                                        /* general user data space				*/
-  HEAP *UserHeap;                                       /* user heap							*/
-  void *genpurp;                                        /* general purpose pointer				*/
+  /** \brief general user data space                              */
+  void *GenData;
 
-  /* i/o handing */
-  INT saved;                                                    /* 1 if multigrid saved					*/
-  char filename[NAMESIZE];                      /* filename if saved					*/
+  /** \brief user heap                                                    */
+  HEAP *UserHeap;
 
-  INT CoarseGridFixed;                          /* coarse grid complete					*/
-  INT MarkKey;                                  /* coarse grid MarkKey for SIMPLE_HEAP Mark/Release	*/
+  /** \brief general purpose pointer                              */
+  void *genpurp;
+
+  /* i/o handling */
+  /** \brief 1 if multigrid saved                                 */
+  INT saved;
+
+  /** \brief filename if saved                                    */
+  char filename[NAMESIZE];
+
+  /** \brief coarse grid complete                                 */
+  INT CoarseGridFixed;
+
+  /** \brief coarse grid MarkKey for SIMPLE_HEAP Mark/Release     */
+  INT MarkKey;
 };
 
 /****************************************************************************/
-/*																			*/
-/*					typedef for structs                                                                     */
-/*																			*/
+/*                                                                                                                                                      */
+/*                                      typedef for structs                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* geometrical part */
@@ -1110,9 +1424,9 @@ typedef struct multigrid MULTIGRID;
 typedef union object_with_key KEY_OBJECT;
 
 /****************************************************************************/
-/*																			*/
-/*					structs for evaluation functions						*/
-/*																			*/
+/*                                                                                                                                                      */
+/*                                      structs for evaluation functions                                                */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /*----------- typedef for functions ----------------------------------------*/
@@ -1129,8 +1443,8 @@ struct elementvalues {
   /* fields for enironment list variable */
   ENVVAR v;
 
-  PreprocessingProcPtr PreprocessProc;                  /* prepare eval values					*/
-  ElementEvalProcPtr EvalProc;                                  /* pointer to corresponding function	*/
+  PreprocessingProcPtr PreprocessProc;                  /* prepare eval values                                  */
+  ElementEvalProcPtr EvalProc;                                  /* pointer to corresponding function    */
 };
 
 struct elementvector {
@@ -1138,9 +1452,9 @@ struct elementvector {
   /* fields for enironment list variable */
   ENVVAR v;
 
-  PreprocessingProcPtr PreprocessProc;                  /* prepare eval values					*/
-  ElementVectorProcPtr EvalProc;                                /* pointer to corresponding function	*/
-  int dimension;                                                                /* dimension of result vector			*/
+  PreprocessingProcPtr PreprocessProc;                  /* prepare eval values                                  */
+  ElementVectorProcPtr EvalProc;                                /* pointer to corresponding function    */
+  int dimension;                                                                /* dimension of result vector                   */
 };
 
 struct matrixvalues {
@@ -1148,8 +1462,8 @@ struct matrixvalues {
   /* fields for enironment list variable */
   ENVVAR v;
 
-  PreprocessingProcPtr PreprocessProc;                  /* prepare eval values					*/
-  MatrixEvalProcPtr EvalProc;                                   /* pointer to corresponding function	*/
+  PreprocessingProcPtr PreprocessProc;                  /* prepare eval values                                  */
+  MatrixEvalProcPtr EvalProc;                                   /* pointer to corresponding function    */
 };
 
 typedef struct elementvalues EVALUES ;
@@ -1157,9 +1471,9 @@ typedef struct elementvector EVECTOR ;
 typedef struct matrixvalues MVALUES ;
 
 /****************************************************************************/
-/*																			*/
+/*                                                                                                                                                      */
 /* algebraic dependency for vector ordering                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 typedef INT (*DependencyProcPtr)(GRID *, const char *);
@@ -1169,15 +1483,15 @@ struct AlgebraicDependency {
   /* fields for enironment list variable */
   ENVVAR v;
 
-  DependencyProcPtr DependencyProc;             /* pointer to dependency function			*/
+  DependencyProcPtr DependencyProc;             /* pointer to dependency function                       */
 };
 
 typedef struct AlgebraicDependency ALG_DEP;
 
 /****************************************************************************/
-/*																			*/
-/* periodic boundary info                                                                               */
-/*																			*/
+/*                                                                          */
+/* periodic boundary info                                                   */
+/*                                                                          */
 /****************************************************************************/
 
 #ifdef __PERIODIC_BOUNDARY__
@@ -1204,9 +1518,9 @@ INT GetPeriodicBoundaryInfoProcPtr (PeriodicBoundaryInfoProcPtr *PBI);
 
 
 /****************************************************************************/
-/*																			*/
-/* find cut for vector ordering				                                                                */
-/*																			*/
+/*                                                                          */
+/* find cut for vector ordering                                             */
+/*                                                                          */
 /****************************************************************************/
 
 typedef VECTOR *(*FindCutProcPtr)(GRID *, VECTOR *, INT *);
@@ -1216,57 +1530,98 @@ typedef struct {
   /* fields for enironment list variable */
   ENVVAR v;
 
-  FindCutProcPtr FindCutProc;           /* pointer to find cut function				*/
+  FindCutProcPtr FindCutProc;           /* pointer to find cut function                         */
 
 } FIND_CUT;
 
 /****************************************************************************/
-/*																			*/
-/*					dynamic management of control words                                     */
-/*																			*/
+/*                                                                          */
+/* dynamic management of control words                                      */
+/*                                                                          */
 /****************************************************************************/
 
-/* status of control word */
+/** @name status of control word */
+/*@{*/
 #define CW_FREE                                         0
 #define CW_USED                                         1
+/*@}*/
 
-/* status of control entry */
+
+/** @name Status of control entry */
+/*@{*/
 #define CE_FREE                                         0
 #define CE_USED                                         1
 #define CE_LOCKED                                       1
+/*@}*/
 
-/* initializer macros for control entry and word predefines */
+/** @name Initializer macros for control entry and word predefines */
+/*@{*/
 #define CW_INIT(used,cw,objs)                           {used, STR(cw), cw ## CW, cw ## OFFSET,objs}
 #define CW_INIT_UNUSED                                          {CW_FREE,0,0,0}
 #define CE_INIT(mode,cw,ce,objs)                        {mode, STR(ce), cw ## CW, ce ## CE, ce ## SHIFT, ce ## LEN, objs}
 #define CE_INIT_UNUSED                                          {CE_FREE, 0, 0, 0, 0, 0, 0}
+/*@}*/
 
-/* description of a control word */
+/** \brief Description of a control word */
 typedef struct {
-  INT used;                                                             /* this struct is used				*/
-  char *name;                                                           /* name string						*/
-  unsigned INT offset_in_object ;               /* where in object is it ?			*/
-  INT objt_used;                                                /* bitwise object ID				*/
-  unsigned INT used_mask ;                              /* used bits						*/
+
+  /** \brief this struct is used */
+  INT used;
+
+  /** \brief name string */
+  char *name;
+
+  /** \brief where in object is it ? */
+  unsigned INT offset_in_object;
+
+  /** \brief bitwise object ID */
+  INT objt_used;
+
+  /** \brief used bits */
+  unsigned INT used_mask;
+
 } CONTROL_WORD;
 
-/* manage part of a control word */
+/** \brief Manage part of a control word */
 typedef struct {
-  INT used;                                                             /* this struct is used				*/
-  char *name;                                                           /* name string						*/
-  INT control_word ;                                            /* pointer to corresponding controlw*/
-  INT offset_in_word;                                   /* shift in control word			*/
-  INT length;                                                   /* number of bits used				*/
-  INT objt_used;                                                /* bitwise object ID				*/
-  unsigned INT offset_in_object;                /* copy from control word (faster)	*/
-  unsigned INT mask;                                            /* 1 where bits are used			*/
-  unsigned INT xor_mask;                                /* 0 where bits are used			*/
+
+  /** \brief this struct is used                          */
+  INT used;
+
+  /** \brief name string */
+  char *name;
+
+  /** \brief pointer to corresponding control word */
+  INT control_word;
+
+  /** \brief shift in control word */
+  INT offset_in_word;
+
+  /** \brief number of bits used */
+  INT length;
+
+  /** \brief bitwise object ID  */
+  INT objt_used;
+
+  /** \brief copy from control word (faster)      */
+  unsigned INT offset_in_object;
+
+  /** \brief 1 where bits are used                        */
+  unsigned INT mask;
+
+  /** \brief 0 where bits are used                        */
+  unsigned INT xor_mask;
+
 } CONTROL_ENTRY;
 
+/** \brief Global array with descriptions */
 extern CONTROL_WORD
-  control_words[MAX_CONTROL_WORDS];             /* global array with descriptions	*/
+  control_words[MAX_CONTROL_WORDS];
+
+/** \brief Predefined control words */
 extern CONTROL_ENTRY
-  control_entries[MAX_CONTROL_ENTRIES];      /* predefined control words		*/
+  control_entries[MAX_CONTROL_ENTRIES];
+
 
 /* general query macros */
 
@@ -1318,7 +1673,7 @@ extern CONTROL_ENTRY
 
 #endif  /* _DEBUG_CW_ */
 
-/* enumeration list of all control words of gm.h */
+/** \brief Enumeration list of all control words of gm.h */
 enum GM_CW {
   VECTOR_CW,
   MATRIX_CW,
@@ -1337,7 +1692,7 @@ enum GM_CW {
   GM_N_CW
 };
 
-/* enumeration list of all control entry of gm.h */
+/** \brief Enumeration list of all control entry of gm.h */
 enum GM_CE {
   VTYPE_CE,
   VOTYPE_CE,
@@ -1407,9 +1762,9 @@ enum GM_CE {
 
 enum LV_MODIFIERS {
 
-  LV_SKIP                 = (1<<0),                     /* print skip flags in vector			*/
-  LV_VO_INFO              = (1<<1),                     /* vector object related info			*/
-  LV_POS                  = (1<<2)                      /* position vector						*/
+  LV_SKIP                 = (1<<0),                     /* print skip flags in vector                   */
+  LV_VO_INFO              = (1<<1),                     /* vector object related info                   */
+  LV_POS                  = (1<<2)                      /* position vector  */
 };
 
 enum LV_ID_TYPES {
@@ -1421,64 +1776,64 @@ enum LV_ID_TYPES {
 #define LV_MOD_DEFAULT          (LV_POS | LV_VO_INFO)
 
 /****************************************************************************/
-/*																			*/
-/* Macro definitions for algebra structures                                                             */
-/*																			*/
-/*																			*/
-/* Use of the control word:                                                                                             */
-/*																			*/
-/* macro name|bits	|V|M|use												*/
-/*																			*/
-/* all objects:                                                                                                                         */
-/*																			*/
-/* vectors:                                                                                                                             */
-/* VOTYPE	 |0 - 1 |*| | node-,edge-,side- or elemvector					*/
-/* VCFLAG	 |3		|*| | flag for general use								*/
-/* VCUSED	 |4		|*| | flag for general use								*/
-/* VCOUNT	 |5-6	|*| |                                                                                                   */
+/*                                                                          */
+/* Macro definitions for algebra structures                                 */
+/*                                                                          */
+/*                                                                          */
+/* Use of the control word:                                                 */
+/*                                                                          */
+/* macro name|bits      |V|M|use                                            */
+/*                                                                          */
+/* all objects:                                                             */
+/*                                                                          */
+/* vectors:                                                                 */
+/* VOTYPE        |0 - 1 |*| | node-,edge-,side- or elemvector               */
+/* VCFLAG        |3     |*| | flag for general use                          */
+/* VCUSED        |4     |*| | flag for general use                          */
+/* VCOUNT        |5-6   |*| |                                               */
 /* VECTORSIDE|7 - 9 |*| | nb of side the side vect corr. to (in object elem)*/
-/* VCLASS	 |11-12 |*| | class of v. (3: if corr. to red/green elem)		*/
-/*					  (2: if corr. to first algebraic nb.)					*/
-/*					  (1: if corr. to second algebraic nb.)                                 */
-/* VDATATYPE |13-16 |*| | data type used bitwise							*/
-/* VNCLASS	 |17-18 |*| | type of elem on finer grid the v. lies geom. in:	*/
-/*							0: no elem on finer grid						*/
-/*							1: elem of 'second alg. nbhood' only			*/
-/*							2: elem of 'first alg. nbhood' only                     */
-/*							3: red or green elem							*/
-/* VNEW          |19	|*| | 1 if vector is new								*/
-/* VCNEW	 |20	|*| | 1 if vector has a new connection					*/
-/* VACTIVE   |24	|*| | 1 if vector is active inside a smoother			*/
-/* VCCUT	 |26	|*| |                                                                                                   */
-/* VTYPE	 |27-28 |*| | abstract vector type								*/
-/* VPART	 |29-30 |*| | domain part										*/
-/* VCCOARSE  |31    |*| | indicate algebraic part of VECTOR-MATRIX graph	*/
-/*																			*/
-/* matrices:																*/
-/* MOFFSET	 |0     | |*| 0 if first matrix in connection else 1			*/
-/* MROOTTYPE |1 - 2 | |*| VTYPE of root vector								*/
-/* MDESTTYPE |3 - 4 | |*| VTYPE of destination vector						*/
-/* MDIAG	 |5     | |*| 1 if diagonal matrix element						*/
+/* VCLASS        |11-12 |*| | class of v. (3: if corr. to red/green elem)
+   /*                                        (2: if corr. to first algebraic nb.)
+   /*                                        (1: if corr. to second algebraic nb.)
+   /* VDATATYPE |13-16 |*| | data type used bitwise
+   /* VNCLASS       |17-18 |*| | type of elem on finer grid the v. lies geom. in:  */
+/*                                                      0: no elem on finer grid                                                */
+/*                                                      1: elem of 'second alg. nbhood' only                    */
+/*                                                      2: elem of 'first alg. nbhood' only                     */
+/*                                                      3: red or green elem                                                    */
+/* VNEW          |19    |*| | 1 if vector is new                                                                */
+/* VCNEW         |20    |*| | 1 if vector has a new connection                                  */
+/* VACTIVE   |24        |*| | 1 if vector is active inside a smoother                   */
+/* VCCUT         |26    |*| |                                                                                                   */
+/* VTYPE         |27-28 |*| | abstract vector type                                                              */
+/* VPART         |29-30 |*| | domain part                                                                               */
+/* VCCOARSE  |31    |*| | indicate algebraic part of VECTOR-MATRIX graph        */
+/*                                                                                                                                                      */
+/* matrices:                                                                                                                            */
+/* MOFFSET       |0     | |*| 0 if first matrix in connection else 1                    */
+/* MROOTTYPE |1 - 2 | |*| VTYPE of root vector                                                          */
+/* MDESTTYPE |3 - 4 | |*| VTYPE of destination vector                                           */
+/* MDIAG         |5     | |*| 1 if diagonal matrix element                                              */
 /* MNEW          |6     | |*| ???                                                       */
-/* CEXTRA	 |7     | |*| 1 if is extra connection							*/
+/* CEXTRA        |7     | |*| 1 if is extra connection                                                  */
 /* MDOWN         |8     | |*| ???                                                       */
 /* MUP           |9     | |*| ???                                                       */
 /* MLOWER        |10    | |*| 1 if matrix belongs to lower triangular part      */
 /* MUPPER        |11    | |*| 1 if matrix belongs to upper triangular part      */
-/* MSIZE	 |12-25 | |*| size of the matrix in bytes						*/
-/* MUSED	 |12	| |*| general purpose flag								*/
-/* MNEW          |28	| |*| 1 if matrix/connection is new                                     */
-/*																			*/
-/* Use of the control word in 'BLOCKVECTOR':								*/
-/* BVDOWNTYPE 0	 BVDOWNTYPEVECTOR if the down component points to a vector,	*/
-/*				 BVDOWNTYPEBV if it points to a further blockvector (son)	*/
-/*																			*/
+/* MSIZE         |12-25 | |*| size of the matrix in bytes                                               */
+/* MUSED         |12    | |*| general purpose flag                                                              */
+/* MNEW          |28    | |*| 1 if matrix/connection is new                                     */
+/*                                                                                                                                                      */
+/* Use of the control word in 'BLOCKVECTOR':                                                            */
+/* BVDOWNTYPE 0  BVDOWNTYPEVECTOR if the down component points to a vector,     */
+/*                               BVDOWNTYPEBV if it points to a further blockvector (son)       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* general macros															*/
-/*																			*/
+/*                                                                          */
+/* general macros                                                           */
+/*                                                                          */
 /****************************************************************************/
 
 /* macros to calculate from a coordinate (2D/3D) a hopefully unique ID */
@@ -1502,9 +1857,9 @@ enum LV_ID_TYPES {
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* macros for VECTORs														*/
-/*																			*/
+/*                                                                          */
+/* macros for VECTORs                                                       */
+/*                                                                          */
 /****************************************************************************/
 
 /* control word offset */
@@ -1650,9 +2005,9 @@ enum LV_ID_TYPES {
 
 
 /****************************************************************************/
-/*																			*/
-/* macros for MATRIXs														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* macros for MATRIXs                                                                                                           */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* control word offset */
@@ -1756,9 +2111,9 @@ enum LV_ID_TYPES {
 #define MSTRONG(p)                                      (MDOWN(p) && MUP(p))
 
 /****************************************************************************/
-/*																			*/
-/* macros for CONNECTIONs													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* macros for CONNECTIONs                                                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define CMATRIX0(m)                             (m)
@@ -1766,9 +2121,9 @@ enum LV_ID_TYPES {
 #define SETCUSED(c,n)                           {SETMUSED(CMATRIX0(c),n); SETMUSED(MADJ(CMATRIX0(c)),n);}
 
 /****************************************************************************/
-/*																			*/
-/* macros for struct blockvector_description (BV_DESC)						*/
-/*																			*/
+/*                                                                                                                                                      */
+/* macros for struct blockvector_description (BV_DESC)                                          */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* access to members of struct blockvector_description (BV_DESC) */
@@ -1793,9 +2148,9 @@ enum LV_ID_TYPES {
 #define BVD_IS_SUB_BLOCK(bvd_a,bvd_b,bvdf)      ( (BVD_NR_ENTRIES(bvd_a) >= BVD_NR_ENTRIES(bvd_b)) && (((bvd_a)->entry & (((bvdf)->level_mask[BVD_NR_ENTRIES(bvd_b)-1]))) == ((((bvd_b)->entry & (bvdf)->level_mask[BVD_NR_ENTRIES(bvd_b)-1])))))
 
 /****************************************************************************/
-/*																			*/
-/* macros for BLOCKVECTOR													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* macros for BLOCKVECTOR                                                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* control word offset */
@@ -1853,85 +2208,85 @@ enum LV_ID_TYPES {
 #define BV_IS_DIAG_BV(bv)                               (BVDOWNTYPE(bv)==BVDOWNTYPEDIAG)
 
 /****************************************************************************/
-/*																			*/
-/* Macro definitions for geometric objects									*/
-/*																			*/
-/*																			*/
+/*                                                                                                                                                      */
+/* Macro definitions for geometric objects                                                                      */
+/*                                                                                                                                                      */
+/*                                                                                                                                                      */
 /* Use of the control word:                                                                                             */
-/*																			*/
-/* macro name|bits	|V|N|L|E|V|M|  use										*/
-/*							 C											*/
+/*                                                                                                                                                      */
+/* macro name|bits      |V|N|L|E|V|M|  use                                                                              */
+/*                                                       C                                                                                      */
 /* all objects:                                                                                                                         */
-/* TAG		 |18-20 | | | |*| | |general purpose tag field					*/
-/* LEVEL	 |21-25 |*|*| |*| | |level of a node/element (imp. for copies)	*/
-/* THEFLAG	 |26	|*|*|*|*| | |general purp.,  leave them as you found 'em*/
-/* USED          |27	|*|*|*|*| | |object visited, leave them as you found 'em*/
+/* TAG           |18-20 | | | |*| | |general purpose tag field                                  */
+/* LEVEL         |21-25 |*|*| |*| | |level of a node/element (imp. for copies)  */
+/* THEFLAG       |26    |*|*|*|*| | |general purp.,  leave them as you found 'em*/
+/* USED          |27    |*|*|*|*| | |object visited, leave them as you found 'em*/
 /* OBJT          |28-31 |*|*|*|*| | |object type identification                                 */
 
-/*																			*/
-/* vertices:																*/
-/* MOVED	 |0     |*| | | | | |boundary vertex not lying on edge midpoint */
-/* MOVE          |1-2	|*| | | | | |vertex can be moved on a 0(1,2,3) dim subsp*/
-/* ONEDGE	 |3 - 6 |*| | | | | |no. of edge in father element				*/
-/* ONSIDE	 |3 - 5 |*| | | | | |no. of side in father element				*/
-/* ONNBSIDE	 |6 - 8 |*| | | | | |no. of side in the neigbor of the father   */
-/* NOOFNODE	 |9 -13 |*| | | | | |???									    */
-/*																			*/
-/* nodes:																	*/
-/* NSUBDOM	 |0-3	| |*| | | | |subdomain id                                       */
-/* MODIFIED  |6         | |*| | | | |1 if node must be assembled				*/
-/* N_OUTFLOW |0-7	|														*/
-/* N_INFLOW  |8-15	|														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* vertices:                                                                                                                            */
+/* MOVED         |0     |*| | | | | |boundary vertex not lying on edge midpoint */
+/* MOVE          |1-2   |*| | | | | |vertex can be moved on a 0(1,2,3) dim subsp*/
+/* ONEDGE        |3 - 6 |*| | | | | |no. of edge in father element                              */
+/* ONSIDE        |3 - 5 |*| | | | | |no. of side in father element                              */
+/* ONNBSIDE      |6 - 8 |*| | | | | |no. of side in the neigbor of the father   */
+/* NOOFNODE      |9 -13 |*| | | | | |???                                                                            */
+/*                                                                                                                                                      */
+/* nodes:                                                                                                                                       */
+/* NSUBDOM       |0-3   | |*| | | | |subdomain id                                       */
+/* MODIFIED  |6         | |*| | | | |1 if node must be assembled                                */
+/* N_OUTFLOW |0-7       |                                                                                                               */
+/* N_INFLOW  |8-15      |                                                                                                               */
+/*                                                                                                                                                      */
 /* links and edges:                                                                                                             */
-/* LOFFSET	 |0     | | |*| | | |position of link in links array			*/
-/* EDGENEW	 |1     | | |*| | | |status of edge								*/
-/* NOOFELEM  |2-8	| | |*| | | |nb. of elem. the edge is part of			*/
-/* AUXEDGE	 |9		|														*/
-/* EDSUBDOM  |12-17 | | | |*| | |subdomain of edge if inner edge, 0 else	*/
-/*																			*/
-/* elements:																*/
-/* ECLASS	 |8-9	| | | |*| | |element class from enumeration type		*/
-/* NSONS	 |10-13 | | | |*| | |number of sons                                                     */
-/* NEWEL	 |14	| | | |*| | |element just created						*/
-/* VSIDES	 |11-14 | | | |*| | |viewable sides                                                     */
-/* NORDER	 |15-19 | | | |*| | |view position order of the nodes			*/
-/* CUTMODE	 |26-27 | | | |*| | |elem intersects cutplane or...                     */
-/*																			*/
+/* LOFFSET       |0     | | |*| | | |position of link in links array                    */
+/* EDGENEW       |1     | | |*| | | |status of edge                                                             */
+/* NOOFELEM  |2-8       | | |*| | | |nb. of elem. the edge is part of                   */
+/* AUXEDGE       |9             |                                                                                                               */
+/* EDSUBDOM  |12-17 | | | |*| | |subdomain of edge if inner edge, 0 else        */
+/*                                                                                                                                                      */
+/* elements:                                                                                                                            */
+/* ECLASS        |8-9   | | | |*| | |element class from enumeration type                */
+/* NSONS         |10-13 | | | |*| | |number of sons                                                     */
+/* NEWEL         |14    | | | |*| | |element just created                                               */
+/* VSIDES        |11-14 | | | |*| | |viewable sides                                                     */
+/* NORDER        |15-19 | | | |*| | |view position order of the nodes                   */
+/* CUTMODE       |26-27 | | | |*| | |elem intersects cutplane or...                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* object identification */
 enum GM_OBJECTS {
 
-  MGOBJ,                                                /* multigrid object	                        */
+  MGOBJ,                                                /* multigrid object                             */
   IVOBJ,                                                /* inner vertex                                         */
-  BVOBJ,                                                /* boundary vertex					*/
-  IEOBJ,                                                /* inner element					*/
+  BVOBJ,                                                /* boundary vertex                                      */
+  IEOBJ,                                                /* inner element                                        */
   BEOBJ,                                                /* boundary element                             */
-  EDOBJ,                                                /* edge object						*/
-  NDOBJ,                                                /* node object						*/
-  GROBJ,                                                /* grid object						*/
+  EDOBJ,                                                /* edge object                                          */
+  NDOBJ,                                                /* node object                                          */
+  GROBJ,                                                /* grid object                                          */
 
   /* object numbers for algebra */
-  VEOBJ,                                                /* vector object					*/
-  MAOBJ,                                                /* matrix object					*/
+  VEOBJ,                                                /* vector object                                        */
+  MAOBJ,                                                /* matrix object                                        */
   BLOCKVOBJ,                        /* blockvector object               */
 
   NPREDEFOBJ,                                           /* no of predefined objects             */
 
   NOOBJ = -1
 };
-#define LIOBJ           EDOBJ           /* link and edge are identified		        */
-#define COOBJ           MAOBJ           /* connection and matrix are identified		*/
+#define LIOBJ           EDOBJ           /* link and edge are identified                 */
+#define COOBJ           MAOBJ           /* connection and matrix are identified         */
 
 /****************************************************************************/
-/*																			*/
-/* general macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* general macros                                                                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* control word offset */
-#define GENERAL_CW                                      NODE_CW         /* any of the geom objects	*/
+#define GENERAL_CW                                      NODE_CW         /* any of the geom objects      */
 #define GENERAL_OFFSET                          0
 
 #define OBJ_SHIFT                                       28
@@ -1966,9 +2321,9 @@ enum GM_OBJECTS {
 #define ID(p)           (((INT *)(p))[1])
 
 /****************************************************************************/
-/*																			*/
-/* macros for vertices														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* macros for vertices                                                                                                          */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* control word offset */
@@ -2033,9 +2388,9 @@ enum GM_OBJECTS {
 #endif /* ModelP */
 
 /****************************************************************************/
-/*																			*/
+/*                                                                                                                                                      */
 /* macros for nodes                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* control word offset */
@@ -2085,9 +2440,9 @@ enum GM_OBJECTS {
 #define SETNFATHER(p,n)         ((p)->father = n)
 #define NFATHEREDGE(p)          ((EDGE*)(p)->father)
 /*
-   #define NFATHER(p)			((NTYPE(p) == CORNER_NODE) ? (p)->father : NULL)
-   #define NFATHEREDGE(p)		((NTYPE(p) == MID_NODE) ? (EDGE *)(p)->father : NULL)
-   #define SETNFATHEREDGE(p,e)	((p)->father = (NODE *) (e))
+   #define NFATHER(p)                      ((NTYPE(p) == CORNER_NODE) ? (p)->father : NULL)
+   #define NFATHEREDGE(p)          ((NTYPE(p) == MID_NODE) ? (EDGE *)(p)->father : NULL)
+   #define SETNFATHEREDGE(p,e)     ((p)->father = (NODE *) (e))
  */
 #define CORNERTYPE(p)           (NTYPE(p) == CORNER_NODE)
 #define MIDTYPE(p)                      (NTYPE(p) == MID_NODE)
@@ -2103,9 +2458,9 @@ enum GM_OBJECTS {
 #define ELEMENT_PTR(p)                  ((p)->el)
 
 /****************************************************************************/
-/*																			*/
+/*                                                                                                                                                      */
 /* macros for links                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* CAUTION: the controlword of LINK0 and its edge are identical (AVOID overlapping of flags) */
@@ -2127,9 +2482,9 @@ enum GM_OBJECTS {
 #define REVERSE(p)                                      ((p)+(1-LOFFSET(p)*2))
 
 /****************************************************************************/
-/*																			*/
+/*                                                                                                                                                      */
 /* macros for edges                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* control word offset */
@@ -2166,9 +2521,9 @@ enum GM_OBJECTS {
 #define EDVECTOR(p) ((p)->vector)
 
 /****************************************************************************/
-/*																			*/
-/* macros for elements														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* macros for elements                                                                                                          */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* TAG values */
@@ -2235,23 +2590,23 @@ typedef struct {
 
   /* the following parameters determine size of refs array in element */
   INT max_sons_of_elem;                                         /* max number of sons for this type */
-  INT sides_of_elem;                                                    /* how many sides ?					*/
-  INT corners_of_elem;                                          /* how many corners ?				*/
+  INT sides_of_elem;                                                    /* how many sides ?                                     */
+  INT corners_of_elem;                                          /* how many corners ?                           */
 
   /* local geometric description of the element */
   DOUBLE_VECTOR local_corner[MAX_CORNERS_OF_ELEM];                      /* local coordinates of the corners of the element */
 
   /* more size parameters */
-  INT edges_of_elem;                                                    /* how many edges ?					*/
-  INT edges_of_side[MAX_SIDES_OF_ELEM];         /* number of edges for each side	*/
+  INT edges_of_elem;                                                    /* how many edges ?                                     */
+  INT edges_of_side[MAX_SIDES_OF_ELEM];         /* number of edges for each side        */
   INT corners_of_side[MAX_SIDES_OF_ELEM];       /* number of corners for each side  */
-  INT corners_of_edge;                                          /* is always 2 !					*/
+  INT corners_of_edge;                                          /* is always 2 !                                        */
 
   /* index computations */
   /* Within each element sides, edges, corners are numbered in some way.      */
   /* Within each side the edges and corners are numbered, within the edge the */
   /* corners are numbered. The following arrays map the local numbers within  */
-  /* the side or edge to the numbering within the element.					*/
+  /* the side or edge to the numbering within the element.                                        */
   INT edge_of_side[MAX_SIDES_OF_ELEM][MAX_EDGES_OF_SIDE];
   INT corner_of_side[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_SIDE];
   INT corner_of_edge[MAX_EDGES_OF_ELEM][MAX_CORNERS_OF_EDGE];
@@ -2289,12 +2644,12 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 
 /****************************************************************************/
-/*																			*/
-/* macros for element descriptors											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* macros for element descriptors                                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
-/* macros to access element descriptors by element pointers		*/
+/* macros to access element descriptors by element pointers             */
 
 #define SIDES_OF_ELEM(p)                (element_descriptors[TAG(p)]->sides_of_elem)
 #define EDGES_OF_ELEM(p)                (element_descriptors[TAG(p)]->edges_of_elem)
@@ -2352,7 +2707,7 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #endif
 
 /* use the following macros to assign values, since definition  */
-/* above is no proper lvalue.									*/
+/* above is no proper lvalue.                                                                   */
 #define SET_CORNER(p,i,q)       ((p)->ge.refs[n_offset[TAG(p)]+(i)] = q)
 #define SET_EFATHER(p,q)        ((p)->ge.refs[father_offset[TAG(p)]] = q)
 #define SET_SON(p,i,q)          ((p)->ge.refs[sons_offset[TAG(p)]+(i)] = q)
@@ -2373,7 +2728,7 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define CORNER_OF_SIDE_PTR(e,i,j)               (CORNER(e,CORNER_OF_SIDE(e,i,j)))
 
 
-/* macros to access element descriptors by element tags	*/
+/* macros to access element descriptors by element tags */
 
 #define INNER_SIZE_TAG(t)                       (element_descriptors[t]->inner_size)
 #define BND_SIZE_TAG(t)                         (element_descriptors[t]->bnd_size)
@@ -2406,7 +2761,7 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define EDGE_OF_CORNER_TAG(t,c,e)               (element_descriptors[t]->edge_of_corner[(c)][(e)])
 
 
-/* macros to access reference descriptors by number of element corners	*/
+/* macros to access reference descriptors by number of element corners  */
 
 #define SIDES_OF_REF(n)                   (reference_descriptors[n]->sides_of_elem)
 #define EDGES_OF_REF(n)                   (reference_descriptors[n]->edges_of_elem)
@@ -2429,9 +2784,9 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define EDGE_OF_CORNER_REF(n,c,e)         (reference_descriptors[n]->edge_of_corner[(c)][(e)])
 
 /****************************************************************************/
-/*																			*/
+/*                                                                                                                                                      */
 /* macros for grids                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* control word offset */
@@ -2565,9 +2920,9 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define NDATA_DEF_IN_GRID(p)   (GFORMAT(p)->nodedata)
 
 /****************************************************************************/
-/*																			*/
-/* macros for multigrids													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* macros for multigrids                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* control word offset */
@@ -2620,9 +2975,9 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define MG_MARK_KEY(p)              ((p)->MarkKey)
 
 /****************************************************************************/
-/*																			*/
-/* macros for formats														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* macros for formats                                                                                                           */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define FMT_ELEM_DATA(f)                                ((f)->elementdata)
@@ -2666,28 +3021,29 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 #define MG_MATRIXUSED   32
 
 /****************************************************************************/
-/*																			*/
-/* declaration of exported global variables									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* declaration of exported global variables                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* predefined blockvector description formats */
-extern const BV_DESC_FORMAT DH_bvdf;            /* bvdf for domain halfening	*/
-extern const BV_DESC_FORMAT one_level_bvdf;     /* bvdf for only 1 blocklevel	*/
-extern const BV_DESC_FORMAT two_level_bvdf;     /* bvdf for 2 blocklevels		*/
-extern const BV_DESC_FORMAT three_level_bvdf;   /* bvdf for 3 blocklevels	*/
+extern const BV_DESC_FORMAT DH_bvdf;            /* bvdf for domain halfening    */
+extern const BV_DESC_FORMAT one_level_bvdf;     /* bvdf for only 1 blocklevel   */
+extern const BV_DESC_FORMAT two_level_bvdf;     /* bvdf for 2 blocklevels               */
+extern const BV_DESC_FORMAT three_level_bvdf;   /* bvdf for 3 blocklevels       */
 
 #if defined ModelP && defined __OVERLAP2__
 extern INT ce_NO_DELETE_OVERLAP2;
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* interface functions for module grid manager								*/
-/*																			*/
-/****************************************************************************/
+/*                                                                          */
+/* interface functions for module grid manager                              */
+/*                                                                          *
+   /****************************************************************************/
 
-/* return values for functions returning an INT. The usual rule is: 0 ok, >0 error */
+/** @name Return values for functions returning an INT. The usual rule is: 0 ok, >0 error */
+/*@{*/
 #define GM_OK                                           0
 #define GM_ERROR                                        1
 #define GM_FILEOPEN_ERROR                       2
@@ -2699,8 +3055,10 @@ extern INT ce_NO_DELETE_OVERLAP2;
 #define GM_INCONSISTANCY                        8
 #define GM_COARSE_NOT_FIXED                     9
 #define GM_FATAL                                        999
+/*@}*/
 
-/* some constants passed as parameters */
+/** @name Some constants passed as parameters */
+/*@{*/
 #define GM_KEEP_BOUNDARY_NODES          0
 #define GM_MOVE_BOUNDARY_NODES          1
 #define GM_REFINE_TRULY_LOCAL           2
@@ -2724,10 +3082,11 @@ extern INT ce_NO_DELETE_OVERLAP2;
 #define GM_CURRENT_LEVEL                        2
 #define GM_ORDER_IN_COLS                        0
 #define GM_ORDER_IN_ROWS                        1
-#define GM_PUT_AT_BEGIN                         1               /* put skip vectors at begin of the list	*/
-#define GM_PUT_AT_END                           2               /* put skip vectors at end of the list		*/
+#define GM_PUT_AT_BEGIN                         1               /* put skip vectors at begin of the list */
+#define GM_PUT_AT_END                           2               /* put skip vectors at end of the list */
 #define GM_TAKE_SKIP                            (1<<0)
 #define GM_TAKE_NONSKIP                         (1<<1)
+/*@}*/
 
 /* get/set current multigrid, loop through multigrids */
 MULTIGRID               *MakeMGItem                             (const char *name);
@@ -2795,7 +3154,7 @@ INT             ClearMarksOnLevel               (GRID *theGrid, INT ClearType);
 
 
 NODE            *GetFineNodeOnEdge              (const ELEMENT *theElement, INT side);
-/*INT			GetFineSidesTouchingCoarseSide (const ELEMENT *theElement, INT side, INT *nfine, ELEMENT *Elements[MAX_SIDES_TOUCHING], INT Sides[MAX_SIDES_TOUCHING]);*/
+/*INT                   GetFineSidesTouchingCoarseSide (const ELEMENT *theElement, INT side, INT *nfine, ELEMENT *Elements[MAX_SIDES_TOUCHING], INT Sides[MAX_SIDES_TOUCHING]);*/
 
 /* moving nodes */
 INT         GetMidNodeParam         (NODE * theNode, DOUBLE *lambda);
