@@ -46,3 +46,13 @@
 
 20040218:
 *	12. DONE
+20020224:
+	14. repair of calendar for all browsers
+		status: - konqueror date jump does not work
+				    month jump does not work
+			- netscape6 month jump does not work
+
+	15. handling of DartTestfile for applications
+		new file in UG/ with name DartTestFiles
+		this allow to switch on and off application tests
+
