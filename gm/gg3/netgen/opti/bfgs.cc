@@ -236,25 +236,7 @@ void BFGS (
 
     a3acrit = (fold - f <= tauf * max (typf, fabs (f)));
 
-    //    testout << "g = " << g << endl;
-    //    testout << "a1crit, a3crit = " << int(a1crit) << ", " << int(a3acrit) << endl;
-
-    /*
-        // Output for tests
-
-        normg = sqrt (g * g);
-
-        testout << "it =" << setw (5) << it
-             << " f =" << setw (12) << setprecision (5) << f
-             << " |g| =" << setw (12) << setprecision (5) << normg;
-
-        testout << " x = (" << setw (12) << setprecision (5) << x.Elem(1);
-        for (i = 2; i <= n; i++)
-          testout << "," << setw (12) << setprecision (5) << x.Elem(i);
-        testout << ")" << endl;
-     */
   }
   while (!a1crit || !a3acrit);
 
-  //  testout << "it = " << it << " g = " << g << " f = " << f << endl;
 }

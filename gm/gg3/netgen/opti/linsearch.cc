@@ -97,20 +97,10 @@ void lines (
 
   it = 100000l;
 
-  //  testout << "phi0prime = " << phi0prime << endl;
-
   while (it-- >= 0)
   {
-    //    testout << "it = " << it << " f = " << f
-    //            << " al1 = " << alpha1 << " al2 = " << alpha2
-    //            << " f = " << f << endl;
-
     xneu.Set (1, x, alphahat, p);
 
-    //    for (i = 1; i <= n; i++)
-    //      xneu.Elem(i) = x.Elem(i) + alphahat * p.Elem(i);
-
-    //    f = funk(xneu);
     f = fun.FuncGrad (xneu, g);
 
     if (f < fmin)
@@ -206,16 +196,12 @@ void SteepestDescent (Vector & x, const MinFunction & fun)
   val = fun.FuncGrad(x, g);
 
   alphahat = 1;
-  //  testout << "f = ";
   for (it = 0; it < 10; it++)
   {
-    //    testout << val << " ";
-
     p = -g;
     lines (x, xnew, p, val, g, fun, alphahat, -1e5,
            0.1, 0.1, 1, 10, 0.1, 0.1, 0.6, fail);
 
     x = xnew;
   }
-  //  testout << endl;
 }
