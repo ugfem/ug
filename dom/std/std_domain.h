@@ -127,7 +127,7 @@ void *CreateBoundaryCondition (char *name, INT id,
                                BndCondProcPtr theBndCond,
                                void *Data);
 
-BVP   *CreateBoundaryValueProblem (char *BVPname, BndCondProcPtr theBndCond,
+BVP   *CreateBoundaryValueProblem (const char *BVPname, BndCondProcPtr theBndCond,
                                    int numOfCoeffFct, CoeffProcPtr coeffs[],
                                    int numOfUserFct, UserProcPtr userfct[]);
 BVP       *CreateBVP                              (char *BVP, char *Domain, char *Problem);

@@ -2197,7 +2197,7 @@ Create_MarcBVP (char *BVPName, BndCondProcPtr theBndCond,
 }
 
 BVP *NS_DIM_PREFIX
-CreateBoundaryValueProblem (char *BVPName, BndCondProcPtr theBndCond,
+CreateBoundaryValueProblem (const char *BVPName, BndCondProcPtr theBndCond,
                             int numOfCoeffFct, CoeffProcPtr coeffs[],
                             int numOfUserFct, UserProcPtr userfct[])
 {
@@ -3047,9 +3047,15 @@ BVP_GetNext (BVP * theBVP)
   return ((BVP *) NEXT_ENVITEM (theBVP));
 }
 
+void NS_DIM_PREFIX
+Set_Current_BVP(BVP* theBVP)
+{
+  currBVP = (STD_BVP*)theBVP;
+}
+
 /* domain interface function: for description see domain.h */
 BVP *NS_DIM_PREFIX
-BVP_GetByName (char *name)
+BVP_GetByName (const char *name)
 {
   return ((BVP *) SearchEnv (name, "/BVP", theBVPDirID, theBVPDirID));
 }

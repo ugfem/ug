@@ -352,7 +352,9 @@ BVP        *BVP_Load              (char *name, INT argc, char **argv);
  * </ul>
  */
 /****************************************************************************/
-BVP        *BVP_GetByName         (char *name);
+BVP        *BVP_GetByName         (const char *name);
+
+void Set_Current_BVP(BVP* theBVP);
 
 /****************************************************************************/
 /** \brief Initialize a BVP and return a mesh

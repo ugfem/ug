@@ -169,7 +169,7 @@ static LGM_PROBLEM *Lgm_Problem_GetByName (char *name)
 
 /* domain interface function: for description see domain.h */
 BVP *NS_DIM_PREFIX
-BVP_GetByName (char *name)
+BVP_GetByName (const char *name)
 {
   return((BVP *) SearchEnv(name,"/LGM_BVP",theLGMDomainVarID,theBVPDirID));
 }
