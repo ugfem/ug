@@ -58,7 +58,7 @@
 #define INTERRUPTCODE   5               /* cmd terminated by user interrupt			*/
 #define FATAL                   9999    /* fatal error, quit program				*/
 
-#define MAXOPTIONS              30              /* maximum number of options for a command	*/
+#define MAXOPTIONS              100             /* maximum number of options for a command	*/
 #define OPTIONBUFFERLEN 1024    /* length of option buffer					*/
 
 /****************************************************************************/
