@@ -8,4 +8,4 @@ libdddif2_la_SOURCES = $(SOURCES)
 libdddif2_la_CPPFLAGS = $(UG_2DFLAGS)
 
 libdddif3_la_SOURCES = $(SOURCES)
-libdddif3_la_CPPFLAGS = $(UG_2DFLAGS)
+libdddif3_la_CPPFLAGS = $(UG_3DFLAGS)
