@@ -1084,7 +1084,7 @@ INT GetMJRawRegularUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECT
       V2_COPY(FVG_GCM(geo),                               SCVCorners[2]);
       V2_COPY(FVG_GEM(geo,(ip+nc-1)%nc),  SCVCorners[3]);
 
-      if (Intersect2d_old(4,SCVCorners,IPVel[ip],SCVF_GIP(FVG_SCVF(geo,ip)),&side,&lambda)!=0)
+      if (Intersect2d_old(4,(const DOUBLE_VECTOR*)SCVCorners,IPVel[ip],SCVF_GIP(FVG_SCVF(geo,ip)),&side,&lambda)!=0)
         continue;
 
       switch (side)
@@ -1130,7 +1130,7 @@ INT GetMJRawRegularUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECT
       V2_COPY(FVG_GCM(geo),                       SCVCorners[2]);
       V2_COPY(FVG_GEM(geo,ip),            SCVCorners[3]);
 
-      if (Intersect2d_old(4,SCVCorners,IPVel[ip],SCVF_GIP(FVG_SCVF(geo,ip)),&side,&lambda)!=0)
+      if (Intersect2d_old(4,(const DOUBLE_VECTOR*)SCVCorners,IPVel[ip],SCVF_GIP(FVG_SCVF(geo,ip)),&side,&lambda)!=0)
         continue;
 
       switch (side)
