@@ -4041,7 +4041,7 @@ INT STD_BVP_Configure (INT argc, char **argv)
     x_quad[3][0] = 0.0;
     x_quad[3][1] = 10.0;
   }
-  else if (strcmp(DomainName,"BVariabel") == 0)
+  else if (strcmp(DomainName,"Variable Disc") == 0)
   {
     if (ReadArgvDOUBLE("l",&left,argc,argv))
     {
