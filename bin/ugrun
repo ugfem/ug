@@ -29,7 +29,7 @@ fi
 case $MODEL in
 	PVM)
 		echo $1 -sz $PROC 1;
-		$1 -sz $PROC 1;
+		$1 -sz $PROC 1 $3 $4;
 		;;
 	MPI)
 	    case $ARCH in
