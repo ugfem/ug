@@ -62,15 +62,6 @@
    of a 2D or 3D version.
 
    .vb
-   __version23__
-   __version3__
-   .ve
-
-   Indicates which version is compiled. '__version23__' is for a version
-   that is compatible with UG version 2.3 (a version without the
-   matrix vector structure).
-
-   .vb
    DIM
    DIM_OF_BND
    CORNERS_OF_BND_SEG
@@ -115,30 +106,6 @@
 #define three
 #endif
 
-#ifdef NodeT
-#define Nodeon
-#else
-#define Nodeoff
-#endif
-
-#ifdef EdgeT
-#define Edgeon
-#else
-#define Edgeoff
-#endif
-
-#ifdef SideT
-#define Sideon
-#else
-#define Sideoff
-#endif
-
-#ifdef ElemT
-#define Elemon
-#else
-#define Elemoff
-#endif
-
 #ifdef two
 #ifdef three
 #error ****	define at most dimension two OR three		****
@@ -149,13 +116,6 @@
 #ifndef three
 #error ****	define at least dimension two OR three		****
 #endif
-#endif
-
-#if defined Nodeoff && defined Edgeoff && defined Sideoff && defined Elemoff
-        #ifdef _3
-        #error ****	define at least one of NodeT, ElemT, SideT, EdgeT for 3d version	   ****
-        #endif
-#define __version23__
 #endif
 
 #ifdef two
@@ -189,46 +149,6 @@
 #define __THREEDIM__
 #endif
 
-#ifdef Nodeon
-#define __NODEDATA__
-#define NODE_DATA       1
-#endif
-#ifndef Nodeon
-#define NODE_DATA       0
-#endif
-
-#ifdef Edgeon
-#define __EDGEDATA__
-#define EDGE_DATA       2
-#endif
-#ifndef Edgeon
-#define EDGE_DATA       0
-#endif
-
-#ifdef Elemon
-#define __ELEMDATA__
-#define ELEM_DATA       4
-#endif
-#ifndef Elemon
-#define ELEM_DATA       0
-#endif
-
-#ifdef Sideon
-#define __SIDEDATA__
-#define SIDE_DATA       8
-#endif
-#ifndef Sideon
-#define SIDE_DATA       0
-#endif
-
-#ifndef __version23__
-#define __version3__
-#endif
-
-#define DATA_TYPES                      (NODE_DATA | EDGE_DATA | SIDE_DATA | ELEM_DATA)
-#define ALL_TYPES                   (NODE_DATA | EDGE_DATA | SIDE_DATA | ELEM_DATA)
-#define TYPES_EXISTING(t)       ((((t)|DATA_TYPES)==DATA_TYPES)&&(t))
-
 /****************************************************************************/
 /*																			*/
 /* switch-define dependent defines											*/
@@ -243,7 +163,6 @@
         #define DIM_OF_BND                              1                               /* dimension of boundary surface				*/
         #define CORNERS_OF_BND_SEG              2                               /* number of corners of a boundary side                 */
         #define MAXVECTORS                              3                               /* three different data types					*/
-        #define __MIDNODE__
 #endif
 
 #ifdef __THREEDIM__
@@ -251,7 +170,6 @@
         #define DIM_OF_BND                              2                               /* dimension of boundary surface				*/
         #define CORNERS_OF_BND_SEG              4                               /* number of corners of a boundary side                 */
         #define MAXVECTORS                              4                               /* four different data types					*/
-        #define __MIDNODE__
 #endif
 
 /* values for vectors */

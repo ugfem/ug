@@ -31,6 +31,10 @@
 #include "gm.h"
 #include "ugm.h"
 
+#ifdef ModelP
+#include "parallel.h"
+#endif
+
 #include "elements.h"
 
 /****************************************************************************/
@@ -62,7 +66,6 @@ INT sons_offset[TAGS];
 INT nb_offset[TAGS];
 INT evector_offset[TAGS];
 INT svector_offset[TAGS];
-INT data_offset[TAGS];
 INT side_offset[TAGS];
 
 GENERAL_ELEMENT *element_descriptors[TAGS];
@@ -258,7 +261,7 @@ static char rcsid[] = "$Header$";
    D*/
 /****************************************************************************/
 
-static INT ProcessElementDescription (GENERAL_ELEMENT *el)
+static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
 {
   INT p_count, tag;
   INT i,j,k,l,m,n,n1,n2;
@@ -286,21 +289,19 @@ static INT ProcessElementDescription (GENERAL_ELEMENT *el)
 
   /* element vector */
   evector_offset[tag] = 0;
-        #ifdef __ELEMDATA__
-  evector_offset[tag] = p_count; p_count++;
-        #endif
+  if (TYPE_DEF_IN_MG(theMG,ELEMVECTOR))
+  {
+    evector_offset[tag] = p_count;
+    p_count++;
+  }
 
   /* side vector */
   svector_offset[tag] = 0;
-        #ifdef __SIDEDATA__
-  svector_offset[tag] = p_count; p_count += el->sides_of_elem;
-        #endif
-
-  /* data vector in version 2.3 mode */
-  data_offset[tag] = 0;
-        #ifdef __version23__
-  data_offset[tag] = p_count; p_count++;
-        #endif
+  if (TYPE_DEF_IN_MG(theMG,ELEMVECTOR))
+  {
+    svector_offset[tag] = p_count;
+    p_count += el->sides_of_elem;
+  }
 
   /* so far for an inner element */
   el->inner_size = sizeof(struct generic_element) + (p_count-1)*sizeof(void *);
@@ -743,24 +744,28 @@ static INT ProcessElementDescription (GENERAL_ELEMENT *el)
    D*/
 /****************************************************************************/
 
-INT InitElementTypes (void)
+INT InitElementTypes (MULTIGRID *theMG)
 {
   INT err;
 
 #ifdef __TWODIM__
-  err = ProcessElementDescription(&def_triangle);
+  err = ProcessElementDescription(theMG,&def_triangle);
   if (err!=GM_OK) return(err);
-  err = ProcessElementDescription(&def_quadrilateral);
+  err = ProcessElementDescription(theMG,&def_quadrilateral);
   if (err!=GM_OK) return(err);
 #endif
 
 #ifdef __THREEDIM__
-  err = ProcessElementDescription(&def_tetrahedron);
+  err = ProcessElementDescription(theMG,&def_tetrahedron);
   if (err!=GM_OK) return(err);
-  err = ProcessElementDescription(&def_pyramid);
+  err = ProcessElementDescription(theMG,&def_pyramid);
   if (err!=GM_OK) return(err);
-  err = ProcessElementDescription(&def_hexahedron);
+  err = ProcessElementDescription(theMG,&def_hexahedron);
   if (err!=GM_OK) return(err);
+#endif
+
+#ifdef ModelP
+  InitCurrMG(theMG);
 #endif
 
   return(GM_OK);

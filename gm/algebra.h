@@ -12,7 +12,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 294										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de                            */
+/*			  internet: ug@ica3.uni-stuttgart.de                                    */
 /*																			*/
 /*			  blockvector data structure:									*/
 /*			  Christian Wrobel                                                                              */
@@ -20,7 +20,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de					    */
+/*			  email: ug@ica3.uni-stuttgart.de					            */
 /*																			*/
 /* History:    1.12.93 begin, ug 3d											*/
 /*			  27.09.95 blockvector implemented (Christian Wrobel)			*/
@@ -34,8 +34,6 @@
 /* auto include mechanism and other include files							*/
 /*																			*/
 /****************************************************************************/
-
-#ifdef __version3__
 
 #ifndef __ALGEBRA__
 #define __ALGEBRA__
@@ -114,10 +112,12 @@ INT             DisposeConnection                               (GRID *theGrid, 
 INT                     MGCreateConnection                              (MULTIGRID *theMG);
 INT             CreateConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement);
 INT             InsertedElementCreateConnection (GRID *theGrid, ELEMENT *theElement);
-INT             DisposeDoubledSideVector                (GRID *theGrid, ELEMENT *Elem0, INT Side0, ELEMENT *Elem1, INT Side1);
 INT             DisposeConnectionFromVector     (GRID *theGrid, VECTOR *theVector);
 INT             DisposeConnectionFromElement    (GRID *theGrid, ELEMENT *theElement);
 INT             DisposeConnectionsInNeighborhood(GRID *theGrid, ELEMENT *theElement);
+#ifdef __THREEDIM__
+INT             DisposeDoubledSideVector                (GRID *theGrid, ELEMENT *Elem0, INT Side0, ELEMENT *Elem1, INT Side1);
+#endif
 
 /* query functions */
 INT             GetVectorsOfElement                     (const ELEMENT *theElement, INT *cnt, VECTOR **vList);
@@ -135,12 +135,12 @@ ELEMENT         *ElementCheckConnection                 (GRID *theGrid, ELEMENT 
 
 /* determination of vector classes */
 INT             ClearVectorClasses                              (GRID *theGrid);
-INT             SeedVectorClasses                               (ELEMENT *theElement);
+INT             SeedVectorClasses                               (GRID *theGrid, ELEMENT *theElement);
 INT             PropagateVectorClasses                  (GRID *theGrid);
 INT             ClearNextVectorClasses                  (GRID *theGrid);
-INT             SeedNextVectorClasses                   (ELEMENT *theElement);
+INT             SeedNextVectorClasses                   (GRID *theGrid, ELEMENT *theElement);
 INT             PropagateNextVectorClasses              (GRID *theGrid);
-INT             MaxNextVectorClass                              (ELEMENT *theElement);
+INT             MaxNextVectorClass                              (GRID *theGrid, ELEMENT *theElement);
 
 /* miscellaneous routines */
 INT             PrepareAlgebraModification              (MULTIGRID *theMG);
@@ -149,5 +149,4 @@ INT             MoveVector                                              (GRID *t
 /* Initialization */
 INT             InitAlgebra                                     (void);
 
-#endif
 #endif

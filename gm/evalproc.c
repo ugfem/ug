@@ -608,8 +608,6 @@ EVECTOR *CreateElementVectorEvalProcFromCoeffProc (const char *name, CoeffProcPt
 /*																			*/
 /****************************************************************************/
 
-#ifdef __NODEDATA__
-
 /****************************************************************************/
 /*D
    NodeVectorOrder - Plotfunction for NodeVector Order
@@ -635,6 +633,8 @@ static INT PreprocessNodeIndex (const char *name, MULTIGRID *theMG)
   INT i, index;
   VECTOR *theVector;
 
+  if (TYPE_DEF_IN_MG(theMG,NODEVECTOR))
+    return (1);
   for (i=0; i<=CURRENTLEVEL(theMG); i++)
   {
     index = 0;
@@ -742,8 +742,6 @@ static void GradNodeIndex (const ELEMENT *theElement, const COORD **theCorners, 
 
 #endif
 
-#endif
-
 /****************************************************************************/
 /*
    InitEvalProc	- Init this file
@@ -809,10 +807,8 @@ INT InitEvalProc ()
   theElemVectorVarID = GetNewEnvVarID();
 
   /* install general plot procs */
-        #ifdef __NODEDATA__
   if (CreateElementValueEvalProc("nindex",PreprocessNodeIndex,NodeIndex)==NULL) return(1);
   if (CreateElementVectorEvalProc("gradnindex",PreprocessNodeIndex,GradNodeIndex,DIM)==NULL) return(1);
-        #endif
 
   /* init variables used for CoeffProcElemEval */
   Couple_for_ElemValue.nUsed  = 0;

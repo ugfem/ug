@@ -116,8 +116,6 @@ INT              DisposeAuxEdges                (GRID *theGrid);
 #ifdef __THREEDIM__
 INT          DisposeEdgesFromElement(GRID *theGrid, ELEMENT *theElement);
 INT          CheckParityOfElements      (MULTIGRID* theMG);
-INT              SetParityInGrid            (GRID *theGrid);
-INT          SetParityOfElement         (ELEMENT *theElement);
 #endif
 
 #endif

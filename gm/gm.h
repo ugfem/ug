@@ -188,42 +188,6 @@ struct format {
   ENVDIR d;
 
   /* variables of format */
-#ifdef __version23__
-  INT sVertex;                           /* size of vertex user data structure in bytes */
-  INT sNode;                                     /* size of node user data structure in bytes	*/
-  INT sDiag;                                     /* size of diagonal user data structure in byt */
-  INT sElement;                          /* size of element user data structure in bytes*/
-  INT sLink;                                     /* size of link user data structure in bytes	*/
-  INT sEdge;                                     /* size of edge user data structure in bytes	*/
-  INT sMultiGrid;                        /* size of multigrid user data structure in byt*/
-
-  ConversionProcPtr SaveVertex;                 /* write user data to string		*/
-  ConversionProcPtr SaveNode;
-  ConversionProcPtr SaveDiag;
-  ConversionProcPtr SaveElement;
-  ConversionProcPtr SaveLink;
-  ConversionProcPtr SaveEdge;
-  ConversionProcPtr SaveGrid;
-  ConversionProcPtr SaveMultiGrid;
-
-  ConversionProcPtr LoadVertex;                 /* read user data from string		*/
-  ConversionProcPtr LoadNode;
-  ConversionProcPtr LoadDiag;
-  ConversionProcPtr LoadElement;
-  ConversionProcPtr LoadLink;
-  ConversionProcPtr LoadEdge;
-  ConversionProcPtr LoadGrid;
-  ConversionProcPtr LoadMultiGrid;
-
-  ConversionProcPtr PrintVertex;                /* print user data to string		*/
-  ConversionProcPtr PrintNode;
-  ConversionProcPtr PrintDiag;
-  ConversionProcPtr PrintElement;
-  ConversionProcPtr PrintLink;
-  ConversionProcPtr PrintEdge;
-  ConversionProcPtr PrintGrid;
-  ConversionProcPtr PrintMultiGrid;
-#else
   INT sVertex;                                   /* size of vertex user data struc. in bytes */
   INT sMultiGrid;                        /* size of mg user data structure in bytes	 */
   INT VectorSizes[MAXVECTORS];       /* number of doubles in vectors                     */
@@ -240,10 +204,8 @@ struct format {
   ConversionProcPtr PrintMultigrid;
   ConversionProcPtr PrintVector[MAXVECTORS];
   ConversionProcPtr PrintMatrix[MAXVECTORS][MAXVECTORS];
-#endif
 } ;
 
-#ifdef __version3__
 typedef struct {
   int pos;                                              /* which position is described here             */
   int size;                                             /* data size in bytes						*/
@@ -257,20 +219,12 @@ typedef struct {
   int depth;                                            /* connect with depth in dual graph             */
   ConversionProcPtr print;              /* function to print data					*/
 } MatrixDescriptor ;
-#endif
 
 /****************************************************************************/
 /*																			*/
 /* matrix/vector/blockvector data structure									*/
 /*																			*/
 /****************************************************************************/
-
-#ifdef __version23__
-typedef int VECTOR;
-typedef int MATRIX;
-#endif
-
-#ifdef __version3__
 
 /* data structure for BlockvectorDescription */
 typedef unsigned INT BVD_ENTRY_TYPE;    /* memory providing storage for level numbers */
@@ -350,8 +304,6 @@ struct blockvector
   struct blockvector *last_son;         /* end of blockvector list on next level  */
 };
 typedef struct blockvector BLOCKVECTOR;
-
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -437,12 +389,6 @@ struct node {                                           /* level dependent part 
   INT id;                                                       /* unique id used for load/store		*/
   INT index;                                                    /* discrete coordinates for ordering	*/
 
-  /* compatibility mode */
-        #ifdef __version23__
-  unsigned SHORT vskip;                         /* used bitwise for unkowns in myvertex */
-  unsigned SHORT nskip;                         /* used bitwise for unknowns in node	*/
-        #endif
-
   /* pointers */
   struct node *pred,*succ;                      /* double linked list of nodes per level*/
   struct link *start;                           /* list of links						*/
@@ -451,14 +397,7 @@ struct node {                                           /* level dependent part 
   union vertex *myvertex;                       /* corresponding vertex structure		*/
 
   /* associated vector if */
-        #ifdef __NODEDATA__
   VECTOR *vector;                                       /* associated vector					*/
-        #endif
-
-        #ifdef __version23__
-  void *data;                                           /* associated user data                                 */
-  void *matelem;                                        /* diagonal coefficient (as link data)	*/
-        #endif
 } ;
 
 struct link {
@@ -467,11 +406,6 @@ struct link {
   unsigned INT control;                         /* object identification, various flags */
   struct link *next;                                    /* ptr to next link                                     */
   struct node *nbnode;                          /* ptr to neighbor node                                 */
-
-  /* compatibility mode */
-        #ifdef __version23__
-  void *matelem;                                        /* associated user data structure		*/
-        #endif
 } ;
 
 
@@ -480,19 +414,10 @@ struct edge {                                           /* undirected edge of th
   /* variables */
   struct link links[2];                         /* two links							*/
 
-        #ifdef __MIDNODE__
   struct node *midnode;                         /* pointer to mid node on next finer gri*/
-        #endif
 
   /* associated vector if */
-        #ifdef __EDGEDATA__
   VECTOR *vector;                                       /* associated vector					*/
-        #endif
-
-  /* compatibility mode */
-        #ifdef __version23__
-  void *data;                                           /* associated user data structure		*/
-        #endif
 } ;
 
 struct generic_element {            /* no difference between inner and bndel*/
@@ -532,14 +457,7 @@ struct triangle {
   union element *nb[3];                         /* dual graph							*/
 
   /* associated vector if */
-        #ifdef __ELEMDATA__
   VECTOR *vector;                                       /* associated vector					*/
-        #endif
-
-  /* compatibility mode */
-        #ifdef __version23__
-  void *data;                                           /* associated user data structure		*/
-        #endif
 
   struct elementside *side[3];          /* only on bnd, NULL if interior side	*/
 } ;
@@ -564,14 +482,7 @@ struct quadrilateral {
   union element *nb[4];                         /* dual graph							*/
 
   /* associated vector if */
-        #ifdef __ELEMDATA__
   VECTOR *vector;                                       /* associated vector					*/
-        #endif
-
-  /* compatibility mode */
-        #ifdef __version23__
-  void *data;                                           /* associated user data structure		*/
-        #endif
 
   struct elementside *side[4];          /* only on bnd, NULL if interior side	*/
 } ;
@@ -596,14 +507,10 @@ struct tetrahedron {
   union element *nb[4];                         /* dual graph							*/
 
   /* associated vector if */
-        #ifdef __ELEMDATA__
   VECTOR *vector;                                       /* associated vector					*/
-        #endif
 
   /* associated vector if */
-        #ifdef __SIDEDATA__
   VECTOR *sidevector[4];                        /* associated vectors for sides			*/
-        #endif
 
   struct elementside *side[4];          /* only on bnd, NULL if interior side	*/
 } ;
@@ -628,14 +535,10 @@ struct pyramid {
   union element *nb[5];                         /* dual graph							*/
 
   /* associated vector if */
-        #ifdef __ELEMDATA__
   VECTOR *vector;                                       /* associated vector					*/
-        #endif
 
   /* associated vector if */
-        #ifdef __SIDEDATA__
   VECTOR *sidevector[5];                        /* associated vectors for sides			*/
-        #endif
 
   struct elementside *side[5];          /* only on bnd, NULL if interior side	*/
 } ;
@@ -660,14 +563,10 @@ struct hexahedron {
   union element *nb[6];                         /* dual graph							*/
 
   /* associated vector if */
-        #ifdef __ELEMDATA__
   VECTOR *vector;                                       /* associated vector					*/
-        #endif
 
   /* associated vector if */
-        #ifdef __SIDEDATA__
   VECTOR *sidevector[6];                        /* associated vectors for sides			*/
-        #endif
 
   struct elementside *side[6];          /* only on bnd, NULL if interior side	*/
 } ;
@@ -966,8 +865,6 @@ extern CONTROL_ENTRY
 /*				 BVDOWNTYPEBV if it points to a further blockvector (son)	*/
 /*																			*/
 /****************************************************************************/
-
-#ifdef __version3__
 
 /****************************************************************************/
 /*																			*/
@@ -1279,8 +1176,6 @@ extern CONTROL_ENTRY
 /* operations on struct block */
 #define BV_IS_LEAF_BV(bv)                               (BVDOWNTYPE(bv)==BVDOWNTYPEVECTOR)
 
-#endif
-
 /****************************************************************************/
 /*																			*/
 /* Macro definitions for geometric objects									*/
@@ -1337,18 +1232,11 @@ extern CONTROL_ENTRY
 #define MGOBJ 8                                                 /* multigrid object                             */
 #define VSOBJ 9                                                 /* vertex segment object			*/
 
-#ifdef __version23__
-
-#define NPREDEFOBJ 10                                   /* no of predefined objects             */
-#endif
-
-#ifdef __version3__
 /* object numbers for algebra */
 #define VEOBJ 10                                                /* vector object					*/
 #define MAOBJ 11                                                /* matrix object					*/
 #define BLOCKVOBJ 12                                            /* blockvector object                           */
 #define NPREDEFOBJ 13                                   /* no of predefined objects             */
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -1540,11 +1428,6 @@ extern CONTROL_ENTRY
 #define NDATA(p)        (p)->data
 #define NDIAG(p)        (p)->matelem
 #define NVECTOR(p)      (p)->vector
-
-#ifdef __version23__
-#define VSKIP(p)        (p)->vskip
-#define NSKIP(p)        (p)->nskip
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -1781,7 +1664,6 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define EFATHER(p)              ((ELEMENT *) (p)->ge.refs[father_offset[TAG(p)]])
 #define SON(p,i)                ((ELEMENT *) (p)->ge.refs[sons_offset[TAG(p)]+(i)])
 #define NBELEM(p,i)     ((ELEMENT *) (p)->ge.refs[nb_offset[TAG(p)]+(i)])
-#define EDATA(p)                ((void *) (p)->ge.refs[data_offset[TAG(p)]])
 #define SIDE(p,i)               ((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)])
 #define EVECTOR(p)              ((VECTOR *) (p)->ge.refs[evector_offset[TAG(p)]])
 #define SVECTOR(p,i)    ((VECTOR *) (p)->ge.refs[svector_offset[TAG(p)]+(i)])
@@ -1793,7 +1675,6 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define SET_SON(p,i,q)          (p)->ge.refs[sons_offset[TAG(p)]+(i)] = q
 #define SET_NBELEM(p,i,q)       (p)->ge.refs[nb_offset[TAG(p)]+(i)] = q
 #define VOID_NBELEM(p,i)        (p)->ge.refs[nb_offset[TAG(p)]+(i)]
-#define SET_EDATA(p,q)          (p)->ge.refs[data_offset[TAG(p)]] = q
 #define SET_SIDE(p,i,q)         (p)->ge.refs[side_offset[TAG(p)]+(i)] = q
 #define SET_EVECTOR(p,q)        (p)->ge.refs[evector_offset[TAG(p)]] = q
 #define SET_SVECTOR(p,i,q)      (p)->ge.refs[svector_offset[TAG(p)]+(i)] = q
@@ -1847,7 +1728,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define NS(p)                           ((p)->nSide)
 #define NVEC(p)                         ((p)->nVector)
 #define NC(p)                           ((p)->nCon)
-
+#define TYPE_DEF_IN_GRID(p,tp) ((p)->mg->theFormat->VectorSizes[(tp)]>0)
 
 /****************************************************************************/
 /*																			*/
@@ -1880,6 +1761,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define MG_USER_HEAP(p)                 ((p)->UserHeap)
 #define GEN_MGUD(p)                     ((p)->GenData)
 #define GEN_MGUD_ADR(p,o)               ((void *)(((char *)((p)->GenData))+(o)))
+#define TYPE_DEF_IN_MG(p,tp)    ((p)->theFormat->VectorSizes[(tp)]>0)
 
 /****************************************************************************/
 /*																			*/
@@ -1944,18 +1826,6 @@ FORMAT                   *GetFormat                             (const char *nam
 FORMAT                   *GetFirstFormat                        ();
 FORMAT                   *GetNextFormat                         (FORMAT * fmt);
 INT                               ChangeToFormatDir                     (const char *name);
-#ifdef __version23__
-FORMAT                   *CreateFormat                          (char *name,int sVertex,int sNode,int sDiag,int sElement,int sLink,int sEdge, int sMultiGrid,
-                                                                 ConversionProcPtr SaveVertex,ConversionProcPtr SaveNode,ConversionProcPtr SaveDiag,
-                                                                 ConversionProcPtr SaveElement,ConversionProcPtr SaveLink,ConversionProcPtr SaveEdge,
-                                                                 ConversionProcPtr SaveGrid,ConversionProcPtr SaveMultiGrid,ConversionProcPtr LoadVertex,
-                                                                 ConversionProcPtr LoadNode,ConversionProcPtr LoadDiag,ConversionProcPtr LoadElement,
-                                                                 ConversionProcPtr LoadLink,ConversionProcPtr LoadEdge,ConversionProcPtr LoadGrid,
-                                                                 ConversionProcPtr LoadMultiGrid,ConversionProcPtr PrintVertex,ConversionProcPtr PrintNode,
-                                                                 ConversionProcPtr PrintDiag,ConversionProcPtr PrintElement,ConversionProcPtr PrintLink,
-                                                                 ConversionProcPtr PrintEdge,ConversionProcPtr PrintGrid,ConversionProcPtr PrintMultiGrid);
-#endif
-#ifdef __version3__
 FORMAT                  *CreateFormat           (char *name, INT sVertex, INT sMultiGrid,
                                                  ConversionProcPtr PrintVertex,ConversionProcPtr PrintGrid,ConversionProcPtr PrintMultigrid,
                                                  INT nvDesc, VectorDescriptor *vDesc,INT nmDesc, MatrixDescriptor *mDesc);
@@ -1963,7 +1833,6 @@ FORMAT                  *Ugly_CreateFormat (char *name,INT sVertex, INT sMultiGr
                                             INT *FromType, INT *ToType, INT *MatrixSizes, INT *ConnectionDepth,
                                             ConversionProcPtr PrintVertex, ConversionProcPtr PrintGrid,ConversionProcPtr PrintMultigrid,
                                             ConversionProcPtr PrintVector[MAXVECTORS], ConversionProcPtr PrintMatrix[MAXVECTORS][MAXVECTORS] );
-#endif
 
 /* create, saving and disposing a multigrid structure */
 MULTIGRID   *CreateMultiGrid        (char *MultigridName, char *BndValProblem, char *format, unsigned long heapSize);
@@ -2010,7 +1879,6 @@ INT CreateBlockvector                           (GRID *theGrid, BLOCKVECTOR **BV
 INT DisposeBlockvector                          (GRID *theGrid, BLOCKVECTOR *bv);
 
 /* algebraic connections */
-#ifdef __version3__
 CONNECTION      *CreateExtraConnection  (GRID *theGrid, VECTOR *from, VECTOR *to);
 INT             DisposeExtraConnections (GRID *theGrid);
 MATRIX          *GetMatrix                              (const VECTOR *FromVector, const VECTOR *ToVector);
@@ -2020,11 +1888,8 @@ MATRIX      *GetIMatrix             (VECTOR *FineVector, VECTOR *CoarseVector);
 MATRIX      *CreateIMatrix          (GRID *theGrid, VECTOR *fvec, VECTOR *cvec);
 INT                     DisposeIMatrices                (GRID *theGrid, MATRIX *theMatrix);
 #endif
-#endif
-#ifdef __version23__
 EDGE            *CreateAuxEdge                  (GRID *theGrid, NODE *from, NODE *to);
 INT             DisposeAuxEdges                 (GRID *theGrid);
-#endif
 
 /* searching */
 NODE            *FindNodeFromId                 (GRID *theGrid, INT id);

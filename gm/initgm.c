@@ -118,13 +118,6 @@ INT InitGm ()
     return (err);
   }
 
-  /* elements.c */
-  if ((err=InitElementTypes())!=GM_OK)
-  {
-    SetHiWrd(err,__LINE__);
-    return (err);
-  }
-
   /* init evalproc.c */
   if ((err=InitEvalProc())!=0)
   {

@@ -203,8 +203,6 @@ static char rcsid[] = "$Header$";
 
 INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation );
 
-#ifdef __version3__
-
 /****************************************************************************/
 /*D
    CheckMatrixList - Check matrix list
@@ -1333,39 +1331,40 @@ INT DisposeConnection (GRID *theGrid, CONNECTION *theConnection)
    D*/
 /****************************************************************************/
 
+#ifdef __THREEDIM__
 INT DisposeDoubledSideVector (GRID *theGrid, ELEMENT *Elem0, INT Side0, ELEMENT *Elem1, INT Side1)
 {
-        #ifdef __SIDEDATA__
   VECTOR *Vector0, *Vector1;
 
-  Vector0 = SVECTOR(Elem0,Side0);
-  Vector1 = SVECTOR(Elem1,Side1);
-  if (Vector0 == Vector1)
+  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+  {
+    Vector0 = SVECTOR(Elem0,Side0);
+    Vector1 = SVECTOR(Elem1,Side1);
+    if (Vector0 == Vector1)
+      return (0);
+    assert(VCOUNT(Vector0)==1 && VCOUNT(Vector1)==1);
+    assert(VSTART(Vector0)==NULL || VSTART(Vector1)==NULL);
+    if (VSTART(Vector0)==NULL)
+    {
+      SET_SVECTOR(Elem0,Side0,Vector1);
+      SETVCOUNT(Vector1,2);
+      if (DisposeVector (theGrid,Vector0))
+        return (1);
+    }
+    else
+    {
+      SET_SVECTOR(Elem1,Side1,Vector0);
+      SETVCOUNT(Vector0,2);
+      if (DisposeVector (theGrid,Vector1))
+        return (1);
+    }
     return (0);
-  assert(VCOUNT(Vector0)==1 && VCOUNT(Vector1)==1);
-  assert(VSTART(Vector0)==NULL || VSTART(Vector1)==NULL);
-  if (VSTART(Vector0)==NULL)
-  {
-    SET_SVECTOR(Elem0,Side0,Vector1);
-    SETVCOUNT(Vector1,2);
-    if (DisposeVector (theGrid,Vector0))
-      return (1);
-  }
-  else
-  {
-    SET_SVECTOR(Elem1,Side1,Vector0);
-    SETVCOUNT(Vector0,2);
-    if (DisposeVector (theGrid,Vector1))
-      return (1);
+
   }
 
-  return (0);
-        #endif
-
-        #ifndef __SIDEDATA__
   return (1);
-        #endif
 }
+#endif
 
 /****************************************************************************/
 /*D
@@ -1427,35 +1426,44 @@ INT DisposeConnectionFromElement (GRID *theGrid, ELEMENT *theElement)
   VECTOR *vList[20];
   INT cnt;
 
-  GetVectorsOfElement(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++)
+  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
   {
-    if (DisposeConnectionFromVector(theGrid,vList[i])) return(GM_ERROR);
-    SETVBUILDCON(vList[i],1);
-  }
-
-  if (DIM==3)
-  {
-    GetVectorsOfSides(theElement,&cnt,vList);
+    GetVectorsOfElement(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
     {
       if (DisposeConnectionFromVector(theGrid,vList[i])) return(GM_ERROR);
       SETVBUILDCON(vList[i],1);
     }
   }
-
-  GetVectorsOfEdges(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++)
+  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
   {
-    if (DisposeConnectionFromVector(theGrid,vList[i])) return(GM_ERROR);
-    SETVBUILDCON(vList[i],1);
+    if (DIM==3)
+    {
+      GetVectorsOfSides(theElement,&cnt,vList);
+      for (i=0; i<cnt; i++)
+      {
+        if (DisposeConnectionFromVector(theGrid,vList[i])) return(GM_ERROR);
+        SETVBUILDCON(vList[i],1);
+      }
+    }
   }
-
-  GetVectorsOfNodes(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++)
+  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
   {
-    if (DisposeConnectionFromVector(theGrid,vList[i])) return(GM_ERROR);
-    SETVBUILDCON(vList[i],1);
+    GetVectorsOfEdges(theElement,&cnt,vList);
+    for (i=0; i<cnt; i++)
+    {
+      if (DisposeConnectionFromVector(theGrid,vList[i])) return(GM_ERROR);
+      SETVBUILDCON(vList[i],1);
+    }
+  }
+  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+  {
+    GetVectorsOfNodes(theElement,&cnt,vList);
+    for (i=0; i<cnt; i++)
+    {
+      if (DisposeConnectionFromVector(theGrid,vList[i])) return(GM_ERROR);
+      SETVBUILDCON(vList[i],1);
+    }
   }
 
   return(GM_OK);
@@ -1614,13 +1622,11 @@ INT GetVectorsOfElement (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 {
   *cnt = 0;
 
-        #ifdef __ELEMDATA__
   if (EVECTOR(theElement) != NULL)
   {
     vList[0] = EVECTOR(theElement);
     *cnt = 1;
   }
-        #endif
 
   return(GM_OK);
 }
@@ -1649,18 +1655,14 @@ INT GetVectorsOfElement (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 
 INT GetVectorsOfSides (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 {
-        #ifdef __SIDEDATA__
   INT i;
-        #endif
 
   *cnt = 0;
   if (DIM==2) return(GM_OK);
 
-        #ifdef __SIDEDATA__
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
     if (SVECTOR(theElement,i) != NULL)
       vList[(*cnt)++] = SVECTOR(theElement,i);
-        #endif
 
   return(GM_OK);
 }
@@ -1689,13 +1691,10 @@ INT GetVectorsOfSides (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 
 INT GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 {
-        #ifdef __EDGEDATA__
   EDGE *theEdge;
   INT i,j,n;
-        #endif
 
   *cnt = 0;
-        #ifdef __EDGEDATA__
   if (DIM==3)
   {
     for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -1720,7 +1719,6 @@ INT GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
     }
     return(GM_OK);
   }
-        #endif
 
   return (0);
 }
@@ -1749,16 +1747,12 @@ INT GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 
 INT GetVectorsOfNodes (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 {
-        #ifdef __NODEDATA__
   INT i;
-        #endif
 
   *cnt = 0;
-        #ifdef __NODEDATA__
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     if (NVECTOR(CORNER(theElement,i)) != NULL)
       vList[(*cnt)++] = NVECTOR(CORNER(theElement,i));
-        #endif
   return (GM_OK);
 }
 
@@ -1877,14 +1871,26 @@ static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0, ELEMEN
   VECTOR *elemVec1[12], *sideVec1[12], *edgeVec1[12], *nodeVec1[12];
 
   /* initialize pointer arrays */
-  if (GetVectorsOfElement(Elem0,&elemCnt0,elemVec0)) return(GM_ERROR);
-  if (GetVectorsOfSides(Elem0,&sideCnt0,sideVec0)) return(GM_ERROR);
-  if (GetVectorsOfEdges(Elem0,&edgeCnt0,edgeVec0)) return(GM_ERROR);
-  if (GetVectorsOfNodes(Elem0,&nodeCnt0,nodeVec0)) return(GM_ERROR);
-  if (GetVectorsOfElement(Elem1,&elemCnt1,elemVec1)) return(GM_ERROR);
-  if (GetVectorsOfSides(Elem1,&sideCnt1,sideVec1)) return(GM_ERROR);
-  if (GetVectorsOfEdges(Elem1,&edgeCnt1,edgeVec1)) return(GM_ERROR);
-  if (GetVectorsOfNodes(Elem1,&nodeCnt1,nodeVec1)) return(GM_ERROR);
+  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
+  {
+    if (GetVectorsOfElement(Elem0,&elemCnt0,elemVec0)) return(GM_ERROR);
+    if (GetVectorsOfElement(Elem1,&elemCnt1,elemVec1)) return(GM_ERROR);
+  }
+  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+  {
+    if (GetVectorsOfSides(Elem0,&sideCnt0,sideVec0)) return(GM_ERROR);
+    if (GetVectorsOfSides(Elem1,&sideCnt1,sideVec1)) return(GM_ERROR);
+  }
+  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+  {
+    if (GetVectorsOfEdges(Elem0,&edgeCnt0,edgeVec0)) return(GM_ERROR);
+    if (GetVectorsOfEdges(Elem1,&edgeCnt1,edgeVec1)) return(GM_ERROR);
+  }
+  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+  {
+    if (GetVectorsOfNodes(Elem0,&nodeCnt0,nodeVec0)) return(GM_ERROR);
+    if (GetVectorsOfNodes(Elem1,&nodeCnt1,nodeVec1)) return(GM_ERROR);
+  }
 
   /* create node node connection */
   if (ActDepth <= ConDepth[MatrixType[NODEVECTOR][NODEVECTOR]])
@@ -2312,19 +2318,26 @@ INT GridCreateConnection (GRID *theGrid)
 
     /* check flags in vectors */
     if (DIM==3)
+      if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+      {
+        GetVectorsOfSides(theElement,&cnt,vList);
+        for (i=0; i<cnt; i++)
+          if (VBUILDCON(vList[i])) {SETEBUILDCON(theElement,1); break;}
+      }
+    if (EBUILDCON(theElement)) continue;
+    if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
     {
-      GetVectorsOfSides(theElement,&cnt,vList);
+      GetVectorsOfEdges(theElement,&cnt,vList);
       for (i=0; i<cnt; i++)
         if (VBUILDCON(vList[i])) {SETEBUILDCON(theElement,1); break;}
     }
     if (EBUILDCON(theElement)) continue;
-    GetVectorsOfEdges(theElement,&cnt,vList);
-    for (i=0; i<cnt; i++)
-      if (VBUILDCON(vList[i])) {SETEBUILDCON(theElement,1); break;}
-    if (EBUILDCON(theElement)) continue;
-    GetVectorsOfNodes(theElement,&cnt,vList);
-    for (i=0; i<cnt; i++)
-      if (VBUILDCON(vList[i])) {SETEBUILDCON(theElement,1); break;}
+    if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+    {
+      GetVectorsOfNodes(theElement,&cnt,vList);
+      for (i=0; i<cnt; i++)
+        if (VBUILDCON(vList[i])) {SETEBUILDCON(theElement,1); break;}
+    }
   }
 
   /* run over all elements with EBUILDCON true and build connections */
@@ -2457,14 +2470,13 @@ static INT ElementElementCheck (ELEMENT *Elem0, ELEMENT *Elem1, INT ActDepth, IN
   char buffer[256], msg[128];
   INT ReturnCode;
 
-  /* initialize pointer arrays */
   if (GetVectorsOfElement(Elem0,&elemCnt0,elemVec0)) return(GM_ERROR);
-  if (GetVectorsOfSides(Elem0,&sideCnt0,sideVec0)) return(GM_ERROR);
-  if (GetVectorsOfEdges(Elem0,&edgeCnt0,edgeVec0)) return(GM_ERROR);
-  if (GetVectorsOfNodes(Elem0,&nodeCnt0,nodeVec0)) return(GM_ERROR);
   if (GetVectorsOfElement(Elem1,&elemCnt1,elemVec1)) return(GM_ERROR);
+  if (GetVectorsOfSides(Elem0,&sideCnt0,sideVec0)) return(GM_ERROR);
   if (GetVectorsOfSides(Elem1,&sideCnt1,sideVec1)) return(GM_ERROR);
+  if (GetVectorsOfEdges(Elem0,&edgeCnt0,edgeVec0)) return(GM_ERROR);
   if (GetVectorsOfEdges(Elem1,&edgeCnt1,edgeVec1)) return(GM_ERROR);
+  if (GetVectorsOfNodes(Elem0,&nodeCnt0,nodeVec0)) return(GM_ERROR);
   if (GetVectorsOfNodes(Elem1,&nodeCnt1,nodeVec1)) return(GM_ERROR);
 
   sprintf(msg,"error in connection between element %lu and %lu: ",(long)ID(Elem0),(long)ID(Elem1));
@@ -2856,24 +2868,31 @@ INT VectorInElement (ELEMENT *theElement, VECTOR *theVector)
   VECTOR *vList[20];
   INT cnt;
 
-  GetVectorsOfElement(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++)
-    if (vList[i]==theVector) return(1);
-
-  if (DIM==3)
+  if (VTYPE(theVector) == ELEMVECTOR)
   {
-    GetVectorsOfSides(theElement,&cnt,vList);
+    GetVectorsOfElement(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
       if (vList[i]==theVector) return(1);
   }
-
-  GetVectorsOfEdges(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++)
-    if (vList[i]==theVector) return(1);
-
-  GetVectorsOfNodes(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++)
-    if (vList[i]==theVector) return(1);
+  if (DIM==3)
+    if (VTYPE(theVector) == SIDEVECTOR)
+    {
+      GetVectorsOfSides(theElement,&cnt,vList);
+      for (i=0; i<cnt; i++)
+        if (vList[i]==theVector) return(1);
+    }
+  if (VTYPE(theVector) == EDGEVECTOR)
+  {
+    GetVectorsOfEdges(theElement,&cnt,vList);
+    for (i=0; i<cnt; i++)
+      if (vList[i]==theVector) return(1);
+  }
+  if (VTYPE(theVector) == NODEVECTOR)
+  {
+    GetVectorsOfNodes(theElement,&cnt,vList);
+    for (i=0; i<cnt; i++)
+      if (vList[i]==theVector) return(1);
+  }
 
   return (0);
 }
@@ -2956,9 +2975,10 @@ INT VectorPosition (VECTOR *theVector, COORD *position)
    SeedVectorClasses -  Initialize vector classes
 
    SYNOPSIS:
-   INT SeedVectorClasses (ELEMENT *theElement);
+   INT SeedVectorClasses (GRID *theGrid, ELEMENT *theElement);
 
    PARAMETERS:
+   .  theGrid - given grid
    .  theElement - given element
 
    DESCRIPTION:
@@ -2971,25 +2991,36 @@ INT VectorPosition (VECTOR *theVector, COORD *position)
    D*/
 /****************************************************************************/
 
-INT SeedVectorClasses (ELEMENT *theElement)
+INT SeedVectorClasses (GRID *theGrid, ELEMENT *theElement)
 {
   INT i;
   VECTOR *vList[20];
   INT cnt;
 
-  GetVectorsOfElement(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++) SETVCLASS(vList[i],3);
-  if (DIM==3)
+  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
   {
-    GetVectorsOfSides(theElement,&cnt,vList);
+    GetVectorsOfElement(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) SETVCLASS(vList[i],3);
   }
-  GetVectorsOfEdges(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++) SETVCLASS(vList[i],3);
-  GetVectorsOfNodes(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++) SETVCLASS(vList[i],3);
+  if (DIM==3)
+    if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+    {
+      GetVectorsOfSides(theElement,&cnt,vList);
+      for (i=0; i<cnt; i++) SETVCLASS(vList[i],3);
+    }
+  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+  {
+    GetVectorsOfEdges(theElement,&cnt,vList);
+    for (i=0; i<cnt; i++) SETVCLASS(vList[i],3);
+  }
+  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+  {
+    GetVectorsOfNodes(theElement,&cnt,vList);
+    for (i=0; i<cnt; i++) SETVCLASS(vList[i],3);
+  }
   return (0);
 }
+
 /****************************************************************************/
 /*D
    ClearVectorClasses - Reset vector classes
@@ -3105,9 +3136,10 @@ INT ClearNextVectorClasses (GRID *theGrid)
    SeedNextVectorClasses - Set 'VNCLASS' in all vectors associated with element
 
    SYNOPSIS:
-   INT SeedNextVectorClasses (ELEMENT *theElement);
+   INT SeedNextVectorClasses (GRID *theGrid, ELEMENT *theElement);
 
    PARAMETERS:
+   .  theGrid - given grid
    .  theElement - pointer to element
 
    DESCRIPTION:
@@ -3120,23 +3152,33 @@ INT ClearNextVectorClasses (GRID *theGrid)
    D*/
 /****************************************************************************/
 
-INT SeedNextVectorClasses (ELEMENT *theElement)
+INT SeedNextVectorClasses (GRID *theGrid, ELEMENT *theElement)
 {
   INT i;
   VECTOR *vList[20];
   INT cnt;
 
-  GetVectorsOfElement(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++) SETVNCLASS(vList[i],3);
-  if (DIM==3)
+  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
   {
-    GetVectorsOfSides(theElement,&cnt,vList);
+    GetVectorsOfElement(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) SETVNCLASS(vList[i],3);
   }
-  GetVectorsOfEdges(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++) SETVNCLASS(vList[i],3);
-  GetVectorsOfNodes(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++) SETVNCLASS(vList[i],3);
+  if (DIM==3)
+    if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+    {
+      GetVectorsOfSides(theElement,&cnt,vList);
+      for (i=0; i<cnt; i++) SETVNCLASS(vList[i],3);
+    }
+  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+  {
+    GetVectorsOfEdges(theElement,&cnt,vList);
+    for (i=0; i<cnt; i++) SETVNCLASS(vList[i],3);
+  }
+  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+  {
+    GetVectorsOfNodes(theElement,&cnt,vList);
+    for (i=0; i<cnt; i++) SETVNCLASS(vList[i],3);
+  }
   return (0);
 }
 
@@ -3190,10 +3232,11 @@ INT PropagateNextVectorClasses (GRID *theGrid)
    MaxNextVectorClass - Returns highest vector class of a dof on next level
 
    SYNOPSIS:
-   INT MaxNextVectorClass (ELEMENT *theElement);
+   INT MaxNextVectorClass (GRID *theGrid, ELEMENT *theElement);
 
    PARAMETERS:
-   .  theElement - pointer to element
+   .  theGrid - pointer to a grid
+   .  theElement - pointer to a element
 
    DECRIPTION:
    This function returns highest 'VNCLASS' of a vector associated with the
@@ -3206,25 +3249,34 @@ INT PropagateNextVectorClasses (GRID *theGrid)
    D*/
 /****************************************************************************/
 
-INT MaxNextVectorClass (ELEMENT *theElement)
+INT MaxNextVectorClass (GRID *theGrid, ELEMENT *theElement)
 {
   INT i,m;
   VECTOR *vList[20];
   INT cnt;
 
   m = 0;
-  GetVectorsOfElement(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++) m = MAX(m,VNCLASS(vList[i]));
-  if (DIM==3)
+  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
   {
-    GetVectorsOfSides(theElement,&cnt,vList);
+    GetVectorsOfElement(theElement,&cnt,vList);
     for (i=0; i<cnt; i++) m = MAX(m,VNCLASS(vList[i]));
   }
-  GetVectorsOfEdges(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++) m = MAX(m,VNCLASS(vList[i]));
-  GetVectorsOfNodes(theElement,&cnt,vList);
-  for (i=0; i<cnt; i++) m = MAX(m,VNCLASS(vList[i]));
-
+  if (DIM==3)
+    if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+    {
+      GetVectorsOfSides(theElement,&cnt,vList);
+      for (i=0; i<cnt; i++) m = MAX(m,VNCLASS(vList[i]));
+    }
+  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+  {
+    GetVectorsOfEdges(theElement,&cnt,vList);
+    for (i=0; i<cnt; i++) m = MAX(m,VNCLASS(vList[i]));
+  }
+  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+  {
+    GetVectorsOfNodes(theElement,&cnt,vList);
+    for (i=0; i<cnt; i++) m = MAX(m,VNCLASS(vList[i]));
+  }
   return (m);
 }
 
@@ -5152,9 +5204,6 @@ INT InitAlgebra (void)
 
   return (0);
 }
-
-#endif
-
 
 #ifdef __INTERPOLATION_MATRIX__
 

@@ -1034,7 +1034,7 @@ static int ComputeCopies (GRID *theGrid)
 	for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
 		if (MARK(theElement)!=NO_REFINEMENT && (MARKCLASS(theElement)==RED || MARKCLASS(theElement)==GREEN))
 		{
-			SeedNextVectorClasses(theElement);
+			SeedNextVectorClasses(theGrid,theElement);
 			flag=1; /* there is at least one element to be refined */
 		}
 
@@ -1043,7 +1043,7 @@ static int ComputeCopies (GRID *theGrid)
 	{
 		if (flag)
 			for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
-				SeedNextVectorClasses(theElement);
+				SeedNextVectorClasses(theGrid,theElement);
 	}
 	else
 	{
@@ -1052,7 +1052,7 @@ static int ComputeCopies (GRID *theGrid)
 	
 	/* an element is copied if it has a dof of class 2 and higher */
 	for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement)) {
-		if ((MARK(theElement)==NO_REFINEMENT)&&(MaxNextVectorClass(theElement)>=MINVNCLASS))
+		if ((MARK(theElement)==NO_REFINEMENT)&&(MaxNextVectorClass(theGrid,theElement)>=MINVNCLASS))
 		{
 			SETMARK(theElement,COPY);
 			SETMARKCLASS(theElement,YELLOW);
@@ -2633,11 +2633,11 @@ static int RefineGreenElement (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 										SET_NBELEM(NbSonList[s2],k,theSon);
 								
 										/* dispose doubled side vectors if */
-										#ifdef __SIDEDATA__
-										if (DisposeDoubledSideVector(theGrid,theSon,side,NbSonList[s2],k))
+                                        #ifdef __THREEDIM__
+										if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))										
+										  if (DisposeDoubledSideVector(theGrid,theSon,side,NbSonList[s2],k))
 											return (1);
-										#endif
-								
+                                        #endif
 										found=1;
 										break;
 									default:
@@ -2873,13 +2873,16 @@ static int RefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 				assert(SonList[side]!=NULL);
 		
 				/* dispose doubled side vectors if */
-				#ifdef __SIDEDATA__
-				for (l=0; l<SIDES_OF_ELEM(theElement); l++)
-					if (rule->sons[side].nb[l]==s)
+				#ifdef __THREEDIM__
+				if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+				  {
+					for (l=0; l<SIDES_OF_ELEM(theElement); l++)
+					  if (rule->sons[side].nb[l]==s)
 						break;
-				if (DisposeDoubledSideVector(theGrid,SonList[s],i,SonList[side],l))
+					if (DisposeDoubledSideVector(theGrid,SonList[s],i,SonList[side],l))
 					return (1);
-				#endif
+				  }
+                #endif
 				continue;
 			}
 
@@ -3081,11 +3084,11 @@ static int RefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 							SET_NBELEM(SonList2[s2],j,SonList[s]);
 					
 							/* dispose doubled side vectors if */
-							#ifdef __SIDEDATA__
-							if (DisposeDoubledSideVector(theGrid,SonList[s],i,SonList2[s2],j))
+                            #ifdef __THREEDIM__
+							if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+							  if (DisposeDoubledSideVector(theGrid,SonList[s],i,SonList2[s2],j))
 								return (1);
-							#endif
-					
+                            #endif
 							found=1;
 							break;
 						default:
@@ -3362,7 +3365,8 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
 				if (ECLASS(theElement)>=GREEN_CLASS || (rFlag==GM_COPY_ALL)) 
 				  SeedVectorClasses(FinerGrid,theElement);
 			PropagateVectorClasses(FinerGrid);
-				if (ECLASS(theElement)>=IRREGULAR_CLASS) SeedVectorClasses(theElement);
+				if (ECLASS(theElement)>=IRREGULAR_CLASS) 
+		/* TODO: delete special debug */ PRINTELEMID(-1)
 	DEBUG_TIME(0);
 
 			

@@ -23,7 +23,6 @@
 #pragma segment ugio
 #endif
 
-
 /****************************************************************************/
 /*																			*/
 /* include files															*/
@@ -172,7 +171,7 @@ INT MGSetVectorClasses (MULTIGRID *theMG)
     for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
     {
       if (ECLASS(theElement)!=REGULAR_CLASS && ECLASS(theElement)!=IRREGULAR_CLASS) continue;
-      if (SeedVectorClasses(theElement)) return (1);
+      if (SeedVectorClasses(theGrid,theElement)) return (1);
     }
     if (PropagateVectorClasses(theGrid)) return (1);
   }
@@ -187,7 +186,7 @@ INT MGSetVectorClasses (MULTIGRID *theMG)
     {
       if (NSONS(theElement)==0) continue;
       if (ECLASS(SON(theElement,0))!=REGULAR_CLASS && ECLASS(SON(theElement,0))!=IRREGULAR_CLASS) continue;
-      if (SeedNextVectorClasses(theElement)) return (1);
+      if (SeedNextVectorClasses(theGrid,theElement)) return (1);
     }
     if (PropagateNextVectorClasses(theGrid)) return (1);
   }
@@ -252,12 +251,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   j = theMG->topLevel;
 
   /* write header */
-#ifdef __version23__
-  fprintf(stream,">-version UG23-<\n");
-#endif
-#ifdef __version3__
   fprintf(stream,">-version UG31-<\n");
-#endif
 
   fprintf(stream,"%s\n",comment);
   fprintf(stream,"%s\n",BeginOfData);
@@ -355,27 +349,12 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
       if (NFATHER(theNode)!=NULL) i1 = ID(NFATHER(theNode));
       if (SONNODE(theNode)!=NULL) i2 = ID(SONNODE(theNode));
       if (MYVERTEX(theNode)!=NULL) i3 = ID(MYVERTEX(theNode));
-#ifdef __version23__
-      fprintf(stream,"(ND %lx %ld %ld %hu %hu %ld %ld %ld",
-              (unsigned long) CTRL(theNode),
-              (long) ID(theNode),
-              (long) INDEX(theNode),
-              (unsigned short) VSKIP(theNode),
-              (unsigned short) NSKIP(theNode),
-              i1,i2,i3);
-#endif
-#ifdef __version3__
       fprintf(stream,"(ND %lx %ld %ld %ld %ld %ld",
               (unsigned long) CTRL(theNode),
               (long) ID(theNode),
               (long) INDEX(theNode),
               i1,i2,i3);
-#endif
-#ifdef __version23__
-      /* data */
-      fprintf(stream," ()");
-      fprintf(stream," ()");
-#endif
+
       /* trailer */
       fprintf(stream,")\n");
     }
@@ -399,18 +378,6 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
             if (MIDNODE(theEdge) != NULL) i1 = ID(MIDNODE(theEdge));
             fprintf(stream," %ld",i1);
           }
-#endif
-#ifdef __version23__
-          /* edge data */
-          fprintf(stream," ()");
-
-          /* link 0 */
-          fprintf(stream," %lx",(long) CTRL(LINK0(theEdge)));
-          fprintf(stream," ()");
-
-          /* link 1 */
-          fprintf(stream," %lx",(long) CTRL(LINK1(theEdge)));
-          fprintf(stream," ()");
 #endif
 
           /* trailer */
@@ -449,11 +416,6 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
         if (NBELEM(theElement,i)!=NULL) i1 = ID(NBELEM(theElement,i));
         fprintf(stream," %ld",i1);
       }
-
-#ifdef __version23__
-      /* element data */
-      fprintf(stream," ()");
-#endif
 
       /* boundary elements only */
       if (OBJT(theElement)==BEOBJ)
@@ -603,13 +565,6 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
     PrintErrorMessage('W',"LoadMultiGrid","grid has wrong dimension");
     fclose(stream); return (NULL);
   }
-#ifdef __version23__
-  if (version>23)
-  {
-    PrintErrorMessage('W',"LoadMultiGrid","You can read only files with version <=2.3 with this application");
-    fclose(stream); return(NULL);
-  }
-#endif
 
   /* allocate multigrid envitem */
   theMG = MakeMGItem(MultigridName);
@@ -697,7 +652,13 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
     DisposeMultiGrid(theMG);
     fclose(stream); return(NULL);
   }
-
+  theMG->theFormat = theFormat;
+  if (InitElementTypes(theMG)!=GM_OK)
+  {
+    PrintErrorMessage('E',"LoadMultiGrid","error in InitElementTypes");
+    DisposeMultiGrid(theMG);
+    fclose(stream); return(NULL);
+  }
 
   /* allocate user data from that heap */
 
@@ -732,7 +693,6 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
 
   /* domain, problem and format */
   MG_BVP(theMG) = theBVP;
-  theMG->theFormat = theFormat;
   theMG->theHeap = theHeap;
   for (i=0; i<MAXLEVEL; i++) theMG->grids[i] = NULL;
   for (i=0; i<MAXOBJECTS; i++) theMG->freeObjects[i] = NULL;
@@ -1004,10 +964,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
       CTRL(theNode) = (unsigned INT) ul;
       Nodes[i1] = theNode;
       INDEX(theNode) = (INT) i2;
-#ifdef __version23__
-      VSKIP(theNode) = (unsigned SHORT) us1;
-      NSKIP(theNode) = (unsigned SHORT) us2;
-#endif
+
       NFATHER(theNode) = (NODE *) i3;
       SONNODE(theNode) = (NODE *) i4;
       MYVERTEX(theNode) = (VERTEX *) i5;
@@ -1047,9 +1004,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
 
       /* load ID from MidNode if */
                         #ifdef __TWODIM__
-            #ifdef __MIDNODE__
       MIDNODE(theEdge)=NULL;
-                #endif
                 #endif
                         #ifdef __THREEDIM__
       {
@@ -1307,7 +1262,6 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
   /* throw away pointers */
   Release(theHeap,FROM_TOP);
 
-#ifdef __version3__
   /* handle algebra */
   if (MGCreateConnection(theMG))
   {
@@ -1317,11 +1271,10 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
   }
   if (MGSetVectorClasses(theMG))
   {
-    UserWrite("cannot comput vector classes in multigrid\n");
+    UserWrite("cannot compute vector classes in multigrid\n");
     DisposeMultiGrid(theMG);
     return(NULL);
   }
-#endif
 
   /* return ok */
   fclose(stream); return(theMG);
