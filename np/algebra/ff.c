@@ -78,6 +78,8 @@
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
+REP_ERR_FILE;
+
 static DOUBLE glob_h;   /* used if THETA_ANA is defined */
 
 /****************************************************************************/
@@ -285,7 +287,7 @@ INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
         m = GetMatrix( v_source, v_dest );
         assert( m != NULL );
         MVALUE( m, Theta ) = MVALUE( MADJ(m), Theta ) = 1e11;
-        return NUM_ERROR;
+        REP_ERR_RETURN(NUM_ERROR);
       }
 
       m = GetMatrix( v_source, v_dest );
@@ -299,7 +301,7 @@ INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
 
   }       /* while missed */
 
-  return NUM_OK;
+  return(NUM_OK);
 }
 
 
@@ -434,7 +436,7 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
     {
       PRINTDEBUG( np, 0, ("FFCalculateTheta: testvectors incompatible\n") );
       printf("tv1\n"); printvBS(bv_dest, tv1_comp);printf("tv2\n"); printvBS(bv_dest, tv2_comp);
-      return NUM_ERROR;
+      REP_ERR_RETURN(NUM_ERROR);
     }
 
     MVALUE( VSTART(vi), T_comp ) = MVALUE( VSTART(vi), K_comp ) -
@@ -457,7 +459,7 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
   MVALUE( VSTART(end_v), T_comp ) = MVALUE( VSTART(end_v), K_comp ) -
                                     (e1ip1*a1 + e2ip1*a2) / (e1ip1*e1ip1 + e2ip1 * e2ip1);
 
-  return NUM_OK;
+  return(NUM_OK);
 }
 
 
@@ -508,7 +510,7 @@ INT TFFUpdateDiagBlock( const BLOCKVECTOR *bv_dest, const BV_DESC *bvd_dest, con
   /* T_dest -= L_(dest,source)*Theta_(source,dest) */
   d2matmul_minusBS( bv_dest, bvd_source, bvd_dest, bvdf, T, DL, Theta, grid );
 
-  return NUM_OK;
+  return(NUM_OK);
 }
 
 
@@ -723,7 +725,7 @@ INT TFFDecomp( DOUBLE wavenr,
 #endif
 
   /*printvBS(bv, tv_comp); printmBS(bv,bv,K_comp); printmBS(bv,bv,FF_comp); printmBS(bv,bv,LU_comp); printf("\n");*/
-  return NUM_OK;
+  return(NUM_OK);
 }
 
 
@@ -868,7 +870,7 @@ INT FFDecomp( DOUBLE wavenr,
   FFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, LU_comp, FFsub_comp, FF_comp, tv1_comp, tv2_comp, auxsub1_comp,auxsub2_comp, DUMMY_COMP, DUMMY_COMP, DUMMY_COMP, grid );
 
   /*printvBS(bv, tv_comp); printmBS(bv,bv,K_comp); printmBS(bv,bv,FF_comp); printmBS(bv,bv,LU_comp); printf("\n");*/
-  return NUM_OK;
+  return(NUM_OK);
 }
 
 
@@ -1159,7 +1161,7 @@ INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *
 
 UserWriteF( "avarage of convergency rate ( %d iterations) = %12lg\n", it, pow( new_norm / start_norm, 1.0 / (DOUBLE)it ) );
 
-return NUM_OK;
+return(NUM_OK);
 }
 
 #endif /* __BLOCK_VECTOR_DESC__ */
