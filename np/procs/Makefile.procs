@@ -11,8 +11,8 @@ include $(UGROOT)/ug.conf
 
 OBJECTS = nls.o ls.o assemble.o basics.o iter.o transfer.o error.o
 
-all : $(OBJECTS) Makefile.procs
-	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
+$(UG_LIB) : $(OBJECTS) Makefile.procs
+	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
 
 .SUFFIXES: .o .c
 
