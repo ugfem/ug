@@ -37,7 +37,6 @@
 
 /* standard C includes */
 #include <string.h>
-#include <strings.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -112,7 +111,7 @@ static INT MouseLocation[2];    /* last mouse location						*/
 static char Char;                               /* last character from keyboard                         */
 static INT ChosenTool;                  /* last chosen tool                                             */
 
-OUTPUTDEVICE *MacOutputDevice;  /* ptr to MacOutputDevice					*/
+static OUTPUTDEVICE *MacOutputDevice;   /* ptr to MacOutputDevice			*/
 
 /* data for CVS */
 static char rcsid[] = "$Header$";
@@ -247,6 +246,40 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
     /* handle events */
     switch (theEvent.what)
     {
+    case osEvt :
+      if (theEvent.message>>24==suspendResumeMessage)
+      {
+        if (theEvent.message & resumeFlag)
+        {
+          whichWindow = FrontWindow();
+          if (whichWindow==(WindowPtr)&(shell.theRecord))
+          {
+            /* shell window */
+            ActivateShellWin();
+            break;
+          }
+          else
+          {
+            /* graph window */
+            gw = WhichGW(whichWindow);
+            assert(gw!=NULL);
+            Mac_ActivateOutput((WINDOWID)gw);
+            break;
+          }
+        }
+        else
+        {
+          whichWindow = FrontWindow();
+          if (whichWindow==(WindowPtr)&(shell.theRecord))
+          {
+            /* shell window */
+            DeactivateShellWin();
+            break;
+          }
+        }
+      }
+      break;
+
     case mouseDown :
       switch (WhereIn)
       {
@@ -320,19 +353,20 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
         }
         break;
       case inGoAway :
-        if (whichWindow==(WindowPtr)&(shell.theRecord))
-        {
-          /* shell window */
-          reportEvent->Type                               = TERM_GOAWAY;
-        }
-        else
-        {
-          /* graph window */
-          gw = WhichGW(whichWindow);
-          assert(gw!=NULL);
-          reportEvent->Type                               = DOC_GOAWAY;
-          reportEvent->DocGoAway.win              = (WINDOWID) gw;
-        }
+        if (TrackGoAway(whichWindow,theEvent.where))
+          if (whichWindow==(WindowPtr)&(shell.theRecord))
+          {
+            /* shell window */
+            reportEvent->Type                               = TERM_GOAWAY;
+          }
+          else
+          {
+            /* graph window */
+            gw = WhichGW(whichWindow);
+            assert(gw!=NULL);
+            reportEvent->Type                               = DOC_GOAWAY;
+            reportEvent->DocGoAway.win              = (WINDOWID) gw;
+          }
         break;
       case inContent :
         if (whichWindow!=FrontWindow())
@@ -438,12 +472,25 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
     case autoKey :
       if (BitAnd(theEvent.modifiers,cmdKey))
       {
+        if ((char)BitAnd(theEvent.message,charCodeMask)=='\36')
+        {
+          reportEvent->NoEvent.InterfaceEvent = 1;
+          ShellHandleKeybordEvent('\v');
+          break;
+        }
+        if ((char)BitAnd(theEvent.message,charCodeMask)=='\37')
+        {
+          reportEvent->NoEvent.InterfaceEvent = 1;
+          ShellHandleKeybordEvent('\f');
+          break;
+        }
         reportEvent->Type = TERM_CMDKEY;
         reportEvent->TermCmdKey.CmdKey = (char)BitAnd(theEvent.message,charCodeMask);
 
-        /* special: cmd + shift doesn't work */
-        if (reportEvent->TermCmdKey.CmdKey=='Á')
-          reportEvent->TermCmdKey.CmdKey = '!';
+        /* cmd + shift + 1 --> cmd + ! */
+        if (reportEvent->TermCmdKey.CmdKey=='1')
+          if (BitAnd(theEvent.modifiers,shiftKey))
+            reportEvent->TermCmdKey.CmdKey = '!';
         break;
       }
       else if ((s=ShellHandleKeybordEvent((char)BitAnd(theEvent.message,charCodeMask)))==NULL)
