@@ -78,6 +78,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /* some useful functions by Peter Bastian, from ugp/ug/ugcom.c */
 
+#ifdef ModelP
+
 /****************************************************************************/
 /*D
    UG_GlobalMaxINT - get maximum for INT value
@@ -96,7 +98,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
    D*/
 /****************************************************************************/
-
 INT NS_PREFIX UG_GlobalMaxINT (INT i)
 {
   int l;
@@ -534,3 +535,5 @@ void NS_PREFIX UG_GlobalSumNDOUBLE (INT n, DOUBLE *x)
 
   memmgr_FreeTMEM(y, TMEM_STD);
 }
+
+#endif  /* ModelP */
