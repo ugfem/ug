@@ -16,7 +16,7 @@ include ../machines/mk.$(ARCHDIR)
 include ../ug.conf
 
 # local C compiler flags
-LCFLAGS = -I../low -I../dev -I../gm
+LCFLAGS = -I../low -I../dev -I../gm -I../numerics
 
 # object files for both dimensions
 OBJECTS = plotproc.o wpm.o graph.o wop.o initgraph.o
@@ -30,9 +30,11 @@ OBJECTS3 =
 # main rules
 2Dversion : $(OBJECTS) $(OBJECTS2) Makefile.graph
 	ar $(ARFLAGS) ../lib/libug$(LIBSUFFIX).a $(OBJECTS) 
+	@touch 2Dversion
 
 3Dversion : $(OBJECTS) $(OBJECTS3) Makefile.graph
 	ar $(ARFLAGS) ../lib/libug$(LIBSUFFIX).a $(OBJECTS) 
+	@touch 3Dversion
 
 # default rule
 .c.o:
