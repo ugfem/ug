@@ -135,6 +135,35 @@ INT DisplayPrintingFormat ()
   return (NUM_OK);
 }
 
+/****************************************************************************/
+/*D
+        ResetPrintingFormat - no data will be printed
+
+        SYNOPSIS:
+        INT ResetPrintingFormat (void)
+
+    PARAMETERS:
+   .   void - none
+
+        DESCRIPTION:
+        After call of this function no data will be printed.
+        Do this when closing a multigrid since all descriptors will go out of scope then.
+
+        RETURN VALUE:
+        INT
+   .n   0: ok
+
+        SEE ALSO:
+        setformat, showformat
+   D*/
+/****************************************************************************/
+
+INT ResetPrintingFormat (void)
+{
+  NPrintVectors = NPrintMatrixs = 0;
+  return (0);
+}
+
 /********************************************************/
 /* for the following function							*/
 /* please keep help comment in commands.c up to date	*/
@@ -834,6 +863,80 @@ INT VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, VE
       cmp = offset[type]+l;
       SubComp[k] = Comp[cmp];
       SubName[k] = VT_COMPNAME(vt,cmp);
+      k++;
+    }
+  }
+  *subvd = CreateSubVecDesc(VD_MG(vd),buffer,SUBV_NCOMPS(subv),SubComp,SubName);
+  if (*subvd == NULL)
+    REP_ERR_RETURN (1);
+  if (TransmitLockStatusVD(vd,*subvd))
+    REP_ERR_RETURN(1);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+        VDsubDescFromVS - create a VECDATA_DESC as a vector sub descriptor
+
+        SYNOPSIS:
+        INT VDsubDescFromVS (const VECDATA_DESC *vd, const SUBVEC *subv, VECDATA_DESC **subvd)
+
+    PARAMETERS:
+   .   vd			- make a sub desc of this VECDATA_DESC
+   .   subv		- sub vector descriptor
+   .   subvd		- handle to created sub descriptor
+
+        DESCRIPTION:
+        This function creates a sub descriptor to a given VECDATA_DESC according to the given
+        vector sub descriptor. If a template is available, 'VDsubDescFromVT' should be
+        preferred.
+
+        RETURN VALUE:
+        INT
+   .n   0: ok
+   .n      n: if an error occured
+   D*/
+/****************************************************************************/
+
+INT VDsubDescFromVS (const VECDATA_DESC *vd, const SUBVEC *subv, VECDATA_DESC **subvd)
+{
+  FORMAT *fmt;
+  SHORT SubComp[MAX_VEC_COMP];
+  const SHORT *offset,*Comp;
+  INT i,k,l,type,nc,nn,cmp;
+  char SubName[MAX_VEC_COMP],buffer[NAMESIZE];
+
+  /* generate name and see if desc already exists */
+  strcpy(buffer,SUBV_NAME(subv));
+  strcat(buffer,GENERATED_NAMES_SEPERATOR);
+  strcat(buffer,ENVITEM_NAME(vd));
+  *subvd = GetVecDataDescByName(MD_MG(vd),buffer);
+  if (*subvd != NULL) {
+    if (TransmitLockStatusVD(vd,*subvd))
+      REP_ERR_RETURN(1);
+    return(0);
+  }
+
+  fmt = MGFORMAT(VD_MG(vd));
+
+  offset = VD_OFFSETPTR(vd);
+  Comp = VM_COMPPTR(vd);
+
+  /* compute sub components */
+  k = 0;
+  for (type=0; type<NVECTYPES; type++)
+  {
+    nc = SUBV_NCOMP(subv,type);
+    nn = VD_NCMPS_IN_TYPE(vd,type);
+    for (i=0; i<nc; i++)
+    {
+      l = SUBV_COMP(subv,type,i);
+      if (l>=nn)
+        REP_ERR_RETURN (1);
+      cmp = offset[type]+l;
+      SubComp[k] = Comp[cmp];
+      SubName[k] = VM_COMP_NAME(vd,cmp);
       k++;
     }
   }
@@ -2449,7 +2552,14 @@ static INT ScanTypeOptions (INT argc, char **argv, INT po2t[][MAXVOBJECTS], INT 
       /* update po2t table */
       for (i=0; i<nparts; i++)
         for (j=0; j<nobjs; j++)
-          po2t[partlist[i]][objlist[j]] = max;
+          if (po2t[partlist[i]][objlist[j]]!=NOVTYPE)
+          {
+            PrintErrorMessageF('E',"newformat",
+                               "the combination of obj %s in part %d is already defined (in '$%s')",ObjTypeName[objlist[j]],partlist[i],argv[opt]);
+            REP_ERR_RETURN(1);
+          }
+          else
+            po2t[partlist[i]][objlist[j]] = max;
       max++;
     }
 
@@ -2466,6 +2576,11 @@ static INT ScanTypeOptions (INT argc, char **argv, INT po2t[][MAXVOBJECTS], INT 
   *MaxTypes = max;
 
   return (0);
+}
+
+static INT CleanupTempDir ()
+{
+  return (RemoveFormatWithSubs("newformat"));
 }
 
 INT CreateFormatCmd (INT argc, char **argv)
@@ -2515,7 +2630,7 @@ INT CreateFormatCmd (INT argc, char **argv)
 
   /* scan type option or set default po2t */
   if (ScanTypeOptions(argc,argv,po2t,&MaxTypes,TypeNames))
-    REP_ERR_RETURN(1);
+    REP_ERR_RETURN(CleanupTempDir());
 
   /* scan other options */
   for (opt=1; opt<argc; opt++)
@@ -2527,22 +2642,22 @@ INT CreateFormatCmd (INT argc, char **argv)
 
     case 'V' :
       if (ScanVecOption(argc,argv,&opt,po2t,MaxTypes,TypeNames,TypeUsed,&nvec,VecStorageNeeded))
-        REP_ERR_RETURN(1);
+        REP_ERR_RETURN(CleanupTempDir());
       break;
 
     case 'M' :
       if (ScanMatOption(argc,argv,&opt,po2t,MaxTypes,TypeNames,TypeUsed,&nmat,MatStorageNeeded))
-        REP_ERR_RETURN(1);
+        REP_ERR_RETURN(CleanupTempDir());
       break;
 
     case 'd' :
       if (ScanDepthOption(argc,argv,&opt,MaxTypes,TypeNames,TypeUsed,ConnDepth))
-        REP_ERR_RETURN(1);
+        REP_ERR_RETURN(CleanupTempDir());
       break;
 
     case 'I' :
       if (ScanIMatOption(argc,argv,&opt,MaxTypes,TypeNames,TypeUsed,ImatTypes))
-        REP_ERR_RETURN(1);
+        REP_ERR_RETURN(CleanupTempDir());
       break;
 
     case 'e' :
@@ -2562,12 +2677,12 @@ INT CreateFormatCmd (INT argc, char **argv)
 
     default :
       PrintErrorMessageF('E',"newformat","(invalid option '%s')",argv[opt]);
-      REP_ERR_RETURN (1);
+      REP_ERR_RETURN (CleanupTempDir());
     }
 
   if ((ndata == TRUE) && (nodeelementlist == TRUE)) {
     PrintErrorMessage('E',"newformat","specify either $n or $NE");
-    REP_ERR_RETURN (5);
+    REP_ERR_RETURN (CleanupTempDir());
   }
 
   /* remove types not needed from po2t */
@@ -2595,7 +2710,7 @@ INT CreateFormatCmd (INT argc, char **argv)
         break;
     if (opt == nvd) {
       PrintErrorMessage('E',"newformat","node data requires node vector");
-      REP_ERR_RETURN (5);
+      REP_ERR_RETURN (CleanupTempDir());
     }
   }
 
@@ -2626,7 +2741,7 @@ INT CreateFormatCmd (INT argc, char **argv)
   if (newFormat==NULL)
   {
     PrintErrorMessage('E',"newformat","failed creating the format");
-    REP_ERR_RETURN (3);
+    REP_ERR_RETURN (CleanupTempDir());
   }
 
   /* move templates into the new directory */
@@ -2687,7 +2802,8 @@ static INT RemoveTemplateSubs (FORMAT *fmt)
       vt = (VEC_TEMPLATE*) item;
 
       for (i=0; i<VT_NSUB(vt); i++)
-        FreeEnvMemory(VT_SUB(vt,i));
+        if (VT_SUB(vt,i)!=NULL)
+          FreeEnvMemory(VT_SUB(vt,i));
       VT_NSUB(vt) = 0;
     }
     else if (ENVITEM_TYPE(item) == theMatVarID)
@@ -2695,7 +2811,8 @@ static INT RemoveTemplateSubs (FORMAT *fmt)
       mt = (MAT_TEMPLATE*) item;
 
       for (i=0; i<MT_NSUB(mt); i++)
-        FreeEnvMemory(MT_SUB(mt,i));
+        if (MT_SUB(mt,i)!=NULL)
+          FreeEnvMemory(MT_SUB(mt,i));
       MT_NSUB(mt) = 0;
     }
   return (0);

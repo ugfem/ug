@@ -158,6 +158,7 @@ typedef struct {
 
 INT DisplayPrintingFormat                               (void);
 INT SetPrintingFormatCmd                                (const MULTIGRID *mg, INT argc, char **argv);
+INT ResetPrintingFormat                                 (void);
 
 VEC_TEMPLATE *GetVectorTemplate                 (const FORMAT *theFmt, const char *template);
 MAT_TEMPLATE *GetMatrixTemplate                 (const FORMAT *theFmt, const char *template);
@@ -173,6 +174,7 @@ INT MDmatchesVT                                                 (const MATDATA_D
 INT MDmatchesVTxVT                                              (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, const VEC_TEMPLATE *cvt);
 
 INT VDsubDescFromVT                                             (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, VECDATA_DESC **subvd);
+INT VDsubDescFromVS                                             (const VECDATA_DESC *vd, const SUBVEC *subv, VECDATA_DESC **subvd);
 INT MDsubDescFromVT                                             (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, MATDATA_DESC **submd);
 INT MDsubDescFromVTxVT                                  (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, INT rsub,
                                                          const VEC_TEMPLATE *cvt, INT csub,
