@@ -365,7 +365,8 @@ INT 	GlobalToLocal2d (INT n,const  COORD **Corners, const COORD_VECTOR EvalPoint
 INT		specialGlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint, COORD_VECTOR LocalCoord);
 #endif
 
-#ifdef __THREEDIM__
+#ifdef __THREEDIM__						 
+INT GetSkewedUIP (const COORD_VECTOR *theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], const DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
 INT TransformGlobalToLocal3D(ELEMENT *theElement, COORD_VECTOR Global, COORD_VECTOR Local);
 DOUBLE  N                   (const INT i, const COORD *LocalCoord);
 INT     GlobalToLocal3d     (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);

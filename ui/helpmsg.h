@@ -11,7 +11,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de							    */
 /*																			*/
 /*																			*/
 /* History:   18.02.92 begin, ug version 2.0								*/
@@ -70,6 +70,6 @@
 /* online help mechenism */
 INT     InitHelpMsg                     (char *helpfiles);
 INT     PrintHelp                               (const char *HelpFor,int mode, const char *addText);
-INT     CheckHelp                               ();
+INT     CheckHelp                               (void);
 
 #endif

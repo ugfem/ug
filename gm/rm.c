@@ -29,6 +29,8 @@
 /* standard C library */
 #include <assert.h>
 #include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
 
 /* low module */
 #include "debug.h"
@@ -41,8 +43,9 @@
 #include "evm.h"
 #include "gm.h"
 #include "refine.h"
-#include "rm.h"
 #include "GenerateRules.h"
+#include "shapes.h"
+#include "rm.h"
 
 #include "defaults.h"
 
@@ -1355,7 +1358,7 @@ static INT Alignment (ELEMENT *theElement)
   V3_CLEAR(MidPoint)
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     Corners[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
-  (*theDirectionElemEval)(theElement,Corners,
+  (*theDirectionElemEval)(theElement,(const COORD **)Corners,
                           (COORD *)LMP(CORNERS_OF_ELEM(theElement)),
                           Velocity);
 

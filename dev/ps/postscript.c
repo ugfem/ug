@@ -203,7 +203,7 @@ static void PSErasePolygon (SHORT_POINT *points, INT nb)
   return;
 }
 
-static void PSGrayForeground ()
+static void PSGrayForeground (void)
 {
   if (PScc==GRAY_CC) return;
 

@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "devices.h"
 
 /****************************************************************************/
 /*																			*/
@@ -123,7 +124,7 @@ void PrintDebug (const char *format, ...)
 
   /* use specific debug function for displaying */
   (*printdebug)(buffer);
-  WriteLogFile(buffer);
+  WriteLogFile((const char *)buffer);
 
         #ifdef ModelP
 }

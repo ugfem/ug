@@ -9,7 +9,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de							    */
 /*																			*/
 /* History:   13.02.95 begin, ug version 3.0								*/
 /*																			*/
@@ -67,6 +67,6 @@ INT             ReadSearchingPaths                      (const char *filename, c
 FILE    *FileOpenUsingSearchPaths       (const char *fname, const char *mode, const char *pathsvar);
 FILE    *FileOpenUsingSearchPath        (const char *fname, const char *mode, const char *path);
 
-INT             InitFileOpen                            ();
+INT             InitFileOpen                            (void);
 
 #endif

@@ -244,6 +244,8 @@ extern FULLREFRULEPTR theFullRefRule;
 /*																			*/
 /****************************************************************************/
 
+INT ShowRefRule (INT tag, INT nb);
+
 INT InitRuleManager (void);
 INT Patterns2Rules(ELEMENT *theElement,INT pattern);
 

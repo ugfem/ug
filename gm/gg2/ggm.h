@@ -11,7 +11,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart, Germany										*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de							    */
 /*																			*/
 /* History:   08.03.94 begin, ug version 2.2                                */
 /*                15.10.95 implemented in ug31                                  */
@@ -178,6 +178,6 @@ INT DisposeFrontComp            (FRONTLIST *myList, FRONTCOMP *theFC);
 MG_GGDATA *GetMGdataPointer (MULTIGRID *theMG);
 
 
-INT InitGGManager ();
+INT InitGGManager (void);
 
 #endif

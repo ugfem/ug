@@ -75,10 +75,10 @@
 /****************************************************************************/
 
 /* init */
-INT              InitUGManager                  ();
+INT              InitUGManager                  (void);
 
 /* object handling */
-INT              GetFreeOBJT                    ();
+INT              GetFreeOBJT                    (void);
 INT              ReleaseOBJT                    (INT type);
 void            *GetMemoryForObject             (MULTIGRID *theMG, INT size, INT type);
 INT              PutFreeObject                  (MULTIGRID *theMG, void *object, INT size, INT type);
@@ -110,7 +110,7 @@ INT                      DisposeEdgesFromElement(GRID *theGrid, ELEMENT *theElem
 /* miscellaneous */
 INT              FindNeighborElement    (const ELEMENT *theElement, INT Side, ELEMENT **theNeighbor, INT *NeighborSide);
 INT              PointInElement                 (const COORD*, const ELEMENT *theElement);
-VIRT_HEAP_MGMT *GetGenMGUDM             ();
+VIRT_HEAP_MGMT *GetGenMGUDM             (void);
 
 NODE            *CreateMidNode                  (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after);
 

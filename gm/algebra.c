@@ -53,6 +53,7 @@
 
 #include "compiler.h"
 #include "heaps.h"
+#include "ugenv.h"
 
 #include "devices.h"
 

@@ -172,7 +172,7 @@ static char rcsid[] = "$Header$";
 /*																			*/
 /****************************************************************************/
 
-static INT InterpretString();
+static INT InterpretString(void);
 
 /* are called by GetFactor, GetAnItem */
 static INT GetEquation(OPERAND *result);
@@ -199,7 +199,7 @@ static INT GetCondition(DOUBLE *result);
    D*/
 /****************************************************************************/
 
-static char SkipBlanks()
+static char SkipBlanks (void)
 {
   char c;
 
@@ -224,51 +224,6 @@ static char SkipBlanks()
 }
 
 /****************************************************************************/
-/*D
-   SkipNormalBlanks - skip "normal blanks" in a command string
-
-   SYNOPSIS:
-   static char SkipNormalBlanks();
-
-   PARAMETERS:
-   .  none
-
-   DESCRIPTION:
-   This function moves the command pointer `cmdPtr` until it encounters the first
-   non-blank. This includes comments of the form '#....EOL' but not the `\n`-character
-   At the moment it is not used.
-
-   RETURN VALUE:
-   char
-   .n The final non-blank character.
-   D*/
-/****************************************************************************/
-/*
-   static char SkipNormalBlanks()
-   {
-        char c;
-
-        while ((c=*cmdPtr)!=(char) 0)
-        {
-                if (c=='#')
-                {
-                        while ((c=*(++cmdPtr))!='\n')
-                                if (c==(char) 0) return(c);
-                }
-                else
-                {
-                        if (strchr(normalBlanks,(int) c)!=NULL)
-                                cmdPtr++;
-                        else
-                                break;
-                }
-        }
-
-        return(c);
-   }
- */
-
-/****************************************************************************/
 /*
    SkipAll - skip all text up to the next seperator
 
@@ -287,7 +242,7 @@ static char SkipBlanks()
  */
 /****************************************************************************/
 
-static char SkipAll()
+static char SkipAll (void)
 {
   char c;
 
@@ -1788,7 +1743,7 @@ INT InterpretCommand (char *cmds)
    D*/
 /****************************************************************************/
 
-static INT InterpretString()
+static INT InterpretString (void)
 {
   Boolean termFlag;
   char c,c1;
@@ -2660,7 +2615,7 @@ else
  */
 /****************************************************************************/
 
-void SetDoneFlag ()
+void SetDoneFlag (void)
 {
   doneFlag = 1;
 }

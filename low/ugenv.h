@@ -2,26 +2,26 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*	                                                                        */
-/* File:      ugenv.h                                                        */
-/*                                                                            */
+/* File:      ugenv.h                                                       */
+/*                                                                          */
 /* Purpose:   header file for ug environment manager                        */
-/*                                                                            */
-/* Author:      Peter Bastian                                                 */
-/*              Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen    */
-/*              Universitaet Heidelberg                                        */
-/*              Im Neuenheimer Feld 368                                        */
-/*              6900 Heidelberg                                                */
-/*                                                                            */
+/*                                                                          */
+/* Author:      Peter Bastian                                               */
+/*              Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen */
+/*              Universitaet Heidelberg                                     */
+/*              Im Neuenheimer Feld 368                                     */
+/*              6900 Heidelberg                                             */
+/*                                                                          */
 /* History:   06.02.92 begin, ug version 2.0                                */
-/*                                                                            */
+/*                                                                          */
 /* Revision:  08.09.95                                                      */
-/*                                                                            */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*                                                                            */
-/* auto include mechanism and other include files                            */
-/*                                                                            */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __UGENV__
@@ -32,15 +32,15 @@
 #include "compiler.h"
 #endif
 
-/****************************************************************************/
-/*                                                                            */
+/*****************************************************************************/
+/*                                                                           */
 /* defines in the following order                                            */
-/*                                                                            */
-/*          compile time constants defining static data size (i.e. arrays)    */
-/*          other constants                                                    */
-/*          macros                                                            */
-/*                                                                            */
-/****************************************************************************/
+/*                                                                           */
+/*          compile time constants defining static data size (i.e. arrays)   */
+/*          other constants                                                  */
+/*          macros                                                           */
+/*                                                                           */
+/*****************************************************************************/
 
 /* CAUTION: when changing NAMESIZE also change scanf sizes!!! */
 #define NAMESIZE            64        /* max length of name string            */
@@ -61,9 +61,9 @@
 #define ENVITEM_LOCKED(p)         (((ENVITEM *)(p))->v.locked)
 
 /****************************************************************************/
-/*                                                                            */
+/*                                                                          */
 /* data structures exported by the corresponding source file                */
-/*                                                                            */
+/*                                                                          */
 /****************************************************************************/
 
 typedef struct {                /* user defined variable                    */
@@ -92,9 +92,9 @@ union envitem {
 typedef union envitem ENVITEM;
 
 /****************************************************************************/
-/*                                                                            */
+/*                                                                          */
 /* function declarations                                                    */
-/*                                                                            */
+/*                                                                          */
 /****************************************************************************/
 
 /* initialize environment with following heapSize */
@@ -104,7 +104,7 @@ INT      InitUgEnv        (INT heapSize);
 ENVDIR    *ChangeEnvDir    (const char *s);
 
 /* get the current working directory */
-ENVDIR    *GetCurrentDir    ();
+ENVDIR    *GetCurrentDir    (void);
 
 /* get path name of the current directory */
 void     GetPathName    (char *s);
@@ -128,8 +128,8 @@ void     FreeEnvMemory    (void *buffer);
 void     EnvHeapInfo     (char *s);
 
 /* return a unique ID for a new ENVDIR/ENVVAR type */
-INT      GetNewEnvDirID ();
-INT      GetNewEnvVarID ();
+INT      GetNewEnvDirID (void);
+INT      GetNewEnvVarID (void);
 
 
 #endif

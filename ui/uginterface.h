@@ -64,12 +64,12 @@
 /*																			*/
 /****************************************************************************/
 
-INT                     InitUgInterface                                 ();
+INT                     InitUgInterface                                 (void);
 
 INT                     DelCmdKey                                               (char c);
 INT                     SetCmdKey                                               (char c, const char *String);
 INT                     DelAllCmdKeys                                   (void);
-INT                     ListCmdKeys                                     ();
+INT                     ListCmdKeys                                     (void);
 
 INT                     SetCurrentPicture                               (PICTURE *thePicture);
 PICTURE                 *GetCurrentPicture                              (void);

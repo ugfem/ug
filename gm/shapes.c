@@ -1172,27 +1172,27 @@ INT HexaVolume (COORD **theCorners, COORD *volume)
 	
 	Tcorners[0] = theCorners[0]; Tcorners[2] = theCorners[3];
 	Tcorners[1] = theCorners[1]; Tcorners[3] = theCorners[4];
-	TetraVolume(Tcorners,&Tvolume);
+	TetraVolume((const COORD **)Tcorners,&Tvolume);
 	*volume += Tvolume;
 
 	Tcorners[0] = theCorners[5]; Tcorners[2] = theCorners[4];
 	Tcorners[1] = theCorners[6]; Tcorners[3] = theCorners[1];
-	TetraVolume(Tcorners,&Tvolume);
+	TetraVolume((const COORD **)Tcorners,&Tvolume);
 	*volume += Tvolume;
 
 	Tcorners[0] = theCorners[2]; Tcorners[2] = theCorners[3];
 	Tcorners[1] = theCorners[1]; Tcorners[3] = theCorners[6];
-	TetraVolume(Tcorners,&Tvolume);
+	TetraVolume((const COORD **)Tcorners,&Tvolume);
 	*volume += Tvolume;
 
 	Tcorners[0] = theCorners[7]; Tcorners[2] = theCorners[4];
 	Tcorners[1] = theCorners[3]; Tcorners[3] = theCorners[6];
-	TetraVolume(Tcorners,&Tvolume);
+	TetraVolume((const COORD **)Tcorners,&Tvolume);
 	*volume += Tvolume;
 
 	Tcorners[0] = theCorners[3]; Tcorners[2] = theCorners[1];
 	Tcorners[1] = theCorners[6]; Tcorners[3] = theCorners[4];
-	TetraVolume(Tcorners,&Tvolume);
+	TetraVolume((const COORD **)Tcorners,&Tvolume);
 	*volume += Tvolume;
 	
 	return (0);
@@ -1217,7 +1217,7 @@ INT TransformGlobalToLocal3D(ELEMENT *theElement, COORD_VECTOR Global, COORD_VEC
     if(TAG(theElement)==TETRAHEDRON) {
         for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
             x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
-        return(GlobalToLocal3d(4,x,Global,Local));
+        return(GlobalToLocal3d(4,(const COORD **)x,Global,Local));
     }
     if(TAG(theElement)==HEXAHEDRON){
         TransformCoefficients (theElement);

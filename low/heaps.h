@@ -146,7 +146,7 @@ typedef struct block BLOCK;
 /*                                                                          */
 /****************************************************************************/
 
-INT          InitHeaps                ();
+INT          InitHeaps                (void);
 
 /* functions for the simple and general heap management */
 HEAP        *NewHeap                (INT type, MEM size, void *buffer);
@@ -162,7 +162,7 @@ MEM          HeapUsed                (const HEAP *theHeap);
 /* functions for the virtual heap management */
 INT          InitVirtualHeapManagement(VIRT_HEAP_MGMT *theVHM, MEM TotalSize);
 MEM          CalcAndFixTotalSize    (VIRT_HEAP_MGMT *theVHM);
-BLOCK_ID     GetNewBlockID            ();
+BLOCK_ID     GetNewBlockID            (void);
 BLOCK_DESC  *GetBlockDesc            (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id);
 INT          DefineBlock            (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id, MEM size);
 INT          FreeBlock                (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id);

@@ -11,7 +11,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de							    */
 /*																			*/
 /*																			*/
 /* History:   18.02.92 begin, ug version 2.0								*/
@@ -80,10 +80,10 @@ typedef struct {                                /* executable command variable		
 /*																			*/
 /****************************************************************************/
 
-INT      InitCmdline            ();
+INT      InitCmdline            (void);
 
 /* command creation and execution */
-COMMAND *GetFirstCommand        ();
+COMMAND *GetFirstCommand        (void);
 COMMAND *GetNextCommand         (const COMMAND *cmd);
 COMMAND *SearchUgCmd            (const char *cmdName);
 COMMAND *CreateCommand          (const char *name, CommandProcPtr cmdProc);

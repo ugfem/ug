@@ -63,15 +63,18 @@
 /* grid generatormodule */
 #include "ggm.h"
 #include "ggmain.h"
+#include "gg3d.h"
 
 /* grid manager module */
 #include "gm.h"
 #include "rm.h"
 #include "evm.h"
+#include "ugm.h"
 
 /* numerics module */
 #include "num.h"
 #include "formats.h"
+#include "disctools.h"
 
 /* graph module */
 #include "wpm.h"
@@ -199,7 +202,7 @@ static char rcsid[] = "$Header$";
    GetCurrentMultigrid - return a pointer to the current multigrid
 
    SYNOPSIS:
-   MULTIGRID *GetCurrentMultigrid ();
+   MULTIGRID *GetCurrentMultigrid (void);
 
    PARAMETERS:
    .  void -
@@ -214,7 +217,7 @@ static char rcsid[] = "$Header$";
    D*/
 /****************************************************************************/
 
-MULTIGRID *GetCurrentMultigrid ()
+MULTIGRID *GetCurrentMultigrid (void)
 {
   return (currMG);
 }
@@ -269,7 +272,7 @@ INT SetCurrentMultigrid (MULTIGRID *theMG)
    GetCurrentNumProc - return a pointer to the current numproc
 
    SYNOPSIS:
-   static NUM_PROC *GetCurrentNumProc ();
+   static NUM_PROC *GetCurrentNumProc (void);
 
    PARAMETERS:
    .  void -
@@ -284,7 +287,7 @@ INT SetCurrentMultigrid (MULTIGRID *theMG)
    D*/
 /****************************************************************************/
 
-static NUM_PROC *GetCurrentNumProc ()
+static NUM_PROC *GetCurrentNumProc (void)
 {
   return (currNumProc);
 }
@@ -726,10 +729,10 @@ static INT ResetClockCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   InitClock() - starting the time mesuring
+   InitClock(void) - starting the time mesuring
 
    SYNOPSIS:
-   static INT InitClock();
+   static INT InitClock(void);
 
    PARAMETERS:
    .  void -
@@ -745,7 +748,7 @@ static INT ResetClockCommand (INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-static INT InitClock()
+static INT InitClock(void)
 {
 
   Time0 = clock();
@@ -10401,7 +10404,7 @@ static INT RefreshOffCommand (INT argc, char **argv)
  */
 /****************************************************************************/
 
-static INT InitFindRange ()
+static INT InitFindRange (void)
 {
   /* install a struct for findrange */
   if (MakeStruct(":findrange")!=0)
@@ -10429,7 +10432,7 @@ static INT InitFindRange ()
  */
 /****************************************************************************/
 
-static INT InitScreenSize ()
+static INT InitScreenSize (void)
 {
   /* install a struct for screensize */
   if (MakeStruct(":screensize")!=0)

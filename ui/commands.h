@@ -83,11 +83,11 @@
 /*																			*/
 /****************************************************************************/
 
-INT              InitCommands                   ();
+INT              InitCommands                   (void);
 
-FILE            *GetProtocolFile                ();
+FILE            *GetProtocolFile                (void);
 
-MULTIGRID       *GetCurrentMultigrid    ();
+MULTIGRID       *GetCurrentMultigrid    (void);
 INT              SetCurrentMultigrid    (MULTIGRID *theMG);
 
 #endif

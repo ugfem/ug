@@ -1859,7 +1859,7 @@ MULTIGRID               *GetNextMultigrid                       (const MULTIGRID
 
 /* format definition */
 FORMAT                   *GetFormat                             (const char *name);
-FORMAT                   *GetFirstFormat                        ();
+FORMAT                   *GetFirstFormat                        (void);
 FORMAT                   *GetNextFormat                         (FORMAT * fmt);
 INT                               ChangeToFormatDir                     (const char *name);
 FORMAT                  *CreateFormat           (char *name, INT sVertex, INT sMultiGrid,
@@ -1996,7 +1996,7 @@ INT             OrderVectors                    (MULTIGRID *theMG, INT levels, I
 INT                     ShellOrderVectors               (GRID *theGrid, VECTOR *seed);
 
 /* functions for evaluation-fct management */
-INT              InitEvalProc                                                           ();
+INT              InitEvalProc                                                           (void);
 EVALUES         *CreateElementValueEvalProc                             (const char *name, PreprocessingProcPtr PreProc, ElementEvalProcPtr EvalProc);
 EVECTOR         *CreateElementVectorEvalProc                            (const char *name, PreprocessingProcPtr PreProc, ElementVectorProcPtr EvalProc, INT d);
 MVALUES         *CreateMatrixValueEvalProc                                      (const char *name, PreprocessingProcPtr PreProc, MatrixEvalProcPtr EvalProc);
