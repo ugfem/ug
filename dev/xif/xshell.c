@@ -39,6 +39,9 @@
 #define USE_XAW     /* enables use of Athena Text Widget  (libXaw, libXt) */
 /* undefine USE_XAW, if you want pure X (only libX11) */
 
+/* do not display x shell */
+#define GUI_NOSHELL 1
+
 #ifdef USE_XAW
 /* Xt & Xaw includes */
 #include <X11/Intrinsic.h>
@@ -352,10 +355,14 @@ int ShellOpen (ShellWindow *sh)
   XtAppAddActions(context,actions,XtNumber(actions));
 
   /* realize widget tree */
-  XtRealizeWidget (toplevel);
+  if (GUI_NOSHELL)
+    XtRealizeWidget (toplevel);
 
   sh->wid = ugshell;
-  sh->win = XtWindow(ugshell);
+  if (GUI_NOSHELL)
+    sh->win = XtWindow(ugshell);
+  else
+    sh->win = RootWindow(display,screen_num);
 
         #else /* USE_XAW */
 
@@ -405,7 +412,8 @@ int ShellOpen (ShellWindow *sh)
   XSetDashes(display,sh->gc,0,dash_list,2);
 
   /* now map the window */
-  XMapWindow(display,sh->win);
+  if (GUI_NOSHELL)
+    XMapWindow(display,sh->win);
 
   /* create a region to accumulate update region */
   sh->region = XCreateRegion();
