@@ -98,9 +98,19 @@
 20040523:
 *	26. DONE
 20040525:
-	27. UG/ug/TestCasesAll with all 48 important testcases
-	28. C++ compilation of UGlib
-	29. valgrind patch for Dart
-	30. Dashboard open from 20:00 to 8.00
-
-
+*	27. UG/ug/TestCasesAll with all 48 important testcases
+*	28. C++ compilation of UGlib
+*	29. valgrind patch for Dart
+*	30. Dashboard open from 20:00 to 8.00
+20040605:
+*	29. DONE: No patch but a new Dart version
+20040608:
+*	27. DONE
+*	28. DONE
+*	30 .DONE
+20040608:
+	31. repair parallel startup
+	32. Why NA for TUTOR-tutor1-Linux-2.­4.­26-g ???
+	33. Full Coverage Info for applications cd,tutor from all directories!!!
+	34. Extension of DartTestFiles by TestCase filename
+	35. new architectures PCCPP, PCICPP
