@@ -280,18 +280,11 @@ INT GetDefaultValue (const char *filename, const char *name, char *value)
   {
     int err;
 
-    /* reset BasePath for the time being */
-    char *OldBasePath = StrDup(GetBasePath());
-
     const char *path = getenv("HOME");
-
-    SetBasePath("");
     if (path!=NULL)
       if (GetPathedUGRCValue(path,name,value,&err)==0)
       {
         PRINTDEBUG(low,2,("GetDefaultValue: GetPathedUGRCValue called for HOME='%s', err=%d\n",path,err));
-        SetBasePath(OldBasePath);
-        free(OldBasePath);
         return err;
       }
     path = getenv("UGROOT");
@@ -304,8 +297,6 @@ INT GetDefaultValue (const char *filename, const char *name, char *value)
       if (GetPathedUGRCValue(data_path,name,value,&err)==0)
       {
         PRINTDEBUG(low,2,("GetDefaultValue: GetPathedUGRCValue called for DATA='%s', err=%d\n",data_path,err));
-        SetBasePath(OldBasePath);
-        free(OldBasePath);
         return err;
       }
     }
