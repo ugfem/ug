@@ -1921,213 +1921,524 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 }
 #endif /* ModelP */
 
-
 /****************************************************************************/
 /*D
-   l_dset - set all components of a vector to a given value
+   dset - set all components of a vector to a given value
 
    SYNOPSIS:
-   INT l_dset (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a);
+   INT dset (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, DOUBLE a);
 
    PARAMETERS:
-.  g - pointer to grid 
+.  mg - pointer to multigrid 
+.  fl - from level
+.  tl - to level
+.  mode - ALL_VECTORS or ON_SURFACE
 .  x - vector data descriptor
-.  xclass - vector class
 .  a - the DOUBLE value		
 
    DESCRIPTION:
-   This function sets all components of a vector on one grid level
-   to a given value.
+   This function sets all components of a vector to a given value.
 
    RETURN VALUE:
    INT
 .n    NUM_OK
+.n    NUM_ERROR if error occured
 D*/
 /****************************************************************************/
 
-INT l_dset (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
-{
-	VECTOR *first_v;
-	register VECTOR *v;
-	register SHORT i;
-	register SHORT ncomp;
-	register INT vtype;
-	DEFINE_VD_CMPS(cx);
-	
-	first_v = FIRSTVECTOR(g);
-	
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						VVALUE(v,cx0) = a;
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a;}
-					break;
-				
-				case 3:
-					SET_VD_CMP_3(cx,x,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a; VVALUE(v,cx2) = a;}
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = a;
-			}
-	
-	return (NUM_OK);
-}
+#define T_FUNCNAME      dset
+#define T_ARGS          ,DOUBLE a
+#define T_MOD_SCAL      VVALUE(v,xc) = a;
+#define T_MOD_VECTOR_1  VVALUE(v,cx0) = a;
+#define T_MOD_VECTOR_2  VVALUE(v,cx1) = a;
+#define T_MOD_VECTOR_3  VVALUE(v,cx2) = a;
+#define T_MOD_VECTOR_N  for (i=0;i<ncomp;i++)                                 \
+                            VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i))=a;
+
+#include "vecfunc.ct"
+
 /****************************************************************************/
 /*D
-   a_dset - set all components of a vector to a given value
+   dcopy - copy a vector
 
    SYNOPSIS:
-   INT a_dset (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, 
-   INT xclass, DOUBLE a);
+   INT dcopy (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, 
+   VECDATA_DESC *y);
 
    PARAMETERS:
 .  mg - pointer to multigrid 
 .  fl - from level
 .  tl - to level
+.  mode - ALL_VECTORS or ON_SURFACE
 .  x - destination vector data descriptor
-.  xclass - vector class
-.  a - DOUBLE value
+.  y - source vector data descriptor
 
    DESCRIPTION:
-   This function sets all components of a vector to a given value.
-   It runs from level fl to level tl.
+   This function copies a vector to another: `x := y`.	
 
    RETURN VALUE:
    INT
 .n    NUM_OK
+.n    NUM_ERROR if error occured
 D*/
 /****************************************************************************/
 
-INT a_dset (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE a)
-{
-	register VECTOR *v;
-	register SHORT i;
-	register SHORT ncomp;
-	register INT vtype;
-	INT lev;
-	DEFINE_VD_CMPS(cx);
+#define T_FUNCNAME      dcopy
+#define T_ARGS          ,VECDATA_DESC *y
+#define T_USE_Y
+#define T_MOD_SCAL      VVALUE(v,xc) = VVALUE(v,yc);
+#define T_MOD_VECTOR_1  VVALUE(v,cx0) = VVALUE(v,cy0);
+#define T_MOD_VECTOR_2  VVALUE(v,cx1) = VVALUE(v,cy1);
+#define T_MOD_VECTOR_3  VVALUE(v,cx2) = VVALUE(v,cy2);
+#define T_MOD_VECTOR_N  for (i=0;i<ncomp;i++)                                 \
+                            VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i))=              \
+								VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
 
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						VVALUE(v,cx0) = a;
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a;}
-					break;
-				
-				case 3:
-					SET_VD_CMP_3(cx,x,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a; VVALUE(v,cx2) = a;}
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = a;
-			}
-	
-	return (NUM_OK);
-}
+#include "vecfunc.ct"
 
 /****************************************************************************/
 /*D
-   s_dset - set all components of a vector to a given value
+   dscale - scaling x with a
 
    SYNOPSIS:
-   INT s_dset (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE a);
+   INT dscalex (MULTIGRID *mg, INT fl, INT tl, INT mode, 
+   VECDATA_DESC *x, DOUBLE a);
 
    PARAMETERS:
 .  mg - pointer to multigrid 
 .  fl - from level
 .  tl - to level
+.  mode - ALL_VECTORS or ON_SURFACE
 .  x - destination vector data descriptor
-.  xclass - vector class
 .  a - DOUBLE value
 
    DESCRIPTION:
-   This function sets all components of a vector to a given value.
-   It runs the surface of the grid, c. f. 'FINE_GRID_DOF' in 'gm.h'.
+   This function calculates `x := a * x`.
 
    RETURN VALUE:
    INT
 .n    NUM_OK
+.n    NUM_ERROR if error occured
 D*/
 /****************************************************************************/
 
-INT s_dset (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE a)
-{
-	register VECTOR *v;
-	register SHORT i;
-	register SHORT ncomp;
-	register INT vtype;
-	INT lev;
-	DEFINE_VD_CMPS(cx);
+#define T_FUNCNAME      dscale
+#define T_ARGS          ,DOUBLE a
+#define T_CONFIG        DOUBLE *value;
+#define T_MOD_SCAL      VVALUE(v,xc) *= a;
+#define T_MOD_VECTOR_1  VVALUE(v,cx0) *= a;
+#define T_MOD_VECTOR_2  VVALUE(v,cx1) *= a;
+#define T_MOD_VECTOR_3  VVALUE(v,cx2) *= a;
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                              \
+                           VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) *= a;
 
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						VVALUE(v,cx0) = a;
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						VVALUE(v,cx0) = a;
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a;}
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a;}
-					break;
-				
-				case 3:
-					SET_VD_CMP_3(cx,x,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a; VVALUE(v,cx2) = a;}
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a; VVALUE(v,cx2) = a;}
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = a;
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = a;
-			}
-	
-	return (NUM_OK);
+#include "vecfunc.ct"
+
+/****************************************************************************/
+/*D
+   dscalex - scaling x with a
+
+   SYNOPSIS:
+   INT dscalex (MULTIGRID *mg, INT fl, INT tl, INT mode, 
+   VECDATA_DESC *x, DOUBLE *a);
+
+   PARAMETERS:
+.  mg - pointer to multigrid 
+.  fl - from level
+.  tl - to level
+.  mode - ALL_VECTORS or ON_SURFACE
+.  x - destination vector data descriptor
+.  a - DOUBLE value per component
+
+   DESCRIPTION:
+   This function calculates `x := a * x`.
+   It runs from level fl to tl.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK
+.n    NUM_ERROR if error occured
+D*/
+/****************************************************************************/
+
+#define T_FUNCNAME      dscalex
+#define T_ARGS          ,DOUBLE *a
+#define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x);	              \
+                        DEFINE_VS_CMPS(a); DOUBLE *value;
+#define T_PREP_1        SET_VS_CMP_1(a,a,aoff,vtype);
+#define T_MOD_VECTOR_1  VVALUE(v,cx0) *= a0;
+#define T_PREP_2        SET_VS_CMP_2(a,a,aoff,vtype);
+#define T_MOD_VECTOR_2  VVALUE(v,cx1) *= a1;
+#define T_PREP_3        SET_VS_CMP_3(a,a,aoff,vtype);
+#define T_MOD_VECTOR_3  VVALUE(v,cx2) *= a2;
+#define T_PREP_N        value = a+aoff[vtype];
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                              \
+                           VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) *= value[i];
+
+#include "vecfunc.ct"
+
+/****************************************************************************/
+/*D
+   dadd - x plus y
+
+   SYNOPSIS:
+   INT dadd (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, 
+   VECDATA_DESC *y);
+
+
+   PARAMETERS:
+.  mg - pointer to multigrid 
+.  fl - from level
+.  tl - to level
+.  mode - ALL_VECTORS or ON_SURFACE
+.  x - vector data descriptor
+.  y - vector data descriptor
+
+   DESCRIPTION:
+   This function calculates `x := x + y` on one grid level.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK if ok
+.n    NUM_ERROR if error occured
+D*/
+/****************************************************************************/
+
+#define T_FUNCNAME      dadd
+#define T_ARGS          ,VECDATA_DESC *y
+#define T_USE_Y
+#define T_MOD_SCAL      VVALUE(v,xc) += VVALUE(v,yc);
+#define T_MOD_VECTOR_1  VVALUE(v,cx0) += VVALUE(v,cy0);
+#define T_MOD_VECTOR_2  VVALUE(v,cx1) += VVALUE(v,cy1);
+#define T_MOD_VECTOR_3  VVALUE(v,cx2) += VVALUE(v,cy2);
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                               \
+                            VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i))               \
+                              += VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
+
+#include "vecfunc.ct"
+
+/****************************************************************************/
+/*D
+   dsub - x minus y
+
+   SYNOPSIS:
+   INT dsub (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, 
+   VECDATA_DESC *y);
+
+
+   PARAMETERS:
+.  mg - pointer to multigrid 
+.  fl - from level
+.  tl - to level
+.  mode - ALL_VECTORS or ON_SURFACE
+.  x - vector data descriptor
+.  y - vector data descriptor
+
+   DESCRIPTION:
+   This function calculates `x := x - y` on one grid level.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK if ok
+.n    NUM_ERROR if error occured
+D*/
+/****************************************************************************/
+
+#define T_FUNCNAME      dsub
+#define T_ARGS          ,VECDATA_DESC *y
+#define T_USE_Y
+#define T_MOD_SCAL      VVALUE(v,xc) -= VVALUE(v,yc);
+#define T_MOD_VECTOR_1  VVALUE(v,cx0) -= VVALUE(v,cy0);
+#define T_MOD_VECTOR_2  VVALUE(v,cx1) -= VVALUE(v,cy1);
+#define T_MOD_VECTOR_3  VVALUE(v,cx2) -= VVALUE(v,cy2);
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                               \
+                            VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i))               \
+                              -= VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
+
+#include "vecfunc.ct"
+
+/****************************************************************************/
+/*D
+   daxpyx - x plus a times y
+
+   SYNOPSIS:
+   INT daxpyx (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, 
+   DOUBLE *a, VECDATA_DESC *y);
+
+
+   PARAMETERS:
+.  mg - pointer to multigrid 
+.  fl - from level
+.  tl - to level
+.  mode - ALL_VECTORS or ON_SURFACE
+.  x - vector data descriptor
+.  a - DOUBLE value for every component of 'x'
+.  y - vector data descriptor
+
+   DESCRIPTION:
+   This function calculates `x := x + ay` on one grid level.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK if ok
+.n    NUM_ERROR if error occured
+D*/
+/****************************************************************************/
+
+#define T_FUNCNAME      daxpyx
+#define T_ARGS          ,DOUBLE *a,VECDATA_DESC *y
+#define T_USE_Y
+#define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value; \
+                        DEFINE_VS_CMPS(a);
+#define T_MOD_SCAL      VVALUE(v,xc) += *a * VVALUE(v,yc);
+#define T_PREP_SWITCH   value = a+aoff[vtype];
+#define T_MOD_VECTOR_1  VVALUE(v,cx0) += value[0] * VVALUE(v,cy0);
+#define T_MOD_VECTOR_2  VVALUE(v,cx1) += value[1] * VVALUE(v,cy1);
+#define T_MOD_VECTOR_3  VVALUE(v,cx2) += value[2] * VVALUE(v,cy2);
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                               \
+                            VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i))               \
+                              += value[i] * VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
+
+#include "vecfunc.ct"
+
+/****************************************************************************/
+/*D
+   daxpy - x plus a times y
+
+   SYNOPSIS:
+   INT daxpy (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, 
+   DOUBLE a, VECDATA_DESC *y);
+
+
+   PARAMETERS:
+.  mg - pointer to multigrid 
+.  fl - from level
+.  tl - to level
+.  mode - ALL_VECTORS or ON_SURFACE
+.  x - vector data descriptor
+.  a - DOUBLE value
+.  y - vector data descriptor
+
+   DESCRIPTION:
+   This function calculates `x := x + ay` on one grid level.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK if ok
+.n    NUM_ERROR if error occured
+D*/
+/****************************************************************************/
+
+#define T_FUNCNAME      daxpy
+#define T_ARGS          ,DOUBLE a,VECDATA_DESC *y
+#define T_USE_Y
+#define T_MOD_SCAL      VVALUE(v,xc) += a * VVALUE(v,yc);
+#define T_MOD_VECTOR_1  VVALUE(v,cx0) += a * VVALUE(v,cy0);
+#define T_MOD_VECTOR_2  VVALUE(v,cx1) += a * VVALUE(v,cy1);
+#define T_MOD_VECTOR_3  VVALUE(v,cx2) += a * VVALUE(v,cy2);
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                               \
+                            VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i))               \
+                              += a * VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
+
+#include "vecfunc.ct"
+
+/****************************************************************************/
+/*D
+   ddotx - scalar product of two vectors
+
+   SYNOPSIS:
+   INT ddotx (MULTIGRID *mg, INT fl, INT tl, INT mode, 
+   VECDATA_DESC *x, VECDATA_DESC *y, DOUBLE *a);
+
+
+   PARAMETERS:
+.  mg - pointer to multigrid 
+.  fl - from level
+.  tl - to level
+.  mode - ALL_VECTORS or ON_SURFACE
+.  x - vector data descriptor
+.  y - vector data descriptor
+.  a - DOUBLE value for every component of 'x'
+
+   DESCRIPTION:
+   This function computes the scalar product of two vectors.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK if ok
+.n    NUM_ERROR if error occured
+D*/
+/****************************************************************************/
+
+static void UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
+{
+	DOUBLE a1[NVECTYPES+1];
+	INT i;
+
+	#ifdef ModelP
+	#ifdef Debug
+	for (i=0; i<ncomp; i++)
+	    a1[i] = a[i];
+	a1[ncomp] = (DOUBLE) rep_err_count;
+	UG_GlobalSumNDOUBLE(ncomp+1, sp1);
+	if (a1[ncomp] > 0.0)
+	    return(NUM_ERROR);
+	for (i=0; i<ncomp; i++)
+	    a[i] = a1[i];
+	#else
+	UG_GlobalSumNDOUBLE(ncomp, a);
+	#endif
+	#endif
 }
+
+#define T_FUNCNAME      ddotx
+#define T_ARGS          ,VECDATA_DESC *y,DOUBLE *a
+#define T_USE_Y
+#define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value;   \
+                        DEFINE_VS_CMPS(a);                                    \
+						for (i=0; i<VD_NCOMP(x); i++) a[i] = 0.0;
+#define T_MOD_SCAL      *a += VVALUE(v,xc) * VVALUE(v,yc);
+#define T_PREP_SWITCH   value = a+aoff[vtype];
+#define T_MOD_VECTOR_1  value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
+#define T_MOD_VECTOR_2  value[1] += VVALUE(v,cx1) * VVALUE(v,cy1);
+#define T_MOD_VECTOR_3  value[2] += VVALUE(v,cx2) * VVALUE(v,cy2);
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                               \
+							value[i] += VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) * \
+								VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
+#define T_POST_PAR      UG_GlobalSumNDOUBLE_X(VD_NCOMP(x),a);
+
+#include "vecfunc.ct"
+
+/****************************************************************************/
+/*D
+   ddot - scalar product of two vectors
+
+   SYNOPSIS:
+   INT ddotx (MULTIGRID *mg, INT fl, INT tl, INT mode, 
+   VECDATA_DESC *x, VECDATA_DESC *y, DOUBLE *a);
+
+
+   PARAMETERS:
+.  mg - pointer to multigrid 
+.  fl - from level
+.  tl - to level
+.  mode - ALL_VECTORS or ON_SURFACE
+.  x - vector data descriptor
+.  y - vector data descriptor
+.  a - DOUBLE value 
+
+   DESCRIPTION:
+   This function computes the scalar product of two vectors.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK if ok
+.n    NUM_ERROR if error occured
+D*/
+/****************************************************************************/
+
+#define T_FUNCNAME      ddot
+#define T_ARGS          ,VECDATA_DESC *y,DOUBLE *a
+#define T_USE_Y
+#define T_CONFIG        *a = 0.0;
+#define T_MOD_SCAL      *a += VVALUE(v,xc) * VVALUE(v,yc);
+#define T_MOD_VECTOR_1  *a += VVALUE(v,cx0) * VVALUE(v,cy0);
+#define T_MOD_VECTOR_2  *a += VVALUE(v,cx1) * VVALUE(v,cy1);
+#define T_MOD_VECTOR_3  *a += VVALUE(v,cx2) * VVALUE(v,cy2);
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                               \
+							*a += VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) *       \
+							    VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
+#define T_POST_PAR      UG_GlobalSumNDOUBLE_X(1,a);
+
+#include "vecfunc.ct"
+
+/****************************************************************************/
+/*D
+   dnrm2x - euclidian norm of a vectors
+
+   SYNOPSIS:
+   INT dnrm2x (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, 
+   DOUBLE *a);
+
+
+   PARAMETERS:
+.  mg - pointer to multigrid 
+.  fl - from level
+.  tl - to level
+.  mode - ALL_VECTORS or ON_SURFACE
+.  x - vector data descriptor
+.  a - DOUBLE value for every component of 'x'
+
+   DESCRIPTION:
+   This function computes the euclidian product of a vectors.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK if ok
+.n    NUM_ERROR if error occured
+D*/
+/****************************************************************************/
+
+#define T_FUNCNAME      dnrm2x
+#define T_ARGS          ,DOUBLE *a
+#define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value;   \
+                        DEFINE_VS_CMPS(a); DOUBLE s;                          \
+						for (i=0; i<VD_NCOMP(x); i++) a[i] = 0.0;
+#define T_MOD_SCAL      s = VVALUE(v,xc); *a += s*s;
+#define T_PREP_SWITCH   value = a+aoff[vtype];
+#define T_MOD_VECTOR_1  s = VVALUE(v,cx0); value[0] += s*s;
+#define T_MOD_VECTOR_2  s = VVALUE(v,cx1); value[1] += s*s;
+#define T_MOD_VECTOR_3  s = VVALUE(v,cx2); value[2] += s*s;
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++) {                              \
+						   s = VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i));            \
+						   value[i] += s*s; }
+#define T_POST_PAR      UG_GlobalSumNDOUBLE_X(VD_NCOMP(x),a);
+#define T_POST          for (i=0; i<VD_NCOMP(x); i++) a[i] = SQRT(a[i]);
+
+#include "vecfunc.ct"
+
+/****************************************************************************/
+/*D
+   dnrm2 - euclidian norm of a vectors
+
+   SYNOPSIS:
+   INT dnrm2x (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, 
+   DOUBLE *a);
+
+
+   PARAMETERS:
+.  mg - pointer to multigrid 
+.  fl - from level
+.  tl - to level
+.  mode - ALL_VECTORS or ON_SURFACE
+.  x - vector data descriptor
+.  a - DOUBLE value
+
+   DESCRIPTION:
+   This function computes the euclidian product of a vectors.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK if ok
+.n    NUM_ERROR if error occured
+D*/
+/****************************************************************************/
+
+#define T_FUNCNAME      dnrm2
+#define T_ARGS          ,DOUBLE *a
+#define T_CONFIG        DOUBLE s; *a = 0.0;
+#define T_MOD_SCAL      s = VVALUE(v,xc); *a += s*s;
+#define T_MOD_VECTOR_1  s = VVALUE(v,cx0); *a += s*s;
+#define T_MOD_VECTOR_2  s = VVALUE(v,cx1); *a += s*s;
+#define T_MOD_VECTOR_3  s = VVALUE(v,cx2); *a += s*s;
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++) {                              \
+						   s = VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i));            \
+						   *a += s*s; }
+#define T_POST_PAR      UG_GlobalSumNDOUBLE_X(1,a);
+#define T_POST          *a = SQRT(*a);
+
+#include "vecfunc.ct"
+
 
 /****************************************************************************/
 /*D
@@ -2725,84 +3036,6 @@ INT l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFu
 	return (NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   l_dcopy - copy one vector to another
-
-   SYNOPSIS:
-   INT l_dcopy (GRID *g, const VECDATA_DESC *x, INT xclass, 
-   const VECDATA_DESC *y);
-
-   PARAMETERS:
-.  g - pointer to grid 
-.  x - destination vector data descriptor
-.  xclass - vector class
-.  y - source vector data descriptor
-
-   DESCRIPTION:
-   This function copies a vector on one grid to another: `x := y`.	
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    if NDEBUG is not defined:
-.n    error code from 'VecCheckConsistency'
-D*/
-/****************************************************************************/
-
-INT l_dcopy (GRID *g, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y)
-{
-	VECTOR *first_v;
-	register VECTOR *v;
-	register SHORT i;
-	register SHORT ncomp;
-	register INT vtype,err;
-	DEFINE_VD_CMPS(cx);
-	DEFINE_VD_CMPS(cy);
-
-#ifndef NDEBUG
-	/* check consistency */
-	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		REP_ERR_RETURN(err);
-#endif
-	
-	first_v = FIRSTVECTOR(g);
-	
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					SET_VD_CMP_1(cy,y,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						VVALUE(v,cx0) = VVALUE(v,cy0);
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					SET_VD_CMP_2(cy,y,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1);}
-					break;
-				
-				case 3:
-					SET_VD_CMP_3(cx,x,vtype);
-					SET_VD_CMP_3(cy,y,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1); VVALUE(v,cx2) = VVALUE(v,cy2);}
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
-			}
-	
-	return (NUM_OK);
-}
-
 INT l_dcopy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y)
 {
 	VECTOR *first_v,*end_v;
@@ -2857,243 +3090,6 @@ INT l_dcopy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const VEC
 	return (NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   a_dcopy - copy one vector to another
-
-   SYNOPSIS:
-   INT a_dcopy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, 
-   INT xclass, const VECDATA_DESC *y);
-
-   PARAMETERS:
-.  mg - pointer to multigrid 
-.  fl - from level
-.  tl - to level
-.  x - destination vector data descriptor
-.  xclass - vector class
-.  y - source vector data descriptor
-
-   DESCRIPTION:
-   This function copies one vector to another: `x := y`.	
-   It runs from level fl to level tl.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    if NDEBUG is not defined:
-.n    error code from 'VecCheckConsistency'
-D*/
-/****************************************************************************/
-
-INT a_dcopy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y)
-{
-	register VECTOR *v;
-	register SHORT i;
-	register SHORT ncomp;
-	INT lev,vtype,err;
-	DEFINE_VD_CMPS(cx);
-	DEFINE_VD_CMPS(cy);
-
-#ifndef NDEBUG
-	/* check consistency */
-	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		REP_ERR_RETURN(err);
-#endif
-	
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					SET_VD_CMP_1(cy,y,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						VVALUE(v,cx0) = VVALUE(v,cy0);
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					SET_VD_CMP_2(cy,y,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1);}
-					break;
-				
-				case 3:
-					SET_VD_CMP_3(cx,x,vtype);
-					SET_VD_CMP_3(cy,y,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1); VVALUE(v,cx2) = VVALUE(v,cy2);}
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
-			}
-	
-	return (NUM_OK);
-}
-
-/****************************************************************************/
-/*D
-   s_dcopy - copy one vector to another
-
-   SYNOPSIS:
-   INT s_dcopy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, 
-   const VECDATA_DESC *y);
-
-   PARAMETERS:
-.  mg - pointer to multigrid 
-.  fl - from level
-.  tl - to level
-.  x - destination vector data descriptor
-.  y - source vector data descriptor
-
-   DESCRIPTION:
-   This function copies one vector to another: `x := y`.	
-   It runs the surface of the grid, c. f. 'FINE_GRID_DOF' in 'gm.h'.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    if NDEBUG is not defined:
-.n    error code from 'VecCheckConsistency'
-D*/
-/****************************************************************************/
-
-INT s_dcopy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VECDATA_DESC *y)
-{
-	register VECTOR *v;
-	register SHORT i;
-	register SHORT ncomp;
-	INT lev,vtype,err;
-	DEFINE_VD_CMPS(cx);
-	DEFINE_VD_CMPS(cy);
-
-#ifndef NDEBUG
-	/* check consistency */
-	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		REP_ERR_RETURN(err);
-#endif
-	
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					SET_VD_CMP_1(cy,y,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						VVALUE(v,cx0) = VVALUE(v,cy0);
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						VVALUE(v,cx0) = VVALUE(v,cy0);
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					SET_VD_CMP_2(cy,y,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1);}
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1);}
-					break;
-				
-				case 3:
-					SET_VD_CMP_3(cx,x,vtype);
-					SET_VD_CMP_3(cy,y,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1); VVALUE(v,cx2) = VVALUE(v,cy2);}
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1); VVALUE(v,cx2) = VVALUE(v,cy2);}
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
-			}
-	
-	return (NUM_OK);
-}
-
-/****************************************************************************/
-/*D
-   l_dscale - scaling x with a
-
-   SYNOPSIS:
-   INT l_dscale (GRID *g, const VECDATA_DESC *x, INT xclass, const DOUBLE *a);
-
-   PARAMETERS:
-.  g - pointer to grid 
-.  x - destination vector data descriptor
-.  xclass - vector class
-.  a - DOUBLE value
-
-   DESCRIPTION:
-   This function calculates `x := a * x` on one grid level.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK
-D*/
-/****************************************************************************/
-
-INT l_dscale (GRID *g, const VECDATA_DESC *x, INT xclass, const DOUBLE *a)
-{
-	VECTOR *first_v;
-	const DOUBLE *value;
-	register VECTOR *v;
-	register SHORT i;
-	register SHORT ncomp;
-	register INT vtype;
-	const SHORT *aoff;
-	DEFINE_VS_CMPS(a);
-	DEFINE_VD_CMPS(cx);
-
-	aoff = VD_OFFSETPTR(x);	
-	first_v = FIRSTVECTOR(g);
-	
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					SET_VS_CMP_1(a,a,aoff,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						VVALUE(v,cx0) *= a0;
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					SET_VS_CMP_2(a,a,aoff,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						{VVALUE(v,cx0) *= a0; VVALUE(v,cx1) *= a1;}
-					break;
-				
-				case 3:
-					SET_VD_CMP_3(cx,x,vtype);
-					SET_VS_CMP_3(a,a,aoff,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						{VVALUE(v,cx0) *= a0; VVALUE(v,cx1) *= a1; VVALUE(v,cx2) *= a2;}
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					value = a+aoff[vtype];
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) *= value[i];
-			}
-	
-	return (NUM_OK);
-}
-
 INT l_dscale_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const DOUBLE *a)
 {
 	VECTOR *first_v,*end_v;
@@ -3141,249 +3137,6 @@ INT l_dscale_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const DO
 					L_VLOOP__TYPE_CLASS2(v,first_v,end_v,vtype,xclass)
 						for (i=0; i<ncomp; i++)
 							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) *= value[i];
-			}
-	
-	return (NUM_OK);
-}
-
-/****************************************************************************/
-/*D
-   s_dscale - scaling x with a
-
-   SYNOPSIS:
-   INT s_dscale (const MULTIGRID *mg, INT fl, INT tl, const TYPE_VEC_DESC *x, DOUBLE *scale);
-
-   PARAMETERS:
-.  mg - pointer to multigrid 
-.  x - destination vector data descriptor
-.  a - DOUBLE value
-
-   DESCRIPTION:
-   This function calculates `x := a * x` on the multigrid surface.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK
-D*/
-/****************************************************************************/
-
-INT s_dscale (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE *a)
-{
-	DOUBLE *value;
-	VECTOR *v;
-	register SHORT i;
-	register SHORT ncomp;
-	INT lev,vtype;
-	const SHORT *spoff;
-	DEFINE_VD_CMPS(cx);
-
-  	spoff = VD_OFFSETPTR(x);				
-	
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-		{
-			value = a+spoff[vtype];
-			
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						VVALUE(v,cx0) *= value[0];
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						VVALUE(v,cx0) *= value[0];
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						{VVALUE(v,cx0) *= value[0]; VVALUE(v,cx1) *= value[1];}
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						{VVALUE(v,cx0) *= value[0]; VVALUE(v,cx1) *= value[1];}
-					break;
-				
-				case 3:
-					SET_VD_CMP_3(cx,x,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						{VVALUE(v,cx0) *= value[0]; VVALUE(v,cx1) *= value[1]; VVALUE(v,cx2) *= value[2];}
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						{VVALUE(v,cx0) *= value[0]; VVALUE(v,cx1) *= value[1]; VVALUE(v,cx2) *= value[2];}
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) *= value[i] += VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i));
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) *= value[i] += VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i));
-			}
-		}
-	
-	return (NUM_OK);
-}
-
-/****************************************************************************/
-/*D
-   a_dscale - scaling x with a
-
-   SYNOPSIS:
-   INT a_dscale (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, 
-                 INT xclass, const DOUBLE *a);
-
-   PARAMETERS:
-.  mg - pointer to multigrid 
-.  fl - from level
-.  tl - to level
-.  x - destination vector data descriptor
-.  xclass - vector class
-.  a - DOUBLE value
-
-   DESCRIPTION:
-   This function calculates `x := a * x`.
-   It runs from level fl to tl.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK
-D*/
-/****************************************************************************/
-
-INT a_dscale (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, 
-                 INT xclass, const DOUBLE *a)
-{
-	const DOUBLE *value;
-	register VECTOR *v;
-	register SHORT i;
-	register SHORT ncomp;
-	register INT vtype;
-	INT lev;
-	const SHORT *aoff;
-	DEFINE_VS_CMPS(a);
-	DEFINE_VD_CMPS(cx);
-
-
-	aoff = VD_OFFSETPTR(x);	
-	
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					SET_VS_CMP_1(a,a,aoff,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						VVALUE(v,cx0) *= a0;
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					SET_VS_CMP_2(a,a,aoff,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						{VVALUE(v,cx0) *= a0; VVALUE(v,cx1) *= a1;}
-					break;
-				
-				case 3:
-					SET_VD_CMP_3(cx,x,vtype);
-					SET_VS_CMP_3(a,a,aoff,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						{VVALUE(v,cx0) *= a0; VVALUE(v,cx1) *= a1; VVALUE(v,cx2) *= a2;}
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					value = a+aoff[vtype];
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) *= value[i];
-			}
-	
-	return (NUM_OK);
-}
-
-/****************************************************************************/
-/*D
-   l_daxpy - x plus a times y
-
-   SYNOPSIS:
-   INT l_daxpy (GRID *g, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, 
-   const VECDATA_DESC *y);
-
-   PARAMETERS:
-.  g - pointer to grid 
-.  x - destination vector data descriptor
-.  xclass - vector class
-.  a - DOUBLE value
-.  y - source vector data descriptor
-
-   DESCRIPTION:
-   This function calculates `x := x + ay` on one grid level.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    if NDEBUG is not defined:
-.n    error code from 'VecCheckConsistency'
-D*/
-/****************************************************************************/
-
-INT l_daxpy (GRID *g, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y)
-{
-	VECTOR *first_v;
-	const DOUBLE *value;
-	register VECTOR *v;
-	register SHORT i;
-	register SHORT ncomp;
-	register INT vtype,err;
-	const SHORT *aoff;
-	DEFINE_VS_CMPS(a);
-	DEFINE_VD_CMPS(cx);
-	DEFINE_VD_CMPS(cy);
-
-#ifndef NDEBUG
-	/* check consistency */
-	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		REP_ERR_RETURN(err);
-#endif
-
-	aoff = VD_OFFSETPTR(x);			
-	first_v = FIRSTVECTOR(g);
-	
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					SET_VD_CMP_1(cy,y,vtype);
-					SET_VS_CMP_1(a,a,aoff,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						VVALUE(v,cx0) += a0*VVALUE(v,cy0);
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					SET_VD_CMP_2(cy,y,vtype);
-					SET_VS_CMP_2(a,a,aoff,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1);}
-					break;
-				
-				case 3:
-					SET_VD_CMP_3(cx,x,vtype);
-					SET_VD_CMP_3(cy,y,vtype);
-					SET_VS_CMP_3(a,a,aoff,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1); VVALUE(v,cx2) += a2*VVALUE(v,cy2);}
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					value = a+aoff[vtype];
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) += value[i]*VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
 			}
 	
 	return (NUM_OK);
@@ -3444,193 +3197,6 @@ INT l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const DOU
 					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
 					value = a+aoff[vtype];
 					L_VLOOP__TYPE_CLASS2(v,first_v,end_v,vtype,xclass)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) += value[i]*VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
-			}
-	
-	return (NUM_OK);
-}
-
-/****************************************************************************/
-/*D
-   a_daxpy - x plus a times y
-
-   SYNOPSIS:
-   INT a_daxpy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, 
-   INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
-
-   PARAMETERS:
-.  mg - pointer to multigrid 
-.  fl - from level
-.  tl - to level
-.  x - destination vector data descriptor
-.  xclass - vector class
-.  a - DOUBLE value
-.  y - source vector data descriptor
-
-   DESCRIPTION:
-   This function calculates `x := x + ay`.
-   It runs from level fl to level tl.
-
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    if NDEBUG is not defined:
-.n    error code from 'VecCheckConsistency'
-D*/
-/****************************************************************************/
-
-INT a_daxpy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y)
-{
-	const DOUBLE *value;
-	register VECTOR *v;
-	register SHORT i;
-	register SHORT ncomp;
-	register INT vtype;
-	INT lev,err;
-	const SHORT *aoff;
-	DEFINE_VS_CMPS(a);
-	DEFINE_VD_CMPS(cx);
-	DEFINE_VD_CMPS(cy);
-
-#ifndef NDEBUG
-	/* check consistency */
-	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		REP_ERR_RETURN(err);
-#endif
-
-	aoff = VD_OFFSETPTR(x);			
-	
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					SET_VD_CMP_1(cy,y,vtype);
-					SET_VS_CMP_1(a,a,aoff,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						VVALUE(v,cx0) += a0*VVALUE(v,cy0);
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					SET_VD_CMP_2(cy,y,vtype);
-					SET_VS_CMP_2(a,a,aoff,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1);}
-					break;
-				
-				case 3:
-					SET_VD_CMP_3(cx,x,vtype);
-					SET_VD_CMP_3(cy,y,vtype);
-					SET_VS_CMP_3(a,a,aoff,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1); VVALUE(v,cx2) += a2*VVALUE(v,cy2);}
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					value = a+aoff[vtype];
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) += value[i]*VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
-			}
-	
-	return (NUM_OK);
-}
-
-/****************************************************************************/
-/*D
-   s_daxpy - x plus a times y
-
-   SYNOPSIS:
-   INT s_daxpy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, 
-   const DOUBLE *a, const VECDATA_DESC *y);
-
-   PARAMETERS:
-.  mg - pointer to multigrid 
-.  fl - from level
-.  tl - to level
-.  x - destination vector data descriptor
-.  a - DOUBLE value
-.  y - source vector data descriptor
-
-   DESCRIPTION:
-   This function calculates `x := x + ay`.
-   It runs the surface of the grid, c. f. 'FINE_GRID_DOF' in 'gm.h'.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    if NDEBUG is not defined:
-.n    error code from 'VecCheckConsistency'
-D*/
-/****************************************************************************/
-
-INT s_daxpy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const DOUBLE *a, const VECDATA_DESC *y)
-{
-	const DOUBLE *value;
-	register VECTOR *v;
-	register SHORT i;
-	register SHORT ncomp;
-	register INT vtype;
-	INT lev,err;
-	const SHORT *aoff;
-	DEFINE_VS_CMPS(a);
-	DEFINE_VD_CMPS(cx);
-	DEFINE_VD_CMPS(cy);
-
-#ifndef NDEBUG
-	/* check consistency */
-	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		REP_ERR_RETURN(err);
-#endif
-
-	aoff = VD_OFFSETPTR(x);			
-	
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					SET_VD_CMP_1(cy,y,vtype);
-					SET_VS_CMP_1(a,a,aoff,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						VVALUE(v,cx0) += a0*VVALUE(v,cy0);
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						VVALUE(v,cx0) += a0*VVALUE(v,cy0);
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					SET_VD_CMP_2(cy,y,vtype);
-					SET_VS_CMP_2(a,a,aoff,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1);}
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1);}
-					break;
-				
-				case 3:
-					SET_VD_CMP_3(cx,x,vtype);
-					SET_VD_CMP_3(cy,y,vtype);
-					SET_VS_CMP_3(a,a,aoff,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1); VVALUE(v,cx2) += a2*VVALUE(v,cy2);}
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1); VVALUE(v,cx2) += a2*VVALUE(v,cy2);}
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					value = a+aoff[vtype];
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						for (i=0; i<ncomp; i++)
-							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) += value[i]*VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
 						for (i=0; i<ncomp; i++)
 							VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) += value[i]*VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
 			}
@@ -3852,6 +3418,7 @@ INT a_dxdy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, co
 D*/
 /****************************************************************************/
 
+
 INT s_dxdy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const DOUBLE *a, const VECDATA_DESC *y)
 {
 	const DOUBLE *value;
@@ -3927,371 +3494,6 @@ INT s_dxdy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const DOUBLE *
 								value[i]*VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i))+
 								(1.0-value[i])*VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
 			}
-	
-	return (NUM_OK);
-}
-
-/****************************************************************************/
-/*D
-   l_ddot - scalar product of two vectors
-
-   SYNOPSIS:
-   INT l_ddot (const GRID *g, const VECDATA_DESC *x, INT xclass, 
-   const VECDATA_DESC *y, DOUBLE *sp);
-
-   PARAMETERS:
-.  g - pointer to grid 
-.  x - vector data descriptor
-.  xclass - vector class 
-.  y - vector data descriptor
-.  sp - DOUBLE value for every component of 'x'
-
-   DESCRIPTION:
-   This function computes the scalar product of two vectors on one grid level.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    if NDEBUG is not defined:
-.n    error code from 'VecCheckConsistency'
-D*/
-/****************************************************************************/
-
-INT l_ddot (const GRID *g, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp)
-{
-	DOUBLE *value;
-	VECTOR *v,*first_v;
-	register SHORT i;
-	register SHORT ncomp;
-	INT vtype,err;
-	const SHORT *spoff;
-	DEFINE_VD_CMPS(cx);
-	DEFINE_VD_CMPS(cy);
-
-#ifndef NDEBUG
-	/* check consistency */
-	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		REP_ERR_RETURN(err);
-#endif
-	
-  	spoff = VD_OFFSETPTR(x);				
-
-	/* clear sp */
-	for (i=0; i<VD_NCOMP(x); i++)
-	    sp[i] = 0.0;
-	
-	first_v = FIRSTVECTOR(g);
-	
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-		{
-			value = sp+spoff[vtype];
-			
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					SET_VD_CMP_1(cy,y,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					SET_VD_CMP_2(cy,y,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1);}
-					break;
-				
-				case 3:
-					SET_VD_CMP_3(cx,x,vtype);
-					SET_VD_CMP_3(cy,y,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1); value[2] += VVALUE(v,cx2) * VVALUE(v,cy2);}
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
-						for (i=0; i<ncomp; i++)
-							value[i] += VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) * 
-								VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
-			}
-		}
-
-	#ifdef ModelP
-	UG_GlobalSumNDOUBLE(VD_NCOMP(x), sp);
-	#endif
-	
-	return (NUM_OK);
-}
-
-INT l_ddot_sv (const GRID *g, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv)
-{
-	INT j;
-	VEC_SCALAR sp;
-	
-	if (l_ddot (g,x,xclass,y,sp)) REP_ERR_RETURN (NUM_ERROR);
-	*sv=0.0;
-	for (j=0; j<VD_NCOMP(x); j++)
-		*sv += weight[j]*sp[j];
-	
-	return (NUM_OK);
-}
-
-/****************************************************************************/
-/*D
-   a_ddot - scalar product of two vectors
-
-   SYNOPSIS:
-   INT a_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, 
-   INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
-
-   PARAMETERS:
-.  mg - pointer to multigrid 
-.  fl - from level
-.  tl - to level
-.  x - vector data descriptor
-.  xclass - vector class 
-.  y - vector data descriptor
-.  sp - DOUBLE value for every component of 'x'
-
-   DESCRIPTION:
-   This function computes the scalar product of two vectors.
-   It runs from level fl to level tl.
-
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    if NDEBUG is not defined:
-.n    error code from 'VecCheckConsistency'
-D*/
-/****************************************************************************/
-
-INT a_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp)
-{
-	DOUBLE *value;
-	VECTOR *v;
-	register SHORT i;
-	register SHORT ncomp;
-	INT lev,vtype,err;
-	const SHORT *spoff;
-	DEFINE_VD_CMPS(cx);
-	DEFINE_VD_CMPS(cy);
-
-#ifndef NDEBUG
-	/* check consistency */
-	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		REP_ERR_RETURN(err);
-#endif
-	
-  	spoff = VD_OFFSETPTR(x);				
-	
-	/* clear sp */
-	for (i=0; i<VD_NCOMP(x); i++)
-	    sp[i] = 0.0;
-	
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-		{
-			value = sp+spoff[vtype];
-			
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					SET_VD_CMP_1(cy,y,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					SET_VD_CMP_2(cy,y,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1);}
-					break;
-				
-				case 3:
-					SET_VD_CMP_3(cx,x,vtype);
-					SET_VD_CMP_3(cy,y,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1); value[2] += VVALUE(v,cx2) * VVALUE(v,cy2);}
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
-						for (i=0; i<ncomp; i++)
-							value[i] += VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) * 
-								VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
-			}
-		}
-
-	#ifdef ModelP
-	UG_GlobalSumNDOUBLE(VD_NCOMP(x), sp);
-	#endif
-	
-	return (NUM_OK);
-}
-
-/****************************************************************************/
-/*D
-   s_ddot - scalar product of two vectors
-
-   SYNOPSIS:
-   INT s_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, 
-   const VECDATA_DESC *y, DOUBLE *sp);
-
-   PARAMETERS:
-.  mg - pointer to multigrid 
-.  fl - from level
-.  tl - to level
-.  x - vector data descriptor
-.  y - vector data descriptor
-.  sp - DOUBLE value for every component of 'x'
-
-   DESCRIPTION:
-   This function computes the scalar product of two vectors.
-   It runs the surface of the grid, c. f. 'FINE_GRID_DOF' in 'gm.h'.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    if NDEBUG is not defined:
-.n    error code from 'VecCheckConsistency'
-D*/
-/****************************************************************************/
-
-INT s_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VECDATA_DESC *y, DOUBLE *sp)
-{
-	DOUBLE *value;
-	DOUBLE sp1[MAXVECTORS+1];
-	VECTOR *v;
-	register SHORT i;
-	register SHORT ncomp;
-	INT lev,vtype,err;
-	const SHORT *spoff;
-	DEFINE_VD_CMPS(cx);
-	DEFINE_VD_CMPS(cy);
-
-#ifndef NDEBUG
-	/* check consistency */
-	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
-		REP_ERR_RETURN(err);
-#endif
-
-	if (fl==-1) {
-    UserWriteF("Entering s_ddot on level %d\n",fl);
-	PrintVector(GRID_ON_LEVEL(mg,fl),x,3,3);
-	v=FIRSTVECTOR(GRID_ON_LEVEL(mg,tl));
-	UserWriteF("firstvector = 0x%x\n",v);
-	}
-	
-  	spoff = VD_OFFSETPTR(x);				
-	
-	/* clear sp */
-	for (i=0; i<VD_NCOMP(x); i++)
-	    sp[i] = 0.0;
-
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-		{
-			value = sp+spoff[vtype];
-			
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{
-				case 1:
-					SET_VD_CMP_1(cx,x,vtype);
-					SET_VD_CMP_1(cy,y,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
-					break;
-				
-				case 2:
-					SET_VD_CMP_2(cx,x,vtype);
-					SET_VD_CMP_2(cy,y,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1);}
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1);}
-					break;
-				
-				case 3:
-				    if (tl==-1) UserWriteF("firstvector = 0x%x\n",v);
-					SET_VD_CMP_3(cx,x,vtype);
-				    if (tl==-1) UserWriteF("firstvector = 0x%x\n",v);
-					SET_VD_CMP_3(cy,y,vtype);
-				    if (tl==-1) UserWriteF("firstvector = 0x%x\n",v);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1); value[2] += VVALUE(v,cx2) * VVALUE(v,cy2);}
-					if (tl==-1) UserWriteF("Now doing S_FINE_VLOOP__TYPE(%d,0x%x,0x%x,%d)\n",tl,v,mg,vtype);
-					for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,tl)); v!= NULL; v=SUCCVC(v)) {
-					    if (tl==-1) UserWriteF("v = 0x%x\n",v);
-					    if ((VTYPE(v)==vtype) && (NEW_DEFECT(v))) {
-							value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);	
-							value[1] += VVALUE(v,cx1) * VVALUE(v,cy1); 
-							value[2] += VVALUE(v,cx2) * VVALUE(v,cy2);
-						}
-						else {
-						  if (VTYPE(v)!=vtype) UserWrite("VTYPE(v)!=vtype\n");
-						  if (!NEW_DEFECT(v)) UserWrite("!NEW_DEFECT(v)\n");
-						}
-					}
-					if (tl==-1) UserWriteF("v = 0x%x\n",v); 
-					break;
-				
-				default:
-					ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
-						for (i=0; i<ncomp; i++)
-							value[i] += VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) * 
-								VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
-					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
-						for (i=0; i<ncomp; i++)
-							value[i] += VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) * 
-								VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
-			}
-		}
-
-	#ifdef ModelP
-	#ifdef Debug
-	ncomp = VD_NCOMP(x);
-	for (i=0; i<ncomp; i++)
-	    sp1[i] = sp[i];
-	sp1[ncomp] = (DOUBLE) rep_err_count;
-	UG_GlobalSumNDOUBLE(ncomp+1, sp1);
-	if (sp1[ncomp] > 0.0)
-	    return(NUM_ERROR);
-	for (i=0; i<ncomp; i++)
-	    sp[i] = sp1[i];
-	#else
-	UG_GlobalSumNDOUBLE(VD_NCOMP(x), sp);
-	#endif
-	#endif
-
-	if (fl==-1) {
-    UserWriteF("Leaving s_ddot on level %d\n",fl);
-    UserWriteF("ddot product is %f %f %f\n",sp[0], sp[1], sp[2]);
-	}
-	
-
-
-	return (NUM_OK);
-}
-
-INT s_ddot_sv (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv)
-{
-	INT j;
-	VEC_SCALAR sp;
-	
-	if (s_ddot (mg,fl,tl,x,y,sp)) REP_ERR_RETURN (NUM_ERROR);
-	*sv=0.0;
-	for (j=0; j<VD_NCOMP(x); j++)
-		*sv += weight[j]*sp[j];
 	
 	return (NUM_OK);
 }
@@ -4376,142 +3578,6 @@ INT l_mean (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *sp)
 	
 	return (NUM_OK);
 }
-
-/****************************************************************************/
-/*D
-   l_eunorm - Euclid norm of a vector
-
-   SYNOPSIS:
-   INT l_eunorm (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *eu);
-
-   PARAMETERS:
-.  g - pointer to grid 
-.  x - vector data descriptor
-.  xclass - vector class 
-.  eu - DOUBLE value for every component of 'x'
-
-   DESCRIPTION:
-   This function computes the euclidian norm of a vector 
-   on one grid level in every component.
-   It uses 'l_ddot'.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    error code from 'l_ddot'
-D*/
-/****************************************************************************/
-
-INT l_eunorm (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *eu)
-{
-	INT i;
-	INT err;
-
-	if ((err=l_ddot (g,x,xclass,x,eu))!=0) 	REP_ERR_RETURN (err);
-	for (i=0; i<VD_NCOMP(x); i++)
-		eu[i] = SQRT(eu[i]);
-	
-	return (NUM_OK);
-}
-
-/****************************************************************************/
-/*D
-   a_eunorm - Euclid norm of a vector
-
-   SYNOPSIS:
-   INT l_eunorm (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *eu);
-
-   PARAMETERS:
-.  mg - pointer to multigrid 
-.  x - vector data descriptor
-.  xclass - vector class 
-.  eu - DOUBLE value for every component of 'x'
-
-   DESCRIPTION:
-   This function computes the euclidian norm of a vector in every component.
-   It uses 'a_ddot'.
-   It runs from level fl to level tl.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    error code from 'a_ddot'
-D*/
-/****************************************************************************/
-
-INT a_eunorm (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE *eu)
-{
-	INT i;
-	INT err;
-
-	if ((err=a_ddot (mg,fl,tl,x,xclass,x,eu))!=0) 		REP_ERR_RETURN (err);
-	for (i=0; i<VD_NCOMP(x); i++)
-		eu[i] = SQRT(eu[i]);
-	
-	return NUM_OK;
-}
-
-/****************************************************************************/
-/*D
-   s_eunorm - Euclid norm of a vector
-
-   SYNOPSIS:
-   INT s_eunorm (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, 
-   DOUBLE *eu);
-
-   PARAMETERS:
-.  mg - pointer to multigrid 
-.  fl - from level
-.  tl - to level
-.  x - vector data descriptor
-.  eu - DOUBLE value for every component of 'x'
-
-   DESCRIPTION:
-   This function computes the euclidian norm of a vector in every component.
-   It uses 's_ddot'.
-   It runs over the surface of the grid, c. f. 'FINE_GRID_DOF' in 'gm.h'.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    error code from 's_ddot'
-D*/
-/****************************************************************************/
-
-INT s_eunorm (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE *eu)
-{
-	INT i;
-	INT err;
-
-if (tl==-1) UserWriteF("s_eunorm with fl=%d, tl=%d\n",fl,tl);
-	if ((err=s_ddot (mg,fl,tl,x,x,eu))!=0) 	REP_ERR_RETURN (err);
-if (tl==-1) UserWriteF("s_eunorm done, norm = %f %f %f \n",eu[0],eu[1],eu[2]);
-	for (i=0; i<VD_NCOMP(x); i++)
-		eu[i] = SQRT(eu[i]);
-	
-	return NUM_OK;
-}
-
-/****************************************************************************/
-/*D
-   l_dmatset - initialize a matrix
-
-   SYNOPSIS:
-   INT l_dmatset (GRID *g, const MATDATA_DESC *M, DOUBLE a);
-
-   PARAMETERS:
-.  g - pointer to grid 
-.  M - matrix data descriptor
-.  a - DOUBLE value
-
-   DESCRIPTION:
-   This function sets a matrix to `a` on one grid level.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK
-D*/
-/****************************************************************************/
 
 INT l_dmatset (GRID *g, const MATDATA_DESC *M, DOUBLE a)
 {
@@ -12516,4 +11582,3 @@ INT l_matflset (GRID *g, INT f)
 	
 	return (0);
 }
-

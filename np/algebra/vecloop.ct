@@ -1,0 +1,52 @@
+/****************************************************************************/
+/*																			*/
+/* File:	  vecloop.ct													*/
+/*																			*/
+/* Purpose:   vector loop template          								*/
+/*																			*/
+/* Author:	  Henrik Rentz-Reichert 										*/
+/*			  Institut fuer Computeranwendungen III 						*/
+/*			  Universitaet Stuttgart										*/
+/*			  Pfaffenwaldring 27											*/
+/*			  70569 Stuttgart												*/
+/*																			*/
+/* History:   Aug 22 97 begin                      							*/
+/*																			*/
+/* Remarks: 																*/
+/*																			*/
+/****************************************************************************/
+
+/* RCS_ID
+$Header$
+*/
+ 	#ifdef T_SURFACE_MODE 
+	for (lev= FULLREFINELEVEL(mg); lev<tl; lev++)
+		for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); v!=NULL; v=SUCCVC(v))
+			if (FINE_GRID_DOF(v)) 
+				#ifdef T_VEC_TYPE
+				if (T_VEC_TYPE) 
+				#endif
+				{
+					T_MOD_VECTOR
+				}	
+	for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,tl)); v!=NULL; v=SUCCVC(v)) 
+		if (NEW_DEFECT(v)) 	
+			#ifdef T_VEC_TYPE
+			if (T_VEC_TYPE) 
+			#endif
+			{
+				T_MOD_VECTOR
+			}
+	#else
+	for (lev=fl; lev<=tl; lev++)
+		for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); v != NULL; v = SUCCVC(v)) 
+   			#ifdef T_VEC_TYPE
+			if (T_VEC_TYPE) 
+			#endif
+			{
+				T_MOD_VECTOR
+			}
+	#endif
+
+#undef T_MOD_VECTOR
+#undef T_VEC_TYPE

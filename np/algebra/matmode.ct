@@ -1,0 +1,103 @@
+/****************************************************************************/
+/*																			*/
+/* File:	  matmode.ct													*/
+/*																			*/
+/* Purpose:   matrix function template depending on the mode    			*/
+/*																			*/
+/* Author:	  Klaus Birken           										*/
+/*			  Institut fuer Computeranwendungen III 						*/
+/*			  Universitaet Stuttgart										*/
+/*			  Pfaffenwaldring 27											*/
+/*			  70569 Stuttgart												*/
+/*																			*/
+/* History:   Aug 22 97 begin                      							*/
+/*																			*/
+/* Remarks: 																*/
+/*																			*/
+/****************************************************************************/
+
+/* RCS_ID
+$Header$
+*/
+
+#ifdef T_MOD_SCAL
+if (MD_IS_SCALAR(M)) {
+	register SHORT xc = VD_SCALCMP(x);
+	register SHORT rmask = MD_SCAL_RTYPEMASK(M);
+	register SHORT cmask = MD_SCAL_CTYPEMASK(M);
+	#ifdef T_USE_X
+    register SHORT xc = VD_SCALCMP(x);
+	#endif
+	#ifdef T_USE_Y
+    register SHORT yc = VD_SCALCMP(y);
+	#endif
+
+	#ifdef T_PREP_SCAL
+	T_PREP_SCAL;
+	#endif
+
+    #define T_MOD_MATRIX T_MOD_SCAL
+	#define T_VEC_RTYPE	VDATATYPE(v)&mask
+    #include "vecloop.ct"	
+}
+else 
+#endif
+{
+	for (vtype=VD_MINTYPE(x); vtype<=VD_MAXTYPE(x); vtype++)
+		if (VD_ISDEF_IN_TYPE(x,vtype)) {
+			#ifdef T_PREP_SWITCH
+			T_PREP_SWITCH;
+			#endif
+			switch (VD_NCMPS_IN_TYPE(x,vtype))
+			{	
+			#ifdef T_MOD_VECTOR_1
+			case 1:
+				SET_VD_CMP_1(cx,x,vtype);
+                #ifdef T_USE_Y
+                SET_VD_CMP_1(cy,y,vtype);
+              	#endif
+
+				#ifdef T_PREP_1
+				T_PREP_1;
+				#endif
+       	        #define T_MOD_VECTOR T_MOD_VECTOR_1
+                #define T_VEC_TYPE	 VTYPE(v)==vtype
+				#include "vecloop.ct"
+				break;
+			case 2:
+				SET_VD_CMP_2(cx,x,vtype);
+                #ifdef T_USE_Y
+                SET_VD_CMP_2(cy,y,vtype);
+              	#endif
+				#ifdef T_PREP_2
+				T_PREP_2;
+				#endif
+       	        #define T_MOD_VECTOR T_MOD_VECTOR_1 T_MOD_VECTOR_2
+				#define T_VEC_TYPE	 VTYPE(v)==vtype
+				#include "vecloop.ct"
+				break;
+			case 3:
+				SET_VD_CMP_3(cx,x,vtype);
+                #ifdef T_USE_Y
+                SET_VD_CMP_3(cy,y,vtype);
+              	#endif
+
+				#ifdef T_PREP_3
+				T_PREP_3;
+				#endif
+       	        #define T_MOD_VECTOR T_MOD_VECTOR_1 T_MOD_VECTOR_2 T_MOD_VECTOR_3
+				#define T_VEC_TYPE	 VTYPE(v)==vtype
+				#include "vecloop.ct"
+				break;
+			#endif
+			default:
+				ncomp = VD_NCMPS_IN_TYPE(x,vtype);
+				#ifdef T_PREP_N
+				T_PREP_N;
+				#endif
+       	        #define T_MOD_VECTOR T_MOD_VECTOR_N
+				#define T_VEC_TYPE	 VTYPE(v)==vtype
+				#include "vecloop.ct"
+			}	
+		}	
+}

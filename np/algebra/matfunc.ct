@@ -1,0 +1,198 @@
+/****************************************************************************/
+/*																			*/
+/* File:	  matfunc.ct													*/
+/*																			*/
+/* Purpose:   matrix function template        								*/
+/*																			*/
+/* Author:	  Klaus Birken           										*/
+/*			  Institut fuer Computeranwendungen III 						*/
+/*			  Universitaet Stuttgart										*/
+/*			  Pfaffenwaldring 27											*/
+/*			  70569 Stuttgart												*/
+/*																			*/
+/* History:   Aug 25 97 begin                      							*/
+/*																			*/
+/* Remarks: 																*/
+/*																			*/
+/****************************************************************************/
+
+/* RCS_ID
+$Header$
+*/
+
+INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode, MATDATA_DESC *M T_ARGS)
+{
+	register VECTOR *v;
+	register MATRIX *m;
+	INT lev,rtype,ctype,rcomp,ccomp,i,j;
+	DEFINE_MD_CMPS(m);
+	#ifdef T_USE_X
+	DEFINE_VD_CMPS(cx);
+	#endif
+	#ifdef T_USE_Y
+	DEFINE_VD_CMPS(cy);
+	#endif
+
+	#ifdef T_CONFIG
+	T_CONFIG;
+	#endif
+
+	#ifdef Debug
+	ASSERT(fl<=tl);
+	ASSERT((mode != ON_SURFACE) || (fl <= FULLREFINELEVEL(mg)));
+	#ifdef T_CONS_CHECK
+	T_CONS_CHECK;
+	#endif
+	#endif
+
+	if (mode == ON_SURFACE) {
+		#define T_SURFACE_MODE
+		#include "matmode.ct"
+		#undef T_SURFACE_MODE
+	}
+	else {
+		#include "matmode.ct"
+	}
+	#ifdef ModelP 
+	#ifdef T_POST_PAR
+	T_POST_PAR;
+    #endif
+    #endif
+	#ifdef T_POST
+	T_POST;
+    #endif
+	return(NUM_OK);
+}
+
+#undef T_FUNCNAME 
+#undef T_ARGS 
+#undef T_USE_X
+#undef T_USE_Y
+#undef T_CONFIG
+#undef T_CONS_CHECK 
+#undef T_PREP_SCAL
+#undef T_LOOP_SCAL
+#undef T_MOD_SCAL
+#undef T_PREP_SWITCH
+#undef T_PREP_11
+#undef T_LOOP_11
+#undef T_MOD_11 
+#undef T_PREP_12
+#undef T_LOOP_12
+#undef T_MOD_12 
+#undef T_PREP_13
+#undef T_LOOP_13
+#undef T_MOD_13 
+#undef T_PREP_21
+#undef T_LOOP_21
+#undef T_MOD_21 
+#undef T_PREP_22
+#undef T_LOOP_22
+#undef T_MOD_22
+#undef T_PREP_23
+#undef T_LOOP_23
+#undef T_MOD_23
+#undef T_PREP_31
+#undef T_LOOP_31
+#undef T_MOD_31 
+#undef T_PREP_32
+#undef T_LOOP_32
+#undef T_MOD_32
+#undef T_PREP_33
+#undef T_LOOP_33
+#undef T_MOD_33
+#undef T_PREP_N
+#undef T_MOD_VECTOR_N
+#undef T_POST_PAR
+#undef T_POST
+
+
+
+INT l_dmatset (GRID *g, const MATDATA_DESC *M, DOUBLE a)
+{
+	register VECTOR *v,*first_v;
+	register MATRIX *m;
+	INT rtype,ctype;
+	register SHORT i;
+	register SHORT nr;
+
+
+	first_v = FIRSTVECTOR(g);
+	
+	for (rtype=0; rtype<NVECTYPES; rtype++)
+		for (ctype=0; ctype<NVECTYPES; ctype++)
+			if (MD_ISDEF_IN_RT_CT(M,rtype,ctype))
+				switch (MAT_RCKIND(M,rtype,ctype))
+				{
+					case R1C1:
+						SET_MD_CMP_11(m,M,rtype,ctype);
+						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
+							MVALUE(m,m00) = a;
+						break;
+					
+					case R1C2:
+						SET_MD_CMP_12(m,M,rtype,ctype);
+						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
+							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;}
+						break;
+					
+					case R1C3:
+						SET_MD_CMP_13(m,M,rtype,ctype);
+						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
+							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;}
+						break;
+					
+					case R2C1:
+						SET_MD_CMP_21(m,M,rtype,ctype);
+						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
+							{MVALUE(m,m00) = a;
+							 MVALUE(m,m10) = a;}
+						break;
+					
+					case R2C2:
+						SET_MD_CMP_22(m,M,rtype,ctype);
+						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
+							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;
+							 MVALUE(m,m10) = a; MVALUE(m,m11) = a;}
+						break;
+					
+					case R2C3:
+						SET_MD_CMP_23(m,M,rtype,ctype);
+						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
+							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;
+							 MVALUE(m,m10) = a; MVALUE(m,m11) = a; MVALUE(m,m12) = a;}
+						break;
+					
+					case R3C1:
+						SET_MD_CMP_31(m,M,rtype,ctype);
+						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
+							{MVALUE(m,m00) = a;
+							 MVALUE(m,m10) = a;
+							 MVALUE(m,m20) = a;}
+						break;
+					
+					case R3C2:
+						SET_MD_CMP_32(m,M,rtype,ctype);
+						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
+							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;
+							 MVALUE(m,m10) = a; MVALUE(m,m11) = a;
+							 MVALUE(m,m20) = a; MVALUE(m,m21) = a;}
+						break;
+					
+					case R3C3:
+						SET_MD_CMP_33(m,M,rtype,ctype);
+						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
+							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;
+							 MVALUE(m,m10) = a; MVALUE(m,m11) = a; MVALUE(m,m12) = a;
+							 MVALUE(m,m20) = a; MVALUE(m,m21) = a; MVALUE(m,m22) = a;}
+						break;
+					
+					default:
+						nr   = MD_ROWS_IN_RT_CT(M,rtype,ctype) * MD_COLS_IN_RT_CT(M,rtype,ctype);
+						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
+							for (i=0; i<nr; i++)
+								MVALUE(m,MD_MCMP_OF_RT_CT(M,rtype,ctype,i)) = a;
+				}
+
+	return(NUM_OK);
+}
