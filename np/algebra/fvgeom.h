@@ -218,6 +218,9 @@ INT GetMJRawRegularUpwindShapes         (const FVElementGeometry *geo, const DOU
 INT GetMJRawPositiveUpwindShapes        (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF],
                                          DOUBLE NodalShape[MAXF][MAXNC], DOUBLE IPShape[MAXF][MAXF]);
 
+/* */
+INT SideIsCut                       (INT tag,  const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, const DOUBLE_VECTOR vel, INT side, DOUBLE_VECTOR y);
+
 /* aligned finite volumes */
 INT AFVGeometry                                         (const ELEMENT *theElement, FVElementGeometry *geo, DOUBLE_VECTOR Convection);
 

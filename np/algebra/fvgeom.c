@@ -61,6 +61,30 @@
 /*                                                                          */
 /****************************************************************************/
 
+#define M3_INVERT_WR(M,IM,det)                       \
+  { DOUBLE invdet;                                  \
+    (det) = (M)[0][0]*(M)[1][1]*(M)[2][2]           \
+            + (M)[0][1]*(M)[1][2]*(M)[2][0]               \
+            + (M)[0][2]*(M)[1][0]*(M)[2][1]             \
+            - (M)[0][2]*(M)[1][1]*(M)[2][0]           \
+            - (M)[0][0]*(M)[1][2]*(M)[2][1]         \
+            - (M)[0][1]*(M)[1][0]*(M)[2][2];      \
+    if (ABS((det))>=SMALL_D*SMALL_D) \
+    { \
+      invdet = 1.0 / (det);                           \
+      (IM)[0][0] = ( (M)[1][1]*(M)[2][2] - (M)[1][2]*(M)[2][1]) * invdet;  \
+      (IM)[0][1] = (-(M)[0][1]*(M)[2][2] + (M)[0][2]*(M)[2][1]) * invdet;  \
+      (IM)[0][2] = ( (M)[0][1]*(M)[1][2] - (M)[0][2]*(M)[1][1]) * invdet;  \
+      (IM)[1][0] = (-(M)[1][0]*(M)[2][2] + (M)[1][2]*(M)[2][0]) * invdet;  \
+      (IM)[1][1] = ( (M)[0][0]*(M)[2][2] - (M)[0][2]*(M)[2][0]) * invdet;  \
+      (IM)[1][2] = (-(M)[0][0]*(M)[1][2] + (M)[0][2]*(M)[1][0]) * invdet;  \
+      (IM)[2][0] = ( (M)[1][0]*(M)[2][1] - (M)[1][1]*(M)[2][0]) * invdet;  \
+      (IM)[2][1] = (-(M)[0][0]*(M)[2][1] + (M)[0][1]*(M)[2][0]) * invdet;  \
+      (IM)[2][2] = ( (M)[0][0]*(M)[1][1] - (M)[0][1]*(M)[1][0]) * invdet;} \
+  }
+
+
+
 #ifdef __THREEDIM__
 
 #define OneSixth 0.166666666666666667
@@ -440,7 +464,7 @@ INT EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
    0 when o.k.
  */
 
-static INT SideIsCut (INT tag,  const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, const DOUBLE_VECTOR vel, INT side, DOUBLE_VECTOR y)
+INT SideIsCut (INT tag,  const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, const DOUBLE_VECTOR vel, INT side, DOUBLE_VECTOR y)
 {
 #       ifdef __TWODIM__
   DOUBLE_VECTOR v,r,coeff,M[DIM],MI[DIM];
@@ -493,11 +517,11 @@ static INT SideIsCut (INT tag,  const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, 
   V3_COPY(v1,M[0]);                                                                                             /* transposed coefficient matrix for cut of lines */
   V3_COPY(v2,M[1]);
   V3_COPY(vel,M[2]);
-  M3_INVERT(M,MI,det);                                                                                  /* inverse */
+  M3_INVERT_WR(M,MI,det);                                                                               /* inverse */
   if (det==0.0)
     return (NO);                                                                                                /* lines is parallel to plane */
 
-  V3_SUBTRACT(ip,x[side],r);                                                                            /* right hand side */
+  V3_SUBTRACT(ip,x[a],r);                                                                       /* right hand side */
   MT3_TIMES_V3(MI,r,coeff);                                                                             /* solve for coefficients */
   if (coeff[2]>0.0)                                                                                             /* we search an upwind point */
   {
@@ -522,7 +546,7 @@ static INT SideIsCut (INT tag,  const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, 
       V3_COPY(v1,M[0]);                                                                                                         /* transposed coefficient matrix for cut of lines */
       V3_COPY(v2,M[1]);
       V3_COPY(vel,M[2]);
-      M3_INVERT(M,MI,det);                                                                                              /* inverse */
+      M3_INVERT_WR(M,MI,det);                                                                                           /* inverse */
       if (det==0.0)
         return (NO);                                                                                                            /* lines is parallel to plane */
 
