@@ -71,6 +71,7 @@ int     filetype                    (const char *fname);
 INT             ReadSearchingPaths                      (const char *filename, const char *pathsvar);
 FILE    *FileOpenUsingSearchPaths       (const char *fname, const char *mode, const char *pathsvar);
 FILE    *FileOpenUsingSearchPath        (const char *fname, const char *mode, const char *path);
+int     FileTypeUsingSearchPaths        (const char *fname, const char *pathsvar);
 
 INT             InitFileOpen                            (void);
 

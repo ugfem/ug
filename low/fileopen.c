@@ -33,7 +33,10 @@
 #include <string.h>
 
 /* includes for filesize(), filetype(), also on Macintosh?? (TODO) */
-#if (! ((defined __MWCW__) || (defined __MPW32__)))
+#if (defined __MWCW__) || (defined __MPW32__)
+#include <stat.h>
+/* #include <types.h> */
+#else
 #include <sys/stat.h>
 #include <sys/types.h>
 #endif
@@ -46,6 +49,7 @@
 #include "ugenv.h"
 
 #include "fileopen.h"
+
 
 /****************************************************************************/
 /*																			*/
@@ -251,10 +255,7 @@ FILE *fileopen (const char *fname, const char *mode)
    .   fname - filename with path convention in UNIX-style
 
         DESCRIPTION:
-        If '__MWCW__' or '__MPW32__' are defined (Macintosh compilers),
-    this function will currently return zero. On all other systems
-    (non-Macintosh), it will return the size of the given file
-    or 0 if an error occurs.
+    This function returns the size of the given file or 0 if an error occurs.
 
         RETURN VALUE:
         size_t
@@ -265,36 +266,19 @@ FILE *fileopen (const char *fname, const char *mode)
    D*/
 /****************************************************************************/
 
-#if (defined __MWCW__) || (defined __MPW32__)
-
-/* Macintosh computers */
-
-
-size_t filesize (const char *fname)
-{
-  /* TODO: this is a dummy, must be implemented later! */
-  return(0);
-}
-
-
-#else
-
-/* UNIX machines */
-
 
 size_t filesize (const char *fname)
 {
   size_t fsize;
   struct stat fstat;
 
-  /* get Unix file descriptor */
+  /* get (Unix) file descriptor */
   if (stat(fname, &fstat)<0)
     return(0);
 
   return((size_t)fstat.st_size);
 }
 
-#endif
 
 
 
@@ -309,9 +293,7 @@ size_t filesize (const char *fname)
    .   fname - filename with path convention in UNIX-style
 
         DESCRIPTION:
-        If '__MWCW__' or '__MPW32__' are defined (Macintosh compilers),
-    this function will currently return FT_UNKNOWN. On all other systems
-    (non-Macintosh), it will return the type of the given file
+    This functon returns the type of the given file
     or FT_UNKNOWN if an error occurs.
 
         RETURN VALUE:
@@ -322,22 +304,6 @@ size_t filesize (const char *fname)
         fopen, fileopen, filesize
    D*/
 /****************************************************************************/
-
-#if (defined __MWCW__) || (defined __MPW32__)
-
-/* Macintosh computers */
-
-
-int filetype (const char *fname)
-{
-  /* TODO: this is a dummy, must be implemented later! */
-  return(FT_UNKNOWN);
-}
-
-
-#else
-
-/* UNIX machines */
 
 
 int filetype (const char *fname)
@@ -359,7 +325,6 @@ int filetype (const char *fname)
   return(FT_UNKNOWN);
 }
 
-#endif
 
 
 
@@ -530,6 +495,70 @@ FILE *FileOpenUsingSearchPath (const char *fname, const char *mode, const char *
 
   return (NULL);
 }
+
+
+
+/****************************************************************************/
+/*D
+        FileTypeUsingSearchPaths - give type of file searching in the
+            directories specified in the environment item '/Paths/<paths>'
+
+        SYNOPSIS:
+        int FileTypeUsingSearchPaths (const char *fname, const char *paths)
+
+    PARAMETERS:
+   .   fname - file name to be opened
+   .   paths - try paths specified in the environment item '/Paths/<paths> which was
+                        set by --> 'ReadSearchingPaths'
+
+        DESCRIPTION:
+        The functions trys to determine the file type of the file named
+        'filename' using one by one the paths specified in the environment
+        item '/Paths/<paths> which was set by --> 'ReadSearchingPaths'.
+        It is used in several places in ug (all paths are read from the
+        standard --> 'defaults' file)":"
+
+   .n   'srciptpaths' is used by the interpreter for script execution
+   .n   'gridpaths' is used by ugio to read grids from (they are stored in the
+   .n   first path)
+
+        RETURN VALUE:
+        int
+   .n      file type (one of FT_UNKNOWN, FT_FILE, FT_DIR, FT_LINK)
+
+        SEE ALSO:
+        ReadSearchingPaths, filetype
+   D*/
+/****************************************************************************/
+
+int FileTypeUsingSearchPaths (const char *fname, const char *paths)
+{
+  PATHS *thePaths;
+  int ftype;
+  char fullname[MAXPATHLENGTH];
+  INT i,fnamelen;
+
+  fnamelen = strlen(fname);
+
+  if ((thePaths=GetPaths(paths))==NULL)
+    return (NULL);
+
+  for (i=0; i<thePaths->nPaths; i++)
+  {
+    if (strlen(thePaths->path[i])+fnamelen>MAXPATHLENGTH)
+      return (NULL);
+
+    strcpy(fullname,thePaths->path[i]);
+    strcat(fullname,"/");
+    strcat(fullname,fname);
+
+    if ((ftype=filetype(fullname))!=FT_UNKNOWN)
+      return (ftype);
+  }
+
+  return (FT_UNKNOWN);
+}
+
 
 /****************************************************************************/
 /*D
