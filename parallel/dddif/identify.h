@@ -46,6 +46,12 @@
 /* only for debugging purposes useful!              */
 #define IDENT_IN_STEPS  0
 
+/* settings for ident_mode */
+#define IDENT_OFF       0
+#define IDENT_ON        1
+#define SET_IDENT_MODE(n)       {ident_mode = (n);}
+#define GET_IDENT_MODE()        (ident_mode)
+
 /****************************************************************************/
 /*																			*/
 /* data structures exported by the corresponding source file				*/
@@ -60,6 +66,7 @@
 /*																			*/
 /****************************************************************************/
 
+extern INT ident_mode;
 
 
 /****************************************************************************/
