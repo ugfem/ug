@@ -3587,15 +3587,17 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
   MULTIGRID *theMG;
   INT i;
 #ifdef FF_ModelP
-  INT num_buffers;
+  INT num_buffers, num_buffers_cross;
 #endif
 
   np = (NP_FF *) theNP;
   theMG = np->smoother.iter.base.mg;
 
 #ifdef FF_ModelP
-  num_buffers = FFStartComm( BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level)))), FFStartDeallocBuffer, FFCommNone );
-  num_buffers = FFStartComm( BVSUCC(BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level))))), FFStartDeallocBuffer, FFCommNone );
+  num_buffers = FFStartComm( BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level)))), FFStartDeallocBuffer, FFCommNone );        /* lines */
+  #ifndef FFCOMM
+  num_buffers_cross = FFStartComm( BVSUCC(BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level))))), FFStartDeallocBuffer, FFCommNone );          /* cross */
+  #endif
 #endif
 
   if (NPFF_tv(np) != NULL)
@@ -3624,11 +3626,11 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
   }
 
 #ifdef FF_ModelP
-  FFFinishComm( BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level)))), FFFinishDeallocBuffer, FFCommNone, num_buffers );
+  FFFinishComm( BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level)))), FFFinishDeallocBuffer, FFCommNone, num_buffers );       /* lines */
   #ifdef FFCOMM
-  FFInitCrossComm( BVSUCC(BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level))))) );       /* cross */
+  FFFinishCrossComm();       /* cross */
   #else
-  FFFinishComm( BVSUCC(BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level))))), FFFinishDeallocBuffer, FFCommNone, num_buffers );       /* cross */
+  FFFinishComm( BVSUCC(BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level))))), FFFinishDeallocBuffer, FFCommNone, num_buffers_cross );       /* cross */
   #endif
 #endif
 
