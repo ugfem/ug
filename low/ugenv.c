@@ -425,16 +425,50 @@ INT RemoveEnvItem (ENVITEM *theItem)
    D*/
 /****************************************************************************/
 
+static INT RemoveEnvDirContent (ENVITEM *theItem)
+{
+  ENVITEM *Item,*Next;
+
+  for (Item = theItem; Item != NULL; Item = Next) {
+    Next = NEXT_ENVITEM(Item);
+    if (IS_ENVDIR(Item))
+      RemoveEnvDirContent(ENVITEM_DOWN(Item));
+    DisposeMem(envHeap,Item);
+  }
+
+  return(0);
+}
+
 INT RemoveEnvDir (ENVITEM *theItem)
 {
   ENVITEM *Item,*Next;
 
-  if (IS_ENVDIR(theItem))
-    for (Item = ENVITEM_DOWN(theItem); Item != NULL; Item = Next) {
-      Next = NEXT_ENVITEM(Item);
-      RemoveEnvDir(Item);
-    }
-  RemoveEnvItem(theItem);
+  ENVITEM *anItem;
+  ENVDIR *currentDir;
+
+  /* check if item is in current directory */
+  currentDir = path[pathIndex];
+  anItem = currentDir->down;
+  while (anItem!=NULL)
+  {
+    if (anItem==theItem) break;
+    anItem = anItem->v.next;
+  }
+  if (anItem==NULL) return(1);
+  if (!IS_ENVDIR(theItem)) return(2);
+  if (theItem->v.locked) return(3);
+  RemoveEnvDirContent(ENVITEM_DOWN(theItem));
+
+  /* remove item from double linked list */
+  if (theItem->v.previous==NULL)
+    currentDir->down = theItem->v.next;
+  else
+    theItem->v.previous->v.next = theItem->v.next;
+  if (theItem->v.next!=NULL)
+    theItem->v.next->v.previous = theItem->v.previous;
+
+  /* deallocate memory */
+  DisposeMem(envHeap,theItem);
 
   return(0);
 }
