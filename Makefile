@@ -10,7 +10,7 @@
 include ug.conf
 
 # the following list may be extended
-UGMODULES = LOW GM NUMERICS GRAPHICS UI $(MODEL_TARGET)
+UGMODULES = LOW GM NP GRAPHICS UI $(MODEL_TARGET)
 MODULES = DEV DOM $(UGMODULES)
 
 # modules for ug server daemon
@@ -102,12 +102,14 @@ clean: $(MODEL_TARGET)_clean
 	cd dom; make -f Makefile.dom clean; cd ..;
 	cd gm; make -f Makefile.gm clean; cd ..;
 	cd numerics; make -f Makefile.numerics clean; cd ..;
+	cd np; make -f Makefile.np clean; cd ..;
 	cd graphics; make -f Makefile.graphics clean; cd ..;
 	cd ui; make -f Makefile.ui clean; cd ..;
 
 ifdef: $(MODEL_TARGET)_clean
 	cd gm; make -f Makefile.gm clean; cd ..;
 	cd numerics; make -f Makefile.numerics clean; cd ..;
+	cd np; make -f Makefile.np clean; cd ..;
 	cd graphics; make -f Makefile.graphics clean; cd ..;
 	cd dom; make -f Makefile.dom clean; cd ..;
 	cd ui; rm -f commands.o avs.o tecplot.o; cd ..;
