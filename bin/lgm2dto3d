@@ -1,11 +1,20 @@
 #!/usr/bin/perl -w
 
-@ARGV==3 or die "usage: lgm2dto3d <geometry> <yf> <yb>\n";
+@ARGV==3 or die "usage: lgm2dto3d <geometry> <yf> <yb>    # 3d geometry is written to <geometry>.3d\n";
 $real='[+-]*\d+\.*\d*e[+-]\d+|[+-]*\d+\.\d*|\d+';
+$out_file="$ARGV[0].3d";
+open(OUT,">$out_file");
+
+sub ddie
+{
+	close(OUT);
+	system("rm $out_file");
+	die $_[0];
+}
 
 # admin
 $yf=$ARGV[1]; $yb=$ARGV[2];
-$yf>$yb or die "ERROR: $yb >= $yf\n";
+$yf>$yb or ddie "ERROR: $yb >= $yf\n";
 
 # functions
 sub min
@@ -33,7 +42,7 @@ sub getline
 			return($getline_i);	
 		}
 	}
-	die "ERROR: cannot get line ($_[0],$_[1])\n";
+	ddie "ERROR: cannot get line ($_[0],$_[1])\n";
 }
 
 # check dimension
@@ -42,7 +51,7 @@ while($line=<IN>)
 {
 	if ($line=~/surface/)
 	{
-		die "ERROR: specified geometry is 3d\n";
+		ddie "ERROR: specified geometry is 3d\n";
 		last;
 	}
 }
@@ -55,7 +64,7 @@ $sd_min=1000000; $sd_max=-1;
 # write header
 while($line=<IN>)
 {
-	print $line;
+	print OUT $line;
 	if ($line=~/Line-Info/) {last;}
 }
 
@@ -66,9 +75,9 @@ while($line=<IN>)
 	if ($line=~/points:/)
 	{
 		$n[$l]=0;
-		if (!($line=~/left=(\d+);\s*right=(\d+)/)) {die "ERROR: cannot read left/right info\n";}
+		if (!($line=~/left=(\d+);\s*right=(\d+)/)) {ddie "ERROR: cannot read left/right info\n";}
 		$left[$l]=$1; $right[$l]=$2;
-		if ($left[$l]==$right[$l]) {die "ERROR: line $l references subdomain $right[$l] on both sides\n";}
+		if ($left[$l]==$right[$l]) {ddie "ERROR: line $l references subdomain $right[$l] on both sides\n";}
 		$sd_max=max($sd_max,$1,$2);
 		$sd_min=min($sd_min,$1,$2);
 		$line=~s/line\s*\d+:\s*left=\d+;\s*right=\d+;\s*points:\s*//g;
@@ -85,37 +94,37 @@ while($line=<IN>)
 			}
 		}
 		for ($i=0; $i<$n[$l]; $i++) {$lp[1][$l][$i]=$lp[0][$l][$n[$l]-$i-1];}
-		$n[$l]==2 or die "ERROR: cannot process 2d geometry having line with more than 2 points\n";
+		$n[$l]==2 or ddie "ERROR: cannot process 2d geometry having line with more than 2 points\n";
 		$l++;
 	}
 	if ($line=~/Point-Info/) {last;}
 }
-$sd_min==0 or die "ERROR: subdomain 0 not referenced\n";
-$sd_max>=0 or die "ERROR: #subdomains==0\n";
+$sd_min==0 or ddie "ERROR: subdomain 0 not referenced\n";
+$sd_max>=0 or ddie "ERROR: #subdomains==0\n";
 
 # write lines
 $np=0;
 for ($i=0; $i<$l; $i++)
 {
-	print "line $i: points:";
+	print OUT "line $i: points:";
 	for ($j=0; $j<$n[$i]; $j++)
 	{
-		print " $lp[0][$i][$j]";
+		print OUT " $lp[0][$i][$j]";
 		$np=max($np,$lp[0][$i][$j]);
 	}
-	print ";\n";
+	print OUT ";\n";
 }
 $np++;
 for ($i=0; $i<$l; $i++)
 {
 	$tmp=$i+$l;
-    print "line $tmp: points:";
+    print OUT "line $tmp: points:";
     for ($j=0; $j<$n[$i]; $j++)
     {
 		$tmp=$lp[0][$i][$j]+$np;
-        print " $tmp";
+        print OUT " $tmp";
     }
-    print ";\n";
+    print OUT ";\n";
 }
 
 # get points
@@ -129,19 +138,19 @@ while($line=<IN>)
 	}
 }
 close(IN);
-if ($m!=$np) {print "ERROR: pointreferences inconsisten\n";}
+if ($m!=$np) {print OUT "ERROR: pointreferences inconsisten\n";}
 
 # write further lines
 for ($i=0; $i<$np; $i++)
 {
 	$tmp=$i+2*$l;
-	print "line $tmp: points: ";
+	print OUT "line $tmp: points: ";
 	$tmp=$i+$np;
-	print "$i $tmp;\n";
+	print OUT "$i $tmp;\n";
 }
 
 # write surfaces according to 2d-subdomains
-print "\n#Surface-Info\n";
+print OUT "\n#Surface-Info\n";
 $surf=0;
 for ($i=0; $i<$l; $i++)
 {
@@ -149,13 +158,13 @@ for ($i=0; $i<$l; $i++)
     for ($j=0; $j<$n[$i]-1; $j++)
     {
 		$p1=$lp[0][$i][$j]; $p2=$lp[0][$i][$j+1]; $p3=$p2+$np; $p4=$p1+$np;
-		print "surface $surf: left=$left[$i]; right=$right[$i]; points: $p1 $p2 $p3 $p4; lines: ";
+		print OUT "surface $surf: left=$left[$i]; right=$right[$i]; points: $p1 $p2 $p3 $p4; lines: ";
 		$l1=2*$l+$p1; $l2=2*$l+$p2; $l3=getline($p1,$p2); $l4=$l+$l3;
-		print "$l1 $l2 $l3 $l4; triangles: ";
-		print "$p1 $p2 $p3; $p1 $p3 $p4;";
+		print OUT "$l1 $l2 $l3 $l4; triangles: ";
+		print OUT "$p1 $p2 $p3; $p1 $p3 $p4;";
 		$surf++;
     }
-	print "\n";
+	print OUT "\n";
 }
 for ($i=1; $i<=$sd_max; $i++)
 {
@@ -182,71 +191,106 @@ for ($i=1; $i<=$sd_max; $i++)
 		}
 	}
 
-	print "surface $surf: left=0; right=$i; points:";
+	# check convexity of subdomain
+	$m1=0;
+   	for ($m2=0; $m2<$m; $m2++)
+   	{
+   	    for ($j=0; $j<$n[$line2[$m2]]-1; $j++)
+   	    {
+            $ppp[$m1][0]=$p[$lp[$r2[$m2]][$line2[$m2]][$j]][0];
+            $ppp[$m1][1]=$p[$lp[$r2[$m2]][$line2[$m2]][$j]][1];
+			$m1++;
+        }
+    }
+	$ppp[$m1][0]=$ppp[0][0];
+	$ppp[$m1][1]=$ppp[0][1];
+	for ($m2=0; $m2<$m1; $m2++)
+	{
+		$ppd[$m2][0]=$ppp[$m2+1][0]-$ppp[$m2][0];
+		$ppd[$m2][1]=$ppp[$m2+1][1]-$ppp[$m2][1];
+	}
+	$ppd[$m1][0]=$ppd[0][0];
+	$ppd[$m1][1]=$ppd[0][1];
+	$convex_point=-1;
+	for ($m2=0; $m2<$m1; $m2++)
+	{
+		$vp=$ppd[$m2][0]*$ppd[$m2+1][1]-$ppd[$m2][1]*$ppd[$m2+1][0];
+		$vp>=0 or ddie "ERROR: subdomain $i not convex\n";
+		if ($vp>0 && $convex_point==-1) {$convex_point=$m2;}
+	}
+	$convex_point>=0 or ddie "ERROR: cannot find convex-point for subdomain $i\n"; 
+
+	print OUT "surface $surf: left=0; right=$i; points:";
 	$m1=0;
 	for ($m2=0; $m2<$m; $m2++)
 	{
 		for ($j=0; $j<$n[$line2[$m2]]-1; $j++)
 		{
-			print " $lp[$r2[$m2]][$line2[$m2]][$j]";
+			print OUT " $lp[$r2[$m2]][$line2[$m2]][$j]";
 			$p_surf[$m1++]=$lp[$r2[$m2]][$line2[$m2]][$j];
 		}
 	}
-	print "; lines:";
+	print OUT "; lines:";
 	for ($m2=0; $m2<$m; $m2++)
 	{
-		print " $line2[$m2]";
+		print OUT " $line2[$m2]";
 	}
-	print "; triangles:";
+	print OUT "; triangles:";
 	for ($m2=1; $m2<$m1-1; $m2++)
 	{
-		print " $p_surf[0] $p_surf[$m2] $p_surf[$m2+1];";
+		$cp_i=($convex_point+$m2)%$m1;
+		$cp_j=($convex_point+$m2+1)%$m1;
+		print OUT " $p_surf[$convex_point] $p_surf[$cp_i] $p_surf[$cp_j];";
 	}
-	print "\n";
+	print OUT "\n";
 	$surf_desc[$surf]="# surface $surf: front surface for subdomain $i\n";
 	$surf++;
 
-    print "surface $surf: left=$i; right=0; points:";
+    print OUT "surface $surf: left=$i; right=0; points:";
     $m1=0;
     for ($m2=0; $m2<$m; $m2++)
     {
         for ($j=0; $j<$n[$line2[$m2]]-1; $j++)
         {
 			$tmp=$lp[$r2[$m2]][$line2[$m2]][$j]+$np;
-            print " $tmp";
+            print OUT " $tmp";
             $p_surf[$m1++]=$tmp;
         }
     }
-    print "; lines:";
+    print OUT "; lines:";
     for ($m2=0; $m2<$m; $m2++)
     {
 		$tmp=$line2[$m2]+$l;
-        print " $tmp";
+        print OUT " $tmp";
     }
-    print "; triangles:";
+    print OUT "; triangles:";
     for ($m2=1; $m2<$m1-1; $m2++)
     {
-        print " $p_surf[0] $p_surf[$m2] $p_surf[$m2+1];";
+		$cp_i=($convex_point+$m2)%$m1;
+		$cp_j=($convex_point+$m2+1)%$m1;
+		print OUT " $p_surf[$convex_point] $p_surf[$cp_i] $p_surf[$cp_j];";
     }
-    print "\n";
+    print OUT "\n";
 	$surf_desc[$surf]="# surface $surf: back surface for subdomain $i\n";
 	$surf++;
 }
 
 # write points
-print "\n#Point-Info\n";
-for ($i=0; $i<$np; $i++) {print "$p[$i][0] $yb $p[$i][1];\n";}
-for ($i=0; $i<$np; $i++) {print "$p[$i][0] $yf $p[$i][1];\n";}
+print OUT "\n#Point-Info\n";
+for ($i=0; $i<$np; $i++) {print OUT "$p[$i][0] $yb $p[$i][1];\n";}
+for ($i=0; $i<$np; $i++) {print OUT "$p[$i][0] $yf $p[$i][1];\n";}
 
 # write comment
-print "\n";
+print OUT "\n";
 for ($i=0; $i<$surf; $i++)
 {
-	print $surf_desc[$i];
+	print OUT $surf_desc[$i];
 }
-print "\n";
+print OUT "\n";
 
-
+# finish
+close(OUT);
+print "3d geometry written to '".$out_file."'\n";
 
 
 
