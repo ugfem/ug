@@ -17,4 +17,4 @@ pkgconfig_DATA = libug.pc
 #
 
 # don't follow the full GNU-standard
-AUTOMAKE_OPTIONS = foreign 1.5
+AUTOMAKE_OPTIONS = foreign 1.7
