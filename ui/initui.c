@@ -44,7 +44,6 @@
 #include "commands.h"
 #include "tecplot.h"
 #include "avs.h"
-#include "teti.h"
 
 /* own header */
 #include "initui.h"
