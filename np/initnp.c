@@ -32,6 +32,7 @@
 
 #include "np.h"
 #include "basics.h"
+#include "amgtransfer.h"
 #include "transfer.h"
 #include "assemble.h"
 #include "iter.h"
@@ -90,6 +91,10 @@ INT InitNumerics ()
     return (err);
   }
   if ((err=InitTransfer())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+  if ((err=InitAMGTransfer())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }
