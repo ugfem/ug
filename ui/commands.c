@@ -4871,7 +4871,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
 
   /* check options */
   AlsoOrderMatrices = SpecialTreatSkipVecs = FALSE;
-  /* which = GM_TAKE_SKIP | GM_TAKE_NONSKIP;*/
+  which = GM_TAKE_SKIP | GM_TAKE_NONSKIP;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -4895,13 +4895,13 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
       AlsoOrderMatrices = TRUE;
       break;
 
-    /*			case 'w':
-                                    which = 0;
-                                    if (strchr(argv[i],'s')!=NULL)
-                                            which |= GM_TAKE_SKIP;
-                                    if (strchr(argv[i],'n')!=NULL)
-                                            which |= GM_TAKE_NONSKIP;
-                                    break; */
+    case 'w' :
+      which = 0;
+      if (strchr(argv[i],'s')!=NULL)
+        which |= GM_TAKE_SKIP;
+      if (strchr(argv[i],'n')!=NULL)
+        which |= GM_TAKE_NONSKIP;
+      break;
 
     case 's' :
       if              (strchr(argv[i],'<')!=NULL)
@@ -4931,7 +4931,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
     sprintf(buffer," [%d:",level);
     UserWrite(buffer);
 
-    if (LexOrderVectorsInGrid(theGrid,order,sign,SpecialTreatSkipVecs,AlsoOrderMatrices)!=GM_OK)
+    if (LexOrderVectorsInGrid(theGrid,order,sign,which,SpecialTreatSkipVecs,AlsoOrderMatrices)!=GM_OK)
     {
       PrintErrorMessage('E',"lexorderv","LexOrderVectorsInGrid failed");
       return (CMDERRORCODE);

@@ -1743,6 +1743,8 @@ extern const BV_DESC_FORMAT one_level_bvdf;     /* bvdf for only 1 blocklevel	*/
 #define GM_ORDER_IN_ROWS                        1
 #define GM_PUT_AT_BEGIN                         1               /* put skip vectors at begin of the list	*/
 #define GM_PUT_AT_END                           2               /* put skip vectors at end of the list		*/
+#define GM_TAKE_SKIP                            (1<<0)
+#define GM_TAKE_NONSKIP                         (1<<1)
 
 /* get/set current multigrid, loop through multigrids */
 MULTIGRID               *MakeMGItem                             (const char *name);
@@ -1752,6 +1754,9 @@ MULTIGRID               *GetNextMultigrid                       (const MULTIGRID
 
 /* format definition */
 FORMAT                   *GetFormat                             (const char *name);
+FORMAT                   *GetFirstFormat                        ();
+FORMAT                   *GetNextFormat                         (FORMAT * fmt);
+INT                               ChangeToFormatDir                     (const char *name);
 #ifdef __version23__
 FORMAT                   *CreateFormat                          (char *name,int sVertex,int sNode,int sDiag,int sElement,int sLink,int sEdge, int sMultiGrid,
                                                                  ConversionProcPtr SaveVertex,ConversionProcPtr SaveNode,ConversionProcPtr SaveDiag,
@@ -1775,7 +1780,7 @@ FORMAT                  *Ugly_CreateFormat (char *name,INT sVertex, INT sMultiGr
 
 /* create, saving and disposing a multigrid structure */
 MULTIGRID   *CreateMultiGrid        (char *MultigridName, char *BndValProblem, char *format, unsigned long heapSize);
-MULTIGRID       *LoadMultiGrid                  (char *MultigridName, char *FileName, char *domain, char *problem, char *format, unsigned long heapSize);
+MULTIGRID       *LoadMultiGrid                  (char *MultigridName, char *FileName, char *BndValProblem, char *format, unsigned long heapSize);
 INT             SaveMultiGrid                   (MULTIGRID *theMG, char *FileName, char *comment);
 INT             DisposeMultiGrid                (MULTIGRID *theMG);
 
@@ -1887,7 +1892,7 @@ BLOCK_DESC      *GetMGUDBlockDescriptor (BLOCK_ID id);
 /* ordering of degrees of freedom */
 ALG_DEP         *CreateAlgebraicDependency (char *name, DependencyProcPtr DependencyProc);
 FIND_CUT        *CreateFindCutProc              (char *name, FindCutProcPtr FindCutProc);
-INT                     LexOrderVectorsInGrid   (GRID *theGrid, const INT *order, const INT *sign, INT SpecSkipVecs, INT AlsoOrderMatrices);
+INT                     LexOrderVectorsInGrid   (GRID *theGrid, const INT *order, const INT *sign, INT which, INT SpecSkipVecs, INT AlsoOrderMatrices);
 INT             OrderVectors                    (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat, const char *dependency, const char *dep_options, const char *findcut);
 INT                     ShellOrderVectors               (GRID *theGrid, VECTOR *seed);
 

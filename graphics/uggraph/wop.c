@@ -11,7 +11,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 368										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de                            */
+/*			  internet: ug@ica3.uni-stuttgart.de                                    */
 /*																			*/
 /* History:   21.06.93 begin, ug version ug21Xmas3d                                             */
 /*																			*/
@@ -164,6 +164,9 @@ static COORD OBS_ViewPlaneDist;
 
 /*----------- variables describing phys. reactangle (2D) -------------------*/
 static COORD_POINT PhysRect[4];
+
+/*----------- used by DrawPictureFrame -------------------------------------*/
+static INT DoFramePicture=YES;
 
 /****************************************************************************/
 /************ variables used for communication of functions *****************/
@@ -9722,6 +9725,31 @@ INT DrawWindowText (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT siz
     UgText(text,mode);
   }
 
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   SetDoFramePicture - toggle picture framing
+
+   SYNOPSIS:
+   INT SetDoFramePicture (INT mode)
+
+   PARAMETERS:
+   .  mode - YES: do frame, NO: do not frame
+
+   DESCRIPTION:
+   This function toggles the framing of 'PICTURE's.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   D*/
+/****************************************************************************/
+
+INT SetDoFramePicture (INT mode)
+{
+  DoFramePicture = mode;
   return (0);
 }
 
