@@ -577,11 +577,7 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 
 	FAMGConstructParameter(&famg_parameter);
 
-	#ifndef ModelP
-    FAMGConstruct(famg_interface.gridvector, famg_interface.matrix, famg_interface.vector);
-	#else
-	assert(0);
-	#endif
+    FAMGConstruct(famg_interface.gridvector, famg_interface.matrix, famg_interface.matrix, famg_interface.vector);
 	
 	result[0]=0;
 

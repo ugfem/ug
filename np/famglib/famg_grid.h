@@ -143,9 +143,9 @@ public:
   void GetSmoother();
   FAMGMatrixAlg *GetConsMatrix() const;                 // in serial synonym for the stiffness matrix
   // in parallel the (partly) consistent stiffness matrix
+  void SetConsMatrix(FAMGMatrixAlg *cm);
 #ifdef ModelP
   void CommunicateNodeStatus();
-  void SetConsMatrix(FAMGMatrixAlg *cm);
 #endif
 
 private:

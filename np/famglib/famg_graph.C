@@ -72,7 +72,9 @@ void FAMGNode::Init(int index, const FAMGVectorEntry &i)
     SetFlag1(0);
     SetFlag2(0);
     SetFlag(0);
+#ifdef ModelP
     SetFlagNewMarked(0);
+#endif
 	SetUndecidedNode();
     control.ns = 0;
     //SetLocalId is initialized with the default constructor
