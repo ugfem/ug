@@ -57,7 +57,7 @@
 /****************************************************************************/
 
 /* switch on blasm calls */
-#define _SPARSE_
+#undef _SPARSE_
 
 #define SMALL_DET                       1e-15
 #define MAX_DEPTH           MAX_NODAL_VECTORS
