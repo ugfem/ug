@@ -57,7 +57,8 @@ static VECTOR *GlobalVec2;
 static INT GlobalIds;
 static INT LineWidth;
 static INT VecCoordComp;
-static long ColorTable[8];
+static int UseSpectrum;
+static long SpectrumColor, FixedColor;
 
 #ifdef ModelP
 static int DrawBorderVec;
@@ -108,6 +109,7 @@ struct FAMGPlotObject
 	int level;
 	int ids;
 	int LineWidth;					// LineWidth used for plotting: for X11 uses 1 (default), for postscript uses 2
+	int spectrum;					// use color spectrum
 	VECDATA_DESC *CoordVec;			// vector to hold the coordinate info for the node
 #ifdef ModelP
 	int DrawBorder;					// if 1, also border vectors are plotted
@@ -137,6 +139,11 @@ static INT SetFAMGGraph (PLOTOBJ *thePlotObj, INT argc, char **argv)
 		theObj->LineWidth = 1;
 	else
 		theObj->LineWidth = i;
+	
+	if (ReadArgvINT("spectrum",&i,argc,argv))
+		theObj->spectrum = 0;
+	else
+		theObj->spectrum = i;
 	
 #ifdef ModelP
     if (ReadArgvINT("b",&i,argc,argv))
@@ -192,14 +199,44 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
 	DrawBorderVec = theObj->DrawBorder;
 #endif
 	
-	ColorTable[0] = theOD->blue;
-	ColorTable[1] = theOD->magenta;
-	ColorTable[2] = theOD->green;
-	ColorTable[3] = theOD->orange;
-	ColorTable[4] = theOD->cyan;
-	ColorTable[5] = theOD->gray;
-	ColorTable[6] = theOD->yellow;
-	ColorTable[7] = theOD->red;
+#ifdef ModelP
+	switch( me%8 )
+	{
+		case 0: FixedColor = theOD->blue; break;
+		case 1: FixedColor = theOD->magenta; break;
+		case 2: FixedColor = theOD->green; break;
+		case 3: FixedColor = theOD->orange; break;
+		case 4: FixedColor = theOD->cyan; break;
+		case 5: FixedColor = theOD->gray; break;
+		case 6: FixedColor = theOD->yellow; break;
+		case 7: FixedColor = theOD->red; break;
+	}
+#else
+	FixedColor = theOD->blue;
+#endif
+	
+	if( theObj->spectrum )
+	{
+		if( !theOD->hasPalette )
+		{
+			PrintErrorMessage('E',"plot FAMG Graph","this output device doesn't support color spectrum");
+			RETURN(1); 
+		}
+		double start = theOD->spectrumStart;
+		double end = theOD->spectrumEnd;
+		
+#ifdef ModelP
+		double pe = procs<=1 ? 1.0 : procs-1.0;
+		SpectrumColor = (long)(start + me*(end-start)/ pe);
+#else
+		SpectrumColor = theOD->green;
+#endif
+		UseSpectrum = 1;
+	}
+	else
+	{
+		UseSpectrum = 0;
+	}
 	
     if(theObj->level == 999) 
     {
@@ -297,7 +334,12 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
 		if( DrawBorderVec )
 			VectorColor = BlackColor;
 		else
-			VectorColor = ColorTable[me%8];
+		{
+			if( UseSpectrum )
+				VectorColor = SpectrumColor;
+			else
+				VectorColor = FixedColor;
+		}
 	}
 	CircleSize = 12;
 #else
