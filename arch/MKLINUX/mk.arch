@@ -1,0 +1,27 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for Microkernel Linux (on PowerMacintosh)
+#
+
+ARCH_TYPE     = __MKLINUX__
+
+ARCH_MAKE     = make
+ARCH_CC       = gcc
+ARCH_C++      = g++
+ARCH_F77      = f77
+ARCH_LINK     = gcc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK = true
+
+ARCH_LIBS     = -lm -lc
+
+ARCH_CFLAGS   =  # -g 
+ARCH_C++FLAGS =
+ARCH_LFLAGS   = 
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDES = 
+ARCH_XLIBS     = -L/usr/lib/X11 -lX11 -lXt -lXaw -lXmu
+
