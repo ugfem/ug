@@ -59,7 +59,7 @@ static ENVDIR *path[MAXENVPATH];        /* path to current directory        */
 static int pathIndex;                    /* entry to path array                */
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*D

@@ -73,7 +73,7 @@ static INT theStringDirID;                      /* env type for String dirs     
 static INT theStringVarID;                      /* env type for String vars                     */
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*D

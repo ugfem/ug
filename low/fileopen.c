@@ -84,7 +84,7 @@ static INT thePathsDirID;
 static INT thePathsVarID;
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/

@@ -74,7 +74,7 @@ int UG_math_error = 0; /* This will be non zero after a math error occured  */
 /****************************************************************************/
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*                                                                            */
