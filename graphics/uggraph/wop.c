@@ -20480,7 +20480,7 @@ static void MarkElementsIsosurfaceCuts(MULTIGRID *theMG,
 					SETUSED(CORNER(theElement, j), 1);
 					LocalCornerCoordinates(DIM,TAG(theElement),j,LocalCoord);
 					value = (*Isosurface3D_EvalFct)
-						(theElement,CornersOfElem,LocalCoord);
+                                            (theElement,(const DOUBLE**)CornersOfElem,LocalCoord);
 					if (value < Isosurface3D_lambda)
 						SETTHEFLAG(CORNER(theElement, j), 0);
 					else
@@ -20601,7 +20601,7 @@ static INT EW_Isosurface3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		cell.order[i] = VGID(MYVERTEX(CORNER(theElement,i)));
 		memcpy(cell.x[i], x[i], 3*sizeof(DOUBLE));
 		LocalCornerCoordinates(DIM, TAG(theElement), i, lc);
-		cell.v[i] = (*Isosurface3D_EvalFct)(theElement, x, lc);
+		cell.v[i] = (*Isosurface3D_EvalFct)(theElement, (const DOUBLE**)x, lc);
 	}
 
 	/* plot domain boundary back sides iff */
@@ -20716,7 +20716,7 @@ static INT EW_Isosurface3D_FR(ELEMENT *theElement, DRAWINGOBJ *theDO)
 			SETUSED(CORNER(theElement,i),1);
 			LocalCornerCoordinates(DIM,TAG(theElement),i,LocalCoord);
 			value = (*Isosurface3D_EvalFct)
-				(theElement,CornersOfElem,LocalCoord);
+                            (theElement,(const DOUBLE**)CornersOfElem,LocalCoord);
 			DO_2c(theDO) = DO_RANGE; DO_inc(theDO);
 			DO_2C(theDO) = value; DO_inc(theDO);
 			DO_2C(theDO) = value; DO_inc(theDO);

@@ -612,7 +612,7 @@ msgid SendASync (VChannelPtr vc, void *data, int size, int *error)
 #  ifdef REQUEST_HEAP
   MPI_Request *req;
 
-  if (req = malloc (sizeof (MPI_Request) ) )
+  if (req = (MPI_Request*)malloc (sizeof (MPI_Request) ) )
   {
     if (MPI_SUCCESS == MPI_Isend (data, size, MPI_BYTE, vc->p, vc->chanid, COMM, req) )
     {
@@ -641,7 +641,7 @@ msgid RecvASync (VChannelPtr vc, void *data, int size, int *error)
 #  ifdef REQUEST_HEAP
   MPI_Request *req;
 
-  if (req = malloc (sizeof (MPI_Request) ) )
+  if (req = (MPI_Request*)malloc (sizeof (MPI_Request) ) )
   {
     if (MPI_SUCCESS == MPI_Irecv (data, size, MPI_BYTE, vc->p, vc->chanid, COMM, req) )
     {
