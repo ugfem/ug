@@ -665,12 +665,12 @@ static INT OBGS_PrintMatrix (DOUBLE *Mat, INT n, INT bw)
 
 static INT OBGS_PreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
 {
-  INT i,j,n,bl,max,max_comp_in_type,k,index,bw,rindex,rtype,rcomp,cindex,ctype,ccomp,nb_max,n_Mat,n_Mat_max,MarkKey,fifo_buffer_size;
+  INT i,j,n,bl,max,max_comp_in_type,k,index,bw,rindex,rtype,rcomp,cindex,ctype,ccomp,nb_max,n_Mat,n_Mat_max,MarkKey,fifo_buffer_size,LocalMarkKey;
   SHORT *comp;
   NP_OBGS *np=(NP_OBGS *)theNP;
   GRID *theGrid=NP_GRID(theNP,level);
   HEAP *theHeap=MGHEAP(NP_MG(theNP));
-  VECTOR *theV,*theW,**bv;
+  VECTOR *theV,*theW,**bv,**bv_local;
   MATRIX *theM;
   DOUBLE *Mat;
   FIFO fifo;
@@ -688,12 +688,13 @@ static INT OBGS_PreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA
   /* perform blocking */
   if (np->blocking->Blocking!=NULL)
     if ((*np->blocking->Blocking)(np->blocking,OBGS_GetMem,level,A,&(np->bs[level]),result)) REP_ERR_RETURN(1);
+  assert(np->bs[level].n!=0);
 
   /* allocate vectors and matrices */
   np->bw[level]=(INT *)GetTmpMem(theHeap,sizeof(INT)*np->bs[level].n,MarkKey);
   np->n_Mat[level]=(INT *)GetTmpMem(theHeap,sizeof(INT)*np->bs[level].n,MarkKey);
   np->Mat[level]=(DOUBLE **)GetTmpMem(theHeap,sizeof(DOUBLE *)*np->bs[level].n,MarkKey);
-  for (theV=FIRSTVECTOR(theGrid),max_comp_in_type=0; theV!=NULL; theV=SUCCVC(theV)) { SETVCUSED(theV,0); k=VD_NCMPS_IN_TYPE(x,VTYPE(theV)); max_comp_in_type=MAX(max_comp_in_type,k); }
+  for (theV=FIRSTVECTOR(theGrid),max_comp_in_type=0; theV!=NULL; theV=SUCCVC(theV)) { SETVCUSED(theV,0); SETVACTIVE(theV,0); k=VD_NCMPS_IN_TYPE(x,VTYPE(theV)); max_comp_in_type=MAX(max_comp_in_type,k); }
   if (np->optimizeBand)
   {
     max=0;
@@ -711,30 +712,42 @@ static INT OBGS_PreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA
     /* optimize band */
     if (np->optimizeBand)
     {
+      /* allocate temporary bv-list */
+      if (MarkTmpMem(theHeap,&LocalMarkKey)) REP_ERR_RETURN(1);
+      bv_local=(VECTOR **)GetTmpMem(theHeap,sizeof(VECTOR *)*n,LocalMarkKey);
+      for (i=0; i<n; i++) SETVACTIVE(bv[i],0);
       for (i=0; i<n; i++) SETVCFLAG(bv[i],0);
       fifo_init(&fifo,fifo_buffer,fifo_buffer_size);
-      fifo_in(&fifo,(void *)bv[0]); SETVCFLAG(bv[0],1);
-      while(!fifo_empty(&fifo))
+      for(i=0; i<n; )
       {
-        theV=(VECTOR *)fifo_out(&fifo);
-        for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-          if (!VCFLAG(MDEST(theM)) && VCUSED(MDEST(theM)))
-          {
-            fifo_in(&fifo,(void *)MDEST(theM)); SETVCFLAG(MDEST(theM),1);
-          }
+        for(j=0; j<n; j++) if (!VACTIVE(bv[j])) break;
+        fifo_in(&fifo,(void *)bv[j]); SETVCFLAG(bv[j],1);
+        while(!fifo_empty(&fifo))
+        {
+          theV=(VECTOR *)fifo_out(&fifo);
+          for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+            if (!VCFLAG(MDEST(theM)) && VCUSED(MDEST(theM)))
+            {
+              fifo_in(&fifo,(void *)MDEST(theM)); SETVCFLAG(MDEST(theM),1);
+            }
+        }
+        fifo_in(&fifo,(void *)theV); SETVCFLAG(theV,0);
+        while(!fifo_empty(&fifo))
+        {
+          theV=(VECTOR *)fifo_out(&fifo);
+          bv_local[i++]=theV; SETVACTIVE(theV,1);
+          for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+            if (VCFLAG(MDEST(theM)) && VCUSED(MDEST(theM)))
+            {
+              fifo_in(&fifo,(void *)MDEST(theM)); SETVCFLAG(MDEST(theM),0);
+            }
+        }
       }
-      fifo_in(&fifo,(void *)theV); SETVCFLAG(theV,0); i=0;
-      while(!fifo_empty(&fifo))
-      {
-        theV=(VECTOR *)fifo_out(&fifo);
-        bv[i++]=theV;
-        for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-          if (VCFLAG(MDEST(theM)) && VCUSED(MDEST(theM)))
-          {
-            fifo_in(&fifo,(void *)MDEST(theM)); SETVCFLAG(MDEST(theM),0);
-          }
-      }
-      assert(i==n);
+      for (i=0; i<n; i++) SETVACTIVE(bv[i],0);
+      for (i=0; i<n; i++) bv[i]=bv_local[i];
+
+      /* release temporary bv-list */
+      ReleaseTmpMem(theHeap,LocalMarkKey);
     }
 
     /* get bandwidth */

@@ -94,6 +94,15 @@ typedef struct
   INT depth;
 } NP_SAB;
 
+typedef struct
+{
+  NP_BLOCKING blocking;
+
+  INT n;                                                                        /* desired block size           */
+  INT r[MAXLEVEL];                                                      /* realized block size          */
+} NP_DD;
+
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
@@ -325,6 +334,130 @@ static INT SAB_Construct (NP_BASE *theNP)
 }
 
 /****************************************************************************/
+/*D
+   dd - numproc for dd blocking on algebraic level
+
+   DESCRIPTION:
+   This numproc returns a element-wise blocking
+
+   .vb
+   npinit <name>;
+   .ve
+
+   'npexecute not possible'
+
+   D*/
+/****************************************************************************/
+
+static INT DD_Init (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_DD *np=(NP_DD *)theNP;
+  INT i;
+
+  if (ReadArgvINT ("n",&np->n,argc,argv)) np->n=1;
+  if (np->n<0) return(NP_NOT_ACTIVE);
+  for (i=0; i<MAXLEVEL; i++) np->r[i]=0;
+
+  return (NP_ACTIVE);
+}
+
+static INT DD_Display (NP_BASE *theNP)
+{
+  NP_DD *np=(NP_DD *)theNP;
+  INT i;
+  char buffer[32];
+
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"n",(int)np->n);
+  for (i=0; i<MAXLEVEL; i++)
+    if (np->r[i]>0)
+    {
+      sprintf(buffer,"r[%d]",i);
+      UserWriteF(DISPLAY_NP_FORMAT_SI,buffer,(int)np->r[i]);
+    }
+
+  return (0);
+}
+
+static INT DD_Blocking (NP_BLOCKING *theNP, GetMemProcPtr GetMem, INT level, MATDATA_DESC *A, BLOCKING_STRUCTUR *bs, INT *result)
+{
+  NP_DD *np=(NP_DD *)theNP;
+  GRID *theGrid=NP_GRID(theNP,level);
+  void *buffer;
+  VECTOR **vlist;
+  VECTOR *theV;
+  MATRIX *theM;
+  FIFO fifo;
+  INT i,n,b,v_idx;
+
+  /* perform reverse CutHill McGee ordering of vectors */
+  n=NVEC(theGrid);
+  buffer=(void *)(*GetMem)(sizeof(VECTOR*)*n); assert(buffer!=NULL);
+  vlist = (VECTOR**)(*GetMem)(sizeof(VECTOR*)*n); assert(vlist!=NULL);
+  fifo_init(&fifo,buffer,sizeof(VECTOR*)*n);
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) SETVCUSED(theV,0);
+  fifo_in(&fifo,FIRSTVECTOR(theGrid)); SETVCUSED(FIRSTVECTOR(theGrid),1);
+  while(!fifo_empty(&fifo))
+  {
+    theV=(VECTOR *)fifo_out(&fifo);
+    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+      if (!VCUSED(MDEST(theM)))
+      {
+        fifo_in(&fifo,(void *)MDEST(theM));
+        SETVCUSED(MDEST(theM),1);
+      }
+  }
+  fifo_in(&fifo,(void *)theV);
+  SETVCUSED(theV,0); i=0;
+  while(!fifo_empty(&fifo))
+  {
+    theV=(VECTOR *)fifo_out(&fifo);
+    vlist[i++]=theV;
+    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+      if (VCUSED(MDEST(theM)))
+      {
+        fifo_in(&fifo,(void *)MDEST(theM));
+        SETVCUSED(MDEST(theM),0);
+      }
+  }
+  assert(i==n);
+  for (i=0; i<n; i++) GRID_UNLINK_VECTOR(theGrid,vlist[i]);
+  for (i=0; i<n; i++) GRID_LINK_VECTOR(theGrid,vlist[i],PRIO(vlist[i]));
+
+  /* determine the blocking */
+  b=(INT)ceil(((DOUBLE)n/(DOUBLE)np->n));
+  np->r[level]=(INT)floor(((DOUBLE)n/(DOUBLE)b)+0.5);
+  bs->n=(INT)ceil((DOUBLE)n/(DOUBLE)np->r[level]);
+  bs->nb=(INT *)(*GetMem)(sizeof(INT)*bs->n);
+  bs->vb=(VECTOR***)(*GetMem)(sizeof(VECTOR**)*bs->n);
+  for(i=v_idx=0; i<bs->n; i++)
+  {
+    if (i<bs->n-1) bs->nb[i]=np->r[level];
+    else bs->nb[i]=n-v_idx;
+    assert(v_idx<n);
+    bs->vb[i]=vlist+v_idx;
+    v_idx+=np->r[level];
+  }
+
+  return (0);
+}
+
+static INT DD_Construct (NP_BASE *theNP)
+{
+  NP_BLOCKING *np;
+
+  theNP->Init=DD_Init;
+  theNP->Display=DD_Display;
+  theNP->Execute=NULL;
+
+  np=(NP_BLOCKING *)theNP;
+  np->PreProcess=NULL;
+  np->Blocking=DD_Blocking;
+  np->PostProcess=NULL;
+
+  return(0);
+}
+
+/****************************************************************************/
 /*
    InitBlock	- Init this file
 
@@ -347,7 +480,8 @@ static INT SAB_Construct (NP_BASE *theNP)
 INT NS_DIM_PREFIX InitBlocking ()
 {
   if (CreateClass(BLOCKING_CLASS_NAME ".elemblock",sizeof(NP_ELEM_BLOCK),ELEM_BLOCK_Construct)) REP_ERR_RETURN (__LINE__);
-  if (CreateClass(BLOCKING_CLASS_NAME ".sab",sizeof(NP_ELEM_BLOCK),SAB_Construct)) REP_ERR_RETURN (__LINE__);
+  if (CreateClass(BLOCKING_CLASS_NAME ".sab",sizeof(NP_SAB),SAB_Construct)) REP_ERR_RETURN (__LINE__);
+  if (CreateClass(BLOCKING_CLASS_NAME ".dd",sizeof(NP_DD),DD_Construct)) REP_ERR_RETURN (__LINE__);
 
   return (0);
 }
