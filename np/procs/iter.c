@@ -5173,6 +5173,13 @@ static INT LmgcInit (NP_BASE *theNP, INT argc , char **argv)
     np->nu2 = 1;
   if (ReadArgvINT("b",&(np->baselevel),argc,argv))
     np->baselevel = 0;
+  if (np->baselevel<0)
+  {
+    for (i=FULLREFINELEVEL(NP_MG(theNP)); i>0; i--)
+      if (NVEC(GRID_ON_LEVEL(NP_MG(theNP),i))<=-np->baselevel)
+        break;
+    np->baselevel=i;
+  }
 
   if (np->Transfer == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
   if (np->PreSmooth == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
