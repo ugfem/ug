@@ -558,6 +558,11 @@ INT InitHelpMsg (void)
     PrintErrorMessageF('W',"InitHelpMsg","could not read 'path2ug' in defaults file '%s'",DEFAULTSFILENAME);
     return (__LINE__);
   }
+  if (ExpandCShellVars(buffer)==NULL)
+  {
+    PrintErrorMessageF('W',"InitHelpMsg","could not expand shell variables in 'path2ug' of defaults file '%s'",DEFAULTSFILENAME);
+    return (__LINE__);
+  }
   if (sscanf(buffer,"%s",path2ug)!=1)
   {
     PrintErrorMessageF('W',"InitHelpMsg","no path specified in 'path2ug' in defaults file '%s'",DEFAULTSFILENAME);
