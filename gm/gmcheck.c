@@ -1585,8 +1585,15 @@ static INT CheckGeometry (GRID *theGrid)
 			if (!USED(theEdge))
 			{
 				errors++;
-				UserWriteF("edge between " ID_FMTX " and " ID_FMTX 
+				UserWriteF("edge" 
+					#ifdef __THREEDIM__
+					ID_FMTX
+					#endif
+					" between " ID_FMTX " and " ID_FMTX 
 					" has no element, NO_OF_ELEM=%d \n",
+					#ifdef __THREEDIM__
+					ID_PRTX(theEdge),
+					#endif
 					ID_PRTX(theNode),ID_PRTX(NBNODE(theLink)),
 					NO_OF_ELEM(theEdge));
 
