@@ -365,43 +365,87 @@ enum {nodeSelection=1,         /**< Objects selected are nodes */
 
 /** @name Possible values for rule in MarkForRefinement */
 /*@{*/
-#define NO_REFINEMENT           0
-#define COPY                            1
-#define RED                                     2
-#define BLUE                            3
-#define COARSE                          4
+/*
+   #define NO_REFINEMENT           0
+   #define COPY                            1
+   #define RED                                     2
+   #define BLUE                            3
+   #define COARSE                          4
+   #ifdef __TWODIM__
+   #define BISECTION_1             5
+   #define BISECTION_2_Q           6
+   #define BISECTION_2_T1          7
+   #define BISECTION_2_T2          8
+   #define BISECTION_3             9
+   #endif
+   #ifdef __THREEDIM__
+
+   #define TETRA_RED_HEX           5
+
+   #define PRISM_BISECT_1_2    9
+   #define PRISM_QUADSECT          7
+   #define PRISM_BISECT_HEX0   5
+   #define PRISM_BISECT_HEX1   8
+   #define PRISM_BISECT_HEX2   6
+   #define PRISM_ROTATE_LEFT   10
+   #define PRISM_ROTATE_RGHT   11
+   #define PRISM_QUADSECT_HEXPRI0 14
+
+   #define HEX_BISECT_0_1          5
+   #define HEX_BISECT_0_2          6
+   #define HEX_BISECT_0_3          7
+   #define HEX_TRISECT_0           8
+   #define HEX_TRISECT_5           9
+   #define HEX_QUADSECT_0          12
+   #define HEX_QUADSECT_1          13
+   #define HEX_QUADSECT_2          14
+   #define HEX_BISECT_HEXPRI0      15
+   #define HEX_BISECT_HEXPRI1      16
+
+   #endif
+ */
+/*@}*/
+
+/** @name Possible values for rule in MarkForRefinement */
+/*@{*/
+enum {NO_REFINEMENT = 0,
+      COPY = 1,
+      RED =  2,
+      BLUE = 3,
+      COARSE = 4,
 #ifdef __TWODIM__
-#define BISECTION_1             5
-#define BISECTION_2_Q           6
-#define BISECTION_2_T1          7
-#define BISECTION_2_T2          8
-#define BISECTION_3             9
+      BISECTION_1 = 5,
+      BISECTION_2_Q = 6,
+      BISECTION_2_T1 = 7,
+      BISECTION_2_T2 = 8,
+      BISECTION_3 = 9
 #endif
 #ifdef __THREEDIM__
 
-#define TETRA_RED_HEX           5
+      TETRA_RED_HEX = 5,
 
-#define PRISM_BISECT_1_2    9
-#define PRISM_QUADSECT          7
-#define PRISM_BISECT_HEX0   5
-#define PRISM_BISECT_HEX1   8
-#define PRISM_BISECT_HEX2   6
-#define PRISM_ROTATE_LEFT   10
-#define PRISM_ROTATE_RGHT   11
-#define PRISM_QUADSECT_HEXPRI0 14
+      PRISM_BISECT_1_2 = 9,
+      PRISM_QUADSECT = 7,
+      PRISM_BISECT_HEX0 = 5,
+      PRISM_BISECT_HEX1 = 8,
+      PRISM_BISECT_HEX2 = 6,
+      PRISM_ROTATE_LEFT = 10,
+      PRISM_ROTATE_RGHT = 11,
+      PRISM_QUADSECT_HEXPRI0 = 14,
 
-#define HEX_BISECT_0_1          5
-#define HEX_BISECT_0_2          6
-#define HEX_BISECT_0_3          7
-#define HEX_TRISECT_0           8
-#define HEX_TRISECT_5           9
-#define HEX_QUADSECT_0          12
-#define HEX_QUADSECT_1          13
-#define HEX_QUADSECT_2          14
-#define HEX_BISECT_HEXPRI0      15
-#define HEX_BISECT_HEXPRI1      16
+      HEX_BISECT_0_1 = 5,
+      HEX_BISECT_0_2 = 6,
+      HEX_BISECT_0_3 = 7,
+      HEX_TRISECT_0 = 8,
+      HEX_TRISECT_5 = 9,
+      HEX_QUADSECT_0 = 12,
+      HEX_QUADSECT_1 = 13,
+      HEX_QUADSECT_2 = 14,
+      HEX_BISECT_HEXPRI0 = 15,
+      HEX_BISECT_HEXPRI1 = 16
 
 #endif
+};
 /*@}*/
 
 /** \brief Values for element class */
@@ -3019,15 +3063,23 @@ enum {GM_OK                       = 0,
 
 /** @name Some constants passed as parameters */
 /*@{*/
-#define GM_KEEP_BOUNDARY_NODES          0
-#define GM_MOVE_BOUNDARY_NODES          1
-#define GM_REFINE_TRULY_LOCAL           2
-#define GM_COPY_ALL                             3
-#define GM_REFINE_NOT_CLOSED            4
-#define GM_REFINE_PARALLEL                      0
-#define GM_REFINE_SEQUENTIAL            1
-#define GM_REFINE_NOHEAPTEST            0
-#define GM_REFINE_HEAPTEST                      1
+/*
+   #define GM_KEEP_BOUNDARY_NODES          0
+   #define GM_MOVE_BOUNDARY_NODES          1
+   #define GM_REFINE_TRULY_LOCAL           2
+   #define GM_COPY_ALL                             3
+   #define GM_REFINE_NOT_CLOSED            4
+ */
+enum {GM_KEEP_BOUNDARY_NODES,
+      GM_MOVE_BOUNDARY_NODES,
+      GM_REFINE_TRULY_LOCAL,
+      GM_COPY_ALL,
+      GM_REFINE_NOT_CLOSED};
+
+enum {GM_REFINE_PARALLEL, GM_REFINE_SEQUENTIAL};
+
+enum {GM_REFINE_NOHEAPTEST, GM_REFINE_HEAPTEST};
+
 #define GM_FCFCLL                                       1
 #define GM_FFCCLL                                       2
 #define GM_FFLLCC                                       3
