@@ -19,7 +19,7 @@ help [[<helpitem>] $k]
     $k                      # search for keyword <helpitem>
 
 -checkhelp
-checkhelp       # prints all commands for which help does NOT exist
+checkhelp       # prints all commands and num proc types for which help does NOT exist
 
 -resetclock > all time clock
 resetclock      # reset the execution time clock to zero
@@ -38,8 +38,9 @@ mute <mutelevel>
 
 -date > datum time year month
 date            # print current date and time
-date [$s]
+date [$s] [$S]
     $s                      # print date to string variable :date rather than to shell
+    $S                      # print short version of date (format: yy.mm.dd)
 
 -
 ############################## list environment #########################################
@@ -111,12 +112,16 @@ protoOff        # close the protocol file (see the 'protoOn' command)
 
 -protocol > file output format write
 protocol        # write formatted ouput to the open protocol file
-protocol {$i[ ]<verbatim text> | $n[ ]<verbatim text> | $t[ ]<verbatim text> | $f}*
-    $i                     # append <verbatim text> to protocol file
-    $n                     # write a line feed and append <verbatim text> to protocol file
-    $t                     # write a tab and append <verbatim text> to protocol file
+protocol {{$\i[ ]<verbatim text> | $\n[ ]<verbatim text> | $\t[ ]<verbatim text> | $\f} {[$ text]}*}*
+    $\i                    # append <verbatim text> to protocol file
+    $\n                    # write a line feed and append <verbatim text> to protocol file
+    $\t                    # write a tab and append <verbatim text> to protocol file
                            # NOTE: the first space (if there) following the option character is skipped
-    $f                     # flush the file buffer
+    $\f                    # flush the file buffer
+    [$ text]               # this means an option char followed by any text where the first char is NOT \
+                           # those texts are appended in the order they are given including the $s
+                           # options where the $ is not followed by a \ are appended to the
+                           # example: 'protocol $\i using: $\t mark $a' --> 'using:\tmark $a' will be appended
 
 -logon > all file output write
 logon           # direct total shell output also to a logfile
@@ -209,8 +214,12 @@ orderv $m FFCCLL | FCFCLL $d <dep-proc> $o dep-proc options> [$a]
 
 -ordernodes > nodes grid order sort
 ordernodes       # reorder nodes lexicographically
-ordernodes ur|ul|dr|dl|ru|rd|lu|ld
+ordernodes ur|ul|dr|dl|ru|rd|lu|ld [$l <level>] [$L]
                           # where u=up, d=down, r=right, l=left
+    $l <level>            # only order the specified level
+    $L                    # also order links
+
+                          # CAUTION: node-ids of the whole mg will change in any case
 
 -setcurrmg > grid multigrid current
 setcurrmg        # change the current multigrid
@@ -395,10 +404,11 @@ clearpicture     # clear current picture
 
 -setview > window picture plot graphics
 setview          # specify or change the observer's view of the object of the current picture
-    2D: setview [$t <x> <y>] [$x  <x> <y>]
-    3D: setview [$o <x> <y> <z> $t <x> <y> <z>] [$x <x> <y> [<z>]] [$p < | =]
+    2D: setview [$i] [$t <x> <y>] [$x  <x> <y>]
+    3D: setview [$i] [$o <x> <y> <z> $t <x> <y> <z>] [$x <x> <y> [<z>]] [$p < | =]
                            # all coordinates have to be given in physical coordinates
 
+    $i                     # first initialize view with default settings
     $o <x> <y> <z>         # 3D objects ONLY: specify the observer's stand
     $p < | =               # 3D objects ONLY: choose central (<) or parallel (=) perspective
     $t <x> <y> [<z>]       # specify the target point in the viewplane
@@ -467,11 +477,36 @@ updateDoc        # redraw all pictures of the current multigrid
 -
 ################################# miscellaneous #########################################
 
+-defaults
+in the file 'defaults' in the application directory the user can specify the following
+values (format: the name at the beginning of the line in arbitrary order, then following the value string;
+the example values are taken from the nsa defaults file, omit the comments of course):
+
+envmemory 		128000                                               # environment memory in bytes
+
+helpfiles 		../../ug/doc/ug.help ../../ug/doc/ug2d.help ../pclib/ns.help  # help files to search for help
+
+guimemory 		32000                                                # MAC only: for window management
+scrollback 		500                                                  # MAC only: line buffer for shell
+charsperline 	256                                                  # MAC only: max number of chars per line
+font 			Monaco                                               # MAC only: font name
+size 			9                                                    # MAC only: font size
+TermWinH 		400                                                  # MAC only: horizontal position of shell window
+TermWinV 		0                                                    # MAC only: vertical position of shell window
+TermWinDH 		1000                                                 # MAC only: width of shell window
+TermWinDV 		1000                                                 # MAC only: height of shell window
+
+scriptpathes	./paramruns/ ./ ./plotscripts/                       # search scripts in these pathes
+gridpathes		./grids/                                             # search grids in these pathes
+protocoldir		../../../ug31results/ns/paramruns/results/           # write protocols into this dir
+logfilesdir		../../../ug31results/ns/paramruns/results/           # write logfiles into this dir
+metafilesdir	../../../ug31results/ns/paramruns/results/           # write metafiles into this dir
+
 -clear > vector matrix userdata
 clear            # clear or assign a constant value to a user defined symbol
-clear <symbol name> [$a] [$u] [$v <value>]
+clear <symbol name> [$a] [$s] [$v <value>]
     $a                     # from level 0 through current level (default: current level only)
-    $u                     # consider the skip fields
+    $s                     # consider the skip fields
     $v <value>             # assign this value (instead of 0.0)
 
 -reinit > problem multigrid
@@ -543,14 +578,24 @@ npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|r
        $damp <sc double list>
 
 -pbilu > smoother numproc ilu-beta
-for initialisation of the damped point-block ilu-beta use:
+for initialisation of the damped point-block ilu-beta with beta modification use:
 npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
        $damp <sc double list> $L <lu mat sym> $beta <sc double list>
+
+-pbilubt > smoother numproc ilu-beta threshold
+for initialisation of the damped point-block ilu-beta with beta modification and threshold use:
+npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
+       $damp <sc double list> $thresh <sc double list> $L <lu mat sym> $beta <sc double list>
+
+-pbilusp > smoother numproc ilu-beta spectrally shifted
+for initialisation of the damped point-block spectrally shifted ilu use:
+npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
+       $damp <sc double list> $L <lu mat sym> $beta <sc double list> $mode local|global
 
 -pblu > smoother numproc lu lr
 for initialisation of the point-block lu (with threshold and damping) use:
 npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
-       $damp <sc double list> $L <lu mat sym> $thresh <sc double list>
+       $L <lu mat sym>
 
 -ebgs > smoother numproc gauss-seidel
 for initialisation of the equation-block Gauss-Seidel use:
