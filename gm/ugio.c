@@ -1215,7 +1215,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
       strtok(l,"/");
       if (sscanf(s,"%d",&lastnumber)!=1) REP_ERR_RETURN(1);if (lastnumber<0) REP_ERR_RETURN(1);lastnumber++;
       strcpy(itype,l);
-      sprintf(buf,".%04d",lastnumber);
+      sprintf(buf,".%06d",lastnumber);
       strcat(filename,buf);
     }
     else
@@ -1224,7 +1224,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
       strcpy(itype,type);
       if (name==NULL) REP_ERR_RETURN(1);
       strcpy(filename,name);
-      strcat(filename,".0000");
+      strcat(filename,".000000");
     }
   }
   else
@@ -2519,7 +2519,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
       strcpy(itype,type);
       if (name==NULL) return (NULL);
       strcpy(filename,name);
-      strcat(filename,".0000");
+      strcat(filename,".000000");
     }
   }
   else
