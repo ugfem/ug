@@ -159,5 +159,9 @@ INT InitGm ()
   }
     #endif
 
+  /* set config variable for the script */
+  if (SetStringValue("conf:dim",(DOUBLE)DIM))
+    return(__LINE__);
+
   return (0);
 }

@@ -110,6 +110,9 @@
 
 #define MAX_ELEM_VECTORS                (MAX_CORNERS_OF_ELEM+MAX_EDGES_OF_ELEM+1+MAX_SIDES_OF_ELEM)
 
+#define MAX_NDOF_MOD_32         1           /* max number of doubles in a vector or matrix mod 32 */
+
+
 /* some useful variables */
 typedef COORD COORD_VECTOR[DIM];
 typedef COORD COORD_VECTOR_2D[2];
@@ -708,6 +711,12 @@ union selection_object {                                        /* objects than 
   struct vector ve;
 } ;
 
+typedef struct
+{
+  unsigned INT VecReserv[MAXVECTORS][MAX_NDOF_MOD_32];
+  unsigned INT MatReserv[MAXMATRICES][MAX_NDOF_MOD_32];
+} DATA_RESERVATION ;
+
 struct grid {
 
   /* variables */
@@ -723,6 +732,7 @@ struct grid {
 #ifdef __INTERPOLATION_MATRIX__
   INT nIMat;                        /* number of interpolation matrices     */
 #endif
+  DATA_RESERVATION dr;              /* memory management for vectors|matrix */
 
   /* pointers */
   union  element *elements[ELEMENTPRIOS];       /* pointer to first element     */
@@ -764,6 +774,8 @@ struct multigrid {
   struct format *theFormat;                     /* pointer to format definition                 */
   HEAP *theHeap;                                        /* associated heap structure			*/
   INT nProperty;                                        /* max nb of properties used in elements*/
+
+  DATA_RESERVATION dr;              /* memory management for vectors|matrix */
 
   /* pointers */
   struct grid *grids[MAXLEVEL];         /* pointers to the grids				*/
@@ -1434,7 +1446,8 @@ extern CONTROL_ENTRY
 #define ONEDGE_LEN                                      4
 #define ONEDGE(p)                                       CW_READ(p,ONEDGE_CE)
 #define SETONEDGE(p,n)                          CW_WRITE(p,ONEDGE_CE,n)
-
+#define ONSIDE(p)                                       CW_READ(p,ONEDGE_CE)
+#define SETONSIDE(p,n)                          CW_WRITE(p,ONEDGE_CE,n)
 
 #define PREDV(p)                (p)->iv.pred
 #define SUCCV(p)                (p)->iv.succ
@@ -1977,6 +1990,13 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define EDATA_DEF_IN_GRID(p)   ((p)->mg->theFormat->elementdata)
 #define NDATA_DEF_IN_GRID(p)   ((p)->mg->theFormat->nodedata)
 
+#define READ_DR_VEC_FLAG(p,vt,i)        READ_FLAG((p)->dr.VecReserv[vt][(i)/32],1<<((i)%32))
+#define READ_DR_MAT_FLAG(p,vt,i)        READ_FLAG((p)->dr.MatReserv[vt][(i)/32],1<<((i)%32))
+#define SET_DR_VEC_FLAG(p,vt,i)         SET_FLAG((p)->dr.VecReserv[vt][(i)/32],1<<((i)%32))
+#define SET_DR_MAT_FLAG(p,vt,i)         SET_FLAG((p)->dr.MatReserv[vt][(i)/32],1<<((i)%32))
+#define CLEAR_DR_VEC_FLAG(p,vt,i)       CLEAR_FLAG((p)->dr.VecReserv[vt][(i)/32],1<<((i)%32))
+#define CLEAR_DR_MAT_FLAG(p,vt,i)       CLEAR_FLAG((p)->dr.MatReserv[vt][(i)/32],1<<((i)%32))
+
 /****************************************************************************/
 /*																			*/
 /* macros for multigrids													*/
@@ -2120,8 +2140,17 @@ NODE            *GetFineNodeOnEdge              (const ELEMENT *theElement, INT 
 /*INT			GetFineSidesTouchingCoarseSide (const ELEMENT *theElement, INT side, INT *nfine, ELEMENT *Elements[MAX_SIDES_TOUCHING], INT Sides[MAX_SIDES_TOUCHING]);*/
 
 /* moving nodes */
+INT         GetMidNodeParam         (NODE * theNode, COORD *lambda);
+INT         GetCenterNodeParam      (NODE * theNode, COORD *lambda);
+#ifdef __THREEDIM__
+NODE            GetSideNodeParam        (NODE * theNode, COORD *lambda);
+#endif
+INT         MoveMidNode             (MULTIGRID *theMG, NODE *theNode, COORD lambda);
+INT         MoveCenterNode          (MULTIGRID *theMG, NODE *theNode, COORD *lambda);
+#ifdef __THREEDIM__
+INT         MoveSideNode             (MULTIGRID *theMG, NODE *theNode, COORD *lambda);
+#endif
 INT         MoveNode                (MULTIGRID *theMG, NODE *theNode, COORD *newPos);
-INT         MoveMidNode             (MULTIGRID *theMG, NODE *Node0, NODE *Node1, NODE *MidNode, COORD lambda);
 INT             SmoothMultiGrid                 (MULTIGRID *theMG, INT niter, INT bdryFlag);
 
 /* handling struct blockvector_description_format (BV_DESC_FORMAT) */

@@ -536,10 +536,9 @@ NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
    NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge);
 
    PARAMETERS:
-   .  theGrid - grid where vertex should be inserted
+   .  theGrid - grid where node should be inserted
    .  theElement - pointer to an element
    .  edge - id of an element edge
-   .  after - node where the new node should be appended in the node list
 
    DESCRIPTION:
    This function creates and initializes a new node structure
@@ -733,6 +732,7 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
     V_DIM_COPY(global,CVECT(theVertex));
   }
   VFATHER(theVertex) = theElement;
+  SETONSIDE(theVertex,side);
   V_DIM_COPY(local,LCVECT(theVertex));
 
   /* create node */
@@ -2699,15 +2699,15 @@ static ELEMENT *FindFather (VERTEX *theVertex)
 
 /****************************************************************************/
 /*D
-   MoveNode - Let user enter a new position for an inner node
+   MoveMidNode - set new position for a midnode
 
    SYNOPSIS:
-   INT MoveNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos);
+   INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, COORD lambda);
 
    PARAMETERS:
    .  theMG - pointer to multigrid
    .  theNode - node to move
-   .  newPos - new position (x,y)
+   .  lambda - parameter on the edge
 
    DESCRIPTION:
    This function moves a given node to a new position. The complete
@@ -2716,8 +2716,274 @@ static ELEMENT *FindFather (VERTEX *theVertex)
 
    RETURN VALUE:
    INT
-   .n   0 when ok
-   .n   >0 when error occured.
+   .n   GM_OK when ok
+   .n   GM_ERROR when error occured.
+   D*/
+/****************************************************************************/
+
+INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, COORD lambda)
+{
+  ELEMENT *theElement;
+  NODE *Node0,*Node1;
+  VERTEX *theVertex;
+  BNDP *bndp;
+  COORD *x[MAX_CORNERS_OF_ELEM],*global,*local;
+  COORD_VECTOR bnd_global;
+  DOUBLE diff;
+  INT n,k,co0,co1,edge;
+
+  if ((lambda<0) || (lambda>1)) {
+    PrintErrorMessage('E',"MoveMidNode","lambda not in range (0,1)");
+    return(GM_ERROR);
+  }
+  if (NFATHER(theNode) != NULL) {
+    PrintErrorMessage('E',"MoveMidNode","node not a midnode");
+    return(GM_ERROR);
+  }
+  theVertex = MYVERTEX(theNode);
+  theElement = VFATHER(theVertex);
+  edge = ONEDGE(theVertex);
+  co0 = CORNER_OF_EDGE(theElement,edge,0);
+  co1 = CORNER_OF_EDGE(theElement,edge,1);
+  Node0 = CORNER(theElement,co0);
+  Node1 = CORNER(theElement,co1);
+  global = CVECT(theVertex);
+  local = LCVECT(theVertex);
+  V_DIM_LINCOMB((1.0-lambda), CVECT(MYVERTEX(Node0)),
+                lambda      , CVECT(MYVERTEX(Node1)), global);
+  V_DIM_LINCOMB((1.0-lambda), LOCAL_COORD_OF_ELEM(theElement,co0),
+                lambda      , LOCAL_COORD_OF_ELEM(theElement,co1),
+                local);
+  if (OBJT(theVertex) == BVOBJ) {
+    if (BNDP_Dispose(MGHEAP(theMG),V_BNDP(theVertex)))
+      return(GM_ERROR);
+    bndp = BNDP_CreateBndP(MGHEAP(theMG),V_BNDP(MYVERTEX(Node0)),
+                           V_BNDP(MYVERTEX(Node1)),lambda);
+    if (bndp == NULL)
+      return(GM_ERROR);
+    V_BNDP(theVertex) = bndp;
+    if (BNDP_Global(bndp,bnd_global))
+      RETURN(GM_ERROR);
+    V_DIM_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
+    if (diff > MAX_PAR_DIST) {
+      SETMOVED(theVertex,1);
+      CORNER_COORDINATES(theElement,n,x);
+      UG_GlobalToLocal(n,(const COORD **)x,global,local);
+    }
+  }
+
+  /* Warning: O(n) Operation! */
+  for(k=LEVEL(theNode)+1; k<=TOPLEVEL(theMG); k++)
+    for (theVertex=FIRSTVERTEX(GRID_ON_LEVEL(theMG,k));
+         theVertex!=NULL; theVertex=SUCCV(theVertex))
+      if ((OBJT(theVertex) != BVOBJ)) {
+        CORNER_COORDINATES(VFATHER(theVertex),n,x);
+        LOCAL_TO_GLOBAL(n,x,LCVECT(theVertex),CVECT(theVertex));
+      }
+
+  return(GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   MoveCenterNode - set new position for a centernode
+
+   SYNOPSIS:
+   INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, COORD *lambda);
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+   .  theNode - node to move
+   .  lambda - local coordinate in the father element
+
+   DESCRIPTION:
+   This function moves a given node to a new position. The complete
+   multigrid structure is moved hierachically, that all global coordinates
+   of nodes are updated in order to reflect the changes on coarser grids.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK when ok
+   .n   GM_ERROR when error occured.
+   D*/
+/****************************************************************************/
+
+INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, COORD *lambda)
+{
+  VERTEX *theVertex;
+  ELEMENT *theElement;
+  COORD *x[MAX_CORNERS_OF_ELEM];
+  COORD_VECTOR oldPos,newPos;
+  INT n,k;
+
+  if (NFATHER(theNode) != NULL) {
+    PrintErrorMessage('E',"MoveCenterNode","node not a sidenode");
+    return(GM_ERROR);
+  }
+  theVertex = MYVERTEX(theNode);
+  theElement = VFATHER(theVertex);
+  ASSERT(theElement != NULL);
+  if (OBJT(theVertex) == BVOBJ) {
+    PrintErrorMessage('E',"MoveCenterNode","no inner node");
+    return(GM_ERROR);
+  }
+  CORNER_COORDINATES(theElement,n,x);
+  LOCAL_TO_GLOBAL(n,x,lambda,newPos);
+  V_DIM_COPY(CVECT(theVertex),oldPos);
+  V_DIM_COPY(newPos,CVECT(theVertex));
+  theElement = FindFather(theVertex);
+  if (theElement == NULL) {
+    PrintErrorMessage('W',"MoveCenterNode","cannot find father element");
+    V_DIM_COPY(oldPos,CVECT(theVertex));
+    return(GM_ERROR);
+  }
+  else {
+    V_DIM_COPY(lambda,LCVECT(theVertex));
+    VFATHER(theVertex) = theElement;
+  }
+
+  /* Warning: O(n) Operation! */
+  for(k=LEVEL(theNode)+1; k<=TOPLEVEL(theMG); k++)
+    for (theVertex=FIRSTVERTEX(GRID_ON_LEVEL(theMG,k));
+         theVertex!=NULL; theVertex=SUCCV(theVertex))
+      if ((OBJT(theVertex) != BVOBJ))
+      {
+        CORNER_COORDINATES(VFATHER(theVertex),n,x);
+        LOCAL_TO_GLOBAL(n,x,LCVECT(theVertex),CVECT(theVertex));
+      }
+
+  return(GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   MoveSideNode - set new position for a sidenode
+
+   SYNOPSIS:
+   INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, COORD *lambda);
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+   .  theNode - node to move
+   .  lambda - local coordinate on the father element side
+
+   DESCRIPTION:
+   This function moves a given node to a new position. The complete
+   multigrid structure is moved hierachically, that all global coordinates
+   of nodes are updated in order to reflect the changes on coarser grids.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK when ok
+   .n   GM_ERROR when error occured.
+   D*/
+/****************************************************************************/
+
+#ifdef __THREEDIM__
+INT MoveSideNode (MULTIGRID *theMG, NODE *theNode, COORD *lambda)
+{
+  ELEMENT *theElement;
+  NODE *Node[MAX_CORNERS_OF_SIDE];
+  VERTEX *theVertex;
+  BNDP *bndp;
+  COORD *x[MAX_CORNERS_OF_ELEM],*global,*local;
+  COORD_VECTOR bnd_global;
+  DOUBLE diff;
+  INT n,m,k,i,co[MAX_CORNERS_OF_SIDE],side;
+
+  if ((lambda[0]<0) || (lambda[0]>1) ||(lambda[1]<0) || (lambda[1]>1)) {
+    PrintErrorMessage('E',"MoveSideNode","lambda not in range (0,1)^2");
+    return(GM_ERROR);
+  }
+  if (NFATHER(theNode) != NULL) {
+    PrintErrorMessage('E',"MoveSideNode","node not a sidenode");
+    return(GM_ERROR);
+  }
+  theVertex = MYVERTEX(theNode);
+  theElement = VFATHER(theVertex);
+  side = ONSIDE(theVertex);
+  m = CORNERS_OF_SIDE(theElement,side);
+  if (m  != 4) {
+    PrintErrorMessage('E',"MoveSideNode","node not a sidenode");
+    return(GM_ERROR);
+  }
+  global = CVECT(theVertex);
+  local = LCVECT(theVertex);
+  V_DIM_CLEAR(global);
+  V_DIM_CLEAR(local);
+  for (i=0; i<m; i++) {
+    co[i] = CORNER_OF_SIDE(theElement,side,i);
+    Node[i] = CORNER(theElement,co[i]);
+
+  }
+  V_DIM_LINCOMB((1.0-lambda[0])*(1.0-lambda[1]),
+                CVECT(MYVERTEX(Node[0])),1.0,global,global);
+  V_DIM_LINCOMB(lambda[0]*(1.0-lambda[1]),
+                CVECT(MYVERTEX(Node[1])),1.0,global,global);
+  V_DIM_LINCOMB(lambda[0]*lambda[1],
+                CVECT(MYVERTEX(Node[2])),1.0,global,global);
+  V_DIM_LINCOMB((1.0-lambda[0])*lambda[1],
+                CVECT(MYVERTEX(Node[3])),1.0,global,global);
+  V_DIM_LINCOMB((1.0-lambda[0])*(1.0-lambda[1]),
+                LOCAL_COORD_OF_ELEM(theElement,co[0]),1.0,local,local);
+  V_DIM_LINCOMB(lambda[0]*(1.0-lambda[1]),
+                LOCAL_COORD_OF_ELEM(theElement,co[1]),1.0,local,local);
+  V_DIM_LINCOMB(lambda[0]*lambda[1],
+                LOCAL_COORD_OF_ELEM(theElement,co[2]),1.0,local,local);
+  V_DIM_LINCOMB((1.0-lambda[0])*lambda[1],
+                LOCAL_COORD_OF_ELEM(theElement,co[3]),1.0,local,local);
+
+  if (OBJT(theVertex) == BVOBJ) {
+    if (BNDP_Dispose(MGHEAP(theMG),V_BNDP(theVertex)))
+      return(GM_ERROR);
+    bndp = BNDS_CreateBndP(MGHEAP(theMG),ELEM_BNDS(theElement,side),lambda);
+    if (bndp == NULL)
+      return(GM_ERROR);
+    V_BNDP(theVertex) = bndp;
+    if (BNDP_Global(bndp,bnd_global))
+      RETURN(GM_ERROR);
+    V_DIM_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
+    if (diff > MAX_PAR_DIST) {
+      SETMOVED(theVertex,1);
+      CORNER_COORDINATES(theElement,n,x);
+      UG_GlobalToLocal(n,(const COORD **)x,global,local);
+    }
+  }
+
+  /* Warning: O(n) Operation! */
+  for(k=LEVEL(theNode)+1; k<=TOPLEVEL(theMG); k++)
+    for (theVertex=FIRSTVERTEX(GRID_ON_LEVEL(theMG,k));
+         theVertex!=NULL; theVertex=SUCCV(theVertex))
+      if ((OBJT(theVertex) != BVOBJ)) {
+        CORNER_COORDINATES(VFATHER(theVertex),n,x);
+        LOCAL_TO_GLOBAL(n,x,LCVECT(theVertex),CVECT(theVertex));
+      }
+
+  return(GM_OK);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   MoveNode - Let user enter a new position for an inner node
+
+   SYNOPSIS:
+   INT MoveNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+   .  theNode - node to move
+   .  newPos - global coordinate for new position
+
+   DESCRIPTION:
+   This function moves a given node to a new position. The complete
+   multigrid structure is moved hierachically, that all global coordinates
+   of nodes are updated in order to reflect the changes on coarser grids.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK when ok
+   .n   GM_ERROR when error occured.
    D*/
 /****************************************************************************/
 
@@ -2772,115 +3038,6 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
         LOCAL_TO_GLOBAL(n,x,LCVECT(theVertex),CVECT(theVertex));
       }
 
-  /* OK, done */
-  return(GM_OK);
-}
-
-/****************************************************************************/
-/*D
-   MoveMidNode - Let user enter a new position for an inner node
-
-   SYNOPSIS:
-   INT MoveMidNode (MULTIGRID *theMG,
-   NODE *Node0, NODE *Node1, NODE *MidNode, COORD lambda);
-
-   PARAMETERS:
-   .  theMG - pointer to multigrid
-   .  Node0 - left node of the edge
-   .  Node1 - right node of the edge
-   .  MidNode - node to move
-   .  lambda - local parameter
-
-   DESCRIPTION:
-   This function moves a given node to a new position. The complete
-   multigrid structure is moved hierachically, that all global coordinates
-   of nodes are updated in order to reflect the changes on coarser grids.
-
-   RETURN VALUE:
-   INT
-   .n   0 when ok
-   .n   >0 when error occured.
-   D*/
-/****************************************************************************/
-
-INT MoveMidNode (MULTIGRID *theMG,
-                 NODE *Node0, NODE *Node1, NODE *MidNode, COORD lambda)
-{
-  VERTEX *theVertex;
-  ELEMENT *theElement;
-  BNDP *bndp;
-  COORD *x[MAX_CORNERS_OF_ELEM],*global,*local;
-  COORD_VECTOR bnd_global;
-  DOUBLE diff;
-  INT n,k,co0,co1,edge;
-
-  if ((lambda<0) || (lambda>1))
-  {
-    PrintErrorMessage('E',"MoveMidNode","lambda not in range (0,1)");
-    return(GM_ERROR);
-  }
-
-  if (NFATHER(MidNode) != NULL)
-    return(GM_ERROR);
-
-  theVertex = MYVERTEX(MidNode);
-  theElement = VFATHER(theVertex);
-  edge = ONEDGE(theVertex);
-  co0 = CORNER_OF_EDGE(theElement,edge,0);
-  if (CORNER(theElement,co0)!=Node0)
-  {
-    co0 = CORNER_OF_EDGE(theElement,edge,1);
-    co1 = CORNER_OF_EDGE(theElement,edge,0);
-    if ((CORNER(theElement,co0)!=Node0)
-        || (CORNER(theElement,co1)!=Node1))
-      return(GM_ERROR);
-  }
-  else
-  {
-    co1 = CORNER_OF_EDGE(theElement,edge,1);
-    if (CORNER(theElement,co1)!=Node1)
-      RETURN(GM_ERROR);
-  }
-
-  global = CVECT(theVertex);
-  local = LCVECT(theVertex);
-  V_DIM_LINCOMB((1.0-lambda), CVECT(MYVERTEX(Node0)),
-                lambda      , CVECT(MYVERTEX(Node1)), global);
-  V_DIM_LINCOMB((1.0-lambda), LOCAL_COORD_OF_ELEM(theElement,co0),
-                lambda      , LOCAL_COORD_OF_ELEM(theElement,co1),
-                local);
-  if (OBJT(theVertex) == BVOBJ)
-  {
-    if (BNDP_Dispose(MGHEAP(theMG),V_BNDP(theVertex)))
-      return(GM_ERROR);
-    bndp = BNDP_CreateBndP(MGHEAP(theMG),
-                           V_BNDP(MYVERTEX(Node0)),
-                           V_BNDP(MYVERTEX(Node1)),lambda);
-    if (bndp == NULL)
-      return(GM_ERROR);
-    bndp = V_BNDP(theVertex);
-    if (BNDP_Global(bndp,bnd_global))
-      RETURN(GM_ERROR);
-    V_DIM_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
-    if (diff > MAX_PAR_DIST)
-    {
-      SETMOVED(theVertex,1);
-      CORNER_COORDINATES(theElement,n,x);
-      UG_GlobalToLocal(n,(const COORD **)x,global,local);
-    }
-  }
-
-  /* Warning: O(n) Operation! */
-  for(k=LEVEL(MidNode)+1; k<=TOPLEVEL(theMG); k++)
-    for (theVertex=FIRSTVERTEX(GRID_ON_LEVEL(theMG,k));
-         theVertex!=NULL; theVertex=SUCCV(theVertex))
-      if ((OBJT(theVertex) != BVOBJ))
-      {
-        CORNER_COORDINATES(VFATHER(theVertex),n,x);
-        LOCAL_TO_GLOBAL(n,x,LCVECT(theVertex),CVECT(theVertex));
-      }
-
-  /* OK, done */
   return(GM_OK);
 }
 

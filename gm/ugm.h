@@ -114,7 +114,7 @@ INT              PointInElement                 (const COORD*, const ELEMENT *th
 VIRT_HEAP_MGMT *GetGenMGUDM             (void);
 
 NODE        *CreateSonNode          (GRID *theGrid, NODE *FatherNode);
-NODE            *CreateMidNode                  (GRID *theGrid, ELEMENT *theElement, INT side);
+NODE            *CreateMidNode                  (GRID *theGrid, ELEMENT *theElement, INT edge);
 NODE        *CreateCenterNode       (GRID *theGrid, ELEMENT *theElement);
 
 #ifdef __THREEDIM__
