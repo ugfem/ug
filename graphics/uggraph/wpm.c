@@ -311,32 +311,11 @@ free(data);
 
 INT UpdateUgWindow (UGWINDOW *theUgWindow, const PICTURE *EvalPicture)
 {
-  MULTIGRID *theMG;
-  INT size;
-  char s[64];
-
   if (theUgWindow==NULL) return (0);
 
   /* update ugwindow */
-  s[0] = '\0';
-  if (EvalPicture==NULL)
-  {
-    strcpy(s,"---");
-  }
-  else
-  if (PIC_UGW(EvalPicture)==theUgWindow)
-  {
-    if (VO_STATUS(PIC_VO(EvalPicture))==NOT_INIT)
-      strcpy(s,"---");
-    else
-    {
-      theMG = PIC_MG(EvalPicture);
-      size = (HeapSize(MGHEAP(theMG))-HeapUsed(MGHEAP(theMG)))/1024;
-      sprintf(s,"%d, %d k",(int)CURRENTLEVEL(theMG),(int)size);
-    }
-  }
 
-  if ((*UGW_OUTPUTDEV(theUgWindow)->UpdateOutput)(UGW_IFWINDOW(theUgWindow),s,UGW_CURRTOOL(theUgWindow)))
+  if ((*UGW_OUTPUTDEV(theUgWindow)->UpdateOutput)(UGW_IFWINDOW(theUgWindow),UGW_CURRTOOL(theUgWindow)))
     return (1);
 
   /* window is valid */
@@ -3602,11 +3581,16 @@ static INT InitLinePlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   PO_RADIUS(thePlotObj) = 0.70711;
   ret = ACTIVE;
 
+  theLpo->nHit = 0;
+  theLpo->xmin = 1.0;
+  theLpo->xmax = 0.0;
+
   /* defaults */
   if (PO_STATUS(thePlotObj)==NOT_INIT)
   {
     theLpo->min                                                             = 0.0;
     theLpo->max                                                             = 1.0;
+    theLpo->yLog                                                    = 0;
     theLpo->left[0] = theLpo->left[1]               = 0.0;
     theLpo->right[0] = theLpo->right[1]     = 1.0;
     theLpo->color                                                   = 0.0;
@@ -3694,6 +3678,15 @@ static INT InitLinePlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     UserWrite("aspect ratio is not valid\n");
     ret = NOT_ACTIVE;
   }
+
+  /* log-y option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='L')
+      if (sscanf(argv[i],"Ly %d",&iValue)==1)
+      {
+        theLpo->yLog = iValue;
+        break;
+      }
 
   /* set depth option */
   for (i=1; i<argc; i++)
@@ -3787,11 +3780,20 @@ static INT DisplayLinePlotObject_2D (PLOTOBJ *thePlotObj)
   UserWrite(buffer);
   sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"right",(float)theLpo->right[0],(float)theLpo->right[1]);
   UserWrite(buffer);
+  sprintf(buffer,DISPLAY_PO_FORMAT_SI,"y-log",(int)theLpo->yLog);
+  UserWrite(buffer);
   sprintf(buffer,DISPLAY_PO_FORMAT_SF,"color",(float)theLpo->color);
   UserWrite(buffer);
   sprintf(buffer,DISPLAY_PO_FORMAT_SF,"asp.ratio",(float)theLpo->aspectratio);
   UserWrite(buffer);
   sprintf(buffer,DISPLAY_PO_FORMAT_SI,"Depth",(int)theLpo->depth);
+  UserWrite(buffer);
+  UserWrite("\ncomputed values:\n");
+  sprintf(buffer,DISPLAY_PO_FORMAT_SI,"nHit",(int)theLpo->nHit);
+  UserWrite(buffer);
+  sprintf(buffer,DISPLAY_PO_FORMAT_SF,"x-min",(float)theLpo->xmin);
+  UserWrite(buffer);
+  sprintf(buffer,DISPLAY_PO_FORMAT_SF,"x-max",(float)theLpo->xmax);
   UserWrite(buffer);
 
   return (0);

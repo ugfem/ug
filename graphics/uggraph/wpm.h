@@ -310,10 +310,14 @@ struct LinePlotObj2D {
   /* data for 2D-View of line field */
   EVALUES *EvalFct;                                                     /* evaluation proceedure						*/
   DOUBLE min, max;                                                      /* range										*/
+  INT yLog;                                                                     /* draw y-axis in logarithmic scale				*/
   DOUBLE_VECTOR left, right;                                    /* line in 2D physical space					*/
   INT depth;                                                                    /* depth of recoursive subdevision of elements	*/
   DOUBLE color;                                                         /* value between 0 and 1 specifiing the color   */
   DOUBLE aspectratio;                                                   /* ratio of the picture							*/
+  INT nHit;                                                                     /* # elements hit by the line					*/
+  DOUBLE xmin;                                                          /* min intersection between grid and line	    */
+  DOUBLE xmax;                                                          /* max intersection between grid and line	    */
 };
 
 /*----------- application dimension 3 PlotObjs -----------------------------*/
