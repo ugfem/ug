@@ -6912,12 +6912,16 @@ static INT CheckCommand (INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-static void QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
+static INT QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
 {
+  INT error;
+
   min = 360.0;
   max = 0.0;
 
-  MinMaxAngle(theElement,&min,&max);
+  if ((error=MinMaxAngle(theElement,&min,&max))!=GM_OK)
+    return(error);
+
   minangle = MIN(min,minangle);
   maxangle = MAX(max,maxangle);
   if ((lessopt && (min<themin)) && (greateropt && (max>themax)))
@@ -6935,7 +6939,8 @@ static void QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
     UserWrite(mintext);
     ListElement(theMG,theElement,FALSE,FALSE,FALSE,FALSE);
   }
-  return;
+
+  return(0);
 }
 
 /****************************************************************************/
@@ -6976,7 +6981,7 @@ static INT QualityCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   GRID *theGrid;
   ELEMENT *theElement;
-  INT i,fromE,toE,res,mode;
+  INT error,i,fromE,toE,res,mode;
 
   /* following variables: keep type for sscanf */
   float angle;
@@ -7069,30 +7074,40 @@ static INT QualityCommand (INT argc, char **argv)
   minangle =      MAX_D;
   maxangle = -MAX_D;
 
+  error=0;
   switch (mode)
   {
   case DO_ID :
     for (theGrid=GRID_ON_LEVEL(theMG,0); theGrid!=NULL; theGrid=UPGRID(theGrid))
       for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
         if ((ID(theElement)>=fromE) && (ID(theElement)<=toE))
-          QualityElement(theMG,theElement);
+          if ((error=QualityElement(theMG,theElement))!=0)
+            break;
     break;
 
   case DO_ALL :
     for (theGrid=GRID_ON_LEVEL(theMG,0); theGrid!=NULL; theGrid=UPGRID(theGrid))
       for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-        QualityElement(theMG,theElement);
+        if ((error=QualityElement(theMG,theElement))!=0)
+          break;
     break;
 
   case DO_SELECTION :
     if (SELECTIONMODE(theMG)==elementSelection)
       for (i=0; i<SELECTIONSIZE(theMG); i++)
-        QualityElement(theMG,(ELEMENT *)SELECTIONOBJECT(theMG,i));
+        if ((error=QualityElement(theMG,(ELEMENT *)SELECTIONOBJECT(theMG,i)))!=0)
+          break;
     break;
 
   default :
     PrintErrorMessage('E',"quality","specify one option of a, s or i");
     return (PARAMERRORCODE);
+  }
+
+  if (error)
+  {
+    PrintErrorMessage('E',"quality","error in QualityElement/MinMaxAngle");
+    return (CMDERRORCODE);
   }
 
   sprintf(buffer," min angle = %12.4f\n max angle = %12.4f\n",(float)minangle,(float)maxangle);
