@@ -3410,7 +3410,7 @@ static INT RenumberNodes (MULTIGRID *theMG, INT *foid, INT *non)
   return (0);
 }
 
-INT RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, INT *foid, INT *non)
+INT RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, NODE ***vid_n, INT *foid, INT *non)
 {
   NODE *theNode;
   ELEMENT *theElement;
@@ -3469,6 +3469,14 @@ INT RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *n
         n_iov++;
         SETTHEFLAG(MYVERTEX(theNode),1);
       }
+  if (vid_n!=NULL)
+  {
+    *vid_n = (NODE**)GetTmpMem(MGHEAP(theMG),(n_iov+n_bov)*sizeof(NODE*));
+    for (i=0; i<=TOPLEVEL(theMG); i++)
+      for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+        if (ID(MYVERTEX(theNode))<n_iov+n_bov && (*vid_n)[ID(MYVERTEX(theNode))]==NULL)
+          (*vid_n)[ID(MYVERTEX(theNode))] = theNode;
+  }
   for (i=0; i<=TOPLEVEL(theMG); i++)                                            /* not neccessary for i/o */
     for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
       if (THEFLAG(MYVERTEX(theNode))==0 && !USED(MYVERTEX(theNode)))

@@ -295,6 +295,8 @@ struct mgio_refinement {
 
   /* (procs>1)-extension */
   int sonex;                                                                            /* used bitwise								*/
+  int orphanid_ex;                                                              /* 1 if exists                                                          */
+  int orphanid[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];      /* ids of orphan node or -1 */
   int nbid_ex;                                                                  /* used bitwise: nbid exists for son ...	*/
   int nbid[MGIO_MAX_SONS_OF_ELEM][MGIO_MAX_SIDES_OF_ELEM];       /* nb-elem-ids of non-orphan   */
   /* elems referring to orphan elems if nec.  */

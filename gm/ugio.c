@@ -123,7 +123,8 @@ static INT gridpaths_set=FALSE;
 static MGIO_RR_RULE *rr_rules;
 static unsigned short *ProcList, *ActProcListPos;
 static int foid,non;
-static NODE **nid_n;
+static NODE **nid_n;                                            /* mapping: orphan-node-id  -->  orphan node */
+static NODE **vid_nmin;                                         /* mapping: orphan-vertex-id  -->  lowest orphan node */
 static ELEMENT **eid_e;
 static int nparfiles;                                     /* nb of parallel files		*/
 
@@ -681,6 +682,9 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
   /* not movable at the moment */
   refinement->nmoved = 0;
 
+  /* test */
+  if (MGIO_PARFILE) refinement->orphanid_ex = 1;
+
   /* set refinement class */
   if (nmax>0)
     refinement->refclass = ECLASS(SonList[nmax-1]);
@@ -947,6 +951,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   char filename[NAMESIZE];
   char buf[64],itype[10];
   int lastnumber;
+  NODE **vid_n;
 #ifdef ModelP
   int ftype;
   int error;
@@ -1112,7 +1117,14 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   }
 
   /* renumber objects */
-  if (RenumberMultiGrid (theMG,&nbe,&nie,&nbv,&niv,&foid,&non)) {UserWriteF("ERROR: cannot renumber multigrid\n"); REP_ERR_RETURN(1);}
+  if (MGIO_PARFILE)
+  {
+    if (RenumberMultiGrid (theMG,&nbe,&nie,&nbv,&niv,&vid_n,&foid,&non)) {UserWriteF("ERROR: cannot renumber multigrid\n"); REP_ERR_RETURN(1);}
+  }
+  else
+  {
+    if (RenumberMultiGrid (theMG,&nbe,&nie,&nbv,&niv,NULL,&foid,&non)) {UserWriteF("ERROR: cannot renumber multigrid\n"); REP_ERR_RETURN(1);}
+  }
 
   /* write general information about coarse grid */
   theGrid = GRID_ON_LEVEL(theMG,0);
@@ -1426,6 +1438,10 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
       PRINTDEBUG(gm,1,("Evaluate-pinfo():vid=%d prio=%d\n",ID(theVertex),prio);fflush(stdout));
       for (i=0; i<pinfo->ncopies_vertex[j]; i++)
       {
+        if (0x62400 == pinfo->v_ident[j])
+          UserWriteF("e="EID_FMTX "n=" ID_FMTX "v=" VID_FMTX "ident=%08x\n",
+                     EID_PRTX(theElement),ID_PRTX(CORNER(theElement,j)),VID_PRTX(MYVERTEX(CORNER(theElement,j))),
+                     pinfo->v_ident[j]);
         DDD_IdentifyNumber(PARHDRV(theVertex),pinfo->proclist[s],pinfo->v_ident[j]);
         s++;
       }
@@ -2388,9 +2404,13 @@ nparfiles = UG_GlobalMinINT(nparfiles);
         }
 #endif
     if (GridCreateConnection(theGrid))                                                              {DisposeMultiGrid(theMG); return (NULL);}
+  }
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,i);
     ClearVectorClasses(theGrid);
     ClearNextVectorClasses(theGrid);
-    for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
     {
       if (ECLASS(theElement)>=GREEN_CLASS)
         SeedVectorClasses(theGrid,theElement);

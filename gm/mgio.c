@@ -64,11 +64,29 @@
 #define MGIO_CHECK_DOUBLESIZE(n)        if ((n)>MGIO_DOUBLESIZE) return (1)
 #define MGIO_CHECK_BUFFERIZE(s)         if (strlen(s)>MGIO_BUFFERSIZE) return (1)
 
-#define MGIO_ECTRL(ref,nf,nm,refc)                                      ((nf)&31) | (((nm)&31)<<5)  | (((ref)&262143)<<10) | (((refc)&7)<<28)
-#define MGIO_ECTRL_NC(ctrl)                                             ((ctrl)&31)
-#define MGIO_ECTRL_NM(ctrl)                                             (((ctrl)>>5)&31)
-#define MGIO_ECTRL_REF(ctrl)                                    (((ctrl)>>10)&262143)
-#define MGIO_ECTRL_REFCLASS(ctrl)                               (((ctrl)>>28)&7)
+#define MGIO_ECTRL_NF_LEN                                               5
+#define MGIO_ECTRL_NM_LEN                                               5
+#define MGIO_ECTRL_RF_LEN                                               18
+#define MGIO_ECTRL_RC_LEN                                               3
+#define MGIO_ECTRL_ON_LEN                                               1
+
+#define MGIO_ECTRL_NF_SHIFT                                             0
+#define MGIO_ECTRL_NM_SHIFT                                             (MGIO_ECTRL_NF_SHIFT + MGIO_ECTRL_NF_LEN)
+#define MGIO_ECTRL_RF_SHIFT                                             (MGIO_ECTRL_NM_SHIFT + MGIO_ECTRL_NM_LEN)
+#define MGIO_ECTRL_RC_SHIFT                                             (MGIO_ECTRL_RF_SHIFT + MGIO_ECTRL_RF_LEN)
+#define MGIO_ECTRL_ON_SHIFT                                             (MGIO_ECTRL_RC_SHIFT + MGIO_ECTRL_RC_LEN)
+
+#define MGIO_ECTRL(rf,nf,nm,rc,on)                              ((((nf)&((1<<MGIO_ECTRL_NF_LEN)-1))<<MGIO_ECTRL_NF_SHIFT) | \
+                                                                 (((nm)&((1<<MGIO_ECTRL_NM_LEN)-1))<<MGIO_ECTRL_NM_SHIFT) | \
+                                                                 (((rf)&((1<<MGIO_ECTRL_RF_LEN)-1))<<MGIO_ECTRL_RF_SHIFT) | \
+                                                                 (((rc)&((1<<MGIO_ECTRL_RC_LEN)-1))<<MGIO_ECTRL_RC_SHIFT) | \
+                                                                 (((on)&((1<<MGIO_ECTRL_ON_LEN)-1))<<MGIO_ECTRL_ON_SHIFT))
+
+#define MGIO_ECTRL_NF(ctrl)                                             (((ctrl)>>MGIO_ECTRL_NF_SHIFT)&((1<<MGIO_ECTRL_NF_LEN)-1))
+#define MGIO_ECTRL_NM(ctrl)                                             (((ctrl)>>MGIO_ECTRL_NM_SHIFT)&((1<<MGIO_ECTRL_NM_LEN)-1))
+#define MGIO_ECTRL_RF(ctrl)                                             (((ctrl)>>MGIO_ECTRL_RF_SHIFT)&((1<<MGIO_ECTRL_RF_LEN)-1))
+#define MGIO_ECTRL_RC(ctrl)                                             (((ctrl)>>MGIO_ECTRL_RC_SHIFT)&((1<<MGIO_ECTRL_RC_LEN)-1))
+#define MGIO_ECTRL_ON(ctrl)                                             (((ctrl)>>MGIO_ECTRL_ON_SHIFT)&((1<<MGIO_ECTRL_ON_LEN)-1))
 
 /****************************************************************************/
 /*																			*/
@@ -1136,12 +1154,12 @@ int Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
   if (Bio_Read_mint(2,intList)) return (1);
   ctrl = intList[0];
   pr->sonref = intList[1];
-  pr->refrule = MGIO_ECTRL_REF(ctrl)-1;
+  pr->refrule = MGIO_ECTRL_RF(ctrl)-1;
   if (pr->refrule>-1)
   {
-    pr->nnewcorners = MGIO_ECTRL_NC(ctrl);
+    pr->nnewcorners = MGIO_ECTRL_NF(ctrl);
     pr->nmoved = MGIO_ECTRL_NM(ctrl);
-    pr->refclass = MGIO_ECTRL_REFCLASS(ctrl);
+    pr->refclass = MGIO_ECTRL_RC(ctrl);
     if (pr->nnewcorners+pr->nmoved>0)
       if (Bio_Read_mint(pr->nnewcorners+pr->nmoved,intList)) return (1);
     s=0;
@@ -1161,9 +1179,15 @@ int Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
 
   if (MGIO_PARFILE)
   {
-    if (Bio_Read_mint(2,intList)) return (1);
-    pr->sonex = intList[0];
-    pr->nbid_ex = intList[1];
+    pr->orphanid_ex = MGIO_ECTRL_ON(ctrl);
+    s=2; if (pr->orphanid_ex) s+= pr->nnewcorners;
+    if (Bio_Read_mint(s,intList)) return (1);
+    s=0;
+    pr->sonex = intList[s++];
+    pr->nbid_ex = intList[s++];
+    if (pr->orphanid_ex)
+      for (j=0; j<pr->nnewcorners; j++)
+        pr->orphanid[j] = intList[s++];
     for (k=0; k<MGIO_MAX_SONS_OF_ELEM; k++)
       if ((pr->sonex>>k)&1)
       {
@@ -1214,7 +1238,7 @@ int Write_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
   g_count++;
 
   s=t=0;
-  intList[s++] = MGIO_ECTRL(pr->refrule+1,pr->nnewcorners,pr->nmoved,pr->refclass);
+  intList[s++] = MGIO_ECTRL(pr->refrule+1,pr->nnewcorners,pr->nmoved,pr->refclass,pr->orphanid_ex);
   intList[s++] = pr->sonref;
   if (pr->refrule>-1)
   {
@@ -1234,9 +1258,13 @@ int Write_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
 
   if (MGIO_PARFILE)
   {
-    intList[0] = pr->sonex;
-    intList[1] = pr->nbid_ex;
-    if (Bio_Write_mint(2,intList)) return (1);
+    s=0;
+    intList[s++] = pr->sonex;
+    intList[s++] = pr->nbid_ex;
+    if (pr->orphanid_ex)
+      for (j=0; j<pr->nnewcorners; j++)
+        intList[s++] = pr->orphanid[j];
+    if (Bio_Write_mint(s,intList)) return (1);
     for (k=0; k<MGIO_MAX_SONS_OF_ELEM; k++)
       if ((pr->sonex>>k)&1)
       {

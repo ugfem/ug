@@ -2779,7 +2779,7 @@ EVECTOR         *GetFirstElementVectorEvalProc                          (void);
 EVECTOR         *GetNextElementVectorEvalProc                           (EVECTOR *EvecProc);
 
 /* miscellaneous */
-INT             RenumberMultiGrid                                       (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, INT *foid, INT *non);
+INT             RenumberMultiGrid                                       (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, NODE ***vid_n, INT *foid, INT *non);
 INT                     OrderNodesInGrid                                        (GRID *theGrid, const INT *order, const INT *sign, INT AlsoOrderLinks);
 INT             PutAtEndOfList                                          (GRID *theGrid, INT cnt, ELEMENT **elemList);
 INT         MGSetVectorClasses                              (MULTIGRID *theMG);
