@@ -511,58 +511,58 @@ Continue:
                                 GM_REFINE_PARALLEL,
                                 GM_REFINE_NOHEAPTEST) != GM_OK)
               NP_RETURN(1,res[0]);
-          }
-          if (level != TOPLEVEL(mg)) {
-            if (level < TOPLEVEL(mg)) {
-              if (InterpolateVDAllocation(mg,bdf->y_m1))
-                NP_RETURN(1,res[0]);
-              if (InterpolateVDAllocation(mg,bdf->y_0))
-                NP_RETURN(1,res[0]);
-              if (InterpolateVDAllocation(mg,bdf->y_p1))
-                NP_RETURN(1,res[0]);
-              if (InterpolateVDAllocation(mg,bdf->b))
-                NP_RETURN(1,res[0]);
-            }
-            level = TOPLEVEL(mg);
-            mg_changed = 1;
-          }
-          else {
-            mg_changed = 0;
-            for (i=0; i<=level; i++)
-              if (GSTATUS(GRID_ON_LEVEL(mg,i),GSTATUS_BDF))
-              {
-                RESETGSTATUS(GRID_ON_LEVEL(mg,i),GSTATUS_BDF);
-                mg_changed = 1;
-              }
-          }
-          if (mg_changed)
-          {
-            k = level - 1;
-            if (bdf->trans->PreProcessSolution != NULL)
-              if ((*bdf->trans->PreProcessSolution)
-                    (bdf->trans,0,level,bdf->y_p1,res))
-                NP_RETURN(1,res[0]);
-            if ((*bdf->trans->InterpolateNewVectors)
-                  (bdf->trans,0,level,bdf->y_m1,res))
-              NP_RETURN(1,res[0]);
-            if ((*bdf->trans->InterpolateNewVectors)
-                  (bdf->trans,0,level,bdf->y_0,res))
-              NP_RETURN(1,res[0]);
-            if ((*bdf->trans->InterpolateNewVectors)
-                  (bdf->trans,0,level,bdf->y_p1,res))
-              NP_RETURN(1,res[0]);
-            if (bdf->trans->PostProcessSolution != NULL)
-              if ((*bdf->trans->PostProcessSolution)
-                    (bdf->trans,0,level,bdf->y_p1,res))
-                NP_RETURN(1,res[0]);
-            nlinterpolate--;
-            if(bdf->rep ==0) {
-              k = level;
-              nlinterpolate = 0;
-              if (nlsolve->PostProcess!=NULL)
-                if ((*nlsolve->PostProcess)
-                      (nlsolve,k,bdf->y_p1,res))
+            if (level != TOPLEVEL(mg)) {
+              if (level < TOPLEVEL(mg)) {
+                if (InterpolateVDAllocation(mg,bdf->y_m1))
                   NP_RETURN(1,res[0]);
+                if (InterpolateVDAllocation(mg,bdf->y_0))
+                  NP_RETURN(1,res[0]);
+                if (InterpolateVDAllocation(mg,bdf->y_p1))
+                  NP_RETURN(1,res[0]);
+                if (InterpolateVDAllocation(mg,bdf->b))
+                  NP_RETURN(1,res[0]);
+              }
+              level = TOPLEVEL(mg);
+              mg_changed = 1;
+            }
+            else {
+              mg_changed = 0;
+              for (i=0; i<=level; i++)
+                if (GSTATUS(GRID_ON_LEVEL(mg,i),GSTATUS_BDF))
+                {
+                  RESETGSTATUS(GRID_ON_LEVEL(mg,i),GSTATUS_BDF);
+                  mg_changed = 1;
+                }
+            }
+            if (mg_changed)
+            {
+              k = level - 1;
+              if (bdf->trans->PreProcessSolution != NULL)
+                if ((*bdf->trans->PreProcessSolution)
+                      (bdf->trans,0,level,bdf->y_p1,res))
+                  NP_RETURN(1,res[0]);
+              if ((*bdf->trans->InterpolateNewVectors)
+                    (bdf->trans,0,level,bdf->y_m1,res))
+                NP_RETURN(1,res[0]);
+              if ((*bdf->trans->InterpolateNewVectors)
+                    (bdf->trans,0,level,bdf->y_0,res))
+                NP_RETURN(1,res[0]);
+              if ((*bdf->trans->InterpolateNewVectors)
+                    (bdf->trans,0,level,bdf->y_p1,res))
+                NP_RETURN(1,res[0]);
+              if (bdf->trans->PostProcessSolution != NULL)
+                if ((*bdf->trans->PostProcessSolution)
+                      (bdf->trans,0,level,bdf->y_p1,res))
+                  NP_RETURN(1,res[0]);
+              nlinterpolate--;
+              if(bdf->rep ==0) {
+                k = level;
+                nlinterpolate = 0;
+                if (nlsolve->PostProcess!=NULL)
+                  if ((*nlsolve->PostProcess)
+                        (nlsolve,k,bdf->y_p1,res))
+                    NP_RETURN(1,res[0]);
+              }
             }
           }
           else {
