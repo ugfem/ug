@@ -103,7 +103,7 @@ INT SolveSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
   DOUBLE BlockMat[MAX_SINGLE_MAT_COMP],BlockSol[MAX_SINGLE_VEC_COMP], det;
   DOUBLE aux,M3div0,M6div0;
   register DOUBLE dinv,piv,sum;
-  register i,j,k;
+  register SHORT i,j,k;
   INT pivrow;
   DOUBLE factor;
 
@@ -223,7 +223,7 @@ INT SolveInverseSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
                             const DOUBLE *rhs)
 {
   register DOUBLE sum;
-  register i,j;
+  register SHORT i,j;
 
   if (n>=MAX_SINGLE_VEC_COMP)
     return (1);
@@ -630,7 +630,7 @@ INT InvertSpdMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
 INT SolveFullMatrix (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
 {
   register DOUBLE dinv,piv,sum;
-  register i,j,k;
+  register INT i,j,k;
   INT ipv[LOCAL_DIM];
 
   if (n > LOCAL_DIM)
@@ -731,7 +731,7 @@ INT InvertFullMatrix_piv (INT n, DOUBLE *mat, DOUBLE *inv)
 {
   register DOUBLE dinv,piv,sum;
   DOUBLE rhs[LOCAL_DIM];
-  register i,j,k;
+  register INT i,j,k;
   INT ipv[LOCAL_DIM];
 
   if (n > LOCAL_DIM)
@@ -840,7 +840,7 @@ INT InvertFullMatrix_gen (INT n, DOUBLE *mat, DOUBLE *inv,
 {
   MULTIGRID *theMG;
   register DOUBLE dinv,piv,sum;
-  register i,j,k;
+  register INT i,j,k;
 
   for (i=0; i<n; i++)
     ipv[i] = i;
