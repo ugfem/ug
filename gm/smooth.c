@@ -50,8 +50,9 @@
 #define IS_0_OR_1(V)   (LOCAL_EQUAL(V,0) || LOCAL_EQUAL(V,1))
 #define V2_LOCAL_EQUAL(A,B) ((ABS((A)[0]-(B)[0])<SMALL_LOCAL)&&(ABS((A)[1]-(B)[1])<SMALL_LOCAL))
 
-/* purpose text buffer */
-static char buffer[512];
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
+
 
 /****************************************************************************/
 /*
@@ -986,11 +987,11 @@ INT SmoothGrid (GRID *theGrid, const COORD LimitLocDis, INT *MoveInfo, const INT
       printf("mid-node %ld, father-elem%ld reached limit\n",ID(theNode),ID(fatherElement));
       MoveInfo[3]++;
     }
-  }
 #else
     PrintErrorMessage('E',"SmoothGrid","3D not implemented yet");
     return(1);
 #endif
+  }
   return(0);
 }
 /****************************************************************************/
