@@ -15,7 +15,7 @@ ARCH_AR       = ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = true
 
-ARCH_LIBS     = -lm
+ARCH_LIBS     = -lm -lrpc
 ARCH_FLIBS     = -lf
 
 
