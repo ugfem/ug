@@ -12,12 +12,15 @@ include $(UGROOT)/ug.conf
 
 # path to library
 FAMGLIB      = $(UG_LIB)
+#FAMGOPTIONS  = -DUG_DRAW -DUSE_UG_DS
+FAMGOPTIONS  = -DUSE_UG_DS
 
-OBJECTS = famg_heap.o famg_misc.o famg_matrix.o famg_decomp.o famg_transfer.o \
+OBJECTS = famg_heap.o famg_misc.o famg_transfer.o \
 		  famg_graph.o famg_approx.o famg_construct.o famg_grid.o \
 		  famg_multigrid.o famg_system.o famg_uginterface.o ug-famg.o\
-		  famg_graphics.o
+		  famg_graphics.o famg_ugalgebra.o famg_algebra.o
 
+# excluded: famg_decomp.o
 
 # paths to include files
 
@@ -31,10 +34,10 @@ ar: $(OBJECTS) Makefile.famglib
 .SUFFIXES: .o .c .C
  
 .C.o:
-	$(ARCH_C++) $(UG_C++FLAGS) -DUG_DRAW $<
+	$(ARCH_C++) $(UG_C++FLAGS) $(FAMGOPTIONS) $<
 
 .c.o:
-	$(ARCH_CC) $(UG_CFLAGS) -DUG_DRAW $<
+	$(ARCH_CC) $(UG_CFLAGS) $(FAMGOPTIONS) $<
 
 clean:
 	rm -f *.o

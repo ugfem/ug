@@ -22,7 +22,7 @@
 #ifndef __FAMG_GRID__
 #define __FAMG_GRID__
 
-#include "famg_matrix.h"
+#include "famg_algebra.h"
 #include "famg_decomp.h"
 #include "famg_transfer.h"
 #include "famg_graph.h"
@@ -41,87 +41,97 @@ const int FAMGMAXVECTORS=5;
 class FAMGGrid
 {
 public:
-  void **GetNode() const;
-  FAMGMatrix *GetMatrix() const;
-  FAMGMatrix *GetTmpMatrix() const;
+  int GetN() const {
+    return n;
+  };
+  FAMGMatrixAlg *GetMatrix() const;
+  FAMGMatrixAlg *GetTmpMatrix() const;
   FAMGDecomp *GetDecomp() const;
   FAMGGraph *GetGraph() const;
-  double *GetVector(int) const;
-  double **GetVectorPtr();
+  FAMGGridVector &GetGridVector() const;
+  FAMGVector *GetVector(int) const;
+  FAMGVector **GetVectorPtr();
   FAMGTransfer *GetTransfer() const;
-  int GetN() const;
   int GetNF() const;
-  int* GetFather() const;
   int* GetMap() const;
-  void SetTmpMatrix(FAMGMatrix *tmp);
-  void SetVector(int, double *);
+  void SetTmpMatrix(FAMGMatrixAlg *tmp);
+  void SetVector(int, FAMGVector *);
 
-  void Defect();
+  void Defect() const;
   void DefectTrans();
   void JACSmooth();
   void SGSSmooth();
   void FGSSmooth();
   void BGSSmooth();
   void ILUTSmooth();
-  void DevideFGDefect();
+  void JacobiSmoothFG();
   void Prolongation(const FAMGGrid *cg);
-  void ProlongationTrans(const FAMGGrid *cg);
   void Restriction(FAMGGrid *cg) const;
-  void RestrictionTrans(FAMGGrid *cg) const;
-  int ILUTDecomp(int);
   int ConstructTransfer();
-  void CopyVector(int, int);
-  void AddVector(int, int);
-  void SubVector(int, int);
-  void SetVector(int, double);
-  void MultVector(int source, double factor);
   int AnalyseParents(int i);
   int InitLevel0(const class FAMGSystem &);
-  int Init(int);
+  int Init(int n, const FAMGGrid &grid_pattern);
   int Construct(FAMGGrid *);
   void Deconstruct();
+  int SolveCoarseGrid();
   int BiCGStab();
   void SmoothTV();
+  int AnalyseNodeSimple(FAMGNode* nodei, FAMGPaList *&palist);
+
+#ifdef USE_UG_DS
+  GRID *GetugGrid() const {
+    return mygrid;
+  }
+#else
+  int* GetFather() const;
+#endif
+
+#ifdef FAMG_ILU
+  int ILUTDecomp(int);
   int OrderVector(int,int*);
   int ReorderVector(int,int*);
   int Order(int*);
   int Reorder();
-  int AnalyseNodeSimple(int i, FAMGPaList *&palist);
+#endif
+
+#ifdef UG_DRAW
+  void **GetNode() const;
+#endif
 
 
-  int AnalyseNode0(int i, FAMGPaList *&palist);
+  int AnalyseNode0(const FAMGVectorEntry &veci, FAMGPaList *&palist);
   double BestFirst0(FAMGPaList *&palist, double mii, double prt, double plt, double ff, double gg, struct FAMGSpecialData *sd, int nnb);
   double BestSecond0(FAMGPaList *&palist, double mii, double prt, double plt, double ff, double gg, struct FAMGSpecialData *sd, int nnb);
   double BestFirst2(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData sd);
-  void FF0(int j, double &ff, double &gg, double *f, double *g);
-  void DFF0(int j);
-  void JK0(int k, double &hjk, double &ejk, double* h, double *e);
-  int LocalJ0(int j, double* h, double *e);
-  void DLocalJ0(int j);
-  void FJ0(int j, double &fj, double &gj, double *f, double *g);
-  void JJ0(int j, double &hjj, double &ejj);
+  void FF0(const FAMGVectorEntry &veci, double &ff, double &gg, double *f, double *g);
+  void DFF0(const FAMGVectorEntry &veci);
+  void JK0(int k, const FAMGVectorEntry &veck, double &hjk, double &ejk, double* h, double *e);
+  int LocalJ0(int j, const FAMGVectorEntry &vecj, double* h, double *e);
+  void DLocalJ0(int j, const FAMGVectorEntry &vecj);
+  void FJ0(int j, const FAMGVectorEntry &vecj, double &fj, double &gj, double *f, double *g);
+  void JJ0(const FAMGVectorEntry &vecj, double &hjj, double &ejj);
 
-  int AnalyseNode1(int i, FAMGPaList *&palist);
+  int AnalyseNode1(const FAMGVectorEntry &veci, FAMGPaList *&palist);
   double BestFirst1(FAMGPaList *&palist, double mii, double prt, double plt, double ff, double gg, struct FAMGSpecialData *sd, int nnb);
   double BestFirst5(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData sd);
   double BestSecond1(FAMGPaList *&palist, double mii, double prt, double plt, double ff, double gg, struct FAMGSpecialData *sd, int nnb);
-  void FF1(int j, double &ff, double &gg, double *f, double *g);
-  void DFF1(int j);
-  void JK1(int k, double &hjk, double &ejk, double* h, double *e);
-  int LocalJ1(int j, double* h, double *e);
-  void DLocalJ1(int j);
-  void FJ1(int j, double &fj, double &gj, double *f, double *g);
-  void JJ1(int j, double &hjj, double &ejj);
+  void FF1(const FAMGVectorEntry &veci, double &ff, double &gg, double *f, double *g);
+  void DFF1(const FAMGVectorEntry &veci);
+  void JK1(int k, const FAMGVectorEntry &veck, double &hjk, double &ejk, double* h, double *e);
+  int LocalJ1(int j, const FAMGVectorEntry &vecj, double* h, double *e);
+  void DLocalJ1(int j, const FAMGVectorEntry &vecj);
+  void FJ1(int j, const FAMGVectorEntry &vecj, double &fj, double &gj, double *f, double *g);
+  void JJ1(const FAMGVectorEntry &vecj, double &hjj, double &ejj);
 
-  int AnalyseNode2(int i, FAMGPaList *&palist);
-  int AnalyseNode3(int i, FAMGPaList *&palist);
-  int AnalyseNode4(int i, FAMGPaList *&palist);
-  int AnalyseNode5(int i, FAMGPaList *&palist);
+  int AnalyseNode2(const FAMGVectorEntry &veci, FAMGPaList *&palist);
+  int AnalyseNode3(const FAMGVectorEntry &veci, FAMGPaList *&palist);
+  int AnalyseNode4(const FAMGVectorEntry &veci, FAMGPaList *&palist);
+  int AnalyseNode5(const FAMGVectorEntry &veci, FAMGPaList *&palist);
 
   int SetFlagsAndCount(int i, int f);
   int Connected(int i, int z);
   void SetFlags(int i, int f);
-  int SaveCoeffs(int i, int np, int *pa, double *coeff, double *coefft);
+  int SaveCoeffs(const FAMGVectorEntry& i, int np, const int pa[], double coeff[], double coefft[]);
   int CountLinks(int i);
   int UpdateNBNewCG(int i);
   int UpdateNeighborsCG(int i);
@@ -130,64 +140,103 @@ public:
   void PreSmooth();
   void PostSmooth();
   void GetSmoother();
+
 private:
-  int n;                     // unknowns
-  int nf;
-  FAMGMatrix *matrix;
-  FAMGMatrix *tmpmatrix;
-  FAMGDecomp *decomp;
-  FAMGTransfer *transfer;
-  FAMGGraph *graph;
-  double *vector[FAMGMAXVECTORS];
+
+#ifdef USE_UG_DS
+  void SetugGrid(GRID *grid) {
+    mygrid=grid;
+  }
+#else
+  void SetFather(int *f) {
+    father=f;
+  }
+#endif
+
+  int n;                                        // number unknowns
+  int nf;                                                       // number fine grid unknowns
+  FAMGMatrixAlg *matrix;                        // stiffness matrix
+  FAMGMatrixAlg *tmpmatrix;                     // temp. stiffness matrix for a double-step
+  FAMGTransfer *transfer;                       // transfer matrix
+  FAMGGraph *graph;                                     // node graph for elemination
+  FAMGGridVector *mygridvector;
+  FAMGVector *vector[FAMGMAXVECTORS];
+
+#ifdef USE_UG_DS
+  GRID *mygrid;
+#else
   int *father;
+#endif
+
+#ifdef FAMG_ILU
+  FAMGDecomp *decomp;
   int *map;        // actually either map or father
+#endif
+
+#ifdef UG_DRAW
   void  **vertex;
+#endif
   void (FAMGGrid::*CGSmootherPtr)(void);
   void (FAMGGrid::*PreSmootherPtr)(void);
   void (FAMGGrid::*PostSmootherPtr)(void);
 };
 
-inline void **FAMGGrid::GetNode() const {
-  return vertex;
-}
-inline FAMGMatrix *FAMGGrid::GetMatrix() const {
+inline FAMGMatrixAlg *FAMGGrid::GetMatrix() const {
   return matrix;
 }
-inline FAMGMatrix *FAMGGrid::GetTmpMatrix() const {
+inline FAMGMatrixAlg *FAMGGrid::GetTmpMatrix() const {
   return tmpmatrix;
-}
-inline FAMGDecomp *FAMGGrid::GetDecomp() const {
-  return decomp;
 }
 inline FAMGGraph *FAMGGrid::GetGraph() const {
   return graph;
 }
-inline double **FAMGGrid::GetVectorPtr()  {
+inline FAMGGridVector &FAMGGrid::GetGridVector() const {
+  return *mygridvector;
+}
+inline FAMGVector **FAMGGrid::GetVectorPtr()  {
   return vector;
 }
-inline double *FAMGGrid::GetVector(int i) const {
+inline FAMGVector *FAMGGrid::GetVector(int i) const {
   return vector[i];
-}
-inline int FAMGGrid::GetN() const {
-  return n;
 }
 inline int FAMGGrid::GetNF() const {
   return nf;
 }
+inline FAMGTransfer *FAMGGrid::GetTransfer() const {
+  return transfer;
+}
+inline void FAMGGrid::SetTmpMatrix(FAMGMatrixAlg *tmp) {
+  tmpmatrix = tmp;
+}
+inline void FAMGGrid::SetVector(int i, FAMGVector *p) {
+  vector[i] = p;
+}
+
+#ifdef USE_UG_DS
+#else
 inline int* FAMGGrid::GetFather() const {
   return father;
+}
+#endif
+
+#ifdef FAMG_ILU
+inline FAMGDecomp *FAMGGrid::GetDecomp() const {
+  return decomp;
 }
 inline int* FAMGGrid::GetMap() const {
   return map;
 }
-inline FAMGTransfer *FAMGGrid::GetTransfer() const {
-  return transfer;
+#endif
+
+#ifdef UG_DRAW
+inline void **FAMGGrid::GetNode() const {
+  return vertex;
 }
-inline void FAMGGrid::SetTmpMatrix(FAMGMatrix *tmp) {
-  tmpmatrix = tmp;
-}
-inline void FAMGGrid::SetVector(int i, double *p) {
-  vector[i] = p;
-}
+#endif
+
+// only for debugging
+void printv( int level, int x_nr );
+void printim(int level);
+void printm(int level);
 
 #endif

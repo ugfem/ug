@@ -24,7 +24,7 @@
 #ifndef __FAMG_DECOMP__
 #define __FAMG_DECOMP__
 
-#include "famg_matrix.h"
+#include "famg_algebra.h"
 
 /* RCS_ID
    $Header$
@@ -143,7 +143,7 @@ public:
   FAMGDecompRow* GetRow() const;
   FAMGDecompRow* GetRow(int) const;
   void SetN(int);
-  int Init(FAMGMatrix *);
+  int Init(FAMGMatrixAlg *);
   int Construct(int);
   void ILUT(double *);
 private:

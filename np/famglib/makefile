@@ -20,10 +20,10 @@ APPL = famg
 
 # HP 10.20
 #CC = aCC is more accurate but much slower
-CC = CC 
-CFLAGS = -c -w -O
+CC = aCC 
+CFLAGS = -c -g
 LN=$(CC) 
-LNFLAGS = -O
+LNFLAGS = -g
 LIBS= -lm -lc
 
 ARCH_AR       = ar

@@ -37,7 +37,7 @@ class FAMGMultiGrid
 public:
   int Step(int);
   int SGSStep(int);
-  void Mult(double *vout, double *vin);
+  // weg void Mult(double *vout, double *vin);
   FAMGGrid *GetGrid(int) const;
   int GetN() const;
   int Construct();

@@ -23,7 +23,7 @@
 #include <math.h>
 
 #include "famg_misc.h"
-#include "famg_matrix.h"
+#include "famg_algebra.h"
 #include "famg_heap.h"
 #include "famg_grid.h"
 #include "famg_graph.h"
@@ -58,39 +58,43 @@ void FAMGList::Init(FAMGList *p,FAMGList *s,int d)
 
     // Class Node
 
-void FAMGNode::Init(int i)
+void FAMGNode::Init(int index, const FAMGVectorEntry &i)
 {
-    data = 0;
-    id = i;
-    list = NULL;
-    palist = NULL;
-    succ = NULL;
-    pred = NULL;
-    control.f0 = 0;
-    control.f1 = 0;
-    control.f2 = 0;
+    SetData(0);
+    SetId(index);
+	SetLocalId(-1);
+    SetVec(i);
+    SetList(NULL);
+    SetPaList(NULL);
+    SetSucc(NULL);
+    SetPred(NULL);
+    SetFlag(0);
+    SetFlag1(0);
+    SetFlag2(0);
+    SetFlag(0);
     control.nt = 0;
     control.ns = 0;
-    control.lid = -1;
+    //SetLocalId is initialized with the default constructor
 }
     
 
 // Class PaList
 
 
-void FAMGPaList::Init(FAMGPaList *nex, int n, int *p, double *c, double *ct, double error)
+void FAMGPaList::Init(FAMGPaList *next, int np, const int p[], double c[], double ct[], double error)
 {
     int z;
     
-    next = nex;
-    np = n;
-    for(z = 0; z < n; z++)
+    SetNext(next);
+    SetNp(np);
+    SetApprox(error);
+	
+    for(z = 0; z < np; z++)
     {
-        pa[z] = p[z];
-        coeff[z] = c[z];
-        coefft[z] = ct[z];
+        SetPa(z,p[z]);
+        SetCoeff(z,c[z]);
+        SetCoefft(z,ct[z]);
     }
-    approx = error;
 
     return;
 }
@@ -321,14 +325,14 @@ void FAMGGraph::CorrectPaList(FAMGPaList *&palist, double threshold)
     return;
 } 
 
-int FAMGGraph::SavePaList(FAMGPaList *&list, int np, int *pa, double *c, double *ct, double error)
+int FAMGGraph::SavePaList(FAMGPaList *&list, int np, const int pa[], double c[], double ct[], double error)
 {
     FAMGPaList *pl;
 
-    if (freepalist != NULL)
+    if (GetFreePaList() != NULL)
     {
-        pl = freepalist;
-        freepalist = pl->GetNext();
+        pl = GetFreePaList();
+        SetFreePaList(pl->GetNext());
     }
     else
     {
@@ -348,19 +352,20 @@ int FAMGGraph::SavePaList(FAMGPaList *&list, int np, int *pa, double *c, double 
 void FAMGGraph::MarkFGNode(FAMGNode *fgnode)
 {
     if(fgnode->IsFGNode()) return;
-    fgnode->MarkFGNode();
+    fgnode->NodeMarkFG();
     // map[fgnode->GetId()] = nf;
     nf++;
-
+	GetGridVector().SetFG(fgnode->GetVec());
+	
     return;
 }
 
 void FAMGGraph::MarkCGNode(FAMGNode *cgnode)
 {
-    if(cgnode->IsCGNode()) return;
-    cgnode->MarkCGNode();
-    // map[cgnode->GetId()] = nc; 
-    nc--; 
+    if(cgnode->IsCGNode())
+		return;
+    cgnode->NodeMarkCG();
+	GetGridVector().SetCG(cgnode->GetVec());
 
     return;
 }
@@ -368,35 +373,42 @@ void FAMGGraph::MarkCGNode(FAMGNode *cgnode)
 int FAMGGraph::Init(FAMGGrid *gridptr)
 {
     FAMGNode *nodei;
-    int i;
-
-    // noetig ?
-    n = gridptr->GetN();
+    int i, nrvec;
+	FAMGVectorIter viter(gridptr->GetGridVector());
+	FAMGVectorEntry ve;
+	
+    nrvec = gridptr->GetN();
     nf = 0;
-    nc = n-1;
 
-    node = (FAMGNode *) FAMGGetMem(n*sizeof(FAMGNode), FAMG_FROM_BOTTOM);
-    if (node == NULL) return 1;
+    //node = (FAMGNode *) FAMGGetMem(n*sizeof(FAMGNode), FAMG_FROM_BOTTOM);
+    node = new FAMGNode[nrvec];
+    if (node == NULL)
+		return 1;
     
-    for(i = 0; i < n; i++)
-    {
-        nodei = node+i;
-        nodei->Init(i);
-    }
-    
+	nodei = node;
+	i=0;
+	while(viter(ve))
+		nodei++ ->Init(i++,ve);
+	    
+	assert(i==nrvec);
+	n = nrvec;
+	
+#ifdef FAMG_ILU	
     map = gridptr->GetMap();
     if(map == NULL) // temporary map on level > 0
     {
         map = (int *) FAMGGetMem(n*sizeof(int),FAMG_FROM_BOTTOM);
-        if (map == NULL) return 1;
-        for(i = 0; i < n; i++) map[i] = i;
+        if (map == NULL)
+			return 1;
+        for(i = 0; i < nrvec; i++) map[i] = i;
     }
-
-    list = NULL;
-    helplist = NULL;
-    freelist = NULL;
-    freepalist = NULL;
-
+#endif
+	
+    SetList(NULL);
+    SetHelpList(NULL);
+    SetFreeList(NULL);
+    SetFreePaList(NULL);
+	SetGridVector(&(gridptr->GetGridVector()));
 
     // just for plotting
 
@@ -416,203 +428,7 @@ int FAMGGraph::Init(FAMGGrid *gridptr)
     return 0;
 }
 
-    // test
- 
-int FAMGGraph::InsertH(FAMGNode *nod)
-{
-    FAMGList *last, *li, *pl;
-    int data;
-
-    data = nod->GetData();
-    last = NULL;
-    for(li = (FAMGList *)helplist; li != NULL; li = li->GetSucc())
-    {
-        if (data == li->GetData()) 
-        {
-            li->Insert(nod);
-            return 0;
-        }
-        if (data < li->GetData())
-        {
-            if (freelist != NULL)
-            {
-                pl = freelist;
-                freelist = pl->GetSucc();
-            }
-            else
-            {
-                pl = (FAMGList *) FAMGGetMem(sizeof(FAMGList), FAMG_FROM_BOTTOM);
-            }
-            if (pl == NULL) return 1;
-            if(li->GetPred() == NULL) helplist = (FAMGNode *)pl;
-            pl->Init(li->GetPred(),li,data); 
-            pl->Insert(nod);
-            return 0;
-        }
-        last = li;
-    }
-    if (freelist != NULL)
-    {
-        pl = freelist;
-        freelist = pl->GetSucc();
-    }
-    else
-    {
-        pl = (FAMGList *)FAMGGetMem(sizeof(class FAMGList), FAMG_FROM_BOTTOM);
-    }
-    if (pl == NULL) return 1;
-    if(last == NULL) helplist = (FAMGNode *)pl; 
-    pl->Init(last,NULL,data);
-    pl->Insert(nod);
-
-    return 0;
-}
-
-void FAMGGraph::RemoveH(FAMGNode *nod)
-{
-    FAMGList *li;
-    
-    if(nod->GetList() == NULL)  return; // nod not on list
-        
-    if (nod->GetSucc() != NULL) 
-    {
-        (nod->GetSucc())->SetPred(nod->GetPred());
-    }
-    else
-    {
-        (nod->GetList())->SetLast(nod->GetPred());
-    }
-    if (nod->GetPred() != NULL)
-    {
-       (nod->GetPred())->SetSucc(nod->GetSucc()); 
-    }
-    else 
-    {
-        li = nod->GetList();
-        if(nod->GetSucc() != NULL)
-        {
-            li->SetFirst(nod->GetSucc());
-        }
-        else 
-        {
-            if( li->GetPred() != NULL)
-            {
-                (li->GetPred())->SetSucc(li->GetSucc());
-            }
-            else
-            {
-                helplist = (FAMGNode *)li->GetSucc();
-            }
-            if( li->GetSucc() != NULL)
-            {
-                (li->GetSucc())->SetPred(li->GetPred());
-            }
-
-            // add li to freelist
-            li->SetSucc(freelist);
-            freelist = li;
-        }
-    }
-    nod->SetSucc(NULL);
-    nod->SetPred(NULL);
-    nod->SetList(NULL);
-}
-
-FAMGNode *FAMGGraph::GetFirstNodeH()
-{
-    FAMGNode *nod;
-    FAMGList *hlist;
-    
-    if(helplist == NULL) return NULL;
-    hlist = (FAMGList *)helplist;
-    nod = hlist->GetFirst();
-    RemoveH(nod);
-
-    return nod;
-}
-
-
-
-int FAMGGraph::OrderSpecial(FAMGMatrix *matrix)
-{
-    FAMGNode *nodei, *nodej;
-    FAMGMatrixPtr matij;
-    int i, z, nl;
-    double mii;
-
-    if(n < 1) return 0;
-
-    for(i = 0; i < n; i++)
-    {
-        matij = matrix->GetStart(i);
-        nl = 0;
-        while(matij.GetNext())
-        {
-            nl++;
-        }
-        nodei = node+i;
-        nodei->Init(i);
-        nodei->SetFlag1(1);
-        nodei->SetData(nl);
-        if(Insert(nodei)) return 1;
-    }
-
-    z = 0;
-
-    while(list != NULL)
-    {
-        nodei = GetFirstNode();
-        while(nodei != NULL)
-        {
-            nodei->SetFlag1(0);
-            i = nodei->GetId();
-            map[i] = z;
-            z++;
-            matij = matrix->GetStart(i);
-            mii = matij.GetData();
-            while(matij.GetNext())
-            {
-                if(Abs(matij.GetData()) < 1e-5*mii) continue;
-                nodej = node+matij.GetIndex();
-                if((nodej->GetFlag1() == 1) && (nodej->GetFlag2() == 0))
-                {
-                    Remove(nodej);
-                    nodej->SetFlag1(0);
-                    nodej->SetFlag2(1);
-                    if(InsertH(nodej)) return 1;
-                }   
-            }   
-            nodei = GetFirstNode();
-        }
-        
-        nodei = GetFirstNodeH();
-        while(nodei != NULL)
-        {
-            nodei->SetFlag2(0);
-            i = nodei->GetId();
-            map[i] = z;
-            z++;
-            matij = matrix->GetStart(i);
-            mii = matij.GetData();
-            while(matij.GetNext())
-            {
-                if(Abs(matij.GetData()) < 1e-5*mii) continue;
-                nodej = node+matij.GetIndex();
-                if((nodej->GetFlag1() == 0) && (nodej->GetFlag2() == 1))
-                {
-                    RemoveH(nodej);
-                    nodej->SetFlag1(1);
-                    nodej->SetFlag2(0);
-                    if(Insert(nodej)) return 1;
-                }   
-            }   
-            nodei = GetFirstNodeH();
-        }
-    }
- 
-    return 0;
-}
-        
+#ifdef FAMG_ILU
 int FAMGGraph::OrderILUT(FAMGMatrix *matrix)
 {
     FAMGNode *nodei;
@@ -704,5 +520,5 @@ int FAMGGraph::OrderILUT(FAMGMatrix *matrix)
 
     return 0;
 }
-
+#endif
 

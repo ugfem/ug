@@ -149,10 +149,12 @@ public:
   void MultTrans(double *vout, double *vin);
   int Init(int nn);
   int Init2(int nn);
+#ifdef FAMG_REORDERCOLUMN
   int OrderColumns();
   int OrderColumns(int *map);
   int ReorderColumns(int *map);
   int OrderColumns2(FAMGGraph*);
+#endif
   int ConstructAdjoined();
   int ConstructAdjoinedB();
   int ConstructAdjoined2(FAMGGraph*);

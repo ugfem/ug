@@ -369,8 +369,9 @@ int FAMGParameter::Read()
 main(int argc, char **argv)
 {
     double *entry, *rhs;
-    int *index, *start, n, nl,status;
-
+    int *index, *start, n, nl, status, i;
+	struct FAMG_Interface my_famg_parameter;
+	
     if (ReadMatrix(entry,index,start,n,nl,argc,argv)) return 1;
     if (ReadRHS(rhs,n,argc,argv)) return 1;
 
@@ -386,7 +387,16 @@ main(int argc, char **argv)
 
    if(FAMGConstructParameter(&parameter)) return 1;
 
-   if(FAMGConstruct(entry,index,start,n,nl,NULL, NULL,NULL)) return 1;
+	my_famg_parameter.n = n;
+	my_famg_parameter.nl = nl;
+	my_famg_parameter.extra = extra;
+	my_famg_parameter.entry = entry;
+	my_famg_parameter.index = index;
+	my_famg_parameter.start = start;
+	my_famg_parameter.nv = FAMG_NVECTORS;
+	for( i=0; i<FAMG_NVECTORS ; i++ )
+		my_famg_parameter.vector[i] = NULL;
+	if(FAMGConstruct(&my_famg_parameter)) return 1;
 
    status = FAMGSolve(rhs,defect,unknown);
 

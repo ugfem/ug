@@ -281,6 +281,7 @@ void FAMGMatrix::RemodifyIndex(int *type, int f)
     return;
 }
         
+#ifdef FAMG_REORDERCOLUMN			
 int FAMGMatrix::OrderColumns(int *map)
 {
     double hd, *mat, *firstentry;
@@ -412,7 +413,7 @@ int FAMGMatrix::OrderColumns2(FAMGGraph *graph)
 
     return 0;
 }
-
+#endif
 
 int FAMGMatrix::ConstructAdjoined()
 {

@@ -19,11 +19,10 @@
 /*																			*/
 /****************************************************************************/
 
-extern "C"
-{
-#include "famginterface.h"
-}
-#include "famg_matrix.h"
+#include <iostream.h>
+
+#include "famg_uginterface.h"
+#include "famg_algebra.h"
 #include "famg_system.h"
 #include "famg_heap.h"
 
@@ -36,82 +35,140 @@ $Header$
 
 static FAMGSystem *famgsystemptr;
 
-static void ReadParameter(FAMGParameter *parameter, FAMGParameter *in_parameter)
+#ifdef WEG
+// TODO: weg!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/* nur fuer Tests */
+#include "famg_ugalgebra.h"
+extern "C"
 {
-    parameter->Setheap(in_parameter->Getheap());
-    parameter->Setgamma(in_parameter->Getgamma());
-    parameter->Setn1(in_parameter->Getn1());
-    parameter->Setn2(in_parameter->Getn2());
-    parameter->Setilut(in_parameter->Getilut());
-    parameter->Setcgilut(in_parameter->Getcgilut());
-    parameter->Setcgnodes(in_parameter->Getcgnodes());
-    parameter->Setconloops(in_parameter->Getconloops());
-    parameter->Setmincoarse(in_parameter->Getmincoarse());
-    parameter->Settype(in_parameter->Gettype());
-    parameter->Setstv(in_parameter->Getstv());
-    parameter->Settol(in_parameter->Gettol());
-    parameter->Setsigma(in_parameter->Getsigma());
-    parameter->Setomegar(in_parameter->Getomegar());
-    parameter->Setomegal(in_parameter->Getomegal());
-    parameter->Seterror1(in_parameter->Geterror1());
-    parameter->Seterror2(in_parameter->Geterror2());
-    parameter->Setmaxit(in_parameter->Getmaxit());
-    parameter->Setalimit(in_parameter->Getalimit());
-    parameter->Setrlimit(in_parameter->Getrlimit());
-    parameter->Setdivlimit(in_parameter->Getdivlimit());
-    parameter->Setreduction(in_parameter->Getreduction());
-    parameter->Setsolver(in_parameter->Getsolver());
-    parameter->Setpresmoother(in_parameter->Getpresmoother());
-    parameter->Setpostsmoother(in_parameter->Getpostsmoother());
-    parameter->Setcgsmoother(in_parameter->Getcgsmoother());
+#include "commands.h"
+}
+
+void test_algebra(void)
+{
+	GRID *grid = GRID_ON_LEVEL(GetCurrentMultigrid(),0);
+	
+	FAMGugVector sol ( grid,0);
+	//FAMGVectorEntry ve(sol.firstEntry());
+	FAMGVectorEntry ve;
+	
+	FAMGVectorIter soliter(sol);
+	
+	FAMGugMatrix M(0);
+	FAMGMatrixEntry me;
+
+	while( soliter(ve) )
+	{
+		cout << sol[ve] << "Matrixeintraege:";
+		
+		FAMGMatrixIter Miter(M,ve);
+		while( Miter(me) )
+		{
+			cout << M[me] << " ";	
+		}
+		cout << endl;
+	}
+	
+	printf( "test\n" );
+	return;
+}
+#endif
+
+static void ReadParameter(FAMGParameter *parameter, FAMGParameter_ug *in_parameter)
+{
+
+//test_algebra(); assert(0);
+
+    parameter->Setheap(in_parameter->heap);
+    parameter->Setgamma(in_parameter->gamma);
+    parameter->Setn1(in_parameter->n1);
+    parameter->Setn2(in_parameter->n2);
+    parameter->Setilut(in_parameter->ilut);
+    parameter->Setcgilut(in_parameter->cgilut);
+    parameter->Setcgnodes(in_parameter->cgnodes);
+    parameter->Setconloops(in_parameter->conloops);
+    parameter->Setmincoarse(in_parameter->mincoarse);
+    parameter->Settype(in_parameter->type);
+    parameter->Setstv(in_parameter->stv);
+    parameter->Settol(in_parameter->tol);
+    parameter->Setsigma(in_parameter->sigma);
+    parameter->Setomegar(in_parameter->omegar);
+    parameter->Setomegal(in_parameter->omegal);
+    parameter->Seterror1(in_parameter->error1);
+    parameter->Seterror2(in_parameter->error2);
+    parameter->Setmaxit(in_parameter->maxit);
+    parameter->Setalimit(in_parameter->alimit);
+    parameter->Setrlimit(in_parameter->rlimit);
+    parameter->Setdivlimit(in_parameter->divlimit);
+    parameter->Setreduction(in_parameter->reduction);
+    parameter->Setsolver(in_parameter->solver);
+    parameter->Setpresmoother(in_parameter->presmoother);
+    parameter->Setpostsmoother(in_parameter->postsmoother);
+    parameter->Setcgsmoother(in_parameter->cgsmoother);
 }    
 
 
-static int FAMGConstructParameter(FAMGParameter *in_parameter)
+int FAMGConstructParameter(struct FAMGParameter_ug *in_parameter)
 {
     FAMGParameter *parameter = new FAMGParameter;
     if(parameter == NULL) return 1;
-    ReadParameter(parameter, in_parameter); 
+    ReadParameter((FAMGParameter*)parameter, in_parameter); 
     FAMGSetParameter(parameter);
 
     return 0;
 }
 
-static void FAMGDeconstructParameter()
+void FAMGDeconstructParameter()
 {
     FAMGParameter *parameter = FAMGGetParameter();
     delete parameter;
 }
 
-static int FAMGConstruct(double *matrix, int *index, int *start, int n, int nl, double *tvA, double *tvB, void **extra)
+int FAMGConstruct(FAMGGridVector *gridvector, FAMGMatrixAlg *matrix, FAMGVector *vectors[FAMG_NVECTORS])
 {
  
 
     FAMGHeap *heap = new FAMGHeap (FAMGGetParameter()->Getheap());
-    if (heap == NULL) return 1;
+    if (heap == NULL) 
+	{
+		ostrstream ostr; ostr  << __FILE__ << ", line " << __LINE__ << ": can not allocate Heap" << endl;
+		FAMGError(ostr);
+		assert(0);
+	}
     FAMGSetHeap(heap);
 
     famgsystemptr = (FAMGSystem *) FAMGGetMem(sizeof(FAMGSystem),FAMG_FROM_TOP);
-    if(famgsystemptr == NULL) return 1;
+    if(famgsystemptr == NULL)
+	{
+		ostrstream ostr; ostr  << __FILE__ << ", line " << __LINE__ << ": can not allocate FAMGSystem" << endl;
+		FAMGError(ostr);
+		assert(0);
+	}
     
     famgsystemptr->Init();
-    if(famgsystemptr->Construct(matrix,index,start,n,nl,tvA,tvB,extra)) return 1;
+    if(famgsystemptr->Construct(gridvector,matrix,vectors))
+	{
+		ostrstream ostr; ostr  << __FILE__ << ", line " << __LINE__ << ": can not construct FAMGSystem" << endl;
+		FAMGError(ostr);
+		assert(0);
+	}
 
     return 0;
 }
-static int FAMGConstructSimple(double *matrix, int *index, int *start, int n, int nl, void **extra)
+
+int FAMGConstructSimple(FAMGMatrixAlg *matrix, FAMGVector *tvA, FAMGVector *tvB)
 {
-    if(famgsystemptr->ConstructSimple(matrix,index,start,n,nl,extra)) return 1;
+    if(famgsystemptr->ConstructSimple(matrix,tvA,tvB)) return 1;
 
     return 0;
 }
 
-static int FAMGSolve(double *rhs, double *defect, double *unknown)
+int FAMGSolve(FAMGVector *rhs, FAMGVector *defect, FAMGVector *unknown)
 {
     return famgsystemptr->Solve(rhs,defect,unknown);
 }
 
-static void FAMGDeconstruct()
+void FAMGDeconstruct()
 {
     famgsystemptr->Deconstruct();
     
@@ -119,21 +176,21 @@ static void FAMGDeconstruct()
     delete heap;
 }
 
-static void FAMGDeconstructSimple()
+void FAMGDeconstructSimple()
 {
     famgsystemptr->DeconstructSimple();
 
     // remove heap, parameter
 }
 
-int FAMGSolveSystem(FAMG_Interface *interface, FAMG_Parameter *in_parameter)
+int FAMGSolveSystem(FAMG_Interface *interface)
 {
     int status;
 
 
-    FAMGConstructParameter((FAMGParameter*)in_parameter);
+    //verschoben nach Preprocess FAMGConstructParameter((FAMGParameter*)in_parameter);
 
-    FAMGConstruct(interface->entry,interface->index,interface->start,interface->n,interface->nl,interface->vector[FAMG_TVA],interface->vector[FAMG_TVB],interface->extra);
+    //verschoben nach Preprocess FAMGConstruct(interface->entry,interface->index,interface->start,interface->n,interface->nl,interface->vector[FAMG_TVA],interface->vector[FAMG_TVB],interface->extra);
 
     status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
 
@@ -142,15 +199,6 @@ int FAMGSolveSystem(FAMG_Interface *interface, FAMG_Parameter *in_parameter)
 	FAMGDeconstructParameter();
  
     return status;
-}
-
-void **FAMG_GetExtraPtr(int level)
-{
-    void **ptr;
-
-    ptr = famgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetNode();
-
-    return ptr;
 }
 
 int FAMG_GetN(int level)
@@ -169,7 +217,13 @@ int FAMG_GetNF(int level)
     return nf;
 }
 
-FAMG_MatrixPtr FAMG_GetMatrixPtr(int level,int i)
+FAMGSystem *FAMG_GetSystem()
+{
+	return famgsystemptr;
+}
+
+#ifdef UG_DRAW
+FAMG_Matrix* FAMG_GetMatrixPtr(int level,int i)
 {
     FAMGMatrix *matrix;
     FAMGMatrixPtr mat;
@@ -179,18 +233,18 @@ FAMG_MatrixPtr FAMG_GetMatrixPtr(int level,int i)
     return (*((FAMG_MatrixPtr *)&mat));
 }
 
-FAMG_TransferEntry  *FAMG_GetTransferEntry(int level,int i)
+FAMG_TransferEntry* FAMG_GetTransferEntry(int level,FAMGVectorEntry &row)
 {
     FAMGTransfer *transfer;
     FAMGTransferEntry *trans;
     
     transfer = famgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetTransfer();
     if(transfer == NULL) return NULL;
-    trans = transfer->GetRow(i);
+    trans = transfer->GetFirstEntry(row);
     return ((FAMG_TransferEntry *) trans);
 }
 
-double * FAMG_GetVector(int level, int i)
+FAMGVector* FAMG_GetVector(int level, int i)
 {
     double *vector;
     
@@ -206,3 +260,4 @@ int FAMG_GetMaxLevel()
     n = famgsystemptr->GetMultiGrid(0)->GetN();
     return n-1;
 }
+#endif

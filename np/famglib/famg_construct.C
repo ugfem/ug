@@ -23,13 +23,25 @@
 #include <math.h>
 
 #include "famg_misc.h"
-#include "famg_matrix.h"
+#include "famg_algebra.h"
 #include "famg_heap.h"
 #include "famg_grid.h"
 #include "famg_graph.h"
 #include "famg_system.h"
 
-   
+#ifdef Debug
+	#ifdef USE_UG_DS
+		#include "famg_uginterface.h"
+	#else
+		#include "famg_interface.h"
+	#endif
+#endif
+
+extern "C"
+{
+#include "commands.h" /* for GetCurrentMultigrid for debuggung */
+}
+
 #ifdef UG_DRAW
 
 extern "C"
@@ -47,22 +59,166 @@ extern "C"
 $Header$
 */
 
-int FAMGGrid::AnalyseNodeSimple(int i, FAMGPaList *&palist)
+void printm(int level)
+// for debugging
 {
-    FAMGNode *nodei, *node;
+#ifdef USE_UG_DS
+	VECTOR *v;
+	MATRIX *m;
+	FAMGTransferEntry *trans;
+	
+	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
+
+	printf("Matrix:\n");
+	for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+	{
+		printf("vec[%4d] ", VINDEX(v));
+		for (m=VSTART(v); m!=NULL; m = MNEXT(m))
+		{
+			printf("\t%g(->%d)",MVALUE(m,0),VINDEX(MDEST(m)));
+		}
+		printf("\n");
+	}
+#else
+	FAMGSystem &sys = *FAMG_GetSystem();
+	FAMGGrid &grid = *sys.GetMultiGrid(0)->GetGrid(level);
+
+	FAMGMatrix &M = *grid.GetMatrix();
+	int n = grid.GetN(), end;
+    
+	FAMGMatrixPtr matij;
+
+	printf("Matrix:\n");
+    for(int i = 0; i < n; i++)
+    {
+		printf("vec[%4d] ", i);
+		end = 1;
+		for( matij=M.GetStart(i); end; end=matij.GetNext() )
+		{
+			printf("\t%g(->%d)", matij.GetData(),matij.GetIndex());
+		}
+		printf("\n");
+	}
+#endif
+}
+
+void printim(int level)
+// for debugging
+{
+#ifdef USE_UG_DS
+	VECTOR *v;
+	MATRIX *m;
+	FAMGTransferEntry *trans;
+	
+	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
+
+	printf("Interpolation Matrix:\n");
+	for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+	{
+		printf("vec[%4d] ", VINDEX(v));
+		for (m=VISTART(v); m!=NULL; m = MNEXT(m))
+		{
+			trans = (FAMGTransferEntry*)m;
+			printf("\tP=%g(->%d) R=%g", trans->GetProlongation(),VINDEX(MDEST(m)),trans->GetRestriction());
+		}
+		printf("\n");
+	}
+#else
+	FAMGSystem &sys = *FAMG_GetSystem();
+	FAMGGrid &grid = *sys.GetMultiGrid(0)->GetGrid(level);
+	FAMGTransferEntry *transij, *resji;
+	FAMGTransfer *trans;
+	FAMGMatrix *matrix;
+	int n = grid.GetN(), i, j;
+    double resval;
+	
+	trans = grid.GetTransfer();
+	matrix = grid.GetMatrix();
+	printf("Interpolation Matrix:\n");
+    for(i = 0; i < n; i++)
+    {
+		printf("vec[%4d] ", i);
+		if (matrix->GetType(i)) // FG Node
+		{
+			for(transij = trans->GetRow(i)->GetNext(); transij != NULL; transij = transij->GetNext())
+			{
+				j = transij->GetId();
+				resval = -99.99;
+				for(resji = trans->GetRow(j)->GetNext(); resji != NULL; resji = resji->GetNext())
+				{
+					if( resji->GetId() == i )
+					{
+						resval = resji->GetData();
+							break;
+					}
+				}
+				printf("\tP=%g(->%d) R=%g", transij->GetData(),j,resval);
+			}
+		}
+		else
+		{
+			printf("\tP=%g R=%g", 1.0, 1.0);
+		}
+		printf("\n");
+	}
+#endif
+}
+
+void printv( int level, int x_nr )
+/* for calling from a debugger */
+{
+#ifdef USE_UG_DS
+	register VECTOR *v;
+	DOUBLE pos[DIM];
+	
+	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
+	
+	printf("Vector:\n");
+    for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+    {
+		VectorPosition(v,pos);
+#ifdef ModelP 
+		printf(PFMT,me);
+#endif		
+		printf("x=%5.2f y=%5.2f ",pos[0],pos[1]);
+#ifdef __THREEDIM__
+		printf("z=%5.2f ",pos[2]);
+#endif
+		printf("  index = %d  ", VINDEX( v ) );
+		printf("u[%d]=%15.8f ",x_nr,VVALUE(v,x_nr));
+		/*printf("   cl %d %d sk ",VCLASS(v),VNCLASS(v));*/
+		/*for (j=0; j<ncomp; j++)
+			printf("%d ",((VECSKIP(v) & (1<<j))!=0));*/
+		printf("\n");
+	}
+	return;
+#else
+	FAMGSystem &sys = *FAMG_GetSystem();
+	FAMGGrid &grid = *sys.GetMultiGrid(0)->GetGrid(level);
+
+	double *vec = grid.GetVector(x_nr);
+	int n = grid.GetN();
+    
+	printf("Vector:\n");
+    for(int i = 0; i < n; i++)
+    {
+		printf("vec[%4d] = %g\n", i, vec[i]);
+	}
+#endif
+}
+
+int FAMGGrid::AnalyseNodeSimple(FAMGNode* nodei, FAMGPaList *&palist)
+{
     FAMGPaList *pl;
-    int remove, z, j;
+    int remove, z;
 
     palist = NULL;
-    node = graph->GetNode();
-    nodei = node+i;
     for(pl = nodei->GetPaList(); pl != NULL; pl = pl->GetNext())
     {
         remove = 0;
         for(z = 0; z < pl->GetNp(); z++)
         {
-            j = pl->GetPa(z);
-            if((node+j)->IsFGNode()) 
+            if(graph->GetNode(pl->GetPa(z))->IsFGNode()) 
             {
                 remove = 1;
                 break;
@@ -70,8 +226,8 @@ int FAMGGrid::AnalyseNodeSimple(int i, FAMGPaList *&palist)
         }
         if(!remove)
         {
-            
-            if(graph->SavePaList(palist,pl->GetNp(),pl->GetPa(),pl->GetCoeff(),pl->GetCoefft(),pl->GetApprox())) return 1;
+            if(graph->SavePaList(palist,pl->GetNp(),pl->GetPaPtr(),pl->GetCoeff(),pl->GetCoefft(),pl->GetApprox())) 
+				return 1;
         }
     }
 
@@ -124,20 +280,20 @@ void FAMGNode::CountNewCG(FAMGGraph *graph)
     FAMGNode *node;
     FAMGPaList *pl;
     double nc;
-    int i, np, *pa, ns;
+    int i, np, ns;
 
-    node = graph->GetNode();
-    for(pl  = palist; pl != NULL; pl = pl->GetNext())
+    node = graph->GetNodePtr();
+    for(pl  = GetPaList(); pl != NULL; pl = pl->GetNext())
     {
         np = pl->GetNp();
-        pa = pl->GetPa();
+        const int *pa = pl->GetPaPtr();
         nc = 0;
         for(i = 0; i < np; i++)
         {
-            if((node+pa[i])->IsCGNode()) continue;
+            if(node[pa[i]].IsCGNode()) continue;
             else
             {
-                ns = (node+pa[i])->GetNSons();
+                ns = node[pa[i]].GetNSons();
                 if(ns > 0)
                 {
                     nc += 1.0/(double)ns;
@@ -159,28 +315,30 @@ int FAMGNode::CountNewCG(FAMGGraph *graph, int j)
     FAMGNode *node;
     FAMGPaList *pl;
     double nc;
-    int i, np, *pa, found, change, ns;
+    int i, np, found, change, ns;
 
-    node = graph->GetNode();
+    node = graph->GetNodePtr();
     change = 0;
-    for(pl  = palist; pl != NULL; pl = pl->GetNext())
+    for(pl  = GetPaList(); pl != NULL; pl = pl->GetNext())
     {
         np = pl->GetNp();
-        pa = pl->GetPa();
+        const int *pa = pl->GetPaPtr();
         nc = 0;
         found = 0;
         for(i = 0; i < np; i++)
         {
-            if(pa[i] == j) found = 1;
+            if(pa[i] == j) 
+				found = 1;
         }
         if(found)
         {
             for(i = 0; i < np; i++)
             {
-                if((node+pa[i])->IsCGNode()) continue;
+                if(node[pa[i]].IsCGNode()) 
+					continue;
                 else
                 {
-                    ns = (node+pa[i])->GetNSons();
+                    ns = node[pa[i]].GetNSons();
                     if(ns > 0)
                     {
                         nc += 1.0/(double)ns;
@@ -202,296 +360,76 @@ int FAMGNode::CountNewCG(FAMGGraph *graph, int j)
     return change;
 }
 
+// i,z are node indices: may be coarse or non-determined, but are NOT allowed to be fine
+#define FAMG_TRAVERSE_RETURN_TYPE		int
+#define FAMG_TRAVERSE_FCT_NAME			Connected
+#define FAMG_TRAVERSE_SECOND_ARG		int z
+#define FAMG_TRAVERSE_INIT(node_i)		FAMGNode *node_z = GetGraph()->GetNode(z);
+#define FAMG_TRAVERSE_ACTION(node)		if((node)==node_z) return 1;
+//#define FAMG_TRAVERSE_FINISH(node_i)
+#define FAMG_TRAVERSE_RETURN			0
+#include "famg_traverse.template"
 
-int FAMGGrid::Connected(int i, int z)
-{
-    FAMGTransferEntry *trans, *transis, *transrj;
-    FAMGMatrixPtr matsr;
-    FAMGNode *noder, *node;
-    int j,r,s;
+// count the number of non-fine neighbors and set their flag=1 (with exception of i itself)
+// i is node index: may be coarse or non-determined, but are NOT allowed to be fine
+#define FAMG_TRAVERSE_RETURN_TYPE		int
+#define FAMG_TRAVERSE_FCT_NAME			SetFlagsAndCount
+#define FAMG_TRAVERSE_SECOND_ARG		int flag
+#define FAMG_TRAVERSE_INIT(node_i)		int z = 0; (node_i)->SetFlag(flag);
+#define FAMG_TRAVERSE_ACTION(node)		if((node)->GetFlag() != flag) {z++;(node)->SetFlag(flag);}
+#define FAMG_TRAVERSE_FINISH(node_i) 	(node_i)->SetFlag(0);
+#define FAMG_TRAVERSE_RETURN			z
+#include "famg_traverse.template"
 
-    trans = transfer->GetRow();
-    node = graph->GetNode();
+// for the non-fine neighbors set the flag=1 (with exception of i itself)
+// i is node index: may be coarse or non-determined, but are NOT allowed to be fine
+#define FAMG_TRAVERSE_RETURN_TYPE		void
+#define FAMG_TRAVERSE_FCT_NAME			SetFlags
+#define FAMG_TRAVERSE_SECOND_ARG		int flag
+//#define FAMG_TRAVERSE_INIT(node_i)
+#define FAMG_TRAVERSE_ACTION(node)		(node)->SetFlag(flag);
+#define FAMG_TRAVERSE_FINISH(node_i) 	(node_i)->SetFlag(0);
+//#define FAMG_TRAVERSE_RETURN
+#include "famg_traverse.template"
 
-    for(transis = (trans+i)->GetNext(); transis != NULL; transis = transis->GetNext())
-    {
-        s = transis->GetId();
-        matsr = matrix->GetStart(s); 
-        do
-        {
-            r = matsr.GetIndex();
-            if(r == z) return 1;
-            noder = node+r;
-            if(noder->IsFGNode())
-            {
-                for(transrj = (trans+r)->GetNext(); transrj != NULL; transrj = transrj->GetNext())
-                {
-                    j = transrj->GetId();
-                    if(j == z) return 1;
-                }
-            }
-        } while(matsr.GetNext());
-    }
-    s = i;
-    matsr = matrix->GetStart(s); 
-    do
-    {
-        r = matsr.GetIndex();
-        if(r == z) return 1;
-        noder = node+r;
-        if(noder->IsFGNode())
-        {
-            for(transrj = (trans+r)->GetNext(); transrj != NULL; transrj = transrj->GetNext())
-            {
-                j = transrj->GetId();
-                if(j == z) return 1;
-            }
-        }
-    } while(matsr.GetNext());
-                                          
-    return 0;
-}
+#define FAMG_TRAVERSE_RETURN_TYPE		int
+#define FAMG_TRAVERSE_FCT_NAME			CountLinks
+//#define FAMG_TRAVERSE_SECOND_ARG
+#define FAMG_TRAVERSE_INIT(node_i)		int z = 0;
+#define FAMG_TRAVERSE_ACTION(node)		if((node)->GetFlag() == 1) {z++;(node)->SetFlag(0);}
+//#define FAMG_TRAVERSE_FINISH(node_i)
+#define FAMG_TRAVERSE_RETURN			z
+#include "famg_traverse.template"
 
-int FAMGGrid::SetFlagsAndCount(int i, int f)
-{
-    FAMGTransferEntry *trans, *transis, *transrj;
-    FAMGMatrixPtr matsr;
-    FAMGNode *nodej, *noder, *node;
-    int z,j,r,s;
-
-    trans = transfer->GetRow();
-    node = graph->GetNode();
-
-    z = 0;
-    for(transis = (trans+i)->GetNext(); transis != NULL; transis = transis->GetNext())
-    {
-        s = transis->GetId();
-        matsr = matrix->GetStart(s); 
-        do
-        {
-            r = matsr.GetIndex();
-            noder = node+r;
-            if(noder->IsFGNode())
-            {
-                for(transrj = (trans+r)->GetNext(); transrj != NULL; transrj = transrj->GetNext())
-                {
-                    j = transrj->GetId();
-                    nodej = node + j;
-                    if(nodej->GetFlag() != f)
-                    {
-                        nodej->SetFlag(f);
-                        z++;
-                    }
-                }
-            }
-            else
-            {
-                if(noder->GetFlag() != f)
-                {
-                    noder->SetFlag(f);
-                    z++;
-                }
-            }
-        } while(matsr.GetNext());
-    }
-    s = i;
-    matsr = matrix->GetStart(s); 
-    do
-    {
-        r = matsr.GetIndex();
-        noder = node+r;
-        if(noder->IsFGNode())
-        {
-            for(transrj = (trans+r)->GetNext(); transrj != NULL; transrj = transrj->GetNext())
-            {
-                j = transrj->GetId();
-                nodej = node + j;
-                if(nodej->GetFlag() != f)
-                {
-                    nodej->SetFlag(f);
-                    z++;
-                }
-            }
-        }
-        else
-        {
-            if(noder->GetFlag() != f)
-            {
-                noder->SetFlag(f);
-                z++;
-            }
-        }
-    } while(matsr.GetNext());
-                    
-    return z;
-}
-
-void FAMGGrid::SetFlags(int i, int f)
-{
-    FAMGTransferEntry *trans, *transis, *transrj;
-    FAMGMatrixPtr matsr;
-    FAMGNode *nodej, *noder, *node;
-    int j,r,s;
-
-    trans = transfer->GetRow();
-    node = graph->GetNode();
-
-    for(transis = (trans+i)->GetNext(); transis != NULL; transis = transis->GetNext())
-    {
-        s = transis->GetId();
-        matsr = matrix->GetStart(s); 
-        do
-        {
-            r = matsr.GetIndex();
-            noder = node+r;
-            if(noder->IsFGNode())
-            {
-                for(transrj = (trans+r)->GetNext(); transrj != NULL; transrj = transrj->GetNext())
-                {
-                    j = transrj->GetId();
-                    nodej = node + j;
-                    nodej->SetFlag(f);
-                }
-            }
-            else
-            {
-                noder->SetFlag(f);
-            }
-        } while(matsr.GetNext());
-    }
-    s = i;
-    matsr = matrix->GetStart(s); 
-    do
-    {
-        r = matsr.GetIndex();
-        noder = node+r;
-        if(noder->IsFGNode())
-        {
-            for(transrj = (trans+r)->GetNext(); transrj != NULL; transrj = transrj->GetNext())
-            {
-                j = transrj->GetId();
-                nodej = node + j;
-                nodej->SetFlag(f);
-            }
-        }
-        else
-        {
-            noder->SetFlag(f);
-        }
-    } while(matsr.GetNext());
-                    
-                       
-    return;
-}
-
-int FAMGGrid::CountLinks(int i)
-{
-    FAMGTransferEntry *trans, *transis, *transrj;
-    FAMGMatrixPtr matsr;
-    FAMGNode *nodej, *noder, *node;
-    int z,j,r,s;
-
-    trans = transfer->GetRow();
-    node = graph->GetNode();
-
-    z = 0;
-    for(transis = (trans+i)->GetNext(); transis != NULL; transis = transis->GetNext())
-    {
-        s = transis->GetId();
-        matsr = matrix->GetStart(s); 
-        do
-        {
-            r = matsr.GetIndex();
-            noder = node+r;
-            if(noder->IsFGNode())
-            {
-                for(transrj = (trans+r)->GetNext(); transrj != NULL; transrj = transrj->GetNext())
-                {
-                    j = transrj->GetId();
-                    nodej = node + j;
-                    if(nodej->GetFlag() == 1)
-                    {
-                        z++;
-                        nodej->SetFlag(0);
-                    }
-                }
-            }
-            else
-            {
-                if(noder->GetFlag() == 1)
-                {
-                    z++;
-                    noder->SetFlag(0);
-                }
-            }
-        } while(matsr.GetNext());
-    }
-    s = i;
-    matsr = matrix->GetStart(s); 
-    do
-    {
-        r = matsr.GetIndex();
-        noder = node+r;
-        if(noder->IsFGNode())
-        {
-            for(transrj = (trans+r)->GetNext(); transrj != NULL; transrj = transrj->GetNext())
-            {
-                j = transrj->GetId();
-                nodej = node + j;
-                if(nodej->GetFlag() == 1)
-                {
-                    z++;
-                    nodej->SetFlag(0);
-                }
-            }
-        }
-        else
-        {
-            if(noder->GetFlag() == 1)
-            {
-                z++;
-                noder->SetFlag(0);
-            }
-        }
-    } while(matsr.GetNext());
-                                           
-    return z;
-}
 
 int FAMGNode::CountNewLinks(FAMGGrid *gridptr, FAMGGraph *graph)
 {
     FAMGPaList *pl;
-    FAMGNode *node;
-    int nnb, nl, z, np, *pa, y, newlinks;
+    int nnb, nl, z, np, y, newlinks;
     
-    node = graph->GetNode();
-    nnb = gridptr->SetFlagsAndCount(id,1);
-    if(GetFlag() == 1) 
-    {
-        SetFlag(0); 
-        nnb--;
-    }
+    nnb = gridptr->SetFlagsAndCount(GetId(),1);
     for(pl = palist; pl != NULL; pl = pl->GetNext())
     {
         np = pl->GetNp();
-        pa = pl->GetPa();
+        const int *pa = pl->GetPaPtr();
         nl = 0;
         for(z = 0; z < np; z++)
         {
-            (node+pa[z])->SetFlag(0);
+            graph->GetNode(pa[z])->SetFlag(0);
             nl += gridptr->CountLinks(pa[z]);
-            gridptr->SetFlags(id,1);
-            SetFlag(0);
+            gridptr->SetFlags(GetId(),1);
             for(y = z+1; y < np; y++)
             {
-                if(!gridptr->Connected(pa[z],pa[y])) nl++;
+                if(!gridptr->Connected(pa[z],pa[y])) 
+					nl++;
             }
         }
         newlinks = np*(nnb-1)-nl;
-        if(np < 0) newlinks = 20;
+        if(np < 0) 
+			newlinks = 20;
         pl->SetNewLinks(newlinks);
     }
-    gridptr->SetFlags(id,0);
+    gridptr->SetFlags(GetId(),0);
 
     return 0;
 }
@@ -500,11 +438,12 @@ int FAMGNode::CountNewLinks(FAMGGrid *gridptr, FAMGGraph *graph)
 void FAMGGraph::InitNSons()
 {
     FAMGPaList *palist, *pl;
+	FAMGNode *node_j;
     int i, np, j, z, mark;
 
-    for(i = 0; i < n; i++)
+    for(i = 0; i < GetN(); i++)
     {
-        palist = (node+i)->GetPaList();
+        palist = GetNode(i)->GetPaList();
         for(pl = palist; pl != NULL; pl = pl->GetNext())
         {
             np = pl->GetNp();
@@ -512,7 +451,7 @@ void FAMGGraph::InitNSons()
             for(z = 0; z < np; z++)
             {
                 j = pl->GetPa(z);
-                if((node+j)->IsCGNode())
+                if(GetNode(j)->IsCGNode())
                 {
                     mark = 1;
                     break;
@@ -523,9 +462,10 @@ void FAMGGraph::InitNSons()
                 for(z = 0; z < np; z++)
                 {
                     j = pl->GetPa(z);
-                    if(!(node+j)->IsCGNode())
+					node_j = GetNode(j);
+                    if(!node_j->IsCGNode())
                     {
-                        (node+j)->SetFlag(1);
+                        node_j->SetFlag(1);
                     }
                 }
             }
@@ -536,10 +476,11 @@ void FAMGGraph::InitNSons()
             for(z = 0; z < np; z++)
             {
                 j = pl->GetPa(z);
-                if((node+j)->GetFlag() == 1)
+				node_j = GetNode(j);
+                if(node_j->GetFlag() == 1)
                 {
-                    (node+j)->SetFlag(0);
-                    (node+j)->SetNSons((node+j)->GetNSons()+1);
+                    node_j->SetFlag(0);
+                    node_j->SetNSons(node_j->GetNSons()+1);
                 }
             }
         }
@@ -550,23 +491,23 @@ void FAMGGraph::InitNSons()
             
 int FAMGGrid::UpdateNBNewCG(int i)
 {
-    FAMGNode *nodej, *node;
-    FAMGMatrixPtr matij;
-    int j;
-
-    node = graph->GetNode();
+    FAMGNode *nodej;
 
     // check all neighbors with i as possible father, tmpmatrix is OK
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+	FAMGMatrixEntry matij;
+	FAMGVectorEntry vec_i = GetGraph()->GetNode(i)->GetVec();
+	FAMGMatrixIter matiter(*GetTmpMatrix(), vec_i);
+
+	matiter(matij);		// skip diagonal entry
+    while(matiter(matij))
     {
-        j = matij.GetIndex();
-        nodej = node+j;
-        if(((nodej)->IsCGNode()) || ((nodej)->IsFGNode())) continue;
-        if((node+j)->CountNewCG(graph,i))
+		nodej = GetGraph()->GetNode(matij.dest());
+        if(nodej->IsCGNode() || nodej->IsFGNode()) 
+			continue;
+        if(nodej->CountNewCG(GetGraph(),i))
         {
             // something changed
-            graph->Store(nodej);
+            GetGraph()->Store(nodej);
         }
     }
 
@@ -576,6 +517,7 @@ int FAMGGrid::UpdateNBNewCG(int i)
 void FAMGGraph::UpdateNSons(FAMGPaList *newlist, FAMGPaList *oldlist, FAMGGrid* grid)
 {
     FAMGPaList *pl;
+    FAMGNode *nodej;
     int np, z, j, mark, fmark;
     
     for(pl = oldlist; pl != NULL; pl = pl->GetNext())
@@ -585,8 +527,10 @@ void FAMGGraph::UpdateNSons(FAMGPaList *newlist, FAMGPaList *oldlist, FAMGGrid* 
         for(z = 0; z < np; z++)
         {
             j = pl->GetPa(z);
-            if((node+j)->IsCGNode()) mark = 1;
-            if((node+j)->IsFGNode()) 
+			nodej = GetNode(j);
+            if(nodej->IsCGNode()) 
+				mark = 1;
+            if(nodej->IsFGNode()) 
             {
                 fmark = 0;
                 break;
@@ -597,9 +541,10 @@ void FAMGGraph::UpdateNSons(FAMGPaList *newlist, FAMGPaList *oldlist, FAMGGrid* 
             for(z = 0; z < np; z++)
             {
                 j = pl->GetPa(z);
-                if(!(node+j)->IsCGNode())
+				nodej = GetNode(j);
+                if(!nodej->IsCGNode())
                 {
-                    (node+j)->SetFlag(1);
+                    nodej->SetFlag(1);
                 }
             }
         }
@@ -612,8 +557,10 @@ void FAMGGraph::UpdateNSons(FAMGPaList *newlist, FAMGPaList *oldlist, FAMGGrid* 
         for(z = 0; z < np; z++)
         {
             j = pl->GetPa(z);
-            if((node+j)->IsCGNode()) mark = 1;
-            if((node+j)->IsFGNode()) 
+			nodej = GetNode(j);
+            if(nodej->IsCGNode()) 
+				mark = 1;
+            if(nodej->IsFGNode()) 
             {
                 fmark = 0;
                 break;
@@ -624,9 +571,10 @@ void FAMGGraph::UpdateNSons(FAMGPaList *newlist, FAMGPaList *oldlist, FAMGGrid* 
             for(z = 0; z < np; z++)
             {
                 j = pl->GetPa(z);
-                if(!(node+j)->IsCGNode())
+				nodej = GetNode(j);
+                if(!nodej->IsCGNode())
                 {
-                    (node+j)->SetFlag1(1);
+                    nodej->SetFlag1(1);
                 }
             }
         }
@@ -638,12 +586,13 @@ void FAMGGraph::UpdateNSons(FAMGPaList *newlist, FAMGPaList *oldlist, FAMGGrid* 
         for(z = 0; z < np; z++)
         {
             j = pl->GetPa(z);
-            if(((node+j)->GetFlag())
-               && (!(node+j)->GetFlag1())
-               && (!(node+j)->GetFlag2()))
+			nodej = GetNode(j);
+            if(nodej->GetFlag()
+               && !nodej->GetFlag1()
+               && !nodej->GetFlag2())
             {
-                (node+j)->SetFlag2(1);
-                (node+j)->SetNSons((node+j)->GetNSons()-1);
+                nodej->SetFlag2(1);
+                nodej->SetNSons(nodej->GetNSons()-1);
             }
         }
     }
@@ -654,13 +603,13 @@ void FAMGGraph::UpdateNSons(FAMGPaList *newlist, FAMGPaList *oldlist, FAMGGrid* 
         for(z = 0; z < np; z++)
         {
             j = pl->GetPa(z);
-            if((!(node+j)->GetFlag()) 
-               && ((node+j)->GetFlag1())
-               && (!(node+j)->GetFlag2()))
+			nodej = GetNode(j);
+            if(!nodej->GetFlag()
+               && nodej->GetFlag1()
+               && !nodej->GetFlag2())
             {
-                
-               (node+j)->SetFlag2(1);
-               (node+j)->SetNSons((node+j)->GetNSons()+1);
+               nodej->SetFlag2(1);
+               nodej->SetNSons(nodej->GetNSons()+1);
             }
         }
     }
@@ -671,11 +620,12 @@ void FAMGGraph::UpdateNSons(FAMGPaList *newlist, FAMGPaList *oldlist, FAMGGrid* 
         for(z = 0; z < np; z++)
         {
             j = pl->GetPa(z);
-            (node+j)->SetFlag(0);
-            (node+j)->SetFlag1(0);
-            if((node+j)->GetFlag2())
+			nodej = GetNode(j);
+            nodej->SetFlag(0);
+            nodej->SetFlag1(0);
+            if(nodej->GetFlag2())
             {
-                (node+j)->SetFlag2(0);
+                nodej->SetFlag2(0);
                 grid->UpdateNBNewCG(j);
             }
         }
@@ -687,11 +637,12 @@ void FAMGGraph::UpdateNSons(FAMGPaList *newlist, FAMGPaList *oldlist, FAMGGrid* 
         for(z = 0; z < np; z++)
         {
             j = pl->GetPa(z);
-            (node+j)->SetFlag(0);
-            (node+j)->SetFlag1(0);
-            if((node+j)->GetFlag2())
+			nodej = GetNode(j);
+            nodej->SetFlag(0);
+            nodej->SetFlag1(0);
+            if(nodej->GetFlag2())
             {
-                (node+j)->SetFlag2(0);
+                nodej->SetFlag2(0);
                 grid->UpdateNBNewCG(j);
             }
         }
@@ -703,101 +654,101 @@ void FAMGGraph::UpdateNSons(FAMGPaList *newlist, FAMGPaList *oldlist, FAMGGrid* 
 
 int FAMGGrid::UpdateNeighborsCG(int i)
 {
-    FAMGNode *nodej, *node;
-    FAMGMatrixPtr matij;
-    FAMGPaList *pl;
-    int j, z, found, k;
+	FAMGNode *nodej, *nodek;
+	FAMGPaList *pl;
+	int z, found, k;
 
-    node = graph->GetNode();
+	// check all neighbors with i as possible father, tmpmatrix is OK
+	FAMGMatrixEntry matij;
+	FAMGVectorEntry vec_i = GetGraph()->GetNode(i)->GetVec();
+	FAMGMatrixIter matiter(*GetTmpMatrix(), vec_i);
+	
+	matiter(matij);		// skip diagonal entry
+	while(matiter(matij))
+	{
+		nodej = GetGraph()->GetNode(matij.dest());
+        if(nodej->IsCGNode() || nodej->IsFGNode())
+			continue;
 
-    // check all neighbors with i as possible father, tmpmatrix is OK
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
-    {
-        j = matij.GetIndex();
-        nodej = node+j;
-        if(((nodej)->IsCGNode()) || ((nodej)->IsFGNode())) continue;
-        {
-            for(pl = nodej->GetPaList(); pl != NULL; pl = pl->GetNext())
-            {
-                found = 0;
-                for(z = 0; z < pl->GetNp(); z++)
-                {
-                    if(pl->GetPa(z) == i)
-                    {
-                        found = 1;
-                        break;
-                    }
-                }
-                if (found)
-                {
-                    for(z = 0; z < pl->GetNp(); z++)
-                    {
-                        k = pl->GetPa(z); 
-                        if(k != i)
-                        { 
-                            (node+k)->SetFlag(1);
-                            (node+k)->SetNSons((node+k)->GetNSons()+1);
-                        }
-                    }
-                }
-            }
-        }
-    }
+		for(pl = nodej->GetPaList(); pl != NULL; pl = pl->GetNext())
+		{
+			found = 0;
+			for(z = 0; z < pl->GetNp(); z++)
+			{
+				if(pl->GetPa(z) == i)
+				{
+					found = 1;
+					break;
+				}
+			}
+			if (found)
+			{
+				for(z = 0; z < pl->GetNp(); z++)
+				{
+					k = pl->GetPa(z); 
+					if(k != i)
+					{
+						nodek = GetGraph()->GetNode(k);
+						nodek->SetFlag(1);
+						nodek->SetNSons(nodek->GetNSons()+1);
+					}
+				}
+			}
+		}
 
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
-    {
-        j = matij.GetIndex();
-        nodej = node+j;
-        if(((nodej)->IsCGNode()) || ((nodej)->IsFGNode())) continue;
-        {
-            for(pl = nodej->GetPaList(); pl != NULL; pl = pl->GetNext())
-            {
-                found = 0;
-                for(z = 0; z < pl->GetNp(); z++)
-                {
-                    if(pl->GetPa(z) == i)
-                    {
-                        found = 1;
-                        break;
-                    }
-                }
-                if (found)
-                {
-                    for(z = 0; z < pl->GetNp(); z++)
-                    {
-                        k = pl->GetPa(z); 
-                        if((node+k)->GetFlag() == 1)
-                        { 
-                            (node+k)->SetFlag(0);
-                            UpdateNBNewCG(k);
-                        }
-                    }
-                }
-            }
-        }
-    }
-                    
+	}
 
-    UpdateNBNewCG(i);
+	matiter.reset();
+	matiter(matij);		// skip diagonal entry
+	while(matiter(matij))
+	{
+		nodej = GetGraph()->GetNode(matij.dest());
+        if(nodej->IsCGNode() || nodej->IsFGNode())
+			continue;
+		for(pl = nodej->GetPaList(); pl != NULL; pl = pl->GetNext())
+		{
+			found = 0;
+			for(z = 0; z < pl->GetNp(); z++)
+			{
+				if(pl->GetPa(z) == i)
+				{
+					found = 1;
+					break;
+				}
+			}
+			if (found)
+			{
+				for(z = 0; z < pl->GetNp(); z++)
+				{
+					k = pl->GetPa(z);
+					nodek = GetGraph()->GetNode(k); 
+					if(nodek->GetFlag() == 1)
+					{ 
+						nodek->SetFlag(0);
+						UpdateNBNewCG(k);
+					}
+				}
+			}
+		}
+	}
 
-    return 0;
+	UpdateNBNewCG(i);
+
+	return 0;
 }
 
  
 void FAMGPaList::MarkParents(FAMGGrid *grid)
 {
-    FAMGNode *node,*cgnode;
-    FAMGGraph *graph;
+	FAMGGraph *graph = grid->GetGraph();
+    FAMGNode *cgnode;
     int i;
     
-    graph = grid->GetGraph();
-    node = graph->GetNode();
     for(i = 0; i < np; i++)
     {
-        cgnode = node + pa[i];
-        if(cgnode->IsCGNode()) continue;
+        cgnode = graph->GetNode(pa[i]);
+        if(cgnode->IsCGNode()) 
+			continue;
         graph->Remove(cgnode);
         graph->MarkCGNode(cgnode);
         graph->UpdateNSons(NULL,cgnode->GetPaList(),grid);
@@ -810,18 +761,12 @@ void FAMGPaList::MarkParents(FAMGGrid *grid)
 }
 
         
-int FAMGGrid::SaveCoeffs(int i, int np, int *pa, double *coeff, double *coefft)
+int FAMGGrid::SaveCoeffs(const FAMGVectorEntry& fg_vec, int np, const int pa[], double coeff[], double coefft[])
 {
-    FAMGTransferEntry *trans;
-    int j,z;
+    int z;
 
-    trans = transfer->GetRow();
     for(z = 0; z < np; z++)
-    {
-        j = pa[z];
-        if((trans+i)->SaveEntry(trans+j,coeff[z])) return 1;
-        if((trans+j)->SaveEntry(trans+i,coefft[z])) return 1;
-    }
+		transfer->SetEntries(fg_vec,GetGraph()->GetNode(pa[z])->GetVec(),coeff[z],coefft[z]);
  
     return 0;
 }
@@ -830,8 +775,8 @@ int FAMGNode::CheckPaList(FAMGGraph *graph)
 {
     FAMGPaList *pl, *ppl, *opl;
     int update, remove, z, j;
-    FAMGNode *node=graph->GetNode();
-
+	FAMGNode *nodej;
+	
     update = 0;
     pl = palist;
     ppl = NULL;
@@ -844,7 +789,8 @@ int FAMGNode::CheckPaList(FAMGGraph *graph)
         for(z = 0; z < opl->GetNp(); z++)
         {
             j = opl->GetPa(z);
-            if((node+j)->IsFGNode()) 
+			nodej = graph->GetNode(j);
+            if(nodej->IsFGNode()) 
             {
                 remove = 1;
                 break;
@@ -852,8 +798,10 @@ int FAMGNode::CheckPaList(FAMGGraph *graph)
         }
         if(remove)
         {
-            if(ppl != NULL) ppl->SetNext(pl);
-            else palist = pl;
+            if(ppl != NULL) 
+				ppl->SetNext(pl);
+            else 
+				palist = pl;
 
             // store opl in freelist
             opl->SetNext(graph->GetFreePaList());
@@ -872,11 +820,9 @@ int FAMGNode::CheckPaList(FAMGGraph *graph)
 
 int FAMGNode::Eliminate(FAMGGrid *grid)
 {
-    FAMGGraph *graph;
+	FAMGGraph *graph = grid->GetGraph();
     FAMGPaList *pl, *minpl;
     double weight, minweight;
-
-    graph = grid->GetGraph();
 
     minweight = 1e+10;
     for(pl = palist; pl != NULL; pl = pl->GetNext())
@@ -895,47 +841,46 @@ int FAMGNode::Eliminate(FAMGGrid *grid)
     palist = NULL;
     minpl->MarkParents(grid);
 
-    if(grid->SaveCoeffs(id,minpl->GetNp(),minpl->GetPa(),minpl->GetCoeff(),minpl->GetCoefft())) return 1;
-   
+    if(grid->SaveCoeffs(GetVec(),minpl->GetNp(),minpl->GetPaPtr(),minpl->GetCoeff(),minpl->GetCoefft())) return 1;
 
     return 0;
 }
 
 int FAMGNode::UpdateNeighborsFG(FAMGGrid *grid)
 {
-    FAMGGraph *graph;
-    FAMGNode *node, *nodej;
-    FAMGMatrixPtr matij;
-    FAMGPaList *palist;
-    int j;
+	FAMGGraph *graph = grid->GetGraph();
+	FAMGNode *nodej;
+	FAMGPaList *palist;
     
-    graph = grid->GetGraph();
-    node = graph->GetNode();
+	// check all current neighbors, i.e. all neighbors and the
+	// parent nodes of the FG neighbors. The parent nodes are marked,
+	// thus tmpmatrix or (matrix) is fine.
+	
+	FAMGMatrixEntry matij;
+	FAMGMatrixIter matiter(*(grid->GetTmpMatrix()), GetVec());
 
-    // check all current neighbors, i.e. all neighbors and the
-    // parent nodes of the FG neighbors. The parent nodes are marked,
-    // thus tmpmatrix or (matrix) is fine.
-    matij = grid->GetTmpMatrix()->GetStart(id);
-    while(matij.GetNext())
+	matiter(matij);		// skip diagonal entry
+    while(matiter(matij))
     {
-        // maybe not enough
-        j = matij.GetIndex();
-        nodej = node+j;
-        if(((nodej)->IsCGNode()) || ((nodej)->IsFGNode())) continue;
-        graph->Store(nodej);
-        if(grid->AnalyseNodeSimple(j,palist)) return 1;
-        graph->UpdateNSons(palist,nodej->GetPaList(),grid);
-        graph->ClearPaList(nodej->GetPaList());
-        nodej->SetPaList(palist);
-        nodej->CountNewLinks(grid, graph);
-        nodej->CountNewCG(graph);
-    }
+		// maybe not enough
+		nodej = graph->GetNode(matij.dest());
+		if(nodej->IsCGNode() || nodej->IsFGNode()) 
+			continue;
+		graph->Store(nodej);
+		if(grid->AnalyseNodeSimple(nodej,palist)) 
+			return 1;
+		graph->UpdateNSons(palist,nodej->GetPaList(),grid);
+		graph->ClearPaList(nodej->GetPaList());
+		nodej->SetPaList(palist);
+		nodej->CountNewLinks(grid, graph);
+		nodej->CountNewCG(graph);
+	}
 
-    return 0;
+	return 0;
 }
         
 
-int FAMGGraph::RemainingNodes(FAMGGrid *gridptr)
+int FAMGGraph::RemainingNodes(void)
 {
     FAMGNode* cgnode;
     
@@ -992,7 +937,8 @@ int FAMGGraph::EliminateNodes(FAMGGrid *gridptr)
                 DrawUgPicture(thePic);
             } 
             cin >> c;
-            } */
+            } 
+		*/
     }
 
     return 0;
@@ -1000,6 +946,7 @@ int FAMGGraph::EliminateNodes(FAMGGrid *gridptr)
 
 int FAMGGraph::Construct(FAMGGrid *gridptr)
 {
+	FAMGGraph *graph = gridptr->GetGraph();
     FAMGNode *nodei;
     FAMGPaList *palist;
     int i;
@@ -1020,24 +967,26 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
     
     for(i = 0; i < n; i++)
     {
-        nodei = node+i;
-        if(nodei->IsFGNode()) continue;
+        nodei = graph->GetNode(i);
+        if(nodei->IsFGNode()) 
+			continue;
         switch (type)
         {
-        case 0: if (gridptr->AnalyseNode0(i,palist)) return 1; break;
-        case 1: if (gridptr->AnalyseNode1(i,palist)) return 1; break;
-        case 2: if (gridptr->AnalyseNode2(i,palist)) return 1; break;
-        case 3: if (gridptr->AnalyseNode3(i,palist)) return 1; break;
-        case 4: if (gridptr->AnalyseNode4(i,palist)) return 1; break;
-        case 5: if (gridptr->AnalyseNode5(i,palist)) return 1; break;
+        case 0: if (gridptr->AnalyseNode0(nodei->GetVec(),palist)) return 1; break;
+        case 1: if (gridptr->AnalyseNode1(nodei->GetVec(),palist)) return 1; break;
+        case 2: if (gridptr->AnalyseNode2(nodei->GetVec(),palist)) return 1; break;
+        case 3: if (gridptr->AnalyseNode3(nodei->GetVec(),palist)) return 1; break;
+        case 4: if (gridptr->AnalyseNode4(nodei->GetVec(),palist)) return 1; break;
+        case 5: if (gridptr->AnalyseNode5(nodei->GetVec(),palist)) return 1; break;
         }
         nodei->SetPaList(palist);
     }
     InitNSons();
     for(i = 0; i < n; i++)
     {
-        nodei = node+i;
-        if(nodei->IsFGNode()) continue;
+        nodei = graph->GetNode(i);
+        if(nodei->IsFGNode()) 
+			continue;
         Remove(nodei);  // might be inserted by UpdateNeighborsCG
         // if(nodei->GetPaList() == NULL)
         // {
@@ -1058,6 +1007,7 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 
 int FAMGGraph::Construct2(FAMGGrid *gridptr)
 {
+	FAMGGraph *graph = gridptr->GetGraph();
     FAMGNode *nodei;
     FAMGPaList *palist;
     int i;
@@ -1079,16 +1029,17 @@ int FAMGGraph::Construct2(FAMGGrid *gridptr)
     
     for(i = 0; i < n; i++)
     {
-        nodei = node+i;
-        if((nodei->IsFGNode()) || (nodei->IsCGNode())) continue; 
+        nodei = graph->GetNode(i);
+        if(nodei->IsFGNode() || nodei->IsCGNode()) 
+			continue; 
         switch (type)
         {
-        case 0: if (gridptr->AnalyseNode0(i,palist)) return 1; break;
-        case 1: if (gridptr->AnalyseNode1(i,palist)) return 1; break;
-        case 2: if (gridptr->AnalyseNode2(i,palist)) return 1; break;
-        case 3: if (gridptr->AnalyseNode3(i,palist)) return 1; break;
-        case 4: if (gridptr->AnalyseNode4(i,palist)) return 1; break;
-        case 5: if (gridptr->AnalyseNode5(i,palist)) return 1; break;
+        case 0: if (gridptr->AnalyseNode0(nodei->GetVec(),palist)) return 1; break;
+        case 1: if (gridptr->AnalyseNode1(nodei->GetVec(),palist)) return 1; break;
+        case 2: if (gridptr->AnalyseNode2(nodei->GetVec(),palist)) return 1; break;
+        case 3: if (gridptr->AnalyseNode3(nodei->GetVec(),palist)) return 1; break;
+        case 4: if (gridptr->AnalyseNode4(nodei->GetVec(),palist)) return 1; break;
+        case 5: if (gridptr->AnalyseNode5(nodei->GetVec(),palist)) return 1; break;
         }
         nodei->SetPaList(palist);
         nodei->SetNSons(0);
@@ -1098,8 +1049,9 @@ int FAMGGraph::Construct2(FAMGGrid *gridptr)
     InitNSons();
     for(i = 0; i < n; i++)
     {
-        nodei = node+i;
-        if((nodei->IsFGNode()) || (nodei->IsCGNode())) continue; 
+        nodei = graph->GetNode(i);
+        if(nodei->IsFGNode() || nodei->IsCGNode())
+			continue; 
         Remove(nodei);  
         // if(nodei->GetPaList() == NULL)
         // {
@@ -1117,44 +1069,3 @@ int FAMGGraph::Construct2(FAMGGrid *gridptr)
 
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

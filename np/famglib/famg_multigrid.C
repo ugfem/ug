@@ -26,7 +26,7 @@
 #include "famg_grid.h"
 #include "famg_multigrid.h"
 #include "famg_graph.h"
-#include "famg_matrix.h"
+#include "famg_algebra.h"
 #include "famg_heap.h"
 #include "famg_system.h"
 
@@ -64,21 +64,19 @@ int FAMGMultiGrid::Construct()
     const int cgnodes = FAMGGetParameter()->Getcgnodes();
     const double mincoarse = FAMGGetParameter()->Getmincoarse();
     const int gamma = FAMGGetParameter()->Getgamma();
-    if ((strcmp("ilut",FAMGGetParameter()->Getpresmoother()) == 0)
-     || (strcmp("ilut",FAMGGetParameter()->Getpostsmoother()) == 0))  
-    {
-        ilu = 1; 
-        
-    }
-    else ilu = 0;
-    if (strcmp("ilut",FAMGGetParameter()->Getcgsmoother()) == 0)
-    {
-        cgilu = 1;
-        
-    }
-    else cgilu = 0;
+	if ((strcmp("ilut",FAMGGetParameter()->Getpresmoother()) == 0)
+		|| (strcmp("ilut",FAMGGetParameter()->Getpostsmoother()) == 0))  
+	{
+		ilu = 1; 
+	}
+	else ilu = 0;
+	if (strcmp("ilut",FAMGGetParameter()->Getcgsmoother()) == 0)
+	{
+		cgilu = 1;
+	}
+	else cgilu = 0;
 
-    g = grid[0];
+	g = grid[0];
     g->SmoothTV();
     FAMGMarkHeap(FAMG_FROM_TOP); // release in Deconstruct
     for(level = 0; level < FAMGMAXGRIDS-1; level++)
@@ -86,24 +84,32 @@ int FAMGMultiGrid::Construct()
         g->Stencil();
         nn = g->GetN();
         if ((nn <= cgnodes) && (gamma > 0)) break;
-        
+
+#ifdef FAMG_ILU
         if(ilu)
         {
-            if (g->ILUTDecomp(0)) return 1;
+            if (g->ILUTDecomp(0)) 
+				return 1;
         }
+#endif
         if (gamma < 1) return 0;
 
-        if (g->ConstructTransfer()) return 1;        
+        if (g->ConstructTransfer()) 
+			return 1;        
         nnc = (g->GetN())-(g->GetNF());
         // if (nnc == 0) return 0; 
         cg = (FAMGGrid *) FAMGGetMem(sizeof(FAMGGrid),FAMG_FROM_TOP);
-        if(cg == NULL) return(NULL);
-        if(cg->Init(nnc)) return 1;
-        if(cg->Construct(g)) return 1;
+        if(cg == NULL)
+			return(NULL);
+        if(cg->Init(nnc,*g))
+			return 1;
+        if(cg->Construct(g))
+			return 1;
         grid[n] = cg;
         g = cg;
         n++;
-        if(nnc > nn*mincoarse) break;
+        if(nnc > nn*mincoarse)
+			break;
     }
 
     if(level == FAMGMAXGRIDS-1)
@@ -113,11 +119,13 @@ int FAMGMultiGrid::Construct()
     }
 
     g->Stencil();
+#ifdef FAMG_ILU	
     if(cgilu)
     {
         if (g->ILUTDecomp(1)) return 1;
     }
-
+#endif
+	
     return 0;
 }
 
@@ -126,7 +134,9 @@ int FAMGMultiGrid::Deconstruct()
 {
     int i;
     
+#ifdef FAMG_REORDERCOLUMN
     if(Reorder()) return 1;
+#endif
     for(i = 0; i < n; i++) if(grid[i] != NULL)  grid[i]->Deconstruct();
     FAMGReleaseHeap(FAMG_FROM_TOP); // mark in construct
     n = 1;
@@ -141,37 +151,36 @@ int FAMGMultiGrid::Step(int level)
     
     FAMGGrid *g, *cg;
     int i,n1,n2,gamma;
-
+	
     n1 = FAMGGetParameter()->Getn1();
     n2 = FAMGGetParameter()->Getn2();
     gamma = FAMGGetParameter()->Getgamma();
- 
-
+	g = grid[level];
+	
     if(gamma < 1)
     {
 
-        g = grid[level];
         for(i = 0; i < n1; i++)
         {
             g->PreSmooth();
-            g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
+            // not necessary any more: g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
             g->Defect();
         }        
 
         for(i = 0; i < n2; i++)
         {
             g->PostSmooth();
-            g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
+            // not necessary any more: g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
             g->Defect();
         }
 
         return 0;
     }
 
-    g = grid[level];
     if(level == (n-1))
     { 
-        if(g->BiCGStab()) return 1;
+        if(g->SolveCoarseGrid())
+			return 1;
     }
     else
     {
@@ -180,22 +189,24 @@ int FAMGMultiGrid::Step(int level)
         for(i = 0; i < n1; i++)
         {
             g->PreSmooth();
-            g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
+            // not necessary any more: g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
             g->Defect();
         }        
 
-        g->DevideFGDefect();
+        // g->DevideFGDefect(); included in the new restriction
         g->Restriction(cg);
-        cg->SetVector(FAMGUNKNOWN,0.0);
-        cg->CopyVector(FAMGRHS,FAMGDEFECT);
-        for(i = 0; i < gamma; i++) { if(Step(level+1)) return 1; }
+        *(cg->GetVector(FAMGUNKNOWN)) = 0.0;
+        *(cg->GetVector(FAMGRHS)) = *(cg->GetVector(FAMGDEFECT));
+		for(i = 0; i < gamma; i++) 
+			if(Step(level+1)) 
+				return 1;
         g->Prolongation(cg);
-        g->Defect();
+        // g->Defect(); included in the new restriction
 
         for(i = 0; i < n2; i++)
         {
             g->PostSmooth();
-            g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
+            // not necessary any more: g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
             g->Defect();
         }
 
@@ -214,12 +225,13 @@ int FAMGMultiGrid::SGSStep(int level)
     g = grid[level];
 
     g->SGSSmooth();
-    g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
+    // not necessary any more: g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
     g->Defect();
   
     return 0;
 }
 
+#ifdef WEG
 void FAMGMultiGrid::Mult(double *vout, double *vin)
 {
     FAMGMatrix *matrix;
@@ -229,7 +241,9 @@ void FAMGMultiGrid::Mult(double *vout, double *vin)
 
     return;
 }
-        
+#endif
+
+#ifdef FAMG_REORDERCOLUMN
 int FAMGMultiGrid::Order()
 {
     FAMGGrid *grid0;
@@ -255,6 +269,4 @@ int FAMGMultiGrid::Reorder()
 
     return 0;
 }
-
-    
- 
+#endif

@@ -18,13 +18,12 @@
 /* Remarks:																	*/
 /*																			*/
 /****************************************************************************/
-
 #include <iostream.h>
 #include <strstream.h>
 #include <math.h>
 
+#include "famg_algebra.h"
 #include "famg_misc.h"
-#include "famg_matrix.h"
 #include "famg_heap.h"
 #include "famg_grid.h"
 #include "famg_graph.h"
@@ -42,20 +41,22 @@ struct FAMGSpecialData
 
 
 
-void FAMGGrid::JJ1(int j, double &hjj, double &ejj)
+void FAMGGrid::JJ1(const FAMGVectorEntry &vecj, double &hjj, double &ejj)
 {
-    FAMGMatrixPtr matjz;
+	const FAMGMatrixAlg& M = *GetTmpMatrix();
+    FAMGMatrixEntry matjz;
     double esum, hsum, mjj, mjz, mzj;
-
+	
     double omega = FAMGGetParameter()->Getomegar();
     hsum = 0.0;
     esum = 0.0;
-    matjz = tmpmatrix->GetStart(j);
-    mjj = matjz.GetData();
-    while(matjz.GetNext())
+	FAMGMatrixIter miter(M,vecj);
+	miter(matjz);   // get diagonal
+    mjj = M[matjz];
+    while(miter(matjz))
     {
-        mjz = matjz.GetData();
-        mzj = matjz.GetAdjData();
+        mjz = M[matjz];
+        mzj = M.GetAdjData(matjz);
         hsum += mjz*mjz;
         esum += mzj*mzj;
     }
@@ -67,28 +68,28 @@ void FAMGGrid::JJ1(int j, double &hjj, double &ejj)
 }
         
 
-void FAMGGrid::FJ1(int j, double &fj, double &gj, double *f, double *g)
+void FAMGGrid::FJ1(int j, const FAMGVectorEntry &vecj, double &fj, double &gj, double *f, double *g)
 {
-    FAMGMatrixPtr matjz;
-    FAMGNode *node;
+	const FAMGMatrixAlg& M = *GetTmpMatrix();
+    FAMGMatrixEntry matjz;
+    const FAMGGraph &graph = *GetGraph();
     double mjz, mzj, mjj, tf, tg;
-    int z, lz;
+    int lz;
     
     double omega = FAMGGetParameter()->Getomegar();
-    node = graph->GetNode();
-    matjz = tmpmatrix->GetStart(j);
-    mjj = matjz.GetData();
-    lz = (node+j)->GetLocalId();
+	FAMGMatrixIter miter(M,vecj);
+	miter(matjz);   // get diagonal
+    mjj = M[matjz];
+    lz = graph.GetNode(j)->GetLocalId();
     fj = (1.0-omega)*f[lz];
     gj = (1.0-omega)*g[lz];
     tf = 0.0;
     tg = 0.0;
-    while(matjz.GetNext())
+    while(miter(matjz))
     {
-        z = matjz.GetIndex();
-        lz = (node+z)->GetLocalId();
-        mjz = matjz.GetData();
-        mzj = matjz.GetAdjData();
+        lz = graph.GetNode(matjz.dest().GetIndex())->GetLocalId();
+        mjz = M[matjz];
+        mzj = M.GetAdjData(matjz);
         tf -= mjz*f[lz];
         tg -= mzj*g[lz];
     }
@@ -100,31 +101,30 @@ void FAMGGrid::FJ1(int j, double &fj, double &gj, double *f, double *g)
 }
 
 
-int FAMGGrid::LocalJ1(int j, double *h, double *e)
+int FAMGGrid::LocalJ1(int j, const FAMGVectorEntry &vecj, double *h, double *e)
 {
-    FAMGMatrixPtr matjz;
-    FAMGNode *node, *nodej, *nodez;
+	const FAMGMatrixAlg& M = *GetTmpMatrix();
+    FAMGMatrixEntry matjz;
+    const FAMGGraph &graph = *GetGraph();
     double mjj;
-    int z, nn;
+    int nn;
 
     double omega = FAMGGetParameter()->Getomegar();
-    node = graph->GetNode();
  
-    matjz = tmpmatrix->GetStart(j);
-    mjj = matjz.GetData();
-    nodej = node+j;
-    nodej->SetLocalId(0);
+	graph.GetNode(j)->SetLocalId(0);
     h[0] = 1.0-omega;
     e[0] = 1.0-omega;
     nn = 1;
-    while(matjz.GetNext())
+	FAMGMatrixIter miter(M,vecj);
+	miter(matjz);   // get diagonal
+    mjj = M[matjz];
+    while(miter(matjz))
     {
-        z = matjz.GetIndex();
-        nodez = node+z;
-        nodez->SetLocalId(nn);
-        h[nn] = -omega*matjz.GetData()/mjj;
-        e[nn] = -omega*matjz.GetAdjData()/mjj;
-        if(nn < 500) nn++;
+		graph.GetNode(matjz.dest().GetIndex())->SetLocalId(nn);
+        h[nn] = -omega*M[matjz]/mjj;
+        e[nn] = -omega*M.GetAdjData(matjz)/mjj;
+        if(nn < 500) 
+			nn++;
         else 
         {
             ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
@@ -135,44 +135,33 @@ int FAMGGrid::LocalJ1(int j, double *h, double *e)
     return 0;
 }
 
-void FAMGGrid::DLocalJ1(int j)
+void FAMGGrid::DLocalJ1(int j, const FAMGVectorEntry &vecj)
 {
-    FAMGMatrixPtr matjz;
-    FAMGNode *node, *nodej, *nodez;
-    int z;
+	const FAMGMatrixAlg& M = *GetTmpMatrix();
+    FAMGMatrixEntry matjz;
+    const FAMGGraph &graph = *GetGraph();
 
-    node = graph->GetNode();
-    nodej = node+j;
-    nodej->SetLocalId(-1);
-    matjz = tmpmatrix->GetStart(j);
-    while(matjz.GetNext())
-    {
-        z = matjz.GetIndex();
-        nodez = node+z;
-        nodez->SetLocalId(-1);
-    }
+	graph.GetNode(j)->SetLocalId(-1);
+	FAMGMatrixIter miter(M,vecj);
+	miter(matjz);   // skip diagonal
+    while(miter(matjz))
+		graph.GetNode(matjz.dest().GetIndex())->SetLocalId(-1);
 
    return;
 }
    
    
-void FAMGGrid::JK1(int k, double &hjk, double &ejk, double *h, double *e)        
+void FAMGGrid::JK1(int k, const FAMGVectorEntry &veck, double &hjk, double &ejk, double *h, double *e)        
 {
-    FAMGMatrixPtr matkz;
-    FAMGNode *node, *nodek, *nodez;
+	const FAMGMatrixAlg& M = *GetTmpMatrix();
+    FAMGMatrixEntry matkz;
+    const FAMGGraph &graph = *GetGraph();
     double mkz, mzk, mkk, th, te;
-    int z, lz;
+    int lz;
     
     double omega = FAMGGetParameter()->Getomegar();
-
-    node = graph->GetNode();
-    nodek = node+k;
-
-    matkz = tmpmatrix->GetStart(k);
-    mkk = matkz.GetData();
-
     hjk = ejk = 0.0;
-    lz = nodek->GetLocalId();
+    lz = graph.GetNode(k)->GetLocalId();
     if(lz >= 0)
     {
         hjk += (1.0-omega)*h[lz];
@@ -180,15 +169,17 @@ void FAMGGrid::JK1(int k, double &hjk, double &ejk, double *h, double *e)
     }
     th = 0.0;
     te = 0.0;
-    while(matkz.GetNext())
+
+	FAMGMatrixIter miter(M,veck);
+	miter(matkz);    // get diagonal
+    mkk = M[matkz];
+    while(miter(matkz))
     {
-        z = matkz.GetIndex();
-        nodez = node+z;
-        lz = nodez->GetLocalId();
+        lz = graph.GetNode(matkz.dest().GetIndex())->GetLocalId();
         if(lz >= 0)
         {
-            mkz = matkz.GetData();
-            mzk = matkz.GetAdjData();
+            mkz = M[matkz];
+            mzk = M.GetAdjData(matkz);
             th -= mkz*h[lz];
             te -= mzk*e[lz];
         }
@@ -200,39 +191,42 @@ void FAMGGrid::JK1(int k, double &hjk, double &ejk, double *h, double *e)
 }
 
 
-void FAMGGrid::FF1(int i, double &ff, double &gg, double *f, double *g)
+void FAMGGrid::FF1(const FAMGVectorEntry &veci, double &ff, double &gg, double *f, double *g)
 {
-    FAMGMatrixPtr matjz, matij;
-    FAMGNode *node, *nodez, *nodej;
+	FAMGVectorEntry vecj;
+	const FAMGMatrixAlg& M = *GetTmpMatrix();
+    FAMGMatrixEntry matij, matjz;
+    const FAMGGraph &graph = *GetGraph();
+	FAMGNode *nodej, *nodez;
     double mjj, mzj, mjz, rj, lj;
-    int z, j, lz, nn;
+    int lz, nn;
 
     double omega = FAMGGetParameter()->Getomegar();
-    node = graph->GetNode();
-    matij = tmpmatrix->GetStart(i);
     nn = 0;
-    while(matij.GetNext())
+	FAMGMatrixIter miter(M,veci);
+	miter(matij);   // skip diagonal
+    while(miter(matij))
     {
-        j = matij.GetIndex();
-        matjz = tmpmatrix->GetStart(j);
-        mjj = matjz.GetData();
-        rj = matij.GetData()/mjj;
-        lj = matij.GetAdjData()/mjj;
+        FAMGMatrixIter mjziter(M,matij.dest());
+        mjziter(matjz);    // get diagonal
+        mjj = M[matjz];
+        rj = M[matij]/mjj;
+        lj = M.GetAdjData(matij)/mjj;
         
         // most expensive part
-        while(matjz.GetNext())
+        while(mjziter(matjz))
         {
-            z = matjz.GetIndex();
-            mjz = matjz.GetData();
-            mzj = matjz.GetAdjData();
-            nodez = node+z;
+            mjz = M[matjz];
+            mzj = M.GetAdjData(matjz);
+            nodez = graph.GetNode(matjz.dest().GetIndex());
             lz = nodez->GetLocalId();
             if(lz < 0)
             {
                 nodez->SetLocalId(nn);
                 f[nn] = -omega*mjz*rj;
                 g[nn] = -omega*mzj*lj;
-                if(nn < 4000) nn++;
+                if(nn < 4000)
+					nn++;
                 else 
                 {
                     ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
@@ -246,22 +240,24 @@ void FAMGGrid::FF1(int i, double &ff, double &gg, double *f, double *g)
             }
         }
     }
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+    miter.reset();
+	miter(matij);    // skip diagonal
+    while(miter(matij))
     {
-        j = matij.GetIndex();
-        mjj = tmpmatrix->GetDiag(j);
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
+		vecj = matij.dest();
+        mjj = M.DiagValue(vecj);
+        rj = M[matij];
+        lj = M.GetAdjData(matij);
 
-        nodej = node+j;
+		nodej = graph.GetNode(vecj.GetIndex());
         lz = nodej->GetLocalId();
         if(lz < 0)
         {
             nodej->SetLocalId(nn);
             f[nn] = (1.0-omega)*rj;
             g[nn] = (1.0-omega)*lj;
-            if(nn < 4000) nn++;
+            if(nn < 4000)
+				nn++;
             else 
             {
                 ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
@@ -286,80 +282,84 @@ void FAMGGrid::FF1(int i, double &ff, double &gg, double *f, double *g)
     return;
 }
         
-void FAMGGrid::DFF1(int i)
+void FAMGGrid::DFF1(const FAMGVectorEntry &veci)
 {
-    FAMGMatrixPtr matjz, matij;
-    FAMGNode *node, *nodez, *nodej;
-    int z, j;
+	FAMGVectorEntry vecj;
+	const FAMGMatrixAlg& M = *GetTmpMatrix();
+    FAMGMatrixEntry matij, matjz;
+    const FAMGGraph &graph = *GetGraph();
 
-    node = graph->GetNode();
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+	FAMGMatrixIter miter(M,veci);
+	miter(matij);   // skip diagonal
+    while(miter(matij))
     {
-        j = matij.GetIndex();
-        nodej = node+j;
-        nodej->SetLocalId(-1);
+		vecj = matij.dest();
+		graph.GetNode(vecj.GetIndex())->SetLocalId(-1);
         
         // most expensive part
-        matjz = tmpmatrix->GetStart(j);
-        while(matjz.GetNext())
-        {
-            z = matjz.GetIndex();
-            nodez = node+z;
-            nodez->SetLocalId(-1);
-        }
+		FAMGMatrixIter mjziter(M,matij.dest());
+		mjziter(matjz); // skip diagonal
+        while(mjziter(matjz))
+			graph.GetNode(matjz.dest().GetIndex())->SetLocalId(-1);
     }
 
     return;
 }
         
 
-
 double FAMGGrid::BestSecond1(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData *sd, int nnb)
 {
-    double *tvA, *tvB;
     double aj, ak, bj, bk;
     double hjj, ejj, fj, gj, hkk, ekk, fk, gk, hjk, ejk, h[500], e[500];
     double error, errorA, errorB, min, nenner, tvAj, tvAk, tvBj, tvBk;
     double coeffA[2], coeffB[2];
     int k, np, pa[2], j, z, y;
+    FAMGGraph &graph = *GetGraph();
+	const FAMGVector &tvA = *vector[FAMGTVA];
+	const FAMGVector &tvB = *vector[FAMGTVB];
+	FAMGVectorEntry vecj, veck;
 
     double tol = FAMGGetParameter()->Gettol();
-    tvA = vector[FAMGTVA];
-    tvB = vector[FAMGTVB];
 
     min = FAMGGetParameter()->Geterror2();
     for(z = 0; z < nnb-1; z++)
     {
         j = sd[z].j;
+		vecj = graph.GetNode(j)->GetVec();
+
         FAMGMarkHeap(FAMG_FROM_TOP);
         hjj = (sd[z]).hjj; ejj = sd[z].ejj;
         fj = sd[z].fj; gj = sd[z].gj;
-        tvAj = tvA[j];
-        tvBj = tvB[j];
+        tvAj = tvA[vecj];
+        tvBj = tvB[vecj];
             
-        if(LocalJ1(j,h,e)) return 1e+20;
+        if(LocalJ1(j,vecj,h,e)) 
+			return 1e+20;
 
         for(y = z+1; y < nnb; y++)
         {
             k = sd[y].j;
+			veck = graph.GetNode(k)->GetVec();
+
             hkk = sd[y].hjj; ekk = sd[y].ejj;
             fk = sd[y].fj; gk = sd[y].gj;
-            tvAk = tvA[k];
-            tvBk = tvB[k];
+            tvAk = tvA[veck];
+            tvBk = tvB[veck];
  
-            JK1(k,hjk,ejk,h,e);
+            JK1(k,veck,hjk,ejk,h,e);
 
             // compute aj, ak
-           if( (Abs(tvAj) < 1e-15) && (Abs(tvAk) < 1e-15))
+			if( (Abs(tvAj) < 1e-15) && (Abs(tvAk) < 1e-15))
             {
-                if (Abs(rt) > 1e-15) continue;
-
-                 nenner = hjj*hkk-hjk*hjk;
-                if (Abs(nenner) < 1e-15) continue;
+                if (Abs(rt) > 1e-15) 
+					continue;
+				nenner = hjj*hkk-hjk*hjk;
+                if (Abs(nenner) < 1e-15) 
+					continue;
                 ak = (hjj*fk-hjk*fj)/nenner;
                 nenner = hjj*hjj+hjk*hjk;
-                if (Abs(nenner) < 1e-15) continue;
+                if (Abs(nenner) < 1e-15) 
+					continue;
                 aj = (hjj*fj+hjk*fk-(hjj*hjk+hjk*hkk)*ak)/nenner;
             }
             else if(Abs(tvAj) > Abs(tvAk))
@@ -395,13 +395,15 @@ double FAMGGrid::BestSecond1(FAMGPaList *&palist, double mii, double rt, double 
 
             if( (Abs(tvBj) < 1e-15) && (Abs(tvBk) < 1e-15))
             {
-                if (Abs(lt) > 1e-15) continue;
-
+                if (Abs(lt) > 1e-15)
+					continue;
                 nenner = ejj*ekk-ejk*ejk;
-                if (Abs(nenner) < 1e-15) continue;
+                if (Abs(nenner) < 1e-15)
+					continue;
                 bk = (ejj*gk-ejk*gj)/nenner;
                 nenner = ejj*ejj+ejk*ejk;
-                if (Abs(nenner) < 1e-15) continue;
+                if (Abs(nenner) < 1e-15)
+					continue;
                 bj = (ejj*gj+ejk*gk-(ejj*ejk+ejk*ekk)*bk)/nenner;
             }
             else if(Abs(tvBj) > Abs(tvBk))
@@ -439,19 +441,21 @@ double FAMGGrid::BestSecond1(FAMGPaList *&palist, double mii, double rt, double 
 
             if(error*tol < min)
             {
-                if (error < min) min = error;
+                if (error < min)
+					min = error;
                 // k must be first parents !
                 np = 2; pa[0] = j; pa[1] = k; 
                 coeffA[0] = -aj/mii; coeffA[1] = -ak/mii;
                 coeffB[0] = -bj/mii; coeffB[1] = -bk/mii; 
-                if(graph->SavePaList(palist,np,pa,coeffA,coeffB,error)) return 1e+20;
+                if(graph.SavePaList(palist,np,pa,coeffA,coeffB,error))
+					return 1e+20;
             }
         }
-        DLocalJ1(j);
+        DLocalJ1(j,vecj);
         FAMGReleaseHeap(FAMG_FROM_TOP);
     }
 
-    graph->CorrectPaList(palist,min/tol);
+    graph.CorrectPaList(palist,min/tol);
 
     return min;
 }
@@ -459,21 +463,23 @@ double FAMGGrid::BestSecond1(FAMGPaList *&palist, double mii, double rt, double 
 
 double FAMGGrid::BestFirst1(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData *sd, int nnb)
 {
-    double *tvA, *tvB, aj, bj, coeffA[1], coeffB[1];
+    double aj, bj, coeffA[1], coeffB[1];
     double errorA, errorB, error, min;
     double hjj, ejj, fj, gj;
     int j, np, pa[1], z;
-    
+	FAMGGraph &graph = *GetGraph();
+	const FAMGVector &tvA = *vector[FAMGTVA];
+	const FAMGVector &tvB = *vector[FAMGTVB];
+	FAMGVectorEntry vecj;
+   
     double tol = FAMGGetParameter()->Gettol();
-    tvA = vector[FAMGTVA];
-    tvB = vector[FAMGTVB];
- 
     min = 1.01*FAMGGetParameter()->Geterror1(); 
     for(z = 0; z < nnb; z++)
     {
         j = sd[z].j;
-        aj = rt/tvA[j];
-        bj = lt/tvB[j];
+		vecj = graph.GetNode(j)->GetVec();
+        aj = rt/tvA[vecj];
+        bj = lt/tvB[vecj];
             
         hjj = sd[z].hjj; ejj = sd[z].ejj;
         fj = sd[z].fj; gj = sd[z].gj;
@@ -489,11 +495,12 @@ double FAMGGrid::BestFirst1(FAMGPaList *&palist, double mii, double rt, double l
             np = 1; pa[0] = j; 
             coeffA[0] = -aj/mii;
             coeffB[0] = -bj/mii; 
-            if(graph->SavePaList(palist,np,pa,coeffA,coeffB,error)) return 1e+20;
+            if(graph.SavePaList(palist,np,pa,coeffA,coeffB,error)) 
+				return 1e+20;
         }
     }
 
-    graph->CorrectPaList(palist,min/tol); 
+    graph.CorrectPaList(palist,min/tol); 
 
 
     return min;
@@ -501,19 +508,21 @@ double FAMGGrid::BestFirst1(FAMGPaList *&palist, double mii, double rt, double l
 
 double FAMGGrid::BestFirst5(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData sd)
 {
-    double *tvA, *tvB, aj, bj, coeffA[1], coeffB[1];
+    double aj, bj, coeffA[1], coeffB[1];
     double errorA, errorB, error, min;
     double hjj, ejj, fj, gj;
     int j, np, pa[1];
+	FAMGGraph &graph = *GetGraph();
+	const FAMGVector &tvA = *vector[FAMGTVA];
+	const FAMGVector &tvB = *vector[FAMGTVB];
+	FAMGVectorEntry vecj;
     
     double tol = FAMGGetParameter()->Gettol();
-    tvA = vector[FAMGTVA];
-    tvB = vector[FAMGTVB];
- 
     min = 1.01*FAMGGetParameter()->Geterror1(); 
     j = sd.j;
-    aj = rt/tvA[j];
-    bj = lt/tvB[j];
+	vecj = graph.GetNode(j)->GetVec();
+    aj = rt/tvA[vecj];
+    bj = lt/tvB[vecj];
             
     hjj = sd.hjj; ejj = sd.ejj;
     fj = sd.fj; gj = sd.gj;
@@ -527,38 +536,42 @@ double FAMGGrid::BestFirst5(FAMGPaList *&palist, double mii, double rt, double l
         np = 1; pa[0] = j; 
         coeffA[0] = -aj/mii;
         coeffB[0] = -bj/mii; 
-        if(graph->SavePaList(palist,np,pa,coeffA,coeffB,error)) return 1e+20;
+        if(graph.SavePaList(palist,np,pa,coeffA,coeffB,error)) 
+			return 1e+20;
     }
 
     return error;
 }
 
 
-int FAMGGrid::AnalyseNode3(int i, FAMGPaList *&palist)
+int FAMGGrid::AnalyseNode3(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 {
-    FAMGMatrixPtr matij;
-    double rj, lj, rt, lt, mii, rmax, lmax, min1, *tvA, *tvB, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000];
+    double rj, lj, rt, lt, mii, rmax, lmax, min1, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000];
     int j, nnb, z;
     FAMGSpecialData *sd;
-
-    tvA = vector[FAMGTVA];
-    tvB = vector[FAMGTVB];
+	FAMGGraph &graph = *GetGraph();
+	const FAMGVector &tvA = *vector[FAMGTVA];
+	const FAMGVector &tvB = *vector[FAMGTVB];
+	const FAMGMatrixAlg &M = *GetMatrix();
+	FAMGVectorEntry vecj;
+	FAMGMatrixEntry matij;
 
     palist = NULL;
 
-    matij = matrix->GetStart(i);
-    mii = matij.GetData();
     rt = lt = 0.0;
     normr = norml = 0.0;
-    while(matij.GetNext())
+    FAMGMatrixIter miter(M,veci);
+	miter(matij);
+    mii = M[matij];
+    while(miter(matij))
     {
-        j = matij.GetIndex();
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
+		vecj = matij.dest();
+        rj = M[matij];
+        lj = M.GetAdjData(matij);
         normr += Abs(rj);
         norml += Abs(lj);
-        rt += rj*tvA[j];
-        lt += lj*tvB[j];
+        rt += rj*tvA[vecj];
+        lt += lj*tvB[vecj];
     }
 
     normr = normr/Abs(mii);
@@ -566,20 +579,24 @@ int FAMGGrid::AnalyseNode3(int i, FAMGPaList *&palist)
 
     if((normr < 1e-15) || (norml < 1e-15))
     {
-        if(graph->SavePaList(palist,0,NULL,NULL,NULL,0.0)) return 1;
+        if(graph.SavePaList(palist,0,NULL,NULL,NULL,0.0)) return 1;
         return 0;
     }
         
     
     rmax = 0.0; lmax = 0.0; nnb = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+	const FAMGMatrixAlg &MTemp = *GetTmpMatrix();
+	FAMGMatrixIter mtiter(MTemp,veci);
+    mtiter(matij);    // skip diagonal
+    while(mtiter(matij))
     {
-        j = matij.GetIndex();
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
-        if (Abs(rj*tvA[j]) > rmax) rmax = Abs(rj*tvA[j]);
-        if (Abs(lj*tvB[j]) > lmax) lmax = Abs(lj*tvB[j]);
+        vecj = matij.dest();
+        rj = MTemp[matij];
+        lj = MTemp.GetAdjData(matij);
+        if (Abs(rj*tvA[vecj]) > rmax) 
+			rmax = Abs(rj*tvA[vecj]);
+        if (Abs(lj*tvB[vecj]) > lmax)
+			lmax = Abs(lj*tvB[vecj]);
         nnb++;
     }
 
@@ -589,23 +606,25 @@ int FAMGGrid::AnalyseNode3(int i, FAMGPaList *&palist)
  
     FAMGMarkHeap(FAMG_FROM_TOP);
     sd = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
-    if (sd == NULL) return 1;
+    if (sd == NULL) 
+		return 1;
 
-
-    FF1(i,ff,gg, f, g);
+    FF1(veci,ff,gg, f, g);
 
     z = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+	mtiter.reset();
+	mtiter(matij);// skip diagonal
+    while(mtiter(matij))
     { 
-        j = matij.GetIndex();
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
-        if((Abs(rj*tvA[j]) > rmax) || (Abs(lj*tvB[j]) > lmax))
+        vecj = matij.dest();
+		j = vecj.GetIndex();
+        rj = MTemp[matij];
+		lj = MTemp.GetAdjData(matij);
+        if((Abs(rj*tvA[vecj]) > rmax) || (Abs(lj*tvB[vecj]) > lmax))
         {
 
-            JJ1(j,hjj,ejj);
-            FJ1(j,fj,gj,f,g);
+            JJ1(vecj,hjj,ejj);
+            FJ1(j,vecj,fj,gj,f,g);
             sd[z].j = j;
             sd[z].hjj = hjj;
             sd[z].ejj = ejj;
@@ -616,13 +635,13 @@ int FAMGGrid::AnalyseNode3(int i, FAMGPaList *&palist)
             z++;
         }
     }
-    DFF1(i);
+    DFF1(veci);
 
 
     min1 = BestFirst1(palist,mii,rt,lt,ff,gg,sd,z);
     if(min1 > FAMGGetParameter()->Geterror1()) 
     {
-        graph->ClearPaListRev(palist);
+        graph.ClearPaListRev(palist);
         BestSecond1(palist,mii,rt,lt,ff,gg,sd,z);
     } 
 
@@ -630,30 +649,34 @@ int FAMGGrid::AnalyseNode3(int i, FAMGPaList *&palist)
     return 0;
 }
 
-int FAMGGrid::AnalyseNode4(int i, FAMGPaList *&palist)
+int FAMGGrid::AnalyseNode4(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 {
-    FAMGMatrixPtr matij;
-    double rj, lj, rt, lt, hr, hl, mii, rmax, lmax, min1, *tvA, *tvB, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000], rmax2, lmax2;
+    double rj, lj, rt, lt, hr, hl, mii, rmax, lmax, min1, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000], rmax2, lmax2;
     int j, nnb, z;
     FAMGSpecialData *sd;
+	FAMGGraph &graph = *GetGraph();
+	const FAMGVector &tvA = *vector[FAMGTVA];
+	const FAMGVector &tvB = *vector[FAMGTVB];
+	const FAMGMatrixAlg &M = *GetMatrix();
+	FAMGVectorEntry vecj;
+	FAMGMatrixEntry matij;
 
-    tvA = vector[FAMGTVA];
-    tvB = vector[FAMGTVB];
     palist = NULL;
 
-    matij = matrix->GetStart(i);
-    mii = matij.GetData();
     rt = lt = 0.0;
     normr = norml = 0.0;
-    while(matij.GetNext())
+    FAMGMatrixIter miter(M,veci);
+	miter(matij);
+    mii = M[matij];
+    while(miter(matij))
     {
-        j = matij.GetIndex();
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
+        vecj = matij.dest();
+        rj = M[matij];
+        lj = M.GetAdjData(matij);
         normr += Abs(rj);
         norml += Abs(lj);
-        rt += rj*tvA[j];
-        lt += lj*tvB[j];
+        rt += rj*tvA[vecj];
+        lt += lj*tvB[vecj];
     }
 
     normr = normr/Abs(mii);
@@ -661,19 +684,22 @@ int FAMGGrid::AnalyseNode4(int i, FAMGPaList *&palist)
 
     if((normr < 1e-15) || (norml < 1e-15))
     {
-        if(graph->SavePaList(palist,0,NULL,NULL,NULL,0.0)) return 1;
+        if(graph.SavePaList(palist,0,NULL,NULL,NULL,0.0)) 
+			return 1;
         return 0;
     }
                 
     rmax2 = rmax = 0.0; lmax2 = lmax = 0.0; nnb = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+	const FAMGMatrixAlg &MTemp = *GetTmpMatrix();
+	FAMGMatrixIter mtiter(MTemp,veci);
+    mtiter(matij);    // skip diagonal
+    while(mtiter(matij))
     {
-        j = matij.GetIndex();
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
-        hr = Abs(rj*tvA[j]);
-        hl = Abs(lj*tvB[j]);
+        vecj = matij.dest();
+        rj = MTemp[matij];
+        lj = MTemp.GetAdjData(matij);
+        hr = Abs(rj*tvA[vecj]);
+        hl = Abs(lj*tvB[vecj]);
         if (hr > rmax2) 
         {
             if (hr > rmax) 
@@ -700,23 +726,26 @@ int FAMGGrid::AnalyseNode4(int i, FAMGPaList *&palist)
  
     FAMGMarkHeap(FAMG_FROM_TOP);
     sd = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
-    if (sd == NULL) return 1;
+    if (sd == NULL) 
+		return 1;
 
-    FF1(i,ff,gg, f, g);
+    FF1(veci,ff,gg, f, g);
 
     z = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+	mtiter.reset();
+	mtiter(matij);// skip diagonal
+    while(mtiter(matij))
     { 
-        j = matij.GetIndex();
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
-        hr = Abs(rj*tvA[j]);
-        hl = Abs(lj*tvB[j]);
+        vecj = matij.dest();
+		j = vecj.GetIndex();
+        rj = MTemp[matij];
+		lj = MTemp.GetAdjData(matij);
+        hr = Abs(rj*tvA[vecj]);
+        hl = Abs(lj*tvB[vecj]);
         if(( hr > rmax) || (hl >  lmax))
         {
-            JJ1(j,hjj,ejj);
-            FJ1(j,fj,gj,f,g);
+            JJ1(vecj,hjj,ejj);
+            FJ1(j,vecj,fj,gj,f,g);
             sd[z].j = j;
             sd[z].hjj = hjj;
             sd[z].ejj = ejj;
@@ -727,13 +756,13 @@ int FAMGGrid::AnalyseNode4(int i, FAMGPaList *&palist)
             z++;
         }
     }
-    DFF1(i);
+    DFF1(veci);
 
 
     min1 = BestFirst1(palist,mii,rt,lt,ff,gg,sd,z);
     if(min1 > FAMGGetParameter()->Geterror1()) 
     {
-        graph->ClearPaListRev(palist);
+        graph.ClearPaListRev(palist);
         BestSecond1(palist,mii,rt,lt,ff,gg,sd,z);
     } 
 
@@ -743,30 +772,34 @@ int FAMGGrid::AnalyseNode4(int i, FAMGPaList *&palist)
 
 
 
-int FAMGGrid::AnalyseNode5(int i, FAMGPaList *&palist)
+int FAMGGrid::AnalyseNode5(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 {
-    FAMGMatrixPtr matij;
-    double rj, lj, rt, lt, mii, min1, min2, *tvA, *tvB, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000], *err1, sigma;
-    int j, nnb, z, y, k;
+    double rj, lj, rt, lt, mii, min1, min2, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000], *err1, sigma;
+    int nnb, j, z, y, k;
     FAMGSpecialData *sd, *sd2;
+	FAMGGraph &graph = *GetGraph();
+	const FAMGVector &tvA = *vector[FAMGTVA];
+	const FAMGVector &tvB = *vector[FAMGTVB];
+	const FAMGMatrixAlg &M = *GetMatrix();
+	FAMGVectorEntry vecj;
+	FAMGMatrixEntry matij;
 
-    tvA = vector[FAMGTVA];
-    tvB = vector[FAMGTVB];
     palist = NULL;
 
-    matij = matrix->GetStart(i);
-    mii = matij.GetData();
     rt = lt = 0.0;
     normr = norml = 0.0;
-    while(matij.GetNext())
+    FAMGMatrixIter miter(M,veci);
+	miter(matij);
+    mii = M[matij];
+    while(miter(matij))
     {
-        j = matij.GetIndex();
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
+        vecj = matij.dest();
+        rj = M[matij];
+        lj = M.GetAdjData(matij);
         normr += Abs(rj);
         norml += Abs(lj);
-        rt += rj*tvA[j];
-        lt += lj*tvB[j];
+        rt += rj*tvA[vecj];
+        lt += lj*tvB[vecj];
     }
 
     normr = normr/Abs(mii);
@@ -774,35 +807,39 @@ int FAMGGrid::AnalyseNode5(int i, FAMGPaList *&palist)
 
     if((normr < 1e-15) || (norml < 1e-15))
     {
-        if(graph->SavePaList(palist,0,NULL,NULL,NULL,0.0)) return 1;
+        if(graph.SavePaList(palist,0,NULL,NULL,NULL,0.0))
+			return 1;
         return 0;
     }
         
     nnb = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
-    { 
+	const FAMGMatrixAlg &MTemp = *GetTmpMatrix();
+	FAMGMatrixIter mtiter(MTemp,veci);
+    mtiter(matij);    // skip diagonal
+    while(mtiter(matij))
         nnb++;
-    }
  
     sigma = FAMGGetParameter()->Getsigma();
 
-    FF1(i,ff,gg, f, g);
+    FF1(veci,ff,gg, f, g);
    
     FAMGMarkHeap(FAMG_FROM_TOP);
     sd = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
-    if (sd == NULL) return 1;
+    if (sd == NULL)
+		return 1;
     err1= (double*) FAMGGetMem(nnb*sizeof(double), FAMG_FROM_TOP);
-    if (err1 == NULL) return 1;
-
+    if (err1 == NULL)
+		return 1;
 
     z = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+	mtiter.reset();
+	mtiter(matij);// skip diagonal
+    while(mtiter(matij))
     { 
-        j = matij.GetIndex();
-        JJ1(j,hjj,ejj);
-        FJ1(j,fj,gj,f,g);
+        vecj = matij.dest();
+		j = vecj.GetIndex();
+        JJ1(vecj,hjj,ejj);
+        FJ1(j,vecj,fj,gj,f,g);
         sd[z].j = j;
         sd[z].hjj = hjj;
         sd[z].ejj = ejj;
@@ -812,7 +849,7 @@ int FAMGGrid::AnalyseNode5(int i, FAMGPaList *&palist)
         sd[z].lj = lj;
         z++;
     }
-    DFF1(i);
+    DFF1(veci);
 
 
     min1 = min2 = 10000.0*FAMGGetParameter()->Geterror2();
@@ -826,18 +863,20 @@ int FAMGGrid::AnalyseNode5(int i, FAMGPaList *&palist)
                 min2 = min1;
                 min1 = err1[k];
             }
-            else min2 = err1[k]; 
+            else 
+				min2 = err1[k]; 
         }           
     }
 
     if(min1 < FAMGGetParameter()->Geterror1())
     {
-        graph->CorrectPaList(palist,min1/FAMGGetParameter()->Gettol()); 
+        graph.CorrectPaList(palist,min1/FAMGGetParameter()->Gettol()); 
     }
     else
     {
         sd2 = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
-        if (sd2 == NULL) return 1;
+        if (sd2 == NULL)
+			return 1;
         y = 0;
         for(k = 0; k < z; k++)
         {
@@ -847,7 +886,7 @@ int FAMGGrid::AnalyseNode5(int i, FAMGPaList *&palist)
                 y++;
             }
         }
-        graph->ClearPaListRev(palist);
+        graph.ClearPaListRev(palist);
         BestSecond1(palist,mii,rt,lt,ff,gg,sd2,y);
     } 
 
@@ -856,24 +895,24 @@ int FAMGGrid::AnalyseNode5(int i, FAMGPaList *&palist)
 }
 
 
-void FAMGGrid::JJ0(int j, double &hjj, double &ejj)
+void FAMGGrid::JJ0(const FAMGVectorEntry &vecj, double &hjj, double &ejj)
 {
-    FAMGMatrixPtr matjz;
+	const FAMGMatrixAlg& M = *GetTmpMatrix();
+    FAMGMatrixEntry matjz;
     double esum, hsum, mjj, mjz, mzj, mzz;
-    int z;
 
     const double omegar = FAMGGetParameter()->Getomegar();
     const double omegal = 0.5*FAMGGetParameter()->Getomegal();
     hsum = 0.0;
     esum = 0.0;
-    matjz = tmpmatrix->GetStart(j);
-    mjj = matjz.GetData();
-    while(matjz.GetNext())
+	FAMGMatrixIter miter(M,vecj);
+	miter(matjz);   // get diagonal
+    mjj = M[matjz];
+    while(miter(matjz))
     {
-        z = matjz.GetIndex();
-        mjz = matjz.GetData();
-        mzj = matjz.GetAdjData();
-        mzz = tmpmatrix->GetDiag(z);
+        mjz = M[matjz];
+        mzj = M.GetAdjData(matjz);
+        mzz = M.DiagValue(matjz.dest());
         hsum += mjz*mjz;
         esum += mzj*mzj/(mzz*mzz);
     }
@@ -885,30 +924,30 @@ void FAMGGrid::JJ0(int j, double &hjj, double &ejj)
 }
         
 
-void FAMGGrid::FJ0(int j, double &fj, double &gj, double *f, double *g)
+void FAMGGrid::FJ0(int j, const FAMGVectorEntry &vecj, double &fj, double &gj, double *f, double *g)
 {
-    FAMGMatrixPtr matjz;
-    FAMGNode *node;
+	const FAMGMatrixAlg& M = *GetTmpMatrix();
+    FAMGMatrixEntry matjz;
+    const FAMGGraph &graph = *GetGraph();
     double mzz, mjz, mzj, mjj, tf, tg;
-    int z, lz;
+    int lz;
     
     const double omegar = FAMGGetParameter()->Getomegar();
     const double omegal = 0.5*FAMGGetParameter()->Getomegal();
-    node = graph->GetNode();
-    matjz = tmpmatrix->GetStart(j);
-    mjj = matjz.GetData();
-    lz = (node+j)->GetLocalId();
+	FAMGMatrixIter miter(M,vecj);
+	miter(matjz);   // get diagonal
+    mjj = M[matjz];
+    lz = graph.GetNode(j)->GetLocalId();
     fj = (1.0-omegar)*f[lz];
     gj = (1.0-omegal)*g[lz]/mjj;
     tf = 0.0;
     tg = 0.0;
-    while(matjz.GetNext())
+    while(miter(matjz))
     {
-        z = matjz.GetIndex();
-        lz = (node+z)->GetLocalId();
-        mzz = tmpmatrix->GetDiag(z);
-        mjz = matjz.GetData();
-        mzj = matjz.GetAdjData();
+		lz = graph.GetNode(matjz.dest().GetIndex())->GetLocalId();
+        mzz = M.DiagValue(matjz.dest());
+        mjz = M[matjz];
+        mzj = M.GetAdjData(matjz);
         tf -= mjz*f[lz];
         tg -= mzj*g[lz]/mzz;
     }
@@ -920,32 +959,29 @@ void FAMGGrid::FJ0(int j, double &fj, double &gj, double *f, double *g)
 }
 
 
-int FAMGGrid::LocalJ0(int j, double *h, double *e)
+int FAMGGrid::LocalJ0(int j, const FAMGVectorEntry &vecj, double *h, double *e)
 {
-    FAMGMatrixPtr matjz;
-    FAMGNode *node, *nodej, *nodez;
+	const FAMGMatrixAlg& M = *GetTmpMatrix();
+    FAMGMatrixEntry matjz;
+    const FAMGGraph &graph = *GetGraph();
     double mjj, mzz;
-    int z, nn;
-
-    node = graph->GetNode();
+    int nn;
 
     const double omegar = FAMGGetParameter()->Getomegar();
     const double omegal = 0.5*FAMGGetParameter()->Getomegal();
-    matjz = tmpmatrix->GetStart(j);
-    mjj = matjz.GetData();
-    nodej = node+j;
-    nodej->SetLocalId(0);
+	graph.GetNode(j)->SetLocalId(0);
+	FAMGMatrixIter miter(M,vecj);
+	miter(matjz);   // get diagonal
+    mjj = M[matjz];
     h[0] = (1.0-omegar);
     e[0] = (1.0-omegal)/mjj;
     nn = 1;
-    while(matjz.GetNext())
+    while(miter(matjz))
     {
-        z = matjz.GetIndex();
-        mzz = tmpmatrix->GetDiag(z);
-        nodez = node+z;
-        nodez->SetLocalId(nn);
-        h[nn] = -omegar*matjz.GetData()/mjj;
-        e[nn] = -omegal*matjz.GetAdjData()/(mzz*mjj);
+		graph.GetNode(matjz.dest().GetIndex())->SetLocalId(nn);
+        mzz = M.DiagValue(matjz.dest());
+        h[nn] = -omegar*M[matjz]/mjj;
+        e[nn] = -omegal*M.GetAdjData(matjz)/(mzz*mjj);
         if(nn < 500) nn++;
         else 
         {
@@ -957,45 +993,39 @@ int FAMGGrid::LocalJ0(int j, double *h, double *e)
     return 0;
 }
 
-void FAMGGrid::DLocalJ0(int j)
+void FAMGGrid::DLocalJ0(int j, const FAMGVectorEntry &vecj)
 {
-    FAMGMatrixPtr matjz;
-    FAMGNode *node, *nodej, *nodez;
-    int z;
+	const FAMGMatrixAlg& M = *GetTmpMatrix();
+    FAMGMatrixEntry matjz;
+    const FAMGGraph &graph = *GetGraph();
 
-    node = graph->GetNode();
-
-    nodej = node+j;
-    nodej->SetLocalId(-1);
-    matjz = tmpmatrix->GetStart(j);
-    while(matjz.GetNext())
-    {
-        z = matjz.GetIndex();
-        nodez = node+z;
-        nodez->SetLocalId(-1);
-    }
+	graph.GetNode(j)->SetLocalId(-1);
+	FAMGMatrixIter miter(M,vecj);
+	miter(matjz);   // skip diagonal
+    while(miter(matjz))
+		graph.GetNode(matjz.dest().GetIndex())->SetLocalId(-1);
 
    return;
 }
-   
-   
-void FAMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)        
-{
-    FAMGMatrixPtr matkz;
-    FAMGNode *node, *nodek, *nodez;
-    double mkz, mzk, mkk, mzz, th, te;
-    int z, lz;
-    
-    node = graph->GetNode();
-    nodek = node+k;
 
-    matkz = tmpmatrix->GetStart(k);
-    mkk = matkz.GetData();
+
+void FAMGGrid::JK0(int k, const FAMGVectorEntry &veck, double &hjk, double &ejk, double *h, double *e)        
+{
+	const FAMGMatrixAlg& M = *GetTmpMatrix();
+    FAMGMatrixEntry matkz;
+    const FAMGGraph &graph = *GetGraph();
+    double mkz, mzk, mkk, mzz, th, te;
+    int lz;
 
     const double omegar = FAMGGetParameter()->Getomegar();
     const double omegal = 0.5*FAMGGetParameter()->Getomegal();
     hjk = ejk = 0.0;
-    lz = nodek->GetLocalId();
+    lz = graph.GetNode(k)->GetLocalId();
+
+	FAMGMatrixIter miter(M,veck);
+	miter(matkz);    // get diagonal
+    mkk = M[matkz];
+
     if(lz >= 0)
     {
         hjk += (1.0-omegar)*h[lz];
@@ -1003,16 +1033,14 @@ void FAMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)
     }
     th = 0.0;
     te = 0.0;
-    while(matkz.GetNext())
+    while(miter(matkz))
     {
-        z = matkz.GetIndex();
-        nodez = node+z;
-        lz = nodez->GetLocalId();
+        lz = graph.GetNode(matkz.dest().GetIndex())->GetLocalId();
         if(lz >= 0)
         {
-            mkz = matkz.GetData();
-            mzk = matkz.GetAdjData();
-            mzz = tmpmatrix->GetDiag(z);
+            mkz = M[matkz];
+            mzk = M.GetAdjData(matkz);
+            mzz = M.DiagValue(matkz.dest());
             th -= mkz*h[lz];
             te -= mzk*e[lz]/mzz;
         }
@@ -1024,34 +1052,37 @@ void FAMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)
 }
 
 
-void FAMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
+void FAMGGrid::FF0(const FAMGVectorEntry &veci, double &ff, double &gg, double *f, double *g)
 {
-    FAMGMatrixPtr matij, matjz;
-    FAMGNode *node, *nodez, *nodej;
+	FAMGVectorEntry vecj, vecz;
+	const FAMGMatrixAlg& M = *GetTmpMatrix();
+    FAMGMatrixEntry matij, matjz;
+    const FAMGGraph &graph = *GetGraph();
+    FAMGNode *nodez, *nodej;
     double mjj, mzz, mzj, mjz, rj, lj;
-    int z, j, lz, nn;
+    int lz, nn;
 
-    node = graph->GetNode();
     const double omegar = FAMGGetParameter()->Getomegar();
     const double omegal = 0.5*FAMGGetParameter()->Getomegal();
     nn = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+	FAMGMatrixIter miter(M,veci);
+	miter(matij);   // skip diagonal
+    while(miter(matij))
     {
-        j = matij.GetIndex();
-        matjz = tmpmatrix->GetStart(j);
-        mjj = matjz.GetData();
-        rj = omegar*matij.GetData()/mjj;
-        lj = omegal*matij.GetAdjData()/mjj;
+        FAMGMatrixIter mjziter(M,matij.dest());
+        mjziter(matjz);    // get diagonal
+        mjj = M[matjz];
+        rj = omegar*M[matij]/mjj;
+        lj = omegal*M.GetAdjData(matij)/mjj;
         
         // most expensive part
-        while(matjz.GetNext())
+        while(mjziter(matjz))
         {
-            z = matjz.GetIndex();
-            mjz = matjz.GetData();
-            mzj = matjz.GetAdjData();
-            mzz = tmpmatrix->GetDiag(z);
-            nodez = node+z;
+            mjz = M[matjz];
+            mzj = M.GetAdjData(matjz);
+			vecz = matjz.dest();
+            mzz = M.DiagValue(vecz);
+            nodez = graph.GetNode(vecz.GetIndex());
             lz = nodez->GetLocalId();
             if(lz < 0)
             {
@@ -1072,15 +1103,16 @@ void FAMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
             }
         }
     }
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+    miter.reset();
+	miter(matij);    // skip diagonal
+    while(miter(matij))
     {
-        j = matij.GetIndex();
-        mjj = tmpmatrix->GetDiag(j);
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
+		vecj = matij.dest();
+        mjj = M.DiagValue(vecj);
+        rj = M[matij];
+        lj = M.GetAdjData(matij);
 
-        nodej = node+j;
+        nodej = graph.GetNode(vecj.GetIndex());
         lz = nodej->GetLocalId();
         if(lz < 0)
         {
@@ -1113,641 +1145,82 @@ void FAMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
     return;
 }
         
-void FAMGGrid::DFF0(int i)
+void FAMGGrid::DFF0(const FAMGVectorEntry &veci)
 {
-    FAMGMatrixPtr matjz, matij;
-    FAMGNode *node, *nodez, *nodej;
-    int z, j;
+	FAMGVectorEntry vecj;
+	const FAMGMatrixAlg& M = *GetTmpMatrix();
+    FAMGMatrixEntry matij, matjz;
+    const FAMGGraph &graph = *GetGraph();
 
-    node = graph->GetNode();
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+	FAMGMatrixIter miter(M,veci);
+	miter(matij);   // skip diagonal
+    while(miter(matij))
     {
-        j = matij.GetIndex();
-        nodej = node+j;
-        nodej->SetLocalId(-1);
-        matjz = tmpmatrix->GetStart(j);
-        while(matjz.GetNext())
-        {
-            z = matjz.GetIndex();
-            nodez = node+z;
-            nodez->SetLocalId(-1);
-        }
-    }
+		vecj = matij.dest();
+		graph.GetNode(vecj.GetIndex())->SetLocalId(-1);
 
-    return;
-}
-
-#ifdef ORIG_TEST
-void FAMGGrid::JJ0(int j, double &hjj, double &ejj)
-{
-    FAMGMatrixPtr matjz;
-    double esum, hsum, mjj, mjz, mzj, mzz;
-    int z;
-
-    const double omega = FAMGomega();
-    const double omega2 = omega*omega;
-    hsum = 0.0;
-    esum = 0.0;
-    matjz = tmpmatrix->GetStart(j);
-    mjj = matjz.GetData();
-    while(matjz.GetNext())
-    {
-        z = matjz.GetIndex();
-        mjz = matjz.GetData();
-        mzj = matjz.GetAdjData();
-        mzz = tmpmatrix->GetDiag(z);
-        hsum += mjz*mjz;
-        esum += mzj*mzj/(mzz*mzz);
-    }
-
-    hjj = (1.0-omega)*(1.0-omega) + omega2*hsum/(mjj*mjj);
-    ejj = ((omega+omega-omega2)*(omega+omega-omega2) + esum*omega2*omega2)/(mjj*mjj);
-    
-    return;
-}
-        
-
-void FAMGGrid::FJ0(int j, double &fj, double &gj, double *f, double *g)
-{
-    FAMGMatrixPtr matjz;
-    FAMGNode *node;
-    double mzz, mjz, mzj, mjj, tf, tg;
-    int z, lz;
-    
-    const double omega = FAMGomega();
-    const double omega2 = omega*omega;
-    node = graph->GetNode();
-    matjz = tmpmatrix->GetStart(j);
-    mjj = matjz.GetData();
-    lz = (node+j)->GetLocalId();
-    fj = (1.0-omega)*f[lz];
-    gj = (omega+omega-omega2)*g[lz]/mjj;
-    tf = 0.0;
-    tg = 0.0;
-    while(matjz.GetNext())
-    {
-        z = matjz.GetIndex();
-        lz = (node+z)->GetLocalId();
-        mzz = tmpmatrix->GetDiag(z);
-        mjz = matjz.GetData();
-        mzj = matjz.GetAdjData();
-        tf -= mjz*f[lz];
-        tg -= mzj*g[lz]/mzz;
-    }
-    
-    fj += omega*tf/mjj;
-    gj += omega2*tg/mjj;
-
-    return;
-}
-
-
-int FAMGGrid::LocalJ0(int j, double *h, double *e)
-{
-    FAMGMatrixPtr matjz;
-    FAMGNode *node, *nodej, *nodez;
-    double mjj, mzz;
-    int z, nn;
-
-    node = graph->GetNode();
-
-    const double omega = FAMGomega();
-    const double omega2 = omega*omega;
-    matjz = tmpmatrix->GetStart(j);
-    mjj = matjz.GetData();
-    nodej = node+j;
-    nodej->SetLocalId(0);
-    h[0] = (1.0-omega);
-    e[0] = (omega+omega-omega2)/mjj;
-    nn = 1;
-    while(matjz.GetNext())
-    {
-        z = matjz.GetIndex();
-        mzz = tmpmatrix->GetDiag(z);
-        nodez = node+z;
-        nodez->SetLocalId(nn);
-        h[nn] = -omega*matjz.GetData()/mjj;
-        e[nn] = -omega2*matjz.GetAdjData()/(mzz*mjj);
-        if(nn < 500) nn++;
-        else 
-        {
-            ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-            FAMGWarning(ostr);
-        }
-    }
-
-    return 0;
-}
-
-void FAMGGrid::DLocalJ0(int j)
-{
-    FAMGMatrixPtr matjz;
-    FAMGNode *node, *nodej, *nodez;
-    int z;
-
-    node = graph->GetNode();
-
-    nodej = node+j;
-    nodej->SetLocalId(-1);
-    matjz = tmpmatrix->GetStart(j);
-    while(matjz.GetNext())
-    {
-        z = matjz.GetIndex();
-        nodez = node+z;
-        nodez->SetLocalId(-1);
-    }
-
-   return;
-}
-   
-   
-void FAMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)        
-{
-    FAMGMatrixPtr matkz;
-    FAMGNode *node, *nodek, *nodez;
-    double mkz, mzk, mkk, mzz, th, te;
-    int z, lz;
-    
-    node = graph->GetNode();
-    nodek = node+k;
-
-    matkz = tmpmatrix->GetStart(k);
-    mkk = matkz.GetData();
-
-    const double omega = FAMGomega();
-    const double omega2 = omega*omega;
-    hjk = ejk = 0.0;
-    lz = nodek->GetLocalId();
-    if(lz >= 0)
-    {
-        hjk += (1.0-omega)*h[lz];
-        ejk += (omega+omega-omega2)*e[lz]/mkk;
-    }
-    th = 0.0;
-    te = 0.0;
-    while(matkz.GetNext())
-    {
-        z = matkz.GetIndex();
-        nodez = node+z;
-        lz = nodez->GetLocalId();
-        if(lz >= 0)
-        {
-            mkz = matkz.GetData();
-            mzk = matkz.GetAdjData();
-            mzz = tmpmatrix->GetDiag(z);
-            th -= mkz*h[lz];
-            te -= mzk*e[lz]/mzz;
-        }
-    }
-    hjk += omega*th/mkk;
-    ejk += omega2*te/mkk;
-
-    return;
-}
-
-
-void FAMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
-{
-    FAMGMatrixPtr matij, matjz;
-    FAMGNode *node, *nodez, *nodej;
-    double mjj, mzz, mzj, mjz, rj, lj;
-    int z, j, lz, nn;
-
-    node = graph->GetNode();
-    const double omega = FAMGomega();
-    const double omega2 = omega*omega;
-    nn = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
-    {
-        j = matij.GetIndex();
-        matjz = tmpmatrix->GetStart(j);
-        mjj = matjz.GetData();
-        rj = omega*matij.GetData()/mjj;
-        lj = omega2*matij.GetAdjData()/mjj;
         
         // most expensive part
-        while(matjz.GetNext())
-        {
-            z = matjz.GetIndex();
-            mjz = matjz.GetData();
-            mzj = matjz.GetAdjData();
-            mzz = tmpmatrix->GetDiag(z);
-            nodez = node+z;
-            lz = nodez->GetLocalId();
-            if(lz < 0)
-            {
-                nodez->SetLocalId(nn);
-                f[nn] = -mjz*rj;
-                g[nn] = -mzj*lj/mzz;
-                if(nn < 4000) nn++;
-                else 
-                {
-                    ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-                    FAMGWarning(ostr);
-                }
-            }
-            else
-            {
-                f[lz] -= mjz*rj;
-                g[lz] -= mzj*lj/mzz;
-            }
-        }
-    }
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
-    {
-        j = matij.GetIndex();
-        mjj = tmpmatrix->GetDiag(j);
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
-
-        nodej = node+j;
-        lz = nodej->GetLocalId();
-        if(lz < 0)
-        {
-            nodej->SetLocalId(nn);
-            f[nn] = (1.0-omega)*rj;
-            g[nn] = (omega+omega-omega2)*lj/mjj;
-            if(nn < 4000) nn++;
-            else 
-            {
-                ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-                FAMGWarning(ostr);
-            }
-        }
-        else
-        {
-            f[lz] += (1.0-omega)*rj;
-            g[lz] += (omega+omega-omega2)*lj/mjj;
-        }
-     }
-
-    // compute norm
-    ff = 0.0; gg = 0.0;
-    for(lz = 0; lz < nn; lz++) 
-    {
-        ff += f[lz]*f[lz];
-        gg += g[lz]*g[lz];
-    }
-
-
-    return;
-}
-        
-void FAMGGrid::DFF0(int i)
-{
-    FAMGMatrixPtr matjz, matij;
-    FAMGNode *node, *nodez, *nodej;
-    int z, j;
-
-    node = graph->GetNode();
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
-    {
-        j = matij.GetIndex();
-        nodej = node+j;
-        nodej->SetLocalId(-1);
-        matjz = tmpmatrix->GetStart(j);
-        while(matjz.GetNext())
-        {
-            z = matjz.GetIndex();
-            nodez = node+z;
-            nodez->SetLocalId(-1);
-        }
+		FAMGMatrixIter mjziter(M,matij.dest());
+		mjziter(matjz); // skip diagonal
+        while(mjziter(matjz))
+			graph.GetNode(matjz.dest().GetIndex())->SetLocalId(-1);
     }
 
     return;
 }
-#endif
-#ifdef NEW_TEST
 
-void FAMGGrid::JJ0(int j, double &hjj, double &ejj)
-{
-    FAMGMatrixPtr matjz;
-    double esum, hsum, mjj, mjz, mzj, mzz;
-    int z;
-
-    const double omega = FAMGomega();
-    const double omega2 = omega*omega;
-    hsum = 0.0;
-    esum = 0.0;
-    matjz = tmpmatrix->GetStart(j);
-    mjj = matjz.GetData();
-    while(matjz.GetNext())
-    {
-        z = matjz.GetIndex();
-        mjz = matjz.GetData();
-        mzj = matjz.GetAdjData();
-        mzz = tmpmatrix->GetDiag(z);
-        hsum += mjz*mjz/(mzz*mzz);
-        esum += mzj*mzj/(mzz*mzz);
-    }
-
-    hjj = ((omega+omega-omega2)*(omega+omega-omega2) + hsum*omega2*omega2)/(mjj*mjj);
-    ejj = ((omega+omega-omega2)*(omega+omega-omega2) + esum*omega2*omega2)/(mjj*mjj);
-    
-    return;
-}
-        
-
-void FAMGGrid::FJ0(int j, double &fj, double &gj, double *f, double *g)
-{
-    FAMGMatrixPtr matjz;
-    FAMGNode *node;
-    double mzz, mjz, mzj, mjj, tf, tg;
-    int z, lz;
-    
-    const double omega = FAMGomega();
-    const double omega2 = omega*omega;
-    node = graph->GetNode();
-    matjz = tmpmatrix->GetStart(j);
-    mjj = matjz.GetData();
-    lz = (node+j)->GetLocalId();
-    fj = (omega+omega-omega2)*f[lz]/mjj;
-    gj = (omega+omega-omega2)*g[lz]/mjj;
-    tf = 0.0;
-    tg = 0.0;
-    while(matjz.GetNext())
-    {
-        z = matjz.GetIndex();
-        lz = (node+z)->GetLocalId();
-        mzz = tmpmatrix->GetDiag(z);
-        mjz = matjz.GetData();
-        mzj = matjz.GetAdjData();
-        tf -= mjz*f[lz]/mzz;
-        tg -= mzj*g[lz]/mzz;
-    }
-    
-    fj += omega2*tf/mjj;
-    gj += omega2*tg/mjj;
-
-    return;
-}
-
-
-int FAMGGrid::LocalJ0(int j, double *h, double *e)
-{
-    FAMGMatrixPtr matjz;
-    FAMGNode *node, *nodej, *nodez;
-    double mjj, mzz;
-    int z, nn;
-
-    node = graph->GetNode();
-
-    const double omega = FAMGomega();
-    const double omega2 = omega*omega;
-    matjz = tmpmatrix->GetStart(j);
-    mjj = matjz.GetData();
-    nodej = node+j;
-    nodej->SetLocalId(0);
-    h[0] = (omega+omega-omega2)/mjj;
-    e[0] = (omega+omega-omega2)/mjj;
-    nn = 1;
-    while(matjz.GetNext())
-    {
-        z = matjz.GetIndex();
-        mzz = tmpmatrix->GetDiag(z);
-        nodez = node+z;
-        nodez->SetLocalId(nn);
-        h[nn] = -omega2*matjz.GetData()/(mzz*mjj);
-        e[nn] = -omega2*matjz.GetAdjData()/(mzz*mjj);
-        if(nn < 500) nn++;
-        else 
-        {
-            ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-            FAMGWarning(ostr);
-        }
-    }
-
-    return 0;
-}
-
-void FAMGGrid::DLocalJ0(int j)
-{
-    FAMGMatrixPtr matjz;
-    FAMGNode *node, *nodej, *nodez;
-    int z;
-
-    node = graph->GetNode();
-
-    nodej = node+j;
-    nodej->SetLocalId(-1);
-    matjz = tmpmatrix->GetStart(j);
-    while(matjz.GetNext())
-    {
-        z = matjz.GetIndex();
-        nodez = node+z;
-        nodez->SetLocalId(-1);
-    }
-
-   return;
-}
-   
-   
-void FAMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)        
-{
-    FAMGMatrixPtr matkz;
-    FAMGNode *node, *nodek, *nodez;
-    double mkz, mzk, mkk, mzz, th, te;
-    int z, lz;
-    
-    node = graph->GetNode();
-    nodek = node+k;
-
-    matkz = tmpmatrix->GetStart(k);
-    mkk = matkz.GetData();
-
-    const double omega = FAMGomega();
-    const double omega2 = omega*omega;
-    hjk = ejk = 0.0;
-    lz = nodek->GetLocalId();
-    if(lz >= 0)
-    {
-        hjk += (omega+omega-omega2)*h[lz]/mkk;
-        ejk += (omega+omega-omega2)*e[lz]/mkk;
-    }
-    th = 0.0;
-    te = 0.0;
-    while(matkz.GetNext())
-    {
-        z = matkz.GetIndex();
-        nodez = node+z;
-        lz = nodez->GetLocalId();
-        if(lz >= 0)
-        {
-            mkz = matkz.GetData();
-            mzk = matkz.GetAdjData();
-            mzz = tmpmatrix->GetDiag(z);
-            th -= mkz*h[lz]/mzz;
-            te -= mzk*e[lz]/mzz;
-        }
-    }
-    hjk += omega2*th/mkk;
-    ejk += omega2*te/mkk;
-
-    return;
-}
-
-
-void FAMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
-{
-    FAMGMatrixPtr matij, matjz;
-    FAMGNode *node, *nodez, *nodej;
-    double mjj, mzz, mzj, mjz, rj, lj;
-    int z, j, lz, nn;
-
-    node = graph->GetNode();
-    const double omega = FAMGomega();
-    const double omega2 = omega*omega;
-    nn = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
-    {
-        j = matij.GetIndex();
-        matjz = tmpmatrix->GetStart(j);
-        mjj = matjz.GetData();
-        rj = omega2*matij.GetData()/mjj;
-        lj = omega2*matij.GetAdjData()/mjj;
-        
-        // most expensive part
-        while(matjz.GetNext())
-        {
-            z = matjz.GetIndex();
-            mjz = matjz.GetData();
-            mzj = matjz.GetAdjData();
-            mzz = tmpmatrix->GetDiag(z);
-            nodez = node+z;
-            lz = nodez->GetLocalId();
-            if(lz < 0)
-            {
-                nodez->SetLocalId(nn);
-                f[nn] = -mjz*rj/mzz;
-                g[nn] = -mzj*lj/mzz;
-                if(nn < 4000) nn++;
-                else 
-                {
-                    ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-                    FAMGWarning(ostr);
-                }
-            }
-            else
-            {
-                f[lz] -= mjz*rj/mzz;
-                g[lz] -= mzj*lj/mzz;
-            }
-        }
-    }
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
-    {
-        j = matij.GetIndex();
-        mjj = tmpmatrix->GetDiag(j);
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
-
-        nodej = node+j;
-        lz = nodej->GetLocalId();
-        if(lz < 0)
-        {
-            nodej->SetLocalId(nn);
-            f[nn] = (omega+omega-omega2)*rj/mjj;
-            g[nn] = (omega+omega-omega2)*lj/mjj;
-            if(nn < 4000) nn++;
-            else 
-            {
-                ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-                FAMGWarning(ostr);
-            }
-       }
-        else
-        {
-            f[lz] += (omega+omega-omega2)*rj/mjj;
-            g[lz] += (omega+omega-omega2)*lj/mjj;
-        }
-     }
-
-    // compute norm
-    ff = 0.0; gg = 0.0;
-    for(lz = 0; lz < nn; lz++) 
-    {
-        ff += f[lz]*f[lz];
-        gg += g[lz]*g[lz];
-    }
-
-
-    return;
-}
-        
-void FAMGGrid::DFF0(int i)
-{
-    FAMGMatrixPtr matjz, matij;
-    FAMGNode *node, *nodez, *nodej;
-    int z, j;
-
-    node = graph->GetNode();
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
-    {
-        j = matij.GetIndex();
-        nodej = node+j;
-        nodej->SetLocalId(-1);
-        matjz = tmpmatrix->GetStart(j);
-        while(matjz.GetNext())
-        {
-            z = matjz.GetIndex();
-            nodez = node+z;
-            nodez->SetLocalId(-1);
-        }
-    }
-
-    return;
-}
-#endif
 
 double FAMGGrid::BestSecond0(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData *sd, int nnb)
 {
-    double *tvA, *tvB;
     double aj, ak, bj, bk;
     double hjj, ejj, fj, gj, hkk, ekk, fk, gk, hjk, ejk, h[500], e[500];
     double error, errorA, errorB, min, nenner, tvAj, tvAk, tvBj, tvBk;
     double coeffA[2], coeffB[2];
     int k, np, pa[2], j, z, y;
+    FAMGGraph &graph = *GetGraph();
+	const FAMGVector &tvA = *vector[FAMGTVA];
+	const FAMGVector &tvB = *vector[FAMGTVB];
+	FAMGVectorEntry vecj, veck;
 
     double tol = FAMGGetParameter()->Gettol();
-    tvA = vector[FAMGTVA];
-    tvB = vector[FAMGTVB];
  
     min = FAMGGetParameter()->Geterror2();
     for(z = 0; z < nnb; z++)
     {
         j = sd[z].j;
+		vecj = graph.GetNode(j)->GetVec();
+
         FAMGMarkHeap(FAMG_FROM_TOP);
         hjj = (sd[z]).hjj; ejj = sd[z].ejj;
         fj = sd[z].fj; gj = sd[z].gj;
-        if(LocalJ0(j,h,e)) return 1e+20;
-        tvAj = tvA[j];
-        tvBj = tvB[j];
+        if(LocalJ0(j,vecj,h,e))
+			return 1e+20;
+        tvAj = tvA[vecj];
+        tvBj = tvB[vecj];
 
         for(y = z+1; y < nnb; y++)
         {
             k = sd[y].j;
+			veck = graph.GetNode(k)->GetVec();
+
             hkk = sd[y].hjj; ekk = sd[y].ejj;
             fk = sd[y].fj; gk = sd[y].gj;
-            tvAk = tvA[k];
-            tvBk = tvB[k];
+            tvAk = tvA[veck];
+            tvBk = tvB[veck];
  
-            JK0(k,hjk,ejk,h,e);
+            JK0(k,veck,hjk,ejk,h,e);
 
             // compute aj, ak
 
             if( (Abs(tvAj) < 1e-15) && (Abs(tvAk) < 1e-15))
             {
-                if(Abs(rt) > 1e-15*Abs(mii)) continue;
+                if(Abs(rt) > 1e-15*Abs(mii))
+					continue;
 
                 nenner = hjj*hkk-hjk*hjk;
-                if (Abs(nenner) < 1e-15) continue;
+                if (Abs(nenner) < 1e-15)
+					continue;
                 ak = (hjj*fk-hjk*fj)/nenner;
                 aj = (hkk*fj-hjk*fk)/nenner;
             }
@@ -1784,10 +1257,12 @@ double FAMGGrid::BestSecond0(FAMGPaList *&palist, double mii, double rt, double 
 
             if( (Abs(tvBj) < 1e-15) && (Abs(tvBk) < 1e-15))
             {
-                if(Abs(lt) > 1e-15*Abs(mii)) continue;
+                if(Abs(lt) > 1e-15*Abs(mii))
+					continue;
 
                 nenner = ejj*ekk-ejk*ejk;
-                if (Abs(nenner) < 1e-15) continue;
+                if (Abs(nenner) < 1e-15)
+					continue;
                 bk = (ejj*gk-ejk*gj)/nenner;
                 bj = (ekk*gj-ejk*gk)/nenner;
             }
@@ -1834,35 +1309,39 @@ double FAMGGrid::BestSecond0(FAMGPaList *&palist, double mii, double rt, double 
                 np = 2; pa[0] = j; pa[1] = k; 
                 coeffA[0] = -aj/mii; coeffA[1] = -ak/mii;
                 coeffB[0] = -bj/mii; coeffB[1] = -bk/mii; 
-                if(graph->SavePaList(palist,np,pa,coeffA,coeffB,error)) return 1e+20;
+                if(graph.SavePaList(palist,np,pa,coeffA,coeffB,error))
+					return 1e+20;
             }
         }
-        DLocalJ0(j);
+        DLocalJ0(j,vecj);
         FAMGReleaseHeap(FAMG_FROM_TOP);
     }
 
-    graph->CorrectPaList(palist,min/tol);
+    graph.CorrectPaList(palist,min/tol);
 
     return min;
 }
 
 double FAMGGrid::BestFirst0(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData *sd, int nnb)
 {
-    double *tvA, *tvB, aj, bj, coeffA[1], coeffB[1];
+    double aj, bj, coeffA[1], coeffB[1];
     double errorA, errorB, error, min;
     double hjj, ejj, fj, gj;
     int j, np, pa[1], z;
-    
+	FAMGGraph &graph = *GetGraph();
+	const FAMGVector &tvA = *vector[FAMGTVA];
+	const FAMGVector &tvB = *vector[FAMGTVB];
+	FAMGVectorEntry vecj;
+  
     double tol = FAMGGetParameter()->Gettol();
-    tvA = vector[FAMGTVA];
-    tvB = vector[FAMGTVB];
-
     min = 1.01*FAMGGetParameter()->Geterror1(); 
     for(z = 0; z < nnb; z++)
     {
         j = sd[z].j;
-        aj = rt/tvA[j];
-        bj = lt/tvB[j];
+		vecj = graph.GetNode(j)->GetVec();
+
+		aj = rt/tvA[vecj];
+        bj = lt/tvB[vecj];
 
         hjj = sd[z].hjj; ejj = sd[z].ejj;
         fj = sd[z].fj; gj = sd[z].gj;
@@ -1880,30 +1359,34 @@ double FAMGGrid::BestFirst0(FAMGPaList *&palist, double mii, double rt, double l
             np = 1; pa[0] = j; 
             coeffA[0] = -aj/mii;
             coeffB[0] = -bj/mii; 
-            if(graph->SavePaList(palist,np,pa,coeffA,coeffB,error)) return 1e+20;
+            if(graph.SavePaList(palist,np,pa,coeffA,coeffB,error))
+				return 1e+20;
         }
     }
 
-    graph->CorrectPaList(palist,min/tol); 
+    graph.CorrectPaList(palist,min/tol); 
 
 
     return min;
 }
+
+
 double FAMGGrid::BestFirst2(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData sd)
 {
-    double *tvA, *tvB, aj, bj, coeffA[1], coeffB[1];
+    double aj, bj, coeffA[1], coeffB[1];
     double errorA, errorB, error, min;
     double hjj, ejj, fj, gj;
     int j, np, pa[1];
-    
-    double tol = FAMGGetParameter()->Gettol();
-    tvA = vector[FAMGTVA];
-    tvB = vector[FAMGTVB];
- 
+ 	FAMGGraph &graph = *GetGraph();
+	const FAMGVector &tvA = *vector[FAMGTVA];
+	const FAMGVector &tvB = *vector[FAMGTVB];
+	FAMGVectorEntry vecj;
+   
+    double tol = FAMGGetParameter()->Gettol(); 
     min = 1.01*FAMGGetParameter()->Geterror1(); 
     j = sd.j;
-    aj = rt/tvA[j];
-    bj = lt/tvB[j];
+    aj = rt/tvA[vecj];
+    bj = lt/tvB[vecj];
             
     hjj = sd.hjj; ejj = sd.ejj;
     fj = sd.fj; gj = sd.gj;
@@ -1920,83 +1403,95 @@ double FAMGGrid::BestFirst2(FAMGPaList *&palist, double mii, double rt, double l
         np = 1; pa[0] = j; 
         coeffA[0] = -aj/mii;
         coeffB[0] = -bj/mii; 
-        if(graph->SavePaList(palist,np,pa,coeffA,coeffB,error))return 1e+20;
+        if(graph.SavePaList(palist,np,pa,coeffA,coeffB,error))
+			return 1e+20;
     }
 
     return error;
 }
 
-int FAMGGrid::AnalyseNode0(int i, FAMGPaList *&palist)
+int FAMGGrid::AnalyseNode0(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 {
-    FAMGMatrixPtr matij;
-    double rj, lj, rt, lt, mjj, mii, rmax, lmax, min1, *tvA, *tvB, ff, gg, hjj, ejj, fj, gj, f[4000], g[4000], normr, norml;
+    double rj, lj, rt, lt, mjj, mii, rmax, lmax, min1, ff, gg, hjj, ejj, fj, gj, f[4000], g[4000], normr, norml;
     int j, nnb, z;
     FAMGSpecialData *sd;
-
-    tvA = vector[FAMGTVA];
-    tvB = vector[FAMGTVB];
+	FAMGGraph &graph = *GetGraph();
+	const FAMGVector &tvA = *vector[FAMGTVA];
+	const FAMGVector &tvB = *vector[FAMGTVB];
+	const FAMGMatrixAlg &M = *GetMatrix();
+	FAMGVectorEntry vecj;
+	FAMGMatrixEntry matij;
 
     palist = NULL;
 
     rt = lt = 0.0;
     normr = norml = 0.0;
-    matij = matrix->GetStart(i);
-    mii = matij.GetData();
-    while(matij.GetNext())
+    FAMGMatrixIter miter(M,veci);
+	miter(matij);
+    mii = M[matij];
+    while(miter(matij))
     {
-        j = matij.GetIndex();
-        rj = matij.GetData();;
-        lj = matij.GetAdjData();;
-        mjj = matrix->GetDiag(j);
+		vecj = matij.dest();
+        rj = M[matij];
+        lj = M.GetAdjData(matij);
+        mjj = M.DiagValue(matij.dest());
         normr += Abs(rj/mjj);
         norml += Abs(lj);
-        rt += rj*tvA[j];
-        lt += lj*tvB[j];
+        rt += rj*tvA[vecj];
+        lt += lj*tvB[vecj];
     }
-        
+
     normr = normr/Abs(mii);
 
     if((normr < 1e-15) || (norml < 1e-15))
     {
-        if(graph->SavePaList(palist,0,NULL,NULL,NULL,0.0)) return 1;
+        if(graph.SavePaList(palist,0,NULL,NULL,NULL,0.0))
+			return 1;
         return 0;
     }
 
     rmax = 0.0; lmax = 0.0; nnb = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+	const FAMGMatrixAlg &MTemp = *GetTmpMatrix();
+	FAMGMatrixIter mtiter(MTemp,veci);
+    mtiter(matij);    // skip diagonal
+    while(mtiter(matij))
     {
-        j = matij.GetIndex();
-        rj = matij.GetData();;
-        lj = matij.GetAdjData();;
-        mjj = tmpmatrix->GetDiag(j);
-        if (Abs(rj*tvA[j]) > rmax) rmax = Abs(rj*tvA[j]);
-        if (Abs(lj*tvB[j]) > lmax) lmax = Abs(lj*tvB[j]);
+        vecj = matij.dest();
+        rj = MTemp[matij];
+        lj = MTemp.GetAdjData(matij);
+        mjj = M.DiagValue(matij.dest());
+        if (Abs(rj*tvA[vecj]) > rmax)
+			rmax = Abs(rj*tvA[vecj]);
+        if (Abs(lj*tvB[vecj]) > lmax)
+			lmax = Abs(lj*tvB[vecj]);
         nnb++;
     }
-                
+          
     double sigma = FAMGGetParameter()->Getsigma();
     lmax = lmax*sigma; rmax = rmax*sigma;
 
     FAMGMarkHeap(FAMG_FROM_TOP);
     sd = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
-    if (sd == NULL) return 1;
 
-    FF0(i,ff,gg, f, g);
+	if (sd == NULL)
+		return 1;
+
+    FF0(veci,ff,gg, f, g);
 
     z = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
-    {
-        j = matij.GetIndex();
-        rj = matij.GetData();;
-        lj = matij.GetAdjData();;
-        mjj = tmpmatrix->GetDiag(j);
-        if((Abs(rj*tvA[j]) > rmax) || (Abs(lj*tvB[j]) > lmax))
+	mtiter.reset();
+	mtiter(matij);// skip diagonal
+    while(mtiter(matij))
+    { 
+        vecj = matij.dest();
+		j = vecj.GetIndex();
+        rj = MTemp[matij];
+		lj = MTemp.GetAdjData(matij);
+        mjj = M.DiagValue(matij.dest());
+        if((Abs(rj*tvA[vecj]) > rmax) || (Abs(lj*tvB[vecj]) > lmax))
         {
-
-            JJ0(j,hjj,ejj);
-            FJ0(j,fj,gj, f, g);
+            JJ0(vecj,hjj,ejj);
+            FJ0(j,vecj,fj,gj, f, g);
             sd[z].j = j;
             sd[z].hjj = hjj;
             sd[z].ejj = ejj;
@@ -2007,13 +1502,13 @@ int FAMGGrid::AnalyseNode0(int i, FAMGPaList *&palist)
             z++;
         }
     }
-    DFF0(i);
+    DFF0(veci);
 
 
     min1 = BestFirst0(palist,mii,rt,lt,ff,gg,sd,z);
     if(min1 > FAMGGetParameter()->Geterror1()) 
     {
-        graph->ClearPaListRev(palist);
+        graph.ClearPaListRev(palist);
         BestSecond0(palist,mii,rt,lt,ff,gg,sd,z);
     } 
 
@@ -2022,52 +1517,59 @@ int FAMGGrid::AnalyseNode0(int i, FAMGPaList *&palist)
 }
 
 
-int FAMGGrid::AnalyseNode1(int i, FAMGPaList *&palist)
+int FAMGGrid::AnalyseNode1(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 {
-    FAMGMatrixPtr matij;
-    double rj, lj, rt, lt, mii, rmax, lmax, min1, *tvA, *tvB, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000], hr, hl, rmax2, lmax2, mjj;
+    double rj, lj, rt, lt, mii, rmax, lmax, min1, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000], hr, hl, rmax2, lmax2, mjj;
     int j, nnb, z;
     FAMGSpecialData *sd;
+	FAMGGraph &graph = *GetGraph();
+	const FAMGVector &tvA = *vector[FAMGTVA];
+	const FAMGVector &tvB = *vector[FAMGTVB];
+	const FAMGMatrixAlg &M = *GetMatrix();
+	FAMGVectorEntry vecj;
+	FAMGMatrixEntry matij;
 
-    tvA = vector[FAMGTVA];
-    tvB = vector[FAMGTVB];
     palist = NULL;
 
-    matij = matrix->GetStart(i);
-    mii = matij.GetData();
     rt = lt = 0.0;
     normr = norml = 0.0;
-    while(matij.GetNext())
+    FAMGMatrixIter miter(M,veci);
+	miter(matij);
+    mii = M[matij];
+     while(miter(matij))
     {
-        j = matij.GetIndex();
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
-        mjj = matrix->GetDiag(j);
+        vecj = matij.dest();
+        rj = M[matij];
+        lj = M.GetAdjData(matij);
+        mjj = M.DiagValue(matij.dest());
         normr += Abs(rj);
         norml += Abs(lj/mjj);
-        rt += rj*tvA[j];
-        lt += lj*tvB[j];
+        rt += rj*tvA[vecj];
+        lt += lj*tvB[vecj];
     }
 
     normr = normr/Abs(mii);
 
     if((normr < 1e-15) || (norml < 1e-15))
     {
-        if(graph->SavePaList(palist,0,NULL,NULL,NULL,0.0)) return 1;
+        if(graph.SavePaList(palist,0,NULL,NULL,NULL,0.0))
+			return 1;
         return 0;
     }
 
 
     rmax = rmax2 = 0.0; lmax = lmax2 = 0.0; nnb = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+	const FAMGMatrixAlg &MTemp = *GetTmpMatrix();
+	FAMGMatrixIter mtiter(MTemp,veci);
+    mtiter(matij);    // skip diagonal
+    while(mtiter(matij))
     {
-        j = matij.GetIndex();
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
-        mjj = tmpmatrix->GetDiag(j);
-        hr = Abs(rj*tvA[j]);
-        hl = Abs(lj*tvB[j]);
+        vecj = matij.dest();
+        rj = MTemp[matij];
+        lj = MTemp.GetAdjData(matij);
+        mjj = M.DiagValue(matij.dest());
+        hr = Abs(rj*tvA[vecj]);
+        hl = Abs(lj*tvB[vecj]);
         if(hr > rmax2)
         {
             if (hr > rmax)
@@ -2075,7 +1577,8 @@ int FAMGGrid::AnalyseNode1(int i, FAMGPaList *&palist)
                 rmax2 = rmax;
                 rmax = hr;
             }
-            else rmax2 = hr;
+            else 
+				rmax2 = hr;
         }
         if(hl > lmax2)
         {
@@ -2084,7 +1587,8 @@ int FAMGGrid::AnalyseNode1(int i, FAMGPaList *&palist)
                 lmax2 = lmax;
                 lmax = hl;
             }
-            else lmax2 = hl;
+            else 
+				lmax2 = hl;
         }
         nnb++;
     }
@@ -2094,24 +1598,27 @@ int FAMGGrid::AnalyseNode1(int i, FAMGPaList *&palist)
 
     FAMGMarkHeap(FAMG_FROM_TOP);
     sd = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
-    if (sd == NULL) return 1;
+    if (sd == NULL)
+		return 1;
 
-    FF0(i,ff,gg, f, g);
+    FF0(veci,ff,gg, f, g);
 
     z = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+	mtiter.reset();
+	mtiter(matij);// skip diagonal
+    while(mtiter(matij))
     { 
-        j = matij.GetIndex();
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
-        mjj = tmpmatrix->GetDiag(j);
-        hr = Abs(rj*tvA[j]);
-        hl = Abs(lj*tvB[j]);
+        vecj = matij.dest();
+		j = vecj.GetIndex();
+        rj = MTemp[matij];
+		lj = MTemp.GetAdjData(matij);
+        mjj = M.DiagValue(matij.dest());
+        hr = Abs(rj*tvA[vecj]);
+        hl = Abs(lj*tvB[vecj]);
         if((hr > rmax) || (hl > lmax))
         {
-            JJ0(j,hjj,ejj);
-            FJ0(j,fj,gj, f, g);
+            JJ0(vecj,hjj,ejj);
+            FJ0(j,vecj,fj,gj, f, g);
             sd[z].j = j;
             sd[z].hjj = hjj;
             sd[z].ejj = ejj;
@@ -2122,13 +1629,13 @@ int FAMGGrid::AnalyseNode1(int i, FAMGPaList *&palist)
             z++;
         }
     }
-    DFF0(i);
+    DFF0(veci);
 
 
     min1 = BestFirst0(palist,mii,rt,lt,ff,gg,sd,z);
     if(min1 > FAMGGetParameter()->Geterror1()) 
     {
-        graph->ClearPaListRev(palist);
+        graph.ClearPaListRev(palist);
         BestSecond0(palist,mii,rt,lt,ff,gg,sd,z);
     } 
 
@@ -2137,70 +1644,78 @@ int FAMGGrid::AnalyseNode1(int i, FAMGPaList *&palist)
 }
 
 
-
-int FAMGGrid::AnalyseNode2(int i, FAMGPaList *&palist)
+int FAMGGrid::AnalyseNode2(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 {
-    FAMGMatrixPtr matij;
-    double rj, lj, rt, lt, mii, min1, min2, *tvA, *tvB, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000], *err1, sigma, mjj;
+    double rj, lj, rt, lt, mii, min1, min2, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000], *err1, sigma, mjj;
     int j, nnb, z, y, k;
     FAMGSpecialData *sd, *sd2;
+	FAMGGraph &graph = *GetGraph();
+	const FAMGVector &tvA = *vector[FAMGTVA];
+	const FAMGVector &tvB = *vector[FAMGTVB];
+	const FAMGMatrixAlg &M = *GetMatrix();
+	FAMGVectorEntry vecj;
+	FAMGMatrixEntry matij;
 
-    tvA = vector[FAMGTVA];
-    tvB = vector[FAMGTVB];
     palist = NULL;
 
-    matij = matrix->GetStart(i);
-    mii = matij.GetData();
     rt = lt = 0.0;
     normr = norml = 0.0;
-    while(matij.GetNext())
+    FAMGMatrixIter miter(M,veci);
+	miter(matij);
+    mii = M[matij];
+	while(miter(matij))
     {
-        j = matij.GetIndex();
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
-        mjj = matrix->GetDiag(j);
+        vecj = matij.dest();
+        rj = M[matij];
+        lj = M.GetAdjData(matij);
+        mjj = M.DiagValue(matij.dest());
         normr += Abs(rj);
         norml += Abs(lj/mjj);
-        rt += rj*tvA[j];
-        lt += lj*tvB[j];
+        rt += rj*tvA[vecj];
+        lt += lj*tvB[vecj];
     }
 
     normr = normr/Abs(mii);
 
     if((normr < 1e-15) || (norml < 1e-15))
     {
-        if(graph->SavePaList(palist,0,NULL,NULL,NULL,0.0)) return 1;
+        if(graph.SavePaList(palist,0,NULL,NULL,NULL,0.0)) 
+			return 1;
         return 0;
     }
         
     nnb = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
-    { 
-        nnb++;
-    }
+	const FAMGMatrixAlg &MTemp = *GetTmpMatrix();
+	FAMGMatrixIter mtiter(MTemp,veci);
+    mtiter(matij);    // skip diagonal
+    while(mtiter(matij))
+       nnb++;
 
-    FF0(i,ff,gg, f, g);
+    FF0(veci,ff,gg, f, g);
     
     sigma = FAMGGetParameter()->Getsigma();
  
     FAMGMarkHeap(FAMG_FROM_TOP);
     sd = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
-    if (sd == NULL) return 1;
+    if (sd == NULL)
+		return 1;
 
     err1= (double*) FAMGGetMem(nnb*sizeof(double), FAMG_FROM_TOP);
-    if (err1 == NULL) return 1;
+    if (err1 == NULL)
+		return 1;
 
     z = 0;
-    matij = tmpmatrix->GetStart(i);
-    while(matij.GetNext())
+	mtiter.reset();
+	mtiter(matij);// skip diagonal
+    while(mtiter(matij))
     { 
-        j = matij.GetIndex();
-        rj = matij.GetData();
-        lj = matij.GetAdjData();
-        mjj = tmpmatrix->GetDiag(j);
-        JJ0(j,hjj,ejj);
-        FJ0(j,fj,gj,f,g);
+        vecj = matij.dest();
+		j = vecj.GetIndex();
+        rj = MTemp[matij];
+		lj = MTemp.GetAdjData(matij);
+        mjj = M.DiagValue(matij.dest());
+        JJ0(vecj,hjj,ejj);
+        FJ0(j,vecj,fj,gj,f,g);
         sd[z].j = j;
         sd[z].hjj = hjj;
         sd[z].ejj = ejj;
@@ -2210,7 +1725,7 @@ int FAMGGrid::AnalyseNode2(int i, FAMGPaList *&palist)
         sd[z].lj = lj/mjj;
         z++;
     }
-    DFF0(i);
+    DFF0(veci);
 
 
     min1 = min2 = 10000.0*FAMGGetParameter()->Geterror2();
@@ -2224,18 +1739,20 @@ int FAMGGrid::AnalyseNode2(int i, FAMGPaList *&palist)
                 min2 = min1;
                 min1 = err1[k];
             }
-            else min2 = err1[k]; 
+            else
+				min2 = err1[k]; 
         }           
     }
 
     if(min1 < FAMGGetParameter()->Geterror1())
     {
-        graph->CorrectPaList(palist,min1/FAMGGetParameter()->Gettol()); 
+        graph.CorrectPaList(palist,min1/FAMGGetParameter()->Gettol()); 
     }
     else
     {
         sd2 = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
-        if (sd2 == NULL) return 1;
+        if (sd2 == NULL)
+			return 1;
         y = 0;
         for(k = 0; k < z; k++)
         {
@@ -2245,11 +1762,10 @@ int FAMGGrid::AnalyseNode2(int i, FAMGPaList *&palist)
                 y++;
             }
         }
-        graph->ClearPaListRev(palist);
+        graph.ClearPaListRev(palist);
         BestSecond0(palist,mii,rt,lt,ff,gg,sd2,y);
     } 
 
     FAMGReleaseHeap(FAMG_FROM_TOP);
     return 0;
 }
-

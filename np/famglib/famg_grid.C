@@ -26,12 +26,19 @@
 #include "famg_misc.h"
 #include "famg_grid.h"
 #include "famg_graph.h"
-#include "famg_matrix.h"
+#include "famg_algebra.h"
 #include "famg_decomp.h"
 #include "famg_transfer.h"
 #include "famg_heap.h"
 #include "famg_system.h"
 
+#ifdef USE_UG_DS
+extern "C"
+{
+#include "gm.h"
+#include "ugm.h"
+}
+#endif
 
 #ifdef UG_DRAW
 
@@ -51,114 +58,70 @@ $Header$
 
 // Class FAMGGrid
  
-void FAMGGrid::DevideFGDefect()
+void FAMGGrid::Defect() const
 {
-    matrix->DevideFGDefect(vector[FAMGUNKNOWN],vector[FAMGDEFECT]);
-
-    return;
-}
-       
-void FAMGGrid::Defect()
-{
-    matrix->VecMinusMatVec(vector[FAMGDEFECT], vector[FAMGRHS], vector[FAMGUNKNOWN]); 
+    GetVector(FAMGDEFECT)->VecMinusMatVec(*GetVector(FAMGRHS), *GetMatrix(), *GetVector(FAMGUNKNOWN)); 
     return;
 }
 
 void FAMGGrid::Restriction(FAMGGrid *cg) const
+// including smoothing of fine nodes
 {
-    FAMGTransferEntry *transij, *trans;
-    FAMGMatrixPtr matik, matjk;
-    double *cgdefect, *fgdefect, sum, tij;
-    int ic, i, j, k, nc, *father;
-
-    nc = cg->GetN();
-    father = cg->GetFather();
-    cgdefect = cg->GetVector(FAMGRHS);
-    fgdefect = vector[FAMGDEFECT];
-    trans = transfer->GetRow();
- 
-    for(ic = 0; ic < nc; ic++)
-    {
-        i = father[ic];
-        sum = fgdefect[i];
-        for(transij = (trans+i)->GetNext(); transij != NULL; transij = transij->GetNext())
-        {
-            j = transij->GetId();
-            tij = transij->GetData();
-            matjk = matrix->GetStart(j);
-            while(matjk.GetNext())
-            {
-                k = matjk.GetIndex();
-                if(matjk.GetType()) // FG node
-                {
-                    sum -= tij*matjk.GetData()*fgdefect[k];
-                }
-            }
-        }
-        matik = matrix->GetStart(i);
-        while(matik.GetNext())
-        {
-            k = matik.GetIndex();
-            if(matik.GetType())
-            {
-                sum -= matik.GetData()*fgdefect[k];
-            }
-        }
-            
-        cgdefect[ic] = sum;
-    }
-
+	FAMGVector &fgsolution = *GetVector(FAMGUNKNOWN);
+	FAMGVector &fgdefect = *GetVector(FAMGDEFECT);
+	FAMGVector &cgdefect = *(cg->GetVector(FAMGDEFECT));
+	FAMGVectorEntry fvec;
+	FAMGTransferEntry *transfc;
+	const FAMGTransfer &transfer = *GetTransfer();
+	FAMGTransferEntry *transfg;
+	
+	// jacobi smoothing for the fine nodes
+	fgsolution.JacobiSmoothFG( *GetMatrix(), fgdefect );
+	// correct defect
+	Defect();
+	
+	cgdefect = 0.0;
+	
+	FAMGVectorIter fiter(GetGridVector());
+	while( fiter(fvec) )
+	    for(transfg = transfer.GetFirstEntry(fvec); transfg != NULL; transfg = transfg->GetNext())
+			cgdefect[transfg->GetCol()] += transfg->GetRestriction() * fgdefect[fvec];
+		
     return;
 }
     
 void FAMGGrid::Prolongation(const FAMGGrid *cg)
+// adds the prolongued solution-update to the fine grid solution
+// including smoothing of fine nodes
 {
-    FAMGTransferEntry *trans, *transij;
-    FAMGMatrixPtr matij;
-    double sum, *cgunknown, *fghelp, *fgunknown, mii;
-    int i, j, nc, *father;
+	FAMGVector &fgsol = *GetVector(FAMGUNKNOWN);
+	FAMGVector &fgdefect = *GetVector(FAMGDEFECT);
+	const FAMGVector &cgsol = *(cg->GetVector(FAMGUNKNOWN));
+	FAMGVectorEntry fvec;
+	FAMGTransferEntry *transfc;
+	const FAMGTransfer &transfer = *GetTransfer();
+	FAMGTransferEntry *transfg;
+	register double sum;
+	
+	FAMGVectorIter fiter(GetGridVector());
+	while( fiter(fvec) )
+	{
+		sum = 0.0;
+	    for(transfg = transfer.GetFirstEntry(fvec); transfg != NULL; transfg = transfg->GetNext())
+        	sum += transfg->GetProlongation() * cgsol[transfg->GetCol()];
+		fgsol[fvec] += sum;
+	}
 
-    nc = cg->GetN();
-    father = cg->GetFather();
-    cgunknown = cg->GetVector(FAMGUNKNOWN);
+	// prepare defect for jacobi smoothing
+	Defect();
+	
+	// jacobi smoothing for the fine nodes
+	fgsol.JacobiSmoothFG( *GetMatrix(), fgdefect );
+	
+	// correct defect
+	Defect();
 
-    fgunknown = vector[FAMGUNKNOWN];
-    fghelp = vector[FAMGDEFECT];
-    trans = transfer->GetRow();
-    
-    for(i = 0; i < nc; i++)
-    {
-        fghelp[father[i]] = cgunknown[i];
-        fgunknown[father[i]] += cgunknown[i];
-    }
-    for(i = 0; i < n; i++)
-    {
-        if (matrix->GetType(i)) // FG node
-        {
-            for(transij = (trans+i)->GetNext(); transij != NULL; transij = transij->GetNext())
-            {
-                j = transij->GetId();
-                fghelp[i] += transij->GetData() * fghelp[j];
-            }
-        }
-    }
-    for(i = 0; i < n; i++)
-    {
-        matij = matrix->GetStart(i);
-        if(matij.GetType())
-        {
-            sum = 0.0;
-            mii = matij.GetData();
-            while(matij.GetNext())
-            {
-                j = matij.GetIndex();
-                sum += matij.GetData() * fghelp[j];
-            }
-            fgunknown[i] -= sum/mii;
-        }
-    }
-
-    return;
+	return;
 }
 
 void FAMGGrid::CGSmooth()
@@ -181,38 +144,66 @@ void FAMGGrid::PostSmooth()
 
 void FAMGGrid::JACSmooth()
 {
-    matrix->JAC(vector[FAMGDEFECT]);
+	GetVector(FAMGUNKNOWN)->dampedJacobiSmoother( *GetMatrix(), *GetVector(FAMGDEFECT) );
     return;
 }
 
 void FAMGGrid::FGSSmooth()
 {
-    matrix->FGS(vector[FAMGDEFECT]);
+	GetVector(FAMGUNKNOWN)->FGSSmoother( *GetMatrix(), *GetVector(FAMGDEFECT) );
     return;
 }
 
 void FAMGGrid::BGSSmooth()
 {
-    matrix->BGS(vector[FAMGDEFECT]);
+	GetVector(FAMGUNKNOWN)->BGSSmoother( *GetMatrix(), *GetVector(FAMGDEFECT) );
     return;
 }
 
 void FAMGGrid::SGSSmooth()
 {
-    matrix->SGS(vector[FAMGDEFECT]);
+	GetVector(FAMGUNKNOWN)->SGSSmoother( *GetMatrix(), *GetVector(FAMGDEFECT) );
     return;
 }
 
+#ifdef FAMG_ILU
 void FAMGGrid::ILUTSmooth()
 {
     decomp->ILUT(vector[FAMGDEFECT]);
     return;
 }
+#endif
 
+int FAMGGrid::SolveCoarseGrid()
+{
+#ifdef FAMG_BICG
+	return BiCGStab();
+#endif
+	
+	FAMGVector &sol = *GetVector(FAMGUNKNOWN);
+	FAMGVector &def = *GetVector(FAMGDEFECT);
+	FAMGVector &rhs = *GetVector(FAMGRHS);
+	
+	double mynorm = def.norm();
+	double endnorm = mynorm * 1e-8;
+	
+	while (mynorm>endnorm)
+	{
+		SGSSmooth();
+		Defect();
+		mynorm  = def.norm();
+	}
+	
+	return 0;
+}
+
+#ifdef FAMG_BICG
 int FAMGGrid::BiCGStab()
+// specialy apadted version for use as coarse grid solver
 {
     double rlimit,alimit,reduction,limit,defectnorm,startdefect,oldnorm;
-    double *vec[4], rho, oldrho, alpha, beta, omega, nenner;
+    double rho, oldrho, alpha, beta, omega, nenner;
+    FAMGVector *vec[4];
     int maxit,i;
     ostrstream ostr; 
 
@@ -227,14 +218,17 @@ int FAMGGrid::BiCGStab()
     const int FAMGP = 2;
     const int FAMGT = 3;
 
+	FAMGVector &defect = *GetVector(FAMGDEFECT);
+	FAMGVector &solution = *GetVector(FAMGUNKNOWN);
+	
     FAMGMarkHeap(FAMG_FROM_BOTTOM);
-    vec[FAMGR] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
+    vec[FAMGR] = solution.create_new();
     if(vec[FAMGR] == NULL) return 1;
-    vec[FAMGV] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
+    vec[FAMGV] = solution.create_new();
     if(vec[FAMGV] == NULL) return 1;
-    vec[FAMGP] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
+    vec[FAMGP] = solution.create_new();
     if(vec[FAMGP] == NULL) return 1;
-    vec[FAMGT] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
+    vec[FAMGT] = solution.create_new();
     if(vec[FAMGT] == NULL) return 1;
 
     maxit = 50;
@@ -242,17 +236,16 @@ int FAMGGrid::BiCGStab()
     alimit = 1e-14;
     reduction = 1e-10;
 
-    
-    FAMGCopyVector(n,vec[FAMGR],vector[FAMGDEFECT]);
-    defectnorm = FAMGNorm(n,vec[FAMGR]);
+    *vec[FAMGR] = defect;
+    defectnorm = vec[FAMGR]->norm();
     startdefect = defectnorm;
     limit = rlimit*startdefect;
     // ostr << "cg " << 0 << "\t" <<  startdefect << endl;
     // FAMGWrite(ostr);
 
-    FAMGCopyVector(n,vec[FAMGP],vec[FAMGR]);
-    
-    rho = FAMGSum(n,vec[FAMGR]); // \tilde{r} = (1,...,1)
+    *vec[FAMGP] = *vec[FAMGR];
+	
+	rho = vec[FAMGR]->sum();
     // rho = FAMGScalProd(n,vector[FAMGRHS],vec[FAMGR]); // \tilde{r} = rhs
     if (Abs(rho) < 1e-10*alimit) 
     {
@@ -262,11 +255,11 @@ int FAMGGrid::BiCGStab()
 
     for(i = 0; i < maxit; i++)
     {
-        FAMGCopyVector(n,vector[FAMGDEFECT],vec[FAMGP]);
+        *vector[FAMGDEFECT] = *vec[FAMGP];
         CGSmooth();
-        matrix->Mult(vec[FAMGV],vector[FAMGDEFECT]);
+		vec[FAMGV]->MatVec(*GetMatrix(),defect);
 
-        nenner = FAMGSum(n,vec[FAMGV]);// \tilde{r} = (1,...,1)
+        nenner = vec[FAMGV]->sum();// \tilde{r} = (1,...,1)
         // nenner = FAMGScalProd(n,vector[FAMGRHS],vec[FAMGV]); // \tilde{r} = rhs
         if (Abs(nenner) < 1e-15*Abs(rho)) 
         {
@@ -275,41 +268,41 @@ int FAMGGrid::BiCGStab()
         }
     
         alpha = rho/nenner;
-        FAMGAddVector(n,vector[FAMGUNKNOWN],vector[FAMGDEFECT],alpha);
-        FAMGAddVector(n,vec[FAMGR],vec[FAMGV],-alpha);
+		solution.AddScaledVec(alpha,defect);
+		vec[FAMGR]->AddScaledVec(-alpha,*vec[FAMGV]);
 
         oldnorm = defectnorm; 
         defectnorm = oldnorm; // in order to avoid a warning !
-        defectnorm = FAMGNorm(n,vec[FAMGR]);
+        defectnorm = vec[FAMGR]->norm();
         // ostr << "cg " << i+0.5 << "\t" << defectnorm << "\t" << defectnorm/oldnorm;
         // ostr << "\t" << alpha  << endl;    
         // FAMGWrite(ostr);
         if((defectnorm < alimit) || (defectnorm < limit)) break;
         
-        FAMGCopyVector(n,vector[FAMGDEFECT],vec[FAMGR]);
+		defect = *vec[FAMGR];
         CGSmooth();
-        matrix->Mult(vec[FAMGT],vector[FAMGDEFECT]);
+		vec[FAMGT]->MatVec(*GetMatrix(),defect);
 
-        omega = FAMGScalProd(n,vec[FAMGT],vec[FAMGR])/FAMGScalProd(n,vec[FAMGT],vec[FAMGT]);
+        omega = (*vec[FAMGT] * *vec[FAMGR]) / (*vec[FAMGT] * *vec[FAMGT]);
         if (Abs(omega) < 1e-15) 
         {
             ostr << __FILE__ << ", line " << __LINE__ << ": omega too small" << endl;
             FAMGWarning(ostr);
         }
 
-        FAMGAddVector(n,vector[FAMGUNKNOWN],vector[FAMGDEFECT],omega);
-        FAMGAddVector(n,vec[FAMGR],vec[FAMGT],-omega);
-        FAMGAddVector(n,vec[FAMGP],vec[FAMGV],-omega);
+		solution.AddScaledVec(omega,defect);
+		vec[FAMGR]->AddScaledVec(-omega,*vec[FAMGT]);
+		vec[FAMGP]->AddScaledVec(-omega,*vec[FAMGV]);
 
         oldnorm = defectnorm;
-        defectnorm = FAMGNorm(n,vec[FAMGR]);
+        defectnorm = vec[FAMGR]->norm();
         // ostr << "cg " << i+1 << "\t" << defectnorm << "\t" << defectnorm/oldnorm;
         // ostr << "\t" << omega << endl;    
         // FAMGWrite(ostr);
         if((defectnorm < alimit) || (defectnorm < limit)) break;
 
         oldrho = rho;
-        rho = FAMGSum(n,vec[FAMGR]); // \tilde{r} = (1,...,1)
+        rho = vec[FAMGR]->sum(); // \tilde{r} = (1,...,1)
         // rho = FAMGScalProd(n,vector[FAMGRHS],vec[FAMGR]); // \tilde{r} = rhs
         if (Abs(rho) < 1e-10*alimit) 
         {
@@ -319,10 +312,10 @@ int FAMGGrid::BiCGStab()
 
         beta = rho*alpha/(oldrho*omega);
         // could be accelerated
-        FAMGMultVector(n,vec[FAMGP],beta);
-        FAMGAddVector(n,vec[FAMGP],vec[FAMGR]);
+		*vec[FAMGP] *= beta;
+		*vec[FAMGP] += *vec[FAMGR];
     }
-    FAMGCopyVector(n,vector[FAMGDEFECT],vec[FAMGR]);
+	defect = *vec[FAMGR];
 
     // ostr << "cg: " << i+1 << "  " << defectnorm/startdefect << endl << flush;
     // FAMGWrite(ostr);
@@ -337,146 +330,65 @@ int FAMGGrid::BiCGStab()
 
     return 0;
 }
+#endif
 
 void FAMGGrid::SmoothTV()
 {
-    FAMGMatrixPtr matij;
-    double *tvA, *tvB, sumA, normA, nd, mii;
-    int i,j,k;
+    double sum, normA, mii, scaling;
+    FAMGVector &tvA = *vector[FAMGTVA];
+    FAMGVector &tvB = *vector[FAMGTVB];
+	FAMGMatrixAlg &mat = *matrix;
+	FAMGMatrixEntry me;
+	FAMGVectorEntry ve;
+    int k;
 
     const int stv = FAMGGetParameter()->Getstv();
-    tvA = vector[FAMGTVA];
-    tvB = vector[FAMGTVB];
 
     for(k = 0; k < stv; k++)
     {
-        for(i = 0; i < n; i++)
-        {
-            sumA = 0.0;
-            matij = matrix->GetStart(i);
-            mii = matij.GetData();
-            while(matij.GetNext())
-            {
-                j = matij.GetIndex();
-                sumA -= matij.GetData()*tvA[j];
-            }
-            tvA[i] = sumA/mii;
-        }
-
-        for(i = n-1; i >= 0; i--)
-        {
-            sumA = 0.0;
-            matij = matrix->GetStart(i);
-            mii = matij.GetData();
-            while(matij.GetNext())
-            {
-                j = matij.GetIndex();
-                sumA -= matij.GetData()*tvA[j];
-            }
-            tvA[i] = sumA/mii;
-        }
+		FAMGVectorIter tviter(tvA);
+		while( tviter(ve) )
+		{
+			FAMGMatrixIter miter(*matrix,ve);
+            sum = 0.0;
+			
+			miter(me);	// diagonal element
+			mii = mat[me];
+			while( miter(me) )
+				sum -= mat[me]*tvA[me.dest()];
+			tvA[ve] = sum/mii;
+		}	
+		
+		FAMGVectorRevIter tvReviter(tvA);
+		while( tvReviter(ve) )
+		{
+			FAMGMatrixIter miter(*matrix,ve);
+            sum = 0.0;
+			
+			miter(me);	// diagonal element
+			mii = mat[me];
+			while( miter(me) )
+				sum -= mat[me]*tvA[me.dest()];
+			tvA[ve] = sum/mii;
+		}	
     }
      
-    normA = 0.0;
-    for(i = 0; i < n; i++) 
-    {
-        normA += tvA[i]*tvA[i];
-    }
-    
-    normA = sqrt(normA);
-    nd = sqrt((double)n);
-    for(i = 0; i < n; i++) 
-    {
-        tvB[i] = tvA[i]=nd*tvA[i]/normA;
-     }
+    normA = tvA.norm();
+    scaling = sqrt((double)mat.GetN()) / normA;
+	
+	FAMGVectorIter tviter(tvA);
+	while( tviter(ve) )
+	{
+		tvB[ve] = tvA[ve] *= scaling;
+	}
 
-    
-    return;
+	return;
 }
     
 
-void FAMGGrid::CopyVector(int source, int dest)
-{
-    double *vecsource, *vecdest;
-    int i;
-
-    vecsource = vector[source];
-    vecdest = vector[dest];
-    
-    for(i = 0; i < n; i++) 
-    {
-        vecdest[i] = vecsource[i];
-    }
-
-    return;
-}
-
-void FAMGGrid::AddVector(int source, int dest)
-{
-    double *vecsource, *vecdest;
-    int i;
-
-    vecsource = vector[source];
-    vecdest = vector[dest];
-    
-    for(i = 0; i < n; i++) 
-    {
-        vecdest[i] += vecsource[i];
-    }
-
-    return;
-}
-
-void FAMGGrid::MultVector(int source, double factor)
-{
-    double *vecsource;
-    int i;
-
-    vecsource = vector[source];
-    
-    for(i = 0; i < n; i++) 
-    {
-        vecsource[i] = factor*vecsource[i];
-    }
-
-    return;
-}
-
-void FAMGGrid::SubVector(int source, int dest)
-{
-    double *vecsource, *vecdest;
-    int i;
-
-    vecsource = vector[source];
-    vecdest = vector[dest];
-    
-    for(i = 0; i < n; i++) 
-    {
-        vecdest[i] -= vecsource[i];
-    }
-
-    return;
-}
-
-
-void FAMGGrid::SetVector(int dest, double val)
-{
-    double *vecdest;
-    int i;
-
-    vecdest = vector[dest];
-    
-    for(i = 0; i < n; i++) 
-    {
-        vecdest[i] = val;
-    }
-
-    return;
-}
-
-
+#ifdef FAMG_ILU
 int FAMGGrid::ILUTDecomp(int cgilut)
-{   
+{
     FAMGMarkHeap(FAMG_FROM_BOTTOM);
     if(graph == NULL)
     {
@@ -498,6 +410,7 @@ int FAMGGrid::ILUTDecomp(int cgilut)
     
     return 0;
 }
+#endif
 
 
 void FAMGGrid::Stencil()
@@ -505,7 +418,7 @@ void FAMGGrid::Stencil()
     int nn, nl;
 
     nn = matrix->GetN();
-    nl = matrix->GetNL();
+    nl = matrix->GetNLinks();
     ostrstream ostr; 
     ostr << "unknowns: " << nn << "\t";
     ostr << "avg. stencil: " << (double)nl/(double)nn << endl;
@@ -520,10 +433,14 @@ void FAMGGrid::GetSmoother()
     char *presmoother = FAMGGetParameter()->Getpresmoother();
     char *postsmoother = FAMGGetParameter()->Getpostsmoother();
 
-    CGSmootherPtr = &FAMGGrid::ILUTSmooth;
+    //CGSmootherPtr = &FAMGGrid::ILUTSmooth;
+    CGSmootherPtr = &FAMGGrid::JACSmooth;
     if(strcmp(cgsmoother,"ilut") == 0)
     {
+		assert(0);
+#ifdef FAMG_ILU
         CGSmootherPtr = &FAMGGrid::ILUTSmooth;
+#endif
     }
     else if(strcmp(cgsmoother,"fgs") == 0)
     {
@@ -551,7 +468,10 @@ void FAMGGrid::GetSmoother()
     PreSmootherPtr = &FAMGGrid::FGSSmooth;
     if(strcmp(presmoother,"ilut") == 0)
     {
+		assert(0);
+#ifdef FAMG_ILU
         PreSmootherPtr = &FAMGGrid::ILUTSmooth;
+#endif
     }
     else if(strcmp(presmoother,"fgs") == 0)
     {
@@ -579,7 +499,10 @@ void FAMGGrid::GetSmoother()
     PostSmootherPtr = &FAMGGrid::BGSSmooth;
     if(strcmp(postsmoother,"ilut") == 0)
     {
+		assert(0);
+#ifdef FAMG_ILU
         PostSmootherPtr = &FAMGGrid::ILUTSmooth;
+#endif
     }
     else if(strcmp(postsmoother,"fgs") == 0)
     {
@@ -608,58 +531,127 @@ void FAMGGrid::GetSmoother()
     return;
 }
 
-int  FAMGGrid::InitLevel0(const class FAMGSystem &system)
+int FAMGGrid::InitLevel0(const class FAMGSystem &system)
 {
     int i;
+	FAMGVector *new_vector;
 
-    n = system.GetN();  
+	n = system.GetN();
     nf = 0;
+	
+	mygridvector = system.GetGridVector();
+	
+#ifdef USE_UG_DS
+	SetugGrid(system.GetFineGrid());
+#else
+    SetFather(NULL);
+#endif
+	
     matrix = system.GetMatrix();
     tmpmatrix = matrix;
+	
+#ifdef FAMG_ILU
     decomp = NULL;
+#endif
+	
     transfer = NULL;
-    for(i = 0; i < FAMGMAXVECTORS; i++) vector[i] = system.GetVector(i);
+    for(i = 0; i < FAMGMAXVECTORS; i++)
+		vector[i] = system.GetVector(i);
+	
+#ifdef FAMG_REORDERmap	
     map = (int *) FAMGGetMem(n*sizeof(int),FAMG_FROM_TOP);
     if(map == NULL) return 1;
     for(i = 0; i < n; i++) map[i] = i;
-    father = NULL;
+#endif
+
     graph = NULL;
-    vertex = system.GetExtra();
 
     GetSmoother();
 
     return 0;
 }
 
-int FAMGGrid::Init(int nn)
+
+
+int FAMGGrid::Init(int nn, const FAMGGrid& grid_pattern)
 {
     int i;
 
     n = nn;
     nf = 0;
+	
+#ifdef USE_UG_DS
+	GRID *new_grid;
+	FAMGugVector *new_vector;
+	
+	new_grid = CreateNewLevelAMG(MYMG(grid_pattern.GetugGrid()));
+	if( new_grid == NULL )
+	{
+		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create coarser grid" << endl;
+		FAMGError(ostr);
+		assert(0);
+	}
+	SetugGrid(new_grid);
+	
+	mygridvector = new FAMGugGridVector(new_grid);
+	if( mygridvector == NULL )
+	{
+		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create gridvector" << endl;
+		FAMGError(ostr);
+		assert(0);
+	}
+	
+	matrix = new FAMGugMatrix(new_grid, *(FAMGugMatrix*)grid_pattern.GetMatrix());
+    if(matrix == NULL)
+		return 1;
+#else	
     matrix = (FAMGMatrix *) FAMGGetMem(sizeof(FAMGMatrix),FAMG_FROM_TOP);
-    if(matrix == NULL) return 1;
-    if(matrix->Init(n)) return 1;
+    if(matrix == NULL)
+		return 1;
+    if(matrix->Init(n))
+		return 1;
+	mygridvector = NULL; // aendern
+#endif
+	
     tmpmatrix = matrix;
     transfer = NULL;
+	
+#ifdef FAMG_ILU
     decomp = NULL;
-
+#endif
+	
+#ifndef USE_UG_DS	
     father = (int *) FAMGGetMem(n*sizeof(int),FAMG_FROM_TOP);
     if(father == NULL) return 1;
-
+#endif
+	
+#ifdef FAMG_ILU
     map = NULL;
+#endif
     graph = NULL;
 
     for(i = 0; i < FAMGMAXVECTORS; i++) // here we could save some memory
     {
-        vector[i] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_TOP);
-        if(vector[i] == NULL) return 1;
+#ifdef USE_UG_DS
+		new_vector = new FAMGugVector(GetGridVector(),*(FAMGugVector*)grid_pattern.GetVector(i));
+#else
+		assert(0);
+        //new_vector = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_TOP);
+#endif
+		if( new_vector == NULL )
+		{
+			ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create vector nr. " << i << endl;
+			FAMGError(ostr);
+			return 0;
+		}
+        SetVector(i,new_vector);
     }
-        
 
+#ifdef UG_DRAW
     vertex = (void **) FAMGGetMem(n*sizeof(void *),FAMG_FROM_TOP);
     if(vertex == NULL) return 1;
-    
+#endif
+	
     GetSmoother();
 
     return 0;
@@ -668,10 +660,31 @@ int FAMGGrid::Init(int nn)
 
 void FAMGGrid::Deconstruct()
 {
-    tmpmatrix = matrix;
-    decomp = NULL;
-    father = NULL;
+	int i;
 
+    for(i = 0; i < FAMGMAXVECTORS; i++)
+    {
+#ifdef USE_UG_DS
+		delete GetVector(i);
+#else
+		assert(0);
+#endif
+    }
+	
+#ifdef USE_UG_DS
+	delete GetMatrix();
+#else
+	assert(0);
+    father = NULL;
+    tmpmatrix = matrix;
+#endif
+	
+#ifdef FAMG_ILU
+    decomp = NULL;
+#endif
+	
+	delete mygridvector; mygridvector = NULL;
+	
     return;
 }    
 
@@ -679,34 +692,50 @@ int FAMGGrid::Construct(FAMGGrid *fg)
 {
     int i, j;
 
-    FAMGMatrix *fmatrix = fg->matrix;
+    FAMGMatrixAlg *fmatrix = fg->GetMatrix();
     int fn = fg->GetN();
+#ifdef UG_DRAW
     void  **vertexfg = fg->GetNode();
-    double *tvAcg = vector[FAMGTVA];
-    double *tvAfg = fg->GetVector(FAMGTVA);
-    double *tvBcg = vector[FAMGTVB];
-    double *tvBfg = fg->GetVector(FAMGTVB);
+#endif
+	FAMGVector &tvAcg = *GetVector(FAMGTVA);
+	const FAMGVector &tvAfg = *(fg->GetVector(FAMGTVA));
+	FAMGVector &tvBcg = *GetVector(FAMGTVB);
+	const FAMGVector &tvBfg = *(fg->GetVector(FAMGTVB));
 
-    j = 0;
-    for(i = 0; i < fn; i++)
-    {
-        if(fmatrix->GetType(i) == 0)
-        {
-            father[j] = i;
-            tvAcg[j] = tvAfg[i];
-            tvBcg[j] = tvBfg[i];
-            j++;
-        }
-    }
-
-    if (j != n)
+	if(fg->GetTransfer()->SetDestinationToCoarse(*fg,*this))
     {
         ostrstream ostr;
-        ostr << __FILE__ << __LINE__  << endl;
+        ostr << __FILE__ << __LINE__  << "can not bend transfer entries to coarse grid" << endl;
         FAMGError(ostr);
-        return 1;
+        assert(0);
+    }
+	
+	const FAMGGridVector &fg_gridvec = fg->GetGridVector();
+	FAMGVectorIter viter(fg_gridvec);
+	FAMGVectorEntry fg_ve, cg_ve;
+	
+	// transfer testvectors by trivial injection to coarse grid
+    j = 0;
+	while( viter(fg_ve) )
+	{
+		if (fg_gridvec.IsCG(fg_ve))
+		{
+			cg_ve = GetTransfer()->GetFirstEntry(fg_ve)->GetCol();
+			tvAcg[cg_ve] = tvAfg[fg_ve];
+			tvBcg[cg_ve] = tvBfg[fg_ve];
+			j++;
+		}
+	}
+
+    if (j != GetN())
+    {
+        ostrstream ostr;
+        ostr << __FILE__ << __LINE__  << "number of coarse grid node doesn't match" << endl;
+        FAMGError(ostr);
+        assert(0);
     }
         
+#ifdef UG_DRAW
     if(vertexfg != NULL)
     {
         j = 0;
@@ -719,8 +748,10 @@ int FAMGGrid::Construct(FAMGGrid *fg)
             }
         }
     }
-
-    if(matrix->CGMatrix(fg->GetMatrix(), fg->GetTransfer(), father)) return 1;
+#endif
+	
+    if(GetMatrix()->ConstructGalerkinMatrix(*fg)) 
+		return 1;
 
     return 0;
 }
@@ -745,27 +776,163 @@ int FAMGGrid::ConstructTransfer()
 
     if (graph->Init(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
     if (graph->Construct(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+	
+//////////////////////////////////////////
+#ifdef WEG
+	// war nur testen drin
+	FAMGNode *node;
+	FAMGPaList* pa, *pf;
+	int p1, p2, m;
+	double d;
+	
+	node = graph->GetNode(10);
+	p1=3; p2=17;	
+	for(pa = node->GetPaList(); pa!=NULL; pa = pa->GetNext() )
+		if( !((pa->GetPa(0)==p1 && pa->GetPa(1)==p2) || (pa->GetPa(0)==p2 && pa->GetPa(1)==p1)))
+			pa->SetApprox(99999.0);
+		else
+		{
+			pf = node->GetPaList();
+			
+			m=pa->GetNp(); pa->SetNp(pf->GetNp()); pf->SetNp(m);
+			assert(m==2);
+			m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(1)); pf->SetPa(1,m);
+			m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(0)); pf->SetPa(0,m);
+			d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(1)); pf->SetCoeff(1,d);
+			d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(0)); pf->SetCoeff(0,d);
+			d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(1)); pf->SetCoefft(1,d);
+			d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(0)); pf->SetCoefft(0,d);
+			//m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(0)); pf->SetPa(0,m);
+			//m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(1)); pf->SetPa(1,m);
+			//d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(0)); pf->SetCoeff(0,d);
+			//d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(1)); pf->SetCoeff(1,d);
+			//d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(0)); pf->SetCoefft(0,d);
+			//d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(1)); pf->SetCoefft(1,d);
+			d=pa->GetApprox(); pa->SetApprox(pf->GetApprox()); pf->SetApprox(d);
+			m=pa->GetNewLinks(); pa->SetNewLinks(pf->GetNewLinks()); pf->SetNewLinks(m);
+			d=pa->GetNewCG(); pa->SetNewCG(pf->GetNewCG()); pf->SetNewCG(d);
+			
+		}
+	
+	node = graph->GetNode(22);
+	p1=15; p2=29;	
+	for(pa = node->GetPaList(); pa!=NULL; pa = pa->GetNext() )
+		if( !((pa->GetPa(0)==p1 && pa->GetPa(1)==p2) || (pa->GetPa(0)==p2 && pa->GetPa(1)==p1)))
+			pa->SetApprox(99999.0);
+		else
+		{
+			pf = node->GetPaList();
+			
+			m=pa->GetNp(); pa->SetNp(pf->GetNp()); pf->SetNp(m);
+			assert(m==2);
+			m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(1)); pf->SetPa(1,m);
+			m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(0)); pf->SetPa(0,m);
+			d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(1)); pf->SetCoeff(1,d);
+			d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(0)); pf->SetCoeff(0,d);
+			d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(1)); pf->SetCoefft(1,d);
+			d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(0)); pf->SetCoefft(0,d);
+			//m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(0)); pf->SetPa(0,m);
+			//m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(1)); pf->SetPa(1,m);
+			//d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(0)); pf->SetCoeff(0,d);
+			//d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(1)); pf->SetCoeff(1,d);
+			//d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(0)); pf->SetCoefft(0,d);
+			//d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(1)); pf->SetCoefft(1,d);
+			d=pa->GetApprox(); pa->SetApprox(pf->GetApprox()); pf->SetApprox(d);
+			m=pa->GetNewLinks(); pa->SetNewLinks(pf->GetNewLinks()); pf->SetNewLinks(m);
+			d=pa->GetNewCG(); pa->SetNewCG(pf->GetNewCG()); pf->SetNewCG(d);
+			
+		}
+	
+	node = graph->GetNode(26);
+	p1=19; p2=33;	
+	for(pa = node->GetPaList(); pa!=NULL; pa = pa->GetNext() )
+		if( !((pa->GetPa(0)==p1 && pa->GetPa(1)==p2) || (pa->GetPa(0)==p2 && pa->GetPa(1)==p1)))
+			pa->SetApprox(99999.0);
+		else
+		{
+			pf = node->GetPaList();
+			
+			m=pa->GetNp(); pa->SetNp(pf->GetNp()); pf->SetNp(m);
+			assert(m==2);
+			m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(1)); pf->SetPa(1,m);
+			m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(0)); pf->SetPa(0,m);
+			d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(1)); pf->SetCoeff(1,d);
+			d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(0)); pf->SetCoeff(0,d);
+			d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(1)); pf->SetCoefft(1,d);
+			d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(0)); pf->SetCoefft(0,d);
+			//m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(0)); pf->SetPa(0,m);
+			//m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(1)); pf->SetPa(1,m);
+			//d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(0)); pf->SetCoeff(0,d);
+			//d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(1)); pf->SetCoeff(1,d);
+			//d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(0)); pf->SetCoefft(0,d);
+			//d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(1)); pf->SetCoefft(1,d);
+			d=pa->GetApprox(); pa->SetApprox(pf->GetApprox()); pf->SetApprox(d);
+			m=pa->GetNewLinks(); pa->SetNewLinks(pf->GetNewLinks()); pf->SetNewLinks(m);
+			d=pa->GetNewCG(); pa->SetNewCG(pf->GetNewCG()); pf->SetNewCG(d);
+			
+		}
+	
+	node = graph->GetNode(38);
+	p1=31; p2=45;	
+	for(pa = node->GetPaList(); pa!=NULL; pa = pa->GetNext() )
+		if( !((pa->GetPa(0)==p1 && pa->GetPa(1)==p2) || (pa->GetPa(0)==p2 && pa->GetPa(1)==p1)))
+			pa->SetApprox(99999.0);
+		else
+		{
+			pf = node->GetPaList();
+			
+			m=pa->GetNp(); pa->SetNp(pf->GetNp()); pf->SetNp(m);
+			assert(m==2);
+			m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(1)); pf->SetPa(1,m);
+			m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(0)); pf->SetPa(0,m);
+			d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(1)); pf->SetCoeff(1,d);
+			d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(0)); pf->SetCoeff(0,d);
+			d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(1)); pf->SetCoefft(1,d);
+			d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(0)); pf->SetCoefft(0,d);
+			//m=pa->GetPa(0); pa->SetPa(0,pf->GetPa(0)); pf->SetPa(0,m);
+			//m=pa->GetPa(1); pa->SetPa(1,pf->GetPa(1)); pf->SetPa(1,m);
+			//d=pa->GetCoeff(0); pa->SetCoeff(0,pf->GetCoeff(0)); pf->SetCoeff(0,d);
+			//d=pa->GetCoeff(1); pa->SetCoeff(1,pf->GetCoeff(1)); pf->SetCoeff(1,d);
+			//d=pa->GetCoefft(0); pa->SetCoefft(0,pf->GetCoefft(0)); pf->SetCoefft(0,d);
+			//d=pa->GetCoefft(1); pa->SetCoefft(1,pf->GetCoefft(1)); pf->SetCoefft(1,d);
+			d=pa->GetApprox(); pa->SetApprox(pf->GetApprox()); pf->SetApprox(d);
+			m=pa->GetNewLinks(); pa->SetNewLinks(pf->GetNewLinks()); pf->SetNewLinks(m);
+			d=pa->GetNewCG(); pa->SetNewCG(pf->GetNewCG()); pf->SetNewCG(d);
+			
+		}
+#endif
+//////////////////////////////////////////
+	
     if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
     
     for(i = 0; i < conloops; i++)
     {
         FAMGMarkHeap(FAMG_FROM_BOTTOM);
-        tmpmatrix = (FAMGMatrix *) FAMGGetMem(sizeof(FAMGMatrix),FAMG_FROM_BOTTOM);
-        if(tmpmatrix == NULL) return 1;
-        if(tmpmatrix->Init2(n)) return 1;
-        if(tmpmatrix->TmpMatrix(matrix,transfer,graph)) return 1;
+#ifdef USE_UG_DS
+        assert(0);	// i don't want to have a second matrix
+#else
+		assert(0);	// todo: change
+        tmpmatrix = (FAMGMatrixAlg *) FAMGGetMem(sizeof(FAMGMatrixAlg),FAMG_FROM_BOTTOM);
+        if(tmpmatrix == NULL)
+			return 1;
+        if(tmpmatrix->Init2(n))
+			return 1;
+        if(tmpmatrix->TmpMatrix(matrix,transfer,graph))
+			return 1;
+#endif
  
         if (graph->Construct2(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
         if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
         FAMGReleaseHeap(FAMG_FROM_BOTTOM);
     }
 
-    if (graph->RemainingNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+    if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
     
     nf = graph->GetNF();
-    matrix->MarkUnknowns(graph);
+    // not neceassary any more: matrix->MarkUnknowns(graph);
  
-    
+printim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
+  
 
 #ifdef UG_DRAW
     /* test */
@@ -783,7 +950,8 @@ int FAMGGrid::ConstructTransfer()
 
     return 0;
 }
-    
+
+#ifdef FAMG_ILU
 int FAMGGrid::OrderVector(int vn, int *mapping)
 {
     double *helpvect, *vect;
@@ -910,8 +1078,4 @@ int FAMGGrid::Reorder()
 
     return 0;
 }
-
-    
-    
-
-
+#endif

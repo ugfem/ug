@@ -25,9 +25,15 @@
 #define __FAMG_SYSTEM__
 
 #include <string.h>
-#include "famg_matrix.h"
+#include "famg_algebra.h"
 #include "famg_grid.h"
 #include "famg_multigrid.h"
+
+#ifdef USE_UG_DS
+extern "C" {
+#include "gm.h"
+}
+#endif
 
 /* RCS_ID
    $Header$
@@ -292,18 +298,19 @@ class FAMGSystem
 {
 public:
   FAMGSystem();
-  FAMGMatrix * GetMatrix() const;
-  int GetN() const;
-  double *GetVector(int i) const;
-  void **GetExtra() const;
+  int GetN() const {
+    return GetMatrix()->GetN();
+  }
+  FAMGGridVector * GetGridVector() const;
+  FAMGMatrixAlg * GetMatrix() const;
+  FAMGVector *GetVector(int i) const;
   FAMGMultiGrid *GetMultiGrid(int) const;
-  void SetMatrix(FAMGMatrix *);
-  void SetExtra(void **);
-  void SetVector(int, double *);
-  void SetN(int);
+  void SetGridVector(FAMGGridVector *);
+  void SetMatrix(FAMGMatrixAlg *);
+  void SetVector(int, FAMGVector *);
   int Init();
   FAMGMultiGrid *CreateMultiGrid();
-  int Solve(double *rhs, double *defect, double *unknown);
+  int Solve(FAMGVector *rhs, FAMGVector *defect, FAMGVector *unknown);
   int LinIt();
   int AdTVSolve();
   int BiCGStab();
@@ -314,47 +321,50 @@ public:
   int ComputeEigenVector(FAMGMultiGrid *mg0, double **vec, double *G, double *P, int con);
   int ComputeEigenVectorTrans(FAMGMultiGrid *mg0, double **vec, double *G, double *P, int con);
   int GMRES();
-  int Construct(double *entr, int *index, int *start, int n, int nl, double *tvA, double *tvB, void **extraptr);
-  int ConstructSimple(double *entr, int *index, int *start, int n, int nl, void **extraptr);
+  int Construct( FAMGGridVector *gridvector, FAMGMatrixAlg* stiffmat, FAMGVector* vectors[FAMGMAXVECTORS] );
+  int ConstructSimple( FAMGMatrixAlg* stiffmat, FAMGVector* tvA, FAMGVector* tvB );
   int Deconstruct();
   int DeconstructSimple();
+#ifdef USE_UG_DS
+  GRID *GetFineGrid() const {
+    return finegrid;
+  }
+  void SetFineGrid( GRID *fg) {
+    finegrid = fg;
+  }
+#endif
 private:
   int nmg;
-  int n;             // unknowns
   FAMGMultiGrid *mg[FAMGMULTIGRIDS];
-  FAMGMatrix *matrix;
-  double *vector[FAMGMAXVECTORS];
+  FAMGMatrixAlg *matrix;
+  FAMGGridVector *mygridvector;
+  FAMGVector *vector[FAMGMAXVECTORS];
   int *colmap;
-  void **extra;
   int (FAMGSystem::*SolverPtr)(void);
-
+#ifdef USE_UG_DS
+  GRID *finegrid;
+#endif
 };
 
-inline FAMGMatrix *FAMGSystem::GetMatrix() const {
+inline FAMGGridVector *FAMGSystem::GetGridVector() const {
+  return mygridvector;
+}
+inline FAMGMatrixAlg *FAMGSystem::GetMatrix() const {
   return matrix;
 }
-inline int FAMGSystem::GetN() const {
-  return n;
-}
-inline double *FAMGSystem::GetVector(int i) const {
+inline FAMGVector *FAMGSystem::GetVector(int i) const {
   return vector[i];
-}
-inline void **FAMGSystem::GetExtra() const {
-  return extra;
 }
 inline FAMGMultiGrid *FAMGSystem::GetMultiGrid(int i) const {
   return mg[i];
 }
-inline void FAMGSystem::SetN(int i) {
-  n = i;
+inline void FAMGSystem::SetGridVector(FAMGGridVector *ptr) {
+  mygridvector = ptr;
 }
-inline void FAMGSystem::SetMatrix(FAMGMatrix *ptr) {
+inline void FAMGSystem::SetMatrix(FAMGMatrixAlg *ptr) {
   matrix = ptr;
 }
-inline void FAMGSystem::SetExtra(void **ptr) {
-  extra = ptr;
-}
-inline void FAMGSystem::SetVector(int i, double *ptr) {
+inline void FAMGSystem::SetVector(int i, FAMGVector *ptr) {
   vector[i] = ptr;
 }
 

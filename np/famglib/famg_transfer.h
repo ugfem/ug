@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:      famg_matrix.h													*/
+/* File:      famg_transfer.h												*/
 /*																			*/
 /* Purpose:   famg tranfer classes											*/
 /*																			*/
@@ -24,60 +24,116 @@
 #ifndef __FAMG_TRANSFER__
 #define __FAMG_TRANSFER__
 
+#ifdef USE_UG_DS
+extern "C"
+{
+#include "gm.h"
+}
+#include "famg_ugalgebra.h"
+
+#else
+
+#include "famg_arrayalgebra.h"
+#endif
+
+#include "famg_misc.h"
+
+// forward declaration
+class FAMGGrid;
+
 /* RCS_ID
    $Header$
  */
-
-struct FAMGTransferBitField
-{
-  unsigned f1 : 1;
-  unsigned f0 : 31;
-};
 
 // Class FAMGTransferEntry
 
 class FAMGTransferEntry
 {
 public:
-  double GetData(void) const;
-  int GetId(void) const;
+  FAMGVectorEntry GetCol(void) const;
   FAMGTransferEntry *GetNext(void) const;
-  FAMGTransferEntry *GetReverse();
-  FAMGTransferEntry *GetReverse(int);
-  FAMGTransferEntry* GetEntry(int);
-  FAMGTransferEntry* NewEntry(FAMGTransferEntry*);
-  int SaveEntry(FAMGTransferEntry*,double);
-  int SaveEntry(FAMGTransferEntry*,double,FAMGTransferEntry**);
-  void SetData(double);
-  void AddData(double);
-  void SetId(int);
-  void SetRev(int);
   void SetNext(FAMGTransferEntry *);
-  void Init(int);
+  FAMGTransferEntry *GetEntry(const FAMGVectorEntry &cg_vec);
+  double GetProlongation(void) const;
+  double GetRestriction(void) const;
+  void SetProlongation(double);
+  void SetRestriction(double);
+  //void AddProlongation(double);
+  //void AddRestriction(double);
+#ifdef USE_UG_DS
+  void GetColInVar(FAMGugVectorEntry &ugve) const;
+#else
+  int GetId() {
+    return id;
+  }
+  void SetId(int newid) {
+    id=newid;
+  }
+#endif
+
 private:
-  double data;
-  FAMGTransferBitField id;
+  static const int PROLONGATION_COMP = 0;
+  static const int RESTRICTION_COMP = 1;
+
+#ifdef USE_UG_DS
+  // if USE_UG_DS, no object of type FAMGTransferEntry may be created; only pointer to
+  // FAMGTransferEntry are allowed, since FAMGTransferEntry is only a synonym for a
+  // ug transfermatrix entry
+  // to check proper use of FAMGTransferEntry you can activate a pure virtual function
+  // to ensure that there is no object created, but only pointer.
+  // USE ONLY FOR COMPILING CHECKS!!!! DON'T RUN THE PROGRAMM, BECAUSE THE ADDITIONAL
+  // POINTER FOR VIRTUAL FUNCTION MECHANISM DESTROYS THE CORRESPONDENCE TO MATRIX-TYPE
+  //virtual void check_no_object()=NULL;
+
+  // this entries are only set for debugging purpose
+  unsigned int control;         /* object identification, various flags */
+
+  MATRIX *next;                         /* row list                                                     */
+  VECTOR *vect;                         /* destination vector					*/
+
+  /* user data */
+  DOUBLE value[2];                      /* array of doubles                                     */
+
+#else
   FAMGTransferEntry *next;
+  int id;
+  double data[2];
+#endif
 };
 
 
-inline double FAMGTransferEntry::GetData() const {
-  return data;
+#ifdef USE_UG_DS
+inline FAMGVectorEntry FAMGTransferEntry::GetCol() const {
+  return FAMGVectorEntry(new FAMGugVectorEntryRef(MDEST((MATRIX*)this)));
 }
-inline void FAMGTransferEntry::SetData(double val) {
-  data = val;
+inline FAMGTransferEntry *FAMGTransferEntry::GetNext() const {
+  return (FAMGTransferEntry*)MNEXT((MATRIX*)this);
 }
-inline void FAMGTransferEntry::AddData(double val) {
-  data += val;
+inline void FAMGTransferEntry::SetNext(FAMGTransferEntry *mat) {
+  MNEXT((MATRIX*)this) = (MATRIX*)mat;
 }
-inline int FAMGTransferEntry::GetId() const {
-  return id.f0;
+inline double FAMGTransferEntry::GetProlongation() const {
+  return MVALUE((MATRIX*)this,PROLONGATION_COMP);
 }
-inline void FAMGTransferEntry::SetId(int i) {
-  id.f0 = i;
+inline double FAMGTransferEntry::GetRestriction() const {
+  return MVALUE((MATRIX*)this,RESTRICTION_COMP);
 }
-inline void FAMGTransferEntry::SetRev(int i) {
-  id.f1 = i;
+inline void FAMGTransferEntry::SetProlongation(double val) {
+  MVALUE((MATRIX*)this,PROLONGATION_COMP) = val;
+}
+inline void FAMGTransferEntry::SetRestriction(double val) {
+  MVALUE((MATRIX*)this,RESTRICTION_COMP) = val;
+}
+// weg inline void FAMGTransferEntry::AddProlongation(double val) {MVALUE((MATRIX*)this,PROLONGATION_COMP) += val;}
+// weg inline void FAMGTransferEntry::AddRestriction(double val) {MVALUE((MATRIX*)this,RESTRICTION_COMP) += val;}
+
+// for specialized functions
+inline void FAMGTransferEntry::GetColInVar(FAMGugVectorEntry &ugve) const {
+  ugve = MDEST((MATRIX*)this);
+}
+#else
+inline FAMGVectorEntry FAMGTransferEntry::GetCol() const {
+  return FAMGVectorEntry(new FAMGarrayVectorEntryRef(GetId(id)));
 }
 inline FAMGTransferEntry *FAMGTransferEntry::GetNext() const {
   return next;
@@ -85,39 +141,61 @@ inline FAMGTransferEntry *FAMGTransferEntry::GetNext() const {
 inline void FAMGTransferEntry::SetNext(FAMGTransferEntry *mat) {
   next = mat;
 }
-inline FAMGTransferEntry *FAMGTransferEntry::GetReverse()
-{
-  return this+(1 - 2*id.f1);
+inline double FAMGTransferEntry::GetProlongation() const {
+  return data[PROLONGATION_COMP];
 }
-
-
+inline double FAMGTransferEntry::GetRestriction() const {
+  return data[RESTRICTION_COMP];
+}
+inline void FAMGTransferEntry::SetProlongation(double val) {
+  data[PROLONGATION_COMP] = val;
+}
+inline void FAMGTransferEntry::SetRestriction(double val) {
+  data[RESTRICTION_COMP] = val;
+}
+inline void FAMGTransferEntry::AddProlongation(double val) {
+  data[PROLONGATION_COMP] += val;
+}
+inline void FAMGTransferEntry::AddRestriction(double val) {
+  data[RESTRICTION_COMP] += val;
+}
+#endif
 
 
 class FAMGTransfer
 {
 public:
-  FAMGTransferEntry* GetRow() const;
-  FAMGTransferEntry* GetRow(int) const;
-  void SetRow(FAMGTransferEntry*);
   int Init(class FAMGGrid*);
-  int Construct(class FAMGGrid*);
-  int Reorder(int *);
-  int Order(int *);
+  FAMGTransferEntry* GetFirstEntry(const FAMGVectorEntry& fg_vec) const;
+  FAMGTransferEntry* NewEntry(const FAMGVectorEntry& fg_vec, const FAMGVectorEntry& cg_vec);
+  int SetEntries(const FAMGVectorEntry& fg_vec, const FAMGVectorEntry& cg_vec,double prolongation_val, double restriction_val);
+  int SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg );
+#ifdef USE_UG_DS
+  FAMGTransferEntry* GetFirstEntry(const FAMGugVectorEntry& fg_vec) const;
+#else
+#endif
+
 private:
+
+#ifdef USE_UG_DS
+  GRID *mygrid;
+#else
   int n;
-  FAMGTransferEntry *row;
+  FAMGTransferEntry **row_array;                // array of diagonal elements of the interpolation matrix
+#endif
 };
 
-inline FAMGTransferEntry *FAMGTransfer::GetRow() const {
-  return row;
+#ifdef USE_UG_DS
+inline FAMGTransferEntry *FAMGTransfer::GetFirstEntry(const FAMGVectorEntry& fg_vec) const {
+  return (FAMGTransferEntry*)VISTART(((FAMGugVectorEntryRef*)(fg_vec.GetPointer()))->myvector());
 }
-inline FAMGTransferEntry *FAMGTransfer::GetRow(int i) const {
-  return row+i;
+inline FAMGTransferEntry *FAMGTransfer::GetFirstEntry(const FAMGugVectorEntry& fg_vec) const {
+  return (FAMGTransferEntry*)VISTART(fg_vec.myvector());
 }
-inline void FAMGTransfer::SetRow(FAMGTransferEntry *ptr) {
-  row = ptr;
+#else
+inline FAMGTransferEntry *FAMGTransfer::GetFirstEntry(const FAMGVectorEntry& fg_vec) const {
+  return row_array[((FAMGarrayVectorEntry*)(fg_vec->GetPointer()))->myid()];
 }
-
-
+#endif
 
 #endif

@@ -1,0 +1,127 @@
+/****************************************************************************/
+/*																			*/
+/* File:      famg_traverse.template										*/
+/*																			*/
+/* Purpose:   for a given non-fine grid node traverse all its				*/
+/*			  (perhaps) coarse neighbors									*/
+/*																			*/
+/* Author:    Christian Wrobel												*/
+/*			  Institut fuer Computeranwendungen  III						*/
+/*			  Universitaet Stuttgart										*/
+/*			  Pfaffenwaldring 27											*/
+/*			  70569 Stuttgart												*/
+/*			  internet: ug@ica3.uni-stuttgart.de							*/
+/*																			*/
+/*																			*/
+/* History:   September 98 begin (Christian Wrobel)							*/
+/*																			*/
+/* Remarks:																	*/
+/*																			*/
+/****************************************************************************/
+
+#include "famg_algebra.h"
+
+/* RCS_ID
+$Header$
+*/
+
+// respected preprocessor variables:
+//		FAMG_TRAVERSE_RETURN_TYPE
+//		FAMG_TRAVERSE_FCT_NAME
+//		FAMG_TRAVERSE_SECOND_ARG
+//		FAMG_TRAVERSE_INIT(node_i)
+//		FAMG_TRAVERSE_ACTION(node)		for coarse neighbors
+//		FAMG_TRAVERSE_FINISH(node_i)
+//		FAMG_TRAVERSE_RETURN
+
+
+// the first parameter "i" must be the index of a non-fine node
+
+FAMG_TRAVERSE_RETURN_TYPE FAMGGrid::FAMG_TRAVERSE_FCT_NAME(int i
+#ifdef FAMG_TRAVERSE_SECOND_ARG
+, FAMG_TRAVERSE_SECOND_ARG
+#endif
+)
+{
+	int iamp;
+	FAMGTransferEntry *transjk, *transks;
+	FAMGNode *node_i = GetGraph()->GetNode(i);
+	FAMGVectorEntry vec_i = node_i->GetVec();
+
+#ifdef FAMG_TRAVERSE_INIT
+	FAMG_TRAVERSE_INIT(node_i)
+#endif
+
+	FAMGMatrixEntry matij;
+	FAMGMatrixIter matij_iter(*GetMatrix(), vec_i);
+
+	matij_iter(matij);		// skip diagonal entry
+	while (matij_iter(matij))
+	{
+		FAMGVectorEntry vec_j = matij.dest();
+		FAMGNode *node_j = GetGraph()->GetNode(vec_j);
+		
+		if(node_j->IsFGNode())
+		{
+			iamp = 0;
+			for(transjk = GetTransfer()->GetFirstEntry(vec_j); transjk != NULL; transjk = transjk->GetNext())
+			{
+				FAMGVectorEntry vec_k = transjk->GetCol();
+				FAMGNode *node_k = GetGraph()->GetNode(vec_k);
+
+				FAMG_TRAVERSE_ACTION(node_k)
+
+				if (node_k == node_i) iamp = 1;
+			}
+			if (iamp)
+			{
+				FAMGMatrixEntry matjk;
+				FAMGMatrixIter matjk_iter(*GetMatrix(), vec_j);
+
+				matjk_iter(matjk);		// skip diagonal entry
+				while (matjk_iter(matjk))
+				{
+					FAMGVectorEntry vec_k = matjk.dest();
+					FAMGNode *node_k = GetGraph()->GetNode(vec_k);
+
+					if(node_k->IsFGNode())
+					{
+						for(transks = GetTransfer()->GetFirstEntry(vec_k); transks != NULL; transks = transks->GetNext())
+						{
+							FAMGVectorEntry vec_s = transks->GetCol();
+							FAMGNode *node_s = GetGraph()->GetNode(vec_s);
+
+							FAMG_TRAVERSE_ACTION(node_s)
+						}
+					}
+					else
+					{
+						FAMG_TRAVERSE_ACTION(node_k)
+					}
+				}
+			}
+		}
+		else
+		{
+			FAMG_TRAVERSE_ACTION(node_j)
+		}
+	}
+                       
+	#ifdef FAMG_TRAVERSE_FINISH
+	FAMG_TRAVERSE_FINISH(node_i)
+	#endif
+	
+	return 
+		#ifdef FAMG_TRAVERSE_RETURN
+		FAMG_TRAVERSE_RETURN
+		#endif
+		;
+}
+
+#undef FAMG_TRAVERSE_RETURN_TYPE
+#undef FAMG_TRAVERSE_FCT_NAME
+#undef FAMG_TRAVERSE_SECOND_ARG
+#undef FAMG_TRAVERSE_INIT
+#undef FAMG_TRAVERSE_ACTION
+#undef FAMG_TRAVERSE_FINISH
+#undef FAMG_TRAVERSE_RETURN

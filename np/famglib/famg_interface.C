@@ -77,7 +77,7 @@ int FAMGDeconstructParameter()
     return 0;
 }
 
-int FAMGConstruct(double *matrix, int *index, int *start, int n, int nl, double *tvA, double *tvB, void **extra)
+int FAMGConstruct(FAMG_Interface* famg_interface)
 {
  
 
@@ -89,13 +89,14 @@ int FAMGConstruct(double *matrix, int *index, int *start, int n, int nl, double 
     if(famgsystemptr == NULL) return 1;
     
     famgsystemptr->Init();
-    if(famgsystemptr->Construct(matrix,index,start,n,nl,tvA,tvB,extra)) return 1;
+    if(famgsystemptr->Construct(famg_interface)) return 1;
 
     return 0;
 }
-int FAMGPrepare(double *matrix, int *index, int *start, int n, int nl, void **extra)
+
+int FAMGPrepare(FAMG_Interface* famg_interface)
 {
-    if(famgsystemptr->ConstructSimple(matrix,index,start,n,nl,extra)) return 1;
+    if(famgsystemptr->ConstructSimple(famg_interface)) return 1;
 
     return 0;
 }
@@ -121,3 +122,9 @@ int FAMGRepair()
     
     return 0;
 }
+
+FAMGSystem *FAMG_GetSystem()
+{
+	return famgsystemptr;
+}
+

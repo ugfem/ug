@@ -36,7 +36,7 @@
 #include "graph.h"
 #include "gm.h"
 
-#include "famginterface.h"
+#include "famg_uginterface.h"
 
 /* RCS_ID
    $Header$

@@ -33,10 +33,13 @@
 int FAMGDeconstructParameter();
 int FAMGConstructParameter(class FAMGParameter *in_parameter);
 int FAMGConstruct(double *matrix, int *index, int *start, int n, int nl, double *tvA, double *tvB, void **extra);
-int FAMGPrepare(double *matrix, int *index, int *start, int n, int nl, void **extra);
-int FAMGSolve(double *rhs, double *unknown, double *defect);
+int FAMGPrepare(FAMGParameter *in_parameter);
+int FAMGSolve(double *rhs, double *defect, double *unknown);
 int FAMGDeconstruct();
 int FAMGRepair();
 
+// for debugging
+class FAMGSystem;
+FAMGSystem *FAMG_GetSystem();
 
 #endif
