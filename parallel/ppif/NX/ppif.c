@@ -41,6 +41,13 @@
 /*#define PPIF_SHOW_PARTITION_INFO*/
 
 
+/* use the following define to specify how many processes should run
+   on one processor. normal setting is 1 process per processor, set
+   PROCESS_BITS to 0 for this case. the number of processes per proc is
+   2^PROCESS_BITS. */
+#define PROCESS_BITS  0
+
+
 /****************************************************************************/
 /*                                                                          */
 /* include files                                                            */
@@ -66,6 +73,7 @@
 
 #include "compiler.h"
 
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -86,8 +94,9 @@
 
 #define ID_ARRAY        100L    /* channel id: array							*/
 #define ID_TREE         101L    /* channel id: tree								*/
-#define ID_GLOBAL       102L    /* channel id: global					*/
-#define ID_MAIL         103L    /* channel id: mail					*/
+#define ID_SYNC         102L    /* channel id: synchronize						*/
+#define ID_GLOBAL       103L    /* channel id: global							*/
+#define ID_MAIL         104L    /* channel id: mail								*/
 
 #define MID_NOMESG      -1L             /* empty message								*/
 #define MID_ERROR       -1L             /* error, no message							*/
@@ -101,6 +110,23 @@
 #define XPOS(aid)           (aid&0xFF)           /* xpos from compact form  */
 #define YPOS(aid)           ((aid&0xFF00)>>8)    /* ypos from compact form  */
 #define ZPOS(aid)           ((aid&0xFF0000)>>16) /* zpos from compact form  */
+
+
+
+
+/* macros for mapping PPIF-node numbers to NX-node numbers */
+#define PROCESSES_PER_PROC   (1<<PROCESS_BITS)
+#define PTYPE_MASK           (PROCESSES_PER_PROC-1)
+#define PPIF_PROC(n,t)       (((n)<<PROCESS_BITS)|(t))
+#define NX_PROC(p)           ((p)>>PROCESS_BITS)
+#if (PROCESS_BITS == 0)
+#define NX_PTYPE_ANY(p)      PTYPE_ANY
+#define NX_PTYPE(p)          0L
+#else
+#define NX_PTYPE_ANY(p)      ((p) & PTYPE_MASK)
+#define NX_PTYPE(p)          ((p) & PTYPE_MASK)
+#endif
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -286,15 +312,39 @@ int N, *pn, *pm;
 
 int InitPPIF (int *argcp, char ***argvp)
 {
-  int i, succ, sonr, sonl, aid;
+  int forks, i, succ, sonr, sonl, aid;
+  long local_node = mynode();
+  long pid_list[PROCESSES_PER_PROC];
+  int child_node_offset = 0;
 
-  me = mynode();
+  for(forks=1; child_node_offset==0 && forks<PROCESSES_PER_PROC; forks++)
+  {
+    long child_spawned =
+      nx_nfork(&local_node, 1L, (long)forks, &(pid_list[forks]));
+
+    if (child_spawned==-1)
+    {
+      fprintf(stderr, "%4d: PPIF: couldn't spawn child process (errno=%ld)\n",
+              local_node, (long)errno);
+      exit(1);
+    }
+
+    if (child_spawned==0)
+    {
+      /* I am a successfully spawned child! */
+      child_node_offset = forks;
+    }
+  }
+
+  me = PPIF_PROC(mynode(), child_node_offset);
   master = 0;
-  procs = numnodes();
+  procs = numnodes()<<PROCESS_BITS;
 
-  if (myptype()!=0L) {
-    setptype(0L);
-    printf("%4d: PPIF-warning: corrected PTYPE to 0\n", me);
+
+  if (myptype()!=(long)child_node_offset) {
+    setptype((long)child_node_offset);
+    printf("%4d: PPIF-warning: corrected PTYPE to %d\n",
+           me, child_node_offset);
   }
 
   if (!InitVChan())
@@ -310,7 +360,9 @@ int InitPPIF (int *argcp, char ***argvp)
     long rows, cols;
 
     status = nx_app_nodes(0, &mynodes, &nnodes);
-    assert(nnodes==procs);
+
+    assert(nnodes==procs || PROCESSES_PER_PROC>1);
+
     if (status!=0)
     {
       printf("%4d: PPIF-warning: couldn't get partition-info\n", me);
@@ -353,8 +405,12 @@ int InitPPIF (int *argcp, char ***argvp)
    */
   DimZ = 1;
   Factor(procs, &DimX, &DimY);
-  if (me==master) {
-    fprintf(stderr, "DimX=%d, DimY=%d, DimZ=%d\n", DimX, DimY, DimZ);
+  if (me==master)
+  {
+    fprintf(stderr, "PPIF: DimX=%d, DimY=%d, DimZ=%d\n", DimX, DimY, DimZ);
+    if (PROCESSES_PER_PROC!=1)
+      fprintf(stderr, "PPIF: ProcessesPerNode=%d\n", PROCESSES_PER_PROC);
+
   }
 
   aid = pid_to_aid(me);
@@ -433,21 +489,29 @@ int InitPPIF (int *argcp, char ***argvp)
   }
 
   succ=1;
-  for(i=0; i<degree; i++) {
+  for(i=0; i<degree; i++)
+  {
+    long p = downtree[i]->p;
+
     crecvx(ID_GLOBAL, (char *)&(slvcnt[i]), (long)sizeof(int),
-           downtree[i]->p, PTYPE_ANY, msginfo);
+           NX_PROC(p), NX_PTYPE_ANY(p), msginfo);
     succ += slvcnt[i];
   }
-  if (me>0) {
-    csend(ID_GLOBAL, (char *)&succ, (long)sizeof(int), (long)(me-1)/2, 0L);
+  if (me>0)
+  {
+    long p = (long)(me-1)/2;
+    csend(ID_GLOBAL, (char *)&succ, (long)sizeof(int),
+          NX_PROC(p), NX_PTYPE(p));
   }
   return(0);
 }
+
 
 void ExitPPIF (void)
 {
   return;
 }
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -459,11 +523,20 @@ int Broadcast (void *data, int size)
 {
   long ret;
 
-  if (me==master) {
-    /*printf(" SEND  %3d -> all  mit %lx\n", me, ID_GLOBAL);*/
-    ret = _csend(ID_GLOBAL, (char *)data, (long)size, -1L, 0L);
-    return((ret==0L) ? 0 : 1);
-  } else {
+  if (me==master)
+  {
+    long ptypes;
+    for(ptypes=0; ptypes<PROCESSES_PER_PROC; ptypes++)
+    {
+      /*printf(" SEND  %3d -> all  mit %lx\n", me, ID_GLOBAL);*/
+      ret = _csend(ID_GLOBAL, (char *)data, (long)size, -1L, ptypes);
+      if (ret!=0L)
+        return(1);
+    }
+    return(0);
+  }
+  else
+  {
     /*printf(" RECV  sby -> %3d  mit %lx\n", me, ID_GLOBAL);*/
     ret = _crecv(ID_GLOBAL, (char *)data, (long)size);
     return((ret!=-1L) ? 0 : 1);
@@ -474,8 +547,11 @@ int Concentrate (void *data, int size)
 {
   long ret;
 
-  if (me!=master) {
-    ret = _csend(uptree->chanid|uptree->scnt, (char *)data, (long)size, uptree->p, 0L);
+  if (me!=master)
+  {
+    long p = uptree->p;
+    ret = _csend(uptree->chanid|uptree->scnt, (char *)data, (long)size,
+                 NX_PROC(p), NX_PTYPE(p));
     uptree->scnt = (uptree->scnt+1)&0x0f;
     return((ret==0L) ? 0 : 1);
   }
@@ -487,10 +563,13 @@ int GetConcentrate (int slave, void *data, int size)
   VChannel *chan;
   long ret;
 
-  if (slave<degree) {
+  if (slave<degree)
+  {
+    long p;
     chan = downtree[slave];
+    p = chan->p;
     ret = _crecvx(chan->chanid|chan->rcnt, (char *)data, (long)size,
-                  chan->p, PTYPE_ANY, msginfo);
+                  NX_PROC(p), NX_PTYPE_ANY(p), msginfo);
     chan->rcnt = (chan->rcnt+1)&0x0f;
     return((ret==0L) ? 0 : 1);
   }
@@ -502,9 +581,13 @@ int Spread (int slave, void *data, int size)
   VChannel *chan;
   long ret;
 
-  if (slave<degree) {
+  if (slave<degree)
+  {
+    long p;
     chan = downtree[slave];
-    ret = _csend(chan->chanid|chan->scnt, (char *)data, (long)size, chan->p, 0L);
+    p = chan->p;
+    ret = _csend(chan->chanid|chan->scnt, (char *)data, (long)size,
+                 NX_PROC(p), NX_PTYPE(p));
     chan->scnt = (chan->scnt+1)&0x0f;
     return((ret==0L) ? 0 : 1);
   }
@@ -515,8 +598,11 @@ int GetSpread (void *data, int size)
 {
   long ret;
 
-  if (me!=master) {
-    ret = _crecvx(uptree->chanid|uptree->rcnt, (char *)data, (long)size, uptree->p, PTYPE_ANY, msginfo);
+  if (me!=master)
+  {
+    long p = uptree->p;
+    ret = _crecvx(uptree->chanid|uptree->rcnt, (char *)data, (long)size,
+                  NX_PROC(p), NX_PTYPE_ANY(p), msginfo);
     uptree->rcnt = (uptree->rcnt+1)&0x0f;
     return((ret==0L) ? 0 : 1);
   }
@@ -524,13 +610,27 @@ int GetSpread (void *data, int size)
 }
 
 
+
 int Synchronize (void)
 {
+#if (PROCESS_BITS == 0)
   long ret;
 
   ret = _gsync();
   return((ret!=-1L) ? 0 : 1);
+#else
+  int l, dummy=0;
+
+  for(l=degree-1; l>=0; l--) {
+    GetConcentrate(l, &dummy, sizeof(dummy));
+  }
+  Concentrate(&dummy, sizeof(dummy));
+
+  Broadcast(&dummy, sizeof(dummy));
+#endif
 }
+
+
 
 
 /****************************************************************************/
@@ -552,18 +652,19 @@ int DiscSync (VChannelPtr vc)
 
 int SendSync (VChannelPtr vc, void *data, int size)
 {
-  long ret;
+  long ret, p = vc->p;
 
-  ret = _csend(vc->chanid, (char *)data, (long)size, vc->p, 0L);
+  ret = _csend(vc->chanid, (char *)data, (long)size,
+               NX_PROC(p), NX_PTYPE(p));
   return((ret==0) ? size : -1);
 }
 
 int RecvSync (VChannelPtr vc, void *data, int size)
 {
-  long ret;
+  long ret, p = vc->p;
 
   ret = _crecvx(vc->chanid, (char *)data, (long)size,
-                vc->p, PTYPE_ANY, msginfo);
+                NX_PROC(p), NX_PTYPE_ANY(p), msginfo);
   return((int)ret);
 }
 
@@ -599,10 +700,11 @@ int InfoADisc (VChannelPtr vc)
 
 msgid SendASync (VChannelPtr vc, void *data, int size, int *error)
 {
-  long id;
+  long id, p = vc->p;
 
   *error = 0;
-  id = _isend(vc->chanid|vc->scnt, (char *)data, (long)size, vc->p, 0L);
+  id = _isend(vc->chanid|vc->scnt, (char *)data, (long)size,
+              NX_PROC(p), NX_PTYPE(p));
 
   /*sprintf(buf, "    %d: SA   id-e=%ld   an %d  vc %8p  id-i %8p  size %4d", me, id, vc->p, vc,vc->chanid|vc->scnt, size);*/
   vc->scnt = (vc->scnt+1)&0x0f;
@@ -619,11 +721,11 @@ msgid SendASync (VChannelPtr vc, void *data, int size, int *error)
 
 msgid RecvASync (VChannelPtr vc, void *data, int size, int *error)
 {
-  long id;
+  long id, p = vc->p;
 
   *error = 0;
   id = _irecvx(vc->chanid|vc->rcnt, (char *)data, (long)size,
-               vc->p, PTYPE_ANY, msginfo);
+               NX_PROC(p), NX_PTYPE_ANY(p), msginfo);
 
   /*sprintf(buf, "    %d: RA   id-e=%ld  von %d  vc %8p  id-i %8p  size %4d", me, id, vc->p, vc,vc->chanid|vc->rcnt,size);*/
   vc->rcnt = (vc->rcnt+1)&0x0f;
@@ -695,9 +797,9 @@ int InfoARecv (VChannelPtr vc, msgid m)
 
 int SendMail (int destId, int reqId, void *data, int size)
 {
-  long ret;
+  long ret, p = (long)destId;
 
-  ret = _csend(ID_MAIL, (char *)data, (long)size, (long)destId, 0L);
+  ret = _csend(ID_MAIL, (char *)data, (long)size, NX_PROC(p), NX_PTYPE(p));
   return((ret==0) ? 0 : 1);
 }
 
@@ -715,7 +817,10 @@ int GetMail (int *sourceId, int *reqId, void *data, int *size)
     return(-1);
   }
 
-  *sourceId = (int)infonode();
+  *sourceId = (int)(PPIF_PROC(infonode(), infoptype()));
+  if (infonode()==-1)
+    *sourceId = -1;
+
   *reqId = (int)(ID_MAIL);
   *size = (int)infocount();
 
