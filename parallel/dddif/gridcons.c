@@ -1211,7 +1211,7 @@ static int Scatter_ObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
 	{
 		theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
 						  CORNER_OF_EDGE_PTR(theElement,i,1));
-		if (((unsigned int *)data)[i] = GID(theEdge))
+		if (((unsigned int *)data)[i] != GID(theEdge))
 		{
 			UserWriteF(PFMT "ELEM=" EID_FMTX " #ERROR#: EDGE=" ID_FMTX " gids don't match "
 				"local=%08x remote=%08x remoteproc/prio=%d/%d\n",me,EID_PRTX(theElement),ID_PRTX(theEdge),
