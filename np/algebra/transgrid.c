@@ -46,6 +46,7 @@
 
 #include "np.h"
 #include "disctools.h"
+#include "transgrid.h"
 
 /****************************************************************************/
 /*																			*/
@@ -1261,7 +1262,8 @@ static INT RestrictByMatrix_General (GRID *FineGrid, const VECDATA_DESC *to,
         for (m=VISTART(v); m!= NULL; m = NEXT(m))
         {
           w = MDEST(m);
-          if ( (VDATATYPE(w)&xmask) && (VECSKIP(w) == 0) )
+          if ( (VDATATYPE(w)&xmask) && (VECSKIP(w) == 0)
+               && (CRITBIT(v, 0) == 0) )
             VVALUE(w,xc) += MVALUE(m,rcomp) * VVALUE(v,yc);
         }
     if (damp[0] != 1.0)
@@ -1317,7 +1319,12 @@ static INT RestrictByMatrix_General (GRID *FineGrid, const VECDATA_DESC *to,
           {
             sum = 0.0;
             for (j=0; j<vncomp; j++)
-              sum += mptr[rcomp++] * vptr[j];
+            {
+              if(CRITBIT(v, j))
+                rcomp++;
+              else
+                sum += mptr[rcomp++] * vptr[j];
+            }
             wptr[i] += sum;
           }
           else
@@ -1408,7 +1415,8 @@ static INT InterpolateCorrectionByMatrix_General (GRID *FineGrid, const VECDATA_
       if ( (VDATATYPE(v)&xmask) )
       {
         if ((flag&1)==0)
-          if (VECSKIP(v)!=0)
+          if (VECSKIPBIT(v, 0) ||
+              CRITBIT(v, 0))
             continue;
 
         for (m=VISTART(v); m!= NULL; m = NEXT(m))
@@ -1461,7 +1469,7 @@ static INT InterpolateCorrectionByMatrix_General (GRID *FineGrid, const VECDATA_
         wptr = VVALUEPTR(w,VD_CMP_OF_TYPE(from,wtype,0));
         wncomp = VD_NCMPS_IN_TYPE(from,wtype);
         for (i=0; i<vncomp; i++)
-          if (!(vecskip & (1<<i)))
+          if (!(vecskip & (1<<i)) && !CRITBIT(v,i))
           {
             sum = 0.0;
             for (j=0; j<wncomp; j++)
