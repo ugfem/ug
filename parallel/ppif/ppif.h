@@ -83,6 +83,9 @@ extern "C" {
 typedef void *VChannelPtr;   /* dummy definition, any pointer type is ok    */
 typedef void *msgid;         /* dummy definition, any pointer type is ok    */
 
+#define NO_MSGID ((msgid)-1L) /* a special value that should never be re-   */
+                              /* turned as a msgid, like NULL for pointers  */
+
 enum directions {north,east,south,west,up,down};
 
 #define RAND_MSG_SIZE 128   /* max size of random messages                                      */
