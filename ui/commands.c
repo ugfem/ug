@@ -4650,6 +4650,36 @@ static INT RefineCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   fixcoarsegrid - marks the end of corse grid generation
+
+   DESCRIPTION:
+   If the coarse grid is build interactively by 'ie', this command
+   determinated this process and calls 'CreateAlgebra'.
+
+   'fixcoarsegrid'
+   D*/
+/****************************************************************************/
+
+static INT FixCoarseGridCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+
+  theMG = currMG;
+  if (theMG==NULL) {
+    PrintErrorMessage('E',"fixcoarsegirdmark","no open multigrid");
+    return (CMDERRORCODE);
+  }
+  if (CreateAlgebra(GRID_ON_LEVEL(theMG,0)) != GM_OK) {
+    PrintErrorMessage('E',"fixcoarsegirdmark",
+                      "could not create algebra");
+    return (CMDERRORCODE);
+  }
+
+  return(OKCODE);
+}
+
+/****************************************************************************/
+/*D
    mark - mark elements with refinement type
 
    DESCRIPTION:
@@ -12382,6 +12412,7 @@ INT InitCommands ()
   if (CreateCommand("ie",                         InsertElementCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("dele",                       DeleteElementCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("refine",             RefineCommand                                   )==NULL) return (__LINE__);
+  if (CreateCommand("fixcoarsegrid",      FixCoarseGridCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("mark",                       MarkCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("find",                       FindCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("select",             SelectCommand                                   )==NULL) return (__LINE__);
