@@ -670,8 +670,8 @@ INT GetElementNewVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD,
    GetElementMPtrs - get list of DOUBLE pointers for matrices
 
    SYNOPSIS:
-   INT GetElementVMPtrs (ELEMENT *theElement, const MATDATA_DESC *md,
-                                          DOUBLE **mptr);
+   INT GetElementMPtrs (ELEMENT *theElement, const MATDATA_DESC *md,
+   DOUBLE **mptr);
 
    PARAMETERS:
    .  theElement - pointer to an element
@@ -2091,6 +2091,92 @@ INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
 
 /****************************************************************************/
 /*D
+   ConvertMatrix - converts a matrix in a sparce format
+
+   SYNOPSIS:
+   INT ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
+   MATDATA_DESC *A, int *pn, int **pia, int **pja, double **pa);
+
+   PARAMETERS:
+   .  theGrid - pointer to a grid
+   .  theHeap - pointer to heap
+   .  MarkKey - mark in temp mem
+   .  A - pointer to matrix descriptor
+   .  pn - number of lines
+   .  pia - diagonal indices
+   .  pja - row indices
+   .  pa - matrix entries
+
+   DESCRIPTION:
+   This function converts a matrix in a sparce format.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+INT ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
+                   MATDATA_DESC *A,
+                   int *pn, int **pia, int **pja, double **pa)
+{
+  VECTOR *v;
+  MATRIX *m;
+  INT rtype,ctype,rcomp,ccomp,i,j,k,n,nn;
+  int *ia,*ja;
+  double *a;
+  SHORT *Mcomp;
+
+  n = nn = 0;
+  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+    VINDEX(v) = n;
+    rtype = VTYPE(v);
+    rcomp = MD_ROWS_IN_RT_CT(A,rtype,rtype);
+    for (m=VSTART(v); m!=NULL; m=MNEXT(m)) {
+      ctype = MDESTTYPE(m);
+      ccomp = MD_COLS_IN_RT_CT(A,rtype,ctype);
+      if (ccomp == 0) continue;
+      nn += rcomp * ccomp;
+    }
+    n += rcomp;
+  }
+  ia = (int *)GetTmpMem(theHeap,sizeof(int) * (n+1),MarkKey);
+  a = (double *)GetTmpMem(theHeap,sizeof(double) * nn,MarkKey);
+  ja = (int *)GetTmpMem(theHeap,sizeof(int) * nn,MarkKey);
+  if (ia == NULL || a == NULL || ja == NULL)
+    return(NUM_ERROR);
+  n = nn = 0;
+  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+    rtype = VTYPE(v);
+    rcomp = MD_ROWS_IN_RT_CT(A,rtype,rtype);
+    for (i=0; i<rcomp; i++) {
+      ia[n++] = nn;
+      for (m=VSTART(v); m!=NULL; m=MNEXT(m)) {
+        ctype = MDESTTYPE(m);
+        ccomp = MD_COLS_IN_RT_CT(A,rtype,ctype);
+        if (ccomp == 0) continue;
+        Mcomp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
+        k = VINDEX(MDEST(m));
+        for (j=0; j<ccomp; j++) {
+          a[nn] = MVALUE(m,Mcomp[i*ccomp+j]);
+          ja[nn] = k++;
+          nn++;
+        }
+      }
+    }
+  }
+  ia[n] = nn;
+  pn[0] = n;
+  pia[0] = ia;
+  pja[0] = ja;
+  pa[0] = a;
+
+  return(NUM_OK);
+}
+
+/****************************************************************************/
+/*D
    PrintVector - print a vector list
 
    SYNOPSIS:
@@ -2149,6 +2235,9 @@ INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
       i += sprintf(buffer+i,"%d ",((VECSKIP(v) & (1<<j))!=0));
     i += sprintf(buffer+i,"n %d t %d o %d\n",VNEW(v),VTYPE(v),VOTYPE(v));
     UserWrite(buffer);
+
+    PRINTDEBUG(np,1,("%d: %s",me,buffer));
+
   }
 
   if (info) UserWrite("NOTE: Geometrical information not available for some vectors.\n");
