@@ -1846,8 +1846,11 @@ INT GetRefinementMark (const ELEMENT *theElement, INT *rule, void *data)
 {
   INT *side = data;
 
-  if (LEAFELEM(theElement))
-    return(GetRefinementMark(LAST_RED_ELEM(theElement),rule,data));
+  if (ECLASS(theElement) != RED_CLASS)
+    if (LEAFELEM(theElement))
+      return(GetRefinementMark(LAST_RED_ELEM(theElement),rule,data));
+    else
+      return(-1);
 
   ASSERT(theElement != NULL);
   if (!((ECLASS(theElement) == RED_CLASS)
