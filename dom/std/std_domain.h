@@ -94,7 +94,6 @@ struct domain {
   INT numOfSegments;                                            /* number of boundary segments		*/
   INT numOfCorners;                                             /* number of corner points			*/
   INT domConvex;                                                /* is the domain convex?			*/
-  INT numOfSubdomains;                                  /* number of subdomains		        */
 } ;
 
 struct boundary_segment {
