@@ -4132,59 +4132,6 @@ static INT GEN_PostProcess_Scalar_FR (PICTURE *thePicture, WORK *theWork)
   return (0);
 }
 
-/****************************************************************************/
-/*																			*/
-/* Function:  GEN_PostProcess_Line_FR	                                                                        */
-/*																			*/
-/* Purpose:   postprocess for findrange of scalar plot						*/
-/*																			*/
-/* Input:	  PICTURE *thePicture, WORK *theWork							*/
-/*																			*/
-/* Return:	  INT 0: ok                                                                                                     */
-/*			  INT 1: an error occurred										*/
-/*																			*/
-/****************************************************************************/
-
-static INT GEN_PostProcess_Line_FR (PICTURE *thePicture, WORK *theWork)
-{
-  struct FindRange_Work *FR_Work;
-  DOUBLE m,l;
-  INT i;
-
-  FR_Work = W_FINDRANGE_WORK(theWork);
-
-  if (GEN_FR_min>GEN_FR_max)
-  {
-    UserWrite("findrange failed\n");
-    return (0);
-  }
-
-  /* postprocess findrange */
-  if (FR_Work->symmetric==YES)
-  {
-    GEN_FR_max = MAX(ABS(GEN_FR_min),ABS(GEN_FR_max));
-    GEN_FR_min = -GEN_FR_max;
-  }
-  if (FR_Work->zoom!=1.0)
-  {
-    m = 0.5*(GEN_FR_max + GEN_FR_min);
-    l = 0.5*(GEN_FR_max - GEN_FR_min);
-    GEN_FR_min = m - FR_Work->zoom*l;
-    GEN_FR_max = m + FR_Work->zoom*l;
-  }
-  FR_Work->min = GEN_FR_min;
-  FR_Work->max = GEN_FR_max;
-
-  /* store if */
-  if (GEN_FR_put == YES)
-  {
-    PIC_PO(thePicture)->theLpo.min = GEN_FR_min;
-    PIC_PO(thePicture)->theLpo.max = GEN_FR_max;
-  }
-
-  return (0);
-}
-
 /**********************************************************************************************************/
 /************************************ Part for 2D and 3D Version ******************************************/
 /**********************************************************************************************************/
@@ -6300,6 +6247,59 @@ static INT EW_PostProcess_Line2D (PICTURE *thePicture, WORK *theWork)
     p[0] = 1.0; p[1] = LINE2D_V2Y_offset;
     V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
     Draw2D(WOP_DrawingObject);
+  }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  GEN_PostProcess_Line_FR	                                                                        */
+/*																			*/
+/* Purpose:   postprocess for findrange of scalar plot						*/
+/*																			*/
+/* Input:	  PICTURE *thePicture, WORK *theWork							*/
+/*																			*/
+/* Return:	  INT 0: ok                                                                                                     */
+/*			  INT 1: an error occurred										*/
+/*																			*/
+/****************************************************************************/
+
+static INT GEN_PostProcess_Line_FR (PICTURE *thePicture, WORK *theWork)
+{
+  struct FindRange_Work *FR_Work;
+  DOUBLE m,l;
+  INT i;
+
+  FR_Work = W_FINDRANGE_WORK(theWork);
+
+  if (GEN_FR_min>GEN_FR_max)
+  {
+    UserWrite("findrange failed\n");
+    return (0);
+  }
+
+  /* postprocess findrange */
+  if (FR_Work->symmetric==YES)
+  {
+    GEN_FR_max = MAX(ABS(GEN_FR_min),ABS(GEN_FR_max));
+    GEN_FR_min = -GEN_FR_max;
+  }
+  if (FR_Work->zoom!=1.0)
+  {
+    m = 0.5*(GEN_FR_max + GEN_FR_min);
+    l = 0.5*(GEN_FR_max - GEN_FR_min);
+    GEN_FR_min = m - FR_Work->zoom*l;
+    GEN_FR_max = m + FR_Work->zoom*l;
+  }
+  FR_Work->min = GEN_FR_min;
+  FR_Work->max = GEN_FR_max;
+
+  /* store if */
+  if (GEN_FR_put == YES)
+  {
+    PIC_PO(thePicture)->theLpo.min = GEN_FR_min;
+    PIC_PO(thePicture)->theLpo.max = GEN_FR_max;
   }
 
   return (0);
