@@ -799,7 +799,7 @@ INT BVP_GetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
                                  ==-1 gives all coeff fcts
 
    DESCRIPTION:
-   This function fills in 'CoeffFct[0], CoeffFct[1], ... one or more coeff fcts
+   This function fills in 'CoeffFct[0]', 'CoeffFct[1]', ... one or more coeff fcts
 
    RETURN VALUE:
    INT
@@ -841,7 +841,7 @@ INT BVP_GetCoeffFct (BVP *aBVP, INT n, CoeffProcPtr *CoeffFct)
                                 ==-1 gives all user fcts
 
    DESCRIPTION:
-   This function fills in 'UserFct[0], UserFct[1], ... one or more user fcts
+   This function fills in 'UserFct[0]', 'UserFct[1]', ... one or more user fcts
 
    RETURN VALUE:
    INT
