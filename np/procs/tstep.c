@@ -76,6 +76,26 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 typedef struct
 {
+  INT nb;
+  char name[NAMELEN];
+  INT s;
+  DOUBLE backward_frac[10];
+  DOUBLE foreward_frac[10];
+
+} DIRK_SPEC;
+
+static DIRK_SPEC dirk_spec[] = {
+
+  {0,     "be",           1,              {1.0},                                                          {0.0}                                                   },
+  {1,     "cn",           1,              {0.5},                                                          {0.5}                                                   },
+  {2,     "dirk(2)",      2,              {0.2928932,0.2928932},                          {0.4142136,0.0}                                 },
+  {3,     "frac-step",3,          {0.1715729,0.1715729,0.1715729},        {0.2426407,0.1213203,0.1213203} }
+};
+
+#define DIRK_SPEC_N             4
+
+typedef struct
+{
   NP_T_STEP tstep;                       /* derived from class NP_T_STEP    */
 
   /* nonlinear assemmly used */
@@ -87,6 +107,9 @@ typedef struct
   INT displayMode;
   char scaleName[NAMELEN];
   DOUBLE scale;
+  INT tscheme;                                                   /* 0: backward-euler, 1: Crank-Nicolson */
+  INT frac_step;                                                 /* internal-step-counter			*/
+  VECDATA_DESC *sol_tfrac;
 
   /* references to numprocs  */
   NP_TRANSFER *trans;                    /* uses transgrid for nested iter  */
@@ -96,6 +119,7 @@ typedef struct
 } NP_BE;                                 /* backward euler                  */
 
 /****************************************************************************/
+
 /****************************************************************************/
 /*                                                                          */
 /* Nonlinear Assemble Interface provided to nonlinear solver				*/
@@ -117,24 +141,27 @@ INT BE_NLAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u,
   return((*tass->TAssembleSolution)(tass,fl,tl,current_tstep->t1,u,res));
 }
 
+#define CNS_ALPHA       0.2928932
+#define CNS_BETA        (1.0-2.0*CNS_ALPHA)
+
 INT BE_NLAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
 {
   NP_BE *be;
   NP_T_ASSEMBLE *tass;
-  DOUBLE s_a,s_m;
+  DOUBLE dt,s_m;
 
   /* get tass numproc */
   be = (NP_BE*)current_tstep;
   tass = be->tass;
 
   /* compute coefficients */
-  s_a = -current_tstep->t1+current_tstep->t0;
+  dt = current_tstep->t1-current_tstep->t0;
   s_m = 1.0;
 
   /* assemble defect */
   dset(NP_MG(be),fl,tl,ALL_VECTORS,d,0.0);
-  if ((*tass->TAssembleDefect)(tass,fl,tl,be->tstep.t0,-1.0,0.0,be->tstep.sol_t0,d,NULL,res)) NP_RETURN(1,*res);
-  return ((*tass->TAssembleDefect)(tass,fl,tl,current_tstep->t1,s_m,s_a,u,d,J,res));
+  if ((*tass->TAssembleDefect)(tass,fl,tl,be->tstep.t0,-1.0,-dirk_spec[be->tscheme].foreward_frac[be->frac_step]*dt,be->sol_tfrac,d,NULL,res)) NP_RETURN(1,*res);
+  return ((*tass->TAssembleDefect)(tass,fl,tl,current_tstep->t1,s_m,-dirk_spec[be->tscheme].backward_frac[be->frac_step]*dt,u,d,J,res));
 }
 
 INT BE_NLAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
@@ -150,8 +177,7 @@ INT BE_NLAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, V
   /* compute coefficients */
   s_a = -current_tstep->t1+current_tstep->t0;
 
-  /* call function from time assemble interface */
-  return ((*tass->TAssembleMatrix)(tass,fl,tl,current_tstep->t1,s_a,u,d,v,J,res));
+  return ((*tass->TAssembleMatrix)(tass,fl,tl,current_tstep->t1,dirk_spec[be->tscheme].backward_frac[be->frac_step]*s_a,u,d,v,J,res));
 }
 
 INT BE_NLNAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, NODE *n, VECDATA_DESC *u, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
@@ -261,12 +287,13 @@ static INT BE_TimeStep (NP_T_STEP *tstep, INT level, DOUBLE t0, VECDATA_DESC *so
   if (be->nested) flevel = MIN(be->baselevel,level);
   else flevel = level;
 
-  /* predict to new time step on level low */
-  dcopy(mg,0,flevel,ALL_VECTORS,sol_t1,sol_t0);
-
   /* prepare transfer */
   if (trans->PreProcessProject!=NULL)
     if ((*trans->PreProcessProject)(trans,0,level,&res)) NP_RETURN(1,res);
+
+  /* predict to new time step on level low */
+  if (AllocVDFromVD(mg,0,level,tstep->sol_t0,&(be->sol_tfrac))) return (1);
+  dcopy(mg,0,flevel,ALL_VECTORS,sol_t1,sol_t0);
 
   /* assemble */
   current_tstep = tstep;
@@ -274,53 +301,60 @@ static INT BE_TimeStep (NP_T_STEP *tstep, INT level, DOUBLE t0, VECDATA_DESC *so
   if ((*tass->TAssembleSolution)(tass,0,flevel,t1,sol_t1,&res)) NP_RETURN(1,res);
 
   /* do (nested) iteration on new time step */
-  for (k=flevel; k<=level; k++)
+  for (be->frac_step=0; be->frac_step<dirk_spec[be->tscheme].s; be->frac_step++)
   {
-    if (be->nested) UserWriteF("Nested Iteration on level %d (%d)\n",k,level);
-
-    /* prepare nonlinear solver on level k */
-    if (nlsolve->PreProcess!=NULL)
-      if ((*nlsolve->PreProcess)(nlsolve,k,sol_t1,&res)) NP_RETURN(1,res);
-
-    /* solve nonlinear on level k */
-    if ((*nlsolve->Solver)
-          (nlsolve,k,sol_t1,&be->nlass,nlsolve->abslimit,nlsolve->reduction,&nlresult))
-      return(__LINE__);
-
-    /* postprocess nonlinear solver on level k */
-    if (nlsolve->PostProcess!=NULL)
-      if ((*nlsolve->PostProcess)(nlsolve,k,sol_t1,&res)) NP_RETURN(1,res);
-
-    /* update result */
-    tstep_result->number_of_nonlinear_iterations += nlresult.number_of_nonlinear_iterations;
-    if (nlresult.number_of_nonlinear_iterations==0) tstep_result->jumped=1;
-    else tstep_result->jumped=0;
-    tstep_result->number_of_linear_iterations += nlresult.total_linear_iterations;
-    tstep_result->max_linear_iterations = MAX(tstep_result->max_linear_iterations,nlresult.max_linear_iterations);
-    tstep_result->exec_time += nlresult.exec_time;
-    if (!nlresult.converged)
+    dcopy(mg,0,flevel,ALL_VECTORS,be->sol_tfrac,sol_t1);
+    for (k=flevel; k<=level; k++)
     {
-      tstep_result->converged = 0;
-      break;
+      if (be->nested) UserWriteF("Nested Iteration on level %d (%d)\n",k,level);
+
+      /* prepare nonlinear solver on level k */
+      if (nlsolve->PreProcess!=NULL)
+        if ((*nlsolve->PreProcess)(nlsolve,k,sol_t1,&res)) NP_RETURN(1,res);
+
+      /* solve nonlinear on level k */
+      if ((*nlsolve->Solver)
+            (nlsolve,k,sol_t1,&be->nlass,nlsolve->abslimit,nlsolve->reduction,&nlresult))
+        return(__LINE__);
+
+      /* postprocess nonlinear solver on level k */
+      if (nlsolve->PostProcess!=NULL)
+        if ((*nlsolve->PostProcess)(nlsolve,k,sol_t1,&res)) NP_RETURN(1,res);
+
+      /* update result */
+      tstep_result->number_of_nonlinear_iterations += nlresult.number_of_nonlinear_iterations;
+      if (nlresult.number_of_nonlinear_iterations==0) tstep_result->jumped=1;
+      else tstep_result->jumped=0;
+      tstep_result->number_of_linear_iterations += nlresult.total_linear_iterations;
+      tstep_result->max_linear_iterations = MAX(tstep_result->max_linear_iterations,nlresult.max_linear_iterations);
+      tstep_result->exec_time += nlresult.exec_time;
+      if (!nlresult.converged)
+      {
+        tstep_result->converged = 0;
+        be->frac_step = dirk_spec[be->tscheme].s;
+        break;
+      }
+
+      /* are we ready ? */
+      if (k==level) break;
+
+      /* interpolate up */
+      for (i=0; i<ncomp; i++) Factor[i] = 1.0;
+      if ((*trans->InterpolateCorrection)(trans,k+1,sol_t1,sol_t1,NULL,Factor,&res)) NP_RETURN(1,res);
+
+      /* set Dirichlet conditions in predicted solution */
+      if ((*tass->TAssembleSolution)(tass,k+1,k+1,t1,sol_t1,&res)) NP_RETURN(1,res);
     }
-
-    /* are we ready ? */
-    if (k==level) break;
-
-    /* interpolate up */
-    for (i=0; i<ncomp; i++) Factor[i] = 1.0;
-    if ((*trans->InterpolateCorrection)(trans,k+1,sol_t1,sol_t1,NULL,Factor,&res)) NP_RETURN(1,res);
-
-    /* set Dirichlet conditions in predicted solution */
-    if ((*tass->TAssembleSolution)(tass,k+1,k+1,t1,sol_t1,&res)) NP_RETURN(1,res);
   }
+
+  if (FreeVD(mg,0,level,be->sol_tfrac)) return (1);
+
+  /* postprocess assemble */
+  if ((*tass->TAssemblePostProcess)(tass,0,level,t1,t0,0.0,sol_t1,sol_t0,NULL,&res)) NP_RETURN(1,res);
 
   /* postprocess transfer */
   if (trans->PostProcessProject!=NULL)
     if ((*trans->PostProcessProject)(trans,0,level,&res)) NP_RETURN(1,res);
-
-  /* postprocess assemble */
-  if ((*tass->TAssemblePostProcess)(tass,0,level,t1,t0,0.0,sol_t1,sol_t0,NULL,&res)) NP_RETURN(1,res);
 
   /* write time to shell */
   sprintf(buffer,"%12.4E",t0);
@@ -419,6 +453,8 @@ INT BE_Init (NP_BASE *base, INT argc, char **argv)
   if (be->tstep.sol_t0==NULL) ret=NP_ACTIVE;
   if (ReadArgvDOUBLE("t0",&(be->tstep.t0),argc,argv)) ret=NP_ACTIVE;
   if (ReadArgvDOUBLE("t1",&(be->tstep.t1),argc,argv)) ret=NP_ACTIVE;
+  if (ReadArgvINT("tscheme",&(be->tscheme),argc,argv)) ret=NP_NOT_ACTIVE;
+  if (be->tscheme<0 || be->tscheme>=DIRK_SPEC_N) ret=NP_NOT_ACTIVE;
 
   return (ret);
 }
@@ -455,6 +491,7 @@ INT BE_Display (NP_BASE *theNumProc)
   if (be->tstep.sol_t0!=NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"sol_t0",ENVITEM_NAME(be->tstep.sol_t0));
   else UserWriteF(DISPLAY_NP_FORMAT_SS,"sol_t0","---");
   UserWriteF(DISPLAY_NP_FORMAT_SF,"t1",(float)be->tstep.t1);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"TScheme",(int)be->tscheme);
   if (be->tstep.sol_t1!=NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"sol_t1",ENVITEM_NAME(be->tstep.sol_t1));
   else UserWriteF(DISPLAY_NP_FORMAT_SS,"sol_t1","---");
   UserWriteF(DISPLAY_NP_FORMAT_SI,"nested",(int)be->nested);
