@@ -5,12 +5,6 @@
 
 #include <meshing/meshtype.hh>
 
-/*
-
-    Advancing front class for surfaces
-
- */
-
 class ADFRONT2
 {
 
@@ -87,7 +81,8 @@ public:
                  ARRAY<INDEX> & pindex,
                  ARRAY<INDEX> & lindex,
                  int & surfind,
-                 double xh);
+                 double xh,
+                 double dist);
 
   void DeleteLine (INDEX li);
   INDEX AddPoint (const Point3d & p, INDEX globind);

@@ -90,9 +90,13 @@ static INT ***nbElement;
 static INT nb_boundary_points;
 static INT nb_boundary_points_subdom;
 static INT nb_inner_points;
+static DOUBLE scale[3][3];
+static DOUBLE invscale[3][3];
+static INT from_sub,  to_sub;
+INT **point_list, **elem_list;
 
 static INT GG3_DEBUG = 0;
-
+static SAVE_VOLUME = 1;
 static CoeffProcPtr Coefficients[8];
 static CoeffProcPtr LOCAL_H;
 
@@ -114,8 +118,21 @@ int AllMemInnerPoints(int npoints)
   point = 0;
   nInnP[subdomain] = npoints;
   Position[subdomain] = (DOUBLE **) GetTmpMem(MGHEAP(currMG),(npoints+1)*sizeof(DOUBLE*), GG3_MarkKey);
+  if(Position==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
   for(i=0; i<npoints; i++)
+  {
     Position[subdomain][i] = (DOUBLE *) GetTmpMem(MGHEAP(currMG),3*sizeof(DOUBLE), GG3_MarkKey);
+    if(Position[subdomain][i]==NULL)
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
+  }
+  return(0);
 }
 
 /****************************************************************************/
@@ -141,7 +158,7 @@ int AllMemInnerPoints(int npoints)
 
 int AddInnerNode (double x, double y, double z)
 {
-  DOUBLE_VECTOR xc;
+  DOUBLE xc[3], nxc[3];
 
   PRINTDEBUG(dom,1,(" add inner node %4d %6.3lf %6.3lf %6.3lf\n",
                     nodeid,x,y,z));
@@ -150,13 +167,12 @@ int AddInnerNode (double x, double y, double z)
   xc[1] = y;
   xc[2] = z;
 
-  /*	if (InsertInnerNode(GRID_ON_LEVEL(currMG,0),xc) == NULL)
-            return(-1);*/
+  MM_TIMES_V_DIM(invscale, xc, nxc);
 
   /* write pointposition in the mesh structure */
-  Position[subdomain][point][0] = x;
-  Position[subdomain][point][1] = y;
-  Position[subdomain][point][2] = z;
+  Position[subdomain][point][0] = nxc[0];
+  Position[subdomain][point][1] = nxc[1];
+  Position[subdomain][point][2] = nxc[2];
   point++;
 
   return(nodeid++);
@@ -168,7 +184,7 @@ int AllMemElements(int nelements)
   char buff[3], name[6];
   FILE *stream;
 
-  if(GG3_DEBUG)
+  if(SAVE_VOLUME)
   {
     name[0] = 'v';
     name[1] = 'o';
@@ -194,18 +210,29 @@ int AllMemElements(int nelements)
   element = 0;
   currmesh->nElements[subdomain] = nelements;
   currmesh->Element_corners[subdomain] = (INT *) GetTmpMem(MGHEAP(currMG),(nelements+1)*sizeof(INT), GG3_MarkKey);
+  if(currmesh->Element_corners[subdomain]==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
   currmesh->Element_corner_ids[subdomain] = (INT **) GetTmpMem(MGHEAP(currMG),(nelements+1)*sizeof(INT*), GG3_MarkKey);
+  if(currmesh->Element_corner_ids[subdomain]==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+  return(0);
 }
 
 /****************************************************************************/
 /*D
-   AddTetrahedron  - add tetraheron in gg3d
+   AddElement  - add tetraheron in gg3d
 
    SYNOPSIS:
-   int AddTetrahedron (int node0, int node1, int node2, int node3);
+   int AddElement (int node0, int node1, int node2, int node3);
 
    PARAMETERS:
-   .  node0,node1,node2,node3 - ids of the corner nodes
+   .  node0,node1,node2,node3,node4,node5 - ids of the corner nodes
 
    DESCRIPTION:
    This function is an interface function for the grid generator.
@@ -218,52 +245,47 @@ int AllMemElements(int nelements)
    D*/
 /****************************************************************************/
 
-int AddTetrahedron (int node0, int node1, int node2, int node3)
+int AddElement (int nnodes, int node0, int node1, int node2, int node3, int node4, int node5)
 {
-  INT Id[4], i;
+  INT Id[6], i;
   char buff[3], name[6];
   FILE *stream;
   ELEMENT *theElement;
 
-  Id[0] = node1;                /* das gehoert so ! */
-  Id[1] = node0;
-  Id[2] = node2;
-  Id[3] = node3;
-
-  if(GG3_DEBUG)
+  if(nnodes==4)
   {
-    name[0] = 'v';
-    name[1] = 'o';
-    name[2] = 'l';
-    sprintf(buff,"%d",subdomain);
-    name[3] = buff[0];
-    name[4] = buff[1];
-    name[5] = buff[2];
-
-    stream = fopen(name,"a+");
-    if (stream==NULL)
-    {
-      printf("%s\n", "cannot open file");
-      return(1);
-    }
-
-    fprintf(stream,"%d %d %d %d\n",node0, node1, node2, node3);
-    fclose(stream);
+    Id[0] = node1;
+    Id[1] = node0;
+    Id[2] = node2;
+    Id[3] = node3;
+  }
+  if(nnodes==5)
+  {
+    Id[0] = node0;
+    Id[1] = node3;
+    Id[2] = node2;
+    Id[3] = node1;
+    Id[4] = node4;
+  }
+  if(nnodes==6)
+  {
+    Id[0] = node0;
+    Id[1] = node2;
+    Id[2] = node1;
+    Id[3] = node3;
+    Id[4] = node5;
+    Id[5] = node4;
+  }
+  /* write element in the mesh structure */
+  currmesh->Element_corner_ids[subdomain][element] = (INT *) GetTmpMem(MGHEAP(currMG),nnodes*sizeof(INT), GG3_MarkKey);
+  if(currmesh->Element_corner_ids[subdomain][element]==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
   }
 
-
-  PRINTDEBUG(dom,1,(" add element %4d %4d %4d %4d\n",
-                    Id[0], Id[1], Id[2], Id[3]));
-
-
-  /*	if (InsertElementFromIDs(GRID_ON_LEVEL(currMG,0),4,Id) == NULL)
-            return(1);*/
-
-  /* write element in the mesh structure */
-  currmesh->Element_corner_ids[subdomain][element] = (INT *) GetTmpMem(MGHEAP(currMG),4*sizeof(INT), GG3_MarkKey);
-
-  currmesh->Element_corners[subdomain][element] = 4;
-  for(i=0; i<4; i++)
+  currmesh->Element_corners[subdomain][element] = nnodes;
+  for(i=0; i<nnodes; i++)
     if(Id[i]<nb_boundary_points_subdom)
       currmesh->Element_corner_ids[subdomain][element][i] = oldId[Id[i]];
     else
@@ -271,15 +293,7 @@ int AddTetrahedron (int node0, int node1, int node2, int node3)
                                                             + nb_inner_points
                                                             + Id[i]
                                                             - nb_boundary_points_subdom;
-  /*	printf("%d %d %d %d\n", Id[0], Id[1], Id[2], Id[3]);
-          printf("%d %d %d %d\n", currmesh->Element_corner_ids[subdomain][element][0],
-                                                          currmesh->Element_corner_ids[subdomain][element][1],
-                                                          currmesh->Element_corner_ids[subdomain][element][2],
-                                                          currmesh->Element_corner_ids[subdomain][element][3]);*/
   element++;
-  /*	theElement = InsertElementFromIDs(GRID_ON_LEVEL(currMG,0),4,Id,NULL);
-          if (theElement==NULL)  return(1);*/
-  /*SETSUBDOMAIN(theElement,id_from_somewhere);*/
 
   return(0);
 }
@@ -342,7 +356,7 @@ static INT AddBoundaryNode (INT nodeid, DOUBLE *global)
    D*/
 /****************************************************************************/
 
-static INT AddBoundaryElement (INT n, INT *nodelist)
+static INT AddBoundaryElement (INT n, INT *nodelist, INT prism_flag)
 {
   if (n != 3)
     return(1);
@@ -351,132 +365,7 @@ static INT AddBoundaryElement (INT n, INT *nodelist)
                     nodelist[0],nodelist[1],nodelist[2]));
 
     #ifdef _NETGEN
-  AddSurfaceTriangle(nodelist[0],nodelist[1],nodelist[2]);
-    #endif
-
-  return(0);
-}
-
-/****************************************************************************/
-/*D
-   GenerateGrid3d - call the netgen grid generator
-
-   SYNOPSIS:
-   INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth, INT coeff);
-
-   PARAMETERS:
-   .  theMG - pointer to multigrid
-   .  mesh - pointer to mesh
-   .  h - mesh size
-   .  smoothing parameter
-   .  coeff - number of coefficientfunction for gridsize
-   DESCRIPTION:
-   This function is an interface function for the grid generator.
-   It calls the netgen grid genarator to compute an inner
-   decomposition into tetrahedrons. It loads the surface triangulation
-   given by the mesh structure.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured
-   D*/
-/****************************************************************************/
-
-INT GenerateGrid3d_OLD (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
-                        INT display, INT coeff)
-{
-  NODE *theNode;
-  VERTEX *theVertex;
-  INT sid,i;
-  char rulefilename[128];
-  DOUBLE **x;
-
-  if (mesh == NULL)
-    return(GM_OK);
-
-  currMG = theMG;
-
-  if(h<=0.0)
-  {
-    /* get Coefficientfunctions */
-    if (BVP_SetCoeffFct(MG_BVP(theMG),-1,Coefficients))
-      return (0);
-    LOCAL_H = Coefficients[coeff];
-  }
-
-  if (GetDefaultValue(DEFAULTSFILENAME,"netgenrules",rulefilename))
-    strcpy(rulefilename,"tetra.rls");
-    #ifdef _NETGEN
-  InitNetgen(rulefilename);
-        #else
-  PrintErrorMessage('E',"GenerateGrid3d","no netgen");
-  return(1);
-    #endif
-
-  IFDEBUG(dom,1)
-  x = (DOUBLE **) GetTmpMem(MGHEAP(theMG),mesh->nBndP*sizeof(DOUBLE *),MG_MARK_KEY(theMG));
-  for (i=0, theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,0));
-       theNode!=NULL; theNode=SUCCN(theNode))
-  {
-    PRINTDEBUG(dom,0,(" i %d  nid %ld nd %x %x %x \n",
-                      i,ID(theNode),theNode,
-                      V_BNDP(theVertex),mesh->theBndPs[i]));
-
-    x[i++] = CVECT(MYVERTEX(theNode));
-  }
-  for (i=0, theNode=LASTNODE(GRID_ON_LEVEL(theMG,0));
-       theNode!=NULL; theNode=PREDN(theNode))
-  {
-    PRINTDEBUG(dom,0,(" i %d  nid %ld nd %x %x %x \n",
-                      i,ID(theNode),theNode,
-                      V_BNDP(theVertex),mesh->theBndPs[i]));
-
-    x[i++] = CVECT(MYVERTEX(theNode));
-  }
-
-
-
-  ENDDEBUG
-
-  for (i=0, theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,0));
-       theNode!=NULL; theNode=SUCCN(theNode))
-  {
-    theVertex = MYVERTEX(theNode);
-    if (V_BNDP(theVertex) != mesh->theBndPs[i])
-      return(1);
-    if (AddBoundaryNode (i++,CVECT(theVertex)))
-      return(1);
-  }
-  if (i != mesh->nBndP)
-    return(1);
-
-  for (sid=0; sid<=mesh->nSubDomains; sid++)
-    for (i=0; i<mesh->nSides[sid]; i++)
-    {
-
-      DOUBLE mat[3][3];
-
-      if (AddBoundaryElement (mesh->Side_corners[sid][i],
-                              mesh->Side_corner_ids[sid][i]))
-        return(1);
-
-      PRINTDEBUG(dom,1,(" sid %ld (%4.2f,%4.2f,%4.2f) (%4.2f,%4.2f,%4.2f) (%4.2f,%4.2f,%4.2f)\n",
-                        i,
-                        x[mesh->Side_corner_ids[sid][i][0]][0],
-                        x[mesh->Side_corner_ids[sid][i][0]][1],
-                        x[mesh->Side_corner_ids[sid][i][0]][2],
-                        x[mesh->Side_corner_ids[sid][i][1]][0],
-                        x[mesh->Side_corner_ids[sid][i][1]][1],
-                        x[mesh->Side_corner_ids[sid][i][1]][2],
-                        x[mesh->Side_corner_ids[sid][i][2]][0],
-                        x[mesh->Side_corner_ids[sid][i][2]][1],
-                        x[mesh->Side_corner_ids[sid][i][2]][2]));
-
-    }
-
-    #ifdef _NETGEN
-  if (StartNetgen(h,smooth,display)) return(1);
+  AddSurfaceTriangle(nodelist[0],nodelist[1],nodelist[2], prism_flag);
     #endif
 
   return(0);
@@ -488,7 +377,7 @@ static INT Write_SurfaceMesh(MESH *mesh, MULTIGRID *theMG)
   char buff[3], name[10], name1[14];
   INT i, j, k, sid, nnodes, nsides, nodelist[4];
   FILE *stream;
-  DOUBLE local[3], global[3];
+  DOUBLE local[3], global[3], newglobal[3];
   NODE *theNode;
   VERTEX *theVertex;
 
@@ -511,7 +400,10 @@ static INT Write_SurfaceMesh(MESH *mesh, MULTIGRID *theMG)
     {
       if (BNDP_Global(mesh->theBndPs[i],global))
         return (1);
-      fprintf(stream,"%lf %lf %lf\n",global[0], global[1], global[2]);
+
+      MM_TIMES_V_DIM(scale, global, newglobal);
+
+      fprintf(stream,"%lf %lf %lf\n",newglobal[0], newglobal[1], newglobal[2]);
     }
   }
 
@@ -536,7 +428,7 @@ static INT Write_SurfaceMesh(MESH *mesh, MULTIGRID *theMG)
 static INT Write_VolumeMesh(MESH *mesh, MULTIGRID *theMG)
 {
   char buff[3], name[6], name1[14];
-  INT i, j, k, sid, nnodes, nsides, nodelist[4], id[4];
+  INT i, j, k, sid, nnodes, nsides, nodelist[6], id[6];
   FILE *stream;
   DOUBLE local[3], global[3];
   NODE *theNode;
@@ -552,11 +444,35 @@ static INT Write_VolumeMesh(MESH *mesh, MULTIGRID *theMG)
 
   /* write mesh-information to file */
 
-  stream = fopen(name,"a+");
+  stream = fopen(name,"r+");
   if (stream==NULL)
   {
     printf("%s\n", "cannot open file");
     return(1);
+  }
+
+  fprintf(stream, "%s\n", "vol_mesh");
+
+  fprintf(stream,"%d\n",(int)mesh->nElements[subdomain]);
+
+  for (i=subdomain; i<=subdomain; i++)
+  {
+    for (j=0; j<mesh->nElements[subdomain]; j++)
+    {
+      for(k=0; k<mesh->Element_corners[i][j]; k++)
+        if(mesh->Element_corner_ids[i][j][k]<nb_boundary_points)
+          id[k] = newId[mesh->Element_corner_ids[i][j][k]];
+        else
+          id[k] = mesh->Element_corner_ids[i][j][k]
+                  - nb_boundary_points
+                  - nb_inner_points
+                  + nb_boundary_points_subdom;
+
+      fprintf(stream,"%d\n",mesh->Element_corners[i][j]);
+      for(k=0; k<mesh->Element_corners[i][j]; k++)
+        fprintf(stream,"%d ",id[k]);
+      fprintf(stream,"\n");
+    }
   }
 
   fprintf(stream,"%d\n",(int)nb_boundary_points_subdom+(int)nInnP[subdomain]);
@@ -566,30 +482,11 @@ static INT Write_VolumeMesh(MESH *mesh, MULTIGRID *theMG)
     {
       if (BNDP_Global(mesh->theBndPs[i],global))
         return (1);
-      fprintf(stream,"%lf %lf %lf\n",global[0], global[1], global[2]);
+      fprintf(stream,"%20.16lf %20.16lf %20.16lf\n",global[0], global[1], global[2]);
     }
   }
   for (i=0; i<nInnP[subdomain]; i++)
-    fprintf(stream,"%lf %lf %lf\n",Position[subdomain][i][0], Position[subdomain][i][1], Position[subdomain][i][2]);
-
-  /*	fprintf(stream,"%d\n",(int)mesh->nElements[subdomain]);
-
-          for (i=subdomain; i<=subdomain; i++)
-          {
-                  for (j=0; j<mesh->nElements[subdomain];j++)
-                  {
-                          for(k=0;k<4;k++)
-                                  if(mesh->Element_corner_ids[i][j][k]<nb_boundary_points_subdom)
-                                          id[k] = newId[mesh->Element_corner_ids[i][j][k]];
-                                  else
-                                          id[k] = mesh->Element_corner_ids[i][j][k]
-                                                          - nb_boundary_points
-                                                          - nb_inner_points
-   + nb_boundary_points_subdom;
-
-                                  fprintf(stream,"%d %d %d %d\n",id[0], id[1], id[2], id[3]);
-                  }
-          }*/
+    fprintf(stream,"%20.16lf %20.16lf %20.16lf\n",Position[subdomain][i][0], Position[subdomain][i][1], Position[subdomain][i][2]);
 
   fclose(stream);
   return(0);
@@ -626,7 +523,7 @@ static INT Get_Ang(DOUBLE *n0, DOUBLE *n1)
 
   s = V_DIM_SCAL_PROD(n0, n1);
   s=MIN(1,s); s=MAX(-1,s);
-  printf("%lf %lf\n", s, acos(s));
+  /*	printf("%lf %lf\n", s, acos(s));*/
   /*	if(s>1-0.00001)
                   angle = 3.141592654;
           else
@@ -692,10 +589,10 @@ static INT Angle_of_Element(INT *Id, DOUBLE *max_a, DOUBLE *min_a)
 static INT Read_VolumeMesh(MESH *mesh, MULTIGRID *theMG, INT MarkKey)
 {
   char buff[3], name[6], name1[14];
-  INT i, j, k, sid, buflen;
+  INT i, j, k, sid, buflen, iv;
   FILE *stream;
   char buffer[256];
-  int nelements, npoints, d0, d1, d2, d3, id[4];
+  int nelements, npoints, d0, d1, d2, d3, id[6];
   double g0, g1, g2;
   DOUBLE max_angle, min_angle, max_a, min_a;
 
@@ -716,28 +613,48 @@ static INT Read_VolumeMesh(MESH *mesh, MULTIGRID *theMG, INT MarkKey)
     return(1);
   }
 
-  fgets(buffer,buflen,stream);
-  fgets(buffer,buflen,stream);
-  sscanf(buffer,"%d",&nelements);
+  fscanf(stream,"%s\n", buffer);
+
+  fscanf(stream,"%d\n",&nelements);
 
   mesh->nElements[subdomain] = nelements;
   mesh->Element_corners[subdomain] = (INT *) GetTmpMem(MGHEAP(currMG),(nelements+1)*sizeof(INT), MarkKey);
+  if(mesh->Element_corners[subdomain]==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+
   mesh->Element_corner_ids[subdomain] = (INT **) GetTmpMem(MGHEAP(currMG),(nelements+1)*sizeof(INT*), MarkKey);
+  if(mesh->Element_corner_ids[subdomain]==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
 
   for (i=subdomain; i<=subdomain; i++)
   {
     for (j=0; j<mesh->nElements[subdomain]; j++)
     {
-      fgets(buffer,buflen,stream);
-      sscanf(buffer,"%d %d %d %d",&d0, &d1, &d2, &d3);
-      id[0] = d1; id[1] = d0; id[2] = d2; id[3] = d3;
+      fscanf(stream,"%d\n", &iv);
+      mesh->Element_corners[i][j] = iv;
 
-      mesh->Element_corners[subdomain][j] = 4;
-      mesh->Element_corner_ids[subdomain][j] = (INT *) GetTmpMem(MGHEAP(currMG),4*sizeof(INT), MarkKey);
+      for(k=0; k<mesh->Element_corners[i][j]; k++)
+      {
+        fscanf(stream,"%d ",&iv);
+        id[k] = iv;
+      }
+      fscanf(stream,"\n");
+
+      mesh->Element_corner_ids[subdomain][j] = (INT *) GetTmpMem(MGHEAP(currMG),mesh->Element_corners[i][j]*sizeof(INT), MarkKey);
       if(mesh->Element_corner_ids[subdomain][j]==NULL)
-        return(0);
+      {
+        printf("%s\n", "Not enough memory");
+        assert(0);
+      }
 
-      for(k=0; k<4; k++)
+      for(k=0; k<mesh->Element_corners[i][j]; k++)
+      {
         if(id[k]<nb_boundary_points_subdom)
           mesh->Element_corner_ids[subdomain][j][k] = oldId[id[k]];
         else
@@ -745,47 +662,41 @@ static INT Read_VolumeMesh(MESH *mesh, MULTIGRID *theMG, INT MarkKey)
                                                       + nb_inner_points
                                                       + id[k]
                                                       - nb_boundary_points_subdom;
-
-      /*				printf("%d %d %d %d\n", id[0], id[1], id[2], id[3]);*/
-      /*				printf("%d %d %d %d %d\n", j, mesh->Element_corner_ids[subdomain][j][0],
-                                                                                      mesh->Element_corner_ids[subdomain][j][1],
-                                                                                      mesh->Element_corner_ids[subdomain][j][2],
-                                                                                      mesh->Element_corner_ids[subdomain][j][3]);*/
+      }
     }
   }
 
-  fgets(buffer,buflen,stream);
-  sscanf(buffer,"%d",&npoints);
+  fscanf(stream,"%d\n",&npoints);
 
   nInnP[subdomain] = npoints - nb_boundary_points_subdom;
 
   Position[subdomain] = (DOUBLE **) GetTmpMem(MGHEAP(currMG),(nInnP[subdomain]+1)*sizeof(DOUBLE*), MarkKey);
   if(Position[subdomain]==NULL)
-    return(0);
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
   for(i=0; i<nInnP[subdomain]; i++)
   {
     Position[subdomain][i] = (DOUBLE *) GetTmpMem(MGHEAP(currMG),3*sizeof(DOUBLE), MarkKey);
     if(Position[subdomain][i]==NULL)
-      return(0);
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
   }
   for (i=0; i<nb_boundary_points_subdom; i++)
   {
-    fgets(buffer,buflen,stream);
-    sscanf(buffer,"%lf %lf %lf",&g0, &g1, &g2);
-    /*		Position[subdomain][i][0] = g0;
-                    Position[subdomain][i][1] = g1;
-                    Position[subdomain][i][2] = g2;*/
+    fscanf(stream,"%lg %lg %lg",&g0, &g1, &g2);
   }
 
   for (i=0; i<nInnP[subdomain]; i++)
   {
-    fgets(buffer,buflen,stream);
-    sscanf(buffer,"%lf %lf %lf",&g0, &g1, &g2);
+    fscanf(stream,"%lg %lg %lg",&g0, &g1, &g2);
     Position[subdomain][i][0] = g0;
     Position[subdomain][i][1] = g1;
     Position[subdomain][i][2] = g2;
   }
-
   fclose(stream);
 
   return(0);
@@ -793,47 +704,87 @@ static INT Read_VolumeMesh(MESH *mesh, MULTIGRID *theMG, INT MarkKey)
 
 static INT MAX_ELE = 75;
 
-static INT Search_Tet_Neighbours(MULTIGRID *theMG, MESH *mesh, INT MarkKey)
+static INT Search_Neighbours(MULTIGRID *theMG, MESH *mesh, INT MarkKey)
 {
-  INT sid, np, i, j, k, l, a1, a2, a3, b1, b2, b3, npoints, corner_of_tet;
-  INT **pointlist;
+  INT sid, np, i, j, k, l, m, n, a1, a2, a3, b1, b2, b3, npoints, corner_of_elem, flag;
+  INT **pointlist, sides_i, sides_j, corners_i, corners_j, corner_i, corner_j, element_type_i, element_type_j;
 
   nbElement = (INT ***) GetTmpMem(MGHEAP(theMG),(mesh->nSubDomains+1)*sizeof(INT**), MarkKey);
   if(nbElement==NULL)
-    return(0);
-  for(sid=1; sid<=mesh->nSubDomains; sid++)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+  for(sid=from_sub; sid<=to_sub; sid++)
   {
     nbElement[sid] = (INT **) GetTmpMem(MGHEAP(currMG),(mesh->nElements[sid]+1)*sizeof(INT*), MarkKey);
     if(nbElement[sid]==NULL)
-      return(0);
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
     for(i=0; i<mesh->nElements[sid]; i++)
     {
-      nbElement[sid][i] = (INT *) GetTmpMem(MGHEAP(currMG),4*sizeof(INT), MarkKey);
+      nbElement[sid][i] = (INT *) GetTmpMem(MGHEAP(currMG),mesh->Element_corners[sid][i]*sizeof(INT), MarkKey);
       if(nbElement[sid][i]==NULL)
-        return(0);
+      {
+        printf("%s\n", "Not enough memory");
+        assert(0);
+      }
     }
   }
 
   npoints =  nb_inner_points + nb_boundary_points;
   pointlist = (INT **) GetTmpMem(MGHEAP(currMG),(npoints+1)*sizeof(INT*), MarkKey);
+  if(pointlist==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+
   for(i=0; i<npoints+1; i++)
+  {
     pointlist[i] = (INT *) GetTmpMem(MGHEAP(currMG),MAX_ELE*sizeof(INT), MarkKey);
+    if(pointlist[i]==NULL)
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
 
+  }
+  if(GG3_DEBUG)
+    for(sid=from_sub; sid<=to_sub; sid++)
+      for(i=0; i<mesh->nElements[sid]; i++)
+      {
+        printf("%d ",i);
+        for(j=0; j<mesh->Element_corners[sid][i]; j++)
+          printf("%d ", mesh->Element_corner_ids[sid][i][j]);
+        printf("\n");
+      }
 
-  for(sid=1; sid<=mesh->nSubDomains; sid++)
+  for(sid=from_sub; sid<=to_sub; sid++)
   {
     for(i=0; i<mesh->nElements[sid]; i++)
-      for(j=0; j<4; j++)
+      for(j=0; j<mesh->Element_corners[sid][i]; j++)
         nbElement[sid][i][j] = -1;
     for(i=0; i<npoints; i++)
       for(j=0; j<MAX_ELE; j++)
         pointlist[i][j] = 0;
 
     for(i=0; i<mesh->nElements[sid]; i++)
-      for(j=0; j<4; j++)
+      for(j=0; j<mesh->Element_corners[sid][i]; j++)
       {
-        corner_of_tet = mesh->Element_corner_ids[sid][i][j];
-        pointlist[corner_of_tet][++pointlist[corner_of_tet][0]] = i;
+        corner_of_elem = mesh->Element_corner_ids[sid][i][j];
+        pointlist[corner_of_elem][++pointlist[corner_of_elem][0]] = i;
+      }
+
+    if(GG3_DEBUG)
+      for(np=0; np<npoints; np++)
+      {
+        printf("%d %d ", np, pointlist[np][0]);
+        for(i=1; i<=pointlist[np][0]; i++)
+          printf("%d ", pointlist[np][i]);
+        printf("\n");
       }
 
     for(np=0; np<npoints; np++)
@@ -841,41 +792,359 @@ static INT Search_Tet_Neighbours(MULTIGRID *theMG, MESH *mesh, INT MarkKey)
         for(i=1; i<=pointlist[np][0]; i++)
           for(j=1; j<=pointlist[np][0]; j++)
             if(i!=j)
-              for(k=0; k<4; k++)
-                for(l=0; l<4; l++)
-                {
-                  a1 = mesh->Element_corner_ids[sid][pointlist[np][i]][(k+1)%4];
-                  a2 = mesh->Element_corner_ids[sid][pointlist[np][i]][(k+2)%4];
-                  a3 = mesh->Element_corner_ids[sid][pointlist[np][i]][(k+3)%4];
-                  b1 = mesh->Element_corner_ids[sid][pointlist[np][j]][(l+3)%4];
-                  b2 = mesh->Element_corner_ids[sid][pointlist[np][j]][(l+2)%4];
-                  b3 = mesh->Element_corner_ids[sid][pointlist[np][j]][(l+1)%4];
-                  if( ((a1==b1) && (a2==b2) && (a3==b3))
-                      || ((a1==b2) && (a2==b3) && (a3==b1))
-                      || ((a1==b3) && (a2==b1) && (a3==b2))
-                      || ((a1==b1) && (a2==b3) && (a3==b2))
-                      || ((a1==b2) && (a2==b1) && (a3==b3))
-                      || ((a1==b3) && (a2==b2) && (a3==b1)) )
-                    nbElement[sid][pointlist[np][i]][(k+1)%4] = pointlist[np][j];
-                }
+            {
+              element_type_i = mesh->Element_corners[sid][pointlist[np][i]];
+              element_type_j = mesh->Element_corners[sid][pointlist[np][j]];
+              sides_i = SIDES_OF_REF(element_type_i);
+              sides_j = SIDES_OF_REF(element_type_i);
 
+              for(k=0; k<sides_i; k++)
+                for(l=0; l<sides_j; l++)
+                {
+                  corners_i = CORNERS_OF_SIDE_REF(element_type_i,k);
+                  corners_j = CORNERS_OF_SIDE_REF(element_type_j,l);
+
+                  if(corners_i==corners_j)
+                  {
+                    for(m=0; m<corners_i; m++)
+                    {
+                      flag = 0;
+                      for(n=0; n<corners_j; n++)
+                      {
+                        corner_i = CORNER_OF_SIDE_REF(element_type_i,k,(  n)%corners_i);
+                        corner_j = CORNER_OF_SIDE_REF(element_type_j,l,corners_j-1-(m+n)%corners_j);
+
+                        if(
+                          (       mesh->Element_corner_ids[sid][pointlist[np][i]][corner_i]
+                                  ==  mesh->Element_corner_ids[sid][pointlist[np][j]][corner_j] )
+                          )
+                          flag++;
+                      }
+                      if(flag==corners_i)
+                      {
+                        nbElement[sid][pointlist[np][i]][k] = pointlist[np][j];
+                        nbElement[sid][pointlist[np][j]][l] = pointlist[np][i];
+                      }
+                    }
+                    /*	for(m=0;m<corners_i;m++)
+                            {
+                                    flag = 0;
+                                    for(n=0;n<corners_j;n++)
+                                    {
+                                            corner_i = CORNER_OF_SIDE_REF(element_type_i,k,(  n)%corners_i);
+                                            corner_j = CORNER_OF_SIDE_REF(element_type_j,l,(m+n)%corners_j);
+
+                                            if(
+                                            (	mesh->Element_corner_ids[sid][pointlist[np][i]][corner_i]
+                                            ==  mesh->Element_corner_ids[sid][pointlist[np][j]][corner_j] )
+                                            )
+                                                    flag++;
+                                    }
+                                    if(flag==corners_i)
+                                    {
+                                            nbElement[sid][pointlist[np][i]][k] = pointlist[np][j];
+                                            nbElement[sid][pointlist[np][j]][l] = pointlist[np][i];
+                                    }
+                            }*/
+                  }
+                }
+            }
   }
+
+  if(GG3_DEBUG)
+    for(sid=from_sub; sid<=to_sub; sid++)
+    {
+      for(i=0; i<mesh->nElements[sid]; i++)
+      {
+        printf("%d%s ", i, ":");
+        for(j=0; j<SIDES_OF_REF(mesh->Element_corners[sid][i]); j++)
+          printf("%d ", nbElement[sid][i][j]);
+        printf("\n");
+      }
+    }
+
   return(0);
 }
 
+#define Mult(vec1,vec2)         ( vec1[0] * vec2[0]     \
+                                  + vec1[1] * vec2[1]     \
+                                  + vec1[2] * vec2[2])
+
+#define Lenght(vec)             sqrt(vec[0]*vec[0]      \
+                                     +vec[1]*vec[1]  \
+                                     +vec[2]*vec[2])
+
+#define Minus(sol,vec1,vec2)    sol[0] = vec1[0] - vec2[0];     \
+  sol[1] = vec1[1] - vec2[1];     \
+  sol[2] = vec1[2] - vec2[2];
+
+#define Scale(vec,l)            vec[0] = vec[0] * l;            \
+  vec[1] = vec[1] * l;            \
+  vec[2] = vec[2] * l;
+
+#define Cross(vec,vec1,vec2)    vec[0] = vec1[1] * vec2[2] - vec1[2] * vec2[1]; \
+  vec[1] = vec1[2] * vec2[0] - vec1[0] * vec2[2]; \
+  vec[2] = vec1[0] * vec2[1] - vec1[1] * vec2[0];
+
+int GetNormalVector(double *p0, double *p1, double *p2, double *n)
+{
+  double n1[3], n2[3], l;
+
+  Minus(n1, p1, p0);
+  l = Lenght(n1);
+  Scale(n1,1/l);
+  Minus(n2, p2, p0);
+  l = Lenght(n2);
+  Scale(n2,1/l);
+  Cross(n, n1, n2);
+  l = Lenght(n);
+  Scale(n,1/l);
+
+  return(1);
+}
+
+static int Same_Plane(  double *p1_0, double *p1_1, double *p1_2,
+                        double *p2_0, double *p2_1, double *p2_2)
+{
+  double n1[3], n2[3], sp;
+
+  GetNormalVector(p1_0, p1_1, p1_2, n1);
+  GetNormalVector(p2_0, p2_1, p2_2, n2);
+
+  sp = Mult(n1, n2);
+
+  if(sp<-0.999999)
+    return(1);
+  else
+    return(0);
+
+}
+
+#define MAX_T 30
+
+static INT Check_Volume(MESH *mesh, INT sid)
+{
+  INT ni, i, j, k, l, ntriangle, npoint, a, b, c, d, e, f, corner_id;
+  DOUBLE g1[3], g2[3], g3[3], g4[3], g5[3], g6[3], ng1[3], ng2[3], ng3[3], ng4[3], ng5[3], ng6[3];
+
+  ntriangle = mesh->nSides[sid];
+  npoint = mesh->nBndP;
+
+  /* first search neighbour triangle */
+  for(i=0; i<ntriangle; i++)
+    for(j=0; j<3; j++)
+      elem_list[i][j] = -1;
+
+  for(i=0; i<npoint; i++)
+  {
+    point_list[i][0] = 0;
+    for(j=1; j<MAX_T; j++)
+      point_list[i][j] = -1;
+  }
+
+  for(i=0; i<ntriangle; i++)
+    for(j=0; j<3; j++)
+    {
+      corner_id = mesh->Side_corner_ids[sid][i][j];
+      point_list[corner_id][++point_list[corner_id][0]] = i;
+    }
+
+  for(ni=0; ni<npoint; ni++)
+    for(i=1; i<=point_list[ni][0]; i++)
+      for(j=1; j<=point_list[ni][0]; j++)
+        if(i!=j)
+          for(k=0; k<3; k++)
+            for(l=0; l<3; l++)
+            {
+              a = mesh->Side_corner_ids[sid][point_list[ni][i]][(k+1)%3];
+              b = mesh->Side_corner_ids[sid][point_list[ni][i]][(k+2)%3];
+              c = mesh->Side_corner_ids[sid][point_list[ni][j]][(l+2)%3];
+              d = mesh->Side_corner_ids[sid][point_list[ni][j]][(l+1)%3];
+              if( ((a==c)&&(b==d)) )
+                elem_list[point_list[ni][i]][k] = point_list[ni][j];
+            }
+
+  /* triangles identical */
+  for(i=0; i<ntriangle; i++)
+  {
+    a = mesh->Side_corner_ids[sid][i][0];
+    b = mesh->Side_corner_ids[sid][i][1];
+    c = mesh->Side_corner_ids[sid][i][2];
+    for(j=0; j<3; j++)
+    {
+      d = mesh->Side_corner_ids[sid][elem_list[i][j]][0];
+      e = mesh->Side_corner_ids[sid][elem_list[i][j]][1];
+      f = mesh->Side_corner_ids[sid][elem_list[i][j]][2];
+      if( ((b==d)&&(a==e)&&(c==f))
+          ||      ((b==e)&&(a==f)&&(c==d))
+          ||      ((b==f)&&(a==d)&&(c==e)) )
+        return(1);
+    }
+  }
+  /* triangles planar */
+  for(i=0; i<ntriangle; i++)
+  {
+    BNDP_Global(mesh->theBndPs[mesh->Side_corner_ids[sid][i][0]],g1);
+    BNDP_Global(mesh->theBndPs[mesh->Side_corner_ids[sid][i][1]],g2);
+    BNDP_Global(mesh->theBndPs[mesh->Side_corner_ids[sid][i][2]],g3);
+    MM_TIMES_V_DIM(scale, g1, ng1);
+    MM_TIMES_V_DIM(scale, g2, ng2);
+    MM_TIMES_V_DIM(scale, g3, ng3);
+    for(j=0; j<3; j++)
+    {
+      BNDP_Global(mesh->theBndPs[mesh->Side_corner_ids[sid][elem_list[i][j]][0]],g4);
+      BNDP_Global(mesh->theBndPs[mesh->Side_corner_ids[sid][elem_list[i][j]][1]],g5);
+      BNDP_Global(mesh->theBndPs[mesh->Side_corner_ids[sid][elem_list[i][j]][2]],g6);
+      MM_TIMES_V_DIM(scale, g4, ng4);
+      MM_TIMES_V_DIM(scale, g5, ng5);
+      MM_TIMES_V_DIM(scale, g6, ng6);
+      if(Same_Plane(ng1, ng2, ng3, ng4, ng5, ng6))
+        return(1);
+    }
+  }
+
+  return(0);
+}
+
+static INT Allocate_Mem(MESH *mesh, INT from, INT to)
+{
+  int i, j, npoint, nelem;
+
+  npoint = mesh->nBndP;
+  nelem = 0;
+
+  for(i=from; i<=to; i++)
+    if(nelem < mesh->nSides[i])
+      nelem = mesh->nSides[i];
+
+  point_list = (INT **) GetTmpMem(MGHEAP(currMG),(npoint+1)*sizeof(INT*), GG3_MarkKey);
+  if(point_list==NULL)
+  {
+    printf("%s\n","Not enough memory");
+    assert(0);
+  }
+  for(i=0; i<npoint; i++)
+  {
+    point_list[i] = (INT *) GetTmpMem(MGHEAP(currMG),MAX_T*sizeof(INT), GG3_MarkKey);
+    if(point_list[i]==NULL)
+    {
+      printf("%s\n","Not enough memory");
+      assert(0);
+    }
+  }
+  elem_list = (INT **) GetTmpMem(MGHEAP(currMG),(nelem+1)*sizeof(INT*), GG3_MarkKey);
+  if(elem_list==NULL)
+  {
+    printf("%s\n","Not enough memory");
+    assert(0);
+  }
+  for(i=0; i<nelem; i++)
+  {
+    elem_list[i] = (INT *) GetTmpMem(MGHEAP(currMG),3*sizeof(INT), GG3_MarkKey);
+    if(elem_list[i]==NULL)
+    {
+      printf("%s\n","Not enough memory");
+      assert(0);
+    }
+  }
+  return(1);
+}
+
+static INT Write_Domain(MESH *mesh)
+{
+  INT i, j, nelem, npoint, sid, Id[6];
+  FILE *file;
+  DOUBLE global[3];
+
+  nelem = 0;
+  for (sid=from_sub; sid<=to_sub; sid++)
+    nelem = nelem + mesh->nElements[sid];
+
+
+  file = fopen("domain","w");
+  fprintf(file, "%s\n", "volmesh");
+  fprintf(file, "%d\n", nelem);
+
+  for (sid=from_sub; sid<=to_sub; sid++)
+  {
+    for(i=0; i<mesh->nElements[sid]; i++)
+    {
+      fprintf(file, "%d\n",mesh->Element_corners[sid][i]);
+      for(j=0; j<mesh->Element_corners[sid][i]; j++)
+        fprintf(file, "%d ", mesh->Element_corner_ids[sid][i][j]);
+      fprintf(file, "\n");
+    }
+  }
+
+  fprintf(file, "%d\n", mesh->nBndP+mesh->nInnP);
+  for(i=0; i<mesh->nBndP; i++)
+  {
+    if (BNDP_Global(mesh->theBndPs[i],global))
+      return (1);
+    fprintf(file, "%f %f %f\n", global[0], global[1], global[2]);
+  }
+
+  for(i=0; i<mesh->nInnP; i++)
+  {
+    for(j=0; j<3; j++)
+      global[j] = mesh->Position[i][j];
+    fprintf(file, "%f %f %f\n", global[0], global[1], global[2]);
+  }
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   GenerateGrid3d - call the netgen grid generator
+
+   SYNOPSIS:
+   INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth, INT coeff, DOUBLE *sc, INT from, INT to);
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+   .  mesh - pointer to mesh
+   .  h - mesh size
+   .  smoothing parameter
+   .  coeff - number of coefficientfunction for gridsize
+   .  sc - scaling
+   .  from - subdomain
+   .  to - subdomain
+   DESCRIPTION:
+   This function is an interface function for the grid generator.
+   It calls the netgen grid genarator to compute an inner
+   decomposition into tetrahedrons. It loads the surface triangulation
+   given by the mesh structure.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured
+   D*/
+/****************************************************************************/
+
 INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
-                    INT display, INT coeff)
+                    INT display, INT coeff, DOUBLE *sc, INT from, INT to, INT prism, INT save)
 {
   NODE *theNode;
   VERTEX *theVertex;
-  INT sid,i,j, k, nodelist[4], Id[4], bnds_flag[4], k1, k2;
+  INT sid,i,j, k, nodelist[6], Id[6], bnds_flag[6], k1, k2;
   char rulefilename[128];
-  DOUBLE global[3];
+  DOUBLE global[3], newglobal[3], det;
   char buff[3], name[6];
   FILE *stream;
   ELEMENT *theElement;
 
   GG3_MarkKey = MG_MARK_KEY(theMG);
+
+  scale[0][0] = sc[0]; scale[0][1] = sc[1]; scale[0][2] = sc[2];
+  scale[1][0] = sc[3]; scale[1][1] = sc[4]; scale[1][2] = sc[5];
+  scale[2][0] = sc[6]; scale[2][1] = sc[7]; scale[2][2] = sc[8];
+
+  M_DIM_INVERT(scale,invscale,det);
+
+  from_sub = from;
+  to_sub = to;
 
   if (mesh == NULL)
     return(GM_OK);
@@ -891,21 +1160,63 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
   }
 
   nInnP = (INT *) GetTmpMem(MGHEAP(theMG),(mesh->nSubDomains+1)*sizeof(INT), GG3_MarkKey);
+  if(nInnP==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+
   Position = (DOUBLE ***) GetTmpMem(MGHEAP(theMG),(mesh->nSubDomains+1)*sizeof(DOUBLE**), GG3_MarkKey);
+  if(Position==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
 
   mesh->nElements = (INT *) GetTmpMem(MGHEAP(theMG),(mesh->nSubDomains+1)*sizeof(INT), GG3_MarkKey);
-  mesh->Element_corners = (INT **) GetTmpMem(MGHEAP(theMG),(mesh->nSubDomains+1)*sizeof(INT*), GG3_MarkKey);
+  if(mesh->nElements==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+  mesh->Element_corners = (INT **) GetTmpMem(MGHEAP(theMG),(mesh->nSubDomains+2)*sizeof(INT*), GG3_MarkKey);
+  if(mesh->Element_corners==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
   mesh->Element_corner_ids = (INT ***) GetTmpMem(MGHEAP(theMG),(mesh->nSubDomains+1)*sizeof(INT**), GG3_MarkKey);
+  if(mesh->Element_corner_ids==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
 
   transfer = (INT *) GetTmpMem(MGHEAP(theMG),(mesh->nBndP+1)*sizeof(INT), GG3_MarkKey);
+  if(transfer==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
   newId = (INT *) GetTmpMem(MGHEAP(theMG),(mesh->nBndP+1)*sizeof(INT), GG3_MarkKey);
+  if(newId==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
   oldId = (INT *) GetTmpMem(MGHEAP(theMG),(mesh->nBndP+1)*sizeof(INT), GG3_MarkKey);
+  if(oldId==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
 
   nb_boundary_points = theMG->nodeIdCounter;
   nb_inner_points = 0;
 
+  Allocate_Mem(mesh, from, to);
   /* triangulate every subdomain */
-  for (sid=1; sid<=mesh->nSubDomains; sid++)
+  for (sid=from; sid<=to; sid++)
   {
     subdomain = sid;
 
@@ -952,7 +1263,8 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
       {
         if (BNDP_Global(mesh->theBndPs[i],global))
           return (1);
-        if (AddBoundaryNode (newId[i],global))
+        MM_TIMES_V_DIM(scale, global, newglobal);
+        if (AddBoundaryNode (newId[i],newglobal))
           return(1);
       }
     }
@@ -961,7 +1273,7 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
     {
       for(j=0; j<mesh->Side_corners[sid][i]; j++)
         nodelist[j] = newId[mesh->Side_corner_ids[sid][i][j]];
-      if (AddBoundaryElement (mesh->Side_corners[sid][i],nodelist))
+      if (AddBoundaryElement (mesh->Side_corners[sid][i],nodelist, mesh->xy_Side[sid][i]))
         return(1);
     }
 
@@ -979,18 +1291,24 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
       fclose(stream);
       printf("%s %d %s\n", "Subdomain ", subdomain, "not triangulated, do now");
 
-      if(GG3_DEBUG)
+      if(SAVE_VOLUME)
         Write_SurfaceMesh(mesh, theMG);
+      if(Check_Volume(mesh, sid))
+      {
+        UserWriteF("%s %d\n", "Surfaces identical in subdomain", sid);
+        UserWriteF("%s\n", "Check Surfaces");
+        return(1);
+      }
                         #ifdef _NETGEN
-      if (StartNetgen(h,smooth,display)) return(1);
+      if (StartNetgen(h,smooth,display, prism)) return(1);
                         #endif
-      if(GG3_DEBUG)
+      if(save)
         Write_VolumeMesh(mesh, theMG);
     }
     else
     {
       fclose(stream);
-      printf("%s %d\n", "Read Subdomain ", subdomain);
+      if(GG3_DEBUG) printf("%s %d\n", "Read Subdomain ", subdomain);
       Read_VolumeMesh(mesh, theMG, GG3_MarkKey);
     }
     nb_inner_points = nb_inner_points + nInnP[subdomain];
@@ -1003,10 +1321,22 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
     if(nInnP[sid]>0)
       mesh->nInnP = mesh->nInnP + nInnP[sid];
   mesh->Position = (DOUBLE **) GetTmpMem(MGHEAP(currMG), (mesh->nInnP+1)*sizeof(DOUBLE*), GG3_MarkKey);
+  if(mesh->Position==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
   for(i=0; i<mesh->nInnP; i++)
+  {
     mesh->Position[i] = (DOUBLE *) GetTmpMem(MGHEAP(currMG),3*sizeof(DOUBLE), GG3_MarkKey);
+    if(mesh->Position[i]==NULL)
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
+  }
   k = 0;
-  for (sid=1; sid<=mesh->nSubDomains; sid++)
+  for (sid=from; sid<=to; sid++)
   {
     for(i=0; i<nInnP[sid]; i++)
     {
@@ -1020,7 +1350,7 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
     printf("%s\n", "3d-gg fertig");
   /* search neighbor-elements per subdomain */
   /* for InsertElement */
-  Search_Tet_Neighbours(theMG, mesh, GG3_MarkKey);
+  Search_Neighbours(theMG, mesh, GG3_MarkKey);
 
   /* insert points into the multigrid */
   for(i=0; i<mesh->nInnP; i++)
@@ -1033,40 +1363,37 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
 
   /* insert elements into the multigrid */
   k1 = k2 = 0;
-  for (sid=1; sid<=mesh->nSubDomains; sid++)
+  for (sid=from; sid<=to; sid++)
   {
     subdomain = sid;
     k1 = k2+1;
     for(i=0; i<mesh->nElements[sid]; i++)
     {
-      for(j=0; j<4; j++)
+      for(j=0; j<mesh->Element_corners[sid][i]; j++)
       {
         Id[j] = mesh->Element_corner_ids[sid][i][j];
+        if(GG3_DEBUG)
+          printf("%d ", mesh->Element_corner_ids[sid][i][j]);
         if(nbElement[sid][i][j]==-1)
           bnds_flag[j] = 1;
         else
           bnds_flag[j] = 0;
       }
-      /*			printf("%d %d %d %d %d %d %d %d\n", mesh->Element_corner_ids[sid][i][0],
-                                                                  mesh->Element_corner_ids[sid][i][1],
-                                                                  mesh->Element_corner_ids[sid][i][2],
-                                                                  mesh->Element_corner_ids[sid][i][3],
-                                                                  nbElement[sid][i][0],
-                                                                  nbElement[sid][i][1],
-                                                                  nbElement[sid][i][2],
-                                                                  nbElement[sid][i][3]);*/
-      /*			if (InsertElementFromIDs_New(GRID_ON_LEVEL(theMG,0),mesh->Element_corners[sid][i],Id, bnds_flag, sid) == NULL)
-                                      return(1);*/
-      theElement = InsertElementFromIDs(GRID_ON_LEVEL(currMG,0),4,Id,bnds_flag);
+      if(GG3_DEBUG)
+        printf("\n");
+      theElement = InsertElementFromIDs(GRID_ON_LEVEL(currMG,0),mesh->Element_corners[sid][i],Id,bnds_flag);
+      /*			theElement = InsertElementFromIDs(GRID_ON_LEVEL(currMG,0),mesh->Element_corners[sid][i],Id,NULL);*/
       if (theElement==NULL)
         return(1);
       SETSUBDOMAIN(theElement,subdomain);
 
     }
     k2 = k2 + mesh->nElements[sid];
-    printf("%s %d %d %d\n", "subdomain ", sid, k1, k2);
+    if(GG3_DEBUG)
+      printf("%s %d %d %d\n", "subdomain ", sid, k1, k2);
   }
-
+  if(GG3_DEBUG)
+    Write_Domain(mesh);
   return(0);
 }
 

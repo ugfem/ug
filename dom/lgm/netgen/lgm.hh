@@ -63,8 +63,10 @@ public:
   void AddBoundaryElement (INDEX i1, INDEX i2, int surfind);
   virtual void TestPoint (const Point3d & /* p */,int flag) { };
 
+  virtual int Write_Surface_Grid ();
   virtual int SavePoint (const Point3d & p);
   virtual void SaveElement (const Element & elem);
+  virtual void Write2Shell (int n);
 
   //  friend int StartNetgen (double h, int smooth, int display);
 
@@ -72,17 +74,14 @@ protected:
   virtual void StartMesh ();
   virtual void EndMesh ();
   virtual int DefineTransformation (INDEX surfind, Point3d & p1, Point3d & p2);
-  virtual int DefineTransformation_OLD (INDEX surfind, Point3d & p1, Point3d & p2);
   virtual void TransformToPlain (INDEX ind, const Point3d & locpoint,
                                  Point2d & plainpoint, double h);
   virtual void TransformFromPlain (INDEX surfind, Point2d & plainpoint,
                                    Point3d & locpoint, double h);
 public:
   virtual void ProjectPoint (INDEX surfind, Point3d & p) const;
-  virtual void ProjectPointold (INDEX surfind, Point3d & p) const;
   virtual void ProjectPoint2 (INDEX surfind, INDEX surfind2, Point3d & p) const;
   virtual void GetNormalVector(INDEX surfind, const Point3d & p, Vec3d & n) const;
-  virtual void GetNormalVectorold(INDEX surfind, const Point3d & p, Vec3d & n) const;
 
   virtual double CalcLocalH (const Point3d & p, int surfind, double gh) const;
 };

@@ -6,7 +6,7 @@
 class Element
 {
   int np;
-  int pnum[4];
+  int pnum[6];
   int surfaceind;
 
 public:

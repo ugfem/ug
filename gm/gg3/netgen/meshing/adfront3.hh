@@ -51,6 +51,7 @@ class ADFRONT3
     Element f;
     int qualclass;
     char oldfront;
+    int prism_flag;
 
   public:
     FrontFace ();
@@ -58,9 +59,12 @@ class ADFRONT3
     const Element & Face () const;
 
     int QualClass () const;
+    int PrismFlag () const;
     void IncrementQualClass ();
+    void ResetPrismFlag ();
+    void SetQualClass (int i);
+    void SetPrismFlag (int i);
     void ResetQualClass ();
-
     int Valid () const;
     void Invalidate ();
   };
@@ -86,15 +90,30 @@ public:
 
 
   void GetPoints (ARRAY<Point3d> & apoints) const;
+  int Prism () const;
   void Print () const;
+  void Grape () const;
 
   int Empty () const;
 
-  int GetLocals (ARRAY<Point3d> & locpoints,
-                 ARRAY<Element> & locfaces,   // local index
-                 ARRAY<INDEX> & pindex,
-                 ARRAY<INDEX> & findex,
-                 float xh);
+  int GetLocals_Tetrahedra (ARRAY<Point3d> & locpoints,
+                            ARRAY<Element> & locfaces,               // local index
+                            ARRAY<INDEX> & pindex,
+                            ARRAY<INDEX> & findex,
+                            float xh);
+
+  int GetLocals_Prism(  ARRAY<Point3d> & locpoints,
+                        ARRAY<Element> & locfaces,           // local index
+                        ARRAY<INDEX> & pindex,
+                        ARRAY<INDEX> & findex,
+                        float xh,
+                        ARRAY<int> & prism_flags);
+
+  int GetLocals_Pyramid(ARRAY<Point3d> & locpoints,
+                        ARRAY<Element> & locfaces,           // local index
+                        ARRAY<INDEX> & pindex,
+                        ARRAY<INDEX> & findex,
+                        float xh);
 
   void GetGroup (int fi,
                  ARRAY<Point3d> & grouppoints,
@@ -105,14 +124,16 @@ public:
 
   void DeleteFace (INDEX fi);
   INDEX AddPoint (const Point3d & p, INDEX globind);
-  INDEX AddFace (const Element & e);
+  INDEX AddFace (const Element & e,int prism_flag);
   void IncrementClass (INDEX fi);
+  void ResetPrism (INDEX fi);
   void ResetClass (INDEX fi);
-  int TestOk () const;
+  void SetClass (INDEX fi, int i);
   void SetStartFront ();
 
   INDEX GetGlobalIndex (INDEX pi) const;
   double Volume () const;
+  int NFF () const;
 
 
   void SaveSurface (char * filename, double h);
@@ -177,6 +198,16 @@ inline int ADFRONT3 :: FrontFace :: Valid () const
   return f.PNum(1) != 0;
 }
 
+inline void ADFRONT3 :: FrontFace :: SetQualClass (int i)
+{
+  qualclass = i;
+}
+
+inline void ADFRONT3 :: FrontFace :: SetPrismFlag (int i)
+{
+  prism_flag = i;
+}
+
 inline const Element & ADFRONT3 :: FrontFace :: Face() const
 {
   return f;
@@ -187,9 +218,19 @@ inline int ADFRONT3 :: FrontFace :: QualClass () const
   return qualclass;
 }
 
+inline int ADFRONT3 :: FrontFace :: PrismFlag () const
+{
+  return prism_flag;
+}
+
 inline void ADFRONT3 :: FrontFace :: IncrementQualClass ()
 {
   qualclass++;
+}
+
+inline void ADFRONT3 :: FrontFace :: ResetPrismFlag ()
+{
+  prism_flag = -1;
 }
 
 inline void ADFRONT3 :: FrontFace :: ResetQualClass ()
@@ -214,6 +255,11 @@ inline INDEX ADFRONT3 :: GetGlobalIndex (INDEX pi) const
 inline double ADFRONT3 :: Volume () const
 {
   return vol;
+}
+
+inline int ADFRONT3 :: NFF () const
+{
+  return nff;
 }
 
 

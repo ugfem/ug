@@ -92,7 +92,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 #ifdef _NETGEN
 extern int AddGeomPoint (int id, double x, double y, double z);
-extern int StartSurfaceNetgen (double h, int smooth, int display);
+extern int StartSurfaceNetgen (double h, int smooth, int display, int D);
 extern int InitSurfaceNetgen (char * rulefilename);
 #endif
 extern INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE *n);
@@ -112,7 +112,10 @@ int Allocate_Mem_Surfdisc(int npoints, int nelements)
   {
     LGM_SURFACE_DISC(theSurface)->local[i] = (DOUBLE *)  GetTmpMem(Heap,3*sizeof(DOUBLE),LGM_MarkKey);
     if(LGM_SURFACE_DISC(theSurface)->local[i]==NULL)
-      return(1);
+    {
+      printf("%s\n","Not enough memory");
+      assert(0);
+    }
   }
   LGM_SURFACE_DISC(theSurface)->triangle = (INT **) GetTmpMem(Heap,(nelements+1)*sizeof(INT*), LGM_MarkKey);
   if(LGM_SURFACE_DISC(theSurface)->triangle==NULL)
@@ -121,16 +124,34 @@ int Allocate_Mem_Surfdisc(int npoints, int nelements)
   {
     LGM_SURFACE_DISC(theSurface)->triangle[i] = (INT *)  GetTmpMem(Heap,4*sizeof(INT),LGM_MarkKey);
     if(LGM_SURFACE_DISC(theSurface)->triangle[i]==NULL)
-      return(1);
+    {
+      printf("%s\n","Not enough memory");
+      assert(0);
+    }
   }
+  LGM_SURFACE_DISC(theSurface)->neighbour = (INT **) GetTmpMem(Heap,(nelements+1)*sizeof(INT*), LGM_MarkKey);
+  if(LGM_SURFACE_DISC(theSurface)->neighbour==NULL)
+  {
+    printf("%s\n","Not enough memory");
+    assert(0);
+  }
+  for(i=0; i<nelements; i++)
+  {
+    LGM_SURFACE_DISC(theSurface)->neighbour[i] = (INT *)  GetTmpMem(Heap,4*sizeof(INT),LGM_MarkKey);
+    if(LGM_SURFACE_DISC(theSurface)->neighbour[i]==NULL)
+    {
+      printf("%s\n","Not enough memory");
+      assert(0);
+    }
+  }
+  return(0);
 }
 
 static INT AddPoint2Netgen (INT id, DOUBLE *global)
 {
 
     #ifdef _NETGEN
-  AddGeomPoint (nodeid,
-                (double)global[0],(double)global[1],(double)global[2]);
+  AddGeomPoint (nodeid, (double)global[0],(double)global[1],(double)global[2]);
     #endif
 
   return(0);
@@ -187,8 +208,190 @@ int AddSurfaceTriangle2ug (int node0, int node1, int node2)
   return(0);
 }
 
+#define MAX_T 30
 
-INT GenerateSurfaceGrid (HEAP *theHeap, INT MarkKey, LGM_SURFACE *aSurface, DOUBLE h, INT smooth,INT display)
+static INT Search_Neighbour_Triangle(INT dummy)
+{
+  INT ni, i, j, k, l, ntriangle, npoint, a, b, c, d;
+  INT **point_list, corner_id;
+
+  ntriangle = LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface));
+  npoint = LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface));
+
+  for(i=0; i<ntriangle; i++)
+    for(j=0; j<3; j++)
+      LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), i, j) = -1;
+
+  point_list = (INT **) GetTmpMem(Heap,(npoint+1)*sizeof(INT*), LGM_MarkKey);
+  if(point_list==NULL)
+  {
+    printf("%s\n","Not enough memory");
+    assert(0);
+  }
+  for(i=0; i<npoint; i++)
+  {
+    point_list[i] = (INT *)  GetTmpMem(Heap,MAX_T*sizeof(INT),LGM_MarkKey);
+    if(point_list[i]==NULL)
+    {
+      printf("%s\n","Not enough memory");
+      assert(0);
+    }
+  }
+
+  for(i=0; i<npoint; i++)
+  {
+    point_list[i][0] = 0;
+    for(j=1; j<MAX_T; j++)
+      point_list[i][j] = -1;
+  }
+
+  for(i=0; i<ntriangle; i++)
+    for(j=0; j<3; j++)
+    {
+      corner_id = LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface),i,j);
+      point_list[corner_id][++point_list[corner_id][0]] = i;
+    }
+
+  for(ni=0; ni<npoint; ni++)
+    for(i=1; i<=point_list[ni][0]; i++)
+      for(j=1; j<=point_list[ni][0]; j++)
+        if(i!=j)
+          for(k=0; k<3; k++)
+            for(l=0; l<3; l++)
+            {
+              a = LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface),point_list[ni][i],(k+1)%3);
+              b = LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface),point_list[ni][i],(k+2)%3);
+              c = LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface),point_list[ni][j],(l+2)%3);
+              d = LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface),point_list[ni][j],(l+1)%3);
+              if( ((a==c)&&(b==d)) )
+                LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), point_list[ni][i], k)
+                  = point_list[ni][j];
+            }
+
+
+  return(0);
+}
+
+static INT Modify_Triangulation(INT dummy)
+{
+  INT i, j, k, ntriangle, n, m, flag1, flag2, triangle, neighbour, help, id[4], tr_id[3], n_id[3], trn_id[3], nn_id[3];
+  INT *modify;
+
+  ntriangle = LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface));
+  modify = (INT *)GetTmpMem(Heap,ntriangle*sizeof(INT),LGM_MarkKey);
+  if(modify==NULL)
+  {
+    printf("%s\n","Not enough memory");
+    assert(0);
+  }
+  for(i=0; i<ntriangle; i++)
+    modify[i] = 0;
+
+  for(i=0; i<ntriangle; i++)
+  {
+    n = 0;
+    for(j=0; j<3; j++)
+      if(LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), i, j)==-1)
+        n++;
+      else
+        flag1 = j;
+    if(n==2)
+    {
+      m = 0;
+      triangle = i;
+      neighbour = LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, flag1);
+      for(j=0; j<3; j++)
+      {
+        if(LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, j)==i)
+          flag2 = j;
+        if(LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, j)==-1)
+          m++;
+      }
+      if(m==0)
+        modify[neighbour]++;
+    }
+  }
+
+  for(i=0; i<ntriangle; i++)
+  {
+    n = 0;
+    for(j=0; j<3; j++)
+      if(LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), i, j)==-1)
+        n++;
+      else
+        flag1 = j;
+    if(n==2)
+    {
+      m = 0;
+      triangle = i;
+      neighbour = LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, flag1);
+      for(j=0; j<3; j++)
+      {
+        if(LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, j)==i)
+          flag2 = j;
+        if(LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, j)==-1)
+          m++;
+      }
+      if((m==0)&&(modify[neighbour]==1))
+      {
+        /*				printf("%d %d %d %d %d %d %d %d %d %d %d %d\n",
+                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 0),
+                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 1),
+                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 2),
+                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 0),
+                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 1),
+                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 2),
+                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 0),
+                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 1),
+                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 2),
+                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 0),
+                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 1),
+                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 2));*/
+
+        for(k=0; k<3; k++)
+        {
+          tr_id[k] = LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, (flag1 + 2 + k)%3 );
+          n_id[k] = LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, (flag2 + 2 + k)%3 );
+          trn_id[k] = LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, (flag1 + 2 + k)%3 );
+          nn_id[k] = LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, (flag2 + 2 + k)%3 );
+        }
+        /*				printf("%d %d %d %d %d %d\n",tr_id[0],tr_id[1],tr_id[2],n_id[0],n_id[1],n_id[2]); */
+
+        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 0) = tr_id[0];
+        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 1) = tr_id[1];
+        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 2) = n_id[1];
+        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 0) = n_id[0];
+        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 1) = n_id[1];
+        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 2) = tr_id[1];
+        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 0) = -1;
+        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 1) = -1;
+        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 2) = -1;
+        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 0) = -1;
+        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 1) = -1;
+        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 2) = -1;
+
+        /*				printf("%d %d %d %d %d %d %d %d %d %d %d %d\n",
+                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 0),
+                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 1),
+                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), triangle, 2),
+                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 0),
+                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 1),
+                                        LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), neighbour, 2),
+                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 0),
+                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 1),
+                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), triangle, 2),
+                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 0),
+                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 1),
+                                        LGM_SURFDISC_TRIANGLE_NEIGHBOUR(LGM_SURFACE_DISC(theSurface), neighbour, 2));*/
+      }
+
+    }
+  }
+
+  return(0);
+}
+
+INT GenerateSurfaceGrid (HEAP *theHeap, INT MarkKey, LGM_SURFACE *aSurface, DOUBLE h, INT smooth,INT display, INT D)
 {
   INT sid,i;
   char rulefilename[128];
@@ -204,8 +407,11 @@ INT GenerateSurfaceGrid (HEAP *theHeap, INT MarkKey, LGM_SURFACE *aSurface, DOUB
     strcpy(rulefilename,rulefilename);
 
     #ifdef _NETGEN
-  if (StartSurfaceNetgen(h,smooth,display)) return(1);
+  if (StartSurfaceNetgen(h,smooth,display, D)) return(1);
     #endif
+
+  Search_Neighbour_Triangle(1);
+  Modify_Triangulation(1);
 
   return(0);
 }

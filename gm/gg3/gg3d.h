@@ -48,7 +48,7 @@
 /****************************************************************************/
 
 INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
-                    INT display, INT coeff);
+                    INT display, INT coeff, DOUBLE *sc, INT from, INT to, INT prism, INT save);
 int Get_Local_h(double *in, double *out);
 
 #endif

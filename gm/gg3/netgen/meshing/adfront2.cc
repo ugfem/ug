@@ -1,9 +1,5 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/*
-   Advancing front class for surfaces
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <fstream.h>
@@ -15,7 +11,7 @@
 #include <geom/geom2d.hh>
 #include <geom/geom3d.hh>
 
-extern int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh);
+extern int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh,double dist);
 extern int Test_Point(Point3d p, Point3d sp1, Point3d sp2, double xh);
 
 
@@ -173,7 +169,8 @@ int ADFRONT2 :: GetLocals (ARRAY<Point3d> & locpoints,
                            ARRAY<INDEX> & pindex,
                            ARRAY<INDEX> & lindex,
                            int & asurfaceind,
-                           double xh)
+                           double xh,
+                           double dist)
 {
   INDEX i, j, k;
   INDEX lstind, pstind;
@@ -255,7 +252,7 @@ int ADFRONT2 :: GetLocals (ARRAY<Point3d> & locpoints,
       p1 = points.Get(lines.Get(i).L().I1()).P();
       p2 = points.Get(lines.Get(i).L().I2()).P();
 
-      if (Test_Line(p1,p2,sp1,sp2,xh))
+      if (Test_Line(p1,p2,sp1,sp2,xh,dist))
       {
         loclines.Append(lines.Get(i).L());
         lindex.Append(i);

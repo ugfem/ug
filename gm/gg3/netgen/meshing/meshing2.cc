@@ -177,7 +177,7 @@ void Meshing2 :: Mesh (double gh)
 
     qualclass =
       adfront ->GetLocals (locpoints, loclines, pindex, lindex,
-                           surfind, 60 * gh);
+                           surfind, 60 * gh, 1.0);
     oldnp = locpoints.Size();
     oldnl = loclines.Size();
 

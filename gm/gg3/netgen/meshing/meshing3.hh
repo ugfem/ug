@@ -21,7 +21,7 @@ public:
   virtual ~Meshing3 ();
 
   void LoadRules (char * filename);
-  void Mesh (double gh);
+  void Mesh (double gh,int prism);
 
   void ImproveMesh (ARRAY<Point3d> & points,
                     const ARRAY<Element> & surfelements,
@@ -48,7 +48,7 @@ public:
 
 
   void AddPoint (const Point3d & p, INDEX globind);
-  void AddBoundaryElement (const Element & elem, int inverse);
+  void AddBoundaryElement (const Element & elem, int inverse, int prism_flag);
 
   virtual int SavePoint (const Point3d & /* p */) { return 0; }
   virtual void SaveElement (const Element & /* elem */) { };

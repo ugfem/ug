@@ -2,6 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 #include <fstream.h>
 #include <iostream.h>
 #include <iomanip.h>
@@ -43,13 +44,10 @@ static char buf[100];
 static int qualclass;
 static float vol0, err;
 static int problemindex = 1;
-
+static int MESH_DEBUG = 0;
 double h;
 
 static Meshing3 * meshing;
-static int GSF_DEBUG = 0;
-
-
 
 // for useful point
 static ARRAY<Point3d> grouppoints;
@@ -85,7 +83,7 @@ void Meshing3 :: AddPoint (const Point3d & p, INDEX globind)
   adfront->AddPoint (p, globind);
 }
 
-void Meshing3 :: AddBoundaryElement (const Element & elem, int inverse)
+void Meshing3 :: AddBoundaryElement (const Element & elem, int inverse, int prism_flag)
 {
   Element helem;
   INDEX hi;
@@ -98,7 +96,7 @@ void Meshing3 :: AddBoundaryElement (const Element & elem, int inverse)
     helem.PNum(2) = hi;
   }
 
-  adfront->AddFace (helem);
+  adfront->AddFace (helem,prism_flag);
 }
 
 
@@ -231,46 +229,355 @@ void PlotVolMesh (const ROT3D & r, char key)
 }
 
 
-void Meshing3 :: Mesh (double ah)
+void Meshing3 :: Mesh (double ah,int make_prism)
 {
   ARRAY<Point3d> plainpoints;
   ARRAY<int> delpoints, delfaces;
   ARRAY<int> changepoints;
   ARRAY<Element> locelements;
   int i, j, oldnp, oldnf;
-  int found;
+  int found,rotind;
   referencetransform trans;
-  int rotind;
+  int gen_prism, gen_pyramid, gen_tetrahedra, prism, pyramid,flag;
   INDEX globind;
   Point3d inp,bemp,bemp1,bemp2,bemp3;
+  Point3d *hp1, *hp2, *hp3, *hp4, *hp5, *hp6;
   double in[5];
   float minerr;
   int hasfound;
-  double tetvol;
+  double tetvol,prismvol,pyramidvol;
 
   ARRAY<Point3d> tempnewpoints;
   ARRAY<Element> tempnewfaces;
   ARRAY<int> tempdelfaces;
   ARRAY<Element> templocelements;
+  ARRAY<int> prism_flags;
 
   int pause = 1, redraw = 1, shouldredraw = 1;
 
-  //ah = 5;
+  //  ah = 15;
 
   h = ah;
   meshing = this;
   adfront->SetStartFront ();
 
-
   found = 0;
   vol0 = adfront -> Volume();
-  tetvol = 0;
+  tetvol = 0.0;
+  prismvol = 0.0;
+  pyramidvol = 0.0;
 
+  gen_pyramid = 0;
+  qualclass = 1;
+  //	gen_prism = adfront->Prism();
+  gen_prism = make_prism;
+  if(gen_prism)
+    gen_tetrahedra = 0;
+  else
+    gen_tetrahedra = 1;
 
+  // generate prism if possible
+  if(gen_prism)
+    while (!adfront -> Empty())
+    {
+      //adfront->Print();
+      h = ah;
+      locpoints.SetSize(0);
+      locfaces.SetSize(0);
+      pindex.SetSize(0);
+      findex.SetSize(0);
 
-  while (!adfront -> Empty())
+      prism = adfront->GetLocals_Prism(locpoints, locfaces, pindex, findex, 3 * h, prism_flags);
+      if(prism==-1)
+      {
+        gen_prism = 0;
+        gen_pyramid = 1;
+        break;
+      }
 
+      oldnp = locpoints.Size();
+      oldnf = locfaces.Size();
+      found = 0;
+      hasfound = 0;
+      minerr = 1000;
+
+      trans.Set (     locpoints[locfaces[1].PNumMod(1)],
+                      locpoints[locfaces[1].PNumMod(2)],
+                      locpoints[locfaces[1].PNumMod(3)], h);
+
+      trans.ToPlain (locpoints, plainpoints);
+
+      cnttrials++;
+
+      found = Generate_Prism (plainpoints, locfaces, locelements,
+                              delfaces, prism_flags);
+
+      if (found) cntsucc++;
+
+      locpoints.SetSize (plainpoints.Size());
+      for (i = oldnp+1; i <= plainpoints.Size(); i++)
+        trans.FromPlain (plainpoints[i], locpoints[i]);
+
+      tempnewfaces.SetSize (0);
+      for (i = oldnf+1; i <= locfaces.Size(); i++)
+        tempnewfaces.Append (locfaces[i]);
+
+      tempdelfaces.SetSize (0);
+      for (i = 1; i <= delfaces.Size(); i++)
+        tempdelfaces.Append (delfaces[i]);
+
+      templocelements.SetSize (0);
+      for (i = 1; i <= locelements.Size(); i++)
+        templocelements.Append (locelements[i]);
+
+      locpoints.SetSize (oldnp);
+      locfaces.SetSize (oldnf);
+      delfaces.SetSize (0);
+      locelements.SetSize (0);
+
+      if (found)
+      {
+        for (i = 1; i <= tempnewfaces.Size(); i++)
+          locfaces.Append (tempnewfaces[i]);
+        for (i = 1; i <= tempdelfaces.Size(); i++)
+          delfaces.Append (tempdelfaces[i]);
+        for (i = 1; i <= templocelements.Size(); i++)
+          locelements.Append (templocelements[i]);
+
+        pindex.SetSize(locpoints.Size());
+
+        for (i = 1; i <= locelements.Size(); i++)
+        {
+          hp1 = &locpoints[locelements[i].PNum(1)];
+          hp2 = &locpoints[locelements[i].PNum(2)];
+          hp3 = &locpoints[locelements[i].PNum(3)];
+          hp4 = &locpoints[locelements[i].PNum(4)];
+          hp5 = &locpoints[locelements[i].PNum(5)];
+          hp6 = &locpoints[locelements[i].PNum(6)];
+
+          if(MESH_DEBUG)
+          {
+            cout << locelements[i].PNum(1) <<  " (" <<      locpoints[locelements[i].PNum(1)].X() << "," <<
+            locpoints[locelements[i].PNum(1)].Y() << "," <<
+            locpoints[locelements[i].PNum(1)].Z() << ")" << endl;
+            cout << locelements[i].PNum(2) <<  " (" <<      locpoints[locelements[i].PNum(2)].X() << "," <<
+            locpoints[locelements[i].PNum(2)].Y() << "," <<
+            locpoints[locelements[i].PNum(2)].Z() << ")" << endl;
+            cout << locelements[i].PNum(3) <<  " (" <<      locpoints[locelements[i].PNum(3)].X() << "," <<
+            locpoints[locelements[i].PNum(3)].Y() << "," <<
+            locpoints[locelements[i].PNum(3)].Z() << ")" << endl;
+            cout << locelements[i].PNum(4) <<  " (" <<      locpoints[locelements[i].PNum(4)].X() << "," <<
+            locpoints[locelements[i].PNum(4)].Y() << "," <<
+            locpoints[locelements[i].PNum(4)].Z() << ")" << endl;
+            cout << locelements[i].PNum(5) <<  " (" <<      locpoints[locelements[i].PNum(5)].X() << "," <<
+            locpoints[locelements[i].PNum(5)].Y() << "," <<
+            locpoints[locelements[i].PNum(5)].Z() << ")" << endl;
+            cout << locelements[i].PNum(6) <<  " (" <<      locpoints[locelements[i].PNum(6)].X() << "," <<
+            locpoints[locelements[i].PNum(6)].Y() << "," <<
+            locpoints[locelements[i].PNum(6)].Z() << ")" << endl;
+
+            printf("%d %d %d %d %d %d\n",   locelements[i].PNum(1),
+                   locelements[i].PNum(2),
+                   locelements[i].PNum(3),
+                   locelements[i].PNum(4),
+                   locelements[i].PNum(5),
+                   locelements[i].PNum(6)
+                   );
+            printf("%s %d\n","nff:",adfront->NFF());
+          }
+          prismvol = prismvol
+                     + (1.0 / 6.0) * ( Cross ( *hp2 - *hp1, *hp3 - *hp1) * (*hp4 - *hp1) )
+                     + (1.0 / 6.0) * ( Cross ( *hp4 - *hp3, *hp5 - *hp3) * (*hp6 - *hp3) )
+                     + (1.0 / 6.0) * ( Cross ( *hp3 - *hp2, *hp4 - *hp2) * (*hp5 - *hp2) );
+
+          for (j = 1; j <= locelements[i].NP(); j++)
+            locelements[i].PNum(j) =
+              adfront -> GetGlobalIndex (pindex[locelements[i].PNum(j)]);
+
+          SaveElement (locelements[i]);
+          cntelem++;
+        }
+
+        for (i = oldnf+1; i <= locfaces.Size(); i++)
+        {
+          for (j = 1; j <= locfaces[i].NP(); j++)
+            locfaces[i].PNum(j) = pindex[locfaces[i].PNum(j)];
+          adfront->AddFace (locfaces[i],-1);
+        }
+
+        for (i = 1; i <= delfaces.Size(); i++)
+          adfront->DeleteFace (findex[delfaces[i]]);
+      }
+      else
+        adfront->ResetPrism (findex[1]);
+
+      locelements.SetSize (0);
+      delpoints.SetSize(0);
+      delfaces.SetSize(0);
+      prism_flags.SetSize(0);
+    }
+
+  //adfront->Print();
+
+  // close with pyramids, if nessesary
+  if(gen_pyramid)
   {
+    while (!adfront -> Empty())
+    {
+      //adfront->Print();
+      h = ah;
+      locpoints.SetSize(0);
+      locfaces.SetSize(0);
+      pindex.SetSize(0);
+      findex.SetSize(0);
+
+      pyramid = adfront->GetLocals_Pyramid(locpoints, locfaces, pindex, findex, 3 * h);
+      if(pyramid==-1)
+      {
+        gen_pyramid = 0;
+        gen_tetrahedra = 1;
+        break;
+      }
+
+      oldnp = locpoints.Size();
+      oldnf = locfaces.Size();
+      found = 0;
+      hasfound = 0;
+      minerr = 1000;
+
+      trans.Set (     locpoints[locfaces[1].PNumMod(1)],
+                      locpoints[locfaces[1].PNumMod(2)],
+                      locpoints[locfaces[1].PNumMod(3)], h);
+
+      trans.ToPlain (locpoints, plainpoints);
+
+      cnttrials++;
+
+      found = Generate_Pyramid (      plainpoints, locfaces, locelements,
+                                      delfaces, prism_flags);
+
+      if (found) cntsucc++;
+
+      locpoints.SetSize (plainpoints.Size());
+      for (i = oldnp+1; i <= plainpoints.Size(); i++)
+        trans.FromPlain (plainpoints[i], locpoints[i]);
+
+      tempnewpoints.SetSize (0);
+      for (i = oldnp+1; i <= locpoints.Size(); i++)
+        tempnewpoints.Append (locpoints[i]);
+
+      tempnewfaces.SetSize (0);
+      for (i = oldnf+1; i <= locfaces.Size(); i++)
+        tempnewfaces.Append (locfaces[i]);
+
+      tempdelfaces.SetSize (0);
+      for (i = 1; i <= delfaces.Size(); i++)
+        tempdelfaces.Append (delfaces[i]);
+
+      templocelements.SetSize (0);
+      for (i = 1; i <= locelements.Size(); i++)
+        templocelements.Append (locelements[i]);
+
+      locpoints.SetSize (oldnp);
+      locfaces.SetSize (oldnf);
+      delfaces.SetSize (0);
+      locelements.SetSize (0);
+
+
+      if (found)
+      {
+        for (i = 1; i <= tempnewpoints.Size(); i++)
+          locpoints.Append (tempnewpoints[i]);
+        for (i = 1; i <= tempnewfaces.Size(); i++)
+          locfaces.Append (tempnewfaces[i]);
+        for (i = 1; i <= tempdelfaces.Size(); i++)
+          delfaces.Append (tempdelfaces[i]);
+        for (i = 1; i <= templocelements.Size(); i++)
+          locelements.Append (templocelements[i]);
+
+        pindex.SetSize(locpoints.Size());
+
+        for (i = oldnp+1; i <= locpoints.Size(); i++)
+        {
+          globind = SavePoint (locpoints[i]);
+          pindex[i] = adfront -> AddPoint (locpoints[i], globind);
+        }
+
+        for (i = 1; i <= locelements.Size(); i++)
+        {
+          hp1 = &locpoints[locelements[i].PNum(1)];
+          hp2 = &locpoints[locelements[i].PNum(2)];
+          hp3 = &locpoints[locelements[i].PNum(3)];
+          hp4 = &locpoints[locelements[i].PNum(4)];
+          hp5 = &locpoints[locelements[i].PNum(5)];
+
+          if(MESH_DEBUG)
+          {
+            cout << locelements[i].PNum(1) <<  " (" <<      locpoints[locelements[i].PNum(1)].X() << "," <<
+            locpoints[locelements[i].PNum(1)].Y() << "," <<
+            locpoints[locelements[i].PNum(1)].Z() << ")" << endl;
+            cout << locelements[i].PNum(2) <<  " (" <<      locpoints[locelements[i].PNum(2)].X() << "," <<
+            locpoints[locelements[i].PNum(2)].Y() << "," <<
+            locpoints[locelements[i].PNum(2)].Z() << ")" << endl;
+            cout << locelements[i].PNum(3) <<  " (" <<      locpoints[locelements[i].PNum(3)].X() << "," <<
+            locpoints[locelements[i].PNum(3)].Y() << "," <<
+            locpoints[locelements[i].PNum(3)].Z() << ")" << endl;
+            cout << locelements[i].PNum(4) <<  " (" <<      locpoints[locelements[i].PNum(4)].X() << "," <<
+            locpoints[locelements[i].PNum(4)].Y() << "," <<
+            locpoints[locelements[i].PNum(4)].Z() << ")" << endl;
+            cout << locelements[i].PNum(5) <<  " (" <<      locpoints[locelements[i].PNum(5)].X() << "," <<
+            locpoints[locelements[i].PNum(5)].Y() << "," <<
+            locpoints[locelements[i].PNum(5)].Z() << ")" << endl;
+
+            printf("%d %d %d %d %d\n",      locelements[i].PNum(1),
+                   locelements[i].PNum(2),
+                   locelements[i].PNum(3),
+                   locelements[i].PNum(4),
+                   locelements[i].PNum(5)
+                   );
+            printf("%s %d\n","nff:",adfront->NFF());
+          }
+          pyramidvol = pyramidvol
+                       + (1.0 / 6.0) * ( Cross ( *hp2 - *hp1, *hp4 - *hp1) * (*hp5 - *hp1) )
+                       + (1.0 / 6.0) * ( Cross ( *hp3 - *hp2, *hp4 - *hp2) * (*hp5 - *hp2) );
+
+          for (j = 1; j <= locelements[i].NP(); j++)
+            locelements[i].PNum(j) =
+              adfront -> GetGlobalIndex (pindex[locelements[i].PNum(j)]);
+
+          SaveElement (locelements[i]);
+          cntelem++;
+        }
+
+        for (i = oldnf+1; i <= locfaces.Size(); i++)
+        {
+          for (j = 1; j <= locfaces[i].NP(); j++)
+            locfaces[i].PNum(j) = pindex[locfaces[i].PNum(j)];
+
+          adfront->AddFace (locfaces[i],-1);
+        }
+
+        for (i = 1; i <= delfaces.Size(); i++)
+          adfront->DeleteFace (findex[delfaces[i]]);
+      }
+      else
+      {
+        printf("%s\n", "Can not create prism");
+        assert(0);
+      }
+      locelements.SetSize (0);
+      delpoints.SetSize(0);
+      delfaces.SetSize(0);
+    }
+  }
+  if(make_prism)
+    for(i=1; i<=adfront->NFF(); i++)
+      adfront->SetClass(i,1);
+
+  // and now the tetrahedra
+  while (!adfront -> Empty())
+  {
+    //adfront->Print();
     locpoints.SetSize(0);
     locfaces.SetSize(0);
     pindex.SetSize(0);
@@ -278,13 +585,10 @@ void Meshing3 :: Mesh (double ah)
 
     h = ah;
     if(h>0.0)
-      qualclass =
-        adfront -> GetLocals (locpoints, locfaces, pindex, findex, 3 * h);
+      qualclass = adfront -> GetLocals_Tetrahedra (locpoints, locfaces, pindex, findex, 3 * h);
     else
     {
-      qualclass =
-        adfront -> GetLocals (locpoints, locfaces, pindex, findex, -3 * h);
-
+      qualclass = adfront -> GetLocals_Tetrahedra (locpoints, locfaces, pindex, findex, -3 * h);
 
       bemp1.X() = locpoints[locfaces[1].PNum(1)].X();
       bemp1.Y() = locpoints[locfaces[1].PNum(1)].Y();
@@ -310,8 +614,7 @@ void Meshing3 :: Mesh (double ah)
       in[2] = bemp.Z();
       in[3] = ah;
       Get_Local_h_3d(in,&h);
-      qualclass =
-        adfront -> GetLocals (locpoints, locfaces, pindex, findex, 3 * h);
+      qualclass = adfront -> GetLocals_Tetrahedra (locpoints, locfaces, pindex, findex, 3 * h);
     }
 
     oldnp = locpoints.Size();
@@ -344,9 +647,6 @@ void Meshing3 :: Mesh (double ah)
           style[delfaces[i]] = 2;
         style[1] = 1;
 
-#ifdef MYGRAPH
-        Plot3D (PlotVolMesh, 1, pause);
-#endif
         pause = 0;
 
         delfaces.SetSize (0);
@@ -368,28 +668,24 @@ void Meshing3 :: Mesh (double ah)
       }
     }
 
-
-
     found = 0;
     hasfound = 0;
     minerr = 1000;
 
     for (rotind = 1; rotind <= 3; rotind++)
     {
-      trans.Set (locpoints[locfaces[1].PNumMod(1+rotind)],
-                 locpoints[locfaces[1].PNumMod(2+rotind)],
-                 locpoints[locfaces[1].PNumMod(3+rotind)], h);
+      trans.Set (     locpoints[locfaces[1].PNumMod(1+rotind)],
+                      locpoints[locfaces[1].PNumMod(2+rotind)],
+                      locpoints[locfaces[1].PNumMod(3+rotind)], h);
 
       trans.ToPlain (locpoints, plainpoints);
 
       cnttrials++;
 
-      found = ApplyVRules (rules, tolfak, plainpoints, locfaces, locelements,
-                           delfaces, qualclass, rotind, err, problems);
-
+      found = ApplyVRules (   rules, tolfak, plainpoints, locfaces, locelements,
+                              delfaces, qualclass, rotind, err, problems);
 
       if (found) cntsucc++;
-
 
       locpoints.SetSize (plainpoints.Size());
       for (i = oldnp+1; i <= plainpoints.Size(); i++)
@@ -437,16 +733,11 @@ void Meshing3 :: Mesh (double ah)
         pause = 1;
       }
 
-#ifdef MYGRAPH
-      Plot3D (PlotVolMesh, redraw, pause);
-#endif
       redraw = 0;
       pause = 0;
 
-
       if (found && (!hasfound || err < minerr) )
       {
-
         if (testmode)
         {
           (*testout) << "testmode found" << endl;
@@ -460,8 +751,6 @@ void Meshing3 :: Mesh (double ah)
             (*testout) << plainpoints[i] << endl;
           }
         }
-
-
 
         hasfound = found;
         minerr = err;
@@ -501,28 +790,6 @@ void Meshing3 :: Mesh (double ah)
       for (i = 1; i <= templocelements.Size(); i++)
         locelements.Append (templocelements[i]);
 
-
-      /*
-            changepoints.SetSize (locpoints.Size());
-            for (i = 1; i <= changepoints.Size(); i++)
-              changepoints[i] = 0;
-
-            for (i = oldnf + 1; i <= locfaces.Size(); i++)
-              for (j = 1; j <= locfaces[i].NP(); j++)
-                changepoints[locfaces[i].PNum(j)] = 1;
-
-            for (i = 1; i <= oldnf; i++)
-              {
-              hc = 0;
-              for (j = 1; j <= locfaces[i].NP(); j++)
-                if (changepoints[locfaces[i].PNum(j)])
-                  hc = 1;
-
-              if (hc)
-                adfront->ResetClass (findex[i]);
-              }
-       */
-
       if (testmode)
       {
         (*testout) << "testmode locpoints" << endl;
@@ -536,8 +803,6 @@ void Meshing3 :: Mesh (double ah)
           (*testout) << locpoints[i] << endl;
         }
       }
-
-
 
       pindex.SetSize(locpoints.Size());
 
@@ -558,8 +823,9 @@ void Meshing3 :: Mesh (double ah)
         tetvol += (1.0 / 6.0) * ( Cross ( *hp2 - *hp1, *hp3 - *hp1) * (*hp4 - *hp1) );
 
         for (j = 1; j <= locelements[i].NP(); j++)
-          locelements[i].PNum(j) =
-            adfront -> GetGlobalIndex (pindex[locelements[i].PNum(j)]);
+          locelements[i].PNum(j) = adfront -> GetGlobalIndex (pindex[locelements[i].PNum(j)]);
+        if(MESH_DEBUG)
+          printf("%s %d\n","NFF:",adfront->NFF());
 
         SaveElement (locelements[i]);
         cntelem++;
@@ -570,7 +836,7 @@ void Meshing3 :: Mesh (double ah)
         for (j = 1; j <= locfaces[i].NP(); j++)
           locfaces[i].PNum(j) = pindex[locfaces[i].PNum(j)];
 
-        adfront->AddFace (locfaces[i]);
+        adfront->AddFace (locfaces[i], -1);
       }
 
       for (i = 1; i <= delfaces.Size(); i++)
@@ -578,9 +844,6 @@ void Meshing3 :: Mesh (double ah)
         adfront->DeleteFace (findex[delfaces[i]]);
       }
 
-      //      testout << "rule: " << rules[hasfound] -> Name() << endl;
-      //      testout << "Vol from surface: " << (vol0 - adfront -> Volume()) << endl;
-      //      testout << "Tetra volume:     " << tetvol << endl << endl;
     }
     else
     {
@@ -592,9 +855,4 @@ void Meshing3 :: Mesh (double ah)
     delfaces.SetSize(0);
   }
 
-
-
-  for (i = 1; i <= ruleused.Size(); i++)
-    (*testout) << setw(4) << ruleused[i]
-               << " times used rule " << rules[i] -> Name() << endl;
 }

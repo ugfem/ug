@@ -23,166 +23,17 @@ static double CalcElementBadness (const ARRAY<Point3d> & points,
   Vec3d v2 = points[elem.PNum(3)] - points[elem.PNum(1)];
   Vec3d v3 = points[elem.PNum(4)] - points[elem.PNum(1)];
 
-  vol = - (Cross (v1, v2) * v3);
+  vol = - (Cross(v1, v2) * v3);
   l4 = Dist (points[elem.PNum(2)], points[elem.PNum(3)]);
   l5 = Dist (points[elem.PNum(2)], points[elem.PNum(4)]);
   l6 = Dist (points[elem.PNum(3)], points[elem.PNum(4)]);
 
   l = v1.Length() + v2.Length() + v3.Length() + l4 + l5 + l6;
 
-  //  testout << "vol = " << vol << " l = " << l << endl;
-  if (vol < 1e-8) return 1e10;
-  //  (*testout) << "l^3/vol = " << (l*l*l / vol) << endl;
-
-  return (l*l*l/vol)/500;
-}
-
-
-static double CalcElementBadness_new (const ARRAY<Point3d> & points,
-                                      const Element & elem)
-{
-  int i,j,k;
-  double vol, l, l1,l2,l3,l4,l5,l6,l_min,l_max;
-  Vec3d v1,v2,v3;
-  Vec3d n1,n2,n3,n4;
-  double alpha,maxalpha,minalpha,pi;
-  double alpha1,alpha2,alpha3,alpha4,alpha5,alpha6;
-  double minfl,maxfl,min;
-  Point3d p1,p2,p3,p4,pp1,pp2,pp3;
-  double longest_edge,shortest_edge,incircle;
-
-  pi = 3.141592654;
-
-  p1 = points[elem.PNum(1)];
-  p2 = points[elem.PNum(2)];
-  p3 = points[elem.PNum(3)];
-  p4 = points[elem.PNum(4)];
-
-  // Volume_angle
-  v1 = p1 - p2;
-  v2 = p3 - p2;
-
-  n1 = Cross(v1,v2);
-  l1 = n1.Length();
-  if(l1<1e-8)
-    return(1e10);
-
-  v1 = p4 - p2;
-  v2 = p1 - p2;
-
-  n2 = Cross(v1,v2);
-  l2= n2.Length();
-  if(l2<1e-8)
-    return(1e10);
-
-  v1 = p3 - p4;
-  v2 = p1 - p4;
-
-  n3 = Cross(v1,v2);
-  l3 = n3.Length();
-  if(l3<1e-8)
-    return(1e10);
-
-  v1 = p3 - p2;
-  v2 = p4 - p2;
-
-  n4 = Cross(v1,v2);
-  l4 = n4.Length();
-  if(l4<1e-8)
-    return(1e10);
-
-  alpha1 = pi - acos( n1*n2 / (l1*l2) );
-  maxalpha = alpha1;
-  minalpha = alpha1;
-
-  alpha2 = pi - acos( n1*n3 / (l1*l3) );
-  if(maxalpha<alpha2)
-    maxalpha = alpha2;
-  if(minalpha>alpha2)
-    minalpha = alpha2;
-
-  alpha3 = pi - acos( n1*n4 / (l1*l4) );
-  if(maxalpha<alpha3)
-    maxalpha = alpha3;
-  if(minalpha>alpha3)
-    minalpha = alpha3;
-
-  alpha4 = pi - acos( n2*n3 / (l2*l3) );
-  if(maxalpha<alpha4)
-    maxalpha = alpha4;
-  if(minalpha>alpha4)
-    minalpha = alpha4;
-
-  alpha5 = pi - acos( n2*n4 / (l2*l4) );
-  if(maxalpha<alpha5)
-    maxalpha = alpha5;
-  if(minalpha>alpha5)
-    minalpha = alpha5;
-
-  alpha6 = pi - acos( n3*n4 / (l3*l4) );
-  if(maxalpha<alpha6)
-    maxalpha = alpha6;
-  if(minalpha>alpha6)
-    minalpha = alpha6;
-
-
-  v1 = points[elem.PNum(2)] - points[elem.PNum(1)];
-  v2 = points[elem.PNum(3)] - points[elem.PNum(1)];
-  v3 = points[elem.PNum(4)] - points[elem.PNum(1)];
-
-  vol = - (Cross (v1, v2) * v3);
-  l4 = Dist (points[elem.PNum(2)], points[elem.PNum(3)]);
-  l5 = Dist (points[elem.PNum(2)], points[elem.PNum(4)]);
-  l6 = Dist (points[elem.PNum(3)], points[elem.PNum(4)]);
-
-  l1 = v1.Length();
-  l2 = v2.Length();
-  l3 = v3.Length();
-  l = l1 + l2 + l3 + l4 + l5 + l6;
-
-  l_min = l1;
-  if(l_min>l2)
-    l_min = l2;
-  if(l_min>l3)
-    l_min = l3;
-  if(l_min>l4)
-    l_min = l4;
-  if(l_min>l5)
-    l_min = l5;
-  if(l_min>l6)
-    l_min = l6;
-
-  l_max = l1;
-  if(l_max<l2)
-    l_max = l2;
-  if(l_max<l3)
-    l_max = l3;
-  if(l_max<l4)
-    l_max = l4;
-  if(l_max<l5)
-    l_max = l5;
-  if(l_max<l6)
-    l_max = l6;
-
-  /*	cout << maxalpha << "  " << minalpha << "  " << 0.5-cos(maxalpha) <<  "  "
-                   << minfl << "  "
-                   << longest_edge << "  "
-                   << incircle << "  "
-                   << longest_edge/incircle
-                   << endl;*/
-
-  /*	if(minfl<0.1)
-                  return(1e10);*/
-
-  if(minalpha>1.57)
-    cout << "schotter" << endl;
   if (vol < 1e-8)
     return 1e10;
-  if(maxalpha>3.14)
-    return(1e10);
-  if(minalpha<0.1e-8)
-    return(1e10);
-  return 0.5-cos(maxalpha);
+
+  return (l*l*l/vol)/500;
 }
 
 int ApplyVRules (const ARRAY<vnetrule*> & rules, double tolfak,

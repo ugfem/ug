@@ -16,7 +16,7 @@
 #include <meshing/ruler2.hh>
 
 static double maxdouble = 1.0e37;
-static double SMALLDOUBLE = 1.0e-6;
+static double SMALLDOUBLE = 1.0e-12;
 
 static int CalcNewPoint(double xt[3],double yt[3],double h)
 {
@@ -82,8 +82,8 @@ static int Cross_Point(double p0[2], double n0[2], double p1[2], double n1[2], d
   cp1[0] = p1[0] + lambda1 * n1[0];
   cp1[1] = p1[1] + lambda1 * n1[1];
 
-  if(sqrt( (cp0[0]-cp1[0])*(cp0[0]-cp1[0]) + (cp0[1]-cp1[1])*(cp0[1]-cp1[1]) )>SMALLDOUBLE)
-    printf("%s\n", "ERROR");
+  /*	if(sqrt( (cp0[0]-cp1[0])*(cp0[0]-cp1[0]) + (cp0[1]-cp1[1])*(cp0[1]-cp1[1]) )>SMALLDOUBLE)
+                  printf("%s\n", "ERROR");*/
 
   cp[0] = cp0[0];
   cp[1] = cp0[1];
@@ -194,12 +194,12 @@ int GenerateTriangle (ARRAY<Point2d> & lpoints, ARRAY<ILINE> & llines,
         circ0 = sqrt( (midp[0]-xt[0])*(midp[0]-xt[0]) + (midp[1]-yt[0])*(midp[1]-yt[0]) );
         circ1 = sqrt( (midp[0]-xt[1])*(midp[0]-xt[1]) + (midp[1]-yt[1])*(midp[1]-yt[1]) );
         circ2 = sqrt( (midp[0]-xt[2])*(midp[0]-xt[2]) + (midp[1]-yt[2])*(midp[1]-yt[2]) );
-        if( (sqrt((circ0-circ1)*(circ0-circ1))<SMALLDOUBLE) &&
-            (sqrt((circ1-circ2)*(circ1-circ2))<SMALLDOUBLE) &&
-            (sqrt((circ2-circ0)*(circ2-circ0))<SMALLDOUBLE) )
-          circ = circ1;
-        else
-          printf("%s\n", "ERROR");
+        /*				if( (sqrt((circ0-circ1)*(circ0-circ1))<SMALLDOUBLE) &&
+                                            (sqrt((circ1-circ2)*(circ1-circ2))<SMALLDOUBLE) &&
+                                                (sqrt((circ2-circ0)*(circ2-circ0))<SMALLDOUBLE) )
+                                                circ = circ1;
+                                        else
+                                                printf("%s\n", "ERROR");*/
 
         circ = sqrt( (midp[0]-xt[0])*(midp[0]-xt[0]) + (midp[1]-yt[0])*(midp[1]-yt[0]) );
         if(min_circ>circ)

@@ -8,6 +8,8 @@ Element & Element :: operator= (const Element & el2)
   pnum[1] = el2.pnum[1];
   pnum[2] = el2.pnum[2];
   pnum[3] = el2.pnum[3];
+  pnum[4] = el2.pnum[4];
+  pnum[5] = el2.pnum[5];
   surfaceind = el2.surfaceind;
   np = el2.np;
   return *this;

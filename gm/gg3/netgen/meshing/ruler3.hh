@@ -101,4 +101,11 @@ extern int ApplyVRules (const ARRAY<vnetrule*> & rules, double tolfak,
                         ARRAY<INDEX> & delfaces, int tolerance, int rotind1,
                         float & retminerr, ARRAY<char*> & problems);
 
+int Generate_Prism (ARRAY<Point3d> & lpoints, ARRAY<Element> & lfaces,
+                    ARRAY<Element> & elements,
+                    ARRAY<INDEX> & delfaces, ARRAY<int> & prism_flags);
+
+int Generate_Pyramid (  ARRAY<Point3d> & lpoints, ARRAY<Element> & lfaces,
+                        ARRAY<Element> & elements,
+                        ARRAY<INDEX> & delfaces, ARRAY<int> & prism_flags);
 #endif

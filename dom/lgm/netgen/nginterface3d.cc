@@ -1,15 +1,5 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/************************************************************************/
-/*                                                                      */
-/* This file is a part of NETGEN                                        */
-/*                                                                      */
-/* File:   nginterface.cc                                               */
-/* Author: Joachim Schoeberl                                            */
-/*                                                                      */
-/************************************************************************/
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -23,17 +13,10 @@
 #include <string.h>
 #include <time.h>
 
-
-
 #include <myadt.hh>
 #include <geom/geom2d.hh>
 #include <geom/geom3d.hh>
 #include <linalg/linalg.hh>
-
-// #include <meshing/meshtool.hh>
-// #include <meshing/meshing2.hh>
-// #include <meshing/meshsurf.hh>
-
 #include <meshing/global.hh>
 #include <meshing/meshing3.hh>
 #include <meshing/meshing2.hh>
@@ -41,10 +24,8 @@
 
 extern "C"
 {
-#include "../../gginterface.h"
+        #include "../../gginterface.h"
 }
-
-//int testmode;
 
 extern "C"
 void UserWriteF (char * ch, ...);
@@ -53,12 +34,9 @@ static ARRAY<geompoint3d> geompoints;
 static ARRAY<splinesegment3d*> splines;
 static ARRAY<Point3d> points2;
 static ARRAY<int> lp1, lp2;
-//static ARRAY<Point3d> points;
 static ARRAY<Element> elements;
 static ARRAY<InputElement> geomelements;
 static int nbp;
-static int tt;
-static int trid;
 static Point3d tripoint;
 extern int yyparse ();
 
@@ -66,6 +44,8 @@ static ARRAY<Point3d> points;
 static ARRAY<Element> * volelements;
 static int disp;
 static double vol0;
+static int write;
+static int DD;
 
 static ARRAY<Point3d> locpoints;
 static ARRAY<Point2d> plainpoints;
@@ -74,18 +54,12 @@ static const char * rname;
 static int cntelem;
 static int oldnl;
 static int qualclass, surfind;
-static int LGM_DEBUG = 0;
+static int LGM_DEBUG = 1;
 static double SMALL = 0.0005;
 static double Triangle_Angle2 = 40.0;
 static Point3d sp1;
 static Vec3d n, t1, t2;
 static ARRAY<INDEX> locelements(0);
-static ARRAY<int> locrots(0);
-static ARRAY<Point3d> * optpoints;
-static const ARRAY<Element> * optelements;
-static int locerr2;
-static double loch;
-static int surfi, surfi2;
 Point3d gl_sp1,gl_sp2,gl_p1,gl_p2;
 
 
@@ -108,6 +82,7 @@ void surfacemeshing :: AddBoundaryElement (INDEX i1, INDEX i2, int surfind)
 {
   adfront ->AddLine (i1, i2, surfind);
 }
+
 void surfacemeshing :: LoadRules (char * filename)
 {
   char buf[256];
@@ -156,10 +131,7 @@ int GetTriangleId(const Point3d & pp, Point3d & pnew)
         mi = i;
       }
     }
-    //    cout << mi << endl;
 
-    /* if(mi==0)
-         cout << "E R R O R" << endl;*/
     ep1 = geompoints[geomelements[mi].PNum(1)].p;
     ep2 = geompoints[geomelements[mi].PNum(2)].p;
     ep3 = geompoints[geomelements[mi].PNum(3)].p;
@@ -169,18 +141,12 @@ int GetTriangleId(const Point3d & pp, Point3d & pnew)
     n1 = ep3 - ep1;
     if(n1.Length()>eps)
       n1 /= n1.Length();
-    else
-      ; //cout << "ERROR n1" << endl;
     n2 = ep3 - ep2;
     if(n1.Length()>eps)
       n2 /= n2.Length();
-    else
-      ; //cout << "ERROR n2" << endl;
     n3 = Cross(n1,n2);
     if(n1.Length()>eps)
       n3 /= n3.Length();
-    else
-      ; //cout << "ERROR n3" << endl;
 
     p1.X() = 0.0;
     p1.Y() = 0.0;
@@ -190,9 +156,9 @@ int GetTriangleId(const Point3d & pp, Point3d & pnew)
     p.X() = np.X() + ep1.X();
     p.Y() = np.Y() + ep1.Y();
     p.Z() = np.Z() + ep1.Z();
-    dist = sqrt( (p.X() - pold.X()) * (p.X() - pold.X())
-                 + (p.Y() - pold.Y()) * (p.Y() - pold.Y())
-                 + (p.Z() - pold.Z()) * (p.Z() - pold.Z()));
+    dist = sqrt(  (p.X() - pold.X()) * (p.X() - pold.X())
+                  + (p.Y() - pold.Y()) * (p.Y() - pold.Y())
+                  + (p.Z() - pold.Z()) * (p.Z() - pold.Z()));
   }
   while( dist >= 0.05 );
   pnew = p;
@@ -206,49 +172,10 @@ int surfacemeshing :: DefineTransformation (INDEX surfind, Point3d & p1, Point3d
   int mi;
 
   mi = GetEdgeId(p1,p2);
-
   Calc_Coord_Vectors(p1,p2,mi,ex,ey,ez);
-
-  //  globp1 = Center(p1,p2);
   globp1 = p1;
 
   return(mi);
-}
-
-int surfacemeshing :: DefineTransformation_OLD (INDEX surfind, Point3d & p1, Point3d & p2)
-{
-  /*
-
-     Vec3d n1,e1,e2,e3,ex1,ez1,ez2;
-     Point3d ep11,ep12,ep13,p,pnew;
-     Point3d ep21,ep22,ep23;
-     Point3d ep1,ep2,ep3;
-     double min,test;
-     int mi,i;
-     int m1,m2;
-
-     p = Center(p1,p2);
-     mi = GetTriangleId(p,pnew);
-
-     ep1 = geompoints[geomelements[mi].PNum(1)].p;
-     ep2 = geompoints[geomelements[mi].PNum(2)].p;
-     ep3 = geompoints[geomelements[mi].PNum(3)].p;
-
-     ex = p2 - p1;
-     ex /= ex.Length();
-     ez = Cross(ep3 - ep2, ep3 - ep1);
-     ez = ez - (ez * ex) * ex;
-     ez /= ez.Length();
-
-     ey = Cross(ex,ez);
-     //  ey = ey - (ey * ex) * ey - (ey * ez) * ey;
-     ey /= ey.Length();
-
-     globp1 = p1;
-     trid = mi;
-     tripoint = p;*/
-
-  return (0);
 }
 
 void surfacemeshing :: TransformToPlain (INDEX surfind, const Point3d & locpoint,
@@ -269,37 +196,10 @@ void ProjectPoint2geo (Point3d & p)
 {
   Vec3d n1,n2,n3,e1,e2,e3,np;
   Point3d ep1,ep2,ep3,pnew,p1;
-  double min,test;
-  int mi,i;
+  int mi;
+
   mi = GetTriangleId(p,pnew);
   p = pnew;
-
-  ep1 = geompoints[geomelements[mi].PNum(1)].p;
-  ep2 = geompoints[geomelements[mi].PNum(2)].p;
-  ep3 = geompoints[geomelements[mi].PNum(3)].p;
-
-  n1 = ep3 - ep1;
-  n1 /= n1.Length();
-  n2 = ep3 - ep2;
-  n2 /= n2.Length();
-  n3 = Cross(n1,n2);
-  n3 /= n3.Length();
-  p1.X() = 0.0;
-  p1.Y() = 0.0;
-  p1.Z() = 0.0;
-  np = p - ep1;
-  np = np - (n3 * np) * n3;
-  p.X() = np.X() + ep1.X();
-  p.Y() = np.Y() + ep1.Y();
-  p.Z() = np.Z() + ep1.Z();
-}
-
-void ProjectPoint2Triangle (Point3d & p, int mi)
-{
-  Vec3d n1,n2,n3,e1,e2,e3,np;
-  Point3d ep1,ep2,ep3,pnew,p1;
-  double min,test;
-  int i;
 
   ep1 = geompoints[geomelements[mi].PNum(1)].p;
   ep2 = geompoints[geomelements[mi].PNum(2)].p;
@@ -340,8 +240,8 @@ void surfacemeshing :: ProjectPoint (INDEX surfind, Point3d & p) const
 {
   Vec3d e1,e2,e3,n1,n2,n3,np;
   Point3d ep1,ep2,ep3,p1,pold,pnew;
-  double min,test,dist;
-  int mi,i;
+  double dist;
+  int mi;
 
   mi = GetTriangleId(p,pnew);
   p = pnew;
@@ -352,40 +252,8 @@ void surfacemeshing :: ProjectPoint (INDEX surfind, Point3d & p) const
   while( dist >= 0.5 ) ;
 }
 
-void surfacemeshing :: ProjectPointold (INDEX surfind, Point3d & p) const
-{
-  Vec3d e1,e2,e3,n1,n2,n3,np;
-  Point3d ep1,ep2,ep3,p1,pnew;
-  double min,test;
-  int mi,i;
-
-  mi = GetTriangleId(p,pnew);
-  min = 100000000.0;
-
-  ep1 = geompoints[geomelements[mi].PNum(1)].p;
-  ep2 = geompoints[geomelements[mi].PNum(2)].p;
-  ep3 = geompoints[geomelements[mi].PNum(3)].p;
-
-  n1 = ep3 - ep1;
-  n1 /= n1.Length();
-  n2 = ep3 - ep2;
-  n2 /= n2.Length();
-  n3 = Cross(n1,n2);
-  n3 /= n3.Length();
-  p1.X() = 0.0;
-  p1.Y() = 0.0;
-  p1.Z() = 0.0;
-  np = p - ep1;
-  np = np - (n3 * np) * n3;
-  p.X() = np.X() + ep1.X();
-  p.Y() = np.Y() + ep1.Y();
-  p.Z() = np.Z() + ep1.Z();
-}
-
 void surfacemeshing :: ProjectPoint2 (INDEX surfind, INDEX surfind2, Point3d & p) const
-{
-  //  ProjectToEdge ( (*surfaces)[surfind], (*surfaces)[surfind2], p);
-}
+{}
 
 void surfacemeshing :: GetNormalVector(INDEX surfind, const Point3d & pp, Vec3d & n) const
 {
@@ -450,51 +318,26 @@ void surfacemeshing :: GetNormalVector(INDEX surfind, const Point3d & pp, Vec3d 
   n /= n.Length();
 }
 
-void surfacemeshing :: GetNormalVectorold(INDEX surfind, const Point3d & p, Vec3d & n) const
-{
-  Vec3d e1,e2,e3,n1,n2,n3;
-  Point3d ep1,ep2,ep3;
-  double min,test;
-  int mi,i;
-
-  min = 100000000.0;
-  mi = 0;
-  for(i=1; i<=geomelements.Size(); i++)
-  {
-    ep1 = geompoints[geomelements[i].PNum(1)].p;
-    ep2 = geompoints[geomelements[i].PNum(2)].p;
-    ep3 = geompoints[geomelements[i].PNum(3)].p;
-    e1 = p - ep1;
-    e2 = p - ep2;
-    e3 = p - ep3;
-    test = e1.Length() + e2.Length() + e3.Length();
-    if(min > test)
-    {
-      min = test;
-      mi = i;
-    }
-  }
-
-  ep1 = geompoints[geomelements[mi].PNum(1)].p;
-  ep2 = geompoints[geomelements[mi].PNum(2)].p;
-  ep3 = geompoints[geomelements[mi].PNum(3)].p;
-
-  n1 = ep3 - ep1;
-  n1 /= n1.Length();
-  n2 = ep3 - ep2;
-  n2 /= n2.Length();
-  n = Cross(n1,n2);
-  n /= n.Length();
-  /*  cout << "normalvector " <<  mi << endl;
-     cout << n.X() << "  " << n.Y() << "  " << n.Z() << endl;
-     cout << "im punkt " << p.X() << "  "
-                        << p.Y() << "  "
-                        << p.Z() << endl;*/
-}
-
 double surfacemeshing :: CalcLocalH (const Point3d & p, int surfind, double gh) const
 {
   return gh;
+}
+
+int surfacemeshing :: Write_Surface_Grid ()
+{
+  int i,j;
+  FILE *file;
+
+  file = fopen("surface","w");
+  fprintf(file,"%s\n","surfacemesh");
+  fprintf(file,"%d\n",points.Size());
+  for(i=1; i<=points.Size(); i++)
+    fprintf(file,"%lf %lf %lf\n",points[i].X(),points[i].Y(),points[i].Z());
+  fprintf(file,"%d\n",elements.Size());
+  for(i=1; i<=elements.Size(); i++)
+    fprintf(file,"%d %d %d\n",elements[i].PNum(1)-1,elements[i].PNum(2)-1,elements[i].PNum(3)-1);
+  fclose(file);
+  return(0);
 }
 
 int surfacemeshing :: SavePoint (const Point3d & p)
@@ -507,6 +350,16 @@ void surfacemeshing :: SaveElement (const Element & elem)
   elements.Append (elem);
 }
 
+void surfacemeshing :: Write2Shell (int n)
+{
+  if(n%DD==0)
+  {
+    if(write%10==0)
+      UserWriteF("\n");
+    UserWriteF("%s%d%s","[",n,"]");
+    write++;
+  }
+}
 
 class my_surfacemeshing : public surfacemeshing
 {
@@ -514,53 +367,21 @@ public:
   my_surfacemeshing (char * rulefilename);
   virtual int SavePoint (const Point3d & p);
   virtual void SaveElement (const Element & elem);
-  virtual void TestPoint (const Point3d & ,int flag);
 };
 
 my_surfacemeshing :: my_surfacemeshing (char * rulefilename)
   : surfacemeshing (rulefilename)
-{
-  ;
-}
+{}
 
 int my_surfacemeshing :: SavePoint (const Point3d & p)
 {
   return points.Append (p);
 }
 
-/*void my_surfacemeshing :: SaveElement (const Element & elem)
-   {
-   elements.Append (elem);
-   }*/
-
-void my_surfacemeshing :: TestPoint (const Point3d & ,int flag)
-{
-  int i;
-  for(i=1; i<=elements.Size(); i++)
-  {}
-}
-
-#define V3_ADD(A,B,C)                              {(C)[0] = (A)[0] + (B)[0];\
-                                                    (C)[1] = (A)[1] + (B)[1];\
-                                                    (C)[2] = (A)[2] + (B)[2];}
-
-#define V3_SCALE(c,C)                              {(C)[0] = (c)*(C)[0];\
-                                                    (C)[1] = (c)*(C)[1];\
-                                                    (C)[2] = (c)*(C)[2];}
-
-#define V3_EUKLIDNORM_OF_DIFF(A,B,b)    (b) = (sqrt((double)(((A)[0]-(B)[0])*((A)[0]-(B)[0])+((A)[1]-(B)[1])*((A)[1]-(B)[1])+((A)[2]-(B)[2])*((A)[2]-(B)[2]))));
-
-#define V3_CLEAR(A)                                {(A)[0] = 0.0; (A)[1]= 0.0; (A)[2] = 0.0;}
-
 void my_surfacemeshing :: SaveElement (const Element & elem)
 {
-  float x[4][3],diam,fac,global[3],inndiam,dist,percent;
-  int i,n;
-  float volume,percent1;
-
   elements.Append (elem);
 }
-
 
 static my_surfacemeshing * meshing;
 static const surfacemeshing * meshthis;
@@ -571,9 +392,6 @@ int AddGeomPoint (int id, double x, double y, double z)
   geompoints.Last().p.X() = x;
   geompoints.Last().p.Y() = y;
   geompoints.Last().p.Z() = z;
-
-  //  if (LGM_DEBUG)
-  //    printf("%s %f %f %f \n","GEOMPOINT",x,y,z);
 
   return 0;
 }
@@ -588,10 +406,6 @@ int AddGeomElement (int node0, int node1, int node2, int neigbor0, int neigbor1,
   geomelements.Last().Neighbour(2) = neigbor1;
   geomelements.Last().Neighbour(3) = neigbor2;
 
-  //  if (LGM_DEBUG)
-  //    printf("%s %d %d %d %d %d %d \n","SURFACEElement",node0,node1,node2,
-  //				neigbor0,neigbor1,neigbor2);
-
   return 0;
 }
 
@@ -600,16 +414,12 @@ int AddLinePoint (int id, double x, double y, double z)
   points.Append (Point3d(x,y,z));
 
   meshing->AddPoint (points.Last(), id);
-  //  if (LGM_DEBUG)
-  //    printf("%s %d %f %f %f \n","POINT",id,x,y,z);
   return 0;
 }
 
 int AddLineSegment (int i1,int i2)
 {
   meshing->AddBoundaryElement (i1, i2, 1);
-  //  if (LGM_DEBUG)
-  //    printf("%s %d %d \n","LINESEGMENT",i1,i2);
   return 0;
 }
 
@@ -624,27 +434,59 @@ void surfacemeshing :: StartMesh ()
 }
 
 void surfacemeshing :: EndMesh ()
-{
-  int i;
+{}
 
-  //  for (i = 1; i <= ruleused.Size(); i++)
-  //    (*testout) << setw(4) << ruleused[i]
-  //            << " times used rule " << rules[i] -> Name() << endl;
+static double SMALLDOUBLE = 1.0e-6;
+
+static int Cross_Check(int dummy)
+{
+  int i,j;
+  double xRi,yRi,xQi,yQi,xRj,yRj,xQj,yQj,denominator,lambdai,lambdaj;
+  for(i=1; i<=loclines.Size(); i++)
+  {
+    for(j=1; j<=loclines.Size(); j++)
+    {
+      if(i!=j)
+      {
+        xRi = plainpoints[loclines[i].I1()].X();
+        yRi = plainpoints[loclines[i].I1()].Y();
+        xQi = plainpoints[loclines[i].I2()].X();
+        yQi = plainpoints[loclines[i].I2()].Y();
+        xRj = plainpoints[loclines[j].I1()].X();
+        yRj = plainpoints[loclines[j].I1()].Y();
+        xQj = plainpoints[loclines[j].I2()].X();
+        yQj = plainpoints[loclines[j].I2()].Y();
+
+        denominator = (xRi-xQi)*(yQj-yRj) - (yRi-yQi)*(xQj-xRj);
+        if(fabs(denominator)<SMALLDOUBLE)
+          continue;
+
+        lambdai = ( (yQj-yRj)*(xRi-xRj) + (xRj-xQj)*(yRi-yRj) ) / denominator;
+        lambdaj = ( (yQi-yRi)*(xRi-xRj) + (xRi-xQi)*(yRi-yRj) ) / denominator;
+
+        if( (lambdai<1.0-2*SMALLDOUBLE) && (lambdai>2*SMALLDOUBLE) && (lambdaj<1.0-2*SMALLDOUBLE) && (lambdaj>2*SMALLDOUBLE) )
+        {
+          return(1);
+        }
+      }
+    }
+  }
+  return(0);
 }
+
 
 void surfacemeshing :: Mesh (double gh)
 {
   ARRAY<INDEX> pindex, lindex;
   ARRAY<int> delpoints, dellines;
   ARRAY<Element> locelements;
-  int i, j, oldnp,flag,test;
+  int i, j, oldnp;
   char ch, found;
   INDEX globind;
-  int old;
   double in[5];
   static ARRAY<Point3d> locp;
   FILE *file;
-  double h;
+  double h,dist;
   Point3d bemp, bemp1, bemp2;
 
   if(LGM_DEBUG)
@@ -668,8 +510,8 @@ void surfacemeshing :: Mesh (double gh)
 
     fclose(file);
 
-    // Ausgabe der Front
-    //adfront->ugPrint(cout);
+    //		 Ausgabe der Front
+    adfront->ugPrint(cout);
   }
 
   testmode = 0;
@@ -680,65 +522,69 @@ void surfacemeshing :: Mesh (double gh)
   adfront ->SetStartFront ();
   while (ch != 'e' && !adfront ->Empty())
   {
-    //	adfront->Print(cout);
-    locpoints.SetSize(0);
-    loclines.SetSize(0);
-    pindex.SetSize(0);
-    lindex.SetSize(0);
+    //		adfront->Print(cout);
 
-    h = gh;
-    if (h>0.0)
-      qualclass =
-        adfront ->GetLocals (locpoints, loclines, pindex, lindex,
-                             surfind, 3 * h);
-    else
-      qualclass =
-        adfront ->GetLocals (locpoints, loclines, pindex, lindex,
-                             surfind, -3 * h);
-
-    oldnp = locpoints.Size();
-    oldnl = loclines.Size();
-
-    bemp1.X() = locpoints[loclines[1].I1()].X();
-    bemp1.Y() = locpoints[loclines[1].I1()].Y();
-    bemp1.Z() = locpoints[loclines[1].I1()].Z();
-    bemp2.X() = locpoints[loclines[1].I2()].X();
-    bemp2.Y() = locpoints[loclines[1].I2()].Y();
-    bemp2.Z() = locpoints[loclines[1].I2()].Z();
-
-    bemp = Center (bemp1, bemp2);
-    bemp.Y() += 0.1 * (bemp2.X() - bemp1.X());
-    bemp.X() -= 0.1 * (bemp2.Y() - bemp1.Y());
-
-    if(gh<=0.0)
+    dist = 1.5;
+    do
     {
       locpoints.SetSize(0);
       loclines.SetSize(0);
       pindex.SetSize(0);
       lindex.SetSize(0);
-      in[0] = bemp.X();
-      in[1] = bemp.Y();
-      in[2] = bemp.Z();
-      in[3] = gh;
-      Get_Local_h(in,&h);
-      qualclass =
-        adfront ->GetLocals (locpoints, loclines, pindex, lindex,
-                             surfind, - 3 * gh);
+
+      h = gh;
+      if (h>0.0)
+        qualclass =
+          adfront ->GetLocals (locpoints, loclines, pindex, lindex,
+                               surfind, 3 * h, dist);
+      else
+        qualclass =
+          adfront ->GetLocals (locpoints, loclines, pindex, lindex,
+                               surfind, -3 * h, dist);
+
+      oldnp = locpoints.Size();
+      oldnl = loclines.Size();
+
+      bemp1.X() = locpoints[loclines[1].I1()].X();
+      bemp1.Y() = locpoints[loclines[1].I1()].Y();
+      bemp1.Z() = locpoints[loclines[1].I1()].Z();
+      bemp2.X() = locpoints[loclines[1].I2()].X();
+      bemp2.Y() = locpoints[loclines[1].I2()].Y();
+      bemp2.Z() = locpoints[loclines[1].I2()].Z();
+
+      bemp = Center (bemp1, bemp2);
+      bemp.Y() += 0.1 * (bemp2.X() - bemp1.X());
+      bemp.X() -= 0.1 * (bemp2.Y() - bemp1.Y());
+
+      if(gh<=0.0)
+      {
+        locpoints.SetSize(0);
+        loclines.SetSize(0);
+        pindex.SetSize(0);
+        lindex.SetSize(0);
+        in[0] = bemp.X();
+        in[1] = bemp.Y();
+        in[2] = bemp.Z();
+        in[3] = gh;
+        Get_Local_h(in,&h);
+        qualclass =
+          adfront ->GetLocals (locpoints, loclines, pindex, lindex,
+                               surfind, - 3 * gh, dist);
+      }
+
+      DefineTransformation (surfind, locpoints[loclines[1].I1()],
+                            locpoints[loclines[1].I2()]);
+
+      plainpoints.SetSize (locpoints.Size());
+      for (i = 1; i <= locpoints.Size(); i++)
+      {
+        TransformToPlain (surfind, locpoints[i], plainpoints[i], h);
+      }
+      dist = dist / 2;
     }
+    while(Cross_Check(0));
 
-    DefineTransformation (surfind, locpoints[loclines[1].I1()],
-                          locpoints[loclines[1].I2()]);
-
-    plainpoints.SetSize (locpoints.Size());
-    for (i = 1; i <= locpoints.Size(); i++)
-    {
-      TransformToPlain (surfind, locpoints[i], plainpoints[i], h);
-      //		cout << locpoints[i].X() << "  " << locpoints[i].Y() << "  " <<locpoints[i].Z()
-      //			<< " -> " << plainpoints[i].X() << "  " << plainpoints[i].Y() << endl;
-
-    }
-    //	cout << endl;
-    for (i = 2; i <= loclines.Size(); i++)  // don't remove first line
+    for (i = 2; i <= loclines.Size(); i++)              // don't remove first line
     {
       if (plainpoints[loclines[i].I1()].X() > 1e6 ||
           plainpoints[loclines[i].I2()].X() > 1e6)
@@ -755,11 +601,9 @@ void surfacemeshing :: Mesh (double gh)
     /*    found = ApplyRules (rules, plainpoints, loclines, locelements,
                             dellines, qualclass);*/
 
-    flag = 1;
-
     if (found)
     {
-      //      adfront->Print(cout);
+      //			adfront->Print(cout);
       ruleused[found]++;
 
       locpoints.SetSize (plainpoints.Size());
@@ -777,27 +621,11 @@ void surfacemeshing :: Mesh (double gh)
         pindex[i] = adfront -> AddPoint (locpoints[i], globind);
       }
 
-      /*      for(i=1;i<=pindex.Size();i++)
-                      cout << i << pindex[i] << endl;*/
-
       for (i = oldnl+1; i <= loclines.Size(); i++)
       {
         adfront -> AddLine (pindex[loclines[i].I1()],
                             pindex[loclines[i].I2()], surfind);
-        /*        cout << " addline "
-                     << loclines[i].I1() << "  "
-                     << loclines[i].I2() << "  "
-                     << pindex[loclines[i].I1()] << "  "
-                     << pindex[loclines[i].I2()] << "  "
-                     << plainpoints[pindex[loclines[i].I1()]].X() << "  "
-                     << plainpoints[pindex[loclines[i].I1()]].Y() << "  "
-                     << plainpoints[pindex[loclines[i].I2()]].X() << "  "
-                     << plainpoints[pindex[loclines[i].I2()]].Y() << "  "
-                     << endl;*/
       }
-
-      /*      for(i=1;i<=pindex.Size();i++)
-                      cout << i << pindex[i] << endl;*/
 
       for (i = 1; i <= locelements.Size(); i++)
       {
@@ -805,23 +633,16 @@ void surfacemeshing :: Mesh (double gh)
         {
           locelements[i].PNum(j) =
             adfront -> GetGlobalIndex (pindex[locelements[i].PNum(j)]);
-
-          //	  old = locelements[i].PNum(j);
-          //          locelements[i].PNum(j) =
-          //              adfront -> GetGlobalIndex (pindex[locelements[i].PNum(j)]);
-          // das hier ging immer mit adfront -> GetGlobalIndex
-          //          locelements[i].PNum(j) = pindex[locelements[i].PNum(j)];
-          //	  cout << old << "  " << locelements[i].PNum(j)<< endl;
         }
 
         locelements[i].SetSurfaceIndex (surfind);
 
         SaveElement (locelements[i]);
+        Write2Shell(cntelem);
+        //				Write_Surface_Grid();
         cntelem++;
-        /*		cout    << cntelem << "  "
-                                        << locelements[i].PNum(1) << "  "
-                                << locelements[i].PNum(2) << "  "
-                                << locelements[i].PNum(3) << endl;*/
+        //				printf("%d %d %d %d\n",cntelem,locelements[i].PNum(1),locelements[i].PNum(2),
+        //						locelements[i].PNum(3));
       }
 
       for (i = 1; i <= dellines.Size(); i++)
@@ -829,8 +650,8 @@ void surfacemeshing :: Mesh (double gh)
         adfront -> DeleteLine (lindex[dellines[i]]);
       }
 
-      rname = rules[found]->Name();
-      adfront->GetPoints(locp);
+      //			rname = rules[found]->Name();
+      //			adfront->GetPoints(locp);
     }
     else
     {
@@ -844,20 +665,18 @@ void surfacemeshing :: Mesh (double gh)
     delpoints.SetSize(0);
     dellines.SetSize(0);
     locelements.SetSize(0);
-
-    //    adfront->Print(cout);
-
+    plainpoints.SetSize(0);
   }
 
   EndMesh ();
 }
 
-#define Det(a)                  ( - a[0] * a[4] * a[8]  \
-                                  + a[0] * a[5] * a[7]  \
-                                  + a[3] * a[1] * a[8]  \
-                                  - a[3] * a[2] * a[7]  \
-                                  - a[6] * a[1] * a[5]  \
-                                  + a[6] * a[2] * a[4])
+#define Det(a)                                  ( - a[0] * a[4] * a[8]  \
+                                                  + a[0] * a[5] * a[7]    \
+                                                  + a[3] * a[1] * a[8]    \
+                                                  - a[3] * a[2] * a[7]    \
+                                                  - a[6] * a[1] * a[5]    \
+                                                  + a[6] * a[2] * a[4])
 
 #define InvMatMult(b,c,a)               b[0] =    ( a[5] * a[7] - a[4] * a[8] ) * c[0]          \
                                                + ( a[1] * a[8] - a[2] * a[7] ) * c[1]          \
@@ -872,7 +691,7 @@ void surfacemeshing :: Mesh (double gh)
   b[1] = b[1] / Det(a);                                   \
   b[2] = b[2] / Det(a);
 
-#define Det2d(a)                ( a[0] * a[3] - a[1] * a[2] )
+#define Det2d(a)                                ( a[0] * a[3] - a[1] * a[2] )
 
 #define InvMatMult2d(b,c,a)             b[0] =    a[3] * c[0]           \
                                                - a[1] * c[1];          \
@@ -1033,12 +852,12 @@ int Calc_Coord_Vectors(const Point3d p1,
   return(0);
 }
 
-double Project2Plane(Point3d & p,
-                     Vec3d & np,
-                     Point3d & p0,
-                     Vec3d & n0,
-                     Vec3d & n1,
-                     Vec3d & n2)
+double Project2Plane(   Point3d & p,
+                        Vec3d & np,
+                        Point3d & p0,
+                        Vec3d & n0,
+                        Vec3d & n1,
+                        Vec3d & n2)
 {
   double dist, dist1;
   np = p - p0;
@@ -1084,195 +903,17 @@ double Calc_Angle(InputElement e1, InputElement e2)
   return(acos(sp));
 }
 
-static void CalcTriangleBadness (double x2, double x3, double y3, int err2,
-                                 double h, double & badness, double & g1x, double & g1y)
-{
-  // badness = sqrt(3) /36 * circumference^2 / area - 1 +
-  //           h / li + li / h - 2
-
-  // p1 = (0, 0), p2 = (x2, 0), p3 = (x3, y3);
-
-  Vec2d v23;
-  double l12, l13, l23, cir, area;
-  static const double c = sqrt(3) / 36;
-  double c1, c2, c3, c4;
-
-  v23.X() = x3 - x2;
-  v23.Y() = y3;
-
-  l12 = x2;
-  l13 = sqrt (x3*x3 + y3*y3);
-  l23 = v23.Length();
-
-  cir = l12 + l13 + l23;
-  area = 0.5 * x2 * y3;
-
-  if (area < 0)
-  {
-    g1x = 0;
-    g1y = 0;
-    badness = 1e10;
-    return;
-  }
-
-  badness = c * cir * cir / area - 1;
-
-  c1 = 2 * c * cir / area;
-  c2 = 0.5 * c * cir * cir / (area * area);
-
-  g1x = c1 * ( - 1 - x3 / l13) - c2 * (-v23.Y());
-  g1y = c1 * (     - y3 / l13) - c2 * ( v23.X());
-
-  if (err2)
-  {
-    badness += cir / h + h/l12 + h/l13 + h/l23 - 6;
-    c3 = 1 / (h * l12) - h / (l12 * l12 * l12);
-    c4 = 1 / (h * l13) - h / (l13 * l13 * l13);
-    g1x -= c3 * x2 + c4 * x3;
-    g1y -= c4 * y3;
-  }
-}
-
-
-
-void surfacemeshing :: ImproveMesh (ARRAY<Point3d> & points, const ARRAY<Element> & elements,
-                                    int improveedges, int numboundarypoints, double h, int steps, int err2)
-{
-  INDEX i, eli;
-  int j, it, ito, rot, surfi3;
-  const Element * el;
-
-  Vec3d n1, n2;
-  TABLE<INDEX> elementsonpoint(points.Size());
-  Vector x(2), xedge(1);
-
-  for (i = 1; i <= elements.Size(); i++)
-    for (j = 1; j <= elements[i].NP(); j++)
-      elementsonpoint.Add (elements[i].PNum(j), i);
-
-  loch = h;
-  locerr2 = err2;
-  optpoints = &points;
-  optelements = &elements;
-  meshthis = this;
-
-  if (improveedges)
-    for (i = 1; i <= numboundarypoints; i++)
-    {
-      sp1 = points.Elem(i);
-
-      locelements.SetSize(0);
-      locrots.SetSize (0);
-      surfi = surfi2 = surfi3 = 0;
-
-      for (j = 1; j <= elementsonpoint.EntrySize(i); j++)
-      {
-        eli = elementsonpoint.Get(i, j);
-        el = &elements.Get(eli);
-
-        if (!surfi)
-          surfi = el->SurfaceIndex();
-        else if (surfi != el->SurfaceIndex())
-        {
-          if (surfi2 != 0 && surfi2 != el->SurfaceIndex())
-            surfi3 = el->SurfaceIndex();
-          else
-            surfi2 = el->SurfaceIndex();
-        }
-
-        locelements.Append (eli);
-
-        if (el->PNum(1) == i)
-          locrots.Append (1);
-        else if (el->PNum(2) == i)
-          locrots.Append (2);
-        else
-          locrots.Append (3);
-      }
-
-      //      testout << "surfaces = " << surfi << ", " << surfi2 << ", " << surfi3 << endl;
-
-      if (surfi2 && !surfi3)
-      {
-        GetNormalVector (surfi, sp1, n1);
-        GetNormalVector (surfi2, sp1, n2);
-        t1 = Cross (n1, n2);
-
-        //        if (surfi == 10 && surfi2 == 16)
-        //          (*testout) << "n1 = " << n1 << " n2 = " << n2 << " t = " << t1 << endl;
-
-        xedge = 0;
-        //        BFGS (xedge, Opti2EdgeFunctionValueGrad);
-
-        points.Elem(i).X() += xedge.Get(1) * t1.X();
-        points.Elem(i).Y() += xedge.Get(1) * t1.Y();
-        points.Elem(i).Z() += xedge.Get(1) * t1.Z();
-        ProjectPoint2 (surfi, surfi2, points.Elem(i));
-      }
-    }
-  for (i = numboundarypoints+1; i <= elementsonpoint.Size(); i++)
-  {
-    sp1 = points.Elem(i);
-
-    locelements.SetSize(0);
-    locrots.SetSize (0);
-    for (j = 1; j <= elementsonpoint.EntrySize(i); j++)
-    {
-      eli = elementsonpoint.Get(i, j);
-      el = &elements.Get(eli);
-      surfi = el->SurfaceIndex();
-
-      locelements.Append (eli);
-
-      if (el->PNum(1) == i)
-        locrots.Append (1);
-      else if (el->PNum(2) == i)
-        locrots.Append (2);
-      else
-        locrots.Append (3);
-    }
-
-    GetNormalVector (surfi, sp1, n);
-    if (fabs (n.X()) > 0.3)
-    {
-      t1.X() = n.Y();
-      t1.Y() = -n.X();
-      t1.Z() = 0;
-      t1 /= t1.Length();
-    }
-    else
-    {
-      t1.X() = 0;
-      t1.Y() = -n.Z();
-      t1.Z() = n.Y();
-      t1 /= t1.Length();
-    }
-    t2 = Cross (n, t1);
-
-    x = 0;
-    //    BFGS (x, Opti2FunctionValueGrad);
-
-    points.Elem(i).X() += (x.Get(1) * t1.X() + x.Get(2) * t2.X());
-    points.Elem(i).Y() += (x.Get(1) * t1.Y() + x.Get(2) * t2.Y());
-    points.Elem(i).Z() += (x.Get(1) * t1.Z() + x.Get(2) * t2.Z());
-    ProjectPoint (surfi, points.Elem(i));
-  }
-}
-
-
 int InitSurfaceNetgen (char * rulefilename)
 {
-  //  testout = new ofstream("test.out");
   meshing = new my_surfacemeshing(rulefilename);
 
-  //  points = new ARRAY<Point3d>;
   volelements = new ARRAY<Element>;
   nbp = 0;
 
   return 0;
 }
 
-int StartSurfaceNetgen (double h, int smooth, int display)
+int StartSurfaceNetgen (double h, int smooth, int display,int D)
 {
   int i;
   double hpx, hpy, hpz, v1x, v1y, v1z, v2x, v2y, v2z;
@@ -1281,13 +922,12 @@ int StartSurfaceNetgen (double h, int smooth, int display)
 
   nbp = points.Size();
   disp = display;
-  //  vol0 = meshing->adfront->Volume();
+  write = 0;
+  DD = D;
 
   meshing -> Mesh (h);
 
   Smooth_SurfaceMesh(points, elements, nbp, smooth);
-
-  //	meshing->ImproveMesh (points, elements, 0, nbp, h, smooth, 1);
 
   Allocate_Mem_Surfdisc(points.Size(), elements.Size());
 
@@ -1865,7 +1505,78 @@ int GetEdgeId(const Point3d & ep1, Point3d & ep2)
   return(mi);
 }
 
-int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh)
+int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh, double dist)
+{
+  Point3d midp,midsp,ep0,ep1,ep2;
+  Vec3d n0,n1,n2,np,front_vec, triang_direction,dist_vec1,dist_vec2,front_n,edge_n;
+  int front_id, line_id;
+  double angle,help1,help2,nh,sp,help,L,front;
+
+  gl_sp1 = sp1;
+  gl_sp2 = sp2;
+  gl_p1 = p1;
+  gl_p2 = p2;
+
+  //	Plot3D (PlotFrontLine, 1, 1);
+
+  midp = Center (p1,p2);
+  midsp = Center (sp1,sp2);
+
+  nh = Dist(sp1,sp2);
+  front = Dist(sp1,sp2);
+  nh = xh;
+  if(Dist (midp, midsp) > nh)
+    return(0);
+  else
+  {
+    front_id = GetEdgeId(sp1,sp2);
+    assert(front_id);
+    line_id = GetEdgeId(p1,p2);
+    assert(line_id);
+
+    front_n = NormalVector(geomelements[front_id]);
+    edge_n = NormalVector(geomelements[line_id]);
+
+    if(front_n*edge_n<0.0)
+      return(0);
+
+    // definiere lokale Ebene
+    ep0 = geompoints[geomelements[front_id].PNum(1)].p;
+    ep1 = geompoints[geomelements[front_id].PNum(2)].p;
+    ep2 = geompoints[geomelements[front_id].PNum(3)].p;
+
+    Calc_Vectors(ep0,ep1,ep2,n0,n1,n2);
+
+    help1 = Project2Plane(p1,np,ep0,n0,n1,n2);
+    help2 = Project2Plane(p2,np,ep0,n0,n1,n2);
+
+    // Angle of Visibility
+    front_vec = sp2 - sp1;
+    triang_direction = Cross(n2,front_vec);
+    dist_vec1 = midp - midsp;
+    dist_vec2 = p2 - midsp;
+
+    /*		if((dist_vec1*triang_direction<=0.0)&&(dist_vec2*triang_direction<=0.0))
+                            return(0);*/
+    if((dist_vec1*triang_direction<=0.0))
+      return(0);
+
+    help = Project2Plane(midp,np,ep0,n0,n1,n2);
+
+    if( (help1>dist*xh) || (help2>dist*xh) )
+      return(0);
+
+    angle = Calc_Angle(geomelements[front_id], geomelements[line_id]);
+    if(angle>=3.1415*Triangle_Angle2/180)
+      return(0);
+    if(front_id==line_id)
+      if(help > 0.3*front)
+        return(0);
+
+  }
+  return(1);
+}
+int Test_Line_OLD(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh)
 {
   Point3d midp,midsp,ep0,ep1,ep2;
   Vec3d n0,n1,n2,np,front_vec, triang_direction,dist_vec;
@@ -1920,7 +1631,6 @@ int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh)
     angle = Calc_Angle(geomelements[front_id], geomelements[line_id]);
     if(angle>=3.1415*Triangle_Angle2/180)
       return(0);
-    //		cout << "angle: " << angle << "  " << angle/3.1415*180.0<< endl;
     if(front_id==line_id)
       if(help > 0.3*front)
         return(0);
@@ -1934,8 +1644,7 @@ int Test_Point(Point3d p, Point3d sp1, Point3d sp2, double xh)
   Point3d midp,midsp,ep0,ep1,ep2,p1;
   Vec3d n0,n1,n2,np;
   int front_id, line_id,point_id;
-  double angle,help1,help2,nh,sp,help,L;
-
+  double angle,help1,help2,nh,sp,help;
 
   midsp = Center (sp1,sp2);
 
@@ -1949,11 +1658,9 @@ int Test_Point(Point3d p, Point3d sp1, Point3d sp2, double xh)
   if( (p.X()==ep0.X())&&(p.Y()==ep0.Y())&&(p.Z()==ep0.Z()) ||
       (p.X()==ep1.X())&&(p.Y()==ep1.Y())&&(p.Z()==ep1.Z()) ||
       (p.X()==ep2.X())&&(p.Y()==ep2.Y())&&(p.Z()==ep2.Z()) )
-
     return(1);
   else
     return(0);
-
 }
 
 void Smooth_SurfaceMesh (ARRAY<Point3d> & points, const ARRAY<Element> & elements, int numboundarypoints, int steps)
