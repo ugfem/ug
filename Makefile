@@ -104,6 +104,14 @@ clean: $(MODEL_TARGET)_clean
 	cd graphics; make -f Makefile.graphics clean; cd ..;
 	cd ui; make -f Makefile.ui clean; cd ..;
 
+ar: 
+	cd gm; make -f Makefile.gm ar; cd ..;
+	cd graphics; make -f Makefile.graphics ar; cd ..;
+	cd ui; make -f Makefile.ui ar; cd ..;
+	cd np; make -f Makefile.np ar; cd ..;
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS);
+	make;
+
 ifdef: $(MODEL_TARGET)_clean
 	cd gm; make -f Makefile.gm clean; cd ..;
 	cd numerics; make -f Makefile.numerics clean; cd ..;
