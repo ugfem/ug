@@ -84,6 +84,7 @@
 #define MAT_CONS              1
 #define MAT_MASTER_CONS       2
 #define MAT_GHOST_DIAG_CONS   3
+#define MAT_DIAG_VEC_CONS     4
 
 /* special REP_ERR_RETURN macro */
 #define NP_RETURN(err,intvar)           {intvar = __LINE__; REP_ERR_RETURN(err);}
@@ -390,7 +391,7 @@ INT l_setindex          (GRID *g);
 INT l_jac                       (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
 INT jacBS                       (const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT K_comp, INT u_comp, INT f_comp );
 
-INT l_lgs                       (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
+INT l_lgs                       (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, VECDATA_DESC *diag);
 INT l_ugs                       (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
 
 INT l_lgsB                      (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);

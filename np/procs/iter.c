@@ -151,6 +151,7 @@ struct np_smoother {
 
     #ifdef ModelP
   INT cons_mode;
+  VECDATA_DESC *diag;
     #endif
 
   INT (*Step)
@@ -650,6 +651,10 @@ static INT SmootherInit (NP_BASE *theNP, INT argc , char **argv)
     np->cons_mode = MAT_CONS;
   else if (ReadArgvOption("D",argc,argv))
     np->cons_mode = MAT_DIAG_CONS;
+  else if (ReadArgvOption("V",argc,argv)) {
+    np->cons_mode = MAT_DIAG_VEC_CONS;
+    np->diag = ReadArgvVecDesc(theNP->mg,"diag",argc,argv);
+  }
   else
     np->cons_mode = MAT_MASTER_CONS;
         #endif
@@ -714,6 +719,11 @@ static INT SmootherPostProcess (NP_ITER *theNP, INT level,
   if (np->L != NULL)
     if (FreeMD(NP_MG(theNP),level,level,np->L))
       REP_ERR_RETURN(1);
+        #ifdef ModelP
+  if (np->cons_mode == MAT_DIAG_VEC_CONS)
+    if (FreeVD(NP_MG(theNP),level,level,np->diag))
+      REP_ERR_RETURN(1);
+        #endif
 
   return(0);
 }
@@ -825,6 +835,36 @@ static INT JacobiConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
+static INT CopyDiagMatrix (GRID *theGrid, MATDATA_DESC *A, VECDATA_DESC *diag)
+{
+  VECTOR *v;
+
+  if (MD_IS_SCALAR(A)) {
+    register SHORT mc = MD_SCALCMP(A);
+    register SHORT vc = VD_SCALCMP(diag);
+    register SHORT mask = MD_SCAL_RTYPEMASK(A);
+
+    for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v))
+      if ((VDATATYPE(v)&mask))
+        VVALUE(v,vc) = MVALUE(START(v),mc);
+
+    return (0);
+  }
+  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v))
+  {
+    MATRIX *m = START(v);
+    INT tp = VTYPE(v);
+    INT i;
+    INT n = VD_NCMPS_IN_TYPE(diag,tp);
+
+    for (i=0; i<n; i++)
+      VVALUE(v,VD_CMP_OF_TYPE(diag,tp,i)) =
+        MVALUE(START(v),MD_MCMP_OF_RT_CT(A,tp,tp,i));
+  }
+
+  return(0);
+}
+
 static INT GSPreProcess  (NP_ITER *theNP, INT level,
                           VECDATA_DESC *x, VECDATA_DESC *b,
                           MATDATA_DESC *A, INT *baselevel, INT *result)
@@ -834,11 +874,21 @@ static INT GSPreProcess  (NP_ITER *theNP, INT level,
   NP_SMOOTHER *np=(NP_SMOOTHER *) theNP;
 
         #ifdef ModelP
-  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L))
-    NP_RETURN(1,result[0]);
-  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
-    NP_RETURN(1,result[0]);
+  if (np->cons_mode == MAT_DIAG_VEC_CONS) {
+    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->diag))
+      NP_RETURN(1,result[0]);
+    CopyDiagMatrix(theGrid,A,np->diag);
+    if (l_vector_consistent(theGrid,np->diag) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+  else {
+    if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L))
+      NP_RETURN(1,result[0]);
+    if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
         #endif
   if (np->Order!=NULL)
     if ((*np->Order->Order)(np->Order,level,A,result)) NP_RETURN(1,result[0]);
@@ -869,9 +919,15 @@ static INT GSStep (NP_SMOOTHER *theNP, INT level,
     if (l_vector_meanvalue(theGrid,b) != NUM_OK)
       NP_RETURN(1,result[0]);
   }
-  if (l_lgs(NP_GRID(theNP,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
+  if (np->cons_mode == MAT_DIAG_VEC_CONS) {
+    if (l_lgs(NP_GRID(theNP,level),x,A,b,np->diag) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+  else
+  if (l_lgs(NP_GRID(theNP,level),x,L,b,NULL) != NUM_OK)
+    NP_RETURN(1,result[0]);
     #else
-  if (l_lgs(NP_GRID(theNP,level),x,A,b) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_lgs(NP_GRID(theNP,level),x,A,b,NULL) != NUM_OK) NP_RETURN(1,result[0]);
     #endif
 
   return (0);
@@ -1218,13 +1274,13 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
     if (l_vector_meanvalue(theGrid,b) != NUM_OK)
       NP_RETURN(1,result[0]);
   }
-  if (l_lgs(theGrid,NP_SGS_t(np),np->smoother.L,b)
+  if (l_lgs(theGrid,NP_SGS_t(np),np->smoother.L,b,NULL)
       != NUM_OK)
     NP_RETURN(1,result[0]);
   if (l_vector_consistent(theGrid,NP_SGS_t(np)) != NUM_OK)
     NP_RETURN(1,result[0]);
     #else
-  if (l_lgs(theGrid,NP_SGS_t(np),A,b)) NP_RETURN(1,result[0]);
+  if (l_lgs(theGrid,NP_SGS_t(np),A,b,NULL)) NP_RETURN(1,result[0]);
     #endif
 
   /* damp */
@@ -6104,9 +6160,7 @@ static INT AddmgcConstruct (NP_BASE *theNP)
    ex - numproc for exact solver
 
    DESCRIPTION:
-   This numproc executes a symmetric Gauss-Seidel smoother,
-   using the blas routines
-   'l_lgs' and 'l_ugs'. It can be used in 'lmgc'.
+   This numproc executes an exact band-lu decomposition.
 
    .vb
    npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>]

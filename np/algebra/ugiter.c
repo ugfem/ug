@@ -56,8 +56,9 @@
 /*																			*/
 /****************************************************************************/
 
-/* switch on blasm calls */
-#define _SPARSE_
+/* switch on blasm calls
+   #define _SPARSE_
+ */
 
 
 #define SMALL_DET                       1e-15
@@ -466,7 +467,7 @@ INT l_lgs (GRID *grid, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
 }
 #else /* not _SPARSE_ */
 
-INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*first_vec;
   INT rtype,ctype,myindex,err;
@@ -646,7 +647,15 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
                 for (j=0; j<nc; j++)
                   s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
         }
-
+        #ifdef ModelP
+    if (diag != NULL) {
+      if (SolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
+                          VD_CMPPTR_OF_TYPE(diag,rtype),
+                          VVALPTR(vec),s)!=0)
+        REP_ERR_RETURN (__LINE__);
+    }
+    else
+        #endif
     if (SolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
                         MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                         MVALPTR(VSTART(vec)),s)!=0)
