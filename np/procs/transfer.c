@@ -656,9 +656,11 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     if (np->display != PCR_NO_DISPLAY)
       UserWrite(" [d]\n");
   }
+        #ifdef ModelP
   else
   if (a_vector_vecskip(theMG,*fl,tl,x) != NUM_OK)
     NP_RETURN(1,result[0]);
+        #endif
 
   if (np->mode == SCALEDMG_MODE)
   {
