@@ -1435,8 +1435,13 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
     for(i = 0; i < n; i++)
     {
         nodei = graph->GetNode(i);
-        if(nodei->IsFGNode()) 
+#ifdef ModelP
+        if(!IS_FAMG_MASTER(((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector()) || nodei->IsFGNode()) 
+#else
+		if( nodei->IsFGNode() )
+#endif
 			continue;
+
         switch (type)
         {
 #ifndef FAMG_SPARSE_BLOCK
@@ -1610,8 +1615,13 @@ int FAMGGraph::Construct2(FAMGGrid *gridptr)
     for(i = 0; i < n; i++)
     {
         nodei = graph->GetNode(i);
+#ifdef ModelP
+        if(!IS_FAMG_MASTER(((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector()) || nodei->IsFGNode() || nodei->IsCGNode()) 
+#else
         if(nodei->IsFGNode() || nodei->IsCGNode()) 
+#endif
 			continue; 
+
         switch (type)
         {
 #ifndef FAMG_SPARSE_BLOCK
