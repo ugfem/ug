@@ -2140,8 +2140,7 @@ static INT OpenCommand (INT argc, char **argv)
   char Multigrid[NAMESIZE],File[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE],type[NAMESIZE];
   char *theBVP,*theFormat,*theMGName;
   unsigned long heapSize;
-  DOUBLE_VECTOR global0, global1, global2;
-  INT i;
+  INT i,force;
 
   /* get multigrid name */
   if ((sscanf(argv[0],expandfmt(CONCAT3(" open %",NAMELENSTR,"[ -~]")),File)!=1) || (strlen(File)==0))
@@ -2153,8 +2152,7 @@ static INT OpenCommand (INT argc, char **argv)
   /* get problem and format */
   strcpy(type,"asc");
   theBVP = theFormat = theMGName = NULL;
-  heapSize = 0;
-  for (i=0; i<DIM; i++) global0[i]=global1[i]=global2[i]=0.0;
+  heapSize = force = 0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -2174,6 +2172,10 @@ static INT OpenCommand (INT argc, char **argv)
         return(PARAMERRORCODE);
       }
       theFormat = Format;
+      break;
+
+    case 'F' :
+      force = 1;
       break;
 
     case 'm' :
@@ -2201,23 +2203,6 @@ static INT OpenCommand (INT argc, char **argv)
       }
       break;
 
-#ifdef __THREEDIM__
-    case 'A' :
-      if (ReadArgvPosition("A",argc,argv,global0))
-        return (CMDERRORCODE);
-      break;
-
-    case 'B' :
-      if (ReadArgvPosition("B",argc,argv,global1))
-        return (CMDERRORCODE);
-      break;
-
-    case 'C' :
-      if (ReadArgvPosition("C",argc,argv,global2))
-        return (CMDERRORCODE);
-      break;
-#endif
-
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("open",HELPITEM,buffer);
@@ -2225,7 +2210,7 @@ static INT OpenCommand (INT argc, char **argv)
     }
 
   /* allocate the multigrid structure */
-  theMG = LoadMultiGrid(theMGName,File,type,theBVP,theFormat,heapSize,global0,global1,global2);
+  theMG = LoadMultiGrid(theMGName,File,type,theBVP,theFormat,heapSize,force);
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"open","could not open multigrid");
