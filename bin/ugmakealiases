@@ -1,0 +1,48 @@
+#!/bin/sh
+if test "$1" = "-help"
+then
+    echo "purpose: make aliases file 'ugaliases' for  easy changing ";
+	echo "         into ug's directories,e.g. instead of typing on ";
+	echo "         your shell command line: ";
+    echo "             cd \$UGROOT/gm/gg3             ";
+    echo "         you can use:                      ";
+    echo "             cdgg3                         ";
+	echo "         (remark that no space is used)    ";
+	echo "         To activate the 'ugaliases' file in your shell ";
+	echo "         type on your shell command line:  ";
+	echo "             source \$UGROOT/bin/ugaliases  ";
+	echo "         you can also put this line into your shell ";
+	echo "         resource file (e.g. ~/.tcshrc) to use the  ";
+	echo "         shortcutting permanently.";
+    exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then
+    echo "$0: to use $0 set shell environment variable UGROOT!";
+    exit 1;
+fi
+
+UGALIASESFILE=$UGROOT/bin/ugaliases
+
+cd $UGROOT;
+rm -f $UGROOT/bin/ugaliases;
+
+echo " creating aliases ...";
+
+# create aliases for ug directory
+for i in * */* */*/* */*/*/* 
+do
+	if test -d $i -a ! -h $i
+	then
+		if test "`basename $i`" != "CVS"
+		then
+			echo "alias cd`basename $i` 'cd \$UGROOT/$i'" >> $UGALIASESFILE;
+		fi
+	fi
+done	
+
+# create aliases for application and problem part
+
+# final message
+echo " new 'ugaliases' file ($UGALIASESFILE) created!";
