@@ -65,36 +65,40 @@ namespace UG3d {
 #define MTYPE_RT(mtp)       (((mtp)<NMATTYPES_NORMAL) ? (mtp)/NVECTYPES : (mtp)%NVECTYPES)
 #define MTYPE_CT(mtp)           ((mtp)%NVECTYPES)
 
-/*! max nb of vec comps in one TYPE      */
+/** \brief Max nb of vec comps in one TYPE      */
 #define MAX_SINGLE_VEC_COMP             40
-/*! max nb of mat comps in one TYPE              */
+/** \brief Max nb of mat comps in one TYPE              */
 #define MAX_SINGLE_MAT_COMP       1600
-/*! max nb of comps in one VECDATA_DESC  */
+/** \brief Max nb of comps in one VECDATA_DESC  */
 #define MAX_VEC_COMP                40
-/*! max nb of comps in one MATDATA_DESC  */
+/** \brief Max nb of comps in one MATDATA_DESC  */
 #define MAX_MAT_COMP              7000
-/*! max#(comp) in one MATDATA_DESC       */
+/** \brief Max #(comp) in one MATDATA_DESC       */
 #define MAX_MAT_COMP_TOTAL        7000
 
 #define NVECOFFSETS                             (NVECTYPES+1)
-/* for offset component in VECDATA_DESC */
+
+/** \brief For offset component in VECDATA_DESC */
 #define NMATOFFSETS                             (NMATTYPES+1)
 
 #define DEFAULT_NAMES "uvwzpabcdefghijklmnoPQRSTUVWXYZ123456789" /* of size MAX_VEC_COMP */
 
-#define NO_IDENT                        -1              /* no identification of components              */
-#define FULL_TPLT                       -1              /* full template rather than sub                */
+/** \brief No identification of components */
+#define NO_IDENT                        -1
+
+/** \brief Full template rather than sub */
+#define FULL_TPLT                       -1
 
 #define GENERATED_NAMES_SEPERATOR               "_"
 
-/* defines for getting object type specific information from XXXDATA_DESCs      */
+/** \brief Defines for getting object type specific information from XXXDATA_DESCs      */
 enum VECTOR_DATA_IN_OBJ
 {
   STRICT,
   NON_STRICT
 };
 
-/* modifier flags for DisplayXXXDataDesc */
+/** \brief Modifier flags for DisplayXXXDataDesc */
 enum DISP_DATA_DESC_MODIF
 {
   DEFAULT                 = (1<<0),
@@ -102,7 +106,8 @@ enum DISP_DATA_DESC_MODIF
   SCAL_PROP               = (1<<2)
 };
 
-/* VECDATA_DESC */
+/** @name Defines for VECDATA_DESC */
+/*@{*/
 #define VD_MG(vd)                                                       ((vd)->mg)
 #define VD_ISDEF_IN_TYPE(vd,tp)             (VD_NCMPS_IN_TYPE(vd,tp)>0)
 #define VD_NCMPPTR(vd)                              ((vd)->NCmpInType)
@@ -126,8 +131,11 @@ enum DISP_DATA_DESC_MODIF
 #define VD_MINTYPE(vd)                      ((vd)->mintype)
 #define VD_MAXTYPE(vd)                      ((vd)->maxtype)
 #define VD_SUCC_COMP(vd)                    ((vd)->SuccComp)
+/*@}*/
 
-/* MATDATA_DESC */
+
+/** @name Macros for MATDATA_DESC */
+/*@{*/
 #define MCMP(row,col,ncol)                  ((row)*(ncol)+col)
 #define MCMP_I(mc,ncol)                                         ((mc)/(ncol))
 #define MCMP_J(mc,ncol)                                         ((mc)%(ncol))
@@ -167,20 +175,25 @@ enum DISP_DATA_DESC_MODIF
 #define MD_MTYPE_OFFSET(md,mtp)             (MD_OFFSETPTR(md)[mtp])
 #define MD_RT_CT_OFFSET(md,mtp)             (MD_MTYPE_OFFSET(md,MTP(rt,ct)))
 #define MD_SUCC_COMP(md)                    ((md)->SuccComp)
+/*@}*/
 
-/* VEC_SCALAR */
+/** @name Macros for VEC_SCALAR */
+/*@{*/
 #define VS_CMP_AT_OFFSET(vs,os,i)                       (vs[(os)+(i)])
 #define VS_CMP_OF_TYPE(vs,vd,tp,i)                      VS_CMP_AT_OFFSET(vs,VD_OFFSET(vd,tp),i)
 
 #define VM_COMP_NAMEPTR(p)                 ((p)->compNames)
 #define VM_COMP_NAME(p,i)                  (VM_COMP_NAMEPTR(p)[i])
 #define VM_COMPPTR(p)                      ((p)->Components)
+/*@}*/
+
 /* we remove this for security reasons: please use function calls
    #define VM_LOCKED(p)                       ((p)->locked)
  */
 #define EVM_LOCKED(p)                      ((p)->locked)
 
-/* swapping part interface data */
+/** @name Swapping part interface data */
+/*@{*/
 #define SPID_NVD_MAX            4
 #define SPID_NMD_MAX            2
 #define SPID_FORTH                      69
@@ -192,9 +205,10 @@ enum DISP_DATA_DESC_MODIF
 #define SPID_NMD(p)                     ((p)->nmd)
 #define SPID_MD(p,i)            ((p)->md[i])
 #define SPID_MDI(p,i)           ((p)->mdi[i])
+/*@}*/
 
-/* flags for constistent status and collect status */
-
+/** @name Flags for consistent status and collect status */
+/*@{*/
 #define READ_VEC_CONS_FLAG(p,vt,i)      READ_FLAG((p)->data_status.VecConsistentStatus[vt][(i)/32],1<<((i)%32))
 #define SET_VEC_CONS__FLAG(p,vt,i)      SET_FLAG((p)->data_status.VecConsistentStatus[vt][(i)/32],1<<((i)%32))
 #define CLEAR_VEC_CONS__FLAG(p,vt,i)    CLEAR_FLAG((p)->data_status.VecConsistentStatus[vt][(i)/32],1<<((i)%32))
@@ -202,6 +216,7 @@ enum DISP_DATA_DESC_MODIF
 #define READ_VEC_COLLECT_FLAG(p,vt,i)   READ_FLAG((p)->data_status.VecCollectStatus[vt][(i)/32],1<<((i)%32))
 #define SET_VEC_COLLECT__FLAG(p,vt,i)   SET_FLAG((p)->data_status.VecCollectStatus[vt][(i)/32],1<<((i)%32))
 #define CLEAR_VEC_COLLECT__FLAG(p,vt,i) CLEAR_FLAG((p)->data_status.VecCollectStatus[vt][(i)/32],1<<((i)%32))
+/*@}*/
 
 /****************************************************************************/
 /*                                                                          */
@@ -209,6 +224,8 @@ enum DISP_DATA_DESC_MODIF
 /*                                                                          */
 /****************************************************************************/
 
+/** \brief A set of degrees of freedom associated to a geometrical object
+ */
 typedef struct {
 
   /** \brief Fields for environment list variable */
@@ -270,36 +287,66 @@ typedef struct {
 
 typedef struct {
 
+  /** \brief Inheritance from environment variable class */
   ENVVAR v;
 
-  SHORT locked;                         /* locked for dynamic allocation        */
-  MULTIGRID *mg;                                    /* associated multigrid                                     */
+  /** \brief Locked for dynamic allocation        */
+  SHORT locked;
 
-  char compNames[2*MAX_MAT_COMP];   /* names for symbol components          */
-  SHORT RowsInType[NMATTYPES];          /* number of rows of a matrix per type  */
-  SHORT ColsInType[NMATTYPES];          /* number of columns of a matrix        */
-                                        /* per type                             */
-  SHORT *CmpsInType[NMATTYPES];         /* pointer to SHORT vector containing   */
-                                        /* the components                       */
+  /** \brief Associated multigrid */
+  MULTIGRID *mg;
 
-  SPARSE_MATRIX *sm[NMATTYPES];         /* pointers to sm form, if not full     */
+  /** \brief Names for symbol components          */
+  char compNames[2*MAX_MAT_COMP];
+
+  /** \brief Number of rows of a matrix per type  */
+  SHORT RowsInType[NMATTYPES];
+
+  /** \brief Number of columns of a matrix per type */
+  SHORT ColsInType[NMATTYPES];
+
+  /** \brief Pointer to SHORT vector containing the components */
+  SHORT *CmpsInType[NMATTYPES];
+
+  /** \brief Pointers to sm form, if not full */
+  SPARSE_MATRIX *sm[NMATTYPES];
 
   /* redundant (but frequently used) information                          */
-  SHORT IsSparse;                       /* TRUE if sparse form should be used   */
-  SHORT IsScalar;                       /* TRUE if desc is scalar:              */
-  /* same settings in all types           */
-  SHORT SuccComp;                   /* successive components                */
-  SHORT ScalComp;                       /* location of scalar component         */
-  SHORT ScalRowTypeMask;                /* mask for used vectypes in rows       */
-  SHORT ScalColTypeMask;                /* mask for used vectypes in cols       */
-  SHORT offset[NMATOFFSETS];            /* offsets for what ever you need it    */
+  /** \brief TRUE if sparse form should be used   */
+  SHORT IsSparse;
 
-  SHORT rowdatatypes;                               /* compact form of row vtypes (bitwise)     */
-  SHORT coldatatypes;                               /* compact form of col vtypes (bitwise)     */
-  SHORT rowobjused;                                     /* compact form of row otypes (bitwise) */
-  SHORT colobjused;                                     /* compact form of col otypes (bitwise) */
+  /** \brief TRUE if desc is scalar: same settings in all types             */
+  SHORT IsScalar;
 
-  SHORT Components[1];                  /* memory for component mapping         */
+  /** \brief Successive components                */
+  SHORT SuccComp;
+
+  /** \brief Location of scalar component         */
+  SHORT ScalComp;
+
+  /** \brief Mask for used vectypes in rows       */
+  SHORT ScalRowTypeMask;
+
+  /** \brief Mask for used vectypes in cols       */
+  SHORT ScalColTypeMask;
+
+  /** \brief Offsets for what ever you need it    */
+  SHORT offset[NMATOFFSETS];
+
+  /** \brief Compact form of row vtypes (bitwise)     */
+  SHORT rowdatatypes;
+
+  /** \brief Compact form of col vtypes (bitwise)     */
+  SHORT coldatatypes;
+
+  /** \brief Compact form of row otypes (bitwise) */
+  SHORT rowobjused;
+
+  /** \brief Compact form of col otypes (bitwise) */
+  SHORT colobjused;
+
+  /** \brief Memory for component mapping         */
+  SHORT Components[1];
 
 } MATDATA_DESC;
 
@@ -308,13 +355,23 @@ typedef DOUBLE VEC_SCALAR[MAX_VEC_COMP];
 
 typedef struct {
 
-  INT nvd;                                                      /* number of vec data descriptors               */
-  VECDATA_DESC *vd[SPID_NVD_MAX];       /* vec data descriptors                                 */
-  VECDATA_DESC *vdi[SPID_NVD_MAX];      /* vec data interface descriptors               */
+  /** \brief Number of vector data descriptors               */
+  INT nvd;
 
-  INT nmd;                                                      /* number of mat data descriptors               */
-  MATDATA_DESC *md[SPID_NMD_MAX];       /* mat data descriptors                                 */
-  MATDATA_DESC *mdi[SPID_NMD_MAX];      /* mat data interface descriptors               */
+  /** \brief Vector data descriptors                                 */
+  VECDATA_DESC *vd[SPID_NVD_MAX];
+
+  /** \brief Vector data interface descriptors               */
+  VECDATA_DESC *vdi[SPID_NVD_MAX];
+
+  /** \brief Number of matrix data descriptors               */
+  INT nmd;
+
+  /** \brief Matrix data descriptors                                 */
+  MATDATA_DESC *md[SPID_NMD_MAX];
+
+  /** \brief Matrix data interface descriptors               */
+  MATDATA_DESC *mdi[SPID_NMD_MAX];
 
 } SPID_DESC;
 
@@ -327,13 +384,20 @@ typedef struct {
 
 typedef struct {
 
-  /* fields for environment list variable */
+  /** \brief Fields for environment list variable */
   ENVVAR v;
 
-  SHORT locked;                         /* locked for dynamic allocation        */
-  INT n;                                /* size of extension                    */
-  VECDATA_DESC *vd;                     /* vector descriptor                    */
-  DOUBLE e[MAXLEVEL][EXTENSION_MAX];   /* extension                         */
+  /** \brief Locked for dynamic allocation        */
+  SHORT locked;
+
+  /** \brief Size of extension                    */
+  INT n;
+
+  /** \brief Vector descriptor                    */
+  VECDATA_DESC *vd;
+
+  /** \brief Extension                         */
+  DOUBLE e[MAXLEVEL][EXTENSION_MAX];
 
 } EVECDATA_DESC;
 
@@ -342,15 +406,26 @@ typedef struct {
 
 typedef struct {
 
-  /* fields for environment list variable */
+  /** \brief Fields for environment list variable */
   ENVVAR v;
 
-  SHORT locked;                         /* locked for dynamic allocation        */
-  INT n;                                /* size of extension                    */
-  MATDATA_DESC *mm;                             /* 11-block                     */
-  VECDATA_DESC *me[EXTENSION_MAX];              /* 12-block                     */
-  VECDATA_DESC *em[EXTENSION_MAX];              /* 21-block                     */
-  DOUBLE ee[MAXLEVEL][EXTENSION_MAX*EXTENSION_MAX];       /* 22-block           */
+  /** \brief Locked for dynamic allocation        */
+  SHORT locked;
+
+  /** \brief Size of extension                    */
+  INT n;
+
+  /** \brief 11-block                     */
+  MATDATA_DESC *mm;
+
+  /** \brief 12-block                     */
+  VECDATA_DESC *me[EXTENSION_MAX];
+
+  /** \brief 21-block                     */
+  VECDATA_DESC *em[EXTENSION_MAX];
+
+  /** \brief 22-block           */
+  DOUBLE ee[MAXLEVEL][EXTENSION_MAX*EXTENSION_MAX];
 
 } EMATDATA_DESC;
 
@@ -359,15 +434,15 @@ typedef DOUBLE EVEC_SCALAR[MAX_VEC_COMP+EXTENSION_MAX];
 
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* definition of exported data structures                                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* definition of exported data structures                                   */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* definition of exported functions                                                                                     */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* definition of exported functions                                         */
+/*                                                                          */
 /****************************************************************************/
 
 VECDATA_DESC *GetFirstVector (MULTIGRID *theMG);
@@ -401,17 +476,22 @@ MATDATA_DESC *GetMatDataDescByName (const MULTIGRID *theMG, char *name);
 INT CompMatDesc (const MATDATA_DESC *md, const SHORT *RowsInType,
                  const SHORT *ColsInType, SHORT *const*CmpsInType);
 
-/* allocation of vector descriptors */
+/** @name Allocation of vector descriptors */
+/*@{*/
 INT AllocVDfromNCmp (MULTIGRID *theMG, INT fl, INT tl,
                      const SHORT *NCmpInType, const char *compNames, VECDATA_DESC **new_desc);
 INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
                    const VECDATA_DESC *template_desc, VECDATA_DESC **new_desc);
+/*@}*/
 
-/* allocation of extended vector descriptors */
+/** @name Allocation of extended vector descriptors */
+/*@{*/
 INT AllocEVDForVD (MULTIGRID *theMG, const VECDATA_DESC *vd, INT n, EVECDATA_DESC **new_desc);
 INT AllocEVDFromEVD (MULTIGRID *theMG, INT fl, INT tl, const EVECDATA_DESC *vd, EVECDATA_DESC **new_desc);
+/*@}*/
 
-/* allocation of matrix descriptors */
+/** @name Allocation of matrix descriptors */
+/*@{*/
 INT AllocMDFromMRowMCol (MULTIGRID *theMG, INT fl, INT tl,
                          const SHORT *RowsInType,const SHORT *ColsInType,const char *compNames,
                          MATDATA_DESC **new_desc);
@@ -421,61 +501,81 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
                    const VECDATA_DESC *x, const VECDATA_DESC *y, MATDATA_DESC **new_desc);
 INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
                    MATDATA_DESC *template_desc, MATDATA_DESC **new_desc);
+/*@}*/
 
-/* allocation of extended matrix descriptors */
+/** @name Allocation of extended matrix descriptors */
+/*@{*/
 INT AllocEMDFromEVD (MULTIGRID *theMG, INT fl, INT tl, const EVECDATA_DESC *x, const EVECDATA_DESC *y, EMATDATA_DESC **new_desc);
 INT AllocEMDForMD (MULTIGRID *theMG, const MATDATA_DESC *md, INT n, EMATDATA_DESC **new_desc);
+/*@}*/
 
-/* locking of vector and matrix descriptors */
+/** @name Locking of vector and matrix descriptors */
+/*@{*/
 INT LockVD (MULTIGRID *theMG, VECDATA_DESC *vd);
 INT LockMD (MATDATA_DESC *md);
 INT UnlockMD (MATDATA_DESC *md);
+/*@}*/
 
-/* */
+/** @name ??? */
+/*@{*/
 INT TransmitLockStatusVD (const VECDATA_DESC *vd, VECDATA_DESC *svd);
 INT TransmitLockStatusMD (const MATDATA_DESC *md, MATDATA_DESC *smd);
+/*@}*/
 
-/* freeing of vector and matrix descriptors */
+/** @name Freeing of vector and matrix descriptors */
+/*@{*/
 INT FreeVD        (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *x);
 INT FreeMD        (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *A);
+/*@}*/
 
-/* freeing of extended vector and matrix descriptors */
+/** @name Freeing of extended vector and matrix descriptors */
+/*@{*/
 INT FreeEVD       (MULTIGRID *theMG, INT fl, INT tl, EVECDATA_DESC *vd);
 INT FreeEMD       (MULTIGRID *theMG, INT fl, INT tl, EMATDATA_DESC *md);
+/*@}*/
 
-/* interpolate allocation on new level */
+/** \brief Interpolate allocation on new level */
 INT InterpolateVDAllocation (MULTIGRID *theMG, VECDATA_DESC *vd);
 
-/* disposing of vector and matrix descriptors */
+/** @name Disposing of vector and matrix descriptors */
+/*@{*/
 INT DisposeVD     (VECDATA_DESC *vd);
 INT DisposeMD     (MATDATA_DESC *md);
+/*@}*/
 
-/* constructing part interface descriptors */
+/** @name Constructing part interface descriptors */
+/*@{*/
 INT VDinterfaceDesc                             (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi);
 INT VDinterfaceCoDesc                   (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi);
 INT VDCoDesc                                    (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi);
 INT MDinterfaceDesc                             (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi);
 INT MDinterfaceCoCoupleDesc             (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi);
+/*@}*/
 
 INT ConstructVecOffsets         (const SHORT *NCmpInType, SHORT *offset);
 INT ConstructMatOffsets         (const SHORT *RowsInType, const SHORT *ColsInType, SHORT *offset);
 INT ConstructMatOffsetsAlt      (const SHORT *CmpsInType, SHORT *offset);
 
 /* swapping data on part interfaces */
+/*@{*/
 INT SwapPartInterfaceData       (INT fl, INT tl, SPID_DESC *spid, INT direction);
 INT SwapPartSkipflags           (INT fl, INT tl, const VECDATA_DESC *vdg, const VECDATA_DESC *vdi, INT direction);
+/*@}*/
 
 /****************************************************************************/
-/*      getting object type specific information from XXXDATA_DESCs
- */
+/*      getting object type specific information from XXXDATA_DESCs         */
+/****************************************************************************/
 
-/* vtypes and object types */
+/** @name vtypes and object types */
+/*@{*/
 INT             GetUniqueOTypeOfVType                                           (const FORMAT *fmt, INT vtype);
 INT             GetUniquePartOfVType                                            (const MULTIGRID *mg, INT vtype);
 INT             IsVDdefinedInAllObjects                                         (const MULTIGRID *mg, const VECDATA_DESC *vd, INT obj_flags);
 INT             FillCompsForOType                                                       (const FORMAT *fmt, INT otype, INT n, SHORT cmps[]);
+/*@}*/
 
-/* VECDATA_DESCs and object type */
+/** @name VECDATA_DESCs and object type */
+/*@{*/
 INT             VD_ncmps_in_otype_mod                                           (const VECDATA_DESC *vd, INT otype, INT mode);
 INT             VD_cmp_of_otype_mod                                                     (const VECDATA_DESC *vd, INT otype, INT i, INT mode);
 SHORT  *VD_ncmp_cmpptr_of_otype_mod                             (const VECDATA_DESC *vd, INT otype, INT *ncomp, INT mode);
@@ -486,14 +586,16 @@ INT             VDusesVOTypeOnly                                                
 #define VD_cmpptr_of_otype(vd,ot)                                       VD_ncmp_cmpptr_of_otype_mod(vd,ot,NULL,STRICT)
 #define VD_cmpptr_of_otype_mod(vd,ot,mo)                        VD_ncmp_cmpptr_of_otype_mod(vd,ot,NULL,mo)
 #define VD_ncmp_cmpptr_of_otype(vd,ot,nc)                       VD_ncmp_cmpptr_of_otype_mod(vd,ot,nc,STRICT)
+/*@}*/
 
-/* MATDATA_DESCs and object type */
-INT             MD_rows_in_ro_co_mod                                            (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mode);
-INT             MD_cols_in_ro_co_mod                                            (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mode);
-INT             MD_rows_cols_in_ro_co_mod                                       (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc, INT mode);
-INT             MD_mcmp_of_ro_co_mod                                            (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i, INT mode);
-SHORT   *MD_nr_nc_mcmpptr_of_ro_co_mod                          (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nrow, INT *ncol, INT mode);
-INT             MDusesVOTypeOnly                                                        (const MATDATA_DESC *md, INT votype);
+/** @name MATDATA_DESCs and object type */
+/*@{*/
+INT MD_rows_in_ro_co_mod                   (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mode);
+INT MD_cols_in_ro_co_mod                   (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mode);
+INT MD_rows_cols_in_ro_co_mod             (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc, INT mode);
+INT MD_mcmp_of_ro_co_mod                   (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i, INT mode);
+SHORT *MD_nr_nc_mcmpptr_of_ro_co_mod      (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nrow, INT *ncol, INT mode);
+INT    MDusesVOTypeOnly                     (const MATDATA_DESC *md, INT votype);
 
 #define MD_rows_in_ro_co(md,ro,co)                                      MD_rows_in_ro_co_mod(md,ro,co,STRICT)
 #define MD_cols_in_ro_co(md,ro,co)                                      MD_cols_in_ro_co_mod(md,ro,co,STRICT)
@@ -502,8 +604,9 @@ INT             MDusesVOTypeOnly                                                
 #define MD_mcmpptr_of_ro_co(md,ro,co)                           MD_nr_nc_mcmpptr_of_ro_co_mod(md,ro,co,NULL,NULL,STRICT)
 #define MD_mcmpptr_of_ro_co_mod(md,ro,co,mo)            MD_nr_nc_mcmpptr_of_ro_co_mod(md,ro,co,NULL,NULL,mo)
 #define MD_nr_nc_mcmpptr_of_ro_co(md,ro,co,nr,nc)       MD_nr_nc_mcmpptr_of_ro_co_mod(md,ro,co,nr,nc,STRICT)
+/*@}*/
 
-/* init user data manager */
+/** \brief Init user data manager */
 INT InitUserDataManager (void);
 
 #ifdef __cplusplus
