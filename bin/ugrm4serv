@@ -48,7 +48,7 @@ fi
 
 cd ${UGROOT}/bin;
 rm -f ugmakeref ugrm4serv ugmaketrees ugmakelatex ugtex ugmakelatexrefs;
-rm -f ugprep4serv ugmakeman ugrecurse ugsetcvsaccess;
+rm -f ugprep4serv ugmakeman ugrecurse ugsetcvsaccess ugmakealiases;
 
 if test $# -ge 1 -o "$1" = "-help"
 then
@@ -61,14 +61,13 @@ then
 	cd ..
 	mkdir $1
 	cd $1
-	mv ../ug31/ug/gm/gm.h .
-	mv ../ug31/ug/gm/gg3/netgen/meshing/ruler3.cc .
-	cp ../ug31/ug/doc/applmanual.ps.gz .
-	cp ../ug31/ug/doc/progmanual.ps.gz .
-	cp ../ug31/ug/doc/refmanual.ps.gz .
-	mv ../ug31 $1
-	tar cf $1.tar $1
+	mv ${UGROOT}/gm/gm.h .
+	mv ${UGROOT}/gm/gg3/netgen/meshing/ruler3.cc .
+	cp ${UGROOT}/doc/applmanual.ps.gz .
+	cp ${UGROOT}/doc/progmanual.ps.gz .
+	cp ${UGROOT}/doc/refmanual.ps.gz .
+	mv ../UG $1
+	tar cvf $1.tar $1
 	gzip $1.tar
-	mv $1 ../ug31
     cd ..
 fi
