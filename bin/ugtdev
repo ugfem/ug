@@ -1,6 +1,6 @@
 #!/bin/csh -f
 if ( $1 == "-H" ) then
-echo "tstat [-a | -m | -g | -h] <film-name>"; exit;
+echo "ugtdev [-a | -m | -g | -h] [-G] <film-name>"; exit;
 endif
 
 set timescale = 1;
@@ -21,6 +21,11 @@ if ( $1 == "-h" ) then
 set timescale = 3600; shift;
 endif
 
+set Screen = 0;
+if ( $1 == "-G" ) then
+set Screen = 1; shift;
+endif
+
 rm -f t.li;
 rm -f dt.li;
 set PREFIX = $1
@@ -34,9 +39,19 @@ while ( $i <= 10000 )
 	@ i = $i + 1
 end
 
-echo 'set parametric; set grid; plot "t.li" w l; pause -1; set terminal postscript; set output "t.ps"; plot "t.li" w l;' > t.gnu;
+if ( $Screen == 1 ) then 
+	echo 'set parametric; set grid; plot "t.li" w l; pause -1; set terminal postscript; set output "t.ps"; plot "t.li" w l;' > t.gnu;
+endif
+if ( $Screen == 0 ) then 
+	echo 'set parametric; set grid; set terminal postscript; set output "t.ps"; plot "t.li" w l;' > t.gnu;
+endif
 gnuplot "t.gnu";
-echo 'set parametric; set grid; plot "dt.li" w l; pause -1; set terminal postscript; set output "dt.ps"; plot "dt.li" w l;' > dt.gnu;
+if ( $Screen == 1 ) then 
+	echo 'set parametric; set grid; plot "dt.li" w l; pause -1; set terminal postscript; set output "dt.ps"; plot "dt.li" w l;' > dt.gnu;
+endif
+if ( $Screen == 0 ) then
+	echo 'set parametric; set grid; set terminal postscript; set output "dt.ps"; plot "dt.li" w l;' > dt.gnu;
+endif
 gnuplot "dt.gnu";
 rm t.li;
 rm dt.li;
