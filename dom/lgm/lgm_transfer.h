@@ -112,11 +112,17 @@ struct lgm_point_info {
   float position[LGM_TRDIM];                            /* position of corner							*/
 };
 
+struct lgm_mesh_info {
+
+  int dummy;
+};
+
 typedef struct lgm_domain_info LGM_DOMAIN_INFO;
 typedef struct lgm_sizes LGM_SIZES;
 typedef struct lgm_subdomain_info LGM_SUBDOMAIN_INFO;
 typedef struct lgm_line_info LGM_LINE_INFO;
 typedef struct lgm_point_info LGM_POINT_INFO;
+typedef struct lgm_mesh_info LGM_MESH_INFO;
 
 #endif
 
@@ -186,6 +192,11 @@ struct lgm_point_info {
   float position[LGM_TRDIM];                            /* position of corner							*/
 };
 
+struct lgm_mesh_info {
+
+  int dummy;
+};
+
 typedef struct lgm_domain_info LGM_DOMAIN_INFO;
 typedef struct lgm_sizes LGM_SIZES;
 typedef struct lgm_subdomain_info LGM_SUBDOMAIN_INFO;
@@ -193,6 +204,7 @@ typedef struct lgm_triangle_info LGM_TRIANGLE_INFO;
 typedef struct lgm_surface_info LGM_SURFACE_INFO;
 typedef struct lgm_line_info LGM_LINE_INFO;
 typedef struct lgm_point_info LGM_POINT_INFO;
+typedef struct lgm_mesh_info LGM_MESH_INFO;
 
 #endif
 

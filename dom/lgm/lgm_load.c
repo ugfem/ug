@@ -71,6 +71,7 @@ typedef int (*ReadSizesProc)(LGM_SIZES *lgm_sizes);
 typedef int (*ReadSubDomainProc)(int i, LGM_SUBDOMAIN_INFO *subdom_info);
 typedef int (*ReadLinesProc)(int i, LGM_LINE_INFO *line_info);
 typedef int (*ReadPointsProc)(LGM_POINT_INFO *lgm_point_info);
+typedef int (*ReadMeshProc)(LGM_MESH_INFO *lgm_mesh_info);
 
 #if (LGM_DIM==3)
 typedef int (*ReadSurfaceProc)(int i, LGM_SURFACE_INFO *surface_info);
@@ -102,6 +103,7 @@ static ReadSizesProc ReadSizes;
 static ReadSubDomainProc ReadSubDomain;
 static ReadLinesProc ReadLines;
 static ReadPointsProc ReadPoints;
+static ReadMeshProc ReadMesh;
 
 #if (LGM_DIM==3)
 static ReadSurfaceProc ReadSurface;
@@ -163,6 +165,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     ReadSubDomain   = LGM_ReadSubDomain;
     ReadLines               = LGM_ReadLines;
     ReadPoints              = LGM_ReadPoints;
+    ReadMesh                = NULL;
   }
   else
   {
@@ -286,6 +289,16 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   return (theDomain);
 }
 
+INT LGM_LoadMesh (MESH *theMesh)
+{
+  /* if impossible to read mesh, return 1 */
+  if (ReadMesh==NULL) return (1);
+
+  /* do the right thing */
+  return (1);
+}
+
+
 #endif
 
 #if (LGM_DIM==3)
@@ -317,6 +330,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     ReadSurface             = LGM_ReadSurface;
     ReadLines               = LGM_ReadLines;
     ReadPoints              = LGM_ReadPoints;
+    ReadMesh                = NULL;
   }
   else if (strcmp(p,".ans")==0)
   {
@@ -326,6 +340,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     ReadSurface             = LGM_ANSYS_ReadSurface;
     ReadLines               = LGM_ANSYS_ReadLines;
     ReadPoints              = LGM_ANSYS_ReadPoints;
+    ReadMesh                        = LGM_ANSYS_ReadMesh;
   }
   else
   {
@@ -580,6 +595,15 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   }
 
   return (theDomain);
+}
+
+INT LGM_LoadMesh (MESH *theMesh)
+{
+  /* if impossible to read mesh, return 1 */
+  if (ReadMesh==NULL) return (1);
+
+  /* do the right thing */
+  return (1);
 }
 
 #endif

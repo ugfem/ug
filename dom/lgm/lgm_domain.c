@@ -230,17 +230,19 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   /* set bounding sphere */
   if (SetDomainSize(theDomain)) return (NULL);
 
-
   /* set mesh with nothing */
-  Mesh->nBndP             = 0;
-  Mesh->nInnP             = 0;
-  Mesh->nSubDomains       = 0;
-  Mesh->nbElements        = NULL;
-  Mesh->nElements = NULL;
-  Mesh->VertexLevel = NULL;
-  Mesh->VertexPrio = NULL;
-  Mesh->ElementLevel = NULL;
-  Mesh->ElementPrio = NULL;
+  if (LGM_LoadMesh(Mesh))
+  {
+    Mesh->nBndP             = 0;
+    Mesh->nInnP             = 0;
+    Mesh->nSubDomains       = 0;
+    Mesh->nbElements        = NULL;
+    Mesh->nElements     = NULL;
+    Mesh->VertexLevel   = NULL;
+    Mesh->VertexPrio    = NULL;
+    Mesh->ElementLevel  = NULL;
+    Mesh->ElementPrio   = NULL;
+  }
 
   /* allocate s2p table */
   LGM_DOMAIN_NPART(theDomain) = 1;
