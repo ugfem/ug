@@ -69,8 +69,8 @@
 #define NPFF_FF(p)                              (((p)->FF))
 #define NPFF_FF3D(p)                    (((p)->FF3D))
 #define NPFF_aux(p)                             (((p)->aux))
-#define NPFF_aux3D(p)                   (((p)->aux2_3D))
-#define NPFF_aux2_3D(p)                 (((p)->aux3D))
+#define NPFF_aux3D(p)                   (((p)->aux3D))
+#define NPFF_aux2_3D(p)                 (((p)->aux2_3D))
 #define NPFF_aux2(p)                    (((p)->aux2))
 #define NPFF_aux3(p)                    (((p)->aux3))
 #define NPFF_aux4(p)                    (((p)->aux4))
@@ -2923,7 +2923,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
                         VD_SCALCMP( NPFF_aux(np) ),
                         VD_SCALCMP( NPFF_tv(np) ),
                         NPFF_aux3D(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux3D(np) ),
-                        NPFF_FF3D(np)==NULL ? -1 : MD_SCALCMP( NPFF_FF3D(np) ) ) != NUM_OK)
+                        MD_SCALCMP( NPFF_FF(np) ) ) != NUM_OK)
     {
       PrintErrorMessage('E',"FFStep","inversion failed");
       NP_RETURN(1,result[0]);
@@ -2993,7 +2993,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
                           VD_SCALCMP( NPFF_t(np) ),
                           VD_SCALCMP( NPFF_aux(np) ),
                           NPFF_aux3D(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux3D(np) ),
-                          NPFF_FF3D(np)==NULL ? -1 : MD_SCALCMP( NPFF_FF(np) ) ) != NUM_OK)
+                          MD_SCALCMP( NPFF_FF(np) ) ) != NUM_OK)
       {
         PrintErrorMessage('E',"FFStep","inversion failed");
         NP_RETURN(1,result[0]);
