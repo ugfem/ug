@@ -1450,7 +1450,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
     return (NUM_OK);
   }
 
-  L_VLOOP__CLASS(vec,first_vec,ACTIVE_CLASS)
+  L_VLOOP__CLASS(vec,first_vec,EVERY_CLASS)
   {
     rtype = VTYPE(vec);
 
@@ -1462,6 +1462,13 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
     tdmp     = damp+offset[rtype];
 
     /* rhs */
+    if (VCLASS(vec) < ACTIVE_CLASS)
+    {
+      DOUBLE *vmat = VVALPTR(vec);
+      for (i=0; i<n; i++)
+        vmat[vcomp[i]] = 0.0;
+      continue;
+    }
     for (i=0; i<n; i++)
       s[i] = VVALUE(vec,dcomp[i]);
     for (ctype=0; ctype<NVECTYPES; ctype++)
@@ -1669,7 +1676,7 @@ INT l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
     return (NUM_OK);
   }
 
-  L_VLOOP__CLASS(vec,first_vec,ACTIVE_CLASS)
+  L_VLOOP__CLASS(vec,first_vec,EVERY_CLASS)
   {
     rtype = VTYPE(vec);
 
@@ -1681,6 +1688,13 @@ INT l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
     tdmp    = VD_CMPPTR_OF_TYPE(damp,rtype);
 
     /* rhs */
+    if (VCLASS(vec) < ACTIVE_CLASS)
+    {
+      DOUBLE *vmat = VVALPTR(vec);
+      for (i=0; i<n; i++)
+        vmat[vcomp[i]] = 0.0;
+      continue;
+    }
     for (i=0; i<n; i++)
       s[i] = VVALUE(vec,dcomp[i]);
     for (ctype=0; ctype<NVECTYPES; ctype++)
