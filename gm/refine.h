@@ -226,7 +226,7 @@ enum REFINE_CE {
 
 typedef struct refineinfo
 {
-  INT step;                                               /* count of calls to RefineMultiGrid  */
+  INT step;                                               /* count of calls to AdaptMultiGrid   */
   float markcount[RINFO_MAX];             /* count of currently marked elements */
   float predicted_new[RINFO_MAX][3];
   /* count of elements, would be created */

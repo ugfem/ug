@@ -2644,7 +2644,7 @@ INT         MarkForRefinementX      (ELEMENT *theElement,
                                      INT fl, INT tl, INT rule, void *data);
 INT             GetRefinementMark               (ELEMENT *theElement, INT *rule, void *data);
 INT             GetRefinementMarkType   (ELEMENT *theElement);
-INT             RefineMultiGrid                 (MULTIGRID *theMG, INT flag, INT seq, INT mgtest);
+INT             AdaptMultiGrid                  (MULTIGRID *theMG, INT flag, INT seq, INT mgtest);
 INT         TestRefineInfo          (MULTIGRID *theMG);
 INT         SetRefineInfo           (MULTIGRID *theMG);
 INT             ClearMarksOnLevel               (GRID *theGrid, INT ClearType);
