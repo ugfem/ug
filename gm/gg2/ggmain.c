@@ -939,7 +939,7 @@ static INT AssembleFrontLists (MULTIGRID *theMG)
     return (1);
   }
 
-  for (SubdomainID=1; SubdomainID<numOfSubdomains; SubdomainID++)
+  for (SubdomainID=1; SubdomainID<numOfSubdomains+1; SubdomainID++)
   {
     /* find all segments that form the boundary of our subdomain */
     nSeg = 0;
