@@ -124,6 +124,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
 
   {1,BVDOWNTYPE_CE,       BLOCKVECTOR_CW, BVDOWNTYPE_SHIFT,       BVDOWNTYPE_LEN  },
   {1,BVLEVEL_CE,          BLOCKVECTOR_CW, BVLEVEL_SHIFT,          BVLEVEL_LEN             },
+  {1,BVTVTYPE_CE,         BLOCKVECTOR_CW, BVTVTYPE_SHIFT,         BVTVTYPE_LEN    },
 
   {2,OBJ_CE,              GENERAL_CW,     OBJ_SHIFT,              OBJ_LEN                 },
   {2,USED_CE,             GENERAL_CW,     USED_SHIFT,             USED_LEN                },
@@ -192,8 +193,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {0,0,0,0,0},
   {0,0,0,0,0},
   {0,0,0,0,0},
-  {0,0,0,0,0},
-}; /* last entry used: 80 for VCCOARSE_CE */
+}; /* last entry used: 81 for BVTVTYPE_CE */
 
 /****************************************************************************/
 /*                                                                          */
