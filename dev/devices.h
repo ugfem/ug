@@ -310,7 +310,7 @@ typedef struct outputdevice OUTPUTDEVICE;
 
 /* initialization and clean up */
 INT               InitDevices                           (int *argcp, char **argv);
-void          ExitDevices               (void);
+INT           ExitDevices               (void);
 
 /* return the size of the monitor screen, return 0 if not available */
 INT               GetScreenSize                         (INT size[2]);

@@ -744,8 +744,10 @@ else
 
 
 
-void ExitDevices (void)
+INT ExitDevices (void)
 {
   /* clean up screen device */
   ExitScreen();
+
+  return(0);         /* no error */
 }
