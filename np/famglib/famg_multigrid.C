@@ -60,8 +60,12 @@ int FAMGMultiGrid::Init(const FAMGSystem &system)
 int FAMGMultiGrid::Construct()
 {
     FAMGGrid *g, *cg;
-    int level, nnc, nn, ilu, cgilu, coarsen_weak = 0, leave;
-	
+    int level, nnc, nn, ilu, cgilu, leave;
+	DOUBLE coarsefrac = 0.0;
+#ifdef ModelP
+	DOUBLE commBuf [2];
+#endif
+
     // read parameter
     const int cgnodes = FAMGGetParameter()->Getcgnodes();
     const int cglevels = FAMGGetParameter()->Getcglevels();
@@ -90,15 +94,22 @@ int FAMGMultiGrid::Construct()
         nn = g->GetN();
 #endif
 		
-		leave = ( coarsen_weak || nn <= cgnodes || level>=cglevels) && (gamma > 0);
 #ifdef ModelP
-		leave = UG_GlobalMaxINT(leave);
+		leave = ( nn <= cgnodes || level>=cglevels) && (gamma > 0);
+		commBuf [0] = coarsefrac;
+		commBuf[1] = (DOUBLE)leave;
+		UG_GlobalMaxNDOUBLE(2,commBuf);
+		leave = (commBuf[1]==1.0) || (commBuf[0] > mincoarse) && (gamma > 0);
+#else
+		leave = ( coarsefrac > mincoarse || nn <= cgnodes || level>=cglevels) && (gamma > 0);
 #endif
         if (leave)
 			break;
 
 #ifdef ModelP
+//prv(-level,0);
 		g->ConstructOverlap();
+//prv(-level,0);
 		assert(g->GetNrMasterVectors() == nn );
 #endif
         g->Stencil();
@@ -110,7 +121,7 @@ int FAMGMultiGrid::Construct()
 				RETURN(1);
         }
 #endif
-        if (gamma < 1) return 0;	// simple return because gamma is known to all processors
+        if (gamma < 1) return 0;	// ModelP: simple return because gamma is known to all processors
 
         if (g->ConstructTransfer()) 
 			RETURN(1);       
@@ -128,18 +139,22 @@ int FAMGMultiGrid::Construct()
 //printf("after Galerkin:\n");
 //prm(0,0);prm(0,1); prim(0);
 //prm(-1,0);
+//prv(-level-1,0);
 
 #ifdef ModelP
 		cout << me << ": ";
 		nnc = cg->GetNrMasterVectors();	// we are interested only in the master vectors
 #endif
+		coarsefrac = (double)nnc/nn;
 		cout << "amglevel " << -level;
 		if( nnc > 0 )
-			cout << " coarsening rate " << nn/(double)nnc << endl;
+		{
+			cout << " coarsening rate " << 1.0/coarsefrac << endl;
+		}
 		else
+		{
 			cout << " no coarsening" << endl;
-		
-        coarsen_weak = (nnc > nn*mincoarse);
+		}
     }
 
     if(level == FAMGMAXGRIDS-1)
