@@ -4468,6 +4468,11 @@ INT BNDP_SaveBndP (BNDP *BndP)
   return(0);
 }
 
+INT BNDP_SaveBndP_Ext (BNDP *BndP)
+{
+  return (1);
+}
+
 /* domain interface function: for description see domain.h */
 BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 {
@@ -4500,6 +4505,11 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
   }
 
   return((BNDP *)bp);
+}
+
+BNDP *BNDP_LoadBndP_Ext (void)
+{
+  return (NULL);
 }
 
 INT ReadAndPrintArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
