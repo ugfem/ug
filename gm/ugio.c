@@ -848,7 +848,17 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
         if (ID(MYVERTEX(NodeContext[i]))<nov
             && LEVEL(NodeContext[i])<LEVEL(vid_n[ID(MYVERTEX(NodeContext[i]))]))
         {
-          assert(i>=CORNERS_OF_ELEM(theElement));
+          /* TODO remove the next assert; Christian Wrobel 980127
+             it seems that the assert fails for valid load balancings
+             consider the following situation:
+
+             level 3:     |ooo*                     * is orphan node
+             level 2:         &------|              & is corner node and i points to it; thus i<=CORNERS_OF_ELEM(theElement) is valid
+             level 1:         |-------------|
+             level 0: |---------------------|       this is also an orphan element but this doesn't influence the current case
+           */
+          /*assert(i>=CORNERS_OF_ELEM(theElement)); */
+
           refinement->orphanid[n] = ID(vid_n[ID(MYVERTEX(NodeContext[i]))]);
           refinement->orphanid_ex = 1;
         }
