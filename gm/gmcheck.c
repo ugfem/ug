@@ -414,8 +414,8 @@ if (0)  /* this code is for special debugging (980204 s.l.) */
 						if (SONNODE(FatherNode) != theNode)
 						{
 							UserWriteF(PFMT " cornernode=" ID_FMTX 
-								" has father with wrong backptr=%x\n", 
-								me,ID_PRTX(theNode),SONNODE(FatherNode));
+								" has node father=" ID_FMTX " with wrong backptr=%x\n", 
+								me,ID_PRTX(theNode),ID_PRTX(FatherNode),SONNODE(FatherNode));
 							nerrors++;
 						}
 					}
@@ -476,8 +476,10 @@ if (0)  /* this code is for special debugging (980204 s.l.) */
 						if (MIDNODE(FatherEdge) != theNode)
 						{
 							UserWriteF(PFMT " midnode=" ID_FMTX 
-								" has father with wrong backptr=%x\n", 
-								me,ID_PRTX(theNode),MIDNODE(FatherEdge));
+								" has edge  father=" ID_FMTX " with wrong backptr=%x\n", 
+								me,ID_PRTX(theNode),ID_PRTX(FatherEdge),MIDNODE(FatherEdge));
+/* TODO: this should be deleted */
+if (1) MIDNODE(FatherEdge) = theNode;
 							nerrors++;
 						}
 					}
