@@ -97,6 +97,8 @@ INT InitUGGraph (void)
     SetHiWrd(err,__LINE__);
     return (err);
   }
+  if (SetStringValue("Devices:nWindows",0.0))
+    return(__LINE__);
 
   return (0);
 }

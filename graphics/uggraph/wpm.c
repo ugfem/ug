@@ -73,6 +73,20 @@ static INT thePlotObjTypesVarID;
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
+static INT SetDeviceInfo (void)
+{
+  DOUBLE counter;
+  UGWINDOW *theWin;
+
+  counter=0.0;
+  for (theWin=GetFirstUgWindow(); theWin!=NULL; theWin=GetNextUgWindow(theWin))
+    counter += 1.0;
+
+  if (SetStringValue(":Devices:nWindows",counter)) return(1);
+
+  return (0);
+}
+
 /****************************************************************************/
 /*D
    CreatePicture - Allocate a new PICTURE
@@ -282,6 +296,8 @@ free(data);
   UGW_VALID(theWindow)            = NO;
   UGW_IFWINDOW(theWindow)         = winID;
 
+  SetDeviceInfo();
+
   return (theWindow);
 }
 
@@ -370,6 +386,8 @@ UGWINDOW *OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *tas
     }
   }
 
+  SetDeviceInfo();
+
   return (theWin);
 }
 
@@ -452,6 +470,7 @@ INT DisposeUgWindow (UGWINDOW *theUgWindow)
   /* dispose window */
   if (ChangeEnvDir("/UgWindows") == NULL) return (1);
   if (RemoveEnvItem((ENVITEM*)theUgWindow)) return (1);
+  SetDeviceInfo();
 
   return (0);
 }
