@@ -45,9 +45,7 @@
 #define __DDDI_H__
 
 #include <limits.h>
-#ifndef MAXINT
-#include <math.h>
-#endif
+
 
 #include <assert.h>
 
@@ -489,12 +487,12 @@ extern VChannelPtr *theTopology;
 
 
 /* DDD_HDR may be invalid */
-#define MarkHdrInvalid(hdr)    OBJ_INDEX(hdr)=(MAXINT-1)
-#define IsHdrInvalid(hdr)      OBJ_INDEX(hdr)==(MAXINT-1)
+#define MarkHdrInvalid(hdr)    OBJ_INDEX(hdr)=(INT_MAX-1)
+#define IsHdrInvalid(hdr)      OBJ_INDEX(hdr)==(INT_MAX-1)
 
 #ifndef WithFullObjectTable
-#define MarkHdrLocal(hdr)      OBJ_INDEX(hdr)=(MAXINT)
-#define IsHdrLocal(hdr)        OBJ_INDEX(hdr)==(MAXINT)
+#define MarkHdrLocal(hdr)      OBJ_INDEX(hdr)=(INT_MAX)
+#define IsHdrLocal(hdr)        OBJ_INDEX(hdr)==(INT_MAX)
 #endif
 
 /****************************************************************************/
