@@ -35,10 +35,10 @@
 /* first compiler header for __MWCW__ definition iff */
 #include "compiler.h"
 
-/* includes for filesize(), filetype(), also on Macintosh?? (TODO) */
+/* includes for filesize(), filetype() */
 #if (defined __MWCW__) || (defined __MPW32__)
 #include <stat.h>
-/* #include <types.h> */
+/* NB: On Macs the structs of <types.h> are defined locally in <stat.h> */
 #else
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -271,7 +271,6 @@ FILE *fileopen (const char *fname, const char *mode)
 
 size_t filesize (const char *fname)
 {
-  size_t fsize;
   struct stat fstat;
 
   /* get (Unix) file descriptor */
@@ -430,14 +429,17 @@ INT ReadSearchingPaths (const char *filename, const char *paths)
 int DirCreateUsingSearchPaths (const char *fname, const char *paths)
 {
   /* HRR_TODO: get this straight */
-        #ifndef __MWCW__
   PATHS *thePaths;
 
   char fullname[MAXPATHLENGTH];
   INT i,fnamelen,mode,error;
   fnamelen = strlen(fname);
+        #ifndef __MWCW__
   mode = S_IRUSR | S_IWUSR | S_IXUSR |
          S_IRGRP | S_IXGRP;
+        #else
+  mode = 0;       /* ignored on Macintosh */
+        #endif
 
   if (paths == NULL)
     if ((error=mkdir(fname,mode))!=0) return (1);
@@ -457,7 +459,6 @@ int DirCreateUsingSearchPaths (const char *fname, const char *paths)
     if ((error=mkdir(fullname,mode))!=0)
       return (1);
   }
-        #endif
   return (0);
 }
 
