@@ -1012,7 +1012,7 @@ extern CONTROL_ENTRY
 #define PPREDVC(p,v)                            (((v)==PRIO_FIRSTVECTOR(p,PrioMaster)) ? \
                                                  PRIO_LASTVECTOR(p,PrioBorder) : (v)->pred)
 #else
-#define PPREDVC(v)                                      ((v)->pred)
+#define PPREDVC(p,v)                            ((v)->pred)
 #endif
 #define PREDVC(v)                                       ((v)->pred)
 #define SUCCVC(v)                                       ((v)->succ)
