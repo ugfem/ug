@@ -57,6 +57,7 @@ int FAMGSystem::Init()
     nmg = 0;
     for(i = 0; i < FAMGMULTIGRIDS; i++) mg[i] = NULL; 
     matrix = NULL;
+    Consmatrix = NULL;
     for(i = 0; i < FAMGMAXVECTORS; i++) vector[i] = NULL;
     
     SolverPtr = NULL;
@@ -67,7 +68,11 @@ int FAMGSystem::Init()
 
 int FAMGSystem::ConstructSimple( FAMGMatrixAlg* stiffmat, FAMGVector* tvA, FAMGVector* tvB )
 {
-    FAMGMarkHeap(FAMG_FROM_BOTTOM);
+	#ifdef ModelP
+	assert(0);	// not for parallel because of Mat/ConMat
+	#endif
+
+	FAMGMarkHeap(FAMG_FROM_BOTTOM);
     
     matrix = stiffmat;
 
@@ -108,7 +113,7 @@ int FAMGSystem::ConstructSimple( FAMGMatrixAlg* stiffmat, FAMGVector* tvA, FAMGV
 }
 
 
-int FAMGSystem::Construct( FAMGGridVector *gridvector, FAMGMatrixAlg* stiffmat, FAMGVector *vectors[FAMGMAXVECTORS] )
+int FAMGSystem::Construct( FAMGGridVector *gridvector, FAMGMatrixAlg* stiffmat, FAMGMatrixAlg* Consstiffmat, FAMGVector *vectors[FAMGMAXVECTORS] )
 {
     FAMGMarkHeap(FAMG_FROM_TOP);
     FAMGMarkHeap(FAMG_FROM_BOTTOM);
@@ -136,11 +141,20 @@ int FAMGSystem::Construct( FAMGGridVector *gridvector, FAMGMatrixAlg* stiffmat, 
 		return 1;
     }
  
+    SetConsMatrix(Consstiffmat);
+    if (GetConsMatrix() == NULL)
+	{
+        ostrstream ostr;
+        ostr << __FILE__ << __LINE__ <<  "you must provide a consistent matrix" << endl;
+        FAMGError(ostr);
+		return 1;
+    }
+ 
 #ifdef FAMG_REORDERCOLUMN	
     // only for reorder column
     colmap = (int*) FAMGGetMem(famg_interface->n*sizeof(int),FAMG_FROM_TOP);
     if (colmap == NULL) return 1;
-    if(matrix->OrderColumns(colmap)) return 1;
+    if(GetMatrix()->OrderColumns(colmap)) return 1;
 #endif
         
 	for ( i=0; i<FAMGMAXVECTORS; i++ )
@@ -316,6 +330,7 @@ FAMGSystem::FAMGSystem()
     nmg = 0;
     for(i = 0; i < FAMGMULTIGRIDS; i++) mg[i] = NULL; 
     matrix = NULL;
+    Consmatrix = NULL;
     for(i = 0; i < FAMGMAXVECTORS; i++) vector[i] = NULL;
     SolverPtr = &FAMGSystem::LinIt;
 }

@@ -85,7 +85,7 @@ void FAMGGrid::Restriction(FAMGGrid *cg) const
 	FAMGTransferEntry *transfg;
 	
 	// jacobi smoothing for the fine nodes
-    fgsolution.JacobiSmoothFG( *GetMatrix(), fgdefect );
+    fgsolution.JacobiSmoothFG( *GetConsMatrix(), fgdefect );
 	// correct defect
 	Defect();
 
@@ -131,7 +131,7 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, FAMGVector *c)
         // famg as solver
 
         // jacobi smoothing for the fine nodes
-        fgsol.JacobiSmoothFG( *GetMatrix(), fgdefect );
+        fgsol.JacobiSmoothFG( *GetConsMatrix(), fgdefect );
         
         // correct defect
         Defect();
@@ -143,7 +143,7 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, FAMGVector *c)
         fgsol = 0.0;
 
         // jacobi smoothing for the fine nodes
-        fgsol.JacobiSmoothFG( *GetMatrix(), fgdefect );
+        fgsol.JacobiSmoothFG( *GetConsMatrix(), fgdefect );
 
         // defect is computed in ug (Lmgc)
     }
@@ -171,25 +171,25 @@ void FAMGGrid::PostSmooth()
 
 void FAMGGrid::JACSmooth()
 {
-	GetVector(FAMGUNKNOWN)->dampedJacobiSmoother( *GetMatrix(), *GetVector(FAMGDEFECT) );
+	GetVector(FAMGUNKNOWN)->dampedJacobiSmoother( *GetConsMatrix(), *GetVector(FAMGDEFECT) );
     return;
 }
 
 void FAMGGrid::FGSSmooth()
 {
-	GetVector(FAMGUNKNOWN)->FGSSmoother( *GetMatrix(), *GetVector(FAMGDEFECT) );
+	GetVector(FAMGUNKNOWN)->FGSSmoother( *GetConsMatrix(), *GetVector(FAMGDEFECT) );
     return;
 }
 
 void FAMGGrid::BGSSmooth()
 {
-	GetVector(FAMGUNKNOWN)->BGSSmoother( *GetMatrix(), *GetVector(FAMGDEFECT) );
+	GetVector(FAMGUNKNOWN)->BGSSmoother( *GetConsMatrix(), *GetVector(FAMGDEFECT) );
     return;
 }
 
 void FAMGGrid::SGSSmooth()
 {
-	GetVector(FAMGUNKNOWN)->SGSSmoother( *GetMatrix(), *GetVector(FAMGDEFECT) );
+	GetVector(FAMGUNKNOWN)->SGSSmoother( *GetConsMatrix(), *GetVector(FAMGDEFECT) );
     return;
 }
 
@@ -373,6 +373,7 @@ void FAMGGrid::SmoothTV()
 
     for(k = 0; k < stv; k++)
     {
+		assert(0); // TODO: noch ueberlegen ob matrix Consmatrix richtig ist
 		FAMGVectorIter tviter(tvA);
 		while( tviter(ve) )
 		{
@@ -575,6 +576,7 @@ int FAMGGrid::InitLevel0(const class FAMGSystem &system)
 #endif
 	
     matrix = system.GetMatrix();
+    Consmatrix = system.GetConsMatrix();
     tmpmatrix = matrix;
 	
 #ifdef FAMG_ILU
@@ -631,6 +633,14 @@ int FAMGGrid::Init(int nn, const FAMGGrid& grid_pattern)
 	matrix = new FAMGugMatrix(new_grid, *(FAMGugMatrix*)grid_pattern.GetMatrix());
     if(matrix == NULL)
 		return 1;
+	if(grid_pattern.GetMatrix()!=grid_pattern.GetConsMatrix())
+	{
+		Consmatrix = new FAMGugMatrix(new_grid, *(FAMGugMatrix*)grid_pattern.GetConsMatrix());
+	    if(Consmatrix == NULL)
+			return 1;
+	}
+	else
+		Consmatrix = matrix;
 #else	
     matrix = (FAMGMatrix *) FAMGGetMem(sizeof(FAMGMatrix),FAMG_FROM_TOP);
     if(matrix == NULL)
@@ -699,7 +709,13 @@ void FAMGGrid::Deconstruct()
     }
 	
 #ifdef USE_UG_DS
+	if( GetConsMatrix()!=GetMatrix() )
+	{
+		delete GetConsMatrix();
+		SetConsMatrix(NULL);
+	}
 	delete GetMatrix();
+	SetMatrix(NULL);
 #else
 	assert(0);
     father = NULL;
@@ -788,6 +804,23 @@ int FAMGGrid::ConstructTransfer()
 {
     int i, conloops;
 
+#ifdef ModelP
+	// set a consistent copy of the stiffmat
+	// in order to be able to construct a consistent interpolationmatrix
+	
+	MULTIGRID *mg = MYMG(mygrid);
+	INT level = GLEVEL(mygrid);
+	MATDATA_DESC *A, *ACons;
+	
+	A = ((FAMGugMatrix*)GetMatrix())->GetMatDesc();
+	ACons = ((FAMGugMatrix*)GetConsMatrix())->GetMatDesc();
+	
+    if (dmatcopy(mg,level,level,ALL_VECTORS,ACons,A) != NUM_OK) 
+	   assert(0);
+	if (l_matrix_consistent(mygrid,ACons,MAT_CONS) != NUM_OK) 
+	   assert(0);
+#endif
+
     conloops = FAMGGetParameter()->Getconloops();
     transfer = (FAMGTransfer *) FAMGGetMem(sizeof(FAMGTransfer),FAMG_FROM_TOP);
     if(transfer == NULL) return 1;
@@ -815,29 +848,33 @@ int FAMGGrid::ConstructTransfer()
 	{
 		if( me == p )
 		{
+		    if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
 		    if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
     		if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
 		}
 		
+		prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
 		CommunicateNodeStatus();
+	}	
 	
-	    for(i = 0; i < n; i++)
-    	{
-        	nodei = graph->GetNode(i);
+	// put the undecided nodes from the core partition into the list
+    for(i = 0; i < n; i++)
+   	{
+       	nodei = graph->GetNode(i);
+	
+		// now only the unmarked nodes must be inserted into the list
+		if( nodei->IsUndecidedNode() )
+		{
 			vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
-		
-			if( IS_FAMG_GHOST(vec) )
-				continue; // only master vectors can be in border the of the core partition
-		
-			// now only the unmarked nodes must be inserted into the list
-			if( !nodei->IsCGNode() && !nodei->IsFGNode() )
+			if( IS_FAMG_MASTER(vec) ) // only master vectors can be in border the of the core partition
 				if(graph->InsertNode(this, nodei))
 					return 0;
-	    }
-	}	
+		}
+    }
 #endif
 	
-    if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+	if( graph->InsertHelplist() ) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+    if (graph->EliminateNodes(this)) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
     
     for(i = 0; i < conloops; i++)
     {
@@ -864,13 +901,14 @@ int FAMGGrid::ConstructTransfer()
     
 #ifdef ModelP
 	// update the ghost and border nodes
+	prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
 	CommunicateNodeStatus();
 #endif
 	
     nf = graph->GetNF();
-    // not neceassary any more: matrix->MarkUnknowns(graph);
+    // TODO: not neceassary any more: matrix->MarkUnknowns(graph);
  
-printim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
+	prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
   
 
 #ifdef UG_DRAW
@@ -1023,7 +1061,7 @@ int FAMGGrid::Reorder()
 // *********** parallel extensions *********************************************
 // *****************************************************************************
 
-#ifdef ModelP
+#ifdef ModelPQQQQQQQQQQQQQQQQQQQQQ
 
 /*
 	Das Problem bei dieser Methode ist zur Zeit, dass beim Zielknoten VINDEX und 
@@ -1293,30 +1331,270 @@ void FAMGGrid::CommunicateNodeStatus()
 #endif
 
 
-#ifdef ModelPQQQQ
+#ifdef ModelP
 
 /*
 	2. Version
 */
+static FAMGGraph *Communication_Graph = NULL;
+static FAMGGrid *Communication_Grid = NULL;
+enum FAMG_MSG_TYPE {FAMG_TYPE_NONE, FAMG_TYPE_COARSE, FAMG_TYPE_FINE};
+
+static int Gather_NodeStatus (DDD_OBJ obj, void *data)
+{
+	VECTOR *vec = (VECTOR *)obj;
+	char *buffer = (char*)data;
+	FAMGNode *node = Communication_Graph->GetNode(VINDEX(vec));
+	FAMG_MSG_TYPE &msgtype = *(FAMG_MSG_TYPE*)buffer;
+
+	if( node->GetFlagNewMarked() )
+	{
+		if( node->IsFGNode() )
+		{
+	    	PRINTDEBUG(np,1,("%d: Gather_NodeStatus: Fine "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+			msgtype = FAMG_TYPE_FINE;
+			buffer += sizeof(msgtype);
+			
+			char &NumberEntries = *(char*)buffer;
+			buffer += sizeof(NumberEntries);
+			NumberEntries = 0;
+			
+			FAMGTransferEntry *trans;
+			
+			for ( MATRIX *imat=VISTART(vec); imat!= NULL; imat = MNEXT(imat) )
+			{
+				*(DDD_GID*)buffer = DDD_InfoGlobalId(PARHDR(MDEST(imat)));
+				buffer += sizeof(DDD_GID);
+				
+				trans = (FAMGTransferEntry*)imat;	// dirty cast
+				
+				((double*)buffer)[0] = (double)trans->GetProlongation();
+				((double*)buffer)[1] = (double)trans->GetRestriction();
+		    	PRINTDEBUG(np,1,("%d: Gather_NodeStatus:      ->"VINDEX_FMTX" P=%g R=%g\n",me,VINDEX_PRTX(MDEST(imat)),((double*)buffer)[0],((double*)buffer)[1] ));
+				buffer += 2*sizeof(double);
+
+				NumberEntries++;
+			}
+		}
+		else
+		{
+	    	PRINTDEBUG(np,1,("%d: Gather_NodeStatus: Coarse "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+			assert(node->IsCGNode());
+			msgtype = FAMG_TYPE_COARSE;
+		}
+		
+		// now the node should not be considered as newly marked
+		node->SetFlagNewMarked(0);
+	
+	}
+	else
+	{	// the F/C status of the node has not changed
+	   	PRINTDEBUG(np,1,("%d: Gather_NodeStatus: not changed "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+		msgtype = FAMG_TYPE_NONE;
+	}
+	
+	return 0;
+}
+
+static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
+{
+	VECTOR *vec = (VECTOR *)obj;
+	char *buffer = (char*)data;
+	FAMG_MSG_TYPE msgtype = *(FAMG_MSG_TYPE*)buffer;
+	buffer += sizeof(FAMG_MSG_TYPE);
+
+	if( msgtype == FAMG_TYPE_NONE )
+	{
+	    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: not changed "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+		return 0;		// no info for me
+	}
+	
+	FAMGNode *node = Communication_Graph->GetNode(VINDEX(vec));
+	
+	assert( node->IsUndecidedNode() );
+	
+	if( msgtype == FAMG_TYPE_COARSE )
+	{
+	    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Coarse "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+
+		// code from PaList::MarkParents
+        Communication_Graph->Remove(node);
+        Communication_Graph->MarkCGNode(node);
+        Communication_Graph->UpdateNSons(NULL,node->GetPaList(),Communication_Grid);
+        Communication_Graph->ClearPaList(node->GetPaList());
+        node->SetPaList(NULL);
+        Communication_Grid->UpdateNeighborsCG(node->GetId());
+	}
+	else if( msgtype == FAMG_TYPE_FINE )
+	{
+		double prolongations[FAMGMAXPARENTS], restrictions[FAMGMAXPARENTS];
+		int np, parents[FAMGMAXPARENTS], pos = 0;
+		DDD_GID pgid;
+		MATRIX *mat;	
+		
+		np = *(char*)buffer;		// fetch number of parents from buffer
+		buffer += sizeof(char);
+		
+	    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Fine "VINDEX_FMTX" %d parents\n",me,VINDEX_PRTX(vec), np));
+		
+		for( ; np-- > 0; )	// process parent nodes
+		{
+			pgid = *(DDD_GID*)buffer;	// fetch GID of a parent node from buffer
+			buffer += sizeof(DDD_GID);
+			
+		    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus:     -> GID %08x P=%g R=%g\n",me,pgid,((double*)buffer)[0],((double*)buffer)[1]));
+			for( mat = MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat) )
+				if( DDD_InfoGlobalId(PARHDR(MDEST(mat)))==pgid )
+					break;
+			if( mat==NULL )
+			{
+				buffer += 2*sizeof(double);	// skip buffer
+				continue; // this parent node is not on this processor
+				// is skippping OK  ?????????
+			}
+			
+			assert( pos<FAMGMAXPARENTS );
+			
+			parents[pos] = VINDEX(MDEST(mat));
+			prolongations[pos] = ((double*)buffer)[0];
+			restrictions[pos] = ((double*)buffer)[1];
+			buffer += 2*sizeof(double);
+		    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus:     -> "VINDEX_FMTX" P=%g R=%g\n",me,VINDEX_PRTX(MDEST(mat)),prolongations[pos],restrictions[pos]));
+			pos++;
+		}
+		
+		// put the values for the parent nodes into the node
+		FAMGPaList *palist = NULL;
+		if(Communication_Graph->SavePaList(palist,pos,parents,prolongations,restrictions,1.0))
+		{
+			assert(0);
+			return 1;
+		}
+		Communication_Graph->ClearPaList(node->GetPaList());		
+		node->SetPaList(palist);
+		
+		// process node as fine node
+		node->Eliminate(Communication_Grid);
+		node->UpdateNeighborsFG(Communication_Grid);
+	}
+	else
+	{
+		assert(0); // unrecognized message type
+		return 1;
+	}
+	
+	node->SetFlagNewMarked(0);	// not newly set but only updated
+	
+	return 0;
+}
+
+void FAMGGrid::CommunicateNodeStatus()
+{
+	Communication_Graph = GetGraph();	// set global variable to pass the graph to the Handlers
+	Communication_Grid = this;			// set global variable to pass the grid to the Handlers
+	
+	int size = sizeof(FAMG_MSG_TYPE) + sizeof(char) + 
+				FAMGMAXPARENTS * ( sizeof(DDD_GID) + 2 * sizeof(double) );
+	size = CEIL(size);
+	
+DDD_IFRefreshAll(); // ????????/// only temp
+	DDD_IFAExchange( BorderVectorSymmIF, GRID_ATTR(mygrid), size,
+					Gather_NodeStatus, Scatter_NodeStatus);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// l_force_consistence
+///////////////////////////////////////////////////////////////////////////////
+#ifdef WEQ
 static int Gather_VectorComp (DDD_OBJ obj, void *data)
+// exactly copy of Gather_VectorComp
 {
 	VECTOR *pv = (VECTOR *)obj;
 	INT i,type;
 	const SHORT *Comp;	
 
-}
+	if (VD_IS_SCALAR(ConsVector)) {
+		if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
+		  *((DOUBLE *)data) = VVALUE(pv,VD_SCALCMP(ConsVector));
 
-static int Scatter_VectorComp (DDD_OBJ obj, void *data)
+		return (NUM_OK);
+	}
+   
+	type = VTYPE(pv);
+	Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
+	for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+		((DOUBLE *)data)[i] = VVALUE(pv,Comp[i]);
+
+	return (NUM_OK);
+}
+ 
+static int Scatter_GhostVectorComp (DDD_OBJ obj, void *data)
 {
 	VECTOR *pv = (VECTOR *)obj;
-	INT i,type,vecskip;
+	INT i,type;
 	const SHORT *Comp;	
+
+	if (VD_IS_SCALAR(ConsVector)) {
+  	    if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
+		    VVALUE(pv,VD_SCALCMP(ConsVector)) = *((DOUBLE *)data);
+
+		return (NUM_OK);
+	}
+
+	type = VTYPE(pv);
+	Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
+	for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+		VVALUE(pv,Comp[i]) = ((DOUBLE *)data)[i]; 
+
+	return (NUM_OK);
 }
 
-void FAMGGrid::CommunicateNodeStatus()
+INT l_force_consistence (GRID *g, const VECDATA_DESC *x)
 {
-	DDD_IFAExchange( OuterVectorSymmIF, GRID_ATTR(mygrid), sizeof(),
-					, );
-}
+    INT tp,m; 
 
+    ConsVector = (VECDATA_DESC *)x;
+
+	m = 0;
+	for (tp=0; tp<NVECTYPES; tp++)
+ 	    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+
+	DDD_IFAOneway(VectorVIF, GRID_ATTR(g), IF_FORWARD, m * sizeof(DOUBLE),
+				  Gather_VectorComp, Scatter_GhostVectorComp);
+
+	return (NUM_OK);
+}
+#endif
+
+pl(FAMGGraph *graph)
+{
+	FAMGList *list;
+	FAMGNode *n;
+	list = graph->GetList();
+	cout << "LISTE: "<<endl;
+	while(list!=NULL)
+	{
+		cout<<"   data" << list->GetData()<<" first="<<list->GetFirst()->GetId()<<" last="<<list->GetLast()->GetId()<<endl<<flush;
+		n = list->GetFirst();
+		while( n!=NULL)
+		{
+			cout<<"       "<<n->GetId();
+			if(n->GetPred()!=NULL)
+				cout<<" pred= "<<n->GetPred()->GetId();
+			if(n->GetSucc()!=NULL)
+				cout<<" succ= "<<n->GetSucc()->GetId();
+			cout<<endl<<flush;
+			n = n->GetSucc();
+		}
+		list = list->GetSucc();
+	}
+	cout <<"helplist:";
+	n=graph->GetHelpList();
+	while(n!=NULL)
+	{
+		cout<<" "<<n->GetId();
+		n = n->GetSucc();
+	}
+	cout<<endl<<flush;
+}
 #endif

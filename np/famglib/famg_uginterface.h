@@ -43,6 +43,7 @@
 struct FAMG_Interface
 {
   FAMGMatrixAlg* matrix;
+  FAMGMatrixAlg* Consmatrix;
   FAMGGridVector* gridvector;
   FAMGVector* vector[FAMG_NVECTORS];
 };
@@ -133,7 +134,7 @@ FAMG_TransferEntry* FAMG_GetTransferEntry(int level,int i);
 
 int FAMGConstructParameter(struct FAMGParameter_ug *in_parameter);
 void FAMGDeconstructParameter();
-int FAMGConstruct(FAMGGridVector *gridvector, FAMGMatrixAlg *matrix, FAMGVector *vectors[FAMG_NVECTORS]);
+int FAMGConstruct(FAMGGridVector *gridvector, FAMGMatrixAlg *matrix, FAMGMatrixAlg *Consmatrix, FAMGVector *vectors[FAMG_NVECTORS]);
 int FAMGConstructSimple(FAMGMatrixAlg *matrix, FAMGVector *tvA, FAMGVector *tvB);
 int FAMGSolve(FAMGVector *rhs, FAMGVector *defect, FAMGVector *unknown);
 void FAMGDeconstruct();

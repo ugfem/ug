@@ -124,7 +124,7 @@ void FAMGDeconstructParameter()
     delete parameter;
 }
 
-int FAMGConstruct(FAMGGridVector *gridvector, FAMGMatrixAlg *matrix, FAMGVector *vectors[FAMG_NVECTORS])
+int FAMGConstruct(FAMGGridVector *gridvector, FAMGMatrixAlg *matrix, FAMGMatrixAlg *Consmatrix, FAMGVector *vectors[FAMG_NVECTORS])
 {
  
 
@@ -146,7 +146,7 @@ int FAMGConstruct(FAMGGridVector *gridvector, FAMGMatrixAlg *matrix, FAMGVector 
 	}
     
     famgsystemptr->Init();
-    if(famgsystemptr->Construct(gridvector,matrix,vectors))
+    if(famgsystemptr->Construct(gridvector,matrix,Consmatrix,vectors))
 	{
 		ostrstream ostr; ostr  << __FILE__ << ", line " << __LINE__ << ": can not construct FAMGSystem" << endl;
 		FAMGError(ostr);

@@ -274,6 +274,7 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 	#endif
 	
 	cg.GetMatrix()->GetN() = nrVec;
+	cg.GetConsMatrix()->GetN() = nrVec;
 	
 	// second step: reconnect the transfer matrices from fine vectors to their coarse grid parents ,
 	// which has been created in the first step

@@ -62,7 +62,7 @@ extern "C"
 $Header$
 */
 
-void printm(int level)
+void prm(int level, int comp)
 // for debugging
 {
 #ifdef USE_UG_DS
@@ -72,7 +72,7 @@ void printm(int level)
 	
 	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
 
-	printf("Matrix:\n");
+	printf("Matrix on level %d: component %d\n", GLEVEL(g), comp);
 	for (v=PFIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
 	{
 #ifdef ModelP 
@@ -81,7 +81,7 @@ void printm(int level)
 		printf("v[%4d] ", VINDEX(v));
 		for (m=VSTART(v); m!=NULL; m = MNEXT(m))
 		{
-			printf("\t%g(->%d)",MVALUE(m,0),VINDEX(MDEST(m)));
+			printf("\t%g(->%d)",MVALUE(m,comp),VINDEX(MDEST(m)));
 		}
 		printf("\n");
 	}
@@ -108,7 +108,7 @@ void printm(int level)
 #endif
 }
 
-void printim(int level)
+void prim(int level)
 // for debugging
 {
 #ifdef USE_UG_DS
@@ -118,7 +118,7 @@ void printim(int level)
 	
 	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
 
-	printf("Interpolation Matrix:\n");
+	printf("Interpolation Matrix on level %d:\n", GLEVEL(g));
 	for (v=PFIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
 	{
 #ifdef ModelP 
@@ -173,7 +173,7 @@ void printim(int level)
 #endif
 }
 
-void printv( int level, int x_nr )
+void prv( int level, int x_nr )
 /* for calling from a debugger */
 {
 #ifdef USE_UG_DS
@@ -182,7 +182,7 @@ void printv( int level, int x_nr )
 	
 	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
 	
-	printf("Vector:\n");
+	printf("Vector on level %d:\n",GLEVEL(g));
     for (v=PFIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
     {
 		VectorPosition(v,pos);

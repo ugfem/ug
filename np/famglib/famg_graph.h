@@ -187,7 +187,10 @@ struct FAMGNodeBitField
   unsigned f1 : 1;
   unsigned f2 : 1;
   unsigned nt : 2;
-  unsigned ns : 11;
+  unsigned ns : 10;
+#ifdef ModelP
+  unsigned newmarked : 1;
+#endif
 };
 
 class FAMGNode
@@ -219,11 +222,15 @@ public:
   int GetFlag() const;
   int GetFlag1() const;
   int GetFlag2() const;
+  int GetFlagNewMarked() const;
   int IsCGNode() const;
   int IsFGNode() const;
+  int IsUndecidedNode() const;
+  void SetUndecidedNode();
   void SetFlag(int);
   void SetFlag1(int);
   void SetFlag2(int);
+  void SetFlagNewMarked(int);
   void Init(int index, const FAMGVectorEntry &id);
   int UpdateNeighborsFG(class FAMGGrid *grid);
   int Eliminate(FAMGGrid *grid);
@@ -307,6 +314,12 @@ inline int FAMGNode::IsCGNode() const {
 inline int FAMGNode::IsFGNode() const {
   return (control.nt == 1);
 }
+inline int FAMGNode::IsUndecidedNode() const {
+  return (control.nt == 0);
+}
+inline void FAMGNode::SetUndecidedNode() {
+  control.nt = 0;
+}
 inline int FAMGNode::GetFlag() const {
   return control.f0;
 }
@@ -316,12 +329,27 @@ inline int FAMGNode::GetFlag1() const {
 inline int FAMGNode::GetFlag2() const {
   return control.f2;
 }
+#ifdef ModelP
+inline int FAMGNode::GetFlagNewMarked() const {
+  return control.newmarked;
+}
+inline void FAMGNode::SetFlagNewMarked(int f) {
+  control.newmarked = f;
+}
+inline void FAMGNode::NodeMarkCG() {
+  printf("node %d marked Coarse\n",GetId());control.nt = 2;SetFlagNewMarked(1);
+}                                                                                                                       // only in the node; ensure that the CG is also set in the gridvector
+inline void FAMGNode::NodeMarkFG() {
+  printf("node %d marked Fine\n",GetId());control.nt = 1;SetFlagNewMarked(1);
+}                                                                                                                       // only in the node; ensure that the FG is also set in the gridvector
+#else
 inline void FAMGNode::NodeMarkCG() {
   control.nt = 2;
 }                                                       // only in the node; ensure that the CG is also set in the gridvector
 inline void FAMGNode::NodeMarkFG() {
   control.nt = 1;
 }                                                       // only in the node; ensure that the FG is also set in the gridvector
+#endif
 inline void FAMGNode::SetFlag(int f) {
   control.f0 = f;
 }

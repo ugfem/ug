@@ -303,10 +303,12 @@ public:
   }
   FAMGGridVector * GetGridVector() const;
   FAMGMatrixAlg * GetMatrix() const;
+  FAMGMatrixAlg * GetConsMatrix() const;
   FAMGVector *GetVector(int i) const;
   FAMGMultiGrid *GetMultiGrid(int) const;
   void SetGridVector(FAMGGridVector *);
   void SetMatrix(FAMGMatrixAlg *);
+  void SetConsMatrix(FAMGMatrixAlg *);
   void SetVector(int, FAMGVector *);
   int Init();
   FAMGMultiGrid *CreateMultiGrid();
@@ -321,7 +323,7 @@ public:
   int ComputeEigenVector(FAMGMultiGrid *mg0, double **vec, double *G, double *P, int con);
   int ComputeEigenVectorTrans(FAMGMultiGrid *mg0, double **vec, double *G, double *P, int con);
   int GMRES();
-  int Construct( FAMGGridVector *gridvector, FAMGMatrixAlg* stiffmat, FAMGVector* vectors[FAMGMAXVECTORS] );
+  int Construct( FAMGGridVector *gridvector, FAMGMatrixAlg* stiffmat, FAMGMatrixAlg* Consstiffmat, FAMGVector* vectors[FAMGMAXVECTORS] );
   int ConstructSimple( FAMGMatrixAlg* stiffmat, FAMGVector* tvA, FAMGVector* tvB );
   int Deconstruct();
   int DeconstructSimple();
@@ -337,6 +339,7 @@ private:
   int nmg;
   FAMGMultiGrid *mg[FAMGMULTIGRIDS];
   FAMGMatrixAlg *matrix;
+  FAMGMatrixAlg *Consmatrix;
   FAMGGridVector *mygridvector;
   FAMGVector *vector[FAMGMAXVECTORS];
   int *colmap;
@@ -352,6 +355,9 @@ inline FAMGGridVector *FAMGSystem::GetGridVector() const {
 inline FAMGMatrixAlg *FAMGSystem::GetMatrix() const {
   return matrix;
 }
+inline FAMGMatrixAlg *FAMGSystem::GetConsMatrix() const {
+  return Consmatrix;
+}
 inline FAMGVector *FAMGSystem::GetVector(int i) const {
   return vector[i];
 }
@@ -363,6 +369,9 @@ inline void FAMGSystem::SetGridVector(FAMGGridVector *ptr) {
 }
 inline void FAMGSystem::SetMatrix(FAMGMatrixAlg *ptr) {
   matrix = ptr;
+}
+inline void FAMGSystem::SetConsMatrix(FAMGMatrixAlg *ptr) {
+  Consmatrix = ptr;
 }
 inline void FAMGSystem::SetVector(int i, FAMGVector *ptr) {
   vector[i] = ptr;

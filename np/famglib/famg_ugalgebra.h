@@ -27,6 +27,10 @@ extern "C"
 {
 #include "gm.h"
 #include "udm.h"
+
+#ifdef ModelP
+#include "np.h"
+#endif
 }
 
 #include "famg_algebra.h"
@@ -42,7 +46,7 @@ extern "C"
 #ifdef ModelP
 // auxiliaries for ug VECTOR
 #define IS_FAMG_MASTER(vec) (PRIO(vec)==PrioMaster)
-#define IS_FAMG_GHOST(vec)  (PRIO(vec)!=PrioMaster)
+#define IS_FAMG_GHOST(vec)  (PRIO(vec)<=PrioBorder)
 #endif
 
 class FAMGugVectorEntryRef : public FAMGVectorEntryRef
@@ -321,9 +325,19 @@ class FAMGugMatrix : public FAMGMatrixAlg
   typedef class FAMGugMatrixIter Iterator;
 
 public:
-  FAMGugMatrix( GRID *grid, int mat_comp, int nrVec, int nrLink ) : FAMGMatrixAlg(nrVec,nrLink), mygrid(grid), comp(mat_comp) {}
-  FAMGugMatrix( GRID *grid, int mat_comp ) : FAMGMatrixAlg(0,0), mygrid(grid), comp(mat_comp) {}               // CAUTION: set N and NLinks explicitly
-  FAMGugMatrix( GRID *grid, const FAMGugMatrix &pattern_mat) : FAMGMatrixAlg(0,0), mygrid(grid), comp(pattern_mat.comp) {}
+  FAMGugMatrix( GRID *grid, MATDATA_DESC *md, int nrVec, int nrLink ) : FAMGMatrixAlg(nrVec,nrLink), mygrid(grid), matdesc(md), comp(MD_SCALCMP(md)) {
+    assert(MD_IS_SCALAR(md));
+  }
+  FAMGugMatrix( GRID *grid, MATDATA_DESC *md ) : FAMGMatrixAlg(0,0), mygrid(grid), matdesc(md), comp(MD_SCALCMP(md)) {
+    assert(MD_IS_SCALAR(md));
+  }                                                                                                                                                            // CAUTION: set N and NLinks explicitly
+  FAMGugMatrix( GRID *grid, const FAMGugMatrix &pattern_mat) : FAMGMatrixAlg(0,0), mygrid(grid) {
+    matdesc = pattern_mat.GetMatDesc(); assert(matdesc!=NULL); assert(MD_IS_SCALAR(matdesc)); comp = MD_SCALCMP(matdesc);
+  }
+  ~FAMGugMatrix() {
+    if (FreeMD(MYMG(GetMyGrid()),GLEVEL(GetMyGrid()),GLEVEL(GetMyGrid()),GetMatDesc())) assert(0);
+  }
+
   //void SetNumbers();
 
   virtual double operator[] ( const FAMGMatrixEntry & me ) const {return MVALUE(((FAMGugMatrixEntryRef*)me.GetPointer())->myMatrix(),GetComp());}
@@ -350,6 +364,10 @@ public:
 
   virtual int ConstructGalerkinMatrix( const FAMGGrid &fg );
 
+  MATDATA_DESC *GetMatDesc() const {
+    return matdesc;
+  }
+
   // only for specialized functions
   double& operator[] ( const FAMGugMatrixEntry & me );
   double operator[] ( const FAMGugMatrixEntry & me ) const;
@@ -364,6 +382,7 @@ private:
   }
   int comp;
   GRID *mygrid;
+  MATDATA_DESC *matdesc;
 };
 
 // specialized classes to increase performance

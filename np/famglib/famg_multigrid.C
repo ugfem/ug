@@ -110,6 +110,10 @@ int FAMGMultiGrid::Construct()
         grid[n] = cg;
         g = cg;
         n++;
+printf("after Galerkin:\n");
+prm(0,0);
+prm(0,1);
+prm(-1,0);
         if(nnc > nn*mincoarse)
 			break;
     }

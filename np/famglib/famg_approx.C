@@ -552,7 +552,7 @@ int FAMGGrid::AnalyseNode3(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 	FAMGGraph &graph = *GetGraph();
 	const FAMGVector &tvA = *vector[FAMGTVA];
 	const FAMGVector &tvB = *vector[FAMGTVB];
-	const FAMGMatrixAlg &M = *GetMatrix();
+	const FAMGMatrixAlg &M = *GetConsMatrix();
 	FAMGVectorEntry vecj;
 	FAMGMatrixEntry matij;
 
@@ -657,7 +657,7 @@ int FAMGGrid::AnalyseNode4(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 	FAMGGraph &graph = *GetGraph();
 	const FAMGVector &tvA = *vector[FAMGTVA];
 	const FAMGVector &tvB = *vector[FAMGTVB];
-	const FAMGMatrixAlg &M = *GetMatrix();
+	const FAMGMatrixAlg &M = *GetConsMatrix();
 	FAMGVectorEntry vecj;
 	FAMGMatrixEntry matij;
 
@@ -780,7 +780,7 @@ int FAMGGrid::AnalyseNode5(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 	FAMGGraph &graph = *GetGraph();
 	const FAMGVector &tvA = *vector[FAMGTVA];
 	const FAMGVector &tvB = *vector[FAMGTVB];
-	const FAMGMatrixAlg &M = *GetMatrix();
+	const FAMGMatrixAlg &M = *GetConsMatrix();
 	FAMGVectorEntry vecj;
 	FAMGMatrixEntry matij;
 
@@ -1418,7 +1418,7 @@ int FAMGGrid::AnalyseNode0(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 	FAMGGraph &graph = *GetGraph();
 	const FAMGVector &tvA = *vector[FAMGTVA];
 	const FAMGVector &tvB = *vector[FAMGTVB];
-	const FAMGMatrixAlg &M = *GetMatrix();
+	const FAMGMatrixAlg &M = *GetConsMatrix();
 	FAMGVectorEntry vecj;
 	FAMGMatrixEntry matij;
 
@@ -1525,7 +1525,7 @@ int FAMGGrid::AnalyseNode1(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 	FAMGGraph &graph = *GetGraph();
 	const FAMGVector &tvA = *vector[FAMGTVA];
 	const FAMGVector &tvB = *vector[FAMGTVB];
-	const FAMGMatrixAlg &M = *GetMatrix();
+	const FAMGMatrixAlg &M = *GetConsMatrix();
 	FAMGVectorEntry vecj;
 	FAMGMatrixEntry matij;
 
@@ -1652,7 +1652,7 @@ int FAMGGrid::AnalyseNode2(const FAMGVectorEntry &veci, FAMGPaList *&palist)
 	FAMGGraph &graph = *GetGraph();
 	const FAMGVector &tvA = *vector[FAMGTVA];
 	const FAMGVector &tvB = *vector[FAMGTVB];
-	const FAMGMatrixAlg &M = *GetMatrix();
+	const FAMGMatrixAlg &M = *GetConsMatrix();
 	FAMGVectorEntry vecj;
 	FAMGMatrixEntry matij;
 

@@ -52,6 +52,7 @@ extern "C"
 
 #ifdef USE_UG_DS
 #include "amgtransfer.h"
+#include "npscan.h"
 #endif
 
 // give C-linkage to these functions
@@ -213,9 +214,12 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 	INT nrVec = 0, nrLinks = 0, lev, ll, found, i;
 	SHORT xc,bc,mc,xmask,bmask;	
     
+	#ifdef ModelP
+	assert(0); // not for parallel
+	#endif
+	
     MarkTmpMem(MGHEAP(mg),mark_key); /* release in PostProcess */
 	
-	    
     if (MD_IS_SCALAR(A) && VD_IS_SCALAR(x) && VD_IS_SCALAR(b))
 	{
 		xc    = VD_SCALCMP(x);
@@ -558,7 +562,7 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 		}
 	}
 	
-	if( (famg_interface.matrix = new FAMGugMatrix( amggrid, mc, nrVec, nrLinks )) == NULL )
+	if( (famg_interface.matrix = new FAMGugMatrix( amggrid, A, nrVec, nrLinks )) == NULL )
 	{
 		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create matrix" << endl;
 		FAMGError(ostr);
@@ -571,8 +575,12 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 
 	FAMGConstructParameter(&famg_parameter);
 
+	#ifndef ModelP
     FAMGConstruct(famg_interface.gridvector, famg_interface.matrix, famg_interface.vector);
-
+	#else
+	assert(0);
+	#endif
+	
 	result[0]=0;
 
 	return NUM_OK;
@@ -580,7 +588,7 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 
 
 static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT level,
-							VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+							VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, MATDATA_DESC *ACons,
 							INT *result)
 // in this case, use grid on level 0 as the fine grid for FAMG and
 // do not copy the start grid into level -1
@@ -594,7 +602,7 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
     MarkTmpMem(MGHEAP(mg),mark_key); /* release in PostProcess */
 	
 	    
-    if (MD_IS_SCALAR(A) && VD_IS_SCALAR(x) && VD_IS_SCALAR(b))
+    if (MD_IS_SCALAR(A) && MD_IS_SCALAR(ACons) && VD_IS_SCALAR(x) && VD_IS_SCALAR(b))
 	{
 		xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(A);
@@ -683,20 +691,32 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
 		}
 	}
 	
-	if( (famg_interface.matrix = new FAMGugMatrix( grid, mc, nrVec, nrLinks )) == NULL )
+	if( (famg_interface.matrix = new FAMGugMatrix( grid, A, nrVec, nrLinks )) == NULL )
 	{
 		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create matrix" << endl;
 		FAMGError(ostr);
 		return 0;
 	}
 
+	if( A!=ACons )
+	{
+		if( (famg_interface.Consmatrix = new FAMGugMatrix( grid, ACons, nrVec, nrLinks )) == NULL )
+		{
+			ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create matrix" << endl;
+			FAMGError(ostr);
+			return 0;
+		}
+	}
+	else
+		famg_interface.Consmatrix = famg_interface.matrix;
+	
 	// init testvectors
 	*famg_interface.vector[FAMG_TVA] = 1.0;
 	*famg_interface.vector[FAMG_TVB] = 1.0;
 
 	FAMGConstructParameter(&famg_parameter);
 
-    FAMGConstruct(famg_interface.gridvector, famg_interface.matrix, famg_interface.vector);
+    FAMGConstruct(famg_interface.gridvector, famg_interface.matrix, famg_interface.Consmatrix, famg_interface.vector);
 
 	result[0]=0;
 
@@ -766,6 +786,10 @@ static INT FAMGIterPreProcess  (NP_ITER *theNP, INT level,
 	np = (NP_FAMG_ITER *) theNP;
 	mg = NP_MG(theNP);
 	
+	#ifdef ModelP
+	assert(0);	// not implemented for parallel
+	#endif
+	
 	return FAMGPreProcess( mg, &np->famg_mark_key, level, x, b, A, result);
 }
 #else
@@ -787,6 +811,10 @@ static INT FAMGIterPreProcess  (NP_ITER *theNP, INT level,
     void **extra;
     NP_FAMG_ITER *np;	
 
+	#ifdef ModelP
+	assert(0);	// not implemented for parallel
+	#endif
+	
 	np = (NP_FAMG_ITER *) theNP;
     
 	mg = NP_MG(theNP);
@@ -1385,6 +1413,8 @@ INT FAMGTransferInit (NP_BASE *theNP, INT argc, char **argv)
 	if (ReadArgvINT("coarsegridsolver",&(famgtrans->coarsegridsolver),argc,argv))
         famgtrans->coarsegridsolver = 1;
 	
+	famgtrans->ConsMat = ReadArgvMatDesc(famgtrans->amg_trans.transfer.base.mg,"ConsMat",argc,argv);
+
 	famgtrans->smooth_sol = NULL;	// default to detect errors
 	famgtrans->smooth_def = NULL;	// default to detect errors
 	
@@ -1400,24 +1430,53 @@ INT FAMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 	MULTIGRID *mg;
     NP_FAMG_TRANSFER *np;
 	INT res;
+	MATDATA_DESC *ACons;
 
 	np = (NP_FAMG_TRANSFER *) theNP;
 	mg = NP_MG(theNP);
 	
+#ifdef ModelP
+	// check assumptions for IS_FAMG_MASTER and IS_FAMG_GHOST
+	assert(PrioMaster>PrioBorder);
+	assert(PrioHGhost<PrioBorder);
+	assert(PrioVGhost<PrioBorder);
+	assert(PrioVHGhost<PrioBorder);
+	
+	// a consistent copy of the stiffmat is needed
+	// in order to be able to construct a consistent interpolationmatrix
+	
+	ACons = np->ConsMat;
+	if (ACons==NULL) 
+	{
+		ostrstream ostr; ostr  << __FILE__ << ", line " << __LINE__ << ": can not read ConsMat symbol" << endl;
+		FAMGError(ostr);
+		assert(0);
+	}
+#else
+	ACons = A;
+#endif
+	
 	if( np->coarsegridsolver )
-		res = FAMGPreProcessForCoarseGridSolver( mg, &np->famg_mark_key, *fl, x, b, A, result);
+		res = FAMGPreProcessForCoarseGridSolver( mg, &np->famg_mark_key, *fl, x, b, A, ACons, result);
 	else
+	{
+		#ifdef ModelP
+		assert(0);	// not implemented for parallel
+		#endif
 		res = FAMGPreProcess( mg, &np->famg_mark_key, *fl, x, b, A, result);
+	}
 
 	/* we set the baselevel for the following cycle!! */
 	*fl = mg->bottomLevel;
 
 #ifdef ModelP
 	// coarse grid agglomeration
+prm(mg->bottomLevel,0);
 	AMGAgglomerate(mg);
 	l_amgmatrix_collect(GRID_ON_LEVEL(mg,mg->bottomLevel),A);
 	UserWrite("coarse grid agglomerated\n");
 	printf("coarse grid agglomerated\n");
+prm(mg->bottomLevel,0);
 #endif
 	
 	return res;
@@ -1463,6 +1522,12 @@ INT FAMGRestrictDefect (NP_TRANSFER *theNP, INT level,
 		famglevel = -level;
 	else
 		famglevel = -1-level;
+	
+#ifdef ModelP
+	// TODO: sollte eigentlich ueberfluessig sein: defect sollte auf border vectoren eh schon 0 sein!
+	if (l_vector_collect(GRID_ON_LEVEL(np->amg_trans.transfer.base.mg,famglevel),from)!=NUM_OK) 
+		NP_RETURN(1,result[0]);
+#endif
 	
 	result[0] = FAMG_RestrictDefect(famglevel, to, from, np->smooth_sol, np->smooth_def);
 	return result[0];

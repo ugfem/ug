@@ -54,6 +54,7 @@ public:
   FAMGTransfer *GetTransfer() const;
   int GetNF() const;
   int* GetMap() const;
+  void SetMatrix(FAMGMatrixAlg *mat);
   void SetTmpMatrix(FAMGMatrixAlg *tmp);
   void SetVector(int, FAMGVector *);
 
@@ -140,8 +141,11 @@ public:
   void PreSmooth();
   void PostSmooth();
   void GetSmoother();
+  FAMGMatrixAlg *GetConsMatrix() const;                 // in serial synonym for the stiffness matrix
+  // in parallel the (partly) consistent stiffness matrix
 #ifdef ModelP
   void CommunicateNodeStatus();
+  void SetConsMatrix(FAMGMatrixAlg *cm);
 #endif
 
 private:
@@ -159,6 +163,7 @@ private:
   int n;                                        // number unknowns
   int nf;                                                       // number fine grid unknowns
   FAMGMatrixAlg *matrix;                        // stiffness matrix
+  FAMGMatrixAlg *Consmatrix;                    // (partly) consistent stiffness matrix
   FAMGMatrixAlg *tmpmatrix;                     // temp. stiffness matrix for a double-step
   FAMGTransfer *transfer;                       // transfer matrix
   FAMGGraph *graph;                                     // node graph for elemination
@@ -208,12 +213,21 @@ inline int FAMGGrid::GetNF() const {
 inline FAMGTransfer *FAMGGrid::GetTransfer() const {
   return transfer;
 }
+inline void FAMGGrid::SetMatrix(FAMGMatrixAlg *mat) {
+  matrix = mat;
+}
 inline void FAMGGrid::SetTmpMatrix(FAMGMatrixAlg *tmp) {
   tmpmatrix = tmp;
 }
 inline void FAMGGrid::SetVector(int i, FAMGVector *p) {
   vector[i] = p;
 }
+inline void FAMGGrid::SetConsMatrix(FAMGMatrixAlg *cm) {
+  Consmatrix = cm;
+}
+inline FAMGMatrixAlg *FAMGGrid::GetConsMatrix() const {
+  return Consmatrix;
+}                                                                               // in parallel the (partly) consistent stiffness matrix
 
 #ifdef USE_UG_DS
 #else
@@ -237,9 +251,9 @@ inline void **FAMGGrid::GetNode() const {
 }
 #endif
 
-// only for debugging
-void printv( int level, int x_nr );
-void printim(int level);
-void printm(int level);
+// only for debugging printv printm printim
+void prv( int level, int x_nr );
+void prim(int level);
+void prm(int level, int comp = 0);
 
 #endif
