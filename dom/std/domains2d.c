@@ -808,6 +808,72 @@ static INT InitCircle (void)
 
 /****************************************************************************/
 /*                                                                          */
+/*  define the ring                                                         */
+/*                                                                          */
+/****************************************************************************/
+
+#define INNER_RADIUS 0.3
+
+static INT circleBoundaryUpper1 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+
+  result[0] = INNER_RADIUS * cos(PI*lambda);
+  result[1] = INNER_RADIUS * sin(PI*lambda);
+
+  return(0);
+}
+
+static INT circleBoundaryLower1 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+
+  result[0] = INNER_RADIUS * cos(PI+PI*lambda);
+  result[1] = INNER_RADIUS * sin(PI+PI*lambda);
+
+  return(0);
+}
+
+static INT InitRing (void)
+{
+  DOUBLE_VECTOR MidPoint;
+  DOUBLE radius;
+
+  MidPoint[0] = MidPoint[1] = 0.0;
+  radius = 1.05;
+  if (CreateDomain("Ring",MidPoint,radius,4,4,YES)==NULL)
+    return(1);
+
+  if (CreateBoundarySegment2D("ring bnd upper",
+                              1,0,0,0,1,20,0.0,1.0,
+                              circleBoundaryUpper,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring bnd lower",
+                              1,0,1,1,0,20,0.0,1.0,
+                              circleBoundaryLower,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring inner bnd upper",
+                              0,1,2,2,3,20,0.0,1.0,
+                              circleBoundaryUpper1,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring inner bnd lower",
+                              0,1,3,3,2,20,0.0,1.0,
+                              circleBoundaryLower1,NULL)==NULL)
+    return(1);
+
+  return(0);
+}
+
+/****************************************************************************/
+/*                                                                          */
 /*  define Hexagon                                                          */
 /*                                                                          */
 /****************************************************************************/
@@ -1206,6 +1272,11 @@ INT STD_BVP_Configure (INT argc, char **argv)
     if (strcmp(DomainName,"Circle") == 0)
     {
       if (InitCircle())
+        return(1);
+    }
+    if (strcmp(DomainName,"Ring") == 0)
+    {
+      if (InitRing())
         return(1);
     }
     else if (strcmp(DomainName,"Quadrilateral") == 0)
