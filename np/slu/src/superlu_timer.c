@@ -47,7 +47,7 @@ double SuperLU_timer_()
   times(&use);
   tmp = use.tms_utime;
   tmp += use.tms_stime;
-  return (double)tmp / (double)CLK_TCK;
+  return (double)tmp / (double)CLOCKS_PER_SEC;
 #else
   /* do nothing */
   return 0.0;
