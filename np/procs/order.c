@@ -94,6 +94,8 @@ typedef struct
   NP_ORDER order;
 
   INT comp;
+  INT ncyc;
+  INT ncut;
 
 } NP_ORDER_SO;
 
@@ -119,6 +121,52 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /* forward declarations of functions used before they are defined			*/
 /*																			*/
 /****************************************************************************/
+
+static void PVP (VECTOR *v)
+{
+  DOUBLE_VECTOR pos;
+
+  VectorPosition(v,pos);
+  printf("%f %f\n",pos[0],pos[1]);
+
+  return;
+}
+
+static void PVPI (VECTOR *v, INT f)
+{
+  DOUBLE_VECTOR pos;
+  INT ipos[2];
+
+  VectorPosition(v,pos);
+  ipos[0]=(INT)(pos[0]*f+0.5);
+  ipos[1]=(INT)(pos[1]*f+0.5);
+  printf("%d %d\n",ipos[0],ipos[1]);
+
+  return;
+}
+
+static void PVPC (VECTOR *v, char *c)
+{
+  DOUBLE_VECTOR pos;
+
+  VectorPosition(v,pos);
+  printf("%s: %f %f\n",c,pos[0],pos[1]);
+
+  return;
+}
+
+static void PVPCI (VECTOR *v, char *c, INT f)
+{
+  DOUBLE_VECTOR pos;
+  INT ipos[2];
+
+  VectorPosition(v,pos);
+  ipos[0]=(INT)(pos[0]*f+0.5);
+  ipos[1]=(INT)(pos[1]*f+0.5);
+  printf("%s: %d %d\n",ipos[0],ipos[1]);
+
+  return;
+}
 
 INT ORDER_Init (NP_BASE *theNP, INT argc, char **argv)
 {
@@ -405,6 +453,8 @@ INT OrderSODisplay (NP_BASE *theNP)
 
   np = (NP_ORDER_SO *) theNP;
   UserWriteF(DISPLAY_NP_FORMAT_SI,"comp",(int)np->comp);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"ncyc",(int)np->ncyc);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"ncut",(int)np->ncut);
 
   return (ORDER_Display(theNP));
 }
@@ -421,6 +471,7 @@ static INT MatrixDep_Adjoint (GRID *theGrid, MATDATA_DESC *A, INT comp)
     diag = MVALUE(VSTART(theV),comp);
     for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
     {
+      SETMUP(theM,0);
       offdiag = MVALUE(theM,comp) - MVALUE(MADJ(theM),comp);
       if (diag*offdiag > 0.0) SETMDOWN(theM,1);
       else SETMDOWN(theM,0);
@@ -430,16 +481,295 @@ static INT MatrixDep_Adjoint (GRID *theGrid, MATDATA_DESC *A, INT comp)
   return (0);
 }
 
+#define MUPP(m)         MDOWN(MADJ(m))
+#define WH_INIT              0
+#define WH_CYCLE_INIT        1
+#define WH_ACYCLE_INIT       2
+#define WH_DOWN              0
+#define WH_UP                1
+
+typedef struct {
+  VECTOR *v;
+  DOUBLE angle;
+  INT mode;
+
+} MORDER;
+
+int WH_mcmp (const void* x, const void *y)
+{
+  MORDER *mx,*my;
+
+  mx=(MORDER*)x;
+  my=(MORDER*)y;
+  if (mx->angle<my->angle) return (-1);
+  if (mx->angle>my->angle) return (1);
+  return (0);
+}
+
+static INT WH_IsStarVector (VECTOR *v)
+{
+  INT i,n,ndown,ndu,nud;
+  MATRIX *m;
+  MORDER mo[30];
+  DOUBLE_VECTOR z,p;
+
+  n=ndown=0;
+  VectorPosition(v,z);
+  for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
+  {
+    if (MDOWN(m) && !VCUSED(MDEST(m)))
+    {
+      mo[n].mode=WH_DOWN;
+      ndown++;
+    }
+    else if (MUPP(m))
+      mo[n].mode=WH_UP;
+    else
+      continue;
+    VectorPosition(MDEST(m),p);
+    p[0]-=z[0];
+    p[1]-=z[1];
+    mo[n].angle=atan2(p[1],p[0]);
+    n++;
+  }
+  if (ndown<=1) return (0);
+  if (n<=3) return (0);
+  qsort((void*)mo,n,sizeof(MORDER),WH_mcmp);
+  ndu=nud=0;
+  for (i=0; i<n; i++)
+    if (mo[i].mode==WH_DOWN && mo[(i+1)%n].mode==WH_UP)
+      ndu++;
+    else if (mo[i].mode==WH_UP && mo[(i+1)%n].mode==WH_DOWN)
+      nud++;
+  if (nud!=1 || ndu!=1) return (1);
+  return (0);
+}
+
+static INT WH_PrintStarVectors (GRID *g)
+{
+  VECTOR *v;
+
+  for (v=FIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
+    if (!VCUSED(v))
+      if (WH_IsStarVector(v))
+        PVP(v);
+  return(1);
+}
+
+static VECTOR *WH_next_left (VECTOR *v)
+{
+  INT i,n,ndown,ndu,nud;
+  VECTOR *w,*s;
+  MATRIX *m;
+  MORDER mo[30];
+  DOUBLE_VECTOR z,p;
+
+  n=ndown=0;
+  VectorPosition(v,z);
+  for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
+  {
+    if (MDOWN(m) && !VCUSED(MDEST(m)))
+    {
+      mo[n].mode=WH_DOWN;
+      ndown++;
+      mo[n].v=s=MDEST(m);
+    }
+    else if (MUPP(m))
+      mo[n].mode=WH_UP;
+    else
+      continue;
+    VectorPosition(MDEST(m),p);
+    p[0]-=z[0];
+    p[1]-=z[1];
+    mo[n].angle=atan2(p[1],p[0]);
+    n++;
+  }
+  if (ndown==0) return (NULL);
+  if (ndown==1) return (s);
+  qsort((void*)mo,n,sizeof(MORDER),WH_mcmp);
+  ndu=nud=0;
+  for (i=0; i<n; i++)
+    if (mo[i].mode==WH_DOWN && mo[(i+1)%n].mode==WH_UP)
+    {
+      ndu++;
+      w=mo[i].v;
+    }
+    else if (mo[i].mode==WH_UP && mo[(i+1)%n].mode==WH_DOWN)
+      nud++;
+  if (nud!=1 || ndu!=1)
+  {
+    assert(0);
+  }
+  return (w);
+}
+
+static VECTOR *WH_next_right (VECTOR *v)
+{
+  INT i,n,ndown,ndu,nud;
+  VECTOR *w,*s;
+  MATRIX *m;
+  MORDER mo[30];
+  DOUBLE_VECTOR z,p;
+
+  n=ndown=0;
+  VectorPosition(v,z);
+  for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
+  {
+    if (MDOWN(m) && !VCUSED(MDEST(m)))
+    {
+      mo[n].mode=WH_DOWN;
+      ndown++;
+      mo[n].v=s=MDEST(m);
+    }
+    else if (MUPP(m))
+      mo[n].mode=WH_UP;
+    else
+      continue;
+    VectorPosition(MDEST(m),p);
+    p[0]-=z[0];
+    p[1]-=z[1];
+    mo[n].angle=atan2(p[1],p[0]);
+    n++;
+  }
+  if (ndown==0) return (NULL);
+  if (ndown==1) return (s);
+  qsort((void*)mo,n,sizeof(MORDER),WH_mcmp);
+  ndu=nud=0;
+  for (i=0; i<n; i++)
+    if (mo[i].mode==WH_DOWN && mo[(i+1)%n].mode==WH_UP)
+      ndu++;
+    else if (mo[i].mode==WH_UP && mo[(i+1)%n].mode==WH_DOWN)
+    {
+      nud++;
+      w=mo[(i+1)%n].v;
+    }
+  if (nud!=1 || ndu!=1)
+  {
+    assert(0);
+  }
+
+  return (w);
+}
+
+static INT SimpleCut (GRID *g, VECTOR **vlist, INT *ncut)
+{
+  INT n,nl,nr;
+  VECTOR *v0,*v1,*vl,*vr;
+  MATRIX *m;
+  DOUBLE_VECTOR p0,p1;
+  DOUBLE min;
+
+  /* run left */
+  for (vl=FIRSTVECTOR(g); vl!=NULL; vl=SUCCVC(vl))
+  {
+    SETVCFLAG(vl,0);
+    SETVCCUT(vl,0);
+  }
+  for (vl=FIRSTVECTOR(g),nl=0; vl!=NULL; vl=WH_next_left(vl))
+    if (!VCFLAG(vl))
+      SETVCFLAG(vl,1);
+    else if (!VCCUT(vl))
+    {
+      SETVCCUT(vl,1);
+      nl++;
+    }
+    else
+      break;
+  assert(vl!=NULL);
+
+  /* run right */
+  for (vr=FIRSTVECTOR(g); vr!=NULL; vr=SUCCVC(vr))
+  {
+    SETVCFLAG(vr,0);
+    SETVCCUT(vr,0);
+  }
+  for (vr=FIRSTVECTOR(g); vr!=NULL; vr=SUCCVC(vr))
+  {
+    SETVCFLAG(vr,0);
+    SETVCCUT(vr,0);
+  }
+  for (vr=FIRSTVECTOR(g),nr=0; vr!=NULL; vr=WH_next_right(vr))
+    if (!VCFLAG(vr))
+      SETVCFLAG(vr,1);
+    else if (!VCCUT(vr))
+    {
+      SETVCCUT(vr,1);
+      nr++;
+    }
+    else
+      break;
+  assert(vr!=NULL);
+
+  if (nl<nr) v0=vl;
+  else v0=vr;
+  n=0;
+  while(1)
+  {
+    vlist[n++]=v0;
+    VectorPosition(v0,p0);
+    v1=NULL; min=p0[0];
+    for (m=MNEXT(VSTART(v0)); m!=NULL; m=MNEXT(m))
+      if (!VCUSED(MDEST(m)))
+      {
+        VectorPosition(MDEST(m),p1);
+        if (p1[0]<min)
+        {
+          min=p1[0];
+          v1=MDEST(m);
+        }
+      }
+    if (v1==NULL) break;
+    v0=v1;
+  }
+  *ncut=n;
+
+  return(0);
+}
+
+static void FirstInsertInVList (GRID *g, VECTOR *v, VECTOR **vlist, INT n, INT unlink)
+{
+  MATRIX *theM;
+
+  vlist[n]=v;
+  SETVCUSED(v,1);
+  for (theM=MNEXT(VSTART(v)); theM!=NULL; theM=MNEXT(theM))
+    if (MDOWN(theM) && !VCUSED(MDEST(theM)))
+      SETVUP(MDEST(theM),VUP(MDEST(theM))-1);
+  if (unlink)
+    GRID_UNLINK_VECTOR(g,v);
+  SETVCFLAG(v,0);
+
+  return;
+}
+
+static void LastInsertInVList (GRID *g, VECTOR *v, VECTOR **vlist, INT n, INT unlink)
+{
+  MATRIX *theM;
+
+  vlist[n]=v;
+  SETVCUSED(v,1);
+  for (theM=MNEXT(VSTART(v)); theM!=NULL; theM=MNEXT(theM))
+    if (MUPP(theM) && !VCUSED(MDEST(theM)))
+      SETVDOWN(MDEST(theM),VDOWN(MDEST(theM))-1);
+  if (unlink)
+    GRID_UNLINK_VECTOR(g,v);
+  SETVCFLAG(v,0);
+
+  return;
+}
+
 static INT OrderSO (NP_ORDER *theNP, INT level, MATDATA_DESC *A, INT *result)
 {
   HEAP *theHeap;
   GRID *theGrid;
   NP_ORDER_SO *np;
   VECTOR *theV,**vlist;
-  MATRIX *theM;
-  INT i,comp,n,MarkKey,nextin;
+  MATRIX *theM,*theM0;
+  INT i,cnt,comp,ncut,n,MarkKey,fno,fni,lno,lni;
+  DOUBLE pos[2];
 
   np = (NP_ORDER_SO *) theNP;
+  np->ncut = np->ncyc = 0;
   theGrid = NP_GRID(theNP,level);
   A = np->order.A;
   if (A==NULL) return (1);
@@ -471,34 +801,74 @@ static INT OrderSO (NP_ORDER *theNP, INT level, MATDATA_DESC *A, INT *result)
   vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
   assert(vlist!=NULL);
 
-  /* initialize vlist with first and last */
-  nextin = 0;
+  /* insert first/last set */
+  fni = fno = 0; lni = lno = n-1;
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-    if (VUP(theV)==0)
-    {
-      vlist[nextin++] = theV;
-      SETVCUSED(theV,1);
-    }
-  if (nextin==0)
   {
-    vlist[nextin++] = FIRSTVECTOR(theGrid);
-    SETVCUSED(FIRSTVECTOR(theGrid),1);
+    if (VUP(theV)==NULL) FirstInsertInVList(theGrid,theV,vlist,fni++,0);
+    else if (VDOWN(theV)==NULL) LastInsertInVList(theGrid,theV,vlist,lni--,0);
   }
+  for (i=fno; i<fni; i++) GRID_UNLINK_VECTOR(theGrid,vlist[i]);
+  for (i=lno; i>lni; i--) GRID_UNLINK_VECTOR(theGrid,vlist[i]);
 
   /* order */
-  for (i=0; i<nextin; i++)
+  for (cnt=0;; cnt++)
   {
-    theV = vlist[i];
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-    {
-      if (!VCUSED(MDEST(theM)) && MDOWN(theM))
+    /* process first set */
+    for (i=fno; i<fni; i++)
+      for (theM0=MNEXT(VSTART(vlist[i])); theM0!=NULL; theM0=MNEXT(theM0))
       {
-        vlist[nextin++] = MDEST(theM);
-        SETVCUSED(MDEST(theM),1);
+        theV=MDEST(theM0);
+        if (!VCUSED(theV) && MDOWN(theM0) && VUP(theV)==0)
+          FirstInsertInVList(theGrid,theV,vlist,fni++,1);
       }
+    fno=fni;
+
+    /* process last set */
+    for (i=lno; i>lni; i--)
+      for (theM0=MNEXT(VSTART(vlist[i])); theM0!=NULL; theM0=MNEXT(theM0))
+      {
+        theV=MDEST(theM0);
+        if (!VCUSED(theV) && MUPP(theM0) && VDOWN(theV)==0)
+          LastInsertInVList(theGrid,theV,vlist,lni--,1);
+      }
+    lno=lni;
+
+    /* break if vlist complete */
+    if (fni>lni) break;
+
+    /* cut star vectors */
+    if (!cnt)
+      for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+        if (!VCUSED(theV) && WH_IsStarVector(theV))
+        {
+          FirstInsertInVList(theGrid,theV,vlist,fni,0);
+          LastInsertInVList(theGrid,theV,vlist,fni++,1);
+          np->ncut++;
+          SETVCFLAG(theV,1);
+        }
+
+    /* insert cut as first set */
+    if (SimpleCut(theGrid,vlist+fni,&ncut)) return(1);
+    assert(ncut>0); assert(ncut<=lni-fni+1);
+    np->ncut+=ncut; np->ncyc++;
+    for (i=fni; i<fni+ncut; i++)
+    {
+      FirstInsertInVList(theGrid,vlist[i],vlist,i,0);
+      LastInsertInVList(theGrid,vlist[i],vlist,i,1);
+      SETVCFLAG(vlist[i],1);
     }
+    fni+=ncut;
+
+    /* insert cut-neighbors as last set */
+    for (i=fni-ncut; i<fni; i++)
+      for (theM0=MNEXT(VSTART(vlist[i])); theM0!=NULL; theM0=MNEXT(theM0))
+      {
+        theV=MDEST(theM0);
+        if (!VCUSED(theV) && MUPP(theM0) && VDOWN(theV)==0)
+          LastInsertInVList(theGrid,theV,vlist,lni--,1);
+      }
   }
-  assert(nextin==n);
 
   /* postprocess */
   for (i=0; i<n; i++)
