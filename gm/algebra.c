@@ -3966,12 +3966,12 @@ static int Gather_VectorVClass (DDD_OBJ obj, void *data)
 {
   VECTOR *theVector = (VECTOR *)obj;
 
-  PRINTDEBUG(gm,2,(PFMT "Gather_VectorVClass(): v=" ID_FMTX " vclass=%d\n",
-                   me,ID_PRTX(theVector),VCLASS(theVector)))
+  PRINTDEBUG(gm,1,(PFMT "Gather_VectorVClass(): v=" VINDEX_FMTX " vclass=%d\n",
+                   me,VINDEX_PRTX(theVector),VCLASS(theVector)))
 
     ((INT *)data)[0] = VCLASS(theVector);
 
-  return(GM_OK);
+  return(0);
 }
 
 static int Scatter_VectorVClass (DDD_OBJ obj, void *data)
@@ -3980,10 +3980,10 @@ static int Scatter_VectorVClass (DDD_OBJ obj, void *data)
 
   SETVCLASS(theVector,MAX(VCLASS(theVector),((INT *)data)[0]));
 
-  PRINTDEBUG(gm,2,(PFMT "Scatter_VectorVClass(): v=" ID_FMTX " vclass=%d\n",
-                   me,ID_PRTX(theVector),VCLASS(theVector)))
+  PRINTDEBUG(gm,2,(PFMT "Scatter_VectorVClass(): v=" VINDEX_FMTX " vclass=%d\n",
+                   me,VINDEX_PRTX(theVector),VCLASS(theVector)))
 
-  return(GM_OK);
+  return(0);
 }
 
 static int Scatter_GhostVectorVClass (DDD_OBJ obj, void *data)
@@ -3992,10 +3992,10 @@ static int Scatter_GhostVectorVClass (DDD_OBJ obj, void *data)
 
   SETVCLASS(theVector,((INT *)data)[0]);
 
-  PRINTDEBUG(gm,2,(PFMT "Scatter_GhostVectorVClass(): v=" ID_FMTX " vclass=%d\n",
-                   me,ID_PRTX(theVector),VCLASS(theVector)))
+  PRINTDEBUG(gm,1,(PFMT "Scatter_GhostVectorVClass(): v=" VINDEX_FMTX " vclass=%d\n",
+                   me,VINDEX_PRTX(theVector),VCLASS(theVector)))
 
-  return(GM_OK);
+  return(0);
 }
 #endif
 
@@ -4005,8 +4005,8 @@ INT PropagateVectorClasses (GRID *theGrid)
   MATRIX *theMatrix;
 
     #ifdef ModelP
-  PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses(): 1. communication\n",
-                   me))
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses():"
+                   " 1. communication on level %d\n",me,GLEVEL(theGrid)))
   /* exchange VCLASS of vectors */
   DDD_IFAOneway(BorderVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
                 Gather_VectorVClass, Scatter_VectorVClass);
@@ -4044,7 +4044,10 @@ INT PropagateVectorClasses (GRID *theGrid)
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses(): 3. communication\n",
                    me))
   /* exchange VCLASS of vectors */
-  DDD_IFAOneway(VectorVAllIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+  DDD_IFAOneway(BorderVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+                Gather_VectorVClass, Scatter_VectorVClass);
+  /* send VCLASS to ghosts */
+  DDD_IFAOneway(VectorAllIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
                 Gather_VectorVClass, Scatter_GhostVectorVClass);
     #endif
 
@@ -4164,8 +4167,8 @@ static int Gather_VectorVNClass (DDD_OBJ obj, void *data)
 {
   VECTOR *theVector = (VECTOR *)obj;
 
-  PRINTDEBUG(gm,2,(PFMT "Gather_VectorVNClass(): v=" ID_FMTX " vnclass=%d\n",
-                   me,ID_PRTX(theVector),VNCLASS(theVector)))
+  PRINTDEBUG(gm,2,(PFMT "Gather_VectorVNClass(): v=" VINDEX_FMTX " vnclass=%d\n",
+                   me,VINDEX_PRTX(theVector),VNCLASS(theVector)))
 
     ((INT *)data)[0] = VNCLASS(theVector);
 
@@ -4178,8 +4181,8 @@ static int Scatter_VectorVNClass (DDD_OBJ obj, void *data)
 
   SETVNCLASS(theVector,MAX(VNCLASS(theVector),((INT *)data)[0]));
 
-  PRINTDEBUG(gm,2,(PFMT "Scatter_VectorVNClass(): v=" ID_FMTX " vnclass=%d\n",
-                   me,ID_PRTX(theVector),VNCLASS(theVector)))
+  PRINTDEBUG(gm,2,(PFMT "Scatter_VectorVNClass(): v=" VINDEX_FMTX " vnclass=%d\n",
+                   me,VINDEX_PRTX(theVector),VNCLASS(theVector)))
 
   return(GM_OK);
 }
@@ -4190,8 +4193,8 @@ static int Scatter_GhostVectorVNClass (DDD_OBJ obj, void *data)
 
   SETVNCLASS(theVector,((INT *)data)[0]);
 
-  PRINTDEBUG(gm,2,(PFMT "Scatter_GhostVectorVNClass(): v=" ID_FMTX " vnclass=%d\n",
-                   me,ID_PRTX(theVector),VNCLASS(theVector)))
+  PRINTDEBUG(gm,2,(PFMT "Scatter_GhostVectorVNClass(): v=" VINDEX_FMTX " vnclass=%d\n",
+                   me,VINDEX_PRTX(theVector),VNCLASS(theVector)))
 
   return(GM_OK);
 }
@@ -4239,7 +4242,10 @@ INT PropagateNextVectorClasses (GRID *theGrid)
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 3. communication\n",me))
   /* exchange VNCLASS of vectors */
-  DDD_IFAOneway(VectorVAllIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+  DDD_IFAOneway(BorderVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+                Gather_VectorVNClass, Scatter_VectorVNClass);
+  /* send VCLASS to ghosts */
+  DDD_IFAOneway(VectorAllIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
                 Gather_VectorVNClass, Scatter_GhostVectorVNClass);
     #endif
 
