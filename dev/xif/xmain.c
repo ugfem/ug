@@ -161,6 +161,7 @@ static Bool callback (Display *d, XEvent *report, char *arg)
 {
   return(True);
 }
+
 /****************************************************************************/
 /*
    GUI_GetNextEvent - Process an event from the system and pass it to ug
@@ -183,7 +184,7 @@ static Bool callback (Display *d, XEvent *report, char *arg)
  */
 /****************************************************************************/
 
-INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
+INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
 {
   XEvent report;
   XWindowAttributes xwa;
@@ -198,7 +199,7 @@ INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
   theEvent->NoEvent.InterfaceEvent = 0;
 
   /* event loop */
-  switch (EventMask)
+  switch (Eventmask)
   {
   case EVERY_EVENT :
     if (!XCheckIfEvent(display,&report,callback,s)) return(0);
