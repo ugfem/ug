@@ -441,9 +441,9 @@ QUADRATURE *GetQuadrature(INT dim, INT n, INT order)
       switch (order)
       {
       case 0 : return(&Quadrature2D40);
-      case 1 : return(&Quadrature2D40);
+      case 1 : return(&Quadrature2D42);
       case 2 : return(&Quadrature2D42);
-      case 3 : return(&Quadrature2D42);
+      case 3 : return(&Quadrature2D44);
       case 4 : return(&Quadrature2D44);
       default : return(&Quadrature2D44);
       }
