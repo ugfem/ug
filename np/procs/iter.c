@@ -434,6 +434,7 @@ typedef struct
   INT pp_failed;                                        /* 1 if preproc failed, used in smooth  */
 
   DOUBLE *Vec;                                  /* vector								*/
+  INT printdecomptime;                          /* 1 for printing decopmposition time	*/
 
 } NP_EX;
 
@@ -6260,6 +6261,7 @@ static INT EXInit (NP_BASE *theNP, INT argc , char **argv)
   np->fmode = ReadArgvOption ("f",argc,argv);
   if (ReadArgvINT ("o",&np->optimizeBand,argc,argv)) np->optimizeBand=1;
   if (ReadArgvINT ("copyback",&np->CopyBack,argc,argv)) np->CopyBack=0;
+  if (ReadArgvINT ("printdecomptime",&np->printdecomptime,argc,argv)) np->printdecomptime=0;
   np->nv = -1;
   np->count = -1;
 
@@ -6294,6 +6296,7 @@ static INT EXDisplay (NP_BASE *theNP)
   UserWriteF(DISPLAY_NP_FORMAT_SS,"copy back",BOOL_2_YN(np->CopyBack));
   UserWriteF(DISPLAY_NP_FORMAT_SI,"nv",(int)np->nv);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"count",(int)np->count);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"print decomp time",(int)np->printdecomptime);
 
   return (0);
 }
@@ -6642,6 +6645,10 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   INT MarkKey;
   INT optimizeBand = np->optimizeBand;
   INT n = 0;
+  DOUBLE decomptime = -1.0;
+
+  if( np->printdecomptime )
+    decomptime = CURRENT_TIME;
 
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
     if (VD_NCMPS_IN_TYPE(x,VTYPE(theV)) > 0) n++;
@@ -6898,6 +6905,16 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
       if (EXCopyMatrixDOUBLEback(theGrid,x,np->smoother.L,np->bw,np->DMat[np->count]))
         REP_ERR_RETURN(1);
   }
+
+  if( np->printdecomptime )
+  {
+    decomptime = CURRENT_TIME - decomptime;
+                #ifdef ModelP
+    if( me == master )
+                #endif
+    UserWriteF("EX decomp %g sec\n", decomptime );
+  }
+
   return (0);
 }
 
