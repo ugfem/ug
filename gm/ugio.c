@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 
 #include "compiler.h"
 #include "fileopen.h"
@@ -50,6 +51,8 @@
 #include "ugm.h"
 #include "ugio.h"
 #include "elements.h"
+#include "shapes.h"
+#include "rm.h"
 
 /* include refine because of macros accessed  */
 #include "refine.h"
@@ -540,15 +543,15 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
   /* find begin of data */
   strcpy(buffer,BeginOfData);
   n = strlen(buffer); k=0;
-  while (1)
+  do
   {
     k++;
     if (k > SEARCH_OFFSET) {fclose(stream); return(NULL);}
     for (i=0; i<n; i++)
       if ((c=getc(stream))!=buffer[i])
         break;
-    if (i==n) break;
   }
+  while (i!=n);
 
   /* check dimension for version >= 23 */
   if (version>=23)
@@ -1276,6 +1279,201 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
   /* return ok */
   fclose(stream); return(theMG);
 }
+
+#ifdef __TWODIM__
+/****************************************************************************/
+/*
+   SaveCNomGridAndValues - Save 2d grid & data in cnom format
+
+   SYNOPSIS:
+   INT SaveCNomGridAndValues (MULTIGRID *theMG, FILE *stream, char *symname)
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid structure
+   .  stream - file on which data is written
+   .  symname - name of data field
+
+   DESCRIPTION:
+   Is called by the CnomCommand.
+
+   RETURN VALUE:
+   INT
+   .n    NULL if an error occured
+   .n    else pointer to new 'MULTIGRID'
+ */
+/****************************************************************************/
+
+static COORD LocalCoord[2][4][2]=
+{ {{0,0},{1,0},{0,1},{0,0}},
+  {{-1,-1},{1,-1},{1,1},{-1,1}} };
+INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, char *tag)
+{
+  ELEMENT *theElement;
+  VERTEX *theVertex;
+  NODE *theNode;
+  GRID *theGrid;
+  long nv,ne,id;
+  int i,j,k,n;
+  double min,max,val;
+  COORD *CoordOfCornerPtr[8];
+  FILE *stream;
+  EVALUES *PlotProcInfo;
+
+  if (theMG==NULL)
+    return(0);
+
+  if ((PlotProcInfo=GetElementValueEvalProc(plotprocName))==NULL)
+  {
+    PrintErrorMessage('E',"SaveCnomGridAndValues","can't find ElementValueEvalProc");
+    return(1);
+  }
+
+  stream = fopen(docName,"w");
+  if (stream==NULL)
+  {
+    PrintErrorMessage('E',"SaveCnomGridAndValues","can't open file");
+    return(1);
+  }
+
+  if (PlotProcInfo->PreprocessProc!=NULL)
+    if ((*PlotProcInfo->PreprocessProc)(NULL,theMG)!=0)
+      return(1);
+
+  j=TOPLEVEL(theMG);
+
+  /* count elements and vertices */
+  nv = ne = 0;
+  for (k=0; k<=j; k++)
+  {
+    theGrid = theMG->grids[k];
+    for (theVertex=FIRSTVERTEX(theGrid); theVertex!=NULL; theVertex=SUCCV(theVertex))
+    {
+      nv++;
+      SETUSED(theVertex,0);
+    }
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      if ((k==j)||LEAFELEM(theElement))
+        ne++;
+  }
+
+  /* write header */
+  fprintf(stream,">DATA\n");
+  fprintf(stream,">TIME(S) 0.0\n");
+  fprintf(stream,">NV: %d\n",nv);
+  fprintf(stream,">NE: %d\n",ne);
+
+  /* compute min and max */
+  min = MAX_D; max = -MAX_D;
+  for (k=0; k<=j; k++)
+  {
+    theGrid = theMG->grids[k];
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      if ((k==j)||LEAFELEM(theElement))
+      {
+        CORNER_COORDINATES(theElement,n,CoordOfCornerPtr);
+        for (i=0; i<n; i++)
+        {
+          val=(*PlotProcInfo->EvalProc)(theElement, (const COORD **) CoordOfCornerPtr, (COORD *) &(LocalCoord[n-3,i,0]));
+          min = MIN(val,min);
+          max = MAX(val,max);
+        }
+      }
+  }
+
+  fprintf(stream,">MIN\n");
+  fprintf(stream," %s\n",tag);
+  fprintf(stream," %15.8LE\n",min);
+  fprintf(stream,">MAX\n");
+  fprintf(stream," %s\n,tag");
+  fprintf(stream," %15.8LE\n",max);
+  fprintf(stream,">FIN\n");
+
+  /* write x values now */
+  fprintf(stream,">X\n");
+  id = 0;
+  for (k=0; k<=j; k++)
+  {
+    theGrid = theMG->grids[k];
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      if ((k==j)||LEAFELEM(theElement))
+        for (i=0; i<TAG(theElement); i++)
+        {
+          theVertex=MYVERTEX(CORNER(theElement,i));
+          if (USED(theVertex)) continue;
+          fprintf(stream," %15.8lE",(double)XC(theVertex));
+          ID(theVertex)=id++;
+          if (id%5==0) fprintf(stream,"\n");
+          SETUSED(theVertex,1);
+        }
+  }
+  if (id%5!=0) fprintf(stream,"\n");
+
+  /* write y values now */
+  fprintf(stream,">Y\n");
+  id = 0;
+  for (k=0; k<=j; k++)
+  {
+    theGrid = theMG->grids[k];
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      if ((k==j)||LEAFELEM(theElement))
+        for (i=0; i<TAG(theElement); i++)
+        {
+          theVertex=MYVERTEX(CORNER(theElement,i));
+          if (USED(theVertex)==0) continue;
+          fprintf(stream," %15.8lE",(double)YC(theVertex));
+          id++;
+          if (id%5==0) fprintf(stream,"\n");
+          SETUSED(theVertex,0);
+        }
+  }
+  if (id%5!=0) fprintf(stream,"\n");
+
+  /* write element list now */
+  fprintf(stream,">E\n");
+  for (k=0; k<=j; k++)
+  {
+    theGrid = theMG->grids[k];
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      if ((k==j)||LEAFELEM(theElement))
+      {
+        if (TAG(theElement)==3)
+          fprintf(stream,"%ld %ld %ld\n",(long)ID(MYVERTEX(CORNER(theElement,0))),(long)ID(MYVERTEX(CORNER(theElement,1))),(long)ID(MYVERTEX(CORNER(theElement,2))));
+        else
+          fprintf(stream,"%ld %ld %ld %ld\n",ID(MYVERTEX(CORNER(theElement,0))),(long)ID(MYVERTEX(CORNER(theElement,1))),(long)ID(MYVERTEX(CORNER(theElement,2))),(long)ID(MYVERTEX(CORNER(theElement,3))));
+      }
+  }
+
+  /* write data field now */
+  fprintf(stream,">Z\n");
+  fprintf(stream," %s\n",tag);
+  id = 0;
+  for (k=0; k<=j; k++)
+  {
+    theGrid = theMG->grids[k];
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      if ((k==j)||LEAFELEM(theElement))
+      {
+        CORNER_COORDINATES(theElement,n,CoordOfCornerPtr);
+        for (i=0; i<n; i++)
+        {
+          theVertex=MYVERTEX(CORNER(theElement,i));
+          if (USED(theVertex)) continue;
+          val=(*PlotProcInfo->EvalProc)(theElement, (const COORD **) CoordOfCornerPtr, (COORD *) &(LocalCoord[n-3,i,0]));
+          fprintf(stream," %15.8lE",val);
+          id++;
+          if (id%5==0) fprintf(stream,"\n");
+          SETUSED(theVertex,1);
+        }
+      }
+  }
+  if (id%5!=0) fprintf(stream,"\n");
+
+  fprintf(stream,"<\n");
+  fclose(stream);
+
+  return(0);
+}
+#endif
 
 INT InitUgio ()
 {

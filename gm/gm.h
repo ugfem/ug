@@ -1867,6 +1867,9 @@ MULTIGRID   *CreateMultiGrid        (char *MultigridName, char *BndValProblem, c
 MULTIGRID       *LoadMultiGrid                  (char *MultigridName, char *FileName, char *BndValProblem, char *format, unsigned long heapSize);
 INT             SaveMultiGrid                   (MULTIGRID *theMG, char *FileName, char *comment);
 INT             DisposeMultiGrid                (MULTIGRID *theMG);
+#ifdef __TWODIM__
+INT                     SaveCnomGridAndValues (MULTIGRID *theMG, char *FileName, char *plotprocName, char *tagName);
+#endif
 
 /* coarse grid manipulations */
 INT             InsertInnerNode                 (MULTIGRID *theMG, COORD *pos);
@@ -1903,8 +1906,8 @@ INT CreateBVStripe                                      ( GRID *grid, INT points
 INT CreateBVDomainHalfening                     ( GRID *grid, INT side, INT leaf_size );
 
 /* general functions for BLOCKVECTOR */
-INT CreateBlockvector                                   ( GRID *theGrid, BLOCKVECTOR **BVHandle );
-INT DisposeBlockvector                                  ( GRID *theGrid, BLOCKVECTOR *bv );
+INT CreateBlockvector                           ( GRID *theGrid, BLOCKVECTOR **BVHandle );
+INT DisposeBlockvector                          ( GRID *theGrid, BLOCKVECTOR *bv );
 void FreeAllBV                                          ( GRID *grid );
 void FreeBVList                                         ( GRID *grid, BLOCKVECTOR *bv );
 
