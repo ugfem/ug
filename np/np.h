@@ -239,6 +239,8 @@ INT dmatmul_minus  (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC 
                     const MATDATA_DESC *M, const VECDATA_DESC *y);
 INT dmatscale      (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M,
                     DOUBLE a);
+INT dm0add         (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const MATDATA_DESC *A);
 
 /* for compatibility only */
 
