@@ -222,7 +222,7 @@ void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
     {
       DDD_TYPE dddtype = DDDTYPE(type);
       DDD_HDR dddhdr = (DDD_HDR)(((char *)obj) + DDD_InfoHdrOffset(dddtype));
-      DDD_HdrConstructor(dddhdr, dddtype, PrioMaster, 0);
+      DDD_HdrConstructor(dddhdr, dddtype, PrioNone, 0);
     }
   }
 
@@ -457,6 +457,9 @@ VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after)
   VSEG(pv) = NULL;
   SETONEDGE(pv,0);
   SETMOVE(pv,DIM_OF_BND);
+        #ifdef ModelP
+  DDD_PrioritySet(PARHDRV(pv),PrioVertex);
+        #endif
 
   /* insert in vertex list */
   if (after==NULL)
@@ -528,6 +531,9 @@ VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after)
   VFATHER(pv) = NULL;
   TOPNODE(pv) = NULL;
   SETMOVE(pv,DIM);
+        #ifdef ModelP
+  DDD_PrioritySet(PARHDRV(pv),PrioVertex);
+        #endif
   for (i=0; i<DIM; i++) LCVECT(pv)[i] = 0.0;
 
   /* insert in vertex list */
@@ -608,6 +614,9 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
   PARSETOBJT(pn,NDOBJ);
   SETCLASS(pn,4);
   SETLEVEL(pn,theGrid->level);
+        #ifdef ModelP
+  DDD_PrioritySet(PARHDR(pn),PrioNode);
+        #endif
   ID(pn) = (theGrid->mg->nodeIdCounter)++;
   INDEX(pn) = 0;
   START(pn) = NULL;
@@ -1974,6 +1983,15 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
   if (pv==NULL) { DisposeMultiGrid(theMG); return(NULL); }
   theMG->corners = pv;
 
+        #ifdef ModelP
+  memset(pv,0,n*sizeof(VERTEX *));
+  if (me!=master)
+  {
+    Release(theHeap,FROM_TOP);
+    return(theMG);
+  }
+        #endif
+
   /* create nodes and vertices */
   for (i=0; i<n; i++)
   {
@@ -1988,35 +2006,38 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
   }
 
         #ifdef ModelP
-  /* identify boundary nodes and vertices on different procs */
-  DDD_IdentifyBegin();
-  for (i=0; i<n; i++)
-  {
-    int proc;
-    for (proc=0; proc<procs; proc++)
-      if (proc!=me)
-      {
-        NODE *node = TOPNODE(pv[i]);
-
-        /* take number of vertex i as DDD identifier (id=i*3),
-           (id+0 is vertex, id+1 is node, id+2 is vector) */
-
-        DDD_IdentifyNumber(PARHDRV(pv[i]), proc, i*3);
-        DDD_IdentifyNumber(PARHDR(node), proc, i*3+1);
-
-        /* identify vectors of nodes */
-        if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+  /* TODO: create the corner nodes or delete this */
+  if (0) {
+    /* identify boundary nodes and vertices on different procs */
+    DDD_IdentifyBegin();
+    for (i=0; i<n; i++)
+    {
+      int proc;
+      for (proc=0; proc<procs; proc++)
+        if (proc!=me)
         {
-          DDD_IdentifyNumber(PARHDR(NVECTOR(node)), proc, i+3+2);
-        }
-      }
-  }
-  DDD_IdentifyEnd();
+          NODE *node = TOPNODE(pv[i]);
 
-  if (me!=master)
-  {
-    Release(theHeap,FROM_TOP);
-    return(theMG);
+          /* take number of vertex i as DDD identifier (id=i*3),
+             (id+0 is vertex, id+1 is node, id+2 is vector) */
+
+          DDD_IdentifyNumber(PARHDRV(pv[i]), proc, i*3);
+          DDD_IdentifyNumber(PARHDR(node), proc, i*3+1);
+
+          /* identify vectors of nodes */
+          if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+          {
+            DDD_IdentifyNumber(PARHDR(NVECTOR(node)), proc, i+3+2);
+          }
+        }
+    }
+    DDD_IdentifyEnd();
+
+    if (me!=master)
+    {
+      Release(theHeap,FROM_TOP);
+      return(theMG);
+    }
   }
         #endif
 
@@ -5714,10 +5735,6 @@ void ListGrids (const MULTIGRID *theMG)
     UserWrite(buffer);
   }
 
-#ifdef ModelP    /* TODO temporary version, due to crash for me>0 */
-  if (me==master) {
-#endif
-
   /* surface grid up to current level */
   minl = cl;
   hmin = MAX_C;
@@ -5811,13 +5828,6 @@ void ListGrids (const MULTIGRID *theMG)
   UserWriteF("%c %3d %8d %8s %8ld %8ld %8ld %8ld %8ld %8ld %9.3e %9.3e\n",' ',minl,(int)cl,
              "---",(long)nn,(long)ne,(long)nt,
              (long)ns,(long)nvec,(long)nc,(float)hmin,(float)hmax);
-
-#ifdef ModelP    /* TODO temporary version, due to crash for me>0 */
-}
-else {
-  UserWrite("\nlisting of surface grid not implemented yet.\n");
-}
-#endif
 
   /* storage */
   sprintf(buffer,"\n%lu bytes used out of %lu allocated\n",HeapUsed(MGHEAP(theMG)),HeapSize(MGHEAP(theMG)));

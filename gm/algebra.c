@@ -63,6 +63,10 @@
 #include "misc.h"
 #include "algebra.h"
 
+#ifdef ModelP
+#include "parallel.h"
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -509,6 +513,9 @@ INT CreateVector (GRID *theGrid, VECTOR *After, INT VectorType, VECTOR **VectorH
   SETVNEW(pv,1);
   SETVCNEW(pv,1);
   BVD_INIT( &VBVD( pv ) );
+        #ifdef ModelP
+  DDD_PrioritySet(PARHDR(pv),PrioVector);
+        #endif
   pv->object = NULL;
   pv->index  = (long)theGrid->nVector;
   pv->skip   = 0;
