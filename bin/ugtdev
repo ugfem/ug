@@ -1,210 +1,66 @@
-#!/bin/csh -f
+#!/usr/bin/perl -w
 
-#set verbose
-set ToolName = `basename $0`;
+# check environment
+defined $ENV{'UGROOT'} or die "ugtdev error: 'UGROOT' environment variable not set\n";
+$ugmgs=$ENV{'UGROOT'}."/bin/ugmgs";
+-e $ugmgs or die "ugtdev error: tool 'ugmgs' not existing\n";
 
+# check input
+@ARGV==2 or die "ugtdev usage: ugtdev <s|m|h|D|W|M|Y> <prefix>\n";
+$prefix=$ARGV[1];
+SWITCH:
+{
+	if ($ARGV[0] eq 's') { $unit=1; last SWITCH; }
+	if ($ARGV[0] eq 'm') { $unit=60; last SWITCH; }
+	if ($ARGV[0] eq 'h') { $unit=3600; last SWITCH; }
+	if ($ARGV[0] eq 'D') { $unit=86400; last SWITCH; }
+	if ($ARGV[0] eq 'W') { $unit=604800; last SWITCH; }
+	if ($ARGV[0] eq 'M') { $unit=2592000; last SWITCH; }
+	if ($ARGV[0] eq 'Y') { $unit=31536000; last SWITCH; }
+}
 
-if ( $1 == "-h" || $1 == "-help" ) then
-echo $ToolName " [-S[a|m|g|h]] [-G] [-k] [-n] <film-name> [<path-to-mg-files>]";
-exit;
-endif
+# subs
+sub float
+{
+    my $real='[+-]?\d+\.?\d*[eE]?[+-]?\d+|[+-]?\d*\.?\d+[eE]?[+-]?\d+|[+-]?\d+';
+    my (@list,$f,$s,$in);
 
+    if (@_==1) { @list=grep /$real/,split /($real)/,$_[0]; }
+    elsif (@_==2)
+    {
+        $in=' '.$_[1];
+        ($f,$s)=split /$_[0]/,$in,2;
+        @list=grep /$real/,split /($real)/,$s;
+    }
+    else
+    {
+        $in=' '.$_[2];
+        ($f,$s)=split /$_[0]/,$in,2;
+        @list=grep /$real/,split /($real)/,$s;
+        if ($_[1]>=@list || $_[1]<0) { return undef;}
+        for ($s=0; $s<$_[1]; $s++) { shift @list; }
+    }
+    return wantarray ? @list : $list[0];
+}
 
-##################################################################
-
-# default settings
-set timescale = 1;
-set FlagScreen = 0;
-set FlagKeep = 0;
-set FlagNodes = 0;
-
-
-##################################################################
-
-
-# process list of options in variable order
-
-set ready = 0;
-while ($ready == 0)
-
-	# process one option
-	switch ($1)
-		case "-Sa":
-			set timescale = 31536000;
-			breaksw;
-
-		case "-Sm":
-			set timescale = 2592000;
-			breaksw;
-
-		case "-Sg":
-			set timescale = 86400;
-			breaksw;
-
-		case "-Sh":
-			set timescale = 3600;
-			breaksw;
-
-		case "-Smin":
-			set timescale = 60;
-			breaksw;
-
-		case "-G":
-			set FlagScreen = 1;
-			breaksw;
-
-		case "-k":
-			set FlagKeep = 1;
-			breaksw;
-
-		case "-n":
-			set FlagNodes = 1;
-			breaksw;
-		
-		default:
-			set ready = 1;
-	endsw
-
-	# eat option argument if it was interpreted
-	if ($ready == 0) then
-		shift;
-	endif
-end
-
-
-##################################################################
-
-
-rm -f t.gnu dt.gnu n.gnu;
-set PREFIX = $1
-if ($2 != "") then
-	set PathToMG = $2
-else
-	set PathToMG = .
-endif
-
-
-@ i = 0
-while ($i <= 1000000)
-
-	set DataFileSuffix = `echo $i | awk '{printf("%06d.ug.data.xdr",$1);}' - `
-	set DataFile = $PREFIX.$DataFileSuffix
-	if (! -f $DataFile ) break;
-
-	echo "extracting data from file" $DataFile
-	ugmgs $DataFile | \
-		awk '$1=="Time:"     {print awk_i,$2/(ts+0);i++;}' \
-			ts=$timescale awk_i=$i  - >> t.gnu
-
-	ugmgs $DataFile | \
-		awk '$1=="TimeStep:" {print awk_i,$2/(ts+0);i++;}' \
-			ts=$timescale awk_i=$i  - >> dt.gnu
-
-	if ( $FlagNodes ) then 
-		# getting corresponding mg-file
-		set MGFileName = `ugmgs $DataFile | awk '$1=="MG" {print $3}' -`
-		set MGFile = $PathToMG/$MGFileName;
-
-		if (! -f $MGFile) then
-			echo $ToolName": couldn't open MG-file " $MGFile
-		else
-			ugmgs $MGFile | \
-				awk '$2=="Vertex:"  {print awk_i,$3;}' \
-					ts=$timescale awk_i=$i  - >> n.gnu
-		endif
-	endif
-
-	@ i = $i + 1
-end
-
-
-if (! -f t.gnu) then
-	echo $ToolName": couldn't extract 'Time' data."
-	exit;
-endif
-
-if (! -f dt.gnu) then
-	echo $ToolName": couldn't extract 'TimeStep' data."
-	exit;
-endif
-
-if ($FlagNodes && (! -f n.gnu)) then
-	echo $ToolName": couldn't extract 'Vertex' data."
-	exit;
-endif
-
-
-##################################################################
+# run
+open(TIME,">time");
+open(DT,">time_step");
+for($i=0;; $i++)
+{
+	$data=$prefix.sprintf(".%.6d.ug.data.xdr",$i);
+	-e $data or last;
+	$r=`$ugmgs $data`;
+	($t,$dt)=float 'Identification',$r;
+	$t/=$unit; $dt/=$unit;
+	print TIME "$i $t\n";
+	print DT "$i $dt\n";
+}
 
 
 
-if ($FlagScreen) then 
-	echo '\
-		set parametric; \
-		set grid; \
-		plot "t.gnu" w l; \
-		pause -1; \
-		set terminal postscript; \
-		set output "t.ps";\
-		plot "t.gnu" w l;'       > t.scr;
-
-	echo '\
-		set parametric; \
-		set grid; \
-		plot "dt.gnu" w l; \
-		pause -1; \
-		set terminal postscript; \
-		set output "dt.ps"; \
-		plot "dt.gnu" w l;'         > dt.scr;
-
-	if ($FlagNodes) then
-		echo '\
-			set parametric; \
-			set grid; \
-			plot "n.gnu" w l; \
-			pause -1; \
-			set terminal postscript; \
-			set output "n.ps"; \
-			plot "n.gnu" w l;'         > n.scr;
-	endif
-else
-	echo '\
-		set parametric; \
-		set grid; \
-		set terminal postscript; \
-		set output "t.ps"; \
-		plot "t.gnu" w l;'       > t.scr;
-
-	echo '\
-		set parametric; \
-		set grid; \
-		set terminal postscript; \
-		set output "dt.ps"; \
-		plot "dt.gnu" w l;'        > dt.scr;
-
-	if ($FlagNodes) then
-		echo '\
-			set parametric; \
-			set grid; \
-			set terminal postscript; \
-			set output "n.ps"; \
-			plot "n.gnu" w l;'        > n.scr;
-	endif
-endif
-
-gnuplot "t.scr";   rm t.scr;
-gnuplot "dt.scr";  rm dt.scr;
-if ($FlagNodes) then
-	gnuplot "n.scr";  rm n.scr;
-endif
 
 
-if (! $FlagKeep) then
-	rm t.gnu;
-	rm dt.gnu;
-	rm n.gnu;
-endif
 
 
-##################################################################
 
