@@ -10125,11 +10125,6 @@ static INT WalkCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   double x[3];
 
-
-        #ifdef ModelP
-  if (me!=master) return (OKCODE);
-        #endif
-
   NO_OPTION_CHECK(argc,argv);
 
   /* current picture */
@@ -10226,11 +10221,6 @@ static INT WalkAroundCommand (INT argc, char **argv)
 
   /* following variables: keep type for sscanf */
   double dirAngle,Angle;
-
-
-        #ifdef ModelP
-  if (me!=master) return (OKCODE);
-        #endif
 
   NO_OPTION_CHECK(argc,argv);
 
