@@ -4560,12 +4560,10 @@ void ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const INT longformat)
   c = isCurrent ? '*' : ' ';
 
   if (longformat)
-    sprintf(buffer," %c %-20.20s %-20.20s %10lu %10lu\n",c,ENVITEM_NAME(theMG),
-            BVPD_NAME(theBVPDesc), HeapSize(theMG->theHeap),HeapUsed(theMG->theHeap));
+    UserWriteF(" %c %-20.20s %-20.20s %10lu %10lu\n",c,ENVITEM_NAME(theMG),
+               BVPD_NAME(theBVPDesc), HeapSize(theMG->theHeap),HeapUsed(theMG->theHeap));
   else
-    sprintf(buffer," %c %-20.20s\n",c,ENVITEM_NAME(theMG));
-
-  UserWrite(buffer);
+    UserWriteF(" %c %-20.20s\n",c,ENVITEM_NAME(theMG));
 
   return;
 }
@@ -4789,42 +4787,30 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
   /******************************/
   /* print standard information */
   /******************************/
-  /* line 1 */ sprintf(buffer,"NODEID=" ID_FFMTE " CTRL=%8lx IX=%8ld VEID=" VID_FFMTX " LEVEL=%2d",
-                       ID_PRTE(theNode),(long)CTRL(theNode),
-                       (long)INDEX(theNode),VID_PRTX(theVertex),LEVEL(theNode));
-  UserWrite(buffer);
+  /* line 1 */ UserWriteF("NODEID=" ID_FFMTE " CTRL=%8lx IX=%8ld VEID=" VID_FFMTX " LEVEL=%2d",
+                          ID_PRTE(theNode),(long)CTRL(theNode),
+                          (long)INDEX(theNode),VID_PRTX(theVertex),LEVEL(theNode));
 
   /* print coordinates of that node */
   for(i=0; i<DIM; i++)
-  {
-    sprintf(buffer," x%1d=%11.4E",i, (float)(CVECT(theVertex)[i]) );
-    UserWrite(buffer);
-  }
+    UserWriteF(" x%1d=%11.4E",i, (float)(CVECT(theVertex)[i]) );
   UserWrite("\n");
 
   if (vopt)       /* verbose: print all information */
   {
-    /* line 2 */ sprintf(buffer,"   CLASS=%d ",CLASS(theNode));
-    UserWrite(buffer);
+    /* line 2 */ UserWriteF("   CLASS=%d ",CLASS(theNode));
 
     /* print nfather information */
     if (NFATHER(theNode)!=NULL)
-    {
-      sprintf(buffer," NODEFATHER=%ld",(long)ID(NFATHER(theNode)));
-      UserWrite(buffer);
-    }
+      UserWriteF(" NODEFATHER=%ld",(long)ID(NFATHER(theNode)));
     UserWrite("\n");
 
     /* line 3 */	/* print vertex father information */
     if (VFATHER(theVertex)!=NULL)
     {
-      sprintf(buffer,"   VERTEXFATHER=%ld ",(long)ID(VFATHER(theVertex)));
-      UserWrite(buffer);
+      UserWriteF("   VERTEXFATHER=%ld ",(long)ID(VFATHER(theVertex)));
       for(i=0; i<DIM; i++)
-      {
-        sprintf(buffer,"XI[%d]=%11.4E ",i, (float)(LCVECT(theVertex)[i]) );
-        UserWrite(buffer);
-      }
+        UserWriteF("XI[%d]=%11.4E ",i, (float)(LCVECT(theVertex)[i]) );
     }
     UserWrite("\n");
   }
@@ -4849,23 +4835,18 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
     {
                         #if defined __THREEDIM__ && defined ModelP
-      sprintf(buffer,"   EDGE=%x/%08x ",MYEDGE(theLink),
-              DDD_InfoGlobalId(PARHDR(MYEDGE(theLink))));
+      UserWriteF("   EDGE=%x/%08x ",MYEDGE(theLink),
+                 DDD_InfoGlobalId(PARHDR(MYEDGE(theLink))));
                         #else
-      sprintf(buffer,"   ");
+      UserWriteF("   ");
                         #endif
-      UserWrite(buffer);
-      sprintf(buffer,"NB=" ID_FMTX " CTRL=%8lx NO_OF_ELEM=%3d ",
-              ID_PRTX(NBNODE(theLink)),(long)CTRL(theLink),
-              NO_OF_ELEM(MYEDGE(theLink)));
-      UserWrite(buffer);
+      UserWriteF("NB=" ID_FMTX " CTRL=%8lx NO_OF_ELEM=%3d ",
+                 ID_PRTX(NBNODE(theLink)),(long)CTRL(theLink),
+                 NO_OF_ELEM(MYEDGE(theLink)));
 
       theVertex=MYVERTEX(NBNODE(theLink));
       for(i=0; i<DIM; i++)
-      {
-        sprintf(buffer,"x%1d=%11.4 ",i, (float)(CVECT(theVertex)[i]) );
-        UserWrite(buffer);
-      }
+        UserWriteF("x%1d=%11.4 ",i, (float)(CVECT(theVertex)[i]) );
       UserWrite("\n");
     }
   }
@@ -5039,10 +5020,9 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
   case RED_CLASS :                 strcpy(ekind,"RED    "); break;
   default :                strcpy(ekind,"???    "); break;
   }
-  sprintf(buffer,"ELEMID=" EID_FFMTE " %5s %5s CTRL=%8lx CTRL2=%8lx REFINE=%2d MARK=%2d LEVEL=%2d",
-          EID_PRTE(theElement),ekind,etype,
-          (long)CTRL(theElement),(long)FLAG(theElement),REFINE(theElement),MARK(theElement),LEVEL(theElement));
-  UserWrite(buffer);
+  UserWriteF("ELEMID=" EID_FFMTE " %5s %5s CTRL=%8lx CTRL2=%8lx REFINE=%2d MARK=%2d LEVEL=%2d",
+             EID_PRTE(theElement),ekind,etype,
+             (long)CTRL(theElement),(long)FLAG(theElement),REFINE(theElement),MARK(theElement),LEVEL(theElement));
   if (COARSEN(theElement)) UserWrite(" COARSEN");
   UserWrite("\n");
 
@@ -5050,32 +5030,20 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
   {
     UserWrite("   ");
     for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-    {
-      sprintf(buffer," N%d=" ID_FMTX,i,ID_PRTX(CORNER(theElement,i)));
-      UserWrite(buffer);
-    }
+      UserWriteF(" N%d=" ID_FMTX,i,ID_PRTX(CORNER(theElement,i)));
     if (EFATHER(theElement)!=NULL)
-    {
-      sprintf(buffer," FA=%ld ",(long)ID(EFATHER(theElement)));
-      UserWrite(buffer);
-    }
+      UserWriteF(" FA=%ld ",(long)ID(EFATHER(theElement)));
     UserWrite("\n");
     UserWrite("   ");
                 #ifdef __TWODIM__
     for (i=0; i<SONS_OF_ELEM(theElement); i++)
       if (SON(theElement,i)!=NULL)
-      {
-        sprintf(buffer,"S%d=%ld ",i,(long)ID(SON(theElement,i)));
-        UserWrite(buffer);
-      }
+        UserWriteF("S%d=%ld ",i,(long)ID(SON(theElement,i)));
                 #endif
                 #ifdef __THREEDIM__
     if (GetSons(theElement,SonList)!=0) return;
     for (i=0; i<NSONS(theElement); i++)
-    {
-      sprintf(buffer,"S%d=%ld ",i,(long)ID(SonList[i]));
-      UserWrite(buffer);
-    }
+      UserWriteF("S%d=%ld ",i,(long)ID(SonList[i]));
                 #endif
     UserWrite("\n");
   }
@@ -5083,10 +5051,7 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
   {
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
       if (NBELEM(theElement,i)!=NULL)
-      {
-        sprintf(buffer,"NB%d=%ld ",i,(long)ID(NBELEM(theElement,i)));
-        UserWrite(buffer);
-      }
+        UserWriteF("NB%d=%ld ",i,(long)ID(NBELEM(theElement,i)));
     UserWrite("\n");
   }
   if (bopt)
@@ -5100,8 +5065,7 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
         {
                                                 #ifdef __THREEDIM__
                         #ifdef ModelP
-          sprintf(buffer,"  NODE[ID=%ld]: ",(long)(ID(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j)))));
-          UserWrite(buffer);
+          UserWriteF("  NODE[ID=%ld]: ",(long)(ID(CORNER(theElement,CORNER_OF_SIDE(theElement,i,j)))));
                                                 #endif
                                                 #endif
           UserWrite("\n");
@@ -5268,39 +5232,35 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
   if (VTYPE(theVector)==NODEVECTOR)
   {
     theNode = (NODE*)VOBJECT(theVector);
-    sprintf(buffer,"NODE-V IND=" VINDEX_FFMTE " nodeID=" ID_FMTX
-            "                VCLASS=%1d VNCLASS=%1d\n",
-            VINDEX_PRTE(theVector),ID_PRTX(theNode),VCLASS(theVector),VNCLASS(theVector));
-    UserWrite(buffer);
+    UserWriteF("NODE-V IND=" VINDEX_FFMTE " nodeID=" ID_FMTX
+               "                VCLASS=%1d VNCLASS=%1d\n",
+               VINDEX_PRTE(theVector),ID_PRTX(theNode),VCLASS(theVector),VNCLASS(theVector));
   }
   if (VTYPE(theVector)==EDGEVECTOR)
   {
     theEdge = (EDGE*)VOBJECT(theVector);
-    sprintf(buffer,"EDGE-V IND=" VINDEX_FFMTE " fromID=" ID_FFMT
-            " to__ID=%7ld VCLASS=%1d VNCLASS=%1d\n",
-            VINDEX_PRTE(theVector),ID_PRT(NBNODE(LINK0(theEdge))),
-            ID(NBNODE(LINK1(theEdge))),VCLASS(theVector),VNCLASS(theVector));
-    UserWrite(buffer);
+    UserWriteF("EDGE-V IND=" VINDEX_FFMTE " fromID=" ID_FFMT
+               " to__ID=%7ld VCLASS=%1d VNCLASS=%1d\n",
+               VINDEX_PRTE(theVector),ID_PRT(NBNODE(LINK0(theEdge))),
+               ID(NBNODE(LINK1(theEdge))),VCLASS(theVector),VNCLASS(theVector));
   }
         #ifdef __THREEDIM__
   if (VTYPE(theVector)==SIDEVECTOR)
   {
     theElement = (ELEMENT*)VOBJECT(theVector);
-    sprintf(buffer,"SIDE-V IND=" VINDEX_FFMTE " elemID=" EID_FFMT
-            "                VCLASS=%1d VNCLASS=%1d\n",
-            VINDEX_PRTE(theVector),EID_PRT(theElement),
-            VCLASS(theVector),VNCLASS(theVector));
-    UserWrite(buffer);
+    UserWriteF("SIDE-V IND=" VINDEX_FFMTE " elemID=" EID_FFMT
+               "                VCLASS=%1d VNCLASS=%1d\n",
+               VINDEX_PRTE(theVector),EID_PRT(theElement),
+               VCLASS(theVector),VNCLASS(theVector));
   }
         #endif
   if (VTYPE(theVector)==ELEMVECTOR)
   {
     theElement = (ELEMENT*)VOBJECT(theVector);
-    sprintf(buffer,"ELEM-V IND=" VINDEX_FFMTE " elemID=" EID_FFMT
-            "                VCLASS=%1d VNCLASS=%1d\n",
-            VINDEX_PRTE(theVector),EID_PRT(theElement),
-            VCLASS(theVector),VNCLASS(theVector));
-    UserWrite(buffer);
+    UserWriteF("ELEM-V IND=" VINDEX_FFMTE " elemID=" EID_FFMT
+               "                VCLASS=%1d VNCLASS=%1d\n",
+               VINDEX_PRTE(theVector),EID_PRT(theElement),
+               VCLASS(theVector),VNCLASS(theVector));
   }
 
 
@@ -5369,8 +5329,7 @@ void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
   for (j=0; j<SELECTIONSIZE(theMG); j++)
   {
     theElement = (ELEMENT *) SELECTIONOBJECT(theMG,j);
-    sprintf(buffer,"ELEM(ID=%d):\n",ID(theElement));
-    UserWrite(buffer);
+    UserWriteF("ELEM(ID=%d):\n",ID(theElement));
 
     if (TYPE_DEF_IN_MG(theMG,NODEVECTOR))
     {
@@ -5582,8 +5541,7 @@ static INT CheckGeometryold (GRID *theGrid) /* 2D VERSION */
   {
     n = SIDES_OF_ELEM(theElement);
     if (CheckElementold(theElement, &SideError, &EdgeError, &NodeError)==0) continue;
-    sprintf(buffer,"ELEM " EID_FMTE ":\n", EID_PRTE(theElement));
-    UserWrite(buffer);
+    UserWriteF("ELEM " EID_FMTE ":\n", EID_PRTE(theElement));
 
     if (SideError)
       for (i=0; i<n; i++)
@@ -5593,8 +5551,7 @@ static INT CheckGeometryold (GRID *theGrid) /* 2D VERSION */
           UserWrite("   SIDE(");
           for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
-            sprintf(buffer,ID_FMT, ID_PRT(CORNER(theElement,(i+j)%n)));
-            UserWrite(buffer);
+            UserWriteF(ID_FMT, ID_PRT(CORNER(theElement,(i+j)%n)));
             if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
           }
           UserWrite(") has neighbour but a backPtr does not exist\n");
@@ -5604,8 +5561,7 @@ static INT CheckGeometryold (GRID *theGrid) /* 2D VERSION */
           UserWrite("   SIDE(");
           for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
-            sprintf(buffer, ID_FMT, ID_PRT(CORNER(theElement,(i+j)%n)));
-            UserWrite(buffer);
+            UserWriteF( ID_FMT, ID_PRT(CORNER(theElement,(i+j)%n)));
             if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
           }
           UserWrite(") has no neighbour but element is IEOBJ\n");
@@ -5615,8 +5571,7 @@ static INT CheckGeometryold (GRID *theGrid) /* 2D VERSION */
           UserWrite("   SIDE(");
           for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
-            sprintf(buffer, ID_FMT, ID_PRT(CORNER(theElement,(i+j)%n)));
-            UserWrite(buffer);
+            UserWriteF( ID_FMT, ID_PRT(CORNER(theElement,(i+j)%n)));
             if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
           }
           UserWrite(") has no neighbour, element is BEOBJ, "
@@ -5627,26 +5582,19 @@ static INT CheckGeometryold (GRID *theGrid) /* 2D VERSION */
       for (i=0; i<EDGES_OF_ELEM(theElement); i++)
       {
         if (!(EdgeError & 1<<i)) continue;
-        sprintf(buffer,"   EDGE(" ID_FMT "," ID_FMT ") is missing\n",
-                ID_PRT(CORNER(theElement,i)), ID_PRT(CORNER(theElement,(i+1)%n)));
-        UserWrite(buffer);
+        UserWriteF("   EDGE(" ID_FMT "," ID_FMT ") is missing\n",
+                   ID_PRT(CORNER(theElement,i)), ID_PRT(CORNER(theElement,(i+1)%n)));
       }
     if (NodeError)
       for (i=0; i<n; i++)
       {
         if (NodeError & (1<<i))
-        {
-          sprintf(buffer,"   CORNER " ID_FMT " is BVOBJ, "
-                  "ids from elementside and vertexsegment are "
-                  "not consistent\n", ID_PRT(CORNER(theElement,i)));
-          UserWrite(buffer);
-        }
+          UserWriteF("   CORNER " ID_FMT " is BVOBJ, "
+                     "ids from elementside and vertexsegment are "
+                     "not consistent\n", ID_PRT(CORNER(theElement,i)));
         if (NodeError & (1<<(i+n)))
-        {
-          sprintf(buffer,"   CORNER " ID_FMT " is IVOBJ, but lies on elementside\n",
-                  ID_PRT(CORNER(theElement,i)));
-          UserWrite(buffer);
-        }
+          UserWriteF("   CORNER " ID_FMT " is IVOBJ, but lies on elementside\n",
+                     ID_PRT(CORNER(theElement,i)));
       }
   }
 
@@ -5687,9 +5635,7 @@ static INT CheckGeometryold (GRID *theGrid) /* 2D VERSION */
     if (!USED(theNode))
     {
             #ifdef ModelP
-      sprintf(buffer,"node " ID_FMTX " is dead ",ID_PRTX(theNode));
-      UserWrite(buffer);
-      UserWrite("\n");
+      UserWriteF("node " ID_FMTX " is dead\n",ID_PRTX(theNode));
                         #endif
     }
     else
@@ -5704,43 +5650,27 @@ static INT CheckGeometryold (GRID *theGrid) /* 2D VERSION */
     {
       if (OBJT(SUCCE(theElement))!=IEOBJ && OBJT(SUCCE(theElement))!=BEOBJ)
       {
-        sprintf(buffer,"pointer of ELEM(" EID_FMT ") (number %ld) to next element is no pointer to an element\n", EID_PRT(theElement),(long)count);
-        UserWrite(buffer);
+        UserWriteF("pointer of ELEM(" EID_FMT ") (number %ld) to next element is no pointer to an element\n", EID_PRT(theElement),(long)count);
         break;
       }
       if (PREDE(SUCCE(theElement))!=NULL)
       {
         if (PREDE(SUCCE(theElement))!=theElement)
-        {
-          sprintf(buffer,"pointer of ELEM(" EID_FMT ") (number %ld) to previous element is not the previous element\n",EID_PRT(SUCCE(theElement)),(long)(count+1));
-          UserWrite(buffer);
-        }
+          UserWriteF("pointer of ELEM(" EID_FMT ") (number %ld) to previous element is not the previous element\n",EID_PRT(SUCCE(theElement)),(long)(count+1));
       }
       else
-      {
-        sprintf(buffer,"pointer of ELEM(" EID_FMT ") (number %ld) to previous element is NULL\n",EID_PRT(SUCCE(theElement)),(long)(count+1));
-        UserWrite(buffer);
-      }
+        UserWriteF("pointer of ELEM(" EID_FMT ") (number %ld) to previous element is NULL\n",EID_PRT(SUCCE(theElement)),(long)(count+1));
     }
     count++;
   }
   if (FIRSTELEMENT(theGrid)!=NULL)
     if (PREDE(FIRSTELEMENT(theGrid)) != NULL)
-    {
-      sprintf(buffer,"first element of the grid has a previous 'element'\n");
-      UserWrite(buffer);
-    }
+      UserWriteF("first element of the grid has a previous 'element'\n");
   if (LASTELEMENT(theGrid)!=NULL)
     if (SUCCE(LASTELEMENT(theGrid)) != NULL)
-    {
-      sprintf(buffer,"last element of the grid has a following 'element'\n");
-      UserWrite(buffer);
-    }
+      UserWriteF("last element of the grid has a following 'element'\n");
   if (count != theGrid->nElem)
-  {
-    sprintf(buffer,"there are %ld elements but %ld expected\n",(long)(count),(long)theGrid->nElem);
-    UserWrite(buffer);
-  }
+    UserWriteF("there are %ld elements but %ld expected\n",(long)(count),(long)theGrid->nElem);
   return(GM_OK);
 }
 
@@ -5877,10 +5807,8 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError,
         *ESonError |= (1<<i);
 
       if (REFINE(theElement)==0)
-      {
         UserWriteF("ELEM(" EID_FMTX "): element is not refined but "
                    "has NSONS=%d\n",EID_PRTX(theElement),NSONS(theElement));
-      }
     }
   }
 
@@ -5890,7 +5818,7 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError,
   return (0);
 }
 
-INT CheckGeometry (GRID *theGrid)
+static INT CheckGeometry (GRID *theGrid)
 {
   NODE *theNode;
   ELEMENT *theElement;
@@ -6075,10 +6003,8 @@ INT CheckGeometry (GRID *theGrid)
 
           for (theLink1=START(nb); theLink1!=NULL;
                theLink1=NEXT(theLink1))
-          {
             UserWriteF(" %d-%d",ID(NBNODE(theLink1)),
                        ID(NBNODE(REVERSE(theLink1))));
-          }
           UserWrite("\n");
         }
                                 #endif
@@ -6222,9 +6148,7 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
       fflush(stdout);
     }
     else
-    {
       UserWrite(" ok");
-    }
   }
 
   /* check algebraic data structures */
@@ -6233,7 +6157,7 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
     UserWrite(", algebra:");
     fflush(stdout);
 
-    if (errors = CheckAlgebra(theGrid) != GM_OK)
+    if ((errors = CheckAlgebra(theGrid)) != GM_OK)
     {
       totalerrors += errors;
       error++;
@@ -6241,9 +6165,7 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
       fflush(stdout);
     }
     else
-    {
       UserWrite(" ok");
-    }
   }
 
   /* check lists and counters */
@@ -6252,7 +6174,7 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
     UserWrite(", lists:");
     fflush(stdout);
 
-    if (errors = CheckLists(theGrid) != GM_OK)
+    if ((errors = CheckLists(theGrid)) != GM_OK)
     {
       totalerrors += errors;
       error++;
@@ -6260,9 +6182,7 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
       fflush(stdout);
     }
     else
-    {
       UserWrite(" ok");
-    }
   }
 
         #ifdef ModelP
@@ -6280,9 +6200,7 @@ INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
       fflush(stdout);
     }
     else
-    {
       UserWrite(" ok");
-    }
   }
         #endif
 
@@ -6331,7 +6249,8 @@ void ClearSelection (MULTIGRID *theMG)
    .  theNode - node to add
 
    DESCRIPTION:
-   This function adds an node to the selection buffer.
+   This function adds an node to the selection buffer or removes it if it is already
+   in the list.
 
    RETURN VALUE:
    INT
@@ -6353,7 +6272,13 @@ INT AddNodeToSelection (MULTIGRID *theMG, NODE *theNode)
 
   g = (SELECTION_OBJECT *) theNode;
   for (i=0; i<SELECTIONSIZE(theMG); i++)
-    if (SELECTIONOBJECT(theMG,i)==g) RETURN(GM_ERROR);
+    if (SELECTIONOBJECT(theMG,i)==g)
+    {
+      /* remove g from list (replace it with last object) */
+      SELECTIONSIZE(theMG)--;
+      SELECTIONOBJECT(theMG,i) = SELECTIONOBJECT(theMG,SELECTIONSIZE(theMG));
+      return(GM_OK);
+    }
 
   if (SELECTIONSIZE(theMG)>=MAXSELECTION) RETURN(GM_ERROR);
 
@@ -6375,7 +6300,8 @@ INT AddNodeToSelection (MULTIGRID *theMG, NODE *theNode)
    .  theElement - element to add
 
    DESCRIPTION:
-   This function adds an element to the selection buffer.
+   This function adds an element to the selection buffer or removes it if it is already
+   in the list.
 
    RETURN VALUE:
    INT
@@ -6399,9 +6325,9 @@ INT AddElementToSelection (MULTIGRID *theMG, ELEMENT *theElement)
   for (i=0; i<SELECTIONSIZE(theMG); i++)
     if (SELECTIONOBJECT(theMG,i)==g)
     {
+      /* remove g from list (replace it with last object) */
       SELECTIONSIZE(theMG)--;
-      SELECTIONOBJECT(theMG,i) =
-        SELECTIONOBJECT(theMG,SELECTIONSIZE(theMG));
+      SELECTIONOBJECT(theMG,i) = SELECTIONOBJECT(theMG,SELECTIONSIZE(theMG));
       return(GM_OK);
     }
 
@@ -6425,7 +6351,8 @@ INT AddElementToSelection (MULTIGRID *theMG, ELEMENT *theElement)
    .  theVector - vector to add
 
    DESCRIPTION:
-   This function adds a vector to the selection buffer.
+   This function adds a vector to the selection buffer or removes it if it is already
+   in the list.
 
    RETURN VALUE:
    INT
@@ -6447,7 +6374,13 @@ INT AddVectorToSelection (MULTIGRID *theMG, VECTOR *theVector)
 
   g = (SELECTION_OBJECT *) theVector;
   for (i=0; i<SELECTIONSIZE(theMG); i++)
-    if (SELECTIONOBJECT(theMG,i)==g) return(GM_ERROR);
+    if (SELECTIONOBJECT(theMG,i)==g)
+    {
+      /* remove g from list (replace it with last object) */
+      SELECTIONSIZE(theMG)--;
+      SELECTIONOBJECT(theMG,i) = SELECTIONOBJECT(theMG,SELECTIONSIZE(theMG));
+      return(GM_OK);
+    }
 
   if (SELECTIONSIZE(theMG)>=MAXSELECTION) RETURN(GM_ERROR);
 
