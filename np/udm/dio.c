@@ -210,6 +210,8 @@ int     Read_DT_General (DIO_GENERAL *dio_general)
 
   /* now special mode */
   if (Bio_Read_string(dio_general->version)) return (1);
+  if (Bio_Read_string(dio_general->mgfile)) return (1);
+  if (Bio_Read_mdouble(1,&(dio_general->time))) return (1);
   if (Bio_Read_mint(2,intList)) return (1);
   dio_general->magic_cookie       = intList[0];
   dio_general->nVD                        = intList[1];
@@ -263,6 +265,8 @@ int     Write_DT_General (DIO_GENERAL *dio_general)
 
   /* now special mode */
   if (Bio_Write_string(dio_general->version)) return (1);
+  if (Bio_Write_string(dio_general->mgfile)) return (1);
+  if (Bio_Write_mdouble(1,&(dio_general->time))) return (1);
   intList[0] = dio_general->magic_cookie;
   intList[1] = dio_general->nVD;
   if (Bio_Write_mint(2,intList)) return (1);
@@ -327,13 +331,21 @@ int CloseDTFile ()
 
 int DIO_Init (void)
 {
-
 #ifdef __MGIO_USE_IN_UG__
+
+  INT error;
 
   /* path to grid-dirs */
   datapaths_set = 0;
   if (ReadSearchingPaths(DEFAULTSFILENAME,"datapaths")==0)
     datapaths_set = 1;
+
+  /* create struct and fill stringvars */
+  if (MakeStruct(":IO")!=0)
+  {
+    SetHiWrd(error,__LINE__);
+    return (error);
+  }
 
 #endif
 

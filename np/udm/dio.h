@@ -40,7 +40,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define DIO_VERSION                                     "DATA_IO_1.1"
+#define DIO_VERSION                                     "DATA_IO_1.4"
 
 #define __DIO_USE_IN_UG__
 #define DIO_DIM                 3
@@ -80,11 +80,13 @@ struct dio_general {
   /* information about the file */
   int mode;                                                     /* macros see above						*/
   char version[DIO_NAMELEN];                    /* version of i/o						*/
+  char mgfile[DIO_NAMELEN];                     /* corresponding multigrid file                 */
+  double time;                                          /* time, -1.0 means no time specified!  */
   int magic_cookie;                                     /* identification with mg-file			*/
 
   /* information about data stored */
   int nVD;                                                              /* nb of vector data				*/
-  char VDname[DIO_NAMELEN][DIO_VDMAX];      /* name of each vectordata desc		*/
+  char VDname[DIO_VDMAX][DIO_NAMELEN];      /* name of each vectordata desc		*/
   int VDncomp[DIO_VDMAX];                               /* nb of comp of each vectordata	*/
   int ndata;                                                            /* nb of doubles stored				*/
 };

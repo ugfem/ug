@@ -113,21 +113,17 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT LoadData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList)
+INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDATA_DESC **theVDList)
 {
-  INT i,j,ncomp,s,*entry,copied_until,copy_until,still_to_read,read;
+  INT i,j,ncomp,s,*entry,copied_until,copy_until,still_to_read,read,nvec,id;
   unsigned long m;
   DIO_GENERAL dio_general;
   HEAP *theHeap;
   double *data;
-  VECTOR *theV;
+  VECTOR *theV, **VectorList;
   GRID *theGrid;
   NODE *theNode;
-#       ifndef __MWCW__
-  char sysCom[NAMESIZE];
-  char *p;
-  INT zip;
-#       endif
+  char FileName[NAMESIZE], NumberString[6];
 
   if (theMG==NULL) return (1);
   theHeap = MGHEAP(theMG);
@@ -143,26 +139,20 @@ INT LoadData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList)
 #endif
   }
 
-#ifndef __MWCW__
-  /* unzip if */
-  zip = 0;
-  p = FileName + strlen(FileName) - 3;
-  if (strcmp(p,".gz")==0)
-  {
-    zip = 1;
-    strcpy(sysCom,"gzip -d -f ");
-    strcat(sysCom,FileName);
-    if (system(sysCom)==-1) return (1);
-    p[0] = '\0';
-  }
-#endif
-
   /* open file */
+  strcpy(FileName,name);
+  strcat(FileName,".ug.data.");
+  if (number!=-1)
+  {
+    sprintf(NumberString,"%04d.",(int)number);
+    strcat(FileName,NumberString);
+  }
+  strcat(FileName,type);
   if (Read_OpenDTFile (FileName)) return (1);
 
   /* read general information */
   if (Read_DT_General (&dio_general))                                     {CloseDTFile(); return (1);}
-
+  if (SetStringValue(":IO:TIME",dio_general.time))                {CloseDTFile(); return (1);}
   if (strcmp(dio_general.version,DIO_VERSION)!=0)                 {CloseDTFile(); UserWrite("ERROR: wrong version\n"); return (1);}
   if (dio_general.magic_cookie != MG_MAGIC_COOKIE(theMG)) {CloseDTFile(); UserWrite("m-c-error"); return (1);}
   if (dio_general.nVD != n)                                                               {CloseDTFile(); UserWrite("ERROR: wrong nb of VectorData\n"); return (1);}
@@ -170,18 +160,46 @@ INT LoadData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList)
   for (i=0; i<n; i++)
   {
     if (strcmp(dio_general.VDname[i],"---"))                        {CloseDTFile(); UserWrite("vd-names do not match\n"); return (1);}
-    if (dio_general.VDncomp[i] != VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR)) {CloseDTFile(); UserWrite("vd-comp do not match\n"); return (1);}
-    ncomp += VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR);
+    if (theVDList[i]!=NULL)
+      if (dio_general.VDncomp[i] != VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR)) {CloseDTFile(); UserWrite("vd-comp do not match\n"); return (1);}
+    ncomp += dio_general.VDncomp[i];
+  }
+
+  /* create list of vectors */
+  MarkTmpMem(theHeap);
+  nvec=0;
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    nvec += NVEC(GRID_ON_LEVEL(theMG,i));
+  VectorList = (VECTOR **)GetTmpMem(theHeap,nvec*sizeof(VECTOR*));
+  if (VectorList==NULL)                                                                   {CloseDTFile(); UserWrite("ERROR: cannot allocate memoriy for VectorList\n"); return (1);}
+  for (i=0; i<nvec; i++) VectorList[i] = NULL;
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,i);
+    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+    {
+      theV = NVECTOR(theNode);
+      id = ID(theNode);
+      if (id >= nvec)                                                                 {CloseDTFile(); UserWrite("internal ERROR: id is out of range\n"); return (1);}
+      if (VectorList[id]!=NULL)
+      {CloseDTFile(); UserWrite("internal ERROR: VectorList is set twice\n"); return (1);}
+      VectorList[id] = theV;
+    }
   }
 
   /* load data */
-  MarkTmpMem(theHeap);
   entry = (INT *)GetTmpMem(theHeap,ncomp*sizeof(INT));
   if (entry==NULL)                                                                                {CloseDTFile(); return (1);}
   s=0;
   for (i=0; i<n; i++)
-    for (j=0; j<VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR); j++)
-      entry[s++] = VD_CMP_OF_TYPE(theVDList[i],NODEVECTOR,j);
+  {
+    if (theVDList[i]!=NULL)
+      for (j=0; j<VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR); j++)
+        entry[s++] = VD_CMP_OF_TYPE(theVDList[i],NODEVECTOR,j);
+    else
+      for (j=0; j<dio_general.VDncomp[i]; j++)
+        entry[s++] = -1;
+  }
   if (s!=ncomp)                                                                                   {CloseDTFile(); return (1);}
   m = theHeap->size - theHeap->used;
   m = m - m%sizeof(double); m /= sizeof(double);
@@ -195,41 +213,30 @@ INT LoadData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList)
   if (m<ncomp)                                                                                    {CloseDTFile(); UserWrite("ERROR: tmp mem too small\n"); return (1);}
 
   copied_until = copy_until=0; still_to_read=dio_general.ndata;
-  for (i=0; i<=TOPLEVEL(theMG); i++)
+  for (id=0; id<nvec; id++)
   {
-    theGrid = GRID_ON_LEVEL(theMG,i);
-    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+    if (copied_until>=copy_until)
     {
-      if (copied_until>=copy_until)
-      {
-        if (still_to_read<=m) read=still_to_read;
-        else read=m;
-        read -= read%ncomp;
-        if (Bio_Read_mdouble(read,data))                        {CloseDTFile(); UserWrite("ERROR: tmp mem too small\n"); return (1);}
-        still_to_read -= read;
-        copy_until += read;
-        s=0;
-      }
-      theV = NVECTOR(theNode);
-      for (j=0; j<ncomp; j++)
-        VVALUE(theV,entry[j]) = data[s++];
-      copied_until += ncomp;
+      if (still_to_read<=m) read=still_to_read;
+      else read=m;
+      read -= read%ncomp;
+      if (Bio_Read_mdouble(read,data))                        {CloseDTFile(); UserWrite("ERROR: tmp mem too small\n"); return (1);}
+      still_to_read -= read;
+      copy_until += read;
+      s=0;
     }
+    theV = VectorList[id];
+    for (j=0; j<ncomp; j++)
+      if (entry[j]>=0)
+        VVALUE(theV,entry[j]) = data[s++];
+      else
+        s++;
+    copied_until += ncomp;
   }
   ReleaseTmpMem(theHeap);
 
   /* close file */
   if (CloseDTFile()) return (1);
-
-#ifndef __MWCW__
-  /* zip if */
-  if (zip)
-  {
-    strcpy(sysCom,"gzip -f ");
-    strcat(sysCom,FileName);
-    if (system(sysCom)==-1) return (1);
-  }
-#endif
 
   return (0);
 }
@@ -259,9 +266,9 @@ INT LoadData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList)
    D*/
 /****************************************************************************/
 
-INT SaveData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec)
+INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec)
 {
-  INT i,j,k,l,ncomp,s,t,*e_per_n,*entry,nNode,store_from_eval,id,tag,coe,q;
+  INT i,j,k,l,ncomp,s,t,*e_per_n,*entry,nNode,store_from_eval,id,tag,coe,q,mode;
   unsigned long m;
   DIO_GENERAL dio_general;
   HEAP *theHeap;
@@ -272,16 +279,16 @@ INT SaveData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList,
   ELEMENT *theElement;
   const DOUBLE *x[MAX_CORNERS_OF_ELEM];
   DOUBLE value;
-  DOUBLE_VECTOR vector;
-  char *p;
-#       ifndef __MWCW__
-  char sysCom[NAMESIZE];
-  INT zip;
-#       endif
+  DOUBLE_VECTOR LocalCoord[MAX_CORNERS_OF_ELEM],vector;
+  char FileName[NAMESIZE],NumberString[6];
 
   /* init */
   if (theMG==NULL) return (1);
-  if (RenumberNodeElem (theMG)) return (1);
+  if (!MG_SAVED(theMG))
+  {
+    UserWrite("ERROR: first save multigrid\n");
+    return (1);
+  }
   theHeap = MGHEAP(theMG);
   if (n<1) return (1);
 
@@ -296,27 +303,27 @@ INT SaveData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList,
 #endif
   }
 
-#ifndef __MWCW__
-  /* zip if */
-  zip = 0;
-  p = FileName + strlen(FileName) - 3;
-  if (strcmp(p,".gz")==0)
-  {
-    zip = 1;
-    p[0] = '\0';
-  }
-#endif
-
   /* open file */
+  if (strcmp(type,"dbg")==0) mode = BIO_DEBUG;
+  else if (strcmp(type,"asc")==0) mode = BIO_ASCII;
+  else if (strcmp(type,"bin")==0) mode = BIO_BIN;
+  else return (1);
+  strcpy(FileName,name);
+  strcat(FileName,".ug.data.");
+  if (number!=-1)
+  {
+    sprintf(NumberString,"%04d.",(int)number);
+    strcat(FileName,NumberString);
+  }
+  strcat(FileName,type);
   if (Write_OpenDTFile (FileName)) return (1);
 
   /* write general information */
-  p = FileName + strlen(FileName) - 4;
-  if (strcmp(p,".dbg")==0) dio_general.mode = BIO_DEBUG;
-  else if (strcmp(p,".asc")==0) dio_general.mode = BIO_ASCII;
-  else if (strcmp(p,".bin")==0) dio_general.mode = BIO_BIN;
-  else                                                                                                    {CloseDTFile(); return (1);}
+  dio_general.mode = mode;
   strcpy(dio_general.version,DIO_VERSION);
+  strcpy(dio_general.mgfile,MG_FILENAME(theMG));
+  if (number!=-1) dio_general.time = time;
+  else dio_general.time = -1.0;
   dio_general.magic_cookie = MG_MAGIC_COOKIE(theMG);
   dio_general.nVD = n;
   ncomp = 0; store_from_eval = 0;
@@ -484,16 +491,6 @@ INT SaveData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList,
 
   /* close file */
   if (CloseDTFile()) return (1);
-
-#ifndef __MWCW__
-  /* zip if */
-  if (zip)
-  {
-    strcpy(sysCom,"gzip -f ");
-    strcat(sysCom,FileName);
-    if (system(sysCom)==-1) return (1);
-  }
-#endif
 
   return (0);
 }
