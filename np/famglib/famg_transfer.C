@@ -131,8 +131,8 @@ int FAMGTransfer::SetEntries(const FAMGVectorEntry& fg_vec, const FAMGVectorEntr
     FAMGTransferEntry *transij, *row_entry;
 
     // test 
-    if(Abs(prolongation_val) < 1e-20) return 0;
-    if(Abs(restriction_val) < 1e-20) return 0;
+    if( (Abs(prolongation_val) < 1e-20) && (Abs(restriction_val) < 1e-20) )
+		return 0;
 
 	row_entry = GetFirstEntry(fg_vec);
 	if(row_entry==NULL)
