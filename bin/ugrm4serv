@@ -63,11 +63,13 @@ then
 	cd $1
 	mv ${UGROOT}/gm/gm.h .
 	mv ${UGROOT}/gm/gg3/netgen/meshing/ruler3.cc .
+	cp ${UGROOT}/../license.ps .
 	cp ${UGROOT}/doc/applmanual.ps.gz .
 	cp ${UGROOT}/doc/progmanual.ps.gz .
 	cp ${UGROOT}/doc/refmanual.ps.gz .
 	mv ../UG $1
 	tar cvf $1.tar $1
 	gzip $1.tar
+	mv $1 ../UG
     cd ..
 fi
