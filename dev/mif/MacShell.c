@@ -128,6 +128,8 @@ typedef ProcPtr ControlActionUPP;         /* this one works */
 #endif
 #endif
 
+#define NewControlActionProc(userRoutine)               \
+  (ControlActionUPP) NewRoutineDescriptor((ProcPtr)(userRoutine), uppControlActionProcInfo, GetCurrentISA())
 
 static ControlActionUPP MyShellScrollActionPtr;
 
@@ -155,52 +157,52 @@ INT GrowShellWindow (EventRecord *theEvent)
 
   /* get event */
   theWindow = MAC_WIN(shell);
-  SetPort(theWindow);
+  SetPort(GetWindowPort(theWindow));
 
   /* grow window */
-  beforeRect = theWindow->portRect;
+  GetPortBounds(GetWindowPort(theWindow),&beforeRect);
   SetRect(&sizeRect,TERMHMIN,TERMVMIN,SCREEN_WIDTH,SCREEN_HEIGHT);
   growResult = GrowWindow(theWindow,theEvent->where,&sizeRect);
   if (growResult==0)
     return(NO_POS_CHANGE);
 
   /* actually change windows size */
-  SetPort(theWindow);
+  SetPort(GetWindowPort(theWindow));
   SizeWindow(theWindow,LoWrd(growResult),HiWrd(growResult),true);
-  afterRect = theWindow->portRect;
+  GetPortBounds(GetWindowPort(theWindow),&afterRect);
 
   /* make the new regions invalid */
   if (afterRect.right>beforeRect.right)
   {
     SetRect(&r,beforeRect.right-16,afterRect.top,afterRect.right,afterRect.bottom);
-    InvalRect(&r);
+    InvalWindowRect(theWindow,&r);
   }
   if (afterRect.bottom>beforeRect.bottom)
   {
     SetRect(&r,afterRect.left,beforeRect.bottom-16,afterRect.right,afterRect.bottom);
-    InvalRect(&r);
+    InvalWindowRect(theWindow,&r);
   }
 
   /* redraw resize */
   DrawGrowIcon(theWindow);
-  r = theWindow->portRect;
+  GetPortBounds(GetWindowPort(theWindow),&r);
   SetRect(&r,r.right-15,r.bottom-15,r.right,r.bottom);
-  ValidRect(&r);
+  ValidWindowRect(theWindow,&r);
 
   /* move & resize scrollbars */
-  r = theWindow->portRect;
+  GetPortBounds(GetWindowPort(theWindow),&r);
   MoveControl(shell->vScrollBar,r.right-15,0);
   SizeControl(shell->vScrollBar,16,r.bottom-14);
   SetRect(&r,r.right-15,0,r.right,r.bottom-14);
-  ValidRect(&r);
-  r = theWindow->portRect;
+  ValidWindowRect(theWindow,&r);
+  GetPortBounds(GetWindowPort(theWindow),&r);
   MoveControl(shell->hScrollBar,0,r.bottom-15);
   SizeControl(shell->hScrollBar,r.right-14,16);
   SetRect(&r,0,r.bottom-15,r.right-14,r.bottom);
-  ValidRect(&r);
+  ValidWindowRect(theWindow,&r);
 
   /* update text view */
-  r = theWindow->portRect;
+  GetPortBounds(GetWindowPort(theWindow),&r);
   SetRect(&viewRect,0,0,r.right-16,r.bottom-16);
   shell->lines = (viewRect.bottom-viewRect.top-2)/shell->lineHeight;
   shell->cols = (viewRect.right-viewRect.left-4)/shell->charWidth;
@@ -326,7 +328,7 @@ void ShellWinContentClick (WindowPtr theWindow,EventRecord *theEvent)
   short part1,part2;
   short New;
 
-  SetPort(theWindow);
+  SetPort(GetWindowPort(theWindow));
   GlobalToLocal(&(theEvent->where));
 
   /* check if a control has been hit */
@@ -382,7 +384,7 @@ INT ActivateShellWin ()
   WindowPtr theWindow;
 
   theWindow = MAC_WIN(shell);
-  SetPort(theWindow);
+  SetPort(GetWindowPort(theWindow));
   DrawGrowIcon(theWindow);
   TEActivate(shell->textH);
   ShowControl(shell->vScrollBar);
@@ -406,7 +408,7 @@ INT ActivateShellWin ()
 
 INT DeactivateShellWin ()
 {
-  SetPort(MAC_WIN(shell));
+  SetPort(GetWindowPort(MAC_WIN(shell)));
   TEDeactivate(shell->textH);
   HideControl(shell->vScrollBar);
   HideControl(shell->hScrollBar);
@@ -431,15 +433,19 @@ INT DeactivateShellWin ()
 INT UpdateShellWin (void)
 {
   WindowPtr theWindow;
+  Rect r;
+  RgnHandle rh=nil;
 
   theWindow = MAC_WIN(shell);
 
-  SetPort(theWindow);
+  SetPort(GetWindowPort(theWindow));
+  GetPortBounds(GetWindowPort(theWindow),&r);
   BeginUpdate(theWindow);
-  EraseRgn(((GrafPtr)(theWindow))->visRgn);               /* only what is necessary */
+  GetPortVisibleRegion(GetWindowPort(theWindow), rh);
+  EraseRgn(rh);
   DrawGrowIcon(theWindow);
   DrawControls(theWindow);
-  TEUpdate(&(theWindow->portRect),shell->textH);
+  TEUpdate((const Rect *)&r,shell->textH);
   EndUpdate(theWindow);
 
   return (0);
@@ -544,28 +550,11 @@ void MacWriteString (char *s)
   int nLinesBefore,nLinesAfter,linesToDelete,linesToScroll;
   GrafPtr savePort;
 
-#       if GENERATING68K
-
-  /*
-          NB: this is not necessary for CW C-compiler version 1.2 if 'MPW newlines' is checked
-                  in the 'Language' preferences
-   */
-
   char *cp;
-
-  /* replace \n by \r for Metrowerks CodeWarrior C compiler */
-  for (cp=s; *cp!='\0'; cp++)
-    if (*cp=='\n')
-      *cp = '\r';
-#       else
-
-  char *cp;
-
   /* replace \r by \n for Metrowerks CodeWarrior C compiler */
   for (cp=s; *cp!='\0'; cp++)
     if (*cp=='\r')
       *cp = '\n';
-#       endif
 
   nLinesBefore = (**(shell->textH)).nLines;
 
@@ -573,7 +562,7 @@ void MacWriteString (char *s)
   GetPort(&savePort);
 
   /* insert text into text edit record */
-  SetPort(MAC_WIN(shell));
+  SetPort(GetWindowPort(MAC_WIN(shell)));
   TESetSelect(32760,32760,shell->textH);
   TEInsert((Ptr) s,(long) strlen(s),shell->textH);
 
@@ -698,26 +687,33 @@ char *ShellHandleKeybordEvent (INT SpecialKey, char key)
 int ShellInitAndOpen (ShellWindow *sh)
 {
   Rect r,destRect,viewRect;
-  GrafPtr myPort;
+  CGrafPtr myPort;
   FontInfo info;
   char buffer[256];
   int TermWinH=0,TermWinV=0,TermWinDH=400,TermWinDV=300;
   short maxX,maxY;
   char ShellTitle[256];
+  Str255 pstr;
 
   shell = sh;
 
   strcpy(ShellTitle,SHELLTITLE);
 
   /* init the Macintosh toolbox */
+        #ifndef __USE_CARBON_FOR_UG__
   InitGraf(&qd.thePort);
   InitFonts();
+        #endif
   FlushEvents(everyEvent,0);
+        #ifndef __USE_CARBON_FOR_UG__
   InitWindows();
   TEInit();
   InitDialogs(nil);
+        #endif
   InitCursor();
+        #ifndef __USE_CARBON_FOR_UG__
   InitMenus();
+        #endif
 
   /* show about box */
   {
@@ -733,7 +729,7 @@ int ShellInitAndOpen (ShellWindow *sh)
 
   /* create routine descriptor for running in mixed mode on Power PC
      (CAUTION: usage of the new universal headers required!, s.a.) */
-  MyShellScrollActionPtr = NewControlActionProc(MyShellScrollAction);
+  //MyShellScrollActionPtr = NewControlActionProc(MyShellScrollAction);
 
   /* read default values for text edit */
   if (GetDefaultValue(DEFAULTSFILENAME,"scrollback",buffer)==0)
@@ -777,18 +773,20 @@ int ShellInitAndOpen (ShellWindow *sh)
   /* init shell window */
 
   /* read in resources */
-  if (GetNewCWindow(SHELL_RSRC_ID,(Ptr) &(shell->theRecord),(WindowPtr) -1)==NULL)
-    return(2);
+  shell->theWindow = GetNewCWindow(SHELL_RSRC_ID, nil, (WindowPtr)-1L);
+  if (shell->theWindow==NULL)
+    return 2;
 
   /* move and size window */
   myPort = (GrafPtr) MAC_WIN(shell);
   MoveWindow(MAC_WIN(shell),TermWinH,TermWinV,false);
   SizeWindow(MAC_WIN(shell),TermWinDH,TermWinDV,false);
-  SetWTitle(MAC_WIN(shell),c2pstr(ShellTitle));
+  CopyCStringToPascal(ShellTitle,pstr);
+  SetWTitle(MAC_WIN(shell),pstr);
   ShowWindow(MAC_WIN(shell));
   SelectWindow(MAC_WIN(shell));
   DrawGrowIcon(MAC_WIN(shell));
-  r = myPort->portRect;
+  GetPortBounds(GetWindowPort(MAC_WIN(shell)),&r);
 
   /* compute text parameters */
   SetPort(myPort);

@@ -68,7 +68,7 @@ enum SPECIAL_KEYS {
 
 typedef struct {
 
-  WindowRecord theRecord;                       /* used by mac's window manager             */
+  WindowRef theWindow;                          /* used by mac's window manager             */
 
   /* now terminal window specific stuff */
   TEHandle textH;                                       /* text edit handle                                             */

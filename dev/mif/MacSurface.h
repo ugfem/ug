@@ -51,8 +51,8 @@
 /****************************************************************************/
 
 /* screen's size from the Quidraw globals */
-#define SCREEN_WIDTH            (((qd.screenBits).bounds).right)
-#define SCREEN_HEIGHT           (((qd.screenBits).bounds).bottom)
+#define SCREEN_WIDTH            MacScreenWidth()
+#define SCREEN_HEIGHT           MacScreenHeight()
 
 #define MENU_BAR                        39      /* the menu-bar has a hight of 39 pixels	*/
 #define MARGIN_TO_SCREEN        2       /* leave a margin between window and screen */
@@ -65,7 +65,7 @@
 #define HiWrd(aLong)            (((aLong) >> 16) & 0xFFFF)
 #define LoWrd(aLong)            ((aLong) & 0xFFFF)
 
-#define MAC_WIN(w)                      ((WindowPtr) & ((w)->theRecord))
+#define MAC_WIN(w)                      ((WindowPtr) &((w)->theWindow))
 
 /****************************************************************************/
 /*																			*/
@@ -84,6 +84,9 @@
 /* function declarations													*/
 /*																			*/
 /****************************************************************************/
+
+int MacScreenWidth ( void );
+int MacScreenHeight( void );
 
 Rect *DragRect                  ();
 void SetMyCursor                (short id);

@@ -221,13 +221,15 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
   reportEvent->NoEvent.InterfaceEvent = 0;
   reportEvent->NoEvent.GraphWinActive = (WINDOWID) 0;
 
+        #ifndef __USE_CARBON_FOR_UG__
   /* do system tasks */
   SystemTask();
+        #endif
 
   /* periodic tasks for windows */
   if ((whichWindow=FrontWindow())!=NULL)
   {
-    if (whichWindow==(WindowPtr)&(shell.theRecord))
+    if (whichWindow==shell.theWindow)
       IdleShellWindow();
     gw = WhichGW(whichWindow);
     if (gw!=NULL)
@@ -253,7 +255,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
         if (theEvent.message & resumeFlag)
         {
           whichWindow = FrontWindow();
-          if (whichWindow==(WindowPtr)&(shell.theRecord))
+          if (whichWindow==shell.theWindow)
           {
             /* shell window */
             ActivateShellWin();
@@ -271,7 +273,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
         else
         {
           whichWindow = FrontWindow();
-          if (whichWindow==(WindowPtr)&(shell.theRecord))
+          if (whichWindow==shell.theWindow)
           {
             /* shell window */
             DeactivateShellWin();
@@ -286,7 +288,9 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
       {
       /* do system events */
       case inSysWindow :
+                                                #ifndef __USE_CARBON_FOR_UG__
         SystemClick(&theEvent,whichWindow);
+                                                #endif
         break;
       case inMenuBar :
         DoCommand(MenuSelect(theEvent.where));
@@ -294,7 +298,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
 
       /* do ug events */
       case inGrow :
-        if (whichWindow==(WindowPtr)&(shell.theRecord))
+        if (whichWindow==shell.theWindow)
         {
           /* shell window */
           if ((rv=GrowShellWindow (&theEvent))==NO_POS_CHANGE)
@@ -326,7 +330,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
         }
         break;
       case inDrag :
-        if (whichWindow==(WindowPtr)&(shell.theRecord))
+        if (whichWindow==shell.theWindow)
         {
           /* shell window */
           DragShellWin(&theEvent);
@@ -355,7 +359,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
         break;
       case inGoAway :
         if (TrackGoAway(whichWindow,theEvent.where))
-          if (whichWindow==(WindowPtr)&(shell.theRecord))
+          if (whichWindow==shell.theWindow)
           {
             /* shell window */
             reportEvent->Type                               = TERM_GOAWAY;
@@ -374,7 +378,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
         {
           SelectWindow(whichWindow);
 
-          if (whichWindow==(WindowPtr)&(shell.theRecord))
+          if (whichWindow==shell.theWindow)
           {
             /* shell window */
             ActivateShellWin();
@@ -393,7 +397,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
         }
         else
         {
-          if (whichWindow==(WindowPtr)&(shell.theRecord))
+          if (whichWindow==shell.theWindow)
           {
             ShellWinContentClick(whichWindow,&theEvent);
           }
@@ -402,7 +406,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
             /* graph window */
             gw = WhichGW(whichWindow);
             my_assert(gw!=NULL);
-            SetPort(whichWindow);
+            SetPort(GetWindowPort(whichWindow));
             GlobalToLocal(&(theEvent.where));
             MouseLocation[0] = (INT)theEvent.where.h;
             MouseLocation[1] = (INT)theEvent.where.v;
@@ -429,7 +433,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
 
     case activateEvt :
       whichWindow = (WindowPtr)theEvent.message;
-      if (whichWindow==(WindowPtr)&(shell.theRecord))
+      if (whichWindow==shell.theWindow)
       {
         /* shell window */
         if (BitAnd(theEvent.modifiers,activeFlag)!=0)
@@ -454,7 +458,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
 
     case updateEvt :
       whichWindow = (WindowPtr)theEvent.message;
-      if (whichWindow==(WindowPtr)&(shell.theRecord))
+      if (whichWindow==shell.theWindow)
       {
         /* shell window */
         if (whichWindow==FrontWindow())

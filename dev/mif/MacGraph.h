@@ -76,7 +76,7 @@
 
 struct graphwindow {
 
-  WindowRecord theRecord;                               /* used by mac's window manager         */
+  WindowPtr theWindow;                                  /* used by mac's window manager         */
 
   /* now graph window specific stuff */
   struct graphwindow *next;                             /* linked list of all graph windows     */

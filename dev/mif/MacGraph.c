@@ -50,6 +50,8 @@
 #include <Packages.h>
 #include <Files.h>
 #include <TextUtils.h>
+#include <MacTypes.h>
+#include <MacWindows.h>
 
 /* standard C includes */
 #include <string.h>
@@ -85,12 +87,7 @@
 /*																			*/
 /****************************************************************************/
 
-#ifdef __MWCW__
-#define Str255          ConstStr255Param
-#define qdgray          &qd.black
-#else
-#define qdgray          &qd.black
-#endif
+Pattern* qdgray;
 
 #define GET_CHOSEN_TOOL(val,rect,m)     {\
     if (((int)m[1]<rect.bottom-16) || ((int)m[1]>rect.bottom) || ((int)m[0]-(rect.right-119)<0) \
@@ -187,13 +184,13 @@ static void MacShadedPolygon (SHORT_POINT *points, INT n, DOUBLE intensity)
 {
   PaletteHandle myPalette;
   RGBColor theColor;
-  //short r,g,b;
+  /*short r,g,b;*/
 
   if (n<3) return;
 
   /* change color */
-  //MacGetPaletteEntry(CurrColor,&r,&g,&b);
-  //MacSetPaletteEntry(CurrColor,r*intensity,g*intensity,b*intensity);
+  /*MacGetPaletteEntry(CurrColor,&r,&g,&b);*/
+  /*MacSetPaletteEntry(CurrColor,r*intensity,g*intensity,b*intensity);*/
   myPalette = GetPalette(MAC_WIN(currgw));
   GetEntryColor(myPalette,(short) CurrColor,&theColor);
 
@@ -204,8 +201,8 @@ static void MacShadedPolygon (SHORT_POINT *points, INT n, DOUBLE intensity)
   RGBForeColor(&theColor);
   MacintoshPolygon(points,n);
 
-  /* retsore color */
-  //MacSetPaletteEntry(CurrColor,r,g,b);
+  /* restore color */
+  /*MacSetPaletteEntry(CurrColor,r,g,b);*/
 }
 
 static void MacInversePolygon (SHORT_POINT *points, INT n)
@@ -468,20 +465,23 @@ static void MacInvPolymark (short n, SHORT_POINT *points)
 
 static void MacintoshDrawText (const char *s, INT mode)
 {
+  Str255 pstr;
+
   switch(mode)
   {
   case TEXT_REGULAR : TextMode(srcOr); break;
   case TEXT_INVERSE : TextMode(srcXor); break;
   default : return;
   }
-  strcpy(buffer,s);
-  DrawString(((Str255)c2pstr(buffer)));
+  CopyCStringToPascal(s,pstr);
+  DrawString(pstr);
   TextMode(srcOr);
 }
 
 static void MacCenteredText (SHORT_POINT point, const char *s, INT mode)
 {
   short ts,w;
+  Str255 pstr;
 
   ts = currgw->textSize;
 
@@ -491,11 +491,10 @@ static void MacCenteredText (SHORT_POINT point, const char *s, INT mode)
   case TEXT_INVERSE : TextMode(srcXor); break;
   default : return;
   }
-  strcpy(buffer,s);
-  c2pstr(buffer);
-  w = StringWidth((Str255)buffer);
+  CopyCStringToPascal(s,pstr);
+  w = StringWidth(pstr);
   MoveTo(point.x-w/2,point.y+ts/2);
-  DrawString((Str255)buffer);
+  DrawString(pstr);
   TextMode(srcOr);
 }
 
@@ -699,15 +698,15 @@ void SetCurrentGW (GRAPH_WINDOW *g)
 static void DrawToolBox (GRAPH_WINDOW *gw, INT tool)
 {
   Rect r,dstRect;
-  GrafPtr myPort;
+  CGrafPtr myPort;
   PicHandle toolBox;
   WindowPtr theWindow;
 
   theWindow = MAC_WIN(gw);
-  myPort = (GrafPtr) theWindow;
 
+  myPort = GetWindowPort(theWindow);
   SetPort(myPort);
-  r = myPort->portRect;
+  GetPortBounds(myPort,&r);
 
   toolBox = GetPicture(TOOLBOX_RSRC_ID);
   if (toolBox!=NULL)
@@ -736,25 +735,22 @@ void DrawInfoBox (WINDOWID win, const char *info)
 {
   WindowPtr theMacWindow;
   Rect r,box,WinRect;
-  GrafPtr myPort;
+  CGrafPtr myPort;
   Rect myClipRect;
-  char buffer[INFO_SIZE];
   short w;
   GRAPH_WINDOW *gw;
+  Str255 pstr;
 
   gw = (GRAPH_WINDOW *)win;
   theMacWindow = MAC_WIN(gw);
-  WinRect = theMacWindow->portRect;
-
-  strncpy(buffer,info,INFO_SIZE);
-  buffer[INFO_LEN] = '\0';
-
   /* set port */
-  myPort = (GrafPtr) theMacWindow;
+  myPort = GetWindowPort(theMacWindow);
   SetPort(myPort);
 
+  GetPortBounds(myPort,&WinRect);
+
   PmForeColor(1);               /* black */
-  r = myPort->portRect;
+  GetPortBounds(myPort,&r);
 
   /* info box */
   SetRect(&box,r.left+1,r.bottom-14,r.right-121,r.bottom);
@@ -764,11 +760,11 @@ void DrawInfoBox (WINDOWID win, const char *info)
 
   EraseRect(&box);
 
-  c2pstr(buffer);
-  w = StringWidth((Str255) buffer);
+  CopyCStringToPascal(info,pstr);
+  w = StringWidth(pstr);
   MoveTo((box.left+box.right)/2-w/2,box.bottom-3);
   TextSize(9);
-  DrawString((Str255) buffer);
+  DrawString(pstr);
 
   /* adjust clipping rectangle again to plottable area */
   myClipRect.left   = gw->Local_LL[0];
@@ -799,7 +795,7 @@ static INT ActivateMacWin (GRAPH_WINDOW *gw, INT tool)
   MacWindow = MAC_WIN(gw);
 
   DrawGrowIcon(MacWindow);
-  SetPort(MacWindow);
+  SetPort(GetWindowPort(MacWindow));
 
   switch (tool)
   {
@@ -838,7 +834,7 @@ INT WhichTool (WINDOWID win, const INT mp[2], INT *ChosenToolPtr)
 
   theWindow = MAC_WIN((GRAPH_WINDOW*)win);
 
-  WinRect = theWindow->portRect;
+  GetPortBounds(GetWindowPort(theWindow),&WinRect);
 
   GET_CHOSEN_TOOL(i,WinRect,mp);
 
@@ -872,38 +868,38 @@ INT GrowGraphWindow (GRAPH_WINDOW *gw, EventRecord *theEvent, DOC_GROW_EVENT *do
   Rect myClipRect;
 
   theWindow = MAC_WIN(gw);
-  SetPort(theWindow);
+  SetPort(GetWindowPort(theWindow));
 
   /* grow window */
-  beforeRect = theWindow->portRect;
+  GetPortBounds(GetWindowPort(theWindow),&beforeRect);
   SetRect(&sizeRect,GRAPHWIN_MINSIZE,GRAPHWIN_MINSIZE,SCREEN_WIDTH-2*MARGIN_TO_SCREEN,SCREEN_HEIGHT-2*MARGIN_TO_SCREEN-MENU_BAR);
   growResult = GrowWindow(theWindow,theEvent->where,&sizeRect);
   if (growResult!=0)
   {
     /* actually change windows size */
     SizeWindow(theWindow,LoWrd(growResult),HiWrd(growResult),true);
-    afterRect = theWindow->portRect;
+    GetPortBounds(GetWindowPort(theWindow),&afterRect);
 
     /* make the new regions invalid */
     if (afterRect.right>beforeRect.right)
     {
       SetRect(&r,beforeRect.right-15,beforeRect.top,beforeRect.right,beforeRect.bottom-15);
-      InvalRect(&r);
+      InvalWindowRect(theWindow,&r);
     }
     else if (afterRect.right<beforeRect.right)
     {
       SetRect(&r,afterRect.right-15,afterRect.top,afterRect.right,afterRect.bottom-15);
-      InvalRect(&r);
+      InvalWindowRect(theWindow,&r);
     }
     if (afterRect.bottom>beforeRect.bottom)
     {
       SetRect(&r,beforeRect.left,beforeRect.bottom-15,beforeRect.right,beforeRect.bottom);
-      InvalRect(&r);
+      InvalWindowRect(theWindow,&r);
     }
     else if (afterRect.bottom<beforeRect.bottom)
     {
       SetRect(&r,afterRect.left,afterRect.bottom-15,afterRect.right,afterRect.bottom);
-      InvalRect(&r);
+      InvalWindowRect(theWindow,&r);
     }
 
     /* store and report new size */
@@ -954,16 +950,19 @@ INT DragGraphWindow (GRAPH_WINDOW *gw, EventRecord *theEvent, DOC_DRAG_EVENT *do
 {
   WindowPtr theWindow;
   int TopOld, BottomOld, LeftOld, RightOld, Left, Right, Top, Bottom, DelLeft, DelRight, DelTop, DelBottom;
+  Rect currentRect;
   Rect theDragRect;
   Point MouseLoc;
 
   theWindow = MAC_WIN(gw);
 
+        #warning do we need kWindowContentRgn instead of kWindowStructureRgn?
+  GetWindowBounds(theWindow, kWindowStructureRgn, &currentRect);
   /* store old corners of the window */
-  TopOld     = (*(((WindowPeek)theWindow)->strucRgn))->rgnBBox.top;
-  BottomOld  = (*(((WindowPeek)theWindow)->strucRgn))->rgnBBox.bottom;
-  LeftOld    = (*(((WindowPeek)theWindow)->strucRgn))->rgnBBox.left;
-  RightOld   = (*(((WindowPeek)theWindow)->strucRgn))->rgnBBox.right;
+  TopOld     = currentRect.top;
+  BottomOld  = currentRect.bottom;
+  LeftOld    = currentRect.left;
+  RightOld   = currentRect.right;
 
   /* set drag rect */
   GetMouse(&MouseLoc);
@@ -978,10 +977,12 @@ INT DragGraphWindow (GRAPH_WINDOW *gw, EventRecord *theEvent, DOC_DRAG_EVENT *do
   DragWindow (theWindow,theEvent->where,&theDragRect);
 
   /* report new size */
-  Left   = (*(((WindowPeek)theWindow)->strucRgn))->rgnBBox.left;
-  Right  = (*(((WindowPeek)theWindow)->strucRgn))->rgnBBox.right;
-  Top    = (*(((WindowPeek)theWindow)->strucRgn))->rgnBBox.top;
-  Bottom = (*(((WindowPeek)theWindow)->strucRgn))->rgnBBox.bottom;
+        #warning do we need kWindowContentRgn instead of kWindowStructureRgn?
+  GetWindowBounds(theWindow, kWindowStructureRgn, &currentRect);
+  Left   = currentRect.left;
+  Right  = currentRect.right;
+  Top    = currentRect.top;
+  Bottom = currentRect.bottom;
   DelLeft         = Left  - LeftOld;
   DelRight        = Right - RightOld;
   DelTop          = Top   - TopOld;
@@ -1015,11 +1016,7 @@ static INT GraphOpen (GRAPH_WINDOW *gw, const char *title, short h, short v, sho
   WindowPtr MacWin;
   GrafPtr myPort;
   PaletteHandle myPalette;
-  char WindowTitle[MAXTITLELENGTH];
-
-  /* copy title because of conversion to pascal string */
-  strncpy(WindowTitle,title,MAXTITLELENGTH);
-  WindowTitle[MAXTITLELENGTH-1] = '\0';
+  Str255 pstr;
 
   MacWin = MAC_WIN(gw);
 
@@ -1035,7 +1032,8 @@ static INT GraphOpen (GRAPH_WINDOW *gw, const char *title, short h, short v, sho
   SetPort(myPort);
   MoveWindow(MacWin,h,v,false);
   SizeWindow(MacWin,dh,dv,false);
-  SetWTitle(MacWin,c2pstr(WindowTitle));
+  CopyCStringToPascal(title,pstr);
+  SetWTitle(MacWin,pstr);
   ShowWindow(MacWin);
   SelectWindow(MacWin);
   DrawGrowIcon(MacWin);
@@ -1064,7 +1062,7 @@ static WINDOWID Mac_OpenOutput (
   INT *error)                                                           /* error code					*/
 {
   GRAPH_WINDOW *gw;
-  Rect myClipRect,*portRect;
+  Rect myClipRect,*portRect = nil;
   short h,v,dh,dv;
 
   /* create GRAPH_WINDOW structure and put in list */
@@ -1108,7 +1106,8 @@ static WINDOWID Mac_OpenOutput (
   myClipRect.top    = 0;
 
   /* set clipping rectangle */
-  portRect = &(((GrafPtr)MAC_WIN(gw))->portRect);
+  GetPortBounds(GetWindowPort(MAC_WIN(gw)),portRect);
+
   myClipRect.left   = portRect->left;
   myClipRect.right  = portRect->right  - SCROLL_BAR;
   myClipRect.bottom = portRect->bottom - SCROLL_BAR;
@@ -1167,7 +1166,7 @@ static INT Mac_CloseOutput (WINDOWID win)
   }
 
   /* close window on screen */
-  CloseWindow(MAC_WIN(old));
+  DisposeWindow(MAC_WIN(old));
 
   /* free memory */
   DisposeMem(guiHeap,old);
@@ -1197,7 +1196,7 @@ INT Mac_ActivateOutput (WINDOWID win)
   currgw = (GRAPH_WINDOW *)(win);
   theWindow = MAC_WIN(currgw);
 
-  SetPort(theWindow);
+  SetPort(GetWindowPort(theWindow));
 
   ActivateMacWin (currgw,currgw->currTool);
 
@@ -1221,17 +1220,17 @@ INT Mac_UpdateOutput (WINDOWID win, INT tool)
 {
   GRAPH_WINDOW *gw;
   WindowPtr theWindow;
-  Rect myClipRect,*portRect;
+  Rect myClipRect,*portRect = nil;
 
   gw = (GRAPH_WINDOW *) win;
   theWindow = MAC_WIN(gw);
 
   gw->currTool = tool;
 
-  SetPort(theWindow);
+  SetPort(GetWindowPort(theWindow));
 
   /* identify clipping rect with port */
-  portRect = &(((GrafPtr)theWindow)->portRect);
+  GetPortBounds(GetWindowPort(theWindow),portRect);
   ClipRect(portRect);
 
   BeginUpdate(theWindow);
@@ -1283,6 +1282,9 @@ OUTPUTDEVICE *InitMacOutputDevice (void)
 
   /* create output device */
   if ((MacOutputDevice=CreateOutputDevice("screen"))==NULL) return(NULL);
+
+  /* set global variables */
+  qdgray = GetQDGlobalsBlack(qdgray);
 
   /* init output device 'screen' */
   MacOutputDevice->OpenOutput     = Mac_OpenOutput;

@@ -36,6 +36,7 @@
 #include <Windows.h>
 #include <ToolUtils.h>
 #include <Devices.h>
+#include <MacWindows.h>
 
 /* standard C includes */
 #include <string.h>
@@ -94,6 +95,9 @@ static MenuHandle myMenus[menuCount];   /* menuCount defined in MacGui.m	*/
 static short currentCurs = 128;                 /* resource id of current cursor	*/
 
 static Rect dragRect;                                   /* rect where windows can be moved	*/
+
+int screenWidth;                                                /* We are not prepared for changing the */
+int screenHeight;                                       /* screen size while program is running */
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -157,11 +161,10 @@ INT MouseStillDown(void)
 
 void About ()
 {
-  CWindowRecord theRecord;
   short h,v;
   int theEnd;
   EventRecord theEvent;
-  WindowPtr theWindow,whichWindow;
+  WindowRef theWindow,whichWindow;
   GrafPtr myPort;
   PicHandle myPicture;
   Rect dstRect;
@@ -171,10 +174,9 @@ void About ()
   h = (SCREEN_WIDTH+1-ABOUTPICT_X-2*AboutMargin)/2;
   v = (SCREEN_HEIGHT+1-ABOUTPICT_Y-2*AboutMargin)/2;
 
-  if (GetNewCWindow(ABOUT_RSRC_ID,(Ptr) (&theRecord),(WindowPtr) -1)==NULL)
+  theWindow = GetNewCWindow(ABOUT_RSRC_ID, nil, (WindowPtr)-1L);
+  if (theWindow==NULL)
     return;
-
-  theWindow = (WindowPtr) (&theRecord);
 
   myPort = (GrafPtr) theWindow;
   MoveWindow(theWindow,h,v,false);
@@ -209,7 +211,7 @@ void About ()
       }
   }
 
-  CloseWindow(theWindow);
+  DisposeWindow(theWindow);
 }
 
 /****************************************************************************/
@@ -256,8 +258,11 @@ void ScheduleCommand (short theMenu,short theItem)
 
 void DoCommand (long mResult)
 {
-  short temp,theItem,theMenu;
+  short theItem,theMenu;
+        #ifndef __USE_CARBON_FOR_UG__
+  short temp;
   Str255 name;
+        #endif
 
   theItem = LoWrd(mResult);
   theMenu = HiWrd(mResult);
@@ -270,8 +275,10 @@ void DoCommand (long mResult)
       About();
     else
     {
+                                #ifndef __USE_CARBON_FOR_UG__
       GetMenuItemText(myMenus[appleM],theItem,name);
       temp = OpenDeskAcc(name);
+                                #endif
     }
     break;
   default :
@@ -362,6 +369,15 @@ INT GetScreenSize (INT size[2])
 
 int InitMacSurface (void)
 {
+  /* set global variables screenWidth and screenHeight, used by
+     SCREEN_WIDTH and SCREEN_HEIGHT */
+  BitMap *bmap = nil;
+
+  bmap = GetQDGlobalsScreenBits(bmap);
+        #warning genauer anschauen
+  screenWidth  = bmap->bounds.bottom;
+  screenHeight = bmap->bounds.right;
+
   /* reactangle where windows can be moved */
   SetRect(&dragRect,      -1,
           MENU_BAR-SCROLL_BAR-1,
@@ -369,4 +385,36 @@ int InitMacSurface (void)
           SCREEN_HEIGHT + SCROLL_BAR);
 
   return(0);
+}
+
+/****************************************************************************/
+/*
+   InitMacGuiCommands - Load mac specific commands into environment
+
+   SYNOPSIS:
+   int InitMacSurface (void)
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+   This function loads mac specific commands into environment,
+   makes Macintosh menus.
+
+   RETURN VALUE:
+   int
+   0, if all is o.k.
+
+   1, if an error occurred
+ */
+/****************************************************************************/
+int MacScreenWidth ( void )
+{
+  return screenWidth;
+}
+
+
+int MacScreenHeight( void )
+{
+  return screenHeight;
 }
