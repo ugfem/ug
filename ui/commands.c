@@ -10630,6 +10630,82 @@ static INT SetCurrentNumProcCommand (INT argc, char **argv)
 
   return(OKCODE);
 }
+
+/****************************************************************************/
+/*
+   createvector - construct vector descriptors
+
+   DESCRIPTION:
+   This function creates vector descriptors using templates defined
+   in the format.
+
+   'createvector <v1> [<v2> ...] [$t <template>] [$m <name>]'
+
+   .  v1 - vector name
+   .  template - template name (default is the first vector template)
+   .  name - multigrid name (default is the current multigrid)
+
+   SEE ALS0:
+   newformat, creatematrix
+ */
+/****************************************************************************/
+
+static INT CreateVecDescCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  char name[NAMESIZE];
+
+  if (ReadArgvChar("m",name,argc,argv))
+    theMG = GetCurrentMultigrid();
+  else
+    theMG = GetMultigrid(name);
+  if (theMG==NULL) {
+    PrintErrorMessage('E',"createvector","no current multigrid");
+    return(CMDERRORCODE);
+  }
+  if (CreateVecDescCmd(theMG,argc,argv))
+    return(CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*
+   creatematrix - construct matrix
+
+   DESCRIPTION:
+   This function creates matrix descriptors using templates defined
+   in the format.
+
+   'creatematrix <M1> [<M2> ...] [$t <template>] [$m <name>]'
+
+   .  M1 - matrix name
+   .  template - template name (default is the first matrix template)
+   .  name - multigrid name (default is the current multigrid)
+
+   SEE ALS0:
+   newformat, createvector
+ */
+/****************************************************************************/
+
+static INT CreateMatDescCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  char name[NAMESIZE];
+
+  if (ReadArgvChar("m",name,argc,argv))
+    theMG = GetCurrentMultigrid();
+  else
+    theMG = GetMultigrid(name);
+  if (theMG==NULL) {
+    PrintErrorMessage('E',"createvector","no current multigrid");
+    return(CMDERRORCODE);
+  }
+  if (CreateMatDescCmd(theMG,argc,argv))
+    return(CMDERRORCODE);
+
+  return (OKCODE);
+}
 #endif /* __NP__ */
 
 /****************************************************************************/
@@ -12475,6 +12551,11 @@ INT InitCommands ()
 
   /* formats */
   if (CreateCommand("newformat",          CreateFormatCommand                             )==NULL) return (__LINE__);
+#ifdef __NP__
+  if (CreateCommand("createvector",   CreateVecDescCommand            )==NULL) return (__LINE__);
+  if (CreateCommand("creatematrix",   CreateMatDescCommand            )==NULL) return (__LINE__);
+#endif /* __NP__ */
+
 #ifdef __NUMERICS__
   if (CreateCommand("setpf",                      SetPrintingFormatCommand                )==NULL) return (__LINE__);
   if (CreateCommand("showpf",             ShowPrintingFormatCommand               )==NULL) return (__LINE__);
