@@ -141,6 +141,198 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 static INT WriteElementParInfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pinfo);
 
 /****************************************************************************/
+/*D
+   RenumberMultiGrid - Recalculate ids in the current order
+
+   SYNOPSIS:
+   INT RenumberMultiGrid (MULTIGRID *theMG);
+
+   PARAMETERS:
+   .  theMG - structure to renumber
+
+   DESCRIPTION:
+   This function recalculates ids in the current order.
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   D*/
+/****************************************************************************/
+
+/************************************************************************************/
+/*                                                                                                                                                              */
+/*    Enumeration of nodes from left to right corresponding to 0...n-1                          */
+/*    ----------------------------------------------------------------				*/
+/*                                                                                                                                                              */
+/*                                         orphan nodes												*/
+/*                                      |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|							*/
+/*   N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N                      */
+/*  |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|             */
+/*                      ghost nodes						  master nodes						*/
+/*                                                                                                                                                              */
+/*                                                                                                                                                              */
+/*                                                                                                                                                              */
+/*   Mapping should exist for all orphan nodes to vertices. 'foid' is id of first       */
+/*   orphan node, 'non' number of orphan nodes. (MGIO_PAR) it looks (consequently): */
+/*                                                                                                                                                              */
+/*                                                                                                                                                              */
+/*                                                                      orphan nodes								*/
+/*                                                      |~~~~~~~~~~~~~~~~~~~~|							*/
+/*                                   N N N N N N N N N N N N N N N N N N N                      */
+/*                                                          |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|            */
+/*                                                                                        master nodes						*/
+/*                                                                                                                                                              */
+/*                                                                                                                                                              */
+/************************************************************************************/
+
+static INT RenumberNodes (MULTIGRID *theMG, INT *foid, INT *non)
+{
+  INT i,nid;
+  NODE *theNode;
+
+  nid=0;
+  if (procs==1)
+  {
+    /* ids for all nodes */
+    for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,0)); theNode!=NULL; theNode=SUCCN(theNode))
+    {
+      ID(theNode) = ID(MYVERTEX(theNode));
+      nid = MAX(nid,ID(theNode));
+    }
+    nid++;
+    non[0] = nid;
+    for (i=1; i<=TOPLEVEL(theMG); i++)
+      for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+        ID(theNode) = nid++;
+    foid[0] = 0;
+  }
+  else
+  {
+    /* ids for other nodes */
+    for (i=0; i<=TOPLEVEL(theMG); i++)
+      for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+        if (GHOST(theNode) && !USED(theNode))
+          ID(theNode) = nid++;
+    foid[0] = nid;
+
+    for (i=0; i<=TOPLEVEL(theMG); i++)
+      for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+        if (GHOST(theNode) && USED(theNode))
+          ID(theNode) = nid++;
+
+    /* ids for master nodes */
+    for (i=0; i<=TOPLEVEL(theMG); i++)
+      for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+        if (MASTER(theNode) && USED(theNode))
+          ID(theNode) = nid++;
+    non[0] = nid-foid[0];
+
+    /* ids for master nodes */
+    for (i=0; i<=TOPLEVEL(theMG); i++)
+      for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+        if (MASTER(theNode) && !USED(theNode))
+          ID(theNode) = nid++;
+
+  }
+
+  return (0);
+}
+
+INT RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, NODE ***vid_n, INT *foid, INT *non)
+{
+  NODE *theNode;
+  ELEMENT *theElement;
+  INT i,n_ioe,n_boe,vid,n_iov,n_bov,eid,lfoid,lnon,j;
+
+  /* init used-flags */
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+    {
+      SETUSED(theNode,0);
+      SETUSED(MYVERTEX(theNode),0);
+      SETTHEFLAG(MYVERTEX(theNode),0);
+    }
+
+  /* renumber elements and set orphan-flags for nodes and vertices */
+  eid=n_ioe=n_boe=0;
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
+      if (EFATHER(theElement)==NULL || THEFLAG(theElement)==1)
+      {
+        ID(theElement) = eid++;
+        if (OBJT(theElement)==BEOBJ) n_boe++;
+        else n_ioe++;
+        for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+        {
+          SETUSED(CORNER(theElement,j),1);
+          SETUSED(MYVERTEX(CORNER(theElement,j)),1);
+        }
+                                #ifdef ModelP
+        assert(i==0 || EGHOST(theElement));
+                                #endif
+      }
+
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
+      if (EFATHER(theElement)!=NULL && THEFLAG(theElement)==0)
+        ID(theElement) = eid++;
+  if (nboe!=NULL) *nboe = n_boe;
+  if (nioe!=NULL) *nioe = n_ioe;
+
+  /* renumber vertices */
+  vid=n_iov=n_bov=0;
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+      if (THEFLAG(MYVERTEX(theNode))==0 && USED(MYVERTEX(theNode)) && OBJT(MYVERTEX(theNode))==BVOBJ)
+      {
+        ID(MYVERTEX(theNode)) = vid++;
+        n_bov++;
+        SETTHEFLAG(MYVERTEX(theNode),1);
+      }
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+      if (THEFLAG(MYVERTEX(theNode))==0 && USED(MYVERTEX(theNode)) && OBJT(MYVERTEX(theNode))==IVOBJ)
+      {
+        ID(MYVERTEX(theNode)) = vid++;
+        n_iov++;
+        SETTHEFLAG(MYVERTEX(theNode),1);
+      }
+  if (vid_n!=NULL)
+  {
+    *vid_n = (NODE**)GetTmpMem(MGHEAP(theMG),(n_iov+n_bov)*sizeof(NODE*));
+    for (i=0; i<n_iov+n_bov; i++) (*vid_n)[i] = NULL;
+    for (i=0; i<=TOPLEVEL(theMG); i++)
+      for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+        if (USED(theNode))
+        {
+          assert(ID(MYVERTEX(theNode))<n_iov+n_bov);
+          if ((*vid_n)[ID(MYVERTEX(theNode))]!=NULL) continue;
+          (*vid_n)[ID(MYVERTEX(theNode))] = theNode;
+        }
+    IFDEBUG(gm,4)
+    for (i=0; i<n_iov+n_bov; i++)
+      assert((*vid_n)[i] != NULL);
+    ENDDEBUG
+  }
+  for (i=0; i<=TOPLEVEL(theMG); i++)                                            /* not neccessary for i/o */
+    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+      if (THEFLAG(MYVERTEX(theNode))==0 && !USED(MYVERTEX(theNode)))
+      {
+        ID(MYVERTEX(theNode)) = vid++;
+        SETTHEFLAG(MYVERTEX(theNode),1);
+      }
+  if (nbov!=NULL) *nbov = n_bov;
+  if (niov!=NULL) *niov = n_iov;
+
+  /* renumber nodes */
+  if (RenumberNodes(theMG,&lfoid,&lnon)) return (1);
+  if (foid!=NULL) *foid = lfoid;
+  if (non!=NULL) *non = lnon;
+
+  return (0);
+}
+
+/****************************************************************************/
 /*																			*/
 /* Function:  MGSetVectorClasses											*/
 /*																			*/
@@ -1775,17 +1967,28 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
 #ifdef __THREEDIM__
   for (; i<SIDES_OF_ELEM(theElement)+offset; i++)
   {
-    if (MGIO_PARFILE && !((nex>>i)&1))
-    {
-      NodeList[i] = NULL;
-      continue;
-    }
     if (theRule->pattern[i-CORNERS_OF_ELEM(theElement)]!=1)
     {
       NodeList[i] = NULL;
       continue;
     }
-
+    theVertex = NULL;
+    if (MGIO_PARFILE)
+    {
+      if (!((nex>>i)&1))
+      {
+        NodeList[i] = NULL;
+        continue;
+      }
+      else if (ref->orphanid_ex==1)
+      {
+        if (ref->orphanid[r_index]>=0)
+        {
+          assert(ref->orphanid[r_index]>=foid && ref->orphanid[r_index]<non+foid);
+          theVertex = MYVERTEX(nid_n[ref->orphanid[r_index]-foid]);
+        }
+      }
+    }
     if (ref->newcornerid[r_index]-foid>=0 && ref->newcornerid[r_index]-foid<non)
     {
       NodeList[i] = nid_n[ref->newcornerid[r_index]-foid];
@@ -1796,7 +1999,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
       NodeList[i] = GetSideNode(theElement,i-offset);
     if (NodeList[i]==NULL)
     {
-      NodeList[i] = CreateSideNode(upGrid,theElement,i-offset);
+      NodeList[i] = CreateSideNode(upGrid,theElement,theVertex,i-offset);
       if (NodeList[i]==NULL) REP_ERR_RETURN(1);
       ID(NodeList[i]) = ref->newcornerid[r_index];
     }
@@ -1808,8 +2011,15 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   offset = i;
 #endif
 
-  if (theRule->pattern[CENTER_NODE_INDEX(theElement)]==1 && (!MGIO_PARFILE || ((nex>>i)&1)))
+  i = CORNERS_OF_ELEM(theElement)+CENTER_NODE_INDEX(theElement);       /* using consistency within rm.c (id of CenterNode in SonData corresponds to CORNERS_OF_ELEM(theElement)+CENTER_NODE_INDEX(theElement)) */
+  if (theRule->pattern[CENTER_NODE_INDEX(theElement)]==1 && (!MGIO_PARFILE || ((nex>>(i))&1)))
   {
+    theVertex = NULL;
+    if (MGIO_PARFILE && ref->orphanid_ex==1 && ref->orphanid[r_index]>=0)
+    {
+      assert(ref->orphanid[r_index]>=foid && ref->orphanid[r_index]<non+foid);
+      theVertex = MYVERTEX(nid_n[ref->orphanid[r_index]-foid]);
+    }
     if (ref->newcornerid[r_index]-foid>=0 && ref->newcornerid[r_index]-foid<non)
     {
       NodeList[i] = nid_n[ref->newcornerid[r_index]-foid];
@@ -1817,7 +2027,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
       assert(ID(NodeList[i]) == ref->newcornerid[r_index]);
     }
     else
-      NodeList[i] = CreateCenterNode(upGrid,theElement);
+      NodeList[i] = CreateCenterNode(upGrid,theElement,theVertex);
     if (NodeList[i]==NULL) REP_ERR_RETURN(1);
     SETNTYPE(NodeList[i],CENTER_NODE);
     ID(NodeList[i]) = ref->newcornerid[r_index++];

@@ -2549,7 +2549,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 			{
 
 				/* allocate the sidenode */
-				if ((SideNodes[i] = CreateSideNode(theGrid,theElement,i)) 
+				if ((SideNodes[i] = CreateSideNode(theGrid,theElement,NULL,i)) 
 					== NULL) 
 				{
 					RETURN(GM_FATAL);
@@ -2609,7 +2609,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 
 	if (toCreate)
 	{
-		if ((CenterNode[0] = CreateCenterNode(theGrid,theElement)) == NULL)
+		if ((CenterNode[0] = CreateCenterNode(theGrid,theElement,NULL)) == NULL)
 		  RETURN(GM_FATAL);
 	}
 

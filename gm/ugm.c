@@ -593,7 +593,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT 
   DOUBLE *local,*x[MAX_CORNERS_OF_ELEM];
   DOUBLE_VECTOR bnd_global,global;
   DOUBLE diff;
-  INT n,co0,co1,move,part;
+  INT n,co0,co1,move,part,vertex_null;
 
   co0 = CORNER_OF_EDGE(theElement,edge,0);
   co1 = CORNER_OF_EDGE(theElement,edge,1);
@@ -602,6 +602,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT 
   V_DIM_LINCOMB(0.5, CVECT(v0), 0.5, CVECT(v1), global);
 
   /* allocate vertex */
+  vertex_null = (theVertex==NULL);
   if (theVertex==NULL)
   {
     if ((OBJT(v0) == BVOBJ) && (OBJT(v1) == BVOBJ))
@@ -656,7 +657,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT 
 
   /* allocate node */
   theNode = CreateNode(theGrid,theVertex,(GEOM_OBJECT *)theEdge,MID_NODE,1);
-  if (theNode==NULL)
+  if (theNode==NULL && vertex_null)
   {
     DisposeVertex(theGrid,theVertex);
     return(NULL);
@@ -760,16 +761,15 @@ static INT SideOfNbElement(ELEMENT *theElement, INT side)
 }
 
 #ifdef __THREEDIM__
-NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
+NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT side)
 {
   DOUBLE_VECTOR bnd_global,global,local,bnd_local;
   DOUBLE *x[MAX_CORNERS_OF_ELEM];
-  VERTEX *theVertex;
   NODE *theNode;
   BNDP *bndp;
   BNDS *bnds;
   DOUBLE fac, diff;
-  INT n,j,k,move,part;
+  INT n,j,k,move,part,vertex_null;
 
   n = CORNERS_OF_SIDE(theElement,side);
   fac = 1.0 / n;
@@ -785,59 +785,62 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
   }
   V_DIM_SCALE(fac,local);
   V_DIM_SCALE(fac,global);
-  theVertex = NULL;
 
   /* check if boundary vertex */
-  if (OBJT(theElement) == BEOBJ) {
-    bnds = ELEM_BNDS(theElement,side);
-    if (bnds != NULL) {
-      if (n == 3)
-        bnd_local[0] = bnd_local[1] = 0.33333333333333;
-      else if (n == 4)
-        bnd_local[0] = bnd_local[1] = 0.5;
-      bndp = BNDS_CreateBndP(MGHEAP(MYMG(theGrid)),bnds,bnd_local);
-      if (bndp != NULL) {
-        theVertex = CreateBoundaryVertex(theGrid);
-        if (theVertex == NULL)
-          return(NULL);
-        if (BNDP_BndPDesc(bndp,&move,&part))
-          return(NULL);
-        SETMOVE(theVertex,move);
-        if (BNDP_Global(bndp,bnd_global))
-          return(NULL);
-        V_BNDP(theVertex) = bndp;
-        V_DIM_COPY(bnd_global,CVECT(theVertex));
-        V_DIM_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
-        if (diff > MAX_PAR_DIST) {
-          SETMOVED(theVertex,1);
-          CORNER_COORDINATES(theElement,k,x);
-          UG_GlobalToLocal(k,(const DOUBLE **)x,bnd_global,local);
+  vertex_null = (theVertex==NULL);
+  if (theVertex==NULL)
+  {
+    if (OBJT(theElement) == BEOBJ) {
+      bnds = ELEM_BNDS(theElement,side);
+      if (bnds != NULL) {
+        if (n == 3)
+          bnd_local[0] = bnd_local[1] = 0.33333333333333;
+        else if (n == 4)
+          bnd_local[0] = bnd_local[1] = 0.5;
+        bndp = BNDS_CreateBndP(MGHEAP(MYMG(theGrid)),bnds,bnd_local);
+        if (bndp != NULL) {
+          theVertex = CreateBoundaryVertex(theGrid);
+          if (theVertex == NULL)
+            return(NULL);
+          if (BNDP_BndPDesc(bndp,&move,&part))
+            return(NULL);
+          SETMOVE(theVertex,move);
+          if (BNDP_Global(bndp,bnd_global))
+            return(NULL);
+          V_BNDP(theVertex) = bndp;
+          V_DIM_COPY(bnd_global,CVECT(theVertex));
+          V_DIM_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
+          if (diff > MAX_PAR_DIST) {
+            SETMOVED(theVertex,1);
+            CORNER_COORDINATES(theElement,k,x);
+            UG_GlobalToLocal(k,(const DOUBLE **)x,bnd_global,local);
+          }
         }
       }
     }
-  }
 
-  if (theVertex == NULL)
-  {
-    theVertex = CreateInnerVertex(theGrid);
-    if (theVertex == NULL) return(NULL);
-    V_DIM_COPY(global,CVECT(theVertex));
+    if (theVertex == NULL)
+    {
+      theVertex = CreateInnerVertex(theGrid);
+      if (theVertex == NULL) return(NULL);
+      V_DIM_COPY(global,CVECT(theVertex));
+    }
+    VFATHER(theVertex) = theElement;
+    SETONSIDE(theVertex,side);
+    SETONNBSIDE(theVertex,SideOfNbElement(theElement,side));
+    V_DIM_COPY(local,LCVECT(theVertex));
   }
-  VFATHER(theVertex) = theElement;
-  SETONSIDE(theVertex,side);
-  SETONNBSIDE(theVertex,SideOfNbElement(theElement,side));
-  V_DIM_COPY(local,LCVECT(theVertex));
-
   /* create node */
   theNode = CreateNode(theGrid,theVertex,
                        (GEOM_OBJECT *)theElement,SIDE_NODE,1);
-  if (theNode==NULL)
+  if (theNode==NULL && vertex_null)
   {
     DisposeVertex(theGrid,theVertex);
     return(NULL);
   }
         #ifdef TOPNODE
-  TOPNODE(theVertex) = theNode;
+  if (TOPNODE(theVertex) == NULL || LEVEL(TOPNODE(theVertex))<LEVEL(theNode))
+    TOPNODE(theVertex) = theNode;
         #endif
   theGrid->status |= 1;
 
@@ -1085,12 +1088,12 @@ NODE *GetCenterNode (ELEMENT *theElement)
 /*																			*/
 /****************************************************************************/
 
-NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
+NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex)
 {
   DOUBLE *global,*local;
   DOUBLE_VECTOR diff;
-  INT n,j,moved;
-  VERTEX *theVertex,*VertexOnEdge[MAX_EDGES_OF_ELEM];
+  INT n,j,moved,vertex_null;
+  VERTEX *VertexOnEdge[MAX_EDGES_OF_ELEM];
   NODE *theNode;
   EDGE *theEdge;
   DOUBLE fac;
@@ -1100,7 +1103,8 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
   /* check if moved side nodes exist */
   CORNER_COORDINATES(theElement,n,x);
   moved = 0;
-  if (OBJT(theElement) == BEOBJ) {
+  vertex_null = (theVertex==NULL);
+  if (theVertex==NULL && OBJT(theElement) == BEOBJ) {
     for (j=0; j<EDGES_OF_ELEM(theElement); j++) {
       theEdge=GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)),
                       CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)));
@@ -1146,18 +1150,29 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
             #endif
   }
 
-  theVertex = CreateInnerVertex(theGrid);
-  if (theVertex==NULL)
-    return(NULL);
-  VFATHER(theVertex) = theElement;
+  if (theVertex == NULL)
+  {
+    theVertex = CreateInnerVertex(theGrid);
+    if (theVertex==NULL)
+      return(NULL);
+    VFATHER(theVertex) = theElement;
+  }
 
-  theNode = CreateNode(theGrid,theVertex,
-                       (GEOM_OBJECT *)theElement,CENTER_NODE,1);
-  if (theNode==NULL)
+  theNode = CreateNode(theGrid,theVertex,(GEOM_OBJECT *)theElement,CENTER_NODE,1);
+  if (theNode==NULL && vertex_null)
   {
     DisposeVertex(theGrid,theVertex);
     return(NULL);
   }
+
+        #ifdef TOPNODE
+  if (TOPNODE(theVertex) == NULL || LEVEL(TOPNODE(theVertex))<LEVEL(theNode))
+    TOPNODE(theVertex) = theNode;
+        #endif
+  theGrid->status |= 1;
+
+  if (!vertex_null) return(theNode);
+
   global = CVECT(theVertex);
   local = LCVECT(theVertex);
   V_DIM_CLEAR(local);
@@ -1179,11 +1194,6 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
     LOCAL_TO_GLOBAL(n,x,local,diff);
     SETMOVED(theVertex,1);
   }
-        #ifdef TOPNODE
-  TOPNODE(theVertex) = theNode;
-        #endif
-  theGrid->status |= 1;
-
   return(theNode);
 }
 
@@ -3304,198 +3314,6 @@ INT DisposeMultiGrid (MULTIGRID *theMG)
   return(GM_OK);
 }
 
-
-/****************************************************************************/
-/*D
-   RenumberMultiGrid - Recalculate ids in the current order
-
-   SYNOPSIS:
-   INT RenumberMultiGrid (MULTIGRID *theMG);
-
-   PARAMETERS:
-   .  theMG - structure to renumber
-
-   DESCRIPTION:
-   This function recalculates ids in the current order.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   D*/
-/****************************************************************************/
-
-/************************************************************************************/
-/*                                                                                                                                                              */
-/*    Enumeration of nodes from left to right corresponding to 0...n-1                          */
-/*    ----------------------------------------------------------------				*/
-/*                                                                                                                                                              */
-/*                                         orphan nodes												*/
-/*                                      |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|							*/
-/*   N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N                      */
-/*  |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|             */
-/*                      ghost nodes						  master nodes						*/
-/*                                                                                                                                                              */
-/*                                                                                                                                                              */
-/*                                                                                                                                                              */
-/*   Mapping should exist for all orphan nodes to vertices. 'foid' is id of first       */
-/*   orphan node, 'non' number of orphan nodes. (MGIO_PAR) it looks (consequently): */
-/*                                                                                                                                                              */
-/*                                                                                                                                                              */
-/*                                                                      orphan nodes								*/
-/*                                                      |~~~~~~~~~~~~~~~~~~~~|							*/
-/*                                   N N N N N N N N N N N N N N N N N N N                      */
-/*                                                          |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|            */
-/*                                                                                        master nodes						*/
-/*                                                                                                                                                              */
-/*                                                                                                                                                              */
-/************************************************************************************/
-
-static INT RenumberNodes (MULTIGRID *theMG, INT *foid, INT *non)
-{
-  INT i,nid;
-  NODE *theNode;
-
-  nid=0;
-  if (procs==1)
-  {
-    /* ids for all nodes */
-    for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,0)); theNode!=NULL; theNode=SUCCN(theNode))
-    {
-      ID(theNode) = ID(MYVERTEX(theNode));
-      nid = MAX(nid,ID(theNode));
-    }
-    nid++;
-    non[0] = nid;
-    for (i=1; i<=TOPLEVEL(theMG); i++)
-      for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-        ID(theNode) = nid++;
-    foid[0] = 0;
-  }
-  else
-  {
-    /* ids for other nodes */
-    for (i=0; i<=TOPLEVEL(theMG); i++)
-      for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-        if (GHOST(theNode) && !USED(theNode))
-          ID(theNode) = nid++;
-    foid[0] = nid;
-
-    for (i=0; i<=TOPLEVEL(theMG); i++)
-      for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-        if (GHOST(theNode) && USED(theNode))
-          ID(theNode) = nid++;
-
-    /* ids for master nodes */
-    for (i=0; i<=TOPLEVEL(theMG); i++)
-      for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-        if (MASTER(theNode) && USED(theNode))
-          ID(theNode) = nid++;
-    non[0] = nid-foid[0];
-
-    /* ids for master nodes */
-    for (i=0; i<=TOPLEVEL(theMG); i++)
-      for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-        if (MASTER(theNode) && !USED(theNode))
-          ID(theNode) = nid++;
-
-  }
-
-  return (0);
-}
-
-INT RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, NODE ***vid_n, INT *foid, INT *non)
-{
-  NODE *theNode;
-  ELEMENT *theElement;
-  INT i,n_ioe,n_boe,vid,n_iov,n_bov,eid,lfoid,lnon,j;
-
-  /* init used-flags */
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-    {
-      SETUSED(theNode,0);
-      SETUSED(MYVERTEX(theNode),0);
-      SETTHEFLAG(MYVERTEX(theNode),0);
-    }
-
-  /* renumber elements and set orphan-flags for nodes and vertices */
-  eid=n_ioe=n_boe=0;
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-    for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
-      if (EFATHER(theElement)==NULL || THEFLAG(theElement)==1)
-      {
-        ID(theElement) = eid++;
-        if (OBJT(theElement)==BEOBJ) n_boe++;
-        else n_ioe++;
-        for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
-        {
-          SETUSED(CORNER(theElement,j),1);
-          SETUSED(MYVERTEX(CORNER(theElement,j)),1);
-        }
-                                #ifdef ModelP
-        assert(i==0 || EGHOST(theElement));
-                                #endif
-      }
-
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-    for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
-      if (EFATHER(theElement)!=NULL && THEFLAG(theElement)==0)
-        ID(theElement) = eid++;
-  if (nboe!=NULL) *nboe = n_boe;
-  if (nioe!=NULL) *nioe = n_ioe;
-
-  /* renumber vertices */
-  vid=n_iov=n_bov=0;
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-      if (THEFLAG(MYVERTEX(theNode))==0 && USED(MYVERTEX(theNode)) && OBJT(MYVERTEX(theNode))==BVOBJ)
-      {
-        ID(MYVERTEX(theNode)) = vid++;
-        n_bov++;
-        SETTHEFLAG(MYVERTEX(theNode),1);
-      }
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-      if (THEFLAG(MYVERTEX(theNode))==0 && USED(MYVERTEX(theNode)) && OBJT(MYVERTEX(theNode))==IVOBJ)
-      {
-        ID(MYVERTEX(theNode)) = vid++;
-        n_iov++;
-        SETTHEFLAG(MYVERTEX(theNode),1);
-      }
-  if (vid_n!=NULL)
-  {
-    *vid_n = (NODE**)GetTmpMem(MGHEAP(theMG),(n_iov+n_bov)*sizeof(NODE*));
-    for (i=0; i<n_iov+n_bov; i++) (*vid_n)[i] = NULL;
-    for (i=0; i<=TOPLEVEL(theMG); i++)
-      for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-        if (USED(theNode))
-        {
-          assert(ID(MYVERTEX(theNode))<n_iov+n_bov);
-          if ((*vid_n)[ID(MYVERTEX(theNode))]!=NULL) continue;
-          (*vid_n)[ID(MYVERTEX(theNode))] = theNode;
-        }
-    IFDEBUG(gm,4)
-    for (i=0; i<n_iov+n_bov; i++)
-      assert((*vid_n)[i] != NULL);
-    ENDDEBUG
-  }
-  for (i=0; i<=TOPLEVEL(theMG); i++)                                            /* not neccessary for i/o */
-    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-      if (THEFLAG(MYVERTEX(theNode))==0 && !USED(MYVERTEX(theNode)))
-      {
-        ID(MYVERTEX(theNode)) = vid++;
-        SETTHEFLAG(MYVERTEX(theNode),1);
-      }
-  if (nbov!=NULL) *nbov = n_bov;
-  if (niov!=NULL) *niov = n_iov;
-
-  /* renumber nodes */
-  if (RenumberNodes(theMG,&lfoid,&lnon)) return (1);
-  if (foid!=NULL) *foid = lfoid;
-  if (non!=NULL) *non = lnon;
-
-  return (0);
-}
 
 /****************************************************************************/
 /*
