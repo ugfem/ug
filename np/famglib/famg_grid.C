@@ -566,6 +566,9 @@ void FAMGGrid::Stencil()
 #endif
 	ostr << "unknowns: " << nn << "\t";
 	ostr << "avg. stencil: " << (double)nl/(double)nn;
+#ifdef	USE_UG_DS
+	ostr << " level " << GLEVEL(GetugGrid());
+#endif
 #ifdef ModelP
 	ostr << " master= "<<GetNrMasterVectors()<<" border= "<<GetNrBorderVectors()<<" ghosts= "<<GetNrGhostVectors();
 #endif
@@ -690,7 +693,8 @@ int FAMGGrid::InitLevel0(const class FAMGSystem &system)
 	
 #ifdef USE_UG_DS
 	SetugGrid(system.GetFineGrid());
-	#ifdef ModelP
+	#ifdef WEG
+	//#ifdef ModelP
 	GetNrMasterVectors() = -1;		// default
 	GetNrBorderVectors() = -1;		// default
 	GetNrGhostVectors() = -1;		// default
@@ -766,7 +770,8 @@ int FAMGGrid::Init(int nn, const FAMGGrid& grid_pattern)
 	else
 		Consmatrix = matrix;
 	
-	#ifdef ModelP
+	#ifdef WEG
+	//#ifdef ModelP
 	GetNrMasterVectors() = -1;		// default
 	GetNrBorderVectors() = -1;		// default
 	GetNrGhostVectors() = -1;		// default
@@ -1466,7 +1471,7 @@ ASSERT(!DDD_ConsCheck());
 		DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), SendToOverlap1 );
 	DDD_XferEnd();
 	
-
+#ifdef WEG
 	// count & set number of vectors
 	mv = FIRSTVECTOR(mygrid);
 	i = 0;
@@ -1486,6 +1491,12 @@ ASSERT(!DDD_ConsCheck());
 		else
 			GetNrBorderVectors()++;
 	}
+#else
+	// renumber vector list
+	i = 0;
+	for( vec=PFIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec))
+		VINDEX(vec) = i++;
+#endif
 	
 	n = NVEC(mygrid);
 	assert(i==n);	// otherwise the vectorlist became inconsistent

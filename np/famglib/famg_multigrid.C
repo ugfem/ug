@@ -84,7 +84,12 @@ int FAMGMultiGrid::Construct()
     FAMGMarkHeap(FAMG_FROM_TOP); // release in Deconstruct
     for(level = 0; level < FAMGMAXGRIDS-1; level++)
     {
+#ifdef ModelP
+		nn  = g->GetNrMasterVectors();	// we are interested only in the master vectors
+#else
         nn = g->GetN();
+#endif
+		
 		leave = ( coarsen_weak || nn <= cgnodes || level>=cglevels) && (gamma > 0);
 #ifdef ModelP
 		leave = UG_GlobalMaxINT(leave);
@@ -94,6 +99,7 @@ int FAMGMultiGrid::Construct()
 
 #ifdef ModelP
 		g->ConstructOverlap();
+		assert(g->GetNrMasterVectors() == nn );
 #endif
         g->Stencil();
 
@@ -123,15 +129,17 @@ int FAMGMultiGrid::Construct()
 //prm(0,0);prm(0,1); prim(0);
 //prm(-1,0);
 
-        coarsen_weak = (nnc > nn*mincoarse);
 #ifdef ModelP
 		cout << me << ": ";
+		nnc = cg->GetNrMasterVectors();	// we are interested only in the master vectors
 #endif
-		cout << "amglevel " << level;
+		cout << "amglevel " << -level;
 		if( nnc > 0 )
 			cout << " coarsening rate " << nn/(double)nnc << endl;
 		else
 			cout << " no coarsening" << endl;
+		
+        coarsen_weak = (nnc > nn*mincoarse);
     }
 
     if(level == FAMGMAXGRIDS-1)
@@ -140,11 +148,13 @@ int FAMGMultiGrid::Construct()
         FAMGWarning(ostr);
     }
 
-#ifdef ModelP	
+#ifdef WEG 	
+	//#ifdef ModelP 	
 	// count & set number of vectors
 	VECTOR *vec, *mv;
 	int i = 0;
 	mv = FIRSTVECTOR(g->GetugGrid());
+	
 	g->GetNrMasterVectors()=0;
 	g->GetNrBorderVectors()=0;
 	g->GetNrGhostVectors()=0;

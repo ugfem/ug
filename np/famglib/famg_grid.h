@@ -147,6 +147,7 @@ public:
 #ifdef ModelP
   void CommunicateNodeStatus();
   void ConstructOverlap();
+#ifdef WEG
   INT &GetNrMasterVectors() {
     return nrMaster;
   }
@@ -156,6 +157,17 @@ public:
   INT &GetNrGhostVectors() {
     return nrGhost;
   }
+#else
+  INT GetNrMasterVectors() const {
+    return NVEC_PRIO(GetugGrid(),PrioMaster);
+  }
+  INT GetNrBorderVectors() const {
+    return NVEC_PRIO(GetugGrid(),PrioBorder);
+  }
+  INT GetNrGhostVectors() const {
+    return NVEC_PRIO(GetugGrid(),PrioVGhost)+NVEC_PRIO(GetugGrid(),PrioVHGhost)+NVEC_PRIO(GetugGrid(),PrioHGhost);
+  }
+#endif
   GRID *GetugGrid() {
     return mygrid;
   }
@@ -186,7 +198,8 @@ private:
 
 #ifdef USE_UG_DS
   GRID *mygrid;
-  #ifdef ModelP
+  #ifdef WEG
+  //#ifdef ModelP
   INT nrMaster;                                                 // number of master vectors
   INT nrBorder;                                                 // number of border vectors
   INT nrGhost;                                                  // number of ghost vectors
