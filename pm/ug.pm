@@ -57,7 +57,6 @@ BEGIN
 		my $dt;
 		my $name=shift;
 
-		defined $time{$name} or return;
 		$dt=gettimeofday()-$time{$name};
 		$time{"total $name"}+=$dt;
 		$time{"diff $name"}+=$dt;
@@ -68,6 +67,7 @@ BEGIN
 		my $name=shift;
 		my $dt=shift;
 
+		defined $dt or return;
 		if (!(defined $time{"$name"})) { $time{"total $name"}=$time{"diff $name"}=$dt; }
 		else { $time{"total $name"}+=$dt; $time{"diff $name"}=$dt; }
 		$time{$name}=-1;
