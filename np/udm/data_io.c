@@ -634,6 +634,43 @@ INT SaveData (MULTIGRID *theMG, char *name, INT rename, char *type, INT number, 
   }
   if (s!=ncomp)                                                                                   {CloseDTFile(); return (1);}
 
+  /* prepare eval/evec and call each, to give a change to allocate tmpmem */
+  theGrid = GRID_ON_LEVEL(theMG,0);
+  for (k=0; k<n; k++)
+  {
+    if (theVDList[k]!=NULL) continue;
+    if (theEVal[k]!=NULL)
+    {
+      if (theEVal[k]->PreprocessProc!=NULL)
+        if ((*(theEVal[k]->PreprocessProc))(ENVITEM_NAME(theEVal[k]),theMG))
+          return (1);
+
+      for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      {
+        coe = CORNERS_OF_ELEM(theElement);
+        for (l=0; l<coe; l++)
+          x[l] = CVECT(MYVERTEX(CORNER(theElement,l)));
+        (*(theEVal[k]->EvalProc))(theElement,x,LOCAL_COORD_OF_ELEM(theElement,0));
+      }
+    }
+    else if (theEVec[k]!=NULL)
+    {
+      if (theEVec[k]->PreprocessProc!=NULL)
+        if ((*(theEVec[k]->PreprocessProc))(ENVITEM_NAME(theEVec[k]),theMG))
+          return (1);
+
+      for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      {
+        coe = CORNERS_OF_ELEM(theElement);
+        for (l=0; l<coe; l++)
+          x[l] = CVECT(MYVERTEX(CORNER(theElement,l)));
+        (*(theEVec[k]->EvalProc))(theElement,x,LOCAL_COORD_OF_ELEM(theElement,0),vector);
+      }
+    }
+    else
+    {CloseDTFile(); return (1);}
+  }
+
   /* save data: temporary heap */
   blocksize = sizeof(DTIO_BLOCK) + (ncomp-1)*sizeof(DOUBLE);
   free = theHeap->size - theHeap->used - 1024;
@@ -697,10 +734,6 @@ INT SaveData (MULTIGRID *theMG, char *name, INT rename, char *type, INT number, 
       while(entry[t]>=0.0) t++;
       if (theEVal[k]!=NULL)
       {
-        if (theEVal[k]->PreprocessProc!=NULL)
-          if ((*(theEVal[k]->PreprocessProc))(ENVITEM_NAME(theEVal[k]),theMG))
-            return (1);
-
         /* save data from eval procs */
         for (i=0; i<=TOPLEVEL(theMG); i++)
         {
@@ -725,10 +758,6 @@ INT SaveData (MULTIGRID *theMG, char *name, INT rename, char *type, INT number, 
       }
       else if (theEVec[k]!=NULL)
       {
-        if (theEVec[k]->PreprocessProc!=NULL)
-          if ((*(theEVec[k]->PreprocessProc))(ENVITEM_NAME(theEVec[k]),theMG))
-            return (1);
-
         /* save data from evec procs */
         for (i=0; i<=TOPLEVEL(theMG); i++)
         {
