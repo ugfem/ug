@@ -35,10 +35,11 @@
 #ifndef __DEBUG__
 #define __DEBUG__
 
-#ifndef __GENERAL__
 #include "general.h"
-#endif
 #include "misc.h"
+#ifdef ModelP
+#include "ppif.h"
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -51,6 +52,7 @@
 /****************************************************************************/
 
 #define REP_ERR_MAX             10
+#define DEBUG_TIME_MAX  100
 
 /* if HEAPCHECK is true p is a pointer to a zombie object */
 #define HEAPCHECK(ptr) (((int *)ptr)[1] == -1)
@@ -76,7 +78,27 @@
 
 #define REP_ERR_RESET                   rep_err_count = 0;
 #define REP_ERR_FILE                    static char *this_file=__FILE__
+
+#define DEBUG_TIME_RESET        debug_time_count = 0;
+#ifdef ModelP
+#define DEBUG_TIME_INC                                    \
+  { debug_time_line[debug_time_count] = __LINE__;          \
+    debug_time_file[debug_time_count] = this_file;         \
+    debug_time[debug_time_count] = CurrentTime();          \
+    debug_time_count = (debug_time_count+1)%DEBUG_TIME_MAX;}
+
 #else
+#define DEBUG_TIME_INC                                    \
+  { debug_time_line[debug_time_count] = __LINE__;          \
+    debug_time_file[debug_time_count] = this_file;         \
+    debug_time[debug_time_count] = (double)clock();        \
+    debug_time_count = (debug_time_count+1)%DEBUG_TIME_MAX;}
+
+#endif
+#define DEBUG_TIME(n)           if (Debugtime >= n) DEBUG_TIME_INC
+
+#else /* Debug */
+
 #define IFDEBUG(m,n)    if (1==0) {
 #define ENDDEBUG        }
 #define PRINTDEBUG(m,n,s) /* no debugging */
@@ -88,7 +110,11 @@
 #define REP_ERR_INC
 #define REP_ERR_RESET
 #define REP_ERR_FILE
-#endif
+#define DEBUG_TIME_RESET
+#define DEBUG_TIME_INC
+#define DEBUG_TIME(n)
+
+#endif  /* Debug */
 
 /****************************************************************************/
 /*																			*/
@@ -118,11 +144,18 @@ extern int Debugnp;
 extern int Debugui;
 extern int Debugappl;
 extern int Debugpclib;
+extern int Debugtime;
 
 /* for reporting of erros (using the REP_ERR_RETURN-macro) */
 extern int rep_err_count;
 extern int rep_err_line[REP_ERR_MAX];
 extern const char  *rep_err_file[REP_ERR_MAX];
+
+/* for timings */
+extern int debug_time_count;
+extern double debug_time[DEBUG_TIME_MAX];
+extern int debug_time_line[DEBUG_TIME_MAX];
+extern const char  *debug_time_file[DEBUG_TIME_MAX];
 
 #endif
 
