@@ -105,6 +105,12 @@ static int sort_rcb_x (const void *e1, const void *e2)
   if (t1->center[1] < t2->center[1] -SMALL_COORD) return(-1);
   if (t1->center[1] > t2->center[1] +SMALL_COORD) return(1);
 
+        #ifdef __THREEDIM__
+  /* x and y coordinates are considered to be equal, compare y now */
+  if (t1->center[2] < t2->center[2] -SMALL_COORD) return(-1);
+  if (t1->center[2] > t2->center[2] +SMALL_COORD) return(1);
+        #endif
+
   return(0);
 }
 
@@ -123,10 +129,38 @@ static int sort_rcb_y (const void *e1, const void *e2)
   if (t1->center[0] < t2->center[0] -SMALL_COORD) return(-1);
   if (t1->center[0] > t2->center[0] +SMALL_COORD) return(1);
 
+        #ifdef __THREEDIM__
+  /* y and x coordinates are considered to be equal, compare x now */
+  if (t1->center[2] < t2->center[2] -SMALL_COORD) return(-1);
+  if (t1->center[2] > t2->center[2] +SMALL_COORD) return(1);
+        #endif
+
   return(0);
 }
 
 
+#ifdef __THREEDIM__
+static int sort_rcb_z (const void *e1, const void *e2)
+{
+  LB_INFO *t1, *t2;
+
+  t1 = (LB_INFO *)e1;
+  t2 = (LB_INFO *)e2;
+
+  if (t1->center[2] < t2->center[2] -SMALL_COORD) return(-1);
+  if (t1->center[2] > t2->center[2] +SMALL_COORD) return(1);
+
+  /* z coordinates are considered to be equal, compare x now */
+  if (t1->center[1] < t2->center[1] -SMALL_COORD) return(-1);
+  if (t1->center[1] > t2->center[1] +SMALL_COORD) return(1);
+
+  /* z and y coordinates are considered to be equal, compare x now */
+  if (t1->center[0] < t2->center[0] -SMALL_COORD) return(-1);
+  if (t1->center[0] > t2->center[0] +SMALL_COORD) return(1);
+
+  return(0);
+}
+#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -140,14 +174,34 @@ static int sort_rcb_y (const void *e1, const void *e2)
 /*            nItems:    length of array                                    */
 /*            px,py:     bottom left position in 2D processor array         */
 /*            dx,dy:     size of 2D processor array                         */
+/*            dim:       sort dimension 0=x, 1=y, 2=z                       */
 /*                                                                          */
 /* Output:    -                                                             */
 /*                                                                          */
 /****************************************************************************/
 
-static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int dy)
+static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int dy, int dim)
 {
   int i, part0, part1, ni0, ni1;
+  static int (*sort_function)(const void *e1, const void *e2);
+
+  /* determine sort function */
+  switch (dim) {
+  case 0 :
+    sort_function = sort_rcb_x;
+    break;
+  case 1 :
+    sort_function = sort_rcb_y;
+    break;
+                #ifdef __THREEDIM__
+  case 2 :
+    sort_function = sort_rcb_z;
+    break;
+                #endif
+  default :
+    printf("%d: theRCB(): ERROR no valid sort dimension specified\n",me);
+    break;
+  }
 
   if (nItems==0)
     return;
@@ -164,7 +218,7 @@ static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int d
 
   if (dx>=dy)
   {
-    if (nItems>1) qsort(theItems, nItems, sizeof(LB_INFO), sort_rcb_x);
+    if (nItems>1) qsort(theItems, nItems, sizeof(LB_INFO), sort_function);
 
     part0 = dx/2;
     part1 = dx-part0;
@@ -172,13 +226,13 @@ static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int d
     ni0 = (int)(((double)part0)/((double)(dx))*((double)nItems));
     ni1 = nItems-ni0;
 
-    theRCB(theItems,     ni0, px,       py, part0, dy);
-    theRCB(theItems+ni0, ni1, px+part0, py, part1, dy);
+    theRCB(theItems,     ni0, px,       py, part0, dy,(dim+1)%DIM);
+    theRCB(theItems+ni0, ni1, px+part0, py, part1, dy,(dim+1)%DIM);
 
   }
   else
   {
-    if (nItems>1) qsort(theItems, nItems, sizeof(LB_INFO), sort_rcb_y);
+    if (nItems>1) qsort(theItems, nItems, sizeof(LB_INFO), sort_function);
 
     part0 = dy/2;
     part1 = dy-part0;
@@ -186,8 +240,8 @@ static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int d
     ni0 = (int)(((double)part0)/((double)(dy))*((double)nItems));
     ni1 = nItems-ni0;
 
-    theRCB(theItems,     ni0, px, py      , dx, part0);
-    theRCB(theItems+ni0, ni1, px, py+part0, dx, part1);
+    theRCB(theItems,     ni0, px, py      , dx, part0,(dim+1)%DIM);
+    theRCB(theItems+ni0, ni1, px, py+part0, dx, part1,(dim+1)%DIM);
   }
 }
 
@@ -385,7 +439,7 @@ int BalanceGrid (MULTIGRID *theMG)
 
 
     /* apply coordinate bisection strategy */
-    theRCB(lbinfo, NT(theGrid), 0, 0, DimX, DimY);
+    theRCB(lbinfo, NT(theGrid), 0, 0, DimX, DimY, 0);
 
     for (e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
     {
