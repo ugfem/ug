@@ -1040,7 +1040,7 @@ INT pfile_tagged_write_BYTE (PFILE_BIN *pf, unsigned char *values, int n, INT ke
       PrintErrorMessage('E',"pfile_tagged_write_INT","unxepected finish");
       return(1);
     }
-    append_buffer_bin_FLOAT(pf,values,n,key);
+    append_buffer_bin_BYTE(pf,values,n,key);
   }
 #endif
   return(0);
