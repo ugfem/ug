@@ -30,11 +30,29 @@ echo "cvs admin -a$DEFAULT `basename $UG` ...";
 cvs admin -a$DEFAULT `basename $UG` 2>> $ERRORFILE;
 
 cd $UGROOT;
-echo "cvs admin -abirken,wieners arch";
-cvs admin -abirken,wieners arch 2>> $ERRORFILE;
+echo "cvs admin -abirken,lampe,wieners arch";
+cvs admin -abirken,lampe,wieners arch 2>> $ERRORFILE;
+
+echo "cvs admin -alampe,reichenb bin";
+cvs admin -alampe,reichenb bin 2>> $ERRORFILE;
 
 echo "cvs admin -awieners configs";
 cvs admin -awieners configs 2>> $ERRORFILE;
+
+echo "cvs admin -alampe dev";
+cvs admin -alampe dev 2>> $ERRORFILE;
+
+echo "cvs admin -alampe graphics/uggraph";
+cvs admin -alampe graphics/uggraph 2>> $ERRORFILE;
+
+echo "cvs admin -alampe low";
+cvs admin -alampe low 2>> $ERRORFILE;
+
+echo "cvs admin -alampe tools";
+cvs admin -alampe tools 2>> $ERRORFILE;
+
+echo "cvs admin -alampe ui";
+cvs admin -alampe ui 2>> $ERRORFILE;
 
 echo "cvs admin -abirken parallel/ddd";
 cvs admin -abirken parallel/ddd 2>> $ERRORFILE;
