@@ -110,8 +110,18 @@ typedef struct {
   int nmerge;                       /* nb. of merges                            */
 } HASH_STAT;
 
+struct mgio_refinement_seq_red {                /* used only for sizeof                     */
+
+  int refrule;                                  /* id of refinement rule                    */
+  int sonref;                                   /* 1 if sons are refined, bitwise           */
+  int refclass;                                 /* refinement class                         */
+  int nnewcorners;                              /* nb of new corners on next level          */
+  int newcornerid[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];  /* ids of new vert.or -1 */
+  int nmoved;                                   /* nmoved new vertices moved                */
+};
+
 typedef struct {
-  struct mgio_refinement_seq ref;
+  struct mgio_refinement_seq_red ref;
   int sonex;
 } MERGE_REFINEMENT;
 
@@ -574,7 +584,7 @@ int ht_malloc_display (void)
 int ReconstructNodeContext (MERGE_REFINEMENT *mref, MGIO_GE_ELEMENT *ge_element, MGIO_RR_RULE *rr_rules, int *nc)
 {
   int i,j,sonex;
-  struct mgio_refinement_seq *ref;
+  struct mgio_refinement_seq_red *ref;
 
   ref=&(mref->ref);
   sonex=mref->sonex;
@@ -697,6 +707,7 @@ static MGIO_RR_RULE *WR_rr_rules;
 int WriteRefinement (MERGE_REFINEMENT *ref)
 {
   int i,lid,key[2];
+  MGIO_REFINEMENT pref;
 
   for (i=0; i<ref->ref.nnewcorners; i++)
   {
@@ -705,7 +716,9 @@ int WriteRefinement (MERGE_REFINEMENT *ref)
     assert(lid!=-1);
     ref->ref.newcornerid[i]=lid;
   }
-  if (Write_Refinement((MGIO_REFINEMENT*)ref,WR_rr_rules)) return (1);
+  memcpy((void*)(&pref),(const void*)ref,sizeof(struct mgio_refinement_seq_red));
+  pref.orphanid_ex=0;
+  if (Write_Refinement(&pref,WR_rr_rules)) return (1);
 
   return (0);
 }
@@ -998,8 +1011,9 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
                 ref->newcornerid[t]=ref->pinfo[l].n_ident[s];
                 nc[rr_rules[ref->refrule].sons[l].corners[s]]=-1;
               }
-          memcpy((void*)(refinement[i][j]+k),(const void*)ref,sizeof(struct mgio_refinement_seq));
+          memcpy((void*)(refinement[i][j]+k),(const void*)ref,sizeof(struct mgio_refinement_seq_red));
           refinement[i][j][k].sonex=ref->sonex;
+          assert(refinement[i][j][k].ref.nmoved==0);
         }
       }
       for (j=0; j<cg_general[i].nElement; j++)
