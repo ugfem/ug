@@ -175,6 +175,8 @@ static CONTROL_ENTRY_PREDEF ce_predefines[MAX_CONTROL_ENTRIES] = {
   CE_INIT(CE_LOCKED,      VERTEX_,                MOVE_,                  CW_VXOBJS),
   CE_INIT(CE_LOCKED,      VERTEX_,                MOVED_,                 CW_VXOBJS),
   CE_INIT(CE_LOCKED,      VERTEX_,                ONEDGE_,                CW_VXOBJS),
+  CE_INIT(CE_LOCKED,      VERTEX_,                ONSIDE_,                CW_VXOBJS),
+  CE_INIT(CE_LOCKED,      VERTEX_,                ONNBSIDE_,              CW_VXOBJS),
   CE_INIT(CE_LOCKED,      VERTEX_,                NOOFNODE_,              CW_VXOBJS),
 
   CE_INIT(CE_LOCKED,      NODE_,                  NSUBDOM_,               CW_NDOBJ),
@@ -642,7 +644,7 @@ static INT InitPredefinedControlEntries (void)
         /* do other control entries overlap? */
         if (cw->used_mask & mask)
         {
-          IFDEBUG(gm,1)
+          IFDEBUG(gm,0)
           printf("predef ctrl entry '%s' has overlapping bits with previous ctrl entries:\n",pce->name);
           for (j=0; j<i; j++)
           {
@@ -662,7 +664,7 @@ static INT InitPredefinedControlEntries (void)
       }
     }
 
-  IFDEBUG(gm,1)
+  IFDEBUG(gm,0)
   ListAllCWsOfObjectType(IVOBJ);
   ListAllCWsOfObjectType(IEOBJ);
   ListAllCWsOfObjectType(EDOBJ);
@@ -672,11 +674,13 @@ static INT InitPredefinedControlEntries (void)
   ListAllCWsOfObjectType(BLOCKVOBJ);
   ListAllCWsOfObjectType(GROBJ);
   ListAllCWsOfObjectType(MGOBJ);
-  ENDDEBUG;
+  ENDDEBUG
 
-  /* TODO: enable next lines for error control
-     if (error)
-          return (__LINE__);*/
+  /* TODO: enable next lines for error control */
+  IFDEBUG(gm,1)
+  if (error)
+    return (__LINE__);
+  ENDDEBUG
 
   ASSERT(nused==REFINE_N_CE);
 
@@ -745,7 +749,10 @@ void PrintCEstatistics (void)
   for (i=0; i<MAX_CONTROL_ENTRIES; i++)
     if (control_entries[i].used)
       if (ce_usage[i].read || ce_usage[i].write)
-        UserWriteF("ce %-20s: read %10d write %10d\n",control_entries[i].name,ce_usage[i].read,ce_usage[i].write);
+        if (control_entries[i].name!=NULL)
+          UserWriteF("ce %-20s: read %10d write %10d\n",control_entries[i].name,ce_usage[i].read,ce_usage[i].write);
+        else
+          UserWriteF("ce %20d: read %10d write %10d\n",i,ce_usage[i].read,ce_usage[i].write);
         #endif
 }
 
@@ -985,6 +992,7 @@ INT AllocateControlEntry (INT cw_id, INT length, INT *ce_id)
   ce->length = length;
   ce->mask = mask;
   ce->xor_mask = ~mask;
+  ce->name = NULL;
 
   /* remember used bits */
   cw->used_mask |= mask;
