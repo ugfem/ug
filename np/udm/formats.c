@@ -62,44 +62,54 @@ USING_UG_NAMESPACES
 
 #define MAX_PRINT_SYM                                   5
 
-/* format for PrintVectorData and PrintMatrixData */
+/** @name Format for PrintVectorData and PrintMatrixData */
+/*@{*/
 #define VFORMAT                                                 " %c=%11.4E"
 #define MFORMAT                                                 " %c%c=%11.4E"
+/*@}*/
 
-/* seperators */
+/** @name Separators */
+/*@{*/
 #define NAMESEP                                                 ':'
 #define BLANKS                                                  " \t"
 #define LIST_SEP                                                " \t,"
 #define IN_PARTS                                                "in"
+/*@}*/
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 static char default_type_names[MAXVECTORS];
 
-/* printing routine ptrs */
+/** @name Printing routine pointers */
+/*@*/
 static ConversionProcPtr PrintVectorDataPtr[NVECTYPES];
 static ConversionProcPtr PrintMatrixDataPtr[NMATTYPES];
+/*@}*/
 
-/* print symbol counters and lists */
+/** @name Print symbol counters and lists */
+/*@{*/
 static INT NPrintVectors=0;
 static INT NPrintMatrixs=0;
 static VECDATA_DESC *PrintVector[MAX_PRINT_SYM];
 static MATDATA_DESC *PrintMatrix[MAX_PRINT_SYM];
+/*@}*/
 
-/* environment dir and var ids */
+/** @name Environment dir and var ids */
+/*@{*/
 static INT theNewFormatDirID;                   /* env type for NewFormat dir           */
 static INT theVecVarID;                                 /* env type for VEC_TEMPLATE vars       */
 static INT theMatVarID;                                 /* env type for MAT_TEMPLATE vars       */
+/*@}*/
 
 REP_ERR_FILE;
 
@@ -108,9 +118,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
 /****************************************************************************/
-/*																			*/
-/* functions to set, display and change the printing format			                */
-/*																			*/
+/*                                                                          */
+/* functions to set, display and change the printing format                 */
+/*                                                                          */
 /****************************************************************************/
 
 INT NS_PREFIX DisplayPrintingFormat ()
@@ -139,26 +149,17 @@ INT NS_PREFIX DisplayPrintingFormat ()
 }
 
 /****************************************************************************/
-/*D
-        ResetPrintingFormat - no data will be printed
+/** \brief No data will be printed
 
-        SYNOPSIS:
-        INT ResetPrintingFormat (void)
-
-    PARAMETERS:
-   .   void - none
-
-        DESCRIPTION:
         After call of this function no data will be printed.
         Do this when closing a multigrid since all descriptors will go out of scope then.
 
-        RETURN VALUE:
-        INT
-   .n   0: ok
+        \return
+        0: ok
 
-        SEE ALSO:
+        \sa
         setformat, showformat
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX ResetPrintingFormat (void)
@@ -168,8 +169,8 @@ INT NS_PREFIX ResetPrintingFormat (void)
 }
 
 /********************************************************/
-/* for the following function							*/
-/* please keep help comment in commands.c up to date	*/
+/* for the following function                           */
+/* please keep help comment in commands.c up to date    */
 /********************************************************/
 
 INT NS_PREFIX SetPrintingFormatCmd (const MULTIGRID *mg, INT argc, char **argv)
@@ -304,28 +305,21 @@ static char *DisplayVecDD (const VECDATA_DESC *vd, INT type, const DOUBLE *data,
 }
 
 /****************************************************************************/
-/*D
-        PrintTypeVectorData - print selected vector user data for the 'nsr' format
+/** \brief Print selected vector user data for the 'nsr' format
 
-        SYNOPSIS:
-        static INT PrintTypeVectorData (INT type, void *data, const char *indent, char *s)
+   \param type - consider only this type
+   \param data - user data
+   \param indent - is printed at the beginning of lines
+   \param s - output string
 
-    PARAMETERS:
-   .   type - consider only this type
-   .   data - user data
-   .   indent - is printed at the beginning of lines
-   .   s - output string
-
-        DESCRIPTION:
         Print selected vector user data for the 'nsr' format.
 
-        RETURN VALUE:
-        INT
-   .n   0: ok
+        \return
+        0: ok
 
-        SEE ALSO:
+        \sa
         setformat, showformat
-   D*/
+ */
 /****************************************************************************/
 
 static INT PrintTypeVectorData (INT type, void *data, const char *indent, char *s)
@@ -374,28 +368,21 @@ static char *DisplayMatDD (const MATDATA_DESC *md, INT type, const DOUBLE *data,
 }
 
 /****************************************************************************/
-/*D
-        PrintTypeMatrixData - print selected matrix user data for the 'nsr' format
+/** \brief Print selected matrix user data for the 'nsr' format
 
-        SYNOPSIS:
-        static INT PrintTypeMatrixData (INT type, void *data, const char *indent, char *s)
+   \param type - consider this mat type
+   \param data - user data
+   \param indent - is printed at the beginning of lines
+   \param s - output string
 
-    PARAMETERS:
-   .   type - consider this mat type
-   .   data - user data
-   .   indent - is printed at the beginning of lines
-   .   s - output string
-
-        DESCRIPTION:
         Print selected matrix user data for the 'nsr' format.
 
-        RETURN VALUE:
-        INT
-   .n   0: ok
+        \return
+        0: ok
 
-        SEE ALSO:
+        \sa
         setformat, showformat
-   D*/
+ */
 /****************************************************************************/
 
 static INT PrintTypeMatrixData (INT type, void *data, const char *indent, char *s)
@@ -435,6 +422,7 @@ VEC_TEMPLATE *NS_PREFIX GetVectorTemplate (const FORMAT *theFmt, const char *the
       for (item = NEXT_ENVITEM(item); item != NULL; item = NEXT_ENVITEM(item))
         if (ENVITEM_TYPE(item) == theVecVarID)
         {
+          UserWriteF("Trying to handle the vector '%s', but...\n", theTmplt);
           PrintErrorMessage('E',"GetVectorTemplate","there are several vector templates - specify!");
           REP_ERR_RETURN_PTR (NULL);
         }
@@ -445,27 +433,20 @@ VEC_TEMPLATE *NS_PREFIX GetVectorTemplate (const FORMAT *theFmt, const char *the
 }
 
 /****************************************************************************/
-/*D
-        CreateVecDescOfTemplate - create a VECDATA_DESC according to a given template
+/** \brief Create a VECDATA_DESC according to a given template
 
-        SYNOPSIS:
-        VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
-                                                                           const char *name, const char *theTmplt)
+   \param theMG		- multigrid
+   \param name		- name of the VECDATA_DESC
+   \param theTmplt	- template name (if NULL a template called "name" is taken)
 
-    PARAMETERS:
-   .   theMG		- multigrid
-   .   name		- name of the VECDATA_DESC
-   .   theTmplt	- template name (if NULL a template called "name" is taken)
-
-        DESCRIPTION:
         Create a VECDATA_DESC according to a given template created with the format
         of the multigrid.
 
-        RETURN VALUE:
-        VECDATA_DESC *
-   .n   ptr to VECDATA_DESC if ok
-   .n		NULL if an error occured
-   D*/
+        \return <ul>
+        <li> Pointer to VECDATA_DESC if ok </li>
+       <li> NULL if an error occured </li>
+       </ul>
+ */
 /****************************************************************************/
 
 VECDATA_DESC * NS_PREFIX CreateVecDescOfTemplate (MULTIGRID *theMG,
@@ -584,27 +565,20 @@ MAT_TEMPLATE *NS_PREFIX GetMatrixTemplate (const FORMAT *theFmt, const char *the
 }
 
 /****************************************************************************/
-/*D
-        CreateMatDescOfTemplate - create a MATDATA_DESC according to a given template
+/** \brief Create a MATDATA_DESC according to a given template
 
-        SYNOPSIS:
-        MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
-                                                                           const char *name, const char *theTmplt)
+   \param theMG		- multigrid
+   \param name		- name of the VECDATA_DESC
+   \param theTmplt	- template name (if NULL a template called "name" is taken)
 
-    PARAMETERS:
-   .   theMG		- multigrid
-   .   name		- name of the VECDATA_DESC
-   .   theTmplt	- template name (if NULL a template called "name" is taken)
-
-        DESCRIPTION:
         Create a MATDATA_DESC according to a given template created with the format
         of the multigrid.
 
-        RETURN VALUE:
-        MATDATA_DESC *
-   .n   ptr to MATDATA_DESC if ok
-   .n		NULL if an error occured
-   D*/
+        \return <ul>
+        <li> Pointer to MATDATA_DESC if ok </li>
+        <li> NULL if an error occured </li>
+        </ul>
+ */
 /****************************************************************************/
 
 MATDATA_DESC * NS_PREFIX CreateMatDescOfTemplate (MULTIGRID *theMG,
@@ -720,24 +694,18 @@ INT NS_PREFIX FreeMatDescCmd (MULTIGRID *theMG, INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*D
-        CreateVecTemplate - create a VEC_TEMPLATE
+/** \brief Create a VEC_TEMPLATE
 
-        SYNOPSIS:
-        VEC_TEMPLATE *CreateVecTemplate (const char *name)
+   \param theMG		- multigrid
+   \param name		- name of the VEC_TEMPLATE
 
-    PARAMETERS:
-   .   theMG		- multigrid
-   .   name		- name of the VEC_TEMPLATE
+        Create a VEC_TEMPLATE in the /newformat directory of the environment.
 
-        DESCRIPTION:
-        Create a VEC_TEMPLATE in the /newformat directoy of the environment.
-
-        RETURN VALUE:
-        VEC_TEMPLATE *
-   .n   ptr to VEC_TEMPLATE if ok
-   .n		NULL if an error occured
-   D*/
+        \return <ul>
+        <li> Pointer to VEC_TEMPLATE if ok </li>
+        <li> NULL if an error occured </li>
+        </ul>
+ */
 /****************************************************************************/
 
 static VEC_TEMPLATE *CreateVecTemplate (const char *name)
@@ -762,24 +730,18 @@ static VEC_TEMPLATE *CreateVecTemplate (const char *name)
 }
 
 /****************************************************************************/
-/*D
-        CreateMatTemplate - create a MAT_TEMPLATE
+/** \brief Create a MAT_TEMPLATE
 
-        SYNOPSIS:
-        MAT_TEMPLATE *CreateMatTemplate (const char *name)
+   \param theMG		- multigrid
+   \param name		- name of the MAT_TEMPLATE
 
-    PARAMETERS:
-   .   theMG		- multigrid
-   .   name		- name of the MAT_TEMPLATE
+   Create a MAT_TEMPLATE in the /newformat directory of the environment.
 
-        DESCRIPTION:
-        Create a MAT_TEMPLATE in the /newformat directoy of the environment.
-
-        RETURN VALUE:
-        MAT_TEMPLATE *
-   .n   ptr to MAT_TEMPLATE if ok
-   .n		NULL if an error occured
-   D*/
+   \return <ul>
+   <li> Pointer to MAT_TEMPLATE if ok </li>
+   <li> NULL if an error occured </li>
+   </ul>
+ */
 /****************************************************************************/
 
 static MAT_TEMPLATE *CreateMatTemplate (const char *name)
@@ -800,25 +762,19 @@ static MAT_TEMPLATE *CreateMatTemplate (const char *name)
 }
 
 /****************************************************************************/
-/*D
-        VDmatchesVT - check whether VECDATA_DESC and VEC_TEMPLATE match
+/** \brief Check whether VECDATA_DESC and VEC_TEMPLATE match
 
-        SYNOPSIS:
-        INT VDmatchesVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt)
+   \param vd			- vec data descriptor
+   \param vt			- vector template
 
-    PARAMETERS:
-   .   vd			- vec data descriptor
-   .   vt			- vector template
+   This function checks whether a VECDATA_DESC and a VEC_TEMPLATE match, i.e.
+   the number of components per type coincide.
 
-        DESCRIPTION:
-        This function checks whether a VECDATA_DESC and a VEC_TEMPLATE match, i.e.
-        the number of components per type coincide.
-
-        RETURN VALUE:
-        INT
-   .n   YES: vd and vt match
-   .n   NO:  vd and vt do not match
-   D*/
+   \return <ul>
+   <li> YES: vd and vt match </li>
+   <li> NO:  vd and vt do not match </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX VDmatchesVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt)
@@ -833,27 +789,20 @@ INT NS_PREFIX VDmatchesVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt)
 }
 
 /****************************************************************************/
-/*D
-        VDsubDescFromVT - create a VECDATA_DESC as a sub descriptor from a vector template
+/** \brief Create a VECDATA_DESC as a sub descriptor from a vector template
 
-        SYNOPSIS:
-        INT VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, VECDATA_DESC **subvd)
+   \param vd			- make a sub desc of this VECDATA_DESC
+   \param vt			- template containing sub descriptor
+   \param sub			- index of sub descriptor in template
+   \param subvd		- handle to created sub descriptor
 
-    PARAMETERS:
-   .   vd			- make a sub desc of this VECDATA_DESC
-   .   vt			- template containing sub descriptor
-   .   sub			- index of sub descriptor in template
-   .   subvd		- handle to created sub descriptor
+   This function creates a sub descriptor to a given VECDATA_DESC according to the given
+   sub descriptor of a template.
 
-        DESCRIPTION:
-        This function creates a sub descriptor to a given VECDATA_DESC according to the given
-        sub descriptor of a template.
-
-        RETURN VALUE:
-        INT
-   .n   0: ok
-   .n      n: if an error occured
-   D*/
+   \return <ul>
+   <li>         0: ok
+   <li>     n: if an error occured
+ */
 /****************************************************************************/
 
 INT NS_PREFIX VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, VECDATA_DESC **subvd)
@@ -915,27 +864,27 @@ INT NS_PREFIX VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, I
 }
 
 /****************************************************************************/
-/*D
+/** \brief
         VDsubDescFromVS - create a VECDATA_DESC as a vector sub descriptor
 
         SYNOPSIS:
         INT VDsubDescFromVS (const VECDATA_DESC *vd, const SUBVEC *subv, VECDATA_DESC **subvd)
 
     PARAMETERS:
-   .   vd			- make a sub desc of this VECDATA_DESC
-   .   subv		- sub vector descriptor
-   .   subvd		- handle to created sub descriptor
+   \param vd			- make a sub desc of this VECDATA_DESC
+   \param subv		- sub vector descriptor
+   \param subvd		- handle to created sub descriptor
 
         DESCRIPTION:
         This function creates a sub descriptor to a given VECDATA_DESC according to the given
         vector sub descriptor. If a template is available, 'VDsubDescFromVT' should be
         preferred.
 
-        RETURN VALUE:
+        \return <ul>
         INT
-   .n   0: ok
-   .n      n: if an error occured
-   D*/
+   <li>         0: ok
+   <li>     n: if an error occured
+ */
 /****************************************************************************/
 
 INT NS_PREFIX VDsubDescFromVS (const VECDATA_DESC *vd, const SUBVEC *subv, VECDATA_DESC **subvd)
@@ -989,26 +938,26 @@ INT NS_PREFIX VDsubDescFromVS (const VECDATA_DESC *vd, const SUBVEC *subv, VECDA
 }
 
 /****************************************************************************/
-/*D
+/** \brief
         CompMDwithMT - check whether MATDATA_DESC and MAT_TEMPLATE match
 
         SYNOPSIS:
         INT CompMDwithMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt)
 
     PARAMETERS:
-   .   md			- matrix data descriptor
-   .   mt			- matrix template
+   \param md			- matrix data descriptor
+   \param mt			- matrix template
 
         DESCRIPTION:
         This function checks whether a MATDATA_DESC and a MAT_TEMPLATE match, i.e.
         the number of row/col components per type coincide.
 
-        RETURN VALUE:
+        \return <ul>
         INT
-   .n   0: vd and vt match
-   .n   1: sizes do not match
-   .n      2: sparse structure does not match
-   D*/
+   <li>         0: vd and vt match
+   <li>         1: sizes do not match
+   <li>     2: sparse structure does not match
+ */
 /****************************************************************************/
 
 INT NS_PREFIX CompMDwithMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt)
@@ -1019,26 +968,26 @@ INT NS_PREFIX CompMDwithMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
         MDmatchesVT - check whether MATDATA_DESC and VEC_TEMPLATE match (tensor product)
 
         SYNOPSIS:
         INT MDmatchesVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt)
 
     PARAMETERS:
-   .   md			- matrix data descriptor
-   .   vt			- vector template
+   \param md			- matrix data descriptor
+   \param vt			- vector template
 
         DESCRIPTION:
         This function checks whether a MATDATA_DESC and a VEC_TEMPLATE match, i.e.
         the number of components per type coincide in the sense that md is a
         tensor product of vt.
 
-        RETURN VALUE:
+        \return <ul>
         INT
-   .n   YES: md and vt match
-   .n   NO:  md and vt do not match
-   D*/
+   <li>         YES: md and vt match
+   <li>         NO:  md and vt do not match
+ */
 /****************************************************************************/
 
 INT NS_PREFIX MDmatchesVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt)
@@ -1064,27 +1013,21 @@ INT NS_PREFIX MDmatchesVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt)
 }
 
 /****************************************************************************/
-/*D
-        MDmatchesVTxVT - check whether MATDATA_DESC and VEC_TEMPLATE x VEC_TEMPLATE match (tensor product)
+/** \brief Check whether MATDATA_DESC and VEC_TEMPLATE x VEC_TEMPLATE match (tensor product)
 
-        SYNOPSIS:
-        INT MDmatchesVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, const VEC_TEMPLATE *cvt)
+   \param md			- matrix data descriptor
+   \param rvt			- row vector template
+   \param cvt			- col vector template
 
-    PARAMETERS:
-   .   md			- matrix data descriptor
-   .   rvt			- row vector template
-   .   cvt			- col vector template
-
-        DESCRIPTION:
         This function checks whether a MATDATA_DESC and a VEC_TEMPLATE x VEC_TEMPLATE
         match, i.e. the number of components per type coincide in the sense that md is a
         tensor product of rvt and cvt.
 
-        RETURN VALUE:
-        INT
-   .n   YES: md and vt match
-   .n   NO:  md and vt do not match
-   D*/
+        \return <ul>
+        <li> YES: md and vt match </li>
+        <li> NO:  md and vt do not match </li>
+        </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX MDmatchesVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, const VEC_TEMPLATE *cvt)
@@ -1132,27 +1075,21 @@ static INT MTmatchesVTxVT (const MAT_TEMPLATE *mt, const VEC_TEMPLATE *rvt, cons
 }
 
 /****************************************************************************/
-/*D
-        MDsubDescFromMT - create a MATDATA_DESC as a sub descriptor from a matrix template
+/** \brief Create a MATDATA_DESC as a sub descriptor from a matrix template
 
-        SYNOPSIS:
-        INT MDsubDescFromMT (const MATDATA_DESC *vd, const MAT_TEMPLATE *vt, INT sub, MATDATA_DESC *subvd)
+   \param vd			- make a sub desc of this MATDATA_DESC
+   \param vt			- template containing sub descriptor
+   \param sub			- index of sub descriptor in template
+   \param subvd		- handle to created sub descriptor
 
-    PARAMETERS:
-   .   vd			- make a sub desc of this MATDATA_DESC
-   .   vt			- template containing sub descriptor
-   .   sub			- index of sub descriptor in template
-   .   subvd		- handle to created sub descriptor
-
-        DESCRIPTION:
         This function creates a sub descriptor to a given MATDATA_DESC according to the given
         sub descriptor of a matrix template.
 
-        RETURN VALUE:
-        INT
-   .n   0: ok
-   .n      n: if an error occured
-   D*/
+        \return <ul>
+        <li>    0: ok </li>
+        <li>     n: if an error occured </li>
+        </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, MATDATA_DESC **submd)
@@ -1212,27 +1149,21 @@ INT NS_PREFIX MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, I
 }
 
 /****************************************************************************/
-/*D
-        MDsubDescFromVT - create a MATDATA_DESC as a sub descriptor from a vector template
+/** \brief Create a MATDATA_DESC as a sub descriptor from a vector template
 
-        SYNOPSIS:
-        INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, MATDATA_DESC **submd)
+   \param md			- make a sub desc of this MATDATA_DESC
+   \param vt			- template containing sub descriptor
+   \param sub			- index of sub descriptor in template
+   \param submd		- handle to created sub descriptor
 
-    PARAMETERS:
-   .   md			- make a sub desc of this MATDATA_DESC
-   .   vt			- template containing sub descriptor
-   .   sub			- index of sub descriptor in template
-   .   submd		- handle to created sub descriptor
+   This function creates a sub descriptor to a given MATDATA_DESC according to the given
+   subv of a vector template. The matrix is composed as tensor product of the subv.
 
-        DESCRIPTION:
-        This function creates a sub descriptor to a given MATDATA_DESC according to the given
-        subv of a vector template. The matrix is composed as tensor product of the subv.
-
-        RETURN VALUE:
-        INT
-   .n   0: ok
-   .n      n: if an error occured
-   D*/
+   \return <ul>
+   <li>         0: ok </li>
+   <li>  n: if an error occured </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, MATDATA_DESC **submd)
@@ -1310,31 +1241,23 @@ INT NS_PREFIX MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, I
 }
 
 /****************************************************************************/
-/*D
-        MDsubDescFromVTxVT - create a MATDATA_DESC as a sub descriptor from a vector template
+/** \brief Create a MATDATA_DESC as a sub descriptor from a vector template
 
-        SYNOPSIS:
-        INT MDsubDescFromVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, INT rsub,
-                                                                                                        const VEC_TEMPLATE *cvt, INT csub,
-                                                                                                        MATDATA_DESC **submd)
+   \param md			- make a sub desc of this MATDATA_DESC
+   \param rvt			- template containing row sub descriptor
+   \param rsub		- index of row sub descriptor in template
+   \param cvt			- template containing col sub descriptor
+   \param csub		- index of col sub descriptor in template
+   \param submd		- handle to created sub descriptor
 
-    PARAMETERS:
-   .   md			- make a sub desc of this MATDATA_DESC
-   .   rvt			- template containing row sub descriptor
-   .   rsub		- index of row sub descriptor in template
-   .   cvt			- template containing col sub descriptor
-   .   csub		- index of col sub descriptor in template
-   .   submd		- handle to created sub descriptor
+   This function creates a sub descriptor to a given MATDATA_DESC according to the given
+   subv of a vector template. The matrix is composed as tensor product of the subv descriptors.
 
-        DESCRIPTION:
-        This function creates a sub descriptor to a given MATDATA_DESC according to the given
-        subv of a vector template. The matrix is composed as tensor product of the subv descriptors.
-
-        RETURN VALUE:
-        INT
-   .n   0: ok
-   .n      n: if an error occured
-   D*/
+   \return <ul>
+   <li>         0: ok </li>
+   <li>  n: if an error occured </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX MDsubDescFromVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, INT rsub,
@@ -1464,30 +1387,6 @@ INT NS_PREFIX MDsubDescFromVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rv
   return (0);
 }
 
-/****************************************************************************/
-/*D
-        RemoveFormatWithSubs - remove format including sub descriptors (iff)
-
-        SYNOPSIS:
-        INT RemoveFormatWithSubs (const char *name)
-
-    PARAMETERS:
-   .   name - format name
-
-        DESCRIPTION:
-        Remove format including sub descriptors (iff). It is not sufficient to
-        call DeleteFormat for formats allocated using the CreateFormatCmd of
-        formats.c since sub descriptors are allocated directly from the environment
-        heap. Calling this function cleans everything and all memory is released.
-
-        RETURN VALUE:
-        INT
-   .n   0: ok
-
-        SEE ALSO:
-        CreateFormatCmd
-   D*/
-/****************************************************************************/
 
 static INT RemoveTemplateSubs (FORMAT *fmt)
 {
@@ -1518,6 +1417,25 @@ static INT RemoveTemplateSubs (FORMAT *fmt)
   return (0);
 }
 
+
+/****************************************************************************/
+/** \brief Remove format including sub descriptors (iff)
+
+   \param name - format name
+
+   Remove format including sub descriptors (iff). It is not sufficient to
+   call DeleteFormat for formats allocated using the CreateFormatCmd of
+   formats.c since sub descriptors are allocated directly from the environment
+   heap. Calling this function cleans everything and all memory is released.
+
+   \return
+   0: ok
+
+   \sa
+   CreateFormatCmd
+ */
+/****************************************************************************/
+
 INT NS_PREFIX RemoveFormatWithSubs (const char *name)
 {
   FORMAT *fmt;
@@ -1537,15 +1455,13 @@ INT NS_PREFIX RemoveFormatWithSubs (const char *name)
 }
 
 /**********************************************************************************/
-/*D
-        newformat - init a format and allocate templates for vec and mat descriptors
+/** \page newformat newformat - Init a format and allocate templates for vector and matrix descriptors
 
-        DESCRIPTION:
         The 'newformat' command enrols a format for multigrid user data.
         It also creates templates for vector and matrix descriptors.
 
-        SYNTAX:
-   .vb
+   \section Syntax
+   \verbatim
    newformat <format name>
         {$T <type specifier>}*
         {$V <dofs per type list>: <vector template name> <total needed>
@@ -1565,18 +1481,24 @@ INT NS_PREFIX RemoveFormatWithSubs (const char *name)
     [$NE]
     [$e <size>]
     [$n <size>]
-   .ve
+   \endverbatim
 
-        Use T-option(s) for definition of types (may be omitted, s.b.):~
-   .     <type~specifier>			- <type name> in <domain part list>: <object list>
-   .     <type~name>				- <character>
-   .     <domain~part~list>		- <int> {, <int>}*
-   .     <object~list>				- <obj> {, <obj>}*
-   .     <obj>						- nd | ed | el | si
+        Use T-option(s) for definition of types (may be omitted, see below):
+        <ul>
+        <li> \<type~specifier\>   - \<type name\> in \<domain part list\>: \<object list\> </li>
+        <li> \<type~name\>        - \<character\> </li>
+        <li> \<domain~part~list\> - \<int\> {, \<int\>}* </li>
+        <li> \<object~list\>      - \<obj\> {, \<obj\>}* </li>
+        <li> \<obj\>              - nd | ed | el | si </li>
+        </ul>
 
-        NB: If no T-option is found at all it is assumed that default types are defined:~
-   .n    $T n in 0,...: nd $T k in 0,...: ed $T e in 0,...: el $T s in 0,...: si
-        to ensure downward compatibilty.
+        NB: If no T-option is found at all it is assumed that default types are defined:
+        <ul>
+        <li>
+        $T n in 0,...: nd $T k in 0,...: ed $T e in 0,...: el $T s in 0,...: si
+        </li>
+        </ul>
+        to ensure downward compatibility.
 
 
         Use V-options for definition of vector templates:~
@@ -1629,7 +1551,7 @@ INT NS_PREFIX RemoveFormatWithSubs (const char *name)
         To define sub-matrix-templates as above you then have to specify component
         names with a comp-option following the M-option (second format only).
 
-        Further options:~
+        \subsection fo Further Options
    .	  d							- specify connection depth other than 0 (inside element only)
                                                                   for <type name1>x<type name2> connections
    .	  I							- (capital i) specify interpolation matrices
@@ -1637,7 +1559,7 @@ INT NS_PREFIX RemoveFormatWithSubs (const char *name)
    .	  e							- user data in elements in bytes
    .	  n							- user data in nodes in bytes
 
-    More~information:~
+   \subsection moreInfo More Information
         The sparse_matrix_name must be a structure in
         ':SparseFormats' that contains for every combination of types a
         string 'T<type~name><type~name>' (three characters).  Since
@@ -1648,8 +1570,8 @@ INT NS_PREFIX RemoveFormatWithSubs (const char *name)
         entries.  Additionally, non-zero entries may be identified by
         using the characters 'a-z' at the appropriate places.
 
-        EXAMPLE:
-   .vb
+   \section Example
+   \verbatim
    newformat myfmt
         $T a in 0: nd,ed $T b in 1: el		# defines 2 abstract types:
  #      a in domain part 0 including nd and ed objects
@@ -1663,21 +1585,21 @@ INT NS_PREFIX RemoveFormatWithSubs (const char *name)
 
     $M implicit(vt): mt 2;				# implicit generation of a matrix template mt
  # with storage reservation for 2 of those matrices
-   .ve
+   \endverbatim
 
-        KEYWORDS:
+   \section Keywords
         storage, format
-   D*/
+ */
 /**********************************************************************************/
 
-static INT ScanVecOption (      INT argc, char **argv,                  /* option list						*/
-                                INT *curropt,                                                           /* next option to scan				*/
-                                INT po2t[][MAXVOBJECTS],                                    /* part-obj to type table			*/
-                                INT MaxType,                                                            /* bound for type id				*/
-                                const char TypeNames[],                                         /* names of types					*/
-                                INT TypeUsed[],                                                         /* indicate whether type is used	*/
-                                INT *nvec,                                                                      /* just an index for templates		*/
-                                SHORT VecStorageNeeded[])                                       /* to accumulate storage per type	*/
+static INT ScanVecOption (INT argc, char **argv,                        /* option list						*/
+                          INT *curropt,                                 /* next option to scan				*/
+                          INT po2t[][MAXVOBJECTS],          /* part-obj to type table			*/
+                          INT MaxType,                                  /* bound for type id				*/
+                          const char TypeNames[],                       /* names of types					*/
+                          INT TypeUsed[],                                       /* indicate whether type is used	*/
+                          INT *nvec,                                            /* just an index for templates		*/
+                          SHORT VecStorageNeeded[])             /* to accumulate storage per type	*/
 {
   VEC_TEMPLATE *vt,*vv;
   SUBVEC *subv;
