@@ -20,6 +20,11 @@ include $(ARCH_PATH)/mk.arch
 include $(PPIF_PATH)/mk.ppif
 
 
+ppif_all: $(LIBDIR)/libppif.a
+
+
+##############################################################################
+
 PPIF_LCFLAGS  = -D$(ARCH_TYPE) $(ARCH_CFLAGS) $(PPIF_CFLAGS)
 PPIF_LINCLUDE = -I./include $(PPIF_INCLUDES)
 PPIF_LOBJ = $(PPIF_PATH)/ppif.o
@@ -35,7 +40,11 @@ $(PPIF_PATH)/ppif.o:
 	mv -f ppif.o $(PPIF_PATH)/ppif.o
 
 
+##############################################################################
+
 clean:
 	rm -f $(PPIF_LOBJ)
 	rm -f $(LIBDIR)/libppif.a
  
+
+##############################################################################
