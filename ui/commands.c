@@ -6822,7 +6822,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
     if (ReadArgvDOUBLE("h",&h,argc,argv))
       h = 1.0;
 
-    if (GenerateGrid3d(theMG,mesh,h,smooth))
+    if (GenerateGrid3d(theMG,mesh,h,smooth,ReadArgvOption("d",argc,argv)))
     {
       PrintErrorMessage('E',"makegrid","execution failed");
       Release(MGHEAP(theMG),FROM_TOP);
