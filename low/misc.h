@@ -103,6 +103,10 @@
 extern int UG_math_error;
 #endif
 
+#ifndef ModelP
+extern int me;  /* to have in the serial case this variable as a dummy */
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* function declarations                                                    */

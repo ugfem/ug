@@ -11,7 +11,7 @@
 /*              Universitaet Stuttgart                                      */
 /*              Pfaffenwaldring 27                                          */
 /*              70569 Stuttgart                                             */
-/*              internet: ug@ica3.uni-stuttgart.de                    */
+/*              internet: ug@ica3.uni-stuttgart.de		                    */
 /*                                                                          */
 /* History:   08.12.94 begin, ug3-version                                   */
 /*                                                                          */
@@ -66,6 +66,7 @@
 /****************************************************************************/
 
 int UG_math_error = 0; /* This will be non zero after a math error occured  */
+int me = 0;                             /* to have in the serial case this variable as a dummy */
 
 /****************************************************************************/
 /*                                                                            */
