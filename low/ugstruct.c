@@ -951,7 +951,7 @@ INT DeleteVariable (char *name)
    SetStringVar - Set a string variable to a given string
 
    SYNOPSIS:
-   INT SetStringVar (const char *name, char *sval);
+   INT SetStringVar (const char *name, const char *sval);
 
    PARAMETERS:
    .  name - variable name
@@ -973,7 +973,7 @@ INT DeleteVariable (char *name)
    D*/
 /****************************************************************************/
 
-INT SetStringVar (const char *name, char *sval)
+INT SetStringVar (const char *name, const char *sval)
 {
   char *lastname;
   ENVDIR *theDir;

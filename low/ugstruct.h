@@ -90,7 +90,7 @@ ENVDIR  *FindStructDir                          (const char *name, char **lastna
 STRVAR  *FindStringVar                          (const ENVDIR *where, const char *name);
 ENVDIR  *FindStructure                          (const ENVDIR *where, const char *name);
 INT              RemoveStringVar                        (ENVDIR *homeDir, STRVAR *theVar);
-INT      SetStringVar                           (const char *name, char *sval);
+INT      SetStringVar                           (const char *name, const char *sval);
 INT              SetStringVarNotify                     (const char *name, const char *sval);
 INT      SetnStringVar                          (const char *name, const char *sval, int n);
 char    *GetStringVar                           (const char *name);
