@@ -1518,20 +1518,18 @@ INT GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 
   *cnt = 0;
   for (i=0; i<EDGES_OF_ELEM(theElement); i++)
-  {
-    theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
-                      CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
-
-    IFDEBUG(gm,0)
-    {
-      assert(theEdge != NULL);
-      assert(EDVECTOR(theEdge) != NULL);
-      assert(VTYPE(EDVECTOR(theEdge)) == EDGEVECTOR);
-    }
-    ENDDEBUG
-
+    if ((theEdge =
+           GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
+                   CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)))) != NULL)
       vList[(*cnt)++] = EDVECTOR(theEdge);
+
+  IFDEBUG(gm,0)
+  for (i=0; i<(*cnt); i++)
+  {
+    assert(vList[i] != NULL);
+    assert(VTYPE(vList[i]) == EDGEVECTOR);
   }
+  ENDDEBUG
 
   return(GM_OK);
 }
