@@ -999,6 +999,9 @@ INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
     m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
   m++;
+
+  PRINTDEBUG(np,1,("%d: a_vector_vecskip begin  %d %d\n",me,fl,tl));
+
   if ((fl==BOTTOMLEVEL(mg)) && (tl==TOPLEVEL(mg)))
     DDD_IFExchange(BorderVectorSymmIF, m * sizeof(DOUBLE),
                    Gather_VectorVecskip, Scatter_VectorVecskip);
@@ -1009,6 +1012,8 @@ INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
                       m * sizeof(DOUBLE),
                       Gather_VectorVecskip, Scatter_VectorVecskip);
 
+  PRINTDEBUG(np,1,("%d: a_vector_vecskip med %d %d\n",me,fl,tl));
+
   if ((fl==BOTTOMLEVEL(mg)) && (tl==TOPLEVEL(mg)))
     DDD_IFOneway(VectorVIF, IF_FORWARD, m * sizeof(DOUBLE),
                  Gather_VectorVecskip, Scatter_GhostVectorVecskip);
@@ -1018,6 +1023,8 @@ INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
                     GRID_ATTR(GRID_ON_LEVEL(mg,level)), IF_FORWARD,
                     m * sizeof(DOUBLE),
                     Gather_VectorVecskip, Scatter_GhostVectorVecskip);
+
+  PRINTDEBUG(np,1,("%d: a_vector_vecskip end %d %d\n",me,fl,tl));
 
   return (NUM_OK);
 }
@@ -1238,7 +1245,6 @@ static int Scatter_AMGMatrixCollect (DDD_OBJ obj, void *data)
 
   if (VSTART(pv) == NULL) return (NUM_OK);
   if (MD_IS_SCALAR(ConsMatrix)) {
-    printf("%3d: MD_IS_SCALAR(ConsMatrix)\n",me);
     if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv))
     {
       if (VECSKIP(pv) != 0) return (NUM_OK);
@@ -1835,7 +1841,7 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
   int i,j,k, *proclist,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
   const SHORT *Comp;
 
-  PRINTDEBUG(np,1,("%d: Scatter_OffDiagMatrixComp %d: maxgid %d\n",
+  PRINTDEBUG(np,2,("%d: Scatter_OffDiagMatrixComp %d: maxgid %d\n",
                    me,GID(pv),*maxgid));
 
   if (VSTART(pv) == NULL) return (NUM_OK);
@@ -1940,7 +1946,7 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
       }
     }
 
-  IFDEBUG(np,1)
+  IFDEBUG(np,2)
   igid = 0;
   msgbuf = (DOUBLE *)data;
   for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
@@ -2102,7 +2108,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
     MaxBlockSize = MAX(MaxBlockSize,MD_COLS_IN_MTYPE(ConsMatrix,mt)
                        *MD_ROWS_IN_MTYPE(ConsMatrix,mt));
 
-  PRINTDEBUG(np,1,("%2d: l_matrix_consistent mode\n",me,mode));
+  PRINTDEBUG(np,2,("%2d: l_matrix_consistent mode\n",me,mode));
 
   /* TODO: make consistency of diags and off-diags in one communication! */
 
@@ -2135,7 +2141,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
   sizePerVector = CEIL(sizePerVector);
 
   if (mode == MAT_CONS) {
-    PRINTDEBUG(np,1,("%d: MAT_CONS\n",me));
+    PRINTDEBUG(np,2,("%d: MAT_CONS\n",me));
     DDD_IFAExchangeX(BorderVectorSymmIF, GRID_ATTR(g), sizePerVector,
                      Gather_OffDiagMatrixComp, Scatter_OffDiagMatrixComp);
   }
