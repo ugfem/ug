@@ -553,7 +553,6 @@ static INT ReadClockCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-
 /** \brief Implementation of \ref resetclock. */
 static INT ResetClockCommand (INT argc, char **argv)
 {
@@ -6762,6 +6761,9 @@ static INT MakeGridCommand  (INT argc, char **argv)
   INT smooth, from, to, prism, save;
   DOUBLE h,vol_h;
   INT coeff;
+#ifdef ModelP
+  INT mprocs;
+#endif
 #endif
 
   /* get current multigrid */
@@ -6771,6 +6773,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
     PrintErrorMessage('E',"makegrid","no open multigrid");
     return (CMDERRORCODE);
   }
+        #if defined ModelP && !defined __THREEDIM__
   if (me!=master)
   {
     if (FixCoarseGrid(theMG)) return (CMDERRORCODE);
@@ -6971,6 +6974,37 @@ static INT MakeGridCommand  (INT argc, char **argv)
     if (ReadArgvDOUBLE("v",&vol_h,argc,argv))
       vol_h = h;
 
+                #ifdef ModelP && defined __THREEDIM__ && defined _NETGEN
+    if (ReadArgvINT("x",&mprocs,argc,argv))
+    {
+      /* sequential */
+      mprocs = 1;
+    }
+    else
+    {
+      INT nsub,ndiv,i,j;
+
+      mprocs = MAX(1,MIN(procs,mprocs));
+      nsub = theMG->theBVPD.nSubDomains/mprocs;
+      ndiv = theMG->theBVPD.nSubDomains%mprocs;
+
+      if (me<ndiv)
+      {
+        nsub++;
+        from = nsub*me+1;
+        to   = MIN(theMG->theBVPD.nSubDomains,nsub*me+nsub);
+      }
+      else
+      {
+        from = nsub*me+1+ndiv;
+        to   = MIN(theMG->theBVPD.nSubDomains,nsub*me+nsub+ndiv);
+      }
+
+      UserWriteF("%5d: Parallel Triangulation of %d subdomains:\n",me,theMG->theBVPD.nSubDomains);
+      UserWriteF("%5d: mprocs=%d nsub=%d from=%d to=%d\n",me,mprocs,nsub,from,to);
+    }
+                #endif
+
     if (GenerateGrid3d(theMG,mesh,vol_h,smooth,ReadArgvOption("d",argc,argv),coeff, from, to, prism, save, argc, argv))
     {
       PrintErrorMessage('E',"makegrid","execution failed");
@@ -6983,6 +7017,11 @@ static INT MakeGridCommand  (INT argc, char **argv)
   if (FixCoarseGrid(theMG)) return (CMDERRORCODE);
   InvalidatePicturesOfMG(theMG);
   InvalidateUgWindowsOfMG(theMG);
+
+        #if defined ModelP && defined __THREEDIM__ && defined _NETGEN
+  if (mprocs > 1)
+    if (IdentifySDGrid(theMG,mprocs)) return (CMDERRORCODE);
+        #endif
 
   return (OKCODE);
 }
