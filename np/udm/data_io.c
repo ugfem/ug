@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "compiler.h"
 #include "heaps.h"
@@ -59,6 +60,7 @@
 /****************************************************************************/
 
 #define DTIO_PARFILE    (nparfiles > 1)
+#define DTIO_BLP(p,s,i) ((DTIO_BLOCK*)(((char*)(p))+((s)*(i))))
 
 /****************************************************************************/
 /*																			*/
@@ -66,6 +68,13 @@
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
+
+typedef struct {
+
+  INT nElem;
+  VECTOR *theV;
+  DOUBLE data[1];
+} DTIO_BLOCK;
 
 /****************************************************************************/
 /*																			*/
@@ -127,12 +136,12 @@ MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *D
 
   /* open file */
   strcpy(FileName,DataFileName);
-  strcat(FileName,".ug.data.");
   if (number!=-1)
   {
-    sprintf(NumberString,"%04d.",(int)number);
+    sprintf(NumberString,".%04d",(int)number);
     strcat(FileName,NumberString);
   }
+  strcat(FileName,".ug.data.");
   strcat(FileName,type);
   if (Read_OpenDTFile (FileName))                                                                                 {CloseDTFile(); return (NULL);}
 
@@ -212,12 +221,12 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
 
   /* open file */
   strcpy(FileName,name);
-  strcat(FileName,".ug.data.");
   if (number!=-1)
   {
-    sprintf(NumberString,"%04d.",(int)number);
+    sprintf(NumberString,".%04d",(int)number);
     strcat(FileName,NumberString);
   }
+  strcat(FileName,".ug.data.");
   strcat(FileName,type);
   if (Read_OpenDTFile (FileName)) return (1);
 
@@ -353,12 +362,13 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   NODE *theNode;
   ELEMENT *theElement;
   const DOUBLE *x[MAX_CORNERS_OF_ELEM];
-  DOUBLE value;
+  DOUBLE value,fnblock;
   DOUBLE_VECTOR vector;
   char FileName[NAMESIZE],NumberString[6];
   char buf[64];
   SHORT *cp[DIO_VDMAX];
-  INT ncmp[DIO_VDMAX];
+  INT ncmp[DIO_VDMAX],blocksize,free,fb,lb,nblock;
+  DTIO_BLOCK *block,*bptr;
 
   /* init */
   if (theMG==NULL) return (1);
@@ -399,7 +409,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   strcpy(FileName,name);
   if (number!=-1)
   {
-    sprintf(NumberString,"%04d.",(int)number);
+    sprintf(NumberString,".%04d",(int)number);
     strcat(FileName,NumberString);
   }
   strcat(FileName,".ug.data.");
@@ -500,7 +510,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   dio_general.ndata = nNode*ncomp;
   if (Write_DT_General (&dio_general))                                    {CloseDTFile(); return (1);}
 
-  /* save data */
+  /* save data: entries */
   MarkTmpMem(theHeap);
   entry = (INT *)GetTmpMem(theHeap,ncomp*sizeof(INT));
   if (entry==NULL)                                                                                {CloseDTFile(); return (1);}
@@ -519,113 +529,135 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
       return (1);
   }
   if (s!=ncomp)                                                                                   {CloseDTFile(); return (1);}
-  m = theHeap->size - theHeap->used;
-  m = m - m%sizeof(double); m /= sizeof(double);
-  while(m>=ncomp)
+
+  /* save data: temporary heap */
+  blocksize = sizeof(DTIO_BLOCK) + (ncomp-1)*sizeof(DOUBLE);
+  free = theHeap->size - theHeap->used - 1024;
+  if (free<=0)                                                                                    {CloseDTFile(); return (1);}
+  fnblock = (DOUBLE)free/(DOUBLE)blocksize;
+  nblock = (INT)floor(fnblock);
+  if (nblock<1)                                                                                   {CloseDTFile(); return (1);}
+  block = (DTIO_BLOCK *)GetTmpMem(theHeap,nblock*blocksize);
+  if (block==NULL)                                                                                {CloseDTFile(); return (1);}
+  if (100*nblock<nNode)
+    UserWrite("WARNING: save will take long due to lake of temporary memory\n");
+
+  /* save data */
+  for (fb=0,lb=MIN(nblock,nNode); fb<nNode; fb+=nblock,lb=MIN(lb+nblock,nNode))
   {
-    data = (double *)GetTmpMem(theHeap,m*sizeof(double));
-    if (data!=NULL) break;
-    m *= 0.5;
-  }
-  if (data==NULL)                                                                                 {CloseDTFile(); UserWrite("ERROR: cannot allocate tmp mem\n"); return (1);}
-  if (m<ncomp)                                                                                    {CloseDTFile(); UserWrite("ERROR: tmp mem too small\n"); return (1);}
-  s=0;
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-  {
-    theGrid = GRID_ON_LEVEL(theMG,i);
-    for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+    /* init blocks */
+    for (i=0; i<=TOPLEVEL(theMG); i++)
     {
-      theV = NVECTOR(theNode);
+      theGrid = GRID_ON_LEVEL(theMG,i);
+      for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+        if (ID(theNode)>=fb && ID(theNode)<lb)
+        {
+          bptr = DTIO_BLP(block,blocksize,ID(theNode)-fb);
+          bptr->nElem = 0;
+          bptr->theV = NVECTOR(theNode);
+        }
+    }
+    for (i=0; i<=TOPLEVEL(theMG); i++)
+    {
+      theGrid = GRID_ON_LEVEL(theMG,i);
+      for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      {
+        tag = TAG(theElement);
+        coe = CORNERS_OF_ELEM(theElement);
+        for (l=0; l<coe; l++)
+        {
+          id = ID(CORNER(theElement,l));
+          if (id<fb || id>=lb) continue;
+          bptr = DTIO_BLP(block,blocksize,id-fb);
+          bptr->nElem++;
+        }
+      }
+    }
+
+    /* save data from symbols */
+    for (i=0; i<lb-fb; i++)
+    {
+      bptr = DTIO_BLP(block,blocksize,i);
       for (j=0; j<ncomp; j++)
         if (entry[j]>=0.0)
-          data[s++] = VVALUE(theV,entry[j]);
+          bptr->data[j] = VVALUE(bptr->theV,entry[j]);
         else
-          data[s++] = 0.0;
-      if (s>m-ncomp)
-      {
-        if (Bio_Write_mdouble(s,data))                          {CloseDTFile(); return (1);}
-        s=0;
-      }
+          bptr->data[j] = 0.0;
     }
-  }
-  if (store_from_eval)
-  {
-    if (m>=ncomp*nNode)
-    {
-      /* count nb of elements per node */
-      e_per_n = (INT *)GetTmpMem(theHeap,nNode*sizeof(INT));
-      if (e_per_n==NULL)                                                              {CloseDTFile(); UserWrite("ERROR: cannot allocate tmp mem\n"); return (1);}
-      for (i=0; i<nNode; i++) e_per_n[i] = 0;
-      for (i=0; i<=TOPLEVEL(theMG); i++)
-      {
-        theGrid = GRID_ON_LEVEL(theMG,i);
-        for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
-          {
-            id = ID(CORNER(theElement,j));
-            e_per_n[id]++;
-          }
-      }
 
-      /* store data from eval procs */
-      t=0;
-      for (k=0; k<n; k++)
+    /* save data from eval/evec-procs */
+    t=0;
+    for (k=0; k<n; k++)
+    {
+      if (theVDList[k]!=NULL) continue;
+      while(entry[t]>=0.0) t++;
+      if (theEVal[k]!=NULL)
       {
-        if (theVDList[k]!=NULL) continue;
-        while(entry[t]>=0.0) t++;
-        if (theEVal[k]!=NULL)
+        if (theEVal[k]->PreprocessProc!=NULL)
+          if ((*(theEVal[k]->PreprocessProc))(ENVITEM_NAME(theEVal[k]),theMG))
+            return (1);
+
+        /* save data from eval procs */
+        for (i=0; i<=TOPLEVEL(theMG); i++)
         {
-          if (theEVal[k]->PreprocessProc!=NULL)
-            if ((*(theEVal[k]->PreprocessProc))(ENVITEM_NAME(theEVal[k]),theMG))
-              return (1);
-          for (i=0; i<=TOPLEVEL(theMG); i++)
+          theGrid = GRID_ON_LEVEL(theMG,i);
+          for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
           {
-            theGrid = GRID_ON_LEVEL(theMG,i);
-            for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+            tag = TAG(theElement);
+            coe = CORNERS_OF_ELEM(theElement);
+            for (l=0; l<coe; l++)
+              x[l] = CVECT(MYVERTEX(CORNER(theElement,l)));
+            for (l=0; l<coe; l++)
             {
-              tag = TAG(theElement);
-              coe = CORNERS_OF_ELEM(theElement);
-              for (l=0; l<coe; l++)
-                x[l] = CVECT(MYVERTEX(CORNER(theElement,l)));
-              for (l=0; l<coe; l++)
-              {
-                id = ID(CORNER(theElement,l));
-                value = (*(theEVal[k]->EvalProc))(theElement,x,LOCAL_COORD_OF_ELEM(theElement,l));
-                data[ncomp*id+t] += value/e_per_n[id];
-              }
+              id = ID(CORNER(theElement,l));
+              if (id<fb || id>=lb) continue;
+              bptr = DTIO_BLP(block,blocksize,id-fb);
+              value = (*(theEVal[k]->EvalProc))(theElement,x,LOCAL_COORD_OF_ELEM(theElement,l));
+              bptr->data[t] += value/(DOUBLE)(bptr->nElem);
             }
           }
         }
-        if (theEVec[k]!=NULL)
-        {
-          if (theEVec[k]->PreprocessProc!=NULL)
-            if ((*(theEVec[k]->PreprocessProc))(ENVITEM_NAME(theEVec[k]),theMG))
-              return (1);
-          for (i=0; i<=TOPLEVEL(theMG); i++)
-          {
-            theGrid = GRID_ON_LEVEL(theMG,i);
-            for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-            {
-              tag = TAG(theElement);
-              coe = CORNERS_OF_ELEM(theElement);
-              for (l=0; l<coe; l++)
-                x[l] = CVECT(MYVERTEX(CORNER(theElement,l)));
-              for (l=0; l<coe; l++)
-              {
-                id = ID(CORNER(theElement,l));
-                (*(theEVec[k]->EvalProc))(theElement,x,LOCAL_COORD_OF_ELEM(theElement,l),vector);
-                for (q=0; q<DIM; q++)
-                  data[ncomp*id+t+q] += vector[q]/e_per_n[id];
-              }
-            }
-          }
-        }
+        t++;
       }
+      else if (theEVec[k]!=NULL)
+      {
+        if (theEVec[k]->PreprocessProc!=NULL)
+          if ((*(theEVec[k]->PreprocessProc))(ENVITEM_NAME(theEVec[k]),theMG))
+            return (1);
+
+        /* save data from evec procs */
+        for (i=0; i<=TOPLEVEL(theMG); i++)
+        {
+          theGrid = GRID_ON_LEVEL(theMG,i);
+          for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+          {
+            tag = TAG(theElement);
+            coe = CORNERS_OF_ELEM(theElement);
+            for (l=0; l<coe; l++)
+              x[l] = CVECT(MYVERTEX(CORNER(theElement,l)));
+            for (l=0; l<coe; l++)
+            {
+              id = ID(CORNER(theElement,l));
+              if (id<fb || id>=lb) continue;
+              bptr = DTIO_BLP(block,blocksize,id-fb);
+              (*(theEVec[k]->EvalProc))(theElement,x,LOCAL_COORD_OF_ELEM(theElement,l),vector);
+              for (q=0; q<DIM; q++)
+                bptr->data[t+q] += vector[q]/(DOUBLE)(bptr->nElem);
+            }
+          }
+        }
+        t += DIM;
+      }
+      else                                                                                                                                                                    {CloseDTFile(); return (1);}
     }
-    else
-      UserWrite("WARNING: cannot write data from EvalProcs: not enough memory\n");
+
+    /* save data to file */
+    for (i=0; i<lb-fb; i++)
+    {
+      bptr = DTIO_BLP(block,blocksize,i);
+      if (Bio_Write_mdouble(ncomp,bptr->data))                                                                                                {CloseDTFile(); return (1);}
+    }
   }
-  if (s>0) if (Bio_Write_mdouble(s,data))                                 {CloseDTFile(); return (1);}
   ReleaseTmpMem(theHeap);
 
   /* close file */
