@@ -67,6 +67,7 @@
 #include "refine.h"
 #include "domain.h"
 #include "pargm.h"
+#include "ugstruct.h"
 
 /****************************************************************************/
 /*																			*/
@@ -1680,6 +1681,8 @@ EDGE *GetFatherEdge (EDGE *theEdge)
 
   /* one case not considered */
   assert(0);
+
+  return NULL;          /* in case NDEBUG defined */
 }
 
 #ifdef __THREEDIM__
@@ -1894,11 +1897,14 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
 {
   ELEMENT *theFather;
   EDGE *pe,*father_edge;
-  NODE *from,*to,*n1,*n2,*nbn1,*nbn2,*nbn3,*nbn4;
+  NODE *from,*to,*n1,*n2;
   LINK *link0,*link1;
-  VERTEX *theVertex;
   VECTOR *pv;
-  INT j,k,side,found,part,sc;
+#ifdef __THREEDIM__
+  VERTEX *theVertex;
+  NODE *nbn1,*nbn2,*nbn3,*nbn4;
+  INT sc,found,side,k,j;
+#endif
 
   from = CORNER(theElement,CORNER_OF_EDGE(theElement,edge,0));
   to = CORNER(theElement,CORNER_OF_EDGE(theElement,edge,1));
@@ -4338,6 +4344,12 @@ NODE *InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
   PRINTDEBUG(dom,1,("  ipn %ld nd %x bndp %x \n",
                     ID(theNode),theNode,V_BNDP(theVertex)));
 
+  SetStringValue(":bndp0",XC(theVertex));
+  SetStringValue(":bndp1",YC(theVertex));
+        #ifdef __THREEDIM__
+  SetStringValue(":bndp2",ZC(theVertex));
+        #endif
+
   return(theNode);
 }
 
@@ -5122,6 +5134,12 @@ INT SetVertexGlobalAndLocal (VERTEX *vert, const DOUBLE *global, const DOUBLE *l
 
 INT MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, const DOUBLE *newPos)
 {
+        #ifdef ModelP
+  /* TODO: parallel version */
+  PrintErrorMessage('E',"MoveFreeBoundaryVertex","parallel not implemented");
+  ASSERT(FALSE);
+        #endif
+
   if (OBJT(vert) != BVOBJ)
     REP_ERR_RETURN(GM_ERROR);
   if (MOVE(vert)!=DIM)
@@ -5189,6 +5207,9 @@ INT FinishMovingFreeBoundaryVertices (MULTIGRID *theMG)
             UG_GlobalToLocal(n,(const DOUBLE **)x,CVECT(vert),LCVECT(vert));
           }
       }
+
+  RESETMGSTATUS(theMG);
+
   return(GM_OK);
 }
 
@@ -9979,8 +10000,6 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
 
 INT FixCoarseGrid (MULTIGRID *theMG)
 {
-  INT MarkKey;
-
   if (MG_COARSE_FIXED(theMG)) return (GM_OK);
 
   /* TODO (HRR 971031): check that before check-in!
