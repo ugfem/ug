@@ -4892,7 +4892,7 @@ static INT RefineCommand (INT argc, char **argv)
 
     nmarked = 0;
 
-    for (l=0; l<=TOPLEVEL(theMG); l++)
+    for (l=TOPLEVEL(theMG); l<=TOPLEVEL(theMG); l++)
       for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
            theElement!=NULL; theElement=SUCCE(theElement)) {
         if (EstimateHere(theElement))
@@ -11830,9 +11830,9 @@ static INT PTestCommand (INT argc, char **argv)
   }
 
   if (argc==2)
-    ddd_test(atoi(argv[1]), theCurrMG);
+    ddd_test(argv[1], theCurrMG);
   else
-    ddd_test(0, theCurrMG);
+    ddd_test("0", theCurrMG);
 
   return(OKCODE);
 }
@@ -11942,6 +11942,12 @@ static INT LB4Command (INT argc, char **argv)
   char buffer[100];
 
   theMG = currMG;
+
+  if (theMG == NULL)
+  {
+    UserWrite("LB4Command: no open multigrid\n");
+    return(OKCODE);
+  }
 
   if (procs==1) return(OKCODE);
 
@@ -12110,6 +12116,7 @@ static INT DebugCommand (INT argc, char **argv)
     if (strcmp("init",argv[1])==0) Debuginit               = atoi(argv[2]);
     else if (strcmp("dddif",argv[1])==0) Debugdddif              = atoi(argv[2]);
     else if (strcmp("dev",argv[1])==0) Debugdev                = atoi(argv[2]);
+    else if (strcmp("dom",argv[1])==0) Debugdom                = atoi(argv[2]);
     else if (strcmp("gm",argv[1])==0) Debuggm                 = atoi(argv[2]);
     else if (strcmp("graph",argv[1])==0) Debuggraph              = atoi(argv[2]);
     else if (strcmp("low",argv[1])==0) Debuglow                = atoi(argv[2]);
@@ -12130,6 +12137,7 @@ static INT DebugCommand (INT argc, char **argv)
     if (strcmp("init",argv[1])==0)                  {module="init";         l=Debuginit;}
     else if (strcmp("dddif",argv[1])==0)    {module="dddif";        l=Debugdddif;}
     else if (strcmp("dev",argv[1])==0)              {module="dev";          l=Debugdev;}
+    else if (strcmp("dom",argv[1])==0)              {module="dom";          l=Debugdom;}
     else if (strcmp("gm",argv[1])==0)               {module="gm";           l=Debuggm;}
     else if (strcmp("graph",argv[1])==0)    {module="graph";        l=Debuggraph;}
     else if (strcmp("low",argv[1])==0)              {module="low";          l=Debuglow;}
