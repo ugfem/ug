@@ -54,6 +54,14 @@
  */
 
 
+/* define this to detect size of allocatable memory */
+/*
+   #define DETECT_MEMORY_SIZE
+ */
+
+
+
+
 #define HARD_EXIT assert(0)
 /*#define HARD_EXIT exit(1)*/
 
@@ -76,7 +84,7 @@
 
 #ifdef WITH_HASH_CONTROL
 /* constants for hashing of alloc/free requests (for debugging) */
-#define HASHTAB_SIZE  15731
+#define HASHTAB_SIZE  15731    /* prime number not near 2^n */
 #define HASH_FUNC(k)   ((k)%HASHTAB_SIZE)
 #endif
 
@@ -485,11 +493,25 @@ void memmgr_ReleaseHMEM (void)
 }
 
 
+
 /****************************************************************************/
+
+/*
+        DetectAllocatableMemory()
+
+        This function tries to find out the amount of memory
+        which can be allocated from the local heap. This is
+        done by allocating a sequence of memory blocks,
+        starting with big ones. NOTE: this function shouldn't
+        be used on systems where virtual memory is available
+        (e.g., workstations); the page swapping mechanism
+        will break down if you try to do DetectAllocatableMemory()
+        on such systems.
+ */
 
 #define MAX_MALLOCS 256
 
-static size_t MemFree (void)
+static size_t DetectAllocatableMemory (void)
 {
   void *buffers[MAX_MALLOCS];
   size_t s = 1024*1024*1024;
@@ -522,6 +544,11 @@ static size_t MemFree (void)
 }
 
 
+
+
+/****************************************************************************/
+
+
 void memmgr_Init (void)
 {
         #ifdef WITH_GENERAL_HEAP
@@ -536,13 +563,15 @@ void memmgr_Init (void)
 
     myheap = NewHeap(GENERAL_HEAP,HEAP_SIZE,buffer);
   }
+
         #else
-  /* check for allocatable memory */
-  /* TODO correct MemFree */
-  /*	printf("%4d: MemMgr. size of allocatable memory: %ld\n", me,
-                  (unsigned long)MemFree());*/
-  /*
-   */
+
+  /* detect size of allocatable memory */
+                #ifdef DETECT_MEMORY_SIZE
+  printf("%4d: MemMgr. detecting size of allocatable memory ...\n", me);
+  printf("%4d: MemMgr. size of allocatable memory: %ld\n", me,
+         (unsigned long)DetectAllocatableMemory());
+                #endif
         #endif
 
 
