@@ -32,7 +32,7 @@ if test -d include
 then
 	rm -f -r include;
 fi	
-mkdir include;
+mkdir include.tmp;
 
 case `/bin/uname | cut -f1 -d ' ' ` in
 	AIX | Paragon)
@@ -45,11 +45,13 @@ case `/bin/uname | cut -f1 -d ' ' ` in
 esac;
 
 find ${UGROOT} \
-	-type d -name include -prune -o \
+	-type d -name include.tmp -prune -o \
 	-type d -name doc -prune -o \
 	-type d -name man -prune -o \
 	-name '*.h' \
-	${FOLLOW_LINKS} -exec ln -s {} $UGROOT/include \; -print
+	${FOLLOW_LINKS} -exec ln -s {} $UGROOT/include.tmp \; -print
+
+mv include.tmp include
 
 exit 0
 
