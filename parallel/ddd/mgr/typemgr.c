@@ -40,9 +40,11 @@
 #include "dddi.h"
 
 
-/* #define DebugTypeDefine */
-/* #define DebugCopyMask */
-/* #define DebugNoStructCompress */
+/*
+   #define DebugTypeDefine
+   #define DebugCopyMask
+   #define DebugNoStructCompress
+ */
 
 
 
@@ -260,6 +262,22 @@ static void ConstructEl (ELEM_DESC *elem, int t, char *a, size_t s, DDD_TYPE rt)
           beginning of each structure (offsetHeader==0).
    */
   elem->reftype = rt;
+
+#ifdef C_FRONTEND
+  /*
+          for GBITS elements, store array of bits. 1=GDATA,
+          0=LDATA.
+   */
+  if (t==EL_GBITS)
+  {
+    elem->gbits = (char *) AllocFix(s);
+    if (elem->gbits==NULL)
+    {
+      /* TODO elaborate error output */
+      HARD_EXIT;
+    }
+  }
+#endif
 }
 
 
@@ -416,6 +434,10 @@ static int NormalizeDesc (TYPE_DESC *desc)
         (elems[i].reftype != elems[i+1].reftype))
       continue;
 
+    /* 5) EL_GBITS cant be compressed */
+    if (elems[i].type == EL_GBITS)
+      continue;
+
     /* all conditions fit: compress elements */
     realsize = elems[i+1].offset - elems[i].offset;
     elems[i].size = realsize + elems[i+1].size;
@@ -477,7 +499,14 @@ static void AttachMask (TYPE_DESC *desc)
 
     for(k=0; k<e->size; k++)
     {
-      mp[k] = mask;
+      if (e->type==EL_GBITS)
+      {
+        mp[k] = e->gbits[k];                           /* copy bitwise */
+      }
+      else
+      {
+        mp[k] = mask;
+      }
     }
   }
 
@@ -559,6 +588,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
   va_list ap;
 #ifdef C_FRONTEND
   char      *adr;
+  char      *gbits;
 #else
   DDD_TYPE typ = *ftyp;
   int size;
@@ -772,7 +802,54 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
       break;
 
 
-    /* 3) ELEM_DESC is a recursively defined DDD_TYPE */
+
+    /* 3) ELEM_DESC is bitwise global or local */
+    case EL_GBITS :
+#ifdef C_FRONTEND
+      /* get third argument of this definition line */
+      argsize = va_arg(ap, size_t); argno++;
+
+      /* initialize ELEM_DESC */
+      ConstructEl(&desc->element[i],
+                  argtyp, argp-adr, argsize, 0);
+
+      /* read forth arg from cmdline */
+      gbits = va_arg(ap, char *); argno++;
+
+      /* fill gbits array, read forth arg from cmdline */
+      memcpy(desc->element[i].gbits, gbits, argsize);
+#else
+      /* TODO */
+      DDD_PrintError('E', 9930, "EL_GBITS not supported in F_FRONTEND");
+      HARD_EXIT;                           /*return;*/
+#endif
+      if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
+        return;
+
+#                               ifdef DebugTypeDefine
+#ifdef C_FRONTEND
+      sprintf(cBuffer,"   BITS, %05d, %06d, ",
+              argp-adr, argsize);
+      {
+        int ii;
+        char buf[5];
+        for(ii=0; ii<argsize; ii++)
+        {
+          sprintf(buf, "%02x ", (int)desc->element[i].gbits[ii]);
+          strcat(cBuffer, buf);
+        }
+        strcat(cBuffer, "\n");
+      }
+      DDD_PrintDebug(cBuffer);
+#endif
+#                               endif
+
+      i++;
+
+      break;
+
+
+    /* 4) ELEM_DESC is a recursively defined DDD_TYPE */
     default :
 #ifdef C_FRONTEND
       /* hierarchical registering of known ddd_types */
@@ -1020,6 +1097,19 @@ void DDD_TypeDisplay (DDD_TYPE *idf)
           sprintf(cBuffer, "%sobj pointer (refs %s)\n",
                   cBuffer,
                   theTypeDefs[e->reftype].name);
+          break;
+        case EL_GBITS : strcat(cBuffer, "bitwise global: ");
+          {
+            int ii;
+            char buf[5];
+            for(ii=0; ii<e->size; ii++)
+            {
+              sprintf(buf, "%02x ",
+                      (int)e->gbits[ii]);
+              strcat(cBuffer, buf);
+            }
+            strcat(cBuffer, "\n");
+          }
           break;
         }
         DDD_PrintLine(cBuffer);

@@ -44,7 +44,7 @@
 extern "C" {
 #endif
 
-#define DDD_VERSION    "1.7.6"
+#define DDD_VERSION    "1.7.7"
 
 
 /****************************************************************************/
@@ -85,10 +85,11 @@ enum ElemType {
   EL_DDDHDR   =  0,                     /* element type: DDD header             */
   EL_GDATA    = -1,                     /* element type: global data            */
   EL_LDATA    = -2,                     /* element type: local data             */
-  EL_DATAPTR  = -3,                     /* element type: data pointer           */
-  EL_OBJPTR   = -4,                     /* element type: object pointer         */
-  EL_CONTINUE = -5,                     /* continued element definition list    */
-  EL_END      = -6                      /* end of element definition list       */
+  EL_GBITS    = -3,                     /* element type: bitwise, 1=global      */
+  EL_DATAPTR  = -4,                     /* element type: data pointer           */
+  EL_OBJPTR   = -5,                     /* element type: object pointer         */
+  EL_CONTINUE = -6,                     /* continued element definition list    */
+  EL_END      = -7                      /* end of element definition list       */
 };
 
 
@@ -236,7 +237,7 @@ typedef struct _DDD_HEADER
   unsigned int myIndex;         /* global object array index */
   unsigned int gid;             /* global id */
 
-  /*	char          empty[4];  *//* 4 unused bytes in current impl. */
+  char empty[4];                 /* 4 unused bytes in current impl. */
 } DDD_HEADER;
 
 

@@ -1,5 +1,21 @@
 ---------------------------
 
+CHANGES 1.7.6 -> 1.7.7
+
+---------------------------
+970131 kb
+new element type EL_GBITS.
+	- with EL_GBITS, one can define components of DDD-types bitwise.
+	  1=GDATA, 0=LDATA. for DDD_TypeDefine, a line for defining a 
+	  bitwise element looks like this:
+	  EL_GBITS, &a, sizeof(a), bitarray
+	  where a is a structure component, sizeof(a) its size, and
+	  bitarray a character-array (unsigned char *) with length
+	  sizeof(a), where the bits are set according to GDATA or LDATA
+	  property.
+	- not implemented for F_FRONTEND.
+---------------------------
+
 CHANGES 1.7.5 -> 1.7.6
 
 ---------------------------

@@ -78,7 +78,7 @@
 
 /*** DDD internal parameters ***/
 
-#define MAX_ELEMDESC    100  /* max. number of elements per TYPE_DESC       */
+#define MAX_ELEMDESC   84    /* max. number of elements per TYPE_DESC       */
 #define MAX_TYPEDESC   32    /* max. number of TYPE_DESC                    */
 #define MAX_PRIO       32    /* max. number of DDD_PRIO                     */
 
@@ -185,6 +185,8 @@ typedef struct _ELEM_DESC
 {
 #ifdef C_FRONTEND
   int offset;                         /* element offset from object address     */
+
+  unsigned char *gbits;               /* ptr to gbits array, if type==EL_GBITS  */
 #else
   char     *array;                        /* pointer to the array of this element   */
   int msgoffset;                                          /* offset of this element in the message  */
