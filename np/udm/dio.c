@@ -219,6 +219,8 @@ int     Read_DT_General (DIO_GENERAL *dio_general)
   {
     if (Bio_Read_string(dio_general->VDname[i])) return (1);
     if (Bio_Read_mint(1,dio_general->VDncomp+i)) return (1);
+    if (Bio_Read_mint(1,dio_general->VDtype+i)) return (1);
+    if (Bio_Read_string(dio_general->VDcompNames[i])) return (1);
   }
   if (Bio_Read_mint(1,intList)) return (1);
   dio_general->ndata              = intList[0];
@@ -274,6 +276,8 @@ int     Write_DT_General (DIO_GENERAL *dio_general)
   {
     if (Bio_Write_string(dio_general->VDname[i])) return (1);
     if (Bio_Write_mint(1,dio_general->VDncomp+i)) return (1);
+    if (Bio_Write_mint(1,dio_general->VDtype+i)) return (1);
+    if (Bio_Write_string(dio_general->VDcompNames[i])) return (1);
   }
   intList[0] = dio_general->ndata;
   if (Bio_Write_mint(1,intList)) return (1);

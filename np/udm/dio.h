@@ -69,6 +69,11 @@
 #define DIO_VDMAX                                               10
 #define DIO_NAMELEN                                             128
 
+/* types of vector data */
+#define DIO_SCALAR                                              0
+#define DIO_VECTOR                                              1
+#define DIO_MULTIPLE_SCALAR                             2
+
 /****************************************************************************/
 /*																			*/
 /* data structures exported by the corresponding source file				*/
@@ -85,10 +90,12 @@ struct dio_general {
   int magic_cookie;                                     /* identification with mg-file			*/
 
   /* information about data stored */
-  int nVD;                                                              /* nb of vector data				*/
-  char VDname[DIO_VDMAX][DIO_NAMELEN];      /* name of each vectordata desc		*/
-  int VDncomp[DIO_VDMAX];                               /* nb of comp of each vectordata	*/
-  int ndata;                                                            /* nb of doubles stored				*/
+  int nVD;                                                                              /* nb of vector data				*/
+  char VDname[DIO_VDMAX][DIO_NAMELEN];                  /* name of each vectordata desc		*/
+  int VDncomp[DIO_VDMAX];                                               /* nb of comp of each vectordata	*/
+  int VDtype[DIO_VDMAX];                                                /* types of vector data, see above	*/
+  char VDcompNames[DIO_VDMAX][DIO_NAMELEN];             /* component names, used char-wise  */
+  int ndata;                                                                            /* nb of doubles stored				*/
 };
 
 typedef struct dio_general DIO_GENERAL;

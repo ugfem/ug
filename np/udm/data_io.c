@@ -159,7 +159,6 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
   ncomp = 0;
   for (i=0; i<n; i++)
   {
-    if (strcmp(dio_general.VDname[i],"---"))                        {CloseDTFile(); UserWrite("vd-names do not match\n"); return (1);}
     if (theVDList[i]!=NULL)
       if (dio_general.VDncomp[i] != VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR)) {CloseDTFile(); UserWrite("vd-comp do not match\n"); return (1);}
     ncomp += dio_general.VDncomp[i];
@@ -331,23 +330,36 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   {
     if (theVDList[i]!=NULL)
     {
-      strcpy(dio_general.VDname[i],"---");
+      strcpy(dio_general.VDname[i],ENVITEM_NAME(theVDList[i]));
       dio_general.VDncomp[i] = VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR);
       ncomp += VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR);
+      if (VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR)==3)
+        dio_general.VDtype[i] = DIO_VECTOR;
+      else if (VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR)==1)
+        dio_general.VDtype[i] = DIO_SCALAR;
+      else
+        dio_general.VDtype[i] = DIO_MULTIPLE_SCALAR;
+      for (j=0; j<VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR); j++)
+        dio_general.VDcompNames[i][j] = theVDList[i]->compNames[j];
+      dio_general.VDcompNames[i][j] = '\0';
     }
     else if (theEVal[i]!=NULL)
     {
-      strcpy(dio_general.VDname[i],"---");
+      strcpy(dio_general.VDname[i],ENVITEM_NAME(theEVal[i]));
       dio_general.VDncomp[i] = 1;
       ncomp += 1;
       store_from_eval = 1;
+      dio_general.VDtype[i] = DIO_SCALAR;
+      strcpy(dio_general.VDcompNames[i],"u");
     }
     else if (theEVec[i]!=NULL)
     {
-      strcpy(dio_general.VDname[i],"---");
+      strcpy(dio_general.VDname[i],ENVITEM_NAME(theEVec[i]));
       dio_general.VDncomp[i] = DIM;
       ncomp += DIM;
       store_from_eval = 1;
+      dio_general.VDtype[i] = DIO_VECTOR;
+      strcpy(dio_general.VDcompNames[i],"xyz");
     }
     else
     {CloseDTFile(); return (1);}
