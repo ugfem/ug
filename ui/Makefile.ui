@@ -19,7 +19,7 @@ ar :
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 
 .c.o:
-	$(ARCH_CC) $(UG_CFLAGS) $<
+	$(ARCH_CC) $(UG_CFLAGS) $(NETGEN_CFLAGS) $<
 
 clean:
 	rm -f *.o
