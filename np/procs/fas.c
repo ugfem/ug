@@ -64,11 +64,18 @@
 /*                                                                          */
 /****************************************************************************/
 
-REP_ERR_FILE;
-
 #define SMALL_FACTOR    1e-10
 #define DAMP_FACTOR     1.0
 #define RESTRICT_FACTOR 1.0
+
+#define CSTART()    clock_start=CURRENT_TIME;
+#define CSTOP(t,c)  t+=(CURRENT_TIME-clock_start);c++
+
+/****************************************************************************/
+/*																			*/
+/* definition of variables global to this source file only (static!)		*/
+/*																			*/
+/****************************************************************************/
 
 static DOUBLE Factor_One[MAX_VEC_COMP];
 static DOUBLE Factor_MinusOne[MAX_VEC_COMP];
@@ -79,19 +86,9 @@ static DOUBLE Restrict_Factor[MAX_VEC_COMP];
 /* variables for timing measurement		*/
 static int fas_c;
 static double fas_t;
+static DOUBLE clock_start;
 
-#ifdef ModelP
-#include "ppif.h"
-static double clock_start;
-
-#define CSTART()    clock_start=CurrentTime()
-#define CSTOP(t,c)  t+=(CurrentTime()-clock_start);c++
-#else
-static clock_t clock_start;
-
-#define CSTART()    clock_start=clock()
-#define CSTOP(t,c)  t+=((double)(clock()-clock_start))/((double)CLOCKS_PER_SEC);c++
-#endif
+REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);

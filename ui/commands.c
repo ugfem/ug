@@ -106,11 +106,6 @@
 #include "lb4.h"
 #endif
 
-#ifdef __NECSX4__
-#include <sys/types.h>
-#include <sys/syssx.h>
-#endif
-
 /* own header */
 #include "commands.h"
 
@@ -223,11 +218,7 @@ static MARKRULE myMR[NO_OF_RULES]=      /* name and ID of available rules	*/
                                          #endif
  {"coarse", COARSE}};
 
-#ifdef __NECSX4__
-static double Time0NEC;                                 /* time offset for readclock NEC SX4*/
-#else
-static clock_t Time0;                                   /* time offset for readclock		*/
-#endif
+static DOUBLE Time0;                            /* time offset for readclock		*/
 
 static char userPath[1024];                     /* environment path for ls,cd		*/
 
@@ -595,20 +586,6 @@ static INT CreateMetafileNameCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-#ifdef __NECSX4__
-/* special high performance time system for NEC SX4 */
-static DOUBLE nec_clock( void )
-{
-  struct htms timebuf;
-  DOUBLE dtime;
-
-  if (syssx (HTIMES, (struct htms *)&timebuf) < 0)
-    return -1.0;
-  dtime = (timebuf.hutime / 1000000.0)+(timebuf.hstime / 1000000.0);
-  return (dtime);
-}
-#endif
-
 /****************************************************************************/
 /*D
    readclock - printing execution time
@@ -631,23 +608,14 @@ static DOUBLE nec_clock( void )
 static INT ReadClockCommand (INT argc, char **argv)
 {
   DOUBLE Time;
-  clock_t end_clock;
 
   NO_OPTION_CHECK(argc,argv);
 
-#ifdef __NECSX4__
-  Time = nec_clock() - Time0NEC;
-#else
-  end_clock = clock();
-  if (end_clock>Time0)
-    Time = (end_clock-Time0)/((DOUBLE)CLOCKS_PER_SEC);
-  else
-    Time = (((clock_t) ~0)-Time0+end_clock)/((DOUBLE)CLOCKS_PER_SEC);
-#endif
+  Time = CURRENT_TIME - Time0;
 
-  if (SetStringValue(":CLOCK",Time)!=0)
-  {
-    PrintErrorMessage('E',"readclock","could not get string variable :CLOCK");
+  if (SetStringValue(":CLOCK",Time)!=0) {
+    PrintErrorMessage('E',"readclock",
+                      "could not get string variable :CLOCK");
     return (CMDERRORCODE);
   }
 
@@ -676,13 +644,7 @@ static INT ResetClockCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
 
-#ifdef __NECSX4__
-  Time0NEC = nec_clock();
-  if ( Time0NEC < 0.0 )
-    return CMDERRORCODE;
-#else
-  Time0 = clock();
-#endif
+  Time0 = CURRENT_TIME;
 
   return (OKCODE);
 }
@@ -710,14 +672,7 @@ static INT ResetClockCommand (INT argc, char **argv)
 
 static INT InitClock(void)
 {
-
-#ifdef __NECSX4__
-  Time0NEC = nec_clock();
-  if ( Time0NEC < 0.0 )
-    return CMDERRORCODE;
-#else
-  Time0 = clock();
-#endif
+  Time0 = CURRENT_TIME;
 
   return(0);
 }
@@ -11912,18 +11867,12 @@ static INT TimingCommand (INT argc, char **argv)
   else
   {
     UserWrite("timing:\n\n");
-
-        #ifdef ModelP
-    fac = 1.0;
-        #else
-    fac = 1.0 / ((double)CLOCKS_PER_SEC);
-        #endif
     for (i=0; i<__debug_time_count; i++) {
       UserWriteF("%2d: File:%15s, Line:%5d elapsed time%10.4f",
                  i,__debug_time_file[i],__debug_time_line[i],
-                 (__debug_time[i]-__debug_time[0])*fac);
+                 __debug_time[i]-__debug_time[0]);
       if (i > 0) UserWriteF(" diff%8.4f",
-                            (__debug_time[i]-__debug_time[i-1])*fac);
+                            __debug_time[i]-__debug_time[i-1]);
       UserWriteF("\n");
     }
   }

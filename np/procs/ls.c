@@ -59,14 +59,9 @@
 
 #define ABS_LIMIT 1e-10
 #define MAX_RESTART 20
-#ifdef ModelP
-#include "ppif.h"
-#define CSTART()    clock_start=CurrentTime()
-#define CSTOP(t,c)  t+=(CurrentTime()-clock_start);c++
-#else
-#define CSTART()    clock_start=clock()
-#define CSTOP(t,c)  t+=((double)(clock()-clock_start))/((double)CLOCKS_PER_SEC);c++
-#endif
+
+#define CSTART()    clock_start=CURRENT_TIME;
+#define CSTOP(t,c)  t+=(CURRENT_TIME-clock_start);c++
 
 /****************************************************************************/
 /*																			*/
@@ -247,6 +242,8 @@ typedef struct np_ldcs NP_LDCS;
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
+
+static DOUBLE clock_start;
 
 REP_ERR_FILE;
 

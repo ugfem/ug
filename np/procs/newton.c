@@ -62,27 +62,25 @@
 #define MAX_LINE_SEARCH                 20
 #define LINE_SEARCH_REDUCTION   0.5
 
+#define CSTART()    clock_start=CURRENT_TIME;
+#define CSTOP(t,c)  t+=(CURRENT_TIME-clock_start);c++
+
+/****************************************************************************/
+/*																			*/
+/* definition of variables global to this source file only (static!)		*/
+/*																			*/
+/****************************************************************************/
+
+/* variables for timing measurement		*/
+static INT defect_c, newton_c, linear_c;
+static DOUBLE defect_t, newton_t, linear_t;
+static DOUBLE clock_start;
+
 REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-/* variables for timing measurement		*/
-static int defect_c, newton_c, linear_c;
-static double defect_t, newton_t, linear_t;
-
-#ifdef ModelP
-#include "ppif.h"
-static double clock_start;
-
-#define CSTART()    clock_start=CurrentTime()
-#define CSTOP(t,c)  t+=(CurrentTime()-clock_start);c++
-#else
-static clock_t clock_start;
-
-#define CSTART()    clock_start=clock()
-#define CSTOP(t,c)  t+=((double)(clock()-clock_start))/((double)CLOCKS_PER_SEC);c++
-#endif
 
 /****************************************************************************/
 /*                                                                          */

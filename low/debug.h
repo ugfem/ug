@@ -37,9 +37,6 @@
 
 #include "general.h"
 #include "misc.h"
-#ifdef ModelP
-#include "ppif.h"
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -87,21 +84,11 @@
 #define REP_ERR_FILE                    static char *this_file=__FILE__
 
 #define DEBUG_TIME_RESET        __debug_time_count = 0;
-#ifdef ModelP
 #define DEBUG_TIME_INC                                        \
   { __debug_time_line[__debug_time_count] = __LINE__;          \
     __debug_time_file[__debug_time_count] = this_file;         \
-    __debug_time[__debug_time_count] = CurrentTime();          \
+    __debug_time[__debug_time_count] = CURRENT_TIME;           \
     __debug_time_count = (__debug_time_count+1)%DEBUG_TIME_MAX;}
-
-#else
-#define DEBUG_TIME_INC                                        \
-  { __debug_time_line[__debug_time_count] = __LINE__;          \
-    __debug_time_file[__debug_time_count] = this_file;         \
-    __debug_time[__debug_time_count] = (double)clock();        \
-    __debug_time_count = (__debug_time_count+1)%DEBUG_TIME_MAX;}
-
-#endif
 #define DEBUG_TIME(n)           if (Debugtime >= n) DEBUG_TIME_INC
 
 #else /* Debug */
