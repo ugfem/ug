@@ -49,10 +49,10 @@
 /* cleanup old definitions of macros */
 #ifdef MIN
 #undef MIN
-#end
+#endif
 #ifdef MAX
 #undef MAX
-#end
+#endif
 
 #define ABS(i)                   (((i)<0) ? (-(i)) : (i))
 #define MIN(x,y)                 (((x)<(y)) ? (x) : (y))
