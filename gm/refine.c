@@ -127,78 +127,107 @@
 /* green marked elements were NEWGREEN is true are refined without rule */
 #ifdef TET_RULESET
 #define NEWGREEN(e)					(TAG(e)==HEXAHEDRON || TAG(e)== PRISM || \
-										TAG(e)==PYRAMID)
+									TAG(e)==PYRAMID)
 #else
 #define NEWGREEN(e)					(TAG(e)==HEXAHEDRON || TAG(e)== PRISM || \
-										TAG(e)==PYRAMID || TAG(e)== TETRAHEDRON)
+									TAG(e)==PYRAMID || TAG(e)== TETRAHEDRON)
 #endif
+
+/* marked elem with new green refinement (without rule, only 3D) */
+#define MARKED_NEW_GREEN(elem)                                               \
+			(DIM==3 && NEWGREEN(elem) && MARKCLASS(elem)==GREEN_CLASS)
+
+/* refined elem with new green refinement (without rule, only 3D) */
+#define REFINED_NEW_GREEN(elem)                                              \
+			(DIM==3 && NEWGREEN(elem) && REFINECLASS(elem)==GREEN_CLASS)
+
+/* macro to test whether element changes refinement */
+#define REFINEMENT_CHANGES(elem)                                             \
+		(REF_TYPE_CHANGES(elem) ||                                           \
+		(MARKED_NEW_GREEN(elem) &&                                           \
+		(REFINECLASS(elem)!=GREEN_CLASS || (REFINECLASS(elem)==GREEN_CLASS   \
+		&& USED(elem)==1))))
 
 /* macros for storing sparse data needed in ExchangeClosureInfo() */
 #define MARKCLASSDATA_SHIFT	20
-
 #define GETMARKCLASSDATA(elem,dataadr)                                       \
-		(*dataadr) |= ((MARKCLASS(elem))<<MARKCLASSDATA_SHIFT)
-
+		(*dataadr) = (*dataadr) | ((MARKCLASS(elem))<<MARKCLASSDATA_SHIFT)
 #define SETMARKCLASSDATA(elem,data)                                          \
 		SETMARKCLASS(elem,(data>>MARKCLASSDATA_SHIFT)&((1<<MARKCLASS_LEN)-1))
-		
 
+/* macros for storing sparse data needed in ExchangeClosureInfo() */
+#define MARKDATA_SHIFT	22
+#define GETMARKDATA(elem,dataadr)                                            \
+		(*dataadr) = (*dataadr) | ((MARK(elem))<<MARKDATA_SHIFT)
+#define SETMARKDATA(elem,data)                                               \
+		SETMARK(elem,(data>>MARKDATA_SHIFT)&((1<<MARKCLASS_LEN)-1))
+		
+/* macros for storing sparse data needed in ExchangeClosureInfo() */
+#define COARSENDATA_SHIFT	19
+#define GETCOARSENDATA(elem,dataadr)                                         \
+		(*dataadr) = (*dataadr) | ((COARSEN(elem))<<COARSENDATA_SHIFT)
+#define SETCOARSENDATA(elem,data)                                            \
+		SETCOARSEN(elem,(data>>COARSENDATA_SHIFT)&((1<<COARSEN_LEN)-1))
+		
 /* macros to get and set the edgepattern on an element */
-#define GetEdgePattern(elem,patadr)                                          \
+#define GetEdgeInfo(elem,patadr,macro)                                       \
 		{                                                                    \
-			INT i;                                                           \
+			INT i,pattern;                                                   \
 			EDGE *theEdge;                                                   \
                                                                              \
-			*patadr = 0;                                                     \
+            pattern = 0;                                                     \
 			for (i=EDGES_OF_ELEM(elem)-1; i>=0; i--)                         \
 			{                                                                \
 				theEdge=GetEdge(CORNER_OF_EDGE_PTR(elem,i,0),                \
 						    	CORNER_OF_EDGE_PTR(elem,i,1));               \
 				ASSERT(theEdge!=NULL);                                       \
                                                                              \
-				*patadr = (*patadr<<1) | PATTERN(theEdge);                   \
+				pattern = (pattern<<1) | macro(theEdge);                     \
 			}                                                                \
+                                                                             \
+            (*patadr) |= pattern;                                            \
 		}
 
-#define	SetEdgePattern(elem,pat)                                             \
+#define	SetEdgeInfo(elem,pat,macro,OP)                                       \
 		{                                                                    \
-			INT i;                                                           \
+			INT i,pattern;                                                   \
 			EDGE *theEdge;                                                   \
                                                                              \
+            pattern = pat;                                                   \
 			for (i=0; i<EDGES_OF_ELEM(elem); i++)                            \
 			{                                                                \
 				theEdge = GetEdge(CORNER_OF_EDGE_PTR(elem,i,0),              \
 								  CORNER_OF_EDGE_PTR(elem,i,1));             \
 				ASSERT(theEdge!=NULL);                                       \
                                                                              \
-				SETPATTERN(theEdge,PATTERN(theEdge)|(pat&0x1));              \
-				pat >>= 1;                                                   \
+				SET ## macro(theEdge, macro(theEdge) OP (pattern&0x1));      \
+				pattern >>= 1;                                               \
 			}                                                                \
 		}
 
 /* TODO: delete special debug */
 static ELEMENT *debugelem=NULL;
 /*
-#define PRINTELEMID(id) \
-		if (ID(theElement)==id && id!=10120) \
-		{ \
-			debugelem=theElement; \
-			UserWriteF("refine.c:line=%d\n",__LINE__);\
-			ListElement(NULL,theElement,0,0,1,0); \
-		} \
-		else if ((id==-1 || ID(theElement)==10120) && debugelem!=NULL) \
-		{\
-			UserWriteF("refine.c:line=%d\n",__LINE__); \
-			ListElement(NULL,debugelem,0,0,1,0); \
-		} \
-		else if (id==-2 && debugelem!=NULL) \
-		{\
-			if (ID(theElement)==8899) \
-			{\
-				UserWriteF("refine.c:line=%d\n",__LINE__); \
-				UserWriteF("ERRORID=%d\n",ID(theElement)); \
-				ListElement(NULL,debugelem,0,0,1,0); \
-			}\
+#define PRINTELEMID(id)                                                      \
+		if (ID(theElement)==id && id!=10120)                                 \
+		{                                                                    \
+			debugelem=theElement;                                            \
+			UserWriteF("refine.c:line=%d\n",__LINE__);                       \
+			ListElement(NULL,theElement,0,0,1,0);                            \
+		}                                                                    \
+		else if ((id==-1 || ID(theElement)==10120) && debugelem!=NULL)       \
+		{                                                                    \
+			UserWriteF("refine.c:line=%d\n",__LINE__);                       \
+			ListElement(NULL,debugelem,0,0,1,0);                             \
+		}                                                                    \
+		else if (id==-2 && debugelem!=NULL)                                  \
+		{                                                                    \
+			if (ID(theElement)==8899)                                        \
+			{                                                                \
+				UserWriteF("refine.c:line=%d\n",__LINE__);                   \
+				UserWriteF("ERRORID=%d\n",ID(theElement));                   \
+				ListElement(NULL,debugelem,0,0,1,0);                         \
+			}                                                                \
 		}
 */
 
@@ -207,9 +236,9 @@ static ELEMENT *debugelem=NULL;
 #define REFINE_ELEMENT_LIST(d,e,s)                                           \
 	IFDEBUG(gm,d)                                                            \
 	if (e!=NULL)                                                             \
-		UserWriteF( s " ID=%d TAG=%d BE=%d ECLASS=%d REFINECLASS=%d"         \
-		" MARKCLASS=%d REFINE=%d MARK=%d COARSE=%d"                          \
-		   " USED=%d NSONS=%d EFATHERID=%d\n", ID(e),                        \
+		UserWriteF( s " ID=%d/%08x PRIO=%d TAG=%d BE=%d ECLASS=%d LEVEL=%d"  \
+		" REFINECLASS=%d MARKCLASS=%d REFINE=%d MARK=%d COARSE=%d"           \
+		   " USED=%d NSONS=%d EFATHERID=%d\n",ID(e),EGID(e),EPRIO(e),        \
 		TAG(e),(OBJT(e)==BEOBJ),ECLASS(e),REFINECLASS(e),MARKCLASS(e),       \
 		REFINE(e),MARK(e),COARSEN(e),                                        \
 		USED(e),NSONS(e),(EFATHER(e)!=NULL)?ID(EFATHER(e)):0);               \
@@ -222,8 +251,8 @@ static ELEMENT *debugelem=NULL;
 		GRID	*grid = GRID_ON_LEVEL(mg,k);                                 \
 		ELEMENT	*theElement;                                                 \
                                                                              \
-		UserWriteF( s1 );                                                    \
-		for (theElement=PFIRSTELEMENT(grid);                                  \
+		UserWriteF s1 ;                                                      \
+		for (theElement=PFIRSTELEMENT(grid);                                 \
 			 theElement!=NULL;                                               \
 			 theElement=SUCCE(theElement))                                   \
 		{                                                                    \
@@ -245,7 +274,7 @@ static ELEMENT *debugelem=NULL;
 			ELEMENT	*theElement;                                             \
                                                                              \
 			UserWriteF( s2 );                                                \
-			for (theElement=PFIRSTELEMENT(grid);                              \
+			for (theElement=PFIRSTELEMENT(grid);                             \
 				 theElement!=NULL;                                           \
 				 theElement=SUCCE(theElement))                               \
 			{                                                                \
@@ -681,6 +710,24 @@ static INT ManageParallelFIFO (ELEMENT *firstElement)
 /*																			*/
 /****************************************************************************/
 
+static INT PrintEdgeInfo (GRID *theGrid, char* string, INT level)
+{
+	INT pat;
+	ELEMENT	*theElement;
+
+	PRINTDEBUG(gm,level,(PFMT "%s:\n",me,string));
+	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
+		theElement=SUCCE(theElement))
+	{
+		pat = 0;
+		GetEdgeInfo(theElement,&pat,ADDPATTERN);
+		PRINTDEBUG(gm,level,(PFMT "ListEdgeInfo(): elem=" EID_FMTX " addpat=%08x\n",
+			me,EID_PRTX(theElement),pat));
+	}
+
+	return(GM_OK);
+}
+
 static INT PrepareGridClosure (GRID *theGrid)
 {
 	INT		j;
@@ -711,100 +758,58 @@ static INT PrepareGridClosure (GRID *theGrid)
 }
 
 #ifdef ModelP
-#ifdef __TWODIM__
-static int Gather_ElemSideandEdgePattern (DDD_OBJ obj, void *data)
+static int Gather_ElementClosureInfo (DDD_OBJ obj, void *data)
 {
 	INT 	i,refinedata;
 	ELEMENT *theElement = (ELEMENT *)obj;
 	EDGE	*theEdge;
 
-	PRINTDEBUG(gm,4,(PFMT "Gather_ElemSideandEdgePattern(): e=" EID_FMTX "\n",
+	PRINTDEBUG(gm,1,(PFMT "Gather_ElementClosureInfo(): e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
 	   
-	GetEdgePattern(theElement,&refinedata);
+	refinedata = 0;
+	GetEdgeInfo(theElement,&refinedata,PATTERN);
+
+	GETMARKCLASSDATA(theElement,&refinedata);
+	GETMARKDATA(theElement,&refinedata);
+	GETCOARSENDATA(theElement,&refinedata);
 	((INT *)data)[0] = refinedata;
 
-	PRINTDEBUG(gm,4,(PFMT "Gather_ElemSideandEdgePattern(): sidepattern=%d markclass=%d\n",
-			 me,SIDEPATTERN(theElement),MARKCLASS(theElement)))
-	SETMARKCLASSDATA(theElement,refinedata);
-	((INT *)data)[0] = refinedata;
+	PRINTDEBUG(gm,1,(PFMT "Gather_ElementClosureInfo(): refinedata=%08x "
+		"sidepattern=%d markclass=%d mark=%d coarse=%d\n",me,refinedata,
+		SIDEPATTERN(theElement),MARKCLASS(theElement),MARK(theElement),COARSEN(theElement)))
 
 	return(GM_OK);
 }
 
-static int Scatter_ElemSideandEdgePattern (DDD_OBJ obj, void *data)
+static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data)
 {
 	INT		i,refinedata;
 	ELEMENT *theElement = (ELEMENT *)obj;
 	EDGE	*theEdge;
 
-	PRINTDEBUG(gm,4,(PFMT "Scatter_ElemSideandEdgePattern(): e=" EID_FMTX "\n",
+	PRINTDEBUG(gm,1,(PFMT "Scatter_ElementClosureInfo(): e=" EID_FMTX "\n",
 			 me,EID_PRTX(theElement)))
 
 	refinedata = ((INT *)data)[0];
-	SetEdgePattern(theElement,refinedata);
+	SetEdgeInfo(theElement,refinedata,PATTERN,|);
 
-	PRINTDEBUG(gm,4,(PFMT "Gather_ElemSideandEdgePattern(): sidepattern=%d markclass=%d\n",
-			 me,SIDEPATTERN(theElement),MARKCLASS(theElement)))
-	GETMARKCLASSDATA(theElement,&refinedata);
+	SETMARKCLASSDATA(theElement,refinedata);
+	SETMARKDATA(theElement,refinedata);
+	SETCOARSENDATA(theElement,refinedata);
 
-	return(GM_OK);
-}
-#endif
-
-#ifdef __THREEDIM__
-static int Gather_EdgePattern (DDD_OBJ obj, void *data)
-{
-	EDGE *theEdge = (EDGE *)obj;
-	
-	*((INT *)data) = PATTERN(theEdge);
-	return(GM_OK);
-}
-
-static int Scatter_EdgePattern (DDD_OBJ obj, void *data)
-{
-	EDGE *theEdge = (EDGE *)obj;
-
-	SETPATTERN(theEdge,PATTERN(theEdge)|*((INT *)data));
-	return(GM_OK);
-}
-
-static int Gather_ElemSidePattern (DDD_OBJ obj, void *data)
-{
-	ELEMENT *theElement = (ELEMENT *)obj;
-	
-	*((INT *)data) = SIDEPATTERN(theElement);
+	PRINTDEBUG(gm,1,(PFMT "Scatter_ElementClosureInfo(): refinedata=%08x "
+		"sidepattern=%d markclass=%d mark=%d coarse=%d\n",me,refinedata,
+		SIDEPATTERN(theElement),MARKCLASS(theElement),MARK(theElement),COARSEN(theElement)))
 
 	return(GM_OK);
 }
-
-static int Scatter_ElemSidePattern (DDD_OBJ obj, void *data)
-{
-	ELEMENT *theElement = (ELEMENT *)obj;
-
-	SETSIDEPATTERN(theElement,SIDEPATTERN(theElement)|*((INT *)data));
-
-	return(GM_OK);
-}
-#endif
 
 static INT ExchangeClosureInfo (GRID *theGrid)
 {
-	#ifdef __TWODIM__
 	/* exchange sidepattern of edges */
 	DDD_IFAOneway(ElementIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
-		Gather_ElemSideandEdgePattern, Scatter_ElemSideandEdgePattern);
-	#endif
-
-	#ifdef __THREEDIM__
-	/* exchange patterns of edges */
-	DDD_IFAOneway(EdgeHIF,IF_FORWARD,GRID_ATTR(theGrid),sizeof(INT),
-		Gather_EdgePattern, Scatter_EdgePattern);
-
-	/* exchange sidepattern of edges */
-	DDD_IFAOneway(ElementIF,IF_FORWARD,GRID_ATTR(theGrid),sizeof(INT),
-		Gather_ElemSidePattern, Scatter_ElemSidePattern);
-	#endif
+		Gather_ElementClosureInfo, Scatter_ElementClosureInfo);
 
 	return(GM_OK);
 }
@@ -817,9 +822,14 @@ static INT ComputePatterns (GRID *theGrid)
 	ELEMENT *theElement;
 	EDGE	*theEdge;
 
-	/* reset EDGE/SIDEPATTERN in elements */
-	/* set SIDEPATTERN in elements        */
-	/* set PATTERN on the edges           */
+	/* ComputePatterns works only on master elements      */
+	/* since ghost elements have no information from      */
+	/* RestrictMarks() up to this time and this may       */
+	/* leed to inconsistency while coarsening             */
+
+	/* reset EDGE/SIDEPATTERN in elements                 */
+	/* set SIDEPATTERN in elements                        */
+	/* set PATTERN on the edges                           */
 	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
 			theElement=SUCCE(theElement))
 	{
@@ -869,7 +879,11 @@ static INT ComputePatterns (GRID *theGrid)
 	}
 
 	#ifdef ModelP
-	if (ExchangeClosureInfo(theGrid) != GM_OK) return(GM_ERROR);
+	if (!refine_seq)
+	{
+		if (ExchangeClosureInfo(theGrid) != GM_OK) return(GM_ERROR);
+		if (ExchangeClosureInfo(theGrid) != GM_OK) return(GM_ERROR);
+	}
 	#endif
 
 	return(GM_OK);
@@ -1081,9 +1095,10 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 		 theElement=SUCCE(theElement))
 	{
 		/* TODO: delete special debug */ PRINTELEMID(11668)
+		theEdgePattern = 0;
 
 		/* compute element pattern */
-		GetEdgePattern(theElement,&theEdgePattern);
+		GetEdgeInfo(theElement,&theEdgePattern,PATTERN);
 
 		#ifdef __TWODIM__
 		thePattern = theEdgePattern;
@@ -1173,75 +1188,42 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 }
 
 #ifdef ModelP
-#ifdef __TWODIM__
 static int Gather_AddEdgePattern (DDD_OBJ obj, void *data)
 {
-	INT 	i;
+	INT 	i,pat;
 	ELEMENT *theElement = (ELEMENT *)obj;
 	EDGE	*theEdge;
 
-	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
-	{
-		theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
-						  CORNER_OF_EDGE_PTR(theElement,i,1));
-		ASSERT(theEdge!=NULL);
+	pat = 0;
+	GetEdgeInfo(theElement,&pat,ADDPATTERN);
 
-		((INT *)data)[i] = ADDPATTERN(theEdge);
-	}
+	((INT *)data)[0] = pat;
 
+	PRINTDEBUG(gm,1,(PFMT "Gather_AddEdgePattern(): elem=" EID_FMTX "pat=%08x\n",
+		me,EID_PRTX(theElement),pat));
 	return(GM_OK);
 }
 
 static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data)
 {
-	INT		i;
+	INT		i,pat;
 	ELEMENT *theElement = (ELEMENT *)obj;
 	EDGE	*theEdge;
 
-	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
-	{
-		theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
-						  CORNER_OF_EDGE_PTR(theElement,i,1));
-		ASSERT(theEdge!=NULL);
+	PRINTDEBUG(gm,1,(PFMT "Scatter_AddEdgePattern(): elem=" EID_FMTX "pat=%08x\n",
+		me,EID_PRTX(theElement),pat));
 
-		SETADDPATTERN(theEdge,ADDPATTERN(theEdge)|((INT *)data)[i]);
-	}
+	pat = ((INT *)data)[0];
+	SetEdgeInfo(theElement,pat,ADDPATTERN,&);
 
 	return(GM_OK);
 }
-#endif
-#ifdef __THREEDIM__
-static int Gather_EdgeAddPattern (DDD_OBJ obj, void *data)
-{
-	EDGE *theEdge = (EDGE *)obj;
-	
-	*((INT *)data) = ADDPATTERN(theEdge);
-	return(GM_OK);
-}
-
-static int Scatter_EdgeAddPattern (DDD_OBJ obj, void *data)
-{
-	EDGE *theEdge = (EDGE *)obj;
-
-	SETADDPATTERN(theEdge,ADDPATTERN(theEdge)|*((INT *)data));
-
-	return(GM_OK);
-}
-#endif
 
 static INT ExchangeAddPatterns (GRID *theGrid)
 {
-#ifdef __TWODIM__
 	/* exchange addpatterns of edges */
-	DDD_IFAOneway(ElementIF,IF_FORWARD,GRID_ATTR(theGrid),4*sizeof(INT),
+	DDD_IFAOneway(ElementIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
 		Gather_AddEdgePattern, Scatter_AddEdgePattern);
-#endif
-
-#ifdef __THREEDIM__
-	/* exchange addpatterns of edges */
-	DDD_IFAOneway(EdgeHIF,IF_FORWARD,GRID_ATTR(theGrid),sizeof(INT),
-		Gather_EdgeAddPattern, Scatter_EdgeAddPattern);
-#endif
 
 	return(GM_OK);
 }
@@ -1262,6 +1244,8 @@ static INT SetAddPatterns (GRID *theGrid)
 
 		if (MARKCLASS(theElement)!=RED_CLASS) continue;
 
+		REFINE_ELEMENT_LIST(1,theElement,"SetAddPatterns(): addpattern=0");
+
 		for (j=0; j<EDGES_OF_ELEM(theElement); j++)
 		{
 			/* no green elements for this edge if there is no edge node */ 
@@ -1278,7 +1262,8 @@ static INT SetAddPatterns (GRID *theGrid)
 	}
 
 	#ifdef ModelP
-	ExchangeAddPatterns(theGrid);
+	if (ExchangeAddPatterns(theGrid)) 	RETURN(GM_FATAL);
+	if (ExchangeAddPatterns(theGrid)) 	RETURN(GM_FATAL);
 	#endif
 
 	return(GM_OK);
@@ -1407,9 +1392,120 @@ static INT BuildGreenClosure (GRID *theGrid)
 	return(GM_OK);
 }
 
+#ifdef ModelP
+static int Gather_ElementInfo (DDD_OBJ obj, void *Data)
+{
+	INT 	epat,eaddpat;
+	ELEMENT *theElement = (ELEMENT *)obj;
+	char	*data = (char *)Data;
+
+	PRINTDEBUG(gm,2,(PFMT "Gather_ElementInfo(): elem=" EID_FMTX "\n",
+		me,EID_PRTX(theElement)));
+
+	memcpy(data,theElement,sizeof(struct generic_element));
+	data += CEIL(sizeof(struct generic_element));
+
+	epat = 0;
+	GetEdgeInfo(theElement,&epat,PATTERN);
+	((int *)data)[0] = epat; 
+	data += sizeof(INT);
+
+	eaddpat = 0;
+	GetEdgeInfo(theElement,&eaddpat,ADDPATTERN);
+	((int *)data)[0] = eaddpat; 
+
+	return(GM_OK);
+}
+
+/* this macro compares control word macros of two elements */
+#define COMPARE_MACRO(elem0,elem1,macro,print)                               \
+	if (macro(elem0) != macro(elem1))                                        \
+	{                                                                        \
+		print("e=" EID_FMTX " macro=%s differs value0=%d value1=%d \n",      \
+		EID_PRTX(elem0),#macro,macro(elem0),macro(elem1));                   \
+		assert(0);                                                           \
+	}
+
+#ifdef TET_RULESET
+#define COMPARE_MACROX(elem0,elem1,macro,print)                              \
+	{                                                                        \
+		INT _mark0,_mark1,_pat0,_pat1;                                       \
+                                                                             \
+		_mark0 = macro(elem0); _mark1 = macro(elem1);                        \
+		_pat0 = MARK2PAT(elem0,_mark0); _pat1 = MARK2PAT(elem1,_mark1);      \
+		if (_pat0 != _pat1)                                                  \
+			COMPARE_MACRO(elem0,elem1,macro,print)                           \
+	}
+#else
+#define COMPARE_MACROX(elem0,elem1,macro,print)                              \
+			COMPARE_MACRO(elem0,elem1,macro,print)
+#endif
+
+/* this macro compares to values */
+#define COMPARE_VALUE(elem0,val0,val1,string,print)                          \
+	if (val0 != val1)                                                        \
+	{                                                                        \
+		print("e=" EID_FMTX " %s differs value0=%d value1=%d \n",            \
+		EID_PRTX(elem0),string,val0,val1);                                   \
+		assert(0);                                                           \
+	}
+
+static int Scatter_ElementInfo (DDD_OBJ obj, void *Data)
+{
+	INT 	epat,mpat,eaddpat,maddpat;
+	ELEMENT *theElement = (ELEMENT *)obj;
+	EDGE	*theEdge;
+	struct generic_element ge;
+	ELEMENT *theMaster = (ELEMENT *)&ge;
+	char	*data = (char *)Data;
+
+	memcpy(theMaster,data,sizeof(struct generic_element));
+	data += CEIL(sizeof(struct generic_element));
+
+	PRINTDEBUG(gm,2,(PFMT "Scatter_ElementInfo(): Comparing elem=" 
+		EID_FMTX " master=" EID_FMTX "\n",me,EID_PRTX(theElement),
+		EID_PRTX(theMaster)));
+
+	/* now compare the control entries of master with it local copy */
+	COMPARE_MACRO(theElement,theMaster,REFINECLASS,PrintDebug)
+	COMPARE_MACRO(theElement,theMaster,MARKCLASS,PrintDebug)
+	COMPARE_MACROX(theElement,theMaster,REFINE,PrintDebug)
+	COMPARE_MACROX(theElement,theMaster,MARK,PrintDebug)
+	COMPARE_MACRO(theElement,theMaster,COARSEN,PrintDebug)
+	COMPARE_MACRO(theElement,theMaster,USED,PrintDebug)
+	#ifndef TET_RULESET
+	COMPARE_MACRO(theElement,theMaster,SIDEPATTERN,PrintDebug)
+	#endif
+
+	epat = 0;
+	GetEdgeInfo(theElement,&epat,PATTERN);
+	mpat = ((INT *)data)[0];	
+	data += sizeof(INT);
+	COMPARE_VALUE(theElement,epat,mpat,"EdgePattern",PrintDebug)
+
+	eaddpat = 0;
+	GetEdgeInfo(theElement,&eaddpat,ADDPATTERN);
+	maddpat = ((INT *)data)[0];	
+	COMPARE_VALUE(theElement,eaddpat,maddpat,"EdgeAddPattern",PrintDebug)
+
+	return(GM_OK);
+}
+
+static INT CheckElementInfo (GRID *theGrid)
+{
+	/* exchange element info */
+	DDD_IFAOneway(ElementIF,GRID_ATTR(theGrid),IF_FORWARD,
+		CEIL(sizeof(struct generic_element))+2*sizeof(INT),
+		Gather_ElementInfo, Scatter_ElementInfo);
+
+	return(GM_OK);
+}
+#endif
+
 static int GridClosure (GRID *theGrid)
 {
 	INT cnt;
+	INT level = 0;
 
 	/* initialize used control word entries */
 	if (PrepareGridClosure(theGrid) != GM_OK)	RETURN(GM_ERROR);
@@ -1445,9 +1541,8 @@ static int GridClosure (GRID *theGrid)
 	/* build the closure around the red elements */
 	if (BuildGreenClosure(theGrid) != GM_OK)	RETURN(GM_ERROR);
 
-	#ifdef ModelPTest
-	/* send MARKCLASS from slave to masters */
-	IF_S2M_MARKCLASS(GLEVEL(grid));
+	#if defined(Debug) && defined(ModelP)
+	if (CheckElementInfo(theGrid))				RETURN(GM_ERROR);
 	#endif
 	
 	return(cnt);
@@ -1745,6 +1840,144 @@ assert(0);
 	return(GM_OK);
 }
 
+/****************************************************************************/
+/*																			*/
+/* Function:  RestrictElementMark							                */
+/*																			*/
+/* Purpose:   restrict refinement marks of an element whose sons are        */
+/*		      further marked for refinement                                 */
+/*																			*/
+/* Param:	  ELEMENT *theElement: pointer to the element			        */
+/*																			*/
+/* return:	  INT: =0  ok													*/
+/*				   >0  error												*/
+/*																			*/
+/****************************************************************************/
+
+INT RestrictElementMark(ELEMENT *theElement)
+{
+	#ifdef __THREEDIM__
+	EDGE *theEdge;
+	int j,Rule,Pattern;
+	#endif
+	
+	if (MARKCLASS(theElement)==RED_CLASS)
+	{
+		/* TODO: this mark is from DropMarks()!    */
+		/* theElement is marked from outside       */
+		/* TODO: edit this for new element type or */
+		/* for different restrictions              */
+		switch (TAG(theElement))
+		{
+			#ifdef __TWODIM__
+				case TRIANGLE:
+					SETMARK(theElement,T_RED);
+					break;
+				case QUADRILATERAL:
+					SETMARK(theElement,Q_RED);
+					break;
+			#endif
+			#ifdef __THREEDIM__
+			case TETRAHEDRON:
+#ifdef TET_RULESET
+				if (MARK(theElement)!=RED) 
+					/* TODO: Is REFINE always as red */
+					/* rule available?               */
+					SETMARK(theElement,REFINE(theElement));
+#else
+				SETMARK(theElement,TET_RED);
+#endif
+				break;
+			case PYRAMID:
+				SETMARK(theElement,PYR_RED);
+				break;
+			case PRISM:
+				SETMARK(theElement,PRI_RED);
+				break;
+			case HEXAHEDRON:
+				SETMARK(theElement,HEXA_RED);
+				break;
+			#endif
+
+			default:
+				ASSERT(0);
+		}
+	}
+	else
+	{
+		/* TODO: edit this for new element type or */
+		/* for different restrictions              */
+		switch (TAG(theElement))
+		{
+			#ifdef __TWODIM__
+				case TRIANGLE:
+					SETMARK(theElement,T_RED);
+					break;
+
+				case QUADRILATERAL:
+					SETMARK(theElement,Q_RED);
+					break;
+			#endif
+			#ifdef __THREEDIM__
+			case TETRAHEDRON:
+#ifdef TET_RULESET
+				/* theElement is not marked from outside, */
+				/* so find a reg. rule being consistent   */
+				/* with those neighbors of all sons of    */
+				/* theElement which are marked for refine.*/
+				/* this choice will make sure these marks */
+				/* will not be distroyed.				  */
+				Pattern = RULE2PAT(theElement,
+							REFINE(theElement));
+				for (j=0; j<EDGES_OF_ELEM(theElement); j++)
+				{
+					theEdge=GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),
+									CORNER_OF_EDGE_PTR(theElement,j,1));
+					ASSERT(theEdge != NULL);
+
+					/* TODO: 
+						What's on when MIDNODE exists?? */
+					if (MIDNODE(theEdge)==NULL)
+					{
+						theEdge=GetEdge(
+							SONNODE(CORNER_OF_EDGE_PTR(theElement,j,0)),
+							SONNODE(CORNER_OF_EDGE_PTR(theElement,j,1)));
+						ASSERT(theEdge != NULL);
+
+						/* TODO: Is ADDPATTERN needed for fitting with other green elements?? */ 
+						if (ADDPATTERN(theEdge))
+							Pattern |= (1<<j);
+						PRINTDEBUG(gm,4,("RestrictElementMark(): modified Pattern=%d bisects now edge=%d too\n",Pattern,j))
+					}
+				}
+				Rule = PATTERN2RULE(theElement,Pattern);
+				SETMARK(theElement,RULE2MARK(theElement,Rule));
+				/* TODO: delete this old code 
+				SETMARK(theElement,PATTERN2MARK(theElement,Pattern)); */
+				/* TODO: this would be the quick fix 
+				SETMARK(theElement,FULL_REFRULE); */
+#else
+				SETMARK(theElement,TET_RED);
+#endif
+				break;
+			case PYRAMID:
+				SETMARK(theElement,PYR_RED);
+				break;
+			case PRISM:
+				SETMARK(theElement,PRI_RED);
+				break;
+			case HEXAHEDRON:
+				SETMARK(theElement,HEXA_RED);
+				break;
+			#endif
+			default:
+				ASSERT(0);
+		}
+		SETMARKCLASS(theElement,RED_CLASS);
+	}
+
+	return(GM_OK);
+}
 
 /****************************************************************************/
 /*																			*/
@@ -1763,10 +1996,6 @@ static INT RestrictMarks (GRID *theGrid)
 {
 	ELEMENT *theElement,*SonList[MAX_SONS];
 	int i,flag;
-	#ifdef __THREEDIM__
-	EDGE *theEdge;
-	int j,Rule,Pattern;
-	#endif
 	
 	/* TODO: delete special debug */ PRINTELEMID(-1)
 
@@ -1808,130 +2037,8 @@ static INT RestrictMarks (GRID *theGrid)
 					/* Is the son marked for further refinement */ 
 					if (MARK(SonList[i])>NO_REFINEMENT)
 					{
-						if (MARKCLASS(theElement)==RED_CLASS)
-						{
-							/* TODO: this mark is from DropMarks()!    */
-							/* theElement is marked from outside       */
-							/* TODO: edit this for new element type or */
-							/* for different restrictions              */
-							switch (TAG(theElement))
-							{
-								#ifdef __TWODIM__
-									case TRIANGLE:
-										SETMARK(theElement,T_RED);
-										break;
-									case QUADRILATERAL:
-										SETMARK(theElement,Q_RED);
-										break;
-								#endif
-								#ifdef __THREEDIM__
-								case TETRAHEDRON:
-#ifdef TET_RULESET
-									if (MARK(theElement)!=RED) 
-										/* TODO: Is REFINE always as red */
-										/* rule available?               */
-										SETMARK(theElement,REFINE(theElement));
-#else
-									SETMARK(theElement,TET_RED);
-#endif
-									break;
-								case PYRAMID:
-									SETMARK(theElement,PYR_RED);
-									break;
-								case PRISM:
-									SETMARK(theElement,PRI_RED);
-									break;
-								case HEXAHEDRON:
-									SETMARK(theElement,HEXA_RED);
-									break;
-								#endif
+						if (RestrictElementMark(theElement)) RETURN(GM_ERROR);
 
-								default:
-									ASSERT(0);
-							}
-									
-						}
-						else
-						{
-							/* TODO: edit this for new element type or */
-							/* for different restrictions              */
-							switch (TAG(theElement))
-							{
-								#ifdef __TWODIM__
-
-									case TRIANGLE:
-										SETMARK(theElement,T_RED);
-										break;
-
-									case QUADRILATERAL:
-										SETMARK(theElement,Q_RED);
-										break;
-
-								#endif
-
-								#ifdef __THREEDIM__
-
-								case TETRAHEDRON:
-#ifdef TET_RULESET
-									/* theElement is not marked from outside, */
-									/* so find a reg. rule being consistent   */
-									/* with those neighbors of all sons of    */
-									/* theElement which are marked for refine.*/
-									/* this choice will make sure these marks */
-									/* will not be distroyed.				  */
-									Pattern = RULE2PAT(theElement,
-												REFINE(theElement));
-									for (j=0; j<EDGES_OF_ELEM(theElement); j++)
-									{
-										theEdge=GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),
-														CORNER_OF_EDGE_PTR(theElement,j,1));
-										ASSERT(theEdge != NULL);
-
-										/* TODO: 
-											What's on when MIDNODE exists?? */
-										if (MIDNODE(theEdge)==NULL)
-										{
-											theEdge=GetEdge(
-												SONNODE(CORNER_OF_EDGE_PTR(theElement,j,0)),
-												SONNODE(CORNER_OF_EDGE_PTR(theElement,j,1)));
-											ASSERT(theEdge != NULL);
-
-											/* TODO: Is ADDPATTERN needed for fitting with other green elements?? */ 
-											if (ADDPATTERN(theEdge))
-												Pattern |= (1<<j);
-											PRINTDEBUG(gm,4,("RestrictMarks(): modified Pattern=%d bisects now edge=%d too\n",Pattern,j))
-										}
-									}
-									Rule = PATTERN2RULE(theElement,Pattern);
-									SETMARK(theElement,RULE2MARK(theElement,Rule));
-									/* TODO: delete this old code 
-									SETMARK(theElement,PATTERN2MARK(theElement,Pattern)); */
-									/* TODO: this would be the quick fix 
-									SETMARK(theElement,FULL_REFRULE); */
-#else
-									SETMARK(theElement,TET_RED);
-#endif
-									break;
-
-								case PYRAMID:
-									SETMARK(theElement,PYR_RED);
-									break;
-
-								case PRISM:
-									SETMARK(theElement,PRI_RED);
-									break;
-
-								case HEXAHEDRON:
-									SETMARK(theElement,HEXA_RED);
-									break;
-								#endif
-
-								default:
-									ASSERT(0);
-							}
-
-							SETMARKCLASS(theElement,RED_CLASS);
-						}
 						/* this must be done only once for each element */
 						break;
 					}
@@ -1984,7 +2091,7 @@ static INT RestrictMarks (GRID *theGrid)
 /*																			*/
 /* Param:	  GRID *theGrid: pointer to grid structure						*/
 /*																			*/
-/* return:	  GM_OK: ok 													*/
+/* return:	  INT number of yellow marks  	                				*/
 /*																			*/
 /****************************************************************************/
 
@@ -1992,13 +2099,14 @@ static int ComputeCopies (GRID *theGrid)
 {
 	ELEMENT *theElement;
 	int flag;
+	int cnt = 0;
 	
 	/* set class of all dofs on next level to 0 */
 	ClearNextVectorClasses(theGrid);
 	
 	/* seed dofs of regularly and irregularly refined elements to 3 */
 	flag = 0;
-	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
+	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 		theElement=SUCCE(theElement))
 	{
 		if (MARK(theElement)!=NO_REFINEMENT && 
@@ -2026,18 +2134,29 @@ static int ComputeCopies (GRID *theGrid)
 	}
 	
 	/* an element is copied if it has a dof of class 2 and higher */
-	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
+	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 		theElement=SUCCE(theElement))
 	{
+		INT maxclass = 0;
+
 		if ((MARK(theElement)==NO_REFINEMENT)&&
-			(MaxNextVectorClass(theGrid,theElement)>=MINVNCLASS))
+			((maxclass=MaxNextVectorClass(theGrid,theElement))>=MINVNCLASS))
 		{
+			PRINTDEBUG(gm,1,(PFMT "ComputeCopies(): level=%d e=" EID_FMTX "yellow marked\n",
+				me,LEVEL(theElement),EID_PRTX(theElement))); 
 			SETMARK(theElement,COPY);
 			SETMARKCLASS(theElement,YELLOW_CLASS);
+			cnt++;
+		}
+		else
+		{
+			PRINTDEBUG(gm,1,(PFMT "ComputeCopies(): level=%d e=" EID_FMTX "not yellow marked"
+				" mark=%d maxclass=%d\n",
+				me,LEVEL(theElement),EID_PRTX(theElement),MARK(theElement),maxclass)); 
 		}
 	}
 
-	return(GM_OK);
+	return(cnt);
 }
 
 /****************************************************************************/
@@ -2191,8 +2310,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 		
 		toBisect = 0;
 
-		if (DIM==3 && NEWGREEN(theElement) && 
-			MARKCLASS(theElement)==GREEN_CLASS)
+		if (MARKED_NEW_GREEN(theElement))
 		{
 			theEdge = GetEdge(CORNER(theElement,Corner0),
 							  CORNER(theElement,Corner1));
@@ -2260,9 +2378,8 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 
 		toCreate = 0;
 		/* is side node needed */
-		if (NEWGREEN(theElement) && MARKCLASS(theElement)==GREEN_CLASS)
+		if (MARKED_NEW_GREEN(theElement))
 		{
-
 			theNeighbor = NBELEM(theElement,i);
 
 			if (theNeighbor!=NULL)
@@ -2331,9 +2448,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 			ENDDEBUG
 
 /*
-			if (DIM==3 && NEWGREEN(theNeighbor) && 
-				MARKCLASS(theNeighbor)==GREEN_CLASS && USED(theNeighbor)==0)
-			{
+			if (MARKED_NEW_GREEN(theNeighbor) && USED(theNeighbor)==0)
 */
 			if (theNeighbor !=NULL)
 			{
@@ -2390,14 +2505,13 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 	if (CenterNode[0] == NULL)
 	{
 
-		if (DIM==3 && NEWGREEN(theElement) && 
-			MARKCLASS(theElement)==GREEN_CLASS)
+		if (MARKED_NEW_GREEN(theElement))
 		{
 			toCreate = 1;
 		}
 		else if (NODE_OF_RULE(theElement,Mark,CENTER_NODE_INDEX(theElement)))
 		{
-				toCreate = 1;
+			toCreate = 1;
 		}
 	}
 
@@ -2450,14 +2564,10 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement)
 	/* something to do ? */
 	if ((REFINE(theElement)==NO_REFINEMENT)||(theGrid==NULL)) return(GM_OK);
 
-	if (GetSons(theElement,SonList)!=GM_OK) RETURN(GM_FATAL);
+	if (GetAllSons(theElement,SonList)!=GM_OK) RETURN(GM_FATAL);
 	
-	for (s=0; s<NSONS(theElement); s++)
+	for (s=0; SonList[s]!=NULL; s++)
 	{
-		#ifdef ModelP
-		if (SonList[s] == NULL) break;
-		#endif
-
 		theSon = SonList[s];
 		SETMARK(theSon,NO_REFINEMENT);
 		if (IS_REFINED(theSon))
@@ -2467,19 +2577,15 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement)
 	}
 
 	/* remove connections in neighborhood of sons */
-	for (s=0; s<NSONS(theElement); s++)
+	for (s=0; SonList[s]!=NULL; s++)
 	{
-		#ifdef ModelP
-		if (SonList[s] == NULL) break;
-		#endif
-
 		DisposeConnectionsInNeighborhood(theGrid,SonList[s]);
 	}
 
 	/* remove son elements */
 	#ifndef ModelP
 	IFDEBUG(gm,1)
-	if (DIM!=3 || !NEWGREEN(theElement) || REFINECLASS(theElement)!=GREEN_CLASS)
+	if (!REFINED_NEW_GREEN(theElement))
 	{
 		if (NSONS(theElement) != NSONS_OF_RULE(MARK2RULEADR(theElement,
 			REFINE(theElement)))) 
@@ -2491,12 +2597,8 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement)
 	ENDDEBUG
 	#endif
 
-	for (s=0; NSONS(theElement)>0; s++)
+	for (s=0; SonList[s]!=NULL; s++)
 	{
-		#ifdef ModelP
-		if (SonList[s] == NULL) break;
-		#endif
-
 		/* TODO: delete special debug */
 		/* if (ID(SonList[s])==11644) { RETURN(GM_FATAL); } */
 		PRINTDEBUG(gm,1,(PFMT "UnrefineElement(): DisposeElement[%d]=" 
@@ -2504,11 +2606,6 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement)
 			
 		if (DisposeElement(theGrid,SonList[s],TRUE)!=0) RETURN(GM_FATAL);
 	}
-
-/* TODO: delete 
-	SETNSONS(theElement,0);
-	SET_SON(theElement,0,NULL);
-*/
 
 	return (GM_OK);
 }
@@ -2645,6 +2742,8 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 		ID(theElement),TAG(theElement),REFINECLASS(theElement),MARKCLASS(theElement),
 		REFINE(theElement),MARK(theElement),COARSEN(theElement),
 		USED(theElement),NSONS(theElement),side,NeedSons);
+	for (i=0; SonList[i]!=NULL; i++)
+		UserWriteF(PFMT "   son[%d]=" EID_FMTX "\n",me,i,EID_PRTX(SonList[i]));
 	ENDDEBUG
 
 	#ifdef __TWODIM__
@@ -3041,15 +3140,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 	}			
 
 
-	if ((REF_TYPE_CHANGES(theNeighbor)||
-		(DIM==3 && NEWGREEN(theNeighbor) && 
-			MARKCLASS(theNeighbor)==GREEN_CLASS && 
-		(REFINECLASS(theNeighbor)!=GREEN_CLASS || 
-			(REFINECLASS(theNeighbor)==GREEN_CLASS 
-			&& USED(theNeighbor)==1)))))
-	{
-		return(GM_OK);
-	}
+	if (REFINEMENT_CHANGES(theNeighbor)) return(GM_OK);
 
 	/* determine corresponding side of neighbor */
 	for (nbside=0; nbside<SIDES_OF_ELEM(theNeighbor); nbside++) 
@@ -3286,6 +3377,10 @@ static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theCo
 
 		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side,
 			Sons_of_Side_List,SonSides,hFlag)!=GM_OK) RETURN(GM_FATAL);
+
+		#ifdef ModelP
+		if (Identify_Objects_of_ElementSide(theGrid,theElement,i)) RETURN(GM_FATAL);
+		#endif
 	}
 
 	return(GM_OK);
@@ -4237,6 +4332,10 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 
 		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side, 
 			 	Sons_of_Side_List,SonSides,hFlag)!=GM_OK) RETURN(GM_FATAL);
+
+		#ifdef ModelP
+		if (Identify_Objects_of_ElementSide(theGrid,theElement,i)) RETURN(GM_FATAL);
+		#endif
 	}
 
 	return(GM_OK);
@@ -4454,11 +4553,65 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 
 		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side, 
 				Sons_of_Side_List,SonSides,hFlag)!=GM_OK) RETURN(GM_FATAL);
+
+		#ifdef ModelP
+		if (Identify_Objects_of_ElementSide(theGrid,theElement,i)) RETURN(GM_FATAL);
+		#endif
 	}
 	
 	return(GM_OK);
 }
 
+/****************************************************************************/
+/*																			*/
+/* Function:  RefineElement         										*/
+/*																			*/
+/* Purpose:   refine an element                                             */ 
+/*																			*/
+/* Param:	  GRID *UpGrid: grid level to refine							*/
+/*            ELEMENT *theElement: element to refine                        */
+/*            NODE **theNodeContext: nodecontext for refinement             */
+/*																			*/
+/* return:	  INT GM_OK: ok 												*/
+/*			  INT GM_FATAL: fatal memory error 								*/
+/*																			*/
+/****************************************************************************/
+
+static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContext)
+{
+	switch (MARKCLASS(theElement))
+	{
+		case (YELLOW_CLASS):
+			if (RefineElementYellow(UpGrid,theElement,theNodeContext)!=GM_OK)
+				RETURN(GM_FATAL);
+			break;
+
+		case (GREEN_CLASS):
+			if (MARKED_NEW_GREEN(theElement))
+			{
+				/* elements with incomplete rules set */
+				if (RefineElementGreen(UpGrid,theElement,theNodeContext) != GM_OK)
+					RETURN(GM_FATAL);
+			}
+			else
+			{
+				/* elements with complete rules set */
+				if (RefineElementRed(UpGrid,theElement,theNodeContext)!=GM_OK)
+					RETURN(GM_FATAL);
+			}
+			break;
+
+		case (RED_CLASS):
+			if (RefineElementRed(UpGrid,theElement,theNodeContext)!=GM_OK)
+				RETURN(GM_FATAL);
+			break;
+
+		default:
+			RETURN(GM_FATAL);
+	}
+
+	return(GM_OK);
+}
 
 /****************************************************************************/
 /*																			*/
@@ -4475,32 +4628,29 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 
 static int RefineGrid (GRID *theGrid)
 {
-	int i;
+	int i,prio;
 	ELEMENT *theElement;
 	ELEMENTCONTEXT theContext;
-	GRID *fineGrid;
+	GRID *UpGrid;
 	
-	fineGrid = UPGRID(theGrid);
-	if (fineGrid==NULL) RETURN(GM_FATAL);
+	UpGrid = UPGRID(theGrid);
+	if (UpGrid==NULL) RETURN(GM_FATAL);
 
-	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),"RefineGrid():\n","");
+	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),("RefineGrid(%d):\n",GLEVEL(theGrid)),"");
 	
-	RESETGSTATUS(fineGrid,GRID_CHANGED);
+	/* grid not modified yet! */
+	RESETGSTATUS(UpGrid,GRID_CHANGED);
 
 	/* refine elements */
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 		 theElement=SUCCE(theElement))
 	{
-		#ifdef ModelP
-		INT prio = EPRIO(theElement);
-		if (EMASTERPRIO(prio))
+		/* do not change PrioVGhost elements */ 
+		if (EVGHOST(theElement)) continue;
+
+		if (REFINEMENT_CHANGES(theElement))
 		{
-		#endif
-		if (REF_TYPE_CHANGES(theElement)||
-			(DIM==3 && NEWGREEN(theElement) && MARKCLASS(theElement)==GREEN_CLASS && 
-			(REFINECLASS(theElement)!=GREEN_CLASS || (REFINECLASS(theElement)==GREEN_CLASS && USED(theElement)==1))))
-		{
-			if (hFlag == 0 && MARKCLASS(theElement)!=RED_CLASS)
+			if (hFlag==0 && MARKCLASS(theElement)!=RED_CLASS)
 			{
 				SETMARK(theElement,NO_REFINEMENT);
 				SETMARKCLASS(theElement,NO_CLASS);
@@ -4509,54 +4659,22 @@ static int RefineGrid (GRID *theGrid)
 
 			REFINE_ELEMENT_LIST(1,theElement,"REFINING element: ");
 
-			if (UnrefineElement(fineGrid,theElement))  RETURN(GM_FATAL);
-			/* TODO: delete special debug */ PRINTELEMID(-2)
+			if (UnrefineElement(UpGrid,theElement))				RETURN(GM_FATAL);
 
-			if (UpdateContext(fineGrid,theElement,theContext)!=0) RETURN(GM_FATAL);
+			if (EMASTER(theElement))
+			{
+				if (UpdateContext(UpGrid,theElement,theContext)!=0)	RETURN(GM_FATAL);
 
-			REFINE_CONTEXT_LIST(2,theContext);
+				REFINE_CONTEXT_LIST(2,theContext);
 
-			#ifdef Debug
-			CheckElementContextConsistency(theElement,theContext);
-			#endif
+				#ifdef Debug
+				CheckElementContextConsistency(theElement,theContext);
+				#endif
 
-			/* TODO: delete special debug */ PRINTELEMID(-2)
-
-			/* is something to do ? */
-			if (MARKED(theElement)) 
-				switch (MARKCLASS(theElement))
-				{
-					case (RED_CLASS):
-						if (RefineElementRed(fineGrid,theElement,theContext)!=GM_OK)
-							RETURN(GM_FATAL);
-						break;
-
-					case (GREEN_CLASS):
-						if (DIM==3 && NEWGREEN(theElement) && MARKCLASS(theElement)==GREEN_CLASS)
-						{
-							/* elements with incomplete rules set */
-							if (RefineElementGreen(fineGrid,theElement,theContext) != GM_OK)
-								RETURN(GM_FATAL);
-						}
-						else
-						{
-							/* elements with complete rules set */
-							if (RefineElementRed(fineGrid,theElement,theContext)!=GM_OK)
-								RETURN(GM_FATAL);
-						}
-						break;
-
-					case (YELLOW_CLASS):
-						if (RefineElementYellow(fineGrid,theElement,theContext)!=GM_OK)
-							RETURN(GM_FATAL);
-						break;
-
-					default:
-						RETURN(GM_FATAL);
-				}
-					
-
-			/* TODO: delete special debug */ PRINTELEMID(-2)
+				/* is something to do ? */
+				if (MARKED(theElement))
+					if (RefineElement(UpGrid,theElement,theContext))	RETURN(GM_FATAL);
+			}
 
 			/* refine and refineclass flag */
 			SETREFINE(theElement,MARK(theElement));
@@ -4564,207 +4682,191 @@ static int RefineGrid (GRID *theGrid)
 			SETUSED(theElement,0);
 
 			/* this grid is modified */
-			SETGSTATUS(fineGrid,GRID_CHANGED);
+			SETGSTATUS(UpGrid,GRID_CHANGED);
 		}
 		else if (USED(theElement) == 0)
 		{
-
 			/* count not updated green refinements */ 
 			No_Green_Update++;
 		}
-		#ifdef ModelP
-		}
-		else
-		{
-			INT prio = EPRIO(theElement);
-			if (EHGHOSTPRIO(prio))
-			 	SETREFINE(theElement,MARK(theElement));
-			SETREFINECLASS(theElement,MARKCLASS(theElement));
-			SETUSED(theElement,0);
-		}
-		#endif
 
 		/* count green marks */
 		if (MARKCLASS(theElement) == GREEN_CLASS)	Green_Marks++;
 
-		/* TODO: delete special debug */ PRINTELEMID(-2)
-
 		SETCOARSEN(theElement,0);
 	}
 
-	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),"END RefineGrid():\n","");
+	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),("END RefineGrid(%d):\n",GLEVEL(theGrid)),"");
 
 	return(GM_OK);
 }
 
 
 #ifdef ModelP
-
-static INT CreateGridOverlap (MULTIGRID *theMG, INT FromLevel)
+static INT UpdateElementOverlap (ELEMENT *theElement)
 {
-	INT l,i,prio,s;
-	INT SonsOfSide,SonSides[MAX_SONS];
-	GRID *theGrid;
-	ELEMENT *theElement,*theNeighbor,*theSon;
+	INT		i,s,prio;
+	INT		SonsOfSide,SonSides[MAX_SONS];
+	ELEMENT *theNeighbor,*theSon;
 	ELEMENT *SonList[MAX_SONS];
 
-	ddd_HandlerInit(HSET_REFINE);
-	DDD_XferBegin();
+		theNeighbor = NBELEM(theElement,i);
+		if (theNeighbor == NULL) continue;
+
+		prio = EPRIO(theNeighbor);
 		if (!IS_REFINED(theNeighbor) || !EHGHOSTPRIO(prio)) continue;
-	for (l=FromLevel; l<TOPLEVEL(theMG); l++)
-	{
-		theGrid = GRID_ON_LEVEL(theMG,l);
-		for (theElement=PFIRSTELEMENT(theGrid); 
-			 theElement!=NULL; 
-			 theElement=SUCCE(theElement))
-		{ 
-			prio = EPRIO(theElement);
-			if (!IS_REFINED(theElement) || EHGHOSTPRIO(prio))
-			{
-				SETUSED(theElement,0);
-				continue;
-			}
+
+		/* yellow_class specific code:                                     */
 		/* this is the special situation an update of the element overlap  */
-			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-			{
+			SonList,SonSides,1,0);
+		PRINTDEBUG(gm,1,("%d: SonsOfSide=%d\n",me,SonsOfSide))
 
-				theNeighbor = NBELEM(theElement,i);
+		for (s=0; s<SonsOfSide; s++)
+			SonList,SonSides,1);
+			theSon = SonList[s];
 			ASSERT(theSon != NULL);
-				if (theNeighbor == NULL) continue;
 
-				prio = EPRIO(theNeighbor);
-				if (EHGHOSTPRIO(prio))
-				{
-					PRINTDEBUG(gm,1,("%d: EID=%d side=%d NbID=%d "
-						"NbPARTITION=%d\n",me,
-						ID(theElement),i,ID(theNeighbor),
-						DDD_InfoProcPrio(PARHDRE(theNeighbor),PrioMaster)))
+			PRINTDEBUG(gm,1,("%d: Sending Son=%08x/%x SonID=%d "
+				"SonLevel=%d to dest=%d\n", me,EGID(theSon),theSon,
+				ID(theSon),LEVEL(theSon), EPROCPRIO(theNeighbor,PrioMaster)))
+
+			XFERECOPYX(theSon,EPROCPRIO(theNeighbor,PrioMaster),PrioHGhost,
+				(OBJT(theSon)==BEOBJ)?BND_SIZE_TAG(TAG(theSon)):
+				INNER_SIZE_TAG(TAG(theSon)));
 		}
-					if (NSONS(theNeighbor) == 0)
-					{
-						
-						Get_Sons_of_ElementSide(theElement,i,&SonsOfSide,
-							SonList,SonSides,1);
-						PRINTDEBUG(gm,1,("%d: SonsOfSide=%d\n",me,SonsOfSide))
+			XFERECOPYX(theSon,EPROCPRIO(theNeighbor,PrioMaster),PrioGhost,
 
-						for (s=0; s<SonsOfSide; s++)
-						{
-							theSon = SonList[s];
-							assert(theSon != NULL);
+	return(GM_OK);
+}
+
+
+/****************************************************************************/
+/*
    UpdateGridOverlap - 
-							SETUSED(theSon,1);
+	for (theElement=FIRSTELEMENT(theGrid);theElement!=NULL;theElement=SUCCE(theElement))
+	{ 
+/*
 		if (IS_REFINED(theElement) && THEFLAG(theElement))
-							PRINTDEBUG(gm,1,("%d: Sending Son=%08x/%x SonID=%d "
-								"SonLevel=%d to dest=%d\n",
-								me,DDD_InfoGlobalId(PARHDRE(theSon)),theSon,
-								ID(theSon),LEVEL(theSon),
-								DDD_InfoProcPrio(PARHDRE(theNeighbor),
-								PrioMaster)))
+*/
+		if (IS_REFINED(theElement))
+		if (IS_REFINED(theElement))
+}
 
-							DDD_XferCopyObjX(PARHDRE(theSon),
-								DDD_InfoProcPrio(PARHDRE(theNeighbor),
-								PrioMaster), PrioGhost,
-								(OBJT(theSon)==BEOBJ) ?
-									BND_SIZE_TAG(TAG(theSon)) :
-									INNER_SIZE_TAG(TAG(theSon)));
-						}
-					}
-				}
-			}
-		}
-
-
-	DDD_XferEnd();
 
 /****************************************************************************/
 /*
    UpdateMultiGridOverlap - 
-static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
+
 	ddd_HandlerInit(HSET_REFINE);
-	INT l,i;
-	ELEMENT *theElement;
-	GRID *theGrid;
-	
-	/* drop used marks to fathers */
-	for (l=FromLevel+1; l<=TOPLEVEL(theMG); l++)
 
-
+	for (l=FromLevel; l<TOPLEVEL(theMG); l++)
+	{
 		theGrid = GRID_ON_LEVEL(theMG,l);
-   DropUsedFlags - 
-		if (theGrid == NULL) continue;
-		{
-		for (theElement=PFIRSTELEMENT(theGrid); 
-			 theElement!=NULL; 
-			 theElement=SUCCE(theElement))
+		UpdateGridOverlap(theGrid);
+	}
 
-			SETUSED(EFATHER(theElement),1);
-			if (USED(theElement) == 1)
-			{
-				REFINE_ELEMENT_LIST(1,theElement,"drop mark");
-
-				ASSERT(EFATHER(theElement)!=NULL);
-		}
-				/* this father has to be connected */
-				SETUSED(EFATHER(theElement),1);
-				SETUSED(theElement,0);
-			}
+	return(GM_OK);
 }
 
 
+/****************************************************************************/
+/*
+   DropUsedFlags - 
+	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+	{
+		if (USED(theElement) == 1)
+		{
+			REFINE_ELEMENT_LIST(1,theElement,"drop mark");
+
+			ASSERT(EFATHER(theElement)!=NULL);
+
+			/* this father has to be connected */
+			SETUSED(EFATHER(theElement),1);
+			SETUSED(theElement,0);
+		}
+	}
+
+	return(GM_OK);
+}
+
+
+/****************************************************************************/
+/*
+   ConnectGridOverlap - 
+	ELEMENT	*theElement;
+	ELEMENT	*theNeighbor;
+	INT		i,l;
+
+	for (theElement=PFIRSTELEMENT(theGrid);theElement!=NULL;theElement=SUCCE(theElement))
+
+		/* connect only FROM hgost copies */
+		if (!IS_REFINED(theElement) || !EHGHOSTPRIO(prio)) continue;
+		INT prio = EPRIO(theElement);
+		PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
+		if (!IS_REFINED(theElement) || EMASTERPRIO(prio)) continue;
+							LEVEL(theElement)));
+
+		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+		{
+			if (OBJT(theElement)==BEOBJ
+				&& SIDE_ON_BND(theElement,i)
+				&& !INNER_BOUNDARY(theElement,i))	continue;
+
+			INT j,Sons_of_Side,prio;
+			ELEMENT *Sons_of_Side_List[MAX_SONS];
+			INT SonSides[MAX_SIDE_NODES];
+
+			theNeighbor = NBELEM(theElement,i);
+			if (theNeighbor == NULL)       continue;
+
+			prio = EPRIO(theNeighbor);
+			/* overlap situation hasn't changed */
+			if (!THEFLAG(theElement) && !THEFLAG(theNeighbor)) continue;
+
+			/* connect only TO master copies */
+			if (!IS_REFINED(theNeighbor) || EHGHOSTPRIO(prio))	continue;
+			IFDEBUG(gm,1)
+				UserWriteF(PFMT " 		side=%d NSONS=%d Sons_of_Side=%d:\n",
+					Sons_of_Side_List,SonSides,1)!=GM_OK) RETURN(GM_FATAL);
+				for (j=0; j<Sons_of_Side; j++)
+					UserWriteF(PFMT "            son=%08x/%x sonside=%d\n",
+				INT j;
+						me,EGID(Sons_of_Side_List[j]),
+						Sons_of_Side_List[j],SonSides[j]);
+				printf("%d:         connecting ghostelements:\n",me);
+			ENDDEBUG
+			
+			if (Connect_Sons_of_ElementSide(theGrid,theElement,i,
+					Sons_of_Side,Sons_of_Side_List,SonSides,hFlag,0)!=GM_OK) 
+				RETURN(GM_FATAL);
+		}
+
+					Sons_of_Side,Sons_of_Side_List,SonSides,hFlag)!=GM_OK) 
+		/* check whether is a valid ghost, which as in minimum one */
+		/* master element as neighbor                              */
+
+
+
+/****************************************************************************/
+/*
+	
+	/* drop used marks to fathers */
+	for (l=FromLevel+1; l<=TOPLEVEL(theMG); l++)
+	{
+		theGrid = GRID_ON_LEVEL(theMG,l);
+		if (DropUsedFlags(theGrid)) RETURN(GM_FATAL);
+	}
+
 	/* connect sons of elements with used flag set */
 	for (l=FromLevel; l<TOPLEVEL(theMG); l++)
-		if (!IS_REFINED(theElement) || !EHGHOSTPRIO(prio)) continue;
-		PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
+	{
+
 		theGrid = GRID_ON_LEVEL(theMG,l);
-				&& SIDE_ON_BND(theElement,i)
-		for (theElement=PFIRSTELEMENT(theGrid); 
-			 theElement!=NULL; 
-			 theElement=SUCCE(theElement))
-
-			INT prio = EPRIO(theElement);
-			prio = EPRIO(theNeighbor);
-			if (USED(theElement) == 0 || EMASTERPRIO(prio)) 
-				continue;
-
-			PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
-								me,DDD_InfoGlobalId(PARHDRE(theElement)),
-								theElement,ID(theElement),
-								LEVEL(theElement)));
-			IFDEBUG(gm,1)
-			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-			{
-				INT j,Sons_of_Side,prio;
-				ELEMENT *Sons_of_Side_List[MAX_SONS];
-				INT SonSides[MAX_SIDE_NODES];
-				for (j=0; j<Sons_of_Side; j++)
-				if (OBJT(theElement)==BEOBJ
-					&& SIDE_ON_BND(theElement,i)
-					&& !INNER_BOUNDARY(theElement,i))	continue;
-
-				if (NBELEM(theElement,i) == NULL)       continue;
-/*
-				prio = EPRIO(NBELEM(theElement,i));
-				if (EHGHOSTPRIO(prio))					continue;
-
-				if (Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,
-						Sons_of_Side_List,SonSides,1)!=GM_OK) RETURN(GM_FATAL);
+		if (ConnectGridOverlap(theGrid)) RETURN(GM_FATAL); 
+	}
 			
-				IFDEBUG(gm,1)
-					INT j;
-					printf("%d: 		side=%d NSONS=%d Sons_of_Side=%d:\n",
-						me,i,NSONS(theElement),Sons_of_Side);
-					for (j=0; j<Sons_of_Side; j++)
-						UserWriteF("%d:            son=%08x/%x sonside=%d\n",
-							me,DDD_InfoGlobalId(PARHDRE(Sons_of_Side_List[j])),
-							Sons_of_Side_List[j],SonSides[j]);
-					printf("%d:         connecting ghostelements:\n",me);
-				ENDDEBUG
-				
-				if (Connect_Sons_of_ElementSide(theGrid,theElement,i,
-						Sons_of_Side,Sons_of_Side_List,SonSides,hFlag)!=GM_OK) 
-					RETURN(GM_FATAL);
-			}
-		}
+	return(GM_OK);
+}
 #endif
 		
 #ifdef ModelP
@@ -4803,7 +4905,9 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 	SetRefineInfo(theMG);
 	/* evaluate prediction */
 	if (mgtest)
+	{
 		UserWriteF("refinetest: predicted_new0=%9.0f predicted_new1=%9.0f"
+			" predicted_max=%9.0f\n",
 			PREDNEW0(REFINEINFO(theMG)), PREDNEW1(REFINEINFO(theMG)),
 			PREDMAX(REFINEINFO(theMG)));
 
@@ -4834,8 +4938,7 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 	
 	/* prepare algebra (set internal flags correctly) */
 	PrepareAlgebraModification(theMG);
-		if (DropMarks(theMG))
-			RETURN(GM_ERROR);
+
 	toplevel = TOPLEVEL(theMG);
 
 	REFINE_MULTIGRID_LIST(1,theMG,"RefineMultiGrid()","","")
@@ -4851,7 +4954,7 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 
 			if ((nrefined = GridClosure(GRID_ON_LEVEL(theMG,level)))<0)
 			{
-			PRINTDEBUG(gm,1,("Begin GridClosure(%d):\n",level))
+				PrintErrorMessage('E',"RefineMultiGrid","error in GridClosure");
 				RETURN(GM_ERROR);
 			}
 
@@ -4859,15 +4962,19 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 		}
 
 		/* restrict marks on next lower grid level */
-			REFINE_GRID_LIST(1,theMG,level,"End GridClosure(%d):\n","");
+		if (RestrictMarks(GRID_ON_LEVEL(theMG,level-1))!=GM_OK) RETURN(GM_ERROR);
 
 		REFINE_GRID_LIST(1,theMG,level-1,("End RestrictMarks(%d,down):\n",level),"");
 	}
 
 	#ifdef ModelP
-		REFINE_GRID_LIST(1,theMG,level-1,"End RestrictMarks(%d):\n","");
+	IdentifyInit(theMG);
 	#endif
 
+	newlevel = 0;
+	for (level=0; level<=toplevel; level++)
+	{
+		/* TODO: delete special debug */ PRINTELEMID(-1)
 
 		theGrid = GRID_ON_LEVEL(theMG,level);
 		if (level<toplevel) FinerGrid = GRID_ON_LEVEL(theMG,level+1); else FinerGrid = NULL;
@@ -4889,7 +4996,7 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 
 			/* determine regular and irregular elements on next level */
 			if ((nrefined = GridClosure(theGrid))<0)
-			PRINTDEBUG(gm,1,("Begin 2. GridClosure(%d):\n",level));
+			{
 				PrintErrorMessage('E',"RefineMultiGrid","error in 2. GridClosure");
 				RETURN(GM_ERROR);
 			}
@@ -4898,10 +5005,10 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 		}
 
 		nrefined += ComputeCopies(theGrid);
-			REFINE_GRID_LIST(1,theMG,level,"End 2. GridClosure(%d):\n","");
+
 		if (hFlag)
 		{
-		ComputeCopies(theGrid);
+			/* dispose connections that may be changed on next level, this is determined */
 			/* by the neighborhood of elements were MARK != REFINE. 					 */
 			/* This will leave some flags where to rebuild connections later			 */
 			if (level<toplevel)
@@ -4930,21 +5037,102 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 #ifdef ModelP
 		newlevel = UG_GlobalMaxINT(newlevel); 
 #endif
-		if (nrefined>0 && level==toplevel)
+		if (newlevel)
+		{
+			if (CreateNewLevel(theMG,0)==NULL) RETURN(GM_FATAL);
+			FinerGrid = GRID_ON_LEVEL(theMG,toplevel+1);
+		}
 		
-			newlevel = 1;
-			if (CreateNewLevel(theMG,0)==NULL)
-				RETURN(GM_FATAL);
+		PRINTDEBUG(gm,1,(PFMT "RefineMultiGrid(): toplevel=%d nrefined=%d newlevel=%d\n",
 			me,toplevel,nrefined,newlevel));
 
 
-		PRINTDEBUG(gm,1,(PFMT "RefineMultiGrid(): nrefined=%d newlevel=%d\n",me,nrefined,newlevel));
+#ifdef ModelP
+		DDD_IdentifyBegin();
 		DDD_XferBegin();
+
+	DEBUG_TIME(0);
+
+		/* now really manipulate the next finer level */		
 #ifdef ModelP
 		DDD_XferEnd();
-			if (RefineGrid(theGrid)!=GM_OK) 
-				RETURN(GM_FATAL);
-			
+
+
+	DEBUG_TIME(0);
+
+{ 
+int dddiflevel;
+if (1)
+int debugstart=0;
+		DDD_IdentifyEnd();
+
+if (level == 0)
+{
+	dddiflevel=Debugdddif;
+	Debugdddif = 0;
+}
+
+IFDEBUG(gm,debugstart)
+#define GHOSTS	1
+#define GEOM	1
+#define ALG		0
+#define LIST	1
+#define IF 		1
+
+printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,check++,level);
+Debuggm = GHOSTS; CheckGrid(theGrid,GEOM,ALG,LIST,IF); Debuggm=gmlevel;
+if (DDD_ConsCheck() > 0) buggy(theMG);
+ENDDEBUG
+
+if (0)
+}
+
+	DEBUG_TIME(0);
+IFDEBUG(gm,debugstart)
+printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,check++,level);
+Debuggm = GHOSTS; CheckGrid(theGrid,GEOM,ALG,LIST,IF); Debuggm=gmlevel;
+if (DDD_ConsCheck() > 0) buggy(theMG);
+if (level == 1)
+	Debugdddif = dddiflevel;
+ENDDEBUG
+
+		if (Identify_SonNodesAndSonEdges(theGrid))	RETURN(GM_FATAL);
+
+		DDD_IdentifyEnd();
+
+IFDEBUG(gm,debugstart)
+printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,check++,level);
+Debuggm = GHOSTS; CheckGrid(theGrid,GEOM,ALG,LIST,IF); Debuggm=gmlevel;
+if (DDD_ConsCheck() > 0) buggy(theMG);
+ENDDEBUG
+
+
+		if (level<toplevel || newlevel)
+IFDEBUG(gm,debugstart)
+printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,check++,level);
+Debuggm = GHOSTS; CheckGrid(theGrid,GEOM,ALG,LIST,IF); Debuggm=gmlevel;
+if (DDD_ConsCheck() > 0) buggy(theMG);
+ENDDEBUG
+
+		DDD_XferBegin();
+			if (UpdateGridOverlap(theGrid))				RETURN(GM_FATAL);
+			DDD_XferEnd();
+			if (SetBorderPriorities(UPGRID(theGrid))) 	RETURN(GM_FATAL);
+
+
+		DDD_XferEnd();
+		if (level<toplevel || newlevel)
+			if (ConnectGridOverlap(theGrid))			RETURN(GM_FATAL);
+}
+IFDEBUG(gm,debugstart)
+printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,check++,level);
+Debuggm = GHOSTS; CheckGrid(theGrid,GEOM,ALG,LIST,IF); Debuggm=gmlevel;
+if (DDD_ConsCheck() > 0) buggy(theMG);
+ENDDEBUG
+
+		{
+			/* now rebuild connections in neighborhood of elements which have EBUILDCON set */
+				
 		/* TODO: delete special debug */ PRINTELEMID(-1)
 			/* This flag has been set either by GridDisposeConnection or by CreateElement	*/
 			if (GridCreateConnection(FinerGrid)) RETURN(GM_FATAL);
@@ -4966,20 +5154,32 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 	#endif
 
 	DisposeTopLevel(theMG);
+	if (TOPLEVEL(theMG) > 0) DisposeTopLevel(theMG);
+	CURRENTLEVEL(theMG) = TOPLEVEL(theMG);
+
+if (0)
+{
+	#ifdef ModelP
+	/* reconstruct interfaces for communication */
+	DDD_IFRefreshAll();
+
 	if (!refine_seq)
 	{
 		INT FromLevel = MAX(TOPLEVEL(theMG)-1,0);
 		INT ToLevel = MAX(TOPLEVEL(theMG),0);
 
 		/* identify multiply created objects */
-		IdentifyGridLevels(theMG,FromLevel,ToLevel);
+		if (IdentifyGridLevels(theMG,FromLevel,ToLevel))				return(GM_FATAL);
 
 		/* create one-element-overlapping for multigrid */
-		CreateGridOverlap(theMG,FromLevel);
-		ConnectNewOverlap(theMG,FromLevel);
-		SetOverlapPriorities(GRID_ON_LEVEL(theMG,TOPLEVEL(theMG)));
+		if (UpdateMultiGridOverlap(theMG,FromLevel))					return(GM_FATAL);
+		if (ConnectMultiGridOverlap(theMG,FromLevel))					return(GM_FATAL);
+		DDD_XferBegin();
+		if (SetBorderPriorities(GRID_ON_LEVEL(theMG,TOPLEVEL(theMG)))) RETURN(GM_FATAL);
+		DDD_XferEnd();
 	}
 	#endif
+}
 
 	if (CreateAlgebra(theMG) != GM_OK)
         REP_ERR_RETURN (GM_ERROR);
@@ -4987,15 +5187,15 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 
 	#ifdef ModelP
 	/* create grids on each proc up global toplevel maximum */
+	if (0)
 	{
 		INT Max_TopLevel = UG_GlobalMaxINT(TOPLEVEL(theMG)); 
 
 		for (level=TOPLEVEL(theMG); level<Max_TopLevel; level++)
 		{
-			PRINTDEBUG(gm,1,("CreateNewLevel toplevel=%d", TOPLEVEL(theMG)));
+			PRINTDEBUG(gm,1,("CreateNewLevel toplevel=%d\n", TOPLEVEL(theMG)));
 
-			if (CreateNewLevel(theMG,0)==NULL)
-				RETURN(GM_FATAL);
+			if (CreateNewLevel(theMG,0)==NULL) RETURN(GM_FATAL);
 		}
 	}
 	#endif
