@@ -540,7 +540,7 @@ static int Scatter_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, 
 			 me,EID_PRTX(theElement)))
 
 		partition = ((int *)data)[0];
-		/* send master sons to master elmement partition */
+		/* send master sons to master element partition */
 		if (GetSons(theElement,SonList)) RETURN(GM_ERROR);
 		for (i=0; SonList[i]!=NULL; i++) 
 			PARTITION(SonList[i]) = partition;
@@ -612,7 +612,6 @@ INT RestrictPartitioning (MULTIGRID *theMG, INT coarse)
 			Gather_ElementRestriction, Scatter_ElementRestriction);
 	}
 
-
 	/* send restricted sons to partition of father */
 	for (i=0; i<=TOPLEVEL(theMG); i++)
 	{
@@ -637,7 +636,6 @@ INT RestrictPartitioning (MULTIGRID *theMG, INT coarse)
 			}
 		}
 	}
-
 
 	if (TransferGrid(theMG) != 0) RETURN(GM_FATAL);
 
@@ -4812,6 +4810,7 @@ static int RefineGrid (GRID *theGrid)
 {
 	int i,prio;
 	ELEMENT *theElement;
+	ELEMENT *NextElement;
 	ELEMENTCONTEXT theContext;
 	GRID *UpGrid;
 	
@@ -4822,8 +4821,10 @@ static int RefineGrid (GRID *theGrid)
 	
 	/* refine elements */
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
-		 theElement=SUCCE(theElement))
+		 theElement=NextElement)
 	{
+		NextElement = SUCCE(theElement);
+
 		#ifdef ModelP
 		/* update overlap  */
 		SETTHEFLAG(theElement,0);
@@ -4849,8 +4850,11 @@ static int RefineGrid (GRID *theGrid)
 			/* dispose hghost elements with EFATHER==NULL */
 			if (EHGHOST(theElement) && COARSEN(theElement))
 			{
-				DisposeElement(theGrid,theElement,TRUE);
-				theElement = NULL;
+				if (LEVEL(theElement)>0 && EFATHER(theElement)==NULL)
+				{
+					DisposeElement(theGrid,theElement,TRUE);
+					continue;
+				}
 			}
 			#endif
 
@@ -4889,8 +4893,11 @@ static int RefineGrid (GRID *theGrid)
 			/* dispose hghost elements with EFATHER==NULL */
 			if (EHGHOST(theElement) && COARSEN(theElement))
 			{
-				DisposeElement(theGrid,theElement,TRUE);
-				theElement = NULL;
+				if (LEVEL(theElement)>0 && EFATHER(theElement)==NULL)
+				{
+					DisposeElement(theGrid,theElement,TRUE);
+					continue;
+				}
 			}
 			#endif
 
@@ -4901,14 +4908,11 @@ static int RefineGrid (GRID *theGrid)
 			}
 		}
 
-		if (theElement != NULL)
-		{
-			/* count green marks */
-			if (MARKCLASS(theElement) == GREEN_CLASS)	Green_Marks++;
+		/* count green marks */
+		if (MARKCLASS(theElement) == GREEN_CLASS)	Green_Marks++;
 
-			/* reset coarse flag */
-			SETCOARSEN(theElement,0);
-		}
+		/* reset coarse flag */
+		SETCOARSEN(theElement,0);
 	}
 
 	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),("END RefineGrid(%d):\n",GLEVEL(theGrid)),"");
@@ -5311,7 +5315,7 @@ if (0)
 { 
 int dddiflevel;
 if (1)
-int debugstart=1;
+{
 		DDD_IdentifyEnd();
 
 if (level == 0)
