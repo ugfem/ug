@@ -1746,23 +1746,6 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElemen
 	for (i=0; i<NSONS(theElement); i++)
 		DisposeConnectionsInNeighborhood(theGrid,SonList[i]);
 
-	/* remove pointers referencing sons from neighboring elements */
-	for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
-		theNeighbor = NBELEM(theElement,i);
-		if (theNeighbor == NULL) continue;
-
-		if (GetSons(theNeighbor,NbSonList)!=GM_OK) { assert(0); return(GM_ERROR); }
-		for (s=0; s<NSONS(theNeighbor); s++) {
-			NbSon = NbSonList[s];
-			for (j=0; j<SIDES_OF_ELEM(NbSon); j++) 
-			  {
-				NbElem = NBELEM(NbSon,j);
-				if (NbElem != NULL)
-				  if (EFATHER(NbElem) == theElement) SET_NBELEM(NbSon,j,NULL);
-			  }
-		}
-	}
-
 	/* remove son elements */
 	IFDEBUG(gm,1)
 	if (DIM!=3 || TAG(theElement)!=HEXAHEDRON || REFINECLASS(theElement)!=GREEN) {
@@ -1781,7 +1764,7 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElemen
 			assert(0);
 			return(GM_FATAL);
 		} */
-		DisposeElement(theGrid,SonList[s]);
+		if (DisposeElement(theGrid,SonList[s])!=0) { assert(0); return(GM_FATAL);}
 	}
 
 	SETNSONS(theElement,0);
@@ -2618,6 +2601,11 @@ static int RefineGreenElement (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 							if (found) {
 								SET_NBELEM(NbSideSons[m],nbside,sons[n].theSon);
 								SET_NBELEM(sons[n].theSon,nbside,NbSideSons[m]);
+								#ifdef __THREEDIM__
+								if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))										
+								  if (DisposeDoubledSideVector(theGrid,sons[n].theSon,nbside,NbSideSons[m],nbside))
+									return (1);
+								#endif
 								k++;
 							}
 						}
@@ -2944,14 +2932,19 @@ static int RefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 		
 				/* dispose doubled side vectors if */
 				#ifdef __THREEDIM__
-				if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
-				  {
-					for (l=0; l<SIDES_OF_ELEM(theElement); l++)
-					  if (rule->sons[side].nb[l]==s)
+				if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR)) {
+					for (l=0; l<SIDES_OF_ELEM(SonList[side]); l++)
+					  if (NBELEM(SonList[side],l)==SonList[s])
 						break;
-					if (DisposeDoubledSideVector(theGrid,SonList[s],i,SonList[side],l))
-					return (1);
-				  }
+
+					if (l<SIDES_OF_ELEM(SonList[side])) {
+						/* assert consistency of rule set */
+						assert(rule->sons[side].nb[l]==s);
+						assert(rule->sons[s].nb[i]==side);
+						assert(NBELEM(SonList[s],i)==SonList[side] && NBELEM(SonList[side],l)==SonList[s]);
+						if (DisposeDoubledSideVector(theGrid,SonList[s],i,SonList[side],l)) return (GM_FATAL);
+					}
+				}
                 #endif
 				continue;
 			}
@@ -2994,7 +2987,7 @@ static int RefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 			assert(l<SIDES_OF_ELEM(theNeighbor));			
 	
 			/* TODO: delete special debug */ PRINTELEMID(-2)
-			/* connect green hexahedral neighbor */
+			/* connect green hexahedral neighbor which have no rule */
 			if (DIM==3 && TAG(theNeighbor)==HEXAHEDRON && MARKCLASS(theNeighbor)==GREEN) {
 
 				/* outer side for pyramid has 4 corners */
@@ -3077,6 +3070,12 @@ static int RefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 					if (found) {
 						SET_NBELEM(NbSideSons[m],nbside,SonList[s]);
 						SET_NBELEM(SonList[s],i,NbSideSons[m]);
+						/* dispose doubled side vectors if */
+						#ifdef __THREEDIM__
+						if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+						  if (DisposeDoubledSideVector(theGrid,SonList[s],i,NbSideSons[m],nbside))
+							return (1);
+						#endif
 						k++;
 						break;
 					}
@@ -3086,6 +3085,7 @@ static int RefineElement (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 				continue;
 			}
 
+			/* connect neighbor refined by rule of rule set */
 			rule2 = MARK2RULEADR(theNeighbor,REFINE(theNeighbor));
 			found = 0;
 			if (GetSons(theNeighbor,SonList2)!=0)
