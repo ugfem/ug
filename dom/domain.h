@@ -68,14 +68,12 @@
 #define __TWODIM__
 #define DIM 2
 #define DIM_OF_BND 1
-#define DOM_PARAM_OFFSET DIM
 #endif
 
 #ifdef _3
 #define __THREEDIM__
 #define DIM 3
 #define DIM_OF_BND 2
-#define DOM_PARAM_OFFSET DIM
 #endif
 
 #ifndef _2
@@ -90,6 +88,10 @@
 #define FREE          1
 #define PERIODIC      2
 #define NON_PERIODIC  3
+
+/* position of element relative to boundary */
+#define ELEM_IS_LEFT   -1.0
+#define ELEM_IS_RIGHT   1.0
 
 /* function formats */
 typedef INT (*ConfigProcPtr)(INT argc, char **argv);
