@@ -699,11 +699,13 @@ INT     ConnectOverlapVerticalGrid (GRID *theGrid)
                       MIDNODE(theEdge) == SonNode);
 
                                                                 #ifdef __TWODIM__
+              IFDEBUG(dddif,1)
               printf(PFMT "ConnectOverlapVerticalGrid(): new "
                      " midnode relation between theEdge=%08x"
                      " SonNode=" ID_FMTX "Vertex=" VID_FMTX "\n",
                      me,theEdge,ID_PRTX(SonNode),
                      VID_PRTX(MYVERTEX(SonNode)));
+              ENDDEBUG
                                                                 #endif
                                                                 #ifdef __THREEDIM__
               printf(PFMT "ConnectOverlapVerticalGrid(): new "
