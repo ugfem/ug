@@ -6,9 +6,9 @@ then
 	echo "Options are";
 	echo " <ugmodule>: the module which you want to compile";
 	echo "             where <ugmodule> is one of ug, dev, meta, xif";
-	echo "             gm, graph, low, numerics, ui, diff2d, diff2da,";
+	echo "             gm, graph, low, numerics, ui, gg, diff2d, diff2da,";
 	echo "             cd3d, cd3da, fem, fema";
-	echo " <makeoptions>: the options which you want tp pass to \"make\"";
+	echo " <makeoptions>: the options which you want to pass to \"make\"";
 	exit 1;
 fi
 
@@ -35,7 +35,7 @@ fi
 if test $# -ge 1 
 then
 	# check whether first  option is ug module 
-	if test "$1" = "ug" -o "$1" = "dev" -o "$1" = "meta" -o "$1" = "xif" -o "$1" = "gm" -o "$1" = "graph" -o "$1" = "low" -o "$1" = "numerics" -o "$1" = "ui"
+	if test "$1" = "ug" -o "$1" = "dev" -o "$1" = "meta" -o "$1" = "xif" -o "$1" = "gm" -o "$1" = "graph" -o "$1" = "low" -o "$1" = "numerics" -o "$1" = "ui" -o "$1" = "gg"
 	then
 		if test "$1" = "ug"
 		then 
