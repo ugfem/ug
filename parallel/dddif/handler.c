@@ -1015,6 +1015,7 @@ void ElementLDataConstructor (DDD_OBJ obj)
 	INT		level		= DDD_InfoAttr(PARHDRE(pe));
 	GRID	*theGrid	= GetGridOnDemand(dddctrl.currMG,level);
 	INT		prio		= DDD_InfoPriority(PARHDRE(pe));
+	void    *q;
 
 	PRINTDEBUG(dddif,2,(PFMT " ElementLDataConsX(): pe=" EID_FMTX 
 		" EOBJ=%d l=%d\n",me,EID_PRTX(pe),OBJT(pe),level))
@@ -1029,6 +1030,12 @@ void ElementLDataConstructor (DDD_OBJ obj)
 
 	/* TODO: in global id umrechnen */
 	ID(pe) = (theGrid->mg->elemIdCounter)++;
+
+	if (EDATA_DEF_IN_GRID(theGrid)) {
+        q = (void *) GetMemoryForObject(theGrid->mg,EDATA_DEF_IN_GRID(theGrid),-1);
+		ASSERT(q != NULL);
+        SET_EDATA(pe,q); 
+	}
 }
 
 /****************************************************************************/
@@ -1144,6 +1151,9 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 		BElementXferBndS(bnds,nsides,proc,prio);
 	  }
 
+	if (EDATA_DEF_IN_MG(dddctrl.currMG)) 
+		DDD_XferAddData(EDATA_DEF_IN_MG(dddctrl.currMG), DDD_USER_DATA);
+
 	/* add edges of element */
 	/* must be done before any XferCopyObj-call! herein    */
 	/* or directly after XferCopyObj-call for this element */
@@ -1162,8 +1172,6 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 
 		DDD_XferCopyObj(PARHDR(node), proc, prio);
 	}
-
-
 
 	/* send edge and edge vectors */
 	if (dddctrl.edgeData || DIM==3) {
@@ -1243,6 +1251,23 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 
 
 /****************************************************************************/
+
+void ElemGatherEdata (ELEMENT *pe, int cnt, char *data)
+{
+	ASSERT(cnt == EDATA_DEF_IN_MG(dddctrl.currMG)); 
+
+	memcpy(data,(char*)EDATA(pe),cnt);
+	return;
+}
+
+void ElemScatterEdata (ELEMENT *pe, int cnt, char *data)
+{
+	ASSERT(cnt == EDATA_DEF_IN_MG(dddctrl.currMG)); 
+
+	memcpy((char*)EDATA(pe),data,cnt);
+	return;
+}
+
 
 #ifdef __TWODIM__
 static void ElemGatherEdge (ELEMENT *pe, int cnt, char *data)
@@ -1349,23 +1374,38 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data)
 */
 	}
 }
+#endif /* end __TWODIM__ */
+
 
 /****************************************************************************/
 
 
 void ElemGatherI (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 {
-	/* type_id is always TypeEdge */
+	if (type_id == DDD_USER_DATA) {
+		ElemGatherEdata((ELEMENT *)obj, cnt, (char *)data);
+		return;
+	}
+
+    #ifdef __TWODIM__
+	/* now: type_id is always TypeEdge */
 	ElemGatherEdge((ELEMENT *)obj, cnt, (char *)data);
+	#endif
 }
 
 
 void ElemScatterI (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 {
+	if (type_id == DDD_USER_DATA) {
+		ElemScatterEdata((ELEMENT *)obj, cnt, (char *)data);
+		return;
+	}
+
+    #ifdef __TWODIM__
 	/* type_id is always TypeEdge */
 	ElemScatterEdge((ELEMENT *)obj, cnt, (char *)data);
+	#endif
 }
-#endif /* end __TWODIM__ */
 
 void ElemGatherB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 {
@@ -1373,19 +1413,25 @@ void ElemGatherB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 	BNDS	*bnds[MAX_SIDES_OF_ELEM];
 	ELEMENT	*pe = (ELEMENT *)obj;
 
-	/* type_id is TypeEdge or other */
+	if (type_id == DDD_DOMAIN_DATA) {
+		nsides = SIDES_OF_ELEM(pe);
+		for (i=0; i<nsides; i++)
+			bnds[i] = ELEM_BNDS(pe,i);
+		BElementGatherBndS(bnds, nsides, cnt, (char *)data);
+		return;
+	}
+	if (type_id == DDD_USER_DATA) {
+		ElemGatherEdata((ELEMENT *)obj, cnt,(char *)data);
+		return;
+	}
+
+	/* now: type_id is TypeEdge or other */
 	#ifdef __TWODIM__
 	if (type_id==TypeEdge)
 	{
 		ElemGatherEdge(pe, cnt, (char *)data);
-	} else
+	} 
 	#endif
-	{
-		nsides = SIDES_OF_ELEM(pe);
-		for (i=0; i<nsides; i++)
-		  bnds[i] = ELEM_BNDS(pe,i);
-		BElementGatherBndS(bnds, nsides, cnt, (char *)data);
-	}
 }
 
 
@@ -1395,21 +1441,27 @@ void ElemScatterB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 	BNDS	*bnds[MAX_SIDES_OF_ELEM];
 	ELEMENT	*pe = (ELEMENT *)obj;
 
-	/* type_id is TypeEdge or other */
-	#ifdef __TWODIM__
-	if (type_id==TypeEdge)
-	{
-		ElemScatterEdge(pe, cnt, (char *)data);
-	} else
-	#endif
-	{
+	if (type_id == DDD_DOMAIN_DATA) {
 		nsides = SIDES_OF_ELEM(pe);
 		for (i=0; i<nsides; i++)
 		  bnds[i] = ELEM_BNDS(pe,i);
 		BElementScatterBndS(bnds, nsides, cnt, (char *)data);
 		for (i=0; i<nsides; i++)
 		  SET_BNDS(pe,i,bnds[i]);
+		return;
 	}
+	if (type_id == DDD_USER_DATA) {
+		ElemScatterEdata((ELEMENT *)obj, cnt,(char *)data);
+		return;
+	}
+
+	/* now: type_id is TypeEdge or other */
+	#ifdef __TWODIM__
+	if (type_id==TypeEdge)
+	{
+		ElemScatterEdge(pe, cnt, (char *)data);
+	} 
+	#endif
 }
 
 
@@ -1667,14 +1719,12 @@ static void IElemHandlerInit (DDD_TYPE etype, INT handlerSet)
 	/* init standard elem handlers */
 	ElemHandlerInit(etype, handlerSet);
 
-	#ifdef __TWODIM__
 	/* init additional handlers, necessary for inside management */
 	DDD_HandlerRegister(etype,
 		HANDLER_XFERGATHER,		  ElemGatherI,
 		HANDLER_XFERSCATTER,	  ElemScatterI,
 		HANDLER_END
 	);
-	#endif
 }
 
 
