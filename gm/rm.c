@@ -30,6 +30,8 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "fileopen.h"
+
 /* gm module */
 #include "evm.h"
 #include "gm.h"
