@@ -1764,9 +1764,9 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
         #ifdef ModelP
   if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
         #endif
-  if (np->mindiag[0] > 0.0)
-    if (l_shift_diagonal(theGrid,np->smoother.L,np->mindiag) != NUM_OK)
-      NP_RETURN(1,result[0]);
+  /*	if (np->mindiag[0] > 0.0)
+      if (l_shift_diagonal(theGrid,np->smoother.L,np->mindiag) != NUM_OK)
+              NP_RETURN(1,result[0]); */
   if (l_ilubthdecomp(theGrid,np->smoother.L,np->beta,NULL,NULL,NULL)
       !=NUM_OK) {
     PrintErrorMessage('E',"ILUPreProcess","decomposition failed");
