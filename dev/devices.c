@@ -99,7 +99,7 @@ static INT theOutputDevVarID;                   /* env type for Output Device va
 static char ToolName[nboftools][NAMESIZE]; /* array of tool names			*/
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -485,6 +485,9 @@ else
 
    RETURN VALUE:
    void
+
+   SEE ALSO:
+   'PrintErrorMessageF'
    D*/
 /****************************************************************************/
 
@@ -512,6 +515,46 @@ void PrintErrorMessage (char type, const char *procName, const char *text)
   }
   sprintf(buffer,"%s in %.20s: %.200s\n",classText,procName,text);
   UserWrite(buffer);
+}
+
+/****************************************************************************/
+/*D
+   PrintErrorMessageF - Formatted error output with fotmatted message (also to log file)
+
+   SYNOPSIS:
+   void PrintErrorMessageF (char type, const char *procName, const char *format, ...);
+
+   PARAMETERS:
+   .  type - 'W','E','F'
+   .  procName - name  of procedure where error occured
+   .  format -  additional formatted explanation (like printf)
+
+   DESCRIPTION:
+   This function formats error output (also to log file).
+   After expanding message 'PrintErrorMessage' is called.
+
+   RETURN VALUE:
+   void
+
+   SEE ALSO:
+   'PrintErrorMessage'
+   D*/
+/****************************************************************************/
+
+void PrintErrorMessageF (char type, const char *procName, const char *format, ...)
+{
+  char buffer[256];
+  va_list args;
+
+  /* initialize args */
+  va_start(args,format);
+
+  vsprintf(buffer,format,args);
+
+  PrintErrorMessage(type,procName,buffer);
+
+  /* garbage collection */
+  va_end(args);
 }
 
 /****************************************************************************/
@@ -659,7 +702,7 @@ INT InitDevices (int *argcp, char **argv)
 {
   ENVDIR *DevDir;
   ENVITEM *dev;
-  INT error,i;
+  INT error=0,i;
   char sv[32];
 
   /* init tool names */

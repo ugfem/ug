@@ -327,6 +327,7 @@ OUTPUTDEVICE *GetDefaultOutputDevice    (void);
 void              UserWrite                             (const char *s);
 int               UserWriteF                            (const char *format, ...);
 void              PrintErrorMessage             (char type, const char *procName, const char *text);
+void              PrintErrorMessageF            (char type, const char *procName, const char *format, ...);
 INT               OpenLogFile                           (const char *name);
 INT               CloseLogFile                          (void);
 INT                       SetLogFile                            (FILE *file);
