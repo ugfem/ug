@@ -242,7 +242,6 @@ int interface (CLUSTER **clusters, int nvtxs, short *assign, double *goal,
    	int nedges;			/* number of edges in graph */
    	int using_vwgts;		/* are vertex weights being used? */
    	int using_ewgts;     /* are edge weights being used? */
-   	extern double start_time;		/* time routine is entered */
    	int i;			/* loop counter */
    	double time_tol;		/* effective resolution of timer */
    	double seconds();
@@ -626,7 +625,6 @@ void do_timing(FILE *outfile)
    extern double kl_total_time;    /* following for timing KL algorithm */
    extern double kl_init_time;
    extern double nway_kl_time;
-   extern double start_time;		/* time routine is entered */
 
    double time_tol;		/* effective resolution of timer */
    double total_time;           /* total time spent in partitioning code*/
