@@ -5890,7 +5890,11 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 	register SHORT i,j,xc,yc,mc;
 	register SHORT nr,nc;
 	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
-	
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+	DEFINE_VS_CMPS(s);
+	DEFINE_MD_CMPS(m);
+
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
 		return (err);
@@ -5939,15 +5943,15 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 	for (rtype=0; rtype<NVECTYPES; rtype++)
 		if (VD_ISDEF_IN_TYPE(x,rtype))
 		{
-			SetXComp(x,rtype);
+			SET_VD_CMP_N(cx,x,rtype);
 			
 			for (ctype=0; ctype<NVECTYPES; ctype++)
 				if (MD_ISDEF_IN_RT_CT(M,rtype,ctype))
 					switch (MAT_RCKIND(M,rtype,ctype))
 					{
 						case R1C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_11(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = 0.0;
@@ -5967,8 +5971,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 						
 						case R1C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_12(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = 0.0;
@@ -5988,8 +5992,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 							
 						case R1C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_13(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = 0.0;
@@ -6009,8 +6013,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 						
 						case R2C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_21(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = 0.0;
@@ -6032,8 +6036,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 						
 						case R2C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_22(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = 0.0;
@@ -6055,8 +6059,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 						
 						case R2C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_23(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = 0.0;
@@ -6078,8 +6082,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 						
 						case R3C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_31(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -6103,8 +6107,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 						
 						case R3C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_32(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -6128,8 +6132,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 						
 						case R3C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_33(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = s2 = 0.0;
