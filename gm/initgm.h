@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:	  initlow.h                                                                                                     */
+/* File:	  initgm.h                                                                                                      */
 /*																			*/
 /* Purpose:   call the init routines of the grid manager module                         */
 /*			  (header file)                                                                                                 */
@@ -12,7 +12,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de							    */
 /*																			*/
 /* History:   27.02.95 begin, ug version 3.0								*/
 /*																			*/
@@ -20,6 +20,10 @@
 /*																			*/
 /****************************************************************************/
 
+#ifndef __INITGM__
+#define __INITGM__
+
+#include "compiler.h"
 
 /****************************************************************************/
 /*																			*/
@@ -29,3 +33,4 @@
 
 /* initialisation of the low module */
 INT InitGm (void);
+#endif
