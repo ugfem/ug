@@ -75,6 +75,7 @@ ifdef:
 	cd gm; make -f Makefile.gm clean; cd ..;
 	cd numerics; make -f Makefile.numerics clean; cd ..;
 	cd graph; make -f Makefile.graph clean; cd ..;
+	cd dom; make -f Makefile.dom clean; cd ..;
 	cd ui; rm commands.o ; cd ..;
 	rm initug.o;
 
