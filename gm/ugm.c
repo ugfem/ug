@@ -7754,7 +7754,7 @@ INT NS_DIM_PREFIX MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag
   infobuffer      = (INT *) GetTmpMem(MGHEAP(theMG),(procs+1)*(MAXLEVEL+1)*ELEMENT_PRIOS*sizeof(INT),MarkKey);
   if (infobuffer == NULL) assert(0);
 
-  lbinfo          = (INT **) GetTmpMem(MGHEAP(theMG),(procs+1)*sizeof(INT),MarkKey);
+  lbinfo          = (INT **) GetTmpMem(MGHEAP(theMG),(procs+1)*sizeof(INT*),MarkKey);
   if (lbinfo == NULL) assert(0);
 
   memset((void *)infobuffer,0,(procs+1)*(MAXLEVEL+1)*ELEMENT_PRIOS*sizeof(INT));
