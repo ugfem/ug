@@ -2,7 +2,7 @@
 #
 # ug_dart.pl
 # 
-# purpose: runs all necessary scripts on the client 
+# purpose: runs all necessary scripts to perform a dart cycle on the client 
 
 ###############################################################################
 # modules
@@ -18,19 +18,20 @@ use Getopt::Std;
 sub Test # arguments: configuration string, test type, directory id 
 { 
     my ($LibTestDirs, $LibDirIds, $TestDirs, $DirIds);
+    my ($LibTestCaseFiles, $TestCaseFiles);
     my (@AllLibTestCases, @AllTestCases);
     my (@TestCaseFamilies, @TestOrder);
 
     # get the library test directories
-    ($LibTestDirs, $LibDirIds) = read_testdirs("Lib");
+    ($LibTestDirs, $LibDirIds, $LibTestCaseFiles) = read_testdirs("Lib");
     
     # get the application test directories
-    ($TestDirs, $DirIds) = read_testdirs("Appl");
+    ($TestDirs, $DirIds, $TestCaseFiles) = read_testdirs("Appl");
     
     # get the library test cases and save them 
     for(my $i = 0; $i < @$LibTestDirs; $i++)
     {
-        my $DirLibTestCases = read_case($LibTestDirs->[$i], $LibDirIds->[$i]);
+        my $DirLibTestCases = read_case($LibTestDirs->[$i], $LibDirIds->[$i], $LibTestCaseFiles->[$i]);
         for(my $j = 0; $j < @$DirLibTestCases; $j++)
         {
             push(@AllLibTestCases, $DirLibTestCases->[$j]);
@@ -42,7 +43,7 @@ sub Test # arguments: configuration string, test type, directory id
     {
 	if($DirIds->[$i] eq $_[2])
 	{
-	    my @DirTestCases = @{ read_case($TestDirs->[$i], $DirIds->[$i])};
+	    my @DirTestCases = @{ read_case($TestDirs->[$i], $DirIds->[$i], $TestCaseFiles->[$i])};
 	    if($_[1] eq "")
 	    {
 		for(my $j = 0; $j <= $#DirTestCases; $j++)
@@ -214,16 +215,17 @@ sub Lib # arguments: configuration string, test type, directory id
 {
     my ($LibTestDirs, $LibDirIds);
     my (@AllLibTestCases, @TestOrder);
+    my ($LibTestCaseFiles, $TestCaseFiles);
 
     # get the library test directories
-    ($LibTestDirs, $LibDirIds) = read_testdirs("Lib");
+    ($LibTestDirs, $LibDirIds, $LibTestCaseFiles) = read_testdirs("Lib");
     
     # get the library test cases and save them 
     for(my $i = 0; $i < @$LibTestDirs; $i++)
     {
 	if($LibDirIds->[$i] eq $_[2])
 	{
-	    my @DirLibTestCases = @{ read_case($LibTestDirs->[$i], $LibDirIds->[$i])};
+	    my @DirLibTestCases = @{ read_case($LibTestDirs->[$i], $LibDirIds->[$i], $LibTestCaseFiles->[$i])};
 	    if($_[1] eq "")
 	    {
 		for(my $j = 0; $j <= $#DirLibTestCases; $j++)
@@ -280,14 +282,15 @@ sub Liball
 {
     my ($LibTestDirs, $LibDirIds);
     my (@AllLibTestCases, @TestOrder);
+    my ($LibTestCaseFiles, $TestCaseFiles);
 
     # get the library test directories
-    ($LibTestDirs, $LibDirIds) = read_testdirs("Lib");
+    ($LibTestDirs, $LibDirIds, $LibTestCaseFiles) = read_testdirs("Lib");
     
     # get the library test cases and save them 
     for(my $i = 0; $i < @$LibTestDirs; $i++)
     {
-        my $DirLibTestCases = read_case($LibTestDirs->[$i], $LibDirIds->[$i]);
+        my $DirLibTestCases = read_case($LibTestDirs->[$i], $LibDirIds->[$i], $LibTestCaseFiles->[$i]);
         for(my $j = 0; $j < @$DirLibTestCases; $j++)
         {
             push(@AllLibTestCases, $DirLibTestCases->[$j]);
@@ -332,17 +335,18 @@ sub AllOrTestall # argument: test type
     my ($LibTestDirs, $LibDirIds, $TestDirs, $DirIds);
     my (@AllLibTestCases, @AllTestCases);
     my (@TestCaseFamilies, @TestOrder);
+    my ($LibTestCaseFiles, $TestCaseFiles);
 
     # get the library test directories
-    ($LibTestDirs, $LibDirIds) = read_testdirs("Lib");
+    ($LibTestDirs, $LibDirIds, $LibTestCaseFiles) = read_testdirs("Lib");
     
     # get the application test directories
-    ($TestDirs, $DirIds) = read_testdirs("Appl");
+    ($TestDirs, $DirIds, $TestCaseFiles) = read_testdirs("Appl");
     
     # get the library test cases and save them 
     for(my $i = 0; $i < @$LibTestDirs; $i++)
     {
-        my $DirLibTestCases = read_case($LibTestDirs->[$i], $LibDirIds->[$i]);
+        my $DirLibTestCases = read_case($LibTestDirs->[$i], $LibDirIds->[$i], $LibTestCaseFiles->[$i]);
         for(my $j = 0; $j < @$DirLibTestCases; $j++)
         {
             push(@AllLibTestCases, $DirLibTestCases->[$j]);
@@ -352,7 +356,7 @@ sub AllOrTestall # argument: test type
     # get the application test cases and save them 
     for(my $i = 0; $i < @$TestDirs; $i++)
     {
-        my $DirTestCases = read_case($TestDirs->[$i], $DirIds->[$i]);
+        my $DirTestCases = read_case($TestDirs->[$i], $DirIds->[$i], $TestCaseFiles->[$i]);
         for(my $j = 0; $j < @$DirTestCases; $j++)
         {
             push(@AllTestCases, $DirTestCases->[$j]);
@@ -404,14 +408,14 @@ sub AllOrTestall # argument: test type
     for(my $i = 0; $i <= $#TestCaseFamilies; $i++)
     {
         my @RefDirId = @{ $TestCaseFamilies[$i][0]->{"DirId"} };
-        @RefPosition[$i] = 0;
+        $RefPosition[$i] = 0;
         for(my $j = 1; $j <= $#{ $TestCaseFamilies[$i] }; $j++)
         {
             @DirId = @{ $TestCaseFamilies[$i][$j]->{"DirId"} };
             if($#DirId > $#RefDirId)
             {
                 @RefDirId = @DirId;
-                @RefPosition[$i] =  $j;
+                $RefPosition[$i] =  $j;
             }
         }
     }
@@ -419,28 +423,54 @@ sub AllOrTestall # argument: test type
     # get the library test cases needed by every reference test case and
     # build '@TestOrder' which contains all test cases to be executed in the
     # right order
+    my $NotDefinedTestCaseCount = 0;
     for(my $i = 0; $i <= $#TestCaseFamilies; $i++)
     {
+	my @RefArch = @{ $TestCaseFamilies[$i][$RefPosition[$i]]->{"Arch"} };
         my @RefDirId = @{ $TestCaseFamilies[$i][$RefPosition[$i]]->{"DirId"} };
         my @RefCFS = @{ $TestCaseFamilies[$i][$RefPosition[$i]]->{"CFS"} };
         my (@RefLibPosition, @DepLibPosition) = ((), ());
-        
-        for(my $j = 0; $j <=  $#AllLibTestCases; $j++)
+        my $match;
+
+        for(my $k = 0; $k <= $#RefDirId; $k++)
         {
-            my $LibTestCase = $AllLibTestCases[$j];
-            for(my $k = 0; $k <= $#RefDirId; $k++)
+            $match = 0;
+	    for(my $j = 0; $j <=  $#AllLibTestCases; $j++)
             {
-                if($RefDirId[$k] eq $LibTestCase->{"MainDirId"} && $RefCFS[$k] eq $LibTestCase->{"MainCFS"})
+		my $LibTestCase = $AllLibTestCases[$j];
+                if($RefDirId[$k] eq $LibTestCase->{"MainDirId"} && $RefCFS[$k] eq $LibTestCase->{"MainCFS"} && $RefArch[$k] eq $LibTestCase->{"MainArch"})
                 {
-                    push(@RefLibPosition, $j);
+		    $match = 1;
+		    push(@RefLibPosition, $j);
                 }
             }
+	    if($match == 0)
+	    {
+		my %NotDefinedTestCase = ();
+		
+		$NotDefinedTestCaseCount++;		
+		for(my $j = 0; $j < @$LibTestDirs; $j++)
+		{
+		    if($RefDirId[$k] eq $LibDirIds->[$j])
+		    {
+			$NotDefinedTestCase{"TestDir"} = $LibTestDirs->[$j];
+			$NotDefinedTestCase{"TestId"} = join('', $LibDirIds->[$j], '-ND-', $NotDefinedTestCaseCount);
+		    }
+		}
+		$NotDefinedTestCase{"TestApp"} = "";
+		$NotDefinedTestCase{"MainArch"} = $RefArch[$k];
+		$NotDefinedTestCase{"MainDirId"} = $RefDirId[$k];
+		$NotDefinedTestCase{"MainCFS"} = $RefCFS[$k];
+		my $NotDefinedTestCase = \%NotDefinedTestCase;
+		push(@TestOrder, $NotDefinedTestCase);
+	    }
         }
+	
         foreach $LibPosition (@RefLibPosition)
         {
             if($AllLibTestCases[$LibPosition]->{"DirId"})
             {
-                my @DepLibDirIds = @{ $AllLibTestCases[$LibPosition]->{"DirId"} };
+		my @DepLibDirIds = @{ $AllLibTestCases[$LibPosition]->{"DirId"} };
                 my @DepLibCFSs = @{ $AllLibTestCases[$LibPosition]->{"CFS"} };
                 for(my $i = 0; $i <=  $#AllLibTestCases; $i++)
                 {
@@ -510,6 +540,7 @@ sub read_testdirs
     my @Line;
     my @TestDirs;
     my @DirIds;
+    my @TestCaseFiles;
     
     # save the path to the DartTestFiles file 
     my $TestRootDir = join('',$ENV{"DART_HOME"},'/Source/Client/UG');
@@ -530,6 +561,7 @@ sub read_testdirs
                 # save the whole directory in @testdirs
                 push(@TestDirs, join('/',$TestRootDir,$Line[1]));
                 push(@DirIds, $Line[0]);
+		push(@TestCaseFiles, $Line[2]);
             }
         }
         else
@@ -539,11 +571,12 @@ sub read_testdirs
                 # save the whole directory in @testdirs
                 push(@TestDirs, join('/',$TestRootDir,$Line[1]));
                 push(@DirIds, $Line[0]);
+		push(@TestCaseFiles, $Line[2]);
             }
         }
     }
     close(TESTFILES);
-    return \(@TestDirs, @DirIds);    
+    return \(@TestDirs, @DirIds, @TestCaseFiles);    
 }
 
 ### get the test cases
@@ -552,7 +585,7 @@ sub read_case # argument: test directory, directory id
     my @TestCases;
          
     # open the testcase file and read the entries
-    open(TESTCASE, join('',$_[0],'/TestCases'));
+    open(TESTCASE, join('',$_[0],'/',$_[2]));
     while(<TESTCASE>)
     {
         my (@TestCase, @ECFS, %TestCase) = ((), (), ());
@@ -642,7 +675,6 @@ sub dart_test # arguments: test type, testcase(hash)
     $DirId = $TestCase->{"MainDirId"};
     $CFS = $TestCase->{"MainCFS"};
     
-    # coverage: yes or no
     if($Arch =~ /GCOV/)
     {
         $WithCoverage = "yes";
@@ -658,13 +690,13 @@ sub dart_test # arguments: test type, testcase(hash)
     if($TestApp eq "")
     {
         $WithTest = "no";
-        system("ug_dart_client_test $TestType $TestDir $WithCoverage $WithTest");
+	system("ug_dart_client_test $TestType $TestDir $WithCoverage $WithTest");
     }
     else
     {
         $WithTest = "yes";
-        system("ug_dart_tests.pl -b $TestDir -s $TestDir -p '$TestApp' -i $TestId");
-        system("ug_dart_client_test $TestType $TestDir $WithCoverage $WithTest");
+	system("ug_dart_tests.pl -b $TestDir -s $TestDir -p '$TestApp' -i $TestId");
+	system("ug_dart_client_test $TestType $TestDir $WithCoverage $WithTest");
     }
 }
 
@@ -674,6 +706,8 @@ sub subset
     my $match = -1;
     my @DirId1 = @{ $_[0]->{"DirId"} };
     my @DirId2 = @{ $_[1]->{"DirId"} };
+    my $Arch1 = $_[0]->{"Arch"};
+    my $Arch2 = $_[1]->{"Arch"};
     my @CFS1 = @{ $_[0]->{"CFS"} };
     my @CFS2 = @{ $_[1]->{"CFS"} };
     
@@ -682,7 +716,7 @@ sub subset
     {
         for(my $j = 0; $j <= $#DirId2; $j++)
         {
-            if($DirId1[$i] eq $DirId2[$j] && $CFS1[$i] eq $CFS2[$j])
+            if($DirId1[$i] eq $DirId2[$j] && $CFS1[$i] eq $CFS2[$j] && $Arch1 eq $Arch2)
             {
                 $match++;
             }
@@ -701,14 +735,39 @@ sub subset
     }
 }
 
+sub read_option_c
+{
+    if($_[0] =~ / /)
+    {
+	@TestApps = split(/ /, $_[0]);
+    }
+    else
+    {
+	push(@TestApps, $_[0]);
+    }
+    foreach $TestApp (@TestApps)
+    {
+	if($TestApp =~ /:/)
+	{
+	    @TestParts = split(/:/, $TestApp);
+	    push(@DirIds, $TestParts[0]);
+	    if($TestParts[1] =~ /,/)
+	    {
+		@TestAppTestIds = split(",", $TestParts[1]);
+		push(@TestIds, @TestAppTestIds);
+	    }
+	    else
+	    {
+		push(@TestIds, $TestParts[1]);
+	    }
+	}
+    }
+}
+
 ### print help message 
 sub help
 {
     print "usage:	ug_dart.pl [-c configuration string] [-e test extent] [-t test type]\n\n";
-    print "-c: Configuration String which is necessary if the test extent\n";
-    print "    is either 'test' or 'lib'. It has to be given in the form\n";
-    print "    -c <DirId1>:<TestId1,...,TestIdn> ... <DirIdn>:<TestId1,...,TestIdn>,\n";
-    print "    e.g. -c 'Appl1:tutor3,tutor5 Appl2:cd36 (est extent = test)\n";
     print "-e: Test extent.May be\n";
     print "      - manually: execute a given test\n";
     print "      - test    : execute either all tests in the given directory\n";
@@ -718,6 +777,10 @@ sub help
     print "      - test_all: execute all tests in all directories\n";
     print "      - all     : build the libraries with all configurations\n";
     print "                  execute all tests\n";
+    print "-c: Configurations to test. This is necessary if the test extent\n";
+    print "    is either 'test' or 'lib'. It has to be given in the form\n";
+    print "    -c <DirId1>:<TestId1,...,TestIdn> ... <DirIdn>:<TestId1,...,TestIdn>,\n";
+    print "    e.g. -c 'TUTOR:tutor3,tutor5 CD:cd36 (test extent = test)\n";
     print "-t: May be Nightly, Continuous or Experimental\n";
     print "    Default: Nightly\n";
     print "-h: Print this help message\n";    
@@ -732,7 +795,7 @@ sub help
 
 # read the command line parameters
 my %option = ();
-getopts("c:d:e:t:h", \%option);
+getopts("c:e:t:h", \%option);
 
 # print help message if the parameter -h is given
 if($option{h})
@@ -750,10 +813,6 @@ unless($option{t})
 # exit if no configuration string is given but it is needed
 if($option{e} eq "test" || $option{e} eq "lib")
 {
-    unless($option{d})
-    {
-        die "A build directory identifier is recommended!\n";
-    }
     unless($option{c})
     {
 	$option{c} = "";
@@ -763,11 +822,11 @@ if($option{e} eq "test" || $option{e} eq "lib")
 # distinguish between the different entries of the test_extent variable
 if($option{e} eq "test")
 {
-    Test($option{t}, $option{c}, $option{d});
+    Test($option{t}, $option{c});
 }
 elsif($option{e} eq "lib")
 {
-    Lib($option{t}, $option{c}, $option{d});
+    Lib($option{t}, $option{c});
 }
 elsif($option{e} eq "lib_all")
 {

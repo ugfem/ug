@@ -57,15 +57,19 @@ tclsh $MANAGER DartConfiguration.tcl $1 Build;
 #"DartTestfile.txt" files
 if ("$4" == "yes") then
     tclsh $MANAGER DartConfiguration.tcl $1 Test;
-endif
-
-# the Coverage script collects the coverage information which may be created 
-# with gcc
-if ($COVERAGE_PARAM == yes) then  
-    tclsh $MANAGER DartConfiguration.tcl $1 Coverage;
+    if ($COVERAGE_PARAM == yes) then
+	tclsh $MANAGER DartConfiguration.tcl $1 Coverage;
+    endif
+    tclsh $MANAGER DartConfiguration.tcl $1 Valgrind;
 endif
 
 # the Submit script sends the test information to the server
 tclsh $MANAGER DartConfiguration.tcl $1 Submit;
+
+
+
+
+
+
 
 

@@ -50,7 +50,7 @@ sub site
 sub buildname # arguments: test identifier, ugroot directory, architecture  
 {
 	my ($string,$kernel_name,$os_release,$compiler);
-  $string = '[A-Za-z]\w*';
+  $string = '[-+A-Za-z]\w*';
   # setting the compiler
   open ARCHFILE, (join('', $_[1], '/arch/', $_[2], '/mk.arch'))
       or die "\nArchitecture doesn't exist!\n";
