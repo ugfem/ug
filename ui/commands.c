@@ -6479,6 +6479,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
       Release(MGHEAP(theMG),FROM_TOP);
       return (CMDERRORCODE);
     }
+    if (SetSubdomainIDfromBndInfo(theMG)) return (CMDERRORCODE);
              #endif
   }
 
