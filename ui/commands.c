@@ -1632,10 +1632,10 @@ FILE *GetProtocolFile (void)
 static INT LogOnCommand (INT argc, char **argv)
 {
   char logfile[NAMESIZE];
-  INT i,rv,popt;
+  INT i,rv,popt,pext;
 
   /* check options */
-  popt = FALSE;
+  popt = pext = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -1646,6 +1646,12 @@ static INT LogOnCommand (INT argc, char **argv)
         return (PARAMERRORCODE);
       }
       popt = TRUE;
+      break;
+
+    case 'e' :
+                                #ifdef ModelP
+      pext = TRUE;
+                                #endif
       break;
 
     default :
@@ -1668,7 +1674,14 @@ static INT LogOnCommand (INT argc, char **argv)
     return(PARAMERRORCODE);
   }
         #ifdef ModelP
-  sprintf(logfile,"%s.%03d",logfile,me);
+  if (pext == TRUE)
+  {
+    sprintf(logfile,"%s.p%3d.%03d",logfile,procs,me);
+  }
+  else
+  {
+    sprintf(logfile,"%s.%03d",logfile,me);
+  }
         #endif
 
   rv = OpenLogFile(logfile);
@@ -10297,6 +10310,148 @@ static INT InitScreenSize (void)
   return (0);
 }
 
+/****************************************************************************/
+/*
+   lb - a simple load balancing front end to chaco
+                        based on the clustering technique
+
+   DESCRIPTION:
+   ...
+
+   'lb ...'
+
+   KEYWORDS:
+   parallel, processors, load balance, chaco
+ */
+/****************************************************************************/
+
+static INT LBCommand (INT argc, char **argv)
+{
+  INT res,strategy,minlevel,depth,maxlevel,cmd_error;
+  MULTIGRID *theMG;
+
+  return(OKCODE);
+#ifdef COMMENTIN
+
+                #ifndef ModelP
+  /* dummy command in seriell version */
+  return(OKCODE);
+                #endif
+
+                #ifdef ModelP
+  theMG = currMG;
+
+  if (theMG == NULL)
+  {
+    UserWrite("LBCommand: no open multigrid\n");
+    return(OKCODE);
+  }
+
+  if (procs==1) return(OKCODE);
+
+  /* defaults */
+  strategy        = 0;
+  minlevel        = 1;
+  depth           = 2;
+  maxlevel        = MAXLEVEL;
+
+  /* scan lb strategy*/
+  res = sscanf(argv[0]," lb %d", &strategy)
+        if (res > 1)
+  {
+    UserWriteF("lb [<strategy>] [$c <minlevel>] [$d <depth>] [$f <maxlevel>]\n");
+    UserWriteF("default lb 0 $c 1 $d 2\n");
+    return(OKCODE);
+  }
+
+  /* parse options */
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'c' :
+      sscanf(argv[i],"c %d",&minlevel);
+      break;
+
+    case 'd' :
+                                                #ifdef CHACOT
+      sscanf(argv[i],"d %d",&depth);
+                                                #endif
+                                                #ifndef CHACOT
+      UserWriteF("lb: depth parameter skipped\n");
+                                                #endif
+      break;
+
+    case 'f' :
+      sscanf(argv[i],"f %d",&maxlevel);
+      break;
+
+    default :
+      UserWriteF("lb [<strategy>] [$c <minlevel>] [$d <depth>] [$f <maxlevel>]\n");
+      break;
+    }
+
+  cmd_error = 0;
+  if ((minlevel<0)||(minlevel>TOPLEVEL(theMG)))
+  {
+    UserWriteF("Choose <minlevel>: 0-%d (toplevel)\n",TOPLEVEL(theMG));
+    cmd_error = 1;
+  }
+
+                #ifdef CHACOT
+  if (strategy<0 || strategy>6)
+  {
+    UserWriteF("<strategy>: 0-6\n");
+    cmd_error = 1;
+  }
+                #endif
+                #ifdef CHACOT
+  if (strategy != 0)
+  {
+    UserWriteF("don't specify <strategy> without Chaco\n!");
+    UserWriteF("default <strategy> will be 0 (=RCB)\n!");
+    cmd_error = 1;
+  }
+                #endif
+
+  if (maxlevel < minlevel)
+  {
+    UserWriteF("Choose <maxlevel>: %d-%d (MAXLEVEL)\n",minlevel,MAXLEVEL);
+    cmd_error = 1;
+  }
+  if (maxlevel < TOPLEVEL)
+  {
+    UserWriteF("%s: maxlevel reached: no loadbalancing done!\n"
+               "    maxlevel=%d toplevel=%d\n",argv[0],maxlevel,TOPLEVEL(theMG));
+    return(OKCODE);
+  }
+
+  if (cmd_error) return(CMDERRORCODE);
+
+                #ifdef CHACOT
+  threshold       = 1;
+  Const           = 1;
+  n                       = 500;
+  c                       = 10;
+  loc                     = 0;
+  dims            = 1;
+  weights         = ;
+  coarse          = ;
+  mode            = 0;
+  iopt            = 10000;
+  error = Balance_CCPTM(theMG,minlevel,cluster_depth,threshold,Const,n,c,
+                        strategy,eigen,loc,dims,weights,coarse,mode,iopt);
+                #endif
+                #ifndef CHACOT
+  error = ddd_test(minlevel, theMG);
+                #endif
+
+  if (error>0) return(CMDERRORCODE);
+
+  return(OKCODE);
+                #endif
+#endif
+}
+
 #ifdef ModelP
 
 /****************************************************************************/
@@ -10427,7 +10582,6 @@ static INT PStatCommand (INT argc, char **argv)
 
 
 #ifdef CHACOT
-
 /****************************************************************************/
 /*
    lb4 - load balancer using different (high level) strategies
@@ -11683,6 +11837,7 @@ INT InitCommands ()
   if (CreateCommand("reperr",             RepErrCommand                               )==NULL) return (__LINE__);
         #endif
   if (CreateCommand("showconfig",         ShowConfigCommand                           )==NULL) return (__LINE__);
+  if (CreateCommand("lb",                         LBCommand                                               )==NULL) return (__LINE__);
 
 #ifdef ModelP
   /* commands for parallel version */
