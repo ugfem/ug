@@ -87,7 +87,8 @@ static const char * rname;
 static int cntelem;
 static int oldnl;
 static int qualclass, surfind;
-static int LGM_DEBUG = 0;
+static int LGM_DEBUG = 1;
+static double SMALL = 0.0005;
 
 class surfacemeshing
 {
@@ -762,17 +763,19 @@ int AddGeomPoint (int id, double x, double y, double z)
   return 0;
 }
 
-int AddGeomElement (int node0, int node1, int node2)
+int AddGeomElement (int node0, int node1, int node2, int neigbor0, int neigbor1, int neigbor2)
 {
   geomelements.Append(InputElement());
   geomelements.Last().PNum(1) = node0;
   geomelements.Last().PNum(2) = node1;
   geomelements.Last().PNum(3) = node2;
-  geomelements.Last().Neighbour(1) = 0;
-  geomelements.Last().Neighbour(2) = 0;
-  geomelements.Last().Neighbour(3) = 0;
+  geomelements.Last().Neighbour(1) = neigbor0;
+  geomelements.Last().Neighbour(2) = neigbor1;
+  geomelements.Last().Neighbour(3) = neigbor2;
 
-  if (LGM_DEBUG) printf("%s %d %d %d \n","SURFACEELEMENT",node0,node1,node2);
+  if (LGM_DEBUG)
+    printf("%s %d %d %d %d %d %d \n","SURFACEELEMENT",node0,node1,node2,
+           neigbor0,neigbor1,neigbor2);
 
   return 0;
 }
@@ -832,23 +835,32 @@ void surfacemeshing :: Mesh (double gh)
   /*  Point2d bemp, bemp1, bemp2;*/
   Point3d bemp, bemp1, bemp2;
 
-  // cout << "Inputpoints for netgen" << endl;
-  for (i = 1; i <= geompoints.Size(); i++)
+  if(LGM_DEBUG)
   {
-    /*cout << geompoints[i].p.X() << "  "
-        << geompoints[i].p.Y() << "  "
-        << geompoints[i].p.Z() << endl;*/
+    // Ausgabe fuer Netgen
+    printf("%s\n","ug");
+    printf("%d\n",geompoints.Size());
+    for (i = 1; i <= geompoints.Size(); i++)
+    {
+      cout << geompoints[i].p.X() << "  "
+           << geompoints[i].p.Y() << "  "
+           << geompoints[i].p.Z() << endl;
+    }
+    printf("%d\n",geomelements.Size());
+    for(i=1; i<=geomelements.Size(); i++)
+    {
+      cout << geomelements[i].PNum(1) << "  "
+           << geomelements[i].PNum(2) << "  "
+           << geomelements[i].PNum(3) << "  "
+           << geomelements[i].Neighbour(1) << "  "
+           << geomelements[i].Neighbour(2) << "  "
+           << geomelements[i].Neighbour(3)
+           << endl;
+    }
+
+    // Ausgabe der Front
+    adfront->ugPrint(cout);
   }
-
-  // cout << "Inputelements for netgen" << endl;
-  for(i=1; i<=geomelements.Size(); i++)
-  {
-    /*cout << geomelements[i].PNum(1) << "  "
-        << geomelements[i].PNum(2) << "  "
-        << geomelements[i].PNum(3) << endl;*/
-  }
-
-
 
   testmode = 0;
   meshthis = this;
@@ -1029,8 +1041,446 @@ void surfacemeshing :: Mesh (double gh)
   }
 
   EndMesh ();
-  geompoints.SetSize(0);
-  geomelements.SetSize(0);
+}
+
+#define Det(a)                  ( - a[0] * a[4] * a[8]  \
+                                  + a[0] * a[5] * a[7]  \
+                                  + a[3] * a[1] * a[8]  \
+                                  - a[3] * a[2] * a[7]  \
+                                  - a[6] * a[1] * a[5]  \
+                                  + a[6] * a[2] * a[4])
+
+#define InvMatMult(b,c,a)               b[0] =    ( a[5] * a[7] - a[4] * a[8] ) * c[0]          \
+                                               + ( a[1] * a[8] - a[2] * a[7] ) * c[1]          \
+                                               + ( a[2] * a[4] - a[1] * a[5] ) * c[2];         \
+  b[1] =    ( a[3] * a[8] - a[5] * a[6] ) * c[0]          \
+         + ( a[2] * a[6] - a[0] * a[8] ) * c[1]          \
+         + ( a[0] * a[5] - a[2] * a[3] ) * c[2];         \
+  b[2] =    ( a[4] * a[6] - a[3] * a[7] ) * c[0]          \
+         + ( a[0] * a[7] - a[1] * a[6] ) * c[1]          \
+         + ( a[1] * a[3] - a[0] * a[4] ) * c[2];         \
+  b[0] = b[0] / Det(a);                                   \
+  b[1] = b[1] / Det(a);                                   \
+  b[2] = b[2] / Det(a);
+
+#define Det2d(a)                ( a[0] * a[3] - a[1] * a[2] )
+
+#define InvMatMult2d(b,c,a)             b[0] =    a[3] * c[0]           \
+                                               - a[1] * c[1];          \
+  b[1] =  - a[2] * c[0]           \
+         + a[0] * c[1];          \
+  b[0] = b[0] / Det2d(a);         \
+  b[1] = b[1] / Det2d(a);
+
+
+int Calc_Vectors(const Point3d p0,
+                 const Point3d p1,
+                 const Point3d p2,
+                 Vec3d & n0,
+                 Vec3d & n1,
+                 Vec3d & n2)
+{
+  // compute 2 vectors in the plane + normalvektor
+  n0 = p2 - p0;
+  n0 /= n0.Length();
+  n1 = p2 - p1;
+  n1 /= n1.Length();
+
+  n2 = Cross(n0,n1);
+  n2 /= n2.Length();
+  return(0);
+}
+
+
+double ABS(double value)
+{
+  if(value<0.0)
+    return(-value);
+  else
+    return(value);
+}
+
+double Calc_Local_Coordinates(const Point3d p0,
+                              const Point3d p1,
+                              const Point3d p2,
+                              const Point3d p,
+                              double & lam0,
+                              double & lam1,
+                              double & lam2)
+{
+  double a[9],aa[4],cc[2];
+  double s1[3],s2[3],s3[3],det;
+  Point3d np,pp1,pp2;
+  Vec3d n0,n1,n2,nv;
+  //double bb[3];
+  nv = p - p0;
+
+  Calc_Vectors(p0,p1,p2,n0,n1,n2);
+
+  pp1.X() = p.X() - (n2*nv) * n2.X();
+  pp1.Y() = p.Y() - (n2*nv) * n2.Y();
+  pp1.Z() = p.Z() - (n2*nv) * n2.Z();
+
+  // calculate local coordinates
+  a[0] = p0.X();
+  a[1] = p1.X();
+  a[2] = p2.X();
+
+  a[3] = p0.Y();
+  a[4] = p1.Y();
+  a[5] = p2.Y();
+
+  a[6] = p0.Z();
+  a[7] = p1.Z();
+  a[8] = p2.Z();
+
+  aa[0] = a[0] - a[2];
+  aa[1] = a[1] - a[2];
+  aa[2] = a[3] - a[5];
+  aa[3] = a[4] - a[5];
+
+  if(ABS(Det2d(aa))>0.0001)
+  {
+    det = ABS(Det2d(aa));
+    cc[0] = pp1.X() - a[2];
+    cc[1] = pp1.Y() - a[5];
+    InvMatMult2d(s1,cc,aa);
+    s1[2] = 1 - s1[0] - s1[1];
+    lam0 = s1[0];
+    lam1 = s1[1];
+    lam2 = 1 - s1[0] - s1[1];
+  }
+  else
+  {
+    aa[0] = a[0] - a[2];
+    aa[1] = a[1] - a[2];
+    aa[2] = a[6] - a[8];
+    aa[3] = a[7] - a[8];
+    if(ABS(Det2d(aa))>0.001)
+    {
+      det = ABS(Det2d(aa));
+      cc[0] = pp1.X() - a[2];
+      cc[1] = pp1.Z() - a[8];
+      InvMatMult2d(s2,cc,aa);
+      s2[2] = 1 - s2[0] - s2[1];
+      lam0 = s2[0];
+      lam1 = s2[1];
+      lam2 = 1 - s2[0] - s2[1];
+    }
+    else
+    {
+      aa[0] = a[3] - a[5];
+      aa[1] = a[4] - a[5];
+      aa[2] = a[6] - a[8];
+      aa[3] = a[7] - a[8];
+      if(ABS(Det2d(aa))>0.001)
+      {
+        det = ABS(Det2d(aa));
+        cc[0] = pp1.Y() - a[5];
+        cc[1] = pp1.Z() - a[8];
+        InvMatMult2d(s3,cc,aa);
+        s3[2] = 1 - s3[0] - s3[1];
+        lam0 = s3[0];
+        lam1 = s3[1];
+        lam2 = 1 - s3[0] - s3[1];
+      }
+      else
+      {
+        printf("%s\n","hier geht was schief");
+      }
+    }
+  }
+  return(det);
+}
+
+
+int Calc_Coord_Vectors(const Point3d p1,
+                       const Point3d p2,
+                       const int mi,
+                       Vec3d & nx,
+                       Vec3d & ny,
+                       Vec3d & nz)
+{
+  Point3d ep1,ep2,ep3;
+
+  // Corner des Inputdreiecks
+  ep1 = geompoints[geomelements[mi].PNum(1)].p;
+  ep2 = geompoints[geomelements[mi].PNum(2)].p;
+  ep3 = geompoints[geomelements[mi].PNum(3)].p;
+
+  nz = Cross(ep2 - ep1, ep3 - ep1);
+  nz /= nz.Length();
+
+  nx = p2 - p1;
+  nx = nx - (nx * nz) * nz;
+  nx /= nx.Length();
+
+  ny = Cross(nz,nx);
+  ny /= ny.Length();
+
+  return(0);
+}
+
+double Project2Plane(Point3d & p,
+                     Vec3d & np,
+                     Point3d & p0,
+                     Vec3d & n0,
+                     Vec3d & n1,
+                     Vec3d & n2)
+{
+  double dist, dist1;
+  np = p - p0;
+
+  dist = (n2 * np);
+  np = np - (n2 * np) * n2;
+
+  if(dist<0.0)
+    dist = -dist;
+  return(dist);
+}
+
+
+// ***********************************************************************************
+// Funktionen fuer die Projektion eines Punktes auf die Surface
+// ***********************************************************************************
+
+int c1(const Point3d & point, Point3d & returnpoint)
+{
+  int i,j,triang[10][4],trnb, mi, nn1, nn2, np1, np2;
+  double lam[3],prod,help;
+  Point3d p0,p1,p2, p;
+  Vec3d edge,geomedge,n0,n1,n2,np;
+  InputElement es;
+
+  p = point;
+  /* Punkt liegt auf der Surface
+   * 0<=lamda_i<=1,  dist < eps
+   * Falls der Punkt genau auf einer Kante zwischen 2 Dreiecken liegt,
+   * ist es egal welches genommen wird
+   */
+
+  mi = 0;
+  trnb = 0;
+  for(i=1; i<=geomelements.Size(); i++)
+  {
+    p0 = geompoints[geomelements[i].PNum(1)].p;
+    p1 = geompoints[geomelements[i].PNum(2)].p;
+    p2 = geompoints[geomelements[i].PNum(3)].p;
+
+    Calc_Local_Coordinates(p0,p1,p2,p,lam[0],lam[1],lam[2]);
+
+    Calc_Vectors(p0,p1,p2,n0,n1,n2);
+    help = Project2Plane(p,np,p0,n0,n1,n2);
+
+    if( (lam[0]>=-SMALL) && (lam[1]>=-SMALL) && (lam[2]>=-SMALL) && (help<SMALL) )
+    {
+      mi = i;
+      returnpoint.X() = np.X() + p0.X();
+      returnpoint.Y() = np.Y() + p0.Y();
+      returnpoint.Z() = np.Z() + p0.Z();
+      break;
+    }
+  }
+
+  return(mi);
+}
+
+int c2(Point3d & p, Point3d & returnpoint, double &min)
+{
+  int i,j, mi;
+  double lam[3],help;
+  Point3d p0,p1,p2;
+  Vec3d n0,n1,n2,np;
+
+  /* Punkt liegt nicht auf der Surface
+   * Projeziere den Punkt in ein Dreieck mit  0<=lamda_i<=1 sodass der
+   * Abstand zur Surface minimal wird
+   */
+
+  min = 10000000.0;
+  mi = 0;
+  for(i=1; i<=geomelements.Size(); i++)
+  {
+    p0 = geompoints[geomelements[i].PNum(1)].p;
+    p1 = geompoints[geomelements[i].PNum(2)].p;
+    p2 = geompoints[geomelements[i].PNum(3)].p;
+
+    Calc_Local_Coordinates(p0,p1,p2,p,lam[0],lam[1],lam[2]);
+
+    Calc_Vectors(p0,p1,p2,n0,n1,n2);
+    help = Project2Plane(p,np,p0,n0,n1,n2);
+
+    if( (lam[0]>=-SMALL) && (lam[1]>=-SMALL) && (lam[2]>=-SMALL) && (help<min) )
+    {
+      mi = i;
+      min = help;
+      returnpoint.X() = np.X() + p0.X();
+      returnpoint.Y() = np.Y() + p0.Y();
+      returnpoint.Z() = np.Z() + p0.Z();
+    }
+  }
+  return(mi);
+}
+
+int c3(Point3d & p, Point3d & returnpoint, double &min)
+{
+  int i,j, mi;
+  double lam[3],help, d0, d1, dist, m;
+  Point3d p0,p1,p2, point;
+  Vec3d n0,n1,n2,np, dist_vec;
+
+  /* Punkt liegt nicht auf der Surface
+   * Projeziere den Punkt auf die Kante,  sdass der
+   *Abstand minimal wird */
+
+  min = 10000000.0;
+
+  for(i=1; i<=geomelements.Size(); i++)
+  {
+    for(j=0; j<3; j++)
+    {
+      p0 = geompoints[geomelements[i].PNum(j%3+1)].p;
+      p1 = geompoints[geomelements[i].PNum((j+1)%3+1)].p;
+
+      m = ( (p1 - p0) * (p - p0) ) / ( (p1 - p0) * (p1 - p0) );
+
+      if((0.0<=m) && (m<=1.0))
+      {
+        point = p0 + m * (p1 - p0);
+
+        dist_vec = p - point;
+        help = dist_vec.Length();
+      }
+      else
+      {
+        dist_vec = p - p0;
+        d0 = dist_vec.Length();
+
+        dist_vec = p - p1;
+        d1 = dist_vec.Length();
+
+        if(d0>d1)
+        {
+          m = 0.0;
+          help = d1;
+          point = p1;
+        }
+        else
+        {
+          m = 1.0;
+          help = d0;
+          point = p0;
+        }
+      }
+
+      if( (help<min) )
+      {
+        mi = i;
+        min = help;
+        returnpoint.X()=point.X();
+        returnpoint.Y()=point.Y();
+        returnpoint.Z()=point.Z();
+      }
+    }
+  }
+  return(mi);
+}
+
+int Project_Point2Surface(Point3d &inpoint, Point3d &outpoint)
+{
+  int i, j, mi,mi2,mi3;
+  double min2, min3;
+  Point3d p1, p2, p3;
+  mi = 0;
+  mi = c1(inpoint, p1);
+  if(mi!=0)
+    outpoint = p1;
+  else
+  {
+    mi2 = c2(inpoint, p2, min2);
+    mi3 = c3(inpoint, p3, min3);
+    if((mi2==0)&&(mi3==0))
+      printf("%s\n", "schotter");
+
+    if(min2<min3)
+    {
+      mi = mi2;
+      outpoint = p2;
+    }
+    else
+    {
+      mi = mi3;
+      outpoint = p3;
+    }
+  }
+  return(mi);
+}
+
+// ***********************************************************************************
+//
+// ***********************************************************************************
+
+
+void Smooth_SurfaceMesh (ARRAY<Point3d> & points, const ARRAY<Element> & elements, int numboundarypoints, int steps)
+{
+  int i,j,k,l,m,num_neighbor_points;
+  TABLE<INDEX> pointlist(points.Size());
+  Point3d p_new;
+
+  for (i = 1; i <= elements.Size(); i++)
+  {
+    for (j = 1; j <= elements[i].NP(); j++)
+      pointlist.Add(elements[i].PNum(j),i);
+  }
+
+  if(LGM_DEBUG)
+  {
+    cout << points.Size() << " " << "points" << endl;
+    for (i = 1; i <= points.Size(); i++)
+      cout << points[i] << endl;
+    cout << elements.Size() << " " << "elements" << endl;
+    for (i = 1; i <= elements.Size(); i++)
+      cout << elements[i].PNum(1) << "  " << elements[i].PNum(2) << "  " << elements[i].PNum(3) << endl;
+    for (i = 1; i <= points.Size(); i++)
+    {
+      for (j = 1; j <= pointlist.EntrySize(i); j++)
+        cout << pointlist.Get(i, j) << "  ";
+      cout << endl;
+    }
+    cout << endl;
+  }
+
+  for (k = 1; k <= steps; k++)
+  {
+    for (i = numboundarypoints+1; i <= points.Size(); i++)
+    {
+      num_neighbor_points = 0;
+      p_new.X() = 0.0;
+      p_new.Y() = 0.0;
+      p_new.Z() = 0.0;
+      for (j = 1; j <= pointlist.EntrySize(i); j++)
+      {
+        for (l = 1; l <= elements[pointlist.Get(i,j)].NP(); l++)
+        {
+          for (m = 1; m <= elements[pointlist.Get(i,j)].NP(); m++)
+            if(i!=elements[pointlist.Get(i,j)].PNum(m))
+            {
+              p_new.X() = p_new.X() + points[elements[pointlist.Get(i,j)].PNum(m)].X();
+              p_new.Y() = p_new.Y() + points[elements[pointlist.Get(i,j)].PNum(m)].Y();
+              p_new.Z() = p_new.Z() + points[elements[pointlist.Get(i,j)].PNum(m)].Z();
+              num_neighbor_points++;
+            }
+        }
+      }
+      if(num_neighbor_points>0)
+      {
+        p_new.X() = p_new.X() / num_neighbor_points;
+        p_new.Y() = p_new.Y() / num_neighbor_points;
+        p_new.Z() = p_new.Z() / num_neighbor_points;
+      }
+      Project_Point2Surface(p_new, points[i]);
+    }
+  }
 }
 
 
@@ -1056,10 +1506,8 @@ int StartSurfaceNetgen (double h, int smooth, int display)
 
   meshing -> Mesh (h);
 
-  //  for (i=0; i<smooth; i++)
-  //	meshing -> ImproveMesh (points, elements, 0, nbp, h,20,1);
-  //points, elements, 0, nbp, h, 20, 1
-  //  UserWriteF("\n");
+  Smooth_SurfaceMesh(points, elements, nbp, smooth);
+
   for (i = nbp + 1; i <= points.Size(); i++)
     AddInnerNode2ug (points.Get(i).X(),
                      points.Get(i).Y(),
@@ -1074,5 +1522,7 @@ int StartSurfaceNetgen (double h, int smooth, int display)
 
   elements.SetSize(0);
   points.SetSize(0);
+  geompoints.SetSize(0);
+  geomelements.SetSize(0);
   return 0;
 }
