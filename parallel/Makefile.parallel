@@ -63,7 +63,7 @@ clean: ppif_clean
 	cd dddif; make -f Makefile.dddif clean; cd ..;
 	cd dddobj; make -f Makefile.dddobj clean; cd ..;
 	cd chaco; make -f Makefile.chaco clean; cd ..;
-	rm -f $OBJECTS;
+	rm -f $(OBJECTS);
 
 
 ####################################################################
