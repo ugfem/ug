@@ -12002,6 +12002,33 @@ static INT LB4Command (INT argc, char **argv)
 
 #endif /* ModelP */
 
+#ifdef __GUI__
+/****************************************************************************/
+/*D
+   d3f - create gui for d3f simulato
+
+   DESCRIPTION:
+   This command create a graphical user interface for the ug based
+   simulator 'd3f'. The gui is build upon X11, Xt and Xaw widgets,
+   which are managed by a intermediate layer (currently lsx).
+
+   'd3f'
+
+   KEYWORDS:
+   d3f, simulator, gui, graphical user interface, X11
+   D*/
+/****************************************************************************/
+
+static INT D3fCommand (INT argc, char **argv)
+{
+  NO_OPTION_CHECK(argc,argv);
+
+  Main_ControlPanel();
+
+  return(0);
+}
+#endif
+
 /****************************************************************************/
 /*D
    debug - set or display debug level for ug kernel subsystem
@@ -13273,6 +13300,10 @@ INT InitCommands ()
   if (CreateCommand("lb4",                        LB4Command                                              )==NULL) return (__LINE__);
 #endif
 #endif /* ModelP */
+
+        #ifdef __GUI__
+  if (CreateCommand("d3f",         D3fCommand                         )==NULL) return (__LINE__);
+        #endif
 
   /* array commands */
   if (CreateCommand("crar",               CreateArrayCommand                                      )==NULL) return (__LINE__);
