@@ -58,6 +58,7 @@
 #include "compiler.h"
 #include "devices.h"
 #include "initdev.h"
+#include "defaults.h"
 
 /* Xif includes */
 #include "xmain.h"
@@ -142,8 +143,8 @@ static int HistLastPos=0;
 static int HistInsertPos=0;
 static int HistReadPos=0;
 static char HistBuf[HISTLEN*INPUTBUFFERLEN];
-static int MaxTextBuffer=5000;                  /* number of stored characters */
-static int ReplaceTextBuffer=500;                       /* number of characters to remove */
+static int MaxTextBuffer=10000;                         /* number of stored characters */
+static int ReplaceTextBuffer=2000;                  /* number of characters to remove*/
 #endif
 
 /* data for CVS */
@@ -231,6 +232,7 @@ int ShellOpen (ShellWindow *sh)
   XClassHint class_hints;
         #ifdef USE_XAW
   int n;
+  char buffer[128];
   Arg args[20];
   XtTranslations NewTranslations;
   XtActionsRec actions[] = {
@@ -403,7 +405,15 @@ int ShellOpen (ShellWindow *sh)
   ShellShowCursor(sh);
         #endif
 
-  /* und tschuess */
+    #ifdef USE_XAW
+  if (GetDefaultValue(DEFAULTSFILENAME,"shellbuffersize",buffer)==0)
+  {
+    sscanf(buffer," %d ",&n);
+    ReplaceTextBuffer = n / 3;
+    MaxTextBuffer = ReplaceTextBuffer + n;
+  }
+    #endif
+
   return(0);
 }
 
@@ -451,39 +461,11 @@ void ShellScrollLine (ShellWindow *sh)
 /*																			*/
 /****************************************************************************/
 
+#ifndef USE_XAW
 void ShellInsertChar (ShellWindow *sh, char c)
 {
   int x,y;
   int error;
-        #ifdef USE_XAW
-  Cardinal n;
-  Arg args[10];
-  XawTextPosition appendPos;
-  XawTextBlock text;
-  char t = c;
-  char NewString[INPUTBUFFERLEN];
-
-  text.firstPos = 0;
-  text.length = 1;
-  text.ptr = &t;
-  text.format = FMT8BIT;
-
-  appendPos = XawTextGetInsertionPoint(sh->wid);
-  if (nchars > InsertPos)
-  {
-    n=0;
-    XtSetArg(args[n], XtNeditType, XawtextEdit); n++;
-    XtSetValues(ugshell,args,n);
-  }
-  error = XawTextReplace(sh->wid,appendPos,appendPos,&text);
-  if (nchars > InsertPos)
-  {
-    n=0;
-    XtSetArg(args[n], XtNeditType, XawtextAppend); n++;
-    XtSetValues(ugshell,args,n);
-  }
-  XawTextSetInsertionPoint(sh->wid,appendPos+1);
-        #else /* USE_XAW */
 
   /* hide cursor */
   ShellHideCursor(sh);
@@ -527,9 +509,7 @@ void ShellInsertChar (ShellWindow *sh, char c)
     x = XPOS(sh,sh->col,sh->line);
     y = YPOS(sh,sh->col,sh->line);
     BLACK(sh);
-                        #ifndef USE_XAW
     XDrawString(display,sh->win,sh->gc,x,y,&c,1);
-                        #endif /* USE_XAW */
     /* insert character in text buffer */
     TEXTLINE(sh,sh->line)[sh->col] = c;
 
@@ -554,22 +534,23 @@ void ShellInsertChar (ShellWindow *sh, char c)
 
   /* show cursor again */
   ShellShowCursor(sh);
-        #endif /* USE_XAW */
 }
+#endif /* not USE_XAW */
 
 /************************************************************************/
-/*									*/
-/* Function:	ShellUpdateTextBuffer					*/
-/*									*/
-/* Purpose:     Update the buffer of a shell window			*/
-/*									*/
-/* Input:	ShellWindow *sh						*/
-/*		number of characters to remove   int i                  */
-/*									*/
-/* Output:	   none                                                 */
-/*									*/
+/*									                                    */
+/* Function:	ShellUpdateTextBuffer					                */
+/*									                                    */
+/* Purpose:     Update the buffer of a shell window			            */
+/*									                                    */
+/* Input:	ShellWindow *sh						                        */
+/*		number of characters to remove   int i                                  */
+/*									                                    */
+/* Output:	   none                                                                             */
+/*									                                    */
 /************************************************************************/
 
+#ifdef USE_XAW
 void ShellUpdateTextBuffer(ShellWindow *sh, int i)
 {
   XawTextPosition appendPos, endPos;
@@ -592,11 +573,10 @@ void ShellUpdateTextBuffer(ShellWindow *sh, int i)
   XawTextSetInsertionPoint(sh->wid,i);
   endPos=XawTextSearch(sh->wid,XawsdRight,&textSearch);
   XawTextReplace(sh->wid,0,endPos+1,&textInsert);
-  /*XawTextSetInsertionPoint(sh->wid,appendPos);*/
 
   XawTextEnableRedisplay(sh->wid);
 }
-
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -625,7 +605,8 @@ void ShellInsertString (ShellWindow *sh, const char *s)
 
   appendPos = XawTextGetInsertionPoint(sh->wid);
 
-  if(appendPos>MaxTextBuffer) ShellUpdateTextBuffer(sh, ReplaceTextBuffer);
+  if(appendPos>MaxTextBuffer)
+    ShellUpdateTextBuffer(sh, ReplaceTextBuffer);
 
   XawTextReplace(sh->wid,appendPos,appendPos+text.length,&text);
   XawTextSetInsertionPoint(sh->wid,appendPos+text.length);
@@ -678,7 +659,6 @@ void ShellRefresh (ShellWindow *sh)
   /* clear clipping region */
   XDestroyRegion(sh->region);
   sh->region = XCreateRegion();
-
 }
 
 
