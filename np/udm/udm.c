@@ -339,6 +339,7 @@ static INT SetCompactTypesOfVec (VECDATA_DESC *vd)
   for (tp=0; tp<NVECTYPES; tp++)
     if (VD_ISDEF_IN_TYPE(vd,tp))
     {
+      VD_MAXTYPE(vd) = tp + 1;
       VD_DATA_TYPES(vd) |= BITWISE_TYPE(tp);
       VD_OBJ_USED(vd)   |= FMT_T2O(fmt,tp);
     }
