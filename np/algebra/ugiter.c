@@ -2368,7 +2368,7 @@ INT NS_DIM_PREFIX l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCAL
 
       /* now we are at line i */
       diag = MVALUE(VSTART(vi),mc);                                     /* diagonal element */
-      if (fabs(diag)<SMALL_D) REP_ERR_RETURN(-i);                               /* decomposition failed */
+      if (fabs(diag)<SMALL_D*1e-20) REP_ERR_RETURN(-i);                                 /* decomposition failed */
 
       /* store inverse back to diag */
       if (StoreInverse)

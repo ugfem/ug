@@ -162,7 +162,7 @@ INT SolveSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
           }
 
         /* check again */
-        if (ABS(piv)<SMALL_D)
+        if (ABS(piv)<SMALL_D*1e-10)
           return (NUM_SMALL_DIAG);                                       /* matrix is singular */
 
         /* exchange rows i and pivrow */
@@ -355,7 +355,7 @@ INT InvertSmallBlock (SHORT n, const SHORT *mcomp,
           }
 
         /* check again */
-        if (ABS(piv)<SMALL_D)
+        if (ABS(piv)<SMALL_D*1e-20)
           return (NUM_SMALL_DIAG);                               /* matrix is singular */
 
         /* exchange rows i and pivrow */
@@ -670,7 +670,7 @@ INT SolveFullMatrix (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
 
     dinv = mat[i*n+i];
     if (ABS(dinv)<SMALL_DET)
-      RETURN (NUM_SMALL_DIAG);
+      return (NUM_SMALL_DIAG);
     dinv = mat[i*n+i] = 1.0/dinv;
     for (j=i+1; j<n; j++)
     {
