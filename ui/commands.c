@@ -233,6 +233,7 @@ static MARKRULE myMR[NO_OF_RULES]=      /* name and ID of available rules	*/
  /* rules for tetrahedra */
                                          #ifndef TET_RULESET
  {"tet2hex",TETRA_RED_HEX},
+ {"pri2hex",PRISM_RED_HEX},
                                          #endif
  /* rules for prisms */
  {"pri_quadsect",PRISM_QUADSECT},
@@ -5565,7 +5566,7 @@ static INT MarkCommand (INT argc, char **argv)
     }
 
   /* scan parameters */
-  /*rv = sscanf(argv[0],"mark %31[redbluecopycoarsnoi_123qttet2hex] %d",rulename,&Side);*/
+  /*rv = sscanf(argv[0],"mark %31[redbluecopycoarsnoi_123qtpritet2hex] %d",rulename,&Side);*/
   rv = sscanf(argv[0],"mark %31[a-z_1-9] %d",rulename,&Side);
   if (rv<1)
   {
