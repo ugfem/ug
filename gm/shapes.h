@@ -144,6 +144,9 @@
  {if ((n) == 3)      AREA_OF_TRIANGLE((x),(area))       \
   else if ((n) == 4) AREA_OF_QUADRILATERAL((x),(area)) }
 
+#define AREA_OF_REF(n,area)       { if ( (n) == 3) (area) = 0.5;     \
+									else if ( (n) == 4) (area) = 1.0; }
+
 #define TRANSFORMATION_OF_TRIANGLE(x,M)     \
     { V2_SUBTRACT((x)[1],(x)[0],(M)[0]);    \
 	  V2_SUBTRACT((x)[2],(x)[0],(M)[1]); }
@@ -384,6 +387,15 @@
   else if ((n) == 6) {AREA_OF_PRISM((x),(area));}        \
   else if ((n) == 8) {AREA_OF_HEXAHEDRON((x),(area));}}
 
+#define AREA_OF_REF(n,area)          { if ( (n) == 4)                   \
+                                          (area) = 0.16666666666666666; \
+                                       else if ( (n) == 5)              \
+										  (area) = 0.33333333333333333; \
+									   else if ( (n) == 6)              \
+                                          (area) = 0.5;                 \
+									   else if ( (n) == 8)              \
+                                          (area) = 1.0; }
+
 #define TRANSFORMATION_OF_TETRAHEDRON(x,M)   \
 	{ V3_SUBTRACT((x)[1],(x)[0],(M)[0]);     \
 	  V3_SUBTRACT((x)[2],(x)[0],(M)[1]);     \
@@ -583,7 +595,6 @@ INT SurfaceElement (INT dim, INT nc,
 					DOUBLE ip_local[DIM], DOUBLE *result);
 
 #ifdef __TWODIM__
-DOUBLE	N				(INT n, INT i, DOUBLE s, DOUBLE t);
 DOUBLE	dNds			(INT n, INT i, DOUBLE s, DOUBLE t);
 DOUBLE	dNdt			(INT n, INT i, DOUBLE s, DOUBLE t);
 
