@@ -11,8 +11,11 @@ include $(UGROOT)/ug.conf
 
 OBJECTS = stoch.o
 
-$(UG_LIB) : $(OBJECTS) Makefile.field
+$(UG_LIB) : $(OBJECTS) Makefile.field FORCE
 	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
+
+# to assure that OBJECTS are archived
+FORCE:
 
 ar :
 	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
