@@ -45,7 +45,7 @@
 //		the nodes on AMG levels this NODEVEC may be on level 0.
 // 		Thus an already constructed grid gets changed which 
 //		leads to inconsistent data structures! 
-//		DON'T DO THIS ANYMORE!
+//		DON'T DO THIS for level < 0 !
 // Don't define FAMG_SEND_NODES
 //#define FAMG_SEND_NODES
 #endif
@@ -81,6 +81,8 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio);
 void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data);
 void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, int newness);
 }
+
+static int OverlapForLevel0;
 #endif
 
 INT l_force_consistence (GRID *g, const VECDATA_DESC *x);
@@ -1264,25 +1266,30 @@ int FAMGGrid::Reorder()
 
 #ifdef ModelP
 
-static inline void TransferVector( VECTOR *v, DDD_PROC dest_pe, DDD_PRIO dest_prio, int size )
+static void TransferVector( VECTOR *v, DDD_PROC dest_pe, DDD_PRIO dest_prio, int size )
 {	
 	DDD_XferCopyObjX(PARHDR(v), dest_pe, dest_prio, size);
 	
-#ifdef FAMG_SEND_NODES
-	/* for debugging purpose send the node too */
-	/* TODO: be sure that this isn't done for production runs */
-	IFDEBUG(np,0)
-	GEOM_OBJECT *obj = VOBJECT(v);
-	if( obj != NULL )
-		if (VOTYPE(v) == NODEVEC)
-		{
-			PRINTDEBUG(dddif,2,(PFMT " TransferVector(): vec= " VINDEX_FMTX" n=" ID_FMTX " Xfer v=" 
-				VID_FMTX "\n",me,VINDEX_PRTX(v),ID_PRTX((NODE*)obj),VID_PRTX(MYVERTEX((NODE*)obj))))
-			DDD_XferCopyObj(PARHDR((NODE*)obj), dest_pe, dest_prio);
-		}
-		else
-			assert(0); /* unrecognized vector type; extend code if necessary */	
-	ENDDEBUG
+#ifndef FAMG_SEND_NODES
+	if( OverlapForLevel0 )
+	{
+#endif
+		/* for debugging purpose send the node too */
+		/* TODO: be sure that this isn't done for production runs */
+		IFDEBUG(np,0)
+		GEOM_OBJECT *obj = VOBJECT(v);
+		if( obj != NULL )
+			if (VOTYPE(v) == NODEVEC)
+			{
+				PRINTDEBUG(dddif,2,(PFMT " TransferVector(): vec= " VINDEX_FMTX" n=" ID_FMTX " Xfer v=" 
+					VID_FMTX "\n",me,VINDEX_PRTX(v),ID_PRTX((NODE*)obj),VID_PRTX(MYVERTEX((NODE*)obj))))
+				DDD_XferCopyObj(PARHDR((NODE*)obj), dest_pe, dest_prio);
+			}
+			else
+				assert(0); /* unrecognized vector type; extend code if necessary */	
+		ENDDEBUG
+#ifndef FAMG_SEND_NODES
+	}
 #endif
 }
 
@@ -1423,9 +1430,7 @@ void FAMGGrid::ConstructOverlap()
 		DDD_XferBegin();
 		for( vec=PFIRSTVECTOR(mygrid); PRIO(vec) != PrioBorder && PRIO(vec) != PrioMaster; vec = SUCCVC(vec))
 		{
-			#ifdef FAMG_SEND_NODES
 			DDD_XferPrioChange( PARHDR((NODE*)VOBJECT(vec)), PrioBorder ); /* TODO: cancel this line; its only for beauty in checks */
-			#endif
 			DDD_XferPrioChange( PARHDR(vec), PrioBorder );
 
 			for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
@@ -1436,8 +1441,13 @@ void FAMGGrid::ConstructOverlap()
 		/* vectors which just become border have not set the VECSKIP flag correctly! 
 		   this flags will be corrected by the subsequent a_vector_vecskip */
 
-ASSERT(!DDD_ConsCheck());	
-	}	
+ASSERT(!DDD_ConsCheck());
+		OverlapForLevel0 = 1;
+	}
+	else
+	{
+		OverlapForLevel0 = 0;
+	}
 
 	DDD_XferBegin();
 		DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), SendToMaster );
