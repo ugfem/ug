@@ -155,7 +155,7 @@ typedef struct
   int allTypesDefined;
 
   /* context information, will be allocated with size=procs */
-  int  *context;
+  DDD_PROC  *context;
 } DDD_CTRL;
 
 extern DDD_CTRL dddctrl;
