@@ -11492,23 +11492,17 @@ INT SetPerVecVOBJECT(GRID *g)
 {
   NODE *n;
 
-  for (n=FIRSTNODE(g); n!=NULL; n=SUCCN(n))
-  {
-    if (VOBJECT(NVECTOR(n)) == NULL)
-    {
-      PRINTDEBUG(gm,1,("SetPerVecVOBJECT for node NGID=%08x and vec=%08x (at pos %f %f %f)\n",GID(n),GID(NVECTOR(n)),XC(MYVERTEX(n)),YC(MYVERTEX(n)),ZC(MYVERTEX(n))));
-      VOBJECT(NVECTOR(n)) = (GEOM_OBJECT *)n;
-    }
-  }
-#ifdef ModelP
-  for (n=PFIRSTNODE(g); n!=FIRSTNODE(g); n=SUCCN(n))
+  for (n=PFIRSTNODE(g); n!=NULL; n=SUCCN(n))
   {
     if (VOBJECT(NVECTOR(n)) == NULL)
     {
       VOBJECT(NVECTOR(n)) = (GEOM_OBJECT *)n;
+    } else {
+      if (PRIO((NODE *)VOBJECT(NVECTOR(n)))<PRIO(n))
+        VOBJECT(NVECTOR(n)) = (void*)n;
     }
   }
-#endif
+
         #ifdef Debug
   for (n=PFIRSTNODE(g); n!=NULL; n=SUCCN(n))
   {
@@ -12582,17 +12576,19 @@ static INT ListPeriodicNodeAndVec (GRID *g, INT vgid)
   int *proclist;
   INT found = 0;
 
-  sprintf(pbuf,"  PROC%4d: ",me);
+  sprintf(pbuf,"");
   for (v=PFIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
   {
     if (vgid != GID(v)) continue;
     nref = (NODE*) VOBJECT(v);
+    found++;
 
-    sprintf(pbuf+strlen(pbuf),"v=" VINDEX_FMTX " ", VINDEX_PRTX(v));
+    /*                  sprintf(pbuf+strlen(pbuf),"v=" VINDEX_FMTX " ", VINDEX_PRTX(v)); */
+    /*                  sprintf(pbuf+strlen(pbuf),"LEVEL %d v=%08x/%d  ",GLEVEL(g), GID(v),PRIO(v)); */
 
     proclist = PROCLIST(v);
-    ListProclist(proclist);
-    sprintf(pbuf+strlen(pbuf),"\n");
+    /*                  ListProclist(proclist); */
+    /*                  sprintf(pbuf+strlen(pbuf),"  VNEW=%d  ",VNEW(v)); */
   }
 
   for (n=PFIRSTNODE(g); n!=NULL; n=SUCCN(n))
@@ -12602,11 +12598,21 @@ static INT ListPeriodicNodeAndVec (GRID *g, INT vgid)
     if (vgid != GID(NVECTOR(n))) continue;
 
     cv = CVECT(MYVERTEX(n));
+
+                #ifdef __TWODIM__
+    sprintf(pbuf+strlen(pbuf),"LEVEL %d c %g %g ",GLEVEL(g),cv[1],cv[0]);
+                #else
+    sprintf(pbuf+strlen(pbuf),"c %g %g %g ",cv[1],cv[0],cv[2]);
+                #endif
+    sprintf(pbuf+strlen(pbuf),"v=%08x/%d  ",GID(NVECTOR(n)),PRIO(NVECTOR(n)));
+    proclist = PROCLIST(NVECTOR(n));
+    ListProclist(proclist);
+
     if (n == nref) sprintf(pbuf+strlen(pbuf),"	X ");
     else sprintf(pbuf+strlen(pbuf),"	  ");
 
-    sprintf(pbuf+strlen(pbuf),"c %g %g %g ",cv[0],cv[1],cv[2]);
-    sprintf(pbuf+strlen(pbuf),"n=" ID_FMTX " ",ID_PRTX(n));
+    /*                  sprintf(pbuf+strlen(pbuf),"n=" ID_FMTX " ",ID_PRTX(n)); */
+    sprintf(pbuf+strlen(pbuf),"n=%08x/%d  ",GID(n),PRIO(n));
 
     proclist = PROCLIST(n);
     ListProclist(proclist);
@@ -12615,7 +12621,7 @@ static INT ListPeriodicNodeAndVec (GRID *g, INT vgid)
   }
   if (found == 0) sprintf(pbuf+strlen(pbuf),"NOT FOUND\n");
 
-  UserWriteF("%s",pbuf);
+  UserWriteF("%s\n",pbuf);
 
   return(found);
 }
@@ -12702,8 +12708,8 @@ INT MG_ListPeriodicPos (MULTIGRID *mg, INT fl, INT tl, DOUBLE_VECTOR pos)
   {
     GRID *g = GRID_ON_LEVEL(mg,level);
 
-    if (me == master)
-      UserWriteF("LEVEL %4d\n",level);
+    /*                  if (me == master) */
+    UserWriteF("LEVEL %4d\n",level);
     if (Grid_ListPeriodicPos(g,pos)) return(GM_ERROR);
   }
 
