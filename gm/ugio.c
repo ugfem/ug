@@ -270,7 +270,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   if (BVP_GetBVPDesc(MG_BVP(theMG),&theBVPDesc)) return (GM_ERROR);
 
   /* NB: keep first two ints written for compatibility mode (former controlword) */
-  fprintf(stream,"(MG %d %d %ld %ld %ld %ld %ld %ld \n\"%s\"\n\"%s\"\n\"%s\"\n",
+  fprintf(stream,"(MG %d %d %ld %ld %ld %ld %ld %ld \n\"%s\"\n\"%s\"\n",
           0,
           0,
           (long) theMG->status,
