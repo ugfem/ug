@@ -533,6 +533,7 @@ typedef struct Domain3d
   INSTANCE_STRUCT;\
   LGM_DOMAIN *domain;
 } DOMAIN3D;
+#endif
 
 /****************************************************************************/
 /*																			*/
