@@ -37,6 +37,7 @@
 #include "lgm_domain.h"
 #include "lgm_load.h"
 #include "lgm_transfer.h"
+#include "ansys2lgm.h"
 #include "misc.h"
 #include "general.h"
 #ifdef ModelP
@@ -315,9 +316,18 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     ReadLines               = LGM_ReadLines;
     ReadPoints              = LGM_ReadPoints;
   }
+  else if (strcmp(p,".ans")==0)
+  {
+    ReadDomain              = LGM_ANSYS_ReadDomain;
+    ReadSizes               = LGM_ANSYS_ReadSizes;
+    ReadSubDomain           = LGM_ANSYS_ReadSubDomain;
+    ReadSurface             = LGM_ANSYS_ReadSurface;
+    ReadLines               = LGM_ANSYS_ReadLines;
+    ReadPoints              = LGM_ANSYS_ReadPoints;
+  }
   else
   {
-    UserWrite("ERROR: fimename must end with .lgm or .hgm\n");
+    UserWrite("ERROR: fimename must end with .lgm or .ans\n");
     return (NULL);
   }
 
@@ -353,7 +363,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   /* prepare for LGM_DOMAIN_SUBDOM and LGM_LINE_INFO */
 
   MaxSurfacePerSubdom = 0;
-  for (i=0; i<theDomInfo.nSubDomain; i++) MaxSurfacePerSubdom = MAX(MaxSurfacePerSubdom,lgm_sizes.Subdom_nSurf[i]);
+  for (i=1; i<=theDomInfo.nSubDomain; i++) MaxSurfacePerSubdom = MAX(MaxSurfacePerSubdom,lgm_sizes.Subdom_nSurf[i]);
   if ((theSubdomInfo.SurfaceNumber=(int*)GetTmpMem(theHeap,sizeof(int)*MaxSurfacePerSubdom))==NULL)
     return (NULL);
 

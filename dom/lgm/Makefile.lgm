@@ -12,7 +12,7 @@ include ../../ug.conf
 
 MODULES = SURFACE
 
-OBJECTS = lgm_domain.o lgm_domain$(DIM)d.o lgm_load.o lgm_transfer$(DIM)d.o lgm_parallel.o
+OBJECTS = lgm_domain.o lgm_domain$(DIM)d.o lgm_load.o lgm_transfer$(DIM)d.o lgm_parallel.o ansys2lgm.o
 
 # local C compiler flags
 LCFLAGS = -I../../include
