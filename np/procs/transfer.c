@@ -593,6 +593,7 @@ static INT ProjectSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
 {
   INT i;
 
+  result[0] = 0;
   for (i=tl-1; i>=fl; i--)
     result[0] = StandardProject(GRID_ON_LEVEL(theNP->base.mg,i),x,x);
 
