@@ -13648,28 +13648,54 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 			if (n>2)
 				if (LEVEL(theElement)<EE3D_MaxLevel)
 				{
-					switch (EE3D_NoColor[COLOR_LOWER_LEVEL] | (EE3D_NoColor[COLOR_CUT_EDGE]<<1))
+
+					if (EE3D_Property)
 					{
-						case 0:
-							DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
-							DO_2c(theDO) = n; DO_inc(theDO) 
-							DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
-							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
-							break;
-						case 1:
-							DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO) 
-							DO_2c(theDO) = n; DO_inc(theDO) 
-							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
-							break;
-						case 2:
-							DO_2c(theDO) = DO_POLYGON; DO_inc(theDO) 
-							DO_2c(theDO) = n; DO_inc(theDO) 
-							DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
-							break;
-						case 3:
-							DO_2c(theDO) = DO_ERASE_POLYGON; DO_inc(theDO) 
-							DO_2c(theDO) = n; DO_inc(theDO) 
-							break;
+						DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO);
+						DO_2c(theDO) = n; DO_inc(theDO);
+						if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty)
+							assert (0);
+						#ifndef ModelP
+						DO_2l(theDO) = edgecolor = EE3D_PropertyColor[(int)LEVEL(theElement)]; DO_inc(theDO);
+						#else
+						DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1]; DO_inc(theDO);
+						#endif
+						if (EE3D_EdgeColor == 1 && edgecolor != -1)
+						{
+							DO_2l(theDO) = edgecolor;
+							DO_inc(theDO);
+						}
+						else
+						{
+							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE];
+							DO_inc(theDO);
+						}
+					}   
+					else
+					{
+						switch (EE3D_NoColor[COLOR_LOWER_LEVEL] | (EE3D_NoColor[COLOR_CUT_EDGE]<<1))
+						{
+							case 0:
+								DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
+								DO_2c(theDO) = n; DO_inc(theDO) 
+								DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
+								DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
+								break;
+							case 1:
+								DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO) 
+								DO_2c(theDO) = n; DO_inc(theDO) 
+								DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
+								break;
+							case 2:
+								DO_2c(theDO) = DO_POLYGON; DO_inc(theDO) 
+								DO_2c(theDO) = n; DO_inc(theDO) 
+								DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
+								break;
+							case 3:
+								DO_2c(theDO) = DO_ERASE_POLYGON; DO_inc(theDO) 
+								DO_2c(theDO) = n; DO_inc(theDO) 
+								break;
+						}
 					}
                     #ifdef ModelP
 					for (j=0; j<n; j++)
@@ -13689,28 +13715,54 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				}
 				else
 				{
-					switch (EE3D_NoColor[ECLASS(theElement)] | (EE3D_NoColor[COLOR_CUT_EDGE]<<1))
+
+					if (EE3D_Property)
 					{
-						case 0:
-							DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
-							DO_2c(theDO) = n; DO_inc(theDO) 
-							DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO)
-							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
-							break;
-						case 1:
-							DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO) 
-							DO_2c(theDO) = n; DO_inc(theDO) 
-							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
-							break;
-						case 2:
-							DO_2c(theDO) = DO_POLYGON; DO_inc(theDO) 
-							DO_2c(theDO) = n; DO_inc(theDO) 
-							DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
-							break;
-						case 3:
-							DO_2c(theDO) = DO_ERASE_POLYGON; DO_inc(theDO) 
-							DO_2c(theDO) = n; DO_inc(theDO) 
-							break;
+						DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO);
+						DO_2c(theDO) = n; DO_inc(theDO);
+						if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty)
+							assert (0);
+						#ifndef ModelP
+						DO_2l(theDO) = edgecolor = EE3D_PropertyColor[(int)LEVEL(theElement)]; DO_inc(theDO);
+						#else
+						DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1]; DO_inc(theDO);
+						#endif
+						if (EE3D_EdgeColor == 1 && edgecolor != -1)
+						{
+							DO_2l(theDO) = edgecolor;
+							DO_inc(theDO);
+						}
+						else
+						{
+							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE];
+							DO_inc(theDO);
+						}
+					}   
+					else
+					{
+						switch (EE3D_NoColor[ECLASS(theElement)] | (EE3D_NoColor[COLOR_CUT_EDGE]<<1))
+						{
+							case 0:
+								DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
+								DO_2c(theDO) = n; DO_inc(theDO) 
+								DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO)
+								DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
+								break;
+							case 1:
+								DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO) 
+								DO_2c(theDO) = n; DO_inc(theDO) 
+								DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
+								break;
+							case 2:
+								DO_2c(theDO) = DO_POLYGON; DO_inc(theDO) 
+								DO_2c(theDO) = n; DO_inc(theDO) 
+								DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
+								break;
+							case 3:
+								DO_2c(theDO) = DO_ERASE_POLYGON; DO_inc(theDO) 
+								DO_2c(theDO) = n; DO_inc(theDO) 
+								break;
+						}
 					}
                    #ifdef ModelP
 					for (j=0; j<n; j++)
@@ -14328,30 +14380,55 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 			if (n>2) {
 				if (LEVEL(theElement)<EE3D_MaxLevel)
 				{
-					switch (EE3D_NoColor[COLOR_LOWER_LEVEL] | (EE3D_NoColor[COLOR_CUT_EDGE]<<1))
+					if (EE3D_Property)
 					{
-						case 0:
-							DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
-							DO_2c(theDO) = n; DO_inc(theDO) 
-							DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
-							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
-							break;
-						case 1:
-							DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
-							DO_2c(theDO) = n; DO_inc(theDO);
-							DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
-							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
-							break;
-						case 2:
-							DO_2c(theDO) = DO_POLYGON; DO_inc(theDO) 
-							DO_2c(theDO) = n; DO_inc(theDO);
-							DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO);
-							break;
-						case 3:
-							DO_2c(theDO) = DO_POLYGON; DO_inc(theDO);
-							DO_2c(theDO) = n; DO_inc(theDO) 
-							DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
-							break;
+						DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO);
+						DO_2c(theDO) = n; DO_inc(theDO);
+						if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty)
+							assert (0);
+						#ifndef ModelP
+						DO_2l(theDO) = edgecolor = EE3D_PropertyColor[(int)LEVEL(theElement)]; DO_inc(theDO);
+						#else
+						DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1]; DO_inc(theDO);
+						#endif
+						if (EE3D_EdgeColor == 1 && edgecolor != -1)
+						{
+							DO_2l(theDO) = edgecolor;
+							DO_inc(theDO);
+						}
+						else
+						{
+							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE];
+							DO_inc(theDO);
+						}
+					}   
+					else
+					{
+						switch (EE3D_NoColor[COLOR_LOWER_LEVEL] | (EE3D_NoColor[COLOR_CUT_EDGE]<<1))
+						{
+							case 0:
+								DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
+								DO_2c(theDO) = n; DO_inc(theDO) 
+								DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
+								DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
+								break;
+							case 1:
+								DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
+								DO_2c(theDO) = n; DO_inc(theDO);
+								DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+								DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
+								break;
+							case 2:
+								DO_2c(theDO) = DO_POLYGON; DO_inc(theDO) 
+								DO_2c(theDO) = n; DO_inc(theDO);
+								DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO);
+								break;
+							case 3:
+								DO_2c(theDO) = DO_POLYGON; DO_inc(theDO);
+								DO_2c(theDO) = n; DO_inc(theDO) 
+								DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+								break;
+						}
 					}
                     #ifdef ModelP
 					for (j=0; j<n; j++)
@@ -14371,30 +14448,56 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				}
 				else
 				{
-					switch (EE3D_NoColor[ECLASS(theElement)] | (EE3D_NoColor[COLOR_CUT_EDGE]<<1))
+
+					if (EE3D_Property)
 					{
-						case 0:
-							DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
-							DO_2c(theDO) = n; DO_inc(theDO) 
-							DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO)
-							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
-							break;
-						case 1:
-							DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
-							DO_2c(theDO) = n; DO_inc(theDO);
-							DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
-							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
-							break;
-						case 2:
-							DO_2c(theDO) = DO_POLYGON; DO_inc(theDO) 
-							DO_2c(theDO) = n; DO_inc(theDO) 
-							DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
-							break;
-						case 3:
-							DO_2c(theDO) = DO_POLYGON; DO_inc(theDO);
-							DO_2c(theDO) = n; DO_inc(theDO) 
-							DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
-							break;
+						DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO);
+						DO_2c(theDO) = n; DO_inc(theDO);
+						if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty)
+							assert (0);
+						#ifndef ModelP
+						DO_2l(theDO) = edgecolor = EE3D_PropertyColor[(int)LEVEL(theElement)]; DO_inc(theDO);
+						#else
+						DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1]; DO_inc(theDO);
+						#endif
+						if (EE3D_EdgeColor == 1 && edgecolor != -1)
+						{
+							DO_2l(theDO) = edgecolor;
+							DO_inc(theDO);
+						}
+						else
+						{
+							DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE];
+							DO_inc(theDO);
+						}
+					}   
+					else
+					{
+						switch (EE3D_NoColor[ECLASS(theElement)] | (EE3D_NoColor[COLOR_CUT_EDGE]<<1))
+						{
+							case 0:
+								DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
+								DO_2c(theDO) = n; DO_inc(theDO) 
+								DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO)
+								DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
+								break;
+							case 1:
+								DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
+								DO_2c(theDO) = n; DO_inc(theDO);
+								DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+								DO_2l(theDO) = EE3D_Color[COLOR_CUT_EDGE]; DO_inc(theDO)
+								break;
+							case 2:
+								DO_2c(theDO) = DO_POLYGON; DO_inc(theDO) 
+								DO_2c(theDO) = n; DO_inc(theDO) 
+								DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
+								break;
+							case 3:
+								DO_2c(theDO) = DO_POLYGON; DO_inc(theDO);
+								DO_2c(theDO) = n; DO_inc(theDO) 
+								DO_2l(theDO) = EE3D_Color[COLOR_DEFAULT]; DO_inc(theDO);
+								break;
+						}
 					}
                     #ifdef ModelP
 					for (j=0; j<n; j++)
