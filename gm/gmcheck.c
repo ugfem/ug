@@ -1017,7 +1017,7 @@ if (0)			nerrors++;
 			UserWrite("cannot get sons\n");
 			return (1);
 		}
-		for (i=0; SonList[i]!=NULL || i<nsons; i++)
+		for (i=0; (SonList[i]!=NULL || i<nsons) && i<MAX_SONS; i++)
 		{
 		    IFDEBUG(gm,1)
 			if (REFINE(theElement)==0)
