@@ -92,6 +92,16 @@
 								   (x)[1]=CVECT(MYVERTEX(CORNER((e),1))); \
 								   (x)[2]=CVECT(MYVERTEX(CORNER((e),2)));}
 
+#define COPY_COORDINATES_TRIANGLE(e,n,x)                                     \
+                                  {COORD *cvect;                             \
+                                   (n) = 3;                                  \
+								   cvect=CVECT(MYVERTEX(CORNER((e),0)));     \
+                                   V_DIM_COPY(cvect,x[0]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),1)));     \
+                                   V_DIM_COPY(cvect,x[1]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),2)));     \
+								   V_DIM_COPY(cvect,x[2]); }
+
 #define CORNER_COORDINATES_QUADRILATERAL(e,n,x)                           \
                                    {(n)=4;                                \
 								   (x)[0]=CVECT(MYVERTEX(CORNER((e),0))); \
@@ -99,11 +109,29 @@
 								   (x)[2]=CVECT(MYVERTEX(CORNER((e),2))); \
 								   (x)[3]=CVECT(MYVERTEX(CORNER((e),3)));}
 
+#define COPY_COORDINATES_QUADRILATERAL(e,n,x)                                \
+                                  {COORD *cvect;                             \
+                                   (n) = 4;                                  \
+								   cvect=CVECT(MYVERTEX(CORNER((e),0)));     \
+                                   V_DIM_COPY(cvect,x[0]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),1)));     \
+                                   V_DIM_COPY(cvect,x[1]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),2)));     \
+                                   V_DIM_COPY(cvect,x[2]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),3)));     \
+					               V_DIM_COPY(cvect,x[3]); }
+
 #define CORNER_COORDINATES(e,n,x)                               \
  {if (TAG((e))==TRIANGLE)                                       \
                  CORNER_COORDINATES_TRIANGLE((e),(n),(x))       \
   else if (TAG((e))==QUADRILATERAL)                             \
                  CORNER_COORDINATES_QUADRILATERAL((e),(n),(x))}
+
+#define COPY_CORNER_COORDINATES(e,n,x)                          \
+ {if (TAG((e))==TRIANGLE)                                       \
+                 COPY_COORDINATES_TRIANGLE((e),(n),(x))         \
+  else if (TAG((e))==QUADRILATERAL)                             \
+                 COPY_COORDINATES_QUADRILATERAL((e),(n),(x))}
 
 #define LOCAL_TO_GLOBAL_TRIANGLE(x,local,global)          \
  {(global)[0] = (1.0-(local)[0]-(local)[1])*(x)[0][0]     \
@@ -185,6 +213,18 @@
 								   (x)[2]=CVECT(MYVERTEX(CORNER((e),2)));  \
 				                   (x)[3]=CVECT(MYVERTEX(CORNER((e),3)));}
 
+#define COPY_COORDINATES_TETRAHEDRON(e,n,x)                                  \
+                                  {COORD *cvect;                             \
+                                   (n) = 4;                                  \
+								   cvect=CVECT(MYVERTEX(CORNER((e),0)));     \
+                                   V_DIM_COPY(cvect,x[0]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),1)));     \
+                                   V_DIM_COPY(cvect,x[1]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),2)));     \
+                                   V_DIM_COPY(cvect,x[2]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),3)));     \
+					               V_DIM_COPY(cvect,x[3]); }
+
 #define CORNER_COORDINATES_PYRAMID(e,n,x)                                  \
                                   {(n) = 5;                                \
 								   (x)[0]=CVECT(MYVERTEX(CORNER((e),0)));  \
@@ -192,6 +232,20 @@
 								   (x)[2]=CVECT(MYVERTEX(CORNER((e),2)));  \
                                    (x)[3]=CVECT(MYVERTEX(CORNER((e),3)));  \
                                    (x)[4]=CVECT(MYVERTEX(CORNER((e),4)));}
+
+#define COPY_COORDINATES_PYRAMID(e,n,x)                                      \
+                                  {COORD *cvect;                             \
+                                   (n) = 5;                                  \
+								   cvect=CVECT(MYVERTEX(CORNER((e),0)));     \
+                                   V_DIM_COPY(cvect,x[0]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),1)));     \
+                                   V_DIM_COPY(cvect,x[1]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),2)));     \
+                                   V_DIM_COPY(cvect,x[2]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),3)));     \
+                                   V_DIM_COPY(cvect,x[3]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),4)));     \
+					               V_DIM_COPY(cvect,x[4]); }
 
 #define CORNER_COORDINATES_PRISM(e,n,x)                                    \
                                   {(n) = 6;                                \
@@ -201,6 +255,22 @@
                                    (x)[3]=CVECT(MYVERTEX(CORNER((e),3)));  \
                                    (x)[4]=CVECT(MYVERTEX(CORNER((e),3)));  \
                                    (x)[5]=CVECT(MYVERTEX(CORNER((e),4)));}
+
+#define COPY_COORDINATES_PRISM(e,n,x)                                        \
+                                  {COORD *cvect;                             \
+                                   (n) = 6;                                  \
+								   cvect=CVECT(MYVERTEX(CORNER((e),0)));     \
+                                   V_DIM_COPY(cvect,x[0]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),1)));     \
+                                   V_DIM_COPY(cvect,x[1]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),2)));     \
+                                   V_DIM_COPY(cvect,x[2]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),3)));     \
+                                   V_DIM_COPY(cvect,x[3]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),4)));     \
+                                   V_DIM_COPY(cvect,x[4]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),5)));     \
+					               V_DIM_COPY(cvect,x[5]); }
 
 #define CORNER_COORDINATES_HEXAHEDRON(e,n,x)                               \
                                   {(n) = 8;                                \
@@ -213,11 +283,37 @@
 								   (x)[6]=CVECT(MYVERTEX(CORNER((e),6)));  \
 								   (x)[7]=CVECT(MYVERTEX(CORNER((e),7)));}
 
+#define COPY_COORDINATES_HEXAHEDRON(e,n,x)                                   \
+                                  {COORD *cvect;                             \
+                                   (n) = 8;                                  \
+								   cvect=CVECT(MYVERTEX(CORNER((e),0)));     \
+                                   V_DIM_COPY(cvect,x[0]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),1)));     \
+                                   V_DIM_COPY(cvect,x[1]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),2)));     \
+                                   V_DIM_COPY(cvect,x[2]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),3)));     \
+                                   V_DIM_COPY(cvect,x[3]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),4)));     \
+                                   V_DIM_COPY(cvect,x[4]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),5)));     \
+                                   V_DIM_COPY(cvect,x[5]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),6)));     \
+                                   V_DIM_COPY(cvect,x[6]);                   \
+								   cvect=CVECT(MYVERTEX(CORNER((e),7)));     \
+					               V_DIM_COPY(cvect,x[7]); }
+
 #define CORNER_COORDINATES(e,n,x)                                            \
   {if (TAG((e))==TETRAHEDRON)     CORNER_COORDINATES_TETRAHEDRON((e),(n),(x))\
    else if (TAG((e))==PYRAMID)    CORNER_COORDINATES_PYRAMID((e),(n),(x))    \
    else if (TAG((e))==PRISM)      CORNER_COORDINATES_PRISM((e),(n),(x))      \
    else if (TAG((e))==HEXAHEDRON) CORNER_COORDINATES_HEXAHEDRON((e),(n),(x))}
+ 
+#define COPY_CORNER_COORDINATES(e,n,x)                                     \
+  {if (TAG((e))==TETRAHEDRON)     COPY_COORDINATES_TETRAHEDRON((e),(n),(x))\
+   else if (TAG((e))==PYRAMID)    COPY_COORDINATES_PYRAMID((e),(n),(x))    \
+   else if (TAG((e))==PRISM)      COPY_COORDINATES_PRISM((e),(n),(x))      \
+   else if (TAG((e))==HEXAHEDRON) COPY_COORDINATES_HEXAHEDRON((e),(n),(x))}
  
 #define LOCAL_TO_GLOBAL_TETRAHEDRON(x,local,global)                       \
  {(global)[0] = (1.0-(local)[0]-(local)[1]-(local)[2])*(x)[0][0]          \
@@ -498,6 +594,11 @@
 	V3_SCALE(1.0/s,(normal));}
 
 #endif
+
+#define INVERSE_TRANSFORMATION(n,x,local,Jinv,Jdet)   \
+{   DOUBLE_VECTOR J[DIM];                             \
+    TRANSFORMATION((n),(x),(local),J);                \
+	M_DIM_INVERT(J,(Jinv),(Jdet)); }
 
 /****************************************************************************/
 /*																			*/
