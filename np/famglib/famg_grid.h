@@ -322,5 +322,5 @@ inline void **FAMGGrid::GetNode() const {
 void prv( int level, int x_nr );
 void prim(int level);
 void prm(int level, int comp = 0);
-
+void printlist( FAMGGraph *graph);
 #endif

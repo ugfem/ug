@@ -93,7 +93,6 @@ static int* CopyPEBuffer = NULL;
 
 INT l_force_consistence (GRID *g, const VECDATA_DESC *x);
 INT l_vector_collectAll (GRID *g, const VECDATA_DESC *x);
-int pl(FAMGGraph *graph);
 
 // Class FAMGGrid
  
@@ -1311,7 +1310,8 @@ int FAMGGrid::ConstructTransfer()
 
     // test
     // FGSSmoothTV();
-    GetMatrix()->MarkStrongLinks(*this);
+    
+	GetMatrix()->MarkStrongLinks(*this);
 
     if (graph->Init(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
     if (graph->Construct(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
@@ -2380,7 +2380,7 @@ ppal( FAMGNode *node )
 }
 
 
-pl(FAMGGraph *graph)
+void printlist(FAMGGraph *graph)
 {
 	FAMGList *list;
 	FAMGNode *n;

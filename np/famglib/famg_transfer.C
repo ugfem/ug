@@ -30,6 +30,7 @@ extern "C"
 {
 #include "gm.h"
 #include "algebra.h"
+#include "dlmgr.h"
 	#ifdef ModelP
 	#include "parallel.h"
 	#include "np.h"
@@ -292,11 +293,12 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 	GRID *ugfg = fg.GetugGrid();
 	GRID *ugcg = cg.GetugGrid();
 
-    #ifdef ModelP
+	#ifdef ModelP
 	DDD_IdentifyBegin();
-    #ifdef DDDOBJMGR
-    DDD_ObjMgrBegin();
-    #endif
+	DDD_XferBegin();	// SETPRIO needs it
+	#ifdef DDDOBJMGR
+	DDD_ObjMgrBegin();
+	#endif
 	#endif
 
 	// first step: create the coarse grid vectors and the transfer matrix to them
@@ -328,11 +330,11 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 			SETVNCLASS(ugnew_vec,VCLASS(ugfg_vec));
 			SETNEW_DEFECT(ugnew_vec,1);
 			SETFINE_GRID_DOF(ugnew_vec,0);
-			SETPRIO(ugnew_vec,PRIO(ugfg_vec));
 			VECSKIP(ugnew_vec)=VECSKIP(ugfg_vec);
 			SETVCCOARSE(ugnew_vec,0);
 			VSTART(ugnew_vec) = NULL;
 			VISTART(ugnew_vec) = NULL;
+			SETPRIO(ugnew_vec,PRIO(ugfg_vec));
 
 			#ifdef ModelP
 			if (DDD_InfoPrioCopies(PARHDR(ugfg_vec)) > 0) {
@@ -385,11 +387,12 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 		}
 	}
 
-    #ifdef ModelP
-    #ifdef DDDOBJMGR
-    DDD_ObjMgrEnd();
-    #endif
-	DDD_IdentifyEnd();
+	#ifdef ModelP
+	#ifdef DDDOBJMGR
+	DDD_ObjMgrEnd();
+	#endif
+	DDD_XferEnd();
+	DDD_IdentifyEnd();	// this constructs distributed objects; afterwards XferEnd to update prio info
 	#endif
 	
 	cg.GetMatrix()->GetN() = nrVec;
