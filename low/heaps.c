@@ -870,6 +870,9 @@ INT Release (HEAP *theHeap, INT mode, INT key)
       theHeap->used -= newsize-oldsize;
       return(0);
     }
+    if (theHeap->topStackPtr==0)
+      /* no memory in this heap ever allocated */
+      return(0);
   }
   if (mode==FROM_BOTTOM)
   {
@@ -895,6 +898,9 @@ INT Release (HEAP *theHeap, INT mode, INT key)
       theHeap->used -= newsize-oldsize;
       return(0);
     }
+    if (theHeap->bottomStackPtr==0)
+      /* no memory in this heap ever allocated */
+      return(0);
   }
   return(5);
 }
