@@ -55,6 +55,7 @@ AM_CONDITIONAL(NETGEN, false)
 
 # Checks for header files.
 AC_PATH_XTRA
+AM_CONDITIONAL(X11, test x$have_x = xyes)
 AC_FUNC_ALLOCA
 AC_HEADER_DIRENT
 AC_HEADER_STDC

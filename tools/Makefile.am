@@ -7,7 +7,13 @@ AM_CFLAGS = $(UG_CPPFLAGS)
 # !!! dynamic options should be global or so... or in the lib?
 # AM_LDFLAGS = -dlopen self
 
-TOOLS = ugnetgen ugstl xugv ugmesh m2ps
+if X11
+ XUGV = xugv
+else
+ XUGV =
+endif
+
+TOOLS = ugnetgen ugstl $(XUGV) ugmesh m2ps
 
 if BUILD2D
   TOOLS_2D = ugmgs2 ugpfm2 ugmarc2
