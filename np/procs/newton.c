@@ -104,7 +104,8 @@ typedef struct
   INT maxLineSearch;                            /* maximum number of line search steps			*/
   DOUBLE rhoReass;                              /* reassemble if nonlin conv worth than this    */
   DOUBLE lambda;                                /* nonlinear damp factor in $step and $nmg_step */
-  DOUBLE linMinRed[MAX_VEC_COMP];         /* minimum reduction for linear solver			*/
+  DOUBLE linMinRed[MAX_VEC_COMP];         /* minimum reduction for linear solver	*/
+  DOUBLE divFactor[MAX_VEC_COMP];         /* divergence factor for nonlin iteration	*/
 
   /* and XDATA_DESCs */
   MATDATA_DESC *J;                              /* the Matrix to be solved						*/
@@ -335,6 +336,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   char text[DISPLAY_WIDTH+4];                           /* display text in PCR					*/
   INT PrintID;                                                  /* print id for PCR						*/
   VEC_SCALAR defect, defect2reach;              /* component--wise norm					*/
+  VEC_SCALAR defectmax;                                 /* max defect without codivergence		*/
   INT n_unk;                                                            /* number of components in solution		*/
   DOUBLE s,sold,sprime,s2reach,sred;            /* combined defect norm					*/
   INT reassemble=1;                                             /* adaptive computation of jacobian		*/
@@ -422,6 +424,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(newton),'#',"\n");
   if (PreparePCR(newton->d,newton->displayMode,text,&PrintID))    {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
   if (sc_mul(defect2reach,defect,reduction,newton->d))                    {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
+  if (sc_mul(defectmax,defect,newton->divFactor,newton->d))               {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
   if (DoPCR(PrintID,defect,PCR_CRATE))                                                    {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
   for (i=0; i<n_unk; i++) res->first_defect[i] = defect[i];
 
@@ -692,6 +695,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     if (sprime<s2reach) {res->converged=1; break;}
     if (sc_cmp(defect,abslimit,newton->d)) {res->converged=1; break;}
     if (sc_cmp(defect,defect2reach,newton->d)) {res->converged=1; break;}
+    if (!sc_cmp(defect,defectmax,newton->d)) break;
 
     /* compute new reduction factor, assuming quadratic convergence */
     for (i=0; i<n_unk; i++)
@@ -822,6 +826,18 @@ static INT NewtonInit (NP_BASE *base, INT argc, char **argv)
       PrintErrorMessage('E',"NewtonInit","linminred must be in (0,1)");
       REP_ERR_RETURN(NP_NOT_ACTIVE);
     }
+
+  if (sc_read(newton->divFactor,NP_FMT(newton),newton->s,"divfac",argc,argv))
+    for (i=0; i<MAX_VEC_COMP; i++)
+      newton->divFactor[i] = 1e5;
+
+  for (i=0; i<MAX_VEC_COMP; i++)
+    if ((newton->divFactor[i]<=1.0))
+    {
+      PrintErrorMessage('E',"NewtonInit","divfac must be in )1,inf(");
+      REP_ERR_RETURN(NP_NOT_ACTIVE);
+    }
+
   /* set display option */
   newton->displayMode = ReadArgvDisplay(argc,argv);
 
@@ -865,6 +881,7 @@ static INT NewtonDisplay (NP_BASE *theNumProc)
   UserWriteF(DISPLAY_NP_FORMAT_SI,"line",(int)newton->lineSearch);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"lsteps",(int)newton->maxLineSearch);
   if (sc_disp(newton->linMinRed,newton->s,"linMinRed")) REP_ERR_RETURN (1);
+  if (sc_disp(newton->divFactor,newton->s,"divfac")) REP_ERR_RETURN (1);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"lambda",(float)newton->lambda);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"rhoreass",(float)newton->rhoReass);
 
