@@ -256,10 +256,12 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
                                 #ifdef USE_XAW
       flag=XtDispatchEvent(&report);
       IFDEBUG(dev,1)
-      if (flag==FALSE)
+      if (flag==FALSE) {
         PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"));
-      else
+      }
+      else {
         PRINTDEBUG(dev,1,("XtDispatchEvent(): handler for this event found\n"));
+      }
       ENDDEBUG
                                 #else /* USE_XAW */
       ShellHandleResizeEvent(&shell,&report);
@@ -425,10 +427,12 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
   /* Send all events to shell widget */
   flag=XtDispatchEvent(&report);
   IFDEBUG(dev,1)
-  if (flag==FALSE)
+  if (flag==FALSE) {
     PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"));
-  else
+  }
+  else {
     PRINTDEBUG(dev,1,("XtDispatchEvent(): Handler for this event found\n"));
+  }
   ENDDEBUG
 
   switch (report.type)

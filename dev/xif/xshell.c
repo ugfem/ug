@@ -359,9 +359,9 @@ int ShellOpen (ShellWindow *sh)
   sh->win = XCreateSimpleWindow(display,RootWindow(display,screen_num),
                                 x,y,width,height,border_width,BlackPixel(display,screen_num),
                                 WhitePixel(display,screen_num));
-        #endif /* USE_XAW *.
+        #endif /* USE_XAW */
 
-                  /* generate icon, needed for properties */
+  /* generate icon, needed for properties */
   sh->icon_pixmap = XCreateBitmapFromData(display,sh->win,shell_icon_bits,shell_icon_width,
                                           shell_icon_height);
 
