@@ -34,6 +34,8 @@ then
 	echo "         GSF_DOMAIN (set DOM_MODUL = GSF_DOMAIN)";
 	echo "         DEBUG (set DEBUG_MODE = ON)";
 	echo "         NODEBUG (set DEBUG_MODE = OFF)";
+	echo "         CHACO (set CHACO = ON)";
+	echo "         NOCHACO (set CHACO = OFF)";
 	exit 1;
 fi
 
@@ -75,7 +77,7 @@ PACKSUFFIX=Z
 
 grep_valid_entries()
 {
-	egrep '^[ ]*ARCH|^[ ]*MODEL |^[ ]*DIM|^[ ]*GRAPE |^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE' $1;
+	egrep '^[ ]*ARCH|^[ ]*MODEL |^[ ]*DIM|^[ ]*GRAPE |^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE|^[ ]*CHACO' $1;
 }
 
 
@@ -265,6 +267,12 @@ edit_ugconf()
 		;;
 	NODEBUG)
 		sed 's/^DEBUG_MODE.*$/DEBUG_MODE = OFF/' $1 > $1.tmp
+		;;
+	CHACO)
+		sed 's/^CHACO.*$/CHACO = ON/' $1 > $1.tmp
+		;;
+	NOCHACO)
+		sed 's/^CHACO.*$/CHACO = OFF/' $1 > $1.tmp
 		;;
 	*)
 		echo "error: unrecognized option '" $2 "'. use 'ugconf -help' for help.";
