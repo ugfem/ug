@@ -67,7 +67,7 @@
 /****************************************************************************/
 
 int Debuginit           =       0;
-int Debugdddif              =       6;      /* temporary setting for debugging ModelP */
+int Debugdddif              =       0;      /* temporary setting for debugging ModelP */
 int Debugdev                =       0;
 int Debugdom                =       0;
 int Debuggm                 =       0;
