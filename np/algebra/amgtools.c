@@ -1852,20 +1852,11 @@ static DOUBLE Dist (VECTOR *v, VECTOR *w)
 
 INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
-  INT ncomp,/*j,*/ n,nmax;
-  /*DOUBLE s;  //sum*/
+  INT ncomp,i,j,n,nmax;
+  DOUBLE s;
   GRID *newGrid;
   VECTOR *vect,*dest,*newVect;
   MATRIX *mat,*imat;
-
-  /* Check that only mtype=0x0 (for other, AMG is unclear anyhow).        */
-  /* Define and set the variables scalar,blockN,blockNN, and error. */
-  BLOCK_SETUP(A);
-  if (error) {
-    PrintErrorMessage('E',"IpAverage",
-                      "not yet for general matrices");
-    REP_ERR_RETURN(error);
-  }
 
   for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
     if (VCCOARSE(vect)) {
@@ -1911,7 +1902,7 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
           }
           if (n >= nmax) break;
         }
-      PRINTDEBUG(np,1,("%d:%d ->",VINDEX(vect),n));
+      PRINTDEBUG(np,2,("%d:%d ->",VINDEX(vect),n));
       if (n == 0) {
         PrintErrorMessage('E',"IpAverage",
                           "can't build Interpolation matrix (n = 0)");
@@ -1945,7 +1936,12 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
         }
         SETMDIAG(imat,1);
         /* s = sum * Dist(vect,dest); */
-        BLOCK_SCALIDENTITY(1.0/((DOUBLE) n), &(MVALUE(imat,0)));
+        s = 1.0/((DOUBLE) n);
+        for (i=0; i<ncomp; i++)
+          for (j=0; j<ncomp; j++) {
+            if (i == j) MVALUE(imat,i*ncomp+j) = s;
+            else MVALUE(imat,i*ncomp+j) = 0.0;
+          }
       }
       PRINTDEBUG(np,3,("\n"));
     }
@@ -1954,11 +1950,15 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
       imat = VISTART(vect);
       assert (imat != NULL);
       SETMDIAG(imat,1);
-      BLOCK_IDENTITY(&(MVALUE(imat,0)));
+      for (i=0; i<ncomp; i++)
+        for (j=0; j<ncomp; j++) {
+          if (i == j) MVALUE(imat,i*ncomp+j) = 1.0;
+          else MVALUE(imat,i*ncomp+j) = 0.0;
+        }
     }
   PRINTDEBUG(np,3,("\n"));
 
-  IFDEBUG(np,1)
+  IFDEBUG(np,2)
   CheckImat(theGrid,2);
   ENDDEBUG
 
