@@ -18341,7 +18341,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo, INT bullet)
 
 	/* no more to do for bullet plotter */
 	if (bullet) {
-		SETELEMORD(mg, VSIDES_DONE);
+		/*SETELEMORD(mg, VSIDES_DONE);*/
 		return 0;
 	}
 
@@ -18403,7 +18403,7 @@ fault:
 	}
 	#endif
 
-	SETELEMORD(mg, ALL_DONE);
+	/*SETELEMORD(mg, ALL_DONE);*/
 
 	return (0);
 }
