@@ -131,6 +131,8 @@
 #define SETPREDNEW1(r,n)                                r.predicted_new[r.step][1] = n
 #define PREDNEW2(r)                                             r.predicted_new[r.step][2]
 #define SETPREDNEW2(r,n)                                r.predicted_new[r.step][2] = n
+#define REAL(r)                                                 r.real[r.step]
+#define SETREAL(r,n)                                    r.real[r.step] = n
 #define PREDMAX(r)                                              r.predicted_max[r.step]
 #define SETPREDMAX(r,n)                                 r.predicted_max[r.step] = n
 
@@ -145,6 +147,7 @@ typedef struct refineinfo
   INT step;                                       /* count of calls to RefineMultiGrid      */
   float markcount[100];                   /* count of currently marked elements     */
   float predicted_new[100][3];        /* count of elements, would be created    */
+  float real[100];                                /* count of elements before refinement    */
   float predicted_max[100];               /* count of elements which can be created */
 } REFINEINFO;
 
