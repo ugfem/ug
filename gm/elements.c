@@ -264,7 +264,7 @@ static char rcsid[] = "$Header$";
 static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
 {
   INT p_count, tag;
-  INT i,j,k,l,m,n,n1,n2;
+  INT i,j,k,l,m,n,n1,n2,from,to;
 
   tag = el->tag;
   p_count = 0;
@@ -328,17 +328,22 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
   /* side_with_edge(i,j) : edge i is an edge of side side_with_edge(i,j) */
   for (i=0; i<MAX_EDGES_OF_ELEM; i++)
     for (j=0; j<MAX_SIDES_OF_EDGE; j++) el->side_with_edge[i][j] = -1;
-  for (i=0; i<el->sides_of_elem; i++)
-    for (j=0; j<el->edges_of_side[i]; j++)
-    {
-      n = el->edge_of_side[i][j];
-      for (k=0; k<MAX_SIDES_OF_EDGE; k++)
-        if (el->side_with_edge[n][k]<0)
-        {
-          el->side_with_edge[n][k] = i;
-          break;
-        }
+  for (k=0; k<el->edges_of_elem; k++)
+  {
+    from = el->corner_of_edge[k][0];
+    to   = el->corner_of_edge[k][1];
+
+    for (i=0; i<el->sides_of_elem; i++) {
+      n = el->corners_of_side[i];
+      for (j=0; j<n; j++)
+      {
+        if ((el->corner_of_side[i][j]==from)&&(el->corner_of_side[i][(j+1)%n]==to))
+          el->side_with_edge[k][1] = i;
+        if ((el->corner_of_side[i][j]==to)&&(el->corner_of_side[i][(j+1)%n]==from))
+          el->side_with_edge[k][0] = i;
+      }
     }
+  }
 
   /* corner_of_side_inv(i,j) : j is number of a corner in the element. Then this
      array returns the local number of this corner within side i or -1 if side i
