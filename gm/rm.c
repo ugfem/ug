@@ -1437,7 +1437,7 @@ static INT YAlignment (ELEMENT *theElement)
 /*																			*/
 /* Param:	  ELEMENT *theElement: element to refine						*/
 /*			  INT type: type of refinement mark:							*/
-/*						RED_MARK										*/
+/*						RED_MARK										    */
 /*																			*/
 /* return:	  INT 1: element has been marked								*/
 /*				  0: element cannot be marked								*/
@@ -1449,7 +1449,10 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
   INT side;
 
   /* regulary refined elements can not be be marked */
-  if (!LEAFELEM(theElement)) return(GM_ERROR);
+  ASSERT(theElement != NULL);
+  if (!((ECLASS(theElement) == RED_CLASS)
+        && (REFINECLASS(theElement) != RED_CLASS)))
+    return(GM_ERROR);
 
   SETCOARSEN(theElement,0);
 
@@ -1842,6 +1845,14 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
 INT GetRefinementMark (const ELEMENT *theElement, INT *rule, void *data)
 {
   INT *side = data;
+
+  if (LEAFELEM(theElement))
+    return(GetRefinementMark(LAST_RED_ELEM(theElement),rule,data));
+
+  ASSERT(theElement != NULL);
+  if (!((ECLASS(theElement) == RED_CLASS)
+        && (REFINECLASS(theElement) != RED_CLASS)))
+    return(-1);
 
   /* tetrahedra have their own ruleset */
   if (DIM==3 && TAG(theElement)==TETRAHEDRON && MARK(theElement)==FULL_REFRULE)

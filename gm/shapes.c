@@ -50,7 +50,7 @@
 /****************************************************************************/
 
 #define SMALL_DET      1e-50
-#define SMALL_DIFF     1e-4
+#define SMALL_DIFF     1e-3
 #define MAX_ITER       20 
 
 /* some useful abbreviations */
@@ -1260,7 +1260,7 @@ INT GlobalToLocal (INT n, const COORD **Corners,
 		LOCAL_TO_GLOBAL (n,Corners,LocalCoord,tmp);
 		V_DIM_SUBTRACT(tmp,EvalPoint,diff);
 		V_DIM_EUKLIDNORM(diff,s);
-		if (s <= SMALL_DIFF) 
+		if (s <= SMALL_DIFF*IMdet) 
 			return (0);
 		TRANSFORMATION(n,Corners,LocalCoord,M);
 		M_DIM_INVERT(M,IM,IMdet);

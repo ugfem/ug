@@ -1125,8 +1125,8 @@ extern CONTROL_ENTRY
 #define MUP(p)                                          CW_READ(p,MUP_CE)
 #define SETMUP(p,n)                             CW_WRITE(p,MUP_CE,n)
 
-#define MINC(m)                                         ((MATRIX*)(((unsigned int)(m))+MSIZE(m)))
-#define MDEC(m)                                         ((MATRIX*)(((unsigned int)(m))-MSIZE(m)))
+#define MINC(m)                                         ((MATRIX*)(((unsigned INT)(m))+MSIZE(m)))
+#define MDEC(m)                                         ((MATRIX*)(((unsigned INT)(m))-MSIZE(m)))
 #define MNEXT(m)                                        ((m)->next)
 #define MDEST(m)                                        ((m)->vect)
 #define MADJ(m)                                         ((MDIAG(m)) ? (m) : ((MOFFSET(m)) ? (MDEC(m)) : (MINC(m))))
@@ -1695,6 +1695,10 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define SIDE(p,i)               ((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)])
 #define EVECTOR(p)              ((VECTOR *) (p)->ge.refs[evector_offset[TAG(p)]])
 #define SVECTOR(p,i)    ((VECTOR *) (p)->ge.refs[svector_offset[TAG(p)]+(i)])
+#define LAST_RED_ELEM(e)  ((NSONS(e)>1) ? NULL :                         \
+                           (ECLASS(e) == RED_CLASS) ? e :                \
+                           (ECLASS(EFATHER(e)) == RED_CLASS) ?           \
+                           EFATHER(e) : EFATHER(EFATHER(e)))
 
 /* use the following macros to assign values, since definition  */
 /* above is no proper lvalue.									*/
