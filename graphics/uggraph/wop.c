@@ -6670,7 +6670,10 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
 				break;
 		}
 		DO_inc(theDO);
-		DO_2s(theDO) = VM_MARKERSIZE; DO_inc(theDO);
+		if (VCCOARSE(vec))
+			{DO_2s(theDO) = 2*VM_MARKERSIZE; DO_inc(theDO);}
+		else
+			{DO_2s(theDO) = VM_MARKERSIZE; DO_inc(theDO);}
 		V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
 	}
 	
