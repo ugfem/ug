@@ -61,6 +61,9 @@
 #include "ff.h"
 #include "ugblas.h"
 
+#ifdef USE_FAMG
+#include "ug-famg.h"
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -5297,15 +5300,43 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   UserWriteF("correction of presmoothing : %f\n",eunorm);
   ENDDEBUG
 
+#ifdef USE_FAMG
+  if((*np->Transfer->RestrictDefect) == FAMGRestrictDefect)
+  {
+    ((NP_FAMG_TRANSFER*)np->Transfer)->smooth_sol = np->t;
+    ((NP_FAMG_TRANSFER*)np->Transfer)->smooth_def = b;
+    if (dset(theMG,level,level,ALL_VECTORS,np->t,0.0) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+#endif
   if ((*np->Transfer->RestrictDefect)
         (np->Transfer,level,b,b,A,Factor_One,result))
     REP_ERR_RETURN(1);
+
+#ifdef USE_FAMG
+  /* update correction, defect computed in restriction */
+  if((*np->Transfer->RestrictDefect) == FAMGRestrictDefect)
+  {
+    if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+#endif
 
   if (dset(theMG,level-1,level-1,ALL_VECTORS,c,0.0) != NUM_OK)
     NP_RETURN(1,result[0]);
   for (i=0; i<np->gamma; i++)
     if (Lmgc(theNP,level-1,c,b,A,result))
       REP_ERR_RETURN(1);
+
+#ifdef USE_FAMG
+  if((*np->Transfer->InterpolateCorrection) == FAMGInterpolateCorrection)
+  {
+    ((NP_FAMG_TRANSFER*)np->Transfer)->smooth_sol = np->t;
+    ((NP_FAMG_TRANSFER*)np->Transfer)->smooth_def = b;
+    if (dset(theMG,level,level,ALL_VECTORS,np->t,0.0) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+#endif
   if ((*np->Transfer->InterpolateCorrection)
         (np->Transfer,level,np->t,c,A,np->damp,result))
     REP_ERR_RETURN(1);
