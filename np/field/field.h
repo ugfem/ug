@@ -66,6 +66,6 @@ typedef struct np_field NP_FIELD;
 /*									                                                                        */
 /****************************************************************************/
 
-INT InitStochField ();
+INT InitStochField (void);
 
 #endif

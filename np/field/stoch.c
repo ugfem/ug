@@ -2068,7 +2068,7 @@ static INT GetAnisoFieldConstruct       (NP_BASE *theNP)
   return(0);
 }
 
-INT InitStochField ()
+INT InitStochField (void)
 {
   if (CreateClass(FIELD_CLASS_NAME ".stoch",sizeof(NP_STOCH_FIELD),StochFieldConstruct)) return(__LINE__);
   if (CreateClass(FIELD_CLASS_NAME ".scale",sizeof(NP_GET_FIELD),GetFieldConstruct)) return(__LINE__);
