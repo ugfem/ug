@@ -33,6 +33,7 @@
 #ifndef __GENERAL__
 #include "general.h"
 #endif
+#include "misc.h"
 
 /****************************************************************************/
 /*																			*/
@@ -47,8 +48,7 @@
 #ifdef Debug
 #include <assert.h>
 
-#define CAT(x,y)                x ## y
-#define IFDEBUG(m,n)    if (CAT(Debug, m) >=(n)) {
+#define IFDEBUG(m,n)    if (Debug ## m >=(n)) {
 #define PRINTDEBUG(m,n,s) IFDEBUG(m,n) PrintDebug s; ENDDEBUG
 #define ENDDEBUG  }
 #define RETURN(rcode)   {INT rc; rc = rcode; assert(!rc); return (rc);}
