@@ -388,6 +388,13 @@ INT BNDS_Dispose (HEAP *Heap, BNDS *aBndS)
   return (PutFreelistMemory(Heap,theBndS,sizeof(theBndS)));
 }
 /* domain interface function: for description see domain.h */
+#ifdef __TWODIM__
+INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
+{
+  return(1);
+}
+#endif
+#ifdef __THREEDIM__
 INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
 {
   INT i,j;
@@ -400,6 +407,7 @@ INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
 
   return (0);
 }
+#endif
 
 /* domain interface function: for description see domain.h */
 INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
