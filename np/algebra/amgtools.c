@@ -775,6 +775,12 @@ INT CoarsenAverage (GRID *theGrid)
     if (d > dmin)
       fifo_in(&myfifo,(void *)theV);
   }
+    #ifdef ModelP
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    if (VECSKIP(theV) == 0)
+      if (DDD_InfoPrioCopies(PARHDR(theV)) > 0)
+        fifo_in(&myfifo,(void *)theV);
+        #endif
   m = n;
   while(!fifo_empty(&myfifo)) {
     theV = (VECTOR *)fifo_out(&myfifo);
