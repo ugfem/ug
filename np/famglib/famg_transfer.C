@@ -46,8 +46,8 @@ $Header$
 //
 
 // define the 2 static constants
-const int FAMGTransferEntry::PROLONGATION_COMP;
-const int FAMGTransferEntry::RESTRICTION_COMP;
+const int FAMGTransferEntry::PROLONGATION_COMP = 0;
+const int FAMGTransferEntry::RESTRICTION_COMP = 1;
 
 FAMGTransferEntry *FAMGTransferEntry::GetEntry(const FAMGVectorEntry &cg_vec)
 {

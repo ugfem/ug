@@ -72,8 +72,8 @@ public:
 #endif
 
 private:
-  static const int PROLONGATION_COMP = 0;
-  static const int RESTRICTION_COMP = 1;
+  static const int PROLONGATION_COMP;
+  static const int RESTRICTION_COMP;
 
 #ifdef USE_UG_DS
   // if USE_UG_DS, no object of type FAMGTransferEntry may be created; only pointer to
