@@ -151,6 +151,58 @@ enum REFINE_CE {
 #define PREDMAX(r)                                              r.predicted_max[r.step]
 #define SETPREDMAX(r,n)                                 r.predicted_max[r.step] = n
 
+/* macros for listing */
+#define REFINE_ELEMENT_LIST(d,e,s)                                           \
+  IFDEBUG(gm,d)                                                            \
+  if (e!=NULL)                                                             \
+    UserWriteF( s " ID=%d/%08x PRIO=%d TAG=%d BE=%d ECLASS=%d LEVEL=%d"  \
+                " REFINECLASS=%d MARKCLASS=%d REFINE=%d MARK=%d COARSE=%d"           \
+                " USED=%d NSONS=%d EFATHERID=%d SIDEPATTERN=%d\n",                   \
+                ID(e),EGID(e),EPRIO(e),TAG(e),(OBJT(e)==BEOBJ),ECLASS(e),LEVEL(e),   \
+                REFINECLASS(e),MARKCLASS(e),REFINE(e),MARK(e),COARSEN(e),            \
+                USED(e),NSONS(e),(EFATHER(e)!=NULL) ? ID(EFATHER(e)) : 0,SIDEPATTERN(e));\
+  ENDDEBUG
+
+
+#define REFINE_GRID_LIST(d,mg,k,s1,s2)                                       \
+  IFDEBUG(gm,d)                                                            \
+  {                                                                        \
+    GRID    *grid = GRID_ON_LEVEL(mg,k);                                 \
+    ELEMENT *theElement;                                                 \
+                                                                             \
+    UserWriteF s1 ;                                                      \
+    for (theElement=PFIRSTELEMENT(grid);                                 \
+         theElement!=NULL;                                               \
+         theElement=SUCCE(theElement))                                   \
+    {                                                                    \
+      REFINE_ELEMENT_LIST(d,theElement,s2)                             \
+    }                                                                                \
+  }                                                                        \
+  ENDDEBUG
+
+
+#define REFINE_MULTIGRID_LIST(d,mg,s1,s2,s3)                                 \
+  IFDEBUG(gm,d)                                                            \
+  {                                                                        \
+    INT k;                                                               \
+                                                                             \
+    UserWriteF( s1 );                                                    \
+    for (k=0; k<=TOPLEVEL(mg); k++)                                      \
+    {                                                                    \
+      GRID    *grid = GRID_ON_LEVEL(mg,k);                             \
+      ELEMENT *theElement;                                             \
+                                                                             \
+      UserWriteF( s2 );                                                \
+      for (theElement=PFIRSTELEMENT(grid);                             \
+           theElement!=NULL;                                           \
+           theElement=SUCCE(theElement))                               \
+      {                                                                \
+        REFINE_ELEMENT_LIST(d,theElement,s3)                         \
+      }                                                                            \
+    }                                                                    \
+  }                                                                        \
+  ENDDEBUG
+
 /****************************************************************************/
 /*																			*/
 /* typedefs																	*/

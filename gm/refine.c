@@ -244,57 +244,6 @@ static ELEMENT *debugelem=NULL;
 
 #define PRINTELEMID(id) 
 
-#define REFINE_ELEMENT_LIST(d,e,s)                                           \
-	IFDEBUG(gm,d)                                                            \
-	if (e!=NULL)                                                             \
-		UserWriteF( s " ID=%d/%08x PRIO=%d TAG=%d BE=%d ECLASS=%d LEVEL=%d"  \
-		" REFINECLASS=%d MARKCLASS=%d REFINE=%d MARK=%d COARSE=%d"           \
-		" USED=%d NSONS=%d EFATHERID=%d SIDEPATTERN=%d\n",                   \
-		ID(e),EGID(e),EPRIO(e),TAG(e),(OBJT(e)==BEOBJ),ECLASS(e),LEVEL(e),   \
-		REFINECLASS(e),MARKCLASS(e),REFINE(e),MARK(e),COARSEN(e),            \
-		USED(e),NSONS(e),(EFATHER(e)!=NULL)?ID(EFATHER(e)):0,SIDEPATTERN(e));\
-	ENDDEBUG
-
-
-#define REFINE_GRID_LIST(d,mg,k,s1,s2)                                       \
-	IFDEBUG(gm,d)                                                            \
-	{                                                                        \
-		GRID	*grid = GRID_ON_LEVEL(mg,k);                                 \
-		ELEMENT	*theElement;                                                 \
-                                                                             \
-		UserWriteF s1 ;                                                      \
-		for (theElement=PFIRSTELEMENT(grid);                                 \
-			 theElement!=NULL;                                               \
-			 theElement=SUCCE(theElement))                                   \
-		{                                                                    \
-			REFINE_ELEMENT_LIST(d,theElement,s2)                             \
-		}			                                                         \
-	}                                                                        \
-	ENDDEBUG
-
-
-#define REFINE_MULTIGRID_LIST(d,mg,s1,s2,s3)                                 \
-	IFDEBUG(gm,d)                                                            \
-	{                                                                        \
-		INT k;                                                               \
-                                                                             \
-		UserWriteF( s1 );                                                    \
-		for (k=0; k<=TOPLEVEL(mg); k++)                                      \
-		{                                                                    \
-			GRID	*grid = GRID_ON_LEVEL(mg,k);                             \
-			ELEMENT	*theElement;                                             \
-                                                                             \
-			UserWriteF( s2 );                                                \
-			for (theElement=PFIRSTELEMENT(grid);                             \
-				 theElement!=NULL;                                           \
-				 theElement=SUCCE(theElement))                               \
-			{                                                                \
-				REFINE_ELEMENT_LIST(d,theElement,s3)                         \
-			}			                                                     \
-		}                                                                    \
-	}                                                                        \
-	ENDDEBUG
-
 #define REFINE_CONTEXT_LIST(d,context)                                       \
 	IFDEBUG(gm,2)                                                            \
 	{                                                                        \
@@ -931,26 +880,6 @@ static INT ManageParallelFIFO (ELEMENT *firstElement)
 	return (0);	
 #endif
 }
-
-
-/****************************************************************************/
-/*																			*/
-/* Function:  GridClosure 													*/
-/*																			*/
-/* Purpose:   compute closure for next level. A closure can only be         */
-/*			  determined if the rule set for the used elements is complete. */
-/* 			  This means that for all side and edge patterns possible for   */
-/*			  an element type exists a rule which closes the element.       */
-/*	          In this case a FIFO for computing the closure is not needed   */
-/*	          any more and the closure can be computed in one step.			*/
-/*																			*/
-/* Param:	  GRID *theGrid: pointer to grid structure						*/
-/*																			*/
-/* return:	  INT >0: elements will be refined								*/
-/*			  INT 0: no elements will be refined							*/
-/*			  INT -1: an error occured           		 					*/
-/*																			*/
-/****************************************************************************/
 
 static INT PrintEdgeInfo (GRID *theGrid, char* string, INT level)
 {
@@ -1775,6 +1704,26 @@ static INT CheckElementInfo (GRID *theGrid)
 	return(GM_OK);
 }
 #endif
+
+
+/****************************************************************************/
+/*																			*/
+/* Function:  GridClosure 													*/
+/*																			*/
+/* Purpose:   compute closure for next level. A closure can only be         */
+/*			  determined if the rule set for the used elements is complete. */
+/* 			  This means that for all side and edge patterns possible for   */
+/*			  an element type exists a rule which closes the element.       */
+/*	          In this case a FIFO for computing the closure is not needed   */
+/*	          any more and the closure can be computed in one step.			*/
+/*																			*/
+/* Param:	  GRID *theGrid: pointer to grid structure						*/
+/*																			*/
+/* return:	  INT >0: elements will be refined								*/
+/*			  INT 0: no elements will be refined							*/
+/*			  INT -1: an error occured           		 					*/
+/*																			*/
+/****************************************************************************/
 
 static int GridClosure (GRID *theGrid)
 {
