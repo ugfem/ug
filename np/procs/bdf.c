@@ -95,6 +95,7 @@ typedef struct
   INT predictorder;                                              /* 0,1 are allowed					*/
   INT nested;                                                            /* use nested iteration                        */
   INT nlinterpolate;                                             /* nonlinear interpolation			*/
+  INT presteps;                                               /* number of steps for start grid */
   INT optnlsteps;                                            /* optimal number of nonlin. steps */
   INT rep;                               /* for repeat solver after grid chg*/
   INT Break;                                                     /* break after error estimator         */
@@ -467,6 +468,8 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
     /* grid adaption ? */
     if (bdf->error != NULL) nlinterpolate = bdf->nlinterpolate;
     else nlinterpolate = 0;
+    if (bdf->error !=NULL && bdf->step== 0 && bdf->presteps >=0)
+      nlinterpolate = bdf->presteps;
 
     /* predict to new time step on level low */
     dcopy(mg,0,low,ALL_VECTORS,bdf->y_p1,bdf->y_0);
@@ -620,12 +623,10 @@ Continue:
             {
 
               for (i=0; i<=level; i++)
-                                  #ifndef ModelP
-                CheckGrid(GRID_ON_LEVEL(mg,i),1,1,1);
-                                  #else
+                                  #ifdef ModelP
                 CheckGrid(GRID_ON_LEVEL(mg,i),1,1,1,1);
                                   #endif
-              k = level - 1;
+                k = level - 1;
               if (bdf->trans->PreProcessSolution != NULL)
                 if ((*bdf->trans->PreProcessSolution)
                       (bdf->trans,0,level,bdf->y_p1,res))
@@ -658,7 +659,7 @@ Continue:
                       (bdf->trans,0,level,bdf->y_p1,res))
                   NP_RETURN(1,res[0]);
               nlinterpolate--;
-              if(bdf->rep ==0) {
+              if(bdf->rep ==0&& bdf->step != 0) {
                 k = level;
                 nlinterpolate = 0;
                 if (nlsolve->PostProcess!=NULL)
@@ -788,7 +789,7 @@ Continue:
       *res = 0;
     }
   }
-  else if (eresult.step ==0.)
+  else
   {
     if (verygood && (!bad) && bdf->dt*2<=bdf->dtmax)
     {
@@ -801,21 +802,23 @@ Continue:
       bdf->dt *= bdf->dtscale;
       *res=0;
     }
+    if (eresult.step != 0.)
+      if (eresult.step > bdf->dt && (!bad))
+      {
+        if (eresult.step <=bdf->dtmax)
+        {
+          bdf->dt = eresult.step;
+          UserWrite("time step modified\n");
+        }
+        if (eresult.step >=bdf->dtmax)
+        {
+          bdf->dt = bdf->dtmax;
+          UserWrite("time step modified, dt= dtmax\n");
+        }
+      }
   }
-  else if (eresult.step > bdf->dt && (!bad))
-  {
-    if (eresult.step <=bdf->dtmax)
-    {
-      bdf->dt = eresult.step;
-      UserWrite("time step modified\n");
-    }
-    if (eresult.step >=bdf->dtmax)
-    {
-      bdf->dt = bdf->dtmax;
-      UserWrite("time step modified, dt= dtmax\n");
-    }
-  }
-  else if (eresult.step < bdf->dt)
+
+  if (eresult.step != 0. && eresult.step < bdf->dt)
   {
     if ( eresult.step < bdf->dtmin)
     {
@@ -993,6 +996,8 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
   if (ReadArgvINT("nlinterpolate",&(bdf->nlinterpolate),argc,argv))
     bdf->nlinterpolate=0;
   if (bdf->nlinterpolate<0) return(NP_NOT_ACTIVE);
+  if (ReadArgvINT("presteps",&(bdf->presteps),argc,argv))
+    bdf->presteps=-1;
 
   if (ReadArgvDOUBLE("tstart",&(bdf->tstart),argc,argv))
     bdf->tstart = 0.0;
