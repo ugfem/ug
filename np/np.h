@@ -75,6 +75,9 @@
 #define MAT_CONS              1
 #define MAT_MASTER_CONS       2
 
+/* special REP_ERR_RETURN macro */
+#define NP_RETURN(err,intvar)           {intvar = 1; REP_ERR_RETURN(err);}
+
 /****************************************************************************/
 /*																			*/
 /* macros concerned with solving											*/
