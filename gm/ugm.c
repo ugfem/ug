@@ -11057,7 +11057,7 @@ static int sort_entries_old (const void *e1, const void *e2)
 }
 
 
-static int sort_entries (const void *e1, const void *e2)
+static int sort_entries_new (const void *e1, const void *e2)
 {
   INT i;
   PERIODIC_ENTRIES *v1 = (PERIODIC_ENTRIES *)e1;
@@ -11085,6 +11085,35 @@ static int sort_entries (const void *e1, const void *e2)
     if (PVID(v1->vp[i]) < PVID(v2->vp[i])) return (-1);
     if (PVID(v1->vp[i]) > PVID(v2->vp[i])) return (1);
   }
+
+  return(0);
+}
+
+static int sort_entries (const void *e1, const void *e2)
+{
+  INT i;
+  PERIODIC_ENTRIES *v1 = (PERIODIC_ENTRIES *)e1;
+  PERIODIC_ENTRIES *v2 = (PERIODIC_ENTRIES *)e2;
+
+  if (v1->n < v2->n) return (-1);
+  if (v1->n > v2->n) return (1);
+
+  for (i=0; i<v1->n; i++)
+  {
+    if (PVID(v1->vp[i]) < PVID(v2->vp[i])) return (-1);
+    if (PVID(v1->vp[i]) > PVID(v2->vp[i])) return (1);
+  }
+
+  /* periodic ids */
+  if (v1->periodic_id < v2->periodic_id) return (-1);
+  if (v1->periodic_id > v2->periodic_id) return (1);
+
+  for (i=0; i<DIM; i++)
+  {
+    if (v1->coord[i] < v2->coord[i] - SMALL_DOUBLE) return (-1);
+    if (v1->coord[i] > v2->coord[i] + SMALL_DOUBLE) return (1);
+  }
+  return (0);
 
   return(0);
 }
@@ -11415,9 +11444,9 @@ static INT SelectCorProc (VECTOR **vp, INT pos, INT p, int *np, int *theprocs)
 
     proclist += 2;
     j+=2;
+    assert(j < MAX_PERIODIC_PROCS);
   }
   Proclist[j] = -1;
-  assert(j < MAX_PERIODIC_PROCS);
   proclist = Proclist;
 
   proclist += 2;
@@ -11459,9 +11488,9 @@ static int GetMatchingProcs (PERIODIC_ENTRIES *coordlist, INT i, int *np, int *t
 
     proclist += 2;
     j+=2;
+    assert(j < MAX_PERIODIC_PROCS);
   }
   Proclist[j] = -1;
-  assert(j < MAX_PERIODIC_PROCS);
   proclist = Proclist;
 
   proclist += 2;
@@ -11859,6 +11888,151 @@ INT MG_GeometricToPeriodic (MULTIGRID *mg, INT fl, INT tl)
   return (GM_OK);
 }
 
+char pbuf[256];
+
+static INT ListProclist (int *proclist)
+{
+  while (*proclist != -1)
+  {
+    sprintf(pbuf+strlen(pbuf),"%4d-%d ",proclist[0],proclist[1]);
+    proclist += 2;
+  }
+
+  return(GM_OK);
+}
+
+static INT ListPeriodicNodeAndVec (GRID *g, INT vgid)
+{
+  VECTOR *v;
+  NODE *n,*nref;
+  int *proclist;
+  INT found = 0;
+
+  sprintf(pbuf,"  PROC%4d: ",me);
+  for (v=PFIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
+  {
+    if (vgid != GID(v)) continue;
+    nref = (NODE*) VOBJECT(v);
+
+    sprintf(pbuf+strlen(pbuf),"v=" VINDEX_FMTX " ", VINDEX_PRTX(v));
+
+    proclist = PROCLIST(v);
+    ListProclist(proclist);
+    sprintf(pbuf+strlen(pbuf),"\n");
+  }
+
+  for (n=PFIRSTNODE(g); n!=NULL; n=SUCCN(n))
+  {
+    DOUBLE *cv;
+
+    if (vgid != GID(NVECTOR(n))) continue;
+
+    cv = CVECT(MYVERTEX(n));
+    if (n == nref) sprintf(pbuf+strlen(pbuf),"	X ");
+    else sprintf(pbuf+strlen(pbuf),"	  ");
+
+    sprintf(pbuf+strlen(pbuf),"c %lf %lf %lf ",cv[0],cv[1],cv[2]);
+    sprintf(pbuf+strlen(pbuf),"n=" ID_FMTX " ",ID_PRTX(n));
+
+    proclist = PROCLIST(n);
+    ListProclist(proclist);
+    sprintf(pbuf+strlen(pbuf),"\n");
+    found++;
+  }
+  if (found == 0) sprintf(pbuf+strlen(pbuf),"NOT FOUND\n");
+
+  UserWriteF("%s",pbuf);
+
+  return(found);
+}
+
+static INT Grid_ListPeriodicPos (GRID *g, DOUBLE_VECTOR pos)
+{
+  DOUBLE tol[3] = {SMALL_DOUBLE,SMALL_DOUBLE,SMALL_DOUBLE};
+  NODE *n = FindNodeFromPosition(g,pos,tol);
+  INT i,found;
+  INT vgid;
+
+  if (n != NULL)
+    vgid = GID(NVECTOR(n));
+  else
+    vgid = -1;
+  ASSERT(vgid==UG_GlobalMaxINT(vgid) || vgid==-1);
+  vgid = UG_GlobalMaxINT(vgid);
+
+  if (vgid == -1)
+  {
+    UserWriteF("NOT FOUND\n");
+    return (GM_OK);
+  }
+
+  found = 0;
+  for (i=0; i<procs; i++)
+  {
+                #ifdef ModelP
+    Synchronize();
+    fflush(stdout);
+                #endif
+    if (me!=i) continue;
+
+    found += ListPeriodicNodeAndVec(g,vgid);
+  }
+        #ifdef ModelP
+  fflush(stdout);
+        #endif
+  found = UG_GlobalSumINT(found);
+
+  if (me == master)
+    UserWriteF("FOUND %d periodic nodes for this position\n",found);
+
+  return (GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   MG_ListPeriodicPos - list periodic positions and node-vector(-proc) info
+
+   SYNOPSIS:
+   INT MG_ListPeriodicPos (MULTIGRID *mg, INT fl, INT tl, DOUBLE_VECTOR pos)
+
+   PARAMETERS:
+   .  mg - multigrid to work on
+
+   DESCRIPTION:
+   This function list periodic positions including vector and information
+   of all periodic boundaries. In parallel also proclist are printed.
+   This should give a clear view onto the periodic data structure.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+INT MG_ListPeriodicPos (MULTIGRID *mg, INT fl, INT tl, DOUBLE_VECTOR pos)
+{
+  INT level;
+
+  if (me == master)
+  {
+#ifdef __THREEDIM__
+    UserWriteF("position is %lf %lf %lf\n",pos[0],pos[1],pos[2]);
+#else
+    UserWriteF("position is %lf %lf\n",pos[0],pos[1]);
+#endif
+  }
+  for (level=fl; level<=tl; level++)
+  {
+    GRID *g = GRID_ON_LEVEL(mg,level);
+
+    if (me == master)
+      UserWriteF("LEVEL %4d\n",level);
+    if (Grid_ListPeriodicPos(g,pos)) return(GM_ERROR);
+  }
+
+  return (GM_OK);
+}
 #endif
 
 /****************************************************************************/
