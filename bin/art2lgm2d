@@ -1,0 +1,941 @@
+#!/usr/bin/perl -w
+
+# convert ART grids to LGM domains + grids in 2D.
+
+$debug = 100;
+
+# globals
+$pass = 0;
+$vertices = 0;
+$edges = 0;
+$faces = 0;
+$elements = 0;
+
+
+@vertex = ();
+@edge = ();
+@face = ();
+
+@domainvertex = ();
+@domainedge = ();
+@domainface = ();
+$domainvertices = 0;
+$domainedges    = 0;
+$domainfaces    = 0;
+
+foreach $filename (@ARGV)	{
+	ConvertFile($filename);
+}
+
+######################################################################
+######################################################################
+#
+# In ConvertFile we assume that either  
+#   1) the grid file produced by ART is specified
+#   2) the domain file (input file for ART) is specified - in that
+#      case the grid file has to be there too and have the extension 
+#      ".net"
+#   3) the basename of the domain file (input file for ART) and the
+#      grid file produced by ART are specified.  Valid extensions for the
+#      domain file are ".dat" and ".art", 
+#      extensions for the grid file are ".net".
+#
+
+sub ConvertFile	{
+	local($artfile) = @_;
+	
+	# Analyze extensions
+	$artbasename = $artfile;
+	$domainfile = "";
+	$gridfile   = "";
+
+	if ( substr($artfile,-4) eq ".dat" || substr($artfile,-4) eq ".art" ) {
+		substr($artbasename,-4) = "";
+		$domainfile = $artfile;
+		$gridfile = $artbasename . ".net";
+	}
+
+	elsif ( substr($artfile,-4) eq ".net" ) {
+		substr($artbasename,-4) = "";
+		$gridfile = $artfile;
+		$domainfile = $artbasename . ".dat";
+	}
+	
+	else	{
+		$domainfile = $artbasename . ".dat";
+		$gridfile = $artbasename . ".net";
+	}
+
+	if ($debug)	{
+		print "ART domain file $domainfile\n";
+		print "ART grid file $gridfile\n";
+	}
+	
+	open (LOG,"> $artbasename.clog");
+	
+	if ( ! -e $gridfile )   { die "ART grid file $gridfile doesn't exist\n"; }
+	if ( -e $domainfile ) { 
+		print "Using ART domain file $domainfile\n";
+		ReadARTDomain($domainfile);
+	}
+	
+
+	ReadHeader($gridfile);
+	ReadVertices($gridfile);
+	ReadEdges($gridfile);
+	ReadFaces($gridfile);
+	
+	WriteGnuplotfiles($artbasename);
+		
+	WriteLGMDomain($artbasename);
+	WriteLGMNet($artbasename);
+	WriteBoundaryConditionsMap($artfile);
+
+	close(LOG);
+}
+
+######################################################################
+######################################################################
+sub ReadARTDomain	{
+	local($domainfile) = @_;
+
+	open(DOMAIN, "< $domainfile")           or die "can't open ART domain file $domainfile.";
+
+	# Read document head
+	while ( <DOMAIN> ) {
+		if ( /VertexNumber/ )  {
+			@eintrag = split (" ", $_);
+            $domainvertices = $eintrag[2];
+		}
+		if ( /EdgeNumber/ )  {
+            @eintrag = split (" ", $_);
+            $domainedges = $eintrag[2];
+		}
+		if ( /FaceNumber/ )  {
+            @eintrag = split (" ", $_);
+            $domainfaces = $eintrag[2];
+		}
+		if ( /ElementNumber/ ) { last; }
+	}
+	
+	if ($debug>0) {
+		print "    ART domain with $domainvertices vertices, ";
+		print "$domainedges edges, ";
+		print "$domainfaces faces.\n";
+	}
+	
+	print "    Reading vertices...";
+	
+	$count = 0;
+	while ( <DOMAIN> )	{
+		chomp;					# no newline
+		s/%.*//;				# no comments
+		s/^\s+//;				# no leading whitespace
+		s/\s+$//;				# no trailing whitespace;
+		next unless length;		# anything left?
+		
+		if ( $_ eq "\$" ) { last; }
+		@tmp = split (" ", $_);
+		$domainvertex[$count]{x} = $tmp[0];
+		$domainvertex[$count]{y} = $tmp[1];
+		$count++;
+	}
+	
+	print " done. ($count vertices)\n";
+	if ( $domainvertices ne $count )	{
+		die "$domainvertices vertices announced but $count found\n";
+	}
+
+	print "    Reading edges...";
+	
+	$count = 0;
+	while ( <DOMAIN> )	{
+		chomp;					# no newline
+		s/%.*//;				# no comments
+		s/^\s+//;				# no leading whitespace
+		s/\s+$//;				# no trailing whitespace;
+		next unless length;		# anything left?
+		
+		if ( $_ eq "\$" ) { last; }
+		@tmp = split (" ", $_);
+		$tmp_id = $tmp[0];
+		$tmp_id =~ s/:$//;
+		$domainedge[$count]{id} = $tmp_id;
+		$domainedge[$count]{from} = $tmp[1];
+		$domainedge[$count]{to}   = $tmp[2];
+
+		$domainedge[$count]{left}  = 0;			# subdomain to the left
+		$domainedge[$count]{right} = 0;			# subdomain to the right
+		$domainedge[$count]{gridedges} = ();	# list of all grid edges on this line.
+		$domainedge[$count]{gridpoints} = ();	# hash of all grid points on this line
+		$count++;
+	}
+	
+	print " done.    ($count edges)\n";
+	if ( $domainedges ne $count )	{
+		die "$domainedges edges announced but $count found\n";
+	}
+
+	print "    Reading faces...";
+	
+	$count = 0;
+	while ( <DOMAIN> )	{
+		chomp;					# no newline
+		s/%.*//;				# no comments
+		s/^\s+//;				# no leading whitespace
+		s/\s+$//;				# no trailing whitespace;
+		next unless length;		# anything left?
+		
+		if ( $_ eq "\$" ) { last; }
+		@tmp = split (":", $_);
+		$domainface[$count]{id} = $tmp[0];
+		$tmp_lines = $tmp[1];
+		@tmp = split(" ", $tmp_lines);
+		$domainface[$count]{lines} = @tmp;
+		$count++;
+	}
+	
+	print " done.    ($count faces)\n";
+	if ( $domainfaces ne $count )	{
+		die "$domainfaces edges announced but $count found\n";
+	}
+	
+	if ( $debug>0 )	{
+		PrintDomainVerticesInfo();
+		PrintDomainEdgesInfo();
+		PrintDomainFacesInfo();
+	}
+	close(DOMAIN);
+}
+
+
+######################################################################
+######################################################################
+sub ReadHeader	{
+	local($artfile) = @_;
+	print "Reading from ART grid file $artfile\n";
+	
+	#$lgmdomainfile = $artfile . ".lgm";
+	#$lgmnetfile    = $artfile . ".ng";
+	
+	open(ART, "< $artfile")           or die "can't open ART file $artfile.";
+	
+	
+	while ( <ART> ) {
+       if ( /VertexNumber/ )  {
+            @eintrag = split (" ", $_);
+            $vertices = $eintrag[2];
+       }
+       if ( /EdgeNumber/ )  {
+            @eintrag = split (" ", $_);
+            $edges = $eintrag[2];
+       }
+       if ( /FaceNumber/ )  {
+            @eintrag = split (" ", $_);
+            $faces = $eintrag[2];
+       }
+       if ( /ElementNumber/ )  {
+            @eintrag = split (" ", $_);
+            $elements = $eintrag[2];
+			last;
+       }
+	}
+	close(ART)     or die "can't close $artfile";
+	
+	print "    The header of file $artfile says:\n";
+	print "    $vertices vertices, $edges edges, $faces faces, $elements elements\n";
+	
+}
+
+
+######################################################################
+######################################################################
+sub ReadVertices {
+	local($artfile) = @_;
+	print "    Reading vertices of $artfile... ";
+	
+	open(ART,    "< $artfile")        or die "can't open ART file $artfile.";
+	
+	# we pass the file 3 times: for vertices, edges and faces.
+	$pass = 0;
+	local($i) = 0;
+	
+ 	while ( <ART> ) {
+		# if the line starts with a number we use it
+		if ( /^(\s)*[-+]*\d/ )  {
+			@vtmp = split (" ", $_);
+			# the next field is intended for line/face/element information
+			$vertex[$i]{x} = $vtmp[0];
+			$vertex[$i]{y} = $vtmp[1];
+			$vertex[$i]{nginfo} = "I $vertex[$i]{x} $vertex[$i]{y}";
+			$i++;
+		}
+		if (/\$/) {
+			last;
+		}
+ 	}
+
+	if ($debug>0) {	
+		print LOG "Vertex list after reading in from $artfile (not complete!)\n";
+		PrintVertexList();
+	}
+	
+	close(ART)     or die "can't close $artfile";
+
+	print "done. ($i vertices)\n";
+}
+
+######################################################################
+######################################################################
+sub ReadEdges {
+	
+	local($artfile) = @_;
+	# print "-" x 60,"\n";
+	
+	print "    Reading edges of $artfile... ";
+	
+	$lgmdomainfile = $artfile . ".lgm";
+	$lgmnetfile    = $artfile . ".ng";
+	
+	open(ART,    "< $artfile")        or die "can't open ART file $artfile.";
+	
+	# we pass the file 3 times: for vertices, edges and faces.
+	$pass++;
+	local($i) = 0;
+	
+	# skip over vertices
+	for $p (0 .. $pass-1) {
+		while ( <ART> ) {
+			if (/\$/) {
+				last;
+			}
+		}
+	}
+	
+	$i=0;
+ 	while ( <ART> ) {
+		# if the line starts with a number we use it
+		if ( /^(\s)*[-+]*(\d)+(\s)*:/ )  {
+			@vtmp = split (" ", $_);
+			$edge[$i]{id} = $vtmp[0];
+			$edge[$i]{from} = $vtmp[1];
+			$edge[$i]{to}   = $vtmp[2];
+			
+			# Used later:
+			$edge[$i]{elements} = "";
+			
+			$i++;
+		}
+		if (/\$/) {
+			last;
+		}
+ 	}
+ 	
+	# remove ':' from control words, also remove leading and trailing whitespace
+	for $n (0 .. $i-1) {
+		$edge[$n]{id} =~ s/\s+$//;
+		$edge[$n]{id} =~ s/:$//;
+		$edge[$n]{id} =~ s/\s+$//;
+		$edge[$n]{id} =~ s/^\s+//;
+	}
+
+	if ($debug>0) {	PrintEdgeList(); }
+	
+	if ( $i!=$edges ) {
+		print "x" x 60,"\n";
+		print "x" x 60,"\n";
+		print "     $edges edges anounced in header, but $i found \n";
+		print "x" x 60,"\n";
+		print "x" x 60,"\n";
+	}		
+	
+	close(ART)     or die "can't close $artfile";
+
+	print "done. ($i edges)\n";
+}
+
+######################################################################
+######################################################################
+sub ReadFaces {
+
+	local($artfile) = @_;
+	# print "-" x 60,"\n";
+	
+	print "    Reading faces of $artfile... ";
+	
+	$lgmdomainfile = $artfile . ".lgm";
+	$lgmnetfile    = $artfile . ".ng";
+	
+	open(ART,    "< $artfile")        or die "can't open ART file $artfile.";
+	
+	# we pass the file 3 times: for vertices, edges and faces.
+	$pass++;
+	local($i) = 0;
+	
+	# skip over vertices, edges
+	for $p (0 .. $pass-1) {
+		while ( <ART> ) {
+			if (/\$/) {
+				last;
+			}
+		}
+	}
+	
+	$i=0;
+	@face = ();
+ 	while ( <ART> ) {
+		# if the line starts with a number we use it
+		if ( /^(\s)*[-+]*(\d)+(\s)*:/ )  {
+			@vtmp = split (":", $_);
+			$face[$i]{id} = $vtmp[0];
+			@tmp2 = split(" ", $vtmp[1]);
+			$face[$i]{edge1} = $tmp2[0];
+			$face[$i]{edge2} = $tmp2[1];
+			$face[$i]{edge3} = $tmp2[2];
+
+			$face[$i]{vertex1} = -1;
+			$face[$i]{vertex2} = -1;
+			$face[$i]{vertex3} = -1;
+			$i++;
+		}
+		if (/\$/) {
+			last;
+		}
+ 	}
+ 	
+	if ( $i!=$faces ) {
+		print "x" x 60,"\n";
+		print "x" x 60,"\n";
+		print "     $faces faces anounced in header, but $i found \n";
+		print "x" x 60,"\n";
+		print "x" x 60,"\n";
+	}		
+
+	if ($debug>0) {
+		PrintFaceList();
+	}
+	
+	close(ART)     or die "can't close $artfile";
+
+	print "done. ($i faces)\n";
+}
+
+######################################################################
+######################################################################
+sub WriteLGMDomain {
+	local($artfile) = @_;
+# 	print "-" x 60,"\n";
+	
+	# if art file ends in '.art' or '.net' remove the extension
+	$artbasename = $artfile;
+	
+	print "Problem name is $artbasename\n";
+	$lgmdomainfile = $artbasename . ".lgm";
+	print "Writing LGM domain to file $lgmdomainfile\n";
+	
+	open(LGMDOM, "> $lgmdomainfile")  or die "can't open LGM domain file $lgmdomainfile.";
+	
+	######################################################################
+	# 1) Header ((( UG doesn't seem to like this!! )))
+	#print LGMDOM "\# LGM domain, created by art2lgm from file $artfile\n";
+	#print LGMDOM "\# Date: ",scalar localtime,"\n\n\n";
+	
+	######################################################################
+	# 2) Domain information
+	print LGMDOM "\# Domain-Info\n";
+	print LGMDOM "name = $artbasename\n";
+	print LGMDOM "problemname = $artbasename\n";
+	print LGMDOM "convex = 0\n\n";
+
+	######################################################################
+	# 2) Unit information
+	# Check for subdomains and count them.  Use the information from the grid file.
+	$subdomains=0;
+	@subdomain = ();
+		
+	for $n (0 .. $faces-1) {
+
+		$alreadyin=0;
+				
+		for $m (0 .. $subdomains-1) {			
+			if ( $face[$n]{id}==$subdomain[$m] ) {				
+				$alreadyin = 1;
+			}
+		}
+		
+		if ( $alreadyin==0 ) {
+			# face has a subdomain id we don't already know
+			@subdomain = (@subdomain, $face[$n]{id});
+			$subdomains++;
+			
+			# print warning if subdomain 0 is used
+			if ( $face[$n]{id}==0 ) {
+				print "\#" x 60,"\n"; print "\#" x 60,"\n";
+				print " subdomain id 0 found for face $n!!!\n";
+				print "\#" x 60,"\n"; print "\#" x 60,"\n";
+			}
+		}
+	}
+	
+	print "    $subdomains subdomains ( ";
+	for $m (0 .. $subdomains-1) {
+		print $subdomain[$m]," ";
+	}
+	print ")\n";
+	
+	print LGMDOM "\# Unit-Info\n";
+	$n = 1;
+	foreach $item (@subdomain) {
+		print LGMDOM "unit ",$n++," MATERIAL",$item,"\n";
+	}
+	print LGMDOM "\n";
+	
+	
+	######################################################################
+	# Preprocessing.  Do some preparation for the next steps.
+	# 
+	
+	# Loop through all faces and write info to edges so that each edge knows its faces
+	
+	for ($f=0; $f<$faces; $f++)	{
+		$edge1 = $face[$f]{edge1};
+		$edge2 = $face[$f]{edge2};
+		$edge3 = $face[$f]{edge3};
+		
+		$edge[$edge1]{elements} = $edge[$edge1]{elements} . "$f ";
+		$edge[$edge2]{elements} = $edge[$edge2]{elements} . "$f ";
+		$edge[$edge3]{elements} = $edge[$edge3]{elements} . "$f ";
+	}
+	
+	# Loop through all faces (i.e. elements) and gather information about vertices
+	for ($f=0; $f<$faces; $f++)	{
+		
+		@liste = ();
+		
+		$edgeid = $face[$f]{edge1};
+		push(@liste, $edge[$edgeid]{from});
+		push(@liste, $edge[$edgeid]{to});
+		
+		$edgeid = $face[$f]{edge2};
+		push(@liste, $edge[$edgeid]{from});
+		push(@liste, $edge[$edgeid]{to});
+		
+		$edgeid = $face[$f]{edge3};
+		push(@liste, $edge[$edgeid]{from});
+		push(@liste, $edge[$edgeid]{to});
+		
+		# extract unique items from @liste
+		# perl cookbook page 102
+		%seen = ();
+		@unique = grep { ! $seen{$_} ++ } @liste;
+		
+		$face[$f]{vertex1} = $unique[0];
+		$face[$f]{vertex2} = $unique[1];
+		$face[$f]{vertex3} = $unique[2];
+	}
+	
+	PrintFaceList();
+	
+	# Set the left, right information in the domainedge array
+	# Idea: find an edge which is on the domain line.
+	# One of the vertices of the elements of the edge is not on the line.
+	# Determine on which side the element lies (with the use of this
+	# point) and use the subdomain id from the element.
+	
+	# loop through domain edges
+	for ($e=0; $e<$domainedges; $e++) {
+		
+		$lineid = $domainedge[$e]{id};
+		
+		for ($l=0; $l<$edges; $l++) {
+			if ( $edge[$l]{id} eq $lineid ) { last; }
+		}
+		
+		if ( $l eq $edges ) { die "line $lineid not found."; }
+		
+		@elem = split(" ",$edge[$l]{elements});
+			
+		if ($debug>0) { print LOG "   lineid $lineid   elements ",$edge[$l]{elements},"\n"; }
+		
+		# the vertices of the first element
+		print LOG "   element[0] ",$elem[0],"\n";
+		$v1 = $face[$elem[0]]{vertex1};
+		$v2 = $face[$elem[0]]{vertex2};
+		$v3 = $face[$elem[0]]{vertex3};
+		
+		if ($debug>0) { print LOG "   vertices ",$v1," ",$v2," ",$v3,"\n"; }
+		
+		# the line we are looking at has these vertices
+		$p1 = $edge[$l]{from};
+		$p2 = $edge[$l]{to};
+		
+		if    ( $v1 ne $p1 && $v1 ne $p2) { $v = $v1; }
+		elsif ( $v2 ne $p1 && $v2 ne $p2) { $v = $v2; }
+		else  { $v = $v3; }
+		
+		if ($debug>0) { print LOG "   $v is the vertex id we need\n"; }
+		
+		# look if $v is left or right from line
+		# Arguments to LeftOrRight:  Line from x and y, line to x and y, point x and y
+		# >0 means left, <0 means right, 0 is an error.
+		$from = $domainedge[$e]{from};
+		$to   = $domainedge[$e]{to};
+		$det = LeftOrRight($domainvertex[$from]{x}, $domainvertex[$from]{y}, 
+					$domainvertex[$to]{x},   $domainvertex[$to]{y}, 
+					$vertex[$v]{x}, $vertex[$v]{y});
+
+		if ( $det>0 ) {
+			# point is left from line
+			$domainedge[$e]{left} = $face[$elem[0]]{id};
+			
+			# if there is a second element...
+			if ( defined($elem[1]) )	{
+				$domainedge[$e]{right} = $face[$elem[1]]{id};
+			}
+			else { $domainedge[$e]{right} = 0; }
+		}
+		elsif ( $det<0 ) {
+			# point is right from line
+			$domainedge[$e]{right} = $face[$elem[0]]{id};
+			
+			# if there is a second element...
+			if ( defined($elem[1]) )	{
+				$domainedge[$e]{left} = $face[$elem[1]]{id};
+			}
+			else { $domainedge[$e]{left} = 0; }
+		}
+		else { die "Unable to detect subdomain id for left/right of line $lineid\n"; }
+	}
+	
+	PrintDomainEdgesInfo();
+		
+	######################################################################
+	# Lines.
+	# 
+	print "    Writing LGM lines\n";
+	print LGMDOM "\# Line-Info\n";
+	for ($e=0; $e<$domainedges; $e++) {
+		print LGMDOM "line $e: left=";
+		print LGMDOM $domainedge[$e]{left}, "; right=";
+		print LGMDOM $domainedge[$e]{right}, " points: ";
+		print LGMDOM $domainedge[$e]{from}, " ", $domainedge[$e]{to}, ";\n";
+	}
+	print LGMDOM "\n\n";	
+	
+	#######################################################################
+	# Points.
+	# 
+	print "    Writing LGM points\n";
+	print LGMDOM "\#  Point-Info\n";
+	for $v (0 .. $domainvertices-1) {
+		print LGMDOM $domainvertex[$v]{x}," ";
+		print LGMDOM $domainvertex[$v]{y},"\n";
+	}
+	
+	close(LGMDOM)  or die "can't close $lgmdomainfile";
+}
+
+######################################################################
+######################################################################
+sub WriteLGMNet {
+	local($artfile) = @_;
+# 	print "-" x 60,"\n";
+	
+	local($artbasename,$from,$to);
+	
+    # if art file ends in '.art' remove the extension
+    $artbasename = $artfile;
+    if ( substr($artbasename,-4) eq ".art" || substr($artbasename,-4) eq ".net" ) {
+        substr($artbasename,-4) = "";
+    }
+
+	$lgmnetfile    = $artbasename . ".ng";
+	print "Writing LGM net to file of $lgmnetfile\n";
+	
+	open(LGMNET, "> $lgmnetfile")     or die "can't open LGM grid file $lgmnetfile.";
+	
+	# Write vertex info
+	print LGMNET "\# $vertices vertices\n";
+	
+	######################################################################
+	# Points.
+	# 
+	print "    Preprocessing vertex list\n";
+	
+	# loop over all domain lines
+	for ($l=0; $l<$domainedges; $l++)	{
+		
+		$from = $domainedge[$l]{from};
+		$to   = $domainedge[$l]{to};
+
+		$from_x = $domainvertex[$from]{x};
+		$from_y = $domainvertex[$from]{y};
+		$to_x   = $domainvertex[$to]{x};
+		$to_y   = $domainvertex[$to]{y};
+		if ($debug) { print LOG "line $l from ($from_x,$from_y) to ($to_x,$to_y)\n"; }
+		
+		$length = Distance($from_x,$from_y,$to_x,$to_y);
+		
+		# test all grid edges if they are on this line
+		for ($e=0; $e<$edges; $e++)	{
+			
+			if ( $edge[$e]{id}==$domainedge[$l]{id} )	{
+				
+				if ($debug) { print LOG "  edge $e is on line $l\n"; }
+				
+				$p0_x = $vertex[ $edge[$e]{from} ]{x};
+				$p0_y = $vertex[ $edge[$e]{from} ]{y};
+				$p1_x = $vertex[ $edge[$e]{to} ]{x};
+				$p1_y = $vertex[ $edge[$e]{to} ]{y};
+				if ($debug) { print LOG "  grid edge $e from ($p0_x,$p0_y) to ($p1_x,$p1_y)\n"; }
+				
+				$dist = Distance($from_x,$from_y,$p0_x,$p0_y);
+				$lambda1 = $dist/$length;
+				$dist = Distance($from_x,$from_y,$p1_x,$p1_y);
+				$lambda2 = $dist/$length;
+				
+				if ($debug) { print LOG "  lambda values: $lambda1 $lambda2\n"; }
+				
+				substr($vertex[ $edge[$e]{from} ]{nginfo},0,1) = "B";
+				substr($vertex[ $edge[$e]{to} ]{nginfo},0,1) = "B";
+				
+				if ( !exists($domainedge[$l]{gridpoints}{$edge[$e]{from}}) )	{
+					$vertex[ $edge[$e]{from} ]{nginfo} .= " L $l $lambda1";
+				}
+				if ( !exists($domainedge[$l]{gridpoints}{$edge[$e]{to}}) )	{
+					$vertex[ $edge[$e]{to} ]{nginfo} .= " L $l $lambda2";
+				}
+				
+				# Remember the grid points that lie on this line
+				$domainedge[$l]{gridpoints}{$edge[$e]{from}} = 1;
+				$domainedge[$l]{gridpoints}{$edge[$e]{to}} = 1;
+				
+			}
+		}
+	}
+	
+	if ($debug>0) {	
+		print LOG "Vertex list after checking boundary info\n";
+		PrintVertexList();
+	}
+	
+	print "    Writing LGM grid points (boundary points ";
+	
+	for ($v=0; $v<$vertices; $v++) {
+		if ( substr($vertex[$v]{nginfo},0,1) eq "B" )	{
+			print LGMNET $vertex[$v]{nginfo},"\n";
+		}
+	}
+	
+	print LGMNET "\n";
+	print "and inner points).\n";
+	
+	for ($v=0; $v<$vertices; $v++) {
+		if ( substr($vertex[$v]{nginfo},0,1) ne "B" )	{
+			print LGMNET $vertex[$v]{nginfo},"\n";
+		}
+	}
+	
+	print "    Writing LGM elements\n";
+	for ($f=0; $f<$faces; $f++)	{
+		print LGMNET "E ", $face[$f]{id}, " ";
+
+		print LGMNET $face[$f]{vertex1}, " ";
+		print LGMNET $face[$f]{vertex2}, " ";
+		print LGMNET $face[$f]{vertex3}, "  ";
+
+		print LGMNET "S ", $edge[ $face[$f]{edge1} ]{from}, " ";
+		print LGMNET       $edge[ $face[$f]{edge1} ]{to},   "  ";
+		print LGMNET "S ", $edge[ $face[$f]{edge2} ]{from}, " ";
+		print LGMNET       $edge[ $face[$f]{edge2} ]{to},   "  ";
+		print LGMNET "S ", $edge[ $face[$f]{edge3} ]{from}, " ";
+		print LGMNET       $edge[ $face[$f]{edge3} ]{to},   ";\n";
+		
+	}
+	
+	close(LGMNET)  or die "can't close $lgmnetfile";
+	
+}
+
+# Calculate distance of point ($x0,$y0) to ($x1,$y1)
+sub Distance {
+	
+	local($x0,$y0,$x1,$y1) = @_;
+	
+	local($a,$b);
+
+	$a = $x1-$x0;
+	$b = $y1-$y0;
+	
+	return sqrt( $a*$a + $b*$b );
+
+}
+
+######################################################################
+######################################################################
+sub WriteBoundaryConditionsMap {
+	local($basename) = @_;
+	local($bcfile,$e);
+	
+	$bcfile    = $basename . ".bc";
+	print "Writing LGM boundary conditions to file of $bcfile\n";
+	
+	open(BCMAP, "> $bcfile")     or die "can't open LGM grid file $bcfile.";
+	
+	# Write size info
+	print BCMAP "size $domainedges\n";
+	
+	for $e (0 .. $domainedges-1)	{
+		print BCMAP "$e $domainedge[$e]{id}\n"
+	}
+	
+	close(BCMAP)  or die "can't close $bcfile";
+	
+}
+
+######################################################################
+######################################################################
+sub PrintVertexList {
+ 		
+	print LOG "$vertices vertices: \n";
+	for ($n=0; $n<$vertices; $n++) {
+		print LOG "  Vertex[$n]:  x=",$vertex[$n]{x},"\ty=";
+		print LOG $vertex[$n]{y},"\t<";
+		print LOG $vertex[$n]{nginfo},">\n";
+	}
+}
+
+######################################################################
+######################################################################
+sub PrintEdgeList {
+	print LOG "$edges edges: \n";
+	for ($n=0; $n<$edges; $n++) {
+		print LOG "    Edge $n ";
+		print LOG "control word ",$edge[$n]{id};
+		print LOG "  from ",$edge[$n]{from};
+		print LOG "  to ",  $edge[$n]{to};
+		print LOG "  elements ",  $edge[$n]{elements};
+		print LOG "\n";
+	}
+}
+
+######################################################################
+######################################################################
+sub PrintFaceList {
+		
+	print LOG "$faces faces\n";
+	for ($n=0; $n<$faces; $n++) {
+		print LOG "    face $n ";
+		print LOG "control word ",$face[$n]{id},"   ";
+		print LOG "edges ",$face[$n]{edge1};
+		print LOG " ",$face[$n]{edge2};
+		print LOG " ",$face[$n]{edge3};
+		print LOG "   vertices ",$face[$n]{vertex1};
+		print LOG " ",$face[$n]{vertex2};
+		print LOG " ",$face[$n]{vertex3};
+		print LOG "\n";
+	}
+	
+}
+
+######################################################################
+######################################################################
+sub LeftOrRight {
+	
+	local($x0,$y0,$x1,$y1,$x2,$y2) = @_;
+	
+	print LOG "--------Left or right subdomain test------\n";
+	print LOG "        x0=$x0, y0=$y0\n";
+	print LOG "        x1=$x1, y1=$y1\n";
+	print LOG "        x2=$x2, y1=$y1\n";
+	
+	$linevec_x = $x1-$x0;
+	$linevec_y = $y1-$y0;
+	
+	$pointvec_x = $x2-$x0;
+	$pointvec_y = $y2-$y0;
+	
+	$det = $linevec_x*$pointvec_y - $linevec_y*$pointvec_x;
+	
+	return $det;
+}
+
+######################################################################
+######################################################################
+sub WriteGnuplotfiles	{
+
+	local($basename) = @_;
+	local($n,$from,$to);
+	
+	print "Writing files for gnuplot:\n";
+	
+	$gnuplotprogram = $basename . ".gnuplot";
+	$domaindata = $basename . ".gpdomain";
+	$griddata   = $basename . ".gpgrid";
+	
+	print "    $gnuplotprogram for gnuplot program.\n";
+	open(GPPROG, "> $gnuplotprogram")  or die "can't open gnu plot file $gnuplotprogram.";
+	print GPPROG "plot '$griddata' with lines, '$domaindata' with lines\n";
+	close(GPPROG);
+	
+	print "    $domaindata for domain data.\n";
+	open(GPDOMAIN, "> $domaindata")    or die "can't open gnu plot file $domaindata.";
+	for ($n=0; $n<$domainedges; $n++) {
+		$from = $domainedge[$n]{from};
+		$to = $domainedge[$n]{to};
+		print GPDOMAIN $domainvertex[$from]{x}," ",$domainvertex[$from]{y},"\n";
+		print GPDOMAIN $domainvertex[$to]{x}," ",$domainvertex[$to]{y},"\n\n";
+	}
+	close(GPDOMAIN);
+	
+	print "    $griddata for grid data.\n";
+	open(GPGRID, "> $griddata")        or die "can't open gnu plot file $griddata.";
+	for ($n=0; $n<$edges; $n++) {
+		$from = $edge[$n]{from};
+		$to = $edge[$n]{to};
+		print GPGRID $vertex[$from]{x}," ",$vertex[$from]{y},"\n";
+		print GPGRID $vertex[$to]{x}," ",$vertex[$to]{y},"\n\n";
+	}	
+	close(GPGRID);
+	
+}
+
+######################################################################
+sub PrintDomainVerticesInfo {
+	
+	$count = 0;
+	foreach $item (@domainvertex) {
+		print LOG "Vertex $count: ";
+		print LOG "x = ",$domainvertex[$count]{x},"  ";
+		print LOG "x = ",$domainvertex[$count]{y},"\n";
+		$count++;
+	}
+}
+
+######################################################################
+sub PrintDomainEdgesInfo {
+	$count = 0;
+	foreach $item (@domainedge) {
+		print LOG "Edge $count: ";
+		print LOG "from = ",$domainedge[$count]{from},"  ";
+		print LOG "to = ",$domainedge[$count]{to},"  ";
+		print LOG "id = ",$domainedge[$count]{id},"  ";
+		print LOG "(left,right) = (",$domainedge[$count]{left};
+		print LOG ",",$domainedge[$count]{right},")\n";
+		$count++;
+	}
+
+}
+
+######################################################################
+sub PrintDomainFacesInfo {
+	$count = 0;
+	foreach $item (@domainface) {
+		print LOG "Face $count: ";
+		print LOG "id = ",$domainface[$count]{id},"  ";
+		print LOG "lines = ",$domainface[$count]{lines},"\n";
+		$count++;
+	}
+
+}
+
