@@ -142,9 +142,9 @@ static char theLine[MAX_LEN+1];
 static INT nCorners,nBndP,nElem,nPPatch,nLPatch,nTPatch,nPri,nFound;
 static INT Marc_Extended;
 
-static INT ExpandLine (char *theLine)
+static int ExpandLine (char *theLine)
 {
-  INT i,j,k,l;
+  int i,j,k,l;
 
   if (Marc_Extended) {
     i = 76;
@@ -168,29 +168,36 @@ static INT ExpandLine (char *theLine)
     }
     theLine[i] = ' ';
     /*printf("%s",theLine); */
-    return(0);
   }
-
-  i = 41;
-  j = 34;
-  for (l=0; l<3; l++) {
-    theLine[i] = ' ';
-    i--;
-    theLine[i] = theLine[j];
-    i--;
-    j--;
-    theLine[i] = theLine[j];
-    i--;
-    j--;
-    theLine[i] = 'e';
-    i--;
-    for (k=0; k<8; k++) {
+  else {
+    i = 41;
+    j = 34;
+    for (l=0; l<3; l++) {
+      theLine[i] = ' ';
+      i--;
       theLine[i] = theLine[j];
       i--;
       j--;
+      theLine[i] = theLine[j];
+      i--;
+      j--;
+      theLine[i] = 'e';
+      i--;
+      for (k=0; k<8; k++) {
+        theLine[i] = theLine[j];
+        i--;
+        j--;
+      }
     }
+    theLine[i] = ' ';
   }
-  theLine[i] = ' ';
+
+  for (i=5; i<strlen(theLine); i++)
+    if (theLine[i] == '-')
+      if (theLine[i+1] == 'e') {
+        theLine[i] = 'e';
+        theLine[i+1] = '-';
+      }
 
   return(0);
 }
