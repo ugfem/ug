@@ -21,7 +21,7 @@ LIBDIR = ../../lib
 
 DDD_MORE_OPTIONS = -DXferMemFromHeap -DConsMemFromHeap -DDDD_FRONTEND_C
 
-DDD_CFLAGS = $(DDD_MORE_OPTIONS) $(ARCH_CFLAGS) $(ARCH_PCFLAGS) -I../../include
+DDD_CFLAGS = $(DDD_MORE_OPTIONS) $(ARCH_CFLAGS) $(UG_OFLAGS) $(ARCH_PCFLAGS) -I../../include
 DDD_CC     = $(ARCH_CC)
 
 
