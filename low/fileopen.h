@@ -51,6 +51,7 @@
 /* return constants for filetype() */
 enum FileTypes { FT_UNKNOWN, FT_FILE, FT_DIR, FT_LINK };
 
+#define fileopen(fname,mode)    fopen(ConvertFileName(fname),mode)
 
 /****************************************************************************/
 /*																			*/
@@ -70,15 +71,19 @@ enum FileTypes { FT_UNKNOWN, FT_FILE, FT_DIR, FT_LINK };
 /*																			*/
 /****************************************************************************/
 
-FILE    *fileopen                                       (const char *fname, const char *mode);
-size_t  filesize                    (const char *fname);
-int     filetype                    (const char *fname);
-INT     ReadSearchingPaths                      (const char *filename, const char *pathsvar);
-int     DirCreateUsingSearchPaths       (const char *fname, const char *paths);
-FILE    *FileOpenUsingSearchPaths       (const char *fname, const char *mode, const char *pathsvar);
-FILE    *FileOpenUsingSearchPath        (const char *fname, const char *mode, const char *path);
-int     FileTypeUsingSearchPaths        (const char *fname, const char *pathsvar);
+#ifdef __MACINTOSH__
+const char      *ConvertFileName                        (const char *fname);
+#else
+#define         ConvertFileName(fname)          fname
+#endif
+size_t          filesize                    (const char *fname);
+int             filetype                    (const char *fname);
+INT                     ReadSearchingPaths                      (const char *filename, const char *pathsvar);
+int                     DirCreateUsingSearchPaths       (const char *fname, const char *paths);
+FILE            *FileOpenUsingSearchPaths       (const char *fname, const char *mode, const char *pathsvar);
+FILE            *FileOpenUsingSearchPath        (const char *fname, const char *mode, const char *path);
+int             FileTypeUsingSearchPaths        (const char *fname, const char *pathsvar);
 
-INT             InitFileOpen                            (void);
+INT                     InitFileOpen                            (void);
 
 #endif

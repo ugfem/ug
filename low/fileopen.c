@@ -32,11 +32,11 @@
 #include <stdio.h>
 #include <string.h>
 
-/* first compiler header for __MWCW__ definition iff */
+/* first compiler header for __MACINTOSH__ definition iff */
 #include "compiler.h"
 
 /* includes for filesize(), filetype() */
-#if (defined __MWCW__) || (defined __MPW32__)
+#ifdef __MACINTOSH__
 #include <stat.h>
 /* NB: On Macs the structs of <types.h> are defined locally in <stat.h> */
 #else
@@ -97,6 +97,8 @@ typedef struct
 static INT thePathsDirID;
 static INT thePathsVarID;
 
+static char fullpath[MAXPATHLENGTH];
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -141,38 +143,33 @@ static PATHS *GetPaths (const char *name)
 
 /****************************************************************************/
 /*D
-        fileopen - like ANSI-C 'fopen' but convert UNIX-style paths to machine format
+        ConvertFileName - like ANSI-C 'fopen' but convert UNIX-style paths to machine format
 
         SYNOPSIS:
-        FILE *fileopen (const char *fname, const char *mode)
+        const char *ConvertFileName (const char *fname)
+
 
     PARAMETERS:
    .   fname - filename with path convention in UNIX-style
-   .   mode - see ANSI-C 'fopen'
 
         DESCRIPTION:
-        Convert UNIX-style paths to machine format. If '__MWCW__' or '__MPW32__'
-        are define (Macintosh compilers) the UNIX-sytle path is converted to
-        Macintosh-style. Then standard 'fopen' is called.
+        Convert UNIX-style paths to machine format. If '__MACINTOSH__'
+        is defined (Apple Macintosh computer) the UNIX-sytle path is converted to
+        Macintosh-style.
 
-        For other platforms 'fileopen' is just mapped to 'fopen'.
+        For other platforms 'ConvertFileName' returns 'fname' (macro).
 
         RETURN VALUE:
-        FILE *
-   .n   file ptr (NULL if error)
-
-        SEE ALSO:
-        fopen
+        char *
+   .n   converted file name (NULL if error)
    D*/
 /****************************************************************************/
 
-#if (defined __MWCW__) || (defined __MPW32__)
+#ifdef __MACINTOSH__
 
 /* Macintosh computers */
-
-FILE *fileopen (const char *fname, const char *mode)
+const char *ConvertFileName (const char *fname)
 {
-  char fullpath[MAXPATHLENGTH];
   int pos;
 
   if (*fname=='/')
@@ -184,7 +181,7 @@ FILE *fileopen (const char *fname, const char *mode)
 
   /* something to convert? */
   if (strchr(fname,'/')==NULL)
-    return (fopen(fname,mode));
+    return (fname);
 
   pos = 0;
   while ((*fname!='\0') && (pos<MAXPATHLENGTH-2))
@@ -229,17 +226,7 @@ FILE *fileopen (const char *fname, const char *mode)
   /* 0-terminate string */
   fullpath[pos] = '\0';
 
-  return (fopen(fullpath,mode));
-}
-
-
-#else
-
-/* UNIX machines */
-
-FILE *fileopen (const char *fname, const char *mode)
-{
-  return (fopen(fname,mode));
+  return (fullpath);
 }
 
 #endif
@@ -274,7 +261,7 @@ size_t filesize (const char *fname)
   struct stat fstat;
 
   /* get (Unix) file descriptor */
-  if (stat(fname, &fstat)<0)
+  if (stat(ConvertFileName(fname), &fstat)<0)
     return(0);
 
   return((size_t)fstat.st_size);
@@ -310,9 +297,10 @@ size_t filesize (const char *fname)
 int filetype (const char *fname)
 {
   struct stat fstat;
+  int r;
 
   /* get Unix file descriptor */
-  if (stat(fname, &fstat)<0)
+  if ((r=stat(ConvertFileName(fname), &fstat))<0)
     return(FT_UNKNOWN);
 
         #ifdef __CC__
@@ -441,10 +429,12 @@ int DirCreateUsingSearchPaths (const char *fname, const char *paths)
 {
   PATHS *thePaths;
 
+  const char *real_name = ConvertFileName(fname);
   char fullname[MAXPATHLENGTH];
   INT i,fnamelen,mode,error;
-  fnamelen = strlen(fname);
-        #ifndef __MWCW__
+
+  fnamelen = strlen(real_name);
+        #ifndef __MACINTOSH__
   mode = S_IRUSR | S_IWUSR | S_IXUSR |
          S_IRGRP | S_IXGRP;
         #else
@@ -452,7 +442,7 @@ int DirCreateUsingSearchPaths (const char *fname, const char *paths)
         #endif
 
   if (paths == NULL)
-    if ((error=mkdir(fname,mode))!=0) return (1);
+    if ((error=mkdir(real_name,mode))!=0) return (1);
 
   if ((thePaths=GetPaths(paths))==NULL)
     return (0);
@@ -466,7 +456,7 @@ int DirCreateUsingSearchPaths (const char *fname, const char *paths)
     strcat(fullname,"/");
     strcat(fullname,fname);
 
-    if ((error=mkdir(fullname,mode))!=0)
+    if ((error=mkdir(ConvertFileName(fullname),mode))!=0)
       return (1);
   }
   return (0);
