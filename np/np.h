@@ -395,6 +395,7 @@ INT l_lgsB                      (GRID *g, const VECDATA_DESC *v, const MATDATA_D
 INT gs_solveBS          (const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, DOUBLE eps, INT max_it, INT K_comp, INT u_comp, INT f_comp, INT aux_comp, INT verbose, INT eps_relative );
 
 INT l_lsor                      (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, const DOUBLE *damp);
+INT l_lsor_ld       (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, const VECDATA_DESC *damp);
 
 /* iterative methods for Simple BLOCKVECTOR */
 INT l_lgs_SB            (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
