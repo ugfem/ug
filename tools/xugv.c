@@ -1886,6 +1886,7 @@ char* argv[];
       }
       sscanf(argv[i+1],"%d",&first);
       sscanf(argv[i+2],"%d",&last);
+      frame_number = first;
       film = 1;
       i+=3;
       continue;
