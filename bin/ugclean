@@ -14,18 +14,18 @@ then
     exit 1;
 fi
 
-ugmake ug -i clean
-ugmake sc -i clean
-ugmake sc2d -i clean
-ugmake sc3d -i clean
-ugmake simple -i clean
-ugmake diff2d -i clean
-ugmake diff2da -i clean
-ugmake fe -i clean
-ugmake ns -i clean
-ugmake ns2d -i clean
-ugmake ns3d -i clean
-ugmake tools -i clean
+ugmake ug -i -k clean
+ugmake sc -i -k clean
+ugmake sc2d -i -k clean
+ugmake sc3d -i -k clean
+ugmake simple -i -k clean
+ugmake diff2d -i -k clean
+ugmake diff2da -i -k clean
+ugmake fe -i -k clean
+ugmake ns -i -k clean
+ugmake ns2d -i -k clean
+ugmake ns3d -i -k clean
+ugmake tools -i -k clean
 
 if test "$1" = "all"
 then
@@ -34,6 +34,6 @@ then
 	rm -f $UGROOT/bin/m2ps
 	rm -f $UGROOT/../*/pclib/*.a
 	rm -f -r $UGROOT/include
-	ugmake tools -i clean
+	ugmake tools -i -k clean
 fi
 
