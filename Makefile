@@ -22,7 +22,7 @@ OBJECTS = initug.o
 ##############################################################################
 
 # make all
-all: include $(MODULES)
+all: include $(MODULES) $(OBJECTS)
 	make $(UG_LIB) 	
 	echo "libug, libdom and libdev compiled"
 
