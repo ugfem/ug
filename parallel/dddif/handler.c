@@ -60,10 +60,11 @@
 /*																			*/
 /****************************************************************************/
 
+#ifdef Debug
 #define DEBUGNSONS(pe,m) { if (pe!=NULL) {CheckNSons(pe,m);} }
-/*
-   #define DEBUGNSONS(pe,m)
- */
+#else
+#define DEBUGNSONS(pe,m)
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -2017,14 +2018,6 @@ void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
        */
     }
   }
-
-  /* TODO: delete this
-     #ifdef Debug
-          SETEPRIO(pe,new);
-          DEBUGNSONS(EFATHER(pe),"end ElementPriorityUpdate");
-          SETEPRIO(pe,old);
-     #endif
-   */
 
   return;
 }
