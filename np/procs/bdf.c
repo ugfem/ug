@@ -572,8 +572,10 @@ Continue:
   /* write time to shell */
   sprintf(buffer,"%12.4lE",bdf->t_0);
   SetStringVar("TIME",buffer);
+  SetStringVar(":BDF:TIME",buffer);
   sprintf(buffer,"%12.4lE",bdf->dt);
   SetStringVar("TIMESTEP",buffer);
+  SetStringVar(":BDF:DT",buffer);
 
   UserWriteF("TIMESTEP %4d: TIME=%10.4lg DT=%10.4lg EXECT=%10.4lg NLIT=%5d LIT=%5d MAXLIT=%3d\n",
              bdf->step,bdf->t_0,bdf->dt,bdf->exec_time,bdf->number_of_nonlinear_iterations,
