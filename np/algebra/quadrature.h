@@ -46,7 +46,7 @@
 /****************************************************************************/
 
 #ifdef __TWODIM__
-#define MAX_INT_POINTS 9
+#define MAX_INT_POINTS 33
 #else
 #define MAX_INT_POINTS 27
 #endif
@@ -93,6 +93,7 @@ typedef struct {
 /****************************************************************************/
 
 QUADRATURE *GetQuadrature(INT dim, INT n, INT order);
+QUADRATURE *GetQuadratureRule(INT dim, INT n, INT order);
 INT GaussPoints(INT dim, INT n, INT order, DOUBLE_VECTOR *x, GAUSS_POINT *gp);
 
 #endif
