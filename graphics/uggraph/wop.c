@@ -5845,7 +5845,7 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
       }
       la = PARAM(theSide,0,0);
       le = PARAM(theSide,1,0);
-      dl = (la - le) / MN_Resolution;
+      dl = (le - la) / MN_Resolution;
 
       /* scan resolution points of the segment */
       bestDist2 = MAX_C;
@@ -5858,7 +5858,7 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
         if (len < bestDist2)
         {
           bestDist2 = len;
-          MN_lambda = l;
+          MN_lambda = (l-la) / (le-la);
         }
       }
     }
