@@ -3394,11 +3394,20 @@ INT MoveMidNode (MULTIGRID *theMG,
   theElement = VFATHER(theVertex);
   edge = ONEDGE(theVertex);
   co0 = CORNER_OF_EDGE(theElement,edge,0);
-  co1 = CORNER_OF_EDGE(theElement,edge,1);
-  if (CORNER(theElement,co0) != Node0)
-    return(GM_ERROR);
-  if (CORNER(theElement,co1) != Node1)
-    return(GM_ERROR);
+  if (CORNER(theElement,co0)!=Node0)
+  {
+    co0 = CORNER_OF_EDGE(theElement,edge,1);
+    co1 = CORNER_OF_EDGE(theElement,edge,0);
+    if ((CORNER(theElement,co0)!=Node1)
+        || (CORNER(theElement,co1)!=Node0))
+      return(GM_ERROR);
+  }
+  else
+  {
+    co1 = CORNER_OF_EDGE(theElement,edge,1);
+    if (CORNER(theElement,co1)!=Node1)
+      return(GM_ERROR);
+  }
 
   global = CVECT(theVertex);
   local = LCVECT(theVertex);
