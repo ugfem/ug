@@ -35,6 +35,7 @@
 #include <math.h>
 #include <assert.h>
 #include <memory.h>
+#include <time.h>
 
 #include "compiler.h"
 #include "debug.h"
@@ -116,6 +117,23 @@ INT ce_CUTMODE;
 #define SETBITS(x,p,y)         (((y)<<((p)+1-(3)))|(x))
 #define CORNER_OF_SIDE0(t,s,c) (element_descriptors[t]->corner_of_side[(s)][(c)])
 
+/* Macros for ordering elements */
+#define NCUT                10
+#define SENTINEL            -3.40E38
+#define BT(i)               (OE_BoxTab[i])
+#define BCOUNT(i)           (OE_BE_Data[i].count)
+#define HIDDEN_BY(i)        (OE_BE_Data[i].hiddenBy)
+#define LEFT_SON(i)         (OE_BE_Data[i].leftSon)
+#define RIGHT_SON(i)        (OE_BE_Data[i].rightSon)
+#define U1(i)               (OE_BE_Data[i].u1)
+#define V1(i)               (OE_BE_Data[i].v1)
+#define U2(i)               (OE_BE_Data[i].u2)
+#define V2(i)               (OE_BE_Data[i].v2)
+#define U_LEFT_TREE(i)      (OE_BE_Data[i].uLeftTree)
+#define V_LEFT_TREE(i)      (OE_BE_Data[i].vLeftTree)
+#define U_RIGHT_TREE(i)     (OE_BE_Data[i].uRightTree)
+#define V_RIGHT_TREE(i)     (OE_BE_Data[i].vRightTree)
+
 /* pixel resolution for inserting boundary nodes */
 #define SMALLPIX 			4
 
@@ -127,6 +145,33 @@ INT ce_CUTMODE;
 */
 #define MAT_XC(col)	(col)
 #define MAT_YC(row)	(MAT_maxrow-(row))
+
+/****************************************************************************/
+/*                                                                          */
+/*  structs for ordering elements                                           */
+/*                                                                          */
+/****************************************************************************/
+
+typedef struct {
+	INT        id;
+	ELEMENT    *elem;
+} MAP;
+
+typedef struct IList{
+	INT          index;
+	struct IList *next;
+} ILIST;
+
+typedef struct {
+	INT        count;
+	ILIST      *hiddenBy;
+	INT        leftSon;
+	INT        rightSon;
+	COORD      u1, v1;
+	COORD      u2, v2;
+	COORD      uLeftTree, vLeftTree;
+	COORD      uRightTree, vRightTree;
+} BE_DATA;
 
 /****************************************************************************/
 /*																			*/
@@ -237,6 +282,17 @@ static INT DoFramePicture=YES;
 
 /*---------- variables use by OrderElements etc ----------------------------*/
 static VIEWEDOBJ			*OE_ViewedObj;
+static COORD                *OE_zMin;
+static COORD                *OE_zMax;
+INT                         OE_OrderStrategy;
+static INT                  OE_nBndElem;
+static MAP                  *OE_Map;
+static BE_DATA              *OE_BE_Data;
+static INT                  *OE_BoxTab;
+static HEAP                 *OE_Heap;
+static INT                  OE_QueryBox;
+static ILIST                **OE_CurrLink;
+static INT                  OE_nCompareElements;
 
 /*---------- variables use by GetFirst/NextElement... ----------------------*/
 static MULTIGRID					*GE_MG; 						
@@ -12265,6 +12321,8 @@ static INT CompareElements (const void *ElementHandle0,
 	theElement[0] = *((ELEMENT **)ElementHandle0);
 	theElement[1] = *((ELEMENT **)ElementHandle1);
 
+	OE_nCompareElements++;
+
 	/* test, if elements have a common side */
 	for (i=0; i<SIDES_OF_ELEM(theElement[0]); i++)
 		if( NBELEM(theElement[0],i) == theElement[1] )
@@ -12376,6 +12434,725 @@ static INT CompareElements (const void *ElementHandle0,
 	return(0);	
 }
 
+/*------ used by OrderFathersNNS --------------------------------------------*/
+
+static COORD ZCoordInEyeSystem(DOUBLE *p)
+{
+	return (p[0]*(VO_VT(OE_ViewedObj)[0]-VO_VP(OE_ViewedObj)[0]) +
+            p[1]*(VO_VT(OE_ViewedObj)[1]-VO_VP(OE_ViewedObj)[1]) +
+            p[2]*(VO_VT(OE_ViewedObj)[2]-VO_VP(OE_ViewedObj)[2])
+           );
+}
+
+static INT CompareZCoord(void *p, void *q)
+{
+    ELEMENT *p1, *q1;
+    
+
+	p1 = *((ELEMENT **)p);
+    q1 = *((ELEMENT **)q);
+	if (OE_zMax[ID(p1)] < OE_zMax[ID(q1)])
+		return 1;
+	if (OE_zMax[ID(p1)] > OE_zMax[ID(q1)])
+		return -1;
+	return 0;
+}
+
+/****************************************************************************/
+/*
+   OrderFathersNNS - Order elements with respect to view orientation on 
+                     level 0 a la Newell, Newell & Sancha
+
+   SYNOPSIS:
+
+
+   PARAMETERS:
+
+  
+   DESCRIPTION:
+   This function orders elements with respect to view orientation on level 0.
+
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+*/
+/****************************************************************************/
+
+static INT OrderFathersNNS (ELEMENT **table, HEAP *heap, INT n)
+{
+    INT i, j, k, ok;
+    COORD min, max, t;
+    ELEMENT *p, *q;
+    
+	/* allocate arrays for z coordinates */
+    Mark(heap, FROM_TOP);
+	if ((OE_zMin = (COORD *)GetMem(heap, n*sizeof(COORD), FROM_TOP)) == NULL) {
+		Release(heap,FROM_TOP);
+		UserWrite("ERROR: could not allocate memory from the MGHeap\n");
+		return 1;
+	}
+	if ((OE_zMax = (COORD *)GetMem(heap, n*sizeof(COORD), FROM_TOP)) == NULL) {
+		Release(heap,FROM_TOP);
+		UserWrite("ERROR: could not allocate memory from the MGHeap\n");
+		return 1;
+	}
+
+    /* unmark elements and compute z coordinates */
+	for (i=0; i<n; i++) {
+        p = table[i];
+		SETUSED(p, 0);
+        min = max =  ZCoordInEyeSystem(CVECT(MYVERTEX(CORNER(p, 0)))); 
+		for (j=1; j<CORNERS_OF_ELEM(p); j++) {
+		    t = ZCoordInEyeSystem(CVECT(MYVERTEX(CORNER(p, j))));
+			if (t < min) min = t;
+			if (t > max) max = t;
+		}
+		OE_zMin[ID(p)] = min;
+		OE_zMax[ID(p)] = max;
+	}
+	
+	/* setup initial z ordering */
+    qsort((void *)table, n, sizeof(*table), CompareZCoord);
+
+	/* fix up initial ordering a la Newell, Newell & Sancha */
+	i = 0;
+	while (i < n) {
+		p = table[i];
+		ok = 1;
+		for (j=i+1; j<n; j++) {
+			q = table[j];
+			if (!USED(q) && OE_zMax[ID(q)] <= OE_zMin[ID(p)])
+				break;
+			if (CompareElements(&p, &q) == 1) {
+				if (USED(q)) return 1;
+				for (k=j; k>i; k--)
+					table[k] = table[k-1];
+				table[i] = q;
+				SETUSED(q, 1);
+				ok = 0;
+				break;
+			}
+		}
+		if (ok) i++;
+	}
+	Release(heap, FROM_TOP);
+	return 0;
+}
+
+/*----- used by OrderFathersXSH --------------------------------------------*/
+
+/****************************************************************************/
+/*
+   CompareElementsXSH - Test, whether an element hides another 
+
+   SYNOPSIS:
+   static INT CompareElementsXSH (ELEMENT *p, ELEMENT *q);
+
+   PARAMETERS:
+.  p - 
+.  q - 
+
+   DESCRIPTION:
+   This function tests, whether an element hides another. It is derived
+   from CompareElements, but ignores elements that have a common side.
+   Sphere test is also discarded.
+
+   RETURN VALUE:
+   INT
+.n     1 whenelement0 hides element1
+.n      -1 when element1 hides element0
+.n     0 when elements do not hide each other.
+*/
+/****************************************************************************/
+
+static INT CompareElementsXSH(ELEMENT *p, ELEMENT *q)
+{
+	ELEMENT *theElement[2];
+	INT i, j, k, i1, k1, b0, b1, found, view0, view1, num0, num1, NCorners[2];
+	DOUBLE *Corners[2][8];
+	DOUBLE_VECTOR Triangle[2][4];
+	COORD_POINT ScreenPoints[2][4];
+	
+	theElement[0] = p;
+	theElement[1] = q;
+
+	OE_nCompareElements++;
+
+	/* ignore if elements have a common side */
+	for (i=0; i<SIDES_OF_ELEM(theElement[0]); i++)
+		if( NBELEM(theElement[0],i) == theElement[1] )
+			return 0;
+
+	/* do some initializing */ 
+	for (j=0; j<2; ++j)
+		for (i=0; i<CORNERS_OF_ELEM(theElement[j]); i++)
+			Corners[j][i] = CVECT(MYVERTEX(CORNER(theElement[j],i)));
+
+	/* determine the viewable sides and its numbers */
+	view0  = VSIDES(theElement[0]);
+	view1  = VSIDES(theElement[1]);
+	num0   = NoOfViewableSides[view0];
+	num1   = NoOfViewableSides[view1];
+	
+	/* use visible or unvisible sides, depending on which are less */
+	b0 = (num0>2);
+	b1 = (num1>2);
+	if (b0) num0 = SIDES_OF_ELEM(theElement[0]) - num0;
+	if (b1) num1 = SIDES_OF_ELEM(theElement[1]) - num1;
+	
+	NCorners[0] = CORNERS_OF_SIDE(theElement[0],0);
+	NCorners[1] = CORNERS_OF_SIDE(theElement[1],0);
+	
+	/* test the tetrahedrons by testing triangles */
+	i1=0;
+	for (i=0; i<num0; i++)
+	{
+		/* determine triangle of theElement0 */
+		while( ((view0>>i1)&1) == b0) i1++;
+		for (j=0; j<CORNERS_OF_SIDE(theElement[0],i1); j++)
+		{
+			
+			V3_TRAFOM4_V3(Corners[0][CORNER_OF_SIDE(theElement[0],i1,j)],ObsTrafo,Triangle[0][j])
+			(*OBS_ProjectProc)(Triangle[0][j],&(ScreenPoints[0][j]));
+		}
+	
+		/* determine triangle of theElement1 and compare triangles */
+		k1=0;
+		for (k=0; k<num1; k++)
+		{
+			while ( ((view1>>k1)&1) == b1 ) k1++;
+			for (j=0; j<CORNERS_OF_SIDE(theElement[1],k1); j++)
+			{
+				V3_TRAFOM4_V3(Corners[1][CORNER_OF_SIDE(theElement[1],k1,j)],ObsTrafo,Triangle[1][j])
+				(*OBS_ProjectProc)(Triangle[1][j],&(ScreenPoints[1][j]));
+			}
+			if ((NCorners[0]==3)&&(NCorners[1]==3))
+			   	found = CompareTriangles(Triangle,ScreenPoints);
+			else
+				found = CompareQuadrilaterals (Triangle,ScreenPoints,NCorners);
+			if (found)
+				return (found);
+			k1++;
+		}
+		i1++;
+	}
+
+	return(0);	
+}
+
+/* -------------------------------------------------------------------------- */
+
+static INT CompareIDs(void *p, void *q)
+{
+    INT a, b;
+
+	a = ((MAP *)p)->id;
+    b = ((MAP *)q)->id;
+    if (a < b) 
+		return -1;
+	if (a > b)
+		return 1;
+	return 0;
+}
+
+/****************************************************************************/
+/*
+   BSort1, BSort2 - build auxilliary data structure for OrderFathersXSH
+
+   DESCRIPTION: These functions build the tree of boxes
+   (c.f. The Visual Computer (1987) 3:236-249)
+   
+   RETURN VALUE:
+.n     none
+*/
+/****************************************************************************/
+
+static void BSort2(INT left, INT right,
+				   INT *root,
+				   COORD *u1Tree, COORD *v1Tree,
+				   COORD *u2Tree, COORD *v2Tree);   /* forward */
+
+static void BSort1(INT   left, INT right,
+				   INT   *root,
+				   COORD *u1Tree, COORD *v1Tree, 
+                   COORD *u2Tree, COORD *v2Tree)
+{
+	INT i, j, h, k, l, r, middle;
+    COORD key, u2LeftTree, v2LeftTree, u2RightTree, v2RightTree;
+
+	/* find median, 1st pass quicksort */
+	middle = (left+right)/2;
+	l = left;
+	r = right;
+    while (r-l >= NCUT) {
+		key = U1(BT(middle));  /* u1 is active sort key */
+		i = l;
+		j = r;
+		do {
+			while (U1(BT(i)) < key) i++;
+			while (key < U1(BT(j))) j--;
+			if (i <= j) {
+				h = BT(i);
+				BT(i) = BT(j);
+				BT(j) = h;
+				i++;
+				j--;
+			}
+		} while (i <= j);
+		if (j < middle) l = i;
+		if (middle < i) r = j;
+	}
+
+	/* 2nd pass straight selection */
+	for (i = l; i <= middle; i++) {
+		k = i; 
+		h = BT(i);
+		for (j = i+1; j <= r; j++)
+			if (U1(BT(j)) < U1(h)) {
+				k = j;
+				h = BT(j);
+			}
+		BT(k) = BT(i);
+		BT(i) = h;
+	}
+
+	/* take median as root */
+	*root = i = BT(middle);
+
+	/* determine sons */
+	if (left < middle) {
+		if (left < middle-1)
+			/* entire left subtree */
+			BSort2(left, middle-1, 
+				   &LEFT_SON(i), 
+				   &U_LEFT_TREE(i), &V_LEFT_TREE(i),
+				   &u2LeftTree, &v2LeftTree);
+		else {
+			/* left son is leaf */
+			LEFT_SON(i) = j = BT(left);
+			U_LEFT_TREE(i) = U1(j);
+			V_LEFT_TREE(i) = V1(j);
+			V_LEFT_TREE(j)  = SENTINEL;
+			V_RIGHT_TREE(j) = SENTINEL;
+			u2LeftTree = U2(j);
+			v2LeftTree = V2(j);
+		}
+		if (middle+1 < right)
+			/* entire right subtree */
+			BSort2(middle+1, right, 
+				   &RIGHT_SON(i),
+				   &U_RIGHT_TREE(i), &V_RIGHT_TREE(i),
+				   &u2RightTree, &v2RightTree);
+		else {
+			/* right son is leaf */
+			RIGHT_SON(i) = j = BT(right);
+			U_RIGHT_TREE(i) = U1(j);
+			V_RIGHT_TREE(i) = V1(j);
+			V_LEFT_TREE(j)  = SENTINEL;
+			V_RIGHT_TREE(j) = SENTINEL;
+			u2RightTree = U2(j);
+			v2RightTree = V2(j);
+		}
+
+		*u1Tree = U_LEFT_TREE(i);
+		*v1Tree = MAX(V_LEFT_TREE(i), MAX(V1(i), V_RIGHT_TREE(i)));
+		*u2Tree = MIN(u2LeftTree, MIN(U2(i), u2RightTree));
+		*v2Tree = MAX(v2LeftTree, MAX(V2(i), v2RightTree));
+	}
+	else {
+		/* no left son, right son is leaf */
+		RIGHT_SON(i) = j = BT(right);
+		V_LEFT_TREE(i) = SENTINEL;
+		U_RIGHT_TREE(i) = U1(j);
+		V_RIGHT_TREE(i) = V1(j);
+		V_LEFT_TREE(j)  = SENTINEL;
+		V_RIGHT_TREE(j) = SENTINEL;
+		*u1Tree = U1(i);
+		*v1Tree = MAX(V1(i), V1(RIGHT_SON(i)));
+		*u2Tree = MIN(U2(i), U2(RIGHT_SON(i)));
+		*v2Tree = MAX(V2(i), V2(RIGHT_SON(i)));
+	}
+}
+
+static void BSort2(INT left, INT right,
+				   INT *root,
+				   COORD *u1Tree, COORD *v1Tree,
+				   COORD *u2Tree, COORD *v2Tree)
+{
+	INT i, j, h, k, l, r, middle;
+    COORD key, u1LeftTree, v1LeftTree, u1RightTree, v1RightTree;
+
+	/* find median, 1st pass quicksort */
+	middle = (left+right)/2;
+	l = left;
+	r = right;
+    while (r-l >= NCUT) {
+		key = U2(BT(middle));   /* u2 is active sort key */
+		i = l;
+		j = r;
+		do {
+			while (U2(BT(i)) < key) i++;
+			while (key < U2(BT(j))) j--;
+			if (i <= j) {
+				h = BT(i);
+				BT(i) = BT(j);
+				BT(j) = h;
+				i++;
+				j--;
+			}
+		} while (i <= j);
+		if (j < middle) l = i;
+		if (middle < i) r = j;
+	}
+
+	/* 2nd pass straight selection */
+	for (i = l; i <= middle; i++) {
+		k = i; 
+		h = BT(i);
+		for (j = i+1; j <= r; j++)
+			if (U2(BT(j)) < U2(h)) {
+				k = j;
+				h = BT(j);
+			}
+		BT(k) = BT(i);
+		BT(i) = h;
+	}
+
+	/* take median as root */
+	*root = i = BT(middle);
+
+	/* determine sons */
+	if (left < middle) {
+		if (left < middle-1)
+			/* entire left subtree */
+			BSort1(left, middle-1, 
+				   &LEFT_SON(i), 
+				   &u1LeftTree, &v1LeftTree,
+				   &U_LEFT_TREE(i), &V_LEFT_TREE(i));
+		else {
+			/* left son is leaf */
+			LEFT_SON(i) = j = BT(left);
+			U_LEFT_TREE(i) = U2(j);
+			V_LEFT_TREE(i) = V2(j);
+			V_LEFT_TREE(j)  = SENTINEL;
+			V_RIGHT_TREE(j) = SENTINEL;
+			u1LeftTree = U1(j);
+			v1LeftTree = V1(j);
+		}
+		if (middle+1 < right)
+			/* entire right subtree */
+			BSort1(middle+1, right, 
+				   &RIGHT_SON(i),
+				   &u1RightTree, &v1RightTree,
+				   &U_RIGHT_TREE(i), &V_RIGHT_TREE(i));
+		else {
+			/* right son is leaf */
+			RIGHT_SON(i) = j = BT(right);
+			U_RIGHT_TREE(i) = U2(j);
+			V_RIGHT_TREE(i) = V2(j);
+			V_LEFT_TREE(j)  = SENTINEL;
+			V_RIGHT_TREE(j) = SENTINEL;
+			u1RightTree = U1(j);
+			v1RightTree = V1(j);
+		}
+		*u1Tree = MIN(u1LeftTree, MIN(U1(i), u1RightTree));
+		*v1Tree = MAX(v1LeftTree, MAX(V1(i), v1RightTree));
+		*u2Tree = U_LEFT_TREE(i);
+		*v2Tree = MAX(V_LEFT_TREE(i), MAX(V2(i), V_RIGHT_TREE(i)));
+	}
+	else {
+		/* no left son, right son is leaf */
+		RIGHT_SON(i) = j = BT(right);
+		V_LEFT_TREE(i) = SENTINEL;
+		U_RIGHT_TREE(i) = U2(j);
+		V_RIGHT_TREE(i) = V2(j);
+		V_LEFT_TREE(j)  = SENTINEL;
+		V_RIGHT_TREE(j) = SENTINEL;
+		*u1Tree = MIN(U1(i), U1(RIGHT_SON(i)));
+		*v1Tree = MAX(V1(i), V1(RIGHT_SON(i)));
+		*u2Tree = U2(i);
+		*v2Tree = MAX(V2(i), V2(RIGHT_SON(i)));
+	}
+}
+
+/****************************************************************************/
+/*
+   TestPrecedence - 
+
+   DESCRIPTION:
+   Compares (boundary) elements whose 2D bounding boxes overlap. If one
+   hides the other remember precedence.
+
+   RETURN VALUE:
+.n     none
+*/
+/****************************************************************************/
+
+static void TestPrecedence(INT i, INT j)
+{
+	ILIST *h;
+	INT cmp;
+
+	cmp = CompareElementsXSH(OE_Map[i].elem, OE_Map[j].elem);
+	if (cmp == 1)
+	{
+		BCOUNT(i)++;
+		h = HIDDEN_BY(j);
+		HIDDEN_BY(j) = (ILIST *)GetMem(OE_Heap, sizeof(ILIST), FROM_TOP);
+		HIDDEN_BY(j)->index = i;
+		HIDDEN_BY(j)->next = h;
+	}
+	else if (cmp == -1) {
+		BCOUNT(j)++;
+		h = HIDDEN_BY(i);
+		HIDDEN_BY(i) = (ILIST *)GetMem(OE_Heap, sizeof(ILIST), FROM_TOP);
+		HIDDEN_BY(i)->index = j;
+		HIDDEN_BY(i)->next = h;
+	}
+}
+
+/****************************************************************************/
+/*
+   BSearch1, BSearch2 - 
+
+   DESCRIPTION:
+   find all elements whose bounding boxes of 2D projection overlap the 
+   bounding box of the element given in OE_QueyBox. If one is found test
+   if elements really hide each other.
+
+   RETURN VALUE:
+.n     none
+*/
+/****************************************************************************/
+
+static void BSearch2(INT root);    /* forward */
+
+static void BSearch1(INT root)
+{
+	if (U1(root) <= V1(OE_QueryBox)) {
+		if (root < OE_QueryBox && V1(root) >= U1(OE_QueryBox) &&
+			    U2(root) <= V2(OE_QueryBox) && V2(root) >= U2(OE_QueryBox))
+			TestPrecedence(root, OE_QueryBox);
+		if (V_LEFT_TREE (root) >= U1(OE_QueryBox))
+			BSearch2(LEFT_SON(root));
+		if (V_RIGHT_TREE(root) >= U1(OE_QueryBox) && U_RIGHT_TREE(root) <= V1(OE_QueryBox))
+			BSearch2(RIGHT_SON(root));
+	}
+	else {
+		if (V_LEFT_TREE(root) >= U1(OE_QueryBox) && U_LEFT_TREE(root) <= V1(OE_QueryBox))
+			BSearch2(LEFT_SON(root));
+	}
+}
+
+static void BSearch2(INT root)
+{
+	if (U2(root) <= V2(OE_QueryBox)) {
+		if (root < OE_QueryBox && V1(root) >= U1(OE_QueryBox) &&
+			    U1(root) <= V1(OE_QueryBox) && V2(root) >= U2(OE_QueryBox))
+			TestPrecedence(root, OE_QueryBox);
+		if (V_LEFT_TREE (root) >= U2(OE_QueryBox))
+			BSearch1(LEFT_SON(root));
+		if (V_RIGHT_TREE(root) >= U2(OE_QueryBox) && U_RIGHT_TREE(root) <= V2(OE_QueryBox))
+			BSearch1(RIGHT_SON(root));
+	}
+	else {
+		if (V_LEFT_TREE(root) >= U2(OE_QueryBox) && U_LEFT_TREE(root) <= V2(OE_QueryBox))
+			BSearch1(LEFT_SON(root));
+	}
+}
+
+
+static INT Id2Index(INT id)
+{
+	INT l, r, m, key;
+
+	l = 0;
+	r = OE_nBndElem-1;
+	for(;;) {
+		m = (l+r)/2;
+		key = OE_Map[m].id;
+		if (key < id)
+			l = m+1;
+		else if (key > id)
+			r = m-1;
+		else 
+			return m;
+	}
+}
+
+
+/****************************************************************************/
+/*
+   OrderFathersXSH - Order elements with respect to view orientation on 
+                     level 0 by extended shell algorithm
+
+   SYNOPSIS:
+   static INT OrderFathersXSH(GRID *grid, HEAP *heap, ELEMENT **table)
+
+   PARAMETERS:
+   grid  - pointer to level zero grid to be ordered
+   heap  - pointer to heap 
+   table - array to store pointers to ordered elements (output) 
+ 
+   DESCRIPTION:
+   This function orders elements with respect to view orientation on level 0.
+
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+*/
+/****************************************************************************/
+
+static INT OrderFathersXSH(GRID *grid, HEAP *heap, ELEMENT **table)
+{
+	ELEMENT *p, *q;
+	ILIST *h;
+    COORD minx, maxx, miny, maxy, dummy;
+    COORD_POINT t;
+    DOUBLE temp[3];
+    INT i, j, k, count, root, pos, lastBegin, newBegin;
+
+    /* count boundary elements */
+	OE_nBndElem = 0;
+	for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
+		if (OBJT(p) == BEOBJ)
+			OE_nBndElem++;
+
+	/* allocate Arrays */
+	Mark(heap, FROM_TOP);
+	OE_Map     = (MAP *)     GetMem(heap, OE_nBndElem*sizeof(MAP),     FROM_TOP);
+    OE_BE_Data = (BE_DATA *) GetMem(heap, OE_nBndElem*sizeof(BE_DATA), FROM_TOP);
+    OE_BoxTab  = (INT *)     GetMem(heap, OE_nBndElem*sizeof(INT),     FROM_TOP);
+
+    /* init inner elements & copy boundary elements */
+    i = 0;
+    for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p)) {
+		SETUSED(p, 0);
+		if (OBJT(p) == BEOBJ) {
+			OE_Map[i].id = ID(p);
+			OE_Map[i++].elem = p;
+		}
+		else {
+			count = 0;
+            for (j = 0; j < SIDES_OF_ELEM(p); j++) {
+				q = NBELEM(p, j);
+				if (q != NULL && !VIEWABLE(p, j))
+					count++;
+			}
+			SETCOUNT(p, count);
+		}
+	}
+
+	/* sort map */
+	qsort((void *)OE_Map, OE_nBndElem, sizeof(MAP), CompareIDs);
+
+	/* init boundary elements */
+	for (i = 0; i < OE_nBndElem; i++) 
+	{
+		p = OE_Map[i].elem;
+
+		/* set counters */
+		count = 0;
+        for (j = 0; j < SIDES_OF_ELEM(p); j++) {
+				q = NBELEM(p, j);
+				if (q != NULL && !VIEWABLE(p, j))
+					count++;
+		}
+		BCOUNT(i) = count;
+
+		/* clear list of elems this one is hidden by */
+		HIDDEN_BY(i) = NULL;
+
+		/* set bounding boxes */
+        V3_TRAFOM4_V3(CVECT(MYVERTEX(CORNER(p, 0))), ObsTrafo, temp);
+        (*OBS_ProjectProc)(temp, &t);
+        minx = maxx = t.x;
+		miny = maxy = t.y;
+		for (j = 1; j < CORNERS_OF_ELEM(p); j++) {
+			V3_TRAFOM4_V3(CVECT(MYVERTEX(CORNER(p, j))), ObsTrafo, temp);
+            (*OBS_ProjectProc)(temp, &t);
+            if (t.x < minx) minx = t.x;
+            if (t.x > maxx) maxx = t.x;
+			if (t.y < miny) miny = t.y;
+			if (t.y > maxy) maxy = t.y;
+		}
+		U1(i) = minx;
+        V1(i) = maxx;
+        U2(i) = miny;
+		V2(i) = maxy;
+	}
+
+    /* build box tree */
+    for (i = 0; i < OE_nBndElem; i++)
+		BT(i) = i;
+	BSort1(0, OE_nBndElem-1, &root, &dummy, &dummy, &dummy, &dummy);
+
+	/* complete boundary element init */
+    OE_Heap = heap;
+	for (i = 0; i < OE_nBndElem; i++) {
+		OE_QueryBox = i;
+		BSearch1(root);
+	}
+
+	/* find first shell */
+	pos = 0;
+	for (i = 0; i < OE_nBndElem; i++)
+		if (BCOUNT(i) == 0) {
+			p = OE_Map[i].elem;
+			SETUSED(p, 1);
+			table[pos++] = p;
+		}
+	
+	/* create new shell from last one */
+   lastBegin = 0;
+   newBegin  = pos;
+   while (lastBegin < newBegin) {
+	   for (i = lastBegin; i<newBegin; i++) {
+		   p = table[i];
+		   for (j = 0; j < SIDES_OF_ELEM(p); j++) {
+			   q = NBELEM(p, j);
+			   if (q != NULL && !USED(q)) {
+				   if (OBJT(q) == BEOBJ) {
+					   k = Id2Index(ID(q));
+					   count = BCOUNT(k)-1;
+					   if (count == 0) {
+						   table[pos++] = q;
+						   SETUSED(q, 1);
+					   }
+					   else
+						   BCOUNT(k) = count;
+				   }
+				   else {
+					   count = COUNT(q)-1;
+					   if (count == 0) {
+						   table[pos++] = q;
+						   SETUSED(q, 1);
+					   }
+					   else
+						   SETCOUNT(q, count);
+				   }
+			   }
+		   }
+		   if (OBJT(p) == BEOBJ) {
+			   for (h = HIDDEN_BY(Id2Index(ID(p))) ; h != NULL; h = h->next) {
+				   k = h->index;
+				   if(--BCOUNT(k) == 0) {
+					   q = OE_Map[k].elem;
+					   table[pos++] = q;
+					   SETUSED(q, 1);
+				   }
+			   }
+		   }
+	   }
+	   lastBegin = newBegin;
+	   newBegin  = pos;
+   }
+   Release(heap, FROM_TOP);
+   return (pos == grid->nElem ? 0 : 1);
+}
+
 /****************************************************************************/
 /*
    OrderElements - order elements w.r.t. theViewedObject 
@@ -12403,6 +13180,8 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 	ELEMENT **table, *theElement;
 	GRID *theGrid;
 	INT i;
+    clock_t start, stop;
+	char msg[80];
 
 	/* check if multigrid is allready ordered */
 	/*.....*/
@@ -12428,15 +13207,45 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 	}
 	
 	/* order elements on level zero */
-	i=0;
-	for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
-		table[i++] = theElement;
-#	ifndef ModelP
-	if (i!=NT(theGrid)) return (1);
-#	endif
 
-	SelectionSort((void *)table,i,sizeof(*table),CompareElements);
-	if (PutAtEndOfList(theGrid,i,table)!=GM_OK) return (1);	
+    start = clock();    
+	OE_nCompareElements = 0;
+
+	switch (OE_OrderStrategy) /* select order strategy */
+	{
+	case 0:
+		if (OrderFathersXSH(theGrid, theHeap, table)) return (1);
+		break;
+	case 1:
+		i=0;
+		for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
+			table[i++] = theElement;
+        #ifndef ModelP
+		if (i!=NT(theGrid)) return (1);
+        #endif
+	    if (OrderFathersNNS(table, theHeap, i)) return (1);
+		break;
+
+	case 2:
+		i=0;
+		for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
+			table[i++] = theElement;
+        #ifndef ModelP
+		if (i!=NT(theGrid)) return (1);
+        #endif
+		SelectionSort((void *)table,i,sizeof(*table),CompareElements);
+		break;
+	}
+
+	stop = clock();
+    
+    sprintf(msg, "time for ordering coarse grid: %7.2f s\n", 
+			     (stop-start)/(DOUBLE)CLOCKS_PER_SEC); 
+	UserWrite(msg);
+	sprintf(msg, "number of CompareElements    : %9d\n", OE_nCompareElements);
+	UserWrite(msg);
+
+	if (PutAtEndOfList(theGrid,theGrid->nElem,table)!=GM_OK) return (1);	
 
 	/* now order level 1 to toplevel hirarchically */
 	for (i=0; i<theMG->topLevel; i++)
