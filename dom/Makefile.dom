@@ -29,7 +29,7 @@ STD_DOMAIN:
 	cd std; make -f Makefile.std; cd ..;
 
 LGM_DOMAIN:
-	cd lgm; make -f Makefile.lgm; cd ..;
+	cd lgm; make -f Makefile.lgm $(DIM); cd ..;
 
 STD: 
 	rm -f ../lib/libdom$(UG_DOMSUFFIX).a;

@@ -12,13 +12,18 @@ include ../../ug.conf
 
 MODULES = SURFACE
 
-OBJECTS = lgm_domain.o lgm_domain$(DIM)d.o lgm_load.o lgm_transfer$(DIM)d.o lgm_parallel.o ansys2lgm.o
+OBJECTS = lgm_domain.o lgm_load.o lgm_transfer$(DIM)d.o lgm_parallel.o
+OBJECTS2 = lgm_domain2d.o
+OBJECTS3 = lgm_domain3d.o ansys2lgm.o
 
 # local C compiler flags
 LCFLAGS = -I../../include
 
-all : $(OBJECTS) Makefile.lgm $(MODULES)
-	$(ARCH_AR) $(ARCH_ARFLAGS) ../../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS) 
+2 :  $(OBJECTS) $(OBJECTS2) Makefile.lgm $(MODULES)
+	$(ARCH_AR) $(ARCH_ARFLAGS) ../../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS) $(OBJECTS2)
+
+3 :  $(OBJECTS) $(OBJECTS3) Makefile.lgm $(MODULES)
+	$(ARCH_AR) $(ARCH_ARFLAGS) ../../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS) $(OBJECTS3)
 
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
