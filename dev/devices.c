@@ -650,12 +650,25 @@ INT InitDevices (int *argcp, char **argv)
 
   /* init screen device */
         #ifdef ModelP
-  if (me == master)
-  {
+  if (me == master) {
+    int l;
         #endif
   defaultOuputDevice = InitScreen(argcp,argv,&error);
   if (error) return(1);
+
+  for (l=0; l<degree; l++)
+    Spread(l,(void *)defaultOuputDevice,sizeof(OUTPUTDEVICE));
         #ifdef ModelP
+}
+else {
+  int l;
+
+  defaultOuputDevice = malloc(sizeof(OUTPUTDEVICE));
+  /* TODO:  set function pointers to NULL */
+
+  GetSpread((void *)defaultOuputDevice,sizeof(OUTPUTDEVICE));
+  for (l=0; l<degree; l++)
+    Spread(l,(void *)defaultOuputDevice,sizeof(OUTPUTDEVICE));
 }
         #endif
 
