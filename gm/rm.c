@@ -2339,7 +2339,9 @@ static INT InitRuleManager3D (void)
   /************************************************************************/
 
   /* open file */
+        #ifdef ModelP
   if (me == master)
+        #endif
   {
     if (GetDefaultValue(DEFAULTSFILENAME,"refrulefile",buffer)==0)
       stream = fileopen(buffer,"r");
@@ -2361,8 +2363,10 @@ static INT InitRuleManager3D (void)
     }
   }
 
+        #ifdef ModelP
   Broadcast(&nRules,sizeof(nRules));
   Broadcast(&nPatterns,sizeof(nPatterns));
+        #endif
 
   /* get storage for Rules */
   Rules = (REFRULE *) malloc(nRules*sizeof(REFRULE));
@@ -2383,7 +2387,9 @@ static INT InitRuleManager3D (void)
   }
   for (i=0; i<nPatterns; i++) Pattern2Rule[TETRAHEDRON][i] = -1;
 
+        #ifdef ModelP
   if (me == master)
+        #endif
   {
     /* read Rules */
     for (i=0; i<nRules; i++)
@@ -2405,8 +2411,10 @@ static INT InitRuleManager3D (void)
     fclose(stream);
   }
 
+        #ifdef ModelP
   Broadcast(Rules,nRules*sizeof(REFRULE));
   Broadcast(Pattern2Rule[TETRAHEDRON],nPatterns*sizeof(SHORT));
+        #endif
 
   /* now make rules for tetrahedrons globally available */
   MaxRules[TETRAHEDRON] = nRules;
