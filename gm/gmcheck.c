@@ -108,6 +108,7 @@ USING_UG_NAMESPACES
 /****************************************************************************/
 
 static char buffer[4*256];			/* general purpose text buffer			*/
+static DOUBLE hghost_overlap = 1.0;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -447,7 +448,7 @@ if (0)  /* this code is for special debugging (980204 s.l.) */
 								" has node father=" ID_FMTX " with wrong backptr=%x\n", 
 								me,ID_PRTX(theNode),ID_PRTX(FatherNode),SONNODE(FatherNode));
 /* TODO: this should be deleted */
-if (1) SONNODE(FatherNode) = theNode;
+if (0) SONNODE(FatherNode) = theNode;
 else						nerrors++;
 						}
 					}
@@ -507,7 +508,7 @@ else						nerrors++;
 
 						if (MIDNODE(FatherEdge) != theNode)
 						{
-#ifdef __TWODIM__
+#ifndef EDGE_WITH_DDDHDR
 							UserWriteF(PFMT " midnode=" ID_FMTX 
 								" has edge father with wrong backptr=%x\n", 
 								me,ID_PRTX(theNode),MIDNODE(FatherEdge));
@@ -517,7 +518,7 @@ else						nerrors++;
 								" has edge  father=" ID_FMTX " with wrong backptr=%x\n", 
 								me,ID_PRTX(theNode),ID_PRTX(FatherEdge),MIDNODE(FatherEdge));
 /* TODO: this should be deleted */
-if (1) MIDNODE(FatherEdge) = theNode;
+if (0) MIDNODE(FatherEdge) = theNode;
 else						nerrors++;
 #endif
 							/*nerrors++; temp. auskommentiert, um Reperaturwirkung wirklich nutzen zu koennen */
@@ -566,6 +567,70 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 	VERTEX	*theVertex;
 
 	SETUSED(theEdge,1);
+
+#	if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+	{
+		int elemlink,no_of_elem,No_Of_Elem;
+		NODE *n0,*n1;
+		LINK *l0,*l1;
+		ELEMENT *e0,*e1;
+
+		n0 = CORNER_OF_EDGE_PTR(theElement,i,0);
+		n1 = CORNER_OF_EDGE_PTR(theElement,i,1);
+
+		elemlink = GetElemLink(n0,n1,theElement);
+		
+		l0 = LINK0(theEdge);
+		l1 = LINK1(theEdge);
+		e0 = LELEM(l0);
+		e1 = LELEM(l1);
+
+		/* check number of edge neighbor elements */
+		no_of_elem = 0;
+		if (e0 != NULL)
+		{
+			no_of_elem++;
+			HEAPFAULT(e0);
+		}
+		if (e1 != NULL)
+		{
+			no_of_elem++;
+			HEAPFAULT(e1);
+		}
+
+		No_Of_Elem = NO_OF_ELEM(theEdge);
+
+		if (no_of_elem==0 || No_Of_Elem!=no_of_elem)
+		{
+			UserWriteF(PFMT "elem=" EID_FMTX " edge%d=" EDID_FMTX " NO_OF_ELEM wrong" 
+				"NO_OF_ELEM=%d no_of_elem=%d\n",
+				me,EID_PRTX(theElement),i,EDID_PRTX(theEdge),No_Of_Elem,no_of_elem);
+		}
+
+		if (elemlink == 0)
+		{
+			if (e0 != theElement)
+			{
+				UserWriteF(PFMT "elem=" EID_FMTX " edge%d=" EDID_FMTX " LELEM0 wrong" 
+					"elemlink=%d LELEM0=%08x\n",
+					me,EID_PRTX(theElement),i,EDID_PRTX(theEdge),elemlink,
+					(e0!=NULL)?EGID(e0):0);
+				nerrors++;
+			}
+		}
+		else
+		{
+			if (e1 != theElement)
+			{
+				UserWriteF(PFMT "elem=" EID_FMTX " edge%d=" EDID_FMTX " LELEM0 wrong" 
+					"elemlink=%d LELEM0=%08x\n",
+					me,EID_PRTX(theElement),i,EDID_PRTX(theEdge),elemlink,
+					(e1!=NULL)?EGID(e1):0);
+				nerrors++;
+			}
+		}
+	}
+#	endif
 
 	theNode = MIDNODE(theEdge);
 	if (theNode == NULL)
@@ -634,6 +699,32 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 	return(nerrors);
 }
 
+#ifdef EDGE_WITH_DDDHDR
+int EdgeHasTMasterCopy (ELEMENT *e, int i)
+{
+	int nmaster,nborder,nall;
+	EDGE *edge;
+
+	edge = GetEdge(CORNER_OF_EDGE_PTR(e,i,0),CORNER_OF_EDGE_PTR(e,i,1));
+	assert(edge != NULL);
+
+	nmaster = CheckProcListCons(PROCLIST(edge),PrioMaster);
+	nborder = CheckProcListCons(PROCLIST(edge),PrioBorder);
+	nall = nmaster + nborder;
+if (0)
+	assert(nall==1 || nall==2);
+
+	if (nall > 2)
+	{
+		UserWriteF(PFMT "EID=" EID_FMTX " EDID=" EDID_FMTX 
+			" ERROR edge%d has mastertype prios=%d\n",
+			me,EID_PRTX(e),EDID_PRTX(edge),i,nall);
+	}
+
+	return(nall-1);
+}
+#endif
+
 static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT *EdgeError,
 						 INT *NodeError, INT *ESonError, INT *NSonError, INT *errors)
 {
@@ -699,10 +790,25 @@ PAR(
 					}
 				}
 			}
+
+		/* TODO remove self healing */
+if (0)
+		if (NBELEM(theElement,i)!=NULL)
+		if (ID(NBELEM(theElement,i)) == -1)
+		{
+			if (EGHOST(theElement))
+			{
+				SET_NBELEM(theElement,i,NULL);
+				UserWriteF(PFMT "elem=" EID_FMTX " correcting nb error\n",
+					me,EID_PRTX(theElement));
+			}
+		}
+
 		NbElement = NBELEM(theElement,i);
 		if (NbElement != NULL)
 		{
-		    HEAPFAULT(NbElement);
+			HEAPFAULT(NbElement);
+
 			/* lets see if NbElement has the neighbor theElement */
 			for (j=0; j<SIDES_OF_ELEM(NbElement); j++)
 				if (NBELEM(NbElement,j) == theElement)
@@ -834,6 +940,9 @@ PAR(
 				if (OBJT(theElement) == IEOBJ)
 				#ifdef ModelP
 				if (EMASTER(theElement))
+				#if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+				if (hghost_overlap!=0.0 || EdgeHasTMasterCopy(theElement,i)==0)
+				#endif
 				#endif
 					*SideError |= (1<<(i+MAX_SIDES_OF_ELEM));
 
@@ -843,6 +952,9 @@ PAR(
 				{
 				  #ifdef ModelP
 				  if (EMASTER(theElement))
+				  #if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+					if (hghost_overlap!=0.0 || EdgeHasTMasterCopy(theElement,i)==0)
+				  #endif
 				  #endif
 					if (INNER_SIDE(theElement,i)) {
 						*SideError |= (1<<(i+2*MAX_SIDES_OF_ELEM));
@@ -860,6 +972,9 @@ PAR(
 				else if (ECLASS(theElement)!=YELLOW_CLASS)
 					#ifdef ModelP
 					if (EMASTER(theElement))
+				    #if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+					if (hghost_overlap!=0.0 || EdgeHasTMasterCopy(theElement,i)==0)
+					#endif
 					#endif
 						*SideError |= (1<<(i+2*MAX_SIDES_OF_ELEM));
 			}
@@ -1631,12 +1746,12 @@ static INT CheckGeometry (GRID *theGrid)
 			{
 				errors++;
 				UserWriteF("edge" 
-					#ifdef __THREEDIM__
+					#ifdef EDGE_WITH_DDDHDR
 					ID_FMTX
 					#endif
 					" between " ID_FMTX " and " ID_FMTX 
 					" has no element, NO_OF_ELEM=%d \n",
-					#ifdef __THREEDIM__
+					#ifdef EDGE_WITH_DDDHDR
 					ID_PRTX(theEdge),
 					#endif
 					ID_PRTX(theNode),ID_PRTX(NBNODE(theLink)),
@@ -1836,6 +1951,9 @@ INT NS_DIM_PREFIX CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT
 	INT error		= 0;
 	INT errors		= 0; 
 	INT totalerrors	= 0; 
+
+    if (GetStringValue(":conf:hghost_overlap",&hghost_overlap) !=0)
+        UserWriteF("CheckGrid: warning %s not set\n",":conf:hghost_overlap");
 
 	/* check geometrical data structures */
 	if (checkgeom)

@@ -930,6 +930,11 @@ struct link {
   /** \brief ptr to neighbor node                                 */
   struct node *nbnode;
 
+  /** \brief ptr to neighboring elem                              */
+#if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+  union element *elem;
+#endif
+
 };
 
 /** \brief Undirected edge of the grid graph    */
@@ -939,7 +944,7 @@ struct edge {
   /* two links */
   struct link links[2];
 
-#if defined(ModelP) && defined(__THREEDIM__)
+#ifdef EDGE_WITH_DDDHDR
   DDD_HEADER ddd;
 #endif
 
@@ -2510,6 +2515,11 @@ enum GM_OBJECTS {
 #define MYEDGE(p)                                       ((EDGE *)((p)-LOFFSET(p)))
 #define REVERSE(p)                                      ((p)+(1-LOFFSET(p)*2))
 
+#if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+#define LELEM(p)                                        ((p)->elem)
+#define SET_LELEM(p,e)                                  ((p)->elem = (e))
+#endif
+
 /****************************************************************************/
 /*                                                                                                                                                      */
 /* macros for edges                                                                                                             */
@@ -2722,7 +2732,11 @@ START_UGDIM_NAMESPACE
 #define CORNER(p,i)     ((NODE *) (p)->ge.refs[n_offset[TAG(p)]+(i)])
 #define EFATHER(p)              ((ELEMENT *) (p)->ge.refs[father_offset[TAG(p)]])
 #define SON(p,i)                ((ELEMENT *) (p)->ge.refs[sons_offset[TAG(p)]+(i)])
+#if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+#define NBELEM(p,i)     NbElem((p),(i))
+#else
 #define NBELEM(p,i)     ((ELEMENT *) (p)->ge.refs[nb_offset[TAG(p)]+(i)])
+#endif
 #define ELEM_BNDS(p,i)  ((BNDS *) (p)->ge.refs[side_offset[TAG(p)]+(i)])
 #define EVECTOR(p)              ((VECTOR *) (p)->ge.refs[evector_offset[TAG(p)]])
 #define SVECTOR(p,i)    ((VECTOR *) (p)->ge.refs[svector_offset[TAG(p)]+(i)])
@@ -2750,8 +2764,13 @@ START_UGDIM_NAMESPACE
 #define SET_CORNER(p,i,q)       ((p)->ge.refs[n_offset[TAG(p)]+(i)] = q)
 #define SET_EFATHER(p,q)        ((p)->ge.refs[father_offset[TAG(p)]] = q)
 #define SET_SON(p,i,q)          ((p)->ge.refs[sons_offset[TAG(p)]+(i)] = q)
+#if defined(EDGE_WITH_DDDHDR) && defined(__TWODIM__)
+#define SET_NBELEM(p,i,q)       Set_NbElem((p),(i),(q))
+#define VOID_NBELEM(p,i)        NBELEM(p,i)
+#else
 #define SET_NBELEM(p,i,q)       ((p)->ge.refs[nb_offset[TAG(p)]+(i)] = q)
 #define VOID_NBELEM(p,i)        ((p)->ge.refs[nb_offset[TAG(p)]+(i)])
+#endif
 #define SET_BNDS(p,i,q)         ((p)->ge.refs[side_offset[TAG(p)]+(i)] = q)
 #define SET_EVECTOR(p,q)        ((p)->ge.refs[evector_offset[TAG(p)]] = q)
 #define SET_SVECTOR(p,i,q)      ((p)->ge.refs[svector_offset[TAG(p)]+(i)] = q)
