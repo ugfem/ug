@@ -216,7 +216,7 @@ static INT CondensedEdgeOfSide[4] = {0x07,0x32,0x2C,0x19};
 static INT newstyle = 1;
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -535,8 +535,8 @@ FIFOSTART:
             NbEdge=GetEdge(CORNER(NbElement,CORNER_OF_EDGE(NbElement,edge,0)),CORNER(NbElement,CORNER_OF_EDGE(NbElement,edge,1)));
             ASSERT(NbEdge!=NULL);
 
-            if (PATTERN(NbEdge) && (edge>trisectionedge)) ;
-            trisectionedge = edge;
+            if (PATTERN(NbEdge) && (edge>trisectionedge))
+              trisectionedge = edge;
           }
           assert(trisectionedge != -1);
 
@@ -1729,7 +1729,7 @@ typedef struct compare_record COMPARE_RECORD;
 
 #define MAX_SIDE_NODES  9
 
-INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, NODE *SideNodes[MAX_SIDE_NODES])
+static INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, NODE *SideNodes[MAX_SIDE_NODES])
 {
   EDGE *theEdge;
   INT i,ncorners,nedges;
@@ -1819,7 +1819,7 @@ INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, NODE *SideNodes[
 }
 
 
-INT compare_node (const void *e0, const void *e1)
+static INT compare_node (const void *e0, const void *e1)
 {
   NODE *n0, *n1;
 
@@ -1831,8 +1831,8 @@ INT compare_node (const void *e0, const void *e1)
   return(0);
 }
 
-INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
-                             ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons)
+static INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
+                                    ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons)
 {
   INT i,j,nsons,markclass;
 
@@ -2053,7 +2053,7 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
   return(GM_OK);
 }
 
-INT Sort_Node_Ptr (INT n,NODE **nodes)
+static INT Sort_Node_Ptr (INT n,NODE **nodes)
 {
   NODE* nd;
   INT i,j,max;
@@ -2089,8 +2089,8 @@ INT Sort_Node_Ptr (INT n,NODE **nodes)
 }
 
 
-INT     Fill_Comp_Table (COMPARE_RECORD **SortTable, COMPARE_RECORD *Table, INT nelems,
-                         ELEMENT **Elements, INT *Sides)
+static INT      Fill_Comp_Table (COMPARE_RECORD **SortTable, COMPARE_RECORD *Table, INT nelems,
+                                 ELEMENT **Elements, INT *Sides)
 {
   COMPARE_RECORD *Entry;
   INT i,j;
@@ -2110,7 +2110,7 @@ INT     Fill_Comp_Table (COMPARE_RECORD **SortTable, COMPARE_RECORD *Table, INT 
 }
 
 
-int compare_nodes (const void *ce0, const void *ce1)
+static int compare_nodes (const void *ce0, const void *ce1)
 {
   COMPARE_RECORD *e0, *e1;
   INT j;
@@ -2141,8 +2141,8 @@ int compare_nodes (const void *ce0, const void *ce1)
   return(0);
 }
 
-INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side,
-                                 ELEMENT **Sons_of_Side_List, INT *SonSides)
+static INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side,
+                                        ELEMENT **Sons_of_Side_List, INT *SonSides)
 {
   COMPARE_RECORD ElemSonTable[MAX_SONS];
   COMPARE_RECORD NbSonTable[MAX_SONS];
