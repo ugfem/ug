@@ -902,8 +902,11 @@ int FAMGGrid::Construct(FAMGGrid *fg)
 int FAMGGrid::ConstructTransfer()
 {
     int i, conloops;
+	double TotalTime;
 
 #ifdef ModelP
+	double GraphColorTime, BorderTime;
+	
 	// set a consistent copy of the stiffmat
 	// in order to be able to construct a consistent interpolationmatrix
 	
@@ -920,6 +923,8 @@ int FAMGGrid::ConstructTransfer()
 	   assert(0);
 #endif
 
+	TotalTime = CURRENT_TIME_LONG;
+	
     conloops = FAMGGetParameter()->Getconloops();
     transfer = (FAMGTransfer *) FAMGGetMem(sizeof(FAMGTransfer),FAMG_FROM_TOP);
     if(transfer == NULL) return 1;
@@ -936,6 +941,7 @@ int FAMGGrid::ConstructTransfer()
     if (graph->Init(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
     if (graph->Construct(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
 	
+	
 #ifdef ModelP
 	// in parallel now only the nodes in the border of the core partition are in the list
 	
@@ -943,7 +949,8 @@ int FAMGGrid::ConstructTransfer()
 	MATRIX *mat;
 	FAMGNode *nodei;
 	int BorderCycles;
-	double StartTime = CURRENT_TIME;
+	
+	GraphColorTime = CURRENT_TIME;
 	
 	if( ConstructColoringGraph(GRID_ATTR(mygrid)) )
 	{
@@ -958,10 +965,12 @@ int FAMGGrid::ConstructTransfer()
 		FAMGReleaseHeap(FAMG_FROM_BOTTOM);
 		return 1;
 	}
-
+		
+	GraphColorTime = CURRENT_TIME - GraphColorTime;
 	BorderCycles = UG_GlobalMaxINT((int)FAMGMyColor);
-	cout <<me<<": level = "<<level<<" my color = "<<FAMGMyColor<<" max. color = "<<BorderCycles<<" ColoringMethod = "<<FAMGGetParameter()->GetColoringMethod()<<" time for graph coloring = "<<CURRENT_TIME-StartTime<<endl;
+	cout <<me<<": level = "<<level<<" my color = "<<FAMGMyColor<<" max. color = "<<BorderCycles<<" ColoringMethod = "<<FAMGGetParameter()->GetColoringMethod()<<endl;
 	
+	BorderTime = CURRENT_TIME_LONG;
 	for ( int color = 0; color <= BorderCycles; color++)
 	{
 		if( FAMGMyColor == color )
@@ -974,6 +983,7 @@ int FAMGGrid::ConstructTransfer()
 //prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
 		CommunicateNodeStatus();
 	}	
+	BorderTime = CURRENT_TIME_LONG - BorderTime;
 	
 	// put the undecided nodes from the core partition into the list
     for(i = 0; i < n; i++)
@@ -1054,6 +1064,19 @@ int FAMGGrid::ConstructTransfer()
     nf = graph->GetNF();
     // TODO: not neceassary any more: matrix->MarkUnknowns(graph);
  
+	TotalTime = CURRENT_TIME_LONG - TotalTime;
+	cout
+#ifdef ModelP
+		<< me << ": "
+#endif
+		<< "level "<< level 
+	    << " FAMG time = " << TotalTime
+#ifdef ModelP
+	    << " ( graph coloring = " << GraphColorTime
+	    << " border = " << BorderTime << " )"
+#endif
+		<< endl;
+		
 //prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
 
 #ifdef UG_DRAW

@@ -1435,7 +1435,8 @@ INT FAMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     NP_FAMG_TRANSFER *np;
 	INT res;
 	MATDATA_DESC *ACons;
-
+	double StartTimeTotal = CURRENT_TIME_LONG;
+	
 	np = (NP_FAMG_TRANSFER *) theNP;
 	mg = NP_MG(theNP);
 	
@@ -1482,6 +1483,8 @@ INT FAMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 	printf("%d: coarse grid agglomerated\n", me);
 //prm(mg->bottomLevel,0);
 #endif
+	
+	cout << me << ": total time for constructing FAMG Transfer = " << CURRENT_TIME_LONG - StartTimeTotal << endl;
 	
 	return res;
 }

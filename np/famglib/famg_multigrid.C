@@ -61,7 +61,6 @@ int FAMGMultiGrid::Construct()
 {
     FAMGGrid *g, *cg;
     int level, nnc, nn, ilu, cgilu, coarsen_weak = 0, leave;
-	double StartTime = CURRENT_TIME_LONG;
 	
     // read parameter
     const int cgnodes = FAMGGetParameter()->Getcgnodes();
@@ -150,11 +149,6 @@ int FAMGMultiGrid::Construct()
         if (g->ILUTDecomp(1)) return 1;
     }
 #endif
-	
-#ifdef ModelP
-	cout << me << ": ";
-#endif
-	cout << "Time for constructing FAMG = " << CURRENT_TIME_LONG - StartTime << endl;
 	
     return 0;
 }
