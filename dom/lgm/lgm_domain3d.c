@@ -3502,6 +3502,13 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   global[1] = ( globalp0[1] + globalp1[1] +  globalp2[1] ) / 3;
   global[2] = ( globalp0[2] + globalp1[2] +  globalp2[2] ) / 3;
 
+  if(LGM_DEBUG)
+    if( (global[0]>299)&&(global[0]<301)&&
+        (global[1]>-1)&&(global[1]<1)&&
+        (global[2]>230)&&(global[2]<240)
+        )
+      printf("\n");
+
   count = 0;
   min_d = 1000000.0;
   for (i=0; i<LGM_BNDP_N(theBndP1); i++)
@@ -3516,7 +3523,6 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
           Check_Surface(theSurface,global,local,&d);
           if(d<min_d)
           {
-            min_d = d;
             ilocal = floor(local[0]);
             ilocal1 = floor(local[1]);
             if(ilocal>ilocal1)
@@ -3529,6 +3535,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
                 && (1-slocal[0]-slocal[1]>-small) && (1-slocal[0]-slocal[1]<1.0+small)
                 )
             {
+              min_d = d;
               theSurface = LGM_BNDP_SURFACE(theBndP1,i);
               count++;
               i0=i;
