@@ -9104,7 +9104,7 @@ static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT Nod
       V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
       j++; i++;
       if ((ordercon[0][i]==1)||(ordercon[0][i]==2)) i++;
-      if ((ordercon[0][i]!=1)&&(ordercon[0][i]!=2)) {
+      if (i<3 && ((ordercon[0][i]!=1)&&(ordercon[0][i]!=2))) {
         V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
         j++; i++;
       }
@@ -9119,7 +9119,7 @@ static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT Nod
       V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
       j++; i++;
       if ((ordercon[1][i]==0)||(ordercon[1][i]==2)) i++;
-      if ((ordercon[1][i]!=0)&&(ordercon[1][i]!=2)) {
+      if (i<3 && ((ordercon[1][i]!=0)&&(ordercon[1][i]!=2))) {
         V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
         j++; i++;
       }
