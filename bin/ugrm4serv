@@ -28,7 +28,8 @@ do
 		rm -r $i;
 	else
 		if test "$i" = "progmanual.ps" -o "$i" = "refmanual.ps" -o \
-				"$i" = "applmanual.ps"
+				"$i" = "applmanual.ps" -o "$i" = "ug.help" -o \
+                "$i" = "ug2.help" -o "$i" = "ug3.help"
 		then 
 			echo "`basename $0`: $i not removed!";
 		else
