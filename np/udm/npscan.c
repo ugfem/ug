@@ -285,7 +285,10 @@ MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, const char *name,
   if (ReadArgvChar(name,value,argc,argv))
     REP_ERR_RETURN (NULL);
 
-  res = sscanf(value,"%s/%s",mdname,tname);
+  res = sscanf(value,expandfmt(CONCAT5("%",NAMELENSTR,
+                                       "[a-zA-Z0-9_] / %",
+                                       NAMELENSTR,"[a-zA-Z0-9_]")),
+               mdname,tname);
   md = GetMatDataDescByName(theMG,mdname);
   if (md == NULL)
   {
