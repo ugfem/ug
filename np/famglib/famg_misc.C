@@ -28,9 +28,13 @@ extern "C"
 #include <assert.h>
 #include "ugdevices.h"
 }
-
 #define FAMG_IOBUFFFER_LEN 10000
 static char testf[FAMG_IOBUFFFER_LEN];
+#endif
+
+#ifdef ModelP
+#include "parallel.h"
+#include "pargm.h"
 #endif
 
 /* RCS_ID
@@ -196,4 +200,25 @@ void FAMGEigenVector(int n, double *a, double *b, double *e)
 
     return;
 }
-        
+
+double FAMGTimeVar;
+
+void PrintTIME( double time, char *text )
+{
+#ifdef ModelP
+	int maxpe = -1;
+	double maxt = time;
+	maxt = UG_GlobalMaxDOUBLE( (DOUBLE)time );
+
+	if( maxt == time )
+		maxpe = me;
+
+	maxpe = UG_GlobalMaxINT( (INT)maxpe );
+
+	if( me == 0 )
+		printf(PFMT" PrintTIME %s %g maxt %g mpe %d\n",me, text, time, maxt, maxpe );
+#else
+	printf("  0: PrintTIME %s mt %g mpe 0\n",me, text, time );
+#endif
+	return;
+}

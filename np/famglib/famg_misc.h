@@ -70,5 +70,25 @@ double FAMGSum(const int n, const double *v1);
 double FAMGScalProd(const int n, const double *v1, const double *v2);
 void FAMGEigenVector(int n, double *a, double *b, double *e);
 
+// stuff for timing
+#ifdef USE_UG_DS
+extern "C"
+{
+#include "parallel.h"
+}
+extern double FAMGTimeVar;
+void PrintTIME( double time, char *text );
+inline void START_SYNC_TIME(void)
+{
+#ifdef ModelP
+  Synchronize();
+#endif
+  FAMGTimeVar = CURRENT_TIME;
+}
 
+inline void END_SYNC_TIME( char *text )
+{
+  PrintTIME( CURRENT_TIME-FAMGTimeVar, text );
+}
+#endif
 #endif
