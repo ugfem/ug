@@ -162,15 +162,73 @@ static ELEMENT *debugelem=NULL;
 
 #define PRINTELEMID(id) 
 
-#define REFINE_ELEMENT_LIST(d,e,s) \
-	IFDEBUG(gm,d) \
-	if (e!=NULL) \
-		UserWriteF( s " ID=%d TAG=%d BE=%d ECLASS=%d REFINECLASS=%d" \
-		" MARKCLASS=%d REFINE=%d MARK=%d COARSE=%d" \
-		   " USED=%d NSONS=%d\n", ID(e),\
-		TAG(e),(OBJT(e)==BEOBJ),ECLASS(e),REFINECLASS(e),MARKCLASS(e), \
-		REFINE(e),MARK(e),COARSEN(e), \
-		USED(e),NSONS(e)); \
+#define REFINE_ELEMENT_LIST(d,e,s)                                           \
+	IFDEBUG(gm,d)                                                            \
+	if (e!=NULL)                                                             \
+		UserWriteF( s " ID=%d TAG=%d BE=%d ECLASS=%d REFINECLASS=%d"         \
+		" MARKCLASS=%d REFINE=%d MARK=%d COARSE=%d"                          \
+		   " USED=%d NSONS=%d EFATHERID=%d\n", ID(e),                        \
+		TAG(e),(OBJT(e)==BEOBJ),ECLASS(e),REFINECLASS(e),MARKCLASS(e),       \
+		REFINE(e),MARK(e),COARSEN(e),                                        \
+		USED(e),NSONS(e),(EFATHER(e)!=NULL)?ID(EFATHER(e)):0);               \
+	ENDDEBUG
+
+
+#define REFINE_GRID_LIST(d,mg,k,s1,s2)                                       \
+	IFDEBUG(gm,d)                                                            \
+	{                                                                        \
+		GRID	*grid = GRID_ON_LEVEL(mg,k);                                 \
+		ELEMENT	*theElement;                                                 \
+                                                                             \
+		UserWriteF( s1 );                                                    \
+		for (theElement=FIRSTELEMENT(grid);                                  \
+			 theElement!=NULL;                                               \
+			 theElement=SUCCE(theElement))                                   \
+		{                                                                    \
+			REFINE_ELEMENT_LIST(d,theElement,s2)                             \
+		}			                                                         \
+	}                                                                        \
+	ENDDEBUG
+
+
+#define REFINE_MULTIGRID_LIST(d,mg,s1,s2,s3)                                 \
+	IFDEBUG(gm,d)                                                            \
+	{                                                                        \
+		INT k;                                                               \
+                                                                             \
+		UserWriteF( s1 );                                                    \
+		for (k=0; k<=TOPLEVEL(mg); k++)                                      \
+		{                                                                    \
+			GRID	*grid = GRID_ON_LEVEL(mg,k);                             \
+			ELEMENT	*theElement;                                             \
+                                                                             \
+			UserWriteF( s2 );                                                \
+			for (theElement=FIRSTELEMENT(grid);                              \
+				 theElement!=NULL;                                           \
+				 theElement=SUCCE(theElement))                               \
+			{                                                                \
+				REFINE_ELEMENT_LIST(d,theElement,s3)                         \
+			}			                                                     \
+		}                                                                    \
+	}                                                                        \
+	ENDDEBUG
+
+#define REFINE_CONTEXT_LIST(d,context)                                       \
+	IFDEBUG(gm,2)                                                            \
+	{                                                                        \
+		INT i;                                                               \
+																			 \
+		UserWrite("  UpdateContext is :\n");                                 \
+		for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)             \
+			UserWriteF(" %3d",i);                                            \
+		UserWrite("\n");                                                     \
+		for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)             \
+			if (context[i] != NULL)                                          \
+				UserWriteF(" %3d",ID(context[i]));                           \
+			else                                                             \
+				UserWriteF("    ");                                          \
+		UserWrite("\n");                                                     \
+	}                                                                        \
 	ENDDEBUG
 
 /****************************************************************************/
@@ -4214,14 +4272,11 @@ static int RefineGrid (GRID *theGrid)
 	fineGrid = UPGRID(theGrid);
 	if (fineGrid==NULL) RETURN(GM_FATAL);
 
-	IFDEBUG(gm,1)
-	UserWrite("RefineGrid():\n");
-	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-		UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),ECLASS(theElement),REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),COARSEN(theElement));
-	ENDDEBUG
+	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),"RefineGrid():\n","");
 	
-	/* refine elements */
 	RESETGSTATUS(fineGrid,GRID_CHANGED);
+
+	/* refine elements */
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 	{
 		#ifdef ModelP
@@ -4239,33 +4294,15 @@ static int RefineGrid (GRID *theGrid)
 				SETMARKCLASS(theElement,NO_CLASS);
 				continue; 
 			}
-			IFDEBUG(gm,1)
-			printf("REFINING element ID=%d TAG=%d REFINECLASS=%d MARKCLASS=%d REFINE=%d "
-				"MARK=%d NSONS=%d COARSEN=%d\n",
-				ID(theElement),TAG(theElement),REFINECLASS(theElement),MARKCLASS(theElement),
-				REFINE(theElement),MARK(theElement),NSONS(theElement),COARSEN(theElement));
-			UserWriteF("REFINING element ID=%d TAG=%d REFINECLASS=%d MARKCLASS=%d REFINE=%d "
-				"MARK=%d COARSEN=%d\n",ID(theElement),TAG(theElement),REFINECLASS(theElement),
-				MARKCLASS(theElement),REFINE(theElement),MARK(theElement),COARSEN(theElement));
-			ENDDEBUG
+
+			REFINE_ELEMENT_LIST(1,theElement,"REFINING element: ");
 
 			if (UnrefineElement(fineGrid,theElement))  RETURN(GM_FATAL);
 			/* TODO: delete special debug */ PRINTELEMID(-2)
 
 			if (UpdateContext(fineGrid,theElement,theContext)!=0) RETURN(GM_FATAL);
 
-			IFDEBUG(gm,2)
-			UserWrite("  UpdateContext is :\n");
-			for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)  
-				UserWriteF(" %3d",i);
-			UserWrite("\n");
-			for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)  
-				if (theContext[i] != NULL)
-					UserWriteF(" %3d",ID(theContext[i]));
-				else
-					UserWriteF("    ");
-			UserWrite("\n");
-			ENDDEBUG
+			REFINE_CONTEXT_LIST(2,theContext);
 
 			#ifdef Debug
 			CheckElementContextConsistency(theElement,theContext);
@@ -4275,27 +4312,36 @@ static int RefineGrid (GRID *theGrid)
 
 			/* is something to do ? */
 			if (MARKED(theElement)) 
-			switch (MARKCLASS(theElement))
-			{
-				case (RED_CLASS):
-					if (RefineElementRed(fineGrid,theElement,theContext)!=GM_OK) RETURN(GM_FATAL);
-					break;
-				case (GREEN_CLASS):
-					if (DIM==3 && NEWGREEN(theElement) && MARKCLASS(theElement)==GREEN_CLASS)
-					{
-						if (RefineElementGreen(fineGrid,theElement,theContext) != GM_OK) RETURN(GM_FATAL);
-					}
-					else
-					{
-						if (RefineElementRed(fineGrid,theElement,theContext)!=GM_OK) RETURN(GM_FATAL);
-					}
-					break;
-				case (YELLOW_CLASS):
-					if (RefineElementYellow(fineGrid,theElement,theContext)!=GM_OK) RETURN(GM_FATAL);
-					break;
-				default:
-					RETURN(GM_FATAL);
-			}
+				switch (MARKCLASS(theElement))
+				{
+					case (RED_CLASS):
+						if (RefineElementRed(fineGrid,theElement,theContext)!=GM_OK)
+							RETURN(GM_FATAL);
+						break;
+
+					case (GREEN_CLASS):
+						if (DIM==3 && NEWGREEN(theElement) && MARKCLASS(theElement)==GREEN_CLASS)
+						{
+							/* elements with incomplete rules set */
+							if (RefineElementGreen(fineGrid,theElement,theContext) != GM_OK)
+								RETURN(GM_FATAL);
+						}
+						else
+						{
+							/* elements with complete rules set */
+							if (RefineElementRed(fineGrid,theElement,theContext)!=GM_OK)
+								RETURN(GM_FATAL);
+						}
+						break;
+
+					case (YELLOW_CLASS):
+						if (RefineElementYellow(fineGrid,theElement,theContext)!=GM_OK)
+							RETURN(GM_FATAL);
+						break;
+
+					default:
+						RETURN(GM_FATAL);
+				}
 					
 
 			/* TODO: delete special debug */ PRINTELEMID(-2)
@@ -4303,8 +4349,10 @@ static int RefineGrid (GRID *theGrid)
 			/* refine and refineclass flag */
 			SETREFINE(theElement,MARK(theElement));
 			SETREFINECLASS(theElement,MARKCLASS(theElement));
-			SETGSTATUS(fineGrid,GRID_CHANGED);
 			SETUSED(theElement,0);
+
+			/* this grid is modified */
+			SETGSTATUS(fineGrid,GRID_CHANGED);
 		}
 		else if (USED(theElement) == 0)
 		{
@@ -4328,15 +4376,12 @@ static int RefineGrid (GRID *theGrid)
 		if (MARKCLASS(theElement) == GREEN_CLASS)	Green_Marks++;
 
 		/* TODO: delete special debug */ PRINTELEMID(-2)
+
 		SETCOARSEN(theElement,0);
 	}
 
-	IFDEBUG(gm,1)
-	UserWrite("RefineGrid():\n");
-	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-		UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),ECLASS(theElement),REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),COARSEN(theElement));
-	ENDDEBUG
-	
+	REFINE_GRID_LIST(1,MYMG(theGrid),GLEVEL(theGrid),"END RefineGrid():\n","");
+
 	return(GM_OK);
 }
 
@@ -4545,7 +4590,7 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 	rFlag=flag & 0x03; 	 	/* copy local or all */
 	hFlag=!((flag>>2)&0x1); /* use hanging nodes */
 	fifoFlag=(flag>>3)&0x1; /* use fifo       	 */
-	/* set different flag */
+
 	refine_seq = seq;
 
 	No_Green_Update=0;
@@ -4565,22 +4610,7 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 	
 	j = TOPLEVEL(theMG);
 	for (level=toplevel; level>0; level--)
-	IFDEBUG(gm,1)
-	UserWrite("RefineMultiGrid():\n");
-	for (k=j; k>=0; k--)
 	{
-		theGrid = GRID_ON_LEVEL(theMG,k);
-		for (theElement=FIRSTELEMENT(theGrid); 
-			 theElement!=NULL; 
-			 theElement=SUCCE(theElement))
-		{
-			UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d Refine=%d "\
-			"Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),ECLASS(theElement),\
-			REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),\
-			COARSEN(theElement));
-		}			
-	}
-	ENDDEBUG
 		theGrid = GRID_ON_LEVEL(theMG,level);
 		
 	for (k=j; k>0; k--)
@@ -4589,42 +4619,21 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 
 			if ((nrefined = GridClosure(GRID_ON_LEVEL(theMG,level)))<0)
 			{
-			IFDEBUG(gm,1)
-			UserWriteF("Begin GridClosure(%d):\n",k);
-			ENDDEBUG
+			PRINTDEBUG(gm,1,("Begin GridClosure(%d):\n",k))
+				RETURN(GM_ERROR);
 			if ((r = GridClosure(GRID_ON_LEVEL(theMG,k)))<0)
 
 			REFINE_GRID_LIST(1,theMG,level,("End GridClosure(%d,down):\n",level),"");
 		}
 
-			IFDEBUG(gm,1)
-			UserWriteF("End GridClosure(%d):\n",k);
-			for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,k)); theElement!=NULL; theElement=SUCCE(theElement))
-				UserWriteF("EID=%d TAG=%d ECLASS=%d EFATHERID=%d RefineClass=%d "\
-					"MarkClass=%d Refine=%d Mark=%d Coarse=%d\n",ID(theElement),\
-					TAG(theElement),ECLASS(theElement),ID(EFATHER(theElement)),\
-					REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),COARSEN(theElement));
-			ENDDEBUG
+		/* restrict marks on next lower grid level */
+			REFINE_GRID_LIST(1,theMG,k,"End GridClosure(%d):\n","");
 
 		REFINE_GRID_LIST(1,theMG,level-1,("End RestrictMarks(%d,down):\n",level),"");
 	}
 		if (RestrictMarks(GRID_ON_LEVEL(theMG,k-1))!=GM_OK) RETURN(GM_ERROR);
 	#ifdef ModelP
-		IFDEBUG(gm,1)
-		UserWriteF("End RestrictMarks(%d):\n",k-1);
-		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,k-1)); theElement!=NULL; theElement=SUCCE(theElement))
-		  if (k-1 == 0)
-			UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d" \
-				"Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),\
-				ECLASS(theElement),REFINECLASS(theElement),MARKCLASS(theElement),\
-				REFINE(theElement),MARK(theElement),COARSEN(theElement));
-		  else
-			UserWriteF("EID=%d TAG=%d ECLASS=%d EFATHERID=%d RefineClass=%d" \
-				"MarkClass=%d Refine=%d Mark=%d Coarse=%d\n",ID(theElement),\
-				TAG(theElement),ECLASS(theElement),ID(EFATHER(theElement)),\
-				REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),\
-				MARK(theElement),COARSEN(theElement));
-		ENDDEBUG
+		REFINE_GRID_LIST(1,theMG,k-1,"End RestrictMarks(%d):\n","");
 	#endif
 
 
@@ -4648,32 +4657,16 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 
 			/* determine regular and irregular elements on next level */
 			if ((nrefined = GridClosure(theGrid))<0)
+			PRINTDEBUG(gm,1,("Begin 2. GridClosure(%d):\n",k));
+				PrintErrorMessage('E',"RefineMultiGrid","error in 2. GridClosure");
 				RETURN(GM_ERROR);
-			IFDEBUG(gm,1)
-			UserWriteF("Begin 2. GridClosure(%d):\n",k);
-			ENDDEBUG
 			if ((r = GridClosure(theGrid))<0)
 
 			REFINE_GRID_LIST(1,theMG,level,("End GridClosure(%d,up):\n",level),"");
 		}
 
-			IFDEBUG(gm,1)
-			UserWriteF("End 2. GridClosure(%d):\n",k);
-			for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,k)); theElement!=NULL; theElement=SUCCE(theElement))
-			{
-				if (k>0)
-				  UserWriteF("EID=%d TAG=%d ECLASS=%d EFATHERID=%d RefineClass=%d "\
-					"MarkClass=%d Refine=%d Mark=%d Coarse=%d\n",ID(theElement),\
-					TAG(theElement),ECLASS(theElement),ID(EFATHER(theElement)),\
-					REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),\
-					MARK(theElement),COARSEN(theElement));
-				else
-				  UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d "\
-				  	"Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),\
-					ECLASS(theElement),REFINECLASS(theElement),MARKCLASS(theElement),\
-					REFINE(theElement),MARK(theElement),COARSEN(theElement));
-			  }
-			ENDDEBUG
+		nrefined += ComputeCopies(theGrid);
+			REFINE_GRID_LIST(1,theMG,k,"End 2. GridClosure(%d):\n","");
 		if (hFlag)
 		{
 		ComputeCopies(theGrid);
@@ -4714,6 +4707,7 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 
 
 		PRINTDEBUG(gm,1,(PFMT "RefineMultiGrid(): r=%d newlevel=%d\n",me,r,newlevel));
+		DDD_XferBegin();
 #ifdef ModelP
 		if ( k<j || newlevel )
 			if (RefineGrid(theGrid)!=GM_OK) 
@@ -4729,9 +4723,11 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 			for (theElement=FIRSTELEMENT(FinerGrid); theElement!=NULL; theElement=SUCCE(theElement))
 				if (ECLASS(theElement)>=GREEN_CLASS || (rFlag==GM_COPY_ALL)) 
 				  SeedVectorClasses(FinerGrid,theElement);
+
 			PropagateVectorClasses(FinerGrid);
 		}
 		/* TODO: delete special debug */ PRINTELEMID(-1)
+
 	DEBUG_TIME(0);
 
 	}
@@ -4765,6 +4761,7 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 		for (k=TOPLEVEL(theMG); k<Max_TopLevel; k++)
 		{
 			PRINTDEBUG(gm,1,("CreateNewLevel toplevel=%d", TOPLEVEL(theMG)));
+
 			if (CreateNewLevel(theMG,0)==NULL)
 				RETURN(GM_FATAL);
 		}
@@ -4780,23 +4777,7 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 	/* set grid status of grid 0 */
 	RESETGSTATUS(GRID_ON_LEVEL(theMG,0),GRID_CHANGED);
 
-	IFDEBUG(gm,1)
-	UserWrite("END RefineMultiGrid():\n");
-	j = TOPLEVEL(theMG);
-	for (k=j; k>=0; k--)
-	{
-		theGrid = GRID_ON_LEVEL(theMG,k);
-		for (theElement=FIRSTELEMENT(theGrid); 
-			 theElement!=NULL; 
-			 theElement=SUCCE(theElement))
-		{
-			UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d "\
-				"Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),\
-				ECLASS(theElement),REFINECLASS(theElement),MARKCLASS(theElement),\
-				REFINE(theElement),MARK(theElement),COARSEN(theElement));
-		}
-	}
-	ENDDEBUG
+		UserWriteF(" Number of green refinements not updated: "
 			"%d (%d green marks)\n",No_Green_Update,Green_Marks);
 	
 	/* increment step count */
