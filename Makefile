@@ -73,13 +73,13 @@ UI: include
 SEQUENTIAL:
 
 PARALLEL: include
-	cd parallel; make -f Makefile.parallel; cd ..;
+	cd parallel; $(ARCH_MAKE) -f Makefile.parallel; cd ..;
 
 
 SEQUENTIAL_clean:
 
 PARALLEL_clean:
-	cd parallel; make -f Makefile.parallel clean; cd ..;
+	cd parallel; $(ARCH_MAKE) -f Makefile.parallel clean; cd ..;
 
 
 ##############################################################################
