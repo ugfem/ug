@@ -58,6 +58,9 @@
 #include <sys/thread.h>
 #include <sys/time.h>
 
+/* ppif includes */
+#include "../ppif_general.h"
+
 /* LocalLink has no definition */
 int LocalLink (LinkCB_t *Link[2]);
 
@@ -139,6 +142,15 @@ struct messagecarrier {
   void *data;
 } ; /* 16 Bytes */
 
+
+/****************************************************************************/
+/*                                                                          */
+/* definition of static variables                                           */
+/*                                                                          */
+/****************************************************************************/
+
+/* Revison Control System string */
+RCSID(Header: $,PPIF_RCS_STRING)
 
 
 /****************************************************************************/

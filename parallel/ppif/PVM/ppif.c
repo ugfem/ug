@@ -51,6 +51,9 @@
 
 #include "pvm3.h"
 
+/* ppif includes */
+#include "../ppif_general.h"
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -81,6 +84,7 @@
 #define ZPOS(aid)   ((aid&0xFF0000)>>16)         /* zpos from compact form  */
 #define MIN(x,y) (((x)<(y)) ? (x) : (y))
 
+
 /****************************************************************************/
 /*                                                                          */
 /* data structures                                                          */
@@ -100,6 +104,16 @@ struct message {
 }  ;
 
 typedef struct message MESSAGE ;
+
+
+/****************************************************************************/
+/*                                                                          */
+/* definition of static variables                                           */
+/*                                                                          */
+/****************************************************************************/
+
+/* Revison Control System string */
+RCSID(Header: $,PPIF_RCS_STRING)
 
 
 /****************************************************************************/

@@ -58,6 +58,8 @@
 
 #include <nxmalloc.h>
 
+/* ppif includes */
+#include "../ppif_general.h"
 
 /****************************************************************************/
 /*                                                                          */
@@ -119,6 +121,16 @@ typedef struct {
 
 typedef VChannel *VChannelPtr;
 typedef int msgid;
+
+
+/****************************************************************************/
+/*                                                                          */
+/* definition of static variables                                           */
+/*                                                                          */
+/****************************************************************************/
+
+/* Revison Control System string */
+RCSID(Header: $,PPIF_RCS_STRING)
 
 
 /****************************************************************************/

@@ -75,10 +75,14 @@
 #include <unistd.h>
 #include <mpp/shmem.h>
 #include <mpp/sync_proto.h>
-/*
+/* TODO: uncomment this
    #include "compiler.h"
  */
+/* ppif includes */
+#include "../ppif_general.h"
 
+
+/* TODO: delete this */
 /* copied from compiler.h */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
@@ -277,6 +281,16 @@ struct Mailbox {
 typedef struct Mailbox MAILBOX;
 
 enum directions {north,east,south,west,up,down};
+
+
+/****************************************************************************/
+/*                                                                          */
+/* definition of static variables                                           */
+/*                                                                          */
+/****************************************************************************/
+
+/* Revison Control System string */
+RCSID(Header: $,PPIF_RCS_STRING)
 
 
 /****************************************************************************/
