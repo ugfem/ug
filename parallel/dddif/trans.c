@@ -95,6 +95,35 @@ RCSID("$Header$",UG_RCS_STRING)
 /*																			*/
 /****************************************************************************/
 
+/****************************************************************************/
+
+void AMGAgglomerate(MULTIGRID *theMG)
+{
+  INT level;
+  GRID    *theGrid;
+  VECTOR  *theVector;
+
+  level = BOTTOMLEVEL(theMG);
+  if (level >= 0)
+  {
+    UserWriteF("AMGAgglomerate(): no amg level found\n");
+    return;
+  }
+  theGrid = GRID_ON_LEVEL(theMG,level);
+
+  DDD_XferBegin();
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+  {
+    XFERCOPY(theVector,master,PrioMaster);
+    SETPRIO(theVector,PrioVGhost);
+  }
+  DDD_XferEnd();
+
+  return;
+}
+
+/****************************************************************************/
+
 static int Gather_ElemDest (DDD_OBJ obj, void *data)
 {
   ELEMENT *theElement = (ELEMENT *)obj;

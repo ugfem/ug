@@ -65,6 +65,7 @@
 /*
 #define DEBUGNSONS(pe,m)
 */
+#define AMG_CONV(l)	((((int)l)>MAXLEVEL)?(((int)l)-256):l)
 
 
 /****************************************************************************/
@@ -136,7 +137,7 @@ static GRID *GetGridOnDemand (MULTIGRID *mg, int level)
 {
 	while (level > TOPLEVEL(mg))
 	{
-		PRINTDEBUG(dddif,1,(PFMT " CreateNewLevel toplevel=%d",me,TOPLEVEL(mg)));
+		PRINTDEBUG(dddif,1,(PFMT " CreateNewLevel toplevel=%d level=%d",me,TOPLEVEL(mg),level));
 		if (CreateNewLevel(mg,0)==NULL) assert(0);
 	}
 
@@ -198,7 +199,7 @@ static GRID *GetGridOnDemand (MULTIGRID *mg, int level)
 void VectorUpdate (DDD_OBJ obj)
 {
 	VECTOR	*pv			= (VECTOR *)obj;
-	INT		level		= DDD_InfoAttr(PARHDR(pv));
+	INT		level		= AMG_CONV(DDD_InfoAttr(PARHDR(pv)));
 	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 	INT		prio		= DDD_InfoPriority(PARHDR(pv));
 
@@ -217,7 +218,7 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 	INT		nmat	= 0;
 	MATRIX	*mat;
 	VECTOR	*pv		= (VECTOR *)obj;
-	INT			level		= DDD_InfoAttr(PARHDR(pv));
+	INT		level		= AMG_CONV(DDD_InfoAttr(PARHDR(pv)));
 	GRID		*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 	/* TODO: define this static global                    */
 	/* TODO: take size as maximum of possible connections */
@@ -300,7 +301,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
 	VECTOR		*vec		= (VECTOR *)obj;
 	CONNECTION	*first		= NULL,
 				*last		= NULL;
-	INT			level		= DDD_InfoAttr(PARHDR(vec));
+	INT			level		= AMG_CONV(DDD_InfoAttr(PARHDR(vec)));
 	GRID		*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 	INT			prio 		= DDD_InfoPriority(PARHDR(vec));
 	INT			i;
@@ -502,7 +503,7 @@ void VectorObjMkCons (DDD_OBJ obj, int newness)
 {
 	VECTOR		*vec		= (VECTOR *) obj;
 	MATRIX 		*theMatrix,*Prev,*Next;
-	INT         level       = DDD_InfoAttr(PARHDR(vec));
+	INT			level		= AMG_CONV(DDD_InfoAttr(PARHDR(vec)));
 	GRID        *theGrid    = GRID_ON_LEVEL(dddctrl.currMG,level);
 
 
@@ -569,7 +570,7 @@ void VectorObjMkCons (DDD_OBJ obj, int newness)
 void VectorDelete (DDD_OBJ obj)
 {
 	VECTOR		*pv			= (VECTOR *)obj;
-	INT         level		= DDD_InfoAttr(PARHDR(pv));
+	INT			level		= AMG_CONV(DDD_InfoAttr(PARHDR(pv)));
 	GRID		*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 
 	PRINTDEBUG(dddif,2,(PFMT " VectorDelete(): v=" VINDEX_FMTX 
@@ -595,12 +596,15 @@ void VectorDelete (DDD_OBJ obj)
 void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
 	VECTOR	*pv			= (VECTOR *)obj;
-	INT		level		= DDD_InfoAttr(PARHDR(pv));
-	GRID	*theGrid 	= GetGridOnDemand(dddctrl.currMG,level);
+	INT		level		= AMG_CONV(DDD_InfoAttr(PARHDR(pv)));
+	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 	INT		old			= DDD_InfoPriority(PARHDR(pv));
 
 	PRINTDEBUG(dddif,2,(PFMT " VectorPriorityUpdate(): v=" VINDEX_FMTX
 		" old=%d new=%d level=%d\n",me,VINDEX_PRTX(pv),old,new,level))
+
+	printf("%d: VectorPriorityUpdate(): oldlevel=%d newlevel=%d\n",
+		me,(int)DDD_InfoAttr(PARHDR(pv)),level);
 
 	if (pv == NULL) return;
 	if (old == new) return;
@@ -619,24 +623,25 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 		return;
 	}
 
-	/* dispose connections */
-	if (new==PrioGhost || new==PrioVGhost)
-	{
-		MATRIX *theMatrix,*next;
-
-		for (theMatrix=VSTART(pv); theMatrix!=NULL;
-			 theMatrix = next)
+	/* dispose connections for geom levels not for amg levels */
+	if (level<0)
+		if (new==PrioGhost || new==PrioVGhost)
 		{
-			next = MNEXT(theMatrix);
+			MATRIX *theMatrix,*next;
 
-			PRINTDEBUG(dddif,2,(PFMT " VectorPriorityUpdate(): v=" 
-				VINDEX_FMTX " old=%d new=%d dispose conn=%x\n",
-				me,VINDEX_PRTX(pv),old,new,MMYCON(theMatrix)))
+			for (theMatrix=VSTART(pv); theMatrix!=NULL;
+				 theMatrix = next)
+			{
+				next = MNEXT(theMatrix);
 
-			 if (DisposeConnection(theGrid,MMYCON(theMatrix)))
-				ASSERT(0);
+				PRINTDEBUG(dddif,2,(PFMT " VectorPriorityUpdate(): v=" 
+					VINDEX_FMTX " old=%d new=%d dispose conn=%x\n",
+					me,VINDEX_PRTX(pv),old,new,MMYCON(theMatrix)))
+
+				 if (DisposeConnection(theGrid,MMYCON(theMatrix)))
+					ASSERT(0);
+			}
 		}
-	}
 
 	IFDEBUG(dddif,1)
 	if (new == PrioMaster)

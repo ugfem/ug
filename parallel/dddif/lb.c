@@ -76,8 +76,8 @@ void ddd_test (char *argv, MULTIGRID *theMG)
   mode = param = fromlevel = tolevel = 0;
 
   sscanf(argv,"%d %d %d",&param,&fromlevel,&tolevel);
-  UserWriteF(PFMT "ddd_test() mode=%d fromlevel=%d tolevel=%d\n",
-             me,mode,fromlevel,tolevel);
+  UserWriteF(PFMT "ddd_test() param=%d fromlevel=%d tolevel=%d\n",
+             me,param,fromlevel,tolevel);
 
   /* param>100 is used as switch for DDD xfer statistics */
   if (param>=100)
@@ -92,6 +92,11 @@ void ddd_test (char *argv, MULTIGRID *theMG)
   InitCurrMG(theMG);
   switch (mode)
   {
+  /* transfer vectors of coarsest amg grid to master */
+  case (-1) :
+    AMGAgglomerate(theMG);
+    return;
+
   /* dies balanciert ein GRID mit RCB */
   case (0) :
     BalanceGridRCB(theMG,0);
