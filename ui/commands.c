@@ -10831,10 +10831,11 @@ static INT DebugCommand (INT argc, char **argv)
     else if (strcmp("graph",argv[1])==0) Debuggraph              = atoi(argv[2]);
     else if (strcmp("low",argv[1])==0) Debuglow                = atoi(argv[2]);
     else if (strcmp("machines",argv[1])==0) Debugmachines   = atoi(argv[2]);
-    else if (strcmp("numerics",argv[1])==0) Debugnumerics   = atoi(argv[2]);
     else if (strcmp("np",argv[1])==0) Debugnp             = atoi(argv[2]);
     else if (strcmp("dom",argv[1])==0) Debugdom        = atoi(argv[2]);
     else if (strcmp("ui",argv[1])==0) Debugui                 = atoi(argv[2]);
+    else if (strcmp("appl",argv[1])==0) Debugappl               = atoi(argv[2]);
+    else if (strcmp("pclib",argv[1])==0) Debugpclib              = atoi(argv[2]);
     else
     {
       UserWriteF("no debug variable for module %s found!\n",argv[1]);
@@ -10852,10 +10853,11 @@ static INT DebugCommand (INT argc, char **argv)
     else if (strcmp("graph",argv[1])==0)    {module="graph";        l=Debuggraph;}
     else if (strcmp("low",argv[1])==0)              {module="low";          l=Debuglow;}
     else if (strcmp("machines",argv[1])==0) {module="machines";     l=Debugmachines;}
-    else if (strcmp("numerics",argv[1])==0) {module="numerics";     l=Debugnumerics;}
     else if (strcmp("np",argv[1])==0)           {module="np";           l=Debugnp;}
     else if (strcmp("dom",argv[1])==0)          {module="dom";          l=Debugdom;}
     else if (strcmp("ui",argv[1])==0)               {module="ui";           l=Debugui;}
+    else if (strcmp("appl",argv[1])==0)             {module="appl";         l=Debugappl;}
+    else if (strcmp("pclib",argv[1])==0)    {module="pclib";        l=Debugpclib;}
     else
     {
       UserWriteF("no debug variable for module %s found!\n",argv[1]);
