@@ -142,6 +142,7 @@ static MATRIX *MatArrayLocal[MATARRAYSIZE];
 static MATRIX *MatArrayRemote[MATARRAYSIZE];
 static INT MaxBlockSize;
 static size_t DataSizePerVector;
+static size_t DataSizePerMatrix;
 
 #ifdef __TWODIM__
 static INT max_vectors_of_type[NVECTYPES] = 
@@ -858,10 +859,14 @@ static int Gather_MatrixCollect (DDD_OBJ obj, void *data)
 	INT i,m;
 
 	m = GetElementMPtrs(pe,ConsMatrix,mptr);
-	for (i=0; i<m; i++) {
-	    ((DOUBLE *)data)[i] = *mptr[i];
-	    *mptr[i] = 0.0;
-	}
+	if (m < 0)
+	    for (i=0; i<DataSizePerMatrix; i++)
+		    ((DOUBLE *)data)[i] = 0.0; 
+	else
+	    for (i=0; i<MIN(DataSizePerMatrix,m*m); i++) {
+		  ((DOUBLE *)data)[i] = *mptr[i];
+		  *mptr[i] = 0.0;
+		}
 
 	return (NUM_OK);
 }
@@ -873,7 +878,9 @@ static int Scatter_MatrixCollect (DDD_OBJ obj, void *data)
 	INT i,m;
 
 	m = GetElementMPtrs(pe,ConsMatrix,mptr);
-	for (i=0; i<m; i++) 
+	if (m < 0)
+	    return (NUM_ERROR);
+	for (i=0; i<MIN(DataSizePerMatrix,m*m); i++) 
 	    *mptr[i] += ((DOUBLE *)data)[i];
 
 	return (NUM_OK);
@@ -886,12 +893,12 @@ INT l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A)
     ConsMatrix = (MATDATA_DESC *)A;
 	m = 0;
 	for (rtp=0; rtp<NVECTYPES; rtp++)
-	    for (ctp=rtp; ctp<NVECTYPES; ctp++)
-		    m += MD_NCMPS_IN_RT_CT(ConsMatrix,rtp,ctp) * 
-			    max_vectors_of_type[rtp] * max_vectors_of_type[ctp];
-	m = MIN(m,MAX_NODAL_VALUES*MAX_NODAL_VALUES);
+	    m += MD_NCMPS_IN_RT_CT(ConsMatrix,rtp,rtp) * max_vectors_of_type[rtp];
+	m = MIN(m,MAX_NODAL_VALUES);
+	DataSizePerMatrix = m * m;
 
-	DDD_IFAOneway(ElementVIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
+	DDD_IFAOneway(ElementVIF, GLEVEL(g), IF_BACKWARD, 
+				  DataSizePerMatrix * sizeof(DOUBLE),
 				  Gather_MatrixCollect, Scatter_MatrixCollect);
 
 	return (NUM_OK);
