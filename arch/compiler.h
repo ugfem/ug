@@ -211,11 +211,15 @@ extern "C" {
 #define __SWAPBYTES__ 1
 
 /* memory */
-#define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) !  */
+#define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFFC            /* compatible to alignment          */
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
+
+/* current time as DOUBLE value */
+#undef CURRENT_TIME
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
 #endif
 
