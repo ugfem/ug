@@ -56,8 +56,8 @@ case $MODEL in
 		px3 run -a ccall $PROC $1;
         ;;
 	SHMEM)
-		echo mpprun -n $PROC $1;
-		mpprun -n $PROC $1;
+		echo mpprun -n $PROC $1 $3 $4;
+		mpprun -n $PROC $1 $3 $4;
 		;;
 	SHMEMT3D)
 		if test -f $1$2
