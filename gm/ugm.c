@@ -5709,9 +5709,6 @@ INT CheckGeometry (GRID *theGrid)
 INT CheckLists (GRID *theGrid)
 {
   int objs = 0;
-  ELEMENT *theElement;
-  NODE *theNode;
-  VECTOR  *theVector;
 
   GRID_CHECK_ELEMENT_LIST(theGrid);
   GRID_CHECK_NODE_LIST(theGrid);
