@@ -1,0 +1,73 @@
+/****************************************************************************/
+/*																			*/
+/* File:	  bvecfunc.ct													*/
+/*																			*/
+/* Purpose:   block vector function template        						*/
+/*																			*/
+/* Author:	  Klaus Birken           										*/
+/*			  Institut fuer Computeranwendungen III 						*/
+/*			  Universitaet Stuttgart										*/
+/*			  Pfaffenwaldring 27											*/
+/*			  70569 Stuttgart												*/
+/*																			*/
+/* History:   Aug 22 97 begin                      							*/
+/*																			*/
+/* Remarks: 																*/
+/*																			*/
+/****************************************************************************/
+
+/* RCS_ID
+$Header$
+*/
+
+INT T_FUNCNAME (const BLOCKVECTOR *bv, INT xcomp T_ARGS)
+	register VECTOR *v, *end_v;
+	#ifdef T_CONFIG
+	T_CONFIG;
+	#endif
+	
+	#ifdef Debug
+	ASSERT(xcomp >= 0);
+	#ifdef T_CONS_CHECK
+	T_CONS_CHECK;
+	#endif
+	#endif
+
+	end_v = BVENDVECTOR( bv );
+	for (v=BVFIRSTVECTOR(bv); v!= end_v; v=SUCCVC(v))
+	{
+	T_MOD_VECTOR;
+	}
+	#ifdef T_POST
+	T_POST;
+    #endif
+	return(NUM_OK);
+}
+
+#undef T_FUNCNAME 
+#undef T_ARGS 
+#undef T_CONFIG
+#undef T_CONS_CHECK 
+#undef T_MOD_VECTOR
+#undef T_POST
+
+/*
+
+#undef T_FUNCNAME   dsetBS 
+#undef T_ARGS       ,DOUBLE a
+#undef T_MOD_VECTOR VVALUE(v,xcomp)=a;
+
+#include "bvecfunc.ct"
+
+
+#undef T_FUNCNAME   ddotBS
+#undef T_ARGS       ,INT ycomp,DOUBLE *a
+#undef T_CONFIG     register DOUBLE sum = 0.0;
+#undef T_CONS_CHECK ASSERT(ycomp>=0);
+#undef T_MOD_VECTOR sum += VVALUE(v,xcomp)*VVALUE(v,ycomp);
+#undef T_POST       *a = sum;
+
+#include "bvecfunc.ct"
+
+
+*/
