@@ -597,13 +597,16 @@ PAR(
 	{
 		if (OBJT(theElement) == BEOBJ)
 			if (ELEM_BNDS(theElement,i) != NULL) {
-				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++) 
-					if (NSUBDOM(CORNER(theElement,i)) != 0) {
-						UserWriteF(PFMT "wrong subdomain id on boundary node,"
-								   "el =  " EID_FMTX "\n",
-								   me,EID_PRTX(theElement));
+				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++) {
+					k = CORNER_OF_SIDE(theElement,i,j);
+					theNode = CORNER(theElement,k);
+					if (NSUBDOM(theNode) != 0) {
+						UserWriteF(PFMT "wrong subdomain id(%d) on boundary node,"
+								   "el =  " EID_FMTX ", side = %d, corner = %d, node = " ID_FMTX "\n",
+								   me,NSUBDOM(theNode),EID_PRTX(theElement),i,k,ID_PRTX(theNode));
 						bserror |= (1<<i);
 					}
+				}
 				for (j=0; j<EDGES_OF_SIDE(theElement,i); j++) {
 					k  = EDGE_OF_SIDE(theElement,i,j);
 					theEdge = GetEdge(CORNER(theElement,
@@ -612,9 +615,11 @@ PAR(
 											 CORNER_OF_EDGE(theElement,k,1)));
 					ASSERT(theEdge != NULL);
 					if (EDSUBDOM(theEdge) != 0) {
-						UserWriteF(PFMT "wrong subdomain id on boundary edge,"
-								   "el =  " EID_FMTX "\n",
-								   me,EID_PRTX(theElement));
+						UserWriteF(PFMT "wrong subdomain id(%d) on boundary edge %d,"
+								   "el =  " EID_FMTX ", side = %d, edge = %d, corner0 = " ID_FMTX ", corner1 = " ID_FMTX "\n",
+								   me,EDSUBDOM(theEdge),k,EID_PRTX(theElement), i, j,
+								   ID_PRTX(CORNER(theElement,CORNER_OF_EDGE(theElement,k,0))),
+								   ID_PRTX(CORNER(theElement,CORNER_OF_EDGE(theElement,k,1))));
 						bserror |= (1<<i);
 					}
 				}
@@ -667,6 +672,13 @@ PAR(
 						}
 					}
 			}
+			
+			if( ECLASS(theElement)==NO_CLASS)
+			{
+				UserWriteF(PFMT "Element has no ECLASS set, el =  " EID_FMTX "\n",
+						   me,EID_PRTX(theElement));
+			}
+			
 			if (ECLASS(theElement)!=YELLOW_CLASS) 
 			{
 				n = CORNERS_OF_SIDE(theElement,i);
