@@ -206,7 +206,7 @@ static void PSErasePolygon (SHORT_POINT *points, INT nb)
   return;
 }
 
-void PSPrintColor (float color)
+static void PSPrintColor (float color)
 {
   if (color==0.0) fprintf(currPSF,"%d ",0);
   else if (color==1.0) fprintf(currPSF,"%d ",1);
