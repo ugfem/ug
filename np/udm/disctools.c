@@ -1367,9 +1367,10 @@ INT PrintMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
       for (m=VSTART(v); m!=NULL; m = MNEXT(m))
       {
         ctype = MDESTTYPE(m);
+        ccomp = MD_COLS_IN_RT_CT(Mat,rtype,ctype);
+        if (ccomp == 0) continue;
         if (rcomp != MD_ROWS_IN_RT_CT(Mat,rtype,ctype))
           UserWrite("wrong type\n");
-        ccomp = MD_COLS_IN_RT_CT(Mat,rtype,ctype);
         Mcomp = MD_MCMP_OF_RT_CT(Mat,rtype,ctype,i*ccomp);
         for (j=0; j<ccomp; j++)
           UserWriteF("%4.2lf ",MVALUE(m,Mcomp+j));
