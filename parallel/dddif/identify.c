@@ -88,18 +88,6 @@
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-/* temp node flag for Identification
-   static INT ce_NIDENT;
-   #define NIDENT_LEN                    1
-   #define NIDENT(p)                     CW_READ(p,ce_NIDENT)
- #define SETNIDENT(p,n)                CW_WRITE(p,ce_NIDENT,n) */
-
-/* temp edge flag for Identification
-   static INT ce_EDIDENT;
-   #define EDIDENT_LEN                   1
-   #define EDIDENT(p)                    CW_READ(p,ce_EDIDENT)
- #define SETEDIDENT(p,n)               CW_WRITE(p,ce_EDIDENT,n) */
-
 #define NIDENT(p)                     THEFLAG(p)
 #define SETNIDENT(p,n)                SETTHEFLAG(p,n)
 
@@ -607,7 +595,7 @@ static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
       IdentObjectHdr[nobject++] = PARHDR(NVECTOR(theNode));
 
                         #ifdef __TWODIM__
-    if (!NPROP(theNode)) break;
+    if (!NEW_NIDENT(theNode)) break;
 
     /* 2D: identify to proclist of neighbor element */
     proclist = DDD_InfoProcList(PARHDRE(theNeighbor));
@@ -1032,13 +1020,13 @@ INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
   debug = 0;
         #endif
 
-  /* allocate a control word entry to lock nodes
-     if (AllocateControlEntry(NODE_CW,1,&ce_NIDENT) != GM_OK)
-          assert(0); */
+  /* allocate a control word entry to lock nodes */
+  if (AllocateControlEntry(NODE_CW,NEW_NIDENT_LEN,&ce_NEW_NIDENT) != GM_OK)
+    assert(0);
 
-  /* allocate a control word entry to lock edges
-     if (AllocateControlEntry(EDGE_CW,1,&ce_EDIDENT) != GM_OK)
-          assert(0); */
+  /* allocate a control word entry to lock edges */
+  if (AllocateControlEntry(EDGE_CW,NEW_EDIDENT_LEN,&ce_NEW_EDIDENT) != GM_OK)
+    assert(0);
 
   /* set Ident_FctPtr to identification mode */
   Ident_FctPtr = Identify_by_ObjectList;
@@ -1065,10 +1053,8 @@ INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
 
   ENDDEBUG
 
-  /*
-          FreeControlEntry(ce_NIDENT);
-          FreeControlEntry(ce_EDIDENT);
-   */
+  FreeControlEntry(ce_NEW_NIDENT);
+  FreeControlEntry(ce_NEW_EDIDENT);
 }
 
 #ifdef IDENT_ONLY_NEW
@@ -1080,7 +1066,7 @@ static int Gather_NewNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
   /* identification is only done between master objects */
   ASSERT(identlevel-1 == LEVEL(theNode));
 
-  if (SonNode!=NULL && NPROP(SonNode))
+  if (SonNode!=NULL && NEW_NIDENT(SonNode))
   {
     UserWriteF(PFMT "new son node=" ID_FMTX  "node=" ID_FMTX "\n",
                me,ID_PRTX(SonNode),ID_PRTX(theNode));
@@ -1101,7 +1087,7 @@ static int Scatter_NewNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO
   /* identification is only done between master objects */
   ASSERT(identlevel-1 == LEVEL(theNode));
 
-  if (SonNode!=NULL && has_newsonnode) SETNPROP(SonNode,1);
+  if (SonNode!=NULL && has_newsonnode) SETNEW_NIDENT(SonNode,1);
 
   return(0);
 }
@@ -1120,7 +1106,7 @@ static int Gather_NodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pri
     return(0);
   }
 
-  *((int *)data) = NPROP(theNode);
+  *((int *)data) = NEW_NIDENT(theNode);
 
   return(0);
 }
@@ -1134,11 +1120,11 @@ static int Scatter_NodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pr
 
   if (!CORNERTYPE(theNode)) return(0);
 
-  if (0) if (NPROP(theNode)) assert(NFATHER(theNode) != NULL);
+  if (0) if (NEW_NIDENT(theNode)) assert(NFATHER(theNode) != NULL);
 
   if (nprop)
   {
-    SETNPROP(theNode,1);
+    SETNEW_NIDENT(theNode,1);
     if (NFATHER(theNode) == NULL)
     {
       UserWriteF(PFMT "isolated node=" ID_FMTX "\n",
@@ -1159,8 +1145,8 @@ static int Gather_TestNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO
 
   ASSERT(identlevel == LEVEL(theNode));
 
-  ((int *)data)[0] = NPROP(theNode);
-  if (NPROP(theNode)) assert(NFATHER(theNode) != NULL);
+  ((int *)data)[0] = NEW_NIDENT(theNode);
+  if (NEW_NIDENT(theNode)) assert(NFATHER(theNode) != NULL);
 
   return(0);
 }
@@ -1172,10 +1158,10 @@ static int Scatter_TestNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRI
 
   ASSERT(identlevel == LEVEL(theNode));
 
-  if (NPROP(theNode) != nprop)
+  if (NEW_NIDENT(theNode) != nprop)
   {
     UserWriteF(PFMT "nprop wrong mynprop=%d hisnprop=%d theNode=" ID_FMTX " LEVEL=%d PROC=%d PRIO=%d\n",
-               me,NPROP(theNode),nprop,ID_PRTX(theNode),LEVEL(theNode),proc,prio);
+               me,NEW_NIDENT(theNode),nprop,ID_PRTX(theNode),LEVEL(theNode),proc,prio);
     fflush(stdout);
     assert(0);
   }
@@ -1199,7 +1185,7 @@ static int Gather_IdentSonNode (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO
   if (SonNode != NULL)
   {
     ((int *)data)[0] = 1;
-    ((int *)data)[1] = NPROP(SonNode);
+    ((int *)data)[1] = NEW_NIDENT(SonNode);
   }
 
   return(0);
@@ -1218,16 +1204,16 @@ static int Scatter_IdentSonNode (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRI
   if (SonNode!=NULL)
   {
     /*
-            if (1 || NPROP(SonNode))
+            if (1 || NEW_NIDENT(SonNode))
      */
-    if (NPROP(SonNode))
+    if (NEW_NIDENT(SonNode))
     {
       if(sonnode)
       {
         if (!newsonnode)
         {
           UserWriteF(PFMT "theNode=" ID_FMTX " LEVEL=%d PROC=%d PRIO=%d sonnprop=%d\n",
-                     me,ID_PRTX(theNode),LEVEL(theNode),proc,prio,NPROP(SonNode));
+                     me,ID_PRTX(theNode),LEVEL(theNode),proc,prio,NEW_NIDENT(SonNode));
           fflush(stdout);
           assert(0);
         }
@@ -1242,7 +1228,7 @@ static int Scatter_IdentSonNode (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRI
       if (newsonnode)
       {
         UserWriteF(PFMT "theNode=" ID_FMTX " LEVEL=%d PROC=%d PRIO=%d sonnprop=%d\n",
-                   me,ID_PRTX(theNode),LEVEL(theNode),proc,prio,NPROP(SonNode));
+                   me,ID_PRTX(theNode),LEVEL(theNode),proc,prio,NEW_NIDENT(SonNode));
         fflush(stdout);
         assert(0);
       }
@@ -1560,15 +1546,12 @@ void IdentifyInit (MULTIGRID *theMG)
         #endif
 
   /* allocate a control word entry to lock nodes */
-  /* TODO: delete
-          if (AllocateControlEntry(NODE_CW,1,&ce_NIDENT) != GM_OK)
-                  assert(0);
-   */
+  if (AllocateControlEntry(NODE_CW,NEW_NIDENT_LEN,&ce_NEW_NIDENT) != GM_OK)
+    assert(0);
+
   /* allocate a control word entry to lock edges */
-  /* TODO: delete
-          if (AllocateControlEntry(EDGE_CW,1,&ce_EDIDENT) != GM_OK)
-                  assert(0);
-   */
+  if (AllocateControlEntry(EDGE_CW,NEW_EDIDENT_LEN,&ce_NEW_EDIDENT) != GM_OK)
+    assert(0);
 
   for (i=0; i<=TOPLEVEL(theMG); i++)
     ResetIdentFlags(GRID_ON_LEVEL(theMG,i));
@@ -1598,8 +1581,8 @@ void IdentifyInit (MULTIGRID *theMG)
 
 void IdentifyExit (void)
 {
-  /*FreeControlEntry(ce_NIDENT);
-     FreeControlEntry(ce_EDIDENT); */
+  FreeControlEntry(ce_NEW_NIDENT);
+  FreeControlEntry(ce_NEW_EDIDENT);
 }
 
 #endif /* end ModelP */
