@@ -141,7 +141,7 @@ INT ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE *pos)
       }
     }
 
-  REP_ERR_RETURN(1);
+  return(1);
 }
 
 /****************************************************************************/
@@ -184,7 +184,7 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
   INT res;
 
   if (ReadArgvChar(name,value,argc,argv))
-    REP_ERR_RETURN (NULL);
+    return(NULL);
 
   res = sscanf(value,expandfmt(CONCAT5("%",NAMELENSTR,"[a-zA-Z0-9_] / %",NAMELENSTR,"[a-zA-Z0-9_]")),vdname,tname);
   vd = GetVecDataDescByName(theMG,vdname);
@@ -196,7 +196,7 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
       /* taking default template */
       vd = CreateVecDescOfTemplate (theMG,vdname,NULL);
   }
-  if (vd == NULL) REP_ERR_RETURN (NULL);
+  if (vd == NULL) return(NULL);
 
   VM_LOCKED(vd) = 1;
 
@@ -237,10 +237,10 @@ VEC_TEMPLATE *ReadArgvVecTemplate (const FORMAT *fmt, const char *name,
   char value[VALUELEN],vtname[NAMESIZE];
 
   if (ReadArgvChar(name,value,argc,argv))
-    REP_ERR_RETURN (NULL);
+    return(NULL);
 
   if (sscanf(value,expandfmt(CONCAT3("%",NAMELENSTR,"[a-zA-Z0-9_]")),vtname)!=1)
-    REP_ERR_RETURN (NULL);
+    return(NULL);
 
   return(GetVectorTemplate(fmt,vtname));
 }
@@ -283,20 +283,20 @@ VEC_TEMPLATE *ReadArgvVecTemplateSub (const FORMAT *fmt, const char *name,
   char value[VALUELEN],vtname[NAMESIZE],subname[NAMESIZE];
 
   if (ReadArgvChar(name,value,argc,argv))
-    REP_ERR_RETURN (NULL);
+    return(NULL);
 
   if (sscanf(value,expandfmt(CONCAT5("%",NAMELENSTR,"[a-zA-Z0-9_] %",NAMELENSTR,"[a-zA-Z0-9_]")),vtname,subname)!=2)
-    REP_ERR_RETURN (NULL);
+    return (NULL);
 
   vt = GetVectorTemplate(fmt,vtname);
   if (vt==NULL)
-    REP_ERR_RETURN(NULL);
+    return(NULL);
 
   for (i=0; i<VT_NSUB(vt); i++)
     if (strcmp(SUBV_NAME(VT_SUB(vt,i)),subname)==0)
       break;
   if (i>=VT_NSUB(vt))
-    REP_ERR_RETURN(NULL);
+    return(NULL);
 
   *sub = i;
 
@@ -341,20 +341,20 @@ MAT_TEMPLATE *ReadArgvMatTemplateSub (const FORMAT *fmt, const char *name,
   char value[VALUELEN],mtname[NAMESIZE],subname[NAMESIZE];
 
   if (ReadArgvChar(name,value,argc,argv))
-    REP_ERR_RETURN (NULL);
+    return (NULL);
 
   if (sscanf(value,expandfmt(CONCAT5("%",NAMELENSTR,"[a-zA-Z0-9_] %",NAMELENSTR,"[a-zA-Z0-9_]")),mtname,subname)!=2)
-    REP_ERR_RETURN (NULL);
+    return (NULL);
 
   mt = GetMatrixTemplate(fmt,mtname);
   if (mt==NULL)
-    REP_ERR_RETURN(NULL);
+    return(NULL);
 
   for (i=0; i<MT_NSUB(mt); i++)
     if (strcmp(SUBM_NAME(MT_SUB(mt,i)),subname)==0)
       break;
   if (i>=MT_NSUB(mt))
-    REP_ERR_RETURN(NULL);
+    return(NULL);
 
   *sub = i;
 
@@ -395,7 +395,7 @@ MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, const char *name,
   INT res;
 
   if (ReadArgvChar(name,value,argc,argv))
-    REP_ERR_RETURN (NULL);
+    return (NULL);
 
   res = sscanf(value,expandfmt(CONCAT5("%",NAMELENSTR,
                                        "[a-zA-Z0-9_] / %",
@@ -410,7 +410,7 @@ MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, const char *name,
       /* taking default template */
       md = CreateMatDescOfTemplate (theMG,mdname,NULL);
   }
-  if (md == NULL) REP_ERR_RETURN (NULL);
+  if (md == NULL) return (NULL);
 
   VM_LOCKED(md) = 1;
 
@@ -449,7 +449,7 @@ NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, const char *class,
   char value[VALUELEN];
 
   if (ReadArgvChar(name,value,argc,argv))
-    REP_ERR_RETURN (NULL);
+    return (NULL);
 
   return(GetNumProcByName(theMG,value,class));
 }
@@ -561,9 +561,9 @@ INT ReadVecTypeINTs (const FORMAT *fmt, char *str, INT n, INT nINT[MAXVECTORS], 
         if (nINT[type]>=n) REP_ERR_RETURN (2);
 
         if (sscanf(tok,"%d",&iValue)!=1)
-          REP_ERR_RETURN (3)
-          else
-            theINTs[nINT[type]++][type] = (INT) iValue;
+          return (3);
+        else
+          theINTs[nINT[type]++][type] = (INT) iValue;
       }
 
   return (NUM_OK);
@@ -638,9 +638,9 @@ INT ReadVecTypeDOUBLEs (const FORMAT *fmt, char *str, INT n, INT nDOUBLE[MAXVECT
         if (nDOUBLE[type]>=n) REP_ERR_RETURN (2);
 
         if (sscanf(tok,"%lf",&lfValue)!=1)
-          REP_ERR_RETURN (3)
-          else
-            theDOUBLEs[nDOUBLE[type]++][type] = (DOUBLE) lfValue;
+          return (3);
+        else
+          theDOUBLEs[nDOUBLE[type]++][type] = (DOUBLE) lfValue;
       }
 
   if (notypetok!=NULL)
