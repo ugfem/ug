@@ -55,7 +55,6 @@
 
 #include "devices.h"
 
-#include "switch.h"
 #include "evm.h"
 #include "gm.h"
 #include "rm.h"
@@ -133,7 +132,7 @@ REP_ERR_FILE;
 /*																			*/
 /****************************************************************************/
 
-static NODE *CreateNode (GRID *theGrid);
+static NODE *CreateNode (GRID *theGrid, VERTEX *vertex, NODE *FatherNode, INT NodeType);
 static VERTEX *CreateBoundaryVertex     (GRID *theGrid);
 static VERTEX *CreateInnerVertex (GRID *theGrid);
 
@@ -323,7 +322,7 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid)
 
   pv = GetMemoryForObject(MYMG(theGrid),sizeof(struct bvertex),BVOBJ);
   if (pv==NULL) return(NULL);
-  if ((ds=theGrid->mg->theFormat->sVertex)>0)
+  if ((ds=FMT_S_VERTEX(MGFORMAT(MYMG(theGrid))))>0)
   {
     VDATA(pv) = GetMemoryForObject(MYMG(theGrid),ds,NOOBJ);
     if (VDATA(pv)==NULL) return(NULL);
@@ -385,7 +384,7 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
 
   pv = GetMemoryForObject(MYMG(theGrid),sizeof(struct ivertex),IVOBJ);
   if (pv==NULL) return(NULL);
-  if ((ds=theGrid->mg->theFormat->sVertex)>0)
+  if ((ds=FMT_S_VERTEX(MGFORMAT(MYMG(theGrid))))>0)
   {
     VDATA(pv) = GetMemoryForObject(MYMG(theGrid),ds,NOOBJ);
     if (VDATA(pv)==NULL) return(NULL);
@@ -421,11 +420,13 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
    CreateNode - Return pointer to a new node structure
 
    SYNOPSIS:
-   static NODE *CreateNode (GRID *theGrid);
+   static NODE *CreateNode (GRID *theGrid, VERTEX *vertex, NODE *FatherNode, INT NodeType);
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
-   .  after - node after which to insert new node
+   .  vertex  - vertex of the node
+   .  FatherNode - father node (may be NULL)
+   .  NodeType - node type (CORNER_NODE..., cf. gm.h)
 
    DESCRIPTION:
    This function creates and initializes a new node structure
@@ -438,38 +439,19 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
    D*/
 /****************************************************************************/
 
-static NODE *CreateNode (GRID *theGrid)
+static NODE *CreateNode (GRID *theGrid, VERTEX *vertex, NODE *FatherNode, INT NodeType)
 {
   NODE *pn;
   VECTOR *pv;
   INT size;
 
   size = sizeof(NODE);
-  if (!TYPE_DEF_IN_GRID(theGrid,NODEVECTOR)) size -= sizeof(VECTOR *);
+  if (!VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC)) size -= sizeof(VECTOR *);
   if (NDATA_DEF_IN_GRID(theGrid)) size += sizeof(void *);
   if (NELIST_DEF_IN_GRID(theGrid)) size += sizeof(void *);
 
   pn = GetMemoryForObject(MYMG(theGrid),size,NDOBJ);
   if (pn==NULL) return(NULL);
-
-  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR)) {
-    pv = CreateVector (theGrid,NODEVECTOR,(GEOM_OBJECT *)pn);
-    if (pv == NULL)
-    {
-      DisposeNode (theGrid,pn);
-      return (NULL);
-    }
-    NVECTOR(pn) = pv;
-  }
-
-  if (NDATA_DEF_IN_GRID(theGrid)) {
-    NDATA(pn) = (void *) GetMemoryForObject(theGrid->mg,
-                                            NDATA_DEF_IN_GRID(theGrid),-1);
-    if (NDATA(pn) == NULL) {
-      DisposeNode (theGrid,pn);
-      return (NULL);
-    }
-  }
 
   /* initialize data */
   SETOBJT(pn,NDOBJ);
@@ -483,6 +465,32 @@ static NODE *CreateNode (GRID *theGrid)
   START(pn) = NULL;
   SONNODE(pn) = NULL;
   if (NELIST_DEF_IN_GRID(theGrid)) NDATA(pn) = NULL;
+  MYVERTEX(pn) = vertex;
+  SETNFATHER(pn,FatherNode);
+  SETNTYPE(pn,NodeType);
+
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC))
+    if (GLEVEL(theGrid)!=0)
+    {
+      if (CreateVector (theGrid,NODEVEC,(GEOM_OBJECT *)pn,&pv))
+      {
+        DisposeNode (theGrid,pn);
+        return (NULL);
+      }
+      NVECTOR(pn) = pv;
+    }
+    else
+      NVECTOR(pn) = NULL;
+
+
+  if (NDATA_DEF_IN_GRID(theGrid)) {
+    NDATA(pn) = (void *) GetMemoryForObject(theGrid->mg,
+                                            NDATA_DEF_IN_GRID(theGrid),-1);
+    if (NDATA(pn) == NULL) {
+      DisposeNode (theGrid,pn);
+      return (NULL);
+    }
+  }
 
   theGrid->status |= 1;          /* recalculate stiffness matrix */
 
@@ -519,22 +527,20 @@ NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
   NODE *pn;
   VERTEX *theVertex;
 
-  pn = CreateNode(theGrid);
+  theVertex = MYVERTEX(FatherNode);
+
+  pn = CreateNode(theGrid,theVertex,FatherNode,CORNER_NODE);
   if (pn == NULL)
     return(NULL);
   SONNODE(FatherNode) = pn;
-  SETNFATHER(pn,FatherNode);
-  theVertex = MYVERTEX(FatherNode);
   if (NOOFNODE(theVertex)<NOOFNODEMAX-1)
     INCNOOFNODE(theVertex);
   else
     ASSERT(0);
 
-  MYVERTEX(pn) = theVertex;
         #ifdef TOPNODE
   TOPNODE(theVertex) = pn;
         #endif
-  SETNTYPE(pn,CORNER_NODE);
 
   return(pn);
 }
@@ -625,25 +631,22 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
   VFATHER(theVertex) = theElement;
   SETONEDGE(theVertex,edge);
 
+  /* set MIDNODE pointer */
+  theEdge = GetEdge(CORNER(theElement,co0),CORNER(theElement,co1));
+  ASSERT(theEdge!=NULL);
+
   /* allocate node */
-  theNode = CreateNode(theGrid);
+  theNode = CreateNode(theGrid,theVertex,(NODE *)theEdge,MID_NODE);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
     return(NULL);
   }
 
-  /* set MIDNODE pointer */
-  theEdge = GetEdge(CORNER(theElement,co0),CORNER(theElement,co1));
-  ASSERT(theEdge!=NULL);
-
   MIDNODE(theEdge) = theNode;
-  SETNFATHER(theNode,(NODE *)theEdge);
-  MYVERTEX(theNode) = theVertex;
         #ifdef TOPNODE
   TOPNODE(theVertex) = theNode;
         #endif
-  SETNTYPE(theNode,MID_NODE);
 
   if (OBJT(theVertex) == BVOBJ)
     PRINTDEBUG(dom,1,(" MidPoint %d %f %f %f\n",ID(theNode),
@@ -679,7 +682,6 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
 
 NODE *GetMidNode (ELEMENT *theElement, INT edge)
 {
-  ELEMENT *theFather;
   EDGE *theEdge;
   NODE *theNode;
   VERTEX *theVertex;
@@ -799,18 +801,15 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
   V_DIM_COPY(local,LCVECT(theVertex));
 
   /* create node */
-  theNode = CreateNode(theGrid);
+  theNode = CreateNode(theGrid,theVertex,NULL,SIDE_NODE);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
     return(NULL);
   }
-  MYVERTEX(theNode) = theVertex;
         #ifdef TOPNODE
   TOPNODE(theVertex) = theNode;
         #endif
-  SETNFATHER(theNode,NULL);
-  SETNTYPE(theNode,SIDE_NODE);
   theGrid->status |= 1;
 
   return(theNode);
@@ -977,7 +976,6 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
 INT GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
 {
   ELEMENT *theFather;
-  EDGE *ed;
   NODE *nd[MAX_EDGES_OF_ELEM];
   INT i,j,k,l,cnt;
 
@@ -1062,7 +1060,7 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
 {
   DOUBLE *global,*local;
   DOUBLE_VECTOR diff;
-  INT n,m,j,moved;
+  INT n,j,moved;
   VERTEX *theVertex,*VertexOnEdge[MAX_EDGES_OF_ELEM];
   NODE *theNode;
   EDGE *theEdge;
@@ -1090,7 +1088,9 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
   theVertex = CreateInnerVertex(theGrid);
   if (theVertex==NULL)
     return(NULL);
-  theNode = CreateNode(theGrid);
+  VFATHER(theVertex) = theElement;
+
+  theNode = CreateNode(theGrid,theVertex,NULL,CENTER_NODE);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
@@ -1118,13 +1118,9 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
     LOCAL_TO_GLOBAL(n,x,local,diff);
     SETMOVED(theVertex,1);
   }
-  VFATHER(theVertex) = theElement;
-  SETNFATHER(theNode,NULL);
-  MYVERTEX(theNode) = theVertex;
         #ifdef TOPNODE
   TOPNODE(theVertex) = theNode;
         #endif
-  SETNTYPE(theNode,CENTER_NODE);
   theGrid->status |= 1;
 
   return(theNode);
@@ -1293,7 +1289,7 @@ void GetNbSideByNodes (ELEMENT *theNeighbor, INT *nbside, ELEMENT *theElement, I
 #ifdef __THREEDIM__
 EDGE *FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge)
 {
-  INT sonedge,pos0,pos1;
+  INT pos0,pos1;
   EDGE *fatherEdge = NULL;
 
   ASSERT(Nodes[0]!=NULL);
@@ -1441,6 +1437,48 @@ EDGE *GetEdge (NODE *from, NODE *to)
   return(NULL);
 }
 
+static INT SetEdgeSubdomain (EDGE *ed, INT s_id)
+{
+  /* get subdomain info from coarser grid iff */
+  if (LEVEL(ed)>0)
+  {
+    EDGE *ced=NULL;
+    NODE *to,*from;
+
+    to   = NBNODE(LINK0(ed));
+    from = NBNODE(LINK1(ed));
+
+    /* find coarse edge to get subdomain info from */
+    if ((NTYPE(to)==MID_NODE) && (NTYPE(from)==CORNER_NODE))
+      ced = (EDGE*)NFATHER(to);
+    else if ((NTYPE(from)==MID_NODE) && (NTYPE(to)==CORNER_NODE))
+      ced = (EDGE*)NFATHER(from);
+    else if ((NTYPE(from)==CORNER_NODE) && (NTYPE(to)==CORNER_NODE))
+    {
+      /* edge is a coarse edge also */
+      NODE *ff,*tf;
+      ff = NFATHER(from);
+      tf = NFATHER(to);
+      ced = GetEdge(ff,tf);
+    }
+    if (ced!=NULL)
+      s_id = EDSUBDOM(ced);
+
+    IFDEBUG(gm,1)
+    if (s_id==0)
+    {
+      if (OBJT(MYVERTEX(from))!=BVOBJ)
+        return (1);
+      if (OBJT(MYVERTEX(to))!=BVOBJ)
+        return (1);
+    }
+    ENDDEBUG
+  }
+  SETEDSUBDOM(ed,s_id);
+
+  return (0);
+}
+
 /****************************************************************************/
 /*D
    CreateEdge - Return pointer to a new edge structure
@@ -1467,7 +1505,7 @@ EDGE *GetEdge (NODE *from, NODE *to)
 #ifndef ModelP
 static
 #endif
-EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
+EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector, INT subdom_id)
 {
   EDGE *pe;
   LINK *link0,*link1;
@@ -1484,7 +1522,7 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
     return(pe);
   }
 
-  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
     pe = GetMemoryForObject(theGrid->mg,sizeof(EDGE),EDOBJ);
   else
     pe = GetMemoryForObject(theGrid->mg,sizeof(EDGE)-sizeof(VECTOR*),EDOBJ);
@@ -1507,17 +1545,21 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
   SETTAG(pe,0);
   SETEDGENEW(pe,1);
 
+  SetEdgeSubdomain(pe,subdom_id);
+
   /* create vector if */
-  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR) && with_vector)
-  {
-    pv = CreateVector (theGrid,EDGEVECTOR,(GEOM_OBJECT *)pe);
-    if (pv == NULL)
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC) && with_vector)
+    if (GLEVEL(theGrid)!=0)
     {
-      DisposeEdge (theGrid,pe);
-      return (NULL);
+      if (CreateVector (theGrid,EDGEVEC,(GEOM_OBJECT *)pe,&pv))
+      {
+        DisposeEdge (theGrid,pe);
+        return (NULL);
+      }
+      EDVECTOR(pe) = pv;
     }
-    EDVECTOR(pe) = pv;
-  }
+    else
+      EDVECTOR(pe) = NULL;
 
   /* put in neighbor lists */
   NEXT(link0) = START(from);
@@ -1595,7 +1637,8 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
                         NODE **nodes, ELEMENT *Father)
 {
   ELEMENT *pe;
-  INT i;
+  EDGE *ed;
+  INT i,s_id;
   VECTOR *pv;
   void *q;
 
@@ -1624,28 +1667,34 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   for (i=0; i<CORNERS_OF_ELEM(pe); i++)
     SET_CORNER(pe,i,nodes[i]);
 
+  /* subdomain id */
+  s_id = (Father != NULL) ? SUBDOMAIN(Father) : 0;
+  SETSUBDOMAIN(pe,s_id);
+
   /* create edges */
   for (i=0; i<EDGES_OF_ELEM(pe); i++)
-    if (CreateEdge(theGrid,
-                   nodes[CORNER_OF_EDGE(pe,i,0)],
-                   nodes[CORNER_OF_EDGE(pe,i,1)],
-                   TRUE) == NULL)
+    if ((ed=CreateEdge(theGrid,
+                       nodes[CORNER_OF_EDGE(pe,i,0)],
+                       nodes[CORNER_OF_EDGE(pe,i,1)],
+                       TRUE,s_id)) == NULL)
     {
       DisposeElement(theGrid,pe,TRUE);
       return(NULL);
     }
 
   /* create element vector if */
-  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
-  {
-    pv = CreateVector (theGrid,ELEMVECTOR,(GEOM_OBJECT *)pe);
-    if (pv == NULL)
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
+    if (GLEVEL(theGrid)!=0)
     {
-      DisposeElement(theGrid,pe,TRUE);
-      return (NULL);
+      if (CreateVector (theGrid,ELEMVEC,(GEOM_OBJECT *)pe,&pv))
+      {
+        DisposeElement(theGrid,pe,TRUE);
+        return (NULL);
+      }
+      SET_EVECTOR(pe,pv);
     }
-    SET_EVECTOR(pe,pv);
-  }
+    else
+      SET_EVECTOR(pe,NULL);
 
   if (EDATA_DEF_IN_GRID(theGrid)) {
     q = (void *) GetMemoryForObject(theGrid->mg,EDATA_DEF_IN_GRID(theGrid),-1);
@@ -1657,19 +1706,19 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   }
 
   /* create side vectors if */
-        #ifdef __THREEDIM__
-  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
     for (i=0; i<SIDES_OF_ELEM(pe); i++)
-    {
-      pv = CreateSideVector (theGrid,i,(GEOM_OBJECT *)pe);
-      if (pv == NULL)
+      if (GLEVEL(theGrid)!=0)
       {
-        DisposeElement(theGrid,pe,TRUE);
-        return (NULL);
+        if (CreateSideVector (theGrid,i,(GEOM_OBJECT *)pe,&pv))
+        {
+          DisposeElement(theGrid,pe,TRUE);
+          return (NULL);
+        }
+        SET_SVECTOR(pe,i,pv);
       }
-      SET_SVECTOR(pe,i,pv);
-    }
-        #endif
+      else
+        SET_SVECTOR(pe,i,NULL);
 
   /* insert in element list */
   GRID_LINK_ELEMENT(theGrid,pe,PrioMaster);
@@ -1684,8 +1733,6 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
       SET_SON(Father,where,pe);
     SETNSONS(Father,NSONS(Father)+1);
   }
-  if (Father != NULL)
-    SETSUBDOMAIN(pe,SUBDOMAIN(Father));
 
   /* return ok */
   return(pe);
@@ -1708,6 +1755,12 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
 
    DESCRIPTION:
    This function creates and initializes an element side of a son element.
+   Here also the side vector (iff at all) is inspected in 'ReinspectSonSideVector'.
+   The latter function eventually reallocates the vector if its size has changed and
+   sets the VBUILDCON flag in the vector. The connections of the old vector are
+   thereby disposed. The refine-module which is calling
+   'CreateSonElementSide' will finally call 'GridCreateConnection' to reinstall
+   the connections of the side-vector.
 
    RETURN VALUE:
    INT
@@ -1722,6 +1775,7 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
   INT n,i;
   BNDS *bnds;
   BNDP *bndp[MAX_CORNERS_OF_ELEM];
+  VECTOR *vec;
 
   ASSERT (OBJT(theElement) == BEOBJ);
 
@@ -1736,6 +1790,13 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
   if (bnds == NULL)
     RETURN(GM_ERROR);
   SET_BNDS(theSon,son_side,bnds);
+
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+  {
+    vec = SVECTOR(theSon,son_side);
+    ReinspectSonSideVector(theGrid,theSon,son_side,&vec);
+    SET_SVECTOR(theSon,son_side,vec);
+  }
 
   return(GM_OK);
 }
@@ -2124,7 +2185,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   GRID *theGrid;
   INT i,ds;
   BVP *theBVP;
-  BVP_DESC theBVPDesc;
+  BVP_DESC *theBVPDesc;
   MESH mesh;
   FORMAT *theFormat;
 
@@ -2162,11 +2223,12 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
     PrintErrorMessage('E',"CreateMultiGrid","BVP not found");
     return(NULL);
   }
-  if (BVP_SetBVPDesc(theBVP,&theBVPDesc))
+  if (BVP_SetBVPDesc(theBVP,&theMG->theBVPD))
   {
     PrintErrorMessage('E',"CreateMultiGrid","BVP not evaluated");
     return(NULL);
   }
+  theBVPDesc = MG_BVPD(theMG);
 
   /* 1: general user data space */
   if (!theGenMGUDM->locked)
@@ -2188,7 +2250,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
     GEN_MGUD(theMG) = NULL;
 
   /* 2: user heap */
-  ds = theFormat->sMultiGrid;
+  ds = FMT_S_MG(theFormat);
   if (ds!=0)
   {
     theUserHeap = NewHeap(SIMPLE_HEAP, ds, GetMem(theHeap,ds,FROM_BOTTOM));
@@ -2204,6 +2266,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
 
   /* fill multigrid structure */
   theMG->status = 0;
+  MG_COARSE_FIXED(theMG) = 0;
   theMG->vertIdCounter = 0;
   theMG->nodeIdCounter = 0;
   theMG->elemIdCounter = 0;
@@ -2352,7 +2415,7 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
     SETNFATHER(MIDNODE(theEdge),NULL);
 
   /* dispose vector and its matrices from edge-vector if */
-  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
   {
     if (DisposeVector (theGrid,EDVECTOR(theEdge)))
       RETURN(1);
@@ -2475,7 +2538,7 @@ static INT DisposeNode (GRID *theGrid, NODE *theNode)
     DisposeElementList(theGrid,theNode);
     size += sizeof(void *);
   }
-  if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC))
   {
     if (DisposeVector (theGrid,NVECTOR(theNode)))
       RETURN(1);
@@ -2515,7 +2578,7 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
   HEAPFAULT(theVertex);
 
   PRINTDEBUG(gm,1,(PFMT "DisposeVertex(): Gridlevel=%d theVertex=" VID_FMTX "\n",
-                   me,LEVEL(theGrid),VID_PRTX(theVertex)));
+                   me,GLEVEL(theGrid),VID_PRTX(theVertex)));
 
   theGrid = GRID_ON_LEVEL(MYMG(theGrid),LEVEL(theVertex));
 
@@ -2559,8 +2622,7 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
 
 INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 {
-  INT i,j,k,l,m,n,o,edge,tag;
-  DOUBLE fac,*local;
+  INT i,j,edge,tag;
   NODE    *theNode;
   VERTEX  *theVertex;
   EDGE    *theEdge;
@@ -2569,7 +2631,8 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
   ELEMENT *succe = SUCCE(theElement);
         #ifdef __THREEDIM__
   VECTOR  *theVector;
-  ELEMENT *theNeighbor;
+  DOUBLE *local,fac;
+  INT k,m,o,l;
         #endif
 
   HEAPFAULT(theElement);
@@ -2831,26 +2894,30 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
     ELEMENT *theNeighbor = NBELEM(theElement,i);
 
                 #ifdef __THREEDIM__
-    if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR)) {
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+    {
       theVector = SVECTOR(theElement,i);
-      assert (VCOUNT(theVector) != 0);
-      assert (VCOUNT(theVector) != 3);
-      if (VCOUNT(theVector) == 1)
+      if (theVector!=NULL)
       {
-        if (DisposeVector (theGrid,theVector))
-          RETURN (1);
-      }
-      else
-      {
-                          #ifdef ModelP
-        /* TODO: sidevector case must be tested */
-        assert(0);
-                          #endif
-        if (!FindNeighborElement (theElement,i,&theNeighbor,&j))
-          RETURN (1);
-        VOBJECT(theVector) = (void*)theNeighbor;
-        SETVECTORSIDE(theVector,j);
-        SETVCOUNT(SVECTOR(theElement,i),1);
+        assert (VCOUNT(theVector) != 0);
+        assert (VCOUNT(theVector) != 3);
+        if (VCOUNT(theVector) == 1)
+        {
+          if (DisposeVector (theGrid,theVector))
+            RETURN (1);
+        }
+        else
+        {
+                                        #ifdef ModelP
+          /* TODO: sidevector case must be tested */
+          assert(0);
+                                        #endif
+          if (!FindNeighborElement (theElement,i,&theNeighbor,&j))
+            RETURN (1);
+          VOBJECT(theVector) = (void*)theNeighbor;
+          SETVECTORSIDE(theVector,j);
+          SETVCOUNT(SVECTOR(theElement,i),1);
+        }
       }
     }
                 #endif
@@ -2871,7 +2938,7 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
   }
 
   /* dispose vector in center of element */
-  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
     if (DisposeVector (theGrid,EVECTOR(theElement)))
       RETURN(1);
 
@@ -3438,14 +3505,14 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT Also
   INT i,entries,firstID,nl;
   HEAP *theHeap;
   BVP *theBVP;
-  BVP_DESC theBVPDesc;
+  BVP_DESC *theBVPDesc;
 
   theMG   = MYMG(theGrid);
   entries = NN(theGrid);
   if (entries == 0) return (0);
   firstID = ID(FIRSTNODE(theGrid));
   theBVP = MG_BVP(theMG);
-  if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) RETURN (1);
+  theBVPDesc = MG_BVPD(theMG);
 
   /* calculate the diameter of the bounding rectangle of the domain */
   InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / BVPD_RADIUS(theBVPDesc);
@@ -3674,7 +3741,7 @@ NODE *InsertInnerNode (GRID *theGrid, DOUBLE *pos)
     PrintErrorMessage('E',"InsertInnerNode","cannot create vertex");
     return(NULL);
   }
-  theNode = CreateNode(theGrid);
+  theNode = CreateNode(theGrid,theVertex,NULL,LEVEL_0_NODE);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
@@ -3687,7 +3754,6 @@ NODE *InsertInnerNode (GRID *theGrid, DOUBLE *pos)
   SETMOVE(theVertex,DIM);
 
   INDEX(theNode) = 0;
-  MYVERTEX(theNode) = theVertex;
 
   return(theNode);
 }
@@ -3717,7 +3783,7 @@ NODE *InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
 {
   NODE *theNode;
   VERTEX *theVertex;
-  INT move;
+  INT move,part;
 
   /* create objects */
   theVertex = CreateBoundaryVertex(theGrid);
@@ -3733,7 +3799,7 @@ NODE *InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
     return(NULL);
   }
 
-  if (BNDP_BndPDesc(bndp,&move))
+  if (BNDP_BndPDesc(bndp,&move,&part))
   {
     DisposeVertex(theGrid,theVertex);
     return(NULL);
@@ -3741,14 +3807,13 @@ NODE *InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
   SETMOVE(theVertex,move);
   V_BNDP(theVertex) = bndp;
 
-  theNode = CreateNode(theGrid);
+  theNode = CreateNode(theGrid,theVertex,NULL,LEVEL_0_NODE);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
     PrintErrorMessage('E',"InsertBoundaryNode","cannot create node");
     return(NULL);
   }
-  MYVERTEX(theNode) = theVertex;
         #ifdef TOPNODE
   TOPNODE(theVertex) = theNode;
         #endif
@@ -3879,7 +3944,9 @@ INT DeleteNodeWithID (GRID *theGrid, INT id)
 ELEMENT *FindFather (VERTEX *theVertex)
 {
   ELEMENT *theElement;
+#       ifdef TOPNODE
   NODE *theNode;
+#       endif
   INT i;
 
   theElement = VFATHER(theVertex);
@@ -3937,8 +4004,8 @@ static INT RecreateBNDSofNode (MULTIGRID *theMG, NODE *theNode)
   ELEMENT *theElement, *sonElem, *NBElem;
   ELEMENT *SonList[MAX_SONS];
   BNDS *bnds;
-  BNDP *bndp, *sidebndp[MAX_CORNERS_OF_SIDE];
-  INT m,i,j,k,l,patch_id;
+  BNDP *sidebndp[MAX_CORNERS_OF_SIDE];
+  INT m,i,j,k,l;
 
   /* first scan father element of theNode */
   theElement = VFATHER(MYVERTEX(theNode));
@@ -4387,10 +4454,10 @@ INT GetMidNodeParam (NODE * theNode, DOUBLE *lambda)
   NODE *Node0,*Node1;
   VERTEX *theVertex;
   BNDS *bnds;
-  DOUBLE *x[MAX_CORNERS_OF_ELEM],*global;
-  DOUBLE_VECTOR bnd_global, BndPoint0, BndPoint1;
-  DOUBLE diff, len0,len1, bndLambda[DIM_OF_BND], Lambda0, Lambda1, midLambda;
-  INT n,k,co0,co1,edge,iter,MaxIter;
+  DOUBLE *global;
+  DOUBLE_VECTOR BndPoint0, BndPoint1;
+  DOUBLE len0,len1, bndLambda[DIM_OF_BND], Lambda0, Lambda1, midLambda;
+  INT co0,co1,edge,iter,MaxIter;
 
 #ifdef __THREEDIM__
   PrintErrorMessage('E',"GetMidNodeParam","3D not implemented yet");
@@ -4541,7 +4608,7 @@ static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, E
     /* Ziel: theElement = ... */
     j=0;
 
-    /*fülle interestingElements mit den Elements des ersten Nodes:*/
+    /*fuelle interestingElements mit den Elements des ersten Nodes:*/
     m = 0;index=0;
     IndexOfDivPart = ID(sideNode[0]) / NO_NODES_OF_BLK;
     IndexOfModPart = ID(sideNode[0]) % NO_NODES_OF_BLK;
@@ -4904,7 +4971,7 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
   MULTIGRID *theMG;
   INT i,j,k,m,rv,found,tag,ElementType;
   INT NeighborSide[MAX_SIDES_OF_ELEM];
-  NODE             *sideNode[MAX_CORNERS_OF_SIDE],*NeighborNode;
+  NODE             *sideNode[MAX_CORNERS_OF_SIDE];
   VERTEX           *Vertex[MAX_CORNERS_OF_ELEM],*sideVertex[MAX_CORNERS_OF_SIDE];
   ELEMENT          *theElement,*Neighbor[MAX_SIDES_OF_ELEM];
   BNDS         *bnds[MAX_SIDES_OF_ELEM];
@@ -5192,7 +5259,7 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
       }
       SET_NBELEM(Neighbor[i],NeighborSide[i],theElement);
             #ifdef __THREEDIM__
-      if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+      if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
         if (DisposeDoubledSideVector(theGrid,Neighbor[i],
                                      NeighborSide[i],theElement,i))
           return(NULL);
@@ -5204,13 +5271,14 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
   SETECLASS(theElement,RED_CLASS);
 
   /* create connection to other elements. ATTENTION: this function is O(n)*/
-  if (InsertedElementCreateConnection(theGrid,theElement))
-  {
-    PrintErrorMessage('E',"InsertElement",
-                      "could not create algebra connections");
-    DisposeElement(theGrid,theElement,TRUE);
-    return(NULL);
-  }
+  /* TODO: remove this
+     if (InsertedElementCreateConnection(theGrid,theElement))
+     {
+          PrintErrorMessage('E',"InsertElement",
+                                            "could not create algebra connections");
+          DisposeElement(theGrid,theElement,TRUE);
+          return(NULL);
+     }*/
 
   return(theElement);
 }
@@ -5474,10 +5542,9 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
           ListNode = NList[theMesh->Element_corner_ids[j][k][l]];
           if (ListNode==NULL || LEVEL(ListNode)<i)
           {
-            Nodes[l] = CreateNode(theGrid);
+            Nodes[l] = CreateNode(theGrid,VList[theMesh->Element_corner_ids[j][k][l]],NULL,LEVEL_0_NODE);
             if (Nodes[l]==NULL) assert(0);
             NList[theMesh->Element_corner_ids[j][k][l]] = Nodes[l];
-            MYVERTEX(Nodes[l]) = VList[theMesh->Element_corner_ids[j][k][l]];
             if (ListNode==NULL || LEVEL(ListNode)<i-1)
             {
               NFATHER(Nodes[l]) = NULL;
@@ -5785,12 +5852,12 @@ ELEMENT *FindElementOnSurface (MULTIGRID *theMG, DOUBLE *global)
 
 INT InnerBoundary (ELEMENT *t, INT side)
 {
-  INT left,right;
+  INT left,right,part;
 
   ASSERT(OBJT(t) == BEOBJ);
   ASSERT(SIDE_ON_BND(t,side));
 
-  BNDS_BndSDesc(ELEM_BNDS(t,side),&left,&right);
+  BNDS_BndSDesc(ELEM_BNDS(t,side),&left,&right,&part);
 
   return((left != 0) && (right != 0));
 }
@@ -5862,15 +5929,11 @@ void ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const INT longformat)
 {
   char c;
   BVP *theBVP;
-  BVP_DESC theBVPDesc;
+  BVP_DESC *theBVPDesc;
 
   /* get BVP description */
   theBVP = MG_BVP(theMG);
-  if (BVP_SetBVPDesc(theBVP,&theBVPDesc))
-  {
-    PrintErrorMessage('E',"ListMultiGrid","cannot evaluate BVP");
-    return;
-  }
+  theBVPDesc = MG_BVPD(theMG);
 
   c = isCurrent ? '*' : ' ';
 
@@ -5914,7 +5977,6 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
   FLOAT sum,sum_div_red,redplusgreen_div_red;
   FLOAT mg_sum,mg_sum_div_red,mg_redplusgreen_div_red;
   FLOAT mg_sum_size_div_red,mg_redplusgreen_size_div_red;
-  FLOAT avg_greenrule,mg_avg_green_rule;
   ELEMENT *theElement;
   GRID    *theGrid;
         #ifdef ModelP
@@ -6493,7 +6555,7 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
 {
   VERTEX *theVertex;
   LINK *theLink;
-  INT i;
+  INT i,part;
 
   theVertex = MYVERTEX(theNode);
 
@@ -6558,7 +6620,7 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
   {
     if (OBJT(theVertex) == BVOBJ)
     {
-      if (BNDP_BndPDesc(V_BNDP(theVertex),&i))
+      if (BNDP_BndPDesc(V_BNDP(theVertex),&i,&part))
         UserWrite("Error in boundary point\n");
       else
         UserWriteF("boundary point: move %d moved %d\n",i,
@@ -6981,14 +7043,17 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
   theFormat = MGFORMAT(theMG);
 
   /* print type of vector */
-  if (VTYPE(theVector)==NODEVECTOR)
+  UserWriteF("VTYPE=%d(%c) ",VTYPE(theVector),FMT_T2N(theFormat,VTYPE(theVector)));
+
+  /* print object type of vector */
+  if (VOTYPE(theVector)==NODEVEC)
   {
     theNode = (NODE*)VOBJECT(theVector);
     UserWriteF("NODE-V IND=" VINDEX_FFMTE " nodeID=" ID_FMTX
                "                VCLASS=%1d VNCLASS=%1d\n",
                VINDEX_PRTE(theVector),ID_PRTX(theNode),VCLASS(theVector),VNCLASS(theVector));
   }
-  if (VTYPE(theVector)==EDGEVECTOR)
+  if (VOTYPE(theVector)==EDGEVEC)
   {
     theEdge = (EDGE*)VOBJECT(theVector);
     UserWriteF("EDGE-V IND=" VINDEX_FFMTE " fromID=" ID_FFMT
@@ -6997,7 +7062,7 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
                ID(NBNODE(LINK1(theEdge))),VCLASS(theVector),VNCLASS(theVector));
   }
         #ifdef __THREEDIM__
-  if (VTYPE(theVector)==SIDEVECTOR)
+  if (VOTYPE(theVector)==SIDEVEC)
   {
     theElement = (ELEMENT*)VOBJECT(theVector);
     UserWriteF("SIDE-V IND=" VINDEX_FFMTE " elemID=" EID_FFMT
@@ -7006,7 +7071,7 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
                VCLASS(theVector),VNCLASS(theVector));
   }
         #endif
-  if (VTYPE(theVector)==ELEMVECTOR)
+  if (VOTYPE(theVector)==ELEMVEC)
   {
     theElement = (ELEMENT*)VOBJECT(theVector);
     UserWriteF("ELEM-V IND=" VINDEX_FFMTE " elemID=" EID_FFMT
@@ -7017,10 +7082,10 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
 
 
   /* print vector data if */
-  if (dataopt && theFormat->PrintVector[VTYPE(theVector)]!=NULL)
+  if (dataopt && FMT_PR_VEC(theFormat)!=NULL)
   {
     Data = (void*)(&VVALUE(theVector,0));
-    if ((*(theFormat->PrintVector[VTYPE(theVector)]))(Data,"   ",buffer))
+    if ((*(FMT_PR_VEC(theFormat)))(VTYPE(theVector),Data,"   ",buffer))
       return;
     UserWrite(buffer);
     UserWrite("\n");
@@ -7034,10 +7099,10 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
       ListVector(theMG,MDEST(theMatrix),0,0);
 
       /* print matrix data if */
-      if (dataopt && theFormat->PrintMatrix[MROOTTYPE(theMatrix)][MDESTTYPE(theMatrix)]!=NULL)
+      if (dataopt && theFormat->PrintMatrix!=NULL)
       {
         Data = (void*)(&MVALUE(theMatrix,0));
-        if ((*(theFormat->PrintMatrix[MROOTTYPE(theMatrix)][MDESTTYPE(theMatrix)]))(Data,"       ",buffer))
+        if ((*(FMT_PR_MAT(theFormat)))(MROOTTYPE(theMatrix)*MAXVECTORS+MDESTTYPE(theMatrix),Data,"       ",buffer))
           return;
         UserWrite(buffer);
         UserWrite("\n");
@@ -7083,24 +7148,24 @@ void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
     theElement = (ELEMENT *) SELECTIONOBJECT(theMG,j);
     UserWriteF("ELEM(ID=%d):\n",ID(theElement));
 
-    if (TYPE_DEF_IN_MG(theMG,NODEVECTOR))
+    if (VEC_DEF_IN_OBJ_OF_MG(theMG,NODEVEC))
     {
       GetVectorsOfNodes(theElement,&cnt,vList);
       for (i=0; i<cnt; i++) ListVector(theMG,vList[i],matrixopt,dataopt);
     }
-    if (TYPE_DEF_IN_MG(theMG,EDGEVECTOR))
+    if (VEC_DEF_IN_OBJ_OF_MG(theMG,EDGEVEC))
     {
       GetVectorsOfEdges(theElement,&cnt,vList);
       for (i=0; i<cnt; i++) ListVector(theMG,vList[i],matrixopt,dataopt);
     }
                 #ifdef __THREEDIM__
-    if (TYPE_DEF_IN_MG(theMG,SIDEVECTOR))
+    if (VEC_DEF_IN_OBJ_OF_MG(theMG,SIDEVEC))
     {
       GetVectorsOfSides(theElement,&cnt,vList);
       for (i=0; i<cnt; i++) ListVector(theMG,vList[i],matrixopt,dataopt);
     }
                 #endif
-    if (TYPE_DEF_IN_MG(theMG,ELEMVECTOR))
+    if (VEC_DEF_IN_OBJ_OF_MG(theMG,ELEMVEC))
     {
       GetVectorsOfElement(theElement,&cnt,vList);
       for (i=0; i<cnt; i++) ListVector(theMG,vList[i],matrixopt,dataopt);
@@ -7586,7 +7651,7 @@ static INT GetAngle(DOUBLE *angle,DOUBLE *n1, DOUBLE *n2)
 
 static INT SetNormal(DOUBLE *n, DOUBLE **x, INT nc)
 {
-  DOUBLE v[DIM],w[DIM];
+  DOUBLE v[DIM];
 
         #ifdef __TWODIM__
   if (nc!=2) return(1);
@@ -7596,6 +7661,8 @@ static INT SetNormal(DOUBLE *n, DOUBLE **x, INT nc)
         #endif
 
         #ifdef __THREEDIM__
+  DOUBLE w[DIM];
+
   /* this is the primitive form, it would be better to take a fit */
   if (nc<3) return(1);
   V_DIM_SUBTRACT(x[1],x[0],v);
@@ -7608,7 +7675,7 @@ static INT SetNormal(DOUBLE *n, DOUBLE **x, INT nc)
 
 INT MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
 {
-  INT error,i,j,s1,s2,tag;
+  INT error,i,s1,s2,tag;
   DOUBLE angle,*x[MAX_CORNERS_OF_SIDE],n1[DIM],n2[DIM];
 
   error=GM_OK;
@@ -7711,7 +7778,6 @@ INT FreeMGUDBlock (BLOCK_ID id)
   return (GM_OK);
 }
 
-
 /****************************************************************************/
 /*D
    GetMGUDBlockDescriptor - Return pointer to block descriptor with id
@@ -7742,20 +7808,116 @@ VIRT_HEAP_MGMT *GetGenMGUDM()
   return (theGenMGUDM);
 }
 
+/****************************************************************************/
+/*D
+   SetEdgeSubdomainFromElements - set subdomain id on level 0 edges
+
+   SYNOPSIS:
+   INT SetEdgeSubdomainFromElements (GRID *theGrid)
+
+   PARAMETERS:
+   .  id - the id of the block to be allocated
+
+   DESCRIPTION:
+   This function sets the subdomain id taken from the elements for level 0 edges.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+INT SetEdgeSubdomainFromElements (GRID *theGrid)
+{
+  ELEMENT *theElement;
+  NODE *n0,*n1;
+  EDGE *ed;
+  INT s_id,s,i,k;
+
+  /* first set subdomain id for all edges */
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+  {
+    /* all edges of the element acquire the subdomain id of the element */
+    s_id = SUBDOMAIN(theElement);
+    for (k=0; k<EDGES_OF_ELEM(theElement); k++)
+    {
+      n0 = CORNER(theElement,CORNER_OF_EDGE(theElement,k,0));
+      n1 = CORNER(theElement,CORNER_OF_EDGE(theElement,k,1));
+      ed = GetEdge(n0,n1);
+      ASSERT(ed!=NULL);
+      SETEDSUBDOM(ed,s_id);
+    }
+  }
+
+  /* now change subdomain id for boundary edges to 0 */
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+    if (OBJT(theElement)==BEOBJ)
+      for (s=0; s<SIDES_OF_ELEM(theElement); s++)
+      {
+        if (ELEM_BNDS(theElement,s)==NULL)
+          continue;
+
+        for (i=0; i<EDGES_OF_SIDE(theElement,s); i++)
+        {
+          k  = EDGE_OF_SIDE(theElement,s,i);
+          n0 = CORNER(theElement,CORNER_OF_EDGE(theElement,k,0));
+          n1 = CORNER(theElement,CORNER_OF_EDGE(theElement,k,1));
+          ed = GetEdge(n0,n1);
+          ASSERT(ed!=NULL);
+          SETEDSUBDOM(ed,0);
+        }
+      }
+  IFDEBUG(gm,1)
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+  {
+    PRINTDEBUG(gm,1,("el(%d)-sd=%d\n",ID(theElement),SUBDOMAIN(theElement)));
+    for (k=0; k<EDGES_OF_ELEM(theElement); k++)
+    {
+      n0 = CORNER(theElement,CORNER_OF_EDGE(theElement,k,0));
+      n1 = CORNER(theElement,CORNER_OF_EDGE(theElement,k,1));
+      ed = GetEdge(n0,n1);
+      PRINTDEBUG(gm,1,("  ed(%d,%d)-sd=%d\n",ID(n0),ID(n1),EDSUBDOM(ed)));
+    }
+  }
+  ENDDEBUG
+
+  return (GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   SetSubdomainIDfromBndInfo - set subdomain id on level 0 elements and edges
+
+   SYNOPSIS:
+   INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
+
+   PARAMETERS:
+   .  id - the id of the block to be allocated
+
+   DESCRIPTION:
+   This function sets the subdomain for level 0 elements and edges.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
 INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
 {
   HEAP *theHeap;
   GRID *theGrid;
   ELEMENT *theElement, *theNeighbor;
   void *buffer;
-  INT i,k,n,id,nbid;
+  INT i,n,id,nbid,part;
   FIFO myfifo;
 
   /* prepare */
-  if (DIM==2) return (1);
-  if (TOPLEVEL(theMG)>0) return (1);
+  if (TOPLEVEL(theMG)>0) REP_ERR_RETURN (GM_ERROR);
   theGrid = GRID_ON_LEVEL(theMG,0);
-  n = NT(theGrid);        if (n==0) return (1);
+  n = NT(theGrid);        if (n==0) REP_ERR_RETURN (GM_ERROR);
 
   /* allocate fifo and init */
   theHeap = MYMG(theGrid)->theHeap;
@@ -7774,7 +7936,7 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
       assert(i<SIDES_OF_ELEM(theElement));
 
       /* set id from BNDS */
-      if (BNDS_BndSDesc(ELEM_BNDS(theElement,i),&id,&nbid)) return (1);
+      if (BNDS_BndSDesc(ELEM_BNDS(theElement,i),&id,&nbid,&part)) REP_ERR_RETURN (GM_ERROR);
       SETSUBDOMAIN(theElement,id);
       SETUSED(theElement,1);
       fifo_in(&myfifo,(void *)theElement);
@@ -7792,7 +7954,7 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
     theElement = (ELEMENT*)fifo_out(&myfifo);
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
     {
-      if (NBELEM(theElement,i)==NULL || ELEM_BNDS(theElement,i)!=NULL) continue;
+      if (NBELEM(theElement,i)==NULL) continue;
       theNeighbor = NBELEM(theElement,i);
       if (USED(theNeighbor)) continue;
       SETSUBDOMAIN(theNeighbor,SUBDOMAIN(theElement));
@@ -7802,12 +7964,55 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
   }
   ReleaseTmpMem(theHeap);
 
-  return (0);
+  if (SetEdgeSubdomainFromElements(theGrid))
+    REP_ERR_RETURN (GM_ERROR);
+
+  return (GM_OK);
 }
 
 /****************************************************************************/
 /*D
-   InitUGManager - Init what is neccessary
+   FixCoarseGrid - do all that is necessary to complete the coarse grid
+
+   SYNOPSIS:
+   INT FixCoarseGrid (MULTIGRID *theMG)
+
+   PARAMETERS:
+   .  id - the id of the block to be allocated
+
+   DESCRIPTION:
+   This function does all that is necessary to complete the coarse grid.
+   Finally the MG_COARSE_FIXED flag is set.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+INT FixCoarseGrid (MULTIGRID *theMG)
+{
+  if (MG_COARSE_FIXED(theMG))
+    return (GM_OK);
+
+  if (SetSubdomainIDfromBndInfo(theMG))
+    REP_ERR_RETURN (GM_ERROR);
+
+  /* set this flag here because it is checked by CreateAlgebra */
+  MG_COARSE_FIXED(theMG) = TRUE;
+  if (CreateAlgebra(GRID_ON_LEVEL(theMG,0)) != GM_OK)
+  {
+    MG_COARSE_FIXED(theMG) = FALSE;
+    REP_ERR_RETURN (GM_ERROR);
+  }
+
+  return (GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   InitUGManager - Init what is necessary
 
    SYNOPSIS:
    INT InitUGManager ();
