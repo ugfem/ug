@@ -15,10 +15,16 @@
 RCSID("$Header$",UG_RCS_STRING)
 
 
-static int TransferGridComplete (MULTIGRID *theMG)
+static int TransferGridComplete (MULTIGRID *theMG, INT level)
 {
   ELEMENT *e;
-  GRID *theGrid = GRID_ON_LEVEL(theMG,0);
+  GRID *theGrid = GRID_ON_LEVEL(theMG,level);
+
+  if (theGrid==NULL)
+  {
+    UserWriteF(PFMT "TransferGridComplete(): no grid on level=%d\n",me,level);
+    return(0);
+  }
 
   /* assign elements of level 0 */
   if (me == master) {
@@ -31,34 +37,6 @@ static int TransferGridComplete (MULTIGRID *theMG)
     UserWriteF("elem %08x has dest=%d\n",
                DDD_InfoGlobalId(PARHDRE(e)), PARTITION(e));
   }
-
-  /* start physical transfer */
-  ddd_HandlerInit(HSET_XFER);
-  DDD_XferBegin();
-
-  if (me==master) {
-
-    TransferGridFromCoarse(theMG);
-    if (0) {
-      /* create element copies */
-      for(e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
-      {
-        /* create element copy */
-        DDD_XferCopyObjX(PARHDRE(e),
-                         PARTITION(e),
-                         PrioMaster,
-                         (OBJT(e)==BEOBJ) ? BND_SIZE_TAG(TAG(e)) : INNER_SIZE_TAG(TAG(e))
-                         );
-
-        /* delete local copy */
-        DDD_XferDeleteObj(PARHDRE(e));
-      }
-    }
-  }
-
-  DDD_XferEnd();
-
-  DDD_ConsCheck();
 
   return(0);
 }
@@ -86,14 +64,16 @@ static int TransferGridToMaster (MULTIGRID *theMG)
     }
   }
 
-  TransferGridFromCoarse(theMG);
-
   return(0);
 }
 
-void ddd_test (int param, MULTIGRID *theMG)
+void ddd_test (char *argv, MULTIGRID *theMG)
 {
-  int mode;
+  int mode,param,fromlevel,tolevel;
+
+  sscanf(argv,"%d %d %d",&param,&fromlevel,tolevel);
+  UserWriteF(PFMT "ddd_test() mode=%d fromlevel=%d tolevel=%d\n",
+             me,mode,fromlevel,tolevel);
 
   /* param>100 is used as switch for DDD xfer statistics */
   if (param>=100)
@@ -106,25 +86,63 @@ void ddd_test (int param, MULTIGRID *theMG)
     DDD_SetOption(OPT_INFO_XFER, XFER_SHOW_MEMUSAGE);
 
   InitCurrMG(theMG);
-  switch (mode) {
+  switch (mode)
+  {
   /* dies balanciert ein GRID mit RCB */
   case (0) :
-    BalanceGridRCB(theMG);
-    TransferGridFromCoarse(theMG);
+    BalanceGridRCB(theMG,0);
+    fromlevel = 0;
     break;
 
   /* dies verschickt ein GRID komplett */
   case (1) :
-    TransferGridComplete(theMG);
+    TransferGridComplete(theMG,fromlevel);
     break;
 
   /* dies verschickt ein verteiltes GRID zum master */
   case (2) :
     TransferGridToMaster(theMG);
+    fromlevel = 0;
+    break;
+
+  /* dies balanciert ein GRID mit RCB ab fromlevel */
+  case (3) :
+    if (fromlevel>=0 && fromlevel<=TOPLEVEL(theMG))
+    {
+      BalanceGridRCB(theMG,fromlevel);
+    }
+    else
+    {
+      UserWriteF(PFMT "ddd_test(): gridlevel=%d not "
+                 "existent!\n",me,fromlevel);
+    }
+    break;
+
+  /* dies balanciert ein GRID mit RCB ab fromlevel */
+  case (4) :
+    if (fromlevel>=0 && fromlevel<=TOPLEVEL(theMG) ||
+        tolevel>=0 && tolevel<=TOPLEVEL(theMG)     ||
+        tolevel < fromlevel)
+    {
+      int j;
+
+      for (j=fromlevel; j<=tolevel; j++)
+        BalanceGridRCB(theMG,j);
+      /*
+                                      TransferGrid(theMG,fromlevel,tolevel);
+       */
+    }
+    else
+    {
+      UserWriteF(PFMT "ddd_test(): ERROR fromlevel=%d "
+                 "tolevel=%d\n",me,fromlevel,tolevel);
+    }
     break;
 
   default : break;
   }
+
+  TransferGridFromLevel(theMG,fromlevel);
 
   /* switch DDD infos off */
   if (param>=100)

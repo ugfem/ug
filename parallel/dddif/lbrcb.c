@@ -284,16 +284,15 @@ static void InheritPartition (ELEMENT *e)
 
 
 
-int BalanceGridRCB (MULTIGRID *theMG)
+int BalanceGridRCB (MULTIGRID *theMG, int level)
 {
   HEAP *theHeap = theMG->theHeap;
-  GRID *theGrid = GRID_ON_LEVEL(theMG,0);       /* balance coarse grid */
+  GRID *theGrid = GRID_ON_LEVEL(theMG,level);       /* balance grid of level */
   LB_INFO *lbinfo;
   ELEMENT *e;
   int i, son;
 
   /* distributed grids cannot be redistributed by this function */
-
 
   if (me==master)
   {

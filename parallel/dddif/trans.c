@@ -54,12 +54,12 @@ enum GhostCmds { GC_Keep, GC_ToMaster, GC_Delete };
 
 
 #define XferElement(elem,dest,prio) \
-  { PRINTDEBUG(dddif,1,("%4d: XferElement(): XferCopy elem=%08x dest=%d prio=%d\n", \
-                        me,DDD_InfoGlobalId(PARHDRE(elem)), dest, prio)); \
-    DDD_XferCopyObjX(PARHDRE(elem), dest, prio, \
-                     (OBJT(elem)==BEOBJ) ?   \
-                     BND_SIZE_TAG(TAG(elem)) :   \
-                     INNER_SIZE_TAG(TAG(elem)));  }
+  { PRINTDEBUG(dddif,1,("%4d: XferElement(): XferCopy elem=" EID_FMTX " dest=%d prio=%d\n", \
+                        me,EID_PRTX(elem), dest, prio)); \
+    XFERECOPYX((elem), dest, prio, \
+               (OBJT(elem)==BEOBJ) ?   \
+               BND_SIZE_TAG(TAG(elem)) :   \
+               INNER_SIZE_TAG(TAG(elem)));  }
 
 
 /****************************************************************************/
@@ -96,22 +96,25 @@ RCSID("$Header$",UG_RCS_STRING)
 
 static int Gather_ElemDest (DDD_OBJ obj, void *data)
 {
-  ELEMENT *e = (ELEMENT *)obj;
+  ELEMENT *theElement = (ELEMENT *)obj;
 
-  *(DDD_PROC *)data = PARTITION(e);
+  *(DDD_PROC *)data = PARTITION(theElement);
 }
 
 static int Scatter_ElemDest (DDD_OBJ obj, void *data)
 {
-  ELEMENT *e = (ELEMENT *)obj;
+  ELEMENT *theElement = (ELEMENT *)obj;
 
-  PARTITION(e) = *(DDD_PROC *)data;
+  PARTITION(theElement) = *(DDD_PROC *)data;
 }
 
 
 static int UpdateGhostDests (MULTIGRID *theMG)
 {
   DDD_IFOneway(ElementIF, IF_FORWARD, sizeof(DDD_PROC),
+               Gather_ElemDest, Scatter_ElemDest);
+
+  DDD_IFOneway(ElementVIF, IF_FORWARD, sizeof(DDD_PROC),
                Gather_ElemDest, Scatter_ElemDest);
 
   return 0;
@@ -124,21 +127,24 @@ static int UpdateGhostDests (MULTIGRID *theMG)
 
 static int Gather_GhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
-  ELEMENT *elem = (ELEMENT *)obj;
+  ELEMENT *theElement = (ELEMENT *)obj;
+  INT j;
 
-  if (PARTITION(elem) == proc)
+  /* TODO: not needed anymore. kb 9070108 */
+  if (PARTITION(theElement) == proc)
   {
     *((int *)data) = GC_ToMaster;
-  }
-  else
-  {
-    int j;
 
+    return(0);
+  }
+
+  if (PARTITION(theElement) != proc)
+  {
     *((int *)data) = GC_Delete;
 
-    for(j=0; j<SIDES_OF_ELEM(elem); j++)
+    for(j=0; j<SIDES_OF_ELEM(theElement); j++)
     {
-      ELEMENT *nb = NBELEM(elem,j);
+      ELEMENT *nb = NBELEM(theElement,j);
 
       if (nb!=NULL)
       {
@@ -149,15 +155,18 @@ static int Gather_GhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pri
         }
       }
     }
+    return(0);
   }
 
-  return 0;
+  return(1);
 }
 
 
 static int Scatter_GhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
-  ELEMENT *elem = (ELEMENT *)obj;
+  ELEMENT *theElement = (ELEMENT *)obj;
+  ELEMENT *SonList[MAX_SONS];
+  INT i;
 
   switch (*(int *)data)
   {
@@ -166,28 +175,116 @@ static int Scatter_GhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pr
     break;
 
   case GC_ToMaster :
-    /* not needed anymore. kb 9070108 */
-    /*DDD_PrioritySet(PARHDRE(elem), PrioMaster);*/
+    /* TODO: not needed anymore. kb 9070108
+                            SETEPRIO(theElement, PrioMaster);*/
     break;
 
   case GC_Delete :
-    DDD_XferDeleteObj(PARHDRE(elem));
+    if (NSONS(theElement) > 0)
+    {
+      if (GetAllSons(theElement,SonList) != 0) return(1);
+      i = 0;
+      while (SonList[i] != NULL)
+      {
+        if (PARTITION(SonList[i]) == me) return(0);
+        i++;
+      }
+    }
+    XFEREDELETE(theElement);
     break;
 
   default :
     assert(1);
   }
 
-  return 0;
+  return(0);
 }
 
-
-static int SendGhostCmds (MULTIGRID *theMG)
+static int Gather_VHGhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
-  DDD_IFOnewayX(ElementIF, IF_FORWARD, sizeof(int),
-                Gather_GhostCmd, Scatter_GhostCmd);
+  ELEMENT *theElement = (ELEMENT *)obj;
+  ELEMENT *theFather      = EFATHER(theElement);
+  ELEMENT *theNeighbor;
+  INT j;
 
-  return 0;
+  if (PARTITION(theElement) != proc)
+  {
+    *((int *)data) = GC_Delete;
+
+    for(j=0; j<SIDES_OF_ELEM(theElement); j++)
+    {
+      theNeighbor = NBELEM(theElement,j);
+
+      if (theNeighbor != NULL)
+      {
+        if (PARTITION(theNeighbor) == proc)
+        {
+          *((int *)data) = GC_Keep;
+          return (0);
+        }
+      }
+    }
+
+    if (LEVEL(theElement) > 0)
+    {
+      ASSERT(theFather != NULL);
+
+      if (PARTITION(theFather) == proc)
+      {
+        *((int *)data) = GC_Keep;
+        return (0);
+      }
+    }
+    return (0);
+  }
+
+  return(1);
+}
+
+static int Scatter_VHGhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  ELEMENT *theElement = (ELEMENT *)obj;
+  ELEMENT *SonList[MAX_SONS];
+  INT i;
+
+  /* if element is needed after transfer here */
+  if ((*(int *)data) == GC_Keep) return(0);
+
+  /* element becomes master copy */
+  if (PARTITION(theElement) == me) return(0);
+
+  /* if a son resides as master keep element as vghost */
+  if (GetAllSons(theElement,SonList) != GM_OK) return;
+  i = 0;
+  while (SonList[i] != NULL)
+  {
+    if (PARTITION(SonList[i]) == me) return(0);
+    i++;
+  }
+
+  /* element is not needed on me any more */
+  if ((*(int *)data) == GC_Delete)
+  {
+    XFEREDELETE(theElement);
+    return(0);
+  }
+
+  return(1);
+}
+
+static int ComputeGhostCmds (MULTIGRID *theMG)
+{
+  /*
+          DDD_IFOnewayX(ElementIF, IF_FORWARD, sizeof(int),
+                  Gather_GhostCmd, Scatter_GhostCmd);
+
+          DDD_IFOnewayX(ElementVIF, IF_FORWARD, sizeof(int),
+                  Gather_VGhostCmd, Scatter_VGhostCmd);
+   */
+  DDD_IFOnewayX(ElementVHIF, IF_FORWARD, sizeof(int),
+                Gather_VHGhostCmd, Scatter_VHGhostCmd);
+
+  return(0);
 }
 
 
@@ -213,52 +310,105 @@ static int SendGhostCmds (MULTIGRID *theMG)
 
 static void XferGridWithOverlap (GRID *theGrid)
 {
-  ELEMENT *elem;
-  NODE *node;
+  ELEMENT *theElement, *theFather, *theNeighbor;
+  ELEMENT *SonList[MAX_SONS];
+  NODE    *theNode;
+  INT i,j,overlap_elem;
 
-
-  for(elem=FIRSTELEMENT(theGrid); elem!=NULL; elem=SUCCE(elem))
+  for(theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
-    int has_local_nb = FALSE;
-    int j;
+    overlap_elem = 0;
 
     /* create Master copy */
-    XferElement(elem, PARTITION(elem), PrioMaster);
+    XferElement(theElement, PARTITION(theElement), PrioMaster);
 
-
-
-    /* create 1-overlapping of elements */
-    for(j=0; j<SIDES_OF_ELEM(elem); j++)
+    /* create 1-overlapping of horizontal elements */
+    for(j=0; j<SIDES_OF_ELEM(theElement); j++)
     {
-      ELEMENT *nb = NBELEM(elem,j);
+      theNeighbor = NBELEM(theElement,j);
 
-      if (nb!=NULL)
+      if (theNeighbor != NULL)
       {
-        if (PARTITION(elem)!=PARTITION(nb))
+        if (PARTITION(theElement)!=PARTITION(theNeighbor))
         {
           /* create Ghost copy */
-          XferElement(elem, PARTITION(nb), PrioGhost);
+          XferElement(theElement, PARTITION(theNeighbor), PrioGhost);
         }
 
         /* remember any local neighbour element */
-        if (PARTITION(nb)==me)
-          has_local_nb = TRUE;
+        if (PARTITION(theNeighbor)==me)
+          overlap_elem = 1;
       }
     }
 
+    /* create 1-overlapping of vertical elements */
+    theFather = EFATHER(theElement);
+    if (theFather != NULL)
+    {
+      if (PARTITION(theFather) != PARTITION(theElement) ||
+          !EMASTER(theFather))
+        /* create VGhost copy */
+        XferElement(theFather, PARTITION(theElement), PrioVGhost);
+    }
+    else
+    {
+      ASSERT(LEVEL(theElement) == 0);
+    }
 
     /* consider elements on master-proc */
-    if (PARTITION(elem)!=me)
+    if (PARTITION(theElement)!=me)
     {
-      if (!has_local_nb)
+      if (NSONS(theElement) > 0)
+      {
+        if (GetAllSons(theElement,SonList) != 0) return;
+        i = 0;
+        while (SonList[i] != NULL)
+        {
+          if (PARTITION(SonList[i]) == me)
+          {
+            overlap_elem += 2;
+            break;
+          }
+          i++;
+        }
+      }
+
+      PRINTDEBUG(dddif,1,("%d: XferGridWithOverlap(): elem=" EID_FMTX " p=%d new prio=%d\n",
+                          me,EGID(theElement),PARTITION(theElement),overlap_elem));
+
+      if (overlap_elem > 0)
+      {
+        /* element is needed, set new prio */
+        switch (overlap_elem)
+        {
+        case (1) :
+          SETEPRIO(theElement,PrioGhost);
+          break;
+
+        case (2) :
+          SETEPRIO(theElement,PrioVGhost);
+          break;
+
+        case (3) :
+          SETEPRIO(theElement,PrioVGhost);
+          break;
+
+        default :
+          assert(0);
+        }
+      }
+      else
       {
         /* element isn't needed */
-        PRINTDEBUG(dddif,1,("%d: XferGridWithOverlap(): XferDel elem=%d to p=%d prio=%d\n",
-                            me,DDD_InfoGlobalId(PARHDRE(elem)),PARTITION(elem),PrioGhost));
-        DDD_XferDeleteObj(PARHDRE(elem));
+        PRINTDEBUG(dddif,2,("%d: XferGridWithOverlap(): XferDel elem=%d to p=%d prio=%d\n",
+                            me,EGID(theElement),PARTITION(theElement),PrioGhost));
+        XFEREDELETE(theElement);
       }
     }
   }
+
+  /* set prios on ghost objects */
+  SetGhostObjectPriorities(theGrid);
 }
 
 
@@ -272,7 +422,7 @@ static void InheritPartitionBottomTop (ELEMENT *e)
 
   if (GetSons(e,SonList) != GM_OK) assert(0);
 
-  for(i=0; i<SONS_OF_ELEM(e); i++)
+  for(i=0; i<MAX_SONS; i++)
   {
     ELEMENT *son = SonList[i];
     if (son==NULL) break;
@@ -286,20 +436,21 @@ static void InheritPartitionBottomTop (ELEMENT *e)
 /****************************************************************************/
 
 
-int TransferGridFromCoarse (MULTIGRID *theMG)
+int TransferGridFromLevel (MULTIGRID *theMG, INT level)
 {
   HEAP *theHeap = theMG->theHeap;
-  GRID *theGrid = GRID_ON_LEVEL(theMG,0);       /* balance coarse grid */
+  GRID *theGrid = GRID_ON_LEVEL(theMG,level);       /* transfer grid starting at*/
   ELEMENT *e;
   int i, son;
   int g;
 
 
   /* send son elements to destination of father element */
-  for (e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
-  {
-    InheritPartitionBottomTop(e);
-  }
+  if (0)
+    for (e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
+    {
+      InheritPartitionBottomTop(e);
+    }
 
   /* send new destination to ghost elements */
   UpdateGhostDests(theMG);
@@ -313,7 +464,7 @@ int TransferGridFromCoarse (MULTIGRID *theMG)
 
   {
     /* send 'commands' to ghosts in old partitioning */
-    SendGhostCmds(theMG);
+    ComputeGhostCmds(theMG);
 
     /* send all grids */
     for(g=TOPLEVEL(theMG); g>=0; g--)
@@ -352,7 +503,7 @@ int TransferGridFromCoarse (MULTIGRID *theMG)
     for(g=TOPLEVEL(theMG); g>=0; g--)
     {
       GRID *grid = GRID_ON_LEVEL(theMG,g);
-      dddif_SetOverlapPriorities(grid);
+      ConstructConsistentGrid(grid);
     }
   }
 

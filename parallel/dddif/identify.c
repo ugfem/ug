@@ -58,8 +58,8 @@
 #define MAX_TOKEN       10
 
 /* determine the ddd header for identification of a node */
-#define GET_IDENT_HDR(node) ( (NTYPE(node) == CORNER_NODE) ? \
-                              PARHDR(NFATHER(node)) : PARHDR(node) )
+#define NIDENT_HDR(node) ( (CORNERTYPE(node)) ? \
+                           PARHDR(NFATHER(node)) : PARHDR(node) )
 
 /****************************************************************************/
 /*																			*/
@@ -345,7 +345,7 @@ static INT IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor,
   for (k=0; k<CORNERS_OF_SIDE(Son,SonSide); k++)
   {
     theNode = CORNER(Son,CORNER_OF_SIDE(Son,SonSide,k));
-    if (NFATHER(theNode) != NULL)
+    if (CORNERTYPE(theNode))
       IdentHdr[nident++] = PARHDR(NFATHER(theNode));
     else
       IdentHdr[nident++] = PARHDR(theNode);
@@ -466,8 +466,8 @@ static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode,
   {
     INT i;
 
-    PRINTDEBUG(dddif,1,("%d: Identify SIDENODE gid=%08x node=%d Vec=%d\n",
-                        me, DDD_InfoGlobalId(PARHDR(theNode)), node, Vec));
+    PRINTDEBUG(dddif,1,("%d: Identify SIDENODE gid=%08x node=%d "
+                        "Vec=%d\n",me,DDD_InfoGlobalId(PARHDR(theNode)),node,Vec));
 
     /* identify sidenode, vertex and vector */
     IdentObjectHdr[nobject++] = PARHDR(theNode);
@@ -506,124 +506,9 @@ static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode,
   return;
 }
 
-#ifdef __THREEDIM__
-EDGE *FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge)
-{
-  INT sonedge,pos0,pos1;
-  EDGE *fatherEdge = NULL;
-
-  ASSERT(Nodes[0]!=NULL);
-  ASSERT(Nodes[1]!=NULL);
-
-  /* one node is side node -> no father edge */
-  if (NTYPE(Nodes[0])==SIDE_NODE || NTYPE(Nodes[1])==SIDE_NODE) return(NULL);
-
-  /* both nodes are side nodes -> no father edge */
-  if (NTYPE(Nodes[0])==MID_NODE && NTYPE(Nodes[1])==MID_NODE) return(NULL);
-
-  for (pos0=0; pos0<MAX_SIDE_NODES; pos0++) {
-    if (SideNodes[pos0] == Nodes[0])
-      break;
-  }
-  ASSERT(pos0<MAX_SIDE_NODES);
-
-  for (pos1=0; pos1<MAX_SIDE_NODES; pos1++)
-    if (SideNodes[pos1] == Nodes[1])
-      break;
-  ASSERT(pos1<MAX_SIDE_NODES);
-
-  switch (NTYPE(Nodes[0]))
-  {
-  case (CORNER_NODE) :
-
-    ASSERT(pos0<ncorners);
-    if ( ((pos0+1)%ncorners == pos1) ||
-         (pos0+ncorners == pos1) )
-    {
-      fatherEdge = GetEdge(NFATHER(Nodes[0]),
-                           NFATHER(SideNodes[(pos0+1)%ncorners]));
-      ASSERT(fatherEdge!=NULL);
-    }
-
-    if ( ((pos0-1+ncorners)%ncorners == pos1) ||
-         ((pos0-1+ncorners)%ncorners+ncorners == pos1) )
-    {
-      fatherEdge = GetEdge(NFATHER(Nodes[0]),
-                           NFATHER(SideNodes[(pos0-1+ncorners)%ncorners]));
-      ASSERT(fatherEdge!=NULL);
-    }
-
-    break;
-
-  case (MID_NODE) :
-
-    ASSERT(pos0>=ncorners);
-    ASSERT(pos0<2*ncorners);
-
-    if ((pos0+1)%ncorners == pos1)
-    {
-      fatherEdge = GetEdge(NFATHER(SideNodes[pos0%ncorners]),
-                           NFATHER(Nodes[1]));
-      ASSERT(fatherEdge!=NULL);
-    }
-
-    if (pos0%ncorners == pos1)
-    {
-      fatherEdge = GetEdge(NFATHER(SideNodes[(pos0+1)%ncorners]),
-                           NFATHER(Nodes[1]));
-      ASSERT(fatherEdge!=NULL);
-    }
-
-    break;
-
-  case (SIDE_NODE) :
-
-    /* this edge has no father edge */
-    fatherEdge = NULL;
-    break;
-
-  default :
-    assert(0);
-    break;
-  }
-
-  IFDEBUG(dddif,0)
-  INT i;
-  EDGE* edge0, *edge1;
-
-  edge0 = edge1 = NULL;
-
-  /* test whether theEdge lies above fatherEdge */
-  if (MIDNODE(fatherEdge) != NULL)
-  {
-    edge0 = GetEdge(MIDNODE(fatherEdge),SONNODE(NBNODE(LINK0(fatherEdge))));
-    edge1 = GetEdge(MIDNODE(fatherEdge),SONNODE(NBNODE(LINK1(fatherEdge))));
-  }
-  else
-    edge0 = GetEdge(SONNODE(NBNODE(LINK0(fatherEdge))),
-                    SONNODE(NBNODE(LINK1(fatherEdge))));
-
-  IFDEBUG(dddif,5)
-  UserWriteF("%4d: fatherEdge=%x theEdge=%x edge0=%x edge1=%x\n",me,
-             fatherEdge,theEdge,edge0,edge1);
-  UserWriteF("%4d: Nodes[0]=%d Nodes[1]=%d\n",me,ID(Nodes[0]),ID(Nodes[1]));
-
-  UserWriteF("SideNodes\n");
-  for (i=0; i<MAX_SIDE_NODES; i++) UserWriteF(" %5d",i);
-  UserWriteF("\n");
-  for (i=0; i<MAX_SIDE_NODES; i++)
-    if (SideNodes[i]!=NULL) UserWriteF(" %5d",ID(SideNodes[i]));
-  UserWriteF("\n");
-  ENDDEBUG
-
-  assert(edge0==theEdge || edge1==theEdge);
-  ENDDEBUG
-
-  return(fatherEdge);
-}
-#endif
-
-static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor, NODE **SideNodes, INT ncorners, ELEMENT *Son, INT SonSide, INT edgeofside, INT Vec)
+static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor,
+                         NODE **SideNodes, INT ncorners, ELEMENT *Son, INT SonSide,
+                         INT edgeofside, INT Vec)
 {
   NODE *Nodes[2];
   EDGE *theEdge;
@@ -687,8 +572,8 @@ static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor, NODE **SideN
   proclist = DDD_InfoProcList(PARHDRE(theNeighbor));
         #endif
 
-        #ifdef __THREEDIM__
   /* identify to proclist of father edge or neighbor*/
+        #ifdef __THREEDIM__
   {
     EDGE *fatherEdge = NULL;
 
@@ -702,12 +587,12 @@ static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor, NODE **SideN
   }
         #endif
 
-  if (NFATHER(Nodes[0]) != NULL)
+  if (CORNERTYPE(Nodes[0]))
     IdentHdr[nident++] = PARHDR(NFATHER(Nodes[0]));
   else
     IdentHdr[nident++] = PARHDR(Nodes[0]);
 
-  if (NFATHER(Nodes[1]) != NULL)
+  if (CORNERTYPE(Nodes[1]))
     IdentHdr[nident++] = PARHDR(NFATHER(Nodes[1]));
   else
     IdentHdr[nident++] = PARHDR(Nodes[1]);
@@ -824,9 +709,10 @@ INT     IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel
     for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
          theElement=SUCCE(theElement))
     {
+      prio = DDD_InfoPriority(PARHDRE(theElement));
 
       if (!IS_REFINED(theElement) ||
-          (prio = DDD_InfoPriority(PARHDRE(theElement))) == PrioGhost)
+          prio==PrioGhost || prio==PrioVGhost)
       {
         continue;
       }
@@ -836,6 +722,7 @@ INT     IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel
         theNeighbor = NBELEM(theElement,i);
         if (theNeighbor == NULL) continue;
 
+        /* TODO: change for full dynamic element distribution */
         if ((prio = DDD_InfoPriority(PARHDRE(theNeighbor))) != PrioGhost
             || NSONS(theNeighbor)!=0)
           continue;

@@ -93,6 +93,52 @@ enum HandlerSets
 #define DDD_DOMAIN_DATA    DDD_USER_DATA+1
 #define DDD_EXTRA_DATA     DDD_USER_DATA+2
 
+/* macros for ddd object info */
+/* for elements */
+#define EPRIO(e)                                                DDD_InfoPriority(PARHDRE(e))
+#define SETEPRIO(e,p)                                   DDD_PrioritySet(PARHDRE(e),p)
+#define EMASTER(e)                                              (DDD_InfoPriority(PARHDRE(e)) == PrioMaster)
+#define EGHOST(e)                                               (DDD_InfoPriority(PARHDRE(e))==PrioGhost || \
+                                                                 DDD_InfoPriority(PARHDRE(e))==PrioVGhost)
+#define EVGHOST(e)                                              (DDD_InfoPriority(PARHDRE(e))==PrioVGhost)
+#define EHGHOST(e)                                              (DDD_InfoPriority(PARHDRE(e))==PrioGhost)
+#define EGID(e)                                                 DDD_InfoGlobalId(PARHDRE(e))
+#define EPROCLIST(e)                                    DDD_InfoProcList(PARHDRE(e))
+#define EATTR(e)                                                DDD_InfoAttr(PARHDRE(e))
+#define XFEREDELETE(e)                                  DDD_XferDeleteObj(PARHDRE(e))
+#define XFERECOPY(e,dest,prio)                  DDD_XferCopyObj(PARHDRE(e),dest,prio)
+#define XFERECOPYX(e,dest,prio,size)    DDD_XferCopyObjX(PARHDRE(e),dest,prio,size)
+
+/* for nodes, vectors, edges (edges only 3D) */
+#define PRIO(e)                                                 DDD_InfoPriority(PARHDR(e))
+#define SETPRIO(e,p)                                    DDD_PrioritySet(PARHDR(e),p)
+#define MASTER(e)                                               (DDD_InfoPriority(PARHDR(e))==PrioMaster || \
+                                                                 DDD_InfoPriority(PARHDR(e))==PrioBorder)
+#define GHOST(e)                                                (DDD_InfoPriority(PARHDR(e))==PrioGhost || \
+                                                                 DDD_InfoPriority(PARHDR(e))==PrioVGhost)
+#define GID(e)                                                  DDD_InfoGlobalId(PARHDR(e))
+#define PROCLIST(e)                                             DDD_InfoProcList(PARHDR(e))
+#define ATTR(e)                                                 DDD_InfoAttr(PARHDR(e))
+#define XFERDELETE(e)                                   DDD_XferDeleteObj(PARHDR(e))
+#define XFERCOPY(e,dest,prio)                   DDD_XferCopyObj(PARHDR(e),dest,prio)
+#define XFERCOPYX(e,dest,prio,size)             DDD_XferCopyObjX(PARHDR(e),dest,prio,size)
+
+/* for vertices */
+#define VPRIO(e)                                                DDD_InfoPriority(PARHDRV(e))
+#define SETVPRIO(e,p)                                   DDD_PrioritySet(PARHDRV(e),p)
+#define VMASTER(e)                                              (DDD_InfoPriority(PARHDRV(e))==PrioMaster || \
+                                                                 DDD_InfoPriority(PARHDRV(e))==PrioBorder)
+#define VGHOST(e)                                               (DDD_InfoPriority(PARHDRV(e))==PrioGhost || \
+                                                                 DDD_InfoPriority(PARHDRV(e))==PrioVGhost)
+#define VGID(e)                                                 DDD_InfoGlobalId(PARHDRV(e))
+#define VPROCLIST(e)                                    DDD_InfoProcList(PARHDRV(e))
+#define VATTR(e)                                                DDD_InfoAttr(PARHDRV(e))
+#define XFERVDELETE(e)                                  DDD_XferDeleteObj(PARHDRV(e))
+#define XFERVCOPY(e,dest,prio)                  DDD_XferCopyObj(PARHDRV(e),dest,prio,size)
+#define XFERVCOPYX(e,dest,prio,size)    DDD_XferCopyObjX(PARHDRV(e),dest,prio,size)
+
+#define GIDFMT                                                  "%08x"
+
 #define __EXCHANGE_CONNECTIONS__
 
 #endif /* ModelP */
@@ -116,6 +162,8 @@ enum HandlerSets
 extern DDD_TYPE TypeVector;
 extern DDD_TYPE TypeIVertex, TypeBVertex;
 extern DDD_TYPE TypeNode;
+
+extern DDD_TYPE TypeUnknown;
 
 #ifdef __TWODIM__
 extern DDD_TYPE TypeTrElem, TypeTrBElem,
@@ -186,17 +234,19 @@ void ddd_DisplayContext (void);
 void ddd_test ();
 
 /* from handler.c */
-void ddd_HandlerInit (INT);
+void            ddd_HandlerInit (INT);
+DDD_TYPE        NFatherObjType  (DDD_OBJ obj, DDD_OBJ ref);
 
 /* from lbrcb.c */
-int BalanceGridRCB (MULTIGRID *);
+int BalanceGridRCB (MULTIGRID *, int);
 
 /* from gridcons.c */
-void dddif_SetOverlapPriorities (GRID *);
-INT CheckInterfaces(GRID *theGrid);
+void    SetOverlapPriorities            (GRID *theGrid);
+void    ConstructConsistentGrid         (GRID *theGrid);
+INT             CheckInterfaces                         (GRID *theGrid);
 
 /* from transfer.c */
-int TransferGridFromCoarse (MULTIGRID *);
+int TransferGridFromLevel (MULTIGRID *theMG, INT level);
 
 #endif /* ModelP */
 #endif /* __PARALLEL_H__ */

@@ -40,6 +40,7 @@
 #include "debug.h"
 #include "compiler.h"
 #include "domain.h"
+#include "evm.h"
 #include "parallel.h"
 #include "heaps.h"
 #include "ugm.h"
@@ -58,6 +59,10 @@
 /*																			*/
 /****************************************************************************/
 
+#define DEBUGNSONS(pe,m) { if (pe!=NULL) {CheckNSons(pe,m);} }
+/*
+#define DEBUGNSONS(pe,m)
+*/
 
 
 /****************************************************************************/
@@ -93,6 +98,37 @@ RCSID("$Header$",UG_RCS_STRING)
 /*																			*/
 /****************************************************************************/
 
+void PrintSons (ELEMENT *theElement)
+{
+	ELEMENT *SonList[MAX_SONS];
+	int		i;
+
+	if (GetAllSons(theElement,SonList)) ASSERT(0);
+	for (i=0; SonList[i] != NULL; )
+	{
+		printf(PFMT "elem=" EID_FMTX " son[%d]=" EID_FMTX "\n",
+			me,EID_PRTX(theElement),i,EID_PRTX(SonList[i]));
+		i++;
+	}
+}
+
+void CheckNSons (ELEMENT *theElement, char *buffer)
+{
+	ELEMENT *SonList[MAX_SONS];
+	int		i,nsons;
+
+	if (GetAllSons(theElement,SonList)) ASSERT(0);
+	for (i=0; SonList[i] != NULL; ) i++;
+
+	nsons = NSONS(theElement);
+	if(i != nsons)
+	{
+		if (1) PrintSons(theElement);
+		printf(PFMT "%s: elem=" EID_FMTX " ERROR nsons=%d NSONS=%d\n\n",
+			me,buffer,EID_PRTX(theElement),i,nsons);
+		fflush(stdout);
+	}
+}
 
 static GRID *GetGridOnDemand (MULTIGRID *mg, int level)
 {
@@ -170,13 +206,6 @@ void VectorUpdate (DDD_OBJ obj)
 	/* insert in vector list */
 	GRID_LINK_VECTOR(theGrid,pv,prio);
 
-/* TODO: is this needed?
-	VSTART(pv) = NULL;
-*/
-
-    #ifndef __EXCHANGE_CONNECTIONS__
-	VSTART(pv) = NULL;
-	#endif
 }
 
 
@@ -196,7 +225,7 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 		"prio=%d vtype=%d\n",me,VINDEX_PRTX(pv),proc,prio,VTYPE(pv)))
 
     #ifdef __EXCHANGE_CONNECTIONS__
-	if (prio!=PrioGhost)
+	if (prio!=PrioGhost && prio!=PrioVGhost)
 	{
 		for(mat=VSTART(pv); mat!=NULL; mat=MNEXT(mat))
 		{
@@ -280,7 +309,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
 		" cnt=%d type=%d veobj=%d vtype=%d\n",\
 		me,VINDEX_PRTX(vec),cnt,type_id,OBJT(vec),VTYPE(vec)))
 
-	if (prio == PrioGhost)
+	if (prio==PrioGhost || prio==PrioVGhost)
 	{
 		PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v=" VINDEX_FMTX
 			" USELESS since ghost vector\n",
@@ -296,18 +325,19 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
 
 		if (MDEST(mcopy)==NULL)
 		{
-			/* destination vector is not on this processor */
-			/* -> matrix entry is useless, throw away */
+			/* destination vector is not on this processor  */
+			/* -> matrix entry is useless, throw away       */
 			PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v=" VINDEX_FMTX
 				" mat=%x Size=%d, USELESS no dest vector \n",
 				me,VINDEX_PRTX(vec),mcopy,MSIZE(mcopy)))
 			continue;
 		}
 
-		if (DDD_InfoPriority(PARHDR(MDEST(mcopy)))==PrioGhost)
+		if (DDD_InfoPriority(PARHDR(MDEST(mcopy)))==PrioGhost ||
+			DDD_InfoPriority(PARHDR(MDEST(mcopy)))==PrioVGhost)
 		{
-			/* destination vector has only PrioGhost on this processor */
-			/* -> matrix entry is useless, throw away */
+			/* destination vector has only prio Ghost on this processor */
+			/* -> matrix entry is useless, throw away                     */
 			PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v=" VINDEX_FMTX 
 				" mat=%x Size=%d, USELESS dest vect is ghost\n",
 				me,VINDEX_PRTX(vec),mcopy,MSIZE(mcopy)))
@@ -487,7 +517,7 @@ void VectorObjMkCons (DDD_OBJ obj, int newness)
 	of a second connection, which will also be deleted here. we would
 	need a mkcons after all messages to handle that case. (NIY in ddd 1.6.5)
 
-	THIS case is handeled in newer DDD version!!
+	THIS case is handeled in newer DDD version (s.l. 970127)!!
 */
 
 	/* kill inconsistent connections */
@@ -588,7 +618,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 	}
 
 	/* dispose connections */
-	if (new == PrioGhost)
+	if (new==PrioGhost || new==PrioVGhost)
 	{
 		MATRIX *theMatrix,*next;
 
@@ -606,6 +636,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 		}
 	}
 
+	IFDEBUG(dddif,1)
 	if (new == PrioMaster)
 	{
 		if (VSTART(pv) == NULL)
@@ -615,6 +646,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 				me,VINDEX_PRTX(pv),old,new))
 		}
 	}
+	ENDDEBUG
 
 	GRID_UNLINK_VECTOR(theGrid,pv);
 
@@ -642,42 +674,58 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 
 void BVertexLDataConstructor (DDD_OBJ obj)
 {
-	VERTEX	*pv			= (VERTEX *) obj;
+	VERTEX	*theVertex			= (VERTEX *) obj;
 
 	PRINTDEBUG(dddif,1,(PFMT " BVertexLDataConstructor(): v=" VID_FMTX 
-		" I/BVOBJ=%d\n",me,VID_PRTX(pv),OBJT(pv)))
+		" I/BVOBJ=%d\n",me,VID_PRTX(theVertex),OBJT(theVertex)))
 
-	V_BNDP(pv) = NULL;
+	V_BNDP(theVertex) = NULL;
 }
 
 
 void VertexUpdate (DDD_OBJ obj)
 {
-	VERTEX	*pv			= (VERTEX *) obj;
-	INT		level		= DDD_InfoAttr(PARHDRV(pv));
+	VERTEX	*theVertex	= (VERTEX *) obj;
+	INT		level		= DDD_InfoAttr(PARHDRV(theVertex));
 	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
-	INT		prio		= DDD_InfoPriority(PARHDRV(pv));
+	INT		prio		= DDD_InfoPriority(PARHDRV(theVertex));
 
 	PRINTDEBUG(dddif,1,(PFMT " VertexUpdate(): v=" VID_FMTX " I/BVOBJ=%d\n",
-		me,VID_PRTX(pv),OBJT(pv)))
+		me,VID_PRTX(theVertex),OBJT(theVertex)))
 
-	GRID_LINK_VERTEX(theGrid,pv,prio);
+	GRID_LINK_VERTEX(theGrid,theVertex,prio);
+
+
+/* this assertion is not correct, since there may be an arbitrary number of */
+/* calls to NodeUpdate(), which increments NOOFNODE							*/
+/*	ASSERT(NOOFNODE(theVertex) == 0); */
 
 	/* update ID of vertex */
 	/* TODO: change to global id */
-	ID(pv) = (theGrid->mg->vertIdCounter)++;
+	/* TODO: delete
+	ID(theVertex) = (theGrid->mg->vertIdCounter)++;
+	*/
+}
+
+void VertexObjMkCons (DDD_OBJ obj, int newness)
+{
+	VERTEX	*theVertex	= (VERTEX *) obj;
+
+	PRINTDEBUG(dddif,1,(PFMT " VertexObjMkCons(): v=" VID_FMTX 
+		" I/BVOBJ=%d newness=%d\n",
+		me,VID_PRTX(theVertex),OBJT(theVertex),newness))
 }
 
 
 void BVertexXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 {
-	VERTEX	*pv			= (VERTEX *) obj;
+	VERTEX	*theVertex			= (VERTEX *) obj;
 
 	PRINTDEBUG(dddif,1,(PFMT " BVertexXferCopy(): v=" VID_FMTX 
 		" I/BVOBJ=%d proc=%d prio=%d \n",
-		me,VID_PRTX(pv),OBJT(pv),proc,prio))
+		me,VID_PRTX(theVertex),OBJT(theVertex),proc,prio))
 
-	BVertexXferBndP (V_BNDP(pv),proc,prio);
+	BVertexXferBndP(V_BNDP(theVertex),proc,prio);
 }
 
 
@@ -689,21 +737,21 @@ void BVertexGather (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
 
 void BVertexScatter (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data, int newness)
 {
-    BVertexScatterBndP (&(V_BNDP((VERTEX *)obj)),cnt,Data);
+    BVertexScatterBndP(&(V_BNDP((VERTEX *)obj)),cnt,Data);
 }
 
 
 void VertexPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
-    VERTEX	*pv			= (VERTEX *)obj;
-    INT		level		= DDD_InfoAttr(PARHDRV(pv));
+    VERTEX	*theVertex			= (VERTEX *)obj;
+    INT		level		= DDD_InfoAttr(PARHDRV(theVertex));
     GRID	*theGrid 	= GetGridOnDemand(dddctrl.currMG,level);
-    INT		old			= DDD_InfoPriority(PARHDRV(pv));
+    INT		old			= DDD_InfoPriority(PARHDRV(theVertex));
 
     PRINTDEBUG(dddif,2,(PFMT " VertexPriorityUpdate(): v=" VID_FMTX 
-		" old=%d new=%d level=%d\n",me,VID_PRTX(pv),old,new,level))
+		" old=%d new=%d level=%d\n",me,VID_PRTX(theVertex),old,new,level))
 
-    if (pv == NULL) return;
+    if (theVertex == NULL) return;
     if (old == new) return;
 
     if (old == PrioNone) {
@@ -720,9 +768,9 @@ void VertexPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
         return;
     }
 
-    GRID_UNLINK_VERTEX(theGrid,pv);
+    GRID_UNLINK_VERTEX(theGrid,theVertex);
 
-    GRID_LINK_VERTEX(theGrid,pv,new);
+    GRID_LINK_VERTEX(theGrid,theVertex,new);
 
     return;
 }
@@ -755,37 +803,52 @@ void NodeObjInit(DDD_OBJ obj)
 
 void NodeObjMkCons (DDD_OBJ obj, int newness)
 {
-	NODE *node	= (NODE *) obj;
+	NODE *theNode	= (NODE *) obj;
 
 	PRINTDEBUG(dddif,2,(PFMT " NodeObjMkCons(): n=" ID_FMTX " NDOBJ=%d\n",
-		me,ID_PRTX(node),OBJT(node)))
+		me,ID_PRTX(theNode),OBJT(theNode)))
 
-/* TODO: delete this */
-if (0) {
-	LINK *link;
-	NODE *nodeto;
-
-	for (link=START(node); link!=NULL; link=NEXT(link))
+	#ifdef TOPNODE
+	/* set topnode pointer of vertex */
+	if (TOPNODE(MYVERTEX(theNode)) == NULL) 
+		TOPNODE(MYVERTEX(theNode)) = theNode;
+	else
 	{
-		/* TODO: wird das hier noch benoetigt? */
-		nodeto = NBNODE(link);
+		NODE *TopNode	= TOPNODE(MYVERTEX(theNode));
+		INT  level		= LEVEL(TopNode);
 
-		/* restore pointer from vector to its edge */
-		if (dddctrl.edgeData) 
-			VOBJECT(EDVECTOR(MYEDGE(link))) = (void*)MYEDGE(link);	
-
-		/* is nodeto really stored on this proc? */
-		/* TODO: wird das hier noch benoetigt? */
-		if (nodeto!=NULL)
+		if (level < LEVEL(theNode))
+			TOPNODE(MYVERTEX(theNode)) = theNode;
+	}
+	#endif
+		
+	/* TODO: this needs to be done here not in NodeUpdate() for 2D, 	*/			
+	/* since father would be overwritten by ElemScatterEdge() 			*/ 
+	#ifdef __TWODIM__
+	if (NFATHER(theNode) != NULL)
+	{
+		switch (NTYPE(theNode))
 		{
-			NEXT(REVERSE(link)) = START(nodeto);
-			START(nodeto) = REVERSE(link);
+			case (CORNER_NODE):
+				ASSERT(OBJT(NFATHER(theNode)) == NDOBJ);
+				SONNODE(NFATHER(theNode)) = theNode;
+				break;
+
+			case (MID_NODE):
+				ASSERT(OBJT((EDGE *)NFATHER(theNode)) == EDOBJ);
+				MIDNODE((EDGE *)NFATHER(theNode)) = theNode; 
+				break;
+
+			default:
+				ASSERT(0);
+				break;
 		}
 	}
-}
+	#endif
 
-	/* reconstruct node pointer */
-	if (dddctrl.nodeData && NVECTOR(node)) VOBJECT(NVECTOR(node)) = (void*)node;
+	/* set pointer of vector to its node */
+	if (dddctrl.nodeData && NVECTOR(theNode)) 
+		VOBJECT(NVECTOR(theNode)) = (void*)theNode;
 
 }
 
@@ -805,19 +868,51 @@ if (0) {
 
 void NodeUpdate (DDD_OBJ obj)
 {
-	NODE	*node		= (NODE *)obj;
-	INT		level		= DDD_InfoAttr(PARHDR(node));
+	NODE	*theNode	= (NODE *)obj;
+	VERTEX	*theVertex	= MYVERTEX(theNode);
+	INT		level		= DDD_InfoAttr(PARHDR(theNode));
 	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
-	INT		prio		= DDD_InfoPriority(PARHDR(node));
+	INT		prio		= DDD_InfoPriority(PARHDR(theNode));
 
 	PRINTDEBUG(dddif,1,(PFMT " NodeUpdate(): n=" ID_FMTX " NDOBJ=%d\n",
-		me,ID_PRTX(node),OBJT(node)))
+		me,ID_PRTX(theNode),OBJT(theNode)))
 
 	/* insert in listpart */
-	GRID_LINK_NODE(theGrid,node,prio);
+	GRID_LINK_NODE(theGrid,theNode,prio);
+
+	/* TODO: can this be done in NodeObjMkCons() also	*/
+	/* to unify 2 and 3D case							*/
+	#ifdef __THREEDIM__
+	if (NFATHER(theNode) != NULL)
+	{
+		switch (NTYPE(theNode))
+		{
+			case (CORNER_NODE):
+				ASSERT(OBJT(NFATHER(theNode)) == NDOBJ);
+				SONNODE(NFATHER(theNode)) = theNode;
+				break;
+
+			case (MID_NODE):
+				ASSERT(OBJT((EDGE *)NFATHER(theNode)) == EDOBJ);
+				MIDNODE((EDGE *)NFATHER(theNode)) = theNode; 
+				break;
+
+			default:
+				ASSERT(0);
+				break;
+		}
+	}
+	#endif
+	
+	if (NOOFNODE(theVertex)<NOOFNODEMAX-1)
+		INCNOOFNODE(theVertex);
+	else
+		ASSERT(0);
 
 	/* TODO: change to global id */
+	/* TODO: delete
 	ID(node) = (theGrid->mg->nodeIdCounter)++;
+	*/
 }
 
 /****************************************************************************/
@@ -836,31 +931,51 @@ void NodeUpdate (DDD_OBJ obj)
 
 void NodeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 {
-	INT		nlink 	= 0;
-	INT		Size,i	= 0;
-	NODE	*node	= (NODE *)obj;
-	VECTOR	*vec	= NULL;
+	INT		nlink 		= 0;
+	INT		Size,i		= 0;
+	NODE	*theNode	= (NODE *)obj;
+	VECTOR	*vec		= NULL;
 
 	PRINTDEBUG(dddif,1,(PFMT " NodeXferCopy(): n=" ID_FMTX " proc=%d prio=%d\n",
-		me,ID_PRTX(node),proc,prio))
+		me,ID_PRTX(theNode),proc,prio))
 
 
 	/* copy vertex */
 	PRINTDEBUG(dddif,2,(PFMT " NodeXferCopy(): n=" ID_FMTX " Xfer v=" 
-		VID_FMTX "\n",me,ID_PRTX(node),VID_PRTX(MYVERTEX(node))))
+		VID_FMTX "\n",me,ID_PRTX(theNode),VID_PRTX(MYVERTEX(theNode))))
 
-	DDD_XferCopyObj(PARHDRV(MYVERTEX(node)), proc, prio);
+	#ifdef Debug
+	if (NFATHER(theNode) != NULL)
+	{
+		switch (NTYPE(theNode))
+		{
+			case (CORNER_NODE):
+				ASSERT(OBJT(NFATHER(theNode)) == NDOBJ);
+				break;
+
+			case (MID_NODE):
+				ASSERT(OBJT((EDGE *)NFATHER(theNode)) == EDOBJ);
+				break;
+
+			default:
+				ASSERT(0);
+				break;
+		}
+	}
+	#endif
+
+	DDD_XferCopyObj(PARHDRV(MYVERTEX(theNode)), proc, prio);
 
 	/* copy vector if defined */
 	if (dddctrl.nodeData)
 	{
-		vec = NVECTOR(node);
+		vec = NVECTOR(theNode);
 		Size = sizeof(VECTOR)-sizeof(DOUBLE)
 				+dddctrl.currMG->theFormat->VectorSizes[VTYPE(vec)];
 
 		PRINTDEBUG(dddif,2,(PFMT " NodeXferCopy(): n=" ID_FMTX 
 			" Xfer NODEVEC=" VINDEX_FMTX " size=%d\n",
-			me,ID_PRTX(node),VINDEX_PRTX(vec),Size))
+			me,ID_PRTX(theNode),VINDEX_PRTX(vec),Size))
 
 		DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
 	}
@@ -893,16 +1008,13 @@ void NodeGatherEdge (DDD_OBJ n, int cnt, DDD_TYPE type_id, void *Data)
 					me,ID_PRTX(node),link,ID_PRTX(NBNODE(link))))
 				memcpy(data,MYEDGE(link),sizeof(EDGE));
 				data += CEIL(sizeof(EDGE));
-
-				/* clear XFERFLAG */
-/*
-				SETXFERLINK(link,CLEAR);
-*/
 				break;
+
 		case TOUCHED:
 				/* clear XFERFLAG */
 				SETXFERLINK(link,CLEAR);
 				break;
+
 		default:
 				break;
 		}
@@ -1007,6 +1119,26 @@ void NodePriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 	return;
 }
 
+DDD_TYPE NFatherObjType(DDD_OBJ obj, DDD_OBJ ref)
+{
+	NODE *theNode = (NODE *)obj;
+
+	switch (NTYPE(theNode))
+	{
+		case (CORNER_NODE):
+			ASSERT(OBJT((NODE *)ref) == NDOBJ);
+			return(TypeNode);
+
+		case (MID_NODE):
+			ASSERT(OBJT((EDGE *)ref) == EDOBJ);
+			return(TypeEdge);
+
+		default:
+			ASSERT(0);
+			break;
+	}
+}
+
 /****************************************************************************/
 /****************************************************************************/
 /*																			*/
@@ -1040,7 +1172,8 @@ void ElementLDataConstructor (DDD_OBJ obj)
 	PRINTDEBUG(dddif,2,(PFMT " ElementLDataConsX(): pe=" EID_FMTX 
 		" EOBJ=%d l=%d\n",me,EID_PRTX(pe),OBJT(pe),level))
 
-	GRID_LINK_ELEMENT(theGrid,pe,prio);
+/*	TODO: delete
+	GRID_LINK_ELEMENT(theGrid,pe,prio); */
 
 	if (OBJT(pe)==BEOBJ)
 	{
@@ -1049,7 +1182,9 @@ void ElementLDataConstructor (DDD_OBJ obj)
 	}
 
 	/* TODO: in global id umrechnen */
+	/* TODO: delete
 	ID(pe) = (theGrid->mg->elemIdCounter)++;
+	*/
 
 	if (EDATA_DEF_IN_GRID(theGrid)) {
         q = (void *) GetMemoryForObject(theGrid->mg,EDATA_DEF_IN_GRID(theGrid),-1);
@@ -1071,37 +1206,23 @@ void ElementLDataConstructor (DDD_OBJ obj)
 /*																			*/
 /****************************************************************************/
 
-#ifdef __THREEDIM__
 void ElementUpdate (DDD_OBJ obj)
 {
 	INT		i;
 	ELEMENT	*pe			= (ELEMENT *)obj;
 
-	PRINTDEBUG(dddif,2,(PFMT " ElementUpdate(): pe=" EID_FMTX 
+	PRINTDEBUG(dddif,1,(PFMT " ElementUpdate(): pe=" EID_FMTX 
 		" EOBJ=%d\n",me,EID_PRTX(pe),OBJT(pe)))
 
-	/* increment elem counter in edges */ 
-if (0)
-	for (i=0; i<EDGES_OF_ELEM(pe); i++)
-	{
-		EDGE *theEdge;
-		NODE *theNode0 = CORNER(pe,CORNER_OF_EDGE(pe,i,0));
-		NODE *theNode1 = CORNER(pe,CORNER_OF_EDGE(pe,i,1));
+/* TODO: delete this
+	SETNSONS(pe,0); */
 
-		ASSERT(theNode0!=NULL && theNode1!=NULL);
-
-		PRINTDEBUG(dddif,4,(PFMT " ElementUpdate(): pe=" EID_FMTX 
-			" INC_NO_OF_ELEM for n0=" ID_FMTX " n1=" ID_FMTX "\n",
-			me,EID_PRTX(pe),ID_PRTX(theNode0),ID_PRTX(theNode1)))
-
-		theEdge = GetEdge(theNode0,theNode1);
-		ASSERT(theEdge != NULL);
-
-		INC_NO_OF_ELEM(theEdge);
-	}
-
+/* TODO: this is not true any more, since elements pe, which are new and
+		 have local non-new sons, have already gotten their NSONS through
+		 ElementrPriorityUpdate() of the sons!!!
+	ASSERT(NSONS(pe) == 0);
+*/
 }
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -1122,7 +1243,7 @@ void ElementDelete (DDD_OBJ obj)
 	INT		level		= DDD_InfoAttr(PARHDRE(pe));
 	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 
-	PRINTDEBUG(dddif,2,(PFMT " ElementDelete(): e=" EID_FMTX " EOBJ=%d l=%d "
+	PRINTDEBUG(dddif,1,(PFMT " ElementDelete(): e=" EID_FMTX " EOBJ=%d l=%d "
 		"ncon=%d\n",
 		me,EID_PRTX(pe),OBJT(pe),level,NC(theGrid)))
 
@@ -1168,6 +1289,11 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 		nsides = SIDES_OF_ELEM(pe);
 		for (i=0; i<nsides; i++)
 		  bnds[i] = ELEM_BNDS(pe,i);
+
+		PRINTDEBUG(dddif,3,(PFMT " ElementXferCopy(): "
+			"pe=" EID_FMTX " BElementXferBndS nsides=%d\n",
+			me,EID_PRTX(pe),nsides))
+
 		BElementXferBndS(bnds,nsides,proc,prio);
 	  }
 
@@ -1190,7 +1316,15 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 			" Xfer n=" ID_FMTX " i=%d\n",
 			me,EID_PRTX(pe),ID_PRTX(node),i))
 
-		DDD_XferCopyObj(PARHDR(node), proc, prio);
+		#ifdef __TWODIM__
+		if (NTYPE(node) == MID_NODE)
+		{
+			/* midnodes need information about their edge */
+			DDD_XferCopyObj(PARHDR(node), proc, prio);
+		}
+		else
+		#endif
+			DDD_XferCopyObj(PARHDR(node), proc, prio);
 	}
 
 	/* send edge and edge vectors */
@@ -1198,9 +1332,12 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 		for (i=0; i<EDGES_OF_ELEM(pe); i++)
 		{
 			int Size;
-			EDGE *edge = GetEdge(CORNER(pe,CORNER_OF_EDGE(pe,i,0)),
-							 	CORNER(pe,CORNER_OF_EDGE(pe,i,1)));
-			VECTOR *vec = EDVECTOR(edge);
+			EDGE 	*edge;
+			VECTOR 	*vec;
+
+			edge = GetEdge(CORNER(pe,CORNER_OF_EDGE(pe,i,0)),
+						   CORNER(pe,CORNER_OF_EDGE(pe,i,1)));
+			ASSERT(edge != NULL);
 
 			#ifdef __THREEDIM__
 			PRINTDEBUG(dddif,2,(PFMT " ElementXferCopy():  e=" EID_FMTX 
@@ -1253,18 +1390,6 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 				" SIDEVEC=" VINDEX_FMTX " size=%d\n",
 				me,EID_PRTX(pe),VINDEX_PRTX(vec),Size))
 			DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
-
-			/* TODO: delete this, now sidevectors are send doubly */
-			if (0)
-			if (XFERVECTOR(vec) == 0)
-			{
-				PRINTDEBUG(dddif,2,(PFMT " ElementXferCopy(): e=" EID_FMTX
-					" SIDEVEC=" VINDEX_FMTX " size=%d\n",
-					me,EID_PRTX(pe),VINDEX_PRTX(vec),Size))
-				  
-			    DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
-				SETXFERVECTOR(vec,1);
-			}
 		} 
 	}
 }
@@ -1316,16 +1441,25 @@ static void ElemGatherEdge (ELEMENT *pe, int cnt, char *data)
 }
 
 
-static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data)
+static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
 {
 	INT		i;
-	INT		size = sizeof(EDGE) - ((dddctrl.edgeData)? 0 : sizeof(VECTOR*));
-	INT		level = DDD_InfoAttr(PARHDRE(pe));
+	INT		size	= sizeof(EDGE) - ((dddctrl.edgeData)? 0 : sizeof(VECTOR*));
+	INT		level	= DDD_InfoAttr(PARHDRE(pe));
 	GRID	*theGrid = GetGridOnDemand(dddctrl.currMG,level);
 
+	PRINTDEBUG(dddif,3,(PFMT " ElemScatterEdge(): pe=" EID_FMTX 
+		" cnt=%d newness=%d\n",
+		me,EID_PRTX(pe),cnt,newness))
 
-	PRINTDEBUG(dddif,3,(PFMT " ElemScatterEdge(): pe=" EID_FMTX " cnt=%d\n",
-			me,EID_PRTX(pe),cnt))
+	/* if element is not new do nothing */ 
+	/* TODO: this is old, delete 
+	if (newness != XFER_NEW) return; */
+
+	/* XFER_REJECT:   only case where edges must not be unpacked */
+	/* XFER_NEW:      there are still no edges -> unpack         */
+	/* XFER_UPGRADE:  new MIDNODE pointers might be non NULL     */
+	if (newness == XFER_REJECT) return;
 
 	/* retrieve edges from message */
 	for (i=0; i<cnt; i++)
@@ -1343,16 +1477,23 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data)
 		/* this is the 2D case for edge creation:              */
 		/*    CreateEdge increments the NO_OF_ELEM count       */
 		/*    NO_OF_ELEM counter gets wrong if an element      */
-		/*    is unpacked several times, therefore set         */
-		/*    NO_OF_ELEM explictly.                            */
-		enew = CreateEdge(theGrid, NBNODE(LINK0(ecopy)), NBNODE(LINK1(ecopy)), FALSE);
+		/*    is unpacked several times.                       */
+		if (newness == XFER_NEW)
+			enew = CreateEdge(theGrid, NBNODE(LINK0(ecopy)), 
+					  	  	  NBNODE(LINK1(ecopy)), FALSE);
+		else
+			enew = GetEdge(NBNODE(LINK0(ecopy)), 
+					  	   NBNODE(LINK1(ecopy)));
 
-		/* TODO: dirty bug fix            */
-		/* set element counter explicitly */
-		if (NBELEM(pe,i)==NULL) 
+		/* TODO: not needed due to newness */
+		/* TODO: dirty bug fix             */
+		/* set element counter explicitly  */
+/*
+		if (NBELEM(pe,i)==NULL)
 			SET_NO_OF_ELEM(enew,1);
 		else					  
 			SET_NO_OF_ELEM(enew,2);
+*/
 
 		PRINTDEBUG(dddif,5,(PFMT " ElemScatterEdge(): elem=" EID_FMTX
 			" create edge=%x for n0=" EID_FMTX " n1=" ID_FMTX "\n",
@@ -1360,38 +1501,73 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data)
 			ID_PRTX(NBNODE(LINK0(ecopy))),
 			ID_PRTX(NBNODE(LINK1(ecopy)))));
 
-		if (enew == NULL) {
+		if (enew == NULL)
+		{
 			PRINTDEBUG(dddif,1,(PFMT "  ElemScatterEdge(): ERROR pe=" EID_FMTX 
 				" i=%d CreateEdge returned NULL\n",
 				me,EID_PRTX(pe),i));
 			ASSERT(0);
 		}
+#ifdef Debug
 		{
-		EDGE *edge0,*edge1;
+			EDGE *edge0,*edge1;
+
 			edge0 = GetEdge(NBNODE(LINK0(ecopy)),NBNODE(LINK1(ecopy)));
 			edge1 = GetEdge(NBNODE(LINK1(ecopy)),NBNODE(LINK0(ecopy)));
 			if (edge0 != edge1) 
+			{
 				PRINTDEBUG(dddif,1,(PFMT " ElemScatterEdge(): n0=" ID_FMTX
 					" n1=" ID_FMTX " edge0=%08x BUT edge1=%08x\n",me,
 					ID_PRTX(NBNODE(LINK0(ecopy))),
 					ID_PRTX(NBNODE(LINK1(ecopy))),
 					edge0,edge1));
+				ASSERT(0);
+			}
 		}
+#endif
 
+		/* copy midnode pointer */
+/* TODO: delete
 		MIDNODE(enew) = MIDNODE(ecopy);
-		if (dddctrl.edgeData)
+		if (MIDNODE(enew) != NULL)
 		{
-			EDVECTOR(enew) = EDVECTOR(ecopy);
-			VOBJECT(EDVECTOR(enew)) = (void *)enew;
+*/
+		if (MIDNODE(ecopy) != NULL)
+		{
+			VERTEX 			*theVertex;
+			DOUBLE_VECTOR	global;
+			INT				co0,co1;
+
+			MIDNODE(enew)	= MIDNODE(ecopy);
+			theVertex 		= MYVERTEX(MIDNODE(enew));
+
+			/* reconstruct local coordinates of vertex */ 
+			co0 = CORNER_OF_EDGE(pe,i,0);
+			co1 = CORNER_OF_EDGE(pe,i,1);
+
+			/* local coordinates have to be local towards pe */
+/* TODO: delete this
+			V_DIM_COPY(global,CVECT(theVertex)); */
+			V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(pe,co0),
+						  0.5, LOCAL_COORD_OF_ELEM(pe,co1),
+						  LCVECT(theVertex));
+
+			/* set nfather pointer of midnode */ 
+			ASSERT(ID(MIDNODE(enew)) != -1);
+			SETNFATHER(MIDNODE(enew),(NODE *)enew);
+
+			/* make vertex information consistent */
+			VFATHER(theVertex) = pe;
+			SETONEDGE(theVertex,i); 
 		}
 
-/*
-		PRINTDEBUG(dddif,4,(PFMT " ElemScatterEdge(): pe=" EID_FMTX 
-			" i=%d n1=" ID_FMTX " n2=" ID_FMTX " nmid=%08x\n",
-			me,EID_PRTE(pe),i,ID_PRTX(edge->links[0].nbnode),
-			ID_PRTX(PARHDR(edge->links[1].nbnode),
-			DDD_InfoGlobalId(PARHDR(edge->midnode)))
-*/
+		/* copy edge vector pointer */
+		if (newness == XFER_NEW)
+			if (dddctrl.edgeData)
+			{
+				EDVECTOR(enew) = EDVECTOR(ecopy);
+				VOBJECT(EDVECTOR(enew)) = (void *)enew;
+			}
 	}
 }
 #endif /* end __TWODIM__ */
@@ -1402,7 +1578,8 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data)
 
 void ElemGatherI (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 {
-	if (type_id == DDD_USER_DATA) {
+	if (type_id == DDD_USER_DATA)
+	{
 		ElemGatherEdata((ELEMENT *)obj, cnt, (char *)data);
 		return;
 	}
@@ -1414,16 +1591,18 @@ void ElemGatherI (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 }
 
 
-void ElemScatterI (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data, int newness)
+void ElemScatterI (DDD_OBJ obj, int cnt, DDD_TYPE type_id,
+				   void *data, int newness)
 {
-	if (type_id == DDD_USER_DATA) {
+	if (type_id == DDD_USER_DATA)
+	{
 		ElemScatterEdata((ELEMENT *)obj, cnt, (char *)data);
 		return;
 	}
 
     #ifdef __TWODIM__
 	/* type_id is always TypeEdge */
-	ElemScatterEdge((ELEMENT *)obj, cnt, (char *)data);
+	ElemScatterEdge((ELEMENT *)obj, cnt, (char *)data, newness);
 	#endif
 }
 
@@ -1433,14 +1612,16 @@ void ElemGatherB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 	BNDS	*bnds[MAX_SIDES_OF_ELEM];
 	ELEMENT	*pe = (ELEMENT *)obj;
 
-	if (type_id == DDD_DOMAIN_DATA) {
+	if (type_id == DDD_DOMAIN_DATA)
+	{
 		nsides = SIDES_OF_ELEM(pe);
 		for (i=0; i<nsides; i++)
 			bnds[i] = ELEM_BNDS(pe,i);
 		BElementGatherBndS(bnds, nsides, cnt, (char *)data);
 		return;
 	}
-	if (type_id == DDD_USER_DATA) {
+	if (type_id == DDD_USER_DATA)
+	{
 		ElemGatherEdata((ELEMENT *)obj, cnt,(char *)data);
 		return;
 	}
@@ -1455,13 +1636,15 @@ void ElemGatherB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 }
 
 
-void ElemScatterB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data, int newness)
+void ElemScatterB (DDD_OBJ obj, int cnt, DDD_TYPE type_id,
+				   void *data, int newness)
 {
 	INT		i,nsides;
 	BNDS	*bnds[MAX_SIDES_OF_ELEM];
 	ELEMENT	*pe = (ELEMENT *)obj;
 
-	if (type_id == DDD_DOMAIN_DATA) {
+	if (type_id == DDD_DOMAIN_DATA)
+	{
 		nsides = SIDES_OF_ELEM(pe);
 		for (i=0; i<nsides; i++)
 		  bnds[i] = ELEM_BNDS(pe,i);
@@ -1470,7 +1653,8 @@ void ElemScatterB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data, int newne
 		  SET_BNDS(pe,i,bnds[i]);
 		return;
 	}
-	if (type_id == DDD_USER_DATA) {
+	if (type_id == DDD_USER_DATA)
+	{
 		ElemScatterEdata((ELEMENT *)obj, cnt,(char *)data);
 		return;
 	}
@@ -1479,7 +1663,7 @@ void ElemScatterB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data, int newne
 	#ifdef __TWODIM__
 	if (type_id==TypeEdge)
 	{
-		ElemScatterEdge(pe, cnt, (char *)data);
+		ElemScatterEdge(pe, cnt, (char *)data, newness);
 	} 
 	#endif
 }
@@ -1488,10 +1672,171 @@ void ElemScatterB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data, int newne
 /****************************************************************************/
 
 
+void ElementObjMkCons (DDD_OBJ obj, int newness)
+{
+	INT		i,j;
+	INT		lostson		= 0;
+	ELEMENT	*pe			= (ELEMENT *)obj;
+	INT		prio 		= DDD_InfoPriority(PARHDRE(pe));
+	ELEMENT *theFather	= EFATHER(pe);
+	ELEMENT *NbElement;
+	INT		level		= DDD_InfoAttr(PARHDRE(pe));
+	GRID	*theGrid 	= GetGridOnDemand(dddctrl.currMG,level);
+
+
+	PRINTDEBUG(dddif,1,(PFMT " ElementObjMkCons(): pe=" EID_FMTX 
+		" newness=%d\n",
+		me,EID_PRTX(pe),newness))
+
+	DEBUGNSONS(theFather,"ElementObjMkCons begin:");
+
+	/* correct nb relationships between ghostelements */
+	/* TODO: 3d case */
+	#ifdef __TWODIM__
+	if (EGHOST(pe))
+	{
+		for (i=0; i<SIDES_OF_ELEM(pe); i++)
+		{
+			NbElement = NBELEM(pe,i);
+			if (NbElement!=NULL && EGHOST(NbElement))
+			{
+				for (j=0; j<SIDES_OF_ELEM(NbElement); j++)
+					if (NBELEM(NbElement,j) == pe) break;
+				/* no backptr reset nb pointer */
+				if (j >= SIDES_OF_ELEM(NbElement)) SET_NBELEM(pe,i,NULL); 
+			}
+		}
+	}
+	#endif
+
+	/* reconstruct pointer from vectors */
+	if (dddctrl.elemData) VOBJECT(EVECTOR(pe)) = (void*)pe;
+
+	if (dddctrl.sideData)
+		for (i=0; i<SIDES_OF_ELEM(pe); i++)
+			VOBJECT(SVECTOR(pe,i)) = (void*)pe;
+
+	/*  if called with prio old=ghost and new=ghost,
+		then you have eventually to unlink and link 
+		an element again to avoid
+		decoupling of element and its father.
+		Sample cenario:
+			father=a  son=x are on proc p.
+			father is deleted and removes his reference in son,
+			but father and son are sent again to p. Son x gets
+			his father pointer again. Son needs to be 
+			rearranged in element to list be surely a son of father.
+			This applies only for ghost sons, since master sons
+			avoid deleting of their fathers?!
+	*/
+if (0 && newness != XFER_NEW)
+	{
+		if (prio == PrioMaster)
+			return;
+		else if (theFather != NULL)
+		{
+			ELEMENT *SonList[MAX_SONS];
+			int		i;
+
+			/* check whether NSONS of father must be incremented */
+			if (GetAllSons(theFather,SonList)) ASSERT(0);
+			i = 0;
+			while (SonList[i] != NULL)
+			{
+				if (SonList[i] == pe) return;
+				i++;
+			}
+			PRINTDEBUG(dddif,1,(PFMT "  ElementObjMkCons(): father: f=" 
+				EID_FMTX " lost son=" EID_FMTX " nsons=%d\n",me,
+				EID_PRTX(theFather),EID_PRTX(pe),NSONS(theFather)));
+
+			lostson = 1;
+			GRID_UNLINK_ELEMENT(theGrid,pe);
+		}
+	}
+
+	if (newness == XFER_NEW || lostson)
+	{
+		/* link element into list according to prio */
+		INT     where   = PRIO2INDEX(prio);
+		ELEMENT *after;
+
+		if (theFather != NULL)
+		{
+			/* link element with father */
+			after = SON(theFather,where);
+
+			PRINTDEBUG(dddif,1,(PFMT " ElementObjMkCons(): GRID_LINKX_ELEMENT "
+				"pe=" EID_FMTX " prio=%d where=%d after=%x father= " EID_FMTX 
+				"\n", me,EID_PRTX(pe),prio,where,after,EID_PRTX(theFather)))
+
+			GRID_LINKX_ELEMENT(theGrid,pe,prio,after);
+
+			/* construct son information */
+			if (after == NULL)
+			{
+				ELEMENT *next;
+
+				SET_SON(theFather,where,pe);
+
+				/* very successor of pe was decoupled before */
+				/* -> correct NSONS                          */
+if (0)
+{
+				next = SUCCE(pe); 
+				while (next!=NULL && DDD_InfoPriority(PARHDRE(next))==prio
+						&& theFather==EFATHER(next))
+				{
+					SETNSONS(theFather,NSONS(theFather)+1);
+					next = SUCCE(next);
+				}
+}
+			}
+			SETNSONS(theFather,NSONS(theFather)+1);
+		}
+		else
+		{
+			/* link coarse grid element or ghost element */
+			GRID_LINK_ELEMENT(theGrid,pe,prio);
+
+			#ifdef Debug
+			if (level > 0)
+				/* only ghost elements may have no father */
+				assert(DDD_InfoPriority(PARHDRE(pe))==PrioGhost ||
+					   DDD_InfoPriority(PARHDRE(pe))==PrioVGhost   );
+			#endif
+		}
+	}
+
+	#ifdef __THREEDIM__
+	/* update edge of new created elements */
+	if (newness == XFER_NEW)
+		/* increment elem counter in edges */ 
+		for (i=0; i<EDGES_OF_ELEM(pe); i++)
+		{
+			EDGE *theEdge;
+			NODE *theNode0 = CORNER(pe,CORNER_OF_EDGE(pe,i,0));
+			NODE *theNode1 = CORNER(pe,CORNER_OF_EDGE(pe,i,1));
+
+			ASSERT(theNode0!=NULL && theNode1!=NULL);
+
+			PRINTDEBUG(dddif,4,(PFMT " ElementObjMkCons(): pe=" EID_FMTX 
+				" INC_NO_OF_ELEM for n0=" ID_FMTX " n1=" ID_FMTX "\n",
+				me,EID_PRTX(pe),ID_PRTX(theNode0),ID_PRTX(theNode1)))
+
+			theEdge = GetEdge(theNode0,theNode1);
+			ASSERT(theEdge != NULL);
+
+			INC_NO_OF_ELEM(theEdge);
+		}
+	#endif
+
+	DEBUGNSONS(theFather,"end ElementObjMkCons");
+}
+
+/* TODO: these versions are now unified */
 /* two versions of ElementObjMkCons ... */
-
-
-void ElementObjMkCons_Xfer (DDD_OBJ obj, int newness)
+void ElementObjMkCons_Xferold (DDD_OBJ obj, int newness)
 {
 	INT		i;
 	ELEMENT	*pe			= (ELEMENT *)obj;
@@ -1530,41 +1875,12 @@ void ElementObjMkCons_Xfer (DDD_OBJ obj, int newness)
 	{
 		for (i=0; i<SIDES_OF_ELEM(pe); i++) 
 			VOBJECT(SVECTOR(pe,i)) = (void*)pe;
-
-		/* TODO: delete this */
-		if (0) {
-			if (SVECTOR(pe,i) != NULL) {
-
-				/* this element has Xfered the side vector */
-				VOBJECT(SVECTOR(pe,i)) = (void*)pe;
-			}
-			else {
-				ELEMENT *nb;
-				INT j;
-
-				nb = NBELEM(pe,i);
-				if (nb == NULL) {
-					PRINTDEBUG(dddif,1,(PFMT " no sidevector exists, pe="
-						EID_FMTX "\n",me,EID_PRTX(pe)));
-				}
-
-				for (j=0; j<SIDES_OF_ELEM(nb); j++) {
-					if (NBELEM(nb,j) == pe) break;
-				}
-				ASSERT(j<SIDES_OF_ELEM(nb));
-
-				/* nb element has Xfered the side vector */
-				ASSERT(NBELEM(nb,j) == pe);
-				ASSERT(SVECTOR(nb,j) != NULL);
-				SET_SVECTOR(pe,i,SVECTOR(nb,j));
-			}
-		}
 	}
 }
 
 
-
-void ElementObjMkCons_Refine (DDD_OBJ obj, int newness)
+/* TODO: delete this function */
+void ElementObjMkCons_Refineold (DDD_OBJ obj, int newness)
 {
 	INT		i,j;
 	ELEMENT	*pe	= (ELEMENT *)obj;
@@ -1581,7 +1897,8 @@ void ElementObjMkCons_Refine (DDD_OBJ obj, int newness)
 		for (i=0; i<SIDES_OF_ELEM(pe); i++) VOBJECT(SVECTOR(pe,i)) = (void*)pe;
 	}
 
-	/* connect with father */
+	/* increment nsons of father */
+	if (newness == XFER_NEW)
 	{
 		ELEMENT *father = EFATHER(pe);
 		if (father != NULL) {
@@ -1595,6 +1912,10 @@ void ElementObjMkCons_Refine (DDD_OBJ obj, int newness)
 			SET_SON(father,NSONS(father),pe);
 			SETNSONS(father,NSONS(father)+1);
 		}
+		else
+			/* only GhostElements may have no father */
+			assert(DDD_InfoPriority(PARHDRE(pe))==PrioGhost ||
+				   DDD_InfoPriority(PARHDRE(pe))==PrioVGhost   );
 	}
 
 }
@@ -1603,15 +1924,30 @@ void ElementObjMkCons_Refine (DDD_OBJ obj, int newness)
 void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
 	ELEMENT	*pe			= (ELEMENT *)obj;
+	ELEMENT *theFather	= EFATHER(pe);
+	ELEMENT *succe		= SUCCE(pe);
 	INT		level		= DDD_InfoAttr(PARHDRE(pe));
 	GRID	*theGrid	= GetGridOnDemand(dddctrl.currMG,level);
 	INT		old			= DDD_InfoPriority(PARHDRE(pe));
+	INT		lostson		= 1;
 
-	PRINTDEBUG(dddif,2,(PFMT "  ElementPriorityUpdate(): e=" EID_FMTX 
+	PRINTDEBUG(dddif,1,(PFMT "  ElementPriorityUpdate(): e=" EID_FMTX 
 		" old=%d new=%d level=%d\n",me,EID_PRTX(pe),old,new,level))
 
 	if (pe == NULL) return;
-	if (old == new) return;
+
+	/*  if called with prio old=ghost and new=ghost,
+		then you have to unlink and link again to avoid
+		decoupling of son and father.
+		Sample cenario:
+			father=a  son=x are on proc p.
+			father is deleted and removes his reference in son,
+			but father and son are sent again to p. Son x gets
+			his father pointer again. Son needs to be 
+			rearranged in element to list be surely a son of father.
+			This applies only for ghost sons, since master sons
+			avoid deleting of their fathers?!
+	*/
 
 	if (old == PrioNone) {
 		/* only valid for masters */
@@ -1627,10 +1963,107 @@ void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 		return;
 	}
 
+	/* check whether element and father are decoupled */
+	if (theFather != NULL)
+	{
+		ELEMENT *SonList[MAX_SONS];
+		int		i;
+
+		if (GetAllSons(theFather,SonList)) ASSERT(0);
+		i = 0;
+		while (SonList[i] != NULL)
+		{
+			if (SonList[i] == pe) lostson = 0;
+			i++;
+		}
+
+		PRINTDEBUG(dddif,1,(PFMT "  ElementPriorityUpdate(): father: f=" 
+			EID_FMTX " lost son=" EID_FMTX " nsons=%d\n",me,
+			EID_PRTX(theFather),EID_PRTX(pe),NSONS(theFather)));
+
+		if (lostson == 1)
+			SETNSONS(theFather,NSONS(theFather)+1);
+		else if (old == new)
+			return;
+	}
+
 	GRID_UNLINK_ELEMENT(theGrid,pe);
 
-	GRID_LINK_ELEMENT(theGrid,pe,new);
-	
+	/* link element into list according to prio */
+	{
+		INT     where   = PRIO2INDEX(new);
+		ELEMENT *after;
+
+		if (theFather != NULL)
+		{
+			ELEMENT *Next		= NULL;
+			INT 	oldwhere	= PRIO2INDEX(old);
+
+			/* update son information for old prio */
+			if (pe == SON(theFather,oldwhere))
+			{
+				if (succe != NULL)
+					if (EFATHER(succe)==theFather && DDD_InfoPriority(PARHDRE(succe))==old)
+						Next = succe;
+
+				SET_SON(theFather,oldwhere,Next);
+			}
+
+			/* link elements with father */
+			after = SON(theFather,where);
+
+			PRINTDEBUG(dddif,2,(PFMT " ElementPriorityUpdate(): GRID_LINKX_ELEMENT "
+				"pe=" EID_FMTX " prio=%d after=%x\n",me,EID_PRTX(pe),new,after))
+
+			GRID_LINKX_ELEMENT(theGrid,pe,new,after);
+
+			/* update son information for new prio */
+			if (after == NULL)
+			{
+				ELEMENT *next;
+
+				SET_SON(theFather,where,pe);
+
+				/* add successor elements which were decoupled before */
+				next = SUCCE(pe); 
+				while (next!=NULL && DDD_InfoPriority(PARHDRE(next))==new
+						&& theFather==EFATHER(next))
+				{
+					SETNSONS(theFather,NSONS(theFather)+1);
+					next = SUCCE(next);
+				}
+			}
+		}
+		else
+		{
+			PRINTDEBUG(dddif,2,(PFMT " ElementPriorityUpdate(): GRID_LINK_ELEMENT "
+				"pe=" EID_FMTX " prio=%d",me,EID_PRTX(pe),new))
+
+			/* link coarse grid element */
+			GRID_LINK_ELEMENT(theGrid,pe,new);
+
+			/* only GhostElements may have no father */     
+/*
+			if (level > 0)
+			{
+				assert(new==PrioGhost ||
+					   new==PrioVGhost   );
+
+				assert(DDD_InfoPriority(PARHDRE(pe))==PrioGhost ||
+					   DDD_InfoPriority(PARHDRE(pe))==PrioVGhost   );
+			}
+*/
+		}
+	}
+
+/* TODO: delete this
+	#ifdef Debug
+	DDD_InfoPriority(PARHDRE(pe)) = new;
+	DEBUGNSONS(EFATHER(pe),"end ElementPriorityUpdate");
+	DDD_InfoPriority(PARHDRE(pe)) = old;
+	#endif
+*/
+
 	return;
 }
 
@@ -1655,7 +2088,6 @@ void EdgeUpdate (DDD_OBJ obj)
 		" NO_OF_ELEM=%d\n",
 		me,pe,DDD_InfoGlobalId(PARHDR(pe)),OBJT(pe),NO_OF_ELEM(pe)))
 
-	#ifdef __THREEDIM__
 	{
 		LINK *link0,*link1;
 		NODE *node0,*node1;
@@ -1680,11 +2112,42 @@ void EdgeUpdate (DDD_OBJ obj)
 		/* reset element counter */
 		SET_NO_OF_ELEM(pe,0);
 	}
-	#endif
+
+	/* set nfather pointer of midnode */ 
+	if (MIDNODE(pe) != NULL)
+	{
+		ASSERT(ID(MIDNODE(pe)) != -1);
+		ASSERT(NTYPE((MIDNODE(pe))) == MID_NODE);
+		SETNFATHER(MIDNODE(pe),(NODE *)pe);
+	}
 
 	/* increment counter */
 	NE(theGrid)++;
 }	
+
+void EdgePriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
+{
+	EDGE	*theEdge	= (EDGE *)obj;
+	INT		level		= ATTR(theEdge);
+	GRID	*theGrid	= GetGridOnDemand(dddctrl.currMG,level);
+	INT		old			= PRIO(theEdge);
+
+	PRINTDEBUG(dddif,2,(PFMT " EdgePriorityUpdate(): n=" ID_FMTX " old=%d new=%d "
+		"level=%d\n",me,ID_PRTX(theEdge),old,new,level))
+}
+
+void EdgeObjMkCons (DDD_OBJ obj, int newness)
+{
+	EDGE *theEdge	= (EDGE *) obj;
+
+	PRINTDEBUG(dddif,2,(PFMT " EdgeObjMkCons(): n=" ID_FMTX " EDOBJ=%d\n",
+		me,ID_PRTX(theEdge),OBJT(theEdge)))
+
+	/* set pointer of vector to its edge */
+	if (dddctrl.edgeData && EDVECTOR(theEdge)) 
+		VOBJECT(EDVECTOR(theEdge)) = (void*)theEdge;
+
+}
 
 void EdgeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio) 
 {
@@ -1714,6 +2177,7 @@ static void ElemHandlerInit (DDD_TYPE etype, INT handlerSet)
 
 	switch (handlerSet)
 	{
+		/* TODO: not needed any more ??
 		case HSET_XFER:
 			DDD_SetHandlerOBJMKCONS(etype, ElementObjMkCons_Xfer);
 			break;
@@ -1721,6 +2185,10 @@ static void ElemHandlerInit (DDD_TYPE etype, INT handlerSet)
 		case HSET_REFINE:
 			DDD_SetHandlerOBJMKCONS(etype, ElementObjMkCons_Refine);
 			break;
+		*/
+		default:
+            DDD_SetHandlerOBJMKCONS(etype, ElementObjMkCons);
+            break;
 	}
 }
 
@@ -1809,7 +2277,9 @@ void ddd_HandlerInit (INT handlerSet)
 
 	#ifdef __THREEDIM__
 	DDD_SetHandlerUPDATE      (TypeEdge, EdgeUpdate);
+	DDD_SetHandlerOBJMKCONS   (TypeEdge, EdgeObjMkCons);
 	DDD_SetHandlerXFERCOPY    (TypeEdge, EdgeXferCopy);
+	DDD_SetHandlerSETPRIORITY (TypeEdge, EdgePriorityUpdate);
 	#endif
 
     DomHandlerInit(handlerSet);

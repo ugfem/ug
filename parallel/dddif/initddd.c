@@ -49,6 +49,7 @@
 /* macro for easier definition of DDD_TYPEs */
 #define  ELDEF(comp)    &(comp),sizeof(comp)
 
+/* #define DDD_PrioMergeDefault(x,y)*/	/* TODO: delete this define */
 
 
 /****************************************************************************/
@@ -74,6 +75,8 @@ DDD_TYPE TypeNode;
 DDD_TYPE TypeEdge;
 #endif
 
+DDD_TYPE TypeUnknown;
+
 #ifdef __TWODIM__
 DDD_TYPE TypeTrElem, TypeTrBElem;
 DDD_TYPE TypeQuElem, TypeQuBElem;
@@ -96,12 +99,14 @@ DDD_TYPE TypeEdge;
 DDD_TYPE TypeBndS;
 
 /* DDD interfaces needed for distributed computation */
-DDD_IF ElementIF, ElementSymmIF;
-DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF;
-DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF;
+DDD_IF ElementIF, ElementSymmIF, ElementVIF, ElementSymmVIF,
+       ElementVHIF, ElementSymmVHIF;
+DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF;
+DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF,
+       VectorVIF, VectorVAllIF;
 DDD_IF VertexIF;
 #ifdef __THREEDIM__
-DDD_IF EdgeIF;
+DDD_IF EdgeIF, BorderEdgeSymmIF;
 #endif
 
 
@@ -129,22 +134,30 @@ enum ElemTypeFlag { Inside, Boundary };
 
 static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
 {
-  struct generic_element *ge=0;
-  GENERAL_ELEMENT *desc = element_descriptors[tag];
+  struct generic_element  *ge=0;
+  GENERAL_ELEMENT                 *desc = element_descriptors[tag];
+  unsigned INT gbits = 0;
 
   size_t ps  = sizeof(void *);
   void   **r = ge->refs;
 
+  /* compute global fields of control word entry */
+  gbits = ~(((1<<NSONS_LEN)-1)<<NSONS_SHIFT);
+  PRINTDEBUG(dddif,1,("ddd_InitGenericElement(): gbits=%08x size=%d\n",
+                      gbits,sizeof(ge->control)));
 
   /* initialize base part (valid for all elements) */
   DDD_TypeDefine(dddType, ge,
                  EL_DDDHDR, &(ge->ddd),
-                 EL_GDATA,  ELDEF(ge->control),
+                 /* TODO: delete this					*/
+                 /*		EL_GDATA,  ELDEF(ge->control),	*/
+                 EL_GBITS,  ELDEF(ge->control), &gbits,
 
                  /* TODO: id muss umgerechnet werden! (?) */
                  EL_GDATA,  ELDEF(ge->id),
                  EL_GDATA,  ELDEF(ge->flag),
                  EL_GDATA,  ELDEF(ge->property),
+                 EL_GDATA,  ELDEF(ge->ptmp),
                  EL_LDATA,  ELDEF(ge->pred),
                  EL_LDATA,  ELDEF(ge->succ),
                  EL_CONTINUE);
@@ -159,12 +172,15 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
   DDD_TypeDefine(dddType, ge,
                  EL_OBJPTR, r+n_offset[tag],       ps*desc->corners_of_elem, TypeNode,
                  EL_OBJPTR, r+father_offset[tag],  ps,                       dddType,
-                #ifdef __TWODIM__
-                 EL_OBJPTR, r+sons_offset[tag],    ps*desc->max_sons_of_elem,dddType,
-                #endif
-                #ifdef __THREEDIM__
-                 EL_OBJPTR, r+sons_offset[tag],    ps*1,                     dddType,
-                #endif
+                 /* TODO: delete
+                    #ifdef __TWODIM__
+                                 EL_LDATA, r+sons_offset[tag],    ps*desc->max_sons_of_elem,
+                    #endif
+                    #ifdef __THREEDIM__
+                                 EL_LDATA, r+sons_offset[tag],    ps*1,
+                    #endif
+                  */
+                 EL_LDATA, r+sons_offset[tag],    ps*2,
                  EL_OBJPTR, r+nb_offset[tag],      ps*desc->sides_of_elem,   dddType,
                  EL_CONTINUE);
 
@@ -203,6 +219,17 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
     dddctrl.types[MAPPED_BND_OBJT_TAG(tag)] = dddType;
     dddctrl.dddObj[MAPPED_BND_OBJT_TAG(tag)] = TRUE;
   }
+
+  /* set mergemode to maximum */
+  DDD_PrioMergeDefault(dddType, PRIOMERGE_MAXIMUM);
+  /* TODO: set prios
+          DDD_PrioMergeDefine(dddType, PrioGhost, PrioVGhost, PrioVHGhost);
+          DDD_PrioMergeDefine(dddType, PrioGhost, PrioVHGhost, PrioVHGhost);
+          DDD_PrioMergeDefine(dddType, PrioVGhost, PrioVHGhost, PrioVHGhost);
+          DDD_PrioMergeDefine(dddType, PrioGhost, PrioMaster, PrioMaster);
+          DDD_PrioMergeDefine(dddType, PrioVGhost, PrioMaster, PrioMaster);
+          DDD_PrioMergeDefine(dddType, PrioVHGhost, PrioMaster, PrioMaster);
+   */
 
 }
 
@@ -286,6 +313,15 @@ static void ddd_DeclareTypes (void)
   TypeHeBElem     = DDD_TypeDeclare("HeBElem");
         #endif /* THREEDIM */
 
+  /* edge type not unique:                    */
+  /* edge is DDD object for 3D                */
+  /* edge is DDD data object for 2D           */
+  TypeEdge        = DDD_TypeDeclare("Edge");
+  dddctrl.ugtypes[TypeEdge] = EDOBJ;
+  dddctrl.types[EDOBJ] = TypeEdge;
+        #ifdef __THREEDIM__
+  dddctrl.dddObj[EDOBJ] = TRUE;
+        #endif
 
   /* 2. DDD data objects (without DDD_HEADER) */
 
@@ -296,13 +332,6 @@ static void ddd_DeclareTypes (void)
   TypeBndP    = DDD_TypeDeclare("BndP");
   dddctrl.ugtypes[TypeBndP] = BPOBJ;
   dddctrl.types[BPOBJ] = TypeBndP;
-
-  TypeEdge        = DDD_TypeDeclare("Edge");
-  dddctrl.ugtypes[TypeEdge] = EDOBJ;
-  dddctrl.types[EDOBJ] = TypeEdge;
-        #ifdef __THREEDIM__
-  dddctrl.dddObj[EDOBJ] = TRUE;
-        #endif
 
   TypeBndS = DDD_TypeDeclare("BndS");
   dddctrl.ugtypes[TypeBndS] = BSOBJ;
@@ -335,6 +364,7 @@ static void ddd_DefineTypes (void)
 
   MATRIX m;
   EDGE e;
+  unsigned INT gbits = 0;
 
   /* 1. DDD objects (with DDD_HEADER) */
 
@@ -370,10 +400,21 @@ static void ddd_DefineTypes (void)
                  EL_END,    &v+1
                  );
 
+  /* set mergemode to maximum */
+  DDD_PrioMergeDefault(TypeVector, PRIOMERGE_MAXIMUM);
+
+  /* compute global fields it control word entry */
+  gbits = ~((((1<<ONEDGE_LEN)-1)<<ONEDGE_SHIFT) |
+            (((1<<NOOFNODE_LEN)-1)<<NOOFNODE_SHIFT));
+  PRINTDEBUG(dddif,1,("ddd_DefineTypes(): TypeI/BVertex gbits=%08x size=%d\n",
+                      gbits,sizeof(iv.control)));
 
   DDD_TypeDefine(TypeIVertex, &iv,
                  EL_DDDHDR, &iv.ddd,
-                 EL_GDATA,  ELDEF(iv.control),
+                 /* TODO: delete
+                                 EL_GDATA,  ELDEF(iv.control),
+                  */
+                 EL_GBITS,  ELDEF(iv.control), &gbits,
 
                  /* TODO: muss umgerechnet werden! */
                  EL_GDATA,  ELDEF(iv.id),
@@ -383,20 +424,30 @@ static void ddd_DefineTypes (void)
                  EL_LDATA,  ELDEF(iv.succ),
                  EL_LDATA,  ELDEF(iv.data),
 
-                 /* TODO muss father LDATA oder OBJPTR sein? */
+                 /* TODO muss father LDATA oder OBJPTR sein?     */
+                 /* LDATA, father ist nur lokal gueltig und      */
+                 /* ist abhaengig von vertikaler Lastverteilung  */
                  EL_LDATA,  ELDEF(iv.father),
 
+                #ifdef TOPNODE
                  /* TODO topnode wirklich OBJPTR? */
-                 EL_OBJPTR, ELDEF(iv.topnode), TypeNode,
+                 EL_LDATA,  ELDEF(iv.topnode),
+                #endif
                  EL_END,    &iv+1
                  );
+
+  /* set mergemode to maximum */
+  DDD_PrioMergeDefault(TypeIVertex, PRIOMERGE_MAXIMUM);
 
 
   DDD_TypeDefine(TypeBVertex, &bv,
                  EL_DDDHDR, &bv.ddd,
-                 EL_GDATA,  ELDEF(bv.control),
+                 /* TODO: delete
+                                 EL_GDATA,  ELDEF(bv.control),
+                  */
+                 EL_GBITS,  ELDEF(bv.control), &gbits,
 
-                 /* TODO: muss umgerechnet werden! */
+                 /* TODO: muss umgerechnet werden! Nooeee! */
                  EL_GDATA,  ELDEF(bv.id),
                  EL_GDATA,  ELDEF(bv.x),
                  EL_GDATA,  ELDEF(bv.xi),
@@ -404,14 +455,21 @@ static void ddd_DefineTypes (void)
                  EL_LDATA,  ELDEF(bv.succ),
                  EL_LDATA,  ELDEF(bv.data),
 
-                 /* TODO muss father LDATA oder OBJPTR sein? */
+                 /* TODO muss father LDATA oder OBJPTR sein?     */
+                 /* LDATA, father ist nur lokal gueltig und      */
+                 /* ist abhaengig von vertikaler Lastverteilung  */
                  EL_LDATA,  ELDEF(bv.father),
 
-                 /* TODO topnode wirklich OBJPTR? */
-                 EL_OBJPTR, ELDEF(bv.topnode), TypeNode,
+                #ifdef TOPNODE
+                 /* TODO topnode wirklich OBJPTR?, Nooeee! */
+                 EL_LDATA,  ELDEF(bv.topnode),
+                #endif
                  EL_LDATA,  ELDEF(bv.bndp),     /* different from IVertex */
                  EL_END,    &bv+1
                  );
+
+  /* set mergemode to maximum */
+  DDD_PrioMergeDefault(TypeBVertex, PRIOMERGE_MAXIMUM);
 
 
   DDD_TypeDefine(TypeNode, &n,
@@ -426,7 +484,10 @@ static void ddd_DefineTypes (void)
 
                  /* TODO was ist start? */
                  EL_LDATA,  ELDEF(n.start),
-                 EL_OBJPTR, ELDEF(n.father),   TypeNode,
+
+                 /* father may be one of node or edge */
+                 EL_OBJPTR, ELDEF(n.father),   DDD_TYPE_BY_HANDLER, NFatherObjType,
+
                  EL_OBJPTR, ELDEF(n.son),      TypeNode,
 
                  /* TODO: ref-typ muss eigentlich {TypeIVertex,TypeBVertex} sein! */
@@ -440,6 +501,9 @@ static void ddd_DefineTypes (void)
 
   DDD_TypeDefine(TypeNode, &n,
                  EL_END,    &n+1);
+
+  /* set mergemode to maximum */
+  DDD_PrioMergeDefault(TypeNode, PRIOMERGE_MAXIMUM);
 
 
         #ifdef __TWODIM__
@@ -478,10 +542,22 @@ static void ddd_DefineTypes (void)
                  EL_END,    &m+1
                  );
 
+  /* compute global fields it control word entry */
+  gbits = ~(((1<<NOOFELEM_LEN)-1)<<NOOFELEM_SHIFT);
+  PRINTDEBUG(dddif,1,("ddd_DefineTypes(): TypeEdge gbits=%08x size=%d\n",
+                      gbits,sizeof(e.links[0].control)));
 
   DDD_TypeDefine(TypeEdge, &e,
                  /* link 0 data */
-                 EL_LDATA,  ELDEF(e.links[0].control),
+                 /*TODO: now unique
+                    #ifdef __TWODIM__
+                                 EL_GDATA,  ELDEF(e.links[0].control),
+                    #endif
+                    #ifdef __THREEDIM__
+                                 EL_LDATA,  ELDEF(e.links[0].control),
+                    #endif
+                  */
+                 EL_GBITS,  ELDEF(e.links[0].control), &gbits,
                  EL_LDATA,  ELDEF(e.links[0].next),
                  EL_OBJPTR, ELDEF(e.links[0].nbnode), TypeNode,
 
@@ -504,6 +580,12 @@ static void ddd_DefineTypes (void)
 
   size = sizeof(EDGE) - ((dddctrl.edgeData) ? 0 : sizeof(VECTOR*));
   DDD_TypeDefine(TypeEdge, &e, EL_END, ((char *)&e)+size);
+
+        #ifdef __THREEDIM__
+  /* set mergemode to maximum */
+  DDD_PrioMergeDefault(TypeEdge, PRIOMERGE_MAXIMUM);
+        #endif
+
 }
 
 
@@ -528,6 +610,8 @@ static void ddd_IfInit (void)
   DDD_PRIO A[8];
   DDD_PRIO B[8];
 
+
+  /* define element interfaces */
 #ifdef __TWODIM__
   O[0] = TypeTrElem; O[1] = TypeTrBElem;
   O[2] = TypeQuElem; O[3] = TypeQuBElem;
@@ -552,54 +636,102 @@ static void ddd_IfInit (void)
   ElementSymmIF = DDD_IFDefine(nO,O,2,A,2,B);
   DDD_IFSetName(ElementSymmIF, "ElementSymmIF: Master/Ghost");
 
+  A[0] = PrioMaster;
+  B[0] = PrioVGhost;
+  ElementVIF = DDD_IFDefine(nO,O,1,A,1,B);
+  DDD_IFSetName(ElementVIF, "ElementVIF: Master->VGhost");
+
+  A[0] = PrioMaster; A[1] = PrioVGhost;
+  B[0] = PrioMaster; B[1] = PrioVGhost;
+  ElementSymmVIF = DDD_IFDefine(nO,O,2,A,2,B);
+  DDD_IFSetName(ElementSymmVIF, "ElementSymmVIF: Master/VGhost");
+
+  A[0] = PrioMaster;
+  B[0] = PrioVGhost; B[1] = PrioGhost;
+  ElementVHIF = DDD_IFDefine(nO,O,1,A,2,B);
+  DDD_IFSetName(ElementVHIF, "ElementVHIF: Master->VGhost&Ghost");
+
+  A[0] = PrioMaster; A[1] = PrioVGhost; A[2] = PrioGhost;
+  B[0] = PrioMaster; B[1] = PrioVGhost; B[2] = PrioGhost;
+  ElementSymmVHIF = DDD_IFDefine(nO,O,3,A,3,B);
+  DDD_IFSetName(ElementSymmVHIF, "ElementSymmVHIF: Master/VGhost&Ghost");
+
+
+  /* define node interfaces */
   O[0] = TypeNode;
+
   A[0] = PrioBorder;
   B[0] = PrioMaster;
   BorderNodeIF = DDD_IFDefine(1,O,1,A,1,B);
   DDD_IFSetName(BorderNodeIF, "BorderNodeIF: Border->Master");
 
-  O[0] = TypeNode;
   A[0] = PrioMaster; A[1] = PrioBorder;
   B[0] = PrioMaster; B[1] = PrioBorder;
   BorderNodeSymmIF = DDD_IFDefine(1,O,2,A,2,B);
   DDD_IFSetName(BorderNodeSymmIF, "BorderNodeSymmIF: Border->Master");
 
-  O[0] = TypeNode;
   A[0] = PrioMaster;
   B[0] = PrioGhost;
   OuterNodeIF = DDD_IFDefine(1,O,1,A,1,B);
   DDD_IFSetName(OuterNodeIF, "OuterNodeIF: Master->Ghost");
 
+  A[0] = PrioMaster;
+  B[0] = PrioVGhost;
+  NodeVIF = DDD_IFDefine(1,O,1,A,1,B);
+  DDD_IFSetName(NodeVIF, "NodeVIF: Master->VGhost");
+
+
+  /* define vector interfaces */
   O[0] = TypeVector;
+
   A[0] = PrioBorder;
   B[0] = PrioMaster;
   BorderVectorIF = DDD_IFDefine(1,O,1,A,1,B);
   DDD_IFSetName(BorderVectorIF, "BorderVectorIF: Border->Master");
 
-  O[0] = TypeVector;
   A[0] = PrioMaster; A[1] = PrioBorder;
   B[0] = PrioMaster; B[1] = PrioBorder;
   BorderVectorSymmIF = DDD_IFDefine(1,O,2,A,2,B);
   DDD_IFSetName(BorderVectorSymmIF, "BorderVectorSymmIF: Master/Border");
 
-  O[0] = TypeVector;
   A[0] = PrioMaster;
   B[0] = PrioGhost;
   OuterVectorIF = DDD_IFDefine(1,O,1,A,1,B);
   DDD_IFSetName(OuterVectorIF, "OuterVectorIF: Master->Ghost");
 
+  A[0] = PrioMaster;
+  B[0] = PrioVGhost;
+  VectorVIF = DDD_IFDefine(1,O,1,A,1,B);
+  DDD_IFSetName(VectorVIF, "VectorVIF: Master->VGhost");
+
+  A[0] = PrioMaster; A[1] = PrioBorder; A[2] = PrioVGhost;
+  B[0] = PrioMaster; B[1] = PrioBorder;
+  VectorVAllIF = DDD_IFDefine(1,O,3,A,2,B);
+  DDD_IFSetName(VectorVAllIF, "VectorVAllIF: Master/Border/VGhost->Master/Border");
+
+
+  /* define vertex interfaces */
   O[0] = TypeIVertex; O[1] = TypeBVertex;
+
   A[0] = PrioMaster;
   B[0] = PrioMaster;
   VertexIF = DDD_IFDefine(2,O,1,A,1,B);
   DDD_IFSetName(VertexIF, "VertexIF: Master<->Master");
 
+
+  /* define edge interfaces */
         #ifdef __THREEDIM__
   O[0] = TypeEdge;
+
   A[0] = PrioMaster;
   B[0] = PrioMaster;
   EdgeIF = DDD_IFDefine(1,O,1,A,1,B);
   DDD_IFSetName(EdgeIF, "EdgeIF: Master<->Master");
+
+  A[0] = PrioMaster; A[1] = PrioBorder;
+  B[0] = PrioMaster; B[1] = PrioBorder;
+  BorderEdgeSymmIF = DDD_IFDefine(1,O,2,A,2,B);
+  DDD_IFSetName(BorderEdgeSymmIF, "BorderEdgeSymmIF: Master/Border");
 
         #endif
 }
@@ -744,6 +876,9 @@ int InitParallel (int *argc, char ***argv)
 
   /* treat identify tokens for one object as set */
   DDD_SetOption(OPT_IDENTIFY_MODE, IDMODE_SETS);
+
+  /* dont delete objects when another copy comes in during Xfer */
+  DDD_SetOption(OPT_XFER_PRUNE_DELETE, OPT_ON);
 
   /* initialize context */
   /* TODO: malloc() should be replaced by HEAPs or ddd_memmgr */
