@@ -522,32 +522,33 @@ static INT file_elements_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
                                theLine,id,n,c0,c1,c2,c3,c4,c5,c6,c7); */
 
 
-    if (c[0] == c[1]) {
-      if (c[4] != c[5]) return(1);
-      Mesh->Element_corners[1][nElem] = 6;
-      Mesh->Element_corner_ids[1][nElem][0] = c[0] - 1;
-      Mesh->Element_corner_ids[1][nElem][1] = c[2] - 1;
-      Mesh->Element_corner_ids[1][nElem][2] = c[3] - 1;
-      Mesh->Element_corner_ids[1][nElem][3] = c[4] - 1;
-      Mesh->Element_corner_ids[1][nElem][4] = c[6] - 1;
-      Mesh->Element_corner_ids[1][nElem][5] = c[7] - 1;
+    if (Mesh != NULL)
+      if (c[0] == c[1]) {
+        if (c[4] != c[5]) return(1);
+        Mesh->Element_corners[1][nElem] = 6;
+        Mesh->Element_corner_ids[1][nElem][0] = c[0] - 1;
+        Mesh->Element_corner_ids[1][nElem][1] = c[2] - 1;
+        Mesh->Element_corner_ids[1][nElem][2] = c[3] - 1;
+        Mesh->Element_corner_ids[1][nElem][3] = c[4] - 1;
+        Mesh->Element_corner_ids[1][nElem][4] = c[6] - 1;
+        Mesh->Element_corner_ids[1][nElem][5] = c[7] - 1;
 
-      /*
-                      printf("%d : %d %d %d %d %d %d\n",
-                                 nElem,
-                                 Mesh->Element_corner_ids[1][nElem][0],
-                                 Mesh->Element_corner_ids[1][nElem][1],
-                                 Mesh->Element_corner_ids[1][nElem][2],
-                                 Mesh->Element_corner_ids[1][nElem][3],
-                                 Mesh->Element_corner_ids[1][nElem][4],
-                                 Mesh->Element_corner_ids[1][nElem][5]);
-       */
-    }
-    else {
-      Mesh->Element_corners[1][nElem] = n+1;
-      for (i=0; i<=n; i++)
-        Mesh->Element_corner_ids[1][nElem][i] = c[i] - 1;
-    }
+        /*
+                        printf("%d : %d %d %d %d %d %d\n",
+                                   nElem,
+                                   Mesh->Element_corner_ids[1][nElem][0],
+                                   Mesh->Element_corner_ids[1][nElem][1],
+                                   Mesh->Element_corner_ids[1][nElem][2],
+                                   Mesh->Element_corner_ids[1][nElem][3],
+                                   Mesh->Element_corner_ids[1][nElem][4],
+                                   Mesh->Element_corner_ids[1][nElem][5]);
+         */
+      }
+      else {
+        Mesh->Element_corners[1][nElem] = n+1;
+        for (i=0; i<=n; i++)
+          Mesh->Element_corner_ids[1][nElem][i] = c[i] - 1;
+      }
     nElem++;
 
     /*		printf("%d %d %d %d %d\n",id,n,c[0],c[1],c[2]); */
@@ -638,33 +639,38 @@ static INT file_corners_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey,
                &id,c,c+1,c+2) != 1+N) return(0);
 
     if (i < nBndP)
-    {
-      M_BNDP *p = (M_BNDP *)Mesh->theBndPs[i];
-
       for (j=0; j<3; j++)
         midpoint[j] += c[j];
 
-      for (j=0; j<3; j++)
-        p->pos[j] = c[j];
+    if (Mesh != NULL) {
+      if (i < nBndP)
+      {
+        M_BNDP *p = (M_BNDP *)Mesh->theBndPs[i];
 
+        for (j=0; j<3; j++)
+          p->pos[j] = c[j];
+      }
+      else
+        for (j=0; j<3; j++)
+          Mesh->Position[i-nBndP][j] = c[j];
     }
-    else
-      for (j=0; j<3; j++)
-        Mesh->Position[i-nBndP][j] = c[j];
-
     /* printf("%d %f %f %f\n",id,c[0],c[1],c[2]);  */
   }
   s = 1.0 / nBndP;
   for (j=0; j<3; j++)
     midpoint[j] *= s;
-  *radius = 0.0;
-  for (i=0; i<nBndP; i++)
-  {
-    M_BNDP *p = (M_BNDP *)Mesh->theBndPs[i];
+  if (Mesh != NULL) {
+    *radius = 0.0;
+    for (i=0; i<nBndP; i++)
+    {
+      M_BNDP *p = (M_BNDP *)Mesh->theBndPs[i];
 
-    for (j=0; j<3; j++)
-      *radius = MAX(*radius,fabs(midpoint[j] - p->pos[j]));
+      for (j=0; j<3; j++)
+        *radius = MAX(*radius,fabs(midpoint[j] - p->pos[j]));
+    }
   }
+  else
+    *radius = ABS(midpoint[0])+ABS(midpoint[1])+ABS(midpoint[2]);
 
   return(0);
 }
@@ -674,6 +680,9 @@ static INT file_contact_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
   int id,c;
 
   /*	fgets(theLine, MAX_LEN, f); */
+
+  if (Mesh == NULL)
+    return(0);
 
   nBndP = 0;
   do
@@ -851,9 +860,6 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
     return (NULL);
   STD_BVP_S2P_PTR(theBVP)[0] = 0;
   STD_BVP_S2P_PTR(theBVP)[1] = 0;
-
-  if (Mesh == NULL)
-    return ((BVP*)theBVP);
 
         #ifdef ModelP
   if (me == 0) {
@@ -1034,7 +1040,8 @@ Broadcast(&nTPatch,sizeof(INT));
   fclose(stream);
 
 #       ifdef __THREEDIM__
-  RepairMesh(Heap,MarkKey,Mesh);
+  if (Mesh != NULL)
+    RepairMesh(Heap,MarkKey,Mesh);
 #       endif
 
 
