@@ -12,18 +12,6 @@ then
 	exit 1;
 fi
 
-ugmkln () 
-{
-	for j in `cd $1; ls -1 *.h; cd $UGROOT/include;`
-	do
-		if test -h ${j}
-			then	
-				echo "links for ${j} exists";
-			else
-				ln -s $1${j} ${j};
-		fi
-	done
-}
 
 cd $UGROOT;
 
@@ -32,29 +20,32 @@ then
 	rm -f -r include;
 fi	
 mkdir include;
-cd include;
 
-ugmkln "../";
-
-for i in `ls -1 ../`
+for i in . * */* */*/* */*/*/* */*/*/*/*
 do
-	if test "${i}" != "include" -a "${i}" != "doc"
+	if /bin/test -d $i -a ! -h $i
 	then
-    	if test -d "../${i}"
-    	then
-			echo "change to ../$i";
-	    	ugmkln ../${i}/;
-			for k in `ls -1 ../${i}`
+		if test "$i" != "include" -a `basename $i` != "doc" -a `basename $i` != "CVS"
+		then
+			echo $i
+			cd $i
+			for j in *.h
 			do
-		    	if test -d "../${i}/${k}"
-		    	then
-					echo "change to $k";
-			    	ugmkln ../${i}/${k}/;
-		    	fi
+				if test "$j" != "*.h"
+				then
+					echo $j
+					if /bin/test -h $UGROOT/include/$j
+					then	
+						echo "link for $i/$j already exists";
+					else
+						ln -s ../$i/$j $UGROOT/include/$j
+					fi
+				fi
 			done
-    	fi
+			cd $UGROOT
+		fi
 	fi
 done
 
-exit 0;
+exit 0
 
