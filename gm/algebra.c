@@ -7654,7 +7654,6 @@ MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
     return (NULL);
   Size = sizeof(MATRIX)-sizeof(DOUBLE)+ds;
   if (MSIZEMAX<Size) return (NULL);
-  assert (Size % ALIGNMENT == 0);
   pm = (MATRIX *)GetMemoryForObject (theMG,Size,MAOBJ);
   if (pm==NULL)
     return (NULL);
