@@ -237,7 +237,7 @@ INT CenterInPattern (char *str, INT PatLen, const char *text, char p, const char
 /****************************************************************************/
 
 /* install a user math error handler */
-int matherr(
+int UG_matherr(
             #if defined(__HP__)
   struct _exception *x
                         #elif defined(__LINUXPPC__)
