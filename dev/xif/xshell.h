@@ -11,7 +11,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 368										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de					*/
+/*			  internet: ug@ica3.uni-stuttgart.de					        */
 /*																			*/
 /* History:   17.02.94 begin, ug version 3.0								*/
 /*																			*/
@@ -42,8 +42,8 @@
 #define MAXLINES                100
 #define MAXCOLS                 130
 
-#define SHELLICONNAME   "ug3.1 shell"
-#define SHELLWINNAME    "ug3.1 shell"
+#define SHELLICONNAME   "ug3.2 shell"
+#define SHELLWINNAME    "ug3.2 shell"
 #define RESOURCENAME    "ug3"
 
 /****************************************************************************/
