@@ -7162,14 +7162,14 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
                         #else
       UserWrite("   ");
                         #endif
-      UserWriteF("NB=" ID_FMTX " CTRL=%8lx NO_OF_ELEM=%3d MIDNODE=" ID_FMTX,
-                 ID_PRTX(NBNODE(theLink)),(long)CTRL(theLink),
-                 NO_OF_ELEM(MYEDGE(theLink)),ID_PRTX(MIDNODE(MYEDGE(theLink))));
-
+      UserWriteF("NB=" ID_FMTX " CTRL=%8lx NO_OF_ELEM=%3d",
+                 ID_PRTX(NBNODE(theLink)),(long)CTRL(theLink),NO_OF_ELEM(MYEDGE(theLink)));
+      if (MIDNODE(MYEDGE(theLink))!=NULL)
+        UserWriteF(" MIDNODE=" ID_FMTX, ID_PRTX(MIDNODE(MYEDGE(theLink))));
       theVertex=MYVERTEX(NBNODE(theLink));
       for(i=0; i<DIM; i++)
       {
-        UserWriteF("x%1d=%11.4 ",i, (float)(CVECT(theVertex)[i]) );
+        UserWriteF(" x%1d=%11.4E",i, (float)(CVECT(theVertex)[i]) );
       }
       UserWrite("\n");
     }
