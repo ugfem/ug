@@ -169,7 +169,7 @@ void IFInitSend (IF_PROC *ifHead)
  */
 int IFPollSend (DDD_IF ifId)
 {
-  int tries;
+  unsigned long tries;
 
   for(tries=0; tries<MAX_TRIES && send_mesgs>0; tries++)
   {
@@ -185,10 +185,26 @@ int IFPollSend (DDD_IF ifId)
         if (error==1) {
           send_mesgs--;
           ifHead->msgOut=-1;
+
+                                        #ifdef CtrlTimeoutsDetailed
+          printf("%4d: IFCTRL %02d send-completed    to "
+                 "%4d after %10ld, size %ld\n",
+                 me, ifId, ifHead->proc,
+                 (unsigned long)tries,
+                 (unsigned long)ifHead->lenBufOut);
+                                        #endif
         }
       }
     }
   }
+
+        #ifdef CtrlTimeouts
+  if (send_mesgs==0)
+  {
+    printf("%4d: IFCTRL %02d send-completed    all after %10ld tries\n",
+           me, ifId, (unsigned long)tries);
+  }
+        #endif
 
   return(send_mesgs==0);
 }

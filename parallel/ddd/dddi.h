@@ -95,9 +95,9 @@
 #define MAX_PRIO       32    /* max. number of DDD_PRIO                     */
 
 #define MAX_OBJ    200000    /* max. number of locally registered objects   */
-#define MAX_CPL     77700    /* max. number of local objects with coupling  */
+#define MAX_CPL     77000    /* max. number of local objects with coupling  */
 
-#define MAX_TRIES 5000000    /* max. number of tries til timeout in IF-comm */
+#define MAX_TRIES  50000000  /* max. number of tries til timeout in IF-comm */
 
 #define MAX_PROCBITS_IN_GID 10  /* this allows 2^10 procs and 2^22 objects  */
 

@@ -1,5 +1,20 @@
 ---------------------------
 
+CHANGES 1.8.2 -> 1.8.3
+
+---------------------------
+970306 kb
+increased MAX_TRIES timeout value to 50M.
+970305 kb
+added CtrlTimeouts(Detailed) switch in if/if.h.
+	- this may be used for checking the interface timout values.
+	- CtrlTimeouts displays the timeout value after each IF communication
+	  (on each proc one line for send/receive)
+	- CtrlTimeoutsDetailed displays the timeout values for each 
+	  message during a IF communication (on each proc one line for
+	  send/receive of any message)
+---------------------------
+
 CHANGES 1.8.1 -> 1.8.2
 
 ---------------------------

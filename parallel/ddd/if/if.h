@@ -32,6 +32,12 @@
 /****************************************************************************/
 
 
+/*
+   #define CtrlTimeouts
+   #define CtrlTimeoutsDetailed
+ */
+
+
 /* maximum number of interfaces */
 #define MAX_IF                  20
 

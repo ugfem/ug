@@ -190,9 +190,9 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 	#endif
 #endif  /* F_FRONTEND */
 
-	IF_PROC		*ifHead;
-	int			tries;
-	int         recv_mesgs;
+	IF_PROC		  *ifHead;
+	unsigned long tries;
+	int           recv_mesgs;
 
 
 	/* prohibit using standard interface (IF0) */
@@ -348,6 +348,14 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 						IF_ATTR  *ifAttr;
 					#endif
 
+					#ifdef CtrlTimeoutsDetailed
+					printf("%4d: IFCTRL %02d received msg    from "
+						"%4d after %10ld, size %ld\n",
+						me, ifId, ifHead->proc,
+						(unsigned long)tries,
+						(unsigned long)ifHead->lenBufIn);
+					#endif
+
 					recv_mesgs--;
 					ifHead->msgIn=-1;
 
@@ -384,12 +392,47 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 	}
 
 	/* finally poll send completion */
-	if ((recv_mesgs>0) || (! IFPollSend(ifId)))
+	if (recv_mesgs>0)
 	{
-		sprintf(cBuffer, CONCAT("timeout for IF %02d in ",IF_FUNCNAME), ifId);
+		sprintf(cBuffer, CONCAT("receive-timeout for IF %02d in ",IF_FUNCNAME), ifId);
 		DDD_PrintError('E', 4200, cBuffer);
-		/* TODO complete error handling */
+
+		ForIF(ifId,ifHead)
+		{
+			if (ifHead->lenBufIn>0 && ifHead->msgIn!=-1)
+			{
+				sprintf(cBuffer,
+					"  waiting for message (from proc %d, size %ld)",
+					ifHead->proc, (unsigned long)ifHead->lenBufIn);
+				DDD_PrintError('E', 4201, cBuffer);
+			}
+		}
 	}
+	else
+	{
+		#ifdef CtrlTimeouts
+		printf("%4d: IFCTRL %02d received msg  all after %10ld tries\n",
+			me, ifId, (unsigned long)tries);
+		#endif
+
+		if (! IFPollSend(ifId))
+		{
+			sprintf(cBuffer, CONCAT("send-timeout for IF %02d in ",IF_FUNCNAME), ifId);
+			DDD_PrintError('E', 4210, cBuffer);
+
+			ForIF(ifId,ifHead)
+			{
+				if (ifHead->lenBufOut>0 && ifHead->msgOut!=-1)
+				{
+					sprintf(cBuffer,
+						"  waiting for send completion (to proc %d, size %ld)",
+						ifHead->proc, (unsigned long)ifHead->lenBufOut);
+					DDD_PrintError('E', 4211, cBuffer);
+				}
+			}
+		}
+	}
+
 
 	/* free memory */
 	IFExitComm(ifId);

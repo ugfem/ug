@@ -277,7 +277,7 @@ void DDD_Library::Status (void)
           nObjs, nCpls, nCplItems);
   DDD_PrintLine(cBuffer);
   DDD_PrintLine("|\n|     Timeouts:\n");
-  sprintf(cBuffer, "|        IFComm:  %9d\n", MAX_TRIES);
+  sprintf(cBuffer, "|        IFComm:  %12ld\n", (unsigned long)MAX_TRIES);
   DDD_PrintLine(cBuffer);
 
   sprintf(cBuffer, "|\n|     Compile-Time Options: ");
