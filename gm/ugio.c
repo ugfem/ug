@@ -908,7 +908,6 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   if (saved)
   {
     UserWriteF("WARNING: multigrid already saved as %s\n",MG_FILENAME(theMG));
-    return (0);
   }
 
   /* open file */
