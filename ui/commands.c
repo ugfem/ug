@@ -6353,6 +6353,16 @@ static INT CheckCommand (INT argc, char **argv)
   }
   UserWrite("\n");
 
+        #ifdef ModelP
+  for (level=0; level<=TOPLEVEL(theMG); level++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,level);
+
+    CheckLists(theGrid);
+    fflush(stdout);
+  }
+        #endif
+
   if (err)
     return (CMDERRORCODE);
   else
@@ -6628,6 +6638,10 @@ static INT MakeGridCommand  (INT argc, char **argv)
   DOUBLE h;
   long ElemID,m;
   float tmp;
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
 
   /* get current multigrid */
   theMG = currMG;
@@ -10849,6 +10863,180 @@ static INT PStatCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  LB4Command                                                    */
+/*                                                                          */
+/* Purpose:   load balancer using different (high level) strategies         */
+/*            based on the clustering technique                             */
+/*                                                                          */
+/* Input:     INT argc: number of arguments (incl. its own name             */
+/*            char **argv: array of strings giving the arguments            */
+/*                                                                          */
+/* Output:    INT return code see header file                               */
+/*                                                                          */
+/****************************************************************************/
+
+static INT LB4Command (INT argc, char **argv)
+{
+  int cmd_error,error,minlevel,cluster_depth,threshold,Const;
+  int n,c;
+  int strategy,eigen,loc,dims,weights,coarse,mode;
+  MULTIGRID *theMG;
+  int iopt,i,res,copt;
+  char buffer[100];
+
+  theMG = GetCurrentMultigrid();
+
+  if (procs==1) return(OKCODE);
+
+  /* $i option ? */
+  iopt = 100000;
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='i')
+    {
+      sscanf(argv[i]," i %d",&iopt);
+      break;
+    }
+
+  /* $c option ? */
+  copt = 0;
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='c')
+    {
+      copt = 1;
+      break;
+    }
+
+  /* scan command line arguments */
+  res = sscanf(argv[0]," lb4 %d %d %d %d %d %d %d %d %d %d %d %d %d",
+               &minlevel,&cluster_depth,
+               &threshold,&Const,&n,&c,&strategy,&eigen,&loc,&dims,&weights,
+               &coarse,&mode);
+  if (res!=13)
+  {
+    sprintf(buffer,"Wrong number of arguments: need exactly 13!");
+    UserWrite(buffer);
+    PrintHelp("lb4",HELPITEM,NULL);
+    return(CMDERRORCODE);
+  }
+
+  /* check for parameter consistency! */
+  cmd_error = 0;
+
+  if ((minlevel<0)||(minlevel>TOPLEVEL(theMG)))
+  {
+    sprintf(buffer,"Choose <minlevel>: 0-%d (toplevel)\n",TOPLEVEL(theMG));
+    UserWrite(buffer);
+    cmd_error = 1;
+  }
+
+  if (strategy<1 || strategy>6)
+  {
+    sprintf(buffer,"<strategy>: 1-6\n");
+    UserWrite(buffer);
+    cmd_error = 1;
+  }
+
+  if (eigen<0 || eigen>8)
+  {
+    sprintf(buffer,"<eigen>: 0-8\n");
+    UserWrite(buffer);
+    cmd_error = 1;
+  }
+
+  if (loc<0 || loc>1)
+  {
+    sprintf(buffer,"<loc>: 0 (no KL) / 1 (use KL local refinement)\n");
+    UserWrite(buffer);
+    cmd_error = 1;
+  }
+
+  if (dims<1 || dims>3)
+  {
+    sprintf(buffer,"Choose <ndims>: 1-3, 1 bi-, 2 quadri-, 3 octasection\n");
+    UserWrite(buffer);
+    cmd_error = 1;
+  }
+
+  if (weights<0 || weights>3)
+  {
+    sprintf(buffer,"Choose <weights>: 0-3, 0 no, 1 vertex, 2 edge, 3 both weights\n");
+    UserWrite(buffer);
+    cmd_error = 1;
+  }
+
+  if (strategy==1 && eigen>5)
+  {
+    sprintf(buffer,"For multlevel strategy (1) choose <eigen>: 1-4\n");
+    UserWrite(buffer);
+    cmd_error = 1;
+  }
+
+  if (strategy==2 && eigen==0)
+  {
+    sprintf(buffer,"For spectral strategy (2) choose <eigen>: 1-8\n");
+    UserWrite(buffer);
+    cmd_error = 1;
+  }
+
+  if (strategy>2 && (eigen!=0 || coarse!=0))
+  {
+    sprintf(buffer,"For inertial, linear, random, scattered strategy (3/4/5/6) set <eigen>, <coarse> = 0\n");
+    UserWrite(buffer);
+    cmd_error = 1;
+  }
+
+  if (strategy==1 && loc==0)
+  {
+    sprintf(buffer,"For multlevel strategy (1) set <loc> = 1\n");
+    UserWrite(buffer);
+    cmd_error = 1;
+  }
+
+  if ((strategy==1 || strategy==2 && eigen>4) && coarse<1)
+  {
+    sprintf(buffer,"For multilevel method <coarse>: normally 50-500\n");
+    UserWrite(buffer);
+    cmd_error = 1;
+  }
+  else if (strategy==2 && eigen<5 && coarse!=0 )
+  {
+    sprintf(buffer,"NOT using a multilevel method <coarse> = 0\n");
+    UserWrite(buffer);
+    cmd_error = 1;
+  }
+
+  if ((strategy>2 || strategy<6) && weights >1)
+  {
+    sprintf(buffer,"For inertial, linear, random strategy choose <weights>: 0 no, 1 vertex weights\n");
+    UserWrite(buffer);
+    cmd_error = 1;
+  }
+
+  if (strategy==6 && weights>0)
+  {
+    sprintf(buffer,"For scattered strategy set <weights> = 0\n");
+    UserWrite(buffer);
+    cmd_error = 1;
+  }
+
+  if (cmd_error) return(CMDERRORCODE);
+
+
+  /* close if before refinement */
+  /*
+     if (copt) CloseOnlyTags(theMG);
+   */
+
+  error = Balance_CCPTM(theMG,minlevel,cluster_depth,threshold,Const,n,c,
+                        strategy,eigen,loc,dims,weights,coarse,mode,iopt);
+  if (error>0) return(CMDERRORCODE);
+
+  return(OKCODE);
+}
+
 #endif /* ModelP */
 
 /****************************************************************************/
@@ -12002,6 +12190,8 @@ INT InitCommands ()
   if (CreateCommand("ptest",                      PTestCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("context",            ContextCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("pstat",                      PStatCommand                                )==NULL) return (__LINE__);
+  if (CreateCommand("lb4",                        LB4Command                                              )==NULL) return (__LINE__);
+
 #endif /* ModelP */
 
   /* array commands */
