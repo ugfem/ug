@@ -378,7 +378,7 @@ static INT SetUnsymmetric (MULTIGRID *mg, INT fl, INT tl,
 
   for (lev=fl; lev<=tl; lev++)
     l_setindex(GRID_ON_LEVEL(mg,lev));
-  index *= 10;
+  index *= 20;
   for (vtype=0; vtype<NVECTYPES; vtype++)
     if (VD_ISDEF_IN_TYPE(x,vtype))
     {
@@ -1337,21 +1337,21 @@ static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT New,
       NP_RETURN(1,ewresult->error_code);
     if (np->display == PCR_FULL_DISPLAY)
       UserWriteF("Rayleigh quotient (ew%d) %lf\n", i, ew[i]);
-    if (i==np->idefect) {
-      if (PreparePCR(np->r,np->display,text,&PrintID))
-        NP_RETURN(1,ewresult->error_code);
-      if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
-                                        ev[np->idefect],np->t,
-                                        np->M,&ewresult->error_code))
-        NP_RETURN(1,ewresult->error_code);
-      if (RayleighDefect(theMG,np->r,np->t,rq,defect))
-        NP_RETURN(1,ewresult->error_code);
-      if (sc_mul(defect2reach,defect,reduction,np->t))
-        NP_RETURN(1,ewresult->error_code);
-      if (DoPCR(PrintID,defect,PCR_CRATE))
-        NP_RETURN(1,ewresult->error_code);
-    }
   }
+  i = np->idefect;
+  if (PreparePCR(np->r,np->display,text,&PrintID))
+    NP_RETURN(1,ewresult->error_code);
+  if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
+                                    ev[np->idefect],np->t,
+                                    np->M,&ewresult->error_code))
+    NP_RETURN(1,ewresult->error_code);
+  if (RayleighDefect(theMG,np->r,np->t,rq,defect))
+    NP_RETURN(1,ewresult->error_code);
+  if (sc_mul(defect2reach,defect,reduction,np->t))
+    NP_RETURN(1,ewresult->error_code);
+  if (DoPCR(PrintID,defect,PCR_CRATE))
+    NP_RETURN(1,ewresult->error_code);
+
   for (iter=0; iter<np->maxiter; iter++)
   {
     if (sc_cmp(defect,defect2reach,np->t))
@@ -1502,8 +1502,8 @@ static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT New,
 
       /* transform back the Eigenvectors */
       for (i=0; i<New; i++) {
-        /* if (ABS(ew[i]) < SMALL_D)
-                ew[i] = 1.0 / ew[i]; */
+        if (ABS(ew[i]) > SMALL_D)
+          ew[i] = 1.0 / ew[i];
         /* TODO: reorder E[i] ? */
         for (j=0; j<New; j++)
         {
