@@ -22,6 +22,12 @@
 #include <math.h>
 #include <assert.h>
 
+extern "C"
+{
+/* ug library */
+#include "gm.h"        /* for data structure               */
+} // extern "C"
+
 #ifndef __SGI10__
 #include "famg_system.h"
 #endif
@@ -53,6 +59,7 @@ void SetValue( VT &v, double val )
 	short ncmp = v.GetSparseVectorPtr()->Get_n();
 	short *comp = v.GetSparseVectorPtr()->Get_comp();
     double *vptr;
+
     
 	while(viter(ve))
     {
@@ -261,6 +268,7 @@ void VecMinusMatVec( VT &d, const VT &f, const MT &M, const VT &u )
 		
         dptr = d.GetValuePtr(row);
         fptr = f.GetValuePtr(row);
+        
         // diagonal 
         miter(col);
         uptr = u.GetValuePtr(col.dest());
@@ -273,12 +281,13 @@ void VecMinusMatVec( VT &d, const VT &f, const MT &M, const VT &u )
             uptr = u.GetValuePtr(col.dest());
             mptr = M.GetValuePtr(col);
             SparseBlockMVAddProduct(&svsum_o,sb,svu,sum_o,mptr,uptr,1.0);
-			// sum += M[col] * u[col.dest()];
         }
         SparseBlockVSub(svd,svf,&svsum_o,dptr,fptr,sum_o);
         SparseBlockVSub(svd,svd,&svsum_d,dptr,dptr,sum_d);
-		// d[row] = f[row] - sum;
 	}
+
+    delete sum_d;
+    delete sum_o;
 }
 
 template<class VT,class MT>
@@ -301,7 +310,6 @@ void JacobiSmoothFG( VT &sol, const MT &D, const VT &def )
             defptr = def.GetValuePtr(ve);
             matptr = D.GetDiagValuePtr(ve);
             SparseBlockMVAddProduct(svsol,sb,svdef,solptr,matptr,defptr,1.0);
-			// sol[ve] += def[ve] / M.DiagValue(ve);
         }
     }
 	
@@ -657,8 +665,9 @@ void MarkStrongLinks(const MT &A, const FAMGGrid &grid)
 	typename MT::MatrixEntry matij;
 	typename VT::VectorEntry vi;
 	typename VT::Iterator viter(gridvec);
-
-
+    
+    VECTOR *vector;
+    
 	while (viter(vi))
 	{
         typename MT::Iterator mij_iter(A,vi);
@@ -666,7 +675,8 @@ void MarkStrongLinks(const MT &A, const FAMGGrid &grid)
         matij.set_strong(1);
         while( mij_iter(matij) )
         {
-                matij.set_strong(1);
+            vector = matij.dest().myvector();
+            matij.set_strong(1);
         }
 
     }

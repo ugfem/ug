@@ -33,6 +33,33 @@ extern "C" {
 $Header$
 */
  
+
+#ifdef FAMG_SPARSE_BLOCK
+void SetValueSkip(const FAMGugVector &v, double val )
+{
+	// typename is a new C++ keyword!
+	FAMGugVectorIter viter(v);
+	FAMGugVectorEntry ve; 
+	short ncmp = v.GetSparseVectorPtr()->Get_n();
+	short *comp = v.GetSparseVectorPtr()->Get_comp();
+    double *vptr;
+
+    VECTOR *vector;
+
+    
+	while(viter(ve))
+    {
+        vector = ve.myvector();
+        vptr = v.GetValuePtr(ve);
+        for(short i = 0; i < ncmp; i++) 
+        {
+            if(VSKIPME(vector,i)) vptr[comp[i]] = 0.0;
+            else vptr[comp[i]] = val;
+        }
+    }
+}
+#endif
+
 #ifdef FAMG_SPARSE_BLOCK
 FAMGVector* FAMGugVector::create_new() const
 {

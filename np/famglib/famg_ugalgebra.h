@@ -574,6 +574,7 @@ inline void FAMGugMatrix::MarkStrongLinks const ( const FAMGGrid &grid )
 //
 typedef FAMGVectorEntryRef FAMGugVectorEntryRef;
 typedef class FAMGVectorEntry FAMGugVectorEntry;
+typedef class FAMGVectorIter FAMGugVectorIter;
 typedef class FAMGGridVector FAMGugGridVector;
 typedef class FAMGVector FAMGugVector;
 typedef class FAMGMatrixEntry FAMGugMatrixEntry;
@@ -581,5 +582,9 @@ typedef class FAMGMatrixAlg FAMGugMatrix;
 typedef class FAMGMatrixIter FAMGugMatrixIter;
 
 #endif  // ONLY_ONE_ALGEBRA_DS
+
+
+void SetValueSkip(const FAMGugVector &v, double val );
+
 
 #endif
