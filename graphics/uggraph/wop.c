@@ -650,6 +650,7 @@ static INT VM_Part;				/* plot part								*/
 static long VM_OrderStart;		/* spectrum start for order					*/
 static float VM_OrderDelta;		/* spectrum increment for order				*/
 static INT VM_Dependency;		/* plot dependencies						*/
+static INT VM_Flagged;			/* plot only VCFLAGged, if 1				*/
 static VECTOR *VM_LastVector;	/* preceding vector							*/
 static INT VM_lastind;			/* remember index of last vector			*/
 static INT VM_ConnectVectors;	/* connect vectors to show order			*/
@@ -7068,6 +7069,9 @@ static INT EW_PreProcess_VecMatBnd2D (PICTURE *thePicture, WORK *theWork)
 	BND_Resolution				= 10;
 	UgSetLineWidth (2);
 	
+	/* mark surface elements */
+	if (MarkElements_MGS_Bnd(theMG,0,CURRENTLEVEL(theMG))) return (1);
+	
 	return (0);
 }
 
@@ -7379,6 +7383,7 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
 	VM_IdxColor					= theOD->blue;
 	VM_Order					= theVmo->Order;
 	VM_Dependency				= theVmo->Dependency;
+	VM_Flagged					= theVmo->Flagged;
 	VM_StrongColor				= theOD->green;
 	VM_ConnectVectors			= theVmo->ConnectVectors;
 	VM_ConnectColor				= theOD->red;
@@ -7542,6 +7547,17 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
 	long color;
 	char setchar;
 	static INT number;
+
+	if (VM_Flagged && !VCFLAG(vec)) 
+	{
+		DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+        WOP_DObjPnt = theDO;
+        #endif
+
+        return (0);
+	}
 	
 	if (!VM_Type[VTYPE(vec)])
 	{

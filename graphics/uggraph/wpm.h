@@ -340,6 +340,7 @@ struct VecMatPlotObj2D {
   INT Dependency;                                                       /* YES or NO									*/
   INT ConnectVectors;                                                   /* YES or NO									*/
   INT Boundary;                                                         /* YES or NO									*/
+  INT Flagged;                                                          /* YES: plot only VCFLAGged, NO: all            */
   VECDATA_DESC *vd;                                                     /* NULL or vector                                                       */
   MATDATA_DESC *md;                                                     /* NULL or matrix                                                       */
 };

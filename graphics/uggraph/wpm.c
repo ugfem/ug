@@ -3526,6 +3526,7 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theVmo->Boundary                        = YES;
     theVmo->vd                                      = NULL;
     theVmo->md                                      = NULL;
+    theVmo->Flagged                         = NO;
   }
 
   /* color mode */
@@ -3624,6 +3625,13 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
         theVmo->md = NULL;
       }
       break;
+
+    case 'f' :
+      if (sscanf(argv[i],"f %d",&iValue)!=1)
+        break;
+      if      (iValue==1) theVmo->Flagged = YES;
+      else if (iValue==0) theVmo->Flagged = NO;
+      break;
     }
 
   if (theVmo->ConnectVectors)
@@ -3703,6 +3711,7 @@ static INT DisplayVecMat_2D (PLOTOBJ *thePlotObj)
   UserWriteF(DISPLAY_PO_FORMAT_SS,"dependency",   BOOL_2_YN(theVmo->Dependency));
   UserWriteF(DISPLAY_PO_FORMAT_SS,"connect",              BOOL_2_YN(theVmo->ConnectVectors));
   UserWriteF(DISPLAY_PO_FORMAT_SS,"boundary",             BOOL_2_YN(theVmo->Boundary));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"flagged",              BOOL_2_YN(theVmo->Flagged));
 
   if (theVmo->vd!=NULL)
     UserWriteF(DISPLAY_PO_FORMAT_SS,"vec data",ENVITEM_NAME(theVmo->vd));
