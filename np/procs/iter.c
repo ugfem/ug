@@ -908,15 +908,16 @@ static INT SGSPreProcess  (NP_ITER *theNP, INT level,
                            MATDATA_DESC *A, INT *baselevel, INT *result)
 {
         #ifdef ModelP
-  NP_SGS *np;
+  NP_SMOOTHER *np;
   GRID *theGrid;
 
-  np = (NP_SGS *) theNP;
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L))
+  np = (NP_SMOOTHER *) theNP;
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L))
     NP_RETURN(1,result[0]);
   theGrid = NP_GRID(theNP,level);
-  if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS) != NUM_OK)
+  if (l_dmatcopy(theGrid,np->L,A) != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS) != NUM_OK)
     NP_RETURN(1,result[0]);
         #endif
   *baselevel = level;

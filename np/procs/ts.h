@@ -69,8 +69,6 @@ struct np_t_solver {
   INT (*TimeInit)                        /* initialize, set initial values  */
     (struct np_t_solver *,                   /* pointer to (derived) object     */
     INT,                                         /* level                           */
-    DOUBLE t,                                    /* time                            */
-    DOUBLE dt,                                   /* time step                       */
     INT *);                                      /* result                                      */
   INT (*TimeStep)                        /* b := b - Ax                     */
     (struct np_t_solver *,                   /* pointer to (derived) object     */
@@ -86,7 +84,7 @@ typedef struct np_t_solver NP_T_SOLVER;
 typedef INT (*TimePreProcessProcPtr)                                         \
   (NP_T_SOLVER *, INT, INT *);
 typedef INT (*TimeInitProcPtr)                                               \
-  (NP_T_SOLVER *, INT, DOUBLE, DOUBLE, INT *);
+  (NP_T_SOLVER *, INT, INT *);
 typedef INT (*TimeStepProcPtr)                                               \
   (NP_T_SOLVER *, INT, INT *);
 typedef INT (*TimePostProcessProcPtr)                                        \

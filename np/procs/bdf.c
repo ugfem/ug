@@ -85,6 +85,7 @@ typedef struct
   INT order;                                                             /* 1,2 are allowed					*/
   INT predictorder;                                              /* 0,1 are allowed					*/
   INT nested;                                                            /* use nested iteration                        */
+  DOUBLE tstart;                                                 /* start time                          */
   DOUBLE dtstart;                                                /* time step to begin with			*/
   DOUBLE dtmin;                                                  /* smallest time step allowed		*/
   DOUBLE dtmax;                                                  /* largest time step allowed		*/
@@ -243,7 +244,7 @@ static INT TimePreProcess (NP_T_SOLVER *ts, INT level, INT *res)
   return(0);
 }
 
-static INT TimeInit (NP_T_SOLVER *ts, INT level, DOUBLE t, DOUBLE dt, INT *res)
+static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -254,10 +255,11 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, DOUBLE t, DOUBLE dt, INT *res)
   tass = bdf->tsolver.tass;
 
   /* initialize bdf local variables */
-  bdf->dt = dt;
+  /* initialize bdf local variables */
+  bdf->dt = bdf->dtstart;
   bdf->step = 0;
-  bdf->t_0 = t;
-  bdf->t_m1 = t - dt;
+  bdf->t_0 = bdf->tstart;
+  bdf->t_m1 = - bdf->dt;
 
   /* set initial values and boundary conditions in y_0 */
   *res = 1;
@@ -545,6 +547,8 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
   }
   if ((bdf->nested<0)||(bdf->nested>1)) return(NP_NOT_ACTIVE);
 
+  if (ReadArgvDOUBLE("tstart",&(bdf->tstart),argc,argv))
+    bdf->tstart = 0.0;
   if (ReadArgvDOUBLE("dtstart",&(bdf->dtstart),argc,argv))
   {
     UserWrite("dtstart must be specified\n");
@@ -674,20 +678,11 @@ static INT BDFExecute (NP_BASE *theNP, INT argc , char **argv)
   /* set initial values */
   if (ReadArgvOption("init",argc,argv))
     if (np->TimeInit != NULL) {
-      if (ReadArgvDOUBLE("t",&initialtime,argc,argv)) {
-        if ((*np->TimeInit)(np,level,0.0,bdf->dtstart,&result)) {
-          UserWriteF("NPTSolverExecute: TimeInit failed, error code %d\n",result);
-          return (1);
-        }
-      }
-      else if (ReadArgvDOUBLE("T",&dtime,argc,argv)) {
-        if ((*np->TimeInit)(np,level,initialtime,bdf->dtstart,&result)) {
-          UserWriteF("NPTSolverExecute: TimeInit failed, error code %d\n",result);
-          return (1);
-        }
-      }
-      else
-      if ((*np->TimeInit)(np,level,initialtime,dtime,&result)) {
+      if (ReadArgvDOUBLE("t",&initialtime,argc,argv) == 0)
+        bdf->tstart = initialtime;
+      if (ReadArgvDOUBLE("dt",&dtime,argc,argv) == 0)
+        bdf->dt = dtime;
+      if ((*np->TimeInit)(np,level,&result)) {
         UserWriteF("NPTSolverExecute: TimeInit failed, error code %d\n",result);
         return (1);
       }
