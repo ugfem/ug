@@ -337,7 +337,7 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid)
   /* initialize data */
   CTRL(pv) = 0;
   SETOBJT(pv,BVOBJ);
-  SETNOOFNODE(pv,1);
+  SETNOOFNODE(pv,0);
   SETLEVEL(pv,theGrid->level);
   ID(pv) = (theGrid->mg->vertIdCounter)++;
   VFATHER(pv) = NULL;
@@ -398,7 +398,7 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
   /* initialize data */
   CTRL(pv) = 0;
   SETOBJT(pv,IVOBJ);
-  SETNOOFNODE(pv,1);
+  SETNOOFNODE(pv,0);
   SETLEVEL(pv,theGrid->level);
   ID(pv) = (theGrid->mg->vertIdCounter)++;
   VFATHER(pv) = NULL;
@@ -471,6 +471,10 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
   SONNODE(pn) = NULL;
   if (NELIST_DEF_IN_GRID(theGrid)) NDATA(pn) = NULL;
   MYVERTEX(pn) = vertex;
+  if (NOOFNODE(vertex)<NOOFNODEMAX)
+    INCNOOFNODE(vertex);
+  else
+    ASSERT(0);
   /* priliminary */
   if (Father != NULL)
     if ((OBJT(Father) == IEOBJ) || (OBJT(Father) == BEOBJ))
@@ -553,10 +557,6 @@ NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
   if (pn == NULL)
     return(NULL);
   SONNODE(FatherNode) = pn;
-  if (NOOFNODE(theVertex)<NOOFNODEMAX)
-    INCNOOFNODE(theVertex);
-  else
-    ASSERT(0);
 
         #ifdef TOPNODE
   TOPNODE(theVertex) = pn;
