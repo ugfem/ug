@@ -85,6 +85,7 @@ extern int Debugdev;
 extern int Debuggm;
 extern int Debuggraph;
 extern int Debuglow;
+extern int Debugdom;
 extern int Debugmachines;
 extern int Debugnumerics;
 extern int Debugui;

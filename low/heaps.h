@@ -56,6 +56,13 @@
 
 #define MAXFREEOBJECTS  128                  /* number of free object pionters  */
 
+/* by convention, tempory memory on a simple heap should allocated FROM_TOP */
+/* the Freelist memory is allocated FROM_BOTTOM                             */
+
+#define MarkTmpMem(p)     Mark(p,FROM_TOP)
+#define GetTmpMem(p,n)    GetMem(p,n,FROM_TOP)
+#define ReleaseTmpMem(p)  Release(p,FROM_TOP)
+
 /****************************************************************************/
 /* defines and macros for the virtual heap management                       */
 /****************************************************************************/
