@@ -82,6 +82,16 @@
 #define CONCAT5(a,b,c,d,e)        CONCAT5_AUX(a,b,c,d,e)
 #define CONCAT5_AUX(a,b,c,d,e)    a b c d e
 
+/* concatenation macros for preprocessor */
+#define XCAT(a,b)                       a ## b
+#define XCAT3(a,b,c)            a ## b ## c
+#define CAT(a,b)                        XCAT(a,b)
+#define CAT3(a,b,c)                     XCAT3(a,b,c)
+
+/* expand macro and transfer expanded to string */
+#define XSTR(s) # s
+#define STR(s) XSTR(s)
+
 #define YES             1
 #define ON              1
 
