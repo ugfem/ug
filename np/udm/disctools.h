@@ -191,7 +191,7 @@ INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
 
 /* display data */
 INT ConvertMatrix                               (GRID *theGrid, HEAP *theHeap, INT MarkKey,
-                                                 MATDATA_DESC *A,
+                                                 MATDATA_DESC *A, INT symmetric,
                                                  int *pn, int **pia, int **pja, double **pa);
 INT PrintVector                                 (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass);
 INT PrintVectorX                                (const GRID *g, const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf);

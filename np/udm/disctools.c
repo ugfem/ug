@@ -2097,13 +2097,14 @@ INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
 
    SYNOPSIS:
    INT ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
-   MATDATA_DESC *A, int *pn, int **pia, int **pja, double **pa);
+   MATDATA_DESC *A, INT symmetric, int *pn, int **pia, int **pja, double **pa);
 
    PARAMETERS:
    .  theGrid - pointer to a grid
    .  theHeap - pointer to heap
    .  MarkKey - mark in temp mem
    .  A - pointer to matrix descriptor
+   .  symmetric - if symmetric, store only upper part
    .  pn - number of lines
    .  pia - diagonal indices
    .  pja - row indices
@@ -2120,7 +2121,7 @@ INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
 /****************************************************************************/
 
 INT ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
-                   MATDATA_DESC *A,
+                   MATDATA_DESC *A, INT symmetric,
                    int *pn, int **pia, int **pja, double **pa)
 {
   VECTOR *v;
@@ -2130,12 +2131,21 @@ INT ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
   double *a;
   SHORT *Mcomp;
 
+  n = 0;
+  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+    rtype = VTYPE(v);
+    rcomp = MD_ROWS_IN_RT_CT(A,rtype,rtype);
+    VINDEX(v) = n;
+    n += rcomp;
+  }
+
   n = nn = 0;
   for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
-    VINDEX(v) = n;
     rtype = VTYPE(v);
     rcomp = MD_ROWS_IN_RT_CT(A,rtype,rtype);
     for (m=VSTART(v); m!=NULL; m=MNEXT(m)) {
+      if (symmetric)
+        if (VINDEX(MDEST(m)) > n) continue;
       ctype = MDESTTYPE(m);
       ccomp = MD_COLS_IN_RT_CT(A,rtype,ctype);
       if (ccomp == 0) continue;
@@ -2155,12 +2165,14 @@ INT ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
     for (i=0; i<rcomp; i++) {
       ia[n++] = nn;
       for (m=VSTART(v); m!=NULL; m=MNEXT(m)) {
+        k = VINDEX(MDEST(m));
         ctype = MDESTTYPE(m);
         ccomp = MD_COLS_IN_RT_CT(A,rtype,ctype);
         if (ccomp == 0) continue;
         Mcomp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
-        k = VINDEX(MDEST(m));
         for (j=0; j<ccomp; j++) {
+          if (symmetric)
+            if (k >= n) continue;
           a[nn] = MVALUE(m,Mcomp[i*ccomp+j]);
           ja[nn] = k++;
           nn++;
@@ -2176,6 +2188,7 @@ INT ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
 
   return(NUM_OK);
 }
+
 /****************************************************************************/
 /*D
    PrintVector - print a vector list
