@@ -162,7 +162,7 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 
 /* values for element class */
 #define NO_CLASS                0
-#define YELLOW_CLASS            1
+#define YELLOW_CLASS    1
 #define GREEN_CLASS             2
 #define RED_CLASS               3
 
