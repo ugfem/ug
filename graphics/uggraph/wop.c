@@ -21545,6 +21545,7 @@ static void PWorkNW_Evaluate(void)
 	if (WOP_More[i] && WOP_Count[i] < DO_BUFFER_SLOTS) {
 		p = p1 = WOP_DO_Buffer[i][WOP_Front[i]];
 		DO_inc(p);
+		DO_inc(p);
 		DO_2INT(p1) = NO_TOKEN;
 		do {
 			if (WOP_CurrDoLen > 0) {
@@ -21564,6 +21565,8 @@ static void PWorkNW_Evaluate(void)
 		} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
 				 > WOP_CurrDoLen);
 		DO_2c(p) = DO_NO_INST;
+		DO_inc(p1);
+		DO_2INT(p1) = (INT)p-(INT)p1+2;
 		WOP_Count[i]++;
 		WOP_Front[i] = (WOP_Front[i] + 1) % DO_BUFFER_SLOTS;
 	}
@@ -21597,6 +21600,7 @@ static void PWorkVW_Evaluate(void)
 	if (WOP_More[i] && WOP_Count[i] < DO_BUFFER_SLOTS) {
 		p = p1 = WOP_DO_Buffer[i][WOP_Front[i]];
 		DO_inc(p);
+		DO_inc(p);
 		DO_2INT(p1) = NO_TOKEN;
 		do {
 			if (WOP_CurrDoLen > 0) {
@@ -21616,6 +21620,8 @@ static void PWorkVW_Evaluate(void)
 		} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
 				 > WOP_CurrDoLen);
 		DO_2c(p) = DO_NO_INST;
+		DO_inc(p1);
+		DO_2INT(p1) = (INT)p-(INT)p1+2;
 		WOP_Count[i]++;
 		WOP_Front[i] = (WOP_Front[i] + 1) % DO_BUFFER_SLOTS;
 	}
@@ -21650,6 +21656,7 @@ static void PWorkET_Evaluate(void)
 	if (WOP_More[i] && WOP_Count[i] < DO_BUFFER_SLOTS) {
 		p = p1 = WOP_DO_Buffer[i][WOP_Front[i]];
 		DO_inc(p);
+		DO_inc(p);
 		DO_2INT(p1) = NO_TOKEN;
 		do {
 			if (WOP_CurrDoLen > 0) {
@@ -21668,6 +21675,8 @@ static void PWorkET_Evaluate(void)
 		} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
 				 > WOP_CurrDoLen);
 		DO_2c(p) = DO_NO_INST;
+		DO_inc(p1);
+		DO_2INT(p1) = (INT)p-(INT)p1+2;
 		WOP_Count[i]++;
 		WOP_Front[i] = (WOP_Front[i] + 1) % DO_BUFFER_SLOTS;
 	}
