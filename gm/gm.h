@@ -302,7 +302,9 @@ struct blockvector
   BLOCKNUMBER number;                                   /* logical blockvectornumber			  */
   struct blockvector *pred,*succ;       /* double linked list of blockvectors	  */
   VECTOR *first_vec;                                    /* start vector of this blockvector       */
-  VECTOR *end_vec;                                      /* succ. of the last vector of this blockv*/
+  VECTOR *last_vec;                                     /* last vector of this blockvector		  */
+  INT vec_number;                                       /* number of covered VECTORs			  */
+  void *user_data;                                      /* pointer to any data					  */
 
   struct blockvector *first_son;        /* start of blockvector list on next level*/
   struct blockvector *last_son;         /* end of blockvector list on next level  */
@@ -1151,6 +1153,8 @@ extern CONTROL_ENTRY
 /* sequential access operations on struct blockvector_description  (BV_DESC) */
 #define BVD_PUSH_ENTRY(bvd,bnr,bvdf)            PushEntry( (bvd), (bnr), (bvdf) )
 #define BVD_DISCARD_LAST_ENTRY(bvd)                     {assert(BVD_NR_ENTRIES(bvd)>0);BVD_NR_ENTRIES(bvd)--;}
+#define BVD_INC_LAST_ENTRY(bvd,incr,bvdf)       ((bvd)->entry = (((((bvd)->entry >> ((bvdf)->bits * (BVD_NR_ENTRIES(bvd)-1))) + (incr)) & ((bvdf)->level_mask[0])) << ((bvdf)->bits * (BVD_NR_ENTRIES(bvd)-1))) | ((bvd)->entry & (bvdf)->neg_digit_mask[BVD_NR_ENTRIES(bvd)-1]))
+#define BVD_DEC_LAST_ENTRY(bvd,decr,bvdf)       ((bvd)->entry = (((((bvd)->entry >> ((bvdf)->bits * (BVD_NR_ENTRIES(bvd)-1))) - (decr)) & ((bvdf)->level_mask[0])) << ((bvdf)->bits * (BVD_NR_ENTRIES(bvd)-1))) | ((bvd)->entry & (bvdf)->neg_digit_mask[BVD_NR_ENTRIES(bvd)-1]))
 #define BVD_INIT_SEQ_READ(bvd)                          ((bvd)->read = 0)
 #define BVD_READ_NEXT_ENTRY(bvd,bvdf)           ( ((bvd)->read<BVD_NR_ENTRIES(bvd)) ? BVD_GET_ENTRY((bvd),(bvd)->read++,(bvdf)) : NO_BLOCKVECTOR )
 
@@ -1178,14 +1182,17 @@ extern CONTROL_ENTRY
 
 /* access to members of struct blockvector */
 #define BVNUMBER(bv)                                    ((bv)->number)
+#define BVUSERDATA(bv)                                  ((bv)->user_data)
 #define BVPRED(bv)                                              ((bv)->pred)
 #define BVSUCC(bv)                                              ((bv)->succ)
 #define BVFIRSTVECTOR(bv)                               ((bv)->first_vec)
-#define BVENDVECTOR(bv)                                 ((bv)->end_vec)
+#define BVLASTVECTOR(bv)                                ((bv)->last_vec)
+#define BVENDVECTOR(bv)                                 (BVSUCC(BVLASTVECTOR(bv)))
+#define BVNUMBEROFVECTORS(bv)                   ((bv)->vec_number)
 #define BVDOWNVECTOR(bv)                                ((bv)->first_vec)
 #define BVDOWNBV(bv)                                    ((bv)->first_son)
-#define BVDOWNBVEND(bv)                                 ((bv)->last_son)
-
+#define BVDOWNBVLAST(bv)                                ((bv)->last_son)
+#define BVDOWNBVEND(bv)                                 (BVSUCC(BVDOWNBVLAST(bv)))
 #define BV_GEN_F                                                0
 #define BV_GEN_L                                                1
 #define BV_GEN_C                                                2
@@ -1893,12 +1900,14 @@ INT InitBVDF                                            ( BV_DESC_FORMAT *bvdf, 
 INT PushEntry                                           ( BV_DESC *bvd, BLOCKNUMBER bnr, const BV_DESC_FORMAT *bvdf );
 
 /* functions to create a BLOCKVECTOR structure for a regular rectangular grid */
-INT CreateBVStripe                                      (GRID *grid, INT points, INT points_per_stripe );
-INT CreateBVDomainHalfening                     (GRID *grid, INT side );
+INT CreateBVStripe                                      ( GRID *grid, INT points, INT points_per_stripe );
+INT CreateBVDomainHalfening                     ( GRID *grid, INT side, INT leaf_size );
 
 /* general functions for BLOCKVECTOR */
-INT CreateBlockvector                           (GRID *theGrid, BLOCKVECTOR **BVHandle);
-INT DisposeBlockvector                          (GRID *theGrid, BLOCKVECTOR *bv);
+INT CreateBlockvector                                   ( GRID *theGrid, BLOCKVECTOR **BVHandle );
+INT DisposeBlockvector                                  ( GRID *theGrid, BLOCKVECTOR *bv );
+void FreeAllBV                                          ( GRID *grid );
+void FreeBVList                                         ( GRID *grid, BLOCKVECTOR *bv );
 
 /* algebraic connections */
 CONNECTION      *CreateExtraConnection  (GRID *theGrid, VECTOR *from, VECTOR *to);

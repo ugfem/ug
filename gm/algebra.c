@@ -116,8 +116,7 @@ static INT theFindCutVarID;                     /* env type for FIND_CUT vars   
 static FindCutProcPtr FindCutSet;       /* pointer to find cut procedure		*/
 
 /****************************************************************************/
-/*
- */
+/*																			*/
 /* definition of exported global variables									*/
 /*																			*/
 /****************************************************************************/
@@ -199,7 +198,7 @@ static char rcsid[] = "$Header$";
 /*																			*/
 /****************************************************************************/
 
-INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation );
+INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation, INT leaf_size );
 
 /****************************************************************************/
 /*D
@@ -600,8 +599,7 @@ static INT InsertBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *insertBV, BLOCKVECT
     if (makeVC==YES)
     {
       PREDVC(BVFIRSTVECTOR(insertBV)) = NULL;
-      SUCCVC(BVENDVECTOR(insertBV)) = NULL;
-      BVENDVECTOR(insertBV) = NULL;
+      SUCCVC(BVLASTVECTOR(insertBV)) = NULL;
     }
   }
   else if (after)
@@ -616,9 +614,8 @@ static INT InsertBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *insertBV, BLOCKVECT
       if (makeVC==YES)
       {
         PREDVC(BVFIRSTVECTOR(insertBV)) = NULL;
-        SUCCVC(BVENDVECTOR(insertBV)) = BVFIRSTVECTOR(BVSUCC(insertBV));
-        PREDVC(BVFIRSTVECTOR(BVSUCC(insertBV))) = BVENDVECTOR(insertBV);
-        BVENDVECTOR(insertBV) = BVFIRSTVECTOR(BVSUCC(insertBV));
+        SUCCVC(BVLASTVECTOR(insertBV)) = BVFIRSTVECTOR(BVSUCC(insertBV));
+        PREDVC(BVFIRSTVECTOR(BVSUCC(insertBV))) = BVLASTVECTOR(insertBV);
         FIRSTVECTOR(theGrid) = BVFIRSTVECTOR(insertBV);
       }
     }
@@ -632,26 +629,11 @@ static INT InsertBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *insertBV, BLOCKVECT
 
       if (makeVC==YES)
       {
-        if (BVENDVECTOR(theBV)!=NULL)
-        {
-          SUCCVC(PREDVC(BVENDVECTOR(theBV))) = BVFIRSTVECTOR(insertBV);
-          PREDVC(BVFIRSTVECTOR(insertBV)) = PREDVC(BVENDVECTOR(theBV));
-          SUCCVC(BVENDVECTOR(insertBV)) = BVENDVECTOR(theBV);
-          PREDVC(BVENDVECTOR(theBV)) = BVENDVECTOR(insertBV);
-        }
-        else
-        {
-          for (BVENDVECTOR(theBV)=BVFIRSTVECTOR(theBV); SUCCVC(BVENDVECTOR(theBV))!=NULL;)
-            BVENDVECTOR(theBV)=SUCCVC(BVENDVECTOR(theBV));
-          SUCCVC(BVENDVECTOR(theBV)) = BVFIRSTVECTOR(insertBV);
-          PREDVC(BVFIRSTVECTOR(insertBV)) = BVENDVECTOR(theBV);
-          SUCCVC(BVENDVECTOR(insertBV)) = NULL;
-          LASTVECTOR(theGrid) = BVENDVECTOR(insertBV);
-        }
-
-        if (BVSUCC(insertBV)!=NULL) BVENDVECTOR(insertBV) = BVFIRSTVECTOR(BVSUCC(insertBV));
-        else BVENDVECTOR(insertBV) = NULL;
-        BVENDVECTOR(theBV) = BVFIRSTVECTOR(insertBV);
+        SUCCVC(BVLASTVECTOR(insertBV)) = SUCCVC(BVLASTVECTOR(theBV));
+        if (SUCCVC(BVLASTVECTOR(insertBV))!=NULL) PREDVC(SUCCVC(BVLASTVECTOR(insertBV))) = BVLASTVECTOR(insertBV);
+        else LASTVECTOR(theGrid) = BVLASTVECTOR(insertBV);
+        SUCCVC(BVLASTVECTOR(theBV)) = BVFIRSTVECTOR(insertBV);
+        PREDVC(BVFIRSTVECTOR(insertBV)) = BVLASTVECTOR(theBV);
       }
     }
   }
@@ -679,7 +661,7 @@ static INT CreatBlockvector_l0 (GRID *theGrid, BLOCKVECTOR **BVHandle, BLOCKVECT
 
 static INT CutBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *theBV, INT makeVC)
 {
-  if (theBV==0) return (GM_ERROR);
+  if (theBV==NULL) return (GM_ERROR);
 
   switch ((theBV==GFIRSTBV(theGrid)) | ((theBV==GLASTBV(theGrid))<<1))
   {
@@ -689,10 +671,8 @@ static INT CutBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *theBV, INT makeVC)
 
     if (makeVC==YES)
     {
-      BVENDVECTOR(theBV) = PREDVC(BVENDVECTOR(theBV));
-      SUCCVC(PREDVC(BVENDVECTOR(BVPRED(theBV)))) = BVFIRSTVECTOR(BVSUCC(theBV));
-      PREDVC(BVFIRSTVECTOR(BVSUCC(theBV))) = PREDVC(BVENDVECTOR(BVPRED(theBV)));
-      BVENDVECTOR(BVPRED(theBV)) = BVFIRSTVECTOR(BVSUCC(theBV));
+      SUCCVC(BVLASTVECTOR(BVPRED(theBV))) = BVFIRSTVECTOR(BVSUCC(theBV));
+      PREDVC(BVFIRSTVECTOR(BVSUCC(theBV))) = BVLASTVECTOR(BVPRED(theBV));
     }
     break;
   case 1 :
@@ -700,29 +680,17 @@ static INT CutBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *theBV, INT makeVC)
     GFIRSTBV(theGrid) = BVSUCC(theBV);
 
     if (makeVC==YES)
-    {
-      BVENDVECTOR(theBV) = PREDVC(BVENDVECTOR(theBV));
-      PREDVC(BVFIRSTVECTOR(BVSUCC(theBV))) = NULL;
-    }
+      PREDVC(BVFIRSTVECTOR(GFIRSTBV(theGrid))) = NULL;
     break;
   case 2 :
     BVSUCC(BVPRED(theBV)) = NULL;
     GLASTBV(theGrid) = BVPRED(theBV);
 
     if (makeVC==YES)
-    {
-      for (BVENDVECTOR(theBV)=BVFIRSTVECTOR(theBV); SUCCVC(BVENDVECTOR(theBV))!=NULL;)
-        BVENDVECTOR(theBV)=SUCCVC(BVENDVECTOR(theBV));
-      SUCCVC(PREDVC(BVENDVECTOR(BVPRED(theBV)))) = NULL;
-      BVENDVECTOR(BVPRED(theBV)) = NULL;
-    }
+      SUCCVC(BVLASTVECTOR(BVPRED(theBV))) = NULL;
     break;
   case 3 :
     GFIRSTBV(theGrid) = GLASTBV(theGrid) = NULL;
-
-    if (makeVC==YES)
-      for (BVENDVECTOR(theBV)=BVFIRSTVECTOR(theBV); SUCCVC(BVENDVECTOR(theBV))!=NULL;)
-        BVENDVECTOR(theBV)=SUCCVC(BVENDVECTOR(theBV));
     break;
   }
 
@@ -3475,24 +3443,13 @@ static void GetBVNumberInGrid (GRID *theGrid, INT *nb)
   return;
 }
 
-static void GetBVNumber (BLOCKVECTOR *theBV, INT *nb, INT cutted)
+static void GetBVNumber (BLOCKVECTOR *theBV, INT *nb)
 {
   VECTOR *theVector;
 
   nb[0]=nb[1]=0;
-  if (cutted)
-  {
-    for (theVector=BVFIRSTVECTOR(theBV); theVector!= SUCCVC(BVENDVECTOR(theBV)); theVector=SUCCVC(theVector)) nb[0]++;
-    for (theVector=BVENDVECTOR(theBV); theVector!= PREDVC(BVFIRSTVECTOR(theBV)); theVector=PREDVC(theVector)) nb[1]++;
-  }
-  else
-  {
-    for (theVector=BVFIRSTVECTOR(theBV); theVector!= BVENDVECTOR(theBV); theVector=SUCCVC(theVector)) nb[0]++;
-    if (BVENDVECTOR(theBV)!=NULL)
-      for (theVector=PREDVC(BVENDVECTOR(theBV)); theVector!= PREDVC(BVFIRSTVECTOR(theBV)); theVector=PREDVC(theVector)) nb[1]++;
-    else
-      nb[1] = -1;
-  }
+  for (theVector=BVFIRSTVECTOR(theBV); theVector!= BVENDVECTOR(theBV); theVector=SUCCVC(theVector)) nb[0]++;
+  for (theVector=BVLASTVECTOR(theBV); theVector!= PREDVC(BVFIRSTVECTOR(theBV)); theVector=PREDVC(theVector)) nb[1]++;
   return;
 }
 
@@ -3748,13 +3705,16 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   PREDVC(succVector)   = NULL;
 
   /* set pointers in BLOCKVECTORs */
-  BVENDVECTOR(GLASTBV(theGrid)) = NULL;
+  BVLASTVECTOR(GLASTBV(theGrid)) = LASTVECTOR(theGrid);
   for (theBV=GLASTBV(theGrid); theBV!=NULL; theBV=BVPRED(theBV))
   {
-    if (BVSUCC(theBV)!=NULL && BVENDVECTOR(theBV)==NULL)
-      BVENDVECTOR(theBV)=BVFIRSTVECTOR(BVSUCC(theBV));
+    if (BVSUCC(theBV)!=NULL && BVLASTVECTOR(theBV)==NULL)
+      BVLASTVECTOR(theBV)=PREDVC(BVFIRSTVECTOR(BVSUCC(theBV)));
     if (BVFIRSTVECTOR(theBV)==NULL)
+    {
+      assert(0);
       BVFIRSTVECTOR(theBV)=BVENDVECTOR(theBV);
+    }
   }
 
   if (mode==GM_FFLLCC)
@@ -4280,7 +4240,7 @@ INT CreateBVStripe( GRID *grid, INT points, INT points_per_stripe )
   BLOCKVECTOR *bv;
   register BLOCKVECTOR *prev;
   register INT i, j, nr_blocks;
-  register VECTOR *v;
+  register VECTOR *v, *pred_v;
 
   /* number of blockvectors to be constructed */
   nr_blocks = ( points + points_per_stripe - 1) / points_per_stripe;
@@ -4322,9 +4282,11 @@ INT CreateBVStripe( GRID *grid, INT points, INT points_per_stripe )
     for ( j = points_per_stripe; (j > 0) && (v != NULL); j-- )
     {
       BVD_PUSH_ENTRY( &VBVD( v ), i, &one_level_bvdf );
+      pred_v = v;
       v = SUCCVC( v );
     }
-    BVENDVECTOR( bv ) = v;
+    BVLASTVECTOR( bv ) = pred_v;
+    BVNUMBEROFVECTORS( bv ) = points_per_stripe - j;
   }
 
   BVSUCC( bv ) = NULL;                          /* end of the blockvector list */
@@ -4362,6 +4324,15 @@ INT CreateBVStripe( GRID *grid, INT points, INT points_per_stripe )
    a subdomain consists of less than 10 points. The initial grid should have
    a side length allowing all halfenings without a remainder.
 
+   The first blockvector in the hierarchy is covering all the vectors.
+
+   NOTE:
+   If the grid contains Dirichlet vectors, they must be hidden from this
+   routine; e.g. order the whole vector list such that the Dirichlet vectors
+   are at the end of the list; then let the LASTVECTOR of the grid be the
+   vector in front of the first Dirichlet vector and correct this temporarly
+   setting after returning from this routine.
+
    RETURN VALUE:
    INT
    .n GM_OK if ok
@@ -4373,52 +4344,45 @@ INT CreateBVStripe( GRID *grid, INT points, INT points_per_stripe )
    D*/
 /****************************************************************************/
 
-INT CreateBVDomainHalfening( GRID *grid, INT side )
+INT CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
 {
   BLOCKVECTOR *bv;
-  register VECTOR *v;
   INT ret;
+  register VECTOR *v, *end_v;
 
-  /* create first block of the hierarchy (it is only a dummy
-     for temporary use) */
-  (void)CreateBlockvector( grid, &bv );
-  GFIRSTBV( grid ) = bv;
-  if ( bv == NULL )
+  /* create first block of the hierarchy */
+  if ( CreateBlockvector( grid, &bv ) != GM_OK )
     return GM_OUT_OF_MEM;
+
+  GFIRSTBV( grid ) = bv;
+  GLASTBV( grid ) = bv;
   SETBVDOWNTYPE( bv, BVDOWNTYPEVECTOR );
   BVDOWNVECTOR( bv ) = FIRSTVECTOR( grid );
   BVPRED( bv ) = NULL;
   BVSUCC( bv ) = NULL;
   BVNUMBER( bv ) = 0;
-  BVENDVECTOR( bv ) = NULL;
+  BVLASTVECTOR( bv ) = LASTVECTOR( grid );
   BVFIRSTVECTOR( bv ) = FIRSTVECTOR( grid );
 
-  ret = BlockHalfening( grid, bv, 0, 0, side, side, side, BV_VERTICAL );
+  /* set this global blockvector as the first stage of the hierarchy */
+  end_v = SUCCVC(LASTVECTOR( grid ));
+  for ( v = FIRSTVECTOR( grid ); v != end_v; v = SUCCVC( v ) )
+    BVD_PUSH_ENTRY( &VBVD( v ), 0, &DH_bvdf );
 
-  /* set FIRST- and LASTVECTOR */
-  v = FIRSTVECTOR( grid ) = BVFIRSTVECTOR( bv );
-  for ( ; SUCCVC( v ) != NULL; v = SUCCVC( v ) )
-    ;
-  LASTVECTOR( grid ) = v;
-
-  if ( ret != GM_OK )
+  if ( (ret = BlockHalfening( grid, bv, 0, 0, side, side, side, BV_VERTICAL, leaf_size )) != GM_OK )
   {
-    GFIRSTBV( grid ) = bv;
-    GLASTBV( grid ) = bv;
     FreeAllBV( grid );
-    GFIRSTBV( grid ) = NULL;
-    GLASTBV( grid ) = NULL;
     return ret;
   }
 
-  /* remove the dummy blockvector and set first and last blockvector
-     of the grid */
-  GFIRSTBV( grid ) = BVDOWNBV( bv );
-  DisposeBlockvector( grid, bv );
-  bv = GFIRSTBV( grid );
-  while ( BVSUCC( bv ) != NULL )
-    bv = BVSUCC( bv );
-  GLASTBV( grid ) = bv;
+  /* set the number of covered VECTORS */
+  BVNUMBEROFVECTORS( bv ) = BVNUMBEROFVECTORS( BVDOWNBV(bv) ) +
+                            BVNUMBEROFVECTORS( BVSUCC(BVDOWNBV(bv)) ) +
+                            BVNUMBEROFVECTORS( BVDOWNBVLAST(bv) );
+
+  /* set FIRST- and LASTVECTOR */
+  FIRSTVECTOR( grid ) = BVFIRSTVECTOR( bv );
+  LASTVECTOR( grid ) = BVLASTVECTOR( bv );
 
   return GM_OK;
 }
@@ -4460,15 +4424,17 @@ INT CreateBVDomainHalfening( GRID *grid, INT side )
  */
 /****************************************************************************/
 
-INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation )
+INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation, INT leaf_size )
 {
-  VECTOR *v, *end_v, **v0, **v1, **vi;
+  VECTOR *v, *vpred, *end_v, **v0, **v1, **vi;
   BLOCKVECTOR *bv0, *bv1, *bvi;
-  register INT index, interface;
+  register INT index, interface, nr_0, nr_1, nr_i;
+  VECTOR *pred_first_vec, *succ_last_vec;
 
   /* create a double linked list of 3 blockvectors */
   v = BVFIRSTVECTOR( bv );
   end_v = BVENDVECTOR( bv );
+  pred_first_vec = PREDVC( v );
 
   if ( CreateBlockvector( grid, &bv0 ) != GM_OK )
     return GM_OUT_OF_MEM;
@@ -4507,12 +4473,14 @@ INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width
   /* all necessary memory allocated; insert new block list in father block */
   SETBVDOWNTYPE( bv, BVDOWNTYPEBV );
   BVDOWNBV( bv ) = bv0;
+  BVDOWNBVLAST( bv ) = bvi;
 
   /* coordinate of the interface line */
   interface = ( (orientation == BV_VERTICAL) ? (width-1)/2 + left : bottom + (height-1)/2 );
 
   /* sort each vector in one of the 3 subdomains */
-  for ( ; v != end_v; v = SUCCVC( v ) )
+  nr_0 = nr_1 = nr_i = 0;
+  for ( vpred = NULL; v != end_v; vpred = v, v = SUCCVC( v ) )
   {
     /* calculate row/column number from index */
     index = ( (orientation == BV_VERTICAL) ? VINDEX(v) % side : VINDEX(v) / side );
@@ -4523,6 +4491,7 @@ INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width
       *v0 = v;
       v0 = &SUCCVC( v );
       BVD_PUSH_ENTRY( &VBVD( v ), 0, &DH_bvdf );
+      nr_0++;
     }
     else if ( index > interface )
     {
@@ -4530,6 +4499,7 @@ INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width
       *v1 = v;
       v1 = &SUCCVC( v );
       BVD_PUSH_ENTRY( &VBVD( v ), 1, &DH_bvdf );
+      nr_1++;
     }
     else
     {
@@ -4537,22 +4507,39 @@ INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width
       *vi = v;
       vi = &SUCCVC( v );
       BVD_PUSH_ENTRY( &VBVD( v ), 2, &DH_bvdf );
+      nr_i++;
     }
 
   }
-  /* complete the relation between blockvectors and vectors */
-  BVENDVECTOR( bv0 ) = BVDOWNVECTOR( bv1 );
-  BVENDVECTOR( bv1 ) = BVDOWNVECTOR( bvi );
-  BVENDVECTOR( bvi ) = end_v;
-
-  BVFIRSTVECTOR( bv0 ) = BVDOWNVECTOR( bv0 );
-  BVFIRSTVECTOR( bv1 ) = BVDOWNVECTOR( bv1 );
-  BVFIRSTVECTOR( bvi ) = BVDOWNVECTOR( bvi );
 
   /* relink the 3 subdomain lists to the global vector list */
   *v0 = BVDOWNVECTOR( bv1 );
   *v1 = BVDOWNVECTOR( bvi );
   *vi = end_v;
+  v = BVDOWNVECTOR( bv0 );
+  vpred = pred_first_vec;
+  if ( pred_first_vec != NULL )
+    SUCCVC( pred_first_vec ) = v;
+  /* correct the PRED-pointer chain */
+  for ( ; v != end_v; vpred = v, v = SUCCVC( v ) )
+    PREDVC( v ) = vpred;
+  if ( v != NULL )              /* at the end of the vectors of this blockvector */
+    PREDVC( v ) = vpred;
+
+  BVNUMBEROFVECTORS( bv0 ) = nr_0;
+  BVNUMBEROFVECTORS( bv1 ) = nr_1;
+  BVNUMBEROFVECTORS( bvi ) = nr_i;
+
+  /* complete the relation between blockvectors and vectors */
+  BVLASTVECTOR( bv0 ) = BVPRED(BVDOWNVECTOR( bv1 ));
+  BVLASTVECTOR( bv1 ) = BVPRED(BVDOWNVECTOR( bvi ));
+  BVLASTVECTOR( bvi ) = vpred;
+  BVLASTVECTOR( bv ) = vpred;
+
+  BVFIRSTVECTOR( bv0 ) = BVDOWNVECTOR( bv0 );
+  BVFIRSTVECTOR( bv1 ) = BVDOWNVECTOR( bv1 );
+  BVFIRSTVECTOR( bvi ) = BVDOWNVECTOR( bvi );
+  BVFIRSTVECTOR( bv ) = BVFIRSTVECTOR( bv0 );
 
   /* next loop */
 
@@ -4562,11 +4549,11 @@ INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width
     width = ( width - 1 ) / 2;
 
     /* if there are too many points per subdomain halfen them */
-    if ( ( width * height ) > 9 )
+    if ( ( width * height ) > leaf_size )
     {
-      if ( BlockHalfening( grid, bv0, left, bottom, width, height, side, BV_HORIZONTAL ) == GM_OUT_OF_MEM )
+      if ( BlockHalfening( grid, bv0, left, bottom, width, height, side, BV_HORIZONTAL, leaf_size ) == GM_OUT_OF_MEM )
         return GM_OUT_OF_MEM;
-      if ( BlockHalfening( grid, bv1, left+width+1, bottom, width, height, side, BV_HORIZONTAL ) == GM_OUT_OF_MEM )
+      if ( BlockHalfening( grid, bv1, left+width+1, bottom, width, height, side, BV_HORIZONTAL, leaf_size ) == GM_OUT_OF_MEM )
         return GM_OUT_OF_MEM;
     }
   }
@@ -4576,17 +4563,19 @@ INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width
     height = ( height - 1 ) / 2;
 
     /* if there are too many points per subdomain halfen them */
-    if ( ( width * height ) > 9 )
+    if ( ( width * height ) > leaf_size )
     {
-      if ( BlockHalfening( grid, bv0, left, bottom, width, height, side, BV_VERTICAL ) == GM_OUT_OF_MEM )
+      if ( BlockHalfening( grid, bv0, left, bottom, width, height, side, BV_VERTICAL, leaf_size ) == GM_OUT_OF_MEM )
         return GM_OUT_OF_MEM;
-      if ( BlockHalfening( grid, bv1, left, bottom +height+1, width, height, side, BV_VERTICAL ) == GM_OUT_OF_MEM )
+      if ( BlockHalfening( grid, bv1, left, bottom +height+1, width, height, side, BV_VERTICAL, leaf_size ) == GM_OUT_OF_MEM )
         return GM_OUT_OF_MEM;
     }
   }
 
   return GM_OK;
 }
+
+
 
 /****************************************************************************/
 /*D
