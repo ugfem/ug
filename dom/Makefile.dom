@@ -28,20 +28,20 @@ all : $(OBJECTS) $(DOM_MODULE) Makefile.dom
 STD_DOMAIN:
 	cd std; make -f Makefile.std; cd ..;
 
-GSF_DOMAIN:
-	cd gsf; make -f Makefile.gsf; cd ..;
+LGM_DOMAIN:
+	cd lgm; make -f Makefile.lgm; cd ..;
 
 STD: 
 	rm -f ../lib/libdom$(UG_DOMSUFFIX).a;
 	cd std; make -f Makefile.std; cd ..;
 
-GSF: 
+LGM: 
 	rm -f ../lib/libdom$(UG_DOMSUFFIX).a;
-	cd gsf; make -f Makefile.gsf; cd ..;
+	cd lgm; make -f Makefile.lgm; cd ..;
 
 clean:
 	cd std;  make -f Makefile.std clean; cd ..;
-	cd gsf;  make -f Makefile.gsf clean; cd ..;
+	cd lgm;  make -f Makefile.lgm clean; cd ..;
 
 #preliminary: only std (should be configurable in another way)
 extract:
