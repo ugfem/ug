@@ -16,14 +16,14 @@ include machines/mk.$(ARCHDIR)
 include ug.conf
 
 # the following list may be extended
-MODULES = LOW DEV DOM GM NUMERICS GRAPH GRAPE UI GG 
+MODULES = LOW DDDIF DEV DOM GM NUMERICS GRAPH GRAPE PPIF UI GG 
 UGMODULES = LOW GM NUMERICS GRAPH GRAPE UI GG 
 
 # dimension dependent targets
 version = $(DIM)Dversion
 
 # local C compiler flags
-LCFLAGS = -Ilow -Idev -Idom -Idom/$(DOM_MODULE) -Igm -Igraph -Iui -Inumerics -Igg
+LCFLAGS = -Ilow -I dddif -Idev -Idom -Idom/$(DOM_MODULE) -Igm -Igraph -Iui -Inumerics -Igg
 
 # object files for both dimensions
 OBJECTS = initug.o
@@ -39,6 +39,9 @@ uglib: $(UGMODULES) $(OBJECTS)
 
 LOW:
 	cd low; make -f Makefile.low; cd ..;
+
+DDDIF:
+	cd dddif; make -f Makefile.dddif; cd ..;
 
 DEV:
 	cd dev; make -f Makefile.dev; cd ..;
@@ -65,6 +68,9 @@ GG:
 	cd gg; make -f Makefile.gg $(version); cd ..;
 	cd gg3d; make -f Makefile.gg3d $(version); cd ..;
 	
+PPIF:
+	cd machines/$(ARCHDIR); make; cd ..;
+
 # default rule
 .c.o:
 	$(CC) $(UGDEFINES) $(CFLAGS) $(LCFLAGS) $<
@@ -72,6 +78,7 @@ GG:
 clean:
 	rm -f $(OBJECTS)
 	cd low; make -f Makefile.low clean; cd ..;
+	cd dddif; make -f Makefile.dddif clean; cd ..;
 	cd dev; make -f Makefile.dev clean; cd ..;
 	cd dom; make -f Makefile.dom clean; cd ..;
 	cd gm; make -f Makefile.gm clean; cd ..;
@@ -79,7 +86,8 @@ clean:
 	cd graph; make -f Makefile.graph clean; cd ..;
 	cd ui; make -f Makefile.ui clean; cd ..;
 	cd gg; make -f Makefile.gg clean; cd ..;
-	cd gg3d; make -f Makefile.gg3d clean; cd ..;
+	cd gg3d; make -f Makefile.gg clean; cd ..;
+	cd machines/$(ARCHDIR); make clean; cd ..;
 
 ifdef:
 	cd gm; make -f Makefile.gm clean; cd ..;
