@@ -52,7 +52,6 @@
 
 /* grid manager module */
 #include "initgm.h"
-#include "switch.h"
 
 /* numerics module */
 #include "initnumerics.h"
