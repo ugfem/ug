@@ -1896,24 +1896,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
         ENDDEBUG
 
         /* check for side node */
-          theNode = NULL;
-        theNode0 = MidNodes[EDGE_OF_SIDE(theElement,i,0)];
-        theNode1 = MidNodes[EDGE_OF_SIDE(theElement,i,2)];
-        l = 0;
-
-        if (theNode0 != NULL && theNode1 != NULL)
-          theNode = GetSideNode(theElement,theNode0,theNode1,i);
-
-        IFDEBUG(gm,3)
-        if (theNode != NULL)
-          UserWriteF("found SideNode=" ID_FMTX " MidNode0=" ID_FMTX " MidNode1=" ID_FMTX "\n",
-                     ID_PRTX(theNode),ID_PRTX(theNode0),ID_PRTX(theNode1));
-        else
-          UserWriteF("NOT found SideNode=NULL MidNode0=" ID_FMTX " MidNode1=" ID_FMTX "\n",
-                     ID_PRTX(theNode0),ID_PRTX(theNode1));
-        ENDDEBUG
-
-          SideNodes[i] = theNode;
+          SideNodes[i] = GetSideNode(theElement,i);
       }
 
       if (SideNodes[i] == NULL)
@@ -2045,16 +2028,8 @@ static int NodeContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementCon
     /* no side nodes for triangular sides yet */
     if (CORNERS_OF_SIDE(theElement,i) == 3) continue;
 #endif
-
     /* check for side node */
-    theNode = NULL;
-    theNode0 = MidNodes[EDGE_OF_SIDE(theElement,i,0)];
-    theNode1 = MidNodes[EDGE_OF_SIDE(theElement,i,2)];
-    if (theNode0 != NULL && theNode1 != NULL)
-      theNode = GetSideNode(theElement,theNode0,theNode1,i);
-
-    SideNodes[i] = theNode;
-
+    SideNodes[i] = GetSideNode(theElement,i);
   }
         #endif
 
@@ -2222,21 +2197,13 @@ INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes,
         #ifdef __THREEDIM__
   /* determine side node */
   {
-    NODE *theNode,*theNode0,*theNode1;
-    LINK *theLink0,*theLink1;
-    INT l;
+    NODE *theNode;
 
-    theNode = NULL;
-    theNode0 = SideNodes[ncorners];
-    theNode1 = SideNodes[ncorners+2];
-    l = 0;
-
-    if (theNode0 != NULL && theNode1 != NULL)
-      if ((theNode = GetSideNode(theElement,theNode0,theNode1,side))
-          != NULL)
-      {
-        (*nodes)++;
-      }
+    theNode = GetSideNode(theElement,side);
+    if (theNode != NULL)
+    {
+      (*nodes)++;
+    }
 
     SideNodes[ncorners+nedges] = theNode;
 

@@ -784,67 +784,70 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 	return(theNode);	
 }
 
-NODE *GetSideNode (ELEMENT *theElement, NODE *theNode0, NODE *theNode1, INT side)
+NODE *GetSideNode (ELEMENT *theElement, INT side)
 {
-	NODE *theNode=NULL;
-	LINK *theLink0,*theLink1;
-	INT l=0;
+	NODE *theNode;
+	NODE *MidNodes[MAX_EDGES_OF_SIDE];
+	LINK *theLink0,*theLink1,*theLink2,*theLink3;
+	INT i,j,n;
 
-	ASSERT(theNode0!=NULL || theNode1!=NULL);
-
-	/* search over both link lists */
-	if (theNode0!=NULL && theNode1!=NULL) 
-		for (theLink0=START(theNode0); theLink0!=NULL; theLink0=NEXT(theLink0)) {
-			for (theLink1=START(theNode1); theLink1!=NULL; theLink1=NEXT(theLink1))
-				if (NBNODE(theLink0) == NBNODE(theLink1)) {
-					if (NTYPE(NBNODE(theLink0)) == SIDE_NODE) {
-						theNode = NBNODE(theLink0);
-						if (VFATHER(MYVERTEX(theNode)) == theElement) {
-							if (ONSIDE(MYVERTEX(theNode)) == side)
-								break;
-						}
-						if (NBELEM(theElement,side)==VFATHER(MYVERTEX(theNode))) {
-							if (ONNBSIDE(MYVERTEX(theNode)) == side)
-								break;
-						}
-						theNode = NULL;
+	n = EDGES_OF_SIDE(theElement,side);
+	for (i=0; i<n; i++) {
+		theNode = MIDNODE(GetEdge(
+		CORNER_OF_EDGE_PTR(theElement,EDGE_OF_SIDE(theElement,side,i),0),
+		CORNER_OF_EDGE_PTR(theElement,EDGE_OF_SIDE(theElement,side,i),1)));
+		if (theNode == NULL) return(NULL);
+		MidNodes[i] = theNode;
+	}
+	if (n == 4) {
+		for (theLink0=START(MidNodes[0]); theLink0!=NULL; 
+			 theLink0=NEXT(theLink0)) {
+			theNode = NBNODE(theLink0);
+			if (NTYPE(theNode) != SIDE_NODE)
+				continue;
+			for (theLink1=START(MidNodes[1]); theLink1!=NULL; 
+				 theLink1=NEXT(theLink1)) {
+				if (theNode != NBNODE(theLink1))
+					continue;
+				for (theLink2=START(MidNodes[2]); theLink2!=NULL; 
+					 theLink2=NEXT(theLink2)) {
+					if (theNode != NBNODE(theLink2))
+						continue;
+					for (theLink3=START(MidNodes[3]); theLink3!=NULL; 
+						 theLink3=NEXT(theLink3)) { 
+						if (theNode != NBNODE(theLink3))
+							continue;
+						ASSERT((ONSIDE(MYVERTEX(theNode)) == side) ||
+							   (ONNBSIDE(MYVERTEX(theNode)) == side));
+						return(theNode); 
 					}
 				}
-				if (theNode != NULL) 
-				    if (NTYPE(theNode)==SIDE_NODE && 
-						(ONSIDE(MYVERTEX(theNode)) == side ||
-						 ONNBSIDE(MYVERTEX(theNode)) == side))
-					return(theNode);
 			}
-
-	/* search over one link list */
-	if (theNode0!=NULL || theNode1!=NULL) {
-		if (theNode0!=NULL)
-			theLink0 = START(theNode0);
-		if (theNode1!=NULL)
-			theLink0 = START(theNode1);
-
-		for ( ; theLink0!=NULL; theLink0=NEXT(theLink0)) {
-			if (NTYPE(NBNODE(theLink0)) == SIDE_NODE) {
-				theNode = NBNODE(theLink0);
-				if (VFATHER(MYVERTEX(theNode)) == theElement) {
-					if (ONSIDE(MYVERTEX(theNode)) == side)
-						break;
+		}
+	}
+	else if (n == 3) {
+		for (theLink0=START(MidNodes[0]); theLink0!=NULL; 
+			 theLink0=NEXT(theLink0)) {
+			theNode = NBNODE(theLink0);
+			if (NTYPE(theNode) != SIDE_NODE)
+				continue;
+			for (theLink1=START(MidNodes[1]); theLink1!=NULL; 
+				 theLink1=NEXT(theLink1)) {
+				if (theNode != NBNODE(theLink1))
+					continue;
+				for (theLink2=START(MidNodes[2]); theLink2!=NULL; 
+					 theLink2=NEXT(theLink2)) {
+					if (theNode != NBNODE(theLink2))
+						continue;
+					ASSERT((ONSIDE(MYVERTEX(theNode)) == side) ||
+						   (ONNBSIDE(MYVERTEX(theNode)) == side));
+					return(theNode); 
 				}
-				if (NBELEM(theElement,side)==VFATHER(MYVERTEX(theNode))) {
-					if (ONNBSIDE(MYVERTEX(theNode)) == side)
-						break;
-				}
-				theNode = NULL;
 			}
 		}
 	}
 
-	ASSERT(theNode==NULL || NTYPE(theNode)==SIDE_NODE && 
-			(ONSIDE(MYVERTEX(theNode)) == side ||
-			ONNBSIDE(MYVERTEX(theNode)) == side));
-
-	return(theNode);
+	return(NULL);
 }
 
 
@@ -2324,7 +2327,7 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 		theNode = NULL;
 
 		if (theNode0!=NULL && theNode1!=NULL)
-			theNode = GetSideNode(theElement,theNode0,theNode1,j);
+			theNode = GetSideNode(theElement,j);
 
 		if (theNode!=NULL && VFATHER(MYVERTEX(theNode))==theElement)
 		{
@@ -6652,6 +6655,15 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 					" VID=" VID_FMTX " SIDE_NODE VFATHER=NULL\n",
 					me,EID_PRTX(theElement),ID_PRTX(theNode),VID_PRTX(theVertex));
 				break;
+			}
+			else {
+				if (GetSideNode(theFather,ONSIDE(theVertex)) != theNode) {
+					nerrors = 1;
+					UserWriteF(PFMT "EID=" EID_FMTX " NID=" ID_FMTX 
+							   " VID=" VID_FMTX " inconsistent ONSIDE entry\n",
+							   me,EID_PRTX(theElement),ID_PRTX(theNode),
+							   VID_PRTX(theVertex));
+				}
 			}
 			break;
 

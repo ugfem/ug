@@ -1322,6 +1322,7 @@ INT UG_GlobalToLocal (INT n, const DOUBLE **Corners,
 		LOCAL_TO_GLOBAL (n,Corners,LocalCoord,tmp);
 		V_DIM_SUBTRACT(tmp,EvalPoint,diff);
 		V_DIM_EUKLIDNORM(diff,s);
+		PRINTDEBUG(gm,1,("UG_GlobalToLocal %d %g\n",i,s));
 		if (s * s <= SMALL_DIFF * IMdet) 
 			return (0);
 		TRANSFORMATION(n,Corners,LocalCoord,M);
