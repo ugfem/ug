@@ -38,17 +38,8 @@
    `ug` library $UGROOT/lib/libug$(LIBSUFFIX).a. 
  
 .  executables -
-   In order to receive two executable demonstration 
-   programs, make ug3/ your current directory and execute the command 
-   <Project>.
-   <Project> is a shellscript which firstly will execute the global makefile 
-   in ug/, in order to build a two and a three-dimensional version of the 
-   `ug` library $UGROOT/lib/libug$(LIBSUFFIX).a. Secondly four additional 
-   makefiles will be executed to set up the problem class librairies 
-   libdiff$(LIBSSUFFIX).a, libcd$(LIBSSUFFIX).a, libns$(LIBSSUFFIX).a and 
-   libnc$(LIBSSUFFIX).a in directory diff2d/, cd3d/, ns2d/ and nc2d/ 
-   respectively. Finally the executables appl will be generated in the
-   corresponding directories matching the demonstration programs.
+   In order to receive the executable demonstration 
+   programs execute the 'ugproject' shell script.
 
 D*/																			
 /****************************************************************************/

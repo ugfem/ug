@@ -3,53 +3,65 @@
 /*D
    modules - survey of the structure of the ug software
    
-   OVERVIEW:
-   The ug3 software consists of two parts: the pure ug (you can call it
-   a kernel) and various experimenting environments. The installation is
-   described in the manual page `installation`. The concept of ug is
-   explained in the manual page `ug`.
+OVERVIEW:
+   Basically the UG source code is divided into three parts. The problem-
+   independent `ug library`, the `problem class libraries`, that implement
+   discretization, solvers, error estimators for a specific partial
+   differential equation and the `applications` that use all these libraries
+   to construct an executable. A problem class library together with its
+   applications is called an `experimental environment` in some places
+   of this manual.
    
-   UG~KERNEL:
-.   'configuring~information~(config)' - Contains configuring files for
-    various ug versions. Needed for the auto testing facility 'ugproject'.
-    You can use it for looking for your appropriate 
-    configutation file.
-.   'grid~management~(gm)' - The grid manager module performs all operations which manipulate the grid. It controls the creation 
-	and deletion of new elements during refine and provides a well defined interface to the layers above.
-	For more details see man page `gm`.
+UG KERNEL:
+   The problem-independent part of ug (the ug kernel) is itself structured
+   into several layers. These layers correspond directly to the subdirectories
+   of the 'ug31/ug' directory. From top to bottom (high level to low level)
+   these layers are explained in the following list.
 
-.   'graphics~(graph)' -
-	This module of `ug` realizes a small 2/3D color graphics model. Some features are skalar or vector plots 
-	with arbitrary viewpoint and cutplanes on the viewed domain, solution or grid.
+.   'configuring~information~(config)' - Contains configuration files that parametrize
+    the ug library to be build. These files are processed by the makefiles.
 
 .   'user~interface~(ui)' -
 	The core of 'ui' is a command interpreter which provides a script language and gives access to 
 	commands of your application. This allows to type in all commands directly into the command line
 	interface furthermore it is possible to gather a series of commands and control statements of the script
 	language in a separate file. This script file can then be executed as one unity.
+    The 'ui' layer also provides the graphical user interface with the help of the 'graph' and 'dev' layers.
+
+.   'graphics~(graph)' -
+	This module of `ug` realizes a small 2/3D color graphics model. Some features are scalar or vector plots 
+	with arbitrary viewpoint and cutplanes on the viewed domain, solution or grid.
+
+.   'numerical~procedures~(numerics)' - This layer provides ready to use linear algebra 
+    routines and iterative methods (such as multigrid) for standard applications.
+	The numerical procedures is also a toolset for the construction of new solvers on very high language level.
+	Since they are implemented as commands, it is possible to access them on the script or command line level.
+	This allows a quick and easy formulation of your appropriate solver and rapid prototyping of new ideas.
+
+.   'grid~generator~(gg)' - Contains an advancing front grid generator for triangular
+    meshes.
+
+.   'grid~management~(gm)' - The grid manager module performs all operations which manipulate the grid. It controls the creation 
+	and deletion of new elements during refine and provides a well defined interface to the layers above.
+	For more details see man page `gm`.
 
 .   'devices~(dev)' -
 	`devices` defines an abstract device interface with a fixed functionality. The drivers for different real 
 	devices as X11 or the `ug` internal graphics meta format are implemented in separate modules. All access 
 	to X11 is for example managed by the submodule `xif`.
 
-.   'numerical~procedures~(numerics)' -
-	The numerical procedures are a toolset for the construction of new solvers on very high language level.
-	Since they are implemented as commands, it is possible to access them on the script or command line level.
-	This allows a quick and easy formulation of your appropriate solver and rapid prototyping of new ideas.
-
 .   'low~tasks~(low)' -
 	This module handles low tasks as providing memory management, treating machine architecture and operation system 
 	dependencies. 
   
-   EXPERIMENTAL~ENVIRONMENT:
+EXPERIMENTAL ENVIRONMENT:
    An experimenting environment is a directory containing the code 
    belonging to the problem class and application layer of an ug application.
-   This directory may be placed anywhere in the file system and have not to
-   observe a certain position to the 'ug' directory. The name of the directory is
+   This directory may be placed anywhere in the file system and does not have to
+   in a special position relative to the 'ug' directory. The name of the directory is
    an abbreviation of the corresponding problemclass name (e.g. "'diff2d'"
    for diffusion equation in 2 dimensions).
-   There are three subdirectories:~
+   There usually are three subdirectories:~
    
 .  pclib - The `p`roblem `c`lass `lib`rary ('pclib') realizes the 
    problem class layer. In this
@@ -85,6 +97,7 @@
    some functions need the current directory to be an application directory.
    To make different experiments it is a favourable proceeding to maintain
    them in different application directories.
+
 .  man - This directory contains subdirectories with the manual pages 
    supplied by this experimenting environment. See manual page `installation`
    for the correct installation of the manual pages. This pages you can not
@@ -104,7 +117,7 @@
    Navier Stokes equation with a Finite Volume scheme consistent 
    stabilized according to Schneider and Raw.
    
-   UG3~PACKAGE:
+UG3 PACKAGE:
    The whole directory structure of the ug3 package is:~
 .vb
 ug3/
@@ -156,29 +169,30 @@ ug3/
 D*/
 
 /*D
-   defaults - setting to configure an experiment (application)
+   defaults - file containig default settings for an executable application
    
    FILENAME:
    "'defaults'", stored in an application directory
    
    DESCRIPTION:
-   In the file 'defaults' values are specified to configure an experiment. 
-   This file must
-   be stored in the current working directory, thus store the file in the
-   application directory and invoke the application (stored there too) from
-   this. The man page `modules` contain an explanation of the directory
+   The 'defaults' file contains some load time configurable parameters
+   for an executable produced with the ug libraries. It must reside in
+   the same directory where the application (the executable program)
+   is stored.
+   The man page `modules` contains an explanation of the directory
    structure of the ug software. For further configuration facilities refer
-   to the manual pages `install` and `machines`.
-    
-   This database can be read with the 'GetDefaultValue' function. You can
-   set database entries for your own purpose. Additionaly ug can recognize
-   some variables listed below if set in the 'defaults'-file.
+   to the manual pages `Installation` and `makefiles`.
+   
+   The entries in the defaults-file can be read from C-code with the
+   function 'GetDefaultValue'. You can append your own entries to the
+   defaults file and read them with this function. In the follwing the
+   entries recognized by ug are listed.
 
-   FILE~FORMAT:
+   FILE FORMAT:
    Each line contains one setting in the form "`variable` `value`". 
    Lines with unrecognized variables do not trouble.
    
-   RECOGNIZED~VARIABLES~BY~UG:
+   VARIABLES RECOGNIZED BY UG:
 .  envmemory -  environment memory in bytes
 .  helpfiles -  list of help files ('*.help'). Give blank-separated 
       list, specifications relatively to the current working directory or
@@ -205,7 +219,7 @@ D*/
       absolute, terminate each name with "/". Note that environment 
       variables such as '$UGROOT' are not interpreted; do not use them!
       
-   RECOGNIZED~VARIABLES~~BY~UG~ONLY~ON~MACINTOSH:
+   VARIABLES RECOGNIZED BY UG ONLY ON MACINTOSH:
 .  guimemory - memory for window management
 .  scrollback - line buffer for shell
 .  charsperline - max number of chars per line
@@ -249,20 +263,18 @@ TermWinDV       1000
 D*/
 
 /*D
-   helpfile - file containing information for the ug on-line help
-   
-   FILENAME:
-   The filename is arbitrary, the extension should be "'.help'".
+   helpfile - format of UGs online help manuals
    
    DESCRIPTION:
-   The content of the helpfiles is searched to get on-line 
-   information about ug
-   commands etc. The command to perform such an retrieval is 'help' (see
-   manual page `help`). To install a helpfile correctly add the 
-   name incl. pathname to the variable 'helpfiles' in the 'defaults'-file 
-   (refer to the manual page `defaults`).
-   
-   FILE~FORMAT:
+   UGs online help messages (see the command 'help')
+   are contained in standard ASCII files that you can extend to your needs.
+   A help file should have the extension '.help'.
+   UG can process several help-files at a time. A list of all help files
+   to be processed is defined in the defaults-file of the application (see
+   manpage 'defaults'). In the following the format of a help file is
+   explained and the names of the existing help files are listed.
+
+   FILE FORMAT:
    '<helpfile> := { -[<helpitem> [ > {keyword }+ ]] <lines of ascii text> }*'
    
    The file consits of a sequence of entries. Each entry starts with a minus
@@ -282,10 +294,9 @@ D*/
    
    DEPENDENCIES:
    All the helpfiles must be registered in the 'defaults'-file (see 
-   above or manual page
-   `defaults`).
+   above or manual page `defaults`).
    
-   RELATED~FILES:
+   RELATED FILES:
 .  $UGROOT/doc/ug.help general ug features 
 .  '$UGROOT/doc/ug2d.help' - special ug features in 2 dimensions
 .  '$UGROOT/doc/ug3d.help' - special ug features in 3 dimensions
