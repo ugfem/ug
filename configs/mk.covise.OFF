@@ -1,0 +1,6 @@
+# this file is for internal ug configuration. don't change it!
+
+COVISE_TARGET = COVISE_OFF
+COVISE_CFLAGS =
+COVISE_LFLAGS =
+

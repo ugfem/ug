@@ -40,6 +40,9 @@ include $(UGROOT)/configs/mk.debug.$(DEBUG_MODE)
 # include macro definitions for netgen
 include $(UGROOT)/configs/mk.netgen.$(NETGEN)
 
+# include macro definitions for covise
+include $(UGROOT)/configs/mk.covise.$(COVISE)
+
 # include macro definitions for grape
 include $(UGROOT)/configs/mk.grape.$(GRAPE)
 
@@ -56,7 +59,7 @@ UG_CFLAGS =	-c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 			$(ARCH_CFLAGS) $(PPIF_CFLAGS) $(MODEL_CFLAGS) \
 			$(ARCH_XINCLUDES) $(ENV_CFLAGS) \
 			$(RIF_CFLAGS) $(CHACO_CFLAGS) \
-			$(NETGEN_CFLAGS) $(GRAPE_CFLAGS) \
+			$(NETGEN_CFLAGS) $(COVISE_CFLAGS) $(GRAPE_CFLAGS) \
 			$(CAD_CFLAGS) \
 			-I$(UGROOT)/include
 
@@ -65,7 +68,7 @@ UG_C++FLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 
 UG_LFLAGS = $(ARCH_LFLAGS) $(PPIF_LFLAGS) $(MODEL_LFLAGS) $(GRAPE_LFLAGS) \
 			$(ARCH_XLIBS) $(ARCH_LIBS) $(ENV_LFLAGS) $(ARCH_PLIBS) \
-			$(NETGEN_LFLAGS) $(CHACO_LFLAGS) $(CAD_LFLAGS)
+			$(NETGEN_LFLAGS) $(COVISE_LFLAGS) $(CHACO_LFLAGS) $(CAD_LFLAGS)
 
 UG_LIB    = $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a 
 
