@@ -2295,21 +2295,27 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
   /* set neighborship relations */
   if (newstyle)
     for (i=0; i<Sons_of_Side; i++) {
-      SET_NBELEM(ElemSortTable[i]->elem,ElemSortTable[i]->side,NbSortTable[i]->elem);
-      SET_NBELEM(NbSortTable[i]->elem,NbSortTable[i]->side,ElemSortTable[i]->elem);
+      SET_NBELEM(ElemSortTable[i]->elem,ElemSortTable[i]->side,
+                 NbSortTable[i]->elem);
+      SET_NBELEM(NbSortTable[i]->elem,NbSortTable[i]->side,
+                 ElemSortTable[i]->elem);
+      if (DisposeDoubledSideVector(theGrid,ElemSortTable[i]->elem,
+                                   ElemSortTable[i]->side,
+                                   NbSortTable[i]->elem,
+                                   NbSortTable[i]->side))
+        RETURN(GM_FATAL);
     }
 
   return(GM_OK);
 }
 
-
 /****************************************************************************/
 /*																			*/
-/* Function:  RefineElementYellow										*/
+/* Function:  RefineElementYellow										    */
 /*																			*/
-/* Purpose:   copy an element                                                                                   */
-/*			  (i)	 corner nodes are already allocated				*/
-/*			  (iv)	 create son and set references to sons                          */
+/* Purpose:   copy an element                                                                                       */
+/*			  (i)	 corner nodes are already allocated				        */
+/*			  (iv)	 create son and set references to sons                              */
 /*																			*/
 /* Param:	  GRID *theGrid: grid level of sons of theElement				*/
 /*			  ELEMENT *theElement: element to refine						*/
