@@ -128,6 +128,16 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 	nerrors = 0;
 	if (theFather==NULL && MASTER(theNode) && LEVEL(theVertex)>0)
 	{
+        #ifdef ModelP
+		if (!CORNERTYPE(theNode))
+		{
+		    nerrors = 0;
+			IFDEBUG(gm,1)
+		    nerrors = 1;
+			ENDDEBUG
+		}
+        #endif
+		if (nerrors == 0) return(nerrors);
 		UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX " vertex=" VID_FMTX
 			" VFATHER=NULL vertex needs VFATHER\n",me,EID_PRTX(theElement),ID_PRTX(theNode),
 			VID_PRTX(theVertex));
@@ -142,8 +152,19 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 		return(nerrors++);
 	}
 
+	
 	if (theFather!=NULL && MASTER(theNode) && EPRIO(theFather)==PrioGhost)
 	{
+        #ifdef ModelP
+		if (!CORNERTYPE(theNode))
+		{
+		    nerrors = 0;
+			IFDEBUG(gm,1)
+		    nerrors = 1;
+			ENDDEBUG
+		}
+        #endif
+		if (nerrors == 0) return(nerrors);
 		UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX " vertex=" VID_FMTX
 			" VFATHER=" EID_FMTX " vertex needs VFATHER with prio master or vghost\n",
 			me,EID_PRTX(theElement),ID_PRTX(theNode),VID_PRTX(theVertex),EID_PRTX(theFather));
@@ -157,9 +178,20 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 		LOCAL_TO_GLOBAL(n,x,local,global1);
 		V_DIM_EUKLIDNORM_OF_DIFF(global1,global,diff);
 		if (diff > MAX_PAR_DIST) {
-		    UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX "/%d vertex=" VID_FMTX
-			" VFATHER=%x diff %f local and global coordinates don't match\n",me,EID_PRTX(theElement),ID_PRTX(theNode),
-			NTYPE(theNode),VID_PRTX(theVertex),theFather,diff);
+			#ifdef ModelP
+			if (!CORNERTYPE(theNode))
+			{
+				nerrors = 0;
+				IFDEBUG(gm,1)
+				nerrors = 1;
+				ENDDEBUG
+			}
+			#endif
+			if (nerrors == 0) return(nerrors);
+		   	UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX "/%d vertex=" VID_FMTX
+				" WARNING VFATHER=%x WARNING diff %f local and global coordinates don't match\n",
+				me,EID_PRTX(theElement),ID_PRTX(theNode),
+				NTYPE(theNode),VID_PRTX(theVertex),theFather,diff);
 			nerrors++;
 		}
 	}
@@ -214,7 +246,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 			{
 				nerrors++;	
                 #ifdef ModelP
-				if (EPRIO(theElement)==PrioGhost) {
+				if (EGHOST(theElement)) {
 				    nerrors = 0;
 					IFDEBUG(gm,1)
 					    nerrors = 1;
@@ -326,8 +358,13 @@ static INT CheckNode (ELEMENT *theElement, NODE* theNode, INT i)
 					}
 					else
 					{
-						UserWriteF(PFMT " WARN cornernode=" ID_FMTX " has no father level=%d\n",
-							me,ID_PRTX(theNode),LEVEL(theNode));
+						INT print = 0;
+						IFDEBUG(gm,1)
+						print = 1;
+						ENDDEBUG
+						if (print)
+							UserWriteF(PFMT " WARN cornernode=" ID_FMTX " has no father level=%d\n",
+								me,ID_PRTX(theNode),LEVEL(theNode));
 					}
 					#endif
 				}
@@ -471,16 +508,13 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 		{
 
         #ifdef ModelP
-		if (EPRIO(theElement)==PrioGhost) {
-		    nerrors = 0;
-			IFDEBUG(gm,1)
-			    nerrors = 1;
-			ENDDEBUG
-			if (!nerrors) return(nerrors);
-		}
+		IFDEBUG(gm,1)
 	    #endif
 				UserWriteF(PFMT "elem=" EID_FMTX " edge%d=" EDID_FMTX " midnode NID=NULL" 
 				" BUT REFINE(elem)=RED\n",me,EID_PRTX(theElement),i,EDID_PRTX(theEdge));
+		#ifdef ModelP
+		ENDDEBUG
+	    #endif
 			return(nerrors++);
 		}
 		else
@@ -507,10 +541,22 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 
 	if (i != ONEDGE(theVertex))
 	{
-		UserWriteF(PFMT "EID=" EID_FMTX " VID=" VID_FMTX 
-			" edgenumber of vertex wrong\n",
-			me,EID_PRTX(theElement),VID_PRTX(theVertex));
-		return(nerrors++);	
+		if (EGHOST(theElement))
+		{
+			IFDEBUG(gm,1)
+			UserWriteF(PFMT "EID=" EID_FMTX " VID=" VID_FMTX 
+				" WARNING edgenumber of vertex wrong\n",
+				me,EID_PRTX(theElement),VID_PRTX(theVertex));
+			ENDDEBUG
+		}
+		else
+		{
+			UserWriteF(PFMT "EID=" EID_FMTX " VID=" VID_FMTX 
+				" ERROR edgenumber of vertex wrong\n",
+				me,EID_PRTX(theElement),VID_PRTX(theVertex));
+			nerrors++;
+		}
+		return(nerrors);	
 	}
 
 	return(nerrors);
@@ -680,13 +726,14 @@ if (0)
 					if (EMASTER(theFather))
 					#endif
 						UserWriteF(PFMT "ELEM(" EID_FMTX ") ERROR MIDNODE=NULL"
-							" for mid node=%d\n",
-							me,EID_PRTX(theFather),i);
+							" for mid node[%d]=" ID_FMTX "\n",
+							me,EID_PRTX(theFather),i,ID_PRTX(theNode));
 					#ifdef ModelP
 					else
                         IFDEBUG(gm,1) 
 						UserWriteF(PFMT "ELEM(" EID_FMTX ") WARNING MIDNODE=NULL"
-							" for mid node=%d\n",me,EID_PRTX(theFather),i);
+							" for mid node[%d]" ID_FMTX "\n",
+							me,EID_PRTX(theFather),i,ID_PRTX(theNode));
 					    ENDDEBUG 
 					#endif
 				}
