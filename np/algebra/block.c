@@ -98,7 +98,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 INT SolveSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
-                     const SHORT *mcomp, const DOUBLE *mat, const DOUBLE *rhs)
+                     const SHORT *mcomp, const DOUBLE *mat, DOUBLE *rhs)
 {
   DOUBLE BlockMat[MAX_SINGLE_MAT_COMP],BlockSol[MAX_SINGLE_VEC_COMP], det;
   DOUBLE aux,M3div0,M6div0;

@@ -75,8 +75,7 @@ INT SolveInverseSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
                             const SHORT *invcomp, const DOUBLE *inv,
                             const DOUBLE *rhs);
 INT SolveSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol,
-                     const SHORT *mcomp, const DOUBLE *mat, const DOUBLE *rhs);
-
+                     const SHORT *mcomp, const DOUBLE *mat, DOUBLE *rhs);
 INT InvertFullMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
                       DOUBLE invmat[LOCAL_DIM][LOCAL_DIM]);
 INT InvertSpdMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
