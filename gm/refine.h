@@ -25,8 +25,8 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef __UGREFINE__
-#define __UGREFINE__
+#ifndef __REFINE__
+#define __REFINE__
 
 #ifndef __COMPILER__
 #include "compiler.h"
