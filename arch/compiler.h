@@ -375,7 +375,7 @@ extern "C" {
 #define INT    long
 #define FLOAT  float
 #define DOUBLE double
-#define COORD  float
+#define COORD  double
 #define SCREEN_COORD  float
 
 /* memory */
