@@ -1,6 +1,6 @@
 #!/bin/csh -f
 if ( $1 == "-H" ) then
-echo "ugtdev [-a | -m | -g | -h] [-G] <film-name>"; exit;
+echo "ugtdev [-a | -m | -g | -h] [-G] [-k] <film-name>"; exit;
 endif
 
 set timescale = 1;
@@ -26,34 +26,43 @@ if ( $1 == "-G" ) then
 set Screen = 1; shift;
 endif
 
-rm -f t.li;
-rm -f dt.li;
+set Keep = 0;
+if ( $1 == "-k" ) then
+set Keep = 1; shift;
+endif
+
+rm -f t.gnu;
+rm -f dt.gnu;
 set PREFIX = $1
 @ i = 0
 while ( $i <= 10000 )
 	set nr = `echo $i | awk '{printf("%04d.ug.data.bin",$1);}' - `
 	if (! -f $PREFIX.$nr ) break;
 	echo "extracting data from file" $PREFIX.$nr
-	ugmgs $PREFIX.$nr | awk '$1=="Time:"     {print awk_i,$2/(ts+0);i++;}' ts=$timescale awk_i=$i  - >> t.li
-	ugmgs $PREFIX.$nr | awk '$1=="TimeStep:" {print awk_i,$2/(ts+0);i++;}' ts=$timescale awk_i=$i  - >> dt.li
+	ugmgs $PREFIX.$nr | awk '$1=="Time:"     {print awk_i,$2/(ts+0);i++;}' ts=$timescale awk_i=$i  - >> t.gnu
+	ugmgs $PREFIX.$nr | awk '$1=="TimeStep:" {print awk_i,$2/(ts+0);i++;}' ts=$timescale awk_i=$i  - >> dt.gnu
 	@ i = $i + 1
 end
 
 if ( $Screen == 1 ) then 
-	echo 'set parametric; set grid; plot "t.li" w l; pause -1; set terminal postscript; set output "t.ps"; plot "t.li" w l;' > t.gnu;
+	echo 'set parametric; set grid; plot "t.gnu" w l; pause -1; set terminal postscript; set output "t.ps"; plot "t.gnu" w l;' > t.scr;
 endif
 if ( $Screen == 0 ) then 
-	echo 'set parametric; set grid; set terminal postscript; set output "t.ps"; plot "t.li" w l;' > t.gnu;
+	echo 'set parametric; set grid; set terminal postscript; set output "t.ps"; plot "t.gnu" w l;' > t.scr;
 endif
-gnuplot "t.gnu";
+gnuplot "t.scr";
 if ( $Screen == 1 ) then 
-	echo 'set parametric; set grid; plot "dt.li" w l; pause -1; set terminal postscript; set output "dt.ps"; plot "dt.li" w l;' > dt.gnu;
+	echo 'set parametric; set grid; plot "dt.gnu" w l; pause -1; set terminal postscript; set output "dt.ps"; plot "dt.gnu" w l;' > dt.scr;
 endif
 if ( $Screen == 0 ) then
-	echo 'set parametric; set grid; set terminal postscript; set output "dt.ps"; plot "dt.li" w l;' > dt.gnu;
+	echo 'set parametric; set grid; set terminal postscript; set output "dt.ps"; plot "dt.gnu" w l;' > dt.scr;
 endif
-gnuplot "dt.gnu";
-rm t.li;
-rm dt.li;
-rm t.gnu;
-rm dt.gnu;
+gnuplot "dt.scr";
+rm t.scr;
+rm dt.scr;
+if ( $Keep == 0 ) then
+	rm t.gnu;
+	rm dt.gnu;
+endif
+
+
