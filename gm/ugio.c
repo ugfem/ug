@@ -2150,7 +2150,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   BVP_DESC theBVPDesc;
   MESH theMesh;
   char FormatName[NAMESIZE], BndValName[NAMESIZE], MGName[NAMESIZE], filename[NAMESIZE];
-  INT i,j,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],
+  INT i,j,k,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],
   **Element_corner_ids_uniq_subdom,*Element_corner_ids,max,**Element_nb_uniq_subdom,
   *Element_nb_ids,id,level;
   char buf[64],itype[10];
@@ -2516,14 +2516,28 @@ nparfiles = UG_GlobalMinINT(nparfiles);
         else SETNSUBDOM(theNode,cge->subdomain);
         ID(CORNER(theElement,j)) = cge->cornerid[j];
       }
-      for (j=0; j<EDGES_OF_ELEM(theElement); j++)
+      for (j=0; j<SIDES_OF_ELEM(theElement); j++)
       {
-        SETEDSUBDOM(GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),
-                            CORNER_OF_EDGE_PTR(theElement,j,1)),
-                    cge->subdomain);
+        SETEDSUBDOM(GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),CORNER_OF_EDGE_PTR(theElement,j,1)),cge->subdomain);
       }
     }
-  if (CreateAlgebra (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    for (theElement = PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
+      if (OBJT(theElement)==BEOBJ)
+#ifdef __TWODIM__
+        for (j=0; j<EDGES_OF_ELEM(theElement); j++)
+          if (EDGE_ON_BND(theElement,j))
+            SETEDSUBDOM(GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),CORNER_OF_EDGE_PTR(theElement,j,1)),0);
+
+#endif
+#ifdef __THREEDIM__
+        for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+          if (SIDE_ON_BND(theElement,j))
+            for (k=0; k<EDGES_OF_SIDE(theElement,j)
+                 SETEDSUBDOM(GetEdge(CORNER_OF_EDGE_PTR(theElement,EDGE_OF_SIDE(theElement,j,k),0),CORNER_OF_EDGE_PTR(theElement,EDGE_OF_SIDE(theElement,j,k),1)),0);
+
+#endif
+        if (CreateAlgebra (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (PrepareAlgebraModification(theMG))                                                          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   i = MG_ELEMUSED | MG_NODEUSED | MG_EDGEUSED | MG_VERTEXUSED |  MG_VECTORUSED;
