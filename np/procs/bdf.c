@@ -101,6 +101,7 @@ typedef struct
   INT Break;                                                     /* break after error estimator         */
   INT Continue;                                              /* continue after error estimator  */
   INT refarg;                                                    /* refine copy all                 */
+  INT noabort;                                               /* take last iterate if not converged */
   DOUBLE tstart;                                                 /* start time                          */
   DOUBLE dtstart;                                                /* time step to begin with			*/
   DOUBLE dtmin;                                                  /* smallest time step allowed		*/
@@ -537,8 +538,19 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
             bdf->dt *= 0.5;
             if (bdf->dt<bdf->dtmin)
             {
-              UserWrite("time step too small -- aborting\n");
-              return(__LINE__);
+              if (bdf->noabort)               /* use last iterate */
+              {
+                nlresult.converged = TRUE;
+                bdf->dt = bdf->dtmin;
+                bad = 1;
+                UserWrite("bdf->TimeStep: not converged, still going on  \n");
+                goto noabort;
+              }
+              else
+              {
+                UserWrite("time step too small -- aborting\n");
+                return(__LINE__);
+              }
             }
             UserWrite("halfen time step\n");
             bad=1;
@@ -556,6 +568,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
             verygood=0;
         }
 
+noabort:
         /* interpolate up */
         if (k<level)
         {
@@ -1038,6 +1051,8 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
   else
     bdf->refarg = GM_REFINE_TRULY_LOCAL;
 
+  bdf->noabort = ReadArgvOption("noabort",argc,argv);
+
   /* set display option */
   bdf->displayMode = ReadArgvDisplay(argc,argv);
 
@@ -1095,6 +1110,8 @@ static INT BDFDisplay (NP_BASE *theNumProc)
   UserWriteF(DISPLAY_NP_FORMAT_SI,"hist",(int)bdf->hist);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"dtscale",(float)bdf->dtscale);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"rhogood",(float)bdf->rhogood);
+  if (bdf->noabort)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"noabort","TRUE");
   if (bdf->y_p1 != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"y_p1",ENVITEM_NAME(bdf->y_p1));
   if (bdf->y_0  != NULL)
