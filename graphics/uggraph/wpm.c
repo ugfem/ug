@@ -5504,7 +5504,7 @@ static INT DisplayVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj)
 *   Usage:
 *
 *   setplotobject Isosurface [$l <lambda>] [$f <from>] [$t <to>] [$b 0|1]
-*                            [$a 0..1] $s <vecdatadesc> $e <evalproc>
+*                            [$a 0..1] $s <vecdatadesc> $e [<evalproc>]
 *
 *   $l...    - isosurface value (default: 0.5)
 *   $f...    - min value of field (default: 0.0)

@@ -192,7 +192,7 @@ static int DecomposeHex(CELL *cell)
   if (k == 1 || k == 3) index |= (1<<0);
   k = SplitSide(cell, 1, 2, 6, 5);
   if (k == 2 || k == 5) index |= (1<<1);
-  /* and so on---fucking fill in */
+  /* and so on---fill in */
   return index;
 }
 
