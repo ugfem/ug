@@ -4,7 +4,7 @@
 /*																			*/
 /* File:	  np.h															*/
 /*																			*/
-/* Purpose:   numerics subststem header file								*/
+/* Purpose:   numerics subsystem header file								*/
 /*																			*/
 /* Author:	  Klaus Johannsen/Henrik Rentz-Reichert							*/
 /*			  Institut fuer Computeranwendungen III                                                 */
