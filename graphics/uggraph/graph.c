@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:	  graph.h														*/
+/* File:	  graph.c														*/
 /*																			*/
 /* Purpose:   low level plot routines and clip management					*/
 /*																			*/
@@ -693,16 +693,16 @@ static INT ClipPolygon (COORD_POINT *in, INT nin,
       left  = 0;
       for (i=0; i<nin; i++)
         left += (in[(i+1)%(nin)].x*in[i].y >= in[i].x*in[(i+1)%(nin)].y);
-      if (left == nin)
-        FillUpTot(out,nout);
+      /*if (left == nin)
+              FillUpTot(out,nout);*/
     }
     else
     {
       right  = 0;
       for (i=0; i<nin; i++)
         right += (in[(i+1)%(nin)].x*in[i].y <= in[i].x*in[(i+1)%(nin)].y);
-      if (right == nin)
-        FillUpTot(out,nout);
+      /* if (right == nin)
+              FillUpTot(out,nout); */
     }
   }
   return (0);
