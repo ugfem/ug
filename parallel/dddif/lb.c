@@ -236,17 +236,18 @@ static int CollectElementsNearSegment(MULTIGRID *theMG,
 static int PartitionElementsForDD(GRID *theGrid, int hor_boxes, int vert_boxes )
 {
   ELEMENT *theElement;
-  INT i;
+  INT i, nrcorners;
   DOUBLE *coord, xmax, ymax;
 
   for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
        theElement=SUCCE(theElement))
   {
-    ASSERT(CORNERS_OF_ELEM(theElement)==4);             /* works only for quadrilateral grids */
+    nrcorners = CORNERS_OF_ELEM(theElement);
+    ASSERT(nrcorners==4 || nrcorners==3 );              /* works only for triangle and quadrilateral grids */
 
     /* calculate the coordinates xmax, ymax of the element */
     xmax = ymax = 0.0;
-    for( i=0; i<4; i++ )
+    for( i=0; i<nrcorners; i++ )
     {
       coord = CVECT(MYVERTEX(CORNER(theElement,i)));
       xmax = MAX(xmax,coord[0]);
@@ -280,7 +281,7 @@ static int CreateDD(MULTIGRID *theMG, INT level, int hor_boxes, int vert_boxes )
     elements = NT(theGrid);
     elements = UG_GlobalMaxINT(elements);
 
-    if( elements > 2000 )
+    if( elements > 20000 )
     {
       /* we have a case with too heavy load for DDD; thus subdivide */
       /* find a coarser auxiliary partition */
