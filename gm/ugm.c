@@ -5803,13 +5803,13 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError,
 
       if (OBJT(theElement) == BEOBJ)
       {
-        if (INNER_BOUNDARY(theElement,i)) {
-          *SideError |= (1<<(i+2*MAX_SIDES_OF_ELEM));
-          UserWriteF(PFMT "no nb Element for inner boundary, el =  " EID_FMTX "\n",
-                     me,EID_PRTX(theElement));
-        }
         if (SIDE_ON_BND(theElement,i))
         {
+          if (INNER_BOUNDARY(theElement,i)) {
+            *SideError |= (1<<(i+2*MAX_SIDES_OF_ELEM));
+            UserWriteF(PFMT "no nb Element for inner boundary, el =  " EID_FMTX "\n",
+                       me,EID_PRTX(theElement));
+          }
           for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
             theVertex = MYVERTEX(CORNER(theElement,(k=CORNER_OF_SIDE(theElement,i,j))));
