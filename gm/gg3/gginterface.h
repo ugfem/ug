@@ -39,6 +39,8 @@
 /*                                                                          */
 /****************************************************************************/
 
+int AllMemInnerPoints(int npoints);
+int AllMemElements(int nelements);
 int AddInnerNode (double x, double y, double z);
 int AddInnerNode2ug (double x, double y, double z);
 int AddTetrahedron (int node0, int node1, int node2, int node3);
@@ -47,6 +49,7 @@ int AddSurfaceTriangle (int node0, int node1, int node2);
 int AddSurfaceTriangle2ug (int node0, int node1, int node2);
 int InitNetgen (char *rulefilename);
 int StartNetgen (double h,int smooth,int display);
+int Allocate_Mem_Surfdisc(int npoints, int nelements);
 
 int AddGeomPoint (int nodeid, double x, double y, double z);
 int AddGeomElement (int node0, int node1, int node2, int neigbor0, int neigbor1, int neigbor2);
