@@ -43,7 +43,6 @@
 #include "pcr.h"
 #include "np.h"
 
-#include "block.h"
 #include "iter.h"
 #include "ls.h"
 
@@ -221,13 +220,17 @@ struct np_ldcs
 {
   NP_LINEAR_SOLVER ls;
 
+  NP_ITER *DCSmooth;
   NP_LINEAR_SOLVER *linsol;
+  NP_LINEAR_SOLVER *linsol2;
 
   VECDATA_DESC *b;                       /* tmp defect                                  */
   VECDATA_DESC *c;                       /* tmp corr                                            */
   MATDATA_DESC *DC;                      /* defect correction matrix        */
+  MATDATA_DESC *DC2;                      /* defect correction matrix        */
   INT maxiter;
   INT display;
+  INT ndc;
   INT baselevel;
 };
 typedef struct np_ldcs NP_LDCS;
@@ -492,10 +495,6 @@ static INT LinearSolverInit (NP_BASE *theNP, INT argc , char **argv)
   if (np->Iter == NULL)
     REP_ERR_RETURN(NP_NOT_ACTIVE);
   np->baselevel = 0;
-  ReadArgvINT("baselevel",&(np->baselevel),argc,argv);
-  if (ReadArgvINT("m",&(np->maxiter),argc,argv))
-    REP_ERR_RETURN(NP_NOT_ACTIVE);
-
   np->c = ReadArgvVecDesc(theNP->mg,"c",argc,argv);
 
   return (NPLinearSolverInit(&np->ls,argc,argv));
@@ -1042,6 +1041,8 @@ static INT CRPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, V
     if (np->Iter->PostProcess == NULL) return(0);
     return((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result));
   }
+  else
+    return (0);
 
   return(0);
 }
@@ -1552,6 +1553,8 @@ static INT BCGSPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x,
     if (np->Iter->PostProcess == NULL) return(0);
     return((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result));
   }
+  else
+    return (0);
 
   return(0);
 }
@@ -2557,11 +2560,17 @@ static INT LDCSInit (NP_BASE *theNP, INT argc , char **argv)
   np = (NP_LDCS *) theNP;
 
   if (ReadArgvINT("m",&(np->maxiter),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (ReadArgvINT("ndc",&(np->ndc),argc,argv)) np->ndc=0;
   np->display = ReadArgvDisplay(argc,argv);
   np->linsol = (NP_LINEAR_SOLVER *)       ReadArgvNumProc(theNP->mg,"LS",LINEAR_SOLVER_CLASS_NAME,argc,argv);
+  np->linsol2 = (NP_LINEAR_SOLVER *)      ReadArgvNumProc(theNP->mg,"LS2",LINEAR_SOLVER_CLASS_NAME,argc,argv);
   if (np->linsol == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
   np->DC = ReadArgvMatDesc(theNP->mg,"DC",argc,argv);
   if (np->DC == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  np->DC2 = ReadArgvMatDesc(theNP->mg,"DC2",argc,argv);
+  if (np->DC == NULL) np->linsol2=NULL;
+  np->DCSmooth = (NP_ITER *) ReadArgvNumProc(theNP->mg,"DCS",ITER_CLASS_NAME,argc,argv);
+  if (np->DCSmooth==NULL) np->ndc=0;
 
   return (NPLinearSolverInit(&np->ls,argc,argv));
 }
@@ -2574,6 +2583,7 @@ static INT LDCSDisplay (NP_BASE *theNP)
   NPLinearSolverDisplay(&np->ls);
 
   UserWriteF(DISPLAY_NP_FORMAT_SI,"m",(int)np->maxiter);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"ndc",(int)np->ndc);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)np->baselevel);
   if (np->linsol != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"LS",ENVITEM_NAME(np->linsol));
   else UserWriteF(DISPLAY_NP_FORMAT_SS,"LS","---");
@@ -2586,6 +2596,8 @@ static INT LDCSDisplay (NP_BASE *theNP)
   else UserWriteF(DISPLAY_NP_FORMAT_SS,"b","---");
   if (np->c != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"c",ENVITEM_NAME(np->c));
   else UserWriteF(DISPLAY_NP_FORMAT_SS,"c","---");
+  if (np->DCSmooth != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"DCS",ENVITEM_NAME(np->DCSmooth));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"DCS","---");
 
   return (0);
 }
@@ -2600,9 +2612,20 @@ static INT LDCSPreProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, 
   NPLS_b(theNP) = b;
 
   np = (NP_LDCS *) theNP;
+  if (np->DCSmooth != NULL && np->ndc>0)
+    if (np->DCSmooth->PreProcess != NULL)
+      if ((*np->DCSmooth->PreProcess)(np->DCSmooth,level,x,b,np->DC,baselevel,result))
+        REP_ERR_RETURN(1);
+
   if (np->linsol->PreProcess != NULL)
     if ((*np->linsol->PreProcess)(np->linsol,level,x,b,np->DC,baselevel,result))
       REP_ERR_RETURN(1);
+
+  if (np->linsol2!=NULL)
+    if (np->linsol2->PreProcess != NULL)
+      if ((*np->linsol2->PreProcess)(np->linsol2,level,x,b,np->DC2,baselevel,result))
+        REP_ERR_RETURN(1);
+
   np->baselevel = MIN(*baselevel,level);
 
   return(0);
@@ -2612,10 +2635,11 @@ static INT LDCSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
 {
   NP_LDCS *np;
   VEC_SCALAR defect2reach;
-  INT i,bl,PrintID;
+  INT i,j,bl,PrintID,result;
   char text[DISPLAY_WIDTH+4];
-  NP_LINEAR_SOLVER * linsol;
+  NP_LINEAR_SOLVER * linsol,*linsol2;
   LRESULT linsolresult;
+  GRID *theGrid;
 
   /* store passed reduction and abslimit */
   for (i=0; i<VD_NCOMP(x); i++)
@@ -2626,6 +2650,7 @@ static INT LDCSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
 
   np = (NP_LDCS *) theNP;
   linsol = np->linsol;
+  linsol2 = np->linsol2;
   if (linsol == NULL) NP_RETURN(1,lresult->error_code);
 
   /* print defect */
@@ -2642,15 +2667,40 @@ static INT LDCSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
   lresult->number_of_linear_iterations = 0;
   if (AllocVDFromVD(theNP->base.mg,np->baselevel,level,x,&np->b)) REP_ERR_RETURN(1);
   if (AllocVDFromVD(theNP->base.mg,np->baselevel,level,x,&np->c)) REP_ERR_RETURN(1);
+  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
   for (i=0; i<np->maxiter; i++)
   {
     if (lresult->converged) break;
+
+    /* dc smoother */
+    for (j=0; j<np->ndc; j++)
+    {
+      if (l_dcopy(theGrid,np->b,NEWDEF_CLASS,b)!= NUM_OK) REP_ERR_RETURN(1);
+      if ((*np->DCSmooth->Iter)(np->DCSmooth,level,np->c,np->b,np->DC,&result)) REP_ERR_RETURN(1);
+      if (l_daxpy(theGrid,x,ACTIVE_CLASS,Factor_One,np->c) != NUM_OK) REP_ERR_RETURN(1);
+      if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,np->c,ACTIVE_CLASS)) REP_ERR_RETURN(1);
+    }
+
+    /* solve first */
     if (s_dcopy(theNP->base.mg,np->baselevel,level,np->b,b)) REP_ERR_RETURN(1);
     if (s_dset(theNP->base.mg,np->baselevel,level,np->c,0.0)) REP_ERR_RETURN(1);
     if ((*linsol->Residuum)(linsol,np->baselevel,level,np->c,np->b,np->DC,&linsolresult)) NP_RETURN(1,lresult->error_code);
     if ((*linsol->Solver)(linsol,level,np->c,np->b,np->DC,linsol->abslimit,linsol->reduction,&linsolresult)) REP_ERR_RETURN (1);
     if (s_daxpy (theNP->base.mg,np->baselevel,level,x,Factor_One,np->c)) REP_ERR_RETURN(1);
     if (s_dmatmul_minus(theNP->base.mg,np->baselevel,level,b,A,np->c,EVERY_CLASS)) REP_ERR_RETURN(1);
+
+    /* solve second */
+    if (linsol2!=NULL)
+    {
+      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->b,b)) REP_ERR_RETURN(1);
+      if (s_dset(theNP->base.mg,np->baselevel,level,np->c,0.0)) REP_ERR_RETURN(1);
+      if ((*linsol2->Residuum)(linsol2,np->baselevel,level,np->c,np->b,np->DC2,&linsolresult)) NP_RETURN(1,lresult->error_code);
+      if ((*linsol2->Solver)(linsol2,level,np->c,np->b,np->DC2,linsol->abslimit,linsol2->reduction,&linsolresult)) REP_ERR_RETURN (1);
+      if (s_daxpy (theNP->base.mg,np->baselevel,level,x,Factor_One,np->c)) REP_ERR_RETURN(1);
+      if (s_dmatmul_minus(theNP->base.mg,np->baselevel,level,b,A,np->c,EVERY_CLASS)) REP_ERR_RETURN(1);
+    }
+
+    /* calculate residuum */
     if (LinearResiduum(theNP,bl,level,x,b,A,lresult)) REP_ERR_RETURN(1);
     if (np->display > PCR_NO_DISPLAY)
       if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE)) NP_RETURN(1,lresult->error_code);
@@ -2674,11 +2724,24 @@ static INT LDCSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
 static INT LDCSPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
 {
   NP_LDCS *np;
+  INT ret;
 
   np = (NP_LDCS *) theNP;
 
-  if (np->linsol->PostProcess == NULL) return(0);
-  return((*np->linsol->PostProcess)(np->linsol,level,x,b,np->DC,result));
+  if (np->DCSmooth != NULL && np->ndc>0)
+    if (np->DCSmooth->PostProcess != NULL)
+      if ((*np->DCSmooth->PostProcess)(np->DCSmooth,level,x,b,np->DC,result))
+        REP_ERR_RETURN(1);
+
+  ret = 0;
+  if (np->linsol->PostProcess != NULL)
+    ret = (*np->linsol->PostProcess)(np->linsol,level,x,b,np->DC,result);
+
+  if (np->linsol2 != NULL)
+    if (np->linsol2->PostProcess != NULL)
+      ret = (*np->linsol2->PostProcess)(np->linsol2,level,x,b,np->DC2,result);
+
+  return(ret);
 }
 
 static INT LDCSConstruct (NP_BASE *theNP)
