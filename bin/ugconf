@@ -101,6 +101,7 @@ then
 	echo "         domain representation library";
 	echo "             STD_DOMAIN (set DOM_MODUL = STD_DOMAIN)";
 	echo "             LGM_DOMAIN (set DOM_MODUL = LGM_DOMAIN)";
+	echo "             GEN_DOMAIN (set DOM_MODUL = GEN_DOMAIN)";
 
 	echo "         grid generation in 3D";
 	echo "             NETGEN (set NETGEN = ON)";
@@ -480,6 +481,9 @@ edit_ugconf()
 		;;
 	LGM_DOMAIN)
 		sed 's/^DOM_MODULE.*$/DOM_MODULE = LGM_DOMAIN/' $1 > $1.tmp
+		;;
+	GEN_DOMAIN)
+		sed 's/^DOM_MODULE.*$/DOM_MODULE = GEN_DOMAIN/' $1 > $1.tmp
 		;;
 
 	DEBUG)

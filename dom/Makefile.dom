@@ -31,6 +31,9 @@ STD_DOMAIN:
 LGM_DOMAIN:
 	cd lgm; make -f Makefile.lgm $(DIM); cd ..;
 
+GEN_DOMAIN:
+	cd gen; make -f Makefile.gen; cd ..;
+
 STD: 
 	rm -f ../lib/libdom$(UG_DOMSUFFIX).a;
 	cd std; make -f Makefile.std; cd ..;
@@ -39,9 +42,14 @@ LGM:
 	rm -f ../lib/libdom$(UG_DOMSUFFIX).a;
 	cd lgm; make -f Makefile.lgm; cd ..;
 
+GEN: 
+	rm -f ../lib/libdom$(UG_DOMSUFFIX).a;
+	cd gen; make -f Makefile.gen; cd ..;
+
 clean:
 	cd std;  make -f Makefile.std clean; cd ..;
 	cd lgm;  make -f Makefile.lgm clean; cd ..;
+	cd gen;  make -f Makefile.gen clean; cd ..;
 
 #preliminary: only std (should be configurable in another way)
 extract:

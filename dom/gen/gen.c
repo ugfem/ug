@@ -381,7 +381,7 @@ static int faces[4][2] = {
 };
 #else
 static int nfaces[9] = {0,0,0,0,0,0,0,0,6};
-static int ncfaces[4] = {4,4,4,4,4,4};
+static int ncfaces[6] = {4,4,4,4,4,4};
 static int faces[6][4] = {
   {0,3,2,1},{0,1,4,5},{1,2,5,6},{2,3,6,7},{3,0,7,4},{4,5,6,7}
 };
