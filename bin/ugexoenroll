@@ -126,7 +126,7 @@ sub model_vmeshpre_jou
 	printf FILE "logging on file '%s_vmesh.log'\n",$model;
  	printf FILE "\n";
 
- 	printf FILE "export genesis 'unit_vmesh.gen'\n";
+ 	printf FILE "export genesis '%s_vmesh.gen'\n";
 
 	close(FILE);
 }
