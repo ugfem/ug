@@ -212,9 +212,6 @@ static INT TriSectionEdge[64][2] = {  {-1,-1},{-1,-1},{-1,-1},{ 1, 0},{-1,-1},{ 
 /* the indices of the edges of each side */
 static INT CondensedEdgeOfSide[4] = {0x07,0x32,0x2C,0x19};
 
-/* TODO: delete this */
-static INT newstyle = 1;
-
 /* ptr to Get_Sons_of_ElementSideProc */
 static Get_Sons_of_ElementSideProcPtr Get_Sons_of_ElementSideProc;
 
@@ -2199,7 +2196,6 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
   /* connect to boundary */
   if (OBJT(theElement)==BEOBJ && SIDE_ON_BND(theElement,side)) {
     /* TODO: connect change test */
-    if (!newstyle) return(GM_OK);
 
     for (i=0; i<Sons_of_Side; i++) {
 
@@ -2336,21 +2332,20 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
   ENDDEBUG
 
   /* set neighborship relations */
-  if (newstyle)
-    for (i=0; i<Sons_of_Side; i++) {
-      SET_NBELEM(ElemSortTable[i]->elem,ElemSortTable[i]->side,
-                 NbSortTable[i]->elem);
-      SET_NBELEM(NbSortTable[i]->elem,NbSortTable[i]->side,
-                 ElemSortTable[i]->elem);
+  for (i=0; i<Sons_of_Side; i++) {
+    SET_NBELEM(ElemSortTable[i]->elem,ElemSortTable[i]->side,
+               NbSortTable[i]->elem);
+    SET_NBELEM(NbSortTable[i]->elem,NbSortTable[i]->side,
+               ElemSortTable[i]->elem);
 #ifdef __THREEDIM__
-      if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
-        if (DisposeDoubledSideVector(theGrid,ElemSortTable[i]->elem,
-                                     ElemSortTable[i]->side,
-                                     NbSortTable[i]->elem,
-                                     NbSortTable[i]->side))
-          RETURN(GM_FATAL);
+    if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+      if (DisposeDoubledSideVector(theGrid,ElemSortTable[i]->elem,
+                                   ElemSortTable[i]->side,
+                                   NbSortTable[i]->elem,
+                                   NbSortTable[i]->side))
+        RETURN(GM_FATAL);
 #endif
-    }
+  }
 
   return(GM_OK);
 }
@@ -3178,239 +3173,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
     }
   }
 
-  if(!newstyle)
-    for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
-      for (j=0; j<5; j++) {
-        if (sons[i*5+j].tag < 0) continue;
-        theSon = sons[i*5+j].theSon;
-        side = 0;
-        if (sons[i*5+j].tag == PYRAMID) {
-          for (k=0; k<SIDES_OF_TAG(PYRAMID); k++)
-            if (CORNERS_OF_SIDE_TAG(PYRAMID,k) == 4)
-              break;
-          side = k;
-        }
-
-        /* connect outer sides of son elements */
-        if (sons[i*5+j].bdy == 1) {
-
-          /* TODO: delete this
-                                          for (k=0; k<SIDES_OF_ELEM(sons[i*5+j].theSon); k++)
-                                                  SET_SIDE(sons[i*5+j].theSon,k,NULL);
-
-                                          oldSide = SIDE(theElement,i);
-                                          ASSERT(oldSide != NULL);
-           */
-
-          IFDEBUG(gm,3)
-          UserWriteF("CreateSonElementSide(ID=%d,side=%d,SONID=%d,side=%d) TAG(ID)=%d TAG(SONID)=%d\n",\
-                     ID(theElement),i,ID(sons[i*5+j].theSon),side);
-          ENDDEBUG
-          if (CreateSonElementSide(theGrid,theElement,i,sons[i*5+j].theSon,side)!=GM_OK) RETURN(GM_FATAL);
-        }
-        else {
-
-          /* search neighboring element */
-          NbElement = NBELEM(theElement,i);
-          ASSERT(NbElement != NULL);
-
-          for (l=0; l<SIDES_OF_ELEM(NbElement); l++)
-            if (NBELEM(NbElement,l) == theElement)
-              break;
-
-          ASSERT(l<SIDES_OF_ELEM(NbElement));
-
-          IFDEBUG(gm,2)
-          UserWriteF("        Connect side=%d nbside=%d nb ID=%d TAG=%d REFINECLASS=%d MARKCLASS=%d REFINE=%d "
-                     "MARK=%d COARSEN=%d USED=%d\n",i,l,ID(NbElement),TAG(NbElement),REFINECLASS(NbElement),
-                     MARKCLASS(NbElement),REFINE(NbElement),MARK(NbElement),COARSEN(NbElement),
-                     USED(NbElement));
-          ENDDEBUG
-
-          switch (MARKCLASS(NbElement)) {
-          case YELLOW_CLASS :
-            if (REF_TYPE_CHANGES(NbElement)) continue;
-            SET_NBELEM(SON(NbElement,0),l,sons[i*5+j].theSon);
-            SET_NBELEM(sons[i*5+j].theSon,side,SON(NbElement,0));
-            ASSERT(sons[i*5+j+1].theSon == NULL);
-            ASSERT(j==0);
-            break;
-          case GREEN_CLASS :
-            /* green neighbor not refined yet */
-            if (USED(NbElement) != 0) continue;
-            /* TODO: delete this */
-            /* if (NSONS(NbElement) == 0) continue; */
-            if (j>0) continue;
-
-            /* determine the sons of neighbor */
-            if (GetSons(NbElement,NbSonList) != GM_OK)
-              RETURN(GM_FATAL);
-
-            /* determine son elements on current side */
-            q = 0;
-            for (m=0; m<MAX_SONS; m++) {
-              if (NbSonList[m] == NULL) continue;
-              p = 0;
-              nbside = 0;
-              if (TAG(NbSonList[m]) == PYRAMID) nbside =  pyrSide;
-              for (n=0; n<CORNERS_OF_SIDE(NbSonList[m],nbside); n++) {
-                for (o=0; o<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; o++) {
-                  if (theContext[o] == NULL) continue;
-                  if (CORNER(NbSonList[m],CORNER_OF_SIDE(NbSonList[m],nbside,n)) == theContext[o]) {
-                    IFDEBUG(gm,3)
-                    UserWriteF("                 NbSonList[m=%2d] matching CORNER theContext[%2d] ID=%d NBID=%d adr=%x nbadr=%x\n",m,o,ID(theContext[o]),ID(CORNER(NbSonList[m],CORNER_OF_SIDE(NbSonList[m],nbside,n))),theContext[o],CORNER(NbSonList[m],CORNER_OF_SIDE(NbSonList[m],nbside,n)));
-                    ENDDEBUG
-                      p++;
-                  }
-                }
-              }
-              /* this son element is to connect */
-              if (p == CORNERS_OF_SIDE(NbSonList[m],nbside)) {
-                NbSideSons[q++] = NbSonList[m];
-                IFDEBUG(gm,2)
-                UserWriteF("             NbSonList[m=%d] matching SIDE p=%d for side=%d\n",m,p,nbside);
-                ENDDEBUG
-              }
-            }
-            ASSERT(q>0 && q<=6);
-
-            /* search corresponding elements */
-            k = 0;
-            for (m=0; m<q; m++) {
-              found = 0;
-              nbside = 0;
-              if (TAG(NbSideSons[m]) == PYRAMID) nbside = pyrSide;
-              for (n=i*5+j; n<i*5+q; n++) {
-                r = 0;
-                if (CORNERS_OF_SIDE(NbSideSons[m],nbside) != CORNERS_OF_SIDE(sons[n].theSon,nbside)) continue;
-                for (o=0; o<CORNERS_OF_SIDE(NbSideSons[m],nbside); o++)
-                  for (p=0; p<CORNERS_OF_SIDE(sons[n].theSon,nbside); p++)
-                    if ((CORNER(NbSideSons[m],CORNER_OF_SIDE(NbSideSons[m],nbside,o))) == (CORNER(sons[n].theSon,CORNER_OF_SIDE(sons[n].theSon,nbside,p))))
-
-                      r++;
-                if (r == CORNERS_OF_SIDE(sons[n].theSon,nbside)) {
-                  IFDEBUG(gm,2)
-                  UserWriteF("RefineElementGreen(): Matching sides for element ID=%d and neighbor ID=%d\n",ID(sons[n].theSon),ID(NbSideSons[m]));
-                  UserWriteF("                      m=%d n=%d i=%d j=%d q=%d r=%d\n",m,n,i,j,q,r);
-                  UserWrite("                      element node IDs:");
-                  for (o=0; o<CORNERS_OF_SIDE(NbSideSons[m],nbside); o++) UserWriteF(" %d",ID(CORNER(NbSideSons[m],CORNER_OF_SIDE(NbSideSons[m],nbside,o))));
-                  UserWrite("\n");
-                  UserWrite("                      neighbr node IDs:");
-                  for (p=0; p<CORNERS_OF_SIDE(sons[n].theSon,nbside); p++) UserWriteF(" %d",ID(CORNER(sons[n].theSon,CORNER_OF_SIDE(sons[n].theSon,nbside,p))));
-                  UserWrite("\n");
-                  ENDDEBUG
-                    found = 1;
-                  break;
-                }
-              }
-              ASSERT(found==1);
-              ASSERT(sons[n].theSon != NULL);
-              ASSERT(NbSideSons[m] != NULL);
-              if (found) {
-                SET_NBELEM(NbSideSons[m],nbside,sons[n].theSon);
-                SET_NBELEM(sons[n].theSon,nbside,NbSideSons[m]);
-                                                                #ifdef __THREEDIM__
-                if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
-                  if (DisposeDoubledSideVector(theGrid,sons[n].theSon,nbside,NbSideSons[m],nbside))
-                    RETURN(GM_FATAL);
-                                                                #endif
-                k++;
-              }
-            }
-            ASSERT(k == q);
-
-            break;
-          case RED_CLASS :
-            if (REF_TYPE_CHANGES(NbElement)) continue;
-            NbRule = MARK2RULEADR(NbElement,REFINE(NbElement));
-            found = 0;
-            if (GetSons(NbElement,NbSonList)!=GM_OK)
-              RETURN(GM_FATAL);
-            for (s2=0; s2<NSONS_OF_RULE(NbRule); s2++) {
-              sdata2 = SON_OF_RULE(NbRule,s2);
-              for (k=0; k<SIDES_OF_ELEM(NbSonList[s2]); k++) {
-                if (SON_NB(sdata2,k) != FATHER_SIDE_OFFSET+l) continue;
-
-                IFDEBUG(gm,2)
-                UserWriteF("elid=%3d: side:",ID(theSon));
-                for (p=0; p<CORNERS_OF_SIDE(theSon,side); p++)
-                  UserWriteF(" %2d",ID(CORNER(theSon,CORNER_OF_SIDE(theSon,side,p))));
-                UserWriteF(" OUTSIDE of father");
-                UserWriteF("\nnbid=%3d: side:",ID(NbSonList[s2]));
-                for (p=0; p<CORNERS_OF_SIDE(NbSonList[s2],k); p++)
-                  UserWriteF(" %2d",ID(CORNER(NbSonList[s2],CORNER_OF_SIDE(NbSonList[s2],k,p))));
-                UserWriteF("\n\n");
-                ENDDEBUG
-
-                  points=0;
-                for (p=0; p<CORNERS_OF_SIDE(theSon,side); p++)
-                  for (q=0; q<CORNERS_OF_SIDE(NbSonList[s2],k); q++)
-                    if (CORNER(theSon,CORNER_OF_SIDE(theSon,side,p)) == CORNER(NbSonList[s2],CORNER_OF_SIDE(NbSonList[s2],k,q))) {
-                      /* look whether each corner of current neighbor side */
-                      /* has matching corner of current element side       */
-                      points |= ((1<<p) | (16<<q));
-                      break;
-                    }
-                /* TODO: decrypt this expression and generalize for all side types                              */
-                /* (edges 2D, triangle and quad 3D)                                                                                     */
-                /* for tetra: 63 (0111 0111) and means all corners have matching corners        */
-                /* for hexa: 127 (1111 1111)                                                                                                    */
-                /* for quad and tri: 15 (0011 0011)                                                                                     */
-                switch (points) {
-                                                                        #ifdef __TWODIM__
-                case (LINEPOINTS) :
-                                                                        #endif
-                                                                        #ifdef __THREEDIM__
-                case (TRIPOINTS) :
-                case (QUADPOINTS) :                                                        /* neighbor found */
-                                                                        #endif
-                  /* no match for quadside with only three points */
-                  if (points==TRIPOINTS && CORNERS_OF_SIDE(theSon,side)==4) {
-                    PrintErrorMessage('E',"RefineElementGreen","quad side with 3 equal nodes");
-                    RETURN(GM_FATAL);
-                  }
-
-                  IFDEBUG(gm,3)
-                  UserWriteF("Matching Sides:\n",ID(theSon));
-                  UserWriteF("elid=%3d: side:",ID(theSon));
-                  for (p=0; p<CORNERS_OF_SIDE(theSon,side); p++)
-                    UserWriteF(" %2d",ID(CORNER(theSon,CORNER_OF_SIDE(theSon,side,p))));
-                  UserWriteF(" OUTSIDE of father");
-                  UserWriteF("\nnbid=%3d: side:",ID(NbSonList[s2]));
-                  for (p=0; p<CORNERS_OF_SIDE(NbSonList[s2],k); p++)
-                    UserWriteF(" %2d",ID(CORNER(NbSonList[s2],CORNER_OF_SIDE(NbSonList[s2],k,p))));
-                  UserWriteF("\n\n");
-                  ENDDEBUG
-                  /* adjust pointers */
-                  SET_NBELEM(theSon,side,NbSonList[s2]);
-                  SET_NBELEM(NbSonList[s2],k,theSon);
-
-                  /* dispose doubled side vectors if */
-                                        #ifdef __THREEDIM__
-                  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
-                    if (DisposeDoubledSideVector(theGrid,theSon,side,NbSonList[s2],k))
-                      RETURN(GM_FATAL);
-                                        #endif
-                  found=1;
-                  break;
-                default :
-                  break;
-                }
-                if (found) break;
-              }
-              if (found) break;
-            }
-            ASSERT(found==1);
-
-            break;
-          default :
-            break;
-          }
-        }
-      }
-    }
-
-
+  /* connect sons over outer sides */
   for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
     INT j,k,Sons_of_Side;
     ELEMENT *Sons_of_Side_List[MAX_SONS];
@@ -3527,24 +3290,6 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
         #endif
 
   /* TODO: delete special debug */ PRINTELEMID(-2)
-  /* create element sides at the boundary */
-  if (OBJT(theElement)==BEOBJ)
-    for(s=0; s<NSONS_OF_RULE(rule); s++)
-    {
-      if (newstyle || OBJT(SonList[s]) != BEOBJ) continue;
-      for (j=0; j<SIDES_OF_ELEM(SonList[s]); j++)
-      {
-        if ((side = SON_NB_OF_RULE(rule,s,j)) < FATHER_SIDE_OFFSET) continue;
-        side -= FATHER_SIDE_OFFSET;
-        /* TODO: delete this
-                                                if ((oldSide = SIDE(theElement,side)) == NULL) continue;
-         */
-
-        if (CreateSonElementSide(theGrid,theElement,side,SonList[s],j)!=GM_OK) RETURN(GM_FATAL);
-      }
-    }
-
-  /* TODO: delete special debug */ PRINTELEMID(-2)
   /* connect elements */
   for (s=0; s<NSONS_OF_RULE(rule); s++)
   {
@@ -3626,237 +3371,6 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
                 #endif
         continue;
       }
-      if(newstyle) continue;
-      /* the boundary case */
-      if ((OBJT(SonList[s]) == BEOBJ) && SIDE_ON_BND(SonList[s],i))
-        continue;
-
-      /* check, if neighbor has been refined */
-      side -= FATHER_SIDE_OFFSET;
-      theNeighbor = NBELEM(theElement,side);
-
-      if(theNeighbor==NULL)
-      {
-        IFDEBUG(gm,0)
-        /* NULL only if theElement is an copy element */
-        if (ECLASS(theElement)!=YELLOW_CLASS)
-        {
-          PrintErrorMessage('E',"RefineElement","element has no neighbor, but is not on boundary and no yellow element!");
-          RETURN(GM_FATAL);
-        }
-        ENDDEBUG
-        continue;
-      }
-
-      if (REF_TYPE_CHANGES(theNeighbor) || (REFINE(theNeighbor) == NO_REFINEMENT))
-        continue;
-
-      /* TODO: generalize this */
-                        #ifdef __TWODIM__
-      for (l=0; l<EDGES_OF_ELEM(theNeighbor); l++)
-        if (NBELEM(theNeighbor,l) == theElement)
-          break;
-                        #endif
-                        #ifdef __THREEDIM__
-      for (l=0; l<SIDES_OF_ELEM(theNeighbor); l++)
-        if (NBELEM(theNeighbor,l) == theElement)
-          break;
-                        #endif
-
-      ASSERT(l<SIDES_OF_ELEM(theNeighbor));
-
-      IFDEBUG(gm,2)
-      UserWriteF("        Connect side=%d nbside=%d nb ID=%d TAG=%d REFINECLASS=%d MARKCLASS=%d REFINE=%d "
-                 "MARK=%d COARSEN=%d USED=%d\n",i,l,ID(theNeighbor),TAG(theNeighbor),REFINECLASS(theNeighbor),
-                 MARKCLASS(theNeighbor),REFINE(theNeighbor),MARK(theNeighbor),COARSEN(theNeighbor),
-                 USED(theNeighbor));
-      ENDDEBUG
-
-      /* TODO: delete special debug */ PRINTELEMID(-2)
-      /* connect green hexahedral neighbor which have no rule */
-      if (DIM==3 && NEWGREEN(theNeighbor) && MARKCLASS(theNeighbor)==GREEN_CLASS) {
-
-        /* outer side for pyramid has 4 corners */
-        for (n=0; n<SIDES_OF_TAG(PYRAMID); n++)
-          if (CORNERS_OF_SIDE_TAG(PYRAMID,n) == 4)
-            break;
-        pyrSide = n;
-
-        /* green neighbor not refined yet */
-        if (USED(theNeighbor) != 0) continue;
-
-        /* determine the sons of neighbor */
-        if (GetSons(theNeighbor,SonList2) != GM_OK)
-          RETURN(GM_FATAL);
-
-        /* determine son elements on current side */
-        q = 0;
-        for (m=0; m<MAX_SONS; m++) {
-          if (SonList2[m] == NULL) continue;
-          p = 0;
-          nbside = 0;
-          if (TAG(SonList2[m]) == PYRAMID) nbside = pyrSide;
-
-          /* compare corners of neighbor elements with elementcontext */
-          for (n=0; n<CORNERS_OF_SIDE(SonList2[m],nbside); n++) {
-            for (o=0; o<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; o++) {
-              if (theElementContext[o] == NULL) continue;
-              if (CORNER(SonList2[m],CORNER_OF_SIDE(SonList2[m],nbside,n)) == theElementContext[o]) {
-                IFDEBUG(gm,3)
-                UserWriteF("                 SonList2[m=%2d] matching CORNER theElementContext[%2d] ID=%d NBID=%d adr=%x nbadr=%x\n",m,o,ID(theElementContext[o]),ID(CORNER(SonList2[m],CORNER_OF_SIDE(SonList2[m],nbside,n))),theElementContext[o],CORNER(SonList2[m],CORNER_OF_SIDE(SonList2[m],nbside,n)));
-                ENDDEBUG
-                  p++;
-              }
-            }
-          }
-          /* this son element is to connect */
-          if (p == CORNERS_OF_SIDE(SonList2[m],nbside)) {
-            NbSideSons[q++] = SonList2[m];
-            IFDEBUG(gm,2)
-            UserWriteF("             SonList2[m=%d] matching SIDE p=%d for side=%d\n",m,p,nbside);
-            ENDDEBUG
-          }
-        }
-        ASSERT(q>0 && q<=6);
-
-        /* search corresponding elements */
-        k = 0;
-        for (m=0; m<q; m++) {
-          found = 0;
-          nbside = 0;
-          if (TAG(NbSideSons[m]) == PYRAMID) nbside = pyrSide;
-
-          /* compare corners of each side */
-          r = 0;
-          if (CORNERS_OF_SIDE(NbSideSons[m],nbside) != CORNERS_OF_SIDE(SonList[s],i)) continue;
-          for (o=0; o<CORNERS_OF_SIDE(NbSideSons[m],nbside); o++)
-            for (p=0; p<CORNERS_OF_SIDE(SonList[s],i); p++)
-              if ((CORNER(NbSideSons[m],CORNER_OF_SIDE(NbSideSons[m],nbside,o))) == (CORNER(SonList[s],CORNER_OF_SIDE(SonList[s],i,p))))
-
-                r++;
-
-          /* matching sides */
-          if (r == CORNERS_OF_SIDE(SonList[s],i)) {
-            IFDEBUG(gm,2)
-            UserWriteF("RefineElement(): Matching sides for element ID=%d and neighbor ID=%d\n",ID(SonList[s]),ID(NbSideSons[m]));
-            UserWriteF("                      m=%d n=%d i=%d j=%d q=%d r=%d\n",m,n,i,j,q,r);
-            UserWrite("                      neighbr node IDs:");
-            for (o=0; o<CORNERS_OF_SIDE(NbSideSons[m],nbside); o++) UserWriteF(" %d",ID(CORNER(NbSideSons[m],CORNER_OF_SIDE(NbSideSons[m],nbside,o))));
-            UserWrite("\n");
-            UserWrite("                      element node IDs:");
-            for (p=0; p<CORNERS_OF_SIDE(SonList[s],nbside); p++) UserWriteF(" %d",ID(CORNER(SonList[s],CORNER_OF_SIDE(SonList[s],i,p))));
-            UserWrite("\n");
-            ENDDEBUG
-              found = 1;
-          }
-          ASSERT(SonList[s] != NULL);
-          ASSERT(NbSideSons[m] != NULL);
-
-          /* connect elements over these sides */
-          if (found) {
-            SET_NBELEM(NbSideSons[m],nbside,SonList[s]);
-            SET_NBELEM(SonList[s],i,NbSideSons[m]);
-            /* dispose doubled side vectors if */
-                                                #ifdef __THREEDIM__
-            if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
-              if (DisposeDoubledSideVector(theGrid,SonList[s],i,NbSideSons[m],nbside))
-                RETURN(GM_FATAL);
-                                                #endif
-            k++;
-            break;
-          }
-        }
-        ASSERT(k == 1);
-
-        continue;
-      }
-
-      /* connect neighbor refined by rule of rule set */
-      rule2 = MARK2RULEADR(theNeighbor,REFINE(theNeighbor));
-      found = 0;
-      if (GetSons(theNeighbor,SonList2)!=GM_OK)
-        RETURN(GM_FATAL);
-      for (s2=0; s2<NSONS_OF_RULE(rule2); s2++)
-      {
-        /* TODO: delete special debug */ PRINTELEMID(-2)
-        sdata2 = SON_OF_RULE(rule2,s2);
-        for (j=0; j<SIDES_OF_ELEM(SonList2[s2]); j++)
-        {
-          if (SON_NB(sdata2,j) != FATHER_SIDE_OFFSET+l) continue;
-
-          IFDEBUG(gm,2)
-          UserWriteF("elid=%3d: side:",ID(SonList[s]));
-          for (p=0; p<CORNERS_OF_SIDE(SonList[s],i); p++)
-            UserWriteF(" %2d",ID(CORNER(SonList[s],CORNER_OF_SIDE(SonList[s],i,p))));
-          UserWriteF(" OUTSIDE of father");
-          UserWriteF("\nnbid=%3d: side:",ID(SonList2[s2]));
-          for (p=0; p<CORNERS_OF_SIDE(SonList2[s2],j); p++)
-            UserWriteF(" %2d",ID(CORNER(SonList2[s2],CORNER_OF_SIDE(SonList2[s2],j,p))));
-          UserWriteF("\n\n");
-          ENDDEBUG
-
-            points=0;
-          for (p=0; p<CORNERS_OF_SIDE(SonList[s],i); p++)
-            for (q=0; q<CORNERS_OF_SIDE(SonList2[s2],j); q++)
-              if (CORNER(SonList[s],CORNER_OF_SIDE(SonList[s],i,p)) == CORNER(SonList2[s2],CORNER_OF_SIDE(SonList2[s2],j,q)))
-              {
-                /* look whether each corner of current neighbor side */
-                /* has matching corner of current element side       */
-                points |= ((1<<p) | (16<<q));
-                break;
-              }
-          /* TODO: decrypt this expression and generalize for all side types                            */
-          /* (edges 2D, triangle and quad 3D)                                                                                   */
-          /* for tetra: 63 (0111 0111) and means all corners have matching corners        */
-          /* for hexa: 127 (1111 1111)                                                                                                  */
-          /* for quad and tri: 15 (0011 0011)                                                                                   */
-          switch (points)
-          {
-                                                #ifdef __TWODIM__
-          case (LINEPOINTS) :
-                                                #endif
-                                                #ifdef __THREEDIM__
-          case (TRIPOINTS) :
-          case (QUADPOINTS) :                                      /* neighbor found */
-                                                #endif
-            /* no match for quadside with only three points */
-            if (points==TRIPOINTS && CORNERS_OF_SIDE(SonList[s],i)==4)
-            {
-              PrintErrorMessage('E',"RefineElement","quad side with 3 equal nodes");
-              RETURN(GM_FATAL);
-            }
-
-            IFDEBUG(gm,3)
-            UserWriteF("Matching Sides:\n",ID(SonList[s]));
-            UserWriteF("elid=%3d: side:",ID(SonList[s]));
-            for (p=0; p<CORNERS_OF_SIDE(SonList[s],i); p++)
-              UserWriteF(" %2d",ID(CORNER(SonList[s],CORNER_OF_SIDE(SonList[s],i,p))));
-            UserWriteF(" OUTSIDE of father");
-            UserWriteF("\nnbid=%3d: side:",ID(SonList2[s2]));
-            for (p=0; p<CORNERS_OF_SIDE(SonList2[s2],j); p++)
-              UserWriteF(" %2d",ID(CORNER(SonList2[s2],CORNER_OF_SIDE(SonList2[s2],j,p))));
-            UserWriteF("\n\n");
-            ENDDEBUG
-            /* adjust pointers */
-            SET_NBELEM(SonList[s],i,SonList2[s2]);
-            SET_NBELEM(SonList2[s2],j,SonList[s]);
-
-            /* dispose doubled side vectors if */
-                            #ifdef __THREEDIM__
-            if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
-              if (DisposeDoubledSideVector(theGrid,SonList[s],i,SonList2[s2],j))
-                RETURN(GM_FATAL);
-                            #endif
-            found=1;
-            break;
-          default :
-            break;
-          }
-          if (found) break;
-        }
-        if (found) break;
-      }
-      ASSERT(found==1);
     }
   }
 
