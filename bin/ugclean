@@ -20,7 +20,6 @@ ugmake diff2d -i clean
 ugmake diff2da -i clean
 ugmake cd3d -i clean
 ugmake cd3da -i clean
-ugmake fem -i clean
 ugmake fema -i clean
 ugmake ns2d -i clean
 ugmake ns2da -i clean
