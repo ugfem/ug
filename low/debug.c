@@ -151,15 +151,13 @@ void SetPrintDebugProc (PrintDebugProcPtr print)
 
 int PrintDebugToFile (const char *format, ...)
 {
-  char buffer[256];
   va_list args;
 
   /* initialize args */
   va_start(args,format);
 
-  vsprintf(buffer,format,args);
-
-  fprintf(debugfile,buffer);
+  vfprintf(debugfile,format,args);
+  fflush(debugfile);
 
   /* garbage collection */
   va_end(args);
