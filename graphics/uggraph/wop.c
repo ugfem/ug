@@ -22261,6 +22261,9 @@ INT ZoomPicture (PICTURE *thePicture, const INT *OldMousePos)
 		factor = fabs((ymax-ymin)/((DOUBLE)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1])));
 	else
 		factor = fabs((xmax-xmin)/((DOUBLE)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
+	if (FrameRatio>5)
+		factor = 1.0/factor;
+if (0)	UserWriteF("ZoomPicture factor=%lf\n",factor);
 	if (theViewDim==TYPE_2D)
 	{
 		V2_SCALE(factor,VO_PXD(theViewedObj))
