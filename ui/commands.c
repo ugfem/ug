@@ -6629,6 +6629,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
     PrintErrorMessage('E',"InsertBoundaryNode","only a multigrid with exactly one level can be edited");
     RETURN(GM_ERROR);
   }
+  MarkKey = MG_MARK_KEY(theMG);
   if (MG_COARSE_FIXED(theMG)) {
     MG_COARSE_FIXED(theMG) = FALSE;
     MarkTmpMem(MGHEAP(theMG),&MarkKey);
