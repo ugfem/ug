@@ -8008,8 +8008,7 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
       /* set id from BNDS */
       if (BNDS_BndSDesc(ELEM_BNDS(theElement,i),&id,&nbid,&part))
         REP_ERR_RETURN (GM_ERROR);
-      printf("%d %d\n", id, nbid);
-      /*assert(id>0);*/
+      assert(id>0);
       SETSUBDOMAIN(theElement,id);
       SETUSED(theElement,1);
       fifo_in(&myfifo,(void *)theElement);
