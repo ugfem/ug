@@ -3007,7 +3007,7 @@ INT NS_PREFIX CreateFormatCmd (INT argc, char **argv)
   /* remove types not needed from po2t */
   for (i=0; i<MAXDOMPARTS; i++)
     for (j=0; j<MAXVOBJECTS; j++)
-      if (!TypeUsed[po2t[i][j]])
+      if (po2t[i][j] != NOVTYPE && !TypeUsed[po2t[i][j]])
         po2t[i][j] = NOVTYPE;
 
   /* now we are ready to create the format */
