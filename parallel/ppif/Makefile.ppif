@@ -42,7 +42,7 @@ $(PPIF_PATH)/ppif.o:
 
 ##############################################################################
 
-clean:
+ppif_clean:
 	rm -f $(PPIF_LOBJ)
 	rm -f $(LIBDIR)/libppif.a
  
