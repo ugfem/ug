@@ -6965,12 +6965,12 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
       SETSUBDOMAIN(theElement,id);
       SETUSED(theElement,1);
       fifo_in(&myfifo,(void *)theElement);
-      if (nbid==0) continue;
-      theNeighbor = NBELEM(theElement,i);
-      assert(theNeighbor!=NULL);
-      SETSUBDOMAIN(theNeighbor,nbid);
-      SETUSED(theNeighbor,1);
-      fifo_in(&myfifo,(void *)theNeighbor);
+      /*if (nbid==0) continue;
+         theNeighbor = NBELEM(theElement,i);
+         assert(theNeighbor!=NULL);
+         SETSUBDOMAIN(theNeighbor,nbid);
+         SETUSED(theNeighbor,1);
+         fifo_in(&myfifo,(void *)theNeighbor);*/
     }
 
   /* set subdomain id for all elements */
