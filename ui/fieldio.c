@@ -349,12 +349,12 @@ static int WriteElementData(STREAM *stream, MULTIGRID *mg,
     lc[j] /= (double)CORNERS_OF_ELEM(e);
   for (i = 0; i < no_es; i++) {
     eval_s = se[i].eval->EvalProc;
-    s = eval_s(e, cc, lc);
+    s = eval_s(e, (const DOUBLE **)cc, lc);
     if (WriteDouble(stream, s)) return 1;
   }
   for (i = 0; i < no_ev; i++) {
     eval_v = ve[i].eval->EvalProc;
-    eval_v(e, cc, lc, v);
+    eval_v(e, (const DOUBLE **)cc, lc, v);
     for (j = 0; j < DIM; j++)
       if (WriteDouble(stream, v[j])) return 1;
   }
