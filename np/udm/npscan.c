@@ -146,17 +146,18 @@ INT ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE *pos)
 
 /****************************************************************************/
 /*D
-   ReadArgvVecDesc - Read command strings
+   ReadArgvVecDescX - Read command strings
 
    SYNOPSIS:
-   VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
-                                  INT argc, char **argv);
+   VECDATA_DESC *ReadArgvVecDescX (MULTIGRID *theMG, const char *name,
+                                                           INT argc, char **argv, INT CreateIfNonExistent);
 
    PARAMETERS:
    .  theMG - pointer to a multigrid
    .  name - name of the argument
    .  argc - argument counter
    .  argv - argument vector
+   .  CreateIfNonExistent - create vector if not yet existing
 
    DESCRIPTION:
    This function reads a symbol name from the command strings and returns
@@ -176,8 +177,41 @@ INT ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE *pos)
    D*/
 /****************************************************************************/
 
-VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
-                               INT argc, char **argv)
+/****************************************************************************/
+/*D
+   ReadArgvVecDesc - Read command strings
+
+   SYNOPSIS:
+   VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
+                                                           INT argc, char **argv);
+
+   PARAMETERS:
+   .  theMG - pointer to a multigrid
+   .  name - name of the argument
+   .  argc - argument counter
+   .  argv - argument vector
+
+   DESCRIPTION:
+   This function reads a symbol name from the command strings and returns
+   a pointer to the corresponding vector descriptor.
+   (This function is a macro calling 'ReadArgvVecDescX')
+
+   CAUTION: If no template is specified the first vector template is used.
+
+   This call locks the vector descriptor for dynamic allocation.
+
+   SYNTAX:
+   '$<name> <vec desc name>[/<template name>]'
+
+   RETURN VALUE:
+   VECDATA_DESC *
+   .n    pointer to vector descriptor
+   .n    NULL if error occurs
+   D*/
+/****************************************************************************/
+
+VECDATA_DESC *ReadArgvVecDescX (MULTIGRID *theMG, const char *name,
+                                INT argc, char **argv, INT CreateIfNonExistent)
 {
   VECDATA_DESC *vd;
   char value[VALUELEN],vdname[NAMESIZE],tname[NAMESIZE];
@@ -190,7 +224,7 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
 
   res = sscanf(value,expandfmt(CONCAT5("%",NAMELENSTR,"[a-zA-Z0-9_] / %",NAMELENSTR,"[a-zA-Z0-9_]")),vdname,tname);
   vd = GetVecDataDescByName(theMG,vdname);
-  if (vd == NULL)
+  if (vd == NULL && CreateIfNonExistent)
   {
     if (res==2)
       vd = CreateVecDescOfTemplate (theMG,vdname,tname);
@@ -381,6 +415,33 @@ MAT_TEMPLATE *ReadArgvMatTemplateSub (const FORMAT *fmt, const char *name,
 
 /****************************************************************************/
 /*D
+   ReadArgvMatDescX - Read command strings
+
+   SYNOPSIS:
+   MATDATA_DESC *ReadArgvMatDescX (MULTIGRID *theMG, const char *name,
+                                                           INT argc, char **argv, INT CreateIfNonExistent);
+
+   PARAMETERS:
+   .  theMG - pointer to a multigrid
+   .  name - name of the argument
+   .  argc - argument counter
+   .  argv - argument vector
+   .  CreateIfNonExistent - create vector if not yet existing
+
+   DESCRIPTION:
+   This function reads a symbol name from the command strings and returns
+   a pointer to the corresponding matrix descriptor.
+   This call locks the matrix descriptor for dynamic allocation.
+
+   RETURN VALUE:
+   MATDATA_DESC *
+   .n    pointer to matrix descriptor
+   .n    NULL if error occurs
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
    ReadArgvMatDesc - Read command strings
 
    SYNOPSIS:
@@ -397,6 +458,7 @@ MAT_TEMPLATE *ReadArgvMatTemplateSub (const FORMAT *fmt, const char *name,
    This function reads a symbol name from the command strings and returns
    a pointer to the corresponding matrix descriptor.
    This call locks the matrix descriptor for dynamic allocation.
+   (This function is a macro calling 'ReadArgvMatDescX')
 
    RETURN VALUE:
    MATDATA_DESC *
@@ -405,8 +467,8 @@ MAT_TEMPLATE *ReadArgvMatTemplateSub (const FORMAT *fmt, const char *name,
    D*/
 /****************************************************************************/
 
-MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, const char *name,
-                               INT argc, char **argv)
+MATDATA_DESC *ReadArgvMatDescX (MULTIGRID *theMG, const char *name,
+                                INT argc, char **argv, INT CreateIfNonExistent)
 {
   MATDATA_DESC *md;
   char value[VALUELEN],mdname[NAMESIZE],tname[NAMESIZE];
@@ -422,7 +484,7 @@ MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, const char *name,
                                        NAMELENSTR,"[a-zA-Z0-9_]")),
                mdname,tname);
   md = GetMatDataDescByName(theMG,mdname);
-  if (md == NULL)
+  if (md==NULL && CreateIfNonExistent)
   {
     if (res==2)
       md = CreateMatDescOfTemplate (theMG,mdname,tname);

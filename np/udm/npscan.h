@@ -81,19 +81,22 @@
 
 INT ReadArgvPosition                                    (const char *name, INT argc, char **argv, DOUBLE *pos);
 
-VECDATA_DESC *ReadArgvVecDesc                   (MULTIGRID *theMG, const char *name,
-                                                 INT argc, char **argv);
+VECDATA_DESC *ReadArgvVecDescX                  (MULTIGRID *theMG, const char *name,
+                                                 INT argc, char **argv, INT CreateIfNonExistent);
 VEC_TEMPLATE *ReadArgvVecTemplate               (const FORMAT *fmt, const char *name,
                                                  INT argc, char **argv);
 VEC_TEMPLATE *ReadArgvVecTemplateSub    (const FORMAT *fmt, const char *name,
                                          INT argc, char **argv, INT *sub);
 MAT_TEMPLATE *ReadArgvMatTemplateSub    (const FORMAT *fmt, const char *name,
                                          INT argc, char **argv, INT *sub);
-MATDATA_DESC *ReadArgvMatDesc                   (MULTIGRID *theMG, const char *name,
-                                                 INT argc, char **argv);
+MATDATA_DESC *ReadArgvMatDescX                  (MULTIGRID *theMG, const char *name,
+                                                 INT argc, char **argv, INT CreateIfNonExistent);
 
 NP_BASE      *ReadArgvNumProc                   (MULTIGRID *theMG, const char *name, const char *class,
                                                  INT argc, char **argv);
+
+#define ReadArgvVecDesc(mg,n,ac,av)             ReadArgvVecDescX(mg,n,ac,av,YES)
+#define ReadArgvMatDesc(mg,n,ac,av)             ReadArgvMatDescX(mg,n,ac,av,YES)
 
 /* for reading damping factors etc. */
 INT ReadVecTypeINTs             (const FORMAT *fmt, char *str, INT n, INT nINT[MAXVECTORS], INT theINTs[][MAXVECTORS]);
