@@ -25,6 +25,10 @@
 /*																			*/
 /* History:   06.03.95 begin, ug version 3.0								*/
 /*			  28.09.95 blockvector routines implemented (Christian Wrobel)	*/
+/*			  22.08.03 corrections concering skip flags for many components	*/
+/*			           in a vector data descriptor. Not adapted for the     */
+/*			           block vectors, AMG and Galerkin approximations!		*/
+/*			           Switch on by macro _XXL_SKIPFLAGS_ (else not active).*/
 /*																			*/
 /* Remarks:                                                                                                                             */
 /*																			*/
@@ -73,6 +77,8 @@
 /****************************************************************************/
 
 #undef _SPARSE_
+
+#undef _XXL_SKIPFLAGS_
 
 #define VERBOSE_BLAS    10
 
@@ -167,6 +173,17 @@ static INT max_vectors_of_type[NVECTYPES] =
 static const BV_DESC *ConsBvd;
 static const BV_DESC_FORMAT *ConsBvdf;
 static INT ConsComp;
+#endif
+
+#ifndef _XXL_SKIPFLAGS_
+#define SKIP_CONT(skip,i) ((skip) & (1 << (i)))
+#define SET_SKIP_CONT(v,i) (VECSKIP(v) |= (1 << (i)))
+#else
+#define SKIP_CONT(skip,i) ((i < sizeof (INT) * 8) ? \
+                           (skip) & (1 << (i)) \
+                           : (skip) & (1 << (sizeof (INT) * 8 - 1)))
+#define SET_SKIP_CONT(v,i) (VECSKIP(v) |= ((i) < sizeof(INT) * 8) ? 1 << (i) \
+                                          : 1 << (sizeof (INT) * 8 - 1))
 #endif
 
 #endif
@@ -375,7 +392,7 @@ static int Scatter_VectorComp (DDD_OBJ obj, void *data)
       VVALUE(pv,Comp[i]) += ((DOUBLE *)data)[i];
   else
     for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
-      if (!(vecskip & (1<<i)))
+      if (! SKIP_CONT (vecskip, i))
         VVALUE(pv,Comp[i]) += ((DOUBLE *)data)[i];
 
   return (NUM_OK);
@@ -1108,12 +1125,12 @@ static int Scatter_VectorVecskip (DDD_OBJ obj, void *data)
   type = VTYPE(pv);
   Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
   for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
-    if ((vecskip & (1<<i))) {
-      if ((VECSKIP(pv) & (1<<i)))
+    if (SKIP_CONT (vecskip, i)) {
+      if (SKIP_CONT (VECSKIP(pv), i))
         VVALUE(pv,Comp[i]) = MAX(VVALUE(pv,Comp[i]),((DOUBLE *)data)[i+1]);
       else {
         VVALUE(pv,Comp[i]) = ((DOUBLE *)data)[i+1];
-        VECSKIP(pv) |= (1<<i);
+        SET_SKIP_CONT (pv, i);
       }
     }
 
@@ -1139,7 +1156,7 @@ static int Scatter_GhostVectorVecskip (DDD_OBJ obj, void *data)
   type = VTYPE(pv);
   Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
   for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
-    if ((vecskip & (1<<i)))
+    if (SKIP_CONT (vecskip, i))
       VVALUE(pv,Comp[i]) = ((DOUBLE *)data)[i+1];
 
   return (NUM_OK);
@@ -1650,7 +1667,7 @@ static INT l_vector_average (GRID *g, const VECDATA_DESC *x)
           VVALUE(v,Comp[i]) *= fac;
       else
         for (i=0; i<n; i++)
-          if (!(vecskip & (1<<i)))
+          if (! SKIP_CONT (vecskip, i))
             VVALUE(v,Comp[i]) *= fac;
     }
 
@@ -1802,7 +1819,7 @@ static int Scatter_DiagMatrixComp (DDD_OBJ obj, void *data)
   else
   {
     for (i=0; i<sm->nrows; i++)
-      if (!(vecskip & (1<<i)))
+      if (! SKIP_CONT (vecskip, i))
         for (j=sm->row_start[i]; j<sm->row_start[i+1]; j++)
           MVALUE(m, sm->offset[j]) += ((DOUBLE *)data)[j];
   }
@@ -2000,7 +2017,7 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
           mtype = MTP(vtype,MDESTTYPE(m));
           sm = MD_SM(ConsMatrix, mtype);
           for (k=0; k<sm->nrows; k++)
-            if (!(vecskip & (1<<k)))
+            if (! SKIP_CONT (vecskip, k))
               for (j=sm->row_start[k]; j<sm->row_start[k+1]; j++)
                 MVALUE(m, sm->offset[j]) += msgbuf[j];
           msgbuf += MaxBlockSize;
