@@ -24,7 +24,7 @@ ARCH_LIBS     = -lm -lc
 # -g           debug
 ARCH_CFLAGS   = -g
 ARCH_C++FLAGS = -g
-ARCH_LFLAGS   = -g
+ARCH_LFLAGS   = -lnsl
 ARCH_ARFLAGS  = ru
 
 ARCH_XINCLUDES = -I/usr/openwin/share/include -I/usr/X11/include -I.
