@@ -3252,8 +3252,7 @@ INT l_lrregularize (GRID *theGrid, const MATDATA_DESC *M)
   }
   MVALUE(VSTART(LASTVECTOR(theGrid)),matComp) = 1.0;
 
-  if (TRUE /*mutelevel<=VERBOSE_SMOOTH*/)
-    UserWriteF(" - decomposition regularized on level %d, component %d\n",(int)GLEVEL(theGrid),singComp);
+  PRINTDEBUG(np,1,(" - decomposition regularized on level %d, component %d\n",(int)GLEVEL(theGrid),singComp));
 
   if (StoreInverse)
   {
