@@ -16,7 +16,7 @@ include machines/mk.$(ARCHDIR)
 include ug.conf
 
 # the following list may be extended
-MODULES = LOW DEV DOM GM NUMERICS GRAPH UI GG
+MODULES = LOW DEV DOM GM NUMERICS GRAPH GRAPE UI GG 
 
 # dimension dependent targets
 version = $(DIM)Dversion
@@ -49,6 +49,9 @@ NUMERICS:
 
 GRAPH:
 	cd graph; make -f Makefile.graph $(version); cd ..;
+	
+GRAPE:
+	cd grape; make -f Makefile.grape $(version)GRAPE$(GRAPE); cd ..;
 	
 UI:
 	cd ui; make -f Makefile.ui $(version); cd ..;
