@@ -14,17 +14,18 @@ fi
 
 DEFAULT=stefan,klaus,birken,henrik,peter,wieners,christia,niko
 ERRORFILE=$UGROOT/bin/cvsaccess
+UG=`dirname $UGROOT`
 
 cd $UGROOT/../..
 rm -f $ERRORFILE;
 
 # clear access lists 
-echo "cvs admin -e * ...";
-cvs admin -e UG 2>> $ERRORFILE;
+echo "cvs admin -e `basename $UG` ...";
+cvs admin -e `basename $UG` 2>> $ERRORFILE;
 
 # set default access lists 
-echo "cvs admin -a$DEFAULT ...";
-cvs admin -a$DEFAULT UG 2>> $ERRORFILE;
+echo "cvs admin -a$DEFAULT `basename $UG` ...";
+cvs admin -a$DEFAULT `basename $UG` 2>> $ERRORFILE;
 
 # set special access lists
 echo "setting special access lists ...";
@@ -55,7 +56,7 @@ then
 	echo "not all access lists could be set properly";
 	echo "Check for errors in file: $ERRORFILE!";
 else
-	rm -f $ERRORFILE;
+#	rm -f $ERRORFILE;
 	echo "$0 succeded, all access lists are set properly!";
 fi
 
