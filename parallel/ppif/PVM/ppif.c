@@ -357,7 +357,9 @@ int InitPPIF (int *argcp, char ***argvp)
     /* now start ugp on other processors */
     if (procs>1)
     {
-      error=pvm_spawn((*argvp)[0],(char **) 0,PvmTaskDefault,"",procs-1,&tids[1]);
+      pvm_catchout(stdout);
+
+      error=pvm_spawn((*argvp)[0],(char **) 0,PvmTaskDebug,"",procs-1,&tids[1]);
       if (error<procs-1)
       {
         printf("Error in spawning tasks error=%d\n",error);
