@@ -13,7 +13,7 @@ fi
 if test -x $UGROOT/../ns/appl3d/ns3d
 then
 	cd $UGROOT/../ns/appl3d
-	time ugrun ns3d 1 ugtest.scr
+	time ugrun ns3d 1 first_example.scr
 fi
 if test -x $UGROOT/../sc/appl3d/sc3d
 then
