@@ -42,7 +42,9 @@
 #include "wpm.h"
 #include "general.h"
 
-#include "parallel/util/xbc.h"
+#ifdef ModelP
+#include "xbc.h"
+#endif
 
 USING_UG_NAMESPACES
 
@@ -5495,6 +5497,175 @@ static INT DisplayVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj)
   return (0);
 }
 
+/*------------------[doxygen??, ug help sys??, blah!!]-----------------------*
+*
+*   Isosurface PlotObject---extract isosurface from scalar field
+*
+*   Usage:
+*
+*   setplotobject Isosurface [$l <lambda>] [$f <from>] [$t <to>] [$b 0|1]
+*                            [$a 0..1] $s <vecdatadesc> $e <evalproc>
+*
+*   $l...    - isosurface value (default: 0.5)
+*   $f...    - min value of field (default: 0.0)
+*   $t...    - max value of field (default: 1.0)
+*   $b...    - whether to plot domain boundary back sides (default: 0)
+*   $a...    - lighting: share of ambient light (default: 0.4, nice)
+*   $s...    - vecdata descriptor for field
+*   $e...    - evaluation procedure (default: nvalue)
+*
+*---------------------------------------------------------------------------*/
+
+static INT InitIsosurfacePlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
+{
+  struct IsosurfacePlotobject3D *theIpo;
+  BVP_DESC *theBVPDesc;
+  char buffer[64];
+  INT i, ret;
+  int iValue;
+  float fValue;
+
+  theIpo = &(thePlotObj->theIpo);
+  theBVPDesc = MG_BVPD(PO_MG(thePlotObj));
+  V3_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj));
+  PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
+  PO_USESCUT(thePlotObj) = NO;
+
+  ret = ACTIVE;
+
+  /* defaults */
+  if (PO_STATUS(thePlotObj)==NOT_INIT)
+  {
+    theIpo->EvalFct                 = NULL;
+    theIpo->lambda          = 0.5;
+    theIpo->min                         = 0.0;
+    theIpo->max                         = 1.0;
+    theIpo->DomainBackFaces = NO;
+    theIpo->AmbientLight    = 0.4;
+  }
+
+  /* get isosurface value */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='l')
+    {
+      if (sscanf(argv[i],"l %g",&fValue)!=1)
+        break;
+      theIpo->lambda = fValue;
+      break;
+    }
+
+  /* set from option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='f')
+    {
+      if (sscanf(argv[i],"f %g",&fValue)!=1)
+        break;
+      theIpo->min = fValue;
+      break;
+    }
+
+  /* set to option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='t')
+    {
+      if (sscanf(argv[i],"t %g",&fValue)!=1)
+        break;
+      theIpo->max = fValue;
+      break;
+    }
+
+  if (theIpo->min > theIpo->max )
+  {
+    UserWrite("minValue is bigger than maxValue\n");
+    ret = NOT_ACTIVE;
+  }
+
+  /* get plot procedure */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='e')
+    {
+      if (sscanf(argv[i],"e %s",buffer)!=1)
+        break;
+      if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(PO_NAME(theIpo),buffer);
+      theIpo->EvalFct = GetElementValueEvalProc(buffer);
+      break;
+    }
+
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='s')
+    {
+      if (sscanf(argv[i],"s %s",buffer)!=1)
+        break;
+      if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(PO_NAME(theIpo),buffer);
+      if (theIpo->EvalFct == NULL)
+        theIpo->EvalFct = GetElementValueEvalProc("nvalue");
+      break;
+    }
+
+  /* domain back faces? */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='b')
+    {
+      if (sscanf(argv[i],"b %d",&iValue)!=1)
+        break;
+      if (iValue==1)
+        theIpo->DomainBackFaces = YES;
+      else if (iValue==0)
+        theIpo->DomainBackFaces = NO;
+      break;
+    }
+
+  /* lighting? */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='a')
+    {
+      if (sscanf(argv[i], "a %f", &fValue) != 1) break;
+      theIpo->AmbientLight = fValue;
+      break;
+    }
+  if (theIpo->AmbientLight < 0.0 || theIpo->AmbientLight > 1.0)
+    theIpo->AmbientLight = 1.0;
+
+  if (theIpo->EvalFct == NULL)
+  {
+    UserWrite("cannot find plot procedure\n");
+    ret = NOT_ACTIVE;
+  }
+
+  return (ret);
+}
+
+/*---------------------------------------------------------------------------*
+*
+*   Display contents of Isosurface PlotObject
+*
+*---------------------------------------------------------------------------*/
+
+static INT DisplayIsosurfacePlotObject_3D (PLOTOBJ *thePlotObj)
+{
+  struct IsosurfacePlotobject3D *theIpo;
+
+  theIpo = &(thePlotObj->theIpo);
+
+  /* print content */
+  if (theIpo->EvalFct != NULL)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theIpo->EvalFct));
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc","---");
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"name",PO_NAME(theIpo));
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"lambda",(float)theIpo->lambda);
+  UserWriteF(DISPLAY_PO_FORMAT_SFF,"Range",(float)theIpo->min,(float)theIpo->max);
+  if (theIpo->DomainBackFaces == YES)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"DomainBackFaces","YES");
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"DomainBackFaces","NO");
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"AmbientLight",(float)theIpo->AmbientLight);
+  UserWrite("\n");
+  return 0;
+}
+
 #endif
 
 /****************************************************************************/
@@ -5586,6 +5757,11 @@ INT NS_DIM_PREFIX InitPlotObjTypes (void)
   thePOT->Dimension                               = TYPE_3D;
   thePOT->SetPlotObjProc                  = InitGridObject_3D;
   thePOT->DispPlotObjProc                 = DisplayGridPlotObject_3D;
+
+  if ((thePOT=GetPlotObjType("Isosurface"))    == NULL) return (1);
+  thePOT->Dimension                               = TYPE_3D;
+  thePOT->SetPlotObjProc                  = InitIsosurfacePlotObject_3D;
+  thePOT->DispPlotObjProc                 = DisplayIsosurfacePlotObject_3D;
 
   /* maybe later: KJ
      if ((thePOT=GetPlotObjType("Domain"))  == NULL) return (1);

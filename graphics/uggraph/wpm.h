@@ -7,16 +7,16 @@
 /* Purpose:   defines data structure for wpm.c                              */
 /*                                                                          */
 /* Author:    Klaus Johannsen                                               */
-/*                        Institut fuer Computeranwendungen                                                     */
-/*                        Universitaet Stuttgart                                                                                */
-/*                        Pfaffenwaldring 27                                                                                    */
-/*                        70569 Stuttgart                                                                                               */
-/*                        internet: ug@ica3.uni-stuttgart.de                                                */
-/*                                                                                                                                                      */
-/* History:   8.12.94 begin, ug3-version                                                                        */
-/*                                                                                                                                                      */
-/* Remarks:                                                                                                                             */
-/*                                                                                                                                                      */
+/*            Institut fuer Computeranwendungen                             */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            internet: ug@ica3.uni-stuttgart.de                            */
+/*                                                                          */
+/* History:   8.12.94 begin, ug3-version                                    */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* auto include mechanism and other include files                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __WPM__
@@ -44,19 +44,19 @@
 START_UGDIM_NAMESPACE
 
 /****************************************************************************/
-/*                                                                          */
-/* defines in the arbitrary order                                                                                       */
-/*                                                                                                                                                      */
-/*                compile time constants defining static data size (i.e. arrays)        */
-/*                other constants                                                                                                       */
-/*                macros                                                                                                                        */
-/*                                                                                                                                                      */
+/*																			*/
+/* defines in the following order											*/
+/*																			*/
+/*		  compile time constants defining static data size (i.e. arrays)	*/
+/*		  other constants													*/
+/*		  macros															*/
+/*																			*/
 /****************************************************************************/
 
 /****************************************************************************/
-/*                                                                                                                                                      */
+/*																			*/
 /* Defines and Macros, misc                                                                                             */
-/*                                                                                                                                                      */
+/*																			*/
 /****************************************************************************/
 
 /* formats for display routines */
@@ -70,137 +70,137 @@ START_UGDIM_NAMESPACE
 
 /* dimension of PLOTOBJ, VIEWEDOBJ */
 #define NOT_DEFINED                     0
-#define TYPE_2D                                 1
-#define TYPE_3D                                 2
+#define TYPE_2D                         1
+#define TYPE_3D                         2
 
 /* status field of VIEW, CUT, PLOTOBJTYPE */
-#define NOT_INIT                                0
-#define NOT_ACTIVE                              1
-#define ACTIVE                                  2
+#define NOT_INIT                        0
+#define NOT_ACTIVE                      1
+#define ACTIVE                          2
 
 /* info box status in UGWINDOW */
-#define BOX_INVALID             -2      /* indicates that info-box has to be redrawn*/
-#define NO_INFO_AVAILABLE       -3      /* no information avaiable to be printed        */
-#define MOUSE_IN_CURR_PIC       -4      /* mouse in current picture of active graphw*/
-#define MOUSE_OUT_CURR_PIC      -5      /* mouse in current picture of active graphw*/
-#define STATIC_TEXT                     -6      /* static text instead of dynamic info          */
+#define BOX_INVALID         -2  /* indicates that info-box has to be redrawn*/
+#define NO_INFO_AVAILABLE   -3  /* no information avaiable to be printed    */
+#define MOUSE_IN_CURR_PIC   -4  /* mouse in current picture of active graphw*/
+#define MOUSE_OUT_CURR_PIC  -5  /* mouse in current picture of active graphw*/
+#define STATIC_TEXT         -6  /* static text instead of dynamic info      */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* Defines and Macros for CUT                                                                                           */
-/*                                                                                                                                                      */
+/*																			*/
+/* Defines and Macros for CUT												*/
+/*																			*/
 /****************************************************************************/
 
 #define CUT_STATUS(p)                   ((p)->status)
-#define CUT_PN(p)                               ((p)->PlaneNormal)
-#define CUT_PP(p)                               ((p)->PlanePoint)
+#define CUT_PN(p)                       ((p)->PlaneNormal)
+#define CUT_PP(p)                       ((p)->PlanePoint)
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* Defines and Macros for PLOTOBJ                                                                                       */
-/*                                                                                                                                                      */
+/*																			*/
+/* Defines and Macros for PLOTOBJ											*/
+/*																			*/
 /****************************************************************************/
 
 #define EXT_DESC_SIZE                   200
 
-#define PO_NO                                   0
-#define PO_COPY                                 1
-#define PO_IRR                                  2
-#define PO_REG                                  3
-#define PO_ALL                                  4
+#define PO_NO                           0
+#define PO_COPY                         1
+#define PO_IRR                          2
+#define PO_REG                          3
+#define PO_ALL                          4
 
-#define PO_COLOR                                0
+#define PO_COLOR                        0
 #define PO_CONTOURS_EQ                  1
 
 #define PO_MAXCONTOURS                  50
 
 #define PO_STATUS(p)                    ((p)->theHead.status)
-#define PO_CBD(p)                               ((p)->theHead.clearBeforeDraw)
-#define PO_POT(p)                               ((p)->theHead.thePlotObjType)
+#define PO_CBD(p)                       ((p)->theHead.clearBeforeDraw)
+#define PO_POT(p)                       ((p)->theHead.thePlotObjType)
 #define PO_MIDPOINT(p)                  ((p)->theHead.theMidPoint)
 #define PO_RADIUS(p)                    ((p)->theHead.theRadius)
-#define PO_MG(p)                                ((p)->theHead.theMG)
-#define PO_PIC(p)                               ((p)->theHead.pic)
-#define PO_NAME(p)                              ((p)->theHead.name)
+#define PO_MG(p)                        ((p)->theHead.theMG)
+#define PO_PIC(p)                       ((p)->theHead.pic)
+#define PO_NAME(p)                      ((p)->theHead.name)
 #define PO_USESCUT(p)                   ((p)->theHead.UsesCut)
-#define PO_DIM(p)                               (((p)->theHead.thePlotObjType==NULL) ? (NOT_DEFINED) : ((p)->theHead.thePlotObjType->Dimension))
+#define PO_DIM(p)                       (((p)->theHead.thePlotObjType==NULL) ? (NOT_DEFINED) : ((p)->theHead.thePlotObjType->Dimension))
 
 /****************************************************************************/
-/*                                                                                                                                                      */
+/*																			*/
 /* Defines and Macros for VIEWEDOBJ                                                                             */
-/*                                                                                                                                                      */
+/*																			*/
 /****************************************************************************/
 
-#define VO_PO(p)                                (&((p)->thePlotObj))
-#define VO_DIM(p)                               (PO_DIM(&((p)->thePlotObj)))
+#define VO_PO(p)                        (&((p)->thePlotObj))
+#define VO_DIM(p)                       (PO_DIM(&((p)->thePlotObj)))
 #define VO_STATUS(p)                    ((p)->status)
-#define VO_CUT(p)                               (&((p)->theCut))
+#define VO_CUT(p)                       (&((p)->theCut))
 #define VO_PERSPECTIVE(p)               ((p)->perspective)
-#define VO_VP(p)                                ((p)->ViewPoint)
-#define VO_VT(p)                                ((p)->ViewTarget)
-#define VO_PMP(p)                               ((p)->PlaneMidpoint)
-#define VO_PXD(p)                               ((p)->PlaneXDir)
-#define VO_PYD(p)                               ((p)->PlaneYDir)
-#define VO_SXD(p)                               ((p)->ScaleXDir)
-#define VO_SYD(p)                               ((p)->ScaleYDir)
-#define VO_SZD(p)                               ((p)->ScaleZDir)
-#define VO_SCALE(p)                             ((p)->Scale)
-#define VO_MG(p)                                ((p)->thePlotObj.theHead.theMG)
+#define VO_VP(p)                        ((p)->ViewPoint)
+#define VO_VT(p)                        ((p)->ViewTarget)
+#define VO_PMP(p)                       ((p)->PlaneMidpoint)
+#define VO_PXD(p)                       ((p)->PlaneXDir)
+#define VO_PYD(p)                       ((p)->PlaneYDir)
+#define VO_SXD(p)                       ((p)->ScaleXDir)
+#define VO_SYD(p)                       ((p)->ScaleYDir)
+#define VO_SZD(p)                       ((p)->ScaleZDir)
+#define VO_SCALE(p)                     ((p)->Scale)
+#define VO_MG(p)                        ((p)->thePlotObj.theHead.theMG)
 
-#define VO_TRAFO(p)                             ((p)->ObsTrafo)
+#define VO_TRAFO(p)                     ((p)->ObsTrafo)
 #define VO_INVTRAFO(p)                  ((p)->InvObsTrafo)
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* Defines and Macros for PICTURE                                                                                       */
-/*                                                                                                                                                      */
+/*																			*/
+/* Defines and Macros for PICTURE											*/
+/*																			*/
 /****************************************************************************/
 
-#define PIC_UGW(p)                                      ((p)->theUgWindow)
-#define PIC_OUTPUTDEV(p)                        ((p)->theUgWindow->theOutputDevice)
-#define PIC_VO(p)                                       (&((p)->theViewedObj))
-#define PIC_PO(p)                                       (&((p)->theViewedObj.thePlotObj))
-#define PIC_MG(p)                                       ((p)->theViewedObj.thePlotObj.theHead.theMG)
-#define PIC_VALID(p)                            ((p)->Valid)
-#define PIC_GLL(p)                                      ((p)->Global_LL)
-#define PIC_GUR(p)                                      ((p)->Global_UR)
-#define PIC_NAME(p)                             ((p)->v.name)
-#define PIC_POT(p)                                      ((p)->theViewedObj.thePlotObj.theHead.thePlotObjType)
-#define PIC_SIGN_X(p)                           ((p)->sign_x)
-#define PIC_SIGN_Y(p)                           ((p)->sign_y)
+#define PIC_UGW(p)                      ((p)->theUgWindow)
+#define PIC_OUTPUTDEV(p)                ((p)->theUgWindow->theOutputDevice)
+#define PIC_VO(p)                       (&((p)->theViewedObj))
+#define PIC_PO(p)                       (&((p)->theViewedObj.thePlotObj))
+#define PIC_MG(p)                       ((p)->theViewedObj.thePlotObj.theHead.theMG)
+#define PIC_VALID(p)                    ((p)->Valid)
+#define PIC_GLL(p)                      ((p)->Global_LL)
+#define PIC_GUR(p)                      ((p)->Global_UR)
+#define PIC_NAME(p)                     ((p)->v.name)
+#define PIC_POT(p)                      ((p)->theViewedObj.thePlotObj.theHead.thePlotObjType)
+#define PIC_SIGN_X(p)                   ((p)->sign_x)
+#define PIC_SIGN_Y(p)                   ((p)->sign_y)
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* Defines and Macros for UGWINDOW                                                                                      */
-/*                                                                                                                                                      */
+/*																			*/
+/* Defines and Macros for UGWINDOW											*/
+/*																			*/
 /****************************************************************************/
 
-#define UGW_OUTPUTDEV(p)                        ((p)->theOutputDevice)
-#define UGW_IFWINDOW(p)                         ((p)->theIFWindow)
-#define UGW_GLL(p)                                      ((p)->Global_LL)
-#define UGW_GUR(p)                                      ((p)->Global_UR)
-#define UGW_LLL(p)                                      ((p)->Local_LL)
-#define UGW_LUR(p)                                      ((p)->Local_UR)
-#define UGW_NPIC(p)                             ((p)->NbPictures)
-#define UGW_NAME(p)                             ((p)->d.name)
-#define UGW_VALID(p)                            ((p)->Valid)
-#define UGW_CURRTOOL(p)                         ((p)->currTool)
-#define UGW_CURRFUNC(p)                         ((p)->currFunc)
-#define UGW_INFOTEXT(p)                         ((p)->info)
-#define UGW_BOXSTATE(p)                         ((p)->InfoBoxState)
+#define UGW_OUTPUTDEV(p)                ((p)->theOutputDevice)
+#define UGW_IFWINDOW(p)                 ((p)->theIFWindow)
+#define UGW_GLL(p)                      ((p)->Global_LL)
+#define UGW_GUR(p)                      ((p)->Global_UR)
+#define UGW_LLL(p)                      ((p)->Local_LL)
+#define UGW_LUR(p)                      ((p)->Local_UR)
+#define UGW_NPIC(p)                     ((p)->NbPictures)
+#define UGW_NAME(p)                     ((p)->d.name)
+#define UGW_VALID(p)                    ((p)->Valid)
+#define UGW_CURRTOOL(p)                 ((p)->currTool)
+#define UGW_CURRFUNC(p)                 ((p)->currFunc)
+#define UGW_INFOTEXT(p)                 ((p)->info)
+#define UGW_BOXSTATE(p)                 ((p)->InfoBoxState)
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* Defines and Macros for PLOTOBJTYPE                                                                           */
-/*                                                                                                                                                      */
+/*																			*/
+/* Defines and Macros for PLOTOBJTYPE										*/
+/*																			*/
 /****************************************************************************/
 
 #define POT_DIM(p)                                      ((p)->Dimension)
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* structures and ...                                                                                                           */
-/*                                                                                                                                                      */
+/*																			*/
+/* structures and ...														*/
+/*																			*/
 /****************************************************************************/
 
 /*----------- definition of structs ----------------------------------------*/
@@ -445,6 +445,16 @@ struct GridPlotObj3D {
   INT UndispSubDom;                                     /* subdomain not displayed OS_CHANGED           */
 };
 
+struct IsosurfacePlotobject3D {
+  struct PlotObjHead theHead;                           /* the head                                                                     */
+
+  EVALUES *EvalFct;                                                     /* evaluation procedure	                                        */
+  DOUBLE lambda;                                /* isosurface value                             */
+  DOUBLE min, max;                                                      /* range										*/
+  INT DomainBackFaces;                          /* plot domain boundary back faces?             */
+  DOUBLE AmbientLight;                          /* share of ambient light                       */
+};
+
 union PlotObj {
 
   struct PlotObjHead theHead;
@@ -469,6 +479,7 @@ union PlotObj {
   struct VecMatPlotObj3D theVmo;
   struct GridPlotObj3D theGpo;
   struct LinePlotObj theLpo;
+  struct IsosurfacePlotobject3D theIpo;
 #endif
 
 };

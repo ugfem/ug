@@ -62,6 +62,9 @@
 #include "ppif.h"
 #include "xbc.h"
 #endif
+#ifdef __THREEDIM__
+#include "iso.h"
+#endif
 
 USING_UG_NAMESPACES
 
@@ -815,6 +818,15 @@ static INT					EVector3D_projectvector;
 static DOUBLE				EVector3D_V2C_factor;
 static DOUBLE				EVector3D_V2C_offset;
 
+/*---------- working variables of 'EW_Isosurface3D' -------------------------*/
+static ElementEvalProcPtr   Isosurface3D_EvalFct;
+static DOUBLE               Isosurface3D_lambda;
+static DOUBLE               Isosurface3D_Min;
+static DOUBLE               Isosurface3D_Max;
+static INT                  Isosurface3D_DomainBackFaces;
+static DOUBLE               Isosurface3D_AmbientLight;
+static long                 Isosurface3D_color;
+static long                 Isosurface3D_backcolor;
 
 /*---------- working variables of 'GetNode...' routines --------------------*/
 static MULTIGRID	*GNode_MG;
@@ -5097,7 +5109,7 @@ static INT BulletDraw3D (DRAWINGOBJ *q)
 		  case DO_SHADED_POLYGON:
 			    DO_inc(q);
 				n = DO_2c(q); DO_inc(q)
-				UgSetColor(DO_2l(q)); DO_inc(q);
+				color = DO_2l(q); DO_inc(q);
 				intensity = *q; DO_inc(q);
 				pp = points;	
 				for (j=0; j<n; j++) {
@@ -20422,7 +20434,7 @@ static INT EW_LineElement3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	}
 	DO_2c(theDO) = DO_NO_INST;
 
-        #ifdef ModelP
+    #ifdef ModelP
 	WOP_DObjPnt = theDO;
 	#endif
 	
@@ -20432,6 +20444,319 @@ static INT EW_LineElement3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		Heap_Used_Max = MAX(Heap_Used_Max,n);
 #endif
 	return (0);
+}
+
+/*---------------------------------------------------------------------------*
+ *
+ *   Implementation of Isosurface PlotObject
+ *   
+ *---------------------------------------------------------------------------*/
+
+static void MarkElementsIsosurfaceCuts(MULTIGRID *theMG,
+									   INT fromLevel, INT toLevel)
+{
+	ELEMENT *theElement;
+	NODE *theNode;
+	INT i, j, first;
+	DOUBLE value, *CornersOfElem[MAX_CORNERS_OF_ELEM], LocalCoord[DIM];
+	
+	fromLevel = MAX(fromLevel,0);
+	toLevel = MIN(toLevel,CURRENTLEVEL(theMG));
+	
+	/* mark surface element nodes 0/1 if value </>= iso value */
+	for (i=fromLevel; i<=toLevel; i++)
+		for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG, i));
+			 theNode!=NULL;theNode=SUCCN(theNode))
+			SETUSED(theNode, 0);
+	for (i=fromLevel; i<=toLevel; i++)
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i));
+			 theElement!=NULL; theElement=SUCCE(theElement))
+		{
+			if (!IS_REFINED(theElement) || LEVEL(theElement) == toLevel) {
+				for (j = 0; j < CORNERS_OF_ELEM(theElement); j++)
+					CornersOfElem[j] = CVECT(MYVERTEX(CORNER(theElement, j)));
+				for (j = 0; j < CORNERS_OF_ELEM(theElement); j++) {
+					if (USED(CORNER(theElement, j))) continue;
+					SETUSED(CORNER(theElement, j), 1);
+					LocalCornerCoordinates(DIM,TAG(theElement),j,LocalCoord);
+					value = (*Isosurface3D_EvalFct)
+						(theElement,CornersOfElem,LocalCoord);
+					if (value < Isosurface3D_lambda)
+						SETTHEFLAG(CORNER(theElement, j), 0);
+					else
+						SETTHEFLAG(CORNER(theElement, j), 1);
+				}
+			}
+		}
+	
+	for (i=fromLevel; i<=toLevel; i++)
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i));
+			 theElement!=NULL; theElement=SUCCE(theElement))
+		{
+			SETUSED(theElement, 0);
+			if (!IS_REFINED(theElement) || LEVEL(theElement) == toLevel) {
+				/* mark surface elements that have not all nodes marked equally */
+				first = THEFLAG(CORNER(theElement, 0));
+				for (j = 1; j < CORNERS_OF_ELEM(theElement); j++)
+					if (first != THEFLAG(CORNER(theElement, j))) {
+						SETUSED(theElement, 1);
+						break;
+					}
+				/* mark domain boundary back sides iff */
+				if (Isosurface3D_DomainBackFaces && OBJT(theElement)==BEOBJ)
+					for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+						if (!INNER_SIDE(theElement,j) && !VIEWABLE(theElement,j)) {
+							SETUSED(theElement, 1);
+							break;
+						}
+			}
+		}
+}
+
+static INT EW_PreProcess_Isosurface3D(PICTURE *thePicture, WORK *theWork)
+{
+	struct IsosurfacePlotobject3D *theIpo;
+	OUTPUTDEVICE *theOD;
+	MULTIGRID *theMG;
+	
+	theIpo = &(PIC_PO(thePicture)->theIpo);
+	theOD  = PIC_OUTPUTDEV(thePicture);
+	theMG  = PO_MG(PIC_PO(thePicture));
+
+	Isosurface3D_EvalFct         = theIpo->EvalFct->EvalProc;
+	Isosurface3D_lambda          = theIpo->lambda;
+	Isosurface3D_Min             = theIpo->min;
+	Isosurface3D_Max             = theIpo->max;
+	Isosurface3D_DomainBackFaces = theIpo->DomainBackFaces;
+	Isosurface3D_AmbientLight    = theIpo->AmbientLight;
+ 
+	/* colors */
+	Isosurface3D_color           = theOD->spectrumStart
+		+(Isosurface3D_lambda-Isosurface3D_Min)/(Isosurface3D_Max-Isosurface3D_Min)
+		*(theOD->spectrumEnd-theOD->spectrumStart);
+	Isosurface3D_color           = MIN(Isosurface3D_color,theOD->spectrumEnd);
+	Isosurface3D_color           = MAX(Isosurface3D_color,theOD->spectrumStart);
+	Isosurface3D_backcolor       = theOD->gray;
+
+	/* prepare evaluation routine */
+	if (theIpo->EvalFct->PreprocessProc != NULL)
+		if ((*theIpo->EvalFct->PreprocessProc)(PO_NAME(theIpo),theMG))
+			return 1;
+	
+	/* mark surface elements the isosurface cuts */
+	MarkElementsIsosurfaceCuts(theMG, 0, CURRENTLEVEL(theMG));
+	
+	return 0;
+}
+
+static void SortPolygons(POLY *poly, INT npoly)
+{
+	/* TODO: sort polygons back to front */
+	return;
+}
+
+static DOUBLE LightPolygon(POLY *poly)
+{
+	INT i;
+	DOUBLE xcs[3], lightDir[3], edge1[3], edge2[3], normal[3];
+	DOUBLE cosa, scale1, scale2;
+
+	/* light direction */
+	if (OBS_Perspective == YES) {
+		V3_CLEAR(xcs);
+		for (i = 0; i < poly->n; i++)
+			V3_ADD(poly->x[i], xcs, xcs);
+		V3_SCALE(1.0/poly->n, xcs);
+		V3_SUBTRACT(VO_VP(OE_ViewedObj), xcs, lightDir);
+	}
+	else
+		V3_SUBTRACT(VO_VP(OE_ViewedObj), VO_VT(OE_ViewedObj), lightDir);
+
+	/* polygon normal */
+	V3_SUBTRACT(poly->x[1], poly->x[0], edge1);
+	V3_SUBTRACT(poly->x[2], poly->x[0], edge2);
+	V3_VECTOR_PRODUCT(edge1, edge2, normal);
+	
+	/* face intensity */
+	V3_SCALAR_PRODUCT(lightDir, normal, cosa);
+	V3_SCALAR_PRODUCT(normal, normal, scale1);
+	V3_SCALAR_PRODUCT(lightDir, lightDir, scale2);
+	cosa = ABS(cosa)/sqrt(scale1*scale2);
+	return Isosurface3D_AmbientLight + (1.0-Isosurface3D_AmbientLight)*cosa;
+}
+
+static INT EW_Isosurface3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
+{
+	CELL cell;
+	POLY poly[MAXPOLY];
+	INT i, j, npoly;
+	DOUBLE *x[MAX_CORNERS_OF_ELEM], lc[DIM], intensity;
+
+	cell.n = CORNERS_OF_ELEM(theElement);
+
+	for (i = 0; i < CORNERS_OF_ELEM(theElement); i++)
+		x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
+	
+	for (i = 0; i < CORNERS_OF_ELEM(theElement); i++) {
+		cell.order[i] = VGID(MYVERTEX(CORNER(theElement,i)));
+		memcpy(cell.x[i], x[i], 3*sizeof(DOUBLE));
+		LocalCornerCoordinates(DIM, TAG(theElement), i, lc);
+		cell.v[i] = (*Isosurface3D_EvalFct)(theElement, x, lc);
+	}
+
+	/* plot domain boundary back sides iff */
+	if (Isosurface3D_DomainBackFaces && OBJT(theElement)==BEOBJ)
+		for (i = 0; i < SIDES_OF_ELEM(theElement); i++)
+			if (!INNER_SIDE(theElement,i) && !VIEWABLE(theElement,i)) {
+				DO_2c(theDO) = DO_SHADED_POLYGON; DO_inc(theDO);
+				DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO);
+				DO_2l(theDO) = Isosurface3D_backcolor; DO_inc(theDO);
+				if (Isosurface3D_AmbientLight < 1.0) {
+					poly[0].n = CORNERS_OF_SIDE(theElement,i);
+					for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
+						V3_COPY(x[CORNER_OF_SIDE(theElement,i,j)], poly[0].x[j]);
+					intensity = LightPolygon(&poly[0]);
+				}
+				else
+					intensity = 1.0;
+				DO_2C(theDO) = intensity; DO_inc(theDO);
+				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++) {
+					V3_COPY(x[CORNER_OF_SIDE(theElement,i,j)],DO_2Cp(theDO));
+					DO_inc_n(theDO,3);
+				}
+			}
+
+	/* extract & plot isosurface polygons */
+	ExtractElement(&cell, Isosurface3D_lambda, poly, &npoly);
+	if (npoly > 0) {
+		if (!do_bullet) SortPolygons(poly, npoly);
+		for (i = 0; i < npoly; i++) {
+			if (poly[i].n == 0) continue;
+			if (Isosurface3D_AmbientLight < 1.0)
+				intensity = LightPolygon(&poly[i]);
+			else
+				intensity = 1.0;
+			DO_2c(theDO) = DO_SHADED_POLYGON; DO_inc(theDO);
+			DO_2c(theDO) = poly[i].n; DO_inc(theDO);
+			DO_2l(theDO) = Isosurface3D_color; DO_inc(theDO);
+			DO_2C(theDO) = intensity; DO_inc(theDO);
+			for (j = 0; j < poly[i].n; j++) {
+				V3_COPY(poly[i].x[j], DO_2Cp(theDO));
+				DO_inc_n(theDO,3);
+			}
+		}
+	}
+	DO_2c(theDO) = DO_NO_INST;
+
+#ifdef ModelP
+	WOP_DObjPnt = theDO;
+#endif
+
+	return 0;
+}
+
+static void MarkElementsOnSurface(MULTIGRID *theMG,INT fromLevel, INT toLevel)
+{
+	INT i;
+	ELEMENT *theElement;
+	NODE *theNode;
+
+	fromLevel = MAX(fromLevel,0);
+	toLevel = MIN(toLevel,CURRENTLEVEL(theMG));
+	
+	/* unmark all nodes */
+	for (i=fromLevel; i<=toLevel; i++)
+		for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG, i));
+			 theNode!=NULL;theNode=SUCCN(theNode))
+			SETUSED(theNode, 0);
+
+	/* mark surface elements */
+	for (i=fromLevel; i<=toLevel; i++)
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i));
+			 theElement!=NULL; theElement=SUCCE(theElement))
+			if (!IS_REFINED(theElement) || LEVEL(theElement) == toLevel)
+				SETUSED(theElement, 1);
+			else
+				SETUSED(theElement, 0);
+}
+
+static INT EW_PreProcess_Isosurface3D_FR(PICTURE *thePicture, WORK *theWork)
+{
+	struct IsosurfacePlotobject3D *theIpo;
+	MULTIGRID *theMG;
+
+	theIpo = &(PIC_PO(thePicture)->theIpo);
+	theMG  = PO_MG(PIC_PO(thePicture));
+
+	Isosurface3D_EvalFct = theIpo->EvalFct->EvalProc;
+	GEN_FR_min           =  MAX_D;
+	GEN_FR_max           = -MAX_D;
+	GEN_FR_put           = W_FINDRANGE_WORK(theWork)->put;
+
+	/* prepare evaluation routine */
+	if (theIpo->EvalFct->PreprocessProc != NULL)
+		if ((*theIpo->EvalFct->PreprocessProc)(PO_NAME(theIpo),theMG))
+			return 1;
+
+	/* mark surface elements */
+	MarkElementsOnSurface(theMG, 0, CURRENTLEVEL(theMG));
+
+	return 0;
+}
+
+static INT EW_Isosurface3D_FR(ELEMENT *theElement, DRAWINGOBJ *theDO)
+{
+	INT i;
+	DOUBLE *CornersOfElem[MAX_CORNERS_OF_ELEM], LocalCoord[DIM], value;
+
+	for (i = 0; i < CORNERS_OF_ELEM(theElement); i++)
+		CornersOfElem[i] = CVECT(MYVERTEX(CORNER(theElement, i)));
+	for (i = 0; i < CORNERS_OF_ELEM(theElement); i++)
+		if (!USED(CORNER(theElement, i))) {
+			SETUSED(CORNER(theElement,i),1);
+			LocalCornerCoordinates(DIM,TAG(theElement),i,LocalCoord);
+			value = (*Isosurface3D_EvalFct)
+				(theElement,CornersOfElem,LocalCoord);
+			DO_2c(theDO) = DO_RANGE; DO_inc(theDO);
+			DO_2C(theDO) = value; DO_inc(theDO);
+			DO_2C(theDO) = value; DO_inc(theDO);
+		}
+	
+	DO_2c(theDO) = DO_NO_INST;
+
+	return 0;
+}
+
+static INT EW_PostProcess_Isosurface3D_FR(PICTURE *thePicture, WORK *theWork)
+{
+	struct FindRange_Work *FR_Work = W_FINDRANGE_WORK(theWork);
+	
+#ifdef ModelP
+	GEN_FR_min = UG_GlobalMinDOUBLE(GEN_FR_min);
+	GEN_FR_max = UG_GlobalMaxDOUBLE(GEN_FR_max);
+#endif
+
+	if (GEN_FR_min>GEN_FR_max) {
+		UserWrite("findrange failed\n");
+		return 0;
+	}
+
+	/* postprocess findrange */
+	if (FR_Work->symmetric==YES) {
+		GEN_FR_max = MAX(ABS(GEN_FR_min),ABS(GEN_FR_max));
+		GEN_FR_min = -GEN_FR_max;
+	}
+
+	FR_Work->min = GEN_FR_min;
+	FR_Work->max = GEN_FR_max;
+
+	/* store if */
+	if (GEN_FR_put == YES) {
+		PIC_PO(thePicture)->theIpo.min = GEN_FR_min;
+		PIC_PO(thePicture)->theIpo.max = GEN_FR_max;
+	}
+
+	return 0;
 }
 
 #endif /* __THREEDIM__ */
@@ -24254,7 +24579,35 @@ INT NS_DIM_PREFIX InitWOP (void)
 		theEWW->EW_EvaluateProc 				= EW_LineElement3D;
 		theEWW->EW_ExecuteProc					= FindRange2D;
 		theEWW->EW_PostProcessProc				= GEN_PostProcess_Line_FR;
-	
+
+		/* create WorkHandling for 'IsoSurface' */
+		if ((thePOH=CreatePlotObjHandling ("Isosurface")) == NULL) return (__LINE__);
+
+		/* draw work */
+		POH_NBCYCLES(thePOH,DRAW_WORK) = 1;
+
+		theWP = POH_WORKPROGS(thePOH,DRAW_WORK,0);
+		WP_WORKMODE(theWP) = ELEMENTWISE;
+		theEWW = WP_ELEMWISE(theWP);
+		theEWW->EW_PreProcessProc				= EW_PreProcess_Isosurface3D;
+		theEWW->EW_GetFirstElementProcProc		= EW_GetFirstElement_vert_fw_up_Proc;
+		theEWW->EW_GetNextElementProcProc		= EW_GetNextElement_vert_fw_up_Proc;
+		theEWW->EW_EvaluateProc 				= EW_Isosurface3D;
+		theEWW->EW_ExecuteProc					= Draw3D;
+		theEWW->EW_PostProcessProc				= NULL;
+
+		/* findrange work */
+		POH_NBCYCLES(thePOH,FINDRANGE_WORK) = 1;
+		
+		theWP = POH_WORKPROGS(thePOH,FINDRANGE_WORK,0);
+		WP_WORKMODE(theWP) = ELEMENTWISE;
+		theEWW = WP_ELEMWISE(theWP);
+		theEWW->EW_PreProcessProc				= EW_PreProcess_Isosurface3D_FR;
+		theEWW->EW_GetFirstElementProcProc		= EW_GetFirstElement_vert_fw_up_Proc;
+		theEWW->EW_GetNextElementProcProc		= EW_GetNextElement_vert_fw_up_Proc;
+		theEWW->EW_EvaluateProc 				= EW_Isosurface3D_FR;
+		theEWW->EW_ExecuteProc					= FindRange3D;
+		theEWW->EW_PostProcessProc				= EW_PostProcess_Isosurface3D_FR;
 	#endif
 		
 	/* set PlotObjTypes of PlotObjHandlings */
