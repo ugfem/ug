@@ -67,6 +67,9 @@ extern int nsets_glob;           /* total number of processors to partition into
 /* global variables for this source file. Static! */
 static double start_time;		/* time routine is entered */
 
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
+
 /* reformats the graph in adding edges to neighbors, which have not the */
 /* same cluster depth and are therefore not partitioned here, at the    */
 /* end of the edge list. Thus the old graph can be regained.            */
@@ -266,7 +269,6 @@ int interface (CLUSTER **clusters, int nvtxs, short *assign, double *goal,
 	int *pvtx;                   /* loops through vtxs */
 	int *loc2glob;               /* map from local to global numbering */
 	int total_edges;
-	int count;
 
 	start_time = seconds();
 
@@ -502,12 +504,10 @@ int interface (CLUSTER **clusters, int nvtxs, short *assign, double *goal,
 		graph[i]->edges = edges;
 		*edges = cptr->edges[0];
 		edges++;
-		count++;
 		for (j=size-1; j>0; j--) 
 		{
 			*edges = cptr->edges[j];
 			edges++;
-			count++;
 		}
 		if (using_ewgts) {
 			graph[i]->ewgts = eweights;
