@@ -51,6 +51,7 @@
 #include "transfer.h"
 #include "ls.h"
 #include "iter.h"
+#include "disctools.h"
 
 #include "ff_gen.h"
 #include "ff.h"
@@ -2997,6 +2998,10 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
   }
   /*	}*/
 
+  /* construction of Dirichlet boundary conditions */
+  if (AssembleDirichletBoundary (theGrid,A,x,b))
+    NP_RETURN(1,result[0]);
+  UserWrite(" [d]\n");
 
   if (FF_PrepareGrid( theGrid, &meshwidth, TRUE, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
   {
@@ -3258,6 +3263,12 @@ static INT FFIter (NP_ITER *theNP, INT level,
 
     FreeVD(theNP->base.mg,level,level,NPFF_t(np));
   }
+
+  /* set all vectors with VCLASS < ACTIVE_CLASS to 0.0
+     since in the FF routines all inner vectors are calculated, only the
+     dirichlet boundary vectos remain as < ACTIVE_CLASS
+     BVSUCC(GFIRSTBV(theGrid)) are exactly the dirichlet boundary vectors */
+  dsetBS( BVSUCC(GFIRSTBV(theGrid)), VD_SCALCMP( x ), 0.0 );
 
   return (0);
 #else
