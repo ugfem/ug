@@ -1776,7 +1776,7 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
   }
 
         #ifdef __THREEDIM__
-  /* update edge of new created elements */
+  /* update element count of edges for new created elements */
   if (newness == XFER_NEW)
     /* increment elem counter in edges */
     for (i=0; i<EDGES_OF_ELEM(pe); i++)
