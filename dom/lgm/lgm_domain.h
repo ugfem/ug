@@ -672,7 +672,10 @@ typedef struct Domain3d
 /* function declarations													*/
 /*																			*/
 /****************************************************************************/
-
+#if (LGM_DIM==2)
+LGM_LINE                                *FirstLine                      (LGM_DOMAIN *theDomain);
+LGM_LINE                                *NextLine                       (LGM_DOMAIN *theDomain);
+#endif
 #if (LGM_DIM==3)
 LGM_SURFACE                     *FirstSurface           (LGM_DOMAIN *theDomain);
 LGM_SURFACE                     *NextSurface            (LGM_DOMAIN *theDomain);
