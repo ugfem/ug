@@ -12962,7 +12962,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 
         if (me != master) {
 
-          PRINTDEBUG(graph,0,("%d: connecting to master=%d\n",me,master));
+          PRINTDEBUG(graph,1,("%d: connecting to master=%d\n",me,master));
           gpipe = ConnSync(master, 123);
         }
 
@@ -12978,7 +12978,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
                                         #ifdef ModelP
       }
       else {
-        PRINTDEBUG(graph,0,("%d: sending plotbuffer=%d\n",me,n));
+        PRINTDEBUG(graph,1,("%d: sending plotbuffer=%d\n",me,n));
         SendSync(gpipe,(void *)WOP_DrawingObject,DO_SIZE);
         n++;
       }
@@ -12992,15 +12992,15 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 
         for (i=1,p=master+1; i<procs; i++,p=(p+1)%procs) {
           if (!CONTEXT(p)) {
-            PRINTDEBUG(graph,0,("%d: NOT connecting to slave=%d\n",me,p));
+            PRINTDEBUG(graph,1,("%d: NOT connecting to slave=%d\n",me,p));
             continue;
           }
-          PRINTDEBUG(graph,0,("%d: connecting to slave=%d\n",me,p));
+          PRINTDEBUG(graph,1,("%d: connecting to slave=%d\n",me,p));
           gpipe = ConnSync(p, 123);
           while (1) {
             char endtoken;
 
-            PRINTDEBUG(graph,0,("%d: receiving plotbuffer=%d\n",n));
+            PRINTDEBUG(graph,1,("%d: receiving plotbuffer=%d\n",n));
             RecvSync(gpipe,(void *)WOP_DrawingObject,DO_SIZE);
             n++;
             endtoken = DO_2c(WOP_DrawingObject);
@@ -13008,16 +13008,16 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 
             if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject)) return (1);
           }
-          PRINTDEBUG(graph,0,("%d: disconnecting gpipe to slave=%d\n",me,n));
+          PRINTDEBUG(graph,1,("%d: disconnecting gpipe to slave=%d\n",me,n));
           DiscSync(gpipe);
         }
       }
       else {
         /* send ready token */
         DO_2c(WOP_DrawingObject) = DO_END_GPIPE;
-        PRINTDEBUG(graph,0,("%d: sending stoptoken in plotbuffer=%d\n",me,n));
+        PRINTDEBUG(graph,1,("%d: sending stoptoken in plotbuffer=%d\n",me,n));
         SendSync(gpipe,(void *)WOP_DrawingObject,DO_SIZE);
-        PRINTDEBUG(graph,0,("%d: disconnecting gpipe to master=%d\n",me,master));
+        PRINTDEBUG(graph,1,("%d: disconnecting gpipe to master=%d\n",me,master));
         DiscSync(gpipe);
       }
     }
@@ -13055,7 +13055,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 
         if (me != master) {
 
-          PRINTDEBUG(graph,0,("%d: connecting to master=%d\n",me,master));
+          PRINTDEBUG(graph,1,("%d: connecting to master=%d\n",me,master));
           gpipe = ConnSync(master, 123);
         }
 
@@ -13071,7 +13071,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
                                         #ifdef ModelP
       }
       else {
-        PRINTDEBUG(graph,0,("%d: sending plotbuffer=%d\n",me,n));
+        PRINTDEBUG(graph,1,("%d: sending plotbuffer=%d\n",me,n));
         SendSync(gpipe,(void *)WOP_DrawingObject,DO_SIZE);
         n++;
       }
@@ -13086,15 +13086,15 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 
         for (i=1,p=master+1; i<procs; i++,p=(p+1)%procs) {
           if (!CONTEXT(p)) {
-            PRINTDEBUG(graph,0,("%d: NOT connecting to slave=%d\n",me,p));
+            PRINTDEBUG(graph,1,("%d: NOT connecting to slave=%d\n",me,p));
             continue;
           }
-          PRINTDEBUG(graph,0,("%d: connecting to slave=%d\n",me,p));
+          PRINTDEBUG(graph,1,("%d: connecting to slave=%d\n",me,p));
           gpipe = ConnSync(p, 123);
           while (1) {
             char endtoken;
 
-            PRINTDEBUG(graph,0,("%d: receiving plotbuffer=%d\n",n));
+            PRINTDEBUG(graph,1,("%d: receiving plotbuffer=%d\n",n));
             RecvSync(gpipe,(void *)WOP_DrawingObject,DO_SIZE);
             n++;
             endtoken = DO_2c(WOP_DrawingObject);
@@ -13102,16 +13102,16 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 
             if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject)) return (1);
           }
-          PRINTDEBUG(graph,0,("%d: disconnecting gpipe to slave=%d\n",me,n));
+          PRINTDEBUG(graph,1,("%d: disconnecting gpipe to slave=%d\n",me,n));
           DiscSync(gpipe);
         }
       }
       else {
         /* send ready token */
         DO_2c(WOP_DrawingObject) = DO_END_GPIPE;
-        PRINTDEBUG(graph,0,("%d: sending stoptoken in plotbuffer=%d\n",me,n));
+        PRINTDEBUG(graph,1,("%d: sending stoptoken in plotbuffer=%d\n",me,n));
         SendSync(gpipe,(void *)WOP_DrawingObject,DO_SIZE);
-        PRINTDEBUG(graph,0,("%d: disconnecting gpipe to master=%d\n",me,master));
+        PRINTDEBUG(graph,1,("%d: disconnecting gpipe to master=%d\n",me,master));
         DiscSync(gpipe);
       }
     }
