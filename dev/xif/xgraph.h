@@ -66,6 +66,12 @@ typedef struct graphwindow {
   int window_width;
   int window_height;
 
+  /* pixmap size and depth */
+  Pixmap pixmap;
+  int pixmap_depth;
+  int pixmap_width;
+  int pixmap_height;
+
   /* windows current point */
   int x;
   int y;

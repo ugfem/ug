@@ -98,7 +98,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /* global data needed everywhere */
 #ifdef USE_XAW
 XtAppContext context;   /* application context */
-Widget applShell,
+Widget toplevel,
        ugshell;
 XawTextPosition CursorPos,
                 CutBeginPos = 0;
@@ -520,13 +520,13 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
   argv[0] = buf;
 
         #ifdef USE_XAW
-  applShell = XtAppInitialize (&context, "Xug3",
-                               (XrmOptionDescRec*)NULL, 0,
-                               argcp, argv,
-                               (String*)NULL,
-                               (Arg*)NULL, 0);
+  toplevel = XtAppInitialize (&context, "Xug3",
+                              (XrmOptionDescRec*)NULL, 0,
+                              argcp, argv,
+                              (String*)NULL,
+                              (Arg*)NULL, 0);
 
-  display = XtDisplay (applShell);
+  display = XtDisplay(toplevel);
         #else /* USE_XAW */
   display=XOpenDisplay(NULL);
         #endif /* USE_XAW */

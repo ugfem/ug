@@ -122,7 +122,7 @@
 /****************************************************************************/
 
 #ifdef USE_XAW
-extern Widget applShell;
+extern Widget toplevel;
 extern Widget ugshell;
 extern XtAppContext context;
 #endif /* USE_XAW */
@@ -328,7 +328,7 @@ int ShellOpen (ShellWindow *sh)
   XtSetArg(args[n], XtNforeground,BlackPixel(display,screen_num)); n++;
 
   ugshell = XtCreateManagedWidget ("ugshell", asciiTextWidgetClass,
-                                   applShell, args, n);
+                                   toplevel, args, n);
 
   /* modify Translation table */
   NewTranslations = XtParseTranslationTable
@@ -348,7 +348,7 @@ int ShellOpen (ShellWindow *sh)
   XtAppAddActions(context,actions,XtNumber(actions));
 
   /* realize widget tree */
-  XtRealizeWidget (applShell);
+  XtRealizeWidget (toplevel);
 
   sh->wid = ugshell;
   sh->win = XtWindow(ugshell);
