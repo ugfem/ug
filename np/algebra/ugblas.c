@@ -779,10 +779,6 @@ static INT l_vector_average (GRID *g, const VECDATA_DESC *x)
 				if (m > 0)
 				    VVALUE(v,vc) *= 1.0 / (m+1.0);
 			}
-
-		for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v)) 
-		  UserWriteF("v %f m %d\n",VVALUE(v,vc),DDD_InfoNCopies(PARHDR(v)));
-
 	}
 	else 
 	    for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v)) {
@@ -856,8 +852,6 @@ INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 
     ConsVector = (VECDATA_DESC *)x;
 
-	PrintVector(GRID_ON_LEVEL(mg,tl),x,3,3);
-
 	m = 0;
 	for (tp=0; tp<NVECTYPES; tp++)
 		m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
@@ -870,13 +864,9 @@ INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 			DDD_IFAExchange(BorderVectorSymmIF, level, m * sizeof(DOUBLE),
 							Gather_VectorComp, Scatter_VectorComp);
 
-	PrintVector(GRID_ON_LEVEL(mg,tl),x,3,3);
-
 	for (level=fl; level<=tl; level++) 
 	    if (l_vector_average(GRID_ON_LEVEL(mg,level),x) != NUM_OK)
 		    REP_ERR_RETURN(NUM_ERROR);
-
-	PrintVector(GRID_ON_LEVEL(mg,tl),x,3,3);
 
 	return (NUM_OK);
 }
