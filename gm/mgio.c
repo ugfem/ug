@@ -38,8 +38,6 @@
 
 #endif
 
-#undef __MGIO_CONTRO_OUT__
-
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -724,10 +722,6 @@ int     Write_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
   int i,j,k,m,s;
   MGIO_RR_RULE *prr;
 
-#ifdef  __MGIO_CONTRO_OUT__
-  if ((*Write_string)("##### rr rules #####")) return (1);
-#endif
-
   m = 2+MGIO_MAX_NEW_CORNERS+2*MGIO_MAX_NEW_CORNERS+MGIO_MAX_SONS_OF_ELEM*(1+MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_SIDES_OF_ELEM+1);
   prr = rr_rules;
   for (i=0; i<n; i++)
@@ -819,10 +813,6 @@ int Read_CG_General (MGIO_CG_GENERAL *cg_general)
 int Write_CG_General (MGIO_CG_GENERAL *cg_general)
 {
 
-#ifdef  __MGIO_CONTRO_OUT__
-  if ((*Write_string)("##### cg general #####")) return (1);
-#endif
-
   intList[0] = cg_general->nPoint;
   intList[1] = cg_general->nBndPoint;
   intList[2] = cg_general->nInnerPoint;
@@ -908,10 +898,6 @@ int Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
 {
   int i,j,s;
 
-#ifdef  __MGIO_CONTRO_OUT__
-  if ((*Write_string)("##### cg points #####")) return (1);
-#endif
-
   s=0;
   for(i=0; i<n; i++)
   {
@@ -961,7 +947,7 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
   {
     if ((*Read_mint)(1,intList)) return (1);
     pe->ge = intList[0];
-    m=lge[pe->ge].nCorner+lge[pe->ge].nSide+2;
+    m=lge[pe->ge].nCorner+lge[pe->ge].nSide+1;
     if ((*Read_mint)(m,intList)) return (1);
     s=0;
     for (j=0; j<lge[pe->ge].nCorner; j++)
@@ -969,18 +955,22 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
     for (j=0; j<lge[pe->ge].nSide; j++)
       pe->nbid[j] = intList[s++];
     pe->refrule = intList[s++];
-    pe->nmoved = intList[s++];
-    if (pe->nmoved>0)
+    if (pe->refrule>-1)
     {
-      if ((*Read_mint)(pe->nmoved,intList)) return (1);
-      s=0;
-      for (j=0; j<pe->nmoved; j++)
-        pe->mvcorner[j].id = intList[s++];
-      if ((*Read_mdouble)(MGIO_DIM*pe->nmoved,doubleList)) return (1);
-      s=0;
-      for (j=0; j<pe->nmoved; j++)
-        for (k=0; k<MGIO_DIM; k++)
-          pe->mvcorner[j].position[k] = doubleList[s++];
+      if ((*Read_mint)(1,intList)) return (1);
+      pe->nmoved = intList[0];
+      if (pe->nmoved>0)
+      {
+        if ((*Read_mint)(pe->nmoved,intList)) return (1);
+        s=0;
+        for (j=0; j<pe->nmoved; j++)
+          pe->mvcorner[j].id = intList[s++];
+        if ((*Read_mdouble)(MGIO_DIM*pe->nmoved,doubleList)) return (1);
+        s=0;
+        for (j=0; j<pe->nmoved; j++)
+          for (k=0; k<MGIO_DIM; k++)
+            pe->mvcorner[j].position[k] = doubleList[s++];
+      }
     }
     pe++;
   }
@@ -1013,12 +1003,8 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 
 int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 {
-  int i,j,k,m,s;
+  int i,j,k,m,s,t;
   MGIO_CG_ELEMENT *pe;
-
-#ifdef  __MGIO_CONTRO_OUT__
-  if ((*Write_string)("##### cg elements #####")) return (1);
-#endif
 
   m = 1+MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_SIDES_OF_ELEM+2+MGIO_MAX_NEW_CORNERS;
   pe = cg_element;
@@ -1031,17 +1017,22 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
     for (j=0; j<lge[pe->ge].nSide; j++)
       intList[s++] = pe->nbid[j];
     intList[s++] = pe->refrule;
-    intList[s++] = pe->nmoved;
-    for (j=0; j<pe->nmoved; j++)
-      intList[s++] = pe->mvcorner[j].id;
+    if (pe->refrule>-1)
+    {
+      intList[s++] = pe->nmoved;
+      for (j=0; j<pe->nmoved; j++)
+        intList[s++] = pe->mvcorner[j].id;
+      t=0;
+      for (j=0; j<pe->nmoved; j++)
+        for (k=0; k<MGIO_DIM; k++)
+          doubleList[t++] = pe->mvcorner[j].position[k];
+    }
+
     MGIO_CHECK_INTSIZE(s);
     if ((*Write_mint)(s,intList)) return (1);
-    s=0;
-    for (j=0; j<pe->nmoved; j++)
-      for (k=0; k<MGIO_DIM; k++)
-        doubleList[s++] = pe->mvcorner[j].position[k];
-    MGIO_CHECK_DOUBLESIZE(s);
-    if (s>0) if ((*Write_mdouble)(s,doubleList)) return (1);
+    MGIO_CHECK_DOUBLESIZE(t);
+    if (t>0) if ((*Write_mdouble)(t,doubleList)) return (1);
+
     pe++;
   }
 

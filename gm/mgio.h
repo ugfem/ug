@@ -205,8 +205,9 @@ struct mgio_cg_element {
   int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of corners							*/
   int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
   int refrule;                                                                  /* id of refinement rule					*/
-  int nmoved;                                                                           /* n new corners moved						*/
-  struct mgio_movedcorner mvcorner[MGIO_MAX_NEW_CORNERS];       /* array of moved corners					*/
+  int newcornerid[MGIO_MAX_NEW_CORNERS];                /* ids of corners on next level				*/
+  int nmoved;                                                                           /* nmoved new corners moved					*/
+  struct mgio_movedcorner mvcorner[MGIO_MAX_NEW_CORNERS];       /* array of moved corners		*/
 };
 
 struct mgio_he_element {
