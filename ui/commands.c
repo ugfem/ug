@@ -4377,7 +4377,7 @@ static INT DeleteElementCommand (INT argc, char **argv)
 
    DESCRIPTION:
    This command refines the multigrid according to the refinement marks
-   set in the elements, calling the function 'RefineMultiGrid'.
+   set in the elements, calling the function 'AdaptMultiGrid'.
 
    'refine [$g] [$a] [$h] [$x] [$d <vector plot proc>]'
 
@@ -4503,7 +4503,7 @@ static INT RefineCommand (INT argc, char **argv)
   SetAlignmentPtr (theMG, theElemEvalDirection);
         #endif
 
-  rv = RefineMultiGrid(theMG,mode,seq,mgtest);
+  rv = AdaptMultiGrid(theMG,mode,seq,mgtest);
 
   InvalidatePicturesOfMG(theMG);
   InvalidateUgWindowsOfMG(theMG);
@@ -4893,7 +4893,6 @@ static INT MarkCommand (INT argc, char **argv)
       if (theElement==NULL)
       {
         PrintErrorMessageF('W',"mark","element with ID %ld could not be found, nothing marked",id);
-        return (CMDERRORCODE);
       }
 
       if (EstimateHere(theElement))
