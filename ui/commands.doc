@@ -1,5 +1,5 @@
 /***********************************************************/
-/** \page commands Commands - User commands for the ug shell script
+/** \page commands Commands - User commands for the UG shell script
 	
 	Commands are used on the shell or in a script to perform ug functions
     and to pass parameters, e. g. 
@@ -16,7 +16,7 @@
 	'checkhelp' prints a list of all commands where the help entry is 
     missing.
 
-\section How to Create User Commands
+\section howto How to Create User Commands
 	To include a new command to `ug3` one has to provide a 
 	Command funcion. The Command function has a fixed form.
 	The fixed form in detail is described in the example below. 
@@ -37,7 +37,7 @@
 	As guided example the embedding of the 'MakeStructCommand' is 
 	demonstrated step by step.	
 	
-.vb
+\verbatim
 static INT MakeStructCommand (INT argc, char **argv)
 {	
     INT res;
@@ -58,21 +58,21 @@ static INT MakeStructCommand (INT argc, char **argv)
     else
         return (OKCODE);
 }
-.ve
+\endverbatim
 	
 	INITIALIZATION:
 	All commands have to be built with 'CreateCommand'. All ug commands 
     are inizialized in 'commands.c', the problem specific commands 
     can be created in the corresponding 'pclib'.
 	
-.vb
+\verbatim
 INT InitCommands ()
 {
     if (CreateCommand("ms",MakeStructCommand)==NULL) return (__LINE__);
     ...
     return(0);
 }
-.ve
+\endverbatim
 
  	In this case, the name of the command is `ms`.
 
@@ -192,7 +192,7 @@ INT InitCommands ()
 .  \<var> - the contents of var will be appended to the name
 
  \section Example
-.vb
+\verbatim
 frame="
     cmfn film step;
     openwindow 0 0 820 420 $d meta $n \@film;
@@ -213,7 +213,7 @@ repeat {
     \@frame;
     if (step==steps) break;
 }
-.ve
+\endverbatim
 
    This runs 'mysolve' 100 times and 
    creates metafiles 'film.0000', 'film.0001', 'film.0002', ... 'film.0100'.
@@ -480,18 +480,18 @@ repeat {
 .   $%f   - flush the file buffer
 
   \section Example
-.vb
+\verbatim
 x = exp(1);
 protoOn exp.proto;
 protocol $%i the value of exp(1) is $%t \@x;
 protocol $%n you can use $s in protocol;
 protoOff 
-.ve
+\endverbatim
 
 Then, the file 'exp.proto' will consist of the string
-.vb
+\verbatim
 "the value of exp(1) is\t2.7182818\nyou can use $s in protocol"
-.ve
+\endverbatim
    
    \section Keywords
    protocol, file, output, format
@@ -764,11 +764,11 @@ Then, the file 'exp.proto' will consist of the string
    'average {$ns \<scalar plot proc> [$s \<sym>] | $nv \<vector plot proc> [$s \<sym>]}*'
 
  \section Example
-.vb
+\verbatim
 average $nv uwTrans $s sol $nv unTrans $s sol;
 savedata air3d $t xdr $n \@step $T \@TIME $a sol $b uwTrans $c unTrans;
 freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
-.ve
+\endverbatim
 
 
  \section Keywords
@@ -792,11 +792,11 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
    'freeaverage {$ns \<scalar plot proc> [$s \<sym>] | $nv \<vector plot proc> [$s \<sym>]}*'
 
  \section Example
-.vb
+\verbatim
 average $nv uwTrans $s sol $nv unTrans $s sol;
 savedata air3d $t xdr $n \@step $T \@TIME $a sol $b uwTrans $c unTrans;
 freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
-.ve
+\endverbatim
 
 
  \section Keywords
@@ -1710,9 +1710,11 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
    'cadconvert $\<filename> $h\<heapsize>'
 
-.  $ \<filename>  - filename = name of CADOutputfile ("*.ans", ANSYS/PREP7-Format) 
-.  $f \<format>   - one of the enroled formats matching with \<problem>
-.  $h \<heapsize> - the heapsize to be allocated
+   <ul>
+     <li> $ \<filename>  - filename = name of CADOutputfile ("*.ans", ANSYS/PREP7-Format) </li>
+     <li> $f \<format>   - one of the enroled formats matching with \<problem> </li>
+     <li> $h \<heapsize> - the heapsize to be allocated </li>
+   </ul>
 
 
  \section Example
@@ -2014,15 +2016,15 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 \section Syntax
 
  \subsection  In 2D
-.vb
+\verbatim
 setview [$i] [$t \<x> \<y>] [$x  \<x> \<y>]
-.ve
+\endverbatim
 
  \subsection  In 3D
-.vb
+\verbatim
 setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< | =]
               {$C | $R | {$P \<x> \<y> \<z> $N \<x> \<y> \<z>}}
-.ve
+\endverbatim
 
 .n                         all coordinates have to be given in physical coordinates
 
@@ -2264,7 +2266,7 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
    See the help for one of the abobe plotobjects for further help.
 
  \section Example
-.vb
+\verbatim
 openpicture $n p0 $s 5 5  300 300;
 setplotobject Grid $b 1 $n 0 $e 0 $c 1 $w a;
 setview;
@@ -2277,7 +2279,7 @@ zoom 0.75;
 
 openpicture $n p2 $s 5 615 300 300;
 setplotobject EScalar $e v_sol $d 1;
-.ve
+\endverbatim
    
  \section Keywords
    graphics, plot, window, picture, view, plotobject
@@ -2672,7 +2674,7 @@ setplotobject EScalar $e v_sol $d 1;
 	removes symbols from that list.
 	
 	EXAMPLE:
-.vb
+\verbatim
 	newformat ns $V n3: vt 5 $M n3xn3: mt 2;
 	
 	open grid $f ns $h 1000000;
@@ -2689,7 +2691,7 @@ setplotobject EScalar $e v_sol $d 1;
 	# print sol vector data and MAT matrix data of vector with index 12
 	setpf ns $V- rhs $M- LU;
 	vmlist $i 12 $m $d;
-.ve
+\endverbatim
    
  \section Keywords
    multigrid, numerics, userdata, vecdata, matdata, print, show, display
@@ -3314,7 +3316,7 @@ setplotobject EScalar $e v_sol $d 1;
  \section Example
    Use the array commands to realize a consecutively numbering of logfiles 
    across several runs of the programm.
-.vb
+\verbatim
        loar $n filenumber;			# try to load a previously stored array
        if ( :cmdstatus != "0" )
        {                            # no previous array -> the first run
@@ -3333,7 +3335,7 @@ setplotobject EScalar $e v_sol $d 1;
        set logname log\@fnr;
 
        logon \@logname;
-.ve
+\endverbatim
    
  \section Keywords
    values, array, manipulate, load, store, data, indexed
@@ -3360,10 +3362,10 @@ setplotobject EScalar $e v_sol $d 1;
 .  \<n_i>  - extension in the i.th dimension, 1 \<= i \<= 'AR_NVAR_MAX'
 
  \section Example
-.vb
+\verbatim
    # Create a 3x7 (2-dimensional) array
    crar $n example_array $3$7;
-.ve
+\endverbatim
    
  \section Keywords
    values, array, manipulate, load, store, data, indexed
@@ -3461,10 +3463,10 @@ setplotobject EScalar $e v_sol $d 1;
    range causes an error. Give coordinate for all allocated dimensions.
 
  \section Example
-.vb
+\verbatim
    # perform array[2][5] := 1.0
    wrar $n example_array $2$5 $v 1.0;
-.ve
+\endverbatim
    
  \section Keywords
    values, array, manipulate, load, store, data, indexed
@@ -3493,12 +3495,12 @@ setplotobject EScalar $e v_sol $d 1;
    range causes an error. Give coordinate for all allocated dimensions.
 
  \section Example
-.vb
+\verbatim
    # retrieve array[2][5]
    rear $n example_array $2$5;
    # and display the value
    set :ARRAY_VALUE;
-.ve
+\endverbatim
    
  \section Keywords
    values, array, manipulate, load, store, data, indexed
