@@ -1,6 +1,6 @@
 /****************************************************************************/
 /*																			*/
-/* File:      famg_approx.C													*/
+/* File:      famg_approxNew.C													*/
 /*																			*/
 /* Purpose:   famg parents selection process                                */
 /*																			*/
@@ -15,7 +15,7 @@
 /* History:   November 97 begin, Stuttgart									*/
 /*			  August 98 integration into ug (Christian Wrobel)				*/
 /*																			*/
-/* Remarks:																	*/
+/* Remarks:																*/
 /*																			*/
 /****************************************************************************/
 
@@ -67,7 +67,6 @@ int FAMGGrid::ConstructLocalMatrix(const FAMGVectorEntry &veci, struct FAMGMatri
     double *mat, *matT, *vec, *vecT;
 
     const double omega = FAMGGetParameter()->Getomegar();
-    const double omegaC = FAMGGetParameter()->Getomegal();
 
     // set local IDs
     graph.GetNode(veci.GetIndex())->SetLocalId(0);
