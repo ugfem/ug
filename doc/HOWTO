@@ -131,6 +131,13 @@ yet. Use it on your own risk!
    There can be conflicts with the default names of components (cf.
    DEFAULT_NAMES in this file), but they should not lead to problems.
 
+6. Note that there are only sizeof (INT) * 8 skip flags in UG. This make no
+   problem for the sequential computations. For the parallel computations,
+   there are two possibilities: a) All your skip flags are equal, or
+   b) Define the macro _XXL_SKIPFLAGS_ in 'ug/np/algebra/ugblas.c'. In the
+   latter case, the skip flag with index (sizeof (INT) * 8 - 1) is used
+   for all components with indices >= (sizeof (INT) * 8 - 1).
+
 
 UG/ug/ui:
 --------
