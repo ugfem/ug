@@ -3203,8 +3203,8 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
     }
   }
 
-  SetStringValue(":gg:nElem",(double) theGrid->nElem);
-  SetStringValue(":gg:nNode",(double) theGrid->nNode);
+  SetStringValue(":gg:nElem",(double) NT(theGrid));
+  SetStringValue(":gg:nNode",(double) NN(theGrid));
 
   if (display>0) UserWrite("\n");
 
