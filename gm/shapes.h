@@ -34,9 +34,8 @@ $Header$
 #ifndef __SHAPES__
 #define __SHAPES__
 
-#ifndef __GM__
 #include "gm.h"
-#endif
+#include "evm.h"
 
 /****************************************************************************/
 /*																			*/
