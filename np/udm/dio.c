@@ -253,10 +253,9 @@ int     Read_DT_General (DIO_GENERAL *dio_general)
 
   /* now special mode */
   if (Bio_Read_string(dio_general->version)) return (1);
-  if (strcmp(dio_general->version,"DATA_IO_1.5")==0)
+  if (strcmp(dio_general->version,"DATA_IO_1.6")==0)
   {
-    strcpy(dio_general->version,"DATA_IO_1.6");
-    strcpy(dio_general->ident,"---");
+    strcpy(dio_general->version,"DATA_IO_1.7");
   }
   else
   {

@@ -45,7 +45,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define DIO_VERSION                                     "DATA_IO_1.6"
+#define DIO_VERSION                                     "DATA_IO_1.7"
 
 #define __DTIO_USE_IN_UG__
 #define DIO_DIM                 3
@@ -73,6 +73,7 @@
 
 #define DIO_VDMAX                                               10
 #define DIO_NAMELEN                                             128
+#define DIO_IDENTLEN                                    4096
 
 /* types of vector data */
 #define DIO_SCALAR                                              0
@@ -97,7 +98,7 @@ struct dio_general {
   double dt;                                                    /* previous time-step                                   */
   double ndt;                                                   /* next time-step (suggestion)                  */
   int magic_cookie;                                     /* identification with mg-file			*/
-  char ident[DIO_NAMELEN];         /* identification string from input file*/
+  char ident[DIO_IDENTLEN];         /* identification string from input file*/
 
   /* information about data stored */
   int nVD;                                                                              /* nb of vector data				*/
