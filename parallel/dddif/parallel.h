@@ -173,6 +173,12 @@ enum HandlerSets
 
 #define __EXCHANGE_CONNECTIONS__
 
+#else
+
+/* dummy defintions */
+/* this macro was needed only once in ugio.c. Please remove if obselete. */
+#define SETVXPRIO(e,p)
+
 #endif /* ModelP */
 
 
