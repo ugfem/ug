@@ -2342,7 +2342,7 @@ INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE
   DOUBLE aa[4],bb[2],cc[2];
   DOUBLE lam[3], dist, min_dist, new_lam[3], A, B, m, point[3], dist_vec[3],pp0[3], pp1[3], new_global[3];
 
-  min = MAXDOUBLE;
+  min = MAXINT;
   min_dist = MAXDOUBLE;
   dist_i = -1;
   mi = -1;
@@ -4854,6 +4854,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
               assert(0);
           }
         }
+    ASSERT(max==LGM_BNDP_N(theBndP));
   }
   else                                                  /* projeziere auf die Surface */
   {
@@ -4910,14 +4911,17 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
 {
   LGM_BNDP *theBndP;
-  INT size;
 
-  if (aBndP == NULL)
-    return(0);
+  if (aBndP == NULL) return(0);
 
   theBndP = BNDP2LGM(aBndP);
-  size = sizeof(LGM_BNDP) + (LGM_BNDP_N(theBndP)-1)*sizeof(struct lgm_bndp_surf);
-  return (PutFreelistMemory(Heap,theBndP,size));
+  ASSERT(LGM_BNDP_NLINE(theBndP)<=1);
+  if (LGM_BNDP_NLINE(theBndP)>0)
+    PutFreelistMemory(Heap,theBndP->Line,sizeof(LGM_BNDP_PLINE));
+  ASSERT(LGM_BNDP_N(theBndP)>0);
+  PutFreelistMemory(Heap,theBndP->Surf,LGM_BNDP_N(theBndP)*sizeof(LGM_BNDP_PSURFACE));
+
+  return (PutFreelistMemory(Heap,theBndP,sizeof(LGM_BNDP)));
 }
 
 /* domain interface function: for description see domain.h */
@@ -5117,6 +5121,8 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
   DOUBLE loc0[2],loc1[2],loc2[2],loc[2];
   DOUBLE global0[3],global1[3],global2[3],global[3], nv[3];
 
+  ASSERT(0);
+
   if (local[0]<=0.0 || local[0]>=1.0)
     return (NULL);
   if (local[1]<=0.0 || local[1]>=1.0)
@@ -5143,10 +5149,11 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
   V_DIM_CLEAR(nv);
   GetLocalKoord(theSurface,global,loc, nv);
 
-  theBndP = (LGM_BNDP *)GetFreelistMemory(Heap,sizeof(LGM_BNDP));
+  /*theBndP = (LGM_BNDP *)GetFreelistMemory(Heap,sizeof(LGM_BNDP));*/
+  theBndP = (LGM_BNDP *)malloc(sizeof(LGM_BNDP));
   LGM_BNDP_N(theBndP) = 1;
   LGM_BNDP_SURFACE(theBndP,0) = theSurface;
-  LGM_BNDP_LOCAL(theBndP,0)[0] = loc[0];
+  LGM_BNDP_LOCAL(theBndP,0)[0] = loc[0];                /* TODO */
   LGM_BNDP_LOCAL(theBndP,0)[1] = loc[1];
 
   return((BNDP *)theBndP);
