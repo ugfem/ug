@@ -133,6 +133,8 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 	const FAMGSparseVector *svcg  = cgdefect.GetSparseVectorPtr();
 	const FAMGSparseVector *svr  = transfer.Get_sr();
 
+	cgdefect = 0.0;
+
 	FAMGVectorIter fiter(GetGridVector());
 	while( fiter(fvec) )
 #ifdef ModelP
