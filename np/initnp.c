@@ -45,6 +45,7 @@
 #include "formats.h"
 #include "dio.h"
 #include "newton.h"
+#include "enewton.h"
 #include "ts.h"
 #include "bdf.h"
 #include "ew.h"
@@ -54,7 +55,9 @@
 #include "nliter.h"
 #include "order.h"
 #include "tstep.h"
+#include "pstep.h"
 #include "project.h"
+#include "reinit.h"
 
 #include "initnp.h"
 #include "numproc.h"
@@ -116,6 +119,10 @@ INT InitNumerics ()
     return (err);
   }
   if ((err=InitNewtonSolver())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+  if ((err=InitENewtonSolver())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }
@@ -222,6 +229,18 @@ INT InitNumerics ()
 
   /* init time-step numprocs */
   if ((err=InitTStep())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* init parameter-step numprocs */
+  if ((err=InitPStep())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* init reinit numprocs */
+  if ((err=InitReinit())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }
