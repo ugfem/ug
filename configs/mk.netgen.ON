@@ -4,6 +4,5 @@ NETGEN_CFLAGS = -DNETGENT
 NETGEN_LFLAGS = $(UGROOT)/lib/libnetgen.a
 
 # if netgen is needed, we also need C++ linkage.
-# TODO this is a temporary solution, won't work with >1 C++ packages!
 UG_LINK = $(ARCH_C++)
 

@@ -3,7 +3,3 @@
 NETGEN_CFLAGS = -DNETGENF
 NETGEN_LFLAGS =
 
-# if netgen is not needed, we also don't need C++ linkage.
-# TODO this is a temporary solution, won't work with >1 C++ packages!
-UG_LINK = $(ARCH_LINK)
-
