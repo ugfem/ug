@@ -1242,7 +1242,7 @@ static INT SetCommand (INT argc, char **argv)
     return(__LINE__);
   }
 
-  res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %4096[\t\n -~]")),name,buffer);
+  res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %16384[\t\n -~]")),name,buffer);
         #else
   res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %255[ -~]")),name,buffer);
         #endif /* ModelP */
@@ -6353,13 +6353,20 @@ static INT CheckCommand (INT argc, char **argv)
       err++;
       UserWrite(" grid bad");
     }
-    else if ( (checkconn) && (CheckConnections(theGrid)!=GM_OK))
-    {
-      err++;
-      UserWrite(" connections bad");
-    }
     else
       UserWrite("ok");
+
+    if (checkconn)
+    {
+      UserWrite(", algebra ");
+      if (CheckAlgebra(theGrid)!=GM_OK)
+      {
+        err++;
+        UserWrite(" algebra bad");
+      }
+      else
+        UserWrite(" ok");
+    }
 
     UserWrite("] ");
   }
