@@ -16,7 +16,11 @@ OBJECTS =
 LCFLAGS = -I../include
 
 all : $(OBJECTS) $(DOM_MODULE) Makefile.dom
-	$(ARCH_AR) $(ARCH_ARFLAGS) ../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS) 
+
+
+# if no objects are defined, some archivers will abort with error.
+#	$(ARCH_AR) $(ARCH_ARFLAGS) ../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS) 
+
 
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
@@ -41,7 +45,8 @@ clean:
 
 #preliminary: only std (should be configurable in another way)
 extract:
-	$(ARCH_AR) $(ARCH_EXFLAGS) ../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS)
+	# if no objects are defined, some archivers will abort with error.
+	#$(ARCH_AR) $(ARCH_EXFLAGS) ../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS)
 	cd std;  make -f Makefile.std extract; cd ..;
 
 xmc: extract all
