@@ -32,6 +32,7 @@
 #include <assert.h>
 
 #include "defaults.h"
+#include "domain.h"
 #include "lgm_domain.h"
 #include "lgm_transfer.h"
 #include "heaps.h"
@@ -43,24 +44,17 @@
 #include "compiler.h"
 #include "fileopen.h"
 
-/*#include "gm.h"*/
-
 #include "heaps.h"
 
 #include "misc.h"
 
-#include "ugm.h"
-
 #include "devices.h"
 #include "cmdline.h"
 /*#include "problem.h"*/
-/*#include "switch.h"*/
 
 /*#include "readcadfile.h"*/
 #include "heaps.h"
 /* #include "construct.h" */
-
-/* ? #include "enrol.h" ?? */
 
 
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
@@ -7888,6 +7882,14 @@ int LGM_ANSYS_ReadPoints (LGM_POINT_INFO *lgm_point_info)
 
 	return(0);
 }
+
+
+INT LGM_ANSYS_ReadMesh (HEAP *theHeap, MESH *theMesh)
+{
+    return (1);
+}
+
+
 
 
 
