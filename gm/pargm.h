@@ -299,6 +299,11 @@ enum Priorities
 
 #define GetAllSons(e,s)         GetSons(e,s)
 
+#define MASTER(p)       1
+#define GHOST(p)        0
+#define SETEPRIO(p,i)   ;
+
+
 #endif
 
 
