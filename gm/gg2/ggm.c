@@ -103,6 +103,12 @@ INT SetFlagsfortemporaryGGObjects(INT IflObject,INT FlObject,INT FcObject)
   FlObj  = FlObject;
   FcObj  = FcObject;
 
+        #ifdef ModelP
+  IflObj = MAOBJ;
+  FlObj  = MAOBJ;
+  FcObj  = MAOBJ;
+    #endif
+
   return(0);
 
 }
