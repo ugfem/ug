@@ -48,8 +48,8 @@
 #define MAX_INT_POINTS 9
 
 #define Q_NIP(p)          ((p)->nip)
-#define Q_LOCAL(p,i)      (((p)->local)[i])
-#define Q_WEIGHT(p,i)     (((p)->weight)[i])
+#define Q_LOCAL(p,i)      (((const DOUBLE_VECTOR_3D *)((p)->local))[i])
+#define Q_WEIGHT(p,i)     (((const DOUBLE *)((p)->weight))[i])
 
 #define G_LOCAL(p)        ((p)->local)
 #define G_GLOBAL(p)       ((p)->global)
@@ -62,7 +62,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-typedef struct {
+typedef const struct {
   INT nip;
   const DOUBLE_VECTOR_3D *local;        /* array[nip] for local coordinates */
   const DOUBLE *weight;                         /* array[nip] for weights */
