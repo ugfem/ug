@@ -2426,9 +2426,9 @@ void CommunicateEClasses (MULTIGRID *theMG)
 #if (MGIO_DEBUG>0)
 static INT CheckCGKeys (INT ne, ELEMENT** eid_e, MGIO_CG_ELEMENT *cg_elem)
 {
-  INT i,j,key;
+  INT i,j,k,key;
   MGIO_CG_ELEMENT *cge;
-  ELEMENT *theElement;
+  ELEMENT *theElement, *nb_element, *nb_back;
 
   for (i=0; i<ne; i++)
   {
@@ -2469,12 +2469,59 @@ static INT CheckCGKeys (INT ne, ELEMENT** eid_e, MGIO_CG_ELEMENT *cg_elem)
 
     for (j=0; j<SIDES_OF_ELEM(theElement); j++)
     {
-      key = KeyForObject((KEY_OBJECT *)NBELEM(theElement,j));
+      nb_element = NBELEM(theElement,j);
+      key = KeyForObject((KEY_OBJECT *)nb_element);
       if (key!=-1 && key!=cge->neighborkey[j])
       {
-        if (NBELEM(theElement,j)!=NULL)
+        if ( EGHOST(theElement) && EGHOST(nb_element) )
+        {                               /* if both elements are ghosts, then the neighbor-pointers are
+                                           optionally; but if there is one pointer then also the
+                                           other must exist.
+                                           if at save time none of this pointers have existed,
+                                           at load time they may exist and it is ok.
+                                         */
+
+          if ( cge->neighborkey[j] == -1 )
+          {                                     /* at save time there were no neighbor pointers
+                                                   ( i.e. cge->neighborkey[j] == -1 ), but now.
+                                                   ensure that the pointers are symmetric.
+                                                 */
+
+            /* search for the neighbor pointer from nb_element
+               back to theElement */
+            nb_back = NULL;
+            for (k=0; k<SIDES_OF_ELEM(nb_element); k++)
+              if (NBELEM(nb_element,k)==theElement)
+              {
+                nb_back = theElement;
+                break;
+              }
+
+            if ( nb_back != theElement )
+            {
+              printf(PFMT " IO_CG: neighbor relation unsymmetric, element: " EID_FMTX "has neighbor[%d]: " EID_FMTX " but not vice versa (this pointer has not been in the coarse grid at save time, but it's ok)\n",
+                     me,EID_PRTX(theElement),j,EID_PRTX(nb_element));
+              assert(0);
+            }
+            else
+            {                                           /* else the neighbor pointer relation is symmetric and hence ok */
+              continue;
+            }
+          }
+          /* else it is an error because there are 2 valid (!=-1) but
+             different keys.
+           */
+        }
+        /* else it is an error because at least one of the 2 considered elements
+           is a master and masters must always have pointers to its
+           existing neighbors. Thus especially it can't be, that at
+           save time cge->neighborkey[j]==-1 has held and a key difference
+           is in this case always an error.
+         */
+
+        if (nb_element!=NULL)
           printf(PFMT " IO_CG: neighbor relation, element: " EID_FMTX ", neighbor[%d]: " EID_FMTX " :exp.key %d does not match\n",
-                 me,EID_PRTX(theElement),j,EID_PRTX(NBELEM(theElement,j)),cge->neighborkey[j]);
+                 me,EID_PRTX(theElement),j,EID_PRTX(nb_element),cge->neighborkey[j]);
         else
           printf(PFMT " IO_CG: neighbor relation, element: " EID_FMTX ", neighbor[%d]: --- :exp.key %d does not match\n",
                  me,EID_PRTX(theElement),j,cge->neighborkey[j]);
