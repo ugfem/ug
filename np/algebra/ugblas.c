@@ -1091,10 +1091,13 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
 			}
 		}
 	}
-	for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) 
+	for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
+	    mtype = MTP(vtype,MDESTTYPE(m));
+	    Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
 		for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
 				 *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++) 
 			MVALUE(m,Comp[i]) = 0.0;
+	  }
 
 
 	return(0);
