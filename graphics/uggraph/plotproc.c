@@ -75,6 +75,7 @@
 static INT NodeValueComp;
 static INT ElementValueComp;
 static INT NodeVectorComp;
+static INT ElementVectorComp;
 static INT GradientFlag;
 
 /* RCS string */
@@ -248,6 +249,34 @@ static void NodeVector (const ELEMENT *theElement, const DOUBLE **theCorners,
   return;
 }
 
+static INT PreProcessElementVector (const char *name, MULTIGRID *theMG)
+{
+  VECDATA_DESC *theVD;
+
+  theVD = GetVecDataDescByName(theMG,(char *)name);
+
+  if (theVD == NULL) {
+    PrintErrorMessage('E',"PreProcessNodeValue","cannot find symbol");
+    return (1);
+  }
+
+  if (VD_ncmps_in_otype(theVD,ELEMVEC)<DIM)
+    return (1);
+
+  ElementVectorComp = VD_cmp_of_otype(theVD,ELEMVEC,0);
+
+  return (0);
+}
+
+static void ElementVector (const ELEMENT *theElement, const DOUBLE **theCorners,
+                           DOUBLE *LocalCoord, DOUBLE *values)
+{
+  int i;
+
+  for (i = 0; i < DIM; i++)
+    values[i] = VVALUE(EVECTOR(theElement), ElementVectorComp+i);
+}
+
 /**************************************************************************/
 /*
    RefMarks - plot funtion for refinement marks
@@ -341,6 +370,7 @@ INT InitPlotProc ()
   if (CreateElementValueEvalProc("evalue",PreProcessElementValue,ElementValue) == NULL) return(1);
   if (CreateElementValueEvalProc("level",NULL,LevelValue) == NULL) return(1);
   if (CreateElementVectorEvalProc("nvector",PreProcessNodeVector,NodeVector,DIM) == NULL) return(1);
+  if (CreateElementVectorEvalProc("evector",PreProcessElementVector,ElementVector,DIM) == NULL) return(1);
   if (CreateElementValueEvalProc("refmarks",PreProcessRefMarks,RefMarks) == NULL) return(1);
   if (CreateElementValueEvalProc("procid",NULL,ProcID) == NULL) return(1);
   if (CreateElementValueEvalProc("subdomid",NULL,SubDomID) == NULL) return(1);
