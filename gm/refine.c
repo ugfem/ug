@@ -248,7 +248,7 @@ typedef NODE *ELEMENTCONTEXT[MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM];
 /****************************************************************************/
 
 /* information used by the estimator and refine*/ 
-REFINEINFO refine_info = {0}; /* init step to 0 */
+REFINEINFO refine_info;
 
 /****************************************************************************/
 /*																			*/
@@ -846,10 +846,10 @@ static INT CorrectTetrahedronSidePattern (ELEMENT *theElement, INT i, ELEMENT *t
 	if (TAG(theElement)==PYRAMID || TAG(theElement)==PRISM) 
 		return(GM_OK);
 
-	for (i=EDGES_OF_ELEM(theElement)-1; i>=0; i--)
+	for (k=EDGES_OF_ELEM(theElement)-1; k>=0; k--)
 	{
-		theEdge=GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
-						CORNER_OF_EDGE_PTR(theElement,i,1));
+		theEdge=GetEdge(CORNER_OF_EDGE_PTR(theElement,k,0),
+						CORNER_OF_EDGE_PTR(theElement,k,1));
 		ASSERT(theEdge!=NULL);
 
 		theEdgePattern = (theEdgePattern<<1) | PATTERN(theEdge);
@@ -2383,69 +2383,6 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 
 	return(GM_OK);
 }
-
-#ifdef UNCOMMENT
-static int NodeContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementContext) 
-{
-	NODE *theNode, **MidNodes, **CenterNode;
-	EDGE *theEdge;
-	INT i,Corner0, Corner1;
-	#ifdef __THREEDIM__
-	NODE **SideNodes;
-	NODE *theNode0, *theNode1;
-	#endif
-
-	/* reset context */
-	for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)  
-		theElementContext[i] = NULL;
-
-    /* is element to refine */
-	if (!IS_REFINED(theElement)) return(GM_OK);
-
-	/* get corner nodes */
-	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-	{
-		theNode = CORNER(theElement,i);
-		theElementContext[i] = SONNODE(theNode);
-	}
-
-	/* check for midpoint nodes */
-	MidNodes = theElementContext+CORNERS_OF_ELEM(theElement);
-	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
-	{
-		Corner0 = CORNER_OF_EDGE(theElement,i,0);
-		Corner1 = CORNER_OF_EDGE(theElement,i,1);
-		
-		theEdge = GetEdge(CORNER(theElement,Corner0),
-						  CORNER(theElement,Corner1));
-		ASSERT(theEdge != NULL);
-
-		MidNodes[i] = MIDNODE(theEdge);
-	}
-
-	#ifdef __THREEDIM__
-	SideNodes = theElementContext+CORNERS_OF_ELEM(theElement)+
-					EDGES_OF_ELEM(theElement);
-	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-	{
-#ifdef TET_RULESET
-		/* no side nodes for triangular sides yet */
-		if (CORNERS_OF_SIDE(theElement,i) == 3) continue;
-#endif
-		/* check for side node */
-		SideNodes[i] = GetSideNode(theElement,i);
-	}
-	#endif
-	
-	/* check for center node */
-	CenterNode = MidNodes+CENTER_NODE_INDEX(theElement);
-/*	TODO: to implement
-	CenterNode[0] = GetCenterNode(theGrid,theElement); */
-	assert(0);
-
-	return(GM_OK);
-}
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -4813,10 +4750,12 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 /*
 	
 	/* set info for refinement prediction */
+	SetRefineInfo(theMG);
+	/* evaluate prediction */
+	if (mgtest)
+		UserWriteF("refinetest: predicted_new0=%9.0f predicted_new1=%9.0f"
 			PREDNEW0(REFINEINFO(theMG)), PREDNEW1(REFINEINFO(theMG)),
 			PREDMAX(REFINEINFO(theMG)));
-		SetRefineInfo(theMG);
-
 
 		/* refinement possible or not */
 		if (TestRefineInfo(theMG) != GM_OK)
@@ -5033,5 +4972,5 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 	RESETMGSTATUS(theMG);
 
 CheckMultiGrid(theMG);
-	SETREFINESTEP(REFINEINFO(theMG),REFINESTEP(REFINEINFO(theMG))++);
+*/
 }
