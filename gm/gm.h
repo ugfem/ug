@@ -2589,6 +2589,8 @@ INT             DeleteElement                   (MULTIGRID *theMG, ELEMENT *theE
 /* refinement */
 INT             EstimateHere                    (ELEMENT *theElement);
 INT         MarkForRefinement       (ELEMENT *theElement, INT rule, void *data);
+INT         MarkForRefinementX      (ELEMENT *theElement,
+                                     INT fl, INT tl, INT rule, void *data);
 INT             GetRefinementMark               (ELEMENT *theElement, INT *rule, void *data);
 INT             GetRefinementMarkType   (ELEMENT *theElement);
 INT             RefineMultiGrid                 (MULTIGRID *theMG, INT flag, INT seq, INT mgtest);
