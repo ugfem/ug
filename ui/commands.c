@@ -60,6 +60,10 @@
 /* devices module */
 #include "devices.h"
 
+/* grid generatormodule */
+#include "ggm.h"
+#include "ggmain.h"
+
 /* grid manager module */
 #include "gm.h"
 #include "evm.h"
@@ -5447,6 +5451,237 @@ static INT QualityCommand (INT argc, char **argv)
 
   return(OKCODE);
 }
+
+/****************************************************************************/
+/*D
+   bnodes - generate boundary nodes
+
+   DESCRIPTION:
+   This command generates boundary nodes.
+   It reads the environ variables ':gg:RelRasterSize', ':gg:h_global',
+   ':gg:searchconst', ':gg:angle', ':gg:epsi'.
+
+   'bnodes'
+
+   SEE ALSO:
+   'makegrid'
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  BnodesCommand                                                             */
+/*                                                                          */
+/* Purpose:   allocate a new document record with bndry node generation		*/
+/*                                                                          */
+/* Input:     INT argc: number of arguments (incl. its own name             */
+/*            char **argv: array of strings giving the arguments            */
+/*                                                                          */
+/* Output:    INT return code see header file                               */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __TWODIM__
+
+static INT BnodesCommand  (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  DOUBLE RelRasterSize,h_global;
+  INT i,msizecoeffno;
+
+  /* get current multigrid */
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"bnodes","no open multigrid");
+    return (CMDERRORCODE);
+  }
+  /* check options (no option up to now) */
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintHelp("bnodes",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
+
+  /* read RelRasterSize */
+  if(GetStringDOUBLEInRange(":gg:RelRasterSize",
+                            10e-10, 10e+10, &RelRasterSize) != 0)
+    return(PARAMERRORCODE);
+
+  h_global = 1.0;
+  if(GetStringINTInRange   (":gg:meshsizecoeffno",
+                            -1     , 100    , &msizecoeffno) != 0)
+    msizecoeffno = -1;
+
+  if (msizecoeffno == -1)
+    if(GetStringDOUBLEInRange(":gg:h_global",
+                              10e-10, 10e+10, &h_global) != 0)
+      return(PARAMERRORCODE);
+
+  if (GenerateBnodes(theMG,RelRasterSize,h_global,msizecoeffno) != 0)
+  {
+    PrintErrorMessage('E',"bnodes","execution failed");
+    return (CMDERRORCODE);
+  }
+
+  return (OKCODE);
+}
+
+#endif
+
+/****************************************************************************/
+/*D
+   makegrid - generate grid
+
+   DESCRIPTION:
+   This command generates the grid. First, the command bnodes must be called.
+   It reads the environ variables ':gg:RelRasterSize', ':gg:h_global',
+   ':gg:searchconst', ':gg:angle', ':gg:epsi'.
+
+   'makegrid ${W|w|K|k} [$E]'
+
+   .  ${W|w|K|k} - W resp. K are using the accellerator,
+   W resp. w use the angle criterion,
+   K resp. k use the edge criterion
+   .  $E - grid generator tries to create eqilateral triangles
+
+   .n default: isosceles triangles
+
+   EXAMPLE:
+   .vb
+   :gg:RelRasterSize	= 0.005;
+   :gg:h_global		= 0.005;
+   :gg:searchconst		= 0.002;
+   :gg:angle			= 15;
+   :gg:epsi			= 0.000625;
+
+   bnodes;
+   makegrid $E $W;
+   .ve
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  MakeGridCommand                                                   */
+/*                                                                          */
+/* Purpose:   create the advancing frontlists and generates the grid		*/
+/*                                                                          */
+/* Input:     INT argc: number of arguments (incl. its own name             */
+/*            char **argv: array of strings giving the arguments            */
+/*                                                                          */
+/* Output:    INT return code see header file                               */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __TWODIM__
+
+static INT MakeGridCommand  (INT argc, char **argv)
+{
+  long ElemID;
+  MULTIGRID *theMG;
+  DOUBLE angle;
+  INT i;
+  GG_ARG args;
+  GG_PARAM params;
+
+  /* get current multigrid */
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"makegrid","no open multigrid");
+    return (CMDERRORCODE);
+  }
+
+  /* check options */
+  args.doanimate = args.doupdate = args.dostep = args.equilateral = args.plotfront
+                                                                      = args.printelem = args.doedge = args.doangle = args.doEdge = args.doAngle =  NO;
+  ElemID = -1;
+
+
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'a' :
+      args.doanimate = YES; break;
+
+    case 'u' :
+      args.doupdate = YES; break;
+
+    case 's' :
+      args.dostep = YES; break;
+
+    case 'f' :
+      args.plotfront = YES; break;
+
+    case 'p' :
+      args.printelem = YES; break;
+
+    case 'E' :
+      args.equilateral = YES; break;
+
+    case 'e' :
+      if (sscanf(argv[i],"e %ld",&ElemID)!=1)
+      {
+        PrintHelp("makegrid",HELPITEM," (could not read <element id>)");
+        return (PARAMERRORCODE);
+      }
+      break;
+
+    case 'k' :
+      args.doedge = YES;
+      break;
+
+    case 'w' :
+      args.doangle = YES;
+      break;
+
+    case 'K' :
+      args.doEdge = YES;
+      break;
+
+    case 'W' :
+      args.doAngle = YES;
+      break;
+
+    default :
+      sprintf(buffer," (unknown option '%s')",argv[i]);
+      PrintHelp("makegrid",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
+
+  if(GetStringDOUBLEInRange(":gg:angle", 10e-10, 10e+10, &angle) != 0)
+    return(PARAMERRORCODE);
+  if(GetStringDOUBLEInRange(":gg:epsi", 10e-10, 10e+10, &(params.epsi))!= 0)
+    return(PARAMERRORCODE);
+  if(GetStringDOUBLEInRange(":gg:searchconst", 10e-10, 10e+10,
+                            &(params.searchconst)) != 0)
+    return(PARAMERRORCODE);
+  if(GetStringINTInRange   (":gg:meshsizecoeffno",
+                            -1      , 100   , &(params.msizecoeffno)) != 0)
+    params.msizecoeffno = -1;
+
+  if (params.msizecoeffno == -1)
+    if(GetStringDOUBLEInRange(":gg:h_global",
+                              10e-10, 10e+10, &(params.h_global)) != 0)
+      return(PARAMERRORCODE);
+
+  params.CheckCos = cos(angle*PI/180.0);
+
+  if (GenerateGrid(theMG, &args, &params) != 0)
+  {
+    PrintErrorMessage('E',"makegrid","execution failed");
+    return (CMDERRORCODE);
+  }
+
+  return (OKCODE);
+}
+
+#endif
+
 /****************************************************************************/
 /*D
    screensize - print the size of the monitor screen in pixels
@@ -8679,6 +8914,8 @@ INT InitCommands ()
   if (CreateCommand("slist",                      SelectionListCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("vmlist",             VMListCommand                                   )==NULL) return (__LINE__);
   if (CreateCommand("quality",            QualityCommand                                  )==NULL) return (__LINE__);
+  if (CreateCommand("bnodes",                 BnodesCommand                                       )==NULL) return (__LINE__);
+  if (CreateCommand("makegrid",           MakeGridCommand                                 )==NULL) return (__LINE__);
 
   /* commands for window and picture management */
   if (CreateCommand("screensize",         ScreenSizeCommand                               )==NULL) return (__LINE__);
