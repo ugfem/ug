@@ -2029,6 +2029,184 @@ static INT TSConstruct (NP_BASE *theNP)
   return(0);
 }
 
+
+static INT BHRInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_TS *np;
+  INT i;
+
+  np = (NP_TS *) theNP;
+
+  np->vt = ReadArgvVecTemplateSub(MGFORMAT(theNP->mg),
+                                  "u",argc,argv,&(np->u_sub));
+  if (np->vt == NULL) {
+    UserWriteF("TSInit: no subtemplate u found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->vt = ReadArgvVecTemplateSub(MGFORMAT(theNP->mg),
+                                  "p",argc,argv,&(np->p_sub));
+  if (np->vt == NULL) {
+    UserWriteF("TSInit: no subtemplate p found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
+                                  "uu",argc,argv,&(np->uu_sub));
+  if (np->mt == NULL) {
+    UserWriteF("TSInit: no subtemplate uu found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
+                                  "up",argc,argv,&(np->up_sub));
+  if (np->mt == NULL) {
+    UserWriteF("TSInit: no subtemplate up found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
+                                  "pu",argc,argv,&(np->pu_sub));
+  if (np->mt == NULL) {
+    UserWriteF("TSInit: no subtemplate pu found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
+                                  "pp",argc,argv,&(np->pp_sub));
+  if (np->mt == NULL) {
+    UserWriteF("TSInit: no subtemplate pp found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->u_iter = (NP_ITER *)
+               ReadArgvNumProc(theNP->mg,"UI",ITER_CLASS_NAME,argc,argv);
+  if (np->u_iter == NULL) {
+    UserWriteF("TSInit: no iter UI found\n");
+    return(NP_NOT_ACTIVE);
+  }
+
+  np->t = NULL;
+  return (NPIterInit(&np->iter,argc,argv));
+}
+
+static INT BHRDisplay (NP_BASE *theNP)
+{
+  NP_TS *np;
+
+  np = (NP_TS *) theNP;
+
+  NPIterDisplay(&np->iter);
+  UserWrite("configuration parameters:\n");
+  if (np->u_iter != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"UI",ENVITEM_NAME(np->u_iter));
+  return (0);
+}
+
+static INT BHRPreProcess  (NP_ITER *theNP, INT level,
+                           VECDATA_DESC *x, VECDATA_DESC *b,
+                           MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+  NP_TS *np;
+  GRID *theGrid;
+
+  np = (NP_TS *) theNP;
+  theGrid = NP_GRID(theNP,level);
+  if (VDsubDescFromVT(x,np->vt,np->u_sub,&np->ux))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(x,np->vt,np->p_sub,&np->px))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(b,np->vt,np->u_sub,&np->ub))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(b,np->vt,np->p_sub,&np->pb))
+    NP_RETURN(1,result[0]);
+  if (MDsubDescFromMT(A,np->mt,np->uu_sub,&np->uuA))
+    NP_RETURN(1,result[0]);
+  if (MDsubDescFromMT(A,np->mt,np->up_sub,&np->upA))
+    NP_RETURN(1,result[0]);
+  if (MDsubDescFromMT(A,np->mt,np->pu_sub,&np->puA))
+    NP_RETURN(1,result[0]);
+  if (MDsubDescFromMT(A,np->mt,np->pp_sub,&np->ppA))
+    NP_RETURN(1,result[0]);
+  *baselevel = level;
+
+  if (np->u_iter->PreProcess != NULL)
+    if ((*np->u_iter->PreProcess)
+          (np->u_iter,level,np->ux,np->ub,np->puA,baselevel,result))
+      REP_ERR_RETURN(1);
+
+  return (0);
+}
+
+static INT BHRSmoother (NP_ITER *theNP, INT level,
+                        VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                        INT *result)
+{
+  NP_TS *np;
+  MULTIGRID *theMG;
+  VEC_SCALAR defect2reach,defect;
+  DOUBLE rho,lambda;
+  INT i,PrintID;
+  char text[DISPLAY_WIDTH+4],text1[DISPLAY_WIDTH];
+
+  np = (NP_TS *) theNP;
+  theMG = NP_MG(theNP);
+
+  /* get storage for extra temp */
+  if (VDsubDescFromVT(x,np->vt,np->u_sub,&np->ux))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(x,np->vt,np->p_sub,&np->px))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theMG,level,level,np->ux,&np->t))
+    NP_RETURN(1,result[0]);
+  if (dcopy(theMG,level,level,ALL_VECTORS,np->t,np->ub) != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if ((*np->u_iter->Iter)(np->u_iter,level,np->px,np->t,np->upA,result))
+    REP_ERR_RETURN(1);
+
+  if (dcopy(theMG,level,level,ALL_VECTORS,np->t,np->pb) != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if ((*np->u_iter->Iter)(np->u_iter,level,np->ux,np->t,np->puA,result))
+    REP_ERR_RETURN(1);
+
+  /* damp */
+  if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,x,np->damp)!= NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  /* update defect */
+  if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,x)!= NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  FreeVD(NP_MG(theNP),level,level,np->t);
+
+  return (0);
+}
+
+static INT BHRPostProcess (NP_ITER *theNP, INT level,
+                           VECDATA_DESC *x, VECDATA_DESC *b,
+                           MATDATA_DESC *A, INT *result)
+{
+  NP_TS *np;
+
+  np = (NP_TS *) theNP;
+  if (np->u_iter->PostProcess != NULL)
+    if ((*np->u_iter->PostProcess)
+          (np->u_iter,level,x,b,A,result))
+      REP_ERR_RETURN(1);
+
+  return(0);
+}
+
+static INT BHRConstruct (NP_BASE *theNP)
+{
+  NP_ITER *np;
+
+  theNP->Init = BHRInit;
+  theNP->Display = BHRDisplay;
+  theNP->Execute = NPIterExecute;
+
+  np = (NP_ITER *) theNP;
+  np->PreProcess = BHRPreProcess;
+  np->Iter = BHRSmoother;
+  np->PostProcess = BHRPostProcess;
+
+  return(0);
+}
+
 /****************************************************************************/
 /*D
    sor - numproc for SOR smoother
@@ -6102,6 +6280,8 @@ INT InitIter ()
   if (CreateClass(ITER_CLASS_NAME ".pgs",sizeof(NP_PGS),PGSConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ts",sizeof(NP_TS),TSConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".bhr",sizeof(NP_TS),BHRConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".sor",sizeof(NP_SMOOTHER),
                   SORConstruct))
