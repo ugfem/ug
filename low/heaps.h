@@ -64,7 +64,7 @@
 #define FROM_TOP          1              /* allocate from top of stack      */
 #define FROM_BOTTOM       2              /* allocate from bottom of stack   */
 
-#define MAXFREEOBJECTS  128                  /* number of free object pionters  */
+#define MAXFREEOBJECTS  128                     /* number of free object pionters  */
 
 /* by convention, tempory memory on a simple heap should allocated FROM_TOP */
 /* the Freelist memory is allocated FROM_BOTTOM                             */
@@ -131,6 +131,9 @@ typedef struct {
   MEM bottomStack[MARK_STACK_SIZE];
   INT SizeOfFreeObjects[MAXFREEOBJECTS];
   void *freeObjects[MAXFREEOBJECTS];
+        #ifdef Debug
+  INT objcount[MAXFREEOBJECTS];
+        #endif
 } HEAP;
 
 /****************************************************************************/
