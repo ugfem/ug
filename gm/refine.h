@@ -135,9 +135,10 @@ enum REFINE_CE {
 #define SETMARKCLASS(p,n)                               CW_WRITE(p,MARKCLASS_CE,n)
 
 /* macros for refineinfo */
+#define RINFO_MAX                                               100
 #define REFINEINFO(mg)                                  refine_info
 #define REFINESTEP(r)                                   r.step
-#define SETREFINESTEP(r,s)                              r.step = s
+#define SETREFINESTEP(r,s)                              r.step = (s%RINFO_MAX)
 #define MARKCOUNT(r)                                    r.markcount[r.step]
 #define SETMARKCOUNT(r,n)                               r.markcount[r.step] = n
 #define PREDNEW0(r)                                             r.predicted_new[r.step][0]
@@ -211,11 +212,12 @@ enum REFINE_CE {
 
 typedef struct refineinfo
 {
-  INT step;                                       /* count of calls to RefineMultiGrid      */
-  float markcount[100];                   /* count of currently marked elements     */
-  float predicted_new[100][3];        /* count of elements, would be created    */
-  float real[100];                                /* count of elements before refinement    */
-  float predicted_max[100];               /* count of elements which can be created */
+  INT step;                                               /* count of calls to RefineMultiGrid  */
+  float markcount[RINFO_MAX];             /* count of currently marked elements */
+  float predicted_new[RINFO_MAX][3];
+  /* count of elements, would be created */
+  float real[RINFO_MAX];                      /* count of elements before refinement */
+  float predicted_max[RINFO_MAX];        /* count of elements which can be created */
 } REFINEINFO;
 
 typedef INT (*Get_Sons_of_ElementSideProcPtr)(ELEMENT *theElement, INT side, INT *Sons_of_Side,ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons);
