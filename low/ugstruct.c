@@ -859,6 +859,50 @@ INT DeleteStruct (char *name)
 
 /****************************************************************************/
 /*D
+   RemoveStringVar - remove a string variable fro the environment tree
+
+   SYNOPSIS:
+   INT RemoveStringVar (ENVDIR *homeDir, STRVAR *theVar)
+
+   PARAMETERS:
+   .  homeDir - theVar is located in this directory
+   .  theVar - string var to remove
+
+   DESCRIPTION:
+   This function removes a string variable from the environment tree.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 homeDir==NULL
+   .n     2 theVar==NULL
+   .n     3 theVar is a directory
+   D*/
+/****************************************************************************/
+
+INT RemoveStringVar (ENVDIR *homeDir, STRVAR *theVar)
+{
+  if (homeDir==NULL) return (1);
+  if (theVar==NULL) return (2);
+  if (theVar->v.type%2!=0) return (3);
+
+  /* remove item from double linked list */
+  if (theVar->v.previous==NULL)
+    homeDir->down = theVar->v.next;
+  else
+    theVar->v.previous->v.next = theVar->v.next;
+
+  if (theVar->v.next!=NULL)
+    theVar->v.next->v.previous = theVar->v.previous;
+
+  /* deallocate memory */
+  FreeEnvMemory(theVar);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    DeleteVariable	- Delete an existing string variable
 
    SYNOPSIS:
@@ -918,7 +962,7 @@ INT DeleteVariable (char *name)
    too short for the string, it is removed and newly created.
 
    SEE ALSO:
-   FindStructDir, FindStringVar, RemoveEnvItem, MakeStructItem
+   FindStructDir, FindStringVar, RemoveStringVar, MakeStructItem
 
    RETURN VALUE:
    INT
@@ -941,7 +985,7 @@ INT SetStringVar (const char *name, char *sval)
 
   if ((myVar!=NULL) && (myVar->length<=strlen(sval)))
   {
-    RemoveEnvItem((ENVITEM *) myVar);
+    RemoveStringVar(theDir, myVar);
     myVar=NULL;
   }
 
@@ -978,7 +1022,7 @@ INT SetStringVar (const char *name, char *sval)
    by '\0'.
 
    SEE ALSO:
-   SetStringVar, FindStructDir, FindStringVar, RemoveEnvItem, MakeStructItem
+   SetStringVar, FindStructDir, FindStringVar, RemoveStringVar, MakeStructItem
 
    RETURN VALUE:
    INT
@@ -1001,13 +1045,13 @@ INT SetnStringVar (const char *name, const char *sval, int n)
 
   if ((myVar!=NULL) && (myVar->length<=n))
   {
-    RemoveEnvItem((ENVITEM *) myVar);
+    RemoveStringVar(theDir, myVar);
     myVar=NULL;
   }
 
   if (myVar==NULL)
   {
-    myVar = (STRVAR *) MakeStructItem(theDir,lastname,theStringVarID,strlen(sval));
+    myVar = (STRVAR *) MakeStructItem(theDir,lastname,theStringVarID,n);
     if (myVar==NULL)
       return(2);                        /* could not allocate variable */
   }
