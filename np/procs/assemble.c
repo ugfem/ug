@@ -61,6 +61,7 @@
 #define PA_ASS(pa,i)            ((pa)->ass[i])
 #define PA_DT(pa)                       ((pa)->dt)
 #define PA_DT_OLD(pa)           ((pa)->dt_old)
+#define PA_VD_o(pa)                     ((pa)->old)
 
 /****************************************************************************/
 /*																			*/
@@ -90,13 +91,14 @@ typedef struct
   /* additional data */
   VEC_TEMPLATE *vt;                                     /* vector template for part decomp		*/
   VECDATA_DESC *gridvel;                        /* velocity of moving grid (iff)		*/
+  VECDATA_DESC *old;                                    /* old solution							*/
 
   INT nass;                                                     /* number of part assembling numprocs	*/
   INT sub[MAX_PA];                                      /* sub vector of vt for part decomp		*/
   NP_T_PARTASS *ass[MAX_PA];                    /* pointers to part assembling numprocs	*/
 
   DOUBLE dt;                                                    /* time step							*/
-  DOUBLE dt_old;                                        /* old time step							*/
+  DOUBLE dt_old;                                        /* old time step						*/
 
 } NP_PA_T;
 
@@ -135,6 +137,7 @@ typedef struct
 
 static DOUBLE *mat,*sol,*def;
 static INT *vecskip;
+static char pp_action_str[64];
 
 REP_ERR_FILE;
 
@@ -1503,6 +1506,8 @@ static INT NLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
         REP_ERR_RETURN (NP_NOT_ACTIVE);
       }
       PA_SUB(pa,nass) = j;
+      NPPNL_t(PA_ASS(pa,nass)) = mvt;
+      NPPNL_s(PA_ASS(pa,nass)) = j;
       nass++;
       break;
     }
@@ -1536,7 +1541,7 @@ static INT NLPartAssDisplay (NP_BASE *theNP)
   for (i=0; i<PA_NASS(pa); i++)
   {
     sprintf(text,"ass%d",i);
-    UserWriteF(DISPLAY_NP_FORMAT_SSS,text,ENVITEM_NAME(PA_ASS(pa,i)),SUBV_NAME(VT_SUB(PA_VT(pa),PA_SUB(pa,i))));
+    UserWriteF(DISPLAY_NP_FORMAT_SSS,text,strrchr(ENVITEM_NAME(PA_ASS(pa,i)),'.')+1,SUBV_NAME(VT_SUB(PA_VT(pa),PA_SUB(pa,i))));
   }
 
   return (0);
@@ -1751,6 +1756,8 @@ static INT TPartAssInit (NP_BASE *theNP, INT argc, char **argv)
         REP_ERR_RETURN (NP_NOT_ACTIVE);
       }
       PA_SUB(pa,nass) = j;
+      NPPT_t(PA_ASS(pa,nass)) = mvt;
+      NPPT_s(PA_ASS(pa,nass)) = j;
       nass++;
       break;
     }
@@ -1784,7 +1791,7 @@ static INT TPartAssDisplay (NP_BASE *theNP)
   for (i=0; i<PA_NASS(pa); i++)
   {
     sprintf(text,"ass%d",i);
-    UserWriteF(DISPLAY_NP_FORMAT_SSS,text,ENVITEM_NAME(PA_ASS(pa,i)),SUBV_NAME(VT_SUB(PA_VT(pa),PA_SUB(pa,i))));
+    UserWriteF(DISPLAY_NP_FORMAT_SSS,text,strrchr(ENVITEM_NAME(PA_ASS(pa,i)),'.')+1,SUBV_NAME(VT_SUB(PA_VT(pa),PA_SUB(pa,i))));
   }
 
   return (0);
@@ -1800,6 +1807,7 @@ static INT TPartAssPreProcess (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE t_p1, 
 
   PA_DT(pa)               = t_p1-t_0;
   PA_DT_OLD(pa)   = t_0-t_m1;
+  PA_VD_o(pa)             = u_0;
 
   /* call prep routines */
   for (i=0; i<PA_NASS(pa); i++)
@@ -1867,7 +1875,7 @@ static INT TPartAssSolution (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE time, VE
   /* call assemble solution routines */
   for (i=0; i<PA_NASS(pa); i++)
   {
-    if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),0.,1.,time,PA_DT(pa),PA_DT_OLD(pa),u,NULL,NULL,NULL,PA_VD_g(pa),NULL))
+    if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),0.,1.,time,PA_DT(pa),PA_DT_OLD(pa),u,NULL,PA_VD_o(pa),NULL,PA_VD_g(pa),NULL))
       REP_ERR_RETURN(1);
     if (NPPT_ASSSOL(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
       REP_ERR_RETURN(1);
@@ -1891,7 +1899,7 @@ static INT TPartAssDefect (NP_T_ASSEMBLE *ass, INT fl, INT tl,
   /* call assemble defect routines */
   for (i=0; i<PA_NASS(pa); i++)
   {
-    if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),s_a,s_m,time,PA_DT(pa),PA_DT_OLD(pa),s,r,NULL,NULL,PA_VD_g(pa),A))
+    if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),s_a,s_m,time,PA_DT(pa),PA_DT_OLD(pa),s,r,PA_VD_o(pa),NULL,PA_VD_g(pa),A))
       REP_ERR_RETURN(1);
     PP_ACTION(pp) = PARTASS_DEFECT;
     if (NPPT_ASS(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
@@ -1914,12 +1922,31 @@ static INT TPartAssMatrix (NP_T_ASSEMBLE *ass, INT fl, INT tl, DOUBLE time, DOUB
   /* call assemble matrix routines */
   for (i=0; i<PA_NASS(pa); i++)
   {
-    if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),s_a,1.,time,PA_DT(pa),PA_DT_OLD(pa),s,d,NULL,v,PA_VD_g(pa),A))
+    if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),s_a,1.,time,PA_DT(pa),PA_DT_OLD(pa),s,d,PA_VD_o(pa),v,PA_VD_g(pa),A))
       REP_ERR_RETURN(1);
-    PP_ACTION(pp) = PARTASS_DEFECT;
+    PP_ACTION(pp) = PARTASS_MATRIX;
     if (NPPT_ASS(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
       REP_ERR_RETURN(1);
   }
+
+  return(0);
+}
+
+static INT TPartAssFinal (NP_T_ASSEMBLE *ass, INT fl, INT tl, INT *res)
+{
+  NP_PA_T *pa = (NP_PA_T*) ass;
+  PARTASS_PARAMS papa,*pp=&papa;
+  INT i;
+
+  /* call post routines */
+  for (i=0; i<PA_NASS(pa); i++)
+    if (NPPT_FINAL(PA_ASS(pa,i))!=NULL)
+    {
+      if (SetPartassParams(pp,PA_VT(pa),PA_SUB(pa,i),1.,0.,0.,PA_DT(pa),PA_DT_OLD(pa),NULL,NULL,PA_VD_o(pa),NULL,PA_VD_g(pa),NULL))
+        REP_ERR_RETURN(1);
+      if (NPPT_FINAL(PA_ASS(pa,i)) (PA_ASS(pa,i),fl,tl,pp,res))
+        REP_ERR_RETURN(1);
+    }
 
   return(0);
 }
@@ -1938,6 +1965,7 @@ static INT TPartAssConstruct (NP_BASE *theNP)
   NPAT_ASSSOL(np)         = TPartAssSolution;
   NPAT_ASSDEF(np)         = TPartAssDefect;
   NPAT_ASSMAT(np)         = TPartAssMatrix;
+  NPAT_FINAL(np)          = TPartAssFinal;
 
   return(0);
 }
@@ -2118,6 +2146,44 @@ INT NPTPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
 {
   /* never executable */
   REP_ERR_RETURN(1);
+}
+
+/****************************************************************************/
+/*D
+   name - short_description
+
+   SYNOPSIS:
+
+   PARAMETERS:
+   .  par - meaning
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+
+   SEE ALSO:
+   D*/
+/****************************************************************************/
+
+const char *pp_action2str (const PARTASS_PARAMS *pp)
+{
+  pp_action_str[0] = '\0';
+
+  if (PP_ACTION(pp)==0)
+  {
+    strcat(pp_action_str,"none");
+    return (pp_action_str);
+  }
+  if (READ_FLAG(PP_ACTION(pp),PARTASS_DEFECT))
+    strcat(pp_action_str,"def");
+  if (READ_FLAG(PP_ACTION(pp),PARTASS_MATRIX))
+  {
+    if (strlen(pp_action_str)>0)
+      strcat(pp_action_str,"+");
+    strcat(pp_action_str,"mat");
+  }
+
+  return (pp_action_str);
 }
 
 /****************************************************************************/

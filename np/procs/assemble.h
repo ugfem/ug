@@ -105,6 +105,7 @@ enum PP_ACTIONS {
 #define NPAT_ASSSOL(p)                  (((NP_T_ASSEMBLE*)(p))->TAssembleSolution)
 #define NPAT_ASSMAT(p)                  (((NP_T_ASSEMBLE*)(p))->TAssembleMatrix)
 #define NPAT_POST(p)                    (((NP_T_ASSEMBLE*)(p))->TAssemblePostProcess)
+#define NPAT_FINAL(p)                   (((NP_T_ASSEMBLE*)(p))->TAssembleFinal)
 
 /* PARTASS_PARAMS access macros */
 #define PP_ACTION(p)                    ((p)->action)
@@ -155,6 +156,7 @@ enum PP_ACTIONS {
 #define NPPT_ASSSOL(p)                  (((NP_T_PARTASS*)(p))->TPassembleSolution)
 #define NPPT_ASS(p)                     (((NP_T_PARTASS*)(p))->TPassemble)
 #define NPPT_POST(p)                    (((NP_T_PARTASS*)(p))->TPpostprocess)
+#define NPPT_FINAL(p)                   (((NP_T_PARTASS*)(p))->TPassembleFinal)
 
 /****************************************************************************/
 /*																			*/
@@ -615,6 +617,13 @@ struct np_t_partass {
     PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
     INT *                                                               /* result							*/
     );
+  INT (*TPassembleFinal)                                /* call after finishing integration*/
+    (struct np_t_partass *,                             /* pointer to (derived) object     */
+    INT fl,                                                             /* from level						*/
+    INT tl,                                                             /* to level                                             */
+    PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
+    INT *                                                               /* result							*/
+    );
 };
 typedef struct np_t_partass NP_T_PARTASS;
 
@@ -666,6 +675,8 @@ INT NPNLPartAssExecute                  (NP_BASE *theNP, INT argc, char **argv);
 INT NPTPartAssInit                              (NP_BASE *theNP, INT argc, char **argv);
 INT NPTPartAssDisplay                   (NP_BASE *theNP);
 INT NPTPartAssExecute                   (NP_BASE *theNP, INT argc, char **argv);
+
+const char *pp_action2str               (const PARTASS_PARAMS *pp);
 
 /* init tis file */
 INT InitAssemble (void);
