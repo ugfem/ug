@@ -349,6 +349,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     for (i=0; i<n_unk; i++) linred[i] = red_factor;
     if (newton->solve->PreProcess!=NULL)
       if ((*newton->solve->PreProcess)(newton->solve,level,newton->v,newton->d,newton->J,&bl,&error)) {
+        UserWriteF("NewtonSolver: solve->PreProcess failed, error code %d\n",error);
         res->error_code = __LINE__;
         return(res->error_code);
       }
@@ -611,6 +612,29 @@ static INT NewtonDisplay (NP_BASE *theNumProc)
   if (newton->v != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"v",ENVITEM_NAME(newton->v));
   if (newton->d != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"d",ENVITEM_NAME(newton->d));
   if (newton->s != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"s",ENVITEM_NAME(newton->s));
+
+  if (newton->solve != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"S",ENVITEM_NAME(newton->solve));
+  else
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"S","---");
+  if (newton->trans != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"T",ENVITEM_NAME(newton->trans));
+  else
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"T","---");
+  if (newton->displayMode == PCR_NO_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
+  else if (newton->displayMode == PCR_RED_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
+  else if (newton->displayMode == PCR_FULL_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
+
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"maxit",(int)newton->maxit);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"linrate",(int)newton->linearRate);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"line",(int)newton->lineSearch);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"lsteps",(int)newton->maxLineSearch);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"linminred",(float)newton->linMinRed);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"lambda",(float)newton->lambda);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"rhoreass",(float)newton->rhoReass);
 
   return (0);
 }
