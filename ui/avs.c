@@ -51,6 +51,7 @@
 #include "helpmsg.h"
 #include "shapes.h"
 #include "cmdline.h"
+#include "num.h"
 
 #include "avs.h"
 
@@ -240,6 +241,9 @@ static INT AVSCommand (INT argc, char **argv)
   DOUBLE value;                                 /* returned by user eval proc				*/
   DOUBLE x,y,z;                                 /* scalar values							*/
   DOUBLE vval[DIM];                             /* result of vector evaluation function		*/
+  DOUBLE scale;
+  VECDATA_DESC *displacement;
+  const SHORT *comp;
   time_t ltime;
   double scaling=1.0;
   INT oe,on;
@@ -256,6 +260,14 @@ static INT AVSCommand (INT argc, char **argv)
   /* scan options */
   ns = nv = ns_cell = nv_cell = 0;
   zcoord = NULL;
+  displacement = ReadArgvVecDesc(mg,"displacement",argc,argv);
+  if (displacement != NULL) {
+    if (VD_NCMPS_IN_TYPE(displacement,NODEVECTOR) < DIM)
+      return(CMDERRORCODE);
+    comp = VD_CMPPTR_OF_TYPE(displacement,NODEVECTOR,0);
+    if (ReadArgvDOUBLE("scale",&scale,argc,argv))
+      scale = 1.0;
+  }
   for(i=1; i<argc; i++)
   {
     if (strncmp(argv[i],"scale",5)==0) {
@@ -509,6 +521,13 @@ static INT AVSCommand (INT argc, char **argv)
           }
           else
             z = 0.0;
+        }
+        if (displacement != NULL) {
+          x += scale * VVALUE(NVECTOR(CORNER(el,i)),comp[0]);
+          y += scale * VVALUE(NVECTOR(CORNER(el,i)),comp[1]);
+                                        #ifdef __THREEDIM__
+          z += scale * VVALUE(NVECTOR(CORNER(el,i)),comp[2]);
+                                        #endif
         }
         sprintf(it,"%d %lg %lg %lg\n",ID(vx),x,y,z);
         pfile_tagged_puts(pf,it,counter+on);
