@@ -310,35 +310,38 @@ free(data);
    D*/
 /****************************************************************************/
 
-INT PlacePictures (PLACEMENT_TASK *task, PLACEMENT_REAL *real)
-{
-  INT w,h,nx,ny,p,i,j,npic;
+/* not used. see placer.c */
+/*
+   INT PlacePictures (PLACEMENT_TASK *task, PLACEMENT_REAL *real)
+   {
+    INT w,h,nx,ny,p,i,j,npic;
 
-  w = task->winUR[0] - task->winLL[0] - 10;
-  h = task->winUR[1] - task->winLL[1] - 10;;
+    w = task->winUR[0] - task->winLL[0] - 10;
+    h = task->winUR[1] - task->winLL[1] - 10;;
 
-  for (p=1000; p>90; p-=10)
-  {
-    nx = w/p;
-    ny = h/p;
-    if (nx*ny>=task->n) break;
-  }
-  if (p==90) return (1);
-
-  npic=0;
-  for (i=0; i<nx; i++)
-    for (j=0; j<ny; j++)
+    for (p=1000; p>90; p-=10)
     {
-      real->picLL[npic][0] = 10+i*p;
-      real->picLL[npic][1] = 10+j*p;
-      real->picUR[npic][0] = (i+1)*p;
-      real->picUR[npic][1] = (j+1)*p;
-      npic++;
-      if (npic>=task->n) return (0);
-    }
+        nx = w/p;
+        ny = h/p;
+        if (nx*ny>=task->n) break;
+        }
+    if (p==90) return (1);
 
-  return (0);
-}
+    npic=0;
+    for (i=0; i<nx; i++)
+       for (j=0; j<ny; j++)
+       {
+           real->picLL[npic][0] = 10+i*p;
+           real->picLL[npic][1] = 10+j*p;
+           real->picUR[npic][0] = (i+1)*p;
+           real->picUR[npic][1] = (j+1)*p;
+           npic++;
+           if (npic>=task->n) return (0);
+           }
+
+        return (0);
+   }
+ */
 
 INT OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task)
 {
