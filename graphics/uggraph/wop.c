@@ -2885,15 +2885,41 @@ static EW_GetFirstElementProcPtr EW_GetFirstElement_hor_fw_up_Proc (VIEWEDOBJ *t
 .n      Null if error occured.
 */
 /****************************************************************************/
+
+static GRID *EE2D_GRID[MAXLEVEL];
+static INT EE2D_CURRGRID;
+
+static ELEMENT *EW_GetFirstElement_HGrid (MULTIGRID *theMG, INT fromLevel, INT toLevel)
+{
+    ELEMENT *theElement;
+
+    if (theMG==NULL) return (NULL);
+    if (fromLevel<0) return (NULL);
+    if (toLevel>TOPLEVEL(theMG)) return (NULL);
+    if (toLevel<fromLevel) return (NULL);
+    theElement=FIRSTELEMENT(EE2D_GRID[EE2D_CURRGRID]);
+    if (theElement==NULL) return (NULL);
+    else if (USED(theElement)) return (theElement);
+    else return (EW_GetNextElement_hor_fw_up(theElement));
+}
+
 static EW_GetFirstElementProcPtr EW_GetFirstElement_HGrid_Proc (VIEWEDOBJ *theViewedObj)
 {
-	if (theViewedObj->ViewPoint[2]>TOPLEVEL(VO_MG(theViewedObj)))
-		return (EW_GetFirstElement_hor_fw_up);
-	else if (theViewedObj->ViewPoint[2]<0)
-		return (EW_GetFirstElement_hor_fw_down);
-	else
-		return (EW_GetFirstElement_hor_fw_up);
+	INT level,i,j;
+
+	for (i=0; i<MAXLEVEL; i++) EE2D_GRID[i]=NULL;
+	level = (INT)(theViewedObj->ViewPoint[2]/EE2D_ZScale);	
+	level = MAX(0,level);
+	level = MIN(CURRENTLEVEL(VO_MG(theViewedObj)),level);
+	j=0;
+	for (i=0; i<level; i++) EE2D_GRID[j++]=GRID_ON_LEVEL(VO_MG(theViewedObj),i);
+	for (i=CURRENTLEVEL(VO_MG(theViewedObj)); i>level; i--) EE2D_GRID[j++]=GRID_ON_LEVEL(VO_MG(theViewedObj),i);
+	EE2D_GRID[j++]=GRID_ON_LEVEL(VO_MG(theViewedObj),level);
+	EE2D_CURRGRID=0;
+	return (EW_GetFirstElement_HGrid);
 }
+
+
 /****************************************************************************/
 /*
    EW_GetFirstElement_hor_fw_down_Proc - Get the GetFirstElementProc	
@@ -3013,14 +3039,20 @@ static EW_GetNextElementProcPtr EW_GetNextElement_vert_fw_up_Proc (VIEWEDOBJ *th
 .n      Null if error occured.
 */
 /****************************************************************************/
+static ELEMENT *EW_GetNextElement_HGrid (ELEMENT *theElement)
+{
+	assert(theElement!=NULL);
+
+	theElement=SUCCE(theElement);
+	if (theElement!=NULL) return (theElement);
+	EE2D_CURRGRID++;
+	if (EE2D_GRID[EE2D_CURRGRID]==NULL) return (NULL);
+	return (FIRSTELEMENT(EE2D_GRID[EE2D_CURRGRID]));
+}
+
 static EW_GetNextElementProcPtr EW_GetNextElement_HGrid_Proc (VIEWEDOBJ *theViewedObj)
 {
-	if (theViewedObj->ViewPoint[2]>TOPLEVEL(VO_MG(theViewedObj)))
-		return (EW_GetNextElement_hor_fw_up);
-	else if (theViewedObj->ViewPoint[2]<0)
-		return (EW_GetNextElement_hor_fw_down);
-	else
-		return (EW_GetNextElement_hor_fw_up);
+	return (EW_GetNextElement_HGrid);
 }
 
 /****************************************************************************/
@@ -6800,7 +6832,7 @@ static INT EW_PreProcess_HPlotElements2D (PICTURE *thePicture, WORK *theWork)
 	if (TOPLEVEL(theMG)>0)
 		EE2D_ZScale					= theGpo->ZMax/TOPLEVEL(theMG);
 	else
-		EE2D_ZScale					= 0;
+		EE2D_ZScale					= 1;
 
 	EE2D_Property = 0;
 	if (theGpo->ElemColored==2)
@@ -9036,12 +9068,23 @@ static INT EW_ElementHEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 			V2_LINCOMB(EE2D_ShrinkFactor,x[j],1.0-EE2D_ShrinkFactor,MidPoint,help)
 			V2_COPY(help,DO_2Cp(theDO));
 			DO_inc_n(theDO,2);
-			DO_2Cp(theDO)[0]=Element_Z;
-			DO_inc(theDO);
+			DO_2Cp(theDO)[0]=Element_Z; DO_inc(theDO);
 		}
 		#endif
 	}
-	
+
+    if (OBJT(theElement)==BEOBJ)
+        for (i=0; i<coe; i++)
+        {
+            if (INNER_SIDE(theElement,i)) continue;
+            DO_2c(theDO) = DO_LINE; DO_inc(theDO)
+            DO_2l(theDO) = EE2D_Color[COLOR_BND]; DO_inc(theDO);
+            V2_COPY(x[i],DO_2Cp(theDO)); DO_inc_n(theDO,2);
+			DO_2Cp(theDO)[0]=Element_Z; DO_inc(theDO);
+            V2_COPY(x[(i+1)%coe],DO_2Cp(theDO)); DO_inc_n(theDO,2);
+			DO_2Cp(theDO)[0]=Element_Z; DO_inc(theDO);
+        }
+
 	/* plot refinement mark */
 	if (EE2D_RefMark)
 		theDO = InvertRefinementMark2D(theElement,theDO);

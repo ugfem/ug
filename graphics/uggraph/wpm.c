@@ -3438,7 +3438,6 @@ static INT InitHGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   theGpo = &(thePlotObj->theHGpo);
   theBVPDesc = MG_BVPD(PO_MG(thePlotObj));
   V2_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
-  PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
 
   /* defaults */
   if (PO_STATUS(thePlotObj)==NOT_INIT)
@@ -3457,7 +3456,7 @@ static INT InitHGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->PlotNodes                       = NO;
     theGpo->PlotRefMarks            = NO;
     theGpo->PlotIndMarks            = NO;
-    theGpo->ZMax                            = PO_RADIUS(thePlotObj);
+    theGpo->ZMax                            = BVPD_RADIUS(theBVPDesc);
     theGpo->FreeBnd                 = NULL;
   }
 
@@ -3484,6 +3483,7 @@ static INT InitHGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   ReadArgvINT   ("m",&theGpo->PlotNodes,          argc,argv);
   ReadArgvDOUBLE("z",&theGpo->ZMax,                       argc,argv);
   PO_MIDPOINT(thePlotObj)[2]=0.5*theGpo->ZMax;
+  PO_RADIUS(thePlotObj) = SQRT(BVPD_RADIUS(theBVPDesc)*BVPD_RADIUS(theBVPDesc)+0.25*theGpo->ZMax*theGpo->ZMax);
 
   vd = ReadArgvVecDesc(PO_MG(thePlotObj),"free",argc,argv);
   if (vd!=NULL) theGpo->FreeBnd = vd;
