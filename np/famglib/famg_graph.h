@@ -23,14 +23,17 @@
 #ifndef __FAMG_GRAPH__
 #define __FAMG_GRAPH__
 
+#include <assert.h>
+
+#ifdef USE_UG_DS
 extern "C"
 {
-#include "parallel.h"
-#include "pargm.h"
+        #include "parallel.h"
+        #include "pargm.h"
 }
+#endif
 
 #include "famg_algebra.h"
-
 /* RCS_ID
    $Header$
  */
