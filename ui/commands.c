@@ -10477,6 +10477,58 @@ static INT SystemCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
+/*D
+   resetCEstat - reset counters of control entry usage
+
+   DESCRIPTION:
+   This command resets the counters of control entry usage.
+
+   'resetCEstat'
+
+   KEYWORDS:
+   control entries
+
+   SEE ALSO:
+   'printCEstat'
+   D*/
+/****************************************************************************/
+
+static INT ResetCEstatCommand (INT argc, char **argv)
+{
+  NO_OPTION_CHECK(argc,argv);
+
+  ResetCEstatistics();
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   printCEstat - print counters of control entry usage
+
+   DESCRIPTION:
+   This command prints the counters of control entry usage.
+
+   'printCEstat'
+
+   KEYWORDS:
+   control entries
+
+   SEE ALSO:
+   'resetCEstat'
+   D*/
+/****************************************************************************/
+
+static INT PrintCEstatCommand (INT argc, char **argv)
+{
+  NO_OPTION_CHECK(argc,argv);
+
+  PrintCEstatistics();
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
 /*
    InitFindRange - create struct where findrange stores results (min and max)
 
@@ -12109,6 +12161,8 @@ INT InitCommands ()
   if (CreateCommand("refreshoff",         RefreshOffCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("machinetest",        MachineTestCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("system",                     SystemCommand                                   )==NULL) return (__LINE__);
+  if (CreateCommand("resetCEstat",        ResetCEstatCommand                              )==NULL) return (__LINE__);
+  if (CreateCommand("printCEstat",        PrintCEstatCommand                              )==NULL) return (__LINE__);
 
   /* commands for debugging */
         #ifdef Debug
