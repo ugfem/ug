@@ -256,12 +256,11 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
         PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"))
         else
           PRINTDEBUG(dev,1,("XtDispatchEvent(): handler for this event found\n"))
-                                #endif
                                 #else /* USE_XAW */
       ShellHandleResizeEvent(&shell,&report);
       theEvent->NoEvent.InterfaceEvent = 1;
                                 #endif /* USE_XAW */
-      break;
+          break;
     }
     gw = WhichGW(report.xconfigure.window);
     if (gw==NULL) break;
