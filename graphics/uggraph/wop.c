@@ -124,7 +124,10 @@ typedef void (*ProjectionProcPtr)(COORD *, COORD_POINT *);
 /*																			*/
 /****************************************************************************/
 
-#define WINDOW_TEXT_SIZE                10
+#define WINDOW_TEXT_SIZE                (10*TextFactor)
+
+/* general multiplier for all text sizes */
+static DOUBLE TextFactor=1;
 
 /************************************************************************/
 /************ ordinary static variables   *******************************/
@@ -194,13 +197,13 @@ static INT GE_fromLevel,GE_toLevel;
 #define COLOR_EDGE                      (REGULAR_CLASS+2)
 
 /* defines 2D */
-#define EE2D_TEXTSIZE                   8
+#define EE2D_TEXTSIZE                   (8*TextFactor)
 
 #define COLOR_BND                       (REGULAR_CLASS+3)
 #define COLOR_ELEMID            (REGULAR_CLASS+4)
 
 /* defines 3D */
-#define EE3D_TEXTSIZE                   8
+#define EE3D_TEXTSIZE                   (8*TextFactor)
 
 #define COLOR_CUT_EDGE          (REGULAR_CLASS+3)
 
@@ -265,7 +268,7 @@ static INT MN_MouseMoved;               /* invert links at last pos if TRUE			*/
 static INT MN_LastMousePos[2];  /* store last mouse position				*/
 
 /*---------- working variables of 'EXT_BndEval2d' --------------------------*/
-#define BE_TEXTSIZE                     10
+#define BE_TEXTSIZE                     (10*TextFactor)
 static short BE_PlotBoundary;   /* plot boundary if TRUE					*/
 static long BE_BndColor;                /* use this color for the outer boundary	*/
 static long BE_InnerBndColor;   /* use this color for interior boundaries	*/
@@ -274,14 +277,15 @@ static short BE_PlotSegmentIDs; /* plot also sehment IDs					*/
 static long BE_SegIdColor;              /* plot sement IDs with this color			*/
 static MULTIGRID *BE_MG;                /* mg pointer								*/
 static INT BE_CurrSeg;                  /* current segment to be plotted			*/
+static PATCH *BE_Patch;                 /* current patch of boundary				*/
 static INT BE_CurrLine;                 /* current line of the segment to be plotted*/
 static INT BE_nLines;                   /* number of plotted lines					*/
 static INT BE_MaxLines;                 /* max line number per call of EXT_BndEval2d*/
 
 /*---------- working variables of 'VW_VecMatEval' --------------------------*/
 #define VM_MARKERSIZE           6
-#define VM_TEXTSIZE                     8
-#define VM_VECMAT_TEXTSIZE      8
+#define VM_TEXTSIZE                     (8*TextFactor)
+#define VM_VECMAT_TEXTSIZE      (8*TextFactor)
 #define VM_LINEFAC                      1.2
 
 static INT VM_Marker;                   /* plot markers for Vectors					*/
@@ -300,11 +304,32 @@ static INT VM_Dependency;               /* plot dependencies						*/
 static VECTOR *VM_LastVector;   /* preceding vector							*/
 static INT VM_ConnectVectors;   /* connect vectors to show order			*/
 static long VM_ConnectColor;    /* color of vector order connections		*/
+static long VM_CutColor;                /* color for cut vectors (order=2)			*/
 static INT VM_VecData;                  /* plot vector data							*/
 static INT VM_MatData;                  /* plot matrix data							*/
 static VECDATA_DESC *VM_tvd;    /* vector descriptor						*/
 static MATDATA_DESC *VM_tmd;    /* matrix descriptor						*/
 static long VM_VecMatColor;             /* color of vector matrix data				*/
+
+/*---------- working variables of 'Matrix' stuff ---------------------------*/
+#define MAT_FRAMESIZE                   5
+#define MAT_TEXTSIZE                    (8*TextFactor)
+
+static MatrixEvalProcPtr MAT_eval; /* evaluation function (if no symbol)		*/
+static INT MAT_comp;                    /* matrix comp (if symbol)					*/
+static INT MAT_conn;                    /* plot connections							*/
+static INT MAT_extra;                   /* plot extra connections					*/
+static INT MAT_rmask;                   /* row type mask							*/
+static INT MAT_cmask;                   /* col type mask							*/
+static INT MAT_maxrow;                  /* last row									*/
+static DOUBLE MAT_factor;               /* color spectrum factor					*/
+static long MAT_black;                  /* black for frames and values				*/
+static INT MAT_frame;                   /* frame colored squares					*/
+static INT MAT_printsize;               /* minimal square size for printing values	*/
+static INT MAT_print;                   /* print values								*/
+static DOUBLE MAT_offset;               /* color spectrum offset					*/
+static INT MAT_log;                             /* take log of absolute values				*/
+static DOUBLE MAT_thresh;               /* don't plot entries with |.|<thresh		*/
 
 /*---------- working variables of 'EW_ElementBdryEval2D' -------------------*/
 static long EB_ColorGrid;               /* color of the grid plotted with the EScala*/
@@ -3786,6 +3811,241 @@ static INT GEN_PostProcess_Vector_FR (PICTURE *thePicture, WORK *theWork)
 }
 
 /**********************************************************************************************************/
+/************************************ Part for 2D and 3D Version ******************************************/
+/**********************************************************************************************************/
+
+static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
+{
+  struct MatrixPlotObj *theMpo;
+  OUTPUTDEVICE *theOD;
+  MULTIGRID *theMG;
+  GRID *theGrid;
+  MATDATA_DESC *theMD;
+  COORD_POINT point0,point1;
+  COORD x0[2],x1[2],help[2];
+  DOUBLE d;
+
+  theMpo = &(PIC_PO(thePicture)->theMpo);
+  theOD  = PIC_OUTPUTDEV(thePicture);
+  theMG  = PO_MG(PIC_PO(thePicture));
+  theGrid= GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
+
+  MAT_conn                        = theMpo->conn;
+  MAT_extra                       = theMpo->extra;
+  MAT_black                       = theOD->black;
+
+  /* set globals for eval function */
+  if (theMpo->Matrix!=NULL)
+  {
+    MAT_eval                = NULL;
+
+    theMD                   = SYM_MAT_DESC(theMpo->Matrix);
+    MAT_comp                = MD_SCALCMP(theMD);
+    MAT_rmask               = MD_SCAL_RTYPEMASK(theMD);
+    MAT_cmask               = MD_SCAL_CTYPEMASK(theMD);
+  }
+  else
+  {
+    MAT_eval                = theMpo->EvalFct->EvalProc;
+    MAT_rmask               = 0xF;
+    MAT_cmask               = 0xF;
+  }
+  MAT_maxrow                      = theGrid->nVector;
+  MAT_log                         = theMpo->log;
+  MAT_thresh                      = theMpo->thresh;
+
+  /* color range */
+  if (theMpo->max - theMpo->min < SMALL_D)
+    if (W_ID(theWork) != FINDRANGE_WORK)
+    {
+      UserWrite("maxValue has to be larger than minValue\n");
+      return (1);
+    }
+  if ((theMpo->max - theMpo->min)==0)
+    MAT_factor = 0;
+  else
+    MAT_factor = (theOD->spectrumEnd - theOD->spectrumStart)/(theMpo->max - theMpo->min);
+  MAT_offset = theOD->spectrumStart - MAT_factor*theMpo->min;
+
+  /* compute size of squares in pixel coordinates */
+  x0[0] = 0.0; x0[1] = 0.0;
+  x1[0] = 1.0; x1[1] = 0.0;
+  V2_TRAFOM3_V2(x0,ObsTrafo,help); (*OBS_ProjectProc)(help,&point0);
+  V2_TRAFOM3_V2(x1,ObsTrafo,help); (*OBS_ProjectProc)(help,&point1);
+
+  d = sqrt((point0.x-point1.x)*(point0.x-point1.x)+(point0.y-point1.y)*(point0.y-point1.y));
+
+  if (d>MAT_FRAMESIZE)
+    MAT_frame = TRUE;
+  else
+    MAT_frame = FALSE;
+
+  if (d>4*MAT_TEXTSIZE)
+    MAT_print = TRUE;
+  else
+    MAT_print = FALSE;
+
+  l_setindex(theGrid);
+
+  return (0);
+}
+
+static INT VW_MatrixEval (VECTOR *vec, DRAWINGOBJ *theDO)
+{
+  MATRIX *mat;
+  DOUBLE value,printvalue,min,max;
+  long Color;
+  INT row,col;
+  char valtext[16],*p;
+  row = MAT_maxrow-VINDEX(vec);
+
+  min =  MAX_D;
+  max = -MAX_D;
+
+  if (MAT_rmask & VDATATYPE(vec))
+    for (mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
+      if (MAT_cmask & VDATATYPE(MDEST(mat)))
+      {
+        if (CEXTRA(MMYCON(mat)))
+        {
+          if (!MAT_extra) continue;
+        }
+        else
+        if (!MAT_conn) continue;
+
+        col = VINDEX(MDEST(mat));
+
+        if (MAT_eval==NULL)
+          value = MVALUE(mat,MAT_comp);
+        else
+          value = (*MAT_eval)(mat);
+
+        printvalue = value;
+
+        if (fabs(value)<=MAT_thresh)
+          continue;
+        if (MAT_log)
+          value = log(fabs(value));
+
+        /* store range */
+        max = MAX(max,value);
+        min = MIN(min,value);
+
+        Color = (long)(MAT_factor*value+MAT_offset);
+        Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
+        if (Color<WOP_OutputDevice->spectrumStart)
+          continue;
+
+        /* draw */
+        DO_2c(theDO) = DO_POLYGON; DO_inc(theDO)
+        DO_2c(theDO) = 4; DO_inc(theDO)
+        DO_2l(theDO) = Color; DO_inc(theDO);
+        DO_2C(theDO) = col;   DO_inc(theDO); DO_2C(theDO) = row;   DO_inc(theDO);
+        DO_2C(theDO) = col+1; DO_inc(theDO); DO_2C(theDO) = row;   DO_inc(theDO);
+        DO_2C(theDO) = col+1; DO_inc(theDO); DO_2C(theDO) = row+1; DO_inc(theDO);
+        DO_2C(theDO) = col;   DO_inc(theDO); DO_2C(theDO) = row+1; DO_inc(theDO);
+
+        if (MAT_frame)
+        {
+          DO_2c(theDO) = DO_POLYLINE; DO_inc(theDO)
+          DO_2c(theDO) = 5; DO_inc(theDO)
+          DO_2l(theDO) = MAT_black; DO_inc(theDO);
+          DO_2C(theDO) = col;   DO_inc(theDO); DO_2C(theDO) = row;   DO_inc(theDO);
+          DO_2C(theDO) = col+1; DO_inc(theDO); DO_2C(theDO) = row;   DO_inc(theDO);
+          DO_2C(theDO) = col+1; DO_inc(theDO); DO_2C(theDO) = row+1; DO_inc(theDO);
+          DO_2C(theDO) = col;   DO_inc(theDO); DO_2C(theDO) = row+1; DO_inc(theDO);
+          DO_2C(theDO) = col;   DO_inc(theDO); DO_2C(theDO) = row;   DO_inc(theDO);
+        }
+        if (MAT_print)
+        {
+          sprintf(valtext,"%.3e",printvalue);
+
+          /* exponent */
+          p = strchr(valtext,'e');
+          DO_2c(theDO) = DO_TEXT; DO_inc(theDO)
+          DO_2l(theDO) = MAT_black; DO_inc(theDO);
+          DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO)
+          DO_2c(theDO) = TEXT_CENTERED; DO_inc(theDO)
+          DO_2s(theDO) = MAT_TEXTSIZE; DO_inc(theDO);
+          DO_2C(theDO) = col+0.5;   DO_inc(theDO); DO_2C(theDO) = row+0.25;   DO_inc(theDO);
+          strcpy(DO_2cp(theDO),p); DO_inc_str(theDO);
+
+          /* mantisse */
+          *p = '\0';
+          DO_2c(theDO) = DO_TEXT; DO_inc(theDO)
+          DO_2l(theDO) = MAT_black; DO_inc(theDO);
+          DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO)
+          DO_2c(theDO) = TEXT_CENTERED; DO_inc(theDO)
+          DO_2s(theDO) = MAT_TEXTSIZE; DO_inc(theDO);
+          DO_2C(theDO) = col+0.5;   DO_inc(theDO); DO_2C(theDO) = row+0.75;   DO_inc(theDO);
+          strcpy(DO_2cp(theDO),valtext); DO_inc_str(theDO);
+        }
+      }
+
+  if ((max!=-MAX_D) && (min!=MAX_D))
+  {
+    DO_2c(theDO) = DO_RANGE; DO_inc(theDO);
+    DO_2C(theDO) = min; DO_inc(theDO);
+    DO_2C(theDO) = max; DO_inc(theDO);
+  }
+  DO_2c(theDO) = DO_NO_INST;
+
+  return (0);
+}
+
+static INT VW_PreProcess_Matrix_FR (PICTURE *thePicture, WORK *theWork)
+{
+  if (VW_MatrixPreProcess (thePicture,theWork))
+    return (1);
+
+  /* reset min and max values */
+  GEN_FR_put = W_FINDRANGE_WORK(theWork)->put;
+  GEN_FR_min =  MAX_D;
+  GEN_FR_max = -MAX_D;
+
+  return (0);
+}
+
+static INT GEN_PostProcess_Matrix_FR (PICTURE *thePicture, WORK *theWork)
+{
+  struct FindRange_Work *FR_Work;
+  DOUBLE m,l;
+
+  FR_Work = W_FINDRANGE_WORK(theWork);
+
+  if (GEN_FR_min>GEN_FR_max)
+  {
+    UserWrite("findrange failed\n");
+    return (0);
+  }
+
+  /* postprocess findrange */
+  if (FR_Work->symmetric==YES)
+  {
+    GEN_FR_max = MAX(ABS(GEN_FR_min),ABS(GEN_FR_max));
+    GEN_FR_min = -GEN_FR_max;
+  }
+  if (FR_Work->zoom!=1.0)
+  {
+    m = 0.5*(GEN_FR_max + GEN_FR_min);
+    l = 0.5*(GEN_FR_max - GEN_FR_min);
+    GEN_FR_min = m - FR_Work->zoom*l;
+    GEN_FR_max = m + FR_Work->zoom*l;
+  }
+  FR_Work->min = GEN_FR_min;
+  FR_Work->max = GEN_FR_max;
+
+  /* store if */
+  if (GEN_FR_put == YES)
+  {
+    PIC_PO(thePicture)->theMpo.min = GEN_FR_min;
+    PIC_PO(thePicture)->theMpo.max = GEN_FR_max;
+  }
+
+  return (0);
+}
+
+/**********************************************************************************************************/
 /************************************ Part only for 2D Version ********************************************/
 /**********************************************************************************************************/
 
@@ -4444,6 +4704,7 @@ static INT EXT_PreProcess_Bnd2d (PICTURE *thePicture, WORK *theWork)
 
   BE_MG                                           = theMG;
   BE_CurrSeg                                      = 0;
+  BE_Patch                                        = BVP_GetFirstPatch(MG_BVP(BE_MG));
   BE_CurrLine                                     = 1;
   BE_nLines                                       = 0;
   BE_MaxLines                                     = 100;
@@ -4470,6 +4731,7 @@ static INT EXT_PreProcess_VecMatBnd2d (PICTURE *thePicture, WORK *theWork)
 
   BE_MG                                           = theMG;
   BE_CurrSeg                                      = 0;
+  BE_Patch                                        = BVP_GetFirstPatch(MG_BVP(BE_MG));
   BE_CurrLine                                     = 1;
   BE_nLines                                       = 0;
   BE_MaxLines                                     = 100;
@@ -4485,7 +4747,6 @@ static INT EXT_BndEval2d (DRAWINGOBJ *theDO, INT *end)
   COORD_VECTOR x0,x1;
   long Color;
   BVP *theBVP;
-  PATCH *thePatch;
   PATCH_DESC thePatchDesc;
 
   if (!BE_PlotBoundary && !BE_PlotSegmentIDs)
@@ -4497,9 +4758,9 @@ static INT EXT_BndEval2d (DRAWINGOBJ *theDO, INT *end)
   theBVP = MG_BVP(BE_MG);
 
   /* plot boundary segments and their ids (if) */
-  for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
+  for (; BE_Patch!=NULL; BE_Patch=BVP_GetNextPatch(theBVP,BE_Patch))
   {
-    if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return (1);
+    if (Patch_GetPatchDesc(BE_Patch,&thePatchDesc)) return (1);
     if ((PATCH_LEFT(thePatchDesc)==0) || (PATCH_RIGHT(thePatchDesc)==0))
       Color = BE_BndColor;
     else
@@ -4513,12 +4774,12 @@ static INT EXT_BndEval2d (DRAWINGOBJ *theDO, INT *end)
     {
       /* plot boundary with resolution */
       lambda = alpha + (BE_CurrLine-1)*delta;
-      if (Patch_local2global(thePatch,&lambda,x0)) return (1);
+      if (Patch_local2global(BE_Patch,&lambda,x0)) return (1);
       for (; BE_CurrLine<=res; BE_CurrLine++)
       {
         lambda = alpha + BE_CurrLine*delta;
         lambda = MIN(lambda,beta);
-        if (Patch_local2global(thePatch,&lambda,x1)) return (1);
+        if (Patch_local2global(BE_Patch,&lambda,x1)) return (1);
 
         DO_2c(theDO) = DO_LINE; DO_inc(theDO)
         DO_2l(theDO) = Color; DO_inc(theDO);
@@ -4539,7 +4800,7 @@ static INT EXT_BndEval2d (DRAWINGOBJ *theDO, INT *end)
     if (BE_PlotSegmentIDs)
     {
       lambda = 0.5*(alpha+beta);
-      if (Patch_local2global(thePatch,&lambda,x0)) return (1);
+      if (Patch_local2global(BE_Patch,&lambda,x0)) return (1);
       DO_2c(theDO) = DO_TEXT; DO_inc(theDO)
       DO_2l(theDO) = BE_SegIdColor; DO_inc(theDO);
       DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO)
@@ -4548,6 +4809,7 @@ static INT EXT_BndEval2d (DRAWINGOBJ *theDO, INT *end)
       V2_COPY(x0,DO_2Cp(theDO)); DO_inc_n(theDO,2);
       sprintf(DO_2cp(theDO),"%d",(int)BE_CurrSeg); DO_inc_str(theDO);
     }
+    BE_CurrSeg++;
   }
   DO_2c(theDO) = DO_NO_INST;
   *end = TRUE;
@@ -4652,7 +4914,7 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
   GRID *theGrid;
   VECTOR *vec;
   BLOCKVECTOR  *theBV;
-  INT cycle,cycles;
+  INT nBV;
 
   theVmo = &(PIC_PO(thePicture)->theVmo);
   theOD  = PIC_OUTPUTDEV(thePicture);
@@ -4669,7 +4931,7 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
   VM_Type[EDGEVECTOR]                     = theVmo->Type[EDGEVECTOR];
   VM_Type[ELEMVECTOR]                     = theVmo->Type[ELEMVECTOR];
   VM_Connections                          = theVmo->Connections;
-  VM_MColor                                       = theOD->black;
+  VM_MColor                                       = theOD->red;
   VM_MExtra                                       = theVmo->Extra;
   VM_MExtraColor                          = theOD->cyan;
   VM_Idx                                          = theVmo->Idx;
@@ -4678,40 +4940,40 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
   VM_Dependency                           = theVmo->Dependency;
   VM_ConnectVectors                       = theVmo->ConnectVectors;
   VM_ConnectColor                         = theOD->red;
+  VM_CutColor                                     = theOD->black;
   VM_VecData                                      = (theVmo->vs!=NULL);
   VM_MatData                                      = (theVmo->ms!=NULL);
   VM_tvd                                          = SYM_VEC_DESC(theVmo->vs);
   VM_tmd                                          = SYM_MAT_DESC(theVmo->ms);
-  VM_VecMatColor                          = theOD->red;
+  VM_VecMatColor                          = theOD->black;
+
+  VM_LastVector                           = NULL;
 
   /* check if ordered */
-  if (GFIRSTBV(theGrid)==NULL && VM_Order)
+  if (VM_Order && GFIRSTBV(theGrid)==NULL)
   {
     VM_Order=NO;
     UserWrite("grid is not ordered: switch back to non-ordered mode\n");
   }
-  if (GFIRSTBV(theGrid)!=NULL && VM_Order)
-  {
-    for (theBV=GFIRSTBV(theGrid); theBV!=NULL; theBV=BVSUCC(theBV))
-      for (vec=BVFIRSTVECTOR(theBV); vec!=BVENDVECTOR(theBV); vec=SUCCVC(vec))
-        VINDEX(vec) = BVNUMBER(theBV);
-  }
-
-
-  VM_LastVector                           = NULL;
 
   if (VM_Order)
   {
-    cycles = 0;
-    for (vec=FIRSTVECTOR(theGrid); vec!=NULL; vec=SUCCVC(vec))
-      if ((cycle=VINDEX(vec)/3)>cycles)                         /* integer division! */
-        cycles = cycle;
+    nBV = 0;
+    for (theBV=GFIRSTBV(theGrid); theBV!=NULL; theBV=BVSUCC(theBV))
+    {
+      nBV++;
+      for (vec=BVFIRSTVECTOR(theBV); vec!=BVENDVECTOR(theBV); vec=SUCCVC(vec))
+        VINDEX(vec) = BVNUMBER(theBV);
+    }
+    if (VM_Order!=3)
+      /* calc number of cycles */
+      nBV /= 3;
 
-    if (cycles<=0)
+    if (nBV<=0)
       return (1);
 
     VM_OrderStart                   = theOD->spectrumStart;
-    VM_OrderDelta                   = (theOD->spectrumEnd - theOD->spectrumStart) / (float) cycles;
+    VM_OrderDelta                   = (theOD->spectrumEnd - theOD->spectrumStart) / (float) nBV;
   }
 
   return (0);
@@ -4837,8 +5099,12 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
       if (set<2)
         color = VM_OrderStart+cycle*VM_OrderDelta;
       else
-        color = VM_MColor;
+        color = VM_CutColor;
       markertype = set;
+      break;
+    case 3 :
+      color = VM_OrderStart+VINDEX(vec)*VM_OrderDelta;
+      markertype = 0;
       break;
     }
 
@@ -4882,7 +5148,7 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
     DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO)
     DO_2s(theDO) = VM_TEXTSIZE; DO_inc(theDO);
     V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-    if (VM_Order)
+    if (VM_Order && (VM_Order!=3))
       sprintf(DO_2cp(theDO),"%c%d",(int)setchar,(int)cycle);
     else
       sprintf(DO_2cp(theDO),"%d",(int)VINDEX(vec));
@@ -4903,8 +5169,8 @@ static INT EXT_PreProcess_InsertNode2D (PICTURE *thePicture, WORK *theWork)
   COORD pt[2],pos[2];
   COORD deltaScreen[2],zeroScreen[2],deltaVector[2],zeroVector[2],npos[2],apos[2],epos[2];
   COORD delta,len,l,la,le,dl,MyLambda,dist2,bestDist2,sdl;
-  INT i,found;
-  BVP             *theBVP;
+  INT found;
+  BVP *theBVP;
   BVP_DESC theBVPDesc;
   PATCH *thePatch, *MyPatch;
   PATCH_DESC thePatchDesc, MyPatchDesc;
@@ -9763,6 +10029,31 @@ INT DrawWindowText (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT siz
 
 /****************************************************************************/
 /*D
+   SetTextFactor - set a factor to multiply textsizes with
+
+   SYNOPSIS:
+   INT SetTextFactor (DOUBLE textfactor)
+
+   PARAMETERS:
+   .  mode - YES: do frame, NO: do not frame
+
+   DESCRIPTION:
+   This function sets a factor to multiply textsizes with.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   D*/
+/****************************************************************************/
+
+INT SetTextFactor (DOUBLE textfactor)
+{
+  TextFactor = textfactor;
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    SetDoFramePicture - toggle picture framing
 
    SYNOPSIS:
@@ -9798,7 +10089,7 @@ INT SetDoFramePicture (INT mode)
    .  mode - mode of the frame
 
    DESCRIPTION:
-   This function draw a frame around 'thePicture'. The mode determines the color of the
+   This function draws a frame around 'thePicture'. The mode determines the color of the
    frame. 'mode'==WOP_ACTIVE results in a orange frame, 'mode'==WOP_NOT_ACTIVE in a black
    and 'mode'==WOP_WORKING in a red one.
 
@@ -9814,6 +10105,9 @@ INT DrawPictureFrame (PICTURE *thePicture, INT mode)
   OUTPUTDEVICE *theOD;
   long color;
   COORD_POINT p[5];
+
+  if (!DoFramePicture)
+    return (0);
 
   /* prepare graph for plot */
   if (PrepareGraph (thePicture)) return (1);
@@ -10400,11 +10694,54 @@ INT InitWOP (void)
   PLOTOBJHANDLING *thePOH;
   WORKPROCS *theWP;
   ELEMWISEWORK *theEWW;
-
+  VECTORWISEWORK *theVWW;
+  INT i;
         #ifdef __TWODIM__
   NODEWISEWORK *theNWW;
-  VECTORWISEWORK *theVWW;
   EXTERNWORK *theEXW;
+        #endif
+
+  /* create WorkHandling for 'Matrix' */
+  if ((thePOH=CreatePlotObjHandling ("Matrix"))      == NULL) return (__LINE__);
+
+  /* reset all works */
+  for (i=0; i<NB_WORK; i++) POH_NBCYCLES(thePOH,i) = 0;
+
+  /* draw work */
+  POH_NBCYCLES(thePOH,DRAW_WORK) = 1;
+
+  theWP = POH_WORKPROGS(thePOH,DRAW_WORK,0);
+  WP_WORKMODE(theWP) = VECTORWISE;
+  theVWW = WP_VECTORWISE(theWP);
+  theVWW->VW_PreProcessProc                               = VW_MatrixPreProcess;
+  theVWW->VW_GetFirstVectorProcProc               = VW_GetFirstVector_Proc;
+  theVWW->VW_GetNextVectorProcProc                = VW_GetNextVector_Proc;
+  theVWW->VW_EvaluateProc                                 = VW_MatrixEval;
+        #ifdef __TWODIM__
+  theVWW->VW_ExecuteProc                                  = Draw2D;
+        #else
+  theVWW->VW_ExecuteProc                                  = Draw3D;
+        #endif
+  theVWW->VW_PostProcessProc                              = NULL;
+
+  /* findrange work */
+  POH_NBCYCLES(thePOH,FINDRANGE_WORK) = 1;
+
+  theWP = POH_WORKPROGS(thePOH,FINDRANGE_WORK,0);
+  WP_WORKMODE(theWP) = VECTORWISE;
+  theVWW = WP_VECTORWISE(theWP);
+  theVWW->VW_PreProcessProc                               = VW_PreProcess_Matrix_FR;
+  theVWW->VW_GetFirstVectorProcProc               = VW_GetFirstVector_Proc;
+  theVWW->VW_GetNextVectorProcProc                = VW_GetNextVector_Proc;
+  theVWW->VW_EvaluateProc                                 = VW_MatrixEval;
+        #ifdef __TWODIM__
+  theVWW->VW_ExecuteProc                                  = FindRange2D;
+        #else
+  theVWW->VW_ExecuteProc                                  = FindRange3D;
+        #endif
+  theVWW->VW_PostProcessProc                              = GEN_PostProcess_Matrix_FR;
+
+        #ifdef __TWODIM__
 
   /* create WorkHandling for 'Grid' */
   if ((thePOH=CreatePlotObjHandling ("Grid"))     == NULL) return (__LINE__);
@@ -10689,7 +11026,7 @@ INT InitWOP (void)
   theEXW->EXT_PostProcessProc                             = EXT_PostProcess_Bnd2d;
 
   theWP = POH_WORKPROGS(thePOH,DRAW_WORK,1);
-  WP_WORKMODE(theWP) = ELEMENTWISE;
+  WP_WORKMODE(theWP) = VECTORWISE;
   theVWW = WP_VECTORWISE(theWP);
   theVWW->VW_PreProcessProc                               = VW_VecMatPreProcess;
   theVWW->VW_GetFirstVectorProcProc               = VW_GetFirstVector_Proc;
@@ -10699,7 +11036,7 @@ INT InitWOP (void)
   theVWW->VW_PostProcessProc                              = NULL;
 
   theWP = POH_WORKPROGS(thePOH,DRAW_WORK,2);
-  WP_WORKMODE(theWP) = ELEMENTWISE;
+  WP_WORKMODE(theWP) = VECTORWISE;
   theVWW = WP_VECTORWISE(theWP);
   theVWW->VW_PreProcessProc                               = NULL;
   theVWW->VW_GetFirstVectorProcProc               = VW_GetFirstVector_Proc;
@@ -10741,6 +11078,8 @@ INT InitWOP (void)
 
   /* insertbndnode work */
   POH_NBCYCLES(thePOH,INSERTBNDNODE_WORK) = 0;
+
+
 
         #endif
 

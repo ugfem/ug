@@ -421,6 +421,7 @@ INT                     DrawWindowText                  (UGWINDOW *theWin, COORD
 INT                     DragPicture                             (PICTURE *thePicture, INT *MousePos);
 INT                     ZoomPicture                             (PICTURE *thePicture, INT *MousePos);
 INT             DrawUgPicture                   (PICTURE *thePicture);
+INT                     SetTextFactor                   (DOUBLE textfactor);
 INT                     SetDoFramePicture               (INT mode);
 INT             DrawPictureFrame                (PICTURE *thePicture, INT mode);
 INT             ErasePicture                    (PICTURE *thePicture);

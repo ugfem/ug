@@ -59,7 +59,7 @@
 /****************************************************************************/
 
 /* formats for display routines */
-#define DISPLAY_PO_FORMAT_SS            "%-15.12s = %-15.12s\n"
+#define DISPLAY_PO_FORMAT_SS            "%-15.12s = %-25.22s\n"
 #define DISPLAY_PO_FORMAT_SF            "%-15.12s = %-7.4g\n"
 #define DISPLAY_PO_FORMAT_SFF           "%-15.12s = %-7.4g  %-7.4g\n"
 #define DISPLAY_PO_FORMAT_SFFF          "%-15.12s = %-7.4g  %-7.4g  %-7.4g\n"
@@ -209,7 +209,12 @@ struct MatrixPlotObj {
 
   /* data for 2D-View of matrix */
   MVALUES *EvalFct;                                                     /* evaluation proceedure						*/
+  INT log;                                                                      /* use log of absolute value					*/
+  DOUBLE thresh;                                                        /* plot entries only if |.|>thresh				*/
+  INT conn;                                                                     /* plot connections								*/
+  INT extra;                                                                    /* plot extra connections						*/
   DOUBLE min, max;                                                      /* range										*/
+  SYMBOL *Matrix;                                                       /* matrix symbol iff							*/
 };
 
 struct ExternPlotObject {

@@ -2085,34 +2085,104 @@ static INT InitMatrixPlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
   struct MatrixPlotObj *theMpo;
   GRID *theGrid;
   INT i;
+  float fValue;
+  int iValue;
   char buffer[64];
 
   theMpo = &(thePlotObj->theMpo);
   theGrid = PO_MG(thePlotObj)->grids[PO_MG(thePlotObj)->currentLevel];
   if (theGrid == NULL) return (NOT_INIT);
-  PO_MIDPOINT(thePlotObj)[0] = PO_MIDPOINT(thePlotObj)[1] = theGrid->nVector;
+  PO_MIDPOINT(thePlotObj)[0] = PO_MIDPOINT(thePlotObj)[1] = theGrid->nVector/2;
   PO_RADIUS(thePlotObj) = theGrid->nVector/2;
 
   /* defaults */
   if (PO_STATUS(thePlotObj)==NOT_INIT)
   {
-    theMpo->min =           -4.0;
-    theMpo->max =            4.0;
+    theMpo->min                     =-4.0;
+    theMpo->max                     = 4.0;
+    theMpo->log                     = FALSE;
+    theMpo->conn            = TRUE;
+    theMpo->extra           = FALSE;
+    theMpo->EvalFct         = NULL;
+    theMpo->Matrix          = NULL;
   }
 
   /* get plot procedure */
   for (i=1; i<argc; i++)
-    if (argv[i][0]=='e')
+    switch (argv[i][0])
     {
+    case 'f' :
+      if (sscanf(argv[i],"f %f",&fValue)==1)
+        theMpo->min = fValue;
+      break;
+
+    case 't' :
+      if (sscanf(argv[i],"t %f",&fValue)==1)
+        theMpo->max = fValue;
+      break;
+
+    case 'T' :
+      if (sscanf(argv[i],"T %f",&fValue)!=1)
+        PrintErrorMessage('E',"Matrix","specify value with T option");
+      else
+        theMpo->thresh = fValue;
+      break;
+
+    case 'l' :
+      if (sscanf(argv[i],"l %d",&iValue)!=1)
+        break;
+      if (iValue==1)
+        theMpo->log = YES;
+      else if (iValue==0)
+        theMpo->log = NO;
+      break;
+
+    case 'C' :
+      if (sscanf(argv[i],"C %d",&iValue)!=1)
+        break;
+      if (iValue==1)
+        theMpo->conn = YES;
+      else if (iValue==0)
+        theMpo->conn = NO;
+      break;
+
+    case 'E' :
+      if (sscanf(argv[i],"E %d",&iValue)!=1)
+        break;
+      if (iValue==1)
+        theMpo->extra = YES;
+      else if (iValue==0)
+        theMpo->extra = NO;
+      break;
+
+    case 'e' :
       if (sscanf(argv[i],"e %s",buffer)!=1)
         break;
-      if (strlen(buffer)>=NAMESIZE) break;
       theMpo->EvalFct = GetMatrixValueEvalProc(buffer);
+      if (theMpo->EvalFct == NULL)
+      {
+        UserWrite("cannot find plot procedure\n");
+        return (NOT_ACTIVE);
+      }
+      break;
+
+    case 'M' :
+      if (sscanf(argv[i],"M %s",buffer)!=1)
+        break;
+      theMpo->Matrix = GetMatSymbol(ENVITEM_NAME(MGFORMAT(PO_MG(thePlotObj))),buffer);
+      if (theMpo->Matrix!=NULL)
+        if (!MD_IS_SCALAR(SYM_MAT_DESC(theMpo->Matrix)))
+          theMpo->Matrix = NULL;
+      if (theMpo->Matrix == NULL)
+      {
+        UserWrite("cannot find scalar matrix symbol\n");
+        return (NOT_ACTIVE);
+      }
       break;
     }
-  if (theMpo->EvalFct == NULL)
+  if ((theMpo->EvalFct == NULL) && (theMpo->Matrix == NULL))
   {
-    UserWrite("cannot find plot procedure\n");
+    UserWrite("specify a scalar matrix symbol or a matrix plot procedure\n");
     return (NOT_ACTIVE);
   }
 
@@ -2135,19 +2205,24 @@ static INT InitMatrixPlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
 static INT DisplayMatrixPlotObject (PLOTOBJ *thePlotObj)
 {
   struct MatrixPlotObj *theMpo;
-  char buffer[128];
 
   theMpo = &(thePlotObj->theMpo);
 
   /* print range */
-  sprintf(buffer,"minValue=%.10g    maxValue=%.10g\n",(float)theMpo->min,(float)theMpo->max);
-  UserWrite(buffer);
+  UserWriteF(DISPLAY_PO_FORMAT_SFF,"range",(float)theMpo->min,(float)theMpo->max);
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"regular conn.",(theMpo->conn) ? "YES" : "NO");
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"extra   conn.",(theMpo->extra) ? "YES" : "NO");
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"use log",(theMpo->log) ? "YES" : "NO");
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"Thresh",(float)theMpo->thresh);
 
   /* print procedure name */
-  sprintf(buffer,"EvalProc=%s\n",((ENVVAR*)theMpo->EvalFct)->name);
-  UserWrite(buffer);
+  if (theMpo->EvalFct!=NULL)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc",((ENVVAR*)theMpo->EvalFct)->name);
 
-  return (ACTIVE);
+  if (theMpo->Matrix!=NULL)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"Matrix",ENVITEM_NAME(theMpo->Matrix));
+
+  return (0);
 }
 
 /****************************************************************************/
@@ -2653,7 +2728,7 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
         break;
       theVmo->Order = iValue;
       theVmo->Order = MAX(theVmo->Order,0);
-      theVmo->Order = MIN(theVmo->Order,2);
+      theVmo->Order = MIN(theVmo->Order,3);
       break;
 
     case 'b' :
@@ -2780,7 +2855,12 @@ static INT DisplayVecMat_2D (PLOTOBJ *thePlotObj)
   else
     UserWriteF(DISPLAY_PO_FORMAT_SS,"extra","NO");
 
-  UserWriteF(DISPLAY_PO_FORMAT_SI,"order",(int)theVmo->Order);
+  switch (theVmo->Order)
+  {
+  case 1 : UserWriteF(DISPLAY_PO_FORMAT_SS,"order","1: vector order"); break;
+  case 2 : UserWriteF(DISPLAY_PO_FORMAT_SS,"order","2: vector order, cuts black"); break;
+  case 3 : UserWriteF(DISPLAY_PO_FORMAT_SS,"order","3: blockvector order"); break;
+  }
 
   if (theVmo->Dependency == YES)
     UserWriteF(DISPLAY_PO_FORMAT_SS,"dependency","YES");
@@ -3856,12 +3936,12 @@ INT InitPlotObjTypes (void)
 
   /* set data and procedures of PLOTOBJTYPE */
         #ifdef __TWODIM__
-  /* maybe later: KJ
-     if ((thePOT=GetPlotObjType("Matrix"))  == NULL) return (1);
-     thePOT->Dimension				= TYPE_2D;
-     thePOT->SetPlotObjProc			= InitMatrixPlotObject;
-     thePOT->DispPlotObjProc            = DisplayMatrixPlotObject;
-   */
+
+  if ((thePOT=GetPlotObjType("Matrix"))  == NULL) return (1);
+  thePOT->Dimension                               = TYPE_2D;
+  thePOT->SetPlotObjProc                  = InitMatrixPlotObject;
+  thePOT->DispPlotObjProc                 = DisplayMatrixPlotObject;
+
   if ((thePOT=GetPlotObjType("EScalar")) == NULL) return (1);
   thePOT->Dimension                               = TYPE_2D;
   thePOT->SetPlotObjProc                  = InitScalarFieldPlotObject_2D;
@@ -3884,12 +3964,11 @@ INT InitPlotObjTypes (void)
         #endif
 
         #ifdef __THREEDIM__
-  /* maybe later: KJ
-     if ((thePOT=GetPlotObjType("Matrix"))  == NULL) return (1);
-     thePOT->Dimension				= TYPE_3D;
-     thePOT->SetPlotObjProc			= InitMatrixPlotObject;
-     thePOT->DispPlotObjProc            = DisplayMatrixPlotObject;
-   */
+  if ((thePOT=GetPlotObjType("Matrix"))  == NULL) return (1);
+  thePOT->Dimension                               = TYPE_3D;
+  thePOT->SetPlotObjProc                  = InitMatrixPlotObject;
+  thePOT->DispPlotObjProc                 = DisplayMatrixPlotObject;
+
   if ((thePOT=GetPlotObjType("EScalar")) == NULL) return (1);
   thePOT->Dimension                               = TYPE_3D;
   thePOT->SetPlotObjProc                  = InitScalarFieldPlotObject_3D;
