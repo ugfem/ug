@@ -165,7 +165,7 @@
    out of the packed archive file within the ug3 software is shipped.
 .  nroff(1),~neqn(1),~tbl(1) - These UNIX utilities are neccessary to 
    format the manual pages with the 'ugman' respectively 'xugman' command.
-.  X window - ug needs the X window system.
+.  X~window - ug needs the X window system.
 .  hardware - For hardware dependencies refer to the manual pages `machines`
    and `installation`.
 
