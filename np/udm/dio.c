@@ -309,7 +309,7 @@ int     Write_DT_General (DIO_GENERAL *dio_general)
 
 int CloseDTFile ()
 {
-  if (fclose(stream)!=NULL) return (1);
+  if (fclose(stream)) return (1);
   return (0);
 }
 

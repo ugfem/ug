@@ -4641,7 +4641,7 @@ static INT SmoothGridCommand (INT argc, char **argv)
     switch (argv[i][0])
     {
     case 'r' :
-      if (strcmp(argv[i],"reset")==NULL)
+      if (strcmp(argv[i],"reset")==0)
         GridReset=TRUE;
       else
       {
