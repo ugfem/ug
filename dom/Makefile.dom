@@ -28,6 +28,14 @@ STD_DOMAIN:
 GSF_DOMAIN:
 	cd gsf; make -f Makefile.gsf; cd ..;
 
+STD: 
+	rm -f ../lib/libdom$(UG_DOMSUFFIX).a;
+	cd std; make -f Makefile.std; cd ..;
+
+GSF: 
+	rm -f ../lib/libdom$(UG_DOMSUFFIX).a;
+	cd gsf; make -f Makefile.gsf; cd ..;
+
 clean:
 	rm -f $(OBJECTS)
 	cd std;  make -f Makefile.std clean; cd ..;
