@@ -1655,16 +1655,6 @@ static INT DisposeNode (GRID *theGrid, NODE *theNode)
 
   /* remove node from node list */
   GRID_UNLINK_NODE(theGrid,theNode)
-  /* TODO: delete
-          if (PREDN(theNode)!=NULL)
-                  SUCCN(PREDN(theNode)) = SUCCN(theNode);
-          else
-                  FIRSTNODE(theGrid) = SUCCN(theNode);
-          if (SUCCN(theNode)!=NULL)
-                  PREDN(SUCCN(theNode)) = PREDN(theNode);
-          else
-                  LASTNODE(theGrid) = PREDN(theNode);
-     } */
   theVertex = MYVERTEX(theNode);
   father = NFATHER(theNode);
   if (father != NULL)
@@ -4274,7 +4264,14 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
   /******************************/
   if (bopt)
   {
-    /* ??????????????? */
+    if (OBJT(theVertex) == BVOBJ)
+    {
+      if (BNDP_BndPDesc(V_BNDP(theVertex),&i))
+        UserWrite("Error in boundary point\n");
+      else
+        UserWriteF("boundary point: move %d moved %d\n",i,
+                   MOVED(theVertex));
+    }
   }
 
   if (nbopt)
@@ -4487,6 +4484,7 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
       UserWrite(buffer);
     }
                 #endif
+    UserWrite("\n");
   }
   if (nbopt)
   {

@@ -146,23 +146,22 @@
 
 #else
 
-#define GRID_UNLINK_OBJECT(Grid,Object,OTYPE,PRED,SUCC)\
-  {\
-    if (PRED(Object)!=NULL) \
-      SUCC(PRED(Object)) = SUCC(Object);\
-    else {\
-      FIRST ## OTYPE(Grid) = SUCC(Object);\
-      PRED(SUCC(Object)) = NULL;\
-    }\
-    if (SUCC(Object)!=NULL) \
-      PRED(SUCC(Object)) = PRED(Object);\
-    else {\
-      LAST ## OTYPE(Grid) = PRED(Object);\
-      SUCC(PRED(Object)) = NULL;\
-    }\
+#define GRID_UNLINK_OBJECT(Grid,Object,OTYPE,PRED,SUCC)     \
+  {                                                           \
+    if (PRED(Object)!=NULL)                                 \
+      SUCC(PRED(Object)) = SUCC(Object);                  \
+    else {                                                  \
+      FIRST ## OTYPE(Grid) = SUCC(Object);                \
+      if (SUCC(Object)!=NULL) PRED(SUCC(Object)) = NULL;  \
+    }                                                       \
+    if (SUCC(Object)!=NULL)                                 \
+      PRED(SUCC(Object)) = PRED(Object);                  \
+    else {                                                  \
+      LAST ## OTYPE(Grid) = PRED(Object);                 \
+      if (PRED(Object)!=NULL) SUCC(PRED(Object)) = NULL;  \
+    }                                                       \
   }
 #endif
-
 
 #ifdef ModelP
 #define GRID_LINK_OBJECT(Grid,Object,Prio,OTYPE,PRED,SUCC)\
