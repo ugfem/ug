@@ -173,6 +173,7 @@ struct mesh
   INT **Element_corners;             /* nb. of element corners              */
   INT ***Element_corner_ids;         /* nb. of side corners                 */
   INT ***nbElements;                 /* nb. of side corners                 */
+  INT **ElemSideOnBnd;               /* used bitwise: sides on bnd for elem */
 
   /* parallel part */
   char *VertexLevel;                                     /* level of vertex						*/
