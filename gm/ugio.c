@@ -45,6 +45,7 @@
 #include "general.h"
 #include "debug.h"
 #include "bio.h"
+#include "ugstruct.h"
 
 #include "devices.h"
 
@@ -195,7 +196,7 @@ INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
   NODE *theNode;
   ELEMENT *theElement;
   VERTEX *theVertex;
-  DOUBLE *global;
+  COORD *global;
   time_t Time;
   char *fmt;
   char buffer[BUFFERSIZE];
@@ -862,42 +863,6 @@ static INT IO_GetSideNode (ELEMENT *theElement, INT side, NODE **theNode, INT *n
 
 #endif
 
-INT IO_Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side, ELEMENT *SonList[MAX_SONS], INT SonSides[MAX_SONS], INT dummy)
-{
-  INT i,j;
-  MGIO_RR_RULE *theRule;
-  struct mgio_sondata *son;
-
-  /* init */
-  *Sons_of_Side = 0;
-  theRule = rr_rules + REFINE(theElement);
-
-#ifdef __TWODIM__
-  for (i=0; i<NSONS(theElement); i++) SonList[i] = SON(theElement,i);
-#endif
-#ifdef __THREEDIM__
-  if (IO_GetSons(theElement,SonList) != GM_OK) RETURN(GM_FATAL);
-#endif
-
-  for (i=0; i<theRule->nsons; i++)
-  {
-    son = &(theRule->sons[i]);
-    for (j=0; j<SIDES_OF_TAG(son->tag); j++)
-      if (son->nb[j]==20+side)
-      {
-        SonList[*Sons_of_Side] = SonList[i];
-        SonSides[*Sons_of_Side] = j;
-        (*Sons_of_Side)++;
-      }
-  }
-
-  /* fill remaining with zero */
-  for (i=*Sons_of_Side; i<MAX_SONS; i++) SonList[i] = NULL;
-
-  return(GM_OK);
-}
-
-
 static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT *refinement)
 {
   INT i,j,n,nedge,type,sonRefined,n0,n1,Sons_of_Side,Sons_of_Side_List[MAX_SONS],nbside;
@@ -1057,6 +1022,41 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   return (0);
 }
 
+INT IO_Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side, ELEMENT *SonList[MAX_SONS], INT SonSides[MAX_SONS], INT dummy)
+{
+  INT i,j;
+  MGIO_RR_RULE *theRule;
+  struct mgio_sondata *son;
+
+  /* init */
+  *Sons_of_Side = 0;
+  theRule = rr_rules + REFINE(theElement);
+
+#ifdef __TWODIM__
+  for (i=0; i<NSONS(theElement); i++) SonList[i] = SON(theElement,i);
+#endif
+#ifdef __THREEDIM__
+  if (IO_GetSons(theElement,SonList) != GM_OK) RETURN(GM_FATAL);
+#endif
+
+  for (i=0; i<theRule->nsons; i++)
+  {
+    son = &(theRule->sons[i]);
+    for (j=0; j<SIDES_OF_TAG(son->tag); j++)
+      if (son->nb[j]==20+side)
+      {
+        SonList[*Sons_of_Side] = SonList[i];
+        SonSides[*Sons_of_Side] = j;
+        (*Sons_of_Side)++;
+      }
+  }
+
+  /* fill remaining with zero */
+  for (i=*Sons_of_Side; i<MAX_SONS; i++) SonList[i] = NULL;
+
+  return(GM_OK);
+}
+
 MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, char *format, unsigned long heapSize)
 {
   MULTIGRID *theMG;
@@ -1075,7 +1075,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   MGIO_BD_GENERAL bd_general;
   MGIO_REFINEMENT *refinement;
   BNDP **BndPList;
-  DOUBLE **PositionList, *Positions;
+  COORD **PositionList, *Positions;
   char sysCom[NAMESIZE];
   char *p;
   BVP *theBVP;
@@ -1163,10 +1163,10 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   theMesh.nInnP = cg_general.nInnerPoint;
   if (cg_general.nInnerPoint>0)
   {
-    theMesh.Position = (DOUBLE**)GetTmpMem(theHeap,cg_general.nInnerPoint*sizeof(DOUBLE*));
-    if (theMesh.Position==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for theMesh.Position\n",(int)cg_general.nInnerPoint*sizeof(DOUBLE*)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-    Positions = (DOUBLE*)GetTmpMem(theHeap,MGIO_DIM*cg_general.nInnerPoint*sizeof(DOUBLE));
-    if (Positions==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for Positions\n",(int)MGIO_DIM*cg_general.nInnerPoint*sizeof(DOUBLE)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+    theMesh.Position = (COORD**)GetTmpMem(theHeap,cg_general.nInnerPoint*sizeof(COORD*));
+    if (theMesh.Position==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for theMesh.Position\n",(int)cg_general.nInnerPoint*sizeof(COORD*)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+    Positions = (COORD*)GetTmpMem(theHeap,MGIO_DIM*cg_general.nInnerPoint*sizeof(COORD));
+    if (Positions==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for Positions\n",(int)MGIO_DIM*cg_general.nInnerPoint*sizeof(COORD)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   }
   for (i=0; i<cg_general.nInnerPoint; i++)
     theMesh.Position[i] = Positions+MGIO_DIM*i;
@@ -1335,7 +1335,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
  */
 /****************************************************************************/
 
-static DOUBLE LocalCoord[2][4][2]=
+static COORD LocalCoord[2][4][2]=
 { {{ 0, 0},{1, 0},{0,1},{ 0,0}},
   {{-1,-1},{1,-1},{1,1},{-1,1}} };
 
@@ -1347,7 +1347,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
   long nv,ne,id;
   int i,j,k,n;
   double min,max,val;
-  DOUBLE *CoordOfCornerPtr[8];
+  COORD *CoordOfCornerPtr[8];
   FILE *stream;
   EVALUES *PlotProcInfo;
 
@@ -1405,7 +1405,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
         CORNER_COORDINATES(theElement,n,CoordOfCornerPtr);
         for (i=0; i<n; i++)
         {
-          val=(*PlotProcInfo->EvalProc)(theElement, (const DOUBLE **) CoordOfCornerPtr, (DOUBLE *) &(LocalCoord[n-3,i,0]));
+          val=(*PlotProcInfo->EvalProc)(theElement, (const COORD **) CoordOfCornerPtr, (COORD *) &(LocalCoord[n-3,i,0]));
           min = MIN(val,min);
           max = MAX(val,max);
         }
@@ -1490,7 +1490,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
         {
           theVertex=MYVERTEX(CORNER(theElement,i));
           if (USED(theVertex)) continue;
-          val=(*PlotProcInfo->EvalProc)(theElement, (const DOUBLE **) CoordOfCornerPtr, (DOUBLE *) &(LocalCoord[n-3,i,0]));
+          val=(*PlotProcInfo->EvalProc)(theElement, (const COORD **) CoordOfCornerPtr, (COORD *) &(LocalCoord[n-3,i,0]));
           fprintf(stream," %15.8lE",val);
           id++;
           if (id%5==0) fprintf(stream,"\n");
