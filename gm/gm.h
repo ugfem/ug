@@ -129,6 +129,7 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 #define BVD_MAX_ENTRIES (sizeof(BVD_ENTRY_TYPE)*CHAR_BIT)       /* maximum number
                                                                    of entries in a BVD; NOTE: the actual available
                                                                    number of entries depends on the range of each entry */
+
 /* constants for BLOCKVECTOR */
 #define BVDOWNTYPEVECTOR        0       /* symbolic value for BVDOWNTYPE */
 #define BVDOWNTYPEBV            1       /* symbolic value for BVDOWNTYPE */
@@ -358,7 +359,7 @@ typedef int MATRIX;
 #ifdef __version3__
 
 /* data structure for BlockvectorDescription */
-#define BVD_ENTRY_TYPE unsigned INT
+typedef unsigned INT BVD_ENTRY_TYPE;    /* memory providing storage for level numbers */
 typedef unsigned SHORT BLOCKNUMBER;     /* valid numbers are 0..MAX_BV_NUMBER */
 typedef unsigned char BLOCKLEVEL;       /* valid levels are 0..MAX_BV_LEVEL */
 
@@ -366,8 +367,8 @@ struct blockvector_description_format           /* describes how a struct of typ
                                                                                            blockvector_description is to
                                                                                            be interpreted				*/
 {
-  INT bits;                                                                     /* bits per blockentry			*/
-  BLOCKLEVEL max_level;                                                         /* max. number of entries		*/
+  INT bits;                                                                       /* bits per blocknumber entry */
+  BLOCKLEVEL max_level;                                                   /* max. number of entries	*/
   BVD_ENTRY_TYPE level_mask[BVD_MAX_ENTRIES];
   /* level_mask[i] = mask entries for levels 0..i		*/
   BVD_ENTRY_TYPE neg_digit_mask[BVD_MAX_ENTRIES];
@@ -388,13 +389,13 @@ struct vector {
   unsigned INT control;                         /* object identification, various flags */
   union geom_object *object;                    /* associated object					*/
 
-  struct vector *pred,*succ;                    /* doubly linked list of vectors		*/
+  struct vector *pred,*succ;                    /* double linked list of vectors		*/
 
   unsigned INT index;                           /* ordering of unknowns                                 */
   unsigned INT skip;                                    /* used bitwise to skip unknowns		*/
   struct matrix *start;                         /* implements matrix					*/
 
-  BV_DESC block_descr;                          /* membership to the block levels		*/
+  BV_DESC block_descr;                          /* membership to the blockvector levels	*/
 
   /* user data */
   DOUBLE value[1];                                      /* array of doubles                                     */
@@ -415,18 +416,15 @@ typedef struct matrix CONNECTION;
 
 struct blockvector
 {
-  unsigned INT control;                         /* object identification				  */
+  unsigned INT control;                         /* object identification, various flags	  */
 
-  BLOCKNUMBER number;                                   /* logical blocknumber					  */
-  struct blockvector *pred,*succ;       /* doubly linked list of vectors		  */
-  VECTOR *first_vec;                                    /* start vector of this block                     */
-  VECTOR *end_vec;                                      /* succ. of the last vector of this block */
+  BLOCKNUMBER number;                                   /* logical blockvectornumber			  */
+  struct blockvector *pred,*succ;       /* double linked list of blockvectors	  */
+  VECTOR *first_vec;                                    /* start vector of this blockvector       */
+  VECTOR *end_vec;                                      /* succ. of the last vector of this blockv*/
 
-  union                                                         /* variant determined by bit 0 in control */
-  {                                                                     /* bit = 0 vector; bit = 1 sons			  */
-    VECTOR *vector;                                     /* in the last blocklevel: ptr. to vector */
-    struct blockvector *sons;                   /* start of the next block level		  */
-  } down;
+  struct blockvector *first_son;        /* start of blockvector list on next level*/
+  struct blockvector *last_son;         /* end of blockvector list on next level  */
 };
 typedef struct blockvector BLOCKVECTOR;
 
@@ -452,7 +450,7 @@ struct ivertex {                                        /* inner vertex structur
   COORD xi[DIM];                                        /* local coordinates in father element	*/
 
   /* pointers */
-  union vertex *pred,*succ;                     /* doubly linked list of vertices		*/
+  union vertex *pred,*succ;                     /* double linked list of vertices		*/
   void *data;                                           /* associated user data structure		*/
   union element *father;                        /* father element						*/
   struct node *topnode;                         /* highest node where defect is valid	*/
@@ -483,7 +481,7 @@ struct bvertex {                                        /* boundary vertex struc
   COORD xi[DIM];                                        /* local coordinates in father element	*/
 
   /* pointers */
-  union vertex *pred,*succ;                     /* doubly linked list of vertices		*/
+  union vertex *pred,*succ;                     /* double linked list of vertices		*/
   void *data;                                           /* associated user data structure		*/
   union element *father;                        /* father element						*/
   struct node *topnode;                         /* highest node where defect is valid	*/
@@ -511,7 +509,7 @@ struct node {                                           /* level dependent part 
         #endif
 
   /* pointers */
-  struct node *pred,*succ;                      /* doubly linked list of nodes per level*/
+  struct node *pred,*succ;                      /* double linked list of nodes per level*/
   struct link *start;                           /* list of links						*/
   struct node *father;                          /* node on coarser level (NULL if none) */
   struct node *son;                                     /* node on finer level (NULL if none)	*/
@@ -585,7 +583,7 @@ struct triangle {
   unsigned INT property;                        /* we need more bits ...				*/
 
   /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements		*/
+  union element *pred, *succ;           /* double linked list of elements		*/
   struct node *n[3];                                    /* corners of that element				*/
   union element *father;                        /* father element on coarser grid		*/
   union element *sons[4];                       /* element tree                                                 */
@@ -613,7 +611,7 @@ struct quadrilateral {
   unsigned INT property;                        /* we need more bits ...				*/
 
   /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements		*/
+  union element *pred, *succ;           /* double linked list of elements		*/
   struct node *n[4];                                    /* corners of that element				*/
   union element *father;                        /* father element on coarser grid		*/
   union element *sons[4];                       /* element tree                                                 */
@@ -641,7 +639,7 @@ struct tetrahedron {
   unsigned INT property;                        /* we need more bits ...				*/
 
   /* pointers */
-  union element *pred, *succ;           /* doubly linked list of elements		*/
+  union element *pred, *succ;           /* double linked list of elements		*/
   struct node *n[4];                                    /* corners of that element				*/
   union element *father;                        /* father element on coarser grid		*/
   union element *sons[1];                       /* element tree                                                 */
@@ -878,7 +876,7 @@ extern CONTROL_ENTRY
 /* MNEW          |28	| |*| 1 if matrix/connection is new                                     */
 /* CEXTRA	 |29	| |*| 1 if is extra connection							*/
 /*																			*/
-/* Use of the control word in blockvector:									*/
+/* Use of the control word in 'BLOCKVECTOR':									*/
 /* BVDOWNTYPE 0	 BVDOWNTYPEVECTOR if the down component points to a vector,	*/
 /*				 BVDOWNTYPEBV if it points to a further blockvector (son)	*/
 /*																			*/
@@ -1100,7 +1098,7 @@ extern CONTROL_ENTRY
 /*																			*/
 /****************************************************************************/
 
-/* access to members of struct block_vectordescription (BV_DESC) */
+/* access to members of struct blockvector_description (BV_DESC) */
 #define BVD_NR_ENTRIES(bvd)                                     ((bvd)->current)
 
 /* macros for blockvectordescription */
@@ -1119,8 +1117,6 @@ extern CONTROL_ENTRY
 
 #define BVD_IS_SUB_BLOCK(bvd_a,bvd_b,bvdf)      ( (BVD_NR_ENTRIES(bvd_a) >= BVD_NR_ENTRIES(bvd_b)) && (((bvd_a)->entry & (((bvdf)->level_mask[BVD_NR_ENTRIES(bvd_b)-1]))) == ((((bvd_b)->entry & (bvdf)->level_mask[BVD_NR_ENTRIES(bvd_b)-1])))))
 
-
-
 /****************************************************************************/
 /*																			*/
 /* macros for BLOCKVECTOR													*/
@@ -1134,8 +1130,8 @@ extern CONTROL_ENTRY
 #define BVDOWNTYPE_CE                                   67
 #define BVDOWNTYPE_SHIFT                                0
 #define BVDOWNTYPE_LEN                                  1
-#define BVDOWNTYPE(p)                                   CW_READ(p,BVDOWNTYPE_CE)
-#define SETBVDOWNTYPE(p,n)                              CW_WRITE(p,BVDOWNTYPE_CE,n)
+#define BVDOWNTYPE(bv)                                  CW_READ(bv,BVDOWNTYPE_CE)
+#define SETBVDOWNTYPE(bv,n)                     CW_WRITE(bv,BVDOWNTYPE_CE,n)
 
 /* access to members of struct blockvector */
 #define BVNUMBER(bv)                                    ((bv)->number)
@@ -1143,8 +1139,9 @@ extern CONTROL_ENTRY
 #define BVSUCC(bv)                                              ((bv)->succ)
 #define BVFIRSTVECTOR(bv)                               ((bv)->first_vec)
 #define BVENDVECTOR(bv)                                 ((bv)->end_vec)
-#define BVDOWNVECTOR(bv)                                ((bv)->down.vector)
-#define BVDOWNBV(bv)                                    ((bv)->down.sons)
+#define BVDOWNVECTOR(bv)                                ((bv)->first_vec)
+#define BVDOWNBV(bv)                                    ((bv)->first_son)
+#define BVDOWNBVEND(bv)                                 ((bv)->last_son)
 
 /* operations on struct block */
 #define BV_IS_LEAF_BV(bv)                               (BVDOWNTYPE(bv)==BVDOWNTYPEVECTOR)
