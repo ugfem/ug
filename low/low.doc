@@ -21,8 +21,8 @@
    The constant 'ALIGNMENT' has to set equal to '4' or '8' depending on 
    the 32 or 64 bit architecture of the used machine. It is also related 
    to the constant 'ALIGNMASK', which has correspondingly to be set equal 
-   to '0xFFFFFFFC' or '0xFFFFFFF8' to clear the last three or four bits 
-   of the alignment of the memory blocks.
+   to '0xFFFFFFFC' or '0xFFFFFFF8' to clear the last two or three bits 
+   of a memory address.
  
 D*/
 /***************************************************************************/
