@@ -1,0 +1,137 @@
+				HOWTO go parallel using UG
+				==========================
+
+CAUTION: these steps are only a descrition for 
+		 ugcore internal use, and fit to a setup 
+		 inside the ICA3 domain (129.69.113). 
+			S.L., 970128
+
+PURPOSE:
+
+Short description what is to do, when you want to run 
+your application with a parallel UG version. 
+
+STEPS:
+
+The following steps are nescessary.
+
+1. Configure UG
+2. Compile UG
+3. Link your application
+4. Start your application
+5. Modify your scripts
+
+
+1. Configure UG
+
+First you need to do the basic UG configuration. This means
+you should know what parallel model you want to use and
+select this  model using the command 'ugconf'.
+
+The parallel model depends mainly on the hardware,
+you choose. This is one of  
+	Model			Platform
+	-----			--------
+	PVM				workstation clusters, 
+					many supercomputers 
+	MPI				workstations clusters,
+					many supercomputers 
+	SHMEMT3D		Cray T3D (shmem)
+	NX				Intel Paragon (nx)
+	NXLIB			Intel Paragon (nxlib)
+	PARIX			Parsytec computers:
+					Supercluster, CC
+	SEQ				serial version (default)
+
+for a full list of currently supported models type 
+'ugconf -help'.
+
+For Models PVM or MPI you need to set the environment
+variable PVM_ROOT (PVM) or MPIHOME (MPI) and uncomment
+the following lines to set the model dependent include and
+library information correctly:
+
+# example settings for MPI
+MODEL_ENV_CFLAGS = -I$(MPIHOME)/include
+MODEL_ENV_LFLAGS = -L$(MPIHOME)/lib/IRIX/ch_p4 -lmpi
+
+Set other configuration options, you want using 'ugconf'.
+All but GRAPE should work with parallel models.
+
+
+2. Compile UG
+
+Now compile UG in the usual way, all parallel stuff like
+ddd, ppif, dddif should be compiled transparently.
+After successfull compilation the $UGROOT/lib directory
+contains beside your parallel UG library 'libug2/3.a' 
+the additional parallel libs 'libddd.a', 'libppif.a'.
+
+
+3. compile/link your application
+
+To compile/link your application modify your
+applicaton's Makefile
+according to the Makefile of a UG application like
+$UGROOT/../simple or other.
+
+Ensure that it contains the line
+
+	include $(UGROOT)/ug.conf
+
+at the beginning. With this include all necessary options
+are passed into your Makefile.
+The target for compilation should look like
+
+.c.o:
+	$(ARCH_CC) $(UG_CFLAGS) $<
+
+the link target should look similar to
+
+simple:
+	$(UG_LINK) -o simple $(OBJECTS) $(UG_LIBS) $(UG_LFLAGS)
+
+Remember that an action line (e.g. $(ARCH_CC) $(UG_CFLAGS) $<)
+must have a <tab> at the beginning.
+
+
+4. Start parallel application
+
+If you succeded in the last steps, you should now have your
+application as an executable file.
+
+For PVM check that you have a ~/hosts file containing the line:
+
+* ep=/home/stefan/UG/fem/appl wd=/home/stefan/UG/fem/appl
+
+at the beginning. Now change to the directory where your
+application resides and start the pvm daemon using the command:
+	'ugpvmcontext $PWD'
+this command will modify the ~/hosts/file and restart the
+pvm daemon.
+'ugpvmcontext' will only work correctly, if
+'pvmd3' is accessible by your shell (PATH variable).
+You can find 'pvmd3' in /rlocal/pvm3/lib/<arch>, where
+<arch> is the architecture (e.g. HPPA).
+
+Starting the application is now really easy. 
+Use the command 'ugrun <appl> <procs>', e.g. if you want
+to start the application 'simple' on 2 processors, enter:
+
+	ugrun simple 2
+
+
+5. Modify your scripts
+
+A script should contain the command
+	'cont $a'
+so that following skript commands are executed on
+all processors.
+
+After coarse grid completion you should insert
+the command 'fixcoarsegrid', which 
+does a distribution of the coarse grid to all
+processors.
+
+Now hopefully all works and you have fun with 
+your parallel UG version.
