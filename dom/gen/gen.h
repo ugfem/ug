@@ -125,6 +125,9 @@ typedef struct {
 typedef struct {
 
   int id;
+  int in;
+  int out;
+  int property;
 
 } SEGMENT;
 
@@ -141,6 +144,7 @@ typedef struct {
   int nBC;
   CELL *C;
   int nF;
+  int nBF;
   FACE *F;
   int sd;
   int nS;
