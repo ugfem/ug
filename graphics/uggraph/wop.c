@@ -125,11 +125,47 @@ INT ce_ELEMORD;
 #define SETBITS(x,p,y)         (((y)<<((p)+1-(3)))|(x))
 #define CORNER_OF_SIDE0(t,s,c) (element_descriptors[t]->corner_of_side[(s)][(c)])
 
-/* Macros for ordering elements */
+/* Macrod for ordering remote sons and collecting coarse grid (parallel only) */
+#ifdef ModelP
+#define HT_LEN                31
+#define GLEN                  (1+(3+MAX_SIDES_OF_ELEM)*MAX_SONS)
+#define OS_LINK(p)            (*(OS_DATA **)((INT *)(p)+1))
+#define GAP(p)                (OS_LINK(p)->gap)
+#define PLOT_ID(p)            (OS_LINK(p)->plotId)
+#define N_LOCAL_SONS(p)       (OS_LINK(p)->nLocalSons)
+#define N_GLOBAL_SONS(p)      (OS_LINK(p)->nGlobalSons)
+#define SH_LINK(p)            (OS_LINK(p)->SH_Data)
+#define TABLE(p)              (SH_LINK(p)->table)
+#define HTAB(p)               (SH_LINK(p)->htab)
+#define GR_LINK(p)            (SH_LINK(p)->GR_Data)
+#define HIS_GAP(p, k)         (GR_LINK(p)[k]->hisGap)
+#define CNT(p, k)             (GR_LINK(p)[k]->cnt)
+#define NAD(p, k)             (GR_LINK(p)[k]->nad)
+#define ADJACENT(p, k)        (GR_LINK(p)[k]->adjacent)
+#define CGG_BUFFER_SLOTS      2
+#define MAX_PGRAPH_SIZE       (4+MAX_SIDES_OF_ELEM-1 + \
+	                           1+(MAX_SIDES_OF_ELEM-1)*(1+MAX_CORNERS_OF_SIDE)+2)
+#define CGG_SLOT_LEN          (300*MAX_PGRAPH_SIZE+1)
+#define CGG_GID(k)            (OE_CGG[k].gid)
+#define CGG_GAP(k)            (OE_CGG[k].gap)
+#define CGG_CNT(k)            (OE_CGG[k].cnt)
+#define CGG_NAD(k)            (OE_CGG[k].nad)
+#define CGG_ADJACENT(k)       (OE_CGG[k].adjacent)
+#define CGG_BLINK(k)          (OE_CGG[k].blink)
+#define CGG_NSIDES(k)         (CGG_BLINK(k)->nsides)
+#define CGG_SIDE(k)           (CGG_BLINK(k)->side)
+#define CGG_FVS(k)            (CGG_BLINK(k)->viewableBSide)
+#define CGG_FHS(k)            (CGG_BLINK(k)->hiddenBSide)
+#define CGG_2INT(d)           (*(INT *) d)
+#endif
+
+/* Macros for extended shell algorithm */
 #define NCUT                  10
 #define INFINITY              1.79769E308
 #define SENTINEL              -INFINITY
 #define BT(i)                 (OE_BoxTab[i])
+
+#ifndef ModelP
 #define BCOUNT(i)             (OE_BE_Data[i].count)
 #define HIDDEN_BY(i)          (OE_BE_Data[i].hiddenBy)
 #define VIEWABLE_BSIDE(i)     (OE_BE_Data[i].viewableBSide)
@@ -147,26 +183,27 @@ INT ce_ELEMORD;
 #define Z_MIN(i)              (OE_BE_Data[i].zMin)
 #define Z_MAX(i)              (OE_BE_Data[i].zMax)
 
-#ifdef ModelP
-#define HT_LEN                31
-#define GLEN                  (1+(3+MAX_SIDES_OF_ELEM)*MAX_SONS)
-#define OS_LINK(p)            (*(OS_DATA **)((INT *)(p)+1))
-#define GAP(p)                (OS_LINK(p)->gap)
-#define PLOT_ID(p)            (OS_LINK(p)->plotId)
-#define N_LOCAL_SONS(p)       (OS_LINK(p)->nLocalSons)
-#define N_GLOBAL_SONS(p)      (OS_LINK(p)->nGlobalSons)
-#define SH_LINK(p)            (OS_LINK(p)->SH_Data)
-#define TABLE(p)              (SH_LINK(p)->table)
-#define HTAB(p)               (SH_LINK(p)->htab)
-#define GR_LINK(p)            (SH_LINK(p)->GR_Data)
-#define HIS_GAP(p, k)         (GR_LINK(p)[k]->hisGap)
-#define CNT(p, k)             (GR_LINK(p)[k]->cnt)
-#define NAD(p, k)             (GR_LINK(p)[k]->nad)
-#define ADJACENT(p, k)        (GR_LINK(p)[k]->adjacent)
+#else
+#define BCOUNT(i)             (OE_CGG[i].cnt)
+#define HIDDEN_BY(i)          (CGG_BLINK(i)->hiddenBy)
+#define VIEWABLE_BSIDE(i)     (CGG_BLINK(i)->viewableBSide)
+#define HIDDEN_BSIDE(i)       (CGG_BLINK(i)->hiddenBSide)
+#define LEFT_SON(i)           (CGG_BLINK(i)->leftSon)
+#define RIGHT_SON(i)          (CGG_BLINK(i)->rightSon)
+#define U1(i)                 (CGG_BLINK(i)->u1)
+#define V1(i)                 (CGG_BLINK(i)->v1)
+#define U2(i)                 (CGG_BLINK(i)->u2)
+#define V2(i)                 (CGG_BLINK(i)->v2)
+#define U_LEFT_TREE(i)        (CGG_BLINK(i)->uLeftTree)
+#define V_LEFT_TREE(i)        (CGG_BLINK(i)->vLeftTree)
+#define U_RIGHT_TREE(i)       (CGG_BLINK(i)->uRightTree)
+#define V_RIGHT_TREE(i)       (CGG_BLINK(i)->vRightTree)
+#define Z_MIN(i)              (CGG_BLINK(i)->zMin)
+#define Z_MAX(i)              (CGG_BLINK(i)->zMax)
 #endif
 
 /* pixel resolution for inserting boundary nodes */
-#define SMALLPIX 			4
+#define SMALLPIX 	    	  4
 
 /* introduce new coordinate system for matrix plots: 
 		(0,0) is in the upper left corner
@@ -183,6 +220,8 @@ INT ce_ELEMORD;
 /*                                                                          */
 /****************************************************************************/
 
+/* structs for extended shell algorithm */
+
 typedef struct {
 	INT        id;
 	ELEMENT    *elem;
@@ -193,11 +232,12 @@ typedef struct IList{
 	struct IList *next;
 } ILIST;
 
+#ifndef ModelP
 typedef struct {
 	INT          count;
-	ILIST        *hiddenBy;
 	INT          viewableBSide;
 	INT          hiddenBSide;
+	ILIST        *hiddenBy;
 	INT          leftSon;
 	INT          rightSon;
 	DOUBLE       u1, v1;
@@ -207,8 +247,43 @@ typedef struct {
 	DOUBLE       zMin;
 	DOUBLE       zMax;
 } BE_DATA;
+#endif
+
+/* structs for collecting & ordering coarse grid */
 
 #ifdef ModelP
+typedef struct {
+	INT          ncorners;
+	DOUBLE       corner[MAX_CORNERS_OF_SIDE][3];
+} SIDE_DATA;
+
+typedef struct {
+	INT          viewableBSide;
+	INT          hiddenBSide;
+	ILIST        *hiddenBy;
+	INT          leftSon;
+	INT          rightSon;
+	DOUBLE       u1, v1;
+	DOUBLE       u2, v2;
+	DOUBLE       uLeftTree, vLeftTree;
+	DOUBLE       uRightTree, vRightTree;
+	DOUBLE       zMin;
+	DOUBLE       zMax;
+	INT          nsides;
+	SIDE_DATA    side[1];
+} BS_DATA;
+
+typedef struct {
+	INT          gid;
+	INT          gap;
+	INT          cnt;
+	INT          nad;
+	INT          *adjacent;
+	BS_DATA      *blink;
+} CGG_DATA;
+
+/* structs for ordering remote sons */
+
 typedef struct {
 	INT          hisGap;
 	INT          cnt;
@@ -362,18 +437,25 @@ static RotObsTrafoProcPtr InitRotObsTrafo3d;
 
 /*---------- variables use by OrderElements etc ----------------------------*/
 static VIEWEDOBJ			*OE_ViewedObj;
-static INT                  OE_OrderStrategy=0;
-static INT					OE_force_ordering=FALSE;
 static DOUBLE               *OE_zMin;
 static DOUBLE               *OE_zMax;
+static INT                  OE_OrderStrategy;
+static INT                  OE_force_ordering;
 static INT                  OE_nBndElem;
 static MAP                  *OE_Map;
+#ifndef ModelP
 static BE_DATA              *OE_BE_Data;
+#endif
 static INT                  *OE_BoxTab;
 static HEAP                 *OE_Heap;
 static INT                  OE_QueryBox;
-static INT                  OE_nCompareElements;
 static INT                  OE_Error;
+#ifdef ModelP
+static CGG_DATA             *OE_CGG;
+static INT                  OE_nLocalCGelems;
+static INT                  OE_nGlobalCGelems;
+static DOUBLE               *OE_Buffer[WOP_DOWN_CHANNELS+1][CGG_BUFFER_SLOTS];
+#endif
 
 /*---------- variables use by GetFirst/NextElement... ----------------------*/
 static MULTIGRID					*GE_MG; 						
@@ -682,7 +764,7 @@ static MULTIGRID	*GElem_MG;
 static INT			 GElem_fromLevel;
 static INT			 GElem_toLevel;
 #ifdef ModelP
-static ELEMENT      *GElem_NextInLevel[MAX_LEVELS_PAR];
+static ELEMENT      *GElem_NextInLevel[MAXLEVEL];
 #endif
 
 /*---------- working variables of 'FindRange' routines ---------------------*/
@@ -724,13 +806,11 @@ static RECURSIVE_EvaluateProcPtr	WOP_RECURSIVE_EvaluateProc;
 
 /*---------- variables for parallel extensions ----------------------------*/
 #ifdef ModelP
-static DRAWINGOBJ          WOP_DO_Buffer[WOP_DOWN_CHANNELS+1]
-                                        [DO_BUFFER_SLOTS][DO_SLOT_SIZE];
-static VChannelPtr         WOP_UpChannel;
-static VChannelPtr         WOP_DownChannel[WOP_DOWN_CHANNELS];
-static INT                 WOP_NbDesc[WOP_DOWN_CHANNELS];
-static DRAWINGOBJ          *WOP_DObjPnt;
-
+static DRAWINGOBJ       *WOP_DO_Buffer[WOP_DOWN_CHANNELS+1][DO_BUFFER_SLOTS];
+static VChannelPtr       WOP_UpChannel;
+static VChannelPtr       WOP_DownChannel[WOP_DOWN_CHANNELS];
+static INT               WOP_NbDesc[WOP_DOWN_CHANNELS];
+static DRAWINGOBJ        *WOP_DObjPnt;
 static INT WOP_Sending  [WOP_DOWN_CHANNELS+1]; /* indicates sending from buffer i  */
 static INT WOP_Receiving[WOP_DOWN_CHANNELS];   /* indicates receiving in buffer i  */
 static INT WOP_NbTokens [WOP_DOWN_CHANNELS];   /* nb of tokens seen from channel i */
@@ -743,7 +823,7 @@ static INT WOP_RError   [WOP_DOWN_CHANNELS];   /* error for receiving on channel
 static msgid WOP_Outmsg [WOP_DOWN_CHANNELS+1]; /* IDs for messages being sent      */
 static msgid WOP_Inmsg  [WOP_DOWN_CHANNELS];   /* IDs for messages being received  */
 static INT WOP_CurrDoLen;                      /* length of current DO             */ 
-static INT WOP_lastID, WOP_nextID;
+static INT WOP_lastID, WOP_nextID;             /* plot id of last/next element     */
 #endif
 
 
@@ -5550,16 +5630,17 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 	EE2D_ShrinkFactor				= theGpo->ShrinkFactor;
 	#ifdef ModelP
 	{
-		GRID *theGrid = GRID_ON_LEVEL(theMG,0);
+		GRID *theGrid;
 		NODE *theNode;
-		INT  nodes = 0;
+		INT  nodes;
 		
 		EE2D_PartShrinkFactor		= theGpo->PartShrinkFactor;
 		if (EE2D_PartShrinkFactor < 1.0)
 		{
 			nodes = 0;
+			theGrid = GRID_ON_LEVEL(theMG, CURRENTLEVEL(theMG));
 			V2_CLEAR(EE2D_PartMidPoint)
-			for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
+			for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
 				V2_ADD(EE2D_PartMidPoint,CVECT(MYVERTEX(theNode)),EE2D_PartMidPoint)
 				nodes++;
 			}
@@ -11725,6 +11806,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	DOUBLE_VECTOR sx[MAX_CORNERS_OF_ELEM], MidPoint;
 	INT Viewable[MAX_SIDES_OF_ELEM];
 #	ifdef ModelP
+	ELEMENT *Neighbor;
 	DOUBLE_VECTOR help;
 #	endif
 	
@@ -11750,15 +11832,28 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		{
 			if (EE3D_Elem2Plot[PLOT_ALL])
 			{
-				/* plot only parts lying on the boundary */ 
-				if (OBJT(theElement)==BEOBJ)
-				{
-					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-						if (INNER_SIDE(theElement,i))
-							Viewable[i] = 0;
+				/* plot only parts lying on the boundary */
+				#ifdef ModelP
+				if (EE3D_PartShrinkFactor == 1.0) {
+				#endif
+					if (OBJT(theElement)==BEOBJ)
+					{
+						for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+							if (INNER_SIDE(theElement,i))
+								Viewable[i] = 0;
+					}
+					else 
+						return (0);
+				#ifdef ModelP
 				}
 				else
-					return (0);
+					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+						if (Viewable[i]) {
+							Neighbor = NBELEM(theElement, i);
+							if (Neighbor != NULL && DDD_InfoPriority(PARHDRE(Neighbor)) == PrioMaster)
+								Viewable[i] = 0;
+						}
+				#endif
 			}
 			else
 				for (i=0; i<SIDES_OF_ELEM(theElement); i++)
@@ -11906,15 +12001,28 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 			if (EE3D_Elem2Plot[PLOT_ALL])
 			{
 				/* only sides lying on the boundary are visible */
-				if (OBJT(theElement)==BEOBJ)
-				{
-					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-						if (INNER_SIDE(theElement,i))
+				#ifdef ModelP
+				if (EE3D_PartShrinkFactor == 1.0) {
+				#endif
+					if (OBJT(theElement)==BEOBJ)
+					{
+						for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+							if (INNER_SIDE(theElement,i))
+								Viewable[i] = 0;
+					}
+					else 
+						for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 							Viewable[i] = 0;
+				#ifdef ModelP
 				}
 				else
 					for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-						Viewable[i] = 0;
+						if (Viewable[i]) {
+							Neighbor = NBELEM(theElement, i);
+							if (Neighbor != NULL && DDD_InfoPriority(PARHDRE(Neighbor)) == PrioMaster)
+								Viewable[i] = 0;
+						}
+				#endif
 			}
 			else
 				for (i=0; i<SIDES_OF_ELEM(theElement); i++)
@@ -12836,20 +12944,24 @@ static void CalcViewableSidesOnGrid (GRID *theGrid)
 		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 		{
 			if ((theNeighbor=NBELEM(theElement,i))==NULL) continue;
-			#ifdef ModelP
-			if (DDD_InfoPriority(PARHDRE(theNeighbor)) == PrioVGhost) continue;
-			#endif
+			#ifndef ModelP
 			if (ID(theElement) < ID(theNeighbor))
+			#else
+			if (DDD_InfoGlobalId(PARHDRE(theElement)) <
+				DDD_InfoGlobalId(PARHDRE(theNeighbor)))
+			#endif
 			{
 				for(j=0; j<SIDES_OF_ELEM(theElement); j++)
 					if (NBELEM(theNeighbor,j)==theElement)
 						break;
-				if (VIEWABLE(theElement,i) == VIEWABLE(theNeighbor,j))
-					if (VIEWABLE(theElement,i))
+				if (VIEWABLE(theElement,i)) {
+					if (VIEWABLE(theNeighbor, j))
 						SETVSIDES(theElement,VSIDES(theElement)&(~(1<<i)));
-					else
+				}
+				else {
+					if (!VIEWABLE(theNeighbor, j))
 						SETVSIDES(theElement,VSIDES(theElement)|(1<<i));
-				ASSERT(VIEWABLE(theElement,i) != VIEWABLE(theNeighbor,j));
+				}	
 			}
 		}	
 }
@@ -12891,10 +13003,7 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 	/* init list and numbers */
 	LastShellBegin = 0;
 	ActualPosition = 0;
-
-	/* count local sons */
-	for (nsons = 0; nsons < MAX_SONS; nsons++)
-		if (SonList[nsons] == NULL) break;
+	nsons = NSONS(theElement);
 
 	for  (i=0; i<nsons; i++)
 	{
@@ -12903,21 +13012,16 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 		/* count how many neighbor-sons are overlapped by SonElement */
 		Count = 0;
 		for (j=0; j<SIDES_OF_ELEM(SonElement); j++)
-		  {
+		{
 			NbElement = NBELEM(SonElement,j);
 			if (NbElement != NULL)
-			  if (EFATHER(NbElement)==theElement && (!VIEWABLE(SonElement,j))) Count++;
-		  }
+				if (EFATHER(NbElement)==theElement && (!VIEWABLE(SonElement,j))) 
+					Count++;
+		}
 		if (Count)
-		{
 			SETCOUNT(SonElement,Count);
-			SETUSED(SonElement,0);
-		}
 		else
-		{
 			table[ActualPosition++] = SonElement;
-			SETUSED(SonElement,1);
-		}
 	}
 	NewShellBegin = ActualPosition;
 	
@@ -12935,13 +13039,11 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 		{
 			for (j=0; j<SIDES_OF_ELEM(table[i]); j++)
 			{
+				if (!VIEWABLE(table[i], j)) continue;
 				if ((NbElement=NBELEM(table[i],j))==NULL) continue;
-				if (EFATHER(NbElement)!=theElement || USED(NbElement)) continue;
+				if (EFATHER(NbElement)!=theElement) continue;
 				if ((Count = COUNT(NbElement)-1)==0)
-				{
 					table[ActualPosition++] = NbElement;
-					SETUSED(NbElement,1);
-				}
 				else
 					SETCOUNT(NbElement,Count);
 			}
@@ -13143,8 +13245,6 @@ static INT CompareElements (const void *ElementHandle0,
 	theElement[0] = *((ELEMENT **)ElementHandle0);
 	theElement[1] = *((ELEMENT **)ElementHandle1);
 
-	OE_nCompareElements++;
-
 	/* test, if elements have a common side */
 	for (i=0; i<SIDES_OF_ELEM(theElement[0]); i++)
 		if( NBELEM(theElement[0],i) == theElement[1] )
@@ -13262,10 +13362,11 @@ static INT CompareElements (const void *ElementHandle0,
                      level 0 by modified selection sort
 
    SYNOPSIS:
-
+   static INT OrderFathersSEL(MULTIGRID *mg, ELEMENT **table)
 
    PARAMETERS:
-
+   mg    -
+   table -  list of ordered elements (output) 
   
    DESCRIPTION:
    This function orders elements with respect to view orientation on level 0.
@@ -13297,10 +13398,11 @@ static INT OrderFathersSEL(MULTIGRID *mg, ELEMENT **table)
                      level 0 a la Newell, Newell & Sancha
 
    SYNOPSIS:
-
+   static INT OrderFathersNNS (MULTIGRID *mg, ELEMENT **table)
 
    PARAMETERS:
-
+   mg    -
+   table -  list of ordered elements (output) 
   
    DESCRIPTION:
    This function orders elements with respect to view orientation on level 0.
@@ -13324,7 +13426,6 @@ static COORD ZCoordInEyeSystem(DOUBLE *p)
 static INT CompareZCoord(const void *p, const void *q)
 {
     ELEMENT *p1, *q1;
-    
 
 	p1 = *((ELEMENT **)p);
     q1 = *((ELEMENT **)q);
@@ -13436,14 +13537,15 @@ static INT CompareElementsXSH(INT mu, INT nu)
 	COORD_POINT projection[2][4];
 
 	/* ignore if boundary sides don't fit */
-	if (Z_MAX(mu) <= Z_MIN(nu) && !(VIEWABLE_BSIDE(mu) && HIDDEN_BSIDE(nu)))
+	if (Z_MAX(mu)-Z_MIN(nu) <= SMALL_C && !(VIEWABLE_BSIDE(mu) && HIDDEN_BSIDE(nu)))
 		return 0;
-	if (Z_MAX(nu) <= Z_MIN(mu) && !(VIEWABLE_BSIDE(nu) && HIDDEN_BSIDE(mu)))
+	if (Z_MAX(nu)-Z_MIN(mu) <= SMALL_C && !(VIEWABLE_BSIDE(nu) && HIDDEN_BSIDE(mu)))
 		return 0;
 	if (!(VIEWABLE_BSIDE(mu) && HIDDEN_BSIDE(nu)) &&
 		!(VIEWABLE_BSIDE(nu) && HIDDEN_BSIDE(mu)))
 		return 0;
 
+	#ifndef ModelP
 	p = OE_Map[mu].elem;
 	q = OE_Map[nu].elem;
 
@@ -13452,15 +13554,15 @@ static INT CompareElementsXSH(INT mu, INT nu)
 		if( NBELEM(p, i) == q )
 			return 0;
 
-	OE_nCompareElements++;
-	
 	/* copy corner vectors */
 	for (i = 0; i < CORNERS_OF_ELEM(p); i++)
 		corners[0][i] =  CVECT(MYVERTEX(CORNER(p, i)));
 	for (i = 0; i < CORNERS_OF_ELEM(q); i++)
 		corners[1][i] =  CVECT(MYVERTEX(CORNER(q, i)));
+	#endif
 
 	/* compare boundary sides */
+	#ifndef ModelP
 	for (i = 0; i < SIDES_OF_ELEM(p); i++) {
 		if (NBELEM(p, i) != NULL) continue;
 		nCorners[0] =  CORNERS_OF_SIDE(p, i);
@@ -13475,6 +13577,20 @@ static INT CompareElementsXSH(INT mu, INT nu)
 				V3_TRAFOM4_V3(corners[1][CORNER_OF_SIDE(q, k, l)], ObsTrafo, side[1][l]);
 				(*OBS_ProjectProc)(side[1][l], &(projection[1][l]));
 			}
+	#else
+	for (i = 0; i < CGG_NSIDES(mu); i++) {
+		nCorners[0] = CGG_SIDE(mu)[i].ncorners; 
+		for (j = 0; j <nCorners[0]; j++) {
+			V3_TRAFOM4_V3(CGG_SIDE(mu)[i].corner[j], ObsTrafo, side[0][j]);
+			(*OBS_ProjectProc)(side[0][j], &(projection[0][j]));
+		}
+		for (k = 0; k < CGG_NSIDES(nu); k++) {
+			nCorners[1] = CGG_SIDE(nu)[k].ncorners;
+			for (l = 0; l < nCorners[1]; l++) {
+				V3_TRAFOM4_V3(CGG_SIDE(nu)[k].corner[l],  ObsTrafo, side[1][l]);
+				(*OBS_ProjectProc)(side[1][l], &(projection[1][l]));
+			}
+    #endif
 			if ((nCorners[0] == 3) && (nCorners[1] == 3))
 				found = CompareTriangles(side, projection);
 			else
@@ -13483,10 +13599,13 @@ static INT CompareElementsXSH(INT mu, INT nu)
 				return found;
 		}
 	}
+
 	return 0;
 }
 
 /* -------------------------------------------------------------------------- */
+
+#ifndef ModelP
 
 static INT CompareIDs (const void *p, const void *q)
 {
@@ -13500,6 +13619,23 @@ static INT CompareIDs (const void *p, const void *q)
 		return 1;
 	return 0;
 }
+
+#else
+
+static INT CompareGIDs(const void *p, const void *q)
+{
+	INT a, b;
+
+	a = ((CGG_DATA *) p)->gid;
+	b = ((CGG_DATA *) q)->gid;
+	if (a < b) 
+		return -1;
+	if (a > b)
+		return 1;
+	return 0;
+}
+
+#endif
 
 /****************************************************************************/
 /*
@@ -13864,6 +14000,8 @@ static void BSearch2(INT root)
 */
 /****************************************************************************/
 
+#ifndef ModelP
+
 static INT Id2Index(INT id)
 {
 	INT l, r, m, key;
@@ -13882,6 +14020,28 @@ static INT Id2Index(INT id)
 	}
 }
 
+#else
+
+static INT Gid2Index(INT gid)
+{
+	INT l, r, m, key;
+
+	l = 0;
+	r = OE_nGlobalCGelems-1;
+	for(;;) {
+		m = (l+r)/2;
+		key = CGG_GID(m);
+		if (key < gid)
+			l = m+1;
+		else if (key > gid)
+			r = m-1;
+		else 
+			return m;
+	}
+}
+
+#endif
+
 /****************************************************************************/
 /*
    OrderFathersXSH - Order elements with respect to view orientation on 
@@ -13891,7 +14051,8 @@ static INT Id2Index(INT id)
    static INT OrderFathersXSH(MULTIGRID *mg, ELEMENT **table)
 
    PARAMETERS:
-
+   mg    -
+   table -  list of ordered elements (output) 
  
    DESCRIPTION:
    This function orders elements with respect to view orientation on level 0.
@@ -13904,7 +14065,10 @@ static INT Id2Index(INT id)
 */
 /****************************************************************************/
 
-static INT OrderFathersXSH (MULTIGRID *mg, ELEMENT **table)
+
+#ifndef ModelP
+
+static INT OrderFathersXSH(MULTIGRID *mg, ELEMENT **table)
 {
 	ELEMENT *p, *q;
 	GRID *grid;
@@ -13929,7 +14093,8 @@ static INT OrderFathersXSH (MULTIGRID *mg, ELEMENT **table)
 	OE_Map     = (MAP *)      GetMem(heap, OE_nBndElem*sizeof(MAP),         FROM_TOP);
 	OE_BE_Data = (BE_DATA *)  GetMem(heap, OE_nBndElem*sizeof(BE_DATA),     FROM_TOP);
 	OE_BoxTab  = (INT *)      GetMem(heap, OE_nBndElem*sizeof(INT),         FROM_TOP);
-	if (OE_Map == NULL || OE_BE_Data == NULL || OE_BoxTab == NULL || table == NULL) {
+
+	if (OE_Map == NULL || OE_BE_Data == NULL || OE_BoxTab == NULL) {
 		Release(heap, FROM_TOP);
 		return 2;
 	}
@@ -13937,7 +14102,6 @@ static INT OrderFathersXSH (MULTIGRID *mg, ELEMENT **table)
 	/* init inner elements & copy boundary elements */
 	i = 0;
 	for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p)) {
-		SETUSED(p, 0);
 		if (OBJT(p) == BEOBJ) {
 			OE_Map[i].id = ID(p);
 			OE_Map[i++].elem = p;
@@ -13955,7 +14119,7 @@ static INT OrderFathersXSH (MULTIGRID *mg, ELEMENT **table)
 
 	/* sort map */
 	qsort((void *)OE_Map, OE_nBndElem, sizeof(MAP), CompareIDs);
-	
+
 	/* begin boundary element init */
 	for (i = 0; i < OE_nBndElem; i++) 
 	{
@@ -14014,18 +14178,22 @@ static INT OrderFathersXSH (MULTIGRID *mg, ELEMENT **table)
 	/* complete boundary element init */
 	OE_Heap = heap;
 	OE_Error = 0;
+
 	for (i = 0; i < OE_nBndElem; i++) {
 		OE_QueryBox = i;
 		BSearch1(root);
 	}
-	if (OE_Error) return 2;
+
+	if (OE_Error) {
+		Release(heap, FROM_TOP);	
+		return 2;
+	}
 
 	/* find first shell */
 	pos = 0;
 	for (i = 0; i < OE_nBndElem; i++)
 		if (BCOUNT(i) == 0) {
 			p = OE_Map[i].elem;
-			SETUSED(p, 1);
 			table[pos++] = p;
 		}
 	
@@ -14036,24 +14204,21 @@ static INT OrderFathersXSH (MULTIGRID *mg, ELEMENT **table)
 		for (i = lastBegin; i<newBegin; i++) {
 			p = table[i];
 			for (j = 0; j < SIDES_OF_ELEM(p); j++) {
+				if (!VIEWABLE(p, j)) continue;
 				q = NBELEM(p, j);
-				if (q != NULL && !USED(q)) {
+				if (q != NULL) {
 					if (OBJT(q) == BEOBJ) {
 						k = Id2Index(ID(q));
 						count = BCOUNT(k)-1;
-						if (count == 0) {
+						if (count == 0)
 							table[pos++] = q;
-							SETUSED(q, 1);
-						}
 						else
 							BCOUNT(k) = count;
 					}
 					else {
 						count = COUNT(q)-1;
-						if (count == 0) {
+						if (count == 0)
 							table[pos++] = q;
-							SETUSED(q, 1);
-						}
 						else
 							SETCOUNT(q, count);
 					}
@@ -14065,7 +14230,6 @@ static INT OrderFathersXSH (MULTIGRID *mg, ELEMENT **table)
 					if(--BCOUNT(k) == 0) {
 						q = OE_Map[k].elem;
 						table[pos++] = q;
-						SETUSED(q, 1);
 					}
 				}
 			}
@@ -14076,8 +14240,156 @@ static INT OrderFathersXSH (MULTIGRID *mg, ELEMENT **table)
 	Release(heap, FROM_TOP);
 	if (pos != grid->nElem) return 1;
 	
+	return 0; 
+}
+
+#else
+
+static INT compare_gid(const void *p, const void *q)
+{
+	INT gid1, gid2;
+
+	gid1 = *(INT *)p;
+	gid2 = *(INT *)q;
+
+	if (gid1 < gid2)
+		return -1;
+	if (gid1 > gid2)
+		return 1;
 	return 0;
 }
+
+static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
+{
+	GRID *grid;
+	HEAP *heap;
+	ILIST *h;
+    DOUBLE minx, maxx, miny, maxy, minz, maxz, dummy;
+    COORD_POINT t;
+    DOUBLE *corner[8];
+	DOUBLE_VECTOR temp;
+    INT i, j, k, l, count, root, pos, lastBegin, newBegin;
+
+	/* count boundary elements */
+	OE_nBndElem = 0;
+	for (i = 0; i < OE_nGlobalCGelems; i++)
+		if (CGG_BLINK(i) != NULL)
+			OE_nBndElem++;
+		
+	/* allocate Arrays */
+	heap = mg->theHeap;
+	Mark(heap, FROM_TOP);
+	OE_BoxTab  = (INT *) GetMem(heap, OE_nBndElem*sizeof(INT), FROM_TOP);
+
+	if (OE_BoxTab == NULL) {
+		Release(heap, FROM_TOP);
+		return 2;
+	}
+
+	/* sort CGG */
+	qsort((void *)OE_CGG, OE_nGlobalCGelems, sizeof(CGG_DATA), CompareGIDs);
+
+	/* begin boundary element init */
+	for (i = 0; i < OE_nGlobalCGelems; i++) {
+		if (CGG_BLINK(i) != NULL) 
+		{
+			/* set bounding boxes */
+			minx = miny = minz =  INFINITY;
+			maxx = maxy = maxz = -INFINITY;
+			for (j = 0; j < CGG_NSIDES(i); j++) {
+				for (k = 0; k < CGG_SIDE(i)[j].ncorners; k++) {
+					V3_TRAFOM4_V3(CGG_SIDE(i)[j].corner[k], ObsTrafo, temp);
+					minz = MIN(minz, temp[2]);
+					maxz = MAX(maxz, temp[2]);
+					(*OBS_ProjectProc)(temp, &t);
+					minx = MIN(minx, t.x);
+					miny = MIN(miny, t.y);
+					maxx = MAX(maxx, t.x);
+					maxy = MAX(maxy, t.y);
+				}
+			}
+			U1(i) = minx;
+			V1(i) = maxx;
+			U2(i) = miny;
+			V2(i) = maxy;
+			Z_MIN(i) = minz;
+			Z_MAX(i) = maxz;
+
+			/* clear list of elems this one is hidden by */
+			HIDDEN_BY(i) = NULL;
+		}
+	}
+
+	/* build box tree */
+	j = 0;
+	for (i = 0; i < OE_nGlobalCGelems; i++)
+		if (CGG_BLINK(i) != NULL)
+			BT(j++) = i;
+	BSort1(0, OE_nBndElem-1, &root, &dummy, &dummy, &dummy, &dummy);
+	
+	/* complete boundary element init */
+	OE_Heap = heap;
+	OE_Error = 0;
+	for (i = 0; i < OE_nGlobalCGelems; i++)
+		if (CGG_BLINK(i) != NULL) {
+			OE_QueryBox = i;
+			BSearch1(root);
+		}
+	if (OE_Error) {
+		Release(heap, FROM_TOP);
+		return 2;
+	}
+
+	/* find first shell */
+	pos = 0;
+	for (i = 0; i < OE_nGlobalCGelems; i++)
+		if (CGG_CNT(i) == 0) {
+			table[pos] = i;
+			pos+=2;
+		}
+	
+	/* create new shell from last one */
+	lastBegin = 0;
+	newBegin  = pos;
+	while (lastBegin < newBegin) {
+		for (i = lastBegin; i<newBegin; i+=2) {
+			l = table[i];
+			for (j = 0; j < CGG_NAD(l); j++) {
+				k = Gid2Index(CGG_ADJACENT(l)[j]);
+				if (--CGG_CNT(k) == 0) {
+					table[pos] = k;
+					pos+=2;
+				}
+			}
+			if (CGG_BLINK(l) != NULL) 
+				for (h = HIDDEN_BY(l); h != NULL; h = h->next) {
+					j = h->index;
+					if (--CGG_CNT(j) == 0) {
+						table[pos] = j;
+						pos+=2;
+					}
+			}
+		}
+		lastBegin = newBegin;
+		newBegin  = pos;
+	}
+	Release(heap, FROM_TOP);
+	if (pos != 2*OE_nGlobalCGelems) return 1;
+
+	/* compute plot ids */
+	l = 1;
+	for (i = 0; i < pos; i+=2) {
+		table[i+1] = l;
+		l += CGG_GAP(table[i]);
+		table[i] = CGG_GID(table[i]);
+	}
+
+	/* sort list by gid */
+	qsort((void *)table, OE_nGlobalCGelems, 2*sizeof(INT), compare_gid);
+
+	return 0;
+}
+#endif
 
 /****************************************************************************/
 /*
@@ -14219,6 +14531,7 @@ static void NumberElements(ELEMENT **table, INT n, INT start)
    level - multigrid level
 
    DESCRIPTION:
+   Send plot ids from Master to VGhosts. Needed for hierarchical ordering.
 
    RETURN VALUE:
    void
@@ -14568,6 +14881,7 @@ static void DistributeOrdering(INT level)
    mg - 
 
    DESCRIPTION:
+   Every multigrid level is sorted by ascending (plot) ids. 
 
    RETURN VALUE:
    INT
@@ -14599,7 +14913,7 @@ static INT SortLevelsLocally(MULTIGRID *mg)
 
 	err = 0;
 	heap = mg->theHeap;
-	for (i = 1; i <= mg->topLevel; i++) 
+	for (i = 0; i <= mg->topLevel; i++) 
 	{
 		grid = GRID_ON_LEVEL(mg,i);
 
@@ -14645,6 +14959,313 @@ static INT SortLevelsLocally(MULTIGRID *mg)
 	return UG_GlobalMaxINT(err);
 }
 
+/****************************************************************************/
+/*
+   NumberCoarseGrid - set plot ids for coarse grid
+
+   SYNOPSIS:
+   static INT NumberCoarseGrid(INT *table, MULTIGRID *mg)
+
+   PARAMETERS:
+   mg    - 
+   table -  list of coarse grid element global ids and plotids
+ 
+   DESCRIPTION:
+   Set plot ids for remotely ordered coarse grid elements.  
+
+   RETURN VALUE:
+   INT
+      0 if ok
+      1 if error
+*/
+/****************************************************************************/
+
+static INT cmp_gid(const void *p, const void *q)
+{
+    INT gid1, gid2;
+    
+	gid1 = DDD_InfoGlobalId(PARHDRE(*((ELEMENT **)p)));
+    gid2 = DDD_InfoGlobalId(PARHDRE(*((ELEMENT **)q)));
+
+	if (gid1 < gid2)
+		return -1;
+	if (gid1 > gid2)
+		return 1;
+	return 0;
+}
+
+static INT NumberCoarseGrid(INT *table, MULTIGRID *mg)
+{
+	INT i, j, me, err;
+	ELEMENT **mine, *p;
+	HEAP *heap;
+
+	/* allocate mem */
+	err = 0;
+	if (OE_nLocalCGelems == 0)
+		return UG_GlobalMaxINT(err);
+	heap = mg->theHeap;
+	Mark(heap, FROM_TOP);
+	if ((mine = (ELEMENT **)GetMem(heap, OE_nLocalCGelems*sizeof(ELEMENT *), FROM_TOP)) == NULL) {
+		err = 1;
+		Release(heap, FROM_TOP);
+		return UG_GlobalMaxINT(err);
+	}
+	
+	/* copy local coarse grid pointers */
+	i = 0;
+	for (p = FIRSTELEMENT(mg->grids[0]); p != NULL; p = SUCCE(p))
+		mine[i++] = p;
+
+	/* sort local coarse grid pointers by gid */
+	qsort((void *)mine, OE_nLocalCGelems, sizeof(*mine), cmp_gid);
+	
+	/* number your coarse grid elems according to table */
+	for (i = 0; i < OE_nLocalCGelems; i++) {
+		me = DDD_InfoGlobalId(PARHDRE(mine[i]));
+		j = 0;
+		while (table[j] != me) 
+			j+=2;
+		PLOT_ID(mine[i]) = table[j+1];
+	}
+	Release(heap, FROM_TOP);
+	return UG_GlobalMaxINT(err);
+}
+
+/****************************************************************************/
+/*
+   CollectCoarseGrid - construct a coarse grid graph on master proc
+
+   SYNOPSIS:
+   static INT CollectCoarseGrid(MULTIGRID *mg)
+
+   PARAMETERS:
+   mg  -
+
+   DESCRIPTION:
+   Constructs a coarse grid graph on master proc with all information needed 
+   for OrderFathersXSH.
+
+   RETURN VALUE:
+   INT
+      0 if ok
+      1 if error
+*/
+/****************************************************************************/
+
+static INT CollectCoarseGrid(MULTIGRID *mg)
+{
+	HEAP *heap;
+	ELEMENT *elem, *neighbor;
+	DOUBLE *corner[MAX_CORNERS_OF_ELEM], *d, *d0, *d1, *d2, *d3;
+	INT i, quit, j, na, cnt, k, n, error, l, ns, nc, fvs, fhs;
+
+	/* state information */
+	INT receiving[WOP_DOWN_CHANNELS], sending[WOP_DOWN_CHANNELS+1], 
+		nbTokens[WOP_DOWN_CHANNELS], more[WOP_DOWN_CHANNELS+1], 
+		count[WOP_DOWN_CHANNELS+1], front[WOP_DOWN_CHANNELS+1], 
+		rear[WOP_DOWN_CHANNELS+1], serror[WOP_DOWN_CHANNELS+1], 
+		rerror[WOP_DOWN_CHANNELS], outmsg[WOP_DOWN_CHANNELS+1], 
+		inmsg[WOP_DOWN_CHANNELS];
+
+	/* init */
+	elem = FIRSTELEMENT(mg->grids[0]);
+	heap = mg->theHeap;
+	error = k = 0;
+	Mark(heap, FROM_BOTTOM);
+	for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+		for (j = 0; j < DO_BUFFER_SLOTS; j++)
+			if ((OE_Buffer[i][j] = (DOUBLE *)GetMem(heap, 
+				 CGG_SLOT_LEN*sizeof(DOUBLE), FROM_BOTTOM)) == NULL) {
+				error = 1;
+				goto oops;
+			}
+oops:
+	error = UG_GlobalMaxINT(error);
+	if (error) {
+		Release(heap, FROM_BOTTOM);
+		return 1;
+	}
+	for (i=0; i<WOP_DOWN_CHANNELS; i++) {
+		sending[i]   = 0;
+		receiving[i] = 0; 
+		nbTokens[i]  = 0;
+		count[i]     = 0;
+		front[i]     = 0;
+		rear[i]      = 0;
+		more[i]      = (WOP_DownChannel[i] != NULL);
+	}
+	sending[WOP_DOWN_CHANNELS] = 0;
+	count  [WOP_DOWN_CHANNELS] = 0;
+	front  [WOP_DOWN_CHANNELS] = 0;
+	rear   [WOP_DOWN_CHANNELS] = 0;
+	more   [WOP_DOWN_CHANNELS] = 1;
+	
+	/* main loop */
+	for (;;)
+	{
+		/* see if we are finished */
+		quit = 1;
+		for (i = 0; i <= WOP_DOWN_CHANNELS; i++) 
+			quit = (quit && !more[i] && count[i] == 0);
+		if (quit) break;
+
+		/* receive coarse grid partial graphs */
+		for (i = 0; i < WOP_DOWN_CHANNELS; i++) {
+			if (receiving[i])
+				if (InfoARecv(WOP_DownChannel[i], inmsg[i]) == 1) {
+					count[i]++;
+					receiving[i] = 0;
+					if (CGG_2INT(OE_Buffer[i][front[i]]) == END_TOKEN)
+						more[i] = (++nbTokens[i] < WOP_NbDesc[i]);
+					front[i] = (front[i] + 1) % CGG_BUFFER_SLOTS;
+				}
+			if (more[i] && !receiving[i])
+				if (count[i] < CGG_BUFFER_SLOTS) {
+					receiving[i] = 1;
+					inmsg[i] = RecvASync(WOP_DownChannel[i],OE_Buffer[i][front[i]],
+										 CGG_SLOT_LEN*sizeof(DOUBLE), &rerror[i]);
+				}
+		}
+
+		/* send coarse grid partial graphs up tree or store them */
+		if (me == master) { 
+			for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+				if (count[i] > 0) 
+				{
+					/* store partial graphs */
+					d = OE_Buffer[i][rear[i]] + 1;
+					n = CGG_2INT(d);
+					d1 = d;  d++;
+					while(d-d1 < n) 
+					{
+						/* read local adjacency */
+						CGG_GID(k)      = CGG_2INT(d);  d++;
+						CGG_GAP(k)      = CGG_2INT(d);  d++;
+						CGG_CNT(k)      = CGG_2INT(d);  d++;
+						CGG_NAD(k) = na = CGG_2INT(d);  d++;
+						if (na > 0) {
+							if ((CGG_ADJACENT(k) = 
+								(INT *)GetMem(heap, na*sizeof(INT), FROM_TOP)) == NULL){
+								error = 1;
+								break;
+							}
+							for (j = 0; j < na; j++) {
+								CGG_ADJACENT(k)[j] = CGG_2INT(d);
+								d++;
+							}
+						}
+
+						/* read boundary side info */
+						ns = CGG_2INT(d);  d++;
+						if (ns > 0) {
+							if ((CGG_BLINK(k) = (BS_DATA *) GetMem(heap, sizeof(BS_DATA)
+										+(ns-1)*sizeof(SIDE_DATA), FROM_TOP)) == NULL) {
+								error = 1;
+								break;
+							}
+							CGG_NSIDES(k) = ns;
+							for (j = 0; j < ns; j++) {
+								nc = CGG_2INT(d);  d++;
+								CGG_SIDE(k)[j].ncorners = nc;
+								for (l = 0; l < nc; l++) {
+									V3_COPY(d, CGG_SIDE(k)[j].corner[l]);
+									d += 3;
+								}
+							}
+							CGG_FVS(k) = CGG_2INT(d);  d++;
+							CGG_FHS(k) = CGG_2INT(d);  d++;
+						}
+						else 
+							CGG_BLINK(k) = NULL;
+						k++;
+					}
+                    count[i]--;
+					rear[i] = (rear[i] + 1) % CGG_BUFFER_SLOTS;
+				}
+		}
+		else {
+			for (i = 0; i <= WOP_DOWN_CHANNELS; i++) {
+				if (sending[i])
+					if (InfoASend(WOP_UpChannel, outmsg[i]) == 1) {
+						count[i]--;
+						sending[i] = 0;
+						rear[i] = (rear[i] + 1) % CGG_BUFFER_SLOTS;
+					}
+				if (!sending[i])
+					if (count[i] > 0) {
+						sending[i] = 1;
+						outmsg[i] = SendASync(WOP_UpChannel, OE_Buffer[i][rear[i]],
+											  CGG_SLOT_LEN*sizeof(DOUBLE), &serror[i]);
+					}
+			}
+		}
+		
+		/* produce coarse grid partial graphs */
+		i = WOP_DOWN_CHANNELS;
+		if (more[i] && count[i] < CGG_BUFFER_SLOTS) 
+		{
+			d = d0 = OE_Buffer[i][front[i]];
+			CGG_2INT(d) = NO_TOKEN;  d++;
+			d1 = d;  d++;
+
+			/* produce local adjacency */
+			while (elem != NULL && d-d0 <= CGG_SLOT_LEN-MAX_PGRAPH_SIZE) {
+				CGG_2INT(d) = DDD_InfoGlobalId(PARHDRE(elem));  d++;
+				CGG_2INT(d) = GAP(elem);  d++;
+				d2 = d;  d += 2;
+				na = cnt = 0;
+				for (j = 0; j < SIDES_OF_ELEM(elem); j++) {
+					neighbor = NBELEM(elem, j);
+					if (neighbor != NULL)
+						if (!VIEWABLE(elem, j))
+							cnt++;
+						else {
+							na++;
+							CGG_2INT(d) = DDD_InfoGlobalId(PARHDRE(neighbor));  d++;
+						}
+				}
+				CGG_2INT(d2) = cnt; d2++;
+				CGG_2INT(d2) = na;
+				
+				/* produce boundary side info */
+				d3 = d;  d++;
+				ns = 0;
+				if (OBJT(elem) == BEOBJ) {
+					for (j = 0; j < CORNERS_OF_ELEM(elem); j++)
+						corner[j] = CVECT(MYVERTEX(CORNER(elem, j)));
+					fvs = fhs = 0;
+					for  (j = 0; j < SIDES_OF_ELEM(elem); j++) {
+						if (NBELEM(elem, j) != NULL) continue;
+						if (VIEWABLE(elem ,j))
+							fvs = 1;
+						else
+							fhs = 1;
+						ns++;
+						CGG_2INT(d) = CORNERS_OF_SIDE(elem, j);  d++;
+						for (l = 0; l < CORNERS_OF_SIDE(elem ,j); l++) {
+							V3_COPY(corner[CORNER_OF_SIDE(elem, j, l)], (DOUBLE *)d);
+							d += 3;
+						}
+					}
+					CGG_2INT(d) = fvs;  d++;
+					CGG_2INT(d) = fhs;  d++;
+				}
+				CGG_2INT(d3) = ns;
+				elem = SUCCE(elem);
+			}
+			CGG_2INT(d1) = d-d1;
+			if (elem == NULL) {
+				CGG_2INT(d0) = END_TOKEN;
+				more[i] = 0;
+			}
+			count[i]++;
+			front[i] = (front[i] + 1) % CGG_BUFFER_SLOTS;
+		}
+	}
+	Release(heap, FROM_BOTTOM);
+	return error;
+}
 #endif
 
 /****************************************************************************/
@@ -14742,6 +15363,7 @@ static INT OrderHirarchically(MULTIGRID *mg)
 	return 0;
 }
 
+
 /****************************************************************************/
 /*
    OrderCoarseGrid -
@@ -14753,6 +15375,7 @@ static INT OrderHirarchically(MULTIGRID *mg)
    mg -
 
    DESCRIPTION:
+   Orders coarse grid with selected algorithm.
 
    RETURN VALUE:
    INT
@@ -14765,59 +15388,107 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 {
 	HEAP *heap;
 	GRID *grid;
+	ELEMENT *p;
+	INT err, n;
+	#ifndef ModelP
 	ELEMENT **table;
-	INT err;
+	#else
+	INT *table;
+	#endif
+
+	heap = mg->theHeap;
+	grid = mg->grids[0];
+	Mark(heap, FROM_TOP);
 
 	#ifdef ModelP
-	if (me == master) {
-	#endif
-		heap = mg->theHeap;
-		grid = GRID_ON_LEVEL(mg,0);
-		Mark(heap, FROM_TOP);
-		table = (ELEMENT **)GetMem(heap, (grid->nElem)*sizeof(ELEMENT *), FROM_TOP);
-		if (table != NULL)
-			switch (OE_OrderStrategy) 
-			{
-			case 0: 
-				err = OrderFathersXSH(mg, table);
-				if (err == 1) {
-					UserWrite("Cycle detected while ordering coarse grid.\n");
-					UserWrite("Falling back on slow method ...\n");
-					err = OrderFathersSEL(mg, table);
-				}
-				break;
-			case 1:
-				#ifndef ModelP
-				err = OrderFathersNNS(mg, table);
-				if (err == 1) {
-					UserWrite("Cycle detected while ordering coarse grid.\n");
-					UserWrite("Falling back on slow method ...\n");
-					err = OrderFathersSEL(mg, table);
-				}
-				#else
-				err = 1; /* does not work in parallel */
-				#endif
-				break;
-			case 2:
-				err = OrderFathersSEL(mg, table);
-				break;
-			}
-		else
-			err = 1;
-	
-		if (err == 0) {
-			PutAtEndOfList(grid, grid->nElem, table);
-            #ifdef ModelP
-	        NumberElements(table, grid->nElem, 1);
-            #endif
-		}
+	/* count all coarse grid elements */
+	n = 0;
+	for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
+		n++;
+	OE_nLocalCGelems  = n;
+	OE_nGlobalCGelems = n = UG_GlobalSumINT(n);
+
+	/* allocate memory for ordering list and coarse grid graph */
+	table  = (INT *)GetMem(heap, 2*n*sizeof(INT), FROM_TOP);
+	err = (table == NULL);
+	err = UG_GlobalMaxINT(err);
+	if (err) {
 		Release(heap, FROM_TOP);
-	#ifdef ModelP
+		return 1;
+	}
+	if (me == master) {
+		Mark(heap, FROM_TOP);
+	    OE_CGG = (CGG_DATA *)GetMem(heap, n*sizeof(CGG_DATA), FROM_TOP);
+		if (err = (OE_CGG == NULL))
+			Release(heap, FROM_TOP);
 	}
 	Broadcast(&err, sizeof(err));
-	if (err == 0) DistributePlotIDs(0);
+	if (err) {
+		Release(heap, FROM_TOP);
+		return 1;
+	}
+
+	/* collect coarse grid graph on master */
+	err = CollectCoarseGrid(mg);
+    Broadcast(&err, sizeof(err));
+	if (err) {
+		if (me == master) Release(heap, FROM_TOP);
+		Release(heap, FROM_TOP);
+		return 1;
+	}
+	
+	#else
+	/* allocate memory for ordering list */
+	table = (ELEMENT **)GetMem(heap, (grid->nElem)*sizeof(ELEMENT *), FROM_TOP);
+	if (table == NULL) {
+		Release(heap, FROM_TOP);
+		return 1;
+	}
 	#endif
-    
+
+	#ifdef ModelP
+	/* order coarse grid (graph) */
+	if (me == master) {
+	#endif
+	#ifndef ModelP
+		switch (OE_OrderStrategy) 
+		{
+		case 0: 
+			err = OrderFathersXSH(mg, table);
+			if (err == 1) {
+				UserWrite("Cycle detected while ordering coarse grid.\n");
+				UserWrite("Falling back on slow method ...\n");
+				err = OrderFathersSEL(mg, table);
+			}
+			break;
+		case 1:
+			err = OrderFathersNNS(mg, table);
+			if (err == 1) {
+				UserWrite("Cycle detected while ordering coarse grid.\n");
+				UserWrite("Falling back on slow method ...\n");
+				err = OrderFathersSEL(mg, table);
+			}
+			break;
+		case 2:
+			err = OrderFathersSEL(mg, table);
+			break;
+		}
+		if (!err) PutAtEndOfList(grid, grid->nElem, table);
+    #else
+		err = OrderFathersXSH(mg, table);
+		if (err == 1) 
+			UserWrite("Cycle detected while ordering coarse grid.\n");
+		Release(heap, FROM_TOP);
+	}
+	Broadcast(&err, sizeof(err));
+	if (err == 0) {
+		Broadcast(table, 2*n*sizeof(INT));
+		NumberCoarseGrid(table, mg);
+		DistributePlotIDs(0);
+	}
+	#endif
+
+    Release(heap, FROM_TOP);
    	return err;
 }
 
@@ -14876,7 +15547,6 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 	if (myMGdata == NULL)
 		return 1;
 
-	/* check if multigrid is already ordered */
 	if (myMGdata->init == 0)
 		/* not yet initialized */
 		SaveSettings(vo, myMGdata);
@@ -15336,17 +16006,17 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 	EE3D_ShrinkFactor				= theGpo->ShrinkFactor;
 	#ifdef ModelP
 	{
-		GRID *theGrid = GRID_ON_LEVEL(theMG,0);
+		GRID *theGrid;
 		NODE *theNode;
-		INT  nodes = 0;
+		INT  nodes;
 
-		theGrid = GRID_ON_LEVEL(theMG,0);
 		EE3D_PartShrinkFactor			= theGpo->PartShrinkFactor;
 		if (EE3D_PartShrinkFactor < 1.0)
 		{
 			nodes = 0;
+			theGrid = GRID_ON_LEVEL(theMG, CURRENTLEVEL(theMG));
 			V3_CLEAR(EE3D_PartMidPoint)
-			for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
+			for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
 				V3_ADD(EE3D_PartMidPoint,CVECT(MYVERTEX(theNode)),EE3D_PartMidPoint)
 				nodes++;
 			}
@@ -17794,10 +18464,8 @@ static INT WOP_Init(INT WOP_WorkMode)
 
 static INT WorkEW()
 {
-#ifndef ModelP
+#ifndef ModelP   /*** Sequential Version ***/
   
-	/*** Sequential Version ***/
-
 	for (WOP_Element=(*WOP_EW_GetFirstElementProc)(WOP_MG,0,
 												   WOP_MG->currentLevel);
 		 WOP_Element!=NULL;
@@ -17808,17 +18476,37 @@ static INT WorkEW()
 	}
 	return (0);
 
-#else
-
-	/*** Parallel Version ***/
+#else       	 /*** Parallel Version ***/
 	
+	HEAP *heap;
+	INT i, j, err=0;
+
 	WOP_Element = (CONTEXT(me) ?
       (*WOP_EW_GetFirstElementProc)(WOP_MG, 0, WOP_MG->currentLevel) : NULL);
 
 	switch (W_ID(WOP_Work))
 	{
 	case DRAW_WORK:
+
 		PWorkGEN_Init();
+
+		/* allocate buffers */
+		heap = WOP_MG->theHeap;
+		Mark(heap, FROM_TOP);
+		for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+			for (j = 0; j < DO_BUFFER_SLOTS; j++)
+				if ((WOP_DO_Buffer[i][j] = (DRAWINGOBJ *)GetMem(heap, 
+					 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), FROM_TOP)) == NULL) {
+					err = 1;
+					goto oops;
+				}
+	oops:
+		err = UG_GlobalMaxINT(err);
+		if (err) {
+			Release(heap, FROM_TOP);
+			return 1;
+		}
+
         #ifdef __TWODIM__
 		for (;;) {
 			if (PWorkGEN_Quit()) break;
@@ -17833,7 +18521,10 @@ static INT WorkEW()
 			PWorkEW_Evaluate_3D();
 		}
         #endif
+
+		Release(heap, FROM_TOP);
 		break;
+
 	case  FINDRANGE_WORK:
 		for (; WOP_Element != NULL; WOP_Element = (*WOP_EW_GetNextElementProc)(WOP_Element)) {
 			(*WOP_EW_EvaluateProc)(WOP_Element, WOP_DrawingObject);
@@ -17889,6 +18580,26 @@ static INT WorkNW()
 
 	/*** Parallel Version ***/
 
+	HEAP *heap;
+	INT i, j, err=0;
+
+	/* allocate buffers */
+	heap = WOP_MG->theHeap;
+	Mark(heap, FROM_TOP);
+	for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+		for (j = 0; j < DO_BUFFER_SLOTS; j++)
+			if ((WOP_DO_Buffer[i][j] = (DRAWINGOBJ *)GetMem(heap, 
+				 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), FROM_TOP)) == NULL) {
+				err = 1;
+				goto oops;
+			}
+oops:
+	err = UG_GlobalMaxINT(err);
+	if (err) {
+		Release(heap, FROM_TOP);
+		return 1;
+	}
+
 	PWorkGEN_Init();
 
 	WOP_Node=(CONTEXT(me) ?
@@ -17899,7 +18610,8 @@ static INT WorkNW()
 		PWorkGEN_Execute();
 		PWorkNW_Evaluate();
 	}
-  
+
+	Release(heap, FROM_TOP);
 	return (0);
 
 #endif
@@ -17947,6 +18659,26 @@ static INT WorkVW()
 
 	/*** Parallel Version ***/
 
+	HEAP *heap;
+	INT i, j, err=0;
+
+	/* allocate buffers */
+	heap = WOP_MG->theHeap;
+	Mark(heap, FROM_TOP);
+	for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+		for (j = 0; j < DO_BUFFER_SLOTS; j++)
+			if ((WOP_DO_Buffer[i][j] = (DRAWINGOBJ *)GetMem(heap, 
+				 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), FROM_TOP)) == NULL) {
+				err = 1;
+				goto oops;
+			}
+oops:
+	err = UG_GlobalMaxINT(err);
+	if (err) {
+		Release(heap, FROM_TOP);
+		return 1;
+	}
+
 	PWorkGEN_Init();
 
 	WOP_Vector=(CONTEXT(me) ?
@@ -17958,6 +18690,7 @@ static INT WorkVW()
 		PWorkVW_Evaluate();
 	}
   
+	Release(heap, FROM_TOP);
 	return (0);
 
 #endif
