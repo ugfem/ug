@@ -185,8 +185,7 @@
 #endif
 
 /* if periodic boundaries are used */
-#define __PERIODIC_BOUNDARY__
-
+/* #define __PERIODIC_BOUNDARY__ */
 
 /****************************************************************************/
 /*																			*/
