@@ -51,8 +51,6 @@
 /*																			*/
 /****************************************************************************/
 
-#define YES_NO_STR(i)           ((i) ? "YES" : "NO")
-
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
@@ -2794,12 +2792,12 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
   else
     UserWriteF(DISPLAY_PO_FORMAT_SS,"BND","NO");
 
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"Node markers",         YES_NO_STR(theGpo->PlotNodes));
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"ref marks",            YES_NO_STR(theGpo->PlotRefMarks));
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"indicator marks",      YES_NO_STR(theGpo->PlotIndMarks));
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"ElemID",                       YES_NO_STR(theGpo->PlotElemID));
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"subdomID",                     YES_NO_STR(theGpo->PlotSubdomain));
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"NodeID",                       YES_NO_STR(theGpo->PlotNodeID));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"Node markers",         BOOL_2_YN(theGpo->PlotNodes));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"ref marks",            BOOL_2_YN(theGpo->PlotRefMarks));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"indicator marks",      BOOL_2_YN(theGpo->PlotIndMarks));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"ElemID",                       BOOL_2_YN(theGpo->PlotElemID));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"subdomID",                     BOOL_2_YN(theGpo->PlotSubdomain));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"NodeID",                       BOOL_2_YN(theGpo->PlotNodeID));
 
   switch (theGpo->WhichElem)
   {
@@ -3125,12 +3123,12 @@ static INT DisplayVecMat_2D (PLOTOBJ *thePlotObj)
     if (FMT_S_VEC_TP(fmt,i)>0)
     {
       sprintf(buffer,"type %c",FMT_VTYPE_NAME(fmt,i));
-      UserWriteF(DISPLAY_PO_FORMAT_SS,buffer,YES_NO_STR(theVmo->Type[i]));
+      UserWriteF(DISPLAY_PO_FORMAT_SS,buffer,BOOL_2_YN(theVmo->Type[i]));
     }
 
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"index",                YES_NO_STR(theVmo->Idx));
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"connections",  YES_NO_STR(theVmo->Connections));
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"extra",                YES_NO_STR(theVmo->Extra));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"index",                BOOL_2_YN(theVmo->Idx));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"connections",  BOOL_2_YN(theVmo->Connections));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"extra",                BOOL_2_YN(theVmo->Extra));
 
   switch (theVmo->Order)
   {
@@ -3139,9 +3137,9 @@ static INT DisplayVecMat_2D (PLOTOBJ *thePlotObj)
   case 3 : UserWriteF(DISPLAY_PO_FORMAT_SS,"order","3: line order"); break;
   }
 
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"dependency",   YES_NO_STR(theVmo->Dependency));
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"connect",              YES_NO_STR(theVmo->ConnectVectors));
-  UserWriteF(DISPLAY_PO_FORMAT_SS,"boundary",             YES_NO_STR(theVmo->Boundary));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"dependency",   BOOL_2_YN(theVmo->Dependency));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"connect",              BOOL_2_YN(theVmo->ConnectVectors));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"boundary",             BOOL_2_YN(theVmo->Boundary));
 
   if (theVmo->vd!=NULL)
     UserWriteF(DISPLAY_PO_FORMAT_SS,"vec data",ENVITEM_NAME(theVmo->vd));
@@ -4175,7 +4173,7 @@ static INT DisplayVecMat_3D (PLOTOBJ *thePlotObj)
     if (FMT_S_VEC_TP(fmt,i)>0)
     {
       sprintf(buffer,"type %c",FMT_VTYPE_NAME(fmt,i));
-      UserWriteF(DISPLAY_PO_FORMAT_SS,buffer,YES_NO_STR(theVmo->Type[i]));
+      UserWriteF(DISPLAY_PO_FORMAT_SS,buffer,BOOL_2_YN(theVmo->Type[i]));
     }
 
   UserWriteF(DISPLAY_PO_FORMAT_SS,"index",(theVmo->Idx) ? "YES" : "NO");
@@ -4426,7 +4424,7 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
   for (i=0; i<MAXVOBJECTS; i++)
   {
     sprintf(buffer,"vobject %s",ObjTypeName[i]);
-    UserWriteF(DISPLAY_PO_FORMAT_SS,buffer,YES_NO_STR(theGpo->OType[i]));
+    UserWriteF(DISPLAY_PO_FORMAT_SS,buffer,BOOL_2_YN(theGpo->OType[i]));
   }
   UserWrite(buffer);
   UserWrite("\n");
