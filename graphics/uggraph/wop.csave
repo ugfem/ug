@@ -15619,6 +15619,8 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 	}
 	#endif
 
+	SETELEMORD(mg,1);
+
 	return (0);
 }
 
