@@ -131,9 +131,9 @@ typedef struct indepfrontlist INDEPFRONTLIST;
 
 typedef struct {
 
-  INDEPFRONTLIST *first;                /* entry to independent frontlists		*/
-  INDEPFRONTLIST *last;                 /* reach the end of independent frontlists		*/
-  int nIndepFrontlist;                  /* number of independent lists		        */
+  INDEPFRONTLIST *first;                /* entry to independent frontlists		   */
+  INDEPFRONTLIST *last;                 /* reach the end of independent frontlists */
+  int nIndepFrontlist;                  /* number of independent lists		           */
 } MG_GGDATA;
 
 typedef struct {
@@ -175,8 +175,5 @@ INT DisposeFrontList            (FRONTLIST *theFL);
 INT DisposeFrontComp            (FRONTLIST *myList, FRONTCOMP *theFC);
 
 MG_GGDATA *GetMGdataPointer (MULTIGRID *theMG);
-
-
-INT InitGGManager (void);
 
 #endif

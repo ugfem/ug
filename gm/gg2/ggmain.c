@@ -2716,7 +2716,5 @@ INT InitGG ()
 {
   if (MakeStruct(":gg")!=0) return(__LINE__);
 
-  if (InitGGManager()!=0) return(__LINE__);
-
   return(0);
 }

@@ -74,6 +74,7 @@
 
 static MULTIGRID *MG;
 static INT ggMGUDid;
+static MG_GGDATA MGdata;
 static MG_GGDATA *myMGdata;
 
 static INT IflObj;
@@ -506,21 +507,11 @@ INT DisposeFrontList (FRONTLIST *theFL)
 
 MG_GGDATA *GetMGdataPointer (MULTIGRID *theMG)
 {
-  myMGdata  = (MG_GGDATA*) GEN_MGUD_ADR(theMG,OFFSET_IN_MGUD(ggMGUDid));
+  myMGdata  = &MGdata;
+
+  myMGdata->first = NULL;
+  myMGdata->last = NULL;
+  myMGdata->nIndepFrontlist = 0;
+
   return(myMGdata);
-}
-
-/****************************************************************************/
-/*                                                                          */
-/* initialization for grid generator library			                                */
-/*                                                                          */
-/****************************************************************************/
-
-INT InitGGManager ()
-{
-  /* allocate storage in general mg user data */
-  ggMGUDid = GetNewBlockID();
-  if (DefineMGUDBlock(ggMGUDid,sizeof(MG_GGDATA))!=GM_OK) return (__LINE__);
-
-  return(0);
 }
