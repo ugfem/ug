@@ -4597,7 +4597,7 @@ void ListGrids (const MULTIGRID *theMG)
   if (0 == heap)
     UserWriteF("\n%d bytes used out of %d allocated\n",used,used+free);
   else
-    UserWriteF("\n%d+%d bytes used out of %d allocated\n",used,heap,used+free);
+    UserWriteF("\n%d ( %d + %d ) bytes used out of %d allocated\n",used+heap,used,heap,used+free);
 }
 
 /****************************************************************************/
