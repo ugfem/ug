@@ -5329,7 +5329,7 @@ void ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const INT longformat)
 D*/
 /****************************************************************************/
 
-INT MultiGridStatus (MULTIGRID *theMG, INT greenflag, INT loadflag)
+INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag)
 {
 	INT		i,j,sons,maxsons,heap,used,free;
 	INT		red, green, yellow; 
@@ -5342,6 +5342,12 @@ INT MultiGridStatus (MULTIGRID *theMG, INT greenflag, INT loadflag)
 	FLOAT	avg_greenrule,mg_avg_green_rule;
 	ELEMENT *theElement;
 	GRID	*theGrid;
+	#ifdef ModelP
+	INT		*infobuffer;
+	INT		**lbinfo;
+	INT		total_elements,sum_elements,master_elements,hghost_elements,vghost_elements;
+	VChannelPtr	mych;
+	#endif
 
 	mg_red = mg_green = mg_yellow = mg_sum = 0;
 	mg_sum_div_red = mg_redplusgreen_div_red = 0.0;
@@ -5354,17 +5360,29 @@ INT MultiGridStatus (MULTIGRID *theMG, INT greenflag, INT loadflag)
 			maxsons = 0;
 		}
 
-	/* compute multi grid info */
-	UserWriteF("MULTIGRID STATISTICS:\n");
-	UserWriteF("LEVEL      RED     GREEN    YELLOW        SUM     SUM/RED (RED+GREEN)/RED\n");
+	#ifdef ModelP
+	infobuffer	= (INT *) malloc((procs+1)*(MAXLEVEL+1)*3*sizeof(INT));
+	lbinfo		= (INT **) malloc((procs+1)*sizeof(INT));
+	memset((void *)infobuffer,0,(procs+1)*(MAXLEVEL+1)*3*sizeof(INT));
+	for (i=0; i<procs+1; i++)
+		lbinfo[i] = infobuffer+(i*(MAXLEVEL+1)*3);
+	total_elements = sum_elements = master_elements = hghost_elements = vghost_elements = 0;
+	#endif
 
+	if (gridflag)
+	{
+		UserWriteF("\nMULTIGRID STATISTICS:\n");
+		UserWriteF("LEVEL      RED     GREEN    YELLOW        SUM     SUM/RED (RED+GREEN)/RED\n");
+	}
+
+	/* compute multi grid infos */
 	for (i=0; i<=TOPLEVEL(theMG); i++)
 	{
 		theGrid = GRID_ON_LEVEL(theMG,i);
 		red = green = yellow = 0;
 		sum = sum_div_red = redplusgreen_div_red = 0.0;
 
-		for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
+		for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 			 theElement=SUCCE(theElement))
 		{
 			switch (ECLASS(theElement))
@@ -5389,13 +5407,35 @@ INT MultiGridStatus (MULTIGRID *theMG, INT greenflag, INT loadflag)
 										break;
 					default:			break;
 				}
+			#ifdef ModelP
+			/* count master, hghost and vghost elements */
+			switch (EPRIO(theElement))
+			{
+				case PrioMaster:
+					lbinfo[me][3*i]++;
+					lbinfo[me][3*MAXLEVEL]++;
+					break;
+				case PrioGhost:
+					lbinfo[me][3*i+1]++;
+					lbinfo[me][3*MAXLEVEL+1]++;
+					break;
+				case PrioVGhost:
+					lbinfo[me][3*i+2]++;
+					lbinfo[me][3*MAXLEVEL+2]++;
+					break;
+				default:
+					assert(0);
+					break;
+			}
+			#endif
 		}
 		sum = red + green + yellow;
 		sum_div_red = sum / red;
 		redplusgreen_div_red = ((float)(red+green)) / red;
 
-		UserWriteF("   %2d  %9d %9d %9d  %9.0f    %2.3f      %2.3f\n",
-			i,red,green,yellow,sum,sum_div_red,redplusgreen_div_red);
+		if (gridflag)
+			UserWriteF("   %2d  %9d %9d %9d  %9.0f    %2.3f      %2.3f\n",
+				i,red,green,yellow,sum,sum_div_red,redplusgreen_div_red);
 
 		mg_red		+= red;
 		mg_green	+= green;
@@ -5405,31 +5445,37 @@ INT MultiGridStatus (MULTIGRID *theMG, INT greenflag, INT loadflag)
 	mg_sum_div_red 			= mg_sum / mg_red; 
 	mg_redplusgreen_div_red	= ((float)(mg_red + mg_green)) / mg_red;
 
-	UserWriteF("  ALL  %9d %9d %9d  %9.0f    %2.3f      %2.3f\n",
-		mg_red,mg_green,mg_yellow,mg_sum,mg_sum_div_red,mg_redplusgreen_div_red);
+	if (gridflag)
+		UserWriteF("  ALL  %9d %9d %9d  %9.0f    %2.3f      %2.3f\n",
+			mg_red,mg_green,mg_yellow,mg_sum,mg_sum_div_red,mg_redplusgreen_div_red);
 	
-	/* compute heap info */
-	heap = HeapFreelistUsed(MGHEAP(theMG));
-	used = HeapUsed(MGHEAP(theMG))-heap;
-	free = (HeapSize(MGHEAP(theMG))-used)>>10;
-	mg_sum_size = used>>10;
-	mg_red_size = mg_sum_size*mg_red/mg_sum;
-	mg_green_size = mg_sum_size*mg_green/mg_sum;
-	mg_yellow_size = (float)mg_sum_size*mg_yellow/mg_sum;
-	mg_sum_size_div_red = ((float)mg_sum_size)/mg_red;
-	mg_redplusgreen_size_div_red = ((float)(mg_red_size+mg_green_size))/mg_red;
-	UserWriteF(" HEAP  %7dKB %7dKB %7dKB  %7dKB    %2.3fKB    %2.3fKB\n",
-		mg_red_size,mg_green_size,mg_yellow_size,mg_sum_size,
-		mg_sum_size_div_red,mg_redplusgreen_size_div_red);
+	/* compute and list heap info */
+	if (gridflag)
+	{
+		heap = HeapFreelistUsed(MGHEAP(theMG));
+		used = HeapUsed(MGHEAP(theMG))-heap;
+		free = (HeapSize(MGHEAP(theMG))-used)>>10;
+		mg_sum_size = used>>10;
+		mg_red_size = mg_sum_size*mg_red/mg_sum;
+		mg_green_size = mg_sum_size*mg_green/mg_sum;
+		mg_yellow_size = (float)mg_sum_size*mg_yellow/mg_sum;
+		mg_sum_size_div_red = ((float)mg_sum_size)/mg_red;
+		mg_redplusgreen_size_div_red = ((float)(mg_red_size+mg_green_size))/mg_red;
 
-	UserWriteF(" EST  FREE=%7dKB  MAXNEWELEMENTS free/(SUM/RED)=%9.0f "
-		"FREE/((RED+GREEN)/RED)=%9.0f\n",
-		free,free/mg_sum_size_div_red,
-		free/mg_redplusgreen_size_div_red);
+		UserWriteF(" HEAP  %7dKB %7dKB %7dKB  %7dKB    %2.3fKB    %2.3fKB\n",
+			mg_red_size,mg_green_size,mg_yellow_size,mg_sum_size,
+			mg_sum_size_div_red,mg_redplusgreen_size_div_red);
 
+		UserWriteF(" EST  FREE=%7dKB  MAXNEWELEMENTS free/(SUM/RED)=%9.0f "
+			"FREE/((RED+GREEN)/RED)=%9.0f\n",
+			free,free/mg_sum_size_div_red,
+			free/mg_redplusgreen_size_div_red);
+	}
+
+	/* compute and list green rule info */
 	if (greenflag)
 	{
-		UserWriteF("GREEN RULE STATISTICS:\n");
+		UserWriteF("\nGREEN RULE STATISTICS:\n");
 		UserWriteF("  LEVEL GREENSONS     RULES GREENSONS/RUL");
 		for (j=0; j<8 && j<maxsons; j++) UserWriteF("   %9d",j);
 		UserWriteF("\n");
@@ -5456,6 +5502,106 @@ INT MultiGridStatus (MULTIGRID *theMG, INT greenflag, INT loadflag)
 		}
 		UserWriteF("\n");
 	}
+
+	#ifdef ModelP
+	/* compute and list loadbalancing info */
+	if (lbflag)
+	{
+		UserWriteF("\nLB INFO:\n");
+		/* now collect lb info on master */
+		if (me == master)
+			for (i=1; i<procs; i++)
+			{
+				mych =ConnSync(i,3917);
+				RecvSync(mych,(void *)lbinfo[i],(MAXLEVEL+1)*3*sizeof(INT));
+				DiscSync(mych);
+			}
+		else
+		{
+			mych = ConnSync(master,3917);
+			SendSync(mych,(void *)lbinfo[me],(MAXLEVEL+1)*3*sizeof(INT));
+			DiscSync(mych);
+			return(GM_OK);
+		}
+
+		/* sum levels over procs */
+		for (i=0; i<procs; i++)
+		{
+			for (j=0; j<TOPLEVEL(theMG)+1; j++)
+			{
+				lbinfo[procs][3*j] += lbinfo[i][3*j];
+				lbinfo[procs][3*j+1] += lbinfo[i][3*j+1];
+				lbinfo[procs][3*j+2] += lbinfo[i][3*j+2];
+			}
+		}
+
+		/* only master */
+		if (lbflag >= 3)
+		{
+			UserWriteF(" LEVEL");
+			for (i=0; i<3*TOPLEVEL(theMG)+3; i++)
+			{
+				UserWriteF(" %9d",i/3);
+			}
+			UserWrite("\n");
+			UserWriteF("PROC  ");
+			for (i=0; i<3*TOPLEVEL(theMG)+3; i++)
+			{
+				UserWriteF(" %9s",(i%3==0)?"MASTER":(i%3==1)?"HGHOST":"VGHOST");
+			}
+			UserWrite("\n");
+			for (i=0; i<procs; i++)
+			{
+				UserWriteF("%4d  ",i);
+				for (j=0; j<3*TOPLEVEL(theMG)+3; j++)
+				{
+					UserWriteF(" %9d",lbinfo[i][j]);
+				}
+				UserWrite("\n");
+			}
+			UserWriteF("\n");
+		}
+
+		if (lbflag >= 2)
+		{
+			UserWriteF("%5s %9s %9s %9s %9s %6s\n","LEVEL","SUM","MASTER","HGHOST","VGHOST","MEMEFF");
+			for (i=0; i<=TOPLEVEL(theMG); i++)
+			{
+				sum_elements = lbinfo[procs][3*i]+lbinfo[procs][3*i+1]+lbinfo[procs][3*i+2];
+				UserWriteF("%4d %9d %9d %9d %9d  %3.2f\n",i,sum_elements,
+					lbinfo[procs][3*i],lbinfo[procs][3*i+1],lbinfo[procs][3*i+2],
+					((float)lbinfo[procs][3*i])/sum_elements*100);
+			}
+			UserWrite("\n");
+
+			UserWriteF("%4s %9s %9s %9s %9s %6s\n","PROC","SUM","MASTER","HGHOST","VGHOST","MEMEFF");
+			for (i=0; i<procs; i++)
+			{
+				sum_elements = lbinfo[i][3*MAXLEVEL]+lbinfo[i][3*MAXLEVEL+1]+lbinfo[i][3*MAXLEVEL+2];
+				UserWriteF("%4d %9d %9d %9d %9d  %3.2f\n",i,sum_elements,
+					lbinfo[i][3*MAXLEVEL],lbinfo[i][3*MAXLEVEL+1],lbinfo[i][3*MAXLEVEL+2],
+					((float)lbinfo[i][3*MAXLEVEL])/sum_elements*100);
+			}
+			UserWrite("\n");
+		}
+
+		if (lbflag >= 1)
+		{
+			for (i=0; i<procs; i++)
+			{
+				master_elements += lbinfo[i][3*MAXLEVEL];
+				hghost_elements += lbinfo[i][3*MAXLEVEL+1];
+				vghost_elements += lbinfo[i][3*MAXLEVEL+2];
+			}
+			total_elements = master_elements + hghost_elements + vghost_elements;
+
+			UserWriteF("%9s %9s %9s %9s %6s\n","TOTAL","MASTER","HGHOST","VGHOST","MEMEFF");
+			UserWriteF("%9d %9d %9d %9d  %3.2f\n",total_elements,master_elements,hghost_elements,
+				vghost_elements,((float)master_elements)/total_elements*100);
+		}
+
+	}
+	#endif
 
 	return (GM_OK);
 }
