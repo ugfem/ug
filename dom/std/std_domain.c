@@ -178,7 +178,6 @@ PROBLEM *CreateProblem (char *domain,char *name, int id, ConfigProcPtr config,
   return(newProblem);
 }
 
-
 /****************************************************************************/
 /*D
    GetProblem -  Get pointer to a problem structure
@@ -205,7 +204,6 @@ PROBLEM *GetProblem (const char * domain, const char *name)
   if (ChangeEnvDir("/Domains")==NULL) return(NULL);
   return((PROBLEM *) SearchEnv(name,domain,theProblemDirID,theDomainDirID));
 }
-
 
 /****************************************************************************/
 /*
@@ -247,7 +245,6 @@ BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id, BndCondProcPtr 
   return(newBndCond);
 }
 #endif
-
 
 /****************************************************************************/
 /*D
@@ -614,7 +611,6 @@ BOUNDARY_SEGMENT *CreateBoundarySegment2D (char *name, int left, int right,
                                res,pt,alp,bet,BndSegFunc,data));
 }
 
-
 /****************************************************************************/
 /*D
    CreateBVP - Create BoundaryValueProblem from Domain and Problem
@@ -828,7 +824,7 @@ INT BVP_GetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
   theBVPDesc->numOfCoeffFct       = theBVP->numOfCoeffFct;
   theBVPDesc->numOfUserFct        = theBVP->numOfUserFct;
   theBVPDesc->ConfigProc          = theBVP->ConfigProblem;
-  theBVPDesc->id                  = theBVP->problemId;
+  theBVPDesc->id                  = theBVP->problemID;
 
   return (0);
 }
@@ -937,7 +933,6 @@ INT BVP_GetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
    .n      NULL if not found or error.
    D*/
 /****************************************************************************/
-
 PATCH *BVP_GetNextPatch (BVP *theBVP, PATCH *thePatch)
 {
   ENVITEM *theItem;
@@ -970,7 +965,6 @@ PATCH *BVP_GetNextPatch (BVP *theBVP, PATCH *thePatch)
    .n      NULL if not found or error.
    D*/
 /****************************************************************************/
-
 PATCH *BVP_GetFirstPatch (BVP *theBVP)
 {
   ENVITEM *theItem;
@@ -1002,7 +996,6 @@ PATCH *BVP_GetFirstPatch (BVP *theBVP)
    .n      1 if error.
    D*/
 /****************************************************************************/
-
 INT Patch_global2local (PATCH *aPatch, COORD *global, COORD *local)
 {
   BndSegFuncPtr BndSegFunc;
