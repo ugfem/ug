@@ -23,5 +23,5 @@ ARCH_C++FLAGS = -fpermissive
 ARCH_LFLAGS   =
 ARCH_ARFLAGS  = rus
 
-ARCH_XINCLUDES =
+ARCH_XINCLUDES = -I/usr/X11R6/include
 ARCH_XLIBS     = -L/usr/X11R6/lib64 -lXaw -lXt -lX11
