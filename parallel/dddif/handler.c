@@ -139,6 +139,7 @@ static GRID *GetGridOnDemand (MULTIGRID *mg, int level)
 /*				 3-Dim:														*/
 /*				 TypeTeElem, TypeTeBElem									*/
 /*				 TypePyElem, TypePyBElem									*/
+/*				 TypePrElem, TypePrBElem									*/
 /*				 TypeHeElem, TypeHeBElem									*/
 /*				 TypeEdge													*/
 /*																			*/
@@ -1573,6 +1574,9 @@ void ddd_HandlerInit (INT handlerSet)
 
 	IElemHandlerInit(TypePyElem, handlerSet);
 	BElemHandlerInit(TypePyBElem, handlerSet);
+
+	IElemHandlerInit(TypePrElem, handlerSet);
+	BElemHandlerInit(TypePrBElem, handlerSet);
 
 	IElemHandlerInit(TypeHeElem, handlerSet);
 	BElemHandlerInit(TypeHeBElem, handlerSet);

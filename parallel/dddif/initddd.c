@@ -84,6 +84,7 @@ DDD_TYPE TypeQuElem, TypeQuBElem;
 #ifdef __THREEDIM__
 DDD_TYPE TypeTeElem, TypeTeBElem;
 DDD_TYPE TypePyElem, TypePyBElem;
+DDD_TYPE TypePrElem, TypePrBElem;
 DDD_TYPE TypeHeElem, TypeHeBElem;
 #endif
 
@@ -281,6 +282,8 @@ static void ddd_DeclareTypes (void)
   TypeTeBElem     = DDD_TypeDeclare("TeBElem");
   TypePyElem      = DDD_TypeDeclare("PyElem");
   TypePyBElem     = DDD_TypeDeclare("PyBElem");
+  TypePrElem      = DDD_TypeDeclare("PrElem");
+  TypePrBElem     = DDD_TypeDeclare("PrBElem");
   TypeHeElem      = DDD_TypeDeclare("HeElem");
   TypeHeBElem     = DDD_TypeDeclare("HeBElem");
         #endif /* THREEDIM */
@@ -452,6 +455,8 @@ static void ddd_DefineTypes (void)
   ddd_InitGenericElement(TETRAHEDRON, TypeTeBElem, Boundary);
   ddd_InitGenericElement(PYRAMID,     TypePyElem,  Inside);
   ddd_InitGenericElement(PYRAMID,     TypePyBElem, Boundary);
+  ddd_InitGenericElement(PRISM,           TypePrElem,  Inside);
+  ddd_InitGenericElement(PRISM,           TypePrBElem, Boundary);
   ddd_InitGenericElement(HEXAHEDRON,  TypeHeElem,  Inside);
   ddd_InitGenericElement(HEXAHEDRON,  TypeHeBElem, Boundary);
         #endif /* THREEDIM */
@@ -526,9 +531,10 @@ static void ddd_IfInit (void)
 
 #ifdef __THREEDIM__
   O[0] = TypeTeElem; O[1] = TypeTeBElem;
-  O[2] = TypeHeElem; O[3] = TypeHeBElem;
-  O[4] = TypePyElem; O[5] = TypePyBElem;
-  nO = 6;
+  O[2] = TypePyElem; O[3] = TypePyBElem;
+  O[4] = TypePrElem; O[5] = TypePrBElem;
+  O[6] = TypeHeElem; O[7] = TypeHeBElem;
+  nO = 8;
 #endif
 
   A[0] = PrioMaster;
@@ -635,6 +641,8 @@ void InitDDDTypes (void)
   DDD_TypeDisplay(TypeTeBElem);
   DDD_TypeDisplay(TypePyElem);
   DDD_TypeDisplay(TypePyBElem);
+  DDD_TypeDisplay(TypePrElem);
+  DDD_TypeDisplay(TypePrBElem);
   DDD_TypeDisplay(TypeHeElem);
   DDD_TypeDisplay(TypeHeBElem);
         #endif

@@ -121,6 +121,7 @@ extern DDD_TYPE TypeTrElem, TypeTrBElem,
 #ifdef __THREEDIM__
 extern DDD_TYPE TypeTeElem, TypeTeBElem;
 extern DDD_TYPE TypePyElem, TypePyBElem;
+extern DDD_TYPE TypePrElem, TypePrBElem;
 extern DDD_TYPE TypeHeElem, TypeHeBElem;
 #endif
 
