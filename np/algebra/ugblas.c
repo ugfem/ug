@@ -1660,9 +1660,6 @@ INT NS_PREFIX a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_D
   return (NUM_OK);
 }
 
-
-
-/* !?! */
 static int Gather_DiagMatrixComp (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
@@ -1680,14 +1677,13 @@ static int Gather_DiagMatrixComp (DDD_OBJ obj, void *data)
   mtype = DMTP(vtype);
   m = VSTART(pv);
   sm = MD_SM(ConsMatrix,mtype);
-
-  for (i=0; i<sm->N; i++)
-    ((DOUBLE *)data)[i] = MVALUE(m, sm->offset[i]);
+  if (sm!=NULL)
+    for (i=0; i<sm->N; i++)
+      ((DOUBLE *)data)[i] = MVALUE(m, sm->offset[i]);
 
   return (NUM_OK);
 }
 
-/* !?! */
 static int Scatter_DiagMatrixComp (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
@@ -1707,11 +1703,7 @@ static int Scatter_DiagMatrixComp (DDD_OBJ obj, void *data)
   mtype = DMTP(vtype);
   m = VSTART(pv);
   sm = MD_SM(ConsMatrix, mtype);
-  vecskip = VECSKIP(pv);
-  if (vecskip == 0)
-    for (i=0; i<sm->N; i++)
-      MVALUE(m,sm->offset[i]) += ((DOUBLE *)data)[i];
-  else
+  if (sm!=NULL)
   {
     for (i=0; i<sm->nrows; i++)
       if (! SKIP_CONT (vecskip, i))
@@ -1746,8 +1738,9 @@ static int Scatter_GhostDiagMatrixComp (DDD_OBJ obj, void *data)
     vtype = VTYPE(pv);
     mtype = DMTP(vtype);
     sm = MD_SM(ConsMatrix, mtype);
-    for (i=0; i<sm->N; i++)
-      MVALUE(m, sm->offset[i]) = ((DOUBLE *)data)[i];
+    if (sm!=NULL)
+      for (i=0; i<sm->N; i++)
+        MVALUE(m, sm->offset[i]) = ((DOUBLE *)data)[i];
   }
 
   return (NUM_OK);
@@ -1781,8 +1774,9 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
     {
       mtype = MTP(vtype, MDESTTYPE(m));
       sm = MD_SM(ConsMatrix, mtype);
-      for (i=0; i<sm->N; i++)
-        msgbuf[i] = MVALUE(m, sm->offset[i]);
+      if (sm!=NULL)
+        for (i=0; i<sm->N; i++)
+          msgbuf[i] = MVALUE(m, sm->offset[i]);
       msgbuf += MaxBlockSize;
 
       gidbuf[*maxgid] = DDD_InfoGlobalId(PARHDR(MDEST(m)));
@@ -1821,15 +1815,18 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
     {
       mtype = MTP(vtype,MDESTTYPE(m));
       sm = MD_SM(ConsMatrix, mtype);
-      for (i=0; i<sm->N; i++)
+      if (sm!=NULL)
       {
-        msgbuf[i] = MVALUE(m, sm->offset[i]);
-        MVALUE(m, sm->offset[i]) = 0.0;
-      }
-      msgbuf+=MaxBlockSize;
+        for (i=0; i<sm->N; i++)
+        {
+          msgbuf[i] = MVALUE(m, sm->offset[i]);
+          MVALUE(m, sm->offset[i]) = 0.0;
+        }
+        msgbuf+=MaxBlockSize;
 
-      gidbuf[*maxgid] = DDD_InfoGlobalId(PARHDR(MDEST(m)));
-      (*maxgid)++;
+        gidbuf[*maxgid] = DDD_InfoGlobalId(PARHDR(MDEST(m)));
+        (*maxgid)++;
+      }
     }
   }
 
@@ -1881,8 +1878,9 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
         {
           mtype = MTP(vtype,MDESTTYPE(m));
           sm = MD_SM(ConsMatrix, mtype);
-          for (j=0; j<sm->N; j++)
-            MVALUE(m,sm->offset[j]) += msgbuf[j];
+          if (sm!=NULL)
+            for (j=0; j<sm->N; j++)
+              MVALUE(m,sm->offset[j]) += msgbuf[j];
           msgbuf += MaxBlockSize;
           igid++;
         }
@@ -1911,10 +1909,13 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
         {
           mtype = MTP(vtype,MDESTTYPE(m));
           sm = MD_SM(ConsMatrix, mtype);
-          for (k=0; k<sm->nrows; k++)
-            if (! SKIP_CONT (vecskip, k))
-              for (j=sm->row_start[k]; j<sm->row_start[k+1]; j++)
-                MVALUE(m, sm->offset[j]) += msgbuf[j];
+
+          if (sm!=NULL)
+            for (k=0; k<sm->nrows; k++)
+              if (! SKIP_CONT (vecskip, k))
+                for (j=sm->row_start[k]; j<sm->row_start[k+1]; j++)
+                  MVALUE(m, sm->offset[j]) += msgbuf[j];
+
           msgbuf += MaxBlockSize;
           igid++;
         }
@@ -1948,9 +1949,10 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
         sm = MD_SM(ConsMatrix, mtype);
         ncomp = MD_COLS_IN_MTYPE(ConsMatrix,mtype);
         Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
-        for (k=0; k<sm->nrows; k++)
-          for (j=sm->row_start[k]; j<sm->row_start[k+1]; j++)
-            printf(" %f", MVALUE(m, sm->offset[j]));
+        if (sm!=NULL)
+          for (k=0; k<sm->nrows; k++)
+            for (j=sm->row_start[k]; j<sm->row_start[k+1]; j++)
+              printf(" %f", MVALUE(m, sm->offset[j]));
         msgbuf += MaxBlockSize;
         igid++;
         printf("\n");
@@ -2077,11 +2079,9 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
   PRINTDEBUG(np,2,("%2d: l_matrix_consistent mode\n",me,mode));
 
   /** \todo make consistency of diags and off-diags in one communication! */
-
   DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g),
                   MaxBlockSize*sizeof(DOUBLE),
                   Gather_DiagMatrixComp, Scatter_DiagMatrixComp);
-
   if (mode == MAT_DIAG_CONS) return (NUM_OK);
 
   if (mode == MAT_GHOST_DIAG_CONS) {
