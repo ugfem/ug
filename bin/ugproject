@@ -21,6 +21,7 @@ cp $UGROOT/configs/3TFFF.conf $UGROOT/ug.conf
 ugmake ug -i ifdef
 ugmake ug
 cd $UGROOT/../cd/appl
+make ifdef
 make 2d
 make ifdef
 make 3d
@@ -29,6 +30,7 @@ cp $UGROOT/configs/2FTFF.conf $UGROOT/ug.conf
 ugmake ug -i ifdef
 ugmake ug
 cd $UGROOT/../fem/appl
+make ifdef
 make nd
 make ed
 # Test is ready
