@@ -14563,7 +14563,7 @@ static void ComputeOS_Data(MULTIGRID *mg)
 		grid = GRID_ON_LEVEL(mg,i);
 		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p)) {
 			prio = EPRIO(p);
-			if (prio == PrioGhost) continue;
+			if (prio == PrioHGhost) continue;
 			if (prio == PrioMaster && !IS_REFINED(p))
 				gap = 1;
 			else
@@ -15408,7 +15408,7 @@ static INT OrderHirarchically(MULTIGRID *mg)
 		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
 		{
             #ifdef ModelP
-			if (EPRIO(p) == PrioGhost) continue;
+			if (EPRIO(p) == PrioHGhost) continue;
 			SH_LINK(p) = NULL;
 			/* all sons here? */
 			if (N_LOCAL_SONS(p) != N_GLOBAL_SONS(p) || N_GLOBAL_SONS(p) == 0)
@@ -15684,7 +15684,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 	for (i = 0; i <= mg->topLevel; i++) {
 		grid = GRID_ON_LEVEL(mg,i);
 		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
-			if (EPRIO(p) != PrioGhost)
+			if (EPRIO(p) != PrioHGhost)
 				if ((OS_LINK(p) = (OS_DATA *) GetMem(heap, sizeof(OS_DATA), FROM_TOP)) == NULL) {
 					err = 1;
 					goto fault;

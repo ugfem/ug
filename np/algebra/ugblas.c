@@ -142,6 +142,7 @@ static MATRIX *MatArrayRemote[MATARRAYSIZE];
 static INT MaxBlockSize;
 static size_t DataSizePerVector;
 static size_t DataSizePerMatrix;
+static size_t DataSizePerElement;
 
 #ifdef __TWODIM__
 static INT max_vectors_of_type[NVECTYPES] =
@@ -594,10 +595,72 @@ INT a_outervector_consistent (MULTIGRID *mg, INT fl, INT tl,
                  Gather_VectorComp, Scatter_GhostVectorComp);
   else
     for (level=fl; level<=tl; level++)
-      DDD_IFAOneway(OuterVectorIF,
+      DDD_IFAOneway(VectorAllIF,
                     GRID_ATTR(GRID_ON_LEVEL(mg,level)), IF_FORWARD,
                     m * sizeof(DOUBLE),
                     Gather_VectorComp, Scatter_GhostVectorComp);
+
+  return (NUM_OK);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   a_elementdata_consistent - makes element data  consistent
+
+   SYNOPSIS:
+   INT a__elementdata_consistent (MULTIGRID *mg, INT fl, INT tl);
+
+   PARAMETERS:
+   .  mg - pointer to multigrid
+   .  fl - from level
+   .  tl - from level
+
+   DESCRIPTION:
+   This function copies the element data field form all masters to the
+   copy elements.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+   D*/
+/****************************************************************************/
+
+#ifdef ModelP
+static int Gather_EData (DDD_OBJ obj, void *data)
+{
+  ELEMENT *pe = (ELEMENT *)obj;
+
+  memcpy(data,EDATA(pe),DataSizePerElement);
+
+  return (0);
+}
+
+static int Scatter_EData (DDD_OBJ obj, void *data)
+{
+  ELEMENT *pe = (ELEMENT *)obj;
+
+  memcpy(EDATA(pe),data,DataSizePerElement);
+
+  return (0);
+}
+
+INT a_elementdata_consistent (MULTIGRID *mg, INT fl, INT tl)
+{
+  INT level;
+
+  DataSizePerElement = EDATA_DEF_IN_MG(mg);
+  if (DataSizePerElement <= 0) return(NUM_OK);
+
+  if ((fl==BOTTOMLEVEL(mg)) && (tl==TOPLEVEL(mg)))
+    DDD_IFOneway(ElementVHIF, IF_FORWARD, DataSizePerElement,
+                 Gather_EData, Scatter_EData);
+  else
+    for (level=fl; level<=tl; level++)
+      DDD_IFAOneway(ElementVHIF,GRID_ATTR(GRID_ON_LEVEL(mg,level)),
+                    IF_FORWARD, DataSizePerElement,
+                    Gather_EData, Scatter_EData);
 
   return (NUM_OK);
 }
@@ -1933,12 +1996,12 @@ static int CountAndSortInconsMatrices (DDD_OBJ obj)
 
       if (proclist[i]<0)
       {
-        /* MDEST has only copies with PrioGhost (if any) */
+        /* MDEST has only copies with PrioHGhost (if any) */
         MatArrayLocal[nLocal++] = m;
       }
       else
       {
-        /* MDEST has copies != PrioGhost */
+        /* MDEST has copies != PrioHGhost */
         MatArrayRemote[nRemote++] = m;
       }
     }
