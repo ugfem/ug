@@ -3118,7 +3118,7 @@ static INT CheckVector (const FORMAT *fmt, const INT s2p[], GEOM_OBJECT *theObje
       UserWriteF("%d: %s ID=%ld  exists but should not\n",me, ObjectString,
                  ID(theObject));
     }
-    SETUSED(theVector,1);
+    SETVCUSED(theVector,1);
 
     VecObject = VOBJECT(theVector);
     if (VecObject == NULL)
@@ -3296,7 +3296,7 @@ INT CheckAlgebra (GRID *theGrid)
   for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL;
        theVector=SUCCVC(theVector))
   {
-    SETUSED(theVector,0);
+    SETVCUSED(theVector,0);
   }
 
   /* check pointers to element, side, edge vector */
@@ -3356,7 +3356,7 @@ INT CheckAlgebra (GRID *theGrid)
   for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL;
        theVector=SUCCVC(theVector))
   {
-    if (USED(theVector) != 1)
+    if (VCUSED(theVector) != 1)
     {
       errors++;
       UserWriteF("%d: vector ID=%d NOT referenced by an geom_object: "
@@ -3368,7 +3368,7 @@ INT CheckAlgebra (GRID *theGrid)
         UserWrite("\n");
     }
     else
-      SETUSED(theVector,0);
+      SETVCUSED(theVector,0);
   }
 
   /* check validity of all defined connections */
