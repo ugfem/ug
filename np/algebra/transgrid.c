@@ -36,6 +36,7 @@
 #include "ugdevices.h"
 #include "misc.h"
 #include "gm.h"
+#include "elements.h"
 #include "algebra.h"
 #include "ugdevices.h"
 #include "evm.h"
@@ -43,6 +44,7 @@
 #include "debug.h"
 #include "general.h"
 #include "block.h"
+#include "cw.h"
 
 #include "np.h"
 #include "disctools.h"
@@ -76,13 +78,6 @@ using namespace UG3d;
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
-
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-  control_entries[MAX_CONTROL_ENTRIES];
-
-extern INT n_offset[TAGS];
-extern INT sons_offset[TAGS];
 
 /****************************************************************************/
 /*																			*/
@@ -509,7 +504,7 @@ static INT StandardIntNewNodeVector (GRID *FineGrid, const VECDATA_DESC *Cor)
    D*/
 /****************************************************************************/
 
-INT StandardRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
+INT NS_PREFIX StandardRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
 {
   FORMAT *fmt;
   INT vtype,rv,otype;
@@ -584,7 +579,7 @@ INT StandardRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC
    D*/
 /****************************************************************************/
 
-INT StandardInterpolateCorrection (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
+INT NS_PREFIX StandardInterpolateCorrection (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
 {
   FORMAT *fmt;
   INT vtype,rv,otype;
@@ -656,7 +651,7 @@ INT StandardInterpolateCorrection (GRID *FineGrid, const VECDATA_DESC *to, const
    D*/
 /****************************************************************************/
 
-INT StandardInterpolateNewVectors (GRID *FineGrid, const VECDATA_DESC *Sol)
+INT NS_PREFIX StandardInterpolateNewVectors (GRID *FineGrid, const VECDATA_DESC *Sol)
 {
   FORMAT *fmt;
   INT vtype,rv,otype;
@@ -725,8 +720,8 @@ INT StandardInterpolateNewVectors (GRID *FineGrid, const VECDATA_DESC *Sol)
    D*/
 /****************************************************************************/
 
-INT StandardProject (GRID *CoarseGrid, const VECDATA_DESC *to,
-                     const VECDATA_DESC *from)
+INT NS_PREFIX StandardProject (GRID *CoarseGrid, const VECDATA_DESC *to,
+                               const VECDATA_DESC *from)
 {
   VECTOR *v;
   NODE *theNode;
@@ -821,7 +816,7 @@ INT StandardProject (GRID *CoarseGrid, const VECDATA_DESC *to,
    D*/
 /****************************************************************************/
 
-INT ClearIMatrix (GRID *g, VECDATA_DESC *theVD)
+INT NS_PREFIX ClearIMatrix (GRID *g, VECDATA_DESC *theVD)
 {
   VECTOR *v;
   MATRIX *m;
@@ -876,7 +871,7 @@ INT ClearIMatrix (GRID *g, VECDATA_DESC *theVD)
    D*/
 /****************************************************************************/
 
-INT ScaleIMatrix (GRID *g, VECDATA_DESC *theVD)
+INT NS_PREFIX ScaleIMatrix (GRID *g, VECDATA_DESC *theVD)
 {
   VECTOR *v;
   MATRIX *m;
@@ -938,7 +933,7 @@ INT ScaleIMatrix (GRID *g, VECDATA_DESC *theVD)
    D*/
 /****************************************************************************/
 
-INT ClearIVector (GRID *g)
+INT NS_PREFIX ClearIVector (GRID *g)
 {
   VECTOR *v;
 
@@ -970,7 +965,7 @@ INT ClearIVector (GRID *g)
    D*/
 /****************************************************************************/
 
-INT ScaleIVector (GRID *g, VECDATA_DESC *theVD)
+INT NS_PREFIX ScaleIVector (GRID *g, VECDATA_DESC *theVD)
 {
   VECTOR *v;
   INT i,comp;
@@ -1030,8 +1025,8 @@ INT ScaleIVector (GRID *g, VECDATA_DESC *theVD)
  */
 /****************************************************************************/
 
-INT GetInterpolationMatrix (ELEMENT *theElement, ELEMENT *theFather,
-                            INT me, DOUBLE *IntMat, VECDATA_DESC *theVD)
+INT NS_PREFIX GetInterpolationMatrix (ELEMENT *theElement, ELEMENT *theFather,
+                                      INT me, DOUBLE *IntMat, VECDATA_DESC *theVD)
 {
   VECTOR *fvec[MAX_NODAL_VECTORS];
   VECTOR *evec[MAX_NODAL_VECTORS];
@@ -1140,9 +1135,9 @@ static INT CheckBlock(INT me, INT ke, INT kf, INT ncf, INT nce, DOUBLE *IntMat)
   }
 }
 
-INT AddInterpolationMatrix (GRID *theGrid,
-                            ELEMENT *theElement, ELEMENT *theFather,
-                            INT me, DOUBLE *IntMat, VECDATA_DESC *theVD)
+INT NS_PREFIX AddInterpolationMatrix (GRID *theGrid,
+                                      ELEMENT *theElement, ELEMENT *theFather,
+                                      INT me, DOUBLE *IntMat, VECDATA_DESC *theVD)
 {
   VECTOR *fvec[MAX_NODAL_VECTORS];
   VECTOR *evec[MAX_NODAL_VECTORS];
@@ -1373,14 +1368,14 @@ static INT RestrictByMatrix_General (GRID *FineGrid, const VECDATA_DESC *to,
   return (NUM_OK);
 }
 
-INT RestrictByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
-                      const VECDATA_DESC *from, const DOUBLE *damp)
+INT NS_PREFIX RestrictByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
+                                const VECDATA_DESC *from, const DOUBLE *damp)
 {
   return( RestrictByMatrix_General (FineGrid,to,from,damp,0) );
 }
 
-INT RestrictByMatrix_s (GRID *FineGrid, const VECDATA_DESC *to,
-                        const VECDATA_DESC *from, const DOUBLE *damp)
+INT NS_PREFIX RestrictByMatrix_s (GRID *FineGrid, const VECDATA_DESC *to,
+                                  const VECDATA_DESC *from, const DOUBLE *damp)
 {
   return( RestrictByMatrix_General (FineGrid,to,from,damp,1) );
 }
@@ -1511,16 +1506,16 @@ static INT InterpolateCorrectionByMatrix_General (GRID *FineGrid, const VECDATA_
   return (NUM_OK);
 }
 
-INT InterpolateCorrectionByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
-                                   const VECDATA_DESC *from,
-                                   const DOUBLE *damp)
+INT NS_PREFIX InterpolateCorrectionByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
+                                             const VECDATA_DESC *from,
+                                             const DOUBLE *damp)
 {
   return (InterpolateCorrectionByMatrix_General(FineGrid,to,from,damp,0));
 }
 
-INT InterpolateCorrectionByMatrix_NoSkip (GRID *FineGrid, const VECDATA_DESC *to,
-                                          const VECDATA_DESC *from,
-                                          const DOUBLE *damp)
+INT NS_PREFIX InterpolateCorrectionByMatrix_NoSkip (GRID *FineGrid, const VECDATA_DESC *to,
+                                                    const VECDATA_DESC *from,
+                                                    const DOUBLE *damp)
 {
   return (InterpolateCorrectionByMatrix_General (FineGrid,to,from,damp,1));
 }
@@ -1551,7 +1546,7 @@ INT InterpolateCorrectionByMatrix_NoSkip (GRID *FineGrid, const VECDATA_DESC *to
    D*/
 /****************************************************************************/
 
-INT InterpolateNewVectorsByMatrix (GRID *FineGrid, const VECDATA_DESC *sol)
+INT NS_PREFIX InterpolateNewVectorsByMatrix (GRID *FineGrid, const VECDATA_DESC *sol)
 {
   MATRIX *m;
   VECTOR *v,*w;
@@ -1708,7 +1703,7 @@ static INT ClearGhostMatrix (GRID *g, MATDATA_DESC *Mat)
   return (NUM_OK);
 }
 
-INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
+INT NS_PREFIX AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
 {
   GRID *CoarseGrid;
   MATRIX *m,*im,*jm,*cm;
@@ -2177,7 +2172,7 @@ static INT ScaledMGRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
    D*/
 /****************************************************************************/
 
-INT ScaledMGRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
+INT NS_PREFIX ScaledMGRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
 {
   INT vtype,rv;
   const SHORT *offset;
@@ -2239,7 +2234,7 @@ INT ScaledMGRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC
 
 #undef _LOCAL_DEBUG_
 
-INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOUBLE cut)
+INT NS_PREFIX InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOUBLE cut)
 {
   NODE *theNode;
   VECTOR *vf,*vc;
@@ -2426,7 +2421,7 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
    D*/
 /****************************************************************************/
 
-INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const MATDATA_DESC *ConsMat, const VECDATA_DESC *rhs)
+INT NS_PREFIX DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const MATDATA_DESC *ConsMat, const VECDATA_DESC *rhs)
 {
   NODE *theNode;
   INT A,ConsA,b,n,i,j,k;
@@ -2542,7 +2537,7 @@ INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const MATDATA_
    D*/
 /****************************************************************************/
 
-INT CreateStandardNodeRestProl (GRID *FineGrid, INT ncomp)
+INT NS_PREFIX CreateStandardNodeRestProl (GRID *FineGrid, INT ncomp)
 {
   NODE *theNode;
   VECTOR *vf,*vc;

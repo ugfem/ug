@@ -67,6 +67,8 @@
 #include "parallel.h"
 #endif
 
+#include "cw.h"
+
 #ifdef __cplusplus
 #ifdef __TWODIM__
 using namespace UG2d;
@@ -97,19 +99,6 @@ using namespace UG3d;
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
-
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-        control_entries[MAX_CONTROL_ENTRIES];
-
-extern INT n_offset[TAGS];
-extern INT father_offset[TAGS];
-extern INT sons_offset[TAGS];
-extern INT nb_offset[TAGS];
-extern INT evector_offset[TAGS];
-extern INT svector_offset[TAGS];
-extern INT side_offset[TAGS];
-extern INT data_offset[TAGS];
 
 /****************************************************************************/
 /*																			*/
@@ -1835,9 +1824,9 @@ D*/
 /****************************************************************************/
 
 #ifndef ModelP
-INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists)
+INT NS_PREFIX CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists)
 #else
-INT CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
+INT NS_PREFIX CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
 			   INT checkif)
 #endif
 {

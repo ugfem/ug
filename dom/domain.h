@@ -35,18 +35,6 @@
 
 #include <stdio.h>
 
-#ifndef __COMPILER__
-#include "compiler.h"
-#endif
-
-#ifndef __UGENV__
-#include "ugenv.h"
-#endif
-
-#ifndef __HEAPS__
-#include "heaps.h"
-#endif
-
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -78,6 +66,13 @@
 #endif
 #endif
 
+
+#include "compiler.h"
+#include "ugenv.h"
+#include "heaps.h"
+
+
+
 /***************************************************/
 /* The namespace prefix if this is compiled as c++ */
 /***************************************************/
@@ -89,6 +84,18 @@
 #endif
 #else
 #define NS_PREFIX
+#endif
+
+
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
 #endif
 
 /* offset of additional parameters for boundary condition function call */
@@ -931,5 +938,9 @@ void BVertexScatterBndP  (BNDP **bndp, int cnt, char *data);
 
 /* miscellaneous */
 INT         InitDom               (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

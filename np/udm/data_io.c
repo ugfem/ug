@@ -39,6 +39,7 @@
 #include "debug.h"
 #include "ugdevices.h"
 #include "gm.h"
+#include "elements.h"
 #include "algebra.h"
 #include "misc.h"
 #include "bio.h"
@@ -76,9 +77,6 @@ using namespace UG3d;
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
-
-extern INT n_offset[TAGS];
-extern INT data_offset[TAGS];
 
 typedef struct {
 
@@ -322,7 +320,7 @@ static INT SaveEdgeData (MULTIGRID *theMG, VECDATA_DESC *v)
    D*/
 /****************************************************************************/
 
-MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *DataFileName, MEM heapSize)
+MULTIGRID * NS_PREFIX OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *DataFileName, MEM heapSize)
 {
   MULTIGRID *mg;
   DIO_GENERAL dio_general;
@@ -411,7 +409,7 @@ MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *D
   return (mg);
 }
 
-INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDATA_DESC **theVDList)
+INT NS_PREFIX LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDATA_DESC **theVDList)
 {
   INT i,j,ncomp,s,*entry,copied_until,copy_until,still_to_read,read,nvec,id,nparfiles;
   unsigned long m;
@@ -653,7 +651,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
    D*/
 /****************************************************************************/
 
-INT SaveData (MULTIGRID *theMG, char *name, INT rename, INT save_without_mg, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec, char **NameList)
+INT NS_PREFIX SaveData (MULTIGRID *theMG, char *name, INT rename, INT save_without_mg, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec, char **NameList)
 {
   INT i,j,k,l,ncomp,s,t,*entry,nNode,store_from_eval,id,tag,coe,q,mode,nparfiles;
   DIO_GENERAL dio_general;

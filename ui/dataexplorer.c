@@ -46,6 +46,7 @@
 #include "pfile.h"
 
 #include "gm.h"
+#include "elements.h"
 #include "ugenv.h"
 #include "ugm.h"
 #include "algebra.h"
@@ -59,6 +60,7 @@
 #include "udm.h"
 
 #include "dataexplorer.h"
+#include "cw.h"
 
 #ifdef __cplusplus
 #ifdef __TWODIM__
@@ -86,13 +88,6 @@ using namespace UG3d;
 /*																			*/
 /****************************************************************************/
 
-extern INT n_offset[TAGS];
-extern INT nb_offset[TAGS];
-extern INT side_offset[TAGS];
-
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-  control_entries[MAX_CONTROL_ENTRIES];
 
 /* data for CVS	*/
 static char RCS_ID("$Header$",UG_RCS_STRING);

@@ -75,7 +75,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*                                                                          */
 /****************************************************************************/
 
-INT NPTSolverInit (NP_T_SOLVER *np, INT argc , char **argv)
+INT NS_PREFIX NPTSolverInit (NP_T_SOLVER *np, INT argc , char **argv)
 {
   INT r;
 
@@ -102,7 +102,7 @@ INT NPTSolverInit (NP_T_SOLVER *np, INT argc , char **argv)
   return(r);
 }
 
-INT NPTSolverDisplay (NP_T_SOLVER *np)
+INT NS_PREFIX NPTSolverDisplay (NP_T_SOLVER *np)
 {
   UserWrite("symbolic user data:\n");
   if (np->y != NULL)
@@ -249,7 +249,7 @@ INT NPTSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 /*                                                                          */
 /****************************************************************************/
 
-INT InitTSolver (void)
+INT NS_PREFIX InitTSolver (void)
 {
   return(0);
 }

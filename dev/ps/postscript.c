@@ -34,6 +34,10 @@
 #include <math.h>
 #include <time.h>
 
+/* only for the definition of NS_PREFIX */
+#include "domain.h"
+
+
 #include "defaults.h"
 #include "fileopen.h"
 #include "ugdevices.h"
@@ -985,7 +989,7 @@ static OUTPUTDEVICE *InitPSOutputDevice (void)
  */
 /****************************************************************************/
 
-INT InitPostScript (void)
+INT NS_PREFIX InitPostScript (void)
 {
   if ((InitPSOutputDevice()) == NULL) return (1);
 

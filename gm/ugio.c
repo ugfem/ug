@@ -71,6 +71,7 @@
 #include "rm.h"
 
 #include "er.h"
+#include "cw.h"
 
 #ifdef __cplusplus
 #ifdef __TWODIM__
@@ -123,19 +124,6 @@ using namespace UG3d;
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
-
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-  control_entries[MAX_CONTROL_ENTRIES];
-
-extern INT n_offset[TAGS];
-extern INT father_offset[TAGS];
-extern INT sons_offset[TAGS];
-extern INT nb_offset[TAGS];
-extern INT evector_offset[TAGS];
-extern INT svector_offset[TAGS];
-extern INT side_offset[TAGS];
-extern INT data_offset[TAGS];
 
 /****************************************************************************/
 /*																			*/
@@ -1678,7 +1666,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   return (0);
 }
 
-INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave, INT rename)
+INT NS_PREFIX SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave, INT rename)
 {
   /* check name convention */
   if (name==NULL || strcmp(name+strlen(name)-4,".scr")!=0)
@@ -2694,7 +2682,7 @@ static INT CheckCGKeys (INT ne, ELEMENT** eid_e, MGIO_CG_ELEMENT *cg_elem)
 }
 #endif
 
-MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize, INT force, INT optimizedIE, INT autosave)
+MULTIGRID * NS_PREFIX LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize, INT force, INT optimizedIE, INT autosave)
 /* Documentation of the intended programm flow resp. communication requirements.
    Functions introducing a global communication (all processors without any exception)
    are:
@@ -3631,7 +3619,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
 }
 #endif
 
-INT InitUgio ()
+INT NS_PREFIX InitUgio ()
 {
   /* read gridpaths from defaults file (iff) */
   gridpaths_set = FALSE;

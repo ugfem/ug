@@ -38,6 +38,7 @@
 #include "evm.h"
 #include "ugdevices.h"
 #include "shapes.h"
+#include "elements.h"
 
 #ifdef __cplusplus
 #ifdef __TWODIM__
@@ -65,8 +66,6 @@ using namespace UG3d;
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
-
-extern INT n_offset[TAGS];
 
 struct Coubling_CoeffProc_Name {
 
@@ -180,7 +179,7 @@ EVALUES * NS_PREFIX CreateElementValueEvalProc (const char *name, PreprocessingP
  */
 /****************************************************************************/
 
-EVALUES *GetElementValueEvalProc (const char *name)
+EVALUES * NS_PREFIX GetElementValueEvalProc (const char *name)
 {
   if (ChangeEnvDir("/ElementEvalProcs")==NULL) return(NULL);
   return((EVALUES*) SearchEnv(name,".",theElemValVarID,SEARCHALL));
@@ -205,7 +204,7 @@ EVALUES *GetElementValueEvalProc (const char *name)
  */
 /****************************************************************************/
 
-EVALUES *GetFirstElementValueEvalProc (void)
+EVALUES * NS_PREFIX GetFirstElementValueEvalProc (void)
 {
   ENVITEM *theEvalProc;
 
@@ -237,7 +236,7 @@ EVALUES *GetFirstElementValueEvalProc (void)
  */
 /****************************************************************************/
 
-EVALUES *GetNextElementValueEvalProc (EVALUES *EvalProc)
+EVALUES * NS_PREFIX GetNextElementValueEvalProc (EVALUES *EvalProc)
 {
   ENVITEM *theEvalProc;
 
@@ -312,7 +311,7 @@ EVECTOR * NS_PREFIX CreateElementVectorEvalProc (const char *name, Preprocessing
  */
 /****************************************************************************/
 
-EVECTOR *GetElementVectorEvalProc (const char *name)
+EVECTOR * NS_PREFIX GetElementVectorEvalProc (const char *name)
 {
   if (ChangeEnvDir("/ElementVectorEvalProcs")==NULL) return(NULL);
   return((EVECTOR*) SearchEnv(name,".",theElemVectorVarID,SEARCHALL));
@@ -337,7 +336,7 @@ EVECTOR *GetElementVectorEvalProc (const char *name)
  */
 /****************************************************************************/
 
-EVECTOR *GetFirstElementVectorEvalProc (void)
+EVECTOR * NS_PREFIX GetFirstElementVectorEvalProc (void)
 {
   ENVITEM *theEvecProc;
 
@@ -369,7 +368,7 @@ EVECTOR *GetFirstElementVectorEvalProc (void)
    D*/
 /****************************************************************************/
 
-EVECTOR *GetNextElementVectorEvalProc (EVECTOR *EvecProc)
+EVECTOR * NS_PREFIX GetNextElementVectorEvalProc (EVECTOR *EvecProc)
 {
   ENVITEM *theEvecProc;
 
@@ -402,7 +401,7 @@ EVECTOR *GetNextElementVectorEvalProc (EVECTOR *EvecProc)
  */
 /****************************************************************************/
 
-MVALUES *CreateMatrixValueEvalProc (const char *name, PreprocessingProcPtr PreProc, MatrixEvalProcPtr EvalProc)
+MVALUES * NS_PREFIX CreateMatrixValueEvalProc (const char *name, PreprocessingProcPtr PreProc, MatrixEvalProcPtr EvalProc)
 {
   MVALUES *newMatrixValues;
 
@@ -442,7 +441,7 @@ MVALUES *CreateMatrixValueEvalProc (const char *name, PreprocessingProcPtr PrePr
  */
 /****************************************************************************/
 
-MVALUES *GetMatrixValueEvalProc (const char *name)
+MVALUES * NS_PREFIX GetMatrixValueEvalProc (const char *name)
 {
   if (ChangeEnvDir("/MatrixEvalProcs")==NULL) return(NULL);
   return((MVALUES*) SearchEnv(name,".",theMatrixValVarID,SEARCHALL));
@@ -504,7 +503,7 @@ static DOUBLE CoeffProcElementValueEvalProc (const ELEMENT *theElement,const DOU
   return(phi);
 }
 
-EVALUES *CreateElementValueEvalProcFromCoeffProc (const char *name, CoeffProcPtr CoeffProc)
+EVALUES * NS_PREFIX CreateElementValueEvalProcFromCoeffProc (const char *name, CoeffProcPtr CoeffProc)
 {
   EVALUES *newElementValues;
 
@@ -589,7 +588,7 @@ static void CoeffProcElementVectorEvalProc (const ELEMENT *theElement,const DOUB
   return;
 }
 
-EVECTOR *CreateElementVectorEvalProcFromCoeffProc (const char *name, CoeffProcPtr CoeffProc, INT d)
+EVECTOR * NS_PREFIX CreateElementVectorEvalProcFromCoeffProc (const char *name, CoeffProcPtr CoeffProc, INT d)
 {
   EVECTOR *newElemVector;
 
@@ -756,7 +755,7 @@ static void GradNodeIndex (const ELEMENT *theElement, const DOUBLE **theCorners,
  */
 /****************************************************************************/
 
-INT InitEvalProc ()
+INT NS_PREFIX InitEvalProc ()
 {
   /* install the /ElementEvalProcs directory */
   if (ChangeEnvDir("/")==NULL)

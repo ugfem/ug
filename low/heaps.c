@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*	                                                                        */
+/*                                                                          */
 /* File:      heaps.c                                                       */
 /*                                                                          */
 /* Purpose:   low-level memory management for ug 2.0                        */
@@ -34,13 +34,14 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "domain.h"
+
 #include "compiler.h"
 #include "heaps.h"
 #include "misc.h"
 #include "general.h"
 #include "debug.h"
 #include "ugdevices.h"
-#include "domain.h"
 
 #if defined(DYNAMIC_MEMORY_ALLOCMODEL) && defined(Debug)
 #include "gm.h"
@@ -52,8 +53,10 @@ NS_PREFIX MULTIGRID * NS_PREFIX GetCurrentMultigrid (void);
 #ifdef __cplusplus
 #ifdef __TWODIM__
 using namespace UG2d;
-#else
+#elif defined __THREEDIM__
 using namespace UG3d;
+#else
+#error Neither __TWODIM__ nor __THREEDIM__ is defined!
 #endif
 #endif
 
@@ -97,8 +100,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 #if defined(DYNAMIC_MEMORY_ALLOCMODEL) && defined(Debug)
-INT check_of_getcallstack = 0;
-INT check_of_putcallstack = 0;
+INT NS_PREFIX check_of_getcallstack = 0;
+INT NS_PREFIX check_of_putcallstack = 0;
 #endif
 
 /****************************************************************************/
@@ -119,7 +122,7 @@ INT check_of_putcallstack = 0;
    D*/
 /****************************************************************************/
 
-void HeapStat (const HEAP *theHeap)
+void NS_PREFIX HeapStat (const HEAP *theHeap)
 {
   INT i;
   INT usedfreelistentries,size,found;
@@ -184,7 +187,7 @@ void HeapStat (const HEAP *theHeap)
    D*/
 /****************************************************************************/
 
-INT InitHeaps ()
+INT NS_PREFIX InitHeaps ()
 {
   return(0);
 }
@@ -215,7 +218,7 @@ INT InitHeaps ()
    D*/
 /****************************************************************************/
 
-HEAP *NewHeap (INT type, MEM size, void *buffer)
+HEAP *NS_PREFIX NewHeap (INT type, MEM size, void *buffer)
 {
   HEAP *theHeap;
   INT i;
@@ -308,7 +311,7 @@ HEAP *NewHeap (INT type, MEM size, void *buffer)
    D*/
 /****************************************************************************/
 
-void *GetMem (HEAP *theHeap, MEM n, INT mode)
+void *NS_PREFIX GetMem (HEAP *theHeap, MEM n, INT mode)
 {
   BLOCK *theBlock,*newBlock;
   long newsize,allocated;
@@ -409,7 +412,7 @@ void *GetMem (HEAP *theHeap, MEM n, INT mode)
   return(NULL);
 }
 
-void *GetMemUsingKey (HEAP *theHeap, MEM n, INT mode, INT key)
+void *NS_PREFIX GetMemUsingKey (HEAP *theHeap, MEM n, INT mode, INT key)
 {
   if (theHeap->type==SIMPLE_HEAP)
   {
@@ -485,7 +488,7 @@ void *GetMemUsingKey (HEAP *theHeap, MEM n, INT mode, INT key)
    D*/
 /****************************************************************************/
 
-void DisposeMem (HEAP *theHeap, void *buffer)
+void NS_PREFIX DisposeMem (HEAP *theHeap, void *buffer)
 {
   BLOCK *newBlock,*theBlock,*nextBlock;
   MEM b,n,p;
@@ -643,7 +646,7 @@ void DisposeMem (HEAP *theHeap, void *buffer)
    D*/
 /****************************************************************************/
 
-void *GetFreelistMemory (HEAP *theHeap, INT size)
+void *NS_PREFIX GetFreelistMemory (HEAP *theHeap, INT size)
 {
   void **ptr, *obj;
   INT i,j,k,l;
@@ -722,7 +725,7 @@ void *GetFreelistMemory (HEAP *theHeap, INT size)
    D*/
 /****************************************************************************/
 
-INT PutFreelistMemory (HEAP *theHeap, void *object, INT size)
+INT NS_PREFIX PutFreelistMemory (HEAP *theHeap, void *object, INT size)
 {
   void **ptr;
   INT i,j,k,l;
@@ -794,7 +797,7 @@ INT PutFreelistMemory (HEAP *theHeap, void *object, INT size)
    D*/
 /****************************************************************************/
 
-INT Mark (HEAP *theHeap, INT mode, INT *key)
+INT NS_PREFIX Mark (HEAP *theHeap, INT mode, INT *key)
 {
   if (theHeap->type!=SIMPLE_HEAP) return(1);
 
@@ -843,7 +846,7 @@ INT Mark (HEAP *theHeap, INT mode, INT *key)
    D*/
 /****************************************************************************/
 
-INT Release (HEAP *theHeap, INT mode, INT key)
+INT NS_PREFIX Release (HEAP *theHeap, INT mode, INT key)
 {
   MEM oldsize;
   MEM newsize;
@@ -926,7 +929,7 @@ INT Release (HEAP *theHeap, INT mode, INT key)
    D*/
 /****************************************************************************/
 
-MEM HeapSize (const HEAP *theHeap)
+MEM NS_PREFIX HeapSize (const HEAP *theHeap)
 {
   return(theHeap->size);
 }
@@ -950,7 +953,7 @@ MEM HeapSize (const HEAP *theHeap)
    D*/
 /****************************************************************************/
 
-MEM HeapUsed (const HEAP *theHeap)
+MEM NS_PREFIX HeapUsed (const HEAP *theHeap)
 {
   return(theHeap->used);
 }
@@ -975,7 +978,7 @@ MEM HeapUsed (const HEAP *theHeap)
    D*/
 /****************************************************************************/
 
-MEM HeapFree (const HEAP *theHeap)
+MEM NS_PREFIX HeapFree (const HEAP *theHeap)
 {
   return(theHeap->size-theHeap->used);
 }
@@ -999,7 +1002,7 @@ MEM HeapFree (const HEAP *theHeap)
    D*/
 /****************************************************************************/
 
-MEM HeapFreelistUsed (const HEAP *theHeap)
+MEM NS_PREFIX HeapFreelistUsed (const HEAP *theHeap)
 {
   return(theHeap->freelistmem);
 }
@@ -1023,7 +1026,7 @@ MEM HeapFreelistUsed (const HEAP *theHeap)
    D*/
 /****************************************************************************/
 
-MEM HeapTotalFree (const HEAP *theHeap)
+MEM NS_PREFIX HeapTotalFree (const HEAP *theHeap)
 {
   return(theHeap->size-theHeap->used+theHeap->freelistmem);
 }
@@ -1051,7 +1054,7 @@ MEM HeapTotalFree (const HEAP *theHeap)
    D*/
 /****************************************************************************/
 
-INT InitVirtualHeapManagement (VIRT_HEAP_MGMT *theVHM, MEM TotalSize)
+INT NS_PREFIX InitVirtualHeapManagement (VIRT_HEAP_MGMT *theVHM, MEM TotalSize)
 {
   if (theVHM==NULL)
     return (99);
@@ -1096,7 +1099,7 @@ INT InitVirtualHeapManagement (VIRT_HEAP_MGMT *theVHM, MEM TotalSize)
    D*/
 /****************************************************************************/
 
-MEM CalcAndFixTotalSize (VIRT_HEAP_MGMT *theVHM)
+MEM NS_PREFIX CalcAndFixTotalSize (VIRT_HEAP_MGMT *theVHM)
 {
   if (theVHM==NULL)
     return (99);
@@ -1130,7 +1133,7 @@ MEM CalcAndFixTotalSize (VIRT_HEAP_MGMT *theVHM)
    D*/
 /****************************************************************************/
 
-BLOCK_ID GetNewBlockID ()
+BLOCK_ID NS_PREFIX GetNewBlockID ()
 {
   static BLOCK_ID newID = 0;
 
@@ -1160,7 +1163,7 @@ BLOCK_ID GetNewBlockID ()
    D*/
 /****************************************************************************/
 
-BLOCK_DESC *GetBlockDesc (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id)
+BLOCK_DESC *NS_PREFIX GetBlockDesc (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id)
 {
   INT i;
 
@@ -1202,7 +1205,7 @@ BLOCK_DESC *GetBlockDesc (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id)
    D*/
 /****************************************************************************/
 
-INT DefineBlock (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id, MEM size)
+INT NS_PREFIX DefineBlock (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id, MEM size)
 {
   BLOCK_DESC *theBlock;
   MEM Gap,BestFitGap,LargestGap;
@@ -1328,7 +1331,7 @@ INT DefineBlock (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id, MEM size)
    D*/
 /****************************************************************************/
 
-INT FreeBlock (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id)
+INT NS_PREFIX FreeBlock (VIRT_HEAP_MGMT *theVHM, BLOCK_ID id)
 {
   MEM NewGap;
   INT i,i_free;

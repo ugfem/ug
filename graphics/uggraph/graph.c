@@ -207,7 +207,7 @@ static INT LinCombCoordPoint (DOUBLE lambdaa, COORD_POINT a, DOUBLE lambdab, COO
 /*																			*/
 /****************************************************************************/
 
-INT PrepareGraph (const PICTURE *thePicture)
+INT NS_PREFIX PrepareGraph (const PICTURE *thePicture)
 {
   /* set current output device */
   CurrentOutputDevice = PIC_OUTPUTDEV(thePicture);
@@ -246,7 +246,7 @@ INT PrepareGraph (const PICTURE *thePicture)
 /*																			*/
 /****************************************************************************/
 
-INT PrepareGraphWindow (const UGWINDOW *theWindow)
+INT NS_PREFIX PrepareGraphWindow (const UGWINDOW *theWindow)
 {
   /* set current output device */
   CurrentOutputDevice = UGW_OUTPUTDEV(theWindow);
@@ -736,7 +736,7 @@ static INT ClipPolygon (COORD_POINT *in, INT nin,
    D*/
 /****************************************************************************/
 
-void UgMove (COORD_POINT in)
+void NS_PREFIX UgMove (COORD_POINT in)
 {
         #ifdef ModelP
   if (me != master)
@@ -765,7 +765,7 @@ void UgMove (COORD_POINT in)
    D*/
 /****************************************************************************/
 
-void UgDraw (COORD_POINT point)
+void NS_PREFIX UgDraw (COORD_POINT point)
 {
   SHORT_POINT out1,out2;
   INT reject,dummy;
@@ -803,7 +803,7 @@ void UgDraw (COORD_POINT point)
    D*/
 /****************************************************************************/
 
-void UgLine (COORD_POINT point1, COORD_POINT point2)
+void NS_PREFIX UgLine (COORD_POINT point1, COORD_POINT point2)
 {
   SHORT_POINT out1,out2;
   INT reject,dummy;
@@ -845,7 +845,7 @@ void UgLine (COORD_POINT point1, COORD_POINT point2)
    D*/
 /****************************************************************************/
 
-void UgStyledLine (COORD_POINT point1, COORD_POINT point2, DOUBLE dash_length, DOUBLE space_length )
+void NS_PREFIX UgStyledLine (COORD_POINT point1, COORD_POINT point2, DOUBLE dash_length, DOUBLE space_length )
 {
   SHORT_POINT out1,out2, end;
   INT reject,dummy;
@@ -931,7 +931,7 @@ void UgStyledLine (COORD_POINT point1, COORD_POINT point2, DOUBLE dash_length, D
    D*/
 /****************************************************************************/
 
-void UgInverseLine (COORD_POINT point1, COORD_POINT point2)
+void NS_PREFIX UgInverseLine (COORD_POINT point1, COORD_POINT point2)
 {
   SHORT_POINT out[2];
   INT reject,dummy;
@@ -964,7 +964,7 @@ void UgInverseLine (COORD_POINT point1, COORD_POINT point2)
    D*/
 /****************************************************************************/
 
-void UgPolyLine (COORD_POINT *points, INT n)
+void NS_PREFIX UgPolyLine (COORD_POINT *points, INT n)
 {
   SHORT_POINT out1,out2;
   INT reject,dummy,k;
@@ -1003,7 +1003,7 @@ void UgPolyLine (COORD_POINT *points, INT n)
    D*/
 /****************************************************************************/
 
-void UgPolygon (COORD_POINT *points, INT n)
+void NS_PREFIX UgPolygon (COORD_POINT *points, INT n)
 {
   INT nout;
   SHORT_POINT out[MAX_POINTS_OF_POLY];
@@ -1037,7 +1037,7 @@ void UgPolygon (COORD_POINT *points, INT n)
    D*/
 /****************************************************************************/
 
-void UgShadedPolygon (COORD_POINT *points, INT n, DOUBLE intensity)
+void NS_PREFIX UgShadedPolygon (COORD_POINT *points, INT n, DOUBLE intensity)
 {
   INT nout;
   SHORT_POINT out[MAX_POINTS_OF_POLY];
@@ -1070,7 +1070,7 @@ void UgShadedPolygon (COORD_POINT *points, INT n, DOUBLE intensity)
    D*/
 /****************************************************************************/
 
-void UgInversePolygon (COORD_POINT *points, INT n)
+void NS_PREFIX UgInversePolygon (COORD_POINT *points, INT n)
 {
   INT nout;
   SHORT_POINT out[MAX_POINTS_OF_POLY];
@@ -1104,7 +1104,7 @@ void UgInversePolygon (COORD_POINT *points, INT n)
    D*/
 /****************************************************************************/
 
-void UgErasePolygon (COORD_POINT *points, INT n)
+void NS_PREFIX UgErasePolygon (COORD_POINT *points, INT n)
 {
   INT nout;
   SHORT_POINT out[MAX_POINTS_OF_POLY];
@@ -1139,7 +1139,7 @@ void UgErasePolygon (COORD_POINT *points, INT n)
    D*/
 /****************************************************************************/
 
-void UgPolymark (COORD_POINT *points, INT n)
+void NS_PREFIX UgPolymark (COORD_POINT *points, INT n)
 {
   INT k,reject;
   SHORT_POINT out;
@@ -1176,7 +1176,7 @@ void UgPolymark (COORD_POINT *points, INT n)
    D*/
 /****************************************************************************/
 
-void UgInvPolymark (COORD_POINT *points, INT n)
+void NS_PREFIX UgInvPolymark (COORD_POINT *points, INT n)
 {
   INT k,reject;
   SHORT_POINT out;
@@ -1213,7 +1213,7 @@ void UgInvPolymark (COORD_POINT *points, INT n)
    D*/
 /****************************************************************************/
 
-void UgText (const char *s, INT mode)
+void NS_PREFIX UgText (const char *s, INT mode)
 {
   INT reject;
   SHORT_POINT out;
@@ -1310,7 +1310,7 @@ void UgText (const char *s, INT mode)
    D*/
 /****************************************************************************/
 
-void UgCenteredText (COORD_POINT point, const char *s, INT mode)
+void NS_PREFIX UgCenteredText (COORD_POINT point, const char *s, INT mode)
 {
   INT reject;
   SHORT_POINT out;
@@ -1345,7 +1345,7 @@ void UgCenteredText (COORD_POINT point, const char *s, INT mode)
    D*/
 /****************************************************************************/
 
-void UgSetColor (long colorIndex)
+void NS_PREFIX UgSetColor (long colorIndex)
 {
         #ifdef ModelP
   if (me != master)
@@ -1373,7 +1373,7 @@ void UgSetColor (long colorIndex)
    D*/
 /****************************************************************************/
 
-void UgSetMarker (short index)
+void NS_PREFIX UgSetMarker (short index)
 {
         #ifdef ModelP
   if (me != master)
@@ -1401,7 +1401,7 @@ void UgSetMarker (short index)
    D*/
 /****************************************************************************/
 
-void UgSetMarkerSize (short Index)
+void NS_PREFIX UgSetMarkerSize (short Index)
 {
         #ifdef ModelP
   if (me != master)
@@ -1429,7 +1429,7 @@ void UgSetMarkerSize (short Index)
    D*/
 /****************************************************************************/
 
-void UgSetTextSize (short size)
+void NS_PREFIX UgSetTextSize (short size)
 {
         #ifdef ModelP
   if (me != master)
@@ -1458,7 +1458,7 @@ void UgSetTextSize (short size)
    D*/
 /****************************************************************************/
 
-void UgSetLineWidth (short width)
+void NS_PREFIX UgSetLineWidth (short width)
 {
         #ifdef ModelP
   if (me != master)
@@ -1487,7 +1487,7 @@ void UgSetLineWidth (short width)
    D*/
 /****************************************************************************/
 
-void UgClearViewPort (void)
+void NS_PREFIX UgClearViewPort (void)
 {
         #ifdef ModelP
   if (me != master)
@@ -1515,7 +1515,7 @@ void UgClearViewPort (void)
    D*/
 /****************************************************************************/
 
-void UgFlush (void)
+void NS_PREFIX UgFlush (void)
 {
         #ifdef ModelP
   if (me != master)
@@ -1543,7 +1543,7 @@ void UgFlush (void)
    D*/
 /****************************************************************************/
 
-void UgWait (DOUBLE wait)
+void NS_PREFIX UgWait (DOUBLE wait)
 {
   time_t end,time,delta;
 
@@ -1575,7 +1575,7 @@ void UgWait (DOUBLE wait)
    D*/
 /****************************************************************************/
 
-INT SetTextFactor (DOUBLE textfactor)
+INT NS_PREFIX SetTextFactor (DOUBLE textfactor)
 {
   TextFactor = textfactor;
   return (0);
@@ -1597,7 +1597,7 @@ INT SetTextFactor (DOUBLE textfactor)
    D*/
 /****************************************************************************/
 
-DOUBLE GetTextFactor (void)
+DOUBLE NS_PREFIX GetTextFactor (void)
 {
   return (TextFactor);
 }

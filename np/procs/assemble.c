@@ -36,6 +36,7 @@
 #include "debug.h"
 #include "ugdevices.h"
 #include "gm.h"
+#include "cw.h"
 #include "disctools.h"
 #include "np.h"
 
@@ -77,10 +78,6 @@ using namespace UG3d;
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
-
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-  control_entries[MAX_CONTROL_ENTRIES];
 
 typedef struct
 {
@@ -1635,7 +1632,7 @@ static INT TPartAssConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-INT NPNLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
+INT NS_PREFIX NPNLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_NL_PARTASS *np       = (NP_NL_PARTASS *) theNP;
   MULTIGRID *mg           = NP_MG(theNP);
@@ -1653,7 +1650,7 @@ INT NPNLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NPNLPartAssDisplay (NP_BASE *theNP)
+INT NS_PREFIX NPNLPartAssDisplay (NP_BASE *theNP)
 {
   NP_NL_PARTASS *np       = (NP_NL_PARTASS *) theNP;
 
@@ -1676,7 +1673,7 @@ INT NPNLPartAssDisplay (NP_BASE *theNP)
   return (0);
 }
 
-INT NPNLPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
+INT NS_PREFIX NPNLPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_NL_PARTASS *np       = (NP_NL_PARTASS *) theNP;
   INT result                  = NUM_OK;
@@ -1789,12 +1786,12 @@ INT NPNLPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-INT NPTPartAssInit (NP_BASE *theNP, INT argc, char **argv)
+INT NS_PREFIX NPTPartAssInit (NP_BASE *theNP, INT argc, char **argv)
 {
   return(NP_ACTIVE);
 }
 
-INT NPTPartAssDisplay (NP_BASE *theNP)
+INT NS_PREFIX NPTPartAssDisplay (NP_BASE *theNP)
 {
   NP_NL_PARTASS *np       = (NP_NL_PARTASS *) theNP;
 
@@ -1805,7 +1802,7 @@ INT NPTPartAssDisplay (NP_BASE *theNP)
   return(0);
 }
 
-INT NPTPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
+INT NS_PREFIX NPTPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
 {
   /* never executable */
   REP_ERR_RETURN(1);
@@ -1833,7 +1830,7 @@ INT NPTPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-const char *pp_action2str (const PARTASS_PARAMS *pp)
+const char *NS_PREFIX pp_action2str (const PARTASS_PARAMS *pp)
 {
   pp_action_str[0] = '\0';
 
@@ -1876,7 +1873,7 @@ const char *pp_action2str (const PARTASS_PARAMS *pp)
    D*/
 /****************************************************************************/
 
-INT InitAssemble (void)
+INT NS_PREFIX InitAssemble (void)
 {
   /* create partass class */
   if (CreateClass(NL_ASSEMBLE_CLASS_NAME ".nlpass",

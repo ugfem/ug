@@ -4,13 +4,13 @@
 /*                                                                          */
 /* File:      error.c                                                       */
 /*                                                                          */
-/* Purpose:   most simple error indicators                                                      */
+/* Purpose:   most simple error indicators                                  */
 /*                                                                          */
-/* Author:	  Christian Wieners                                                                             */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
+/* Author:    Christian Wieners                                             */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
 /*			  email: ug@ica3.uni-stuttgart.de				                        */
 /*																			*/
 /* History:   Sep 4, 1996, ug version 3.4                                                               */
@@ -34,9 +34,11 @@
 #include <string.h>
 
 #include "gm.h"       /* for data structure               */
+#include "cw.h"
 #include "evm.h"      /* for data structure               */
 #include "shapes.h"   /* for data structure               */
 #include "np.h"
+#include "elements.h"
 #include "ugm.h"
 #include "quadrature.h"
 #include "disctools.h"
@@ -71,13 +73,6 @@ using namespace UG3d;
 /*        in the corresponding include file!)                               */
 /*                                                                          */
 /****************************************************************************/
-
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-  control_entries[MAX_CONTROL_ENTRIES];
-
-extern INT n_offset[TAGS];
-extern INT father_offset[TAGS];
 
 typedef struct {
 
@@ -693,7 +688,7 @@ static INT IndicatorConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitError (void)
+INT NS_PREFIX InitError (void)
 {
   if (CreateClass (ERROR_CLASS_NAME ".indicator",
                    sizeof(NP_INDICATOR), IndicatorConstruct))

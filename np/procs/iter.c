@@ -148,8 +148,6 @@ enum LU_REGULARIZE {
 /*																			*/
 /****************************************************************************/
 
-extern const BV_DESC_FORMAT three_level_bvdf;   /* bvdf for 3 blocklevels       */
-
 struct np_smoother {
 
   NP_ITER iter;
@@ -10364,7 +10362,7 @@ static INT IMConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitIter ()
+INT NS_PREFIX InitIter ()
 {
   INT i;
 

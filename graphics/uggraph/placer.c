@@ -439,7 +439,7 @@ static double Place (PRectPtr *order, int n, PRect *win)
 
 
 #ifdef INSIDE_UG
-INT PlacePictures (PLACEMENT_TASK *task, PLACEMENT_REAL *real)
+INT NS_PREFIX PlacePictures (PLACEMENT_TASK *task, PLACEMENT_REAL *real)
 {
   int n = task->n;
 #else

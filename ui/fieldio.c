@@ -35,6 +35,8 @@
 
 #include "general.h"
 #include "gm.h"
+#include "cw.h"
+#include "elements.h"
 #include "evm.h"
 #include "shapes.h"
 #include "quadrature.h"
@@ -104,12 +106,6 @@ using namespace UG3d;
 /*                                                                          */
 /****************************************************************************/
 
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-  control_entries[MAX_CONTROL_ENTRIES];
-
-extern INT n_offset[TAGS];
-extern INT evector_offset[TAGS];
 
 typedef struct {
   FILE *file;

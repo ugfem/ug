@@ -30,11 +30,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* only for the definition of NS_PREFIX */
+#include "domain.h"
+
 #include "defaults.h"
 #include "fileopen.h"
 #include "ugdevices.h"
 #include "initdev.h"
 #include "general.h"
+
 
 #ifdef __cplusplus
 #ifdef __TWODIM__
@@ -358,7 +362,7 @@ static OUTPUTDEVICE *ppm_InitDevice(void)
   return (ppm_OutputDevice);
 }
 
-INT InitPPMDevice(void)
+INT NS_PREFIX InitPPMDevice(void)
 {
   if ((ppm_InitDevice()) == NULL) return 1;
 

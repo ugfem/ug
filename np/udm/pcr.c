@@ -115,7 +115,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-INT GetStrINTinRange (const char *str, INT min, INT max, INT *value)
+INT NS_PREFIX GetStrINTinRange (const char *str, INT min, INT max, INT *value)
 {
   int iValue;
 
@@ -153,7 +153,7 @@ INT GetStrINTinRange (const char *str, INT min, INT max, INT *value)
 /*																			*/
 /****************************************************************************/
 
-INT GetStrDOUBLEinRange (const char *str, DOUBLE min, DOUBLE max, DOUBLE *value)
+INT NS_PREFIX GetStrDOUBLEinRange (const char *str, DOUBLE min, DOUBLE max, DOUBLE *value)
 {
   float fValue;
 
@@ -199,7 +199,7 @@ INT GetStrDOUBLEinRange (const char *str, DOUBLE min, DOUBLE max, DOUBLE *value)
    D*/
 /****************************************************************************/
 
-INT WriteVEC_SCALAR (const VECDATA_DESC *theVDT, const VEC_SCALAR Scalar, const char *structdir)
+INT NS_PREFIX WriteVEC_SCALAR (const VECDATA_DESC *theVDT, const VEC_SCALAR Scalar, const char *structdir)
 {
   INT i;
   char name[2];
@@ -268,7 +268,7 @@ static void PrintHeaderIff (INT i)
   }
 }
 
-INT PreparePCR (VECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
+INT NS_PREFIX PreparePCR (VECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
 {
   INT i,j;
 
@@ -332,7 +332,7 @@ INT PreparePCR (VECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
   return (0);
 }
 
-INT PrepareEPCR (EVECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
+INT NS_PREFIX PrepareEPCR (EVECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
 {
   INT i,j;
 
@@ -418,7 +418,7 @@ INT PrepareEPCR (EVECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
  */
 /*************************************************************************/
 
-INT PostPCR (INT ID, char *path)
+INT NS_PREFIX PostPCR (INT ID, char *path)
 {
   INT i;
   char name[10];
@@ -510,7 +510,7 @@ static INT NormIdentVS_of_VS (const VEC_SCALAR in, SHORT ncmp, SHORT nid, SHORT 
   return (0);
 }
 
-INT DoPCR (INT ID, VEC_SCALAR InDefect, INT PrintMode)
+INT NS_PREFIX DoPCR (INT ID, VEC_SCALAR InDefect, INT PrintMode)
 {
   VEC_SCALAR Defect;
   DOUBLE d,s;

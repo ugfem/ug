@@ -38,6 +38,7 @@
 #include "compiler.h"
 #include "misc.h"
 #include "gm.h"
+#include "elements.h"
 #include "evm.h"
 #include "ugenv.h"
 #include "ugm.h"
@@ -150,9 +151,6 @@ static DOUBLE Param[2][4][2] = {
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
-
-extern INT n_offset[TAGS];
-extern INT side_offset[TAGS];
 
 typedef struct {
   DOUBLE_VECTOR co[MAXNC];                      /* points in local space, corners       */
@@ -2194,7 +2192,7 @@ static INT FillLocalCoords (INT tag)
    D*/
 /****************************************************************************/
 
-INT InitFiniteVolumeGeom (void)
+INT NS_PREFIX InitFiniteVolumeGeom (void)
 {
   if (DIM==2)
   {

@@ -194,6 +194,7 @@ INT l_vector_consistentBS (GRID *g, const BV_DESC *bvd, const BV_DESC_FORMAT *bv
 #define ON_SURFACE      -1      /* class on surface                                     */
 #define ALL_VECTORS      0      /* all vectors                                          */
 
+/** \todo Shouldn't all this be in ugblas.h ? */
 /* blas level 1 (vector operations) */
 
 INT dset           (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
@@ -231,6 +232,10 @@ INT dnrm2          (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC 
 INT dnrm2x         (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
                     VEC_SCALAR a);
 
+
+INT dpdotBS        (const BLOCKVECTOR*, INT, INT);
+INT dm0dotBS(const BLOCKVECTOR*, INT, INT);
+INT dm0addBS(const BLOCKVECTOR*, INT, const MATDATA_DESC*);
 
 /* blas level 2 (matrix operations) */
 
@@ -320,7 +325,7 @@ INT dematset       (MULTIGRID *mg, INT fl, INT tl, INT mode, EMATDATA_DESC *M, D
 #define l_dmatmul_minus(g,x,xc,M,y,yc)     dmatmul_minus(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,M,y)
 #define s_dmatmul_minus(mg,fl,tl,x,M,y,yc) dmatmul_minus(mg,fl,tl,ON_SURFACE,x,M,y)
 
-/* old style **********************
+/** \todo old style -- Should we throw it out? **********************
 
    INT l_dset                      (GRID *g,                                               const VECDATA_DESC *x, INT xclass, DOUBLE a);
    INT a_dset                      (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE a);

@@ -275,7 +275,7 @@ INT NS_PREFIX NPELinearSolverInit (NP_ELINEAR_SOLVER *np, INT argc , char **argv
   return(NP_EXECUTABLE);
 }
 
-INT NPELinearSolverDisplay (NP_ELINEAR_SOLVER *np)
+INT NS_PREFIX NPELinearSolverDisplay (NP_ELINEAR_SOLVER *np)
 {
   if ((np->x != NULL) || (np->b != NULL) || (np->A != NULL)) {
     UserWrite("symbolic user data:\n");
@@ -1061,7 +1061,7 @@ static INT EBCGSConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitELinearSolver ()
+INT NS_PREFIX InitELinearSolver ()
 {
   if (CreateClass(ELINEAR_SOLVER_CLASS_NAME ".els",sizeof(NP_ELS),ELSConstruct)) REP_ERR_RETURN (__LINE__);
   if (CreateClass(ELINEAR_SOLVER_CLASS_NAME ".ebcgs",sizeof(NP_EBCGS),EBCGSConstruct)) REP_ERR_RETURN (__LINE__);

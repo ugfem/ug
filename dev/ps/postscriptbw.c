@@ -34,11 +34,15 @@
 #include <math.h>
 #include <time.h>
 
+/* only for the definition of NS_PREFIX */
+#include "domain.h"
+
 #include "defaults.h"
 #include "fileopen.h"
 #include "ugdevices.h"
 #include "initdev.h"
 #include "general.h"
+
 
 #ifdef __cplusplus
 #ifdef __TWODIM__
@@ -942,7 +946,7 @@ static OUTPUTDEVICE *InitPSOutputDevice (void)
  */
 /****************************************************************************/
 
-INT InitPostScriptBW (void)
+INT NS_PREFIX InitPostScriptBW (void)
 {
   if ((InitPSOutputDevice()) == NULL) return (1);
 

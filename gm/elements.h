@@ -5,7 +5,7 @@
 /* File:      elements.h                                                    */
 /*                                                                          */
 /* Purpose:   general element concept (header file)                         */
-/*                                                                                                                                                      */
+/*                                                                          */
 /* Author:        Peter Bastian                                                                                                 */
 /*                        Institut fuer Computeranwendungen III                                                 */
 /*                        Universitaet Stuttgart                                                                                */
@@ -43,6 +43,17 @@ namespace UG2d {
 namespace UG3d {
 #endif
 #endif
+
+
+
+extern INT n_offset[TAGS];
+extern INT father_offset[TAGS];
+extern INT sons_offset[TAGS];
+extern INT nb_offset[TAGS];
+extern INT evector_offset[TAGS];
+extern INT svector_offset[TAGS];
+extern INT side_offset[TAGS];
+extern INT data_offset[TAGS];
 
 /****************************************************************************/
 /*                                                                                                                                                      */

@@ -887,7 +887,7 @@ static INT EEXConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitEIter ()
+INT NS_PREFIX InitEIter ()
 {
   INT i;
 

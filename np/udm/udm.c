@@ -142,7 +142,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT GetUniqueOTypeOfVType (const FORMAT *fmt, INT vtype)
+INT NS_PREFIX GetUniqueOTypeOfVType (const FORMAT *fmt, INT vtype)
 {
   INT i,found,objs,obj;
 
@@ -183,7 +183,7 @@ INT GetUniqueOTypeOfVType (const FORMAT *fmt, INT vtype)
    D*/
 /****************************************************************************/
 
-INT GetUniquePartOfVType (const MULTIGRID *mg, INT vtype)
+INT NS_PREFIX GetUniquePartOfVType (const MULTIGRID *mg, INT vtype)
 {
   FORMAT *fmt=MGFORMAT(mg);
   INT i,n,found,parts,part;
@@ -227,7 +227,7 @@ INT GetUniquePartOfVType (const MULTIGRID *mg, INT vtype)
    D*/
 /****************************************************************************/
 
-INT IsVDdefinedInAllObjects (const MULTIGRID *mg, const VECDATA_DESC *vd, INT obj_flags)
+INT NS_PREFIX IsVDdefinedInAllObjects (const MULTIGRID *mg, const VECDATA_DESC *vd, INT obj_flags)
 {
   FORMAT *fmt=MGFORMAT(mg);
   INT tp,i,n,parts;
@@ -280,7 +280,7 @@ INT IsVDdefinedInAllObjects (const MULTIGRID *mg, const VECDATA_DESC *vd, INT ob
    D*/
 /****************************************************************************/
 
-INT FillCompsForOType (const FORMAT *fmt, INT otype, INT n, SHORT cmps[])
+INT NS_PREFIX FillCompsForOType (const FORMAT *fmt, INT otype, INT n, SHORT cmps[])
 {
   INT tp,otp;
 
@@ -536,7 +536,7 @@ VECDATA_DESC * NS_PREFIX GetNextVector (VECDATA_DESC *vd)
    D*/
 /****************************************************************************/
 
-EVECDATA_DESC *GetFirstEVector (MULTIGRID *theMG)
+static EVECDATA_DESC * GetFirstEVector (MULTIGRID *theMG)
 {
   ENVITEM *item;
 
@@ -570,7 +570,7 @@ EVECDATA_DESC *GetFirstEVector (MULTIGRID *theMG)
    D*/
 /****************************************************************************/
 
-EVECDATA_DESC *GetNextEVector (EVECDATA_DESC *vd)
+static EVECDATA_DESC * GetNextEVector (EVECDATA_DESC *vd)
 {
   ENVITEM *item;
 
@@ -600,7 +600,7 @@ EVECDATA_DESC *GetNextEVector (EVECDATA_DESC *vd)
    D*/
 /****************************************************************************/
 
-EMATDATA_DESC *GetFirstEMatrix (MULTIGRID *theMG)
+static EMATDATA_DESC * GetFirstEMatrix (MULTIGRID *theMG)
 {
   ENVITEM *item;
 
@@ -634,7 +634,7 @@ EMATDATA_DESC *GetFirstEMatrix (MULTIGRID *theMG)
    D*/
 /****************************************************************************/
 
-EMATDATA_DESC *GetNextEMatrix (EMATDATA_DESC *md)
+static EMATDATA_DESC * GetNextEMatrix (EMATDATA_DESC *md)
 {
   ENVITEM *item;
 
@@ -860,8 +860,8 @@ VECDATA_DESC * NS_PREFIX CreateSubVecDesc (MULTIGRID *theMG, const char *name,
    D*/
 /****************************************************************************/
 
-VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_DESC **theVDs,
-                              const INT nrOfVDs)
+VECDATA_DESC * NS_PREFIX CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_DESC **theVDs,
+                                         const INT nrOfVDs)
 {
   VECDATA_DESC *vd;
   SHORT offset;
@@ -937,7 +937,7 @@ VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_
  */
 /****************************************************************************/
 
-INT VDequal (const VECDATA_DESC *vd0, const VECDATA_DESC *vd1)
+INT NS_PREFIX VDequal (const VECDATA_DESC *vd0, const VECDATA_DESC *vd1)
 {
   INT tp,i,n;
   SHORT *c0,*c1;
@@ -1209,7 +1209,7 @@ static INT GetEMDName (char *name)
   return(0);
 }
 
-INT AllocEVDFromEVD (MULTIGRID *theMG, INT fl, INT tl, const EVECDATA_DESC *vd, EVECDATA_DESC **new_desc)
+INT NS_PREFIX AllocEVDFromEVD (MULTIGRID *theMG, INT fl, INT tl, const EVECDATA_DESC *vd, EVECDATA_DESC **new_desc)
 {
   VECDATA_DESC *nvd=NULL;
   EVECDATA_DESC *evd;
@@ -1274,7 +1274,7 @@ INT AllocEVDFromEVD (MULTIGRID *theMG, INT fl, INT tl, const EVECDATA_DESC *vd, 
  */
 /****************************************************************************/
 
-INT AllocEVDForVD (MULTIGRID *theMG, const VECDATA_DESC *vd, INT n, EVECDATA_DESC **new_desc)
+INT NS_PREFIX AllocEVDForVD (MULTIGRID *theMG, const VECDATA_DESC *vd, INT n, EVECDATA_DESC **new_desc)
 {
   EVECDATA_DESC *evd;
   char name[NAMESIZE];
@@ -1339,7 +1339,7 @@ INT AllocEVDForVD (MULTIGRID *theMG, const VECDATA_DESC *vd, INT n, EVECDATA_DES
  */
 /****************************************************************************/
 
-INT AllocEMDForMD (MULTIGRID *theMG, const MATDATA_DESC *md, INT n, EMATDATA_DESC **new_desc)
+INT NS_PREFIX AllocEMDForMD (MULTIGRID *theMG, const MATDATA_DESC *md, INT n, EMATDATA_DESC **new_desc)
 {
   INT i;
   EMATDATA_DESC *emd;
@@ -1406,7 +1406,7 @@ INT AllocEMDForMD (MULTIGRID *theMG, const MATDATA_DESC *md, INT n, EMATDATA_DES
  */
 /****************************************************************************/
 
-INT LockVD (MULTIGRID *theMG, VECDATA_DESC *vd)
+INT NS_PREFIX LockVD (MULTIGRID *theMG, VECDATA_DESC *vd)
 {
   INT tp,j;
 
@@ -1526,7 +1526,7 @@ INT NS_PREFIX FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
  */
 /****************************************************************************/
 
-INT FreeEVD (MULTIGRID *theMG, INT fl, INT tl, EVECDATA_DESC *vd)
+INT NS_PREFIX FreeEVD (MULTIGRID *theMG, INT fl, INT tl, EVECDATA_DESC *vd)
 {
   if (vd==NULL) REP_ERR_RETURN (NUM_ERROR);
   if (FreeVD(theMG,fl,tl,vd->vd)) REP_ERR_RETURN (NUM_ERROR);
@@ -1556,7 +1556,7 @@ INT FreeEVD (MULTIGRID *theMG, INT fl, INT tl, EVECDATA_DESC *vd)
  */
 /****************************************************************************/
 
-INT InterpolateVDAllocation (MULTIGRID *theMG, VECDATA_DESC *vd)
+INT NS_PREFIX InterpolateVDAllocation (MULTIGRID *theMG, VECDATA_DESC *vd)
 {
   GRID *theGrid;
   INT j,tp,tl;
@@ -1601,7 +1601,7 @@ INT InterpolateVDAllocation (MULTIGRID *theMG, VECDATA_DESC *vd)
  */
 /****************************************************************************/
 
-INT DisposeVD (VECDATA_DESC *vd)
+INT NS_PREFIX DisposeVD (VECDATA_DESC *vd)
 {
   if (vd==NULL) REP_ERR_RETURN (NUM_ERROR);
   if (VM_LOCKED(vd)) REP_ERR_RETURN (NUM_ERROR);
@@ -1681,7 +1681,7 @@ static INT lev2str (const INT levels[MAXLEVEL], char *list)
   return (0);
 }
 
-INT DisplayVecDataDesc (const VECDATA_DESC *vd, INT modifiers, char *buffer)
+INT NS_PREFIX DisplayVecDataDesc (const VECDATA_DESC *vd, INT modifiers, char *buffer)
 {
   const FORMAT *fmt;
   const SHORT *offset;
@@ -1786,7 +1786,7 @@ VECDATA_DESC * NS_PREFIX GetVecDataDescByName (const MULTIGRID *theMG, char *nam
    D*/
 /****************************************************************************/
 
-INT VDinterfaceDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
+INT NS_PREFIX VDinterfaceDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
 {
   SHORT SubComp[MAX_VEC_COMP],SubNCmp[NVECTYPES];
   INT i,k,n,ns,tp;
@@ -1871,7 +1871,7 @@ INT VDinterfaceDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DE
    D*/
 /****************************************************************************/
 
-INT VDinterfaceCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
+INT NS_PREFIX VDinterfaceCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
 {
   SHORT SubComp[MAX_VEC_COMP],SubNCmp[NVECTYPES];
   INT i,j,k,n,ns,tp,cmp,ncmp;
@@ -1965,7 +1965,7 @@ INT VDinterfaceCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_
    D*/
 /****************************************************************************/
 
-INT VDCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
+INT NS_PREFIX VDCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
 {
   SHORT SubComp[MAX_VEC_COMP],SubNCmp[NVECTYPES];
   INT i,j,k,n,ns,tp,cmp,ncmp;
@@ -2082,7 +2082,7 @@ INT VDCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vd
    D*/
 /****************************************************************************/
 
-INT VD_ncmps_in_otype_mod (const VECDATA_DESC *vd, INT otype, INT mode)
+INT NS_PREFIX VD_ncmps_in_otype_mod (const VECDATA_DESC *vd, INT otype, INT mode)
 {
   FORMAT *fmt;
   INT tp,otp,ncmp,parts,i,n;
@@ -2144,7 +2144,7 @@ INT VD_ncmps_in_otype_mod (const VECDATA_DESC *vd, INT otype, INT mode)
    D*/
 /****************************************************************************/
 
-INT VD_cmp_of_otype_mod (const VECDATA_DESC *vd, INT otype, INT i, INT mode)
+INT NS_PREFIX VD_cmp_of_otype_mod (const VECDATA_DESC *vd, INT otype, INT i, INT mode)
 {
   FORMAT *fmt;
   INT tp,otp,ncmp,off,parts,j,n;
@@ -2216,7 +2216,7 @@ INT VD_cmp_of_otype_mod (const VECDATA_DESC *vd, INT otype, INT i, INT mode)
    D*/
 /****************************************************************************/
 
-SHORT *VD_ncmp_cmpptr_of_otype_mod (const VECDATA_DESC *vd, INT otype, INT *ncomp, INT mode)
+SHORT * NS_PREFIX VD_ncmp_cmpptr_of_otype_mod (const VECDATA_DESC *vd, INT otype, INT *ncomp, INT mode)
 {
   FORMAT *fmt;
   SHORT *cptr;
@@ -2289,7 +2289,7 @@ SHORT *VD_ncmp_cmpptr_of_otype_mod (const VECDATA_DESC *vd, INT otype, INT *ncom
    D*/
 /****************************************************************************/
 
-INT VDusesVOTypeOnly (const VECDATA_DESC *vd, INT votype)
+INT NS_PREFIX VDusesVOTypeOnly (const VECDATA_DESC *vd, INT votype)
 {
   FORMAT *fmt;
   INT tp,otp;
@@ -2802,9 +2802,9 @@ MATDATA_DESC * NS_PREFIX CreateMatDesc (MULTIGRID *theMG, const char *name, cons
    D*/
 /****************************************************************************/
 
-MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const char *name, const char *CompNames,
-                                const SHORT *RowsInType, const SHORT *ColsInType,
-                                SHORT **CmpsInType)
+MATDATA_DESC * NS_PREFIX CreateSubMatDesc (MULTIGRID *theMG, const char *name, const char *CompNames,
+                                           const SHORT *RowsInType, const SHORT *ColsInType,
+                                           SHORT **CmpsInType)
 {
   return(CreateMatDesc_General(theMG,name,CompNames,RowsInType,ColsInType,
                                CmpsInType,1));
@@ -2832,7 +2832,7 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const char *name, const char *
    D*/
 /****************************************************************************/
 
-INT DisplayMatDataDesc (const MATDATA_DESC *md, char *buffer)
+INT NS_PREFIX DisplayMatDataDesc (const MATDATA_DESC *md, char *buffer)
 {
   const FORMAT *fmt;
   const SHORT *offset;
@@ -3193,8 +3193,8 @@ INT NS_PREFIX AllocMDFromMRowMCol (MULTIGRID *theMG, INT fl, INT tl,
  */
 /****************************************************************************/
 
-INT AllocMDFromVRowVCol (MULTIGRID *theMG, INT fl, INT tl,
-                         const SHORT *RowsInType,const SHORT *ColsInType,MATDATA_DESC **new_desc)
+INT NS_PREFIX AllocMDFromVRowVCol (MULTIGRID *theMG, INT fl, INT tl,
+                                   const SHORT *RowsInType,const SHORT *ColsInType,MATDATA_DESC **new_desc)
 {
   return (AllocMDFromMRowMCol(theMG,fl,tl,RowsInType,ColsInType,NULL,new_desc));
 }
@@ -3297,7 +3297,7 @@ INT NS_PREFIX AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
  */
 /****************************************************************************/
 
-INT AllocEMDFromEVD (MULTIGRID *theMG, INT fl, INT tl, const EVECDATA_DESC *x, const EVECDATA_DESC *y, EMATDATA_DESC **new_desc)
+INT NS_PREFIX AllocEMDFromEVD (MULTIGRID *theMG, INT fl, INT tl, const EVECDATA_DESC *x, const EVECDATA_DESC *y, EMATDATA_DESC **new_desc)
 {
   INT i;
   MATDATA_DESC *md=NULL;
@@ -3366,8 +3366,8 @@ INT AllocEMDFromEVD (MULTIGRID *theMG, INT fl, INT tl, const EVECDATA_DESC *x, c
  */
 /****************************************************************************/
 
-INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
-                   MATDATA_DESC *md, MATDATA_DESC **new_desc)
+INT NS_PREFIX AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
+                             MATDATA_DESC *md, MATDATA_DESC **new_desc)
 {
   MATDATA_DESC *mdnew;
 
@@ -3427,13 +3427,13 @@ INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
  */
 /****************************************************************************/
 
-INT LockMD (MATDATA_DESC *md)
+INT NS_PREFIX LockMD (MATDATA_DESC *md)
 {
   VM_LOCKED(md) = VM_IS_LOCKED;
   return (0);
 }
 
-INT UnlockMD (MATDATA_DESC *md)
+INT NS_PREFIX UnlockMD (MATDATA_DESC *md)
 {
   VM_LOCKED(md) = VM_IS_UNLOCKED;
   return (0);
@@ -3532,7 +3532,7 @@ INT NS_PREFIX FreeMD (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *md)
  */
 /****************************************************************************/
 
-INT FreeEMD (MULTIGRID *theMG, INT fl, INT tl, EMATDATA_DESC *md)
+INT NS_PREFIX FreeEMD (MULTIGRID *theMG, INT fl, INT tl, EMATDATA_DESC *md)
 {
   INT i;
 
@@ -3570,7 +3570,7 @@ INT FreeEMD (MULTIGRID *theMG, INT fl, INT tl, EMATDATA_DESC *md)
  */
 /****************************************************************************/
 
-INT DisposeMD (MATDATA_DESC *md)
+INT NS_PREFIX DisposeMD (MATDATA_DESC *md)
 {
   if (md==NULL) REP_ERR_RETURN (NUM_ERROR);
   if (VM_LOCKED(md)) REP_ERR_RETURN (NUM_ERROR);
@@ -3610,7 +3610,7 @@ INT DisposeMD (MATDATA_DESC *md)
    D*/
 /****************************************************************************/
 
-INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi)
+INT NS_PREFIX MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi)
 {
   SHORT SubComp[MAX_MAT_COMP],SubRCmp[NMATTYPES],SubCCmp[NMATTYPES];
   INT i,k,l,n,ns,tp;
@@ -3693,7 +3693,7 @@ INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DE
    D*/
 /****************************************************************************/
 
-INT MDinterfaceCoCoupleDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi)
+INT NS_PREFIX MDinterfaceCoCoupleDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi)
 {
   SHORT SubComp[MAX_MAT_COMP],SubRCmp[NMATTYPES],SubCCmp[NMATTYPES];
   INT i,j,jj,k,l,n,ns,nr,co_nr,nc,rt,ct,cmp;
@@ -3856,7 +3856,7 @@ INT MDinterfaceCoCoupleDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MA
    D*/
 /****************************************************************************/
 
-INT MD_rows_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mode)
+INT NS_PREFIX MD_rows_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mode)
 {
   FORMAT *fmt;
   INT rt,ct,rot,cot,nrow,src_parts,dst_parts,i,n;
@@ -3926,7 +3926,7 @@ INT MD_rows_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mo
    D*/
 /****************************************************************************/
 
-INT MD_cols_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mode)
+INT NS_PREFIX MD_cols_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mode)
 {
   FORMAT *fmt;
   INT rt,ct,rot,cot,ncol,src_parts,dst_parts,i,n;
@@ -3998,7 +3998,7 @@ INT MD_cols_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mo
    D*/
 /****************************************************************************/
 
-INT MD_rows_cols_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc, INT mode)
+INT NS_PREFIX MD_rows_cols_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc, INT mode)
 {
   FORMAT *fmt;
   INT rt,ct,rot,cot,nrow,ncol,src_parts,dst_parts,i,n;
@@ -4078,7 +4078,7 @@ INT MD_rows_cols_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, I
    D*/
 /****************************************************************************/
 
-INT MD_mcmp_of_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i, INT mode)
+INT NS_PREFIX MD_mcmp_of_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i, INT mode)
 {
   FORMAT *fmt;
   INT rt,ct,off,rot,cot,nrow,ncol,src_parts,dst_parts,j,n;
@@ -4160,7 +4160,7 @@ INT MD_mcmp_of_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i,
    D*/
 /****************************************************************************/
 
-SHORT *MD_nr_nc_mcmpptr_of_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc, INT mode)
+SHORT * NS_PREFIX MD_nr_nc_mcmpptr_of_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc, INT mode)
 {
   FORMAT *fmt;
   SHORT *cptr;
@@ -4243,7 +4243,7 @@ SHORT *MD_nr_nc_mcmpptr_of_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT co
    D*/
 /****************************************************************************/
 
-INT MDusesVOTypeOnly (const MATDATA_DESC *md, INT votype)
+INT NS_PREFIX MDusesVOTypeOnly (const MATDATA_DESC *md, INT votype)
 {
   FORMAT *fmt;
   INT rt,ct,otp;
@@ -4312,7 +4312,7 @@ INT MDusesVOTypeOnly (const MATDATA_DESC *md, INT votype)
    D*/
 /****************************************************************************/
 
-INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
+INT NS_PREFIX SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
 {
   MULTIGRID *mg;
   VECTOR *vec;
@@ -4698,7 +4698,7 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
    D*/
 /****************************************************************************/
 
-INT SwapPartSkipflags (INT fl, INT tl, const VECDATA_DESC *vdg, const VECDATA_DESC *vdi, INT direction)
+INT NS_PREFIX SwapPartSkipflags (INT fl, INT tl, const VECDATA_DESC *vdg, const VECDATA_DESC *vdi, INT direction)
 {
   MULTIGRID *mg;
   VECTOR *vec;
@@ -4814,7 +4814,7 @@ INT SwapPartSkipflags (INT fl, INT tl, const VECDATA_DESC *vdg, const VECDATA_DE
  */
 /****************************************************************************/
 
-INT InitUserDataManager ()
+INT NS_PREFIX InitUserDataManager ()
 {
   char *names;
   INT i;

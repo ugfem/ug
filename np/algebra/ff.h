@@ -74,6 +74,12 @@ namespace UG3d {
 /*                                                                          */
 /****************************************************************************/
 
+INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest, const BLOCKVECTOR *bv_source, const BV_DESC *bvd_dest, const BV_DESC *bvd_source, const BV_DESC_FORMAT *bvdf, INT tv_comp );
+
+INT TFFUpdateDiagBlock( const BLOCKVECTOR *bv_dest, const BV_DESC *bvd_dest, const BV_DESC *bvd_source, const BV_DESC_FORMAT *bvdf, INT T, INT DL, INT Theta, GRID *grid );
+
+INT InitFF( void );
+
 INT TFFUpdateDiagBlock( const BLOCKVECTOR *bv_dest,
                         const BV_DESC *bvd_dest,
                         const BV_DESC *bvd_source,

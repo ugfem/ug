@@ -1473,7 +1473,7 @@ static INT BDFConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitBDFSolver (void)
+INT NS_PREFIX InitBDFSolver (void)
 {
   INT error=0;
 

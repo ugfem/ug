@@ -738,9 +738,9 @@ INT NS_PREFIX AMGTransferDisplay (NP_BASE *theNP)
   return (0);
 }
 
-INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
-                           VECDATA_DESC *x, VECDATA_DESC *b,
-                           MATDATA_DESC *A, INT *result)
+INT NS_PREFIX AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
+                                     VECDATA_DESC *x, VECDATA_DESC *b,
+                                     MATDATA_DESC *A, INT *result)
 {
   NP_AMG_TRANSFER *np;
   MULTIGRID *theMG;
@@ -1207,7 +1207,7 @@ static INT AMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   return(0);
 }
 
-INT AMGTransferExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX AMGTransferExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_TRANSFER *np;
   NP_AMG_TRANSFER *npa;
@@ -1356,7 +1356,7 @@ static INT ClusterAMGConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitAMGTransfer ()
+INT NS_PREFIX InitAMGTransfer ()
 {
   if (CreateClass(TRANSFER_CLASS_NAME ".selectionAMG",
                   sizeof(NP_AMG_TRANSFER),SelectionAMGConstruct))

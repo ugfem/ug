@@ -25,6 +25,7 @@
 /* define this to exclude extern definition of global arrays */
 #define __COMPILE_CW__
 
+
 #include "ugdevices.h"
 #include "debug.h"
 #include "general.h"
@@ -111,8 +112,8 @@ typedef struct {
 /*                                                                          */
 /****************************************************************************/
 
-CONTROL_WORD control_words[MAX_CONTROL_WORDS];
-CONTROL_ENTRY control_entries[MAX_CONTROL_ENTRIES];
+CONTROL_WORD NS_PREFIX control_words[MAX_CONTROL_WORDS];
+CONTROL_ENTRY NS_PREFIX control_entries[MAX_CONTROL_ENTRIES];
 
 /****************************************************************************/
 /*                                                                          */
@@ -325,7 +326,7 @@ void NS_PREFIX ListCWofObject (const void *obj, INT offset)
    D*/
 /****************************************************************************/
 
-void ListAllCWsOfObject (const void *obj)
+void NS_PREFIX ListAllCWsOfObject (const void *obj)
 {
   INT i,cw,last_cw,sub,min,cw_objt,offset;
 
@@ -725,7 +726,7 @@ static INT InitPredefinedControlEntries (void)
    D*/
 /****************************************************************************/
 
-void ResetCEstatistics (void)
+void NS_PREFIX ResetCEstatistics (void)
 {
         #ifndef _DEBUG_CW_
   PrintErrorMessage('W',"ResetCEstatistics","compile with #ifdef _DEBUG_CW_ in gm.h!");
@@ -787,7 +788,7 @@ static void PrintSingleCEStatistics (INT i)
     UserWrite("\n");
 }
 
-void PrintCEstatistics (void)
+void NS_PREFIX PrintCEstatistics (void)
 {
         #ifndef _DEBUG_CW_
   PrintErrorMessage('W',"PrintCEstatistics","compile with #ifdef _DEBUG_CW_ in gm.h!");
@@ -932,7 +933,7 @@ unsigned INT ReadCW (const void *obj, INT ceID)
    D*/
 /****************************************************************************/
 
-void WriteCW (void *obj, INT ceID, INT n)
+void NS_PREFIX WriteCW (void *obj, INT ceID, INT n)
 {
   CONTROL_ENTRY *ce;
   unsigned INT off_in_obj,mask,i,j,off_in_wrd,cw_objt,xmsk;
@@ -1055,7 +1056,7 @@ void WriteCW (void *obj, INT ceID, INT n)
    D*/
 /****************************************************************************/
 
-INT AllocateControlEntry (INT cw_id, INT length, INT *ce_id)
+INT NS_PREFIX AllocateControlEntry (INT cw_id, INT length, INT *ce_id)
 {
   INT free, i, offset;
   CONTROL_ENTRY *ce;
@@ -1127,7 +1128,7 @@ INT AllocateControlEntry (INT cw_id, INT length, INT *ce_id)
    D*/
 /****************************************************************************/
 
-INT FreeControlEntry (INT ce_id)
+INT NS_PREFIX FreeControlEntry (INT ce_id)
 {
   CONTROL_ENTRY *ce;
   CONTROL_WORD *cw;
@@ -1171,7 +1172,7 @@ INT FreeControlEntry (INT ce_id)
    D*/
 /****************************************************************************/
 
-INT InitCW (void)
+INT NS_PREFIX InitCW (void)
 {
   if (InitPredefinedControlWords())
     return (__LINE__);

@@ -1272,7 +1272,7 @@ int CheckElementsInMG (MULTIGRID *theMG)
   return (ret);
 }
 
-int CallGrape (MULTIGRID *theMG)
+int NS_PREFIX CallGrape (MULTIGRID *theMG)
 {
   static HMESH *mesh;
   int i,j;
@@ -1628,7 +1628,7 @@ void usleep (unsigned long time)
    D*/
 /****************************************************************************/
 
-INT InitGrape (void)
+INT NS_PREFIX InitGrape (void)
 {
   return (0);
 }

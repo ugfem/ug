@@ -108,7 +108,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT InitNumerics ()
+INT NS_PREFIX InitNumerics ()
 {
   INT err;
 

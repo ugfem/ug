@@ -35,11 +35,13 @@
 #include "general.h"
 
 #include "gm.h"
+#include "elements.h"
 #include "ugenv.h"
 #include "evm.h"
 #include "ugdevices.h"
 #include "shapes.h"
 #include "num.h"
+#include "cw.h"
 
 #include "plotproc.h"
 
@@ -67,13 +69,6 @@ using namespace UG3d;
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
-
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-  control_entries[MAX_CONTROL_ENTRIES];
-
-extern INT n_offset[TAGS];
-extern INT evector_offset[TAGS];
 
 /****************************************************************************/
 /*																			*/

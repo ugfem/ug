@@ -167,7 +167,7 @@ INT NS_PREFIX DisplayPrintingFormat ()
    D*/
 /****************************************************************************/
 
-INT ResetPrintingFormat (void)
+INT NS_PREFIX ResetPrintingFormat (void)
 {
   NPrintVectors = NPrintMatrixs = 0;
   return (0);
@@ -178,7 +178,7 @@ INT ResetPrintingFormat (void)
 /* please keep help comment in commands.c up to date	*/
 /********************************************************/
 
-INT SetPrintingFormatCmd (const MULTIGRID *mg, INT argc, char **argv)
+INT NS_PREFIX SetPrintingFormatCmd (const MULTIGRID *mg, INT argc, char **argv)
 {
   VECDATA_DESC *vd;
   MATDATA_DESC *md;
@@ -417,7 +417,7 @@ static INT PrintTypeMatrixData (INT type, void *data, const char *indent, char *
   return(0);
 }
 
-VEC_TEMPLATE *GetVectorTemplate (const FORMAT *theFmt, const char *theTmplt)
+VEC_TEMPLATE *NS_PREFIX GetVectorTemplate (const FORMAT *theFmt, const char *theTmplt)
 {
   ENVITEM *item,*dir;
   VEC_TEMPLATE *first;
@@ -535,7 +535,7 @@ VECDATA_DESC * NS_PREFIX CreateVecDescOfTemplate (MULTIGRID *theMG,
   return (vd);
 }
 
-INT CreateVecDescCmd (MULTIGRID *theMG, INT argc, char **argv)
+INT NS_PREFIX CreateVecDescCmd (MULTIGRID *theMG, INT argc, char **argv)
 {
   char *token,*theTmplt,buffer[NAMESIZE];
 
@@ -557,7 +557,7 @@ INT CreateVecDescCmd (MULTIGRID *theMG, INT argc, char **argv)
   return (NUM_OK);
 }
 
-MAT_TEMPLATE *GetMatrixTemplate (const FORMAT *theFmt, const char *theTmplt)
+MAT_TEMPLATE *NS_PREFIX GetMatrixTemplate (const FORMAT *theFmt, const char *theTmplt)
 {
   ENVITEM *item,*dir;
   MAT_TEMPLATE *first;
@@ -677,7 +677,7 @@ MATDATA_DESC * NS_PREFIX CreateMatDescOfTemplate (MULTIGRID *theMG,
   return (md);
 }
 
-INT CreateMatDescCmd (MULTIGRID *theMG, INT argc, char **argv)
+INT NS_PREFIX CreateMatDescCmd (MULTIGRID *theMG, INT argc, char **argv)
 {
   char *token,*theTmplt,buffer[NAMESIZE];
 
@@ -699,7 +699,7 @@ INT CreateMatDescCmd (MULTIGRID *theMG, INT argc, char **argv)
   return (NUM_OK);
 }
 
-INT FreeMatDescCmd (MULTIGRID *theMG, INT argc, char **argv)
+INT NS_PREFIX FreeMatDescCmd (MULTIGRID *theMG, INT argc, char **argv)
 {
   char *token;
   MATDATA_DESC *theMD;
@@ -862,7 +862,7 @@ INT NS_PREFIX VDmatchesVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt)
    D*/
 /****************************************************************************/
 
-INT VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, VECDATA_DESC **subvd)
+INT NS_PREFIX VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, VECDATA_DESC **subvd)
 {
   FORMAT *fmt;
   SUBVEC *subv;
@@ -944,7 +944,7 @@ INT VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, VE
    D*/
 /****************************************************************************/
 
-INT VDsubDescFromVS (const VECDATA_DESC *vd, const SUBVEC *subv, VECDATA_DESC **subvd)
+INT NS_PREFIX VDsubDescFromVS (const VECDATA_DESC *vd, const SUBVEC *subv, VECDATA_DESC **subvd)
 {
   FORMAT *fmt;
   SHORT SubComp[MAX_VEC_COMP];
@@ -1047,7 +1047,7 @@ INT NS_PREFIX CompMDwithMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt)
    D*/
 /****************************************************************************/
 
-INT MDmatchesVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt)
+INT NS_PREFIX MDmatchesVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt)
 {
   INT rt,ct,mt,nr,nc;
 
@@ -1161,7 +1161,7 @@ static INT MTmatchesVTxVT (const MAT_TEMPLATE *mt, const VEC_TEMPLATE *rvt, cons
    D*/
 /****************************************************************************/
 
-INT MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, MATDATA_DESC **submd)
+INT NS_PREFIX MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, MATDATA_DESC **submd)
 {
   FORMAT *fmt;
   SUBMAT *subm;
@@ -1241,7 +1241,7 @@ INT MDsubDescFromMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, MA
    D*/
 /****************************************************************************/
 
-INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, MATDATA_DESC **submd)
+INT NS_PREFIX MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, MATDATA_DESC **submd)
 {
   FORMAT *fmt;
   SUBVEC *subv;
@@ -1343,9 +1343,9 @@ INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, MA
    D*/
 /****************************************************************************/
 
-INT MDsubDescFromVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, INT rsub,
-                        const VEC_TEMPLATE *cvt, INT csub,
-                        MATDATA_DESC **submd)
+INT NS_PREFIX MDsubDescFromVTxVT (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, INT rsub,
+                                  const VEC_TEMPLATE *cvt, INT csub,
+                                  MATDATA_DESC **submd)
 {
   FORMAT *fmt;
   const VEC_TEMPLATE *vt;
@@ -1524,7 +1524,7 @@ static INT RemoveTemplateSubs (FORMAT *fmt)
   return (0);
 }
 
-INT RemoveFormatWithSubs (const char *name)
+INT NS_PREFIX RemoveFormatWithSubs (const char *name)
 {
   FORMAT *fmt;
 
@@ -2896,7 +2896,7 @@ static INT CleanupTempDir (void)
   return (0);
 }
 
-INT CreateFormatCmd (INT argc, char **argv)
+INT NS_PREFIX CreateFormatCmd (INT argc, char **argv)
 {
   FORMAT *newFormat;
   ENVDIR *dir;
@@ -3137,7 +3137,7 @@ INT CreateFormatCmd (INT argc, char **argv)
 /*                                                                          */
 /****************************************************************************/
 
-INT InitFormats ()
+INT NS_PREFIX InitFormats ()
 {
   INT tp;
 

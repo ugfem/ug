@@ -43,6 +43,8 @@
 #include "pfile.h"
 
 #include "gm.h"
+#include "cw.h"
+#include "elements.h"
 #include "ugenv.h"
 #include "ugm.h"
 #include "algebra.h"
@@ -82,12 +84,6 @@ using namespace UG3d;
 /* definition of exported global variables									*/
 /*																			*/
 /****************************************************************************/
-
-extern INT n_offset[TAGS];
-
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-  control_entries[MAX_CONTROL_ENTRIES];
 
 /****************************************************************************/
 /*																			*/

@@ -153,7 +153,7 @@ typedef INT (*PostProcessELinearSolverProcPtr)(NP_ELINEAR_SOLVER *, INT, EVECDAT
 INT NPELinearSolverInit (NP_ELINEAR_SOLVER *theNP, INT argc , char **argv);
 
 /* generic display function for LinearSolver num procs */
-INT NPeLinearSolverDisplay (NP_ELINEAR_SOLVER *theNP);
+INT NPELinearSolverDisplay (NP_ELINEAR_SOLVER *theNP);
 
 /* generic execute function for LinearSolver num procs */
 INT NPELinearSolverExecute (NP_BASE *theNP, INT argc , char **argv);

@@ -934,7 +934,7 @@ static INT OrderSO_Construct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-INT InitOrder (void)
+INT NS_PREFIX InitOrder (void)
 {
   if (CreateClass(ORDER_CLASS_NAME ".lex",sizeof(NP_ORDER_LEX),OrderLex_Construct)) return (__LINE__);
   if (CreateClass(ORDER_CLASS_NAME ".bw",sizeof(NP_ORDER_BW),OrderBW_Construct)) return (__LINE__);

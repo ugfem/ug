@@ -88,11 +88,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
-   DisposeBottomHeapTmpMemory - dispose memory allocated tmp from bottom
-
-   SYNOPSIS:
-   INT DisposeBottomHeapTmpMemory (MULTIGRID *theMG)
+/** \brief Dispose memory allocated tmp from bottom
 
    PARAMETERS:
    .  theMG - multigrid to handle
@@ -106,7 +102,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT DisposeBottomHeapTmpMemory (MULTIGRID *theMG)
+INT NS_PREFIX DisposeBottomHeapTmpMemory (MULTIGRID *theMG)
 {
 
   if (DisposeAMGLevels(theMG)) REP_ERR_RETURN(1);

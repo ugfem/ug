@@ -39,6 +39,7 @@
 #include "compiler.h"
 #include "misc.h"
 #include "gm.h"
+#include "elements.h"
 #include "ugenv.h"
 #include "ugm.h"
 #include "algebra.h"
@@ -130,9 +131,6 @@ using namespace UG3d;
 /* definition of exported global variables									*/
 /*																			*/
 /****************************************************************************/
-
-extern INT n_offset[TAGS];
-extern INT side_offset[TAGS];
 
 /****************************************************************************/
 /*																			*/

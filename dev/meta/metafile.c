@@ -32,11 +32,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* only for the definition of NS_PREFIX */
+#include "domain.h"
+
 #include "defaults.h"
 #include "fileopen.h"
 #include "ugdevices.h"
 #include "initdev.h"
 #include "general.h"
+
 
 #ifdef __cplusplus
 #ifdef __TWODIM__
@@ -837,7 +841,7 @@ static OUTPUTDEVICE *InitMetaOutputDevice (void)
  */
 /****************************************************************************/
 
-INT InitMeta (void)
+INT NS_PREFIX InitMeta (void)
 {
   /* check for little/big endian storage type */
   littleEndian = !( *((char *) &littleEndian));

@@ -49,6 +49,7 @@
 
 /* low module */
 #include "compiler.h"
+#include "initug.h"
 #include "defaults.h"
 #include "misc.h"
 #include "ugstruct.h"
@@ -63,6 +64,8 @@
 
 /* grid manager module */
 #include "gm.h"
+#include "elements.h"
+#include "cw.h"
 #include "pargm.h"
 #include "rm.h"
 #include "evm.h"
@@ -124,7 +127,6 @@
 /* own header */
 #include "commands.h"
 
-#include "initug.h"
 
 #ifdef __cplusplus
 #ifdef __TWODIM__
@@ -192,12 +194,6 @@ using namespace UG3d;
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
-
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-  control_entries[MAX_CONTROL_ENTRIES];
-
-extern INT n_offset[TAGS];
 
 struct MarkRule
 {
@@ -14949,7 +14945,7 @@ static INT MakePeriodicCommand (INT argc, char **argv)
  */
 /****************************************************************************/
 
-INT InitCommands ()
+INT NS_PREFIX InitCommands ()
 {
   /* quick hack */
 #ifdef __PERIODIC_BOUNDARY__

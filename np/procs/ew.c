@@ -1666,7 +1666,7 @@ static INT EW1Construct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitEW ()
+INT NS_PREFIX InitEW ()
 {
   INT i;
 

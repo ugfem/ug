@@ -159,7 +159,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NPNLSolverInit (NP_NL_SOLVER *np, INT argc , char **argv)
+INT NS_PREFIX NPNLSolverInit (NP_NL_SOLVER *np, INT argc , char **argv)
 {
   INT i,r;
 
@@ -185,7 +185,7 @@ INT NPNLSolverInit (NP_NL_SOLVER *np, INT argc , char **argv)
   return(r);
 }
 
-INT NPNLSolverDisplay (NP_NL_SOLVER *np)
+INT NS_PREFIX NPNLSolverDisplay (NP_NL_SOLVER *np)
 {
   UserWrite("symbolic user data:\n");
   if (np->x != NULL)
@@ -204,7 +204,7 @@ INT NPNLSolverDisplay (NP_NL_SOLVER *np)
   return(0);
 }
 
-INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_NL_SOLVER *np;
   NLRESULT nlresult;
@@ -256,7 +256,7 @@ INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv)
   return(0);
 }
 
-INT NPENLSolverInit (NP_ENL_SOLVER *np, INT argc , char **argv)
+INT NS_PREFIX NPENLSolverInit (NP_ENL_SOLVER *np, INT argc , char **argv)
 {
   DOUBLE s;
   INT i,r;
@@ -289,7 +289,7 @@ INT NPENLSolverInit (NP_ENL_SOLVER *np, INT argc , char **argv)
   return(r);
 }
 
-INT NPENLSolverDisplay (NP_ENL_SOLVER *np)
+INT NS_PREFIX NPENLSolverDisplay (NP_ENL_SOLVER *np)
 {
   UserWrite("symbolic user data:\n");
   if (np->x != NULL)
@@ -329,7 +329,7 @@ INT NPENLSolverDisplay (NP_ENL_SOLVER *np)
  */
 /****************************************************************************/
 
-INT InitNonlinearSolver ()
+INT NS_PREFIX InitNonlinearSolver ()
 {
   return (0);
 }

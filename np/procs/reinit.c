@@ -2,11 +2,11 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      tstep.c                                                           */
+/* File:      tstep.c                                                       */
 /*                                                                          */
-/* Purpose:   time-step schemes                                                                 */
+/* Purpose:   time-step schemes                                             */
 /*                                                                          */
-/* Author:    Klaus Johannsen                                                                                           */
+/* Author:    Klaus Johannsen                                               */
 /*            Institut fuer Computeranwendungen III                         */
 /*            Universitaet Stuttgart                                        */
 /*            Pfaffenwaldring 27                                            */
@@ -82,7 +82,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*                                                                          */
 /****************************************************************************/
 
-INT REINIT_Display (NP_BASE *base)
+INT NS_PREFIX REINIT_Display (NP_BASE *base)
 {
   NP_REINIT *reinit;
   INT i;
@@ -115,7 +115,7 @@ INT REINIT_Display (NP_BASE *base)
  */
 /****************************************************************************/
 
-INT InitReinit ()
+INT NS_PREFIX InitReinit ()
 {
   return (0);
 }

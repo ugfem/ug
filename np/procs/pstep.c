@@ -2,9 +2,9 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      pstep.c                                                           */
+/* File:      pstep.c                                                       */
 /*                                                                          */
-/* Purpose:   parameter-step schemes                                                            */
+/* Purpose:   parameter-step schemes                                        */
 /*                                                                          */
 /* Author:    Klaus Johannsen                                               */
 /*            IWR/TS                                                        */
@@ -79,7 +79,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*                                                                          */
-/*  Class Definition                                                                    */
+/*  Class Definition                                                        */
 /*                                                                          */
 /****************************************************************************/
 
@@ -132,12 +132,12 @@ typedef struct
 #define TIME_INFTY                      1e50
 static NP_P_STEP *current_pstep;
 
-INT SPS_NLPreProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, INT *res)
+static INT SPS_NLPreProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, INT *res)
 {
   return(0);
 }
 
-INT SPS_NLAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, INT *res)
+static INT SPS_NLAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, INT *res)
 {
   INT i;
   NP_SPS *sps;
@@ -157,7 +157,7 @@ INT SPS_NLAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u
   return((*tass->TAssembleSolution)(tass,fl,tl,TIME_INFTY,u,res));
 }
 
-INT SPS_NLAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
+static INT SPS_NLAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
 {
   INT i;
   NP_SPS *sps;
@@ -180,7 +180,7 @@ INT SPS_NLAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, 
   return ((*tass->TAssembleDefect)(tass,fl,tl,TIME_INFTY,1.0,-TIME_INFTY,u,d,J,res));
 }
 
-INT SPS_NLAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
+static INT SPS_NLAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
 {
   INT i;
   NP_SPS *sps;
@@ -200,7 +200,7 @@ INT SPS_NLAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, 
   return ((*tass->TAssembleMatrix)(tass,fl,tl,TIME_INFTY,-TIME_INFTY,u,d,v,J,res));
 }
 
-INT SPS_NLPostProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
+static INT SPS_NLPostProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
 {
   return(0);
 }
@@ -211,12 +211,12 @@ INT SPS_NLPostProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, VEC
 /*                                                                          */
 /****************************************************************************/
 
-INT SPS_ENLPreProcess (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *x, INT *res)
+static INT SPS_ENLPreProcess (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *x, INT *res)
 {
   return(0);
 }
 
-INT SPS_ENLAssembleSolution (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *u, INT *res)
+static INT SPS_ENLAssembleSolution (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *u, INT *res)
 {
   NP_T_ASSEMBLE *tass;
 
@@ -224,7 +224,7 @@ INT SPS_ENLAssembleSolution (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC
   return((*tass->TAssembleSolution)(tass,fl,tl,TIME_INFTY,u->vd,res));
 }
 
-INT SPS_ENLAssembleDefect (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *u, EVECDATA_DESC *d, EMATDATA_DESC *J, INT *res)
+static INT SPS_ENLAssembleDefect (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *u, EVECDATA_DESC *d, EMATDATA_DESC *J, INT *res)
 {
   INT i;
   NP_SPS *sps;
@@ -292,7 +292,7 @@ static INT l_vector_makeinconsistent_pstep (GRID *g, const VECDATA_DESC *x)
 }
 #endif
 
-INT SPS_ENLAssembleMatrix (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *u, EVECDATA_DESC *d, EVECDATA_DESC *v, EMATDATA_DESC *J, INT *res)
+static INT SPS_ENLAssembleMatrix (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *u, EVECDATA_DESC *d, EVECDATA_DESC *v, EMATDATA_DESC *J, INT *res)
 {
   INT i,j,level;
   NP_SPS *sps;
@@ -335,7 +335,7 @@ INT SPS_ENLAssembleMatrix (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *
   return ((*tass->TAssembleMatrix)(tass,fl,tl,TIME_INFTY,-TIME_INFTY,u->vd,d->vd,v->vd,J->mm,res));
 }
 
-INT SPS_ENLPostProcess (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *x, EVECDATA_DESC *d, EMATDATA_DESC *J, INT *res)
+static INT SPS_ENLPostProcess (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *x, EVECDATA_DESC *d, EMATDATA_DESC *J, INT *res)
 {
   return(0);
 }
@@ -348,7 +348,7 @@ INT SPS_ENLPostProcess (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *x, 
 /****************************************************************************/
 /****************************************************************************/
 
-INT SPS_PreProcess (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, INT *res)
+static INT SPS_PreProcess (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, INT *res)
 {
   MULTIGRID *mg;
   NP_SPS *sps;
@@ -608,7 +608,7 @@ static INT SPS_Step (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, EVECDAT
   return(0);
 }
 
-INT SPS_PostProcess (NP_P_STEP *pstep, INT level, INT *res)
+static INT SPS_PostProcess (NP_P_STEP *pstep, INT level, INT *res)
 {
   MULTIGRID *mg;
   NP_SPS *sps;
@@ -636,7 +636,7 @@ INT SPS_PostProcess (NP_P_STEP *pstep, INT level, INT *res)
 /*																			*/
 /****************************************************************************/
 
-INT SPS_Init (NP_BASE *base, INT argc, char **argv)
+static INT SPS_Init (NP_BASE *base, INT argc, char **argv)
 {
   NP_SPS *sps;
   VECDATA_DESC *tmp;
@@ -695,7 +695,7 @@ INT SPS_Init (NP_BASE *base, INT argc, char **argv)
 /*																			*/
 /****************************************************************************/
 
-INT SPS_Display (NP_BASE *theNumProc)
+static INT SPS_Display (NP_BASE *theNumProc)
 {
   INT i;
   NP_SPS *sps;
@@ -899,7 +899,7 @@ static INT SPSConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitPStep (void)
+INT NS_PREFIX InitPStep (void)
 {
   if (CreateClass (P_STEP_CLASS_NAME ".sps",sizeof(NP_SPS), SPSConstruct)) return (__LINE__);
 

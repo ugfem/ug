@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      nliter.c                                                          */
+/* File:      nliter.c                                                      */
 /*                                                                          */
 /* Purpose:   nonlinear iteration num procs                                 */
 /*                                                                          */
@@ -714,7 +714,7 @@ static INT NLGSConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-INT InitNLIter (void)
+INT NS_PREFIX InitNLIter (void)
 {
   INT i;
 

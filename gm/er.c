@@ -69,12 +69,15 @@
 #include "rm.h"
 #include "mgio.h"
 #include "ugm.h"
+#include "cw.h"
+#include "elements.h"
 
 /* ui  (for new memory model, remove later) */
 #include "commands.h"
 
 /* own header */
 #include "er.h"
+
 
 #ifdef __cplusplus
 #ifdef __TWODIM__
@@ -171,19 +174,6 @@ enum ER_DBG {
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
-
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-  control_entries[MAX_CONTROL_ENTRIES];
-
-extern INT n_offset[TAGS];
-extern INT father_offset[TAGS];
-extern INT sons_offset[TAGS];
-extern INT nb_offset[TAGS];
-extern INT evector_offset[TAGS];
-extern INT svector_offset[TAGS];
-extern INT side_offset[TAGS];
-extern INT data_offset[TAGS];
 
 typedef struct {
 
@@ -2132,7 +2122,7 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
    D*/
 /****************************************************************************/
 
-INT NEW_Write_RefRules (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR_RULE **mrule_handle)
+INT NS_PREFIX NEW_Write_RefRules (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR_RULE **mrule_handle)
 {
   MGIO_RR_GENERAL rr_general;
   MGIO_RR_RULE *mrule;
@@ -2242,7 +2232,7 @@ INT NEW_Write_RefRules (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR
    D*/
 /****************************************************************************/
 
-INT ResetRefineTagsBeyondRuleManager (MULTIGRID *mg)
+INT NS_PREFIX ResetRefineTagsBeyondRuleManager (MULTIGRID *mg)
 {
   ELEMENT *elem;
   int l,n=0;

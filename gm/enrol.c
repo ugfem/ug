@@ -203,13 +203,13 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
-                      ConversionProcPtr PrintVertex, ConversionProcPtr PrintGrid,
-                      ConversionProcPtr PrintMultigrid,
-                      TaggedConversionProcPtr PrintVector, TaggedConversionProcPtr PrintMatrix,
-                      INT nvDesc, VectorDescriptor *vDesc, INT nmDesc, MatrixDescriptor *mDesc,
-                      SHORT ImatTypes[], INT po2t[MAXDOMPARTS][MAXVOBJECTS],
-                      INT nodeelementlist, INT edata, INT ndata)
+FORMAT * NS_PREFIX CreateFormat (char *name, INT sVertex, INT sMultiGrid,
+                                 ConversionProcPtr PrintVertex, ConversionProcPtr PrintGrid,
+                                 ConversionProcPtr PrintMultigrid,
+                                 TaggedConversionProcPtr PrintVector, TaggedConversionProcPtr PrintMatrix,
+                                 INT nvDesc, VectorDescriptor *vDesc, INT nmDesc, MatrixDescriptor *mDesc,
+                                 SHORT ImatTypes[], INT po2t[MAXDOMPARTS][MAXVOBJECTS],
+                                 INT nodeelementlist, INT edata, INT ndata)
 {
   FORMAT *fmt;
   INT i, j, type, type2, part, obj, MaxDepth, NeighborhoodDepth, MaxType;
@@ -383,7 +383,7 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
    D*/
 /****************************************************/
 
-INT DeleteFormat (const char *name)
+INT NS_PREFIX DeleteFormat (const char *name)
 {
   FORMAT *fmt;
 
@@ -407,9 +407,6 @@ INT DeleteFormat (const char *name)
 /*D
    GetFormat - Get a format pointer from the environment
 
-   SYNOPSIS:
-   FORMAT *GetFormat (char *name)
-
    PARAMETERS:
    .  name - name of the format
 
@@ -423,7 +420,7 @@ INT DeleteFormat (const char *name)
    D*/
 /****************************************************/
 
-FORMAT *GetFormat (const char *name)
+FORMAT * NS_PREFIX GetFormat (const char *name)
 {
   return((FORMAT *) SearchEnv(name,"/Formats",theFormatDirID,theFormatDirID));
 }
@@ -448,7 +445,7 @@ FORMAT *GetFormat (const char *name)
    D*/
 /****************************************************************************/
 
-FORMAT *GetFirstFormat (void)
+FORMAT * NS_PREFIX GetFirstFormat (void)
 {
   ENVITEM *fmt;
 
@@ -480,7 +477,7 @@ FORMAT *GetFirstFormat (void)
    D*/
 /****************************************************************************/
 
-FORMAT *GetNextFormat (FORMAT *fmt)
+FORMAT * NS_PREFIX GetNextFormat (FORMAT *fmt)
 {
   ENVITEM *nextfmt;
 
@@ -512,7 +509,7 @@ FORMAT *GetNextFormat (FORMAT *fmt)
    D*/
 /****************************************************/
 
-INT ChangeToFormatDir (const char *name)
+INT NS_PREFIX ChangeToFormatDir (const char *name)
 {
   if (ChangeEnvDir("/Formats")==NULL)
     REP_ERR_RETURN (1);
@@ -543,7 +540,7 @@ INT ChangeToFormatDir (const char *name)
    D*/
 /****************************************************************************/
 
-INT InitEnrol ()
+INT NS_PREFIX InitEnrol ()
 {
   /* install the /Formats directory */
   if (ChangeEnvDir("/")==NULL)

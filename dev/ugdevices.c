@@ -33,6 +33,8 @@
 #include <stdarg.h>
 #include <assert.h>
 
+#include "domain.h"
+
 /* low module */
 #include "compiler.h"
 #include "fileopen.h"
@@ -46,6 +48,8 @@
 /* dev module */
 #include "ugdevices.h"
 #include "initdev.h"
+
+
 
 /* dddif module */
 #ifdef ModelP
@@ -135,7 +139,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-OUTPUTDEVICE *CreateOutputDevice (char *name)
+OUTPUTDEVICE * NS_PREFIX CreateOutputDevice (char *name)
 {
   OUTPUTDEVICE *dev;
 
@@ -171,7 +175,7 @@ OUTPUTDEVICE *CreateOutputDevice (char *name)
    D*/
 /****************************************************************************/
 
-OUTPUTDEVICE *GetOutputDevice (const char *name)
+OUTPUTDEVICE * NS_PREFIX GetOutputDevice (const char *name)
 {
   return((OUTPUTDEVICE *) SearchEnv(name,"/Output Devices",theOutputDevVarID,theOutputDevDirID));
 }
@@ -196,7 +200,7 @@ OUTPUTDEVICE *GetOutputDevice (const char *name)
    D*/
 /****************************************************************************/
 
-OUTPUTDEVICE *GetDefaultOutputDevice (void)
+OUTPUTDEVICE * NS_PREFIX GetDefaultOutputDevice (void)
 {
   return(defaultOuputDevice);
 }
@@ -220,7 +224,7 @@ OUTPUTDEVICE *GetDefaultOutputDevice (void)
    D*/
 /****************************************************************************/
 
-INT UgSetPalette (OUTPUTDEVICE *dev, INT palette)
+INT NS_PREFIX UgSetPalette (OUTPUTDEVICE *dev, INT palette)
 {
   short red[256],green[256],blue[256];
   short i;
@@ -319,7 +323,7 @@ INT UgSetPalette (OUTPUTDEVICE *dev, INT palette)
    D*/
 /****************************************************************************/
 
-INT OpenLogFile (const char *name, int rename)
+INT NS_PREFIX OpenLogFile (const char *name, int rename)
 {
   char logpath[BUFFSIZE];
 
@@ -356,7 +360,7 @@ INT OpenLogFile (const char *name, int rename)
    D*/
 /****************************************************************************/
 
-INT CloseLogFile (void)
+INT NS_PREFIX CloseLogFile (void)
 {
   if (logFile==NULL) return(1);
 
@@ -385,7 +389,7 @@ INT CloseLogFile (void)
    D*/
 /****************************************************************************/
 
-INT SetLogFile (FILE *file)
+INT NS_PREFIX SetLogFile (FILE *file)
 {
   logFile = file;
   return(0);
@@ -411,7 +415,7 @@ INT SetLogFile (FILE *file)
    D*/
 /****************************************************************************/
 
-INT WriteLogFile (const char *text)
+INT NS_PREFIX WriteLogFile (const char *text)
 {
   if (logFile==NULL) return(1);
 
@@ -449,7 +453,7 @@ INT WriteLogFile (const char *text)
    D*/
 /****************************************************************************/
 
-void UserWrite (const char *s)
+void NS_PREFIX UserWrite (const char *s)
 {
         #ifdef ModelP
   if (me==master)
@@ -516,7 +520,7 @@ else
 
 #define VAR_ARG_BUFLEN 512
 
-int UserWriteF (const char *format, ...)
+int NS_PREFIX UserWriteF (const char *format, ...)
 {
   char buffer[VAR_ARG_BUFLEN];
   va_list args;
@@ -577,29 +581,19 @@ else
 }
 
 /****************************************************************************/
-/*D
-   PrintErrorMessage - Formatted error output (also to log file)
-
-   SYNOPSIS:
-   void PrintErrorMessage (char type, const char *procName, const char *text);
-
-   PARAMETERS:
-   .  type - 'W','E','F'
-   .  procName - name  of procedure where error occured
-   .  text -  additional explanation
-
-   DESCRIPTION:
-   This function formats error output (also to log file).
-
-   RETURN VALUE:
-   void
-
-   SEE ALSO:
-   'PrintErrorMessageF'
-   D*/
+/** \brief Formatted error output (also to log file)
+ *
+ * @param   type - 'W','E','F'
+ * @param   procName - name  of procedure where error occured
+ * @param   text -  additional explanation
+ *
+ * This function formats error output (also to log file).
+ *
+ * \sa PrintErrorMessageF
+ */
 /****************************************************************************/
 
-void PrintErrorMessage (char type, const char *procName, const char *text)
+void NS_PREFIX PrintErrorMessage (char type, const char *procName, const char *text)
 {
   char classText[32];
   INT oldmutelevel;
@@ -637,9 +631,9 @@ void PrintErrorMessage (char type, const char *procName, const char *text)
    void PrintErrorMessageF (char type, const char *procName, const char *format, ...);
 
    PARAMETERS:
-   .  type - 'W','E','F'
-   .  procName - name  of procedure where error occured
-   .  format -  additional formatted explanation (like printf)
+ * @param   type - 'W','E','F'
+ * @param   procName - name  of procedure where error occured
+ * @param   format -  additional formatted explanation (like printf)
 
    DESCRIPTION:
    This function formats error output (also to log file).
@@ -648,12 +642,11 @@ void PrintErrorMessage (char type, const char *procName, const char *text)
    RETURN VALUE:
    void
 
-   SEE ALSO:
-   'PrintErrorMessage'
+ * \sa PrintErrorMessage
    D*/
 /****************************************************************************/
 
-void PrintErrorMessageF (char type, const char *procName, const char *format, ...)
+void NS_PREFIX PrintErrorMessageF (char type, const char *procName, const char *format, ...)
 {
   char buffer[256];
   va_list args;
@@ -677,7 +670,7 @@ void PrintErrorMessageF (char type, const char *procName, const char *format, ..
    void SetMuteLevel (INT mute);
 
    PARAMETERS:
-   .  mute - indicator of amount of output
+ * @param   mute - indicator of amount of output
 
    DESCRIPTION:
    This function sets the mute level for verbosing level.
@@ -692,7 +685,7 @@ void PrintErrorMessageF (char type, const char *procName, const char *format, ..
    D*/
 /****************************************************************************/
 
-void SetMuteLevel (INT mute)
+void NS_PREFIX SetMuteLevel (INT mute)
 {
   mutelevel = mute;
 }
@@ -720,7 +713,7 @@ void SetMuteLevel (INT mute)
    D*/
 /****************************************************************************/
 
-INT GetMuteLevel (void)
+INT NS_PREFIX GetMuteLevel (void)
 {
   return (mutelevel);
 }
@@ -733,8 +726,8 @@ INT GetMuteLevel (void)
    INT InitDevices (int *argcp, char **argv);
 
    PARAMETERS:
-   .  argcp - pointer to argument counter
-   .  argv  - command line parameters
+ * @param   argcp - pointer to argument counter
+ * @param   argv  - command line parameters
 
    DESCRIPTION:
    This function initializes all devices at startup.
@@ -748,7 +741,7 @@ INT GetMuteLevel (void)
 /****************************************************************************/
 
 
-INT InitDevices (int *argcp, char **argv)
+INT NS_PREFIX InitDevices (int *argcp, char **argv)
 {
   ENVDIR *DevDir;
   ENVITEM *dev;
@@ -893,7 +886,7 @@ else
 
 
 
-INT ExitDevices (void)
+INT NS_PREFIX ExitDevices (void)
 {
   /* clean up screen device */
   ExitScreen();

@@ -153,7 +153,7 @@ static void DrawLine(POINT p1, DOUBLE z1, POINT p2, DOUBLE z2, char c);
    D*/
 /****************************************************************************/
 
-INT BulletOpen(PICTURE *picture, DOUBLE factor)
+INT NS_PREFIX BulletOpen(PICTURE *picture, DOUBLE factor)
 {
   HEAP *heap;
   ZTYP *z;
@@ -235,7 +235,7 @@ INT BulletOpen(PICTURE *picture, DOUBLE factor)
    D*/
 /****************************************************************************/
 
-void BulletClose(void)
+void NS_PREFIX BulletClose(void)
 {
   HEAP *heap;
 
@@ -315,7 +315,7 @@ static void FramePicture(void)
   DrawLine(p1, -FAR_AWAY, p2, -FAR_AWAY, OutputDevice->black);
 }
 
-void BulletPlot(void)
+void NS_PREFIX BulletPlot(void)
 {
   INT son;
   void *scratch;
@@ -630,7 +630,7 @@ void NS_PREFIX BulletLine(DOUBLE *point1, DOUBLE *point2, long color)
    D*/
 /****************************************************************************/
 
-void BulletPolyLine(DOUBLE *points, INT nb, long color)
+void NS_PREFIX BulletPolyLine(DOUBLE *points, INT nb, long color)
 {
   DOUBLE *p0, *p1;
   INT i;
@@ -665,7 +665,7 @@ void BulletPolyLine(DOUBLE *points, INT nb, long color)
    D*/
 /****************************************************************************/
 
-void BulletPolygon(DOUBLE *points, INT nb, DOUBLE intensity, long color)
+void NS_PREFIX BulletPolygon(DOUBLE *points, INT nb, DOUBLE intensity, long color)
 {
   DOUBLE z0, z1, z2;
   POINT p0, p1, p2;

@@ -337,7 +337,7 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
 }
 #endif
 
-INT CheckNP (MULTIGRID *theMG, INT argc, char **argv)
+INT NS_PREFIX CheckNP (MULTIGRID *theMG, INT argc, char **argv)
 {
   MATDATA_DESC *A;
   VECDATA_DESC *x,*y;

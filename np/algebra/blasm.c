@@ -97,7 +97,7 @@ REP_ERR_FILE;
    D*/
 /****************************************************************************/
 
-INT Mark_and_Sort_Matrix (GRID *grid, int operation)
+INT NS_PREFIX Mark_and_Sort_Matrix (GRID *grid, int operation)
 {
   int i;
   VECTOR *vect, *vect2;
@@ -1045,10 +1045,10 @@ static INT Matrix_Loop (FORMAT *format, GRID *grid,
    D*/
 /****************************************************************************/
 
-INT MG_Matrix_Loop(MULTIGRID *mg, INT fl, INT tl, INT mode,
-                   const MATDATA_DESC *M, const MATDATA_DESC *N,
-                   const VECDATA_DESC *x, const VECDATA_DESC *y,
-                   int N_vals, const DOUBLE *values, DOUBLE *result)
+INT NS_PREFIX MG_Matrix_Loop(MULTIGRID *mg, INT fl, INT tl, INT mode,
+                             const MATDATA_DESC *M, const MATDATA_DESC *N,
+                             const VECDATA_DESC *x, const VECDATA_DESC *y,
+                             int N_vals, const DOUBLE *values, DOUBLE *result)
 {
   int j, type, vtype;
   SPARSE_MATRIX *sm;

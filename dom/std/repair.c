@@ -35,6 +35,9 @@
 #include <assert.h>
 #include <math.h>
 
+/* Needs to be the first UG include for the dimension and the namespace */
+#include "domain.h"
+
 /* low modules */
 #include "compiler.h"
 #include "heaps.h"
@@ -52,7 +55,6 @@
 
 /* domain module */
 #include "std_domain.h"
-#include "domain.h"
 
 #ifdef __cplusplus
 #ifdef __TWODIM__
@@ -174,7 +176,7 @@ static REFERENCE_ELEMENT Hexahedron = {
    {2,3,7,6},{3,0,4,7},{4,5,6,7}}
 };
 
-INT CheckPrisms (INT *corner, INT n0, INT n1 , INT n2, INT n3)
+INT NS_PREFIX CheckPrisms (INT *corner, INT n0, INT n1 , INT n2, INT n3)
 {
   INT i,j,k,m,s[4];
 
@@ -208,7 +210,7 @@ INT CheckPrisms (INT *corner, INT n0, INT n1 , INT n2, INT n3)
 }
 
 
-INT CheckOnSide (INT *corner, INT n, INT **ids, INT *flag)
+static INT  CheckOnSide (INT *corner, INT n, INT **ids, INT *flag)
 {
   INT rv = 0;
   INT i,j,k,m;
@@ -309,14 +311,16 @@ static INT CheckOrientation (INT i, INT n,
 }
 #endif
 
-INT RepairMesh (HEAP *Heap, INT MarkKey, MESH *Mesh)
+
+#ifdef __THREEDIM__
+
+INT NS_PREFIX RepairMesh (HEAP *Heap, INT MarkKey, MESH *Mesh)
 {
   INT i,sd;
   DOUBLE **pos = Mesh->Position;
   DOUBLE **p;
   INT c[8];
 
-#ifdef __THREEDIM__
 
   Mesh->Position = (DOUBLE **)
                    GetTmpMem(Heap,Mesh->nInnP*2*sizeof(DOUBLE *),MarkKey);
@@ -657,7 +661,7 @@ INT RepairMesh (HEAP *Heap, INT MarkKey, MESH *Mesh)
       }
     }
   }
-#endif
 
   return(0);
 }
+#endif

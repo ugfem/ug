@@ -5,7 +5,7 @@
 /* File:          ugblas.h                                                                                                              */
 /*                                                                                                                                                      */
 /* Purpose:   basic linear algebra routines                                                             */
-/*                        working on the matrix-vector and                                                              */
+/*            working on the matrix-vector and                                                              */
 /*                        matrix-blockvector structure                                                                  */
 /*                                                                                                                                                      */
 /* Author:        Henrik Rentz-Reichert                                                                                 */

@@ -121,7 +121,7 @@ REP_ERR_FILE;
 /* Some routines marking strong connections  (!change for systems!)         */
 /****************************************************************************/
 
-INT UnmarkAll(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
+INT NS_PREFIX UnmarkAll(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
 {
   VECTOR *vect;
   MATRIX *mat;
@@ -132,7 +132,7 @@ INT UnmarkAll(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
   return(0);
 }
 
-INT MarkAll(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
+INT NS_PREFIX MarkAll(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
 {
   VECTOR *vect;
   MATRIX *mat;
@@ -143,7 +143,7 @@ INT MarkAll(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
   return(0);
 }
 
-INT MarkOffDiagWithoutDirichlet(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
+INT NS_PREFIX MarkOffDiagWithoutDirichlet(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
 {
   VECTOR *vect;
   MATRIX *mat;
@@ -156,7 +156,7 @@ INT MarkOffDiagWithoutDirichlet(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, IN
   return(0);
 }
 
-INT MarkAbsolute(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
+INT NS_PREFIX MarkAbsolute(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
 {
   VECTOR *vect;
   MATRIX *mat;
@@ -201,7 +201,7 @@ INT MarkAbsolute(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
   return(0);
 }
 
-INT MarkRelative(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
+INT NS_PREFIX MarkRelative(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
 {
   VECTOR *vect,*vect2;
   MATRIX *matD,*mat;
@@ -267,7 +267,7 @@ INT MarkRelative(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
   return(0);
 }
 
-INT MarkVanek(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
+INT NS_PREFIX MarkVanek(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
 {
   VECTOR *vect,*vect2;
   MATRIX *mat,*matD;
@@ -674,7 +674,7 @@ static INT GenerateNewGrid(GRID *theGrid)
   return(DONE);
 }
 
-INT GeometricCoarsening(GRID *theGrid)
+INT NS_PREFIX GeometricCoarsening(GRID *theGrid)
 {
   VECTOR *vect,*cvect;
   NODE *theNode;
@@ -698,7 +698,7 @@ INT GeometricCoarsening(GRID *theGrid)
   return(0);
 }
 
-INT CoarsenRugeStueben(GRID *theGrid)
+INT NS_PREFIX CoarsenRugeStueben(GRID *theGrid)
 {
   int flag,i,k;
   INT maxNeighbors;
@@ -1346,7 +1346,7 @@ static INT CoarsenAverageCycle (GRID *theGrid, INT n,
   return(0);
 }
 
-INT CoarsenAverage (GRID *theGrid)
+INT NS_PREFIX CoarsenAverage (GRID *theGrid)
 {
   HEAP *theHeap = MGHEAP(MYMG(theGrid));
   FIFO myfifo;
@@ -1493,7 +1493,7 @@ exit:
    D*/
 /****************************************************************************/
 
-INT CoarsenGreedy (GRID *theGrid)
+INT NS_PREFIX CoarsenGreedy (GRID *theGrid)
 {
   VECTOR *vi,*vj;
   MATRIX *mij;
@@ -1538,7 +1538,7 @@ INT CoarsenGreedy (GRID *theGrid)
   REP_ERR_RETURN(error);
 }
 
-INT CoarsenGreedyWithBndLoop (GRID *theGrid)
+INT NS_PREFIX CoarsenGreedyWithBndLoop (GRID *theGrid)
 {
   VECTOR *vi,*vj;
   MATRIX *mij;
@@ -1793,7 +1793,7 @@ static INT bfs (FIFO *Fifo, VECTOR *theSeedVector,
    D*/
 /****************************************************************************/
 
-INT CoarsenBreadthFirst (GRID *theGrid)
+INT NS_PREFIX CoarsenBreadthFirst (GRID *theGrid)
 {
   HEAP *theHeap;
   void *buffer;
@@ -1976,7 +1976,7 @@ static INT GenerateClusters(AVECTOR **Ua, AVECTOR **Ue, GRID *theGrid, GRID *new
   return(DONE);
 }
 
-INT CoarsenVanek(GRID *theGrid)
+INT NS_PREFIX CoarsenVanek(GRID *theGrid)
 {
   int i,k,minSize;
   INT error,maxNeighbors;
@@ -2133,7 +2133,7 @@ INT CoarsenVanek(GRID *theGrid)
 /*                                                                          */
 /****************************************************************************/
 
-INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+INT NS_PREFIX IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   INT ncomp,i,j,k,n,nmax,cnt;
   DOUBLE s[LEN_MAX],sum;
@@ -2254,7 +2254,7 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 }
 
 
-INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+INT NS_PREFIX IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   INT icomp,mcomp,vskip,nCoarse;
         #ifndef __MWCW__
@@ -2716,35 +2716,35 @@ static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag, INT reducedFFGr
   return(DONE);
 }
 
-INT IpReusken(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+INT NS_PREFIX IpReusken(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   return (IpSchurMG(theGrid,A,REUSKEN,0,0,0));
 }
 
-INT IpWagner(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+INT NS_PREFIX IpWagner(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   return (IpSchurMG(theGrid,A,WAGNER,0,0,0));
 }
 
 /* Test: Work on a reduced graph by considering only strong connections.
    Lump weak fine-fine connections to to diagonal before interpolation: */
-INT IpReuskenReducedFFGraph(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+INT NS_PREFIX IpReuskenReducedFFGraph(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   return (IpSchurMG(theGrid,A,REUSKEN,1,0,0));
 }
 
-INT IpWagnerReducedFFGraph(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+INT NS_PREFIX IpWagnerReducedFFGraph(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   return (IpSchurMG(theGrid,A,WAGNER,1,0,0));
 }
 
 /* Test:Version with no mixing of components: */
-INT IpReuskenDecoupled(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+INT NS_PREFIX IpReuskenDecoupled(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   return (IpSchurMG(theGrid,A,REUSKEN,0,1,0));
 }
 
-INT IpWagnerDecoupled(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+INT NS_PREFIX IpWagnerDecoupled(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   return (IpSchurMG(theGrid,A,WAGNER,0,1,0));
 }
@@ -2755,7 +2755,7 @@ INT IpWagnerDecoupled(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 /* A routine marking nearest fine-coarse connections used in SchurMG-lumping*/
 /****************************************************************************/
 #define BIG_DISTANCE 1.0e9
-INT MarkNearestFineCoarseConns(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
+static INT MarkNearestFineCoarseConns(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
 {
   VECTOR *vj,*vk,*vkmin;
   MATRIX *mjj,*mjk, *mjk1, *mjk2;
@@ -2838,7 +2838,7 @@ INT MarkNearestFineCoarseConns(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT
   return(0);
 }
 
-INT IpReuskenReducedInterpol(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+INT NS_PREFIX IpReuskenReducedInterpol(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   INT error;
   error = MarkNearestFineCoarseConns(theGrid, A, 0.0, 0);
@@ -2846,7 +2846,7 @@ INT IpReuskenReducedInterpol(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
   return (error);
 }
 
-INT IpWagnerReducedInterpol(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+INT NS_PREFIX IpWagnerReducedInterpol(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   INT error;
   error = MarkNearestFineCoarseConns(theGrid, A, 0.0, 0);
@@ -2889,8 +2889,8 @@ INT IpWagnerReducedInterpol(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
    D*/
 /****************************************************************************/
 
-INT NBFineGridCorrection (GRID *theGrid, const VECDATA_DESC *to,const VECDATA_DESC *from,
-                          const MATDATA_DESC *A, INT decoupled)
+INT NS_PREFIX NBFineGridCorrection (GRID *theGrid, const VECDATA_DESC *to,const VECDATA_DESC *from,
+                                    const MATDATA_DESC *A, INT decoupled)
 {
   VECTOR *vi;
   DOUBLE Inv_ii[MAX_MAT_COMP];
@@ -2973,8 +2973,8 @@ INT NBFineGridCorrection (GRID *theGrid, const VECDATA_DESC *to,const VECDATA_DE
    D*/
 /****************************************************************************/
 
-INT NBTransformDefect (GRID *theGrid, const VECDATA_DESC *to, const VECDATA_DESC *from,
-                       const MATDATA_DESC *A, INT reducedFFGraph, INT decoupled)
+INT NS_PREFIX NBTransformDefect (GRID *theGrid, const VECDATA_DESC *to, const VECDATA_DESC *from,
+                                 const MATDATA_DESC *A, INT reducedFFGraph, INT decoupled)
 {
   VECTOR *vi, *vj;
   MATRIX *mij;
@@ -3040,7 +3040,7 @@ INT NBTransformDefect (GRID *theGrid, const VECDATA_DESC *to, const VECDATA_DESC
 /* Here start the interpolation routines of ClusterAMG type                 */
 /****************************************************************************/
 
-INT IpPiecewiseConstant(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+INT NS_PREFIX IpPiecewiseConstant(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   INT i,j,ncomp;
   VECTOR *vect;
@@ -3062,7 +3062,7 @@ INT IpPiecewiseConstant(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
   return(DONE);
 }
 
-INT IpVanek(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+INT NS_PREFIX IpVanek(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   INT icomp,mcomp;
   DOUBLE sum[MAX_MAT_COMP],factor[MAX_MAT_COMP];
@@ -3144,8 +3144,8 @@ INT IpVanek(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 /****************************************************************************/
 
 
-INT FastGalerkinFromInterpolation(GRID *theGrid, MATDATA_DESC *A,
-                                  MATDATA_DESC *I, INT type)
+INT NS_PREFIX FastGalerkinFromInterpolation(GRID *theGrid, MATDATA_DESC *A,
+                                            MATDATA_DESC *I, INT type)
 {
   INT icomp,mcomp,rcomp;
   DOUBLE R_ikA_kl[MAX_MAT_COMP];
@@ -3241,8 +3241,8 @@ INT FastGalerkinFromInterpolation(GRID *theGrid, MATDATA_DESC *A,
   return(NUM_OK);
 }
 
-INT AssembleGalerkinFromInterpolation(GRID *theGrid, MATDATA_DESC *A,
-                                      MATDATA_DESC *I, INT type)
+INT NS_PREFIX AssembleGalerkinFromInterpolation(GRID *theGrid, MATDATA_DESC *A,
+                                                MATDATA_DESC *I, INT type)
 {
   return(AssembleGalerkinByMatrix(theGrid,A,type));
 }
@@ -3257,7 +3257,7 @@ INT AssembleGalerkinFromInterpolation(GRID *theGrid, MATDATA_DESC *A,
 /*                                                                          */
 /****************************************************************************/
 
-INT SparsenCGMatrix(GRID *theGrid, MATDATA_DESC *A, INT lumpFlag)
+INT NS_PREFIX SparsenCGMatrix(GRID *theGrid, MATDATA_DESC *A, INT lumpFlag)
 {
   INT mcomp;
   VECTOR *vect;
@@ -3308,7 +3308,7 @@ INT SparsenCGMatrix(GRID *theGrid, MATDATA_DESC *A, INT lumpFlag)
 /*                                                                          */
 /****************************************************************************/
 
-INT ReorderFineGrid(GRID *theGrid, INT orderType)
+INT NS_PREFIX ReorderFineGrid(GRID *theGrid, INT orderType)
 {
     #ifndef ModelP
   VECTOR *vect,*CaV,*CeV,*FaV,*FeV,*TaV,*TeV;

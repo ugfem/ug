@@ -39,6 +39,7 @@
 #include "numproc.h"
 #include "np.h"
 #include "ugm.h"
+#include "elements.h"
 #include "general.h"
 #include "fileopen.h"
 #include "ugstruct.h"
@@ -75,8 +76,6 @@ using namespace UG3d;
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
-
-extern INT n_offset[TAGS];
 
 typedef struct
 {
@@ -538,7 +537,7 @@ static INT PEN_Construct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-INT InitProject (void)
+INT NS_PREFIX InitProject (void)
 {
 
   if (CreateClass(PROJECT_CLASS_NAME ".pln",sizeof(NP_PRJ),

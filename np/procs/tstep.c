@@ -2,11 +2,11 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      tstep.c                                                           */
+/* File:      tstep.c                                                       */
 /*                                                                          */
-/* Purpose:   time-step schemes                                                                 */
+/* Purpose:   time-step schemes                                             */
 /*                                                                          */
-/* Author:    Klaus Johannsen                                                                                           */
+/* Author:    Klaus Johannsen                                               */
 /*            Institut fuer Computeranwendungen III                         */
 /*            Universitaet Stuttgart                                        */
 /*            Pfaffenwaldring 27                                            */
@@ -768,7 +768,7 @@ static INT BEConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitTStep (void)
+INT NS_PREFIX InitTStep (void)
 {
   INT error=0;
 

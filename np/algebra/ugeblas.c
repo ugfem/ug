@@ -88,7 +88,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-INT deset (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a)
+INT NS_PREFIX deset (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a)
 {
   INT i,ret,level;
 
@@ -99,7 +99,7 @@ INT deset (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a)
   return NUM_OK;
 }
 
-INT deadd (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y)
+INT NS_PREFIX deadd (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y)
 {
   INT i,ret,level;
 
@@ -110,7 +110,7 @@ INT deadd (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVEC
   return NUM_OK;
 }
 
-INT decopy (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y)
+INT NS_PREFIX decopy (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y)
 {
   INT i,ret,level;
 
@@ -121,7 +121,7 @@ INT decopy (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVE
   return NUM_OK;
 }
 
-INT dedotx (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y, EVEC_SCALAR a)
+INT NS_PREFIX dedotx (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y, EVEC_SCALAR a)
 {
   INT i,n,ret;
 
@@ -133,7 +133,7 @@ INT dedotx (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVE
   return NUM_OK;
 }
 
-INT dedotw (MULTIGRID *mg, INT fl, INT tl, INT mode, const EVECDATA_DESC *x, const EVECDATA_DESC *y, const EVEC_SCALAR w, DOUBLE *a)
+INT NS_PREFIX dedotw (MULTIGRID *mg, INT fl, INT tl, INT mode, const EVECDATA_DESC *x, const EVECDATA_DESC *y, const EVEC_SCALAR w, DOUBLE *a)
 {
   INT i,n,ret;
 
@@ -145,7 +145,7 @@ INT dedotw (MULTIGRID *mg, INT fl, INT tl, INT mode, const EVECDATA_DESC *x, con
   return NUM_OK;
 }
 
-INT denrm2x (MULTIGRID *mg, INT fl, INT tl, INT mode, const EVECDATA_DESC *x, EVEC_SCALAR a)
+INT NS_PREFIX denrm2x (MULTIGRID *mg, INT fl, INT tl, INT mode, const EVECDATA_DESC *x, EVEC_SCALAR a)
 {
   INT i,n,ret;
 
@@ -156,7 +156,7 @@ INT denrm2x (MULTIGRID *mg, INT fl, INT tl, INT mode, const EVECDATA_DESC *x, EV
   return NUM_OK;
 }
 
-INT descal (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a)
+INT NS_PREFIX descal (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a)
 {
   INT ret,level,i;
 
@@ -167,7 +167,7 @@ INT descal (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a)
   return NUM_OK;
 }
 
-INT deaxpy (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a, const EVECDATA_DESC *y)
+INT NS_PREFIX deaxpy (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a, const EVECDATA_DESC *y)
 {
   INT i,level,ret;
 
@@ -184,7 +184,7 @@ INT deaxpy (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a,
 /*																			*/
 /****************************************************************************/
 
-INT dematmul_minus (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EMATDATA_DESC *M, const EVECDATA_DESC *y)
+INT NS_PREFIX dematmul_minus (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EMATDATA_DESC *M, const EVECDATA_DESC *y)
 {
   INT i,j,n,ret,level;
   DOUBLE a;
@@ -203,7 +203,7 @@ INT dematmul_minus (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, c
   return NUM_OK;
 }
 
-INT dematmul (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EMATDATA_DESC *M, const EVECDATA_DESC *y)
+INT NS_PREFIX dematmul (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EMATDATA_DESC *M, const EVECDATA_DESC *y)
 {
   INT i,j,n,ret,level;
   DOUBLE a;
@@ -222,7 +222,7 @@ INT dematmul (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const E
   return NUM_OK;
 }
 
-INT dematset (MULTIGRID *mg, INT fl, INT tl, INT mode, EMATDATA_DESC *M, DOUBLE a)
+INT NS_PREFIX dematset (MULTIGRID *mg, INT fl, INT tl, INT mode, EMATDATA_DESC *M, DOUBLE a)
 {
   INT i,ret,level;
 

@@ -44,7 +44,7 @@
 #include "scan.h"
 #include "ugstruct.h"
 #include "gg3d.h"
-
+#include "cw.h"
 
 #ifdef __cplusplus
 #ifdef __TWODIM__
@@ -53,10 +53,6 @@ using namespace UG2d;
 using namespace UG3d;
 #endif
 #endif
-
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-  control_entries[MAX_CONTROL_ENTRIES];
 
 /****************************************************************************/
 /*                                                                          */

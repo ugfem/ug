@@ -37,6 +37,8 @@
 #include <assert.h>
 #include <math.h>
 
+#include "domain.h"
+
 /* low modules */
 #include "compiler.h"
 #include "heaps.h"
@@ -55,7 +57,6 @@
 
 /* domain module */
 #include "std_domain.h"
-#include "domain.h"
 
 
 
@@ -1697,8 +1698,8 @@ static BOUNDARY_CONDITION *GetFirstBoundaryCondition (PROBLEM *theProblem)
    D*/
 /****************************************************************************/
 
-DOMAIN *CreateDomainWithParts (char *name, DOUBLE *MidPoint, DOUBLE radius, INT segments, INT corners, INT Convex,
-                               INT nParts, const DOMAIN_PART_INFO *dpi)
+DOMAIN * NS_PREFIX CreateDomainWithParts (char *name, DOUBLE *MidPoint, DOUBLE radius, INT segments, INT corners, INT Convex,
+                                          INT nParts, const DOMAIN_PART_INFO *dpi)
 {
   DOMAIN *newDomain;
   INT i;
@@ -1754,7 +1755,7 @@ DOMAIN *CreateDomainWithParts (char *name, DOUBLE *MidPoint, DOUBLE radius, INT 
    D*/
 /****************************************************************************/
 
-DOMAIN *CreateDomain (char *name, DOUBLE *MidPoint, DOUBLE radius, INT segments, INT corners, INT Convex)
+DOMAIN * NS_PREFIX CreateDomain (char *name, DOUBLE *MidPoint, DOUBLE radius, INT segments, INT corners, INT Convex)
 {
   return(CreateDomainWithParts(name,MidPoint,radius,segments,corners,Convex,1,NULL));
 }
@@ -1780,7 +1781,7 @@ DOMAIN *CreateDomain (char *name, DOUBLE *MidPoint, DOUBLE radius, INT segments,
  */
 /****************************************************************************/
 
-DOMAIN *GetDomain (char *name)
+DOMAIN * NS_PREFIX GetDomain (char *name)
 {
   return((DOMAIN *) SearchEnv(name,"/Domains",theDomainDirID,theDomainDirID));
 }
@@ -1818,9 +1819,9 @@ DOMAIN *GetDomain (char *name)
    D*/
 /****************************************************************************/
 
-BOUNDARY_SEGMENT *CreateBoundarySegment (char *name,
-                                         INT left, INT right,INT id,INT type,INT res,INT *point,
-                                         DOUBLE *alpha,DOUBLE *beta,BndSegFuncPtr BndSegFunc, void *data)
+BOUNDARY_SEGMENT * NS_PREFIX CreateBoundarySegment (char *name,
+                                                    INT left, INT right,INT id,INT type,INT res,INT *point,
+                                                    DOUBLE *alpha,DOUBLE *beta,BndSegFuncPtr BndSegFunc, void *data)
 {
   BOUNDARY_SEGMENT *newSegment;
   INT i;
@@ -2497,7 +2498,7 @@ static INT CreateCornerPoints (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp)
   return(0);
 }
 
-BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
+BVP * NS_PREFIX BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
 {
   STD_BVP *theBVP;
   DOMAIN *theDomain;
@@ -2888,13 +2889,13 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
 }
 
 /* domain interface function: for description see domain.h */
-INT BVP_Dispose (BVP *theBVP)
+INT NS_PREFIX BVP_Dispose (BVP *theBVP)
 {
   return (0);
 }
 
 /* domain interface function: for description see domain.h */
-BVP *BVP_GetFirst (void)
+BVP *NS_PREFIX BVP_GetFirst (void)
 {
   ENVDIR *theSBVPDir;
   BVP *theBVP;
@@ -2907,19 +2908,19 @@ BVP *BVP_GetFirst (void)
 }
 
 /* domain interface function: for description see domain.h */
-BVP *BVP_GetNext (BVP *theBVP)
+BVP * NS_PREFIX BVP_GetNext (BVP *theBVP)
 {
   if (theBVP==NULL) return (NULL);
   return ((BVP *) NEXT_ENVITEM(theBVP));
 }
 
 /* domain interface function: for description see domain.h */
-BVP *BVP_GetByName (char *name)
+BVP * NS_PREFIX BVP_GetByName (char *name)
 {
   return((BVP *) SearchEnv(name,"/BVP",theBVPDirID,theBVPDirID));
 }
 
-INT BVP_SetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
+INT NS_PREFIX BVP_SetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
 {
   STD_BVP *theBVP;
   INT i;
@@ -2951,7 +2952,7 @@ INT BVP_SetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
 }
 
 /* domain interface function: for description see domain.h */
-INT BVP_SetCoeffFct (BVP *aBVP, INT n, CoeffProcPtr *CoeffFct)
+INT NS_PREFIX BVP_SetCoeffFct (BVP *aBVP, INT n, CoeffProcPtr *CoeffFct)
 {
   STD_BVP *theBVP;
   INT i;
@@ -2971,7 +2972,7 @@ INT BVP_SetCoeffFct (BVP *aBVP, INT n, CoeffProcPtr *CoeffFct)
 }
 
 /* domain interface function: for description see domain.h */
-INT BVP_SetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
+INT NS_PREFIX BVP_SetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
 {
   STD_BVP *theBVP;
   INT i;
@@ -2991,7 +2992,7 @@ INT BVP_SetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
 }
 
 /* domain interface function: for description see domain.h */
-INT BVP_Check (BVP *aBVP)
+INT NS_PREFIX BVP_Check (BVP *aBVP)
 {
   UserWrite("BVP_Check: not implemented\n");
 
@@ -3280,7 +3281,7 @@ static int ResolvePointOnSegment (PATCH *patch, int depth, double resolution2, d
 
 /* domain interface function: for description see domain.h */
 /* TODO: syntax for manpages??? */
-BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
+BNDP * NS_PREFIX BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 {
   STD_BVP *theBVP;
   BND_PS *ps;
@@ -4203,7 +4204,7 @@ static INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
 }
 #endif
 
-MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey)
+MESH * NS_PREFIX BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey)
 {
   STD_BVP *theBVP;
   INT i,j,m,n;
@@ -4465,7 +4466,7 @@ static INT local2lambda (BND_PS *ps, DOUBLE local[], DOUBLE lambda[])
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
+INT NS_PREFIX BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 {
   BND_PS *ps;
   PATCH *p;
@@ -4520,7 +4521,7 @@ static INT SideIsCooriented (BND_PS *ps)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type)
+INT NS_PREFIX BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type)
 {
   BND_PS *ps;
   PATCH *p;
@@ -4583,7 +4584,7 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDS_BndSDesc (BNDS *theBndS, INT *id, INT *nbid, INT *part)
+INT NS_PREFIX BNDS_BndSDesc (BNDS *theBndS, INT *id, INT *nbid, INT *part)
 {
   BND_PS *ps;
   PATCH *p;
@@ -4635,7 +4636,7 @@ INT BNDS_BndSDesc (BNDS *theBndS, INT *id, INT *nbid, INT *part)
 }
 
 /* domain interface function: for description see domain.h */
-BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
+BNDP * NS_PREFIX BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 {
   BND_PS *ps,*pp;
   PATCH *p;
@@ -4764,7 +4765,7 @@ static INT BndPointGlobal (BNDP *aBndP, DOUBLE *global)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
+INT NS_PREFIX BNDP_Global (BNDP *aBndP, DOUBLE *global)
 {
   BND_PS *ps = (BND_PS *)aBndP;
   DOUBLE *pos;
@@ -4786,7 +4787,7 @@ INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_BndPDesc (BNDP *theBndP, INT *move, INT *part)
+INT NS_PREFIX BNDP_BndPDesc (BNDP *theBndP, INT *move, INT *part)
 {
   BND_PS *ps;
   PATCH *p;
@@ -4831,7 +4832,7 @@ INT BNDP_BndPDesc (BNDP *theBndP, INT *move, INT *part)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
+INT NS_PREFIX BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
 {
   BND_PS *bp0,*bp1;
   PATCH *p,*p0,*p1;
@@ -4888,7 +4889,7 @@ INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
 }
 
 /* domain interface function: for description see domain.h */
-BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
+BNDS * NS_PREFIX BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 {
   BND_PS *bp[4],*bs,**pps;
   PATCH *p[4];
@@ -5005,7 +5006,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 }
 
 /* domain interface function: for description see domain.h */
-BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
+BNDP * NS_PREFIX BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 {
   BND_PS *bp0,*bp1,*bp;
   PATCH *p0,*p1;
@@ -5127,7 +5128,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
+INT NS_PREFIX BNDP_Move (BNDP *aBndP, const DOUBLE global[])
 {
   BND_PS *ps;
   DOUBLE *pos;
@@ -5153,7 +5154,7 @@ INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size)
+INT NS_PREFIX BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size)
 {
   BND_PS *bp;
   PATCH *p;
@@ -5311,7 +5312,7 @@ INT BNDP_SurfaceId (BNDP *aBndP, INT *n, INT i)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_Dispose (HEAP *Heap, BNDP *theBndP)
+INT NS_PREFIX BNDP_Dispose (HEAP *Heap, BNDP *theBndP)
 {
   BND_PS *ps;
 
@@ -5329,7 +5330,7 @@ INT BNDP_Dispose (HEAP *Heap, BNDP *theBndP)
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDS_Dispose (HEAP *Heap, BNDS *theBndS)
+INT NS_PREFIX BNDS_Dispose (HEAP *Heap, BNDS *theBndS)
 {
   BND_PS *ps;
 
@@ -5347,19 +5348,19 @@ INT BNDS_Dispose (HEAP *Heap, BNDS *theBndS)
 }
 
 /* the following interface functions are not available in std_domain.c */
-INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv)
+INT NS_PREFIX BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv)
 {
   UserWrite("ERROR: std domain cannot be saved\n");
   return (1);
 }
 
-BVP *BVP_Load (char *name, INT argc, char **argv)
+BVP * NS_PREFIX BVP_Load (char *name, INT argc, char **argv)
 {
   return (NULL);
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_SaveBndP (BNDP *BndP)
+INT NS_PREFIX BNDP_SaveBndP (BNDP *BndP)
 {
   BND_PS *bp;
   INT i,j;
@@ -5397,7 +5398,7 @@ INT BNDP_SaveBndP (BNDP *BndP)
 #define IO_MARC
 
 
-INT BNDP_SaveBndP_Ext (BNDP *BndP)
+INT NS_PREFIX BNDP_SaveBndP_Ext (BNDP *BndP)
 {
   BND_PS *bp;
   INT i,j;
@@ -5444,7 +5445,7 @@ INT BNDP_SaveBndP_Ext (BNDP *BndP)
 }
 
 /* domain interface function: for description see domain.h */
-BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
+BNDP *NS_PREFIX BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 {
   BND_PS *bp;
   int i,j,pid,n;
@@ -5484,7 +5485,7 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
   return((BNDP *)bp);
 }
 
-BNDP *BNDP_LoadBndP_Ext (void)
+BNDP *NS_PREFIX BNDP_LoadBndP_Ext (void)
 {
   BND_PS *bp;
   int i,j,pid,n;
@@ -5521,7 +5522,7 @@ BNDP *BNDP_LoadBndP_Ext (void)
   return((BNDP *)bp);
 }
 
-INT ReadAndPrintArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
+INT NS_PREFIX ReadAndPrintArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
 {
   INT i;
   char option[OPTIONLEN];
@@ -5576,7 +5577,7 @@ INT ReadAndPrintArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
    D*/
 /****************************************************************************/
 
-INT InitDom (void)
+INT NS_PREFIX InitDom (void)
 {
 
   /* change to root directory */

@@ -80,7 +80,9 @@
 #include "algebra.h"
 #include "evm.h"
 #include "gm.h"
+#include "cw.h"
 #include "refine.h"
+#include "elements.h"
 #include "rm.h"
 #include "ugm.h"
 #ifdef DYNAMIC_MEMORY_ALLOCMODEL
@@ -348,16 +350,6 @@ INT ce_NEW_NIDENT;
 INT ce_NEW_EDIDENT;
 #endif
 
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-        control_entries[MAX_CONTROL_ENTRIES];
-
-extern INT father_offset[TAGS];
-extern INT n_offset[TAGS];
-extern INT nb_offset[TAGS];
-extern INT sons_offset[TAGS];
-extern INT side_offset[TAGS];
-
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
@@ -556,17 +548,17 @@ static INT DropMarks (MULTIGRID *theMG)
 */
 /****************************************************************************/
 
-int GetEdgePatternOfElement (OBJECT obj, void *data)
+int NS_PREFIX GetEdgePatternOfElement (OBJECT obj, void *data)
 {
 }
 
-int PutEdgePatternOfElement (OBJECT obj, void *data)
+int NS_PREFIX PutEdgePatternOfElement (OBJECT obj, void *data)
 {
 }
 
 /* TODO: perhaps it is better to exchange the PATTERN to check that they are */
 /*       consistent then use the name ExchangePatternOfMasterToSlaves        */
-void SendPatternFromMasterToSlaves(int level)
+void NS_PREFIX SendPatternFromMasterToSlaves(int level)
 {
 	int id;
 
@@ -871,7 +863,7 @@ static INT PrintEdgeInfo (GRID *theGrid, char* string, INT level)
 */
 /****************************************************************************/
 
-INT Refinement_Changes (ELEMENT *theElement)
+INT NS_PREFIX Refinement_Changes (ELEMENT *theElement)
 {
 	return(REFINEMENT_CHANGES(theElement));
 }
@@ -1036,7 +1028,7 @@ static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data, DDD_PROC proc, D
 	return(GM_OK);
 }
 
-INT ExchangeElementClosureInfo (GRID *theGrid)
+INT NS_PREFIX ExchangeElementClosureInfo (GRID *theGrid)
 {
 	/* exchange information of elements to compute closure */
 	DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
@@ -1074,7 +1066,7 @@ static int Scatter_ElementRefine (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PR
 	return(GM_OK);
 }
 
-INT ExchangeElementRefine (GRID *theGrid)
+INT NS_PREFIX ExchangeElementRefine (GRID *theGrid)
 {
 	/* exchange information of elements to compute closure */
 	DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_FORWARD,2*sizeof(INT),
@@ -2440,7 +2432,7 @@ static INT GetNeighborSons (ELEMENT *theElement, ELEMENT *theSon,
 */
 /****************************************************************************/
 
-INT GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
+INT NS_PREFIX GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 {
 	ELEMENT *son;
 	int SonID,i;
@@ -6270,7 +6262,7 @@ if (0) CheckGrid(FinerGrid,1,0,1,1);
 */
 /****************************************************************************/
 
-void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, int *check)
+void NS_PREFIX CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, int *check)
 {
 	GRID *theGrid = GRID_ON_LEVEL(theMG,level);
 
@@ -6304,7 +6296,7 @@ void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel,
 */
 /****************************************************************************/
 
-INT CheckMultiGrid (MULTIGRID *theMG)
+static INT CheckMultiGrid (MULTIGRID *theMG)
 {
 	INT level;
 
@@ -6324,7 +6316,7 @@ INT CheckMultiGrid (MULTIGRID *theMG)
 
 
 #ifdef STAT_OUT
-void Manage_Adapt_Timer (int alloc)
+void NS_PREFIX Manage_Adapt_Timer (int alloc)
 {
 	if (alloc)
 	{
@@ -6352,7 +6344,7 @@ void Manage_Adapt_Timer (int alloc)
 	}
 }
 
-void Print_Adapt_Timer (int total_adapted)
+void NS_PREFIX Print_Adapt_Timer (int total_adapted)
 {
 	UserWriteF("ADAPT: total_adapted=%d t_adapt=%.2f: t_closure=%.2f t_gridadapt=%.2f t_gridadapti=%.2f "
 		"t_gridadaptl=%.2f t_overlap=%.2f t_ident=%.2f t_gridcons=%.2f t_algebra=%.2f\n",
@@ -6623,7 +6615,7 @@ if (GetVecDataDescByName(theMG,"sol") != NULL)
 */ 
 /****************************************************************************/
 
-INT AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest)
+INT  NS_PREFIX AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest)
 {
 	INT level,toplevel,nrefined,nadapted;
 	INT newlevel;

@@ -411,7 +411,7 @@ static INT Table_Construct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-INT InitDb (void)
+INT NS_PREFIX InitDb (void)
 {
   if (MakeStruct(":DB")!=0) return (__LINE__);
 

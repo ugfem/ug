@@ -35,6 +35,8 @@
 #include <fcntl.h>
 #include <assert.h>
 
+#include "domain.h"
+
 /* first compiler header for __MACINTOSH__ definition iff */
 #include "compiler.h"
 
@@ -72,7 +74,6 @@
 #include "ugdevices.h"
 
 #include "fileopen.h"
-#include "domain.h"
 
 #if defined __HP__ || __SGI__ || __T3E__ || __PARAGON__ || __DEC__ || __SUN__ || __PC__ || __LINUXPPC__
 #include <dirent.h>
@@ -503,7 +504,7 @@ FILE * NS_PREFIX fopen_r (const char *fname, const char *mode, int do_rename)
    D*/
 /****************************************************************************/
 
-size_t filesize (const char *fname)
+size_t NS_PREFIX filesize (const char *fname)
 {
   struct stat fstat;
 
@@ -600,12 +601,12 @@ int NS_PREFIX filetype (const char *fname)
 #undef ModelP
 #endif
 
-INT DirWalk (const char *dir, ProcessFileProc fcn)
+INT NS_PREFIX DirWalk (const char *dir, ProcessFileProc fcn)
 {
 
   /* encapsulate implementation dependent stuff for DirWalk */
 #if defined __HP__ || __SGI__ || __T3E__ || __PARAGON__ || __DEC__ || __SUN__ || __PC__ || __LINUXPPC__
-  //#include <dirent.h>
+
   typedef struct dirent DIRENT;
         #define D_NAME(d)               ((d)->d_name)
 
@@ -801,7 +802,7 @@ INT DirWalk (const char *dir, ProcessFileProc fcn)
    D*/
 /****************************************************************************/
 
-INT ReadSearchingPaths (const char *filename, const char *paths)
+INT NS_PREFIX ReadSearchingPaths (const char *filename, const char *paths)
 {
   PATHS *thePaths;
   INT i,nPaths;
@@ -871,7 +872,7 @@ INT ReadSearchingPaths (const char *filename, const char *paths)
    D*/
 /****************************************************************************/
 
-int DirCreateUsingSearchPaths (const char *fname, const char *paths)
+int NS_PREFIX DirCreateUsingSearchPaths (const char *fname, const char *paths)
 {
   return DirCreateUsingSearchPaths_r ( fname, paths, FALSE);            /* no renaming */
 }
@@ -910,7 +911,7 @@ int DirCreateUsingSearchPaths (const char *fname, const char *paths)
    D*/
 /****************************************************************************/
 
-int DirCreateUsingSearchPaths_r (const char *fname, const char *paths, int rename)
+int NS_PREFIX DirCreateUsingSearchPaths_r (const char *fname, const char *paths, int rename)
 {
   PATHS *thePaths;
   FILE *parentDir;
@@ -991,7 +992,7 @@ int DirCreateUsingSearchPaths_r (const char *fname, const char *paths, int renam
    D*/
 /****************************************************************************/
 
-FILE *FileOpenUsingSearchPaths (const char *fname, const char *mode, const char *paths)
+FILE * NS_PREFIX FileOpenUsingSearchPaths (const char *fname, const char *mode, const char *paths)
 {
   return FileOpenUsingSearchPaths_r( fname, mode, paths, FALSE );       /* no renaming */
 }
@@ -1030,7 +1031,7 @@ FILE *FileOpenUsingSearchPaths (const char *fname, const char *mode, const char 
    D*/
 /****************************************************************************/
 
-FILE *FileOpenUsingSearchPaths_r (const char *fname, const char *mode, const char *paths, int rename)
+FILE * NS_PREFIX FileOpenUsingSearchPaths_r (const char *fname, const char *mode, const char *paths, int rename)
 {
   PATHS *thePaths;
   FILE *theFile;
@@ -1081,7 +1082,7 @@ FILE *FileOpenUsingSearchPaths_r (const char *fname, const char *mode, const cha
    D*/
 /****************************************************************************/
 
-FILE *FileOpenUsingSearchPath (const char *fname, const char *mode, const char *path)
+FILE * NS_PREFIX FileOpenUsingSearchPath (const char *fname, const char *mode, const char *path)
 {
   return FileOpenUsingSearchPath_r( fname, mode, path, FALSE );         /* no renaming */
 }
@@ -1111,7 +1112,7 @@ FILE *FileOpenUsingSearchPath (const char *fname, const char *mode, const char *
    D*/
 /****************************************************************************/
 
-FILE *FileOpenUsingSearchPath_r (const char *fname, const char *mode, const char *path, int rename)
+FILE * NS_PREFIX FileOpenUsingSearchPath_r (const char *fname, const char *mode, const char *path, int rename)
 {
   FILE *theFile;
   char fullname[MAXPATHLENGTH];
@@ -1161,7 +1162,7 @@ FILE *FileOpenUsingSearchPath_r (const char *fname, const char *mode, const char
    D*/
 /****************************************************************************/
 
-int FileTypeUsingSearchPaths (const char *fname, const char *paths)
+int NS_PREFIX FileTypeUsingSearchPaths (const char *fname, const char *paths)
 {
   PATHS *thePaths;
   int ftype;
@@ -1255,12 +1256,12 @@ char * NS_PREFIX SimplifyPath (char *path)
   return path;
 }
 
-const char *GetBasePath (void)
+const char * NS_PREFIX GetBasePath (void)
 {
   return BasePath;
 }
 
-const char *SetBasePath (const char *path)
+const char * NS_PREFIX SetBasePath (const char *path)
 {
   strcpy(OldBasePath,path);
   strcpy(BasePath,path);
@@ -1271,7 +1272,7 @@ const char *SetBasePath (const char *path)
   return OldBasePath;
 }
 
-const char *AddBasePath (const char *path)
+const char * NS_PREFIX AddBasePath (const char *path)
 {
   strcpy(OldBasePath,path);
   strcat(BasePath,path);
@@ -1305,7 +1306,7 @@ const char *AddBasePath (const char *path)
    D*/
 /****************************************************************************/
 
-INT InitFileOpen ()
+INT NS_PREFIX InitFileOpen ()
 {
   /* install the /Paths directory */
   if (ChangeEnvDir("/")==NULL)

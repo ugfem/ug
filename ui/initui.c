@@ -117,7 +117,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-INT InitUi (INT argc, char **argv)
+INT NS_PREFIX InitUi (INT argc, char **argv)
 {
   INT err;
 

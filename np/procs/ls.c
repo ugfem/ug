@@ -3555,7 +3555,7 @@ static INT LDCSConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitLinearSolver ()
+INT NS_PREFIX InitLinearSolver ()
 {
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".ls",sizeof(NP_LS),LSConstruct))
     REP_ERR_RETURN (__LINE__);

@@ -55,13 +55,13 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
 
-int CallGrape (MULTIGRID *theMG)
+int NS_PREFIX CallGrape (MULTIGRID *theMG)
 {
   UserWrite("Grape library not included!\nIf Grape is available set GRAPE=ON in ug.conf and recompile.\n");
   return(0);
 }
 
-INT InitGrape (void)
+INT NS_PREFIX InitGrape (void)
 {
   return (0);
 }

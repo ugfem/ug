@@ -40,6 +40,7 @@
 #include "general.h"
 #include "debug.h"
 #include "gm.h"
+#include "elements.h"
 #include "scan.h"
 #include "misc.h"
 #include "numproc.h"
@@ -80,8 +81,6 @@ using namespace UG3d;
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
-
-extern INT n_offset[TAGS];
 
 static DOUBLE Factor_One[MAX_VEC_COMP];
 static DOUBLE Factor_Minus_One[MAX_VEC_COMP];

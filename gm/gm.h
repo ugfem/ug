@@ -1553,6 +1553,7 @@ typedef struct {
 #define CE_INIT_UNUSED                                          {CE_FREE, 0, 0, 0, 0, 0, 0}
 /*@}*/
 
+#if 0
 /** \brief Description of a control word */
 typedef struct {
 
@@ -1604,15 +1605,6 @@ typedef struct {
   unsigned INT xor_mask;
 
 } CONTROL_ENTRY;
-
-#ifndef __cplusplus  /* Seems like cw.c only compiles with c++ if the following isn't there
-                        /** \brief Global array with descriptions */
-extern CONTROL_WORD
-  control_words[MAX_CONTROL_WORDS];
-
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-  control_entries[MAX_CONTROL_ENTRIES];
 #endif
 
 /* general query macros */
@@ -3326,7 +3318,7 @@ INT                     ClearMultiGridUsedFlags                         (MULTIGR
 void            CalculateCenterOfMass                           (ELEMENT *theElement, DOUBLE_VECTOR center_of_mass);
 INT             KeyForObject                                            (KEY_OBJECT *obj);
 
-/* TODO: remove the following functions after the code will never need any debugging */
+/** \todo remove the following functions after the code will never need any debugging */
 char *PrintElementInfo (ELEMENT *theElement,INT full);
 
 #ifdef __cplusplus

@@ -41,11 +41,13 @@
 #include "ugenv.h"
 #include "algebra.h"
 #include "refine.h"
+#include "elements.h"
 #include "ugdevices.h"
 #include "udm.h"
 #include "pargm.h"
 #include "debug.h"
 #include "mgheapmgr.h"
+#include "cw.h"
 
 #ifdef __cplusplus
 #ifdef __TWODIM__
@@ -73,19 +75,6 @@ REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
-
-extern INT n_offset[TAGS];
-extern INT father_offset[TAGS];
-extern INT sons_offset[TAGS];
-extern INT nb_offset[TAGS];
-extern INT evector_offset[TAGS];
-extern INT svector_offset[TAGS];
-extern INT side_offset[TAGS];
-extern INT data_offset[TAGS];
-
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-  control_entries[MAX_CONTROL_ENTRIES];
 
 /****************************************************************************/
 /*
@@ -2196,7 +2185,7 @@ INT SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
    D*/
 /****************************************************************************/
 
-INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
+INT NS_PREFIX SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
 {
   INT l,i,n,m,k;
   DOUBLE N;

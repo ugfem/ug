@@ -1,26 +1,26 @@
 /****************************************************************************/
-/*																			*/
-/* File:	  vecfunc.ct													*/
-/*																			*/
-/* Purpose:   vector function template        								*/
-/*																			*/
-/* Author:	  Klaus Birken           										*/
-/*			  Institut fuer Computeranwendungen III 						*/
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*																			*/
+/*                                                                          */
+/* File:      vecfunc.ct                                                    */
+/*                                                                          */
+/* Purpose:   vector function template                                      */
+/*                                                                          */
+/* Author:    Klaus Birken           										*/
+/*            Institut fuer Computeranwendungen III 						*/
+/*            Universitaet Stuttgart										*/
+/*            Pfaffenwaldring 27											*/
+/*            70569 Stuttgart                                               */
+/*                                                                          */
 /* History:   Aug 22 97 begin                      							*/
-/*																			*/
-/* Remarks: 																*/
-/*																			*/
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 /* RCS_ID
 $Header$
 */
 
-INT NS_PREFIX T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x T_ARGS)
+INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x T_ARGS)
 {
 	register VECTOR *v;
 	INT lev,vtype,ncomp,i;

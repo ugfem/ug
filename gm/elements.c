@@ -65,14 +65,14 @@ using namespace UG3d;
 /*																			*/
 /****************************************************************************/
 
-INT n_offset[TAGS];
-INT father_offset[TAGS];
-INT sons_offset[TAGS];
-INT nb_offset[TAGS];
-INT evector_offset[TAGS];
-INT svector_offset[TAGS];
-INT side_offset[TAGS];
-INT data_offset[TAGS];
+INT NS_PREFIX n_offset[TAGS];
+INT NS_PREFIX father_offset[TAGS];
+INT NS_PREFIX sons_offset[TAGS];
+INT NS_PREFIX nb_offset[TAGS];
+INT NS_PREFIX evector_offset[TAGS];
+INT NS_PREFIX svector_offset[TAGS];
+INT NS_PREFIX side_offset[TAGS];
+INT NS_PREFIX data_offset[TAGS];
 
 GENERAL_ELEMENT * NS_PREFIX element_descriptors[TAGS];
 GENERAL_ELEMENT * NS_PREFIX reference_descriptors[MAX_CORNERS_OF_ELEM+1];
@@ -931,7 +931,7 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
    D*/
 /****************************************************************************/
 
-INT PreInitElementTypes (void)
+INT NS_PREFIX PreInitElementTypes (void)
 {
   INT err;
 
@@ -978,7 +978,7 @@ INT PreInitElementTypes (void)
    D*/
 /****************************************************************************/
 
-INT InitElementTypes (MULTIGRID *theMG)
+INT NS_PREFIX InitElementTypes (MULTIGRID *theMG)
 {
   INT i,err;
 

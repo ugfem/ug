@@ -261,7 +261,7 @@ INT NS_PREFIX SetCurrentPicture (PICTURE *thePicture)
    D*/
 /****************************************************************************/
 
-PICTURE *GetCurrentPicture (void)
+PICTURE * NS_PREFIX GetCurrentPicture (void)
 {
   return (currPicture);
 }
@@ -323,7 +323,7 @@ INT NS_PREFIX SetCurrentUgWindow (UGWINDOW *theUgWindow)
    D*/
 /****************************************************************************/
 
-UGWINDOW *GetCurrentUgWindow (void)
+UGWINDOW * NS_PREFIX GetCurrentUgWindow (void)
 {
   return (currUgWindow);
 }
@@ -446,7 +446,7 @@ INT NS_PREFIX SetCmdKey (char c, const char *Comment, INT ShowBar, const char *S
    D*/
 /****************************************************************************/
 
-INT DelCmdKey (char c)
+INT NS_PREFIX DelCmdKey (char c)
 {
   CMDKEY *theCmdKey;
   char theCmdKeyName[2];
@@ -497,7 +497,7 @@ INT DelCmdKey (char c)
    D*/
 /****************************************************************************/
 
-INT ListCmdKeys (INT Long)
+INT NS_PREFIX ListCmdKeys (INT Long)
 {
   CMDKEY *theCmdKey;
   ENVDIR *theDir;
@@ -553,7 +553,7 @@ INT ListCmdKeys (INT Long)
    D*/
 /****************************************************************************/
 
-INT DelAllCmdKeys (void)
+INT NS_PREFIX DelAllCmdKeys (void)
 {
   CMDKEY *theCmdKey;
   ENVDIR *theDir;
@@ -1146,7 +1146,7 @@ static INT ProcessEvent (char *String, INT EventMask)
    D*/
 /****************************************************************************/
 
-INT UserInterrupt (const char *text)
+INT NS_PREFIX UserInterrupt (const char *text)
 {
   INT Code,EventMask,mutelevel;
   char buffer[128];
@@ -1200,7 +1200,7 @@ INT UserInterrupt (const char *text)
 
 #ifdef ModelP
 
-int ParExecCommand (char *s)
+int NS_PREFIX ParExecCommand (char *s)
 {
   int error;
   int l,n;
@@ -1263,7 +1263,7 @@ int ParExecCommand (char *s)
    D*/
 /****************************************************************************/
 
-INT UserIn (char *String)
+INT NS_PREFIX UserIn (char *String)
 {
   INT Code,EventMask;
 
@@ -1311,7 +1311,7 @@ INT UserIn (char *String)
    D*/
 /****************************************************************************/
 
-INT UserRead (char *String)
+INT NS_PREFIX UserRead (char *String)
 {
   INT Code,EventMask;
 
@@ -1360,7 +1360,7 @@ INT UserRead (char *String)
    D*/
 /****************************************************************************/
 
-INT SetRefreshState (INT status, INT bullet, DOUBLE factor)
+INT NS_PREFIX SetRefreshState (INT status, INT bullet, DOUBLE factor)
 {
   autoRefresh = status;
   use_bullet = bullet;
@@ -1391,7 +1391,7 @@ INT SetRefreshState (INT status, INT bullet, DOUBLE factor)
    D*/
 /****************************************************************************/
 
-INT InitUgInterface ()
+INT NS_PREFIX InitUgInterface ()
 {
   /* install the /Cmd Keys directory */
   if (ChangeEnvDir("/")==NULL)
