@@ -6,7 +6,7 @@ then
 	echo "Options are";
 	echo " <ugmodule>: the module which you want to compile";
 	echo "             where <ugmodule> is one of ug, dev, meta, xif, gm";
-	echo "             graph, low, numerics, ui, gg, gg3d, dom, std, netgen";
+	echo "             graph, low, numerics, ui, gg2, gg3, dom, std, netgen";
 	echo "             diff2d, diff2da,cd, cda, fem, fema, ns2d, ns2da, simple";
 	echo " <makeoptions>: the options which you want to pass to \"make\"";
 	exit 1;
@@ -35,111 +35,68 @@ fi
 if test $# -ge 1 
 then
 	# check whether first  option is ug module 
-	if test "$1" = "ug" -o "$1" = "dddif" -o "$1" = "dev" -o "$1" = "meta" -o "$1" = "xif" -o "$1" = "gm" -o "$1" = "graph" -o "$1" = "low" -o "$1" = "numerics" -o "$1" = "ui" -o "$1" = "gg" -o "$1" = "gg3d" -o "$1" = "dom" -o "$1" = "std"
-	then
-		if test "$1" = "ug"
-		then 
-			cd $UGROOT;
-		else
-			if test "$1" = "meta" -o "$1" = "xif"
-			then
-				cd $UGROOT/dev/$1;
-			else
-				if test "$1" = "std"	
-				then
-					cd $UGROOT/dom/std;
-				else
-					cd $UGROOT/$1;
-				fi
-			fi
-		fi
-		shift;
-	fi
-
-	if test "$1" = "netgen"
-	then
-		if test -d $UGROOT/gg3d/netgen
-		then
-			cd $UGROOT/gg3d/netgen
-		else 
-			echo "no directory for netgen found!";
-			exit 1;
-		fi				
-		shift;
-	fi			
-
-	# check whether first option is problem class or application
-	if test "$1" = "simple" 
-	then
-		if test -d $UGROOT/../simple
-		then
-			cd $UGROOT/../simple;
-		else 
-			echo "no directory for simple found!";
-			exit 1;
-		fi				
-		shift;
-	fi			
-
-	if test "$1" = "diff2d" -o "$1" = "diff2da" 
-	then
-		if test -d $UGROOT/../diff2d
-		then
-			cd $UGROOT/../diff2d;
-		else 
-			echo "no directory for diff2d found!";
-			exit 1;
-		fi				
-	fi			
-			
-	if test "$1" = "cd" -o "$1" = "cda" 
-	then
-		if test -d $UGROOT/../cd
-		then
-			cd $UGROOT/../cd;
-		else 
-			echo "no directory for cd found!";
-			exit 1;
-		fi				
-	fi			
-			
-	if test "$1" = "fem" -o "$1" = "fema" 
-	then
-		if test -d $UGROOT/../fem
-		then
-			cd $UGROOT/../fem;
-		else 
-			echo "no directory for fem found!";
-			exit 1;
-		fi				
-	fi			
-			
-	if test "$1" = "ns2d" -o "$1" = "ns2da" 
-	then
-		if test -d $UGROOT/../ns2d
-		then
-			cd $UGROOT/../ns2d;
-		else 
-			echo "no directory for ns2d found!";
-			exit 1;
-		fi				
-	fi			
-			
-	if test "$1" = "diff2d" -o "$1" = "cd" -o "$1" = "fem" -o "$1" = "ns2d"
-	then
-		cd pclib;
-		shift;
-	fi
-
-	if test "$1" = "diff2da" -o "$1" = "cda" -o "$1" = "fema" -o "$1" = "ns2da"
-	then
-		cd appl;
-		shift;
-	fi
+	case $1 in
+	ug)
+		cd $UGROOT
+		;;
+	dev | dom | gm | graphics | low | numerics | parallel | ui)
+		cd $UGROOT/$1
+		;;
+	meta | xif | ps | sif)
+		cd $UGROOT/dev/$1
+		;;
+	std)
+		cd $UGROOT/dom/$1
+		;;
+	gg2 | gg3)
+		cd $UGROOT/gm/$1
+		;;
+	netgen)
+		cd $UGROOT/gm/gg3/$1
+		;;
+	uggraph | grape)
+		cd $UGROOT/graphics/$1
+		;;
+	dddif)
+		cd $UGROOT/parallel/$1
+		;;
+	simple)
+		cd $UGROOT/../simple;
+		;;
+	diff2d)
+		cd $UGROOT/../diff2d/pclib;
+		;;
+	diff2da)
+		cd $UGROOT/../diff2d/appl;
+		;;
+	ns2d)
+		cd $UGROOT/../ns2d/pclib;
+		;;
+	ns2da)
+		cd $UGROOT/../ns2d/appl;
+		;;
+	cd)
+		cd $UGROOT/../cd/pclib;
+		;;
+	cda)
+		cd $UGROOT/../cda/appl;
+		;;
+	fem)
+		cd $UGROOT/../fem/pclib;
+		;;
+	fema)
+		cd $UGROOT/../fem/appl;
+		;;
+	*)
+		echo "target $1 not found";
+		exit 1;
+		;;
+	esac;
 
 	# call make with the right makefile
 	if test `ls Makefile*|wc -l` -eq 1 
 	then
+		shift;
 		make -f `ls Makefile*` $*;
 		exit $?;
 	else
