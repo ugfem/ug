@@ -1,0 +1,132 @@
+\documentstyle[epsf,twoside,titlepage]{ugart}
+
+% Voreinstellungen
+\input{const.tex}
+\input{refman.sty}
+\pagestyle{myheadings}
+\sloppy
+\makeindex
+
+% Titelseite
+
+
+\begin{document}
+\newcommand{\sectitle}{\mbox{}}
+\setcounter{page}{0}
+
+\title{Application and Problem Class Documentation for UG Version 3.1}
+\author{The UG Group}
+
+\maketitle
+
+
+\section*{Introduction}
+
+The UG Manual consists of three parts:
+\\[5mm]  
+The {\em Programming Manual} gives an overview on the program, it
+explains the submodules and all data structures and it contains
+all commands which are needed for running an application.
+\\[5mm]  
+The {\em Reference Manual} contains a list of all 
+functions in the ug library which can be called in the Problem Classes.
+\\[5mm]
+The {\em Application and Problem Class Documentation} gives examples
+of applications of the ug library.
+\\[5mm]
+The manuals are created with the tool {\tt doctext} and the content is 
+identical with the man pages. All man pages can be displayed on screen 
+with the commands {\tt xugman} resp. {\tt ugman}.
+\\[5mm]
+We hope that this documentation helps the reader to use UG 
+and to implement own applications.
+\\[1cm]
+The documentation team
+\\[1cm]
+Peter Bastian\\
+Gabi Beddies\\
+Rolf Dornberger\\
+Dirk Feuchter\\
+Reinhard Haag\\
+Ingo Heppner\\
+Wolfgang Hoffmann\\
+Klaus Johannsen\\
+Stefan Lang\\
+George Mazurkevich\\
+Nikolas Neu\ss\\
+Henrik Rentz-Reichart\\
+Oliver Urbitsch\\
+Christian Wieners\\
+Christian Wrobel
+
+\newpage
+{
+\small
+\tableofcontents
+}
+\clearpage
+
+% include the different sections
+\thispagestyle{plain}
+\section{overview to module ''diff2d''}
+\renewcommand{\sectitle}{diff2d}
+\input{ug3/diff2d/overview/refman}
+
+\thispagestyle{plain}
+\section{manpages for module ''diff2d problem class library''}
+\renewcommand{\sectitle}{diff2d pclib}
+\input{ug3/diff2d/pclib/refman}
+
+\thispagestyle{plain}
+\section{manpages for application ''diff2da''}
+\renewcommand{\sectitle}{application diff2da}
+\input{ug3/diff2d/appl/refman}
+
+\thispagestyle{plain}
+\section{overview to module ''cd''}
+\renewcommand{\sectitle}{cd}
+\input{ug3/cd/overview/refman}
+
+\thispagestyle{plain}
+\section{manpages for module ''cd problem class library''}
+\renewcommand{\sectitle}{cd pclib}
+\input{ug3/cd/pclib/refman}
+
+\thispagestyle{plain}
+\section{manpages for application ''cd2d/3d''}
+\renewcommand{\sectitle}{application cd2d/3d}
+\input{ug3/cd/appl/refman}
+
+
+\thispagestyle{plain}
+\section{overview to module ''fem''}
+\renewcommand{\sectitle}{fem}
+\input{ug3/fem/overview/refman}
+
+\thispagestyle{plain}
+\section{manpages for module ''fem problem class library''}
+\renewcommand{\sectitle}{fem pclib}
+\input{ug3/fem/pclib/refman}
+
+%\thispagestyle{plain}
+%\section{manpages for application ''fema''}
+%\renewcommand{\sectitle}{application fema}
+%\input{ug3/fem/appl/refman}
+
+\thispagestyle{plain}
+\section{overview to module ''ns2d''}
+\renewcommand{\sectitle}{ns2d}
+\input{ug3/ns2d/overview/refman}
+
+\thispagestyle{plain}
+\section{manpages for module ''ns2d problem class library''}
+\renewcommand{\sectitle}{ns2d pclib}
+\input{ug3/ns2d/pclib/refman}
+
+%\thispagestyle{plain}
+%\section{manpages for application ''ns2da''}
+%\renewcommand{\sectitle}{application ns2da}
+%\input{ug3/ns2d/appl/refman}
+
+\end{document}
+

@@ -4,12 +4,12 @@ netgen - 3d grid generator
 
 INSTALLATION:
 Do the following steps.
-.n 1) Fill out the netgenlicence ug31/ug/gg3d/netgenlisencs.ps. 
-.n 2) You will obtain the missing file. 
-.n    Copy it in ug31/ug/gg3d/netgen/meshing.
-.n 3) Set NETGEN = T in ug.conf. 	
-.n 4) Edit the machines file of your ug.arch.
-.n    Fill in C++, C++FLAGS, GMAKE and NETGENLIB = -lnetgen.
+.n 1) Fill out the netgenlicence $(UGROOT)/gm/gg3/netgenlisencs.ps. 
+.n 2) You will obtain the missing file ruler3.cc. 
+.n    Copy it in $(UGROOT)/gm/gg3/netgen/meshing.
+.n 3) Set NETGEN = ON in ug.conf. 	
+.n 4) Edit the machines file of your mk.arch.
+.n    Fill in ARCH_C++ and ARCH_C++FLAGS
 .n 5) Call 'ugmake netgen'.  
 	     
 HOW TO USE THE GRIDGENERATOR:
@@ -21,7 +21,7 @@ makegrid $s 2;
 .ve
 in your script. This generates a surface triangulation with step size 0.5
 and it generates a grid. Then, 2 smoothing steps are performed to
-optimize the inner angles. See ug31/cd/appl/scripts/mg.init for an example.
+optimize the inner angles. See $(UGROOT)/../cd/appl/scripts/mg.init for an example.
 
 SHORT DESCRIPTION:
 

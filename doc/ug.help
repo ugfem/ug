@@ -791,6 +791,13 @@ npinit $x <sol sym> $b <rhs sym> $c <cor sym> $t <temp sym> $A <mat sym>
        $m <maxit> $l <baselevel> $g <gamma> $s <sm1 sm2 basesm> $D{no|red|full}
        $red <sc double list> [$p <cg sym>] [$abslimit <sc double list>]
 
+-ew > numproc
+ew # eigenvalue and eigenvector computation
+for initialisation use:
+npinit $s <sym> $e <sym list> $t <temp sym> $d {no|red|full} $A <mat sym>
+       $l <linear solver> $a <assemble stiffness matrix> $b <assemble rhs> 
+       $m <maxit> $Rel_Limit <sc double list> $Damp <sc double list> [$O] [$N]
+
 -nl > numproc 
 nl # nonlinear solver
 for initialisation use:
@@ -800,6 +807,7 @@ npinit $n <new sym> $o <old sym> $t <temp sym> $d {NO|RED|FULL} $m <maxit>
 -tnl > numproc
 tnl                  # time solver
 npinit $n <new sym> $o <old sym> $t <temp sym> $d {NO|RED|FULL} $m <maxit> 
-       $l <linear solver> $r <assemble> $Rel_Limit <sc double list> $Damp <sc double list> ??????
+       $l <linear solver> $r <assemble> $Rel_Limit <sc double list> 
+       $Damp <sc double list> 
 
 
