@@ -1170,7 +1170,7 @@ INT GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD1,
   cnt = GetAllVectorsOfElementOfType(theElement,theVec,theVD1);
 
   if (cnt > MAX_NODAL_VECTORS || cnt < 1)
-    return(-1);
+    REP_ERR_RETURN(-1);
 
   m = 0;
   for (i=0; i<cnt; i++)
@@ -1178,7 +1178,7 @@ INT GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD1,
     vtype[i] = VTYPE(theVec[i]);
     vncomp[i] = VD_NCMPS_IN_TYPE (theVD1,vtype[i]);
     if (vncomp[i] != VD_NCMPS_IN_TYPE (theVD2,vtype[i]))
-      return (-2);
+      REP_ERR_RETURN (-2);
     for (j=0; j<vncomp[i]; j++)
     {
       vptr1[m] = VVALUEPTR(theVec[i],VD_CMP_OF_TYPE(theVD1,vtype[i],j));
@@ -1200,7 +1200,7 @@ INT GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD1,
     for (j=0; j<i; j++)
     {
       if ((theMatrix = GetMatrix(theVec[i],theVec[j]))==NULL)
-        return (-3);
+        REP_ERR_RETURN (-3);
       for (k=0; k<vncomp[i]; k++)
         for (l=0; l<vncomp[j]; l++)
           mptr[(m1+k)*m+m2+l] =
@@ -2210,7 +2210,7 @@ INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
 
 /****************************************************************************/
 /*D
-   ConvertMatrix - converts a matrix in a sparce format
+   ConvertMatrix - converts a matrix in a sparse format
 
    SYNOPSIS:
    INT ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
@@ -2228,7 +2228,7 @@ INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
    .  pa - matrix entries
 
    DESCRIPTION:
-   This function converts a matrix in a sparce format.
+   This function converts a matrix in a sparse format.
 
    RETURN VALUE:
    INT

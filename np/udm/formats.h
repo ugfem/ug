@@ -49,7 +49,7 @@
 /****************************************************************************/
 
 /* limits for XDATA_DESC handling */
-#define MAX_SUB                         10
+#define MAX_SUB                         12
 
 #define V_COMP_NAMES            (MAX_VEC_COMP*NVECTYPES)
 #define M_COMP_NAMES            (2*V_COMP_NAMES*V_COMP_NAMES)
@@ -66,7 +66,11 @@
 #define SUBM_CCOMPS(s)          ((s)->CComp)
 #define SUBM_RCOMP(s,tp)        ((s)->RComp[tp])
 #define SUBM_CCOMP(s,tp)        ((s)->CComp[tp])
-#define SUBM_COMP(s,tp,i)       ((s)->Comps[tp][i])
+#define SUBM_MCMPPTR(s)               ((s)->CmpsInType)
+#define SUBM_MCMPPTR_OF_MTYPE(s,tp)   ((s)->CmpsInType[tp])
+#define SUBM_MCMP_OF_MTYPE(s,tp,i)    ((s)->CmpsInType[tp][i])
+#define SUBM_COMPS(s)       ((s)->Comps)
+#define SUBM_COMP(s,i)      ((s)->Comps[i])
 
 /* macros for VEC_TEMPLATE */
 #define VT_COMPS(vt)            ((vt)->Comp)
@@ -84,10 +88,17 @@
 #define MT_RCOMP(mt,tp)         ((mt)->RComp[tp])
 #define MT_CCOMPS(mt)           ((mt)->CComp)
 #define MT_CCOMP(mt,tp)         ((mt)->CComp[tp])
+#define MT_COMPS(mt)        ((mt)->Comps)
+#define MT_COMP(mt,i)       ((mt)->Comps[i])
+#define MT_MCMPPTR(mt)      ((mt)->CmpsInType)
+#define MT_MCMPPTR_OF_MTYPE(mt,mtp)   ((mt)->CmpsInType[mtp])
+#define MT_MCMP_OF_MTYPE(mt,mtp,i)    ((mt)->CmpsInType[mtp][i])
 #define MT_COMPNAMES(mt)        ((mt)->CompNames)
 #define MT_COMPNAME(mt,i)       ((mt)->CompNames[i])
 #define MT_SUB(mt,i)            ((mt)->SubMat[i])
 #define MT_NSUB(mt)                     ((mt)->nsub)
+#define MT_SM(mt,i)         ((mt)->sm[i])
+#define MT_SMP(mt)          ((mt)->sm)
 
 /****************************************************************************/
 /*                                                                          */
@@ -126,7 +137,8 @@ typedef struct {
   char Name[NAMESIZE];                                          /* prefix for sub matrix name	*/
   SHORT RComp[NMATTYPES];                                       /* number of row comps per type	*/
   SHORT CComp[NMATTYPES];                                       /* number of col comps per type	*/
-  SHORT Comps[NMATTYPES][MAX_MAT_COMP];         /* subsequent comps rel to tplt	*/
+  SHORT *CmpsInType[NMATTYPES];                 /* pointers to SHORT vectors    */
+  SHORT Comps[MAX_MAT_COMP_TOTAL];                  /* subsequent comps rel to tplt	*/
 
 } SUBMAT;
 
@@ -137,10 +149,14 @@ typedef struct {
 
   SHORT RComp[NMATTYPES];                                       /* number of comps per type		*/
   SHORT CComp[NMATTYPES];                                       /* number of col comps per type	*/
+  SHORT   *CmpsInType[NMATTYPES];               /* pointers to SHORT vectors    */
+                                                /* the components               */
+
   char CompNames[M_COMP_NAMES];                         /* comp names (two chars each)	*/
 
   SHORT nsub;                                                           /* number of sub matrices		*/
   SUBMAT  *SubMat[MAX_SUB];                                     /* pointers to sub matrices		*/
+  SHORT Comps[MAX_MAT_COMP_TOTAL];              /* comps starting from 0        */
 
 } MAT_TEMPLATE;
 
@@ -169,7 +185,7 @@ MATDATA_DESC *CreateMatDescOfTemplate   (MULTIGRID *theMG,
                                          const char *name, const char *tmplt);
 
 INT VDmatchesVT                                                 (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt);
-INT MDmatchesMT                                                 (const MATDATA_DESC *md, const MAT_TEMPLATE *mt);
+INT CompMDwithMT                                                (const MATDATA_DESC *md, const MAT_TEMPLATE *mt);
 INT MDmatchesVT                                                 (const MATDATA_DESC *md, const VEC_TEMPLATE *vt);
 INT MDmatchesVTxVT                                              (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, const VEC_TEMPLATE *cvt);
 
@@ -186,6 +202,7 @@ INT RemoveFormatWithSubs                                (const char *name);
 
 INT CreateVecDescCmd                            (MULTIGRID *theMG, INT argc, char **argv);
 INT CreateMatDescCmd                                (MULTIGRID *theMG, INT argc, char **argv);
+INT FreeMatDescCmd                                      (MULTIGRID *theMG, INT argc, char **argv);
 
 INT InitFormats                                                 (void);
 

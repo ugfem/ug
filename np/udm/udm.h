@@ -37,6 +37,7 @@
 
 #include "compiler.h"
 #include "gm.h"
+#include "sm.h"
 
 /****************************************************************************/
 /*																			*/
@@ -44,12 +45,20 @@
 /*																			*/
 /****************************************************************************/
 
-#define NVECTYPES                               MAXVECTORS
-#define NMATTYPES                               (MAXVECTORS*MAXVECTORS)
-#define MAX_SINGLE_VEC_COMP              9      /* max nb of comp in one TYPE                   */
-#define MAX_SINGLE_MAT_COMP             81      /* max nb of comp in one TYPE		    */
-#define MAX_VEC_COMP                    14      /* max nb of comp in one VECDATA_DESC	*/
-#define MAX_MAT_COMP        (14*14)     /* max nb of comp in one VECDATA_DESC	*/
+#define NVECTYPES                       MAXVECTORS
+#define NMATTYPES                       MAXCONNECTIONS
+#define NMATTYPES_NORMAL        MAXMATRICES
+
+#define MTP(rt,ct)          ((rt)*NVECTYPES+(ct))
+#define DMTP(rt)            (NMATTYPES_NORMAL+rt)
+#define MTYPE_RT(mtp)       (((mtp)<NMATTYPES_NORMAL) ? (mtp)/NVECTYPES : (mtp)%NVECTYPES)
+#define MTYPE_CT(mtp)           ((mtp)%NVECTYPES)
+
+#define MAX_SINGLE_VEC_COMP             40      /* max nb of vec comps in one TYPE      */
+#define MAX_SINGLE_MAT_COMP       1600  /* max nb of mat comps in one TYPE		*/
+#define MAX_VEC_COMP                    40      /* max nb of comps in one VECDATA_DESC	*/
+#define MAX_MAT_COMP              2000  /* max nb of comps in one MATDATA_DESC  */
+#define MAX_MAT_COMP_TOTAL        2000  /* max#(comp) in one MATDATA_DESC       */
 
 #define NVECOFFSETS                             (NVECTYPES+1)
 /* for offset component in VECDATA_DESC	*/
@@ -103,10 +112,7 @@ enum DISP_DATA_DESC_MODIF
 #define VD_SUCC_COMP(vd)                    ((vd)->SuccComp)
 
 /* MATDATA_DESC */
-#define MTP(rt,ct)                          ((rt)*NVECTYPES+(ct))
 #define MCMP(row,col,ncol)                  ((row)*(ncol)+col)
-#define MTYPE_RT(mtp)                                           ((mtp)/NVECTYPES)
-#define MTYPE_CT(mtp)                                           ((mtp)%NVECTYPES)
 #define MCMP_I(mc,ncol)                                         ((mc)/(ncol))
 #define MCMP_J(mc,ncol)                                         ((mc)%(ncol))
 
@@ -121,6 +127,7 @@ enum DISP_DATA_DESC_MODIF
 #define MD_COLS_IN_RT_CT(md,rt,ct)          MD_COLS_IN_MTYPE(md,MTP(rt,ct))
 #define MD_NCMPS_IN_MTYPE(md,mtp)           (MD_ROWS_IN_MTYPE(md,mtp)*MD_COLS_IN_MTYPE(md,mtp))
 #define MD_NCMPS_IN_RT_CT(md,rt,ct)         MD_NCMPS_IN_MTYPE(md,MTP(rt,ct))
+#define MD_MCMPPTR(md)                      ((md)->CmpsInType)
 #define MD_MCMPPTR_OF_MTYPE(md,mtp)         ((md)->CmpsInType[mtp])
 #define MD_MCMP_OF_MTYPE(md,mtp,i)          ((md)->CmpsInType[mtp][i])
 #define MD_MCMPPTR_OF_RT_CT(md,rt,ct)       ((md)->CmpsInType[MTP(rt,ct)])
@@ -132,7 +139,10 @@ enum DISP_DATA_DESC_MODIF
 #define MD_COL_DATA_TYPES(md)                           ((md)->coldatatypes)
 #define MD_ROW_OBJ_USED(md)                                     ((md)->rowobjused)
 #define MD_COL_OBJ_USED(md)                                     ((md)->colobjused)
+#define MD_SM(md,i)                                 ((md)->sm[i])
+#define MD_SMP(md)                                  ((md)->sm)
 
+#define MD_IS_SPARSE(md)                    ((md)->IsSparse)
 #define MD_IS_SCALAR(md)                    ((md)->IsScalar)
 #define MD_SCALCMP(md)                                          ((md)->ScalComp)
 #define MD_SCAL_RTYPEMASK(md)                           ((md)->ScalRowTypeMask)
@@ -203,7 +213,7 @@ typedef struct {
   SHORT ScalTypeMask;              /* mask for used vectypes                */
   SHORT offset[NVECOFFSETS];       /* offsets for VEC_SCALARs               */
 
-  SHORT datatypes;                                         /* compact form of vtypes (bitwise)		*/
+  SHORT datatypes;                                 /* compact form of vtypes (bitwise)		*/
   SHORT objused;                                   /* compact form of otypes (bitwise)		*/
   SHORT mintype;                                   /* minimal used type                         */
   SHORT maxtype;                                   /* maximal used type                         */
@@ -221,13 +231,18 @@ typedef struct {
 
   SHORT locked;                         /* locked for dynamic allocation        */
   MULTIGRID *mg;                                    /* associated multigrid					*/
+
   char compNames[2*MAX_MAT_COMP];   /* names for symbol components          */
   SHORT RowsInType[NMATTYPES];          /* number of rows of a matrix per type  */
   SHORT ColsInType[NMATTYPES];          /* number of columns of a matrix        */
                                         /* per type                             */
   SHORT *CmpsInType[NMATTYPES];         /* pointer to SHORT vector containing   */
                                         /* the components                       */
+
+  SPARSE_MATRIX *sm[NMATTYPES];         /* pointers to sm form, if not full     */
+
   /* redundant (but frequently used) information                          */
+  SHORT IsSparse;                       /* TRUE if sparse form should be used   */
   SHORT IsScalar;                       /* TRUE if desc is scalar:              */
   /* same settings in all types           */
   SHORT SuccComp;                   /* successive components                */
@@ -273,19 +288,19 @@ typedef struct {
 /****************************************************************************/
 
 VECDATA_DESC *GetFirstVector (MULTIGRID *theMG);
-VECDATA_DESC *GetNextVector (VECDATA_DESC *vd);
+VECDATA_DESC *GetNextVector  (VECDATA_DESC *vd);
 MATDATA_DESC *GetFirstMatrix (MULTIGRID *theMG);
-MATDATA_DESC *GetNextMatrix (MATDATA_DESC *md);
+MATDATA_DESC *GetNextMatrix  (MATDATA_DESC *md);
 
 VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *compNames,
                              const SHORT *NCmpInType, SHORT nId, SHORT *Ident);
 MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *compNames,
-                             const SHORT *RowsInType, const SHORT *ColsInType);
+                             const SHORT *RowsInType, const SHORT *ColsInType,
+                             SHORT **CmpsInType);
 VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const char *name,
                                 const SHORT *NCmpInType, const SHORT *Comps, const char *CompNames);
-MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG,
-                                const char *name, const SHORT *RowsInType,
-                                const SHORT *ColsInType, const SHORT *Comps, const char *CompNames);
+MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const char *name, const char *CompNames,
+                                const SHORT *RowsInType, const SHORT *ColsInType, SHORT **CmpsInType);
 VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_DESC **theVDs,
                               const INT nrOfVDs);
 
@@ -299,6 +314,9 @@ INT DisplayMatDataDesc (const MATDATA_DESC *md, char *buffer);
 
 VECDATA_DESC *GetVecDataDescByName (const MULTIGRID *theMG, char *name);
 MATDATA_DESC *GetMatDataDescByName (const MULTIGRID *theMG, char *name);
+
+INT CompMatDesc (const MATDATA_DESC *md, const SHORT *RowsInType,
+                 const SHORT *ColsInType, SHORT *const*CmpsInType);
 
 /* allocation of vector descriptors */
 INT AllocVDfromNCmp (MULTIGRID *theMG, INT fl, INT tl,
@@ -320,6 +338,7 @@ INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
 /* locking of vector and matrix descriptors */
 INT LockVD (MULTIGRID *theMG, VECDATA_DESC *vd);
 INT LockMD (MATDATA_DESC *md);
+INT UnlockMD (MATDATA_DESC *md);
 
 /* */
 INT TransmitLockStatusVD (const VECDATA_DESC *vd, VECDATA_DESC *svd);

@@ -493,9 +493,9 @@ MATDATA_DESC *ReadArgvMatDescX (MULTIGRID *theMG, const char *name,
       /* taking default template */
       md = CreateMatDescOfTemplate (theMG,mdname,NULL);
   }
-  if (md == NULL) return (NULL);
+  if (md == NULL) REP_ERR_RETURN (NULL);
 
-  if (LockMD(md)) REP_ERR_RETURN(NULL);
+  if (LockMD(md)) REP_ERR_RETURN (NULL);
 
   return(md);
 }

@@ -38,6 +38,7 @@
 #include "np.h"
 
 #include "udm.h"
+#include "rm.h"
 
 /****************************************************************************/
 /*																			*/
@@ -52,11 +53,11 @@
 #define MAX_NAMES 99
 
 #define READ_DR_VEC_FLAG(p,vt,i)        READ_FLAG((p)->data_status.VecReserv[vt][(i)/32],1<<((i)%32))
-#define READ_DR_MAT_FLAG(p,vt,i)        READ_FLAG((p)->data_status.MatReserv[vt][(i)/32],1<<((i)%32))
+#define READ_DR_MAT_FLAG(p,mt,i)        READ_FLAG((p)->data_status.MatReserv[mt][(i)/32],1<<((i)%32))
 #define SET_DR_VEC_FLAG(p,vt,i)         SET_FLAG((p)->data_status.VecReserv[vt][(i)/32],1<<((i)%32))
-#define SET_DR_MAT_FLAG(p,vt,i)         SET_FLAG((p)->data_status.MatReserv[vt][(i)/32],1<<((i)%32))
+#define SET_DR_MAT_FLAG(p,mt,i)         SET_FLAG((p)->data_status.MatReserv[mt][(i)/32],1<<((i)%32))
 #define CLEAR_DR_VEC_FLAG(p,vt,i)       CLEAR_FLAG((p)->data_status.VecReserv[vt][(i)/32],1<<((i)%32))
-#define CLEAR_DR_MAT_FLAG(p,vt,i)       CLEAR_FLAG((p)->data_status.MatReserv[vt][(i)/32],1<<((i)%32))
+#define CLEAR_DR_MAT_FLAG(p,mt,i)       CLEAR_FLAG((p)->data_status.MatReserv[mt][(i)/32],1<<((i)%32))
 
 #define A_REASONABLE_NUMBER                     100
 
@@ -557,23 +558,23 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
   INT i,j,k,tp,ncmp,size;
 
   if (theMG == NULL)
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN_PTR (NULL);
 
-  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN (NULL);
-  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) REP_ERR_RETURN (NULL);
+  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN_PTR (NULL);
+  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) REP_ERR_RETURN_PTR (NULL);
   if (ChangeEnvDir("Vectors") == NULL) {
     MakeEnvItem("Vectors",VectorDirID,sizeof(ENVDIR));
-    if (ChangeEnvDir("Vectors") == NULL) REP_ERR_RETURN (NULL);
+    if (ChangeEnvDir("Vectors") == NULL) REP_ERR_RETURN_PTR (NULL);
   }
   if (name != NULL)
     strcpy(buffer,name);
-  else if (GetNewVectorName(theMG,buffer)) REP_ERR_RETURN (NULL);
+  else if (GetNewVectorName(theMG,buffer)) REP_ERR_RETURN_PTR (NULL);
   ConstructVecOffsets(NCmpInType,offset);
   ncmp = offset[NVECTYPES];
-  if (ncmp <= 0) REP_ERR_RETURN (NULL);
+  if (ncmp <= 0) REP_ERR_RETURN_PTR (NULL);
   size = sizeof(VECDATA_DESC)+(ncmp-1)*sizeof(SHORT);
   vd = (VECDATA_DESC *) MakeEnvItem (buffer,VectorVarID,size);
-  if (vd == NULL) REP_ERR_RETURN (NULL);
+  if (vd == NULL) REP_ERR_RETURN_PTR (NULL);
   if (compNames==NULL)
     memcpy(VM_COMP_NAMEPTR(vd),NoVecNames,MIN(ncmp,MAX_VEC_COMP));
   else
@@ -589,7 +590,7 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
     for (j=0; j<=MAX_NDOF_MOD_32*32-NCmpInType[tp]; j++) {
       if (i >= offset[tp+1]) break;
       if (j*sizeof(DOUBLE) >= FMT_S_VEC_TP(MGFORMAT(theMG),tp))
-        REP_ERR_RETURN (NULL);
+        REP_ERR_RETURN_PTR (NULL);
       if (READ_DR_VEC_FLAG(theMG,tp,j)) continue;
       for (k=1; k<offset[tp+1]-i; k++)
         if (READ_DR_VEC_FLAG(theMG,tp,j+k)) break;
@@ -612,7 +613,7 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
   VD_IDENT_PTR(vd) = Ident;
 
   if (FillRedundantComponentsOfVD(vd))
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN_PTR (NULL);
   VM_LOCKED(vd) = 0;
 
   return (vd);
@@ -654,20 +655,20 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const char *name,
   char buffer[NAMESIZE];
 
   if (theMG == NULL)
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN_PTR (NULL);
 
-  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN (NULL);
-  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) REP_ERR_RETURN (NULL);
-  if (ChangeEnvDir("Vectors") == NULL) REP_ERR_RETURN (NULL);
+  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN_PTR (NULL);
+  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) REP_ERR_RETURN_PTR (NULL);
+  if (ChangeEnvDir("Vectors") == NULL) REP_ERR_RETURN_PTR (NULL);
   ConstructVecOffsets(NCmpInType,offset);
   ncmp = offset[NVECTYPES];
-  if (ncmp <= 0) REP_ERR_RETURN (NULL);
+  if (ncmp <= 0) REP_ERR_RETURN_PTR (NULL);
   size = sizeof(VECDATA_DESC)+(ncmp-1)*sizeof(SHORT);
   if (name != NULL)
     strcpy(buffer,name);
-  else if (GetNewVectorName(theMG,buffer)) REP_ERR_RETURN (NULL);
+  else if (GetNewVectorName(theMG,buffer)) REP_ERR_RETURN_PTR (NULL);
   vd = (VECDATA_DESC *) MakeEnvItem (buffer,VectorVarID,size);
-  if (vd == NULL) REP_ERR_RETURN (NULL);
+  if (vd == NULL) REP_ERR_RETURN_PTR (NULL);
 
   /* fill data in vec data desc */
   VD_MG(vd) = theMG;
@@ -727,11 +728,11 @@ VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_
   INT i,j,k,type,ncmp,size;
 
   if (theMG == NULL)
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN_PTR (NULL);
 
-  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN (NULL);
-  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) REP_ERR_RETURN (NULL);
-  if (ChangeEnvDir("Vectors") == NULL) REP_ERR_RETURN (NULL);
+  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN_PTR (NULL);
+  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) REP_ERR_RETURN_PTR (NULL);
+  if (ChangeEnvDir("Vectors") == NULL) REP_ERR_RETURN_PTR (NULL);
 
   /* compute size of resulting VD */
   ncmp = 0;
@@ -740,12 +741,12 @@ VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_
     for (type=0; type<NVECTYPES; type++)
       ncmp += VD_NCMPPTR(theVDs[i])[type];
   }
-  if (ncmp <= 0) REP_ERR_RETURN (NULL);
+  if (ncmp <= 0) REP_ERR_RETURN_PTR (NULL);
 
   size = sizeof(VECDATA_DESC)+(ncmp-1)*sizeof(SHORT);
   vd = (VECDATA_DESC *) MakeEnvItem (name,VectorVarID,size);
   if (vd == NULL)
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN_PTR (NULL);
 
   /* fill data in vec data desc */
   strcpy(VM_COMP_NAMEPTR(vd),"");       /* no component names */
@@ -1844,10 +1845,10 @@ SHORT *VD_ncmp_cmpptr_of_otype_mod (const VECDATA_DESC *vd, INT otype, INT *ncom
         else
         {
           if (VD_NCMPS_IN_TYPE(vd,tp)!=ncmp)
-            REP_ERR_RETURN (NULL);
+            REP_ERR_RETURN_PTR (NULL);
           for (i=0; i<ncmp; i++)
             if (VD_CMP_OF_TYPE(vd,tp,i)!=cptr[i])
-              REP_ERR_RETURN (NULL);
+              REP_ERR_RETURN_PTR (NULL);
         }
         parts |= FMT_T2P(fmt,tp);
       }
@@ -1858,10 +1859,10 @@ SHORT *VD_ncmp_cmpptr_of_otype_mod (const VECDATA_DESC *vd, INT otype, INT *ncom
     n = BVPD_NPARTS(MG_BVPD(VD_MG(vd)));
     for (i=0; i<n; i++)
       if (!(parts & (1<<i)))
-        REP_ERR_RETURN (NULL);
+        REP_ERR_RETURN_PTR (NULL);
   }
   else if (mode!=NON_STRICT)
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN_PTR (NULL);
 
   if (ncomp!=NULL) *ncomp = ncmp;
 
@@ -1912,6 +1913,8 @@ INT VDusesVOTypeOnly (const VECDATA_DESC *vd, INT votype)
 /*			here follows matrix stuff										*/
 /****************************************************************************/
 /****************************************************************************/
+
+
 
 /****************************************************************************/
 /*D
@@ -2198,33 +2201,65 @@ static INT GetNewMatrixName (MULTIGRID *theMG, char *name)
    D*/
 /****************************************************************************/
 
-MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *compNames,
-                             const SHORT *RowsInType, const SHORT *ColsInType)
+static MATDATA_DESC *CreateMatDesc_General (MULTIGRID *theMG, const char *name, const char *compNames,
+                                            const SHORT *RowsInType, const SHORT *ColsInType,
+                                            SHORT **CmpsInType, INT ValidField)
 {
   MATDATA_DESC *md;
-  SHORT offset[NMATOFFSETS],*Comp;
+  SHORT off, offset[NMATOFFSETS], smcharoff[NMATOFFSETS];
+  SHORT Comp[MAX_MAT_COMP];
   char buffer[NAMESIZE];
-  INT i,j,tp,ncmp,size;
+  INT i,j,k,tp,ncmp,size,size1,sparseFlag;
+  SHORT N, Nred;
 
   if (theMG == NULL)
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN_PTR (NULL);
 
   if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN_PTR (NULL);
   if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) REP_ERR_RETURN_PTR (NULL);
   if (ChangeEnvDir("Matrices") == NULL) {
     MakeEnvItem("Matrices",MatrixDirID,sizeof(ENVDIR));
     if (ChangeEnvDir("Matrices") == NULL) REP_ERR_RETURN_PTR (NULL);
-
   }
+
   ConstructMatOffsets(RowsInType,ColsInType,offset);
   ncmp = offset[NMATTYPES];
   if (ncmp <= 0) REP_ERR_RETURN_PTR (NULL);
   size = sizeof(MATDATA_DESC)+(ncmp-1)*sizeof(SHORT);
+  size = CEIL(size);
+
+  /* compute space for eventual sparse matrix structures, testing */
+  /* for sparse matrices is done by a comparison of Nred and nr*nc */
+  sparseFlag = 0;
+  for (tp=0; tp<NMATTYPES; tp++)
+  {
+    smcharoff[tp] = size;
+    if (CmpsInType!=NULL)
+    {
+      if (ComputeSMSizeOfArray(RowsInType[tp], ColsInType[tp], CmpsInType[tp],
+                               &N, &Nred))
+        REP_ERR_RETURN_PTR (NULL);
+    }
+    else
+      N = Nred = RowsInType[tp]*ColsInType[tp];
+
+    /* if there are entries, we also want space for the sparse format */
+    if (N != 0)
+    {
+      sparseFlag = 1;
+      size += CEIL(sizeof(SPARSE_MATRIX) + sizeof(SHORT)*(RowsInType[tp]+2*N));
+    }
+  }
+  smcharoff[tp] = size;
+
   if (name != NULL)
     strcpy(buffer,name);
-  else if (GetNewMatrixName(theMG,buffer)) REP_ERR_RETURN_PTR (NULL);
+  else if (GetNewMatrixName(theMG,buffer))
+    REP_ERR_RETURN_PTR (NULL);
+
   md = (MATDATA_DESC *) MakeEnvItem (buffer,MatrixVarID,size);
   if (md == NULL) REP_ERR_RETURN_PTR (NULL);
+
   if (compNames==NULL)
     memcpy(VM_COMP_NAMEPTR(md),NoMatNames,2*MIN(ncmp,MAX_MAT_COMP));
   else
@@ -2232,32 +2267,115 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *com
 
   /* fill data in mat data desc */
   MD_MG(md) = theMG;
-  i = 0;
-  Comp = VM_COMPPTR(md);
-  for (tp=0; tp<NMATTYPES; tp++) {
+  for (tp=0; tp<NMATTYPES; tp++)
+  {
     ASSERT(RowsInType[tp]<A_REASONABLE_NUMBER);
     ASSERT(ColsInType[tp]<A_REASONABLE_NUMBER);
     MD_ROWS_IN_MTYPE(md,tp) = RowsInType[tp];
     MD_COLS_IN_MTYPE(md,tp) = ColsInType[tp];
-    MD_MCMPPTR_OF_MTYPE(md,tp) = Comp + offset[tp];
-    for (j=0; j<MAX_NDOF_MOD_32*32; j++) {
-      if (i >= offset[tp+1]) break;
-      if (j*sizeof(DOUBLE) >=
-          FMT_S_MAT_TP(MGFORMAT(theMG),MatrixType[MTYPE_RT(tp)][MTYPE_CT(tp)]))
+    MD_MCMPPTR_OF_MTYPE(md,tp) = &(VM_COMPPTR(md)[offset[tp]]);
+
+    /* compute (reduced) size of matrix in Nred */
+    if (CmpsInType!=NULL)
+    {
+      if (ComputeSMSizeOfArray(RowsInType[tp], ColsInType[tp], CmpsInType[tp],
+                               &N, &Nred))
         REP_ERR_RETURN_PTR (NULL);
-      if (READ_DR_MAT_FLAG(theMG,tp,j)) continue;
-      Comp[i++] = j;
-      SET_DR_MAT_FLAG(theMG,tp,j);
+    }
+    else
+      N = Nred = RowsInType[tp]*ColsInType[tp];
+
+    if (Nred>MAX_MAT_COMP)
+      REP_ERR_RETURN_PTR (NULL);
+
+    /* we have to allocate storage */
+    if (ValidField)
+    {
+      /* CmpsInType gives the real offsets! */
+      if (CmpsInType==NULL)
+        REP_ERR_RETURN_PTR (NULL);                         /* CmpsInType NOT valid */
+      for (j=0; j<N; j++)
+        MD_MCMP_OF_MTYPE(md,tp,j) = CmpsInType[tp][j];
+    }
+    else
+    {
+      /* allocate the next free fields in Comp[0,...,Nred-1] */
+      i = 0;
+      for (j=0; j<MAX_NDOF; j++) {
+        if (i >= Nred)
+          break;
+        if (j*sizeof(DOUBLE) >= FMT_S_MAT_TP(MGFORMAT(theMG),tp))
+          REP_ERR_RETURN_PTR (NULL);
+        if (READ_DR_MAT_FLAG(theMG,tp,j))
+          continue;
+        Comp[i++] = j;
+        SET_DR_MAT_FLAG(theMG,tp,j);
+      }
+      if (i!=Nred)
+        REP_ERR_RETURN_PTR (NULL);                          /* Fatal: something wrong */
+
+      if (CmpsInType!=NULL)
+      {
+        /* use the CmpsInType-field to determine the actual referencing */
+        i = 0;
+        for (j=0; j<RowsInType[tp]*ColsInType[tp]; j++)
+        {
+          off = CmpsInType[tp][j];
+          if (off<0)
+            MD_MCMP_OF_MTYPE(md,tp,j) = -1;
+          else
+          {
+            if (off>=MAX_MAT_COMP)
+              REP_ERR_RETURN_PTR(NULL);                                            /* Fatal: bad CmpsInType */
+
+            /* find the first instance of 'off' */
+            for (k=0; k<j; k++)
+              if (CmpsInType[tp][k]==off)
+                break;
+
+            if (k<j)
+              MD_MCMP_OF_MTYPE(md,tp,j) = MD_MCMP_OF_MTYPE(md,tp,k);
+            else
+              MD_MCMP_OF_MTYPE(md,tp,j) = Comp[i++];
+          }
+        }
+        if (i!=Nred)
+          REP_ERR_RETURN_PTR (NULL);                                /* Fatal: something wrong */
+      }
+      else
+      {
+        for (j=0; j<N; j++)
+          MD_MCMP_OF_MTYPE(md,tp,j) = Comp[j];
+      }
+    }
+
+    /* if there are entries we also want the sparse format */
+    md->sm[tp] = NULL;
+    if (N != 0)
+    {
+      md->sm[tp] = (SPARSE_MATRIX *) ((char *) md + smcharoff[tp]);
+      if (Array2SM(RowsInType[tp],ColsInType[tp],MD_MCMPPTR_OF_MTYPE(md,tp),
+                   md->sm[tp])!=0)
+        REP_ERR_RETURN_PTR (NULL);
     }
   }
   for (tp=0; tp<NMATOFFSETS; tp++)
     MD_MTYPE_OFFSET(md,tp) = offset[tp];
 
+  md->IsSparse = sparseFlag;
   if (FillRedundantComponentsOfMD(md))
-    return (NULL);
+    REP_ERR_RETURN_PTR (NULL);
   VM_LOCKED(md) = 0;
 
   return (md);
+}
+
+MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *compNames,
+                             const SHORT *RowsInType, const SHORT *ColsInType,
+                             SHORT **CmpsInType)
+{
+  return(CreateMatDesc_General(theMG,name,compNames,RowsInType,ColsInType,
+                               CmpsInType,0));
 }
 
 /****************************************************************************/
@@ -2289,51 +2407,12 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *com
    D*/
 /****************************************************************************/
 
-MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const char *name,
+MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const char *name, const char *CompNames,
                                 const SHORT *RowsInType, const SHORT *ColsInType,
-                                const SHORT *Comps, const char *CompNames)
+                                SHORT **CmpsInType)
 {
-  MATDATA_DESC *md;
-  SHORT offset[NMATOFFSETS];
-  INT k,j,tp,ncmp,size;
-  char buffer[NAMESIZE];
-
-  if (theMG == NULL)
-    REP_ERR_RETURN (NULL);
-
-  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN (NULL);
-  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) REP_ERR_RETURN (NULL);
-  if (ChangeEnvDir("Matrices") == NULL) REP_ERR_RETURN (NULL);
-  ConstructMatOffsets(RowsInType,ColsInType,offset);
-  ncmp = offset[NMATTYPES];
-  if (ncmp <= 0) REP_ERR_RETURN (NULL);
-  size = sizeof(MATDATA_DESC)+(ncmp-1)*sizeof(SHORT);
-  if (name != NULL)
-    strcpy(buffer,name);
-  else if (GetNewMatrixName(theMG,buffer)) REP_ERR_RETURN (NULL);
-  md = (MATDATA_DESC *) MakeEnvItem (buffer,MatrixVarID,size);
-  if (md == NULL) REP_ERR_RETURN (NULL);
-
-  /* fill data in mat data desc */
-  MD_MG(md) = theMG;
-  strncpy(VM_COMP_NAMEPTR(md),CompNames,2*ncmp);
-  k = 0;
-  for (tp=0; tp<NMATTYPES; tp++) {
-    MD_ROWS_IN_MTYPE(md,tp) = RowsInType[tp];
-    MD_COLS_IN_MTYPE(md,tp) = ColsInType[tp];
-    MD_MCMPPTR_OF_MTYPE(md,tp) = VM_COMPPTR(md) + offset[tp];
-    for (j=0; j<RowsInType[tp]*ColsInType[tp]; j++) {
-      MD_MCMP_OF_MTYPE(md,tp,j) = Comps[k++];
-    }
-  }
-  for (tp=0; tp<NMATOFFSETS; tp++)
-    MD_MTYPE_OFFSET(md,tp) = offset[tp];
-
-  if (FillRedundantComponentsOfMD(md))
-    return (NULL);
-  VM_LOCKED(md) = 0;
-
-  return (md);
+  return(CreateMatDesc_General(theMG,name,CompNames,RowsInType,ColsInType,
+                               CmpsInType,1));
 }
 
 /****************************************************************************/
@@ -2497,46 +2576,97 @@ MATDATA_DESC *GetMatDataDescByName (const MULTIGRID *theMG, char *name)
 
 /****************************************************************************/
 /*D
-   AllocMDFromVD - dynamic matrix allocation
+   CompMatDesc - compares a MATDATA_DESC to a given format
 
    SYNOPSIS:
-   INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
-   VECDATA_DESC *x, VECDATA_DESC *y, MATDATA_DESC **new_desc);
+   INT CompMatDesc (const MATDATA_DESC *md, const SHORT *RowsInType,
+                    const SHORT *ColsInType, const SHORT **CmpsInType)
 
    PARAMETERS:
-   .  theMG - create vector for this multigrid
-   .  fl - from level
-   .  tl - to level
-   .  x - template vector for row components
-   .  y - template vector for column components
-   .  new_desc - new matrix
+   .  md - the MATDATA_DESC
+   .  RowsInType - pointer to a SHORT-field of size NMATTYPES
+   .  ColsInType - pointer to a SHORT-field of size NMATTYPES
+   .  CmpsInType - pointer to a (SHORT *)-field of size NMATTYPES
 
    DESCRIPTION:
-   This function allocates a new matrix.
+   This function compares md with the format given by RowsInType, ColsInType,
+   and CmpsInType. If CmpsInType==NULL only the size is compared, if
+   CmpsInType!=NULL there is also a comparison of the sparse structure.
 
    RETURN VALUE:
    INT
    .n      0 if ok
-   .n      1 if error occurred
+   .n      1 if format does not match
+   .n      2 sparse structure does not match
  */
 /****************************************************************************/
 
-static INT CompMatDesc (const MATDATA_DESC *md,
-                        const SHORT *RowsInType, const SHORT *ColsInType)
+INT CompMatDesc (const MATDATA_DESC *md, const SHORT *RowsInType,
+                 const SHORT *ColsInType, SHORT *const*CmpsInType)
 {
-  INT tp;
+  INT a,b,i,n,off,tp;
 
-  for (tp=0; tp<NMATTYPES; tp++) {
+  for (tp=0; tp<NMATTYPES; tp++)
+  {
     if (MD_COLS_IN_MTYPE(md,tp) != ColsInType[tp])
       return(1);
     if (MD_ROWS_IN_MTYPE(md,tp) != RowsInType[tp])
       return(1);
+
+    if (CmpsInType!=NULL)
+    {
+      /* check if sparsity structures coincide */
+      if ((n=MD_ROWS_IN_MTYPE(md,tp)*MD_COLS_IN_MTYPE(md,tp))==0) continue;
+      off=-1;
+      for (i=0; i<n; i++)
+      {
+        a=CmpsInType[tp][i]; b=MD_MCMP_OF_MTYPE(md,tp,i);
+        if ( ((a<0) && (b>=0)) || ((a>=0) && (b<0)) )
+          return (2);
+        if (a>=0)
+        {
+          if (off<0)
+            off=b-a;
+          else
+          if (off!=b-a) return (2);
+        }
+      }
+    }
+    else
+    {
+      /* if md is sparse on tp, return an error */
+      if (md->sm[tp]!=NULL)
+        return(2);
+    }
   }
 
   return(0);
 }
 
-static INT AllocMatDesc (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *md)
+/****************************************************************************/
+/*D
+   AllocMatDesc - dynamic matrix allocation
+
+   SYNOPSIS:
+   static INT AllocMatDesc (MULTIGRID *theMG, INT fl, INT tl, const MATDATA_DESC *md)
+
+   PARAMETERS:
+   .  theMG - create vector for this multigrid
+   .  fl - from level
+   .  tl - to level
+   .  md - MATDATA_DESC to allocate
+
+   DESCRIPTION:
+   This function allocates fields for a MATDATA_DESC.
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occurred (fields are already occupied)
+ */
+/****************************************************************************/
+
+static INT AllocMatDesc (MULTIGRID *theMG, INT fl, INT tl, const MATDATA_DESC *md)
 {
   GRID *theGrid;
   INT i,j,tp;
@@ -2604,7 +2734,7 @@ INT AllocMDFromMRowMCol (MULTIGRID *theMG, INT fl, INT tl,
     for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md)) {
       if (VM_LOCKED(md)) continue;
       if (CompMatDesc(md,RowsInType,
-                      ColsInType))
+                      ColsInType,NULL))
         continue;
       if (!AllocMatDesc(theMG,fl,tl,md)) {
         *new_desc = md;
@@ -2614,7 +2744,8 @@ INT AllocMDFromMRowMCol (MULTIGRID *theMG, INT fl, INT tl,
     /* create a new Matrix */
     *new_desc = CreateMatDesc(theMG,NULL,compNames,
                               RowsInType,
-                              ColsInType);
+                              ColsInType,
+                              NULL);
     if (*new_desc == NULL) {
       PrintErrorMessage('E',"AllocMDFromMRowMCol","cannot create MatDesc\n");
       REP_ERR_RETURN(1);
@@ -2714,15 +2845,22 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
     return (NUM_OK);
 
   /* translate vd-x and vd-y into RowsInType and ColsInType */
+  for (tp=0; tp<NMATTYPES; tp++)
+    RowsInType[tp] = ColsInType[tp] = 0;
   for (i=0; i<NVECTYPES; i++)
     for (j=0; j<NVECTYPES; j++) {
       tp = MTP(i,j);
       if (VD_NCMPS_IN_TYPE(x,i)*VD_NCMPS_IN_TYPE(y,j) > 0) {
         RowsInType[tp] = VD_NCMPS_IN_TYPE(x,i);
         ColsInType[tp] = VD_NCMPS_IN_TYPE(y,j);
+        if (i==j)
+        {
+          tp = DMTP(i);
+          RowsInType[tp] = VD_NCMPS_IN_TYPE(x,i);
+          ColsInType[tp] = VD_NCMPS_IN_TYPE(y,j);
+        }
       }
-      else
-        RowsInType[tp] = ColsInType[tp] = 0;
+
     }
 
   return (AllocMDFromMRowMCol(theMG,fl,tl,RowsInType,ColsInType,NULL,new_desc));
@@ -2760,12 +2898,43 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
 INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
                    const MATDATA_DESC *md, MATDATA_DESC **new_desc)
 {
-  return (AllocMDFromMRowMCol(theMG,fl,tl,
+  MATDATA_DESC *mdnew;
+
+  /* nothing to do if it is locked */
+  if (*new_desc != NULL)
+    if (VM_LOCKED(*new_desc))
+      return (NUM_OK);
+
+  /* is there a freed Matrix we can use */
+  if (AllocMatDesc(theMG,fl,tl,*new_desc)) {
+    for (mdnew = GetFirstMatrix(theMG); mdnew != NULL; mdnew = GetNextMatrix(mdnew)) {
+      if (VM_LOCKED(mdnew)) continue;
+      if (CompMatDesc(mdnew,md->RowsInType,
+                      md->ColsInType,md->CmpsInType))
+        continue;
+      if (!AllocMatDesc(theMG,fl,tl,mdnew)) {
+        *new_desc = mdnew;
+        return (NUM_OK);
+      }
+    }
+    /* create a new Matrix */
+    *new_desc = CreateMatDesc(theMG,NULL,md->compNames,
                               md->RowsInType,
                               md->ColsInType,
-                              md->compNames,
-                              new_desc));
+                              md->CmpsInType);
+    if (*new_desc == NULL) {
+      PrintErrorMessage('E',"AllocMDFromMRowMCol","cannot create MatDesc\n");
+      REP_ERR_RETURN(1);
+    }
+    if (AllocMatDesc(theMG,fl,tl,*new_desc)) {
+      PrintErrorMessage('E',"AllocMDFromMRowMCol","cannot allocate MatDesc\n");
+      REP_ERR_RETURN(1);
+    }
+  }
+
+  return (NUM_OK);
 }
+
 
 /****************************************************************************/
 /*D
@@ -2790,6 +2959,12 @@ INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
 INT LockMD (MATDATA_DESC *md)
 {
   VM_LOCKED(md) = VM_IS_LOCKED;
+  return (0);
+}
+
+INT UnlockMD (MATDATA_DESC *md)
+{
+  VM_LOCKED(md) = VM_IS_UNLOCKED;
   return (0);
 }
 
@@ -2974,8 +3149,8 @@ INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DE
         REP_ERR_RETURN (1);
     }
   }
-
-  *mdi = CreateSubMatDesc(MD_MG(md),buffer,SubRCmp,SubCCmp,SubComp,SubName);
+  /* erroneous #@@@.......
+   *mdi = CreateSubMatDesc(MD_MG(md),buffer,SubName,SubRCmp,SubCCmp,SubComp); */
   if (*mdi == NULL)
     REP_ERR_RETURN (1);
   if (TransmitLockStatusMD(md,*mdi))
@@ -3129,7 +3304,8 @@ INT MDinterfaceCoCoupleDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MA
       }
   }
 
-  *mdi = CreateSubMatDesc(MD_MG(md),buffer,SubRCmp,SubCCmp,SubComp,SubName);
+  /* erroneous #@@@
+   *mdi = CreateSubMatDesc(MD_MG(md),buffer,SubName,SubRCmp,SubCCmp,SubComp); */
   if (*mdi == NULL)
     REP_ERR_RETURN (1);
   if (TransmitLockStatusMD(md,*mdi))
@@ -3503,12 +3679,12 @@ SHORT *MD_nr_nc_mcmpptr_of_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT co
           else
           {
             if (MD_ROWS_IN_RT_CT(md,rt,ct)!=nrow)
-              REP_ERR_RETURN (NULL);
+              REP_ERR_RETURN_PTR (NULL);
             if (MD_COLS_IN_RT_CT(md,rt,ct)!=ncol)
-              REP_ERR_RETURN (NULL);
+              REP_ERR_RETURN_PTR (NULL);
             for (i=0; i<ncmp; i++)
               if (MD_MCMP_OF_RT_CT(md,rt,ct,i)!=cptr[i])
-                REP_ERR_RETURN (NULL);
+                REP_ERR_RETURN_PTR (NULL);
           }
           src_parts |= FMT_T2P(fmt,rt);
           dst_parts |= FMT_T2P(fmt,ct);
@@ -3521,10 +3697,10 @@ SHORT *MD_nr_nc_mcmpptr_of_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT co
     n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
     for (j=0; j<n; j++)
       if (!(src_parts & (1<<j)))
-        REP_ERR_RETURN (NULL);
+        REP_ERR_RETURN_PTR (NULL);
   }
   else if (mode!=NON_STRICT)
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN_PTR (NULL);
 
   if (nr!=NULL) *nr = nrow;
   if (nc!=NULL) *nc = ncol;
