@@ -898,6 +898,9 @@ PATCH *BVP_GetNextPatch (BVP *theBVP, PATCH *thePatch)
 {
   ENVITEM *theItem;
 
+  if (thePatch==NULL)
+    return (NULL);
+
   theItem = (ENVITEM *) thePatch;
 
   do
