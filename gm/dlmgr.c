@@ -60,7 +60,7 @@
 #define SUCC   SUCCV
 #include "dlmgr.t"
 
-/* vertex */
+/* vector */
 #define OTYPE  VECTOR
 #define PRED   PREDVC
 #define SUCC   SUCCVC
