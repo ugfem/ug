@@ -313,6 +313,7 @@ static INT LinearSolverDisplay (NP_BASE *theNP)
   NPLinearSolverDisplay(&np->ls);
 
   UserWriteF(DISPLAY_NP_FORMAT_SI,"m",(int)np->maxiter);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)np->baselevel);
   if (np->Iter != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Iter",ENVITEM_NAME(np->Iter));
   else
@@ -629,6 +630,11 @@ static INT CGPrepare (NP_LS *theNP, INT level, VECDATA_DESC *x, INT *result)
 
   np = (NP_CG *) theNP;
   if (AllocVDFromVD(theNP->ls.base.mg,theNP->baselevel,level,x,&np->p)) {
+    result[0] = __LINE__;
+    return(1);
+  }
+  if (a_dset(theNP->ls.base.mg,theNP->baselevel,level,np->p,EVERY_CLASS,0.0)
+      != NUM_OK) {
     result[0] = __LINE__;
     return(1);
   }
