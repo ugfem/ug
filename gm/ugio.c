@@ -1062,7 +1062,8 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   /* write information about refrules used */
   if (Write_RefRules(theMG,RefRuleOffset)) return (1);
 
-  if (i = OrphanCons(theMG))
+  i = OrphanCons(theMG);
+  if (i)
   {
     PRINTDEBUG(gm,1,(PFMT "OrphanCons() returned %d errors\n",me,i));
     fflush(stdout);
@@ -1797,18 +1798,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   {
     if (name==NULL)
     {
-      if (type!=NULL) return (NULL);
-      strcpy(filename,MG_FILENAME(theMG));
-      f = strtok(filename,".");   if (f==NULL) return (NULL);
-      s = strtok(NULL,".");       if (s==NULL) return (NULL);
-      l = strtok(NULL,".");       if (l==NULL) return (NULL);
-      l = strtok(NULL,".");       if (l==NULL) return (NULL);
-      l = strtok(NULL,".");       if (l==NULL) return (NULL);
-      strtok(l,"/");
-      if (sscanf(s,"%d",&lastnumber)!=1) return (NULL);if (lastnumber<0) return (NULL);lastnumber++;
-      strcpy(itype,l);
-      sprintf(buf,".%04d",lastnumber);
-      strcat(filename,buf);
+      return (NULL);
     }
     else
     {
