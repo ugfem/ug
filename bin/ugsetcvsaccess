@@ -64,6 +64,7 @@ cvs admin -a$DEFAULT_CORE low 2>> $ERRORFILE;
 
 cd $UGROOT;
 cvs admin -awieners,peter,klaus np 2>> $ERRORFILE;
+cvs admin -astefan np/procs/bdf.c np/procs/error.c 2>> $ERRORFILE;
 
 cd $UGROOT;
 cvs admin -e parallel 2>> $ERRORFILE;
