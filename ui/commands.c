@@ -218,15 +218,15 @@ using namespace UG3d;
 
 struct MarkRule
 {
-  char *RuleName;                                       /* what you type in the mark cmdline	*/
-  INT RuleId;                                           /* corresponding rule ID for refine     */
+  char *RuleName;       /*!< what you type in the mark cmdline	*/
+  INT RuleId;           /*!< corresponding rule ID for refine   */
 };
 
 typedef struct MarkRule MARKRULE;
 
 typedef struct
 {
-  /* fields for environment directory */
+  /** \brief Fields for environment directory */
   ENVVAR v;
 
   /* data */
@@ -242,72 +242,78 @@ typedef struct
 /*                                                                          */
 /****************************************************************************/
 
-static MULTIGRID *currMG=NULL;                  /* the current multigrid			*/
+static MULTIGRID *currMG=NULL;                  /*!< The current multigrid			*/
 
-static NP_BASE *currNumProc=NULL;               /* current numerical procedure		*/
+static NP_BASE *currNumProc=NULL;               /*!< Current numerical procedure		*/
 
-static char buffer[BUFFERSIZE];         /* general purpose text buffer		*/
+static char buffer[BUFFERSIZE];         /*!< General purpose text buffer		*/
 
-static FILE     *protocolFile=NULL;     /* for protocol commands			*/
+static FILE     *protocolFile=NULL;     /*!< For protocol commands			*/
 
-static MARKRULE myMR[NO_OF_RULES]=      /* name and ID of available rules	*/
-{{"red",        RED},
- {"no",         NO_REFINEMENT},
- {"blue",       BLUE},
- {"copy",       COPY},
+/** \brief Name and ID of available rules	*/
+static MARKRULE myMR[NO_OF_RULES]=     {{"red",        RED},
+                                        {"no",         NO_REFINEMENT},
+                                        {"blue",       BLUE},
+                                        {"copy",       COPY},
                                          #ifdef __TWODIM__
- {"bi_1",       BISECTION_1},
- {"bi_2q",      BISECTION_2_Q},
- {"bi_2t1", BISECTION_2_T1},
- {"bi_2t2", BISECTION_2_T2},
- {"bi_3",       BISECTION_3},
+                                        {"bi_1",       BISECTION_1},
+                                        {"bi_2q",      BISECTION_2_Q},
+                                        {"bi_2t1", BISECTION_2_T1},
+                                        {"bi_2t2", BISECTION_2_T2},
+                                        {"bi_3",       BISECTION_3},
                                          #endif
                                          #ifdef __THREEDIM__
- /* rules for tetrahedra */
+                                        /* rules for tetrahedra */
                                          #ifndef TET_RULESET
- {"tet2hex",TETRA_RED_HEX},
+                                        {"tet2hex",TETRA_RED_HEX},
                                          #endif
- /* rules for prisms */
- {"pri_quadsect",PRISM_QUADSECT},
- {"pri_bisect_hex0",PRISM_BISECT_HEX0},
- {"pri_bisect_hex1",PRISM_BISECT_HEX1},
- {"pri_bisect_hex2",PRISM_BISECT_HEX2},
- {"pri_rot_l",PRISM_ROTATE_LEFT},
- {"pri_rot_r",PRISM_ROTATE_RGHT},
- {"pri_quadsect_eins",PRISM_QUADSECT_HEXPRI0},
- /* rules for tetrahedra */
- {"hex_bisect_eins",HEX_BISECT_0_1},
- {"hex_bisect_zwei",HEX_BISECT_0_2},
- {"hex_bisect_drei",HEX_BISECT_0_3},
- {"hex_trisect_eins",HEX_TRISECT_0},
- {"hex_trisect_fuenf",HEX_TRISECT_5},
- {"hex_quadsect_null",HEX_QUADSECT_0},
- {"hex_quadsect_eins",HEX_QUADSECT_1},
- {"hex_quadsect_zwei",HEX_QUADSECT_2},
- {"hex_bisect_vier",HEX_BISECT_HEXPRI0},
- {"hex_bisect_fuenf",HEX_BISECT_HEXPRI1},
+                                        /* rules for prisms */
+                                        {"pri_quadsect",PRISM_QUADSECT},
+                                        {"pri_bisect_hex0",PRISM_BISECT_HEX0},
+                                        {"pri_bisect_hex1",PRISM_BISECT_HEX1},
+                                        {"pri_bisect_hex2",PRISM_BISECT_HEX2},
+                                        {"pri_rot_l",PRISM_ROTATE_LEFT},
+                                        {"pri_rot_r",PRISM_ROTATE_RGHT},
+                                        {"pri_quadsect_eins",PRISM_QUADSECT_HEXPRI0},
+                                        /* rules for tetrahedra */
+                                        {"hex_bisect_eins",HEX_BISECT_0_1},
+                                        {"hex_bisect_zwei",HEX_BISECT_0_2},
+                                        {"hex_bisect_drei",HEX_BISECT_0_3},
+                                        {"hex_trisect_eins",HEX_TRISECT_0},
+                                        {"hex_trisect_fuenf",HEX_TRISECT_5},
+                                        {"hex_quadsect_null",HEX_QUADSECT_0},
+                                        {"hex_quadsect_eins",HEX_QUADSECT_1},
+                                        {"hex_quadsect_zwei",HEX_QUADSECT_2},
+                                        {"hex_bisect_vier",HEX_BISECT_HEXPRI0},
+                                        {"hex_bisect_fuenf",HEX_BISECT_HEXPRI1},
                                          #endif
- {"coarse", COARSE}};
+                                        {"coarse", COARSE}};
 
-static DOUBLE Time0;                            /* time offset for readclock		*/
+static DOUBLE Time0;                            /*!< Time offset for readclock		*/
 
-static char userPath[1024];                     /* environment path for ls,cd		*/
+static char userPath[1024];             /*!< Environment path for ls,cd		*/
 
-static INT untitledCounter=0;                   /* counter for untitled multigrids	*/
+static INT untitledCounter=0;   /*!< Counter for untitled multigrids	*/
 
-/* some variables to transfer info between QualityCommand and QualityElement*/
+/** @name Some variables to transfer info between QualityCommand and QualityElement*/
+/*@{*/
 static DOUBLE min,max,themin,themax,minangle,maxangle;
 static INT lessopt,greateropt,selectopt;
 static char mintext[32],maxtext[32],minmaxtext[32];
+/*@}*/
 
-/* counters for windows and pictures */
+/** @name Counters for windows and pictures */
+/*@{*/
 static INT wincounter=1;
 static INT piccounter=1;
+/*@}*/
 
-/* stuff for the array commands */
+/** @name Stuff for the array commands */
+/*@{*/
 static INT theArrayDirID;
 static INT theArrayVarID;
 static INT arraypathes_set=FALSE;
+/*@}*/
 
 REP_ERR_FILE;
 
@@ -316,11 +322,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
 /****************************************************************************/
-/*
- */
-/* forward declarations of functions used before they are defined                       */
-/*
- */
+/*                                                                          */
+/* forward declarations of functions used before they are defined           */
+/*                                                                          */
 /****************************************************************************/
 
 #if defined(CAD) && defined(__THREEDIM__)
@@ -585,7 +589,6 @@ static INT InitClock(void)
 }
 
 
-/****************************************************************************/
 /** \brief Implementation of \ref date. */
 static INT DateCommand (INT argc, char **argv)
 {
@@ -1058,25 +1061,19 @@ static INT ProtocolCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*D
-   OpenProto - Open protocol file where specially formatted output is saved
-
-   SYNOPSIS:
-   static INT OpenProto (char *name, INT mode);
-
-   PARAMETERS:
-   .  name - name of the protocol file
-   .  mode - APPEND_PROTO, RENAME_PROTO, TRYRENAME_PROTO, or NORENAME_PROTO
-
-   DESCRIPTION:
-   This function opens protocol file where specially formatted output is saved.
-   It opens a protocol file for specially formatted output to file.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
-   D*/
+/** \brief Open protocol file where specially formatted output is saved
+ *
+ * @param name - name of the protocol file
+ * @param mode - APPEND_PROTO, RENAME_PROTO, TRYRENAME_PROTO, or NORENAME_PROTO
+ *
+ * This function opens protocol file where specially formatted output is saved.
+ * It opens a protocol file for specially formatted output to file.
+ *
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error occured. </li>
+ * </ul>
+ */
 /****************************************************************************/
 
 static INT OpenProto (char *name, INT mode)
@@ -1472,7 +1469,10 @@ static INT CnomCommand (INT argc, char **argv)
 
 
 /** \brief Implementation of \ref configure. */
-static INT ConfigureCommand (INT argc, char **argv)
+#ifndef __cplusplus
+static
+#endif
+INT NS_PREFIX ConfigureCommand (INT argc, char **argv)
 {
   BVP *theBVP;
   BVP_DESC theBVPDesc;
@@ -1583,7 +1583,10 @@ static INT CloseCommand (INT argc, char **argv)
 
 
 /** \brief Implementation of \ref new. */
-static INT NewCommand (INT argc, char **argv)
+#ifndef __cplusplus
+static
+#endif
+INT NS_PREFIX NewCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   char Multigrid[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE];
@@ -1632,7 +1635,7 @@ static INT NewCommand (INT argc, char **argv)
       break;
 
     case 'h' :
-      if (ReadMemSizeFromString(argv[i]+1,&heapSize)!=0)                           /* skip leading 'h' in argv */
+      if (ReadMemSizeFromString(argv[i]+1,&heapSize)!=0)           /* skip leading 'h' in argv */
       {
         PrintHelp("new",HELPITEM," (cannot read heapsize specification)");
         return(PARAMERRORCODE);
@@ -3335,6 +3338,8 @@ static INT RuleListCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
+
+/** \todo Please doc me! */
 static INT PrintValueCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -3629,7 +3634,7 @@ static INT VMListCommand (INT argc, char **argv)
 }
 
 
-
+/** \todo Please doc me! */
 static int ReadMatrixDimensions (char *name, int *n, int *na)
 {
   int i;
@@ -3644,6 +3649,7 @@ static int ReadMatrixDimensions (char *name, int *n, int *na)
   return(0);
 }
 
+/** \todo Please doc me! */
 static int ReadMatrix (char *name, int n, int *ia, int *ja, double *a)
 {
   int i;
@@ -3666,6 +3672,7 @@ static int ReadMatrix (char *name, int n, int *ia, int *ja, double *a)
   return(0);
 }
 
+/** \todo Please doc me! */
 static int WriteMatrix (char *name, int n, int *ia, int *ja, double *a)
 {
   int i;
@@ -3687,6 +3694,7 @@ static int WriteMatrix (char *name, int n, int *ia, int *ja, double *a)
   return(0);
 }
 
+/** \todo Please doc me! */
 static int WriteMatrixfmt (char *name, int n, int *ia, int *ja, double *a,
                            int inc)
 {
@@ -3835,6 +3843,7 @@ static INT InsertInnerNodeCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
+/** \todo Please doc me! */
 static INT NGInsertInnerNodeCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -3907,6 +3916,7 @@ static INT InsertBoundaryNodeCommand (INT argc, char **argv)
 }
 
 
+/** \todo Please doc me! */
 static INT NGInsertBoundaryNodeCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -4362,6 +4372,7 @@ static INT InsertElementCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
+/** \todo Please doc me! */
 static INT NGInsertElementCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -4542,31 +4553,8 @@ static INT DeleteElementCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page AdaptCommand Adapt Command
- *
-   adapt - adapt the current multigrid
 
-   DESCRIPTION:
-   This command adapt the multigrid according to the refinement marks
-   set in the elements, calling the function 'AdaptMultiGrid'.
-   If coarsen marks are set refinements are deleted.
-
-   'adapt [$g] [$a] [$h] [$x] [$d \<vector plot proc>]'
-
-   .  no~option				- only local refinement
-   .  $g						- copy nonrefined regions to new level
-   .  $a						- refine all elements
-   .  $d~\<vector~plot~proc>	- 3D only: use vector eval proc for determination of
-                                                                regular refinement direction of tetrahedra
-   .  $h						- refine not closed (not implemented yet)
-   .  $x						- use hexahedra (not implemented yet)
-
-   KEYWORDS:
-   multigrid, adapt, mark
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref adapt. */
 static INT AdaptCommand (INT argc, char **argv)
 {
   MULTIGRID       *theMG;
@@ -4708,21 +4696,7 @@ static INT AdaptCommand (INT argc, char **argv)
   }
 }
 
-/****************************************************************************/
-/** \page   fixcoarsegrid - marks the end of corse grid generation
-
-   DESCRIPTION:
-   If the coarse grid is build interactively by 'ie', this command
-   terminates this process and calls 'FixCoarseGrid'.
-
-   SYNTAX:
-   'fixcoarsegrid'
-
-   KEYWORDS:
-   multigrid, edit, finish
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref fixcoarsegrid. */
 static INT FixCoarseGridCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -4744,17 +4718,8 @@ static INT FixCoarseGridCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-/****************************************************************************/
-/** \page   collapse - construct coarse grid from surface
 
-   DESCRIPTION:
-   The coarse grid is build from all surface elements.
-
-   SYNTAX:
-   'collapse'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref collapse. */
 static INT CollapseCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -4770,35 +4735,8 @@ static INT CollapseCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-/****************************************************************************/
-/** \page   mark - mark elements with refinement type
 
-   DESCRIPTION:
-   This command marks elements with refinement type,
-   calling the function 'MarkForRefinement'.
-
-   SYNTAX:
-   'mark [$h | {[\<rule> [\<side>]] [$a | $i \<Id> | $s]} | $c] [$pos \<x y [z]>] [$x \<x>] [$y \<y>] [$z \<z>]'
-
-   .  \<rule>     - specify a refinement rule ("red" is default)
-   .  \<side>     - has to be specified if the corresponding rule can be applied in several orientations
-   .  $a         - refine all (leave) elements
-   .  $c		  - set all marks to no refinement
-   .  $i \<Id>    - refine the element with \<Id>
-   .  $s         - refine all elements from the current selection
-   .  $h         - show available rules
-   .  $x         - marks elements with corner[0] \< x
-   .  $y         - marks elements with corner[1] \< y
-   .  $z         - marks elements with corner[2] \< z
-
-   KEYWORDS:
-   multigrid, refine, adapt, rule, type, mark
-
-   SEE ALSO:
-   'refine'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref mark. */
 static INT MarkCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -5230,25 +5168,8 @@ static INT MarkCommand (INT argc, char **argv)
     return(OKCODE);
 }
 
-/****************************************************************************/
-/** \page   smooth - invoke hierarchical multigrid smoother
 
-   DESCRIPTION:
-   This command invokes hierarchical multigrid smoother,
-   calling the function 'SmoothMultiGrid'.
-
-   SYNTAX:
-   'smooth \<nIt\> [$b] [$nc]'
-
-   .    \<nIt>   - number of iterations
-   .    $b      - also smooth boundary nodes
-   .    $nc     - improvement for nonconvex domains
-
-   KEYWORDS:
-   multigrid
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref smooth. */
 static INT SmoothMGCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -5301,29 +5222,8 @@ static INT SmoothMGCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   smoothgrid - resize quadrilaterals and triangles on surface levels according to
-              the element sizes on level l-1
 
-   DESCRIPTION:
-   'smoothgrid [$limit \<value>] [$reset] [$f \<value>]  [$b] [($ortho0 || $ortho1) \<val0> \<val1> ... \<valN>]'
-
-   . $limit~\<value>       - give maximum displacement of the vertices in local coordinates
-                         of the father element (0 \< value \< 0.5, default: 0.3)
-   . $reset               - reset elements to default size
-   . $f \<value>           - apply smoothgrid for all elements between level \<value> and current level (default: current level)
-   . $ortho0 \<b0> \<b1> ...- generate 'orthogonal' elements on boundaries \<b0> ... \<bN> (N\<=20)
-   . $ortho1 \<b0> \<b1> ...- generate 'orthogonal' elements on boundaries \<b0> ... \<bN> (N\<=20) for all sons
-                         of the boundary elements on level 0
-   . $b                   - move only boundary mid nodes
-   . $spline              - additionaly smooth elements using spline functions
-   . $spline0             - smooth elements using spline functions only
-
-   KEYWORDS:
-   multigrid, anisotropy
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref smoothgrid. */
 static INT SmoothGridCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -5482,34 +5382,8 @@ static INT SmoothGridCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   ordernodes - order the nodes lexicographically according to the specified directions
 
-
-   DESCRIPTION:
-   This command orders the nodes according to the user provided dependencies.
-   It orders the nodes of the current multigrid, calling the function
-   'OrderNodesInGrid' on all levels.
-
-   If specified the links are ordered in the corresponding order.
-
-   'ordernodes ur|ul|dr|dl|ru|rd|lu|ld [$l \<level>] [$L]'
-
-   .   $l~\<level> - only on level \<level>
-   .n                              u=up, d=down, r=right, l=left
-   .   $L		   - also order links
-
-    EXAMPLE:
-        'ordernodes rd $l2'
-
-   Order nodes of grid level 2 lexicographically in horizontal lines from
-   left to right and the lines vertical from top down.
-
-   KEYWORDS:
-   multigrid, order
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref ordernodes. */
 static INT OrderNodesCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -5650,29 +5524,8 @@ static INT OrderNodesCommand (INT argc, char **argv)
 }
 
 
-/****************************************************************************/
-/** \page   lexorderv - order the vectors lexicographically
 
-
-   DESCRIPTION:
-   This command orders the vectors lexicographically according to the user
-   specified directions.
-   It orders the vectors of the current multigrid, calling the function
-   'LexOrderVectorsInGrid'.
-
-   'lexorderv ur|ul|dr|dl|ru|rd|lu|ld [$l \<level>] [$m] [$w s|n] [$s \<|>]'
-
-   .   $l~\<level> - only on level \<level>
-   .n                              u=up, d=down, r=right, l=left
-   .   $m		   - also order matrices
-   .   $w~s|n	   - order skip or nonskip vectors resp.
-   .   $s \<|>	   - put skip vectors at begin or end of the list resp.
-
-   KEYWORDS:
-   multigrid, order
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref lexorderv. */
 static INT LexOrderVectorsCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -5852,25 +5705,8 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   shellorderv - order the vectors shell by shell
 
-
-   DESCRIPTION:
-   This command orders the vectors of the current level of the current
-   multigrid in shells starting from a seed.
-
-   'shellorderv f | l | s'
-
-   .  f - take first vector as seed
-   .  l - take last vector as seed
-   .  s - take selected vector as seed
-
-   KEYWORDS:
-   multigrid, order, shell
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref shellorderv. */
 static INT ShellOrderVectorsCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -5932,30 +5768,8 @@ static INT ShellOrderVectorsCommand (INT argc, char **argv)
   }
 }
 
-/****************************************************************************/
-/** \page   orderv - order the vectors according to the user provided dependencies
 
-
-   DESCRIPTION:
-   This command orders the vectors according to the user provided dependencies.
-   It orders the vectors of the current multigrid, calling the function
-   'OrderVectors'.
-
-   'orderv $m FFCCLL | FCFCLL $d \<dep-proc> $o \<dep-proc options> $c \<find-cut-proc> [$a]'
-
-   .  $m FFCCLL | FCFCLL     - possible modes are FFCCLL or FCFCLL
-   .  $d \<dep-proc>          - the ordering algorithm uses this dependency procedure...
-   .  $o \<dep-proc options>  - ...and passes these options to it
-   .  $a                     - order all levels of the current multigrid
-
-   SEE ALSO:
-   'lineorderv'
-
-   KEYWORDS:
-   multigrid, order, downstream
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref orderv. */
 static INT OrderVectorsCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -6071,22 +5885,8 @@ static INT OrderVectorsCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   revvecorder - revert the vector order
 
-
-   DESCRIPTION:
-   This command reverts the order of the vector list.
-
-   'revvecorder [$a]'
-
-   .  $a  - reorder all levels of the current multigrid
-
-   KEYWORDS:
-   multigrid, order, reverse
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref revvecorder. */
 static INT RevertVecOrderCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -6123,31 +5923,8 @@ static INT RevertVecOrderCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   lineorderv - order the vectors in lines according to the user provided dependencies
 
-
-   DESCRIPTION:
-   This command orders the vectors in lines according to the user provided dependencies.
-   It orders the vectors of the current multigrid, calling the function
-   'LineOrderVectors'.
-
-   'lineorderv $d \<dep-proc> $o \<dep-proc options> $c \<find-cut-proc> [$a] [$v \<level>]'
-
-   .  $d \<dep-proc>          - the ordering algorithm uses this dependency procedure...
-   .  $o \<dep-proc options>  - ...and passes these options to it
-   .  $c					  - user supplied find cut procedure
-   .  $a                     - order all levels of the current multigrid
-   .  $v~\<level>			  - verbose level
-
-   SEE ALSO:
-   'orderv'
-
-   KEYWORDS:
-   multigrid, order, downstream, lines
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref lineorderv. */
 static INT LineOrderVectorsCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -6229,17 +6006,8 @@ static INT LineOrderVectorsCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   setindex - set vector index in ascending order
 
-   DESCRIPTION:
-   'setindex' sets the vector index in ascending order.
-
-   KEYWORDS:
-   multigrid, vector, index
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref setindex. */
 static INT SetIndexCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -6264,32 +6032,8 @@ static INT SetIndexCommand (INT argc, char **argv)
     return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   find - find (and select) a node (element) from a given position
 
-   DESCRIPTION:
-   This function finds (and selects) a node (element) from a given position,
-   where some tolerance can be specified.
-   It finds a node (element) on the current level of the current multigrid,
-   using the functions
-   'FindNodeFromPosition', 'FindElementFromPosition'
-   'AddNodeToSelection', 'RemoveNodeFromSelection',
-   'AddElementToSelection' and 'RemoveElementFromSelection'
-
-   find \<x> \<y> \<z> {$n \<tol> | $v \<tol> | $e} [$s]
-
-   .  \<x> \<y> \<z> - specify as much coordinates as the space has dimensions
-   .  $n \<tol>    - find a node maching the position with tolerance \<tol>
-   .  $v \<tol>    - find a vector maching the position with tolerance \<tol>
-   .  $e          - find an element maching the position
-   .  $s          - add the selected node (element) to the selection buffer
-                 (if not specified the node is just listed)
-
-   KEYWORDS:
-   multigrid, node, element, position, find, select
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref find. */
 static INT FindCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -6417,30 +6161,8 @@ static INT FindCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   select - select a node or element from a given position
 
-   DESCRIPTION:
-   This function finds (and selects) a node (element) from a given position,
-   where some tolerance can be specified.
-   It adds/removes nodes/elements from the selection buffer of the current
-   multigrid, using the functions
-   'FindNodeFromId', 'FindElementFromId'
-   'AddNodeToSelection', 'RemoveNodeFromSelection',
-   'AddElementToSelection' and 'RemoveElementFromSelection'
-
-   'select $i | $c | $n {+|-} \<Id> | $e {+|-} \<Id>'
-
-   .  $i				- print type and number of list members
-   .  $c               - clear the selection buffer
-   .  $n~{+|-}~\<Id>    - add (+) or remove (-) the node with \<Id> to (from) the selection buffer
-   .  $e~{+|-}~\<Id>    - add (+) or remove (-) the element with \<Id> to (from) the selection buffer
-
-   KEYWORDS:
-   multigrid, select, element, node
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref select. */
 static INT SelectCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -6657,22 +6379,8 @@ static INT SelectCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   extracon - display number of (and delete) extra connections
 
-   DESCRIPTION:
-   This command displays the number extra connections.(and deletes them if specified).
-   Extra connection extend the usual sparsity pattern.
-
-   'extracon [$d]'
-
-   .  $c - also check the connections
-
-   KEYWORDS:
-   multigrid, matrices, connections, pattern, delete, remove
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref extracon. */
 static INT ExtraConnectionCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -6737,32 +6445,8 @@ static INT ExtraConnectionCommand (INT argc, char **argv)
 }
 
 
-/****************************************************************************/
-/** \page checkCommand check
-   check - check consistency of the data structure
 
-   DESCRIPTION:
-   This command checks consistency of the data structure, using
-   the function 'CheckGrid'. Dependent on the options are called inside
-   'CheckGrid' one or more of 'CheckGeometry' 'CheckAlgebra', 'CheckLists'
-   and 'CheckInterfaces'. Default check is 'CheckGeometry'.
-
-   'check {$a | $g | $c | $l | $i | $w}* [$n]'
-
-   .  $a - all possible checks are done
-   .  $g - check the geometric part of data structures (default)
-   .  $c - also check the algebraic part of data structures
-   .  $l - also check the lists of objects and counters of a grid
-   .  $i - also check interfaces (only parallel version)
-   .  $b - also check boundary value problems
-   .  $n - also check the numerical part of data structures
-   .  $w - print a list of all control words of object types with control entries to stdout
-
-   KEYWORDS:
-   multigrid, check, consistency, data structure, algebra, counters, interfaces
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref check. */
 static INT CheckCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -6868,49 +6552,18 @@ static INT CheckCommand (INT argc, char **argv)
     return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   quality - calculate minimal and maximal angle of specified elements
 
-   DESCRIPTION:
-   This command calculates the minimal and maximal angle
-   between sides of the specified elements
-   and lists elements with angle \< or > given angles.
-   It calls the functions 'QualityElement'.
-
-   'quality $a | $s | {$i \<fromID> [\<toID>]} [$\< \<angle>] [$> \<angle>]'
-
-   .    $a          - check angles of all elements in the multigrid
-   .    $s          - check angles of the selected elements
-   .    $i          - check angles of elements with an ID in the range \<fromID> through \<toID>
-   .n                 if \<fromID> is omitted only the element with \<fromID> is listed
-
-   .    $\<~\<angle>  - print info for all elements the minangle of which is \< \<angle>
-   .    $>~\<angle>  - print info for all elements the maxangle of which is > \<angle>
-
-     (angles in degree 0-360)
-
-   KEYWORDS:
-   multigrid, element, quality, angles, find
-   D*/
-/****************************************************************************/
 
 /****************************************************************************/
-/*
-   QualityElement - calculate minimal and maximal angle of an element
-
-   SYNOPSIS:
-   static void QualityElement (MULTIGRID *theMG, ELEMENT *theElement);
-
-   PARAMETERS:
-   .  theMG - pointer to multigrid
-   .  theElement - pointer to Element
-
-   DESCRIPTION:
+/** \brief Calculate minimal and maximal angle of an element
+ *
+ * @param theMG - pointer to multigrid
+ * @param theElement - pointer to Element
+ *
    This function calculates the minimal and the maximal angle of elements
-   and lists elements with angle \< or > given angles.
+   and lists elements with angle \< or \> given angles.
 
-   RETURN VALUE:
-   void
+
  */
 /****************************************************************************/
 
@@ -6947,6 +6600,7 @@ INT NS_PREFIX QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
   return(0);
 }
 
+/** \brief Implementation of \ref quality. */
 static INT QualityCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -7091,49 +6745,8 @@ static INT QualityCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-/****************************************************************************/
-/** \page   makegrid - generate grid
 
-   2D advancing front generator:
-
-   DESCRIPTION:
-   This command generates the grid. First, the command bnodes must be called.
-   It reads the environment variables ':gg:RelRasterSize', ':gg:h_global',
-   ':gg:searchconst', ':gg:angle', ':gg:epsi'.
-
-   'makegrid ${W|w|K|k} [$E] [$h \<val>] [$m \<no>] [$S \<search>] [$A \<angle>] [$d \<subdom>]'
-
-   .  ${W|w|K|k}	- W resp. K are using the quadtree accellerator,
-   .  $W~resp.~w	- use the angle criterion,
-   .  $K~resp.~k	- use the edge criterion
-   .  $E                        - grid generator tries to create equilateral triangles (edgelength h)
-   .n                                   default: isosceles triangles (height h)
-   .  $h~\<val>         - mesh size
-   .  $m~\<no>		- id of mesh size coefficient function
-   .  $S~\<search>	- search radius (experts only)
-   .  $A~\<angle>	- try to avoid angle smaller than \<angle>
-   .  $d~\<subdom>	- restrict grid generation to subdomain with id \<subdom>
-
-   EXAMPLE:
-   'makegrid $k $h 1.0;'
-
-
-   3D advancing front generator (by J. Schoeberl):
-
-   DESCRIPTION:
-   This command invokes the advancing front tetrahedral grid generator.
-
-   'makegrid [$s] [$h \<meshsize>] [$d]'
-
-   .   $s				- smooth generated grid
-   .   $h \<meshsize>	- preferred meshsize (default 1.0)
-   .   $d				- ?
-
-   KEYWORDS:
-   multigrid, generate, create, mesh, net, grid, coarse, advancing front
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref makegrid. */
 static INT MakeGridCommand  (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -7379,20 +6992,8 @@ static INT MakeGridCommand  (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   status - show status about (parallel) multigrid
 
-   DESCRIPTION:
-   This command outputs some statistics about red,green yellow element
-   distribution and some loadbalacing measures for parallel.
-
-   .  ${W|w|K|k}	- W resp. K are using the quadtree accellerator,
-
-   KEYWORDS:
-   multigrid, loadbalancing, mesh, net, grid, adaptive refinement, estimator
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref status. */
 static INT StatusCommand  (INT argc, char **argv)
 {
   MULTIGRID       *theMG;
@@ -7443,30 +7044,9 @@ static INT StatusCommand  (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   cadconvert - convert predefined CADgrid
-
-   DESCRIPTION:
-   This command converts a predefined CADgrid to an UG-multigrid.
-   The complete boundary descriptions are created automatically.
-   Additionally boundary conditions can be chosen from a boundary condition class library.
-
-   'cadconvert $\<filename> $h\<heapsize>'
-
-   .  $ \<filename>  - filename = name of CADOutputfile ("*.ans", ANSYS/PREP7-Format)
-   .  $f \<format>   - one of the enroled formats matching with \<problem>
-   .  $h \<heapsize> - the heapsize to be allocated
-
-
-   EXAMPLE:
-   'cadconvert $ wuerfel.ans $h 12000;'
-
-   KEYWORDS:
-   multigrid, generate, create, mesh, net, grid, coarse, CAD, ANSYS, PREP7
-   D*/
-/****************************************************************************/
 
 #if defined(CAD) && defined(__THREEDIM__)
+/** \brief Implementation of \ref cadconvert. */
 static INT CADGridConvertCommand(INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -7536,21 +7116,8 @@ static INT CADGridConvertCommand(INT argc, char **argv)
 }
 #endif
 
-/****************************************************************************/
-/** \page grapeCommand grape
- *
-   grape - switch to interactive grape mode
 
-   DESCRIPTION:
-   This command switches to interactive grape mode. Quitting grape returns to ug.
-
-   'screensize'
-
-   KEYWORDS:
-   multigrid, graphics, GRAPE, plot
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref grape. */
 static INT CallGrapeCommand (INT argc, char **argv)
 {
   MULTIGRID *theCurrMG;
@@ -7571,20 +7138,8 @@ static INT CallGrapeCommand (INT argc, char **argv)
 
 
 #ifdef _COVISE
-/****************************************************************************/
-/** \page   covise - enable covise interface
 
-   DESCRIPTION:
-   This command enables docking of a Covise user interface by a remote
-   workstation.
-
-   .  hostname		- hostname of workstation which runs Covise
-
-   KEYWORDS:
-   multigrid, graphics, Covise, plot
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref covise. */
 static INT CoviseCommand (INT argc, char **argv)
 {
   MULTIGRID *theCurrMG;
@@ -7613,21 +7168,8 @@ static INT CoviseCommand (INT argc, char **argv)
 #endif
 
 
-/****************************************************************************/
-/** \page   screensize - print the size of the monitor screen in pixels
 
-   DESCRIPTION:
-   This command prints the size of the monitor screen in pixels.
-   It prints the size in pixels of the screen (if there) on the shell
-   and in the variables ':screensize:width', ':screensize:height'
-
-   'screensize'
-
-   KEYWORDS:
-   screen, size, width, height
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref screensize. */
 static INT ScreenSizeCommand (INT argc, char **argv)
 {
   INT size[2];
@@ -7656,30 +7198,8 @@ static INT ScreenSizeCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   openwindow - open a new window
 
-   DESCRIPTION:
-   This command opens an ug-window on an outputdevice
-   (this will be the current window then).
-   It calls the function 'CreateUGWindow'.
-
-   'openwindow \<h> \<v> \<dh> \<dv> [$d \<output device>] [$n \<window name>]'
-
-   .  \<h>~\<v>                - the lower left corner of the plotting region in the 'standardRefSys'
-   .  \<dh>~\<dv>              - the width and height resp. of the plotting region of the window
-   .  $d~\<output~device>     - specify the name of an output device (default: screen)
-   .  $n~\<window~name>       - optionally you can specify the window name
-   .  $r~[0|1]               - if not default device: 0: replace (default), 1: rename existing graphics file (using modification date)
-
-   SEE ALSO:
-   'closewindow', 'openpicture', 'closepicture'
-
-   KEYWORDS:
-   graphics, plot, window, open, create
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref openwindow. */
 static INT OpenWindowCommand (INT argc, char **argv)
 {
   OUTPUTDEVICE *theOutDev;
@@ -7772,28 +7292,8 @@ static INT OpenWindowCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   closewindow - close the current ug-window
 
-   DESCRIPTION:
-   This command closes one (or all) ug-window(s)
-   (including the pictures residing there, of course),
-   calling the functions 'DisposeMultiGrid' and 'DisposePicture'.
-
-   'closewindow [$n \<window name> | $a]'
-
-   .  $n~\<window~name>  - close the window with the specified name
-   .n                        (default: the current window)
-   .  $a                - close all open windows
-
-   KEYWORDS:
-   graphics, plot, window, close, remove
-
-   SEE ALSO:
-   'openwindow', 'openpicture', 'closepicture'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref closewindow. */
 static INT CloseWindowCommand (INT argc, char **argv)
 {
   UGWINDOW *theWin, *currWin;
@@ -7918,25 +7418,8 @@ static INT CloseWindowCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   setcurrwindow - set the current window
 
-   DESCRIPTION:
-   This command makes a window the current window.
-   It calls the function 'GetUGWindow'.
-
-   'setcurrwindow \<window name>'
-
-   .  \<window~name> - name of a window
-
-   KEYWORDS:
-   graphics, plot, window, current, active
-
-   SEE ALSO:
-   'openwindow'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref setcurrwindow. */
 static INT SetCurrentWindowCommand (INT argc, char **argv)
 {
   UGWINDOW *theWin;
@@ -7964,30 +7447,8 @@ static INT SetCurrentWindowCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   drawtext - draw text in a ug window
 
-   DESCRIPTION:
-   This command draws text into a ug window.
-
-   'drawtext \<xpos> \<ypos> \<text> [$w \<window name>] [$c] [$i]'
-
-   .  \<xpos>                 - x-coordinate in pixels (origin is the lower left corner)
-   .  \<ypos>                 - y-coordinate in pixels (origin is the lower left corner)
-   .  \<text>                 - text to draw
-   .  $w~\<window~name>       - draw text into this window (default: current window)
-   .  $i                     - draw text inverse
-   .  $c                     - center text at \<xpos> \<ypos>
-   .  $s~\<size>              - text size
-
-   KEYWORDS:
-   graphics, plot, window, text
-
-   SEE ALSO:
-   'openwindow'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref drawtext. */
 static INT DrawTextCommand (INT argc, char **argv)
 {
   UGWINDOW *theWin;
@@ -8066,31 +7527,8 @@ static INT DrawTextCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   openpicture - open a new picture
 
-   DESCRIPTION:
-   This command opens a picture on a window
-   (these will be the current window and picture resp. then).
-   It calls the function 'CreatePicture'.
-
-   'openpicture [$w \<window name>] [$s \<h> \<v> \<dh> \<dv>] [$n \<picture name>]'
-
-   .  $w~\<window~name>       - open a picture on this window (default: current window)
-   .  $s~\<h>~\<v>~\<dh>~\<dv>   - specify the location and size in the 'standardRefSys' with
-                                                        the origin located in the lower left corner of the parent window
-   .n                           (default: picture size = parent window size)
-
-   .  $n~\<picture~name>      - optionally you can specify the picture name
-
-   KEYWORDS:
-   graphics, plot, window, picture, open, create
-
-   SEE ALSO:
-   'openwindow', 'closepicture'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref openpicture. */
 static INT OpenPictureCommand (INT argc, char **argv)
 {
   UGWINDOW *theWin;
@@ -8186,24 +7624,8 @@ static INT OpenPictureCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   openppic - open a new window with placed pictures
 
-   DESCRIPTION:
-   ???
-
-   'openppic ??? [$R [0|1]]'
-
-   .  $R~[0|1]               - if not default device: 0: replace (default), 1: rename existing graphics file (using modification date)
-
-   KEYWORDS:
-   graphics, plot, window, picture, open, create
-
-   SEE ALSO:
-   'openwindow', 'closepicture'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref openppic. */
 static INT OpenPlacedPicturesCommand (INT argc, char **argv)
 {
   INT i,qopt,ropt,nPic,sopt,wopt,res,rename;
@@ -8353,28 +7775,8 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   closepicture - close a picture
 
-   DESCRIPTION:
-   This command closes one (or all) picture(s) on a window.
-   It calls the function 'DeletePicture'.
-
-   'closepicture [$a | {$w \<window name> {\<picture name> | $a}}]'
-
-   .  $w~\<window~name>        - close a picture of this window
-                                                                (default: the current picture)
-   .  $a                      - close all pictures of the current window
-   .  {\<picture~name>~|~$a}   - close the picture with the specified name or all pictures of that window
-
-   KEYWORDS:
-   graphics, plot, window, picture, close, remove
-
-   SEE ALSO:
-   'openwindow', 'openpicture'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref closepicture. */
 static INT ClosePictureCommand (INT argc, char **argv)
 {
   UGWINDOW *theWin;
@@ -8472,25 +7874,8 @@ static INT ClosePictureCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   setcurrpicture - make a picture the current picture
 
-   DESCRIPTION:
-   This command makes a picture the current picture.
-
-   'setcurrpicture \<picture name> [$w \<window name>]'
-
-   .  \<picture~name>         - name of the picture
-   .  $w~\<window~name>       - picture resides in this window (default: current window)
-
-   KEYWORDS:
-   graphics, plot, window, picture, current, active
-
-   SEE ALSO:
-   'openwindow', 'openpicture'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref setcurrpicture. */
 static INT SetCurrentPictureCommand (INT argc, char **argv)
 {
   UGWINDOW *theWin;
@@ -8556,23 +7941,8 @@ static INT SetCurrentPictureCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   picwin - move the current picture to a new window
 
-   DESCRIPTION:
-   This command moves the current picture to a newly created window. All
-   settings will be kept.
-
-   'picwin'
-
-   KEYWORDS:
-   graphics, plot, window, picture, move
-
-   SEE ALSO:
-   'openwindow', 'openpicture'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref picwin. */
 static INT PictureWindowCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
@@ -8596,23 +7966,8 @@ static INT PictureWindowCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   clearpicture - clear current picture
 
-   DESCRIPTION:
-   This command clears current picture.
-   It calls the function 'ErasePicture'.
-
-   'clearpicture'
-
-   KEYWORDS:
-   graphics, plot, window, picture, clear, erase
-
-   SEE ALSO:
-   'openwindow', 'openpicture'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref clearpicture. */
 static INT ClearPictureCommand (INT argc, char **argv)
 {
   PICTURE *thePicture;
@@ -8639,26 +7994,8 @@ static INT ClearPictureCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   picframe - toggle framing of pictures
 
-   DESCRIPTION:
-   This command toggles the framing of pictures. If on a black frame is drawn
-   around each picture to show its bounds. The current picture is indicated
-   by an orange frame, while the frame of a currently drawn picture turns red.
-   It is recommended to switch off framing for other devices than 'screen'.
-
-   SYMTAX:
-   'picframe 0|1'
-
-   KEYWORDS:
-   graphics, plot, window, picture, frame
-
-   SEE ALSO:
-   'openwindow'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref picframe. */
 static INT PicFrameCommand (INT argc, char **argv)
 {
         #ifdef ModelP
@@ -8675,54 +8012,8 @@ static INT PicFrameCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   setview - specifies the view on the object
 
-   DESCRIPTION:
-   This command specifies or changes the observer view of the object
-   of the current picture.
-   It calls the function 'SetView'.
-
-    in 2D:~
-   .vb
-   setview [$i] [$t \<x> \<y>] [$x  \<x> \<y>]
-   .ve
-
-    in 3D:~
-   .vb
-   setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< | =]
-              {$C | $R | {$P \<x> \<y> \<z> $N \<x> \<y> \<z>}}
-   .ve
-
-   .n                         all coordinates have to be given in physical coordinates
-
-   .   $i                     - return to default settings first
-   .   $o \<x> \<y> \<z>         - 3D objects ONLY: specify the observer stand
-   .   $p \< | =               - 3D objects ONLY: choose central (\<) or parallel (=) perspective
-   .   $t \<x> \<y> [\<z>]       - specify the target point in the viewplane
-   .n	                         (NB: the viewplane is then defined to be normal to the line observer-target)
-
-   .   $x \<x> \<y> [\<z>]       - define an x-axis in the viewplane (which will be to the right in the picture)
-
-
-   Some 3D plot objects allow to define a cut. It can be set and manipulated using the
-   following options:~
-
-   .   $C                     - define a default cut facing to x-direction and cutting the objects midpoint
-   .   $P~\<x>~\<y>~\<z>         - a point on the cut plane
-   .   $N~\<x>~\<y>~\<z>         - the normal of the cut plane
-   .   $R					   - remove cut
-
-   For first definition of cut specify either C-option or both P- and N-option.
-
-   KEYWORDS:
-   graphics, plot, window, picture, view, cutting plane
-
-   SEE ALSO:
-   'vdisplay'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref setview. */
 static INT SetViewCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
@@ -8920,27 +8211,8 @@ static INT SetViewCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   vdisplay - display view of current picture
 
-   DESCRIPTION:
-   This command displays view of current picture.
-   It calls the function 'DisplayViewOfDisplayedObject'.
-
-   'vdisplay [$s]'
-
-   .   $s		- print settings in 'setview'-command style. This is especially
-                                useful after interactive zoom and pan. Pasting the output into
-                                a script file will reproduce the current view of the picture.
-
-   KEYWORDS:
-   graphics, plot, window, picture, view, cutting plane, display, show, print
-
-   SEE ALSO:
-   'setview'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref vdisplay. */
 static INT DisplayViewCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
@@ -8984,26 +8256,9 @@ static INT DisplayViewCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-/****************************************************************************/
-/** \page   cpview - copy view settings of current picture to other ones
 
-   DESCRIPTION:
-   This command copies the view settings of current picture to all other pictures of
-   the same window (default) or all windows provided that they belong to the
-   same MG and they have the same dimension.
 
-   'cpview [$a] [$c]'
-   .  a - set views of all pictures in all windows
-   .  c - set also cut (if defined for plot object)
-
-   KEYWORDS:
-   graphics, plot, window, picture, view, cutting plane, copy
-
-   SEE ALSO:
-   'setview', 'arrowtool'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref cpview. */
 static INT CopyViewCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
@@ -9044,25 +8299,8 @@ static INT CopyViewCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   walk - let the observer walk relative to the viewRefSys
 
-   DESCRIPTION:
-   This command lets the observer walk relative to the 'viewRefSys'
-   in the current picture. It calls the function 'walk'.
-
-   'walk \<x> \<y> [\<z>]'
-
-   .   \<x>~\<y>~[\<z>] - coordinates
-
-   KEYWORDS:
-   graphics, plot, window, picture, view, observer, move
-
-   SEE ALSO:
-   'arrowtool'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref walk. */
 static INT WalkCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
@@ -9107,42 +8345,15 @@ static INT WalkCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   walkaround - let the observer walk on a sphere around the target point
-
-   DESCRIPTION:
-   This command lets the observer walk on a sphere around the target point.
-   It calls the function 'RunAroundTargetPoint'.
-
-   'walkaround \<viewplane angle> \<rotation angle>'
-
-   .  \<viewplane~angle>      - this angle runs in the view plane math pos from the x-axis and defines
-   .n                        - together with the target-observer direction a plane
-
-   .  \<rotation~angle>       - the observer will be rotated around the target point in the above plane
-
-   (angles in degree 0 - 360)
-
-   KEYWORDS:
-   graphics, plot, window, picture, view, observer, move, rotate
-
-   SEE ALSO:
-   'arrowtool'
-   D*/
-/****************************************************************************/
 
 /****************************************************************************/
-/*
+/** \brief Implementation of \ref walkaround
+
    WalkAroundCommand - let the observer walk on a sphere around the target point
 
-   SYNOPSIS:
-   static INT WalkAroundCommand (INT argc, char **argv);
+ * @param argc - number of arguments (incl. its own name)
+ * @param argv - array of strings giving the arguments
 
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
    This function lets the observer walk on a sphere around
    the target point in the current picture. (3D ONLY)
    It lets the observer walk on a sphere around the target point in the current picture.
@@ -9155,9 +8366,9 @@ static INT WalkCommand (INT argc, char **argv)
    .  \<rotation~angle>       - the observer will be rotated around the target point in the above plane
 
    RETURN VALUE:
-   INT
    .n    0 if ok
    .n    1 if error occured.
+
  */
 /****************************************************************************/
 
@@ -9210,28 +8421,7 @@ static INT WalkAroundCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page zoomCommand zoom
- *
-   zoom - zoom the current picture
-
-   DESCRIPTION:
-   This command zooms the current picture.
-   the zoom factor is always relative to the current setting.
-   It calls the function 'Zoom'.
-
-   'zoom \<factor>'
-
-   .  \<factor>  - values \< 1 magnify picture
-
-   KEYWORDS:
-   graphics, plot, window, picture, view, zoom, magnify
-
-   SEE ALSO:
-   'arrowtool'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref zoom. */
 static INT ZoomCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
@@ -9268,26 +8458,8 @@ static INT ZoomCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   drag - drag the projection plane of the current picture
 
-   DESCRIPTION:
-   This command drags the projection plane of the current picture relative
-   to its x-axis.
-   It calls the function 'DragProjectionPlane'.
-
-   'drag \<dx> \<dy>'
-
-   .  \<dx>~\<dy>  - displacement vector
-
-   KEYWORDS:
-   graphics, plot, window, picture, view, observer, pan, move
-
-   SEE ALSO:
-   'arrowtool'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref drag. */
 static INT DragCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
@@ -9324,26 +8496,8 @@ static INT DragCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   rotate - rotate the projection plane of the current picture
 
-   DESCRIPTION:
-   This command rotates the projection plane of the current picture around
-   the target point.
-   It calls the function 'RotateProjectionPlane'.
-
-   'rotate \<angle>'
-
-   .  \<angle>  - \<angle> runs in the view plane math pos from the x-axis
-
-   KEYWORDS:
-   graphics, plot, window, picture, view, observer, rotate
-
-   SEE ALSO:
-   'arrowtool'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref rotate. */
 static INT RotateCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
@@ -9393,20 +8547,8 @@ static INT RotateCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   textfac - set factor to zoom text sizes
 
-   DESCRIPTION:
-   This command sets factor to zoom text sizes (default 1).
-
-   SYMTAX:
-   'textfac \<factor>'
-
-   KEYWORDS:
-   graphics, plot, window, picture, view, textsize
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref textfac. */
 static INT TextFacCommand (INT argc, char **argv)
 {
   double Value;
@@ -9430,20 +8572,8 @@ static INT TextFacCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   linefac - set factor to zoom line width
 
-   DESCRIPTION:
-   This command sets factor to zoom line width (default 1).
-
-   SYMTAX:
-   'linefac \<factor>'
-
-   KEYWORDS:
-   graphics, plot, window, picture, view, linewidth
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref linefac. */
 static INT LineFacCommand (INT argc, char **argv)
 {
   double Value;
@@ -9467,59 +8597,9 @@ static INT LineFacCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   setplotobject - set plotting specification
-
-   DESCRIPTION:
-   This command specifies the object which will be plotted in the current
-   picture and associates the current multigrid with it (if not done yet).
-   It calls the function 'SpecifyPlotObjOfViewedObject'.
-
-   'setplotobject [\<object type name>] [$a] ... '
-
-   .    \<object~type~name>   - possible are:
-   .n								2 and 3D:~
-   .n								'Matrix'
-
-   .n								2 and 3D (with possibly different options):~
-   .n								'Grid',			for help see 'Grid2D', 'Grid3D'
-   .n								'EScalar',		for help see 'EScalar2D', 'EScalar3D'
-   .n								'EVector'		for help see 'EVector2D', 'EVector3D'
-   .n								'VecMat'		for help see 'VecMat2D', 'VecMat3D'
-
-   .n								2D only:~
-   .n								'line'
-
-   .    $a					  - (for 3d plot objects) moves the observer to a place outside
-                                    the bounding sphere of the plot object
 
 
-   The remaining options depend on which object you specified.
-   See the help for one of the abobe plotobjects for further help.
-
-   EXAMPLE:
-   .vb
-   openpicture $n p0 $s 5 5  300 300;
-   setplotobject Grid $b 1 $n 0 $e 0 $c 1 $w a;
-   setview;
-   zoom 0.75;
-
-   openpicture $n p1 $s 5 310 300 300;
-   setplotobject EScalar $e u_sol $d 1;
-   setview;
-   zoom 0.75;
-
-   openpicture $n p2 $s 5 615 300 300;
-   setplotobject EScalar $e v_sol $d 1;
-   .ve
-
-   KEYWORDS:
-   graphics, plot, window, picture, view, plotobject
-
-   SEE ALSO:
-   Matrix, Grid, EScalar, EVector, VecMat, line
-   D*/
-
+/** \brief Implementation of \ref setplotobject. */
 static INT SetPlotObjectCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
@@ -9578,23 +8658,8 @@ static INT SetPlotObjectCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   polist - print the specifications of the object
 
-   DESCRIPTION:
-   This command prints the specifications of the object defined in the
-   current picture. It calls the function 'DisplayObject'.
-
-   'polist'
-
-   KEYWORDS:
-   graphics, plot, window, picture, plotobject, list, show, print, display
-
-   SEE ALSO:
-   'setplotobject'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref polist. */
 static INT PlotObjectListCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
@@ -9622,25 +8687,8 @@ static INT PlotObjectListCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   plot - plot an object
 
-   DESCRIPTION:
-   This command plots the object of the current picture according to
-   its specifications.
-   It calls the function 'WorkOnPicture'.
-
-   'plot [$o [0|1|2]] [$b [\<factor>]] [$a]'
-
-   .   $o	- ordering strategy (only used for 3D hidden surface)
-   .   $b  - use bullet plotter
-   .   $a  - plot all pictures in all windows
-
-   KEYWORDS:
-   graphics, plot, window, picture, plotobject, draw
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref plot. */
 static INT PlotCommand (INT argc, char **argv)
 {
   UGWINDOW *theUgW;
@@ -9750,29 +8798,8 @@ static INT PlotCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   findrange - find the range of values to be plotted
 
-   DESCRIPTION:
-   This command computes the range of  values to be plotted for the object
-   in the current picture. The result will be printed and
-   stored into :findrange:min and :findrange:max.
-   It calls the function 'WorkOnPicture'.
-
-   'findrange [$z \<zoom factor>] [$s] [$p]'
-
-   .  $z~\<zoom factor>       - zoom the range by this factor
-   .  $s                     - symmetrize the range (min=max)
-   .  $p                     - store range in plot object
-
-   KEYWORDS:
-   graphics, plot, window, picture, plotobject, range, values
-
-   SEE ALSO:
-   'plot'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref findrange. */
 static INT FindRangeCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
@@ -9871,24 +8898,8 @@ static INT FindRangeCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   setcurrmg - change the current multigrid
 
-   DESCRIPTION:
-   This command sets the current multigrid.
-
-   'setcurrmg \<mgname>'
-
-   .  \<mgname>  - name of the open multigrid which will be made the current one
-
-   KEYWORDS:
-   multigrid, current, active
-
-   SEE ALSO:
-   'open', 'new'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref setcurrmg. */
 static INT SetCurrentMultigridCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -9917,21 +8928,8 @@ static INT SetCurrentMultigridCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-/****************************************************************************/
-/** \page   updateDoc - reset the windows and pictures of the current multigrid to invalid
 
-   DESCRIPTION:
-   This command runs 'InvalidatePicturesOfMG' and
-   'InvalidateUgWindowsOfMG'.
-   If the refresh state is on, the pictures will be replotted.
-
-   'updateDoc'
-
-   KEYWORDS:
-   graphics, plot, window, picture, plotobject, invalidate
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref updateDoc. */
 static INT UpdateDocumentCommand (INT argc, char **argv)
 {
         #ifdef ModelP
@@ -9946,24 +8944,8 @@ static INT UpdateDocumentCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   rotmode - rotation mode for 3D pictures (arrow tool)
 
-   DESCRIPTION:
-   This command toggles the rotation mode for 3D plot objects between
-   Euler angle mode and Virtual Sphere. Just try both to find the most
-   convenient one.
-
-   'rotmode E[uler] | S[phere]'
-
-   KEYWORDS:
-   graphics, plot, window, picture, plotobject, arrowtool
-
-   SEE ALSO:
-   arrowtool
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref rotmode. */
 static INT RotModeCommand (INT argc, char **argv)
 {
   INT mode;
@@ -9985,20 +8967,8 @@ static INT RotModeCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   setpalette - switch palette of default device
 
-   DESCRIPTION:
-   This command switches the palette of the default device.
-
-   'setpalette c|bw|g [$d \<device>]'
-   .  $d~\<device>     - specify the name of an output device (default: screen)
-
-   KEYWORDS:
-   graphics, plot, window, picture, device
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref setpalette. */
 static INT SetPaletteCommand (INT argc, char **argv)
 {
   OUTPUTDEVICE *theOutDev;
@@ -10050,28 +9020,8 @@ static INT SetPaletteCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   clear - assign a value to a symbolic vector
 
-   DESCRIPTION:
-   This function sets the values of a grid function specified by a vec data descriptor.
-   The data descriptor is created if it does not exist yet.
-   It clears or assigns a constant value.
-
-   'clear \<symbol name> [$a] [$u] [$v \<value>] [$x] [$y] [$z]'
-
-   .  $a         - from level 0 through current level (default: current level only)
-   .  $s         - do not change skip (Dirichlet) values
-   .  $v~\<value> - assign this value (instead of 0.0)
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, clear, set
-
-   SEE ALSO:
-   'cv', 'cm', 'copy'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref clear. */
 static INT ClearCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -10191,22 +9141,8 @@ static INT ClearCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   makevdsub - make a sub descriptor for a vector descriptor
 
-   DESCRIPTION:
-   This function makes a sub descriptor for a vector descriptor.
-
-   'makevdsub \<vd> $sub \<vt> \<sub>'
-
-   .  \<vd>				- existing descriptor
-   .  $sub~\<vt>~\<sub>	- template and name of sub of this template
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, descriptor
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref makevdsub. */
 static INT MakeVDsubCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -10239,25 +9175,8 @@ static INT MakeVDsubCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   mflops - floating point speed meassuring
 
-   DESCRIPTION:
-   This function tests the performance of the UG specific blas routines.
-
-   'mflops $x \<vec> [$y \<tmp>] [$A \<mat>] [$l \<loop>]'
-
-   .  $x~\<vec>   - vector
-   .  $y~\<tmp>   - second vector
-   .  $A~\<mat>   - matrix
-   .  $l~\<loop>  - loop number
-
-   REMARK:
-   Due to the inaccuracy of the most UNIX clock systems take a huge loop number
-   to get an good average.
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref mflops. */
 static INT MFLOPSCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -10346,28 +9265,8 @@ static INT MFLOPSCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   rand - assign a value to a symbolic vector
 
-   DESCRIPTION:
-   This function sets the random values of a grid function specified by a vec data descriptor.
-   The data descriptor is created if it does not exist yet.
-
-   'rand \<symbol name> [$a] [$s] [$f \<value>] [$t \<value>]'
-
-   .  $a         - from level 0 through current level (default: current level only)
-   .  $s         - set skip (Dirichlet) values to zero, default is no skip
-   .  $f~\<value> - low bound of random range, default is 0
-   .  $t~\<value> - upper bound of random range, default is 1
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, clear, set
-
-   SEE ALSO:
-   'cv', 'cm', 'copy'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref rand. */
 static INT RandCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -10438,30 +9337,8 @@ static INT RandCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   copy - copy from one vector symbol to another one
 
-   DESCRIPTION:
-   This command copies from one vector symbol to another one.
-   The data descriptor is created if it does not exist yet.
-
-   'copy $f \<from vec sym> $t \<to vec sym> [$a]'
-
-   .  $f~\<from~vec~sym>      - from vector symbol
-   .  $t~\<from~vec~sym>      - to vector symbol
-   .  $a                     - all levels
-
-   EXAMPLE:
-   'copy $f sol $t old;'
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, copy, set
-
-   SEE ALSO:
-   'cv', 'cm', 'clear'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref copy. */
 static INT CopyCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -10501,31 +9378,8 @@ static INT CopyCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page addCommand Add Command
- *
-   add - add two vector symbols
 
-   DESCRIPTION:
-   This command adds two vectors (x = x + y).
-
-   'add $x \<vec sym> $y \<vec sym> [$a]'
-
-   .  $x~\<vec~sym>      - vector symbol
-   .  $y~\<vec~sym>      - vector symbol
-   .  $a                - all levels
-
-   EXAMPLE:
-   'add $x sol $y old;'
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, copy, set
-
-   SEE ALSO:
-   'cv', 'cm', 'clear', 'sub'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref add. */
 static INT AddCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -10564,29 +9418,8 @@ static INT AddCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   sub - subtract two vector symbols
 
-   DESCRIPTION:
-   This command subtracts two vectors (x = x - y).
-
-   'sub $x \<vec sym> $y \<vec sym> [$a]'
-
-   .  $x~\<vec~sym>      - vector symbol
-   .  $y~\<vec~sym>      - vector symbol
-   .  $a                - all levels
-
-   EXAMPLE:
-   'sub $x sol $y old;'
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, copy, set
-
-   SEE ALSO:
-   'cv', 'cm', 'clear', 'add'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref sub. */
 static INT SubCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -10625,31 +9458,8 @@ static INT SubCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   homotopy - convex combination of two vector symbols
 
-   DESCRIPTION:
-
-   This command sets 'x := (1-v)*x + v*y'.
-
-   'homotopy $v \<val> $x \<x vec sym> $y \<y vec sym> [$a]'
-
-   .  $v~\<val>               - value
-   .  $x~\<x~vec~sym>         - vector symbol
-   .  $y~\<y~vec~sym>         - vector symbol
-   .  $a                     - all levels
-
-   EXAMPLE:
-   'homotopy $v 0.5 $x sol $y old;'
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, weighted sum, interpolate
-
-   SEE ALSO:
-   'cv', 'cm', 'copy', 'clear'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref homotopy. */
 static INT HomotopyCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -10707,27 +9517,8 @@ static INT HomotopyCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   interpolate - (standard) interpolate a vector symbol to new vectors on the current level
 
-   DESCRIPTION:
-   The data descriptor is created if it does not exist yet.
-
-   'interpolate \<vec sym>'
-
-   . \<vec~sym>  - vector symbol to be interpolated
-
-   EXAMPLE:
-   'interpolate sol;'
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, interpolate, prolongate
-
-   SEE ALSO:
-   'clear', 'cv'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref interpolate. */
 static INT InterpolateCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -10758,23 +9549,8 @@ static INT InterpolateCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   reinit - reinitialize a boundary value problem
 
-   DESCRIPTION:
-   This command reinitializes the problem with the user defined reinit of the
-   problem. All arguments are passed to the reinit function
-
-   'reinit [$b \<boundary value problem>] ...'
-
-   .  $b~\<boundary~value~problem> - problem to initialize
-                                                             (default is the problem of the current mg)
-
-   KEYWORDS:
-   multigrid, boundary value problem, configure, change
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref reinit. */
 static INT ReInitCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -10834,6 +9610,7 @@ static INT ReInitCommand (INT argc, char **argv)
 
 /* see formats.c for the man page */
 
+/** \brief Implementation of \ref newformat. */
 static INT CreateFormatCommand (INT argc, char **argv)
 {
   INT err;
@@ -10849,21 +9626,8 @@ static INT CreateFormatCommand (INT argc, char **argv)
   }
 }
 
-/****************************************************************************/
-/** \page   delformat - delete a previously enroled format
 
-   DESCRIPTION:
-   This command deletes a previously enroled format.
-
-   'delformat \<format name>'
-
-   .  \<format~name> - name of the fomat
-
-   KEYWORDS:
-   storage, format
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref delformat. */
 static INT DeleteFormatCommand (INT argc, char **argv)
 {
   INT err;
@@ -10886,48 +9650,8 @@ static INT DeleteFormatCommand (INT argc, char **argv)
   }
 }
 
-/****************************************************************************/
-/** \page	setpf -  command to change current settings of the data
-                                        listing functions of a format
 
-        SYNTAX:
-        setpf \<format_name> [$V{0 | {+|-} {\<vecsym_name>}+}]+ [$M{0 | {+|-} {\<matsym_name>}+}]+
-
-        DESCRIPTION:
-        For a format previously enroled by use of the 'newformat' command the 'setpf'
-        command specifies the symbols that are displayed when 'vmlist' is called with
-        '$d' (list vector data) or '$d $m' (list vector and matrix data).
-        '0' clears the list of symbols, '+' adds further symbols, and '-'
-        removes symbols from that list.
-
-        EXAMPLE:
-   .vb
-        newformat ns $V n3: vt 5 $M n3xn3: mt 2;
-
-        open grid $f ns $h 1000000;
-
-        clear sol;		# creates sol vec data desc from vt template
-
- # suppose rhs, MAT, LU data descriptors have been created by the initialization of
- # the discretization and solver
-
- # print sol, rhs vector data and MAT, LU matrix data of vector with index 10
-        setpf ns $V0 $M0 $V+ sol rhs $M+ MAT LU;
-        vmlist $i 10 $m $d;
-
- # print sol vector data and MAT matrix data of vector with index 12
-        setpf ns $V- rhs $M- LU;
-        vmlist $i 12 $m $d;
-   .ve
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, matdata, print, show, display
-
-        SEE ALSO:
-        'showpf'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref setpf. */
 static INT SetPrintingFormatCommand (INT argc, char **argv)
 {
   INT err;
@@ -10950,23 +9674,8 @@ static INT SetPrintingFormatCommand (INT argc, char **argv)
   }
 }
 
-/****************************************************************************/
-/** \page	showpf - command to display current settings of data
-                                        listing functions
 
-        DESCRIPTION:
-        This command shows which user data will bbe listed by vml $d $m...
-
-        'showpf'
-
-    KEYWORDS:
-    multigrid, numerics, userdata, vecdata, matdata, print, show, display
-
-        SEE ALSO:
-        setpf
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref showpf. */
 static INT ShowPrintingFormatCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
@@ -10977,23 +9686,14 @@ static INT ShowPrintingFormatCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/** \brief
-   GetCurrentNumProc - return a pointer to the current numproc
+/** \brief Return a pointer to the current numproc
 
-   SYNOPSIS:
-   static NUM_PROC *GetCurrentNumProc (void);
-
-   PARAMETERS:
-   .  void -
-
-   DESCRIPTION:
    This function returns a pointer to the current numproc.
 
    RETURN VALUE:
-   NUM_PROC *
    .n      pointer to numproc
    .n      NULL if there is no current numproc.
-   D*/
+ */
 /****************************************************************************/
 
 static NP_BASE *GetCurrentNumProc (void)
@@ -11002,24 +9702,18 @@ static NP_BASE *GetCurrentNumProc (void)
 }
 
 /****************************************************************************/
-/** \page   SetCurrentNumProc -	Set the current NumProc if it is valid
+/** \brief Set the current NumProc if it is valid
+ *
+ * @param theNumProc - pointer to multigrid
 
-   SYNOPSIS:
-   static INT SetCurrentNumProc (NUM_PROC *theNumProc);
-
-   PARAMETERS:
-   .  theNumProc - pointer to multigrid
-
-   DESCRIPTION:
    This function sets the current NumProc if it is valid, i. e.
    the function checks whether 'theNumProc' acually points to a numproc.
    It can be NULL only if no numproc is defined.
 
-   RETURN VALUE:
-   INT
+ * @return <ul>
    .n    0 if ok
    .n    1 if theNumProc is not in the numproc list
-   D*/
+ */
 /****************************************************************************/
 
 static INT SetCurrentNumProc (NP_BASE *theNumProc)
@@ -11028,25 +9722,8 @@ static INT SetCurrentNumProc (NP_BASE *theNumProc)
   return (0);
 }
 
-/****************************************************************************/
-/** \page   npexecute - execute a NumProc
 
-   DESCRIPTION:
-   This command executes a NumProc.
-   It calls the function 'ExecuteNumProc'.
-
-   'npexecute [\<num proc name>] \<argument list to be passed>'
-
-   .  \<num~proc~name> - name of an existing NumProc
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, matdata, numproc, execute
-
-   SEE ALSO
-   'numerics', 'NUM_PROC'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref npexecute. */
 static INT ExecuteNumProcCommand (INT argc, char **argv)
 {
   char theNumProcName[NAMESIZE];
@@ -11096,27 +9773,8 @@ static INT ExecuteNumProcCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-/****************************************************************************/
-/** \page   npdisplay - display a NumProc
 
-   DESCRIPTION:
-   This command displays a NumProc.
-   It calls the function 'DisplayNumProc'.
-
-   'npdisplay [\<num proc name>] [$c [\<class>] | $a]'
-
-   .  \<num~proc~name> - name of an existing NumProc (default is the current NumProc)
-   .  $c~[\<class>]    - list all num procs of \<class> or list classes if \<class> omitted
-   .  $a              - list all num procs
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, matdata, numproc, display, show, print
-
-   SEE ALSO:
-   'npcreate', 'npexecute'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref npdisplay. */
 static INT NumProcDisplayCommand (INT argc, char **argv)
 {
   NP_BASE *theNumProc;
@@ -11203,26 +9861,8 @@ static INT NumProcDisplayCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-/****************************************************************************/
-/** \page   npcreate - creating a NumProc
 
-   DESCRIPTION:
-   This command creates a NumProc for the current multigrid with a given constructor.
-   It calls the function 'CreateNumProc'.
-
-   'npcreate \<num proc name> $c \<constructor>'
-
-   .  \<num~proc~name>          - name of the new NumProc
-   .  $c~\<num~proc~type>	- name of an existing constructor
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, matdata, numproc, create, install
-
-   SEE ALSO:
-   'npdisplay', 'npexecute', 'NUM_PROC'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref npcreate. */
 static INT NumProcCreateCommand (INT argc, char **argv)
 {
   char theNumProcName[NAMESIZE];
@@ -11266,23 +9906,8 @@ static INT NumProcCreateCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-/****************************************************************************/
-/** \page   npinit - inizialize a NumProc
 
-   DESCRIPTION:
-   This command inizializes a NumProc.
-   It calls the function 'SetNumProc'.
-
-   'npinit \<argument list to be passed>'
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, matdata, numproc, initialize, parameters, configure
-
-   SEE ALSO:
-   'npcreate', 'npdisplay', 'numerics', 'NUM_PROC'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref npinit. */
 static INT NumProcInitCommand (INT argc, char **argv)
 {
   char theNumProcName[NAMESIZE];
@@ -11338,26 +9963,8 @@ static INT NumProcInitCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-/****************************************************************************/
-/** \page   scnp - make a NumProc the current NumProc
 
-   DESCRIPTION:
-   This command makes a NumProc the current NumProc.
-   It sets current num proc.
-   It calls the function 'GetNumProcFromName'.
-
-   'scnp \<num proc name>'
-
-   . \<num~proc~name> - name of an existing NumProc
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, matdata, numproc, active, current
-
-   SEE ALSO:
-   'npcreate', 'npdisplay', 'numerics', 'NUM_PROC'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref scnp. */
 static INT SetCurrentNumProcCommand (INT argc, char **argv)
 {
   NP_BASE *theNumProc;
@@ -11391,27 +9998,8 @@ static INT SetCurrentNumProcCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-/****************************************************************************/
-/** \page   createvector - construct vector descriptors
 
-   DESCRIPTION:
-   This function creates vector descriptors using templates defined
-   in the format.
-
-   'createvector \<v1> [\<v2> ...] [$t \<template>] [$m \<name>]'
-
-   .  v1                - vector name
-   .  template - template name (default is the first vector template)
-   .  name      - multigrid name (default is the current multigrid)
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, create
-
-   SEE ALS0:
-   'newformat', 'creatematrix'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref createvector. */
 static INT CreateVecDescCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -11431,27 +10019,8 @@ static INT CreateVecDescCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   creatematrix - construct matrix
 
-   DESCRIPTION:
-   This function creates matrix descriptors using templates defined
-   in the format.
-
-   'creatematrix \<M1> [\<M2> ...] [$t \<template>] [$m \<name>]'
-
-   .  M1                - matrix name
-   .  template - template name (default is the first matrix template)
-   .  name      - multigrid name (default is the current multigrid)
-
-   KEYWORDS:
-   multigrid, numerics, userdata, matdata, create
-
-   SEE ALS0:
-   'newformat', 'createvector'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref creatematrix. */
 static INT CreateMatDescCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -11471,25 +10040,8 @@ static INT CreateMatDescCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   freematrix - free matrix
 
-   DESCRIPTION:
-   This function frees matrix descriptors.
-
-   'freematrix \<M1> [\<M2> ...] [$m \<name>]'
-
-   .  M1                - matrix name
-   .  name      - multigrid name (default is the current multigrid)
-
-   KEYWORDS:
-   multigrid, numerics, userdata, matdata, create
-
-   SEE ALS0:
-   'newformat', 'creatematrix'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref freematrix. */
 static INT FreeMatDescCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -11509,32 +10061,8 @@ static INT FreeMatDescCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   symlist - list contents of vector and matrix symbols
 
-   DESCRIPTION:
-   This command lists the contents of vector and matrix data descriptors of the
-   current multigrid
-
-   'symlist {$V [\<vd>] | $M [\<md>]  [$alloc] [$scal]}'
-
-        Specify either option V or M with or without:~
-   .  \<vd> - name of a vec data desc, if omitted ALL vec data descs of the current
-                        multigrid are listed
-   .  \<md> - name of a mat data desc, if omitted ALL mat data descs of the current
-                        multigrid are listed
-
-   .  \<alloc> - is descriptor allocated and/or locked
-   .  \<scal> - is descriptor scalar or not
-
-   KEYWORDS:
-   multigrid, numerics, userdata, vecdata, matdata, list, show, display, print
-
-   SEE ALSO:
-   'newformat', 'createvector', 'creatematrix'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref symlist. */
 static INT SymListCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -11606,42 +10134,8 @@ static INT SymListCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   setkey - associate a command key with a ug command
 
-   DESCRIPTION:
-   This command associates a command key with a ug command.
-   It calls the function 'SetCmdKey'.
-
-   'setkey $\<command char> [$c \<comment text>] [$-] $"\<command sequence>"*'
-
-   .  $k~\<command~char>      - specifiy a single character which will be the command key
-   .  $c~\<coment~text>       - will be displayed by keylist rather than command(s)
-   .  $-                     - keylist prints a hor bar befor this key
-   .  $"\<command~sequence>"  - give an arbitrary sequence of statements which is to be executed when the command key is pressed
-
-   EXAMPLE:
-   'setkey $r $"mark $a" $"refine";'
-
-   Typing \<alt> and then 'r' refines all elements on a UNIX system,
-   \<cmd>+\<r> on a Macintosh.
-
-   NOTICE:
-   When the command sequence contains a \@ character, the following token is interpreted
-   as string variable and expanded as usual instantaneously when the command key is created.
-   If the sequence contains a ? instead of the \@, the string variable will be expanded with its current
-   contents at execution time of the command sequence.
-
-   The special character ? is limited however to the 'setkey' command.
-
-   KEYWORDS:
-   shortcut, hotkey, create, define
-
-   SEE ALSO:
-   'setkey', 'delkey'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref setkey. */
 static INT SetCommandKeyCommand (INT argc, char **argv)
 {
   INT opt,begin,i,j,odd,ShowBar;
@@ -11727,26 +10221,8 @@ static INT SetCommandKeyCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-/****************************************************************************/
-/** \page   delkey - delete an existing command key
 
-   DESCRIPTION:
-   This command deletes an existing command key.
-   It calls the function 'DelCmdKey'.
-
-   'delkey $all | $\<command char>'
-
-   .  $all                   - delete all command keys allocated before
-   .  $\<command~char>        - delete only the command key associated with \<command char>
-
-   KEYWORDS:
-   shortcut, hotkey, remove, undefine
-
-   SEE ALSO:
-   'setkey', 'delkey'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref delkey. */
 static INT DeleteCommandKeyCommand (INT argc, char **argv)
 {
   /* check input */
@@ -11777,25 +10253,8 @@ static INT DeleteCommandKeyCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   keylist - list all existing command keys
 
-   DESCRIPTION:
-   This command lists all existing command keys.
-   It calls the function 'ListCmdKeys'.
-
-   'keylist [$l]'
-
-   .  $l - show commands and comment (iff)
-
-   KEYWORDS:
-   shortcut, hotkey, list, show, display, print
-
-   SEE ALSO:
-   'setkey', 'delkey'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref keylist. */
 static INT ListCommandKeysCommand (INT argc, char **argv)
 {
   if (argc>2)
@@ -11815,25 +10274,8 @@ static INT ListCommandKeysCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   refreshon - sets the refresh state on
 
-   DESCRIPTION:
-   This command sets the refresh state on: The pictures on the screen
-   device will be updated instantaneously.
-
-   'refreshon [$b [factor]]'
-
-   .  $b - use bullet plotter for refresh
-
-   KEYWORDS:
-   graphics, plot, window, picture, plotobject, invalid, update
-
-    SEE ALSO:
-        'refreshoff', 'InvalidatePicturesOfMG', 'InvalidateUgWindowsOfMG'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref refreshon. */
 static INT RefreshOnCommand (INT argc, char **argv)
 {
   DOUBLE factor = 1.0;
@@ -11848,22 +10290,8 @@ static INT RefreshOnCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-/****************************************************************************/
-/** \page   refreshoff - sets the refresh state off
 
-   DESCRIPTION:
-   This command sets the refresh state off.
-
-   'refreshoff'
-
-   KEYWORDS:
-   graphics, plot, window, picture, plotobject, invalid, update
-
-   SEE ALSO:
-   'refreshon'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref refreshoff. */
 static INT RefreshOffCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
@@ -11873,21 +10301,14 @@ static INT RefreshOffCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*
-   MachineTestCommand - perform a machine test
+/** \brief Implementation of \ref ???
 
-   SYNOPSIS:
-   static INT MachineTestCommand (INT argc, char **argv);
-
-   PARAMETERS:
    .  argc - number of arguments (incl. its own name)
    .  argv - array of strings giving the arguments
 
-   DESCRIPTION:
    This function tests interesting machine parameters.
 
    RETURN VALUE:
-   INT
    .n    0 if ok
    .n    1 if error occured.
  */
@@ -11910,17 +10331,13 @@ static INT MachineTestCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*
+/** \brief Implementation of \ref system
+
    SystemCommand - calls system routine
 
-   SYNOPSIS:
-   static INT SystemCommand (INT argc, char **argv);
-
-   PARAMETERS:
    .  argc - number of arguments (incl. its own name)
    .  argv - array of strings giving the arguments
 
-   DESCRIPTION:
    This function calls a system routine.
 
    'system \<system~command>'
@@ -11929,7 +10346,7 @@ static INT MachineTestCommand (INT argc, char **argv)
 
    KEYWORDS:
    system, cshell, UNIX
-   D*/
+ */
 /****************************************************************************/
 
 static INT SystemCommand (INT argc, char **argv)
@@ -11947,22 +10364,8 @@ static INT SystemCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   resetCEstat - reset counters of control entry usage
 
-   DESCRIPTION:
-   This command resets the counters of control entry usage.
-
-   'resetCEstat'
-
-   KEYWORDS:
-   control entries
-
-   SEE ALSO:
-   'printCEstat'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref resetCEstat. */
 static INT ResetCEstatCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
@@ -11972,22 +10375,8 @@ static INT ResetCEstatCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   printCEstat - print counters of control entry usage
 
-   DESCRIPTION:
-   This command prints the counters of control entry usage.
-
-   'printCEstat'
-
-   KEYWORDS:
-   control entries
-
-   SEE ALSO:
-   'resetCEstat'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref printCEstat. */
 static INT PrintCEstatCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
@@ -11997,20 +10386,8 @@ static INT PrintCEstatCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   heapstat - list information about heap of current multigrid
 
-   DESCRIPTION:
-   This command lists information on the heap of the current multigrid, calling
-   the function 'HeapStat'.
-
-   'heapstat'
-
-   KEYWORDS:
-   heap, multigrid, freelists
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref heapstat. */
 static INT HeapStatCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -12037,20 +10414,9 @@ static INT HeapStatCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   getheapused - put size of used heap of current multigrid into environment variabl :HEAPUSED
 
-   DESCRIPTION:
-   This command gets the size of used heap of the current multigrid and puts
-   the result in the environment variable :HEAPUSED.
 
-   'getheapused'
-
-   KEYWORDS:
-   heap, multigrid, freelists, memory, used, get, free
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref getheapused. */
 static INT GetHeapUsedCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -12087,20 +10453,11 @@ static INT GetHeapUsedCommand (INT argc, char **argv)
   return (OKCODE);
 }
 /****************************************************************************/
-/*
-   InitFindRange - create struct where findrange stores results (min and max)
+/** \brief Create struct where findrange stores results (min and max)
 
-   SYNOPSIS:
-   static INT InitFindRange ();
-
-   PARAMETERS:
-   .  void
-
-   DESCRIPTION:
    This function creates the struct ':findrange'.
 
    RETURN VALUE:
-   INT
    .n    0 if ok
    .n    1 if error occured.
  */
@@ -12115,20 +10472,11 @@ static INT InitFindRange (void)
 }
 
 /****************************************************************************/
-/*
-   InitScreenSize - create struct :screensize
+/** \brief Create struct :screensize
 
-   SYNOPSIS:
-   static INT InitScreenSize ();
-
-   PARAMETERS:
-   .  void
-
-   DESCRIPTION:
    This function creates the struct _screensize for the 'screensize' command.
 
    RETURN VALUE:
-   INT
    .n    0 if ok
    .n    1 if error occured.
  */
@@ -12143,32 +10491,9 @@ static INT InitScreenSize (void)
 }
 
 
-/****************************************************************************/
-/*
-   lb - a simple load balancing front end to chaco
-                        based on the clustering technique
-
-   DESCRIPTION:
-   The lb command performs load balancing.  If not run on a parallel machine
-   it will do nothing.  If run on a parallel machine it will try to use Chaco,
-   provided the CHACO option for ug was turned on.  If Chaco is not available
-   a simple RCB load balancing will be employed.  In the latter case some of
-   the optional arguments will be ignored.
-
-   'lb  [\<strategy>] [$c \<minlevel>] [$d \<depth>] [$f \<maxlevel>] [$e \<minelem>]'
-
-   .  \<strategy>		- load balancing strategy
-   .  $c \<minlevel>	- start load balancing at this level
-   .  $d \<depth>		- depth of clusters
-   .  $f \<maxlevel>	- no load balancing above this level
-   .  $e \<minelem>		- minimal number of elements on each processor
-
-   KEYWORDS:
-   parallel, processors, load balance, chaco
- */
-/****************************************************************************/
 
 #ifdef ModelP
+/** \brief Implementation of \ref lb. */
 static INT LBCommand (INT argc, char **argv)
 {
                 #ifndef ModelP
@@ -12338,20 +10663,8 @@ static INT LBCommand (INT argc, char **argv)
 }
 
 
-/****************************************************************************/
-/*
-   lbs - simple or special load balancing functionality
 
-   DESCRIPTION:
-   ...
-
-   'lbs ...'
-
-   KEYWORDS:
-   parallel, processors, check, load balancing
- */
-/****************************************************************************/
-
+/** \brief Implementation of \ref lbs. */
 static INT LBSCommand (INT argc, char **argv)
 {
   MULTIGRID *theCurrMG;
@@ -12371,24 +10684,8 @@ static INT LBSCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-/****************************************************************************/
-/*
-   context - manipulate current processor context
 
-   DESCRIPTION:
-   This command adds/removes processors from the current context.
-
-   'context <processor> | $a | $e'
-
-   .  \<processor>		- processor id
-   .  $a				- add all processors
-   .  $e				- remove all processors (empty context)
-
-   KEYWORDS:
-   parallel, processors, display, show, print, DDD, configure
- */
-/****************************************************************************/
-
+/** \brief Implementation of \ref context. */
 static INT ContextCommand (INT argc, char **argv)
 {
   INT proc = INT_MAX;
@@ -12437,22 +10734,8 @@ static INT ContextCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-/****************************************************************************/
-/*
-   pstat - gives information about parallel data structures
 
-   DESCRIPTION:
-   ...
-
-   'pstat ...'
-
-   first argument will be passed to DDD
-
-   KEYWORDS:
-   parallel, processors, display, show, print, DDD, status, interfaces
- */
-/****************************************************************************/
-
+/** \brief Implementation of \ref pstat. */
 static INT PStatCommand (INT argc, char **argv)
 {
   if (argc!=2)
@@ -12463,21 +10746,8 @@ static INT PStatCommand (INT argc, char **argv)
 }
 
 #ifdef __DLB__
-/****************************************************************************/
-/*
-   dlb_eval - gives information current load balancing situation
 
-   DESCRIPTION:
-   information on the current load balancing situation of MultiGrid
-
-   'dlb_eval $v \<0-n>'
-
-
-   KEYWORDS:
-   load balancing, status, load, interfaces, partition graph
- */
-/****************************************************************************/
-
+/** \brief Implementation of \ref dlb_eval. */
 static INT DLB_EvalCommand (INT argc, char **argv)
 {
   INT verbose;
@@ -12496,21 +10766,8 @@ static INT DLB_EvalCommand (INT argc, char **argv)
 #endif
 
 #ifdef CHACOT
-/****************************************************************************/
-/*
-   lb4 - load balancer using different (high level) strategies
-                        based on the clustering technique
 
-   DESCRIPTION:
-   ...
-
-   'lb4 ...'
-
-   KEYWORDS:
-   parallel, processors, load balance, chaco
- */
-/****************************************************************************/
-
+/** \brief Implementation of \ref lb4. */
 static INT LB4Command (INT argc, char **argv)
 {
   int cmd_error,error,minlevel,cluster_depth,threshold,Const;
@@ -12686,37 +10943,9 @@ static INT pamgCheckCommand (INT argc, char **argv)
 
 #endif /* ModelP */
 
-/****************************************************************************/
-/** \page   debug - set or display debug level for ug kernel subsystem
-
-   DESCRIPTION:
-   This command sets the debug level for a ug kernel subsystem.
-
-   'debug $\<module> [$\<level>]'
-
-   .   $\<module>	- module can be one of
-   .n					init
-   .n					dddif
-   .n					dev
-   .n					dom
-   .n					gm
-   .n					graph
-   .n					low
-   .n					machines
-   .n					np
-   .n					ui
-   .n					time
-   .n                  pclib
-   .n                  appl
-   .   $\<level>	- assign this level (if omitted display current level for the
-                                        specified module)
-
-   KEYWORDS:
-   debug, configure, set, display, show, print
-   D*/
-/****************************************************************************/
 
 #ifdef Debug
+/** \brief Implementation of \ref debug. */
 static INT DebugCommand (INT argc, char **argv)
 {
   char *module;
@@ -12777,22 +11006,9 @@ static INT DebugCommand (INT argc, char **argv)
 }
 #endif
 
-/****************************************************************************/
-/** \page   trace - trace a module
-
-   DESCRIPTION:
-   This command sets the trace level of modules (blas only up to now).
-
-   'trace [$blas \<n>]'
-   .   $blas~\<n>	- 0: off, 1: show parameters (default),
-                                        2: parameters and vector contents (blas level 1)
-
-   KEYWORDS:
-   debug, trace, ugblas
-   D*/
-/****************************************************************************/
 
 #ifdef Debug
+/** \brief Implementation of \ref trace. */
 static INT TraceCommand (INT argc, char **argv)
 {
   int i;
@@ -12819,23 +11035,9 @@ static INT TraceCommand (INT argc, char **argv)
 }
 #endif
 
-/****************************************************************************/
-/** \page   reperr - prints the error stack
-
-   DESCRIPTION:
-   This command prints the error stack which is created when functios use
-   the REP_ERR_RETURN macro. The stack is cleared before each call of a ug-command.
-
-   File and line of the returning functions are printed.
-
-   'reperr'
-
-   KEYWORDS:
-   debug, stack, error, display, show, print
-   D*/
-/****************************************************************************/
 
 #ifdef Debug
+/** \brief Implementation of \ref reperr. */
 static INT RepErrCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
@@ -12847,20 +11049,9 @@ static INT RepErrCommand (INT argc, char **argv)
 #endif
 
 
-/****************************************************************************/
-/** \page   timing - prints time history
-
-   DESCRIPTION:
-   File, line and times are printed.
-
-   'timing'
-
-   KEYWORDS:
-   debug
-   D*/
-/****************************************************************************/
 
 #ifdef Debug
+/** \brief Implementation of \ref timing. */
 static INT TimingCommand (INT argc, char **argv)
 {
   INT i;
@@ -12887,20 +11078,8 @@ static INT TimingCommand (INT argc, char **argv)
 }
 #endif
 
-/****************************************************************************/
-/** \page   showconfig - show the main configuration settings of this ug-program
 
-   DESCRIPTION:
-   This command shows the main configuration options having been active
-   when this ug was compiled.
-
-   'showconfig'
-
-   KEYWORDS:
-   debug, check, configure, show, display, print
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref showconfig. */
 static INT ShowConfigCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
@@ -12978,63 +11157,6 @@ static INT ShowConfigCommand (INT argc, char **argv)
 }
 
 
-/****************************************************************************/
-/** \page   array - family of ug-commands to handle n-dimensional arrays of doubles
-
-   DESCRIPTION:
-   Each array is a struct in the directory '/Array'. Besides some
-   administrational information it contains an ordinary, n-dimensional array
-   of doubles as a 'double[n_1][n_2]...[n_k]' definition in C would allocate.
-   The maximum number 'k' of dimensions is restricted to 'AR_NVAR_MAX'.
-
-   The provided commands to work with array are the following. The name of
-   each command conists of the 2 first letters of its action (e.g. 'sa' for
-   'save') and the postfix 'ar' for 'array'.
-
-   CONSTRUCTION and DESTRUCTION:
-   .  crar~$n~\<name>~{$n_i}+                    - create array of specified size
-   .  dear~$n~\<name>                                    - delete array
-
-   ACCESS to values:
-   .  wrar~$n~\<name>~{$n_i}+~$v~\<value> - write array[n_1][n_2]...[n_k] := \<value>
-   .  rear~$n~\<name>~{$n_i}+			 - read array[n_1][n_2]...[n_k] to ':ARRAY_VALUE'
-   .  clar~$n~\<name>					 - clear array, all entries := 0.0
-
-   FILEOPERATIONS:
-   .  saar~$n~\<name>					 - save array to file '\<name>.array'
-   .  loar~$n~\<name>					 - load array from file '\<name>.array'
-
-   EXAMPLE:
-   Use the array commands to realize a consecutively numbering of logfiles
-   across several runs of the programm.
-   .vb
-       loar $n filenumber;			# try to load a previously stored array
-       if ( :cmdstatus != "0" )
-       {                            # no previous array -> the first run
-        fnr = -1;					# init the number
-        crar $n filenumber $1;      # create an array for only one component
-       }
-       else
-       {                            # previous array is loaded
-        rear $n filenumber $0;      # put the filenumber into :ARRAY_VALUE
-        fnr = :ARRAY_VALUE;         # get this number
-       }
-       fnr = fnr + 1;                  # calculate the next number
-       wrar $n filenumber $0 $v \@fnr;  # write this number (back) to the array
-       saar $n filenumber;             # save the array (back) to file
-       dear $n filenumber;             # delete array since not longer needed
-       set logname log\@fnr;
-
-       logon \@logname;
-   .ve
-
-   KEYWORDS:
-   values, array, manipulate, load, store, data, indexed
-
-   SEE ALSO:
-   'crar', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar', 'defaults'
-   D*/
-/****************************************************************************/
 
 static INT ClearArray (ARRAY *theAR)
 {
@@ -13050,24 +11172,17 @@ static INT ClearArray (ARRAY *theAR)
 }
 
 /****************************************************************************/
-/*
-   CreateArray - allocate a new array structure
+/** \brief Allocate a new array structure
 
-   SYNOPSIS:
-   static ARRAY *CreateArray (char *name, INT nVar, INT *VarDim);
-
-   PARAMETERS:
    .  name - name under which the array is allocated in '/Array'
    .  nVar - number of dimensions of the data field
    .  VarDim - extension of the data field in each dimension
 
-   DESCRIPTION:
    Allocate a new array structure in the directory '/Array' and
    allocate the data field. The maximum number of dimensions is
    'AR_NVAR_MAX'.
 
    RETURN VALUE:
-   ARRAY *
    .n     pointer to allocated array
    .n     NULL on error.
  */
@@ -13106,22 +11221,15 @@ static ARRAY *CreateArray (char *name, INT nVar, INT *VarDim)
 }
 
 /****************************************************************************/
-/*
-   WriteArray - set one single entry of the data field of the array
+/** \brief Set one single entry of the data field of the array
 
-   SYNOPSIS:
-   static INT WriteArray (ARRAY *theAR, INT *Point, DOUBLE value);
-
-   PARAMETERS:
    .  theAR - array structure to work on
    .  Point - specify the coordinate of the entry in each dimension
    .  value - value to be stored
 
-   DESCRIPTION:
    Set one single entry of the data field of the array to the given value.
 
    RETURN VALUE:
-   INT
    .n    0 always
  */
 /****************************************************************************/
@@ -13139,22 +11247,15 @@ static INT WriteArray (ARRAY *theAR, INT *Point, DOUBLE value)
 }
 
 /****************************************************************************/
-/*
-   ReadArray - read one single entry of the data field of the array
+/** \brief Read one single entry of the data field of the array
 
-   SYNOPSIS:
-   static INT ReadArray (ARRAY *theAR, INT *Point, DOUBLE *value);
-
-   PARAMETERS:
    .  theAR - array structure to work on
    .  Point - specify the coordinate of the entry in each dimension
    .  value - read value
 
-   DESCRIPTION:
    Read one single entry of the data field of the array.
 
    RETURN VALUE:
-   INT
    .n    0 always
  */
 /****************************************************************************/
@@ -13171,35 +11272,8 @@ static INT ReadArray (ARRAY *theAR, INT *Point, DOUBLE *value)
   return (0);
 }
 
-/****************************************************************************/
-/** \page   crar - create a new array structure
 
-   DESCRIPTION:
-   Allocate a new array structure in the directory '/Array' and
-   allocate the data field of the specified size with the function
-   'CreateArray'. The data field is the same as a 'double[n_1][n_2]...[n_k]'
-   definition in C would allocate. The maximum number 'k' of dimensions
-   is 'AR_NVAR_MAX'. Give the 'n_i' only for the dimensions 'i' you need.
-
-   'crar $n \<name> {$\<n_i>}+'
-
-   .  \<name> - name of the array structure
-   .  \<n_i>  - extension in the i.th dimension, 1 \<= i \<= 'AR_NVAR_MAX'
-
-   EXAMPLE:
-   .vb
- # Create a 3x7 (2-dimensional) array
-   crar $n example_array $3$7;
-   .ve
-
-   KEYWORDS:
-   values, array, manipulate, load, store, data, indexed
-
-   SEE ALSO:
-   'array', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref crar. */
 static INT CreateArrayCommand (INT argc, char **argv)
 {
   INT i, nVar, VarDim[AR_NVAR_MAX];
@@ -13230,25 +11304,8 @@ static INT CreateArrayCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   dear - delete an existing array structure
 
-   DESCRIPTION:
-   Delete the already existing array. The entry in the directory '/Array'
-   is removed and the data field of the array is freed.
-
-   'dear $n \<name>'
-
-   .  \<name> - name of the array structure
-
-   KEYWORDS:
-   values, array, manipulate, load, store, data, indexed
-
-   SEE ALSO:
-   'array', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref dear. */
 static INT DeleteArrayCommand (INT argc, char **argv)
 {
   char name[128];
@@ -13277,29 +11334,8 @@ static INT DeleteArrayCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   saar - save an array to file
 
-   DESCRIPTION:
-   Store the content of the array into a file with name '\<array name>.array'.
-   The 'arraypathes' entry in the 'defaults' file is considered.
-
-   'saar $n \<name>'
-
-   .  \<name> - name of the array structure
-
-   REMARK:
-   The file is written in the binary mode, thus be careful when exchanging
-   the computer architecture.
-
-   KEYWORDS:
-   values, array, manipulate, load, store, data, indexed
-
-   SEE ALSO:
-   'array', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar', 'defaults'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref saar. */
 static INT SaveArrayCommand (INT argc, char **argv)
 {
   INT i, size;
@@ -13347,30 +11383,8 @@ static INT SaveArrayCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   loar - load and allocates an array from file
 
-   DESCRIPTION:
-   Load the content of the array from the file with name '\<array name>.array'.
-   The 'arraypathes' entry in the 'defaults' file is considered. A new array
-   structure with the given name is allocated in the directory '/Array'.
-
-   'loar $n \<name>'
-
-   .  \<name> - name of the array structure
-
-   REMARK:
-   The file is written in the binary mode, thus be careful when exchanging
-   the computer architecture.
-
-   KEYWORDS:
-   values, array, manipulate, load, store, data, indexed
-
-   SEE ALSO:
-   'array', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar', 'defaults'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref loar. */
 static INT LoadArrayCommand (INT argc, char **argv)
 {
   INT i, size, nVar, VarDim[AR_NVAR_MAX];
@@ -13415,39 +11429,8 @@ static INT LoadArrayCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page wrarCommand wrar
- *
-   wrar - write value into one single entry of the array
 
-   DESCRIPTION:
-   Write the given double-value into the specified entry of the array.
-
-   'wrar $n \<name> {$\<n_i>}+ $v \<value>'
-
-   .  \<name>  - name of the array structure
-   .  \<n_i>   - i.th coordinate of the entry, 0 \<= n_i \< allocated extension
-   .  \<value> - double value to be stored
-
-   REMARK:
-   Like in C if the array is allocated with 'n' components in a dimension,
-   the valid indices for writing are 0,..,'n'-1. An index outside this
-   range causes an error. Give coordinate for all allocated dimensions.
-
-   EXAMPLE:
-   .vb
- # perform array[2][5] := 1.0
-   wrar $n example_array $2$5 $v 1.0;
-   .ve
-
-   KEYWORDS:
-   values, array, manipulate, load, store, data, indexed
-
-   SEE ALSO:
-   'array', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar', 'defaults'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref wrar. */
 static INT WriteArrayCommand (INT argc, char **argv)
 {
   INT i, Point[AR_NVAR_MAX];
@@ -13493,39 +11476,8 @@ static INT WriteArrayCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   rear - read the value from one single entry of the array
 
-   DESCRIPTION:
-   Read the the specified value from the array and store it in the
-   environment variable ':ARRAY_VALUE'.
-
-   'rear $n \<name> {$\<n_i>}+'
-
-   .  \<name>  - name of the array structure
-   .  \<n_i>   - i.th coordinate of the entry, 0 \<= n_i \< allocated extension
-
-   REMARK:
-   Like in C if the array is allocated with 'n' components in a dimension,
-   the valid indices for reading are 0,..,'n'-1. An index outside this
-   range causes an error. Give coordinate for all allocated dimensions.
-
-   EXAMPLE:
-   .vb
- # retrieve array[2][5]
-   rear $n example_array $2$5;
- # and display the value
-   set :ARRAY_VALUE;
-   .ve
-
-   KEYWORDS:
-   values, array, manipulate, load, store, data, indexed
-
-   SEE ALSO:
-   'array', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar', 'defaults'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref rear. */
 static INT ReadArrayCommand (INT argc, char **argv)
 {
   INT i, Point[AR_NVAR_MAX];
@@ -13571,24 +11523,8 @@ static INT ReadArrayCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
-/****************************************************************************/
-/** \page   clar - set all entries of the array to 0.0
 
-   DESCRIPTION:
-   Set all entries of the data field contained in the array structure to 0.0.
-
-   'clar $n \<name>'
-
-   .  \<name> - name of the array structure
-
-   KEYWORDS:
-   values, array, manipulate, load, store, data, indexed
-
-   SEE ALSO:
-   'array', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar', 'defaults'
-   D*/
-/****************************************************************************/
-
+/** \brief Implementation of \ref clar. */
 static INT ClearArrayCommand (INT argc, char **argv)
 {
   char name[128];
@@ -13617,23 +11553,14 @@ static INT ClearArrayCommand (INT argc, char **argv)
 /****************************************************************************/
 /** \brief Initialization of the array commands
 
-   SYNOPSIS:
-   INT InitArray ();
-
-   PARAMETERS:
-   .  void -
-
-   DESCRIPTION:
    This function does initialization of the ug-commands concerning arrays.
 
-   SEE ALSO:
-   array, crar, dear, wrar, rear, saar, loar, clar
+   \sa   array, crar, dear, wrar, rear, saar, loar, clar
 
-   RETURN VALUE:
-   INT
+   @return
    .n    0 if ok
    .n    __LINE__ if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 static INT InitArray (void)
@@ -13661,22 +11588,8 @@ static INT InitArray (void)
 }
 
 
-/****************************************************************************/
-/** \page   dumpalg - dumps the surface algebra to the interface
 
-   DESCRIPTION:
-   Dumps the surface algebra
-
-   'dumpalg \<name\>'
-
-   .  \<name\> - file name
-
-   KEYWORDS:
-   data, io
-
-   SEE ALSO:
-   D*/
-/****************************************************************************/
+/** \brief Implementation of \ref dumpalg. */
 static INT DumpAlgCommand(INT argc, char **argv)
 {
   INT level, comp;
@@ -13802,16 +11715,8 @@ static INT MakePeriodicCommand (INT argc, char **argv)
 
 
 /****************************************************************************/
-/*
-   InitCommands - Initialization of the commands
+/** \brief Initialization of the commands
 
-   SYNOPSIS:
-   INT InitCommands ();
-
-   PARAMETERS:
-   .  void -
-
-   DESCRIPTION:
    This function does initialization of all ug-commands, using
    'CreateCommand'.
    It initializes 'clock', 'findrange', 'screensize' and 'array'
@@ -13821,7 +11726,6 @@ static INT MakePeriodicCommand (INT argc, char **argv)
    commands
 
    RETURN VALUE:
-   INT
    .n    0 if ok
    .n    __LINE__ if error occured.
  */
