@@ -49,7 +49,7 @@
 /****************************************************************************/
 
 /* limits for XDATA_DESC handling */
-#define MAX_SUB                         5
+#define MAX_SUB                         10
 
 /* macros for SUBVEC */
 #define SUBV_NAME(s)            ((s)->Name)
@@ -166,6 +166,8 @@ INT VDsubDescFromVT                                             (const VECDATA_D
 INT MDsubDescFromVT                                             (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CONST_MATDATA_DESC_PTR *submd);
 
 INT CreateFormatCmd                                             (INT argc, char **argv);
+INT RemoveFormatWithSubs                                (const char *name);
+
 INT CreateVecDescCmd                            (MULTIGRID *theMG, INT argc, char **argv);
 INT CreateMatDescCmd                                (MULTIGRID *theMG, INT argc, char **argv);
 

@@ -938,7 +938,7 @@ INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CO
   const SHORT *offset,*Comp;
   SHORT RComp[NMATTYPES];
   SHORT CComp[NMATTYPES];
-  INT i,j,k,l,rt,ct,nr,nc,nn,cmp;
+  INT i,j,k,l,rt,ct,mt,nr,nc,NC,nn,cmp;
   char SubName[MAX_MAT_COMP];
 
   fmt    = MGFORMAT(MD_MG(md));
@@ -950,29 +950,33 @@ INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, CO
   /* compute sub components */
   k  = 0;
   for (rt=0; rt<NVECTYPES; rt++)
-  {
-    nr = SUBV_NCOMP(subv,rt);
     for (ct=0; ct<NVECTYPES; ct++)
     {
+      nr = SUBV_NCOMP(subv,rt);
       nc = SUBV_NCOMP(subv,ct);
-      RComp[MTP(rt,ct)] = nr;
-      CComp[MTP(rt,ct)] = nc;
-      nn = MD_ROWS_IN_RT_CT(md,rt,ct) * MD_COLS_IN_RT_CT(md,rt,ct);
-      for (i=0; i<nr; i++)
+      mt = MTP(rt,ct);
+      if (nr*nc==0)
       {
+        RComp[mt] = CComp[mt] = 0;
+        continue;
+      }
+      RComp[mt] = nr;
+      CComp[mt] = nc;
+      NC = MD_COLS_IN_RT_CT(md,rt,ct);
+      nn = MD_ROWS_IN_RT_CT(md,rt,ct) * NC;
+      for (i=0; i<nr; i++)
         for (j=0; j<nc; j++)
         {
-          l = SUBV_COMP(subv,rt,i) * nc + SUBV_COMP(subv,ct,j);
+          l = SUBV_COMP(subv,rt,i) * NC + SUBV_COMP(subv,ct,j);
           if (l>=nn)
             REP_ERR_RETURN (1);
-          cmp = offset[MTP(rt,ct)]+l;
+          cmp = offset[mt]+l;
           SubComp[k] = Comp[cmp];
-          SubName[k] = VT_COMPNAME(vt,cmp);
+          SubName[2*k]   = VM_COMP_NAME(md,2*cmp);
+          SubName[2*k+1] = VM_COMP_NAME(md,2*cmp+1);
           k++;
         }
-      }
     }
-  }
 
   *submd = CreateSubMatDesc(MD_MG(md),NULL,RComp,RComp,SubComp,SubName);
   if (*submd == NULL)
@@ -1276,12 +1280,13 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
   ENVDIR *dir;
   ENVITEM *item;
   VEC_TEMPLATE *vt;
+  SUBVEC *subv;
   MAT_TEMPLATE *mt,*mm;
   SUBMAT *subm;
-  INT opt,j,k,checksub,type,currtype,rtype,ctype,nsc[NMATTYPES];
+  INT opt,i,j,k,checksub,type,currtype,rtype,ctype,nsc[NMATTYPES];
   SHORT offset[NMATOFFSETS];
-  char tpltname[NAMESIZE],*names,*token,rt,ct,*p;
-  int n,nr,nc;
+  char tpltname[NAMESIZE],subname[NAMESIZE],*names,*token,rt,ct,*p;
+  int n,nr,nc,NC;
 
   opt = *curropt;
 
@@ -1348,12 +1353,11 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
         MT_CCOMP(mt,type) = nc;
       }
 
-    ConstructMatOffsets(MT_RCOMPS(mt),
-                        MT_CCOMPS(mt),offset);
-
     if (VT_COMPNAMES(vt)[0]!=' ')
     {
       /* define also compnames */
+      ConstructVecOffsets(VT_COMPS(vt),offset);
+
       p = MT_COMPNAMES(mt);
       for (rtype=0; rtype<NVECTYPES; rtype++)
         for (ctype=0; ctype<NVECTYPES; ctype++)
@@ -1369,6 +1373,9 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
         }
       checksub = TRUE;
     }
+
+    ConstructMatOffsets(MT_RCOMPS(mt),
+                        MT_CCOMPS(mt),offset);
   }
   else
   {
@@ -1461,9 +1468,67 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
       }
       strcpy(SUBM_NAME(subm),token);
 
+      /* check next token first for implicit declaration */
+      if ((token=strtok(NULL,BLANKS))==NULL)
+      {
+        PrintErrorMessageF('E',"newformat",
+                           "implicit declaration or size expected (in '$%s')",argv[opt]);
+        REP_ERR_RETURN (1);
+      }
+      if (sscanf(token,expandfmt("implicit(%[a-zA_Z0-9_]/%[a-zA_Z0-9_])"),subname,tpltname)==2)
+      {
+        /* define sub-matrix implicitly by (s/vt x s/vt) */
+
+        /* get vector template */
+        if ((dir=ChangeEnvDir("/newformat"))==NULL)
+          REP_ERR_RETURN(2);
+        for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
+          if (ENVITEM_TYPE(item) == theVecVarID)
+            if (strcmp(ENVITEM_NAME(item),tpltname)==0)
+              break;
+        if ((vt=(VEC_TEMPLATE *)item)==NULL)
+        {
+          PrintErrorMessageF('E',"newformat",
+                             "vec template in 'implicit(%s/%s)' not found (in '$%s')",subname,tpltname,argv[opt]);
+          REP_ERR_RETURN (2);
+        }
+
+        /* get sub vector */
+        for (i=0; i<VT_NSUB(vt); i++)
+          if (strcmp(SUBV_NAME(VT_SUB(vt,i)),subname)==0)
+            break;
+        if (i>=VT_NSUB(vt))
+        {
+          PrintErrorMessageF('E',"newformat",
+                             "sub vector '%s' of template '%s' not found (in '$%s')",subname,tpltname,argv[opt]);
+          REP_ERR_RETURN (2);
+        }
+        subv = VT_SUB(vt,i);
+
+        for (rtype=0; rtype<NVECTYPES; rtype++)
+          for (ctype=0; ctype<NVECTYPES; ctype++)
+          {
+            nr = SUBV_NCOMP(subv,rtype);
+            nc = SUBV_NCOMP(subv,ctype);
+            if (nr*nc<=0) continue;
+            type = MTP(rtype,ctype);
+            SUBM_RCOMP(subm,type) = nr;
+            SUBM_CCOMP(subm,type) = nc;
+
+            NC = MT_CCOMP(mt,type);
+            k  = 0;
+            for (i=0; i<nr; i++)
+              for (j=0; j<nc; j++)
+                SUBM_COMP(subm,type,k++) = SUBV_COMP(subv,rtype,i)*NC + SUBV_COMP(subv,ctype,j);
+          }
+
+        continue;                               /* while ((opt+1<argc) && (strncmp(argv[opt+1],"sub",3)==0)) */
+      }
+
       /* subm comps */
       for (type=0; type<NMATTYPES; type++) nsc[type] = 0;
-      while ((token=strtok(NULL,BLANKS))!=NULL) {
+      do
+      {
         /* scan size */
         if (sscanf(token,"%dx%d",&nr,&nc)!=2) {
           PrintErrorMessageF('E',"newformat",
@@ -1511,6 +1576,7 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
         SUBM_RCOMP(subm,type) = nr;
         SUBM_CCOMP(subm,type) = nc;
       }
+      while ((token=strtok(NULL,BLANKS))!=NULL);
     }
 
 
@@ -1934,6 +2000,76 @@ INT CreateFormatCmd (INT argc, char **argv)
     PrintErrorMessage('W',"InitFormats","could not remove newformat dir");
 
   return (NUM_OK);
+}
+
+/****************************************************************************/
+/*D
+        RemoveFormatWithSubs - remove format including sub descriptors (iff)
+
+        SYNOPSIS:
+        INT RemoveFormatWithSubs (const char *name)
+
+    PARAMETERS:
+   .   name - format name
+
+        DESCRIPTION:
+        Remove format including sub descriptors (iff). It is not sufficient to
+        call DeleteFormat for formats allocated using the CreateFormatCmd of
+        formats.c since sub descriptors are allocated directly from the environment
+        heap. Calling this function cleans everything and all memory is released.
+
+        RETURN VALUE:
+        INT
+   .n   0: ok
+
+        SEE ALSO:
+        CreateFormatCmd
+   D*/
+/****************************************************************************/
+
+static INT RemoveTemplateSubs (FORMAT *fmt)
+{
+  ENVITEM *item;
+  VEC_TEMPLATE *vt;
+  MAT_TEMPLATE *mt;
+  INT i;
+
+  for (item=ENVITEM_DOWN(fmt); item != NULL; item = NEXT_ENVITEM(item))
+    if (ENVITEM_TYPE(item) == theVecVarID)
+    {
+      vt = (VEC_TEMPLATE*) item;
+
+      for (i=0; i<VT_NSUB(vt); i++)
+        FreeEnvMemory(VT_SUB(vt,i));
+      VT_NSUB(vt) = 0;
+    }
+    else if (ENVITEM_TYPE(item) == theMatVarID)
+    {
+      mt = (MAT_TEMPLATE*) item;
+
+      for (i=0; i<MT_NSUB(mt); i++)
+        FreeEnvMemory(MT_SUB(mt,i));
+      MT_NSUB(mt) = 0;
+    }
+  return (0);
+}
+
+INT RemoveFormatWithSubs (const char *name)
+{
+  FORMAT *fmt;
+
+  fmt = GetFormat(name);
+  if (fmt==NULL)
+  {
+    PrintErrorMessageF('W',"RemoveFormatWithSubs","format '%s' doesn't exist",name);
+    return (GM_OK);
+  }
+  if (RemoveTemplateSubs(fmt))
+    REP_ERR_RETURN (1);
+  if (DeleteFormat(name))
+    REP_ERR_RETURN (1);
+
+  return (0);
 }
 
 /****************************************************************************/
