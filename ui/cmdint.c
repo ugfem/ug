@@ -101,7 +101,7 @@ static char blanks[]                    = " \t\n";
 /* static char normalBlanks[]		= " \t"; */
 static char seperators[]                = ";{}";
 /* static char tokenseperators[]	= " \n\t;{}()"; */
-static char terminators[]               = "\n;}";               /* terminators for commands */
+static char terminators[]               = ";}";         /* terminators for commands */
 
 static INT scriptpaths_set=FALSE;
 static INT dontexit=FALSE;      /* if TRUE set ':cmdstatus' rather than exiting	*/

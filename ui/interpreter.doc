@@ -69,11 +69,7 @@
    COMMAND SEPERATION AND COMMENTS:
    Like in the C language, commands are seperated by the character ';'
    and grouped to a single one with the brackets '{}'.
-   For compatibility with older scripts, `ug`-commands can additionally be
-   terminated by the '\n' character (CRLF), which allows to combine
-   several `ug`-commands to one interpreter command. Yet it is recommendable to
-   terminate also `ug`-commands with ';' since it might be useful to allow
-   '\n' as a formatting character in later versions.
+   '\n' and '\t' are allowed as formatting characters.
    
    Comments may be given at the end of the line. They start with the
    character '#' and terminate with the end of the line.
