@@ -532,6 +532,30 @@ INT         BNDP_Global           (BNDP *theBndP, DOUBLE *global);
 
 /****************************************************************************/
 /*D
+   BNDP_Move - change global coordinates of free boundary point
+
+   SYNOPSIS:
+   INT BNDP_Move (BNDP *aBndP, DOUBLE global[]);
+
+   PARAMETERS:
+   .  aBndP - BNDP structure
+   .  global - new global coordinates
+
+   DESCRIPTION:
+   This function sets global coordinates of a free BNDP. The local coordinates
+   will be kept fixed which implies that the topology of the boundary triangulation
+   must not be changed!
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   1 if error.
+   D*/
+/****************************************************************************/
+INT BNDP_Move (BNDP *aBndP, DOUBLE global[]);
+
+/****************************************************************************/
+/*D
    BNDP_BndCond - gets bnd conditions for a BNDP
 
    SYNOPSIS:
@@ -540,6 +564,7 @@ INT         BNDP_Global           (BNDP *theBndP, DOUBLE *global);
 
    PARAMETERS:
    .  aBndP - BNDP structure
+   .  i	 - ?
    .  n     - number of BNDS
    .  in    - input vector
    .  type  - type of bnd cond
