@@ -22,6 +22,7 @@ BEGIN
 {
 	my $debug=0;
 	my $end='';
+	STDOUT->autoflush(1);
 	sub debug
 	{
 		$debug=$_[0];
@@ -145,6 +146,7 @@ sub ug
 			if (@_==2)	{$ui="-ui cn";}
 			if (@_==3)	{$ui="-ui c";}
         	open2(*OUT,*IN,"$_[1] $ui -perl");
+			IN->autoflush(1); OUT->autoflush(1);
 			return out($print);
 		}
 	
