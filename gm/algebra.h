@@ -1,32 +1,32 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  algebra.h                                                                                                     */
-/*																			*/
-/* Purpose:   header for algebraic structures								*/
-/*			  internal interface for grid manager module					*/
-/*																			*/
-/* Author:	  Klaus Johannsen												*/
-/*			  Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen	*/
-/*			  Universitaet Heidelberg										*/
-/*			  Im Neuenheimer Feld 294										*/
-/*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de                                    */
-/*																			*/
-/*			  blockvector data structure:									*/
-/*			  Christian Wrobel                                                                              */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de					            */
-/*																			*/
-/* History:    1.12.93 begin, ug 3d											*/
-/*			  27.09.95 blockvector implemented (Christian Wrobel)			*/
-/*																			*/
+/*                                                                          */
+/* File:      algebra.h                                                     */
+/*                                                                          */
+/* Purpose:   header for algebraic structures                                                           */
+/*                        internal interface for grid manager module                                    */
+/*                                                                                                                                                      */
+/* Author:        Klaus Johannsen                                                                                               */
+/*                        Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
+/*                        Universitaet Heidelberg                                                                               */
+/*                        Im Neuenheimer Feld 294                                                                               */
+/*                        6900 Heidelberg                                                                                               */
+/*                        internet: ug@ica3.uni-stuttgart.de                                    */
+/*                                                                                                                                                      */
+/*                        blockvector data structure:                                                                   */
+/*                        Christian Wrobel                                                                              */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                   */
+/*                                                                                                                                                      */
+/* History:    1.12.93 begin, ug 3d                                                                                     */
+/*                        27.09.95 blockvector implemented (Christian Wrobel)                   */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -35,9 +35,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __ALGEBRA__
@@ -46,20 +46,31 @@
 #include "compiler.h"
 #include "gm.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
-/* vector classes															*/
-#define EVERY_CLASS             0       /* <= class of all vectors						*/
-#define NEWDEF_CLASS    2       /* <= class of the vectors where defect needed	*/
-#define ACTIVE_CLASS    3       /* <= class of the active vectors				*/
+/* vector classes                                                                                                                       */
+#define EVERY_CLASS             0       /* <= class of all vectors                                              */
+#define NEWDEF_CLASS    2       /* <= class of the vectors where defect needed  */
+#define ACTIVE_CLASS    3       /* <= class of the active vectors                               */
 
 #define GET_MATRIX(v,w,m)                                                   \
   { register MATRIX *theMatrix0;                                              \
@@ -76,22 +87,22 @@
              if (MDEST(theMatrix0)==theVector0) {(m) = MADJ(theMatrix0); break;}}}
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 extern const char *ObjTypeName[MAXVOBJECTS];
 
 /****************************************************************************/
-/*																			*/
-/* control word definitions                                                                                             */
-/*																			*/
+/*                                                                          */
+/* control word definitions                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 enum ALGEBRA_CE {
 
-  EBUILDCON_CE = GM_N_CE,               /* continue after gm.h entries				*/
+  EBUILDCON_CE = GM_N_CE,               /* continue after gm.h entries                          */
 
   ALGEBRA_N_CE
 };
@@ -103,18 +114,18 @@ enum ALGEBRA_CE {
 #define SETEBUILDCON(p,n)                       CW_WRITE(p,EBUILDCON_CE,n)
 
 /****************************************************************************/
-/*																			*/
-/* macros for VECTORs														*/
-/*																			*/
+/*                                                                          */
+/* macros for VECTORs                                                       */
+/*                                                                          */
 /****************************************************************************/
 
 #define VBUILDCON(p)                            VCFLAG(p)
 #define SETVBUILDCON(p,n)                       SETVCFLAG(p,n)
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                          */
+/* function declarations                                                    */
+/*                                                                          */
 /****************************************************************************/
 
 /* domain part for object */
@@ -185,5 +196,9 @@ INT             MoveVector                                              (GRID *t
 
 /* Initialization */
 INT             InitAlgebra                                     (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif
