@@ -253,6 +253,15 @@ int     Read_DT_General (DIO_GENERAL *dio_general)
 
   /* now special mode */
   if (Bio_Read_string(dio_general->version)) return (1);
+  if (strcmp(dio_general->version,"DATA_IO_1.5")==0)
+  {
+    strcpy(dio_general->version,"DATA_IO_1.6");
+    strcpy(dio_general->ident,"---");
+  }
+  else
+  {
+    if (Bio_Read_string(dio_general->ident)) return (1);
+  }
   if (Bio_Read_string(dio_general->mgfile)) return (1);
   if (Bio_Read_mdouble(1,&(dio_general->time))) return (1);
   if (Bio_Read_mdouble(1,&(dio_general->dt))) return (1);
@@ -314,6 +323,7 @@ int     Write_DT_General (DIO_GENERAL *dio_general)
 
   /* now special mode */
   if (Bio_Write_string(dio_general->version)) return (1);
+  if (Bio_Write_string(dio_general->ident)) return (1);
   if (Bio_Write_string(dio_general->mgfile)) return (1);
   if (Bio_Write_mdouble(1,&(dio_general->time))) return (1);
   if (Bio_Write_mdouble(1,&(dio_general->dt))) return (1);

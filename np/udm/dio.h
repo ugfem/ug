@@ -45,7 +45,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define DIO_VERSION                                     "DATA_IO_1.5"
+#define DIO_VERSION                                     "DATA_IO_1.6"
 
 #define __DTIO_USE_IN_UG__
 #define DIO_DIM                 3
@@ -97,6 +97,7 @@ struct dio_general {
   double dt;                                                    /* previous time-step                                   */
   double ndt;                                                   /* next time-step (suggestion)                  */
   int magic_cookie;                                     /* identification with mg-file			*/
+  char ident[DIO_NAMELEN];         /* identification string from input file*/
 
   /* information about data stored */
   int nVD;                                                                              /* nb of vector data				*/

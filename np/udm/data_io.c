@@ -437,7 +437,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   const DOUBLE *x[MAX_CORNERS_OF_ELEM];
   DOUBLE value,fnblock;
   DOUBLE_VECTOR vector;
-  char FileName[NAMESIZE],NumberString[6];
+  char *p,FileName[NAMESIZE],NumberString[6];
   SHORT *cp[DIO_VDMAX];
   INT ncmp[DIO_VDMAX],blocksize,free,fb,lb,nblock,saved;
   INT MarkKey;
@@ -531,6 +531,9 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   dio_general.mode = mode;
   strcpy(dio_general.version,DIO_VERSION);
   strcpy(dio_general.mgfile,MG_FILENAME(theMG));
+  p = GetStringVar (":IDENTIFICATION");
+  if (p!=NULL) strcpy(dio_general.ident,p);
+  else strcpy(dio_general.ident,"---");
   if (number!=-1)
   {
     dio_general.time = time;
