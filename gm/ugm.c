@@ -5577,7 +5577,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 	INT		red, green, yellow; 
 	INT		mg_red,mg_green,mg_yellow;
 	INT		mg_greenrulesons[MAXLEVEL+1][MAX_SONS+1],mg_greenrules[MAXLEVEL+1];
-	INT		markcount[MAXLEVEL+1];
+	INT		markcount[MAXLEVEL+1],closuresides[MAXLEVEL+1];
 	INT		mg_red_size,mg_green_size,mg_yellow_size,mg_sum_size;
 	FLOAT	sum,sum_div_red,redplusgreen_div_red;
 	FLOAT	mg_sum,mg_sum_div_red,mg_redplusgreen_div_red;
@@ -5598,16 +5598,14 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 
 	for (i=0; i<MAXLEVEL+1; i++)
 	{
-		if (greenflag)
-		{
-			mg_greenrules[i] = 0;
-			for (j=0; j<MAX_SONS+1; j++) mg_greenrulesons[i][j] = 0;
-			maxsons = 0;
-		}
-		if (gridflag)
-		{
-			markcount[i] = 0;
-		}
+		/* for greenflag */
+		mg_greenrules[i] = 0;
+		for (j=0; j<MAX_SONS+1; j++) mg_greenrulesons[i][j] = 0;
+		maxsons = 0;
+
+		/* for gridflag */
+		markcount[i] = 0;
+		closuresides[i] = 0;
 	}
 
 	#ifdef ModelP
@@ -5640,6 +5638,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 			 theElement=SUCCE(theElement))
 		{
 			SETUSED(theElement,0);
+			/* count eclasses */
 			switch (ECLASS(theElement))
 			{
 				case RED_CLASS:		red++;		break;
@@ -5647,31 +5646,45 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 				case YELLOW_CLASS:	yellow++;	break;
 				default:			assert(0);
 			}
+			/* count marks and closuresides */
 			if (LEAFELEM(theElement))
 			{
-				if (GetRefinementMarkType(theElement) && 
-					USED(ELEMENT_TO_MARK(theElement)) == 0)
+				ELEMENT *MarkElement = ELEMENT_TO_MARK(theElement);
+				INT		marktype = GetRefinementMarkType(theElement);
+
+				if (marktype==1 && 
+					USED(MarkElement)==0)
 				{
-					markcount[LEVEL(theElement)]++;
+					markcount[LEVEL(MarkElement)]++;
 					markcount[MAXLEVEL]++;
-					SETUSED(ELEMENT_TO_MARK(theElement),1);
+					for (j=0; j<SIDES_OF_ELEM(MarkElement); j++)
+					{
+						ELEMENT *NbElement = NBELEM(MarkElement,j);
+						if (NbElement!=NULL && MARKCLASS(NbElement)==RED_CLASS)
+						{
+							closuresides[LEVEL(MarkElement)]++;
+							closuresides[MAXLEVEL]++;
+						}
+					}
+					SETUSED(MarkElement,1);
 				}
 			}
-			if (greenflag)
-				switch (REFINECLASS(theElement))
-				{
-					case GREEN_CLASS:	
-										sons = NSONS(theElement);
-										mg_greenrulesons[i][sons]++; 
-										mg_greenrulesons[i][MAX_SONS]+=sons; 
-										mg_greenrules[i]++;
-										mg_greenrulesons[MAXLEVEL][sons]++;
-										mg_greenrulesons[MAXLEVEL][MAX_SONS]+=sons;
-										mg_greenrules[MAXLEVEL]++;
-										if (maxsons < sons) maxsons = sons;
-										break;
-					default:			break;
-				}
+			/* green refinement statistics */
+			switch (REFINECLASS(theElement))
+			{
+				case GREEN_CLASS:	
+					sons = NSONS(theElement);
+					mg_greenrulesons[i][sons]++; 
+					mg_greenrulesons[i][MAX_SONS]+=sons; 
+					mg_greenrules[i]++;
+					mg_greenrulesons[MAXLEVEL][sons]++;
+					mg_greenrulesons[MAXLEVEL][MAX_SONS]+=sons;
+					mg_greenrules[MAXLEVEL]++;
+					if (maxsons < sons) maxsons = sons;
+					break;
+				default:
+					break;
+			}
 			#ifdef ModelP
 			/* count master, hghost and vghost elements */
 			switch (EPRIO(theElement))
@@ -5731,7 +5744,21 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 	/* set heap info in refine info */
 	if (gridflag)
 	{
-		SETPREDNEW(REFINEINFO(theMG),markcount[MAXLEVEL]*(2<<(DIM-1))*mg_sum_div_red);
+		float new;
+		float newpergreen;
+
+		SETMARKCOUNT(REFINEINFO(theMG),markcount[MAXLEVEL]);
+
+		new = markcount[MAXLEVEL]*(2<<(DIM-1))*mg_sum_div_red;
+		SETPREDNEW0(REFINEINFO(theMG),new);
+
+		if (mg_greenrules[MAXLEVEL] > 0) 
+			newpergreen = ((float)mg_greenrulesons[MAXLEVEL][MAX_SONS])/mg_greenrules[MAXLEVEL];
+		else
+			newpergreen = 0;
+		new = markcount[MAXLEVEL]*(2<<(DIM-1))+newpergreen*closuresides[MAXLEVEL];
+		SETPREDNEW1(REFINEINFO(theMG),new);
+
 		SETPREDMAX(REFINEINFO(theMG),free_bytes/mg_sum_size_div_red);
 	}
 
@@ -5746,6 +5773,9 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 			"FREE/((RED+GREEN)/RED)=%9.0f\n",
 			free_bytes,free_bytes/mg_sum_size_div_red,
 			free_bytes/mg_redplusgreen_size_div_red);
+		UserWriteF(" EST  MARKCOUNT=%9.0f  PRED_NEW0=%9.0f PRED_NEW1=%9.0f PRED_MAX=%9.0f\n",
+			MARKCOUNT(REFINEINFO(theMG)),PREDNEW0(REFINEINFO(theMG)),
+			PREDNEW1(REFINEINFO(theMG)),PREDMAX(REFINEINFO(theMG)));
 	}
 
 	/* compute and list green rule info */
