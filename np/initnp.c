@@ -277,5 +277,11 @@ INT NS_DIM_PREFIX InitNumerics ()
     return (err);
   }
 
+  /* init blocking */
+  if ((err=InitBlocking())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
   return (0);
 }
