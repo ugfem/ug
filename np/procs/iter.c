@@ -1378,8 +1378,7 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
   if (l_ilubthdecomp(theGrid,np->smoother.L,np->beta,NULL,NULL,NULL)
       !=NUM_OK) {
     PrintErrorMessage('E',"ILUPreProcess","decomposition failed");
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   *baselevel = level;
 
@@ -1465,8 +1464,7 @@ static INT FILUPreProcess (NP_ITER *theNP, INT level,
   if (l_ilubthdecomp_fine(theGrid,np->smoother.L,np->beta,NULL,NULL,NULL)
       !=NUM_OK) {
     PrintErrorMessage('E',"FILUPreProcess","decomposition failed");
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   *baselevel = level;
 
@@ -1578,8 +1576,7 @@ static INT THILUPreProcess (NP_ITER *theNP, INT level,
   if (l_ilubthdecomp(theGrid,np->smoother.L,np->beta,np->thresh,NULL,NULL)
       !=NUM_OK) {
     PrintErrorMessage('E',"THILUPreProcess","decomposition failed");
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   *baselevel = level;
 
@@ -1695,8 +1692,7 @@ static INT SPILUPreProcess (NP_ITER *theNP, INT level,
   if (l_iluspdecomp(theGrid,np->smoother.L,np->beta,NULL,np->mode,NULL)
       !=NUM_OK) {
     PrintErrorMessage('E',"SPILUPreProcess","decomposition failed");
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   *baselevel = level;
 
@@ -1768,8 +1764,7 @@ static INT ICPreProcess (NP_ITER *theNP, INT level,
   if (l_icdecomp(theGrid,np->smoother.L)
       !=NUM_OK) {
     PrintErrorMessage('E',"ICPreProcess","decomposition failed");
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   *baselevel = level;
 
@@ -1861,12 +1856,10 @@ static INT LUPreProcess (NP_ITER *theNP, INT level,
       switch (err) {
       case NUM_OUT_OF_MEM :
         PrintErrorMessage('E',"LUPreProcess","out of memory");
-        result[0] = __LINE__;
-        return (1);
+        NP_RETURN(1,result[0]);
       default :
         PrintErrorMessage('E',"LUPreProcess","err > 0");
-        result[0] = __LINE__;
-        return (1);
+        NP_RETURN(1,result[0]);
       }
     }
     if (err!=-VINDEX(LASTVECTOR(theGrid))) {
@@ -1875,13 +1868,11 @@ static INT LUPreProcess (NP_ITER *theNP, INT level,
       PrintErrorMessage('E',"LUPreProcess",warn);
       UserWriteF(" - LASTVECTOR has IDX %ld\n",
                  VINDEX(LASTVECTOR(theGrid)));
-      result[0] = __LINE__;
-      return (1);
+      NP_RETURN(1,result[0]);
     }
     if (l_lrregularize(theGrid,np->L) !=NUM_OK) {
       PrintErrorMessage('E',"LUPreProcess","cannot regularize");
-      result[0] = __LINE__;
-      return (1);
+      NP_RETURN(1,result[0]);
     }
   }
   *baselevel = level;
@@ -2193,153 +2184,123 @@ static INT TFFPreProcess (NP_ITER *theNP, INT level,
   NPIT_c(theNP) = x;
   NPIT_b(theNP) = b;
 
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) {
-    result[0] = __LINE__;
-    return (1);
-  }
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&NPTFF_FF(np))) {
-    result[0] = __LINE__;
-    return (1);
-  }
-  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPTFF_aux(np))) {
-    result[0] = __LINE__;
-    return (1);
-  }
-  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPTFF_tv(np))) {
-    result[0] = __LINE__;
-    return (1);
-  }
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L))
+    NP_RETURN(1,result[0]);
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&NPTFF_FF(np)))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPTFF_aux(np)))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPTFF_tv(np)))
+    NP_RETURN(1,result[0]);
 #ifdef __THREEDIM__
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&NPTFF_FF3D(np))) {
-    result[0] = __LINE__;
-    return (1);
-  }
-  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPTFF_aux3D(np))) {
-    result[0] = __LINE__;
-    return (1);
-  }
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&NPTFF_FF3D(np)))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPTFF_aux3D(np)))
+    NP_RETURN(1,result[0]);
 #endif
 
   /* check if all objects are valid and scalar */
   if ( A == NULL )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol A is not defined" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   if ( !MD_IS_SCALAR(A) )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol A is not scalar" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
 
   if ( NPTFF_FF(np) == NULL )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol FF is not defined" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   if ( !MD_IS_SCALAR( NPTFF_FF(np) ) )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol FF is not scalar" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
 
 #ifdef __THREEDIM__
   if ( NPTFF_FF3D(np) == NULL )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol FF3D is not defined" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   if ( !MD_IS_SCALAR( NPTFF_FF3D(np) ) )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol FF3D is not scalar" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
 #endif
 
   if ( np->smoother.L == NULL )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol L is not defined" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   if ( !MD_IS_SCALAR( np->smoother.L ) )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol L is not scalar" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
 
 
   if ( x == NULL )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol x is not defined" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   if ( !VD_IS_SCALAR( x ) )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol x is not scalar" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
 
   if ( b == NULL )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol b is not defined" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   if ( !VD_IS_SCALAR( b ) )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol b is not scalar" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
 
   if ( NPTFF_aux(np) == NULL )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol aux is not defined" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   if ( !VD_IS_SCALAR( NPTFF_aux(np) ) )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol aux is not scalar" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
 
   if ( NPTFF_tv(np) == NULL )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol tv is not defined" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   if ( !VD_IS_SCALAR( NPTFF_tv(np) ) )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol tv is not scalar" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
 
 #ifdef __THREEDIM__
   if ( NPTFF_aux3D(np) == NULL )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol aux3D is not defined" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   if ( !VD_IS_SCALAR( NPTFF_aux3D(np) ) )
   {
     PrintErrorMessage( 'E', "TFFPreProcess", "Symbol aux3D is not scalar" );
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
 #endif
 
@@ -2347,8 +2308,7 @@ static INT TFFPreProcess (NP_ITER *theNP, INT level,
   if (FF_PrepareGrid( theGrid, &meshwidth, TRUE, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPTFF_BVDF(np) )!=NUM_OK)
   {
     PrintErrorMessage('E',"TFFPreProcess","preparation of the grid failed");
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   NPTFF_MESHWIDTH(np) = meshwidth;
 
@@ -2370,8 +2330,7 @@ static INT TFFPreProcess (NP_ITER *theNP, INT level,
                    theGrid ) != NUM_OK )
     {
       PrintErrorMessage('E',"TFFPreProcess","decomposition failed");
-      result[0] = __LINE__;
-      return (1);
+      NP_RETURN(1,result[0]);
     }
   }
 
@@ -2410,8 +2369,7 @@ static INT TFFPostProcess (NP_ITER *theNP, INT level,
   if (MGCreateConnection(theMG))        /* restore the disposed connections */
   {
     PrintErrorMessage('E',"TFFPostProcess","MGCreateConnection failed");
-    result[0] = __LINE__;
-    return (1);
+    NP_RETURN(1,result[0]);
   }
   return (SmootherPostProcess (theNP, level, x, b, A, result));
 }
@@ -2453,8 +2411,7 @@ static INT TFFIter (NP_ITER *theNP, INT level,
                          NPTFF_FF3D(np)==NULL ? 0 : MD_SCALCMP( NPTFF_FF3D(np) ) ) != NUM_OK)
     {
       PrintErrorMessage('E',"TFFStep","inversion failed");
-      result[0] = __LINE__;
-      return (1);
+      NP_RETURN(1,result[0]);
     }
     /* defect -= A * corr_update */
     dmatmul_minusBS( GFIRSTBV(theGrid), &bvd, NPTFF_BVDF(np),
@@ -2464,10 +2421,7 @@ static INT TFFIter (NP_ITER *theNP, INT level,
   {             /* smooth for all testvector frequencies */
 
     /* alloc temp. for correction update (in x!) */
-    if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPTFF_t(np))) {
-      result[0] = __LINE__;
-      return(1);
-    }
+    if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPTFF_t(np))) NP_RETURN(1,result[0]);
     end_wave = 1.0 / NPTFF_MESHWIDTH(np) - 0.5;             /* rounding */
     for ( wavenr = 1.0; wavenr < end_wave; wavenr *= 2.0 )
     {                   /* wave 1.0 ... (1/h)/2 */
@@ -2483,8 +2437,7 @@ static INT TFFIter (NP_ITER *theNP, INT level,
                      theGrid ) != NUM_OK )
       {
         PrintErrorMessage('E',"TFFStep","decomposition failed");
-        result[0] = __LINE__;
-        return (1);
+        NP_RETURN(1,result[0]);
       }
 
       /* copy defect to aux because TFFMultWithMInv destroys its defect */
@@ -2499,8 +2452,7 @@ static INT TFFIter (NP_ITER *theNP, INT level,
                            NPTFF_FF3D(np)==NULL ? 0 : MD_SCALCMP( NPTFF_FF3D(np) ) ) != NUM_OK)
       {
         PrintErrorMessage('E',"TFFStep","inversion failed");
-        result[0] = __LINE__;
-        return (1);
+        NP_RETURN(1,result[0]);
       }
 
       /* corr += corr_update */
