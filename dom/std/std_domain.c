@@ -1313,6 +1313,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
 
   if (Mesh!=NULL)
   {
+    Mesh->mesh_status = MESHSTAT_CNODES;
     Mesh->nBndP = theBVP->ncorners;
     Mesh->nInnP = 0;
     Mesh->nElements = NULL;
