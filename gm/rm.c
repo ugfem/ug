@@ -801,11 +801,11 @@ static INT ShortestInteriorEdge (ELEMENT *theElement)
   COORD Dist_0_5, Dist_1_3, Dist_2_4;
 
   /* get physical position of the corners */
-  for (i=0; i<MAX_CORNERS_OF_ELEM; i++)
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     Corners[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
   /* get physical position of the midpoints of the edges */
-  for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     V3_LINCOMB(0.5, Corners[CORNER_OF_EDGE(theElement,i,0)], 0.5, Corners[CORNER_OF_EDGE(theElement,i,1)], MidPoints[i]);
 
   /* compute distances */
@@ -860,11 +860,11 @@ static INT MinimalSideAngle (ELEMENT *theElement)
   COORD MaxAngle,Max,Min;
 
   /* get physical position of the corners */
-  for (i=0; i<MAX_CORNERS_OF_ELEM; i++)
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     Corners[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
   /* get physical position of the midpoints of the edges */
-  for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     V3_LINCOMB(0.5, Corners[CORNER_OF_EDGE(theElement,i,0)], 0.5, Corners[CORNER_OF_EDGE(theElement,i,1)], MidPoints[i]);
 
   /* try possebilities */
@@ -930,11 +930,11 @@ static INT MinimalSideEntry (ELEMENT *theElement)
   COORD Angle[MAX_EDGES_OF_ELEM],Length[MAX_EDGES_OF_ELEM],Max,Min,help;
 
   /* get physical position of the corners */
-  for (i=0; i<MAX_CORNERS_OF_ELEM; i++)
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     Corners[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
   /* get physical position of the midpoints of the edges */
-  for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     V3_LINCOMB(0.5, Corners[CORNER_OF_EDGE(theElement,i,0)], 0.5, Corners[CORNER_OF_EDGE(theElement,i,1)], MidPoints[i]);
 
   /* try possebilities */
@@ -952,7 +952,7 @@ static INT MinimalSideEntry (ELEMENT *theElement)
         Corners[l] = MidPoints[SideEdgesOfEdge[i][k][l]];
       if (TetAngleAndLength(theElement,Corners,Angle,Length))
         return (FULL_REFRULE_0_5);
-      for (l=0; l<MAX_EDGES_OF_ELEM; l++)
+      for (l=0; l<EDGES_OF_ELEM(theElement); l++)
         if (Angle[l]>PI/2.0)
         {
           help = ABS(Length[l]*(COORD)(cos((double)Angle[l])/sin((double)Angle[l])));
@@ -965,7 +965,7 @@ static INT MinimalSideEntry (ELEMENT *theElement)
         Corners[l] = MidPoints[SideEdgesOfEdge[j][k][l]];
       if (TetAngleAndLength(theElement,Corners,Angle,Length))
         return (FULL_REFRULE_0_5);
-      for (l=0; l<MAX_EDGES_OF_ELEM; l++)
+      for (i=0; i<EDGES_OF_ELEM(theElement); i++)
         if (Angle[l]>PI/2.0)
         {
           help = ABS(Length[l]*(COORD)(cos((double)Angle[l])/sin((double)Angle[l])));
@@ -1012,11 +1012,11 @@ static INT BestLaplaceMMatrix (ELEMENT *theElement)
   char buffer[64];
 
   /* get physical position of the corners */
-  for (i=0; i<MAX_CORNERS_OF_ELEM; i++)
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     Corners[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
   /* get physical position of the midpoints of the edges */
-  for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     V3_LINCOMB(0.5, Corners[CORNER_OF_EDGE(theElement,i,0)], 0.5, Corners[CORNER_OF_EDGE(theElement,i,1)], MidPoints[i]);
 
   /* try possebilities */
@@ -1034,7 +1034,7 @@ static INT BestLaplaceMMatrix (ELEMENT *theElement)
         Corners[l] = MidPoints[SideEdgesOfEdge[i][k][l]];
       if (TetAngleAndLength(theElement,Corners,Angle,Length))
         return (FULL_REFRULE_0_5);
-      for (l=0; l<MAX_EDGES_OF_ELEM; l++)
+      for (l=0; l<EDGES_OF_ELEM(theElement); l++)
         if (Angle[l]>PI/2.0)
           sum += ABS(Length[l]*(COORD)cos((double)Angle[l])/(COORD)sin((double)Angle[l]));
     }
@@ -1044,7 +1044,7 @@ static INT BestLaplaceMMatrix (ELEMENT *theElement)
         Corners[l] = MidPoints[SideEdgesOfEdge[j][k][l]];
       if (TetAngleAndLength(theElement,Corners,Angle,Length))
         return (FULL_REFRULE_0_5);
-      for (l=0; l<MAX_EDGES_OF_ELEM; l++)
+      for (i=0; i<EDGES_OF_ELEM(theElement); i++)
         if (Angle[l]>PI/2.0)
           sum += ABS(Length[l]*(COORD)cos((double)Angle[l])/(COORD)sin((double)Angle[l]));
     }
@@ -1103,11 +1103,11 @@ static INT MaxPerpendicular (ELEMENT *theElement)
   char buffer[64];
 
   /* get physical position of the corners */
-  for (i=0; i<MAX_CORNERS_OF_ELEM; i++)
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     Corners[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
   /* get physical position of the midpoints of the edges */
-  for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     V3_LINCOMB(0.5, Corners[CORNER_OF_EDGE(theElement,i,0)], 0.5, Corners[CORNER_OF_EDGE(theElement,i,1)], MidPoints[i]);
 
   /* try possebilities */
@@ -1178,11 +1178,11 @@ static INT MaxRightAngle (ELEMENT *theElement)
   char buffer[64];
 
   /* get physical position of the corners */
-  for (i=0; i<MAX_CORNERS_OF_ELEM; i++)
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     Corners[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
   /* get physical position of the midpoints of the edges */
-  for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     V3_LINCOMB(0.5, Corners[CORNER_OF_EDGE(theElement,i,0)], 0.5, Corners[CORNER_OF_EDGE(theElement,i,1)], MidPoints[i]);
 
   /* try possebilities */
@@ -1251,11 +1251,11 @@ static INT MaxArea (ELEMENT *theElement)
   char buffer[64];
 
   /* get physical position of the corners */
-  for (i=0; i<MAX_CORNERS_OF_ELEM; i++)
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     Corners[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
   /* get physical position of the midpoints of the edges */
-  for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     V3_LINCOMB(0.5, Corners[CORNER_OF_EDGE(theElement,i,0)], 0.5, Corners[CORNER_OF_EDGE(theElement,i,1)], MidPoints[i]);
 
   /* try possebilities */
@@ -1328,7 +1328,7 @@ static INT Alignment (ELEMENT *theElement)
   (*theDirectionElemEval)(theElement,Corners,LMP(CORNERS_OF_ELEM(theElement)),Velocity);
 
   /* get physical position of the midpoints of the edges */
-  for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     V3_LINCOMB(0.5, Corners[CORNER_OF_EDGE(theElement,i,0)], 0.5, Corners[CORNER_OF_EDGE(theElement,i,1)], MidPoints[i]);
 
   /* compute differences */
@@ -1379,11 +1379,11 @@ static INT YAlignment (ELEMENT *theElement)
   COORD Dist_0_5, Dist_1_3, Dist_2_4, max;
 
   /* get physical position of the corners */
-  for (i=0; i<MAX_CORNERS_OF_ELEM; i++)
+  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     Corners[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
   /* get physical position of the midpoints of the edges */
-  for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     V3_LINCOMB(0.5, Corners[CORNER_OF_EDGE(theElement,i,0)], 0.5, Corners[CORNER_OF_EDGE(theElement,i,1)], MidPoints[i]);
 
   /* compute differences */
