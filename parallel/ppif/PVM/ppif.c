@@ -70,6 +70,9 @@
 #define RECVMAX     128         /* max number of recv messages at one time      */
 #define MAXPROC     128     /* max number of processes allowed              */
 #define VERBOSE         0               /* verbose level								*/
+#ifdef DELAY
+#undef DELAY                            /* on some operating systems DELAY has a different meaning */
+#endif
 #define DELAY           5000    /* delay in async receive						*/
 #define PVMMODE     PvmDataRaw    /* set to PvmDataInPlace when available   */
 
@@ -85,8 +88,9 @@
 #define XPOS(aid)   (aid&0xFF)                   /* xpos from compact form  */
 #define YPOS(aid)   ((aid&0xFF00)>>8)            /* ypos from compact form  */
 #define ZPOS(aid)   ((aid&0xFF0000)>>16)         /* zpos from compact form  */
+#ifndef MIN
 #define MIN(x,y) (((x)<(y)) ? (x) : (y))
-
+#endif
 
 /****************************************************************************/
 /*                                                                          */
