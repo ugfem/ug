@@ -293,17 +293,17 @@ static INT PrintSideSideMatrixData (void *data, const char *indent, char *s)
 
 static VEC_FORMAT *GetVectorTemplate (MULTIGRID *theMG, char *template)
 {
-  ENVITEM *item;
+  ENVITEM *item,*dir;
 
   if (ChangeEnvDir("/Formats") == NULL) return (NULL);
-  item = (ENVITEM *)ChangeEnvDir(ENVITEM_NAME(MGFORMAT(theMG)));
-  if (item == NULL) return (NULL);
+  dir = (ENVITEM *)ChangeEnvDir(ENVITEM_NAME(MGFORMAT(theMG)));
+  if (dir == NULL) return (NULL);
   if (template != NULL)
-    for (item=ENVITEM_DOWN(item); item != NULL; item = NEXT_ENVITEM(item))
+    for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
       if (ENVITEM_TYPE(item) == theVecVarID)
         if (strcmp(ENVITEM_NAME(item),template)==0)
           return ((VEC_FORMAT *)item);
-  for (item=ENVITEM_DOWN(item); item != NULL; item = NEXT_ENVITEM(item))
+  for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
     if (ENVITEM_TYPE(item) == theVecVarID)
       return ((VEC_FORMAT *)item);
 
@@ -356,6 +356,7 @@ INT CreateVecDescCmd (MULTIGRID *theMG, INT argc, char **argv)
 
   if (ReadArgvChar("t",template,argc,argv))
     template == NULL;
+
   token = strtok(argv[0],BLANKS);
   token = strtok(NULL,BLANKS);
   while (token!=NULL) {
@@ -372,18 +373,17 @@ INT CreateVecDescCmd (MULTIGRID *theMG, INT argc, char **argv)
 
 static MAT_FORMAT *GetMatrixTemplate (MULTIGRID *theMG, char *template)
 {
-  ENVITEM *item;
+  ENVITEM *item,*dir;
 
   if (ChangeEnvDir("/Formats") == NULL) return (NULL);
-  item = (ENVITEM *)ChangeEnvDir(ENVITEM_NAME(MGFORMAT(theMG)));
-  if (item == NULL) return (NULL);
+  dir = (ENVITEM *)ChangeEnvDir(ENVITEM_NAME(MGFORMAT(theMG)));
+  if (dir == NULL) return (NULL);
   if (template != NULL)
-    for (item=ENVITEM_DOWN(item); item != NULL; item = NEXT_ENVITEM(item))
+    for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
       if (ENVITEM_TYPE(item) == theMatVarID)
         if (strcmp(ENVITEM_NAME(item),template)==0)
           return ((MAT_FORMAT *)item);
-
-  for (item=ENVITEM_DOWN(item); item != NULL; item = NEXT_ENVITEM(item))
+  for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
     if (ENVITEM_TYPE(item) == theMatVarID)
       return ((MAT_FORMAT *)item);
 
