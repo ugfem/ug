@@ -134,7 +134,7 @@ void IF_FUNCNAME (
 		/* poll receive calls */
 		ForIF(aIF,ifHead)
 		{
-			if ((! BufferIsEmpty(ifHead->bufIn)) && ifHead->msgIn!=-1L) 
+			if ((! BufferIsEmpty(ifHead->bufIn)) && ifHead->msgIn!=(msgid)-1)
 			{
 				int error = InfoARecv(ifHead->vc, ifHead->msgIn);
 				if (error==-1)
@@ -159,7 +159,7 @@ void IF_FUNCNAME (
 					#endif
 
 					recv_mesgs--;
-					ifHead->msgIn=-1L; 
+					ifHead->msgIn=(msgid)-1;
 
 					buffer = BufferMem(ifHead->bufIn);
 
@@ -179,7 +179,7 @@ void IF_FUNCNAME (
 
 		ForIF(aIF,ifHead)
 		{
-			if ((! BufferIsEmpty(ifHead->bufIn)) && ifHead->msgIn!=-1L) 
+			if ((! BufferIsEmpty(ifHead->bufIn)) && ifHead->msgIn!=(msgid)-1)
 			{
 				sprintf(cBuffer,
 					"  waiting for message (from proc %d, size %ld)",
@@ -202,7 +202,7 @@ void IF_FUNCNAME (
 
 			ForIF(aIF,ifHead)
 			{
-				if ((! BufferIsEmpty(ifHead->bufOut)) && ifHead->msgOut!=-1L) 
+				if ((! BufferIsEmpty(ifHead->bufOut)) && ifHead->msgOut!=(msgid)-1)
 				{
 					sprintf(cBuffer,
 						"  waiting for send completion (to proc %d, size %ld)",
