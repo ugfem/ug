@@ -3381,6 +3381,19 @@ INT s_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VE
 	return (NUM_OK);
 }
 
+INT s_ddot_sv (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv)
+{
+	INT j;
+	VEC_SCALAR sp;
+	
+	if (s_ddot (mg,fl,tl,x,y,sp)) return (NUM_ERROR);
+	*sv=0.0;
+	for (j=0; j<VD_NCOMP(x); j++)
+		*sv += weight[j]*sp[j];
+	
+	return (NUM_OK);
+}
+
 /****************************************************************************/
 /*D
    l_mean - mean of a vector
@@ -5911,6 +5924,7 @@ INT s_dtpmatmul_set (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 		return (NUM_OK);
 	}
 	
+	
 	for (rtype=0; rtype<NVECTYPES; rtype++)
 		if (VD_ISDEF_IN_TYPE(x,rtype))
 		{
@@ -5920,7 +5934,7 @@ INT s_dtpmatmul_set (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 				if (MD_ISDEF_IN_RT_CT(M,rtype,ctype))
 					switch (MAT_RCKIND(M,rtype,ctype))
 					{
-						case R1C1:
+						/*		case R1C1:
 							SET_VD_CMP_1(cy,y,ctype);
 							SET_MD_CMP_11(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
@@ -6125,7 +6139,7 @@ INT s_dtpmatmul_set (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 								VVALUE(v,cx1) = s1;
 								VVALUE(v,cx2) = s2;
 							}
-							break;
+							break; */
 						
 						default:
 							nr = MD_ROWS_IN_RT_CT(M,rtype,ctype);
@@ -6137,7 +6151,7 @@ INT s_dtpmatmul_set (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 									if ((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=yclass))
 										for (i=0; i<nr; i++)
 											for (j=0; j<nc; j++)
-												s[i] += MVALUE(MADJ(mat),MD_MCMP_OF_RT_CT(M,ctype,rtype,i*nc+j)) *
+												s[i] += MVALUE(MADJ(mat),MD_MCMP_OF_RT_CT(M,ctype,rtype,j*nr+i)) *
 													VVALUE(w,VD_CMP_OF_TYPE(y,ctype,j));
 								for (i=0; i<nr; i++) VVALUE(v,VD_CMP_OF_TYPE(x,rtype,i)) = s[i];
 							}
@@ -6148,7 +6162,7 @@ INT s_dtpmatmul_set (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 									if ((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=yclass))
 										for (i=0; i<nr; i++)
 											for (j=0; j<nc; j++)
-												s[i] += MVALUE(MADJ(mat),MD_MCMP_OF_RT_CT(M,ctype,rtype,i*nc+j)) *
+												s[i] += MVALUE(MADJ(mat),MD_MCMP_OF_RT_CT(M,ctype,rtype,j*nr+i)) *
 													VVALUE(w,VD_CMP_OF_TYPE(y,ctype,j));
 								for (i=0; i<nr; i++) VVALUE(v,VD_CMP_OF_TYPE(x,rtype,i)) = s[i];
 							}
