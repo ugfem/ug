@@ -206,7 +206,7 @@ INT ReadArgvChar (char *name, char *buffer, INT argc, char **argv)
   char option[OPTIONLEN];
   char value[VALUELEN];
 
-  buffer = "";
+  strcpy(buffer,"");
   for (i=0; i<argc; i++)
     if (argv[i][0]==name[0]) {
       if (sscanf(argv[i],
@@ -391,7 +391,7 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, char *name,
   VECDATA_DESC *vd;
   char value[VALUELEN];
 
-  if (ReadArgvChar(name,value,argc,argv))
+  if (ReadArgvChar(name,&value[0],argc,argv))
     return (NULL);
 
   vd = GetVecDataDescByName(theMG,value);

@@ -140,7 +140,7 @@ INT CreateClass (char *classname, INT size, ConstructorProcPtr Construct)
    PARAMETERS:
    .  theMG - numproc objects are now associated with a multigrid
    .  objectname - name for new object.
-   .  classname - name of an existing class.
+   .  classname - final class name of an existing class.
 
    DESCRIPTION:
    This function is used by the npcreate command to create instances
@@ -154,32 +154,49 @@ INT CreateClass (char *classname, INT size, ConstructorProcPtr Construct)
    RETURN VALUE:
    INT
    .n    0 no error.
-   .n     1 error, usually memory overflow in environment or something not found.
+   .n     __LINE__ error, usually memory overflow in environment or something not found.
    D*/
 /****************************************************************************/
 
 INT CreateObject (MULTIGRID *theMG, char *objectname, char *classname)
 {
+  ENVITEM *item;
   NP_CONSTRUCTOR *constructor;
   NP_BASE *object;
   char name[NAMESIZE];
+  INT i,m;
 
   /* first find constructor */
-  constructor = (NP_CONSTRUCTOR *) SearchEnv(classname,"/NumProcClasses",ClassVarID,ClassDirID);
-  if (constructor==NULL) return(1);
+  item = (ENVITEM *) ChangeEnvDir("/NumProcClasses");
+  if (item == NULL) return (__LINE__);
+  for (item=ENVITEM_DOWN(item); item!=NULL; item=NEXT_ENVITEM(item))
+    if (ENVITEM_TYPE(item) == ClassVarID)
+    {
+      /* check classname */
+      m = strlen(ENVITEM_NAME(item));
+      for (i=m-1; i>=0; i--)
+        if (ENVITEM_NAME(item)[i]=='.') break;
+      if (strcmp(ENVITEM_NAME(item)+(i+1),classname)==0) break;
+    }
+  constructor = (NP_CONSTRUCTOR *) item;
+  if (constructor==NULL) {
+    PrintErrorMessage('E',"CreateObject","cannot find specified class");
+    return(__LINE__);
+  }
 
   /* create objects directory in multigrid if necessary */
-  if (ChangeEnvDir("/Multigrids") == NULL) return (1);
-  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (1);
-  if (ChangeEnvDir("Objects") == NULL)
+  if (ChangeEnvDir("/Multigrids") == NULL) return (__LINE__);
+  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (__LINE__);
+  if (ChangeEnvDir("Objects") == NULL) {
     MakeEnvItem("Objects",ObjectDirID,sizeof(ENVDIR));
-  if (ChangeEnvDir("Objects") == NULL) return (1);
-
+    if (ChangeEnvDir("Objects") == NULL) return (__LINE__);
+  }
   /* allocate object */
-  if (strlen(objectname)+strlen(classname)+2>NAMESIZE) return(1);
-  sprintf(name,"%s.%s",classname,objectname);
+  if (strlen(objectname)+strlen(ENVITEM_NAME(item))+2>NAMESIZE)
+    return(__LINE__);
+  sprintf(name,"%s.%s",ENVITEM_NAME(item),objectname);
   object = (NP_BASE *) MakeEnvItem(name,ObjectVarID,constructor->size);
-  if (object==NULL) return(1);
+  if (object==NULL) return(__LINE__);
 
   /* initialize object with constructor */
   object->mg = theMG;
@@ -187,7 +204,7 @@ INT CreateObject (MULTIGRID *theMG, char *objectname, char *classname)
   object->Init = NULL;
   object->Display = NULL;
   object->Execute = NULL;
-  if ((*constructor->Construct)(object)!=0) return(1);
+  if ((*constructor->Construct)(object)!=0) return(__LINE__);
 
   /* return OK */
   return(0);
