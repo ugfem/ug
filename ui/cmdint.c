@@ -1672,7 +1672,7 @@ static INT GetFullPathName (char *buffer)
     strcpy(buffer,sptr);
     return (DONE);
   }
-  else if (ISALPHA(c)||(c=='/')||(c=='~')||((c=='.')&&(cmdPtr[1]=='.')))
+  else if (ISALPHA(c)||(c=='/')||(c=='~')||((c=='.')&&(cmdPtr[1]=='.'))||((c=='.')&&(cmdPtr[1]=='/')))
   {
     k=0;
     do
