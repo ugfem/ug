@@ -4,9 +4,14 @@
 #
 # purpose: close a dashboard on the server and create HTML files out of the XSL files
 
+# set up default test type
+set TEST_TYPE = "Nightly";
+
+# set up test type that is given on the command line
+if ( $#argv == 1 ) then
+        set TEST_TYPE = $1;
+endif
+	
 cd $DART_HOME/Source/Server/UG
-tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly DashboardEnd
-
-
-
-
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_TYPE DashboardEnd
+ug_dart_copy_html

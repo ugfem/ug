@@ -4,8 +4,16 @@
 #
 # purpose: open a new Dashboard on the server
 
+# set up default test type
+set TEST_TYPE = "Nightly";
+
+# set up test type that is given on the command line
+if ( $#argv == 1 ) then
+        set TEST_TYPE = $1;
+endif
+	
 cd $DART_HOME/Source/Server/UG
-tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly DashboardStart
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_TYPE DashboardStart
 
 
 

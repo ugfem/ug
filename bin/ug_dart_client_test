@@ -7,30 +7,38 @@ cd $DART_HOME/Source/Client/UG
 
 # DashboardManager.tcl controls the test cyle via DartConfiguration.tcl and parameters
 # 	testmode: 
-#		Nightly (tests regular all night or day :-)
+#		$TEST_TYPE (tests regular all night or day :-)
 #		Continuous (tests whenever changes have been made to the reposoritory)
 #		Experimental (tests of software from local developer copy)
 #	command: Start, Update,	Configure, Build, Test, Coverage, Doxygen, Purify, Submit
 
+# set up default test type
+set TEST_TYPE = "Nightly";
+
+# set up test type that is given on the command line
+if ( $#argv == 1 ) then
+	set TEST_TYPE = $1;
+endif
+
 # the Start script creates the testing subtree which is needed to store the test results
-tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly Start 
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_TYPE Start 
 
 # the Update script makes an update against the cvs repository
-tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly Update 
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_TYPE Update 
 
 # the Configure script executes the configure command which is specified in 
 # "DartConfiguration.tcl" file
-tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly Configure 
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_TYPE Configure 
 
 # the Build script executes the build command which is specified in 
 # "DartConfiguration.tcl" file 
-tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly Build
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_TYPE Build
 
 # the Test scripts runs the tests which are specified in the several "DartTestfile.txt" files
-tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly Test
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_TYPE Test
 
 # the Coverage script collects the coverage information which may be created with gcc
-tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly Coverage
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_TYPE Coverage
 
 # the Submit script sends the test information to the server
-tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly Submit
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl $TEST_TYPE Submit
