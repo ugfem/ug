@@ -1320,6 +1320,31 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
   return(0);
 }
 
+static int Gather_NodeType (DDD_OBJ obj, void *data)
+{
+  NODE *theNode = (NODE *)obj;
+
+  ((int *)data)[0] = NTYPE(theNode);
+
+  return(GM_OK);
+}
+
+static int Scatter_NodeType (DDD_OBJ obj, void *data)
+{
+  NODE *theNode = (NODE *)obj;
+
+  SETNTYPE(theNode,((int *)data)[0]);
+
+  return(GM_OK);
+}
+
+static INT SpreadGridNodeTypes(GRID *theGrid)
+{
+  DDD_IFAOneway(NodeIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+                Gather_NodeType,Scatter_NodeType);
+  return(GM_OK);
+}
+
 static INT IO_GridCons(MULTIGRID *theMG)
 {
   INT i,*proclist;
@@ -1342,8 +1367,9 @@ static INT IO_GridCons(MULTIGRID *theMG)
     for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
       if (!MASTER(theVector))
         DisposeConnectionFromVector(theGrid,theVector);
+
     /* spread nodetypes from master to its copies */
-    assert(0);
+    if (SpreadGridNodeTypes(theGrid) != GM_OK) RETURN(GM_FATAL);
   }
 
   return(GM_OK);
