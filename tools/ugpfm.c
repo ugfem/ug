@@ -100,6 +100,7 @@ typedef struct {
   int next_lid;
   int ncol;                         /* nb. of collisions						*/
   int nmerge;                       /* nb. of merges							*/
+  int mem;                                              /* memory used in bytes						*/
   ENTRY *entry[1];                      /* table used								*/
 } HASH_TABLE;
 
@@ -110,8 +111,13 @@ typedef struct {
   int nmerge;                       /* nb. of merges                            */
 } HASH_STAT;
 
+typedef struct {
+  struct mgio_refinement_seq ref;
+  int sonex;
+} MERGE_REFINEMENT;
+
 typedef int (*HashEntryProc)(void **object);
-typedef int (*RefinementProcPtr)(MGIO_REFINEMENT *ref);
+typedef int (*RefinementProcPtr)(MERGE_REFINEMENT *ref);
 
 /****************************************************************************/
 /*																			*/
@@ -133,6 +139,7 @@ static int debug=0;
 #ifdef MERGE_DEBUG
 static HASH_TABLE *ht_nodes=NULL;
 #endif
+HASH_TABLE *ht_mem=NULL;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -162,11 +169,33 @@ int AddElement (int node0, int node1, int node2, int node3) {
   return (0);
 }
 
+void *PopHashEntry (HASH_TABLE *ht, int *key);
+int PushHashEntry (HASH_TABLE **hth, int *key, void *obj);
+
 /****************************************************************************/
 /****************************** ugpfm-low ***********************************/
 /****************************************************************************/
 
-HASH_TABLE *CreateHashTable (int size)
+void *ht_malloc (size_t size, char *ident)
+{
+  int i,key[MAX_KEY_LEN+1];
+  void *mem,*obj;
+
+  mem=malloc(size);
+  if (mem!=NULL)
+  {
+    assert(strlen(ident)<=MAX_KEY_LEN);
+    for (i=0; i<strlen(ident); i++)
+      key[i+1]=(int)(ident[i]);
+    key[0]=i;
+    obj=PopHashEntry(ht_mem,key);
+    if (obj!=NULL) size+=(int)obj;
+    if (PushHashEntry(&ht_mem,key,(void*)size)) return (NULL);
+  }
+  return (mem);
+}
+
+HASH_TABLE *CreateHashTable (HASH_TABLE **hth, int size)
 {
   int i,j,table_len,max_factor;
   HASH_TABLE *ht;
@@ -191,7 +220,8 @@ HASH_TABLE *CreateHashTable (int size)
       break;
     }
   }
-  ht = (HASH_TABLE *)malloc(sizeof(HASH_TABLE)+(table_len-1)*sizeof(ENTRY*));
+  if (hth!=&ht_mem) ht = (HASH_TABLE *)ht_malloc(sizeof(HASH_TABLE)+(table_len-1)*sizeof(ENTRY*),"hashtable");
+  else ht = (HASH_TABLE *)malloc(sizeof(HASH_TABLE)+(table_len-1)*sizeof(ENTRY*));
   if (ht==NULL) return (NULL);
   for (i=0; i<table_len; i++) ht->entry[i]=NULL;
   ht->table_len=table_len;
@@ -201,6 +231,7 @@ HASH_TABLE *CreateHashTable (int size)
   ht->next_get=0;
   ht->next_lid=0;
   ht->nmerge=0;
+  ht->mem=sizeof(HASH_TABLE)+(table_len-1)*sizeof(ENTRY*);
 
   return (ht);
 }
@@ -213,7 +244,7 @@ HASH_TABLE *ResizeHashTable (HASH_TABLE *ht, int add_obj)
 #ifdef VERBOSE
   printf("Resizing hashtable\n");
 #endif
-  nht=CreateHashTable(ht->n_obj+add_obj);
+  nht=CreateHashTable(&ht,ht->n_obj+add_obj);
   if (nht==NULL) return (NULL);
   for (i=ht->next_get; i<ht->table_len; i++)
   {
@@ -275,7 +306,7 @@ int PushHashEntry (HASH_TABLE **hth, int *key, void *obj)
   HASH_TABLE *ht;
   int i,skey;
 
-  if (*hth==NULL) *hth=CreateHashTable(HASH_STARTSIZE);
+  if (*hth==NULL) *hth=CreateHashTable(hth,HASH_STARTSIZE);
   if (*hth==NULL)
   {
     printf("ERROR in 'PushHashEntry': cannot resize hashtable\n");
@@ -299,16 +330,11 @@ int PushHashEntry (HASH_TABLE **hth, int *key, void *obj)
   while (ht->entry[skey]!=NULL && !key_eq(key,ht->entry[skey]->key)) {skey=(skey+1)%ht->table_len; ht->ncol++;}
   if (ht->entry[skey]!=NULL)
   {
-    ht->nmerge++;
-    if (debug)
-    {
-      printf("key: %d\n",key[1]);
-      printf("e1:  %d\n",(int)ht->entry[skey]->obj);
-      printf("e2:  %d\n",(int)obj);
-    }
+    ht->entry[skey]->obj=obj;
     return (0);
   }
-  ht->entry[skey]=(ENTRY *)malloc(sizeof(ENTRY)+key[0]*sizeof(int));
+  if (hth!=&ht_mem) ht->entry[skey]=(ENTRY *)ht_malloc(sizeof(ENTRY)+key[0]*sizeof(int),"hashtable");
+  else ht->entry[skey]=(ENTRY *)malloc(sizeof(ENTRY)+key[0]*sizeof(int));
   if (ht->entry[skey]==NULL)
   {
     printf("ERROR in 'PushHashEntry': cannot allocate entry\n");
@@ -320,6 +346,7 @@ int PushHashEntry (HASH_TABLE **hth, int *key, void *obj)
   ht->n_obj++;
   ht->entry[skey]->lid=ht->next_lid;
   ht->next_lid++;
+  ht->mem+=sizeof(ENTRY)+key[0]*sizeof(int);
 
   return (0);
 }
@@ -457,6 +484,7 @@ int HashTablePrint (HASH_TABLE *ht, char *name)
     printf("n_obj: %d\n",ht->n_obj);
     printf("n_col: %d\n",ht->ncol);
     printf("n_mrg: %d\n",ht->nmerge);
+    printf("mem:   %d\n",ht->mem);
     printf("\n");
   }
   else
@@ -464,6 +492,7 @@ int HashTablePrint (HASH_TABLE *ht, char *name)
     printf("n_obj: 0\n");
     printf("n_col: 0\n");
     printf("n_mrg: 0\n");
+    printf("mem:   0\n");
     printf("\n");
   }
 
@@ -506,17 +535,47 @@ int HashTableInsertAtBegin (HASH_TABLE **ht, HASH_TABLE *insert)
   return (0);
 }
 
+int ht_malloc_display (void)
+{
+  int total,i,lid,found,key[MAX_KEY_LEN+1];
+  char name[MAX_KEY_LEN+1];
+  void *obj;
+
+  printf("%%%%%%%%%% ht_mem display %%%%%%%%%%\n");
+  if (ht_mem==NULL) return (0);
+  total=0;
+  if (BeginHashGet(ht_mem)) return (1);
+  while(1)
+  {
+    if (HashGet(ht_mem,&obj,key,&lid,&found)) return(1);
+    if (!found) break;
+    for (i=1; i<=key[0]; i++)
+      name[i-1]=(char)key[i];
+    name[key[0]]='\0';
+    printf("%12s: %d bytes\n",name,(int)obj);
+    total+=(int)obj;
+  }
+  if (EndHashGet(ht_mem)) return (1);
+  printf("total: %d bytes\n",total);
+  printf("\n");
+
+  return (0);
+}
+
 /****************************************************************************/
 /******************************* ugpfm-mg ***********************************/
 /****************************************************************************/
 
-int ReconstructNodeContext (MGIO_REFINEMENT *ref, MGIO_GE_ELEMENT *ge_element, MGIO_RR_RULE *rr_rules, int *nc)
+int ReconstructNodeContext (MERGE_REFINEMENT *mref, MGIO_GE_ELEMENT *ge_element, MGIO_RR_RULE *rr_rules, int *nc)
 {
-  int i,j;
+  int i,j,sonex;
+  struct mgio_refinement_seq *ref;
 
+  ref=&(mref->ref);
+  sonex=mref->sonex;
   for (i=0; i<MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS; i++) nc[i]=-1;
   for (i=0; i<rr_rules[ref->refrule].nsons; i++)
-    if (ref->sonex & (1<<i))
+    if (sonex & (1<<i))
       for (j=0; j<ge_element[rr_rules[ref->refrule].sons[i].tag].nCorner; j++)
       {
         assert(rr_rules[ref->refrule].sons[i].corners[j]>=0);
@@ -529,12 +588,12 @@ int ReconstructNodeContext (MGIO_REFINEMENT *ref, MGIO_GE_ELEMENT *ge_element, M
   return (0);
 }
 
-int MergeRefinement (HASH_TABLE **hth, int *key, MGIO_REFINEMENT *refinement, MGIO_GE_ELEMENT *ge_element, MGIO_RR_RULE *rr_rules)
+int MergeRefinement (HASH_TABLE **hth, int *key, MERGE_REFINEMENT *refinement, MGIO_GE_ELEMENT *ge_element, MGIO_RR_RULE *rr_rules)
 {
-  MGIO_REFINEMENT *popref;
+  MERGE_REFINEMENT *popref;
   int i,ncold[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS],ncnew[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];
 
-  popref=(MGIO_REFINEMENT*)PopHashEntry(*hth,key);
+  popref=(MERGE_REFINEMENT*)PopHashEntry(*hth,key);
   if (popref==NULL) return(PushHashEntry(hth,key,(void*)refinement));
   if (ReconstructNodeContext(popref,ge_element,rr_rules,ncold)) return (1);
   if (ReconstructNodeContext(refinement,ge_element,rr_rules,ncnew)) return (1);
@@ -544,30 +603,34 @@ int MergeRefinement (HASH_TABLE **hth, int *key, MGIO_REFINEMENT *refinement, MG
     if (ncnew[i]!=-1) continue;
     if (ncold[i]!=-1) ncnew[i]=ncold[i];
   }
-  for (i=popref->nnewcorners=0; i<MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS; i++)
+  for (i=popref->ref.nnewcorners=0; i<MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS; i++)
     if (ncnew[i]!=-1)
-      popref->newcornerid[popref->nnewcorners++]=ncnew[i];
-  popref->sonref|=refinement->sonref;
+      popref->ref.newcornerid[popref->ref.nnewcorners++]=ncnew[i];
+  popref->ref.sonref|=refinement->ref.sonref;
   popref->sonex|=refinement->sonex;
 
   return (0);
 }
 
-int InsertRefinement (HASH_TABLE **hth, int *key, MGIO_REFINEMENT *refinement, MGIO_GE_ELEMENT *ge_element, MGIO_RR_RULE *rr_rules, int *nref)
+int InsertRefinement (HASH_TABLE **hth, int *key, MERGE_REFINEMENT *refinement, MGIO_GE_ELEMENT *ge_element, MGIO_RR_RULE *rr_rules, int *nref)
 {
-  int i,j;
-  static MGIO_REFINEMENT *next_ref;
-  MGIO_REFINEMENT *ref;
+  int i,j,nc[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];
+  static MERGE_REFINEMENT *next_ref;
+  MERGE_REFINEMENT *ref;
 
   if (refinement!=NULL) next_ref=refinement;
   else next_ref++;
   ref=next_ref;
   if (MergeRefinement(hth,key,ref,ge_element,rr_rules))                   {printf("ERROR in 'InsertRefinement': cannot 'PopRefinement'\n");return (1);}
-  for (i=0; i<rr_rules[ref->refrule].nsons; i++)
+  if (ReconstructNodeContext(ref,ge_element,rr_rules,nc)) return (1);
+  for (i=0; i<rr_rules[ref->ref.refrule].nsons; i++)
   {
-    if (((ref->sonex&(1<<i))==0)||((ref->sonref&(1<<i))==0)) continue;
-    for (j=0; j<ge_element[rr_rules[ref->refrule].sons[i].tag].nCorner; j++)
-      key[j+1]=ref->pinfo[i].n_ident[j];
+    if (((ref->sonex&(1<<i))==0)||((ref->ref.sonref&(1<<i))==0)) continue;
+    for (j=0; j<ge_element[rr_rules[ref->ref.refrule].sons[i].tag].nCorner; j++)
+    {
+      assert(nc[rr_rules[ref->ref.refrule].sons[i].corners[j]]!=-1);
+      key[j+1]=nc[rr_rules[ref->ref.refrule].sons[i].corners[j]];
+    }
     key[0]=j;
     if (InsertRefinement(hth,key,NULL,ge_element,rr_rules,nref))
     {printf("ERROR in 'InsertRefinement': cannot recursivly call myself\n");return (1);}
@@ -614,9 +677,9 @@ static int ref_crosscheck=0;
 int ClimbRefinementTree(int *key, HASH_TABLE *ht_ref, RefinementProcPtr Proc, MGIO_GE_ELEMENT *ge_element, MGIO_RR_RULE *rr_rules)
 {
   int i,j,sonkey[MGIO_MAX_CORNERS_OF_ELEM+1],nc[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];
-  MGIO_REFINEMENT *ref;
+  MERGE_REFINEMENT *ref;
 
-  ref=(MGIO_REFINEMENT*)PopHashEntry(ht_ref,key);
+  ref=(MERGE_REFINEMENT*)PopHashEntry(ht_ref,key);
   if (ref==NULL) return (0);
 
 #ifdef MERGE_DEBUG
@@ -626,12 +689,12 @@ int ClimbRefinementTree(int *key, HASH_TABLE *ht_ref, RefinementProcPtr Proc, MG
 
   if (ReconstructNodeContext (ref,ge_element,rr_rules,nc)) return (1);
   if (Proc!=NULL) if ((*Proc)(ref)) return (1);
-  for (i=0; i<rr_rules[ref->refrule].nsons; i++)
+  for (i=0; i<rr_rules[ref->ref.refrule].nsons; i++)
   {
-    if (((ref->sonex&(1<<i))==0)||((ref->sonref&(1<<i))==0)) continue;
-    for (j=0; j<ge_element[rr_rules[ref->refrule].sons[i].tag].nCorner; j++)
+    if (((ref->sonex&(1<<i))==0)||((ref->ref.sonref&(1<<i))==0)) continue;
+    for (j=0; j<ge_element[rr_rules[ref->ref.refrule].sons[i].tag].nCorner; j++)
     {
-      sonkey[j+1]=nc[rr_rules[ref->refrule].sons[i].corners[j]];
+      sonkey[j+1]=nc[rr_rules[ref->ref.refrule].sons[i].corners[j]];
       assert(sonkey[j+1]!=-1);
     }
     sonkey[0]=j;
@@ -643,35 +706,35 @@ int ClimbRefinementTree(int *key, HASH_TABLE *ht_ref, RefinementProcPtr Proc, MG
 
 static HASH_TABLE *WR_GOL;
 static MGIO_RR_RULE *WR_rr_rules;
-int WriteRefinement (MGIO_REFINEMENT *ref)
+int WriteRefinement (MERGE_REFINEMENT *ref)
 {
   int i,lid,key[2];
 
-  for (i=0; i<ref->nnewcorners; i++)
+  for (i=0; i<ref->ref.nnewcorners; i++)
   {
-    key[0]=1; key[1]=ref->newcornerid[i];
+    key[0]=1; key[1]=ref->ref.newcornerid[i];
     if (LocalIndexHash(WR_GOL,key,&lid)) return (1);
     assert(lid!=-1);
-    /*ref->newcornerid[i]=lid;*/
+    ref->ref.newcornerid[i]=lid;
   }
-  if (Write_Refinement(ref,WR_rr_rules)) return (1);
+  if (Write_Refinement((MGIO_REFINEMENT*)ref,WR_rr_rules)) return (1);
 
   return (0);
 }
 
-int PrintRefinementCID (MGIO_REFINEMENT *ref)
+int PrintRefinementCID (MERGE_REFINEMENT *ref)
 {
   int i;
 
-  for (i=0; i<ref->nnewcorners; i++)
-    printf("%d\n",ref->newcornerid[i]);
+  for (i=0; i<ref->ref.nnewcorners; i++)
+    printf("%d\n",ref->ref.newcornerid[i]);
   printf("\n");
 
   return (0);
 }
 
 static int CR_nref;
-int CountRefinements (MGIO_REFINEMENT *ref)
+int CountRefinements (MERGE_REFINEMENT *ref)
 {
   CR_nref++;
   return (0);
@@ -693,7 +756,8 @@ int MergeMultigrid (char *in, int rename)
   MGIO_CG_ELEMENT **cg_element,*o_element,*elem;
   MGIO_BD_GENERAL *bd_general,bd_general_out;
   MGIO_PARINFO cg_pinfo;
-  MGIO_REFINEMENT ***refinement,*ref;
+  MERGE_REFINEMENT ***refinement;
+  MGIO_REFINEMENT loc_ref,*ref;
   unsigned short *ProcList;
   BNDP **BndPList;
   char prefix[128],appdix[128],outname[128],tmp[128],tmp2[28],*p;
@@ -719,7 +783,7 @@ int MergeMultigrid (char *in, int rename)
   if (CloseMGFile())                                                              {printf("ERROR in 'MergeMultigrid': cannot close proc 0 file\n");return (1);}
 
   /* allocate dynamic lists */
-  mg_general_list=(MGIO_MG_GENERAL*)malloc(nparfiles*sizeof(MGIO_MG_GENERAL));
+  mg_general_list=(MGIO_MG_GENERAL*)ht_malloc(nparfiles*sizeof(MGIO_MG_GENERAL),"const");
   if (mg_general_list==NULL)                                              {printf("ERROR in 'MergeMultigrid': cannot allocate mg_general_list\n");return (1);}
 
   /* read all mg_generals */
@@ -762,48 +826,48 @@ int MergeMultigrid (char *in, int rename)
   ht_gol = NULL;
 
   /* scan each input file */
-  cg_general=(MGIO_CG_GENERAL*)malloc(nparfiles*sizeof(MGIO_CG_GENERAL));
+  cg_general=(MGIO_CG_GENERAL*)ht_malloc(nparfiles*sizeof(MGIO_CG_GENERAL),"const");
   if (cg_general==NULL)                                                                   {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'cg_general' \n");return (1);}
-  cg_point=(MGIO_CG_POINT**)malloc(nparfiles*sizeof(MGIO_CG_POINT*));
+  cg_point=(MGIO_CG_POINT**)ht_malloc(nparfiles*sizeof(MGIO_CG_POINT*),"const");
   if (cg_point==NULL)                                                                             {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'cg_point' \n");return (1);}
-  cg_element=(MGIO_CG_ELEMENT**)malloc(nparfiles*sizeof(MGIO_CG_ELEMENT*));
+  cg_element=(MGIO_CG_ELEMENT**)ht_malloc(nparfiles*sizeof(MGIO_CG_ELEMENT*),"const");
   if (cg_element==NULL)                                                                   {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'cg_element' \n");return (1);}
-  bd_general=(MGIO_BD_GENERAL*)malloc(nparfiles*sizeof(MGIO_BD_GENERAL));
+  bd_general=(MGIO_BD_GENERAL*)ht_malloc(nparfiles*sizeof(MGIO_BD_GENERAL),"const");
   if (bd_general==NULL)                                                                   {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'bd_general' \n");return (1);}
-  refinement=(MGIO_REFINEMENT***)malloc(nparfiles*sizeof(MGIO_REFINEMENT**));
+  refinement=(MERGE_REFINEMENT***)ht_malloc(nparfiles*sizeof(MERGE_REFINEMENT**),"const");
   if (refinement==NULL)                                                                   {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'refinement' \n");return (1);}
-  ncge=(int*)malloc(nparfiles*sizeof(int));
+  ncge=(int*)ht_malloc(nparfiles*sizeof(int),"const");
   if (ncge==NULL)                                                                                 {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'ncge' \n");return (1);}
   for (i=0; i<nparfiles; i++)
   {
     sprintf(tmp,"%s/mg.%04d",in,i);
     if (Read_OpenMGFile(tmp))                                                       {printf("ERROR in 'MergeMultigrid': cannot open proc %d file\n",i);return (1);}
     if (Read_MG_General(&mg_general_dummy))                         {printf("ERROR in 'MergeMultigrid': cannot read mg_general of proc %d file\n",i);return (1);}
-    in_lid2gid=(int*)malloc(mg_general_dummy.nNode*sizeof(int));
+    in_lid2gid=(int*)ht_malloc(mg_general_dummy.nNode*sizeof(int),"procloc");
     if (in_lid2gid==NULL)                                                                   {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'in_lid2gid' of proc %d file\n",i);return (1);}
     for (j=0; j<mg_general_dummy.nNode; j++) in_lid2gid[j]=-1;
     nid_l0_max=vid_l0_max=vid_bl0_max=-1;
     if (Read_GE_General(&ge_general))                       {printf("ERROR in 'MergeMultigrid': cannot read 'ge_general' of proc %d file\n",i);return (1);}
     if (Read_GE_Elements(TAGS,ge_element))                  {printf("ERROR in 'MergeMultigrid': cannot read 'ge_element' of proc %d file\n",i);return (1);}
     if (Read_RR_General(&rr_general))                       {printf("ERROR in 'MergeMultigrid': cannot read 'rr_general' of proc %d file\n",i);return (1);}
-    rr_rules = (MGIO_RR_RULE *)malloc(rr_general.nRules*sizeof(MGIO_RR_RULE));
+    rr_rules = (MGIO_RR_RULE *)ht_malloc(rr_general.nRules*sizeof(MGIO_RR_RULE),"const");
     if (rr_rules==NULL)                                                             {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'rr_rules' of proc %d file\n",i);return (1);}
     if (Read_RR_Rules(rr_general.nRules,rr_rules))          {printf("ERROR in 'MergeMultigrid': cannot read 'rr_rules' of proc %d file\n",i);return (1);}
     if (Read_CG_General(cg_general+i))                                      {printf("ERROR in 'MergeMultigrid': cannot read 'cg_general' of proc %d file\n",i);return (1);}
     if (cg_general[i].nPoint>0)
     {
-      cg_point[i]=(MGIO_CG_POINT*)malloc(cg_general[i].nPoint*sizeof(MGIO_CG_POINT));
+      cg_point[i]=(MGIO_CG_POINT*)ht_malloc(cg_general[i].nPoint*sizeof(MGIO_CG_POINT),"procglob");
       if (cg_point[i]==NULL)                                                                  {printf("ERROR in 'MergeMultigrid': cannot allocate 'cg_point' of proc %d file\n",i);return (1);}
       if (Read_CG_Points(cg_general[i].nPoint,cg_point[i]))   {printf("ERROR in 'MergeMultigrid': cannot read 'cg_point' of proc %d file\n",i);return (1);}
     }
     if (Bio_Read_mint(1,&non))                              {printf("ERROR in 'MergeMultigrid': cannot read 'non' of proc %d file\n",i);return (1);}
     if (Bio_Read_mint(1,&foid))                             {printf("ERROR in 'MergeMultigrid': cannot read 'foid' of proc %d file\n",i);return (1);}
-    vidlist = (int*)malloc(non*sizeof(int));
+    vidlist = (int*)ht_malloc(non*sizeof(int),"procloc");
     if (Bio_Read_mint(non,vidlist))                         {printf("ERROR in 'MergeMultigrid': cannot read 'vidlist' of proc %d file\n",i);return (1);}
     if (cg_general[i].nElement>0)
     {
-      o_element=(MGIO_CG_ELEMENT*)malloc(cg_general[i].nElement*sizeof(MGIO_CG_ELEMENT));
-      o_element_im=(int*)malloc(cg_general[i].nElement*sizeof(int));
+      o_element=(MGIO_CG_ELEMENT*)ht_malloc(cg_general[i].nElement*sizeof(MGIO_CG_ELEMENT),"procloc");
+      o_element_im=(int*)ht_malloc(cg_general[i].nElement*sizeof(int),"procloc");
       if (o_element==NULL)                                                    {printf("ERROR in 'MergeMultigrid': cannot allocate 'o_element' of proc %d file\n",i);return (1);}
       if (Read_CG_Elements(cg_general[i].nElement,o_element)) {printf("ERROR in 'MergeMultigrid': cannot read 'o_element' of proc %d file\n",i);return (1);}
       for (ncge[i]=0; ncge[i]<cg_general[i].nElement; ncge[i]++) if (o_element[ncge[i]].level>0) break;
@@ -814,14 +878,14 @@ int MergeMultigrid (char *in, int rename)
     if (Read_BD_General (bd_general+i))                                     {printf("ERROR in 'MergeMultigrid': cannot read 'bd_general' in proc %d file\n",i);return (1);}
     if (bd_general[i].nBndP>0)
     {
-      BndPList = (BNDP**)malloc(bd_general[i].nBndP*sizeof(BNDP*));
+      BndPList = (BNDP**)ht_malloc(bd_general[i].nBndP*sizeof(BNDP*),"const");
       if (BndPList==NULL)                                                     {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'BndPList' of proc %d file\n",i);return (1);}
       if (Read_PBndDesc (NULL,NULL,bd_general[i].nBndP,BndPList))
       {printf("ERROR in 'MergeMultigrid': cannot read 'BndPList' of proc %d file\n",i);return (1);}
     }
     if (cg_general[i].nElement>0)
     {
-      ProcList = (unsigned short*)malloc(PROCLISTSIZE*sizeof(unsigned short));
+      ProcList = (unsigned short*)ht_malloc(PROCLISTSIZE*sizeof(unsigned short),"const");
       if (ProcList==NULL)                                                             {printf("ERROR in 'MergeMultigrid': cannot allocate 'ProcList' of proc %d file\n",i);return (1);}
       cg_pinfo.proclist = ProcList;
       for (j=0; j<cg_general[i].nElement; j++)
@@ -866,19 +930,17 @@ int MergeMultigrid (char *in, int rename)
         for (k=0; k<ge_element[o_element[j].ge].nCorner; k++)
           o_element[j].cornerid[k]=cg_pinfo.n_ident[k];
       }
-      refinement[i]=(MGIO_REFINEMENT**)malloc(cg_general[i].nElement*sizeof(MGIO_REFINEMENT*));
+      refinement[i]=(MERGE_REFINEMENT**)ht_malloc(cg_general[i].nElement*sizeof(MERGE_REFINEMENT*),"refinement");
       if (refinement[i]==NULL)                                                        {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'refinement' \n");return (1);}
-      n_ref_tot=0;
       for (j=0; j<cg_general[i].nElement; j++)
       {
-        n_ref_tot+=o_element[j].nref;
-        refinement[i][j]=(MGIO_REFINEMENT*)malloc(o_element[j].nref*sizeof(MGIO_REFINEMENT));
-        for (k=0; k<o_element[j].nref; k++)
-          for (l=0; l<MGIO_MAX_SONS_OF_ELEM; l++)
-            refinement[i][j][k].pinfo[l].proclist=ProcList;
+        if (o_element[j].nref==0) continue;
+        refinement[i][j]=(MERGE_REFINEMENT*)ht_malloc(o_element[j].nref*sizeof(MERGE_REFINEMENT),"refinement");
+        ref=&loc_ref;
+        for (l=0; l<MGIO_MAX_SONS_OF_ELEM; l++)
+          ref->pinfo[l].proclist=ProcList;
         for (k=0; k<o_element[j].nref; k++)
         {
-          ref=&(refinement[i][j][k]);
           if (Read_Refinement(ref,rr_rules))  {printf("ERROR in 'MergeMultigrid': cannot read 'refinement' of proc %d file\n",i);return (1);}
           if (ref->sonex==0) assert(ref->nnewcorners==0);
           for (l=0; l<MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS; l++) nc[l]=-1;
@@ -920,6 +982,8 @@ int MergeMultigrid (char *in, int rename)
                 ref->newcornerid[t]=ref->pinfo[l].n_ident[s];
                 nc[rr_rules[ref->refrule].sons[l].corners[s]]=-1;
               }
+          memcpy((void*)(refinement[i][j]+k),(const void*)ref,sizeof(struct mgio_refinement_seq));
+          refinement[i][j][k].sonex=ref->sonex;
         }
       }
       for (j=0; j<cg_general[i].nElement; j++)
@@ -933,7 +997,7 @@ int MergeMultigrid (char *in, int rename)
         if (nref_read!=o_element[j].nref)
         {printf("ERROR in 'MergeMultigrid': nref mismatch in  refinement tree of proc %d file\n",i);return (1);}
       }
-      cg_element[i]=(MGIO_CG_ELEMENT*)malloc(ncge[i]*sizeof(MGIO_CG_ELEMENT));
+      cg_element[i]=(MGIO_CG_ELEMENT*)ht_malloc(ncge[i]*sizeof(MGIO_CG_ELEMENT),"procglob");
       if (cg_element[i]==NULL)                                                {printf("ERROR in 'MergeMultigrid': cannot allocate 'cg_element[i]' of proc %d file\n",i);return (1);}
       memcpy((void*)cg_element[i],(const void*)o_element,ncge[i]*sizeof(MGIO_CG_ELEMENT));
       for (j=0; j<ncge[i]; j++)                   /* globalize neighbors */
@@ -1047,7 +1111,7 @@ int MergeMultigrid (char *in, int rename)
          ,cg_general_out.nPoint,cg_general_out.nInnerPoint,cg_general_out.nBndPoint,cg_general_out.nElement,cg_general_out.nInnerElement,cg_general_out.nBndElement);
 #endif
   if (Write_CG_General(&cg_general_out))                                              {printf("ERROR in 'MergeMultigrid': cannot write 'cg_general' to output file\n");return (1);}
-  cg_point_out=(struct mgio_cg_point_seq*)malloc(cg_general_out.nPoint*sizeof(struct mgio_cg_point_seq));
+  cg_point_out=(struct mgio_cg_point_seq*)ht_malloc(cg_general_out.nPoint*sizeof(struct mgio_cg_point_seq),"out");
   if (cg_point_out==NULL)                                                                         {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'cg_point for output file\n");return (1);}
   if (BeginHashGet(ht_cgv))                                                                       {printf("ERROR in 'MergeMultigrid': cannot 'BeginHashGet' of 'ht_cgv' for output file\n");return (1);}
   while (1)
@@ -1110,7 +1174,7 @@ int MergeMultigrid (char *in, int rename)
   if (Bio_Jump_From ())                                                                           {printf("ERROR in 'MergeMultigrid': cannot 'Bio_Jump_From' for output file\n");return (1);}
   bd_general_out.nBndP=cg_general_out.nBndPoint;
   if (Write_BD_General(&bd_general_out))                                          {printf("ERROR in 'MergeMultigrid': cannot 'Write_BD_General' for output file\n");return (1);}
-  BndPList=(BNDP**)malloc(bd_general_out.nBndP*sizeof(BNDP*));
+  BndPList=(BNDP**)ht_malloc(bd_general_out.nBndP*sizeof(BNDP*),"out");
   if (BndPList==NULL)                                                                                     {printf("ERROR in 'MergeMultigrid': cannot allocate 'BndPList' for output file\n");return (1);}
 #ifdef MERGE_DEBUG
   for (i=0; i<bd_general_out.nBndP; i++)
@@ -1171,6 +1235,9 @@ int MergeMultigrid (char *in, int rename)
 #endif
 
   close(stream);
+
+  /* display memory requirements */
+  if (ht_malloc_display()) return (1);
 
   return (0);
 }
