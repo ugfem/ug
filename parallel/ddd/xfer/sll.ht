@@ -1,0 +1,65 @@
+/****************************************************************************/
+/*                                                                          */
+/* File:      sll.ht                                                        */
+/*                                                                          */
+/* Purpose:   single linked list templates, header file                     */
+/*                                                                          */
+/* Author:    Klaus Birken                                                  */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            internet: birken@ica3.uni-stuttgart.de                        */
+/*                                                                          */
+/* History:   960826 kb  created                                            */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
+/****************************************************************************/
+
+
+/****************************************************************************/
+/*                                                                          */
+/* definition of data strcutures                                            */
+/*                                                                          */
+/****************************************************************************/
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
+/****************************************************************************/
+
+/* linked list of items */
+extern T *list(T);
+
+/* free list of items */
+extern T *free(T);
+
+/* number of items in list */
+extern int n(T);
+
+
+/****************************************************************************/
+/*                                                                          */
+/* function declarations                                                    */
+/*                                                                          */
+/****************************************************************************/
+
+/* from xferlist.ct */
+T *New(T) (void);
+T *Free(T) (T *);
+T **SortedArray(T) (int (*) (const void *, const void *));
+int Unify(T) (T **, int (*) (T *, T *));
+void OrigOrder(T) (T **, int);
+void Init(T) (void);
+void FreeAll(T) (void);
+
+
+/****************************************************************************/
+
+#undef T
+
+/****************************************************************************/

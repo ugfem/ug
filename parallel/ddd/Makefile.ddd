@@ -1,0 +1,330 @@
+##############################################################################
+#                                                                            #
+#   Makefile for DDD and Demos                                               #
+#                                                                            #
+#   94/03/22 kb  created                                                     #
+#   95/04/04 kb  restructured                                                #
+#                                                                            #
+##############################################################################
+
+
+### pathes, other settings
+SrcPth     = $(DDD_DIR)
+
+
+### compiler & linker
+CCInclude  = -I$(SrcPth)
+CCStdFlags = -D$(ARCH_TYPE) $(CCInclude) $(DDD_CFLAGS)
+SrcOpt     = -c $(CCStdFlags) 
+
+
+###########################################################
+
+ddd_all: $(LibPth)/libddd.a
+
+
+###########################################################
+
+### pathes
+
+IdentPth = $(SrcPth)/ident
+IfPth    = $(SrcPth)/if
+XferPth  = $(SrcPth)/xfer
+MgrPth   = $(SrcPth)/mgr
+
+BasicPth = $(SrcPth)/basic
+CtrlPth  = $(SrcPth)/ctrl
+
+IncPth   = $(SrcPth)/include
+ExtIncPth   = $(SrcPth)/../include
+
+
+###########################################################
+
+### Include Dependencies
+
+$(SrcPth)/dddi.h:	$(ExtIncPth)/compiler.h	\
+		$(IncPth)/memmgr.h	\
+		$(ExtIncPth)/ppif.h	\
+		$(CtrlPth)/stat.h	\
+		$(IncPth)/ddd.h	\
+		$(IncPth)/dddio.h
+	touch $(SrcPth)/dddi.h
+
+
+###########################################################
+
+
+### Basic Functionality
+
+Basic-o = io.o	\
+	topo.o	\
+	notify.o \
+	reduct.o \
+	lowcomm.o
+
+
+io.o:	$(ExtIncPth)/compiler.h	\
+		$(ExtIncPth)/ppif.h	\
+		$(IncPth)/dddio.h	\
+		$(SrcPth)/dddi.h	\
+		$(BasicPth)/io.c
+	$(ARCH_CC) $(SrcOpt) $(BasicPth)/io.c
+
+topo.o: $(SrcPth)/dddi.h	\
+		$(BasicPth)/topo.c
+	$(ARCH_CC) $(SrcOpt) $(BasicPth)/topo.c
+
+
+
+$(BasicPth)/notify.h:	$(IncPth)/ddd.h
+	touch $(BasicPth)/notify.h
+
+notify.o: $(SrcPth)/dddi.h	\
+		$(BasicPth)/notify.h	\
+		$(BasicPth)/notify.c
+	$(ARCH_CC) $(SrcOpt) $(BasicPth)/notify.c
+
+
+reduct.o:	$(ExtIncPth)/ppif.h	\
+		$(BasicPth)/reduct.c
+	$(ARCH_CC) $(SrcOpt) $(BasicPth)/reduct.c
+
+
+lowcomm.o: $(SrcPth)/dddi.h	\
+		$(BasicPth)/notify.h	\
+		$(BasicPth)/lowcomm.h	\
+		$(BasicPth)/lowcomm.c
+	$(ARCH_CC) $(SrcOpt) $(BasicPth)/lowcomm.c
+
+
+###########################################################
+
+
+### Controller Module
+
+Ctrl-o = debug.o	\
+	cons.o	\
+	stat.o
+
+
+debug.o: $(SrcPth)/dddi.h	\
+		$(CtrlPth)/debug.c
+	$(ARCH_CC) $(SrcOpt) $(CtrlPth)/debug.c
+
+cons.o: $(SrcPth)/dddi.h	\
+		$(BasicPth)/lowcomm.h	\
+		$(XferPth)/xfer.h	\
+		$(CtrlPth)/cons.c
+	$(ARCH_CC) $(SrcOpt) $(CtrlPth)/cons.c
+
+stat.o: $(SrcPth)/dddi.h	\
+		$(CtrlPth)/stat.c
+	$(ARCH_CC) $(SrcOpt) $(CtrlPth)/stat.c
+
+
+
+###########################################################
+
+
+### Manager Module
+
+Mgr-o = typemgr.o	\
+	objmgr.o	\
+	cplmgr.o	\
+	prio.o	\
+	attr.o
+
+
+typemgr.o: $(SrcPth)/dddi.h	\
+		$(MgrPth)/typemgr.c
+	$(ARCH_CC) $(SrcOpt) $(MgrPth)/typemgr.c
+
+objmgr.o: $(SrcPth)/dddi.h	\
+		$(MgrPth)/objmgr.c
+	$(ARCH_CC) $(SrcOpt) $(MgrPth)/objmgr.c
+
+cplmgr.o: $(SrcPth)/dddi.h	\
+		$(MgrPth)/cplmgr.c
+	$(ARCH_CC) $(SrcOpt) $(MgrPth)/cplmgr.c
+
+prio.o: $(SrcPth)/dddi.h	\
+		$(MgrPth)/prio.c
+	$(ARCH_CC) $(SrcOpt) $(MgrPth)/prio.c
+
+attr.o: $(SrcPth)/dddi.h	\
+		$(MgrPth)/attr.c
+	$(ARCH_CC) $(SrcOpt) $(MgrPth)/attr.c
+
+
+###########################################################
+
+
+### Identification Module
+
+Ident-o = ident.o
+
+
+ident.o: $(SrcPth)/dddi.h	\
+		$(IdentPth)/ident.c
+	$(ARCH_CC) $(SrcOpt) $(IdentPth)/ident.c
+
+
+###########################################################
+
+
+### Interface Module
+
+If-o = ifcreate.o	\
+	ifuse.o	\
+	ifcmds.o	\
+	ifcheck.o	\
+	ifobjsc.o
+
+
+ifcreate.o: $(SrcPth)/dddi.h	\
+		$(IfPth)/if.h	\
+		$(IfPth)/ifcreate.c
+	$(ARCH_CC) $(SrcOpt) $(IfPth)/ifcreate.c
+
+ifuse.o: $(SrcPth)/dddi.h	\
+		$(IfPth)/if.h	\
+		$(IfPth)/ifuse.c
+	$(ARCH_CC) $(SrcOpt) $(IfPth)/ifuse.c
+
+ifcmds.o: $(SrcPth)/dddi.h	\
+		$(IfPth)/if.h	\
+		$(IfPth)/ifcmds.c
+	$(ARCH_CC) $(SrcOpt) $(IfPth)/ifcmds.c
+
+ifobjsc.o: $(SrcPth)/dddi.h	\
+		$(IfPth)/if.h	\
+		$(IfPth)/ifobjsc.c
+	$(ARCH_CC) $(SrcOpt) $(IfPth)/ifobjsc.c
+
+ifcheck.o: $(SrcPth)/dddi.h	\
+		$(BasicPth)/notify.h	\
+		$(IfPth)/if.h	\
+		$(IfPth)/ifcheck.c
+	$(ARCH_CC) $(SrcOpt) $(IfPth)/ifcheck.c
+
+
+###########################################################
+
+
+### Xfer Module
+
+Xfer-o = xfer.o	\
+	cmds.o	\
+	pack.o	\
+	unpack.o	\
+	ctrl.o	\
+	cplmsg.o	\
+	supp.o
+
+
+
+$(XferPth)/xfer.h:	$(BasicPth)/lowcomm.h	\
+		$(XferPth)/sll.ht	\
+		$(XferPth)/sll.h
+	touch $(XferPth)/xfer.h
+
+xfer.o: $(SrcPth)/dddi.h	\
+		$(XferPth)/xfer.h	\
+		$(XferPth)/xfer.c
+	$(ARCH_CC) $(SrcOpt) $(XferPth)/xfer.c
+
+cmds.o: $(SrcPth)/dddi.h	\
+		$(XferPth)/xfer.h	\
+		$(XferPth)/cmds.c
+	$(ARCH_CC) $(SrcOpt) $(XferPth)/cmds.c
+
+pack.o: $(SrcPth)/dddi.h	\
+		$(XferPth)/xfer.h	\
+		$(XferPth)/pack.c
+	$(ARCH_CC) $(SrcOpt) $(XferPth)/pack.c
+
+unpack.o: $(SrcPth)/dddi.h	\
+		$(XferPth)/xfer.h	\
+		$(XferPth)/unpack.c
+	$(ARCH_CC) $(SrcOpt) $(XferPth)/unpack.c
+
+ctrl.o: $(SrcPth)/dddi.h	\
+		$(XferPth)/xfer.h	\
+		$(XferPth)/ctrl.c
+	$(ARCH_CC) $(SrcOpt) $(XferPth)/ctrl.c
+
+cplmsg.o: $(SrcPth)/dddi.h	\
+		$(XferPth)/xfer.h	\
+		$(XferPth)/cplmsg.c
+	$(ARCH_CC) $(SrcOpt) $(XferPth)/cplmsg.c
+
+supp.o: $(SrcPth)/dddi.h	\
+		$(XferPth)/xfer.h	\
+		$(XferPth)/sll.ct	\
+		$(XferPth)/supp.c
+	$(ARCH_CC) $(SrcOpt) $(XferPth)/supp.c
+
+
+###########################################################
+
+
+### Main Module
+
+ddd.o: $(SrcPth)/dddi.h        \
+		$(SrcPth)/ddd.c
+	$(ARCH_CC) $(SrcOpt) $(SrcPth)/ddd.c
+
+
+###########################################################
+
+
+### Miscellaneous Modules
+
+Misc-o = inv.o
+
+
+inv.o: $(SrcPth)/dddi.h	\
+		$(SrcPth)/analyser/inv.c
+	$(ARCH_CC) $(SrcOpt) $(SrcPth)/analyser/inv.c
+
+
+
+
+###########################################################
+
+
+### fortran interface, c stub
+
+f2c.o: $(SrcPth)/dddi.h	\
+		$(SrcPth)/f77/f2c.c
+	$(ARCH_CC) $(SrcOpt) $(SrcPth)/f77/f2c.c
+
+
+###########################################################
+
+### link it all !
+
+DDD-o = $(Basic-o)	\
+	$(Ctrl-o)	\
+	$(Mgr-o)	\
+	$(Ident-o)	\
+	$(If-o)	\
+	$(Xfer-o)	\
+	$(Misc-o)	\
+	f2c.o		\
+	ddd.o
+
+
+$(LibPth)/libddd.a:	$(DDD-o)
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(LIBDIR)/libddd.a $(DDD-o)
+
+
+###########################################################
+
+ddd_clean:
+	rm  -f $(DDD-o)
+	rm  -f $(LIBDIR)/libddd.a
+
+
+###########################################################

@@ -1,0 +1,19 @@
+
+this file collects common errors by ddd users, which
+are caused by typical ddd pitfalls.
+
+---------------------------------------------------------------
+
+alignment/non-alignment of buffer pointers.
+960919 kb
+The handlers for gathering/scattering data during IF-communication
+are called with non-aligned pointers into the buffer. therefore,
+the application program  can send n bytes per object in the interface
+without wasting message buffer space.
+However, the handlers for gathering/scattering data objects into
+messages during Xfer (caused by calling DDD_XferAddData()) are called
+with aligned pointers. this is due to allow access to the copy of
+the data object inside the message buffer (which correct alignments).
+
+---------------------------------------------------------------
+

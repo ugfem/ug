@@ -1,0 +1,241 @@
+/****************************************************************************/
+/*                                                                          */
+/* File:      sll.ct                                                        */
+/*                                                                          */
+/* Purpose:   template routines for linked lists with freelist              */
+/*                                                                          */
+/* Author:    Klaus Birken                                                  */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            internet: birken@ica3.uni-stuttgart.de                        */
+/*                                                                          */
+/* History:   960826 kb  created                                            */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
+/****************************************************************************/
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
+/****************************************************************************/
+
+/* linked list of items */
+T *list(T);
+
+/* free list of items */
+T *free(T);
+
+/* number of items in list */
+int n(T);
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* routines                                                                 */
+/*                                                                          */
+/****************************************************************************/
+
+
+/*
+	create a new item of type T, get memory from AllocTmp
+	or from freelist for that type, if any.
+*/
+
+T *New(T) (void)
+{
+	T *item;
+
+	if (free(T)==NULL)
+	{
+		/* get memory from MemMgr */
+		item = (T *) AllocTmp(sizeof(T));
+	}
+	else
+	{
+		/* get memory from freelist */
+		item = free(T);
+		free(T) = item->sll_next;
+	}
+
+	/* insert item into linked list and count it */
+	item->sll_next = list(T);
+	list(T) = item;
+	n(T)++;
+
+	/* insert unique counter */
+	item->sll_n = n(T);
+
+	return(item);
+}
+
+
+
+
+/*
+	free item of type T. 
+*/
+
+T *Free(T) (T *item)
+{
+	/* save pointer to next item, for easier deleting of list */
+	T    *next = item->sll_next;
+
+	/* put memory into freelist */
+	item->sll_next = free(T);
+	free(T) = item;
+
+	return(next);
+}
+
+
+
+/*
+	create pointer array from linked list and sort it
+	according to given comparison function compar().
+*/
+
+T **SortedArray(T) (int (*compar) (const void *, const void *))
+{
+	T **array, *item;
+	int  i;
+
+	if (n(T)>0)
+	{
+		/* alloc array */
+		array = (T **) AllocTmp(sizeof(T *) * n(T));
+
+		/* fill array with pointer */
+		for(item=list(T), i=0; i<n(T); item=item->sll_next, i++)
+		{
+			array[i] = item;
+		}
+
+		/* sort by using compar function */
+		if (n(T)>1)
+			qsort(array, n(T), sizeof(T *), compar);
+	}
+	else
+	{
+		array = NULL;
+	}
+
+	return(array);
+}
+
+
+
+/****************************************************************************/
+
+/*
+	sort array of items into order of their New(T) command
+	execution. the counter-component T.n is used for doing
+	this.
+*/
+
+static int sort_OrigOrder(T) (const void *e1, const void *e2)
+{
+	T *item1 = *((T **)e1);
+	T *item2 = *((T **)e2);
+
+	if (item1->sll_n < item2->sll_n) return(-1);
+	if (item1->sll_n > item2->sll_n) return(1);
+	return(0);
+}
+
+
+void OrigOrder(T) (T **array, int n)
+{
+	qsort(array, n, sizeof(T *), sort_OrigOrder(T));
+}
+
+
+/****************************************************************************/
+
+
+/*
+	unify array of items. the array is compressed, the
+	resulting number of valid items is returned.
+	compar() is a comparison function which returns
+	whether two items are equal or not.
+
+	compar(a,b) should return 
+		FALSE  if a should be skipped and eventually b could be chosen
+		TRUE   if a must be taken.
+
+	the array of items must be sorted in order to
+	allow compar() to decide correctly.
+*/
+
+int Unify(T) (T **array, int (*compar) (T *, T *))
+{
+	int  i, cntValid;
+
+	for(i=0, cntValid=0; i<n(T)-1; i++)
+	{
+		/* test if unique */
+		if (compar(array[i],array[i+1]))
+		{
+			/* choose item */
+			array[cntValid] = array[i];
+			cntValid++;
+		}
+		/* else: skip item */
+	}
+
+	/* loop unrolling: always choose last item */
+	if (n(T)>0)
+	{
+		array[cntValid] = array[n(T)-1];
+		cntValid++;
+	}
+
+	return(cntValid);
+}
+
+
+
+/****************************************************************************/
+
+
+/*
+	init linked list
+*/
+void Init(T) (void)
+{
+	list(T) = NULL;
+	n(T) = 0;
+
+	free(T) = NULL;
+}
+
+
+
+/*
+	free all items
+*/
+void FreeAll(T) (void)
+{
+	T *item = list(T);
+
+	while (item!=NULL)
+	{
+		item = Free(T) (item);
+	}
+
+	list(T) = NULL;
+	n(T) = 0;
+}
+
+
+/****************************************************************************/
+
+#undef T
+
+/****************************************************************************/
