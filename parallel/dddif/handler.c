@@ -176,9 +176,6 @@ void VectorUpdate (DDD_OBJ obj)
 	GRID_LINK_VECTOR(theGrid,pv,prio);
 
 	VSTART(pv) = NULL;
-
-	/* counters */
-	theGrid->nVector++;
 }
 
 
@@ -574,9 +571,6 @@ void VertexUpdate (DDD_OBJ obj)
 
 	GRID_LINK_VERTEX(theGrid,pv,prio);
 
-	/* counters */
-	theGrid->nVert++;
-
 	/* update ID of vertex */
 	/* TODO: change to global id */
 	ID(pv) = (theGrid->mg->vertIdCounter)++;
@@ -731,9 +725,6 @@ void NodeUpdate (DDD_OBJ obj)
 	GRID_LINK_NODE(theGrid,node,prio);
 
 	START(node) = NULL;
-
-	/* incremant counter */
-	theGrid->nNode++;
 
 	/* TODO: change to global id */
 	ID(node) = (theGrid->mg->nodeIdCounter)++;
@@ -973,8 +964,6 @@ void ElementLDataConstructor (DDD_OBJ obj)
 		  SET_BNDS(pe,i,NULL);
 	}
 
-	theGrid->nElem++;
-
 	/* TODO: in global id umrechnen */
 	ID(pe) = (theGrid->mg->elemIdCounter)++;
 }
@@ -1031,9 +1020,9 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 	NODE	*node;
 	BNDS	*bnds[MAX_SIDES_OF_ELEM];
 
-	PRINTDEBUG(dddif,1,("%d: ElementXferCopy(): "\
-		"pe=%08x/%x eID=%d proc=%d prio=%d EOBJT=%d\n", me,\
-		DDD_InfoGlobalId(PARHDRE(pe)),pe,ID(pe), proc, prio, OBJT(pe)))
+	PRINTDEBUG(dddif,1,("%d: ElementXferCopy(): "
+		"pe=%08x/" EID_FMT " proc=%d prio=%d EOBJT=%d\n",me,
+		pe,EID_PRT(pe),proc,prio,OBJT(pe)))
 
 	/* add element sides */
 	/* must be done before any XferCopyObj-call! herein */
@@ -1059,8 +1048,9 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 	{
 		node = CORNER(pe,i);
 
-		PRINTDEBUG(dddif,2,("%2d: ElementXferCopy():  e=%x Xfer n=%x i=%d\n",\
-				me, pe, node, i))
+		PRINTDEBUG(dddif,2,("%2d: ElementXferCopy():  e=%x/" EID_FMT
+			" Xfer n=%08x/" ID_FMT " i=%d\n",
+			me,pe,EID_PRT(pe),node,ID_PRT(node),i))
 
 		DDD_XferCopyObj(PARHDR(node), proc, prio);
 	}
@@ -1161,13 +1151,14 @@ static void ElemGatherEdge (ELEMENT *pe, int cnt, char *data)
 		PRINTDEBUG(dddif,2,("%2d:  ElemGatherEdge(): pe=%x i=%d n1=" ID_FMT
 			" n2=" ID_FMT " nmid=%08x\n",
 			me,pe,i,
-			ID_PRT(edge->links[0].nbnode),ID_PRT(edge->links[1].nbnode),edge->midnode))
+			ID_PRT(NBNODE(LINK0(edge))),ID_PRT(NBNODE(LINK1(edge))),
+			MIDNODE(edge)))
 /*
-		PRINTDEBUG(dddif,2,("%2d:  ElemGatherEdge(): pe=%x i=%d n1=%08x "
+		PRINTDEBUG(dddif,2,("%2d:  ElemGatherEdge(): pe=%08x i=%d n1=%08x "
 			"n2=%08x nmid=%08x\n",
-				me,pe,i,DDD_InfoGlobalId(PARHDR(edge->links[0].nbnode)),
-				DDD_InfoGlobalId(PARHDR(edge->links[1].nbnode)),
-				DDD_InfoGlobalId(PARHDR(edge->midnode))))
+				me,pe,i,DDD_InfoGlobalId(PARHDR(NBNODE(LINK0(edge))),
+				DDD_InfoGlobalId(PARHDR(NBNODE(LINK1(edge))),
+				DDD_InfoGlobalId(PARHDR(MIDNODE(edge)))))
 */
 	}
 }
@@ -1190,16 +1181,22 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data)
 		EDGE *enew, *ecopy = (EDGE *)data;
 		data += CEIL(size);
 
-		PRINTDEBUG(dddif,2,("%2d:  ElemScatterEdge(): pe=%x i=%d n1=%08x "
-			"n2=%08x midnode=%08x\n",
-			me,pe,i,NBNODE(LINK0(ecopy)),ecopy->links[1].nbnode,ecopy->midnode))
+		PRINTDEBUG(dddif,2,("%2d:  ElemScatterEdge(): elem=%08x/" EID_FMTE 
+			" i=%d n1=%08x/"
+			ID_FMT " n2=%08x/" ID_FMT " midnode=%08x\n",
+			me,pe,EID_PRTE(pe),i,
+			NBNODE(LINK0(ecopy)),ID_PRT(NBNODE(LINK0(ecopy))),
+			NBNODE(LINK1(ecopy)),ID_PRT(NBNODE(LINK1(ecopy))),
+			ecopy->midnode))
 
 		enew = CreateEdge(theGrid, NBNODE(LINK0(ecopy)), NBNODE(LINK1(ecopy)), FALSE);
-		PRINTDEBUG(dddif,1,("%d: ElemScatterEdge(): pe=%x create edge=%x "
-			"e%d%d for n0=%x n1=%x\n",
-			me,pe,enew,
-			ID(NBNODE(LINK0(ecopy))),ID(NBNODE(LINK1(ecopy))),
-			NBNODE(LINK0(ecopy)),NBNODE(LINK1(ecopy))));
+		PRINTDEBUG(dddif,1,("%d: ElemScatterEdge(): elem=%08x/" EID_FMTE
+			" create edge=%08x "
+			"e for n0=%08x/" EID_FMT " n1=%08x/" ID_FMT "\n",
+			me,pe,EID_PRTE(pe),enew,
+			NBNODE(LINK0(ecopy)),ID_PRT(NBNODE(LINK0(ecopy))),
+			NBNODE(LINK1(ecopy)),ID_PRT(NBNODE(LINK1(ecopy)))));
+
 		if (enew == NULL) {
 			PRINTDEBUG(dddif,1,("%d:  ElemScatterEdge(): ERROR pe=%x i=%d "
 				"CreateEdge returned NULL\n",
@@ -1211,9 +1208,12 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data)
 			edge0 = GetEdge(NBNODE(LINK0(ecopy)),NBNODE(LINK1(ecopy)));
 			edge1 = GetEdge(NBNODE(LINK1(ecopy)),NBNODE(LINK0(ecopy)));
 			if (edge0 != edge1) 
-				PRINTDEBUG(dddif,1,("%d: ElemScatterEdge(): n0=%x n1=%x "
-					"edge0=%x BUT edge1=%x\n",me,
-					NBNODE(LINK0(ecopy)),NBNODE(LINK1(ecopy)),edge0,edge1));
+				PRINTDEBUG(dddif,1,("%d: ElemScatterEdge(): n0=%08x/" ID_FMT
+					" n1=%08x/" ID_FMT
+					" edge0=%08x BUT edge1=%08x\n",me,
+					NBNODE(LINK0(ecopy)),ID_PRT(NBNODE(LINK0(ecopy))),
+					NBNODE(LINK1(ecopy)),ID_PRT(NBNODE(LINK1(ecopy))),
+					edge0,edge1));
 		}
 
 		MIDNODE(enew) = MIDNODE(ecopy);
@@ -1558,11 +1558,11 @@ void ddd_HandlerInit (INT handlerSet)
 
 	DDD_HandlerRegister(TypeBVertex,
 		HANDLER_LDATACONSTRUCTOR,	BVertexLDataConstructor,
-		HANDLER_UPDATE,		    VertexUpdate,
-		HANDLER_XFERCOPY,		BVertexXferCopy,
-		HANDLER_XFERGATHER,		BVertexGather,
-		HANDLER_XFERSCATTER,	BVertexScatter,
-		HANDLER_SETPRIORITY,	VertexPriorityUpdate,
+		HANDLER_UPDATE,		    	VertexUpdate,
+		HANDLER_XFERCOPY,			BVertexXferCopy,
+		HANDLER_XFERGATHER,			BVertexGather,
+		HANDLER_XFERSCATTER,		BVertexScatter,
+		HANDLER_SETPRIORITY,		VertexPriorityUpdate,
 		HANDLER_END
 	);
 
@@ -1573,10 +1573,6 @@ void ddd_HandlerInit (INT handlerSet)
 		HANDLER_UPDATE,				NodeUpdate,
 		HANDLER_XFERCOPY,			NodeXferCopy,
 		HANDLER_SETPRIORITY,		NodePriorityUpdate,
-/* TODO: delete this
-		HANDLER_XFERGATHER,			NodeGatherEdge,
-		HANDLER_XFERSCATTER,		NodeScatterEdge,
-*/
 		HANDLER_END
 	);
 
