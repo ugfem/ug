@@ -69,7 +69,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 INT NPTSolverInit (NP_T_SOLVER *np, INT argc , char **argv)
 {
-  INT i,r;
+  INT r;
 
   r = NP_EXECUTABLE;       /* highest state */
 

@@ -30,8 +30,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "general.h"
+#include "ugstruct.h"
+#include "devices.h"
 #include "gm.h"
 #include "ugblas.h"
 #include "scan.h"
@@ -146,7 +149,7 @@ INT NPEWSolverInit (NP_EW_SOLVER *np, INT argc , char **argv)
 {
   INT i;
   int n;
-  char *token,*names,buffer[128],template[128];
+  char *token,*names,buffer[128];
 
   n = 0;
   for (i=1; i<argc; i++)
@@ -215,11 +218,9 @@ INT NPEWSolverDisplay (NP_EW_SOLVER *np)
 INT NPEWSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_EW_SOLVER *np;
-  VECDATA_DESC *x,*b;
-  MATDATA_DESC *A;
   DOUBLE a[2],q;
   EWRESULT ewresult;
-  INT i,result,level;
+  INT result,level;
 
   np = (NP_EW_SOLVER *) theNP;
   level = CURRENTLEVEL(theNP->mg);
@@ -303,9 +304,9 @@ static INT SetUnsymmetric (MULTIGRID *mg, INT fl, INT tl,
   return (NUM_OK);
 }
 
-INT RayleighQuotient (MULTIGRID *theMG,
-                      MATDATA_DESC *M, VECDATA_DESC *x,
-                      VECDATA_DESC *r, VECDATA_DESC *t, DOUBLE *a)
+static INT RayleighQuotient (MULTIGRID *theMG,
+                             MATDATA_DESC *M, VECDATA_DESC *x,
+                             VECDATA_DESC *r, VECDATA_DESC *t, DOUBLE *a)
 {
   VEC_SCALAR scal1,scal2;
   INT i,bl,tl;
@@ -437,7 +438,7 @@ static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
                          INT *result)
 {
   NP_EW *np;
-  INT i,l,bl,baselevel;
+  INT i,l,bl;
 
   np = (NP_EW *) theNP;
 
@@ -538,7 +539,7 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
 {
   NP_EW *np;
   MULTIGRID *theMG;
-  INT i,PrintID,j,iew,bl,iter;
+  INT i,PrintID,j,bl,iter;
   char text[DISPLAY_WIDTH+4];
   VEC_SCALAR defect, defect2reach,scal;
   DOUBLE a[2],rq;
@@ -809,7 +810,7 @@ static INT EWPostProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
   return (0);
 }
 
-INT EWInit (NP_BASE *theNP, INT argc , char **argv)
+static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_EW *np;
   INT i;
@@ -850,7 +851,7 @@ INT EWInit (NP_BASE *theNP, INT argc , char **argv)
   return(NPEWSolverInit(&np->ew,argc,argv));
 }
 
-INT EWDisplay (NP_BASE *theNP)
+static INT EWDisplay (NP_BASE *theNP)
 {
   NP_EW *np;
 
@@ -890,14 +891,11 @@ INT EWDisplay (NP_BASE *theNP)
   return(0);
 }
 
-INT EWExecute (NP_BASE *theNP, INT argc , char **argv)
+static INT EWExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_EW *np;
-  VECDATA_DESC *x,*b;
-  MATDATA_DESC *A;
-  DOUBLE a0,a1,q;
   EWRESULT ewresult;
-  INT i,result,level,bl;
+  INT i,result,level;
 
   np = (NP_EW *) theNP;
   level = CURRENTLEVEL(theNP->mg);
