@@ -588,7 +588,7 @@ static INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **So
     }
 
     /* identify (hopefully) an element of SonList */
-    for (j=0; j<NSONS(theElement); j++)
+    for (j=0; NonorderedSonList[j]!=NULL; j++)
     {
       found=0;
       for (l=0; l<CORNERS_OF_TAG(SON_TAG_OF_RULE(theRule,i)); l++)
@@ -1084,6 +1084,18 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   cg_general.nBndElement = nbe;
   cg_general.nInnerElement = nie;
   if (Write_CG_General(&cg_general)) return (1);
+
+  /* this proc has no elements */
+  if (cg_general.nElement == 0)
+  {
+    /* release tmp mem */
+    ReleaseTmpMem(theHeap);
+
+    /* close file */
+    if (CloseMGFile ()) return (1);
+
+    return(0);
+  }
 
   /* write coarse grid points */
   if (WriteCG_Vertices(theMG,nbv+niv)) return (1);
@@ -1933,6 +1945,24 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
   /* read general information about coarse grid */
   if (Read_CG_General(&cg_general))                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+
+  /* this proc has no elements */
+  if (cg_general.nElement == 0)
+  {
+    ReleaseTmpMem(theHeap);
+    CloseMGFile ();
+    DDD_IdentifyBegin();
+    DDD_IdentifyEnd();
+    /* create levels */
+    for (i=0; i<mg_general.nLevel; i++)
+    {
+      if (CreateNewLevel(theMG,0)==NULL)      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+      ConstructConsistentGrid(theGrid);
+    }
+    return(theMG);
+  }
+
+
 
   /* read coarse grid points and elements */
   cg_point = (MGIO_CG_POINT *)GetTmpMem(theHeap,cg_general.nPoint*sizeof(MGIO_CG_POINT));
