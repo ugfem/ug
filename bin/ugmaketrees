@@ -108,6 +108,7 @@ then
 	ugmkdir commands;
 	ugmkdir dev;
 	ugmkdir gm;
+	ugmkdir gg;
 	ugmkdir graph;
 	ugmkdir low;
 	ugmkdir numerics;
@@ -115,7 +116,7 @@ then
 	ugmkdir ui;
 
 	cd ..;
-	for i in cd3d diff2d fem
+	for i in cd3d diff2d fem ns2d
 	do
 		ugmkdir $i;
 		cd $i;

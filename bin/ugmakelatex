@@ -55,6 +55,14 @@ then
 	done
 	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/gm -quotefmt *.doc
 
+	# generate gg man pages
+	cd $UGROOT/gg;
+	for i in *.c *.h
+	do
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/gg -heading ug/gg -quotefmt $i
+	done
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/gg -quotefmt *.doc
+
 	# generate graph man pages
 	cd $UGROOT/graph;
 	for i in *.c *.h
@@ -142,6 +150,14 @@ then
 	doctext -latex -mpath $UGROOT/doc/ug3/fem/pclib -heading fem/pclib -quotefmt *.c *.h
 	cd $UGROOT/../fem/appl
 	doctext -latex -mpath $UGROOT/doc/ug3/fem/appl -heading fem/appl -quotefmt *.c *.h
+
+	#generate man pages for ns2d
+	cd $UGROOT/../ns2d
+	doctext -latex -mpath $UGROOT/doc/ug3/ns2d/overview -heading ns2d -quotefmt *.doc
+	cd $UGROOT/../ns2d/pclib
+	doctext -latex -mpath $UGROOT/doc/ug3/ns2d/pclib -heading ns2d/pclib -quotefmt *.c *.h
+	cd $UGROOT/../ns2d/appl
+	doctext -latex -mpath $UGROOT/doc/ug3/ns2d/appl -heading ns2d/appl -quotefmt *.c *.h
 
 	echo "$0: latex pages for ug created!";
 	exit 0;
