@@ -1,12 +1,10 @@
-#!/bin/csh -f
+#!/bin/tcsh -ef
 #
 # ugppm2mpg: converts a series of ppm-files to an mpeg-clip
 # (adapted from ugm2mpeg)
-#
-
+# 
 # Michael Lampe, Oct 1998
-#
-
+# 
 
 set help = "usage: ugppm2mpg <basename> -f <first> <last> [-fi <increment>]"
 
@@ -50,17 +48,14 @@ endif
 
 echo ""
 
-set up = ""
-set bell = ""
-
 @ i = $fs
 @ j = 1
 while ( $i <= $fe )
-	set infile = `echo $base $i | awk '{printf "%s.%04d",$1,$2}'`
+	set infile = `echo $base $i | awk '{printf "%s.%04d",$1,$2}'`  
 	set outfile = $base.$j
 	echo "Converting PPM to YUV: $infile"
 	ppmtoyuvsplit $outfile $infile >& /dev/null
-	echo "$up"
+	echotc up
 	@ i += $fi
 	@ j++
 end
@@ -76,14 +71,16 @@ echo "Converting YUV to MPG: wait..."
 # get image size
 #
 
-set file = `echo $base $fs | awk '{printf "%s.%04d",$1,$2}'`
+#
+# TODO: This is for a ppm header without comment lines.
+#       Extend header parsing to this case.
 
-set header = `head -3 $file`
-@ width  = $header[7]
-@ height = $header[8]
+set header = `head -2 $infile`
+@ width  = $header[2]
+@ height = $header[3]
 
 #
-#  ppmtoyuvsplit chops off an odd row/column
+#  if #rows/columns is odd, ppmtoyuvsplit chopped off a row/column
 #
 
 if ( $width  % 2 ) @ width--
@@ -100,10 +97,8 @@ if ( $width % 16 || $height % 16 ) set PF = "-PF"
 # make MPG
 #
 
-set MPEGNAME = "$base".mpg
 @ j--
-mpeg -a 1 -b $j -h $width -v $height $PF $base. -s $MPEGNAME >& /dev/null
-
+mpeg -a 1 -b $j -h $width -v $height $PF $base. -s $base.mpg >& /dev/null
 
 #
 # clean up
@@ -111,10 +106,9 @@ mpeg -a 1 -b $j -h $width -v $height $PF $base. -s $MPEGNAME >& /dev/null
 
 rm -f $base.*.[YUV]
 
-echo "$up"
+echotc up
 echo "Converting YUV to MPG: done   "
-echo "$bell"
-echo "$base.mpg created."
-
+echotc bl
 echo ""
-
+echo "$base.mpg created." 
+echo ""
