@@ -535,21 +535,23 @@ int FAMGGrid::ILUTDecomp(int cgilut)
 }
 #endif
 
-
 void FAMGGrid::Stencil()
 {
-    int nn, nl;
+	int nn, nl;
 
-    nn = matrix->GetN();
-    nl = matrix->GetNLinks();
-    ostrstream ostr; 
-    ostr << "unknowns: " << nn << "\t";
-    ostr << "avg. stencil: " << (double)nl/(double)nn << endl;
-    FAMGWrite(ostr);
+	nn = matrix->GetN();
+	nl = matrix->GetNLinks();
+	ostrstream ostr; 
+#ifdef ModelP
+	ostr << me << ": ";
+#endif
+	ostr << "unknowns: " << nn << "\t";
+	ostr << "avg. stencil: " << (double)nl/(double)nn << endl;
+	FAMGWrite(ostr);
 
-    return;
+	return;
 }
-               
+
 void FAMGGrid::GetSmoother()
 {
     char *cgsmoother = FAMGGetParameter()->Getcgsmoother();
@@ -1301,6 +1303,8 @@ int SendToOverlap1( DDD_OBJ obj)
 			}
 		}
 	}
+
+	return 0;
 }
 
 void FAMGGrid::ConstructOverlap()
@@ -1852,6 +1856,7 @@ int PrintLocal(char *text)
 	DDD_IFAExecLocal( BorderVectorSymmIF, GRID_ATTR(GRID_ON_LEVEL(GetCurrentMultigrid(),0)), Local_Print );
 	strcpy(text_print,"OuterVectorSymmIF");
 	DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(GRID_ON_LEVEL(GetCurrentMultigrid(),0)), Local_Print );
+	return 0;
 }
 
 
@@ -2028,5 +2033,7 @@ pl(FAMGGraph *graph)
 		n = n->GetSucc();
 	}
 	cout<<endl<<flush;
+
+	return 0;
 }
 #endif

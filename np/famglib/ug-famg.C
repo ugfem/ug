@@ -1474,7 +1474,7 @@ INT FAMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 	AMGAgglomerate(mg);
 	l_amgmatrix_collect(GRID_ON_LEVEL(mg,mg->bottomLevel),A);
 	UserWrite("coarse grid agglomerated\n");
-	printf("coarse grid agglomerated\n");
+	printf("%d: coarse grid agglomerated\n", me);
 //prm(mg->bottomLevel,0);
 #endif
 	

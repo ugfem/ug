@@ -90,10 +90,7 @@ int FAMGMultiGrid::Construct()
 		leave = UG_GlobalMaxINT(leave);
 #endif
         if (leave)
-		{
-			g->Stencil();
 			break;
-		}
 
 #ifdef ModelP
 		g->ConstructOverlap();
@@ -126,7 +123,17 @@ int FAMGMultiGrid::Construct()
 //printf("after Galerkin:\n");
 //prm(0,0);prm(0,1); prim(0);
 //prm(-1,0);
+
         coarsen_weak = (nnc > nn*mincoarse);
+#ifdef ModelP
+	cout << me << ": ";
+#endif
+	cout << "amglevel " << level;
+	if( nnc > 0 )
+		cout << " coarsening rate " << nn/(double)nnc << endl;
+	else
+		cout << " no coarsening" << endl;
+
     }
 
     if(level == FAMGMAXGRIDS-1)
