@@ -13920,18 +13920,18 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 	ELEMENT *NbElement, *SonElement, *SonList[MAX_SONS];
 	
 	/* get son list (not stored in element) */
-	#ifndef ModelP
 	GetSons(theElement,SonList);
-	#else
-	GetAllSons(theElement, SonList);  /* not necessary, all sons are masters */
-	#endif
 	
 	/* init list and numbers */
 	LastShellBegin = 0;
 	ActualPosition = 0;
+	#ifdef ModelP
+	nsons = N_LOCAL_SONS(theElement);
+	#else
 	nsons = NSONS(theElement);
+	#endif
 
-	for  (i=0; i<nsons; i++)
+	for  (i=0; SonList[i]!=NULL; i++)
 	{
 		SonElement = SonList[i];
 
@@ -15207,7 +15207,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
     COORD_POINT t;
     DOUBLE *corner[8];
 	DOUBLE_VECTOR temp;
-    INT i, j, k, l, count, root, pos, lastBegin, newBegin;
+    INT i, j, k, l, count, root, pos, lastBegin, newBegin, prevlastBegin, prevnewBegin;
 
 	/* count boundary elements */
 	OE_nBndElem = 0;
@@ -15290,25 +15290,58 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
 	/* create new shell from last one */
 	lastBegin = 0;
 	newBegin  = pos;
-	while (lastBegin < newBegin) {
-		for (i = lastBegin; i<newBegin; i+=2) {
-			l = table[i];
-			for (j = 0; j < CGG_NAD(l); j++) {
-				k = Gid2Index(CGG_ADJACENT(l)[j]);
-				if (--CGG_CNT(k) == 0) {
-					table[pos] = k;
-					pos+=2;
+
+	while (lastBegin<newBegin || pos<2*OE_nGlobalCGelems)  {
+		if (lastBegin==newBegin)
+		{
+			while (newBegin==pos) 
+			{
+				for (i=prevnewBegin; i>=0; i-=2)
+				{
+					l = table[i];
+					for (j = 0; j < CGG_NAD(l); j++) {
+						k = Gid2Index(CGG_ADJACENT(l)[j]);
+						if (--CGG_CNT(k) == 0) {
+							table[pos] = k;
+							pos+=2;
+							break;
+						}
+					}
+					if (CGG_BLINK(l) != NULL) 
+						for (h = HIDDEN_BY(l); h != NULL; h = h->next) {
+							j = h->index;
+							if (--CGG_CNT(j) == 0) {
+								table[pos] = j;
+								pos+=2;
+								break;
+							}
+						}
 				}
 			}
-			if (CGG_BLINK(l) != NULL) 
-				for (h = HIDDEN_BY(l); h != NULL; h = h->next) {
-					j = h->index;
-					if (--CGG_CNT(j) == 0) {
-						table[pos] = j;
+		}
+		else
+		{
+			for (i = lastBegin; i<newBegin; i+=2) {
+				l = table[i];
+				for (j = 0; j < CGG_NAD(l); j++) {
+					k = Gid2Index(CGG_ADJACENT(l)[j]);
+					if (--CGG_CNT(k) == 0) {
+						table[pos] = k;
 						pos+=2;
+					}
+				}
+				if (CGG_BLINK(l) != NULL) 
+					for (h = HIDDEN_BY(l); h != NULL; h = h->next) {
+						j = h->index;
+						if (--CGG_CNT(j) == 0) {
+							table[pos] = j;
+							pos+=2;
+						}
 					}
 			}
 		}
+		prevlastBegin = lastBegin;
+		prevnewBegin = newBegin;
 		lastBegin = newBegin;
 		newBegin  = pos;
 	}
@@ -15411,10 +15444,9 @@ static void ComputeOS_Data(MULTIGRID *mg)
 				gap = 1;
 			else
 				gap = 0;
-			GetAllSons(p, sonList);
+			GetSons(p, sonList);
 			n = 0;
-			for (j = 0; j < NSONS(p); j++) {
-				if (EPRIO(sonList[j]) != PrioMaster) continue;
+			for (j = 0; sonList[j]!=NULL; j++) {
 				n++;
 				gap += GAP(sonList[j]);
 			}
@@ -16023,6 +16055,7 @@ static INT CollectCoarseGrid(MULTIGRID *mg)
 oops:
 	error = UG_GlobalMaxINT(error);
 	if (error) {
+		UserWrite("CollectCoarseGrid(): error in stage 0\n");
 		Release(heap, FROM_BOTTOM);
 		return 1;
 	}
@@ -16088,6 +16121,7 @@ oops:
 							if ((CGG_ADJACENT(k) = 
 								(INT *)GetMem(heap, na*sizeof(INT), FROM_TOP)) == NULL){
 								error = 1;
+								UserWrite("CollectCoarseGrid(): error in stage 1\n");
 								break;
 							}
 							for (j = 0; j < na; j++) {
@@ -16102,6 +16136,7 @@ oops:
 							if ((CGG_BLINK(k) = (BS_DATA *) GetMem(heap, sizeof(BS_DATA)
 										+(ns-1)*sizeof(SIDE_DATA), FROM_TOP)) == NULL) {
 								error = 1;
+								UserWriteF("CollectCoarseGrid(): error in stage 2 ns=%d\n",ns);
 								break;
 							}
 							CGG_NSIDES(k) = ns;
@@ -16188,8 +16223,11 @@ oops:
 							d += 3;
 						}
 					}
-					CGG_2INT(d) = fvs;  d++;
-					CGG_2INT(d) = fhs;  d++;
+					if (ns > 0)
+					{
+						CGG_2INT(d) = fvs;  d++;
+						CGG_2INT(d) = fhs;  d++;
+					}
 				}
 				CGG_2INT(d3) = ns;
 				elem = SUCCE(elem);
@@ -16356,6 +16394,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	err = (table == NULL);
 	err = UG_GlobalMaxINT(err);
 	if (err) {
+		UserWrite("OrderCoarseGrid(): out of mem 1\n");
 		Release(heap, FROM_TOP);
 		return 1;
 	}
@@ -16367,6 +16406,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	}
 	Broadcast(&err, sizeof(err));
 	if (err) {
+		UserWrite("OrderCoarseGrid(): out of mem 2\n");
 		Release(heap, FROM_TOP);
 		return 1;
 	}
@@ -16375,6 +16415,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	err = CollectCoarseGrid(mg);
     Broadcast(&err, sizeof(err));
 	if (err) {
+		UserWrite("OrderCoarseGrid(): CollectCoarseGrid() failed\n");
 		if (me == master) Release(heap, FROM_TOP);
 		Release(heap, FROM_TOP);
 		return 1;
@@ -16384,6 +16425,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	/* allocate memory for ordering list */
 	table = (ELEMENT **)GetMem(heap, (grid->nElem)*sizeof(ELEMENT *), FROM_TOP);
 	if (table == NULL) {
+		UserWrite("OrderCoarseGrid(): out of mem 3\n");
 		Release(heap, FROM_TOP);
 		return 1;
 	}
@@ -16505,7 +16547,11 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 	else if (!OE_force_ordering)
 	{
 		if (SettingsEqual(vo, myMGdata))
+			#ifdef ModelP
+			if (UG_GlobalMinINT(ELEMORD(mg)))
+			#else
 			if (ELEMORD(mg))
+			#endif
 				/* no ordering necessary */
 				return 0;
 	}
@@ -16545,6 +16591,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 
    	/* order elements on level zero */
 	if (OrderCoarseGrid(mg)) {
+		UserWrite("ordering of coarse grid failed.\n");
 		#ifdef ModelP
 		Release(heap, FROM_TOP);
 		#endif
