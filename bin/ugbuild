@@ -1,0 +1,10 @@
+#!/bin/tcsh
+
+setenv UGROOT /home/ugtest/Dart/Source/Client/UG/ug/
+setenv PATH "${UGROOT}/bin:${PATH}"
+
+ugclean ug;
+ugmake ug
+cd $UGROOT/../tutor/appl
+make clean;
+make
