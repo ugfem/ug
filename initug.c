@@ -42,6 +42,7 @@
 
 /* grid manager module */
 #include "initgm.h"
+#include "switch.h"
 
 /* grid generator module */
 #include "ggmain.h"
