@@ -11594,6 +11594,47 @@ static INT PrintCEstatCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
+/*D
+   heapstat - list information about heap of current multigrid
+
+   DESCRIPTION:
+   This command lists information on the heap of the current multigrid, calling
+   the function 'HeapStat'.
+
+   'heapstat'
+
+   KEYWORDS:
+   heap, multigrid, freelists
+   D*/
+/****************************************************************************/
+
+static INT HeapStatCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+
+        #ifdef ModelP
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: GListCommand(): me not in Context,"\
+                     " no listing of grid\n",me))
+    return(OKCODE);
+  }
+        #endif
+
+  NO_OPTION_CHECK(argc,argv);
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    UserWrite("no multigrid open\n");
+    return (OKCODE);
+  }
+
+  HeapStat((const HEAP *)MGHEAP(theMG));
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
 /*
    InitFindRange - create struct where findrange stores results (min and max)
 
@@ -13391,6 +13432,7 @@ INT InitCommands ()
   if (CreateCommand("system",                     SystemCommand                                   )==NULL) return (__LINE__);
   if (CreateCommand("resetCEstat",        ResetCEstatCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("printCEstat",        PrintCEstatCommand                              )==NULL) return (__LINE__);
+  if (CreateCommand("heapstat",           HeapStatCommand                             )==NULL) return (__LINE__);
 
   /* commands for debugging */
         #ifdef Debug
