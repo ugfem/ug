@@ -858,7 +858,7 @@ static INT PrepareGridClosure (GRID *theGrid)
 */
 /****************************************************************************/
 
-static int Gather_ElementClosureInfo (DDD_OBJ obj, void *data)
+static int Gather_ElementClosureInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
 	INT 	refinedata;
 	ELEMENT *theElement = (ELEMENT *)obj;
@@ -903,7 +903,7 @@ static int Gather_ElementClosureInfo (DDD_OBJ obj, void *data)
 */
 /****************************************************************************/
 
-static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data)
+static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
 	INT		refinedata;
 	ELEMENT *theElement = (ELEMENT *)obj;
@@ -913,6 +913,9 @@ static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data)
 
 	refinedata = ((INT *)data)[0];
 	SetEdgeInfo(theElement,refinedata,PATTERN,|);
+
+	if (EMASTER(theElement)) return(GM_OK);
+	if (EGHOST(theElement) && EGHOSTPRIO(prio)) return(GM_OK);
 
 	SETMARKCLASSDATA(theElement,refinedata);
 	/* mark and sidepattern have same control word positions */
@@ -948,7 +951,7 @@ static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data)
 static INT ExchangeClosureInfo (GRID *theGrid)
 {
 	/* exchange sidepattern of edges */
-	DDD_IFAOneway(ElementVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+	DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
 		Gather_ElementClosureInfo, Scatter_ElementClosureInfo);
 
 	return(GM_OK);
@@ -1039,7 +1042,6 @@ static INT ComputePatterns (GRID *theGrid)
 	#ifdef ModelP
 	if (!refine_seq)
 	{
-		if (ExchangeClosureInfo(theGrid) != GM_OK) return(GM_ERROR);
 		if (ExchangeClosureInfo(theGrid) != GM_OK) return(GM_ERROR);
 	}
 	#endif
@@ -1285,7 +1287,6 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 		/* make edgepattern consistent with pattern of edges */
 		SETUSED(theElement,1);
 
-		#ifdef __THREEDIM__
 		/* TODO: change this for red refinement of pyramids */
 		if (DIM==3 && TAG(theElement)==PYRAMID) continue;
 
@@ -1308,7 +1309,6 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 
 			if (CorrectElementSidePattern(theElement,theNeighbor,i) != GM_OK) RETURN(GM_ERROR);
 		}
-		#endif
 	}
 
 	return(GM_OK);
@@ -1821,7 +1821,7 @@ static int Gather_ElementInfo (DDD_OBJ obj, void *Data)
 			COMPARE_MACRO(elem0,elem1,macro,print)
 #endif
 
-/* this macro compares to values */
+/* this macro compares two values */
 #define COMPARE_VALUE(elem0,val0,val1,string,print)                          \
 	if (val0 != val1)                                                        \
 	{                                                                        \
