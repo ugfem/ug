@@ -169,6 +169,10 @@ UNLINK(OTYPE)
 	/* decrement counter */
 	CAT(COUNT,OTYPE(Grid))--;
 	ASSERT(CAT(COUNT,OTYPE(Grid))>=0);
+	/* decrement counter for priority */
+	CAT(PRIOCOUNT,OTYPE(Grid,Prio))--;
+	ASSERT(CAT(PRIOCOUNT,OTYPE(Grid,Prio))>=0);
+	ASSERT(Prio>0);
 
 	IFDEBUG(gm,4)
 	/* debug loop in list */
@@ -353,6 +357,9 @@ LINK(OTYPE)
 
 	/* increment counter */
 	CAT(COUNT,OTYPE(Grid))++;
+	/* increment counter for priority */
+	CAT(PRIOCOUNT,OTYPE(Grid,Prio))++;
+	ASSERT(Prio>0);
 
 	IFDEBUG(gm,4)
 	/* debug loop in list */
@@ -483,6 +490,10 @@ LINKX(OTYPE)
 
 	/* increment counter */
 	CAT(COUNT,OTYPE(Grid))++;
+	/* increment counter for priority */
+	CAT(PRIOCOUNT,OTYPE(Grid,Prio))++;
+	ASSERT(Prio>0);
+
 
 	IFDEBUG(gm,4)
 	/* debug loop in list */
