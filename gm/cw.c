@@ -78,7 +78,7 @@ CONTROL_WORD control_words[MAX_CONTROL_WORDS] = {
   {GRID_CW_OFFSET, 0},
   {GRID_STATUS_OFFSET, 0},
   {MULTIGRID_STATUS_OFFSET, 0},
-  {0, 0},
+  {PROPERTY_OFFSET, 0},
   {0, 0},
   {0, 0},
   {0, 0},
@@ -169,6 +169,9 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {1,SIDEPATTERN_CE,      FLAG_CW,        SIDEPATTERN_SHIFT,      SIDEPATTERN_LEN },
   {1,MARKCLASS_CE,        FLAG_CW,        MARKCLASS_SHIFT,        MARKCLASS_LEN   },
 
+  {1,SUBDOMAIN_CE,    PROPERTY_CW,SUBDOMAIN_SHIFT,    SUBDOMAIN_LEN   },
+  {1,NODEORD_CE,          PROPERTY_CW,NODEORD_SHIFT,      NODEORD_LEN     },
+  {1,PROP_CE,             PROPERTY_CW,PROP_SHIFT,                 PROP_LEN                },
 
         #ifdef ModelP
   {1,XFERLINK_CE,         LINK_CW,        XFERLINK_SHIFT,         XFERLINK_LEN    },
@@ -190,10 +193,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {0,0,0,0,0},
   {0,0,0,0,0},
   {0,0,0,0,0},
-  {0,0,0,0,0},
-  {0,0,0,0,0},
-  {0,0,0,0,0},
-}; /* last entry used: 74 for ONNBSIDE_CE */
+}; /* last entry used: 77 for PROP_CE */
 
 /****************************************************************************/
 /*                                                                          */
