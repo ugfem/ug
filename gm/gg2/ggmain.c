@@ -2015,17 +2015,17 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
           theElement = InsertElement (theGrid,n,Node,Neighbor,NeighborSide,NULL);
    */
   IFDEBUG(gm,2)
-  printf("ggmain.c: theMG=%x InsertElement n=%d Node=%x\n",MYMG(theGrid),n,Node);
-  printf("ggmain.c: ndelemptrarray=%x\n",MGNDELEMPTRARRAY(MYMG(theGrid)));
+  printf("ggmain.c: theMG=%p InsertElement n=%d Node=%p\n",MYMG(theGrid),n,Node);
+  printf("ggmain.c: ndelemptrarray=%p\n",MGNDELEMPTRARRAY(MYMG(theGrid)));
   fflush(stdout);
   for (i=0; i<n; i++)
   {
-    printf("ggmain.c: i=%d Node=%x id=%d\n",i,Node[i],ID(Node[i]));
+    printf("ggmain.c: i=%d Node=%p id=%d\n",i,Node[i],ID(Node[i]));
     fflush(stdout);
   }
   for (i=0; i<NDELEM_BLKS_MAX; i++)
   {
-    printf("i=%d ndblk=%x\n",i,MGNDELEMBLK(MYMG(theGrid),i));
+    printf("i=%d ndblk=%p\n",i,MGNDELEMBLK(MYMG(theGrid),i));
     fflush(stdout);
   }
   ENDDEBUG
@@ -2047,7 +2047,7 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   if ((ID(theElement)==ElemID) || (UserInterrupt(NULL)))
         #endif
   {
-    sprintf(buffer,"zoom current element (ID=%ld) (y/n)? ",ID(theElement));
+    sprintf(buffer,"zoom current element (ID=%d) (y/n)? ",ID(theElement));
     UserWrite(buffer);
     UserRead(buffer);
 
@@ -2068,7 +2068,7 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
 
   if (dostep)
   {
-    sprintf(buffer,"current element (ID=%ld)\nstep/zoom & step/cont/break?",ID(theElement));
+    sprintf(buffer,"current element (ID=%d)\nstep/zoom & step/cont/break?",ID(theElement));
     UserWrite(buffer); UserRead(buffer);
 
 
@@ -2181,7 +2181,7 @@ static FRONTCOMP *CreateOrSelectFC (
   if (recursiondepth > 20)
   {
     PrintErrorMessage('E',"CreateOrSelectFC","recursiondepth > 10 in CreateOrSelectFC");
-    sprintf(buffer,"constructing element over %ld %ld\n",ID(FRONTN(theFC)),ID(FRONTN(SUCCFC(theFC))));
+    sprintf(buffer,"constructing element over %d %d\n",ID(FRONTN(theFC)),ID(FRONTN(SUCCFC(theFC))));
     UserWrite(buffer);
     return (NULL);
   }
@@ -2957,7 +2957,7 @@ INT NS_PREFIX GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, M
 
         if (printelem)
         {
-          sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
+          sprintf(buffer,"ELEMID %d done\n",ID(LASTELEMENT(theGrid)));
           UserWrite(buffer);
         }
       }                   /* while */
@@ -3035,7 +3035,7 @@ INT NS_PREFIX GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, M
 
         if (printelem)
         {
-          sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
+          sprintf(buffer,"ELEMID %d done\n",ID(LASTELEMENT(theGrid)));
           UserWrite(buffer);
         }
 
@@ -3153,7 +3153,7 @@ INT NS_PREFIX GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, M
 
         if (printelem)
         {
-          sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
+          sprintf(buffer,"ELEMID %d done\n",ID(LASTELEMENT(theGrid)));
           UserWrite(buffer);
         }
       }
@@ -3229,7 +3229,7 @@ INT NS_PREFIX GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, M
 
         if (printelem)
         {
-          sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
+          sprintf(buffer,"ELEMID %d done\n",ID(LASTELEMENT(theGrid)));
           UserWrite(buffer);
         }
       }                                   /* while */
