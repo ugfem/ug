@@ -4715,10 +4715,9 @@ INT l_dmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const 
 {
 	register VECTOR *v,*w,*first_v,*end_v;
 	register MATRIX *mat;
-	INT rtype,ctype,err,xmask,ymask,first_index,last_index;
-	register SHORT i,j,xc,yc,mc;
-	register SHORT nr,nc;
-	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
+	INT err,xmask,ymask,first_index,last_index;
+	register SHORT xc,yc,mc;
+	DOUBLE sum;
 	
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
@@ -4763,10 +4762,9 @@ INT l_dtpmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, cons
 {
 	register VECTOR *v,*w,*first_v,*end_v;
 	register MATRIX *mat;
-	INT rtype,ctype,err,xmask,ymask,first_index,last_index;
-	register SHORT i,j,xc,yc,mc;
-	register SHORT nr,nc;
-	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
+	INT err,xmask,ymask,first_index,last_index;
+	register SHORT xc,yc,mc;
+	DOUBLE sum;
 	
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
@@ -5036,10 +5034,9 @@ INT l_dmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, co
 {
 	register VECTOR *v,*w,*first_v,*end_v;
 	register MATRIX *mat;
-	INT rtype,ctype,err,xmask,ymask,first_index,last_index;
-	register SHORT i,j,xc,yc,mc;
-	register SHORT nr,nc;
-	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
+	INT err,xmask,ymask,first_index,last_index;
+	register SHORT xc,yc,mc;
+	DOUBLE sum;
 	
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
@@ -5084,10 +5081,9 @@ INT l_dtpmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, 
 {
 	register VECTOR *v,*w,*first_v,*end_v;
 	register MATRIX *mat;
-	INT rtype,ctype,err,xmask,ymask,first_index,last_index;
-	register SHORT i,j,xc,yc,mc;
-	register SHORT nr,nc;
-	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
+	INT err,xmask,ymask,first_index,last_index;
+	register SHORT xc,yc,mc;
+	DOUBLE sum;
 	
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
@@ -5132,10 +5128,9 @@ INT l_dmatmul_minus_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, 
 {
 	register VECTOR *v,*w,*first_v,*end_v;
 	register MATRIX *mat;
-	INT rtype,ctype,err,xmask,ymask,first_index,last_index;
-	register SHORT i,j,xc,yc,mc;
-	register SHORT nr,nc;
-	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
+	INT err,xmask,ymask,first_index,last_index;
+	register SHORT xc,yc,mc;
+	DOUBLE sum;
 	
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)

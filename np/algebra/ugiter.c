@@ -605,14 +605,10 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
 INT l_lgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*end_vec;
-  INT rtype,ctype,myindex,err,first_index;
+  INT myindex,err,first_index;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
-  register SHORT *mcomp,*wcomp,*dcomp;
-  register SHORT i,j;
-  register SHORT n,nc;
   register DOUBLE sum;
-  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -656,14 +652,10 @@ INT l_lgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, 
 INT l_tplgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*end_vec;
-  INT rtype,ctype,myindex,err,last_index;
+  INT myindex,err,last_index;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
-  register SHORT *mcomp,*wcomp,*dcomp;
-  register SHORT i,j;
-  register SHORT n,nc;
   register DOUBLE sum;
-  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -917,14 +909,10 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
 INT l_ugs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*last_vec,*end_vec;
-  INT rtype,ctype,myindex,err,last_index;
+  INT myindex,err,last_index;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
-  register SHORT *mcomp,*wcomp,*dcomp;
-  register SHORT i,j;
-  register SHORT n,nc;
   register DOUBLE sum;
-  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
