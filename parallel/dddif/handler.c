@@ -2165,6 +2165,43 @@ void EdgeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 }
 #endif
 
+/****************************************************************************/
+/****************************************************************************/
+/*																			*/
+/*		general handlers                                                                                                        */
+/*																			*/
+/****************************************************************************/
+/****************************************************************************/
+
+void ObjectPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
+{
+  char type = OBJT(obj);
+
+  switch(type)
+  {
+  case VEOBJ :
+    VectorPriorityUpdate(obj,new);
+    break;
+  case IVOBJ :
+  case BVOBJ :
+    VertexPriorityUpdate(obj,new);
+    break;
+  case NDOBJ :
+    NodePriorityUpdate(obj,new);
+    break;
+  case IEOBJ :
+  case BEOBJ :
+    ElementPriorityUpdate(obj,new);
+    break;
+                #ifdef __THREEDIM__
+  case EDOBJ :
+    EdgePriorityUpdate(obj,new);
+    break;
+                #endif
+  default : assert(0);
+  }
+  return;
+}
 
 /****************************************************************************/
 
