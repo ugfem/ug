@@ -132,7 +132,7 @@ static void AnalyseTypes (void)
 
       if (el->type==EL_OBJPTR)
       {
-        TYPE_EDGE *te = GetTypeEdge(tn, el->reftype);
+        TYPE_EDGE *te = GetTypeEdge(tn, EDESC_REFTYPE(el));
         te->n += (el->size / sizeof(void *));
       }
     }

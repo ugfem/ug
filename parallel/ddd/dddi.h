@@ -230,9 +230,21 @@ typedef struct _ELEM_DESC
 
   size_t size;                        /* size of this element                   */
   int type;                           /* type of element, one of EL_xxx         */
-  DDD_TYPE reftype;                   /* if EL_OBJPTR, type of ref. destination */
+
+
+  /* if type==EL_OBJPTR, the following entries will be used               */
+  DDD_TYPE _reftype;                        /* DDD_TYPE of ref. destination     */
+
+  /* if reftype==DDD_TYPE_BY_HANDLER, we must use a handler for
+     determining the reftype on-the-fly (additional parameter during
+     TypeDefine with EL_OBJPTR)                                        */
+  HandlerGetRefType reftypeHandler;
 } ELEM_DESC;
 
+
+/* macros for accessing ELEM_DESC */
+#define EDESC_REFTYPE(ed)          ((ed)->_reftype)
+#define EDESC_SET_REFTYPE(ed,rt)   (ed)->_reftype=(rt)
 
 
 /****************************************************************************/
@@ -383,7 +395,10 @@ extern VChannelPtr *theTopology;
 /****************************************************************************/
 
 /* usage of flags in DDD_HEADER */
-/* -- none yet -- */
+#define MASK_OBJ_PRUNED 0x00000001
+#define OBJ_PRUNED(c) (((int)((c)->flags))&MASK_OBJ_PRUNED)
+#define SET_OBJ_PRUNED(c,d) ((c)->flags) = (((c)->flags)&(~MASK_OBJ_PRUNED))|((d)&MASK_OBJ_PRUNED)
+
 
 /* usage of flags in COUPLING */
 /* usage of 0x03 while interface-building, temporarily */

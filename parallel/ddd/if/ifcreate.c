@@ -220,7 +220,13 @@ void IFDeleteAll (DDD_IF ifId)
       ifr = ifrNext;
     }
 
+
+    /* if there are msg-buffers, then we must free them here */
+    BufferFree(ifh->bufIn);
+    BufferFree(ifh->bufOut);
+
     DisposeIFHead(ifh);
+
     ifh = ifhNext;
   }
 
@@ -435,15 +441,18 @@ static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
       /* create new IfHead */
       theIF[ifId].nIfHeads++;
       ifHead = NewIFHead();
-      ifHead->nItems = 0;
-      ifHead->cpl    = cplp;
-      ifHead->obj    = NULL;
-      ifHead->nAB    = ifHead->nBA   = ifHead->nABA   = 0;
-      ifHead->cplAB  = ifHead->cplBA = ifHead->cplABA = NULL;
-      ifHead->proc   = cpl->proc;
-      ifHead->next   = lastIfHead;
+      ifHead->nItems   = 0;
+      ifHead->cpl      = cplp;
+      ifHead->obj      = NULL;
+      ifHead->nAB      = ifHead->nBA   = ifHead->nABA   = 0;
+      ifHead->cplAB    = ifHead->cplBA = ifHead->cplABA = NULL;
+      ifHead->proc     = cpl->proc;
+      ifHead->next     = lastIfHead;
       lastIfHead = ifHead;
       lastproc   = ifHead->proc;
+
+      BufferInit(ifHead->bufIn);
+      BufferInit(ifHead->bufOut);
 
       ifHead->nAttrs = 1;
       ifHead->ifAttr = ifAttr = NewIFAttr();

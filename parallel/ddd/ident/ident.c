@@ -485,14 +485,12 @@ static int sort_tupelOrder (const void *e1, const void *e2)
             OBJ_GID(el1->hdr), OBJ_GID(el2->hdr));
     DDD_PrintError('E', 3030, cBuffer);
 
-    /*
-       for(i=0; i<nIds; i++) {
-            printf("%4d: tupel[%d]  %08x/%d  %08x/%d   (id/loi)\n",
-                    me, i,
-                    el1->id.object, el1->loi,
-                    el2->id.object, el2->loi);
-       }
-     */
+    for(i=0; i<nIds; i++) {
+      printf("%4d: tupel[%d]  %08x/%d  %08x/%d   (id/loi)\n",
+             me, i,
+             el1->id.object, el1->loi,
+             el2->id.object, el2->loi);
+    }
 
     HARD_EXIT;
   }

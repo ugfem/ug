@@ -182,6 +182,9 @@ If-o = ifcreate.o	\
 	ifobjsc.o
 
 
+$(IfPth)/if.h:	$(BasicPth)/memutil.h
+	touch $(IfPth)/if.h
+
 ifcreate.o: $(SrcPth)/dddi.h	\
 		$(IfPth)/if.h	\
 		$(IfPth)/ifcreate.c

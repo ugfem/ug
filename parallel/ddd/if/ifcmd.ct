@@ -244,13 +244,12 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 		#endif
 
 		#ifdef IF_WITH_ATTR
-			/* set default values for buffer length */
-			ifHead->lenBufIn  = 0;
-			ifHead->lenBufOut = 0;
+			/* reset buffers */
+			BufferReset(ifHead->bufIn);
+			BufferReset(ifHead->bufOut);
 			FIND_ATTR; /* find ifAttr */
-			/* if no ATTR can be found, buffer length will be 0 */
+			/* if no ATTR can be found, buffers will be empty */
 		#endif
-		
 
 		#ifdef IF_EXCHANGE
 			IFGetMem(ifHead, itemSize, PART->nItems, PART->nItems);
@@ -268,7 +267,8 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 
 		STAT_SETCOUNT(20,STAT_GETCOUNT(20)+ifHead->nItems);
 		STAT_SETCOUNT(21,STAT_GETCOUNT(21)+2);
-		STAT_SETCOUNT(22,STAT_GETCOUNT(22)+ifHead->lenBufIn+ifHead->lenBufOut);
+		STAT_SETCOUNT(22,STAT_GETCOUNT(22)+
+			BufferLen(ifHead->bufIn) + BufferLen(ifHead->bufOut));
 	}
 	STAT_TIMER1(63);
 
@@ -297,7 +297,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 		FIND_ATTR; /* find ifAttr */
 		#endif
 
-		buffer = ifHead->msgBufOut;
+		buffer = BufferMem(ifHead->bufOut);
 
 		#ifdef IF_EXCHANGE
 			/* exchange BA and AB during send */
@@ -329,7 +329,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 		/* poll receive calls */
 		ForIF(ifId,ifHead)
 		{
-			if (ifHead->lenBufIn>0 && ifHead->msgIn!=-1)
+			if ((! BufferIsEmpty(ifHead->bufIn)) && ifHead->msgIn!=-1)
 			{
 				int error = InfoARecv(ifHead->vc, ifHead->msgIn);
 				/* TODO complete error handling */
@@ -353,7 +353,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 						"%4d after %10ld, size %ld\n",
 						me, ifId, ifHead->proc,
 						(unsigned long)tries,
-						(unsigned long)ifHead->lenBufIn);
+						(unsigned long)BufferLen(ifHead->bufIn));
 					#endif
 
 					recv_mesgs--;
@@ -363,7 +363,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 					FIND_ATTR; /* find ifAttr */
 					#endif
 
-					buffer = ifHead->msgBufIn;
+					buffer = BufferMem(ifHead->bufIn);
 
 					/* get data using scatter-handler */
 					#ifdef IF_EXCHANGE
@@ -399,11 +399,11 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 
 		ForIF(ifId,ifHead)
 		{
-			if (ifHead->lenBufIn>0 && ifHead->msgIn!=-1)
+			if ((! BufferIsEmpty(ifHead->bufIn)) && ifHead->msgIn!=-1)
 			{
 				sprintf(cBuffer,
 					"  waiting for message (from proc %d, size %ld)",
-					ifHead->proc, (unsigned long)ifHead->lenBufIn);
+					ifHead->proc, (unsigned long)BufferLen(ifHead->bufIn));
 				DDD_PrintError('E', 4201, cBuffer);
 			}
 		}
@@ -422,11 +422,11 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 
 			ForIF(ifId,ifHead)
 			{
-				if (ifHead->lenBufOut>0 && ifHead->msgOut!=-1)
+				if ((! BufferIsEmpty(ifHead->bufOut)) && ifHead->msgOut!=-1)
 				{
 					sprintf(cBuffer,
 						"  waiting for send completion (to proc %d, size %ld)",
-						ifHead->proc, (unsigned long)ifHead->lenBufOut);
+						ifHead->proc, (unsigned long)BufferLen(ifHead->bufOut));
 					DDD_PrintError('E', 4211, cBuffer);
 				}
 			}

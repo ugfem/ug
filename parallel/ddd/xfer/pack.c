@@ -151,6 +151,7 @@ static int sort_ObjTabEntries (const void *e1, const void *e2)
 /* Purpose:   compute message SymTab entries for one single ddd-object.     */
 /*                                                                          */
 /* Input:     desc: descriptor of object                                    */
+/*            obj:  DDD_OBJ ptr to ddd-object (in local mem) or NULL        */
 /*            copy: copy of ddd-object (inside message buffer)              */
 /*            theSymTab: actual portion of message SymTab                   */
 /*                                                                          */
@@ -158,7 +159,10 @@ static int sort_ObjTabEntries (const void *e1, const void *e2)
 /*                                                                          */
 /****************************************************************************/
 
-static int BuildSymTab (TYPE_DESC *desc, char *copy, SYMTAB_ENTRY *theSymTab)
+static int BuildSymTab (TYPE_DESC *desc,
+                        DDD_OBJ obj,
+                        char *copy,
+                        SYMTAB_ENTRY *theSymTab)
 {
   ELEM_DESC   *theElem;
   int e, actSym;
@@ -176,8 +180,18 @@ static int BuildSymTab (TYPE_DESC *desc, char *copy, SYMTAB_ENTRY *theSymTab)
   {
     if (theElem->type==EL_OBJPTR)
     {
-      TYPE_DESC *refdesc = &theTypeDefs[theElem->reftype];
+      TYPE_DESC *refdesc;
       int l;
+      int rt_on_the_fly = (EDESC_REFTYPE(theElem)==DDD_TYPE_BY_HANDLER);
+
+      /* determine reftype of this elem */
+      if (! rt_on_the_fly)
+      {
+        /* we know the reftype of this element in advance */
+        refdesc = &theTypeDefs[EDESC_REFTYPE(theElem)];
+      }
+      /* else: determine reftype on the fly by calling handler */
+
 
       /* loop over single pointer array */
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
@@ -192,11 +206,32 @@ static int BuildSymTab (TYPE_DESC *desc, char *copy, SYMTAB_ENTRY *theSymTab)
         /* get the index of the referenced object */
         DDD_OBJ *ref = (DDD_OBJ *)(copy+theElem->msgoffset);
 #endif
+
         /* create symbol table entry */
         if (*ref!=NULL)
         {
+          DDD_HDR refhdr;
+
+          if (rt_on_the_fly)
+          {
+            DDD_TYPE rt;
+
+            /* determine reftype on the fly by calling handler */
+            assert(obj!=NULL);                                       /* we need a real object here */
+
+            rt = theElem->reftypeHandler(obj, *ref);
+            if (rt>=MAX_TYPEDESC)
+            {
+              DDD_PrintError('E', 6520,
+                             "invalid referenced DDD_TYPE "
+                             "returned by handler");
+              HARD_EXIT;
+            }
+            refdesc = &theTypeDefs[rt];
+          }
+
           /* get header of referenced object */
-          DDD_HDR refhdr = OBJ2HDR(*ref,refdesc);
+          refhdr = OBJ2HDR(*ref,refdesc);
 
           /* remember the GID of the referenced object */
           theSymTab[actSym].gid = OBJ_GID(refhdr);
@@ -279,7 +314,7 @@ static int GetDepData (char *data,
         descDep = &theTypeDefs[xa->addTyp];
         for(i=0; i<xa->addCnt; i++)
         {
-          actSym += BuildSymTab(descDep,
+          actSym += BuildSymTab(descDep, NULL,
                                 chunk, &(theSymTab[actSym]));
           chunk += CEIL(descDep->size);
         }
@@ -320,7 +355,7 @@ static int GetDepData (char *data,
         /* insert pointers into symtab */
         if (xa->addTyp<DDD_USER_DATA || xa->addTyp>DDD_USER_DATA_MAX)
         {
-          actSym += BuildSymTab(descDep,
+          actSym += BuildSymTab(descDep, NULL,
                                 table1[i], &(theSymTab[actSym]));
         }
 
@@ -517,7 +552,7 @@ static void XferPackSingleMsg (XFERMSG *msg)
 #endif
 
     /* build symbol table portion from object copy */
-    actSym += BuildSymTab(desc, (char *)currObj, &(theSymTab[actSym]));
+    actSym += BuildSymTab(desc, obj, (char *)currObj, &(theSymTab[actSym]));
 
 
     /* advance to next free object slot in message, c.f. alignment */

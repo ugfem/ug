@@ -454,8 +454,12 @@ static int Cons2CheckSingleMsg (LC_MSGHANDLE xm, DDD_HDR *locObjs)
      */
   }
 
-  if (locObjs!=NULL)
-    FreeTmp(locObjs);
+  /* the next too lines are wrong, bug find by PURIFY. KB 970416.
+     the locObjs list is freed in Cons2CheckGlobalCpl!
+     if (locObjs!=NULL)
+          FreeTmp(locObjs);
+   */
+
 
   return(error_cnt);
 }

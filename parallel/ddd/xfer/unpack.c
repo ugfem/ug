@@ -195,6 +195,7 @@ static void LocalizeObject (int merge_mode, TYPE_DESC *desc,
 	int          e;
 	DDD_OBJ      obj = objmem;
 
+
 /*
 printf("%4d:    Localize {\n", me); fflush(stdout);
 */
@@ -206,8 +207,10 @@ printf("%4d:    Localize {\n", me); fflush(stdout);
 	{
 		if (theElem->type==EL_OBJPTR)
 		{
-			TYPE_DESC *refdesc = &theTypeDefs[theElem->reftype];
+			TYPE_DESC *refdesc;
+			int rt_on_the_fly = (EDESC_REFTYPE(theElem)==DDD_TYPE_BY_HANDLER);
 			int       l;
+
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 			char      *msgrefarray = msgmem+theElem->offset;
 			char      *objrefarray = objmem+theElem->offset;
@@ -219,6 +222,16 @@ printf("%4d:    Localize e=%d typ=%s reftyp=%d size=%d\n",
 #ifdef F_FRONTEND
 			char      *objrefarray = theElem->array + (theElem->size*obj);
 #endif
+
+
+			/* determine reftype of this elem */
+			if (! rt_on_the_fly)
+			{
+				refdesc = &theTypeDefs[EDESC_REFTYPE(theElem)];
+			}
+			/* else determine reftype on the fly */
+
+
 
 			/* loop over single pointer array */
 			for(l=0; l<theElem->size; l+=SIZEOF_REF)
@@ -242,6 +255,26 @@ printf("%4d:    Localize e=%d typ=%s reftyp=%d size=%d\n",
 				/* test for Localize execution in merge_mode */
 				if (merge_mode && (*ref!=NULL_REF))
 				{
+					if (rt_on_the_fly)
+					{
+						/* determine reftype on the fly by calling handler */
+						DDD_TYPE rt;
+
+						assert(obj!=NULL);
+
+						rt = theElem->reftypeHandler(obj, *ref);
+
+						if (rt>=MAX_TYPEDESC)
+						{
+							DDD_PrintError('E', 6570,
+								"invalid referenced DDD_TYPE "
+								"returned by handler");
+							HARD_EXIT;
+						}
+
+ 						refdesc = &theTypeDefs[rt];
+					}
+
 					/* if we are in merge_mode, we do not update
 					   existing references. */
 					#ifdef DEBUG_MERGE_MODE
@@ -277,10 +310,20 @@ printf("%4d:    Localize e=%d typ=%s reftyp=%d size=%d\n",
 				}
 
 
+				/*
+				   at this point, we are either not in merge_mode
+				   or we are in merge_mode, but existing reference is zero.
+
+				   NOTE: only in merge_mode the objmem array points
+				         to the reference array inside the local
+				         local object!
+				*/
+
 /*
 printf("%4d:    Localize adr=%08x l=%d ref=%08x *ref=%08x stIdx=%d\n",
 	me,objmem,l,ref,*ref,(int)stIdx); fflush(stdout);
 */
+
 				if (stIdx>=0)
 				{
 					/* get corresponding symtab entry */
@@ -299,17 +342,30 @@ printf("%4d:    Localize adr=%08x l=%d ref=%08x *ref=%08x stIdx=%d\n",
 						if (st->adr.hdr!=NULL)
 						{
 							#ifdef DEBUG_MERGE_MODE
-							printf("%4d: loc-merge curr=%08x have_sym e=%d l=%d to %08x\n",
+							printf("%4d: loc-merge curr=%08x "
+								"have_sym e=%d l=%d to %08x\n",
 								me, *ref, e,l,OBJ_GID(st->adr.hdr));
 							#endif
 
-							*ref = HDR2OBJ(st->adr.hdr,refdesc);
+							/* distinction for efficiency: if we know refdesc
+							   in advance, we can compute DDD_OBJ more
+							   efficient. */
+							if (!rt_on_the_fly)
+							{
+								*ref = HDR2OBJ(st->adr.hdr,refdesc);
+							}
+							else
+							{
+								*ref = OBJ_OBJ(st->adr.hdr);
+							}
 						}
+
 						#ifdef DEBUG_MERGE_MODE
 						else
 						{
 							printf(
-								"%4d: loc-merge curr=%08x have_sym e=%d l=%d to NULL_REF\n",
+								"%4d: loc-merge curr=%08x "
+								"have_sym e=%d l=%d to NULL_REF\n",
 								me, *ref, e, l);
 						}
 						#endif
@@ -318,7 +374,19 @@ printf("%4d:    Localize adr=%08x l=%d ref=%08x *ref=%08x stIdx=%d\n",
 #endif
 					{
 						if (st->adr.hdr!=NULL)
-							*ref = HDR2OBJ(st->adr.hdr,refdesc);
+						{
+							/* distinction for efficiency: if we know refdesc
+							   in advance, we can compute DDD_OBJ more
+							   efficient. */
+							if (!rt_on_the_fly)
+							{
+								*ref = HDR2OBJ(st->adr.hdr,refdesc);
+							}
+							else
+							{
+								*ref = OBJ_OBJ(st->adr.hdr);
+							}
+						}
 						else
 							*ref = NULL_REF;
 					}
@@ -329,7 +397,8 @@ printf("%4d:    Localize adr=%08x l=%d ref=%08x *ref=%08x stIdx=%d\n",
 					if (merge_mode)
 					{
 						#ifdef DEBUG_MERGE_MODE
-						printf("%4d: loc-merge curr=%08x no_sym   e=%d l=%d\n",
+						printf("%4d: loc-merge curr=%08x "
+							"no_sym   e=%d l=%d\n",
 							me, *ref, e,l);
 						#endif
 					}
@@ -497,37 +566,63 @@ static void AcceptObjFromMsg (
 			/* object already here, compare priorities.
 			   this is the implementation of rule XFER-C3. */
 			DDD_PRIO newprio;
-			int  ret = PriorityMerge(desc,
-				ote->prio, OBJ_PRIO(localCplObjs[j]), &newprio);
+			int  ret;
 
-			if (ret==PRIO_FIRST || ret==PRIO_UNKNOWN)  /* incoming is higher or equal */
-			{
-				DDD_OBJ copy;
-
-#			if DebugUnpack<=1
-				sprintf(cBuffer, "%4d: NewPrio wins. %07x\n",me,
-					ote->gid);
-				DDD_PrintDebug(cBuffer);
-#			endif
-
-				/* new priority wins -> recreate */
-				/* all GDATA-parts are overwritten by contents of message */
-				copy = (DDD_OBJ)(theObjects+ote->offset);
-				ObjCopyGlobalData(desc,
-					HDR2OBJ(localCplObjs[j],desc), copy, ote->size);
-
-				ote->is_new = PARTNEW;
-			}
-			else  /* existing is higher than incoming */
+			/* if local object should have been XferDelete'd, but the
+			   delete-cmd had been pruned (see cmdmsg.c), a flag has been
+			   set in its header. we have to ensure here that all incoming
+			   objects win against pruned-deleted ones, because the object
+			   serves only as 'cache' for data (esp. pointers) */
+			if (OBJ_PRUNED(localCplObjs[j]))
 			{
 #				if DebugUnpack<=1
-					sprintf(cBuffer, "%4d: OldPrio wins. %07x\n",me,
-						ote->gid);
+					sprintf(cBuffer, "%4d: NewPrio wins due to PruneDel. "
+						"%08x\n", me, ote->gid);
 					DDD_PrintDebug(cBuffer);
 #				endif
 
-				/* new priority looses -> keep existing obj */
-				ote->is_new = NOTNEW;
+				/* reset flag */
+				SET_OBJ_PRUNED(localCplObjs[j], 0);
+
+				/* simply copy new priority, disregard old one */
+				newprio = ote->prio;
+
+				ote->is_new = PRUNEDNEW;
+			}
+			else
+			{
+				ret = PriorityMerge(desc,
+					ote->prio, OBJ_PRIO(localCplObjs[j]), &newprio);
+
+				if (ret==PRIO_FIRST || ret==PRIO_UNKNOWN)  /* incoming is higher or equal */
+				{
+					DDD_OBJ copy;
+
+#				if DebugUnpack<=1
+					sprintf(cBuffer, "%4d: NewPrio wins. %07x\n",me,
+						ote->gid);
+					DDD_PrintDebug(cBuffer);
+#				endif
+	
+					/* new priority wins -> recreate */
+					/* all GDATA-parts are overwritten by contents of message */
+					copy = (DDD_OBJ)(theObjects+ote->offset);
+					ObjCopyGlobalData(desc,
+						HDR2OBJ(localCplObjs[j],desc), copy, ote->size);
+
+					ote->is_new = PARTNEW;
+				}
+				else  /* existing is higher than incoming */
+				{
+#					if DebugUnpack<=1
+						sprintf(cBuffer, "%4d: OldPrio wins. %07x\n",me,
+							ote->gid);
+						DDD_PrintDebug(cBuffer);
+#					endif
+	
+					/* new priority looses -> keep existing obj */
+					ote->is_new = NOTNEW;
+				}
 			}
 
 			/* store pointer to local object */
@@ -536,7 +631,11 @@ static void AcceptObjFromMsg (
 			/* store old priority and set new one */
 			ote->prio    = newprio;
 			ote->oldprio = OBJ_PRIO(localCplObjs[j]);
-			OBJ_PRIO(localCplObjs[j]) = newprio;
+
+			/* the next line is not useful. the current priority
+			   of the involved object will be changed to newprio-value
+			   after calling of handler SETPRIORITY. KB 970417 */
+			/* OBJ_PRIO(localCplObjs[j]) = newprio; */
 		}
 		else
 		{
@@ -976,7 +1075,7 @@ static void PropagateIncomings (
 	{
 		int newness = allRecObjs[iRO]->is_new;
 
-		if (newness==PARTNEW || newness==TOTALNEW)
+		if (newness==PARTNEW || newness==PRUNEDNEW || newness==TOTALNEW)
 		{
 			COUPLING *cpl;
 
@@ -990,7 +1089,7 @@ static void PropagateIncomings (
 			/* communicate to all new_owner-destinations */
 			while (iNO<nNO && arrayNO[iNO]->gid == ote->gid)
 			{
-				if (newness==PARTNEW)
+				if (newness==PARTNEW || newness==PRUNEDNEW)
 				{
 					XIModCpl *xc = NewXIModCpl(SLLNewArgs);
 					xc->to      = arrayNO[iNO]->dest; /* receiver of XIModCpl*/
@@ -1006,7 +1105,7 @@ static void PropagateIncomings (
 			for(cpl=THECOUPLING(ote->hdr); cpl!=NULL; cpl=CPL_NEXT(cpl))
 			{
 /*
-				if (newness==PARTNEW)
+				if (newness==PARTNEW || newness==PRUNEDNEW)
 				{
 */
 					XIModCpl *xc = NewXIModCpl(SLLNewArgs);
@@ -1224,10 +1323,13 @@ static void UnpackAddData (LC_MSGHANDLE xm)
 
 			switch (theObjTab[i].is_new)
 			{
-				case OTHERMSG: newness=XFER_REJECT;   break;
-				case NOTNEW:   newness=XFER_REJECT;   break;
-				case PARTNEW:  newness=XFER_UPGRADE;  break;
-				case TOTALNEW: newness=XFER_NEW;      break;
+				case OTHERMSG:   newness=XFER_REJECT;   break;
+				case NOTNEW:     newness=XFER_REJECT;   break;
+				case PARTNEW:    newness=XFER_UPGRADE;  break;
+				case PRUNEDNEW:  newness=XFER_UPGRADE;  break;
+/* TODO: for PRUNEDNEW we should merge prios; might be
+	XFER_DOWNGRADE... */
+				case TOTALNEW:   newness=XFER_NEW;      break;
 			}
 
 			/*
@@ -1280,7 +1382,9 @@ static void CallSetPriorityHandler (LC_MSGHANDLE xm)
 			late...)
 			970410 kb
 		*/
-		if ((theObjTab[i].is_new==NOTNEW || theObjTab[i].is_new==PARTNEW)
+		if ((theObjTab[i].is_new==NOTNEW ||
+			 theObjTab[i].is_new==PARTNEW ||
+			 theObjTab[i].is_new==PRUNEDNEW)
 		/*	&& (theObjTab[i].oldprio != theObjTab[i].prio) */  )
 		{
 			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
@@ -1318,6 +1422,7 @@ static void CallObjMkConsHandler (LC_MSGHANDLE xm)
 	for(i=0; i<lenObjTab; i++)         /* for all message items */
 	{
 		if (theObjTab[i].is_new==TOTALNEW ||
+			theObjTab[i].is_new==PRUNEDNEW ||
 			theObjTab[i].is_new==PARTNEW ||
 			theObjTab[i].is_new==NOTNEW)
 		{
@@ -1329,9 +1434,12 @@ static void CallObjMkConsHandler (LC_MSGHANDLE xm)
 
 			switch (theObjTab[i].is_new)
 			{
-				case NOTNEW:   newness=XFER_REJECT;   break;
-				case PARTNEW:  newness=XFER_UPGRADE;  break;
-				case TOTALNEW: newness=XFER_NEW;      break;
+				case NOTNEW:    newness=XFER_REJECT;   break;
+				case PARTNEW:   newness=XFER_UPGRADE;  break;
+				case TOTALNEW:  newness=XFER_NEW;      break;
+				case PRUNEDNEW: newness=XFER_UPGRADE;  break;
+/* TODO: for PRUNEDNEW we should merge prios; might be
+	XFER_DOWNGRADE... */
 			}
 
 

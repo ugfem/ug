@@ -1,5 +1,42 @@
 ---------------------------
 
+CHANGES 1.8.5 -> 1.8.6
+
+---------------------------
+970417 kb
+added DDD_TYPE_BY_HANDLER for EL_OBJPTR in TypeDefine.
+	- normally, for EL_OBJPTR defined during TypeDefine
+	  the DDD_TYPE of the referenced object has to be given.
+	- now, one can replace this argument (a DDD_TYPE) by the
+	  constant DDD_TYPE_BY_HANDLER, and an additional argument
+	  which is a function pointer to a handler function of the
+	  type HandlerGetRefType, i.e. (see ddd.h)
+	     DDD_TYPE (*HandlerGetRefType) (DDD_OBJ o1, DDD_OBJ o2)
+	- DDD will call this handler whenever it needs to evaluate
+	  the referenced type. then, o1 is the object containing
+	  the reference, o2 is the referenced object (for which the
+	  type must be given). the function must return the actual
+	  type of o2.
+	- when defining arrays of EL_OBJPTR, the handler function
+	  will be called for each reference in turn.
+970417 kb
+change in priority consistency during xfer.
+	- when a local object is XFER_UPGRADEd during xfer/unpack,
+	  its priority has been set immediately (until 1.8.5).
+	- for calling the user-defined handler SETPRIORITY,
+	  the old prio-value had been restored into the object's
+	  DDD_HEADER; after the call to the handler (if any),
+	  the new priority value was inserted again.
+	- from 1.8.6 on: the priority isn't set immediately, but only
+	  after the call to SETPRIORITY. This implements the following 
+	  priority consistency model: BEFORE AND DURING the call
+	  to the SETPRIORITY handler, the object has its old priority.
+	  AFTER calling the SETPRIORITY handler, the object has its
+	  new priority.
+970416 kb
+fixed some bugs found by evaluation version of Purify.
+---------------------------
+
 CHANGES 1.8.4 -> 1.8.5
 
 ---------------------------

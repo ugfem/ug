@@ -68,18 +68,11 @@ static int send_mesgs;
  */
 void IFGetMem (IF_PROC *ifHead, size_t itemSize, int lenIn, int lenOut)
 {
-  ifHead->lenBufIn  = itemSize * lenIn;
-  ifHead->lenBufOut = itemSize * lenOut;
+  size_t sizeIn  = itemSize * lenIn;
+  size_t sizeOut = itemSize * lenOut;
 
-  if (ifHead->lenBufIn > 0)
-  {
-    ifHead->msgBufIn  = (char *) AllocMsg(ifHead->lenBufIn);
-  }
-
-  if (ifHead->lenBufOut > 0)
-  {
-    ifHead->msgBufOut = (char *) AllocMsg(ifHead->lenBufOut);
-  }
+  BufferCreate(ifHead->bufIn,  sizeIn);
+  BufferCreate(ifHead->bufOut, sizeOut);
 }
 
 
@@ -102,11 +95,11 @@ int IFInitComm (DDD_IF ifId)
   /* get memory and initiate receive calls */
   ForIF(ifId,ifHead)
   {
-    if (ifHead->lenBufIn>0)
+    if (! BufferIsEmpty(ifHead->bufIn))
     {
       ifHead->msgIn =
         RecvASync(ifHead->vc,
-                  ifHead->msgBufIn, ifHead->lenBufIn,
+                  BufferMem(ifHead->bufIn), BufferLen(ifHead->bufIn),
                   &error);
 
       /* TODO error abfrage */
@@ -128,13 +121,13 @@ void IFExitComm (DDD_IF ifId)
 {
   IF_PROC   *ifHead;
 
-  ForIF(ifId,ifHead)
+  if (DDD_GetOption(OPT_IF_REUSE_BUFFERS) == OPT_OFF)
   {
-    if (ifHead->lenBufIn > 0)
-      FreeMsg(ifHead->msgBufIn);
-
-    if (ifHead->lenBufOut > 0)
-      FreeMsg(ifHead->msgBufOut);
+    ForIF(ifId,ifHead)
+    {
+      BufferFree(ifHead->bufIn);
+      BufferFree(ifHead->bufOut);
+    }
   }
 
   ReleaseHeap();
@@ -149,11 +142,11 @@ void IFInitSend (IF_PROC *ifHead)
 {
   int error;
 
-  if (ifHead->lenBufOut>0)
+  if (! BufferIsEmpty(ifHead->bufOut))
   {
     ifHead->msgOut =
       SendASync(ifHead->vc,
-                ifHead->msgBufOut, ifHead->lenBufOut,
+                BufferMem(ifHead->bufOut), BufferLen(ifHead->bufOut),
                 &error);
 
     /* TODO error abfrage */
@@ -178,7 +171,7 @@ int IFPollSend (DDD_IF ifId)
     /* poll send calls */
     ForIF(ifId,ifHead)
     {
-      if (ifHead->lenBufOut>0 && ifHead->msgOut!=-1)
+      if ((! BufferIsEmpty(ifHead->bufOut)) && ifHead->msgOut!=-1)
       {
         int error = InfoASend(ifHead->vc, ifHead->msgOut);
         /* TODO complete error handling */
@@ -191,7 +184,7 @@ int IFPollSend (DDD_IF ifId)
                  "%4d after %10ld, size %ld\n",
                  me, ifId, ifHead->proc,
                  (unsigned long)tries,
-                 (unsigned long)ifHead->lenBufOut);
+                 (unsigned long)BufferLen(ifHead->bufOut));
                                         #endif
         }
       }

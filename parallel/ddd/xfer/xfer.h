@@ -55,6 +55,7 @@
 enum XferNewType {
   NOTNEW     = 0x00,             /* object is not new                           */
   PARTNEW    = 0x01,             /* object has been updated partially           */
+  PRUNEDNEW  = 0x02,             /* object is new due to PruneDel (see cmdmsg.c)*/
   TOTALNEW   = 0x04,             /* object has been updated completely          */
   OTHERMSG   = 0x08,             /* object is taken from another message        */
   THISMSG    = 0x10              /* object is taken from this msg, temp setting */

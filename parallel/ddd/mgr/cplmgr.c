@@ -274,6 +274,7 @@ COUPLING *AddCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
   cp->obj = hdr;
   cp->proc = proc;
   cp->prio = prio;
+  cp->flags = 0;
 
   /* insert into theCpl array */
   CPL_NEXT(cp) = theCpl[objIndex];
@@ -623,7 +624,7 @@ size_t DDD_InfoCplMemory (void)
 
 void ddd_CplMgrInit (void)
 {
-  localIBuffer = (int*)AllocFix(2*procs*sizeof(int));
+  localIBuffer = (int*)AllocFix((2*procs+1)*sizeof(int));
   if (localIBuffer==NULL)
   {
     DDD_PrintError('E', 2532, STR_NOMEM " for DDD_InfoProcList()");

@@ -285,7 +285,8 @@ static void ConstructEl (ELEM_DESC *elem, int t, int o, size_t s, DDD_TYPE rt)
           not used, the DDD_HDR will be assumed to be at the
           beginning of each structure (offsetHeader==0).
    */
-  elem->reftype = rt;
+  EDESC_SET_REFTYPE(elem, rt);
+  elem->reftypeHandler = NULL;
 
   /*
           for GBITS elements, store array of bits. 1=GDATA,
@@ -330,7 +331,8 @@ static void ConstructEl (ELEM_DESC *elem, int t, char *a, size_t s, DDD_TYPE rt)
           not used, the DDD_HDR will be assumed to be at the
           beginning of each structure (offsetHeader==0).
    */
-  elem->reftype = rt;
+  EDESC_SET_REFTYPE(elem, rt);
+  elem->reftypeHandler = NULL;
 
   if (t==EL_GBITS)
   {
@@ -364,7 +366,7 @@ static int RecursiveRegister (TYPE_DESC *desc,
                 d2->element[j].type,
                 d2->element[j].offset + offs,
                 d2->element[j].size,
-                d2->element[j].reftype);
+                EDESC_REFTYPE(&(d2->element[j])));
     if (CheckBounds(desc, &desc->element[i], argno) == ERROR)
       return(ERROR);
   }
@@ -541,7 +543,8 @@ static int NormalizeDesc (TYPE_DESC *desc)
 
       /* 4) EL_OBJPTRs with different reftypes can't be compressed */
       if (elems[i].type==EL_OBJPTR &&
-          (elems[i].reftype != elems[i+1].reftype))
+          ((EDESC_REFTYPE(elems+i)!= EDESC_REFTYPE(elems+(i+1))) ||
+           (EDESC_REFTYPE(elems+i)==DDD_TYPE_BY_HANDLER)) )
         continue;
 
       /* 5) EL_GBITS cant be compressed */
@@ -599,7 +602,7 @@ static void AttachMask (TYPE_DESC *desc)
     switch (e->type)
     {
     case EL_LDATA :
-    case EL_OBJPTR :
+    case EL_OBJPTR :                        /* OBJPTR are LDATA!!! */
       mask = 0x00;                              /* dont-copy-flag */
       break;
 
@@ -675,13 +678,15 @@ void ClearHeaders (TYPE_DESC *desc)
 /*                                                                          */
 /* Purpose:   define object structure at runtime                            */
 /*                                                                          */
-/* Input:     typ, adr, t0, p0, s0, [r0], t1, p1, s1 ...                    */
+/* Input:     typ, adr, t0, p0, s0, [r0 [, rh0]], t1, p1, s1 ...                    */
 /*            with typ:  previously declared DDD_TYPE                       */
 /*                 adr:  example struct address                             */
 /*                 t:    element type                                       */
 /*                 p:    pointer into example structure                     */
 /*                 s:    size of element in byte                            */
 /*                 r:    (only for EL_OBJPTR): referenced DDD_TYPE          */
+/*                 rt:   (only for EL_OBJPTR and DDD_TYPE_BY_HANDLER):      */
+/*                          handler for getting reftype on-the-fly.         */
 /*                                                                          */
 /* Output:    -                                                             */
 /*                                                                          */
@@ -809,6 +814,8 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
   while ((i<MAX_ELEMDESC) &&
          ((argtyp= FTYPE va_arg(ap, int FTYPE))!=EL_END) && (argtyp!=EL_CONTINUE))
   {
+    HandlerGetRefType arg_rt_handler;
+
     /* get the pointer to the object (no special treatment for fortran	*/
     /* needed )															*/
     argp = va_arg(ap, char *);
@@ -826,17 +833,30 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
       /* EL_OBJPTR have to be specified with target type */
       if (argtyp==EL_OBJPTR)
       {
+
         /* get fourth argument: referenced DDD_TYPE */
         argrefs = FTYPE va_arg(ap, DDD_TYPE FTYPE); argno++;
 
-        /* check whether target type is valid */
-        if (argrefs>=nDescr ||
-            theTypeDefs[argrefs].mode==DDD_TYPE_INVALID)
+                                        #ifdef C_FRONTEND
+        /* check whether target type is DDD_TYPE_BY_HANDLER */
+        /* this is currently supported only by C_FRONTEND */
+        if (argrefs==DDD_TYPE_BY_HANDLER)
         {
-          errtxt=RegisterError(desc,argno,
-                               "referencing invalid DDD_TYPE");
-          DDD_PrintError('E', 9909, errtxt);
-          HARD_EXIT;                                       /*return;*/
+          arg_rt_handler = va_arg(ap, HandlerGetRefType);
+          argno++;
+        }
+        else
+                                        #endif
+        {
+          /* check whether target type is valid */
+          if (argrefs>=nDescr ||
+              theTypeDefs[argrefs].mode==DDD_TYPE_INVALID)
+          {
+            errtxt=RegisterError(desc,argno,
+                                 "referencing invalid DDD_TYPE");
+            DDD_PrintError('E', 9909, errtxt);
+            HARD_EXIT;                                             /*return;*/
+          }
         }
       }
       else
@@ -869,6 +889,10 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
       ConstructEl(&desc->element[i],
                   argtyp, argp-adr, argsize, argrefs);
+
+      /* set reftype-handler function pointer, if any */
+      if (argrefs==DDD_TYPE_BY_HANDLER)
+        desc->element[i].reftypeHandler = arg_rt_handler;
 #endif
 #ifdef F_FRONTEND
       size += argsize;
@@ -1354,9 +1378,18 @@ void DDD_TypeDisplay (DDD_TYPE *idf)
           case EL_LDATA : strcat(cBuffer, "local data\n"); break;
           case EL_DATAPTR : strcat(cBuffer, "data pointer\n"); break;
           case EL_OBJPTR :
-            sprintf(cBuffer, "%sobj pointer (refs %s)\n",
-                    cBuffer,
-                    theTypeDefs[e->reftype].name);
+            if (EDESC_REFTYPE(e)!=DDD_TYPE_BY_HANDLER)
+            {
+              sprintf(cBuffer, "%sobj pointer (refs %s)\n",
+                      cBuffer,
+                      theTypeDefs[EDESC_REFTYPE(e)].name);
+            }
+            else
+            {
+              sprintf(cBuffer,
+                      "%sobj pointer (reftype on-the-fly)\n",
+                      cBuffer);
+            }
             break;
           case EL_GBITS : strcat(cBuffer, "bitwise global: ");
             {

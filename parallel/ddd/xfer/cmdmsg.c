@@ -334,8 +334,7 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
     if (k<lenGidTab && (unionGidTab[k]==gidDC))
     {
       /* found a DelCmd-item to prune */
-      /* TODO: this will not only work for standard priomerge!! */
-      OBJ_PRIO(itemsDC[iDC]->hdr) = 0;
+      SET_OBJ_PRUNED(itemsDC[iDC]->hdr, 1);
 
 #                       if DebugCmdMsg<=1
       printf("%4d: PruneDelCmds. pruned %08x\n", me, gidDC);

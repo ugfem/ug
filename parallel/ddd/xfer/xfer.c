@@ -645,6 +645,7 @@ void ExecLocalXISetPrio (
         desc->handlerSETPRIORITY(_FADR obj, _FADR newprio);
       }
 
+      /* change actual priority to new value */
       OBJ_PRIO(hdr) = newprio;
 
 

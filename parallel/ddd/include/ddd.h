@@ -43,7 +43,7 @@
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.5"
+#define DDD_VERSION    "1.8.6beta"
 
 
 /****************************************************************************/
@@ -159,6 +159,8 @@ enum OptionType {
 
   OPT_XFER_PRUNE_DELETE,           /* prune del-cmd in del/xfercopy-combination */
 
+  OPT_IF_REUSE_BUFFERS,            /* reuse interface buffs as long as possible */
+
   OPT_END
 };
 
@@ -202,15 +204,18 @@ enum XferConstants {
   DDD_USER_DATA_MAX = 0x4fff,
 
 
-  /* additional parameter for MKCONS and XFERSCATTER handlers */
+  /* additional parameter for user defined handlers in xfer */
 
-  /* object has been rejected due to RULE C3 (XFERSCATTER) */
+  /* object has been rejected due to RULE C3 */
   XFER_REJECT  = 0x9000,
 
-  /* object has been upgraded due to RULE C3 (XFERSCATTER, MKCONS) */
+  /* object has been upgraded due to RULE C3 */
   XFER_UPGRADE,
 
-  /* object is totally new (XFERSCATTER, MKCONS) */
+  /* object has been downgraded due to PruneDel */
+  XFER_DOWNGRADE,
+
+  /* object is totally new */
   XFER_NEW
 };
 
@@ -328,6 +333,8 @@ enum Handlers {
 
 
 /* handler prototypes */
+
+/* handlers related to certain DDD_TYPE (i.e., member functions) */
 typedef void (*HandlerLDATACONSTRUCTOR)(DDD_OBJ _FPTR);
 typedef void (*HandlerDESTRUCTOR)(DDD_OBJ _FPTR);
 typedef void (*HandlerDELETE)(DDD_OBJ _FPTR);
@@ -348,6 +355,9 @@ typedef void (*HandlerALLOCOBJ)(DDD_OBJ _FPTR);
 typedef void (*HandlerFREEOBJ)(DDD_OBJ _FPTR);
 #endif
 
+/* handlers not related to DDD_TYPE (i.e., global functions) */
+typedef DDD_TYPE (*HandlerGetRefType)(DDD_OBJ _FPTR, DDD_OBJ _FPTR);
+
 
 
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
@@ -357,6 +367,10 @@ typedef int (*ComProcPtr)(DDD_OBJ _FPTR, void *);
 typedef int (*ComProcXPtr)(DDD_OBJ _FPTR, void *, DDD_PROC _FPTR, DDD_PRIO _FPTR);
 #endif
 
+
+
+/* special feature: hybrid reftype at TypeDefine-time */
+#define DDD_TYPE_BY_HANDLER   127   /* must be > MAX_TYPEDESC */
 
 
 /****************************************************************************/
