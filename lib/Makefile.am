@@ -22,9 +22,6 @@ endif
 
 lib_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 
-# seems to miss...
-#                   ../parallel/util/libparutil.la
-
 libug2_la_SOURCES = ../initug.c
 libug2_la_CPPFLAGS = $(UG_2DFLAGS)
 libug2_la_LIBADD = ../gm/libug_gm2.la \
@@ -33,6 +30,7 @@ libug2_la_LIBADD = ../gm/libug_gm2.la \
                    ../ui/libugui2.la \
                    ../dev/libdevices.la \
                    ../low/liblow2.la \
+                   ../parallel/util/libparutil.la \
                    ../low/liblow.la $(PLIBS_2D)
 
 libug3_la_SOURCES = ../initug.c
@@ -43,4 +41,5 @@ libug3_la_LIBADD = ../gm/libug_gm3.la \
                    ../ui/libugui3.la \
                    ../dev/libdevices.la \
                    ../low/liblow3.la \
+                   ../parallel/util/libparutil.la \
                    ../low/liblow.la $(PLIBS_3D)
