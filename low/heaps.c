@@ -28,6 +28,7 @@
 /*                                                                          */
 /****************************************************************************/
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
@@ -58,6 +59,8 @@
 #define B_ID(bhm,i)             ((bhm)->BlockDesc[i].id)
 
 #define CALC_B_OFFSET(bhm,i)    (((i)==0) ? 0 : (B_OFFSET(theVHM,(i)-1)+B_SIZE(theVHM,(i)-1)))
+
+/* #define OS_MEM */		/* use malloc/free */
 
 /****************************************************************************/
 /*                                                                          */
@@ -124,6 +127,10 @@ HEAP *NewHeap (INT type, MEM size, void *buffer)
 {
   HEAP *theHeap;
 
+        #ifdef OS_MEM
+  buffer = malloc(size);
+        #endif
+
   /* check size */
   if (buffer==NULL) return(NULL);
   if (size<MIN_HEAP_SIZE) return(NULL);
@@ -133,11 +140,11 @@ HEAP *NewHeap (INT type, MEM size, void *buffer)
   theHeap->type = type;
   theHeap->size = size;
   theHeap->topStackPtr = theHeap->bottomStackPtr = 0;
-  theHeap->heapptr = (BLOCK *) CEIL(((MEM)theHeap)+sizeof(HEAP));
-  theHeap->used = ((MEM)theHeap->heapptr)-((MEM)theHeap);
+  theHeap->heapptr = (BLOCK *) (((char *)theHeap)+CEIL(sizeof(HEAP)));
+  theHeap->used = ((char *)theHeap->heapptr)-((char *)theHeap);
 
   /* initialize first block */
-  theHeap->heapptr->size = ((MEM)theHeap)+size-((MEM)theHeap->heapptr);
+  theHeap->heapptr->size = ((char *)theHeap)+size-((char *)theHeap->heapptr);
   theHeap->heapptr->next = theHeap->heapptr;
   theHeap->heapptr->previous = theHeap->heapptr;
 
@@ -227,7 +234,7 @@ void *GetMem (HEAP *theHeap, MEM n, INT mode)
 
       theHeap->used += theBlock->size-newsize;
       theBlock->size = newsize;
-      return((void *)(((MEM)theBlock)+newsize));
+      return((void *)(((char *)theBlock)+newsize));
     }
     if (mode!=FROM_BOTTOM) return(NULL);
     theBlock = theHeap->heapptr;
@@ -238,7 +245,7 @@ void *GetMem (HEAP *theHeap, MEM n, INT mode)
         since the BLOCK struct is only shifted by allocated?
      */
     if (allocated>theBlock->size-sizeof(BLOCK)) return(NULL);
-    newBlock = (BLOCK *) (((MEM)theBlock)+allocated);
+    newBlock = (BLOCK *) (((char *)theBlock)+allocated);
     newBlock->size = theBlock->size-allocated;
     theHeap->heapptr = newBlock;
     theHeap->used += allocated;
@@ -262,9 +269,10 @@ void *GetMem (HEAP *theHeap, MEM n, INT mode)
         allocated = theBlock->size-newsize;
         theHeap->used += allocated;
         theBlock->size = newsize;
-        newBlock = (BLOCK *) (((MEM)theBlock)+newsize);
+        newBlock = (BLOCK *) (((char *)theBlock)+newsize);
         newBlock->size = allocated;
         theHeap->heapptr = theBlock;
+
         return((void *)(((char *)newBlock)+ALIGNMENT));
       }
       else
@@ -315,7 +323,12 @@ void *GetMem (HEAP *theHeap, MEM n, INT mode)
 void DisposeMem (HEAP *theHeap, void *buffer)
 {
   BLOCK *newBlock,*theBlock,*nextBlock;
-  MEM b,n,p;
+  char *b,*n,*p;
+
+        #ifdef OS_MEM
+  free(buffer);
+  return;
+        #endif
 
   if (theHeap->type!=GENERAL_HEAP) return;
 
@@ -333,13 +346,13 @@ void DisposeMem (HEAP *theHeap, void *buffer)
   }
 
   /* find next and previous blocks */
-  b = (MEM) newBlock;
+  b = (char *) newBlock;
 
   for (theBlock=theHeap->heapptr; theBlock->next!=theHeap->heapptr;
        theBlock=theBlock->next)
   {
-    p = (MEM) theBlock;
-    n = (MEM) theBlock->next;
+    p = (char *) theBlock;
+    n = (char *) theBlock->next;
     if (n<=p)
     {
       /* wrap around position or single BLOCK */
@@ -351,8 +364,8 @@ void DisposeMem (HEAP *theHeap, void *buffer)
       if ((b>p)&&(b<n)) break;
     }
   }
-  p = (MEM) theBlock;
-  n = (MEM) theBlock->next;
+  p = (char *) theBlock;
+  n = (char *) theBlock->next;
   if (n<=p)
   {
     /* wrap around position or single BLOCK */
@@ -478,7 +491,7 @@ INT Mark (HEAP *theHeap, INT mode)
     if (theHeap->topStackPtr<MARK_STACK_SIZE)
     {
       theHeap->topStack[theHeap->topStackPtr++] =
-        ((MEM)theHeap->heapptr) + ((MEM)theHeap->heapptr->size);
+        ((char *)theHeap->heapptr) + (theHeap->heapptr->size);
       return(0);
     }
   }
@@ -487,7 +500,7 @@ INT Mark (HEAP *theHeap, INT mode)
     if (theHeap->bottomStackPtr<MARK_STACK_SIZE)
     {
       theHeap->bottomStack[theHeap->bottomStackPtr++] =
-        ((MEM)theHeap->heapptr);
+        ((char *)theHeap->heapptr);
       return(0);
     }
   }
@@ -529,7 +542,7 @@ INT Release (HEAP *theHeap, INT mode)
     if (theHeap->topStackPtr>0)
     {
       oldsize = theHeap->heapptr->size;
-      newsize = theHeap->topStack[--theHeap->topStackPtr]-((MEM)theHeap->heapptr);
+      newsize = theHeap->topStack[--theHeap->topStackPtr]-((char *)theHeap->heapptr);
       theHeap->heapptr->size = newsize;
       theHeap->used -= newsize-oldsize;
       return(0);
@@ -540,7 +553,7 @@ INT Release (HEAP *theHeap, INT mode)
     if (theHeap->bottomStackPtr>0)
     {
       oldsize = theHeap->heapptr->size;
-      newsize = (((MEM)theHeap->heapptr)+((MEM)theHeap->heapptr->size))
+      newsize = (((char *)theHeap->heapptr)+(theHeap->heapptr->size))
                 -theHeap->bottomStack[--theHeap->bottomStackPtr];
       theHeap->heapptr = (BLOCK *) theHeap->bottomStack[theHeap->bottomStackPtr];
       theHeap->heapptr->size = newsize;
