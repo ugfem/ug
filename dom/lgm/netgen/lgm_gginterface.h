@@ -49,7 +49,7 @@ int InitNetgen (char *rulefilename);
 int StartNetgen (double h,int smooth,int display);
 
 int AddGeomPoint (int nodeid, double x, double y, double z);
-int AddGeomElement (int node0, int node1, int node2);
+int AddGeomElement (int node0, int node1, int node2, int neigbor0, int neigbor1, int neigbor2);
 int AddLinePoint (int id, double x, double y, double z);
 int AddLineSegment (int i1,int i2);
 int InitSurfaceNetgen (char *rulefilename);

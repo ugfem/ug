@@ -172,6 +172,8 @@ struct lgm_surface_info {
   struct lgm_triangle_info *Triangle;           /* ptr to list of triangle_info					*/
   int *point;                                                           /* ptr to array of corner (global) id's			*/
   int *line;                                                            /* ptr to array of (global) line id's			*/
+  int **point_list;                                             /* ptr to array for finding neighbour triangles */
+  int length;                                                           /* length of point_list array					*/
 };
 
 struct lgm_line_info {

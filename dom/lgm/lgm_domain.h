@@ -171,6 +171,8 @@
 #endif
 
 #if (LGM_DIM==3)
+#define MAXTRIANGLES 30
+
 /* macros for LGM_POINT */
 #define LGM_POINT_POS(p)                                        ((p)->position)
 #define LGM_POINT_DIST(p,q)                                     (sqrt( (LGM_POINT_POS(p)[0]-LGM_POINT_POS(q)[0])*(LGM_POINT_POS(p)[0]-LGM_POINT_POS(q)[0])\
