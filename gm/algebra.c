@@ -2172,6 +2172,19 @@ INT GetVectorsOfDataTypesInObjects (const ELEMENT *theElement, INT dt, INT obj, 
    D*/
 /****************************************************************************/
 
+static void PrintVectorTriple (int i)
+{
+  VECTOR *vec0 = GBNV_list[i];
+  VECTOR *vec1 = GBNV_list[i+1];
+  VECTOR *vec2 = GBNV_list[i+2];
+  VERTEX *vtx0 = MYVERTEX((NODE*)VOBJECT(vec0));
+  VERTEX *vtx1 = MYVERTEX((NODE*)VOBJECT(vec1));
+  VERTEX *vtx2 = MYVERTEX((NODE*)VOBJECT(vec2));
+  PrintDebug("0: VTYPE=%d XC=%.5g YC=%.5g\n",VTYPE(vec0),XC(vtx0),YC(vtx0));
+  PrintDebug("1: VTYPE=%d XC=%.5g YC=%.5g\n",VTYPE(vec1),XC(vtx1),YC(vtx1));
+  PrintDebug("2: VTYPE=%d XC=%.5g YC=%.5g\n",VTYPE(vec2),XC(vtx2),YC(vtx2));
+}
+
 INT PrepareGetBoundaryNeighbourVectors (GRID *theGrid, INT *MaxListLen)
 {
 #ifdef __TWODIM__
@@ -2228,6 +2241,12 @@ INT PrepareGetBoundaryNeighbourVectors (GRID *theGrid, INT *MaxListLen)
 
   /* this is simple in 2D: center, pred and succ in positive sense */
   *MaxListLen = 3;
+
+  IFDEBUG(gm,2)
+  PrintDebug("PrepareGetBoundaryNeighbourVectors:\n");
+  for (i=0; i<GBNV_n; i++)
+    PrintVectorTriple(3*i);
+  ENDDEBUG
 
   return (0);
 
@@ -2329,8 +2348,13 @@ INT GetBoundaryNeighbourVectors (INT dt, INT obj, INT *cnt, VECTOR *VecList[])
   if (VOTYPE(vec)!=NODEVEC)
     REP_ERR_RETURN(1);
 
+  IFDEBUG(gm,2)
+  PrintDebug("GetBoundaryNeighbourVectors:\n");
+  PrintVectorTriple(GBNV_curr);
+  ENDDEBUG
+
   /* vector, pre and succ in positive sense */
-  VecList[(*cnt)++] = GBNV_list[GBNV_curr];
+    VecList[(*cnt)++] = GBNV_list[GBNV_curr];
   VecList[(*cnt)++] = GBNV_list[GBNV_curr+1];
   VecList[(*cnt)++] = GBNV_list[GBNV_curr+2];
 
