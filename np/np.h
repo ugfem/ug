@@ -182,6 +182,8 @@ INT a_elementdata_consistent (MULTIGRID *mg, INT fl, INT tl);
 INT a_nodedata_consistent (MULTIGRID *mg, INT fl, INT tl);
 INT l_vector_consistent_noskip (GRID *g, const VECDATA_DESC *x);
 INT a_vector_consistent_noskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
+INT l_vector_minimum_noskip (GRID *g, const VECDATA_DESC *x);
+INT l_vector_maximum_noskip (GRID *g, const VECDATA_DESC *x);
 
 #ifdef __BLOCK_VECTOR_DESC__
 INT l_vector_consistentBS (GRID *g, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT x);

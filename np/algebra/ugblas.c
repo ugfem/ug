@@ -435,6 +435,123 @@ static int Scatter_VectorComp_noskip (DDD_OBJ obj, void *data)
 }
 
 /****************************************************************************/
+/*D
+   l_vector_minimum_noskip
+      - stores the minimum of the vector values on master and all copies
+
+   SYNOPSIS:
+   INT l_vector_minimum_noskip (GRID *g, const VECDATA_DESC *x);
+
+   PARAMETERS:
+   .  g - pointer to grid
+   .  x - vector data descriptor
+
+   DESCRIPTION:
+   This function finds and stores the minimum of the vector values of all border vectors
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+   D*/
+/****************************************************************************/
+
+static int Scatter_MinVectorComp_noskip (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+  INT i,type;
+  const SHORT *Comp;
+
+  if (VD_IS_SCALAR(ConsVector)) {
+    if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
+      VVALUE(pv,VD_SCALCMP(ConsVector)) = MIN( VVALUE(pv,VD_SCALCMP(ConsVector)),*((DOUBLE *)data) );
+
+    return (NUM_OK);
+  }
+
+  type = VTYPE(pv);
+  Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
+  for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+    VVALUE(pv,Comp[i]) = MIN( VVALUE(pv,Comp[i]) , ((DOUBLE *)data)[i] );
+
+  return (NUM_OK);
+}
+
+INT l_vector_minimum_noskip (GRID *g, const VECDATA_DESC *x)
+{
+  INT tp,m;
+
+  ConsVector = (VECDATA_DESC *)x;
+
+  m = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+
+  DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g), m * sizeof(DOUBLE),
+                  Gather_VectorComp, Scatter_MinVectorComp_noskip);
+  return (NUM_OK);
+}
+
+
+/****************************************************************************/
+/*D
+   l_vector_maximum_noskip
+     - stores the maximum of the vector values on master and all copies
+
+   SYNOPSIS:
+   INT l_vector_maximum_noskip (GRID *g, const VECDATA_DESC *x);
+
+   PARAMETERS:
+   .  g - pointer to grid
+   .  x - vector data descriptor
+
+   DESCRIPTION:
+   This function finds and stores the maximum of the vector values of all border vectors
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+   D*/
+/****************************************************************************/
+
+static int Scatter_MaxVectorComp_noskip (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+  INT i,type;
+  const SHORT *Comp;
+
+  if (VD_IS_SCALAR(ConsVector)) {
+    if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
+      VVALUE(pv,VD_SCALCMP(ConsVector)) = MAX( VVALUE(pv,VD_SCALCMP(ConsVector)) , *((DOUBLE *)data) );
+
+    return (NUM_OK);
+  }
+
+  type = VTYPE(pv);
+  Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
+  for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+    VVALUE(pv,Comp[i]) = MAX( VVALUE(pv,Comp[i]) , ((DOUBLE *)data)[i] );
+
+  return (NUM_OK);
+}
+
+INT l_vector_maximum_noskip (GRID *g, const VECDATA_DESC *x)
+{
+  INT tp,m;
+
+  ConsVector = (VECDATA_DESC *)x;
+
+  m = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+
+  DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g), m * sizeof(DOUBLE),
+                  Gather_VectorComp, Scatter_MaxVectorComp_noskip);
+  return (NUM_OK);
+}
+
+/****************************************************************************/
 /** \brief
    l_vector_consistent_noskip - builds the sum of the vector values on all copies
 
