@@ -1237,7 +1237,7 @@ int FAMGGrid::Reorder()
 #ifdef ModelP
 
 static void TransferVector( VECTOR *v, DDD_PROC dest_pe, DDD_PRIO dest_prio, int size )
-{
+{	
 	DDD_XferCopyObjX(PARHDR(v), dest_pe, dest_prio, size);
 	
 	/* for debugging purpose send the node too */
@@ -1246,9 +1246,13 @@ static void TransferVector( VECTOR *v, DDD_PROC dest_pe, DDD_PRIO dest_prio, int
 	GEOM_OBJECT *obj = VOBJECT(v);
 	if( obj != NULL )
 		if (VOTYPE(v) == NODEVEC)
+		{
+			PRINTDEBUG(dddif,2,(PFMT " TransferVector(): vec= " VINDEX_FMTX" n=" ID_FMTX " Xfer v=" 
+				VID_FMTX "\n",me,VINDEX_PRTX(v),ID_PRTX((NODE*)obj),VID_PRTX(MYVERTEX((NODE*)obj))))
 			DDD_XferCopyObj(PARHDR((NODE*)obj), dest_pe, dest_prio);
+		}
 		else
-			assert(0); /* unrecognized vector type; extend code if necessary */
+			assert(0); /* unrecognized vector type; extend code if necessary */	
 	ENDDEBUG
 }
 

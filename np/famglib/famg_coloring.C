@@ -23,8 +23,15 @@
 #include <limits.h> 		// for INT_MAX
 #include <iostream.h>
 
+extern "C"
+{
 #include "gm.h"
 #include "ddd.h"
+
+#include "parallel.h"
+#include "pargm.h"
+}
+
 #include "famg_coloring.h"
 
 /* RCS_ID
@@ -47,10 +54,15 @@ static int DetermineNbs( DDD_OBJ obj)
 {
 	VECTOR *vec = (VECTOR *)obj;
 	int *proclist, i;
-	
+
+	PRINTDEBUG(np,2,("%d: "VINDEX_FMTX" has copies: ", me,VINDEX_PRTX(vec)));
 	proclist = DDD_InfoProcList(PARHDR(vec));
 	for( i = 2; proclist[i] != -1	; i += 2 )
+	{
 		helpNbPtr[proclist[i]] = 1;		// perhaps to much neighbors because of counting ghost-copies
+		PRINTDEBUG(np,2,("%d ",proclist[i]));
+	}
+	PRINTDEBUG(np,2,("\n"));
 	return 0;
 }
 
@@ -73,7 +85,13 @@ int ConstructColoringGraph( DDD_ATTR grid_attr)
 	for( i = 0; i < FAMGColorMaxProcs; i++ )
 		if( helpNb[i] != 0 )
 			Nb[NrNb++] = i;
-	
+
+	IFDEBUG(np,2)
+		printf("%d: Nb table for coloring = ",me);
+		for(i=0;i<NrNb;i++)
+			printf("%d ",Nb[i]);
+		printf("\n");
+	ENDDEBUG
 	assert(FAMGColorMaxNb>=NrNb);	// otherwise increase the constant FAMGColorMaxNb 
 
 	return 0;
@@ -113,18 +131,20 @@ int ConstructColoring( int OrderingFunctionType )
 			FAMGMyColor = me;
 			return 0;
 		case 2:
-			srand(me);
-			MyWeight = rand() / (double)INT_MAX;
+			srand(me+1);
+			MyWeight = rand() / (double)(1<<15);
 			break;
 		case 3:
-			srand(me);
-			MyWeight = NrNb + rand() / (double)INT_MAX;
+			srand(me+1);
+			MyWeight = NrNb + rand() / (double)(1<<15);
 			break;
 		default:
 			cout << "ConstructColoring(): unknown ordering function type" << endl << fflush;
 			abort();
 	}
 	
+	PRINTDEBUG(np,2,(PFMT " MyWeight %g\n", me, MyWeight));
+
 	if( NrNb > FAMGColorMaxNb )
 	{
 		cout << "ConstructColoring(): error Number of neighbors ("<<NrNb<<") larger than maximum <<FAMGColorMaxNb<<. Increase FAMGColorMaxNb"<<endl<<fflush;
@@ -190,6 +210,7 @@ int ConstructColoring( int OrderingFunctionType )
 					j--;
 					Recv[i] = 0;	// reset
 					
+					PRINTDEBUG(np,2,(PFMT " recv weight %g from %d (i=%d)\n", me, NbWeight[i], Nb[i], i));
 					if( MyWeight < NbWeight[i] )
 					{
 						// receive color
@@ -241,6 +262,7 @@ int ConstructColoring( int OrderingFunctionType )
 				{	// message arrived
 					j--;
 					Recv[i] = 3;	// reset this flag and set flag for next step
+					PRINTDEBUG(np,2,(PFMT " recv color %d from %d (i=%d)\n", me, NbColor[i], Nb[i], i));
 					if( j==0 )
 						break;
 				}
@@ -265,10 +287,24 @@ int ConstructColoring( int OrderingFunctionType )
 		if( Recv[i]==3 )
 			NbColor[j++] = NbColor[i];
 	assert(j == NrWait);
-	
+
+	IFDEBUG(np,2)
+		printf( PFMT " %d colors recved total:", me, NrWait );	
+		for(i=0; i<NrWait; i++ )
+			printf( " %d", NbColor[i] );
+		printf("\n");
+	ENDDEBUG
+
 	// sort the colors
 	qsort( (void*)NbColor, NrWait, sizeof(FAMGColor), ColorCompare );
 	
+	IFDEBUG(np,2)
+		printf( PFMT " colors after sort:", me );	
+		for(i=0; i<NrWait; i++ )
+			printf( " %d", NbColor[i] );
+		printf("\n");
+	ENDDEBUG
+
 	//
 	// determine the smallest unused color for me
 	//
@@ -280,6 +316,8 @@ int ConstructColoring( int OrderingFunctionType )
 		}
 	if( i == NrWait )
 		FAMGMyColor = NrWait;	// introduce a new color
+	
+	PRINTDEBUG(np,2,(PFMT " my color %d\n", me, FAMGMyColor));
 	
 	//
 	// check if first sends are finished
