@@ -73,7 +73,11 @@ RCSID("$Header$",UG_RCS_STRING)
    D*/
 /****************************************************************************/
 
+#ifdef ModelP
+#define DEFAULTENVSIZE  512000  /* size of environment if no default value	*/
+#else
 #define DEFAULTENVSIZE  64000   /* size of environment if no default value	*/
+#endif
 
 INT InitLow ()
 {
