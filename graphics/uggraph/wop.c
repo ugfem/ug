@@ -4300,10 +4300,7 @@ static INT BulletDraw2D (DRAWINGOBJ *q)
 
 static INT LineDraw2D (DRAWINGOBJ *q)
 {
-	INT j, n, centered, end, mode;
-	DOUBLE help[2],norm;
-	COORD_POINT a, b, point[MAX_POINTS_OF_POLY];
-	long color;
+	INT end;
 
 	if (Draw2D(q)) RETURN(1);
 	if (!LINE_GnuFile) return (0);
@@ -5218,6 +5215,7 @@ static INT DynInfo_Matrix (PICTURE *pic, INT tool, INT fct, const INT mp[2], cha
 	GRID *theGrid;
 	VIEWEDOBJ *vo;
 	DOUBLE cpt[2];
+	int row,col;
 	INT maxrow;
 	
 	if (PIC_VALID(pic) == NO)
@@ -5234,10 +5232,39 @@ static INT DynInfo_Matrix (PICTURE *pic, INT tool, INT fct, const INT mp[2], cha
 	
 	V2_TRAFOM3_V2(mp,VO_INVTRAFO(PIC_VO(pic)),cpt);
 	
-	cpt[0] = floor(cpt[0]) +1;
-	cpt[1] = floor(maxrow - cpt[1]) +1;
+	col = floor(cpt[0]) +1;
+	row = floor(maxrow - cpt[1]) +1;
 	
-	sprintf(text,"(%5d,%5d)",(int)cpt[1],(int)cpt[0]);
+	if (theMpo->i2v)
+	{
+		VECTOR *rvec = theMpo->i2v_table[row-1];
+		VECTOR *cvec = theMpo->i2v_table[col-1];
+		MATRIX *mat = GetMatrix(rvec,cvec);
+		MATDATA_DESC *md = theMpo->Matrix;
+		int mtp = MTP(VTYPE(rvec),VTYPE(cvec));
+		int i = (ceil(cpt[1])-cpt[1])*MD_ROWS_IN_MTYPE(md,mtp);
+		int j = (cpt[0]-floor(cpt[0]))*MD_COLS_IN_MTYPE(md,mtp);
+		double val = (mat==NULL) ? 0.0 : MVALUE(mat,MD_IJ_CMP_OF_MTYPE(md,mtp,i,j));
+		
+		if (VM_COMP_NAMEPTR(md)[0]==' ')
+		{
+			/* no component names defined: use indices */
+			sprintf(text,"(%5d,%5d)[%d,%d] = % .3e",(int)row,(int)col,i,j,val);
+		}
+		else
+		{
+			/* use component names */
+			int nc = MD_COLS_IN_MTYPE(md,mtp);
+			int k  = MD_OFFSETPTR(md)[mtp]+i*nc+j;
+			char r = VM_COMP_NAMEPTR(md)[2*k];
+			char c = VM_COMP_NAMEPTR(md)[2*k+1];
+			sprintf(text,"(%5d,%5d)[%c,%c] = % .3e",(int)row,(int)col,r,c,val);
+		}
+	}
+	else
+	{
+		sprintf(text,"(%5d,%5d)",(int)row,(int)col);
+	}
 	
 	return (0);
 }
@@ -5435,6 +5462,28 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
 	MAT_log				= theMpo->log;
 	MAT_thresh			= theMpo->thresh;
 	MAT_rel				= theMpo->rel;
+	
+	/* index to vector table */
+	if (theMpo->i2v_table!=NULL)
+	{
+		if (PutFreelistMemory(MGHEAP(theMG),theMpo->i2v_table,theMpo->i2v_size))
+			return (1);
+		theMpo->i2v_table = NULL;
+	}
+	if (theMpo->i2v)
+	{
+		VECTOR **p;
+		VECTOR *vec;
+		
+		theMpo->i2v_size = NVEC(theGrid);
+		theMpo->i2v_table = (VECTOR**) GetFreelistMemory(MGHEAP(theMG),theMpo->i2v_size);
+		if (theMpo->i2v_table==NULL)
+			return (1);
+		
+		/* init table */
+		for (p=theMpo->i2v_table, vec=FIRSTVECTOR(theGrid); vec!=NULL; p++, vec=SUCCVC(vec))
+			*p = vec;
+	}
 	
 	/* color range */
 	if (theMpo->max - theMpo->min < SMALL_D)
