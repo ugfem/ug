@@ -5231,15 +5231,13 @@ static INT EXPostProcess (NP_ITER *theNP, INT level,VECDATA_DESC *x, VECDATA_DES
 
   theHeap = MGHEAP(NP_MG(theNP));
 
-  if (np->fmode)
-  {
+  if (np->fmode) {
     ASSERT(np->FMat!=NULL);
     if (PutFreelistMemory(theHeap, np->FMat, np->mem))
       REP_ERR_RETURN(1);
   }
-  else
-  {
-    ASSERT(np->FMat!=NULL);
+  else {
+    ASSERT(np->DMat!=NULL);
     if (PutFreelistMemory(theHeap, np->DMat, np->mem))
       REP_ERR_RETURN(1);
   }
