@@ -2608,7 +2608,7 @@ static INT LevelCommand (INT argc, char **argv)
   /* check parameters */
   if (sscanf(argv[0]," level %d",&l)==1)
   {
-    if ((l<0) || (l>TOPLEVEL(theMG)))
+    if ((l<BOTTOMLEVEL(theMG)) || (l>TOPLEVEL(theMG)))
     {
       PrintErrorMessage('E',"level","level out of range");
       return (PARAMERRORCODE);
@@ -2628,9 +2628,9 @@ static INT LevelCommand (INT argc, char **argv)
   }
   else if (strchr(argv[0],'-')!=NULL)
   {
-    if (CURRENTLEVEL(theMG)==0)
+    if (CURRENTLEVEL(theMG)==BOTTOMLEVEL(theMG))
     {
-      PrintErrorMessage('W',"level","already on level 0");
+      PrintErrorMessage('W',"level","already on BOTTOMLEVEL");
       return (OKCODE);
     }
     else
@@ -2642,7 +2642,8 @@ static INT LevelCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  UserWriteF("  current level is %d (top level %d)\n",CURRENTLEVEL(theMG),TOPLEVEL(theMG));
+  UserWriteF("  current level is %d (bottom level %d, top level %d)\n",
+             CURRENTLEVEL(theMG),BOTTOMLEVEL(theMG),TOPLEVEL(theMG));
 
   InvalidatePicturesOfMG(theMG);
   InvalidateUgWindowsOfMG(theMG);
@@ -6067,7 +6068,8 @@ static INT CheckCommand (INT argc, char **argv)
    quality - calculate minimal and maximal angle of specified elements
 
    DESCRIPTION:
-   This command calculates minimal and maximal angle of the specified elements
+   This command calculates the minimal and maximal angle
+   between sides of the specified elements
    and lists elements with angle < or > given angles.
    It calls the functions 'QualityElement'.
 
@@ -6089,7 +6091,7 @@ static INT CheckCommand (INT argc, char **argv)
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/*
    QualityElement - calculate minimal and maximal angle of an element
 
    SYNOPSIS:
@@ -6105,7 +6107,7 @@ static INT CheckCommand (INT argc, char **argv)
 
    RETURN VALUE:
    void
-   D*/
+ */
 /****************************************************************************/
 
 static INT QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
@@ -8388,6 +8390,8 @@ static INT TextFacCommand (INT argc, char **argv)
    'EVector $e <ElemEvalProc> [$c {0|1}] [$t <toValue>] [$r <rastersize>] [$l <cutlength>]'
 
    .    $e~<ElemEvalProc>               - name of element vector evaluation procedure
+   .    $s~<symbol>                     - vector symbol name, alternatively to e-option
+   .                                    - (if scalar symbol name it means the gradient)
    .    $c~{0|1}                        - cut vectors if to long
    .    $t~<toValue>                    - range: [0,toValue]
    .    $r~<rastersize>                 - physical meshsize of rasterpoints where
@@ -8409,6 +8413,7 @@ static INT TextFacCommand (INT argc, char **argv)
    'EScalar $e <ElemEvalProc> [$m {COLOR | CONTOURS_EQ}] [$f <fromValue>] [$t <toValue>] [$n <nContours>] [$P <x> <y> <z>] [$N <x> <y> <z>]'
 
    .    $e~<ElemEvalProc>               - name of element scalar evaluation procedure
+   .    $s~<symbol>                     - scalar symbol name, alternatively to e-option
    .    $d~<depth>                      - depth of plot
    .    $m~{COLOR|CONTOURS_EQ}          - mode: COLOR-plot or CONTOUR-plot
    .    $f~<fromValue>~$t~<toValue>     - range [fromValue,toValue]
@@ -8418,10 +8423,14 @@ static INT TextFacCommand (INT argc, char **argv)
     'EVector $e <ElemEvalProc> [$c {0|1}] [$t <toValue>] [$r <rastersize>] [$P <x> <y> <z>] [$N <x> <y> <z>]'
 
    .    $e~<ElemEvalProc>               - name of element vector evaluation procedure
+   .    $s~<symbol>                     - vector symbol name, alternatively to e-option
+   .                                    - (if scalar symbol name it means the gradient)
    .    $c~{0|1}                        - cut vectors if to long
    .    $t~<toValue>                    - range: [0,toValue]
    .    $r~<rastersize>                 - physical meshsize of rasterpoints where
-                                    - vectors are plotted
+   .    $P~<x>~<y>~<z>                  - a point on the cut plane
+   .    $N~<x>~<y>~<z>                  - the normal of the cut plane
+                                     - vectors are plotted
 
    EXAMPLE:
    .vb

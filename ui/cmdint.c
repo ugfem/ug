@@ -2355,11 +2355,13 @@ static INT InterpretString (void)
       {
         if (executePos!=0)
         {
+          UserWrite(": ");
           UserWrite(cmdBuffer);
           UserWrite("\n");
         }
         else
         {
+          WriteLogFile(": ");
           WriteLogFile(cmdBuffer);
           WriteLogFile("\n");
         }
