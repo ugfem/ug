@@ -35,7 +35,7 @@
 #include "heaps.h"
 #include "fifo.h"
 #include "general.h"
-#include "ng.h"
+#include "ngin/ng.h"
 
 #include "namespace.h"
 

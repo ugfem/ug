@@ -50,7 +50,7 @@
 #include "lgm_domain.h"
 #include "lgm_load.h"
 #include "lgm_macros.h"
-#include "lgm_gginterface.h"
+#include "netgen/lgm_gginterface.h"
 
 #include "ugdevices.h"
 

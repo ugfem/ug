@@ -45,11 +45,11 @@
 #include "misc.h"
 #include "general.h"
 #ifdef __TWODIM__
-        #include "ng2d.h"
+        #include "ngin2d/ng2d.h"
 #endif
 #ifdef __THREEDIM__
         #include "ansys2lgm.h"
-        #include "ng.h"
+        #include "ngin/ng.h"
 #endif
 #ifdef ModelP
 #include "debug.h"

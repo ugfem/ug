@@ -40,7 +40,7 @@
 #include "misc.h"
 #include "lgm_transfer.h"
 #include "general.h"
-#include "ng2d.h"
+#include "ngin2d/ng2d.h"
 
 #include "namespace.h"
 
