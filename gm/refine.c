@@ -6,34 +6,34 @@
 /* File:      refine.c                                                      */
 /*                                                                          */
 /* Purpose:   unstructured grid adaption using a general element concept    */
-/*			  (dimension independent for 2/3D)								*/
-/*																			*/
-/* Author:	  Stefan Lang                         							*/
-/*			  Institut fuer Computeranwendungen III 						*/
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de								*/
-/*																			*/
-/* History:   08.08.95 begin serial algorithm, ug version 3.0				*/
-/*																			*/
-/* Remarks:   - level 0 grid consists of red elements only					*/
-/*			  - the only restriction in the element hierarchie is that 		*/
-/*				green or yellow elements might not have sons of class 		*/
-/*				green or red												*/
-/*			  - the rule set for refinement consists of regular (red)		*/
-/*				and irregular rules; regular rules create red elements		*/
-/*				while irregular rules result in green elements				*/
-/*				( green elements are needed for the closure of the grid,	*/
-/*				yellow elements, which are from copy rules, save			*/
-/* 				the numerical properties of the solver and are handsome for */
-/*				the discretisation											*/
-/*			  - if the rule set for the red rules is not complete for build-*/
-/*				up a consistent red refined region the FIFO might be used 	*/
-/*				for some (hopefully not too much) iterations to find a 		*/
-/*				consistent one												*/
-/*			  - in 2D: exists a complete rule set for grids of triangles 	*/
-/*					   and quadrilaterals exclusivly						*/
+/*            (dimension independent for 2/3D)                              */
+/*                                                                          */
+/* Author:    Stefan Lang                                                   */
+/*            Institut für Computeranwendungen III                          */
+/*            Universität Stuttgart                                         */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/* email:     ug@ica3.uni-stuttgart.de                                      */
+/*                                                                          */
+/* History:   08.08.95 begin serial algorithm, ug version 3.0               */
+/*                                                                          */
+/* Remarks:   - level 0 grid consists of red elements only                  */
+/*            - the only restriction in the element hierarchie is that      */
+/*              green or yellow elements might not have sons of class       */
+/*              green or red                                                */
+/*            - the rule set for refinement consists of regular (red)       */
+/*              and irregular rules; regular rules create red elements      */
+/*              while irregular rules result in green elements              */
+/*              (green elements are needed for the closure of the grid,     */
+/*              yellow elements, which are from copy rules, save            */
+/*              the numerical properties of the solver and are handsome for */
+/*              the discretisation                                          */
+/*            - if the rule set for the red rules is not complete for build-*/
+/*              up a consistent red refined region the FIFO might be used 	*/
+/*              for some (hopefully not too much) iterations to find a 		*/
+/*              consistent one												*/
+/*- in 2D: exists a complete rule set for grids of triangles 	*/
+/*and quadrilaterals exclusivly						*/
 /*			  - in 3D: exists a complete rule set for tetrahedrons			*/
 /*					   and we assume after some analysation a complete set  */
 /*					   of rules described by an algorithm for hexahedrons	*/
@@ -98,7 +98,7 @@
 #include "pargm.h"
 #include "cmdint.h"
 
-/* TODO: temporarily included to make vecskips consistent for df */
+/** \todo temporarily included to make vecskips consistent for df */
  
 #include "udm.h"
 /*  INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x); */
@@ -108,10 +108,10 @@
 USING_UG_NAMESPACES
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*    compile time constants defining static data size (i.e. arrays)        */
 /*		  other constants													*/
 /*		  macros															*/
 /*																			*/
@@ -187,39 +187,46 @@ USING_UG_NAMESPACES
 			(DIM==3 && NEWGREEN(elem) && MARKCLASS(elem)==GREEN_CLASS)
 #endif
 
-/* refined elem with new green refinement (without rule, only 3D) */
+/** \brief Refined elem with new green refinement (without rule, only 3D) */
 #define REFINED_NEW_GREEN(elem)                                              \
 			(DIM==3 && NEWGREEN(elem) && REFINECLASS(elem)==GREEN_CLASS)
 
-/* macro to test whether element changes refinement */
+/** \brief Macro to test whether element changes refinement */
 #define REFINEMENT_CHANGES(elem)                                             \
 		(REF_TYPE_CHANGES(elem) ||                                           \
 		(MARKED_NEW_GREEN(elem) &&                                           \
 		(REFINECLASS(elem)!=GREEN_CLASS || (REFINECLASS(elem)==GREEN_CLASS   \
 		&& USED(elem)==1))))
 
-/* macros for storing sparse data needed in ExchangeClosureInfo() */
+/** @name Macros for storing sparse data needed in ExchangeClosureInfo() */
+/*@{*/
 #define MARKCLASSDATA_SHIFT	20
 #define GETMARKCLASSDATA(elem,dataadr)                                       \
 		(*(dataadr)) = (*(dataadr)) | ((MARKCLASS(elem))<<MARKCLASSDATA_SHIFT)
 #define SETMARKCLASSDATA(elem,data)                                          \
 		SETMARKCLASS((elem),((data)>>MARKCLASSDATA_SHIFT)&((1<<MARKCLASS_LEN)-1))
+/*@}*/
 
-/* macros for storing sparse data needed in ExchangeClosureInfo() */
+/** @name Macros for storing sparse data needed in ExchangeClosureInfo() */
+/*@{*/
 #define MARKDATA_SHIFT	22
 #define GETMARKDATA(elem,dataadr)                                            \
 		(*(dataadr)) = (*(dataadr)) | ((MARK(elem))<<MARKDATA_SHIFT)
 #define SETMARKDATA(elem,data)                                               \
 		SETMARK((elem),MARK(elem)|((data)>>MARKDATA_SHIFT)&((1<<MARK_LEN)-1))
+/*@}*/
 		
-/* macros for storing sparse data needed in ExchangeClosureInfo() */
+/** @name Macros for storing sparse data needed in ExchangeClosureInfo() */
+/*@{*/
 #define COARSENDATA_SHIFT	19
 #define GETCOARSENDATA(elem,dataadr)                                         \
 		(*(dataadr)) = (*(dataadr)) | ((COARSEN(elem))<<COARSENDATA_SHIFT)
 #define SETCOARSENDATA(elem,data)                                            \
 		SETCOARSEN((elem),((data)>>COARSENDATA_SHIFT)&((1<<COARSEN_LEN)-1))
+/*@}*/
 		
-/* macros to get and set the edgepattern on an element */
+/** @name Macros to get and set the edgepattern on an element */
+/*@{*/
 #define GetEdgeInfo(elem,patadr,macro)                                       \
 		{                                                                    \
 			INT i,pattern;                                                   \
@@ -254,6 +261,7 @@ USING_UG_NAMESPACES
 				pattern >>= 1;                                               \
 			}                                                                \
 		}
+/*@}*/
 
 /** \todo delete special debug */
 static ELEMENT *debugelem=NULL;
@@ -320,10 +328,10 @@ static ELEMENT *debugelem=NULL;
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* data structures used in this source file (exported data structures are	*/
+/*                                                                          */
+/* data structures used in this source file (exported data structures are   */
 /*		  in the corresponding include file!)								*/
-/*																			*/
+/*                                                                          */
 /****************************************************************************/
 
 typedef NODE *ELEMENTCONTEXT[MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM];
@@ -406,20 +414,11 @@ void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel,
 
 
 /****************************************************************************/
-/*
-   SetRefineInfo - fill refineinfo structure
+/** \brief Fill refineinfo structure
 
-   SYNOPSIS:
-   INT SetRefineInfo(MULTIGRID *theMG);
-
-   PARAMETERS:
-.  theMG
-
-   DESCRIPTION:
    This function fills refineinfo structure
 
    RETURN VALUE:
-   INT 
 .n   GM_OK if ok
 .n   GM_ERROR if an error occurs  
 */
@@ -434,20 +433,11 @@ INT NS_PREFIX SetRefineInfo (MULTIGRID *theMG)
 
 
 /****************************************************************************/
-/*
-   TestRefineInfo - test entries of refineinfo structure
+/** \brief Test entries of refineinfo structure
 
-   SYNOPSIS:
-   INT TestRefineInfo(MULTIGRID *theMG);
-
-   PARAMETERS:
-.  theMG
-
-   DESCRIPTION:
    This function tests entries of refineinfo structure
 
    RETURN VALUE:
-   INT
 .n   GM_OK if MG can be refined    
 .n   GM_ERROR if MG refinement will lead to heap overflow
 */
@@ -462,21 +452,12 @@ INT NS_PREFIX TestRefineInfo (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/*
-   DropMarks - drop marks from leafelements to first regular
+/** \brief Drop marks from leafelements to first regular
 
-   SYNOPSIS:
-   static INT DropMarks (MULTIGRID *theMG);
-
-   PARAMETERS:
-.  theMG
-
-   DESCRIPTION:
    This function drops marks from leafelements to first regular, and resets 
    marks on all elements above (important for restrict marks)
 
    RETURN VALUE:
-   INT 
 .n   GM_OK if ok
 .n   GM_ERROR if an error occurs  
 */
@@ -499,7 +480,7 @@ static INT DropMarks (MULTIGRID *theMG)
 					(ECLASS(theElement) != RED_CLASS))
 			{
 				Mark = MARK(theElement);
-				/* TODO: marks must be changed if element type changes */
+				/** \todo marks must be changed if element type changes */
 				if (TAG(theElement)!=HEXAHEDRON && 
 					TAG(EFATHER(theElement))==HEXAHEDRON)  Mark = HEXA_RED;
 				if (TAG(theElement)!=PYRAMID && 
@@ -567,19 +548,7 @@ void NS_PREFIX SendPatternFromMasterToSlaves(int level)
 
 
 /****************************************************************************/
-/*
-   InitClosureFIFO - function for realizing the (parallel) closure FIFO
-
-   SYNOPSIS:
-   static INT InitClosureFIFO (void);
-
-   PARAMETERS:
-.  void
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT 
+/** \brief Function for realizing the (parallel) closure FIFO
 */
 /****************************************************************************/
 
@@ -595,23 +564,15 @@ static INT InitClosureFIFO (void)
 
 
 /****************************************************************************/
-/*
-   UpdateFIFOLists - function for realizing the (parallel) closure FIFO
+/** \brief Function for realizing the (parallel) closure FIFO
 
-   SYNOPSIS:
-   static INT UpdateFIFOLists (GRID *theGrid, ELEMENT *theElement, INT thePattern, INT NewPattern);
-
-   PARAMETERS:
-.  theGrid - pointer to grid structure
+\param  theGrid - pointer to grid structure
 .  theElement
 .  thePattern
 .  NewPattern
 
    DESCRIPTION: 
 
-   RETURN VALUE:
-   INT
-.n     
 */
 /****************************************************************************/
 
@@ -694,19 +655,10 @@ static INT UpdateFIFOLists (GRID *theGrid, ELEMENT *theElement, INT thePattern, 
 
 
 /****************************************************************************/
-/*
-    UpdateClosureFIFO - function for realizing the (parallel) closure FIFO
+/** \brief Function for realizing the (parallel) closure FIFO
 
-   SYNOPSIS:
-   static INT UpdateClosureFIFO (GRID *theGrid);
+\param theGrid - pointer to grid structure
 
-   PARAMETERS:
-.  theGrid - pointer to grid structure
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT 
 */
 /****************************************************************************/
 
@@ -837,21 +789,14 @@ static INT PrintEdgeInfo (GRID *theGrid, char* string, INT level)
 }
 
 /****************************************************************************/
-/*
-   Refinement_Changes - changes refinement of element
+/** \brief Changes refinement of element
 
-   SYNOPSIS:
-   INT Refinement_Changes (ELEMENT *theElement)
+\param theElement - pointer to element 
 
-   PARAMETERS:
-.  theElement - pointer to element 
-
-   DESCRIPTION:
-   This function return a boolean value to indicate, whether an element
+   This function returns a boolean value to indicate, whether an element
    changes its refinement (1) or not (0).
   
    RETURN VALUE:
-   INT 
 .n   0 if element will not change refinement
 .n   1 if it will
 */
@@ -2259,16 +2204,10 @@ static INT CheckElementInfo (GRID *theGrid)
 /*																			*/
 /****************************************************************************/
 /****************************************************************************/
-/*
-   GridClosure - ompute closure for next level
+/** \brief Compute closure for next level
 
-   SYNOPSIS:
-   static int GridClosure (GRID *theGrid);
+\param theGrid - pointer to grid structure
 
-   PARAMETERS:
-.  theGrid - pointer to grid structure
-
-   DESCRIPTION:
    This function computes closure for next level. A closure can only be 
    determined if the rule set for the used elements is complete. This means 
    that for all side and edge patterns possible for an element type exists 
@@ -2276,7 +2215,6 @@ static INT CheckElementInfo (GRID *theGrid)
    closure is not needed any more and the closure can be computed in one step.
    
    RETURN VALUE:
-   int
 .n   >0 elements will be refined
 .n   =0 no elements will be refined
 .n   =-1 an error accured
@@ -6275,21 +6213,6 @@ void NS_PREFIX CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, IN
 #endif
 
 
-/****************************************************************************/
-/*
-   SYNOPSIS:
-   static INT CheckMultiGrid (MULTIGRID *theMG);
-
-   PARAMETERS:
-.  theMG
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT
-*/
-/****************************************************************************/
-
 static INT CheckMultiGrid (MULTIGRID *theMG)
 {
 	INT level;
@@ -6593,24 +6516,18 @@ if (GetVecDataDescByName(theMG,"sol") != NULL)
 }
 
 /****************************************************************************/
-/*
-   AdaptMultiGrid - adapt whole multigrid structure
+/** \brief Adapt whole multigrid structure
 
-   SYNOPSIS:
-   INT AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest);
+\param theMG - multigrid to refine 
+\param flag - flag for switching between different yellow closures
 
-   PARAMETERS:
-.  theMG - multigrid to refine 
-.  flag - flag for switching between different yellow closures
-
-   DESCRIPTION:
    This function refines whole multigrid structure
 
-   RETURN VALUE:
-   INT
-.n   0 - ok
-.n   1 - out of memory, but data structure as before
-.n   2 - fatal memory error, data structure corrupted   
+\return <ul>
+<li> 0 - ok
+<li> 1 - out of memory, but data structure as before
+<li> 2 - fatal memory error, data structure corrupted   
+</ul>
 */ 
 /****************************************************************************/
 
