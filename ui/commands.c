@@ -74,7 +74,7 @@
 #include "ggm.h"
 #include "ggmain.h"
 #endif
-#if defined __THREEDIM__ && defined NETGENT
+#if defined __THREEDIM__ && defined NETGEN_SUPPORT
 #include "gg3d.h"
 #endif
 
@@ -6302,7 +6302,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
   int iValue;
   float tmp;
         #endif
-        #if defined __THREEDIM__ && defined NETGENT
+        #if defined __THREEDIM__ && defined NETGEN_SUPPORT
   INT smooth;
   DOUBLE h;
         #endif
@@ -6467,7 +6467,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
     }
         #endif
 
-        #if defined __THREEDIM__ && defined NETGENT
+        #if defined __THREEDIM__ && defined NETGEN_SUPPORT
     if (ReadArgvINT("s",&smooth,argc,argv))
       smooth = 0;
     if (ReadArgvDOUBLE("h",&h,argc,argv))
