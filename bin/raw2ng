@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 # input
-@ARGV==3 or die "usage: lgmCP <tol> <geometry> <points-file>\n";
+@ARGV==3 or die "usage: raw2ng <tol> <geometry> <raw-grid>\n       writes .ng to STDOUT\n";
 
 # subs
 sub float
