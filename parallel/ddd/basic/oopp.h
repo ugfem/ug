@@ -65,7 +65,11 @@
 
 /* from now on, we assume a previous '#define ClassPrefix XXX' */
 /* construction of class-name */
+#ifdef ClassPrefix
 #define CN(C)            CCAT(ClassPrefix,C)
+#else
+#define CN(C)            C
+#endif
 
 
 /* from now on, we suppose a '#define ClassName XXX' for a given class */

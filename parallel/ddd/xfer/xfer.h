@@ -81,7 +81,7 @@
 
 
 /* extra prefix for all xfer-related data structures and/or typedefs */
-#define ClassPrefix
+/*#define ClassPrefix*/
 
 
 /* types of 'newness' of incoming object (for xferunpack.c) */

@@ -44,7 +44,7 @@
 #ifndef __DDDI_H__
 #define __DDDI_H__
 
-#include <values.h>
+#include <limits.h>
 #include <assert.h>
 
 #ifndef __COMPILER__
