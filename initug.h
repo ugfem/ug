@@ -33,4 +33,7 @@
 /* initialisation of the ug library */
 INT InitUg (int *argcp, char ***argvp);
 
+/* finalisation of the ug library */
+INT ExitUg (void);
+
 #endif

@@ -234,3 +234,59 @@ INT InitUg (int *argcp, char ***argvp)
 
   return (0);
 }
+
+
+/****************************************************************************/
+/*D
+   ExitUg - Call of the exitfunctions for all the ug modules
+
+   SYNOPSIS:
+   INT ExitUg (void);
+
+   PARAMETERS:
+
+   DESCRIPTION:
+   This function exits ug. It is called at the end of the CommandLoop.
+   It calls all available exit functions in reverse order of the corresponding
+   calls in InitUg().
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT ExitUg (void)
+{
+  INT err;
+
+
+  /* exit devices module */
+  PRINTDEBUG(init,1,("%d:     ExitDevices()...\n",me))
+  if ((err=ExitDevices())!=0)
+  {
+    printf("ERROR in ExitUg while ExitDevices (line %d): called routine line %d\n",(int) HiWrd(err), (int) LoWrd(err));
+    printf ("aborting ug\n");
+
+    return (1);
+  }
+
+
+  /* exit parallelization module */
+        #ifdef ModelP
+  /* doesn't work with MPI yet. KB 970318
+      PRINTDEBUG(init,1,("%d:     ExitParallel()...\n",me))
+      if ((err=ExitParallel())!=0)
+      {
+          printf("ERROR in ExitUg while ExitParallel (line %d): called routine line %d\n",(int) HiWrd(err), (int) LoWrd(err));
+          printf ("aborting ug\n");
+
+          return (1);
+      }
+   */
+    #endif
+
+
+  return (0);
+}
