@@ -1,22 +1,22 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  cw.c															*/
-/*																			*/
-/* Purpose:   define global array with predefined control word entries		*/
-/*																			*/
-/* Author:	  Peter Bastian                                                                                                 */
-/*			  Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen	*/
-/*			  Universitaet Heidelberg										*/
-/*			  Im Neuenheimer Feld 368										*/
-/*			  6900 Heidelberg												*/
-/*			  internet: bastian@iwr1.iwr.uni-heidelberg.de					*/
-/*																			*/
-/* History:   11.01.95 begin, ug version 3.0								*/
-/*																			*/
-/* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                          */
+/* File:      cw.c                                                          */
+/*                                                                          */
+/* Purpose:   define global array with predefined control word entries      */
+/*                                                                          */
+/* Author:    Peter Bastian                                                 */
+/*            Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
+/*            Universitaet Heidelberg                                       */
+/*            Im Neuenheimer Feld 368                                       */
+/*            6900 Heidelberg                                               */
+/* Internet:  bastian@iwr1.iwr.uni-heidelberg.de                            */
+/*                                                                          */
+/* History:   11.01.95 begin, ug version 3.0                                */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 #include <string.h>
@@ -30,10 +30,8 @@
 #include "debug.h"
 #include "general.h"
 
-//#include "gm.h"
 #include "misc.h"
 #include "algebra.h"
-//#include "ugm.h"
 #include "refine.h"
 #include "cw.h"
 
@@ -47,13 +45,13 @@ using namespace UG3d;
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*    compile time constants defining static data size (i.e. arrays)        */
+/*    other constants                                                       */
+/*    macros                                                                */
+/*                                                                          */
 /****************************************************************************/
 
 #define CW_EDOBJ                (BITWISE_TYPE(EDOBJ) | BITWISE_TYPE(LIOBJ))
@@ -72,37 +70,37 @@ using namespace UG3d;
 /* NOTE: CW_GEOMOBJS and GEOM_OBJECTS differ*/
 
 /****************************************************************************/
-/*																			*/
-/* data structures used in this source file (exported data structures are	*/
-/*		  in the corresponding include file!)								*/
-/*																			*/
+/*                                                                          */
+/* data structures used in this source file (exported data structures are   */
+/* in the corresponding include file!)                                      */
+/*                                                                          */
 /****************************************************************************/
 
-/* description of a control word predefines */
+/** \brief Description of a control word predefines */
 typedef struct {
-  INT used;                                                             /* used this entry					*/
-  char *name;                                                           /* name string						*/
-  INT control_word_id;                                  /* index in control_words			*/
-  unsigned INT offset_in_object ;               /* where in object is it ?			*/
-  INT objt_used;                                                /* bitwise object ID				*/
+  INT used;             /**< Used this entry					*/
+  char *name;          /**< Name string						*/
+  INT control_word_id;          /**< Index in control_words			*/
+  unsigned INT offset_in_object ;       /**< Where in object is it ?			*/
+  INT objt_used;                                /**< Bitwise object ID */
 } CONTROL_WORD_PREDEF;
 
-/* description of a control enty predefines */
+/** \brief Description of a control entry predefines */
 typedef struct {
-  INT used;                                                             /* used this entry					*/
-  char *name;                                                           /* name string						*/
-  INT control_word;                                             /* index of corresp. controlword	*/
-  INT control_entry_id;                                 /* index in control_entries             */
-  INT offset_in_word;                                   /* shift in control word			*/
-  INT length;                                                   /* number of bits used				*/
-  INT objt_used;                                                /* bitwise object ID				*/
+  INT used;                  /**< Used this entry					*/
+  char *name;                /**< Name string						*/
+  INT control_word;          /**< Index of corresp. controlword	*/
+  INT control_entry_id;      /**< Index in control_entries              */
+  INT offset_in_word;        /**< Shift in control word			*/
+  INT length;                /**< Number of bits used				*/
+  INT objt_used;             /**< Bitwise object ID				*/
 } CONTROL_ENTRY_PREDEF;
 
 typedef struct {
 
-  INT read;                                                             /* number of accesses to read		*/
-  INT write;                                                            /* number of accesses to write		*/
-  INT max;                                                              /* max value assigned to ce			*/
+  INT read;             /**< Number of accesses to read		*/
+  INT write;            /**< Number of accesses to write		*/
+  INT max;              /**< Max value assigned to ce			*/
 
 } CE_USAGE;
 
@@ -246,23 +244,15 @@ static CE_USAGE ce_usage[MAX_CONTROL_ENTRIES];
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*D
-   ListCWofObject	- print all control entries of an objects control word
+/** \brief Print all control entries of an objects control word
 
-   SYNOPSIS:
-   void ListCWofObject (const void *obj, INT offset)
+ * @param obj - object pointer
+ * @param offset - controlword offset in (unsigned INT) in object
 
-   PARAMETERS:
-   .  obj - object pointer
-   .  offset - controlword offset in (unsigned INT) in object
-
-   DESCRIPTION:
    This function prints the contents of all control entries of an objects control word at a
    given offset.
 
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
 void NS_PREFIX ListCWofObject (const void *obj, INT offset)
@@ -308,22 +298,13 @@ void NS_PREFIX ListCWofObject (const void *obj, INT offset)
 }
 
 /****************************************************************************/
-/*D
-   ListAllCWsOfObject	- print all control entries of all control words of an object
+/** \brief Print all control entries of all control words of an object
 
-   SYNOPSIS:
-   void ListAllCWsOfObject (const void *obj)
+ * @param obj - object pointer
 
-   PARAMETERS:
-   .  obj - object pointer
-
-   DESCRIPTION:
    This function prints the contents of all control entries of all control words
    of the object. 'ListCWofObject' is called.
-
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
 void NS_PREFIX ListAllCWsOfObject (const void *obj)
@@ -368,24 +349,15 @@ void NS_PREFIX ListAllCWsOfObject (const void *obj)
 }
 
 /****************************************************************************/
-/*D
-   ListCWofObjectType	- print used pattern of all control entries of an object types control word
+/** \brief Print used pattern of all control entries of an object types control word
 
-   SYNOPSIS:
-   static void ListCWofObjectType (INT objt, INT offset, PrintfProcPtr myprintf)
+ * @param obj - object pointer
+ * @param offset - controlword offset in (unsigned INT) in object
+ * @param myprintf - pointer to a printf function (maybe UserWriteF)
 
-   PARAMETERS:
-   .  obj - object pointer
-   .  offset - controlword offset in (unsigned INT) in object
-   .  myprintf - pointer to a printf function (maybe UserWriteF)
-
-   DESCRIPTION:
    This function prints the used pattern of all control entries of an object types control word at a
    given offset.
-
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
 static void ListCWofObjectType (INT objt, INT offset, PrintfProcPtr myprintf)
@@ -434,24 +406,15 @@ static void ListCWofObjectType (INT objt, INT offset, PrintfProcPtr myprintf)
 }
 
 /****************************************************************************/
-/*D
-   ListAllCWsOfObjectType	- print used pattern of all control entries of all
-                                                                control words of an object type
+/** \brief Print used pattern of all control entries of all
+    control words of an object type
 
-   SYNOPSIS:
-   static void ListAllCWsOfObjectType (INT objt, PrintfProcPtr myprintf)
+ * @param obj - object pointer
+ * @param myprintf - pointer to a printf function (maybe UserWriteF)
 
-   PARAMETERS:
-   .  obj - object pointer
-   .  myprintf - pointer to a printf function (maybe UserWriteF)
-
-   DESCRIPTION:
    This function prints the used pattern of all control entries of all control words
    of an object type. 'ListCWofObjectType' is called.
-
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
 static void ListAllCWsOfObjectType (INT objt, PrintfProcPtr myprintf)
@@ -494,24 +457,15 @@ static void ListAllCWsOfObjectType (INT objt, PrintfProcPtr myprintf)
 }
 
 /****************************************************************************/
-/*D
-   ListAllCWsOfAllObjectTypes	- print used pattern of all control entries of all
-                                                                        control words of all object types
+/** \brief Print used pattern of all control entries of all
+    control words of all object types
 
-   SYNOPSIS:
-   void ListAllCWsOfAllObjectTypes (PrintfProcPtr myprintf)
+ * @param obj - object pointer
+ * @param myprintf - pointer to a printf function (maybe UserWriteF)
 
-   PARAMETERS:
-   .  obj - object pointer
-   .  myprintf - pointer to a printf function (maybe UserWriteF)
-
-   DESCRIPTION:
    This function prints the used pattern of all control entries of all control words
    of all object types. 'ListAllCWsOfObjectType' is called.
-
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
 void NS_PREFIX ListAllCWsOfAllObjectTypes (PrintfProcPtr myprintf)
@@ -528,23 +482,15 @@ void NS_PREFIX ListAllCWsOfAllObjectTypes (PrintfProcPtr myprintf)
 }
 
 /****************************************************************************/
-/*D
-   InitPredefinedControlWords	- Initialize control words
+/** \brief Initialize control words
 
-   SYNOPSIS:
-   INT InitPredefinedControlWords (void)
-
-   PARAMETERS:
-   .  void
-
-   DESCRIPTION:
    This function initializes the predefined control words.
 
-   RETURN VALUE:
-   INT
-   .n   GM_OK if ok
-   .n   GM_ERROR if error occured.
-   D*/
+ * @return <ul>
+ * <li> GM_OK if ok </li>
+ * <li> GM_ERROR if error occured </li>
+ * </ul>
+ */
 /****************************************************************************/
 
 static INT InitPredefinedControlWords (void)
@@ -586,24 +532,16 @@ static INT InitPredefinedControlWords (void)
 }
 
 /****************************************************************************/
-/*D
-   InitPredefinedControlEntries	- Initialize control word entries
+/** \brief Initialize control word entries
 
-   SYNOPSIS:
-   INT InitPredefinedControlEntries (void);
-
-   PARAMETERS:
-   .  void
-
-   DESCRIPTION:
    This function initializes the predefined control word entries. Predefined
    entries are not checked for overlap.
 
-   RETURN VALUE:
-   INT
-   .n   GM_OK if ok
-   .n   GM_ERROR if error occured.
-   D*/
+ * @return <ul>
+ * <li> GM_OK if ok </li>
+ * <li> GM_ERROR if error occured </li>
+ * </ul>
+ */
 /****************************************************************************/
 
 static INT InitPredefinedControlEntries (void)
@@ -706,24 +644,13 @@ static INT InitPredefinedControlEntries (void)
 }
 
 /****************************************************************************/
-/*D
-   ResetCEstatistics	- reset counters for read/write control word access
+/** \brief Reset counters for read/write control word access
 
-   SYNOPSIS:
-   void ResetCEstatistics (void)
-
-   PARAMETERS:
-   .  void -
-
-   DESCRIPTION:
    This function resets all counters for read/write control word access.
    This is only possible if the code is compiled with #define _DEBUG_CW_
    in gm.h. (Maybe it makes sense to do that only for part of the code.
    Then the warnings should be removed.)
-
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
 void NS_PREFIX ResetCEstatistics (void)
@@ -735,27 +662,6 @@ void NS_PREFIX ResetCEstatistics (void)
         #endif
 }
 
-/****************************************************************************/
-/*D
-   PrintCEstatistics	- print control word read/write acces statistic to shell
-
-   SYNOPSIS:
-   void PrintCEstatistics (void)
-
-   PARAMETERS:
-   .  void -
-
-   DESCRIPTION:
-   This function prints all counters for read/write control word access.
-   It also checks the number of bits actually used for a control entry.
-   This is only possible if the code is compiled with #define _DEBUG_CW_
-   in gm.h. (Maybe it makes sense to do that only for part of the code.
-   Then the warnings should be removed.)
-
-   RETURN VALUE:
-   void
-   D*/
-/****************************************************************************/
 
 static void PrintSingleCEStatistics (INT i)
 {
@@ -787,6 +693,18 @@ static void PrintSingleCEStatistics (INT i)
   else
     UserWrite("\n");
 }
+
+
+/****************************************************************************/
+/* \brief Print control word read/write acces statistic to shell
+
+   This function prints all counters for read/write control word access.
+   It also checks the number of bits actually used for a control entry.
+   This is only possible if the code is compiled with #define _DEBUG_CW_
+   in gm.h. (Maybe it makes sense to do that only for part of the code.
+   Then the warnings should be removed.)
+ */
+/****************************************************************************/
 
 void NS_PREFIX PrintCEstatistics (void)
 {
@@ -826,37 +744,32 @@ void NS_PREFIX PrintCEstatistics (void)
 }
 
 /****************************************************************************/
-/*D
-   ReadCW	- function to replace CW_READ macro and does extended error checks
+/** \brief Function to replace CW_READ macro and does extended error checks
 
-   SYNOPSIS:
-   unsigned INT ReadCW (const void *obj, INT ceID)
+ * @param obj - object pointer
+ * @param ceID - control entry ID
 
-   PARAMETERS:
-   .  obj - object pointer
-   .  ceID - control entry ID
-
-   DESCRIPTION:
    This function is to replace the CW_READ and CW_READ_STATIC macros of gm.h and does extended
    error checks:~
-   .n   obj != NULL
-   .n   HEAPFAULT
-   .n   ceID in valid range
-   .n   control entry used
-   .n   the object type is checked (with the natural exception of the first SETOBJ access)
+   <ul>
+   <li> obj != NULL </li>
+   <li> HEAPFAULT </li>
+   <li> ceID in valid range </li>
+   <li> control entry used </li>
+   <li> the object type is checked (with the natural exception of the first SETOBJ access)  </li>
+   </ul>
    Additionally the read accesses to a control entry are counted.
 
    CAUTION:
    set #define _DEBUG_CW_ to replace CW_READ by ReadCW but be aware of the
    slowing down of the program in this case (no large problems!).
 
-   RETURN VALUE:
-   unsigned INT
-   .n   number read from the control entry of the object
-   D*/
+   @return
+   Number read from the control entry of the object
+ */
 /****************************************************************************/
 
-unsigned INT ReadCW (const void *obj, INT ceID)
+unsigned INT NS_PREFIX ReadCW (const void *obj, INT ceID)
 {
   CONTROL_ENTRY *ce;
   unsigned INT off_in_obj,mask,i,off_in_wrd,cw,cw_objt;
@@ -901,36 +814,31 @@ unsigned INT ReadCW (const void *obj, INT ceID)
 }
 
 /****************************************************************************/
-/*D
-   WriteCW	- function to replace CW_WRITE macro and does extended error checks
+/** \brief Function to replace CW_WRITE macro and does extended error checks
 
-   SYNOPSIS:
-   void WriteCW (void *obj, INT ceID, INT n)
+ * @param obj - object pointer
+ * @param ceID - control entry ID
+ * @param n - number to write to the objects control entry
 
-   PARAMETERS:
-   .  obj - object pointer
-   .  ceID - control entry ID
-   .  n - number to write to the objects control entry
-
-   DESCRIPTION:
    This function is to replace the CW_WRITE and CW_WRITE_STATIC macros of gm.h and does extended
    error checks:~
-   .n   obj != NULL
-   .n   HEAPFAULT
-   .n   ceID in valid range
-   .n   control entry used
-   .n   the object type is checked
-   .n   n small enough for length of control entry
+   <ul>
+   <li>  obj != NULL </li>
+   <li>  HEAPFAULT </li>
+   <li>  ceID in valid range </li>
+   <li>  control entry used </li>
+   <li>  the object type is checked </li>
+   <li>  n small enough for length of control entry </li>
+   </ul>
    Additionally the write accesses to a control entry are counted.
 
    CAUTION:
    set #define _DEBUG_CW_ to replace CW_WRITE by WriteCW but be aware of the
    slowing down of the program in this case (no large problems!).
 
-   RETURN VALUE:
-   unsigned INT
-   .n   number read from the control entry of the object
-   D*/
+   @return
+   Number read from the control entry of the object
+ */
 /****************************************************************************/
 
 void NS_PREFIX WriteCW (void *obj, INT ceID, INT n)
@@ -1008,18 +916,12 @@ void NS_PREFIX WriteCW (void *obj, INT ceID, INT n)
 }
 
 /****************************************************************************/
-/*D
-   AllocateControlEntry	-  Allocates space in object control words
+/** \brief Allocates space in object control words
 
-   SYNOPSIS:
-   INT AllocateControlEntry (INT cw_id, INT length, INT *ce_id);
+ * @param cw_id - id of a control word
+ * @param length - number of bits to allocate
+ * @param ce_id -  returns identifier of control entry descriptor
 
-   PARAMETERS:
-   .  cw_id - id of a control word
-   .  length - number of bits to allocate
-   .  ce_id -  returns identifier of control entry descriptor
-
-   DESCRIPTION:
    This function allocates 'length' consecutive bits in the control word of an
    object identified through the `control word id` 'cw_id'.
    It returns '0' and a valid id in 'ce_id' if space was available.
@@ -1035,25 +937,26 @@ void NS_PREFIX WriteCW (void *obj, INT ceID, INT n)
    The following code fragment allocates 'NORDER_LEN' bits in the 'flag' word
    of the 'ELEMENT' structure.
 
-   .vb
+   \verbatim
    INT ce_NORDER;
 
    if (AllocateControlEntry(FLAG_CW,NORDER_LEN,&ce_NORDER) != GM_OK) return (1);
-   .ve
+   \endverbatim
 
    The following macros then read and write the requested bits
 
-   .vb
-   #define NORDER(p)      CW_READ(p,ce_NORDER)
-   #define SETNORDER(p,n) CW_WRITE(p,ce_NORDER,n)
-   .ve
+   \verbatim
+ *#define NORDER(p)      CW_READ(p,ce_NORDER)
+ *#define SETNORDER(p,n) CW_WRITE(p,ce_NORDER,n)
+   \endverbatim
 
 
-   RETURN VALUE:
-   INT
-   .n    GM_OK if ok
-   .n    GM_ERROR if error occured.
-   D*/
+   @return
+   </ul>
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR if error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX AllocateControlEntry (INT cw_id, INT length, INT *ce_id)
@@ -1108,24 +1011,18 @@ INT NS_PREFIX AllocateControlEntry (INT cw_id, INT length, INT *ce_id)
 }
 
 /****************************************************************************/
-/*D
-   FreeControlEntry - Frees space in object control words
+/** \brief Frees space in object control words
 
-   SYNOPSIS:
-   INT FreeControlEntry (INT ce_id);
+ * @param ce_id - control entry descriptor to free
 
-   PARAMETERS:
-   .  ce_id - control entry descriptor to free
-
-   DESCRIPTION:
    This function frees space in object control words that has been allocated
    with 'AllocateControlEntry'.
 
-   RETURN VALUE:
-   INT
-   .n     GM_OK if ok
-   .n     GM_ERROR if error occured.
-   D*/
+   @return <ul>
+   <li>    GM_OK if ok </li>
+   <li>    GM_ERROR if error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX FreeControlEntry (INT ce_id)
@@ -1153,23 +1050,15 @@ INT NS_PREFIX FreeControlEntry (INT ce_id)
 }
 
 /****************************************************************************/
-/*D
-   InitCW - init cw.c file
+/** \brief Init cw.c file
 
-   SYNOPSIS:
-   INT InitCW (void)
-
-   PARAMETERS:
-   .  void
-
-   DESCRIPTION:
    This function initializes the control word manager.
 
-   RETURN VALUE:
-   INT
-   .n   GM_OK if ok
-   .n   > 0 line in which error occured.
-   D*/
+   @return <ul>
+   <li>  GM_OK if ok </li>
+   <li>  > 0 line in which error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX InitCW (void)
