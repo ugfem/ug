@@ -3455,7 +3455,6 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
   SetStringValue(":gg:nNode",(double) theGrid->nNode);
 
 
-        #ifdef __version3__
   /* create algebraic objects */
   if (MGCreateConnection(theMG))
   {
@@ -3469,12 +3468,10 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
     DisposeMultiGrid(theMG);
     return(NULL);
   }
-        #endif
 
   TerminateGG(theMG,0);
   TerminateAccel(theMG, 0);
   return (0);
-
 }
 
 /****************************************************************************/
