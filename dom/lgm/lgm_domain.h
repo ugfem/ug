@@ -260,7 +260,7 @@
 
 #endif
 
-typedef INT (*InitProcPtr)(INT, char **, char *);
+typedef INT (*InitProcPtr)(INT, char **, INT, char *);
 typedef INT (*BndCondProcPtr)(DOUBLE *, DOUBLE *, INT *);
 typedef INT (*DomainSizeConfig)(DOUBLE *min, DOUBLE *max);
 

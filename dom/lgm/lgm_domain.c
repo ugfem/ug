@@ -195,6 +195,8 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
     /* initialize problem */
     if (conf_df_problem)
     {
+      INT l, maxLineId = 0;
+
       if (theProblem->InitProblem==NULL) return (NULL);
       nSubDom = LGM_DOMAIN_NSUBDOM(theDomain);
       argv = (char **) GetTmpMem(Heap, sizeof(char *)*(nSubDom+1));
@@ -203,8 +205,21 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
         UserWrite("ERROR in BVP_Init: cannot allocate argv\n");
         return (NULL);
       }
-      for(i=1; i<=nSubDom; i++) argv[i] = LGM_SUBDOMAIN_UNIT(LGM_DOMAIN_SUBDOM(theDomain,i));
-      if ((*(theProblem->InitProblem))(nSubDom, argv,LGM_DOMAIN_PROBLEMNAME(theDomain)))
+      for(i=1; i<=nSubDom; i++)
+      {
+        LGM_SUBDOMAIN *subdom = LGM_DOMAIN_SUBDOM(theDomain,i);
+
+        argv[i] = LGM_SUBDOMAIN_UNIT(subdom);
+
+        /* find maximum LineId */
+        for(l=0; l<LGM_SUBDOMAIN_NLINE(subdom); l++)
+        {
+          INT id = LGM_LINE_ID(LGM_SUBDOMAIN_LINE(subdom,l));
+          if (maxLineId < id)
+            maxLineId = id;
+        }
+      }
+      if ((*(theProblem->InitProblem))(nSubDom, argv, maxLineId+1, LGM_DOMAIN_PROBLEMNAME(theDomain)))
       {
         UserWrite("ERROR in BVP_Init: cannot initialize problem\n");
         return (NULL);
