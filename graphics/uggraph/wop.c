@@ -5835,14 +5835,13 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
     {
       /* plot links at last postion inverse */
       for (theLink=START(MN_Node); theLink!=NULL; theLink=NEXT(theLink))
-        if (!EXTRA(MYEDGE(theLink)))
-        {
-          nbVertex = MYVERTEX(NBNODE(theLink));
-          nbpos[0] = XC(nbVertex);        nbpos[1] = YC(nbVertex);
-          DO_2c(theDO) = DO_INVERSE_LINE; DO_inc(theDO)
-          V2_COPY(MN_pos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-          V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-        }
+      {
+        nbVertex = MYVERTEX(NBNODE(theLink));
+        nbpos[0] = XC(nbVertex);        nbpos[1] = YC(nbVertex);
+        DO_2c(theDO) = DO_INVERSE_LINE; DO_inc(theDO)
+        V2_COPY(MN_pos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+        V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      }
     }
     MN_MouseMoved = TRUE;
 
@@ -5890,14 +5889,13 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
 
     /* plot links inverse */
     for (theLink=START(MN_Node); theLink!=NULL; theLink=NEXT(theLink))
-      if (!EXTRA(MYEDGE(theLink)))
-      {
-        nbVertex = MYVERTEX(NBNODE(theLink));
-        nbpos[0] = XC(nbVertex);        nbpos[1] = YC(nbVertex);
-        DO_2c(theDO) = DO_INVERSE_LINE; DO_inc(theDO)
-        V2_COPY(MN_pos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-        V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-      }
+    {
+      nbVertex = MYVERTEX(NBNODE(theLink));
+      nbpos[0] = XC(nbVertex);        nbpos[1] = YC(nbVertex);
+      DO_2c(theDO) = DO_INVERSE_LINE; DO_inc(theDO)
+      V2_COPY(MN_pos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    }
 
     DO_2c(theDO) = DO_NO_INST;
 
@@ -5909,14 +5907,13 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
   {
     /* plot links at last postion inverse */
     for (theLink=START(MN_Node); theLink!=NULL; theLink=NEXT(theLink))
-      if (!EXTRA(MYEDGE(theLink)))
-      {
-        nbVertex = MYVERTEX(NBNODE(theLink));
-        nbpos[0] = XC(nbVertex);        nbpos[1] = YC(nbVertex);
-        DO_2c(theDO) = DO_INVERSE_LINE; DO_inc(theDO)
-        V2_COPY(MN_pos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-        V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-      }
+    {
+      nbVertex = MYVERTEX(NBNODE(theLink));
+      nbpos[0] = XC(nbVertex);        nbpos[1] = YC(nbVertex);
+      DO_2c(theDO) = DO_INVERSE_LINE; DO_inc(theDO)
+      V2_COPY(MN_pos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    }
     DO_2c(theDO) = DO_NO_INST;
   }
   *end = TRUE;
@@ -5926,6 +5923,8 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
 static INT EXT_PostProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
 {
   VERTEX *theVertex;
+  ELEMENT *theElement;
+  INT edge;
 
   if (!MN_accept)
     return (0);
@@ -5935,13 +5934,26 @@ static INT EXT_PostProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
 
   if (OBJT(theVertex)==IVOBJ)
   {
-    if (MoveInnerNode(MN_MG,MN_Node,MN_pos)!=GM_OK)
+    if (MoveNode(MN_MG,MN_Node,MN_pos)!=GM_OK)
       return (1);
     return (0);
   }
   else
-  if (MoveBoundaryNode(MN_MG,MN_Node,PATCH_ID(MN_PatchDesc),&MN_lambda)!=GM_OK)
-    return (1);
+  {
+    if (NTYPE(MN_Node) != MID_NODE)
+    {
+      PrintErrorMessage('E',"EXT_PostProcess_MoveNode2D",
+                        "on the boundary only midnodes can be moved");
+      return (1);
+    }
+    edge = ONEDGE(theVertex);
+    theElement = VFATHER(theVertex);
+    if (MoveMidNode (MN_MG,
+                     CORNER(theElement,CORNER_ON_EDGE(theElement,edge,0)),
+                     CORNER(theElement,CORNER_ON_EDGE(theElement,edge,1)),
+                     MN_Node,MN_lambda))
+      return (1);
+  }
 
   return (0);
 }
