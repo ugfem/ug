@@ -2638,7 +2638,13 @@ INT CompMatDesc (const MATDATA_DESC *md, const SHORT *RowsInType,
     {
       /* if md is sparse on tp, check if it is a full matrix without
          identification */
-      if (SM_Compute_Reduced_Size(md->sm[tp])!=ColsInType[tp]*RowsInType[tp])
+      if (md->sm[tp]!=NULL)
+      {
+        if (SM_Compute_Reduced_Size(md->sm[tp])!=ColsInType[tp]*RowsInType[tp])
+          return(2);
+      }
+      else
+      if (ColsInType[tp]*RowsInType[tp]!=0)
         return(2);
     }
   }
