@@ -4084,8 +4084,73 @@ D*/
 /****************************************************************************/
 INT PolylineSplit(PL_LINE_TYP **anfang, PL_LINE_TYP **rechtesMuster, PL_TYP *Polyline, PL_LINE_TYP *idl2)
 {
-	PrintErrorMessage('E',"PolylineSplit","SortPolyline did not find a PartnerLine and PolylineSplit is not installed yet");
-	return (1);
+	PL_TYP *merkeplptr,*neuePolyline;
+	PL_LINE_TYP *lauf_PLL,*endeabgespPL;
+	INT anzbersorPLLPoints;
+	INT rv;
+	
+	
+	anzbersorPLLPoints = 2;
+
+	lauf_PLL = idl2;
+	while(lauf_PLL != (*rechtesMuster))
+	{
+		lauf_PLL = PL_LINES_NXT(lauf_PLL);
+		anzbersorPLLPoints++;
+	}
+	
+
+	endeabgespPL = *rechtesMuster;
+			
+			
+	/*alte Polyline*/
+	/*=> *anfang, *rechtesMuster := ganz vorne usw. ... UPDATEN */
+	(*rechtesMuster) = PL_LINES_NXT((*rechtesMuster));/*ganz vorne*/
+	if((*rechtesMuster) == NULL)
+	{
+		PrintErrorMessage('E',"PolylineSplit","PolylineSpliiting makes no sense - no remaining Polyline");
+		return (1);
+	}
+	else
+	{
+		(*anfang) = PL_LINES_NXT((*rechtesMuster));
+	}
+
+	PL_NMB_OF_POINTS(Polyline) = PL_NMB_OF_POINTS(Polyline) - anzbersorPLLPoints + 1;
+	PL_LINES(Polyline) = *rechtesMuster;
+	/*PL_IDFS, PL_NMB_OF_CH_IDFS und PL_NXT aendern sich nicht !!!*/
+	
+	
+	
+	/*abgespaltete Polyline Teil2 ..*/
+	PL_LINES_NXT(endeabgespPL) = NULL;
+	/*=> bereits sortierte PlLinelist aufabrbeiten (z.B.:NullPointer ans ende)*/
+	
+	/*mit der abgespaltenen eine neue anlegen ...*/
+	   /*laeuft von idl2 bis endeabgespPL.*/
+	merkeplptr = EXCHNG_TYP2_ROOT_PLY(ExchangeVar_2_Pointer);
+	if((neuePolyline = GetTmpMem(theHeap,sizeof(PL_TYP))) == NULL)
+	{
+		PrintErrorMessage('E',"PolylineSplit","got no mem for the new polyline, which splitted");
+		return (1);
+	} 
+	   /*dass sie vom SortPolyline-DURCHLAUF nicht mehr erfasst wird also am besten an den
+	   Listenanfang*/
+	PL_NXT(neuePolyline) = merkeplptr;
+	PL_NMB_OF_CH_IDFS(neuePolyline) = PL_NMB_OF_CH_IDFS(Polyline);
+	PL_IDFS(neuePolyline) = PL_IDFS(Polyline);
+	PL_LINES(neuePolyline) = idl2;
+	PL_NMB_OF_POINTS(neuePolyline) = anzbersorPLLPoints;
+	NMB_OF_PLINES(DomainInfo_Pointer) ++;
+	EXCHNG_TYP2_ROOT_PLY(ExchangeVar_2_Pointer) = neuePolyline;
+	if((rv = ConnectPolylineWithSurfaces(neuePolyline)) == 1) 
+	{
+		PrintErrorMessage('E',"PolylineSplit","Error occured calling ConnectPolylineWithSurfaces");
+		return (1);
+	}
+
+	
+	return (0);
 }
 
 
