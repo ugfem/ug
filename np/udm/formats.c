@@ -2892,7 +2892,7 @@ INT CreateFormatCmd (INT argc, char **argv)
   FORMAT *newFormat;
   ENVDIR *dir;
   VectorDescriptor vd[MAXVECTORS];
-  MatrixDescriptor md[MAXMATRICES];
+  MatrixDescriptor md[MAXMATRICES*MAXVECTORS];
   INT opt,i,j,size,type,type2,rtype,ctype,nvec,nmat,nvd,nmd;
   INT edata,ndata,nodeelementlist;
   INT po2t[MAXDOMPARTS][MAXVOBJECTS],MaxTypes,TypeUsed[MAXVECTORS];
@@ -3018,6 +3018,12 @@ INT CreateFormatCmd (INT argc, char **argv)
       vd[nvd].size  = VecStorageNeeded[type]*sizeof(DOUBLE);
       vd[nvd].name  = TypeNames[type];
       nvd++;
+
+      if (nvd > MAXVECTORS) {
+        PrintErrorMessage('E',"newformat","increase MAXVECTORS");
+        CleanupTempDir();
+        REP_ERR_RETURN (1);
+      }
     }
 
   if (nodeelementlist || ndata) {
@@ -3069,6 +3075,12 @@ INT CreateFormatCmd (INT argc, char **argv)
     md[nmd].size  = size*sizeof(DOUBLE);
     md[nmd].depth = depth;
     nmd++;
+
+    if (nmd > MAXMATRICES*MAXVECTORS) {
+      PrintErrorMessage('E',"newformat","increase MAXMATRICES");
+      CleanupTempDir();
+      REP_ERR_RETURN (1);
+    }
   }
 
   /* create format */
