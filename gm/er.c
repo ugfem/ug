@@ -1292,7 +1292,7 @@ static void FindPathForNeighbours (MGIO_RR_RULE *rule, SHORT myID, SHORT Status[
   for (i=0; i<MAX_SIDES_OF_ELEM; i++)
     if (((nbID=rule->sons[myID].nb[i])<FATHER_SIDE_OFFSET) && (Status[nbID]==NB_NOTDONE))
     {
-      int *nbPath = &(rule->sons[nbID].path);
+      INT *nbPath = (INT) &(rule->sons[nbID].path);
       SHORT nbPathDepth;
 
       /* copy myPath to nbPath */
@@ -1907,7 +1907,7 @@ static void CheckMRules (MULTIGRID *mg, INT RefRuleOffset[], MGIO_RR_RULE *mrule
         NODE **sidenodes        = newnodes+eoe;
                                 #endif
         NODE **centernode       = newnodes+CENTER_NODE_INDEX(elem);
-        int maxsonex            = 0;
+        INT maxsonex            = 0;
         ELEMENT *sons[MAX_SONS];
         int some_path_wrong = FALSE;
         int error = 0;
@@ -2115,7 +2115,7 @@ INT NEW_Write_RefRules (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR
 {
   MGIO_RR_GENERAL rr_general;
   MGIO_RR_RULE *mrule;
-  int BotMarkKey;
+  INT BotMarkKey;
   int tag;
 
   if (mg==NULL)
