@@ -682,6 +682,9 @@ void VectorDelete (DDD_OBJ obj)
   /* remove vector from its object */
   if (VOTYPE(pv)==NODEVEC)
   {
+#ifdef USE_FAMG
+    if( VOBJECT(pv)!=NULL )             // borders may have no node object on this pe
+#endif
     NVECTOR((NODE *)VOBJECT(pv))  = NULL;
   }
   else
