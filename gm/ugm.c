@@ -6599,6 +6599,11 @@ static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT
 						break;
 				if (k == n)
 					*SideError |= (1<<i);
+				if (TAG(theElement)!=TETRAHEDRON 
+				#ifdef Debug
+				|| Debuggm>=1
+				#endif
+				)
 				for (l=1; l<n; l++)
 					if (CORNER(theElement,
 						CORNER_OF_SIDE(theElement,i,(n+k-l)%n))
