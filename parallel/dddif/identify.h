@@ -42,7 +42,9 @@
 /*																			*/
 /****************************************************************************/
 
-
+/* define for identification in several stages to 1 */
+/* only for debugging purposes useful!              */
+#define IDENT_IN_STEPS  0
 
 /****************************************************************************/
 /*																			*/
@@ -65,7 +67,5 @@
 /* function declarations													*/
 /*																			*/
 /****************************************************************************/
-
-INT IdentifyProcBoundaryObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel);
 
 #endif
