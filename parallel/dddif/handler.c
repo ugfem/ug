@@ -278,11 +278,13 @@ void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data)
 #ifdef USE_FAMG
   /* VOBJECT(vec) may be NULL */
   if( VOBJECT(vec)==NULL )
+  {
     PRINTDEBUG(dddif,3,(PFMT " VectorGatherMatX(): v=" VINDEX_FMTX
                         " cnt=%d type=%d veobj=%d vtype=%d\n",
                         me,VINDEX_PRTX(vec),cnt,type_id,
                         OBJT(vec),VTYPE(vec)))
-    else
+  }
+  else
 #endif
   PRINTDEBUG(dddif,3,(PFMT " VectorGatherMatX(): v=" VINDEX_FMTX
                       " VOBJID=%d cnt=%d type=%d veobj=%d vtype=%d\n",
