@@ -513,7 +513,6 @@ INT Line_Local2GlobalNew (LGM_LINE *theLine, DOUBLE *global, DOUBLE local)
     global[1] = LGM_LINE_POINT(theLine,ilocal)->position[1];
     global[2] = LGM_LINE_POINT(theLine,ilocal)->position[2];
   }
-  printf("Line_Local2GlobalNew() global0=%f global1=%f global2=%f\n",global[0],global[1],global[2]);
   return(0);
 }
 
