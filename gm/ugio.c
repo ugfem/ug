@@ -191,6 +191,100 @@ INT MGSetVectorClasses (MULTIGRID *theMG)
    D*/
 /****************************************************************************/
 
+static INT SaveSurfaceGrid  (MULTIGRID *theMG, FILE *stream)
+{
+  GRID *theGrid;
+  NODE *theNode;
+  ELEMENT *theElement;
+  VERTEX *theVertex;
+  DOUBLE *global;
+  time_t Time;
+  char *fmt;
+  char buffer[BUFFERSIZE];
+  BVP_DESC theBVPDesc;
+  INT i,id,move,l,tl;
+
+  tl = CURRENTLEVEL(theMG);
+  for (l=0; l<= tl; l++)
+    for (theElement = FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+         theElement != NULL; theElement = SUCCE(theElement))
+      if (NSONS(theElement) == 0)
+        for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+          ID(MYVERTEX(CORNER(theElement,i))) = 0;
+
+  /* find all boundary nodes witch are no corner nodes */
+  fprintf(stream,BN_HEADER_FMT);
+  id = 0;
+  for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,0));
+       theNode!= NULL; theNode=SUCCN(theNode)) {
+    theVertex = MYVERTEX(theNode);
+    if (OBJT(theVertex) == IVOBJ)
+      continue;
+    if (BNDP_BndPDesc(V_BNDP(theVertex),&move))
+      RETURN(1);
+    if (move == 0)
+      ID(theVertex) = id++;
+  }
+  for (l=0; l<= tl; l++)
+    for (theElement = FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+         theElement != NULL; theElement = SUCCE(theElement))
+      if (NSONS(theElement) == 0)
+        for (i=0; i<CORNERS_OF_ELEM(theElement); i++) {
+          theVertex = MYVERTEX(CORNER(theElement,i));
+          if (OBJT(theVertex) == IVOBJ)
+            continue;
+          /* skip corner points */
+          if (BNDP_BndPDesc(V_BNDP(theVertex),&move))
+            RETURN(1);
+          if (move == 0)
+            continue;
+          if (ID(theVertex) > 0)
+            continue;
+          ID(theVertex) = id++;
+          if (BNDP_SaveInsertedBndP(V_BNDP(theVertex),
+                                    buffer,BUFFERSIZE))
+            RETURN(1);
+          fprintf(stream,"%s",buffer);
+          fprintf(stream,EOL_FMT);
+        }
+  /* find all inner nodes */
+  fprintf(stream,IN_HEADER_FMT);
+  for (l=0; l<= tl; l++)
+    for (theElement = FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+         theElement != NULL; theElement = SUCCE(theElement))
+      if (NSONS(theElement) == 0)
+        for (i=0; i<CORNERS_OF_ELEM(theElement); i++) {
+          theVertex = MYVERTEX(CORNER(theElement,i));
+          if (OBJT(theVertex) == BVOBJ)
+            continue;
+          if (ID(theVertex) > 0)
+            continue;
+          global = CVECT(theVertex);
+          fprintf(stream,IN_FMT);
+          for (i=0; i<DIM; i++)
+            fprintf(stream," %f",global[i]);
+          fprintf(stream,EOL_FMT);
+          ID(theVertex) = id++;
+        }
+
+  /* elements */
+  fprintf(stream,IE_HEADER_FMT);
+  for (l=0; l<= tl; l++)
+    for (theElement = FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+         theElement != NULL; theElement = SUCCE(theElement))
+      if (NSONS(theElement) == 0) {
+        fprintf(stream,IE_FMT);
+        for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+          fprintf(stream," %d",ID(MYVERTEX(CORNER(theElement,i))));
+        fprintf(stream,EOL_FMT);
+      }
+
+  /* trailer */
+  fprintf(stream,EOF_FMT);
+  fclose(stream);
+  return(GM_OK);
+}
+
 static INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
 {
   FILE *stream;
@@ -216,10 +310,6 @@ static INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
     RETURN(GM_FILEOPEN_ERROR);
   }
 
-  if (TOPLEVEL(theMG) > 0)
-    PrintErrorMessage('W',"SaveMultiGrid",
-                      "only level 0 will be saved");
-
   /* get BVPDesc */
   if (BVP_SetBVPDesc(MG_BVP(theMG),&theBVPDesc))
     RETURN (GM_ERROR);
@@ -231,6 +321,9 @@ static INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
 
   /* write header */
   fprintf(stream,HEADER_FMT,BVPD_NAME(theBVPDesc),buffer,name,comment);
+
+  if (TOPLEVEL(theMG) > 0)
+    return(SaveSurfaceGrid(theMG,stream));
 
   theGrid = GRID_ON_LEVEL(theMG,0);
 
@@ -872,7 +965,7 @@ static INT IO_GetSideNode (ELEMENT *theElement, INT side, NODE **theNode, INT *n
 
 #endif
 
-INT IO_Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side, ELEMENT *SonList[MAX_SONS], INT SonSides[MAX_SONS], INT dummy)
+static INT IO_Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side, ELEMENT *SonList[MAX_SONS], INT SonSides[MAX_SONS], INT dummy)
 {
   INT i,j;
   MGIO_RR_RULE *theRule;
