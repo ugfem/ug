@@ -97,8 +97,8 @@ static GENERAL_ELEMENT def_quadrilateral = {
   4,                                                                                    /* max number of sons			*/
   4,                                                                                    /* number of sides				*/
   4,                                                                                    /* number of corners			*/
-  {{-1.0,-1.0},{1.0,-1.0},{1.0,1.0},
-   {-1.0,1.0}},                                                         /* local coordinates			*/
+  {{0.0,0.0},{1.0,0.0},{1.0,1.0},
+   {0.0,1.0}},                                                          /* local coordinates			*/
   4,                                                                                    /* number of edges				*/
   {1,1,1,1},                                                                    /* edges for each side	(2D!)	*/
   {2,2,2,2},                                                                    /* corners for each side		*/

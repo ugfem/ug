@@ -154,10 +154,14 @@ DOUBLE GN (INT n, INT i, COORD *local)
 		case 4:
 			switch (i)
 			{
-				case 0 : return((DOUBLE)(0.25*(1-local[0])*(1-local[1])));
+/*				case 0 : return((DOUBLE)(0.25*(1-local[0])*(1-local[1])));
 				case 1 : return((DOUBLE)(0.25*(1+local[0])*(1-local[1])));
 				case 2 : return((DOUBLE)(0.25*(1+local[0])*(1+local[1])));
-				case 3 : return((DOUBLE)(0.25*(1-local[0])*(1+local[1])));
+				case 3 : return((DOUBLE)(0.25*(1-local[0])*(1+local[1])));*/
+				case 0 : return((DOUBLE)((1-local[0])*(1-local[1])));
+				case 1 : return((DOUBLE)(local[0]*(1-local[1])));
+				case 2 : return((DOUBLE)(local[0]*local[1]));
+				case 3 : return((DOUBLE)((1-local[0])*local[1]));
 			}
 		default:
 			return (-1.0);
@@ -268,10 +272,10 @@ DOUBLE N (int n, int i, DOUBLE s, DOUBLE t)
 	{
 		switch (i)
 		{
-			case 0 : return(0.25*(1-s)*(1-t));
-			case 1 : return(0.25*(1+s)*(1-t));
-			case 2 : return(0.25*(1+s)*(1+t));
-			case 3 : return(0.25*(1-s)*(1+t));
+			case 0 : return((1-s)*(1-t));
+			case 1 : return(s*(1-t));
+			case 2 : return(s*t);
+			case 3 : return((1-s)*t);
 		}
 	}
 	
@@ -336,10 +340,10 @@ DOUBLE dNds (int n, int i, DOUBLE s, DOUBLE t)
 	{
 		switch (i)
 		{
-			case 0 : return(-0.25*(1-t));
-			case 1 : return(0.25*(1-t));
-			case 2 : return(0.25*(1+t));
-			case 3 : return(-0.25*(1+t));
+			case 0 : return(t-1);
+			case 1 : return(1-t);
+			case 2 : return(t);
+			case 3 : return(-t);
 		}
 	}
 	
@@ -387,10 +391,10 @@ DOUBLE dNdt (int n, int i, DOUBLE s, DOUBLE t)
 	{
 		switch (i)
 		{
-			case 0 : return(-0.25*(1-s));
-			case 1 : return(-0.25*(1+s));
-			case 2 : return(0.25*(1+s));
-			case 3 : return(0.25*(1-s));
+			case 0 : return(s-1);
+			case 1 : return(-s);
+			case 2 : return(s);
+			case 3 : return(1-s);
 		}
 	}
 	
@@ -740,6 +744,10 @@ INT GlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint,
 		LocalCoord[0] =  x_dot_normal_to_y(x0,xt) / a;
 		LocalCoord[1] = -x_dot_normal_to_y(x0,xs) / a;		/* xddny = -nxdy */
 		
+
+		LocalCoord[0] =  0.5 * (1.0 + LocalCoord[0]);
+		LocalCoord[1] =  0.5 * (1.0 + LocalCoord[1]);
+
 		return (0);
 	}
 	
@@ -753,6 +761,10 @@ INT GlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint,
 		
 		LocalCoord[0] = x_dot_y(aux1,aux2) / x_dot_y(aux2,aux2);
 		
+
+		LocalCoord[0] =  0.5 * (1.0 + LocalCoord[0]);
+		LocalCoord[1] =  0.5 * (1.0 + LocalCoord[1]);
+
 		return (0);
 	}
 	
@@ -765,6 +777,9 @@ INT GlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint,
 		set_x_plus_ay(aux2,xt,LocalCoord[0],xst);
 		
 		LocalCoord[1] = x_dot_y(aux1,aux2) / x_dot_y(aux2,aux2);
+
+		LocalCoord[0] =  0.5 * (1.0 + LocalCoord[0]);
+		LocalCoord[1] =  0.5 * (1.0 + LocalCoord[1]);
 		
 		return (0);
 	}
@@ -797,6 +812,11 @@ INT GlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint,
 	}
 	else
 		return (4);
+
+		LocalCoord[0] =  0.5 * (1.0 + LocalCoord[0]);
+		LocalCoord[1] =  0.5 * (1.0 + LocalCoord[1]);
+
+	return(0);
 	
 	if ((-1.1<=LocalCoord[0]) && (LocalCoord[0]<=1.1))
 		return (0);

@@ -44,13 +44,6 @@
 /****************************************************************************/
 
 #ifdef __TWODIM__
-#define GlobalToLocal(n,c,e,l)		 GlobalToLocal2d (n,c,e,l)
-#endif
-#ifdef __THREEDIM__
-#define GlobalToLocal(n,c,e,l)		 GlobalToLocal3d (c,e,l)
-#endif
-
-#ifdef __TWODIM__
 #define DNDS(n,i,s,t,r) 		if (n==3)\
 								{\
 									switch (i)\
@@ -64,10 +57,10 @@
 								{\
 									switch (i)\
 									{\
-										case 0 : r=-0.25*(1-t); break;\
-										case 1 : r=0.25*(1-t); break;\
-										case 2 : r=0.25*(1+t); break;\
-										case 3 : r=-0.25*(1+t); break;\
+										case 0 : r=t-1; break;\
+										case 1 : r=1-t; break;\
+										case 2 : r=t;   break;\
+										case 3 : r=-t;  break;\
 									}\
 								}
 
@@ -84,10 +77,10 @@
 								{\
 									switch (i)\
 									{\
-										case 0 : r=-0.25*(1-s); break;\
-										case 1 : r=-0.25*(1+s); break;\
-										case 2 : r=0.25*(1+s); break;\
-										case 3 : r=0.25*(1-s); break;\
+										case 0 : r=s-1; break;\
+										case 1 : r=-s;  break;\
+										case 2 : r=s;   break;\
+										case 3 : r=1-s; break;\
 									}\
 								}
 #endif
@@ -118,6 +111,20 @@
   (global)[1] = (1.0-(local)[0]-(local)[1])*(x)[0][1]     \
    +(local)[0]*(x)[1][1] + (local)[1]*(x)[2][1]; }  
 
+
+#define LOCAL_TO_GLOBAL_QUADRILATERAL(x,local,global)         \
+{(global)[0] = (1.0-(local)[0])*(1.0-(local)[1])*(x)[0][0]    \
+   + (local)[0]*(1.0-(local)[1])*(x)[1][0]                    \
+   + (local)[0]*(local)[1]*(x)[2][0]                          \
+   + (1.0-(local)[0])*(local)[1]*(x)[3][0];                   \
+ (global)[1] = (1.0-(local)[0])*(1.0-(local)[1])*(x)[0][1]    \
+   + (local)[0]*(1.0-(local)[1])*(x)[1][1]                    \
+   + (local)[0]*(local)[1]*(x)[2][1]                          \
+   + (1.0-(local)[0])*(local)[1]*(x)[3][1];}
+
+/*
+
+
 #define LOCAL_TO_GLOBAL_QUADRILATERAL(x,local,global)                   \
  {(global)[0] = 0.25 * ((1.0-(local)[0])*(1.0-(local)[1])*(x)[0][0]     \
                       + (1.0+(local)[0])*(1.0-(local)[1])*(x)[1][0]     \
@@ -127,6 +134,8 @@
                       + (1.0+(local)[0])*(1.0-(local)[1])*(x)[1][1]     \
                       + (1.0+(local)[0])*(1.0+(local)[1])*(x)[2][1]     \
                       + (1.0-(local)[0])*(1.0+(local)[1])*(x)[3][1]);}
+
+*/
 
 #define LOCAL_TO_GLOBAL(n,x,local,global)                                 \
  {if ((n) == 3)      LOCAL_TO_GLOBAL_TRIANGLE((x),(local),(global))       \
@@ -303,6 +312,13 @@
   else if ((n) == 5) {AREA_OF_PYRAMID((x),(area));}      \
   else if ((n) == 8) {AREA_OF_HEXAHEDRON((x),(area));}}
 
+#endif
+
+#ifdef __TWODIM__
+#define GlobalToLocal(n,c,e,l)		 GlobalToLocal2d (n,c,e,l)
+#endif
+#ifdef __THREEDIM__
+#define GlobalToLocal(n,c,e,l)		 GlobalToLocal3d (c,e,l)
 #endif
 
 /****************************************************************************/
