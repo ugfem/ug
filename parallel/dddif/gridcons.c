@@ -689,7 +689,7 @@ void ConstructConsistentGrid (GRID *theGrid)
    			if (VFATHER(theVertex)==NULL || EPRIO(VFATHER(theVertex))==PrioHGhost)
 */
 /* this is too few for arbitrary load balancing, since
-	VFATHER pointer be already a zombie pointer (980126 s.l.)
+	VFATHER pointer may be already a zombie pointer (980126 s.l.)
    			if (VFATHER(theVertex)==NULL || EPRIO(theFather)!=PrioHGhost)
 */
 			{
@@ -1202,6 +1202,7 @@ static int Scatter_ObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
 				"local=%08x remote=%08x remoteproc/prio=%d/%d\n",me,EID_PRTX(theElement),ID_PRTX(theNode),
 				GID(theNode),((unsigned int *)data)[i],proc,prio);
 			check_distributed_objects_errors++;
+			assert(0);
 		}
 	}
 
@@ -1217,6 +1218,7 @@ static int Scatter_ObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
 				"local=%08x remote=%08x remoteproc/prio=%d/%d\n",me,EID_PRTX(theElement),ID_PRTX(theEdge),
 				GID(theEdge),((unsigned int *)data)[i],proc,prio);
 			check_distributed_objects_errors++;
+			assert(0);
 		}
 	}
 	#endif
