@@ -3210,6 +3210,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
   /* now CreateAlgebra  is necessary to have the coarse grid nodevectors for DDD identification in Evaluate_pinfo */
   if (CreateAlgebra (theMG))                                              {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+        #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  if (DisposeConnectionsFromMultiGrid(theMG))             {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+        #endif
   if (PrepareAlgebraModification(theMG))                  {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   i = MG_ELEMUSED | MG_NODEUSED | MG_EDGEUSED | MG_VERTEXUSED |  MG_VECTORUSED;
@@ -3246,6 +3249,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
                    because mg_general.nLevel is a global quantity. */
 
     /* no fine grid elements */
+                 #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+    if (MGCreateConnection(theMG))                         {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+                 #endif
 
     /* close identification context */
     DDD_IdentifyEnd();
@@ -3372,8 +3378,13 @@ nparfiles = UG_GlobalMinINT(nparfiles);
           if (DisposeDoubledSideVector (theGrid,theElement,j,theNeighbor,k)) {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
         }
 #endif
+                #ifndef DYNAMIC_MEMORY_ALLOCMODEL
     if (GridCreateConnection(theGrid))                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+                #endif
   }
+        #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  if (MGCreateConnection(theMG))                                  {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+        #endif
   for (i=0; i<=TOPLEVEL(theMG); i++)
   {
     theGrid = GRID_ON_LEVEL(theMG,i);
