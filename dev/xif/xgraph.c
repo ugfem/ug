@@ -1,18 +1,18 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  xgraph.c														*/
-/*																			*/
-/* Purpose:   graphical output for ug3 based on X11                                             */
-/*																			*/
-/* Author:	  Peter Bastian  /	 Klaus Johannsen							*/
-/*			  Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen	*/
-/*			  Universitaet Heidelberg										*/
-/*			  Im Neuenheimer Feld 368										*/
-/*			  6900 Heidelberg												*/
-/*			  email: ug@ica3.uni-stuttgart.de				                */
-/*																			*/
+/*                                                                          */
+/* File:      xgraph.c                                                      */
+/*                                                                          */
+/* Purpose:   graphical output for ug based on X11                          */
+/*                                                                          */
+/* Author:    Peter Bastian / Klaus Johannsen                               */
+/*            Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
+/*            Universitaet Heidelberg                                       */
+/*            Im Neuenheimer Feld 368                                       */
+/*            6900 Heidelberg                                               */
+/* email:     ug@ica3.uni-stuttgart.de                                      */
+/*                                                                          */
 /* History:   17.02.94 begin, ug version 3.0								*/
 /*																			*/
 /* Remarks:                                                                                                                             */
@@ -142,12 +142,12 @@ static int red_shift, green_shift, blue_shift;
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-unsigned long UGBlack (void)
+unsigned long NS_PREFIX UGBlack (void)
 {
   return(ctab[X11OutputDevice->black].pixel);
 }
 
-unsigned long UGWhite (void)
+unsigned long NS_PREFIX UGWhite (void)
 {
   return(ctab[X11OutputDevice->white].pixel);
 }
