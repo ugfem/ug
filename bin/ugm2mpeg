@@ -1,0 +1,252 @@
+#!/bin/csh -f
+#
+#  Create mpeg animation file directly from UG meta files.
+# 
+#  Created by Volker Reichenberger, ICA III, Universitaet Stuttgart,
+#  reichenb@ica3.uni-stuttgart.de
+#
+#  Using scripts by Wes Barris, MSC, Inc. wesb@msc.edu,
+#  Matt Hughes, University of Minnesota Supercomputer Institute
+#  and Stefan Lang, ICA III, stefan@ica3.uni-stuttgart.de.
+#
+#  June 3, 1997
+#  
+# Define the defaults
+#
+@ fs         = 1		# starting frame number
+@ fe         = 1		# ending frame number
+@ fi         = 1		# frame increment
+#
+if ( $#argv == 0 ) then
+      echo "Usage: ugm2mpeg <basename> [-f first last] [-fi increment]"
+      echo "Default:" 
+      echo "      	-f 1 1 -fi 1"
+      exit
+endif
+#
+#  Parse out arguments.
+#
+@ n = 1
+if ("$argv[$n]" == "-help") then
+	  echo "Usage: ugm2mpeg <basename> [-f first last] [-fi increment]"
+	  echo "Purpose: Create a MPEG-movie from a sequence of ug-meta-files"
+	  echo "Options:"
+	  echo "        <basename>: base name of ug-meta-files"
+	  echo "        -f first last: Start movie with picture <first>, end with <last>"
+	  echo "        -fi increment: Increment steps for base files"
+	  echo "Example: You have 50 ug-meta-files called film.0000 to film.0050. Typing"
+	  echo "             ugm2mpeg film -f 0 50"
+	  echo "         will create a file film.mpg which can be viewed with mpeg_play."
+	  echo "         All files film.0000 to film.0050 will be used. If you want only"
+	  echo "         film.0012 to film.0048 to appear in the movie use"
+	  echo "             ugm2mpeg film -f 12 48"
+	  echo "         If you want only film.0004, film.0006, film.0008,... to be used"
+	  echo "         type"
+	  echo "             ugm2mpeg film -f 4 50 -fi 2"
+	  exit
+endif
+set base = $argv[$n]
+@ n++
+while ($n <= $#argv)
+   if ("$argv[$n]" == "-f") then
+      @ n++
+      @ fs = $argv[$n]
+      @ n++
+      @ fe = $argv[$n]
+   else if ("$argv[$n]" == "-fi") then
+      @ n++
+      @ fi = $argv[$n]
+   else if ("$argv[$n]" == "-help") then
+	  echo "Usage: ugm2mpeg <basename> [-f first last] [-fi increment]"
+	  echo "Purpose: Create a MPEG-movie from a sequence of ug-meta-files"
+	  echo "Options:"
+	  echo "        <basename>: base name of ug-meta-files"
+	  echo "        -f first last: Start movie with picture <first>, end with <last>"
+	  echo "        -fi increment: Increment steps for base files"
+	  echo "Example: You have 50 ug-meta-files called film.0000 to film.0050. Typing"
+	  echo "             ugm2mpeg film -f 0 50"
+	  echo "         will create a file film.mpg which can be viewed with mpeg_play."
+	  echo "         All files film.0000 to film.0050 will be used. If you want only"
+	  echo "         film.0012 to film.0048 to appear in the movie use"
+	  echo "             ugm2mpeg film -f 12 48"
+	  echo "         If you want only film.0004, film.0006, film.0008,... to be used"
+	  echo "         type"
+	  echo "             ugm2mpeg film -f 4 50 -fi 2"
+	  exit
+   else
+      echo "Usage: ugm2mpeg <basename> [-f first last] [-fi increment]"
+      echo "Defaults:" 
+      echo "      	fs = fe = fi = 1"
+      exit
+   endif
+   @ n++
+end
+#
+#
+# Determine architecture
+#
+set ARCH=`grep '^ARCH[ \t]' $UGROOT/ug.conf | awk '{ print $3 }' -`
+#
+#
+#
+#
+# On SGI: convert meta -> rgb -> pnm -> uvy -> mpeg
+#
+if ("$ARCH" == "SGI") then
+	#
+	#  Convert to rgb files
+	#
+	echo converting meta to rgb
+	@ iin = $fs
+	@ iout = $fs
+	while ( $iin <= $fe )
+	  set file = `echo $base $iin | awk '{printf "%s.%04d",$1,$2}'` 
+	  echo Converting $file to $file.rgb
+	  ugv $file -p
+	  touch $file.rgb
+      set junk = `du -s $file.rgb | cat`
+	  @ sizea = $junk[1]
+	  @ sizeb = $sizea + 1
+	  while ($sizea != $sizeb)
+	    sleep 2
+		@ sizeb = $sizea
+        set junk = `du -s $file.rgb | cat`
+	    @ sizea = $junk[1]
+	  end
+	  ugkillall $file
+	  @ iin += $fi
+	  @ iout++
+	end
+	#
+	# get size of the first image and use for the rest.
+	#
+	set file = `echo $base $fs | awk '{printf "%s.%04d.rgb",$1,$2}'` 
+	set junk = `sgitopnm  $file | head -2`
+	@ width = $junk[2]
+	@ height = $junk[3]
+	echo ""
+	echo images have dimensions $width x $height
+	echo ""
+	sleep 2
+	#
+	@ iin = $fs
+	@ iout = $fs
+	while ( $iin <= $fe )
+	  set file = `echo $base $iin | awk '{printf "%s.%04d.rgb",$1,$2}'` 
+	  set outname = $base.$iout
+	  echo Converting $file to $outname .Y .U .V
+	  sgitopnm $file | ppmtoyuvsplit $outname
+	  echo removing $file
+	  sleep 1
+	  rm -f $file
+	  @ iin += $fi
+	  @ iout++
+	end
+	@ iout--        # reset to the last actual frame output
+#
+#
+# If not on SGI: Do slow conversion using Postscript
+#
+else
+#
+	@ iin = $fs
+	@ iout = $fs
+	while ( $iin <= $fe )
+	  #
+	  #  Convert ug-meta-files to ps-files
+	  #
+	  set file = `echo $base $iin | awk '{printf "%s.%04d",$1,$2}'` 
+	  set outname = `echo $base $iin | awk '{printf "%s.%04d",$1,$2}'`
+	  echo Converting $file to $outname.ps
+	  m2ps $file
+	  #
+	  #  Convert ps-files to ppm-files
+	  #
+	  set file = `echo $base $iin | awk '{printf "%s.%04d.ps",$1,$2}'`
+	  set outname = `echo $base $iout | awk '{printf "%s.%04d",$1,$2}'`
+	  echo Converting $file to $outname.ppm
+	  exec gs -dNOPAUSE -dQUIET -sDEVICE=ppm -sOutputFile=$outname.ppm $file &;
+	  while (! -f $outname.ppm)
+		sleep 1;
+	  end
+	  sleep 20;
+	  #
+	  # get size of the first image and use for the rest.
+	  #
+	  if ( $iin == $fs ) then
+		set file = `echo $base $fs | awk '{printf "%s.%04d.ppm",$1,$2}'` 
+		set junk = `cat  $file | head -3`
+		@ width = $junk[9]
+		@ height = $junk[10]
+		echo ""
+		echo images have dimensions $width x $height
+		echo ""
+		sleep 2
+	  endif
+	  #
+	  # Convert ppm to yuv files
+	  #
+	  set file = `echo $base $iout | awk '{printf "%s.%04d.ppm",$1,$2}'` 
+	  set outname = $base.$iout
+	  echo Converting $file to $outname .Y .U .V
+	  ppmtoyuvsplit $outname $file
+	  set rmname = `echo $base $iout | awk '{printf "%s.%04d",$1,$2}'`
+	  echo Removing $rmname.ppm
+	  rm -f $rmname.ppm
+	  set rmname = `echo $base $iin | awk '{printf "%s.%04d",$1,$2}'`
+	  echo Removing $rmname.ps
+	  rm -f $rmname.ps
+	  @ iin += $fi
+	  @ iout++
+	end
+	@ iout--	# reset to the last actual frame output
+endif
+#
+#  Compress into an mpeg movie file.
+#  NOTE: An option has to be added if the width of the image is not evenly
+#        divisible by 16.
+#
+set junk = `echo $width 16 | awk '{print $1/$2}'`
+@ div16 = `echo $junk | awk -F. '{print $2}'`
+if ($div16 == 0) then
+   set junk = `echo $height 16 | awk '{print $1/$2}'`
+   @ div16 = `echo $junk | awk -F. '{print $2}'`
+   if ($div16 == 0) then
+      set PF = ""       # only if both X and Y are evenly divisible by 16
+   else
+      set PF = "-PF"
+   endif
+else
+   set PF = "-PF"
+endif
+#
+#  ppmtoyuvsplit may chop off an odd row and/or column
+#
+set junk = `echo $width 2 | awk '{print $1/$2}'`
+@ xeven = `echo $junk | awk -F. '{print $2}'`
+set junk = `echo $height 2 | awk '{print $1/$2}'`
+@ yeven = `echo $junk | awk -F. '{print $2}'`
+#
+echo Width Height $width $height      in 
+#
+if ( $xeven != 0 ) @ width --
+if ( $yeven != 0 ) @ height --
+#
+echo Width Height $width $height     out 
+sleep 2
+set MPEGNAME = "$base".mpg
+echo Name of MPEG-movie: $base.mpg
+mpeg -a $fs -b $iout -h $width -v $height $PF $base. -s $MPEGNAME
+#
+#  Clean up and instruct the user.
+#
+rm $base.*.Y
+rm $base.*.U
+rm $base.*.V
+#
+echo  "To see segment, type mpeg_play $MPEGNAME"
+echo  "or"
+echo  "mpeg_play -dither color $MPEGNAME"
+echo  ""
+
+
