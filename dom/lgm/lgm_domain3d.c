@@ -1,6 +1,6 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/****************************************************************************/
+
 /*																			*/
 /* File:	  lgm_domain3d.c												*/
 /*																			*/
@@ -2660,7 +2660,7 @@ INT BNDS_BndSDesc (BNDS *aBndS, INT *left, INT *right, INT *part)
   theSurface = LGM_BNDS_SURFACE(theBndS);
 
   part[0] = 0;
-  if(LGM_BNDS_N(theBndS)>0)
+  if(LGM_BNDS_N(theBndS)<0)
   {
     *left = LGM_SURFACE_LEFT(theSurface);
     *right = LGM_SURFACE_RIGHT(theSurface);
