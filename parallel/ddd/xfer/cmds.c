@@ -632,6 +632,13 @@ static void XferInitCopyInfo (DDD_HDR hdr,
     exit(1);
   }
 
+  if (prio<0 || prio>=MAX_PRIO)
+  {
+    sprintf(cBuffer, "priority must be less than %d (prio=%d) in xfer-cmd",
+            MAX_PRIO, prio);
+    DDD_PrintError('E', 6004, cBuffer);
+    exit(1);
+  }
 
   if (dest==me)
   {

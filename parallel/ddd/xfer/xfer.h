@@ -464,7 +464,6 @@ void CplMsgExit (void);
 
 
 /* xfer.c, used only by cmds.c */
-int  WhichPrioWins (DDD_PRIO, DDD_PRIO);
 XICopyObj **CplClosureEstimate(XICopyObj **, int, int *);
 int  PrepareObjMsgs(XICopyObj **, int, XINewCpl **, int,
                     XIOldCpl **, int, XFERMSG **);

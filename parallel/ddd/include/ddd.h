@@ -2,8 +2,6 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/*            DDD V1.7.3                                                    */
-/*                                                                          */
 /* File:      ddd.h                                                         */
 /*                                                                          */
 /* Purpose:   header file for ddd module                                    */
@@ -46,6 +44,8 @@
 extern "C" {
 #endif
 
+#define DDD_VERSION    "1.7.4"
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -61,8 +61,6 @@ extern "C" {
   #define C_FRONTEND
  #endif
 #endif
-
-#define DDD_VERSION    "1.7.3"
 
 
 /* F77SYM(lsym,usym) macro is defined in compiler.h. 961127 KB */

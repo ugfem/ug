@@ -74,18 +74,6 @@ RCSID("$Header$",DDD_RCS_STRING)
 /****************************************************************************/
 
 
-int WhichPrioWins (DDD_PRIO p1, DDD_PRIO p2)
-{
-  if (p1>p2) return(1);
-  if (p1<p2) return(2);
-
-  if (p1==p2) return(1);         /* this is an arbitrary choice */
-
-  return(0);        /* we never reach this */
-}
-
-
-/****************************************************************************/
 
 static int sort_NewOwners (const void *e1, const void *e2)
 {

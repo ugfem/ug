@@ -191,6 +191,22 @@ DDD_OBJ DDD_ObjNew (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
 {
   DDD_OBJ obj;
 
+  /* check input parameters */
+  if (prio<0 || prio>=MAX_PRIO)
+  {
+    sprintf(cBuffer,
+            "priority must be less than %d in DDD_ObjNew", MAX_PRIO);
+    DDD_PrintError('E', 2205, cBuffer);
+    exit(1);
+  }
+  if (typ<0 || typ>=MAX_TYPEDESC)
+  {
+    sprintf(cBuffer,
+            "DDD-type must be less than %d in DDD_ObjNew", MAX_TYPEDESC);
+    DDD_PrintError('E', 2206, cBuffer);
+    exit(1);
+  }
+
   /* get object memory */
   obj = (DDD_OBJ) AllocObj(size, typ, prio, attr);
   if (obj==NULL) {
@@ -318,6 +334,15 @@ void DDD_ObjDelete (DDD_OBJ obj, size_t size, DDD_TYPE typ)
 
 void DDD_HdrConstructor (DDD_HDR hdr,DDD_TYPE typ,DDD_PRIO prio,DDD_ATTR attr)
 {
+  /* check input parameters */
+  if (prio<0 || prio>=MAX_PRIO)
+  {
+    sprintf(cBuffer,
+            "priority must be less than %d in DDD_HdrConstructor", MAX_PRIO);
+    DDD_PrintError('E', 2225, cBuffer);
+    exit(1);
+  }
+
   /* check whether there are available objects */
   if (nObjs==MAX_OBJ)
   {
@@ -473,6 +498,15 @@ DDD_OBJ DDD_ObjGet (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
   DDD_OBJ obj;
   TYPE_DESC  *desc = &(theTypeDefs[typ]);
 
+  /* check input parameters */
+  if (prio<0 || prio>=MAX_PRIO)
+  {
+    sprintf(cBuffer,
+            "priority must be less than %d in DDD_ObjGet", MAX_PRIO);
+    DDD_PrintError('E', 2235, cBuffer);
+    exit(1);
+  }
+
   /* get raw memory */
   obj = (DDD_OBJ) DDD_ObjNew(size, typ, prio, attr);
   if (obj==NULL) {
@@ -591,6 +625,15 @@ void DDD_ObjUnGet (DDD_OBJ *fobj, DDD_TYPE *ftyp)
 
 void DDD_HdrConstructorCopy (DDD_HDR newhdr, DDD_PRIO prio)
 {
+  /* check input parameters */
+  if (prio<0 || prio>=MAX_PRIO)
+  {
+    sprintf(cBuffer,
+            "priority must be less than %d in DDD_HdrConstructorCopy", MAX_PRIO);
+    DDD_PrintError('E', 2245, cBuffer);
+    exit(1);
+  }
+
   /* check whether there are available objects */
   if (nObjs==MAX_OBJ)
   {

@@ -38,6 +38,7 @@
 /* standard C library */
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "dddi.h"
 #include "if.h"
@@ -312,12 +313,7 @@ static COUPLING ** IFCollectStdCouplings (void)
   /*
      printf("%04d: n=%d, nCplItems=%d\n",me,n,nCplItems);
    */
-
-  if (n!=nCplItems) {
-    DDD_PrintError('F', 9999, "internal nCplItems-mismatch");
-    exit(1);
-  }
-
+  assert(n==nCplItems);
   return(cplarray);
 }
 
@@ -349,8 +345,12 @@ void IFCreateFromScratch (DDD_IF ifId)
     {
       theIF[ifId].cpl = (COUPLING **) AllocIF(sizeof(COUPLING *)*nCplItems);
       /* TODO: nCplItems will be too big for average interfaces! */
-      if (theIF[ifId].cpl==NULL) {
-        DDD_PrintError('E', 4000, "not enough memory in IFCreateFromScratch");
+      if (theIF[ifId].cpl==NULL)
+      {
+        sprintf(cBuffer,
+                "not enough memory for IF %02d in IFCreateFromScratch",
+                ifId);
+        DDD_PrintError('E', 4000, cBuffer);
         exit(1);
       }
     }

@@ -460,9 +460,11 @@ static void AcceptObjFromMsg (
     if ((j<nLocalCplObjs) && (OBJ_GID(localCplObjs[j])==ote->gid))
     {
       /* object already here, compare priorities */
-      int wpw = WhichPrioWins(ote->prio, OBJ_PRIO(localCplObjs[j]));
+      DDD_PRIO newprio;
+      int ret = PriorityMerge(desc,
+                              ote->prio, OBJ_PRIO(localCplObjs[j]), &newprio);
 
-      if (wpw==1)                    /* incoming is higher or equal */
+      if (ret==PRIO_FIRST || ret==PRIO_UNKNOWN)                    /* incoming is higher or equal */
       {
         DDD_OBJ copy;
 
@@ -821,11 +823,11 @@ static void UpdateCouplings (
             {
               if (hdr!=NULL)
               {
-                DDD_PRIO prio =
-                  (WhichPrioWins(no->prio, nc->prio) == 1)
-                  ? no->prio : nc->prio;
+                TYPE_DESC *desc = &theTypeDefs[OBJ_TYPE(hdr)];
+                DDD_PRIO newprio;
 
-                AddCoupling(hdr, nc->dest, prio);
+                PriorityMerge(desc, no->prio, nc->prio, &newprio);
+                AddCoupling(hdr, nc->dest, newprio);
               }
 #ifdef WANTED_NOCH_GENAUER_UNTERSUCHEN
               else { printf("%4d: WANTED 4  %d/%d/%d\n",me,nc->dest,no->prio,nc->prio); }

@@ -200,7 +200,11 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 		#endif
 
 		#ifdef IF_WITH_ATTR
+			/* set default values for buffer length */
+			ifHead->lenBufIn  = 0;
+			ifHead->lenBufOut = 0;
 			FIND_ATTR; /* find ifAttr */
+			/* if no ATTR can be found, buffer length will be 0 */
 		#endif
 		
 
@@ -281,7 +285,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 		/* poll receive calls */
 		ForIF(ifId,ifHead)
 		{
-			if (ifHead->msgIn!=-1)
+			if (ifHead->lenBufIn>0 && ifHead->msgIn!=-1)
 			{
 				int error = InfoARecv(ifHead->vc, ifHead->msgIn);
 				/* TODO complete error handling */
@@ -338,7 +342,8 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 	/* finally poll send completion */
 	if ((recv_mesgs>0) || (! IFPollSend(ifId)))
 	{
-		DDD_PrintError('E', 4200, CONCAT("timeout in ", IF_FUNCNAME));
+		sprintf(cBuffer, CONCAT("timeout for IF %02d in ",IF_FUNCNAME), ifId);
+		DDD_PrintError('E', 4200, cBuffer);
 		/* TODO complete error handling */
 	}
 

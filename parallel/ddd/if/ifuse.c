@@ -71,8 +71,15 @@ void IFGetMem (IF_PROC *ifHead, size_t itemSize, int lenIn, int lenOut)
   ifHead->lenBufIn  = itemSize * lenIn;
   ifHead->lenBufOut = itemSize * lenOut;
 
-  ifHead->msgBufIn  = (char *) AllocMsg(ifHead->lenBufIn);
-  ifHead->msgBufOut = (char *) AllocMsg(ifHead->lenBufOut);
+  if (ifHead->lenBufIn > 0)
+  {
+    ifHead->msgBufIn  = (char *) AllocMsg(ifHead->lenBufIn);
+  }
+
+  if (ifHead->lenBufOut > 0)
+  {
+    ifHead->msgBufOut = (char *) AllocMsg(ifHead->lenBufOut);
+  }
 }
 
 
@@ -95,13 +102,16 @@ int IFInitComm (DDD_IF ifId, size_t itemSize)
   /* get memory and initiate receive calls */
   ForIF(ifId,ifHead)
   {
-    ifHead->msgIn =
-      RecvASync(ifHead->vc,
-                ifHead->msgBufIn, ifHead->lenBufIn,
-                &error);
+    if (ifHead->lenBufIn>0)
+    {
+      ifHead->msgIn =
+        RecvASync(ifHead->vc,
+                  ifHead->msgBufIn, ifHead->lenBufIn,
+                  &error);
 
-    /* TODO error abfrage */
-    recv_mesgs++;
+      /* TODO error abfrage */
+      recv_mesgs++;
+    }
   }
 
   send_mesgs = 0;
@@ -120,8 +130,11 @@ void IFExitComm (DDD_IF ifId)
 
   ForIF(ifId,ifHead)
   {
-    FreeMsg(ifHead->msgBufIn);
-    FreeMsg(ifHead->msgBufOut);
+    if (ifHead->lenBufIn > 0)
+      FreeMsg(ifHead->msgBufIn);
+
+    if (ifHead->lenBufOut > 0)
+      FreeMsg(ifHead->msgBufOut);
   }
 
   ReleaseHeap();
@@ -136,13 +149,16 @@ void IFInitSend (IF_PROC *ifHead)
 {
   int error;
 
-  ifHead->msgOut =
-    SendASync(ifHead->vc,
-              ifHead->msgBufOut, ifHead->lenBufOut,
-              &error);
+  if (ifHead->lenBufOut>0)
+  {
+    ifHead->msgOut =
+      SendASync(ifHead->vc,
+                ifHead->msgBufOut, ifHead->lenBufOut,
+                &error);
 
-  /* TODO error abfrage */
-  send_mesgs++;
+    /* TODO error abfrage */
+    send_mesgs++;
+  }
 }
 
 
@@ -162,7 +178,7 @@ int IFPollSend (DDD_IF ifId)
     /* poll send calls */
     ForIF(ifId,ifHead)
     {
-      if (ifHead->msgOut!=-1)
+      if (ifHead->lenBufOut>0 && ifHead->msgOut!=-1)
       {
         int error = InfoASend(ifHead->vc, ifHead->msgOut);
         /* TODO complete error handling */

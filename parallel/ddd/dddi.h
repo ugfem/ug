@@ -70,12 +70,13 @@
 /*** DDD internal parameters ***/
 
 #define MAX_ELEMDESC    100  /* max. number of elements per TYPE_DESC       */
-#define MAX_TYPEDESC   32   /* max. number of TYPE_DESC                    */
+#define MAX_TYPEDESC   32    /* max. number of TYPE_DESC                    */
+#define MAX_PRIO       32    /* max. number of DDD_PRIO                     */
 
-#define MAX_OBJ    400000   /* max. number of locally registered objects   */
+#define MAX_OBJ    400000    /* max. number of locally registered objects   */
 #define MAX_CPL     100000   /* max. number of local objects with coupling  */
 
-#define MAX_TRIES 10000000   /* max. number of tries til timeout in IF-comm */
+#define MAX_TRIES 5000000    /* max. number of tries til timeout in IF-comm */
 
 
 
@@ -92,6 +93,14 @@ enum VChanType {
   VC_TOPO    = 17                /* channels used for xfer module (topology)    */
 };
 
+
+/* results of an prio-merge operation. see mgr/prio.c for more details. */
+enum PrioMergeVals {
+  PRIO_ERROR = -1,
+  PRIO_UNKNOWN,
+  PRIO_FIRST,
+  PRIO_SECOND
+};
 
 
 /****************************************************************************/
@@ -186,15 +195,17 @@ typedef struct _TYPE_DESC
   int hasHeader;                        /* flag: real ddd type (with header)?   */
   int offsetHeader;                     /* offset of header from begin of obj   */
 #else
-  int arraySize;                                                /* nuber of elements in the arrays		*/
-  int nextFree;                                                 /* next free object in arrays			*/
-  DDD_HDR hdr;                                          /* headers for all elements				*/
+  int arraySize;                                                /* number of elements in the arrays     */
+  int nextFree;                                                 /* next free object in arrays           */
+  DDD_HDR hdr;                                          /* headers for all elements             */
 #endif
   ELEM_DESC element[MAX_ELEMDESC];       /* element description array           */
   int nElements;                        /* number of elements in object         */
   size_t size;                          /* size of object, correctly aligned    */
 
   HandlerPtr handler[HANDLER_MAX];      /* pointer to handler functions         */
+
+  DDD_PRIO *prioMatrix;                 /* 2D matrix for comparing priorities   */
 
   /* redundancy for efficiency */
   int nPointers;                        /* number of outside references         */
@@ -411,6 +422,10 @@ COUPLING *ModCoupling (DDD_HDR, DDD_PROC, DDD_PRIO);
 void      DelCoupling (DDD_HDR, DDD_PROC);
 void      DisposeCouplingList (COUPLING *);
 void      DDD_InfoCoupling (DDD_HDR);
+
+
+/* prio.c */
+int PriorityMerge (TYPE_DESC *, DDD_PRIO, DDD_PRIO, DDD_PRIO *);
 
 
 /* if.c */

@@ -1,5 +1,16 @@
 ---------------------------
 
+CHANGES 1.7.3 -> 1.7.4
+
+---------------------------
+970124 kb
+fixed bug in interface communication.
+	- IF_Axxx (i.e. communication by attribute) crashed when
+	  IF-parts without objects existed.
+970124 kb
+increased size of NOTIFY-table.
+---------------------------
+
 CHANGES 1.7.2 -> 1.7.3
 
 ---------------------------

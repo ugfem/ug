@@ -899,6 +899,9 @@ void DDD_TypeDeclare (char *name, int *size, DDD_TYPE *type)
   desc->mode = DDD_TYPE_DECLARED;
   desc->name = name;
 
+  desc->prioMatrix = NULL;
+
+
 #ifdef C_FRONTEND
   /* increase #DDD_TYPEs, but return previously defined one */
   nDescr++; return(nDescr-1);
