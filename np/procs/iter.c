@@ -1606,7 +1606,7 @@ static INT SSORPreProcess  (NP_ITER *theNP, INT level,
   {
     if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector)) NP_RETURN(1,result[0]);
     if (SetAutoDamp(theNP,theGrid,np->AutoDamp,myMat,ssor->omega,np->DampVector)) NP_RETURN(1,result[0]);
-    //DPrintVector(MYMG(theGrid),np->DampVector);
+    /* DPrintVector(MYMG(theGrid),np->DampVector); */
   }
   if (np->Order!=NULL)
     if ((*np->Order->Order)(np->Order,level,myMat,result)) NP_RETURN(1,result[0]);
@@ -4571,35 +4571,40 @@ static INT SetAutoDamp_Scalar (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VEC
 
 static INT SetAutoDamp_Test (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
 {
-  INT i,n,comp,rtype;
+  INT n,comp,rtype;
   SHORT *advcomp;
   VECTOR *v;
   MATRIX *m;
-  DOUBLE diag,sum_1,sum_2,sum;
+  DOUBLE diag,sum,a,b,c;
 
   advcomp = VD_ncmp_cmpptr_of_otype(adv,NODEVEC,&n);
+  assert(n==2);
   for (v=FIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
   {
-    if (VECSKIP(v)) continue;
-    for (i=0; i<n; i++)
+    /* c comp */
+    comp = MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,0);
+    diag=ABS(MVALUE(VSTART(v),comp));
+    if (diag==0.0) return(1);
+    sum=0.0;
+    for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
+      sum+=ABS(MVALUE(m,comp));
+    if (diag>=sum) VVALUE(v,advcomp[0])=damp[0];
+    else VVALUE(v,advcomp[0])=damp[0]*diag/sum;
+
+    /* p comp */
+    VVALUE(v,advcomp[1])=damp[1];
+
+    /* check determinant */
+    sum=ABS(MVALUE(VSTART(v),comp))*ABS(MVALUE(VSTART(v),comp+3))+ABS(MVALUE(VSTART(v),comp+1))*ABS(MVALUE(VSTART(v),comp+2));
+    sum=ABS(MVALUE(VSTART(v),comp)*MVALUE(VSTART(v),comp+3)-MVALUE(VSTART(v),comp+1)*MVALUE(VSTART(v),comp+2))/sum;
+    if (sum<0.5)
     {
-      /* prepare */
-      comp = MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,i*(n+1));
-
-      /* calculate approximate-inverse diagonal */
-      sum_1=0.0;
-      sum_2=0.0;
-      for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
-        if (VINDEX(v)>MDESTINDEX(m) && !VECSKIP(MDEST(m)))
-          sum_1+=0.5*ABS(MVALUE(m,comp)-MVALUE(MADJ(m),comp));
-        else if (VINDEX(v)<MDESTINDEX(m) && !VECSKIP(MDEST(m)))
-          sum_2+=0.5*ABS(MVALUE(m,comp)-MVALUE(MADJ(m),comp));
-      sum=0.5*(sum_1+sum_2);
-      diag=0.5*MVALUE(VSTART(v),comp)+sum;
-
-      /* set diag via auto-damp omega */
-      if (MVALUE(VSTART(v),comp)*diag==0.0) return(1);
-      VVALUE(v,advcomp[i])=MVALUE(VSTART(v),comp)/diag;
+      /* UserWriteF("regularizing %e: ",sum); */
+      if (sum<VVALUE(v,advcomp[0])) UserWriteF("c ");
+      if (sum<VVALUE(v,advcomp[1])) UserWriteF("p ");
+      /* UserWriteF("\n"); */
+      VVALUE(v,advcomp[0])=MIN(sum,VVALUE(v,advcomp[0]));
+      VVALUE(v,advcomp[1])=MIN(sum,VVALUE(v,advcomp[1]));
     }
   }
 
