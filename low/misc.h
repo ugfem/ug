@@ -126,6 +126,13 @@
 #define BOOL_2_TF(b)            ((b) ? "TRUE" : "FALSE")
 #define BOOL_2_NF(b)            ((b) ? "ON" : "OFF")
 
+/* switching by strings */
+#define STR_SWITCH(str)                         if (1) {const char *StrPtr=str; if (0) StrPtr=str; /* dummy 'if' to admit 'else if' for cases */
+#define STR_CASE(opt)                           else if (strncmp(StrPtr,opt,strlen(opt))==0) {
+#define STR_BREAK                                       }
+#define STR_DEFAULT                             else {
+#define STR_SWITCH_END                          }
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
