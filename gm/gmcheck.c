@@ -5,7 +5,7 @@
 /*																			*/
 /* File:	  gmcheck.c     												*/
 /*																			*/
-/* Purpose:   checks of the dtat structure   								*/
+/* Purpose:   checks of the data structure   								*/
 /*																			*/
 /* Author:	  Stefan Lang                         							*/
 /*			  Institut fuer Computeranwendungen III 						*/
@@ -672,6 +672,7 @@ PAR(
 		NbElement = NBELEM(theElement,i);
 		if (NbElement != NULL)
 		{
+		    HEAPFAULT(NbElement);
 			/* lets see if NbElement has the neighbor theElement */
 			for (j=0; j<SIDES_OF_ELEM(NbElement); j++)
 				if (NBELEM(NbElement,j) == theElement)
@@ -883,6 +884,7 @@ if (0)
 	theFather = EFATHER(theElement);
 	if (theFather != NULL)
 	{
+	    HEAPFAULT(theFather);
 		/* check MIDNODE information of father */
 		for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
 		{
