@@ -47,7 +47,7 @@
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.9"
+#define DDD_VERSION    "1.8.10"
 
 
 /****************************************************************************/
@@ -522,6 +522,13 @@ private:
 };
 
 
+/****************************************************************************/
+
+/**
+        DDD Object class.
+        This is the DOKU for the DDD object class.
+ */
+
 class DDD_Object
 {
 public:
@@ -584,6 +591,12 @@ private:
 };
 
 
+/****************************************************************************/
+
+/**
+        DDD ObjectOf template class.
+        This is the DOKU for the DDD ObjectOf template class.
+ */
 
 template<class T>
 class DDD_ObjectOf : public DDD_Object
@@ -611,6 +624,12 @@ template<class T>
 DDD_TYPE DDD_ObjectOf<T>::_dddtype = 0;
 
 
+/****************************************************************************/
+
+/**
+        DDD IndexObject class.
+        This is the DOKU for the DDD IndexObject class.
+ */
 
 class DDD_IndexObject : public DDD_Object
 {
@@ -629,6 +648,12 @@ private:
   DDD_INDEX _index;
 };
 
+
+
+/**
+        DDD IndexObjectOf template class.
+        This is the DOKU for the DDD IndexObjectOf template class.
+ */
 
 template<class T>
 class DDD_IndexObjectOf : public DDD_IndexObject
@@ -657,32 +682,75 @@ DDD_TYPE DDD_IndexObjectOf<T>::_dddtype = 0;
 
 
 
-class DDD_GatherScatter
+/****************************************************************************/
+
+/**
+        DDD Communicator class.
+        Base class for all communicator classes.
+ */
+
+class DDD_Communicator
+{
+  // empty
+};
+
+
+/**
+        DDD GatherScatter class.
+        This is the DOKU for the DDD GatherScatter class.
+ */
+
+class DDD_GatherScatter : public DDD_Communicator
 {
 public:
   virtual int Gather  (DDD_Object*, void*) = 0;
   virtual int Scatter (DDD_Object*, void*) = 0;
 };
 
-class DDD_GatherScatterX
+
+/**
+        DDD GatherScatterX class.
+        This is the DOKU for the DDD GatherScatterX class.
+ */
+
+class DDD_GatherScatterX : public DDD_Communicator
 {
 public:
   virtual int Gather  (DDD_Object*, void*, DDD_PROC, DDD_PRIO) = 0;
   virtual int Scatter (DDD_Object*, void*, DDD_PROC, DDD_PRIO) = 0;
 };
 
-class DDD_Exec
+
+/**
+        DDD Exec class.
+        This is the DOKU for the DDD Exec class.
+ */
+
+class DDD_Exec : public DDD_Communicator
 {
 public:
   virtual int Exec (DDD_Object*) = 0;
 };
 
-class DDD_ExecX
+
+/**
+        DDD ExecX class.
+        This is the DOKU for the DDD ExecX class.
+ */
+
+class DDD_ExecX : public DDD_Communicator
 {
 public:
   virtual int Exec (DDD_Object*, DDD_PROC, DDD_PRIO) = 0;
 };
 
+
+/****************************************************************************/
+
+/**
+        DDD Interface class.
+        This is the DOKU for the DDD Interface class.
+ */
 
 class DDD_Interface
 {
@@ -726,6 +794,8 @@ private:
 
 #endif
 
+
+/****************************************************************************/
 
 
 /*

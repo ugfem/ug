@@ -14,33 +14,39 @@
 /*            internet: birken@ica3.uni-stuttgart.de                        */
 /*                                                                          */
 /* History:   960715 kb  begin                                              */
-/*                                                                          */
-/*                                                                          */
-/*                                                                          */
-/* NOTE: THIS MODULE IS NOT IN ITS FINAL STATE. THE INTERFACE DESIGN, IMPL. */
-/*       AND DOCUMENTATION NEED SOME REWORKING!!                            */
-/*                                                                          */
+/*            971007 kb  reworked                                           */
 /*                                                                          */
 /* Remarks:                                                                 */
-/*            This modules implements a MSG class, which is a hierarchical  */
-/*            format for xfer messages. Each MSG is composed of a number of */
-/*            Chunks of data, and has the following format:                 */
+/*            This module provides two basic abstractions:                  */
+/*            - sending of messages without explicit receive calls          */
+/*            - message types consisting of a set of components, where      */
+/*              components are tables (with entries of equal sizes) and     */
+/*              raw data chunks.                                            */
 /*                                                                          */
-/*               description                           |  type              */
-/*              ---------------------------------------+---------           */
-/*               magic number                          |  ULONG             */
-/*               #chunks                               |  ULONG             */
-/*               offset chunk1 (from beginning of Msg) |  ULONG             */
-/*               length chunk1 (in bytes)              |  ULONG             */
-/*               nItems chunk1                         |  ULONG             */
-/*                 ...                                 |  ...               */
-/*               offset chunkN                         |  ULONG             */
-/*               length chunkN                         |  ULONG             */
-/*               nItems chunkN                         |  ULONG             */
-/*               chunk1                                                     */
+/*            The LowComm subsystem uses the Notify-subsystem in order to   */
+/*            tell receiving processors that corresponding send-calls had   */
+/*            been issued.                                                  */
+/*                                                                          */
+/*            The structure of each message is:                             */
+/*                                                                          */
+/*               description                               |  type          */
+/*              -------------------------------------------+---------       */
+/*               magic number                              |  ULONG         */
+/*               #components                               |  ULONG         */
+/*               offset component1 (from beginning of Msg) |  ULONG         */
+/*               length component1 (in bytes)              |  ULONG         */
+/*               nItems component1                         |  ULONG         */
+/*                 ...                                     |  ...           */
+/*               offset componentN                         |  ULONG         */
+/*               length componentN                         |  ULONG         */
+/*               nItems componentN                         |  ULONG         */
+/*               component1                                                 */
 /*                ...                                                       */
-/*               chunkN                                                     */
+/*               componentN                                                 */
 /*                                                                          */
+/*            The LowComm subsystem is able to handle low-memory situations,*/
+/*            where the available memory is not enough for all send- and    */
+/*            receive-buffers. The LC_MsgAlloc for details.                 */
 /*                                                                          */
 /****************************************************************************/
 
@@ -56,6 +62,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "dddi.h"
 #include "basic/lowcomm.h"
@@ -126,9 +133,12 @@ typedef struct _CHUNK_DESC
 } CHUNK_DESC;
 
 
+enum MsgState { MSTATE_NEW, MSTATE_FREEZED, MSTATE_ALLOCATED, MSTATE_COMM, MSTATE_READY };
+
 typedef struct _MSG_DESC
 {
-  MSG_TYPE   *msgType;           /* message type of this actual message */
+  int msgState;                /* message state of this message (one of MsgState) */
+  MSG_TYPE   *msgType;         /* message type of this message */
 
   ULONG magic;                 /* magic number */
   CHUNK_DESC *chunks;          /* array of chunks */
@@ -189,8 +199,15 @@ static MSG_DESC *LC_FreeMsgDescs;
 /****************************************************************************/
 
 
+/**
+        Initiates LowComm subsystem.
+        This function has to be called exactly once in order
+        to initialize the LowComm subsystem. After a call to
+        this function, the functionality of the LowComm can
+        be used.
+ */
 
-void LowCommInit (void)
+void LC_Init (void)
 {
   LC_SendQueue = NULL;
   LC_RecvQueue = NULL;
@@ -205,7 +222,14 @@ void LowCommInit (void)
 }
 
 
-void LowCommExit (void)
+
+/**
+        Aborts LowComm subsystem.
+        This function frees memory allocated by the LowComm subsystem
+        and shuts down its communication structures.
+ */
+
+void LC_Exit (void)
 {
   /* TODO: free temporary data */
 }
@@ -213,6 +237,10 @@ void LowCommExit (void)
 
 
 /****************************************************************************/
+
+/*
+        auxiliary functions
+ */
 
 static MSG_DESC *NewMsgDesc (void)
 {
@@ -246,35 +274,10 @@ static void FreeMsgDesc (MSG_DESC *md)
 
 
 
-
-LC_MSGHANDLE LC_NewSendMsg (LC_MSGTYPE mt, DDD_PROC dest)
-{
-  MSG_TYPE *mtyp = (MSG_TYPE *)mt;
-  MSG_DESC *msg = NewMsgDesc();;
-
-#       if DebugLowComm<=6
-  sprintf(cBuffer, "%4d: LC_NewSendMsg(%s) dest=%d nSends=%d\n",
-          me, mtyp->name, dest, nSends+1);
-  DDD_PrintDebug(cBuffer);
-#       endif
-
-
-  msg->msgType = mtyp;
-  msg->proc = dest;
-  msg->bufferSize = 0;
-
-  /* allocate chunks array */
-  msg->chunks = (CHUNK_DESC *) AllocTmp(sizeof(CHUNK_DESC)*mtyp->nComps);
-
-  /* enter message into send queue */
-  msg->next = LC_SendQueue;
-  LC_SendQueue = msg;
-  nSends++;
-
-  return((LC_MSGHANDLE) msg);
-}
-
-
+/*
+        this function has internal access only because LowComm initiates
+        asynchronous receive calls itself.
+ */
 
 static LC_MSGHANDLE LC_NewRecvMsg (LC_MSGTYPE mt, DDD_PROC source, size_t size)
 {
@@ -287,6 +290,7 @@ static LC_MSGHANDLE LC_NewRecvMsg (LC_MSGTYPE mt, DDD_PROC source, size_t size)
   DDD_PrintDebug(cBuffer);
 #       endif
 
+  msg->msgState = MSTATE_NEW;
   msg->msgType = mtyp;
   msg->proc = source;
   msg->bufferSize = size;
@@ -294,7 +298,7 @@ static LC_MSGHANDLE LC_NewRecvMsg (LC_MSGTYPE mt, DDD_PROC source, size_t size)
   /* allocate chunks array */
   msg->chunks = (CHUNK_DESC *) AllocTmp(sizeof(CHUNK_DESC)*mtyp->nComps);
 
-  /* enter message into send queue */
+  /* enter message into recv queue */
   msg->next = LC_RecvQueue;
   LC_RecvQueue = msg;
 
@@ -318,122 +322,6 @@ static void LC_DeleteMsgBuffer (LC_MSGHANDLE msg)
   MSG_DESC   *md = (MSG_DESC *)msg;
 
   FreeMsg(md->buffer);
-}
-
-
-
-void LC_SetChunkSize (LC_MSGHANDLE msg, LC_MSGCOMP id, size_t size)
-{
-  MSG_DESC *md = (MSG_DESC *) msg;
-
-  md->chunks[id].size = size;
-  md->chunks[id].entries = 1;
-}
-
-
-void LC_SetTableSize (LC_MSGHANDLE msg, LC_MSGCOMP id, ULONG entries)
-{
-  MSG_DESC *md = (MSG_DESC *) msg;
-
-  md->chunks[id].size = ((int)entries) * md->msgType->comp[id].entry_size;
-  md->chunks[id].entries = entries;
-}
-
-
-/* returns size of message buffer */
-
-size_t LC_MsgPrepareSend (LC_MSGHANDLE msg)
-{
-  MSG_DESC   *md = (MSG_DESC *) msg;
-  ULONG      *hdr;
-  int i, j, n = md->msgType->nComps;
-
-  /* compute size of header */
-  md->bufferSize  = 2 * sizeof(ULONG);
-  md->bufferSize += (n * HDR_ENTRIES_PER_CHUNK * sizeof(ULONG));
-
-  /* compute size and offset for each chunk */
-  for(i=0; i<n; i++)
-  {
-    md->chunks[i].offset = md->bufferSize;
-    md->bufferSize += md->chunks[i].size;
-  }
-
-
-  /* allocate buffer for messages */
-  md->buffer = (char *) AllocMsg(md->bufferSize);
-  if (md->buffer==NULL)
-  {
-    sprintf(cBuffer, STR_NOMEM " in LC_MsgPrepareSend (size=%ld)",
-            (unsigned long)md->bufferSize);
-    DDD_PrintError('E', 6600, cBuffer);
-    HARD_EXIT;
-  }
-
-
-  /* enter control data into message header */
-  hdr = (ULONG *)md->buffer;
-  j=0;
-  hdr[j++] = MAGIC_DUMMY;         /* magic number */
-  hdr[j++] = n;
-
-  /* enter chunk descriptions into message header */
-  for(i=0; i<n; i++)
-  {
-    hdr[j++] = md->chunks[i].offset;
-    hdr[j++] = md->chunks[i].size;
-    hdr[j++] = md->chunks[i].entries;
-  }
-
-  return(md->bufferSize);
-}
-
-
-
-
-DDD_PROC LC_MsgGetProc (LC_MSGHANDLE msg)
-{
-  MSG_DESC *md = (MSG_DESC *)msg;
-
-  return md->proc;
-}
-
-
-void *LC_GetPtr (LC_MSGHANDLE msg, LC_MSGCOMP id)
-{
-  MSG_DESC *md = (MSG_DESC *)msg;
-
-  return ((void *)(((char *)md->buffer) + md->chunks[id].offset));
-}
-
-
-void LC_SetTableLen (LC_MSGHANDLE msg, LC_MSGCOMP id, ULONG n)
-{
-  MSG_DESC *md = (MSG_DESC *)msg;
-  ULONG *hdr = (ULONG *)md->buffer;
-
-  hdr[HDR_ENTRIES_PER_CHUNK*id+4] = n;
-  md->chunks[id].entries = n;
-}
-
-
-ULONG LC_GetTableLen (LC_MSGHANDLE msg, LC_MSGCOMP id)
-{
-  MSG_DESC *md = (MSG_DESC *)msg;
-
-  return((ULONG)md->chunks[id].entries);
-}
-
-
-
-void LC_MsgSend (LC_MSGHANDLE msg)
-{
-  MSG_DESC   *md = (MSG_DESC *)msg;
-  int error;
-
-  /* initiate asynchronous send */
-  md->msgId = SendASync(VCHAN_TO(md->proc),
-                        md->buffer, md->bufferSize, &error);
 }
 
 
@@ -479,14 +367,6 @@ static void LC_MsgRecv (MSG_DESC *md)
 }
 
 
-size_t LC_GetBufferSize (LC_MSGHANDLE msg)
-{
-  MSG_DESC *md = (MSG_DESC *) msg;
-
-  return(md->bufferSize);
-}
-
-
 
 /****************************************************************************/
 /*                                                                          */
@@ -504,35 +384,28 @@ size_t LC_GetBufferSize (LC_MSGHANDLE msg)
 
 static int LC_PollSend (void)
 {
-  MSG_DESC *md, *prev, *next=0;
+  MSG_DESC *md;
   int remaining, error;
 
   remaining = 0;
-  prev = NULL;
-  for(md=LC_SendQueue; md!=NULL; md=next)
+  for(md=LC_SendQueue; md!=NULL; md=md->next)
   {
-    next = md->next;
-
-    error = InfoASend(VCHAN_TO(md->proc), md->msgId);
-    /* TODO complete error handling */
-    if (error==1)
+    if (md->msgState==MSTATE_COMM)
     {
-      /* free message and buffer */
-      LC_DeleteMsg((LC_MSGHANDLE)md);
-      LC_DeleteMsgBuffer((LC_MSGHANDLE)md);
+      error = InfoASend(VCHAN_TO(md->proc), md->msgId);
+      /* TODO complete error handling */
+      if (error==1)
+      {
+        /* free message buffer */
+        LC_DeleteMsgBuffer((LC_MSGHANDLE)md);
 
-      /* remove from SendQueue */
-      if (prev==NULL)
-        LC_SendQueue = next;
+        md->msgState=MSTATE_READY;
+      }
       else
-        prev->next = next;
-      nSends--;
-    }
-    else
-    {
-      /* we keep this message in SendQueue */
-      remaining++;
-      prev = md;
+      {
+        /* we keep this message in SendQueue */
+        remaining++;
+      }
     }
   }
 
@@ -568,15 +441,15 @@ static int LC_PollRecv (void)
   remaining = 0;
   for(md=LC_RecvQueue; md!=NULL; md=md->next)
   {
-    if (md->msgId!=-1)
+    if (md->msgState==MSTATE_COMM)
     {
       error = InfoARecv(VCHAN_TO(md->proc), md->msgId);
       /* TODO complete error handling */
       if (error==1)
       {
-        md->msgId=-1;
-
         LC_MsgRecv(md);
+
+        md->msgState=MSTATE_READY;
       }
       else
       {
@@ -595,6 +468,142 @@ static int LC_PollRecv (void)
 
 
 /****************************************************************************/
+/*                                                                          */
+/* Function:  LC_FreeSendQueue                                              */
+/*                                                                          */
+/****************************************************************************/
+
+static void LC_FreeSendQueue (void)
+{
+  MSG_DESC *md, *next;
+
+  for(md=LC_SendQueue; md!=NULL; md=next)
+  {
+    assert(md->msgState==MSTATE_READY);
+
+    next = md->next;
+    LC_DeleteMsg((LC_MSGHANDLE)md);
+  }
+
+
+  LC_SendQueue = NULL;
+  nSends = 0;
+}
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  LC_FreeRecvQueue                                              */
+/*                                                                          */
+/****************************************************************************/
+
+static void LC_FreeRecvQueue (void)
+{
+  MSG_DESC *md, *next;
+
+  for(md=LC_RecvQueue; md!=NULL; md=next)
+  {
+    assert(md->msgState==MSTATE_READY);
+
+    next = md->next;
+    LC_DeleteMsg((LC_MSGHANDLE)md);
+  }
+
+
+  LC_RecvQueue = NULL;
+  nRecvs = 0;
+}
+
+
+
+/****************************************************************************/
+
+
+/* LC_MsgFreeze and LC_MsgAlloc are the two parts of LC_MsgPrepareSend(). */
+
+/* returns size of message buffer */
+
+size_t LC_MsgFreeze (LC_MSGHANDLE msg)
+{
+  MSG_DESC   *md = (MSG_DESC *) msg;
+  int i, n = md->msgType->nComps;
+
+  assert(md->msgState==MSTATE_NEW);
+
+  /* compute size of header */
+  md->bufferSize  = 2 * sizeof(ULONG);
+  md->bufferSize += (n * HDR_ENTRIES_PER_CHUNK * sizeof(ULONG));
+
+  /* compute size and offset for each chunk */
+  for(i=0; i<n; i++)
+  {
+    md->chunks[i].offset = md->bufferSize;
+    md->bufferSize += md->chunks[i].size;
+  }
+
+  md->msgState=MSTATE_FREEZED;
+
+  return(md->bufferSize);
+}
+
+
+
+int LC_MsgAlloc (LC_MSGHANDLE msg)
+{
+  MSG_DESC   *md = (MSG_DESC *) msg;
+  ULONG      *hdr;
+  int i, j, n = md->msgType->nComps;
+  int remaining=1, give_up = FALSE;
+
+  assert(md->msgState==MSTATE_FREEZED);
+
+  /* the following code tries to allocate the message buffer.
+     if this fails, the previously started asynchronous sends are
+     polled, in order to free their message buffers. if there are
+     no remaining async-sends, we give up. */
+  do {
+    /* allocate buffer for messages */
+    md->buffer = (char *) AllocMsg(md->bufferSize);
+    if (md->buffer==NULL)
+    {
+      if (remaining==0)
+        give_up = TRUE;
+      else
+      {
+        /* couldn't get msg-buffer. try to poll previous messages. */
+        /* first, poll receives to avoid communication deadlock. */
+        LC_PollRecv();
+
+        /* now, try to poll sends and free their message buffers */
+        remaining  = LC_PollSend();
+      }
+    }
+  } while (md->buffer==NULL && !give_up);
+
+  if (give_up)
+    return(FALSE);
+
+
+  /* enter control data into message header */
+  hdr = (ULONG *)md->buffer;
+  j=0;
+  hdr[j++] = MAGIC_DUMMY;         /* magic number */
+  hdr[j++] = n;
+
+  /* enter chunk descriptions into message header */
+  for(i=0; i<n; i++)
+  {
+    hdr[j++] = md->chunks[i].offset;
+    hdr[j++] = md->chunks[i].size;
+    hdr[j++] = md->chunks[i].entries;
+  }
+
+  md->msgState=MSTATE_ALLOCATED;
+
+  return(TRUE);
+}
+
+
 
 
 /*
@@ -611,7 +620,10 @@ static void LC_PrepareRecv (void)
 
   /* compute sum of message buffer sizes */
   for(sumSize=0, md=LC_RecvQueue; md!=NULL; md=md->next)
+  {
+    assert(md->msgState==MSTATE_NEW);
     sumSize += md->bufferSize;
+  }
 
 
   /* allocate buffer for messages */
@@ -634,14 +646,340 @@ static void LC_PrepareRecv (void)
 
     md->msgId = RecvASync(VCHAN_TO(md->proc),
                           md->buffer, md->bufferSize, &error);
+
+    md->msgState=MSTATE_COMM;
   }
+}
+
+
+/****************************************************************************/
+
+/*
+        MSG_TYPE definition functions
+ */
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  LC_NewMsgType                                                 */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+        Declares new message-type.
+        Before messages may be sent and received with the LowComm
+        subsystem, at least one {\em message-type} must be defined by
+        a global call to this function. Subsequently, calls to
+        \lcfunk{NewMsgTable} and \lcfunk{NewMsgChunk} can be used
+        in order to define the structure of the new message-type.
+
+        Each message-type in the LowComm subsystem consists of a set
+        of {\em message-components}. Possible message-components are:
+        {\em tables} (with entries of equal size) and raw {\em data chunks}.
+        The set of message-components has the same structure for
+        all messages of the same type, but the number of table entries
+        and the size of the data chunks differ from message to message.
+
+   @return identifier of new message-type
+   @param aName  name of message-type. This string is used for debugging
+        and logging output.
+ */
+
+LC_MSGTYPE LC_NewMsgType (char *aName)
+{
+  MSG_TYPE *mt;
+
+  mt = (MSG_TYPE *) AllocCom(sizeof(MSG_TYPE));
+  if (mt==NULL)
+  {
+    DDD_PrintError('E', 6601, STR_NOMEM " in LC_NewMsgType()");
+    HARD_EXIT;
+  }
+
+  mt->name   = aName;
+  mt->nComps = 0;
+
+  /* insert into linked list of message types */
+  mt->next = LC_MsgTypes;
+  LC_MsgTypes = mt;
+
+  return((LC_MSGTYPE) mt);
+}
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  LC_NewMsgChunk                                                */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+        Add data chunk to current set of a message-type's message-components.
+        This function is called after a previous call to \lcfunk{NewMsgType}
+        in order to add a new message-component to the message-type.
+        The component added by this function is a chunk of raw data.
+        The size of the chunk is not specified here, use \lcfunk{SetChunkSize}
+        for specifying the data chunk size for a given (concrete) message.
+
+        See \lcfunk{NewMsgTable} for adding message-tables, which are
+        a different kind of message-component.
+
+   @return           identifier of new message-component
+   @param  aName     name of new message component
+   @param  aMsgType  previously declared message-type
+ */
+
+LC_MSGCOMP LC_NewMsgChunk (char *aName, LC_MSGTYPE aMsgType)
+{
+  MSG_TYPE  *mtyp = (MSG_TYPE *)aMsgType;
+  LC_MSGCOMP id = mtyp->nComps++;
+
+  if (id>=MAX_COMPONENTS)
+  {
+    sprintf(cBuffer, "too many message components (max. %d)",
+            MAX_COMPONENTS);
+    DDD_PrintError('E', 6630, cBuffer);
+    HARD_EXIT;
+  }
+
+  mtyp->comp[id].type = CT_CHUNK;
+  mtyp->comp[id].name = aName;
+
+  return(id);
 }
 
 
 
 
 /****************************************************************************/
+/*                                                                          */
+/* Function:  LC_NewMsgTable                                                */
+/*                                                                          */
+/****************************************************************************/
 
+/**
+        Add table to current set of a message-type's message-components.
+        This function is called after a previous call to \lcfunk{NewMsgType}
+        in order to add a new message-component to the message-type.
+        The component added by this function is a table of data, where
+        each table entry has the same size.
+        The overall size of the whole table is not specified here, but only
+        the size for one table entry. Use \lcfunk{SetTableSize} for setting
+        the number of reserved table entries in a given (concrete) message;
+        use \lcfunk{SetTableLen} in order to specify the number of valid
+        entries in a given message.
+
+        See \lcfunk{NewMsgChunk} for adding data chunks, which are
+        a different kind of message-component.
+
+   @return           identifier of new message-component
+   @param  aName     name of new message component
+   @param  aMsgType  previously declared message-type
+   @param  aSize     size of each table entry (in byte)
+ */
+
+LC_MSGCOMP LC_NewMsgTable (char *aName, LC_MSGTYPE aMsgType, size_t aSize)
+{
+  MSG_TYPE  *mtyp = (MSG_TYPE *)aMsgType;
+  LC_MSGCOMP id = mtyp->nComps++;
+
+  if (id>=MAX_COMPONENTS)
+  {
+    sprintf(cBuffer, "too many message components (max. %d)",
+            MAX_COMPONENTS);
+    DDD_PrintError('E', 6631, cBuffer);
+    HARD_EXIT;
+  }
+
+  mtyp->comp[id].type = CT_TABLE;
+  mtyp->comp[id].entry_size = aSize;
+  mtyp->comp[id].name = aName;
+
+  return(id);
+}
+
+
+
+/****************************************************************************/
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  LC_NewSendMsg                                                 */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+        Create new message on sending processor.
+        This function creates a new message handle on the sending processor and
+        links it into the LowComm send-queue. The message has a given message-type
+        and a given destination processor. Before the message is actually sent
+        (by calling \lcfunk{MsgSend}), the sizes of the message's components
+        must be set (\lcfunk{SetTableSize}, \lcfunk{SetChunkSize}) and the message
+        buffer must be prepared (via \lcfunk{MsgPrepareSend}). After that,
+        the message's tables and chunks can be filled with data and the message
+        sending process can be initiated by \lcfunk{MsgSend}.
+
+   @return          identifier of new message
+   @param aMsgType  message-type for new message
+   @param aDest     destination processor of new message
+ */
+
+LC_MSGHANDLE LC_NewSendMsg (LC_MSGTYPE aMsgType, DDD_PROC aDest)
+{
+  MSG_TYPE *mtyp = (MSG_TYPE *)aMsgType;
+  MSG_DESC *msg = NewMsgDesc();
+
+#       if DebugLowComm<=6
+  sprintf(cBuffer, "%4d: LC_NewSendMsg(%s) dest=%d nSends=%d\n",
+          me, mtyp->name, aDest, nSends+1);
+  DDD_PrintDebug(cBuffer);
+#       endif
+
+
+  msg->msgState = MSTATE_NEW;
+  msg->msgType = mtyp;
+  msg->proc = aDest;
+  msg->bufferSize = 0;
+
+  /* allocate chunks array */
+  msg->chunks = (CHUNK_DESC *) AllocTmp(sizeof(CHUNK_DESC)*mtyp->nComps);
+  if (msg->chunks==NULL)
+  {
+    DDD_PrintError('E', 6602, STR_NOMEM " in LC_NewSendMsg()");
+    HARD_EXIT;
+  }
+
+
+  /* enter message into send queue */
+  msg->next = LC_SendQueue;
+  LC_SendQueue = msg;
+  nSends++;
+
+  return((LC_MSGHANDLE) msg);
+}
+
+
+
+
+void LC_SetChunkSize (LC_MSGHANDLE msg, LC_MSGCOMP id, size_t size)
+{
+  MSG_DESC *md = (MSG_DESC *) msg;
+
+  assert(md->msgState==MSTATE_NEW);
+  assert(id < md->msgType->nComps);
+
+  md->chunks[id].size = size;
+  md->chunks[id].entries = 1;
+}
+
+
+void LC_SetTableSize (LC_MSGHANDLE msg, LC_MSGCOMP id, ULONG entries)
+{
+  MSG_DESC *md = (MSG_DESC *) msg;
+
+  assert(md->msgState==MSTATE_NEW);
+  assert(id < md->msgType->nComps);
+
+  md->chunks[id].size = ((int)entries) * md->msgType->comp[id].entry_size;
+  md->chunks[id].entries = entries;
+}
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  LC_MsgPrepareSend                                             */
+/*                                                                          */
+/****************************************************************************/
+
+
+/* returns size of message buffer */
+
+size_t LC_MsgPrepareSend (LC_MSGHANDLE msg)
+{
+  size_t size = LC_MsgFreeze(msg);
+  if (! LC_MsgAlloc(msg))
+  {
+    sprintf(cBuffer, STR_NOMEM " in LC_MsgPrepareSend (size=%ld)",
+            (unsigned long)size);
+    DDD_PrintError('E', 6600, cBuffer);
+    HARD_EXIT;
+  }
+
+  return(size);
+}
+
+
+
+
+DDD_PROC LC_MsgGetProc (LC_MSGHANDLE msg)
+{
+  MSG_DESC *md = (MSG_DESC *)msg;
+
+  return md->proc;
+}
+
+
+void *LC_GetPtr (LC_MSGHANDLE msg, LC_MSGCOMP id)
+{
+  MSG_DESC *md = (MSG_DESC *)msg;
+
+  return ((void *)(((char *)md->buffer) + md->chunks[id].offset));
+}
+
+
+void LC_SetTableLen (LC_MSGHANDLE msg, LC_MSGCOMP id, ULONG n)
+{
+  MSG_DESC *md = (MSG_DESC *)msg;
+  ULONG *hdr = (ULONG *)md->buffer;
+
+  hdr[HDR_ENTRIES_PER_CHUNK*id+4] = n;
+  md->chunks[id].entries = n;
+}
+
+
+ULONG LC_GetTableLen (LC_MSGHANDLE msg, LC_MSGCOMP id)
+{
+  MSG_DESC *md = (MSG_DESC *)msg;
+
+  return((ULONG)md->chunks[id].entries);
+}
+
+
+void LC_MsgSend (LC_MSGHANDLE msg)
+{
+  MSG_DESC   *md = (MSG_DESC *)msg;
+  int error;
+
+  assert(md->msgState==MSTATE_ALLOCATED);
+
+  /* initiate asynchronous send */
+  md->msgId = SendASync(VCHAN_TO(md->proc),
+                        md->buffer, md->bufferSize, &error);
+
+  md->msgState=MSTATE_COMM;
+}
+
+
+size_t LC_GetBufferSize (LC_MSGHANDLE msg)
+{
+  MSG_DESC *md = (MSG_DESC *) msg;
+
+  return(md->bufferSize);
+}
+
+
+/****************************************************************************/
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  LC_Connect                                                    */
+/*                                                                          */
+/****************************************************************************/
 
 int LC_Connect (LC_MSGTYPE mtyp)
 {
@@ -749,6 +1087,13 @@ int LC_Connect (LC_MSGTYPE mtyp)
 }
 
 
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  LC_Communicate                                                */
+/*                                                                          */
+/****************************************************************************/
+
 LC_MSGHANDLE *LC_Communicate (void)
 {
   int leftSend, leftRecv;
@@ -763,12 +1108,8 @@ LC_MSGHANDLE *LC_Communicate (void)
   leftSend = nSends;
   leftRecv = nRecvs;
   do {
-    if (leftRecv>0)
-      leftRecv = LC_PollRecv();
-
-    if (leftSend>0)
-      leftSend = LC_PollSend();
-
+    if (leftRecv>0) leftRecv = LC_PollRecv();
+    if (leftSend>0) leftSend = LC_PollSend();
   } while (leftRecv>0 || leftSend>0);
 
 
@@ -781,24 +1122,18 @@ LC_MSGHANDLE *LC_Communicate (void)
 }
 
 
+/****************************************************************************/
+/*                                                                          */
+/* Function:  LC_Cleanup                                                    */
+/*                                                                          */
+/****************************************************************************/
+
 void LC_Cleanup (void)
 {
-  MSG_DESC *md, *next=0;
-
 #       if DebugLowComm<=9
   sprintf(cBuffer, "%4d: LC_Cleanup() ...\n", me);
   DDD_PrintDebug(cBuffer);
 #       endif
-
-  /* free recv messages */
-  for(md=LC_RecvQueue; md!=NULL; md=next)
-  {
-    next = md->next;
-
-    /* free message */
-    LC_DeleteMsg((LC_MSGHANDLE)md);
-  }
-
 
   if (nRecvs>0)
   {
@@ -812,8 +1147,12 @@ void LC_Cleanup (void)
     theRecvArray=NULL;
   }
 
-  LC_RecvQueue = NULL;
-  nRecvs = 0;
+  /* free recv queue */
+  LC_FreeRecvQueue();
+
+  /* free send queue */
+  LC_FreeSendQueue();
+
 
 #       if DebugLowComm<=9
   sprintf(cBuffer, "%4d: LC_Cleanup() ready\n", me);
@@ -824,74 +1163,6 @@ void LC_Cleanup (void)
 
 
 /****************************************************************************/
-
-/*
-                MSG_TYPE definition functions
- */
-
-
-
-LC_MSGTYPE LC_NewMsgType (char *msgname)
-{
-  MSG_TYPE *mt;
-
-  mt = (MSG_TYPE *) AllocCom(sizeof(MSG_TYPE));
-  /* TODO error handling */
-  mt->name   = msgname;
-  mt->nComps = 0;
-
-  /* insert into linked list of message types */
-  mt->next = LC_MsgTypes;
-  LC_MsgTypes = mt;
-
-  return((LC_MSGTYPE) mt);
-}
-
-
-LC_MSGCOMP LC_NewMsgChunk (char *name, LC_MSGTYPE mt)
-{
-  MSG_TYPE  *mtyp = (MSG_TYPE *)mt;
-  LC_MSGCOMP id = mtyp->nComps++;
-
-  if (id>=MAX_COMPONENTS)
-  {
-    sprintf(cBuffer, "too many message components (max. %d)",
-            MAX_COMPONENTS);
-    DDD_PrintError('E', 6630, cBuffer);
-    HARD_EXIT;
-  }
-
-  mtyp->comp[id].type = CT_CHUNK;
-  mtyp->comp[id].name = name;
-
-  return(id);
-}
-
-
-
-LC_MSGCOMP LC_NewMsgTable (char *name, LC_MSGTYPE mt, size_t size)
-{
-  MSG_TYPE  *mtyp = (MSG_TYPE *)mt;
-  LC_MSGCOMP id = mtyp->nComps++;
-
-  if (id>=MAX_COMPONENTS)
-  {
-    sprintf(cBuffer, "too many message components (max. %d)",
-            MAX_COMPONENTS);
-    DDD_PrintError('E', 6631, cBuffer);
-    HARD_EXIT;
-  }
-
-  mtyp->comp[id].type = CT_TABLE;
-  mtyp->comp[id].entry_size = size;
-  mtyp->comp[id].name = name;
-
-  return(id);
-}
-
-
-/****************************************************************************/
-
 
 #define LC_COLWIDTH   10
 #define LC_DFLTNAME   "<?>"

@@ -141,6 +141,24 @@ static int sort_ObjTabEntries (const void *e1, const void *e2)
 }
 
 
+static int sort_MsgSize (const void *e1, const void *e2)
+{
+  XFERMSG   *xm1, *xm2;
+  size_t s1, s2;
+
+  xm1 = *((XFERMSG **)e1);
+  xm2 = *((XFERMSG **)e2);
+
+  s1 = LC_GetBufferSize(xm1->msg_h);
+  s2 = LC_GetBufferSize(xm2->msg_h);
+
+  /* sort with descending msg-size */
+  if (s1 < s2) return(1);
+  if (s1 > s2) return(-1);
+
+  return(0);
+}
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -659,9 +677,54 @@ void XferPackMsgs (XFERMSG *theMsgs)
   fflush(stdout);
 #endif
 
-  /* pack messages and send away */
+  /* sort messages according to decreasing size. i.e., send
+     biggest message first. LowComm will use this to handle
+     situations with little memory ressources. */
+  {
+    int i, n;
+    XFERMSG **xm_array;
+
+    /* count number of messages */
+    for(n=0, xm=theMsgs; xm!=NULL; xm=xm->next) n++;
+
+    if (n>0)
+    {
+      /* alloc array of pointers to messages */
+      xm_array = (XFERMSG **) AllocTmp(sizeof(XFERMSG *) * n);
+      if (xm_array!=NULL)
+      {
+        for(i=0, xm=theMsgs; i<n; xm=xm->next, i++) xm_array[i] = xm;
+
+        /* sort array and relink list */
+        qsort(xm_array, n, sizeof(XFERMSG *), sort_MsgSize);
+        theMsgs = xm_array[0];
+        for(i=0; i<n-1; i++) xm_array[i]->next = xm_array[i+1];
+        if (n>1) xm_array[n-1]->next = NULL;
+
+        /* free array */
+        FreeTmp(xm_array);
+      }
+      /* else
+         {
+              resorting msg-list is not possible due to memory shortage.
+              simply don't do it.
+         }
+       */
+    }
+  }
+
+
+
+  /* allocate buffer, pack messages and send away */
   for(xm=theMsgs; xm!=NULL; xm=xm->next)
   {
+    if (! LC_MsgAlloc(xm->msg_h))
+    {
+      sprintf(cBuffer, STR_NOMEM " in XferPackMsgs (size=%ld)",
+              (unsigned long) LC_GetBufferSize(xm->msg_h));
+      DDD_PrintError('E', 6522, cBuffer);
+      HARD_EXIT;
+    }
     XferPackSingleMsg(xm);
     LC_MsgSend(xm->msg_h);
   }

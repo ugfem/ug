@@ -1,14 +1,32 @@
 ---------------------------
 
+CHANGES 1.8.9 -> 1.8.10
+
+---------------------------
+971007 kb
+Global coupling-table is now enlarged dynamically.
+	- the upper limit MAX_CPL has been removed. each time the maximal
+	  number of couplings on a processor is reached, its coupling table
+	  (and depending on this, other tables) is doubled in size. this is
+	  to make DDD more robust also on very, very big machines.
+971007 kb
+LowComm is now able to handle low-memory situations.
+	- if LowComm cannot get enough memory from the MemMgr-layer,
+	  it will try now to wait for running messages and free their
+	  send buffers. After that, enough memory should be available.
+	  The Xfer-implementation had to be changed slightly to use this
+	  feature.
+---------------------------
+
 CHANGES 1.8.8 -> 1.8.9
 
 ---------------------------
-970909
+970909 kb
 added inline documentation.
 	- in some later version, the DDD sources will be completely
 	  documented by inline descriptions in DOC++ (ZIB Berlin)
 	  style. This is work in progress.
-970908
+970908 kb
 removed need for (very) large object table.
 	- in all earlier versions, DDD maintained on each processor
 	  a pointer array referencing all DDD objects on that processor.
@@ -27,7 +45,7 @@ removed need for (very) large object table.
 CHANGES 1.8.7 -> 1.8.8
 
 ---------------------------
-970704
+970704 kb
 bugfix in Xfer module.
 	- reference-merging does now work also with rule XFER-C2 in all situations.
 ---------------------------

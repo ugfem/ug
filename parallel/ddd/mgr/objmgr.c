@@ -81,13 +81,18 @@
 RCSID("$Header$",DDD_RCS_STRING)
 
 
+
+/* local unique ID count */
+static int theIdCount;
+
+
+
 /****************************************************************************/
 /*                                                                          */
 /* definition of exported global variables                                  */
 /*                                                                          */
 /****************************************************************************/
 
-extern int theIdCount;
 
 
 
@@ -116,17 +121,17 @@ DDD_HDR *LocalObjectsList (void)
 {
   DDD_HDR   *locObjs;
 
-  if (nObjs==0)
+  if (ddd_nObjs==0)
     return(NULL);
 
-  locObjs = (DDD_HDR *) AllocTmp(nObjs*sizeof(DDD_HDR));
+  locObjs = (DDD_HDR *) AllocTmp(ddd_nObjs*sizeof(DDD_HDR));
   if (locObjs==NULL) {
     DDD_PrintError('E', 2210,  STR_NOMEM " in LocalObjectsList");
     return(NULL);
   }
 
-  memcpy(locObjs, ddd_ObjTable, nObjs*sizeof(DDD_HDR));
-  qsort(locObjs, nObjs, sizeof(DDD_HDR), sort_ObjListGID);
+  memcpy(locObjs, ddd_ObjTable, ddd_nObjs*sizeof(DDD_HDR));
+  qsort(locObjs, ddd_nObjs, sizeof(DDD_HDR), sort_ObjListGID);
 
   return(locObjs);
 }
@@ -153,6 +158,41 @@ DDD_HDR *LocalCoupledObjectsList (void)
 
 
 /****************************************************************************/
+
+
+void ddd_EnsureObjTabSize (int n)
+{
+  DDD_HDR *old_ObjTable   = ddd_ObjTable;
+  int old_ObjTabSize = ddd_ObjTabSize;
+
+  /* if size is large enough, we are already finished. */
+  if (old_ObjTabSize >= n)
+    return;
+
+  /* set new size */
+  ddd_ObjTabSize = n;
+
+  /* allocate new object table */
+  ddd_ObjTable = (DDD_HDR *) AllocTmp(sizeof(DDD_HDR) * ddd_ObjTabSize);
+  if (ddd_ObjTable==NULL)
+  {
+    sprintf(cBuffer, STR_NOMEM " for object table of size %ld",
+            ((long)ddd_ObjTabSize) * sizeof(DDD_HDR));
+    DDD_PrintError('E', 2223, cBuffer);
+    HARD_EXIT;
+  }
+
+  /* copy data from old cpl-table to new one, assuming the old one is full */
+  memcpy(ddd_ObjTable, old_ObjTable, sizeof(DDD_HDR) * old_ObjTabSize);
+
+  /* free old one */
+  FreeTmp(old_ObjTable);
+
+  /* issue a warning in order to inform user */
+  sprintf(cBuffer, "increased object table, now %d entries", ddd_ObjTabSize);
+  DDD_PrintError('W', 2224, cBuffer);
+}
+
 
 /****************************************************************************/
 
@@ -394,7 +434,7 @@ if (prio>=MAX_PRIO)
    global ddd_ObjTable. */
 
 /* check whether there are available objects */
-if (nObjs==MAX_OBJ)
+if (ddd_nObjs==ddd_ObjTabSize)
 {
   /* TODO update docu */
   /* this is a fatal case. we cant register more objects here */
@@ -404,9 +444,9 @@ if (nObjs==MAX_OBJ)
 }
 
 /* insert into theObj array */
-ddd_ObjTable[nObjs] = hdr;
-OBJ_INDEX(hdr) = nObjs;
-nObjs++;
+ddd_ObjTable[ddd_nObjs] = hdr;
+OBJ_INDEX(hdr) = ddd_nObjs;
+ddd_nObjs++;
         #else
 /* if we dont have WithFullObjectTable, pure local objects without
    copies on other processors aren't registered by DDD. Therefore,
@@ -536,7 +576,7 @@ objIndex = OBJ_INDEX(hdr);
 if (objIndex<NCPL_GET)
 {
   /* this is an object with couplings */
-  cpl = theCpl[objIndex];
+  cpl = IdxCplList(objIndex);
 
   /* if not during xfer, deletion may be inconsistent */
   if (!xfer_active)
@@ -553,23 +593,23 @@ if (objIndex<NCPL_GET)
   }
 
   NCPL_DECREMENT;
-  nObjs--;
+  ddd_nObjs--;
 
   /* fill slot of deleted obj with last cpl-obj */
   ddd_ObjTable[objIndex] = ddd_ObjTable[NCPL_GET];
-  theCpl[objIndex] = theCpl[NCPL_GET];
-  theCplN[objIndex] = theCplN[NCPL_GET];
+  IdxCplList(objIndex) = IdxCplList(NCPL_GET);
+  IdxNCpl(objIndex) = IdxNCpl(NCPL_GET);
   OBJ_INDEX(ddd_ObjTable[objIndex]) = objIndex;
 
                 #ifdef WithFullObjectTable
   /* fill slot of last cpl-obj with last obj */
-  if (NCPL_GET<nObjs)
+  if (NCPL_GET<ddd_nObjs)
   {
-    ddd_ObjTable[NCPL_GET] = ddd_ObjTable[nObjs];
+    ddd_ObjTable[NCPL_GET] = ddd_ObjTable[ddd_nObjs];
     OBJ_INDEX(ddd_ObjTable[NCPL_GET]) = NCPL_GET;
   }
                 #else
-  assert(NCPL_GET==nObjs);
+  assert(NCPL_GET==ddd_nObjs);
                 #endif
 
   /* dispose all couplings */
@@ -580,10 +620,10 @@ else
                 #ifdef WithFullObjectTable
   /* this is an object without couplings */
   /* deletion is not dangerous (no consistency problem) */
-  nObjs--;
+  ddd_nObjs--;
 
   /* fill slot of deleted obj with last obj */
-  ddd_ObjTable[objIndex] = ddd_ObjTable[nObjs];
+  ddd_ObjTable[objIndex] = ddd_ObjTable[ddd_nObjs];
   OBJ_INDEX(ddd_ObjTable[objIndex]) = objIndex;
                 #endif
 }
@@ -752,7 +792,7 @@ void DDD_HdrConstructorCopy (DDD_HDR newhdr, DDD_PRIO prio)
 
         #ifdef WithFullObjectTable
   /* check whether there are available objects */
-  if (nObjs==MAX_OBJ)
+  if (ddd_nObjs==ddd_ObjTabSize)
   {
     /* TODO update docu */
     /* this is a fatal case. we cant register more objects here */
@@ -761,12 +801,12 @@ void DDD_HdrConstructorCopy (DDD_HDR newhdr, DDD_PRIO prio)
   }
 
   /* insert into theObj array */
-  ddd_ObjTable[nObjs] = newhdr;
-  OBJ_INDEX(newhdr) = nObjs;
-  nObjs++;
+  ddd_ObjTable[ddd_nObjs] = newhdr;
+  OBJ_INDEX(newhdr) = ddd_nObjs;
+  ddd_nObjs++;
         #else
   MarkHdrLocal(newhdr);
-  assert(nObjs==NCPL_GET);
+  assert(ddd_nObjs==NCPL_GET);
         #endif
 
   /* init LDATA components. GDATA components will be copied elsewhere */
@@ -824,7 +864,7 @@ void DDD_HdrConstructorMove (DDD_HDR newhdr, DDD_HDR oldhdr)
   /* change pointers from couplings to object */
   if (objIndex<NCPL_GET)
   {
-    COUPLING *cpl = theCpl[objIndex];
+    COUPLING *cpl = IdxCplList(objIndex);
 
     for(; cpl!=NULL; cpl=CPL_NEXT(cpl)) {
       cpl->obj = newhdr;
@@ -983,15 +1023,40 @@ DDD_HDR DDD_SearchHdr (DDD_GID *_gid)
 int i;
 
 i=0;
-while (i<nObjs && OBJ_GID(ddd_ObjTable[i])!=gid)
+while (i<ddd_nObjs && OBJ_GID(ddd_ObjTable[i])!=gid)
   i++;
 
-if (i<nObjs)
+if (i<ddd_nObjs)
 {
   return(ddd_ObjTable[i]);
 }
 else
   return(NULL);
+}
+
+
+/****************************************************************************/
+
+
+void ddd_ObjMgrInit (void)
+{
+  theIdCount = 1;        /* start with 1, for debugging reasons */
+
+  /* allocate first (smallest) object table */
+  ddd_ObjTable = (DDD_HDR *) AllocTmp(sizeof(DDD_HDR) * MAX_OBJ_START);
+  if (ddd_ObjTable==NULL)
+  {
+    DDD_PrintError('E', 2222, STR_NOMEM " for initial object table");
+    HARD_EXIT;
+  }
+
+  ddd_ObjTabSize = MAX_OBJ_START;
+}
+
+
+void ddd_ObjMgrExit (void)
+{
+  FreeTmp(ddd_ObjTable);
 }
 
 

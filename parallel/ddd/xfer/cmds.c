@@ -1037,6 +1037,7 @@ void DDD_XferCopyObj (DDD_TYPE *type, DDD_OBJ *obj, DDD_PROC *proc,
 /*                                                                          */
 /****************************************************************************/
 
+#if defined(C_FRONTEND)
 /**
         Transfer-command for objects of varying sizes.
         This function is an extension of \funk{XferCopyObj}.
@@ -1051,6 +1052,7 @@ void DDD_XferCopyObj (DDD_TYPE *type, DDD_OBJ *obj, DDD_PROC *proc,
    @param prio  DDD priority of new object copy.
    @param size  real size of local object.
  */
+#endif
 
 
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
@@ -1092,6 +1094,7 @@ void DDD_XferCopyObjX (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio, size_t size)
 /*                                                                          */
 /****************************************************************************/
 
+#ifdef C_FRONTEND
 /**
         Transfer array of additional data objects with a DDD local object.
         This function transfers an array of additional data objects
@@ -1119,7 +1122,7 @@ void DDD_XferCopyObjX (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio, size_t size)
         registering the object structure via \funk{TypeDefine} as usual,
         but without including the DDD object header.
  */
-#ifdef C_FRONTEND
+
 void DDD_XferAddData (int cnt, DDD_TYPE typ)
 {
   XFERADDDATA *xa;
@@ -1166,7 +1169,7 @@ void DDD_XferAddData (int cnt, DDD_TYPE typ)
 
 /**
         Transfer array of additional, variable-sized data objects.
-        {\em not documented yet.}
+        \todo{not documented yet.}
  */
 
 void DDD_XferAddDataX (int cnt, DDD_TYPE typ, size_t *sizes)

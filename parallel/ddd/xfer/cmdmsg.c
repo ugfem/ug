@@ -163,7 +163,7 @@ static int PrepareCmdMsgs (XICopyObj **itemsCO, int nCO, CMDMSG **theMsgs)
 
     /* run through coupling list of corresponding obj,
        find coupling to destination of XferCopyObj command */
-    cpl = THECOUPLING(co->hdr);
+    cpl = ObjCplList(co->hdr);
     while (cpl!=NULL && CPL_PROC(cpl)!=pCO)
       cpl=CPL_NEXT(cpl);
 

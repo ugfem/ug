@@ -20,7 +20,7 @@
 /****************************************************************************/
 
 /* RCS_ID
-   $Header: /hosts/dom/cvs/ddd/src/dddi.h,v 1.3 1997/07/24 15:49:05 birken Exp
+   $Header: /hosts/dom/cvs/ddd/src/dddi.h,v 1.4 1997/07/24 15:49:05 birken Exp
    $
  */
 
@@ -72,8 +72,8 @@ typedef int LC_MSGCOMP;      /* component of message (dto) */
 
 
 /* lowcomm.c */
-void  LowCommInit (void);
-void  LowCommExit (void);
+void  LC_Init (void);
+void  LC_Exit (void);
 
 
 LC_MSGTYPE LC_NewMsgType (char *);
@@ -90,7 +90,11 @@ LC_MSGHANDLE LC_NewSendMsg (LC_MSGTYPE, DDD_PROC);
 ULONG    LC_GetTableLen (LC_MSGHANDLE, LC_MSGCOMP);
 void *   LC_GetPtr (LC_MSGHANDLE, LC_MSGCOMP);
 DDD_PROC LC_MsgGetProc (LC_MSGHANDLE);
+
 size_t   LC_MsgPrepareSend (LC_MSGHANDLE);
+size_t   LC_MsgFreeze (LC_MSGHANDLE);
+int      LC_MsgAlloc(LC_MSGHANDLE);
+
 void     LC_SetTableLen (LC_MSGHANDLE, LC_MSGCOMP, ULONG);
 void     LC_SetTableSize (LC_MSGHANDLE, LC_MSGCOMP, ULONG);
 void     LC_SetChunkSize (LC_MSGHANDLE, LC_MSGCOMP, size_t);

@@ -319,7 +319,7 @@ static COUPLING ** IFCollectStdCouplings (void)
   {
     COUPLING  *cpl;
 
-    for(cpl=theCpl[index]; cpl!=NULL; cpl=CPL_NEXT(cpl))
+    for(cpl=IdxCplList(index); cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
       cplarray[n] = cpl;
       n++;
@@ -379,7 +379,7 @@ static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
           COUPLING  *cpl;
 
           /* test coupling list */
-          for(cpl=theCpl[index]; cpl!=NULL; cpl=CPL_NEXT(cpl))
+          for(cpl=IdxCplList(index); cpl!=NULL; cpl=CPL_NEXT(cpl))
           {
             int cplInA, cplInB, dir;
 

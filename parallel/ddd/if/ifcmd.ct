@@ -112,12 +112,86 @@
 /****************************************************************************/
 
 
-/**
-	Interface communication function.
-	Executes a communication using a predefined DDD interface.
+#ifdef IF_EXECLOCAL
+	/**
+	Local execution on \ddd{Interface}.
+	This function executes a given handler for each object inside
+	a \ddd{Interface}.
 
-@param ifId   DDD interface used for communication
+	}*/
+#else
+	#if defined(IF_ONEWAY)
+		/**
+		Oneway-communication across a \ddd{Interface}.
+		This function initiates a communication across a previously
+		defined DDD interface. It has to be issued on all processors.
+
+		The communication is carried out one-directional, dependent
+		on parameter {\em dir}. In case of #IF_FORWARD# information
+		will flow from object set A to object set B, in case of #IF_BACKWARD#
+		it will be vice versa (see \funk{IFDefine}).
+		}*/
+	#else
+		/**
+		Bidirectional communication across a \ddd{Interface}.
+		This function initiates a communication across a previously
+		defined DDD interface. It has to be issued on all processors.
+
+		The communication is carried out in both directions, i.e.~from
+		object set A to object set B and vice versa (see \funk{IFDefine}).
+		}*/
+	#endif
+
+	/*{
+	The user-defined function {\em gather\_proc} is called for each object
+	inside the interface. It has to pack all necessary information into
+	a special memory location. Afterwards the actual communication based
+	on the current processor topology happens. After all data had been
+	scheduled onto the destination processors, it has to be
+	incorporated into the destination part of the DDD interface via
+	the user-defined function {\em scatter\_proc}.
+
+	Both communication procedures should have the
+	following declaration:
+
+	#int (*ComProcPtr) (DDD_HDR obj, void *data)#
+	}*/
+#endif
+
+	/*{
+	\todo{further description}
+	}*/
+	#ifdef IF_WITH_XARGS
+		/*{
+		\todo{Doku extended args}
+		}*/
+	#endif
+
+/*{
+@param ifId   the \ddd{Interface} to be used.
+}*/
+#ifdef IF_WITH_ATTR
+	/*{
+	@param attr  the \ddd{Attribute} which specifies the sub-interface.
+	}*/
+#endif
+#ifdef IF_EXECLOCAL
+	/*{
+	@param ExecProc  handler which is executed for each object in the interface.
+	}*/
+#else
+	#ifdef IF_ONEWAY
+		/*{
+		@param dir   the communication direction (#IF_FORWARD# or #IF_BACKWARD#)
+		}*/
+	#endif
+	/*{
+	@param itemSize  amount of data for each object in the interface (number of bytes)
+	}*/
+#endif
+/*{
 */
+
 
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 void IF_FUNCNAME (

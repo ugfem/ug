@@ -125,7 +125,7 @@ if (XferActive())
 }
 else
 {
-  if (! HAS_COUPLING(hdr))
+  if (! ObjHasCpl(hdr))
   {
     /* just one local object, we can simply change its priority */
     OBJ_PRIO(hdr) = prio;

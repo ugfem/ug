@@ -72,15 +72,16 @@ RCSID("$Header$",DDD_RCS_STRING)
 /*                                                                          */
 /****************************************************************************/
 
-DDD_HDR ddd_ObjTable[MAX_OBJ];
-int nObjs;
+DDD_HDR   *ddd_ObjTable;
+int ddd_ObjTabSize;
+int ddd_nObjs;
 
-COUPLING   *theCpl[MAX_CPL];
-int theCplN[MAX_CPL];
+COUPLING **ddd_CplTable;
+short     *ddd_NCplTable;
+int ddd_CplTabSize;
 int ddd_nCpls;
 int nCplItems;
 
-int theIdCount;             /* local unique ID count */
 
 int        *iBuffer;        /* general bufferspace, integer */
 char       *cBuffer;        /* general bufferspace, integer */
@@ -196,9 +197,10 @@ DDD_Library::DDD_Library (int *argcp, char ***argvp)
 
   /* init all DDD components */
   NotifyInit();
-  LowCommInit();
+  LC_Init();
   ddd_StatInit();
   ddd_TypeMgrInit();
+  ddd_ObjMgrInit();
   ddd_CplMgrInit();
   ddd_TopoInit();
   ddd_IdentInit();
@@ -207,10 +209,9 @@ DDD_Library::DDD_Library (int *argcp, char ***argvp)
   ddd_ConsInit();
 
   /* reset all global counters */
-  nObjs  = 0;
+  ddd_nObjs  = 0;
   NCPL_INIT;
   nCplItems  = 0;
-  theIdCount = 1;        /* start with 1, for debugging reasons */
 
   /* set options on default values */
   ddd_SetOption(OPT_WARNING_VARSIZE_OBJ,   OPT_ON);
@@ -270,9 +271,10 @@ DDD_Library::~DDD_Library (void)
   ddd_IdentExit();
   ddd_TopoExit();
   ddd_CplMgrExit();
+  ddd_ObjMgrExit();
   ddd_TypeMgrExit();
   ddd_StatExit();
-  LowCommExit();
+  LC_Exit();
   NotifyExit();
 
   /* exit PPIF */
@@ -323,14 +325,15 @@ void DDD_Library::Status (void)
   sprintf(cBuffer, "|     MAX_PRIO     = %4d\n", MAX_PRIO);
   DDD_PrintLine(cBuffer);
 #ifdef WithFullObjectTable
-  sprintf(cBuffer, "|\n|     MAX_OBJ = %8d  MAX_CPL = %8d\n", MAX_OBJ, MAX_CPL);
+  sprintf(cBuffer, "|\n|     MAX_OBJ = %8d  MAX_CPL = %8d\n",
+          ddd_ObjTabSize, ddd_CplTabSize);
 #else
-  sprintf(cBuffer, "|\n|     MAX_CPL = %8d\n", MAX_CPL);
+  sprintf(cBuffer, "|\n|     MAX_CPL = %8d\n", ddd_CplTabSize);
 #endif
   DDD_PrintLine(cBuffer);
 
   sprintf(cBuffer, "|     nObjs   = %8d  nCpls   = %8d  nCplItems = %8d\n",
-          nObjs, NCPL_GET, nCplItems);
+          ddd_nObjs, NCPL_GET, nCplItems);
   DDD_PrintLine(cBuffer);
   DDD_PrintLine("|\n|     Timeouts:\n");
   sprintf(cBuffer, "|        IFComm:  %12ld\n", (unsigned long)MAX_TRIES);
@@ -355,6 +358,7 @@ void DDD_Library::Status (void)
 /*                                                                          */
 /****************************************************************************/
 
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 /**
         Redirect text output.
         This function sets the DDD-textport to a given handler function.
@@ -369,6 +373,7 @@ void DDD_Library::Status (void)
 
    @param  func  handler function which should be used for text redirection
  */
+#endif
 
 #ifdef C_FRONTEND
 void DDD_LineOutRegister (void (*func)(char *s))
@@ -458,6 +463,7 @@ int DDD_GetOption (DDD_OPTION option)
         transparent access to global variables from PPIF
  */
 
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 /**
         Get local processor number.
         This function returns the local processor number, which is an
@@ -465,6 +471,7 @@ int DDD_GetOption (DDD_OPTION option)
 
    @return  local processor number
  */
+#endif
 
 #ifdef C_FRONTEND
 DDD_PROC DDD_InfoMe (void)
@@ -481,6 +488,7 @@ DDD_PROC DDD_Library::InfoMe (void)
 
 
 
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 /**
         Get master processor number.
         This function returns the processor number of the
@@ -490,6 +498,7 @@ DDD_PROC DDD_Library::InfoMe (void)
 
    @return  master processor number
  */
+#endif
 #ifdef C_FRONTEND
 DDD_PROC DDD_InfoMaster (void)
 {
@@ -504,11 +513,13 @@ DDD_PROC DDD_Library::InfoMaster (void)
 #endif
 
 
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 /**
         Get total number of processors.
 
    @return  total number of processors
  */
+#endif
 #ifdef C_FRONTEND
 DDD_PROC DDD_InfoProcs (void)
 {

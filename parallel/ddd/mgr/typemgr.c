@@ -1561,6 +1561,7 @@ static void InitHandlers (TYPE_DESC *desc)
 
 
 
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
 /**
         Registration of handler functions.
 
@@ -1582,6 +1583,7 @@ static void InitHandlers (TYPE_DESC *desc)
 
    @param typeId  DDD type of object for which the handlers will be registered.
  */
+#endif
 
 #ifdef C_FRONTEND
 void DDD_HandlerRegister (DDD_TYPE typeId, ...)

@@ -124,9 +124,9 @@ void DDD_Library::ListLocalObjects (void)
   if ((locObjs=LocalObjectsList()) ==NULL)
     return;
 
-  qsort(locObjs, nObjs, sizeof(DDD_HDR), sort_LocalObjs);
+  qsort(locObjs, ddd_nObjs, sizeof(DDD_HDR), sort_LocalObjs);
 
-  for(i=0; i<nObjs; i++)
+  for(i=0; i<ddd_nObjs; i++)
   {
     o = locObjs[i];
     sprintf(cBuffer, "%4d: #%04d  adr=0x%08x gid=0x%07x type=0x%02x"

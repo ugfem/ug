@@ -371,7 +371,7 @@ NOTIFY_DESC *DDD_NotifyBegin (int n)
   if (n>procs-1)
   {
     DDD_PrintError('E', 6340,
-                   "more send-messages than other processors in DDD_NotifyAlloc");
+                   "more send-messages than other processors in DDD_NotifyBegin");
     return(NULL);
   }
 

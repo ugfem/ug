@@ -30,8 +30,8 @@
    #define CheckIFMEM
    #define CheckPMEM
    #define CheckCplMEM
-   #define CheckTmpMEM
    #define CheckMsgMEM
+   #define CheckTmpMEM
  */
 
 
@@ -44,6 +44,7 @@
 #ifndef __DDDI_H__
 #define __DDDI_H__
 
+#include <values.h>
 #include <assert.h>
 
 #ifndef __COMPILER__
@@ -94,15 +95,15 @@
 
 /*** DDD internal parameters ***/
 
-#define MAX_ELEMDESC   64    /* max. number of elements per TYPE_DESC       */
-#define MAX_TYPEDESC   32    /* max. number of TYPE_DESC                    */
-#define MAX_PRIO       32    /* max. number of DDD_PRIO                     */
-#define MAX_CPL     50000    /* max. number of local objects with coupling  */
+#define MAX_ELEMDESC   64     /* max. number of elements per TYPE_DESC      */
+#define MAX_TYPEDESC   32     /* max. number of TYPE_DESC                   */
+#define MAX_PRIO       32     /* max. number of DDD_PRIO                    */
+#define MAX_CPL_START  65536  /* max. number of local objects with coupling */
 
 #ifdef WithFullObjectTable
-#define MAX_OBJ    300000    /* max. number of locally registered objects   */
+#define MAX_OBJ_START  262144 /* max. number of locally registered objects  */
 #else
-#define MAX_OBJ    MAX_CPL
+#define MAX_OBJ_START  MAX_CPL_START
 #endif
 
 
@@ -329,11 +330,13 @@ typedef struct _TYPE_DESC
 
 extern TYPE_DESC theTypeDefs[MAX_TYPEDESC];
 
-extern DDD_HDR ddd_ObjTable[MAX_OBJ];
-extern int nObjs;
+extern DDD_HDR   *ddd_ObjTable;
+extern int ddd_ObjTabSize;
+extern int ddd_nObjs;
 
-extern COUPLING   *theCpl[MAX_CPL];
-extern int theCplN[MAX_CPL];
+extern COUPLING   **ddd_CplTable;
+extern short      *ddd_NCplTable;
+extern int ddd_CplTabSize;
 extern int ddd_nCpls;                    /* number of coupling lists */
 extern int nCplItems;                    /* number of couplings      */
 
@@ -453,14 +456,21 @@ extern VChannelPtr *theTopology;
 
 /****************************************************************************/
 
+/*
+        macros for access of coupling tables
+ */
+
 /* get boolean: does object have couplings? */
-#define HAS_COUPLING(o) (OBJ_INDEX(o)<ddd_nCpls)
+#define ObjHasCpl(o)      (OBJ_INDEX(o)<ddd_nCpls)
 
 /* get #couplings per object */
-#define NCOUPLINGS(o) (HAS_COUPLING(o) ? theCplN[OBJ_INDEX(o)] : 0)
+#define ObjNCpl(o)        (ObjHasCpl(o) ? ddd_NCplTable[OBJ_INDEX(o)] : 0)
+#define IdxNCpl(i)        (ddd_NCplTable[i])
 
 /* get pointer to object's coupling list */
-#define THECOUPLING(o) (HAS_COUPLING(o) ? theCpl[OBJ_INDEX(o)] : NULL)
+#define ObjCplList(o)     (ObjHasCpl(o) ? ddd_CplTable[OBJ_INDEX(o)] : NULL)
+#define IdxCplList(i)     (ddd_CplTable[i])
+
 
 /* increment/decrement number of coupled objects */
 /*
@@ -475,12 +485,12 @@ extern VChannelPtr *theTopology;
 
 
 /* DDD_HDR may be invalid */
-#define MarkHdrInvalid(hdr)    OBJ_INDEX(hdr)=MAX_OBJ
-#define IsHdrInvalid(hdr)      OBJ_INDEX(hdr)==MAX_OBJ
+#define MarkHdrInvalid(hdr)    OBJ_INDEX(hdr)=(MAXINT-1)
+#define IsHdrInvalid(hdr)      OBJ_INDEX(hdr)==(MAXINT-1)
 
 #ifndef WithFullObjectTable
-#define MarkHdrLocal(hdr)      OBJ_INDEX(hdr)=(MAX_OBJ+1)
-#define IsHdrLocal(hdr)     OBJ_INDEX(hdr)==(MAX_OBJ+1)
+#define MarkHdrLocal(hdr)      OBJ_INDEX(hdr)=(MAXINT)
+#define IsHdrLocal(hdr)        OBJ_INDEX(hdr)==(MAXINT)
 #endif
 
 /****************************************************************************/
@@ -535,6 +545,7 @@ private:
 #if defined(CheckPMEM) || defined(CheckIFMEM) || defined(CheckCplMEM) || defined(CheckMsgMEM) || defined(CheckTmpMEM)
 
 static void *dummy_ptr;
+static char *mem_ptr;
 
 #ifndef SST
 #define SST (CEIL(sizeof(size_t)))
@@ -551,9 +562,11 @@ static void *dummy_ptr;
 #define AllocCom(s)       memmgr_AllocAMEM((size_t)s)
 
 #ifdef CheckPMEM
-#define AllocFix(s)       (dummy_ptr=SST+(char *)memmgr_AllocPMEM(SST+(size_t)s));\
-  GET_SSTVAL(dummy_ptr) = s;                                    \
-  printf("%4d: MALL PFix adr=%08x size=%ld file=%s line=%d\n",\
+#define AllocFix(s)  \
+  (dummy_ptr = (mem_ptr=(char *)memmgr_AllocPMEM(SST+(size_t)s)) != NULL ? \
+               mem_ptr+SST : NULL);                                     \
+  if (mem_ptr!=NULL) GET_SSTVAL(dummy_ptr) = s;                            \
+  printf("%4d: MALL PFix adr=%08x size=%ld file=%s line=%d\n",             \
          me,dummy_ptr,s,__FILE__,__LINE__)
 #else
 #define AllocFix(s)       memmgr_AllocPMEM((size_t)s)
@@ -561,9 +574,11 @@ static void *dummy_ptr;
 
 
 #ifdef CheckMsgMEM
-#define AllocMsg(s)       (dummy_ptr=SST+(char *)memmgr_AllocTMEM(SST+(size_t)s));\
-  GET_SSTVAL(dummy_ptr) = s;                                    \
-  printf("%4d: MALL TMsg adr=%08x size=%ld file=%s line=%d\n",\
+#define AllocMsg(s)  \
+  (dummy_ptr = (mem_ptr=(char *)memmgr_AllocTMEM(SST+(size_t)s)) != NULL ? \
+               mem_ptr+SST : NULL);                                     \
+  if (mem_ptr!=NULL) GET_SSTVAL(dummy_ptr) = s;                            \
+  printf("%4d: MALL TMsg adr=%08x size=%ld file=%s line=%d\n",             \
          me,dummy_ptr,s,__FILE__,__LINE__)
 #else
 #define AllocMsg(s)       memmgr_AllocTMEM((size_t)s)
@@ -571,9 +586,11 @@ static void *dummy_ptr;
 
 
 #ifdef CheckTmpMEM
-#define AllocTmp(s)       (dummy_ptr=SST+(char *)memmgr_AllocTMEM(SST+(size_t)s));\
-  GET_SSTVAL(dummy_ptr) = s;                                    \
-  printf("%4d: MALL TTmp adr=%08x size=%ld file=%s line=%d\n",\
+#define AllocTmp(s)  \
+  (dummy_ptr = (mem_ptr=(char *)memmgr_AllocTMEM(SST+(size_t)s)) != NULL ? \
+               mem_ptr+SST : NULL);                                     \
+  if (mem_ptr!=NULL) GET_SSTVAL(dummy_ptr) = s;                            \
+  printf("%4d: MALL TTmp adr=%08x size=%ld file=%s line=%d\n",             \
          me,dummy_ptr,s,__FILE__,__LINE__)
 #else
 #define AllocTmp(s)       memmgr_AllocTMEM((size_t)s)
@@ -581,18 +598,22 @@ static void *dummy_ptr;
 
 
 #ifdef CheckCplMEM
-#define AllocCpl(s)       (dummy_ptr=SST+(char *)memmgr_AllocAMEM(SST+(size_t)s));\
-  GET_SSTVAL(dummy_ptr) = s;                                    \
-  printf("%4d: MALL ACpl adr=%08x size=%ld file=%s line=%d\n",  \
+#define AllocCpl(s)  \
+  (dummy_ptr = (mem_ptr=(char *)memmgr_AllocAMEM(SST+(size_t)s)) != NULL ? \
+               mem_ptr+SST : NULL);                                     \
+  if (mem_ptr!=NULL) GET_SSTVAL(dummy_ptr) = s;                            \
+  printf("%4d: MALL ACpl adr=%08x size=%ld file=%s line=%d\n",             \
          me,dummy_ptr,s,__FILE__,__LINE__)
 #else
 #define AllocCpl(s)       memmgr_AllocAMEM((size_t)s)
 #endif
 
 #ifdef CheckIFMEM
-#define AllocIF(s)        (dummy_ptr=SST+(char *)memmgr_AllocAMEM(SST+(size_t)s));\
-  GET_SSTVAL(dummy_ptr) = s;                                    \
-  printf("%4d: MALL AIF  adr=%08x size=%ld file=%s line=%d\n",  \
+#define AllocIF(s)  \
+  (dummy_ptr = (mem_ptr=(char *)memmgr_AllocAMEM(SST+(size_t)s)) != NULL ? \
+               mem_ptr+SST : NULL);                                     \
+  if (mem_ptr!=NULL) GET_SSTVAL(dummy_ptr) = s;                            \
+  printf("%4d: MALL AIF  adr=%08x size=%ld file=%s line=%d\n",             \
          me,dummy_ptr,s,__FILE__,__LINE__)
 #else
 #define AllocIF(s)        memmgr_AllocAMEM((size_t)s)
@@ -696,6 +717,12 @@ void      ddd_TypeMgrInit (void);
 #endif
 void      ddd_TypeMgrExit (void);
 int       ddd_TypeDefined (TYPE_DESC *);
+
+
+/* objmgr.c */
+void      ddd_ObjMgrInit (void);
+void      ddd_ObjMgrExit (void);
+void      ddd_EnsureObjTabSize(int);
 
 
 /* cplmgr.c */

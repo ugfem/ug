@@ -1101,7 +1101,7 @@ static void PropagateIncomings (
 			}
 
 			/* communicate to all procs in coupling */
-			for(cpl=THECOUPLING(ote->hdr); cpl!=NULL; cpl=CPL_NEXT(cpl))
+			for(cpl=ObjCplList(ote->hdr); cpl!=NULL; cpl=CPL_NEXT(cpl))
 			{
 /*
 				if (newness==PARTNEW || newness==PRUNEDNEW)

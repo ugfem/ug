@@ -132,7 +132,7 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
   {
     REGISTER XICopyObj *xi = items[i];
     REGISTER DDD_PROC dest = xi->dest;              /* destination proc */
-    REGISTER COUPLING *cpl, *xicpl = THECOUPLING(xi->hdr);
+    REGISTER COUPLING *cpl, *xicpl = ObjCplList(xi->hdr);
     REGISTER DDD_GID xigid = xi->gid;
     REGISTER DDD_TYPE xitype = OBJ_TYPE(xi->hdr);
 
@@ -578,7 +578,7 @@ int PrepareObjMsgs (
     LC_SetTableSize(xm->msg_h, xferGlobals.oldcpl_id, xm->nOldCpl);
     LC_SetChunkSize(xm->msg_h, xferGlobals.objmem_id, xm->size);
 
-    bufSize = LC_MsgPrepareSend(xm->msg_h);
+    bufSize = LC_MsgFreeze(xm->msg_h);
     *memUsage += bufSize;
 
     if (DDD_GetOption(OPT_INFO_XFER) & XFER_SHOW_MEMUSAGE)
@@ -657,7 +657,7 @@ void ExecLocalXISetPrio (
       /* generate XIModCpl-items */
 
       /* 1. for all existing couplings */
-      for(cpl=THECOUPLING(hdr); cpl!=NULL; cpl=CPL_NEXT(cpl))
+      for(cpl=ObjCplList(hdr); cpl!=NULL; cpl=CPL_NEXT(cpl))
       {
         XIModCpl *xc = NewXIModCpl(SLLNewArgs);
         xc->to      = cpl->proc;                               /* receiver of XIModCpl  */
@@ -903,7 +903,7 @@ void XferRegisterDelete (DDD_HDR hdr)
           coupling list, in case the object is received after deletion
           and the coupling list must be restored.
    */
-  for(cpl=THECOUPLING(hdr); cpl!=NULL; cpl=CPL_NEXT(cpl))
+  for(cpl=ObjCplList(hdr); cpl!=NULL; cpl=CPL_NEXT(cpl))
   {
     XIDelCpl *xc = NewXIDelCpl(SLLNewArgs);
 

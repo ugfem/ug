@@ -226,10 +226,10 @@ static int ConsCheckSingleMsg (LC_MSGHANDLE xm, DDD_HDR *locObjs)
   /* test whether there are consistent objects for all couplings */
   for(i=0, j=0; i<nItems; i++)
   {
-    while ((j<nObjs) && (OBJ_GID(locObjs[j]) < theCplBuf[i].gid))
+    while ((j<ddd_nObjs) && (OBJ_GID(locObjs[j]) < theCplBuf[i].gid))
       j++;
 
-    if ((j<nObjs) && (OBJ_GID(locObjs[j])==theCplBuf[i].gid))
+    if ((j<ddd_nObjs) && (OBJ_GID(locObjs[j])==theCplBuf[i].gid))
     {
       if (OBJ_PRIO(locObjs[j])!=theCplBuf[i].prio)
       {
@@ -288,7 +288,7 @@ static int ConsCheckGlobalCpl (void)
 
   /* count overall number of couplings */
   for(i=0, lenCplBuf=0; i<NCPL_GET; i++)
-    lenCplBuf += theCplN[i];
+    lenCplBuf += IdxNCpl(i);
 
   /* get storage for messages */
   cplBuf = (CONS_INFO *) AllocTmp(lenCplBuf*sizeof(CONS_INFO));
@@ -296,7 +296,7 @@ static int ConsCheckGlobalCpl (void)
   /* copy CONS_INFOs into message buffer */
   for(i=0, j=0; i<NCPL_GET; i++)
   {
-    for(cpl=theCpl[i]; cpl!=NULL; cpl=CPL_NEXT(cpl))
+    for(cpl=IdxCplList(i); cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
       if ((DDD_PROC)cpl->proc >= procs)
       {
@@ -390,10 +390,10 @@ static int Cons2CheckSingleMsg (LC_MSGHANDLE xm, DDD_HDR *locObjs)
   {
     inext = i+1;
 
-    while ((j<nObjs) && (OBJ_GID(locObjs[j]) < theCplBuf[i].gid))
+    while ((j<ddd_nObjs) && (OBJ_GID(locObjs[j]) < theCplBuf[i].gid))
       j++;
 
-    if ((j<nObjs) && (OBJ_GID(locObjs[j])==theCplBuf[i].gid))
+    if ((j<ddd_nObjs) && (OBJ_GID(locObjs[j])==theCplBuf[i].gid))
     {
       if (theCplBuf[i].proc == me)
       {
@@ -413,7 +413,7 @@ static int Cons2CheckSingleMsg (LC_MSGHANDLE xm, DDD_HDR *locObjs)
         int i2;
         COUPLING *j2;
 
-        for(j2=THECOUPLING(locObjs[j]); j2!=NULL; j2=CPL_NEXT(j2))
+        for(j2=ObjCplList(locObjs[j]); j2!=NULL; j2=CPL_NEXT(j2))
         {
           int ifound = -1;
 
@@ -480,7 +480,7 @@ static int Cons2CheckGlobalCpl (void)
 
   /* count overall number of couplings */
   for(i=0, lenCplBuf=0; i<NCPL_GET; i++)
-    lenCplBuf += (theCplN[i] * (theCplN[i]+1));
+    lenCplBuf += (IdxNCpl(i) * (IdxNCpl(i)+1));
 
   /* get storage for messages */
   cplBuf = (CONS_INFO *) AllocTmp(lenCplBuf*sizeof(CONS_INFO));
@@ -488,7 +488,7 @@ static int Cons2CheckGlobalCpl (void)
   /* copy CONS_INFOs into message buffer */
   for(i=0, j=0; i<NCPL_GET; i++)
   {
-    for(cpl=theCpl[i]; cpl!=NULL; cpl=CPL_NEXT(cpl))
+    for(cpl=IdxCplList(i); cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
       cplBuf[j].gid  = OBJ_GID(cpl->obj);
       cplBuf[j].typ  = OBJ_TYPE(cpl->obj);
@@ -497,7 +497,7 @@ static int Cons2CheckGlobalCpl (void)
       cplBuf[j].prio = OBJ_PRIO(cpl->obj);
       j++;
 
-      for(cpl2=theCpl[i]; cpl2!=NULL; cpl2=CPL_NEXT(cpl2))
+      for(cpl2=IdxCplList(i); cpl2!=NULL; cpl2=CPL_NEXT(cpl2))
       {
         cplBuf[j].gid  = OBJ_GID(cpl->obj);
         cplBuf[j].typ  = OBJ_TYPE(cpl->obj);
@@ -563,7 +563,7 @@ static int ConsCheckDoubleObj (void)
 
   locObjs = LocalObjectsList();
 
-  for(i=1; i<nObjs; i++)
+  for(i=1; i<ddd_nObjs; i++)
   {
     if (OBJ_GID(locObjs[i-1])==OBJ_GID(locObjs[i]))
     {
