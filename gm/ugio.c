@@ -1913,6 +1913,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
     for (i=0; i<mg_general.nLevel; i++)
       if (CreateNewLevel(theMG,0)==NULL)                                                              {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+    if (CreateAlgebra (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
     return (theMG);
   }
@@ -1962,6 +1963,8 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     CloseMGFile ();
     DDD_IdentifyBegin();
     DDD_IdentifyEnd();
+    if (CreateAlgebra (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+    ConstructConsistentGrid(GRID_ON_LEVEL(theMG,0));
     /* create levels */
     for (i=1; i<mg_general.nLevel; i++)
     {
