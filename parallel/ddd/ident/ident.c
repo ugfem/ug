@@ -22,7 +22,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-#define DebugIdent 10  /* 10 is off */
+#define DebugIdent 5  /* 10 is off */
 
 
 
@@ -459,6 +459,16 @@ static int sort_tupelOrder (const void *e1, const void *e2)
     sprintf(cBuffer, "same identification tupel for objects %08x and %08x",
             OBJ_GID(el1->hdr), OBJ_GID(el2->hdr));
     DDD_PrintError('E', 3030, cBuffer);
+
+    /*
+       for(i=0; i<nIds; i++) {
+            printf("%4d: tupel[%d]  %08x/%d  %08x/%d   (id/loi)\n",
+                    me, i,
+                    el1->id.object, el1->loi,
+                    el2->id.object, el2->loi);
+       }
+     */
+
     exit(1);
   }
 
@@ -829,7 +839,16 @@ static int IdentifySort (IDENTINFO *id, int nIds,
   i=0; j=0;
   do {
     while (j<nTupels && idp[i]->loi==idp[j]->loi)
+    {
+      if (! keep_order_inside_tupel)
+      {
+        qsort(idp[j],
+              idp[j]->nObjIds,
+              sizeof(IDENTINFO),
+              sort_intoTupelsSets);
+      }
       j++;
+    }
 
     /* sort sub-array for tupelId, tupelValue */
     if (j-i > 1)
@@ -845,6 +864,11 @@ static int IdentifySort (IDENTINFO *id, int nIds,
         /* dont use gid of referenced object (because it
            will be known only after identification), but its
            position in the identification table instead! */
+        /*
+           printf("%4d: loi=%d i=%d, %08x <- %08x\n",
+           me, idp[i]->loi, i, OBJ_GID(idp[i]->hdr), OBJ_GID(rby->by->hdr));
+         */
+
         rby->by->id.object = i;
 
         /* now the tupel value has been changed! */
@@ -858,7 +882,9 @@ static int IdentifySort (IDENTINFO *id, int nIds,
              last change from the above program line. we ignore
              this here, because performance will not suffer
              except for VERY complicated id tupels. */
-          SortTupelObjectItems(rby->by);
+          /*
+                  SortTupelObjectItems(rby->by);
+           */
         }
       }
 
