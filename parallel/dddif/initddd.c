@@ -736,7 +736,7 @@ int InitParallel (int *argc, char ***argv)
 
   /* initialize context */
   /* TODO: malloc() should be replaced by HEAPs or ddd_memmgr */
-  dddctrl.context = (int *)malloc(sizeof(int)*procs);
+  dddctrl.context = (DDD_PROC *)malloc(sizeof(DDD_PROC)*procs);
 
   /* initial context is master processor only */
   for(i=0; i<procs; i++)
@@ -784,7 +784,7 @@ int InitParallel (int *argc, char ***argv)
 void ExitParallel (void)
 {
   /* free memory allocated by InitParallel */
-  if (dddctrl.context!=0)
+  if (dddctrl.context!=NULL)
     free(dddctrl.context);
 
   DDD_Exit();
