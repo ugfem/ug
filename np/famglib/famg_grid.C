@@ -37,6 +37,7 @@ extern "C"
 {
 #include "gm.h"
 #include "ugm.h"
+#include "commands.h" // nur zum testen fuer GetCurrentMultigrid()
 }
 #endif
 
@@ -1024,7 +1025,6 @@ int FAMGGrid::ConstructTransfer()
     // TODO: not neceassary any more: matrix->MarkUnknowns(graph);
  
 //prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
-  
 
 #ifdef UG_DRAW
     /* test */
@@ -1466,7 +1466,7 @@ static int Gather_NodeStatus (DDD_OBJ obj, void *data)
 	{
 		if( node->IsFGNode() )
 		{
-	    	PRINTDEBUG(np,1,("%d: Gather_NodeStatus: Fine "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+			PRINTDEBUG(np,1,("%d: Gather_NodeStatus: Fine "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 			msgtype = FAMG_TYPE_FINE;
 			buffer += sizeof(msgtype);
 			
@@ -1496,18 +1496,17 @@ static int Gather_NodeStatus (DDD_OBJ obj, void *data)
 		}
 		else
 		{
-	    	PRINTDEBUG(np,1,("%d: Gather_NodeStatus: Coarse "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+			PRINTDEBUG(np,1,("%d: Gather_NodeStatus: Coarse "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 			assert(node->IsCGNode());
 			msgtype = FAMG_TYPE_COARSE;
 		}
 		
-		// now the node should not be considered as newly marked
-		node->SetFlagNewMarked(0);
-	
+		// don't reset SetFlagNewMarked here, because this vector may be called for 
+		// further interfaces and needs the NewMarked flag	
 	}
 	else
 	{	// the F/C status of the node has not changed
-	   	PRINTDEBUG(np,1,("%d: Gather_NodeStatus: not changed "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+		PRINTDEBUG(np,1,("%d: Gather_NodeStatus: not changed "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 		msgtype = FAMG_TYPE_NONE;
 	}
 	
@@ -1523,7 +1522,7 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 
 	if( msgtype == FAMG_TYPE_NONE )
 	{
-	    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: not changed "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+		PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: not changed "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 		return 0;		// no info for me
 	}
 	
@@ -1572,7 +1571,7 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 #endif
 	if( msgtype == FAMG_TYPE_COARSE )
 	{
-	    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Coarse "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+		PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Coarse "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 
 		// code from PaList::MarkParents
         Communication_Graph->Remove(node);
@@ -1592,6 +1591,7 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 		np = *(int*)buffer;		// fetch number of parents from buffer
 		
 	    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Fine "VINDEX_FMTX" %d parents\n",me,VINDEX_PRTX(vec), np));
+	    //PRINTDEBUG(np,1,("%d: Scatter_NodeStatus from %d with prio %d: Fine "VINDEX_FMTX" %d parents\n",me,proc,prio,VINDEX_PRTX(vec), np));
 		
 		// prepare array offsets into the buffer
 		DDD_GID *buffer_gid  = (DDD_GID *)((char*)data + CEIL(sizeof(msgtype)+sizeof(int))); // round up to achive alignment
@@ -1665,17 +1665,38 @@ static int Local_ClearNodeFlag (DDD_OBJ obj)
 	return 0;
 }
 
+
+static char text_print[100];
+static int Local_Print(DDD_OBJ obj)
+// nur zum Testen drin
+{
+	VECTOR *vec = (VECTOR *)obj;
+	
+	printf("%d Local_Print: %s %x "VINDEX_FMTX"\n",me,text_print,vec,VINDEX_PRTX(vec));
+	return 0;
+}
+
+int PrintLocal(char *text)
+{
+	if (DDD_ConsCheck()) assert(0);
+	strcpy(text_print,text);
+	DDD_IFAExecLocal( BorderVectorSymmIF, GRID_ATTR(GRID_ON_LEVEL(GetCurrentMultigrid(),0)), Local_Print );
+	strcpy(text_print,"OuterVectorSymmIF");
+	DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(GRID_ON_LEVEL(GetCurrentMultigrid(),0)), Local_Print );
+}
+
+
 void FAMGGrid::CommunicateNodeStatus()
 {
+	PRINTDEBUG(np,1,("%d: FAMGGrid::CommunicateNodeStatus\n",me));
 	Communication_Graph = GetGraph();	// set global variable to pass the graph to the Handlers
 	Communication_Grid = this;			// set global variable to pass the grid to the Handlers
 	
 	int size = CEIL(sizeof(FAMG_MSG_TYPE) + sizeof(char)) + 
 				CEIL(FAMGMAXPARENTS * ( sizeof(DDD_GID)) + 2 * FAMGMAXPARENTS * sizeof(DOUBLE) );
 	size = CEIL(size);
-	
-DDD_IFRefreshAll(); // ????????/// only temp
-	DDD_IFAExchange( BorderVectorSymmIF, GRID_ATTR(mygrid), size,
+		
+	DDD_IFAOneway( BorderVectorSymmIF, GRID_ATTR(mygrid), IF_FORWARD, size,
 					Gather_NodeStatus, Scatter_NodeStatus);
 	
 	DDD_IFAExecLocal( BorderVectorSymmIF, GRID_ATTR(mygrid), Local_ClearNodeFlag );

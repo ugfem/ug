@@ -32,6 +32,9 @@
 
 //#define PROTOCOLNUMERIC
 
+// TODO: remove
+extern "C" int PrintLocal(char *);
+
 // forward declarations
 class FAMGGraph;
 class FAMGGrid;
