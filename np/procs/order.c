@@ -506,17 +506,19 @@ int WH_mcmp (const void* x, const void *y)
   return (0);
 }
 
+#define MAX_VODME 50
 static INT WH_IsStarVector (VECTOR *v)
 {
   INT i,n,ndown,ndu,nud;
   MATRIX *m;
-  MORDER mo[30];
+  MORDER mo[MAX_VODME];
   DOUBLE_VECTOR z,p;
 
   n=ndown=0;
   VectorPosition(v,z);
   for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
   {
+    assert(n < MAX_VODME);
     if (MDOWN(m) && !VCUSED(MDEST(m)))
     {
       mo[n].mode=WH_DOWN;
