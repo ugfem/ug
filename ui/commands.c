@@ -2927,11 +2927,14 @@ static INT GListCommand (INT argc, char **argv)
    This command lists information on specified nodes, calling
    the functions 'ListNodeRange' and 'ListNodeSelection'.
 
-   'nlist $s | {$i <fromID> [<toID>]} [$d] [$b] [$n] [$v] [$a]'
+   'nlist {$s | $i <fromID> [<toID>] | $g <global id> | $k <key>} [$d] [$b] [$n] [$v] [$a]'
 
    .  $s  - list info for the selected nodes
    .  $i  - list info for nodes with an ID in the range <fromID> through <toID>
          if <fromID> is omitted only the node with <fromID> is listed
+   .  $g <glob. id>- list info for node with global id (only for ModelP)
+   .  $k <key>     - list info for node with key
+
    .  $d  - up to version 2.3 ONLY: list also user data space
    .  $b  - print additional info for boundary nodes
    .  $n  - list also neighbours of each node
@@ -2947,7 +2950,7 @@ static INT NListCommand (INT argc, char **argv)
 {
 
   MULTIGRID *theMG;
-  INT i,fromN,toN,res,mode,gidopt,dataopt,boundaryopt,neighbouropt,verboseopt;
+  INT i,fromN,toN,res,mode,idopt,dataopt,boundaryopt,neighbouropt,verboseopt;
   char buff[32];
 
   /* following variables: keep type for sscanf */
@@ -2969,7 +2972,8 @@ static INT NListCommand (INT argc, char **argv)
   }
 
   /* check options */
-  gidopt = dataopt = boundaryopt = neighbouropt = verboseopt = mode = FALSE;
+  idopt = 0;
+  dataopt = boundaryopt = neighbouropt = verboseopt = mode = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -3000,11 +3004,17 @@ static INT NListCommand (INT argc, char **argv)
 #ifdef ModelP
     case 'g' :
       mode = DO_ID;
-      gidopt = TRUE;
+      idopt = 1;
       res = sscanf(argv[i]," g %s",buff);
-      fromN = toN = (DDD_GID) strtol(buff, 0, 0);
+      fromN = toN = (DDD_GID) strtol(buff, NULL, 0);
       break;
 #endif
+    case 'k' :
+      mode = DO_ID;
+      idopt = 2;
+      res = sscanf(argv[i]," k %s",buff);
+      fromN = toN = (INT) strtol(buff, NULL, 0);
+      break;
 
     case 's' :
       if (mode!=FALSE)
@@ -3049,11 +3059,11 @@ static INT NListCommand (INT argc, char **argv)
   switch (mode)
   {
   case DO_ID :
-    ListNodeRange(theMG,fromN,toN,gidopt,dataopt,boundaryopt,neighbouropt,verboseopt);
+    ListNodeRange(theMG,fromN,toN,idopt,dataopt,boundaryopt,neighbouropt,verboseopt);
     break;
 
   case DO_ALL :
-    ListNodeRange(theMG,0,MAX_I,gidopt,dataopt,boundaryopt,neighbouropt,verboseopt);
+    ListNodeRange(theMG,0,MAX_I,idopt,dataopt,boundaryopt,neighbouropt,verboseopt);
     break;
 
   case DO_SELECTION :
@@ -3081,6 +3091,9 @@ static INT NListCommand (INT argc, char **argv)
    .  $s  - list info for the selected elements
    .  $i  - list info for elements with an ID in the range <fromID> through <toID>
          if <fromID> is omitted only the element with <fromID> is listed
+   .  $g <glob. id>- list info for element with global id (only for ModelP)
+   .  $k <key>     - list info for element with key
+
    .  $d  - up to version 2.3 ONLY: list also user data space
    .  $b  - print additional info for boundary elements
    .  $n  - list also neighbours of each element
@@ -3096,7 +3109,7 @@ static INT NListCommand (INT argc, char **argv)
 static INT EListCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  INT i,fromE,toE,res,mode,gidopt,dataopt,boundaryopt,neighbouropt,verboseopt,levelopt;
+  INT i,fromE,toE,res,mode,idopt,dataopt,boundaryopt,neighbouropt,verboseopt,levelopt;
   char buff[32];
 
   /* following variables: keep type for sscanf */
@@ -3118,7 +3131,8 @@ static INT EListCommand (INT argc, char **argv)
   }
 
   /* check options */
-  gidopt = dataopt = boundaryopt = neighbouropt = verboseopt = levelopt = mode = FALSE;
+  idopt = 0;
+  dataopt = boundaryopt = neighbouropt = verboseopt = levelopt = mode = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -3149,11 +3163,17 @@ static INT EListCommand (INT argc, char **argv)
 #ifdef ModelP
     case 'g' :
       mode = DO_ID;
-      gidopt = TRUE;
+      idopt = 1;
       res = sscanf(argv[i]," g %s",buff);
-      fromE = toE = (DDD_GID) strtol(buff, 0, 0);
+      fromE = toE = (DDD_GID) strtol(buff, NULL, 0);
       break;
 #endif
+    case 'k' :
+      mode = DO_ID;
+      idopt = 2;
+      res = sscanf(argv[i]," k %s",buff);
+      fromE = toE = (INT) strtol(buff, NULL, 0);
+      break;
 
     case 's' :
       if (mode!=FALSE)
@@ -3202,11 +3222,11 @@ static INT EListCommand (INT argc, char **argv)
   switch (mode)
   {
   case DO_ID :
-    ListElementRange(theMG,fromE,toE,gidopt,dataopt,boundaryopt,neighbouropt,verboseopt,levelopt);
+    ListElementRange(theMG,fromE,toE,idopt,dataopt,boundaryopt,neighbouropt,verboseopt,levelopt);
     break;
 
   case DO_ALL :
-    ListElementRange(theMG,0,MAX_I,gidopt,dataopt,boundaryopt,neighbouropt,verboseopt,levelopt);
+    ListElementRange(theMG,0,MAX_I,idopt,dataopt,boundaryopt,neighbouropt,verboseopt,levelopt);
     break;
 
   case DO_SELECTION :
@@ -3404,11 +3424,13 @@ static INT RuleListCommand (INT argc, char **argv)
    This command lists information on specified vectors and matrices, calling
    the functions 'ListVectorRange' and 'ListVectorSelection'.
 
-   'vmlist $s | {$i <fromID> [<toID>]} [$m] [$d] [$a] [$l <f> <t>]'
+   'vmlist {$s | $i <fromID> [<toID>] | $g <global id> | $k <key>} [$m] [$d] [$a] [$l <f> <t>]'
 
    .  $s			- list info for the selected vectors
    .  $i			- list info for vectors with an ID in the range <fromID> through <toID>
                           if <fromID> is omitted only the vector with <fromID> is listed
+   .  $g <glob. id>- list info for vector with global id (only for ModelP)
+   .  $k <key>     - list info for vector with key
 
    .  $m			- list also the associated matrix entries
    .  $d			- list also the user data
@@ -3424,7 +3446,7 @@ static INT VMListCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   GRID *theGrid;
-  INT i,fl,tl,fromV,toV,res,mode,gidopt,dataopt,matrixopt,vclass,vnclass;
+  INT i,fl,tl,fromV,toV,res,mode,idopt,dataopt,matrixopt,vclass,vnclass;
   VECDATA_DESC *theVD;
   MATDATA_DESC *theMD;
   char value[VALUELEN];
@@ -3479,7 +3501,8 @@ static INT VMListCommand (INT argc, char **argv)
   }
 
   /* check options */
-  gidopt = dataopt = matrixopt = mode = FALSE;
+  idopt = 0;
+  dataopt = matrixopt = mode = FALSE;
   fl = tl = CURRENTLEVEL(theMG);
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -3511,11 +3534,17 @@ static INT VMListCommand (INT argc, char **argv)
 #ifdef ModelP
     case 'g' :
       mode = DO_ID;
-      gidopt = TRUE;
+      idopt = 1;
       res = sscanf(argv[i]," g %s",buff);
-      fromV = toV = (DDD_GID) strtol(buff, 0, 0);
+      fromV = toV = (DDD_GID) strtol(buff, NULL, 0);
       break;
 #endif
+    case 'k' :
+      mode = DO_ID;
+      idopt = 2;
+      res = sscanf(argv[i]," k %s",buff);
+      fromV = toV = (INT) strtol(buff, NULL, 0);
+      break;
 
     case 's' :
       if (mode!=FALSE)
@@ -3568,11 +3597,11 @@ static INT VMListCommand (INT argc, char **argv)
   switch (mode)
   {
   case DO_ID :
-    ListVectorRange(theMG,fl,tl,fromV,toV,gidopt,matrixopt,dataopt);
+    ListVectorRange(theMG,fl,tl,fromV,toV,idopt,matrixopt,dataopt);
     break;
 
   case DO_ALL :
-    ListVectorRange(theMG,fl,tl,0,MAX_I,gidopt,matrixopt,dataopt);
+    ListVectorRange(theMG,fl,tl,0,MAX_I,idopt,matrixopt,dataopt);
     break;
 
   case DO_SELECTION :
