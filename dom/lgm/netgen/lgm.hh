@@ -89,9 +89,9 @@ public:
 
 
 void LoadGeo (char * filename, ARRAY<geompoint3d> & geompoints,ARRAY<splinesegment3d*> & splines, double & elto0);
-GetEdgeId(const Point3d & ep1, Point3d & ep2);
-Calc_Coord_Vectors(const Point3d p1,const Point3d p2,const int mi,Vec3d & nx,Vec3d & ny,Vec3d & nz);
-Project_Point2Surface(Point3d &inpoint, Point3d &outpoint);
+int GetEdgeId(const Point3d & ep1, Point3d & ep2);
+int Calc_Coord_Vectors(const Point3d p1,const Point3d p2,const int mi,Vec3d & nx,Vec3d & ny,Vec3d & nz);
+void Project_Point2Surface(Point3d &inpoint, Point3d &outpoint);
 int GenerateTriangle(ARRAY<Point2d> & lpoints, ARRAY<ILINE> & llines,ARRAY<Element> & elements, ARRAY<INDEX> & dellines,double h);
 void BFGS (Vector & x, double (*f)(const Vector & x, Vector & g));
 int Project_Point2Surface_2(Point3d &inpoint, Point3d &outpoint, Vec3d n);
