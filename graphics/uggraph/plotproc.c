@@ -224,7 +224,7 @@ static void NodeVector (const ELEMENT *theElement, const DOUBLE **theCorners,
 }
 
 /**************************************************************************/
-/*D
+/*
    RefMarks - plot funtion for refinement marks
 
    SYNOPSIS:
@@ -243,7 +243,7 @@ static void NodeVector (const ELEMENT *theElement, const DOUBLE **theCorners,
    DOUBLE  1.0  for rule == RED
            0.0  for rule == NO_REFINEMENT
                   -1.0  for rule == COARSE
-   D*/
+ */
 /*************************************************************************/
 
 static INT PreProcessRefMarks (const char *name, MULTIGRID *theMG)
@@ -269,6 +269,24 @@ static DOUBLE RefMarks (const ELEMENT *theElement,
   case COARSE :        return(-1.0);
   }
   return(0.0);
+}
+
+/**************************************************************************/
+/*   ProcID - plot funtion for processor id                               */
+/**************************************************************************/
+
+static DOUBLE ProcID(const ELEMENT *e, const DOUBLE **cc, DOUBLE *lc)
+{
+  return (DOUBLE)me;
+}
+
+/**************************************************************************/
+/*   SubDomID - plot funtion for subdomain id                             */
+/**************************************************************************/
+
+static DOUBLE SubDomID(const ELEMENT *e, const DOUBLE **cc, DOUBLE *lc)
+{
+  return (DOUBLE)SUBDOMAIN(e);
 }
 
 /****************************************************************************/
@@ -298,6 +316,7 @@ INT InitPlotProc ()
   if (CreateElementValueEvalProc("level",NULL,LevelValue) == NULL) return(1);
   if (CreateElementVectorEvalProc("nvector",PreProcessNodeVector,NodeVector,DIM) == NULL) return(1);
   if (CreateElementValueEvalProc("refmarks",PreProcessRefMarks,RefMarks) == NULL) return(1);
-
+  if (CreateElementValueEvalProc("procid",NULL,ProcID) == NULL) return(1);
+  if (CreateElementValueEvalProc("subdomid",NULL,SubDomID) == NULL) return(1);
   return (0);
 }
