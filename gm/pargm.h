@@ -64,6 +64,7 @@ enum Priorities
 #ifdef ModelP
 
 /* define the number of priorities for objects */
+#define MAXPRIOS                        8
 #define ELEMENTPRIOS            2
 #define NODEPRIOS                       3
 #define VECTORPRIOS                     3
@@ -73,15 +74,29 @@ enum Priorities
 #define PRIO2LISTPART(listtype,prio) \
   ((listtype == ELEMENT_LIST) ? ((prio == PrioGhost) ? 0 :\
                                  (prio == PrioMaster) ? 1 : -1) :\
-   ((prio == PrioGhost) ? 0 : (prio == PrioBorder) ? 1 : \
+   ((prio == PrioGhost) ? 0 : (prio == PrioBorder) ? 2 : \
       (prio == PrioMaster) ? 2 : -1))
 
-#define LISTPART2PRIO(listtype,listpart) \
-  ((listtype == ELEMENT_LIST) ? ((listpart == 0) ? PrioGhost :\
-                                 (listpart == 1) ? PrioMaster : -1) :\
-   ((listpart == 0) ? PrioGhost : (listpart == 1) ? PrioBorder : \
-      (listpart == 2) ? PrioMaster : -1))
-
+#define LISTPART2PRIO(listtype,listpart,prios)                               \
+  {                                                                        \
+    INT Entry;                                                           \
+    for (Entry=0; Entry<MAXPRIOS; Entry++) prios[Entry] = -1;            \
+    Entry = 0;                                                           \
+    if (listtype == ELEMENT_LIST)                                        \
+    {                                                                    \
+      if (listpart == 0) prios[Entry++] = PrioGhost;              \
+      else if(listpart == 1) prios[Entry++] = PrioMaster;             \
+    }                                                                    \
+    else                                                                 \
+    {                                                                    \
+      if (listpart == 0) prios[Entry++] = PrioGhost;              \
+      else if (listpart == 2)                                          \
+      {                                                                \
+        prios[Entry++] = PrioBorder;                                 \
+        prios[Entry++] = PrioMaster;                                 \
+      }                                                                \
+    }                                                                    \
+  }
 
 /* map pointer to structure onto a pointer to its DDD_HDR */
 #define PARHDR(obj)    (&((obj)->ddd))
@@ -90,6 +105,7 @@ enum Priorities
 #else   /* not ModelP */
 
 /* define the number of prioities for objects */
+#define MAXPRIOS                        1
 #define ELEMENTPRIOS            1
 #define NODEPRIOS                       1
 #define VECTORPRIOS                     1
