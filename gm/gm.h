@@ -1903,7 +1903,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define FIRSTELEMENT(p)                                 ((p)->elements[PRIO2LISTPART(ELEMENT_LIST,PrioMaster)])
 
 #define PLASTELEMENT(p)                                 LASTELEMENT(p)
-#define PRIO_LASTELEMENT(p,prio)                ((p)->elements[PRIO2LISTPART(ELEMENT_LIST,prio)])
+#define PRIO_LASTELEMENT(p,prio)                ((p)->lastelement[PRIO2LISTPART(ELEMENT_LIST,prio)])
 #define LISTPART_LASTELEMENT(p,part)    ((p)->lastelement[part])
 #define LASTELEMENT(p)                                  ((p)->lastelement[PRIO2LISTPART(ELEMENT_LIST,PrioMaster)])
 #else
@@ -2232,11 +2232,12 @@ INT             VectorInElement                 (ELEMENT *theElement, VECTOR *th
 INT             MinMaxAngle                     (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax);
 
 /* check */
-INT             CheckGrid                               (GRID *theGrid);
-INT             CheckConnections                (GRID *theGrid);
-#ifdef ModelP
-void            CheckLists                              (GRID *theGrid);
+#ifndef ModelP
+INT                     CheckGrid                               (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists);
+#else
+INT                     CheckGrid                               (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists, INT checkif);
 #endif
+INT                     CheckLists                              (GRID *theGrid);
 
 /* selection */
 void            ClearSelection                  (MULTIGRID *theMG);
