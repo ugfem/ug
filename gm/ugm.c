@@ -1719,11 +1719,13 @@ MULTIGRID *GetFirstMultigrid ()
 
   theMG = (MULTIGRID *) ENVDIR_DOWN(theDocDir);
 
-  if (InitElementTypes(theMG)!=GM_OK)
-  {
-    PrintErrorMessage('E',"GetFirstMultigrid","error in InitElementTypes");
-    return(NULL);
-  }
+  if (theMG != NULL)
+    if (InitElementTypes(theMG)!=GM_OK)
+    {
+      PrintErrorMessage('E',"GetFirstMultigrid",
+                        "error in InitElementTypes");
+      return(NULL);
+    }
 
   return (theMG);
 }
@@ -1754,11 +1756,14 @@ MULTIGRID *GetNextMultigrid (const MULTIGRID *theMG)
   MULTIGRID *MG;
 
   MG = (MULTIGRID *) NEXT_ENVITEM(theMG);
-  if (InitElementTypes(MG)!=GM_OK)
-  {
-    PrintErrorMessage('E',"GetNextMultigrid","error in InitElementTypes");
-    return(NULL);
-  }
+
+  if (MG != NULL)
+    if (InitElementTypes(MG)!=GM_OK)
+    {
+      PrintErrorMessage('E',"GetNextMultigrid",
+                        "error in InitElementTypes");
+      return(NULL);
+    }
 
   return (MG);
 }
