@@ -4,7 +4,9 @@
 #	for SUN Sparc 5 Workstations (SOLARIS 5.3)
 #     (cc -V: SC4.0)
 #
-
+#   for fvwm (window manager): add to .Xresources: Xug3*input: true
+#   set LD_LIBRARY_PATH /usr/X11/lib:/usr/openwin/lib
+#
 ARCH_TYPE     = __SUN__
 
 ARCH_MAKE     = make
@@ -23,6 +25,6 @@ ARCH_C++FLAGS = -g
 ARCH_LFLAGS   = -g
 ARCH_ARFLAGS  = ru
 
-ARCH_XINCLUDES = -I/usr/openwin/share/include -I.
-ARCH_XLIBS     = -L/usr/openwin/lib -L. -lX11 -lXt -lXaw -lXmu -lXext
+ARCH_XINCLUDES = -I/usr/openwin/share/include -I/usr/X11/include -I.
+ARCH_XLIBS     = -L/usr/X11/lib -L/usr/openwin/lib -L. -lX11 -lXt -lXaw -lXmu -lXext
 
