@@ -486,7 +486,11 @@ static INT							GE_fromLevel,GE_toLevel;
 #define COLOR_REG			RED_CLASS
 #define COLOR_LOWER_LEVEL	(RED_CLASS+1)
 #define COLOR_EDGE			(RED_CLASS+2)
+#ifndef ModelP
 #define EE_MAX_PROP		    100
+#else
+#define EE_MAX_PROP		    2048
+#endif
 
 /* defines 2D */
 #define EE2D_TEXTSIZE		8
