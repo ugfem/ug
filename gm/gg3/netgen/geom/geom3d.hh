@@ -135,21 +135,22 @@ inline Vec3d & Vec3d :: operator*= (double s)
   return *this;
 }
 
-inline Vec3d & Vec3d :: operator/= (double s)
-{
-  if (s != 0)
-  {
+// moved to geom3d.cc
+/*inline Vec3d & Vec3d :: operator/= (double s)
+   {
+   if (s != 0)
+    {
     vx /= s;
     vy /= s;
     vz /= s;
-  }
-  else
-  {
+    }
+   else
+    {
     MyError ("Vec3d::operator /=: Divisioin by zero");
-  }
-  return *this;
-}
-
+    }
+   return *this;
+   }
+ */
 
 
 

@@ -9,6 +9,21 @@
 #include <array.hh>
 #include <geom/geom3d.hh>
 
+Vec3d & Vec3d :: operator/= (double s)
+{
+  if (s != 0)
+  {
+    vx /= s;
+    vy /= s;
+    vz /= s;
+  }
+  else
+  {
+    MyError ("Vec3d::operator /=: Divisioin by zero");
+  }
+  return *this;
+}
+
 ostream & operator<<(ostream  & s, const Point3d & p)
 {
   return s << "(" << p.px << ", " << p.py << ", " << p.pz << ")";
