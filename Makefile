@@ -34,47 +34,50 @@ all: $(MODULES) $(OBJECTS)
 	ar $(ARFLAGS) lib/libug$(LIBSUFFIX).a $(OBJECTS)
 	echo "libug, libdom and libdev compiled"
 
-uglib: $(UGMODULES) $(OBJECTS)
+uglib: $(UGMODULES) $(OBJECTS) 
 	ar $(ARFLAGS) lib/libug$(LIBSUFFIX).a $(OBJECTS)
 	echo "libug compiled"
 
-par: $(UGMODULES) $(OBJECTS) $(PARMODULES)
+par: $(UGMODULES) $(OBJECTS) $(PARMODULES) 
 	ar $(ARFLAGS) lib/libug$(LIBSUFFIX).a $(OBJECTS)
 	echo "libug compiled"
 
-LOW:
+LOW: include
 	cd low; make -f Makefile.low; cd ..;
 
-DDDIF:
+DDDIF: include
 	cd dddif; make -f Makefile.dddif; cd ..;
 
-DEV:
+DEV: include
 	cd dev; make -f Makefile.dev; cd ..;
 
-DOM:
+DOM: include
 	cd dom; make -f Makefile.dom; cd ..;
 
-GM:
+GM: include
 	cd gm; make -f Makefile.gm $(version); cd ..;
 
-NUMERICS:
+NUMERICS: include
 	cd numerics; make -f Makefile.numerics $(version); cd ..;
 
-GRAPH:
+GRAPH: include
 	cd graph; make -f Makefile.graph $(version); cd ..;
 
-GRAPE:
+GRAPE: include
 	cd grape; make -f Makefile.grape $(version)GRAPE$(GRAPE); cd ..;
 
-UI:
+UI: include
 	cd ui; make -f Makefile.ui $(version); cd ..;
 
-GG:
+GG: include
 	cd gg; make -f Makefile.gg $(version); cd ..;
 	cd gg3d; make -f Makefile.gg3d $(version); cd ..;
 
-PPIF:
+PPIF: include
 	cd machines/$(ARCHDIR); make; cd ..;
+
+include:
+	ugmakelinks;
 
 # default rule
 .c.o:
