@@ -892,6 +892,12 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
   /* write mykey */
   refinement->mykey = KeyForObject((KEY_OBJECT *)theElement);
 
+  /* write myfatherkey */
+  if ( THEFLAG(theElement) )
+    refinement->myfatherkey = -1;               /* orphan element has no father */
+  else
+    refinement->myfatherkey = KeyForObject((KEY_OBJECT *)EFATHER(theElement));
+
   /* write nbkey[] */
   for (j=0; j<SIDES_OF_ELEM(theElement); j++)
     refinement->nbkey[j] = KeyForObject((KEY_OBJECT *)NBELEM(theElement,j));
@@ -1486,7 +1492,6 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
 #if (MGIO_DEBUG>0)
       /* write debug extension */
       cge->mykey = KeyForObject((KEY_OBJECT *)theElement);
-      cge->fatherkey = KeyForObject((KEY_OBJECT *)EFATHER(theElement));
       for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
         cge->nodekey[j] = KeyForObject((KEY_OBJECT *)CORNER(theElement,j));
       for (j=0; j<SIDES_OF_ELEM(theElement); j++)
@@ -1997,6 +2002,15 @@ static INT CheckLocalElementKeys (ELEMENT *theElement, MGIO_REFINEMENT *ref, INT
     assert(0);
   }
 
+  /* check consistency of father element key;
+     the check is ok also for orphan elements (they have fatherkey -1) */
+  key = KeyForObject((KEY_OBJECT *)EFATHER(theElement));
+  if (key!=ref->myfatherkey)
+  {
+    printf(PFMT " IO_Loc: father element key, element: " EID_FMTX ", father element: " EID_FMTX ": exp.key %d does not match\n",me,EID_PRTX(theElement),EID_PRTX(EFATHER(theElement)),ref->mykey);
+    assert(0);
+  }
+
   /* check corners */
   if (CORNERS_OF_ELEM(theElement)!=ref->mycorners)
   {
@@ -2029,8 +2043,16 @@ static INT CheckLocalElementKeys (ELEMENT *theElement, MGIO_REFINEMENT *ref, INT
       {
         if ( ref->mycornerfatherkey[j]!=-1 )
         {
-          printf(PFMT " IO_Loc: father corner relation, element: " EID_FMTX " corner %d doesn't exist but key %d expected\n",me,EID_PRTX(theElement),j,ref->mycornerfatherkey[j]);
-          assert(0);
+          if ( !EORPHAN(theElement) )
+          {
+            printf(PFMT " IO_Loc: father corner relation, element: " EID_FMTX " corner %d doesn't exist but key %d expected\n",me,EID_PRTX(theElement),j,ref->mycornerfatherkey[j]);
+            assert(0);
+          }
+          /* else for orphan element: at save time there was a father-corner. Such father-corner pointers are
+             reconstructed not from the orphan element itself, but from the father-corner which is
+             located in a neighbor element-tree; and since it is possible, that this neighbor element-tree
+             is not already constructed and the father-corner pointer is still missing. It's OK.
+           */
         }
       }
 
@@ -2514,14 +2536,10 @@ static INT CheckCGKeys (INT ne, ELEMENT** eid_e, MGIO_CG_ELEMENT *cg_elem)
     }
 
     key = KeyForObject((KEY_OBJECT *)EFATHER(theElement));
-    if (key!=-1 && key!=cge->fatherkey)
+    if (key!=-1)
     {
-      if (EFATHER(theElement)==NULL)
-        printf(PFMT " IO_CG: father relation, element: " EID_FMTX ", father --- : exp.key %d does not match\n",
-               me,EID_PRTX(theElement),cge->fatherkey);
-      else
-        printf(PFMT " IO_CG: father relation, element: " EID_FMTX ", father: " EID_FMTX " :exp.key %d does not match\n",
-               me,EID_PRTX(theElement),EID_PRTX(EFATHER(theElement)),cge->fatherkey);
+      printf(PFMT " IO_CG: father relation, element: " EID_FMTX ", father: " EID_FMTX " ; but no father expected because element is orphan\n",
+             me,EID_PRTX(theElement),EID_PRTX(EFATHER(theElement)));
 
       assert(0);
     }

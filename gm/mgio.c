@@ -1069,11 +1069,10 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 
 #if (MGIO_DEBUG>0)
     /* read debug extension */
-    m = 2 + lge[pe->ge].nCorner + lge[pe->ge].nSide;
+    m = 1 + lge[pe->ge].nCorner + lge[pe->ge].nSide;
     if (Bio_Read_mint(m,intList)) return (1);
     s=0;
     pe->mykey = intList[s++];
-    pe->fatherkey = intList[s++];
     for (j=0; j<lge[pe->ge].nCorner; j++)
       pe->nodekey[j] = intList[s++];
     for (j=0; j<lge[pe->ge].nSide; j++)
@@ -1141,7 +1140,6 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
     /* write debug extension */
     s=0;
     intList[s++] = pe->mykey;
-    intList[s++] = pe->fatherkey;
     for (j=0; j<lge[pe->ge].nCorner; j++)
       intList[s++] = pe->nodekey[j];
     for (j=0; j<lge[pe->ge].nSide; j++)
@@ -1243,6 +1241,9 @@ int Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
 
   /* read mykey */
   if (Bio_Read_mint(1,&(pr->mykey))) assert(0);       /*return (1);*/
+
+  /* read myfatherkey */
+  if (Bio_Read_mint(1,&(pr->myfatherkey))) assert(0);       /*return (1);*/
 
   /* read nbkey[] */
   if (Bio_Read_mint(MGIO_MAX_SIDES_OF_ELEM,pr->nbkey)) assert(0);       /*return (1);*/
@@ -1365,6 +1366,9 @@ int Write_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
 
   /* write mykey */
   if (Bio_Write_mint(1,&(pr->mykey))) assert(0);       /*return (1);*/
+
+  /* write myfatherkey */
+  if (Bio_Write_mint(1,&(pr->myfatherkey))) assert(0);       /*return (1);*/
 
   /* write nbkey[] */
   MGIO_CHECK_INTSIZE(MGIO_MAX_SIDES_OF_ELEM);

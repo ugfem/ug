@@ -267,7 +267,6 @@ struct mgio_cg_element_seq {
 #if (MGIO_DEBUG>0)
   /* debug extension */
   int mykey;                                                                            /* keys of mine                                         */
-  int fatherkey;                                                                /* keys of my father                            */
   int nodekey[MGIO_MAX_CORNERS_OF_ELEM];                /* keys of nodes                                        */
   int neighborkey[MGIO_MAX_SIDES_OF_ELEM];              /* keys of neighbors                                    */
 #endif
@@ -286,7 +285,6 @@ struct mgio_cg_element {
 #if (MGIO_DEBUG>0)
   /* debug extension */
   int mykey;                                                                            /* keys of mine                                         */
-  int fatherkey;                                                                /* keys of my father                            */
   int nodekey[MGIO_MAX_CORNERS_OF_ELEM];                /* keys of nodes                                        */
   int neighborkey[MGIO_MAX_SIDES_OF_ELEM];              /* keys of neighbors                                    */
 #endif
@@ -328,12 +326,13 @@ struct mgio_refinement {
 
 #if (MGIO_DEBUG>0)
   /* debug extension */
-  int mykey;                                                                                                       /* key of the element itself */
-  int mycorners;                                               /* number of element corners */
-  int mycornerkey[MGIO_MAX_CORNERS_OF_ELEM];               /* keys of the element's corners */
+  int mykey;                                                                                    /* key of the element itself */
+  int myfatherkey;                                                                      /* keys of my father                            */
+  int mycorners;                                                                        /* number of element corners */
+  int mycornerkey[MGIO_MAX_CORNERS_OF_ELEM];            /* keys of the element's corners */
   int mycornerfatherkey[MGIO_MAX_CORNERS_OF_ELEM];  /* keys of the element's corners fathers*/
-  int mycornersonkey[MGIO_MAX_CORNERS_OF_ELEM];        /* keys of the element's corners sons*/
-  int nbkey[MGIO_MAX_SIDES_OF_ELEM];                                                            /* nb-elem-keys element */
+  int mycornersonkey[MGIO_MAX_CORNERS_OF_ELEM];         /* keys of the element's corners sons*/
+  int nbkey[MGIO_MAX_SIDES_OF_ELEM];                            /* nb-elem-keys element */
 
   /* (procs>1)-extension */
   int sonskey[MGIO_MAX_SONS_OF_ELEM];                           /* keys of sons of element					*/
