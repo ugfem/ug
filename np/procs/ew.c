@@ -312,6 +312,9 @@ static INT SetUnsymmetric (MULTIGRID *mg, INT fl, INT tl,
   register INT vtype;
   INT lev;
 
+  for (lev=fl; lev<=tl; lev++)
+    l_setindex(GRID_ON_LEVEL(mg,lev));
+
   for (vtype=0; vtype<NVECTYPES; vtype++)
     if (VD_ISDEF_IN_TYPE(x,vtype))
     {
@@ -530,7 +533,7 @@ static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
     for (l=bl+1; l<=level; l++)
       for (i=0; i<nev; i++)
         if ((*np->Transfer->InterpolateNewVectors)
-              (np->Transfer,level,ev[i],result))
+              (np->Transfer,l,ev[i],result))
           return(1);
   }
 
@@ -573,7 +576,6 @@ static INT Rayleigh (NP_EW_SOLVER *theNP, INT level,
   if (a[1] <= ABS(a[0]) * VERY_SMALL)
     NP_RETURN(1,result[0]);
   *q = a[0] / a[1];
-
 
   return (0);
 }
