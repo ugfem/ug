@@ -357,7 +357,7 @@ static int CloseGrid (GRID *theGrid)
 	ELEMENT *theElement, *NbElement, *firstElement;
 	EDGE *MyEdge, *NbEdge;
 	INT i,j,k,cnt,n;
-	INT Mark, MyEdgePattern, MySidePattern, MyEdgeNum, MyRule, MyPattern, NewPattern;
+	INT Mark, MyEdgePattern, MySidePattern, MyEdgeNum, MyPattern, NewPattern;
 	INT NbEdgePattern, NbSidePattern, NbEdgeNum, NbSideMask;
 	SHORT *myPattern;
 
@@ -475,7 +475,7 @@ FIFOSTART:
 			switch (CORNERS_OF_SIDE(theElement,i))
 			{
 				case 3:
-					/* because SIDEPATTERN is set to zero, I choose TriSectionEdge……[0] */
+					/* because SIDEPATTERN is set to zero, I choose TriSectionEdgeää[0] */
 					MyEdgeNum = TriSectionEdge[MyEdgePattern&CondensedEdgeOfSide[i]][0];
 					if (MyEdgeNum == -2)
 						RETURN(-1);
@@ -829,7 +829,7 @@ FIFOSTART:
 /*																			*/
 /****************************************************************************/
 
-INT GetNeighborSons (ELEMENT *theElement, ELEMENT *theSon, ELEMENT *SonList[MAX_SONS], int count, int nsons)
+static INT GetNeighborSons (ELEMENT *theElement, ELEMENT *theSon, ELEMENT *SonList[MAX_SONS], int count, int nsons)
 {
 	ELEMENT *NbElement;
 	int i,j, startson, stopson;
@@ -877,9 +877,12 @@ INT GetNeighborSons (ELEMENT *theElement, ELEMENT *theSon, ELEMENT *SonList[MAX_
 
 INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 {
+	int SonID,tag;
+	#ifdef __THREEDIM__
 	REFRULE *theRule;
 	ELEMENT *theSon;
-	int SonID,PathPos,nsons,tag;
+	int PathPos,nsons;
+	#endif
 	
 	if (theElement==NULL) RETURN(GM_ERROR);
 	
@@ -985,8 +988,11 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 static INT RestrictMarks (GRID *theGrid)
 {
 	ELEMENT *theElement,*SonList[MAX_SONS];
+	int i,flag;
+	#ifdef __THREEDIM__
 	EDGE *theEdge;
-	int i,j,flag,CondensedPattern,Pattern,Rule;
+	int j,Rule,Pattern;
+	#endif
 	
 	/* TODO: delete special debug */ PRINTELEMID(-1)
 
@@ -1144,7 +1150,7 @@ static INT RestrictMarks (GRID *theGrid)
 static int ComputeCopies (GRID *theGrid)
 {
 	ELEMENT *theElement;
-	int i,flag;
+	int flag;
 	
 	/* set class of all dofs on next level to 0 */
 	ClearNextVectorClasses(theGrid);
@@ -1275,22 +1281,24 @@ static void CheckElementContextConsistency(ELEMENT *theElement, ELEMENTCONTEXT t
 static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementContext) 
 {
 	NODE *theNode, **CenterNode; 			
-	ELEMENT *theNeighbor,*theSon;			/* neighbor and a son of current elem.	*/
-	ELEMENT *NeighborSonList[MAX_SONS];
-	EDGE *theEdge,*fatherEdge;				/* temporary storage for an edge		*/
-	INT i,j,r,Corner0, Corner1,candelete;	/* some integer variables				*/
+	EDGE *theEdge;							/* temporary storage for an edge		*/
+	INT i,Corner0, Corner1;					/* some integer variables				*/
 	NODE **MidNodes;						/* nodes on refined edges				*/
-	NODE **SideNodes;						/* nodes on refined sides				*/
-	LINK *theLink;							/* scan through nodes neighbor list 	*/
-	LINK *theLink0,*theLink1;
 	NODE *Node0, *Node1;
+	INT Mark,toBisect,toCreate;
+	#ifdef __THREEDIM__
+/***** TODO: delete (s.b.) */
+	REFRULE *nbrule;
+	ELEMENT *NeighborSonList[MAX_SONS];
+	INT Refine;
+/******/
+	ELEMENT *theNeighbor;					/* neighbor and a son of current elem.	*/
+	NODE **SideNodes;						/* nodes on refined sides				*/
 	NODE *theNode0, *theNode1;
-	VERTEX *CenterVertex;
-	EDGEDATA *edata;
-	REFRULE *rule, *nbrule;
-	INT Mark,Refine,toBisect,toCreate;
-	INT k,l;
-	char buffer[64];
+	LINK *theLink0,*theLink1;
+	EDGE *fatherEdge;
+	INT l,j;
+	#endif
 
 	/* reset context to NULL */
 	for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)  
@@ -1568,8 +1576,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement)
 {
 	int s;
-	ELEMENT *theSon,*SonList[MAX_SONS],*theNeighbor,*NbSonList[MAX_SONS],*NbSon,*NbElem;
-	EDGEDATA *edata;
+	ELEMENT *theSon,*SonList[MAX_SONS];
 
 	/* something to do ? */
 	if ((REFINE(theElement)==NO_REFINEMENT)||(theGrid==NULL)) return(GM_OK);
@@ -2221,21 +2228,18 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 
 	GREENSONDATA sons[MAX_GREEN_SONS];
 
-	NODE *theNode, *theEdgeNode, *theNode0, *theNode1;
+	NODE *theNode, *theNode0, *theNode1;
 	NODE *theSideNodes[8];
 	NODE *ElementNodes[MAX_CORNERS_OF_ELEM];
-	VERTEX *CenterVertex, *myvertex;
-	EDGE *theEdge;
 	ELEMENT *theSon;
 	ELEMENT *NbElement;
 	ELEMENT *NbSonList[MAX_SONS];
 	ELEMENT *NbSideSons[5];
-	ELEMENTSIDE *oldSide, *newSide;
-	NODE **CenterNode;
+	ELEMENTSIDE *oldSide;
 	REFRULE *NbRule;
 	SONDATA *sdata2;
-	int i,j,k,l,m,n,o,p,q,r,s,s2,t,found,points;
-	int NbrSide,side,nbside,NbSonIndex,nelem,nedges,node,node0,nsi;
+	int i,j,k,l,m,n,o,p,q,r,s,s2,found,points;
+	int side,nbside,nelem,nedges,node0;
 	int bdy,edge, sides[4], side0, side1;
 	int tetNode0, tetNode1, tetNode2, tetEdge0, tetEdge1, tetEdge2,
 		tetSideNode0Node1, tetSideNode0Node2, tetSideNode1Node2,
@@ -3087,19 +3091,15 @@ if(!newstyle)
 		
 static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theElementContext)
 {
-	INT i,j,l,s,s2,ni,pi,nsi,p,q,side,pyrSide,nbside;
-	INT points,ni0,ni1,m,n,o,k,r;
+	INT i,j,l,s,s2,p,q,side,pyrSide,nbside;
+	INT points,m,n,o,k,r;
 	ELEMENT *theSon,*theNeighbor;
-	EDGE *theEdge;
 	ELEMENT *SonList[MAX_SONS],*SonList2[MAX_SONS];
 	ELEMENT *NbSideSons[5];
-	ELEMENTSIDE *oldSide,*newSide;
-	VERTEX *myvertex;
-	NODE *mynode;
+	ELEMENTSIDE *oldSide;
 	NODE *ElementNodes[MAX_CORNERS_OF_ELEM];
 	INT boundaryelement, found;
 	REFRULE *rule, *rule2;
-	EDGEDATA *edata;
 	SONDATA *sdata, *sdata2;
 	
 	/* is something to do ? */
@@ -3528,7 +3528,6 @@ static int RefineGrid (GRID *theGrid)
 	ELEMENT *theElement;
 	ELEMENTCONTEXT theContext;
 	GRID *fineGrid;
-	NODE *theNode;
 	
 	fineGrid = UPGRID(theGrid);
 	if (fineGrid==NULL) RETURN(GM_FATAL);
