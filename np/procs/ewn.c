@@ -102,14 +102,16 @@ typedef struct
   INT c_n;                                                               /* convergence on c_n vectors      */
   INT c_d;                                                               /* up to c_d digits                */
   INT type;                                  /* usage of mass matrix            */
-  DOUBLE shift;                                                  /* shift of center of inverse iter */
+  DOUBLE shift_min, shift_max;                   /* shift of center of inverse iter */
   DOUBLE scale;                                                  /* scaling factor for eigenvalues  */
+  VEC_SCALAR weight;                         /* weighting for reduced system    */
+  /* build-up						*/
 
   /* dynamical data */
   VECDATA_DESC *r;                           /* help vector                     */
   VECDATA_DESC *t;                           /* help vector                     */
   VECDATA_DESC *E;                           /* mass matrix, lumped, modified   */
-  MATDATA_DESC *M;                           /* matrix                          */
+  MATDATA_DESC *M, *N;                       /* matrix                          */
   VECDATA_DESC *e[MAX_NUMBER_EW];            /* eigenvectors                    */
 
 } NP_EWN;
@@ -191,7 +193,7 @@ static INT dmassadd (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC
 static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev, VECDATA_DESC **ev, NP_NL_ASSEMBLE *Assemble, INT *result)
 {
   NP_EWN *np;
-  INT i,bl;
+  INT i,bl,low;
 
   np = (NP_EWN *) theNP;
 
@@ -201,17 +203,11 @@ static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev, VECDATA_DESC *
   if (AllocVDFromVD(theNP->base.mg,bl,level,ev[0],&np->r)) NP_RETURN(1,result[0]);
   if (AllocVDFromVD(theNP->base.mg,bl,level,ev[0],&np->t)) NP_RETURN(1,result[0]);
   if (AllocMDFromVD(theNP->base.mg,bl,level,ev[0],ev[0],&np->M)) NP_RETURN(1,result[0]);
-  if (np->reset)
-    for (i=0; i<nev; i++)
-      if (SetUnsymmetric(theNP->base.mg,bl,level,ev[i],EVERY_CLASS,i)) NP_RETURN(1,result[0]);
-  if (np->shift!=0.0)
-  {
-    if (dcopy(theNP->base.mg,bl,level,ALL_VECTORS,np->t,np->E)) return(1);
-    if (dscal(theNP->base.mg,bl,level,ALL_VECTORS,np->t,-np->shift)) return(1);
-    if (dmassadd(theNP->base.mg,bl,level,ALL_VECTORS,np->M,np->t,np->type)) return(1);
-  }
+  low=nev-1; if (np->reset) low=0;
+  for (i=low; i<nev; i++)
+    if (SetUnsymmetric(theNP->base.mg,bl,level,ev[i],EVERY_CLASS,i)) NP_RETURN(1,result[0]);
+  if (dmatcopy(theNP->base.mg,bl,level,ALL_VECTORS,np->N,np->M)) return(1);
   np->reset = 0;
-  if (np->LS->PreProcess != NULL) if ((*np->LS->PreProcess)(np->LS,level,ev[0],np->r,np->M, &np->baselevel,result)) return(1);
 
   return (0);
 }
@@ -231,14 +227,6 @@ static INT EWPostProcess (NP_EW_SOLVER *theNP, INT level, INT nev, VECDATA_DESC 
   if (FreeMD(theNP->base.mg,bl,level,np->M)) NP_RETURN(1,result[0]);
   for (i=0; i<nev; i++)
     if ((*np->Transfer->ProjectSolution)(np->Transfer,bl,level,ev[i],result)) NP_RETURN(1,result[0]);
-  if (np->shift!=0.0)
-  {
-    if (dcopy(theNP->base.mg,bl,level,ALL_VECTORS,np->t,np->E)) return(1);
-    if (dscal(theNP->base.mg,bl,level,ALL_VECTORS,np->t,np->shift)) return(1);
-    if (dmassadd(theNP->base.mg,bl,level,ALL_VECTORS,np->M,np->t,np->type)) return(1);
-  }
-  if (np->LS->PostProcess != NULL)
-    if ((*np->LS->PostProcess)(np->LS,level,ev[0],np->r,np->M,result)) NP_RETURN(1,result[0]);
 
   return (0);
 }
@@ -261,6 +249,8 @@ static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
 
   np->M = ReadArgvMatDesc(theNP->mg,"M",argc,argv);
   if (np->M==NULL) return(NP_NOT_ACTIVE);
+  np->N = ReadArgvMatDesc(theNP->mg,"N",argc,argv);
+  if (np->N==NULL || np->M==np->N) return(NP_NOT_ACTIVE);
   np->E = ReadArgvVecDesc(theNP->mg,"E",argc,argv);
   if (np->E==NULL) return(NP_NOT_ACTIVE);
   np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
@@ -318,8 +308,11 @@ static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
   else np->type=MD_UNDEF;
   if (ReadArgvDOUBLE("scale",&np->scale,argc,argv)) np->scale=1.0;
   if (np->scale<=0.0) return(NP_ACTIVE);
-  if (ReadArgvDOUBLE("shift",&np->shift,argc,argv)) np->shift=0.0;
-  np->shift/=np->scale;
+  if (ReadArgvDOUBLE("smin",&np->shift_min,argc,argv)) np->shift_min=0.0;
+  if (ReadArgvDOUBLE("smax",&np->shift_max,argc,argv)) np->shift_max=0.0;
+  if (sc_read(np->weight,NP_FMT(npew),npew->ev[0],"weight",argc,argv))
+    for (i=0; i<MAX_VEC_COMP; i++)
+      np->weight[i]=1.0;
 
   return(NP_EXECUTABLE);
 }
@@ -412,11 +405,9 @@ static int EWCompare (DOUBLE **index1, DOUBLE **index2)
   a=**index1;
   b=**index2;
 
-  if (ABS(a)>ABS(b)) return (1);
-  if (ABS(a)<ABS(b)) return (-1);
-  if (ABS(a)==ABS(b) && b<0.0) return (1);
-  if (ABS(a)==ABS(b) && a<0.0) return (-1);
-  return (0);
+  if (a>b) return(1);
+  if (a<b) return(-1);
+  return(0);
 }
 
 static INT SmallEWNSolver_Sci (INT nev, DOUBLE A[MAX_NUMBER_EW][MAX_NUMBER_EW], DOUBLE B[MAX_NUMBER_EW][MAX_NUMBER_EW], DOUBLE *re, DOUBLE *im, DOUBLE E[MAX_NUMBER_EW][MAX_NUMBER_EW])
@@ -486,13 +477,31 @@ static INT dmassdot (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC
   }
 }
 
+static INT GetVectorAngle (MULTIGRID *theMG, INT bl, INT tl, VECDATA_DESC *x, VECDATA_DESC* y, VEC_SCALAR angle)
+{
+  VEC_SCALAR n1,n2,sp;
+  DOUBLE q;
+  INT i;
+
+  dnrm2x(theMG,bl,tl,ON_SURFACE,x,n1);
+  dnrm2x(theMG,bl,tl,ON_SURFACE,y,n2);
+  ddotx(theMG,bl,tl,ON_SURFACE,x,y,sp);
+  for (i=0; i<2; i++)
+  {
+    q=ABS(sp[i])/n1[i]/n2[i]; q=MAX(-1.0,q); q=MIN(1.0,q);
+    angle[i]=180/PI*acos(q);
+  }
+
+  return(0);
+}
+
 static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev, DOUBLE *ew, NP_NL_ASSEMBLE *Assemble, VEC_SCALAR abslimit, VEC_SCALAR reduction, EWRESULT *ewresult)
 {
   NP_EWN     *np    = (NP_EWN *) theNP;
   MULTIGRID *theMG = theNP->base.mg;
-  INT i,j,k,l,PrintID,iter,done;
-  char text[DISPLAY_WIDTH+4],format1[64],format2[64],format3[64],formatr1[64],formatr2[64];
-  DOUBLE a[2],rq,s;
+  INT i,j,k,l,PrintID,iter,done,result;
+  char text[DISPLAY_WIDTH+4],format2[64],format3[64],formatr1[64],formatr2[64],formats[64];
+  DOUBLE a[2],rq,s,min,shift;
   DOUBLE A[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE B[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE BL[MAX_NUMBER_EW*MAX_NUMBER_EW];
@@ -501,23 +510,31 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
   DOUBLE GL[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE E[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE ew_re[MAX_NUMBER_EW],ew_im[MAX_NUMBER_EW];
+  DOUBLE ew_re_out,ew_im_out;
   DOUBLE tmp_re[MAX_NUMBER_EW],tmp_im[MAX_NUMBER_EW];
-  DOUBLE old_re[MAX_NUMBER_EW],old_im[MAX_NUMBER_EW];
+  DOUBLE old_re[MAX_NUMBER_EW],old_im[MAX_NUMBER_EW],norm,diff,sign;
   DOUBLE* table[MAX_NUMBER_EW];
   INT index[MAX_NUMBER_EW];
-  INT bl = 0;
+  INT bl = level;
 
   ewresult->error_code = 0;
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'§',"\n"); UserWrite(text);
   sprintf(text,"%d.%d",np->c_d+1,np->c_d-1);
-  strcpy(format1," %-3d  %3d: (% "); strcat(format1,text); strcat(format1,"e, % "); strcat(format1,text); strcat(format1,"e)\n");
+  strcpy(formats," %-3d    S:  % "); strcat(formats,text); strcat(formats,"e\n");
   strcpy(format2,"      %3d: (% "); strcat(format2,text); strcat(format2,"e, % "); strcat(format2,text); strcat(format2,"e)\n");
   strcpy(format3,"      %3d: [% "); strcat(format3,text); strcat(format3,"e, % "); strcat(format3,text); strcat(format3,"e]\n");
   strcpy(formatr1," %-3d   res: %3d: (% "); strcat(formatr1,text); strcat(formatr1,"e, % "); strcat(formatr1,text); strcat(formatr1,"e)\n");
   strcpy(formatr2,"            %3d: (% "); strcat(formatr2,text); strcat(formatr2,"e, % "); strcat(formatr2,text); strcat(formatr2,"e)\n");
+  shift=np->shift_min;
   for (iter=0; iter<np->maxiter; iter++)
   {
     if (iter > 0)
+    {
+      if (dmatcopy(theNP->base.mg,bl,level,ALL_VECTORS,np->M,np->N)) return(1);
+      if (dcopy(theNP->base.mg,bl,level,ALL_VECTORS,np->t,np->E)) return(1);
+      if (dscal(theNP->base.mg,bl,level,ALL_VECTORS,np->t,-shift)) return(1);
+      if (dmassadd(theNP->base.mg,bl,level,ALL_VECTORS,np->M,np->t,np->type)) return(1);
+      if (np->LS->PreProcess != NULL) if ((*np->LS->PreProcess)(np->LS,level,ev[0],np->r,np->M, &np->baselevel,&result)) return(1);
       for (i=0; i<New; i++)
       {
         if (dcopy(theMG,bl,level,ALL_VECTORS,np->t,ev[i])) NP_RETURN(1,ewresult->error_code);
@@ -528,6 +545,9 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
         if (np->Project != NULL)
           if (np->Project->Project(np->Project,bl,level, ev[i],&ewresult->error_code) != NUM_OK) NP_RETURN(1,ewresult->error_code);
       }
+      if (np->LS->PostProcess!=NULL)
+        if ((*np->LS->PostProcess)(np->LS,level,ev[0],np->r,np->M,&result)) return(1);
+    }
     for (i=0; i<New; i++)
     {
       if (ddot(theMG,0,level,ON_SURFACE,ev[i],ev[i],&B[i][i])) NP_RETURN(1,ewresult->error_code);
@@ -538,14 +558,14 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
     {
       if (dmatmul (theMG,0,level,ON_SURFACE,np->t,np->M,ev[i]) != NUM_OK) NP_RETURN(1,ewresult->error_code);
       for (j=0; j<New; j++)
-        if (ddot(theMG,0,level,ON_SURFACE,np->t,ev[j],&A[i][j])) NP_RETURN(1,ewresult->error_code);
+        if (ddotw(theMG,0,level,ON_SURFACE,np->t,ev[j],np->weight,&A[i][j])) NP_RETURN(1,ewresult->error_code);
     }
     for (i=0; i<New; i++)
     {
       if (dcopy(theMG,bl,level,ALL_VECTORS,np->t,ev[i])) NP_RETURN(1,ewresult->error_code);
       if (dmassdot(theMG,bl,level,ALL_VECTORS,np->t,np->E,np->type)) NP_RETURN(1,ewresult->error_code);
       for (j=0; j<New; j++)
-        if (ddot(theMG,0,level,ON_SURFACE,np->t,ev[j],&B[i][j])) NP_RETURN(1,ewresult->error_code);
+        if (ddotw(theMG,0,level,ON_SURFACE,np->t,ev[j],np->weight,&B[i][j])) NP_RETURN(1,ewresult->error_code);
     }
 
     /* Special Eigenvalue problem  G E_i = lambda E_i */
@@ -564,13 +584,14 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
       if (dset(theMG,bl,level,ALL_VECTORS,np->e[i],0.0)) NP_RETURN(1,ewresult->error_code);
       for (j=0; j<New; j++)
         if (daxpy(theMG,bl,level,ALL_VECTORS,np->e[i],E[j][i],ev[j]) != NUM_OK) NP_RETURN(1,ewresult->error_code);
+      dnrm2(theMG,bl,level,ON_SURFACE,np->e[i],&norm);
+      dscal(theMG,bl,level,ALL_VECTORS,np->e[i],1.0/norm);
     }
 
     /* sort eigen-values/vectors */
     for (i=0; i<New; i++)
     {
-      ew[i]=sqrt(ew_re[i]*ew_re[i]+ew_im[i]*ew_im[i]);
-      if (ew_im[i]<0.0) ew[i]*=-1.0;
+      ew[i]=ew_re[i];
       tmp_re[i]=ew_re[i]; tmp_im[i]=ew_im[i];
       table[i] = &ew[i];
     }
@@ -587,23 +608,22 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
       if (FreeVD(theMG,bl,level,np->e[index[i]])) NP_RETURN(1,ewresult->error_code);
     }
 
-    /* scale/shift eigenvalues */
-    for (i=0; i<New; i++)
-    {
-      ew_re[i]=np->scale*(ew_re[i]+np->shift);
-      ew_im[i]=np->scale*ew_im[i];
-    }
+    /* shift back eigenvalues */
+    for (i=0; i<np->ew.nev; i++) ew_re[i]+=shift;
 
     /* display */
     if (np->display > PCR_NO_DISPLAY)
     {
+      UserWriteF(formats,iter,shift*np->scale);
       for (i=0; i<np->ew.nev; i++)
-        if (i==0)
-          UserWriteF(format1,(int)iter,(int)i,ew_re[i],ew_im[i]);
-        else if (i<np->c_n)
-          UserWriteF(format2,(int)i,ew_re[i],ew_im[i]);
+      {
+        ew_re_out=np->scale*ew_re[i];
+        ew_im_out=np->scale*ew_im[i];
+        if (i<np->c_n)
+          UserWriteF(format2,(int)i,ew_re_out,ew_im_out);
         else
-          UserWriteF(format3,(int)i,ew_re[i],ew_im[i]);
+          UserWriteF(format3,(int)i,ew_re_out,ew_im_out);
+      }
       UserWriteF("\n");
     }
 
@@ -614,7 +634,7 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
       for (i=0; i<np->c_n; i++)
       {
         if (Round(ew_re[i],np->c_d)!=Round(old_re[i],np->c_d)) done=0;
-        if (Round(ew_im[i],np->c_d)!=Round(old_im[i],np->c_d)) done=0;
+        if (Round(ABS(ew_im[i]),np->c_d)!=Round(ABS(old_im[i]),np->c_d)) done=0;
       }
     }
     else
@@ -625,14 +645,30 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
       old_im[i]=ew_im[i];
     }
     if (done) break;
+
+    /* calculate shift */
+    shift=0.5*(shift+ew_re[0]);
+    min=0;
+    for (i=1; i<New; i++)
+    {
+      min=2.0*ew_re[0]-ew_re[i];
+      if (min<ew_re[0]) break;
+    }
+    shift=MIN(shift,min);
+    shift=MAX(shift,np->shift_min);
+    shift=MIN(shift,np->shift_max);
   }
 
   /* print result */
   for (i=0; i<np->c_n; i++)
+  {
+    ew_re_out=np->scale*ew_re[i];
+    ew_im_out=np->scale*ew_im[i];
     if (i==0)
-      UserWriteF(formatr1,(int)iter,(int)i,ew_re[i],ew_im[i]);
+      UserWriteF(formatr1,(int)iter,(int)i,ew_re_out,ew_im_out);
     else
-      UserWriteF(formatr2,(int)i,ew_re[i],ew_im[i]);
+      UserWriteF(formatr2,(int)i,ew_re_out,ew_im_out);
+  }
   UserWriteF("\n");
 
   return (0);
