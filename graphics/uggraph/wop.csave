@@ -110,9 +110,9 @@ INT ce_CUTMODE;
 #define CM_INFRONT						2
 
 INT ce_ELEMORD;
-#define ELEMORD_LEN 					2
-#define ELEMORD(p)						CW_READ(p,ce_CUTMODE)
-#define SETELEMORD(p,n) 				CW_WRITE(p,ce_CUTMODE,n)
+#define ELEMORD_LEN 					1
+#define ELEMORD(p)						CW_READ(p,ce_ELEMORD)
+#define SETELEMORD(p,n) 				CW_WRITE(p,ce_ELEMORD,n)
 
 
 /* Macros for Node order */
@@ -319,7 +319,8 @@ static RotObsTrafoProcPtr InitRotObsTrafo3d;
 
 /*---------- variables use by OrderElements etc ----------------------------*/
 static VIEWEDOBJ			*OE_ViewedObj;
-static INT                  OE_OrderStrategy;
+static INT                  OE_OrderStrategy=0;
+static INT					OE_force_ordering=FALSE;
 static DOUBLE               *OE_zMin;
 static DOUBLE               *OE_zMax;
 static INT                  OE_nBndElem;
@@ -5085,6 +5086,8 @@ INT SetOrderStrategy (INT OrderStrategy)
 	if ((OrderStrategy<0) || (OrderStrategy>2))
 		return (1);
 	
+	/* to force ordering next time we plot */
+	OE_force_ordering = TRUE;
 	OE_OrderStrategy = OrderStrategy;
 	
 	return (0);
@@ -13303,7 +13306,7 @@ static INT CompareElementsXSH(INT mu, INT nu)
 
 /* -------------------------------------------------------------------------- */
 
-static INT CompareIDs(void *p, void *q)
+static INT CompareIDs (const void *p, const void *q)
 {
     INT a, b;
 
@@ -13705,7 +13708,7 @@ static INT Id2Index(INT id)
 */
 /****************************************************************************/
 
-static INT OrderFathersXSH(GRID *grid, HEAP *heap, ELEMENT **table)
+static INT OrderFathersXSH_New (GRID *grid, HEAP *heap, ELEMENT **table)
 {
 	ELEMENT *p, *q;
 	ILIST *h;
@@ -13872,6 +13875,153 @@ static INT OrderFathersXSH(GRID *grid, HEAP *heap, ELEMENT **table)
    Release(heap, FROM_TOP);
    return (pos == grid->nElem ? 0 : 1);
 }
+static INT OrderFathersXSH(GRID *grid, HEAP *heap, ELEMENT **table)
+{
+	ELEMENT *p, *q;
+	ILIST *h;
+    DOUBLE minx, maxx, miny, maxy, dummy;
+    COORD_POINT t;
+    DOUBLE temp[3];
+    INT i, j, k, count, root, pos, lastBegin, newBegin;
+
+    /* count boundary elements */
+	OE_nBndElem = 0;
+	for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
+		if (OBJT(p) == BEOBJ)
+			OE_nBndElem++;
+
+	/* allocate Arrays */
+	Mark(heap, FROM_TOP);
+	OE_Map     = (MAP *)     GetMem(heap, OE_nBndElem*sizeof(MAP),     FROM_TOP);
+    OE_BE_Data = (BE_DATA *) GetMem(heap, OE_nBndElem*sizeof(BE_DATA), FROM_TOP);
+    OE_BoxTab  = (INT *)     GetMem(heap, OE_nBndElem*sizeof(INT),     FROM_TOP);
+
+    /* init inner elements & copy boundary elements */
+    i = 0;
+    for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p)) {
+		SETUSED(p, 0);
+		if (OBJT(p) == BEOBJ) {
+			OE_Map[i].id = ID(p);
+			OE_Map[i++].elem = p;
+		}
+		else {
+			count = 0;
+            for (j = 0; j < SIDES_OF_ELEM(p); j++) {
+				q = NBELEM(p, j);
+				if (q != NULL && !VIEWABLE(p, j))
+					count++;
+			}
+			SETCOUNT(p, count);
+		}
+	}
+
+	/* sort map */
+	qsort((void *)OE_Map, OE_nBndElem, sizeof(MAP), CompareIDs);
+
+	/* init boundary elements */
+	for (i = 0; i < OE_nBndElem; i++) 
+	{
+		p = OE_Map[i].elem;
+
+		/* set counters */
+		count = 0;
+        for (j = 0; j < SIDES_OF_ELEM(p); j++) {
+				q = NBELEM(p, j);
+				if (q != NULL && !VIEWABLE(p, j))
+					count++;
+		}
+		BCOUNT(i) = count;
+
+		/* clear list of elems this one is hidden by */
+		HIDDEN_BY(i) = NULL;
+
+		/* set bounding boxes */
+        V3_TRAFOM4_V3(CVECT(MYVERTEX(CORNER(p, 0))), ObsTrafo, temp);
+        (*OBS_ProjectProc)(temp, &t);
+        minx = maxx = t.x;
+		miny = maxy = t.y;
+		for (j = 1; j < CORNERS_OF_ELEM(p); j++) {
+			V3_TRAFOM4_V3(CVECT(MYVERTEX(CORNER(p, j))), ObsTrafo, temp);
+            (*OBS_ProjectProc)(temp, &t);
+            if (t.x < minx) minx = t.x;
+            if (t.x > maxx) maxx = t.x;
+			if (t.y < miny) miny = t.y;
+			if (t.y > maxy) maxy = t.y;
+		}
+		U1(i) = minx;
+        V1(i) = maxx;
+        U2(i) = miny;
+		V2(i) = maxy;
+	}
+
+    /* build box tree */
+    for (i = 0; i < OE_nBndElem; i++)
+		BT(i) = i;
+	BSort1(0, OE_nBndElem-1, &root, &dummy, &dummy, &dummy, &dummy);
+
+	/* complete boundary element init */
+    OE_Heap = heap;
+	for (i = 0; i < OE_nBndElem; i++) {
+		OE_QueryBox = i;
+		BSearch1(root);
+	}
+
+	/* find first shell */
+	pos = 0;
+	for (i = 0; i < OE_nBndElem; i++)
+		if (BCOUNT(i) == 0) {
+			p = OE_Map[i].elem;
+			SETUSED(p, 1);
+			table[pos++] = p;
+		}
+	
+	/* create new shell from last one */
+   lastBegin = 0;
+   newBegin  = pos;
+   while (lastBegin < newBegin) {
+	   for (i = lastBegin; i<newBegin; i++) {
+		   p = table[i];
+		   for (j = 0; j < SIDES_OF_ELEM(p); j++) {
+			   q = NBELEM(p, j);
+			   if (q != NULL && !USED(q)) {
+				   if (OBJT(q) == BEOBJ) {
+					   k = Id2Index(ID(q));
+					   count = BCOUNT(k)-1;
+					   if (count == 0) {
+						   table[pos++] = q;
+						   SETUSED(q, 1);
+					   }
+					   else
+						   BCOUNT(k) = count;
+				   }
+				   else {
+					   count = COUNT(q)-1;
+					   if (count == 0) {
+						   table[pos++] = q;
+						   SETUSED(q, 1);
+					   }
+					   else
+						   SETCOUNT(q, count);
+				   }
+			   }
+		   }
+		   if (OBJT(p) == BEOBJ) {
+			   for (h = HIDDEN_BY(Id2Index(ID(p))) ; h != NULL; h = h->next) {
+				   k = h->index;
+				   if(--BCOUNT(k) == 0) {
+					   q = OE_Map[k].elem;
+					   table[pos++] = q;
+					   SETUSED(q, 1);
+				   }
+			   }
+		   }
+	   }
+	   lastBegin = newBegin;
+	   newBegin  = pos;
+   }
+   Release(heap, FROM_TOP);
+   return (pos == grid->nElem ? 0 : 1);
+}
 
 /****************************************************************************/
 /*
@@ -13922,21 +14072,26 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 	MEM offset;
     clock_t start, stop;
 
-	/* check if multigrid is already ordered */
 	offset   = OFFSET_IN_MGUD(wopMGUDid);
 	myMGdata = (WOP_MG_DATA*) GEN_MGUD_ADR(theMG,offset);
 	
 	if (myMGdata==NULL)
 		return (1);
-
+	
+	/* check if multigrid is already ordered */
 	if (myMGdata->init==0)
 		/* not yet initialized */
 		SaveSettings(theViewedObj,myMGdata);
-	else if (SettingsEqual(theViewedObj,myMGdata))
-		if (ELEMORD(theMG))
-			/* no ordering neccessary */
-			return (0);
-
+	else if (!OE_force_ordering)
+	{
+		if (SettingsEqual(theViewedObj,myMGdata))
+			if (ELEMORD(theMG))
+				/* no ordering neccessary */
+				return (0);
+	}
+	
+	OE_force_ordering = FALSE;
+	
 	/* inits */
 	OE_ViewedObj = theViewedObj;	
 		
@@ -14006,11 +14161,12 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 
 	stop = clock();
     
+    UserWriteF( "order strategy:                %d\n",OE_OrderStrategy);
     UserWriteF( "time for ordering coarse grid: %7.2f s\n", 
 			     (stop-start)/(DOUBLE)CLOCKS_PER_SEC);
 	UserWriteF( "number of CompareElements    : %9d\n", OE_nCompareElements);
 
-	if (PutAtEndOfList(theGrid,i,table)!=GM_OK) RETURN(1);	
+	if (PutAtEndOfList(theGrid,theGrid->nElem,table)!=GM_OK) RETURN(1);	
 
 	/* now order level 1 to toplevel hirarchically */
 	for (i=0; i<theMG->topLevel; i++)
