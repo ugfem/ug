@@ -64,7 +64,7 @@
 /* for offset component in VECDATA_DESC	*/
 #define NMATOFFSETS                             (NMATTYPES+1)
 
-#define DEFAULT_NAMES "uvwzpqrstabcdefghijklmno"   /* of size MAX_VEC_COMP                 */
+#define DEFAULT_NAMES "uvwzpabcdefghijklmnoPQRSTUVWXYZ123456789" /* of size MAX_VEC_COMP */
 
 #define NO_IDENT                        -1              /* no identification of components		*/
 #define FULL_TPLT                       -1              /* full template rather than sub		*/
