@@ -640,9 +640,9 @@ INT StandardProject (GRID *CoarseGrid, const VECDATA_DESC *to,
   if (edcomp <= 0)
     return (NUM_OK);
 
+    #ifndef ModelP
   fromComp = VD_cmpptr_of_otype(from,EDGEVEC);
-  for (t=FIRSTELEMENT(CoarseGrid); t!=NULL; t=SUCCE(t))
-  {
+  for (t=FIRSTELEMENT(CoarseGrid); t!=NULL; t=SUCCE(t)) {
     if (NSONS(t) != 1)
       continue;
     GetVectorsOfEdges ((const ELEMENT *)t       ,&m,v0);
@@ -653,6 +653,7 @@ INT StandardProject (GRID *CoarseGrid, const VECDATA_DESC *to,
       for (i=0; i<edcomp; i++)
         VVALUE(v0[j],edComp[i]) = VVALUE(v1[j],fromComp[i]);
   }
+    #endif
 
   return (NUM_OK);
 }
