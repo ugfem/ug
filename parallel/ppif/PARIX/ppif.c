@@ -90,6 +90,9 @@ int LocalLink (LinkCB_t *Link[2]);
 
 #define VERBOSE         0               /* verbose level								*/
 
+#ifdef DELAY
+#undef DELAY                            /* on some operating systems DELAY has a different meaning */
+#endif
 #define DELAY       100     /* deschedule for a number of low prio ticks    */
 
 /****************************************************************************/
