@@ -741,16 +741,15 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   /* print norm of defect */
   if (DoPCR(PrintID,defect,PCR_AVERAGE))  {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
 
-  /* if converged, then report results and mean execution times */
-  if (res->converged) {
-    res->error_code = 0;
-    res->number_of_nonlinear_iterations = newton_c;
-    res->number_of_line_searches = defect_c;
-    for (i=0; i<n_unk; i++) res->last_defect[i] = defect[i];
-    UserWriteF("AVG EXEC TIMES: DEF[%2d]=%10.4lg JAC[%2d]=%10.4lg LIN[%2d]=%10.4lg\n",
-               defect_c,defect_t/defect_c,newton_c,newton_t/newton_c,linear_c,linear_t/linear_c);
-    res->exec_time = defect_t+newton_t+linear_t;
-  }
+  /* report results and mean execution times */
+  res->error_code = 0;
+  res->number_of_nonlinear_iterations = newton_c;
+  res->number_of_line_searches = defect_c;
+  for (i=0; i<n_unk; i++) res->last_defect[i] = defect[i];
+  if (!res->converged) UserWriteF("NL SOLVER: desired convergence not reached\n");
+  UserWriteF("AVG EXEC TIMES: DEF[%2d]=%10.4lg JAC[%2d]=%10.4lg LIN[%2d]=%10.4lg\n",
+             defect_c,defect_t/defect_c,newton_c,newton_t/newton_c,linear_c,linear_t/linear_c);
+  res->exec_time = defect_t+newton_t+linear_t;
 
   /* postprocess assemble once at the end */
   if (ass->PostProcess!=NULL)
