@@ -235,6 +235,20 @@ static INT arraypathes_set=FALSE;
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
+
+/****************************************************************************/
+/*
+ */
+/* forward declarations of functions used before they are defined                       */
+/*
+ */
+/****************************************************************************/
+
+#if defined(CAD) && defined(__THREEDIM__)
+MULTIGRID *ConvertCADGrid  (char *theFormat, char *CADOutputFileName,unsigned long heapSize);
+#endif
+
+
 /****************************************************************************/
 /*D
    GetCurrentMultigrid - return a pointer to the current multigrid
