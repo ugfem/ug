@@ -1688,6 +1688,8 @@ static INT LogOnCommand (INT argc, char **argv)
   {
     sprintf(logfile,"%s.%03d",logfile,me);
   }
+  else if (me != master)
+    return (OKCODE);
         #endif
 
   rv = OpenLogFile(logfile);
@@ -10333,11 +10335,13 @@ static INT InitScreenSize (void)
 
 static INT LBCommand (INT argc, char **argv)
 {
-  INT res,strategy,minlevel,depth,maxlevel,cmd_error;
+  INT res,cmd_error,error,maxlevel,i;
+  INT minlevel,cluster_depth,threshold,Const,n,c,
+      strategy,eigen,loc,dims,weights,coarse,mode,iopt;
+  char levelarg[32];
   MULTIGRID *theMG;
 
   return(OKCODE);
-#ifdef COMMENTIN
 
                 #ifndef ModelP
   /* dummy command in seriell version */
@@ -10356,14 +10360,25 @@ static INT LBCommand (INT argc, char **argv)
   if (procs==1) return(OKCODE);
 
   /* defaults */
-  strategy        = 0;
-  minlevel        = 1;
-  depth           = 2;
-  maxlevel        = MAXLEVEL;
+  minlevel                = 1;
+  cluster_depth   = 2;
+  maxlevel                = MAXLEVEL;
+  threshold               = 1;
+  Const                   = 1;
+  n                               = 500;
+  c                               = 10;
+  strategy                = 0;
+  eigen                   = 0;
+  loc                             = 0;
+  dims                    = 1;
+  weights                 = 0;
+  coarse                  = 0;
+  mode                    = 0;
+  iopt                    = 10000;
 
   /* scan lb strategy*/
-  res = sscanf(argv[0]," lb %d", &strategy)
-        if (res > 1)
+  res = sscanf(argv[0]," lb %d", &strategy);
+  if (res > 1)
   {
     UserWriteF("lb [<strategy>] [$c <minlevel>] [$d <depth>] [$f <maxlevel>]\n");
     UserWriteF("default lb 0 $c 1 $d 2\n");
@@ -10393,10 +10408,13 @@ static INT LBCommand (INT argc, char **argv)
 
     default :
       UserWriteF("lb [<strategy>] [$c <minlevel>] [$d <depth>] [$f <maxlevel>]\n");
+      UserWriteF("default lb 0 $c 1 $d 2\n");
       break;
     }
 
+  /* check for parameter consistency! */
   cmd_error = 0;
+
   if ((minlevel<0)||(minlevel>TOPLEVEL(theMG)))
   {
     UserWriteF("Choose <minlevel>: 0-%d (toplevel)\n",TOPLEVEL(theMG));
@@ -10410,7 +10428,7 @@ static INT LBCommand (INT argc, char **argv)
     cmd_error = 1;
   }
                 #endif
-                #ifdef CHACOT
+                #ifndef CHACOT
   if (strategy != 0)
   {
     UserWriteF("don't specify <strategy> without Chaco\n!");
@@ -10424,38 +10442,43 @@ static INT LBCommand (INT argc, char **argv)
     UserWriteF("Choose <maxlevel>: %d-%d (MAXLEVEL)\n",minlevel,MAXLEVEL);
     cmd_error = 1;
   }
-  if (maxlevel < TOPLEVEL)
+  if (maxlevel < TOPLEVEL(theMG))
   {
     UserWriteF("%s: maxlevel reached: no loadbalancing done!\n"
                "    maxlevel=%d toplevel=%d\n",argv[0],maxlevel,TOPLEVEL(theMG));
     return(OKCODE);
   }
 
+  if (strategy==1 && strategy==2)
+  {
+    if (strategy == 1)
+    {
+      coarse = 50;
+      loc = 1;
+    }
+    eigen = 1;
+  }
+
+  if (strategy>2 || strategy<6)
+  {
+    weights = 1;
+  }
+
   if (cmd_error) return(CMDERRORCODE);
 
                 #ifdef CHACOT
-  threshold       = 1;
-  Const           = 1;
-  n                       = 500;
-  c                       = 10;
-  loc                     = 0;
-  dims            = 1;
-  weights         = ;
-  coarse          = ;
-  mode            = 0;
-  iopt            = 10000;
   error = Balance_CCPTM(theMG,minlevel,cluster_depth,threshold,Const,n,c,
                         strategy,eigen,loc,dims,weights,coarse,mode,iopt);
                 #endif
                 #ifndef CHACOT
-  error = ddd_test(minlevel, theMG);
+  sprintf(levelarg,"%d",minlevel);
+  ddd_test(levelarg, theMG);
                 #endif
 
   if (error>0) return(CMDERRORCODE);
 
   return(OKCODE);
                 #endif
-#endif
 }
 
 #ifdef ModelP
