@@ -56,6 +56,7 @@ static VECTOR *GlobalVec1;
 static VECTOR *GlobalVec2;
 static INT GlobalIds;
 static INT VecCoordComp;
+static long ColorTable[8];
 
 #ifdef ModelP
 static int DrawBorderVec;
@@ -182,6 +183,16 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
 	GreenColor = theOD->green;
 	DrawBorderVec = theObj->DrawBorder;
 #endif
+	
+	ColorTable[0] = theOD->blue;
+	ColorTable[1] = theOD->magenta;
+	ColorTable[2] = theOD->green;
+	ColorTable[3] = theOD->orange;
+	ColorTable[4] = theOD->cyan;
+	ColorTable[5] = theOD->gray;
+	ColorTable[6] = theOD->yellow;
+	ColorTable[7] = theOD->red;
+	
     if(theObj->level == 999) 
     {
         level =  CURRENTLEVEL(mg);
@@ -277,7 +288,7 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
 		if( DrawBorderVec )
 			VectorColor = BlackColor;
 		else
-			VectorColor = (me%10)+1;
+			VectorColor = ColorTable[me%8];
 	}
 	CircleSize = 12;
 #else
