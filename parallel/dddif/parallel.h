@@ -98,7 +98,7 @@ enum HandlerSets
    #define DDD_PRIO_ENV
  */
 #ifdef DDD_PRIO_ENV
-#define DDD_PrioritySet(h,p) DDD_PrioChange(h,p)
+#define DDD_PrioritySet(h,p) {ObjectPriorityUpdate((DDD_OBJ)h,p); DDD_PrioChange(h,p);}
 #endif
 
 /* macros for processor-synchronized output */
@@ -289,8 +289,9 @@ void    ddd_DisplayContext      (void);
 void lbs (char *argv, MULTIGRID *theMG);
 
 /* from handler.c */
-void            ddd_HandlerInit (INT);
-DDD_TYPE        NFatherObjType  (DDD_OBJ obj, DDD_OBJ ref);
+void            ddd_HandlerInit                 (INT);
+DDD_TYPE        NFatherObjType                  (DDD_OBJ obj, DDD_OBJ ref);
+void            ObjectPriorityUpdate    (DDD_OBJ obj, DDD_PRIO new);
 
 /* from lbrcb.c */
 int BalanceGridRCB (MULTIGRID *, int);
