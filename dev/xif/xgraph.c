@@ -780,6 +780,11 @@ static void IFPlotPixelBuffer(void *buffer, void *data, INT len,
   /* create XImage structure and write image to the screen */
   image = XCreateImage(display, default_visual, default_depth, ZPixmap, 0,
                        (char*)data, w, h, bitmap_pad, 0);
+#ifdef __SWAPBYTES__
+  image->byte_order = LSBFirst;
+#else
+  image->byte_order = MSBFirst;
+#endif
   XPutImage(display, gw->win, gw->gc, image, 0, 0, x, y, w, h);
   if (!gw->backing_store)
     XPutImage(display, gw->pixmap, gw->gc, image, 0, 0, x, y, w, h);
