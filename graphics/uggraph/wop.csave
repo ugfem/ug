@@ -42,7 +42,6 @@
 #include "cw.h"
 #include "graph.h"
 #include "gm.h"
-#include "refine.h"
 #include "ugm.h"
 #include "num.h"
 #include "shapes.h"
@@ -6544,6 +6543,7 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   COORD *x[MAX_CORNERS_OF_ELEM];
   COORD_VECTOR MidPoint;
   INT coe,rule,side;
+  void *data;
 
   coe = CORNERS_OF_ELEM(theElement);
 
@@ -6552,7 +6552,7 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
   if (EE2D_IndMark)
-    rule = MARKCLASS(theElement);
+    GetRefinementMark ((const ELEMENT *)theElement,&rule,data);
 
   /* store viewable sides on drawing obj */
   if (LEVEL(theElement)<EE2D_MaxLevel)
