@@ -46,3 +46,6 @@ then
 	rm ${UGROOT}/bin/texput.log;
 fi
 
+cd ${UGROOT}/bin;
+rm -f ugmakeref ugrm4serv ugmaketrees ugmakelatex ugtex ugmakelatexrefs;
+rm -f ugprep4serv ugmakeman ugrecurse;
