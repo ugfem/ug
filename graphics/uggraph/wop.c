@@ -4697,6 +4697,9 @@ static INT BVEval_recurse( DRAWINGOBJ *theDO, GEN_ExecuteProcPtr ExecuteProc, BL
 	BLOCKVECTOR *bv_child;
 	DRAWINGOBJ *theStartDO = theDO;
 	
+	if ( BV_IS_EMPTY(bv) )	/* do nothing for an empty blockvector */
+		return (0);
+	
 	width_own = BVNUMBEROFVECTORS( bv );
 
 	/* hor line at BVFIRSTVECTOR(BV_theBV) */
