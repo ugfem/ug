@@ -55,7 +55,7 @@
 #define MGIO_ASCII                                      0
 #define MGIO_BIN                                        1
 
-#define MGIO_INTSIZE                            200
+#define MGIO_INTSIZE                            1000    /* minimal 497 !!!		*/
 #define MGIO_DOUBLESIZE                         200
 #define MGIO_BUFFERSIZE                         1024
 
@@ -174,6 +174,42 @@ static int ASCII_Write_string (char *string)
   return (0);
 }
 
+static int BIN_Read_mint (int n, int *intList)
+{
+  if (fread((void*)intList,sizeof(int)*n,1,stream)!=1) return (1);
+  return (0);
+}
+
+static int BIN_Write_mint (int n, int *intList)
+{
+  if (fwrite((void*)intList,sizeof(int)*n,1,stream)!=1) return (1);
+  return (0);
+}
+
+static int BIN_Read_mdouble (int n, double *doubleList)
+{
+  if (fread((void*)doubleList,sizeof(double)*n,1,stream)!=1) return (1);
+  return (0);
+}
+
+static int BIN_Write_mdouble (int n, double *doubleList)
+{
+  if (fwrite((void*)doubleList,sizeof(double)*n,1,stream)!=1) return (1);
+  return (0);
+}
+
+static int BIN_Read_string (char *string)
+{
+  if (fscanf(stream,"%s ",string)!=1) return (1);
+  return (0);
+}
+
+static int BIN_Write_string (char *string)
+{
+  if (fprintf(stream,"%s ",string)<0) return (1);
+  return (0);
+}
+
 /****************************************************************************/
 /*D
    Read_OpenFile - opens file for reading
@@ -284,9 +320,9 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
     Read_string = ASCII_Read_string;
     break;
   case MGIO_BIN :
-    Read_mint       = ASCII_Read_mint;
-    Read_mdouble = ASCII_Read_mdouble;
-    Read_string = ASCII_Read_string;
+    Read_mint       = BIN_Read_mint;
+    Read_mdouble = BIN_Read_mdouble;
+    Read_string = BIN_Read_string;
     break;
   default :
     return (1);
@@ -345,9 +381,9 @@ int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
     Write_string    = ASCII_Write_string;
     break;
   case MGIO_BIN :
-    Write_mint              = ASCII_Write_mint;
-    Write_mdouble   = ASCII_Write_mdouble;
-    Write_string    = ASCII_Write_string;
+    Write_mint              = BIN_Write_mint;
+    Write_mdouble   = BIN_Write_mdouble;
+    Write_string    = BIN_Write_string;
     break;
   default :
     return (1);
@@ -422,11 +458,6 @@ int     Read_GE_General (MGIO_GE_GENERAL *ge_general)
 
 int     Write_GE_General (MGIO_GE_GENERAL *ge_general)
 {
-
-#ifdef  __MGIO_CONTRO_OUT__
-  if ((*Write_string)("##### ge general #####")) return (1);
-#endif
-
   intList[0] = ge_general->nGenElement;
   if ((*Write_mint)(1,intList)) return (1);
 
@@ -469,18 +500,21 @@ int     Read_GE_Elements (int n, MGIO_GE_ELEMENT *ge_element)
     pge->nCorner    = lge[i].nCorner        = intList[s++];
     pge->nEdge              = lge[i].nEdge          = intList[s++];
     pge->nSide              = lge[i].nSide          = intList[s++];
-    if ((*Read_mint)(2*pge->nEdge+4*pge->nSide,intList)) return (1);s=0;
-    for (j=0; j<pge->nEdge; j++)
+    if (pge->nEdge>0 || pge->nSide>0)
     {
-      pge->CornerOfEdge[j][0] = lge[i].CornerOfEdge[j][0] = intList[s++];
-      pge->CornerOfEdge[j][1] = lge[i].CornerOfEdge[j][1] = intList[s++];
-    }
-    for (j=0; j<pge->nSide; j++)
-    {
-      pge->CornerOfSide[j][0] = lge[i].CornerOfSide[j][0] = intList[s++];
-      pge->CornerOfSide[j][1] = lge[i].CornerOfSide[j][1] = intList[s++];
-      pge->CornerOfSide[j][2] = lge[i].CornerOfSide[j][2] = intList[s++];
-      pge->CornerOfSide[j][3] = lge[i].CornerOfSide[j][3] = intList[s++];
+      if ((*Read_mint)(2*pge->nEdge+4*pge->nSide,intList)) return (1);s=0;
+      for (j=0; j<pge->nEdge; j++)
+      {
+        pge->CornerOfEdge[j][0] = lge[i].CornerOfEdge[j][0] = intList[s++];
+        pge->CornerOfEdge[j][1] = lge[i].CornerOfEdge[j][1] = intList[s++];
+      }
+      for (j=0; j<pge->nSide; j++)
+      {
+        pge->CornerOfSide[j][0] = lge[i].CornerOfSide[j][0] = intList[s++];
+        pge->CornerOfSide[j][1] = lge[i].CornerOfSide[j][1] = intList[s++];
+        pge->CornerOfSide[j][2] = lge[i].CornerOfSide[j][2] = intList[s++];
+        pge->CornerOfSide[j][3] = lge[i].CornerOfSide[j][3] = intList[s++];
+      }
     }
     pge++;
   }
@@ -515,10 +549,6 @@ int     Write_GE_Elements (int n, MGIO_GE_ELEMENT *ge_element)
 {
   int i,j,s;
   MGIO_GE_ELEMENT *pge;
-
-#ifdef  __MGIO_CONTRO_OUT__
-  if ((*Write_string)("##### ge elements #####")) return (1);
-#endif
 
   pge = ge_element;
   for (i=0; i<n; i++)
@@ -602,11 +632,6 @@ int     Read_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
 
 int     Write_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
 {
-
-#ifdef  __MGIO_CONTRO_OUT__
-  if ((*Write_string)("##### rr general #####")) return (1);
-#endif
-
   intList[0] = mgio_rr_general->nRules;
   if ((*Write_mint)(1,intList)) return (1);
 

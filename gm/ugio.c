@@ -60,6 +60,7 @@
 
 /* include refine because of macros accessed  */
 #include "refine.h"
+#include "rm.h"
 
 /****************************************************************************/
 /*																			*/
@@ -321,6 +322,65 @@ INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
   return(GM_OK);
 }
 
+static INT Write_RefRules(MULTIGRID *theMG)
+{
+  MGIO_RR_GENERAL rr_general;
+  INT i,j,k,t,nRules;
+  HEAP *theHeap;
+  MGIO_RR_RULE *Refrule, *RR;
+  REFRULE * ug_refrule;
+  struct mgio_sondata *sonData;
+
+  /* init */
+  if (theMG==NULL) return (1);
+  theHeap = MGHEAP(theMG);
+  nRules = 0;
+  for (i=0; i<TAGS; i++) nRules += MaxRules[i];
+
+  /* write refrules general */
+  rr_general.nRules = nRules;
+  if (Write_RR_General(&rr_general)) return (1);
+
+  /* write refrules */
+  MarkTmpMem(theHeap);
+  RR = Refrule = (MGIO_RR_RULE *)GetTmpMem(theHeap,nRules*sizeof(MGIO_RR_RULE));
+  if (Refrule==NULL) return (1);
+  for (t=0; t<TAGS; t++)
+  {
+    ug_refrule = RefRules[t];
+    for (i=0; i<MaxRules[t]; i++)
+    {
+      Refrule->class = ug_refrule->class;
+      Refrule->nsons = ug_refrule->nsons;
+      for (j=0; j<MGIO_MAX_NEW_CORNERS; j++)
+        Refrule->pattern[j] = ug_refrule->pattern[j];
+      for (j=0; j<MGIO_MAX_NEW_CORNERS; j++)
+      {
+        Refrule->sonandnode[j][0] = ug_refrule->sonandnode[j][0];
+        Refrule->sonandnode[j][1] = ug_refrule->sonandnode[j][1];
+      }
+      for (j=0; j<MGIO_MAX_SONS_OF_ELEM; j++)
+      {
+        sonData = &(Refrule->sons[j]);
+        sonData->tag = ug_refrule->sons[i].tag;
+        for (k=0; k<MGIO_MAX_CORNERS_OF_ELEM; k++)
+          sonData->corners[k] = ug_refrule->sons[i].corners[k];
+        for (k=0; k<MGIO_MAX_SIDES_OF_ELEM; k++)
+          sonData->nb[k] = ug_refrule->sons[i].nb[k];
+        sonData->path = ug_refrule->sons[i].path;
+      }
+      Refrule++;
+      ug_refrule++;
+    }
+  }
+  if (Write_RR_Rules(nRules,RR)) return (1);
+
+  ReleaseTmpMem(theHeap);
+
+  return (0);
+}
+
+
 INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
 {
   GRID *theGrid;
@@ -332,7 +392,6 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   BVP_DESC theBVPDesc;
   MGIO_GE_GENERAL ge_general;
   MGIO_GE_ELEMENT ge_element[TAGS];
-  MGIO_RR_GENERAL rr_general;
   MGIO_CG_GENERAL cg_general;
   MGIO_CG_POINT *cg_point;
   MGIO_CG_ELEMENT *cg_element;
@@ -396,8 +455,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   if (Write_GE_Elements(TAGS,ge_element)) return (1);
 
   /* write information about refrules used */
-  rr_general.nRules = 0;
-  if (Write_RR_General(&rr_general)) return (1);
+  if (Write_RefRules(theMG)) return (1);
 
   /* write general information about coarse grid */
   theGrid = GRID_ON_LEVEL(theMG,0);
@@ -539,6 +597,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   MGIO_GE_GENERAL ge_general;
   MGIO_GE_ELEMENT ge_element[TAGS];
   MGIO_RR_GENERAL rr_general;
+  MGIO_RR_RULE *rr_rules;
   MGIO_CG_GENERAL cg_general;
   MGIO_CG_POINT *cg_point;
   MGIO_CG_ELEMENT *cg_element;
@@ -578,8 +637,11 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   if (Read_GE_General(&ge_general))                                                                       {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (Read_GE_Elements(TAGS,ge_element))                                                          {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
 
-  /* read general refrule information */
+  /* read refrule information */
   if (Read_RR_General(&rr_general))                                                                   {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  rr_rules = (MGIO_RR_RULE *)GetTmpMem(theHeap,rr_general.nRules*sizeof(MGIO_RR_RULE));
+  if (rr_rules==NULL)                                                                                                     {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Read_RR_Rules(rr_general.nRules,rr_rules))                                          {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   /* read general information about coarse grid */
   if (Read_CG_General(&cg_general))                                                                       {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
