@@ -40,6 +40,7 @@
 #include "debug.h"
 #include "ugdevices.h"
 #include "evm.h"
+#include "shapes.h"
 #include "general.h"
 #include "gm.h"
 #include "heaps.h"
@@ -1653,13 +1654,16 @@ static DOUBLE Dist (VECTOR *v, VECTOR *w)
   return(s);
 }
 
+#define LEN_MAX DIM*DIM+1
+
 INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
-  INT ncomp,i,j,n,nmax;
-  DOUBLE s;
+  INT ncomp,i,j,n,nmax,cnt;
+  DOUBLE s[DIM+1],sum;
   GRID *newGrid;
-  VECTOR *vect,*dest,*newVect;
+  VECTOR *vect,*dest,*newVect,*w[DIM+1];
   MATRIX *mat,*imat;
+  DOUBLE_VECTOR y[LEN_MAX],x,loc;
 
   for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
     if (VCCOARSE(vect)) {
@@ -1670,7 +1674,6 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
     }
 
   newGrid=theGrid->coarser;
-  nmax = 1 + NVEC(theGrid) / NVEC(newGrid);
   PRINTDEBUG(np,3,("%d:Ip nmax %d\n",me,nmax));
   for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
     if (VCCOARSE(vect) == 0) {
@@ -1703,25 +1706,184 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
             SETMUSED(mat,1);
             n++;
           }
-          if (n >= nmax) break;
         }
-      PRINTDEBUG(np,2,("%d:%d ->",VINDEX(vect),n));
+      PRINTDEBUG(np,2,("%d:%d\n",VINDEX(vect),n));
       if (n == 0) {
         PrintErrorMessage('E',"IpAverage",
                           "can't build Interpolation matrix (n = 0)");
         REP_ERR_RETURN(1);
       }
       /*
-         sum = 0.0;
-         for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
+         while (n > DIM+1) {
+          sum = 0.0;
+              for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
+                  if (!MUSED(mat)) continue;
+                      dest = MDEST(mat);
+                      sum = MAX(sum,Dist(vect,dest));
+              }
+              for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
+                  if (!MUSED(mat)) continue;
+                      dest = MDEST(mat);
+                      if (sum == Dist(vect,dest)) {
+                          n--;
+                              SETMUSED(mat,0);
+                      }
+              }
+         }
+       */
+      if (n > DIM)
+      {
+        DOUBLE detJ,IMdet;
+        DOUBLE_VECTOR a,b,c,M[DIM],IM[DIM];
+
+        VectorPosition(vect,x);
+        cnt = 0;
+        for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
+          if (!MUSED(mat))
+            continue;
+          if (cnt >= LEN_MAX) {
+            SETMUSED(mat,0);
+            continue;
+          }
+          dest = MDEST(mat);
+          VectorPosition(dest,y[cnt]);
+          cnt++;
+          if (cnt == DIM) {
+                        #ifdef __TWODIM__
+            V2_SUBTRACT(y[0],x,a);
+            V2_SUBTRACT(y[1],x,b);
+            V2_VECTOR_PRODUCT(a,b,detJ);
+                        #endif
+                        #ifdef __THREEDIM__
+            V3_SUBTRACT(y[1],y[0],a);
+            V3_SUBTRACT(y[2],y[0],b);
+            V3_VECTOR_PRODUCT(a,b,c);
+            V3_SUBTRACT(x,y[0],a);
+            V3_SCALAR_PRODUCT(a,c,detJ);
+                        #endif
+            ASSERT(detJ != 0.0);
+            if (detJ < 0.0) {
+              V_DIM_COPY(y[0],a);
+              V_DIM_COPY(y[1],y[0]);
+              V_DIM_COPY(a,y[1]);
+            }
+            V_DIM_SUBTRACT(x,y[0],a);
+          }
+          else if (cnt == DIM+1) {
+            TRANSFORMATION(DIM+1,y,loc,M);
+            M_DIM_INVERT(M,IM,IMdet);
+            if (IMdet==0)
+              RETURN(1);
+            MT_TIMES_V_DIM(IM,a,loc);
+            if ((loc[0] < 0.0)
+                || (loc[1] < 0.0)
+                || (loc[0]+loc[1] > 1.0)) {
+              SETMUSED(mat,0);
+              cnt--;
+              continue;
+            }
+            /*
+               printf("%f %f  %f %f   %f %f\n gl  %f %f loc  %f %f",
+               y[0][0],
+               y[0][1],
+               y[1][0],
+               y[1][1],
+               y[2][0],
+               y[2][1],x[0],x[1],loc[0],loc[1]);
+
+               LOCAL_TO_GLOBAL(DIM+1,y,loc,x);
+
+               printf("  gl %f %f\n",x[0],x[1]);
+             */
+          }
+          else if (cnt > DIM+1) {
+            SETMUSED(mat,0);
+            continue;
+          }
+        }
+        GNs(DIM+1,loc,s);
+        if (detJ < 0.0) {
+          a[0] = s[DIM];
+          s[DIM] = s[DIM-1];
+          s[DIM-1] = a[0];
+        }
+        if (cnt < DIM+1)
+          n = cnt;
+      }
+      if (n == 1) {
+        s[0] = 1.0;
+      }
+      else if (n < DIM + 1) {
+        sum = 0.0;
+        for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
           if (!MUSED(mat)) continue;
           dest = MDEST(mat);
-              sum += Dist(vect,dest);
+          sum += 1.0 / Dist(vect,dest);
+        }
+        cnt = 0;
+        for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
+          if (!MUSED(mat)) continue;
+          dest = MDEST(mat);
+          s[cnt] = 1.0 / (Dist(vect,dest) * sum);
+          cnt++;
+        }
+      }
+      /*
+         if (n == DIM + 1)
+         {
+          DOUBLE detJ,IMdet;
+              DOUBLE_VECTOR a,b,c,M[DIM],IM[DIM];
+
+
+
+
+
+              if (detJ == 0)
+                printf("%f %f  %f %f   %f %f\n",
+                               y[0][0],
+                               y[0][1],
+                               y[1][0],
+                               y[1][1],
+                               y[2][0],
+                               y[2][1]);
+
+
+              ASSERT(detJ != 0.0);
+              if (detJ < 0.0) {
+                  V_DIM_COPY(y[DIM],a);
+                  V_DIM_COPY(y[DIM-1],y[DIM]);
+                  V_DIM_COPY(a,y[DIM-1]);
+              }
+              V_DIM_SUBTRACT(x,y[0],a);
+              TRANSFORMATION(DIM+1,y,loc,M);
+              M_DIM_INVERT(M,IM,IMdet);
+              if (IMdet==0)
+                  RETURN(1);
+              MT_TIMES_V_DIM(IM,a,loc);
+
+                printf("%f %f  %f %f   %f %f\n gl   %f %f loc   %f %f",
+                               y[0][0],
+                               y[0][1],
+                               y[1][0],
+                               y[1][1],
+                               y[2][0],
+                               y[2][1],x[0],x[1],loc[0],loc[1]);
+
+                LOCAL_TO_GLOBAL(DIM+1,y,loc,x);
+
+                printf("  gl %f %f\n",x[0],x[1]);
+
+
+
          }
-         sum = 1.0 / sum;
+         else
+          for (i=0; i<=DIM; i++)
+                  s[i] = 1.0 / n;
        */
+      cnt = 0;
       for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
         if (!MUSED(mat)) continue;
+        if (cnt > DIM) continue;
         dest = MDEST(mat);
         PRINTDEBUG(np,3,(" %d",VINDEX(dest)));
         if (MD_COLS_IN_RT_CT(A,VTYPE(vect),VTYPE(dest)) != ncomp) {
@@ -1738,13 +1900,12 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
           REP_ERR_RETURN(1);
         }
         SETMDIAG(imat,1);
-        /* s = sum * Dist(vect,dest); */
-        s = 1.0/((DOUBLE) n);
         for (i=0; i<ncomp; i++)
           for (j=0; j<ncomp; j++) {
-            if (i == j) MVALUE(imat,i*ncomp+j) = s;
+            if (i == j) MVALUE(imat,i*ncomp+j) = s[cnt];
             else MVALUE(imat,i*ncomp+j) = 0.0;
           }
+        cnt++;
       }
       PRINTDEBUG(np,3,("\n"));
     }
