@@ -121,6 +121,14 @@ static DOUBLE InvMeshSize;
 RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
+/*																			*/
+/* forward declarations of functions used before they are defined			*/
+/*																			*/
+/****************************************************************************/
+
+static INT DisposeEdge (GRID *theGrid, EDGE *theEdge);
+
+/****************************************************************************/
 /*D
    GetFreeOBJT - Get an object type id not occupied in theMG
 
@@ -1889,7 +1897,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
    DisposeEdge - Remove edge from the data structure
 
    SYNOPSIS:
-   INT DisposeEdge (GRID *theGrid, EDGE *theEdge);
+   static INT DisposeEdge (GRID *theGrid, EDGE *theEdge);
 
    PARAMETERS:
    .  theGrid - grid to remove from
@@ -1906,7 +1914,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
    D*/
 /****************************************************************************/
 
-INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
+static INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
 {
   LINK *link0,*link1,*pl;
   NODE *from,*to;
@@ -2002,51 +2010,9 @@ INT DisposeNode (GRID *theGrid, NODE *theNode)
   LINK *link0,*link1,*pl;
   EDGE *pe;
   NODE *to;
-  int found;
 
-  /* remove links in all neighbors lists */
-  found = 0;
-  for (link0=START(theNode); link0!=NULL; link0=NEXT(link0))
-  {
-    found--;
-    link1 = REVERSE(link0);
-    to = NBNODE(link0);
-    if (START(to)==link1)
-    {
-      START(to) = NEXT(link1);
-      found++;
-    }
-    else
-    {
-      for (pl=START(to); pl!=NULL; pl = NEXT(pl))
-      {
-        if (NEXT(pl)==link1)
-        {
-          NEXT(pl) = NEXT(link1);
-          found++;
-          break;
-        }
-      }
-    }
-  }
-
-  /* now delete the edges */
-  pl = START(theNode);
-  while (pl!=NULL)
-  {
-    pe = MYEDGE(pl);
-    pl = NEXT(pl);
-    /* dispose vector and its matrices from edge-vector if */
-    if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
-    {
-      if (DisposeVector (theGrid,EDVECTOR(pe)))
-        RETURN(1);
-      PutFreeObject(theGrid->mg,pe,sizeof(EDGE),EDOBJ);
-    }
-    else
-      PutFreeObject(theGrid->mg,pe,sizeof(EDGE)-sizeof(VECTOR*),EDOBJ);
-    theGrid->nEdge--;
-  }
+  /* call DisposeElement first! */
+  assert(START(theNode) == NULL);
 
   /* remove node from node list */
   if (PREDN(theNode)!=NULL)
@@ -2067,9 +2033,6 @@ INT DisposeNode (GRID *theGrid, NODE *theNode)
   }
   else
     PutFreeObject(theGrid->mg,theNode,sizeof(NODE)-sizeof(VECTOR*),NDOBJ);
-
-  /* check error condition */
-  if (found!=0) RETURN(1);
 
   /* return ok */
   (theGrid->nNode)--;
@@ -4155,53 +4118,84 @@ static INT CheckOrientation (INT n, VERTEX **vertices)
 }
 
 #define SWAP_IJ(a,i,j,t)                        {t = a[i]; a[i] = a[j]; a[j] = t;}
+#endif
+
+#ifdef __THREEDIM__
+static INT CheckOrientation (INT n, VERTEX **vertices)
+{
+  COORD_VECTOR diff[3],rot;
+  COORD det;
+  INT i;
+
+  /* TODO: this case */
+  if (n == 8)
+    return(0);
+
+  for (i=1; i<n; i++)
+    V3_SUBTRACT(CVECT(vertices[i]),CVECT(vertices[0]),diff[i-1]);
+  V3_VECTOR_PRODUCT(diff[0],diff[1],rot);
+  V3_SCALAR_PRODUCT(rot,diff[2],det);
+
+  if (det < 0.0)
+    return(1);
+
+  return(0);
+}
+#endif
 
 INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
 {
-  GRID *theGrid;
-  int i,j,m,found,NeighborSide[4],bndEdges;
-  BVP *theBVP;
-  BVP_DESC theBVPDesc;
-  PATCH *thePatch[4];
+  GRID             *theGrid;
+  INT i,j,k,l,m,found,num,tag,ElementType;
+  INT NeighborSide[MAX_SIDES_OF_ELEM];
+  NODE             *sideNode[MAX_CORNERS_OF_SIDE],*NeighborNode,*theNode;
+  VERTEX           *Vertex[MAX_CORNERS_OF_ELEM],*sideVertex[MAX_CORNERS_OF_SIDE],*theVertex;
+  ELEMENT          *theElement,*Neighbor[MAX_SIDES_OF_ELEM];
+  EDGE             *theEdge;
+  COORD param[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_SIDE][DIM_OF_BND];
+  COORD        *plambda[MAX_CORNERS_OF_SIDE];
+  VSEGMENT         *vs,*vs1;
+  PATCH            *thePatch[MAX_SIDES_OF_ELEM], *Patch;
   PATCH_DESC thePatchDesc;
-  NODE *theNode,*aNode,*bNode;
-  VERTEX *Vertex[4],*theVertex,*aVertex,*bVertex;
-  VSEGMENT *aVSeg, *bVSeg, *aUniqueSeg, *bUniqueSeg;
-  ELEMENT *theElement,*Neighbor[4];
-  COORD from[4],to[4];
-  EDGE *theEdge;
 
   /* check level */
   if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
   {
-    PrintErrorMessage('E',"InsertElement","only a multigrid with exactly one level can be edited");
+    PrintErrorMessage('E',"InsertElement",
+                      "only a multigrid with exactly one level can be edited");
     RETURN(GM_ERROR);
   }
   theGrid = GRID_ON_LEVEL(theMG,0);
 
-  /* get BVP description */
-  theBVP = MG_BVP(theMG);
-  if (BVP_GetBVPDesc(theBVP,&theBVPDesc))
-  {
-    PrintErrorMessage('E',"InsertElement","cannot evaluate BVP");
-    RETURN(GM_ERROR);
-  }
-
-  /* check tag */
+  /* check parameters */
+    #ifdef __TWODIM__
   if ((n!=TRIANGLE)&&(n!=QUADRILATERAL))
   {
-    PrintErrorMessage('E',"InsertElement","only triangles and quadrilaterals allowed in 2D");
+    PrintErrorMessage('E',"InsertElement",
+                      "only triangles and quadrilaterals allowed in 2D");
     RETURN(GM_ERROR);
   }
+  tag = n;
+        #endif
 
-  /* init data */
-  for (i=0; i<n; i++)
+    #ifdef __THREEDIM__
+  if (n == 4)
+    tag = TETRAHEDRON;
+  else if ( n == 8)
+    tag = HEXAHEDRON;
+  else
   {
-    Vertex[i]       = MYVERTEX(Node[i]);
-    Neighbor[i] = NULL;
-    thePatch[i]     = NULL;
+    PrintErrorMessage('E',"InsertElement",
+                      "only tetrahedrons and hexahedrons are allowed in the 3D coarse grid");
+    RETURN(GM_ERROR);
   }
+    #endif
 
+  /* init vertices */
+  for (i=0; i<n; i++)
+    Vertex[i] = MYVERTEX(Node[i]);
+
+    #ifdef __TWODIM__
   /* find orientation */
   if (!CheckOrientation(n,Vertex))
   {
@@ -4235,7 +4229,8 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
             SWAP_IJ(Vertex,0,n/2,theVertex);
             if (!CheckOrientation(n,Vertex))
             {
-              PrintErrorMessage('E',"InsertElement","Huh???");
+              PrintErrorMessage('E',"InsertElement",
+                                "cannot find orientation");
               RETURN(GM_ERROR);
             }
           }
@@ -4243,219 +4238,9 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
       }
     }
   }
+        #endif
 
-  /* compute side information (theSeg[i]==NULL) means inner side */
-  bndEdges = 0;
-  for (i=0; i<n; i++)
-  {
-    aNode = Node[i]; bNode = Node[(i+1)%n];
-    aVertex = Vertex[i]; bVertex = Vertex[(i+1)%n];
-
-    /* if at least one vertex is in the interior then skip */
-    if ((OBJT(aVertex)==IVOBJ)||(OBJT(bVertex)==IVOBJ)) continue;
-
-    /* aVertex and bVertex must be on the same boundary patch with unique parameters */
-    found = 0;
-    for (aVSeg = VSEG(aVertex); aVSeg != NULL; aVSeg = NEXTSEG(aVSeg))
-      for (bVSeg = VSEG(bVertex); bVSeg != NULL; bVSeg = NEXTSEG(bVSeg))
-        if( VS_PATCH(aVSeg) == VS_PATCH(bVSeg) )
-        {
-          found++;
-          aUniqueSeg = aVSeg;
-          bUniqueSeg = bVSeg;
-        }
-
-    /* no common patch -> this will be an interior edge */
-    if (found==0) continue;
-
-    /* common patch, but non unique parameters -> refuse to insert (no closed patches!) */
-    if (found>1)
-    {
-      PrintErrorMessage('E',"InsertElement","non unique parameter encountered, do not define closed patches");
-      RETURN(GM_ERROR);
-    }
-
-    /* both nodes are on same patch with unique parameters */
-    thePatch[i] = VS_PATCH(aUniqueSeg);
-    if (Patch_GetPatchDesc(thePatch[i],&thePatchDesc)) RETURN (GM_ERROR);
-    from[i] = LAMBDA(aUniqueSeg,0); to[i] = LAMBDA(bUniqueSeg,0);
-    if (from[i]<to[i])
-    {
-      if (PATCH_LEFT(thePatchDesc)<=0)
-      {
-        PrintErrorMessage('E',"InsertElement","element outside of domain");
-        RETURN(GM_ERROR);
-      }
-    }
-    else
-    {
-      if (PATCH_RIGHT(thePatchDesc)<=0)
-      {
-        PrintErrorMessage('E',"InsertElement","element outside of domain");
-        RETURN(GM_ERROR);
-      }
-    }
-    bndEdges++;
-  }
-
-  /* find neighboring elements */
-  for (i=0; i<n; i++)
-  {
-    aNode = Node[i]; bNode = Node[(i+1)%n];
-    found = 0;
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-    {
-      m = CORNERS_OF_ELEM(theElement);
-      for (j=0; j<m; j++)
-        if ((CORNER(theElement,j)==bNode)&&(CORNER(theElement,(j+1)%m)==aNode))
-        {
-          if (NBELEM(theElement,j)!=NULL)
-          {
-            PrintErrorMessage('E',"InsertElement","neighbor relation inconsistent");
-            RETURN(GM_ERROR);
-          }
-          found++;
-          Neighbor[i] = theElement;
-          NeighborSide[i] = j;
-        }
-    }
-    if (found>1)
-    {
-      PrintErrorMessage('E',"InsertElement","ooops, found more than one neighbor");
-      RETURN(GM_ERROR);
-    }
-  }
-
-  /* create element */
-  if (bndEdges>0)
-    theElement = CreateBoundaryElement(theGrid,n,BEOBJ,Node,NULL);
-  else
-    theElement = CreateBoundaryElement(theGrid,n,IEOBJ,Node,NULL);
-  if (theElement==NULL)
-  {
-    PrintErrorMessage('E',"InsertElement","could not create element");
-    RETURN(GM_ERROR);
-  }
-
-  /* create element sides if necessary */
-  if (bndEdges>0)
-  {
-    for (i=0; i<n; i++)
-    {
-      SET_SIDE(theElement,i,NULL);
-      if (thePatch[i]!=NULL)
-      {
-        SET_SIDE(theElement,i,CreateElementSide(theGrid));
-        if (SIDE(theElement,i)==NULL)
-        {
-          PrintErrorMessage('E',"InsertElement","could not create element side");
-          DisposeElement(theGrid,theElement);
-          RETURN(GM_ERROR);
-        }
-        ES_PATCH(SIDE(theElement,i)) = thePatch[i];
-        PARAM(SIDE(theElement,i),0,0) = from[i];
-        PARAM(SIDE(theElement,i),1,0) = to[i];
-      }
-    }
-  }
-
-  /* fill element data */
-  SETECLASS(theElement,RED);       /* this is a coarse grid element */
-  PARSETTAG(theElement,n);
-  SET_EFATHER(theElement,NULL);
-  for (i=0; i<n; i++)
-  {
-    SET_NBELEM(theElement,i,Neighbor[i]);
-    if (Neighbor[i]!=NULL)
-      SET_NBELEM(Neighbor[i],NeighborSide[i],theElement);
-  }
-  for (i=0; i<SONS_OF_ELEM(theElement); i++) SET_SON(theElement,i,NULL);
-
-  /* create algebra connections */
-  if (InsertedElementCreateConnection(theGrid,theElement))
-  {
-    PrintErrorMessage('E',"InsertElement","could not create algebra connections");
-    DisposeElement(theGrid,theElement);
-    RETURN(GM_ERROR);
-  }
-
-  return(GM_OK);
-}
-#endif
-
-#ifdef __THREEDIM__
-
-static INT CheckOrientation (INT n, VERTEX **vertices)
-{
-  COORD_VECTOR diff[3],rot;
-  COORD det;
-  INT i;
-
-  /* TODO: this case */
-  if (n == 8)
-    return(0);
-
-  for (i=1; i<n; i++)
-    V3_SUBTRACT(CVECT(vertices[i]),CVECT(vertices[0]),diff[i-1]);
-  V3_VECTOR_PRODUCT(diff[0],diff[1],rot);
-  V3_SCALAR_PRODUCT(rot,diff[2],det);
-
-  if (det < 0.0)
-    return(1);
-
-  return(0);
-}
-
-INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
-{
-  GRID             *theGrid;
-  INT i,j,k,l,m,found,num,tag;
-  INT NeighborSide[MAX_SIDES_OF_ELEM];
-  NODE             *sideNode[MAX_CORNERS_OF_SIDE],*NeighborNode;
-  VERTEX           *Vertex[MAX_CORNERS_OF_ELEM],*sideVertex[MAX_CORNERS_OF_SIDE];
-  ELEMENT          *theElement,*Neighbor[MAX_SIDES_OF_ELEM];
-  EDGE             *theEdge;
-  COORD param[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_SIDE][DIM_OF_BND];
-  COORD        *plambda[MAX_CORNERS_OF_SIDE];
-  VSEGMENT         *vs,*vs1;
-  BVP              *theBVP;
-  BVP_DESC theBVPDesc;
-  PATCH            *thePatch[MAX_SIDES_OF_ELEM], *Patch;
-  PATCH_DESC thePatchDesc;
-
-  /* check level */
-  if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
-  {
-    PrintErrorMessage('E',"InsertElement",
-                      "only a multigrid with exactly one level can be edited");
-    RETURN(GM_ERROR);
-  }
-  theGrid = GRID_ON_LEVEL(theMG,0);
-
-  /* get BVP description */
-  theBVP = MG_BVP(theMG);
-  if (BVP_GetBVPDesc(theBVP,&theBVPDesc))
-  {
-    PrintErrorMessage('E',"InsertElement","cannot evaluate BVP");
-    RETURN(GM_ERROR);
-  }
-
-  /* check parameters */
-  if (n == 4)
-    tag = TETRAHEDRON;
-  else if ( n == 8)
-    tag = HEXAHEDRON;
-  else
-  {
-    PrintErrorMessage('E',"InsertElement","exactly four (eight) ID's of nodes are nesessary in 3D (only for tetra/hexahedra!)");
-    RETURN(GM_ERROR);
-  }
-
-  /* init vertices */
-  for (i=0; i<n; i++)
-    Vertex[i] = MYVERTEX(Node[i]);
-
-
+    #ifdef __THREEDIM__
   if (CheckOrientation (n,Vertex))
   {
     sideNode[0] = Node[0];
@@ -4465,6 +4250,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
     Node[1] = sideNode[0];
     Vertex[1] = sideVertex[0];
   }
+        #endif
 
   /* init pointers */
   for (i=0; i<SIDES_OF_REF(n); i++)
@@ -4474,6 +4260,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
   }
 
   /* compute side information (theSeg[i]==NULL) means inner side */
+  ElementType = IEOBJ;
   for (i=0; i<SIDES_OF_REF(n); i++)
   {
     for(j=0; j<CORNERS_OF_SIDE_REF(n,i); j++ )
@@ -4521,16 +4308,15 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
         break;
     }
 
-    if (found)             /* a patch with three corners was found i.e. the side is a boundary side */
+    if (found)             /* a commen patch for all vertices on a side was found
+                              i.e. the side is a boundary side */
     {
       /*	set boundary parameters for vertices of that side */
+      ElementType = BEOBJ;
       thePatch[i] = Patch;
       for( k=0; k<CORNERS_OF_SIDE_REF(n,i); k++)
-      /* vertices of side i */
-      {
-        param[i][k][0] = plambda[k][0];
-        param[i][k][1] = plambda[k][1];
-      }
+        for (j=0; j<DIM-1; j++)
+          param[i][k][j] = plambda[k][j];
     }
   }
 
@@ -4578,17 +4364,8 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
     }
   }
 
-  /* check type of element */
-  found = 0;
-  for (i=0; i<SIDES_OF_REF(n); i++)
-    if (thePatch[i]!=NULL)
-      found++;
-
   /* create element */
-  if (found)
-    theElement = CreateElement(theGrid,tag,BEOBJ,Node,NULL);
-  else
-    theElement = CreateElement(theGrid,tag,IEOBJ,Node,NULL);
+  theElement = CreateElement(theGrid,tag,ElementType,Node,NULL);
   if (theElement==NULL)
   {
     PrintErrorMessage('E',"InsertElement","cannot allocate element");
@@ -4647,8 +4424,6 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
 
   return(GM_OK);
 }
-#endif
-
 
 /****************************************************************************/
 /*D
@@ -4744,103 +4519,31 @@ INT InsertElementFromIDs (MULTIGRID *theMG, INT n, INT *idList)
    D*/
 /****************************************************************************/
 
-#ifdef __TWODIM__
-INT DeleteElement (MULTIGRID *theMG, ELEMENT *theElement) /* 2D VERSION */
-{
-  GRID *theGrid;
-  NODE *aNode,*bNode;
-  ELEMENT *theNeighbor;
-  int i,j,n,m;
-  EDGE *theEdge;
-
-  /* check level */
-  if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
-  {
-    PrintErrorMessage('E',"DeleteElement","only a multigrid with exactly one level can be edited");
-    RETURN(GM_ERROR);
-  }
-  theGrid = GRID_ON_LEVEL(theMG,0);
-
-  /* delete edges if possible */
-  n = TAG(theElement);
-  for (i=0; i<n; i++)
-  {
-    if (NBELEM(theElement,i)==NULL)
-    {
-      aNode = CORNER(theElement,i);
-      bNode = CORNER(theElement,(i+1)%n);
-      theEdge = GetEdge(aNode,bNode);
-      if (theEdge!=NULL) DisposeEdge(theGrid,theEdge);
-    }
-  }
-  if (n==4)
-  {
-    theEdge = GetEdge(CORNER(theElement,0),CORNER(theElement,2));
-    if (theEdge!=NULL) DisposeEdge(theGrid,theEdge);
-    theEdge = GetEdge(CORNER(theElement,1),CORNER(theElement,3));
-    if (theEdge!=NULL) DisposeEdge(theGrid,theEdge);
-  }
-
-  /* delete pointers in neighbors */
-  for (i=0; i<n; i++)
-  {
-    theNeighbor = NBELEM(theElement,i);
-    if (theNeighbor!=NULL)
-    {
-      aNode = CORNER(theElement,i);
-      bNode = CORNER(theElement,(i+1)%n);
-      m = SIDES_OF_ELEM(theNeighbor);
-      for (j=0; j<m; j++)
-        if ((CORNER(theNeighbor,j)==bNode)&&(CORNER(theNeighbor,(j+1)%m)==aNode)) break;
-      SET_NBELEM(theNeighbor,j,NULL);
-    }
-  }
-
-  /* delete element now */
-  DisposeElement(theGrid,theElement);
-
-  return(GM_OK);
-}
-#endif
-
-#ifdef __THREEDIM__
 INT DeleteElement (MULTIGRID *theMG, ELEMENT *theElement) /* 3D VERSION */
 {
   GRID *theGrid;
   ELEMENT *theNeighbor;
   LINK *theLink;
   EDGE *theEdge;
-  int i,j,found;
+  INT i,j,found;
 
   /* check level */
   if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
   {
-    PrintErrorMessage('E',"DeleteElement","only a multigrid with exactly one level can be edited");
+    PrintErrorMessage('E',"DeleteElement",
+                      "only a multigrid with exactly one level can be edited");
     RETURN(GM_ERROR);
   }
   theGrid = GRID_ON_LEVEL(theMG,0);
 
-  /* delete edges if possible */
+  /* delete all EXTRA edges */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-  {
-    for (j=i+1; j<CORNERS_OF_ELEM(theElement); j++)
-    {
-      theEdge = GetEdge(CORNER(theElement,i),CORNER(theElement,j));
-      if (theEdge==NULL) RETURN(GM_ERROR);
-      if (NO_OF_ELEM(theEdge)<=0) RETURN(GM_ERROR);
-      if (NO_OF_ELEM(theEdge)==1)
-        DisposeEdge(theGrid,theEdge);
-      else
-        DEC_NO_OF_ELEM(theEdge);
-    }
-
-    /* delete all EXTRA edges */
-    for (theLink=START(CORNER(theElement,i)); theLink!=NULL; theLink=NEXT(theLink))
+    for (theLink=START(CORNER(theElement,i)); theLink!=NULL;
+         theLink=NEXT(theLink))
     {
       theEdge=MYEDGE(theLink);
       if (EXTRA(theEdge)) DisposeEdge(theGrid,theEdge);
     }
-  }
 
   /* delete pointers in neighbors */
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
@@ -4864,7 +4567,6 @@ INT DeleteElement (MULTIGRID *theMG, ELEMENT *theElement) /* 3D VERSION */
 
   return(GM_OK);
 }
-#endif
 
 INT DeleteElementWithID (MULTIGRID *theMG, INT id)
 {
@@ -4890,7 +4592,6 @@ INT DeleteElementWithID (MULTIGRID *theMG, INT id)
 
   return (DeleteElement(theMG,theElement));
 }
-
 
 /****************************************************************************/
 /*D
