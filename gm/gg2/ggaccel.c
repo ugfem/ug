@@ -2179,7 +2179,7 @@ int AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOIN
    left frontcomponent is the best one.
 
    RETURN VALUE:
-   INT
+   FRONTCOMP*
    .n    pointer to ideal frontcomponent if ok
    .n    NULL if error occured.
    D*/
