@@ -5597,22 +5597,18 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
     }
     count++;
   }
-        #ifdef ModelP
   if (FIRSTELEMENT(theGrid) != NULL)
-        #endif
-  if (PREDE(FIRSTELEMENT(theGrid)) != NULL)
-  {
-    sprintf(buffer,"first element of the grid has a previous 'element'\n");
-    UserWrite(buffer);
-  }
-        #ifdef ModelP
+    if (PREDE(FIRSTELEMENT(theGrid)) != NULL)
+    {
+      sprintf(buffer,"first element of the grid has a previous 'element'\n");
+      UserWrite(buffer);
+    }
   if (LASTELEMENT(theGrid) != NULL)
-        #endif
-  if (SUCCE(LASTELEMENT(theGrid)) != NULL)
-  {
-    sprintf(buffer,"last element of the grid has a following 'element'\n");
-    UserWrite(buffer);
-  }
+    if (SUCCE(LASTELEMENT(theGrid)) != NULL)
+    {
+      sprintf(buffer,"last element of the grid has a following 'element'\n");
+      UserWrite(buffer);
+    }
   if (count != theGrid->nElem)
   {
     sprintf(buffer,"there are %ld elements but %ld expected\n",(long)(count),(long)theGrid->nElem);
