@@ -209,6 +209,7 @@ typedef struct
   INT display;
 
   NP_ITER *u_iter;
+  NP_ITER *v_iter;
   NP_ITER *p_iter;
 
   VEC_SCALAR red;
@@ -1556,6 +1557,9 @@ static INT TSInit (NP_BASE *theNP, INT argc , char **argv)
     UserWriteF("TSInit: no iter UI found\n");
     return(NP_NOT_ACTIVE);
   }
+  np->v_iter = (NP_ITER *)
+               ReadArgvNumProc(theNP->mg,"VI",ITER_CLASS_NAME,argc,argv);
+  if (np->v_iter == NULL) np->v_iter = np->u_iter;
   np->p_iter = (NP_ITER *)
                ReadArgvNumProc(theNP->mg,"PI",ITER_CLASS_NAME,argc,argv);
   if (np->p_iter == NULL) {
@@ -1594,6 +1598,8 @@ static INT TSDisplay (NP_BASE *theNP)
         #endif
   if (np->u_iter != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"UI",ENVITEM_NAME(np->u_iter));
+  if (np->v_iter != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"UI",ENVITEM_NAME(np->v_iter));
   if (np->p_iter != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"PI",ENVITEM_NAME(np->p_iter));
   if (np->u != NULL)
@@ -1792,6 +1798,11 @@ static INT TSPreProcess  (NP_ITER *theNP, INT level,
     if ((*np->u_iter->PreProcess)
           (np->u_iter,level,np->ux,np->ub,np->uuA,baselevel,result))
       REP_ERR_RETURN(1);
+  if (np->v_iter != np->u_iter)
+    if (np->v_iter->PreProcess != NULL)
+      if ((*np->v_iter->PreProcess)
+            (np->v_iter,level,np->ux,np->ub,np->uuA,baselevel,result))
+        REP_ERR_RETURN(1);
   if (np->p_iter->PreProcess != NULL)
     if ((*np->p_iter->PreProcess)
           (np->p_iter,level,np->px,np->pb,np->S,baselevel,result))
@@ -1906,7 +1917,7 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
         #endif
     if (dset(theMG,level,level,ALL_VECTORS,np->u,0.0)!= NUM_OK)
       NP_RETURN(1,result[0]);
-    if ((*np->u_iter->Iter)(np->u_iter,level,np->u,np->t,np->uuA,result))
+    if ((*np->v_iter->Iter)(np->v_iter,level,np->u,np->t,np->uuA,result))
       REP_ERR_RETURN(1);
     if (dmatmul(theMG,level,level,ALL_VECTORS,np->q,np->puA,np->u)
         != NUM_OK)
@@ -1961,7 +1972,7 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
     #endif
   if (dset(theMG,level,level,ALL_VECTORS,np->u,0.0)!= NUM_OK)
     NP_RETURN(1,result[0]);
-  if ((*np->u_iter->Iter)(np->u_iter,level,np->u,np->t,np->uuA,result))
+  if ((*np->v_iter->Iter)(np->v_iter,level,np->u,np->t,np->uuA,result))
     REP_ERR_RETURN(1);
   if (dsub(theMG,level,level,ALL_VECTORS,np->ux,np->u) != NUM_OK)
     NP_RETURN(1,result[0]);
@@ -1998,6 +2009,11 @@ static INT TSPostProcess (NP_ITER *theNP, INT level,
     if ((*np->u_iter->PostProcess)
           (np->u_iter,level,x,b,A,result))
       REP_ERR_RETURN(1);
+  if (np->v_iter != np->u_iter)
+    if (np->v_iter->PostProcess != NULL)
+      if ((*np->v_iter->PostProcess)
+            (np->v_iter,level,x,b,A,result))
+        REP_ERR_RETURN(1);
   if (np->p_iter->PostProcess != NULL)
     if ((*np->p_iter->PostProcess)
           (np->p_iter,level,x,b,A,result))
