@@ -521,12 +521,6 @@ INT InitHelpMsg (void)
   }
   else
   {
-    if (ExpandCShellVars(buffer)==NULL)
-    {
-      PrintErrorMessageF('W',"InitHelpMsg","could not expand shell variables in 'helpfiles' of defaults file '%s'",DEFAULTSFILENAME);
-      return (__LINE__);
-    }
-
     /* open help files */
     token = strtok(buffer,FILENAMESEP);
     while (token!=NULL)
