@@ -693,7 +693,7 @@ INT InvertFullMatrix_piv (INT n, DOUBLE *mat, DOUBLE *inv)
 
     dinv = mat[i*n+i];
     if (ABS(dinv)<SMALL_DET)
-      RETURN (NUM_SMALL_DIAG);
+      return (NUM_SMALL_DIAG);
     dinv = mat[i*n+i] = 1.0/dinv;
     for (j=i+1; j<n; j++)
     {
