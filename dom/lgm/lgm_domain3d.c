@@ -2273,9 +2273,8 @@ static INT Point_Counter(LGM_LINE *theLine, DOUBLE h, INT StartIndex, INT EndInd
     npoints = floor(length_of_line / h + 0.51) + 1;
     if(npoints<2)
       npoints = 2;
-    if(StartIndex!=0)
-      npoints--;
-    lenght_of_segment = length_of_line / (npoints - 1);
+    /*		if(StartIndex!=0)
+                            npoints--;*/
   }
   else
   {
@@ -2405,6 +2404,7 @@ static INT DiscretizeLineSegment(LGM_LINE *theLine, DOUBLE h, INT StartIndex, IN
   DOUBLE length_of_line,lenght_of_segment,dist,dist1,dist2,dist3,slocal;
   DOUBLE lh, lh1, lh2, rest_length, x, y, z, in[5], dummy;
 
+  /* calculate number of points on the line */
   npoints = Point_Counter(theLine, h, StartIndex, EndIndex);
 
   from_id = (*Disc_nPoints);
@@ -2702,10 +2702,14 @@ static INT DiscretizeLine (HEAP *Heap, LGM_LINE *theLine, DOUBLE h, LGM_POINT *p
         folds = folds++;
         EndIndex = i;
         npoints = npoints + Point_Counter(theLine, h, StartIndex, EndIndex+1);
+        if(StartIndex!=0)
+          npoints--;
         StartIndex = EndIndex;
       }
     }
     npoints = npoints + Point_Counter(theLine, h, StartIndex, LGM_LINE_NPOINT(theLine)) /*- folds + 1*/;
+    if(StartIndex!=0)
+      npoints--;
   }
   if(LGM_DEBUG)
     printf("%s %d\n", "folds: ", folds);
