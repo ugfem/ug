@@ -1086,7 +1086,7 @@ static INT CorrectTetrahedronSidePattern (ELEMENT *theElement, INT i, ELEMENT *t
 	}
 
 	/* because SIDEPATTERN is set to zero, */
-	/* I choose TriSectionEdgeää[0] 		 */
+	/* I choose TriSectionEdge‰‰[0] 		 */
 	theEdgeNum = TriSectionEdge[theEdgePattern
 					&CondensedEdgeOfSide[i]][0];
 
@@ -5148,7 +5148,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 /****************************************************************************/
 /*
    CheckMultiGrid - 
-INT CheckMultiGrid (MULTIGRID *theMG)
+	UserWriteF("CheckMultiGrid() begin\n");
 
 	for (level=0; level<=TOPLEVEL(theMG); level++)
 		#ifdef ModelP

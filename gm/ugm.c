@@ -113,6 +113,9 @@ static INT theMGRootDirID;                      /* env dir ID for the multigrids
 
 static INT UsedOBJT;                            /* for the dynamic OBJECT management	*/
 
+/* the scope of this variable reaches from CreateMultiGrid until FixCoarseGrid */
+static INT CoarseGridMarkKey=0;
+
 /* used by OrderNodesInGrid */
 static const INT *Order,*Sign;
 static DOUBLE InvMeshSize;
@@ -2251,6 +2254,31 @@ MULTIGRID *GetNextMultigrid (const MULTIGRID *theMG)
 
 /****************************************************************************/
 /*D
+   GetCoarseGridMarkKey - return mark key for temporary memory allocation during carse grid construction
+
+   SYNOPSIS:
+   INT GetCoarseGridMarkKey (void)
+
+   PARAMETERS:
+   .  void - none
+
+   DESCRIPTION:
+   This function returns a mark key for temporary memory allocation
+   during carse grid construction. The memory is release by 'FixCoarseGrid'.
+
+   RETURN VALUE:
+   INT
+   .n   mark key
+   D*/
+/****************************************************************************/
+
+INT GetCoarseGridMarkKey (void)
+{
+  return (CoarseGridMarkKey);
+}
+
+/****************************************************************************/
+/*D
    CreateMultiGrid - Return a pointer to new multigrid structure
 
    SYNOPSIS:
@@ -2300,7 +2328,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   /* allocate multigrid envitem */
   theMG = MakeMGItem(MultigridName);
   if (theMG==NULL) return(NULL);
-  theMG->theFormat = theFormat;
+  MGFORMAT(theMG) = theFormat;
   if (InitElementTypes(theMG)!=GM_OK)
   {
     PrintErrorMessage('E',"CreateMultiGrid","error in InitElementTypes");
@@ -2317,8 +2345,15 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
     return(NULL);
   }
 
-  MarkTmpMem(theHeap);
-  theBVP = BVP_Init(BndValProblem,theHeap,&mesh);
+  /* TODO (HRR 971009): if this is a problem (open a second MG before FixCoarseGrid of the first one)
+          CoarseGridMarkKey would have to be an array... */
+  if (CoarseGridMarkKey!=0)
+    return(NULL);
+  /* mark temp memory here, release it after coarse grid construction in FixCoarseGrid */
+  MarkTmpMem(theHeap,&CoarseGridMarkKey);
+
+
+  theBVP = BVP_Init(BndValProblem,theHeap,&mesh,CoarseGridMarkKey);
   if (theBVP==NULL)
   {
     PrintErrorMessage('E',"CreateMultiGrid","BVP not found");
@@ -2393,9 +2428,9 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   if(optimizedIE == TRUE)
   {
     if ((MGNDELEMPTRARRAY(theMG)=
-           GetTmpMem(theHeap,NDELEM_BLKS_MAX*sizeof(ELEMENT**)))==NULL)
+           GetTmpMem(theHeap,NDELEM_BLKS_MAX*sizeof(ELEMENT**),CoarseGridMarkKey))==NULL)
     {
-      ReleaseTmpMem(theHeap);
+      ReleaseTmpMem(theHeap,CoarseGridMarkKey);
       PrintErrorMessage('E',"CreateMultiGrid",
                         "ERROR: could not allocate memory from the MGHeap");
       return (NULL);
@@ -3432,6 +3467,7 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT Also
   HEAP *theHeap;
   BVP *theBVP;
   BVP_DESC *theBVPDesc;
+  INT MarkKey;
 
   theMG   = MYMG(theGrid);
   entries = NN(theGrid);
@@ -3445,10 +3481,10 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT Also
 
   /* allocate memory for the node list */
   theHeap = MGHEAP(theMG);
-  MarkTmpMem(theHeap);
-  if ((table=GetTmpMem(theHeap,entries*sizeof(NODE *)))==NULL)
+  MarkTmpMem(theHeap,&MarkKey);
+  if ((table=GetTmpMem(theHeap,entries*sizeof(NODE *),MarkKey))==NULL)
   {
-    ReleaseTmpMem(theHeap);
+    ReleaseTmpMem(theHeap,MarkKey);
     PrintErrorMessage('E',"OrderNodesInGrid","ERROR: could not allocate memory from the MGHeap");
     RETURN (2);
   }
@@ -3485,7 +3521,7 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT Also
   LASTNODE(theGrid)  = table[entries-1];
 
 
-  ReleaseTmpMem(theHeap);
+  ReleaseTmpMem(theHeap,MarkKey);
 
   if (!AlsoOrderLinks)
     return (0);
@@ -4006,8 +4042,8 @@ INT MoveBndMidNode (MULTIGRID *theMG, VERTEX *theVertex)
   BNDP *bndp;
   BNDS *bnds;
   DOUBLE *global,*local, diffmin, lambda_min;
-  DOUBLE_VECTOR bnd_global, bnd_local, VecA, VecB, BndPoint;
-  DOUBLE diff, lambda[DIM_OF_BND], *CornerPtrs[MAX_CORNERS_OF_ELEM], VecLen;
+  DOUBLE_VECTOR bnd_global, bnd_local, BndPoint;
+  DOUBLE diff, lambda[DIM_OF_BND], *CornerPtrs[MAX_CORNERS_OF_ELEM];
   INT co0,co1,edge,coe,n, ndiff;
 
   theElement = VFATHER(theVertex);
@@ -4458,6 +4494,43 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos, INT update)
 
 /****************************************************************************/
 /*D
+   SetVertexGlobalAndLocal - assign new local and global coords to a vertex
+
+   SYNOPSIS:
+   INT SetVertexGlobalAndLocal (VERTEX *vert, const DOUBLE *global, const DOUBLE *local)
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+   .  vert - vertex to move
+   .  newPos - global coordinate for new position
+
+   DESCRIPTION:
+   This function assigns new global and local coordinates to a vertex (MOVE==DIM).
+   It is meant for restoring former consistent positions.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK when ok
+   .n   GM_ERROR when error occured.
+   D*/
+/****************************************************************************/
+
+INT SetVertexGlobalAndLocal (VERTEX *vert, const DOUBLE *global, const DOUBLE *local)
+{
+  if (MOVE(vert)!=DIM)
+    REP_ERR_RETURN(GM_ERROR);
+
+  if (OBJT(vert)==BVOBJ)
+    if (BNDP_Move(V_BNDP(vert),global))
+      REP_ERR_RETURN(GM_ERROR);
+  V_DIM_COPY(global,CVECT(vert));
+  V_DIM_COPY(local,LCVECT(vert));
+
+  return (GM_OK);
+}
+
+/****************************************************************************/
+/*D
    MoveFreeBoundaryVertex - move a vertex on a free boundary
 
    SYNOPSIS:
@@ -4487,10 +4560,6 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos, INT update)
 
 INT MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, const DOUBLE *newPos)
 {
-  ELEMENT *theElement;
-  DOUBLE *x[MAX_CORNERS_OF_ELEM];
-  INT n;
-
   if (OBJT(vert) != BVOBJ)
     REP_ERR_RETURN(GM_ERROR);
   if (MOVE(vert)!=DIM)
@@ -4499,17 +4568,8 @@ INT MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, const DOUBLE *newPos
   if (BNDP_Move(V_BNDP(vert),newPos))
     REP_ERR_RETURN(GM_ERROR);
   V_DIM_COPY(newPos,CVECT(vert));
-  if (LEVEL(vert) > 0)
-  {
-    theElement = VFATHER(vert);
-    if (theElement == NULL)
-      REP_ERR_RETURN(GM_ERROR)
-      else
-      {
-        CORNER_COORDINATES(theElement,n,x);
-        UG_GlobalToLocal(n,(const DOUBLE **)x,newPos,LCVECT(vert));
-      }
-  }
+
+  /* leave local coords for 'FinishMovingFreeBoundaryVertices' */
 
   return(GM_OK);
 }
@@ -4540,16 +4600,32 @@ INT MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, const DOUBLE *newPos
 
 INT FinishMovingFreeBoundaryVertices (MULTIGRID *theMG)
 {
+  ELEMENT *theElement;
   VERTEX *vert;
   DOUBLE *x[MAX_CORNERS_OF_ELEM];
   INT n,lev;
 
+  /* adjust global coords of inner vertices */
   for(lev=1; lev<=TOPLEVEL(theMG); lev++)
     for (vert=FIRSTVERTEX(GRID_ON_LEVEL(theMG,lev)); vert!=NULL; vert=SUCCV(vert))
       if ((OBJT(vert) != BVOBJ))
       {
         CORNER_COORDINATES(VFATHER(vert),n,x);
         LOCAL_TO_GLOBAL(n,x,LCVECT(vert),CVECT(vert));
+      }
+  /* adjust local coords of boundary vertices */
+  for(lev=1; lev<=TOPLEVEL(theMG); lev++)
+    for (vert=FIRSTVERTEX(GRID_ON_LEVEL(theMG,lev)); vert!=NULL; vert=SUCCV(vert))
+      if ((OBJT(vert) == BVOBJ))
+      {
+        theElement = VFATHER(vert);
+        if (theElement == NULL)
+          REP_ERR_RETURN(GM_ERROR)
+          else
+          {
+            CORNER_COORDINATES(theElement,n,x);
+            UG_GlobalToLocal(n,(const DOUBLE **)x,CVECT(vert),LCVECT(vert));
+          }
       }
   return(GM_OK);
 }
@@ -5047,13 +5123,13 @@ static INT NdElPtrArray_GetMemAndCheckIDs(INT n, MULTIGRID *theMG, INT *h_ID, NO
         while (j <= c_ID[IndexOfDivPart])
         {
           /*
-                                  theMG		MGNDELEMBLK(theMG,j) = GetMem(theMG->theHeap,maxi,FROM_TOP);
+                                  theMG		MGNDELEMBLK(theMG,j) = GetTmpMem(theMG->theHeap,maxi,MarkKey);
            */
           /*IE_MEM_PROB*/
           /*
              MGNDELEMBLK(theMG,j) = malloc(maxi);
            */
-          if ((MGNDELEMBLK(theMG,j)=GetTmpMem(MGHEAP(theMG),maxi))==NULL)
+          if ((MGNDELEMBLK(theMG,j)=GetTmpMem(MGHEAP(theMG),maxi,CoarseGridMarkKey))==NULL)
           {
             PrintErrorMessage('E',"InsertElement","  ==> NdElPtrArray_GetMemAndCheckIDs( ) ERROR: No memory for MGNDELEMBLK(theMG,j)");
             return(1);
@@ -5615,9 +5691,9 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
 
   /* prepare */
   nv = theMesh->nBndP + theMesh->nInnP;
-  VList = (VERTEX **) GetTmpMem(MGHEAP(theMG),nv*sizeof(VERTEX *));
+  VList = (VERTEX **) GetTmpMem(MGHEAP(theMG),nv*sizeof(VERTEX *),CoarseGridMarkKey);
   if (VList == NULL) return(GM_ERROR);
-  NList = (NODE **) GetTmpMem(MGHEAP(theMG),nv*sizeof(NODE *));
+  NList = (NODE **) GetTmpMem(MGHEAP(theMG),nv*sizeof(NODE *),CoarseGridMarkKey);
   if (NList == NULL) return(GM_ERROR);
   for (j=0; j<nv; j++) NList[j] = NULL;
 
@@ -6151,6 +6227,7 @@ INT KeyForObject( SELECTION_OBJECT *obj )
   default :        PrintErrorMessage('E',"IDForObject","unrecognized object type");
     assert(0);
   }
+  return (GM_ERROR);
 }
 
 /****************************************************************************/
@@ -7493,13 +7570,14 @@ void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataop
    ListVector - List information about vector
 
    SYNOPSIS:
-   void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt);
+   void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt, INT modifiers);
 
    PARAMETERS:
    .  theMG - multigrid structure to list
    .  theVector - vector to list
    .  matrixopt - list line of matrix corresponding to theVector
    .  dataopt - list user data if true
+   .  modifiers - flags modifying output style and verbose level
 
    DESCRIPTION:
    This function lists information about a vector.
@@ -7509,75 +7587,96 @@ void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataop
    D*/
 /****************************************************************************/
 
-void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt)
+void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt, INT modifiers)
 {
   FORMAT *theFormat;
   NODE *theNode;
   EDGE *theEdge;
   ELEMENT *theElement;
   MATRIX *theMatrix;
+  DOUBLE_VECTOR pos;
   void *Data;
 
   theFormat = MGFORMAT(theMG);
 
-  /* print type of vector */
-  UserWriteF("VTYPE=%d(%c) ",VTYPE(theVector),FMT_T2N(theFormat,VTYPE(theVector)));
+  /* print index and type of vector */
+  UserWriteF("IND=" VINDEX_FFMTE " VTYPE=%d(%c) ",
+             VINDEX_PRTE(theVector),
+             VTYPE(theVector),
+             FMT_T2N(theFormat,VTYPE(theVector)));
 
-  /* print object type of vector */
-  switch( VOTYPE(theVector) )
+  if (READ_FLAG(modifiers,LV_POS))
   {
-  case NODEVEC :
-    theNode = (NODE*)VOBJECT(theVector);
-    UserWriteF("NODE-V IND=" VINDEX_FFMTE " nodeID=" ID_FMTX
-               "                VCLASS=%1d VNCLASS=%1d",
-               VINDEX_PRTE(theVector),ID_PRTX(theNode),VCLASS(theVector),VNCLASS(theVector));
-    break;
-
-  case EDGEVEC :
-    theEdge = (EDGE*)VOBJECT(theVector);
-    UserWriteF("EDGE-V IND=" VINDEX_FFMTE " fromID=" ID_FFMT
-               " to__ID=%7ld VCLASS=%1d VNCLASS=%1d",
-               VINDEX_PRTE(theVector),ID_PRT(NBNODE(LINK0(theEdge))),
-               ID(NBNODE(LINK1(theEdge))),VCLASS(theVector),VNCLASS(theVector));
-    break;
-
-                #ifdef __THREEDIM__
-  case SIDEVEC :
-    theElement = (ELEMENT*)VOBJECT(theVector);
-    UserWriteF("SIDE-V IND=" VINDEX_FFMTE " elemID=" EID_FFMT
-               "                VCLASS=%1d VNCLASS=%1d",
-               VINDEX_PRTE(theVector),EID_PRT(theElement),
-               VCLASS(theVector),VNCLASS(theVector));
-    break;
+    if (VectorPosition(theVector,pos))
+      return;
+                #ifdef __TWODIM__
+    UserWriteF("POS=(%10.2e,%10.2e)",pos[_X_],pos[_Y_]);
                 #endif
-
-  case ELEMVEC :
-    theElement = (ELEMENT*)VOBJECT(theVector);
-    UserWriteF("ELEM-V IND=" VINDEX_FFMTE " elemID=" EID_FFMT
-               "                VCLASS=%1d VNCLASS=%1d",
-               VINDEX_PRTE(theVector),EID_PRT(theElement),
-               VCLASS(theVector),VNCLASS(theVector));
-    break;
-
-  default : PrintErrorMessage( 'E', "ListVector", "unrecognized VECTOR type" );
-    assert(0);
+                #ifdef __THREEDIM__
+    UserWriteF("POS=(%10.2e,%10.2e,%10.2e)",pos[_X_],pos[_Y_],pos[_Z_]);
+                #endif
   }
 
+  /* print object type of vector */
+  if (READ_FLAG(modifiers,LV_VO_INFO))
+    switch (VOTYPE(theVector))
+    {
+    case NODEVEC :
+    {
+      theNode = (NODE*)VOBJECT(theVector);
+      UserWriteF("NODE-V nodeID=" ID_FMTX
+                 "                ",
+                 ID_PRTX(theNode));
+    }
+    break;
+    case EDGEVEC :
+    {
+      theEdge = (EDGE*)VOBJECT(theVector);
+      UserWriteF("EDGE-V fromID=" ID_FFMT
+                 " to__ID=%7ld ",
+                 ID_PRT(NBNODE(LINK0(theEdge))),
+                 ID(NBNODE(LINK1(theEdge))));
+    }
+    break;
+                #ifdef __THREEDIM__
+    case SIDEVEC :
+    {
+      theElement = (ELEMENT*)VOBJECT(theVector);
+      UserWriteF("SIDE-V elemID=" EID_FFMT
+                 "                ",
+                 EID_PRT(theElement));
+    }
+    break;
+                #endif
+    case ELEMVEC :
+    {
+      theElement = (ELEMENT*)VOBJECT(theVector);
+      UserWriteF("ELEM-V elemID=" EID_FFMT
+                 "                ",
+                 EID_PRT(theElement));
+    }
+    break;
+    default :
+      ASSERT(FALSE);
+    }
+  UserWriteF("VCLASS=%1d VNCLASS=%1d",VCLASS(theVector),VNCLASS(theVector));
   UserWriteF(" key=%d\n", KeyForObject((SELECTION_OBJECT *)theVector) );
 
   /* print vector data if */
   if (dataopt && FMT_PR_VEC(theFormat)!=NULL)
   {
     /* print skip flags */
-    INT_2_bitpattern(VECSKIP(theVector),buffer);
-    UserWriteF("  skip=%s\n",buffer);
+    if (READ_FLAG(modifiers,LV_SKIP))
+    {
+      INT_2_bitpattern(VECSKIP(theVector),buffer);
+      UserWriteF("  skip=%s\n",buffer);
+    }
 
     /* print data */
     Data = (void*)(&VVALUE(theVector,0));
     if ((*(FMT_PR_VEC(theFormat)))(VTYPE(theVector),Data,"   ",buffer))
       return;
     UserWrite(buffer);
-    UserWrite("\n");
   }
 
   /* print matrix list if */
@@ -7585,7 +7684,7 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
     for (theMatrix = VSTART(theVector); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
     {
       UserWrite("    DEST(MATRIX): ");
-      ListVector(theMG,MDEST(theMatrix),0,0);
+      ListVector(theMG,MDEST(theMatrix),0,0,modifiers);
 
       /* print matrix data if */
       if (dataopt && theFormat->PrintMatrix!=NULL)
@@ -7594,7 +7693,6 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
         if ((*(FMT_PR_MAT(theFormat)))(MROOTTYPE(theMatrix)*MAXVECTORS+MDESTTYPE(theMatrix),Data,"       ",buffer))
           return;
         UserWrite(buffer);
-        UserWrite("\n");
       }
     }
   return;
@@ -7605,12 +7703,13 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
    ListVectorOfElementSelection - List info about vectors of elements in selection
 
    SYNOPSIS:
-   void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt);
+   void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modifiers);
 
    PARAMETERS:
    .  theMG -  structure to list
    .  matrixopt - list line of matrix corresponding to theVector
    .  dataopt - list user data if true
+   .  modifiers - flags modifying output style and verbose level
 
    DESCRIPTION:
    This function lists info about all vectors of elements in the selection.
@@ -7620,7 +7719,7 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
    D*/
 /****************************************************************************/
 
-void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
+void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modifiers)
 {
   int i,j;
   ELEMENT *theElement;
@@ -7640,24 +7739,24 @@ void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
     if (VEC_DEF_IN_OBJ_OF_MG(theMG,NODEVEC))
     {
       GetVectorsOfNodes(theElement,&cnt,vList);
-      for (i=0; i<cnt; i++) ListVector(theMG,vList[i],matrixopt,dataopt);
+      for (i=0; i<cnt; i++) ListVector(theMG,vList[i],matrixopt,dataopt,modifiers);
     }
     if (VEC_DEF_IN_OBJ_OF_MG(theMG,EDGEVEC))
     {
       GetVectorsOfEdges(theElement,&cnt,vList);
-      for (i=0; i<cnt; i++) ListVector(theMG,vList[i],matrixopt,dataopt);
+      for (i=0; i<cnt; i++) ListVector(theMG,vList[i],matrixopt,dataopt,modifiers);
     }
                 #ifdef __THREEDIM__
     if (VEC_DEF_IN_OBJ_OF_MG(theMG,SIDEVEC))
     {
       GetVectorsOfSides(theElement,&cnt,vList);
-      for (i=0; i<cnt; i++) ListVector(theMG,vList[i],matrixopt,dataopt);
+      for (i=0; i<cnt; i++) ListVector(theMG,vList[i],matrixopt,dataopt,modifiers);
     }
                 #endif
     if (VEC_DEF_IN_OBJ_OF_MG(theMG,ELEMVEC))
     {
       GetVectorsOfElement(theElement,&cnt,vList);
-      for (i=0; i<cnt; i++) ListVector(theMG,vList[i],matrixopt,dataopt);
+      for (i=0; i<cnt; i++) ListVector(theMG,vList[i],matrixopt,dataopt,modifiers);
     }
   }
 }
@@ -7667,12 +7766,13 @@ void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
    ListVectorSelection - list information about vectors in selection
 
    SYNOPSIS:
-   void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
+   void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modifiers)
 
    PARAMETERS:
    .  theMG: multigrid structure to list
    .  matrixopt - list matrices of this vector
    .  dataopt - list user data if true
+   .  modifiers - flags modifying output style and verbose level
 
    DESCRIPTION:
    This function lists information about all elements in the selection.
@@ -7682,7 +7782,7 @@ void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
    D*/
 /****************************************************************************/
 
-void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
+void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modifiers)
 {
   int j;
   VECTOR *theVector;
@@ -7696,7 +7796,7 @@ void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
   for(j=0; j<SELECTIONSIZE(theMG); j++)
   {
     theVector = (VECTOR *) SELECTIONOBJECT(theMG,j);
-    ListVector(theMG,theVector,matrixopt,dataopt);
+    ListVector(theMG,theVector,matrixopt,dataopt,modifiers);
   }
 }
 
@@ -7737,8 +7837,8 @@ INT IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
    ListVectorRange - list information about vectors in range of ids
 
    SYNOPSIS:
-   void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl,
-   INT from, INT to, INT idopt, INT matrixopt, INT dataopt)
+   void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to,
+                                INT idopt, INT matrixopt, INT dataopt, INT datatypes, INT modifiers)
 
    PARAMETERS:
    .  theMG - structure to list
@@ -7747,6 +7847,8 @@ INT IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
    .  idopt - determines the meaning of from/to
    .  matrixopt - list line of matrix corresponding to theVector
    .  dataopt - list user data if true
+   .  datatypes - list vectors with type in datatypes
+   .  modifiers - flags modifying output style and verbose level
 
    DESCRIPTION:
    This function lists information about all vectors in a given range of indices.
@@ -7756,35 +7858,36 @@ INT IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
    D*/
 /****************************************************************************/
 
-void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT idopt, INT matrixopt, INT dataopt)
+void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT idopt, INT matrixopt, INT dataopt, INT datatypes, INT modifiers)
 {
   int level;
   VECTOR *theVector;
 
   for (level=fl; level<=tl; level++)
     for (theVector=PFIRSTVECTOR(GRID_ON_LEVEL(theMG,level)); theVector!=NULL; theVector=SUCCVC(theVector))
-    {
-      switch( idopt )
+      if (datatypes & VDATATYPE(theVector))
       {
-      case 0 :                          /* $i option */
-        if (VINDEX(theVector)>=from && VINDEX(theVector)<=to)
-          ListVector(theMG,theVector,matrixopt,dataopt);
-        break;
+        switch( idopt )
+        {
+        case LV_ID :                                            /* $i option */
+          if (VINDEX(theVector)>=from && VINDEX(theVector)<=to)
+            ListVector(theMG,theVector,matrixopt,dataopt,modifiers);
+          break;
 #ifdef ModelP
-      case 1 :                          /* $g option */
-        if (GID(theVector) == from)
-          ListVector(theMG,theVector,matrixopt,dataopt);
-        break;
+        case LV_GID :                                   /* $g option */
+          if (GID(theVector) == from)
+            ListVector(theMG,theVector,matrixopt,dataopt,modifiers);
+          break;
 #endif
-      case 2 :                          /* $k option */
-        if ( KeyForObject((SELECTION_OBJECT *)theVector) == from)
-          ListVector(theMG,theVector,matrixopt,dataopt);
-        break;
+        case LV_KEY :                                   /* $k option */
+          if ( KeyForObject((SELECTION_OBJECT *)theVector) == from)
+            ListVector(theMG,theVector,matrixopt,dataopt,modifiers);
+          break;
 
-      default : PrintErrorMessage( 'E', "ListVectorRange", "unrecognized idopt" );
-        assert(0);
+        default : PrintErrorMessage( 'E', "ListVectorRange", "unrecognized idopt" );
+          assert(0);
+        }
       }
-    }
 }
 
 /*
@@ -8419,6 +8522,401 @@ static INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
 
 /****************************************************************************/
 /*D
+   RemoveSpuriousBoundarySides - remove boundary side of element and neighbour
+
+   SYNOPSIS:
+   static INT RemoveSpuriousBoundarySides (ELEMENT *elem, INT side)
+
+   PARAMETERS:
+   .  elem - element
+   .  side - boundary side to remove
+
+   DESCRIPTION:
+   This function removes the boundary side of element and neighbour.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+static INT RemoveSpuriousBoundarySides (HEAP *heap, ELEMENT *elem, INT side)
+{
+  ELEMENT *nb=NBELEM(elem,side);
+  BNDS *nbbside,*bside=ELEM_BNDS(elem,side);
+  INT nbside;
+
+  ASSERT(bside!=NULL);
+  ASSERT(OBJT(elem)==BEOBJ);
+  ASSERT(nb!=NULL);
+  ASSERT(OBJT(nb)==BEOBJ);
+
+  /* search nbside */
+  for (nbside=0; nbside<SIDES_OF_ELEM(nb); nbside++)
+    if (NBELEM(nb,nbside)==elem)
+      break;
+  ASSERT(nbside<SIDES_OF_ELEM(nb));
+  nbbside = ELEM_BNDS(nb,nbside);
+  ASSERT(nbbside!=NULL);
+
+  PRINTDEBUG(gm,1,("spurious bsides between elem %ld and elem %ld removed",(long)ID(elem),(long)ID(nb)));
+
+  HEAPFAULT(bside);
+  if (BNDS_Dispose(heap,bside))
+    REP_ERR_RETURN(1);
+  SET_BNDS(elem,side,NULL);
+
+  HEAPFAULT(nbbside);
+  if (BNDS_Dispose(heap,nbbside))
+    REP_ERR_RETURN(2);
+  SET_BNDS(nb,nbside,NULL);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   BElem2IElem - replace boundary by inner element
+
+   SYNOPSIS:
+   static INT BElem2IElem (GRID *grid, ELEMENT **elemH)
+
+   PARAMETERS:
+   .  grid  - grid where elem resides
+   .  elemH - handle to element to be replaced: will point to new element
+
+   DESCRIPTION:
+   This function replaces a boundary by an inner element.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+static INT BElem2IElem (GRID *grid, ELEMENT **elemH)
+{
+  ELEMENT *nb[MAX_SIDES_OF_ELEM],*elem=*elemH,*ielem;
+  NODE *nodes[MAX_CORNERS_OF_ELEM];
+  INT i,j,nbside[MAX_SIDES_OF_ELEM],s_id;
+
+  ASSERT(GLEVEL(grid)==0);
+
+  /* save context */
+  for (i=0; i<CORNERS_OF_ELEM(elem); i++)
+    nodes[i] = CORNER(elem,i);
+
+  for (i=0; i<SIDES_OF_ELEM(elem); i++)
+  {
+    nb[i] = NBELEM(elem,i);
+    for (j=0; j<SIDES_OF_ELEM(nb[i]); j++)
+      if (NBELEM(nb[i],j)==elem)
+        break;
+    ASSERT(j<SIDES_OF_ELEM(nb[i]));
+    nbside[i] = j;
+  }
+
+  s_id = SUBDOMAIN(elem);
+
+  /* create/dispose */
+  ielem = CreateElement(grid,TAG(elem),IEOBJ,nodes,EFATHER(elem),NO);
+  if (ielem==NULL)
+    REP_ERR_RETURN(1);
+
+  if (DisposeElement(grid,elem,NO))
+    REP_ERR_RETURN(1);
+
+  *elemH = ielem;
+
+  /* set context */
+  for (i=0; i<SIDES_OF_ELEM(ielem); i++)
+  {
+    SET_NBELEM(ielem,i,nb[i]);
+
+    SET_NBELEM(nb[i],nbside[i],ielem);
+  }
+  SETSUBDOMAIN(ielem,s_id);
+  SETECLASS(ielem,RED_CLASS);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   FinishGrid - remove erroneously introduced bsides and propagate sub domain IDs
+
+   SYNOPSIS:
+   static INT FinishGrid (MULTIGRID *mg)
+
+   PARAMETERS:
+   .  mg - multigrid
+
+   DESCRIPTION:
+   This function removes erroneously introduced bsides and propagates sub domain IDs.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+static INT FinishGrid (MULTIGRID *mg)
+{
+  GRID *grid;
+  ELEMENT *elem,*nb,*succ;
+  HEAP *heap=MGHEAP(mg);
+  FIFO unused,shell;
+  INT i,side,id,nbid,part,nsd,found,s_id;
+  INT *sd_table;
+  void *buffer;
+
+  /* prepare */
+  if (TOPLEVEL(mg)<0)
+    REP_ERR_RETURN (GM_ERROR);
+  grid = GRID_ON_LEVEL(mg,0);
+  if (!NT(grid))
+    return (GM_OK);
+
+  for (elem=PFIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem))
+  {
+    SETUSED(elem,FALSE);
+    SETTHEFLAG(elem,FALSE);
+  }
+
+  /* table for subdomain ids */
+  nsd = 1 + BVPD_NSUBDOM(MG_BVPD(mg));
+  sd_table = (INT*)GetTmpMem(heap,nsd*sizeof(INT),CoarseGridMarkKey);
+  if (sd_table==NULL)
+    REP_ERR_RETURN (GM_ERROR);
+
+  /* init two fifos */
+  buffer=(void *)GetTmpMem(heap,sizeof(ELEMENT*)*NT(grid),CoarseGridMarkKey);
+  if (buffer==NULL)
+    REP_ERR_RETURN (GM_ERROR);
+  fifo_init(&unused,buffer,sizeof(ELEMENT*)*NT(grid));
+  buffer=(void *)GetTmpMem(heap,sizeof(ELEMENT*)*NT(grid),CoarseGridMarkKey);
+  if (buffer==NULL)
+    REP_ERR_RETURN (GM_ERROR);
+  fifo_init(&shell,buffer,sizeof(ELEMENT*)*NT(grid));
+
+  /* outermost loop handles nonconnected domains */
+  while (TRUE)
+  {
+    for (elem=PFIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem))
+      if (!USED(elem))
+        break;
+    if (elem!=NULL)
+      fifo_in(&unused,elem);
+    else
+      break;
+
+    while (!fifo_empty(&unused))
+    {
+      /* grab next !USED element */
+      do
+        elem = (ELEMENT*) fifo_out(&unused);
+      while (USED(elem) && !fifo_empty(&unused));
+      if (USED(elem))
+        /* we are done */
+        break;
+
+      /* shell algo (using FLAG): neighbours, but not across bside */
+      fifo_clear(&shell);
+      fifo_in(&shell,elem);
+      SETTHEFLAG(elem,TRUE);
+      for (i=0; i<=nsd; i++) sd_table[i] = 0;
+      found = FALSE;
+      while (!fifo_empty(&shell))
+      {
+        elem = (ELEMENT*) fifo_out(&shell);
+
+        if (OBJT(elem)==BEOBJ)
+          for (side=0; side<SIDES_OF_ELEM(elem); side++)
+            if (SIDE_ON_BND(elem,side))
+            {
+              if (BNDS_BndSDesc(ELEM_BNDS(elem,side),&id,&nbid,&part))
+                REP_ERR_RETURN (GM_ERROR);
+
+              if ((nb=NBELEM(elem,side))==NULL)
+              {
+                /* this bside must be ok (outer boundary) */
+                /* TODO (HRR 971012): parallel? */
+                ASSERT(nbid==0);
+                s_id = id;
+                found = TRUE;
+                break;
+              }
+              else
+              if (USED(nb))
+              {
+                /* he must know! */
+                if (nbid==SUBDOMAIN(nb))
+                  s_id = id;
+                else if (id==SUBDOMAIN(nb))
+                  s_id = nbid;
+                else
+                  ASSERT(FALSE);
+              }
+
+              /* handle outer boundary cases */
+              if (id==0)
+              {
+                ASSERT(nbid>0);
+                s_id = nbid;
+                found = TRUE;
+                break;
+              }
+              if (nbid==0)
+              {
+                ASSERT(id>0);
+                s_id = id;
+                found = TRUE;
+                break;
+              }
+
+              ++sd_table[id];
+              if (sd_table[id]>1)
+              {
+                s_id = id;
+                found = TRUE;
+                break;
+              }
+            }
+        if (found)
+          break;
+
+        /* push neighbours not across boundary */
+        if (OBJT(elem)==BEOBJ)
+        {
+          for (side=0; side<SIDES_OF_ELEM(elem); side++)
+            if (!SIDE_ON_BND(elem,side))
+              if ((nb=NBELEM(elem,side))!=NULL)
+                if (!USED(nb) && !THEFLAG(nb))
+                {
+                  fifo_in(&shell,nb);
+                  SETTHEFLAG(nb,TRUE);
+                }
+        }
+        else
+        {
+          for (side=0; side<SIDES_OF_ELEM(elem); side++)
+            if ((nb=NBELEM(elem,side))!=NULL)
+              if (!USED(nb) && !THEFLAG(nb))
+              {
+                fifo_in(&shell,nb);
+                SETTHEFLAG(nb,TRUE);
+              }
+        }
+      }
+
+      /* count occurences of subdom ids (max 2 different) */
+      for (found=0, i=0; i<=nsd; i++)
+        if (sd_table[i])
+          found++;
+      if (found>2)
+        /* FATAL: algorithm relies on assumptions obviously not fulfilled! */
+        ASSERT(FALSE);
+
+      /* again shell algo starting from last element */
+      /* set USED, propagate subdomain ids and remove spurious bsides (has to have NB!) */
+      /* use PRINTDEBUG */
+      fifo_clear(&shell);
+      fifo_in(&shell,elem);
+      SETUSED(elem,TRUE);
+      SETSUBDOMAIN(elem,s_id);
+      while (!fifo_empty(&shell))
+      {
+        elem = (ELEMENT*) fifo_out(&shell);
+
+        if (OBJT(elem)==BEOBJ)
+        {
+          for (side=0; side<SIDES_OF_ELEM(elem); side++)
+            if (SIDE_ON_BND(elem,side))
+            {
+              if ((nb=NBELEM(elem,side))==NULL)
+                continue;
+              if (!USED(nb))
+                /* push unused neighbour across boundary to unused fifo */
+                fifo_in(&unused,nb);
+
+              if (BNDS_BndSDesc(ELEM_BNDS(elem,side),&id,&nbid,&part))
+                REP_ERR_RETURN (GM_ERROR);
+
+              if (id!=s_id || nbid==0)
+              {
+                /* remove spurious bside of both elements */
+                if (RemoveSpuriousBoundarySides(heap,elem,side))
+                  REP_ERR_RETURN(1);
+              }
+            }
+        }
+
+        /* push neighbours not across boundary */
+        if (OBJT(elem)==BEOBJ)
+        {
+          for (side=0; side<SIDES_OF_ELEM(elem); side++)
+            if (!SIDE_ON_BND(elem,side))
+              if ((nb=NBELEM(elem,side))!=NULL)
+              {
+                if (!USED(nb))
+                {
+                  fifo_in(&shell,nb);
+                  SETUSED(nb,TRUE);
+                  SETSUBDOMAIN(nb,s_id);
+                }
+              }
+              else
+                /* TODO (HRR 971012): ModelP: no error if EGHOST? */
+                /* grid not closed */
+                REP_ERR_RETURN(1);
+        }
+        else
+        {
+          for (side=0; side<SIDES_OF_ELEM(elem); side++)
+            if ((nb=NBELEM(elem,side))!=NULL)
+            {
+              if (!USED(nb))
+              {
+                fifo_in(&shell,nb);
+                SETUSED(nb,TRUE);
+                SETSUBDOMAIN(nb,s_id);
+              }
+            }
+            else
+              /* TODO (HRR 971012): ModelP: no error if EGHOST? */
+              /* grid not closed */
+              REP_ERR_RETURN(1);
+        }
+      }
+    }
+  }
+
+  for (elem=PFIRSTELEMENT(grid); elem!=NULL; elem=succ)
+  {
+    succ = SUCCE(elem);
+
+    if (OBJT(elem)!=BEOBJ) continue;
+
+    /* check whether element still has bsides */
+    for (side=0; side<SIDES_OF_ELEM(elem); side++)
+      if (ELEM_BNDS(elem,side)!=NULL)
+        break;
+    if (side>=SIDES_OF_ELEM(elem))
+      if (BElem2IElem(grid,&elem))
+        REP_ERR_RETURN(1);
+  }
+
+  if (SetEdgeAndNodeSubdomainFromElements(grid))
+    REP_ERR_RETURN (GM_ERROR);
+
+  return (GM_OK);
+}
+
+/****************************************************************************/
+/*D
    SetSubdomainIDfromBndInfo - set subdomain id on level 0 elements and edges
 
    SYNOPSIS:
@@ -8454,7 +8952,7 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
 
   /* allocate fifo and init */
   theHeap = MYMG(theGrid)->theHeap;
-  buffer=(void *)GetTmpMem(theHeap,sizeof(ELEMENT*)*n);
+  buffer=(void *)GetTmpMem(theHeap,sizeof(ELEMENT*)*n,CoarseGridMarkKey);
   fifo_init(&myfifo,buffer,sizeof(ELEMENT*)*n);
   for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
        theElement=SUCCE(theElement))
@@ -8550,6 +9048,11 @@ INT FixCoarseGrid (MULTIGRID *theMG)
   if (MG_COARSE_FIXED(theMG))
     return (GM_OK);
 
+  /* TODO (HRR 971031): check that before check-in!
+     if (FinishGrid(theMG))
+          REP_ERR_RETURN (GM_ERROR);*/
+
+  /* TODO (HRR 971031): remove if above works */
   if (SetSubdomainIDfromBndInfo(theMG))
     REP_ERR_RETURN (GM_ERROR);
 
@@ -8557,7 +9060,9 @@ INT FixCoarseGrid (MULTIGRID *theMG)
   if (CreateAlgebra(theMG) != GM_OK)
     REP_ERR_RETURN (GM_ERROR);
 
-  ReleaseTmpMem(MGHEAP(theMG));
+  /* here all temp memory since CreateMultiGrid is released */
+  ReleaseTmpMem(MGHEAP(theMG),CoarseGridMarkKey);
+  CoarseGridMarkKey = 0;
 
   return (GM_OK);
 }

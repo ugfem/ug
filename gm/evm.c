@@ -1339,7 +1339,7 @@ INT EXDecomposeMatrixFLOAT (FLOAT *Mat, INT bw, INT n)
   for (i=0; i<n-1; i++)
   {
     d = EX_MAT(Mat,bw,i,i);
-    if (ABS(d)<=SMALL_F) return (1);
+    if (d==0.0) return (1);
     for (j=i+1; j<=MIN(i+bw,n-1); j++)
     {
       f = EX_MAT(Mat,bw,j,i)/d;
@@ -1384,7 +1384,7 @@ INT EXDecomposeMatrixDOUBLE (DOUBLE *Mat, INT bw, INT n)
   for (i=0; i<n-1; i++)
   {
     d = EX_MAT(Mat,bw,i,i);
-    if (ABS(d)<=SMALL_D) REP_ERR_RETURN (1);
+    if (d==0.0) REP_ERR_RETURN (1);
     for (j=i+1; j<=MIN(i+bw,n-1); j++)
     {
       f = EX_MAT(Mat,bw,j,i)/d;

@@ -122,7 +122,7 @@ static DOUBLE OneSideMoveCP(DOUBLE *CenterPVertex, DOUBLE *sideMid,
 
 #define ISTEPS 100
 /* calculate lambda as a function of length of boundary edge */
-DOUBLE LambdaOfLengthOfEdge(ELEMENT *theElement, INT edge, DOUBLE LambdaOfLength)
+static DOUBLE LambdaOfLengthOfEdge(ELEMENT *theElement, INT edge, DOUBLE LambdaOfLength)
 {
   INT n, reverse, step;
   BNDS *bnds;
@@ -1474,13 +1474,14 @@ INT SmoothGrid (MULTIGRID *theMG, INT fl, INT tl, const DOUBLE LimitLocDis,
   INT i, numOfSides, side, lev;
   DOUBLE_VECTOR *VertexCoord, *VertexLCoord;
   DOUBLE lambda, lambda_old, *MidNodeLambdaOld, *MidNodeLambdaNew;
+  INT MarkKey;
 
   /* allocate temporary memory */
-  Mark(MGHEAP(theMG),FROM_TOP);
-  VertexCoord = (DOUBLE_VECTOR *) GetMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE_VECTOR),FROM_TOP);
-  VertexLCoord = (DOUBLE_VECTOR *) GetMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE_VECTOR),FROM_TOP);
-  MidNodeLambdaOld = (DOUBLE *) GetMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE),FROM_TOP);
-  MidNodeLambdaNew = (DOUBLE *) GetMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE),FROM_TOP);
+  MarkTmpMem(MGHEAP(theMG),&MarkKey);
+  VertexCoord = (DOUBLE_VECTOR *) GetTmpMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE_VECTOR),MarkKey);
+  VertexLCoord = (DOUBLE_VECTOR *) GetTmpMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE_VECTOR),MarkKey);
+  MidNodeLambdaOld = (DOUBLE *) GetTmpMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE),MarkKey);
+  MidNodeLambdaNew = (DOUBLE *) GetTmpMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE),MarkKey);
 
   for (lev=fl; lev<=tl; lev++)
   {
@@ -1500,7 +1501,7 @@ INT SmoothGrid (MULTIGRID *theMG, INT fl, INT tl, const DOUBLE LimitLocDis,
       if (THEFLAG(theNode))
       {
         PrintErrorMessage('E',"SmoothGrid","node flag already set");
-        Release(MGHEAP(theMG),FROM_TOP);
+        ReleaseTmpMem(MGHEAP(theMG),MarkKey);
         return(1);
       }
 
@@ -1684,7 +1685,7 @@ option_b:
     for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
       SETTHEFLAG(theNode,0);
   }
-  Release(MGHEAP(theMG),FROM_TOP);
+  ReleaseTmpMem(MGHEAP(theMG),MarkKey);
   return(0);
 
 exit:
@@ -1695,7 +1696,7 @@ exit:
     for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
       SETTHEFLAG(theNode,0);
   }
-  Release(MGHEAP(theMG),FROM_TOP);
+  ReleaseTmpMem(MGHEAP(theMG),MarkKey);
   return(1);
 
 }
@@ -1730,13 +1731,14 @@ INT SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
   INT coe,lev;
   DOUBLE_VECTOR *VertexCoord, *VertexLCoord;
   DOUBLE *MidNodeLambdaOld, *MidNodeLambdaNew,lambda_old;
+  INT MarkKey;
 
   /* allocate temporary memory */
-  Mark(MGHEAP(theMG),FROM_TOP);
-  VertexCoord = (DOUBLE_VECTOR *) GetMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE_VECTOR),FROM_TOP);
-  VertexLCoord = (DOUBLE_VECTOR *) GetMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE_VECTOR),FROM_TOP);
-  MidNodeLambdaOld = (DOUBLE *) GetMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE),FROM_TOP);
-  MidNodeLambdaNew = (DOUBLE *) GetMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE),FROM_TOP);
+  MarkTmpMem(MGHEAP(theMG),&MarkKey);
+  VertexCoord = (DOUBLE_VECTOR *) GetTmpMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE_VECTOR),MarkKey);
+  VertexLCoord = (DOUBLE_VECTOR *) GetTmpMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE_VECTOR),MarkKey);
+  MidNodeLambdaOld = (DOUBLE *) GetTmpMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE),MarkKey);
+  MidNodeLambdaNew = (DOUBLE *) GetTmpMem(MGHEAP(theMG),VIDCNT(theMG)*sizeof(DOUBLE),MarkKey);
 
   for (lev=fl; lev<=tl; lev++)
   {
@@ -1826,7 +1828,7 @@ INT SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
     for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
       SETTHEFLAG(theNode,0);
   }
-  Release(MGHEAP(theMG),FROM_TOP);
+  ReleaseTmpMem(MGHEAP(theMG),MarkKey);
   return(0);
 }
 
