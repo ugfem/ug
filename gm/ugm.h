@@ -122,6 +122,7 @@ INT              FindNeighborElement    (const ELEMENT *theElement, INT Side, EL
 INT              PointInElement                 (const DOUBLE*, const ELEMENT *theElement);
 INT          PointOnSide            (const DOUBLE *global, const ELEMENT *theElement, INT side);
 DOUBLE       DistanceFromSide       (const DOUBLE *global, const ELEMENT *theElement, INT side);
+INT FindFlippedElements                         (MULTIGRID *theMG, INT verbose);
 NS_PREFIX VIRT_HEAP_MGMT *GetGenMGUDM             (void);
 INT             CheckOrientation                (INT n, VERTEX **vertices);
 INT             CheckOrientationInGrid  (GRID *theGrid);

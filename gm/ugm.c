@@ -7292,6 +7292,93 @@ DOUBLE NS_DIM_PREFIX DistanceFromSide(const DOUBLE *global, const ELEMENT *theEl
 
 /****************************************************************************/
 /** \brief
+   FindFlippedElements - Determine whether elements are flipped
+
+ * @param   theMG - multigrid
+ * @param   verbose - verbose mode
+
+   This function checks, whether an element is flipped, i.e. posseses a
+   negative volume. Works only for tetrahedra.
+
+   @return <ul>
+   <li>   GM_OK if ok </li>
+   <li>   > 0 error occured  </li>
+   </ul> */
+/****************************************************************************/
+#ifdef __THREEDIM__
+INT FindFlippedElements(MULTIGRID *theMG, INT verbose)
+{
+  GRID *theGrid;
+  ELEMENT *e;
+  INT l,n,i,j,fn,found,bfound,bfather;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM],*fx[MAX_CORNERS_OF_ELEM],a,b,c,vol;
+  DOUBLE_VECTOR diff[3],cp;
+
+  found=bfound=bfather=0;
+  /* loop over all elements per grid level */
+  for (l=0; l<=TOPLEVEL(theMG); l++)
+    for (e=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l)); e!=NULL; e=SUCCE(e))
+    {
+      if(TAG(e)!=TETRAHEDRON) {
+        UserWriteF("Command only for tetras implemented !\n");
+        continue;
+      }
+      CORNER_COORDINATES(e,n,x);
+      if(EFATHER(e)!=NULL)
+        CORNER_COORDINATES(EFATHER(e),fn,fx);
+
+      for(i=1; i<n; i++)
+        V3_SUBTRACT(x[i],x[0],diff[i-1]);
+      V3_VECTOR_PRODUCT(diff[0],diff[1],cp);
+      V3_SCALAR_PRODUCT(cp,diff[2],vol);
+      V_DIM_EUKLIDNORM(diff[0],a);
+      V_DIM_EUKLIDNORM(diff[1],b);
+      V_DIM_EUKLIDNORM(diff[2],c);
+      vol /= (a*b*c);
+
+      /* element is flipped */
+      if(vol < FLT_EPSILON) {
+        if(verbose) {
+          if(EFATHER(e) == NULL)
+            UserWriteF("No Father for element defined !\n");
+          else
+          {
+            if(OBJT(EFATHER(e)) == BEOBJ)
+              bfather++;
+            UserWriteF("Father Element ID %d (SD %d): \n",ID(EFATHER(e)),SUBDOMAIN(EFATHER(e)));
+            for(i=0; i<CORNERS_OF_ELEM(EFATHER(e)); i++) {
+              UserWriteF("Vertex %d: ",i);
+              for(j=0; j<DIM; j++)
+                UserWriteF("%f ",fx[i][j]);
+              UserWriteF("\n");
+            }
+          }
+          if(OBJT(e) == BEOBJ)
+            UserWriteF("Flipped boundary El %d (SD %d): \n",ID(e),SUBDOMAIN(e));
+          else
+            UserWriteF("Flipped inner El %d (SD %d): \n",ID(e),SUBDOMAIN(e));
+          for(i=0; i<CORNERS_OF_ELEM(e); i++) {
+            UserWriteF("Vertex %d: ",i);
+            for(j=0; j<DIM; j++)
+              UserWriteF("%f ",x[i][j]);
+            UserWriteF("\n");
+          }
+        }
+        if(OBJT(e) == BEOBJ)
+          bfound++;
+        else
+          found++;
+      }
+    }
+  UserWriteF("-> found %d flipped boundary father elements.\n",bfather);
+  UserWriteF("-> found %d flipped boundary sons.\n",found);
+  UserWriteF("-> found %d flipped inner sons.\n",bfound);
+
+  return (0);
+}
+#endif
+/****************************************************************************/
+/** \brief
    FindElementFromPosition - Find element containing position
 
  * @param   theGrid - grid level to search
