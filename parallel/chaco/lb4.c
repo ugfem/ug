@@ -429,6 +429,7 @@ static int Clustering (MULTIGRID *mg, int minlevel, int cluster_depth, int thres
 			{
 				c->depth = MAX(c->depth,LEVEL(e)+1-c->minlevel);
 				if (c->depth>=MAXDEPTH) return(2);
+				j = NSONS_OF_RULE(MARK2RULEADR(e,MARK(e)));
 				c->size += j;
 				c->level_size[LEVEL(e)+1-c->minlevel] += j;
 			}
