@@ -1,0 +1,65 @@
+##############################################################################
+#																			 #
+#	Makefile for dfcfg          											 #
+#																			 #
+#	982102 kj  created  	 												 #
+#																			 #
+##############################################################################
+
+include $(UGROOT)/ug.conf
+
+# lex and yacc
+MOD = ng
+LEX = flex 
+YACC = bison -b y -p $(MOD)
+#YACC_OPTIONS = -v
+
+# local C compiler flags
+LCFLAGS  = -I$(UGROOT)/include -DUSED_WITH_UG
+
+# name of resulting parser
+PNAME = ngin
+
+# object files
+OBJECTS = $(PNAME)-lex.o $(PNAME)-yacc.o ng.o
+
+# main rule
+NPIN : $(OBJECTS) 
+	$(ARCH_AR) $(ARCH_ARFLAGS) ../../../lib/libdomL3.a $(OBJECTS)
+
+
+# rule: generate object file from lex&yacc-generated source files
+$(PNAME)-lex.o: $(PNAME)-lex.c $(PNAME)-yacc.h 
+
+# rule: generate object file from &yacc-generated source files
+$(PNAME)-yacc.o: $(PNAME)-yacc.c $(PNAME)-yacc.h 
+
+
+
+# rule: generate source files using yacc, this rule won't be used except when
+#       changing grammar rules in .y file
+# rule: generate source files using lex, this rule won't be used except when
+#       changing token specification in .l file
+PARSER:
+	$(YACC) $(YACC_OPTIONS) -d $(PNAME).y
+	sed 's/yy/$(MOD)/g' y.tab.c > $(PNAME)-yacc.c
+	rm y.tab.c
+	sed 's/yy/$(MOD)/g' y.tab.h > $(PNAME)-yacc.h
+	rm y.tab.h
+	$(LEX) $(PNAME).l
+	sed 's/yy/$(MOD)/g' lex.yy.c > $(PNAME)-lex.c
+	rm lex.yy.c
+	sed 's/yy/$(MOD)/g' ng.orig > ng.c
+
+
+# default rule
+.c.o:
+	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
+
+# clean up
+clean:
+	rm -f *.o
+
+cleanall: clean
+	rm -f $(PNAME)-lex.c $(PNAME)-yacc.c $(PNAME)-yacc.h
+
