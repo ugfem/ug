@@ -3263,8 +3263,9 @@ static INT CheckVector (const FORMAT *fmt, const INT s2p[], GEOM_OBJECT *theObje
       else if (MDEST(MADJ(mat))!=theVector)
       {
         errors++;
-        UserWriteF("%d: %s vector=" VINDEX_FMTX ": adj matrix dest does not coincide with vector\n",
-                   me, ObjectString, VINDEX_PRTX(theVector));
+        UserWriteF("%d: %s vector=" VINDEX_FMTX ": adj matrix dest does not coincide"
+                   " with vector conn=%x mat=%x mdest=%x\n",
+                   me, ObjectString, VINDEX_PRTX(theVector),MMYCON(mat),MDEST(mat),MDEST(MADJ(mat)));
       }
 
   }
@@ -3456,9 +3457,9 @@ INT CheckAlgebra (GRID *theGrid)
       {
         errors++;
         UserWriteF(PFMT "ERROR: connection dead vec=" VINDEX_FMTX
-                   " vecto=" VINDEX_FMTX " con=%x mat=%x\n",
+                   " vecto=" VINDEX_FMTX " con=%x mat=%x matadj=%x\n",
                    me,VINDEX_PRTX(theVector),VINDEX_PRTX(MDEST(theMatrix)),
-                   MMYCON(theMatrix),theMatrix);
+                   MMYCON(theMatrix),MDEST(theMatrix),MDEST(MADJ(theMatrix)));
       }
 
                         #ifdef ModelP
