@@ -4776,7 +4776,7 @@ static INT MarkCommand (INT argc, char **argv)
       MarkForRefinement(theElement,RED,NULL);
         #ifdef ModelP
       j = (INT) UG_GlobalSumDOUBLE(1.0);
-      i = ID(theElement);
+      i = DDD_InfoGlobalId(PARHDRE(theElement));
     }
     else
     {
@@ -4789,7 +4789,7 @@ static INT MarkCommand (INT argc, char **argv)
     for (l=0; l<j; l++)
     {
       rv = UG_GlobalMaxINT(i);
-      UserWriteF("element %d marked for refinement\n",rv);
+      UserWriteF("element GID %08x marked for refinement\n",rv);
       if (rv == i) i = -1;
     }
         #else
