@@ -48,9 +48,18 @@
 #define FIRSTPART_OF_LIST               0
 #define LASTPART_OF_LIST(OTYPE) ((OTYPE ## PRIOS) -1)
 
-#define GRID_UNLINK_OBJECT(Grid,Object,Prio,OTYPE,PRED,SUCC)\
+#define HDRELEMENT      PARHDRE
+#define HDRNODE         PARHDR
+#define HDRVECTOR       PARHDR
+#define HDR(OTYPE)      HDR ## OTYPE
+
+#define GRID_UNLINK_OBJECT(Grid,Object,OTYPE,PRED,SUCC)\
   {\
+    INT Prio = DDD_InfoPriority(HDR(OTYPE) ## (Object));\
     INT listpart = PRIO2LISTPART(OTYPE ## _LIST,Prio);\
+    INT listpart1 = listpart;\
+    OTYPE *Object1 = NULL;\
+\
     IFDEBUG(gm,1) \
     printf("%d: GRID_UNLINK_" # OTYPE "():" # Object \
            " has listpart=%d for prio=%d\n",me,listpart,Prio);\
@@ -71,7 +80,8 @@
         SUCC(PRED(Object)) = SUCC(Object);\
       else\
         LISTPART_FIRST ## OTYPE(Grid,FIRSTPART_OF_LIST) = SUCC(Object);\
-      if (SUCC(Object)!=LISTPART_FIRST ## OTYPE(Grid,FIRSTPART_OF_LIST+1))\
+\
+      if (Object != LISTPART_LAST ## OTYPE(Grid,FIRSTPART_OF_LIST))\
         PRED(SUCC(Object)) = PRED(Object);\
       else\
         LISTPART_LAST ## OTYPE(Grid,FIRSTPART_OF_LIST) = PRED(Object);\
@@ -82,13 +92,23 @@
         SUCC(PRED(Object)) = SUCC(Object);\
       else {\
         LISTPART_FIRST ## OTYPE(Grid,LASTPART_OF_LIST(OTYPE)) = SUCC(Object);\
-        if (LISTPART_LAST ## OTYPE(Grid,LASTPART_OF_LIST(OTYPE)-1)!=NULL)\
-          SUCC(LISTPART_LAST ## OTYPE(Grid,LASTPART_OF_LIST(OTYPE)-1)) = SUCC(Object);\
+\
+        do {\
+          listpart1--;\
+          Object1 = LISTPART_LAST ## OTYPE(Grid,listpart1);\
+        }\
+        while (listpart1>FIRSTPART_OF_LIST && Object1==NULL);\
+\
+        if (Object1!=NULL)\
+          SUCC(Object1) = SUCC(Object);\
       }\
       if (SUCC(Object)!=NULL) \
         PRED(SUCC(Object)) = PRED(Object);\
-      else \
+      else {\
         LISTPART_LAST ## OTYPE(Grid,LASTPART_OF_LIST(OTYPE)) = PRED(Object);\
+        if (PRED(Object) != NULL) \
+          SUCC(PRED(Object)) = NULL;\
+      }\
       break;\
         \
     default :\
@@ -96,17 +116,17 @@
       if (PRED(Object)!=NULL) \
         SUCC(PRED(Object)) = SUCC(Object);\
       else {\
-        INT listpartprev=listpart;\
 \
         PRED(SUCC(Object)) = NULL;\
 \
-        do \
-          listpartprev--;\
-        while (listpartprev>FIRSTPART_OF_LIST && \
-               LISTPART_LAST ## OTYPE(Grid,listpartprev)==NULL);\
+        do {\
+          listpart1--;\
+          Object1 = LISTPART_LAST ## OTYPE(Grid,listpart1);\
+        }\
+        while (listpart1>FIRSTPART_OF_LIST && Object1==NULL);\
 \
-        if (LISTPART_LAST ## OTYPE(Grid,listpartprev)!=NULL)\
-          SUCC(LISTPART_LAST ## OTYPE(Grid,listpartprev)) = SUCC(Object);\
+        if (Object1!=NULL)\
+          SUCC(Object1) = SUCC(Object);\
       }\
       if (LISTPART_LAST ## OTYPE(Grid,listpart) != Object) {\
         LISTPART_FIRST ## OTYPE(Grid,listpart) = SUCC(Object);\
@@ -121,11 +141,12 @@
         LISTPART_LAST ## OTYPE(Grid,listpart) = PRED(Object);\
       break;\
     }\
+    SUCC(Object) = PRED(Object) = NULL;\
   }
 
 #else
 
-#define GRID_UNLINK_OBJECT(Grid,Object,Prio,OTYPE,PRED,SUCC)\
+#define GRID_UNLINK_OBJECT(Grid,Object,OTYPE,PRED,SUCC)\
   {\
     if (PRED(Object)!=NULL) \
       SUCC(PRED(Object)) = SUCC(Object);\
@@ -147,6 +168,9 @@
 #define GRID_LINK_OBJECT(Grid,Object,Prio,OTYPE,PRED,SUCC)\
   {\
     INT listpart = PRIO2LISTPART(OTYPE ## _LIST,Prio);\
+    INT listpartprev = listpart;\
+    INT listpartnext = listpart;\
+    OTYPE *Object1 = NULL;\
 \
     ASSERT(Grid != NULL);\
     ASSERT(Object != NULL);\
@@ -166,94 +190,120 @@
     }\
 \
     switch  (listpart) {\
-      OTYPE *before;\
-      OTYPE *after;\
 \
     case FIRSTPART_OF_LIST :\
-      before = LISTPART_FIRST ## OTYPE(Grid,FIRSTPART_OF_LIST);\
-      LISTPART_FIRST ## OTYPE(Grid,FIRSTPART_OF_LIST) = Object;\
-      if (LISTPART_LAST ## OTYPE(Grid,FIRSTPART_OF_LIST) == NULL)\
-        LISTPART_LAST ## OTYPE(Grid,FIRSTPART_OF_LIST) = Object;\
+      Object1 = LISTPART_FIRST ## OTYPE(Grid,FIRSTPART_OF_LIST);\
       PRED(Object) = NULL;\
-      if (before==NULL) {\
-        SUCC(Object) = LISTPART_FIRST ## OTYPE(Grid,FIRSTPART_OF_LIST+1);\
+      LISTPART_FIRST ## OTYPE(Grid,FIRSTPART_OF_LIST) = Object;\
+      if (Object1==NULL) {\
+        LISTPART_LAST ## OTYPE(Grid,FIRSTPART_OF_LIST) = Object;\
+        do {\
+          listpartnext++;\
+          Object1=LISTPART_FIRST ## OTYPE(Grid,listpartnext);\
+        }\
+        while (listpartnext<LASTPART_OF_LIST(OTYPE) && Object1==NULL);\
+        SUCC(Object) = Object1;\
       }\
       else {\
-        SUCC(Object) = before;\
-        PRED(before) = Object;\
+        SUCC(Object) = Object1;\
+        PRED(Object1) = Object;\
       }\
       break;\
 \
     case LASTPART_OF_LIST(OTYPE) : \
-      after = LISTPART_LAST ## OTYPE(Grid,LASTPART_OF_LIST(OTYPE));\
+      Object1 = LISTPART_LAST ## OTYPE(Grid,LASTPART_OF_LIST(OTYPE));\
       SUCC(Object) = NULL;\
-      if (after==NULL)\
+      LISTPART_LAST ## OTYPE(Grid,LASTPART_OF_LIST(OTYPE)) = Object;\
+      if (Object1==NULL)\
       {\
         PRED(Object) = NULL;\
-        LISTPART_LAST ## OTYPE(Grid,LASTPART_OF_LIST(OTYPE)) = Object;\
         LISTPART_FIRST ## OTYPE(Grid,LASTPART_OF_LIST(OTYPE)) = Object;\
-        if (LISTPART_LAST ## OTYPE(Grid,LASTPART_OF_LIST(OTYPE)-1)!=NULL)\
-          SUCC(LISTPART_LAST ## OTYPE(Grid,LASTPART_OF_LIST(OTYPE)-1)) = Object;\
+\
+        do {\
+          listpartprev--;\
+          Object1=LISTPART_LAST ## OTYPE(Grid,listpartprev);\
+        }\
+        while (listpartprev>FIRSTPART_OF_LIST && Object1==NULL);\
+\
+        if (Object1!=NULL)\
+          SUCC(Object1) = Object;\
       }\
       else\
       {\
-        PRED(Object) = after;\
-        LISTPART_LAST ## OTYPE(Grid,LASTPART_OF_LIST(OTYPE)) = Object;\
-        SUCC(after) = Object;\
+        PRED(Object) = Object1;\
+        SUCC(Object1) = Object;\
       }\
       break;\
 \
-    default : {\
+    default : \
       /* link in middle of list */\
-      OTYPE *Object1 = LISTPART_FIRST ## OTYPE(Grid,listpart);\
-      INT listpartprev = listpart;\
-      INT listpartnext = listpart;\
+      Object1 = LISTPART_FIRST ## OTYPE(Grid,listpart);\
 \
       LISTPART_FIRST ## OTYPE(Grid,listpart) = Object;\
       SUCC(Object) = Object1;\
+      PRED(Object) = NULL;\
 \
       /* empty list? */\
       if (Object1 == NULL) {\
         LISTPART_LAST ## OTYPE(Grid,listpart) = Object;\
-        do\
+        do {\
           listpartnext++;\
-        while (listpartnext<LASTPART_OF_LIST(OTYPE) &&\
-               (Object1=LISTPART_FIRST ## OTYPE(Grid,listpartnext))==NULL);\
-        if (Object1 != NULL)\
-          SUCC(Object) = Object1;\
+          Object1=LISTPART_FIRST ## OTYPE(Grid,listpartnext);\
+        }\
+        while (listpartnext<LASTPART_OF_LIST(OTYPE) && Object1==NULL);\
+        SUCC(Object) = Object1;\
       }\
       else \
         PRED(Object1) == Object;\
 \
-      do\
+      do {\
         listpartprev--;\
-      while (listpartprev>FIRSTPART_OF_LIST &&\
-             (Object1=LISTPART_LAST ## OTYPE(Grid,listpartprev))==NULL);\
+        Object1=LISTPART_LAST ## OTYPE(Grid,listpartprev);\
+      }\
+      while (listpartprev>FIRSTPART_OF_LIST && Object1==NULL);\
 \
       if (Object1 != NULL)\
         SUCC(Object1) = Object;\
       break;\
     }\
+  }
+#else
+#define GRID_LINK_OBJECT(Grid,Object,OTYPE,PRED,SUCC)\
+  {\
+    OTYPE *after;\
+\
+    after = LAST ## OTYPE(Grid);\
+    SUCC(Object) = NULL;\
+    if (after==NULL) {\
+      PRED(Object) = NULL;\
+      LAST ## OTYPE(Grid) = Object;\
+      FIRST ## OTYPE(Grid) = Object;\
+    }\
+    else {\
+      PRED(Object) = after;\
+      LAST ## OTYPE(Grid) = Object;\
+      SUCC(after) = Object;\
+    }\
+  }
+#endif
+
+#ifdef ModelP
+#define GRID_INIT_OBJECT_LIST(Grid,OTYPE) \
+  {\
+    INT i;\
+    for (i=0; i<=LASTPART_OF_LIST(OTYPE); i++) {\
+      LISTPART_FIRST  ## OTYPE(Grid,i) = NULL;\
+      LISTPART_LAST ## OTYPE(Grid,i) = NULL;\
     }\
   }
 #else
-#define GRID_LINK_OBJECT(Grid,Object,Prio,OTYPE,PRED,SUCC)   \
-  {                                                        \
-    OTYPE *after;                                        \
-                                                             \
-    after = LAST ## OTYPE(Grid);                         \
-    SUCC(Object) = NULL;                                 \
-    if (after==NULL) {                                   \
-      PRED(Object) = NULL;                             \
-      LAST ## OTYPE(Grid) = Object;                    \
-      FIRST ## OTYPE(Grid) = Object;                   \
-    }                                                    \
-    else {                                               \
-      PRED(Object) = after;                            \
-      LAST ## OTYPE(Grid) = Object;                    \
-      SUCC(after) = Object;                            \
-    }                                                    \
-  }
+#define GRID_INIT_OBJECT_LIST(Grid,OTYPE) \
+  FIRST ## OTYPE(Grid) = LAST ## OTYPE(Grid) = NULL;
+#endif
+
+#ifdef ModelP
+/* TODO: define this */
+#define GRID_CHECK_OBJECT_LIST(Grid,OTYPE)
 #endif
 
 /********************************************************/
@@ -262,24 +312,33 @@
 /********************************************************/
 
 /* element */
-#define GRID_UNLINK_ELEMENT(Grid,Element,Prio) \
-  GRID_UNLINK_OBJECT(Grid,Element,Prio,ELEMENT,PREDE,SUCCE)
+#define GRID_UNLINK_ELEMENT(Grid,Element) \
+  GRID_UNLINK_OBJECT(Grid,Element,ELEMENT,PREDE,SUCCE)
 
 #define GRID_LINK_ELEMENT(Grid,Element,Prio) \
   GRID_LINK_OBJECT(Grid,Element,Prio,ELEMENT,PREDE,SUCCE)
 
+#define GRID_INIT_ELEMENT_LIST(Grid)\
+  GRID_INIT_OBJECT_LIST(Grid,ELEMENT)
+
 /* node */
-#define GRID_UNLINK_NODE(Grid,Node,Prio) \
-  GRID_UNLINK_OBJECT(Grid,Node,Prio,NODE,PREDN,SUCCN)
+#define GRID_UNLINK_NODE(Grid,Node) \
+  GRID_UNLINK_OBJECT(Grid,Node,NODE,PREDN,SUCCN)
 
 #define GRID_LINK_NODE(Grid,Node,Prio) \
   GRID_LINK_OBJECT(Grid,Node,Prio,NODE,PREDN,SUCCN)
 
+#define GRID_INIT_NODE_LIST(Grid)\
+  GRID_INIT_OBJECT_LIST(Grid,NODE)
+
 /* vector */
-#define GRID_UNLINK_VECTOR(Grid,Vector,Prio) \
-  GRID_UNLINK_OBJECT(Grid,Vector,Prio,VECTOR,PREDVC,SUCCVC)
+#define GRID_UNLINK_VECTOR(Grid,Vector) \
+  GRID_UNLINK_OBJECT(Grid,Vector,VECTOR,PREDVC,SUCCVC)
 
 #define GRID_LINK_VECTOR(Grid,Vector,Prio) \
   GRID_LINK_OBJECT(Grid,Vector,Prio,VECTOR,PREDVC,SUCCVC)
+
+#define GRID_INIT_VECTOR_LIST(Grid)\
+  GRID_INIT_OBJECT_LIST(Grid,VECTOR)
 
 #endif /* __DLMGR_H__ */
