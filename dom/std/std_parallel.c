@@ -96,15 +96,15 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-void SetBVPType(INT type)
+void NS_DIM_PREFIX SetBVPType(INT type)
 {
   BVP_type = type;
 }
 
-void DomInitParallel (INT TypeBndP, INT TypeBndS)
+void NS_DIM_PREFIX DomInitParallel (INT TypeBndP, INT TypeBndS)
 {}
 
-void DomHandlerInit (INT handlerSet)
+void NS_DIM_PREFIX DomHandlerInit (INT handlerSet)
 {}
 
 static void M_BElementXferBndS (BNDS **bnds, int n, int proc, int prio)
@@ -214,7 +214,7 @@ static void M_BVertexScatterBndP (BNDP **bndp, int cnt, char *data)
   }
 }
 
-void BElementXferBndS (BNDS **bnds, int n, int proc, int prio)
+void NS_DIM_PREFIX BElementXferBndS (BNDS **bnds, int n, int proc, int prio)
 {
   INT size,i,size0;
 
@@ -239,7 +239,7 @@ void BElementXferBndS (BNDS **bnds, int n, int proc, int prio)
   DDD_XferAddData(size,DDD_DOMAIN_DATA);
 }
 
-void BElementGatherBndS (BNDS **bnds, int n, int cnt, char *data)
+void NS_DIM_PREFIX BElementGatherBndS (BNDS **bnds, int n, int cnt, char *data)
 {
   INT size,i;
 
@@ -267,7 +267,7 @@ void BElementGatherBndS (BNDS **bnds, int n, int cnt, char *data)
   memcpy(data,&i,sizeof(INT));
 }
 
-void BElementScatterBndS (BNDS **bnds, int n, int cnt, char *data)
+void NS_DIM_PREFIX BElementScatterBndS (BNDS **bnds, int n, int cnt, char *data)
 {
   INT size,i;
   BNDS *bs;
@@ -296,7 +296,7 @@ void BElementScatterBndS (BNDS **bnds, int n, int cnt, char *data)
   }
 }
 
-void BVertexXferBndP (BNDP *bndp, int proc, int prio)
+void NS_DIM_PREFIX BVertexXferBndP (BNDP *bndp, int proc, int prio)
 {
   INT size;
 
@@ -312,7 +312,7 @@ void BVertexXferBndP (BNDP *bndp, int proc, int prio)
   DDD_XferAddData(size,DDD_DOMAIN_DATA);
 }
 
-void BVertexGatherBndP (BNDP *bndp, int cnt, char *data)
+void NS_DIM_PREFIX BVertexGatherBndP (BNDP *bndp, int cnt, char *data)
 {
   if (BVP_type == BVP_MARC) {
     M_BVertexGatherBndP(bndp,cnt,data);
@@ -329,7 +329,7 @@ void BVertexGatherBndP (BNDP *bndp, int cnt, char *data)
 }
 
 
-void BVertexScatterBndP (BNDP **bndp, int cnt, char *data)
+void NS_DIM_PREFIX BVertexScatterBndP (BNDP **bndp, int cnt, char *data)
 {
   if (BVP_type == BVP_MARC) {
     M_BVertexScatterBndP(bndp,cnt,data);

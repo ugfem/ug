@@ -2077,7 +2077,7 @@ static INT Identify_SonNodes (GRID *theGrid)
  */
 /****************************************************************************/
 
-INT NS_PREFIX Identify_SonEdges (GRID *theGrid)
+INT Identify_SonEdges (GRID *theGrid)
 {
 
 #ifdef IDENT_ONLY_NEW

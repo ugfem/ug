@@ -826,7 +826,7 @@ void NS_PREFIX memmgr_MarkHMEM (long *theMarkKey)
   *theMarkKey = (long)myMarkKey;
 }
 
-void *memmgr_AllocHMEM (size_t size, long theMarkKey)
+void NS_PREFIX *memmgr_AllocHMEM (size_t size, long theMarkKey)
 {
   void *buffer;
   buffer = GetTmpMem(MGHEAP(dddctrl.currMG), size, (INT)theMarkKey);
@@ -838,7 +838,7 @@ void *memmgr_AllocHMEM (size_t size, long theMarkKey)
   return(buffer);
 }
 
-void memmgr_ReleaseHMEM (long theMarkKey)
+void NS_PREFIX memmgr_ReleaseHMEM (long theMarkKey)
 {
   ReleaseTmpMem(MGHEAP(dddctrl.currMG), (INT)theMarkKey);
 }

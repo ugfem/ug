@@ -101,10 +101,10 @@ INT              ReleaseOBJT                    (INT type);
 
 /* create basic objects */
 #ifdef ModelP
-EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector);
+EDGE NS_DIM_PREFIX *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector);
 #endif
-ELEMENT     *CreateElement          (GRID *theGrid, INT tag, INT objtype,
-                                     NODE **nodes, ELEMENT *Father, INT with_vector);
+ELEMENT NS_DIM_PREFIX *CreateElement          (GRID *theGrid, INT tag, INT objtype,
+                                               NODE **nodes, ELEMENT *Father, INT with_vector);
 INT         CreateSonElementSide    (GRID *theGrid, ELEMENT *theElement,
                                      INT side, ELEMENT *theSon, INT son_side);
 

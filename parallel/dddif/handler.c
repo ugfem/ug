@@ -2105,7 +2105,7 @@ static void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new_)
 /****************************************************************************/
 
 #ifdef __THREEDIM__
-void NS_PREFIX EdgeUpdate (DDD_OBJ obj)
+void EdgeUpdate (DDD_OBJ obj)
 {
   EDGE    *pe                     = (EDGE *)obj;
   LINK    *link0,
@@ -2156,7 +2156,7 @@ void NS_PREFIX EdgeUpdate (DDD_OBJ obj)
   NE(theGrid)++;
 }
 
-void NS_PREFIX EdgePriorityUpdate (DDD_OBJ obj, DDD_PRIO new_)
+void EdgePriorityUpdate (DDD_OBJ obj, DDD_PRIO new_)
 {
   EDGE    *theEdge        = (EDGE *)obj;
   INT level           = LEVEL(theEdge);
@@ -2167,7 +2167,7 @@ void NS_PREFIX EdgePriorityUpdate (DDD_OBJ obj, DDD_PRIO new_)
                       "level=%d\n",me,ID_PRTX(theEdge),old,new_,level))
 }
 
-void NS_PREFIX EdgeObjMkCons (DDD_OBJ obj, int newness)
+void EdgeObjMkCons (DDD_OBJ obj, int newness)
 {
   EDGE *theEdge   = (EDGE *) obj;
 
@@ -2176,12 +2176,12 @@ void NS_PREFIX EdgeObjMkCons (DDD_OBJ obj, int newness)
 
   /* set pointer of vector to its edge */
   if (dddctrl.edgeData && EDVECTOR(theEdge))
-    VOBJECT(EDVECTOR(theEdge)) = (void*)theEdge;
+    VOBJECT(EDVECTOR(theEdge)) = (GEOM_OBJECT*)theEdge;
 
   ASSERT(OBJT(theEdge) == EDOBJ);
 }
 
-void NS_PREFIX EdgeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
+void EdgeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 {
   EDGE *pe        =       (EDGE *)obj;
 
