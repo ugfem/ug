@@ -62,6 +62,7 @@
 /****************************************************************************/
 
 
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -161,8 +162,9 @@ void VectorUpdate (DDD_OBJ obj)
 {
 	VECTOR *pv = (VECTOR *)obj;
 	VECTOR *after = NULL;
-	GRID *theGrid = NULL;
-	int  level = DDD_InfoAttr(PARHDR(pv));
+	GRID   *theGrid = NULL;
+	int    level = DDD_InfoAttr(PARHDR(pv));
+	int    prio = DDD_InfoPriority(PARHDR(pv));
 
 	PRINTDEBUG(dddif,1,("%2d: VectorUpdate(): v=%08x/%x VEOBJ=%d\n",me,\
 		DDD_InfoGlobalId(PARHDR(pv)),pv,OBJT(pv)))
@@ -171,15 +173,19 @@ void VectorUpdate (DDD_OBJ obj)
 	after = LASTVECTOR(theGrid);
 
     /* insert in vector list */
+	GRID_LINK_VECTOR(theGrid,pv,prio)
+
+/* TODO: delete this */
+if (0) {
     if (after==NULL)
     {
-        SUCCVC(pv) = (VECTOR*)theGrid->firstVector;
+        SUCCVC(pv) = (VECTOR*)FIRSTVECTOR(theGrid);
         PREDVC(pv) = NULL;
         if (SUCCVC(pv)!=NULL)
             PREDVC(SUCCVC(pv)) = pv;
-        theGrid->firstVector = (void*)pv;
-        if (theGrid->lastVector==NULL)
-            theGrid->lastVector = (void*)pv;
+        FIRSTVECTOR(theGrid) = (void*)pv;
+        if (LASTVECTOR(theGrid)==NULL)
+            LASTVECTOR(theGrid) = (void*)pv;
     }
     else
     {
@@ -188,9 +194,10 @@ void VectorUpdate (DDD_OBJ obj)
         if (SUCCVC(pv)!=NULL)
             PREDVC(SUCCVC(pv)) = pv;
         else
-            theGrid->lastVector = (void*)pv;
+            LASTVECTOR(theGrid) = (void*)pv;
         SUCCVC(after) = pv;
     }
+}
 
 	VSTART(pv) = NULL;
 
@@ -471,6 +478,41 @@ void VectorDelete (DDD_OBJ obj)
 	DisposeVector(theGrid, pv);
 }
 
+void VectorPriorityUpdate (DDD_OBJ obj, int new)
+{
+	VECTOR *pv = (VECTOR *)obj;
+	INT     level = DDD_InfoAttr(PARHDR(pv));
+	GRID    *theGrid = GetGridOnDemand(dddctrl.currMG,level);
+	INT		old = DDD_InfoPriority(PARHDR(pv));
+
+	if (pv == NULL) return;
+	if (old == new) return;
+
+	if (old == PrioNone) {
+		/* only valid for masters */
+		ASSERT(new == PrioMaster);
+		return;
+	}
+	if (new == PrioNone) {
+		/* only valid when prio undefined */  
+		printf("prio=%d\n",old);
+		fflush(stdout);
+		ASSERT(old <= 0);
+		return;
+	}
+
+	GRID_UNLINK_VECTOR(theGrid,pv,old)
+
+	GRID_LINK_VECTOR(theGrid,pv,new)
+	
+	return;
+}
+
+/****************************************************************************/
+/****************************************************************************/
+/*																			*/
+/*		handlers for typeelement											*/
+/*																			*/
 
 /****************************************************************************/
 /****************************************************************************/
@@ -499,6 +541,7 @@ void VertexUpdate (DDD_OBJ obj)
 {
 	VERTEX  *pv = (VERTEX *) obj;
 	VERTEX  *after;
+	ELEMENT *theElement;
 	GRID  *theGrid;
 	int  level = DDD_InfoAttr(PARHDRV(pv));
 
@@ -639,29 +682,35 @@ void NodeUpdate (DDD_OBJ obj)
 	NODE  *node = (NODE *)obj;
 	NODE  *after;
 	GRID  *theGrid;
-	int  level = DDD_InfoAttr(PARHDR(node));
+	int   level = DDD_InfoAttr(PARHDR(node));
+	int   prio = DDD_InfoPriority(PARHDR(node));
 
 	PRINTDEBUG(dddif,1,("%2d: NodeUpdate(): n=%x NDOBJ=%d\n",me,node,OBJT(node)))
 
 	theGrid = GRID_ON_LEVEL(dddctrl.currMG,level);
 	after = LASTNODE(theGrid);
 
+	GRID_LINK_NODE(theGrid,node,prio)
+
+/* TODO: delete this */
+if (0) {
         /* insert in vertex list */
         if (after==NULL)
         {
-                SUCCN(node) = theGrid->firstNode;
+                SUCCN(node) = FIRSTNODE(theGrid);
                 PREDN(node) = NULL;
                 if (SUCCN(node)!=NULL) PREDN(SUCCN(node)) = node;
-                theGrid->firstNode = node;
-                if (theGrid->lastNode==NULL) theGrid->lastNode = node;
+                FIRSTNODE(theGrid) = node;
+                if (LASTNODE(theGrid)==NULL) LASTNODE(theGrid) = node;
         }
         else
         {
                 SUCCN(node) = SUCCN(after);
                 PREDN(node) = after;
-                if (SUCCN(node)!=NULL) PREDN(SUCCN(node)) = node; else theGrid->lastNode = node;
+                if (SUCCN(node)!=NULL) PREDN(SUCCN(node)) = node; else LASTNODE(theGrid) = node;
                 SUCCN(after) = node;
         }
+}
 
 		START(node) = NULL;
 
@@ -700,7 +749,7 @@ void NodeXferCopy (DDD_OBJ obj, int proc, int prio)
 	/* copy vertex */
 	PRINTDEBUG(dddif,2,("%2d: NodeXferCopy(): n=%x Xfer v=%x\n",me,node,MYVERTEX(node)))
 
-	DDD_XferCopyObj(PARHDRV(MYVERTEX(node)), proc, PrioVertex);
+	DDD_XferCopyObj(PARHDRV(MYVERTEX(node)), proc, prio);
 
 	/* copy vector if defined */
 	if (dddctrl.nodeData && prio==PrioMaster)
@@ -810,6 +859,35 @@ void NodeScatterEdge (DDD_OBJ n, int cnt, DDD_TYPE type_id, void *Data)
 	MNEXT(link) = NULL;
 }
 	
+void NodePriorityUpdate (DDD_OBJ obj, int new)
+{
+	NODE *pn = (NODE *)obj;
+	INT     level = DDD_InfoAttr(PARHDR(pn));
+	GRID    *theGrid = GetGridOnDemand(dddctrl.currMG,level);
+	INT		old = DDD_InfoPriority(PARHDR(pn));
+
+	if (pn == NULL) return;
+	if (old == new) return;
+
+	if (old == PrioNone) {
+		/* only valid for masters */
+		ASSERT(new == PrioMaster);
+		return;
+	}
+	if (new == PrioNone) {
+		/* only valid when prio undefined */  
+		printf("prio=%d\n",old);
+		fflush(stdout);
+		ASSERT(old <= 0);
+		return;
+	}
+
+	GRID_UNLINK_NODE(theGrid,pn,old)
+
+	GRID_LINK_NODE(theGrid,pn,new)
+	
+	return;
+}
 
 /****************************************************************************/
 /****************************************************************************/
@@ -837,7 +915,11 @@ void ElementLDataConstructor (DDD_OBJ obj)
 	int			i,sides;
 	ELEMENT		*pe = (ELEMENT *)obj;
 	ELEMENT		*after = NULL;
+	ELEMENT		*before = NULL;
+	VERTEX		*pv;
+	EDGE		*theEdge;
 	int         level = DDD_InfoAttr(PARHDRE(pe));
+	int         prio = DDD_InfoPriority(PARHDRE(pe));
 	GRID        *theGrid = GetGridOnDemand(dddctrl.currMG,level);
 
 	PRINTDEBUG(dddif,2,("%2d: ElementLDataConsX(): pe=%08x/%x eID=%d EOBJ=%d l=%d\n",\
@@ -847,27 +929,7 @@ void ElementLDataConstructor (DDD_OBJ obj)
 	SETLEVEL(pe,level);
 	sides = 0;
 
-	/* insert in element list */
-	if (after==NULL)
-	{
-		SUCCE(pe) = theGrid->elements;
-		PREDE(pe) = NULL;
-		if (SUCCE(pe)!=NULL) 
-			PREDE(SUCCE(pe)) = pe;
-		else 
-			theGrid->lastelement = pe;
-		theGrid->elements = pe;
-	}
-	else
-	{
-		SUCCE(pe) = SUCCE(after);
-		PREDE(pe) = after;
-		if (SUCCE(pe)!=NULL)
-			PREDE(SUCCE(pe)) = pe;
-		else
-			theGrid->lastelement = pe;
-		SUCCE(after) = pe;
-	}
+	GRID_LINK_ELEMENT(theGrid,pe,prio)
 
 	if (OBJT(pe)==BEOBJ)
 	{
@@ -992,7 +1054,7 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 		
 		PRINTDEBUG(dddif,2,("%2d:ElementXferCopy(): e=%x ELEMVEC=%x size=%d\n",me,pe,vec,Size))
 
-		  DDD_XferCopyObjX(PARHDR(vec), proc, PrioVector, Size);
+		  DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
 	  }
 
 	/* copy sidevectors */
@@ -1028,7 +1090,7 @@ static void ElemGatherEdge (ELEMENT *pe, int cnt, char *data)
 	{
 		EDGE *edge = GetEdge(CORNER(pe,CORNER_OF_EDGE(pe,i,0)),
 							 CORNER(pe,CORNER_OF_EDGE(pe,i,1)));
-
+		ASSERT(edge!=NULL);
 		memcpy(data, (char *)edge, size);
 		data += CEIL(size);
 
@@ -1057,10 +1119,25 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data)
 		EDGE *enew, *ecopy = (EDGE *)data;
 		data += CEIL(size);
 
-		PRINTDEBUG(dddif,4,("%2d:  ElemScatterEdge(): pe=%x i=%d n1=%08x n2=%08x nmid=%08x\n",me,pe,i,NBNODE(LINK0(ecopy)),ecopy->links[1].nbnode,ecopy->midnode))
+		PRINTDEBUG(dddif,4,("%2d:  ElemScatterEdge(): pe=%x i=%d n1=%08x n2=%08x midnode=%08x\n",
+				me,pe,i,NBNODE(LINK0(ecopy)),ecopy->links[1].nbnode,ecopy->midnode))
 
 		enew = CreateEdge(theGrid, NBNODE(LINK0(ecopy)), NBNODE(LINK1(ecopy)), FALSE);
-		/* TODO error handling */
+		PRINTDEBUG(dddif,1,("%d: ElemScatterEdge(): pe=%x create edge=%x e%d%d for n0=%x n1=%x\n",me,pe,enew,
+				ID(NBNODE(LINK0(ecopy))),ID(NBNODE(LINK1(ecopy))),
+				NBNODE(LINK0(ecopy)),NBNODE(LINK1(ecopy))));
+		if (enew == NULL) {
+			PRINTDEBUG(dddif,1,("%d:  ElemScatterEdge(): ERROR pe=%x i=%d CreateEdge returned NULL\n",me,pe,i));
+			ASSERT(0);
+		}
+		{
+		EDGE *edge0,*edge1;
+			edge0 = GetEdge(NBNODE(LINK0(ecopy)),NBNODE(LINK1(ecopy)));
+			edge1 = GetEdge(NBNODE(LINK1(ecopy)),NBNODE(LINK0(ecopy)));
+			if (edge0 != edge1) 
+				PRINTDEBUG(dddif,1,("%d: ElemScatterEdge(): n0=%x n1=%x edge0=%x BUT edge1=%x\n",me,
+						NBNODE(LINK0(ecopy)),NBNODE(LINK1(ecopy)),edge0,edge1));
+		}
 
 		MIDNODE(enew) = MIDNODE(ecopy);
 		if (dddctrl.edgeData)
@@ -1157,8 +1234,11 @@ void ElementObjMkCons_Xfer (DDD_OBJ obj)
 
 void ElementObjMkCons_Refine (DDD_OBJ obj)
 {
-	int i;
+	int i,j;
 	ELEMENT  *pe	=	(ELEMENT *)obj;
+	VERTEX *pv;
+
+	PRINTDEBUG(dddif,0,("%2d: ElementObjMkCons_Refine(): pe=%x/%d\n",me,pe,ID(pe)))
 
 	/* reconstruct pointer from vectors */
 	if (dddctrl.elemData) VOBJECT(EVECTOR(pe)) = (void*)pe;
@@ -1173,13 +1253,48 @@ void ElementObjMkCons_Refine (DDD_OBJ obj)
 		ELEMENT *father = EFATHER(pe);
 		if (father != NULL) {
 			assert(NSONS(father)<NSONS_OF_RULE(MARK2RULEADR(father,REFINE(father))));
+
+			#ifdef __THREEDIM__
+			/* insert only first son */
+			if (SON(father,0) == NULL)
+			#endif
 			SET_SON(father,NSONS(father),pe);
 			SETNSONS(father,NSONS(father)+1);
 		}
 	}
+
 }
 
 
+void ElementPriorityUpdate (DDD_OBJ obj, int new)
+{
+	ELEMENT *pe = (ELEMENT *)obj;
+	INT     level = DDD_InfoAttr(PARHDRE(pe));
+	GRID    *theGrid = GetGridOnDemand(dddctrl.currMG,level);
+	INT		old = DDD_InfoPriority(PARHDRE(pe));
+
+	if (pe == NULL) return;
+	if (old == new) return;
+
+	if (old == PrioNone) {
+		/* only valid for masters */
+		ASSERT(new == PrioMaster);
+		return;
+	}
+	if (new == PrioNone) {
+		/* only valid when prio undefined */  
+		printf("prio=%d\n",old);
+		fflush(stdout);
+		ASSERT(old <= 0);
+		return;
+	}
+
+	GRID_UNLINK_ELEMENT(theGrid,pe,old)
+
+	GRID_LINK_ELEMENT(theGrid,pe,new)
+	
+	return;
+}
 
 /****************************************************************************/
 /****************************************************************************/
@@ -1218,6 +1333,7 @@ static void ElemHandlerInit (DDD_TYPE etype, INT handlerSet)
 		HANDLER_LDATACONSTRUCTOR, ElementLDataConstructor,
 		HANDLER_DELETE,           ElementDelete,
 		HANDLER_XFERCOPY,		  ElementXferCopy,
+		HANDLER_SETPRIORITY,	  ElementPriorityUpdate,
 		HANDLER_END
 	);
 
@@ -1285,6 +1401,7 @@ void ddd_HandlerInit (INT handlerSet)
 		HANDLER_XFERGATHERX,	VectorGatherMatX,
 		HANDLER_XFERSCATTERX,	VectorScatterConnX,
 		HANDLER_OBJMKCONS,		VectorObjMkCons,
+		HANDLER_SETPRIORITY,	VectorPriorityUpdate,
 		HANDLER_END
 	);	
 
@@ -1308,6 +1425,7 @@ void ddd_HandlerInit (INT handlerSet)
 		HANDLER_OBJMKCONS,			NodeObjMkCons,
 		HANDLER_UPDATE,				NodeUpdate,
 		HANDLER_XFERCOPY,			NodeXferCopy,
+		HANDLER_SETPRIORITY,		NodePriorityUpdate,
 /*
 		HANDLER_XFERGATHER,			NodeGatherEdge,
 		HANDLER_XFERSCATTER,		NodeScatterEdge,
