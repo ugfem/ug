@@ -112,6 +112,7 @@ enum yytokentype {
 #include <stdlib.h>
 
 #include "ng2d.h"
+#include "ngin-lex.h"
 
 #define alloca(p)               malloc(p)
 #define SP_COPY(d,s)    {(d)->surf_id=(s)->surf_id; \
@@ -120,12 +121,18 @@ enum yytokentype {
                          (d)->local[1]=(s)->local[1];}
 #define LP_COPY(d,s)    {(d)->line_id=(s)->line_id; (d)->local=(s)->local;}
 
+#include "namespace.h"
+
+USING_UGDIM_NAMESPACE
+
 static LINE_POSITION LinePos;
 static BND_NODE BndNode;
 static INNER_NODE InnerNode;
 static ELEM_SIDE ElemSide;
 static NG_ELEMENT Elem;
 
+/* forward declare my own function (referenced by automatic parser) */
+int ngerror (char *s);
 
 
 
@@ -144,7 +151,7 @@ static NG_ELEMENT Elem;
 #endif
 
 #if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
-#line 44 "ngin-yacc.y"
+#line 51 "ngin-yacc.y"
 typedef union YYSTYPE {
   /* put RCS string here in order to get it into yacc-generated header file
      static char RCS_ID("$Header: /hosts/dom/cvs/df/gen/problems/dfcfg/dfcfg.y,v 1.1
@@ -156,14 +163,14 @@ typedef union YYSTYPE {
   double dval;
   long ival;
 
-  LINE_POSITION *lp;
-  BND_NODE *bs;
-  INNER_NODE *in;
-  ELEM_SIDE *es;
-  NG_ELEMENT *el;
+  NS_DIM_PREFIX LINE_POSITION *lp;
+  NS_DIM_PREFIX BND_NODE *bs;
+  NS_DIM_PREFIX INNER_NODE *in;
+  NS_DIM_PREFIX ELEM_SIDE *es;
+  NS_DIM_PREFIX NG_ELEMENT *el;
 } YYSTYPE;
 /* Line 191 of yacc.c.  */
-#line 165 "ngin-yacc.c"
+#line 172 "ngin-yacc.c"
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 # define YYSTYPE_IS_TRIVIAL 1
@@ -175,7 +182,7 @@ typedef union YYSTYPE {
 
 
 /* Line 214 of yacc.c.  */
-#line 177 "ngin-yacc.c"
+#line 184 "ngin-yacc.c"
 
 #if ! defined (yyoverflow) || YYERROR_VERBOSE
 
@@ -353,10 +360,10 @@ static const yysigned_char yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const unsigned char yyrline[] =
 {
-  0,    76,    76,    77,    80,    81,    84,    87,    84,    93,
-  94,    95,    96,    97,   100,   108,   119,   127,   128,   131,
-  139,   140,   143,   149,   143,   153,   158,   165,   172,   173,
-  176
+  0,    83,    83,    84,    87,    88,    91,    94,    91,   100,
+  101,   102,   103,   104,   107,   115,   126,   134,   135,   138,
+  146,   147,   150,   156,   150,   160,   165,   172,   179,   180,
+  183
 };
 #endif
 
@@ -1079,23 +1086,21 @@ yyreduce:
   switch (yyn)
   {
   case 6 :
-#line 84 "ngin-yacc.y"
+#line 91 "ngin-yacc.y"
     {
       Elem.n_c=Elem.n_s=0;
-      ;
     }
     break;
 
   case 7 :
-#line 87 "ngin-yacc.y"
+#line 94 "ngin-yacc.y"
     {
       if (PutElement(&Elem)) YYABORT;
-      ;
     }
     break;
 
   case 14 :
-#line 100 "ngin-yacc.y"
+#line 107 "ngin-yacc.y"
     {
       Elem.subdom=(int)yyvsp[-3].ival;
       Elem.c_id[0]=(int)yyvsp[-2].ival;
@@ -1103,12 +1108,11 @@ yyreduce:
       Elem.c_id[2]=(int)yyvsp[0].ival;
       Elem.n_c=3;
       yyval.el=&Elem;
-      ;
     }
     break;
 
   case 15 :
-#line 108 "ngin-yacc.y"
+#line 115 "ngin-yacc.y"
     {
       Elem.subdom=(int)yyvsp[-4].ival;
       Elem.c_id[0]=(int)yyvsp[-3].ival;
@@ -1117,93 +1121,86 @@ yyreduce:
       Elem.c_id[3]=(int)yyvsp[0].ival;
       Elem.n_c=4;
       yyval.el=&Elem;
-      ;
     }
     break;
 
   case 16 :
-#line 119 "ngin-yacc.y"
+#line 126 "ngin-yacc.y"
     {
       Elem.side[Elem.n_s].c_id[0]=(int)yyvsp[-1].ival;
       Elem.side[Elem.n_s].c_id[1]=(int)yyvsp[0].ival;
       yyval.es=&(Elem.side[Elem.n_s]);
       Elem.n_s++;
-      ;
     }
     break;
 
   case 19 :
-#line 131 "ngin-yacc.y"
+#line 138 "ngin-yacc.y"
     {
       InnerNode.global[0]=yyvsp[-2].dval;
       InnerNode.global[1]=yyvsp[-1].dval;
       yyval.in=&InnerNode;
       PutInnerNode(&InnerNode);
-      ;
     }
     break;
 
   case 22 :
-#line 143 "ngin-yacc.y"
+#line 150 "ngin-yacc.y"
     {
       BndNode.n_lp=0;
       BndNode.global[0]=yyvsp[-1].dval;
       BndNode.global[1]=yyvsp[0].dval;
       yyval.bs=&BndNode;
-      ;
     }
     break;
 
   case 23 :
-#line 149 "ngin-yacc.y"
-    {PutBndNode(&BndNode);;}
+#line 156 "ngin-yacc.y"
+    {PutBndNode(&BndNode);}
     break;
 
   case 25 :
-#line 153 "ngin-yacc.y"
+#line 160 "ngin-yacc.y"
     {
       LP_COPY(&(BndNode.lp[BndNode.n_lp]),yyvsp[0].lp);
       BndNode.n_lp++;
       yyval.bs=&BndNode;
-      ;
     }
     break;
 
   case 26 :
-#line 158 "ngin-yacc.y"
+#line 165 "ngin-yacc.y"
     {
       LP_COPY(&(BndNode.lp[BndNode.n_lp]),yyvsp[0].lp);
       BndNode.n_lp++;
       yyval.bs=&BndNode;
-      ;
     }
     break;
 
   case 27 :
-#line 165 "ngin-yacc.y"
+#line 172 "ngin-yacc.y"
     {
       LinePos.line_id=(int)yyvsp[-1].ival;
       LinePos.local=(float)yyvsp[0].dval;
       yyval.lp=&LinePos;
-      ;
     }
     break;
 
   case 28 :
-#line 172 "ngin-yacc.y"
-    {yyval.dval=(double)yyvsp[0].ival;;}
+#line 179 "ngin-yacc.y"
+    {yyval.dval=(double)yyvsp[0].ival;}
     break;
 
   case 30 :
-#line 176 "ngin-yacc.y"
-    {yyval.ival=yyvsp[0].ival;;}
+#line 183 "ngin-yacc.y"
+    {yyval.ival=yyvsp[0].ival;}
     break;
 
 
   }
 
   /* Line 999 of yacc.c.  */
-#line 1195 "ngin-yacc.c"
+#line 1202 "ngin-yacc.c"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -1397,16 +1394,16 @@ yyreturn:
 }
 
 
-#line 180 "ngin-yacc.y"
+#line 187 "ngin-yacc.y"
 
 
 
-ngwrap (char *s)
+int ngwrap (char *s)
 {
   return (1);
 }
 
-ngerror (char *s)
+int ngerror (char *s)
 {
   int line;
   char text[128];

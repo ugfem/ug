@@ -27,6 +27,8 @@ static int noline=1;
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
+/* forward declare stuff from ngin-yacc.y */
+int ngerror (char *s); 
 
 %}
 
@@ -58,11 +60,15 @@ KEY_TEND        	;
 
 %%
 
-NP_Error (int *line, char *text)
+int NP_Error (int *line, char *text)
 {
 	*line=noline;
 	strcpy(text,yytext);
-	return;
+	return 0;
 }
 
-
+/*
+  Local Variables:
+  mode: C
+  End:
+*/

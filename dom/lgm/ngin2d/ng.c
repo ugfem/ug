@@ -104,7 +104,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-void ngbreak (void);
 int ngparse (void);
 
 

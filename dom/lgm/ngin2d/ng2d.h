@@ -153,4 +153,6 @@ int NG_Init (int domainpaths_set);
 
 END_NAMESPACE
 
+void ngbreak (void);
+
 #endif

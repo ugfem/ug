@@ -480,8 +480,10 @@ static int noline=1;
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
+/* forward declare stuff from ngin-yacc.y */
+int ngerror (char *s);
 
-#line 490 "ngin-lex.c"
+#line 492 "ngin-lex.c"
 
 #define INITIAL 0
 
@@ -632,10 +634,10 @@ YY_DECL
   register char *yy_cp, *yy_bp;
   register int yy_act;
 
-#line 45 "ngin-lex.l"
+#line 47 "ngin-lex.l"
 
 
-#line 644 "ngin-lex.c"
+#line 646 "ngin-lex.c"
 
   if ( (yy_init) )
   {
@@ -720,76 +722,76 @@ do_action:      /* This label is used only to access EOF actions. */
 
     case 1 :
       YY_RULE_SETUP
-#line 47 "ngin-lex.l"
+#line 49 "ngin-lex.l"
       ;
       YY_BREAK
     case 2 :
       /* rule 2 can match eol */
       YY_RULE_SETUP
-#line 48 "ngin-lex.l"
+#line 50 "ngin-lex.l"
       {noline++;}
       YY_BREAK
     case 3 :
       YY_RULE_SETUP
-#line 49 "ngin-lex.l"
+#line 51 "ngin-lex.l"
       ;
       YY_BREAK
     case 4 :
       YY_RULE_SETUP
-#line 50 "ngin-lex.l"
+#line 52 "ngin-lex.l"
       {nglval.ival=atol((const char *)ngtext); return (INT_VALUE);}
       YY_BREAK
     case 5 :
       YY_RULE_SETUP
-#line 51 "ngin-lex.l"
+#line 53 "ngin-lex.l"
       {nglval.dval=strtod((const char *)ngtext,NULL); return (DOUBLE_VALUE);}
       YY_BREAK
     case 6 :
       YY_RULE_SETUP
-#line 52 "ngin-lex.l"
+#line 54 "ngin-lex.l"
       {return (INODE);}
       YY_BREAK
     case 7 :
       YY_RULE_SETUP
-#line 53 "ngin-lex.l"
+#line 55 "ngin-lex.l"
       {return (BNODE);}
       YY_BREAK
     case 8 :
       YY_RULE_SETUP
-#line 54 "ngin-lex.l"
+#line 56 "ngin-lex.l"
       {return (SURFACE);}
       YY_BREAK
     case 9 :
       YY_RULE_SETUP
-#line 55 "ngin-lex.l"
+#line 57 "ngin-lex.l"
       {return (LINE);}
       YY_BREAK
     case 10 :
       YY_RULE_SETUP
-#line 56 "ngin-lex.l"
+#line 58 "ngin-lex.l"
       {return (ELEM);}
       YY_BREAK
     case 11 :
       YY_RULE_SETUP
-#line 57 "ngin-lex.l"
+#line 59 "ngin-lex.l"
       {return (FACE);}
       YY_BREAK
     case 12 :
       YY_RULE_SETUP
-#line 58 "ngin-lex.l"
+#line 60 "ngin-lex.l"
       {return (TEND);}
       YY_BREAK
     case 13 :
       YY_RULE_SETUP
-#line 59 "ngin-lex.l"
+#line 61 "ngin-lex.l"
       {ngerror(NULL);}
       YY_BREAK
     case 14 :
       YY_RULE_SETUP
-#line 61 "ngin-lex.l"
+#line 63 "ngin-lex.l"
       ECHO;
       YY_BREAK
-#line 798 "ngin-lex.c"
+#line 800 "ngin-lex.c"
     case YY_STATE_EOF(INITIAL) :
       yyterminate();
 
@@ -1755,7 +1757,7 @@ void ngfree (void * ptr )
 #undef YY_DECL_IS_OURS
 #undef YY_DECL
 #endif
-#line 61 "ngin-lex.l"
+#line 63 "ngin-lex.l"
 
 
 
@@ -1765,3 +1767,9 @@ int NP_Error (int *line, char *text)
   strcpy(text,ngtext);
   return 0;
 }
+
+/*
+   Local Variables:
+   mode: C
+   End:
+ */
