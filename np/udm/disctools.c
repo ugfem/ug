@@ -1346,10 +1346,11 @@ INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
    ClearVecskipFlags - set all vecskip flags to 0
 
    SYNOPSIS:
-   INT ClearVecskipFlags (GRID *theGrid);
+   INT ClearVecskipFlags (GRID *theGrid, VECDATA_DESC *theVD);
 
    PARAMETERS:
    .  theGrid - pointer to a grid
+   .  theVD - type vector descriptor
 
    DESCRIPTION:
    This function sets the vecskip flags for all vectors of a grid to 0.
@@ -1361,14 +1362,17 @@ INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
    D*/
 /****************************************************************************/
 
-INT ClearVecskipFlags (GRID *theGrid)
+INT ClearVecskipFlags (GRID *theGrid, VECDATA_DESC *theVD)
 {
   VECTOR *theVector;
+  INT j,vtype;
 
   for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL;
-       theVector=SUCCVC(theVector))
-    VECSKIP(theVector) = 0;
-
+       theVector=SUCCVC(theVector)) {
+    vtype = VTYPE(theVector);
+    for (j=0; j<VD_NCMPS_IN_TYPE (theVD,vtype); j++)
+      VECSKIP(theVector) =  (VECSKIP(theVector) & (~(1<<j)) | (0<<j));
+  }
   return(0);
 }
 

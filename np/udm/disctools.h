@@ -139,10 +139,10 @@ INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
                               DOUBLE **mptrlist[MAXMD],
                               INT *vecskip, INT *nvec);
 
-INT ClearVecskipFlags           (GRID *theGrid);
-INT GetElementDirichletFlags    (ELEMENT *theElement, const VECDATA_DESC *theTVD,
+INT ClearVecskipFlags           (GRID *theGrid, VECDATA_DESC *theVD);
+INT GetElementDirichletFlags    (ELEMENT *theElement, const VECDATA_DESC *theVD,
                                  INT *vecskip);
-INT SetElementDirichletFlags    (ELEMENT *theElement, const VECDATA_DESC *theTVD,
+INT SetElementDirichletFlags    (ELEMENT *theElement, const VECDATA_DESC *theVD,
                                  INT *vecskip);
 INT ModifyDirichletMatrix               (GRID *theGrid, const MATDATA_DESC *Mat);
 INT ModifyDirichletDefect               (GRID *theGrid, const VECDATA_DESC *Def);
