@@ -1578,7 +1578,7 @@ static INT BCGSPreProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, 
 
   if (np->Iter!=NULL)
     if (np->Iter->PreProcess != NULL)
-      if ((*np->Iter->PreProcess)(np->Iter,level,x,b,A,baselevel,result)) REP_ERR_RETURN(1);
+      if ((*np->Iter->PreProcess)(np->Iter,level,x,b,A,baselevel,result)) return(1);
 
   if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->r)) NP_RETURN(1,result[0]);
   if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->p)) NP_RETURN(1,result[0]);
