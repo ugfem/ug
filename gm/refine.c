@@ -2797,8 +2797,12 @@ static int ComputeCopies (GRID *theGrid)
 	int cnt = 0;
 	
 	/* set class of all dofs on next level to 0 */
+    #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+	ClearNextNodeClasses(theGrid);
+    #else
 	ClearNextVectorClasses(theGrid);
-	
+    #endif
+
 	/* seed dofs of regularly and irregularly refined elements to 3 */
 	flag = 0;
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
@@ -2808,7 +2812,11 @@ static int ComputeCopies (GRID *theGrid)
 			(MARKCLASS(theElement)==RED_CLASS || 
 			 MARKCLASS(theElement)==GREEN_CLASS))
 		{
+            #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+			SeedNextNodeClasses(theElement);
+            #else
 			SeedNextVectorClasses(theGrid,theElement);
+            #endif 
 			flag=1; /* there is at least one element to be refined */
 		}
 	}
@@ -2823,12 +2831,20 @@ static int ComputeCopies (GRID *theGrid)
 			for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
 				theElement=SUCCE(theElement))
 			{
+                #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+				SeedNextNodeClasses(theElement);
+                #else
 				SeedNextVectorClasses(theGrid,theElement);
+                #endif
 			}
 	}
 	else
 	{
+        #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+		PropagateNextNodeClasses(theGrid);
+        #else
 		PropagateNextVectorClasses(theGrid);
+        #endif
 	}
 	
 	/* an element is copied if it has a dof of class 2 and higher */
@@ -2838,7 +2854,11 @@ static int ComputeCopies (GRID *theGrid)
 		INT maxclass = 0;
 
 		if ((MARK(theElement)==NO_REFINEMENT)&&
+            #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+			((maxclass=MaxNextNodeClass(theElement))>=MINVNCLASS))
+            #else
 			((maxclass=MaxNextVectorClass(theGrid,theElement))>=MINVNCLASS))
+            #endif
 		{
 			PRINTDEBUG(gm,1,(PFMT "ComputeCopies(): level=%d e=" EID_FMTX "yellow marked\n",
 				me,LEVEL(theElement),EID_PRTX(theElement))); 
@@ -6413,13 +6433,24 @@ if (0)
 			#endif
 			
 			/* and compute the vector classes on the new (or changed) level */
+            #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+			ClearNodeClasses(FinerGrid);
+            #else
 			ClearVectorClasses(FinerGrid);
-
+            #endif
 			for (theElement=FIRSTELEMENT(FinerGrid); theElement!=NULL; theElement=SUCCE(theElement))
 				if (ECLASS(theElement)>=GREEN_CLASS || (rFlag==GM_COPY_ALL)) 
+                  #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+				  SeedNodeClasses(theElement);
+                  #else
 				  SeedVectorClasses(FinerGrid,theElement);
+                  #endif
 
+            #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+			PropagateNodeClasses(FinerGrid);
+            #else
 			PropagateVectorClasses(FinerGrid);
+            #endif
 
 			SUM_TIMER(algebra_timer)
 		}
