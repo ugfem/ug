@@ -4,18 +4,18 @@
 /*                                                                          */
 /* File:      formats.h                                                     */
 /*                                                                          */
-/* Purpose:   header file for format definition                                         */
+/* Purpose:   header file for format definition                             */
 /*                                                                          */
-/* Author:        Henrik Rentz-Reichert                                                                                 */
-/*                        Institut fuer Computeranwendungen III                                                 */
-/*                        Universitaet Stuttgart                                                                                */
-/*                        Pfaffenwaldring 27                                                                                    */
-/*                        70569 Stuttgart                                                                                               */
-/*                        email: henrik@ica3.uni-stuttgart.de                                                   */
-/*                        fon: 0049-(0)711-685-7007                                                                             */
-/*                        fax: 0049-(0)711-685-7000                                                                             */
-/*                                                                                                                                                      */
-/* History:   27.03.95 begin, ug version 3.0                                                            */
+/* Author:    Henrik Rentz-Reichert                                         */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            email: henrik@ica3.uni-stuttgart.de                           */
+/*            fon: 0049-(0)711-685-7007                                     */
+/*            fax: 0049-(0)711-685-7000                                     */
+/*                                                                          */
+/* History:   27.03.95 begin, ug version 3.0                                */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -43,9 +43,11 @@
 /**************************************************/
 #ifdef __cplusplus
 #ifdef __TWODIM__
-namespace UG2d {
+namespace UG2d
+{
 #else
-namespace UG3d {
+namespace UG3d
+{
 #endif
 #endif
 
@@ -59,19 +61,24 @@ namespace UG3d {
 /*                                                                          */
 /****************************************************************************/
 
-/* limits for XDATA_DESC handling */
+/** @name Limits for XDATA_DESC handling */
+/*@{*/
 #define MAX_SUB                         12
 
 #define V_COMP_NAMES            (MAX_VEC_COMP*NVECTYPES)
 #define M_COMP_NAMES            (2*V_COMP_NAMES*V_COMP_NAMES)
+/*@}*/
 
-/* macros for SUBVEC */
+/** @name Macros for SUBVEC */
+/*@{*/
 #define SUBV_NAME(s)            ((s)->Name)
 #define SUBV_NCOMPS(s)          ((s)->Comp)
 #define SUBV_NCOMP(s,tp)        ((s)->Comp[tp])
 #define SUBV_COMP(s,tp,i)       ((s)->Comps[tp][i])
+/*@}*/
 
-/* macros for SUBMAT */
+/** @name Macros for SUBMAT */
+/*@{*/
 #define SUBM_NAME(s)            ((s)->Name)
 #define SUBM_RCOMPS(s)          ((s)->RComp)
 #define SUBM_CCOMPS(s)          ((s)->CComp)
@@ -82,8 +89,10 @@ namespace UG3d {
 #define SUBM_MCMP_OF_MTYPE(s,tp,i)    ((s)->CmpsInType[tp][i])
 #define SUBM_COMPS(s)       ((s)->Comps)
 #define SUBM_COMP(s,i)      ((s)->Comps[i])
+/*@}*/
 
-/* macros for VEC_TEMPLATE */
+/** @name Macros for VEC_TEMPLATE */
+/*@{*/
 #define VT_COMPS(vt)            ((vt)->Comp)
 #define VT_COMP(vt,tp)          ((vt)->Comp[tp])
 #define VT_COMPNAMES(vt)        ((vt)->CompNames)
@@ -93,8 +102,10 @@ namespace UG3d {
 #define VT_IDENT(vt,i)          ((vt)->Ident[i])
 #define VT_SUB(vt,i)            ((vt)->SubVec[i])
 #define VT_NSUB(vt)                     ((vt)->nsub)
+/*@}*/
 
-/* macros for MAT_TEMPLATE */
+/** @name Macros for MAT_TEMPLATE */
+/*@{*/
 #define MT_RCOMPS(mt)           ((mt)->RComp)
 #define MT_RCOMP(mt,tp)         ((mt)->RComp[tp])
 #define MT_CCOMPS(mt)           ((mt)->CComp)
@@ -110,6 +121,7 @@ namespace UG3d {
 #define MT_NSUB(mt)                     ((mt)->nsub)
 #define MT_SM(mt,i)         ((mt)->sm[i])
 #define MT_SMP(mt)          ((mt)->sm)
+/*@}*/
 
 /****************************************************************************/
 /*                                                                          */
@@ -117,57 +129,61 @@ namespace UG3d {
 /*                                                                          */
 /****************************************************************************/
 
-/* sub vector of vector template (components form a subset of the template)     */
-typedef struct {
+/** \brief Sub vector of vector template (components form a subset of the template)     */
+typedef struct
+{
 
-  char Name[NAMESIZE];                                          /* prefix for sub vector name   */
-  SHORT Comp[NVECTYPES];                                        /* number of comps per type             */
-  SHORT Comps[NVECTYPES][MAX_VEC_COMP];         /* subsequent comps rel to tplt */
+  char Name[NAMESIZE];          /*!<  prefix for sub vector name   */
+  SHORT Comp[NVECTYPES];        /*!< number of comps per type             */
+  SHORT Comps[NVECTYPES][MAX_VEC_COMP];         /*!< subsequent comps rel to tplt */
 
 } SUBVEC;
 
-/* vector template specifying number of comps per type and comp names */
-typedef struct {
+/** \brief Vector template specifying number of comps per type and comp names */
+typedef struct
+{
 
-  ENVITEM v;                                                                    /* environment item                             */
+  ENVITEM v;                    /*!< environment item                             */
 
-  SHORT Comp[NVECTYPES];                                        /* number of comps per type             */
-  char CompNames[V_COMP_NAMES];                         /* comp names (one char each)   */
+  SHORT Comp[NVECTYPES];        /*!< number of comps per type             */
+  char CompNames[V_COMP_NAMES];         /*!< comp names (one char each)   */
 
-  SHORT nId;                                                            /* number of comps after ident  */
-  SHORT Ident[V_COMP_NAMES];                            /* identification table                 */
+  SHORT nId;                    /*!< number of comps after ident  */
+  SHORT Ident[V_COMP_NAMES];    /*!< identification table                 */
 
-  SHORT nsub;                                                           /* number of sub vectors                */
-  SUBVEC  *SubVec[MAX_SUB];                                     /* pointers to sub vectors              */
+  SHORT nsub;                   /*!< number of sub vectors                */
+  SUBVEC *SubVec[MAX_SUB];      /*!< pointers to sub vectors              */
 
 } VEC_TEMPLATE;
 
-/* sub matrix of matrix template (components form a subset of the template)     */
-typedef struct {
+/** \brief Sub matrix of matrix template (components form a subset of the template)     */
+typedef struct
+{
 
-  char Name[NAMESIZE];                                          /* prefix for sub matrix name   */
-  SHORT RComp[NMATTYPES];                                       /* number of row comps per type */
-  SHORT CComp[NMATTYPES];                                       /* number of col comps per type */
-  SHORT *CmpsInType[NMATTYPES];                 /* pointers to SHORT vectors    */
-  SHORT Comps[MAX_MAT_COMP_TOTAL];                  /* subsequent comps rel to tplt     */
+  char Name[NAMESIZE];          /*!< prefix for sub matrix name   */
+  SHORT RComp[NMATTYPES];       /*!< number of row comps per type */
+  SHORT CComp[NMATTYPES];       /*!< number of col comps per type */
+  SHORT *CmpsInType[NMATTYPES];         /*!< pointers to SHORT vectors    */
+  SHORT Comps[MAX_MAT_COMP_TOTAL];      /*!< subsequent comps rel to tplt     */
 
 } SUBMAT;
 
-/* matrix template specifying number of row/col comps per type and comp names */
-typedef struct {
+/** \brief Matrix template specifying number of row/col comps per type and comp names */
+typedef struct
+{
 
-  ENVITEM v;                                                                    /* environment item                             */
+  ENVITEM v;                    /*!< environment item                             */
 
-  SHORT RComp[NMATTYPES];                                       /* number of comps per type             */
-  SHORT CComp[NMATTYPES];                                       /* number of col comps per type */
-  SHORT   *CmpsInType[NMATTYPES];               /* pointers to SHORT vectors    */
-                                                /* the components               */
+  SHORT RComp[NMATTYPES];       /*!< number of comps per type             */
+  SHORT CComp[NMATTYPES];       /*!< number of col comps per type */
+  SHORT *CmpsInType[NMATTYPES];         /*!< pointers to SHORT vectors    */
+  /* the components               */
 
-  char CompNames[M_COMP_NAMES];                         /* comp names (two chars each)  */
+  char CompNames[M_COMP_NAMES];         /*!< comp names (two chars each)  */
 
-  SHORT nsub;                                                           /* number of sub matrices               */
-  SUBMAT  *SubMat[MAX_SUB];                                     /* pointers to sub matrices             */
-  SHORT Comps[MAX_MAT_COMP_TOTAL];              /* comps starting from 0        */
+  SHORT nsub;                   /*!< number of sub matrices               */
+  SUBMAT *SubMat[MAX_SUB];      /*!< pointers to sub matrices             */
+  SHORT Comps[MAX_MAT_COMP_TOTAL];      /*!< comps starting from 0        */
 
 } MAT_TEMPLATE;
 
@@ -183,42 +199,47 @@ typedef struct {
 /*                                                                          */
 /****************************************************************************/
 
-INT DisplayPrintingFormat                               (void);
-INT SetPrintingFormatCmd                                (const MULTIGRID *mg, INT argc, char **argv);
-INT ResetPrintingFormat                                 (void);
+INT DisplayPrintingFormat (void);
+INT SetPrintingFormatCmd (const MULTIGRID * mg, INT argc, char **argv);
+INT ResetPrintingFormat (void);
 
-VEC_TEMPLATE *GetVectorTemplate                 (const FORMAT *theFmt, const char *tmplt);
-MAT_TEMPLATE *GetMatrixTemplate                 (const FORMAT *theFmt, const char *tmplt);
+VEC_TEMPLATE *GetVectorTemplate (const FORMAT * theFmt, const char *tmplt);
+MAT_TEMPLATE *GetMatrixTemplate (const FORMAT * theFmt, const char *tmplt);
 
-VECDATA_DESC *CreateVecDescOfTemplate   (MULTIGRID *theMG,
-                                         const char *name, const char *tmplt);
-MATDATA_DESC *CreateMatDescOfTemplate   (MULTIGRID *theMG,
-                                         const char *name, const char *tmplt);
+VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID * theMG,
+                                       const char *name, const char *tmplt);
+MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID * theMG,
+                                       const char *name, const char *tmplt);
 
-INT VDmatchesVT                                                 (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt);
-INT CompMDwithMT                                                (const MATDATA_DESC *md, const MAT_TEMPLATE *mt);
-INT MDmatchesVT                                                 (const MATDATA_DESC *md, const VEC_TEMPLATE *vt);
-INT MDmatchesVTxVT                                              (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, const VEC_TEMPLATE *cvt);
+INT VDmatchesVT (const VECDATA_DESC * vd, const VEC_TEMPLATE * vt);
+INT CompMDwithMT (const MATDATA_DESC * md, const MAT_TEMPLATE * mt);
+INT MDmatchesVT (const MATDATA_DESC * md, const VEC_TEMPLATE * vt);
+INT MDmatchesVTxVT (const MATDATA_DESC * md, const VEC_TEMPLATE * rvt,
+                    const VEC_TEMPLATE * cvt);
 
-INT VDsubDescFromVT                                             (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, VECDATA_DESC **subvd);
-INT VDsubDescFromVS                                             (const VECDATA_DESC *vd, const SUBVEC *subv, VECDATA_DESC **subvd);
-INT MDsubDescFromVT                                             (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, MATDATA_DESC **submd);
-INT MDsubDescFromVTxVT                                  (const MATDATA_DESC *md, const VEC_TEMPLATE *rvt, INT rsub,
-                                                         const VEC_TEMPLATE *cvt, INT csub,
-                                                         MATDATA_DESC **submd);
-INT MDsubDescFromMT                                             (const MATDATA_DESC *md, const MAT_TEMPLATE *mt, INT sub, MATDATA_DESC **submd);
+INT VDsubDescFromVT (const VECDATA_DESC * vd, const VEC_TEMPLATE * vt,
+                     INT sub, VECDATA_DESC ** subvd);
+INT VDsubDescFromVS (const VECDATA_DESC * vd, const SUBVEC * subv,
+                     VECDATA_DESC ** subvd);
+INT MDsubDescFromVT (const MATDATA_DESC * md, const VEC_TEMPLATE * vt,
+                     INT sub, MATDATA_DESC ** submd);
+INT MDsubDescFromVTxVT (const MATDATA_DESC * md, const VEC_TEMPLATE * rvt,
+                        INT rsub, const VEC_TEMPLATE * cvt, INT csub,
+                        MATDATA_DESC ** submd);
+INT MDsubDescFromMT (const MATDATA_DESC * md, const MAT_TEMPLATE * mt,
+                     INT sub, MATDATA_DESC ** submd);
 
-INT CreateFormatCmd                                             (INT argc, char **argv);
-INT RemoveFormatWithSubs                                (const char *name);
+INT CreateFormatCmd (INT argc, char **argv);
+INT RemoveFormatWithSubs (const char *name);
 
-INT CreateVecDescCmd                            (MULTIGRID *theMG, INT argc, char **argv);
-INT CreateMatDescCmd                                (MULTIGRID *theMG, INT argc, char **argv);
-INT FreeMatDescCmd                                      (MULTIGRID *theMG, INT argc, char **argv);
+INT CreateVecDescCmd (MULTIGRID * theMG, INT argc, char **argv);
+INT CreateMatDescCmd (MULTIGRID * theMG, INT argc, char **argv);
+INT FreeMatDescCmd (MULTIGRID * theMG, INT argc, char **argv);
 
-INT InitFormats                                                 (void);
+INT InitFormats (void);
 
 #ifdef __cplusplus
-}  /* namespace UG{2|3}d */
+}                               /* namespace UG{2|3}d */
 #endif
 
 #endif
