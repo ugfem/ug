@@ -1500,7 +1500,7 @@ int FAMGGrid::ConstructTransfer()
 	}
 
 	if(graph->InsertHelplist()) RETURN(1);
-	if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+	if (graph->RemainingNodes(this, 1)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 	CommunicateNodeStatus();
 
 #else // FAMG_SINGLESTEP
@@ -1521,7 +1521,7 @@ int FAMGGrid::ConstructTransfer()
 
 	// let undecided nodes in the list; perhaps they can be eliminated
 	// in the border step; if not they become coarse there
-	//if (graph->RemainingNodes()) RETURN(1);
+	//if (graph->RemainingNodes(this)) RETURN(1);
 
 	CommunicateNodeStatus();
 	
@@ -1575,7 +1575,7 @@ int FAMGGrid::ConstructTransfer()
 		{
 		    if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 		    if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
-    		if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+    		if (graph->RemainingNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 		}
 		
 //prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
@@ -1611,7 +1611,7 @@ int FAMGGrid::ConstructTransfer()
 	
 	if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 	if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
-	if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+	if (graph->RemainingNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 	// put the undecided nodes from the core partition into the list
     for(i = 0; i < n; i++)
    	{
@@ -1667,7 +1667,7 @@ int FAMGGrid::ConstructTransfer()
     }
 
 #if !(defined ModelP && defined FAMG_INNER_FIRST) // i.e !ModelP || (ModelP && !FAMG_INNER_FIRST)
-    if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+    if (graph->RemainingNodes(this,1)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 
 #ifdef ModelP
 	// update the ghost and border nodes

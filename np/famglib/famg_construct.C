@@ -1015,7 +1015,11 @@ int FAMGNode::UpdateNeighborsFG(FAMGGrid *grid)
 }
         
 
-int FAMGGraph::RemainingNodes(void)
+int FAMGGraph::RemainingNodes( FAMGGrid *grid, int doInconsistent )
+// if doInconsistent is set, change only the C/F flag; otherwise eliminate
+// the remaining node as Coarse nodes such that all lists and node information 
+// is changed appropriate. Do doInconsistent only if you are sure that all 
+// the further information isn't used anymore.
 {
     FAMGNode* cgnode;
     
@@ -1024,6 +1028,14 @@ int FAMGGraph::RemainingNodes(void)
     {        
         // cannot be eliminated
         MarkCGNode(cgnode);
+
+		if( !doInconsistent )
+		{
+			UpdateNSons(NULL,cgnode->GetPaList(), grid);
+			ClearPaList(cgnode->GetPaList());
+			cgnode->SetPaList(NULL);
+			grid->UpdateNeighborsCG(cgnode->GetId());
+		}
 
         cgnode = GetFirstNode();
 

@@ -518,7 +518,7 @@ public:
 #endif
   int EliminateNodes(FAMGGrid *gridptr);
   int EliminateDirichletNodes(FAMGGrid *gridptr);
-  int RemainingNodes();
+  int RemainingNodes( FAMGGrid *grid, int doInconsistent = 0 );
   void UpdateNSons(FAMGPaList *newlist, FAMGPaList *oldlist, FAMGGrid *grid);
   void InitNSons();
   FAMGGridVector &GetGridVector() const {
