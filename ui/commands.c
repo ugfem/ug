@@ -2299,11 +2299,6 @@ static INT SaveCommand (INT argc, char **argv)
   char Name[NAMESIZE],type[NAMESIZE],Comment[LONGSTRSIZE];
   INT i,autosave;
 
-        #ifdef ModelP
-  if (me != master) return(OKCODE);
-        #endif
-
-
   theMG = currMG;
   if (theMG==NULL)
   {
