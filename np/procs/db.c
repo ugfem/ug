@@ -339,7 +339,7 @@ static INT Table_GetListEntry_Index (NP_ORDERED_LIST *theNP,
     DOUBLE diff = (np->list[j] - np->list[i]) / np->divide;
 
     if ((np->frac) && (n%2 == 1))
-      *Entry = np->list[i] + diff * (k - 3 + 2.0 * sqrt(2.0));
+      *Entry = np->list[i] + diff * (k - 1 + sqrt(2.0));
     else
       *Entry = np->list[i] + diff * k;
     *result = 1;
