@@ -146,6 +146,8 @@ INT GetVlistMValues             (INT cnt, VECTOR **theVec,
                                  const MATDATA_DESC *theMD, DOUBLE *value);
 INT AddVlistMValues             (GRID *theGrid, INT cnt, VECTOR **theVec,
                                  const MATDATA_DESC *theMD, DOUBLE *value);
+INT SetVlistMValues             (GRID *theGrid, INT cnt, VECTOR **theVec,
+                                 const MATDATA_DESC *theMD, DOUBLE *value);
 INT GetElementVMPtrs            (ELEMENT *theElement,
                                  const VECDATA_DESC *theTVD, const MATDATA_DESC *theTMD,
                                  DOUBLE **vptr, DOUBLE **mptr);
