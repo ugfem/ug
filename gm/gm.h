@@ -1759,6 +1759,7 @@ enum GM_OBJECTS {
 #define OBJ_LEN                                         5
 #define OBJT(p)                                         CW_READ_STATIC(p,OBJ_,GENERAL_)
 #define SETOBJT(p,n)                            CW_WRITE_STATIC(p,OBJ_,GENERAL_,n)
+#define OBJT_MAX                                        (POW2(OBJ_LEN)-1)
 
 #define USED_SHIFT                                      23
 #define USED_LEN                                        1
