@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/****************************************************************************a
-   /*																			*/
+/****************************************************************************/
+/*																			*/
 /* File:	  postscript.c													*/
 /*																			*/
 /* Purpose:   write graphics postscript files                                                           */
@@ -90,19 +90,25 @@ typedef struct {
   float tx,ty;                                          /* translation							*/
   float mxx,mxy,myx,myy;                        /* matrix								*/
 
+  short PSmarker;
+  short PSmarkersize;
+  SHORT_POINT PScp;
+  short PSlw;
+  short PSts;
+  short PScc;
 } PSWINDOW ;
 
 static OUTPUTDEVICE *PSOutputDevice=NULL; /* outputdevice that has been ini*/
 static PSWINDOW *currPSW=NULL;          /* current postscript window			*/
-static FILE *currPSF=NULL;                      /* current postscript file				*/
+static FILE *currPSF;                   /* current postscript file				*/
 static short PSmarker;
 static short PSmarkersize;
 
-static SHORT_POINT PScp={0,0};
-static short PSlw=-1, PSts=-1;
-static short PScc=0;
+static SHORT_POINT PScp;
+static short PSlw, PSts;
+static short PScc;
 static float tx,ty,mxx,myy,mxy,myx;
-static short landscape = 0;
+static short landscape;
 
 /* static color table for all postscript files */
 static float red[COLORS];
@@ -118,9 +124,30 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
+static void PSDefaultValues( PSWINDOW *psw )
+{
+  currPSW = psw;
+
+  currPSW->psfile = currPSF = NULL;
+  currPSW->landscape = landscape = 0;
+  currPSW->tx = tx = 0.0;
+  currPSW->ty = ty = 0.0;
+  currPSW->mxx = mxx = 0.0;
+  currPSW->mxy = mxy = 0.0;
+  currPSW->myx = myx = 0.0;
+  currPSW->myy = myy = 0.0;
+  currPSW->PSmarker = PSmarker = 0;
+  currPSW->PSmarkersize = PSmarkersize = 1;
+  currPSW->PScp.x = PScp.x = 0;
+  currPSW->PScp.y = PScp.y = 0;
+  currPSW->PSlw = PSlw = -1;
+  currPSW->PSts = PSts = -1;
+  currPSW->PScc = PScc = 0;
+}
+
 static void PSMoveTo (SHORT_POINT point)
 {
-  PScp.x = point.x; PScp.y = point.y;
+  currPSW->PScp.x = PScp.x = point.x; currPSW->PScp.y = PScp.y = point.y;
   return;
 }
 
@@ -128,7 +155,7 @@ static void PSDrawTo (SHORT_POINT point)
 {
   fprintf(currPSF,"%g %g M %g %g S\n",
           TRFMX(PScp),TRFMY(PScp),TRFMX(point),TRFMY(point));
-  PScp.x = point.x; PScp.y = point.y;
+  currPSW->PScp.x = PScp.x = point.x; currPSW->PScp.y = PScp.y = point.y;
   return;
 }
 
@@ -206,7 +233,7 @@ static void PSShadedPolygon(SHORT_POINT *points, INT nb, DOUBLE intensity)
   for (i=1; i<nb; i++)
     fprintf(currPSF,"%g %g L\n",TRFMX(points[i]),TRFMY(points[i]));
   fprintf(currPSF,"C\n");
-  PScc = -1;
+  currPSW->PScc = PScc = -1;
 }
 
 static void PSInversePolygon (SHORT_POINT *points, INT nb)
@@ -245,7 +272,7 @@ static void PSGrayForeground (void)
   if (PScc==GRAY_CC) return;
 
   fprintf(currPSF,"%.1f %.1f %.1f R\n",GRAY,GRAY,GRAY);
-  PScc = GRAY_CC;
+  currPSW->PScc = PScc = GRAY_CC;
   return;
 }
 
@@ -257,7 +284,7 @@ static void PSForeground (long index)
   PSPrintColor((float)green[index]);
   PSPrintColor((float)blue[index]);
   fprintf(currPSF,"R\n");
-  PScc = index;
+  currPSW->PScc = PScc = index;
   return;
 }
 
@@ -421,7 +448,7 @@ static void PSSetLineWidth (short n)
   if (n==PSlw) return;
 
   fprintf(currPSF,"%.3f W\n",LW_FACTOR+((float)(n-1))*LW_SCALE*LW_FACTOR);
-  PSlw = n;
+  currPSW->PSlw = PSlw = n;
   return;
 }
 
@@ -430,19 +457,19 @@ static void PSSetTextSize (short n)
   if (n==PSts) return;
 
   fprintf(currPSF,"/%s findfont %d scalefont setfont\n",PS_DEFAULT_FONT,(int)n);
-  PSts = n;
+  currPSW->PSts = PSts = n;
   return;
 }
 
 static void PSSetMarker (short n)
 {
-  PSmarker = n;
+  currPSW->PSmarker = PSmarker = n;
   return;
 }
 
 static void PSSetMarkerSize (short n)
 {
-  PSmarkersize = n;
+  currPSW->PSmarkersize = PSmarkersize = n;
   return;
 }
 
@@ -455,7 +482,7 @@ static void PSSetPaletteEntry (long index, short r, short g, short b)
   PSPrintColor((float)green[index]);
   PSPrintColor((float)blue[index]);
   fprintf(currPSF,"R\n");
-  PScc = index;
+  currPSW->PScc = PScc = index;
   return;
 }
 
@@ -474,7 +501,7 @@ static void PSSetPalette (long x, long count, short *r, short *g, short *b)
   PSPrintColor((float)green[x]);
   PSPrintColor((float)blue[x]);
   fprintf(currPSF,"R\n");
-  PScc = (unsigned char) x;
+  currPSW->PScc = PScc = (unsigned char) x;
   return;
 }
 
@@ -729,31 +756,33 @@ static INT ComputeTransformation (PSWINDOW *PSWindow,INT *ox,INT *oy,INT *sx,INT
 
 static WINDOWID OpenPSWindow (const char *title, INT rename, INT x, INT y, INT width, INT height, INT *Global_LL, INT *Global_UR, INT *Local_LL, INT *Local_UR, INT *error)
 {
-  PSWINDOW *PSWindow;
   char pspath[BUFFLEN];
   INT sx,sy;
 
   *error = 0;
 
   /* create PSWINDOW structure */
-  PSWindow = (PSWINDOW*)malloc(sizeof(PSWINDOW));
-  if (PSWindow==NULL) {*error=1; return(0);}
+  currPSW = (PSWINDOW*)malloc(sizeof(PSWINDOW));
+  if (currPSW==NULL) {*error=1; return(0);}
+
+  /* set default values */
+  PSDefaultValues( currPSW );
 
   /* init postscript window */
   if (GetDefaultValue(DEFAULTSFILENAME,"psfilesdir",pspath)==0)
-    PSWindow->psfile = FileOpenUsingSearchPath_r(title,"w",pspath,rename);
+    currPSW->psfile = FileOpenUsingSearchPath_r(title,"w",pspath,rename);
   else
-    PSWindow->psfile = fileopen(title,"w");
-  if (PSWindow->psfile==NULL)
+    currPSW->psfile = fileopen(title,"w");
+  if (currPSW->psfile==NULL)
   {
-    free(PSWindow);
+    free(currPSW);
+    currPSW = NULL;
     *error = 1;
     return (0);
   }
 
   /* set currents */
-  currPSW = PSWindow;
-  currPSF = PSWindow->psfile;
+  currPSF = currPSW->psfile;
 
   /* return corners in devices coordinate system (before they are changed by ComputeTransformation) */
   Global_LL[0] = Local_LL[0] = x;  Global_LL[1] = Local_LL[1] = y;
@@ -762,7 +791,7 @@ static WINDOWID OpenPSWindow (const char *title, INT rename, INT x, INT y, INT w
 
   /* transformation with default origin, scale and format (how could they be made to be changable?) */
   sx = sy = 1;
-  ComputeTransformation(PSWindow,&x,&y,&sx,&sy,0);
+  ComputeTransformation(currPSW,&x,&y,&sx,&sy,0);
 
   /* init psfile */
   WritePSHeader(currPSF,title,x,y,sx*width,sy*height);
@@ -852,6 +881,15 @@ static INT SetPSOutput (WINDOWID win)
   mxy = currPSW->mxy;
   myx = currPSW->myx;
   myy = currPSW->myy;
+
+  PSmarker = currPSW->PSmarker;
+  PSmarkersize = currPSW->PSmarkersize;
+  PScp.x = currPSW->PScp.x;
+  PScp.y = currPSW->PScp.y;
+  PSlw = currPSW->PSlw;
+  PSts = currPSW->PSts;
+  PScc = currPSW->PScc;
+  landscape = currPSW->landscape;
 
   return(0);
 }
