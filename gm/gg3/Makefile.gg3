@@ -11,7 +11,7 @@ include ../../ug.conf
 
 OBJECTS = gg3d.o
 
-GG_LIB = $(UGROOT)/lib/libgg2.a
+GG_LIB = $(UGROOT)/lib/libgg3.a
 
 # $(NETGEN) is set to ON or OFF in ug.conf
 
