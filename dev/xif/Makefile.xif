@@ -8,6 +8,7 @@
 
 # ARCHDIR has to be one of: INDIGO, HP
 include ../../ug.arch
+include ../../ug.conf
 
 # architecture-dependent makefile entries
 include ../../machines/mk.$(ARCHDIR)
@@ -20,7 +21,7 @@ all : $(OBJECTS) Makefile.xif
 	ar $(ARFLAGS) ../../lib/libdev.a $(OBJECTS) 
 
 .c.o:
-	$(CC) $(LCFLAGS) $(CFLAGS) $<
+	$(CC) $(UGDEFINES) $(LCFLAGS) $(CFLAGS) $<
 
 clean:
 	rm *.o
