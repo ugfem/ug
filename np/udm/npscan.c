@@ -657,7 +657,7 @@ INT ReadVecTypeDOUBLEs (const FORMAT *fmt, char *str, INT n, INT nDOUBLE[MAXVECT
     if (found!=1)
       REP_ERR_RETURN (NUM_ERROR)
       else
-        REP_ERR_RETURN (NUM_TYPE_MISSING);
+        return (NUM_TYPE_MISSING);
   }
 
   return (NUM_OK);
