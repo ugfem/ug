@@ -29,25 +29,25 @@
 /*              the numerical properties of the solver and are handsome for */
 /*              the discretisation                                          */
 /*            - if the rule set for the red rules is not complete for build-*/
-/*              up a consistent red refined region the FIFO might be used 	*/
-/*              for some (hopefully not too much) iterations to find a 		*/
-/*              consistent one												*/
-/*- in 2D: exists a complete rule set for grids of triangles 	*/
-/*and quadrilaterals exclusivly						*/
-/*			  - in 3D: exists a complete rule set for tetrahedrons			*/
-/*					   and we assume after some analysation a complete set  */
-/*					   of rules described by an algorithm for hexahedrons	*/
-/*			  - for mixed element types in arbitrary dimension no 		    */
-/*				rule set for the closure exists								*/
-/*			  - BEFORE refinement we assume a situation where the error		*/
-/*				estimator has detected and marked the leaf elements for 	*/
-/*				further refinement											*/
-/*			  - AFTER refinement all elements are refined by a rule in way	*/
-/*				that no hanging nodes remain (this is the default mode)		*/
-/*				or with hanging nodes (in the hanging node mode)			*/
-/*				if you use inconsistent red refinement, you need to tell 	*/
-/* 				the algorithm explicitly to use the FIFO					*/
-/*																			*/
+/*              up a consistent red refined region the FIFO might be used   */
+/*              for some (hopefully not too much) iterations to find a 	    */
+/*              consistent one                                              */
+/*            - in 2D: exists a complete rule set for grids of triangles    */
+/*              and quadrilaterals exclusively                              */
+/*            - in 3D: exists a complete rule set for tetrahedrons          */
+/*              and we assume after some analysation a complete set         */
+/*              of rules described by an algorithm for hexahedrons          */
+/*            - for mixed element types in arbitrary dimension no           */
+/*              rule set for the closure exists                             */
+/*            - BEFORE refinement we assume a situation where the error     */
+/*              estimator has detected and marked the leaf elements for     */
+/*              further refinement                                          */
+/*            - AFTER refinement all elements are refined by a rule in way  */
+/*              that no hanging nodes remain (this is the default mode)     */
+/*              or with hanging nodes (in the hanging node mode)            */
+/*              if you use inconsistent red refinement, you need to tell    */
+/*              the algorithm explicitly to use the FIFO                    */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
@@ -331,7 +331,7 @@ static ELEMENT *debugelem=NULL;
 /****************************************************************************/
 /*                                                                          */
 /* data structures used in this source file (exported data structures are   */
-/*		  in the corresponding include file!)								*/
+/* in the corresponding include file!)                                      */
 /*                                                                          */
 /****************************************************************************/
 
@@ -417,11 +417,12 @@ static void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT g
 /****************************************************************************/
 /** \brief Fill refineinfo structure
 
-   This function fills refineinfo structure
+   This function fills the refineinfo structure
 
-   RETURN VALUE:
-.n   GM_OK if ok
-.n   GM_ERROR if an error occurs  
+   \return <ul>
+   <li> GM_OK if ok </li>
+   <li> GM_ERROR if an error occurs </li>
+   </ul>
 */
 /****************************************************************************/
 
@@ -438,7 +439,7 @@ INT NS_DIM_PREFIX SetRefineInfo (MULTIGRID *theMG)
 
    This function tests entries of refineinfo structure
 
-   RETURN VALUE:
+   \return <ul>
 .n   GM_OK if MG can be refined    
 .n   GM_ERROR if MG refinement will lead to heap overflow
 */
@@ -458,7 +459,7 @@ INT NS_DIM_PREFIX TestRefineInfo (MULTIGRID *theMG)
    This function drops marks from leafelements to first regular, and resets 
    marks on all elements above (important for restrict marks)
 
-   RETURN VALUE:
+   \return <ul>
 .n   GM_OK if ok
 .n   GM_ERROR if an error occurs  
 */
@@ -519,7 +520,7 @@ static INT DropMarks (MULTIGRID *theMG)
    DESCRIPTION:
    This function exchanges the PATTERN between elements on horizontal boundary of one level.
 
-   RETURN VALUE:
+   \return <ul>
    void    
 */
 /****************************************************************************/
@@ -532,8 +533,8 @@ int NS_DIM_PREFIX PutEdgePatternOfElement (OBJECT obj, void *data)
 {
 }
 
-/* TODO: perhaps it is better to exchange the PATTERN to check that they are */
-/*       consistent then use the name ExchangePatternOfMasterToSlaves        */
+/** \todo perhaps it is better to exchange the PATTERN to check that they are 
+    consistent then use the name ExchangePatternOfMasterToSlaves        */
 void NS_DIM_PREFIX SendPatternFromMasterToSlaves(int level)
 {
 	int id;
@@ -714,7 +715,7 @@ static INT UpdateClosureFIFO (GRID *theGrid)
 
    DESCRIPTION: 
 
-   RETURN VALUE:
+   \return <ul>
    INT 
 */
 /****************************************************************************/
@@ -766,7 +767,7 @@ static INT ManageParallelFIFO (ELEMENT *firstElement)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT
 */
 /****************************************************************************/
@@ -797,7 +798,7 @@ static INT PrintEdgeInfo (GRID *theGrid, char* string, INT level)
    This function returns a boolean value to indicate, whether an element
    changes its refinement (1) or not (0).
   
-   RETURN VALUE:
+   \return <ul>
 .n   0 if element will not change refinement
 .n   1 if it will
 */
@@ -825,7 +826,7 @@ INT NS_DIM_PREFIX Refinement_Changes (ELEMENT *theElement)
    rule which closes the element. In this case a FIFO for computing the closure 
    is not needed any more and the closure can be computed in one step.	
   
-   RETURN VALUE:
+   \return <ul>
    INT 
 .n   >0 if elements will be refined
 .n   0 if no elements will be refined 
@@ -844,7 +845,7 @@ static INT PrepareGridClosure (GRID *theGrid)
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 		theElement=SUCCE(theElement))
 	{
-		/* TODO: delete special debug */ PRINTELEMID(11668)
+            /** \todo delete special debug */ PRINTELEMID(11668)
 
 		SETUSED(theElement,0);
         if (EGHOST(theElement))
@@ -884,7 +885,7 @@ static INT PrepareGridClosure (GRID *theGrid)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    int
 */
 /****************************************************************************/
@@ -932,7 +933,7 @@ static int Gather_ElementClosureInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DD
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    int
 */
 /****************************************************************************/
@@ -1030,7 +1031,7 @@ static INT ExchangeElementRefine (GRID *theGrid)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    int
 */
 /****************************************************************************/
@@ -1065,7 +1066,7 @@ static int Gather_EdgeClosureInfo (DDD_OBJ obj, void *data)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    int
 */
 /****************************************************************************/
@@ -1107,7 +1108,7 @@ INT	ExchangeEdgeClosureInfo (GRID *theGrid)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT
 */
 /****************************************************************************/
@@ -1140,7 +1141,7 @@ static INT ExchangeClosureInfo (GRID *theGrid)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT
 */
 /****************************************************************************/
@@ -1163,7 +1164,7 @@ static INT ComputePatterns (GRID *theGrid)
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 			theElement=SUCCE(theElement))
 	{
-		/* TODO: delete special debug */ PRINTELEMID(11668)
+            /** \todo delete special debug */ PRINTELEMID(11668)
 		#ifdef ModelP
 		if (EGHOST(theElement))
 		{
@@ -1242,7 +1243,7 @@ static INT ComputePatterns (GRID *theGrid)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT
 */
 /****************************************************************************/
@@ -1378,7 +1379,7 @@ static INT CorrectTetrahedronSidePattern (ELEMENT *theElement, INT i, ELEMENT *t
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT
 */
 /****************************************************************************/
@@ -1469,7 +1470,7 @@ if (theNeighbor == NULL)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT 
 */
 /****************************************************************************/
@@ -1483,12 +1484,12 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 	for (theElement=firstElement; theElement!=NULL; 
 		 theElement=SUCCE(theElement))
 	{
-		/* TODO: delete special debug */ PRINTELEMID(11668)
+            /** \todo delete special debug */ PRINTELEMID(11668)
 		/* make edgepattern consistent with pattern of edges */
 		SETUSED(theElement,1);
 
 		#ifndef __ANISOTROPIC__
-		/* TODO: change this for red refinement of pyramids */
+            /** \todo change this for red refinement of pyramids */
 		if (DIM==3 && TAG(theElement)==PYRAMID) continue;
 		#endif
 
@@ -1503,7 +1504,7 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 			if (_EID_(theElement) < _EID_(theNeighbor)) continue;
 
 			/* determine element for side correction by used flag    */
-/* TODO: delete this:
+                        /** \todo delete this:
 			if (USED(theNeighbor)) continue;
 */
 
@@ -1533,7 +1534,7 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT 
 */
 /****************************************************************************/
@@ -1549,7 +1550,7 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 	for (theElement=firstElement; theElement!=NULL; 
 		 theElement=SUCCE(theElement))
 	{
-		/* TODO: delete special debug */ PRINTELEMID(11668)
+            /** \todo delete special debug */ PRINTELEMID(11668)
 		theEdgePattern = 0;
 
 		/* compute element pattern */
@@ -1679,7 +1680,7 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    int 
 */
 /****************************************************************************/
@@ -1728,7 +1729,7 @@ static int Gather_AddEdgePattern (DDD_OBJ obj, void *data)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    int 
 */
 /****************************************************************************/
@@ -1739,7 +1740,7 @@ static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data)
 	INT		pat;
 	ELEMENT *theElement = (ELEMENT *)obj;
 	
-	/* TODO (HRR 971207): output after SetEdgeInfo (pat not init)? */
+	/** \todo (HRR 971207): output after SetEdgeInfo (pat not init)? */
 	PRINTDEBUG(gm,4,(PFMT "Scatter_AddEdgePattern(): elem=" EID_FMTX "pat=%08x\n",
 		me,EID_PRTX(theElement),pat));
 
@@ -1777,7 +1778,7 @@ static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT 
 */
 /****************************************************************************/
@@ -1811,7 +1812,7 @@ static INT ExchangeAddPatterns (GRID *theGrid)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT 
 */
 /****************************************************************************/
@@ -1826,7 +1827,7 @@ static INT SetAddPatterns (GRID *theGrid)
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 		 theElement=SUCCE(theElement))
 	{
-		/* TODO: delete special debug */ PRINTELEMID(11668)
+            /** \todo delete special debug */ PRINTELEMID(11668)
 
 		if (MARKCLASS(theElement)!=RED_CLASS) continue;
 
@@ -1867,7 +1868,7 @@ static INT SetAddPatterns (GRID *theGrid)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT 
 */
 /****************************************************************************/
@@ -1885,7 +1886,7 @@ static INT BuildGreenClosure (GRID *theGrid)
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 			theElement=SUCCE(theElement))
 	{
-		/* TODO: delete special debug */ PRINTELEMID(11668)
+            /** \todo delete special debug */ PRINTELEMID(11668)
 
 		#ifdef __ANISOTROPIC__
 		if (MARKCLASS(theElement)==RED_CLASS && 
@@ -2051,7 +2052,7 @@ static INT BuildGreenClosure (GRID *theGrid)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    int
 */
 /****************************************************************************/
@@ -2127,7 +2128,7 @@ static int Gather_ElementInfo (DDD_OBJ obj, void *Data)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    int
 */
 /****************************************************************************/
@@ -2215,7 +2216,7 @@ static INT CheckElementInfo (GRID *theGrid)
    a rule which closes the element.  In this case a FIFO for computing the 
    closure is not needed any more and the closure can be computed in one step.
    
-   RETURN VALUE:
+   \return <ul>
 .n   >0 elements will be refined
 .n   =0 no elements will be refined
 .n   =-1 an error accured
@@ -2300,7 +2301,7 @@ static int GridClosure (GRID *theGrid)
    DESCRIPTION:
    This function fills SonList for theElement with a breadth first search
 
-   RETURN VALUE:
+   \return <ul>
    INT
 .n   new son count  
 */
@@ -2358,7 +2359,7 @@ static INT GetNeighborSons (ELEMENT *theElement, ELEMENT *theSon,
    DESCRIPTION:
    This function fills SonList for theElement
 
-   RETURN VALUE:
+   \return <ul>
    INT
 .n   0 if ok
 .n   1 if an error occurs  
@@ -2424,7 +2425,7 @@ INT NS_DIM_PREFIX GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT 
 */
 /****************************************************************************/
@@ -2493,7 +2494,7 @@ INT NS_DIM_PREFIX GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
    This function restricts refinement marks of an element whose sons are 
    further marked for refinement
    
-   RETURN VALUE:
+   \return <ul>
    INT
 .n   =0 - ok
 .n   >0 - error
@@ -2511,9 +2512,9 @@ static INT RestrictElementMark(ELEMENT *theElement)
 	
 	if (MARKCLASS(theElement)==RED_CLASS)
 	{
-		/* TODO: this mark is from DropMarks()!    */
+            /** \todo this mark is from DropMarks()!    */
 		/* theElement is marked from outside       */
-		/* TODO: edit this for new element type or */
+		/** \todo edit this for new element type or */
 		/* for different restrictions              */
 		switch (TAG(theElement))
 		{
@@ -2529,8 +2530,7 @@ static INT RestrictElementMark(ELEMENT *theElement)
 			case TETRAHEDRON:
 #ifdef TET_RULESET
 				if (MARK(theElement)!=RED) 
-					/* TODO: Is REFINE always as red */
-					/* rule available?               */
+                                    /** \todo Is REFINE always as red rule available? */
 					SETMARK(theElement,REFINE(theElement));
 #else
 				SETMARK(theElement,TET_RED);
@@ -2553,8 +2553,7 @@ static INT RestrictElementMark(ELEMENT *theElement)
 	}
 	else
 	{
-		/* TODO: edit this for new element type or */
-		/* for different restrictions              */
+            /** \todo edit this for new element type or for different restrictions */
 		switch (TAG(theElement))
 		{
 			#ifdef __TWODIM__
@@ -2583,8 +2582,7 @@ static INT RestrictElementMark(ELEMENT *theElement)
 									CORNER_OF_EDGE_PTR(theElement,j,1));
 					ASSERT(theEdge != NULL);
 
-					/* TODO: 
-						What's on when MIDNODE exists?? */
+					/** \todo What's on when MIDNODE exists?? */
 					if (MIDNODE(theEdge)==NULL)
 					{
 						theEdge=GetEdge(
@@ -2592,7 +2590,7 @@ static INT RestrictElementMark(ELEMENT *theElement)
 							SONNODE(CORNER_OF_EDGE_PTR(theElement,j,1)));
 						ASSERT(theEdge != NULL);
 
-						/* TODO: Is ADDPATTERN needed for fitting with other green elements?? */ 
+						/** \todo Is ADDPATTERN needed for fitting with other green elements?? */ 
 						if (ADDPATTERN(theEdge))
 							Pattern |= (1<<j);
 						PRINTDEBUG(gm,4,("RestrictElementMark(): modified Pattern=%d bisects now edge=%d too\n",Pattern,j))
@@ -2600,9 +2598,9 @@ static INT RestrictElementMark(ELEMENT *theElement)
 				}
 				Rule = PATTERN2RULE(theElement,Pattern);
 				SETMARK(theElement,RULE2MARK(theElement,Rule));
-				/* TODO: delete this old code 
+				/** \todo delete this old code 
 				SETMARK(theElement,PATTERN2MARK(theElement,Pattern)); */
-				/* TODO: this would be the quick fix 
+				/** \todo this would be the quick fix 
 				SETMARK(theElement,FULL_REFRULE); */
 #else
 				SETMARK(theElement,TET_RED);
@@ -2698,7 +2696,7 @@ static INT Grid_RestrictPeriodicMarks(GRID *grid)
    DESCRIPTION:
    This function restricts refinement marks when going down
 
-   RETURN VALUE:
+   \return <ul>
    INT
 .n   0 if ok
 .n  >0 if an error occurs  
@@ -2710,7 +2708,7 @@ static INT RestrictMarks (GRID *theGrid)
 	ELEMENT *theElement,*SonList[MAX_SONS];
 	int i,flag;
 	
-	/* TODO: delete special debug */ PRINTELEMID(-1)
+	/** \todo delete special debug */ PRINTELEMID(-1)
 
 	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
 		 theElement=SUCCE(theElement))
@@ -2807,7 +2805,7 @@ static INT RestrictMarks (GRID *theGrid)
 		SETMARKCLASS(theElement,NO_CLASS);
 		SETCOARSEN(theElement,1);
 	}
-	/* TODO: delete special debug */ PRINTELEMID(-1);
+	/** \todo delete special debug */ PRINTELEMID(-1);
 #ifdef __PERIODIC_BOUNDARY__
 	#ifdef ModelP
 	PRINTDEBUG(gm,1,("\n" PFMT "exchange USED flag for restrict marks\n",me));
@@ -2886,7 +2884,7 @@ static int ComputePeriodicCopies(GRID *grid)
    DESCRIPTION:
    This function determines copy elements from node classes
 
-   RETURN VALUE:
+   \return <ul>
    int
 .n   GM_OK if ok    
 */
@@ -3024,7 +3022,7 @@ static int ComputeCopies (GRID *theGrid)
    DESCRIPTION:
    This function checks NTYPE flags of nodes in elementcontextt with the sons
 
-   RETURN VALUE:
+   \return <ul>
    void   
 */
 /****************************************************************************/
@@ -3119,7 +3117,7 @@ static void CheckElementContextConsistency(ELEMENT *theElement,
    of the given element, i.e. objects are allocated, kept or deleted as 
    indicated by MARK (i) corner nodes  (ii) nodes at midpoints of edges	
    
-   RETURN VALUE:
+   \return <ul>
    int
 .n   0 - ok
 .n   1 - fatal memory error
@@ -3443,7 +3441,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
    recursively, deletes: (i) all connections, (ii) all interior nodes and edges 
    are deleted, (iii) sons are deleted and references to sons reset to NULL.
 
-   RETURN VALUE:
+   \return <ul>
    INT     
 */
 /****************************************************************************/
@@ -3491,7 +3489,7 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement)
 
 	for (s=0; SonList[s]!=NULL; s++)
 	{
-		/* TODO: delete special debug */
+            /** \todo delete special debug */
 		/* if (ID(SonList[s])==11644) { RETURN(GM_FATAL); } */
 		PRINTDEBUG(gm,1,(PFMT "UnrefineElement(): DisposeElement[%d]=" 
 			EID_FMTX "\n",me,s,EID_PRTX(SonList[s])));
@@ -3531,7 +3529,7 @@ typedef struct compare_record COMPARE_RECORD;
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT 
 */
 /****************************************************************************/
@@ -3567,7 +3565,7 @@ INT NS_DIM_PREFIX GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes,
 	/* determine mid nodes */
 	for (i=0; i<nedges; i++)
 	{
-/* TODO: delete
+            /** \todo delete
 		#ifdef __TWODIM__
 	    ASSERT(OBJT(NFATHER(SideNodes[i])) == NDOBJ);
 	    ASSERT(OBJT(NFATHER(SideNodes[i+1])) == NDOBJ);
@@ -3647,7 +3645,7 @@ INT NS_DIM_PREFIX GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes,
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT 
 */
 /****************************************************************************/
@@ -3665,25 +3663,19 @@ static int compare_node (const void *e0, const void *e1)
 }
 
 /****************************************************************************/
-/*
-   Get_Sons_of_ElementSide - 
+/** \brief Get the sons of an element side
 
-   SYNOPSIS:
-   INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side, ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons, INT ioflag);
+\param[in] theElement Input element
+\param[in] side Input element side number
+\param[out] Sons_of_Side Number of topological sons of the element side
+\param[in,out] SonList[MAX_SONS] Output elements
+\param[out] SonSides Output element side numbers
+\param[in] NeedSons If this is true, the correct list of sons is expected to be
+  provided in SonList.  If not it is recomputed.
 
-   PARAMETERS:
-.  theElement
-.  side
-.  Sons_of_Side
-.  SonList[MAX_SONS]
-.  SonSides
-.  NeedSons
-.  ioflag
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT 
+  For a given side of an element, this routine computes all element sides
+  on the next finer grid level which are topological sons of the input
+  element side.
 */
 /****************************************************************************/
 
@@ -3719,7 +3711,7 @@ INT NS_DIM_PREFIX Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *S
 	markclass = MARKCLASS(theElement);
 	#endif
 
-    /* TODO: quick fix */
+        /** \todo quick fix */
 	#ifdef ModelP
 	if (EHGHOST(theElement))
 		markclass = GREEN_CLASS;
@@ -3809,7 +3801,8 @@ INT NS_DIM_PREFIX Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *S
 						SonSides[nsons] = corner[0];
 					else
 					{
-/* TODO: find proper assert			assert(corner[1] == CORNERS_OF_ELEM(theElement)-1); */
+                                            /** \todo find proper assert
+                                                assert(corner[1] == CORNERS_OF_ELEM(theElement)-1); */
 						SonSides[nsons] = corner[1];
 					}
 					SonList[nsons] = SonList[i]; 
@@ -3966,7 +3959,7 @@ slower for uniform refinement!! (s.l. 981016)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT 
 */
 /****************************************************************************/
@@ -4025,7 +4018,7 @@ static INT Sort_Node_Ptr (INT n,NODE **nodes)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT 
 */
 /****************************************************************************/
@@ -4065,7 +4058,7 @@ static INT	Fill_Comp_Table (COMPARE_RECORD **SortTable, COMPARE_RECORD *Table, I
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    int 
 */
 /****************************************************************************/
@@ -4125,7 +4118,7 @@ static int compare_nodes (const void *ce0, const void *ce1)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return <ul>
    INT 
 */
 /****************************************************************************/
@@ -4153,7 +4146,7 @@ INT NS_DIM_PREFIX Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElemen
 	/* connect to boundary */
 	if (OBJT(theElement)==BEOBJ && SIDE_ON_BND(theElement,side))
 	{
-		/* TODO: connect change test */  
+            /** \todo connect change test */  
 
 		for (i=0; i<Sons_of_Side; i++)
 		{
@@ -4518,7 +4511,7 @@ static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theCo
    (iii) create interior nodes and edges, 
    (iv) create sons and set references to sons. 	 
    
-   RETURN VALUE:
+   \return <ul>
    INT
 .n   0 - ok
 .n   1 - fatal memory error  
@@ -5388,9 +5381,9 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 			#else
 			SETECLASS(sons[i].theSon,GREEN_CLASS);
 			#endif
-/* TODO: delete
+                        /** \todo delete
 			SETNSONS(theElement,NSONS(theElement)+1);
-*/
+                        */
 			if (i == 0) SET_SON(theElement,0,sons[i].theSon);
 			for (s=0; s<SIDES_OF_ELEM(sons[i].theSon); s++) 
 			  SET_NBELEM(sons[i].theSon,s,NULL);
@@ -5493,7 +5486,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
    (iii) create interior nodes and edges, 
    (iv) create sons and set references to sons. 
    
-   RETURN VALUE:
+   \return <ul>
    INT
 .n   GM_OK - ok
 .n   GM_FATAL - fatal memory error  
@@ -5519,17 +5512,17 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 
 	rule = MARK2RULEADR(theElement,MARK(theElement));
 
-	/* TODO: delete special debug */ PRINTELEMID(-2)
+	/** \todo delete special debug */ PRINTELEMID(-2)
 
 	/* create elements */
 	for (s=0; s<NSONS_OF_RULE(rule); s++)
 	{
 		boundaryelement = 0;
-		/* TODO: how can boundary detection be generalized */
+		/** \todo how can boundary detection be generalized */
 		if (OBJT(theElement) == BEOBJ)
 			for (i=0; i<SIDES_OF_TAG(SON_TAG_OF_RULE(rule,s)); i++)
 			{
-					/* TODO: delete special debug */ PRINTELEMID(-2)
+                            /** \todo delete special debug */ PRINTELEMID(-2)
 					/* exterior side */
 					if ( (side = SON_NB_OF_RULE(rule,s,i)) >= 
 							FATHER_SIDE_OFFSET )
@@ -5549,7 +5542,7 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 			ElementNodes[i] = theElementContext[SON_CORNER_OF_RULE(rule,s,i)];
 		}
 
-		/* TODO: delete special debug */ PRINTELEMID(-2)
+		/** \todo delete special debug */ PRINTELEMID(-2)
 		if (boundaryelement)
 				theSon = CreateElement(theGrid,SON_TAG_OF_RULE(rule,s),BEOBJ,
 							ElementNodes,theElement,1);
@@ -5558,14 +5551,14 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 							ElementNodes,theElement,1);
 		if (theSon==NULL) RETURN(GM_ERROR);
 
-		/* TODO: delete special debug */ PRINTELEMID(-2)
+		/** \todo delete special debug */ PRINTELEMID(-2)
 		/* fill in son data */
 		SonList[s] = theSon;
 		SETECLASS(theSon,MARKCLASS(theElement));
 	}
 
-	/* TODO: delete special debug */ PRINTELEMID(-2)
-/* TODO: delete
+	/** \todo delete special debug */ PRINTELEMID(-2)
+            /** \todo delete
 	SETNSONS(theElement,NSONS_OF_RULE(rule));
 	#ifdef __TWODIM__
 	for (i=0;i<NSONS(theElement); i++) SET_SON(theElement,i,SonList[i]);
@@ -5575,14 +5568,14 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 	#endif
 */
 	
-	/* TODO: delete special debug */ PRINTELEMID(-2)
+            /** \todo delete special debug */ PRINTELEMID(-2)
 	/* connect elements */
 	for (s=0; s<NSONS_OF_RULE(rule); s++)
 	{
 		sdata = SON_OF_RULE(rule,s);
 		for (i=0; i<SIDES_OF_ELEM(SonList[s]); i++)
 		{
-			/* TODO: delete special debug */ PRINTELEMID(-2)
+                    /** \todo delete special debug */ PRINTELEMID(-2)
 			SET_NBELEM(SonList[s],i,NULL);
 
 			/* an interior face */
@@ -5715,7 +5708,7 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 
    DESCRIPTION:
    This function refines an element
-   RETURN VALUE:
+   \return <ul>
    INT
 .n  GM_OK - ok
 .n  GM_FATAL - fatal memory error
@@ -5778,7 +5771,7 @@ static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContex
    DESCRIPTION:
    This function refines one level of the grid
 
-   RETURN VALUE:
+   \return <ul>
    INT
 .n   GM_OK - ok
 .n   GM_FATAL - fatal memory error  
@@ -5882,7 +5875,7 @@ static int AdaptGrid (GRID *theGrid, INT *nadapted)
 
 			#ifdef ModelP
 			/* dispose hghost elements with EFATHER==NULL */
-/* TODO: how handle this situation?                       */ 
+                        /** \todo how handle this situation?                       */ 
 /* situation possibly some elements to be coarsened are   */
 /* disconnected from their fathers (970109 s.l.)          */             
 if (0)
@@ -5928,7 +5921,7 @@ if (0)
 		{
 			#ifdef ModelP
 			/* dispose hghost elements with EFATHER==NULL */
-/* TODO: how handle this situation?                       */ 
+                    /** \todo how handle this situation?                       */ 
 /* situation possibly some elements to be coarsened are   */
 /* disconnected from their fathers (970109 s.l.)          */             
 if (0)
@@ -6094,7 +6087,7 @@ if (0) {
 DDD_CONSCHECK;
 
 #ifdef __PERIODIC_BOUNDARY__
-	/* TODO modification for adaptive refinement in parallel */
+	/** \todo modification for adaptive refinement in parallel */
 	if (level<toplevel || newlevel)
 	{
 		ASSERT(FinerGrid != NULL);
@@ -6177,10 +6170,6 @@ if (0) CheckGrid(FinerGrid,1,0,1,1);
 .  gmlevel
 .  check
 
-   DESCRIPTION:
-
-   RETURN VALUE:
-   void
 */
 /****************************************************************************/
 
@@ -6490,7 +6479,7 @@ static INT	PostProcessAdaptMultiGrid(MULTIGRID *theMG)
 CheckMultiGrid(theMG);
 */
 
-/* TODO: temporarily to debug df 
+/** \todo temporarily to debug df 
 #ifdef ModelP
 if (GetVecDataDescByName(theMG,"sol") != NULL)
 	a_vector_vecskip(theMG,0,TOPLEVEL(theMG),GetVecDataDescByName(theMG,"sol"));
@@ -6586,7 +6575,7 @@ if (0)
 		}
 	}
 	
-	/* TODO: delete special debug */ debugelem = NULL;
+	/** \todo delete special debug */ debugelem = NULL;
 
 	/* set flags for different modes */
 	rFlag=flag & 0x03; 	 	/* copy local or all */
@@ -6661,7 +6650,7 @@ if (1)
 	newlevel = 0;
 	for (level=0; level<=toplevel; level++)
 	{
-		/* TODO: delete special debug */ PRINTELEMID(-1)
+            /** \todo delete special debug */ PRINTELEMID(-1)
 
 		theGrid = GRID_ON_LEVEL(theMG,level);
 		if (level<toplevel) FinerGrid = GRID_ON_LEVEL(theMG,level+1); else FinerGrid = NULL;
@@ -6731,7 +6720,7 @@ if (1)
 			}
 		}
 		
-		/* TODO: bug fix to force new level creation */
+		/** \todo bug fix to force new level creation */
 		if (!hFlag)
 		{
 			/* set this variable>0 */
