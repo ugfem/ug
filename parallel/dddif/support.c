@@ -35,6 +35,8 @@
 #include <stdio.h>
 #endif
 
+#include <stddef.h>
+
 #include "general.h"
 #include "ppif.h"
 #include "compiler.h"
