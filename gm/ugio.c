@@ -2893,7 +2893,6 @@ nparfiles = UG_GlobalMinINT(nparfiles);
                 #ifdef DYNAMIC_MEMORY_ALLOCMODEL
     if (DisposeBottomHeapTmpMemory(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
                 #endif
-                #endif
 
     DDD_IdentifyBegin();
     /* no elements to insert */
