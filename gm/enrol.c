@@ -230,6 +230,11 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
     newFormat->PrintVector[vDesc[i].pos] = vDesc[i].print;
   }
 
+#ifdef __INTERPOLATION_MATRIX__
+  for (i=0; i<MAXMATRICES; i++)
+    newFormat->IMatrixSizes[i] = 0;
+#endif
+
   /* set connection stuff */
   for (i=0; i<nmDesc; i++)
   {
@@ -241,6 +246,7 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
         mDesc[i].size>0 && mDesc[i].depth>=0)
     {
       newFormat->MatrixSizes[MatrixType[mDesc[i].from][mDesc[i].to]] = mDesc[i].size;
+      newFormat->IMatrixSizes[MatrixType[mDesc[i].from][mDesc[i].to]] = mDesc[i].isize;
       newFormat->ConnectionDepth[MatrixType[mDesc[i].from][mDesc[i].to]] = mDesc[i].depth;
       MaxDepth = MAX(MaxDepth,mDesc[i].depth);
       if ((mDesc[i].from==ELEMVECTOR)&&(mDesc[i].to==ELEMVECTOR))
@@ -253,11 +259,6 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
   }
   newFormat->MaxConnectionDepth = MaxDepth;
   newFormat->NeighborhoodDepth  = NeighborhoodDepth;
-
-#ifdef __INTERPOLATION_MATRIX__
-  for (i=0; i<MAXMATRICES; i++)
-    newFormat->IMatrixSizes[i] = 0;
-#endif
 
   if (ChangeEnvDir(name)==NULL) return(NULL);
   UserWrite("format "); UserWrite(name); UserWrite(" installed\n");

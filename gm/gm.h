@@ -231,6 +231,7 @@ typedef struct {
   int from;                                             /* This connection goes from position from	*/
   int to;                                               /* to position to							*/
   int size;                                             /* with size bytes per connection			*/
+  int isize;                                            /* size of interpolation matrices			*/
   int depth;                                            /* connect with depth in dual graph             */
   ConversionProcPtr print;              /* function to print data					*/
 } MatrixDescriptor ;
