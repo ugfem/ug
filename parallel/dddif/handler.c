@@ -1516,18 +1516,37 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
       co0 = CORNER_OF_EDGE(pe,i,0);
       co1 = CORNER_OF_EDGE(pe,i,1);
 
+      ASSERT(theVertex != NULL);
+
       /* local coordinates have to be local towards pe */
-      V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(pe,co0),
-                    0.5, LOCAL_COORD_OF_ELEM(pe,co1),
-                    LCVECT(theVertex));
+      if (EMASTER(pe)) {
+        if (MOVED(theVertex))
+        {
+          DOUBLE *x[MAX_CORNERS_OF_ELEM];
+          INT n;
+
+          CORNER_COORDINATES(pe,n,x);
+          UG_GlobalToLocal(n,(const DOUBLE **)x,
+                           CVECT(theVertex),LCVECT(theVertex));
+        }
+        else
+          V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(pe,co0),
+                        0.5, LOCAL_COORD_OF_ELEM(pe,co1),
+                        LCVECT(theVertex));
+        /* make vertex information consistent */
+        VFATHER(theVertex) = pe;
+        SETONEDGE(theVertex,i);
+      }
 
       /* set nfather pointer of midnode */
       ASSERT(ID(MIDNODE(enew)) != -1);
       SETNFATHER(MIDNODE(enew),(GEOM_OBJECT *)enew);
 
-      /* make vertex information consistent */
-      VFATHER(theVertex) = pe;
-      SETONEDGE(theVertex,i);
+      PRINTDEBUG(dddif,1,(PFMT " ElemScatterEdge(): n=" ID_FMTX
+                          " NTYPE=%d OBJT=%d father " ID_FMTX " \n",
+                          me,ID_PRTX(MIDNODE(enew)),NTYPE(MIDNODE(enew)),
+                          OBJT(NFATHER(MIDNODE(enew))),
+                          NFATHER(MIDNODE(enew))));
     }
 
     /* copy edge vector pointer */
