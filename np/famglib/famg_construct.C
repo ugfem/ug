@@ -891,7 +891,6 @@ int FAMGNode::UpdateNeighborsFG(FAMGGrid *grid)
 }
         
 
-          
 int FAMGGraph::RemainingNodes(FAMGGrid *gridptr)
 {
     FAMGNode* cgnode;
@@ -901,29 +900,14 @@ int FAMGGraph::RemainingNodes(FAMGGrid *gridptr)
     {        
         // cannot be eliminated
         MarkCGNode(cgnode);
-        // actually graph->UpdateNSons(NULL,NULL); (does nothing)
-
-        // maybe not necessary
-        gridptr->UpdateNeighborsCG(cgnode->GetId());
 
         cgnode = GetFirstNode();
 
-        /* debug 
-        PICTURE *thePic;
-        char c;
-        if(n < 0)
-        {
-            thePic = GetCurrentPicture();
-            if (thePic!=NULL)
-            {
-                DrawUgPicture(thePic);
-            } 
-            cin >> c;
-            } */
     }
 
     return 0;
 }
+          
 int FAMGGraph::EliminateNodes(FAMGGrid *gridptr)
 {
     FAMGNode* fgnode;

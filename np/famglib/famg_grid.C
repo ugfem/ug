@@ -699,6 +699,14 @@ int FAMGGrid::Construct(FAMGGrid *fg)
         }
     }
 
+    if (j != n)
+    {
+        ostrstream ostr;
+        ostr << __FILE__ << __LINE__  << endl;
+        FAMGError(ostr);
+        return 1;
+    }
+        
     if(vertexfg != NULL)
     {
         j = 0;
