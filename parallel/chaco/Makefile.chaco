@@ -48,8 +48,8 @@ FILES.c=	main/interface.c User_params.c \
 		eigen/solistout.c eigen/sorthog.c eigen/splarax.c \
 		eigen/sturmcnt.c eigen/Tevec.c \
 		symmlq/aprod.c symmlq/msolve.c symmlq/pow_dd.c \
-		symmlq/symmlq.c symmlq/symmlqblas.c \
-		optimize/determinant.c optimize/func2d.c \
+		symmlq/symmlq.c symmlq/symmlqblas.c 
+FILES2.c=	optimize/determinant.c optimize/func2d.c \
 		optimize/func3d.c optimize/opt2d.c optimize/opt3d.c \
 		assign/assign.c assign/mapper.c assign/median.c \
 		assign/rec_median.c assign/rotate.c assign/y2x.c \
@@ -71,17 +71,21 @@ FILES.c=	main/interface.c User_params.c \
 		lb4.c
 
 FILES.o=	$(FILES.c:.c=.o) 
+FILES2.o=   $(FILES2.c:.c=.o)
 
 
 ${DEST}: User_params.o lb4.o Makefile.chaco ASSIGN BPMATCH COARSEN CONNECT EIGEN GRAPH \
          INERTIAL INPUT KLSPIFF MAIN MISC OPTIMIZE SYMMLQ UTIL
 		 $(ARCH_AR) $(ARCH_ARFLAGS) $(DEST) $(FILES.o)
+		 $(ARCH_AR) $(ARCH_ARFLAGS) $(DEST) $(FILES2.o)
 
 lint:
 		lint ${FILES.c} -lm
+		lint ${FILES2.c} -lm
 
 alint:
 		alint ${FILES.c} -lm
+		alint ${FILES2.c} -lm
 
 # local C compiler flags
 LCFLAGS = -I../include
@@ -135,4 +139,4 @@ UTIL:
 	cd util; make; cd ..;
 
 clean:
-	rm -f $(FILES.o) $(DEST)
+	rm -f $(FILES.o) $(FILES2.o) $(DEST)
