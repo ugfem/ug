@@ -296,13 +296,13 @@ static ELEMENT *debugelem=NULL;
 	ENDDEBUG
 
 #ifndef STAT_OUT
-#undef NEW_TIMER(n)
-#undef DEL_TIMER(n)
-#undef START_TIMER(n)
-#undef STOP_TIMER(n)
-#undef DIFF_TIMER(n)
-#undef SUM_TIMER(n)
-#undef EVAL_TIMER(n)
+#undef NEW_TIMER
+#undef DEL_TIMER
+#undef START_TIMER
+#undef STOP_TIMER
+#undef DIFF_TIMER
+#undef SUM_TIMER
+#undef EVAL_TIMER
 
 #define NEW_TIMER(n)
 #define DEL_TIMER(n)
