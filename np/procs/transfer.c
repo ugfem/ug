@@ -654,7 +654,12 @@ static INT RestrictDefect (NP_TRANSFER *theNP, INT level,
   NP_STANDARD_TRANSFER *np;
 
   np = (NP_STANDARD_TRANSFER *) theNP;
-  result[0] = (*np->res)(GRID_ON_LEVEL(theNP->base.mg,level),to,from,damp);
+  if (level < 1)
+    result[0] = RestrictByMatrix(GRID_ON_LEVEL(theNP->base.mg,level),
+                                 to,from,damp);
+  else
+    result[0] = (*np->res)(GRID_ON_LEVEL(theNP->base.mg,level),
+                           to,from,damp);
 
     #ifdef ModelP
   if (l_ghostvector_collect(GRID_ON_LEVEL(theNP->base.mg,level-1),to)
@@ -676,7 +681,13 @@ static INT InterpolateCorrection (NP_TRANSFER *theNP, INT level,
   if (l_ghostvector_consistent(GRID_ON_LEVEL(theNP->base.mg,level-1),from)
       != NUM_OK) NP_RETURN(1,result[0]);
         #endif
-  result[0] = (*np->intcor)(GRID_ON_LEVEL(theNP->base.mg,level),to,from,damp);
+  if (level < 1)
+    result[0] =
+      InterpolateCorrectionByMatrix(GRID_ON_LEVEL(theNP->base.mg,level),
+                                    to,from,damp);
+  else
+    result[0] =
+      (*np->intcor)(GRID_ON_LEVEL(theNP->base.mg,level),to,from,damp);
     #ifdef ModelP
   if (np->meanvalue)
     if (l_vector_meanvalue(GRID_ON_LEVEL(theNP->base.mg,level),to)
