@@ -92,7 +92,7 @@ DDD_TYPE TypeEdge;
 DDD_TYPE TypeBndS;
 
 /* DDD interfaces needed for distributed computation */
-DDD_IF ElementIF;
+DDD_IF ElementIF, ElementSymmIF;
 DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF;
 DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF;
 DDD_IF VertexIF;
@@ -508,6 +508,11 @@ static void ddd_IfInit (void)
   A[0] = PrioMaster;
   B[0] = PrioGhost;
   ElementIF = DDD_IFDefine(2,O,1,A,1,B);
+
+  O[0] = TypeTrElem; O[1] = TypeTrBElem;
+  A[0] = PrioMaster; A[1] = PrioGhost;
+  B[0] = PrioMaster; B[1] = PrioGhost;
+  ElementSymmIF = DDD_IFDefine(2,O,2,A,2,B);
 
   O[0] = TypeNode;
   A[0] = PrioBorder;
