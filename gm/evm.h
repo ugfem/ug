@@ -105,6 +105,7 @@
 #define V2_EUKLIDNORM_OF_DIFF(A,B,b)	(b) = sqrt((double)(((A)[0]-(B)[0])*((A)[0]-(B)[0])+((A)[1]-(B)[1])*((A)[1]-(B)[1])));
 #define V2_CLEAR(A) 				   {(A)[0] = 0.0; (A)[1]= 0.0;}
 #define V2_SCALAR_PRODUCT(A,B,c)		(c) = (A)[0]*(B)[0]+(A)[1]*(B)[1];
+#define V2_SCAL_PROD(A,B)		       ((A)[0]*(B)[0]+(A)[1]*(B)[1])
 #define V2_ISZERO(A)					(ABS((A)[0])<SMALL_C && ABS((A)[1])<SMALL_C)
 #define V2_SUP(v,s)                    {s = MAX(ABS(v[0]),ABS(v[1]));}
 
@@ -326,6 +327,7 @@
 #define V_DIM_EUKLIDNORM_OF_DIFF(A,B,b)	V2_EUKLIDNORM_OF_DIFF(A,B,b)
 #define V_DIM_CLEAR(A) 				    V2_CLEAR(A)
 #define V_DIM_SCALAR_PRODUCT(A,B,c)		V2_SCALAR_PRODUCT(A,B,c)
+#define V_DIM_SCAL_PROD(A,B)		    V2_SCAL_PROD(A,B)
 #define V_DIM_ISZERO(A)				    V2_ISZERO(A)
 #define M_TIMES_V_DIM(M,A,B)	        M2_TIMES_V2(M,A,B)
 #define MM_TIMES_V_DIM(M,A,B)	      	MM2_TIMES_V2(M,A,B)
@@ -360,6 +362,7 @@
 #define V_DIM_EUKLIDNORM_OF_DIFF(A,B,b)	V3_EUKLIDNORM_OF_DIFF(A,B,b)
 #define V_DIM_CLEAR(A) 				    V3_CLEAR(A)
 #define V_DIM_SCALAR_PRODUCT(A,B,c)		V3_SCALAR_PRODUCT(A,B,c)
+#define V_DIM_SCAL_PROD(A,B)		    V3_SCAL_PROD(A,B)
 #define V_DIM_ISZERO(A)				    V3_ISZERO(A)
 #define M_TIMES_V_DIM(M,A,B)			M3_TIMES_V3(M,A,B)
 #define MM_TIMES_V_DIM(M,A,B)			MM3_TIMES_V3(M,A,B)
