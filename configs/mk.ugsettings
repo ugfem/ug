@@ -64,7 +64,9 @@ UG_LFLAGS = $(ARCH_LFLAGS) $(PPIF_LFLAGS) $(MODEL_LFLAGS) $(GRAPE_LFLAGS) \
 			$(ARCH_XLIBS) $(ARCH_LIBS) $(ENV_LFLAGS) $(ARCH_PLIBS) \
 			$(NETGEN_LFLAGS) $(CHACO_LFLAGS)
 
-UG_LIBS   = $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a \
+UG_LIB    = $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a 
+
+UG_LIBS   = $(UG_LIB) \
 			$(UGROOT)/lib/libdom$(UG_DOMSUFFIX).a \
 			$(UGROOT)/lib/libgrape$(GRAPE)$(DIM).a \
 			$(UGROOT)/lib/libgg$(DIM).a \
