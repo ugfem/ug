@@ -90,8 +90,10 @@
 #define DO_DEPEND                                               15
 #define DO_INVERSE_POLYLINE                     16
 #define DO_STYLED_LINE                                  17
+
 #ifdef ModelP
-#define DO_END_TOKEN                            18
+#define NO_TOKEN                        0
+#define END_TOKEN                       1
 #endif
 
 /* increment */
@@ -124,7 +126,7 @@
 #define DO_2l(p)                                                (*((long*)(p)))
 #define DO_2C(p)                                                (*((DOUBLE*)(p)))
 #define DO_2Cp(p)                                               ((DOUBLE*)(p))
-
+#define DO_2INT(p)                      (*((INT *)(p)))
 
 /****************************************************************************/
 /*                                                                          */
@@ -133,10 +135,10 @@
 /****************************************************************************/
 
 #ifdef ModelP
-
 #define WOP_DOWN_CHANNELS  2
 #define DO_BUFFER_SLOTS    2
-#define DO_SLOT_SIZE       30001
+#define DO_SLOT_SIZE       (DO_SIZE+2)
+#define MAX_LEVELS_PAR     MAXLEVEL
 #endif
 
 

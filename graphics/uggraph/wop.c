@@ -47,6 +47,8 @@
 #include "graph.h"
 #include "gm.h"
 #include "ugm.h"
+#include "rm.h"
+#include "refine.h"
 #include "num.h"
 #include "shapes.h"
 #include "general.h"
@@ -125,7 +127,7 @@ INT ce_ELEMORD;
 
 /* Macros for ordering elements */
 #define NCUT                  10
-#define INFINITY              1.79E308
+#define INFINITY              1.79769E308
 #define SENTINEL              -INFINITY
 #define BT(i)                 (OE_BoxTab[i])
 #define BCOUNT(i)             (OE_BE_Data[i].count)
@@ -146,11 +148,21 @@ INT ce_ELEMORD;
 #define Z_MAX(i)              (OE_BE_Data[i].zMax)
 
 #ifdef ModelP
+#define HT_LEN                31
+#define GLEN                  (1+(3+MAX_SIDES_OF_ELEM)*MAX_SONS)
 #define OS_LINK(p)            (*(OS_DATA **)((INT *)(p)+1))
 #define GAP(p)                (OS_LINK(p)->gap)
 #define PLOT_ID(p)            (OS_LINK(p)->plotId)
 #define N_LOCAL_SONS(p)       (OS_LINK(p)->nLocalSons)
 #define N_GLOBAL_SONS(p)      (OS_LINK(p)->nGlobalSons)
+#define SH_LINK(p)            (OS_LINK(p)->SH_Data)
+#define TABLE(p)              (SH_LINK(p)->table)
+#define HTAB(p)               (SH_LINK(p)->htab)
+#define GR_LINK(p)            (SH_LINK(p)->GR_Data)
+#define HIS_GAP(p, k)         (GR_LINK(p)[k]->hisGap)
+#define CNT(p, k)             (GR_LINK(p)[k]->cnt)
+#define NAD(p, k)             (GR_LINK(p)[k]->nad)
+#define ADJACENT(p, k)        (GR_LINK(p)[k]->adjacent)
 #endif
 
 /* Miscellaneous */
@@ -200,10 +212,24 @@ typedef struct {
 } BE_DATA;
 
 typedef struct {
+	INT          hisGap;
+	INT          cnt;
+	INT          nad;
+	INT          *adjacent;
+} GR_DATA;
+
+typedef struct {
+	INT          htab[HT_LEN];
+	GR_DATA      *GR_Data[HT_LEN];
+	INT          *table;
+} SH_DATA;
+
+typedef struct {
 	INT          gap;
 	INT          plotId;
 	INT          nLocalSons;
 	INT          nGlobalSons;
+	SH_DATA      *SH_Data;
 } OS_DATA;
 
 /****************************************************************************/
@@ -348,6 +374,7 @@ static INT                  *OE_BoxTab;
 static HEAP                 *OE_Heap;
 static INT                  OE_QueryBox;
 static INT                  OE_nCompareElements;
+static INT                  OE_Error;
 
 /*---------- variables use by GetFirst/NextElement... ----------------------*/
 static MULTIGRID					*GE_MG; 						
@@ -655,6 +682,9 @@ static INT			 GNode_toLevel;
 static MULTIGRID	*GElem_MG;
 static INT			 GElem_fromLevel;
 static INT			 GElem_toLevel;
+#ifdef ModelP
+static ELEMENT      *GElem_NextInLevel[MAX_LEVELS_PAR];
+#endif
 
 /*---------- working variables of 'FindRange' routines ---------------------*/
 static INT 			GEN_FR_put;
@@ -714,7 +744,7 @@ static INT WOP_RError   [WOP_DOWN_CHANNELS];   /* error for receiving on channel
 static msgid WOP_Outmsg [WOP_DOWN_CHANNELS+1]; /* IDs for messages being sent      */
 static msgid WOP_Inmsg  [WOP_DOWN_CHANNELS];   /* IDs for messages being received  */
 static INT WOP_CurrDoLen;                      /* length of current DO             */ 
-
+static INT WOP_lastID, WOP_nextID;
 #endif
 
 
@@ -1335,6 +1365,8 @@ static ELEMENT *EW_GetNextElement_hor_bw_down (ELEMENT *theElement)
 
 static ELEMENT *EW_GetNextElement_vert_fw_up (ELEMENT *theElement)
 {
+    #ifndef ModelP
+
 	do
 	{
 		/* something above? */
@@ -1362,6 +1394,34 @@ static ELEMENT *EW_GetNextElement_vert_fw_up (ELEMENT *theElement)
 	while (!USED(theElement));
 	
 	return (theElement);
+
+    #else
+
+	INT i, k, min;
+	ELEMENT *p;
+
+	/* get element with minimum plot id */
+	min = MAXINT;
+	k   = -1;
+	for (i = GElem_fromLevel; i <= GElem_toLevel; i++) {
+		p = GElem_NextInLevel[i];
+		if (p == NULL) continue;
+		if (ID(p) < min) {
+			min = ID(p);
+			k = i;
+		}
+	}
+
+	/* advance in level next element was selected from */
+	if (k == -1) return NULL;
+	theElement = p = GElem_NextInLevel[k];
+	do {	
+		p = SUCCE(p);
+	}while (p != NULL && !USED(p));
+	GElem_NextInLevel[k] = p;
+	return theElement;
+
+    #endif
 }
 /****************************************************************************/
 /*
@@ -1641,6 +1701,7 @@ static ELEMENT *EW_GetFirstElement_hor_bw_down (MULTIGRID *theMG, INT fromLevel,
 
 static ELEMENT *EW_GetFirstElement_vert_fw_up (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 {
+	INT i;
 	ELEMENT *theElement;
 	
 	if (theMG==NULL)
@@ -1658,7 +1719,9 @@ static ELEMENT *EW_GetFirstElement_vert_fw_up (MULTIGRID *theMG, INT fromLevel, 
 	GElem_MG		= theMG;
 	GElem_fromLevel = fromLevel;
 	GElem_toLevel	= toLevel;
-	
+
+	#ifndef ModelP
+
 	theElement = FIRSTELEMENT(GRID_ON_LEVEL(GElem_MG,fromLevel));
 	
 	if (theElement==NULL)
@@ -1667,6 +1730,18 @@ static ELEMENT *EW_GetFirstElement_vert_fw_up (MULTIGRID *theMG, INT fromLevel, 
 		return (theElement);
 	else
 		return (EW_GetNextElement_vert_fw_up(theElement));
+
+	#else
+	
+	for (i = fromLevel; i <= toLevel; i++) {
+		theElement = FIRSTELEMENT(GRID_ON_LEVEL(GElem_MG, i));
+		while (theElement != NULL && !USED(theElement))
+			theElement = SUCCE(theElement);
+		GElem_NextInLevel[i] = theElement;
+	}
+	return (EW_GetNextElement_vert_fw_up(theElement));
+	
+	#endif
 }
 
 /****************************************************************************/
@@ -2042,7 +2117,7 @@ static INT MarkElements_MGS (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	
 	for (i=fromLevel; i<toLevel; i++)
 		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
-			if (NSONS(theElement)==0)
+			if (!IS_REFINED(theElement))
 				SETUSED(theElement,1);
 			else
 				SETUSED(theElement,0);
@@ -2104,7 +2179,7 @@ static INT MarkElements_MGS_On_Line (MULTIGRID *theMG, INT fromLevel, INT toLeve
 	
 	for (i=fromLevel; i<toLevel; i++)
 		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
-			if (NSONS(theElement)==0 && ElementISLine2D(theElement,p1,p2))
+			if (!IS_REFINED(theElement) && ElementISLine2D(theElement,p1,p2))
 				SETUSED(theElement,1);
 			else
 				SETUSED(theElement,0);
@@ -2188,7 +2263,7 @@ static INT MarkElements2D (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	{
 		for (i=fromLevel; i<toLevel; i++)
 			for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
-				if (NSONS(theElement)==0 && EE2D_Elem2Plot[ECLASS(theElement)])
+				if (!IS_REFINED(theElement) && EE2D_Elem2Plot[ECLASS(theElement)])
 					SETUSED(theElement,1);
 				else
 					SETUSED(theElement,0);
@@ -2247,7 +2322,7 @@ static INT MarkElements3D (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	{
 		for (i=fromLevel; i<toLevel; i++)
 			for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
-				if (NSONS(theElement)==0 && EE3D_Elem2Plot[ECLASS(theElement)])
+				if (!IS_REFINED(theElement) && EE3D_Elem2Plot[ECLASS(theElement)])
 					SETUSED(theElement,1);
 				else
 					SETUSED(theElement,0);
@@ -2343,7 +2418,7 @@ static INT MarkElements_MGS_Bnd (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	
 	for (i=fromLevel; i<toLevel; i++)
 		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
-			if (NSONS(theElement)==0 && OBJT(theElement)==BEOBJ)
+			if (!IS_REFINED(theElement) && OBJT(theElement)==BEOBJ)
 				SETUSED(theElement,1);
 			else
 				SETUSED(theElement,0);
@@ -2390,7 +2465,7 @@ static INT MarkElements_MGS_Bnd_Cut (MULTIGRID *theMG, INT fromLevel, INT toLeve
 	
 	for (i=fromLevel; i<toLevel; i++)
 		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
-			if (NSONS(theElement)==0 && (OBJT(theElement)==BEOBJ || CUTMODE(theElement)==CM_INTERSECT))
+			if (!IS_REFINED(theElement) && (OBJT(theElement)==BEOBJ || CUTMODE(theElement)==CM_INTERSECT))
 				SETUSED(theElement,1);
 			else
 				SETUSED(theElement,0);
@@ -2437,7 +2512,7 @@ static INT MarkElements_MGS_Bnd_and_Cut (MULTIGRID *theMG, INT fromLevel, INT to
 	
 	for (i=fromLevel; i<toLevel; i++)
 		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
-			if (NSONS(theElement)==0 && OBJT(theElement)==BEOBJ && CUTMODE(theElement)==CM_INTERSECT)
+			if (!IS_REFINED(theElement) && OBJT(theElement)==BEOBJ && CUTMODE(theElement)==CM_INTERSECT)
 				SETUSED(theElement,1);
 			else
 				SETUSED(theElement,0);
@@ -2483,7 +2558,7 @@ static INT MarkElements_MGS_Cut (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	
 	for (i=fromLevel; i<toLevel; i++)
 		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
-			if (NSONS(theElement)==0 && CUTMODE(theElement)==CM_INTERSECT)
+			if (!IS_REFINED(theElement) && CUTMODE(theElement)==CM_INTERSECT)
 				SETUSED(theElement,1);
 			else
 				SETUSED(theElement,0);
@@ -4500,8 +4575,8 @@ static INT GEN_PostProcess_Scalar_FR (PICTURE *thePicture, WORK *theWork)
 	FR_Work = W_FINDRANGE_WORK(theWork);
 	
 	#ifdef ModelP
-	Broadcast(&GEN_FR_min,sizeof(double));
-	Broadcast(&GEN_FR_max,sizeof(double));
+	GEN_FR_min = UG_GlobalMinDOUBLE(GEN_FR_min);
+	GEN_FR_max = UG_GlobalMaxDOUBLE(GEN_FR_max);
 	#endif
 
 	if (GEN_FR_min>GEN_FR_max)
@@ -5041,13 +5116,13 @@ static INT GEN_PostProcess_Matrix_FR (PICTURE *thePicture, WORK *theWork)
 	struct FindRange_Work *FR_Work;
 	DOUBLE m,l;
 	
-    #ifdef ModelP
-	Broadcast(&GEN_FR_min,sizeof(double));
-	Broadcast(&GEN_FR_max,sizeof(double));
-	#endif
-
 	FR_Work = W_FINDRANGE_WORK(theWork);
 	
+	#ifdef ModelP
+	GEN_FR_min = UG_GlobalMinDOUBLE(GEN_FR_min);
+	GEN_FR_max = UG_GlobalMaxDOUBLE(GEN_FR_max);
+	#endif
+
 	if (GEN_FR_min>GEN_FR_max)
 	{
 		UserWrite("findrange failed\n");
@@ -5100,7 +5175,7 @@ static INT GEN_PostProcess_Vector_FR (PICTURE *thePicture, WORK *theWork)
 	FR_Work = W_FINDRANGE_WORK(theWork);
 	
 	#ifdef ModelP
-	Broadcast(&GEN_FR_max,sizeof(double));
+	GEN_FR_max = UG_GlobalMaxDOUBLE(GEN_FR_max);
 	#endif
 
 	/* postprocess findrange */
@@ -7150,9 +7225,9 @@ static INT EW_PostProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 	DOUBLE_VECTOR p;
 	DRAWINGOBJ *theDO;
 
-#ifdef ModelP
-	if (me != master) return(0);
-#endif
+	#ifdef ModelP
+	if (me != master) return 0;
+    #endif
 
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theLpo = &(PIC_PO(thePicture)->theLpo);
@@ -7232,7 +7307,7 @@ static INT GEN_PostProcess_Line_FR (PICTURE *thePicture, WORK *theWork)
 	DOUBLE m,l;
 	OUTPUTDEVICE *theOD;
 	struct LinePlotObj2D *theLpo;
-	
+
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theLpo = &(PIC_PO(thePicture)->theLpo);
 	
@@ -7241,6 +7316,11 @@ static INT GEN_PostProcess_Line_FR (PICTURE *thePicture, WORK *theWork)
 	theLpo->xmax = LINE2D_maxCut;
 	
 	FR_Work = W_FINDRANGE_WORK(theWork);
+
+    #ifdef ModelP
+	GEN_FR_min = UG_GlobalMinDOUBLE(GEN_FR_min);
+	GEN_FR_max = UG_GlobalMaxDOUBLE(GEN_FR_max);
+	#endif	
 	
 	#ifdef ModelP
 	Broadcast(&GEN_FR_min,sizeof(double));
@@ -12756,14 +12836,17 @@ static void CalcViewableSidesOnGrid (GRID *theGrid)
 	INT i, j;
 
 	/* calc viewable sides for each element */
-	for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
-		CalcViewableSides(theElement);
+	for (theElement=PFIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
+			CalcViewableSides(theElement);
 		
 	/* make the viewable sides consistent */
-	for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
+	for (theElement=PFIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
 		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 		{
 			if ((theNeighbor=NBELEM(theElement,i))==NULL) continue;
+			#ifdef ModelP
+			if (DDD_InfoPriority(PARHDRE(theNeighbor)) == PrioVGhost) continue;
+			#endif
 			if (ID(theElement) < ID(theNeighbor))
 			{
 				for(j=0; j<SIDES_OF_ELEM(theElement); j++)
@@ -12807,8 +12890,12 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 	ELEMENT *NbElement, *SonElement, *SonList[MAX_SONS];
 	
 	/* get son list (not stored in element) */
-	if (GetSons(theElement,SonList)!=0) return(1);
-
+	#ifndef ModelP
+	GetSons(theElement,SonList);
+	#else
+	GetAllSons(theElement, SonList);  /* not necessary, all sons are masters */
+	#endif
+	
 	/* init list and numbers */
 	LastShellBegin = 0;
 	ActualPosition = 0;
@@ -12820,7 +12907,7 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 	for  (i=0; i<nsons; i++)
 	{
 		SonElement = SonList[i];
-		
+
 		/* count how many neighbor-sons are overlapped by SonElement */
 		Count = 0;
 		for (j=0; j<SIDES_OF_ELEM(SonElement); j++)
@@ -13177,9 +13264,64 @@ static INT CompareElements (const void *ElementHandle0,
 	return(0);	
 }
 
-/*------ used by OrderFathersNNS --------------------------------------------*/
+/****************************************************************************/
+/*
+   OrderFathersSEL - Order elements with respect to view orientation on 
+                     level 0 by modified selection sort
 
-static DOUBLE ZCoordInEyeSystem(DOUBLE *p)
+   SYNOPSIS:
+
+
+   PARAMETERS:
+
+  
+   DESCRIPTION:
+   This function orders elements with respect to view orientation on level 0.
+
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+*/
+/****************************************************************************/
+
+static INT OrderFathersSEL(MULTIGRID *mg, ELEMENT **table)
+{
+	INT n;
+	ELEMENT *p;
+	GRID *grid;
+
+	grid = mg->grids[0];
+	n = 0;
+	for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
+		table[n++] = p;
+	SelectionSort((void *)table, n, sizeof(*table), CompareElements);
+	return 0;
+}
+
+/****************************************************************************/
+/*
+   OrderFathersNNS - Order elements with respect to view orientation on 
+                     level 0 a la Newell, Newell & Sancha
+
+   SYNOPSIS:
+
+
+   PARAMETERS:
+
+  
+   DESCRIPTION:
+   This function orders elements with respect to view orientation on level 0.
+
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if cycle detected
+.n    2 if insufficient memory
+*/
+/****************************************************************************/
+
+static COORD ZCoordInEyeSystem(DOUBLE *p)
 {
 	return (p[0]*(VO_VT(OE_ViewedObj)[0]-VO_VP(OE_ViewedObj)[0]) +
             p[1]*(VO_VT(OE_ViewedObj)[1]-VO_VP(OE_ViewedObj)[1]) +
@@ -13201,44 +13343,28 @@ static INT CompareZCoord(const void *p, const void *q)
 	return 0;
 }
 
-/****************************************************************************/
-/*
-   OrderFathersNNS - Order elements with respect to view orientation on 
-                     level 0 a la Newell, Newell & Sancha
-
-   SYNOPSIS:
-
-
-   PARAMETERS:
-
-  
-   DESCRIPTION:
-   This function orders elements with respect to view orientation on level 0.
-
-   RETURN VALUE:
-   INT
-.n    0 if ok
-.n    1 if error occured.
-*/
-/****************************************************************************/
-
-static INT OrderFathersNNS (ELEMENT **table, HEAP *heap, INT n)
+static INT OrderFathersNNS (MULTIGRID *mg, ELEMENT **table)
 {
-    INT i, j, k, ok;
+    INT i, j, k, ok, n;
     DOUBLE min, max, t;
     ELEMENT *p, *q;
+	HEAP *heap;
+	GRID *grid;
     
+	/* copy elements */
+	n = 0;
+	grid = mg->grids[0];
+	for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
+		table[n++] = p;
+
 	/* allocate arrays for z coordinates */
+	heap = mg->theHeap;
     Mark(heap, FROM_TOP);
-	if ((OE_zMin = (DOUBLE *)GetMem(heap, n*sizeof(DOUBLE), FROM_TOP)) == NULL) {
-		Release(heap,FROM_TOP);
-		UserWrite("ERROR: could not allocate memory from the MGHeap\n");
-		return 1;
-	}
-	if ((OE_zMax = (DOUBLE *)GetMem(heap, n*sizeof(DOUBLE), FROM_TOP)) == NULL) {
-		Release(heap,FROM_TOP);
-		UserWrite("ERROR: could not allocate memory from the MGHeap\n");
-		return 1;
+	OE_zMin = (COORD *)GetMem(heap, n*sizeof(COORD), FROM_TOP);
+	OE_zMax = (COORD *)GetMem(heap, n*sizeof(COORD), FROM_TOP);
+	if (OE_zMin == NULL || OE_zMax == NULL) {
+		Release(heap, FROM_TOP);
+		return 2;
 	}
 
     /* unmark elements and compute z coordinates */
@@ -13268,7 +13394,10 @@ static INT OrderFathersNNS (ELEMENT **table, HEAP *heap, INT n)
 			if (!USED(q) && OE_zMax[ID(q)] <= OE_zMin[ID(p)])
 				break;
 			if (CompareElements(&p, &q) == 1) {
-				if (USED(q)) return 1;
+				if (USED(q)) {
+					Release(heap, FROM_TOP);
+					return 1;
+				}
 				for (k=j; k>i; k--)
 					table[k] = table[k-1];
 				table[i] = q;
@@ -13649,7 +13778,7 @@ static void TestPrecedence(INT i, INT j)
 		h = HIDDEN_BY(j);
 		HIDDEN_BY(j) = (ILIST *)GetMem(OE_Heap, sizeof(ILIST), FROM_TOP);
 		if (HIDDEN_BY(j) == NULL) {
-			UserWrite("Insufficient Memory: coarse grid ordering may be incorrect\n");
+			OE_Error = 1;
 			return;
 		}
 		HIDDEN_BY(j)->index = i;
@@ -13660,7 +13789,7 @@ static void TestPrecedence(INT i, INT j)
 		h = HIDDEN_BY(i);
 		HIDDEN_BY(i) = (ILIST *)GetMem(OE_Heap, sizeof(ILIST), FROM_TOP);
 		if (HIDDEN_BY(i) == NULL) {
-			UserWrite("Insufficient Memory: coarse grid ordering may be incorrect\n");
+			OE_Error = 1;
 			return;
 		}
 		HIDDEN_BY(i)->index = j;
@@ -13763,83 +13892,6 @@ static INT Id2Index(INT id)
 
 /****************************************************************************/
 /*
-   ComputeOS_Data -
-
-   SYNOPSIS:
-
-   PARAMETERS:
- 
-   DESCRIPTION:
-
-   RETURN VALUE:
-   void
-*/
-/****************************************************************************/
-
-#ifdef ModelP
-
-static INT GatherOS_Data(DDD_OBJ obj, void *data)
-{
-	ELEMENT *p;
-	INT *d;
-
-	p  = (ELEMENT *)obj;
-	d  = (INT *)data;
-	*d = GAP(p);  d++;
-	*d = N_LOCAL_SONS(p);
-}
-
-static INT ScatterOS_Data(DDD_OBJ obj, void *data)
-{
-	ELEMENT *p;
-	INT *d;
-
-	p = (ELEMENT *)obj;
-	d = (INT *)data;
-	GAP(p) += *d; d++;
-	N_GLOBAL_SONS(p) += *d;
-}
-
-static void ComputeOS_Data(MULTIGRID *mg)
-{
-	INT i, j, prio, gap, nb;
-	GRID *grid;
-	ELEMENT *p, *sonList[MAX_SONS];
-
-	for (i = mg->topLevel; i >= 0; i--) {
-		grid = mg->grids[i];
-		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p)) {
-			prio = DDD_InfoPriority(PARHDRE(p));
-			if (prio == PrioGhost) continue;
-			if (prio == PrioMaster)
-				gap = 1;
-			else
-				gap = 0;
-			GetAllSons(p, sonList);
-			nb = 0;
-			for (j = 0; j < MAX_SONS; j++) {
-				if (sonList[j] == NULL) break;
-				if (DDD_InfoPriority(PARHDRE(sonList[j])) != PrioMaster) continue;
-				nb++;
-				gap += GAP(sonList[j]);
-			}
-			GAP(p) = gap;
-			N_LOCAL_SONS(p)  = nb;
-			N_GLOBAL_SONS(p) = nb;
-		}
-		DDD_IFAOneway(ElementVIF, i, IF_BACKWARD, 2*sizeof(INT),
-					   GatherOS_Data, ScatterOS_Data);
-		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p)) 
-			if (GAP(p) > 1) GAP(p)--;
-	}
-    /*	DDD_IFOneway(ElementVIF, IF_FORWARD, sizeof(INT),
-				 GatherGaps, ScatterGaps2); */
-}
-
-#endif
-
-/****************************************************************************/
-/*
    OrderFathersXSH - Order elements with respect to view orientation on 
                      level 0 by extended shell algorithm
 
@@ -13872,28 +13924,27 @@ static INT OrderFathersXSH (MULTIGRID *mg, ELEMENT **table)
 	DOUBLE_VECTOR temp;
     INT i, j, k, count, root, pos, lastBegin, newBegin;
 
-    /* count boundary elements */
+	/* count boundary elements */
 	OE_nBndElem = 0;
 	grid = mg->grids[0];
 	for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
 		if (OBJT(p) == BEOBJ)
 			OE_nBndElem++;
-
+		
 	/* allocate Arrays */
 	heap = mg->theHeap;
 	Mark(heap, FROM_TOP);
-	OE_Map     = (MAP *)     GetMem(heap, OE_nBndElem*sizeof(MAP),     FROM_TOP);
-    OE_BE_Data = (BE_DATA *) GetMem(heap, OE_nBndElem*sizeof(BE_DATA), FROM_TOP);
-    OE_BoxTab  = (INT *)     GetMem(heap, OE_nBndElem*sizeof(INT),     FROM_TOP);
-	
+	OE_Map     = (MAP *)      GetMem(heap, OE_nBndElem*sizeof(MAP),         FROM_TOP);
+	OE_BE_Data = (BE_DATA *)  GetMem(heap, OE_nBndElem*sizeof(BE_DATA),     FROM_TOP);
+	OE_BoxTab  = (INT *)      GetMem(heap, OE_nBndElem*sizeof(INT),         FROM_TOP);
 	if (OE_Map == NULL || OE_BE_Data == NULL || OE_BoxTab == NULL || table == NULL) {
-		UserWrite("Insufficient Memory: can't order coarse grid\n");
+		Release(heap, FROM_TOP);
 		return 2;
 	}
 
-    /* init inner elements & copy boundary elements */
-    i = 0;
-    for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p)) {
+	/* init inner elements & copy boundary elements */
+	i = 0;
+	for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p)) {
 		SETUSED(p, 0);
 		if (OBJT(p) == BEOBJ) {
 			OE_Map[i].id = ID(p);
@@ -13912,23 +13963,23 @@ static INT OrderFathersXSH (MULTIGRID *mg, ELEMENT **table)
 
 	/* sort map */
 	qsort((void *)OE_Map, OE_nBndElem, sizeof(MAP), CompareIDs);
-
+	
 	/* begin boundary element init */
 	for (i = 0; i < OE_nBndElem; i++) 
 	{
 		p = OE_Map[i].elem;
-
+		
 		/* copy corner vectors */
 		for (j = 0; j < CORNERS_OF_ELEM(p); j++)
 			corner[j] = CVECT(MYVERTEX(CORNER(p, j)));
-
+		
 		count = 0;
 		VIEWABLE_BSIDE(i) = 0;
 		HIDDEN_BSIDE(i)   = 0;
 		minx = miny = minz =  INFINITY;
 		maxx = maxy = maxz = -INFINITY;
-
-        /* set counters and bounding boxes and test boundary sides */
+		
+		/* set counters and bounding boxes and test boundary sides */
 		for (j = 0; j < SIDES_OF_ELEM(p); j++) {
 			if (NBELEM(p, j) != NULL) {
 				if (!VIEWABLE(p, j))
@@ -13953,27 +14004,29 @@ static INT OrderFathersXSH (MULTIGRID *mg, ELEMENT **table)
 		}
 		BCOUNT(i) = count;
 		U1(i) = minx;
-        V1(i) = maxx;
-        U2(i) = miny;
+		V1(i) = maxx;
+		U2(i) = miny;
 		V2(i) = maxy;
 		Z_MIN(i) = minz;
 		Z_MAX(i) = maxz;
-
+		
 		/* clear list of elems this one is hidden by */
 		HIDDEN_BY(i) = NULL;
 	}
 
-    /* build box tree */
-    for (i = 0; i < OE_nBndElem; i++)
+	/* build box tree */
+	for (i = 0; i < OE_nBndElem; i++)
 		BT(i) = i;
 	BSort1(0, OE_nBndElem-1, &root, &dummy, &dummy, &dummy, &dummy);
-
+	
 	/* complete boundary element init */
-    OE_Heap = heap;
+	OE_Heap = heap;
+	OE_Error = 0;
 	for (i = 0; i < OE_nBndElem; i++) {
 		OE_QueryBox = i;
 		BSearch1(root);
 	}
+	if (OE_Error) return 2;
 
 	/* find first shell */
 	pos = 0;
@@ -13985,87 +14038,12 @@ static INT OrderFathersXSH (MULTIGRID *mg, ELEMENT **table)
 		}
 	
 	/* create new shell from last one */
-   lastBegin = 0;
-   newBegin  = pos;
-   while (lastBegin < newBegin) {
-	   for (i = lastBegin; i<newBegin; i++) {
-		   p = table[i];
-		   for (j = 0; j < SIDES_OF_ELEM(p); j++) {
-			   q = NBELEM(p, j);
-			   if (q != NULL && !USED(q)) {
-				   if (OBJT(q) == BEOBJ) {
-					   k = Id2Index(ID(q));
-					   count = BCOUNT(k)-1;
-					   if (count == 0) {
-						   table[pos++] = q;
-						   SETUSED(q, 1);
-					   }
-					   else
-						   BCOUNT(k) = count;
-				   }
-				   else {
-					   count = COUNT(q)-1;
-					   if (count == 0) {
-						   table[pos++] = q;
-						   SETUSED(q, 1);
-					   }
-					   else
-						   SETCOUNT(q, count);
-				   }
-			   }
-		   }
-		   if (OBJT(p) == BEOBJ) {
-			   for (h = HIDDEN_BY(Id2Index(ID(p))) ; h != NULL; h = h->next) {
-				   k = h->index;
-				   if(--BCOUNT(k) == 0) {
-					   q = OE_Map[k].elem;
-					   table[pos++] = q;
-					   SETUSED(q, 1);
-				   }
-			   }
-		   }
-	   }
-	   lastBegin = newBegin;
-	   newBegin  = pos;
-   }
-   Release(heap, FROM_TOP);
-   if (pos != grid->nElem) return 1;
-
-   return 0;
-}
-
-static INT OrderFathersXSH_OLD (GRID *grid, HEAP *heap, ELEMENT **table)
-{
-	ELEMENT *p, *q;
-	ILIST *h;
-    DOUBLE minx, maxx, miny, maxy, dummy;
-    COORD_POINT t;
-    DOUBLE temp[3];
-    INT i, j, k, count, root, pos, lastBegin, newBegin;
-
-    /* count boundary elements */
-	OE_nBndElem = 0;
-	for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
-		if (OBJT(p) == BEOBJ)
-			OE_nBndElem++;
-
-	/* allocate Arrays */
-	Mark(heap, FROM_TOP);
-	OE_Map     = (MAP *)     GetMem(heap, OE_nBndElem*sizeof(MAP),     FROM_TOP);
-    OE_BE_Data = (BE_DATA *) GetMem(heap, OE_nBndElem*sizeof(BE_DATA), FROM_TOP);
-    OE_BoxTab  = (INT *)     GetMem(heap, OE_nBndElem*sizeof(INT),     FROM_TOP);
-
-    /* init inner elements & copy boundary elements */
-    i = 0;
-    for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p)) {
-		SETUSED(p, 0);
-		if (OBJT(p) == BEOBJ) {
-			OE_Map[i].id = ID(p);
-			OE_Map[i++].elem = p;
-		}
-		else {
-			count = 0;
-            for (j = 0; j < SIDES_OF_ELEM(p); j++) {
+	lastBegin = 0;
+	newBegin  = pos;
+	while (lastBegin < newBegin) {
+		for (i = lastBegin; i<newBegin; i++) {
+			p = table[i];
+			for (j = 0; j < SIDES_OF_ELEM(p); j++) {
 				q = NBELEM(p, j);
 				if (q != NULL && !USED(q)) {
 					if (OBJT(q) == BEOBJ) {
@@ -14109,41 +14087,761 @@ static INT OrderFathersXSH_OLD (GRID *grid, HEAP *heap, ELEMENT **table)
 	return 0;
 }
 
+/****************************************************************************/
+/*
+   ComputeOS_Data - compute data used for OrderSons / OrderRemoteSons
+                    (parallel only)
 
-static INT OrderHirarchically(MULTIGRID *mg)
+   SYNOPSIS:
+   static void ComputeOS_Data(MULTIGRID *mg)
+
+   PARAMETERS:
+   mg - 
+ 
+   DESCRIPTION:
+   This function computes no. of local/global sons and no. of sons over all
+   levels ("gap") for every element. 
+
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
+
+#ifdef ModelP
+
+static INT GatherOS_Data(DDD_OBJ obj, void *data)
+{
+	ELEMENT *p;
+	INT *d;
+
+	p  = (ELEMENT *)obj;
+	d  = (INT *)data;
+	*d = GAP(p);  d++;
+	*d = N_LOCAL_SONS(p);
+}
+
+static INT ScatterOS_Data(DDD_OBJ obj, void *data)
+{
+	ELEMENT *p;
+	INT *d;
+
+	p = (ELEMENT *)obj;
+	d = (INT *)data;
+	GAP(p) += *d;  d++;
+	N_GLOBAL_SONS(p) += *d;
+}
+
+static INT GatherOS_Data2(DDD_OBJ obj, void *data)
+{
+	ELEMENT *p;
+	INT *d;
+	
+	p  = (ELEMENT *)obj;
+	d  = (INT *)data;
+	*d = GAP(p);  d++;
+	*d = N_GLOBAL_SONS(p);
+}
+
+static INT ScatterOS_Data2(DDD_OBJ obj, void *data)
+{
+	ELEMENT *p;
+	INT *d;
+
+	p = (ELEMENT *)obj;
+	d = (INT *)data;
+	GAP(p) = *d;  d++;
+	N_GLOBAL_SONS(p) = *d;
+}
+	
+static void ComputeOS_Data(MULTIGRID *mg)
+{
+	INT i, j, prio, gap, n;
+	GRID *grid;
+	ELEMENT *p, *sonList[MAX_SONS];
+
+	for (i = mg->topLevel; i >= 0; i--) {
+		grid = mg->grids[i];
+		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p)) {
+			prio = DDD_InfoPriority(PARHDRE(p));
+			if (prio == PrioGhost) continue;
+			if (prio == PrioMaster && !IS_REFINED(p))
+				gap = 1;
+			else
+				gap = 0;
+			GetAllSons(p, sonList);
+			n = 0;
+			for (j = 0; j < NSONS(p); j++) {
+				if (DDD_InfoPriority(PARHDRE(sonList[j])) != PrioMaster) continue;
+				n++;
+				gap += GAP(sonList[j]);
+			}
+			GAP(p) = gap;
+			N_LOCAL_SONS(p)  = n;
+			N_GLOBAL_SONS(p) = n;
+		}
+		DDD_IFAOneway(ElementVIF, i, IF_BACKWARD, 2*sizeof(INT),
+					  GatherOS_Data, ScatterOS_Data);
+	}
+    DDD_IFOneway(ElementVIF, IF_FORWARD, 2*sizeof(INT),
+				 GatherOS_Data2, ScatterOS_Data2);
+}
+
+/****************************************************************************/
+/*
+   NumberElements - number elements (i.e. set plot ids)
+
+   SYNOPSIS:
+   static void NumberElements(ELEMENT **table, INT n, INT start)
+
+   PARAMETERS:
+   table - list of elements
+   n     - no. of elems in list
+   start - plot id for first elem
+ 
+   DESCRIPTION:
+   
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
+
+static void NumberElements(ELEMENT **table, INT n, INT start)
+{
+	INT i, pid;
+
+	pid = start;
+	for (i = 0; i < n; i++) {
+		PLOT_ID(table[i]) = pid;
+		pid += GAP(table[i]);
+	}
+}
+
+/****************************************************************************/
+/*
+   DistributePlotIDs - send plot ids from Master to VGhosts
+
+   SYNOPSIS:
+   static void DistributePlotIDs(INT level)
+
+   PARAMETERS:
+   level - multigrid level
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
+
+static INT GatherPlotID(DDD_OBJ obj, void *data)
+{
+	ELEMENT *p;
+
+	p = (ELEMENT *)obj;
+	*(INT *)data = PLOT_ID(p);
+}
+
+static INT ScatterPlotID(DDD_OBJ obj, void *data)
+{
+	ELEMENT *p;
+
+	p = (ELEMENT *)obj;
+	PLOT_ID(p) = *(INT *)data;
+}
+
+static void DistributePlotIDs(INT level)
+{
+	DDD_IFAOneway(ElementVIF, level, IF_FORWARD, sizeof(INT),
+				  GatherPlotID, ScatterPlotID);
+}
+
+
+/* -------------------- a little hashing ---------------------------------- */
+
+static INT Lookup(INT *htab, INT gid)
 {
 	INT i;
-	GRID *grid;
-	ELEMENT *p, *table[MAX_SONS];
-	HEAP *heap;
 
-	for (i=0; i<mg->topLevel; i++)
-	{
-		grid = mg->grids[i];
-		for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
-		{
-			if (NSONS(p) <= 0) continue;
-			OrderSons(table, p);
-			if (PutAtEndOfList(UPGRID(grid), NSONS(p), table) != GM_OK) return 1;
+	i = gid % HT_LEN;
+	while (htab[i] != gid)
+		i = (i+1) % HT_LEN;
+	return i;
+}
+
+static INT Insert(INT *htab, INT gid)
+{
+	INT i;
+	
+	i = gid % HT_LEN;
+	while (htab[i] != -1)
+		i = (i+1) % HT_LEN;
+	htab[i] = gid;
+	return i;
+}
+
+/****************************************************************************/
+/*
+   CollectGraphs - collect graphs describing remote sons 
+
+   SYNOPSIS:
+   static INT CollectGraphs(INT level)
+
+   PARAMETERS:
+   levl - multigrid level
+
+   DESCRIPTION:
+   If not all sons of a father elements are on the same processor, this
+   function attaches a graph describing all sons on the master father.
+
+   RETURN VALUE:
+   INT
+      0 if ok
+      1 if error
+*/
+/****************************************************************************/
+
+
+static INT GatherGraphs(DDD_OBJ obj, void *data)
+{
+	ELEMENT *p, *son, *nbElem, *sonList[MAX_SONS];
+	INT *d, *d1, *d2, i, j, na, cnt; 
+
+	p = (ELEMENT *)obj;
+	d = (INT *)data;
+
+	/* something to send? */
+	if (N_GLOBAL_SONS(p) == N_LOCAL_SONS(p) || N_LOCAL_SONS(p) == 0) {
+		*d = 0;
+		return ;
+	}
+
+	/* compute & compact partial graph */
+	d1 = d;  d++;
+	GetAllSons(p, sonList);
+	for (i = 0; i < NSONS(p); i++) {
+		son = sonList[i];
+		if (DDD_InfoPriority(PARHDRE(son)) != PrioMaster) continue;
+		*d = DDD_InfoGlobalId(PARHDRE(son));  d++;
+		*d = GAP(son);  d++;
+		d2 = d;  d += 2;
+		na = cnt = 0;
+		for (j = 0; j < SIDES_OF_ELEM(son); j++) {
+			nbElem = NBELEM(son, j);
+			if (nbElem != NULL && EFATHER(nbElem) == p)
+				if (!VIEWABLE(son ,j)) 
+					cnt++;
+				else {
+					na++;
+					*d = DDD_InfoGlobalId(PARHDRE(nbElem));  d++;
+				}
 		}
+		*d2 = cnt;  d2++;
+		*d2 = na;
+	}
+	*d1 = d - d1;
+}
+	
+static INT ScatterGraphs(DDD_OBJ obj, void *data)
+{
+	ELEMENT *p;
+	INT *d, *d1, i, j, n, na, gid;
+
+	p = (ELEMENT *)obj;
+	d = (INT *)data;
+	
+	/* got something? */
+	if (*d == 0) return;
+
+	/* allocate & init memory, if necessary */
+	if (SH_LINK(p) == NULL)
+		if ((SH_LINK(p) = (SH_DATA *)GetMem(OE_Heap, sizeof(SH_DATA), FROM_TOP)) == NULL) {
+			OE_Error =1;
+			return;
+		}
+		else {
+			for (i = 0; i < HT_LEN; i++) 
+				HTAB(p)[i] = -1;
+		}
+	
+	/* store partial graph */
+	n = *d;
+	d1 = d;  d++;
+	while (d-d1 < n) {
+		gid = *d;  d++;
+		i = Insert(HTAB(p), gid); 
+		if ((GR_LINK(p)[i] = (GR_DATA *)GetMem(OE_Heap, sizeof(GR_DATA), FROM_TOP)) == NULL) {
+			OE_Error = 1;
+			return;
+		}
+		HIS_GAP(p, i)  = *d;  d++;
+		CNT(p, i)      = *d;  d++;
+		NAD(p, i) = na = *d;  d++;
+		if (na > 0) {
+			if ((ADJACENT(p, i) = (INT *)GetMem(OE_Heap, na*sizeof(INT), FROM_TOP)) == NULL) {
+				OE_Error = 1;
+				return;
+			}
+			for (j = 0; j < na; j++) {
+				ADJACENT(p, i)[j] = *d;
+				d++;
+			}
+		}
+	}
+}
+
+static INT CollectGraphs(INT level)
+{
+	OE_Error = 0;
+	DDD_IFAOneway(ElementVIF, level, IF_BACKWARD, GLEN*sizeof(INT),
+				  GatherGraphs, ScatterGraphs);
+	return UG_GlobalMaxINT(OE_Error);
+}
+
+/****************************************************************************/
+/*
+   OrderRemoteSons - order sons that are scattered over several procs
+
+   SYNOPSIS:
+   static INT OrderRemoteSons(ELEMENT *p)
+
+   PARAMETERS:
+   p - pointer to master father element
+ 
+   DESCRIPTION:
+   The sons of p, described by the graph attached to p, are ordered.
+
+   RETURN VALUE:
+   INT
+      0 if ok
+      1 if error
+*/
+/****************************************************************************/
+
+
+static INT OrderRemoteSons(ELEMENT *p)
+{
+	ELEMENT *sonList[MAX_SONS], *son, *nbElem, *pel[HT_LEN];
+	INT i, j, k, l, pos, lastBegin, newBegin, na, cnt, pid,
+		adjacent[HT_LEN][MAX_SIDES_OF_ELEM-1];
+
+	/* add local partial graph */
+	for (i = 0; i < HT_LEN; i++)
+		pel[i] = NULL;
+	GetAllSons(p, sonList);
+	for (i = 0; i < NSONS(p); i++) {
+		son = sonList[i];
+		if (DDD_InfoPriority(PARHDRE(son)) != PrioMaster) continue;
+		k = Insert(HTAB(p), DDD_InfoGlobalId(PARHDRE(son))); 
+		pel[k] = son;
+		if ((GR_LINK(p)[k] = (GR_DATA *)GetMem(OE_Heap, sizeof(GR_DATA), FROM_TOP)) == NULL)
+			return 1;
+		HIS_GAP(p, k) = GAP(son);
+		na = cnt = 0;
+		for (j = 0; j < SIDES_OF_ELEM(son); j++) {
+			nbElem = NBELEM(son, j);
+			if (nbElem != NULL && EFATHER(nbElem) == p)
+				if (!VIEWABLE(son ,j)) 
+					cnt++;
+				else
+					adjacent[k][na++] = DDD_InfoGlobalId(PARHDRE(nbElem));
+		}
+		NAD(p, k) = na;
+		CNT(p, k) = cnt;
+		ADJACENT(p, k) = adjacent[k];
+	}
+
+	if ((TABLE(p) = (INT *)GetMem(OE_Heap, N_GLOBAL_SONS(p)*sizeof(INT), FROM_TOP)) == NULL)
+		return 1;
+
+	/* find first shell */
+	pos = 0;
+	for (i = 0; i < HT_LEN; i++)
+		if (HTAB(p)[i] != -1 && CNT(p, i) == 0)
+			TABLE(p)[pos++] = HTAB(p)[i];
+			
+	/* create new shell from last one */
+	newBegin = pos;
+	lastBegin = 0;
+	while (pos < N_GLOBAL_SONS(p)) {
+		for (i = lastBegin; i < newBegin; i++) {
+			k = Lookup(HTAB(p), TABLE(p)[i]);
+			for (j = 0; j < NAD(p, k); j++) {
+				l = Lookup(HTAB(p), ADJACENT(p, k)[j]);
+				if (--CNT(p, l) == 0)
+					TABLE(p)[pos++] = HTAB(p)[l];
+			}
+		}
+		lastBegin = newBegin;
+		newBegin = pos;
+	}
+
+	/* number local sons */
+	pid = PLOT_ID(p);
+	for (i = 0; i < N_GLOBAL_SONS(p); i++) {
+		k = Lookup(HTAB(p), TABLE(p)[i]);
+		if ((son = pel[k]) != NULL)
+			PLOT_ID(son) = pid;
+		pid += HIS_GAP(p, k);
 	}
 	return 0;
 }
 
+/****************************************************************************/
+/*
+   DistributeOrdering - distribute plot ids for remotely ordered ons
+
+   SYNOPSIS:
+   static void DistributeOrdering(INT level)
+
+   PARAMETERS:
+   level - multigrid level
+ 
+   DESCRIPTION:
+   Plot ids for sons that are ordered by their remote master father 
+   are sent back.
+
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
+
+static INT GatherOrdering(DDD_OBJ obj, void *data)
+{
+	ELEMENT *p;
+	INT *d, i, k, pid, gid;
+
+	p = (ELEMENT *)obj;
+	d = (INT *)data;
+
+	/* something to send? */
+	if (SH_LINK(p) == NULL) return;
+
+	/* send numbered elements */
+	pid = PLOT_ID(p);
+	for (i = 0; i < N_GLOBAL_SONS(p); i++) {
+		gid = TABLE(p)[i];
+		*d = gid;  d++;
+		*d = pid;  d++;
+		k = Lookup(HTAB(p), gid);
+		pid += HIS_GAP(p, k);
+	}
+}
+
+static INT ScatterOrdering(DDD_OBJ obj, void *data)
+{
+	ELEMENT *p, *son, *sonList[MAX_SONS];
+	INT *d, htab[HT_LEN], pid[HT_LEN], gid, i, k;
+
+	p = (ELEMENT *)obj;
+	d = (INT *)data;
+
+	/* got something? */
+	if (N_LOCAL_SONS(p) == N_GLOBAL_SONS(p)) return;
+
+	/* init local hash table */
+	for (i = 0; i < HT_LEN; i++)
+		htab[i] = -1;
+
+	/* insert data in local hash table */
+	for (i = 0; i < N_GLOBAL_SONS(p); i++) {
+		gid = *d;  d++;
+		k = Insert(htab, gid);
+		pid[k] = *d;  d++;
+	}
+	
+	/* number local sons */
+	GetAllSons(p, sonList);
+	for (i = 0; i < NSONS(p); i++) {
+		son = sonList[i];
+		if (DDD_InfoPriority(PARHDRE(son)) != PrioMaster) continue;
+		k = Lookup(htab, DDD_InfoGlobalId(PARHDRE(son)));
+		PLOT_ID(son) = pid[k];
+	}
+}
+
+static void DistributeOrdering(INT level)
+{
+	DDD_IFAOneway(ElementVIF, level, IF_FORWARD, 2*MAX_SONS*sizeof(INT),
+				  GatherOrdering, ScatterOrdering);
+}
 
 /****************************************************************************/
 /*
-   OrderElements - order elements w.r.t. theViewedObject 
-  
+   SortLevelsLocally - sort grid levels locally by plot id
+
    SYNOPSIS:
-   static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj);
+   static INT SortLevelsLocally(MULTIGRID *mg)
 
    PARAMETERS:
-.  theMG - pointer to multigrid 
-.  theViewObject -
+   mg - 
 
    DESCRIPTION:
-   This function orders elements w.r.t. theViewedObject.
+
+   RETURN VALUE:
+   INT
+      0 if ok
+      1 if error
+*/
+/****************************************************************************/
+
+static INT CmpIDs(const void *pp, const void *qq)
+{
+	ELEMENT *p, *q;
+
+	p = *((ELEMENT **)pp);
+    q = *((ELEMENT **)qq);
+
+	if (ID(p) < ID(q))
+		return -1;
+	if (ID(p) > ID(q))
+		return 1;
+	return 0;
+}
+
+static INT SortLevelsLocally(MULTIGRID *mg)
+{
+	GRID *grid;
+	HEAP *heap;
+	ELEMENT *p, **table, *lastFather;
+	INT i, j, k, n, err;
+
+	err = 0;
+	heap = mg->theHeap;
+	for (i = 1; i <= mg->topLevel; i++) 
+	{
+		grid = mg->grids[i];
+
+		/* count master elems */
+		n = 0;
+		for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
+			n++;
+		if (n == 0) continue;
+
+		/* allocate mem */
+		Mark(heap, FROM_TOP);
+		table = (ELEMENT **)GetMem(heap, n*sizeof(ELEMENT *), FROM_TOP);
+		if (table == NULL) {
+			Release(heap, FROM_TOP);
+			err = 1;
+			return UG_GlobalMaxINT(err);
+		}
+		else
+		{
+			/* copy and sort master elems */
+			n = 0;
+			for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
+				table[n++] = p;
+			qsort((void *)table, n, sizeof(*table), CmpIDs);
+
+			/* put segments with same father at end of list */
+			k = 0;
+			j = 1;
+			lastFather = EFATHER(table[0]);
+			while (k < n) {
+				while (j < n && EFATHER(table[j]) == lastFather) 
+					j++;
+				PutAtEndOfList(grid, j-k, table+k);
+				if (j < n)
+					lastFather = EFATHER(table[j]);
+				k = j;
+				j++;
+			}
+			
+		}
+		Release(heap, FROM_TOP);
+	}
+	return UG_GlobalMaxINT(err);
+}
+
+#endif
+
+/****************************************************************************/
+/*
+   OrderHirarchically - 
+
+   SYNOPSIS:
+   static INT OrderHirarchically(MULTIGRID *mg)
+
+   PARAMETERS:
+   mg -
+
+   DESCRIPTION:
+   This function orders sons on level i from already ordered fathers on
+   level i-1 for i = 1, 2, ...
+
+   RETURN VALUE:
+   INT
+      0 if ok
+      1 if error
+*/
+/****************************************************************************/
+
+static INT OrderHirarchically(MULTIGRID *mg)
+{
+	INT i, err;
+	GRID *grid;
+	ELEMENT *p, *table[MAX_SONS];
+	HEAP *heap;
+
+	#ifdef ModelP
+	heap = OE_Heap = mg->theHeap;
+    err = 0;
+	#endif
+
+	for (i = 0; i < mg->topLevel; i++)
+	{
+		/* local case */
+
+		grid = mg->grids[i];
+		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
+		{
+            #ifdef ModelP
+			if (DDD_InfoPriority(PARHDRE(p)) == PrioGhost) continue;
+			SH_LINK(p) = NULL;
+			/* all sons here? */
+			if (N_LOCAL_SONS(p) != N_GLOBAL_SONS(p) || N_GLOBAL_SONS(p) == 0)
+				continue;
+			#else
+			if (NSONS(p) <= 0) continue;
+			#endif
+			OrderSons(table, p);
+			#ifndef ModelP
+			PutAtEndOfList(UPGRID(grid), NSONS(p), table);
+			#else
+			NumberElements(table, N_LOCAL_SONS(p), PLOT_ID(p));
+			#endif
+		}
+
+	    #ifdef ModelP
+
+		/* nonlocal case (parallel only) */
+
+		Mark(heap, FROM_TOP);
+
+		/* collect graphs describing remote sons */
+		if (CollectGraphs(i)) {
+			Release(heap, FROM_TOP);
+			return 1;
+		}
+
+		/* order remote sons */
+		grid = mg->grids[i];
+		for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
+			if (SH_LINK(p) != NULL)
+			    if (OrderRemoteSons(p)) {
+					err = 1;
+					break;
+				}
+		err = UG_GlobalMaxINT(err);
+		if (err) {
+			Release(heap, FROM_TOP);
+			return 1;
+		}
+
+		/* tell remote sons their ordering */
+		DistributeOrdering(i);
+
+		/* tell VGhosts their Master's plot id */
+		DistributePlotIDs(i+1);
+
+		Release(heap, FROM_TOP);
+		#endif
+	}
+	return 0;
+}
+
+/****************************************************************************/
+/*
+   OrderCoarseGrid -
+
+   SYNOPSIS:
+   static INT OrderCoarseGrid(MULTIGRID *mg)
+
+   PARAMETERS:
+   mg -
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+      0 if ok
+      1 if error
+*/
+/****************************************************************************/
+
+static INT OrderCoarseGrid(MULTIGRID *mg)
+{
+	HEAP *heap;
+	GRID *grid;
+	ELEMENT **table;
+	INT err;
+
+	#ifdef ModelP
+	if (me == master) {
+	#endif
+		heap = mg->theHeap;
+		grid = mg->grids[0];
+		Mark(heap, FROM_TOP);
+		table = (ELEMENT **)GetMem(heap, (grid->nElem)*sizeof(ELEMENT *), FROM_TOP);
+		if (table != NULL)
+			switch (OE_OrderStrategy) 
+			{
+			case 0: 
+				err = OrderFathersXSH(mg, table);
+				if (err == 1) {
+					UserWrite("Cycle detected while ordering coarse grid.\n");
+					UserWrite("Falling back on slow method ...\n");
+					err = OrderFathersSEL(mg, table);
+				}
+				break;
+			case 1:
+				#ifndef ModelP
+				err = OrderFathersNNS(mg, table);
+				if (err == 1) {
+					UserWrite("Cycle detected while ordering coarse grid.\n");
+					UserWrite("Falling back on slow method ...\n");
+					err = OrderFathersSEL(mg, table);
+				}
+				#else
+				err = 1; /* does not work in parallel */
+				#endif
+				break;
+			case 2:
+				err = OrderFathersSEL(mg, table);
+				break;
+			}
+		else
+			err = 1;
+	
+		if (err == 0) {
+			PutAtEndOfList(grid, grid->nElem, table);
+            #ifdef ModelP
+	        NumberElements(table, grid->nElem, 1);
+            #endif
+		}
+		Release(heap, FROM_TOP);
+	#ifdef ModelP
+	}
+	Broadcast(&err, sizeof(err));
+	if (err == 0) DistributePlotIDs(0);
+	#endif
+    
+   	return err;
+}
+
+/****************************************************************************/
+/*
+   OrderElements - order elements w.r.t. the viewed object
+  
+   SYNOPSIS:
+   static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo);
+
+   PARAMETERS:
+.  mg - pointer to multigrid 
+.  vo - the viewed object
+
+   DESCRIPTION:
+   This function orders elements w.r.t. the viewed object.
 
    RETURN VALUE:
    INT
@@ -14170,133 +14868,106 @@ static INT SettingsEqual (const VIEWEDOBJ *vo, const WOP_MG_DATA *data)
 	return (NO);
 }
 
-static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
+static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 {
-	HEAP *theHeap;
-	ELEMENT **table, *theElement;
-	GRID *theGrid;
-	INT i, res;
+	HEAP *heap;
+	ELEMENT *p;
+	GRID *grid;
 	WOP_MG_DATA *myMGdata;
 	MEM offset;
-    clock_t start, stop;
+	INT i, err;
 
-	offset   = OFFSET_IN_MGUD(wopMGUDid);
-	myMGdata = (WOP_MG_DATA*) GEN_MGUD_ADR(theMG,offset);
-	
-	if (myMGdata==NULL)
-		return (1);
-	
 	/* check if multigrid is already ordered */
-	if (myMGdata->init==0)
+	offset   = OFFSET_IN_MGUD(wopMGUDid);
+	myMGdata = (WOP_MG_DATA*) GEN_MGUD_ADR(theMG, offset);
+	
+	if (myMGdata == NULL)
+		return 1;
+
+	/* check if multigrid is already ordered */
+	if (myMGdata->init == 0)
 		/* not yet initialized */
-		SaveSettings(theViewedObj,myMGdata);
+		SaveSettings(vo, myMGdata);
 	else if (!OE_force_ordering)
 	{
-		if (SettingsEqual(theViewedObj,myMGdata))
-			if (ELEMORD(theMG))
+		else if (SettingsEqual(vo, myMGdata))
+			if (ELEMORD(mg))
 				/* no ordering neccessary */
-				return (0);
-	}
+				return 0;
+		else
+			/* save changed settings */
+			SaveSettings(vo, myMGdata);
 	
 	OE_force_ordering = FALSE;
 	
 	/* inits */
-	OE_ViewedObj = theViewedObj;	
+	OE_ViewedObj = vo;
 		
 	/* calculate the viewable sides of all elements on all levels */
-	for (i=0; i<=theMG->topLevel; i++)	
-		CalcViewableSidesOnGrid(theMG->grids[i]);
+	for (i = 0; i <= mg->topLevel; i++)	
+		CalcViewableSidesOnGrid(mg->grids[i]);
 	
-	/* allocate memory for the element list on level 0 (but at least for maximal number of sons of an element) */
-	theGrid = theMG->grids[0];
-	if (theGrid->nElem<1)
-	  return(0);
-	theHeap = theMG->theHeap;
-	Mark(theHeap,FROM_TOP);
-	if ( (table=(ELEMENT **)GetMem(theHeap,MAX(theGrid->nElem,MAX_SONS)*sizeof(ELEMENT *),FROM_TOP)) == NULL )
-	{
-		Release(theHeap,FROM_TOP);
-		UserWrite("ERROR: could not allocate memory from the MGHeap\n");
-		RETURN(1);
+	/* allocate memory for and compute OS_Data (parallel case only) */
+	#ifdef ModelP
+	heap = mg->theHeap;
+	Mark(heap, FROM_TOP);
+	err = 0;
+	for (i = 0; i <= mg->topLevel; i++) {
+		grid = mg->grids[i];
+		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
+			if (DDD_InfoPriority(PARHDRE(p)) != PrioGhost)
+				if ((OS_LINK(p) = (OS_DATA *) GetMem(heap, sizeof(OS_DATA), FROM_TOP)) == NULL) {
+					err = 1;
+					goto fault;
+				}
 	}
-	
-	/* order elements on level zero */
-
-    start = clock();    
-	OE_nCompareElements = 0;
-	i=0;
-	switch (OE_OrderStrategy) /* select order strategy */
-	{
-	case 0:
-		res = OrderFathersXSH(theGrid, theHeap, table);
-		switch (res) 
-		{
-		case 0:
-			break;
-		case 1:
-			UserWrite("Cycle detected while ordering coarse grid.\n");
-			UserWrite("Falling back on slow method ... \n");
-			i=0;
-			for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
-				table[i++] = theElement;
-			SelectionSort((void *)table,i,sizeof(*table),CompareElements);
-			break;
-		case 2:
-			return 1;
-		}
-		break;
-
-	case 1:
-		i=0;
-		for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
-			table[i++] = theElement;
-        #ifndef ModelP
-		if (i!=NT(theGrid)) return (1);
-        #endif
-	    if (OrderFathersNNS(table, theHeap, i)) RETURN(1);
-		break;
-
-	case 2:
-		i=0;
-		for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
-			table[i++] = theElement;
-        #ifndef ModelP
-		if (i!=NT(theGrid)) return (1);
-        #endif
-		SelectionSort((void *)table,i,sizeof(*table),CompareElements);
-		break;
+	fault:
+	err = UG_GlobalMaxINT(err);
+	if (err) {
+		UserWrite("Insufficient memory for ordering elements.\n");
+		Release(heap, FROM_TOP);
+		return 1;
 	}
+	ComputeOS_Data(mg);
+	#endif
 
-	stop = clock();
-    
-    UserWriteF( "order strategy:                %d\n",OE_OrderStrategy);
-    UserWriteF( "time for ordering coarse grid: %7.2f s\n", 
-			     (stop-start)/(DOUBLE)CLOCKS_PER_SEC);
-	UserWriteF( "number of CompareElements    : %9d\n", OE_nCompareElements);
-
-	if (PutAtEndOfList(theGrid,i,table)!=GM_OK) RETURN(1);	
+   	/* order elements on level zero */
+	if (OrderCoarseGrid(mg)) {
+		UserWrite("Insufficient memory to order elements.\n");
+		#ifdef ModelP
+		Release(heap, FROM_TOP);
+		#endif
+		return 1;
+	}
 
 	/* now order level 1 to toplevel hirarchically */
-	for (i=0; i<theMG->topLevel; i++)
-	{
-		theGrid = theMG->grids[i];
-		for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
-		{
-			if (NSONS(theElement)<=0) continue;
-			OrderSons(table,theElement);
-			if (PutAtEndOfList(UPGRID(theGrid),NSONS(theElement),table)!=GM_OK) RETURN(1);
-		}
+	if (OrderHirarchically(mg)) {
+		UserWrite("Insufficient memory to order elements.\n");
+		#ifdef ModelP
+		Release(heap, FROM_TOP);
+		#endif
+		return 1;
 	}
-	
-	/* release heap */
-	Release(theHeap,FROM_TOP);
-	
-	/* save changed settings */
-	SaveSettings(theViewedObj,myMGdata);
-	SETELEMORD(theMG,TRUE);
-	
+
+	#ifdef ModelP
+	/* store PlotID in element ID */
+	for (i = 0; i <= mg->topLevel; i++) {
+		grid = mg->grids[i];
+		for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
+				ID(p) = PLOT_ID(p);
+	}
+	Release(heap, FROM_TOP);
+
+	/* sort grids */
+	if (SortLevelsLocally(mg)) {
+		UserWrite("Insufficient memory to order elements.\n");
+		return 1;
+	}
+	#endif
+
 	return (0);
 }
+
 
 /****************************************************************************/
 /*
@@ -16420,10 +17091,10 @@ void ConnectWopTree()
    NumberOfDesc - computes the number of descandants of every node
 
    SYNOPSIS:
-   void NumberOfDesc(INT *nbDesc)
+   void NumberOfDesc()
 
    PARAMETERS:
-   nbDesc - array to store computed number of descandants 
+   none
 
    DESCRIPTION:
    This function computes the number of descandants of every node in the
@@ -16434,7 +17105,7 @@ void ConnectWopTree()
 */
 /****************************************************************************/
 
-void NumberOfDesc(INT *nbDesc)
+void NumberOfDesc()
 {
 	msgid umid, dmid[WOP_DOWN_CHANNELS];
 	INT   uerr, derr[WOP_DOWN_CHANNELS];
@@ -16443,8 +17114,8 @@ void NumberOfDesc(INT *nbDesc)
 
 	noDesc = 1;
 	for (i=0; i<WOP_DOWN_CHANNELS; i++) {
-		nbDesc[i] = 0;
-		noDesc    = (noDesc && WOP_DownChannel[i] == NULL);
+		WOP_NbDesc[i] = 0;
+		noDesc        = (noDesc && WOP_DownChannel[i] == NULL);
 	}
 	if (procs < 2) return;
 	if (noDesc) {
@@ -16455,7 +17126,7 @@ void NumberOfDesc(INT *nbDesc)
 	else {
 		for (i=0; i<WOP_DOWN_CHANNELS; i++) {
 			if (WOP_DownChannel[i] != NULL) {
-				dmid[i] = RecvASync(WOP_DownChannel[i], &nbDesc[i], 
+				dmid[i] = RecvASync(WOP_DownChannel[i], &WOP_NbDesc[i], 
 									sizeof(INT), &derr[i]);
 				while (InfoARecv(WOP_DownChannel[i], dmid[i]) != 1);
 			}
@@ -16465,7 +17136,7 @@ void NumberOfDesc(INT *nbDesc)
 		if (WOP_UpChannel != NULL) {
 			sum = 0;
 			for (i=0; i<WOP_DOWN_CHANNELS; i++)
-				sum += nbDesc[i];
+				sum += WOP_NbDesc[i];
 			sum++;
 			umid = SendASync(WOP_UpChannel, &sum, sizeof(sum), &uerr);
 			while (InfoASend(WOP_UpChannel, umid) != 1);
@@ -16509,6 +17180,11 @@ void PWorkGEN_Init()
 	WOP_More   [WOP_DOWN_CHANNELS] = 1;
 
 	WOP_CurrDoLen = 0;
+
+	#ifdef __THREEDIM__
+	WOP_Sending[0] = -1;
+	WOP_nextID = -1;
+	#endif
 }   
 
 
@@ -16567,7 +17243,7 @@ void PWorkGEN_Execute()
 			if (InfoARecv(WOP_DownChannel[i], WOP_Inmsg[i]) == 1) {
 				WOP_Count[i]++;
 				WOP_Receiving[i] = 0;
-				if (DO_2c(WOP_DO_Buffer[i][WOP_Front[i]]) == DO_END_TOKEN)
+				if (DO_2INT(WOP_DO_Buffer[i][WOP_Front[i]]) == END_TOKEN)
 					WOP_More[i] = (++WOP_NbTokens[i] < WOP_NbDesc[i]);
 				WOP_Front[i] = (WOP_Front[i] + 1) % DO_BUFFER_SLOTS;
 			}
@@ -16617,6 +17293,16 @@ void PWorkGEN_Execute()
    SYNOPSIS:
    void PWorkEW_Evaluate()
 
+   DESCRIPTION:
+   Evaluates DOs in packets of the following format:
+
+   +-------+-----+-----+-----+---+
+   ! TOKEN ! DO1 ! DO2 ! ... ! 0 !
+   +-------+-----+-----+-----+---+
+
+   The token tells wether this packet is the last one. DOs can be packed as
+   long as the packet length does not exceed the slot length.
+
    PARAMETERS:
    none
 
@@ -16631,33 +17317,241 @@ void PWorkEW_Evaluate()
 	DRAWINGOBJ *p, *p1;
 
 	i = WOP_DOWN_CHANNELS;
-	if (WOP_More[i] && WOP_Count[i] < DO_BUFFER_SLOTS) {
+
+	/* see if we are active an have an empty slot */
+	if (WOP_More[i] && WOP_Count[i] < DO_BUFFER_SLOTS) 
+	{
+		/* set pointers and default token */
 		p = p1 = WOP_DO_Buffer[i][WOP_Front[i]];
 		DO_inc(p);
-		DO_2c(p1) = DO_NO_INST;
-		do {
+		DO_2INT(p1) = NO_TOKEN;
+
+		/* evaluate as long as DOs can be packed */
+		do 
+		{
+			/* copy last DO in slot */
 			if (WOP_CurrDoLen > 0) {
 				memcpy(p, WOP_DrawingObject, (size_t)(WOP_CurrDoLen));
 				p = (DRAWINGOBJ *) (DO_2cp(p) + WOP_CurrDoLen);
 			}
+
+			/* last element reached ? */
 			if (WOP_Element == NULL) {
-				DO_2c(p1) = DO_END_TOKEN;
+				DO_2INT(p1) = END_TOKEN;
 				WOP_More[i] = 0;
 				break;
 			}
-			else {
+			else 
+			{
+				/* prepare next element */
 				(*WOP_EW_EvaluateProc)(WOP_Element, WOP_DrawingObject);
 				WOP_CurrDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
 				WOP_Element = (*WOP_EW_GetNextElementProc)(WOP_Element);
 			}
 		} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
 				 > WOP_CurrDoLen);
+
+		/* set endmarker */
 		DO_2c(p) = DO_NO_INST;
+
+		/* book slot */
 		WOP_Count[i]++;
 		WOP_Front[i] = (WOP_Front[i] + 1) % DO_BUFFER_SLOTS;
 	}
 }
 
+/****************************************************************************/
+/*
+   PWorkEW_Execute_3D - executes and communicates DOs in order (elementwise)
+
+   SYNOPSIS:
+   void PWorkEW_Execute_3D()
+
+   DESCRIPTION:
+
+   PARAMETERS:
+   none
+
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
+
+void PWorkEW_Execute_3D()
+{
+	INT i, k, t, min;
+
+	/* receive DOs */
+
+	/* check all down channels */
+	for (i = 0; i < WOP_DOWN_CHANNELS; i++) {
+		if (WOP_Receiving[i])
+			if (InfoARecv(WOP_DownChannel[i], WOP_Inmsg[i]) == 1) {
+				WOP_Count[i]++;
+				WOP_Receiving[i] = 0;
+				if (DO_2INT(WOP_DO_Buffer[i][WOP_Front[i]]) == END_TOKEN)
+					WOP_More[i] = (++WOP_NbTokens[i] < WOP_NbDesc[i]);
+				WOP_Front[i] = (WOP_Front[i] + 1) % DO_BUFFER_SLOTS;
+			}
+		if (WOP_More[i] && !WOP_Receiving[i])
+			if (WOP_Count[i] < DO_BUFFER_SLOTS) {
+				WOP_Receiving[i] = 1;
+				WOP_Inmsg[i] = RecvASync(WOP_DownChannel[i],
+										 WOP_DO_Buffer[i][WOP_Front[i]], 
+										 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &WOP_RError[i]);
+			}
+	}
+	
+	/* execute or send own and received DOs in order */
+
+	if (me == master) 
+	{
+		/* check if all active buffers have a full slot 
+		   and determine the one with minimum ID */
+		min = MAXINT;
+		for (i = 0; i <= WOP_DOWN_CHANNELS; i++) {
+			if (WOP_Count[i] == 0) {
+				if (!WOP_More[i])
+					continue;
+				else
+					return;
+			}
+			t = DO_2INT(WOP_DO_Buffer[i][WOP_Rear[i]]+1);
+			if (t < min) {
+				min = t;
+				k   = i;
+			}
+		}
+		if (min == MAXINT) return;
+
+		/* execute DO from slot with minimum ID */
+		(*WOP_GEN_ExecuteProc)(WOP_DO_Buffer[k][WOP_Rear[k]]+2);
+		WOP_Count[k]--;
+		WOP_Rear[k] = (WOP_Rear[k] + 1) % DO_BUFFER_SLOTS;
+	}
+
+	else {
+		if (WOP_Sending[0] >= 0)
+			if (InfoASend(WOP_UpChannel, WOP_Outmsg[0]) == 1) {
+				WOP_Count[WOP_Sending[0]]--;
+				WOP_Rear[WOP_Sending[0]] = (WOP_Rear[WOP_Sending[0]] + 1)
+					                                       % DO_BUFFER_SLOTS;
+				WOP_Sending[0] = -1;
+			}
+		if (WOP_Sending[0] < 0) 
+		{
+			/* check if all active buffers have a full slot 
+			   and determine the one with minimum ID */
+			min = MAXINT;
+			for (i = 0; i <= WOP_DOWN_CHANNELS; i++) {
+				if (WOP_Count[i] == 0) {
+					if (!WOP_More[i])
+						continue;
+					else
+						return;
+				}
+				t = DO_2INT(WOP_DO_Buffer[i][WOP_Rear[i]]+1);
+				if (t < min) {
+					min = t;
+					k   = i;
+				}
+			}
+			if (min == MAXINT) return;
+
+			/* send DO from slot with minimum ID */
+			WOP_Sending[0] = k;
+			WOP_Outmsg[0] = SendASync(WOP_UpChannel, WOP_DO_Buffer[k][WOP_Rear[k]],
+							   	      DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &WOP_SError[0]);
+		}
+	}
+}
+
+/****************************************************************************/
+/*
+   PWorkEW_Evaluate_3D - evaluates elementwise 
+
+   SYNOPSIS:
+   void PWorkEW_Evaluate_3D()
+
+   DESCRIPTION:
+   Evaluates DOs in packets of the following format:
+
+   +-------+----+-----+-----+-----+---+
+   ! TOKEN ! ID ! DO1 ! DO2 ! ... ! 0 !
+   +-------+----+-----+-----+-----+---+
+
+   The token tells wether this packet is the last one. ID is the plot id.
+   DOs can be packed as long as their IDs are successive and the packet
+   length does not exceed the slot length.
+
+   PARAMETERS:
+   none
+
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
+
+void PWorkEW_Evaluate_3D()
+{
+	INT i;
+	DRAWINGOBJ *p, *p1, *p2;
+
+	i = WOP_DOWN_CHANNELS;
+
+	/* see if we are active an have an empty slot */
+	if (WOP_More[i] && WOP_Count[i] < DO_BUFFER_SLOTS) 
+	{
+		/* set pointers and default token */
+		p = p1 = WOP_DO_Buffer[i][WOP_Front[i]];
+		DO_2INT(p1) = NO_TOKEN;
+		DO_inc(p);
+		p2 = p;
+		DO_inc(p);
+
+		/* loop until slot is nonempty */
+		do 
+		{
+			/* evaluate as long as DOs can be packed */
+			do 
+			{
+				/* copy last DO in slot */
+				if (WOP_CurrDoLen > 0) {
+					memcpy(p, WOP_DrawingObject, (size_t)(WOP_CurrDoLen));
+					p = (DRAWINGOBJ *) (DO_2cp(p) + WOP_CurrDoLen);
+				}
+				WOP_lastID = WOP_nextID;
+
+				/* last element reached ? */
+				if (WOP_Element == NULL) {
+					DO_2INT(p1) = END_TOKEN;
+					WOP_More[i] = 0;
+					goto fin;
+				}
+				else 
+				{
+					/* prepare next element */
+					(*WOP_EW_EvaluateProc)(WOP_Element, WOP_DrawingObject);
+					WOP_nextID = ID(WOP_Element);
+					if (WOP_lastID < 0) WOP_lastID = WOP_nextID-1;
+					WOP_CurrDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
+					WOP_Element = (*WOP_EW_GetNextElementProc)(WOP_Element);
+				}
+			} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
+					 > WOP_CurrDoLen && WOP_nextID == WOP_lastID+1);
+
+		} while ( p == p2+1);
+
+	fin:
+		/* set endmarker and plot id */
+		DO_2c(p) = DO_NO_INST;
+		DO_2INT(p2) = WOP_lastID;
+
+		/* book slot */
+		WOP_Count[i]++;
+		WOP_Front[i] = (WOP_Front[i] + 1) % DO_BUFFER_SLOTS;
+	}
+}
 
 /****************************************************************************/
 /*
@@ -16665,6 +17559,9 @@ void PWorkEW_Evaluate()
 
    SYNOPSIS:
    void PWorkNW_Evaluate()
+
+   DESCRIPTION:
+   see PWorkEW_Evaluate
 
    PARAMETERS:
    none
@@ -16683,14 +17580,14 @@ void PWorkNW_Evaluate()
 	if (WOP_More[i] && WOP_Count[i] < DO_BUFFER_SLOTS) {
 		p = p1 = WOP_DO_Buffer[i][WOP_Front[i]];
 		DO_inc(p);
-		DO_2c(p1) = DO_NO_INST;
+		DO_2INT(p1) = NO_TOKEN;
 		do {
 			if (WOP_CurrDoLen > 0) {
 				memcpy(p, WOP_DrawingObject, (size_t)(WOP_CurrDoLen));
 				p = (DRAWINGOBJ *) (DO_2cp(p) + WOP_CurrDoLen);
 			}
 			if (WOP_Node == NULL) {
-				DO_2c(p1) = DO_END_TOKEN;
+				DO_2INT(p1) = END_TOKEN;
 				WOP_More[i] = 0;
 				break;
 			}
@@ -16715,6 +17612,9 @@ void PWorkNW_Evaluate()
    SYNOPSIS:
    void PWorkVW_Evaluate()
 
+   DESCRIPTION:
+   see PWorkEW_Evaluate
+
    PARAMETERS:
    none
 
@@ -16732,14 +17632,14 @@ void PWorkVW_Evaluate()
 	if (WOP_More[i] && WOP_Count[i] < DO_BUFFER_SLOTS) {
 		p = p1 = WOP_DO_Buffer[i][WOP_Front[i]];
 		DO_inc(p);
-		DO_2c(p1) = DO_NO_INST;
+		DO_2INT(p1) = NO_TOKEN;
 		do {
 			if (WOP_CurrDoLen > 0) {
 				memcpy(p, WOP_DrawingObject, (size_t)(WOP_CurrDoLen));
 				p = (DRAWINGOBJ *) (DO_2cp(p) + WOP_CurrDoLen);
 			}
 			if (WOP_Vector == NULL) {
-				DO_2c(p1) = DO_END_TOKEN;
+				DO_2INT(p1) = END_TOKEN;
 				WOP_More[i] = 0;
 				break;
 			}
@@ -16797,7 +17697,7 @@ static INT WOP_Init(INT WOP_WorkMode)
 				#endif
 				{
 					UserWrite("ording of elements failed\n");
-					RETURN(1);
+					return 1;
 				}
 			}
 		
@@ -16921,19 +17821,39 @@ static INT WorkEW()
 #else
 
 	/*** Parallel Version ***/
-
-	PWorkGEN_Init();
-
+	
 	WOP_Element = (CONTEXT(me) ?
       (*WOP_EW_GetFirstElementProc)(WOP_MG, 0, WOP_MG->currentLevel) : NULL);
 
-	for (;;) {
-		if (PWorkGEN_Quit()) break;
-		PWorkGEN_Execute();
-		PWorkEW_Evaluate();
+	switch (W_ID(WOP_Work))
+	{
+	case DRAW_WORK:
+		PWorkGEN_Init();
+        #ifdef __TWODIM__
+		for (;;) {
+			if (PWorkGEN_Quit()) break;
+			PWorkGEN_Execute();
+			PWorkEW_Evaluate();
+		}
+       #endif
+       #ifdef __THREEDIM__
+		for (;;) {
+			if (PWorkGEN_Quit()) break;
+			PWorkEW_Execute_3D();
+			PWorkEW_Evaluate_3D();
+		}
+        #endif
+		break;
+	case  FINDRANGE_WORK:
+		for (; WOP_Element != NULL; WOP_Element = (*WOP_EW_GetNextElementProc)(WOP_Element)) {
+			(*WOP_EW_EvaluateProc)(WOP_Element, WOP_DrawingObject);
+			(*WOP_GEN_ExecuteProc)(WOP_DrawingObject);
+		}
+		break;
+	default:
+		return 1;
 	}
-  
-	return (0);
+	return 0;
 
 #endif
 }
@@ -17145,9 +18065,9 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 	if (me == master)
 	#endif
 	error=PrepareGraph(WOP_Picture);
-        #ifdef ModelP
-        Broadcast(&error, sizeof(error));
-        #endif
+    #ifdef ModelP
+	Broadcast(&error, sizeof(error));
+    #endif
         if (error)
 	{
 		UserWrite("cannot activate low level graphic\n");
@@ -17165,23 +18085,23 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 	if (W_ID(theWork) == DRAW_WORK)
 	{
 	        if (PO_CBD(PIC_PO(WOP_Picture)) == YES) {
-                        #ifdef ModelP
-                        if (me == master)
-			#endif
-			error = (ErasePicture(WOP_Picture));
-                        #ifdef ModelP
-                        Broadcast(&error, sizeof(error));
-                        #endif 
-			if (error) return (1);
-                }
                 #ifdef ModelP
-                if (me == master)
-	        #endif
-		error = DrawPictureFrame(WOP_Picture,WOP_WORKING);
+				if (me == master)
+			    #endif
+				error = (ErasePicture(WOP_Picture));
                 #ifdef ModelP
-                Broadcast(&error, sizeof(error));
+				Broadcast(&error, sizeof(error));
                 #endif 
-                if (error) return(1);
+				if (error) return (1);
+			}
+            #ifdef ModelP
+			if (me == master)
+	        #endif
+		    error = DrawPictureFrame(WOP_Picture,WOP_WORKING);
+            #ifdef ModelP
+			Broadcast(&error, sizeof(error));
+            #endif 
+			if (error) return(1);
 	}
 			
 	for (i=0; i<POH_NBCYCLES(WOP_PlotObjHandling,W_ID(WOP_Work)); i++)
@@ -17190,7 +18110,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 		WOP_WorkMode = WP_WORKMODE(WOP_WorkProcs);
 
 		/* initialize */
-		if (WOP_Init(WOP_WorkMode)!=0) RETURN(1);
+		if (WOP_Init(WOP_WorkMode)!=0) return 1;
 
 		/* work */
 		if (WOP_GEN_PreProcessProc!=NULL)
@@ -18960,10 +19880,10 @@ INT InitWOP (void)
 	/* set PlotObjTypes of PlotObjHandlings */
 	if (InitPlotObjTypes()) return (__LINE__);
 
-        #ifdef ModelP
-        ConnectWopTree();
-        NumberOfDesc(WOP_NbDesc);
-        #endif
+    #ifdef ModelP
+	ConnectWopTree();
+	NumberOfDesc();
+    #endif
 
 	return(0);
 }
