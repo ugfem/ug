@@ -606,22 +606,25 @@ INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh, INT MarkKey)
   if ((*ReadMesh)(theHeap,&lgm_mesh_info,MarkKey)) return (1);
 
   /* copy mesh_info to mesh and create BNDPs */
-  theMesh->nBndP                    = lgm_mesh_info.nBndP;
-  theMesh->nInnP                     = lgm_mesh_info.nInnP;
-  theMesh->Position                 = lgm_mesh_info.InnPosition;
-  theMesh->nSubDomains              = lgm_mesh_info.nSubDomains;
-  theMesh->nSides                   = lgm_mesh_info.nSides;
-  theMesh->Side_corners             = lgm_mesh_info.Side_corners;
-  theMesh->Side_corner_ids          = lgm_mesh_info.Side_corner_ids;
-  theMesh->nElements                = lgm_mesh_info.nElements;
-  theMesh->Element_corners          = lgm_mesh_info.Element_corners;
-  theMesh->Element_corner_ids       = lgm_mesh_info.Element_corner_ids;
-  theMesh->nbElements               = lgm_mesh_info.nbElements;
-  for (i=0; i<lgm_mesh_info.nBndP; i++)
-  {
-    theMesh->theBndPs[i] = NULL;
-  }
-  theMesh->ElemSideOnBnd            = NULL;
+  assert(0); /* not compilable for T3D/T3E sine data types don't match */
+  /*
+      theMesh->nBndP                    = lgm_mesh_info.nBndP;
+      theMesh->nInnP                     = lgm_mesh_info.nInnP;
+      theMesh->Position                 = lgm_mesh_info.InnPosition;
+      theMesh->nSubDomains              = lgm_mesh_info.nSubDomains;
+      theMesh->nSides                   = lgm_mesh_info.nSides;
+      theMesh->Side_corners             = lgm_mesh_info.Side_corners;
+          theMesh->Side_corner_ids          = lgm_mesh_info.Side_corner_ids;
+      theMesh->nElements                = lgm_mesh_info.nElements;
+      theMesh->Element_corners          = lgm_mesh_info.Element_corners;
+      theMesh->Element_corner_ids       = lgm_mesh_info.Element_corner_ids;
+      theMesh->nbElements               = lgm_mesh_info.nbElements;
+      for (i=0; i<lgm_mesh_info.nBndP; i++)
+      {
+          theMesh->theBndPs[i] = NULL;
+      }
+      theMesh->ElemSideOnBnd            = NULL;
+   */
 
   return (1);
 }
