@@ -16,10 +16,10 @@ ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lm
 
-ARCH_CFLAGS   = -pipe
+ARCH_CFLAGS   = -pipe -m64
 ARCH_NOOPTIM  = -g
-ARCH_OPTIM    = -m64 -O3 -fomit-frame-pointer -funroll-loops -fno-strict-aliasing
-ARCH_C++FLAGS = -fpermissive
+ARCH_OPTIM    = -O3 -fomit-frame-pointer -funroll-loops -fno-strict-aliasing
+ARCH_C++FLAGS = -fpermissive -m64
 ARCH_LFLAGS   = -m64
 ARCH_ARFLAGS  = rus
 
