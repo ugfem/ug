@@ -2293,13 +2293,13 @@ INT                     SaveCnomGridAndValues (MULTIGRID *theMG, char *FileName,
 #endif
 
 /* coarse grid manipulations */
-NODE        *InsertInnerNode            (MULTIGRID *theMG, DOUBLE *pos);
-NODE        *InsertBoundaryNode     (MULTIGRID *theMG, BNDP *bndp);
+NODE        *InsertInnerNode            (GRID *theGrid, DOUBLE *pos);
+NODE        *InsertBoundaryNode     (GRID *theGrid, BNDP *bndp);
 
-INT             DeleteNodeWithID                (MULTIGRID *theMG, INT id);
-INT             DeleteNode                              (MULTIGRID *theMG, NODE *theNode);
-ELEMENT     *InsertElementFromIDs       (MULTIGRID *theMG, INT n, INT  *idList);
-ELEMENT     *InsertElement                      (MULTIGRID *theMG, INT n, NODE **NodeList, ELEMENT **ElemList, INT *NbgSdList);
+INT             DeleteNodeWithID                (GRID *theGrid, INT id);
+INT             DeleteNode                              (GRID *theGrid, NODE *theNode);
+ELEMENT     *InsertElementFromIDs       (GRID *theGrid, INT n, INT  *idList);
+ELEMENT     *InsertElement                      (GRID *theGrid, INT n, NODE **NodeList, ELEMENT **ElemList, INT *NbgSdList);
 INT         InsertMesh              (MULTIGRID *theMG, MESH *theMesh);
 INT             DeleteElementWithID     (MULTIGRID *theMG, INT id);
 INT             DeleteElement                   (MULTIGRID *theMG, ELEMENT *theElement);
@@ -2461,7 +2461,7 @@ EVECTOR         *GetFirstElementVectorEvalProc                          (void);
 EVECTOR         *GetNextElementVectorEvalProc                           (EVECTOR *EvecProc);
 
 /* miscellaneous */
-INT             RenumberMultiGrid               (MULTIGRID *theMG);
+INT             RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, INT *foid, INT *non);
 INT                     OrderNodesInGrid                (GRID *theGrid, const INT *order, const INT *sign, INT AlsoOrderLinks);
 INT             PutAtEndOfList          (GRID *theGrid, INT cnt, ELEMENT **elemList);
 INT         MGSetVectorClasses      (MULTIGRID *theMG);
