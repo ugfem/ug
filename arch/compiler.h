@@ -495,6 +495,7 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 /* basic types */
 #define SHORT  short
 #define INT    int
+#define INT64  long long
 #define FLOAT  float
 #define DOUBLE double
 #define COORD  float
@@ -510,12 +511,29 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 
 /* current time as DOUBLE value */
 #undef CURRENT_TIME
+
+#if 0
+/*
+ * Use Time Stamp Counter (Pentium and later) for time measurement
+ * Resolution: one clock cycle, Wraparound: after hundreds of years
+ */
+#define TICKS_PER_SEC 400919000 /* Adapt this!! (mean value for speedo's nodes) */
+static inline double x86_highres_clock(void)
+{
+  unsigned long long t;
+  __asm__ __volatile__ ("rdtsc" : "=A" (t));
+  return (double)t/TICKS_PER_SEC;
+}
+#define CURRENT_TIME x86_highres_clock()
+
+#else
 #ifndef ARCH_LONG_TIMER
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 #else
 #define CURRENT_TIME   ((double)time(NULL))
 #undef ARCH_DIFF_TIMER
 #define ARCH_DIFF_TIMER(x,y) (difftime((time_t)(x),(time_t)(y)))
+#endif
 #endif
 
 #endif
