@@ -257,17 +257,6 @@ INT InitUg (int *argcp, char ***argvp)
     return (1);
   }
 
-  /* init the graphics module */
-  if ((err=InitGraphics())!=0)
-  {
-    printf("ERROR in InitUg while InitGraphics (line %d): called routine line %d\n",
-           (int) HiWrd(err), (int) LoWrd(err));
-    printf ("aborting ug\n");
-
-    return (1);
-  }
-
-
   /* init the numerics module */
   if ((err=InitNumerics())!=0)
   {
@@ -282,6 +271,16 @@ INT InitUg (int *argcp, char ***argvp)
   if ((err=InitUi(argcp[0],argvp[0]))!=0)
   {
     printf("ERROR in InitUg while InitUi (line %d): called routine line %d\n",
+           (int) HiWrd(err), (int) LoWrd(err));
+    printf ("aborting ug\n");
+
+    return (1);
+  }
+
+  /* init the graphics module */
+  if ((err=InitGraphics())!=0)
+  {
+    printf("ERROR in InitUg while InitGraphics (line %d): called routine line %d\n",
            (int) HiWrd(err), (int) LoWrd(err));
     printf ("aborting ug\n");
 
