@@ -52,7 +52,6 @@
 #include "assemble.h"
 
 #include "fas.h"
-#include "iter.h"
 #include "nliter.h"
 
 /****************************************************************************/
@@ -523,20 +522,17 @@ static INT NLGSPreProcess  (NP_NL_ITER *theNP, INT level,
                             MATDATA_DESC *A, INT *baselevel, INT *result)
 {
 
-  NP_NL_SMOOTHER *np;
-  GRID *theGrid;
-  MULTIGRID *mg;
-
-  theGrid = NP_GRID(theNP,level);
-  mg = theNP->base.mg;
-  np =(NP_NL_SMOOTHER *) theNP;
+  NP_NL_SMOOTHER *np =(NP_NL_SMOOTHER *) theNP;
+  GRID *theGrid = NP_GRID(theNP,level);
+  MULTIGRID *mg = theNP->base.mg;
 
   if (AllocVDFromVD(mg,level,level,x,&(np->c)))
     NP_RETURN(1,result[0]);
         #ifdef ModelP
   if (AllocMDFromMD(mg,level,level,A,&np->L))
     NP_RETURN(1,result[0]);
-  if (dmatcopy(mg,level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
+  if (dmatcopy(mg,level,level,ALL_VECTORS,np->L,A) != NUM_OK)
+    NP_RETURN(1,result[0]);
   if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
     NP_RETURN(1,result[0]);
         #endif
@@ -563,13 +559,8 @@ static INT NLGSStep (NP_NL_SMOOTHER *theNP, INT level,
 
   for (i=0; i<nlgs->niter; i++)
   {
-    /* Jacobi matrix */
     dmatset(mg,level,level,ALL_VECTORS,A,0.0);
     dset (mg,level,level,ALL_VECTORS,theNP->c,0.0);
-    if ((*ass->NLAssembleMatrix)(ass,0,level,x,b,theNP->c,A,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN(error);
-    }
 
     /* iterate */
     if (l_nlgs(nlgs,ass,NP_GRID(theNP,level),theNP->damp,x,theNP->c,A,b) != NUM_OK) NP_RETURN(1,result[0]);
@@ -616,7 +607,7 @@ INT l_nlgs (NP_NLGS *nlgs, NP_NL_ASSEMBLE *ass, GRID *grid, const DOUBLE *damp,
     myindex = VINDEX(vec);
 
     /* Jacobi matrix */
-    if ((*ass->NLNAssembleMatrix)(ass,0,level,theNode,x,d,v,M,&error)) {
+    if ((*ass->NLNAssembleMatrix)(ass,level,level,theNode,x,d,v,M,&error)) {
       error = __LINE__;
       REP_ERR_RETURN(error);
     }
@@ -625,18 +616,18 @@ INT l_nlgs (NP_NLGS *nlgs, NP_NL_ASSEMBLE *ass, GRID *grid, const DOUBLE *damp,
     for (i=0; i<n; i++)
       r[i] = VVALUE(vec,dcomp[i]);
 
-    /* rhs */
-    for (ctype=0; ctype<=NVECTYPES; ctype++)
-      if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
-      {
-        SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
-        s0 = s1 = 0.0;
-        for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
-          if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
-            MATMUL_22(s,mat,m,w,cy);
-        r[0] -= s0;
-        r[1] -= s1;
-      }
+    /* rhs
+       for (ctype=0; ctype<=NVECTYPES; ctype++)
+       if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
+            {
+                    SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
+                s0 = s1 = 0.0;
+                    for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+                            if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
+                                    MATMUL_22(s,mat,m,w,cy);
+                                    r[0] -= s0;
+                                    r[1] -= s1;
+       }*/
 
     /* solve */
     if (MySolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
@@ -650,15 +641,7 @@ INT l_nlgs (NP_NLGS *nlgs, NP_NL_ASSEMBLE *ass, GRID *grid, const DOUBLE *damp,
 
     /* update solution */
     for (i=0; i<n; i++)
-      VVALUE(vec,xcomp[i]) += VVALUE(vec,vcomp[i]);
-
-    /* calculate rhs */
-    if (dset  (mg,level,level,ALL_VECTORS,d,0.0))
-      return (1);
-    if ((*ass->NLNAssembleDefect)(ass,0,level,theNode,x,d,M,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN(error);
-    }
+      VVALUE(vec,xcomp[i]) -= VVALUE(vec,vcomp[i]);
   }
 
   return (0);
@@ -694,7 +677,7 @@ static INT NLGS_Display (NP_BASE *theNumProc)
   nlgs = (NP_NLGS*) theNumProc;
 
   /* general nl_iter display */
-  NPNLIterDisplay(&(nlgs->smoother.iter));
+  NLSmootherDisplay(&nlgs->smoother);
 
   if (nlgs->displayMode == PCR_NO_DISPLAY)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");

@@ -40,11 +40,11 @@
 #include "general.h"
 #include "debug.h"
 #include "gm.h"
-#include "shapes.h"
 #include "scan.h"
 #include "misc.h"
 #include "numproc.h"
 #include "pcr.h"
+#include "shapes.h"
 #include "np.h"
 
 #include "nls.h"
@@ -64,10 +64,6 @@
 /*                                                                          */
 /****************************************************************************/
 
-#define SMALL_FACTOR    1e-10
-#define DAMP_FACTOR     1.0
-#define RESTRICT_FACTOR 1.0
-
 #define CSTART()    clock_start=CURRENT_TIME;
 #define CSTOP(t,c)  t+=(CURRENT_TIME-clock_start);c++
 
@@ -76,12 +72,6 @@
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
-
-static DOUBLE Factor_One[MAX_VEC_COMP];
-static DOUBLE Factor_MinusOne[MAX_VEC_COMP];
-static DOUBLE Factor_Small[MAX_VEC_COMP];
-static DOUBLE Damp_Factor[MAX_VEC_COMP];
-static DOUBLE Restrict_Factor[MAX_VEC_COMP];
 
 /* variables for timing measurement		*/
 static int fas_c;
@@ -111,7 +101,8 @@ typedef struct
   INT baselevel;                                       /* baselevel					                */
   INT gamma;                                                   /* gamma						                */
   INT maxit;                           /* maximal number of iterations      */
-  DOUBLE reduction[MAX_VEC_COMP];          /* relative reduction of defect		*/
+  DOUBLE damp[MAX_VEC_COMP];           /* damp factor for solution		    */
+  DOUBLE restrict[MAX_VEC_COMP];           /* restrict factor for solution              */
 
   /* and XDATA_DESCs */
   MATDATA_DESC *J;                              /* the Matrix to be solved				        */
@@ -254,7 +245,7 @@ static INT RestrictSolNodeVector (GRID *FineGrid, const VECDATA_DESC *to, const 
    D*/
 /****************************************************************************/
 
-static INT RestrictValue (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
+INT RestrictValue (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
 {
   FORMAT *fmt;
   INT vtype,rv,otype;
@@ -565,7 +556,7 @@ static INT FasSolver (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   for (i=0; i<n_unk; i++) res->first_defect[i] = defect[i];
 
   /* check if iteration is necessary */
-  if (sc_cmp(defect,Factor_Small,fas->d)) {
+  if (sc_cmp(defect,abslimit,fas->d)) {
     res->converged = 1;
     for (i=0; i<n_unk; i++) res->last_defect[i] = defect[i];
     res->error_code = 0;
@@ -602,7 +593,7 @@ static INT FasSolver (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     if (DoPCR(PrintID,defect,PCR_CRATE)) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
 
     /* check if limit reached */
-    if (sc_cmp(defect,Factor_Small,fas->d)) {res->converged=1;      break;}
+    if (sc_cmp(defect,abslimit,fas->d)) {res->converged=1;  break;}
     if (sc_cmp(defect,defect2reach,fas->d)) {res->converged=1;      break;}
   }
 
@@ -636,12 +627,23 @@ INT FasStep (NP_FAS *fas, NP_NL_ASSEMBLE *ass, INT level,
   MULTIGRID *mg;
   GRID *g;
   INT i,error;
+  INT n_unk;
+  DOUBLE Factor_One[MAX_VEC_COMP],Factor_Minus_One[MAX_VEC_COMP];
 
   /* get multigrid and grid */
   mg = NP_MG(fas);
   g = GRID_ON_LEVEL(mg,level);
 
   fas->nlsolver.Assemble = ass;
+
+  /* get number of components */
+  n_unk = VD_NCOMP(x);
+
+  for (i=0; i<n_unk; i++) {
+    Factor_One[i] = 1.0;
+    Factor_Minus_One[i] = -1.0;
+    fas->damp[i] *= -1.0;
+  }
 
   if (level<=fas->baselevel)
   {
@@ -660,78 +662,76 @@ INT FasStep (NP_FAS *fas, NP_NL_ASSEMBLE *ass, INT level,
       error = __LINE__;
       REP_ERR_RETURN (error);
     }
+    return(0);
   }
-  else
-  {
-    /* presmooth */
-    if ((*fas->nliter->PreProcess)
-          (fas->nliter,level,x,fas->d,ass->A,&fas->baselevel,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN (error);
-    }
-    if ((*fas->nliter->NLIter)
-          (fas->nliter,level,x,fas->d,ass->A,fas->nlsolver.Assemble,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN(error);
-    }
-    if ((*fas->nliter->PostProcess)
-          (fas->nliter,level,x,fas->d,ass->A,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN (error);
-    }
+  /* presmooth */
+  if ((*fas->nliter->PreProcess)
+        (fas->nliter,level,x,fas->d,ass->A,&fas->baselevel,&error)) {
+    error = __LINE__;
+    REP_ERR_RETURN (error);
+  }
+  if ((*fas->nliter->NLIter)
+        (fas->nliter,level,x,fas->d,ass->A,fas->nlsolver.Assemble,&error)) {
+    error = __LINE__;
+    REP_ERR_RETURN(error);
+  }
+  if ((*fas->nliter->PostProcess)
+        (fas->nliter,level,x,fas->d,ass->A,&error)) {
+    error = __LINE__;
+    REP_ERR_RETURN (error);
+  }
 
-    /* restrict value */
-    if (dset  (mg,level-1,level-1,ALL_VECTORS,fas->l,0.0))
-      return (1);
-    if (RestrictValue(g,fas->l,x,Restrict_Factor))
-      return (1);
+  /* restrict value */
+  if (dset  (mg,level-1,level-1,ALL_VECTORS,fas->l,0.0))
+    return (1);
+  if (RestrictValue(g,fas->l,x,fas->restrict))
+    return (1);
 
-    /* nonlinear defect on current level */
-    if ((*ass->NLAssembleDefect)(ass,level,level,x,fas->d,ass->A,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN(error);
-    }
+  /* nonlinear defect on current level */
+  if ((*ass->NLAssembleDefect)(ass,level,level,x,fas->d,ass->A,&error)) {
+    error = __LINE__;
+    REP_ERR_RETURN(error);
+  }
 
-    /* restrict defect */
-    if (dset  (mg,level-1,level-1,ALL_VECTORS,fas->d,0.0))
-      return (1);
-    if (StandardRestrict (g,fas->d,fas->d,Factor_One))
-      return (1);
+  /* restrict defect */
+  if (dset  (mg,level-1,level-1,ALL_VECTORS,fas->d,0.0))
+    return (1);
+  if (StandardRestrict (g,fas->d,fas->d,Factor_One))
+    return (1);
 
-    if (dcopy (mg,level-1,level-1,ALL_VECTORS,fas->v,fas->l))
-      return (1);
+  if (dcopy (mg,level-1,level-1,ALL_VECTORS,fas->v,fas->l))
+    return (1);
 
-    /* recursiv call */
-    for (i=0; i<fas->gamma; i++)
-      if (FasStep(fas,ass,level-1,fas->v))
-        return (1);
-
-    /* interpolate correction */
-    if (daxpyx (mg,level-1,level-1,ALL_VECTORS,x,Factor_MinusOne,fas->l))
-      return (1);
-    if (StandardInterpolateCorrection (g,fas->v,x,Factor_One))
+  /* recursiv call */
+  for (i=0; i<fas->gamma; i++)
+    if (FasStep(fas,ass,level-1,fas->v))
       return (1);
 
-    /* update solution */
-    if (daxpyx  (mg,level,level,ALL_VECTORS,x,Damp_Factor,fas->v))
-      return(1) ;
+  /* interpolate correction */
+  if (daxpyx (mg,level-1,level-1,ALL_VECTORS,fas->v,Factor_Minus_One,fas->l))
+    return (1);
+  if (StandardInterpolateCorrection (g,fas->v,fas->v,Factor_One))
+    return (1);
 
-    /* postsmooth */
-    if ((*fas->nliter->PreProcess)
-          (fas->nliter,level,x,fas->d,ass->A,&fas->baselevel,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN (error);
-    }
-    if ((*fas->nliter->NLIter)
-          (fas->nliter,level,x,fas->d,ass->A,fas->nlsolver.Assemble,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN(error);
-    }
-    if ((*fas->nliter->PostProcess)
-          (fas->nliter,level,x,fas->d,ass->A,&error)) {
-      error = __LINE__;
-      REP_ERR_RETURN (error);
-    }
+  /* update solution */
+  if (daxpyx  (mg,level,level,ALL_VECTORS,x,fas->damp,fas->v))
+    return(1) ;
+
+  /* postsmooth */
+  if ((*fas->nliter->PreProcess)
+        (fas->nliter,level,x,fas->d,ass->A,&fas->baselevel,&error)) {
+    error = __LINE__;
+    REP_ERR_RETURN (error);
+  }
+  if ((*fas->nliter->NLIter)
+        (fas->nliter,level,x,fas->d,ass->A,fas->nlsolver.Assemble,&error)) {
+    error = __LINE__;
+    REP_ERR_RETURN(error);
+  }
+  if ((*fas->nliter->PostProcess)
+        (fas->nliter,level,x,fas->d,ass->A,&error)) {
+    error = __LINE__;
+    REP_ERR_RETURN (error);
   }
 
   return (0);
@@ -762,23 +762,10 @@ static INT FasSolverInit (NP_BASE *base, INT argc, char **argv)
   }
 
   /* set configuration parameters */
-  if (sc_read(fas->reduction,NP_FMT(fas),fas->nlsolver.x,"red",argc,argv))
-    for (i=0; i<MAX_VEC_COMP; i++)
-      if ((fas->reduction[i]<0.0)||(fas->reduction[i]>=1.0))
-      {
-        PrintErrorMessage('E',"FasSolverInit","red must be in (0,1)");
-        REP_ERR_RETURN(NP_NOT_ACTIVE);
-      }
-  if (sc_read(Factor_Small,NP_FMT(fas),fas->nlsolver.x,"abslimit",argc,argv))
-    for (j=0; j<MAX_VEC_COMP; j++)
-      Factor_Small[j] = SMALL_FACTOR;
-  if (sc_read(Damp_Factor,NP_FMT(fas),fas->nlsolver.x,"damp",argc,argv))
-    for (j=0; j<MAX_VEC_COMP; j++)
-      Damp_Factor[j] = DAMP_FACTOR;
-  if (sc_read(Restrict_Factor,NP_FMT(fas),fas->nlsolver.x,"res",argc,argv))
-    for (j=0; j<MAX_VEC_COMP; j++)
-      Restrict_Factor[j] = RESTRICT_FACTOR;
-
+  if(sc_read(fas->damp,NP_FMT(fas),fas->l,"damp",argc,argv))
+    REP_ERR_RETURN(1);
+  if(sc_read(fas->restrict,NP_FMT(fas),fas->l,"res",argc,argv))
+    REP_ERR_RETURN(1);
   if (ReadArgvINT("maxit",&(fas->maxit),argc,argv))
     fas->maxit = 50;
   if ((fas->maxit<0)||(fas->maxit>100)) {
@@ -837,9 +824,8 @@ static INT FasSolverDisplay (NP_BASE *theNumProc)
   UserWriteF(DISPLAY_NP_FORMAT_SI,"maxit",(int)fas->maxit);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"gamma",(int)fas->gamma);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)fas->baselevel);
-  if (sc_disp(fas->reduction,fas->nlsolver.x,"red")) REP_ERR_RETURN (1);
-  if (sc_disp(Damp_Factor,fas->nlsolver.x,"damp")) REP_ERR_RETURN (1);
-  if (sc_disp(Restrict_Factor,fas->nlsolver.x,"res")) REP_ERR_RETURN (1);
+  if (sc_disp(fas->damp,fas->l,"damp")) REP_ERR_RETURN (1);
+  if (sc_disp(fas->restrict,fas->l,"res")) REP_ERR_RETURN (1);
 
   return (0);
 }
@@ -883,18 +869,6 @@ static INT FasConstruct (NP_BASE *theNP)
 
 INT InitFasSolver (void)
 {
-  INT i;
-
-  /* init static variables */
-  for (i=0; i<MAX_VEC_COMP; i++)
-  {
-    Factor_Small[i] = 1.0E-10;
-    Factor_One[i] = 1.0;
-    Factor_MinusOne[i] = -1.0;
-    Damp_Factor[i] = 1.0;
-    Restrict_Factor[i] = 1.0;
-  }
-
   if (CreateClass (NL_SOLVER_CLASS_NAME ".fas",
                    sizeof(NP_FAS), FasConstruct))
     REP_ERR_RETURN (__LINE__);
