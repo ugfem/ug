@@ -341,12 +341,18 @@ static void XferGridWithOverlap (GRID *theGrid)
   NODE    *theNode;
   INT i,j,overlap_elem;
 
+
+  for(theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+  {
+    /* create Master copy */
+    XferElement(theElement, PARTITION(theElement), PrioMaster);
+  }
+
+
+  /* create grid overlap */
   for(theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
     overlap_elem = 0;
-
-    /* create Master copy */
-    XferElement(theElement, PARTITION(theElement), PrioMaster);
 
     /* create 1-overlapping of horizontal elements */
     for(j=0; j<SIDES_OF_ELEM(theElement); j++)
