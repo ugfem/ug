@@ -45,6 +45,10 @@ include $(UGROOT)/configs/mk.netgen.$(NETGEN)
 include $(UGROOT)/configs/mk.grape.$(GRAPE)
 
 
+# include macro definitions for grape
+include $(UGROOT)/configs/mk.chaco.$(CHACO)
+
+
 
 # construct new macro definitions from given ones
 UG_CFLAGS =	-c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
@@ -58,7 +62,7 @@ UG_C++FLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 
 UG_LFLAGS = $(ARCH_LFLAGS) $(PPIF_LFLAGS) $(MODEL_LFLAGS) $(GRAPE_LFLAGS) \
 			$(ARCH_XLIBS) $(ARCH_LIBS) $(ENV_LFLAGS) $(ARCH_PLIBS) \
-			$(NETGEN_LFLAGS)
+			$(NETGEN_LFLAGS) $(CHACO_LFLAGS)
 
 UG_POSTLINK = $(ARCH_POSTLINK) ; ugbcheck
 
