@@ -40,7 +40,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define MGIO_VERSION                                    "UG_IO_1.8"
+#define MGIO_VERSION                                    "UG_IO_1.9"
 
 #define __MGIO_USE_IN_UG__
 #define MGIO_DIM                        3
@@ -213,9 +213,7 @@ struct mgio_cg_element {
   int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
   int nhe;                                                                              /* nb of he_elements of this element		*/
   /* if 0 element not refined					*/
-        #if (MGIO_DIM==2)
   int subdomain;                                                                /* id of subdomain							*/
-        #endif
 };
 
 struct mgio_refinement {

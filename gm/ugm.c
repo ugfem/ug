@@ -6928,6 +6928,67 @@ VIRT_HEAP_MGMT *GetGenMGUDM()
   return (theGenMGUDM);
 }
 
+INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
+{
+  HEAP *theHeap;
+  GRID *theGrid;
+  ELEMENT *theElement, *theNeighbor;
+  void *buffer;
+  INT i,k,n,id,nbid;
+  FIFO myfifo;
+
+  /* prepare */
+  if (DIM==2) return (1);
+  if (TOPLEVEL(theMG)>0) return (1);
+  theGrid = GRID_ON_LEVEL(theMG,0);
+  n = NT(theGrid);        if (n==0) return (1);
+
+  /* allocate fifo and init */
+  theHeap = MYMG(theGrid)->theHeap;
+  buffer=(void *)GetTmpMem(theHeap,sizeof(ELEMENT*)*n,FROM_TOP);
+  fifo_init(&myfifo,buffer,sizeof(ELEMENT*)*n);
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+    SETUSED(theElement,0);
+
+  /* insert all boundary elements */
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+    if (OBJT(theElement)==BEOBJ && !USED(theElement))
+    {
+      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+        if (ELEM_BNDS(theElement,i)!=NULL)
+          break;
+      assert(i<SIDES_OF_ELEM(theElement));
+
+      /* set id from BNDS */
+      if (BNDS_BndSDesc(ELEM_BNDS(theElement,i),&id,&nbid)) return (1);
+      SETSUBDOMAIN(theElement,id);
+      SETUSED(theElement,1);
+      fifo_in(&myfifo,(void *)theElement);
+      if (nbid==0) continue;
+      theNeighbor = NBELEM(theElement,i);
+      assert(theNeighbor!=NULL);
+      SETSUBDOMAIN(theNeighbor,nbid);
+      SETUSED(theNeighbor,1);
+      fifo_in(&myfifo,(void *)theNeighbor);
+    }
+
+  /* set subdomain id for all elements */
+  while(!fifo_empty(&myfifo))
+  {
+    theElement = (ELEMENT*)fifo_out(&myfifo);
+    for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+    {
+      if (NBELEM(theElement,i)==NULL || ELEM_BNDS(theElement,i)!=NULL) continue;
+      theNeighbor = NBELEM(theElement,i);
+      if (USED(theNeighbor)) continue;
+      SETSUBDOMAIN(theNeighbor,SUBDOMAIN(theElement));
+      SETUSED(theNeighbor,1);
+      fifo_in(&myfifo,(void *)theNeighbor);
+    }
+  }
+
+  return (0);
+}
 
 /****************************************************************************/
 /*D

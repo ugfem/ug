@@ -777,9 +777,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char * type, char *c
         cg_element[i].nbid[j] = ID(NBELEM(theElement,j));
       else
         cg_element[i].nbid[j] = -1;
-                        #if (DIM==2)
     cg_element[i].subdomain = SUBDOMAIN(theElement);
-                        #endif
   }
   if (Write_CG_Elements((int)n,cg_element)) return (1);
 
@@ -1301,55 +1299,8 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
     SETREFINECLASS(theElement,NO_CLASS);
     SETMARK(theElement,0);
     SETMARKCLASS(theElement,NO_CLASS);
-#if (DIM==2)
     SETSUBDOMAIN(theElement,cg_element[ID(theElement)].subdomain);
-#endif
   }
-
-#if (DIM==3)
-  theGrid = GRID_ON_LEVEL(theMG,0);
-  n = NT(theGrid);
-  if (n==0) return (NULL);
-
-  /* allocate fifo and init */
-  theHeap = MYMG(theGrid)->theHeap;
-  Mark(theHeap,FROM_TOP);
-  assert((buffer=(void *)GetMem(theHeap,sizeof(ELEMENT*)*n,FROM_TOP))!=NULL);
-  fifo_init(&myfifo,buffer,sizeof(ELEMENT*)*n);
-
-  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-    SETUSED(theElement,0);
-
-  /* find elements from positions */
-  e0 = FindElementFromPosition (theGrid, global0);
-  SETSUBDOMAIN(e0,0);
-  SETUSED(e0,1);
-  fifo_in(&myfifo,(void *)e0);
-  e1 = FindElementFromPosition (theGrid, global1);
-  SETSUBDOMAIN(e1,1);
-  SETUSED(e1,1);
-  fifo_in(&myfifo,(void *)e1);
-  e2 = FindElementFromPosition (theGrid, global2);
-  SETSUBDOMAIN(e2,2);
-  SETUSED(e2,1);
-  fifo_in(&myfifo,(void *)e2);
-
-  /* set subdomain id for all elements of the domain */
-  while(!fifo_empty(&myfifo))
-  {
-    theElement = (ELEMENT*)fifo_out(&myfifo);
-    for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-    {
-      if (NBELEM(theElement,i)==NULL || ELEM_BNDS(theElement,i)!=NULL) continue;
-
-      nbe = NBELEM(theElement,i);
-      if (USED(nbe)) continue;
-      SETSUBDOMAIN(nbe,SUBDOMAIN(theElement));
-      SETUSED(nbe,1);
-      fifo_in(&myfifo,(void *)nbe);
-    }
-  }
-#endif
 
   /* are we ready ? */
   if (mg_general.nLevel==1)

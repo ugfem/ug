@@ -843,7 +843,6 @@ int Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
  */
 /****************************************************************************/
 
-#if (MGIO_DIM==2)
 int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 {
   int i,j,m,s;
@@ -868,34 +867,6 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 
   return (0);
 }
-#endif
-
-#if (MGIO_DIM==3)
-int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
-{
-  int i,j,m,s;
-  MGIO_CG_ELEMENT *pe;
-
-  pe = cg_element;
-  for (i=0; i<n; i++)
-  {
-    /* coarse grid part */
-    if (Bio_Read_mint(1,&pe->ge)) return (1);
-    m=lge[pe->ge].nCorner+lge[pe->ge].nSide+1;
-    if (Bio_Read_mint(m,intList)) return (1);
-    s=0;
-    pe->nhe = intList[s++];
-    for (j=0; j<lge[pe->ge].nCorner; j++)
-      pe->cornerid[j] = intList[s++];
-    for (j=0; j<lge[pe->ge].nSide; j++)
-      pe->nbid[j] = intList[s++];
-    /*pe->subdomain = intList[s++];*/
-    pe++;
-  }
-
-  return (0);
-}
-#endif
 
 /****************************************************************************/
 /*
@@ -920,7 +891,6 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
  */
 /****************************************************************************/
 
-#if (MGIO_DIM==2)
 int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 {
   int i,j,s;
@@ -946,35 +916,6 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 
   return (0);
 }
-#endif
-
-#if (MGIO_DIM==3)
-int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
-{
-  int i,j,s;
-  MGIO_CG_ELEMENT *pe;
-
-  pe = cg_element;
-  for (i=0; i<n; i++)
-  {
-    /* coarse grid part */
-    s=0;
-    intList[s++] = pe->ge;
-    intList[s++] = pe->nhe;
-    for (j=0; j<lge[pe->ge].nCorner; j++)
-      intList[s++] = pe->cornerid[j];
-    for (j=0; j<lge[pe->ge].nSide; j++)
-      intList[s++] = pe->nbid[j];
-    /*intList[s++] = pe->subdomain;*/
-    MGIO_CHECK_INTSIZE(s);
-    if (Bio_Write_mint(s,intList)) return (1);
-
-    pe++;
-  }
-
-  return (0);
-}
-#endif
 
 /****************************************************************************/
 /*
