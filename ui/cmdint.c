@@ -1003,7 +1003,9 @@ static INT GetFactor (OPERAND *result)
 
         if ((stringAdr=GetStringVar(buffer))==NULL)
         {
-          PrintErrorMessage('E',"GetFactor","variable not found");
+          char buf[64];
+          sprintf(buf,"variable %s not found",buffer);
+          PrintErrorMessage('E',"GetFactor",buf);
           return(8601);                                         /* variable not found */
         }
 
