@@ -219,7 +219,7 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
   GRID            *theGrid        = GRID_ON_LEVEL(dddctrl.currMG,level);
   /* TODO: define this static global                    */
   /* TODO: take size as maximum of possible connections */
-  size_t sizeArray[50];
+  size_t sizeArray[256];
 
   PRINTDEBUG(dddif,1,(PFMT " VectorXferCopy(): v=" VINDEX_FMTX " proc=%d "
                       "prio=%d vtype=%d\n",me,VINDEX_PRTX(pv),proc,prio,VTYPE(pv)))
@@ -229,6 +229,7 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
   {
     for(mat=VSTART(pv); mat!=NULL; mat=MNEXT(mat))
     {
+      ASSERT(nmat<256);
       sizeArray[nmat++] = MSIZE(mat);
     }
 
