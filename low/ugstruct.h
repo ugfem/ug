@@ -1,25 +1,25 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  ugstruct.h													*/
-/*																			*/
-/* Purpose:   implements hierachically structured string variables			*/
-/*																			*/
-/* Author:	  Nikolas Neuss                                                                                                 */
-/*			  Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen	*/
-/*			  Universitaet Heidelberg										*/
-/*			  Im Neuenheimer Feld 368										*/
-/*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de					*/
-/*																			*/
-/*																			*/
-/* History:   18.02.92 begin, ug version 2.0								*/
-/*			  05 Sep 1992, split cmd.c into cmdint.c and commands.c                 */
-/*			  17.12.94 ug 3.0												*/
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          ugstruct.h                                                                                                    */
+/*                                                                                                                                                      */
+/* Purpose:   implements hierachically structured string variables                      */
+/*                                                                                                                                                      */
+/* Author:        Nikolas Neuss                                                                                                 */
+/*                        Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
+/*                        Universitaet Heidelberg                                                                               */
+/*                        Im Neuenheimer Feld 368                                                                               */
+/*                        6900 Heidelberg                                                                                               */
+/*                        internet: ug@ica3.uni-stuttgart.de                                    */
+/*                                                                                                                                                      */
+/*                                                                                                                                                      */
+/* History:   18.02.92 begin, ug version 2.0                                                            */
+/*                        05 Sep 1992, split cmd.c into cmdint.c and commands.c                 */
+/*                        17.12.94 ug 3.0                                                                                               */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -28,9 +28,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __UGSTRUCT__
@@ -42,14 +42,25 @@
 #include "ugenv.h"
 #endif
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define STRUCTSEP ":"
@@ -64,21 +75,21 @@ enum SV_NOTIFY
 };
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
-typedef struct {                                /* string variable							*/
-  ENVVAR v;                                             /* this is an environment variable			*/
-  INT length;                                   /* bytes allocated for the string			*/
-  char s[1];                                            /* allocated as needed						*/
+typedef struct {                                /* string variable                                                      */
+  ENVVAR v;                                             /* this is an environment variable                      */
+  INT length;                                   /* bytes allocated for the string                       */
+  char s[1];                                            /* allocated as needed                                          */
 } STRVAR ;
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* hierarchical string directory */
@@ -111,5 +122,9 @@ INT              PrintCurrentStructContents (int flag, char *buffer, int bufLen,
 
 /* initialization of this module */
 INT     InitUgStruct                            (void);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

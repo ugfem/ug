@@ -49,6 +49,15 @@
 
 #include "scan.h"
 
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -3615,7 +3624,7 @@ static INT InitHole (void)
  */
 /****************************************************************************/
 
-INT STD_BVP_Configure (INT argc, char **argv)
+INT NS_PREFIX STD_BVP_Configure (INT argc, char **argv)
 {
   STD_BVP *theBVP;
   DOMAIN *theDomain;

@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*	                                                                        */
+/*                                                                          */
 /* File:      misc.c                                                        */
 /*                                                                          */
 /* Purpose:   miscellaneous routines                                        */
@@ -11,7 +11,7 @@
 /*              Universitaet Stuttgart                                      */
 /*              Pfaffenwaldring 27                                          */
 /*              70569 Stuttgart                                             */
-/*              internet: ug@ica3.uni-stuttgart.de		                    */
+/*            internet: ug@ica3.uni-stuttgart.de                            */
 /*                                                                          */
 /* History:   08.12.94 begin, ug3-version                                   */
 /*                                                                          */
@@ -37,6 +37,9 @@
 #include <limits.h>
 #include <float.h>
 
+/* only for the definition of NS_PREFIX */
+#include "domain.h"
+
 #ifdef __NECSX4__
 #include <sys/types.h>
 #include <sys/syssx.h>
@@ -51,6 +54,14 @@
 #include "general.h"
 #include "misc.h"
 #include "heaps.h"
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -77,13 +88,13 @@
 /*                                                                          */
 /****************************************************************************/
 
-int UG_math_error = 0; /* This will be non zero after a math error occured  */
+int NS_PREFIX UG_math_error = 0; /* This will be non zero after a math error occured  */
 #ifndef ModelP
-int me = 0;                     /* to have in the serial case this variable as a dummy */
-int master = 0;         /* to have in the serial case this variable as a dummy */
-int procs = 1;          /* to have in the serial case this variable as a dummy */
-int _proclist_ = -1; /* to have in the serial case this variable as a dummy */
-int _partition_ = 0; /* to have in the serial case this variable as a dummy */
+int NS_PREFIX me = 0;                   /* to have in the serial case this variable as a dummy */
+int NS_PREFIX master = 0;               /* to have in the serial case this variable as a dummy */
+int NS_PREFIX procs = 1;                /* to have in the serial case this variable as a dummy */
+int NS_PREFIX _proclist_ = -1; /* to have in the serial case this variable as a dummy */
+int NS_PREFIX _partition_ = 0; /* to have in the serial case this variable as a dummy */
 #endif
 
 /****************************************************************************/
@@ -139,7 +150,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-void INT_2_bitpattern (INT n, char text[33])
+void NS_PREFIX INT_2_bitpattern (INT n, char text[33])
 {
   INT i;
 
@@ -190,7 +201,7 @@ void INT_2_bitpattern (INT n, char text[33])
    D*/
 /****************************************************************************/
 
-INT CenterInPattern (char *str, INT PatLen, const char *text, char p, const char *end)
+INT NS_PREFIX CenterInPattern (char *str, INT PatLen, const char *text, char p, const char *end)
 {
   INT i,TextBegin,TextEnd,TextLen;
 
@@ -237,7 +248,7 @@ INT CenterInPattern (char *str, INT PatLen, const char *text, char p, const char
 /****************************************************************************/
 
 /* install a user math error handler */
-int UG_matherr(
+static int UG_matherr(
             #if defined(__HP__)
   struct _exception *x
                         #elif defined(__LINUXPPC__)
@@ -256,7 +267,7 @@ int UG_matherr(
 
 static char newfmt[FMTBUFFSIZE];
 
-char *expandfmt (const char *fmt)
+char * NS_PREFIX expandfmt (const char *fmt)
 {
   const char *pos;
   char *newpos;
@@ -366,7 +377,7 @@ char *expandfmt (const char *fmt)
   return (newfmt);
 }
 
-char *ExpandCShellVars (char *string)
+char * NS_PREFIX ExpandCShellVars (char *string)
 {
   if (strstr(string,CSHELL_VAR_BEGIN)!=NULL)
   {
@@ -440,7 +451,7 @@ char *ExpandCShellVars (char *string)
    D*/
 /****************************************************************************/
 
-char *StrTok (char *s, const char *ct)
+char * NS_PREFIX StrTok (char *s, const char *ct)
 {
   static char *e;
   char *b;
@@ -499,7 +510,7 @@ char *StrTok (char *s, const char *ct)
    D*/
 /****************************************************************************/
 
-const char *strntok (const char *str, const char *sep, int n, char *token)
+const char * NS_PREFIX strntok (const char *str, const char *sep, int n, char *token)
 {
   int i;
 
@@ -541,7 +552,7 @@ const char *strntok (const char *str, const char *sep, int n, char *token)
    D*/
 /****************************************************************************/
 
-char *StrDup (const char *s)
+char * NS_PREFIX StrDup (const char *s)
 {
   char *p;
 
@@ -584,7 +595,7 @@ static void Copy (char *a, const char *b, INT size)
    void
    D*/
 /****************************************************************************/
-void QSort (void *base, INT n, INT size, int (*cmp)(const void *, const void *))
+void NS_PREFIX QSort (void *base, INT n, INT size, int (*cmp)(const void *, const void *))
 {
   INT i, j;
   char *Base, v[4], t[4];
@@ -666,7 +677,7 @@ void QSort (void *base, INT n, INT size, int (*cmp)(const void *, const void *))
    D*/
 /****************************************************************************/
 
-void SelectionSort (void *base, INT n, INT size, int (*cmp)(const void *, const void *))
+void NS_PREFIX SelectionSort (void *base, INT n, INT size, int (*cmp)(const void *, const void *))
 {
   INT i,j,k1,k2,s;
   char Smallest[4];
@@ -732,7 +743,7 @@ void SelectionSort (void *base, INT n, INT size, int (*cmp)(const void *, const 
    D*/
 /****************************************************************************/
 
-INT ReadMemSizeFromString (const char *s, MEM *mem_size )
+INT NS_PREFIX ReadMemSizeFromString (const char *s, MEM *mem_size )
 {
   float mem;
 
@@ -781,7 +792,7 @@ INT ReadMemSizeFromString (const char *s, MEM *mem_size )
    D*/
 /****************************************************************************/
 
-INT WriteMemSizeToString (MEM mem_size, char *s)
+INT NS_PREFIX WriteMemSizeToString (MEM mem_size, char *s)
 {
   float mem = mem_size;
 
@@ -794,7 +805,7 @@ INT WriteMemSizeToString (MEM mem_size, char *s)
 /* may be later on ugshell better ... */
 #define UserWriteF printf
 
-INT MemoryParameters (void)
+INT NS_PREFIX MemoryParameters (void)
 {
   /* integer data types */
   char charType;
@@ -863,7 +874,7 @@ INT MemoryParameters (void)
 #ifdef __NECSX4__
 /* special high performance time system for NEC SX4 */
 /* declaration in compiler.h */
-DOUBLE nec_clock( void )
+DOUBLE NS_PREFIX nec_clock( void )
 {
   struct htms timebuf;
 
@@ -877,7 +888,7 @@ DOUBLE nec_clock( void )
 /* special high resolution time system for AIX */
 /* declaration in compiler.h */
 /* time resolution 1e-9 sec; overflow far over 1 year */
-DOUBLE aix_highres_clock( void )
+DOUBLE NS_PREFIX aix_highres_clock( void )
 {
   timebasestruct_t timebuf;
 

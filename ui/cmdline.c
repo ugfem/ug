@@ -41,6 +41,17 @@
 #include "ugdevices.h"
 #include "general.h"
 
+/* only for the definition of NS_PREFIX */
+#include "domain.h"
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -117,7 +128,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-COMMAND *CreateCommand (const char *name, CommandProcPtr cmdProc)
+COMMAND * NS_PREFIX CreateCommand (const char *name, CommandProcPtr cmdProc)
 {
   COMMAND *newCommand;
 
@@ -156,7 +167,7 @@ COMMAND *CreateCommand (const char *name, CommandProcPtr cmdProc)
    D*/
 /****************************************************************************/
 
-COMMAND *GetCommand (const char *name)
+COMMAND * NS_PREFIX GetCommand (const char *name)
 {
   COMMAND *cmd;
 
@@ -186,7 +197,7 @@ COMMAND *GetCommand (const char *name)
    D*/
 /****************************************************************************/
 
-COMMAND *GetFirstCommand ()
+COMMAND * NS_PREFIX GetFirstCommand ()
 {
   ENVITEM *cmd;
 
@@ -219,7 +230,7 @@ COMMAND *GetFirstCommand ()
    D*/
 /****************************************************************************/
 
-COMMAND *GetNextCommand (const COMMAND *cmd)
+COMMAND * NS_PREFIX GetNextCommand (const COMMAND *cmd)
 {
   ENVITEM *nextCmd;
 
@@ -279,7 +290,7 @@ static int Str1inStr2 (const char *name1, const char *name2)
    D*/
 /********************************************************************************/
 
-COMMAND *SearchUgCmd (const char *cmdName)
+COMMAND * NS_PREFIX SearchUgCmd (const char *cmdName)
 {
   ENVDIR *currentDir;
   COMMAND *Cmd;
@@ -340,7 +351,7 @@ COMMAND *SearchUgCmd (const char *cmdName)
    D*/
 /****************************************************************************/
 
-COMMAND *ReplaceCommand (const char *name, CommandProcPtr cmdProc)
+COMMAND * NS_PREFIX ReplaceCommand (const char *name, CommandProcPtr cmdProc)
 {
   COMMAND *theCommand;
 
@@ -381,7 +392,7 @@ COMMAND *ReplaceCommand (const char *name, CommandProcPtr cmdProc)
    D*/
 /****************************************************************************/
 
-INT ExecCommand (char *cmdLine)
+INT NS_PREFIX ExecCommand (char *cmdLine)
 {
   char *s,*token,commandstr[NAMESIZE];
   int i,j,error;
@@ -473,7 +484,7 @@ INT ExecCommand (char *cmdLine)
   return(error);
 }
 
-INT InitCmdline ()
+INT NS_PREFIX InitCmdline ()
 {
   /* install the /Menu directory */
   if (ChangeEnvDir("/")==NULL)

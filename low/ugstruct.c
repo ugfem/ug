@@ -36,6 +36,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/* only for the definition of NS_PREFIX */
+#include "domain.h"
+
 #include "compiler.h"
 #include "general.h"
 #include "heaps.h"
@@ -43,6 +46,15 @@
 #include "ugenv.h"
 
 #include "ugstruct.h"
+
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -97,7 +109,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-ENVDIR *ChangeStructDir (const char *name)
+ENVDIR * NS_PREFIX ChangeStructDir (const char *name)
 {
   ENVDIR *newPath[MAXENVPATH];
   ENVDIR *theDir;
@@ -205,7 +217,7 @@ ENVDIR *ChangeStructDir (const char *name)
 static char token[NAMESIZE];                    /* must be global for lastnameHnd ! */
 static char nexttoken[NAMESIZE];        /* must be global for lastnameHnd ! */
 
-ENVDIR *FindStructDir (const char *name, char **lastnameHnd)
+ENVDIR * NS_PREFIX FindStructDir (const char *name, char **lastnameHnd)
 {
   ENVDIR *newPath[MAXENVPATH];
   ENVDIR *theDir;
@@ -318,7 +330,7 @@ ENVDIR *FindStructDir (const char *name, char **lastnameHnd)
    D*/
 /****************************************************************************/
 
-STRVAR *FindStringVar (const ENVDIR *where, const char *name)
+STRVAR * NS_PREFIX FindStringVar (const ENVDIR *where, const char *name)
 {
   STRVAR *myVar;
 
@@ -354,7 +366,7 @@ STRVAR *FindStringVar (const ENVDIR *where, const char *name)
    D*/
 /****************************************************************************/
 
-ENVDIR *FindStructure (const ENVDIR *where, const char *name)
+ENVDIR * NS_PREFIX FindStructure (const ENVDIR *where, const char *name)
 {
   ENVDIR *theDir;
 
@@ -395,7 +407,7 @@ ENVDIR *FindStructure (const ENVDIR *where, const char *name)
    D*/
 /****************************************************************************/
 
-char *GetStringVar (const char *name)
+char * NS_PREFIX GetStringVar (const char *name)
 {
   char *lastname;
   ENVDIR *theDir;
@@ -432,7 +444,7 @@ char *GetStringVar (const char *name)
  */
 /****************************************************************************/
 
-INT GetStringValue (const char *name, double *value)
+INT NS_PREFIX GetStringValue (const char *name, double *value)
 {
   char *lastname;
   ENVDIR *theDir;
@@ -472,7 +484,7 @@ INT GetStringValue (const char *name, double *value)
    D*/
 /****************************************************************************/
 
-INT GetStringValueDouble (const char *name, double *value)
+INT NS_PREFIX GetStringValueDouble (const char *name, double *value)
 {
   char *lastname;
   ENVDIR *theDir;
@@ -514,7 +526,7 @@ INT GetStringValueDouble (const char *name, double *value)
    D*/
 /****************************************************************************/
 
-INT GetStringValueInt (const char *name, int *value)
+INT NS_PREFIX GetStringValueInt (const char *name, int *value)
 {
   char *lastname;
   ENVDIR *theDir;
@@ -561,7 +573,7 @@ INT GetStringValueInt (const char *name, int *value)
    D*/
 /****************************************************************************/
 
-INT GetStringDOUBLEInRange (const char *name, DOUBLE min, DOUBLE max, DOUBLE *value)
+INT NS_PREFIX GetStringDOUBLEInRange (const char *name, DOUBLE min, DOUBLE max, DOUBLE *value)
 {
   char *lastname;
   ENVDIR *theDir;
@@ -604,7 +616,7 @@ INT GetStringDOUBLEInRange (const char *name, DOUBLE min, DOUBLE max, DOUBLE *va
    D*/
 /****************************************************************************/
 
-INT GetStringINTInRange (const char *name, INT min, INT max, INT *value)
+INT NS_PREFIX GetStringINTInRange (const char *name, INT min, INT max, INT *value)
 {
   char *lastname;
   ENVDIR *theDir;
@@ -641,7 +653,7 @@ INT GetStringINTInRange (const char *name, INT min, INT max, INT *value)
    D*/
 /****************************************************************************/
 
-ENVDIR *GetCurrentStructDir ()
+ENVDIR * NS_PREFIX GetCurrentStructDir ()
 {
   return(path[pathIndex]);
 }
@@ -667,7 +679,7 @@ ENVDIR *GetCurrentStructDir ()
    D*/
 /****************************************************************************/
 
-INT GetStructPathName (char *s, int n)
+INT NS_PREFIX GetStructPathName (char *s, int n)
 {
   int i,l;
 
@@ -716,7 +728,7 @@ INT GetStructPathName (char *s, int n)
    D*/
 /****************************************************************************/
 
-ENVITEM *MakeStructItem (ENVDIR *where, const char *name, INT type, INT size)
+ENVITEM * NS_PREFIX MakeStructItem (ENVDIR *where, const char *name, INT type, INT size)
 {
   ENVDIR *currentDir;
   ENVITEM *newItem,*anItem,*lastItem;
@@ -800,7 +812,7 @@ ENVITEM *MakeStructItem (ENVDIR *where, const char *name, INT type, INT size)
    D*/
 /****************************************************************************/
 
-INT MakeStruct (const char *name)
+INT NS_PREFIX MakeStruct (const char *name)
 {
   char *lastname;
   ENVDIR *theDir,*theStruct;
@@ -837,7 +849,7 @@ INT MakeStruct (const char *name)
    D*/
 /****************************************************************************/
 
-INT DeleteStruct (char *name)
+INT NS_PREFIX DeleteStruct (char *name)
 {
   char *lastname;
   ENVDIR *theDir,*theStruct;
@@ -883,7 +895,7 @@ INT DeleteStruct (char *name)
    D*/
 /****************************************************************************/
 
-INT RemoveStringVar (ENVDIR *homeDir, STRVAR *theVar)
+INT NS_PREFIX RemoveStringVar (ENVDIR *homeDir, STRVAR *theVar)
 {
   if (homeDir==NULL) return (1);
   if (theVar==NULL) return (2);
@@ -927,7 +939,7 @@ INT RemoveStringVar (ENVDIR *homeDir, STRVAR *theVar)
    D*/
 /****************************************************************************/
 
-INT DeleteVariable (char *name)
+INT NS_PREFIX DeleteVariable (char *name)
 {
   char *lastname;
   ENVDIR *theDir;
@@ -975,7 +987,7 @@ INT DeleteVariable (char *name)
    D*/
 /****************************************************************************/
 
-INT SetStringVar (const char *name, const char *sval)
+INT NS_PREFIX SetStringVar (const char *name, const char *sval)
 {
   char *lastname;
   ENVDIR *theDir;
@@ -1035,7 +1047,7 @@ INT SetStringVar (const char *name, const char *sval)
    D*/
 /****************************************************************************/
 
-INT SetnStringVar (const char *name, const char *sval, int n)
+INT NS_PREFIX SetnStringVar (const char *name, const char *sval, int n)
 {
   char *lastname;
   ENVDIR *theDir;
@@ -1091,7 +1103,7 @@ INT SetnStringVar (const char *name, const char *sval, int n)
    D*/
 /****************************************************************************/
 
-INT SetStringVarNotify (const char *name, const char *sval)
+INT NS_PREFIX SetStringVarNotify (const char *name, const char *sval)
 {
   char *lastname;
   ENVDIR *theDir;
@@ -1147,7 +1159,7 @@ INT SetStringVarNotify (const char *name, const char *sval)
    D*/
 /****************************************************************************/
 
-INT SetStringValue (const char *name, double value)
+INT NS_PREFIX SetStringValue (const char *name, double value)
 {
   char buffer[30];
 
@@ -1178,7 +1190,7 @@ INT SetStringValue (const char *name, double value)
    D*/
 /****************************************************************************/
 
-INT CheckStructTree (const ENVDIR *theDir)
+INT NS_PREFIX CheckStructTree (const ENVDIR *theDir)
 {
   INT status;
 
@@ -1213,7 +1225,7 @@ INT CheckStructTree (const ENVDIR *theDir)
    D*/
 /****************************************************************************/
 
-INT CheckIfInStructPath (const ENVDIR *theDir)
+INT NS_PREFIX CheckIfInStructPath (const ENVDIR *theDir)
 {
   int i;
 
@@ -1245,7 +1257,7 @@ INT CheckIfInStructPath (const ENVDIR *theDir)
    D*/
 /****************************************************************************/
 
-INT RemoveStructTree (ENVDIR *homeDir, ENVDIR *theDir)
+INT NS_PREFIX RemoveStructTree (ENVDIR *homeDir, ENVDIR *theDir)
 {
   ENVDIR *theDir2;
 
@@ -1515,7 +1527,7 @@ static INT VarOut (const STRVAR *StrVar, char *buffer, int bufLen)
    D*/
 /****************************************************************************/
 
-INT PrintStructContents (const char *name, char *buffer, int bufLen, int ropt)
+INT NS_PREFIX PrintStructContents (const char *name, char *buffer, int bufLen, int ropt)
 {
   static ENVDIR *theDir;
   static STRVAR *StrVar;
@@ -1605,7 +1617,7 @@ INT PrintStructContents (const char *name, char *buffer, int bufLen, int ropt)
    D*/
 /****************************************************************************/
 
-INT PrintCurrentStructContents (int flag, char *buffer, int bufLen, int ropt)
+INT NS_PREFIX PrintCurrentStructContents (int flag, char *buffer, int bufLen, int ropt)
 {
   if (flag)
     return (DirOut(path[pathIndex], buffer, bufLen, ropt));
@@ -1616,9 +1628,6 @@ INT PrintCurrentStructContents (int flag, char *buffer, int bufLen, int ropt)
 /****************************************************************************/
 /*D
    InitUgStruct	- Initialize ugstruct
-
-   SYNOPSIS:
-   INT InitUgStruct ();
 
    PARAMETERS:
    .  none
@@ -1634,7 +1643,7 @@ INT PrintCurrentStructContents (int flag, char *buffer, int bufLen, int ropt)
    D*/
 /****************************************************************************/
 
-INT InitUgStruct ()
+INT NS_PREFIX InitUgStruct ()
 {
   ENVDIR *theDir;
 

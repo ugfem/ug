@@ -1,23 +1,23 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  ugdevices.h                                                                                                   */
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          ugdevices.h                                                                                                   */
+/*                                                                                                                                                      */
 /* Purpose:   implements a simple but portable graphical user interface         */
-/*																			*/
-/* Author:	  Peter Bastian                                                                                                 */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de					                */
-/*																			*/
+/*                                                                                                                                                      */
+/* Author:        Peter Bastian                                                                                                 */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                       */
+/*                                                                                                                                                      */
 /* History:   14.06.93 begin, ug version ug21Xmas3d                                             */
-/*			  16.12.94 restructured for ug version 3.0						*/
-/*																			*/
-/* Remarks:   was "devices.h" in earlier version of UG						*/
-/*																			*/
+/*                        16.12.94 restructured for ug version 3.0                                              */
+/*                                                                                                                                                      */
+/* Remarks:   was "devices.h" in earlier version of UG                                          */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -26,9 +26,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __DEVICESH__
@@ -44,13 +44,24 @@
 #include "ugenv.h"
 #endif
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/*	constants																*/
-/*																			*/
+/*                                                                                                                                                      */
+/*      constants                                                                                                                               */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
-/* markers																	*/
+/* markers                                                                                                                                      */
 #define EMPTY_SQUARE_MARKER             0
 #define GRAY_SQUARE_MARKER                      1
 #define FILLED_SQUARE_MARKER            2
@@ -118,17 +129,17 @@ enum UG_PALETTE {
 };
 
 /****************************************************************************/
-/*																			*/
-/*	macros																	*/
-/*																			*/
+/*                                                                                                                                                      */
+/*      macros                                                                                                                                  */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define EVENT_TYPE(p)                   ((p).Type)
 
 /****************************************************************************/
-/*																			*/
-/*	data types																*/
-/*																			*/
+/*                                                                                                                                                      */
+/*      data types                                                                                                                              */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* identification of windows */
@@ -154,148 +165,148 @@ struct outputdevice {
   ENVVAR v;
 
   /* properties */
-  long black;                                                   /* value for black										*/
+  long black;                                                   /* value for black                                                                              */
   long gray;                                /* value for gray                                       */
-  long white;                                                   /* value for white										*/
-  long red;                                                             /* value for red										*/
-  long green;                                                   /* value for green										*/
-  long blue;                                                            /* value for blue										*/
-  long cyan;                                                            /* value for cyan										*/
+  long white;                                                   /* value for white                                                                              */
+  long red;                                                             /* value for red                                                                                */
+  long green;                                                   /* value for green                                                                              */
+  long blue;                                                            /* value for blue                                                                               */
+  long cyan;                                                            /* value for cyan                                                                               */
   long orange;                                                  /* value for orange                                                                     */
   long yellow;                                                  /* value for yellow                                                                     */
   long darkyellow;                                              /* value for yellow                                                                     */
-  long magenta;                                                 /* value for magenta									*/
-  short hasPalette;                                             /* 1 if device has a color lookup ta					*/
-  long range;                                                   /* # of possible color indices							*/
-  long spectrumStart;                                   /* usable range for a continuous						*/
-  long spectrumEnd;                                             /* color spectrum										*/
-  DOUBLE PixelRatio;                                            /* ratio of (physical) hight to width of a pixel		*/
-  short signx;                                                  /* direction of increasing x-coordinates				*/
-  short signy;                                                  /* direction of increasing y-coordinates				*/
+  long magenta;                                                 /* value for magenta                                                                    */
+  short hasPalette;                                             /* 1 if device has a color lookup ta                                    */
+  long range;                                                   /* # of possible color indices                                                  */
+  long spectrumStart;                                   /* usable range for a continuous                                                */
+  long spectrumEnd;                                             /* color spectrum                                                                               */
+  DOUBLE PixelRatio;                                            /* ratio of (physical) hight to width of a pixel                */
+  short signx;                                                  /* direction of increasing x-coordinates                                */
+  short signy;                                                  /* direction of increasing y-coordinates                                */
 
   /* pointers to basic drawing functions */
-  void (*Move)(SHORT_POINT);                                                            /* move in device coordinates		*/
+  void (*Move)(SHORT_POINT);                                                            /* move in device coordinates           */
   void (*Draw)(SHORT_POINT);                                                            /* draw from current point to given */
-  void (*Polyline)(SHORT_POINT *, INT );                                        /* draw a polyline					*/
-  void (*InversePolyline)(SHORT_POINT *, INT );                         /* draw an inverted polyline		*/
-  void (*Polygon)(SHORT_POINT *, INT );                                         /* fill a polygon w. curr. col		*/
+  void (*Polyline)(SHORT_POINT *, INT );                                        /* draw a polyline                                      */
+  void (*InversePolyline)(SHORT_POINT *, INT );                         /* draw an inverted polyline            */
+  void (*Polygon)(SHORT_POINT *, INT );                                         /* fill a polygon w. curr. col          */
   void (*ShadedPolygon)(SHORT_POINT *, INT, DOUBLE );           /* shade a polygon w. curr. col     */
-  void (*InversePolygon)(SHORT_POINT *, INT );                          /* invert a polygon w. curr. col	*/
+  void (*InversePolygon)(SHORT_POINT *, INT );                          /* invert a polygon w. curr. col        */
   void (*ErasePolygon)(SHORT_POINT *, INT );                            /* erase a polygon w. curr. col         */
-  void (*Polymark)(short, SHORT_POINT *);                                       /* place markers					*/
-  void (*InvPolymark)(short, SHORT_POINT *);                                    /* place inverse markers			*/
-  void (*DrawText)(const char *, INT);                                          /* draw text in current size/font	*/
-  void (*CenteredText)(SHORT_POINT, const char *, INT);         /* draw text centered at x,y		*/
-  void (*ClearViewPort)(void);                                                          /* clear a view port				*/
+  void (*Polymark)(short, SHORT_POINT *);                                       /* place markers                                        */
+  void (*InvPolymark)(short, SHORT_POINT *);                                    /* place inverse markers                        */
+  void (*DrawText)(const char *, INT);                                          /* draw text in current size/font       */
+  void (*CenteredText)(SHORT_POINT, const char *, INT);         /* draw text centered at x,y            */
+  void (*ClearViewPort)(void);                                                          /* clear a view port                            */
 
   /* pointers to set functions */
-  void (*SetLineWidth)(short);                                                          /* line width in pixels (points)	*/
+  void (*SetLineWidth)(short);                                                          /* line width in pixels (points)        */
   void (*SetTextSize)(short);                                                           /* text size in pixels (points)         */
-  void (*SetMarker)(short);                                                                     /* set marker id					*/
-  void (*SetMarkerSize)(short);                                                         /* marker size in pixels (points)	*/
+  void (*SetMarker)(short);                                                                     /* set marker id                                        */
+  void (*SetMarkerSize)(short);                                                         /* marker size in pixels (points)       */
   void (*SetColor)(long);                                                                       /* arg is index or direct col value */
-  void (*SetPaletteEntry)(long,short,short,short);                      /* set index to value				*/
-  void (*SetNewPalette)(long,long,short*,short*,short*);        /* replace entrie					*/
+  void (*SetPaletteEntry)(long,short,short,short);                      /* set index to value                           */
+  void (*SetNewPalette)(long,long,short*,short*,short*);        /* replace entrie                                       */
 
   /* pointers to miscellaneous functions */
-  void (*GetPaletteEntry)(long,short *,short *,short *);        /* read color tab					*/
-  void (*Flush)(void);                                                                          /* flush graphics buffer			*/
+  void (*GetPaletteEntry)(long,short *,short *,short *);        /* read color tab                                       */
+  void (*Flush)(void);                                                                          /* flush graphics buffer                        */
   void (*PlotPixelBuffer)(void *, void *, INT, int, int, int, int);
   /* plot a pixel buffer              */
 
   /* operations for managing windows */
-  OpenOutputPtr OpenOutput;                       /* function to open a window								*/
+  OpenOutputPtr OpenOutput;                       /* function to open a window                                                          */
   CloseOutputPtr CloseOutput;             /* function to close a window                                                         */
-  ActivateOutputPtr ActivateOutput;       /* function to activate window							*/
-  UpdateOutputPtr UpdateOutput;           /* function to draw outline with tool and info box		*/
+  ActivateOutputPtr ActivateOutput;       /* function to activate window                                                        */
+  UpdateOutputPtr UpdateOutput;           /* function to draw outline with tool and info box            */
 };
 
 
 
 /* event structure */
 typedef struct {                                        /* no event                                                             */
-  INT Type;                                                     /* event type								*/
+  INT Type;                                                     /* event type                                                           */
 
   /* data */
   INT InterfaceEvent;                           /* 1 if the interface event was handled         */
   WINDOWID GraphWinActive;                      /* WINDOWID if a uggraphwin is active,0 else*/
-  INT Mouse[2];                                         /* current mouse coord (rel. to window)		*/
+  INT Mouse[2];                                         /* current mouse coord (rel. to window)         */
 } NO_UGEVENT;
 
-typedef struct {                                        /* go away event for terminal window		*/
-  INT Type;                                                     /* event type								*/
+typedef struct {                                        /* go away event for terminal window            */
+  INT Type;                                                     /* event type                                                           */
 } TERM_GOAWAY_EVENT;
 
-typedef struct {                                        /* cmd key event for terminal window		*/
-  INT Type;                                                     /* event type								*/
+typedef struct {                                        /* cmd key event for terminal window            */
+  INT Type;                                                     /* event type                                                           */
 
   /* data */
-  char CmdKey;                                          /* character from keyboard					*/
+  char CmdKey;                                          /* character from keyboard                                      */
 } TERM_CMDKEY_EVENT;
 
 typedef struct {                                        /* string event for terminal window             */
-  INT Type;                                                     /* event type								*/
+  INT Type;                                                     /* event type                                                           */
 
   /* data */
   char String[INPUTBUFFERLEN];          /* string from keyboard                                         */
 } TERM_STRING_EVENT;
 
-typedef struct {                                        /* go away event for view					*/
-  INT Type;                                                     /* event type								*/
+typedef struct {                                        /* go away event for view                                       */
+  INT Type;                                                     /* event type                                                           */
 
   /* data */
-  WINDOWID win;                                         /* the window								*/
+  WINDOWID win;                                         /* the window                                                           */
 } DOC_GOAWAY_EVENT;
 
-typedef struct {                                        /* activate event for view					*/
-  INT Type;                                                     /* event type								*/
+typedef struct {                                        /* activate event for view                                      */
+  INT Type;                                                     /* event type                                                           */
 
   /* data */
-  WINDOWID win;                                         /* the window								*/
+  WINDOWID win;                                         /* the window                                                           */
 } DOC_ACTIVATE_EVENT;
 
-typedef struct {                                        /* drag event for view						*/
-  INT Type;                                                     /* event type								*/
+typedef struct {                                        /* drag event for view                                          */
+  INT Type;                                                     /* event type                                                           */
 
   /* data */
-  WINDOWID win;                                         /* the window								*/
+  WINDOWID win;                                         /* the window                                                           */
   INT Global_LL[2];                                     /* new absolute position of window on screen*/
-  INT Global_UR[2];                                     /*											*/
+  INT Global_UR[2];                                     /*                                                                                      */
 } DOC_DRAG_EVENT;
 
-typedef struct {                                        /* grow event for view						*/
-  INT Type;                                                     /* event type								*/
+typedef struct {                                        /* grow event for view                                          */
+  INT Type;                                                     /* event type                                                           */
 
   /* data */
-  WINDOWID win;                                         /* the window								*/
+  WINDOWID win;                                         /* the window                                                           */
   INT Global_LL[2];                                     /* new absolute position of window on screen*/
-  INT Global_UR[2];                                     /*											*/
-  INT Local_LL[2];                                      /* range of pixels used for plotting		*/
-  INT Local_UR[2];                                      /*											*/
+  INT Global_UR[2];                                     /*                                                                                      */
+  INT Local_LL[2];                                      /* range of pixels used for plotting            */
+  INT Local_UR[2];                                      /*                                                                                      */
 } DOC_GROW_EVENT;
 
-typedef struct {                                        /* change tool event for view				*/
-  INT Type;                                                     /* event type								*/
+typedef struct {                                        /* change tool event for view                           */
+  INT Type;                                                     /* event type                                                           */
 
   /* data */
-  WINDOWID win;                                         /* the window								*/
-  INT Tool;                                                     /* change to that tool						*/
+  WINDOWID win;                                         /* the window                                                           */
+  INT Tool;                                                     /* change to that tool                                          */
   INT MousePosition[2];                         /* mouse position                                                       */
 } DOC_CHANGETOOL_EVENT;
 
 typedef struct {                                        /* content click event for view                         */
-  INT Type;                                                     /* event type								*/
+  INT Type;                                                     /* event type                                                           */
 
   /* data */
-  WINDOWID win;                                         /* the window								*/
-  INT MousePosition[2];                         /* mouse position							*/
+  WINDOWID win;                                         /* the window                                                           */
+  INT MousePosition[2];                         /* mouse position                                                       */
 } DOC_CONTENTCLICK_EVENT;
 
-typedef struct {                                        /* update event for view					*/
-  INT Type;                                                     /* event type								*/
+typedef struct {                                        /* update event for view                                        */
+  INT Type;                                                     /* event type                                                           */
 
   /* data */
-  WINDOWID win;                                         /* the window								*/
+  WINDOWID win;                                         /* the window                                                           */
 } DOC_UPDATE_EVENT;
 
 typedef union {
@@ -318,9 +329,9 @@ typedef struct outputdevice OUTPUTDEVICE;
 
 
 /****************************************************************************/
-/*																			*/
-/* function exported by the devices module									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function exported by the devices module                                                                      */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* initialization and clean up */
@@ -365,5 +376,9 @@ INT               MouseStillDown                        (void);
 /* tool name handling */
 void              DrawInfoBox                           (WINDOWID win, const char *info);
 INT                       WhichTool                                     (WINDOWID win, const INT mouse[2], INT *tool);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

@@ -6,13 +6,13 @@
 /*                                                                          */
 /* Purpose:   header file for gg manager                                                        */
 /*                                                                          */
-/* Author:    Wolfgang Hoffmann, Henrik Renz-Reichert	                    */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart, Germany										*/
-/*			  email: ug@ica3.uni-stuttgart.de							    */
-/*																			*/
+/* Author:    Wolfgang Hoffmann, Henrik Renz-Reichert                       */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70569 Stuttgart, Germany                                                                              */
+/*                        email: ug@ica3.uni-stuttgart.de                                                           */
+/*                                                                                                                                                      */
 /* History:   08.03.94 begin, ug version 2.2                                */
 /*                15.10.95 implemented in ug31                                  */
 /*                                                                          */
@@ -35,13 +35,8 @@
 #ifndef __GGM__
 #define __GGM__
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
-
-#ifndef __GM__
 #include "gm.h"
-#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -53,7 +48,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-/* object types for front list, front component and independent front list	*/
+/* object types for front list, front component and independent front list      */
 
 /* possible orientations of FLs */
 #define MATHPOS                 1
@@ -76,7 +71,7 @@
 /* macros for front lists */
 #define SUCCFL(pfl)             ((pfl)->succfl)
 #define PREDFL(pfl)             ((pfl)->predfl)
-/* #define MYGRID(pfl)	((pfl)->myGrid)  <-- s.a. */
+/* #define MYGRID(pfl)  ((pfl)->myGrid)  <-- s.a. */
 #define FLORIENTATION(pfl)      (pfl->orientation)
 #define MYIFL(pfl)              ((pfl)->myIFL)
 #define STARTFC(pfl)    ((pfl)->startfc)
@@ -100,9 +95,9 @@
 
 struct frontcomp {
   unsigned INT control;                 /* object identification, various flags */
-  struct frontcomp *succfc,*predfc;      /* double linked list of front comps	*/
-  struct frontlist *myFL;                       /* pointer to my front list				*/
-  NODE *frontnode;                                      /* ptr to corresponding front node		*/
+  struct frontcomp *succfc,*predfc;      /* double linked list of front comps   */
+  struct frontlist *myFL;                       /* pointer to my front list                             */
+  NODE *frontnode;                                      /* ptr to corresponding front node              */
   ELEMENT *Neighbor;
   int NeighborSide;        /*nfck*/
 };
@@ -111,23 +106,23 @@ struct frontcomp {
 
 struct frontlist {
   unsigned INT control;                 /* object identification, various flags */
-  struct frontlist *succfl,*predfl;      /* double linked list of front lists	*/
-  GRID *myGrid;                                         /* pointer to my grid					*/
-  struct indepfrontlist *myIFL;         /* pointer to my indep. front list		*/
-  INT orientation;                                      /* MATHPOS or MATHNEG					*/
+  struct frontlist *succfl,*predfl;      /* double linked list of front lists   */
+  GRID *myGrid;                                         /* pointer to my grid                                   */
+  struct indepfrontlist *myIFL;         /* pointer to my indep. front list              */
+  INT orientation;                                      /* MATHPOS or MATHNEG                                   */
   INT SubdomainID;
-  struct frontcomp *startfc;                    /* entry to front the component list	*/
-  struct frontcomp *lastfc;                     /* entry to front the component list	*/
-  long int nFrontcomp;                          /* # of front components in this list	*/
+  struct frontcomp *startfc;                    /* entry to front the component list    */
+  struct frontcomp *lastfc;                     /* entry to front the component list    */
+  long int nFrontcomp;                          /* # of front components in this list   */
 };
 
 struct indepfrontlist {
   unsigned INT control;                                         /* object identification, various flags                 */
   struct indepfrontlist *succifl,*predifl;              /* double linked list of independent front lists*/
-  GRID *myGrid;                                                                 /* pointer to my grid							*/
-  struct frontlist *startfl;                                            /* entry to front list							*/
-  struct frontlist *lastfl;                                             /* reach end of front list list					*/
-  int nFrontlist;                                                               /* number of lists								*/
+  GRID *myGrid;                                                                 /* pointer to my grid                                                   */
+  struct frontlist *startfl;                                            /* entry to front list                                                  */
+  struct frontlist *lastfl;                                             /* reach end of front list list                                 */
+  int nFrontlist;                                                               /* number of lists                                                              */
 };
 
 typedef struct frontlist FRONTLIST;
@@ -136,9 +131,9 @@ typedef struct indepfrontlist INDEPFRONTLIST;
 
 typedef struct {
 
-  INDEPFRONTLIST *first;                /* entry to independent frontlists		   */
+  INDEPFRONTLIST *first;                /* entry to independent frontlists                 */
   INDEPFRONTLIST *last;                 /* reach the end of independent frontlists */
-  int nIndepFrontlist;                  /* number of independent lists		           */
+  int nIndepFrontlist;                  /* number of independent lists                     */
 } MG_GGDATA;
 
 typedef struct {

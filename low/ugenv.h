@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*	                                                                        */
+/*                                                                              */
 /* File:      ugenv.h                                                       */
 /*                                                                          */
 /* Purpose:   header file for ug environment manager                        */
@@ -35,6 +35,17 @@
 
 #ifndef __COMPILER__
 #include "compiler.h"
+#endif
+
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
 #endif
 
 /*****************************************************************************/
@@ -143,5 +154,9 @@ void     EnvHeapInfo     (char *s);
 INT      GetNewEnvDirID (void);
 INT      GetNewEnvVarID (void);
 
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

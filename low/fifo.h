@@ -1,16 +1,16 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*	                                                                        */
+/*                                                                          */
 /* File:      fifo.h                                                        */
-/*                                                                            */
-/* Purpose:   header file for general purpose fifo                            */
-/*                                                                            */
-/* Author:      Peter Bastian                                                 */
-/*              Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen    */
-/*              Universitaet Heidelberg                                        */
-/*              Im Neuenheimer Feld 368                                        */
-/*              6900 Heidelberg                                                */
+/*                                                                          */
+/* Purpose:   header file for general purpose fifo                          */
+/*                                                                          */
+/* Author:    Peter Bastian                                                 */
+/*            Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen    */
+/*            Universitaet Heidelberg                                        */
+/*            Im Neuenheimer Feld 368                                        */
+/*            6900 Heidelberg                                                */
 /*                                                                            */
 /* History:   30.01.92 begin, ug version 2.0                                */
 /*                                                                            */
@@ -33,8 +33,17 @@
 #define __FIFO__
 
 
-#ifndef __COMPILER__
 #include "compiler.h"
+
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
 #endif
 
 /****************************************************************************/
@@ -61,5 +70,9 @@ INT     fifo_empty    (const FIFO *myfifo);
 INT     fifo_full    (const FIFO *myfifo);
 INT     fifo_in     (FIFO *myfifo, void *newelement);
 void    *fifo_out    (FIFO *myfifo);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*	                                                                        */
+/*                                                                          */
 /* File:      ugenv.c                                                       */
 /*                                                                          */
 /* Purpose:   implements the ug environment mechanism                       */
@@ -30,12 +30,27 @@
 #include <string.h>
 #include <stdio.h>
 
+/* Needs to be the first UG include for the dimension and the namespace */
+#include "domain.h"
+
 #include "compiler.h"
 #include "heaps.h"
 #include "general.h"
 #include "misc.h"
 #include "ugenv.h"
-#include "ugdevices.h" /* TODO: this is a hierarchy conflict, remove. (VR) */
+/** \todo this is a hierarchy conflict, remove. (VR) */
+#include "ugdevices.h"
+
+/* Only for the definition of NS_PREFIX */
+#include "domain.h"
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -66,24 +81,21 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*D
    InitUgEnv - Initialize the Environment and the heap
 
-   SYNOPSIS:
-   INT InitUgEnv (INT heapSize);
-
    PARAMETERS:
-   .  heapSize - size of the heap in bytes
+ * @param   heapSize - size of the heap in bytes
 
    DESCRIPTION:
    This function initializes the Environment and the heap.
 
-   RETURN VALUE:
+   @return <ul>
    INT
-   .n    0 if OK
-   .n    '__LINE__' if not enough memory, error in initializing or allocating a
+ *   <li>     0 if OK
+ *   <li>     '__LINE__' if not enough memory, error in initializing or allocating a
       heap structure
    D*/
 /****************************************************************************/
 
-INT InitUgEnv (INT heapSize)
+INT NS_PREFIX InitUgEnv (INT heapSize)
 {
   void *buffer;
   ENVDIR *root;
@@ -117,19 +129,19 @@ INT InitUgEnv (INT heapSize)
    ENVDIR *ChangeEnvDir (const char *s);
 
    PARAMETERS:
-   .  s - pointer to char (const)
+ * @param   s - pointer to char (const)
 
    DESCRIPTION:
    This function changes environment directory.
 
-   RETURN VALUE:
+   @return <ul>
    ENVDIR *
-   .n      pointer to new environment directory
-   .n      NULL if directory not found.
+ *   <li>       pointer to new environment directory
+ *   <li>       NULL if directory not found.
    D*/
 /****************************************************************************/
 
-ENVDIR *ChangeEnvDir (const char *s)
+ENVDIR * NS_PREFIX ChangeEnvDir (const char *s)
 {
   ENVDIR *newPath[MAXENVPATH];
   ENVDIR *theDir;
@@ -210,18 +222,18 @@ ENVDIR *ChangeEnvDir (const char *s)
    ENVDIR *GetCurrentDir ();
 
    PARAMETERS:
-   .  void -
+ * @param   void -
 
    DESCRIPTION:
    This function gets current environment directory.
 
-   RETURN VALUE:
+   @return <ul>
    ENVDIR *
-   .n       pointer to current environment directory
+ *   <li>        pointer to current environment directory
    D*/
 /****************************************************************************/
 
-ENVDIR *GetCurrentDir ()
+ENVDIR * NS_PREFIX GetCurrentDir ()
 {
   return(path[pathIndex]);
 }
@@ -234,17 +246,17 @@ ENVDIR *GetCurrentDir ()
    void GetPathName (char *s);
 
    PARAMETERS:
-   .  s - pointer to buffer for the string
+ * @param   s - pointer to buffer for the string
 
    DESCRIPTION:
    This function assembles pathname of current directory.
 
-   RETURN VALUE:
+   @return <ul>
    void
    D*/
 /****************************************************************************/
 
-void GetPathName (char *s)
+void NS_PREFIX  GetPathName (char *s)
 {
   int i;
 
@@ -256,30 +268,24 @@ void GetPathName (char *s)
 }
 
 /****************************************************************************/
-/*D
-   MakeEnvItem - Allocate a new environment item in the current directory
-
-   SYNOPSIS:
-   ENVITEM *MakeEnvItem (const char *name, const INT type, const INT size);
-
-   PARAMETERS:
-   .  name - name of the new item
-   .  type - type of item (5 types possible)
-   .  size - size of item in bytes
-
-   DESCRIPTION:
-   This function allocates a new environment item in the current directory.
-
-   RETURN VALUE:
+/** \brief Allocate a new environment item in the current directory
+ *
+ * @param   name - name of the new item
+ * @param   type - type of item (5 types possible)
+ * @param   size - size of item in bytes
+ *
+ * This function allocates a new environment item in the current directory.
+ *
+ *  @return <ul>
    ENVITEM *
-   .n      pointer to new item
-   .n      NULL if name too long or already in use, type equal to 'ROOT_DIR',
+ *   <li>       pointer to new item
+ *   <li>       NULL if name too long or already in use, type equal to 'ROOT_DIR',
              not enough memory
-   .n           in the environment heap or other error occurs.
+ *   <li>            in the environment heap or other error occurs.
    D*/
 /****************************************************************************/
 
-ENVITEM *MakeEnvItem (const char *name, const INT type, const INT size)
+ENVITEM * NS_PREFIX MakeEnvItem (const char *name, const INT type, const INT size)
 {
   ENVITEM *newItem,*anItem,*lastItem;
   ENVDIR *currentDir;
@@ -369,22 +375,22 @@ ENVITEM *MakeEnvItem (const char *name, const INT type, const INT size)
    INT RemoveEnvItem (ENVITEM *theItem);
 
    PARAMETERS:
-   .  theItem - pointer to item
+ * @param   theItem - pointer to item
 
    DESCRIPTION:
    This function deallocates an environment item in the current directory.
    Directories may only be deleted if they are empty.
 
-   RETURN VALUE:
+   @return <ul>
    INT
-   .n    0 if OK
-   .n    1 if item not found in current directory
-   .n    2 if attempt is done to delete non empty directory
-   .n    3 if attempt is done to delete locked item.
+ *   <li>     0 if OK
+ *   <li>     1 if item not found in current directory
+ *   <li>     2 if attempt is done to delete non empty directory
+ *   <li>     3 if attempt is done to delete locked item.
    D*/
 /****************************************************************************/
 
-INT RemoveEnvItem (ENVITEM *theItem)
+INT NS_PREFIX RemoveEnvItem (ENVITEM *theItem)
 {
   ENVITEM *anItem;
   ENVDIR *currentDir;
@@ -426,15 +432,15 @@ INT RemoveEnvItem (ENVITEM *theItem)
    INT RemoveEnvItem (ENVITEM *theItem);
 
    PARAMETERS:
-   .  theItem - pointer to item
+ * @param   theItem - pointer to item
 
    DESCRIPTION:
    This function deallocates an environment directory.
 
-   RETURN VALUE:
+   @return <ul>
    INT
-   .n    0 if OK
-   .n    3 if attempt is done to delete locked item.
+ *   <li>     0 if OK
+ *   <li>     3 if attempt is done to delete locked item.
    D*/
 /****************************************************************************/
 
@@ -455,7 +461,7 @@ INT RemoveEnvDirContent (ENVITEM *theItem)
   return(0);
 }
 
-INT RemoveEnvDir (ENVITEM *theItem)
+INT NS_PREFIX RemoveEnvDir (ENVITEM *theItem)
 {
   ENVITEM *anItem;
   ENVDIR *currentDir;
@@ -495,20 +501,20 @@ INT RemoveEnvDir (ENVITEM *theItem)
    INT MoveEnvItem (ENVITEM *item, ENVDIR *oldDir, ENVDIR *newDir)
 
    PARAMETERS:
-   .  item - pointer to item
-   .  old - directory containing the item
-   .  new - directory to which item has to be moved (if NULL move to root)
+ * @param   item - pointer to item
+ * @param   old - directory containing the item
+ * @param   new - directory to which item has to be moved (if NULL move to root)
 
    DESCRIPTION:
    This function moves an environment item (or subtree) in the tree structure.
 
-   RETURN VALUE:
+   @return <ul>
    INT
-   .n    0 if OK
+ *   <li>     0 if OK
    D*/
 /****************************************************************************/
 
-INT MoveEnvItem (ENVITEM *item, ENVDIR *oldDir, ENVDIR *newDir)
+INT NS_PREFIX MoveEnvItem (ENVITEM *item, ENVDIR *oldDir, ENVDIR *newDir)
 {
   ENVITEM *anItem;
 
@@ -543,18 +549,18 @@ INT MoveEnvItem (ENVITEM *item, ENVDIR *oldDir, ENVDIR *newDir)
    static ENVITEM *SearchTree (const char *name, INT type, INT dirtype);
 
    PARAMETERS:
-   .  name - name of item searched for
-   .  type - one of the five basic types
-   .  dirtype - directory type to scan or SEARCHALL
+ * @param   name - name of item searched for
+ * @param   type - one of the five basic types
+ * @param   dirtype - directory type to scan or SEARCHALL
 
    DESCRIPTION:
    This function searches a given name in the tree, sets current directory
    to directory of the item found and returns the item.
 
-   RETURN VALUE:
+   @return <ul>
    ENVITEM *
-   .n      pointer to the item in the tree
-   .n      NULL if name not found or where not OK.
+ *   <li>       pointer to the item in the tree
+ *   <li>       NULL if name not found or where not OK.
    D*/
 /****************************************************************************/
 
@@ -598,30 +604,23 @@ static ENVITEM *SearchTree (const char *name, INT type, INT dirtype)
 }
 
 /****************************************************************************/
-/*D
-   SearchEnv - Search for a given name in the tree
-
-   SYNOPSIS:
-   ENVITEM *SearchEnv (const char *name, const char *where, INT type, INT dirtype);
-
-   PARAMETERS:
-   .  name - name of item searched for
-   .  type - one of the five basic types
-   .  where - path to directory where recursive search starts
-   .  dirtype - directory type to scan or SEARCHALL
-
-   DESCRIPTION:
-   This function searches a given name in the tree, sets current directory
-   to directory of the item found and returns the item.
-
-   RETURN VALUE:
-   ENVITEM *
+/** \brief  Search for a given name in the tree
+ *
+ * @param   name - name of item searched for
+ * @param   type - one of the five basic types
+ * @param   where - path to directory where recursive search starts
+ * @param   dirtype - directory type to scan or SEARCHALL
+ *
+ * This function searches a given name in the tree, sets current directory
+ * to directory of the item found and returns the item.
+ *
+ * @return <ul>
    .n     pointer to item in the tree
    .n     NULL if name not found or where not OK.
-   D*/
+ */
 /****************************************************************************/
 
-ENVITEM *SearchEnv (const char *name, const char *where, INT type, INT dirtype)
+ENVITEM * NS_PREFIX SearchEnv (const char *name, const char *where, INT type, INT dirtype)
 {
   /* check if search directory is changed */
   if (strcmp(where,".")!=0)
@@ -640,18 +639,18 @@ ENVITEM *SearchEnv (const char *name, const char *where, INT type, INT dirtype)
    void *AllocEnvMemory (INT size);
 
    PARAMETERS:
-   .  size - number of bytes to be allocated
+ * @param   size - number of bytes to be allocated
 
    DESCRIPTION:
    This function allocates memory from environment heap.
 
-   RETURN VALUE:
+   @return <ul>
    void *
    .n       pointer to allocated memory
    D*/
 /****************************************************************************/
 
-void *AllocEnvMemory (INT size)
+void * NS_PREFIX AllocEnvMemory (INT size)
 {
   return(GetMem(envHeap,size,0));
 }
@@ -664,17 +663,17 @@ void *AllocEnvMemory (INT size)
    void FreeEnvMemory (void *buffer);
 
    PARAMETERS:
-   .  buffer - pointer to buffer previously allocated
+ * @param   buffer - pointer to buffer previously allocated
 
    DESCRIPTION:
    This function deallocates memory from environment heap.
 
-   RETURN VALUE:
+   @return <ul>
    void
    D*/
 /****************************************************************************/
 
-void FreeEnvMemory (void *buffer)
+void NS_PREFIX FreeEnvMemory (void *buffer)
 {
   DisposeMem(envHeap,buffer);
 }
@@ -687,17 +686,17 @@ void FreeEnvMemory (void *buffer)
    void EnvHeapInfo (char *s);
 
    PARAMETERS:
-   .  s - string to print on
+ * @param   s - string to print on
 
    DESCRIPTION:
    This function prints size and used of environment heap to string.
 
-   RETURN VALUE:
+   @return <ul>
    void
    D*/
 /****************************************************************************/
 
-void EnvHeapInfo (char *s)
+void NS_PREFIX EnvHeapInfo (char *s)
 {
   sprintf(s,"   size: %ld\n   used: %ld\n",HeapSize(envHeap),HeapUsed(envHeap));
 }
@@ -710,18 +709,18 @@ void EnvHeapInfo (char *s)
    INT GetNewEnvDirID ();
 
    PARAMETERS:
-   .  void -
+ * @param   void -
 
    DESCRIPTION:
    This function returns a unique 'ID' for a new 'ENVDIR' type.
 
-   RETURN VALUE:
+   @return <ul>
    INT
    .n    'ID' for the new 'ENVDIR'
    D*/
 /****************************************************************************/
 
-INT GetNewEnvDirID (void)
+INT NS_PREFIX GetNewEnvDirID (void)
 {
   /* NB: ENVDIRs have odd types and start with 1 */
   static INT theNewEnvDirID = 1;
@@ -739,18 +738,18 @@ INT GetNewEnvDirID (void)
    INT GetNewEnvVarID ();
 
    PARAMETERS:
-   .  void -
+ * @param   void -
 
    DESCRIPTION:
    This function returns a unique 'ID' for a new 'ENVVAR' type.
 
-   RETURN VALUE:
+   @return <ul>
    INT
    .n    'ID' for the new 'ENVVAR'
    D*/
 /****************************************************************************/
 
-INT GetNewEnvVarID ()
+INT NS_PREFIX GetNewEnvVarID ()
 {
   /* NB: ENVVARs have even types and start with 2 */
   static INT theNewEnvVarID = 0;

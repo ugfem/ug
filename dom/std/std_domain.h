@@ -1,22 +1,22 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  std_domain.h													*/
-/*																			*/
-/* Purpose:   standard domain declaration	                                                                */
-/*																			*/
-/* Author:	  Peter Bastian/Klaus Johannsen                                                                 */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70550 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de								*/
-/*																			*/
-/* History:   29.01.92 begin, ug version 2.0								*/
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          std_domain.h                                                                                                  */
+/*                                                                                                                                                      */
+/* Purpose:   standard domain declaration                                                                       */
+/*                                                                                                                                                      */
+/* Author:        Peter Bastian/Klaus Johannsen                                                                 */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70550 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                               */
+/*                                                                                                                                                      */
+/* History:   29.01.92 begin, ug version 2.0                                                            */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -25,29 +25,41 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __STD_DOMAIN__
 #define __STD_DOMAIN__
 
+#include "domain.h"
+
 #include "compiler.h"
 
 #include "ugenv.h"
 
-#include "domain.h"
 
+
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
@@ -119,9 +131,9 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define GetSTD_BVP(p)                           ((STD_BVP *)(p))
 
 /****************************************************************************/
-/*																			*/
-/* macros for boundary segments												*/
-/*																			*/
+/*                                                                                                                                                      */
+/* macros for boundary segments                                                                                         */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define SEG_LEFT(p)                                             ((p)->left)
@@ -139,9 +151,9 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define SEG_DATA(p)                                             ((p)->data)
 
 /****************************************************************************/
-/*																			*/
-/* macros for patches														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* macros for patches                                                                                                           */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define PATCH_FIXED                             0
@@ -189,15 +201,15 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
   if (PATCH_TYPE(currBVP->patches[BND_PATCH_ID(p)]) >= MARC_0_PATCH_TYPE)
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* domain definition data structures										*/
-/*																			*/
+/*                                                                                                                                                      */
+/* domain definition data structures                                                                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /*----------- typedef for functions ----------------------------------------*/
@@ -209,12 +221,12 @@ typedef INT (*BndSegFuncPtr)(void *,DOUBLE *,DOUBLE *);
 
 typedef struct {
 
-  const INT *sd2part;                                           /* table subdomain to part			*/
-  const INT *sg2part;                                           /* table segment   to part			*/
+  const INT *sd2part;                                           /* table subdomain to part                      */
+  const INT *sg2part;                                           /* table segment   to part                      */
 #       ifdef __THREEDIM__
-  const INT **ln2part;                                  /* table line	   to part			*/
+  const INT **ln2part;                                  /* table line      to part                      */
 #       endif
-  const INT *pt2part;                                           /* table point	   to part			*/
+  const INT *pt2part;                                           /* table point     to part                      */
 
 } DOMAIN_PART_INFO;
 
@@ -224,16 +236,16 @@ struct domain {
   ENVDIR d;
 
   /* domain variables */
-  DOUBLE MidPoint[DIM];                                 /* point in the middle of domain	*/
-  DOUBLE radius;                                                /* defines sphere around MidPoint	*/
-  /* containing the domain			*/
-  INT numOfSegments;                                            /* number of boundary segments		*/
-  INT numOfCorners;                                             /* number of corner points			*/
-  INT domConvex;                                                /* is the domain convex?			*/
+  DOUBLE MidPoint[DIM];                                 /* point in the middle of domain        */
+  DOUBLE radius;                                                /* defines sphere around MidPoint       */
+  /* containing the domain                        */
+  INT numOfSegments;                                            /* number of boundary segments          */
+  INT numOfCorners;                                             /* number of corner points                      */
+  INT domConvex;                                                /* is the domain convex?                        */
 
   /* description of domain parts */
-  INT nParts;                                                           /* number of parts in the domain	*/
-  const DOMAIN_PART_INFO *dpi;                  /* domain part info					*/
+  INT nParts;                                                           /* number of parts in the domain        */
+  const DOMAIN_PART_INFO *dpi;                  /* domain part info                                     */
 };
 
 struct boundary_segment {
@@ -243,10 +255,10 @@ struct boundary_segment {
 
   /* fields for boundary segment */
   INT left,right;                                         /* number of left and right subdomain */
-  INT id;                                                         /* unique id of that segment			*/
-  INT segType;                                            /* segment type, see above			*/
-  INT points[CORNERS_OF_BND_SEG];         /* numbers of the vertices (ID)		*/
-  INT resolution;                                         /* measure for the curvature			*/
+  INT id;                                                         /* unique id of that segment                  */
+  INT segType;                                            /* segment type, see above                    */
+  INT points[CORNERS_OF_BND_SEG];         /* numbers of the vertices (ID)               */
+  INT resolution;                                         /* measure for the curvature                  */
   DOUBLE alpha[DIM_OF_BND],beta[DIM_OF_BND];              /* parameter interval used*/
   BndSegFuncPtr BndSegFunc;                       /* pointer to definition function     */
   void *data;                                             /* can be used by applic to find data */
@@ -259,16 +271,16 @@ struct linear_segment {
 
   /* fields for boundary segment */
   INT left,right;                                         /* number of left and right subdomain */
-  INT id;                                                         /* unique id of that segment			*/
+  INT id;                                                         /* unique id of that segment                  */
   INT n;                                  /* number of corners                  */
   INT points[MAX_CORNERS_OF_LINEAR_PATCH];       /* numbers of the vertices (ID)*/
   DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM_OF_BND];            /* coordinates  */
 };
 
 /****************************************************************************/
-/*																			*/
-/* problem data structure													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* problem data structure                                                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /*----------- typedef for functions ----------------------------------------*/
@@ -283,11 +295,11 @@ struct problem {
   ENVDIR d;
 
   /* fields for problem */
-  INT problemID;                                /* used to identify problem type			*/
-  ConfigProcPtr ConfigProblem;      /* procedure to reinitialize problem		*/
-  INT numOfCoeffFct;                            /* number of coefficient functions			*/
-  INT numOfUserFct;                             /* number of User functions					*/
-  void *CU_ProcPtr[1];                  /* coefficient functions					*/
+  INT problemID;                                /* used to identify problem type                        */
+  ConfigProcPtr ConfigProblem;      /* procedure to reinitialize problem                */
+  INT numOfCoeffFct;                            /* number of coefficient functions                      */
+  INT numOfUserFct;                             /* number of User functions                                     */
+  void *CU_ProcPtr[1];                  /* coefficient functions                                        */
 };
 
 struct bndcond {
@@ -302,9 +314,9 @@ struct bndcond {
 };
 
 /****************************************************************************/
-/*																			*/
-/* BoundaryValueProblem data structure										*/
-/*																			*/
+/*                                                                                                                                                      */
+/* BoundaryValueProblem data structure                                                                          */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct std_BoundaryValueProblem
@@ -326,14 +338,14 @@ struct std_BoundaryValueProblem
   INT domConvex;                     /* 1 if domain is convex, 0 if not     */
   INT numOfSubdomains;               /* nb. of subdomains,
                                                                                 exterior not counted                */
-  INT nDomainParts;                                      /* number of parts in the domain		*/
-  INT *s2p;                                                      /* pointer to table subbdom --> part	*/
+  INT nDomainParts;                                      /* number of parts in the domain               */
+  INT *s2p;                                                      /* pointer to table subbdom --> part   */
 
   /* boundary decription */
   INT ncorners;
   INT nsides;
   INT sideoffset;
-  union patch **patches;                     /* list of patches	                            */
+  union patch **patches;                     /* list of patches                             */
 
   /* problem part */
   ConfigProcPtr ConfigProc;          /* configuration function              */
@@ -341,13 +353,13 @@ struct std_BoundaryValueProblem
   INT numOfUserFct;                  /* nb. of user functions               */
 
   BndCondProcPtr GeneralBndCond;     /* general bnd. cond. (if exists)      */
-  void *CU_ProcPtr[1];                       /* coefficient functions				*/
+  void *CU_ProcPtr[1];                       /* coefficient functions                           */
 };
 
 /****************************************************************************/
-/*																			*/
-/* Patch data structure														*/
-/*																			*/
+/*                                                                                                                                                      */
+/* Patch data structure                                                                                                         */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct generic_patch {
@@ -387,8 +399,8 @@ struct line_patch {
   INT id;                           /* unique id used for load/store        */
 
   INT npatches;                     /* number of patches                    */
-  INT c0;                                                       /* corner 0 of line						*/
-  INT c1;                                                       /* corner 1 of line						*/
+  INT c0;                                                       /* corner 0 of line                                             */
+  INT c1;                                                       /* corner 1 of line                                             */
   struct line_on_patch lop[1];      /* reference to surface                 */
 };
 #endif
@@ -412,7 +424,7 @@ struct parameter_patch {
   INT id;                           /* unique id used for load/store        */
 
   INT left,right;                                       /* id of left and right subdomain       */
-  INT resolution;                                       /* measure for curvature				*/
+  INT resolution;                                       /* measure for curvature                                */
   INT points[CORNERS_OF_BND_SEG];   /* ids of points                        */
   DOUBLE range[2][DIM_OF_BND];      /* parameter range                      */
 
@@ -468,7 +480,7 @@ union patch {
 struct bnd_ps {
 
   INT patch_id;                     /* associated patch                     */
-  void *data;                                           /* e.g. global coordiantes, pointers...	*/
+  void *data;                                           /* e.g. global coordiantes, pointers... */
   INT n;                            /* number of arguments                  */
   COORD_BND_VECTOR local[1];        /* parameter range                      */
 };
@@ -510,15 +522,15 @@ typedef struct marc_bndp M_BNDP;
 typedef struct marc_bnds M_BNDS;
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported global variables                                                                      */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #       ifdef __THREEDIM__
@@ -579,5 +591,9 @@ BVP *CreateBVP_Problem (char *BVPName, char *DomainName, char *ProblemName);
 
 /* scanning of coordinates */
 INT   ReadAndPrintArgvPosition    (char *name, INT argc, char **argv, DOUBLE *pos);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

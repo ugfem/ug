@@ -34,11 +34,25 @@
 #include <stdio.h>
 #include <assert.h>
 
+/* for the definition of NS_PREFIX and __TWODIM__ */
+#include "domain.h"
+
 /* interface includes */
 #include "compiler.h"
 #include "ugdevices.h"
 #include "initdev.h"
 #include "general.h"
+
+
+#ifdef __cplusplus
+#ifdef _2
+using namespace UG2d;
+#elif _3
+using namespace UG3d;
+#else
+#error The dimension is unknown at this point!
+#endif
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -88,7 +102,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /****************************************************************************/
 
-INT GetScreenSize (INT size[2])
+static INT GetScreenSize (INT size[2])
 {
   size[0] = 0;
   size[1] = 0;
@@ -118,7 +132,7 @@ INT GetScreenSize (INT size[2])
  */
 /****************************************************************************/
 
-INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
+INT NS_PREFIX GetNextUGEvent (EVENT *theEvent, INT EventMask)
 {
   char *s;
   int cmdKey, onlyCmdKey;
@@ -162,14 +176,14 @@ INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
  */
 /****************************************************************************/
 
-OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
+OUTPUTDEVICE * NS_PREFIX InitScreen (int *argcp, char **argv, INT *error)
 {
   *error=0;
   return(NULL);
 }
 
 
-void ExitScreen (void)
+void NS_PREFIX ExitScreen (void)
 {}
 
 
@@ -192,7 +206,7 @@ void ExitScreen (void)
  */
 /****************************************************************************/
 
-void WriteString (const char *s)
+void NS_PREFIX WriteString (const char *s)
 {
   printf("%s",s);
   return;
@@ -218,7 +232,7 @@ void WriteString (const char *s)
  */
 /****************************************************************************/
 
-void MousePosition (INT *ScreenPoint)
+void NS_PREFIX MousePosition (INT *ScreenPoint)
 {
   return;
 }
@@ -248,17 +262,17 @@ void MousePosition (INT *ScreenPoint)
  */
 /****************************************************************************/
 
-INT MouseStillDown (void)
+INT NS_PREFIX MouseStillDown (void)
 {
   return (0);
 }
 
-void DrawInfoBox (WINDOWID win, const char *info)
+void NS_PREFIX DrawInfoBox (WINDOWID win, const char *info)
 {
   return;
 }
 
-INT WhichTool (WINDOWID win, const INT mouse[2], INT *tool)
+INT NS_PREFIX WhichTool (WINDOWID win, const INT mouse[2], INT *tool)
 {
   return (0);
 }

@@ -33,13 +33,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* only for the definition of NS_PREFIX */
+#include "domain.h"
+
 #include "general.h"
 #include "debug.h"
 #include "ugenv.h"
 #include "misc.h"
 #include "scan.h"
 
-#include "ugdevices.h"  /* TODO (HRR 971105): hierarchy conflict */
+/**  \todo (HRR 971105): hierarchy conflict */
+#include "ugdevices.h"
+
+/* only for the definition of NS_PREFIX */
+#include "domain.h"
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -109,7 +124,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT ReadArgvDOUBLE (const char *name, DOUBLE *a, INT argc, char **argv)
+INT NS_PREFIX ReadArgvDOUBLE (const char *name, DOUBLE *a, INT argc, char **argv)
 {
   INT i;
   char option[OPTIONLEN];
@@ -153,7 +168,7 @@ INT ReadArgvDOUBLE (const char *name, DOUBLE *a, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-INT ReadArgvINT (const char *name, INT *j, INT argc, char **argv)
+INT NS_PREFIX ReadArgvINT (const char *name, INT *j, INT argc, char **argv)
 {
   INT i;
   char option[OPTIONLEN];
@@ -199,7 +214,7 @@ INT ReadArgvINT (const char *name, INT *j, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-INT ReadArgvDOUBLE_INT (const char *name, DOUBLE *a, INT *j, INT argc, char **argv)
+INT NS_PREFIX ReadArgvDOUBLE_INT (const char *name, DOUBLE *a, INT *j, INT argc, char **argv)
 {
   INT i,k;
   char option[OPTIONLEN];
@@ -245,7 +260,7 @@ INT ReadArgvDOUBLE_INT (const char *name, DOUBLE *a, INT *j, INT argc, char **ar
    D*/
 /****************************************************************************/
 
-INT ReadArgvChar (const char *name, char *buffer, INT argc, char **argv)
+INT NS_PREFIX ReadArgvChar (const char *name, char *buffer, INT argc, char **argv)
 {
   INT i;
   char option[OPTIONLEN];
@@ -304,7 +319,7 @@ INT ReadArgvChar (const char *name, char *buffer, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-INT ReadArgvMEM (const char *name, MEM *mem_size, INT argc, char **argv)
+INT NS_PREFIX ReadArgvMEM (const char *name, MEM *mem_size, INT argc, char **argv)
 {
   INT i;
   char option[OPTIONLEN],size_input[20];
@@ -352,7 +367,7 @@ INT ReadArgvMEM (const char *name, MEM *mem_size, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-INT ReadArgvOption (const char *name, INT argc, char **argv)
+INT NS_PREFIX ReadArgvOption (const char *name, INT argc, char **argv)
 {
   INT i;
   char option[OPTIONLEN];

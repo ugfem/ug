@@ -125,7 +125,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 
-INT InitGraphics (void)
+INT NS_PREFIX InitGraphics (void)
 {
   INT error;
 
@@ -134,25 +134,25 @@ INT InitGraphics (void)
   if (error!=0)
     return(error);
 
-        #ifdef _COVISE
+#ifdef _COVISE
   /* init Covise interface */
   error = InitCoviseIF();
   if (error!=0)
     return(error);
-        #endif
+#endif
 
-        #ifdef _PV3
+#ifdef _PV3
   error = InitPV3();
   if (error!=0)
     return(error);
-        #endif
+#endif
 
   return(0);         /* no error */
 }
 
 
 
-INT ExitGraphics (void)
+INT NS_PREFIX ExitGraphics (void)
 {
         #ifdef _COVISE
   INT error;

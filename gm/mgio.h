@@ -1,22 +1,22 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  mgio.h														*/
-/*																			*/
-/* Purpose:   header file for mgio.c		                                                                */
-/*																			*/
-/* Author:	  Klaus Johannsen                                                                                               */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70550 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de								*/
-/*																			*/
-/* History:   13.11.96 begin												*/
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          mgio.h                                                                                                                */
+/*                                                                                                                                                      */
+/* Purpose:   header file for mgio.c                                                                            */
+/*                                                                                                                                                      */
+/* Author:        Klaus Johannsen                                                                                               */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70550 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                               */
+/*                                                                                                                                                      */
+/* History:   13.11.96 begin                                                                                            */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -28,21 +28,41 @@
 #define __MGIO_USE_IN_UG__
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __MGIO__
 #define __MGIO__
 
 #include <stdio.h>
+#include "domain.h"
 
+#ifdef __MGIO_USE_IN_UG__
+
+        #include "heaps.h"
+        #include "gm.h"
+        #include "rm.h"
+        #include "domain.h"
+
+#endif
+
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
 
 /****************************************************************************/
-/*																			*/
+/*                                                                                                                                                      */
 /* configuration of interface                                                                                           */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define MGIO_VERSION                                    "UG_IO_2.5"
@@ -51,21 +71,16 @@
 #define MGIO_DIM                        3
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifdef __MGIO_USE_IN_UG__
-
-        #include "heaps.h"
-        #include "gm.h"
-        #include "rm.h"
-        #include "domain.h"
 
         #define MGIO_PARFILE                                            (nparfiles>1)
     #define MGIO_DEBUG                          0
@@ -156,67 +171,67 @@
 #define MGIO_CONT_VECTYPE(p,i)          (p)->VectorTypes&(i)
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 struct mgio_mg_general {
 
   /* information about the file */
-  int mode;                                             /* macros see above							*/
-  char version[MGIO_NAMELEN];       /* version of i/o							*/
-  int magic_cookie;                             /* identification number					*/
-  char ident[MGIO_IDENTLEN];            /* identification string from input file	*/
+  int mode;                                             /* macros see above                                                     */
+  char version[MGIO_NAMELEN];       /* version of i/o                                                   */
+  int magic_cookie;                             /* identification number                                        */
+  char ident[MGIO_IDENTLEN];            /* identification string from input file        */
 
   /* parallel part */
-  int nparfiles;                                /* number of processors						*/
-  int me;                                               /* id of my processor						*/
+  int nparfiles;                                /* number of processors                                         */
+  int me;                                               /* id of my processor                                           */
 
   /* number of objects */
-  int nLevel;                                   /* nb of levels of the mg						*/
-  int nNode;                                    /* nb of nodes, i.e. corners of elements		*/
-  int nPoint;                                   /* nb of points, i.e. diff node locations in mg	*/
-  int nElement;                         /* nb of elements in mg							*/
+  int nLevel;                                   /* nb of levels of the mg                                               */
+  int nNode;                                    /* nb of nodes, i.e. corners of elements                */
+  int nPoint;                                   /* nb of points, i.e. diff node locations in mg */
+  int nElement;                         /* nb of elements in mg                                                 */
 
   /* information on geometry */
-  int dim;                                                              /* dimension						*/
-  char DomainName[MGIO_NAMELEN];                /* name of domain in ug				*/
-  char MultiGridName[MGIO_NAMELEN];             /* name of multigrid				*/
+  int dim;                                                              /* dimension                                            */
+  char DomainName[MGIO_NAMELEN];                /* name of domain in ug                         */
+  char MultiGridName[MGIO_NAMELEN];             /* name of multigrid                            */
 
   /* information on algebraic structure */
-  char Formatname[MGIO_NAMELEN];                /* name of format used in ug		*/
-  int heapsize;                                                 /* heapsize in kbyte, used in ug	*/
-  int VectorTypes;                                              /* macros see above					*/
+  char Formatname[MGIO_NAMELEN];                /* name of format used in ug            */
+  int heapsize;                                                 /* heapsize in kbyte, used in ug        */
+  int VectorTypes;                                              /* macros see above                                     */
 };
 
 struct mgio_ge_general {
 
-  int nGenElement;                      /* nb of general elements used					*/
+  int nGenElement;                      /* nb of general elements used                                  */
 };
 
 struct mgio_ge_element {
 
-  int tag;                                              /* identification of general element in ug	*/
-  int nCorner;                                  /* nb of corners							*/
-  int nEdge;                                            /* nb of edges								*/
-  int nSide;                                            /* nb of sides								*/
-  int CornerOfEdge[MGIO_MAX_EDGES_OF_ELEM][2];          /* corners of edge		*/
-  int CornerOfSide[MGIO_MAX_SIDES_OF_ELEM][4];          /* corners of side		*/
+  int tag;                                              /* identification of general element in ug      */
+  int nCorner;                                  /* nb of corners                                                        */
+  int nEdge;                                            /* nb of edges                                                          */
+  int nSide;                                            /* nb of sides                                                          */
+  int CornerOfEdge[MGIO_MAX_EDGES_OF_ELEM][2];          /* corners of edge              */
+  int CornerOfSide[MGIO_MAX_SIDES_OF_ELEM][4];          /* corners of side              */
 };
 
 struct mgio_rr_general {
 
-  int nRules;                                                                           /* nb of rules used							*/
-  int RefRuleOffset[MGIO_TAGS];                                 /* offsets used in ug						*/
+  int nRules;                                                                           /* nb of rules used                                                     */
+  int RefRuleOffset[MGIO_TAGS];                                 /* offsets used in ug                                           */
 };
 
 struct mgio_sondata {
   SHORT tag;                                            /* which element type is the son                */
   SHORT corners[MGIO_MAX_CORNERS_OF_ELEM];              /* corners of the son                           */
   SHORT nb[MGIO_MAX_SIDES_OF_ELEM];                     /* neighbors of this son                        */
-  /* < 20 if neighbor has same father           */
-  /* >= 20 if neighbor has other father		*/
+  /* < 20 if neighbor has same father             */
+  /* >= 20 if neighbor has other father           */
   INT path;                                             /* path used in GetSons() for ug                        */
 };
 
@@ -226,36 +241,36 @@ struct mgio_rr_rule {
   int nsons;                                            /* number of sons rule creates                  */
   int pattern[MGIO_MAX_NEW_CORNERS];                    /* stores which edges are refined               */
   int sonandnode[MGIO_MAX_NEW_CORNERS][2];              /* for each new node the number of the son      */
-  /* and the local node number of the node      */
-  struct mgio_sondata sons[MGIO_MAX_SONS_OF_ELEM];       /* for all new sons					*/
+  /* and the local node number of the node        */
+  struct mgio_sondata sons[MGIO_MAX_SONS_OF_ELEM];       /* for all new sons                                    */
 };
 
 struct mgio_cg_general {
 
-  int nPoint;                                                           /* nb of points on coarse grid, sum of next two		*/
-  int nBndPoint;                                                /* nb of bnd points on coarse grid					*/
-  int nInnerPoint;                                              /* nb of inner points on coarse grid				*/
-  int nElement;                                                 /* nb of elements on coarse grid, sum of next two	*/
-  int nBndElement;                                              /* nb of bnd elements on coarse grid				*/
-  int nInnerElement;                                            /* nb of inner elements on coarse grid				*/
+  int nPoint;                                                           /* nb of points on coarse grid, sum of next two         */
+  int nBndPoint;                                                /* nb of bnd points on coarse grid                                      */
+  int nInnerPoint;                                              /* nb of inner points on coarse grid                            */
+  int nElement;                                                 /* nb of elements on coarse grid, sum of next two       */
+  int nBndElement;                                              /* nb of bnd elements on coarse grid                            */
+  int nInnerElement;                                            /* nb of inner elements on coarse grid                          */
 };
 
 struct mgio_cg_point_seq {
 
-  double position[MGIO_DIM];                            /* position of the point							*/
+  double position[MGIO_DIM];                            /* position of the point                                                        */
 };
 
 struct mgio_cg_point {
 
-  double position[MGIO_DIM];                            /* position of the point							*/
-  int level;                                                            /* level of creation								*/
-  int prio;                                                             /* priority											*/
+  double position[MGIO_DIM];                            /* position of the point                                                        */
+  int level;                                                            /* level of creation                                                            */
+  int prio;                                                             /* priority                                                                                     */
 };
 
 struct mgio_movedcorner {
 
-  int id;                                                               /* local id of moved node							*/
-  double position[MGIO_DIM];                            /* position of the point							*/
+  int id;                                                               /* local id of moved node                                                       */
+  double position[MGIO_DIM];                            /* position of the point                                                        */
 };
 
 
@@ -263,27 +278,27 @@ struct mgio_parinfo {
   unsigned short *proclist;                                             /* NULL for elements without copies             */
   unsigned short prio_elem;
   unsigned short ncopies_elem;
-  int e_ident;                                                                  /* identification of element				*/
+  int e_ident;                                                                  /* identification of element                            */
   unsigned short prio_node[MGIO_MAX_CORNERS_OF_ELEM];
   unsigned short ncopies_node[MGIO_MAX_CORNERS_OF_ELEM];
-  int n_ident[MGIO_MAX_CORNERS_OF_ELEM];                /* identification of nodes of elem			*/
+  int n_ident[MGIO_MAX_CORNERS_OF_ELEM];                /* identification of nodes of elem                      */
   unsigned short prio_vertex[MGIO_MAX_CORNERS_OF_ELEM];
   unsigned short ncopies_vertex[MGIO_MAX_CORNERS_OF_ELEM];
-  int v_ident[MGIO_MAX_CORNERS_OF_ELEM];                /* identification of vertices of elem			*/
+  int v_ident[MGIO_MAX_CORNERS_OF_ELEM];                /* identification of vertices of elem                   */
   unsigned short prio_edge[MGIO_MAX_EDGES_OF_ELEM];
   unsigned short ncopies_edge[MGIO_MAX_EDGES_OF_ELEM];
-  int ed_ident[MGIO_MAX_EDGES_OF_ELEM];                 /* identification of edges of element		*/
+  int ed_ident[MGIO_MAX_EDGES_OF_ELEM];                 /* identification of edges of element           */
 };
 
 struct mgio_cg_element_seq {
 
-  int ge;                                                                               /* id of general element					*/
-  int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of nodes (data reference)			*/
+  int ge;                                                                               /* id of general element                                        */
+  int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of nodes (data reference)                        */
   int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
   int se_on_bnd;                                        /* side/edge lies on bnd (used bitwise)         */
-  int nref;                                                                             /* nb of refinements for this element		*/
-  /* if 0 element not refined					*/
-  int subdomain;                                                                /* id of subdomain							*/
+  int nref;                                                                             /* nb of refinements for this element           */
+  /* if 0 element not refined                                     */
+  int subdomain;                                                                /* id of subdomain                                                      */
 
 #if (MGIO_DEBUG>0)
   /* debug extension */
@@ -295,13 +310,13 @@ struct mgio_cg_element_seq {
 
 struct mgio_cg_element {
 
-  int ge;                                                                               /* id of general element					*/
-  int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of nodes (data reference)			*/
+  int ge;                                                                               /* id of general element                                        */
+  int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of nodes (data reference)                        */
   int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
   int se_on_bnd;                                        /* side/edge lies on bnd (used bitwise)         */
-  int nref;                                                                             /* nb of refinements for this element		*/
-  /* if 0 element not refined					*/
-  int subdomain;                                                                /* id of subdomain							*/
+  int nref;                                                                             /* nb of refinements for this element           */
+  /* if 0 element not refined                                     */
+  int subdomain;                                                                /* id of subdomain                                                      */
 
 #if (MGIO_DEBUG>0)
   /* debug extension */
@@ -315,32 +330,32 @@ struct mgio_cg_element {
 
 };
 
-struct mgio_refinement_seq {                                    /* used only for sizeof						*/
+struct mgio_refinement_seq {                                    /* used only for sizeof                                         */
 
-  int refrule;                                                                  /* id of refinement rule					*/
-  int sonref;                                                                           /* 1 if sons are refined, bitwise			*/
-  int refclass;                                                                 /* refinement class							*/
-  int nnewcorners;                                                              /* nb of new corners on next level			*/
+  int refrule;                                                                  /* id of refinement rule                                        */
+  int sonref;                                                                           /* 1 if sons are refined, bitwise                       */
+  int refclass;                                                                 /* refinement class                                                     */
+  int nnewcorners;                                                              /* nb of new corners on next level                      */
   int newcornerid[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];      /* ids of new vert.or -1 */
-  int nmoved;                                                                           /* nmoved new vertices moved				*/
-  struct mgio_movedcorner mvcorner[MGIO_MAX_NEW_CORNERS];       /* array of moved node			*/
+  int nmoved;                                                                           /* nmoved new vertices moved                            */
+  struct mgio_movedcorner mvcorner[MGIO_MAX_NEW_CORNERS];       /* array of moved node                  */
 };
 
 struct mgio_refinement {
 
-  int refrule;                                                                  /* id of refinement rule					*/
-  int sonref;                                                                           /* 1 if sons are refined, bitwise			*/
-  int refclass;                                                                 /* refinement class							*/
-  int nnewcorners;                                                              /* nb of new corners on next level			*/
+  int refrule;                                                                  /* id of refinement rule                                        */
+  int sonref;                                                                           /* 1 if sons are refined, bitwise                       */
+  int refclass;                                                                 /* refinement class                                                     */
+  int nnewcorners;                                                              /* nb of new corners on next level                      */
   int newcornerid[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];      /* ids of new vert.or -1 */
-  int nmoved;                                                                           /* nmoved new vertices moved				*/
-  struct mgio_movedcorner mvcorner[MGIO_MAX_NEW_CORNERS];       /* array of moved node			*/
+  int nmoved;                                                                           /* nmoved new vertices moved                            */
+  struct mgio_movedcorner mvcorner[MGIO_MAX_NEW_CORNERS];       /* array of moved node                  */
 
   /* (procs>1)-extension */
-  int sonex;                                                                            /* used bitwise								*/
+  int sonex;                                                                            /* used bitwise                                                         */
   int orphanid_ex;                                                              /* 1 if exists                                                          */
   int orphanid[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];      /* ids of orphan node or -1 */
-  int nbid_ex;                                                                  /* used bitwise: nbid exists for son ...	*/
+  int nbid_ex;                                                                  /* used bitwise: nbid exists for son ...        */
   int nbid[MGIO_MAX_SONS_OF_ELEM][MGIO_MAX_SIDES_OF_ELEM];       /* nb-elem-ids of non-orphan   */
   /* elems referring to orphan elems if nec.  */
   struct mgio_parinfo pinfo[MGIO_MAX_SONS_OF_ELEM];
@@ -356,15 +371,15 @@ struct mgio_refinement {
   int nbkey[MGIO_MAX_SIDES_OF_ELEM];                            /* nb-elem-keys element */
 
   /* (procs>1)-extension */
-  int sonskey[MGIO_MAX_SONS_OF_ELEM];                           /* keys of sons of element					*/
+  int sonskey[MGIO_MAX_SONS_OF_ELEM];                           /* keys of sons of element                                      */
   int sonsnbkey[MGIO_MAX_SONS_OF_ELEM][MGIO_MAX_SIDES_OF_ELEM];      /* keys of neighbors of
-                                                                                                                                    sons of element			*/
+                                                                                                                                    sons of element                     */
 #endif
 };
 
 struct mgio_bd_general {
 
-  int nBndP;                                                                            /* n BNDP in mg, only ug					*/
+  int nBndP;                                                                            /* n BNDP in mg, only ug                                        */
 };
 
 typedef struct mgio_mg_general MGIO_MG_GENERAL;
@@ -380,17 +395,17 @@ typedef struct mgio_bd_general MGIO_BD_GENERAL;
 typedef struct mgio_parinfo MGIO_PARINFO;
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported global variables                                                                      */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 extern int mgpathes_set;
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* read functions */
@@ -431,5 +446,9 @@ int             Write_PBndDesc          (int n, BNDP **BndPList);
 int     CloseMGFile                     (void);
 int     MGIO_Init                       (void);
 int             MGIO_dircreate          (char *filename, int rename);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif

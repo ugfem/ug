@@ -29,16 +29,20 @@
 #define __TREE__
 
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
 
-#ifndef __FIFO__
 #include "fifo.h"
-#endif
-
-#ifndef __HEAPS__
 #include "heaps.h"
+
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
 #endif
 
 /****************************************************************************/
@@ -129,4 +133,10 @@ INT InsertinTree (TREE *theTree, DOUBLE *Position, void *obj);
 void *DeleteObjinTree (TREE *theTree, DOUBLE *Position);
 TREE_ENTRY *GetFirstLeafinQuader(TREE *theTree, DOUBLE *ll, DOUBLE *ur);
 TREE_ENTRY *GetNextLeafinQuader(TREE *theTree);
+
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
+
 #endif

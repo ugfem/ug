@@ -28,9 +28,13 @@
 
 #include <stdio.h>
 
+/* only for the definition of NS_PREFIX */
+#include "domain.h"
+
 #include "compiler.h"
 #include "general.h"
 #include "fifo.h"
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -63,7 +67,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT fifo_init (FIFO *myfifo, void *buffer, INT size)
+INT NS_PREFIX fifo_init (FIFO *myfifo, void *buffer, INT size)
 {
   myfifo->size = size / sizeof(void *);
   if (myfifo->size<=0) return(0);
@@ -90,7 +94,7 @@ INT fifo_init (FIFO *myfifo, void *buffer, INT size)
    D*/
 /****************************************************************************/
 
-void fifo_clear (FIFO *myfifo)
+void NS_PREFIX fifo_clear (FIFO *myfifo)
 {
   myfifo->start = myfifo->end = myfifo->used = 0;
 }
@@ -115,7 +119,7 @@ void fifo_clear (FIFO *myfifo)
    D*/
 /****************************************************************************/
 
-INT fifo_empty (const FIFO *myfifo)
+INT NS_PREFIX fifo_empty (const FIFO *myfifo)
 {
   if (myfifo->used==0)
     return(1);
@@ -143,7 +147,7 @@ INT fifo_empty (const FIFO *myfifo)
    D*/
 /****************************************************************************/
 
-INT fifo_full (const FIFO *myfifo)
+INT NS_PREFIX fifo_full (const FIFO *myfifo)
 {
   if (myfifo->used==myfifo->size)
     return(1);
@@ -172,7 +176,7 @@ INT fifo_full (const FIFO *myfifo)
    D*/
 /****************************************************************************/
 
-INT fifo_in (FIFO *myfifo, void *newelement)
+INT NS_PREFIX fifo_in (FIFO *myfifo, void *newelement)
 {
   if (myfifo->used<myfifo->size)
   {
@@ -205,7 +209,7 @@ INT fifo_in (FIFO *myfifo, void *newelement)
    D*/
 /****************************************************************************/
 
-void *fifo_out (FIFO *myfifo)
+void *NS_PREFIX fifo_out (FIFO *myfifo)
 {
   INT i;
 

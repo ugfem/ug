@@ -33,6 +33,9 @@
 #include <stdlib.h>
 #include <math.h>
 
+/* dom */
+#include "domain.h"
+
 /* low */
 #include "compiler.h"
 #include "general.h"
@@ -47,8 +50,6 @@
 #include "MacGui.h"
 #endif
 
-/* dom */
-#include "domain.h"
 
 /* gm */
 #include "gm.h"
@@ -67,6 +68,14 @@
 #include "ggaccel.h" /* header file for accelerator */
 
 #include "ggmain.h"
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
 
 /****************************************************************************/
 /*                                                                          */
