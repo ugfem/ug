@@ -2962,6 +2962,11 @@ static int ComputeCopies (GRID *theGrid)
     #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 	ClearNextNodeClasses(theGrid);
 	#ifdef __PERIODIC_BOUNDARY__
+	/*
+		this is needed to set flags of nodes correctly:
+		set flag on node, write to vector (same for all periodic
+		boundaries), communicate if ModelP, get flag from vector. 
+	*/
 	/* for periodic boundaries also the vector classes have to be initialized */
 	ClearNextVectorClasses(theGrid);
 	#endif
