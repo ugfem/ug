@@ -94,8 +94,8 @@ extern "C" {
 /****************************************************************************/
 
 
-void *memmgr_AllocOMEM (size_t size, int typeid , int prio, int attr);
-void  memmgr_FreeOMEM (void *mem, size_t size, int typeid );
+void *memmgr_AllocOMEM (size_t size, int Typeid, int prio, int attr);
+void  memmgr_FreeOMEM (void *mem, size_t size, int Typeid);
 
 void *memmgr_AllocPMEM (size_t size);
 void  memmgr_FreePMEM (void *mem);
