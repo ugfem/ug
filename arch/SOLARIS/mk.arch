@@ -16,7 +16,7 @@ ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lm -lc
 
-ARCH_CFLAGS   = -Xc  # -g 
+ARCH_CFLAGS   = 
 ARCH_C++FLAGS =
 ARCH_LFLAGS   =
 ARCH_ARFLAGS  = ru
