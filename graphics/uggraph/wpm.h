@@ -211,6 +211,8 @@ struct MatrixPlotObj {
   INT extra;                                                                    /* plot extra connections						*/
   DOUBLE min, max;                                                      /* range										*/
   SYMBOL *Matrix;                                                       /* matrix symbol iff							*/
+  DOUBLE dash;                                                          /* length of the line segments in dashed lines */
+  DOUBLE space;                                                         /* gap between line segments in dashed lines*/
 };
 
 struct ExternPlotObject {

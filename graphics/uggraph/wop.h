@@ -88,8 +88,9 @@
 #define DO_WAIT                                                 13
 #define DO_DEPEND                                               14
 #define DO_INVERSE_POLYLINE                     15
+#define DO_STYLED_LINE                                  16
 #ifdef ModelP
-#define DO_END_GPIPE                                    16
+#define DO_END_GPIPE                                    17
 #endif
 
 /* increment */
@@ -100,6 +101,7 @@
 
 #define DO_inc_RANGE(p)                                 (p)+=3;
 #define DO_inc_LINE(p,d)                                (p)+=2+2*d;
+#define DO_inc_STYLED_LINE(p,d)                 (p)+=2+2*d;
 #define DO_inc_ARROW(p,d)                               (p)+=2+2*d;
 #define DO_inc_DEPEND(p,d)                              (p)+=2+2*d;
 #define DO_inc_INVERSE_LINE(p,d)                (p)+=1+2*d;
@@ -132,6 +134,7 @@
 #define NODEWISE                                                2
 #define VECTORWISE                                              3
 #define EXTERN                                                  4
+#define RECURSIVE                                               5
 
 #define MAX_NO_CYCLES                                   4
 
@@ -140,6 +143,7 @@
 #define WP_NODEWISE(p)                                  (&((p)->NodeWiseWorkProcs))
 #define WP_VECTORWISE(p)                                (&((p)->VectorWiseWorkProcs))
 #define WP_EXTERNWISE(p)                                (&((p)->ExternWorkProcs))
+#define WP_RECURSIVEWISE(p)                             (&((p)->RecursiveWorkProcs))
 
 /****************************************************************************/
 /*																			*/
@@ -326,6 +330,9 @@ typedef INT (*VW_EvaluateProcPtr)(VECTOR *, DRAWINGOBJ *);
 /* extern procedure ptr */
 typedef INT (*EXT_EvaluateProcPtr)(DRAWINGOBJ *, INT *);
 
+/* recursive procedure ptr */
+typedef INT (*RECURSIVE_EvaluateProcPtr)(DRAWINGOBJ *, GEN_ExecuteProcPtr executeProc);
+
 struct ElemWiseWork {
 
   INT WorkMode;                                                                                                         /* see above									*/
@@ -372,6 +379,16 @@ struct ExternWork {
   EXT_EvaluateProcPtr EXT_EvaluateProc;                                 /* evaluation procedure                                                         */
 };
 
+struct RecursiveWork {
+
+  INT WorkMode;                                                                                         /* see above										*/
+  GEN_PreProcessProcPtr RECURSIVE_PreProcessProc;                       /* preprocess procedure                                                         */
+  GEN_ExecuteProcPtr RECURSIVE_ExecuteProc;                                     /* execute procedure								*/
+  GEN_PostProcessProcPtr RECURSIVE_PostProcessProc;                     /* postprocess procedure							*/
+
+  RECURSIVE_EvaluateProcPtr RECURSIVE_EvaluateProc;                     /* evaluation procedure                                                         */
+};
+
 union WorkProcs {
 
   INT WorkMode;                                                                                 /* see above										*/
@@ -379,6 +396,7 @@ union WorkProcs {
   struct NodeWiseWork NodeWiseWorkProcs;                                /* procedures for nodewise work                                         */
   struct VectorWiseWork VectorWiseWorkProcs;                    /* procedures for vectorwise work					*/
   struct ExternWork ExternWorkProcs;                                            /* procedures for extern work						*/
+  struct RecursiveWork RecursiveWorkProcs;                              /* procedures for extern work						*/
 };
 
 struct PlotObjHandling {
@@ -399,6 +417,7 @@ typedef struct ElemWiseWork ELEMWISEWORK;
 typedef struct NodeWiseWork NODEWISEWORK;
 typedef struct VectorWiseWork VECTORWISEWORK;
 typedef struct ExternWork EXTERNWORK;
+typedef struct RecursiveWork RECURSIVEWORK;
 typedef struct TrafoContext TRAFOCONTEXT;
 typedef union  Work WORK;
 typedef struct PlotObjHandling PLOTOBJHANDLING;

@@ -117,7 +117,16 @@ INT ce_CUTMODE;
 
 /* pixel resolution for inserting boundary nodes */
 #define SMALLPIX 			4
-	
+
+/* introduce new coordinate system for matrix plots: 
+		(0,0) is in the upper left corner
+		x-axis to yhe right
+		y-axis down (opposite direction resp. standard ug-coordinate system!)
+		unit is 1 matrix entry box
+*/
+#define MAT_XC(col)	(col)
+#define MAT_YC(row)	(MAT_maxrow-(row))
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -398,6 +407,8 @@ static DOUBLE MAT_thresh;		/* don't plot entries with |.|<thresh		*/
 
 static BLOCKVECTOR *BV_theBV;	/* current bockvector						*/
 static long BV_color;			/* black for seperating lines of blocks		*/
+static COORD MAT_dash;			/* length of the line segments in dashed lines */
+static COORD MAT_space;			/* gap between line segments in dashed lines*/
 
 /*---------- working variables of 'EW_ElementBdryEval2D' -------------------*/
 static long EB_ColorGrid;		/* color of the grid plotted with the EScala*/
@@ -538,6 +549,7 @@ static VW_GetFirstVectorProcPtr 	WOP_VW_GetFirstVectorProc;
 static VW_GetNextVectorProcPtr		WOP_VW_GetNextVectorProc;
 static VW_EvaluateProcPtr			WOP_VW_EvaluateProc;
 static EXT_EvaluateProcPtr			WOP_EXT_EvaluateProc;
+static RECURSIVE_EvaluateProcPtr	WOP_RECURSIVE_EvaluateProc;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -3339,6 +3351,9 @@ static INT EW_DoNothing0D (DRAWINGOBJ *q)
 			case DO_LINE:
 				DO_inc_LINE(q,0);
 				break;
+			case DO_STYLED_LINE:
+				DO_inc_STYLED_LINE(q,0);
+				break;
 			case DO_ARROW:
 				DO_inc_ARROW(q,0);
 				break;
@@ -3438,6 +3453,17 @@ static INT Draw2D (DRAWINGOBJ *q)
 				V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,2);
 				(*OBS_ProjectProc)(help,&a);
 				UgDraw(a);
+				break;
+			case DO_STYLED_LINE:
+				DO_inc(q)
+				UgSetColor(DO_2l(q)); DO_inc(q);
+				V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,2);
+				(*OBS_ProjectProc)(help,&a);
+				V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,2);
+				(*OBS_ProjectProc)(help,&b);
+				help[0] = DO_2C(q); DO_inc_n(q,1);
+				help[1] = DO_2C(q); DO_inc_n(q,1);
+				UgStyledLine(a,b,help[0],help[1]);
 				break;
 			case DO_ARROW:
 				DO_inc(q)
@@ -3709,6 +3735,17 @@ static INT Draw3D (DRAWINGOBJ *q)
 				(*OBS_ProjectProc)(help,&a);
 				UgDraw(a);
 				break;
+			case DO_STYLED_LINE:
+				DO_inc(q)
+				UgSetColor(DO_2l(q)); DO_inc(q);
+				V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,3);
+				(*OBS_ProjectProc)(help,&a);
+				V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,3);
+				(*OBS_ProjectProc)(help,&b);
+				help[0] = DO_2C(q); DO_inc_n(q,1);
+				help[1] = DO_2C(q); DO_inc_n(q,1);
+				UgStyledLine(a,b,help[0],help[1]);
+				break;
 			case DO_ARROW:
 				DO_inc(q)
 				UgSetColor(DO_2l(q)); DO_inc(q);
@@ -3896,6 +3933,9 @@ static INT EW_SelectElement2D (DRAWINGOBJ *q)
 			case DO_LINE:
 				DO_inc_LINE(q,2);
 				break;
+			case DO_STYLED_LINE:
+				DO_inc_STYLED_LINE(q,2);
+				break;
 			case DO_ARROW:
 				DO_inc_ARROW(q,2);
 				break;
@@ -4017,6 +4057,9 @@ static INT FindRange2D (DRAWINGOBJ *q)
 			case DO_LINE:
 				DO_inc_LINE(q,2);
 				break;
+			case DO_STYLED_LINE:
+				DO_inc_STYLED_LINE(q,2);
+				break;
 			case DO_ARROW:
 				DO_inc_ARROW(q,2);
 				break;
@@ -4101,6 +4144,9 @@ static INT FindRange3D (DRAWINGOBJ *q)
 				break;
 			case DO_LINE:
 				DO_inc_LINE(q,3);
+				break;
+			case DO_STYLED_LINE:
+				DO_inc_STYLED_LINE(q,3);
 				break;
 			case DO_ARROW:
 				DO_inc_ARROW(q,3);
@@ -4213,7 +4259,7 @@ static INT GEN_PostProcess_Scalar_FR (PICTURE *thePicture, WORK *theWork)
 /************************************ Part for 2D and 3D Version ******************************************/
 /**********************************************************************************************************/
 
-static INT EXT_BVPreProcess (PICTURE *thePicture, WORK *theWork)
+static INT RECURSIVE_BVPreProcess (PICTURE *thePicture, WORK *theWork)
 {
 	struct MatrixPlotObj *theMpo;
 	OUTPUTDEVICE *theOD;
@@ -4238,50 +4284,118 @@ static INT EXT_BVPreProcess (PICTURE *thePicture, WORK *theWork)
 	return (0);
 }
 
-static INT EXT_BVEval (DRAWINGOBJ *theDO, INT *end)
+
+static INT BVEval_recurse( DRAWINGOBJ *theDO, GEN_ExecuteProcPtr ExecuteProc, BLOCKVECTOR *bv, INT pos_parent, INT width_parent, INT pos_own )
+/* called from RECURSIVE_BVEval; does the recursive plotting */
 {
-	INT row,col;
+	INT width_own, pos_child;
+	BLOCKVECTOR *bv_child;
+	DRAWINGOBJ *theStartDO = theDO;
 	
-	if (BV_theBV==NULL)
-	{
-		/* hor line after last vector */
-		DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
-		DO_2l(theDO) = BV_color; DO_inc(theDO);
-		DO_2C(theDO) = 			0;   DO_inc(theDO); DO_2C(theDO) = 0;   DO_inc(theDO);
-		DO_2C(theDO) = MAT_maxrow;   DO_inc(theDO); DO_2C(theDO) = 0;   DO_inc(theDO);
-		
-		/* vert line after last vector */
-		DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
-		DO_2l(theDO) = BV_color; DO_inc(theDO);
-		DO_2C(theDO) = MAT_maxrow;   DO_inc(theDO); DO_2C(theDO) = 			0;   DO_inc(theDO);
-		DO_2C(theDO) = MAT_maxrow;   DO_inc(theDO); DO_2C(theDO) = MAT_maxrow;   DO_inc(theDO);
-		
-		BV_theBV = BVSUCC(BV_theBV);
-		
-		DO_2c(theDO) = DO_NO_INST;
-		
-		*end = TRUE;
-		return (0);
-	}
-	
-	col = VINDEX(BVFIRSTVECTOR(BV_theBV)) - 1;
-	row = MAT_maxrow - col;
-	
+	width_own = BVNUMBEROFVECTORS( bv );
+printf( "%d %d %d %d\n", pos_parent,width_parent,	pos_own,width_own);
+
 	/* hor line at BVFIRSTVECTOR(BV_theBV) */
 	DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
-	DO_2l(theDO) = BV_color; DO_inc(theDO);
-	DO_2C(theDO) = 			0;   DO_inc(theDO); DO_2C(theDO) = row;   DO_inc(theDO);
-	DO_2C(theDO) = MAT_maxrow;   DO_inc(theDO); DO_2C(theDO) = row;   DO_inc(theDO);
-	
+	DO_2l(theDO) = BV_color; DO_inc(theDO)
+	DO_2C(theDO) = MAT_XC(pos_parent);   			DO_inc(theDO); DO_2C(theDO) = MAT_YC(pos_own); DO_inc(theDO)
+	DO_2C(theDO) = MAT_XC(pos_parent+width_parent); DO_inc(theDO); DO_2C(theDO) = MAT_YC(pos_own); DO_inc(theDO)
+
 	/* vert line at BVFIRSTVECTOR(BV_theBV) */
-	DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+	DO_2c(theDO) = DO_LINE; DO_inc(theDO);
 	DO_2l(theDO) = BV_color; DO_inc(theDO);
-	DO_2C(theDO) = col;   DO_inc(theDO); DO_2C(theDO) = 		 0;   DO_inc(theDO);
-	DO_2C(theDO) = col;   DO_inc(theDO); DO_2C(theDO) = MAT_maxrow;   DO_inc(theDO);
+	DO_2C(theDO) = MAT_XC(pos_own);   DO_inc(theDO); DO_2C(theDO) = MAT_YC(pos_parent);				 DO_inc(theDO);
+	DO_2C(theDO) = MAT_XC(pos_own);   DO_inc(theDO); DO_2C(theDO) = MAT_YC(pos_parent+width_parent); DO_inc(theDO);
+
+	if ( MAT_dash != 0.0 )
+	{
+		/* hor dashed line before BVFIRSTVECTOR(BV_theBV) */
+		DO_2c(theDO) = DO_STYLED_LINE; DO_inc(theDO); 
+		DO_2l(theDO) = BV_color; DO_inc(theDO);
+		DO_2C(theDO) = MAT_XC(pos_parent); DO_inc(theDO); DO_2C(theDO) = MAT_YC(pos_own); DO_inc(theDO);
+		DO_2C(theDO) = MAT_XC(0); 		   DO_inc(theDO); DO_2C(theDO) = MAT_YC(pos_own); DO_inc(theDO);
+		DO_2C(theDO) = MAT_dash;  DO_inc(theDO)
+		DO_2C(theDO) = MAT_space; DO_inc(theDO)
+		
+		/* hor dashed line after BVFIRSTVECTOR(BV_theBV) */
+		DO_2c(theDO) = DO_STYLED_LINE; DO_inc(theDO); 
+		DO_2l(theDO) = BV_color; DO_inc(theDO);
+		DO_2C(theDO) = MAT_XC(MAT_maxrow); 				DO_inc(theDO); DO_2C(theDO) = MAT_YC(pos_own); DO_inc(theDO);
+		DO_2C(theDO) = MAT_XC(pos_parent+width_parent); DO_inc(theDO); DO_2C(theDO) = MAT_YC(pos_own); DO_inc(theDO);
+		DO_2C(theDO) = MAT_dash;  DO_inc(theDO);
+		DO_2C(theDO) = MAT_space; DO_inc(theDO);
+
+		/* vert line above BVFIRSTVECTOR(BV_theBV) */
+		DO_2c(theDO) = DO_STYLED_LINE; DO_inc(theDO) ;
+		DO_2l(theDO) = BV_color; DO_inc(theDO);
+		DO_2C(theDO) = MAT_XC(pos_own);   DO_inc(theDO); DO_2C(theDO) = MAT_YC(pos_parent);	DO_inc(theDO);
+		DO_2C(theDO) = MAT_XC(pos_own);   DO_inc(theDO); DO_2C(theDO) = MAT_YC(0); 			DO_inc(theDO);
+		DO_2C(theDO) = MAT_dash;  DO_inc(theDO);
+		DO_2C(theDO) = MAT_space; DO_inc(theDO);
 	
-	BV_theBV = BVSUCC(BV_theBV);
+		/* vert line above BVFIRSTVECTOR(BV_theBV) */
+		DO_2c(theDO) = DO_STYLED_LINE; DO_inc(theDO);
+		DO_2l(theDO) = BV_color; DO_inc(theDO);
+		DO_2C(theDO) = MAT_XC(pos_own); DO_inc(theDO); DO_2C(theDO) = MAT_YC(pos_parent+width_parent); DO_inc(theDO);
+		DO_2C(theDO) = MAT_XC(pos_own); DO_inc(theDO); DO_2C(theDO) = MAT_YC(MAT_maxrow); 			   DO_inc(theDO);
+		DO_2C(theDO) = MAT_dash;  DO_inc(theDO);
+		DO_2C(theDO) = MAT_space; DO_inc(theDO);
+	}
 	
 	DO_2c(theDO) = DO_NO_INST;
+	
+	if ((*ExecuteProc)(theStartDO)) 
+		return (1);
+	
+	if ( BV_IS_LEAF_BV( bv ) )
+		return (0);
+	
+	pos_child = pos_own;
+	for ( bv_child = BVDOWNBV(bv); bv_child != BVDOWNBVEND(bv); bv_child = BVSUCC(bv_child) )
+	{
+		if (BVEval_recurse( theDO, ExecuteProc, bv_child, pos_own, width_own, pos_child ))
+			return (1);
+		pos_child += BVNUMBEROFVECTORS( bv_child );
+	}
+	
+	return (0);
+}
+
+
+static INT RECURSIVE_BVEval (DRAWINGOBJ *theDO, GEN_ExecuteProcPtr ExecuteProc)
+{
+	DRAWINGOBJ *theStartDO = theDO;
+	INT pos_child;
+	BLOCKVECTOR *bv_child;
+	
+	if ( BV_theBV == NULL )
+		return (0);
+	
+	/* process the blockvector list following GFIRSTBV(grid) */
+	pos_child = 0;
+	for ( bv_child = BV_theBV; bv_child != NULL; bv_child = BVSUCC(bv_child) )
+	{
+		if (BVEval_recurse( theDO, ExecuteProc, bv_child, 0, MAT_maxrow, pos_child ))
+			return (1);
+		pos_child += BVNUMBEROFVECTORS(bv_child);
+	}
+	
+	/* hor line after last vector */
+	DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+	DO_2l(theDO) = BV_color; DO_inc(theDO);
+	DO_2C(theDO) = MAT_XC(0);   		DO_inc(theDO); DO_2C(theDO) = MAT_YC(MAT_maxrow);   DO_inc(theDO);
+	DO_2C(theDO) = MAT_XC(MAT_maxrow);	DO_inc(theDO); DO_2C(theDO) = MAT_YC(MAT_maxrow);   DO_inc(theDO);
+		
+	/* vert line after last vector */
+	DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+	DO_2l(theDO) = BV_color; DO_inc(theDO);
+	DO_2C(theDO) = MAT_XC(MAT_maxrow);  DO_inc(theDO); DO_2C(theDO) = MAT_YC(0);   			DO_inc(theDO);
+	DO_2C(theDO) = MAT_XC(MAT_maxrow);  DO_inc(theDO); DO_2C(theDO) = MAT_YC(MAT_maxrow);   DO_inc(theDO);
+		
+	DO_2c(theDO) = DO_NO_INST;
+	
+	if ((*ExecuteProc)(theStartDO)) 
+		return (1);
 	
 	return (0);
 }
@@ -4304,6 +4418,8 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
 	
 	MAT_conn			= theMpo->conn;
 	MAT_extra			= theMpo->extra;
+	MAT_dash			= theMpo->dash;
+	MAT_space			= theMpo->space;
 	MAT_black			= theOD->black;
 	MAT_white			= theOD->white;
 	
@@ -4317,7 +4433,7 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
 	{
 		MAT_eval		= theMpo->EvalFct->EvalProc;
 	}
-	MAT_maxrow			= theGrid->nVector;
+	MAT_maxrow			= NVEC(theGrid);
 	MAT_log				= theMpo->log;
 	MAT_thresh			= theMpo->thresh;
 	MAT_rel				= theMpo->rel;
@@ -10911,6 +11027,9 @@ static INT EW_SelectElement3D (DRAWINGOBJ *q)
 			case DO_LINE:
 				DO_inc_LINE(q,3);
 				break;
+			case DO_STYLED_LINE:
+				DO_inc_STYLED_LINE(q,3);
+				break;
 			case DO_ARROW:
 				DO_inc_ARROW(q,3);
 				break;
@@ -13772,6 +13891,28 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 					if ((*WOP_GEN_PostProcessProc)(thePicture,WOP_Work))			return (1);
 				break;
 			
+			case RECURSIVE:
+			
+				/* set execution functions */
+				WOP_GEN_PreProcessProc			= WP_RECURSIVEWISE(WOP_WorkProcs)->RECURSIVE_PreProcessProc;
+				WOP_RECURSIVE_EvaluateProc		= WP_RECURSIVEWISE(WOP_WorkProcs)->RECURSIVE_EvaluateProc;
+				WOP_GEN_ExecuteProc 			= WP_RECURSIVEWISE(WOP_WorkProcs)->RECURSIVE_ExecuteProc;
+				WOP_GEN_PostProcessProc 		= WP_RECURSIVEWISE(WOP_WorkProcs)->RECURSIVE_PostProcessProc;
+				if (WOP_RECURSIVE_EvaluateProc==NULL || WOP_GEN_ExecuteProc==NULL)
+				{
+					UserWrite("evaluation or execution procedure is missing\n");
+					return (1);
+				}
+			
+				/* work */
+				if (WOP_GEN_PreProcessProc!=NULL)
+					if ((*WOP_GEN_PreProcessProc)(thePicture,WOP_Work))
+						break;
+				if ((*WOP_RECURSIVE_EvaluateProc)(WOP_DrawingObject,WOP_GEN_ExecuteProc))					return (1);
+				if (WOP_GEN_PostProcessProc!=NULL)
+					if ((*WOP_GEN_PostProcessProc)(thePicture,WOP_Work))			return (1);
+				break;
+			
 			default:
 				return (1);
 		}
@@ -14079,7 +14220,8 @@ INT InitWOP (void)
 	ELEMWISEWORK *theEWW;
 	VECTORWISEWORK *theVWW;
 	INT i;
-        EXTERNWORK *theEXW;
+    EXTERNWORK *theEXW;
+    RECURSIVEWORK *theREW;
 	#ifdef __TWODIM__
 		NODEWISEWORK *theNWW;
 	#endif
@@ -14100,24 +14242,16 @@ INT InitWOP (void)
 	theVWW->VW_GetFirstVectorProcProc		= VW_GetFirstVector_Proc;
 	theVWW->VW_GetNextVectorProcProc		= VW_GetNextVector_Proc;
 	theVWW->VW_EvaluateProc 				= VW_MatrixEval;
-	#ifdef __TWODIM__
 	theVWW->VW_ExecuteProc					= Draw2D;
-	#else
-	theVWW->VW_ExecuteProc					= Draw3D;
-	#endif
 	theVWW->VW_PostProcessProc				= NULL;
 
 	theWP = POH_WORKPROGS(thePOH,DRAW_WORK,1);
-	WP_WORKMODE(theWP) = EXTERN;
-	theEXW = WP_EXTERNWISE(theWP);
-	theEXW->EXT_PreProcessProc				= EXT_BVPreProcess;
-	theEXW->EXT_EvaluateProc				= EXT_BVEval;
-	#ifdef __TWODIM__
-	theEXW->EXT_ExecuteProc					= Draw2D;
-	#else
-	theEXW->EXT_ExecuteProc					= Draw3D;
-	#endif
-	theEXW->EXT_PostProcessProc				= NULL;
+	WP_WORKMODE(theWP) = RECURSIVE;
+	theREW = WP_RECURSIVEWISE(theWP);
+	theREW->RECURSIVE_PreProcessProc				= RECURSIVE_BVPreProcess;
+	theREW->RECURSIVE_EvaluateProc					= RECURSIVE_BVEval;
+	theREW->RECURSIVE_ExecuteProc					= Draw2D;
+	theREW->RECURSIVE_PostProcessProc				= NULL;
 
 	/* findrange work */
 	POH_NBCYCLES(thePOH,FINDRANGE_WORK) = 1;

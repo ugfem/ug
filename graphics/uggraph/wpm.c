@@ -2228,15 +2228,15 @@ static INT InitMatrixPlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
   struct MatrixPlotObj *theMpo;
   GRID *theGrid;
   INT i;
-  float fValue;
+  float fValue, f2Value;
   int iValue;
   char buffer[64];
 
   theMpo = &(thePlotObj->theMpo);
   theGrid = PO_MG(thePlotObj)->grids[PO_MG(thePlotObj)->currentLevel];
   if (theGrid == NULL) return (NOT_INIT);
-  PO_MIDPOINT(thePlotObj)[0] = PO_MIDPOINT(thePlotObj)[1] = theGrid->nVector/2;
-  PO_RADIUS(thePlotObj) = theGrid->nVector/2;
+  PO_MIDPOINT(thePlotObj)[0] = PO_MIDPOINT(thePlotObj)[1] = NVEC(theGrid)/2.0;
+  PO_RADIUS(thePlotObj) = NVEC(theGrid)/2.0;
 
   /* defaults */
   if (PO_STATUS(thePlotObj)==NOT_INIT)
@@ -2249,6 +2249,8 @@ static INT InitMatrixPlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theMpo->rel                     = FALSE;
     theMpo->EvalFct         = NULL;
     theMpo->Matrix          = NULL;
+    theMpo->dash            = 0.0;
+    theMpo->space           = 0.0;
   }
 
   /* get plot procedure */
@@ -2282,12 +2284,17 @@ static INT InitMatrixPlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
       break;
 
     case 'B' :
-      if (sscanf(argv[i],"BV %d",&iValue)!=1)
+      iValue = 0;
+      fValue = 0.0;
+      f2Value = 0.0;
+      if (sscanf(argv[i],"BV %d %f %f",&iValue,&fValue,&f2Value)==0)
         break;
       if (iValue==1)
         theMpo->BV = YES;
       else if (iValue==0)
         theMpo->BV = NO;
+      theMpo->dash = fValue;
+      theMpo->space = f2Value;
       break;
 
     case 'r' :
@@ -4470,14 +4477,14 @@ INT InitPlotObjTypes (void)
 {
   PLOTOBJTYPE *thePOT;
 
-  /* set data and procedures of PLOTOBJTYPE */
-        #ifdef __TWODIM__
 
   if ((thePOT=GetPlotObjType("Matrix"))  == NULL) return (1);
   thePOT->Dimension                               = TYPE_2D;
   thePOT->SetPlotObjProc                  = InitMatrixPlotObject;
   thePOT->DispPlotObjProc                 = DisplayMatrixPlotObject;
 
+  /* set data and procedures of PLOTOBJTYPE */
+        #ifdef __TWODIM__
   if ((thePOT=GetPlotObjType("EScalar")) == NULL) return (1);
   thePOT->Dimension                               = TYPE_2D;
   thePOT->SetPlotObjProc                  = InitScalarFieldPlotObject_2D;
@@ -4505,11 +4512,6 @@ INT InitPlotObjTypes (void)
         #endif
 
         #ifdef __THREEDIM__
-  if ((thePOT=GetPlotObjType("Matrix"))  == NULL) return (1);
-  thePOT->Dimension                               = TYPE_3D;
-  thePOT->SetPlotObjProc                  = InitMatrixPlotObject;
-  thePOT->DispPlotObjProc                 = DisplayMatrixPlotObject;
-
   if ((thePOT=GetPlotObjType("EScalar")) == NULL) return (1);
   thePOT->Dimension                               = TYPE_3D;
   thePOT->SetPlotObjProc                  = InitScalarFieldPlotObject_3D;
