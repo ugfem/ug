@@ -635,8 +635,11 @@ INT NPTAssembleInit                     (NP_BASE *theNP, INT argc , char **argv)
 INT NPTAssembleDisplay                  (NP_BASE *theNP);
 INT NPTAssembleExecute                  (NP_BASE *theNP, INT argc , char **argv);
 
-void DefaultPartassParams               (PARTASS_PARAMS *pp);
-INT SetPartassParams                    (PARTASS_PARAMS *pp, const VEC_TEMPLATE *vt, INT sub,
+INT SetPartassParams                    (PARTASS_PARAMS *pp,
+                                         DOUBLE s_a, DOUBLE s_m, DOUBLE t, DOUBLE dt, DOUBLE dt_old,
+                                         VECDATA_DESC *s, VECDATA_DESC *r, VECDATA_DESC *o,
+                                         VECDATA_DESC *c, VECDATA_DESC *g, MATDATA_DESC *A);
+INT SetPartassParamsX                   (PARTASS_PARAMS *pp, const VEC_TEMPLATE *vt, INT sub,
                                          DOUBLE s_a, DOUBLE s_m, DOUBLE t, DOUBLE dt, DOUBLE dt_old,
                                          VECDATA_DESC *s, VECDATA_DESC *r, VECDATA_DESC *o,
                                          VECDATA_DESC *c, VECDATA_DESC *g, MATDATA_DESC *A);
