@@ -764,6 +764,43 @@ int LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
   return (0);
 }
 
+/****************************************************************************/
+/*D
+        LGM_WriteOpenFile - init
+
+   SYNOPSIS:
+   FILE *LGM_WriteOpenFile (char* name);
+
+   PARAMETERS:
+
+   DESCRIPTION:
+   This function inits this file.
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   1 if error.
+   D*/
+/****************************************************************************/
+
+FILE *LGM_WriteOpenFile (char* name)
+{
+  FILE *stream;
+
+  /* open file */
+  if (lgmdomainpathes_set)
+    stream = FileOpenUsingSearchPaths(name,"w","lgmdomainpathes");
+  else
+    stream = fileopen(name,"w");
+  if (stream==NULL)
+  {
+    UserWriteF("cannot open file %s\n",name);
+    return(NULL);
+  }
+
+  return (stream);
+}
+
 INT InitLGMTransfer (void)
 {
   /* path to dir 'storidge' */
