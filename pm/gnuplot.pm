@@ -85,17 +85,30 @@ sub gnuplot
 		}
 		if (@_>=2)
 		{
-			my ($i,$j,$s,$t,$name);
-			$t=$_[0]; 
-			for ($j=1; $j<@_; $j++)
+			my ($i,$j,$k,$s,@a,$t,$name);
+			@a=split //,$_[0]; 
+			for ($j=0,$k=1; $j<@a; $j++)
 			{
-				$s=$_[$j]; 
-				$name=getname;
-				open(TMP,">$name"); 
-				for $i (sort {$a<=>$b} keys %$s) { print TMP "$i $$s{$i}\n"; } 
-				close(TMP);
-				$t=~s/%/"$name"/;
+				if ($a[$j] eq '%')
+				{
+					$name=getname;
+					$a[$j]='"'.$name.'"';
+					$s=$_[$k++];
+					open(TMP,">$name");
+					for $i (sort {$a<=>$b} keys %$s) { print TMP "$i $$s{$i}\n"; }
+					close(TMP);
+				}
+				if ($a[$j] eq '#')
+				{
+					$name=getname;
+					$a[$j]='"'.$name.'"';
+					$s=$_[$k++];
+					open(TMP,">$name");
+					for ($i=0; $i<@$s; $i+=2) { print TMP "$$s[$i] $$s[$i+1]\n"; }
+					close(TMP);
+				}
 			}
+			$t=join '',@a;
 			print IN "$t\n";
             return;
 		}
