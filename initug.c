@@ -43,6 +43,9 @@
 /* grid manager module */
 #include "initgm.h"
 
+/* grid generator module */
+#include "ggmain.h"
+
 /* numerics module */
 #include "initnumerics.h"
 
@@ -113,6 +116,16 @@ INT InitUg (int argc, char **argv)
   if ((err=InitGm())!=0)
   {
     printf("ERROR in InitUg while InitGm (line %d): called routine line %d\n",
+           (int) HiWrd(err), (int) LoWrd(err));
+    printf ("aborting ug\n");
+
+    return (1);
+  }
+
+  /* init the gg module */
+  if ((err=InitGG())!=0)
+  {
+    printf("ERROR in InitUg while InitGG (line %d): called routine line %d\n",
            (int) HiWrd(err), (int) LoWrd(err));
     printf ("aborting ug\n");
 
