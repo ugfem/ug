@@ -3241,12 +3241,6 @@ INT DisposeAMGLevel (MULTIGRID *theMG)
   if (DisposeIMatricesInGrid(fineGrid))
     return(1);
 
-        #ifdef ModelP
-  /* tell DDD that we will 'inconsistently' delete objects.
-     this is a dangerous mode as it switches DDD warnings off. */
-  DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_OFF);
-        #endif
-
   /* clear level */
   while (PFIRSTVECTOR(theGrid)!=NULL)
   {
@@ -3260,7 +3254,6 @@ INT DisposeAMGLevel (MULTIGRID *theMG)
   /* stop dangerous mode. from now on DDD will issue warnings again. */
   DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_ON);
         #endif
-
 
   /* remove from grids array */
   theMG->grids[l] = NULL;
@@ -3298,12 +3291,27 @@ INT DisposeAMGLevels (MULTIGRID *theMG)
 {
   INT err;
 
+        #ifdef ModelP
+  /* tell DDD that we will 'inconsistently' delete objects.
+     this is a dangerous mode as it switches DDD warnings off. */
+  DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_OFF);
+        #endif
+
   while ((err=DisposeAMGLevel(theMG))!=2)
     if (err==1)
     {
       PrintErrorMessage('E',"AMGTransferPreProcess","could not dispose AMG levels");
       REP_ERR_RETURN(1);
     }
+
+        #ifdef ModelP
+  /* stop dangerous mode. from now on DDD will issue warnings again. */
+  DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_ON);
+
+  /* rebuild DDD-interfaces because distributed vectors have been
+     deleted without communication */
+  DDD_IFRefreshAll();
+        #endif
 
   return(0);
 }
