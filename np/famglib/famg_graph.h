@@ -23,13 +23,13 @@
 #ifndef __FAMG_GRAPH__
 #define __FAMG_GRAPH__
 
-#include "famg_algebra.h"
-
 extern "C"
 {
 #include "parallel.h"
 #include "pargm.h"
 }
+
+#include "famg_algebra.h"
 
 /* RCS_ID
    $Header$

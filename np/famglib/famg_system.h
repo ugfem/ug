@@ -25,15 +25,15 @@
 #define __FAMG_SYSTEM__
 
 #include <string.h>
-#include "famg_algebra.h"
-#include "famg_grid.h"
-#include "famg_multigrid.h"
-
 #ifdef USE_UG_DS
 extern "C" {
 #include "gm.h"
 }
 #endif
+
+#include "famg_algebra.h"
+#include "famg_grid.h"
+#include "famg_multigrid.h"
 
 /* RCS_ID
    $Header$

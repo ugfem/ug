@@ -47,10 +47,10 @@ int FAMGMultiGrid::Init(const FAMGSystem &system)
 
     grid0 = (FAMGGrid *) FAMGGetMem(sizeof(FAMGGrid),FAMG_FROM_TOP);
     if(grid0 == NULL)
-		return(0);
+		RETURN(1);
 
     if( grid0->InitLevel0(system))
-		return 1;
+		RETURN(1);
     grid[n] = grid0;
     n++;
 
@@ -101,22 +101,21 @@ int FAMGMultiGrid::Construct()
         if(ilu)
         {
             if (g->ILUTDecomp(0)) 
-				return 1;
+				RETURN(1);
         }
 #endif
-        if (gamma < 1) return 0;
+        if (gamma < 1) return 0;	// simple return because gamma is known to all processors
 
         if (g->ConstructTransfer()) 
-			return 1;        
+			RETURN(1);       
         nnc = (g->GetN())-(g->GetNF());
-        // if (nnc == 0) return 0; 
         cg = (FAMGGrid *) FAMGGetMem(sizeof(FAMGGrid),FAMG_FROM_TOP);
         if(cg == NULL)
-			return(0);
+			RETURN(1);
         if(cg->Init(nnc,*g))
-			return 1;
+			RETURN(1);
         if(cg->Construct(g))
-			return 1;
+			RETURN(1);
         grid[n] = cg;
         g = cg;
         n++;
@@ -126,14 +125,13 @@ int FAMGMultiGrid::Construct()
 
         coarsen_weak = (nnc > nn*mincoarse);
 #ifdef ModelP
-	cout << me << ": ";
+		cout << me << ": ";
 #endif
-	cout << "amglevel " << level;
-	if( nnc > 0 )
-		cout << " coarsening rate " << nn/(double)nnc << endl;
-	else
-		cout << " no coarsening" << endl;
-
+		cout << "amglevel " << level;
+		if( nnc > 0 )
+			cout << " coarsening rate " << nn/(double)nnc << endl;
+		else
+			cout << " no coarsening" << endl;
     }
 
     if(level == FAMGMAXGRIDS-1)
@@ -171,7 +169,7 @@ int FAMGMultiGrid::Construct()
 #ifdef FAMG_ILU	
     if(cgilu)
     {
-        if (g->ILUTDecomp(1)) return 1;
+        if (g->ILUTDecomp(1)) RETURN(1);
     }
 #endif
 	
@@ -184,7 +182,7 @@ int FAMGMultiGrid::Deconstruct()
     int i;
     
 #ifdef FAMG_REORDERCOLUMN
-    if(Reorder()) return 1;
+    if(Reorder()) RETURN(1);
 #endif
     for(i = 0; i < n; i++) if(grid[i] != NULL)  grid[i]->Deconstruct();
     FAMGReleaseHeap(FAMG_FROM_TOP); // mark in construct
@@ -229,7 +227,7 @@ int FAMGMultiGrid::Step(int level)
     if(level == (n-1))
     { 
         if(g->SolveCoarseGrid())
-			return 1;
+			RETURN(1);
     }
     else
     {
@@ -248,7 +246,7 @@ int FAMGMultiGrid::Step(int level)
         *(cg->GetVector(FAMGRHS)) = *(cg->GetVector(FAMGDEFECT));
 		for(i = 0; i < gamma; i++) 
 			if(Step(level+1)) 
-				return 1;
+				RETURN(1);
         g->Prolongation(cg);
         // g->Defect(); included in the new restriction
 
@@ -300,7 +298,7 @@ int FAMGMultiGrid::Order()
     grid0 = grid[0];
     if((n > 0) && (grid0 != NULL))
     {
-        if(grid0->Order(grid0->GetMap())) return 1;
+        if(grid0->Order(grid0->GetMap())) RETURN(1);
     }
 
     return 0;
@@ -313,7 +311,7 @@ int FAMGMultiGrid::Reorder()
     grid0 = grid[0];
     if((n > 0) && (grid0 != NULL))
     {
-        if(grid0->Reorder()) return 1;
+        if(grid0->Reorder()) RETURN(1);
     }
 
     return 0;

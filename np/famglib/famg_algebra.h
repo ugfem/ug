@@ -40,6 +40,18 @@
 // TODO: remove
 extern "C" int PrintLocal(char *);
 
+
+// Use RETURN(x) it instead of return(x) if you want to have an error check.
+// This is recommended for all functions containing global communications to avoid
+// deadlocks (an assert is much easyier to debug).
+#if !defined USE_UG_DS && !defined RETURN
+#ifdef Debug
+#define RETURN(rcode)   {int rc = rcode; assert(!rc); return (rc);}
+#else
+#define RETURN(rcode)   {return (rc);}
+#endif
+
+
 // forward declarations
 class FAMGGraph;
 class FAMGGrid;

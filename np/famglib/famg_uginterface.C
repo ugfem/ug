@@ -113,7 +113,7 @@ static void ReadParameter(FAMGParameter *parameter, FAMGParameter_ug *in_paramet
 int FAMGConstructParameter(struct FAMGParameter_ug *in_parameter)
 {
     FAMGParameter *parameter = new FAMGParameter;
-    if(parameter == NULL) return 1;
+    if(parameter == NULL) RETURN(1);
     ReadParameter((FAMGParameter*)parameter, in_parameter); 
     FAMGSetParameter(parameter);
 
@@ -160,7 +160,7 @@ int FAMGConstruct(FAMGGridVector *gridvector, FAMGMatrixAlg *matrix, FAMGMatrixA
 
 int FAMGConstructSimple(FAMGMatrixAlg *matrix, FAMGVector *tvA, FAMGVector *tvB)
 {
-    if(famgsystemptr->ConstructSimple(matrix,tvA,tvB)) return 1;
+    if(famgsystemptr->ConstructSimple(matrix,tvA,tvB)) RETURN(1);
 
     return 0;
 }
@@ -200,7 +200,7 @@ int FAMGSolveSystem(FAMG_Interface *interface)
 
 	FAMGDeconstructParameter();
  
-    return status;
+    RETURN(status);
 }
 
 int FAMG_RestrictDefect( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from, VECDATA_DESC *smooth_sol, VECDATA_DESC *smooth_def )

@@ -76,7 +76,7 @@ int FAMGTransfer::Init(FAMGGrid *grid)
     n = grid->GetN();
 
     row_array = (FAMGTransferEntry*) FAMGGetMem(n*sizeof(FAMGTransferEntry*), FAMG_FROM_TOP);
-    if (row_array == NULL) return(1);
+    if (row_array == NULL) RETURN(1);
 	
     for(i = 0,rowi=row_array; i < n; i++)
         *row_array++ = NULL;

@@ -179,7 +179,8 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
     MULTIGRID *mg;
     
 	mg = GetCurrentMultigrid();
-	if (mg==NULL) return(OKCODE);
+	if (mg==NULL)
+		RETURN(1); 
 
 	theObj = (struct FAMGPlotObject *) &(PIC_PO(thePicture)->theExternObject);
 	theOD  = PIC_OUTPUTDEV(thePicture);
@@ -213,7 +214,7 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
     {
         GlobalVec1 = NULL;
         GlobalVec2 = NULL;
-        return (0);
+        RETURN(1);
     }
 
     GlobalVec1 = FIRSTVECTOR(grid);

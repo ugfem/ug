@@ -22,8 +22,8 @@
 #include <iostream.h>
 #include <math.h>
 
-#include "famg_misc.h"
 #include "famg_algebra.h"
+#include "famg_misc.h"
 #include "famg_heap.h"
 #include "famg_grid.h"
 #include "famg_graph.h"

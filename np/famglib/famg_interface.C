@@ -62,7 +62,7 @@ static void ReadParameter(FAMGParameter *parameter, FAMGParameter *in_parameter)
 int FAMGConstructParameter(FAMGParameter *in_parameter)
 {
     FAMGParameter *parameter = new FAMGParameter;
-    if(parameter == NULL) return 1;
+    if(parameter == NULL) RETURN(1);
     ReadParameter(parameter, in_parameter); 
     FAMGSetParameter(parameter);
 
@@ -82,21 +82,21 @@ int FAMGConstruct(FAMG_Interface* famg_interface)
  
 
     FAMGHeap *heap = new FAMGHeap (FAMGGetParameter()->Getheap());
-    if (heap == NULL) return 1;
+    if (heap == NULL) RETURN(1);
     FAMGSetHeap(heap);
 
     famgsystemptr = (FAMGSystem *) FAMGGetMem(sizeof(FAMGSystem),FAMG_FROM_TOP);
-    if(famgsystemptr == NULL) return 1;
+    if(famgsystemptr == NULL) RETURN(1);
     
     famgsystemptr->Init();
-    if(famgsystemptr->Construct(famg_interface)) return 1;
+    if(famgsystemptr->Construct(famg_interface)) RETURN(1);
 
     return 0;
 }
 
 int FAMGPrepare(FAMG_Interface* famg_interface)
 {
-    if(famgsystemptr->ConstructSimple(famg_interface)) return 1;
+    if(famgsystemptr->ConstructSimple(famg_interface)) RETURN(1);
 
     return 0;
 }
@@ -108,7 +108,7 @@ int FAMGSolve(double *rhs, double *defect, double *unknown)
 
 int FAMGDeconstruct()
 {
-    if(famgsystemptr->Deconstruct()) return 1;
+    if(famgsystemptr->Deconstruct()) RETURN(1);
     
     FAMGHeap *heap = FAMGGetHeap();
     delete heap;
@@ -118,7 +118,7 @@ int FAMGDeconstruct()
 
 int FAMGRepair()
 {
-    if(famgsystemptr->DeconstructSimple()) return 1;
+    if(famgsystemptr->DeconstructSimple()) RETURN(1);
     
     return 0;
 }
