@@ -2793,6 +2793,7 @@ INT         GetAllVectorsOfElement  (GRID *theGrid, ELEMENT *theElement,
 NODE            *FindNodeFromId                 (GRID *theGrid, INT id);
 NODE            *FindNodeFromPosition   (GRID *theGrid, DOUBLE *pos, DOUBLE *tol);
 VECTOR          *FindVectorFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol);
+VECTOR      *FindVectorFromIndex    (GRID *theGrid, INT index);
 ELEMENT         *FindElementFromId              (GRID *theGrid, INT id);
 ELEMENT         *FindElementFromPosition(GRID *theGrid, DOUBLE *pos);
 ELEMENT     *FindElementOnSurface   (MULTIGRID *theMG, DOUBLE *global);

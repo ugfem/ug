@@ -7043,6 +7043,38 @@ VECTOR *FindVectorFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol)
 
 /****************************************************************************/
 /*D
+   FindVectorFromIndex - Find vector from Index
+
+   SYNOPSIS:
+   VECTOR *FindVectorFromIndex (GRID *theGrid, INT index);
+
+   PARAMETERS:
+   .  theGrid - grid level to search
+   .  index - given index
+
+   DESCRIPTION:
+   This function finds the first vector with index.
+
+   RETURN VALUE:
+   NODE *
+   .n   pointer to VECTOR
+   .n   NULL if not found.
+   D*/
+/****************************************************************************/
+
+VECTOR *FindVectorFromIndex (GRID *theGrid, INT index)
+{
+  VECTOR *theVector;
+
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+    if (VINDEX(theVector)==index)
+      return(theVector);
+
+  return(NULL);
+}
+
+/****************************************************************************/
+/*D
    FindElementFromId - Find element with id
 
    SYNOPSIS:
