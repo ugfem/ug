@@ -23,11 +23,11 @@ ARCH_FLIBS    = -lftn
 SHELL = /bin/sh
 
 # add -mips2 for invoking R4000 specific extensions
-ARCH_CFLAGS   = -fullwarn -mips2 -g # -O2
+ARCH_CFLAGS   = -fullwarn -mips2
 ARCH_C++FLAGS = -fullwarn -mips2 -O -g
 ARCH_NOOPTIM  = -g
 ARCH_OPTIM    = -O2 -Olimit 2048 -g3
-ARCH_LFLAGS   = -mips2
+ARCH_LFLAGS   = -mips2 -w
 ARCH_FFLAGS   = 
 ARCH_ARFLAGS  = ru
 ARCH_EXFLAGS  = xo
