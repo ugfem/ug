@@ -336,19 +336,19 @@ inline int FAMGNode::GetFlagNewMarked() const {
 inline void FAMGNode::SetFlagNewMarked(int f) {
   control.newmarked = f;
 }
-inline void FAMGNode::NodeMarkCG() {
-  printf("node %d marked Coarse\n",GetId());control.nt = 2;SetFlagNewMarked(1);
+inline void FAMGNode::NodeMarkCG() { /*printf("node %d marked Coarse\n",GetId());*/
+  control.nt = 2;SetFlagNewMarked(1);
 }                                                                                                                       // only in the node; ensure that the CG is also set in the gridvector
-inline void FAMGNode::NodeMarkFG() {
-  printf("node %d marked Fine\n",GetId());control.nt = 1;SetFlagNewMarked(1);
+inline void FAMGNode::NodeMarkFG() { /*printf("node %d marked Fine\n",GetId());*/
+  control.nt = 1;SetFlagNewMarked(1);
 }                                                                                                                       // only in the node; ensure that the FG is also set in the gridvector
 #else
-inline void FAMGNode::NodeMarkCG() {
+inline void FAMGNode::NodeMarkCG() { /*printf("node %d marked Coarse\n",GetId());*/
   control.nt = 2;
-}                                                       // only in the node; ensure that the CG is also set in the gridvector
-inline void FAMGNode::NodeMarkFG() {
+}                                                                                                       // only in the node; ensure that the CG is also set in the gridvector
+inline void FAMGNode::NodeMarkFG() { /*printf("node %d marked Fine\n",GetId());*/
   control.nt = 1;
-}                                                       // only in the node; ensure that the FG is also set in the gridvector
+}                                                                                                       // only in the node; ensure that the FG is also set in the gridvector
 #endif
 inline void FAMGNode::SetFlag(int f) {
   control.f0 = f;
@@ -414,7 +414,7 @@ public:
 #endif
 private:
   int n;                        // number nodes
-  int nf;                       // number fine grid nodes
+  int nf;                               // number fine grid nodes
   FAMGNode *node;       // array of nodes
   FAMGList *list;
   FAMGNode *helplist;
