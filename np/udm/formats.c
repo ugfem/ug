@@ -451,7 +451,7 @@ INT CreateMatDescCmd (MULTIGRID *theMG, INT argc, char **argv)
   return (0);
 }
 
-static VEC_FORMAT *CreateVecTemplate (char *name, INT n)
+static VEC_FORMAT *CreateVecTemplate (char *name, SHORT *comp, INT n)
 {
   VEC_FORMAT *vf;
   char buffer[NAMESIZE];
@@ -465,13 +465,14 @@ static VEC_FORMAT *CreateVecTemplate (char *name, INT n)
   vf = (VEC_FORMAT *) MakeEnvItem (buffer,theVecVarID,sizeof(VEC_FORMAT));
   if (vf==NULL) return (NULL);
   for (type=0; type<NVECTYPES; type++)
-    VF_COMP(vf,type) = 0;
+    VF_COMP(vf,type) = comp[type];
   VF_NSUB(vf) = 0;
 
   return (vf);
 }
 
-static MAT_FORMAT *CreateMatTemplate (char *name, INT n)
+static MAT_FORMAT *CreateMatTemplate (char *name,
+                                      SHORT *rcomp, SHORT *ccomp,INT n)
 {
   MAT_FORMAT *mf;
   char buffer[NAMESIZE];
@@ -479,13 +480,14 @@ static MAT_FORMAT *CreateMatTemplate (char *name, INT n)
 
   if (ChangeEnvDir("/newformat")==NULL)
     return(NULL);
-
   if (name == NULL) sprintf(buffer,"mt%02d",n);
   else strcpy(buffer,name);
   mf = (MAT_FORMAT *) MakeEnvItem (buffer,theMatVarID,sizeof(MAT_FORMAT));
   if (mf==NULL) return (NULL);
-  for (type=0; type<NMATTYPES; type++)
-    MF_RCOMP(mf,type) = MF_CCOMP(mf,type) = 0;
+  for (type=0; type<NMATTYPES; type++) {
+    MF_RCOMP(mf,type) = rcomp[type];
+    MF_CCOMP(mf,type) = ccomp[type];
+  }
   MF_NSUB(mf) = 0;
 
   return (mf);
@@ -542,6 +544,7 @@ INT CreateFormatCmd (INT argc, char **argv)
   INT edata,ndata,nodeelementlist;
   SHORT offset[NMATOFFSETS],ConnDepth[NMATTYPES],ImatTypes[NVECTYPES];
   SHORT FirstVecComp[NVECTYPES],FirstMatComp[NMATTYPES];
+  SHORT VComp[NVECTYPES],RComps[NMATTYPES],CComps[NMATTYPES];
   char formatname[NAMESIZE],*names,*token,tp,rt,ct,*p;
   char buffer[NAMESIZE];
   int n,nr,nc,depth;
@@ -567,7 +570,8 @@ INT CreateFormatCmd (INT argc, char **argv)
   }
   if (MakeEnvItem("newformat",theNewFormatDirID,sizeof(ENVDIR))==NULL)
   {
-    PrintErrorMessage('F',"InitFormats","could not install '/newformat' dir");
+    PrintErrorMessage('F',"InitFormats",
+                      "could not install '/newformat' dir");
     return(__LINE__);
   }
   for (i=1; i<argc; i++)
@@ -586,15 +590,14 @@ INT CreateFormatCmd (INT argc, char **argv)
 
       /* read types and sizes */
       token = strtok(argv[i]+1,BLANKS);
-      while (token!=NULL)
-      {
-        if (sscanf(token,"%c%d",&tp,&n)!=2)
-        {
-          PrintErrorMessage('E',"newformat","could not scan type and size");
+      for (type=0; type<NVECTYPES; type++) VComp[type] = 0;
+      while (token!=NULL) {
+        if (sscanf(token,"%c%d",&tp,&n)!=2) {
+          PrintErrorMessage('E',"newformat",
+                            "could not scan type and size");
           return (1);
         }
-        switch (tp)
-        {
+        switch (tp) {
         case 'n' : type = NODEVECTOR; break;
         case 'k' : type = EDGEVECTOR; break;
         case 'e' : type = ELEMVECTOR; break;
@@ -603,17 +606,17 @@ INT CreateFormatCmd (INT argc, char **argv)
           PrintErrorMessage('E',"newformat","specify n,k,e,s for the type (or change config to include type)");
           return (1);
         }
-        if (VF_COMP(vf,type)!=0)
-        {
-          PrintErrorMessage('E',"newformat","double vector type specification");
+        if (VComp[type] !=0 ) {
+          PrintErrorMessage('E',"newformat",
+                            "double vector type specification");
           return (1);
         }
-        VF_COMP(vf,type) = n;
+        VComp[type] = n;
         token = strtok(NULL,BLANKS);
       }
       /* read names of templates */
       if (sscanf(names,"%d",&n) == 1) {
-        vf = CreateVecTemplate(NULL,nmat++);
+        vf = CreateVecTemplate(NULL,VComp,nvec++);
         if (vf == NULL) {
           PrintErrorMessage('E',"newformat",
                             "could not allocate environment storage");
@@ -630,7 +633,7 @@ INT CreateFormatCmd (INT argc, char **argv)
                               "max number of main matrix symbols exceeded");
             return (1);
           }
-          vf = CreateVecTemplate(buffer,nvec++);
+          vf = CreateVecTemplate(buffer,VComp,nvec++);
           if (vf == NULL) {
             PrintErrorMessage('E',"newformat",
                               "could not allocate environment storage");
@@ -642,6 +645,7 @@ INT CreateFormatCmd (INT argc, char **argv)
       for (type=0; type<NVECTYPES; type++)
         FirstVecComp[type] += n * VF_COMP(vf,type);
 
+      break;
       /* check next arg for compnames */
       if (i+1<argc)
         if (strncmp(argv[i+1],"comp",4)!=0)
@@ -727,6 +731,8 @@ INT CreateFormatCmd (INT argc, char **argv)
 
       /* read types and sizes */
       token = strtok(argv[i]+1,BLANKS);
+      for (type=0; type<NMATTYPES; type++)
+        RComps[type] = CComps[type] = 0;
       while (token!=NULL)
       {
         if (sscanf(token,"%c%dx%c%d",&rt,&nr,&ct,&nc)!=4)
@@ -755,19 +761,19 @@ INT CreateFormatCmd (INT argc, char **argv)
           return (1);
         }
         type = MTP(rtype,ctype);
-        if (MF_RCOMP(mf,type)!=0)
-        {
-          PrintErrorMessage('E',"newformat","double matrix type specification");
+        if (RComps[type] !=0 ) {
+          PrintErrorMessage('E',"newformat",
+                            "double matrix type specification");
           return (1);
         }
-        MF_RCOMP(mf,type) = nr;
-        MF_CCOMP(mf,type) = nc;
+        RComps[mf,type] = nr;
+        CComps[type] = nc;
         token = strtok(NULL,BLANKS);
       }
 
       /* read names of templates */
       if (sscanf(names,"%d",&n) == 1) {
-        mf = CreateMatTemplate(NULL,nmat++);
+        mf = CreateMatTemplate(NULL,RComps,CComps,nmat++);
         if (mf == NULL) {
           PrintErrorMessage('E',"newformat",
                             "could not allocate environment storage");
@@ -784,7 +790,7 @@ INT CreateFormatCmd (INT argc, char **argv)
                               "max number of main matrix symbols exceeded");
             return (1);
           }
-          mf = CreateMatTemplate(buffer,nmat++);
+          mf = CreateMatTemplate(buffer,RComps,CComps,nmat++);
           if (mf == NULL) {
             PrintErrorMessage('E',"newformat",
                               "could not allocate environment storage");
@@ -796,6 +802,7 @@ INT CreateFormatCmd (INT argc, char **argv)
       for (type=0; type<NMATTYPES; type++)
         FirstMatComp[type] += n*MF_RCOMP(mf,type)*MF_CCOMP(mf,type);
 
+      break;
       /* check next arg for compnames */
       if (i+1<argc)
         if (strncmp(argv[i+1],"comp",4)!=0) {

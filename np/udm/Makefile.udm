@@ -11,16 +11,13 @@ include $(UGROOT)/ug.conf
 
 OBJECTS = pcr.o disctools.o scan.o udm.o formats.o numproc.o
 
-# local C compiler flags
-LCFLAGS = -I $(UGROOT)/include
-
 all : $(OBJECTS) Makefile.udm
 	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
 
 .SUFFIXES: .o .c
 
 .c.o:
-	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
+	$(ARCH_CC) $(UG_CFLAGS) $<
 
 clean:
 	rm -f *.o

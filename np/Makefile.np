@@ -12,9 +12,6 @@ include $(UGROOT)/ug.conf
 # the following list may be extended
 MODULES = PROCS ALGEBRA UDM
 
-# local C compiler flags
-LCFLAGS = -I$(UGROOT)/include
-
 # object files for both dimensions
 OBJECTS = initnp.o
 
@@ -34,7 +31,7 @@ UDM:
 .SUFFIXES: .o .c
 
 .c.o:
-	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
+	$(ARCH_CC) $(UG_CFLAGS) $<
 
 clean:
 	rm -f *.o

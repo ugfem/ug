@@ -120,6 +120,10 @@ INT InitNumerics ()
     SetHiWrd(err,__LINE__);
     return (err);
   }
+  if ((err=InitFormats())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
 
   return (0);
 }
