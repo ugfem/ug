@@ -1,7 +1,7 @@
 #
 #	ARCH MAKEFILE OPTIONS
 #
-#	for LinuxAXP / CCC / CPML
+#	for LinuxAXP with ccc/cpml
 #
 
 ARCH_TYPE     = __LINUXAXP__
@@ -18,7 +18,7 @@ ARCH_LIBS     = -lcpml
 
 ARCH_CFLAGS   =
 ARCH_NOOPTIM  = -g -msg_enable level4 -msg_disable unused
-ARCH_OPTIM    = -O3 -arch ev67
+ARCH_OPTIM    = -fast
 ARCH_C++FLAGS =
 ARCH_LFLAGS   =
 ARCH_ARFLAGS  = rus
