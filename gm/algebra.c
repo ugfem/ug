@@ -351,6 +351,8 @@ static void CheckMatrixList (VECTOR *theVector)
    often used. This formats you can use without initialization.
    .  DH_bvdf  - useful for domain halfening methods (up to 4 blocks per level)
    .  one_level_bvdf - max. number of blocks in a level but only 1 level
+   .  two_level_bvdf - bvdf for 2 blocklevels
+   .  three_level_bvdf - bvdf for 3 blocklevels
 
    EXAMPLE:
    To create a format for managing a octree-like structure (that is
@@ -1016,7 +1018,8 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
 
    DESCRIPTION:
    This function places the blockvector in the free list. The data structure
-   must be kept consistent by the caller!
+   must be kept consistent by the caller! If bv is the NULL-vector nothing
+   will happen.
 
    RETURN VALUE:
    INT
@@ -1027,6 +1030,7 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
 
 INT DisposeBlockvector( GRID *theGrid, BLOCKVECTOR *bv )
 {
+  if ( bv == NULL ) return 0;
   return PutFreeObject( MYMG(theGrid), bv,sizeof(BLOCKVECTOR),BLOCKVOBJ);
 }
 
