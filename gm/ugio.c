@@ -798,11 +798,12 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
 
 static INT InsertLocalTree (MGIO_RR_RULE *rr_rules, GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT *refinement)
 {
-  INT i,j,n,nedge,type,sonRefined;
+  INT i,j,n,nedge,type,sonRefined,n0,n1;
   ELEMENT *theSonElem[MAX_SONS];
   NODE *NodeList[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
   NODE *SonNodeList[MAX_CORNERS_OF_ELEM];
   GRID *upGrid;
+  EDGE *theEdge;
   MGIO_RR_RULE *theRule;
   static MGIO_REFINEMENT *ref;
   struct mgio_sondata *SonData;
@@ -817,7 +818,9 @@ static INT InsertLocalTree (MGIO_RR_RULE *rr_rules, GRID *theGrid, ELEMENT *theE
   n=0;
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
   {
-    NodeList[n] = CreateSonNode(upGrid,CORNER(theElement,i));
+    NodeList[n] = SONNODE(CORNER(theElement,i));
+    if (NodeList[n]==NULL)
+      NodeList[n] = CreateSonNode(upGrid,CORNER(theElement,i));
     if (NodeList[n]==NULL) return (1);
     n++;
   }
@@ -825,7 +828,13 @@ static INT InsertLocalTree (MGIO_RR_RULE *rr_rules, GRID *theGrid, ELEMENT *theE
   for (i=0; i<nedge; i++)
   {
     if (!theRule->pattern[i]) continue;
-    NodeList[n] = CreateMidNode(upGrid,theElement,i);
+    n0 = CORNER_OF_EDGE(theElement,i,0);
+    n1 = CORNER_OF_EDGE(theElement,i,1);
+    theEdge = GetEdge(CORNER(theElement,n0),CORNER(theElement,n1));
+    if (theEdge==NULL) return (1);
+    NodeList[n] = MIDNODE(theEdge);
+    if (NodeList[n]==NULL)
+      NodeList[n] = CreateMidNode(upGrid,theElement,i);
     if (NodeList[n]==NULL) return (1);
     n++;
   }
