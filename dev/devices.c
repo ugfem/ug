@@ -485,10 +485,15 @@ void PrintErrorMessage (char type, const char *procName, const char *text)
    void SetMuteLevel (INT mute);
 
    PARAMETERS:
-   .  mute -
+   .  mute - indicator of amount of output
 
    DESCRIPTION:
    This function sets the mute level for verbosing level.
+
+   CONVENTION:
+   'mute <= -1' cancels the echoing of `ug`-commands, 'mute >= 0'
+   restores the echoing (which is the default state). 'mute <= -1000' suppresses
+   also the output of `ug` commands.
 
    RETURN VALUE:
    void
@@ -505,10 +510,15 @@ void SetMuteLevel (INT mute)
    GetMuteLevel - return mute level for verbosing level
 
    SYNOPSIS:
-   void SetMuteLevel (INT mute);
+   INT GetMuteLevel (void);
 
    PARAMETERS:
-   .  mute -
+   .  void
+
+   CONVENTION:
+   'mute <= -1' cancels the echoing of `ug`-commands, 'mute >= 0'
+   restores the echoing (which is the default state). 'mute <= -1000' suppresses
+   also the output of `ug` commands.
 
    DESCRIPTION:
    This function return the mute level for verbosing level.
