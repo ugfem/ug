@@ -3550,9 +3550,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   GRID *theGrid;
   LRESULT lresult;
   INT i;
-        #ifdef Debug
   DOUBLE eunorm;
-        #endif
 
   /* store passed XXXDATA_DESCs */
   NPIT_A(theNP) = A;
