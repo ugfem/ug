@@ -80,7 +80,7 @@ then
 		cd $UGROOT/../ns/appl2d;
 		;;
 	ns3d)
-		cd $UGROOT/../ns/appl2d;
+		cd $UGROOT/../ns/appl3d;
 		;;
 	fe)
 		cd $UGROOT/../fe/appl;
