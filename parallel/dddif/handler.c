@@ -700,6 +700,9 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
         if (DisposeConnection(theGrid,MMYCON(theMatrix)))
           ASSERT(0);
       }
+                        #ifdef __INTERPOLATION_MATRIX__
+      if (DisposeIMatrixList(theGrid,pv)) assert(0);
+                        #endif
     }
 
         #ifdef __EXCHANGE_CONNECTIONS__
@@ -1100,14 +1103,26 @@ DDD_TYPE NFatherObjType(DDD_OBJ obj, DDD_OBJ ref)
   switch (NTYPE(theNode))
   {
   case (CORNER_NODE) :
+                        #ifdef Debug
+    if (OBJT((NODE *)ref) != NDOBJ)
+      UserWriteF("NFatherObjType(): wrong OBJT=%d\n",OBJT((NODE *)ref));
+                        #endif
+    HEAPFAULT(ref);
     ASSERT(OBJT((NODE *)ref) == NDOBJ);
     return(TypeNode);
 
   case (MID_NODE) :
+                        #ifdef Debug
+    if (OBJT((EDGE *)ref) != EDOBJ)
+      UserWriteF("NFatherObjType(): wrong OBJT=%d\n",OBJT((EDGE *)ref));
+                        #endif
+    HEAPFAULT(ref);
     ASSERT(OBJT((EDGE *)ref) == EDOBJ);
     return(TypeEdge);
 
   default :
+                        #ifdef Debug
+                        #endif
     ASSERT(0);
     break;
   }
@@ -2062,8 +2077,8 @@ void EdgeUpdate (DDD_OBJ obj)
     NEXT(link1) = START(node1);
     START(node1) = link1;
 
-    /* reset element counter */
-    SET_NO_OF_ELEM(pe,0);
+    /* reset element counter
+       SET_NO_OF_ELEM(pe,0); */
   }
 
   /* set nfather pointer of midnode */
