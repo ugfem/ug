@@ -5042,7 +5042,7 @@ INT l_dmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, co
 	first_index = VINDEX(BVFIRSTVECTOR(theBVY));
 	last_index = VINDEX(BVLASTVECTOR(theBVY));
 	
-	if (MD_IS_SCALAR(M))
+	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
 	{
 		xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(M);
@@ -5089,7 +5089,7 @@ INT l_dtpmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, 
 	first_index = VINDEX(BVFIRSTVECTOR(theBVY));
 	last_index = VINDEX(BVLASTVECTOR(theBVY));
 	
-	if (MD_IS_SCALAR(M))
+	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
 	{
 		xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(M);
@@ -5136,7 +5136,7 @@ INT l_dmatmul_minus_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, 
 	first_index = VINDEX(BVFIRSTVECTOR(theBVY));
 	last_index = VINDEX(BVLASTVECTOR(theBVY));
 	
-	if (MD_IS_SCALAR(M))
+	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
 	{
 		xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(M);
@@ -5208,7 +5208,7 @@ INT s_dmatmul (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const MATDA
 		return (err);
 #endif
 	
-	if (MD_IS_SCALAR(M))
+	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
 	{
 		xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(M);
@@ -5538,7 +5538,7 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 		return (err);
 #endif
 	
-	if (MD_IS_SCALAR(M))
+	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
 	{
 		xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(M);
@@ -5868,7 +5868,7 @@ INT l_dtpmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC 
 	
 	first_v = FIRSTVECTOR(g);
 	
-	if (MD_IS_SCALAR(M))
+	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
 	{
 		xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(M);
@@ -9056,7 +9056,7 @@ INT dmatmulB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
 
-	if (MD_IS_SCALAR(M))
+	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
 	{
 		xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(M);
@@ -9332,7 +9332,7 @@ INT dmatmulG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
 
-	if (MD_IS_SCALAR(M))
+	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
 	{
 		xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(M);
@@ -9731,7 +9731,7 @@ INT dmatmul_minusB ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
 
-	if (MD_IS_SCALAR(M))
+	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
 	{
 		xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(M);
@@ -10007,7 +10007,7 @@ INT dmatmul_minusG ( const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
 
-	if (MD_IS_SCALAR(M))
+	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
 	{
 		xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(M);
