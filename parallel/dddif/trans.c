@@ -48,6 +48,10 @@
 #ifdef __DLB__
 #include "dlb.h"
 #endif
+#include "namespace.h"
+
+/* UG namespaces: */
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
@@ -124,7 +128,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /****************************************************************************/
 
-void AMGAgglomerate(MULTIGRID *theMG)
+void NS_PREFIX AMGAgglomerate(MULTIGRID *theMG)
 {
   INT level,Size;
   GRID    *theGrid;
@@ -769,7 +773,7 @@ static void InheritPartitionBottomTop (ELEMENT *e)
  */
 /****************************************************************************/
 
-int TransferGridFromLevel (MULTIGRID *theMG, INT level)
+int NS_PREFIX TransferGridFromLevel (MULTIGRID *theMG, INT level)
 {
   GRID *theGrid = GRID_ON_LEVEL(theMG,level);       /* transfer grid starting at*/
   INT g,alreadydisposed;
@@ -918,7 +922,7 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
  */
 /****************************************************************************/
 
-int TransferGrid (MULTIGRID *theMG)
+int NS_PREFIX TransferGrid (MULTIGRID *theMG)
 {
   TransferGridFromLevel(theMG,0);
 }

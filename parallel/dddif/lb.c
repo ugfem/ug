@@ -36,6 +36,10 @@
 #include "ugm.h"
 #include "evm.h"
 #include "ugdevices.h"
+#include "namespace.h"
+
+/* UG namespaces: */
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
@@ -69,7 +73,7 @@
 /*																			*/
 /****************************************************************************/
 
-REP_ERR_FILE;
+  REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -521,7 +525,7 @@ static int SimpleSubdomainDistribution (MULTIGRID *theMG,  INT Procs, INT from, 
  */
 /****************************************************************************/
 
-void lbs (char *argv, MULTIGRID *theMG)
+void NS_PREFIX lbs (char *argv, MULTIGRID *theMG)
 {
   int n,mode,param,fromlevel,tolevel,part,hor_boxes,vert_boxes,dest;
 

@@ -32,6 +32,10 @@
 #ifndef __IDENT_H__
 #define __IDENT_H__
 
+#include "namespace.h"
+
+START_NAMESPACE
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -74,5 +78,7 @@ extern INT ident_mode;
 /* function declarations													*/
 /*																			*/
 /****************************************************************************/
+
+END_NAMESPACE
 
 #endif

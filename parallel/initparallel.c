@@ -38,12 +38,16 @@
 #include "general.h"
 #include "defaults.h"
 #include "ugstruct.h"
+#include "namespace.h"
 
 /* parallelization module */
 #ifdef ModelP
 #include "parallel.h"
 #include "ppif.h"
 #endif
+
+/* UG namespaces: */
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */
@@ -85,7 +89,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT InitParallel (int *argcp, char ***argvp)
+INT NS_PREFIX InitParallel (int *argcp, char ***argvp)
 {
   INT err;
 
@@ -134,7 +138,7 @@ INT InitParallel (int *argcp, char ***argvp)
    D*/
 /****************************************************************************/
 
-INT ExitParallel (void)
+INT NS_PREFIX ExitParallel (void)
 {
   INT err;
 

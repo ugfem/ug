@@ -11,6 +11,9 @@
 #include "general.h"
 #include "ugm.h"
 #include "ugdevices.h"
+#include "namespace.h"
+
+USING_UG_NAMESPACES
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -18,13 +21,14 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 
+START_NAMESPACE
 void buggy (MULTIGRID *);
 void dddif_PrintGridRelations (MULTIGRID *);
-
+END_NAMESPACE
 
 /****************************************************************************/
 
-void ddd_DisplayContext (void)
+void NS_PREFIX ddd_DisplayContext (void)
 {
   int i, last=-1;
   char sep[2] = "";
@@ -107,7 +111,7 @@ static void dddif_DisplayMemoryUsage (void)
 /****************************************************************************/
 
 
-void ddd_pstat (char *arg)
+void NS_PREFIX ddd_pstat (char *arg)
 {
   int cmd;
 
@@ -578,7 +582,7 @@ static void buggy_help (void)
  */
 /****************************************************************************/
 
-void buggy (MULTIGRID *theMG)
+void NS_PREFIX buggy (MULTIGRID *theMG)
 {
   char buff[100];
   DDD_GID gid;
@@ -676,7 +680,7 @@ void buggy (MULTIGRID *theMG)
 
 #define PREFIX "__"
 
-void dddif_PrintGridRelations (MULTIGRID *theMG)
+void NS_PREFIX dddif_PrintGridRelations (MULTIGRID *theMG)
 {
   ELEMENT *e, *enb;
   GRID    *theGrid = GRID_ON_LEVEL(theMG,TOPLEVEL(theMG));

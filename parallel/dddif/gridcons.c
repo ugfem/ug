@@ -39,6 +39,10 @@
 #include "evm.h"
 #include "shapes.h"
 #include "ugdevices.h"
+#include "namespace.h"
+
+/* UG namespaces: */
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
@@ -110,7 +114,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /****************************************************************************/
 
-void ConstructConsistentGridLevel (GRID *theGrid)
+void NS_PREFIX ConstructConsistentGridLevel (GRID *theGrid)
 {
   INT i,j,k,l,m,o;
   DOUBLE fac,*local;
@@ -344,7 +348,7 @@ void ConstructConsistentGridLevel (GRID *theGrid)
  */
 /****************************************************************************/
 
-void ConstructConsistentGrid (GRID *theGrid)
+void NS_PREFIX ConstructConsistentGrid (GRID *theGrid)
 {
   INT i,j,k,l,m,o;
   DOUBLE fac,*local;
@@ -389,7 +393,7 @@ void ConstructConsistentGrid (GRID *theGrid)
  */
 /****************************************************************************/
 
-void ConstructConsistentMultiGrid (MULTIGRID *theMG)
+void NS_PREFIX ConstructConsistentMultiGrid (MULTIGRID *theMG)
 {
   INT l;
   GRID *theGrid;

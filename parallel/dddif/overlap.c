@@ -39,6 +39,7 @@
 #include "heaps.h"
 #include "misc.h"
 #include "general.h"
+#include "namespace.h"
 
 /* dev module */
 #include "ugdevices.h"
@@ -57,6 +58,9 @@
 #include "parallel.h"
 #include "identify.h"
 #include "pargm.h"
+
+/* UG namespaces: */
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
@@ -223,7 +227,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
  */
 /****************************************************************************/
 
-INT UpdateGridOverlap (GRID *theGrid)
+INT NS_PREFIX UpdateGridOverlap (GRID *theGrid)
 {
   ELEMENT *theElement;
 
@@ -328,7 +332,7 @@ static INT DropUsedFlags (GRID *theGrid)
  */
 /****************************************************************************/
 
-INT     ConnectGridOverlap (GRID *theGrid)
+INT NS_PREFIX ConnectGridOverlap (GRID *theGrid)
 {
   INT i,j,Sons_of_Side,prio;
   INT SonSides[MAX_SIDE_NODES];
@@ -549,7 +553,7 @@ static INT CompareSide (ELEMENT *theElement, INT s, ELEMENT *theFather, INT t)
   return((k == m));
 }
 
-INT     ConnectVerticalOverlap (MULTIGRID *theMG)
+INT NS_PREFIX ConnectVerticalOverlap (MULTIGRID *theMG)
 {
   INT l;
 
@@ -639,7 +643,7 @@ INT     ConnectVerticalOverlap (MULTIGRID *theMG)
   return(GM_OK);
 }
 
-INT     ConnectOverlapVerticalGrid (GRID *theGrid)
+INT NS_PREFIX ConnectOverlapVerticalGrid (GRID *theGrid)
 {
   INT i,j,k,found,edgenode0,edgenode1,edgenum;
   ELEMENT *theElement,*theSon,*SonList[MAX_SONS];
@@ -760,7 +764,7 @@ INT     ConnectOverlapVerticalGrid (GRID *theGrid)
   return(GM_OK);
 }
 
-INT     ConnectOverlapVerticalMultiGrid (MULTIGRID *theMG)
+INT NS_PREFIX ConnectOverlapVerticalMultiGrid (MULTIGRID *theMG)
 {
   INT i;
   GRID    *theGrid;

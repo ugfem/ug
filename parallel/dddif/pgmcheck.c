@@ -42,6 +42,10 @@
 #include "evm.h"
 #include "shapes.h"
 #include "ugdevices.h"
+#include "namespace.h"
+
+/* UG namespaces: */
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
@@ -141,7 +145,7 @@ static INT check_distributed_objects_errors = 0;
  */
 /****************************************************************************/
 
-INT CheckProcListCons (int *proclist, int uniqueTag)
+INT NS_PREFIX CheckProcListCons (int *proclist, int uniqueTag)
 {
   int nunique = 0;
 
@@ -178,7 +182,7 @@ INT CheckProcListCons (int *proclist, int uniqueTag)
  */
 /****************************************************************************/
 
-INT ListProcList (int *proclist, int uniqueTag)
+INT NS_PREFIX ListProcList (int *proclist, int uniqueTag)
 {
   while (*proclist != -1)
   {
@@ -208,7 +212,7 @@ INT ListProcList (int *proclist, int uniqueTag)
  */
 /****************************************************************************/
 
-INT CheckVectorPrio (ELEMENT *theElement, VECTOR *theVector)
+INT NS_PREFIX CheckVectorPrio (ELEMENT *theElement, VECTOR *theVector)
 {
   INT nmaster;
   INT nerrors = 0;
@@ -320,7 +324,7 @@ static INT CheckPerNodeVecPrio (NODE *theNode)
 }
 #endif
 
-INT CheckNodePrio (ELEMENT *theElement, NODE *theNode)
+INT NS_PREFIX CheckNodePrio (ELEMENT *theElement, NODE *theNode)
 {
   INT nmaster;
   INT nerrors = 0;
@@ -378,7 +382,7 @@ INT CheckNodePrio (ELEMENT *theElement, NODE *theNode)
  */
 /****************************************************************************/
 
-INT CheckEdgePrio (ELEMENT *theElement, EDGE *theEdge)
+INT NS_PREFIX CheckEdgePrio (ELEMENT *theElement, EDGE *theEdge)
 {
   INT nmaster;
   INT nerrors = 0;
@@ -423,7 +427,7 @@ INT CheckEdgePrio (ELEMENT *theElement, EDGE *theEdge)
  */
 /****************************************************************************/
 
-INT CheckElementPrio (ELEMENT *theElement)
+INT NS_PREFIX CheckElementPrio (ELEMENT *theElement)
 {
   INT i,nmaster,prio,valid_copy;
   INT nerrors = 0;
@@ -722,7 +726,7 @@ static int Scatter_EdgeObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_P
 }
 #endif
 
-INT CheckDistributedObjects (GRID *theGrid)
+INT NS_PREFIX CheckDistributedObjects (GRID *theGrid)
 {
   INT nerrors;
         #ifdef __TWODIM__
@@ -764,7 +768,7 @@ INT CheckDistributedObjects (GRID *theGrid)
  */
 /****************************************************************************/
 
-INT CheckInterfaces (GRID *theGrid)
+INT NS_PREFIX CheckInterfaces (GRID *theGrid)
 {
   INT i,j;
   ELEMENT *theElement;

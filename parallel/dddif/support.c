@@ -42,6 +42,10 @@
 #include "compiler.h"
 #include "memmgr.h"
 
+#include "namespace.h"
+
+/* UG namespaces: */
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */
@@ -91,7 +95,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT UG_GlobalMaxINT (INT i)
+INT NS_PREFIX UG_GlobalMaxINT (INT i)
 {
   int l;
   INT n;
@@ -125,7 +129,7 @@ INT UG_GlobalMaxINT (INT i)
    D*/
 /****************************************************************************/
 
-INT UG_GlobalMinINT (INT i)
+INT NS_PREFIX UG_GlobalMinINT (INT i)
 {
   int l;
   INT n;
@@ -159,7 +163,7 @@ INT UG_GlobalMinINT (INT i)
    D*/
 /****************************************************************************/
 
-INT UG_GlobalSumINT (INT x)
+INT NS_PREFIX UG_GlobalSumINT (INT x)
 {
   int l;
   INT y;
@@ -195,7 +199,7 @@ INT UG_GlobalSumINT (INT x)
    D*/
 /****************************************************************************/
 
-void UG_GlobalMaxNINT (INT n, INT *x)
+void NS_PREFIX UG_GlobalMaxNINT (INT n, INT *x)
 {
   int i,l,size;
   INT *y;
@@ -238,7 +242,7 @@ void UG_GlobalMaxNINT (INT n, INT *x)
    D*/
 /****************************************************************************/
 
-void UG_GlobalMinNINT (INT n, INT *x)
+void NS_PREFIX UG_GlobalMinNINT (INT n, INT *x)
 {
   int i,l,size;
   INT *y;
@@ -281,7 +285,7 @@ void UG_GlobalMinNINT (INT n, INT *x)
    D*/
 /****************************************************************************/
 
-void UG_GlobalSumNINT (INT n, INT *xs)
+void NS_PREFIX UG_GlobalSumNINT (INT n, INT *xs)
 {
   int l, i, size=sizeof(INT)*n;
   INT *ys;
@@ -320,7 +324,7 @@ void UG_GlobalSumNINT (INT n, INT *xs)
    D*/
 /****************************************************************************/
 
-DOUBLE UG_GlobalMaxDOUBLE (DOUBLE x)
+DOUBLE NS_PREFIX UG_GlobalMaxDOUBLE (DOUBLE x)
 {
   int l;
   DOUBLE n;
@@ -354,7 +358,7 @@ DOUBLE UG_GlobalMaxDOUBLE (DOUBLE x)
    D*/
 /****************************************************************************/
 
-DOUBLE UG_GlobalMinDOUBLE (DOUBLE x)
+DOUBLE NS_PREFIX UG_GlobalMinDOUBLE (DOUBLE x)
 {
   int l;
   DOUBLE y;
@@ -388,7 +392,7 @@ DOUBLE UG_GlobalMinDOUBLE (DOUBLE x)
    D*/
 /****************************************************************************/
 
-DOUBLE UG_GlobalSumDOUBLE (DOUBLE x)
+DOUBLE NS_PREFIX UG_GlobalSumDOUBLE (DOUBLE x)
 {
   int l;
   DOUBLE y;
@@ -424,7 +428,7 @@ DOUBLE UG_GlobalSumDOUBLE (DOUBLE x)
    D*/
 /****************************************************************************/
 
-void UG_GlobalMaxNDOUBLE (INT n, DOUBLE *x)
+void NS_PREFIX UG_GlobalMaxNDOUBLE (INT n, DOUBLE *x)
 {
   int i,l,size;
   DOUBLE *y;
@@ -467,7 +471,7 @@ void UG_GlobalMaxNDOUBLE (INT n, DOUBLE *x)
    D*/
 /****************************************************************************/
 
-void UG_GlobalMinNDOUBLE (INT n, DOUBLE *x)
+void NS_PREFIX UG_GlobalMinNDOUBLE (INT n, DOUBLE *x)
 {
   int i,l,size;
   DOUBLE *y;
@@ -510,7 +514,7 @@ void UG_GlobalMinNDOUBLE (INT n, DOUBLE *x)
    D*/
 /****************************************************************************/
 
-void UG_GlobalSumNDOUBLE (INT n, DOUBLE *x)
+void NS_PREFIX UG_GlobalSumNDOUBLE (INT n, DOUBLE *x)
 {
   int l, i, size=sizeof(DOUBLE)*n;
   DOUBLE *y;

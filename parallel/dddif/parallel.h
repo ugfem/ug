@@ -46,6 +46,9 @@
 #include "gm.h"
 #include "pargm.h"
 
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -345,4 +348,7 @@ INT pamgCheckDo( MULTIGRID *theMG, INT level );
 #endif
 
 #endif /* ModelP */
+
+END_NAMESPACE
+
 #endif /* __PARALLEL_H__ */

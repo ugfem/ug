@@ -40,6 +40,7 @@
 #include "heaps.h"
 #include "misc.h"
 #include "general.h"
+#include "namespace.h"
 
 /* dev module */
 #include "ugdevices.h"
@@ -58,6 +59,9 @@
 #include "parallel.h"
 #include "identify.h"
 #include "pargm.h"
+
+/* UG namespaces: */
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/

@@ -29,6 +29,9 @@
 #define __INITPARALLEL_H__
 
 #include "compiler.h"
+#include "namespace.h"
+
+START_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -39,5 +42,7 @@
 /* initialisation of the parallel modules */
 INT InitParallel (int *argcp, char ***argvp);
 INT ExitParallel (void);
+
+END_NAMESPACE
 
 #endif

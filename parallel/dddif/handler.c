@@ -50,6 +50,10 @@
 #include "refine.h"
 #include "shapes.h"
 #include "pargm.h"
+#include "namespace.h"
+
+/* UG namespaces: */
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
@@ -107,7 +111,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-void PrintSons (ELEMENT *theElement)
+void NS_PREFIX PrintSons (ELEMENT *theElement)
 {
   ELEMENT *SonList[MAX_SONS];
   int i;
@@ -121,7 +125,7 @@ void PrintSons (ELEMENT *theElement)
   }
 }
 
-int CheckNSons (ELEMENT *theElement, char *buffer)
+int NS_PREFIX CheckNSons (ELEMENT *theElement, char *buffer)
 {
   ELEMENT *SonList[MAX_SONS];
   int i,nsons;
@@ -204,7 +208,7 @@ static GRID *GetGridOnDemand (MULTIGRID *mg, int level)
 /****************************************************************************/
 /****************************************************************************/
 
-void VectorUpdate (DDD_OBJ obj)
+void NS_PREFIX VectorUpdate (DDD_OBJ obj)
 {
   VECTOR  *pv                     = (VECTOR *)obj;
   INT level           = ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(pv)));
@@ -220,7 +224,7 @@ void VectorUpdate (DDD_OBJ obj)
 
 
 
-void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
+void NS_PREFIX VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 {
   INT nmat    = 0;
   MATRIX  *mat;
@@ -269,7 +273,7 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
    */
 }
 
-void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data)
+void NS_PREFIX VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data)
 {
   VECTOR  *vec = (VECTOR *)obj;
   MATRIX  *mat;
@@ -319,7 +323,7 @@ void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data)
 }
 
 
-void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, int newness)
+void NS_PREFIX VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, int newness)
 {
   VECTOR          *vec            = (VECTOR *)obj;
   CONNECTION      *first          = NULL,
@@ -591,7 +595,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
 
 
 
-void VectorObjMkCons (DDD_OBJ obj, int newness)
+void NS_PREFIX VectorObjMkCons (DDD_OBJ obj, int newness)
 {
   VECTOR          *vec            = (VECTOR *) obj;
   MATRIX          *theMatrix,*Prev,*Next;
@@ -670,7 +674,7 @@ void VectorObjMkCons (DDD_OBJ obj, int newness)
 /*																			*/
 /****************************************************************************/
 #ifdef USE_FAMG
-void VectorDelete (DDD_OBJ obj)
+void NS_PREFIX VectorDelete (DDD_OBJ obj)
 {
   VECTOR          *pv                     = (VECTOR *)obj;
   INT level           = ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(pv)));
@@ -702,7 +706,7 @@ void VectorDelete (DDD_OBJ obj)
 }
 #endif
 
-void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
+void NS_PREFIX VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
   VECTOR  *pv                     = (VECTOR *)obj;
   INT level           = ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(pv)));
@@ -794,7 +798,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 /****************************************************************************/
 
 
-void BVertexLDataConstructor (DDD_OBJ obj)
+void NS_PREFIX BVertexLDataConstructor (DDD_OBJ obj)
 {
   VERTEX  *theVertex                      = (VERTEX *) obj;
 
@@ -805,7 +809,7 @@ void BVertexLDataConstructor (DDD_OBJ obj)
 }
 
 
-void VertexUpdate (DDD_OBJ obj)
+void NS_PREFIX VertexUpdate (DDD_OBJ obj)
 {
   VERTEX  *theVertex      = (VERTEX *) obj;
   INT level           = LEVEL(theVertex);
@@ -829,7 +833,7 @@ void VertexUpdate (DDD_OBJ obj)
    */
 }
 
-void VertexObjMkCons (DDD_OBJ obj, int newness)
+void NS_PREFIX VertexObjMkCons (DDD_OBJ obj, int newness)
 {
   VERTEX  *theVertex      = (VERTEX *) obj;
 
@@ -839,7 +843,7 @@ void VertexObjMkCons (DDD_OBJ obj, int newness)
 }
 
 
-void BVertexXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
+void NS_PREFIX BVertexXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 {
   VERTEX  *theVertex                      = (VERTEX *) obj;
 
@@ -851,19 +855,19 @@ void BVertexXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 }
 
 
-void BVertexGather (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
+void NS_PREFIX BVertexGather (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
 {
   BVertexGatherBndP (V_BNDP((VERTEX *)obj),cnt,Data);
 }
 
 
-void BVertexScatter (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data, int newness)
+void NS_PREFIX BVertexScatter (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data, int newness)
 {
   BVertexScatterBndP(&(V_BNDP((VERTEX *)obj)),cnt,Data);
 }
 
 
-void VertexPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
+void NS_PREFIX VertexPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
   VERTEX      *theVertex                      = (VERTEX *)obj;
   INT level           = LEVEL(theVertex);
@@ -906,7 +910,7 @@ void VertexPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 /****************************************************************************/
 
 
-void NodeDestructor(DDD_OBJ obj)
+void NS_PREFIX NodeDestructor(DDD_OBJ obj)
 {
   NODE *node      = (NODE *) obj;
 
@@ -914,7 +918,7 @@ void NodeDestructor(DDD_OBJ obj)
                       me,ID_PRTX(node),OBJT(node)))
 }
 
-void NodeObjInit(DDD_OBJ obj)
+void NS_PREFIX NodeObjInit(DDD_OBJ obj)
 {
   NODE *node      = (NODE *) obj;
 
@@ -923,7 +927,7 @@ void NodeObjInit(DDD_OBJ obj)
 }
 
 
-void NodeObjMkCons (DDD_OBJ obj, int newness)
+void NS_PREFIX NodeObjMkCons (DDD_OBJ obj, int newness)
 {
   NODE *theNode   = (NODE *) obj;
 
@@ -994,7 +998,7 @@ void NodeObjMkCons (DDD_OBJ obj, int newness)
 /*																			*/
 /****************************************************************************/
 
-void NodeUpdate (DDD_OBJ obj)
+void NS_PREFIX NodeUpdate (DDD_OBJ obj)
 {
   NODE    *theNode        = (NODE *)obj;
   VERTEX  *theVertex      = MYVERTEX(theNode);
@@ -1057,7 +1061,7 @@ void NodeUpdate (DDD_OBJ obj)
 /*																			*/
 /****************************************************************************/
 
-void NodeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
+void NS_PREFIX NodeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 {
   INT nlink           = 0;
   INT Size,i          = 0;
@@ -1117,7 +1121,7 @@ void NodeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 }
 
 
-void NodePriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
+void NS_PREFIX NodePriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
   NODE    *pn                     = (NODE *)obj;
   INT level           = LEVEL(pn);
@@ -1153,7 +1157,7 @@ void NodePriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
   return;
 }
 
-DDD_TYPE NFatherObjType(DDD_OBJ obj, DDD_OBJ ref)
+DDD_TYPE NS_PREFIX NFatherObjType(DDD_OBJ obj, DDD_OBJ ref)
 {
   NODE *theNode = (NODE *)obj;
 
@@ -1206,7 +1210,7 @@ DDD_TYPE NFatherObjType(DDD_OBJ obj, DDD_OBJ ref)
 /*																			*/
 /****************************************************************************/
 
-void ElementLDataConstructor (DDD_OBJ obj)
+void NS_PREFIX ElementLDataConstructor (DDD_OBJ obj)
 {
   INT i;
   ELEMENT *pe                     = (ELEMENT *)obj;
@@ -1252,7 +1256,7 @@ void ElementLDataConstructor (DDD_OBJ obj)
 /*																			*/
 /****************************************************************************/
 
-void ElementUpdate (DDD_OBJ obj)
+void NS_PREFIX ElementUpdate (DDD_OBJ obj)
 {
   INT i;
   ELEMENT *pe                     = (ELEMENT *)obj;
@@ -1283,7 +1287,7 @@ void ElementUpdate (DDD_OBJ obj)
 /*																			*/
 /****************************************************************************/
 
-void ElementDelete (DDD_OBJ obj)
+void NS_PREFIX ElementDelete (DDD_OBJ obj)
 {
   ELEMENT *pe                     = (ELEMENT *)obj;
   INT level           = LEVEL(pe);
@@ -1313,7 +1317,7 @@ void ElementDelete (DDD_OBJ obj)
 /*																			*/
 /****************************************************************************/
 
-void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
+void NS_PREFIX ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 {
   INT i,nsides;
   INT Size;
@@ -1446,7 +1450,7 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 
 /****************************************************************************/
 
-void ElemGatherEdata (ELEMENT *pe, int cnt, char *data)
+void NS_PREFIX ElemGatherEdata (ELEMENT *pe, int cnt, char *data)
 {
   ASSERT(cnt == EDATA_DEF_IN_MG(dddctrl.currMG));
 
@@ -1454,7 +1458,7 @@ void ElemGatherEdata (ELEMENT *pe, int cnt, char *data)
   return;
 }
 
-void ElemScatterEdata (ELEMENT *pe, int cnt, char *data)
+void NS_PREFIX ElemScatterEdata (ELEMENT *pe, int cnt, char *data)
 {
   ASSERT(cnt == EDATA_DEF_IN_MG(dddctrl.currMG));
 
@@ -1637,7 +1641,7 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
 /****************************************************************************/
 
 
-void ElemGatherI (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
+void NS_PREFIX ElemGatherI (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 {
   if (type_id == DDD_USER_DATA)
   {
@@ -1652,8 +1656,8 @@ void ElemGatherI (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 }
 
 
-void ElemScatterI (DDD_OBJ obj, int cnt, DDD_TYPE type_id,
-                   void *data, int newness)
+void NS_PREFIX ElemScatterI (DDD_OBJ obj, int cnt, DDD_TYPE type_id,
+                             void *data, int newness)
 {
   if (type_id == DDD_USER_DATA)
   {
@@ -1667,7 +1671,7 @@ void ElemScatterI (DDD_OBJ obj, int cnt, DDD_TYPE type_id,
         #endif
 }
 
-void ElemGatherB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
+void NS_PREFIX ElemGatherB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 {
   INT i,nsides;
   BNDS    *bnds[MAX_SIDES_OF_ELEM];
@@ -1697,8 +1701,8 @@ void ElemGatherB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
 }
 
 
-void ElemScatterB (DDD_OBJ obj, int cnt, DDD_TYPE type_id,
-                   void *data, int newness)
+void NS_PREFIX ElemScatterB (DDD_OBJ obj, int cnt, DDD_TYPE type_id,
+                             void *data, int newness)
 {
   INT i,nsides;
   BNDS    *bnds[MAX_SIDES_OF_ELEM];
@@ -1733,7 +1737,7 @@ void ElemScatterB (DDD_OBJ obj, int cnt, DDD_TYPE type_id,
 /****************************************************************************/
 
 
-void ElementObjMkCons (DDD_OBJ obj, int newness)
+void NS_PREFIX ElementObjMkCons (DDD_OBJ obj, int newness)
 {
   INT i,j;
   INT lostson         = 0;
@@ -1914,7 +1918,7 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
 
 /* TODO: these versions are now unified */
 /* two versions of ElementObjMkCons ... */
-void ElementObjMkCons_Xferold (DDD_OBJ obj, int newness)
+void NS_PREFIX ElementObjMkCons_Xferold (DDD_OBJ obj, int newness)
 {
   INT i;
   ELEMENT *pe                     = (ELEMENT *)obj;
@@ -1957,7 +1961,7 @@ void ElementObjMkCons_Xferold (DDD_OBJ obj, int newness)
 }
 
 
-void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
+void NS_PREFIX ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
   ELEMENT *pe                     = (ELEMENT *)obj;
   ELEMENT *theFather      = EFATHER(pe);
@@ -2101,7 +2105,7 @@ void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 /****************************************************************************/
 
 #ifdef __THREEDIM__
-void EdgeUpdate (DDD_OBJ obj)
+void NS_PREFIX EdgeUpdate (DDD_OBJ obj)
 {
   EDGE    *pe                     = (EDGE *)obj;
   LINK    *link0,
@@ -2152,7 +2156,7 @@ void EdgeUpdate (DDD_OBJ obj)
   NE(theGrid)++;
 }
 
-void EdgePriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
+void NS_PREFIX EdgePriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
   EDGE    *theEdge        = (EDGE *)obj;
   INT level           = LEVEL(theEdge);
@@ -2163,7 +2167,7 @@ void EdgePriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
                       "level=%d\n",me,ID_PRTX(theEdge),old,new,level))
 }
 
-void EdgeObjMkCons (DDD_OBJ obj, int newness)
+void NS_PREFIX EdgeObjMkCons (DDD_OBJ obj, int newness)
 {
   EDGE *theEdge   = (EDGE *) obj;
 
@@ -2177,7 +2181,7 @@ void EdgeObjMkCons (DDD_OBJ obj, int newness)
   ASSERT(OBJT(theEdge) == EDOBJ);
 }
 
-void EdgeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
+void NS_PREFIX EdgeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 {
   EDGE *pe        =       (EDGE *)obj;
 
@@ -2196,7 +2200,7 @@ void EdgeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 /****************************************************************************/
 /****************************************************************************/
 
-void ObjectPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
+void NS_PREFIX ObjectPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
   char type = OBJT(obj);
 
@@ -2287,7 +2291,7 @@ static void BElemHandlerInit (DDD_TYPE etype, INT handlerSet)
 /****************************************************************************/
 
 /* init all handlers necessary for grid xfer */
-void ddd_HandlerInit (INT handlerSet)
+void NS_PREFIX ddd_HandlerInit (INT handlerSet)
 {
   DDD_SetHandlerUPDATE           (TypeVector, VectorUpdate);
   DDD_SetHandlerXFERCOPY         (TypeVector, VectorXferCopy);

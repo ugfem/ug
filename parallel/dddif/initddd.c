@@ -35,6 +35,10 @@
 #include "general.h"
 #include "ugm.h"      /* for GetFreeOBJT() */
 #include "memmgr.h"
+#include "namespace.h"
+
+/* UG namespaces: */
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
@@ -76,54 +80,54 @@
 /****************************************************************************/
 
 /* DDD objects */
-DDD_TYPE TypeVector;
-DDD_TYPE TypeIVertex, TypeBVertex;
-DDD_TYPE TypeNode;
+DDD_TYPE NS_PREFIX TypeVector;
+DDD_TYPE NS_PREFIX TypeIVertex, NS_PREFIX TypeBVertex;
+DDD_TYPE NS_PREFIX TypeNode;
 #ifdef __THREEDIM__
-DDD_TYPE TypeEdge;
+DDD_TYPE NS_PREFIX TypeEdge;
 #endif
 
-DDD_TYPE TypeUnknown;
+DDD_TYPE NS_PREFIX TypeUnknown;
 
 #ifdef __TWODIM__
-DDD_TYPE TypeTrElem, TypeTrBElem;
-DDD_TYPE TypeQuElem, TypeQuBElem;
+DDD_TYPE NS_PREFIX TypeTrElem, NS_PREFIX TypeTrBElem;
+DDD_TYPE NS_PREFIX TypeQuElem, NS_PREFIX TypeQuBElem;
 #endif
 
 #ifdef __THREEDIM__
-DDD_TYPE TypeTeElem, TypeTeBElem;
-DDD_TYPE TypePyElem, TypePyBElem;
-DDD_TYPE TypePrElem, TypePrBElem;
-DDD_TYPE TypeHeElem, TypeHeBElem;
+DDD_TYPE NS_PREFIX TypeTeElem, NS_PREFIX TypeTeBElem;
+DDD_TYPE NS_PREFIX TypePyElem, NS_PREFIX TypePyBElem;
+DDD_TYPE NS_PREFIX TypePrElem, NS_PREFIX TypePrBElem;
+DDD_TYPE NS_PREFIX TypeHeElem, NS_PREFIX TypeHeBElem;
 #endif
 
 
 /* DDD data objects */
-DDD_TYPE TypeMatrix;
-DDD_TYPE TypeBndP;
+DDD_TYPE NS_PREFIX TypeMatrix;
+DDD_TYPE NS_PREFIX TypeBndP;
 #ifdef __TWODIM__
-DDD_TYPE TypeEdge;
+DDD_TYPE NS_PREFIX TypeEdge;
 #endif
-DDD_TYPE TypeBndS;
+DDD_TYPE NS_PREFIX TypeBndS;
 
 /* DDD interfaces needed for distributed computation */
-DDD_IF ElementIF, ElementSymmIF, ElementVIF, ElementSymmVIF,
-       ElementVHIF, ElementSymmVHIF;
-DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF,
-       NodeIF, NodeAllIF;
-DDD_IF BorderVectorIF, BorderVectorSymmIF,
-       OuterVectorIF, OuterVectorSymmIF,
-       VectorVIF, VectorVAllIF, VectorIF;
-DDD_IF VertexIF;
+DDD_IF NS_PREFIX ElementIF, NS_PREFIX ElementSymmIF, NS_PREFIX ElementVIF, NS_PREFIX ElementSymmVIF,
+NS_PREFIX ElementVHIF, NS_PREFIX ElementSymmVHIF;
+DDD_IF NS_PREFIX BorderNodeIF, NS_PREFIX BorderNodeSymmIF, NS_PREFIX OuterNodeIF, NS_PREFIX NodeVIF,
+NS_PREFIX NodeIF, NS_PREFIX NodeAllIF;
+DDD_IF NS_PREFIX BorderVectorIF, NS_PREFIX BorderVectorSymmIF,
+NS_PREFIX OuterVectorIF, NS_PREFIX OuterVectorSymmIF,
+NS_PREFIX VectorVIF, NS_PREFIX VectorVAllIF, NS_PREFIX VectorIF;
+DDD_IF NS_PREFIX VertexIF;
 #ifdef __THREEDIM__
-DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF, EdgeVHIF,
-       EdgeSymmVHIF;
+DDD_IF NS_PREFIX EdgeIF, NS_PREFIX BorderEdgeSymmIF, NS_PREFIX EdgeHIF, NS_PREFIX EdgeVHIF,
+NS_PREFIX EdgeSymmVHIF;
 #endif
 
 
 
 /* DDD global controls */
-DDD_CTRL dddctrl;
+DDD_CTRL NS_PREFIX dddctrl;
 
 
 /****************************************************************************/
@@ -914,7 +918,7 @@ static void InitDDDTypes (void)
 /****************************************************************************/
 
 
-void InitCurrMG (MULTIGRID *MG)
+void NS_PREFIX InitCurrMG (MULTIGRID *MG)
 {
   dddctrl.currMG = MG;
 
@@ -1016,7 +1020,7 @@ static int CheckInitParallel (void)
  */
 /****************************************************************************/
 
-int InitDDD (void)
+int NS_PREFIX InitDDD (void)
 {
   INT err;
   int i;
@@ -1106,7 +1110,7 @@ int InitDDD (void)
  */
 /****************************************************************************/
 
-int ExitDDD (void)
+int NS_PREFIX ExitDDD (void)
 {
   /* free memory allocated by InitParallel */
   if (dddctrl._context!=NULL)

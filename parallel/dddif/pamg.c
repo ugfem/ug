@@ -41,6 +41,10 @@
 #include "algebra.h"
 #include "debug.h"
 #include "ugdevices.h"
+#include "namespace.h"
+
+/* UG namespaces: */
+USING_UG_NAMESPACES
 
 #ifdef USE_FAMG
 /****************************************************************************/
@@ -90,7 +94,7 @@ static INT pamgerrors;  /* only temp. for pamg check */
 /****************************************************************************/
 
 /* TODO:remove*/
-void printall(GRID *grid, char *text)
+void NS_PREFIX printall(GRID *grid, char *text)
 {
   VECTOR *v;
   for( v=PFIRSTVECTOR(grid); v!=NULL; v = SUCCVC(v))
@@ -260,7 +264,7 @@ static int Scatter_pamgCheck (DDD_OBJ obj, void *data)
   return 0;
 }
 
-INT pamgCheckDo( MULTIGRID *theMG, INT level )
+INT NS_PREFIX pamgCheckDo( MULTIGRID *theMG, INT level )
 {
   GRID *grid;
   size_t sizePerVector;

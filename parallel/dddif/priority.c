@@ -40,6 +40,10 @@
 #include "evm.h"
 #include "shapes.h"
 #include "ugdevices.h"
+#include "namespace.h"
+
+/* UG namespaces: */
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
@@ -278,7 +282,7 @@ static int ComputeEdgeBorderPrios (DDD_OBJ obj)
  */
 /****************************************************************************/
 
-void SetGhostObjectPriorities (GRID *theGrid)
+void NS_PREFIX SetGhostObjectPriorities (GRID *theGrid)
 {
   ELEMENT *theElement,*theNeighbor,*SonList[MAX_SONS];
   NODE    *theNode;
@@ -520,7 +524,7 @@ void SetGhostObjectPriorities (GRID *theGrid)
  */
 /****************************************************************************/
 
-INT SetBorderPriorities (GRID *theGrid)
+INT NS_PREFIX SetBorderPriorities (GRID *theGrid)
 {
   DDD_IFAExecLocal(BorderNodeSymmIF,GRID_ATTR(theGrid),
                    ComputeNodeBorderPrios);
@@ -561,7 +565,7 @@ INT SetBorderPriorities (GRID *theGrid)
 /****************************************************************************/
 
 
-INT SetGridBorderPriorities (GRID *theGrid)
+INT NS_PREFIX SetGridBorderPriorities (GRID *theGrid)
 {
   /* set border priorities on next higher level */
   if (SetBorderPriorities(UPGRID(theGrid)) != GM_OK) return(GM_FATAL);
