@@ -40,6 +40,7 @@
 #include "misc.h"        /* for MIN, MAX, PI, ...            */
 #include "devices.h"     /* for UserWrite, PrintErrorMessage */
 #include "commands.h"    /* for GetCurrentMultigrid          */
+#include "debug.h"
 
 #include "num.h"
 #include "ugblas.h"
@@ -767,10 +768,26 @@ INT TFFMultWithMInv( const BLOCKVECTOR *bv,
   if ( BV_IS_LEAF_BV(bv) )
     return solveLUMatBS( bv, bvd, bvdf, v_comp, Tinv_comp, b_comp );
 
+  ASSERT( v_comp != aux_comp );
+  ASSERT( b_comp != aux_comp );
+  ASSERT( L_comp != Tinv_comp );
+
+  IFDEBUG(np,0)
+  if ( auxsub_comp != DUMMY_COMP )
+  {
+    ASSERT( auxsub_comp != v_comp );
+    ASSERT( auxsub_comp != b_comp );
+    ASSERT( auxsub_comp != aux_comp );
+    ASSERT( Lsub_comp != DUMMY_COMP );
+    ASSERT( Lsub_comp != L_comp );
+    ASSERT( Lsub_comp != Tinv_comp );
+  }
+  ENDDEBUG
+
   /* To minimize the incrementation of BVDs there are used two (one for
      index i and the other for index i+1) which are swapped in the loop;
      thus only one incrementation by 2 is necessary */
-  bvd1 = bvd2 = *bvd;
+    bvd1 = bvd2 = *bvd;
   bvd_i = &bvd1;
   bvd_ip1 = &bvd2;
   BVD_PUSH_ENTRY( &bvd1, 0, bvdf );
