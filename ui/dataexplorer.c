@@ -1634,7 +1634,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
       old_pos = 0;
     }
 
-    sprintf(it,"attribute \"dep\" string \"positions\"\n");
+    sprintf(it,"attribute \"dep\" string \"connections\"\n");
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
 
