@@ -160,7 +160,7 @@ int _wait=0;                      /* wait for file creation, if file does not ex
 int ignore=0;
 int verbose=0;
 char frame[50];
-int outopt=0;
+int p_opt=0, g_opt=0;
 char outext[80];
 int through=0;
 int stoploop = 0;
@@ -1910,9 +1910,14 @@ static Boolean run_film (void)
 
   /* the first frame has already been displayed by main() */
 
-  if (outopt) {
+  if (p_opt) {
     sprintf(command, "xwd -name xugv -silent | xwdtopnm >%s_.%04d 2>/dev/null",
             file, frame_number);
+    system(command);
+  }
+  else if (g_opt) {
+    sprintf(command, "xwd -name xugv -silent | xwdtopnm 2>/dev/null |
+                        ppmtogif >%s_.%04d 2>/dev/null", file, frame_number);
     system(command);
   }
 
@@ -1929,7 +1934,7 @@ static Boolean run_film (void)
 
   if (frame_number>last)
   {
-    if (outopt) exit(0);
+    if (p_opt || g_opt) exit(0);
     if (stoploop) frame_number-=incr;
     else frame_number=first;
     if (count)
@@ -2047,7 +2052,7 @@ char* argv[];
   }
 
   if (argc < 2) {
-    printf("usage: xugv [<nb of files>] file [file2] [file3] ... [-v[n]] [-f first last] [-q increment] [-o] [-c] [-s] [-N <nBreak>] [-n]\n");
+    printf("usage: xugv [<nb of files>] file [file2] [file3] ... [-v[n]] [-f first last] [-q increment] [-p|-g] [-c] [-s] [-N <nBreak>] [-n]\n");
     exit(-1);
   }
 
@@ -2064,7 +2069,7 @@ char* argv[];
     i = 2+n_pic;
     f_offset = 2;
   }
-  file = argv[1];
+  if (n_pic == 1) file = argv[1];else file = argv[2];
   film=0;
   option = "";
   count = 0;
@@ -2100,9 +2105,15 @@ char* argv[];
       i+=2;
       continue;
     }
-    if (argv[i][1]=='o')
+    if (argv[i][1]=='p')
     {
-      outopt=1;
+      p_opt=1;
+      i++;
+      continue;
+    }
+    if (argv[i][1]=='g')
+    {
+      g_opt=1;
       i++;
       continue;
     }
