@@ -6272,21 +6272,39 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 
 			if (theEdge==NULL || theNode!=MIDNODE(theEdge))
 			{
+				nerrors++;	
+                #ifdef ModelP
+				if (DDD_InfoPriority(PARHDRE(theElement)) == PrioGhost) {
+				    nerrors = 0;
+					IFDEBUG(gm,1)
+					    nerrors = 1;
+					ENDDEBUG
+				}
+                #endif
+				if (nerrors == 0) break;
 				UserWriteF(PFMT "EID=" EID_FMTX " NID=" ID_FMTX " VID=" VID_FMTX 
 					" ONEDGE and VFATHER incompatible edgeptr=%08x\n",
 					me,EID_PRTX(theElement),ID_PRTX(theNode),
 					VID_PRTX(theVertex),theEdge);
-				nerrors++;	
 			}
 			break;
 
 		case (SIDE_NODE):
 			if (theFather == NULL)
 			{
+				nerrors++;	
+                #ifdef ModelP
+				if (DDD_InfoPriority(PARHDRE(theElement)) == PrioGhost) {
+				    nerrors = 0;
+					IFDEBUG(gm,1)
+					    nerrors = 1;
+					ENDDEBUG
+				}
+                #endif
+				if (nerrors == 0) break;
 				UserWriteF(PFMT "EID=" EID_FMTX " NID=" ID_FMTX 
 					" VID=" VID_FMTX " SIDE_NODE VFATHER=NULL\n",
 					me,EID_PRTX(theElement),ID_PRTX(theNode),VID_PRTX(theVertex));
-				nerrors++;	
 				break;
 			}
 			break;
@@ -6495,7 +6513,7 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 			IFDEBUG(gm,1)
 			    nerrors = 1;
 			ENDDEBUG
-			if (nerrors) return(nerrors);
+			if (!nerrors) return(nerrors);
 		}
 	    #endif
 				UserWriteF(PFMT "elem=" EID_FMTX " edge%d=" EDID_FMTX " midnode NID=NULL" 

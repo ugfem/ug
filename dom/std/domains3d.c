@@ -2585,18 +2585,19 @@ static INT InitCylinder (void)
 /*                                                                          */
 /****************************************************************************/
 
-#define BENCH_H 1.0
+#define BENCH_H 0.5
 
 
-static INT bsouth1Boundary (void *data, DOUBLE *param, DOUBLE *result)
+
+static INT south1Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
+  DOUBLE lambda1, lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>2.5 || lambda2<0.0 || lambda2>2.5 ) return(1);
+  if ( lambda1<0.0 || lambda1>8.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -2607,15 +2608,15 @@ static INT bsouth1Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bsouth2Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT south2Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
+  DOUBLE lambda1, lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>2.5 || lambda2<2.5 || lambda2>5.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>8.0 || lambda2<1.0 || lambda2>2.0 ) return(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -2626,15 +2627,15 @@ static INT bsouth2Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bsouth3Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT south3Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
+  DOUBLE lambda1, lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>2.5 || lambda2<5.0 || lambda2>7.5 ) return(1);
+  if ( lambda1<0.0 || lambda1>8.0 || lambda2<2.0 || lambda2>10.0 ) return(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -2645,178 +2646,8 @@ static INT bsouth3Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bsouth4Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
 
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<0.0 || lambda1>2.5 || lambda2<7.5 || lambda2>10.0 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = 0.0;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bsouth5Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<2.5 || lambda1>5.0 || lambda2<0.0 || lambda2>2.5 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = 0.0;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bsouth6Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<2.5 || lambda1>5.0 || lambda2<2.5 || lambda2>5.0 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = 0.0;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bsouth7Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<2.5 || lambda1>5.0 || lambda2<5.0 || lambda2>7.5 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = 0.0;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bsouth8Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<2.5 || lambda1>5.0 || lambda2<7.5 || lambda2>10.0 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = 0.0;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bsouth9Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<5.0 || lambda1>7.5 || lambda2<0.0 || lambda2>2.5 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = 0.0;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bsouth10Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<5.0 || lambda1>7.5 || lambda2<2.5 || lambda2>5.0 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = 0.0;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bsouth11Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<5.0 || lambda1>7.5 || lambda2<5.0 || lambda2>7.5 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = 0.0;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bsouth12Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<5.0 || lambda1>7.5 || lambda2<7.5 || lambda2>10.0 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = 0.0;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bsouth13Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT south4Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2, px, py, qx, qy;
 
@@ -2827,8 +2658,8 @@ static INT bsouth13Boundary (void *data, DOUBLE *param, DOUBLE *result)
   if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
 
   /* fill result */
-  px = 7.5;
-  py = 2.5*lambda2;
+  px = 8.0;
+  py = lambda2;
   qx = 10.0 + cos(PI - lambda2*PI*0.25);
   qy = sin(PI - lambda2*PI*0.25);
   result[0] = (1.0 - lambda1)*px + lambda1*qx;
@@ -2841,7 +2672,7 @@ static INT bsouth13Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bsouth14Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT south5Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2, px, py, qx, qy;
 
@@ -2852,8 +2683,52 @@ static INT bsouth14Boundary (void *data, DOUBLE *param, DOUBLE *result)
   if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
 
   /* fill result */
-  px = 7.5 + 2.5*lambda2;
-  py = 2.5;
+  px = 8.0;
+  py = 1.0 + lambda2;
+  qx = 10.0 + cos(PI*0.75) - (1.0 + cos(PI*0.75))*lambda2;
+  qy = sin(PI*0.75) + (2.0 - sin(PI*0.75))*lambda2;
+  result[0] = (1.0 - lambda1)*px + lambda1*qx;
+  result[1] = (1.0 - lambda1)*py + lambda1*qy;
+  result[2] = 0.0;
+
+
+
+  /* return ok */
+  return(0);
+}
+
+static INT south6Boundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1, lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<8.0 || lambda1>9.0 || lambda2<2.0 || lambda2>10.0 ) return(1);
+
+  /* fill result */
+  result[0] = lambda1;
+  result[1] = lambda2;
+  result[2] = 0.0;
+
+  /* return ok */
+  return(0);
+}
+
+static INT south7Boundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1, lambda2, px, py, qx, qy;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  px = 9.0 + lambda2;
+  py = 2.0;
   qx = 10.0 + cos(0.75*PI - lambda2*PI*0.25);
   qy = sin(0.75*PI - lambda2*PI*0.25);
   result[0] = (1.0 - lambda1)*px + lambda1*qx;
@@ -2866,15 +2741,15 @@ static INT bsouth14Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bsouth15Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT south8Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
+  DOUBLE lambda1, lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<7.5 || lambda1>10.0 || lambda2<2.5 || lambda2>5.0 ) return(1);
+  if ( lambda1<9.0 || lambda1>10.0 || lambda2<2.0 || lambda2>10.0 ) return(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -2885,54 +2760,15 @@ static INT bsouth15Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bsouth16Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT north1Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
+  DOUBLE lambda1, lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<7.5 || lambda1>10.0 || lambda2<5.0 || lambda2>7.5 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = 0.0;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bsouth17Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<7.5 || lambda1>10.0 || lambda2<7.5 || lambda2>10.0 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = 0.0;
-
-  /* return ok */
-  return(0);
-}
-
-
-static INT bnorth1Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<0.0 || lambda1>2.5 || lambda2<0.0 || lambda2>2.5 ) return(1);
+  if ( lambda1<0.0 || lambda1>8.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -2943,15 +2779,15 @@ static INT bnorth1Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bnorth2Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT north2Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
+  DOUBLE lambda1, lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>2.5 || lambda2<2.5 || lambda2>5.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>8.0 || lambda2<1.0 || lambda2>2.0 ) return(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -2962,15 +2798,15 @@ static INT bnorth2Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bnorth3Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT north3Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
+  DOUBLE lambda1, lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>2.5 || lambda2<5.0 || lambda2>7.5 ) return(1);
+  if ( lambda1<0.0 || lambda1>8.0 || lambda2<2.0 || lambda2>10.0 ) return(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -2981,178 +2817,8 @@ static INT bnorth3Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bnorth4Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
 
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<0.0 || lambda1>2.5 || lambda2<7.5 || lambda2>10.0 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = BENCH_H;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bnorth5Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<2.5 || lambda1>5.0 || lambda2<0.0 || lambda2>2.5 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = BENCH_H;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bnorth6Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<2.5 || lambda1>5.0 || lambda2<2.5 || lambda2>5.0 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = BENCH_H;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bnorth7Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<2.5 || lambda1>5.0 || lambda2<5.0 || lambda2>7.5 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = BENCH_H;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bnorth8Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<2.5 || lambda1>5.0 || lambda2<7.5 || lambda2>10.0 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = BENCH_H;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bnorth9Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<5.0 || lambda1>7.5 || lambda2<0.0 || lambda2>2.5 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = BENCH_H;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bnorth10Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<5.0 || lambda1>7.5 || lambda2<2.5 || lambda2>5.0 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = BENCH_H;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bnorth11Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<5.0 || lambda1>7.5 || lambda2<5.0 || lambda2>7.5 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = BENCH_H;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bnorth12Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<5.0 || lambda1>7.5 || lambda2<7.5 || lambda2>10.0 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = BENCH_H;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bnorth13Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT north4Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2, px, py, qx, qy;
 
@@ -3163,8 +2829,8 @@ static INT bnorth13Boundary (void *data, DOUBLE *param, DOUBLE *result)
   if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
 
   /* fill result */
-  px = 7.5;
-  py = 2.5*lambda2;
+  px = 8.0;
+  py = lambda2;
   qx = 10.0 + cos(PI - lambda2*PI*0.25);
   qy = sin(PI - lambda2*PI*0.25);
   result[0] = (1.0 - lambda1)*px + lambda1*qx;
@@ -3177,7 +2843,7 @@ static INT bnorth13Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bnorth14Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT north5Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2, px, py, qx, qy;
 
@@ -3188,8 +2854,52 @@ static INT bnorth14Boundary (void *data, DOUBLE *param, DOUBLE *result)
   if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
 
   /* fill result */
-  px = 7.5 + 2.5*lambda2;
-  py = 2.5;
+  px = 8.0;
+  py = 1.0 + lambda2;
+  qx = 10.0 + cos(PI*0.75) - (1.0 + cos(PI*0.75))*lambda2;
+  qy = sin(PI*0.75) + (2.0 - sin(PI*0.75))*lambda2;
+  result[0] = (1.0 - lambda1)*px + lambda1*qx;
+  result[1] = (1.0 - lambda1)*py + lambda1*qy;
+  result[2] = BENCH_H;
+
+
+
+  /* return ok */
+  return(0);
+}
+
+static INT north6Boundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1, lambda2;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<8.0 || lambda1>9.0 || lambda2<2.0 || lambda2>10.0 ) return(1);
+
+  /* fill result */
+  result[0] = lambda1;
+  result[1] = lambda2;
+  result[2] = BENCH_H;
+
+  /* return ok */
+  return(0);
+}
+
+static INT north7Boundary (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda1, lambda2, px, py, qx, qy;
+
+  lambda1 = param[0];
+  lambda2 = param[1];
+
+  /* check range */
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+
+  /* fill result */
+  px = 9.0 + lambda2;
+  py = 2.0;
   qx = 10.0 + cos(0.75*PI - lambda2*PI*0.25);
   qy = sin(0.75*PI - lambda2*PI*0.25);
   result[0] = (1.0 - lambda1)*px + lambda1*qx;
@@ -3202,15 +2912,15 @@ static INT bnorth14Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bnorth15Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT north8Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
+  DOUBLE lambda1, lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<7.5 || lambda1>10.0 || lambda2<2.5 || lambda2>5.0 ) return(1);
+  if ( lambda1<9.0 || lambda1>10.0 || lambda2<2.0 || lambda2>10.0 ) return(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -3221,45 +2931,8 @@ static INT bnorth15Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bnorth16Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
 
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<7.5 || lambda1>10.0 || lambda2<5.0 || lambda2>7.5 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = BENCH_H;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bnorth17Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2, px, py, qx, qy;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<7.5 || lambda1>10.0 || lambda2<7.5 || lambda2>10.0 ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = lambda2;
-  result[2] = BENCH_H;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bfront1Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT front1Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2;
 
@@ -3267,7 +2940,7 @@ static INT bfront1Boundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>2.5 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
+  if ( lambda1<0.0 || lambda1>8.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -3278,7 +2951,7 @@ static INT bfront1Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bfront2Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT front2Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2;
 
@@ -3286,7 +2959,7 @@ static INT bfront2Boundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<2.5 || lambda1>5.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
+  if ( lambda1<8.0 || lambda1>9.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -3297,48 +2970,10 @@ static INT bfront2Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bfront3Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT east1Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2;
 
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<5.0 || lambda1>7.5 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = 0.0;
-  result[2] = lambda2;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bfront4Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<7.5 || lambda1>9.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = 0.0;
-  result[2] = lambda2;
-
-  /* return ok */
-  return(0);
-}
-
-static INT beast1Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2;
-  double d;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -3355,7 +2990,7 @@ static INT beast1Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT beast2Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT east2Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2;
   double d;
@@ -3375,7 +3010,7 @@ static INT beast2Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT beast3Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT east3Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2;
 
@@ -3383,7 +3018,7 @@ static INT beast3Boundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<1.0 || lambda1>2.5 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
+  if ( lambda1<1.0 || lambda1>2.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
 
   /* fill result */
   result[0] = 10.0;
@@ -3394,7 +3029,7 @@ static INT beast3Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT beast4Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT east4Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2;
 
@@ -3402,7 +3037,7 @@ static INT beast4Boundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<2.5 || lambda1>5.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
+  if ( lambda1<2.0 || lambda1>10.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
 
   /* fill result */
   result[0] = 10.0;
@@ -3413,7 +3048,7 @@ static INT beast4Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT beast5Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT back1Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2;
 
@@ -3421,45 +3056,7 @@ static INT beast5Boundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<5.0 || lambda1>7.5 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
-
-  /* fill result */
-  result[0] = 10.0;
-  result[1] = lambda1;
-  result[2] = lambda2;
-
-  /* return ok */
-  return(0);
-}
-
-static INT beast6Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<7.5 || lambda1>10.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
-
-  /* fill result */
-  result[0] = 10.0;
-  result[1] = lambda1;
-  result[2] = lambda2;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bback1Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<0.0 || lambda1>2.5 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
+  if ( lambda1<9.0 || lambda1>10.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -3470,7 +3067,7 @@ static INT bback1Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bback2Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT back2Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2;
 
@@ -3478,7 +3075,7 @@ static INT bback2Boundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<2.5 || lambda1>5.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
+  if ( lambda1<8.0 || lambda1>9.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -3489,7 +3086,7 @@ static INT bback2Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bback3Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT back3Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2;
 
@@ -3497,7 +3094,7 @@ static INT bback3Boundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<5.0 || lambda1>7.5 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
+  if ( lambda1<0.0 || lambda1>8.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -3508,7 +3105,7 @@ static INT bback3Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bback4Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT west1Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2;
 
@@ -3516,26 +3113,7 @@ static INT bback4Boundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<7.5 || lambda1>10.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
-
-  /* fill result */
-  result[0] = lambda1;
-  result[1] = 10.0;
-  result[2] = lambda2;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bwest1Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<0.0 || lambda1>2.5 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
+  if ( lambda1<2.0 || lambda1>10.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
 
   /* fill result */
   result[0] = 0.0;
@@ -3546,7 +3124,7 @@ static INT bwest1Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bwest2Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT west2Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2;
 
@@ -3554,7 +3132,7 @@ static INT bwest2Boundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<2.5 || lambda1>5.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
+  if ( lambda1<1.0 || lambda1>2.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
 
   /* fill result */
   result[0] = 0.0;
@@ -3565,7 +3143,7 @@ static INT bwest2Boundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static INT bwest3Boundary (void *data, DOUBLE *param, DOUBLE *result)
+static INT west3Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2;
 
@@ -3573,26 +3151,7 @@ static INT bwest3Boundary (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<5.0 || lambda1>7.5 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
-
-  /* fill result */
-  result[0] = 0.0;
-  result[1] = lambda1;
-  result[2] = lambda2;
-
-  /* return ok */
-  return(0);
-}
-
-static INT bwest4Boundary (void *data, DOUBLE *param, DOUBLE *result)
-{
-  DOUBLE lambda1, lambda2;
-
-  lambda1 = param[0];
-  lambda2 = param[1];
-
-  /* check range */
-  if ( lambda1<7.5 || lambda1>10.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>BENCH_H ) return(1);
 
   /* fill result */
   result[0] = 0.0;
@@ -3611,319 +3170,163 @@ static INT InitBenchmark (void)
   /* allocate new domain structure */
   MidPoint[0] = 5.0;
   MidPoint[1] = 5.0;
-  MidPoint[2] = 2.5;
-  radius = 7.0;
-  if (CreateDomain("Benchmark",MidPoint,radius,52,54,NO)==NULL) return(1);
+  MidPoint[2] = 5.0;
+  radius = 10.0;
+  if (CreateDomain("Benchmark",MidPoint,radius,28,30,NO)==NULL) return(1);
 
   /* allocate the boundary segments */
   alpha[0]=0.0; alpha[1]=0.0;
-  beta[0] =2.5; beta[1] =2.5;
-  point[0]=0; point[1]=5; point[2]=6; point[3]=1;
-  if (CreateBoundarySegment("bsouth1",1,0,0,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth1Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=0.0; alpha[1]=2.5;
-  beta[0] =2.5; beta[1] =5.0;
-  point[0]=1; point[1]=6; point[2]=7; point[3]=2;
-  if (CreateBoundarySegment("bsouth2", 1,0,1,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth2Boundary, NULL)==NULL) return(1);
-
-  alpha[0]=0.0; alpha[1]=5.0;
-  beta[0] =2.5; beta[1] =7.5;
-  point[0]=2; point[1]=7; point[2]=8; point[3]=3;
-  if (CreateBoundarySegment("bsouth3",1,0,2,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth3Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=0.0; alpha[1]=7.5;
-  beta[0] =2.5; beta[1] =10.0;
-  point[0]=3; point[1]=8; point[2]=9; point[3]=4;
-  if (CreateBoundarySegment("bsouth4",1,0,3,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth4Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=2.5; alpha[1]=0.0;
-  beta[0] =5.0; beta[1] =2.5;
-  point[0]=5; point[1]=10; point[2]=11; point[3]=6;
-  if (CreateBoundarySegment("bsouth5",1,0,4,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth5Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=2.5; alpha[1]=2.5;
-  beta[0] =5.0; beta[1] =5.0;
-  point[0]=6; point[1]=11; point[2]=12; point[3]=7;
-  if (CreateBoundarySegment("bsouth6",1,0,5,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth6Boundary,NULL)==NULL) return(1);
-
-  point[0]=7; point[1]=12; point[2]=13; point[3]=8;
-  alpha[0]=2.5; alpha[1]=5.0;
-  beta[0] =5.0; beta[1] =7.5;
-  if (CreateBoundarySegment("bsouth7",1,0,6,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth7Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=2.5; alpha[1]=7.5;
-  beta[0] =5.0; beta[1] =10.0;
-  point[0]=8; point[1]=13; point[2]=14; point[3]=9;
-  if (CreateBoundarySegment("bsouth8",1,0,7,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth8Boundary,NULL)==NULL) return(1);
-
-  point[0]=10; point[1]=15; point[2]=16; point[3]=11;
-  alpha[0]=5.0; alpha[1]=0.0;
-  beta[0] =7.5; beta[1] =2.5;
-  if (CreateBoundarySegment("bsouth9",1,0,8,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth9Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=5.0; alpha[1]=2.5;
-  beta[0] =7.5; beta[1] =5.0;
-  point[0]=11; point[1]=16; point[2]=17; point[3]=12;
-  if (CreateBoundarySegment("bsouth10",1,0,9,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth10Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=5.0; alpha[1]=5.0;
-  beta[0] =7.5; beta[1] =7.5;
-  point[0]=12; point[1]=17; point[2]=18; point[3]=13;
-  if (CreateBoundarySegment("bsouth11",1,0,10,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth11Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=5.0; alpha[1]=7.5;
-  beta[0] =7.5; beta[1] =10.0;
-  point[0]=13; point[1]=18; point[2]=19; point[3]=14;
-  if (CreateBoundarySegment("bsouth12",1,0,11,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth12Boundary,NULL)==NULL) return(1);
-
-  point[0]=15; point[1]=20; point[2]=21; point[3]=16;
+  beta[0] =8.0; beta[1] =1.0;
+  point[0]=0; point[1]=4; point[2]=5; point[3]=1;
+  if (CreateBoundarySegment("south1",1,0,0,NON_PERIODIC,1,point,alpha,beta,
+                            south1Boundary,NULL)==NULL) return(1);
+  alpha[0]=0.0; alpha[1]=1.0;
+  beta[0] =8.0; beta[1] =2.0;
+  point[0]=1; point[1]=5;   point[2]=6;  point[3]=2;
+  if (CreateBoundarySegment("south2",1,0,1,NON_PERIODIC,1,point,alpha,beta,
+                            south2Boundary,NULL)==NULL) return(1);
+  alpha[0]=0.0; alpha[1]=2.0;
+  beta[0] =8.0; beta[1] =10.0;
+  point[0]=2; point[1]=6; point[2]=7; point[3]=3;
+  if (CreateBoundarySegment("south3",1,0,2,NON_PERIODIC,1,point,alpha,beta,
+                            south3Boundary,NULL)==NULL) return(1);
   alpha[0]=0.0; alpha[1]=0.0;
   beta[0] =1.0; beta[1] =1.0;
-  if (CreateBoundarySegment("bsouth13",1,0,12,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth13Boundary,NULL)==NULL) return(1);
-
-  point[0]=16; point[1]=21; point[2]=22; point[3]=23;
-  if (CreateBoundarySegment("bsouth14",1,0,13,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth14Boundary,NULL)==NULL) return(1);
-
-  point[0]=16; point[1]=23; point[2]=24; point[3]=17;
-  alpha[0]=7.5; alpha[1]=2.5;
-  beta[0] =10.0; beta[1] =5.0;
-  if (CreateBoundarySegment("bsouth15",1,0,14,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth15Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=7.5; alpha[1]=5.0;
-  beta[0] =10.0; beta[1] =7.5;
-  point[0]=17; point[1]=24; point[2]=25; point[3]=18;
-  if (CreateBoundarySegment("bsouth16",1,0,15,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth16Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=7.5; alpha[1]=7.5;
-  beta[0] =10.0; beta[1] =10.0;
-  point[0]=18; point[1]=25; point[2]=26; point[3]=19;
-  if (CreateBoundarySegment("bsouth17",1,0,16,NON_PERIODIC,1,point,
-                            alpha,beta,bsouth17Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=0.0; alpha[1]=0.0;
-  beta[0] =2.5; beta[1] =2.5;
-  point[0]=27; point[1]=32; point[2]=33; point[3]=28;
-  if (CreateBoundarySegment("bnorth1",0,1,17,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth1Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=0.0; alpha[1]=2.5;
-  beta[0] =2.5; beta[1] =5.0;
-  point[0]=28; point[1]=33; point[2]=34; point[3]=29;
-  if (CreateBoundarySegment("bnorth2", 0,1,18,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth2Boundary, NULL)==NULL) return(1);
-
-  alpha[0]=0.0; alpha[1]=5.0;
-  beta[0] =2.5; beta[1] =7.5;
-  point[0]=29; point[1]=34; point[2]=35; point[3]=30;
-  if (CreateBoundarySegment("bnorth3",0,1,19,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth3Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=0.0; alpha[1]=7.5;
-  beta[0] =2.5; beta[1] =10.0;
-  point[0]=30; point[1]=35; point[2]=36; point[3]=31;
-  if (CreateBoundarySegment("bnorth4",0,1,20,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth4Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=2.5; alpha[1]=0.0;
-  beta[0] =5.0; beta[1] =2.5;
-  point[0]=32; point[1]=37; point[2]=38; point[3]=33;
-  if (CreateBoundarySegment("bnorth5",0,1,21,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth5Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=2.5; alpha[1]=2.5;
-  beta[0] =5.0; beta[1] =5.0;
-  point[0]=33; point[1]=38; point[2]=39; point[3]=34;
-  if (CreateBoundarySegment("bnorth6",0,1,22,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth6Boundary,NULL)==NULL) return(1);
-
-  point[0]=34; point[1]=39; point[2]=40; point[3]=35;
-  alpha[0]=2.5; alpha[1]=5.0;
-  beta[0] =5.0; beta[1] =7.5;
-  if (CreateBoundarySegment("bnorth7",0,1,23,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth7Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=2.5; alpha[1]=7.5;
-  beta[0] =5.0; beta[1] =10.0;
-  point[0]=35; point[1]=40; point[2]=41; point[3]=36;
-  if (CreateBoundarySegment("bnorth8",0,1,24,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth8Boundary,NULL)==NULL) return(1);
-
-  point[0]=37; point[1]=42; point[2]=43; point[3]=38;
-  alpha[0]=5.0; alpha[1]=0.0;
-  beta[0] =7.5; beta[1] =2.5;
-  if (CreateBoundarySegment("bnorth9",0,1,25,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth9Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=5.0; alpha[1]=2.5;
-  beta[0] =7.5; beta[1] =5.0;
-  point[0]=38; point[1]=43; point[2]=44; point[3]=39;
-  if (CreateBoundarySegment("bnorth10",0,1,26,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth10Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=5.0; alpha[1]=5.0;
-  beta[0] =7.5; beta[1] =7.5;
-  point[0]=39; point[1]=44; point[2]=45; point[3]=40;
-  if (CreateBoundarySegment("bnorth11",0,1,27,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth11Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=5.0; alpha[1]=7.5;
-  beta[0] =7.5; beta[1] =10.0;
-  point[0]=40; point[1]=45; point[2]=46; point[3]=41;
-  if (CreateBoundarySegment("bnorth12",0,1,28,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth12Boundary,NULL)==NULL) return(1);
-
-  point[0]=42; point[1]=47; point[2]=48; point[3]=43;
+  point[0]=4; point[1]=8; point[2]=9; point[3]=5;
+  if (CreateBoundarySegment("south4",1,0,3,NON_PERIODIC,1,point,alpha,beta,
+                            south4Boundary,NULL)==NULL) return(1);
   alpha[0]=0.0; alpha[1]=0.0;
   beta[0] =1.0; beta[1] =1.0;
-  if (CreateBoundarySegment("bnorth13",0,1,29,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth13Boundary,NULL)==NULL) return(1);
-
-  point[0]=43; point[1]=48; point[2]=49; point[3]=50;
-  if (CreateBoundarySegment("bnorth14",0,1,30,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth14Boundary,NULL)==NULL) return(1);
-
-  point[0]=43; point[1]=50; point[2]=51; point[3]=44;
-  alpha[0]=7.5; alpha[1]=2.5;
-  beta[0] =10.0; beta[1] =5.0;
-  if (CreateBoundarySegment("bnorth15",0,1,31,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth15Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=7.5; alpha[1]=5.0;
-  beta[0] =10.0; beta[1] =7.5;
-  point[0]=44; point[1]=51; point[2]=52; point[3]=45;
-  if (CreateBoundarySegment("bnorth16",0,1,32,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth16Boundary,NULL)==NULL) return(1);
-
-  alpha[0]=7.5; alpha[1]=7.5;
+  point[0]=5; point[1]=9; point[2]=10; point[3]=6;
+  if (CreateBoundarySegment("south5",1,0,4,NON_PERIODIC,1,point,alpha,beta,
+                            south5Boundary,NULL)==NULL) return(1);
+  alpha[0]=8.0; alpha[1]=2.0;
+  beta[0] =9.0; beta[1] =10.0;
+  point[0]=6; point[1]=10; point[2]=11; point[3]=7;
+  if (CreateBoundarySegment("south6",1,0,5,NON_PERIODIC,1,point,alpha,beta,
+                            south6Boundary,NULL)==NULL) return(1);
+  alpha[0]=0.0; alpha[1]=0.0;
+  beta[0] =1.0; beta[1] =1.0;
+  point[0]=10; point[1]=9; point[2]=12; point[3]=13;
+  if (CreateBoundarySegment("south7",1,0,6,NON_PERIODIC,1,point,alpha,beta,
+                            south7Boundary,NULL)==NULL) return(1);
+  alpha[0]=9.0; alpha[1]=2.0;
   beta[0] =10.0; beta[1] =10.0;
-  point[0]=45; point[1]=52; point[2]=53; point[3]=46;
-  if (CreateBoundarySegment("bnorth17",0,1,33,NON_PERIODIC,1,point,
-                            alpha,beta,bnorth17Boundary,NULL)==NULL) return(1);
+  point[0]=10; point[1]=13; point[2]=14; point[3]=11;
+  if (CreateBoundarySegment("south8",1,0,7,NON_PERIODIC,1,point,alpha,beta,
+                            south8Boundary,NULL)==NULL) return(1);
+
+  alpha[0]=0.0; alpha[1]=0.0;
+  beta[0] =8.0; beta[1] =1.0;
+  point[0]=15; point[1]=19; point[2]=20; point[3]=16;
+  if (CreateBoundarySegment("north1",0,1,8,NON_PERIODIC,1,point,alpha,beta,
+                            north1Boundary,NULL)==NULL) return(1);
+  alpha[0]=0.0; alpha[1]=1.0;
+  beta[0] =8.0; beta[1] =2.0;
+  point[0]=16; point[1]=20;   point[2]=21;  point[3]=17;
+  if (CreateBoundarySegment("north2",0,1,9,NON_PERIODIC,1,point,alpha,beta,
+                            north2Boundary,NULL)==NULL) return(1);
+  alpha[0]=0.0; alpha[1]=2.0;
+  beta[0] =8.0; beta[1] =10.0;
+  point[0]=17; point[1]=21; point[2]=22; point[3]=18;
+  if (CreateBoundarySegment("north3",0,1,10,NON_PERIODIC,1,point,alpha,beta,
+                            north3Boundary,NULL)==NULL) return(1);
+  alpha[0]=0.0; alpha[1]=0.0;
+  beta[0] =1.0; beta[1] =1.0;
+  point[0]=19; point[1]=23; point[2]=24; point[3]=20;
+  if (CreateBoundarySegment("north4",0,1,11,NON_PERIODIC,1,point,alpha,beta,
+                            north4Boundary,NULL)==NULL) return(1);
+  alpha[0]=0.0; alpha[1]=0.0;
+  beta[0] =1.0; beta[1] =1.0;
+  point[0]=20; point[1]=24; point[2]=25; point[3]=21;
+  if (CreateBoundarySegment("north5",0,1,12,NON_PERIODIC,1,point,alpha,beta,
+                            north5Boundary,NULL)==NULL) return(1);
+  alpha[0]=8.0; alpha[1]=2.0;
+  beta[0] =9.0; beta[1] =10.0;
+  point[0]=21; point[1]=25; point[2]=26; point[3]=22;
+  if (CreateBoundarySegment("north6",0,1,13,NON_PERIODIC,1,point,alpha,beta,
+                            north6Boundary,NULL)==NULL) return(1);
+  alpha[0]=0.0; alpha[1]=0.0;
+  beta[0] =1.0; beta[1] =1.0;
+  point[0]=25; point[1]=24; point[2]=27; point[3]=28;
+  if (CreateBoundarySegment("north7",0,1,14,NON_PERIODIC,1,point,alpha,beta,
+                            north7Boundary,NULL)==NULL) return(1);
+  alpha[0]=9.0; alpha[1]=2.0;
+  beta[0] =10.0; beta[1] =10.0;
+  point[0]=25; point[1]=28; point[2]=29; point[3]=26;
+  if (CreateBoundarySegment("north8",0,1,15,NON_PERIODIC,1,point,alpha,beta,
+                            north8Boundary,NULL)==NULL) return(1);
 
 
   alpha[0]=0.0; alpha[1]=0.0;
-  beta[0] =2.5; beta[1] =BENCH_H;
-  point[0]=0; point[1]=5; point[2]=32; point[3]=27;
-  if (CreateBoundarySegment("bfront1", 0,1,34,NON_PERIODIC,1,point,alpha,beta,
-                            bfront1Boundary, NULL)==NULL) return(1);
+  beta[0] =8.0; beta[1] =BENCH_H;
+  point[0]=0; point[1]=4; point[2]=19; point[3]=15;
+  if (CreateBoundarySegment("front1", 0,1,16,NON_PERIODIC,1,point,alpha,beta,
+                            front1Boundary, NULL)==NULL) return(1);
 
-  point[0]=5; point[1]=10; point[2]=37; point[3]=32;
-  alpha[0]=2.5; alpha[1]=0.0;
-  beta[0] =5.0; beta[1] =BENCH_H;
-  if (CreateBoundarySegment("bfront2", 0,1,35,NON_PERIODIC,1,point,alpha,beta,
-                            bfront2Boundary, NULL)==NULL) return(1);
-
-  point[0]=10; point[1]=15; point[2]=42; point[3]=37;
-  alpha[0]=5.0; alpha[1]=0.0;
-  beta[0] =7.5; beta[1] =BENCH_H;
-  if (CreateBoundarySegment("bfront3", 0,1,36,NON_PERIODIC,1,point,alpha,beta,
-                            bfront3Boundary, NULL)==NULL) return(1);
-
-  alpha[0]=7.5; alpha[1]=0.0;
+  alpha[0]=8.0; alpha[1]=0.0;
   beta[0] =9.0; beta[1] =BENCH_H;
-  point[0]=15; point[1]=20; point[2]=47; point[3]=42;
-  if (CreateBoundarySegment("bfront4", 0,1,37,NON_PERIODIC,1,point,alpha,beta,
-                            bfront4Boundary, NULL)==NULL) return(1);
+  point[0]=4; point[1]=8; point[2]=23; point[3]=19;
+  if (CreateBoundarySegment("front2", 0,1,17,NON_PERIODIC,1,point,alpha,beta,
+                            front2Boundary, NULL)==NULL) return(1);
 
   alpha[0]=0.0; alpha[1]=0.0;
   beta[0] =1.0; beta[1] =BENCH_H;
-  point[0]=20; point[1]=21; point[2]=48; point[3]=47;
-  if (CreateBoundarySegment("beast1", 0,1,38,NON_PERIODIC,1,point,alpha,beta,
-                            beast1Boundary, NULL)==NULL) return(1);
+  point[0]=8; point[1]=9; point[2]=24; point[3]=23;
+  if (CreateBoundarySegment("east1", 0,1,18,NON_PERIODIC,1,point,alpha,beta,
+                            east1Boundary, NULL)==NULL) return(1);
 
-  point[0]=21; point[1]=22; point[2]=49; point[3]=48;
-  alpha[0]=0.0; alpha[1]=0.0;
-  beta[0] =1.0; beta[1] =BENCH_H;
-  if (CreateBoundarySegment("beast2", 0,1,39,NON_PERIODIC,1,point,alpha,beta,
-                            beast2Boundary, NULL)==NULL) return(1);
+  point[0]=9; point[1]=12; point[2]=27; point[3]=24;
+  if (CreateBoundarySegment("east2", 0,1,19,NON_PERIODIC,1,point,alpha,beta,
+                            east2Boundary, NULL)==NULL) return(1);
 
   alpha[0]=1.0; alpha[1]=0.0;
-  beta[0] =2.5; beta[1] =BENCH_H;
-  point[0]=22; point[1]=23; point[2]=50; point[3]=49;
-  if (CreateBoundarySegment("beast3", 0,1,40,NON_PERIODIC,1,point,alpha,beta,
-                            beast3Boundary, NULL)==NULL) return(1);
+  beta[0] =2.0; beta[1] =BENCH_H;
+  point[0]=12; point[1]=13; point[2]=28; point[3]=27;
+  if (CreateBoundarySegment("east3", 0,1,20,NON_PERIODIC,1,point,alpha,beta,
+                            east3Boundary, NULL)==NULL) return(1);
 
-  point[0]=23; point[1]=24; point[2]=51; point[3]=50;
-  alpha[0]=2.5; alpha[1]=0.0;
-  beta[0] =5.0; beta[1] =BENCH_H;
-  if (CreateBoundarySegment("beast4", 0,1,41,NON_PERIODIC,1,point,alpha,beta,
-                            beast4Boundary, NULL)==NULL) return(1);
-
-  point[0]=24; point[1]=25; point[2]=52; point[3]=51;
-  alpha[0]=5.0; alpha[1]=0.0;
-  beta[0] =7.5; beta[1] =BENCH_H;
-  if (CreateBoundarySegment("beast5", 0,1,42,NON_PERIODIC,1,point,alpha,beta,
-                            beast5Boundary, NULL)==NULL) return(1);
-
-  point[0]=25; point[1]=26; point[2]=53; point[3]=52;
-  alpha[0]=7.5; alpha[1]=0.0;
+  alpha[0]=2.0; alpha[1]=0.0;
   beta[0] =10.0; beta[1] =BENCH_H;
-  if (CreateBoundarySegment("beast6", 0,1,43,NON_PERIODIC,1,point,alpha,beta,
-                            beast6Boundary, NULL)==NULL) return(1);
+  point[0]=13; point[1]=14; point[2]=29; point[3]=28;
+  if (CreateBoundarySegment("east4", 0,1,21,NON_PERIODIC,1,point,alpha,beta,
+                            east4Boundary, NULL)==NULL) return(1);
 
-  point[0]=4; point[1]=9; point[2]=36; point[3]=31;
+  alpha[0]=9.0; alpha[1]=0.0;
+  beta[0] =10.0; beta[1] =BENCH_H;
+  point[0]=11; point[1]=14; point[2]=29; point[3]=26;
+  if (CreateBoundarySegment("back1", 1,0,22,NON_PERIODIC,1,point,alpha,beta,
+                            back1Boundary, NULL)==NULL) return(1);
+
+  alpha[0]=8.0; alpha[1]=0.0;
+  beta[0] =9.0; beta[1] =BENCH_H;
+  point[0]=7; point[1]=11; point[2]=26; point[3]=22;
+  if (CreateBoundarySegment("back2", 1,0,23,NON_PERIODIC,1,point,alpha,beta,
+                            back2Boundary, NULL)==NULL) return(1);
+
   alpha[0]=0.0; alpha[1]=0.0;
-  beta[0] =2.5; beta[1] =BENCH_H;
-  if (CreateBoundarySegment("bback1", 1,0,44,NON_PERIODIC,1,point,alpha,beta,
-                            bback1Boundary, NULL)==NULL) return(1);
+  beta[0] =8.0; beta[1] =BENCH_H;
+  point[0]=3; point[1]=7; point[2]=22; point[3]=18;
+  if (CreateBoundarySegment("back3", 1,0,24,NON_PERIODIC,1,point,alpha,beta,
+                            back3Boundary, NULL)==NULL) return(1);
 
-  point[0]=9; point[1]=14; point[2]=41; point[3]=36;
-  alpha[0]=2.5; alpha[1]=0.0;
-  beta[0] =5.0; beta[1] =BENCH_H;
-  if (CreateBoundarySegment("bback2", 1,0,45,NON_PERIODIC,1,point,alpha,beta,
-                            bback2Boundary, NULL)==NULL) return(1);
-
-  point[0]=14; point[1]=19; point[2]=46; point[3]=41;
-  alpha[0]=5.0; alpha[1]=0.0;
-  beta[0] =7.5; beta[1] =BENCH_H;
-  if (CreateBoundarySegment("bback3", 1,0,46,NON_PERIODIC,1,point,alpha,beta,
-                            bback3Boundary, NULL)==NULL) return(1);
-
-  point[0]=19; point[1]=26; point[2]=53; point[3]=46;
-  alpha[0]=7.5; alpha[1]=0.0;
+  alpha[0]=2.0; alpha[1]=0.0;
   beta[0] =10.0; beta[1] =BENCH_H;
-  if (CreateBoundarySegment("bback4", 1,0,47,NON_PERIODIC,1,point,alpha,beta,
-                            bback4Boundary, NULL)==NULL) return(1);
+  point[0]=2; point[1]=3; point[2]=18; point[3]=17;
+  if (CreateBoundarySegment("west1", 1,0,25,NON_PERIODIC,1,point,alpha,beta,
+                            west1Boundary, NULL)==NULL) return(1);
 
-  point[0]=0; point[1]=1; point[2]=28; point[3]=27;
+  alpha[0]=1.0; alpha[1]=0.0;
+  beta[0] =2.0; beta[1] =BENCH_H;
+  point[0]=1; point[1]=2; point[2]=17; point[3]=16;
+  if (CreateBoundarySegment("west2", 1,0,26,NON_PERIODIC,1,point,alpha,beta,
+                            west2Boundary, NULL)==NULL) return(1);
+
   alpha[0]=0.0; alpha[1]=0.0;
-  beta[0] =2.5; beta[1] =BENCH_H;
-  if (CreateBoundarySegment("bwest1", 1,0,48,NON_PERIODIC,1,point,alpha,beta,
-                            bwest1Boundary, NULL)==NULL) return(1);
-
-  point[0]=1; point[1]=2; point[2]=29; point[3]=28;
-  alpha[0]=2.5; alpha[1]=0.0;
-  beta[0] =5.0; beta[1] =BENCH_H;
-  if (CreateBoundarySegment("bwest2", 1,0,49,NON_PERIODIC,1,point,alpha,beta,
-                            bwest2Boundary, NULL)==NULL) return(1);
-
-  point[0]=2; point[1]=3; point[2]=30; point[3]=29;
-  alpha[0]=5.0; alpha[1]=0.0;
-  beta[0] =7.5; beta[1] =BENCH_H;
-  if (CreateBoundarySegment("bwest3", 1,0,50,NON_PERIODIC,1,point,alpha,beta,
-                            bwest3Boundary, NULL)==NULL) return(1);
-
-  point[0]=3; point[1]=4; point[2]=31; point[3]=30;
-  alpha[0]=7.5; alpha[1]=0.0;
-  beta[0] =10.0; beta[1] =BENCH_H;
-  if (CreateBoundarySegment("bwest4", 1,0,51,NON_PERIODIC,1,point,alpha,beta,
-                            bwest4Boundary, NULL)==NULL) return(1);
+  beta[0] =1.0; beta[1] =BENCH_H;
+  point[0]=0; point[1]=1; point[2]=16; point[3]=15;
+  if (CreateBoundarySegment("west3", 1,0,27,NON_PERIODIC,1,point,alpha,beta,
+                            west3Boundary, NULL)==NULL) return(1);
 
   /* return ok */
   return(0);
