@@ -476,7 +476,7 @@ INT RemoveEnvDir (ENVITEM *theItem)
    MoveEnvItem - move an environment item in the tree structure
 
    SYNOPSIS:
-   INT MoveEnvItem (ENVITEM *item, ENVDIR *old, ENVDIR *new)
+   INT MoveEnvItem (ENVITEM *item, ENVDIR *oldDir, ENVDIR *newDir)
 
    PARAMETERS:
    .  item - pointer to item
@@ -492,14 +492,14 @@ INT RemoveEnvDir (ENVITEM *theItem)
    D*/
 /****************************************************************************/
 
-INT MoveEnvItem (ENVITEM *item, ENVDIR *old, ENVDIR *new)
+INT MoveEnvItem (ENVITEM *item, ENVDIR *oldDir, ENVDIR *newDir)
 {
   ENVITEM *anItem;
 
-  if (new==NULL)
-    new = path[0];
+  if (newDir==NULL)
+    newDir = path[0];
 
-  for (anItem=ENVDIR_DOWN(old); anItem!=NULL; anItem=NEXT_ENVITEM(anItem))
+  for (anItem=ENVDIR_DOWN(oldDir); anItem!=NULL; anItem=NEXT_ENVITEM(anItem))
     if (anItem==item) break;
   if (anItem==NULL) return(1);
 
@@ -507,14 +507,14 @@ INT MoveEnvItem (ENVITEM *item, ENVDIR *old, ENVDIR *new)
   if (PREV_ENVITEM(item)!=NULL)
     NEXT_ENVITEM(PREV_ENVITEM(item)) = NEXT_ENVITEM(item);
   else
-    ENVDIR_DOWN(old) = NEXT_ENVITEM(item);
+    ENVDIR_DOWN(oldDir) = NEXT_ENVITEM(item);
   if (NEXT_ENVITEM(item)!=NULL)
     PREV_ENVITEM(NEXT_ENVITEM(item)) = PREV_ENVITEM(item);
 
   /* insert in new directory */
   PREV_ENVITEM(item) = NULL;
-  NEXT_ENVITEM(item) = ENVDIR_DOWN(new);
-  ENVDIR_DOWN(new) = item;
+  NEXT_ENVITEM(item) = ENVDIR_DOWN(newDir);
+  ENVDIR_DOWN(newDir) = item;
 
   return (0);
 }

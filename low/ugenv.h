@@ -120,7 +120,7 @@ INT      RemoveEnvItem    (ENVITEM *theItem);
 INT      RemoveEnvDir     (ENVITEM *theItem);
 
 /* move an envitem to a new directory */
-INT              MoveEnvItem      (ENVITEM *item, ENVDIR *old, ENVDIR *new);
+INT              MoveEnvItem      (ENVITEM *item, ENVDIR *oldDir, ENVDIR *newDir);
 
 /* search the environment for an item */
 ENVITEM *SearchEnv        (const char *name, const char *where, INT type, INT dirtype);
