@@ -948,7 +948,7 @@ INT sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const c
         found = TRUE;
         break;
       }
-  if (!found) REP_ERR_RETURN (2);
+  if (!found) return(2);
 
   /* read from value string */
   err = ReadVecTypeDOUBLEs(fmt,value,MAX_VEC_COMP,nDOUBLEs,theDOUBLEs);
