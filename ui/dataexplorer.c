@@ -1192,7 +1192,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
 
     sprintf(it,"object %d class array type float rank 0 items %d %s\ndata file %s,%d\n",
-            blocks+2+writeBnds, gnumVertices, out_form, filename_grid, dat_pos);
+            blocks+2+writeBnds, gnumVertices, out_form, filename_dat, dat_pos);
     if (binaryOutput)
       dat_pos+=gnumVertices*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
@@ -1315,7 +1315,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
 
     sprintf(it,"object %d class array type float rank 1 shape %d items %d %s\ndata file %s,%d\n",
-            blocks+2+writeBnds, DIM, gnumVertices, out_form, filename_grid, dat_pos);
+            blocks+2+writeBnds, DIM, gnumVertices, out_form, filename_dat, dat_pos);
     if (binaryOutput)
       dat_pos+=DIM*gnumVertices*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
@@ -1454,7 +1454,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
 
     sprintf(it,"object %d class array type float rank 0 items %d %s\ndata file %s,%d\n",
-            blocks+2+writeBnds, gnumElements, out_form, filename_grid, dat_pos);
+            blocks+2+writeBnds, gnumElements, out_form, filename_dat, dat_pos);
     if (binaryOutput)
       dat_pos+=gnumElements*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
@@ -1575,7 +1575,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
 
     sprintf(it,"object %d class array type float rank 1 shape %d items %d %s\ndata file %s,%d\n",
-            blocks+2+writeBnds, DIM, gnumElements, out_form, filename_grid, dat_pos);
+            blocks+2+writeBnds, DIM, gnumElements, out_form, filename_dat, dat_pos);
     if (binaryOutput)
       dat_pos+=DIM*gnumElements*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
