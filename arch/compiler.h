@@ -37,6 +37,7 @@
   #include "ugtypes.h"
   #include "ugmemory.h"
   #include "ugstrings.h"
+  #include "ugtime.h"
 #else
 
 #include <limits.h>
