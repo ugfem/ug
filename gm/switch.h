@@ -121,22 +121,20 @@
 #endif
 
 #undef __GRAPE_TRUE__
-#ifdef GRAPET
+#ifdef _GRAPE
 #define __GRAPE_TRUE__
 #endif
 
-#ifdef GRAPEF
+#ifdef GRAPE
+#define GRAPE_SUPPORT "ON"
+#else
 #define GRAPE_SUPPORT "OFF"
 #endif
-#ifdef GRAPET
-#define GRAPE_SUPPORT "ON"
-#endif
 
-#ifdef NETGENF
-#define NETGEN "OFF"
-#endif
-#ifdef NETGENT
-#define NETGEN "ON"
+#ifdef _NETGEN
+#define NETGEN_SUPPORT "ON"
+#else
+#define NETGEN_SUPPORT "OFF"
 #endif
 
 #ifdef Debug
