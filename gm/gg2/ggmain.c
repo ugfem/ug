@@ -252,7 +252,7 @@ static INT CreateBNodeAndVertex (COORD lambda, BNDSEGDESC *theSegdesc, GRID *the
 
 static DOUBLE H_global;
 
-static INT GlobalMeshsize (DOUBLE *in, DOUBLE *out)
+static INT GlobalMeshsize (COORD *in, DOUBLE *out)
 {
   /* outvalue is just the constant global meshsize */
   out[0] = H_global;
@@ -367,7 +367,7 @@ INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
       /* scan raster for best fitting point */
       oldpart = part = floor((myLambda-ALPHA(theSegdesc,0))/delta);
       maxl = BETA(theSegdesc,0);
-      mindist = MAX_D;
+      mindist = MAX_C;
       pt0[0] = pos0[0] = XC(theVertex);
       pt0[1] = pos0[1] = YC(theVertex);
       arclength = 0.0;
