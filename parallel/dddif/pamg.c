@@ -128,28 +128,6 @@ void printall(GRID *grid, char *text)
   }
 }
 
-/* TODO: remove; this function is not longer used since its work is done in FAMGGrid::ConstructOverlap */
-INT pamgDo( MULTIGRID *theMG, INT level )
-{
-  GRID *grid = GRID_ON_LEVEL(theMG,level);
-  VECTOR *v;
-  MATRIX *m;
-
-  DDD_XferBegin();
-  for( v=PFIRSTVECTOR(grid); PRIO(v) != PrioBorder && PRIO(v) != PrioMaster; v = SUCCVC(v))
-  {
-    DDD_XferPrioChange( PARHDR((NODE*)VOBJECT(v)), PrioBorder );                     /* TODO: cancel this line; its only for beauty in checks */
-    DDD_XferPrioChange( PARHDR(v), PrioBorder );
-  }
-  /* elements with old ghostprios cause errors in check; but that's ok */
-  DDD_XferEnd();
-  /* vectors which just become border have not set the VECSKIP flag correctly!
-     this flags will be corrected by a_vector_vecskip */
-
-  ASSERT(!DDD_ConsCheck());
-  return 0;
-}
-
 static int CountMatrices (DDD_OBJ obj)
 {
   VECTOR *v = (VECTOR *)obj;
