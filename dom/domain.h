@@ -176,6 +176,7 @@ struct mesh
   INT nSubDomains;                   /* nb. of subdomains                   */
   INT *nSides;                       /* nb. of boundary sides per subdomain */
   INT **Side_corners;                /* nb. of side corners                 */
+  INT **xy_Side;                                         /* triangle_id for prism                */
   INT ***Side_corner_ids;                /* corner ids                          */
   INT *nElements;                    /* nb. of elements per subdomain       */
   INT **Element_corners;             /* nb. of element corners              */
