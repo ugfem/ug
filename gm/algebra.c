@@ -96,9 +96,9 @@ USING_UG_NAMESPACES
 /*                                                                          */
 /* defines in the following order                                           */
 /*                                                                          */
-/*    compile time constants defining static data size (i.e. arrays)	*/
-/*    other constants													*/
-/*		  macros															*/
+/*    compile time constants defining static data size (i.e. arrays)        */
+/*    other constants                                                       */
+/*    macros                                                                */
 /*                                                                          */
 /****************************************************************************/
 
@@ -106,7 +106,7 @@ USING_UG_NAMESPACES
 #undef _SCHALE_X_
 
 /* for LexAlgDep */
-#define ORDERRES                1e-3       /* resolution for LexAlgDep					*/
+#define ORDERRES                1e-3       /* resolution for LexAlgDep */
 
 /* for GetDomainPart indicating an element is meant rather than an element side */
 #define NOSIDE          -1
@@ -270,9 +270,9 @@ const BV_DESC_FORMAT NS_PREFIX three_level_bvdf =
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 /* for LexOrderVectorsInGrid */
@@ -286,9 +286,9 @@ REP_ERR_FILE;
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*																			*/
-/* forward declarations of functions used before they are defined			*/
-/*																			*/
+/*                                                                          */
+/* forward declarations of functions used before they are defined           */
+/*                                                                          */
 /****************************************************************************/
 
 static INT ReallocateVector (GRID *g, VECTOR *v, INT part, INT side);
@@ -359,25 +359,25 @@ static void CheckMatrixList (VECTOR *theVector)
    There are predefined 'blockvector description formats', which are
    often used. This formats you can use without initialization.
    <ul>
-     <li>  DH_bvdf  - useful for domain halfening methods (up to 4 blocks per level)
-     <li>  one_level_bvdf - max. number of blocks in a level but only 1 level
-     <li>  two_level_bvdf - bvdf for 2 blocklevels
-     <li>  three_level_bvdf - bvdf for 3 blocklevels
+     <li>  DH_bvdf  - useful for domain halfening methods (up to 4 blocks per level) </li>
+     <li>  one_level_bvdf - max. number of blocks in a level but only 1 level </li>
+     <li>  two_level_bvdf - bvdf for 2 blocklevels </li>
+     <li>  three_level_bvdf - bvdf for 3 blocklevels </li>
    </ul>
 
    EXAMPLE:
    To create a format for managing a octree-like structure (that is
    subdividing a 3D cube into 8 subcubes) you can use the following
    created format:
-   .vb
+   \verbatim
    BV_DESC_FORMAT my_bvdf;
 
    InitBVDF( &my_bvdf, 8 );
-   .ve
+   \endverbatim
 
  * @return <ul>
- *   <li>GM_OK if ok
- *   <li>GM_OUT_OF_RANGE if 'max_blocks' < 2 or if 'max_blocks' greater than possible
+ *   <li>GM_OK if ok </li>
+ *   <li>GM_OUT_OF_RANGE if 'max_blocks' < 2 or if 'max_blocks' greater than possible </li>
  * </ul>
  * \sa
  *  BLOCKVECTOR, BV_DESC, BV_DESC_FORMAT
@@ -440,8 +440,8 @@ INT NS_PREFIX InitBVDF( BV_DESC_FORMAT *bvdf, BLOCKNUMBER max_blocks )
    for storing a sequence of blockvector numbers.
 
  * @return <ul>
- *   <li>GM_OK if ok
- *   <li>GM_OUT_OF_RANGE if the maximum number of blockvector levels is exeeded
+ *   <li>GM_OK if ok </li>
+ *   <li>GM_OUT_OF_RANGE if the maximum number of blockvector levels is exeeded </li>
 
  * \sa
    BLOCKVECTOR, BV_DESC
@@ -472,8 +472,8 @@ INT NS_PREFIX PushEntry( BV_DESC *bvd, BLOCKNUMBER bnr, const BV_DESC_FORMAT *bv
    Returns the blockvector specified by bvd.
 
  * @return <ul>
- *  <li> pointer to the specified blockvector
- *   <li>NULL if the specified blockvector does not exist
+ *  <li> pointer to the specified blockvector </li>
+ *   <li>NULL if the specified blockvector does not exist </li>
 
  * \sa
    BLOCKVECTOR, BV_DESC, BVD_PUSH_ENTRY
@@ -526,8 +526,9 @@ BLOCKVECTOR *NS_PREFIX FindBV( const GRID *grid, const BV_DESC *bvd, const BV_DE
    Compute the part info for a geometrical object including element sides.
 
  * @return <ul>
- *   <li>   part if ok
- *   <li>   -n else
+ *   <li>   part if ok </li>
+ *   <li>   -n else </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -653,8 +654,9 @@ INT NS_PREFIX GetVectorSize (GRID *theGrid, INT VectorObjType, GEOM_OBJECT *obje
    is available, a new structure is allocated from the heap.
 
  * @return <ul>
- *   <li>     0 if ok
- *   <li>     1 if error occured.
+ *   <li>     0 if ok  </li>
+ *   <li>     1 if error occured.	 </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -734,8 +736,9 @@ static INT CreateVectorInPart (GRID *theGrid, INT DomPart, INT VectorObjType,
    from the heap.
 
  * @return <ul>
- *   <li>     0 if ok
- *   <li>     1 if error occured.
+ *   <li>     0 if ok  </li>
+ *   <li>     1 if error occured. </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -802,8 +805,9 @@ INT NS_PREFIX CreateSideVector (GRID *theGrid, INT side, GEOM_OBJECT *object, VE
    a new structure is allocated from the heap.
 
  * @return <ul>
- *   <li>     GM_OK if ok
- *   <li>     GM_OUT_OF_MEM if there is not not enough memory available
+ *   <li>     GM_OK if ok  </li>
+ *   <li>     GM_OUT_OF_MEM if there is not not enough memory available </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -947,8 +951,8 @@ static INT CutBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *theBV, INT makeVC)
    is not important.
 
  * @return <ul>
- *   <li>   NULL if error occured.
- *   <li>   else a pointer to the new CONNECTION is returned.
+ *   <li>   NULL if error occured. </li>
+ *   <li>   else a pointer to the new CONNECTION is returned. </li>
  * </ul>
  */
 /****************************************************************************/
@@ -1079,8 +1083,9 @@ CONNECTION * NS_PREFIX CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to
    from the connections necessary for the stiffness matrix.
 
  * @return <ul>
- *   <li>   NULL if error occured.
- *   <li>   else pointer to new CONNECTION
+ *   <li>   NULL if error occured. </li>
+ *   <li>   else pointer to new CONNECTION </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -1124,8 +1129,9 @@ INT NS_PREFIX CreateElementList (GRID *theGrid, NODE *theNode, ELEMENT *theEleme
    it in the free list.
 
  * @return <ul>
- *   <li>   0 if ok
- *   <li>   1 if error occured.
+ *   <li>   0 if ok </li>
+ *   <li>   1 if error occured. </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -1287,8 +1293,9 @@ INT NS_PREFIX ReinspectSonSideVector (GRID *g, ELEMENT *elem, INT side, VECTOR *
    will happen.
 
  * @return <ul>
- *   <li>   0 if ok
- *   <li>   1 if error occured.
+ *   <li>   0 if ok </li>
+ *   <li>   1 if error occured.	 </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -1368,8 +1375,9 @@ void NS_PREFIX FreeAllBV (GRID *grid)
    free list.
 
  * @return <ul>
- *   <li>   0 if ok
- *   <li>   1 if error occured.
+ *   <li>   0 if ok </li>
+ *   <li>   1 if error occured. </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -1428,8 +1436,9 @@ INT NS_PREFIX DisposeConnection (GRID *theGrid, CONNECTION *theConnection)
    This function disposes a vector associated with two sides in 3D.
 
  * @return <ul>
- *   <li>   0 if ok
- *   <li>   1 if error occured.
+ *   <li>   0 if ok </li>
+ *   <li>   1 if error occured.	 </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -1486,8 +1495,9 @@ INT NS_PREFIX DisposeDoubledSideVector (GRID *theGrid, ELEMENT *Elem0, INT Side0
    This function removes all connections from a vector.
 
  * @return <ul>
- *   <li>   0 if ok
- *   <li>   1 if error occured.
+ *   <li>   0 if ok </li>
+ *   <li>   1 if error occured. </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -1511,8 +1521,9 @@ INT NS_PREFIX DisposeConnectionFromVector (GRID *theGrid, VECTOR *theVector)
    associated with an element.
 
  * @return <ul>
- *   <li>   0 if ok
- *   <li>   1 if error occured.
+ *   <li>   0 if ok </li>
+ *   <li>   1 if error occured. </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -1577,8 +1588,9 @@ INT NS_PREFIX DisposeConnectionFromElement (GRID *theGrid, ELEMENT *theElement)
    is the distance in the element-neighborship-graph (see also FORMAT).
 
  * @return <ul>
- *   <li>   0 if ok
- *   <li>   1 if error occured.
+ *   <li>   0 if ok </li>
+ *   <li>   1 if error occured. </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -1683,25 +1695,19 @@ INT NS_PREFIX DisposeElementList (GRID *theGrid, NODE *theNode)
 }
 
 /****************************************************************************/
-/** \brief
-   GetMatrix - Return pointer to matrix if it exists
+/** \brief Return pointer to matrix if it exists
 
-   SYNOPSIS:
-   MATRIX *GetMatrix (const VECTOR *FromVector, const VECTOR *ToVector);
-
-   PARAMETERS:
  * @param FromVector - starting vector of the Matrix
  * @param ToVector - destination vector of the Matrix
 
-   DESCRIPTION:
    This function returns pointer to matrix if it exists. The function
    runs through the single linked list, since the list is
    assumed to be small (sparse matrix!) the cost is assumed to be negligible.
 
  * @return <ul>
-   MATRIX *
- *   <li>      pointer to Matrix,
- *   <li>      NULL if Matrix does not exist.
+ *   <li>      pointer to Matrix, </li>
+ *   <li>      NULL if Matrix does not exist. </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -1741,23 +1747,17 @@ MATRIX *NS_PREFIX GetOrderedMatrix (const VECTOR *FromVector, const VECTOR *ToVe
 }
 
 /****************************************************************************/
-/** \brief
-   GetConnection - Return pointer to connection if it exists
+/** \brief Return pointer to connection if it exists
 
-   SYNOPSIS:
-   CONNECTION *GetConnection (const VECTOR *FromVector, const VECTOR *ToVector);
-
-   PARAMETERS:
  * @param FromVector - starting vector of the con
  * @param ToVector - destination vector of the con
 
-   DESCRIPTION:
    This function returns pointer to connection if it exists.
 
  * @return <ul>
-   CONNECTION *
- *   <li>      pointer to
- *   <li>      NULL if connection does not exist.
+ *   <li>      pointer to </li>
+ *   <li>      NULL if connection does not exist.  </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -1774,24 +1774,17 @@ CONNECTION * NS_PREFIX GetConnection (const VECTOR *FromVector, const VECTOR *To
 }
 
 /****************************************************************************/
-/** \brief
-   GetVectorsOfElement - Get a pointer list to all element data
+/** \brief Get a pointer list to all element data
 
-   SYNOPSIS:
-   INT GetVectorsOfElement (const ELEMENT *theElement, INT *cnt, VECTOR **vList);
-
-   PARAMETERS:
  * @param theElement - that element
  * @param cnt - how many vectors
  * @param vList - array to store vector list
 
-   DESCRIPTION:
    This function returns a pointer to the VECTOR associated with the
    element (if the element is allowed to have one). cnt will either
    be 0 or 1.
 
  * @return <ul>
-   INT
  *   <li>    GM_OK if ok
  *   <li>    GM_ERROR	if error occured.
  */
@@ -1815,22 +1808,15 @@ INT NS_PREFIX GetVectorsOfElement (const ELEMENT *theElement, INT *cnt, VECTOR *
 }
 
 /****************************************************************************/
-/** \brief
-   GetVectorsOfSides - Get a pointer list to all side data
+/** \brief Get a pointer list to all side data
 
-   SYNOPSIS:
-   INT GetVectorsOfSides (const ELEMENT *theElement, INT *cnt, VECTOR **vList);
-
-   PARAMETERS:
  * @param theElement - that element
  * @param cnt - how many vectors
  * @param vList - array to store vector list
 
-   DESCRIPTION:
    This function gets a pointer array to all VECTORs in sides of the given element.
 
  * @return <ul>
-   INT
  *   <li>    GM_OK if ok
  *   <li>    GM_ERROR	if error occured.
  */
@@ -1860,22 +1846,15 @@ INT NS_PREFIX GetVectorsOfSides (const ELEMENT *theElement, INT *cnt, VECTOR **v
 #endif
 
 /****************************************************************************/
-/** \brief
-   GetVectorsOfEdges - Get a pointer list to all edge data
+/** \brief Get a pointer list to all edge data
 
-   SYNOPSIS:
-   INT GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **vList);
-
-   PARAMETERS:
  * @param theElement -  that element
  * @param cnt - how many vectors
  * @param vList - array to store vector list
 
-   DESCRIPTION:
    This function gets a pointer array to all VECTORs in edges of the element.
 
  * @return <ul>
-   INT
  *   <li>    GM_OK if ok
  *   <li>    GM_ERROR	if error occured.
  */
@@ -1906,22 +1885,15 @@ INT NS_PREFIX GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **v
 }
 
 /****************************************************************************/
-/** \brief
-   GetVectorsOfNodes - Get a pointer list to all node data
+/** \brief Get a pointer list to all node data
 
-   SYNOPSIS:
-   INT GetVectorsOfNodes (const ELEMENT *theElement, INT *cnt, VECTOR **vList);
-
-   PARAMETERS:
  * @param theElement -  that element
  * @param cnt - how many vectors
  * @param vList - array to store vector list
 
-   DESCRIPTION:
    This function gets a pointer array to all VECTORs in nodes of the element.
 
  * @return <ul>
-   INT
  *   <li>    GM_OK if ok
  *   <li>    GM_ERROR	if error occured.
  */
@@ -1948,23 +1920,16 @@ INT NS_PREFIX GetVectorsOfNodes (const ELEMENT *theElement, INT *cnt, VECTOR **v
 }
 
 /****************************************************************************/
-/** \brief
-   GetVectorsOfOType - Get a pointer list to all vector data of specified object type
+/** \brief Get a pointer list to all vector data of specified object type
 
-   SYNOPSIS:
-   INT GetVectorsOfOType (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vList)
-
-   PARAMETERS:
  * @param theElement -  that element
  * @param type - fill array with vectors of this type
  * @param cnt - how many vectors
  * @param vList - array to store vector list
 
-   DESCRIPTION:
    This function returns a pointer array to all VECTORs of the element of the specified type.
 
  * @return <ul>
-   INT
  *   <li>    GM_OK if ok
  *   <li>    GM_ERROR	if error occured.
  */
@@ -1989,23 +1954,16 @@ INT NS_PREFIX GetVectorsOfOType (const ELEMENT *theElement, INT type, INT *cnt, 
 }
 
 /****************************************************************************/
-/** \brief
-   DataTypeFilterVList - remove vectors with non-matching type from list
+/** \brief Remove vectors with non-matching type from list
 
-   SYNOPSIS:
-   INT DataTypeFilterVList (INT dt, VECTOR **vec, INT *cnt)
-
-   PARAMETERS:
  * @param dt - data type including all vtypes needed
  * @param vec - vector list
  * @param cnt  - number of vectors return in the list
 
-   DESCRIPTION:
    This function removes vectors with non-matching types from the list.
 
- * @return <ul>
-   INT
- *   <li>   number of remaining vectors in the list
+ * @return
+ *   Number of remaining vectors in the list
  */
 /****************************************************************************/
 
@@ -2023,24 +1981,17 @@ INT NS_PREFIX DataTypeFilterVList (INT dt, VECTOR **vec, INT *cnt)
 }
 
 /****************************************************************************/
-/** \brief
-   GetVectorsOfDataTypesInObjects - get vector list including all vectors of specified vtypes
+/** \brief Get vector list including all vectors of specified vtypes
 
-   SYNOPSIS:
-   INT GetVectorsOfDataTypesInObjects (const ELEMENT *theElement, INT dt, INT obj, INT *cnt, VECTOR *VecList[])
-
-   PARAMETERS:
  * @param theElement - pointer to an element
  * @param dt  - data type including all vtypes needed
  * @param obj - flags for objects types needed
  * @param cnt - number of vectors return in the list
  * @param vec - vector list
 
-   DESCRIPTION:
    This function gets a list of vectors of the specified vtypes corresponding to an element.
 
  * @return <ul>
-   INT
  *   <li>   GM_OK if ok
  *   <li>   GM_ERROR if error occured
  */
@@ -2208,21 +2159,12 @@ INT NS_PREFIX PrepareGetBoundaryNeighbourVectors (GRID *theGrid, INT *MaxListLen
 }
 
 /****************************************************************************/
-/** \brief
-   ResetGetBoundaryNeighbourVectors - reset current neighbourhood to begin of list
+/** \brief Reset current neighbourhood to begin of list
 
-   SYNOPSIS:
-   INT ResetGetBoundaryNeighbourVectors (void)
-
-   PARAMETERS:
- * @param void - none
-
-   DESCRIPTION:
    This function resets the pointer to the current neighbourhood to the beginning of
    the list. GetBoundaryNeighbourVectors will start again with the first one.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   >0 else
 
@@ -2241,20 +2183,14 @@ INT NS_PREFIX ResetGetBoundaryNeighbourVectors (void)
 }
 
 /****************************************************************************/
-/** \brief
-   GetBoundaryNeighbourVectors - get a neighbourhood of boundary vectors
+/** \brief Get a neighbourhood of boundary vectors
 
-   SYNOPSIS:
-   INT GetBoundaryNeighbourVectors (INT dt, INT obj, INT *cnt, VECTOR *VecList[], INT *end)
-
-   PARAMETERS:
  * @param dt - datatypes of center vectors (bitwise)
  * @param obj - object types of center vectors (bitwise)
  * @param cnt - vector list length
  * @param VecList - vector list
  * @param end - if YES the currently returned list was the last one
 
-   DESCRIPTION:
    This function returns a neighbourhood of boundary vectors, center first and the
    remainder oriented in positiv sense. The boundary vector heighbourhood lists
    are created by a call of PrepareGetBoundaryNeighbourVectors. Use
@@ -2264,7 +2200,6 @@ INT NS_PREFIX ResetGetBoundaryNeighbourVectors (void)
    occupied by PrepareGetBoundaryNeighbourVectors..
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   >0 else
 
@@ -2310,21 +2245,12 @@ INT NS_PREFIX GetBoundaryNeighbourVectors (INT dt, INT obj, INT *cnt, VECTOR *Ve
 }
 
 /****************************************************************************/
-/** \brief
-   FinishBoundaryNeighbourVectors - finish processing of boundary vectors
+/** \brief Finish processing of boundary vectors
 
-   SYNOPSIS:
-   INT FinishBoundaryNeighbourVectors (void)
-
-   PARAMETERS:
-   .  void - nonw
-
-   DESCRIPTION:
    This function releases the temporary memory allocated by PrepareGetBoundaryNeighbourVectors
    from the multigrid heap.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   >0 else
 
@@ -2346,22 +2272,15 @@ INT NS_PREFIX FinishBoundaryNeighbourVectors (void)
 }
 
 /****************************************************************************/
-/** \brief
-   GetAllVectorsOfElement - get vector list
+/** \brief Get vector list
 
-   SYNOPSIS:
-   INT GetAllVectorsOfElement (GRID *theGrid, ELEMENT *theElement, VECTOR **vec);
-
-   PARAMETERS:
  * @param theGrid - pointer to a grid
  * @param theElement - pointer to an element
  * @param vec - vector list
 
-   DESCRIPTION:
    This function gets a list of vectors corresponding to an element.
 
  * @return <ul>
-   INT
  *   <li>   number of components
  *   <li>   -1 if error occured
  */
@@ -2404,21 +2323,14 @@ INT NS_PREFIX GetAllVectorsOfElement (GRID *theGrid, ELEMENT *theElement, VECTOR
 }
 
 /****************************************************************************/
-/** \brief
-   DisposeExtraConnections - Remove all extra connections from the grid
+/** \brief Remove all extra connections from the grid
 
-   SYNOPSIS:
-   INT DisposeExtraConnections (GRID *theGrid);
-
-   PARAMETERS:
  * @param theGrid - grid to remove from
 
-   DESCRIPTION:
    This function removes all extra connections from the grid, i.e. those
    that have been allocated with the CreateExtraConnection function.
 
  * @return <ul>
-   INT
  *   <li>      0 if ok
  *   <li>      1 if error occured
  */
@@ -2465,26 +2377,19 @@ INT NS_PREFIX DisposeConnectionsInGrid (GRID *theGrid)
 }
 
 /****************************************************************************/
-/** \brief
-   ElementElementCreateConnection - Create connections of two elements
+/** \brief Create connections of two elements
 
-   SYNOPSIS:
-   static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0,
-   ELEMENT *Elem1, INT ActDepth, INT *ConDepth, INT* MatSize);
-
-   PARAMETERS:
  * @param theGrid - pointer to grid
  * @param Elem0,Elem1 - elements to be connected
  * @param ActDepth - distance of the two elements in the element neighborship graph
- * @param ConDepth - Array containing the connection depth desired * @paramThis is constructed
+ * @param ConDepth - Array containing the connection depth desired
+ * @paramThis is constructed
  * @param MatSize - Array containing the connection size. This is constructed from the information in the FORMAT.
 
-   DESCRIPTION:
    This function creates connections between all the VECTORs associated
    with two given elements according to the specifications in the ConDepth array.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   1 if error occured.
  */
@@ -2559,26 +2464,18 @@ static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0, ELEMEN
 }
 
 /****************************************************************************/
-/** \brief
-   GetElementInfoFromSideVector	- Get pointers to elements having a common side
+/** \brief Get pointers to elements having a common side
 
-   SYNOPSIS:
-   INT GetElementInfoFromSideVector (const VECTOR *theVector,
-   ELEMENT **Elements, INT *Sides);
-
-   PARAMETERS:
  * @param theVector - given vector associated with a side of an element in 3D
  * @param Elements - array to be filled with two pointers of elements
  * @param Sides - array to be filled with side number within respective element
 
-   DESCRIPTION:
    Given a VECTOR associated with the side of an element, this function
    retrieves pointers to at most two elements having this side in common.
    If the side is part of the exterior boundary of the domain, then
    Elements[1] will be the NULL pointer.
 
  * @return <ul>
-   INT
  *   <li>    0 if ok
  *   <li>    1 if error occured.
  */
@@ -2615,25 +2512,17 @@ INT NS_PREFIX GetElementInfoFromSideVector (const VECTOR *theVector, ELEMENT **E
 #endif
 
 /****************************************************************************/
-/*
-   ResetUsedFlagInNeighborhood - Reset all USED flags in neighborhood of an element
+/** \brief Reset all USED flags in neighborhood of an element
 
-   SYNOPSIS:
-   static INT ResetUsedFlagInNeighborhood (ELEMENT *theElement,
-   INT ActDepth, INT MaxDepth);
-
-   PARAMETERS:
  * @param theElement - given element
  * @param ActDepth - recursion depth
  * @param MaxDepth - end of recursion
 
-   DESCRIPTION:
    This function calls itself recursively and resets all USED flags in the
    neighborhood of depth MaxDepth of theElement. For the first call
    ActDepth should be zero.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   1 if error occured.
  */
@@ -2681,22 +2570,15 @@ static INT ConnectWithNeighborhood (ELEMENT *theElement, GRID *theGrid, ELEMENT 
 }
 
 /****************************************************************************/
-/** \brief
-   CreateConnectionsInNeighborhood - Create connection of an element
+/** \brief Create connection of an element
 
-   SYNOPSIS:
-   INT CreateConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement);
-
-   PARAMETERS:
  * @param theGrid - pointer to grid
  * @param theElement - pointer to an element
 
-   DESCRIPTION:
    This function creates connection for all VECTORs of an element
    with the depth specified in the FORMAT structure.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   1 if error occured.
  */
@@ -2728,25 +2610,12 @@ INT NS_PREFIX CreateConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElemen
 }
 
 /****************************************************************************/
-/*
-   ConnectInsertedWithNeighborhood - Create connection of an inserted element
+/** \brief Create connection of an inserted element
 
-   SYNOPSIS:
-   static INT ConnectInsertedWithNeighborhood (ELEMENT *theElement, GRID *theGrid,
-   INT ActDepth, INT MaxDepth);
-
-   PARAMETERS:
- * @param theElement -
-   .  theGrid -
-   .  ActDepth -
-   .  MaxDepth -
-
-   DESCRITION:
    This function creates connection of an inserted element ,
    i.e. an element is inserted interactively by the user.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   1 if error occured.
  */
@@ -2773,23 +2642,16 @@ static INT ConnectInsertedWithNeighborhood (ELEMENT *theElement, GRID *theGrid, 
 }
 
 /****************************************************************************/
-/** \brief
-   InsertedElementCreateConnection -  Create connection of an inserted element
+/** \brief Create connection of an inserted element
 
-   SYNOPSIS:
-   INT InsertedElementCreateConnection (GRID *theGrid, ELEMENT *theElement);
-
-   PARAMETERS:
  * @param theGrid - grid level
  * @param theElement -  pointer to an element
 
-   DESCRITION:
    This function creates connections of an inserted element ,
    i.e. when an element is inserted interactively by the user. This function
    is inefficient and only intended for that purpose.
 
  * @return <ul>
-   INT
  *   <li>  0 if ok
  *   <li>  1 if error occured.
  */
@@ -2820,19 +2682,13 @@ INT NS_PREFIX InsertedElementCreateConnection (GRID *theGrid, ELEMENT *theElemen
 }
 
 /****************************************************************************/
-/** \brief
-   GridCreateConnection	- Create all connections needed on a grid level
-   SYNOPSIS:
-   INT GridCreateConnection (GRID *theGrid);
+/** \brief Create all connections needed on a grid level
 
-   PARAMETERS:
  * @param theGrid - pointer to grid
 
-   DESCRIPTION:
    This function creates all connections needed on the grid.
 
  * @return <ul>
-   INT
  *   <li>    0 if ok
  *   <li>    1 if error occured.
  */
@@ -2932,25 +2788,6 @@ INT NS_PREFIX GridCreateConnection (GRID *theGrid)
   return(GM_OK);
 }
 
-/****************************************************************************/
-/** \brief
-   CreateAlgebra - Creates the algebra for a grid
-
-   SYNOPSIS:
-   INT CreateAlgebra (MULTIGRID *theGrid);
-
-   PARAMETERS:
- * @param theGrid - pointer to grid
-
-   DESCRIPTION:
-   This function allocates VECTORs in all geometrical objects of the grid
-   (where described by format) and then calls GridCreateConnection.
-
- * @return <ul>
-   INT
- *   <li>    GM_OK if ok
- */
-/****************************************************************************/
 
 #ifdef ModelP
 static int Gather_VectorVNew (DDD_OBJ obj, void *data)
@@ -3075,6 +2912,19 @@ INT NS_PREFIX SetSurfaceClasses (MULTIGRID *theMG)
   return(0);
 }
 
+/****************************************************************************/
+/** \brief Creates the algebra for a grid
+
+ * @param theGrid - pointer to grid
+
+   This function allocates VECTORs in all geometrical objects of the grid
+   (where described by format) and then calls GridCreateConnection.
+
+ * @return <ul>
+ *   <li>    GM_OK if ok
+ */
+/****************************************************************************/
+
 INT NS_PREFIX CreateAlgebra (MULTIGRID *theMG)
 {
   GRID *g;
@@ -3182,20 +3032,13 @@ INT NS_PREFIX CreateAlgebra (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/** \brief
-   MGCreateConnection - Create all connections in multigrid
+/** \brief Create all connections in multigrid
 
-   SYNOPSIS:
-   INT MGCreateConnection (MULTIGRID *theMG);
-
-   PARAMETERS:
  * @param theMG - pointer to mulrigrid
 
-   DESCRIPTION:
    This function creates all connections in multigrid.
 
  * @return <ul>
-   INT
  *   <li>    0 if ok
  *   <li>    1 if error occured.
  */
@@ -3277,25 +3120,17 @@ INT NS_PREFIX PrepareAlgebraModification (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/** \brief
-   ElementElementCheck - Check connection of two elements
+/** \brief Check connection of two elements
 
-   SYNOPSIS:
-   static INT ElementElementCheck (GRID *theGrid,
-   ELEMENT *Elem0, ELEMENT *Elem1, INT ActDepth, INT *ConDepth, INT *MatSize);
-
-   PARAMETERS:
  * @param theGrid -  grid level to check
  * @param Elem0,Elem1 - elements to be checked.
  * @param ActDepth - recursion depth
  * @param ConDepth - connection depth as provided by format.
  * @param MatSize - matrix sizes as provided by format
 
-   DESCRIPTION:
    This function recursively checks connection of two elements.
 
  * @return <ul>
-   INT
  *   <li>    0 if ok
  *   <li>    != 0 if errors occured.
  */
@@ -3442,21 +3277,14 @@ static INT CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *cente
 }
 
 /****************************************************************************/
-/** \brief
-   ElementCheckConnection - Check connection of the element
+/** \brief Check connection of the element
 
-   SYNOPSIS:
-   INT   ElementCheckConnection (GRID *theGrid, ELEMENT *theElement);
-
-   PARAMETERS:
  * @param theGrid - pointer to grid
  * @param theElement - pointer to element
 
-   DESCRIPTION:
    This function checks all connections of the given element.
 
  * @return <ul>
-   INT
  *   <li>  number of errors
  *   <li>  0 if ok
  *   <li>  != 0 if errors occured in that connection.
@@ -3481,20 +3309,13 @@ INT NS_PREFIX ElementCheckConnection (GRID *theGrid, ELEMENT *theElement)
 }
 
 /****************************************************************************/
-/** \brief
-   CheckConnections - Check if connections are correctly allocated
+/** \brief Check if connections are correctly allocated
 
-   SYNOPSIS:
-   INT CheckConnections (GRID *theGrid);
-
-   PARAMETERS:
  * @param theGrid -  grid level to check
 
-   DESCRIPTION:
    This function checks if connections are correctly allocated.
 
  * @return <ul>
-   INT
  *   <li>    GM_OK if ok
  *   <li>    GM_ERROR	if error occured.
  */
@@ -3525,14 +3346,8 @@ static INT CheckConnections (GRID *theGrid)
 
 
 /****************************************************************************/
-/** \brief
-   CheckVector - Checks validity of geom_object	and its vector
+/** \brief Checks validity of geom_object	and its vector
 
-   SYNOPSIS:
-   INT CheckVector (const FORMAT *fmt, const INT s2p[], GEOM_OBJECT *theObject, char *ObjectString,
-                VECTOR *theVector, INT VectorObjType, INT side);
-
-   PARAMETERS:
  * @param fmt - FORMAT of associated multigrid
  * @param s2p - subdomain to part table
  * @param theObject - the object which points to theVector
@@ -3541,12 +3356,10 @@ static INT CheckConnections (GRID *theGrid)
  * @param VectorObjType - NODEVEC,...
  * @param side - element side for SIDEVEC, NOSIDE else
 
-   DESCRIPTION:
    This function checks the consistency between an geom_object and
    its vector.
 
  * @return <ul>
-   INT
  *   <li>    GM_OK if ok
  *   <li>    GM_ERROR	if error occured.
  */
@@ -3722,22 +3535,15 @@ static INT CheckVector (const FORMAT *fmt, const INT s2p[], GEOM_OBJECT *theObje
 }
 
 /****************************************************************************/
-/** \brief
-   CheckAlgebra - Check the algebraic part of the data structure
+/** \brief Check the algebraic part of the data structure
 
-   SYNOPSIS:
-   INT CheckAlgebra (GRID *theGrid);
-
-   PARAMETERS:
  * @param theGrid -  grid level to check
 
-   DESCRIPTION:
    This function checks the consistency of the algebraic data structures
    including the interconnections between the geometric part.
    This function assumes a correct geometric data structure.
 
  * @return <ul>
-   INT
  *   <li>    GM_OK if ok
  *   <li>    GM_ERROR	if error occured.
  */
@@ -3948,21 +3754,15 @@ INT NS_PREFIX CheckAlgebra (GRID *theGrid)
 }
 
 /****************************************************************************/
-/** \brief
-   VectorInElement -  Decide whether a vector corresponds to an element or not
-   SYNOPSIS:
-   INT VectorInElement (ELEMENT *theElement, VECTOR *theVector);
+/** \brief Decide whether a vector corresponds to an element or not
 
-   PARAMETERS:
  * @param theElement - pointer to element
  * @param theVector - pointer to a vector
 
-   DESCRIPTION:
    This function decides whether a given vector belongs to the given element, or
    one of its sides, edges or nodes.
 
  * @return <ul>
-   INT
  *   <li>   0 if does not correspond
  *   <li>   1 if does correspond.
  */
@@ -4005,22 +3805,15 @@ INT NS_PREFIX VectorInElement (ELEMENT *theElement, VECTOR *theVector)
 }
 
 /****************************************************************************/
-/** \brief
-   VectorPosition - Calc coordinate position of vector
+/** \brief Calc coordinate position of vector
 
-   SYNOPSIS:
-   INT VectorPosition (const VECTOR *theVector, DOUBLE *position);
-
-   PARAMETERS:
  * @param theVector - a given vector
  * @param position - array to be filled
 
-   DESCRIPTION:
    This function calcs physical position of vector. For edge vectors the
    midpoint is returned, and for sides and elements the center of mass.
 
  * @return <ul>
-   INT
  *   <li>    0 if ok
  *   <li>    1 if error occured.
  */
@@ -4086,21 +3879,14 @@ INT NS_PREFIX VectorPosition (const VECTOR *theVector, DOUBLE *position)
 
 
 /****************************************************************************/
-/** \brief
-   SeedVectorClasses -  Initialize vector classes
+/** \brief Initialize vector classes
 
-   SYNOPSIS:
-   INT SeedVectorClasses (GRID *theGrid, ELEMENT *theElement);
-
-   PARAMETERS:
  * @param theGrid - given grid
  * @param theElement - given element
 
-   DESCRIPTION:
    Initialize vector class in all vectors associated with given element with 3.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   1 if error occured.
  */
@@ -4138,20 +3924,13 @@ INT NS_PREFIX SeedVectorClasses (GRID *theGrid, ELEMENT *theElement)
 }
 
 /****************************************************************************/
-/** \brief
-   ClearVectorClasses - Reset vector classes
+/** \brief Reset vector classes
 
-   SYNOPSIS:
-   INT ClearVectorClasses (GRID *theGrid);
-
-   PARAMETERS:
  * @param theGrid - pointer to grid
 
-   DESCRIPTION:
    Reset all vector classes in all vectors of given grid to 0.
 
  * @return <ul>
-   INT
  *   <li>    0 if ok
  *   <li>    1 if error occured.
  */
@@ -4167,26 +3946,7 @@ INT NS_PREFIX ClearVectorClasses (GRID *theGrid)
 
   return(0);
 }
-/****************************************************************************/
-/** \brief
-   PropagateVectorClasses - Compute vector classes after initialization
 
-   SYNOPSIS:
-   INT PropagateVectorClasses (GRID *theGrid);
-
-   PARAMETERS:
- * @param theGrid - pointer to grid
-
-   DESCRIPTION:
-   After vector classes have been reset and initialized, this function
-   now computes the class 2 and class 1 vectors.
-
- * @return <ul>
-   INT
- *   <li>     0 if ok
- *   <li>     1 if error occured
- */
-/****************************************************************************/
 
 #ifdef ModelP
 static int Gather_VectorVClass (DDD_OBJ obj, void *data)
@@ -4294,6 +4054,19 @@ static INT PropagateVectorClassX (GRID *theGrid, INT vclass)
 }
 #endif
 
+/****************************************************************************/
+/** \brief Compute vector classes after initialization
+
+ * @param theGrid - pointer to grid
+
+   After vector classes have been reset and initialized, this function
+   now computes the class 2 and class 1 vectors.
+
+ * @return <ul>
+ *   <li>     0 if ok
+ *   <li>     1 if error occured
+ */
+/****************************************************************************/
 INT NS_PREFIX PropagateVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
@@ -4367,22 +4140,15 @@ INT NS_PREFIX PropagateVectorClasses (GRID *theGrid)
 }
 
 /****************************************************************************/
-/** \brief
-   ClearNextVectorClasses - Reset class of the vectors on the next level
+/** \brief Reset class of the vectors on the next level
 
-   SYNOPSIS:
-   INT ClearNextVectorClasses (GRID *theGrid);
-
-   PARAMETERS:
  * @param theGrid - pointer to grid
 
-   DESCRIPTION:
    This function clears VNCLASS flag in all vectors. This is the first step to
    compute the class of the dofs on the *NEXT* level, which
    is also the basis for determining copies.
 
  * @return <ul>
-   INT
  *   <li>    0 if ok
  *   <li>    1 if error occured.
  */
@@ -4402,21 +4168,14 @@ INT NS_PREFIX ClearNextVectorClasses (GRID *theGrid)
 }
 
 /****************************************************************************/
-/** \brief
-   SeedNextVectorClasses - Set VNCLASS in all vectors associated with element
+/** \brief Set VNCLASS in all vectors associated with element
 
-   SYNOPSIS:
-   INT SeedNextVectorClasses (GRID *theGrid, ELEMENT *theElement);
-
-   PARAMETERS:
  * @param theGrid - given grid
  * @param theElement - pointer to element
 
-   DESCRIPTION:
    Set VNCLASS in all vectors associated with the element to 3.
 
  * @return <ul>
-   INT
  *   <li>    0 if ok
  *   <li>    1 if error occured.
  */
@@ -4454,25 +4213,7 @@ INT NS_PREFIX SeedNextVectorClasses (GRID *theGrid, ELEMENT *theElement)
 }
 
 
-/****************************************************************************/
-/** \brief
-   PropagateNextVectorClasses - Compute VNCLASS in all vectors of a grid level
 
-   SYNOPSIS:
-   INT PropagateNextVectorClasses (GRID *theGrid);
-
-   PARAMETERS:
- * @param theGrid - pointer to grid
-
-   DESCRIPTION:
-   Computes values of VNCLASS field in all vectors after seed.
-
- * @return <ul>
-   INT
- *   <li>   0 if ok
- *   <li>   1 if error occured
- */
-/****************************************************************************/
 
 #ifdef ModelP
 static int Gather_VectorVNClass (DDD_OBJ obj, void *data)
@@ -4587,7 +4328,18 @@ static INT PropagatePeriodicNextVectorClass (GRID *theGrid)
 }
 #endif
 
+/****************************************************************************/
+/** \brief Compute VNCLASS in all vectors of a grid level
 
+ * @param theGrid - pointer to grid
+
+   Computes values of VNCLASS field in all vectors after seed.
+
+ * @return <ul>
+ *   <li>   0 if ok
+ *   <li>   1 if error occured
+ */
+/****************************************************************************/
 INT NS_PREFIX PropagateNextVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
@@ -4653,22 +4405,15 @@ INT NS_PREFIX PropagateNextVectorClasses (GRID *theGrid)
 }
 
 /****************************************************************************/
-/** \brief
-   MaxNextVectorClass - Returns highest vector class of a dof on next level
+/** \brief Returns highest vector class of a dof on next level
 
-   SYNOPSIS:
-   INT MaxNextVectorClass (GRID *theGrid, ELEMENT *theElement);
-
-   PARAMETERS:
  * @param theGrid - pointer to a grid
  * @param theElement - pointer to a element
 
-   DECRIPTION:
    This function returns highest VNCLASS of a vector associated with the
    element.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   1 if error occured.
  */
@@ -4708,7 +4453,7 @@ INT NS_PREFIX MaxNextVectorClass (GRID *theGrid, ELEMENT *theElement)
 
 /****************************************************************************/
 /*                                                                          */
-/* Function:  LexCompare													*/
+/* Function:  LexCompare                                                    */
 /*                                                                          */
 /****************************************************************************/
 
@@ -4852,26 +4597,18 @@ static int MatrixCompare (MATRIX **MatHandle1, MATRIX **MatHandle2)
 
 
 /****************************************************************************/
-/** \brief
-   LexOrderVectorsInGrid - order vectors lexicographically
+/** \brief Order vectors lexicographically
 
-   SYNOPSIS:
-   INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign,
-                                INT SpecSkipVecs, INT AlsoOrderMatrices)
-
-   PARAMETERS:
  * @param theGrid - grid level
  * @param order - hierarchie of ordering directions (x,y[,z])
  * @param sign  - signs for the directions
  * @param SpecSkipVecs - if TRUE: GM_PUT_AT_BEGIN or GM_PUT_AT_END of vectors with skip TRUE
  * @param AlsoOrderMatrices - if TRUE order matrices in the same sense
 
-   DESCRIPTION:
    This function orders the vectors of one level lexicographically.
    It has the complexity of qsort which is n*log(n).
 
  * @return <ul>
-   INT
  *   <li>  0 if ok
  *   <li>  1 if error occured.
  */
@@ -4986,21 +4723,14 @@ INT NS_PREFIX LexOrderVectorsInGrid (GRID *theGrid, INT mode, const INT *order, 
 }
 
 /****************************************************************************/
-/** \brief
-   CreateFindCutProc - Create a new find cut procedure in environement
+/** \brief Create a new find cut procedure in environment
 
-   SYNOPSIS:
-   ALG_DEP *CreateFindCutProc (char *name, FindCutProcPtr FindCutProc);
-
-   PARAMETERS:
  * @param name - name
  * @param FindCutProc -  the find cut procedure
 
-   DESCRIPTION:
    This function creates a new find cut dependency in environement.
 
  * @return <ul>
-   INT
  *   <li>  0 if ok
  *   <li>  1 if error occured.
  */
@@ -5024,22 +4754,14 @@ FIND_CUT * NS_PREFIX CreateFindCutProc (char *name, FindCutProcPtr FindCutProc)
 }
 
 /****************************************************************************/
-/** \brief
-   CreateAlgebraicDependency - Create a new algebraic dependency in environement
+/** \brief Create a new algebraic dependency in environment
 
-   SYNOPSIS:
-   ALG_DEP *CreateAlgebraicDependency (char *name,
-   DependencyProcPtr DependencyProc);
-
-   PARAMETERS:
  * @param name - name
  * @param DependencyProc -  the dependency procedure
 
-   DESCRIPTION:
    This function creates a new algebraic dependency in environement.
 
  * @return <ul>
-   INT
  *   <li>  0 if ok
  *   <li>  1 if error occured.
  */
@@ -5063,19 +4785,12 @@ ALG_DEP * NS_PREFIX CreateAlgebraicDependency (char *name, DependencyProcPtr Dep
 }
 
 /****************************************************************************/
-/*
-   FeedbackVertexVectors - put `every` vector !VCUSED into the new order list
+/** \brief Put `every` vector !VCUSED into the new order list
 
-   SYNOPSIS:
-   static INT FeedbackVertexVectors (GRID *theGrid, VECTOR **CutVectors,
-   INT *nb);
-
-   PARAMETERS:
  * @param theGrid - pointer to grid
    .  CutVectors -
    .  nb -
 
-   DESCRIPTION:
    This function can be used as a find-cut-procedure for the streamwise ordering
    algorithm * @paramBut it just puts `all` the remaining vectors into the new order
    list instead of removing only as much as necessary to get rid of cyclic
@@ -5084,7 +4799,6 @@ ALG_DEP * NS_PREFIX CreateAlgebraicDependency (char *name, DependencyProcPtr Dep
    It is used as default when no cut procedure is specified.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   1 if error occured.
  */
@@ -5107,26 +4821,7 @@ static VECTOR *FeedbackVertexVectors (GRID *theGrid, VECTOR *LastVector, INT *nb
   return (LastVector);
 }
 
-/****************************************************************************/
-/*
-   OrderMatrices - reorder the matrix list of a vector in a circular order (2D only)
 
-   SYNOPSIS:
-   static INT OrderMatrices (VECTOR *vec, INT Sense)
-
-   PARAMETERS:
- * @param vec - order matrix list of this vector
- * @param sense - MATHPOS or MATHNEG
-
-   DESCRIPTION:
-   This function reorders the matrix list of a vector in a circular order (2D only).
-
- * @return <ul>
-   INT
- *   <li>   0 if ok
- *   <li>   1 if error occured.
- */
-/****************************************************************************/
 
 #ifdef __TWODIM__
 
@@ -5177,6 +4872,19 @@ static INT SensCompare (MATRIX **MatHandle1, MATRIX **MatHandle2)
   }
 }
 
+/****************************************************************************/
+/** \brief Reorder the matrix list of a vector in a circular order (2D only)
+
+ * @param vec - order matrix list of this vector
+ * @param sense - MATHPOS or MATHNEG
+
+   This function reorders the matrix list of a vector in a circular order (2D only).
+
+ * @return <ul>
+ *   <li>   0 if ok
+ *   <li>   1 if error occured.
+ */
+/****************************************************************************/
 static INT OrderMatrices (VECTOR *vec, INT Sense)
 {
   VECTOR *nbv;
@@ -5221,21 +4929,14 @@ static INT OrderMatrices (VECTOR *vec, INT Sense)
 #endif
 
 /****************************************************************************/
-/*
-   ShellOrderVectors	- Reorder double linked vector list by a shell algorithm
+/** \brief Reorder double linked vector list by a shell algorithm
 
-   SYNOPSIS:
-   INT ShellOrderVectors (GRID *theGrid, VECTOR *seed)
-
-   PARAMETERS:
  * @param theGrid - pointer to grid
  * @param seed - start at this vector
 
-   DESCRIPTION:
    This function reorders double linked vector list by a shell algorithm.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   1 if error occured.
  */
@@ -5608,7 +5309,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     }
 
     /****************************************************************************/
-    /*	get CUT (or Feedback Vertex)-set and do what needs to be done			*/
+    /*	get CUT (or Feedback Vertex)-set and do what needs to be done        */
     /****************************************************************************/
 
     CUT_begin = FIRST_last_in;
@@ -5638,7 +5339,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   a = POW((DOUBLE)NVEC(theGrid),(DOUBLE)(DIM-1)/(DOUBLE)DIM);     a = (DOUBLE)nCutTot/a;
   UserWriteF("# corr. to %6.2f hyp. planes\n",(float)a);
 
-  /* TODO: use dlmgr macros for lists after streamwise ordering */
+  /** \todo use dlmgr macros for lists after streamwise ordering */
 
   /* insert FIRST list one-by-one to LASTVECTOR list of grid */
   LASTVECTOR(theGrid) = NULL;
@@ -5784,14 +5485,8 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
 }
 
 /****************************************************************************/
-/** \brief
-   OrderVectors	-  Driver for general vector ordering
+/** \brief Driver for general vector ordering
 
-   SYNOPSIS:
-   INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat,
-                                        const char *dependency, const char *dep_options, const char *findcut);
-
-   PARAMETERS:
  * @param theMG -  multigrid to order
  * @param levels -  GM_ALL_LEVELS or GM_CURRENT_LEVEL
  * @param mode - GM_FCFCLL or GM_FFCCLL (see orderv command)
@@ -5800,12 +5495,10 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
  * @param dependency - name of user defined dependency item
  * @param dep_options - options for user dependency function
 
-   DESCRIPTION:
    This function orders VECTORs in a multigrid according to the dependency
    function provided.
 
  * @return <ul>
-   INT
  *   <li>    GM_OK if ok
  *   <li>    GM_ERROR if error occured.
  */
@@ -5999,16 +5692,10 @@ static VECTOR *FindOptimalStrong (FIFO *fifo)
 }
 
 /****************************************************************************/
-/*
-   LineOrderVectorsAlgebraic	- Reorder double linked vector list by a streamline ordering
+/** \brief Reorder double linked vector list by a streamline ordering
 
-   SYNOPSIS:
-   static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT mode);
-
-   PARAMETERS:
  * @param theGrid - pointer to grid
 
-   DESCRIPTION:
    This function reorders double linked vector list by a streamline ordering.
 
    CAUTION:
@@ -6018,7 +5705,6 @@ static VECTOR *FindOptimalStrong (FIFO *fifo)
    The FindCutProc can only use the SUCCVC-list (the other one is destroyed).
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   1 if error occured.
  */
@@ -6166,7 +5852,7 @@ static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT verboselevel)
     cycle++;
 
     /****************************************************************************/
-    /*	find next FIRST-set in vectors not used                                                                 */
+    /*	find next FIRST-set in vectors not used                                     */
     /****************************************************************************/
 
     line = 0;
@@ -6463,26 +6149,18 @@ static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT verboselevel)
 }
 
 /****************************************************************************/
-/** \brief
-   LineOrderVectors	-  Driver for general vector ordering
+/** \brief Driver for general vector ordering
 
-   SYNOPSIS:
-   INT LineOrderVectors (MULTIGRID *theMG, INT levels,
-                        const char *dependency, const char *dep_options, const char *findcut);
-
-   PARAMETERS:
  * @param theMG -  multigrid to order
  * @param levels -  GM_ALL_LEVELS or GM_CURRENT_LEVEL
  * @param mode - GM_FCFCLL or GM_FFCCLL (see orderv command)
  * @param dependency - name of user defined dependency item
  * @param dep_options - options for user dependency function
 
-   DESCRIPTION:
    This function orders VECTORs in a multigrid according to the dependency
    function provided.
 
  * @return <ul>
-   INT
  *   <li>    GM_OK if ok
  *   <li>    GM_ERROR if error occured.
  */
@@ -6564,20 +6242,13 @@ INT NS_PREFIX LineOrderVectors (MULTIGRID *theMG, INT levels, const char *depend
 }
 
 /****************************************************************************/
-/** \brief
-   PrepareForLineorderVectors - prepare for lineorderv
+/** \brief Prepare for lineorderv
 
-   SYNOPSIS:
-   INT PrepareForLineorderVectors (GRID *theGrid)
-
-   PARAMETERS:
  * @param theGrid - pointer to grid
 
-   DESCRIPTION:
    This function resets flags in vectors for the line ordering algorithm.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   1 if error occured.
  */
@@ -6597,23 +6268,16 @@ INT NS_PREFIX PrepareForLineorderVectors (GRID *theGrid)
 }
 
 /****************************************************************************/
-/** \brief
-   MarkBeginEndForLineorderVectors - flag begin or end vectors for lineorderv
+/** \brief Flag begin or end vectors for lineorderv
 
-   SYNOPSIS:
-   INT MarkBeginEndForLineorderVectors (ELEMENT *elem, INT dt, INT ot, const INT *mark)
-
-   PARAMETERS:
  * @param elem - set flag in marked vectors of the element
  * @param dt - data types of vectors needed
  * @param ot - object types of vectors needed
  * @param mark - set GM_LOV_BEGIN or GM_LOV_END or no flag
 
-   DESCRIPTION:
    This function sets flags in vectors for the line ordering algorithm.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   1 if error occured.
  */
@@ -6638,20 +6302,13 @@ INT NS_PREFIX MarkBeginEndForLineorderVectors (ELEMENT *elem, INT dt, INT ot, co
 }
 
 /****************************************************************************/
-/** \brief
-   RevertVecOrder - revert order in vector list
+/** \brief Revert order in vector list
 
-   SYNOPSIS:
-   INT RevertVecOrder (GRID *theGrid);
-
-   PARAMETERS:
  * @param theGrid - pointer to grid
 
-   DESCRIPTION:
    This function revertes the order in the vector list.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   1 if error occured.
  */
@@ -6680,21 +6337,14 @@ INT NS_PREFIX RevertVecOrder (GRID *theGrid)
 }
 
 /****************************************************************************/
-/** \brief
-   LexAlgDep - Dependency function for lexicographic ordering
+/** \brief Dependency function for lexicographic ordering
 
-   SYNOPSIS:
-   static INT LexAlgDep (GRID *theGrid, char *data);
-
-   PARAMETERS:
  * @param theGrid - pointer to grid
  * @param data - option string from orderv command
 
-   DESCRIPTION:
    This function defines a dependency function for lexicographic ordering.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   1 if error occured.
  */
@@ -6855,21 +6505,14 @@ static INT LexAlgDep (GRID *theGrid, const char *data)
 }
 
 /****************************************************************************/
-/** \brief
-   StrongLexAlgDep - Dependency function for lexicographic ordering
+/** \brief Dependency function for lexicographic ordering
 
-   SYNOPSIS:
-   static INT StrongLexAlgDep (GRID *theGrid, char *data);
-
-   PARAMETERS:
  * @param theGrid - pointer to grid
  * @param data - option string from orderv command
 
-   DESCRIPTION:
    This function defines a dependency function for lexicographic ordering.
 
  * @return <ul>
-   INT
  *   <li>   0 if ok
  *   <li>   1 if error occured.
  */
@@ -7117,9 +6760,9 @@ void NS_PREFIX SetLevelnumberBV( BLOCKVECTOR *bv, INT level )
    consisting of 'vectors_per_stripe'/linewidth lines (resp. columns).
 
  * @return <ul>
- *   <li>GM_OK if ok
- *   <li>GM_OUT_OF_MEM if there was not enough memory to allocate all blockvectors
- *   <li>GM_INCONSISTANCY if the vector-list was too short
+ *   <li>GM_OK if ok </li>
+ *   <li>GM_OUT_OF_MEM if there was not enough memory to allocate all blockvectors </li>
+ *   <li>GM_INCONSISTANCY if the vector-list was too short </li>
 
  * \sa
    BLOCKVECTOR, CreateBVStripe2D, CreateBVStripe3D, CreateBVDomainHalfening
@@ -7247,10 +6890,10 @@ static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, cons
 
  * @return <ul>
 
- *   <li>GM_OK if ok
- *   <li>GM_OUT_OF_MEM if there was not enough memory to allocate all blockvectors
- *   <li>GM_INCONSISTANCY if the vector-list was too short
-
+ *   <li>GM_OK if ok </li>
+ *   <li>GM_OUT_OF_MEM if there was not enough memory to allocate all blockvectors </li>
+ *   <li>GM_INCONSISTANCY if the vector-list was too short </li>
+   </ul>
  * \sa
    BLOCKVECTOR, CreateBVStripe3D, CreateBVDomainHalfening
 
