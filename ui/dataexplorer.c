@@ -548,8 +548,10 @@ static INT DataExplorerCommand (INT argc, char **argv)
         #else
   gnumNodes = numNodes;
   gnumElements = numElements;
+    #ifdef __TWODIM__
   gnumTriangles = numTriangles;
   gnumQuads = numQuads;
+    #endif
   oe=on=0;
         #endif
 
@@ -637,8 +639,10 @@ static INT DataExplorerCommand (INT argc, char **argv)
     counter=0;
     if (DIM==2)     {
       for ( tag=3; tag<=4; tag++ )    {
+                #ifdef __TWODIM__
         sprintf(it,"object %d class array type float rank 1 shape %d items %d data follows\n",
                 tag,3,(tag==3) ? gnumTriangles : gnumQuads);
+                #endif
         strcpy(item+ic,it); ic+=strlen(it);
         pfile_master_puts(pf,item); ic=0;
 
