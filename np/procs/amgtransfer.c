@@ -49,6 +49,10 @@
 #include "amgtools.h"
 #include "amgtransfer.h"
 
+#ifdef ModelP
+#include "pargm.h"
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -125,6 +129,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
         DOUBLE vRedLimit;
         DOUBLE mRedLimit;
         INT levelLimit;
+        INT aggLimit;
 
         INT explicitFlag;
 
@@ -178,7 +183,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
                             [$display {full|red|no}]
                                 [$vectLimit] [$matLimit] [$bandLimit]
                                 [$vRedLimit] [$mRedLimit]
-                                [$levelLimit]
+                                [$levelLimit] [$aggLimit]
                                 [$explicit]
                                 [$hold];
    .ve
@@ -203,6 +208,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    .  $vRedLimit - stop if vectReduction<vRedLimit
    .  $mRedLimit - stop if matReduction<mRedLimit
    .  $levelLimit - stop if level<=levelLimit (numbers<=0)
+   .  $agglomLimit - agglomerate to one processor if level<=aggLimit.
    .  $explicit - clear AMG levels only by npexecute
    .  $hold - holds AMG levels after solving
 
@@ -217,12 +223,19 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    Alternatively, if the $explicit-option has been given,
    you can building and removing of the AMG grids
    explicitly (without solving) by
+
    .vb
    npexecute <name> [$i] [$p];
    .ve
 
    .  $i - preprocess, rebuilds AMG levels
    .  $p - postprocess, clear AMG levels
+
+   The usage of agglomLimit is useful only for the parallel version;
+   it must be set to a value less than or equal to 0.  The coarsest
+   grid will be agglomerated on all levels <= agglomLimit. Coarse grid
+   agglomeration can be turned off by setting agglomLimit to a value
+   smaller than levelLimit.
 
    APPLICABILITY:
    All schemes are applicable to (multi-)linear FE discretizations of
@@ -406,6 +419,12 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
     REP_ERR_RETURN(NP_NOT_ACTIVE);
   }
 
+  /* Default value for aggLimit is aggLimit = levelLimit */
+  np->aggLimit = -MAXLEVEL-1;
+  ReadArgvINT("agglomLimit",&(np->aggLimit),argc,argv);
+  if (np->aggLimit == -MAXLEVEL-1)
+    np->aggLimit = np->levelLimit;
+
   np->display = ReadArgvDisplay(argc,argv);
 
   if (ReadArgvOption("explicit",argc,argv))
@@ -537,6 +556,7 @@ INT AMGTransferDisplay (NP_BASE *theNP)
   UserWriteF(DISPLAY_NP_FORMAT_SF,"vRedLimit",(float)np->vRedLimit);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"mRedLimit",(float)np->mRedLimit);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"levelLimit",(int)np->levelLimit);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"aggLimit",(int)np->aggLimit);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"hold",(int)np->hold);
 
   return (0);
@@ -549,9 +569,13 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   NP_AMG_TRANSFER *np;
   MULTIGRID *theMG;
   GRID *theGrid,*newGrid;
-  INT i,error,level,nVect,nMat;
+  INT i,error,level,nVect,nMat,unifiedlevel;
   char varname[32];
   char text[DISPLAY_WIDTH+4];
+
+  /* Set flag to inidcate that everything is stored on one processor
+     on this level (and below). */
+  unifiedlevel = -MAXLEVEL-1;
 
   if (tl!=0) {
     PrintErrorMessage('E',"AMGTransferPreProcess",
@@ -589,14 +613,32 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                  (int)theGrid->nCon,0);
     }
     /* coarsen until criteria are fulfilled */
-    while (theMG->bottomLevel>np->levelLimit) {
+    while (theMG->bottomLevel > np->levelLimit) {
       level=theMG->bottomLevel;
       theGrid=GRID_ON_LEVEL(theMG,level);
       nVect=theGrid->nVector;
       nMat=2*theGrid->nCon;
+      /* If there are <= vectLimit vectors on each processor, we
+         1) break if we already have the coarse grid on one processor
+         2) agglomerate all vectors to the master processor (if this
+            hasn't been done yet)
+       */
+                        #ifdef ModelP
+      if (level <= unifiedlevel)
+        if (np->vectLimit!=0 && nVect <= np->vectLimit)
+          break;
+        else
+        if (np->vectLimit != 0 && UG_GlobalMaxINT(nVect) <= np->vectLimit) {
+          AMGAgglomerate(theMG);
+          l_amgmatrix_collect(theGrid,A);
+          unifiedlevel = level;
+          break;
+        }
+                        #else
       if (np->vectLimit!=0)
         if (nVect<=np->vectLimit)
           break;
+                        #endif
       if (np->matLimit!=0)
         if (nMat<=np->matLimit)
           break;
@@ -608,6 +650,15 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         if ((result[0]=(np->MarkStrong)(theGrid,A,np->thetaS))!=0)
           REP_ERR_RETURN(result[0]);
       }
+                        #ifdef ModelP
+      /* Do agglomeration (only if it has not been done yet). */
+      if (level <= np->aggLimit && unifiedlevel < -MAXLEVEL) {
+        AMGAgglomerate(theMG);
+        l_amgmatrix_collect(theGrid,A);
+        unifiedlevel = level;
+      }
+                        #endif
+
       if ((result[0]=(np->Coarsen)(theGrid))!=0)
         break;
       newGrid=theGrid->coarser;
@@ -671,17 +722,21 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         if ((DOUBLE)2*newGrid->nCon/(DOUBLE)nVect > np->mRedLimit)
           break;
     }
+                #ifdef ModelP
+    /* If bottomlevel is still stored on several processors agglomerate */
+    if (unifiedlevel < -MAXLEVEL && np->aggLimit >= np->levelLimit) {
+      AMGAgglomerate(theMG);
+      l_amgmatrix_collect(DOWNGRID(theGrid),A);
+      unifiedlevel = level;
+    }
+                #endif
   }
   else {
     for (level=0; level>theMG->bottomLevel; level--) {
-      if (AllocMDFromMD(theMG,level-1,level-1,A,&A)) {
-        result[0]=1;
+      if (AllocMDFromMD(theMG,level-1,level-1,A,&A))
         REP_ERR_RETURN(1);
-      }
-      if (l_dmatset(GRID_ON_LEVEL(theMG,level-1),A,0.0) != NUM_OK) {
-        result[0]=1;
+      if (l_dmatset(GRID_ON_LEVEL(theMG,level-1),A,0.0) != NUM_OK)
         REP_ERR_RETURN(1);
-      }
       if ((result[0]=(np->SetupCG)(theGrid,A,NULL /* preliminary!! */,
                                    np->symmetric))!=0)
         REP_ERR_RETURN(result[0]);
