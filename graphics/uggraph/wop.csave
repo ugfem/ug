@@ -226,27 +226,27 @@ static INT GE_fromLevel,GE_toLevel;
 
 /*---------- input variables of 'EW_ElementEval2D/3D' ----------------------*/
 /* defines for 2D/3D */
-#define PLOT_COPY                       YELLOW                  /* values for 'Elem2Plot'		*/
-#define PLOT_IRR                        GREEN
-#define PLOT_REG                        REGULAR_CLASS
-#define PLOT_ALL                        (REGULAR_CLASS+1) /* this means all levels		*/
+#define PLOT_COPY                       YELLOW_CLASS            /* values for 'Elem2Plot'		*/
+#define PLOT_IRR                        GREEN_CLASS
+#define PLOT_REG                        RED_CLASS
+#define PLOT_ALL                        (RED_CLASS+1) /* this means all levels		*/
 
-#define COLOR_COPY                      YELLOW                  /* values for 'NoColor' and     */
-#define COLOR_IRR                       GREEN                   /* 'Color'						*/
-#define COLOR_REG                       REGULAR_CLASS
-#define COLOR_LOWER_LEVEL       (REGULAR_CLASS+1)
-#define COLOR_EDGE                      (REGULAR_CLASS+2)
+#define COLOR_COPY                      YELLOW_CLASS            /* values for 'NoColor' and     */
+#define COLOR_IRR                       GREEN_CLASS             /* 'Color'						*/
+#define COLOR_REG                       RED_CLASS
+#define COLOR_LOWER_LEVEL       (RED_CLASS+1)
+#define COLOR_EDGE                      (RED_CLASS+2)
 
 /* defines 2D */
 #define EE2D_TEXTSIZE                   (8*TextFactor)
 
-#define COLOR_BND                       (REGULAR_CLASS+3)
-#define COLOR_ELEMID            (REGULAR_CLASS+4)
+#define COLOR_BND                       (RED_CLASS+3)
+#define COLOR_ELEMID            (RED_CLASS+4)
 
 /* defines 3D */
 #define EE3D_TEXTSIZE                   (8*TextFactor)
 
-#define COLOR_CUT_EDGE          (REGULAR_CLASS+3)
+#define COLOR_CUT_EDGE          (RED_CLASS+3)
 
 /* 2D */
 static INT EE2D_Elem2Plot[10];          /* 1 if element has to be plotted			*/
@@ -2617,11 +2617,11 @@ static INT MarkNodes_OfMarkedElem (MULTIGRID *theMG, INT fromLevel, INT toLevel,
         SETUSED(theNode,1);
     break;
   case MARKMODE_REG :
-    limit = MAX(limit,REGULAR_CLASS);
+    limit = MAX(limit,RED_CLASS);
   case MARKMODE_IRREG :
-    limit = MAX(limit,GREEN);
+    limit = MAX(limit,GREEN_CLASS);
   case MARKMODE_COPY :
-    limit = MAX(limit,YELLOW);
+    limit = MAX(limit,YELLOW_CLASS);
     for (i=fromLevel; i<=toLevel; i++)
       for (theNode=FIRSTNODE(theMG->grids[i]); theNode!=NULL; theNode=SUCCN(theNode))
         SETUSED(theNode,0);
