@@ -1117,7 +1117,7 @@ static INT GetProduct(OPERAND *result)
 
   c=SkipBlanks();
 
-  if ((c=='*') || (c=='/'))
+  if ((c=='*') || (c=='/') || (c=='%'))
   {
     result->ro.type=NUMBERID;
     switch (newResult.ro.type)
@@ -1195,11 +1195,25 @@ static INT GetProduct(OPERAND *result)
       }
       break;
 
+    case '%' :
+      switch (newResult.ro.type)
+      {
+      case NUMBERID :
+        result->ro.value = (DOUBLE)(lrint(result->ro.value)%lrint(newResult.ro.value));
+        break;
+
+      case ALPHAID :
+      case LSTRINGID :
+        result->ro.value = (DOUBLE)(lrint(result->ro.value)%lrint(atof(newResult.so.sptr)));
+        break;
+      }
+      break;
+
     }                   /* switch */
 
     c=SkipBlanks();
 
-  } while ((c=='*') || (c=='/'));
+  } while ((c=='*') || (c=='/') || (c=='%'));
 
   return(DONE);
 
