@@ -1112,10 +1112,14 @@ static INT M_BNDP_BndEDesc (BNDP *theBndP0, BNDP *theBndP1, INT *part)
 static BNDS* M_BNDP_CreateBndS (HEAP *Heap, BNDP **theBndP, INT n)
 {
   M_BNDS *p = (M_BNDS *)GetFreelistMemory(Heap,M_BNDS_NSIZE(n));
-  INT i;
+  INT i,j;
 
-  for (i=0; i<n; i++)
-    p->p[i] = (M_BNDP *)theBndP[i];
+  for (i=0; i<n; i++) {
+    M_BNDP *b = (M_BNDP *)theBndP[i];
+    p->p[i].patch_id = b->patch_id;
+    for (j=0; j<3; j++)
+      p->p[i].pos[j] = b->pos[j];
+  }
   p->n = n;
 
   return((BNDS *)p);
@@ -1191,21 +1195,21 @@ static INT M_BNDS_Global (BNDS *theBndS, DOUBLE *local, DOUBLE *global)
 
     #ifdef __TWODIM__
   for (i=0; i<DIM; i++)
-    global[i] = (1.0 - local[0]) * p->p[0]->pos[i]
-                + local[0] * p->p[1]->pos[i];
+    global[i] = (1.0 - local[0]) * p->p[0].pos[i]
+                + local[0] * p->p[1].pos[i];
     #endif
     #ifdef __THREEDIM__
   if (p->n == 4)
     for (i=0; i<DIM; i++)
-      global[i] = (1.0 - local[0]) *  (1.0 - local[1]) * p->p[0]->pos[i]
-                  + local[0] *  (1.0 - local[1]) * p->p[1]->pos[i]
-                  + local[0] * local[1] * p->p[2]->pos[i]
-                  + (1.0 - local[0]) * local[1] * p->p[3]->pos[i];
+      global[i] = (1.0 - local[0]) *  (1.0 - local[1]) * p->p[0].pos[i]
+                  + local[0] *  (1.0 - local[1]) * p->p[1].pos[i]
+                  + local[0] * local[1] * p->p[2].pos[i]
+                  + (1.0 - local[0]) * local[1] * p->p[3].pos[i];
   else if (p->n == 3)
     for (i=0; i<DIM; i++)
-      global[i] = (1.0 - local[0] - local[1]) * p->p[0]->pos[i]
-                  + local[0] * p->p[1]->pos[i]
-                  + local[1] * local[1] * p->p[2]->pos[i];
+      global[i] = (1.0 - local[0] - local[1]) * p->p[0].pos[i]
+                  + local[0] * p->p[1].pos[i]
+                  + local[1] * local[1] * p->p[2].pos[i];
     #endif
 
   return(0);
