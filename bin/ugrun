@@ -26,6 +26,7 @@ case $MODEL in
 	MPI)
 		echo mpirun -np $PROC	./$1;
 		mpirun -np $PROC	./$1;
+		## auf NEC: mpisx -p $PROC -e ./$1;
         ;;
 	NX)
 		echo isub -sz $PROC   $1;
