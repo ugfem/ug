@@ -758,6 +758,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT 
         else
           V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theElement,co0),
                         0.5, LOCAL_COORD_OF_ELEM(theElement,co1),local);
+        PRINTDEBUG(gm,1,("local = %f %f %f\n",local[0],local[1],local[2]));
       }
     }
     if (theVertex == NULL)
@@ -973,6 +974,7 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT
             SETMOVED(theVertex,1);
             CORNER_COORDINATES(theElement,k,x);
             UG_GlobalToLocal(k,(const DOUBLE **)x,bnd_global,local);
+            PRINTDEBUG(gm,1,("local = %f %f %f\n",local[0],local[1],local[2]));
           }
         }
       }
@@ -1424,7 +1426,7 @@ NODE *GetCenterNode (ELEMENT *theElement)
 /*			  NULL	: could not allocate									*/
 /*																			*/
 /****************************************************************************/
-/* #define MOVE_MIDNODE */
+/*  #define MOVE_MIDNODE */
 NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex)
 {
   DOUBLE *global,*local;
@@ -1482,9 +1484,13 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex)
           len_opp);
         V_DIM_SCALE(len_opp/len_bnd,diff);
         global = CVECT(theVertex);
+        PRINTDEBUG(gm,1,("CreateCenterNode: global_orig = %f %f %f\n",global[0],global[1],global[2]));
+        PRINTDEBUG(gm,1,("CreateCenterNode: diff = %f %f %f\n",diff[0],diff[1],diff[2]));
         V_DIM_LINCOMB(1.0,global,0.5,diff,global);
+        PRINTDEBUG(gm,1,("CreateCenterNode: global_mod = %f %f %f\n",global[0],global[1],global[2]));
         SETMOVED(VertexOnEdge[OPPOSITE_EDGE(theElement,j)],1);
         UG_GlobalToLocal(n,(const DOUBLE **)x,global,LCVECT(theVertex));
+        PRINTDEBUG(gm,1,("CreateCenterNode: local = %f %f %f\n",LCVECT(theVertex)[0],LCVECT(theVertex)[1],LCVECT(theVertex)[2]));
         SETONEDGE(theVertex,OPPOSITE_EDGE(theElement,j));
         VFATHER(theVertex) = theElement;
       }
@@ -10266,6 +10272,25 @@ static INT PropagateNextNodeClass (GRID *theGrid, INT nnclass)
   ELEMENT *theElement;
   INT i;
 
+        #ifdef __PERIODIC_BOUNDARY__
+  {
+    VECTOR *vec;
+    NODE *node;
+
+    for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node)) {
+      vec=NVECTOR(node);
+
+      SETVNCLASS(vec,MAX(NNCLASS(node),VNCLASS(vec)));
+    }
+
+    for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node)) {
+      vec=NVECTOR(node);
+
+      SETNNCLASS(node,MAX(VNCLASS(vec),NNCLASS(node)));
+    }
+
+  }
+        #endif
   for (theElement=FIRSTELEMENT(theGrid);
        theElement!= NULL; theElement = SUCCE(theElement))
     if (MaxNextNodeClass(theElement) == nnclass)
@@ -10921,9 +10946,6 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
 
 #define SMALL_DOUBLE 1e-4
 
-/* maximal count of periodic objects */
-#define MAX_PERIODIC_OBJ        DIM+1
-
 typedef struct periodic_entries
 {
   NODE *node;
@@ -11159,7 +11181,6 @@ static INT Grid_GeometricToPeriodic (GRID *g)
                          own_coord[0],own_coord[1],own_coord[2],
                          periodic_coords[i][0],periodic_coords[i][1],periodic_coords[i][2]))
 
-
         coordlist[nn].node = node;
         coordlist[nn].periodic_id = periodic_ids[i];
         nn++;
@@ -11255,10 +11276,6 @@ static INT Grid_GeometricToPeriodic (GRID *g)
 INT MG_GeometricToPeriodic (MULTIGRID *mg, INT fl, INT tl)
 {
   INT level;
-
-  /* reset NEW flags */
-  if (PrepareAlgebraModification(mg))
-    return (GM_ERROR);
 
   for (level=fl; level<=tl; level++)
   {

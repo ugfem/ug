@@ -185,7 +185,7 @@
 #endif
 
 /* if periodic boundaries are used */
-/* #define __PERIODIC_BOUNDARY__ */
+/*  #define __PERIODIC_BOUNDARY__ */
 
 /****************************************************************************/
 /*																			*/
@@ -1170,6 +1170,9 @@ typedef struct AlgebraicDependency ALG_DEP;
 /****************************************************************************/
 
 #ifdef __PERIODIC_BOUNDARY__
+
+/* maximal count of periodic objects */
+#define MAX_PERIODIC_OBJ        DIM+1
 
 typedef INT (* PeriodicBoundaryInfoProcPtr)(
   VERTEX *vtx,                                                                  /* vertex, for which to examine boundary   */

@@ -2798,6 +2798,9 @@ static int ComputeCopies (GRID *theGrid)
 	/* set class of all dofs on next level to 0 */
     #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 	ClearNextNodeClasses(theGrid);
+	#ifdef __PERIODIC_BOUNDARY__
+	ClearNextVectorClasses(theGrid);
+	#endif
     #else
 	ClearNextVectorClasses(theGrid);
     #endif
@@ -5896,7 +5899,7 @@ DDD_CONSCHECK;
 DDD_CONSCHECK;
 
 { 
-int check=1;
+INT check=1;
 int debugstart=3;
 #ifdef Debug
 int gmlevel=Debuggm;
@@ -5996,7 +5999,7 @@ DDD_CONSCHECK;
 DDD_CONSCHECK;
 
 
-CheckConsistency(MYMG(theGrid),level,debugstart,gmlevel,&check);
+CheckConsistency(MYMG(theGrid),(INT)level,(INT)debugstart,(INT)gmlevel,&check);
 
 
 }
@@ -6142,12 +6145,98 @@ void Print_Adapt_Timer (int total_adapted)
 }
 #endif
 
+#ifdef __PERIODIC_BOUNDARY__
+static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
+{
+  PeriodicBoundaryInfoProcPtr IsPeriodicBnd;
+  INT level;
+
+  GetPeriodicBoundaryInfoProcPtr(&IsPeriodicBnd);
+  if (IsPeriodicBnd==NULL)
+	return (0);
+
+  for (level=0; level<=TOPLEVEL(mg); level++) {
+	GRID *grid;
+	ELEMENT *elem;
+	VECTOR *vec;
+
+	grid=GRID_ON_LEVEL(mg,level);
+
+	for (vec=FIRSTVECTOR(grid); vec!=NULL; vec=SUCCVC(vec))
+	  SETUSED(vec,FALSE);
+
+	/* check if element has points on periodic boundary and set flags */
+	for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
+	  if (EstimateHere(elem)) {
+		INT co, mark, side;
+
+		if (GetRefinementMark(elem, &mark, &side)==-1)
+		  REP_ERR_RETURN (GM_ERROR);
+
+		if (mark == NO_REFINEMENT) continue;
+
+		for (co=0; co<CORNERS_OF_ELEM(elem); co++) {
+		  VERTEX *vtx;
+		  NODE *node;
+		  VECTOR *vec;
+		  INT n,per_ids[MAX_PERIODIC_OBJ];
+		  DOUBLE_VECTOR coord, pcoords[MAX_PERIODIC_OBJ];
+
+		  node = CORNER(elem,co);
+		  vtx = MYVERTEX(node);
+		  vec = NVECTOR(node);
+		  
+		  if (OBJT(vtx)!=BVOBJ) continue;
+		  if ((*IsPeriodicBnd)(vtx,&n,per_ids,coord,pcoords)) {
+			if (mark==RED)
+			  SETUSED(vec,TRUE);
+		  }
+		}
+	  }
+	}
+
+	/* mark all periodic elements consistently */
+	for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem)) {
+	  if (EstimateHere(elem)) {
+		INT edge, side, marked;
+
+		for (edge=0; edge<EDGES_OF_ELEM(elem); edge++) {
+		  VECTOR *vec;
+		  INT co;
+		  
+		  marked = 0;
+
+		  co=CORNER_OF_EDGE(elem,edge,0);
+		  vec=NVECTOR(CORNER(elem,co));
+		  if (USED(vec)) marked++;
+
+		  co=CORNER_OF_EDGE(elem,edge,1);
+		  vec=NVECTOR(CORNER(elem,co));
+		  if (USED(vec)) marked++;
+
+		  if (marked>1) break;
+		}
+		
+		if (marked>1)
+		  MarkForRefinement(elem,RED,0);
+	  }
+	}
+  }
+  
+  return (0);
+}
+#endif
+
 static INT	PreProcessAdaptMultiGrid(MULTIGRID *theMG)
 {
 	#ifdef DYNAMIC_MEMORY_ALLOCMODEL
 	if (DisposeBottomHeapTmpMemory(theMG)) REP_ERR_RETURN(1);
 	#endif
 
+	#ifdef __PERIODIC_BOUNDARY__
+	if (MakePeriodicMarksConsistent(theMG)) REP_ERR_RETURN(1);
+	#endif
+	
 	return(0);
 }
 

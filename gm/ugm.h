@@ -151,4 +151,8 @@ INT             MinNodeClass                            (ELEMENT *theElement);
 INT             MinNextNodeClass                        (ELEMENT *theElement);
 #endif
 
+#ifdef __PERIODIC_BOUNDARY__
+INT             MG_GeometricToPeriodic          (MULTIGRID *mg, INT fl, INT tl);
+#endif
+
 #endif
