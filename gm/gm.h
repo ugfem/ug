@@ -21,8 +21,19 @@
 /*			  phone: 0049-(0)711-685-7003									*/
 /*			  fax  : 0049-(0)711-685-7000									*/
 /*																			*/
+/*			  blockvector data structure:									*/
+/*			  Christian Wrobel                                                                              */
+/*			  Institut fuer Computeranwendungen III                                                 */
+/*			  Universitaet Stuttgart										*/
+/*			  Pfaffenwaldring 27											*/
+/*			  70569 Stuttgart												*/
+/*			  email: christian@ica3.uni-stuttgart.de					    */
+/*			  phone: 0049-(0)711-685-7006									*/
+/*			  fax  : 0049-(0)711-685-7000									*/
+/*																			*/
 /* History:   09.03.92 begin, ug version 2.0  (as ugtypes2.h)				*/
 /*			  13.12.94 begin, ug version 3.0								*/
+/*			  27.09.95 blockvector implemented (Christian Wrobel)			*/
 /*																			*/
 /* Remarks:                                                                                                                             */
 /*																			*/
@@ -37,6 +48,8 @@
 #ifndef __GM__
 #define __GM__
 
+#include <assert.h>
+#include <limits.h>
 
 #ifndef __COMPILER__
 #include "compiler.h"
@@ -54,7 +67,7 @@
 #include "switch.h"
 #endif
 
-#ifdef __MISC__
+#ifndef __MISC__
 #include "misc.h"
 #endif
 
@@ -108,6 +121,17 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 /* some numbers for algebra */
 #define MAXMATRICES             ((MAXVECTORS*(MAXVECTORS+1))/2) /* max number of diff. matrix types */
 #define MAXCONNECTIONS  (MAXMATRICES + MAXVECTORS)              /* max number of diff. connections  */
+
+/* constants for blockvector description (BVD) */
+#define NO_BLOCKVECTOR ((BLOCKNUMBER) ~0)        /* number for "there is no blockvector"; largest number of type BLOCKNUMBER */
+#define MAX_BV_NUMBER (NO_BLOCKVECTOR - 1)      /* largest admissible blockvector number */
+#define MAX_BV_LEVEL UCHAR_MAX                          /* largest admissible blockvector level number */
+#define BVD_MAX_ENTRIES (sizeof(BVD_ENTRY_TYPE)*CHAR_BIT)       /* maximum number
+                                                                   of entries in a BVD; NOTE: the actual available
+                                                                   number of entries depends on the range of each entry */
+/* constants for BLOCKVECTOR */
+#define BVDOWNTYPEVECTOR        0       /* symbolic value for BVDOWNTYPE */
+#define BVDOWNTYPEBV            1       /* symbolic value for BVDOWNTYPE */
 
 /* use of GSTATUS (for grids), use power of 2 */
 #define GRID_CHANGED                    1
@@ -322,7 +346,7 @@ typedef struct {
 
 /****************************************************************************/
 /*																			*/
-/* matrix/vector data structure                                                                                         */
+/* matrix/vector/blockvector data structure									*/
 /*																			*/
 /****************************************************************************/
 
@@ -332,6 +356,34 @@ typedef int MATRIX;
 #endif
 
 #ifdef __version3__
+
+/* data structure for BlockvectorDescription */
+#define BVD_ENTRY_TYPE unsigned INT
+typedef unsigned SHORT BLOCKNUMBER;     /* valid numbers are 0..MAX_BV_NUMBER */
+typedef unsigned char BLOCKLEVEL;       /* valid levels are 0..MAX_BV_LEVEL */
+
+struct blockvector_description_format           /* describes how a struct of type
+                                                                                           blockvector_description is to
+                                                                                           be interpreted				*/
+{
+  INT bits;                                                                     /* bits per blockentry			*/
+  BLOCKLEVEL max_level;                                                         /* max. number of entries		*/
+  BVD_ENTRY_TYPE level_mask[BVD_MAX_ENTRIES];
+  /* level_mask[i] = mask entries for levels 0..i		*/
+  BVD_ENTRY_TYPE neg_digit_mask[BVD_MAX_ENTRIES];
+  /* neg_digit_mask[i] = masks out entry for level i	*/
+};
+typedef struct blockvector_description_format BV_DESC_FORMAT;
+
+struct blockvector_description  /* describes the position of a blockvector	*/
+{                                                               /* in a hierarchy of blockvectors			*/
+  BVD_ENTRY_TYPE entry;                 /* sequence of block levels	according to	*/
+  /* a certain blockvector_description_format	*/
+  BLOCKLEVEL current;                           /* levels 0..current-1 currently valid		*/
+  BLOCKLEVEL read;                              /* level read is next to be read			*/
+};
+typedef struct blockvector_description BV_DESC;
+
 struct vector {
   unsigned INT control;                         /* object identification, various flags */
   union geom_object *object;                    /* associated object					*/
@@ -342,9 +394,12 @@ struct vector {
   unsigned INT skip;                                    /* used bitwise to skip unknowns		*/
   struct matrix *start;                         /* implements matrix					*/
 
+  BV_DESC block_descr;                          /* membership to the block levels		*/
+
   /* user data */
   DOUBLE value[1];                                      /* array of doubles                                     */
 };
+typedef struct vector VECTOR;
 
 struct matrix {
   unsigned INT control;                         /* object identification, various flags */
@@ -355,10 +410,25 @@ struct matrix {
   /* user data */
   DOUBLE value[1];                                      /* array of doubles                                     */
 };
-
-typedef struct vector VECTOR;
 typedef struct matrix MATRIX;
 typedef struct matrix CONNECTION;
+
+struct blockvector
+{
+  unsigned INT control;                         /* object identification				  */
+
+  BLOCKNUMBER number;                                   /* logical blocknumber					  */
+  struct blockvector *pred,*succ;       /* doubly linked list of vectors		  */
+  VECTOR *first_vec;                                    /* start vector of this block                     */
+  VECTOR *end_vec;                                      /* succ. of the last vector of this block */
+
+  union                                                         /* variant determined by bit 0 in control */
+  {                                                                     /* bit = 0 vector; bit = 1 sons			  */
+    VECTOR *vector;                                     /* in the last blocklevel: ptr. to vector */
+    struct blockvector *sons;                   /* start of the next block level		  */
+  } down;
+};
+typedef struct blockvector BLOCKVECTOR;
 
 #endif
 
@@ -645,6 +715,8 @@ struct grid {
   struct node *lastNode;                        /* pointer to last node                                 */
   VECTOR *firstVector;                          /* pointer to first vector				*/
   VECTOR *lastVector;                           /* pointer to last vector				*/
+  BLOCKVECTOR *firstblockvector;        /* pointer to the first blockvector		*/
+  BLOCKVECTOR *lastblockvector;         /* pointer to the last blockvector		*/
   struct grid *coarser, *finer;         /* coarser and finer grids				*/
   struct multigrid *mg;                         /* corresponding multigrid structure	*/
 } ;
@@ -806,13 +878,13 @@ extern CONTROL_ENTRY
 /* MNEW          |28	| |*| 1 if matrix/connection is new                                     */
 /* CEXTRA	 |29	| |*| 1 if is extra connection							*/
 /*																			*/
+/* Use of the control word in blockvector:									*/
+/* BVDOWNTYPE 0	 BVDOWNTYPEVECTOR if the down component points to a vector,	*/
+/*				 BVDOWNTYPEBV if it points to a further blockvector (son)	*/
+/*																			*/
 /****************************************************************************/
 
 #ifdef __version3__
-
-/* object numbers for algebra */
-#define VEOBJ 12                                                /* vector object					*/
-#define MAOBJ 13                                                /* matrix object					*/
 
 /****************************************************************************/
 /*																			*/
@@ -915,6 +987,8 @@ extern CONTROL_ENTRY
 #define SETVUP(p,n)                             SetLoWrd(VINDEX(p),n)
 #define VDOWN(p)                                        HiWrd(VINDEX(p))
 #define SETVDOWN(p,n)                           SetHiWrd(VINDEX(p),n)
+#define VBVD(v)                                         ((v)->block_descr)
+#define VMATCH(v,bvd,bvdf)                      BVD_IS_SUB_BLOCK( &(v)->block_descr, bvd, bvdf )
 
 /* user for nodes, edges and elements */
 #define CAST_NVECTOR(p)                         NVECTOR(p)
@@ -1000,7 +1074,6 @@ extern CONTROL_ENTRY
 #define MUP(p)                                          CW_READ(p,MUP_CE)
 #define SETMUP(p,n)                             CW_WRITE(p,MUP_CE,n)
 
-
 #define MINC(m)                                         ((MATRIX*)(((unsigned int)(m))+MSIZE(m)))
 #define MDEC(m)                                         ((MATRIX*)(((unsigned int)(m))-MSIZE(m)))
 #define MNEXT(m)                                        ((m)->next)
@@ -1020,6 +1093,61 @@ extern CONTROL_ENTRY
 #define CMATRIX0(m)                             (m)
 #define CMATRIX1(m)                             ((MDIAG(m)) ? (NULL) : (MINC(m)))
 #define SETCUSED(c,n)                           SETMUSED(CMATRIX0(c),n); SETMUSED(MADJ(CMATRIX0(c)),n)
+
+/****************************************************************************/
+/*																			*/
+/* macros for struct blockvector_description (BV_DESC)						*/
+/*																			*/
+/****************************************************************************/
+
+/* access to members of struct block_vectordescription (BV_DESC) */
+#define BVD_NR_ENTRIES(bvd)                                     ((bvd)->current)
+
+/* macros for blockvectordescription */
+
+#define BVD_INIT(bvd)                                           ((bvd)->current=0)
+
+/* sequential access operations on struct blockvector_description  (BV_DESC) */
+#define BVD_PUSH_ENTRY(bvd,bnr,bvdf)            PushEntry( (bvd), (bnr), (bvdf) )
+#define BVD_DISCARD_LAST_ENTRY(bvd)                     {assert(BVD_NR_ENTRIES(bvd)>0);BVD_NR_ENTRIES(bvd)--;}
+#define BVD_INIT_SEQ_READ(bvd)                          ((bvd)->read = 0)
+#define BVD_READ_NEXT_ENTRY(bvd,bvdf)           ( ((bvd)->read<BVD_NR_ENTRIES(bvd)) ? BVD_GET_ENTRY((bvd),(bvd)->read++,(bvdf)) : NO_BLOCKVECTOR )
+
+/* random access operations on struct blockvector_description  (BV_DESC) */
+#define BVD_SET_ENTRY(bvd,level,bnr,bvdf)       ( (bvd)->entry = ( ((bvd)->entry & (bvdf)->neg_digit_mask[(level)]) | ( (bnr) << ( (bvdf)->bits*(level) ) ) ) )
+#define BVD_GET_ENTRY(bvd,level,bvdf)           ( ((bvd)->entry >> ((bvdf)->bits * (level))) & (bvdf)->level_mask[0] )
+
+#define BVD_IS_SUB_BLOCK(bvd_a,bvd_b,bvdf)      ( (BVD_NR_ENTRIES(bvd_a) >= BVD_NR_ENTRIES(bvd_b)) && (((bvd_a)->entry & (((bvdf)->level_mask[BVD_NR_ENTRIES(bvd_b)-1]))) == ((((bvd_b)->entry & (bvdf)->level_mask[BVD_NR_ENTRIES(bvd_b)-1])))))
+
+
+
+/****************************************************************************/
+/*																			*/
+/* macros for BLOCKVECTOR													*/
+/*																			*/
+/****************************************************************************/
+
+/* control word identifier */
+#define BLOCKVECTOR_CW                                  12
+#define BLOCKVECTOR_OFFSET                              0
+
+#define BVDOWNTYPE_CE                                   67
+#define BVDOWNTYPE_SHIFT                                0
+#define BVDOWNTYPE_LEN                                  1
+#define BVDOWNTYPE(p)                                   CW_READ(p,BVDOWNTYPE_CE)
+#define SETBVDOWNTYPE(p,n)                              CW_WRITE(p,BVDOWNTYPE_CE,n)
+
+/* access to members of struct blockvector */
+#define BVNUMBER(bv)                                    ((bv)->number)
+#define BVPRED(bv)                                              ((bv)->pred)
+#define BVSUCC(bv)                                              ((bv)->succ)
+#define BVFIRSTVECTOR(bv)                               ((bv)->first_vec)
+#define BVENDVECTOR(bv)                                 ((bv)->end_vec)
+#define BVDOWNVECTOR(bv)                                ((bv)->down.vector)
+#define BVDOWNBV(bv)                                    ((bv)->down.sons)
+
+/* operations on struct block */
+#define BV_IS_LEAF_BV(bv)                               (BVDOWNTYPE(bv)==BVDOWNTYPEVECTOR)
 
 #endif
 
@@ -1079,7 +1207,14 @@ extern CONTROL_ENTRY
 #define MGOBJ 8                                                 /* multigrid object                             */
 #define VSOBJ 9                                                 /* vertex segment object			*/
 
-#define NPREDEFOBJ 10                                   /* no of predefined objects             */
+#ifdef __version3__
+/* object numbers for algebra */
+#define VEOBJ 12                                                /* vector object					*/
+#define MAOBJ 13                                                /* matrix object					*/
+#define BLOCKVOBJ 14                                            /* blockvector object				*/
+#endif
+
+#define NPREDEFOBJ 15                                   /* no of predefined objects             */
 
 /****************************************************************************/
 /*																			*/
@@ -1534,6 +1669,8 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define LASTNODE(p)             ((p)->lastNode)
 #define FIRSTVECTOR(p)          ((p)->firstVector)
 #define LASTVECTOR(p)           ((p)->lastVector)
+#define GFIRSTBV(p)             ((p)->firstblockvector)
+#define GLASTBV(p)                      ((p)->lastblockvector)
 #define UPGRID(p)                       ((p)->finer)
 #define DOWNGRID(p)             ((p)->coarser)
 #define MYMG(p)                         ((p)->mg)
@@ -1567,7 +1704,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define DATAFORMAT(p)                   ((p)->theFormat)
 #define MGPROBLEM(p)                    ((p)->theProblem)
 #define MG_GEOM_SEGMENT(p,i)    (((p)->segments[i]).theSegment)
-#define MGBNDSEGDESC(p,i)               (& ((p)->segments[i]))
+#define MGBNDSEGDESC(p,i)               (&((p)->segments[i]))
 #define MGNOOFSEG(p)                    ((p)->numOfSegments)
 #define MGVERTEX(p,k)                   ((p)->corners[k])
 #define MGNOOFCORNERS(p)                ((p)->numOfCorners)
@@ -1596,6 +1733,16 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 
 /****************************************************************************/
 /*																			*/
+/* declaration of exported global variables									*/
+/*																			*/
+/****************************************************************************/
+
+/* predefined blockvector description formats */
+extern const BV_DESC_FORMAT DH_bvdf;                    /* bvdf for domain halfening	*/
+extern const BV_DESC_FORMAT one_level_bvdf;     /* bvdf for only 1 blocklevel	*/
+
+/****************************************************************************/
+/*																			*/
 /* interface functions for module grid manager								*/
 /*																			*/
 /****************************************************************************/
@@ -1606,6 +1753,10 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS];
 #define GM_FILEOPEN_ERROR                       2
 #define GM_RULE_WITH_ORIENTATION        3
 #define GM_RULE_WITHOUT_ORIENTATION 4
+#define GM_OUT_OF_MEM                           5
+#define GM_OUT_OF_RANGE                         6
+#define GM_NOT_FOUND                            7
+#define GM_INCONSISTANCY                        8
 #define GM_FATAL                                        999
 
 /* some constants passed as parameters */
@@ -1698,6 +1849,22 @@ INT             MoveInnerNode                   (MULTIGRID *theMG, NODE *theNode
 INT             MoveBoundaryNode                (MULTIGRID *theMG, NODE *theNode, INT segid, COORD *newPos);
 INT             SmoothMultiGrid                 (MULTIGRID *theMG, INT niter, INT bdryFlag);
 
+/* handling struct blockvector_description_format (BV_DESC_FORMAT) */
+INT InitBVDF                                            ( BV_DESC_FORMAT *bvdf, BLOCKNUMBER max_blocks );
+
+/* handling struct blockvector_description (BV_DESC) */
+INT PushEntry                                           ( BV_DESC *bvd, BLOCKNUMBER bnr, const BV_DESC_FORMAT *bvdf );
+
+/* functions to create a BLOCKVECTOR structure for a regular rectangular grid */
+INT CreateBVStripe                                      ( GRID *grid, INT points, INT points_per_stripe );
+INT CreateBVDomainHalfening                     ( GRID *grid, INT side );
+
+/* general functions for BLOCKVECTOR */
+INT CreateBlockvector                                   ( GRID *theGrid, BLOCKVECTOR **BVHandle );
+INT DisposeBlockvector                                  ( GRID *theGrid, BLOCKVECTOR *bv );
+void FreeAllBV                                          ( GRID *grid );
+void FreeBVList                                         ( GRID *grid, BLOCKVECTOR *bv );
+
 /* algebraic connections */
 #ifdef __version3__
 CONNECTION      *CreateExtraConnection  (GRID *theGrid, VECTOR *from, VECTOR *to);
@@ -1715,6 +1882,7 @@ NODE            *FindNodeFromId                 (GRID *theGrid, INT id);
 NODE            *FindNodeFromPosition   (GRID *theGrid, COORD *pos, COORD *tol);
 ELEMENT         *FindElementFromId              (GRID *theGrid, INT id);
 ELEMENT         *FindElementFromPosition(GRID *theGrid, COORD *pos);
+BLOCKVECTOR *FindBV                                     (const GRID *grid, BV_DESC *bvd, const BV_DESC_FORMAT *bvdf );
 
 /* list */
 void            ListMultiGridHeader     (const INT longformat);
