@@ -318,10 +318,8 @@ void SetGhostObjectPriorities (GRID *theGrid)
 }
 
 
-void SetOverlapPriorities (GRID *theGrid)
+INT SetBorderPriorities (GRID *theGrid)
 {
-  DDD_XferBegin();
-
   DDD_IFAExecLocal(BorderNodeSymmIF,GRID_ATTR(theGrid),
                    ComputeNodeBorderPrios);
 
@@ -333,7 +331,7 @@ void SetOverlapPriorities (GRID *theGrid)
                    ComputeEdgeBorderPrios);
 #endif
 
-  DDD_XferEnd();
+  return(GM_OK);
 }
 
 void ConstructConsistentGrid (GRID *theGrid)
@@ -345,7 +343,9 @@ void ConstructConsistentGrid (GRID *theGrid)
   EDGE    *theEdge;
   VERTEX  *theVertex;
 
-  SetOverlapPriorities(theGrid);
+  DDD_XferBegin();
+  SetBorderPriorities(theGrid);
+  DDD_XferEnd();
 
     #ifdef __TWODIM__
   for (theVertex = PFIRSTVERTEX(theGrid); theVertex != NULL;
