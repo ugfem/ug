@@ -80,7 +80,7 @@ typedef DOUBLE DOUBLE_VECTOR[DIM];
 /****************************************************************************/
 
 static DOUBLE_VECTOR x_quad[9];
-static DOUBLE alpha,left,top,rad1,L,D,h;
+static DOUBLE alpha,left,top,rad1,L,D,h,form;
 
 static DOUBLE Rand[54][2] = {
   {189,22.5},
@@ -3831,6 +3831,166 @@ static INT InitComposed3a (void)
   return(0);
 }
 
+/****************************************************************************/
+/*                                                                          */
+/*  define Beam-domain                                                    */
+/*                                                                          */
+/****************************************************************************/
+
+
+static INT T_Beam2_0 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = x_quad[0][0]+(x_quad[1][0]-x_quad[0][0])*lambda;
+  result[1] = x_quad[0][1]+(x_quad[1][1]-x_quad[0][1])*lambda;
+
+  return(0);
+}
+
+static INT T_Beam2_1 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = x_quad[1][0]+(x_quad[2][0]-x_quad[1][0])*lambda;
+  result[1] = x_quad[1][1]+(x_quad[2][1]-x_quad[1][1])*lambda;
+
+  return(0);
+}
+static INT T_Beam2_2 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda,a,alpha;
+
+  lambda = param[0];
+  a = sqrt((x_quad[3][1]-x_quad[2][1])*(x_quad[3][1]-x_quad[2][1])
+           +(x_quad[3][0]-x_quad[2][0])*(x_quad[3][0]-x_quad[2][0]));
+  alpha = atan((x_quad[3][1]-x_quad[2][1])/(x_quad[3][0]-x_quad[2][0]));
+
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] =  x_quad[2][0]+(x_quad[3][0]-x_quad[2][0])*lambda
+              - cos(alpha)*(-a*lambda + a*lambda*lambda)*form;
+  result[1] =  x_quad[2][1]+(x_quad[3][1]-x_quad[2][1])*lambda
+              + sin(alpha)*(-a*lambda + a*lambda*lambda)*form;
+
+  return(0);
+}
+
+static INT T_Beam2_3 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = x_quad[3][0]+(x_quad[4][0]-x_quad[3][0])*lambda;
+  result[1] = x_quad[3][1]+(x_quad[4][1]-x_quad[3][1])*lambda;
+
+  return(0);
+}
+
+static INT T_Beam2_4 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = x_quad[4][0]+(x_quad[5][0]-x_quad[4][0])*lambda;
+  result[1] = x_quad[4][1]+(x_quad[5][1]-x_quad[4][1])*lambda;
+
+  return(0);
+}
+
+static INT T_Beam2_5 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = x_quad[5][0]+(x_quad[6][0]-x_quad[5][0])*lambda;
+  result[1] = x_quad[5][1]+(x_quad[6][1]-x_quad[5][1])*lambda;
+
+  return(0);
+}
+
+static INT T_Beam2_6 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = x_quad[6][0]+(x_quad[7][0]-x_quad[6][0])*lambda;
+  result[1] = x_quad[6][1]+(x_quad[7][1]-x_quad[6][1])*lambda;
+
+  return(0);
+}
+
+static INT T_Beam2_7 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = x_quad[7][0]+(x_quad[0][0]-x_quad[7][0])*lambda;
+  result[1] = x_quad[7][1]+(x_quad[0][1]-x_quad[7][1])*lambda;
+
+  return(0);
+}
+
+static INT InitBeam (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  MidPoint[0] = 0.125*(x_quad[0][0]+x_quad[1][0]+x_quad[2][0]+
+                       x_quad[3][0]+x_quad[4][0]+x_quad[5][0]+
+                       x_quad[6][0]+x_quad[7][0]) ;
+  MidPoint[1] = 0.125*(x_quad[0][1]+x_quad[1][1]+x_quad[2][1]+
+                       x_quad[3][1]+x_quad[4][1]+x_quad[5][1]+
+                       x_quad[6][1]+x_quad[7][1]) ;
+
+  radius =            ABS(x_quad[0][0]-MidPoint[0]);
+  radius = MAX(radius,ABS(x_quad[1][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[2][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[3][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[4][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[5][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[6][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[7][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[0][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[1][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[2][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[3][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[4][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[5][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[6][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[7][1]-MidPoint[1]));
+
+  if (CreateDomain("Beam",MidPoint,radius,8,8,YES)==NULL)
+    return(1);
+
+  if (CreateBoundarySegment2D("T_Beam_2_0",1,0,0,0,1, 1,0.0,1.0,
+                              T_Beam2_0,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("T_Beam_2_1",1,0,1,1,2, 1,0.0,1.0,
+                              T_Beam2_1,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("T_Beam_2_2",1,0,2,2,3,20,0.0,1.0,
+                              T_Beam2_2,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("T_Beam_2_3",1,0,3,3,4, 1,0.0,1.0,
+                              T_Beam2_3,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("T_Beam_2_4",1,0,4,4,5, 1,0.0,1.0,
+                              T_Beam2_4,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("T_Beam_2_5",1,0,5,5,6, 1,0.0,1.0,
+                              T_Beam2_5,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("T_Beam_2_6",1,0,6,6,7, 1,0.0,1.0,
+                              T_Beam2_6,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("T_Beam_2_7",1,0,7,7,0, 1,0.0,1.0,
+                              T_Beam2_7,NULL)==NULL) return(1);
+
+  return(0);
+}
+/* end of T_Beam-domain-definition */
+
 /* configuring a domain */
 
 INT STD_BVP_Configure (INT argc, char **argv)
@@ -4092,6 +4252,52 @@ INT STD_BVP_Configure (INT argc, char **argv)
       h = 0.5 ;
     }
   }
+  else if (strcmp(DomainName,"Beam") == 0) {
+    if (ReadAndPrintArgvPosition("x0",argc,argv,x_quad[0]))
+    {
+      x_quad[0][0] = 0.0;
+      x_quad[0][1] = 0.0;
+    }
+    if (ReadAndPrintArgvPosition("x1",argc,argv,x_quad[1]))
+    {
+      x_quad[1][0] = 1.0;
+      x_quad[1][1] = 0.0;
+    }
+    if (ReadAndPrintArgvPosition("x2",argc,argv,x_quad[2]))
+    {
+      x_quad[2][0] = 1.0;
+      x_quad[2][1] = 1.0;
+    }
+    if (ReadAndPrintArgvPosition("x3",argc,argv,x_quad[3]))
+    {
+      x_quad[3][0] = 2.0;
+      x_quad[3][1] = 2.0;
+    }
+    if (ReadAndPrintArgvPosition("x4",argc,argv,x_quad[4]))
+    {
+      x_quad[4][0] = 2.0;
+      x_quad[4][1] = 3.0;
+    }
+    if (ReadAndPrintArgvPosition("x5",argc,argv,x_quad[5]))
+    {
+      x_quad[5][0] = 1.0;
+      x_quad[5][1] = 3.0;
+    }
+    if (ReadAndPrintArgvPosition("x6",argc,argv,x_quad[6]))
+    {
+      x_quad[6][0] = 1.0;
+      x_quad[6][1] = 4.0;
+    }
+    if (ReadAndPrintArgvPosition("x7",argc,argv,x_quad[7]))
+    {
+      x_quad[7][0] = 0.0;
+      x_quad[7][1] = 4.0;
+    }
+    if (ReadArgvDOUBLE("form",&form,argc,argv))
+    {
+      form = 1.0;
+    }
+  }
 
   theDomain = GetDomain(DomainName);
 
@@ -4235,6 +4441,11 @@ INT STD_BVP_Configure (INT argc, char **argv)
     else if (strcmp(DomainName,"Composed3a") == 0)
     {
       if (InitComposed3a())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Beam") == 0)
+    {
+      if (InitBeam())
         return(1);
     }
     else
