@@ -2,7 +2,7 @@
 
 COVISE_TARGET = COVISE_ON
 COVISE_CFLAGS = -D_COVISE
-COVISE_LFLAGS = $(UGROOT)/lib/libcovise3.a $(HOME)/covise/sgi/bin/libcovise.so
+COVISE_LFLAGS = $(UGROOT)/lib/libcovise3.a /usr/local/covise/sgi/bin/libcovise.so
 
 # if Covise is needed, we also need C++ linkage.
 UG_LINK = $(ARCH_C++)
