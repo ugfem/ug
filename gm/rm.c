@@ -3590,6 +3590,26 @@ static int FReadRule (FILE *stream, REFRULE *theRule)
  */
 /****************************************************************************/
 
+static int CorrectRule40 (REFRULE *theRule)
+{
+  int i;
+  int c0,n1;
+
+  for (i=0; i<9; i++)
+  {
+    if (i==1 || i==4 || i==8) {
+      c0 = theRule->sons[i].corners[0];
+      theRule->sons[i].corners[0] = theRule->sons[i].corners[1];
+      theRule->sons[i].corners[1] = c0;
+      n1 = theRule->sons[i].nb[1];
+      theRule->sons[i].nb[1] = theRule->sons[i].nb[2];
+      theRule->sons[i].nb[2] = n1;
+    }
+  }
+
+  return (0);
+}
+
 static int CorrectRule41 (REFRULE *theRule)
 {
   int i;
@@ -3610,6 +3630,25 @@ static int CorrectRule41 (REFRULE *theRule)
   return (0);
 }
 
+static int CorrectRule52 (REFRULE *theRule)
+{
+  int i;
+  int c0,n1;
+
+  for (i=0; i<9; i++)
+  {
+    if (i==2 || i==8) {
+      c0 = theRule->sons[i].corners[0];
+      theRule->sons[i].corners[0] = theRule->sons[i].corners[1];
+      theRule->sons[i].corners[1] = c0;
+      n1 = theRule->sons[i].nb[1];
+      theRule->sons[i].nb[1] = theRule->sons[i].nb[2];
+      theRule->sons[i].nb[2] = n1;
+    }
+  }
+
+  return (0);
+}
 static int CorrectRule53 (REFRULE *theRule)
 {
   int i;
@@ -3630,6 +3669,205 @@ static int CorrectRule53 (REFRULE *theRule)
   return (0);
 }
 
+static int CorrectRule85 (REFRULE *theRule)
+{
+  int i;
+  int c0,n1;
+
+  for (i=0; i<9; i++)
+  {
+    if (i==4) {
+      c0 = theRule->sons[i].corners[0];
+      theRule->sons[i].corners[0] = theRule->sons[i].corners[1];
+      theRule->sons[i].corners[1] = c0;
+      n1 = theRule->sons[i].nb[1];
+      theRule->sons[i].nb[1] = theRule->sons[i].nb[2];
+      theRule->sons[i].nb[2] = n1;
+    }
+  }
+
+  return (0);
+}
+
+static int CorrectRule86 (REFRULE *theRule)
+{
+  int i;
+  int c0,n1;
+
+  for (i=0; i<9; i++)
+  {
+    if (i==4) {
+      c0 = theRule->sons[i].corners[0];
+      theRule->sons[i].corners[0] = theRule->sons[i].corners[1];
+      theRule->sons[i].corners[1] = c0;
+      n1 = theRule->sons[i].nb[1];
+      theRule->sons[i].nb[1] = theRule->sons[i].nb[2];
+      theRule->sons[i].nb[2] = n1;
+    }
+  }
+
+  return (0);
+}
+
+static int CorrectRule111 (REFRULE *theRule)
+{
+  int i;
+  int c0,n1;
+
+  for (i=0; i<9; i++)
+  {
+    if (i==6 || i==8) {
+      c0 = theRule->sons[i].corners[0];
+      theRule->sons[i].corners[0] = theRule->sons[i].corners[1];
+      theRule->sons[i].corners[1] = c0;
+      n1 = theRule->sons[i].nb[1];
+      theRule->sons[i].nb[1] = theRule->sons[i].nb[2];
+      theRule->sons[i].nb[2] = n1;
+    }
+  }
+
+  return (0);
+}
+
+static int CorrectRule112 (REFRULE *theRule)
+{
+  int i;
+  int c0,n1;
+
+  for (i=0; i<9; i++)
+  {
+    if (i==6 || i==7) {
+      c0 = theRule->sons[i].corners[0];
+      theRule->sons[i].corners[0] = theRule->sons[i].corners[1];
+      theRule->sons[i].corners[1] = c0;
+      n1 = theRule->sons[i].nb[1];
+      theRule->sons[i].nb[1] = theRule->sons[i].nb[2];
+      theRule->sons[i].nb[2] = n1;
+    }
+  }
+
+  return (0);
+}
+
+static int CorrectRule135 (REFRULE *theRule)
+{
+  int i;
+  int c0,n1;
+
+  for (i=0; i<12; i++)
+  {
+    if (i==1 || i==3 || i==11) {
+      c0 = theRule->sons[i].corners[0];
+      theRule->sons[i].corners[0] = theRule->sons[i].corners[1];
+      theRule->sons[i].corners[1] = c0;
+      n1 = theRule->sons[i].nb[1];
+      theRule->sons[i].nb[1] = theRule->sons[i].nb[2];
+      theRule->sons[i].nb[2] = n1;
+    }
+  }
+
+  return (0);
+}
+
+static int CorrectRule136 (REFRULE *theRule)
+{
+  int i;
+  int c0,n1;
+
+  for (i=0; i<12; i++)
+  {
+    if (i==2 || i==3 || i==11) {
+      c0 = theRule->sons[i].corners[0];
+      theRule->sons[i].corners[0] = theRule->sons[i].corners[1];
+      theRule->sons[i].corners[1] = c0;
+      n1 = theRule->sons[i].nb[1];
+      theRule->sons[i].nb[1] = theRule->sons[i].nb[2];
+      theRule->sons[i].nb[2] = n1;
+    }
+  }
+
+  return (0);
+}
+
+static int CorrectRule155 (REFRULE *theRule)
+{
+  int i;
+  int c0,n1;
+
+  for (i=0; i<10; i++)
+  {
+    if (i==5 || i==7 || i==9) {
+      c0 = theRule->sons[i].corners[0];
+      theRule->sons[i].corners[0] = theRule->sons[i].corners[1];
+      theRule->sons[i].corners[1] = c0;
+      n1 = theRule->sons[i].nb[1];
+      theRule->sons[i].nb[1] = theRule->sons[i].nb[2];
+      theRule->sons[i].nb[2] = n1;
+    }
+  }
+
+  return (0);
+}
+
+static int CorrectRule156 (REFRULE *theRule)
+{
+  int i;
+  int c0,n1;
+
+  for (i=0; i<10; i++)
+  {
+    if (i==5 || i==8 || i==9) {
+      c0 = theRule->sons[i].corners[0];
+      theRule->sons[i].corners[0] = theRule->sons[i].corners[1];
+      theRule->sons[i].corners[1] = c0;
+      n1 = theRule->sons[i].nb[1];
+      theRule->sons[i].nb[1] = theRule->sons[i].nb[2];
+      theRule->sons[i].nb[2] = n1;
+    }
+  }
+
+  return (0);
+}
+
+static int CorrectRule183 (REFRULE *theRule)
+{
+  int i;
+  int c0,n1;
+
+  for (i=0; i<12; i++)
+  {
+    if (i==3 || i==7 || i==11) {
+      c0 = theRule->sons[i].corners[0];
+      theRule->sons[i].corners[0] = theRule->sons[i].corners[1];
+      theRule->sons[i].corners[1] = c0;
+      n1 = theRule->sons[i].nb[1];
+      theRule->sons[i].nb[1] = theRule->sons[i].nb[2];
+      theRule->sons[i].nb[2] = n1;
+    }
+  }
+
+  return (0);
+}
+
+static int CorrectRule184 (REFRULE *theRule)
+{
+  int i;
+  int c0,n1;
+
+  for (i=0; i<12; i++)
+  {
+    if (i==2 || i==8 || i==11) {
+      c0 = theRule->sons[i].corners[0];
+      theRule->sons[i].corners[0] = theRule->sons[i].corners[1];
+      theRule->sons[i].corners[1] = c0;
+      n1 = theRule->sons[i].nb[1];
+      theRule->sons[i].nb[1] = theRule->sons[i].nb[2];
+      theRule->sons[i].nb[2] = n1;
+    }
+  }
+
+  return (0);
+}
 
 static int      CheckVolumes(REFRULE *Rule)
 {
@@ -3821,8 +4059,20 @@ static INT InitRuleManager3D (void)
   }
 
   /* bug fix */
+  CorrectRule40(&Rules[40]);
   CorrectRule41(&Rules[41]);
+  CorrectRule52(&Rules[52]);
   CorrectRule53(&Rules[53]);
+  CorrectRule85(&Rules[85]);
+  CorrectRule86(&Rules[86]);
+  CorrectRule111(&Rules[111]);
+  CorrectRule112(&Rules[112]);
+  CorrectRule135(&Rules[135]);
+  CorrectRule136(&Rules[136]);
+  CorrectRule155(&Rules[155]);
+  CorrectRule156(&Rules[156]);
+  CorrectRule183(&Rules[183]);
+  CorrectRule184(&Rules[184]);
 
   for (i=0; i<nRules; i++)
   {
