@@ -5997,7 +5997,7 @@ ELEMENT *FindElementFromPosition (GRID *theGrid, DOUBLE *pos)
   }
   theFather = FindElementFromPosition(DOWNGRID(theGrid),pos);
   if (theFather == NULL) {
-    if (OBJT(theFather) == IEOBJ) return(NULL);
+    if (OBJT(theElement) == IEOBJ) return(NULL);
     else {
       for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
            theElement=SUCCE(theElement))
