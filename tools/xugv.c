@@ -37,6 +37,7 @@
 #include <math.h>
 #include <malloc.h>
 #include <X11/Intrinsic.h>
+#include <X11/IntrinsicP.h>
 #include <X11/Vendor.h>
 #include <X11/StringDefs.h>
 #include <X11/keysym.h>
@@ -46,7 +47,6 @@
 #include <X11/Xaw/Label.h>
 #include <X11/Xaw/Dialog.h>
 #include <X11/Xaw/Command.h>
-
 
 /* defines for opCodes */
 #define opNop                           0
@@ -93,16 +93,10 @@
 #define ADJLEN(VALP,STD_SIZE) \
   ((void*) ((char *) (VALP))[sizeof(*(VALP)) - STD_SIZE])
 
-#define MASK(SIZE)      ((0x1<<(8*SIZE))-1)
 #define INVADJLEN(VALP,STD_SIZE) \
   ((*(VALP))>>((sizeof(*(VALP)) - STD_SIZE)*8))
 
-/*
-   #define STD2NAT(VAL,STDSIZE) (VAL = SWAP(INVADJLEN(&(VAL),STDSIZE)))
- */
 #define STD2NAT(VAL,STDSIZE) VAL = INVADJLEN(&(VAL),STDSIZE);VAL = SWAP(VAL)
-
-#define NAT2STD(VAL,STDSIZE) (ADJLEN((&(SWAP(VAL))),STDSIZE)
 
 /* STD_LONG and STD_SHORT are chosen the minimum possible values for */
 /* reasons of efficiency, the code relies on this fact, they may */
@@ -123,8 +117,10 @@
 
 #define APPL_KLASSE    "Xugview"
 
-
 /* global variables */
+/* RCS_ID
+   $Header$
+ */
 
 XtAppContext kontext;                     /* application kontext */
 Display      *display;                  /* display of the application */
@@ -204,144 +200,59 @@ static long swap_long (long data)
 }
 
 
-void exit_dial (Widget w, XtPointer data, XEvent *event, Boolean *continue_to_dispatch)
+int GetFileScreen (FILE *stream, short *fx, short *fy)
 {
-  if (event->xbutton.button == Button3)
+  long blockSize;          /* METABUFFERSIZE */
+  int error;
+  short newfx;
+
+  if (VERBOSE)
+    printf("GetFileScreen():\n");
+
+  /* get file parameters */
+  rewind(stream);
+  error = fread(&blockSize,STD_LONG,1,stream);
+  if (VERBOSE)
+    printf("error=%d blockSize=%d hex=%x\n",error,blockSize,blockSize);
+  STD2NAT(blockSize,STD_LONG);
+  if (error!=1) return(1);                    /* block size */
+  error = fread(fx,STD_SHORT,1,stream);
+  if (VERBOSE)
+    printf("error=%d fx=%d hex=%x\n",error,*fx,*fx);
+  if (VERBOSE>2)
   {
-    XtManageChild(xexit);
-    XRaiseWindow(display, XtWindow(xexit));
-  }
-}
-
-void exit_confirm (Widget w, XtPointer clientdata, XtPointer calldata)
-{
-  XtUnmanageChild(viewport);
-  XtDestroyApplicationContext(kontext);
-  exit(0);
-}
-
-void exit_cancel (Widget w, XtPointer clientdata, XtPointer calldata)
-{
-  XtUnmanageChild(xexit);
-}
-
-void manage_dial (Widget w, XtPointer data, XEvent *event, Boolean *continue_to_dispatch)
-{
-  if (event->xbutton.button == Button2)
-  {
-    XtManageChild(dial);
-    XRaiseWindow(display, XtWindow(dial));
-  }
-}
-
-
-void dialog_confirm(Widget widget, XtPointer clientdata, XtPointer calldata)
-{
-  XGCValues gcv;
-  XPoint edges[4];
-  Arg args[10];
-  Cardinal n;
-  int j;
-
-  XtUnmanageChild(dial);
-
-  file = XawDialogGetValueString(dial);
-
-  if (NULL == (stream = fopen(file, "r")))
-  {
-    XtManageChild(dial);
-    printf("Cannot open file %s\n", file);
-
-    /* initialize dialog widget */
-    n = 0;
-    XtSetArg(args[n], XtNlabel, "bad filename!\n type new:\n"); n++;
-    XtSetArg(args[n], XtNvalue, ".meta"); n++;
-    XtSetValues(dial, args, n);
-
-    return;
+    newfx = *fx;
+    newfx = swap_short(newfx);
+    printf("swap_short: newfx=%d\n",newfx);
+    newfx = *fx;
+    newfx = SWAP(newfx);
+    printf("SWAP: newfx=%d\n",newfx);
+    newfx = INVADJLEN(&newfx,STD_SHORT);
+    printf("SWAP and INVADJLEN: newfx=%d\n",newfx);
+    newfx = *fx;
+    newfx = INVADJLEN(&newfx,STD_SHORT);
+    printf("INVADJLEN: newfx=%d\n",newfx);
+    newfx = SWAP(newfx);
+    printf("INVADJLEN and SWAP: newfx=%d\n",newfx);
+    newfx = *fx;
+    STD2NAT(newfx,STD_SHORT);
+    printf("STD2NAT: newfx=%d\n",newfx);
   }
 
-  /* initialize dialog widget */
-  n = 0;
-  XtSetArg(args[n], XtNlabel, "new filename:"); n++;
-  XtSetArg(args[n], XtNvalue, ".meta"); n++;
-  XtSetValues(dial, args, n);
+  STD2NAT(*fx,STD_SHORT);
+  if (error!=1) return(1);                    /* x size */
+  error = fread(fy,STD_SHORT,1,stream);
+  if (VERBOSE)
+    printf("error=%d fy=%d hex=%x\n",error,*fy,*fy);
+  STD2NAT(*fy,STD_SHORT);
+  if (error!=1) return(1);                    /* y size */
 
-  XClearWindow(display, XtWindow(picture));
-
-  GetFileScreen(stream, &fx, &fy);
-
-  /* change size of drawing window */
-  pwidth = (fx < WIN_WIDTH) ? WIN_WIDTH : fx;
-  pheight = (fy < WIN_HEIGHT) ? WIN_HEIGHT : fy;
-
-  /* allow Scrollbars */
-  n = 0;
-  XtSetArg(args[n], XtNallowHoriz, True); n++;
-  XtSetArg(args[n], XtNallowVert, True); n++;
-  XtSetArg(args[n], XtNwidth, vwidth); n++;
-  XtSetArg(args[n], XtNheight, vheight); n++;
-
-  XtSetValues(viewport, args, n);
-
-
-  /* change size of drawing window */
-  XtResizeWidget(picture, pwidth, pheight, 0);
-
-
-  /* free allocated colorcells */
-  for (j=0; j<dispcells; j++)
+  if (VERBOSE)
   {
-    if (!used[j])
-      XFreeColors(display, def_colormap, &(colortable[j].pixel), 1, 0L);
-    else
-      used[j] = 0;
-    colortable[j].pixel = 0;
+    printf("sizeof blockSize=%d fx=%d fy=%d\n",sizeof(blockSize),sizeof(*fx),sizeof(*fy));
+    printf("blockSize=%d fx=%d fy=%d\n",blockSize,*fx,*fy);
+    printf("blockSize=%x fx=%x fy=%x\n",blockSize,*fx,*fy);
   }
-
-  XFreePixmap(display, pixmap);
-  pixmap = XCreatePixmap(display, XtWindow(picture), pwidth, pheight,
-                         DefaultDepthOfScreen(XtScreen(picture)));
-
-  /* create graphic context */
-  gcv.foreground = WhitePixel(display, screen);
-  gcv.background = WhitePixel(display, screen);
-
-  gc = XCreateGC( XtDisplay(picture) , XtWindow(picture),
-                  GCForeground|GCBackground, &gcv);
-
-  /* clear pixmap's area */
-  edges[0].x = 0;
-  edges[0].y = 0;
-  edges[1].x = 0;
-  edges[1].y = pheight;
-  edges[2].x = pwidth;
-  edges[2].y = pheight;
-  edges[3].x = pwidth;
-  edges[3].y = 0;
-
-  XFillPolygon(display, pixmap, gc, edges, 4,
-               Convex, CoordModeOrigin);
-
-  RasterizeFile(stream);
-  fclose(stream);
-
-  XCopyArea(display, pixmap, XtWindow(picture), gc, 0, 0, pwidth, pheight , 0, 0);
-}
-
-
-void dialog_cancel(Widget widget, XtPointer clientdata, XtPointer calldata)
-{
-  Arg args[10];
-
-  XtUnmanageChild(dial);
-
-  /* initialize dialog widget */
-  n = 0;
-  XtSetArg(args[n], XtNlabel, "new filename:"); n++;
-  XtSetArg(args[n], XtNvalue, ".meta"); n++;
-  XtSetValues(dial, args, n);
-
 }
 
 
@@ -527,8 +438,7 @@ void createColors(XColor colors[CSIZE], short x, short y)
 
 /* RasterizeFile reads the file to draw and executes the */
 /* drawing commands.					 */
-int RasterizeFile(stream)
-FILE *stream;
+int RasterizeFile(FILE *stream)
 {
   char *buffer;                         /* input buffer */
   long blockSize;                     /* METABUFFERSIZE */
@@ -1568,63 +1478,6 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
 }
 
 
-int GetFileScreen (stream, fx, fy)
-FILE *stream;
-short *fx, *fy;
-{
-  long blockSize;          /* METABUFFERSIZE */
-  int error;
-  short newfx;
-
-  if (VERBOSE)
-    printf("GetFileScreen():\n");
-
-  /* get file parameters */
-  rewind(stream);
-  error = fread(&blockSize,STD_LONG,1,stream);
-  if (VERBOSE)
-    printf("error=%d blockSize=%d hex=%x\n",error,blockSize,blockSize);
-  STD2NAT(blockSize,STD_LONG);
-  if (error!=1) return(1);                    /* block size */
-  error = fread(fx,STD_SHORT,1,stream);
-  if (VERBOSE)
-    printf("error=%d fx=%d hex=%x\n",error,*fx,*fx);
-  if (VERBOSE>2)
-  {
-    newfx = *fx;
-    newfx = swap_short(newfx);
-    printf("swap_short: newfx=%d\n",newfx);
-    newfx = *fx;
-    newfx = SWAP(newfx);
-    printf("SWAP: newfx=%d\n",newfx);
-    newfx = INVADJLEN(&newfx,STD_SHORT);
-    printf("SWAP and INVADJLEN: newfx=%d\n",newfx);
-    newfx = *fx;
-    newfx = INVADJLEN(&newfx,STD_SHORT);
-    printf("INVADJLEN: newfx=%d\n",newfx);
-    newfx = SWAP(newfx);
-    printf("INVADJLEN and SWAP: newfx=%d\n",newfx);
-    newfx = *fx;
-    STD2NAT(newfx,STD_SHORT);
-    printf("STD2NAT: newfx=%d\n",newfx);
-  }
-
-  STD2NAT(*fx,STD_SHORT);
-  if (error!=1) return(1);                    /* x size */
-  error = fread(fy,STD_SHORT,1,stream);
-  if (VERBOSE)
-    printf("error=%d fy=%d hex=%x\n",error,*fy,*fy);
-  STD2NAT(*fy,STD_SHORT);
-  if (error!=1) return(1);                    /* y size */
-
-  if (VERBOSE)
-  {
-    printf("MASK for short=%x long=%x\n",MASK(STD_SHORT),MASK(STD_LONG));
-    printf("sizeof blockSize=%d fx=%d fy=%d\n",sizeof(blockSize),sizeof(*fx),sizeof(*fy));
-    printf("blockSize=%d fx=%d fy=%d\n",blockSize,*fx,*fy);
-    printf("blockSize=%x fx=%x fy=%x\n",blockSize,*fx,*fy);
-  }
-}
 
 static void Marker (short n,short s,short x,short y)
 {
@@ -1704,6 +1557,146 @@ static void Marker (short n,short s,short x,short y)
   }
 }
 
+
+void exit_dial (Widget w, XtPointer data, XEvent *event, Boolean *continue_to_dispatch)
+{
+  if (event->xbutton.button == Button3)
+  {
+    XtManageChild(xexit);
+    XRaiseWindow(display, XtWindow(xexit));
+  }
+}
+
+void exit_confirm (Widget w, XtPointer clientdata, XtPointer calldata)
+{
+  XtUnmanageChild(viewport);
+  XtDestroyApplicationContext(kontext);
+  exit(0);
+}
+
+void exit_cancel (Widget w, XtPointer clientdata, XtPointer calldata)
+{
+  XtUnmanageChild(xexit);
+}
+
+void manage_dial (Widget w, XtPointer data, XEvent *event, Boolean *continue_to_dispatch)
+{
+  if (event->xbutton.button == Button2)
+  {
+    XtManageChild(dial);
+    XRaiseWindow(display, XtWindow(dial));
+  }
+}
+
+
+void dialog_confirm(Widget widget, XtPointer clientdata, XtPointer calldata)
+{
+  XGCValues gcv;
+  XPoint edges[4];
+  Arg args[10];
+  Cardinal n;
+  int j;
+
+  XtUnmanageChild(dial);
+
+  file = XawDialogGetValueString(dial);
+
+  if (NULL == (stream = fopen(file, "r")))
+  {
+    XtManageChild(dial);
+    printf("Cannot open file %s\n", file);
+
+    /* initialize dialog widget */
+    n = 0;
+    XtSetArg(args[n], XtNlabel, "bad filename!\n type new:\n"); n++;
+    XtSetArg(args[n], XtNvalue, ".meta"); n++;
+    XtSetValues(dial, args, n);
+
+    return;
+  }
+
+  /* initialize dialog widget */
+  n = 0;
+  XtSetArg(args[n], XtNlabel, "new filename:"); n++;
+  XtSetArg(args[n], XtNvalue, ".meta"); n++;
+  XtSetValues(dial, args, n);
+
+  XClearWindow(display, XtWindow(picture));
+
+  GetFileScreen(stream, &fx, &fy);
+
+  /* change size of drawing window */
+  pwidth = (fx < WIN_WIDTH) ? WIN_WIDTH : fx;
+  pheight = (fy < WIN_HEIGHT) ? WIN_HEIGHT : fy;
+
+  /* allow Scrollbars */
+  n = 0;
+  XtSetArg(args[n], XtNallowHoriz, True); n++;
+  XtSetArg(args[n], XtNallowVert, True); n++;
+  XtSetArg(args[n], XtNwidth, vwidth); n++;
+  XtSetArg(args[n], XtNheight, vheight); n++;
+
+  XtSetValues(viewport, args, n);
+
+
+  /* change size of drawing window */
+  XtResizeWidget(picture, pwidth, pheight, 0);
+
+
+  /* free allocated colorcells */
+  for (j=0; j<dispcells; j++)
+  {
+    if (!used[j])
+      XFreeColors(display, def_colormap, &(colortable[j].pixel), 1, 0L);
+    else
+      used[j] = 0;
+    colortable[j].pixel = 0;
+  }
+
+  XFreePixmap(display, pixmap);
+  pixmap = XCreatePixmap(display, XtWindow(picture), pwidth, pheight,
+                         DefaultDepthOfScreen(XtScreen(picture)));
+
+  /* create graphic context */
+  gcv.foreground = WhitePixel(display, screen);
+  gcv.background = WhitePixel(display, screen);
+
+  gc = XCreateGC( XtDisplay(picture) , XtWindow(picture),
+                  GCForeground|GCBackground, &gcv);
+
+  /* clear pixmap's area */
+  edges[0].x = 0;
+  edges[0].y = 0;
+  edges[1].x = 0;
+  edges[1].y = pheight;
+  edges[2].x = pwidth;
+  edges[2].y = pheight;
+  edges[3].x = pwidth;
+  edges[3].y = 0;
+
+  XFillPolygon(display, pixmap, gc, edges, 4,
+               Convex, CoordModeOrigin);
+
+  RasterizeFile(stream);
+  fclose(stream);
+
+  XCopyArea(display, pixmap, XtWindow(picture), gc, 0, 0, pwidth, pheight , 0, 0);
+}
+
+
+void dialog_cancel(Widget widget, XtPointer clientdata, XtPointer calldata)
+{
+  Arg args[10];
+
+  XtUnmanageChild(dial);
+
+  /* initialize dialog widget */
+  n = 0;
+  XtSetArg(args[n], XtNlabel, "new filename:"); n++;
+  XtSetArg(args[n], XtNvalue, ".meta"); n++;
+  XtSetValues(dial, args, n);
+
+}
 
 
 static Boolean run_film (void)
