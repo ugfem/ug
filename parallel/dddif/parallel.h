@@ -101,6 +101,7 @@ enum HandlerSets
 /* for elements */
 #define EPRIO(e)                                                DDD_InfoPriority(PARHDRE(e))
 #define SETEPRIO(e,p)                                   DDD_PrioritySet(PARHDRE(e),p)
+#define SETEPRIOX(e,p)                                  if (EPRIO(e)!=p) DDD_PrioritySet(PARHDRE(e),p)
 #define EMASTER(e)                                              (EPRIO(e) == PrioMaster)
 #define EGHOST(e)                                               (EPRIO(e)==PrioHGhost  || EPRIO(e)==PrioVGhost ||\
                                                                  EPRIO(e)==PrioVHGhost)
@@ -119,6 +120,7 @@ enum HandlerSets
 /* for nodes, vectors, edges (edges only 3D) */
 #define PRIO(e)                                                 DDD_InfoPriority(PARHDR(e))
 #define SETPRIO(e,p)                                    DDD_PrioritySet(PARHDR(e),p)
+#define SETPRIOX(e,p)                                   if (PRIO(e)!=p) DDD_PrioritySet(PARHDR(e),p)
 #define MASTER(e)                                               (PRIO(e)==PrioMaster || PRIO(e)==PrioBorder)
 #define GHOST(e)                                                (PRIO(e)==PrioHGhost  || PRIO(e)==PrioVGhost ||\
                                                                  PRIO(e)==PrioVHGhost)
@@ -137,6 +139,7 @@ enum HandlerSets
 /* for vertices */
 #define VXPRIO(e)                                               DDD_InfoPriority(PARHDRV(e))
 #define SETVXPRIO(e,p)                                  DDD_PrioritySet(PARHDRV(e),p)
+#define SETVXPRIOX(e,p)                                 if (VXPRIO(e)!=p) DDD_PrioritySet(PARHDRV(e),p)
 #define VXMASTER(e)                                             (VXPRIO(e)==PrioMaster || VXPRIO(e)==PrioBorder)
 #define VXGHOST(e)                                              (VXPRIO(e)==PrioHGhost || VXPRIO(e)==PrioVGhost ||\
                                                                  VXPRIO(e)==PrioVHGhost)

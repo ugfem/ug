@@ -55,8 +55,8 @@
 
 /* macros for merge new priority with objects existing one */
 /* valid only for all types of ghost priorities            */
-#define PRIO_CALC(e) ((USED(e) && THEFLAG(e)) ? PrioVHGhost :             \
-						(THEFLAG(e)) ? PrioVGhost : (USED(e)) ?           \
+#define PRIO_CALC(e) ((USED(e) && THEFLAG(e)) ? PrioVHGhost :                \
+						(THEFLAG(e)) ? PrioVGhost : (USED(e)) ?              \
 						PrioHGhost : (assert(0),0))
 
 /* macros for setting object priorities with related objects */
@@ -64,18 +64,18 @@
 #define NODE_PRIORITY_SET(g,n,prio)                                          \
 		{                                                                    \
 			/* set priorities of node */                                     \
-			SETPRIO(n,prio);                                                 \
+			SETPRIOX(n,prio);                                                \
                                                                              \
 			if (VEC_DEF_IN_OBJ_OF_GRID(g,NODEVEC))                           \
 			    if (NVECTOR(n) != NULL)                                      \
-				    SETPRIO(NVECTOR(n),prio);                                \
+				    SETPRIOX(NVECTOR(n),prio);                               \
 		}
 
 #ifdef __TWODIM__
 #define PRIO_SET_EDGE(e,prio)
 #endif
 #ifdef __THREEDIM__
-#define PRIO_SET_EDGE(e,prio)  SETPRIO(e,prio);
+#define PRIO_SET_EDGE(e,prio)  SETPRIOX(e,prio);
 #endif
 
 #define EDGE_PRIORITY_SET(g,e,prio)                                          \
@@ -86,7 +86,7 @@
 			/* set priority of edge vector */                                \
 			if (VEC_DEF_IN_OBJ_OF_GRID(g,EDGEVEC))                           \
 			    if (EDVECTOR(e) != NULL)                                     \
-				    SETPRIO(EDVECTOR(e),prio);                               \
+				    SETPRIOX(EDVECTOR(e),prio);                              \
 		}
 
 #define CHECK_OBJECT_PRIO(o,prio,master,ghost,id,s,_nerr_)                   \
@@ -354,12 +354,12 @@ void SetGhostObjectPriorities (GRID *theGrid)
 			prio = PRIO_CALC(theElement);
 			PRINTDEBUG(gm,1,("SetGhostObjectPriorities(): e=" EID_FMTX " new prio=%d\n",
 				EID_PRTX(theElement),prio))
-			SETEPRIO(theElement,prio);
+			SETEPRIOX(theElement,prio);
 
 			if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
 			{
 				theVector = EVECTOR(theElement);
-				SETPRIO(theVector,prio);
+				SETPRIOX(theVector,prio);
 			}
 		}
 
@@ -390,7 +390,7 @@ void SetGhostObjectPriorities (GRID *theGrid)
 				for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 				{
 					if (USED(theVector) || THEFLAG(theVector))
-						SETPRIO(theVector,PRIO_CALC(theVector));
+						SETPRIOX(theVector,PRIO_CALC(theVector));
 				}
 			#endif
 		}
