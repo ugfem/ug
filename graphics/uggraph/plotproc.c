@@ -110,8 +110,10 @@ static INT PreprocessNodeValue (const char *name, MULTIGRID *theMG)
 
   theVD = GetVecDataDescByName(theMG,(char *)name);
 
-  if (theVD == NULL)
+  if (theVD == NULL) {
+    PrintErrorMessage('E',"PreprocessNodeValue","cannot find symbol");
     return (1);
+  }
 
   if (VD_NCMPS_IN_TYPE(theVD,NODEVECTOR)<1)
     return (1);
@@ -164,8 +166,10 @@ static INT PreprocessNodeVector (const char *name, MULTIGRID *theMG)
 
   theVD = GetVecDataDescByName(theMG,(char *)name);
 
-  if (theVD == NULL)
+  if (theVD == NULL) {
+    PrintErrorMessage('E',"PreprocessNodeVector","cannot find symbol");
     return (1);
+  }
 
   if (VD_NCMPS_IN_TYPE(theVD,NODEVECTOR)<DIM)
     return (1);

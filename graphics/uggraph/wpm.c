@@ -3304,6 +3304,8 @@ static INT DisplayScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj)
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc","---");
   UserWrite(buffer);
 
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"name",PO_NAME(theEspo));
+
   if (theEspo->PlotGrid == YES)
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"Grid","YES");
   else
@@ -3509,6 +3511,8 @@ static INT DisplayVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj)
   char buffer[128];
 
   theEvpo = &(thePlotObj->theEvpo);
+
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"name",PO_NAME(theEvpo));
 
   /* print content */
   UserWriteF(DISPLAY_PO_FORMAT_SS,"Grid",(theEvpo->PlotGrid) ? "YES" : "NO");
@@ -3735,6 +3739,8 @@ static INT DisplayLinePlotObject_2D (PLOTOBJ *thePlotObj)
   else
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc","---");
   UserWrite(buffer);
+
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"name",PO_NAME(theLpo));
 
   sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"Range",(float)theLpo->min,(float)theLpo->max);
   UserWrite(buffer);
@@ -4200,6 +4206,9 @@ static INT DisplayScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj)
   else
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc","---");
   UserWrite(buffer);
+
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"name",PO_NAME(theEspo));
+
   sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"Range",(float)theEspo->min,(float)theEspo->max);
   UserWrite(buffer);
   sprintf(buffer,DISPLAY_PO_FORMAT_SI,"Depth",(int)theEspo->depth);
@@ -4402,6 +4411,9 @@ static INT DisplayVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj)
   else
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc","---");
   UserWrite(buffer);
+
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"name",PO_NAME(theEvpo));
+
   sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"Range",0.0,(float)theEvpo->max);
   UserWrite(buffer);
   sprintf(buffer,DISPLAY_PO_FORMAT_SF,"RasterSize",(float)theEvpo->RasterSize);
