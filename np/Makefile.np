@@ -15,8 +15,8 @@ MODULES = PROCS ALGEBRA UDM
 # object files for both dimensions
 OBJECTS = initnp.o
 
-all : $(OBJECTS) $(MODULES) Makefile.np
-	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
+$(UG_LIB) : $(OBJECTS) $(MODULES) Makefile.np
+	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
 
 PROCS:
 	cd procs; make -f Makefile.procs; cd ..;
