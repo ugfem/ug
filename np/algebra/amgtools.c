@@ -85,6 +85,19 @@
 /*																			*/
 /****************************************************************************/
 
+/* MacOS can't use local data > 32k */
+#ifdef __MWCW__
+static DOUBLE factor[MAX_MAT_COMP];
+static DOUBLE InvSum_jk[MAX_MAT_COMP];
+static DOUBLE Inv_ii[MAX_MAT_COMP];
+static DOUBLE modDiag[MAX_MAT_COMP];
+static DOUBLE modDiagInv[MAX_MAT_COMP];
+static DOUBLE sum[MAX_MAT_COMP];
+static DOUBLE sumInv[MAX_MAT_COMP];
+static DOUBLE Sum_jk[MAX_MAT_COMP];
+static DOUBLE Weight_ik[MAX_MAT_COMP];
+#endif
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 REP_ERR_FILE;
@@ -2227,8 +2240,10 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   INT icomp,mcomp,vskip,nCoarse;
+        #ifndef __MWCW__
   DOUBLE modDiag[MAX_MAT_COMP],modDiagInv[MAX_MAT_COMP];
   DOUBLE sum[MAX_MAT_COMP],sumInv[MAX_MAT_COMP],factor[MAX_MAT_COMP];
+        #endif
   VECTOR *vect,*vect2,*vect3,*newVect;
   MATRIX *mat,*mat2,*imat,*imat2;
 
@@ -2426,9 +2441,11 @@ static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag, INT reducedFFGr
 {
   INT icomp,mcomp,rcomp,nCoarse;
   INT arithmetic_lump,vsmask;
+        #ifndef __MWCW__
   DOUBLE modDiag[MAX_MAT_COMP];
   DOUBLE Sum_jk[MAX_MAT_COMP], Weight_ik[MAX_MAT_COMP];
   DOUBLE InvSum_jk[MAX_MAT_COMP], Inv_ii[MAX_MAT_COMP];
+        #endif
   VECTOR *vi,*vj,*vk,*newVect;
   MATRIX *mij,*mjk,*imat,*imat2;
 

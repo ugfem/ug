@@ -80,6 +80,12 @@
 /*																			*/
 /****************************************************************************/
 
+#ifdef __MWCW__
+static DOUBLE Dcoarseinv[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
+static DOUBLE Q[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
+static DOUBLE F[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
+#endif
+
 REP_ERR_FILE;
 
 /* RCS string */
@@ -2185,9 +2191,11 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
   VECTOR *vf,*vc;
   INT i,j,k,n,l,ncomp,nc,vecskip,A,rdt;
   SHORT *comps;
+        #ifndef __MWCW__
   DOUBLE Dcoarseinv[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
   DOUBLE Q[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
   DOUBLE F[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
+        #endif
   DOUBLE *Dfine,*Dcoarse;
   MATRIX *im;
   ELEMENT *theElement;

@@ -135,6 +135,11 @@ static INT StoreInverse=TRUE;
 /* large matrix for l_pgs */
 /* (Macintosh does not support local data >32k) */
 static DOUBLE UGI_Mval[LOCAL_DIM*LOCAL_DIM];
+#ifdef __MWCW__
+static DOUBLE InvMat[MAX_SINGLE_MAT_COMP];
+static DOUBLE PivMat[MAX_SINGLE_MAT_COMP];
+static DOUBLE CorMat[MAX_SINGLE_MAT_COMP];
+#endif
 
 REP_ERR_FILE;
 
@@ -2260,8 +2265,10 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
+        #ifndef __MWCW__
   DOUBLE InvMat[MAX_SINGLE_MAT_COMP],PivMat[MAX_SINGLE_MAT_COMP];
   DOUBLE CorMat[MAX_SINGLE_MAT_COMP];
+        #endif
   DOUBLE sum;
   INT offset[NVECTYPES+1];
   register DOUBLE *Diag,*Piv,*Elm,*Mat,*Djj,*Dkk;
@@ -3142,7 +3149,9 @@ INT l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const 
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
+        #ifndef __MWCW__
   DOUBLE InvMat[MAX_SINGLE_MAT_COMP],PivMat[MAX_SINGLE_MAT_COMP],CorMat[MAX_SINGLE_MAT_COMP];
+        #endif
   DOUBLE sum;
   INT offset[NVECTYPES+1];
   register DOUBLE *Diag,*Piv,*Elm,*Mat,*Tmp,*Djj,*Dkk;
@@ -3670,8 +3679,10 @@ INT l_lrdecomp (GRID *g, const MATDATA_DESC *M)
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
+        #ifndef __MWCW__
   DOUBLE InvMat[MAX_SINGLE_MAT_COMP],PivMat[MAX_SINGLE_MAT_COMP];
   DOUBLE CorMat[MAX_SINGLE_MAT_COMP];
+        #endif
   DOUBLE sum;
   register DOUBLE *Diag,*Piv,*Elm,*Mat;
   register SHORT *DiagComp,*PivComp,*ElmComp,*MatComp;
@@ -4203,8 +4214,10 @@ INT l_lrdecompB (GRID *g, const MATDATA_DESC *M)
   VECTOR *vi,*vj,*vk,*vec;
   BLOCKVECTOR *theBV;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
+        #ifndef __MWCW__
   DOUBLE InvMat[MAX_SINGLE_MAT_COMP],PivMat[MAX_SINGLE_MAT_COMP];
   DOUBLE CorMat[MAX_SINGLE_MAT_COMP];
+        #endif
   DOUBLE sum;
   register DOUBLE *Diag,*Piv,*Elm,*Mat;
   register SHORT *DiagComp,*PivComp,*ElmComp,*MatComp;
@@ -5822,8 +5835,10 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
+        #ifndef __MWCW__
   DOUBLE InvMat[MAX_SINGLE_MAT_COMP],PivMat[MAX_SINGLE_MAT_COMP];
   DOUBLE CorMat[MAX_SINGLE_MAT_COMP];
+        #endif
   DOUBLE sum;
   INT offset[NVECTYPES+1];
   register DOUBLE *Diag,*Piv,*Elm,*Mat,*Djj,*Dkk;
