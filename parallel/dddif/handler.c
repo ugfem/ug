@@ -225,7 +225,7 @@ void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 	{
 		int Size;
 
-		IFDEBUG(dddif,0)
+		IFDEBUG(dddif,1)
 		if (cnt<nmat+1)
 		{
 			PRINTDEBUG(dddif,0,("%2d:  VectorGatherMatX(): v=%x cnt=%d nmat=%d type=%d veobj=%d\n",me,vec,cnt,nmat,type_id,OBJT(vec)))
@@ -1275,7 +1275,7 @@ void ElementObjMkCons_Refine (DDD_OBJ obj)
 	ELEMENT  *pe	=	(ELEMENT *)obj;
 	VERTEX *pv;
 
-	PRINTDEBUG(dddif,0,("%2d: ElementObjMkCons_Refine(): pe=%x/%d\n",me,pe,ID(pe)))
+	PRINTDEBUG(dddif,1,("%2d: ElementObjMkCons_Refine(): pe=%x/%d\n",me,pe,ID(pe)))
 
 	/* reconstruct pointer from vectors */
 	if (dddctrl.elemData) VOBJECT(EVECTOR(pe)) = (void*)pe;
