@@ -3451,7 +3451,7 @@ INT CheckAlgebra (GRID *theGrid)
       }
 
                         #ifdef ModelP
-      if (!HGHOSTPRIO(prio))
+      if (prio != PrioGhost)
                         #endif
       if (MUSED(theMatrix) != 1)
       {

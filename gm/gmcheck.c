@@ -142,7 +142,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 		return(nerrors++);
 	}
 
-	if (theFather!=NULL && MASTER(theNode) && EHGHOST(theFather))
+	if (theFather!=NULL && MASTER(theNode) && EPRIO(theFather)==PrioGhost)
 	{
 		UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX " vertex=" VID_FMTX
 			" VFATHER=" EID_FMTX " vertex needs VFATHER with prio master or vghost\n",
@@ -214,7 +214,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 			{
 				nerrors++;	
                 #ifdef ModelP
-				if (EHGHOST(theElement)) {
+				if (EPRIO(theElement)==PrioGhost) {
 				    nerrors = 0;
 					IFDEBUG(gm,1)
 					    nerrors = 1;
@@ -235,7 +235,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 			{
 				nerrors++;	
                 #ifdef ModelP
-				if (EHGHOST(theElement)) {
+				if (EPRIO(theElement)==PrioGhost) {
 				    nerrors = 0;
 					IFDEBUG(gm,1)
 					    nerrors = 1;
@@ -265,7 +265,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 			{
 				nerrors++;	
                 #ifdef ModelP
-				if (EHGHOST(theElement)) {
+				if (EPRIO(theElement)==PrioGhost) {
 				    nerrors = 0;
 					IFDEBUG(gm,1)
 					    nerrors = 1;
@@ -471,7 +471,7 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 		{
 
         #ifdef ModelP
-		if (EHGHOST(theElement)) {
+		if (EPRIO(theElement)==PrioGhost) {
 		    nerrors = 0;
 			IFDEBUG(gm,1)
 			    nerrors = 1;
