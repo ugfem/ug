@@ -577,17 +577,14 @@ VECTOR *CreateVector (GRID *theGrid, INT VectorType, GEOM_OBJECT *object)
 
         #ifdef ModelP
   DDD_AttrSet(PARHDR(pv),theGrid->level);
-  DDD_PrioritySet(PARHDR(pv),PrioVector);
+  DDD_PrioritySet(PARHDR(pv),PrioMaster);
         #endif
 
   VOBJECT(pv) = object;
   VINDEX(pv) = (long)theGrid->nVector;
-  SUCCVC(pv) = theGrid->firstVector;
-  if (SUCCVC(pv)!=NULL)
-    PREDVC(SUCCVC(pv)) = pv;
-  FIRSTVECTOR(theGrid) = pv;
-  if (LASTVECTOR(theGrid)==NULL)
-    LASTVECTOR(theGrid) = pv;
+  SUCCVC(pv) = FIRSTVECTOR(theGrid);
+
+  GRID_LINK_VECTOR(theGrid,pv,PrioMaster)
 
   /* counters */
   theGrid->nVector++;
@@ -983,11 +980,11 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
   if (PREDVC(theVector)!=NULL)
     SUCCVC(PREDVC(theVector)) = SUCCVC(theVector);
   else
-    theGrid->firstVector = SUCCVC(theVector);
+    FIRSTVECTOR(theGrid) = SUCCVC(theVector);
   if (SUCCVC(theVector)!=NULL)
     PREDVC(SUCCVC(theVector)) = PREDVC(theVector);
   else
-    theGrid->lastVector = PREDVC(theVector);
+    LASTVECTOR(theGrid) = PREDVC(theVector);
 
   /* reset count flags */
   SETVCOUNT(theVector,0);
@@ -2134,7 +2131,7 @@ INT GridCreateConnection (GRID *theGrid)
     return (0);
 
   /* set EBUILDCON-flags also in elements accessing a vector with VBUILDCON true */
-  for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
     /* see if it is set */
     if (EBUILDCON(theElement)) continue;
@@ -2165,7 +2162,7 @@ INT GridCreateConnection (GRID *theGrid)
   }
 
   /* run over all elements with EBUILDCON true and build connections */
-  for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
     if (EBUILDCON(theElement))             /* this is the trigger ! */
       if (CreateConnectionsInNeighborhood(theGrid,theElement))
         RETURN (1);
@@ -2202,7 +2199,7 @@ INT MGCreateConnection (MULTIGRID *theMG)
   for (i=0; i<=theMG->topLevel; i++)
   {
     theGrid = theMG->grids[i];
-    for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
       SETEBUILDCON(theElement,1);
     if (GridCreateConnection(theGrid)) RETURN (1);
   }
@@ -2240,14 +2237,14 @@ INT PrepareAlgebraModification (MULTIGRID *theMG)
   j = theMG->topLevel;
   for (k=0; k<=j; k++)
   {
-    for (theElement=theMG->grids[k]->elements; theElement!=NULL; theElement=SUCCE(theElement))
+    for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,k)); theElement!=NULL; theElement=SUCCE(theElement))
     {
       SETUSED(theElement,0);
       SETEBUILDCON(theElement,0);
     }
-    for (theVector=theMG->grids[k]->firstVector; theVector!= NULL; theVector=SUCCVC(theVector))
+    for (theVector=FIRSTVECTOR(GRID_ON_LEVEL(theMG,k)); theVector!= NULL; theVector=SUCCVC(theVector))
       SETVBUILDCON(theVector,0);
-    for (theVector=theMG->grids[k]->firstVector; theVector!= NULL; theVector=SUCCVC(theVector))
+    for (theVector=FIRSTVECTOR(GRID_ON_LEVEL(theMG,k)); theVector!= NULL; theVector=SUCCVC(theVector))
     {
       SETVNEW(theVector,0);
       SETVCNEW(theVector,0);
@@ -2649,7 +2646,7 @@ INT ClearVectorClasses (GRID *theGrid)
   VECTOR *theVector;
 
   /* reset class of each vector to 0 */
-  for (theVector=theGrid->firstVector; theVector!=NULL; theVector=SUCCVC(theVector))
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
     SETVCLASS(theVector,0);
 
   return(0);
@@ -2681,7 +2678,7 @@ INT PropagateVectorClasses (GRID *theGrid)
   MATRIX *theMatrix;
 
   /* set vector classes in the algebraic neighborhood to 2 */
-  for (theVector=theGrid->firstVector; theVector!=NULL; theVector=SUCCVC(theVector))
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
     if ((VCLASS(theVector)==3)&&(VSTART(theVector)!=NULL))
       for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
         if ((VCLASS(MDEST(theMatrix))<3)&&
@@ -2689,7 +2686,7 @@ INT PropagateVectorClasses (GRID *theGrid)
           SETVCLASS(MDEST(theMatrix),2);
 
   /* set vector classes in the algebraic neighborhood to 1 */
-  for (theVector=theGrid->firstVector; theVector!=NULL; theVector=SUCCVC(theVector))
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
     if ((VCLASS(theVector)==2)&&(VSTART(theVector)!=NULL))
       for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
         if ((VCLASS(MDEST(theMatrix))<2)&&
@@ -2726,7 +2723,7 @@ INT ClearNextVectorClasses (GRID *theGrid)
   VECTOR *theVector;
 
   /* reset class of each vector to 0 */
-  for (theVector=theGrid->firstVector; theVector!=NULL; theVector=SUCCVC(theVector))
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
     SETVNCLASS(theVector,0);
 
   /* now the refinement algorithm will initialize the class 3 vectors */
@@ -2813,7 +2810,7 @@ INT PropagateNextVectorClasses (GRID *theGrid)
   MATRIX *theMatrix;
 
   /* set vector classes in the algebraic neighborhood to 2 */
-  for (theVector=theGrid->firstVector; theVector!=NULL; theVector=SUCCVC(theVector))
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
     if ((VNCLASS(theVector)==3)&&(VSTART(theVector)!=NULL))
       for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
         if ((VNCLASS(MDEST(theMatrix))<3)
@@ -2821,7 +2818,7 @@ INT PropagateNextVectorClasses (GRID *theGrid)
           SETVNCLASS(MDEST(theMatrix),2);
 
   /* set vector classes in the algebraic neighborhood to 1 */
-  for (theVector=theGrid->firstVector; theVector!=NULL; theVector=SUCCVC(theVector))
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
     if ((VNCLASS(theVector)==2)&&(VSTART(theVector)!=NULL))
       for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
         if ((VNCLASS(MDEST(theMatrix))<2)
@@ -5813,9 +5810,9 @@ INT MoveVector (GRID *theGrid, VECTOR *moveVector, VECTOR *destVector, INT after
 
   /* take vector out of list */
   if (PREDVC(moveVector)!=NULL) SUCCVC(PREDVC(moveVector))      = SUCCVC(moveVector);
-  else theGrid->firstVector            = SUCCVC(moveVector);
+  else FIRSTVECTOR(theGrid)            = SUCCVC(moveVector);
   if (SUCCVC(moveVector)!=NULL) PREDVC(SUCCVC(moveVector))      = PREDVC(moveVector);
-  else theGrid->lastVector             = PREDVC(moveVector);
+  else LASTVECTOR(theGrid)             = PREDVC(moveVector);
 
   /* put it in list */
   if (destVector!=NULL)
@@ -5823,7 +5820,7 @@ INT MoveVector (GRID *theGrid, VECTOR *moveVector, VECTOR *destVector, INT after
     if (after)
     {
       if (SUCCVC(destVector)!=NULL) PREDVC(SUCCVC(destVector))      = moveVector;
-      else theGrid->lastVector             = moveVector;
+      else LASTVECTOR(theGrid)             = moveVector;
       SUCCVC(moveVector) = SUCCVC(destVector);
       PREDVC(moveVector) = destVector;
       SUCCVC(destVector) = moveVector;
@@ -5831,7 +5828,7 @@ INT MoveVector (GRID *theGrid, VECTOR *moveVector, VECTOR *destVector, INT after
     else
     {
       if (PREDVC(destVector)!=NULL) SUCCVC(PREDVC(destVector))      = moveVector;
-      else theGrid->firstVector            = moveVector;
+      else FIRSTVECTOR(theGrid)            = moveVector;
       PREDVC(moveVector) = PREDVC(destVector);
       SUCCVC(moveVector) = destVector;
       PREDVC(destVector) = moveVector;
@@ -5841,16 +5838,16 @@ INT MoveVector (GRID *theGrid, VECTOR *moveVector, VECTOR *destVector, INT after
   {
     if (after)
     {
-      SUCCVC(moveVector) = theGrid->firstVector;
+      SUCCVC(moveVector) = FIRSTVECTOR(theGrid);
       PREDVC(moveVector) = NULL;
-      theGrid->firstVector = moveVector;
+      FIRSTVECTOR(theGrid) = moveVector;
       if (SUCCVC(moveVector)!=NULL) PREDVC(SUCCVC(moveVector)) = moveVector;
     }
     else
     {
       SUCCVC(moveVector) = NULL;
-      PREDVC(moveVector) = theGrid->lastVector;
-      theGrid->lastVector = moveVector;
+      PREDVC(moveVector) = LASTVECTOR(theGrid);
+      LASTVECTOR(theGrid) = moveVector;
       if (PREDVC(moveVector)!=NULL) SUCCVC(PREDVC(moveVector)) = moveVector;
     }
   }
