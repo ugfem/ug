@@ -2728,13 +2728,13 @@ static INT SaveDomainCommand (INT argc, char **argv)
   }
 
   /* scan name */
-  if (sscanf(argv[0],expandfmt(CONCAT3(" save %",NAMELENSTR,"[ -~]")),Name)!=1)
+  if (sscanf(argv[0],expandfmt(CONCAT3(" savedomain %",NAMELENSTR,"[ -~]")),Name)!=1)
   {
     if (BVP_SetBVPDesc(MG_BVP(theMG),&BVPDesc)) return (CMDERRORCODE);
     strcpy(Name,BVPDesc.name);
   }
 
-  if (BVP_Save(MG_BVP(theMG),Name,argc,argv)) return (CMDERRORCODE);
+  if (BVP_Save(MG_BVP(theMG),Name,ENVITEM_NAME(theMG),MGHEAP(theMG),argc,argv)) return (CMDERRORCODE);
 
   return(OKCODE);
 }
