@@ -73,8 +73,8 @@
 /* if interpolation matrix is stored */
 #define __INTERPOLATION_MATRIX__
 
-/* if node-element list is used */
-#define __NODE_ELEMENT_LIST__
+/* if node-element list is used
+ #define __NODE_ELEMENT_LIST__ */
 
 /* if block vector descriptors are used
  #define __BLOCK_VECTOR_DESC__ */
