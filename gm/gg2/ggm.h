@@ -101,7 +101,7 @@ START_UGDIM_NAMESPACE
 
 
 struct frontcomp {
-  unsigned INT control;                 /* object identification, various flags */
+  UINT control;                 /* object identification, various flags */
   struct frontcomp *succfc,*predfc;      /* double linked list of front comps   */
   struct frontlist *myFL;                       /* pointer to my front list                             */
   NODE *frontnode;                                      /* ptr to corresponding front node              */
@@ -112,7 +112,7 @@ struct frontcomp {
 
 
 struct frontlist {
-  unsigned INT control;                 /* object identification, various flags */
+  UINT control;                 /* object identification, various flags */
   struct frontlist *succfl,*predfl;      /* double linked list of front lists   */
   GRID *myGrid;                                         /* pointer to my grid                                   */
   struct indepfrontlist *myIFL;         /* pointer to my indep. front list              */
@@ -124,7 +124,7 @@ struct frontlist {
 };
 
 struct indepfrontlist {
-  unsigned INT control;                                         /* object identification, various flags                 */
+  UINT control;                                         /* object identification, various flags                 */
   struct indepfrontlist *succifl,*predifl;              /* double linked list of independent front lists*/
   GRID *myGrid;                                                                 /* pointer to my grid                                                   */
   struct frontlist *startfl;                                            /* entry to front list                                                  */

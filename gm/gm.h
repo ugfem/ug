@@ -639,8 +639,8 @@ typedef struct {
 /****************************************************************************/
 
 /* data structure for BlockvectorDescription */
-typedef unsigned INT BVD_ENTRY_TYPE;    /* memory providing storage for level numbers */
-typedef unsigned INT BLOCKNUMBER;       /* valid numbers are 0..MAX_BV_NUMBER */
+typedef UINT BVD_ENTRY_TYPE;    /* memory providing storage for level numbers */
+typedef UINT BLOCKNUMBER;       /* valid numbers are 0..MAX_BV_NUMBER */
 typedef unsigned char BLOCKLEVEL;       /* valid levels are 0..MAX_BV_LEVEL */
 
 struct blockvector_description_format           /* describes how a struct of type
@@ -669,7 +669,7 @@ typedef struct blockvector_description BV_DESC;
 struct vector {
 
   /** \brief object identification, various flags */
-  unsigned INT control;
+  UINT control;
 
   /** \brief associated object */
   union geom_object *object;
@@ -683,10 +683,10 @@ struct vector {
   struct vector *pred,*succ;
 
   /** \brief ordering of unknowns                                 */
-  unsigned INT index;
+  UINT index;
 
   /** \brief used bitwise to skip unknowns                */
-  unsigned INT skip;
+  UINT skip;
 
   /** \brief implements matrix                                    */
   struct matrix *start;
@@ -711,11 +711,11 @@ typedef struct vector VECTOR;
 struct matrix {
 
   /** \brief object identification, various flags */
-  unsigned INT control;
+  UINT control;
 
 #ifdef __XXL_MSIZE__
   /** \brief for people needing large matrices    */
-  unsigned INT xxl_msize;
+  UINT xxl_msize;
 #endif
 
   /** \brief row list */
@@ -736,7 +736,7 @@ struct blockvector
 {
 
   /* object identification, various flags   */
-  unsigned INT control;
+  UINT control;
 
   /* logical blockvectornumber */
   BLOCKNUMBER number;
@@ -782,7 +782,7 @@ struct ivertex {
 
   /* variables */
   /** \brief Object identification, various flags */
-  unsigned INT control;
+  UINT control;
 
   /** \brief Unique id used for load/store */
   INT id;
@@ -822,7 +822,7 @@ struct bvertex {
 
   /* variables */
   /** \brief Object identification, various flags */
-  unsigned INT control;
+  UINT control;
 
   /** \brief Unique id used for load/store */
   INT id;
@@ -876,7 +876,7 @@ struct node {
 
   /* variables */
   /** \brief Object identification, various flags */
-  unsigned INT control;
+  UINT control;
 
   /** \brief Unique id used for load/store                */
   INT id;
@@ -917,7 +917,7 @@ struct link {
 
   /* variables */
   /** \brief object identification, various flags */
-  unsigned INT control;
+  UINT control;
 
   /** \brief ptr to next link                                     */
   struct link *next;
@@ -953,13 +953,13 @@ struct generic_element {            /* no difference between inner and bndel*/
   /* variables */
 
   /* object identification, various flags */
-  unsigned INT control;
+  UINT control;
 
   /* unique id used for load/store        */
   INT id;
 
   /* additional flags for elements        */
-  unsigned INT flag;
+  UINT flag;
 
   /* to store NodeOrder for hexahedrons   */
   INT property;
@@ -990,9 +990,9 @@ struct generic_element {            /* no difference between inner and bndel*/
 struct triangle {
 
   /* variables */
-  unsigned INT control;                         /* object identification, various flags */
+  UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
-  unsigned INT flag;                            /* additional flags for elements                */
+  UINT flag;                            /* additional flags for elements                */
   INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
@@ -1030,9 +1030,9 @@ struct triangle {
 struct quadrilateral {
 
   /* variables */
-  unsigned INT control;                         /* object identification, various flags */
+  UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
-  unsigned INT flag;                            /* additional flags for elements                */
+  UINT flag;                            /* additional flags for elements                */
   INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
@@ -1070,9 +1070,9 @@ struct quadrilateral {
 struct tetrahedron {
 
   /* variables */
-  unsigned INT control;                         /* object identification, various flags */
+  UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
-  unsigned INT flag;                            /* additional flags for elements                */
+  UINT flag;                            /* additional flags for elements                */
   INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
@@ -1111,9 +1111,9 @@ struct tetrahedron {
 struct pyramid {
 
   /* variables */
-  unsigned INT control;                         /* object identification, various flags */
+  UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
-  unsigned INT flag;                            /* additional flags for elements                */
+  UINT flag;                            /* additional flags for elements                */
   INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
@@ -1152,9 +1152,9 @@ struct pyramid {
 struct prism {
 
   /* variables */
-  unsigned INT control;                         /* object identification, various flags */
+  UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
-  unsigned INT flag;                            /* additional flags for elements                */
+  UINT flag;                            /* additional flags for elements                */
   INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
@@ -1193,9 +1193,9 @@ struct prism {
 struct hexahedron {
 
   /* variables */
-  unsigned INT control;                         /* object identification, various flags */
+  UINT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store                */
-  unsigned INT flag;                            /* additional flags for elements                */
+  UINT flag;                            /* additional flags for elements                */
   INT property;                                 /* we need more bits ...                                */
 
         #ifdef ModelP
@@ -1267,16 +1267,16 @@ union object_with_key {                                         /* objects that 
 
 typedef struct
 {
-  unsigned INT VecReserv[MAXVECTORS][MAX_NDOF_MOD_32];
-  unsigned INT MatReserv[MAXCONNECTIONS][MAX_NDOF_MOD_32];
-  unsigned INT VecConsistentStatus[MAXMATRICES][MAX_NDOF_MOD_32];       /* where used? */
-  unsigned INT VecCollectStatus[MAXMATRICES][MAX_NDOF_MOD_32];       /* where used? */
+  UINT VecReserv[MAXVECTORS][MAX_NDOF_MOD_32];
+  UINT MatReserv[MAXCONNECTIONS][MAX_NDOF_MOD_32];
+  UINT VecConsistentStatus[MAXMATRICES][MAX_NDOF_MOD_32];       /* where used? */
+  UINT VecCollectStatus[MAXMATRICES][MAX_NDOF_MOD_32];       /* where used? */
 } DATA_STATUS;
 
 struct grid {
 
   /* variables */
-  unsigned INT control;                         /* object identification, various flags */
+  UINT control;                         /* object identification, various flags */
   INT attribut;                                         /* level + 32; needed for controll word check not detecting HEAPFAULT   */
   INT status;                                           /* possible values see defines above    */
   INT level;                                                    /* level of that grid                                   */
@@ -1580,13 +1580,13 @@ typedef struct {
   char *name;
 
   /** \brief where in object is it ? */
-  unsigned INT offset_in_object;
+  UINT offset_in_object;
 
   /** \brief bitwise object ID */
   INT objt_used;
 
   /** \brief used bits */
-  unsigned INT used_mask;
+  UINT used_mask;
 
 } CONTROL_WORD;
 
@@ -1612,13 +1612,13 @@ typedef struct {
   INT objt_used;
 
   /** \brief copy from control word (faster)      */
-  unsigned INT offset_in_object;
+  UINT offset_in_object;
 
   /** \brief 1 where bits are used                        */
-  unsigned INT mask;
+  UINT mask;
 
   /** \brief 0 where bits are used                        */
-  unsigned INT xor_mask;
+  UINT xor_mask;
 
 } CONTROL_ENTRY;
 #endif
@@ -1638,7 +1638,7 @@ typedef struct {
 
 #else   /* _DEBUG_CW_ */
 
-        #define ControlWord(p,ce)  (((unsigned INT *)(p))[control_entries[ce].offset_in_object])
+        #define ControlWord(p,ce)  (((UINT *)(p))[control_entries[ce].offset_in_object])
 
         #ifndef __T3E__
         #define CW_READ(p,ce)      ((ControlWord(p,ce) & control_entries[ce].mask)>>control_entries[ce].offset_in_word)
@@ -1652,7 +1652,7 @@ typedef struct {
         #define CW_WRITE(p,ce,n)   ControlWord(p,ce) = (ControlWord(p,ce)&control_entries[ce].xor_mask)|(((n)<<control_entries[ce].offset_in_word)&control_entries[ce].mask)
 
 /* static control words */
-        #define StaticControlWord(p,t)            (((unsigned INT *)(p))[t ## OFFSET])
+        #define StaticControlWord(p,t)            (((UINT *)(p))[t ## OFFSET])
         #define StaticControlWordMask(s)          ((POW2(s ## LEN) - 1) << s ## SHIFT)
 
         #ifndef __T3E__
@@ -2317,7 +2317,7 @@ enum GM_OBJECTS {
 
 #define REF2TAG(n)                                      (reference2tag[n])
 
-#define CTRL(p)         (*((unsigned INT *)(p)))
+#define CTRL(p)         (*((UINT *)(p)))
 #define ID(p)           (((INT *)(p))[1])
 
 /****************************************************************************/
@@ -2930,7 +2930,7 @@ START_UGDIM_NAMESPACE
 /****************************************************************************/
 
 /* control word offset */
-#define MULTIGRID_STATUS_OFFSET           ((sizeof(ENVDIR))/sizeof(unsigned INT))
+#define MULTIGRID_STATUS_OFFSET           ((sizeof(ENVDIR))/sizeof(UINT))
 
 #define MGSTATUS(p)                     ((p)->status)
 #define RESETMGSTATUS(p)                {(p)->status=0; (p)->magic_cookie = (int)time(NULL); (p)->saved=0;}
@@ -3299,7 +3299,7 @@ INT             FreeControlEntry                (INT ce_id);
 void            ListCWofObject                  (const void *obj, INT offset);
 void            ListAllCWsOfObject              (const void *obj);
 void            ListAllCWsOfAllObjectTypes (PrintfProcPtr myprintf);
-unsigned INT ReadCW                                     (const void *obj, INT ce);
+UINT ReadCW                                     (const void *obj, INT ce);
 void            WriteCW                                 (void *obj, INT ce, INT n);
 void            ResetCEstatistics               (void);
 void            PrintCEstatistics               (void);

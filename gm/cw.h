@@ -55,13 +55,13 @@ typedef struct {
   char *name;
 
   /** \brief where in object is it ? */
-  unsigned INT offset_in_object;
+  UINT offset_in_object;
 
   /** \brief bitwise object ID */
   INT objt_used;
 
   /** \brief used bits */
-  unsigned INT used_mask;
+  UINT used_mask;
 
 } CONTROL_WORD;
 
@@ -87,13 +87,13 @@ typedef struct {
   INT objt_used;
 
   /** \brief copy from control word (faster)      */
-  unsigned INT offset_in_object;
+  UINT offset_in_object;
 
   /** \brief 1 where bits are used                        */
-  unsigned INT mask;
+  UINT mask;
 
   /** \brief 0 where bits are used                        */
-  unsigned INT xor_mask;
+  UINT xor_mask;
 
 } CONTROL_ENTRY;
 
