@@ -471,6 +471,8 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
       BndPList[ID(theNode)] = V_BNDP(MYVERTEX(theNode));
     }
   if (Write_PBndDesc (nbv,BndPList)) return (1);
+
+  /* release tmp mem */
   ReleaseTmpMem(theHeap);
 
   /* close file */
@@ -594,7 +596,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   if (BndPList==NULL)                                                                                                     {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (Read_PBndDesc (theBVP,theHeap,bd_general.nBndP,BndPList))           {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
 
-  /* create and insert coarse mesh */
+  /* create and insert coarse mesh: prepare */
   theMesh.nBndP = cg_general.nBndPoint;
   theMesh.theBndPs = BndPList;
   theMesh.nInnP = cg_general.nInnerPoint;
@@ -649,8 +651,11 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   Enusdp[1] = Element_nb_uniq_subdom;
   theMesh.nbElements = Enusdp;
 
-
+  /* insert coarse mesh */
   if (InsertMesh(theMG,&theMesh))                                                                         {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}
+
+  /* release tmp mem */
+  ReleaseTmpMem(theHeap);
 
   /* close file */
   if (CloseFile ())                                                                                                       {CloseFile (); DisposeMultiGrid(theMG); return (NULL);}

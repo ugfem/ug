@@ -51,8 +51,6 @@
 /****************************************************************************/
 
 #define MGIO_TITLE_LINE                 "####.sparse.mg.storage.format.####"
-#define MGIO_DATA_LINE                  "#########.data.following.#########"
-#define MGIO_SEP_LINE                   "##################################"
 
 #define MGIO_ASCII                                      0
 #define MGIO_BIN                                        1
@@ -131,7 +129,7 @@ static int ASCII_Read_mint (int n, int *intList)
   int i;
 
   for (i=0; i<n; i++)
-    if (fscanf(stream," %d",intList+i)!=1) return (1);
+    if (fscanf(stream,"%d ",intList+i)!=1) return (1);
   return (0);
 }
 
@@ -140,7 +138,7 @@ static int ASCII_Write_mint (int n, int *intList)
   int i;
 
   for (i=0; i<n; i++)
-    if (fprintf(stream," %d",intList[i])<0) return (1);
+    if (fprintf(stream,"%d ",intList[i])<0) return (1);
   return (0);
 }
 
@@ -150,7 +148,7 @@ static int ASCII_Read_mdouble (int n, double *doubleList)
   double dValue;
 
   for (i=0; i<n; i++)
-    if (fscanf(stream," %lf",doubleList+i)!=1) return (1);
+    if (fscanf(stream,"%lf ",doubleList+i)!=1) return (1);
   return (0);
 }
 
@@ -160,21 +158,19 @@ static int ASCII_Write_mdouble (int n, double *doubleList)
   double fValue;
 
   for (i=0; i<n; i++)
-    if (fprintf(stream," %lf",doubleList[i])<0) return (1);
+    if (fprintf(stream,"%lf ",doubleList[i])<0) return (1);
   return (0);
 }
 
 static int ASCII_Read_string (char *string)
 {
-  if (fscanf(stream,"%s",string)!=1) return (1);
-  if (fscanf(stream,"\n")!=0) return (1);
+  if (fscanf(stream,"%s ",string)!=1) return (1);
   return (0);
 }
 
 static int ASCII_Write_string (char *string)
 {
-  if (fprintf(stream,"%s",string)<0) return (1);
-  if (fprintf(stream,"\n")<0) return (1);
+  if (fprintf(stream,"%s ",string)<0) return (1);
   return (0);
 }
 
@@ -274,23 +270,10 @@ int Write_OpenFile (char *filename)
 
 int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
 {
-  if (ASCII_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_SEP_LINE)!=0) return (1);
+  /* head always in ACSII */
   if (ASCII_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_TITLE_LINE)!=0) return (1);
-  if (ASCII_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_SEP_LINE)!=0) return (1);
-  if (ASCII_Read_mint(6,intList)) return (1);
-  mg_general->mode                = intList[0];
-  mg_general->nLevel              = intList[1];
-  mg_general->nNode               = intList[2];
-  mg_general->nPoint              = intList[3];
-  mg_general->nElement    = intList[4];
-  mg_general->nHierElem   = intList[5];
-  if (ASCII_Read_string(mg_general->DomainName)) return (1);
-  if (ASCII_Read_string(mg_general->Formatname)) return (1);
   if (ASCII_Read_mint(1,intList)) return (1);
-  mg_general->VectorTypes = intList[0];
-  if (ASCII_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_SEP_LINE)!=0) return (1);
-  if (ASCII_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_DATA_LINE)!=0) return (1);
-  if (ASCII_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_SEP_LINE)!=0) return (1);
+  mg_general->mode                = intList[0];
 
   /* set the read functions */
   switch (mg_general->mode)
@@ -308,6 +291,17 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
   default :
     return (1);
   }
+
+  /* now special mode */
+  if ((*Read_string)(mg_general->DomainName)) return (1);
+  if ((*Read_string)(mg_general->Formatname)) return (1);
+  if ((*Read_mint)(6,intList)) return (1);
+  mg_general->nLevel              = intList[0];
+  mg_general->nNode               = intList[1];
+  mg_general->nPoint              = intList[2];
+  mg_general->nElement    = intList[3];
+  mg_general->nHierElem   = intList[4];
+  mg_general->VectorTypes = intList[5];
 
   return (0);
 }
@@ -336,23 +330,10 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
 
 int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
 {
-  if (ASCII_Write_string(MGIO_SEP_LINE)) return (1);
+  /* head always in ACSII */
   if (ASCII_Write_string(MGIO_TITLE_LINE)) return (1);
-  if (ASCII_Write_string(MGIO_SEP_LINE)) return (1);
   intList[0] = mg_general->mode;
-  intList[1] = mg_general->nLevel;
-  intList[2] = mg_general->nNode;
-  intList[3] = mg_general->nPoint;
-  intList[4] = mg_general->nElement;
-  intList[5] = mg_general->nHierElem;
-  if (ASCII_Write_mint(6,intList)) return (1);
-  if (ASCII_Write_string(mg_general->DomainName)) return (1);
-  if (ASCII_Write_string(mg_general->Formatname)) return (1);
-  intList[0] = mg_general->VectorTypes;
   if (ASCII_Write_mint(1,intList)) return (1);
-  if (ASCII_Write_string(MGIO_SEP_LINE)) return (1);
-  if (ASCII_Write_string(MGIO_DATA_LINE)) return (1);
-  if (ASCII_Write_string(MGIO_SEP_LINE)) return (1);
 
   /* set the write functions */
   switch (mg_general->mode)
@@ -370,6 +351,17 @@ int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
   default :
     return (1);
   }
+
+  /* now special mode */
+  if ((*Write_string)(mg_general->DomainName)) return (1);
+  if ((*Write_string)(mg_general->Formatname)) return (1);
+  intList[0] = mg_general->nLevel;
+  intList[1] = mg_general->nNode;
+  intList[2] = mg_general->nPoint;
+  intList[3] = mg_general->nElement;
+  intList[4] = mg_general->nHierElem;
+  intList[5] = mg_general->VectorTypes;
+  if ((*Write_mint)(6,intList)) return (1);
 
   return (0);
 }
