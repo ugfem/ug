@@ -347,6 +347,13 @@ static INT CheckNode (ELEMENT *theElement, NODE* theNode, INT i)
 		case (CORNER_NODE):
 			{
 				FatherNode = (NODE *)NFATHER(theNode);
+if (0)  /* this code is for special debugging (980204 s.l.) */
+				if (GID(theNode)==0x11011 && FatherNode!=NULL)
+				{
+					UserWriteF(PFMT " cornernode=" ID_FMTX " has father=" ID_FMTX "\n",
+						me,ID_PRTX(theNode),ID_PRTX(FatherNode));
+				}
+
 				if (FatherNode == NULL)
 				{
 					#ifdef ModelP
@@ -355,6 +362,21 @@ static INT CheckNode (ELEMENT *theElement, NODE* theNode, INT i)
 					#endif
 						UserWriteF(PFMT " ERROR cornernode=" ID_FMTX " has no father level=%d\n",
 							me,ID_PRTX(theNode),LEVEL(theNode));
+						UserWriteF(PFMT " elem=" EID_FMTX ,me,EID_PRTX(theElement));
+						if (EFATHER(theElement) != NULL)
+						{
+							INT i;
+							ELEMENT *theFather = EFATHER(theElement);
+
+							UserWriteF(" father=" EID_FMTX "\n",EID_PRTX(theFather));
+							for (i=0; i<CORNERS_OF_ELEM(theFather);i++)
+							{
+								UserWriteF("son[%d]=" ID_FMTX "\n",i,ID_PRTX(CORNER(theFather,i)));
+							}
+						}
+						else
+							UserWriteF(" father=NULL\n");
+
 						nerrors++;
 					#ifdef ModelP
 					}
@@ -375,7 +397,7 @@ static INT CheckNode (ELEMENT *theElement, NODE* theNode, INT i)
 					if (HEAPCHECK(FatherNode))
 					{
 						UserWriteF(PFMT "elem=" EID_FMTX " cornernode=%d NID=" ID_FMTX 
-							" has father pointer to ZOMBIE\n",me,EID_PRTX(theElement),i,ID_PRTX(theNode));
+							" has father pointer to ZOMBIE\n",me,EID_PRTX(theElement),ID_PRTX(theNode));
 						nerrors++;
 						break;
 					}
@@ -413,6 +435,11 @@ static INT CheckNode (ELEMENT *theElement, NODE* theNode, INT i)
 					#endif
 						UserWriteF(PFMT " ERROR midnode=" ID_FMTX " has no father level=%d\n",
 							me,ID_PRTX(theNode),LEVEL(theNode));
+						UserWriteF(PFMT " elem=" EID_FMTX ,me,EID_PRTX(theElement));
+						if (EFATHER(theElement) != NULL)
+							UserWriteF(" father=" EID_FMTX "\n",EID_PRTX(EFATHER(theElement)));
+						else
+							UserWriteF(" father=NULL\n");
 						nerrors++;
 					#ifdef ModelP
 					}
@@ -565,7 +592,7 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 }
 
 static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT *EdgeError,
-						 INT *NodeError, INT *ESonError, INT *NSonError)
+						 INT *NodeError, INT *ESonError, INT *NSonError, INT *errors)
 {
 	INT		i,j,k,l,n,nsons,bserror,nerrors;
 	NODE	*theNode,*theNode1;
@@ -589,8 +616,11 @@ PAR(
 
 	/* check level */
 	if (GLEVEL(theGrid) != LEVEL(theElement))
+	{
 		UserWriteF(PFMT "elem=" EID_FMTX " ERROR level=%2d but gridlevel=%2d\n",
 				me,EID_PRTX(theElement),LEVEL(theElement),LEVEL(theGrid));
+		nerrors++;
+	}
 
 	/* check side information */
 	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
@@ -605,6 +635,7 @@ PAR(
 								   "el =  " EID_FMTX ", side = %d, corner = %d, node = " ID_FMTX "\n",
 								   me,NSUBDOM(theNode),EID_PRTX(theElement),i,k,ID_PRTX(theNode));
 						bserror |= (1<<i);
+						nerrors++;
 					}
 				}
 				for (j=0; j<EDGES_OF_SIDE(theElement,i); j++) {
@@ -621,6 +652,7 @@ PAR(
 								   ID_PRTX(CORNER(theElement,CORNER_OF_EDGE(theElement,k,0))),
 								   ID_PRTX(CORNER(theElement,CORNER_OF_EDGE(theElement,k,1))));
 						bserror |= (1<<i);
+						nerrors++;
 					}
 				}
 			}
@@ -632,7 +664,10 @@ PAR(
 				if (NBELEM(NbElement,j) == theElement)
 					break;
 			if (j == SIDES_OF_ELEM(NbElement))
+			{
 				*SideError |= (1<<i);
+				nerrors++;
+			}
 			else
 			{
 				/* if this is a boundary side it has to be an inner boundary 
@@ -677,6 +712,7 @@ PAR(
 			{
 				UserWriteF(PFMT "Element has no ECLASS set, el =  " EID_FMTX "\n",
 						   me,EID_PRTX(theElement));
+				nerrors++;
 			}
 			
 			if (ECLASS(theElement)!=YELLOW_CLASS) 
@@ -722,6 +758,7 @@ PAR(
 						*SideError |= (1<<(i+2*MAX_SIDES_OF_ELEM));
 						UserWriteF(PFMT "no nb Element for inner boundary, el =  " EID_FMTX "\n",
 								   me,EID_PRTX(theElement));
+						nerrors++;
 					}
 					for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 					{
@@ -747,8 +784,11 @@ PAR(
 		if (theNode != NULL)
 			nerrors += CheckNode(theElement,theNode,i);
 		else
+		{
 			UserWriteF(PFMT "elem=" EID_FMTX " corner=%d nodeptr=NULL\n",
 				me,EID_PRTX(theElement),i);
+			nerrors++;
+		}
 	}
 
 	/* check edge information */
@@ -761,6 +801,7 @@ PAR(
 		{
 			UserWriteF(PFMT "elem=" EID_FMTX " edge=%d n0ptr=NULL or n1ptr=NULL\n",
 				me,EID_PRTX(theElement),i,theNode,theNode1);
+			nerrors++;
 			continue;
 		}
 
@@ -770,9 +811,12 @@ PAR(
 		if (theEdge != NULL)
 			nerrors += CheckEdge(theElement,theEdge,i);
 		else
+		{
 			UserWriteF(PFMT "elem=" EID_FMTX " edge=%d n0=" ID_FMTX " n1=" 
 				ID_FMTX " edgeptr=NULL\n",
 				me,EID_PRTX(theElement),i,ID_PRTX(theNode),ID_PRTX(theNode1));
+			nerrors++;
+		}
 	}
 	
 	/* check orientation */
@@ -817,6 +861,7 @@ if (0)
 					UserWriteF(PFMT "ELEM(" EID_FMTX ") ERROR MIDNODE=NULL"
 							   " for mid node[%d]=" ID_FMTX "\n",
 							   me,EID_PRTX(theFather),i,ID_PRTX(theNode));
+					nerrors++;
 					#endif
 				}
 			}
@@ -838,6 +883,8 @@ if (0)
 				")element is not in SonList NSONS=%d\n",
 				me,EID_PRTX(theElement),EID_PRTX(theFather),
 				NSONS(theFather));
+/* TODO: activate if NSONS is consistent */
+if (0)			nerrors++;
 		}
 	}
 	#ifdef ModelP
@@ -846,8 +893,11 @@ if (0)
 		if (LEVEL(theElement) > 0)
 		{
 			if (EMASTER(theElement))
+			{
 				UserWriteF(PFMT "ELEM(" EID_FMTX ") ERROR father=NULL\n",
 					me,EID_PRTX(theElement));
+				nerrors++;
+			}
 			else
 			{
 				CORNER_COORDINATES(theElement,n,x);
@@ -930,6 +980,8 @@ if (0)
 				UserWriteF(PFMT "ELEM(" EID_FMTX "): element has nsons=%d but "
 					" son[%d]=" EID_FMTX " exists\n", me,EID_PRTX(theElement),
 					NSONS(theElement),i,EID_PRTX(SonList[i]));
+/* TODO: activate if NSONS is consistent */
+if (0)			nerrors++;
 			}
 
 			if (SonList[i] == NULL)
@@ -937,6 +989,7 @@ if (0)
 				UserWriteF(PFMT "ELEM(" EID_FMTX "): element has nsons=%d but "
 					" son[%d]=NULL\n", me,EID_PRTX(theElement),nsons,i);
 				*ESonError |= (1<<i);
+				nerrors++;
 				continue;
 			}
 			if (EFATHER(SonList[i])!=theElement)
@@ -945,6 +998,7 @@ if (0)
 					" SonList[i]=" EID_FMTX "\n",
 					me,i,EID_PRTX(theElement),EID_PRTX(SonList[i]));
 				*ESonError |= (1<<i);
+				nerrors++;
 			}
 		}
 	}
@@ -952,8 +1006,11 @@ if (0)
 	if (bserror)
 		nerrors++;
 	if (nerrors > 0)
+	{
 		UserWriteF("ELEM(" EID_FMTX "): element has %d errors\n",
 			EID_PRTX(theElement),nerrors);
+		*errors = nerrors;
+	}	
 
 	if (*SideError || *EdgeError || *NodeError || *ESonError || *NSonError)
 		return (1);
@@ -984,7 +1041,7 @@ static INT CheckGeometry (GRID *theGrid)
 		 theElement=SUCCE(theElement))
 	{
 		if (CheckElement(theGrid,theElement,&SideError,&EdgeError,
-				&NodeError,&ESonError,&NSonError)==0) continue;
+				&NodeError,&ESonError,&NSonError,&errors)==0) continue;
 
 		UserWriteF("ELEM=" EID_FMTX "\n",EID_PRTX(theElement));
 
@@ -997,7 +1054,7 @@ static INT CheckGeometry (GRID *theGrid)
 				{
 					errors++;
 
-					UserWriteF("   SIDE %d=(",i);
+					UserWriteF("   SIDE[%d]=(",i);
 					for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 					{
 						UserWriteF(ID_FMTX,ID_PRTX(CORNER(theElement,
@@ -1014,7 +1071,7 @@ static INT CheckGeometry (GRID *theGrid)
 				{
 					errors++;
 
-					UserWrite("   SIDE(");
+					UserWriteF("   SIDE[%d]=(",i);
 					for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 					{
 						UserWriteF(ID_FMTX,ID_PRTX(CORNER(theElement,
@@ -1022,7 +1079,28 @@ static INT CheckGeometry (GRID *theGrid)
 
 						if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
 					}
-					UserWrite(") has no neighbour but element is IEOBJ\n");
+					UserWrite(") ERROR: has no neighbor but element is IEOBJ\n");
+
+		UserWriteF(" Eclass=%d Efather=" EID_FMTX "FECLASS=%d FREFINE=%d\n",
+			ECLASS(theElement),EID_PRTX(EFATHER(theElement)),
+			ECLASS(EFATHER(theElement)),REFINE(EFATHER(theElement)));
+{
+	INT i;
+	ELEMENT *theFather = EFATHER(theElement);
+	ELEMENT *theNeighbor;
+
+	for (i=0; i<SIDES_OF_ELEM(theFather); i++)
+	{
+		theNeighbor = NBELEM(theFather,i);
+		if (theNeighbor != NULL)
+		{
+			UserWriteF("NB[%d]=" EID_FMTX " NBREFINE=%d\n",
+				i,EID_PRTX(theNeighbor),REFINE(theNeighbor));
+			
+		}
+	}
+}
+
 				}
 
 				/* boundary failure */
@@ -1030,7 +1108,7 @@ static INT CheckGeometry (GRID *theGrid)
 				{
 					errors++;
 
-					UserWrite("   SIDE(");
+					UserWriteF("   SIDE[%d]=(",i);
 					for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 					{
 						UserWriteF(ID_FMTX,ID_PRTX(CORNER(theElement,
@@ -1038,7 +1116,7 @@ static INT CheckGeometry (GRID *theGrid)
 
 						if (j<CORNERS_OF_SIDE(theElement,i)-1) UserWrite(",");
 					}
-					UserWrite(") has no neighbour, element is BEOBJ "
+					UserWrite(") ERROR: has no neighbor, element is BEOBJ "
 						"but there is no SIDE\n");
 				}
 			}
