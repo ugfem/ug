@@ -11450,6 +11450,7 @@ static INT LB4Command (INT argc, char **argv)
    .n					machines
    .n					np
    .n					ui
+   .n					time
    .n                  pclib
    .n                  appl
    .   $<level>	- assign this level (if omitted display current level for the
@@ -11484,6 +11485,7 @@ static INT DebugCommand (INT argc, char **argv)
     else if (strcmp("machines",argv[1])==0) Debugmachines   = atoi(argv[2]);
     else if (strcmp("np",argv[1])==0) Debugnp             = atoi(argv[2]);
     else if (strcmp("ui",argv[1])==0) Debugui                 = atoi(argv[2]);
+    else if (strcmp("time",argv[1])==0) Debugtime               = atoi(argv[2]);
     else if (strcmp("pclib",argv[1])==0) Debugpclib              = atoi(argv[2]);
     else if (strcmp("appl",argv[1])==0) Debugappl               = atoi(argv[2]);
     else
@@ -11505,6 +11507,7 @@ static INT DebugCommand (INT argc, char **argv)
     else if (strcmp("machines",argv[1])==0) {module="machines";     l=Debugmachines;}
     else if (strcmp("np",argv[1])==0)           {module="np";           l=Debugnp;}
     else if (strcmp("ui",argv[1])==0)               {module="ui";           l=Debugui;}
+    else if (strcmp("time",argv[1])==0)             {module="time";         l=Debugtime;}
     else if (strcmp("pclib",argv[1])==0)    {module="pclib";        l=Debugpclib;}
     else if (strcmp("appl",argv[1])==0)             {module="appl";         l=Debugappl;}
     else
@@ -11551,6 +11554,51 @@ static INT RepErrCommand (INT argc, char **argv)
 
     for (i=0; i<rep_err_count; i++)
       UserWriteF("%2d: File: %20s, Line: %5d\n",i,rep_err_file[i],rep_err_line[i]);
+  }
+  return (OKCODE);
+}
+#endif
+
+
+/****************************************************************************/
+/*D
+   timing - prints time history
+
+   DESCRIPTION:
+   File, line and times are printed.
+
+   'timing'
+
+   KEYWORDS:
+   debug
+   D*/
+/****************************************************************************/
+
+#ifdef Debug
+static INT TimingCommand (INT argc, char **argv)
+{
+  INT i;
+  DOUBLE fac;
+
+  if (ReadArgvOption("r",argc,argv)) {
+    DEBUG_TIME_RESET;
+    return (OKCODE);
+  }
+  if (debug_time_count==0)
+    UserWrite("no timing\n");
+  else
+  {
+    UserWrite("timing:\n\n");
+
+        #ifdef ModelP
+    fac = 1.0;
+        #else
+    fac = 1.0 / ((double)CLOCKS_PER_SEC);
+        #endif
+    for (i=0; i<debug_time_count; i++)
+      UserWriteF("%2d: File: %20s, Line: %5d elapsed time %10.4f\n",
+                 i,debug_time_file[i],debug_time_line[i],
+                 (debug_time[i]-debug_time[0])*fac);
   }
   return (OKCODE);
 }
@@ -12522,6 +12570,7 @@ INT InitCommands ()
         #ifdef Debug
   if (CreateCommand("debug",                      DebugCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("reperr",             RepErrCommand                               )==NULL) return (__LINE__);
+  if (CreateCommand("timing",             TimingCommand                               )==NULL) return (__LINE__);
         #endif
   if (CreateCommand("showconfig",         ShowConfigCommand                           )==NULL) return (__LINE__);
   if (CreateCommand("lb",                         LBCommand                                               )==NULL) return (__LINE__);
