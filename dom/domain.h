@@ -59,12 +59,10 @@
 #define NON_PERIODIC                    2
 #define FREE                                    3
 
-
 /* some function formats */
 typedef INT (*ConfigProcPtr)(INT argc, char **argv);
 typedef INT (*CoeffProcPtr)(COORD *, DOUBLE *);
 typedef INT (*UserProcPtr)(DOUBLE *, DOUBLE *);
-
 
 /* macros for BVPDescriptor */
 #define BVPD_NAME(d)                    ((d).name)
@@ -74,6 +72,7 @@ typedef INT (*UserProcPtr)(DOUBLE *, DOUBLE *);
 #define BVPD_CONVEX(d)                  ((d).convex)
 #define BVPD_NPATCHES(d)                ((d).nPatches)
 #define BVPD_NSUBDOM(d)                 ((d).nSubDomains)
+#define BVPD_ID(d)                          ((d).id)
 #define BVPD_CONFIG(d)                  ((d).ConfigProc)
 #define BVPD_NCOEFFF(d)                 ((d).numOfCoeffFct)
 #define BVPD_NUSERF(d)                  ((d).numOfUserFct)
@@ -106,6 +105,7 @@ struct BVPDescriptor
   INT convex;
   INT nPatches;
   INT nSubDomains;
+  INT id;
 
   /* problem part */
   ConfigProcPtr ConfigProc;
@@ -136,14 +136,11 @@ typedef struct PatchDescriptor PATCH_DESC;
 typedef char BVP;
 typedef char PATCH;
 
-
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
 /*																			*/
 /****************************************************************************/
-
-
 
 /****************************************************************************/
 /*																			*/
