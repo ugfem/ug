@@ -4211,7 +4211,6 @@ static INT RefineCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   INT i,mode,rv;
-  char buffer[128];
   EVECTOR *theElemEvalDirection;
 
   theMG = currMG;
@@ -8819,7 +8818,8 @@ static INT NumProcCreateCommand (INT argc, char **argv)
   NP_TYPE *theNumProcType;
   NUM_PROC *theNumProc;
   FORMAT *theFormat;
-  char theNumProcTypeName[NAMESIZE], theFormatName[NAMESIZE], theNumProcName[NAMESIZE], buffer[128];
+  char theNumProcTypeName[NAMESIZE], theFormatName[NAMESIZE];
+  char theNumProcName[NAMESIZE];
   INT i, topt, fopt;
 
   /* get NumProc name */
