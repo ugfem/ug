@@ -648,6 +648,10 @@ static INT InterpolateCorrection (NP_TRANSFER *theNP, INT level,
   NP_STANDARD_TRANSFER *np;
 
   np = (NP_STANDARD_TRANSFER *) theNP;
+    #ifdef ModelP
+  if (l_ghostvector_consistent(GRID_ON_LEVEL(theNP->base.mg,level-1),from)
+      != NUM_OK) NP_RETURN(1,result[0]);
+        #endif
   result[0] = (*np->intcor)(GRID_ON_LEVEL(theNP->base.mg,level),to,from,damp);
     #ifdef ModelP
   if (np->meanvalue)
@@ -666,6 +670,10 @@ static INT InterpolateNewVectors (NP_TRANSFER *theNP,  INT fl, INT tl,
 
   np = (NP_STANDARD_TRANSFER *) theNP;
   for (i=fl+1; i<=tl; i++) {
+        #ifdef ModelP
+    if (l_ghostvector_consistent(GRID_ON_LEVEL(theNP->base.mg,i-1),x)
+        != NUM_OK) NP_RETURN(1,result[0]);
+        #endif
     result[0] = (*np->intnew)(GRID_ON_LEVEL(theNP->base.mg,i),x);
     if (result[0]) NP_RETURN(1,result[0]);
   }
@@ -682,6 +690,10 @@ static INT ProjectSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
   for (i=tl-1; i>=fl; i--) {
     result[0] = StandardProject(GRID_ON_LEVEL(theNP->base.mg,i),x,x);
     if (result[0]) NP_RETURN(1,result[0]);
+        #ifdef ModelP
+    if (l_ghostvector_project(GRID_ON_LEVEL(theNP->base.mg,i),x)
+        != NUM_OK) NP_RETURN(1,result[0]);
+        #endif
   }
 
   return(0);
