@@ -131,82 +131,6 @@ static int red_shift, green_shift, blue_shift;
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-/***************************************************************************/
-/*                                                                         */
-/*  Routine to rasterize lines via DDA algorithm:                          */
-/*                                                                         */
-/*  The XDrawLine routine in some X servers rasterizes a line drawn from   */
-/*  A to B sometimes into different pixels than a line from B to A. This   */
-/*  results in lines with varying width when drawing surroundings and      */
-/*  simply looks ugly.                                                     */
-/*                                                                         */
-/*  Affected are, for example, XFree86's XMach64 and XF68_FBDev X servers  */
-/*  when used with an ATI Rage Pro chip.                                   */
-/*                                                                         */
-/*  Define UGLY_LINES if you have this problem and want to cure it.        */
-/*                                                                         */
-/*  Limitations:                                                           */
-/*  - line style settings are ignored (not a great thing)                  */
-/*  - slower than XDrawLine (if you use a remote connection)               */
-/*                                                                         */
-/***************************************************************************/
-
-#ifdef UGLY_LINES
-
-static void MyDrawLine(Drawable d, GC gc, int x1, int y1, int x2, int y2)
-{
-  int x, y, t, dx, dy;
-  float X, Y, m;
-
-  dx = x2-x1;
-  dy = y2-y1;
-
-  if (dx == 0 && dy == 0) {
-    XDrawPoint(display, d, gc, x1, y1);
-    return;
-  }
-
-  if (ABS(dy) <= ABS(dx)) {
-    if (x1 > x2) {
-      SWAP(x1, x2, t);
-      SWAP(y1, y2, t);
-    }
-    m = (float)dy/(float)dx;
-    Y = (float)y1+0.5;
-    for (x = x1; x <= x2; x++) {
-      XDrawPoint(display, d, gc, x, (int)Y);
-      Y += m;
-    }
-  }
-  else {
-    if (y1 > y2) {
-      SWAP(x1, x2, t);
-      SWAP(y1, y2, t);
-    }
-    m = (float)dx/(float)dy;
-    X = (float)x1+0.5;
-    for (y = y1; y <= y2; y++) {
-      XDrawPoint(display, d, gc, (int)X, y);
-      X += m;
-    }
-  }
-}
-
-static void MyDrawLines(Drawable d, GC gc, XPoint *p, int n)
-{
-  int i;
-
-  for (i = 0; i < n-1; i++)
-    MyDrawLine(d, gc, p[i].x, p[i].y, p[i+1].x, p[i+1].y);
-}
-
-#define XDrawLine(d, w, c, x1, y1, x2, y2)   MyDrawLine(w, c, x1, y1, x2, y2)
-#define XDrawLines(d, w, c, p, n, m)         MyDrawLines(w, c, p, n)
-
-#endif /* UGLY_LINES */
-
-/*--------------------------------------------------------------------------*/
-
 unsigned long UGBlack (void)
 {
   return(ctab[X11OutputDevice->black].pixel);
@@ -231,9 +155,20 @@ static void IFMove (SHORT_POINT point)
 
 static void IFDraw (SHORT_POINT point)
 {
-  XDrawLine(display,gw->win,gw->gc,gw->x,gw->y,(int)point.x,(int)point.y);
+  int x1, y1, x2, y2;
+
+  /* always draw from left to right to get the same pixels */
+  if (point.x <= gw->x) {
+    x1 = point.x;  y1 = point.y;
+    x2 = gw->x;    y2 = gw->y;
+  }
+  else {
+    x1 = gw->x;    y1 = gw->y;
+    x2 = point.x;  y2 = point.y;
+  }
+  XDrawLine(display,gw->win,gw->gc,x1,y1,x2,y2);
   if (!gw->backing_store)
-    XDrawLine(display,gw->pixmap,gw->gc,gw->x,gw->y,(int)point.x,(int)point.y);
+    XDrawLine(display,gw->pixmap,gw->gc,x1,y1,x2,y2);
   gw->x = (int) point.x;
   gw->y = (int) point.y;
 }
