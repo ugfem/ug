@@ -700,7 +700,7 @@ INT GlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint,
   else
     return (4);
 
-  if ((-1.0-SMALL_C<=LocalCoord[0]) && (LocalCoord[0]<=1.0+SMALL_C))
+  if ((-1.0-10*SMALL_C<=LocalCoord[0]) && (LocalCoord[0]<=1.0+10*SMALL_C))
     return (0);
   else
     return (5);
