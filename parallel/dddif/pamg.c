@@ -285,7 +285,7 @@ INT pamgCheckDo( MULTIGRID *theMG, INT level )
   GRID *grid;
   size_t sizePerVector;
 
-  for( ; level >= BOTTOMLEVEL(theMG); level -- )
+  for( ; level > BOTTOMLEVEL(theMG); level -- )
   {
     grid = GRID_ON_LEVEL(theMG,level);
     UserWriteF( "pamgCheckDo: checking level %d:", level );
