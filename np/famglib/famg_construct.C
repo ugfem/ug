@@ -826,6 +826,50 @@ int FAMGGrid::SaveCoeffs(int i, int np, int *pa, double *coeff, double *coefft)
     return 0;
 }
 
+int FAMGNode::CheckPaList(FAMGGraph *graph)
+{
+    FAMGPaList *pl, *ppl, *opl;
+    int update, remove, z, j;
+    FAMGNode *node=graph->GetNode();
+
+    update = 0;
+    pl = palist;
+    ppl = NULL;
+    while(pl != NULL)
+    {
+        opl = pl;
+        pl = pl->GetNext();
+
+        remove = 0;
+        for(z = 0; z < opl->GetNp(); z++)
+        {
+            j = opl->GetPa(z);
+            if((node+j)->IsFGNode()) 
+            {
+                remove = 1;
+                break;
+            }
+        }
+        if(remove)
+        {
+            if(ppl != NULL) ppl->SetNext(pl);
+            else palist = pl;
+
+            // store opl in freelist
+            opl->SetNext(graph->GetFreePaList());
+            graph->SetFreePaList(opl);
+            update = 1;
+        }
+        else
+        {
+            ppl = opl;
+        }
+        
+    }
+
+    return update;
+}
+
 int FAMGNode::Eliminate(FAMGGrid *grid)
 {
     FAMGGraph *graph;
@@ -921,6 +965,14 @@ int FAMGGraph::EliminateNodes(FAMGGrid *gridptr)
             if(Insert(fgnode)) return 1;
             return 0;
         }
+        else if (fgnode->CheckPaList(this))
+        {
+            // CheckPaList is necessary for non structure
+            //   symmetric matrices. It is not nice and
+            //   should be avoided. 
+            fgnode->ComputeTotalWeight();
+            if(Insert(fgnode)) return 1;
+        }           
         else
         {
             if(fgnode->Eliminate(gridptr)) return 1;
@@ -945,7 +997,6 @@ int FAMGGraph::EliminateNodes(FAMGGrid *gridptr)
 
     return 0;
 }
-
 
 int FAMGGraph::Construct(FAMGGrid *gridptr)
 {

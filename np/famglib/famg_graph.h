@@ -228,6 +228,7 @@ public:
   void CountNewCG(class FAMGGraph *graph);
   int CountNewCG(FAMGGraph *graph, int j);
   void ComputeTotalWeight();
+  int CheckPaList(FAMGGraph *graph);
 private:
   int data;
   int id;
@@ -339,6 +340,8 @@ public:
   int Construct(class FAMGGrid *);
   int Construct2(class FAMGGrid *);
   int InitList();
+  FAMGPaList *GetFreePaList() const;
+  void SetFreePaList(FAMGPaList * ptr);
   void MarkFGNode(FAMGNode *);
   void MarkCGNode(FAMGNode *);
   void ClearPaList(FAMGPaList *);
@@ -381,6 +384,12 @@ inline FAMGList *FAMGGraph::GetFreeList() const {
 }
 inline void FAMGGraph::SetFreeList(FAMGList *pl) {
   freelist = pl;
+}
+inline FAMGPaList *FAMGGraph::GetFreePaList() const {
+  return freepalist;
+}
+inline void FAMGGraph::SetFreePaList(FAMGPaList * ptr) {
+  freepalist = ptr;
 }
 
 
