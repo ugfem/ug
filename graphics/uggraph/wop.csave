@@ -485,6 +485,12 @@ static COORD_POINT	LINE2D_Begin;
 static COORD_POINT	LINE2D_End;
 static COORD_POINT	LINE2D_BeginRot;
 static COORD_POINT	LINE2D_EndRot;
+static INT			LINE2D_nHit;
+static INT			LINE2D_YLOG;
+static DOUBLE		LINE2D_minCut;
+static DOUBLE		LINE2D_maxCut;
+static DOUBLE		LINE2D_xmin;
+static DOUBLE		LINE2D_xscl;
 
 /*---------- working variables of 'EW_EVector3D' ---------------------------*/
 #define RASTERPOINTS_MAX		200
@@ -1621,29 +1627,29 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 	DOUBLE determinante, c1, c2;
 	
 	/* check if one endpoint of line0 coincide with one endpoint of line1 */
-	if (ABS(P1.x - P3.x)<SMALL_C && ABS(P1.y - P3.y)<SMALL_C) return(0);
-	if (ABS(P1.x - P4.x)<SMALL_C && ABS(P1.y - P4.y)<SMALL_C) return(0);
-	if (ABS(P2.x - P3.x)<SMALL_C && ABS(P2.y - P3.y)<SMALL_C) return(0);
-	if (ABS(P2.x - P4.x)<SMALL_C && ABS(P2.y - P4.y)<SMALL_C) return(0);
+	if (ABS(P1.x - P3.x)<SMALL_D && ABS(P1.y - P3.y)<SMALL_D) return(0);
+	if (ABS(P1.x - P4.x)<SMALL_D && ABS(P1.y - P4.y)<SMALL_D) return(0);
+	if (ABS(P2.x - P3.x)<SMALL_D && ABS(P2.y - P3.y)<SMALL_D) return(0);
+	if (ABS(P2.x - P4.x)<SMALL_D && ABS(P2.y - P4.y)<SMALL_D) return(0);
 	
 	flags1 = 0;
-	if (ABS(P1.x - P2.x)<SMALL_C) flags1 |= 1;
-	if (ABS(P1.y - P2.y)<SMALL_C) flags1 |= 2;
-	if (ABS(P3.x - P4.x)<SMALL_C) flags1 |= 4;
-	if (ABS(P3.y - P4.y)<SMALL_C) flags1 |= 8;
+	if (ABS(P1.x - P2.x)<SMALL_D) flags1 |= 1;
+	if (ABS(P1.y - P2.y)<SMALL_D) flags1 |= 2;
+	if (ABS(P3.x - P4.x)<SMALL_D) flags1 |= 4;
+	if (ABS(P3.y - P4.y)<SMALL_D) flags1 |= 8;
 	
 	switch (flags1)
 	{
 		case(0):
 			/* the natural case */
 			determinante = (P2.y-P1.y)*(P4.x-P3.x) - (P2.x-P1.x)*(P4.y-P3.y);
-			if (ABS(determinante)<SMALL_C)
+			if (ABS(determinante)<SMALL_D)
 			{
 				/* the lines are parallel */
 				/* check if P1 (or P2) is on line1 */
 				c1 = (P1.y-P3.y)/(P4.y-P3.y);
 				c2 = (P2.y-P3.y)/(P4.y-P3.y);
-				if (ABS((1.0-c1)*P3.x + c1*P4.x - P1.x)<SMALL_C)
+				if (ABS((1.0-c1)*P3.x + c1*P4.x - P1.x)<SMALL_D)
 				{
 					if (((c1<=0.0) && (c2<=0.0)) || ((1.0<=c1) && (1.0<=c2)))
 						return (0);
@@ -1696,7 +1702,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 		case(3):
 			/* line0 is degenerated */
 			*beta = (P1.y-P3.y)/(P4.y-P3.y);
-			if (ABS((1.0-(*beta))*P3.x + (*beta)*P4.x - P1.x)<SMALL_C)
+			if (ABS((1.0-(*beta))*P3.x + (*beta)*P4.x - P1.x)<SMALL_D)
 				if (0.0<*beta && *beta<1.0)
 				{
 					*alpha = 0.5;
@@ -1712,7 +1718,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 			return (0);
 		case(5):
 			/* both lines are vertical */
-			if (ABS(P1.x - P3.x)<SMALL_C)
+			if (ABS(P1.x - P3.x)<SMALL_D)
 			{
 				c1 = (P1.y-P3.y)/(P4.y-P3.y);
 				if (0.0<c1 && c1<1.0)
@@ -1755,7 +1761,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 			return (0);
 		case(7):
 			/* line0 is degenerated, line1 is vertical */
-			if (ABS(P1.x - P3.x)<SMALL_C)
+			if (ABS(P1.x - P3.x)<SMALL_D)
 			{
 				*alpha = 0.5;
 				*beta  = (P1.y-P3.y)/(P4.y-P3.y);
@@ -1779,7 +1785,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 			return (0);
 		case(10):
 			/* both lines are horizontal */
-			if (ABS(P1.y - P3.y)<SMALL_C)
+			if (ABS(P1.y - P3.y)<SMALL_D)
 			{
 				c1 = (P1.x-P3.x)/(P4.x-P3.x);
 				if (0.0<c1 && c1<1.0)
@@ -1815,7 +1821,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 			return (0);
 		case(11):
 			/* line0 is degenerated, line1 is horizontal */
-			if (ABS(P1.y - P3.y)<SMALL_C)
+			if (ABS(P1.y - P3.y)<SMALL_D)
 			{
 				*alpha = 0.5;
 				*beta  = (P1.x-P3.x)/(P4.x-P3.x);
@@ -1826,7 +1832,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 		case(12):
 			/* line1 is degenerated */
 			*alpha = (P3.y-P1.y)/(P2.y-P1.y);
-			if (ABS((1.0-(*alpha))*P1.x + (*alpha)*P2.x - P3.x)<SMALL_C)
+			if (ABS((1.0-(*alpha))*P1.x + (*alpha)*P2.x - P3.x)<SMALL_D)
 				if (0.0<*alpha && *alpha<1.0)
 				{
 					*beta = 0.5;
@@ -1835,7 +1841,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 			return (0);
 		case(13):
 			/* line0 is vertical, lin1 is degenerated */
-			if (ABS(P1.x - P3.x)<SMALL_C)
+			if (ABS(P1.x - P3.x)<SMALL_D)
 			{
 				*alpha = (P3.y-P1.y)/(P2.y-P1.y);
 				*beta  = 0.5;
@@ -1845,7 +1851,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 			return (0);
 		case(14):
 			/* line0 is horizontal, lin1 is degenerated */
-			if (ABS(P1.y - P3.y)<SMALL_C)
+			if (ABS(P1.y - P3.y)<SMALL_D)
 			{
 				*alpha = (P3.x-P1.x)/(P2.x-P1.x);
 				*beta  = 0.5;
@@ -1855,7 +1861,7 @@ static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, CO
 			return (0);
 		case(15):
 			/* both lines are degenerated */
-			if (ABS(P1.x - P3.x)<SMALL_C && ABS(P1.y - P3.y)<SMALL_C)
+			if (ABS(P1.x - P3.x)<SMALL_D && ABS(P1.y - P3.y)<SMALL_D)
 			{
 				*alpha = 0.5;
 				*beta  = 0.5;
@@ -4371,7 +4377,7 @@ static INT DynInfo_Matrix (PICTURE *pic, INT tool, INT fct, const INT mp[2], cha
 	theGrid= GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
 	maxrow = NVEC(theGrid);
 	
-	V2_TRAFOM3_V2(mp,InvObsTrafo,cpt);
+	V2_TRAFOM3_V2(mp,VO_INVTRAFO(PIC_VO(pic)),cpt);
 	
 	cpt[0] = floor(cpt[0]) +1;
 	cpt[1] = floor(maxrow - cpt[1]) +1;
@@ -4960,9 +4966,9 @@ static INT DynInfo_Grid2D (PICTURE *pic, INT tool, INT fct, const INT mp[2], cha
 	}
 	
 	vo = PIC_VO(pic);
-	V2_TRAFOM3_V2(mp,InvObsTrafo,cpt);
+	V2_TRAFOM3_V2(mp,VO_INVTRAFO(PIC_VO(pic)),cpt);
 	
-	sprintf(text,"(%5.3e,%5.3e)",cpt[0],cpt[1]);
+	sprintf(text,"(% 5.2e,% 5.2e)",cpt[0],cpt[1]);
 	
 	return (0);
 }
@@ -5925,9 +5931,9 @@ static INT DynInfo_VecMat2D (PICTURE *pic, INT tool, INT fct, const INT mp[2], c
 	}
 	
 	vo = PIC_VO(pic);
-	V2_TRAFOM3_V2(mp,InvObsTrafo,cpt);
+	V2_TRAFOM3_V2(mp,VO_INVTRAFO(PIC_VO(pic)),cpt);
 	
-	sprintf(text,"(%5.3e,%5.3e)",cpt[0],cpt[1]);
+	sprintf(text,"(% 5.2e,% 5.2e)",cpt[0],cpt[1]);
 	
 	return (0);
 }
@@ -6892,7 +6898,9 @@ static INT EW_PostProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 	
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theLpo = &(PIC_PO(thePicture)->theLpo);
-
+	
+	theLpo->nHit = LINE2D_nHit;
+	
 	/* draw y-axis */
 	theDO = WOP_DrawingObject;
 	DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
@@ -6960,6 +6968,15 @@ static INT GEN_PostProcess_Line_FR (PICTURE *thePicture, WORK *theWork)
 {
 	struct FindRange_Work *FR_Work;
 	DOUBLE m,l;
+	OUTPUTDEVICE *theOD;
+	struct LinePlotObj2D *theLpo;
+	
+	theOD  = PIC_OUTPUTDEV(thePicture);
+	theLpo = &(PIC_PO(thePicture)->theLpo);
+	
+	theLpo->nHit = LINE2D_nHit;
+	theLpo->xmin = LINE2D_minCut;
+	theLpo->xmax = LINE2D_maxCut;
 	
 	FR_Work = W_FINDRANGE_WORK(theWork);
 	
@@ -7590,9 +7607,9 @@ static INT DynInfo_EScalar2D (PICTURE *pic, INT tool, INT fct, const INT mp[2], 
 	}
 	
 	vo = PIC_VO(pic);
-	V2_TRAFOM3_V2(mp,InvObsTrafo,cpt);
+	V2_TRAFOM3_V2(mp,VO_INVTRAFO(PIC_VO(pic)),cpt);
 	
-	sprintf(text,"(%5.3e,%5.3e)",cpt[0],cpt[1]);
+	sprintf(text,"(% 5.2e,% 5.2e)",cpt[0],cpt[1]);
 	
 	return (0);
 }
@@ -7692,7 +7709,9 @@ static INT EW_PreProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 	theLpo = &(PIC_PO(thePicture)->theLpo);
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theMG  = PO_MG(PIC_PO(thePicture));
-
+	
+	theLpo->nHit = 0;
+	
 	/* set value->color fct, eval fct */
 	if (theLpo->max - theLpo->min <= 0.0)
 		if (W_ID(theWork) != FINDRANGE_WORK)
@@ -7700,6 +7719,7 @@ static INT EW_PreProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 			UserWrite("maxValue has to be larger than minValue\n");
 			return (1);
 		}
+	
 	LINE2D_EvalFct	  = theLpo->EvalFct->EvalProc;
 	LINE2D_V2Y_factor = theLpo->aspectratio/(theLpo->max - theLpo->min);
 	LINE2D_V2Y_offset = - LINE2D_V2Y_factor * theLpo->min;
@@ -7709,6 +7729,22 @@ static INT EW_PreProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 	LINE2D_End.x	  = theLpo->right[0]; LINE2D_End.y	  	  = theLpo->right[1];
 	LINE2D_BeginRot.x = theLpo->left[0];  LINE2D_BeginRot.y	  = 1.0001*theLpo->left[1];
 	LINE2D_EndRot.x	  = theLpo->right[0]; LINE2D_EndRot.y	  = 1.0001*theLpo->right[1];
+	LINE2D_YLOG		  = theLpo->yLog;
+	
+	LINE2D_nHit		  = 0;
+	LINE2D_minCut	  = 1.0;
+	LINE2D_maxCut	  = 0.0;
+	
+	if (theLpo->xmin>=theLpo->xmax)
+	{
+		LINE2D_xmin	  = 0.0;
+		LINE2D_xscl	  = 1.0;
+	}
+	else
+	{
+		LINE2D_xmin	  = theLpo->xmin;
+		LINE2D_xscl	  = theLpo->xmax-theLpo->xmin;
+	}
 	
 	/* mark suface elements on boundary */
 	if (MarkElements_MGS_On_Line(theMG,0,CURRENTLEVEL(theMG),theLpo->left,theLpo->right)) return (1);
@@ -8320,11 +8356,11 @@ static INT EW_EScalar2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 
 static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
-	INT i, n, m, found;
+	INT i, n, m, found, s[MAX_CORNERS_OF_ELEM];
 	COORD_POINT P1, P2;
 	const DOUBLE *x[MAX_CORNERS_OF_ELEM];
 	DRAWINGOBJ *range;
-	DOUBLE alpha[MAX_CORNERS_OF_ELEM], beta;
+	DOUBLE alpha[MAX_CORNERS_OF_ELEM], beta[MAX_CORNERS_OF_ELEM],a;
 	DOUBLE_VECTOR LocalCoord, P[MAX_CORNERS_OF_ELEM], PEval, A, B;
 	DOUBLE v;
 	#ifdef __DO_HEAP_USED__
@@ -8345,10 +8381,11 @@ static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	for (i=0; i<n; i++)
 	{
 		P2.x=x[i][0]; P2.y=x[i][1];
-		if (CalcCrossingPoint(LINE2D_Begin,LINE2D_End,P1,P2,alpha+found,&beta))
+		if (CalcCrossingPoint(LINE2D_Begin,LINE2D_End,P1,P2,alpha+found,beta+found))
 		{
-			P[found][0] = (1.0-beta)*P1.x + beta*P2.x;
-			P[found][1] = (1.0-beta)*P1.y + beta*P2.y;
+			P[found][0] = (1.0-beta[found])*P1.x + beta[found]*P2.x;
+			P[found][1] = (1.0-beta[found])*P1.y + beta[found]*P2.y;
+			s[found] = i;
 			found++;
 		}
 		P1.x=P2.x; P1.y=P2.y;
@@ -8360,47 +8397,60 @@ static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		for (i=0; i<n; i++)
 		{
 			P2.x=x[i][0]; P2.y=x[i][1];
-			if (CalcCrossingPoint(LINE2D_BeginRot,LINE2D_EndRot,P1,P2,alpha+found,&beta))
+			if (CalcCrossingPoint(LINE2D_BeginRot,LINE2D_EndRot,P1,P2,alpha+found,beta+found))
 			{
-				P[found][0] = (1.0-beta)*P1.x + beta*P2.x;
-				P[found][1] = (1.0-beta)*P1.y + beta*P2.y;
+				P[found][0] = (1.0-beta[found])*P1.x + beta[found]*P2.x;
+				P[found][1] = (1.0-beta[found])*P1.y + beta[found]*P2.y;
+				s[found] = i;
 				found++;
 			}
 			P1.x=P2.x; P1.y=P2.y;
 		}
 	}
 	if (found==2)
-	{
-    	DO_2c(theDO) = DO_RANGE; DO_inc(theDO); range = theDO; DO_inc_n(theDO,2);
-		
-		if (UG_GlobalToLocal(n,x,P[0],LocalCoord)) return (1);
-		v = (*LINE2D_EvalFct)(theElement,x,LocalCoord);
-		LINE2D_minValue = MIN(LINE2D_minValue,v);	LINE2D_maxValue = MAX(LINE2D_maxValue,v);
-		A[0] = alpha[0];
-		A[1] = LINE2D_V2Y_factor*v + LINE2D_V2Y_offset;
-		m = POW(2,LINE2D_depth);
-		for (i=1; i<=m; i++)
+		/* check tolerance to not detect an element corner */
+		if (!((fabs(beta[0]-1.0)<SMALL_C) && (fabs(beta[2])<SMALL_C) && ((s[0]+1)%n==s[1])))
 		{
-			beta = (DOUBLE)i/(DOUBLE)m;
-			V2_LINCOMB(1.0-beta,P[0],beta,P[1],PEval)
-			if (UG_GlobalToLocal(n,x,PEval,LocalCoord)) return (1);
-			v = (*LINE2D_EvalFct)(theElement,x,LocalCoord);
-			LINE2D_minValue = MIN(LINE2D_minValue,v);	LINE2D_maxValue = MAX(LINE2D_maxValue,v);
-
-			B[0] = (1.0-beta)*alpha[0] + beta*alpha[1] ;
-			B[1] = LINE2D_V2Y_factor*v + LINE2D_V2Y_offset;
-			DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
-			DO_2l(theDO) = LINE2D_Color; DO_inc(theDO);
-			V2_COPY(A,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-			V2_COPY(B,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+			LINE2D_nHit++;
+			LINE2D_minCut = MIN(LINE2D_minCut,alpha[0]);
+			LINE2D_minCut = MIN(LINE2D_minCut,alpha[1]);
+			LINE2D_maxCut = MAX(LINE2D_maxCut,alpha[0]);
+			LINE2D_maxCut = MAX(LINE2D_maxCut,alpha[1]);
 			
-			V2_COPY(B,A)
-		}
-		
-		DO_2C(range) = LINE2D_minValue; DO_inc(range);
-		DO_2C(range) = LINE2D_maxValue;
+	    	DO_2c(theDO) = DO_RANGE; DO_inc(theDO); range = theDO; DO_inc_n(theDO,2);
+			
+			if (UG_GlobalToLocal(n,x,P[0],LocalCoord)) return (1);
+			v = (*LINE2D_EvalFct)(theElement,x,LocalCoord);
+			if (LINE2D_YLOG) v = log10(MAX(fabs(v),1e-100));
+			LINE2D_minValue = MIN(LINE2D_minValue,v);	LINE2D_maxValue = MAX(LINE2D_maxValue,v);
+			A[0] = alpha[0];
+			A[1] = LINE2D_V2Y_factor*v + LINE2D_V2Y_offset;
+			A[0] = (A[0]-LINE2D_xmin)/LINE2D_xscl;	/* transform x-interval to [0,1] */
+			m = POW(2,LINE2D_depth);
+			for (i=1; i<=m; i++)
+			{
+				a = (DOUBLE)i/(DOUBLE)m;
+				V2_LINCOMB(1.0-a,P[0],a,P[1],PEval)
+				if (UG_GlobalToLocal(n,x,PEval,LocalCoord)) return (1);
+				v = (*LINE2D_EvalFct)(theElement,x,LocalCoord);
+				if (LINE2D_YLOG) v = log10(MAX(fabs(v),1e-100));
+				LINE2D_minValue = MIN(LINE2D_minValue,v);	LINE2D_maxValue = MAX(LINE2D_maxValue,v);
 	
-	}
+				B[0] = (1.0-a)*alpha[0] + a*alpha[1] ;
+				B[1] = LINE2D_V2Y_factor*v + LINE2D_V2Y_offset;
+				B[0] = (B[0]-LINE2D_xmin)/LINE2D_xscl;	/* transform x-interval to [0,1] */
+				DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+				DO_2l(theDO) = LINE2D_Color; DO_inc(theDO);
+				V2_COPY(A,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+				V2_COPY(B,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+				
+				V2_COPY(B,A)
+			}
+			
+			DO_2C(range) = LINE2D_minValue; DO_inc(range);
+			DO_2C(range) = LINE2D_maxValue;
+		
+		}
 	DO_2c(theDO) = DO_NO_INST;
 
         #ifdef ModelP
@@ -8785,9 +8835,9 @@ static INT DynInfo_EVector2D (PICTURE *pic, INT tool, INT fct, const INT mp[2], 
 	}
 	
 	vo = PIC_VO(pic);
-	V2_TRAFOM3_V2(mp,InvObsTrafo,cpt);
+	V2_TRAFOM3_V2(mp,VO_INVTRAFO(PIC_VO(pic)),cpt);
 	
-	sprintf(text,"(%5.3e,%5.3e)",cpt[0],cpt[1]);
+	sprintf(text,"(% 5.2e,% 5.2e)",cpt[0],cpt[1]);
 	
 	return (0);
 }
@@ -9014,7 +9064,7 @@ static INT PRCornerOrder[6][3] = {{1,2,3},{0,2,4},{0,1,5},{0,4,5},{1,3,5},{2,3,4
 
 static INT CornerIndexPRI (INT NodeOrder, INT i[8], INT icon[8][4])
 {
-	INT k,j,n,c;
+	INT k,j,n;
 	
 	for (k=0; k<6; ++k)
 		i[k] = GETBITS(NodeOrder, 3*k+2);
@@ -15318,9 +15368,9 @@ INT InitWOP (void)
 	WORKPROCS *theWP;
 	ELEMWISEWORK *theEWW;
 	VECTORWISEWORK *theVWW;
-    EXTERNWORK *theEXW;
     RECURSIVEWORK *theREW;
 	#ifdef __TWODIM__
+	    EXTERNWORK *theEXW;
 		NODEWISEWORK *theNWW;
 	#endif
 	
