@@ -196,7 +196,20 @@ INT dnrm2x         (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
                     DOUBLE *a);
 
 
+/* blas level 2 (matrix operations) */
 
+INT dmatset        (MULTIGRID *mg, INT fl, INT tl, INT mode, MATDATA_DESC *M,
+                    DOUBLE a);
+INT dmatcopy       (MULTIGRID *mg, INT fl, INT tl, INT mode,
+                    MATDATA_DESC *M, MATDATA_DESC *N);
+INT dmatadd        (MULTIGRID *mg, INT fl, INT tl, INT mode,
+                    MATDATA_DESC *M, MATDATA_DESC *N);
+INT dmatmul        (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    MATDATA_DESC *M, VECDATA_DESC *y);
+INT dmatmul_add    (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    MATDATA_DESC *M, VECDATA_DESC *y);
+INT dmatmul_minus  (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+                    MATDATA_DESC *M, VECDATA_DESC *y);
 
 /* for compatibility only */
 
@@ -228,7 +241,23 @@ INT dnrm2x         (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
 #define a_eunorm(mg,fl,tl,x,xclass,a)      dnrm2x(mg,fl,tl,ALL_VECTORS,x,a)
 #define s_eunorm(mg,fl,tl,x,a)             dnrm2x(mg,fl,tl,ON_SURFACE,x,a)
 
+#define l_dmatset(g,M,a)                   dmatset(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,M,a)
+#define s_dmatset(mg,fl,tl,M,a)            dmatset(mg,fl,tl,ON_SURFACE,M,a)
 
+#define l_dmatcopy(g,M,N)                  dmatcopy(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,M,N)
+#define s_dmatcopy(mg,fl,tl,M,N)           dmatcopy(mg,fl,tl,ON_SURFACE,M,N)
+
+#define l_dmatadd(g,M,N)                   dmatadd(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,M,N)
+#define s_dmatadd(mg,fl,tl,M,N)            dmatadd(mg,fl,tl,ON_SURFACE,M,N)
+
+#define l_dmatmul_set(g,x,xc,M,y,yc)       dmatmul(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,M,y)
+#define s_dmatmul_set(mg,fl,tl,x,M,y,yc)   dmatmul(mg,fl,tl,ON_SURFACE,x,M,y)
+
+#define l_dmatmul(g,x,xc,M,y,yc)           dmatmul_add(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,M,y)
+#define s_dmatmul(mg,fl,tl,x,M,y,yc)       dmatmul_add(mg,fl,tl,ON_SURFACE,x,M,y)
+
+#define l_dmatmul_minus(g,x,xc,M,y,yc)     dmatmul_minus(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,M,y)
+#define s_dmatmul_minus(mg,fl,tl,x,M,y,yc) dmatmul_minus(mg,fl,tl,ON_SURFACE,x,M,y)
 
 /* old style **********************
 
@@ -259,6 +288,23 @@ INT dnrm2x         (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
    INT l_ddot_sv                (const GRID *g,						  const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv);
    INT s_ddot_sv                (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const VECDATA_DESC *y, DOUBLE *weight, DOUBLE *sv);
 
+   INT l_dmatset		(GRID *g,						const MATDATA_DESC *M, DOUBLE a);
+   INT s_dmatset		(MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M, DOUBLE a);
+
+   INT l_dmatcopy		(GRID *g,						const MATDATA_DESC *M1, const MATDATA_DESC *M2);
+   INT s_dmatcopy		(MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MATDATA_DESC *M2);
+
+   INT l_dmatadd		(GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2);
+
+   INT l_dmatmul		(GRID *g,						const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
+   INT s_dmatmul		(MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,			   const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
+
+   INT l_dmatmul_set	(GRID *g,						const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
+   INT s_dmatmul_set	(MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,			   const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
+
+   INT l_dmatmul_minus	(GRID *g,						const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
+   INT s_dmatmul_minus	(MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,			   const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
+
  **************************** old style */
 
 
@@ -273,10 +319,6 @@ INT l_dsetrandom        (GRID *g,                                               
 INT l_dsetrandom2       (GRID *g,                                               const VECDATA_DESC *x, INT xclass, DOUBLE from, DOUBLE to, INT skip);
 
 INT l_dsetfunc          (GRID *g,                                               const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFunc);
-
-INT l_dxdy                      (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
-INT a_dxdy                      (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
-INT s_dxdy                      (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const DOUBLE *a, const VECDATA_DESC *y);
 
 INT l_mean                      (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *sp);
 
@@ -333,22 +375,7 @@ INT l_daxpy_SB          (BLOCKVECTOR *theBV,                    const VECDATA_DE
 
 
 /* blas level 2 (matrix (vector) operations) */
-INT l_dmatset           (GRID *g,                                               const MATDATA_DESC *M, DOUBLE a);
-INT s_dmatset           (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M, DOUBLE a);
-
-INT l_dmatcopy          (GRID *g,                                               const MATDATA_DESC *M1, const MATDATA_DESC *M2);
-INT s_dmatcopy          (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MATDATA_DESC *M2);
-
 INT l_dmattranspose (GRID *g,                                           const MATDATA_DESC *M1, const MATDATA_DESC *M2);
-
-INT l_dmatadd           (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2);
-
-INT l_dmatmul           (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
-INT l_dmatmul_minus     (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
-INT l_dmatmul_set       (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
-INT s_dmatmul           (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
-INT s_dmatmul_minus     (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
-INT s_dmatmul_set       (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
 INT s_dtpmatmul_set     (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
 
 INT l_dtpmatmul         (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
