@@ -142,7 +142,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {2,NOOFNODE_CE,         VERTEX_CW,      NOOFNODE_SHIFT,         NOOFNODE_LEN    },
 
   {2,NODE_GEN,            NODE_CW,        GENERAL_SHIFT,          GENERAL_LEN             },
-  {2,CLASS_CE,            NODE_CW,        CLASS_SHIFT,            CLASS_LEN               },
+  {2,NSUBDOM_CE,          NODE_CW,        NSUBDOM_SHIFT,      NSUBDOM_LEN         },
   {2,NPROP_CE,            NODE_CW,        NPROP_SHIFT,            NPROP_LEN               },
   {2,MODIFIED_CE,         NODE_CW,        MODIFIED_SHIFT,         MODIFIED_LEN    },
   {2,NTYPE_CE,            NODE_CW,        NTYPE_SHIFT,            NTYPE_LEN               },

@@ -2553,11 +2553,16 @@ INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes,
 	for (i=0; i<nedges; i++)
 	{
 		#ifdef __TWODIM__
-		theEdge = GetEdge(NFATHER(SideNodes[i]),NFATHER(SideNodes[i+1]));
+	    ASSERT(OBJT(NFATHER(SideNodes[i])) == NDOBJ);
+	    ASSERT(OBJT(NFATHER(SideNodes[i+1])) == NDOBJ);
+		theEdge = GetEdge((NODE *)NFATHER(SideNodes[i]),
+						  (NODE *)NFATHER(SideNodes[i+1]));
 		#endif
 		#ifdef __THREEDIM__
-		theEdge = GetEdge(NFATHER(SideNodes[i]),
-						  NFATHER(SideNodes[(i+1)%nedges]));
+	    ASSERT(OBJT(NFATHER(SideNodes[i])) == NDOBJ);
+	    ASSERT(OBJT(NFATHER(SideNodes[(i+1)%nedges])) == NDOBJ);
+		theEdge = GetEdge((NODE *)NFATHER(SideNodes[i]),
+						  (NODE *)NFATHER(SideNodes[(i+1)%nedges]));
 		#endif
 		assert(theEdge != NULL);
 
@@ -4472,7 +4477,8 @@ static int RefineGrid (GRID *theGrid)
 	RESETGSTATUS(fineGrid,GRID_CHANGED);
 
 	/* refine elements */
-	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
+		 theElement=SUCCE(theElement))
 	{
 		#ifdef ModelP
 		INT prio = EPRIO(theElement);

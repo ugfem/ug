@@ -585,7 +585,6 @@ struct node {                                           /* level dependent part 
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
-  INT index;                                                    /* discrete coordinates for ordering	*/
 
         #ifdef ModelP
   DDD_HEADER ddd;
@@ -594,7 +593,8 @@ struct node {                                           /* level dependent part 
   /* pointers */
   struct node *pred,*succ;                      /* double linked list of nodes per level*/
   struct link *start;                           /* list of links						*/
-  struct node *father;                          /* node on coarser level (NULL if none) */
+  union geom_object *father;                    /* node or edge on coarser level
+                                                             (NULL if none) */
   struct node *son;                                     /* node on finer level (NULL if none)	*/
   union vertex *myvertex;                       /* corresponding vertex structure		*/
 
@@ -1612,8 +1612,7 @@ extern CONTROL_ENTRY
 /* NOOFNODE	 |9 -13 |*| | | | | |???									    */
 /*																			*/
 /* nodes:																	*/
-/* CLASS	 |0-2	| |*| | | | |class of node on current level                     */
-/* NCLASS	 |3-5	| |*| | | | |class of node on next level				*/
+/* NSUBDOM	 |0-3	| |*| | | | |subdomain id                                       */
 /* MODIFIED  |6         | |*| | | | |1 if node must be assembled				*/
 /* N_OUTFLOW |0-7	|														*/
 /* N_INFLOW  |8-15	|														*/
@@ -1790,11 +1789,11 @@ extern CONTROL_ENTRY
 
 #define NODE_GEN                                        28
 
-#define CLASS_CE                                        29
-#define CLASS_SHIFT                             0
-#define CLASS_LEN                                       3
-#define CLASS(p)                                        CW_READ_STATIC(p,CLASS_,NODE_)
-#define SETCLASS(p,n)                           CW_WRITE_STATIC(p,CLASS_,NODE_,n)
+#define NSUBDOM_CE                                      29
+#define NSUBDOM_SHIFT                           0
+#define NSUBDOM_LEN                                     3
+#define NSUBDOM(p)                                      CW_READ_STATIC(p,NSUBDOM_,NODE_)
+#define SETNSUBDOM(p,n)                         CW_WRITE_STATIC(p,NSUBDOM_,NODE_,n)
 
 #define MODIFIED_CE                             31
 #define MODIFIED_SHIFT                          6
@@ -1822,7 +1821,6 @@ extern CONTROL_ENTRY
 
 #define PREDN(p)        (p)->pred
 #define SUCCN(p)        (p)->succ
-#define INDEX(p)        (p)->index
 #define START(p)        (p)->start
 
 #define NFATHER(p)                      (p)->father

@@ -289,7 +289,7 @@ static INT CheckNode (ELEMENT *theElement, NODE* theNode, INT i)
 		case (CORNER_NODE):
 			if (LEVEL(theNode)>0)
 			{
-				FatherNode = NFATHER(theNode);
+				FatherNode = (NODE *)NFATHER(theNode);
 				if (FatherNode == NULL)
 				{
 					#ifdef ModelP

@@ -558,28 +558,9 @@ static INT GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side)
   case NDOBJ :
     nd = (NODE*)obj;
     v0 = MYVERTEX(nd);
-    if (OBJT(v0)==IVOBJ)
-    {
-      if (CORNERTYPE(nd) || (LEVEL(obj)==0))
-      {
-        /* get subdom info from first edge iff (coarse grid is complete when arriving here) */
-        if (START(nd)!=NULL)
-          ed = MYEDGE(START(nd));
-        else
-          /* NFATHER exists for corner nodes and already has edges */
-          ed = MYEDGE(START(NFATHER(nd)));
-
-        ASSERT(ed!=NULL);
-        subdom = EDSUBDOM(ed);
-      }
-      else
-      {
-        /* get subdom info from vertex father */
-        elem = VFATHER(v0);
-        ASSERT(elem!=NULL);
-        subdom = SUBDOMAIN(elem);
-      }
-      ASSERT(subdom>0);                                                 /* inner node ==> inner edge */
+    if (OBJT(v0)==IVOBJ) {
+      subdom = NSUBDOM(nd);
+      ASSERT(subdom>0);
       part = s2p[subdom];
     }
     else
@@ -679,7 +660,8 @@ static INT GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side)
    D*/
 /****************************************************************************/
 
-static INT CreateVectorInPart (GRID *theGrid, INT DomPart, INT VectorObjType, GEOM_OBJECT *object, VECTOR **vHandle)
+static INT CreateVectorInPart (GRID *theGrid, INT DomPart, INT VectorObjType,
+                               GEOM_OBJECT *object, VECTOR **vHandle)
 {
   MULTIGRID *theMG;
   VECTOR *pv;
@@ -768,13 +750,13 @@ INT CreateVector (GRID *theGrid, INT VectorObjType, GEOM_OBJECT *object, VECTOR 
 
   mg = MYMG(theGrid);
   part = GetDomainPart(BVPD_S2P_PTR(MG_BVPD(mg)),object,NOSIDE);
-  if (part<0)
+  if (part < 0)
     REP_ERR_RETURN(1);
-
-  if (CreateVectorInPart(theGrid,part,VectorObjType,object,vHandle))
-    REP_ERR_RETURN(1)
-    else
-      return (0);
+  if (CreateVectorInPart(theGrid,part,VectorObjType,object,vHandle)) {
+    REP_ERR_RETURN(1);
+  }
+  else
+    return (0);
 }
 
 INT CreateSideVector (GRID *theGrid, INT side, GEOM_OBJECT *object, VECTOR **vHandle)
@@ -1773,7 +1755,7 @@ MATRIX *GetOrderedMatrix (const VECTOR *FromVector, const VECTOR *ToVector)
 
   if (FromVector == ToVector)
     return(VSTART(ToVector));
-  else if (INDEX(FromVector) > INDEX(ToVector)) {
+  else if (VINDEX(FromVector) > VINDEX(ToVector)) {
     for (theMatrix=MNEXT(VSTART(FromVector));
          theMatrix!=NULL; theMatrix = MNEXT(theMatrix))
       if (MDEST(theMatrix)==ToVector)
@@ -2654,7 +2636,8 @@ INT GridCreateConnection (GRID *theGrid)
   }
 
   /* run over all elements with EBUILDCON true and build connections */
-  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
+       theElement=SUCCE(theElement))
     if (EBUILDCON(theElement))             /* this is the trigger ! */
       if (CreateConnectionsInNeighborhood(theGrid,theElement))
         RETURN (1);
@@ -2667,14 +2650,14 @@ INT GridCreateConnection (GRID *theGrid)
    CreateAlgebra - Creates the algebra for a grid
 
    SYNOPSIS:
-   INT CreateAlgrbra (GRID *theGrid);
+   INT CreateAlgebra (GRID *theGrid);
 
    PARAMETERS:
    .  theGrid - pointer to grid
 
    DESCRIPTION:
-   This function allocates VECTORs in all geometrical objects of the grid (where
-   described by format) and then calls 'GridCreateConnection'.
+   This function allocates VECTORs in all geometrical objects of the grid
+   (where described by format) and then calls 'GridCreateConnection'.
 
    RETURN VALUE:
    INT
@@ -4062,7 +4045,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
     GRID_UNLINK_VECTOR(theGrid,table[i]);
 
   for (i=0; i<entries; i++) {
-    INDEX(table[i]) = i;
+    VINDEX(table[i]) = i;
         #ifdef ModelP
     GRID_LINK_VECTOR(theGrid,table[i],PRIO(table[i]));
         #else
