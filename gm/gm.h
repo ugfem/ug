@@ -2341,5 +2341,6 @@ INT             RenumberMultiGrid               (MULTIGRID *theMG);
 INT                     OrderNodesInGrid                (GRID *theGrid, const INT *order, const INT *sign, INT AlsoOrderLinks);
 INT             PutAtEndOfList          (GRID *theGrid, INT cnt, ELEMENT **elemList);
 INT         MGSetVectorClasses      (MULTIGRID *theMG);
+INT             SetSubdomainIDfromBndInfo (MULTIGRID *theMG);
 
 #endif
