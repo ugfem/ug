@@ -3325,7 +3325,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
       if (BND_DATA(bp)==NULL)
         return (NULL);
 
-      if (BndPointGlobal((BNDP *)bp,BND_DATA(bp)))
+      if (BNDP_Global((BNDP *)bp,BND_DATA(bp)))
         return (NULL);
     }
     return((BNDP *)bp);
@@ -3347,20 +3347,27 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 
   if (!PATCH_IS_FIXED(currBVP->patches[bp->patch_id]))
   {
+    DOUBLE *x,*a,*b;
+
     /* store global coordinates */
     BND_DATA(bp) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
     if (BND_DATA(bp)==NULL)
       return (NULL);
 
-    if (BndPointGlobal((BNDP *)bp,BND_DATA(bp)))
-      return (NULL);
+    x = (DOUBLE*) BND_DATA(bp);
+    a = (DOUBLE*) BND_DATA(bp0);
+    b = (DOUBLE*) BND_DATA(bp1);
+    ASSERT(a!=NULL);
+    ASSERT(b!=NULL);
+    for (i=0; i<DIM; i++)
+      x[i] = a[i]*(1.0-lcoord) + b[i]*lcoord;
   }
 
   return((BNDP *)bp);
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_Move (BNDP *aBndP, DOUBLE global[])
+INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
 {
   BND_PS *ps;
   DOUBLE *pos;
@@ -3555,6 +3562,7 @@ INT BNDP_SaveBndP (BNDP *BndP)
   int iList[2];
   double dList[DIM-1];
 
+  /* TODO: save free boundary points */
   iList[0] = BND_PATCH_ID(BndP);
   iList[1] = BND_N(BndP);
   if (Bio_Write_mint(2,iList)) return (1);
@@ -3589,6 +3597,7 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
     for (j=0; j<DIM-1; j++)
       bp->local[i][j] = dList[j];
   }
+  /* TODO: load free boundary points properly */
   if (!PATCH_IS_FIXED(currBVP->patches[pid]))
   {
     /* store global coordinates */
