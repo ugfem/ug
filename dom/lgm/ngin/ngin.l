@@ -45,7 +45,7 @@ KEY_TEND        	;
 %%
 
 [ \t]+              ;
-[\n]                {noline++;}
+[\n\r]              {noline++;}
 {COMMENT}           ;
 {KEY_INT}			{yylval.ival=atol((const char *)yytext); return (INT_VALUE);}
 {KEY_DOUBLE}		{yylval.dval=strtod((const char *)yytext,NULL); return (DOUBLE_VALUE);}

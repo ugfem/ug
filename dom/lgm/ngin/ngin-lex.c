@@ -281,26 +281,26 @@ static void ng_fatal_error YY_PROTO(( ngconst char msg[] ));
 
 #define YY_NUM_RULES 14
 #define YY_END_OF_BUFFER 15
-static ngconst short int ng_accept[28] =
+static ngconst short int ng_accept[29] =
 {   0,
-    0,    0,   15,   13,    1,    2,    3,   13,   13,    4,
-    12,    7,   10,   11,    6,    9,    8,    1,    3,    0,
-    5,    5,    4,    0,    0,    5,    0} ;
+    0,    0,   15,   13,    1,    2,    2,    3,   13,   13,
+    4,   12,    7,   10,   11,    6,    9,    8,    1,    3,
+    0,    5,    5,    4,    0,    0,    5,    0} ;
 
 static ngconst int ng_ec[256] =
 {   0,
     1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
+    1,    1,    4,    1,    1,    1,    1,    1,    1,    1,
     1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-    1,    2,    1,    1,    4,    1,    1,    1,    1,    1,
-    1,    1,    5,    1,    6,    7,    1,    8,    8,    8,
-    8,    8,    8,    8,    8,    8,    8,    1,    9,    1,
-    1,    1,    1,    1,    1,   10,    1,    1,   11,   12,
-    1,    1,   13,    1,    1,   14,    1,    1,    1,    1,
-    1,    1,   15,    1,    1,    1,    1,    1,    1,    1,
+    1,    2,    1,    1,    5,    1,    1,    1,    1,    1,
+    1,    1,    6,    1,    7,    8,    1,    9,    9,    9,
+    9,    9,    9,    9,    9,    9,    9,    1,   10,    1,
+    1,    1,    1,    1,    1,   11,    1,    1,   12,   13,
+    1,    1,   14,    1,    1,   15,    1,    1,    1,    1,
+    1,    1,   16,    1,    1,    1,    1,    1,    1,    1,
     1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
 
-    16,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+    17,    1,    1,    1,    1,    1,    1,    1,    1,    1,
     1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
     1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
     1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -318,40 +318,42 @@ static ngconst int ng_ec[256] =
     1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
     1,    1,    1,    1,    1} ;
 
-static ngconst int ng_meta[17] =
+static ngconst int ng_meta[18] =
 {   0,
-    1,    1,    2,    1,    3,    3,    1,    4,    1,    1,
-    5,    1,    1,    1,    1,    5} ;
+    1,    1,    2,    1,    1,    3,    3,    1,    4,    1,
+    1,    5,    1,    1,    1,    1,    5} ;
 
-static ngconst short int ng_base[31] =
+static ngconst short int ng_base[32] =
 {   0,
-    0,    0,   41,   42,   38,   42,    0,   10,   31,   12,
-    42,   42,   42,   42,   42,   42,   42,   36,    0,   29,
-    14,   28,   16,   27,   26,   18,   42,   24,   26,   29} ;
+    0,    0,   42,   43,   39,   43,   43,    0,   10,   31,
+    12,   43,   43,   43,   43,   43,   43,   43,   37,    0,
+    29,   14,   28,   16,   27,   26,   18,   43,   25,   27,
+    30} ;
 
-static ngconst short int ng_def[31] =
+static ngconst short int ng_def[32] =
 {   0,
-    27,    1,   27,   27,   27,   27,   28,   27,   27,   27,
-    27,   27,   27,   27,   27,   27,   27,   27,   28,   27,
-    27,   29,   27,   30,   27,   27,    0,   27,   27,   27} ;
+    28,    1,   28,   28,   28,   28,   28,   29,   28,   28,
+    28,   28,   28,   28,   28,   28,   28,   28,   28,   29,
+    28,   28,   30,   28,   31,   28,   28,    0,   28,   28,
+    28} ;
 
-static ngconst short int ng_nxt[59] =
+static ngconst short int ng_nxt[61] =
 {   0,
-    4,    5,    6,    7,    4,    8,    9,   10,   11,   12,
-    13,   14,   15,   16,   17,    4,   20,   21,   20,   23,
-    20,   21,   20,   23,   19,   26,   19,   19,   19,   24,
-    24,   25,   25,   26,   26,   22,   22,   18,   22,   18,
-    27,    3,   27,   27,   27,   27,   27,   27,   27,   27,
-    27,   27,   27,   27,   27,   27,   27,   27} ;
+    4,    5,    6,    7,    8,    4,    9,   10,   11,   12,
+    13,   14,   15,   16,   17,   18,    4,   21,   22,   21,
+    24,   21,   22,   21,   24,   20,   27,   20,   20,   20,
+    25,   25,   26,   26,   27,   27,   23,   23,   19,   23,
+    19,   28,    3,   28,   28,   28,   28,   28,   28,   28,
+    28,   28,   28,   28,   28,   28,   28,   28,   28,   28} ;
 
-static ngconst short int ng_chk[59] =
+static ngconst short int ng_chk[61] =
 {   0,
     1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-    1,    1,    1,    1,    1,    1,    8,    8,   10,   10,
-    21,   21,   23,   23,   28,   26,   28,   28,   28,   29,
-    29,   30,   30,   25,   24,   22,   20,   18,    9,    5,
-    3,   27,   27,   27,   27,   27,   27,   27,   27,   27,
-    27,   27,   27,   27,   27,   27,   27,   27} ;
+    1,    1,    1,    1,    1,    1,    1,    9,    9,   11,
+    11,   22,   22,   24,   24,   29,   27,   29,   29,   29,
+    30,   30,   31,   31,   26,   25,   23,   21,   19,   10,
+    5,    3,   28,   28,   28,   28,   28,   28,   28,   28,
+    28,   28,   28,   28,   28,   28,   28,   28,   28,   28} ;
 
 static ng_state_type ng_last_accepting_state;
 static char *ng_last_accepting_cpos;
@@ -396,7 +398,7 @@ static int noline=1;
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
-#line 410 "lex.ng.c"
+#line 412 "lex.ng.c"
 
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -550,7 +552,7 @@ YY_DECL
 #line 45 "ngin.l"
 
 
-#line 564 "lex.ng.c"
+#line 566 "lex.ng.c"
 
   if ( ng_init )
   {
@@ -601,13 +603,13 @@ ng_match:
       while ( ng_chk[ng_base[ng_current_state] + ng_c] != ng_current_state )
       {
         ng_current_state = (int) ng_def[ng_current_state];
-        if ( ng_current_state >= 28 )
+        if ( ng_current_state >= 29 )
           ng_c = ng_meta[(unsigned int) ng_c];
       }
       ng_current_state = ng_nxt[ng_base[ng_current_state] + (unsigned int) ng_c];
       ++ng_cp;
     }
-    while ( ng_base[ng_current_state] != 42 );
+    while ( ng_base[ng_current_state] != 43 );
 
 ng_find_action:
     ng_act = ng_accept[ng_current_state];
@@ -703,7 +705,7 @@ do_action:      /* This label is used only to access EOF actions. */
 #line 61 "ngin.l"
       ECHO;
       YY_BREAK
-#line 717 "lex.ng.c"
+#line 719 "lex.ng.c"
     case YY_STATE_EOF(INITIAL) :
       ngterminate();
 
@@ -995,7 +997,7 @@ static ng_state_type ng_get_previous_state()
     while ( ng_chk[ng_base[ng_current_state] + ng_c] != ng_current_state )
     {
       ng_current_state = (int) ng_def[ng_current_state];
-      if ( ng_current_state >= 28 )
+      if ( ng_current_state >= 29 )
         ng_c = ng_meta[(unsigned int) ng_c];
     }
     ng_current_state = ng_nxt[ng_base[ng_current_state] + (unsigned int) ng_c];
@@ -1030,11 +1032,11 @@ ng_state_type ng_current_state;
   while ( ng_chk[ng_base[ng_current_state] + ng_c] != ng_current_state )
   {
     ng_current_state = (int) ng_def[ng_current_state];
-    if ( ng_current_state >= 28 )
+    if ( ng_current_state >= 29 )
       ng_c = ng_meta[(unsigned int) ng_c];
   }
   ng_current_state = ng_nxt[ng_base[ng_current_state] + (unsigned int) ng_c];
-  ng_is_jam = (ng_current_state == 27);
+  ng_is_jam = (ng_current_state == 28);
 
   return ng_is_jam ? 0 : ng_current_state;
 }

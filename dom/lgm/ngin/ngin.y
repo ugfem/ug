@@ -44,7 +44,7 @@ static NG_ELEMENT Elem;
 %union 
 {
 	/* put RCS string here in order to get it into yacc-generated header file
-	static char RCS_ID("$Header: /hosts/dom/cvs/df/gen/problems/dfcfg/dfcfg.y,v 1.5
+	static char RCS_ID("$Header: /home/cvs/UG/ug/dom/lgm/ngin/ngin.y,v 1.6
 	 1998/02/20 16:58:46 birken Exp $",UG_RCS_STRING);
 	*/
 
