@@ -80,7 +80,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    MG_GetCoeffFct - get function pointer
 
    SYNOPSIS:
-   CoeffProcPtr MG_GetCoeffFct (MULTIGRID *theMG, INT n);
+   CoeffProcPtr MG_GetCoeffFct (const MULTIGRID *theMG, INT n);
 
    PARAMETERS:
    .  theMG - pointer to a multigrid
@@ -97,10 +97,10 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-CoeffProcPtr MG_GetCoeffFct (MULTIGRID *theMG, INT n)
+CoeffProcPtr MG_GetCoeffFct (const MULTIGRID *theMG, INT n)
 {
-  BVP *myBVP;
-  BVP_DESC *BVP_desc;
+  const BVP *myBVP;
+  const BVP_DESC *BVP_desc;
   CoeffProcPtr cpp;
 
   myBVP = MG_BVP(theMG);
@@ -2231,49 +2231,64 @@ INT ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
    D*/
 /****************************************************************************/
 
-INT PrintVectorX (const GRID *g, const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf)
+static void PrintSingleVectorX (const VECTOR *v, const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf, INT *info)
 {
   char buffer[256];
-  const VECTOR *v;
   DOUBLE_VECTOR pos;
   INT comp,ncomp,i,j;
+
+  if (VCLASS(v) > vclass) return;
+  if (VNCLASS(v) > vnclass) return;
+  ncomp = VD_NCMPS_IN_TYPE(X,VTYPE(v));
+  if (ncomp == 0) return;
+  comp = VD_CMP_OF_TYPE(X,VTYPE(v),0);
+  /* Check if there is an object associated with the vector. */
+  i = 0;
+  if (VOBJECT(v) != NULL) {
+    VectorPosition(v,pos);
+    i += sprintf(buffer,"x=%5.2f y=%5.2f ",pos[0],pos[1]);
+    if (DIM == 3)
+      i += sprintf(buffer+i,"z=%5.2f ",pos[2]);
+  }
+  else {
+    *info = TRUE;
+    i += sprintf(buffer,"                ");
+    if (DIM == 3)
+      i += sprintf(buffer+i,"        ");
+  }
+  for (j=0; j<ncomp; j++)
+    i += sprintf(buffer+i,"u[%d]=%15.8lf ",j,VVALUE(v,comp+j));
+  i += sprintf(buffer+i,"   cl %d %d sk ",VCLASS(v),VNCLASS(v));
+  for (j=0; j<ncomp; j++)
+    i += sprintf(buffer+i,"%d ",((VECSKIP(v) & (1<<j))!=0));
+  i += sprintf(buffer+i,"n %d t %d o %d\n",VNEW(v),VTYPE(v),VOTYPE(v));
+  Printf(buffer);
+
+  if (Printf!=PrintDebug)
+    PRINTDEBUG(np,1,("%d: %s",me,buffer));
+
+  return;
+}
+
+INT PrintVectorListX (const VECTOR *vlist[], const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf)
+{
+  INT info=FALSE;
+
+  for (; *vlist!= NULL; ++vlist)
+    PrintSingleVectorX(*vlist,X,vclass,vnclass,Printf,&info);
+
+  if (info) Printf("NOTE: Geometrical information not available for some vectors.\n");
+
+  return(NUM_OK);
+}
+
+INT PrintVectorX (const GRID *g, const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf)
+{
+  const VECTOR *v;
   INT info=FALSE;
 
   for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
-  {
-    if (VCLASS(v) > vclass) continue;
-    if (VNCLASS(v) > vnclass) continue;
-    ncomp = VD_NCMPS_IN_TYPE(X,VTYPE(v));
-    if (ncomp == 0) continue;
-    comp = VD_CMP_OF_TYPE(X,VTYPE(v),0);
-    /* Check if there is an object associated with the vector. */
-    i = 0;
-    if (VOBJECT(v) != NULL) {
-      VectorPosition(v,pos);
-      i += sprintf(buffer,"x=%5.2f y=%5.2f ",pos[0],pos[1]);
-      if (DIM == 3)
-        i += sprintf(buffer+i,"z=%5.2f ",pos[2]);
-    }
-    else {
-      info = TRUE;
-      i += sprintf(buffer,"                ");
-      if (DIM == 3)
-        i += sprintf(buffer+i,"        ");
-    }
-    for (j=0; j<ncomp; j++)
-      i += sprintf(buffer+i,"u[%d]=%15.8lf ",j,VVALUE(v,comp+j));
-    i += sprintf(buffer+i,"   cl %d %d sk ",VCLASS(v),VNCLASS(v));
-    for (j=0; j<ncomp; j++)
-      i += sprintf(buffer+i,"%d ",((VECSKIP(v) & (1<<j))!=0));
-    i += sprintf(buffer+i,"n %d t %d o %d\n",VNEW(v),VTYPE(v),VOTYPE(v));
-    Printf(buffer);
-
-#ifdef Debug
-    if (Printf!=PrintDebug)
-      PRINTDEBUG(np,1,("%d: %s",me,buffer));
-#endif
-
-  }
+    PrintSingleVectorX(v,X,vclass,vnclass,Printf,&info);
 
   if (info) Printf("NOTE: Geometrical information not available for some vectors.\n");
 

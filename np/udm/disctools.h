@@ -112,7 +112,7 @@ typedef struct {
 /*                                                                          */
 /****************************************************************************/
 
-CoeffProcPtr MG_GetCoeffFct     (MULTIGRID *theMG, INT n);
+CoeffProcPtr MG_GetCoeffFct             (const MULTIGRID *theMG, INT n);
 UserProcPtr MG_GetUserFct       (MULTIGRID *theMG, INT n);
 INT GetElementVertices          (ELEMENT *theElement, DOUBLE **x);
 INT GetAllVectorsOfElementOfType(ELEMENT *theElement, VECTOR **vec,
@@ -194,6 +194,7 @@ INT ConvertMatrix                               (GRID *theGrid, HEAP *theHeap, I
                                                  MATDATA_DESC *A, INT symmetric,
                                                  int *pn, int **pia, int **pja, double **pa);
 INT PrintVector                                 (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass);
+INT PrintVectorListX                    (const VECTOR *vlist[], const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf);
 INT PrintVectorX                                (const GRID *g, const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf);
 INT PrintSVector                                (MULTIGRID *mg, VECDATA_DESC *X);
 INT PrintMatrix                                 (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass);
