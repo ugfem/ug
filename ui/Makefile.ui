@@ -10,7 +10,7 @@
 include ../ug.conf
 
 OBJECTS = uginterface.o initui.o cmdint.o cmdline.o \
-		  commands.o helpmsg.o avs.o tecplot.o teti.o
+		  commands.o helpmsg.o avs.o tecplot.o 
 
 $(UG_LIB) : $(OBJECTS) Makefile.ui
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
