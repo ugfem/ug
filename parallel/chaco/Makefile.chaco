@@ -1,0 +1,139 @@
+##############################################################################
+#                                                                            #
+#   Makefile for parallel ug version                                         #
+#                                                                            #
+#   created 10 Jan 1994                                                      #
+#                                                                            #
+##############################################################################
+
+
+# ARCHDIR has to be one of: INDIGO, PARAGON, PARIX, PVM, KSR
+include ../../ug.conf
+
+# architecture-dependent makefile entries
+#include ../$(ARCHDIR)/mk.$(ARCHDIR)
+
+DEST_DIR = 	../../lib
+DEST=		${DEST_DIR}/libcp.a
+
+# main/main.c is not compiled and linked */
+# util/smalloc.c is not compiled and linked */
+# util/nrerror.c util/randomize.c util/smalloc.c util/scadd.c 
+FILES.c=	main/interface.c User_params.c \
+		main/balance.c main/divide.c \
+		main/recurse.c main/timer_vars.c \
+		input/check_input.c input/input.c input/input_geom.c \
+		input/input_graph.c input/reflect_in.c \
+		graph/check_graph.c graph/free_graph.c \
+		graph/reformat.c graph/subgraph.c \
+		inertial/eigenvec2.c inertial/eigenvec3.c inertial/inertial.c \
+		inertial/inertial1d.c inertial/inertial2d.c \
+		inertial/inertial3d.c inertial/make_subgeom.c \
+		klspiff/buckets.c klspiff/bilistops.c klspiff/coarsen_kl.c \
+		klspiff/coarsen1_kl.c klspiff/kl_init.c klspiff/kl_output.c \
+		klspiff/klspiff.c klspiff/make_kl_list.c \
+		klspiff/makecgraph_k.c klspiff/nway_kl.c \
+		coarsen/adjcewgts.c coarsen/coarsen.c coarsen/coarsen1.c \
+		coarsen/countcedges.c coarsen/interpolate.c \
+		coarsen/makecgraph.c coarsen/makecewgts.c coarsen/makev2cv.c \
+		coarsen/maxmatch.c coarsen/RQI.c coarsen/unmerge.c \
+		connect/add_edges.c connect/connected.c connect/find_edges.c \
+		eigen/bisect.c eigen/checkeig.c eigen/checkorth.c  \
+		eigen/eigensolve.c eigen/get_ritzvals.c eigen/lanczos_IO.c \
+		eigen/lanczos_FO.c eigen/lanczos_SO.c eigen/lanczos_SO_n.c \
+		eigen/lanpause.c eigen/makeorthlnk.c eigen/mkscanlist.c \
+		eigen/orthogonaliz.c eigen/orthogvec.c eigen/orthog1.c \
+		eigen/ql.c eigen/scanmax.c eigen/scanmin.c \
+		eigen/solistout.c eigen/sorthog.c eigen/splarax.c \
+		eigen/sturmcnt.c eigen/Tevec.c \
+		symmlq/aprod.c symmlq/msolve.c symmlq/pow_dd.c \
+		symmlq/symmlq.c symmlq/symmlqblas.c \
+		optimize/determinant.c optimize/func2d.c \
+		optimize/func3d.c optimize/opt2d.c optimize/opt3d.c \
+		assign/assign.c assign/mapper.c assign/median.c \
+		assign/rec_median.c assign/rotate.c assign/y2x.c \
+		bpmatch/checkbp.c bpmatch/inits2d.c bpmatch/inits3d.c \
+		bpmatch/genvals2d.c bpmatch/genvals3d.c bpmatch/map2d.c \
+		bpmatch/map3d.c bpmatch/mergesort.c bpmatch/movevtxs.c \
+		bpmatch/sorts2d.c bpmatch/sorts3d.c \
+		util/affirm.c util/array_alloc2.c util/bit_reverse.c \
+		util/checkpnt.c util/cpvec.c util/dot.c util/doubleout.c \
+		util/input_int.c util/gray.c util/machine_para.c \
+		util/makevwsqrt.c util/mkvec.c util/norm.c util/normalize.c \
+		util/nrerror.c util/randomize.c util/smalloc.c util/scadd.c \
+		util/scale.c util/seconds.c util/setvec.c util/shell_sort.c \
+		util/tri_prod.c util/true_or_fals.c util/update.c \
+		util/vecout.c util/vecran.c util/vecscale.c \
+		misc/assign_out.c misc/count.c misc/countup.c misc/array.c\
+		misc/find_maxdeg.c misc/make_maps.c misc/make_subgoal.c \
+		misc/merge_assign.c misc/perturb.c misc/simple_part.c \
+		lb4.c
+
+FILES.o=	$(FILES.c:.c=.o) 
+
+
+${DEST}: User_params.o lb4.o Makefile.chaco ASSIGN BPMATCH COARSEN CONNECT EIGEN GRAPH \
+         INERTIAL INPUT KLSPIFF MAIN MISC OPTIMIZE SYMMLQ UTIL
+		 $(ARCH_AR) $(ARCH_ARFLAGS) $(DEST) $(FILES.o)
+
+lint:
+		lint ${FILES.c} -lm
+
+alint:
+		alint ${FILES.c} -lm
+
+# local C compiler flags
+LCFLAGS = -I../include
+
+User_params.o: User_params.c Makefile.chaco 
+		${ARCH_CC} $(UG_CFLAGS) ${LCFLAGS} -c User_params.c
+
+lb4.o: lb4.c Makefile.chaco 
+		${ARCH_CC} $(UG_CFLAGS) ${LCFLAGS} -c lb4.c
+
+ASSIGN:
+	cd assign; make; cd ..;
+
+BPMATCH:
+	cd bpmatch; make; cd ..;
+
+COARSEN:
+	cd coarsen; make; cd ..;
+
+CONNECT:
+	cd connect; make; cd ..;
+
+EIGEN:
+	cd eigen; make; cd ..;
+
+GRAPH:
+	cd graph; make; cd ..;
+
+INERTIAL:
+	cd inertial; make; cd ..;
+
+INPUT:
+	cd input; make; cd ..;
+
+KLSPIFF:
+	cd klspiff; make; cd ..;
+
+MAIN:
+	cd main; make; cd ..;
+
+MISC:
+	cd misc; make; cd ..;
+
+OPTIMIZE:
+	cd optimize; make; cd ..;
+
+SYMMLQ:
+	cd symmlq; make; cd ..;
+
+UTIL:
+	cd util; make; cd ..;
+
+clean:
+	rm -f *.o $(DEST)
+	rm -f */*.o
+

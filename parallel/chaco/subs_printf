@@ -1,0 +1,7 @@
+for i
+	do 
+		sed 's/[^a-zA-Z0-9_]printf(.*);/&UserWrite(buf);}/g' $i > tmp
+		sed 's/[^a-zA-Z0-9_]printf(/{char buf[150]; sprintf(buf,/g' tmp > $i
+		rm tmp
+	done
+		

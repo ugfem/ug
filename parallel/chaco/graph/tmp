@@ -1,0 +1,454 @@
+%!  PostScript Source Code
+%
+%% Description: PostScript prolog for a2ps program.
+%% Copyright (c) 1990, Miguel Santana, miguel@imag.imag.fr
+%% a2ps 4.0
+%%EndComments
+
+/$a2psdict 100 dict def
+$a2psdict begin
+
+% General macros.
+/xdef {exch def} bind def
+/getfont {exch findfont exch scalefont} bind def
+
+% Create Courier backspace font
+/backspacefont {
+    /Courier findfont dup length dict begin
+	{ %forall
+	    1 index /FID eq { pop pop } { def } ifelse
+	} forall
+	currentdict /UniqueID known { %if
+	    /UniqueID UniqueID 16#800000 xor def
+	} if
+	CharStrings length 1 add dict begin
+	    CharStrings { def } forall
+	    /backspace { -600 0 0 0 0 0 setcachedevice } bind def
+	    currentdict
+	end
+	/CharStrings exch def
+	/Encoding Encoding 256 array copy def
+	Encoding 8 /backspace put
+	currentdict
+    end
+    definefont pop
+} bind def
+
+% FUNCTIONS
+
+% Function newfile: Initialize file printing.
+/newfile
+{ /filenm xdef
+  /filenmwidth filenm stringwidth pop def
+  /filenmfont
+       filenmwidth filenmroom gt
+       {
+	       filenmfontname
+	       filenmfontsize filenmroom mul filenmwidth div
+	     getfont
+       }
+       { stdfilenmfont }
+     ifelse
+  def
+} bind def
+
+% Function header: prints page header. no page and
+% sheetside are passed as arguments.
+/header
+  { upperx 1 index get  uppery headersize sub 1 add  moveto
+    datefont setfont
+    gsave
+      upperx 1 index get uppery moveto pop
+      0 headersize 2 div neg rmoveto 
+      headersize setlinewidth
+      0.85 setgray
+      pagewidth 0 rlineto stroke
+    grestore
+    gsave
+      datefontsize headermargin rmoveto
+      date show				% date/hour
+    grestore
+    gsave
+      pnum cvs pop				% page pop up
+        pagewidth (Page 999) stringwidth pop sub
+        headermargin
+	  rmoveto
+      (Page ) show pnum show		% page number
+    grestore
+    empty pnum copy pop
+    gsave
+      filenmfont setfont
+         filenmroom filenm stringwidth pop sub 2 div datewidth add
+          bodymargin 2 mul 
+        add 
+        headermargin
+      rmoveto
+        filenm show			% file name
+      grestore
+    } bind def
+
+% Function border: prints border page. Use sheetside as arg
+/border 
+{ upperx 1 index get uppery moveto pop
+  gsave				% print four sides
+    0.7 setlinewidth		% of the square
+    pagewidth 0 rlineto
+    0 pageheight neg rlineto
+    pagewidth neg 0 rlineto
+    closepath stroke
+  grestore
+} bind def
+
+% Function hborder: completes border of the header.
+/hborder 
+{ gsave
+	0.7 setlinewidth
+	0 headersize neg rmoveto
+	pagewidth 0 rlineto
+	stroke
+  grestore
+} bind def
+
+% Function sheetnumber: prints the sheet number.
+/sheetnumber
+    { sheetnumberx sheetnumbery moveto
+      datefont setfont
+      pnum cvs
+	  dup stringwidth pop (0) stringwidth pop sub neg 0 rmoveto show
+      empty pnum copy pop
+    } bind def
+
+% Function currentdate: prints the current date.
+/currentdate
+    { datex datey moveto
+      bodyfont setfont
+      (Date: ) show
+      currdate show
+    } bind def
+
+% Function s: print a source line
+/s  { show
+      /y0 y0 bodyfontsize sub def
+      x0 y0 moveto
+    } bind def
+
+% Functions b and st: change to bold or standard font
+/b  { show
+      boldfont setfont
+    } bind def
+/st { show
+      bodyfont setfont
+    } bind def
+
+% Strings used to make easy printing numbers
+/pnum 12 string def
+/empty 12 string def
+
+% Global initializations
+
+/CourierBack backspacefont
+/filenmfontname /Helvetica-Bold def
+/inch {72 mul} bind def
+
+% Initialize page description variables.
+/x0 0 def
+/y0 0 def
+/sheetheight 11.64 inch def
+/sheetwidth 8.27 inch def
+/margin 1.2 inch def
+/rightmargin margin 3 div def
+/leftmargin margin 2 mul 3 div def
+/twinfiles false def
+/date () def
+/currdate (Mar 13 1994 15:55:03) def
+%%EndProlog
+
+/docsave save def
+/landscape true def
+/twinpage true def
+% Character size for fonts.
+/filenmfontsize 11 def
+/datefontsize filenmfontsize 0.8 mul def
+/datefont /Helvetica datefontsize getfont def
+/datewidth datefont setfont currdate stringwidth pop def
+/stdfilenmfont filenmfontname filenmfontsize getfont def
+/headermargin filenmfontsize 0.25 mul def
+/headersize 0.22 inch def
+/bodyfontsize 6.8 def
+/bodyfont /CourierBack bodyfontsize getfont def
+/boldfont /Courier-Bold bodyfontsize getfont def
+/bodymargin bodyfontsize 0.7 mul def
+/lines 70 def
+/columns 91 def
+
+% Logical page attributs (a half of a sheet).
+/pagewidth
+   bodyfont setfont (0) stringwidth pop columns mul bodymargin dup add add
+   def
+/pageheight
+   bodyfontsize lines mul bodymargin dup add add headersize add
+   def
+/filenmroom
+      pagewidth
+      filenmfontsize 4 mul datewidth add (Page 999) stringwidth pop add
+    sub
+  def
+
+% Coordinates for upper corner of a logical page and for
+% sheet number. Coordinates depend on format mode used.
+% In twinpage mode, coordinate x of upper corner is not
+% the same for left and right pages: upperx is an array of
+% two elements, indexed by the side of the sheet.
+/topmargin margin twinpage {3} {2} ifelse div def
+% Landscape format
+/uppery rightmargin pageheight add bodymargin add def
+/sheetnumbery datefontsize datefontsize add def
+/datey sheetnumbery def
+
+% Two logical pages
+/upperx [ topmargin			% left page
+          dup 2 mul pagewidth add	% right page
+        ] def
+/sheetnumberx sheetheight topmargin sub def
+/datex topmargin def
+/date (Mar 13 1994 14:14:53) def
+(check_graph.c) newfile
+sheetwidth 0 inch translate	% new origin
+90 rotate			% landscape format
+1 0 header
+0 border
+hborder
+/x0 upperx 0 get bodymargin add def
+/y0 uppery bodymargin bodyfontsize add headersize add sub def
+x0 y0 moveto
+bodyfont setfont
+( /* This software was developed by Bruce Hendrickson and Robert Leland   *) s
+(  * at Sandia National Laboratories under US Department of Energy        *) s
+(  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */) s
+( ) s
+( #include <stdio.h>) s
+( #include <math.h>) s
+( #include "../main/defs.h") s
+( #include "../main/structs.h") s
+( ) s
+( ) s
+( /* Check graph for errors */) s
+( ) s
+( static int is_an_edge\(\);) s
+( ) s
+( int check_graph\(graph, nvtxs, nedges\)) s
+( struct vtx_data **graph;    /* graph data structure */) s
+( int nvtxs;          /* number of vertices */) s
+( int nedges;         /* number of edges */) s
+( {) s
+(    float eweight;       /* edge weight */) s
+(    float wgt_sum;       /* sum of edge weights */) s
+(    int flag;            /* flag for error free graph */) s
+(    int no_edge_count;       /* warning flag for isolated vertex */) s
+(    int using_ewgts;     /* are edge weights being used? */) s
+(    int narcs;           /* number of neighbors of a vertex */) s
+(    int neighbor;        /* neighbor of a vertex */) s
+(    int i, j;            /* loop counters */) s
+( ) s
+(    flag = TRUE;) s
+(    no_edge_count = 0;) s
+(    using_ewgts = \(graph[1]->ewgts != NULL\);) s
+(    narcs = 0;) s
+(    for \(i=1; i<=nvtxs; i++\) {) s
+(       narcs += graph[i]->nedges - 1;) s
+( ) s
+(       if \(graph[i]->edges[0] != i\) {) s
+(      printf\(" Self edge wrong for vtx %d\\n", i\);) s
+(      flag = FALSE;) s
+(       }) s
+( ) s
+(       if \(graph[i]->nedges == 1\) {) s
+(      if \(1\) printf\("WARNING: Vertex %d has no neighbors\\n", i\);) s
+(      ++no_edge_count;) s
+(       }) s
+( ) s
+(       if \(using_ewgts\) wgt_sum = graph[i]->ewgts[0];) s
+( ) s
+(       for \(j=1; j<graph[i]->nedges; j++\) {) s
+(      neighbor = graph[i]->edges[j];) s
+(          if \(using_ewgts\) wgt_sum += graph[i]->ewgts[j];) s
+( ) s
+(      if \(neighbor < 1 || neighbor > nvtxs\) {) s
+(         printf\(" Edge \(%d,%d\) included, but nvtxs = %d\\n",) s
+(             i, neighbor, nvtxs\);) s
+(         flag = FALSE;) s
+(          }) s
+( ) s
+(      if \(!is_an_edge\(graph[neighbor], i, &eweight\)\) {) s
+(         printf\(" Edge \(%d,%d\) included but not \(%d,%d\)\\n",) s
+(             i, neighbor, neighbor, i\);) s
+(         flag = FALSE;) s
+(      }) s
+(      else if \(using_ewgts && eweight != graph[i]->ewgts[j]\) {) s
+(         printf\(" Weight of \(%d,%d\)=%g, but weight of \(%d,%d\)=%g\\n",) s
+(             i, neighbor, graph[i]->ewgts[j], neighbor, i, eweight\);) s
+(         flag = FALSE;) s
+(      }) s
+(       }) s
+( ) s
+(       if \(using_ewgts && fabs\(\(double\) wgt_sum\) > 1.0e-6\) {) s
+%%Page: 1 1
+2 1 header
+1 border
+hborder
+/x0 upperx 1 get bodymargin add def
+/y0 uppery bodymargin bodyfontsize add headersize add sub def
+x0 y0 moveto
+bodyfont setfont
+(      printf\(" Sum of edge weights for vertex %d = %g\\n", i, wgt_sum\);) s
+(      flag = FALSE;) s
+(       }) s
+(    }) s
+( ) s
+(    if \(no_edge_count > 1\) printf\("WARNING: %d vertices have no neighbors\\n", no_edge_count) s
+( \);) s
+( ) s
+(    if \(narcs != 2*nedges\) {) s
+(       printf\(" twice nedges = %d, but I count %d\\n", 2*nedges, narcs\);) s
+(       flag = FALSE;) s
+(    }) s
+(    return\(flag\);) s
+( }) s
+( ) s
+( ) s
+( int check\(graph, nvtxs, nedges\)) s
+( struct vtx_data **graph;    /* graph data structure */) s
+( int nvtxs;          /* number of vertices */) s
+( int nedges;         /* number of edges */) s
+( {) s
+(    float eweight;       /* edge weight */) s
+(    float wgt_sum;       /* sum of edge weights */) s
+(    int flag;            /* flag for error free graph */) s
+(    int no_edge_count;       /* warning flag for isolated vertex */) s
+(    int bad_edge_count;      /* warning flag for isolated vertex */) s
+(    int using_ewgts;     /* are edge weights being used? */) s
+(    int narcs;           /* number of neighbors of a vertex */) s
+(    int neighbor;        /* neighbor of a vertex */) s
+(    int i, j;            /* loop counters */) s
+(    int max,min,vmax,vmin;) s
+( ) s
+(    flag = TRUE;) s
+(    no_edge_count = bad_edge_count = 0;) s
+(    using_ewgts = \(graph[1]->ewgts != NULL\);) s
+(    narcs = 0;) s
+(     max=vmax=vmin=0;) s
+(     vmin=64;) s
+( ) s
+(    for \(i=1; i<=nvtxs; i++\) {) s
+(       narcs += graph[i]->nedges - 1;) s
+( ) s
+(       if \(graph[i]->edges[0] != i\) {) s
+(      printf\(" Self edge wrong for vtx %d\\n", i\);) s
+(      flag = FALSE;) s
+(       }) s
+( ) s
+(       if \(graph[i]->nedges < 1\) {) s
+(      if \(1\) printf\("FATAL: Vertex %d has %d neighbors\\n", i, graph[i]->nedges\);) s
+(      ++bad_edge_count;) s
+(       }) s
+( ) s
+(       if \(graph[i]->nedges == 1\) {) s
+(      if \(1\) printf\("WARNING: Vertex %d has no neighbors\\n", i\);) s
+(      ++no_edge_count;) s
+(       }) s
+( ) s
+(     if \(graph[i]->vwgt<1 || graph[i]->vwgt>512\)) s
+(         printf\("WARNING: vertex %d has weight %d\\n",i,graph[i]->vwgt\);) s
+( ) s
+(     if \(graph[i]->vwgt<min\)) s
+(     {) s
+(         vmin = i;) s
+(         min = graph[i]->vwgt;) s
+(     }) s
+( ) s
+(     if \(graph[i]->vwgt>max\)) s
+(     {) s
+(         vmax = i;) s
+(         max = graph[i]->vwgt;) s
+1 sheetnumber
+showpage
+sheetwidth 0 inch translate	% new origin
+90 rotate			% landscape format
+3 0 header
+0 border
+hborder
+/x0 upperx 0 get bodymargin add def
+/y0 uppery bodymargin bodyfontsize add headersize add sub def
+x0 y0 moveto
+bodyfont setfont
+(     }) s
+( ) s
+(       if \(using_ewgts\) wgt_sum = graph[i]->ewgts[0];) s
+( ) s
+(       for \(j=1; j<graph[i]->nedges; j++\) {) s
+(      neighbor = graph[i]->edges[j];) s
+(          if \(using_ewgts\) wgt_sum += graph[i]->ewgts[j];) s
+( ) s
+(      if \(neighbor < 1 || neighbor > nvtxs\) {) s
+(         printf\("FATAL: Edge \(%d,%d\) included, but nvtxs = %d\\n",) s
+(             i, neighbor, nvtxs\);) s
+(         flag = FALSE;) s
+(          }) s
+( ) s
+(      if \(!is_an_edge\(graph[neighbor], i, &eweight\)\) {) s
+(         printf\("FATAL: Edge \(%d,%d\) included but not \(%d,%d\)\\n",) s
+(             i, neighbor, neighbor, i\);) s
+(         flag = FALSE;) s
+(      }) s
+(      else if \(using_ewgts && eweight != graph[i]->ewgts[j]\) {) s
+(         printf\(" Weight of \(%d,%d\)=%g, but weight of \(%d,%d\)=%g\\n",) s
+(             i, neighbor, graph[i]->ewgts[j], neighbor, i, eweight\);) s
+(         flag = FALSE;) s
+(      }) s
+(       }) s
+( ) s
+(       if \(using_ewgts && fabs\(\(double\) wgt_sum\) > 1.0e-6\) {) s
+(      printf\(" Sum of edge weights for vertex %d = %g\\n", i, wgt_sum\);) s
+(      flag = FALSE;) s
+(       }) s
+(    }) s
+( ) s
+(    if \(bad_edge_count > 0\) printf\("FATAL: %d vertices have no neighbors\\n", bad_edge_count) s
+( \);) s
+(    if \(no_edge_count > 0\) printf\("WARNING: %d vertices have no neighbors\\n", no_edge_count) s
+( \);) s
+( ) s
+(     ) s
+(    if \(narcs != 2*nedges\) {) s
+(     if \(nedges>=0\)) s
+(     {) s
+(       printf\("FATAL: twice nedges = %d, but I count %d\\n", 2*nedges, narcs\);) s
+(       flag = FALSE;) s
+(     }) s
+(    }) s
+(     printf\("checkgraph: vmin=%d min=%d vmax=%d max=%d\\n",vmin,min,vmax,max\);) s
+(    return\(flag\);) s
+( }) s
+( ) s
+( static int is_an_edge\(vertex, v2, weight2\)) s
+( struct vtx_data *vertex;    /* data for a vertex */) s
+( int v2;             /* neighbor to look for */) s
+( float *weight2;         /* weight of edge if found */) s
+( {) s
+(    int i;           /* loop counter */) s
+( ) s
+(    for \(i=1; i<vertex->nedges; i++\) {) s
+(       if \(vertex->edges[i] == v2\) {) s
+(      if \(vertex->ewgts != NULL\) *weight2 = vertex->ewgts[i];) s
+(      else *weight2 = 1;) s
+(      return\(TRUE\);) s
+(       }) s
+(    }) s
+( ) s
+(    return\(FALSE\);) s
+( }) s
+2 sheetnumber
+showpage
+
+%%Trailer
+docsave restore end

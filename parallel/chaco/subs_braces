@@ -1,0 +1,6 @@
+for i
+        do
+                sed 's/).MEM_OK/) (MEM_OK/g' $i > tmp 
+                mv tmp $i
+    done
+

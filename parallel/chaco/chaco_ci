@@ -1,0 +1,15 @@
+ci *,v
+cd assign; ci *,v
+cd ../bpmatch; ci *,v
+cd ../coarsen; ci *,v
+cd ../connect; ci *,v
+cd ../eigen; ci *,v
+cd ../graph; ci *,v
+cd ../inertial; ci *,v
+cd ../input; ci *,v
+cd ../klspiff; ci *,v
+cd ../main; ci *,v
+cd ../misc; ci *,v
+cd ../optimize; ci *,v
+cd ../symmlq; ci *,v
+cd ../util; ci *,v

@@ -1,0 +1,15 @@
+co -l *,v
+cd assign; co -l *,v
+cd ../bpmatch; co -l *,v
+cd ../coarsen; co -l *,v
+cd ../connect; co -l *,v
+cd ../eigen; co -l *,v
+cd ../graph; co -l *,v
+cd ../inertial; co -l *,v
+cd ../input; co -l *,v
+cd ../klspiff; co -l *,v
+cd ../main; co -l *,v
+cd ../misc; co -l *,v
+cd ../optimize; co -l *,v
+cd ../symmlq; co -l *,v
+cd ../util; co -l *,v

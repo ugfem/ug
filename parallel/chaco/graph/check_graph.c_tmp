@@ -1,0 +1,102 @@
+/* This software was developed by Bruce Hendrickson and Robert Leland   *
+ * at Sandia National Laboratories under US Department of Energy        *
+ * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
+
+#include <stdio.h>
+#include <math.h>
+#include "../main/defs.h"
+#include "../main/structs.h"
+
+
+/* Check graph for errors */
+
+static int is_an_edge();
+
+int check_graph(graph, nvtxs, nedges)
+struct vtx_data **graph;	/* graph data structure */
+int nvtxs;			/* number of vertices */
+int nedges;			/* number of edges */
+{
+   float eweight;		/* edge weight */
+   float wgt_sum;		/* sum of edge weights */
+   int flag;			/* flag for error free graph */
+   int no_edge_count;		/* warning flag for isolated vertex */
+   int using_ewgts;		/* are edge weights being used? */
+   int narcs;			/* number of neighbors of a vertex */
+   int neighbor;		/* neighbor of a vertex */
+   int i, j;			/* loop counters */
+
+   flag = TRUE;
+   no_edge_count = 0;
+   using_ewgts = (graph[1]->ewgts != NULL);
+   narcs = 0;
+   for (i=1; i<=nvtxs; i++) {
+      narcs += graph[i]->nedges - 1;
+
+      if (graph[i]->edges[0] != i) {
+	 printf(" Self edge wrong for vtx %d\n", i);
+	 flag = FALSE;
+      }
+
+      if (graph[i]->nedges == 1) {
+	 if (!no_edge_count) printf("WARNING: Vertex %d has no neighbors\n", i);
+	 ++no_edge_count;
+      }
+
+      if (using_ewgts) wgt_sum = graph[i]->ewgts[0];
+
+      for (j=1; j<graph[i]->nedges; j++) {
+	 neighbor = graph[i]->edges[j];
+         if (using_ewgts) wgt_sum += graph[i]->ewgts[j];
+
+	 if (neighbor < 1 || neighbor > nvtxs) {
+	    printf(" Edge (%d,%d) included, but nvtxs = %d\n",
+		    i, neighbor, nvtxs);
+	    flag = FALSE;
+         }
+
+	 if (!is_an_edge(graph[neighbor], i, &eweight)) {
+	    printf(" Edge (%d,%d) included but not (%d,%d)\n",
+		    i, neighbor, neighbor, i);
+	    flag = FALSE;
+	 }
+	 else if (using_ewgts && eweight != graph[i]->ewgts[j]) {
+	    printf(" Weight of (%d,%d)=%g, but weight of (%d,%d)=%g\n",
+		    i, neighbor, graph[i]->ewgts[j], neighbor, i, eweight);
+	    flag = FALSE;
+	 }
+      }
+
+      if (using_ewgts && fabs((double) wgt_sum) > 1.0e-6) {
+	 printf(" Sum of edge weights for vertex %d = %g\n", i, wgt_sum);
+	 flag = FALSE;
+      }
+   }
+
+   if (no_edge_count > 1) printf("WARNING: %d vertices have no neighbors\n", no_edge_count);
+
+   if (narcs != 2*nedges) {
+      printf(" twice nedges = %d, but I count %d\n", 2*nedges, narcs);
+      flag = FALSE;
+   }
+   return(flag);
+}
+
+
+static int is_an_edge(vertex, v2, weight2)
+struct vtx_data *vertex;	/* data for a vertex */
+int v2;				/* neighbor to look for */
+float *weight2;			/* weight of edge if found */
+{
+   int i;			/* loop counter */
+
+   for (i=1; i<vertex->nedges; i++) {
+      if (vertex->edges[i] == v2) {
+	 if (vertex->ewgts != NULL) *weight2 = vertex->ewgts[i];
+	 else *weight2 = 1;
+	 return(TRUE);
+      }
+   }
+
+   return(FALSE);
+}
