@@ -505,9 +505,12 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
 
   /* read data descs */
   bdf->y_0 = bdf->tsolver.y;       /* allocated already in tsolver */
-  bdf->y_p1 = ReadArgvVecDesc(base->mg,"yp1",argc,argv);
-  bdf->y_m1 = ReadArgvVecDesc(base->mg,"ym1",argc,argv);
-  bdf->b = ReadArgvVecDesc(base->mg,"b",argc,argv);
+  if (ReadArgvOption("yp1",argc,argv))
+    bdf->y_p1 = ReadArgvVecDesc(base->mg,"yp1",argc,argv);
+  if (ReadArgvOption("ym1",argc,argv))
+    bdf->y_m1 = ReadArgvVecDesc(base->mg,"ym1",argc,argv);
+  if (ReadArgvOption("b",argc,argv))
+    bdf->b = ReadArgvVecDesc(base->mg,"b",argc,argv);
 
   /* read other numprocs */
   bdf->trans = (NP_TRANSFER *) ReadArgvNumProc(base->mg,"T",TRANSFER_CLASS_NAME,argc,argv);
@@ -752,10 +755,12 @@ static INT BDFConstruct (NP_BASE *theNP)
 {
   NP_T_SOLVER *ts;
   NP_NL_ASSEMBLE *na;
+  NP_BDF *bdf;
 
   /* get numprocs ... */
   ts = (NP_T_SOLVER *) theNP;
   na = &ts->nlass;
+  bdf = (NP_BDF *) theNP;
 
   /* set base functions */
   theNP->Init    = BDFInit;
@@ -774,6 +779,10 @@ static INT BDFConstruct (NP_BASE *theNP)
   ts->TimeInit                    = TimeInit;
   ts->TimeStep                    = TimeStep;
   ts->TimePostProcess             = TimePostProcess;
+
+  bdf->y_p1 = NULL;
+  bdf->y_m1 = NULL;
+  bdf->b = NULL;
 
   return(0);
 }
