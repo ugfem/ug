@@ -60,6 +60,7 @@
 #include "heaps.h"
 #include "ugenv.h"
 #include "misc.h"
+#include "ugdevices.h"
 /* #include "verbose.h" */
 #include "lb4.h"
 #include "parallel.h"
@@ -67,6 +68,7 @@
 /* #include "ugxfer.h" */
 /* #include "ugrefine.h" */
 #include "debug.h"
+#include "ugstruct.h"
 #include "refine.h"
 #include "rm.h"
 #include "ugm.h"
@@ -74,6 +76,10 @@
 #include "./main/defs.h"
 #include "./main/structs.h"
 /* #include "Chaco/code/util/smalloc.h" */
+
+#ifdef __DLB__
+#include "cluster.h"
+#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -85,18 +91,26 @@
 /*                                                                          */
 /****************************************************************************/
 
+#ifdef __DLB__
+/* undefine this if MAXCLUSTERS shall be a define */ 
+#define  INT_MAXCLUSTERS
+#endif
+
+#if (!defined(__DLB__) || !defined(INT_MAXCLUSTERS))
 #define MAXCLUSTERS         10000       /* max number of clusters           */
+#endif
+
 #define MAXSETS             16          /* max number of cluster sets       */
 
 #define SMALL_COORD         1.0E-5      /* resolution when comparing COORDs */
 
 
-#define DESCENDENTS(e)          ((e)->ge.ptmp2)
-#define SET_DESCENDENTS(e,n)    (e)->ge.ptmp2 = n
-#define MY_CLUSTER(e)           ((CLUSTER *)((e)->ge.ptmp1))
-#define SET_MY_CLUSTER(e,p)     (e)->ge.ptmp1 = ((unsigned INT) (p))
-#define HAS_CLUSTER(e)          (((CLUSTER *)(e)->ge.ptmp1)!=NULL)
-#define MY_CLUSTER_ID(e)        (((CLUSTER *)(e)->ge.ptmp1)->edges[0])
+#define DESCENDENTS(e)          ((e)->ge.lb3)
+#define SET_DESCENDENTS(e,n)    (e)->ge.lb3 = n
+#define MY_CLUSTER(e)           ((CLUSTER *)((e)->ge.lb2))
+#define SET_MY_CLUSTER(e,p)     (e)->ge.lb2 = ((unsigned INT) (p))
+#define HAS_CLUSTER(e)          (((CLUSTER *)(e)->ge.lb2)!=NULL)
+#define MY_CLUSTER_ID(e)        (((CLUSTER *)(e)->ge.lb2)->edges[0])
 #define SET_PARTITION(e,p)		(PARTITION(e) = p)
 
 /****************************************************************************/
@@ -108,6 +122,9 @@
 
 /* RCS string */
 static char RCS_ID("$Header$", UG_RCS_STRING);
+/*
+static char RCS_ID1("$Header$", UG_RCS_STRING);
+*/
 
 
 /****************************************************************************/
@@ -132,14 +149,30 @@ static int set_cnt;                       /* number of cluster sets stored  */
 static int total_cnt;                     /* total number of clusters stored*/
 static int startid;						  /* startid for unique clusternumb */
 static INT *load;                         /* total load on all levels&proc!!*/
-static INT MarkKeyBottom;     			  /* mark-key for mem management    */
-static INT quiet;
+static double chaco_sort_minmax = 1.0;
+INT MarkKeyBottom;     			  		  /* mark-key for mem management    */
+INT quiet;
+#ifdef	INT_MAXCLUSTERS
+INT MAXCLUSTERS = 0;
+#endif
 
 /****************************************************************************/
 /*                                                                          */
 /* forward declarations of functions used before they are defined           */
 /*                                                                          */
 /****************************************************************************/
+
+int interface (CLUSTER **clusters, int nvtxs, short *assign, double *goal,
+                int nsets_tot, int glob_method, int eigen, int loc, int dims,
+                int weights, int coarse, int mode, int *glob2loc,
+                int dimx, int dimy);
+
+double find_maxdeg (struct vtx_data **graph, int nvtxs);
+
+void klspiff (struct vtx_data **graph, int nvtxs, short *sets, int nsets,
+	short **hops, double *goal, int vwgt_max, double maxdeg);
+
+void free_graph (struct vtx_data **graph);
 
 
 /****************************************************************************/
@@ -206,7 +239,7 @@ static int InitClustering (MULTIGRID *mg)
 /*                                                                          */
 /****************************************************************************/
 
-static int InitMemLB1 (MULTIGRID *mg)
+int InitMemLB1 (MULTIGRID *mg)
 {
 	int i;
 
@@ -367,12 +400,10 @@ static int check_condition_from_refinement (ELEMENT *e)
         ELEMENT *SonList[MAX_SONS];
 
         if (GetSons(e,SonList)!= GM_OK) assert(0);
-        for (i=0; i<NSONS(e); i++)
+        for (i=0; SonList[i]!=NULL; i++)
         {
-			if (SonList[i]!=NULL)
-				if (ECLASS(SonList[i])!=RED_CLASS) return(1);
-			else
-				break;
+            if (ECLASS(SonList[i])!=RED_CLASS) return(1);
+            if (REFINECLASS(SonList[i])==NO_CLASS) return(1);
         }
     }
 
@@ -550,13 +581,14 @@ static int InitConcentrateClusters (void)
 /*                                                                          */
 /****************************************************************************/
 
-static int BroadCastStartIds (void)
+static int BroadCastStartIds (INT *cluster_cnt, INT total_cnt,INT set_cnt)
 {
     int l,n,start;
     CLUSTER *c;
 
     /* get startid from uptree */
 	if (me!=master) RecvSync(uptree,&startid,sizeof(int));
+	else startid = 1;
 
     /* send startids down tree */
 	start = startid+total_cnt;
@@ -587,53 +619,62 @@ static int BroadCastStartIds (void)
 
 static int GatherClusterNumber (DDD_OBJ theCoupling, void *data)
 {
+	int i,j;
 	ELEMENT *theElement = (ELEMENT *) theCoupling;
+	ELEMENT *Nb;
 	CLUSTER *cptr;
 
-	cptr = MY_CLUSTER(theElement);
+	assert(EGHOST(theElement));
 
-	/* if Element is no master_copy, id is assumed to be zero */
-	if (DDD_InfoPriority(PARHDRE(theElement))==PrioMaster && cptr!=NULL)
+	for (i=0; i<MAX_SIDES_OF_ELEM; i++)
 	{
+		((int *)data)[i] = 0;
 
-		/* Is theElement rootelement? */
-		if (theElement == cptr->root_element)
+		if (i<SIDES_OF_ELEM(theElement))
+		{
+			Nb = NBELEM(theElement,i);
+			if (Nb==NULL || !EMASTER(Nb)) continue;
 
-			(*(int *)data) = MY_CLUSTER_ID(theElement);
+			cptr = (CLUSTER *) MY_CLUSTER(Nb);
+			if (cptr==NULL || Nb!=cptr->root_element) continue;
 
-		/* cluster has no neighbors on this level */
-		else
-			(*(int *)data) = 0;
+			((int *)data)[i] = MY_CLUSTER_ID(Nb);
+		}	
 	}
-	else 
-		(*(int *)data) = 0;
 
 	return(0);
 }
 
 static int ScatterClusterNumber (DDD_OBJ theCoupling, void *data)
 {
-	int i=1;
+	int i,j;
     ELEMENT *theElement = (ELEMENT *) theCoupling;
 	CLUSTER *cptr;
 	char buffer[100]; 
 
 	cptr = (CLUSTER *) MY_CLUSTER(theElement);
 
-	/* scatter id only if Element is not a master_copy */
-	if (DDD_InfoPriority(PARHDRE(theElement))==PrioMaster && cptr!=NULL)
+	assert(EMASTER(theElement));
+
+	/* scatter id only if Element is not a master_copy and is root */
+	if (cptr==NULL) return(0);
+	if (cptr->root_element!=theElement) return(0);
+
+	i = 1;
+	while (cptr->edges[i]!=0 && i<=SIDES_OF_ELEM(theElement)) i++;
+	if (i>SIDES_OF_ELEM(theElement)) 
 	{
-		if (cptr->root_element!=theElement) return(0);
-		while (cptr->edges[i]!=0 && i<=SIDES_OF_ELEM(theElement)) i++;
-		if (i>SIDES_OF_ELEM(theElement)) 
+		sprintf(buffer,"ScatterClusterNumber: neighbors=%d, i=%d", TAG(theElement),i);  
+		UserWrite(buffer);
+		assert(0);
+	}
+	for (j=0; j<MAX_SIDES_OF_ELEM; j++)
+	{
+		if (((int *)data)[j] != 0)
 		{
-			sprintf(buffer,"ScatterClusterNumber: neighbors=%d, i=%d", TAG(theElement),i);  
-			UserWrite(buffer);
-			return(1);
-		}
-		if ((*(int *)data) != 0)
-		{
-			cptr->edges[i] = (*(int *)data);
+			assert(i<=SIDES_OF_ELEM(theElement));
+			cptr->edges[i] = ((int *)data)[j];
+			i++;
 			cptr->nedges++;
 		}
 	}
@@ -646,14 +687,14 @@ static int ExchangeNeighborInfo(MULTIGRID* mg)
 	char buffer[80];
 	int error=0;
 
-	DDD_IFExchange(ElementSymmIF, sizeof(int), GatherClusterNumber,
+	DDD_IFOneway(ElementIF, IF_BACKWARD, sizeof(int)*MAX_SIDES_OF_ELEM, GatherClusterNumber,
 										ScatterClusterNumber);
 
 	if (error>0) 
 	{
 		sprintf(buffer,"communication in ExchangeNeighborInfo failed, error=%d\n",
 				error);
-		PrintErrorMessage('E',99,buffer);
+		PrintErrorMessage('E',"99",buffer);
 		return(2);
 	}
 
@@ -675,7 +716,7 @@ static int ExchangeNeighborInfo(MULTIGRID* mg)
 /*                                                                          */
 /****************************************************************************/
 
-static int ComputeGraphInfo (MULTIGRID *mg)
+int ComputeGraphInfo (MULTIGRID *mg, INT *cluster_cnt, CLUSTER *clusters, INT total_cnt, INT set_cnt)
 {
 	int i,j,l,n,error;
 	ELEMENT *e,*theElement;
@@ -683,7 +724,7 @@ static int ComputeGraphInfo (MULTIGRID *mg)
 	char buffer[100];
 
 	/* give processors global unique ids for cluster numbering */
-	error = BroadCastStartIds();
+	error = BroadCastStartIds(cluster_cnt,total_cnt,set_cnt);
 
 	/* number each locally created Cluster */ 
 	for (i=0; i<cluster_cnt[0]; i++)
@@ -704,13 +745,13 @@ static int ComputeGraphInfo (MULTIGRID *mg)
 		{
 			sprintf(buffer,"ComputeGraphInfo: already %d neighbors in list\n", j-1);
 			UserWrite(buffer);
-			return(1);
+			assert(0);
 		} 
 
 		for (l=0; l<SIDES_OF_ELEM(theElement); l++)
 		{
 			/* more sides than possible */
-			if (j>MAX_SIDES_OF_ELEM) return(1);
+			if (j>MAX_SIDES_OF_ELEM) assert(0);
 
 			/* look for root element of neighbor cluster */
 			e = NBELEM(theElement,l);
@@ -739,6 +780,7 @@ static int ComputeGraphInfo (MULTIGRID *mg)
 	/* exchange cluster ids of boundary clusters between processors */
 	error = ExchangeNeighborInfo(mg);
 
+	return(0);
 }		
 
 /****************************************************************************/
@@ -799,7 +841,7 @@ static INT sum_load (int l, int x0, int y0, int x, int y)
 	sum = 0;
 	for (i=x0; i<x0+x; i++)
 		for (j=y0; j<y0+y; j++)
-			sum += load[(j*DimX+i)*MAXLEVEL+l];
+			sum += load[(j*x+i)*MAXLEVEL+l];
 	return(sum);
 }
 
@@ -831,7 +873,7 @@ static void fit_configuration (int *p, int *x, int *y)
 		}
 		else
 		{ /* now: x*y <= p */ 
-			*p = xx*yy;
+		/*	*p = xx*yy; */
 			break;
 		}
 	}
@@ -845,9 +887,10 @@ static double compute_goal (int level, double average, double N, double **goal,
 	int i,j,pgoal;
 	double *gptr,balance,avg,max,ngoal;
 	char buffer[100];
+	int DimX = x;
 
 	*goal = (MEM_OK = (double *) smalloc((unsigned) p*sizeof(double));
-	if (!MEM_OK) return;
+	if (!MEM_OK) return(1);
 	gptr = *goal;
 	avg = average;
 	ngoal = 0;
@@ -897,11 +940,11 @@ static double compute_goal (int level, double average, double N, double **goal,
 		{
 			if (balance > load[(j*DimX+i)*MAXLEVEL+level])
 			{
-				*(gptr) = MAX(balance-(double)load[(j*DimX+i)*MAXLEVEL+level],0);
-				ngoal += *(gptr++);
+				gptr[j*DimX+i] = MAX(balance-(double)load[(j*DimX+i)*MAXLEVEL+level],0);
+				ngoal += gptr[j*DimX+i];
 			}
 			else 
-				*(gptr++) = 0;
+				gptr[j*DimX+i] = 0;
 		}
 	}
 	if (ngoal>N+0.05 || ngoal<N-0.05)
@@ -909,6 +952,7 @@ static double compute_goal (int level, double average, double N, double **goal,
 		sprintf(buffer, "fatal: sum of goal array differs from sum of clusterelements goal=%f, N=%f\n",
 		        ngoal, N);
 		UserWrite(buffer);
+		assert(0);
 	}
 	return(balance); 
 }
@@ -975,6 +1019,7 @@ if (!quiet)
 	sfree((char *) assigned);
 }
 		
+
 static int compare_maxlevel (const void *e1, const void *e2)
 {
 	CLUSTER *c1,*c2;
@@ -984,11 +1029,15 @@ static int compare_maxlevel (const void *e1, const void *e2)
 	c1 = *((CLUSTER **) e1);
 	c2 = *((CLUSTER **) e2);
 	
+
 	m1 = c1->minlevel;
 	m2 = c2->minlevel;
 
+if (chaco_sort_minmax == 1.0)
+{
 	if (m1<m2) return( 1);
 	if (m1>m2) return(-1);
+}
 
 	m1 += c1->depth;
 	m2 += c2->depth;
@@ -1018,7 +1067,7 @@ static INT max_load (int l, int x0, int y0, int x, int y)
     max = 0;
     for (i=x0; i<x0+x; i++)
         for (j=y0; j<y0+y; j++)
-                max = MAX(load[(j*DimX+i)*MAXLEVEL+l],max);
+                max = MAX(load[(j*x+i)*MAXLEVEL+l],max);
     return(max);
 }
 
@@ -1056,7 +1105,8 @@ static void reset_timers (void)
 	inertial_time = rcb_time = inertial_axis_time = median_time = 0;
 }
 
-static int balance_ccptm (MULTIGRID *mg, int Const, int strategy, int eigen, 
+int balance_ccptm (MULTIGRID *mg, int total_cnt_par, CLUSTER *clusters_par, CLUSTER **sort_clusters_par,
+						  int Const, int strategy, int eigen, 
                           int loc, int dims, int weights, int coarse, int mode)
 {
 	extern Heap   *heap;     /* pointer to heap of multigrid */
@@ -1073,6 +1123,14 @@ static int balance_ccptm (MULTIGRID *mg, int Const, int strategy, int eigen,
 	double *goal; 
 	int *glob2loc;
 	
+	total_cnt = total_cnt_par;
+	clusters = clusters_par;
+	sort_clusters = sort_clusters_par;
+
+    if (GetStringValue(":conf:chaco_sort_minmax",&chaco_sort_minmax) != 0)
+        UserWriteF("PARTITION: warning %s not set using default value=%.1lf\n",
+            ":conf:chaco_sort_minmax",chaco_sort_minmax);
+
 	/* this is done only at the master processor */
 	if (me!=master) return(0);
 	
@@ -1095,7 +1153,7 @@ static int balance_ccptm (MULTIGRID *mg, int Const, int strategy, int eigen,
 
 	/* allocate map for glob to loc numbering */
 	glob2loc = (int *) (MEM_OK = smalloc((unsigned) (total_cnt+1)*sizeof(int));
-	if (!MEM_OK) return;
+	if (!MEM_OK) return(1);
 	
 	for (i=0; i<=total_cnt; i++) glob2loc[i] = 0;
 
@@ -1116,7 +1174,14 @@ static int balance_ccptm (MULTIGRID *mg, int Const, int strategy, int eigen,
 		while (i<total_cnt)
 		{
 			c = sort_clusters[i];
+if (chaco_sort_minmax == 1.0)
+{
 			if (c->minlevel+c->depth!=maxlevel||c->minlevel!=minlevel) break;
+}
+else
+{
+			if (c->minlevel+c->depth!=maxlevel) break;
+}
 			last = i++;
 		}
 		
@@ -1129,7 +1194,10 @@ static int balance_ccptm (MULTIGRID *mg, int Const, int strategy, int eigen,
 		for (j=first; j<=last; j++)
 		{
 			c = sort_clusters[j];
+if (1)
 			N += c->level_size[maxlevel-c->minlevel];
+else
+			N += c->level_size[c->depth];
 		}
 		
 		/* compute number of processors to use */
@@ -1143,11 +1211,11 @@ static int balance_ccptm (MULTIGRID *mg, int Const, int strategy, int eigen,
 
 		/* compute number of elements that has to be assigned */
 		/* to each processor                                  */
-		balance = compute_goal(maxlevel,average,N,&goal,p,0,0,x,y);
+		balance = compute_goal(maxlevel,(double)average,(double)N,&goal,p,0,0,x,y);
 
 		/* allocate space for assignments */
 		assign = (short *) (MEM_OK = smalloc((unsigned) (nc+1)*sizeof(short));
-		if (!MEM_OK) return;
+		if (!MEM_OK) return(1);
 		assignment = assign;
 
 		for (j=0; j<=total_cnt; j++)
@@ -1163,14 +1231,14 @@ static int balance_ccptm (MULTIGRID *mg, int Const, int strategy, int eigen,
 		UserWrite(buffer);
 
 		/* balance clusters with desired partitioning strategy */
-		interface(sort_clusters+first,nc,assign,goal,p,strategy,eigen,loc,
-		          dims,weights,coarse,mode,glob2loc,x,y); 
+			interface(sort_clusters+first,nc,assign,goal,p,strategy,eigen,loc,
+					  dims,weights,coarse,mode,glob2loc,x,y); 
 
-		/* check for memory error in interface() */
-		if (!MEM_OK) return;
+			/* check for memory error in interface() */
+			if (!MEM_OK) return(1);
 
-		/* check whether partitioning succeeded */
-		check_assign(sort_clusters+first, goal, x, y, assign, nc);
+			/* check whether partitioning succeeded */
+			check_assign(sort_clusters+first, goal, x, y, assign, nc);
 		
 
 		/* convert tree id's in clusters to processor id's */
@@ -1181,6 +1249,8 @@ static int balance_ccptm (MULTIGRID *mg, int Const, int strategy, int eigen,
 			c = sort_clusters[j];
 			assign++;
 			c->destination = ArrayToProcid(*assign,x,y);
+if (0)
+			UserWriteF("dest=%d assign=%d\n",c->destination,*assign);
 		}
 
 		/* compute maximum element number of processors in any level */
@@ -1229,33 +1299,35 @@ static int OptimizeMapping(void)
 	double *goal;
 	float *eweights;
 	int **p2p;
-	int *mtx, *p2pmtx;
+	short *mtx; 
+	int *imtx; 
+	int *p2pmtx;
 	int *edges;
 	int i,j,k;
 	int max_deg,sum,nedges,nbid,nprocs;
-	int **hop_mtx;
+	short **hop_mtx;
 	short *assign;
 	short *map;
 	SHORT nbdest;
 	
 	/* this is only done at the master processor */
-	if (me!=master) return;
+	if (me!=master) return(0);
 
 	nedges = nprocs = 0;
 
 
 	/* determine neighborship relations between processors */
-	mtx = (int *) (MEM_OK = smalloc((unsigned)(DimX*DimY*DimX*DimY)*
+	imtx = (int *) (MEM_OK = smalloc((unsigned)(DimX*DimY*DimX*DimY)*
 	                                  sizeof(int));
-	p2pmtx = mtx;
-	if (!MEM_OK) return;
+	p2pmtx = imtx;
+	if (!MEM_OK) return(1);
 	p2p = (int **) (MEM_OK = smalloc((unsigned)(DimX*DimY)*
-	                                  sizeof(int));
-	if (!MEM_OK) return;
+	                                  sizeof(int *));
+	if (!MEM_OK) return(1);
 	for (i=0; i<DimX*DimY; i++)
 	{
-		p2p[i] = mtx;
-		mtx += DimX*DimY;
+		p2p[i] = imtx;
+		imtx += DimX*DimY;
 	}
 		
 		
@@ -1284,17 +1356,17 @@ static int OptimizeMapping(void)
 
 	/* generate some space */
 	assign = (short *) (MEM_OK = smalloc((unsigned)(nprocs)*sizeof(short));
-	if (!MEM_OK) return;
+	if (!MEM_OK) return(1);
 	map = (short *) (MEM_OK = smalloc((unsigned)(DimX*DimY)*sizeof(short));
-	if (!MEM_OK) return;
+	if (!MEM_OK) return(1);
 
 	/* build up graph with procssor neighborship relations */
 	graph = (struct vtx_data **) (MEM_OK = smalloc((unsigned)(nprocs+1)
 	                                       *sizeof(struct vtx_data *));
-	if (!MEM_OK) return;
+	if (!MEM_OK) return(1);
 	links = (struct vtx_data *) (MEM_OK = smalloc((unsigned)(nprocs)
 	                                      *sizeof(struct vtx_data));
-	if (!MEM_OK) return;
+	if (!MEM_OK) return(1);
 
 	for (i=1; i<=nprocs; i++)
 	{
@@ -1302,10 +1374,10 @@ static int OptimizeMapping(void)
 	}
 
 	edges = (int *) (MEM_OK = smalloc((unsigned)nedges*sizeof(int));
-	if (!MEM_OK) return;
+	if (!MEM_OK) return(1);
 
 	eweights = (float *) (MEM_OK = smalloc((unsigned)nedges*sizeof(float));
-	if (!MEM_OK) return;
+	if (!MEM_OK) return(1);
 
 	/* Now fill in all the data fields. */
 	for (i=0,k=1; i<DimX*DimY; i++) 
@@ -1345,17 +1417,17 @@ static int OptimizeMapping(void)
 
 	/* generate goal array */
 	goal = (double *) (MEM_OK = smalloc((unsigned) (nprocs+1)*sizeof(double));
-	if (!MEM_OK) return;
+	if (!MEM_OK) return(1);
 	for (i=1; i<=nprocs; i++) goal[i] = 1;
 
 	
 	/* generate hop matrix */
-	mtx = (int *) (MEM_OK = smalloc((unsigned) (DimX*DimY*DimX*DimY)*
-	                                      sizeof(int));
-	if (!MEM_OK) return;
-	hop_mtx = (int **) (MEM_OK = smalloc((unsigned) (DimX*DimY)*
-	                                      sizeof(int));
-	if (!MEM_OK) return;
+	mtx = (short *) (MEM_OK = smalloc((unsigned) (DimX*DimY*DimX*DimY)*
+	                                      sizeof(short));
+	if (!MEM_OK) return(1);
+	hop_mtx = (short **) (MEM_OK = smalloc((unsigned) (DimX*DimY)*
+	                                      sizeof(short *));
+	if (!MEM_OK) return(1);
 
 	for (i=0; i<DimX*DimY; i++)
 	{
@@ -1404,6 +1476,8 @@ static int OptimizeMapping(void)
 	sfree(assign);
 	sfree(p2p);
 	sfree(p2pmtx);
+
+	return(0);
 }
 		
 		
@@ -1442,7 +1516,7 @@ static int BroadcastDestinations (void)
 
 /****************************************************************************/
 /*                                                                          */
-/* Function:  SetDestinations                                               */
+/* Function:  SetDestinationsChaco                                          */
 /*                                                                          */
 /* Purpose:   writes destination in each element and fills array of pointers*/
 /*            to elements to be transfered. The order in this array is      */
@@ -1489,7 +1563,7 @@ static void recursive_set_dest (ELEMENT *e, CLUSTER *c)
 	}
 }
 	
-static int SetDestinations (MULTIGRID *mg, int minlevel)
+static int SetDestinationsChaco (MULTIGRID *mg, int minlevel)
 {
 	int k;
 	GRID *g;
@@ -1558,6 +1632,14 @@ int Balance_CCPTM (MULTIGRID *mg,                                 /* data    */
 	INT nc,i;
 	DOUBLE Begin,End;
 	char buf[60];
+	#ifdef	INT_MAXCLUSTERS
+	CLUSTER_CONFIG c_config;
+
+	if (DLB_Cluster_ConfigGet(&c_config)) assert(0);
+	MAXCLUSTERS = c_config.maxclusters;
+	if (me == master) UserWriteF("CHACOCLUSTER: maxclusters=%d\n",MAXCLUSTERS);
+	#endif
+
 
 	/* quiet */
 	quiet = (mode==512);
@@ -1615,7 +1697,7 @@ stage1: /* compute total number of clusters or error */
 	error = InitConcentrateClusters();
 
 	/* number cluster locally, but uniquely and compute neighbor ids */
-	error = ComputeGraphInfo(mg); 
+	error = ComputeGraphInfo(mg,cluster_cnt,clusters,total_cnt,set_cnt);
 
 	/* transfer all clusters to master processor */
 	error = ConcentrateClusters();
@@ -1623,7 +1705,8 @@ stage1: /* compute total number of clusters or error */
 	/* now increasingly numbered clusters should be in master processor */
 
 	/* balance load on master processor */
-	error = balance_ccptm(mg,Const,strategy,eigen,loc,dims,weights,coarse,mode);
+	error = balance_ccptm(mg,total_cnt,clusters,sort_clusters,
+				Const,strategy,eigen,loc,dims,weights,coarse,mode);
 
 	/* optimize cluster to processor mapping */
 /*	error = OptimizeMapping(); */
@@ -1640,13 +1723,13 @@ stage1: /* compute total number of clusters or error */
 	error = BroadcastDestinations();
 
 	/* now assign each element to its destination */
-	error = SetDestinations(mg,minlevel);
+	error = SetDestinationsChaco(mg,minlevel);
 
 	/* release memory for clusters */
 	Release(MGHEAP(mg),FROM_BOTTOM, MarkKeyBottom);
 
 	End = CURRENT_TIME;
-	sprintf(buf,"BALAN: T=%.2f\n",End-Begin);
+	sprintf(buf,"BALAN: T=%.2lf\n",End-Begin);
 	UserWrite(buf);
 
 	/* transfer load */
