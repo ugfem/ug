@@ -451,6 +451,8 @@ void SetGhostObjectPriorities (GRID *theGrid)
 
           EDGE_PRIORITY_SET(theGrid,theEdge,PRIO_CALC(theEdge));
         }
+        else
+          EDGE_PRIORITY_SET(theGrid,theEdge,PrioMaster);
       }
 
                         #ifdef __THREEDIM__
