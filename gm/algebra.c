@@ -1509,7 +1509,7 @@ INT GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
   INT i;
 
   *cnt = 0;
-  for (i=0; i<EDGES__OF_ELEM(theElement); i++)
+  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
   {
     theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
                       CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
