@@ -1636,7 +1636,6 @@ static INT RedistributeFLs (FRONTLIST *myList,FRONTLIST *thenewFL)
 
     if (theFL==myList)
       continue;
-
     if (NFC(myList)<NFC(thenewFL))
     {
       if (ContainedIn(myList,theFL))
@@ -2385,10 +2384,12 @@ static FRONTCOMP *CreateDelaunayTriangle (
   DOUBLE xt[3], DOUBLE yt[3])
 {
   FRONTCOMP *thenewFC, *thereturnFC;
+  FRONTLIST *lauf_FL;
   NODE *theNode;
   VERTEX *theVertex;
   DOUBLE meshsize, pos[2], circ, min_circ;
   INT i, subdomain, ok;
+  INT max,zaehler;
   DOUBLE midp[2], np_midp[2], np[2];
   DOUBLE np_circ;
   ELEMENT_2D *help;
@@ -2442,6 +2443,57 @@ static FRONTCOMP *CreateDelaunayTriangle (
       }
     thenewFC = SUCCFC(thenewFC);
   }
+
+  /*laufe auch ueber andere Frontlists*/
+  /* folgende Variablen werden benoetigt*/
+  /*FRONTLIST *lauf_FL;*/
+  /*INT max,zaehler;*/
+  lauf_FL =  STARTFL(theIFL);
+  while(lauf_FL != NULL)
+  {
+    if(lauf_FL != theFL)
+    {
+      thenewFC = STARTFC(lauf_FL);
+      max = NFC(lauf_FL);
+      zaehler = 0;
+
+      while((thenewFC != NULL) && (zaehler < max))
+      {
+        theVertex = MYVERTEX(FRONTN(thenewFC));
+        xt[2] = XC(theVertex);
+        yt[2] = YC(theVertex);
+
+        if( ( ( (xt[1]-xt[0])*(yt[2]-yt[0])-(yt[1]-yt[0])*(xt[2]-xt[0]) )>SMALLDOUBLE ) )
+          if(CheckNewElement(lauf_FL, xt, yt))                                          /* no crossing with the Front */
+          {
+            Calc_Circumcircusmidpoint(xt, yt, midp);
+            /*				circ0 = sqrt( (midp[0]-xt[0])*(midp[0]-xt[0]) + (midp[1]-yt[0])*(midp[1]-yt[0]) );
+                                            circ1 = sqrt( (midp[0]-xt[1])*(midp[0]-xt[1]) + (midp[1]-yt[1])*(midp[1]-yt[1]) );
+                                            circ2 = sqrt( (midp[0]-xt[2])*(midp[0]-xt[2]) + (midp[1]-yt[2])*(midp[1]-yt[2]) );
+                                            if( (sqrt((circ0-circ1)*(circ0-circ1))<SMALLDOUBLE) &&
+                                                (sqrt((circ1-circ2)*(circ1-circ2))<SMALLDOUBLE) &&
+                                            (sqrt((circ2-circ0)*(circ2-circ0))<SMALLDOUBLE) )
+                                            circ = circ1;
+                                    else
+                                            printf("%s\n", "ERROR");*/
+
+            circ = sqrt( (midp[0]-xt[0])*(midp[0]-xt[0]) + (midp[1]-yt[0])*(midp[1]-yt[0]) );
+            if(min_circ>circ)
+            {
+              min_circ = circ;
+              thereturnFC = thenewFC;
+            }
+          }
+
+        thenewFC = SUCCFC (thenewFC);
+        zaehler ++;
+      }
+    }
+    lauf_FL = SUCCFL(lauf_FL);
+  }
+
+
+
 
   if(min_circ>1.5*np_circ)                              /* take the new point */
   {
@@ -2986,6 +3038,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
           sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
           UserWrite(buffer);
         }
+
       }                           /* while */
     else
     if (doConstDel)
