@@ -395,16 +395,17 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 
 	/* enter matrix list at the beginning of existing list for this vector */
 	/* ensure diagonal entry being at first position */
-	if (VSTART(vec)!=NULL)
-	{
-		MNEXT(last) = MNEXT(VSTART(vec));
-		MNEXT(VSTART(vec)) = first;
-	}
-	else
-	{
-		MNEXT(last) = VSTART(vec);
-		VSTART(vec) = first;
-	}
+	if (new_conns > 0)
+		if (VSTART(vec)!=NULL)
+		{
+			MNEXT(last) = MNEXT(VSTART(vec));
+			MNEXT(VSTART(vec)) = first;
+		}
+		else
+		{
+			MNEXT(last) = VSTART(vec);
+			VSTART(vec) = first;
+		}
 
 	/* count new connections */
 	NC(theGrid) += new_conns;
