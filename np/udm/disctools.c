@@ -1221,6 +1221,48 @@ INT ModifyDirichletMatrix (GRID *theGrid, const MATDATA_DESC *Mat)
 
 /****************************************************************************/
 /*D
+   ModifyDirichletDefect - set defect to zero for Dirichlet boundary
+
+   SYNOPSIS:
+   INT ModifyDirichletDefect (GRID *theGrid, VECDATA_DESC *Cor);
+
+   PARAMETERS:
+   .  theGrid - pointer to a grid
+   .  Cor - type vector descriptor for the correction vector
+
+   DESCRIPTION:
+   This function sets all components of Cor to zero where the vecskip flag is set.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+INT ModifyDirichletDefect (GRID *theGrid, const VECDATA_DESC *Cor)
+{
+  VECTOR *theVec;
+  INT i,j,comp1,ncomp,dcomp,type,dtype;
+
+  for (theVec=FIRSTVECTOR(theGrid); theVec!= NULL; theVec=SUCCVC(theVec))
+  {
+    type = VTYPE(theVec);
+    ncomp = VD_NCMPS_IN_TYPE (Cor,type);
+    if (ncomp == 0) continue;
+    for (j=0; j<ncomp; j++)
+      if (VECSKIP(theVec) & (1<<j))
+      {
+        comp1 = VD_CMP_OF_TYPE(Cor,type,j);
+        VVALUE(theVec,comp1) = 0.;
+      }
+  }
+
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*D
    AssembleTotalDirichletBoundary - modifies matrix entries and right hand side
    for Dirichlet boundary
 
