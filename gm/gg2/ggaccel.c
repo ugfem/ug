@@ -92,7 +92,7 @@ static void DELETE_ND ( FRONTCOMP *delete_p );
 /*                                                                          */
 /* Purpose:   necessary for dynamic object data in ug 3.0					*/
 /*            the different data structures for the grid generator get their*/
-/*			  id«s															*/
+/*			  id's															*/
 /*                                                                          */
 /*                                                                          */
 /****************************************************************************/
@@ -495,35 +495,35 @@ static QUADTREETYP* search(QUADTREETYP *q_pointer, SOURCETYP *so, DOUBLE *wi,
 /*            QUADTREETYP *q_pointer: pointer at a quadtree structure       */
 /*            SOURCETYP *so: pointer at a source respectivley a left        */
 /*                                    inferior corner					    */
-/*			  FRONTCOMP* thefoundPoints[MAXNPOINTS] : Array for the FC«s,   */
+/*			  FRONTCOMP* thefoundPoints[MAXNPOINTS] : Array for the FCs,    */
 /*			                          found within the small searching      */
 /*									  rectangle								*/
 /*			  FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS] :  Array for   */
-/*									  the FC«s, found within the big        */
+/*									  the FCs, found within the big         */
 /*									  searching rectangle - necessary to    */
 /*									  detect long cutting edges             */
 /*            SOURCETYP *search_sq_ld,*search_sq_ru,*big_search_sq_ld,      */
 /*                      *big_search_sq_ru : coordinates of the different    */
 /*									  sources								*/
-/*            DOUBLE xt[3], DOUBLE yt[3] : coordinates of the sugg. triangle	*/
-/*			  DOUBLE searchradis : radius of the circle around the new       */
+/*            DOUBLE xt[3], DOUBLE yt[3] : coordinates of the sugg. triangle*/
+/*			  DOUBLE searchradis : radius of the circle around the new      */
 /*									  suggested node to detect also close   */
 /*									  cutting edges							*/
 /*            int *foundpoints, int *ii: reference parameters for number of */
 /*									  found points                                                  */
 /*																			*/
-/* Output:	  FRONTCOMP* thefoundPoints[MAXNPOINTS] : Array with the FC«s,  */
+/* Output:	  FRONTCOMP* thefoundPoints[MAXNPOINTS] : Array with the FCs,   */
 /*			                          found within the small searching      */
 /*									  rectangle								*/
 /*			  FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS] :  Array with  */
-/*									  the FC«s, found within the big        */
+/*									  the FCs, found within the big         */
 /*									  searching rectangle - necessary to    */
 /*									  detect long cutting edges             */
 /*			                          found within the small searching      */
 /*									  rectangle								*/
-/*            int *foundpoints : Number of  FC«s, found within the small    */
+/*            int *foundpoints : Number of  FCs, found within the small     */
 /*			                          searching rectangle					*/
-/*            int *ii          : Number of  FC«s, found within the big      */
+/*            int *ii          : Number of  FCs, found within the big       */
 /*			                          searching rectangle					*/
 /*																			*/
 /****************************************************************************/
@@ -624,8 +624,8 @@ static void environment_search(INDEPFRONTLIST *theIFL,
             /* == "but the node is not within the small */
             /* searching-square" !!!   */
             {
-              /* what«s about its successor ? */
-              /* so we«ve found a candidate for possible */
+              /* what about its successor ? */
+              /* so we have found a candidate for possible */
               /* "FrontLineIntersction" */
               while ( hn_pointer != NULL)
               {
@@ -707,11 +707,11 @@ static void environment_search(INDEPFRONTLIST *theIFL,
 
                 else
                 {
-                  /* what«s about its successor ?   */
+                  /* what about its successor ?   */
                   /* Well It is in any case within the big    */
                   /* searching-square therefore no comparisons */
                   /* necessary!!!                              */
-                  /* so we«ve found a candidate for possible  */
+                  /* so we have found a candidate for possible  */
                   /* "FrontLineIntersection" */
 
                   while ( hn_pointer != NULL)
@@ -975,7 +975,7 @@ static void delete_node(QUADTREETYP *q_pointer, FRONTCOMP *p_del, DOUBLE width,
     nodepointer_qfcl = q_pointer->q_array[place];
     if ( nodepointer_qfcl == NULL )             /* there is no node at all !!! */
     {
-      PrintErrorMessage('E',"bnodes","Error: I cannot delete a node, which  doesn«t exist!!!");
+      PrintErrorMessage('E',"bnodes","Error: I cannot delete a node, which  doesn't exist!!!");
       return;
     }
     else
@@ -995,7 +995,7 @@ static void delete_node(QUADTREETYP *q_pointer, FRONTCOMP *p_del, DOUBLE width,
             nodepointer_qfcl = NXT(nodepointer_qfcl);
           }
           else
-            PrintErrorMessage('E',"bnodes","ERR: in delete_node QFCL: node doesn«t exist !");
+            PrintErrorMessage('E',"bnodes","ERR: in delete_node QFCL: node doesn't exist !");
         }
         while ( FROC(nodepointer_qfcl) != p_del );
 
@@ -1882,7 +1882,7 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
 {
   int l;
   BVP *theBVP;
-  BVP_DESC theBVPDesc;
+  BVP_DESC *theBVPDesc;
   INDEPFRONTLIST *edge_theIFL;
   FRONTLIST *edge_theFL;
   FRONTCOMP *edge_theFC;
@@ -1893,7 +1893,7 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
   MG = MYMG(the_Grid);
   if (MG == NULL) PrintErrorMessage('E',"bnodes","no multigrid received");
   theBVP = MG_BVP(MG);
-  if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (1);
+  theBVPDesc = MG_BVPD(MYMG(the_Grid));
 
   InitAccelObjs(MG);
   del_edg_fnd = 0;
