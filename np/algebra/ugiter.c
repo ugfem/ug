@@ -1408,7 +1408,7 @@ INT gs_solveBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
 /****************************************************************************/
 
 INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-            const VECDATA_DESC *d, const DOUBLE *omega)
+            const VECDATA_DESC *d, const DOUBLE *omega, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*first_vec;
   INT rtype,ctype,myindex,err;
@@ -1596,6 +1596,15 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
         }
 
     /* solve */
+        #ifdef ModelP
+    if (diag != NULL) {
+      if (SolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
+                          VD_CMPPTR_OF_TYPE(diag,rtype),
+                          VVALPTR(vec),s)!=0)
+        REP_ERR_RETURN (__LINE__);
+    }
+    else
+        #endif
     if (SolveSmallBlock(n,vcomp,VVALPTR(vec),
                         MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                         MVALPTR(VSTART(vec)),s)!=0)
@@ -1604,13 +1613,14 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
     /* relaxation */
     for (i=0; i<n; i++)
       VVALUE(vec,vcomp[i]) *= tdmp[i];
+
   }
 
   return (NUM_OK);
 }
 
 INT l_usor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-            const VECDATA_DESC *d, const DOUBLE *omega)
+            const VECDATA_DESC *d, const DOUBLE *omega, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*last_vec;
   INT rtype,ctype,myindex,err;
@@ -1793,6 +1803,15 @@ INT l_usor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
         }
 
     /* solve */
+        #ifdef ModelP
+    if (diag != NULL) {
+      if (SolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
+                          VD_CMPPTR_OF_TYPE(diag,rtype),
+                          VVALPTR(vec),s)!=0)
+        REP_ERR_RETURN (__LINE__);
+    }
+    else
+        #endif
     if (SolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
                         MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                         MVALPTR(VSTART(vec)),s)!=0)
@@ -1807,7 +1826,7 @@ INT l_usor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
 }
 
 INT l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-               const VECDATA_DESC *d, VECDATA_DESC *omega)
+               const VECDATA_DESC *d, VECDATA_DESC *omega, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*last_vec;
   INT rtype,ctype,myindex,err;
@@ -1990,6 +2009,15 @@ INT l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
         }
 
     /* solve */
+        #ifdef ModelP
+    if (diag != NULL) {
+      if (SolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
+                          VD_CMPPTR_OF_TYPE(diag,rtype),
+                          VVALPTR(vec),s)!=0)
+        REP_ERR_RETURN (__LINE__);
+    }
+    else
+        #endif
     if (SolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
                         MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                         MVALPTR(VSTART(vec)),s)!=0)
@@ -2033,7 +2061,7 @@ INT l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
    D*/
 /****************************************************************************/
 
-INT l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, const VECDATA_DESC *damp)
+INT l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, const VECDATA_DESC *damp, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*first_vec;
   INT rtype,ctype,myindex,err;
@@ -2215,6 +2243,15 @@ INT l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
         }
 
     /* solve */
+        #ifdef ModelP
+    if (diag != NULL) {
+      if (SolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
+                          VD_CMPPTR_OF_TYPE(diag,rtype),
+                          VVALPTR(vec),s)!=0)
+        REP_ERR_RETURN (__LINE__);
+    }
+    else
+        #endif
     if (SolveSmallBlock(n,vcomp,VVALPTR(vec),
                         MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                         MVALPTR(VSTART(vec)),s)!=0)
