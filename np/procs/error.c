@@ -128,7 +128,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
         // data (optinal, necessary for calling the generic execute routine)
     VECDATA_DESC *x;                     // solution
     VECDATA_DESC *o;                     // old solution
-    MATDATA_DESC *J;                     // last Jacobi matrix
+    NP_T_SOLVER *ts;                     // reference to timesolver
 
         // functions
         INT (*PreProcess)
@@ -147,7 +147,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
                   DOUBLE *,                      // time step
                   VECDATA_DESC *,                // solution vector
                   VECDATA_DESC *,                // old solution vector
-          MATDATA_DESC *,                // last Jacobi matrix
+          NP_T_SOLVER *,                 // reference to timesolver
                   ERESULT *);                    // result
         INT (*PostProcess)
              (struct np_error *,             // pointer to (derived) object
@@ -166,7 +166,6 @@ INT NPErrorInit (NP_ERROR *np, INT argc , char **argv)
 {
   np->x = ReadArgvVecDesc(np->base.mg,"x",argc,argv);
   np->o = ReadArgvVecDesc(np->base.mg,"o",argc,argv);
-  np->J = ReadArgvMatDesc(np->base.mg,"J",argc,argv);
 
   if (np->x == NULL)
     return(NP_ACTIVE);
@@ -183,8 +182,6 @@ INT NPErrorDisplay (NP_ERROR *np)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(np->x));
   if (np->o != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"o",ENVITEM_NAME(np->o));
-  if (np->J != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"J",ENVITEM_NAME(np->J));
   UserWrite("\n");
 
   return(0);
@@ -246,7 +243,7 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPErrorExecute","no time step");
       return (1);
     }
-    if ((*np->TimeError)(np,level,Time,&step,np->x,np->o,np->J,&eresult)) {
+    if ((*np->TimeError)(np,level,Time,&step,np->x,np->o,np->ts,&eresult)) {
       UserWriteF("NPErrorExecute: PreProcess failed, error code %d\n",
                  eresult.error_code);
       return (1);
@@ -552,7 +549,7 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x,
 
 static INT TimeIndicator (NP_ERROR *theNP, INT level, DOUBLE t,
                           DOUBLE *dt, VECDATA_DESC *x,
-                          VECDATA_DESC *o, MATDATA_DESC *A, ERESULT *eresult)
+                          VECDATA_DESC *o, NP_T_SOLVER *ts, ERESULT *eresult)
 {
   return(Indicator(theNP,level,x,eresult));
 }
