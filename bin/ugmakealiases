@@ -26,7 +26,7 @@ fi
 UGALIASESFILE=$UGROOT/bin/ugaliases
 
 cd $UGROOT;
-rm -f $UGROOT/bin/ugaliases;
+rm -f $UGALIASESFILE;
 
 echo " creating aliases for ug...";
 
@@ -60,16 +60,17 @@ cd $UGROOT;
 
 # create aliases for ug directory
 echo "alias cdug 'cd \$UGROOT'" >> $UGALIASESFILE;
-for i in * */* */*/* */*/*/* 
+for i in  `find . -type d \
+			\( -name man -o -name doc -o -name ddd -o -name CVS \) -prune -o \
+			-type d \
+			-print`
 do
-	if test -d $i -a ! -h $i
-	then
-		if test "`basename $i`" != "CVS"
-		then
-			echo "alias cd`basename $i` 'cd \$UGROOT/$i'" >> $UGALIASESFILE;
-		fi
-	fi
-done	
+	echo $i
+	echo "alias cd`basename $i` 'cd \$UGROOT/$i'" >> $UGALIASESFILE;
+done
+
+
+
 
 # create aliases for application and problem part
 
