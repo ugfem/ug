@@ -4339,6 +4339,12 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
 				RETURN(GM_FATAL);
 		}
 	}
+
+	/* TODO: set EBUILDCON only where necessary */
+    #ifndef __EXCHANGE_CONNECTIONS__
+	MGCreateConnection(theMG);
+	#endif
+	REFINE_MULTIGRID_LIST(1,theMG,"END RefineMultiGrid():\n","","");
 	#endif
 	if (hFlag)
 	/* set grid status of grid 0 */
