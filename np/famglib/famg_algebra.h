@@ -400,4 +400,8 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg );
 #include "famg_algebra.C"       // enable automatic template instantiation with explicit inclusion; remove famg_algebra.o from Makefile
 #endif
 
+#ifdef __SGI10__
+#include "famg_algebra.C"       // enable automatic template instantiation with explicit inclusion; remove famg_algebra.o from Makefile
+#endif
+
 #endif

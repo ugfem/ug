@@ -18,6 +18,8 @@
 /*																			*/
 /****************************************************************************/
 
+#ifdef ModelP
+
 #include <stdlib.h> 		// for (s)rand
 #include <string.h> 		// for memset
 #include <limits.h> 		// for INT_MAX
@@ -425,3 +427,4 @@ int ConstructColoring( int OrderingFunctionType )
 	
 	return 0;
 }
+#endif

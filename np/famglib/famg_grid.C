@@ -962,13 +962,13 @@ int FAMGGrid::ConstructTransfer()
     if (graph->Init(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
     if (graph->Construct(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 
+#ifdef ModelP
 	if( level == 0 )
 	{
 		if (graph->EliminateDirichletNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
-#ifdef ModelP
 		CommunicateNodeStatus();
-#endif
 	}
+#endif
 
 #ifdef ModelP
 	// in parallel now only the nodes in the border of the core partition are in the list
@@ -1095,8 +1095,8 @@ int FAMGGrid::ConstructTransfer()
 	cout
 #ifdef ModelP
 		<< me << ": "
-#endif
 		<< "level "<< level 
+#endif
 	    << " FAMG time = " << TotalTime
 #ifdef ModelP
 	    << " ( graph coloring = " << GraphColorTime

@@ -399,4 +399,14 @@ typedef class FAMGMatrixAlg FAMGugMatrix;
 typedef class FAMGMatrixIter FAMGugMatrixIter;
 #endif
 
+#ifdef __SGI10__
+typedef FAMGVectorEntryRef FAMGugVectorEntryRef;
+typedef class FAMGVectorEntry FAMGugVectorEntry;
+typedef class FAMGGridVector FAMGugGridVector;
+typedef class FAMGVector FAMGugVector;
+typedef class FAMGMatrixEntry FAMGugMatrixEntry;
+typedef class FAMGMatrixAlg FAMGugMatrix;
+typedef class FAMGMatrixIter FAMGugMatrixIter;
+#endif
+
 #endif

@@ -408,7 +408,10 @@ EvalFAMGGraph1_finish:
 	#ifdef ModelP
 	WOP_DObjPnt = theDO;
 	#endif
-            
+    
+#ifndef ModelP
+    DO_2c(theDO) = DO_NO_INST;
+#endif
     return(0);
 }
 
@@ -458,6 +461,10 @@ EvalFAMGGraph2_finish:
 	WOP_DObjPnt = theDO;
 	#endif
             
+#ifndef ModelP
+    DO_2c(theDO) = DO_NO_INST;
+#endif
+
     return(0);
     
 }
@@ -490,6 +497,7 @@ static INT EvalFAMGGraph (DRAWINGOBJ *theDO, INT *end)
 
     if(GlobalVec2 == NULL) *end = 1;
     else *end = 0;
+ 
 
     return(0);
     

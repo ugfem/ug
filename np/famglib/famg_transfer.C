@@ -200,10 +200,12 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 	{
 		IFDEBUG(np,3)
 		ugfg_vec = ((FAMGugVectorEntryRef*)fg_ve.GetPointer())->myvector();
+#ifdef ModelP
 		PRINTDEBUG(np,3,("%d: ind %d gid %08x prio %d n %d\n",me,VINDEX(ugfg_vec),
 						 DDD_InfoGlobalId(PARHDR(ugfg_vec)),
 						 DDD_InfoPriority(PARHDR(ugfg_vec)),
 						 DDD_InfoNCopies(PARHDR(ugfg_vec))));
+#endif
 		ENDDEBUG
 		
 		if( fg_gridvec.IsCG(fg_ve) )
