@@ -61,11 +61,10 @@
 #define MGIO_CHECK_DOUBLESIZE(n)        if ((n)>MGIO_DOUBLESIZE) return (1)
 #define MGIO_CHECK_BUFFERIZE(s)         if (strlen(s)>MGIO_BUFFERSIZE) return (1)
 
-#define MGIO_ECTRL(ge,ref,nf,nm)                                ((ge)&15) | (((nf)&31)<<4) | (((nm)&31)<<9)  | (((ref)&131071)<<14)
-#define MGIO_ECTRL_GE(ctrl)                                             ((ctrl)&15)
-#define MGIO_ECTRL_NC(ctrl)                                             (((ctrl)>>4)&31)
-#define MGIO_ECTRL_NM(ctrl)                                             (((ctrl)>>9)&31)
-#define MGIO_ECTRL_REF(ctrl)                                    (((ctrl)>>14)&131071)
+#define MGIO_ECTRL(ref,nf,nm)                                   ((nf)&31) | (((nm)&31)<<5)  | (((ref)&4194303)<<10)
+#define MGIO_ECTRL_NC(ctrl)                                             ((ctrl)&31)
+#define MGIO_ECTRL_NM(ctrl)                                             (((ctrl)>>5)&31)
+#define MGIO_ECTRL_REF(ctrl)                                    (((ctrl)>>10)&4194303)
 
 /****************************************************************************/
 /*																			*/
@@ -943,40 +942,39 @@ int Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
  */
 /****************************************************************************/
 
-int Read_HE_Refinement (int n, MGIO_HE_ELEMENT *he_element)
+int Read_Refinement (int n, MGIO_REFINEMENT *refinement)
 {
   int i,j,k,s;
   unsigned int ctrl;
-  MGIO_HE_ELEMENT *pe;
+  MGIO_REFINEMENT *pr;
 
-  pe = he_element;
+  pr = refinement;
   for (i=0; i<n; i++)
   {
     if ((*Read_mint)(1,intList)) return (1);
     ctrl = intList[0];
-    pe->ge = MGIO_ECTRL_GE(ctrl);
-    pe->refrule = MGIO_ECTRL_REF(ctrl)-1;
-    if (pe->refrule>-1)
+    pr->refrule = MGIO_ECTRL_REF(ctrl)-1;
+    if (pr->refrule>-1)
     {
-      pe->nnewcorners = MGIO_ECTRL_NC(ctrl);
-      pe->nmoved = MGIO_ECTRL_NM(ctrl);
-      if (pe->nnewcorners+pe->nmoved>0)
-        if ((*Read_mint)(pe->nnewcorners+pe->nmoved,intList)) return (1);
+      pr->nnewcorners = MGIO_ECTRL_NC(ctrl);
+      pr->nmoved = MGIO_ECTRL_NM(ctrl);
+      if (pr->nnewcorners+pr->nmoved>0)
+        if ((*Read_mint)(pr->nnewcorners+pr->nmoved,intList)) return (1);
       s=0;
-      for (j=0; j<pe->nnewcorners; j++)
-        pe->newcornerid[j] = intList[s++];
-      for (j=0; j<pe->nmoved; j++)
-        pe->mvcorner[j].id = intList[s++];
-      if (pe->nmoved>0)
+      for (j=0; j<pr->nnewcorners; j++)
+        pr->newcornerid[j] = intList[s++];
+      for (j=0; j<pr->nmoved; j++)
+        pr->mvcorner[j].id = intList[s++];
+      if (pr->nmoved>0)
       {
-        if ((*Read_mdouble)(MGIO_DIM*pe->nmoved,doubleList)) return (1);
+        if ((*Read_mdouble)(MGIO_DIM*pr->nmoved,doubleList)) return (1);
         s=0;
-        for (j=0; j<pe->nmoved; j++)
+        for (j=0; j<pr->nmoved; j++)
           for (k=0; k<MGIO_DIM; k++)
-            pe->mvcorner[j].position[k] = doubleList[s++];
+            pr->mvcorner[j].position[k] = doubleList[s++];
       }
     }
-    pe++;
+    pr++;
   }
 
   return (0);
@@ -1005,25 +1003,25 @@ int Read_HE_Refinement (int n, MGIO_HE_ELEMENT *he_element)
  */
 /****************************************************************************/
 
-int Write_HE_Refinement (int n, MGIO_HE_ELEMENT *he_element)
+int Write_Refinement (int n, MGIO_REFINEMENT *refinement)
 {
   int i,j,k,s,t;
-  MGIO_HE_ELEMENT *pe;
+  MGIO_REFINEMENT *pr;
 
-  pe = he_element;
+  pr = refinement;
   for (i=0; i<n; i++)
   {
     s=t=0;
-    intList[s++] = MGIO_ECTRL(pe->ge,pe->refrule+1,pe->nnewcorners,pe->nmoved);
-    if (pe->refrule>-1)
+    intList[s++] = MGIO_ECTRL(pr->refrule+1,pr->nnewcorners,pr->nmoved);
+    if (pr->refrule>-1)
     {
-      for (j=0; j<pe->nnewcorners; j++)
-        intList[s++] = pe->newcornerid[j];
-      for (j=0; j<pe->nmoved; j++)
-        intList[s++] = pe->mvcorner[j].id;
-      for (j=0; j<pe->nmoved; j++)
+      for (j=0; j<pr->nnewcorners; j++)
+        intList[s++] = pr->newcornerid[j];
+      for (j=0; j<pr->nmoved; j++)
+        intList[s++] = pr->mvcorner[j].id;
+      for (j=0; j<pr->nmoved; j++)
         for (k=0; k<MGIO_DIM; k++)
-          doubleList[t++] = pe->mvcorner[j].position[k];
+          doubleList[t++] = pr->mvcorner[j].position[k];
     }
 
     MGIO_CHECK_INTSIZE(s);
@@ -1031,7 +1029,7 @@ int Write_HE_Refinement (int n, MGIO_HE_ELEMENT *he_element)
     MGIO_CHECK_DOUBLESIZE(t);
     if (t>0) if ((*Write_mdouble)(t,doubleList)) return (1);
 
-    pe++;
+    pr++;
   }
 
   return (0);
@@ -1069,17 +1067,19 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
   pe = cg_element;
   for (i=0; i<n; i++)
   {
-    /* hierarchical part */
-    if (Read_HE_Refinement (1,&(pe->he))) return (1);
-
     /* coarse grid part */
-    m=lge[pe->he.ge].nCorner+lge[pe->he.ge].nSide;
+    if ((*Read_mint)(1,&pe->ge)) return (1);
+    m=lge[pe->ge].nCorner+lge[pe->ge].nSide+1;
     if ((*Read_mint)(m,intList)) return (1);
     s=0;
-    for (j=0; j<lge[pe->he.ge].nCorner; j++)
+    pe->nhe = intList[s++];
+    for (j=0; j<lge[pe->ge].nCorner; j++)
       pe->cornerid[j] = intList[s++];
-    for (j=0; j<lge[pe->he.ge].nSide; j++)
+    for (j=0; j<lge[pe->ge].nSide; j++)
       pe->nbid[j] = intList[s++];
+
+    /* hierarchical part */
+    if (Read_Refinement (1,&(pe->ref))) return (1);
 
     pe++;
   }
@@ -1118,18 +1118,19 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
   pe = cg_element;
   for (i=0; i<n; i++)
   {
-    /* hierarchical part */
-    if (Write_HE_Refinement (1,&(pe->he))) return (1);
-
     /* coarse grid part */
     s=0;
-    for (j=0; j<lge[pe->he.ge].nCorner; j++)
+    intList[s++] = pe->ge;
+    intList[s++] = pe->nhe;
+    for (j=0; j<lge[pe->ge].nCorner; j++)
       intList[s++] = pe->cornerid[j];
-    for (j=0; j<lge[pe->he.ge].nSide; j++)
+    for (j=0; j<lge[pe->ge].nSide; j++)
       intList[s++] = pe->nbid[j];
-
     MGIO_CHECK_INTSIZE(s);
     if ((*Write_mint)(s,intList)) return (1);
+
+    /* hierarchical part */
+    if (Write_Refinement (1,&(pe->ref))) return (1);
 
     pe++;
   }

@@ -199,21 +199,23 @@ struct mgio_movedcorner {
   double position[MGIO_DIM];                            /* position of the point							*/
 };
 
-struct mgio_he_element {
+struct mgio_refinement {
 
-  int ge;                                                                               /* id of general element					*/
   int refrule;                                                                  /* id of refinement rule					*/
   int nnewcorners;                                                              /* nb of new corners on next level			*/
-  int newcornerid[MGIO_MAX_NEW_CORNERS];                /* ids of corners on next level				*/
+  int newcornerid[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];      /* ids of new corners    */
   int nmoved;                                                                           /* nmoved new corners moved					*/
   struct mgio_movedcorner mvcorner[MGIO_MAX_NEW_CORNERS];       /* array of moved corners		*/
 };
 
 struct mgio_cg_element {
 
-  struct mgio_he_element he;                                            /* the hierarical element					*/
+  int ge;                                                                               /* id of general element					*/
   int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of corners							*/
   int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
+  int nhe;                                                                              /* nb of he_elements of this element		*/
+
+  struct mgio_refinement ref;                                           /* the refinement							*/
 };
 
 struct mgio_bd_general {
@@ -230,7 +232,7 @@ typedef struct mgio_rr_rule MGIO_RR_RULE;
 typedef struct mgio_cg_general MGIO_CG_GENERAL;
 typedef struct mgio_cg_point MGIO_CG_POINT;
 typedef struct mgio_cg_element MGIO_CG_ELEMENT;
-typedef struct mgio_he_element MGIO_HE_ELEMENT;
+typedef struct mgio_refinement MGIO_REFINEMENT;
 typedef struct mgio_bd_general MGIO_BD_GENERAL;
 
 /****************************************************************************/
@@ -257,7 +259,7 @@ int             Read_RR_Rules           (int n, MGIO_RR_RULE    *rr_rules);
 int     Read_CG_General         (MGIO_CG_GENERAL *cg_general);
 int             Read_CG_Points          (int n, MGIO_CG_POINT   *cg_point);
 int             Read_CG_Elements        (int n, MGIO_CG_ELEMENT *cg_element);
-int     Read_HE_Element         (int n, MGIO_HE_ELEMENT *he_element);
+int     Read_Refinement         (int n, MGIO_REFINEMENT *refinement);
 int             Read_BD_General         (MGIO_BD_GENERAL *bd_general);
 
 /* write functions */
@@ -270,7 +272,7 @@ int             Write_RR_Rules          (int n, MGIO_RR_RULE    *rr_rules);
 int     Write_CG_General        (MGIO_CG_GENERAL *cg_general);
 int             Write_CG_Points         (int n, MGIO_CG_POINT   *cg_point);
 int             Write_CG_Elements       (int n, MGIO_CG_ELEMENT *cg_element);
-int     Write_HE_Element        (int n, MGIO_HE_ELEMENT *he_element);
+int     Write_Refinement        (int n, MGIO_REFINEMENT *refinement);
 int             Write_BD_General        (MGIO_BD_GENERAL *bd_general);
 
 #ifdef __MGIO_USE_IN_UG__
