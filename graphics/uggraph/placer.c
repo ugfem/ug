@@ -60,6 +60,11 @@ typedef double DOUBLE;
 /****************************************************************************/
 
 
+/* define exactly one of the following */
+/* #define REL_SIZE_IS_AREA */
+#define REL_SIZE_IS_X_COORD
+
+
 /* this is the relative weight of input-order optimization vs. placement */
 #define INPUT_ORDER_WEIGHT 0.02
 
@@ -136,9 +141,18 @@ static void InitPic (PRect *rect, int i, DOUBLE ar, DOUBLE rs)
   rect->llx = 0.0;
   rect->lly = 0.0;
 
+
+        #ifdef REL_SIZE_IS_AREA
   /* we scale to: sx*sy==rel_size */
   rect->sx  = sqrt(rs/ar);
   rect->sy  = ar * rect->sx;
+        #endif
+
+        #ifdef REL_SIZE_IS_X_COORD
+  /* we scale to: sx==rel_size */
+  rect->sx  = rs;
+  rect->sy  = ar * rect->sx;
+        #endif
 }
 
 
@@ -150,7 +164,15 @@ static void InitWin (PRect *rect, INT *ll, INT *ur)
   rect->sy  = (double)(ur[1]-ll[1]);
 
   rect->aspect_ratio = rect->sy / rect->sx;
+
+
+        #ifdef REL_SIZE_IS_AREA
   rect->rel_size = rect->sx*rect->sy;
+        #endif
+
+        #ifdef REL_SIZE_IS_X_COORD
+  rect->rel_size = rect->sx;
+        #endif
 }
 
 
