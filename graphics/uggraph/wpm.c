@@ -42,6 +42,8 @@
 #include "wpm.h"
 #include "general.h"
 
+#include "xbc.h"
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -245,12 +247,17 @@ UGWINDOW *CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *UgWindowNam
   UGWINDOW *theWindow;
   WINDOWID winID;
   INT error;
+  int r;
 
   /* check outputdevice */
-        #ifdef ModelP
+#ifdef ModelP
   if (me == master)
-        #endif
-  if (theOutputDevice == NULL) return (NULL);
+#endif
+  r = (theOutputDevice == NULL);
+#ifdef ModelP
+  Broadcast(&r, sizeof(r));
+#endif
+  if (r) return NULL;
 
   /* allocate UgWindow envItem */
   if (ChangeEnvDir("/UgWindows") == NULL) return (NULL);
@@ -258,17 +265,13 @@ UGWINDOW *CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *UgWindowNam
   if ((theWindow = (UGWINDOW *) MakeEnvItem(UgWindowName,theUgWinDirID,sizeof(UGWINDOW))) == NULL) return (NULL);
 
   /* open window on device and set sizes */
-        #ifdef ModelP
-  {
-    INT size,l;
-    INT *data;
-    size = 8*sizeof(INT);
-    data = (INT *)malloc(size);
-
-    if (me == master)
-    {
-        #endif
+#ifdef ModelP
+  if (me == master)
+#endif
   winID = (*theOutputDevice->OpenOutput)(UgWindowName, rename, x, y, width, height, UGW_GLL(theWindow), UGW_GUR(theWindow), UGW_LLL(theWindow), UGW_LUR(theWindow), &error);
+#ifdef ModelP
+  Broadcast(&error, sizeof(error));
+#endif
   if (error)
   {
     if (DisposeUgWindow(theWindow))
@@ -279,25 +282,6 @@ UGWINDOW *CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *UgWindowNam
     UserWrite("cannot open IFWindow\n");
     return (NULL);
   }
-        #ifdef ModelP
-  memcpy((void *)data,(void *)UGW_GLL(theWindow),size);
-
-  /* spread coordinates to slaves */
-  for(l=0; l<degree; l++)
-    Spread(l,(void *)data,size);
-}
-else {
-  GetSpread((void *)data,size);
-
-  memcpy((void *)UGW_GLL(theWindow),(void *)data,size);
-
-  /* get coordinates from master */
-  for(l=0; l<degree; l++)
-    Spread(l,(void *)data,size);
-}
-free(data);
-}
-        #endif
 
   /* set the other stuff */
   ENVITEM_LOCKED(theWindow)       = NO;
@@ -307,6 +291,16 @@ free(data);
   UGW_IFWINDOW(theWindow)         = winID;
 
   SetDeviceInfo();
+
+  XBroadcast(8,
+             &(UGW_GLL(theWindow)), sizeof(UGW_GLL(theWindow)),
+             &(UGW_GUR(theWindow)), sizeof(UGW_GUR(theWindow)),
+             &(UGW_LLL(theWindow)), sizeof(UGW_LLL(theWindow)),
+             &(UGW_LUR(theWindow)), sizeof(UGW_LUR(theWindow)),
+             &(ENVITEM_LOCKED(theWindow)), sizeof(ENVITEM_LOCKED(theWindow)),
+             &(UGW_NPIC(theWindow)), sizeof(UGW_NPIC(theWindow)),
+             &(UGW_VALID(theWindow)), sizeof(UGW_VALID(theWindow)),
+             &(UGW_IFWINDOW(theWindow)), sizeof(UGW_IFWINDOW(theWindow)));
 
   return (theWindow);
 }
@@ -428,12 +422,19 @@ UGWINDOW *OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *tas
 
 INT UpdateUgWindow (UGWINDOW *theUgWindow, const PICTURE *EvalPicture)
 {
+  int r;
+
   if (theUgWindow==NULL) return (0);
 
   /* update ugwindow */
-
-  if ((*UGW_OUTPUTDEV(theUgWindow)->UpdateOutput)(UGW_IFWINDOW(theUgWindow),UGW_CURRTOOL(theUgWindow)))
-    return (1);
+#ifdef ModelP
+  if (me == master)
+#endif
+  r = (*UGW_OUTPUTDEV(theUgWindow)->UpdateOutput)(UGW_IFWINDOW(theUgWindow),UGW_CURRTOOL(theUgWindow));
+#ifdef ModelP
+  Broadcast(&r, sizeof(r));
+#endif
+  if (r) return r;
 
   /* window is valid */
   UGW_VALID(theUgWindow) = YES;

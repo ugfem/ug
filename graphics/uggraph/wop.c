@@ -59,6 +59,7 @@
 #ifdef ModelP
 #include "parallel.h"
 #include "ppif.h"
+#include "xbc.h"
 #endif
 
 /****************************************************************************/
@@ -149,7 +150,7 @@ INT ce_ELEMORD;
 #define CNT(p, k)             (GR_LINK(p)[k]->cnt)
 #define NAD(p, k)             (GR_LINK(p)[k]->nad)
 #define ADJACENT(p, k)        (GR_LINK(p)[k]->adjacent)
-#define CGG_BUFFER_SLOTS      2
+#define CGG_BUFFER_SLOTS      DO_BUFFER_SLOTS
 #define MAX_PGRAPH_SIZE       (4+MAX_SIDES_OF_ELEM-1 + \
 	                           1+(MAX_SIDES_OF_ELEM-1)*(1+MAX_CORNERS_OF_SIDE)+2)
 #define CGG_SLOT_LEN          (300*MAX_PGRAPH_SIZE+1)
@@ -471,7 +472,7 @@ static INT                  OE_Error;
 static CGG_DATA             *OE_CGG;
 static INT                  OE_nLocalCGelems;
 static INT                  OE_nGlobalCGelems;
-static DOUBLE               *OE_Buffer[WOP_DOWN_CHANNELS+1][CGG_BUFFER_SLOTS];
+static DOUBLE               *OE_Buffer[WOP_DOWN_CHANNELS_MAX+1][CGG_BUFFER_SLOTS];
 #endif
 
 /*---------- variables use by GetFirst/NextElement... ----------------------*/
@@ -863,22 +864,23 @@ static RECURSIVE_EvaluateProcPtr	WOP_RECURSIVE_EvaluateProc;
 
 /*---------- variables for parallel extensions ----------------------------*/
 #ifdef ModelP
-static DRAWINGOBJ       *WOP_DO_Buffer[WOP_DOWN_CHANNELS+1][DO_BUFFER_SLOTS];
+static INT               WopDownChannels;
+static DRAWINGOBJ       *WOP_DO_Buffer[WOP_DOWN_CHANNELS_MAX+1][DO_BUFFER_SLOTS];
 static VChannelPtr       WOP_UpChannel;
-static VChannelPtr       WOP_DownChannel[WOP_DOWN_CHANNELS];
-static INT               WOP_NbDesc[WOP_DOWN_CHANNELS];
+static VChannelPtr       WOP_DownChannel[WOP_DOWN_CHANNELS_MAX];
+static INT               WOP_NbDesc[WOP_DOWN_CHANNELS_MAX];
 DRAWINGOBJ        *WOP_DObjPnt;
-static INT WOP_Sending  [WOP_DOWN_CHANNELS+1]; /* indicates sending from buffer i  */
-static INT WOP_Receiving[WOP_DOWN_CHANNELS];   /* indicates receiving in buffer i  */
-static INT WOP_NbTokens [WOP_DOWN_CHANNELS];   /* nb of tokens seen from channel i */
-static INT WOP_More     [WOP_DOWN_CHANNELS+1]; /* more to receive from channel i   */
-static INT WOP_Count    [WOP_DOWN_CHANNELS+1]; /* slots used in buffer i           */
-static INT WOP_Front    [WOP_DOWN_CHANNELS+1]; /* next free slot in buffer i       */
-static INT WOP_Rear     [WOP_DOWN_CHANNELS+1]; /* first nonempty slot in buffer i  */
-static int WOP_SError   [WOP_DOWN_CHANNELS+1]; /* error for sending on channel i   */ 
-static int WOP_RError   [WOP_DOWN_CHANNELS];   /* error for receiving on channel i */ 
-static msgid WOP_Outmsg [WOP_DOWN_CHANNELS+1]; /* IDs for messages being sent      */
-static msgid WOP_Inmsg  [WOP_DOWN_CHANNELS];   /* IDs for messages being received  */
+static INT WOP_Sending  [WOP_DOWN_CHANNELS_MAX+1]; /* indicates sending from buffer i  */
+static INT WOP_Receiving[WOP_DOWN_CHANNELS_MAX];   /* indicates receiving in buffer i  */
+static INT WOP_NbTokens [WOP_DOWN_CHANNELS_MAX];   /* nb of tokens seen from channel i */
+static INT WOP_More     [WOP_DOWN_CHANNELS_MAX+1]; /* more to receive from channel i   */
+static INT WOP_Count    [WOP_DOWN_CHANNELS_MAX+1]; /* slots used in buffer i           */
+static INT WOP_Front    [WOP_DOWN_CHANNELS_MAX+1]; /* next free slot in buffer i       */
+static INT WOP_Rear     [WOP_DOWN_CHANNELS_MAX+1]; /* first nonempty slot in buffer i  */
+static int WOP_SError   [WOP_DOWN_CHANNELS_MAX+1]; /* error for sending on channel i   */ 
+static int WOP_RError   [WOP_DOWN_CHANNELS_MAX];   /* error for receiving on channel i */ 
+static msgid WOP_Outmsg [WOP_DOWN_CHANNELS_MAX+1]; /* IDs for messages being sent      */
+static msgid WOP_Inmsg  [WOP_DOWN_CHANNELS_MAX];   /* IDs for messages being received  */
 static INT WOP_CurrDoLen;                      /* length of current DO             */ 
 static INT WOP_lastID, WOP_nextID;             /* plot id of last/next element     */
 static INT WOP_EXT_End;						   /* flag for end of working loop	   */
@@ -17758,19 +17760,19 @@ static INT CollectCoarseGrid(MULTIGRID *mg, INT MarkKeyMaster)
 	INT MarkBottomKey;
 
 	/* state information */
-	INT receiving[WOP_DOWN_CHANNELS], sending[WOP_DOWN_CHANNELS+1], 
-		nbTokens[WOP_DOWN_CHANNELS], more[WOP_DOWN_CHANNELS+1], 
-		count[WOP_DOWN_CHANNELS+1], front[WOP_DOWN_CHANNELS+1], 
-		rear[WOP_DOWN_CHANNELS+1];
-	int serror[WOP_DOWN_CHANNELS+1], rerror[WOP_DOWN_CHANNELS];  
-	msgid outmsg[WOP_DOWN_CHANNELS+1], inmsg[WOP_DOWN_CHANNELS]; 
+	INT receiving[WOP_DOWN_CHANNELS_MAX], sending[WOP_DOWN_CHANNELS_MAX+1], 
+		nbTokens[WOP_DOWN_CHANNELS_MAX], more[WOP_DOWN_CHANNELS_MAX+1], 
+		count[WOP_DOWN_CHANNELS_MAX+1], front[WOP_DOWN_CHANNELS_MAX+1], 
+		rear[WOP_DOWN_CHANNELS_MAX+1];
+	int serror[WOP_DOWN_CHANNELS_MAX+1], rerror[WOP_DOWN_CHANNELS_MAX];  
+	msgid outmsg[WOP_DOWN_CHANNELS_MAX+1], inmsg[WOP_DOWN_CHANNELS_MAX]; 
 
 	/* init */
 	elem = FIRSTELEMENT(GRID_ON_LEVEL(mg,0));
 	heap = mg->theHeap;
 	error = k = 0;
 	Mark(heap,FROM_BOTTOM,&MarkBottomKey);
-	for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+	for (i = 0; i <= WopDownChannels; i++)
 		for (j = 0; j < DO_BUFFER_SLOTS; j++)
 			if ((OE_Buffer[i][j] =
 				#ifndef DYNAMIC_MEMORY_ALLOCMODEL
@@ -17789,7 +17791,7 @@ oops:
 		UserWrite("CollectCoarseGrid(): error in stage 0\n");
 		return 1;
 	}
-	for (i=0; i<WOP_DOWN_CHANNELS; i++) {
+	for (i=0; i<WopDownChannels; i++) {
 		sending[i]   = 0;
 		receiving[i] = 0; 
 		nbTokens[i]  = 0;
@@ -17798,23 +17800,23 @@ oops:
 		rear[i]      = 0;
 		more[i]      = (WOP_DownChannel[i] != NULL);
 	}
-	sending[WOP_DOWN_CHANNELS] = 0;
-	count  [WOP_DOWN_CHANNELS] = 0;
-	front  [WOP_DOWN_CHANNELS] = 0;
-	rear   [WOP_DOWN_CHANNELS] = 0;
-	more   [WOP_DOWN_CHANNELS] = 1;
+	sending[WopDownChannels] = 0;
+	count  [WopDownChannels] = 0;
+	front  [WopDownChannels] = 0;
+	rear   [WopDownChannels] = 0;
+	more   [WopDownChannels] = 1;
 	
 	/* main loop */
 	for (;;)
 	{
 		/* see if we are finished */
 		quit = 1;
-		for (i = 0; i <= WOP_DOWN_CHANNELS; i++) 
+		for (i = 0; i <= WopDownChannels; i++) 
 			quit = (quit && !more[i] && count[i] == 0);
 		if (quit) break;
 
 		/* receive coarse grid partial graphs */
-		for (i = 0; i < WOP_DOWN_CHANNELS; i++) {
+		for (i = 0; i < WopDownChannels; i++) {
 			if (receiving[i])
 				if (InfoARecv(WOP_DownChannel[i], inmsg[i]) == 1) {
 					count[i]++;
@@ -17833,7 +17835,7 @@ oops:
 
 		/* send coarse grid partial graphs up tree or store them */
 		if (me == master) { 
-			for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+			for (i = 0; i <= WopDownChannels; i++)
 				if (count[i] > 0) 
 				{
 					/* store partial graphs */
@@ -17890,7 +17892,7 @@ oops:
 				}
 		}
 		else {
-			for (i = 0; i <= WOP_DOWN_CHANNELS; i++) {
+			for (i = 0; i <= WopDownChannels; i++) {
 				if (sending[i])
 					if (InfoASend(WOP_UpChannel, outmsg[i]) == 1) {
 						count[i]--;
@@ -17907,7 +17909,7 @@ oops:
 		}
 		
 		/* produce coarse grid partial graphs */
-		i = WOP_DOWN_CHANNELS;
+		i = WopDownChannels;
 		if (more[i] && count[i] < CGG_BUFFER_SLOTS) 
 		{
 			d = d0 = OE_Buffer[i][front[i]];
@@ -18261,6 +18263,9 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo, INT bullet)
 	INT MarkKey;
     #endif
 
+/* Forget about this; it simply doesn't work -- at all */
+/*  -ml                                                */
+#if 0
 	/* check if multigrid is already ordered */
 	offset   = OFFSET_IN_MGUD(wopMGUDid);
 	myMGdata = (WOP_MG_DATA*) GEN_MGUD_ADR(mg, offset);
@@ -18285,6 +18290,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo, INT bullet)
 	}
 	
 	OE_force_ordering = FALSE;
+#endif
 	
 	/* inits */
 	OE_ViewedObj = vo;
@@ -20603,15 +20609,20 @@ static void ConnectWopTree(void)
 {
 	INT i, k;
 	
+	/* make it a height three, but min degree four tree */
+
+	WopDownChannels = (INT)ceil(0.5*(sqrt(4.0*(DOUBLE)procs-3.0)-1.0));
+	WopDownChannels = MAX(WopDownChannels, 4);
+
 	/* setup connections ... */
 
 	WOP_UpChannel = NULL;
-	for (i=0; i<WOP_DOWN_CHANNELS; i++) WOP_DownChannel[i] = NULL;
+	for (i=0; i<WopDownChannels; i++) WOP_DownChannel[i] = NULL;
 
 	if (me != master) 
-		WOP_UpChannel = ConnASync((me-1)/WOP_DOWN_CHANNELS, 4711);
-	for (i=0; i<WOP_DOWN_CHANNELS; i++) {
-		k = me * WOP_DOWN_CHANNELS + i + 1;
+		WOP_UpChannel = ConnASync((me-1)/WopDownChannels, 4711);
+	for (i=0; i<WopDownChannels; i++) {
+		k = me * WopDownChannels + i + 1;
 		if (k < procs)
 			WOP_DownChannel[i] = ConnASync(k, 4711);
 		else
@@ -20622,8 +20633,8 @@ static void ConnectWopTree(void)
 
 	if (me != master)
 		while (InfoAConn(WOP_UpChannel) != 1);
-	for (i=0; i<WOP_DOWN_CHANNELS; i++) {
-		k = me * WOP_DOWN_CHANNELS + i + 1;
+	for (i=0; i<WopDownChannels; i++) {
+		k = me * WopDownChannels + i + 1;
 		if (k < procs) 
 			while (InfoAConn(WOP_DownChannel[i]) != 1);
 		else
@@ -20653,13 +20664,13 @@ static void ConnectWopTree(void)
 
 static void NumberOfDesc(void)
 {
-	msgid umid, dmid[WOP_DOWN_CHANNELS];
-	int   uerr, derr[WOP_DOWN_CHANNELS];  
+	msgid umid, dmid[WOP_DOWN_CHANNELS_MAX];
+	int   uerr, derr[WOP_DOWN_CHANNELS_MAX];  
 	INT   sum;
 	INT   i, noDesc;
 
 	noDesc = 1;
-	for (i=0; i<WOP_DOWN_CHANNELS; i++) {
+	for (i=0; i<WopDownChannels; i++) {
 		WOP_NbDesc[i] = 0;
 		noDesc        = (noDesc && WOP_DownChannel[i] == NULL);
 	}
@@ -20670,7 +20681,7 @@ static void NumberOfDesc(void)
 		while (InfoASend(WOP_UpChannel, umid) != 1);
 	}
 	else {
-		for (i=0; i<WOP_DOWN_CHANNELS; i++) {
+		for (i=0; i<WopDownChannels; i++) {
 			if (WOP_DownChannel[i] != NULL) {
 				dmid[i] = RecvASync(WOP_DownChannel[i], &WOP_NbDesc[i], 
 									sizeof(INT), &derr[i]);
@@ -20681,7 +20692,7 @@ static void NumberOfDesc(void)
 		}
 		if (WOP_UpChannel != NULL) {
 			sum = 0;
-			for (i=0; i<WOP_DOWN_CHANNELS; i++)
+			for (i=0; i<WopDownChannels; i++)
 				sum += WOP_NbDesc[i];
 			sum++;
 			umid = SendASync(WOP_UpChannel, &sum, sizeof(sum), &uerr);
@@ -20710,7 +20721,7 @@ static void PWorkGEN_Init(void)
 {
 	int i;
 
-	for (i=0; i<WOP_DOWN_CHANNELS; i++) {
+	for (i=0; i<WopDownChannels; i++) {
 		WOP_Sending[i]   = 0;
 		WOP_Receiving[i] = 0; 
 		WOP_NbTokens[i]  = 0;
@@ -20719,11 +20730,11 @@ static void PWorkGEN_Init(void)
 		WOP_Rear[i]      = 0;
 		WOP_More[i]      = (WOP_DownChannel[i] != NULL);
 	}
-	WOP_Sending[WOP_DOWN_CHANNELS] = 0;
-	WOP_Count  [WOP_DOWN_CHANNELS] = 0;
-	WOP_Front  [WOP_DOWN_CHANNELS] = 0;
-	WOP_Rear   [WOP_DOWN_CHANNELS] = 0;
-	WOP_More   [WOP_DOWN_CHANNELS] = 1;
+	WOP_Sending[WopDownChannels] = 0;
+	WOP_Count  [WopDownChannels] = 0;
+	WOP_Front  [WopDownChannels] = 0;
+	WOP_Rear   [WopDownChannels] = 0;
+	WOP_More   [WopDownChannels] = 1;
 
 	WOP_CurrDoLen = 0;
 
@@ -20756,7 +20767,7 @@ static INT PWorkGEN_Quit(void)
 	INT i, quit;
 
 	quit = 1;
-	for (i = 0; i <= WOP_DOWN_CHANNELS; i++) 
+	for (i = 0; i <= WopDownChannels; i++) 
 		quit = (quit && !WOP_More[i] && WOP_Count[i] == 0);
 	return (quit);
 }
@@ -20784,7 +20795,7 @@ static void PWorkGEN_Execute(void)
 
 	/* receive DOs */
 
-	for (i = 0; i < WOP_DOWN_CHANNELS; i++) {
+	for (i = 0; i < WopDownChannels; i++) {
 		if (WOP_Receiving[i])
 			if (InfoARecv(WOP_DownChannel[i], WOP_Inmsg[i]) == 1) {
 				WOP_Count[i]++;
@@ -20805,7 +20816,7 @@ static void PWorkGEN_Execute(void)
 	/* execute or send own and received DOs */
 
 	if (me == master) { 
-		for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+		for (i = 0; i <= WopDownChannels; i++)
 			if (WOP_Count[i] > 0) {
 				p = WOP_DO_Buffer[i][WOP_Rear[i]];
 				DO_inc(p);
@@ -20815,7 +20826,7 @@ static void PWorkGEN_Execute(void)
 			}
 	}
 	else {
-		for (i = 0; i <= WOP_DOWN_CHANNELS; i++) {
+		for (i = 0; i <= WopDownChannels; i++) {
 			if (WOP_Sending[i])
 				if (InfoASend(WOP_UpChannel, WOP_Outmsg[i]) == 1) {
 					WOP_Count[i]--;
@@ -20862,7 +20873,7 @@ static void PWorkEW_Evaluate(void)
 	INT i;
 	DRAWINGOBJ *p, *p1;
 
-	i = WOP_DOWN_CHANNELS;
+	i = WopDownChannels;
 
 	/* see if we are active an have an empty slot */
 	if (WOP_More[i] && WOP_Count[i] < DO_BUFFER_SLOTS) 
@@ -20930,7 +20941,7 @@ static void PWorkEW_Execute_3D(void)
 	/* receive DOs */
 
 	/* check all down channels */
-	for (i = 0; i < WOP_DOWN_CHANNELS; i++) {
+	for (i = 0; i < WopDownChannels; i++) {
 		if (WOP_Receiving[i])
 			if (InfoARecv(WOP_DownChannel[i], WOP_Inmsg[i]) == 1) {
 				WOP_Count[i]++;
@@ -20955,7 +20966,7 @@ static void PWorkEW_Execute_3D(void)
 		/* check if all active buffers have a full slot 
 		   and determine the one with minimum ID */
 		min = INT_MAX;
-		for (i = 0; i <= WOP_DOWN_CHANNELS; i++) {
+		for (i = 0; i <= WopDownChannels; i++) {
 			if (WOP_Count[i] == 0) {
 				if (!WOP_More[i])
 					continue;
@@ -20989,7 +21000,7 @@ static void PWorkEW_Execute_3D(void)
 			/* check if all active buffers have a full slot 
 			   and determine the one with minimum ID */
 			min = INT_MAX;
-			for (i = 0; i <= WOP_DOWN_CHANNELS; i++) {
+			for (i = 0; i <= WopDownChannels; i++) {
 				if (WOP_Count[i] == 0) {
 					if (!WOP_More[i])
 						continue;
@@ -21043,7 +21054,7 @@ static void PWorkEW_Evaluate_3D(void)
 	INT i;
 	DRAWINGOBJ *p, *p1, *p2;
 
-	i = WOP_DOWN_CHANNELS;
+	i = WopDownChannels;
 
 	/* see if we are active an have an empty slot */
 	if (WOP_More[i] && WOP_Count[i] < DO_BUFFER_SLOTS) 
@@ -21122,7 +21133,7 @@ static void PWorkNW_Evaluate(void)
 	INT i;
 	DRAWINGOBJ *p, *p1;
 
-	i = WOP_DOWN_CHANNELS;
+	i = WopDownChannels;
 	if (WOP_More[i] && WOP_Count[i] < DO_BUFFER_SLOTS) {
 		p = p1 = WOP_DO_Buffer[i][WOP_Front[i]];
 		DO_inc(p);
@@ -21174,7 +21185,7 @@ static void PWorkVW_Evaluate(void)
 	INT i;
 	DRAWINGOBJ *p, *p1;
 
-	i = WOP_DOWN_CHANNELS;
+	i = WopDownChannels;
 	if (WOP_More[i] && WOP_Count[i] < DO_BUFFER_SLOTS) {
 		p = p1 = WOP_DO_Buffer[i][WOP_Front[i]];
 		DO_inc(p);
@@ -21227,7 +21238,7 @@ static void PWorkET_Evaluate(void)
 	INT i;
 	DRAWINGOBJ *p, *p1;
 
-	i = WOP_DOWN_CHANNELS;
+	i = WopDownChannels;
 	if (WOP_More[i] && WOP_Count[i] < DO_BUFFER_SLOTS) {
 		p = p1 = WOP_DO_Buffer[i][WOP_Front[i]];
 		DO_inc(p);
@@ -21435,7 +21446,7 @@ static INT WorkEW(void)
 		/* allocate buffers */
 		heap = WOP_MG->theHeap;
 		MarkTmpMem(heap,&MarkKey);
-		for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+		for (i = 0; i <= WopDownChannels; i++)
 			for (j = 0; j < DO_BUFFER_SLOTS; j++)
 				if ((WOP_DO_Buffer[i][j] = (DRAWINGOBJ *)GetTmpMem(heap, 
 					 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), MarkKey)) == NULL) {
@@ -21529,7 +21540,7 @@ static INT WorkNW(void)
 	/* allocate buffers */
 	heap = WOP_MG->theHeap;
 	MarkTmpMem(heap,&MarkKey);
-	for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+	for (i = 0; i <= WopDownChannels; i++)
 		for (j = 0; j < DO_BUFFER_SLOTS; j++)
 			if ((WOP_DO_Buffer[i][j] = (DRAWINGOBJ *)GetTmpMem(heap, 
 				 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), MarkKey)) == NULL) {
@@ -21609,7 +21620,7 @@ static INT WorkVW(void)
 	/* allocate buffers */
 	heap = WOP_MG->theHeap;
 	MarkTmpMem(heap,&MarkKey);
-	for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+	for (i = 0; i <= WopDownChannels; i++)
 		for (j = 0; j < DO_BUFFER_SLOTS; j++)
 			if ((WOP_DO_Buffer[i][j] = (DRAWINGOBJ *)GetTmpMem(heap, 
 				 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), MarkKey)) == NULL) {
@@ -21668,7 +21679,7 @@ static INT WorkET(void)
 	/* allocate buffers */
 	heap = WOP_MG->theHeap;
 	MarkTmpMem(heap,&MarkKey);
-	for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+	for (i = 0; i <= WopDownChannels; i++)
 		for (j = 0; j < DO_BUFFER_SLOTS; j++)
 			if ((WOP_DO_Buffer[i][j] = (DRAWINGOBJ *)GetTmpMem(heap, 
 				 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), MarkKey)) == NULL) {
@@ -22057,6 +22068,7 @@ INT DragPicture (PICTURE *thePicture, const INT *StartMousePos)
 	DOUBLE xmin,xmax,ymin,ymax;
 	INT LastMousePos[3],OldMousePos[3],MousePos[2];
 	INT theViewDim,MouseMoved,rejected;
+	int r;
 
 	if (thePicture==NULL)	return (1);
 	theViewedObj = PIC_VO(thePicture);
@@ -22079,39 +22091,75 @@ INT DragPicture (PICTURE *thePicture, const INT *StartMousePos)
 	}
 	
 	/* activate low level grahic */
-	if (PrepareGraph(thePicture))
+#ifdef ModelP
+	if (me == master)
+#endif
+		r = PrepareGraph(thePicture);
+#ifdef ModelP
+	Broadcast(&r, sizeof(r));
+#endif
+	if (r)
 	{
 		PrintErrorMessage('E',"DragPicture","cannot activate low level graphics");
 		return (1);
 	}
-	
-	xmin	= MIN(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
-	xmax	= MAX(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
-	ymin	= MIN(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
-	ymax	= MAX(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
-	
-	/* old mouse position in the physical system */
-	if (theViewDim==TYPE_2D)
-		V2_TRAFOM3_V2(OldMousePos,InvObsTrafo,oldpos)
-	else
-		V3_TRAFOM4_V3(OldMousePos,InvObsTrafo,oldpos)
-	
-	rejected = MouseMoved = FALSE;
-	V3_COPY(OldMousePos,LastMousePos);
-	while (MouseStillDown())
+#ifdef ModelP
+	if (me == master)
 	{
-		MousePosition(MousePos);
+#endif
+		xmin	= MIN(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
+		xmax	= MAX(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
+		ymin	= MIN(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
+		ymax	= MAX(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
 		
-		if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
+		/* old mouse position in the physical system */
+		if (theViewDim==TYPE_2D)
+			V2_TRAFOM3_V2(OldMousePos,InvObsTrafo,oldpos)
+		else
+			V3_TRAFOM4_V3(OldMousePos,InvObsTrafo,oldpos)
 		
-		/* inside picture? */
-		if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+		rejected = MouseMoved = FALSE;
+		V3_COPY(OldMousePos,LastMousePos);
+		while (MouseStillDown())
 		{
-			rejected = TRUE;
-			break;
-		}
+			MousePosition(MousePos);
+			
+			if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
 		
-		V2_COPY(MousePos,LastMousePos);
+			/* inside picture? */
+			if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+			{
+				rejected = TRUE;
+				break;
+			}
+			
+			V2_COPY(MousePos,LastMousePos);
+			
+			if (MouseMoved)
+			{
+				/* invert last frame */
+				UgInverseLine(FrameLL,FrameLR);
+				UgInverseLine(FrameLR,FrameUR);
+				UgInverseLine(FrameUR,FrameUL);
+				UgInverseLine(FrameUL,FrameLL);
+			}
+			
+			MouseMoved = TRUE;
+			
+			/* calculate shifted picture frame in screen coords */
+			V2_SUBTRACT(MousePos,OldMousePos,shift);
+			FrameUL.x = FrameLL.x = PIC_GLL(thePicture)[_X_]+shift[_X_];
+			FrameLR.y = FrameLL.y = PIC_GLL(thePicture)[_Y_]+shift[_Y_];
+			FrameLR.x = FrameUR.x = PIC_GUR(thePicture)[_X_]+shift[_X_];
+			FrameUL.y = FrameUR.y = PIC_GUR(thePicture)[_Y_]+shift[_Y_];
+			
+			/* invert new frame */
+			UgInverseLine(FrameLL,FrameLR);
+			UgInverseLine(FrameLR,FrameUR);
+			UgInverseLine(FrameUR,FrameUL);
+			UgInverseLine(FrameUL,FrameLL);
+			UgFlush();
+		}
 		
 		if (MouseMoved)
 		{
@@ -22120,42 +22168,22 @@ INT DragPicture (PICTURE *thePicture, const INT *StartMousePos)
 			UgInverseLine(FrameLR,FrameUR);
 			UgInverseLine(FrameUR,FrameUL);
 			UgInverseLine(FrameUL,FrameLL);
+			UgFlush();
 		}
-		
-		MouseMoved = TRUE;
-		
-		/* calculate shifted picture frame in screen coords */
-		V2_SUBTRACT(MousePos,OldMousePos,shift);
-		FrameUL.x = FrameLL.x = PIC_GLL(thePicture)[_X_]+shift[_X_];
-		FrameLR.y = FrameLL.y = PIC_GLL(thePicture)[_Y_]+shift[_Y_];
-		FrameLR.x = FrameUR.x = PIC_GUR(thePicture)[_X_]+shift[_X_];
-		FrameUL.y = FrameUR.y = PIC_GUR(thePicture)[_Y_]+shift[_Y_];
-		
-		/* invert new frame */
-		UgInverseLine(FrameLL,FrameLR);
-		UgInverseLine(FrameLR,FrameUR);
-		UgInverseLine(FrameUR,FrameUL);
-		UgInverseLine(FrameUL,FrameLL);
-		UgFlush();
+#ifdef ModelP
 	}
-	
-	if (MouseMoved)
-	{
-		/* invert last frame */
-		UgInverseLine(FrameLL,FrameLR);
-		UgInverseLine(FrameLR,FrameUR);
-		UgInverseLine(FrameUR,FrameUL);
-		UgInverseLine(FrameUL,FrameLL);
-		UgFlush();
-	}
-	
+	Broadcast(&rejected, sizeof(rejected));
+#endif
 	if (rejected) return (0);
-	
+
 	/* adjust view */
 	if (theViewDim==TYPE_2D)
 	{
 		V2_TRAFOM3_V2(LastMousePos,InvObsTrafo,pos)
 		V2_SUBTRACT(oldpos,pos,shift);
+#ifdef ModelP
+		Broadcast(shift, 2*sizeof(DOUBLE));
+#endif
 		V2_ADD(VO_VT(theViewedObj),shift,VO_VT(theViewedObj));
 		V2_ADD(VO_PMP(theViewedObj),shift,VO_PMP(theViewedObj));
 	}
@@ -22163,6 +22191,9 @@ INT DragPicture (PICTURE *thePicture, const INT *StartMousePos)
 	{
 		V3_TRAFOM4_V3(LastMousePos,InvObsTrafo,pos)
 		V3_SUBTRACT(oldpos,pos,shift);
+#ifdef ModelP
+		Broadcast(shift, 3*sizeof(DOUBLE));
+#endif
 		V3_ADD(VO_VP(theViewedObj),shift,VO_VP(theViewedObj));
 		V3_ADD(VO_VT(theViewedObj),shift,VO_VT(theViewedObj));
 		V3_ADD(VO_PMP(theViewedObj),shift,VO_PMP(theViewedObj));
@@ -22203,6 +22234,7 @@ INT ZoomPicture (PICTURE *thePicture, const INT *OldMousePos)
 	DOUBLE xmin,xmax,ymin,ymax;
 	DOUBLE CanvasRatio,FrameRatio,factor;
 	INT status,theViewDim;
+	int r;
 
 	if (thePicture==NULL)	return (1);
 	theViewedObj = PIC_VO(thePicture);
@@ -22222,14 +22254,26 @@ INT ZoomPicture (PICTURE *thePicture, const INT *OldMousePos)
 	}
 	
 	/* activate low level grahic */
-	if (PrepareGraph(thePicture))
+#ifdef ModelP
+	if (me == master)
+#endif
+		r = PrepareGraph(thePicture);
+#ifdef ModelP
+	Broadcast(&r, sizeof(r));
+#endif
+	if (r)
 	{
 		PrintErrorMessage('E',"ZoomPicture","cannot activate low level graphics");
 		return (1);
 	}
 	
-	status = MousePullFrame(thePicture,OldMousePos,&xmin,&xmax,&ymin,&ymax);
-	
+#ifdef ModelP
+	if (me == master)
+#endif
+		status = MousePullFrame(thePicture,OldMousePos,&xmin,&xmax,&ymin,&ymax);
+#ifdef ModelP
+	Broadcast(&status, sizeof(status));
+#endif
 	if (status!=MOUSE_MOVED)
 		return (0);
 	
@@ -22242,6 +22286,9 @@ INT ZoomPicture (PICTURE *thePicture, const INT *OldMousePos)
 	if (theViewDim==TYPE_2D)
 	{
 		V2_TRAFOM3_V2(MidPoint,InvObsTrafo,pos);
+#ifdef ModelP
+		Broadcast(pos, 2*sizeof(DOUBLE));
+#endif
 		V2_COPY(pos,VO_VT(theViewedObj));
 		V2_COPY(pos,VO_PMP(theViewedObj));
 	}
@@ -22249,6 +22296,9 @@ INT ZoomPicture (PICTURE *thePicture, const INT *OldMousePos)
 	{
 		V3_TRAFOM4_V3(MidPoint,InvObsTrafo,pos)
 		V3_SUBTRACT(VO_PMP(theViewedObj),pos,shift);
+#ifdef ModelP
+		Broadcast(shift, 3*sizeof(DOUBLE));
+#endif
 		V3_SUBTRACT(VO_VP(theViewedObj),shift,VO_VP(theViewedObj));
 		V3_SUBTRACT(VO_VT(theViewedObj),shift,VO_VT(theViewedObj));
 		V3_SUBTRACT(VO_PMP(theViewedObj),shift,VO_PMP(theViewedObj));
@@ -22264,6 +22314,9 @@ INT ZoomPicture (PICTURE *thePicture, const INT *OldMousePos)
 	if (FrameRatio>5)
 		factor = 1.0/factor;
 if (0)	UserWriteF("ZoomPicture factor=%lf\n",factor);
+#ifdef ModelP
+		Broadcast(&factor, sizeof(DOUBLE));
+#endif
 	if (theViewDim==TYPE_2D)
 	{
 		V2_SCALE(factor,VO_PXD(theViewedObj))
@@ -22805,7 +22858,10 @@ INT RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
 	myWin = PIC_UGW(thePicture);
 	
 	/* set color black */
-	UgSetColor(PIC_OUTPUTDEV(thePicture)->black);
+#ifdef ModelP
+	if (me == master)
+#endif
+		UgSetColor(PIC_OUTPUTDEV(thePicture)->black);
 	
 	/* build transformation */
 	if (BuildObsTrafo(thePicture))
@@ -22846,39 +22902,46 @@ INT RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
 		if (InitRotObsTrafo2d(ScreenMid,OldMousePos,LastMousePos,RotMat))
 			return (1);
 		
-		/* invert tripod (dipod?) */
-		InvertTripod2d(TP_sc,TP_ph,RotMat,unit);
-		
-		rejected = MouseMoved = FALSE;
-		while (MouseStillDown())
+#ifdef ModelP
+		if (me == master)
 		{
-			MousePosition(MousePos);
-			
-			if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
-			
-			/* inside picture? */
-			if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+#endif
+			/* invert tripod (dipod?) */
+			InvertTripod2d(TP_sc,TP_ph,RotMat,unit);
+		
+			rejected = MouseMoved = FALSE;
+			while (MouseStillDown())
 			{
-				rejected = TRUE;
-				break;
+				MousePosition(MousePos);
+				
+				if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
+				
+				/* inside picture? */
+				if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+				{
+					rejected = TRUE;
+					break;
+				}
+				
+				/* invert last tripod (dipod?) */
+				InvertTripod2d(TP_sc,TP_ph,RotMat,unit);
+				
+				V2_COPY(MousePos,LastMousePos);
+				MouseMoved = TRUE;
+				
+				if (RotObsTrafo2d(ScreenMid,OldMousePos,LastMousePos,RotMat))
+					return (1);
+				
+				/* invert new tripod (dipod?) */
+				InvertTripod2d(TP_sc,TP_ph,RotMat,unit);
 			}
 			
 			/* invert last tripod (dipod?) */
 			InvertTripod2d(TP_sc,TP_ph,RotMat,unit);
-			
-			V2_COPY(MousePos,LastMousePos);
-			MouseMoved = TRUE;
-			
-			if (RotObsTrafo2d(ScreenMid,OldMousePos,LastMousePos,RotMat))
-				return (1);
-			
-			/* invert new tripod (dipod?) */
-			InvertTripod2d(TP_sc,TP_ph,RotMat,unit);
+#ifdef ModelP
 		}
-		
-		/* invert last tripod (dipod?) */
-		InvertTripod2d(TP_sc,TP_ph,RotMat,unit);
-		
+		Broadcast(&rejected, sizeof(rejected));
+#endif
 		if (rejected) return (0);
 		if (V2_ISEQUAL(LastMousePos,ScreenMid)) return (0);
 		
@@ -22891,6 +22954,12 @@ INT RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
 		M2_TIMES_V2(RotMat,VO_PYD(theViewedObj),help);
 		V2_COPY(help,VO_PYD(theViewedObj));
 		
+#ifdef ModelP
+		XBroadcast(2,
+				   VO_PXD(theViewedObj), 2*sizeof(DOUBLE),
+				   VO_PYD(theViewedObj), 2*sizeof(DOUBLE));
+#endif
+
 		PIC_VALID(thePicture) = NO;
 	}
 	else
@@ -22948,42 +23017,49 @@ INT RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
 		M3_TIMES_M3(InvObsTrafoRot,RotMat,AuxMat);
 		M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
 		
-		/* invert tripod */
-		InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
-		
-		rejected = MouseMoved = FALSE;
-		while (MouseStillDown())
+#ifdef ModelP
+		if (me == master)
 		{
-			MousePosition(MousePos);
-			
-			if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
-			
-			/* inside picture? */
-			if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+#endif
+			/* invert tripod */
+			InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
+		
+			rejected = MouseMoved = FALSE;
+			while (MouseStillDown())
 			{
-				rejected = TRUE;
-				break;
-			}
+				MousePosition(MousePos);
+				
+				if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
+				
+				/* inside picture? */
+				if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+				{
+					rejected = TRUE;
+					break;
+				}
 			
+				/* invert last tripod */
+				InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
+			
+				if ((*RotObsTrafo3d)(ScreenMid,LastMousePos,MousePos,dx,dy,RotMat))
+					return 1;
+				M3_TIMES_M3(InvObsTrafoRot,RotMat,AuxMat);
+				M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
+				
+				V2_COPY(MousePos,LastMousePos);
+				MouseMoved = TRUE;
+			
+				/* invert new tripod */
+				InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
+			}
+
 			/* invert last tripod */
 			InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
-			
-			if ((*RotObsTrafo3d)(ScreenMid,LastMousePos,MousePos,dx,dy,RotMat))
-				return (1);
-			M3_TIMES_M3(InvObsTrafoRot,RotMat,AuxMat);
-			M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
-			
-			V2_COPY(MousePos,LastMousePos);
-			MouseMoved = TRUE;
-			
-			/* invert new tripod */
-			InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
+#ifdef ModelP
 		}
-		
-		/* invert last tripod */
-		InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
-		
-		if (rejected) return (0);
+		Broadcast(&rejected, sizeof(rejected));
+#endif
+		if (rejected) return 0;
 		/*if (!MouseMoved) return (0);*/
 		
 		/* inverse of rot by taking transpose */
@@ -22999,7 +23075,7 @@ INT RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
 		V3_SUBTRACT(VO_VP(theViewedObj),VO_VT(theViewedObj),help);
 		M3_TIMES_V3(PhysRotMat,help,VO_VP(theViewedObj));
 		V3_ADD(VO_VP(theViewedObj),VO_VT(theViewedObj),VO_VP(theViewedObj));
-		
+
 		V3_SUBTRACT(VO_PMP(theViewedObj),VO_VT(theViewedObj),help);
 		M3_TIMES_V3(PhysRotMat,help,VO_PMP(theViewedObj));
 		V3_ADD(VO_PMP(theViewedObj),VO_VT(theViewedObj),VO_PMP(theViewedObj));
@@ -23009,6 +23085,14 @@ INT RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
 		
 		V3_COPY(VO_PYD(theViewedObj),help);
 		M3_TIMES_V3(PhysRotMat,help,VO_PYD(theViewedObj));
+
+#ifdef ModelP
+		XBroadcast(4,
+				   VO_VP(theViewedObj), 3*sizeof(DOUBLE),
+				   VO_PMP(theViewedObj), 3*sizeof(DOUBLE),
+				   VO_PXD(theViewedObj), 3*sizeof(DOUBLE),
+				   VO_PYD(theViewedObj), 3*sizeof(DOUBLE));
+#endif
 		
 		PIC_VALID(thePicture) = NO;
 	}
@@ -23051,7 +23135,10 @@ INT RotateCut (PICTURE *thePicture, const INT *OldMousePos)
 	myWin = PIC_UGW(thePicture);
 	
 	/* set color black */
-	UgSetColor(PIC_OUTPUTDEV(thePicture)->black);
+#ifdef ModelP
+	if (me == master)
+#endif
+		UgSetColor(PIC_OUTPUTDEV(thePicture)->black);
 	
 	/* build transformation */
 	if (BuildObsTrafo(thePicture))
@@ -23119,42 +23206,49 @@ INT RotateCut (PICTURE *thePicture, const INT *OldMousePos)
 		return (1);
 	M3_TIMES_M3(InvObsTrafoRot,RotMat,AuxMat);
 	M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
-	
-	/* invert cut */
-	InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
-	
-	rejected = MouseMoved = FALSE;
-	while (MouseStillDown())
+
+#ifdef ModelP
+	if (me == master)
 	{
-		MousePosition(MousePos);
-		
-		if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
-		
-		/* inside picture? */
-		if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+#endif
+		/* invert cut */
+		InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
+	
+		rejected = MouseMoved = FALSE;
+		while (MouseStillDown())
 		{
-			rejected = TRUE;
-			break;
+			MousePosition(MousePos);
+			
+			if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
+			
+			/* inside picture? */
+			if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+			{
+				rejected = TRUE;
+				break;
+			}
+			
+			/* invert last cut icon */
+			InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
+			
+			if ((*RotObsTrafo3d)(ScreenMid,LastMousePos,MousePos,dx,dy,RotMat))
+				return (1);
+			M3_TIMES_M3(InvObsTrafoRot,RotMat,AuxMat);
+			M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
+			
+			V2_COPY(MousePos,LastMousePos);
+			MouseMoved = TRUE;
+			
+			/* invert new cut icon */
+			InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
 		}
 		
 		/* invert last cut icon */
 		InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
-		
-		if ((*RotObsTrafo3d)(ScreenMid,LastMousePos,MousePos,dx,dy,RotMat))
-			return (1);
-		M3_TIMES_M3(InvObsTrafoRot,RotMat,AuxMat);
-		M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
-		
-		V2_COPY(MousePos,LastMousePos);
-		MouseMoved = TRUE;
-		
-		/* invert new cut icon */
-		InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
+#ifdef ModelP
 	}
-	
-	/* invert last cut icon */
-	InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
-	
+	Broadcast(&rejected, sizeof(rejected));
+#endif
 	if (rejected) return (0);
 	/*if (!MouseMoved) return (0);*/
 	
@@ -23167,7 +23261,10 @@ INT RotateCut (PICTURE *thePicture, const INT *OldMousePos)
 	/* here we go: rotate plane normal */
 	V3_COPY(CUT_PN(theCut),help);
 	M3_TIMES_V3(PhysRotMat,help,CUT_PN(theCut));
-	
+#ifdef ModelP
+	Broadcast(CUT_PN(theCut), 3*sizeof(DOUBLE));
+#endif
+
 	PIC_VALID(thePicture) = NO;
 	
 	return (0);
@@ -23265,37 +23362,44 @@ INT MoveCut (PICTURE *thePicture, const INT *OldMousePos)
 	curr += xmin;
 	
 	/* invert slider */
-	InvertControl(xmin,xmax,ym,curr);
-	InvertSlider (xm,dx,ym,curr,LastMousePos[_X_]);
-	
-	rejected = MouseMoved = FALSE;
-	while (MouseStillDown())
+#ifdef ModelP
+	if (me == master)
 	{
-		MousePosition(MousePos);
-		
-		if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
-		
-		/* inside picture? */
-		if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+#endif
+		InvertControl(xmin,xmax,ym,curr);
+		InvertSlider (xm,dx,ym,curr,LastMousePos[_X_]);
+	
+		rejected = MouseMoved = FALSE;
+		while (MouseStillDown())
 		{
-			rejected = TRUE;
-			break;
+			MousePosition(MousePos);
+			
+			if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
+		
+			/* inside picture? */
+			if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+			{
+				rejected = TRUE;
+				break;
+			}
+			
+			/* invert slider */
+			InvertSlider (xm,dx,ym,curr,LastMousePos[_X_]);
+			
+			V2_COPY(MousePos,LastMousePos);
+			MouseMoved = TRUE;
+			
+			/* invert slider */
+			InvertSlider (xm,dx,ym,curr,LastMousePos[_X_]);
 		}
 		
 		/* invert slider */
+		InvertControl(xmin,xmax,ym,curr);
 		InvertSlider (xm,dx,ym,curr,LastMousePos[_X_]);
-		
-		V2_COPY(MousePos,LastMousePos);
-		MouseMoved = TRUE;
-		
-		/* invert slider */
-		InvertSlider (xm,dx,ym,curr,LastMousePos[_X_]);
+#ifdef ModelP
 	}
-	
-	/* invert slider */
-	InvertControl(xmin,xmax,ym,curr);
-	InvertSlider (xm,dx,ym,curr,LastMousePos[_X_]);
-	
+	Broadcast(&rejected, sizeof(rejected));
+#endif
 	if (rejected) return (0);
 	/*if (!MouseMoved) return (0);*/
 	
@@ -23310,7 +23414,10 @@ INT MoveCut (PICTURE *thePicture, const INT *OldMousePos)
 	
 	/* here we go: move cut plane point */
 	V3_LINCOMB(1.0,CUT_PP(theCut),move,PN,CUT_PP(theCut));
-	
+#ifdef ModelP
+	Broadcast(CUT_PP(theCut), 3*sizeof(DOUBLE));
+#endif
+
 	PIC_VALID(thePicture) = NO;
 	
 	return (0);

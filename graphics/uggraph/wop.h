@@ -149,9 +149,9 @@
 /****************************************************************************/
 
 #ifdef ModelP
-#define WOP_DOWN_CHANNELS  2
-#define DO_BUFFER_SLOTS    2
-#define DO_SLOT_SIZE       (DO_SIZE+2)
+#define WOP_DOWN_CHANNELS_MAX           32
+#define DO_BUFFER_SLOTS                 2
+#define DO_SLOT_SIZE                    (DO_SIZE+2)
 #endif
 
 
