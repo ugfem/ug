@@ -11,6 +11,9 @@ include ../../ug.conf
 
 OBJECTS = wpm.o graph.o wop.o initgraph.o plotproc.o placer.o bullet.o
 
+# local C compiler flags
+LCFLAGS = -I../..
+
 $(UG_LIB): $(OBJECTS) Makefile.uggraph 
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 
@@ -18,7 +21,7 @@ ar :
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 
 .c.o:
-	$(ARCH_CC) $(UG_CFLAGS) $<
+	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
 
 clean:
 	rm -f *.o

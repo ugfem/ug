@@ -42,7 +42,7 @@
 #include "wpm.h"
 #include "general.h"
 
-#include "xbc.h"
+#include "parallel/util/xbc.h"
 
 USING_UG_NAMESPACES
 
