@@ -6196,6 +6196,21 @@ BNDP *BNDP_LoadBndP_Ext (void)
   return((BNDP *)theBndP);
 }
 
+INT LGM_BNDS_SurfId (BNDS *aBndS)
+{
+  int surf;
+  LGM_BNDS *theBndS;
+  LGM_SURFACE *theSurface;
+
+  if (theBndS==NULL) return (-1);
+  theBndS = BNDS2LGM(aBndS);
+  theSurface = LGM_BNDS_SURFACE(theBndS);
+  if (theSurface==NULL) return (-1);
+  surf=LGM_SURFACE_ID(theSurface);
+
+  return (surf);
+}
+
 /* domain interface function: for description see domain.h */
 INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 {

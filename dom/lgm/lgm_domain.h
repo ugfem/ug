@@ -678,6 +678,7 @@ LGM_SURFACE                     *FirstSurface           (LGM_DOMAIN *theDomain);
 LGM_SURFACE                     *NextSurface            (LGM_DOMAIN *theDomain);
 LGM_LINE                                *FirstLine                      (LGM_DOMAIN *theDomain);
 LGM_LINE                                *NextLine                       (LGM_DOMAIN *theDomain);
+INT                                     LGM_BNDS_SurfId         (BNDS *aBndS);
 
 #ifdef NO_PROJECT
 /*for evaluation of global coordinates*/
