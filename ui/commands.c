@@ -7078,7 +7078,6 @@ static INT OpenWindowCommand (INT argc, char **argv)
 
   /* following variables: keep type for sscanf */
   int x,y,w,h;
-
         #ifdef ModelP
   if (!CONTEXT(me)) {
     PRINTDEBUG(ui,0,("%2d: OpenWindowCommand(): me not in Context," \
@@ -7556,6 +7555,194 @@ static INT OpenPictureCommand (INT argc, char **argv)
   }
 
   SetCurrentPicture(thePic);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   openplacedpictures - open a new picture
+
+   DESCRIPTION:
+   This command opens a picture on a window
+   (these will be the current window and picture resp. then).
+   It calls the function 'CreatePicture'.
+
+   'openpicture [$w <window name>] [$s <h> <v> <dh> <dv>] [$n <picture name>]'
+
+   .  $w~<window~name>       - open a picture on this window (default: current window)
+   .  $s~<h>~<v>~<dh>~<dv>   - specify the location and size in the 'standardRefSys' with
+                                                        the origin located in the lower left corner of the parent window
+   .n                           (default: picture size = parent window size)
+
+   .  $n~<picture~name>      - optionally you can specify the picture name
+
+   KEYWORDS:
+   graphics, plot, window, picture, open, create
+
+   SEE ALSO:
+   'openwindow', 'closepicture'
+   D*/
+/****************************************************************************/
+
+static INT OpenPlacedPicturesCommand (INT argc, char **argv)
+{
+  INT i,qPic,rPic,nPic,sopt,wopt,j;
+  PLACEMENT_TASK task;
+  int iValue,v,h,dv,dh;
+  float fValue;
+  OUTPUTDEVICE *theOutDev;
+  char devname[NAMESIZE];
+  char *c,*c2;
+
+  /* get number of pictures */
+  if (sscanf(argv[0],"openppic %d",&iValue)!=1)
+  {
+    PrintErrorMessage('E',"openppic","specify number of pictures with n option");
+    return (PARAMERRORCODE);
+  }
+  nPic = iValue;
+
+  /* check options */
+  theOutDev  = GetDefaultOutputDevice();
+  sopt=wopt=0;
+  qPic=rPic=-1;
+  sopt = FALSE;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'w' :
+      wopt=1;
+      if (sscanf(argv[i],expandfmt(CONCAT3("w %",NAMELENSTR,"[a-zA-Z0-9_]")),task.win_name)!=1)
+      {
+        PrintErrorMessage('E',"openppic","specify a window name with w option");
+        return (PARAMERRORCODE);
+      }
+      break;
+
+    case 'q' :
+      c = argv[i]+2;
+      c2 = strtok(c," ");
+      if (c2==NULL || sscanf(c2,"%f",&fValue)!=1)
+      {
+        PrintErrorMessage('E',"openppic","specify aspect ratio for every picture with q option");
+        return (PARAMERRORCODE);
+      }
+      if (fValue<=0.0)
+      {
+        PrintErrorMessage('E',"openppic","specified aspect ratio out of range");
+        return (PARAMERRORCODE);
+      }
+      qPic=0;
+      task.apect_ratio[qPic++] = fValue;
+      for (j=1; j<nPic; j++)
+      {
+        c2 = strtok(NULL," ");
+        if (c2==NULL || sscanf(c2,"%f",&fValue)!=1)
+        {
+          PrintErrorMessage('E',"openppic","specify aspect ratio for every picture with q option");
+          return (PARAMERRORCODE);
+        }
+        if (fValue<=0.0)
+        {
+          PrintErrorMessage('E',"openppic","specified aspect ratio out of range");
+          return (PARAMERRORCODE);
+        }
+        task.apect_ratio[qPic++] = fValue;
+      }
+      break;
+
+    case 'r' :
+      c = argv[i]+2;
+      c2 = strtok(c," ");
+      if (c2==NULL || sscanf(c2,"%f",&fValue)!=1)
+      {
+        PrintErrorMessage('E',"openppic","specify ratio for every picture with q option");
+        return (PARAMERRORCODE);
+      }
+      if (fValue<=0.0)
+      {
+        PrintErrorMessage('E',"openppic","specified ratio out of range");
+        return (PARAMERRORCODE);
+      }
+      rPic=0;
+      task.rel_size[rPic++] = fValue;
+      for (j=1; j<nPic; j++)
+      {
+        c2 = strtok(NULL," ");
+        if (c2==NULL || sscanf(c2,"%f",&fValue)!=1)
+        {
+          PrintErrorMessage('E',"openppic","specify ratio for every picture with q option");
+          return (PARAMERRORCODE);
+        }
+        if (fValue<=0.0)
+        {
+          PrintErrorMessage('E',"openppic","specified ratio out of range");
+          return (PARAMERRORCODE);
+        }
+        task.rel_size[rPic++] = fValue;
+      }
+      break;
+
+    case 's' :
+      sopt = 1;
+      if (sscanf(argv[i],"s %d %d %d %d",&h,&v,&dh,&dv)!=4)
+      {
+        PrintErrorMessage('E',"openpicture","specify h, v, dh, dv with s option");
+        return (PARAMERRORCODE);
+      }
+      task.winLL[0] = h;
+      task.winLL[1] = v;
+      task.winUR[0] = h+dh;
+      task.winUR[1] = v+dv;
+      break;
+
+    case 'd' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("d %",NAMELENSTR,"[a-zA-Z0-9_-]")),devname)!=1)
+      {
+        PrintErrorMessage('E',"openwindow","specify device name with d option");
+        return (PARAMERRORCODE);
+      }
+      if ((theOutDev=GetOutputDevice(devname))==NULL)
+      {
+        PrintErrorMessageF('E',"openwindow","there is no device named '%s'",devname);
+        return (PARAMERRORCODE);
+      }
+      break;
+
+    default :
+      return (PARAMERRORCODE);
+    }
+
+  /* check if size initialized */
+  if (!sopt)
+  {
+    PrintErrorMessage('E',"openppic","size not specified");
+    return (PARAMERRORCODE);
+  }
+
+  /* check if window name initialized */
+  if (!wopt)
+  {
+    PrintErrorMessage('E',"openppic","window name not specified");
+    return (PARAMERRORCODE);
+  }
+
+  task.n = nPic;
+
+  /* set names of pictues */
+  for (i=0; i<nPic; i++)
+    sprintf(task.pic_name[i],"pic_%d",(int)i);
+
+  /* check device */
+  if (theOutDev==NULL)
+  {
+    PrintErrorMessage('E',"openppic","cannot find outputdevice");
+    return (PARAMERRORCODE);
+  }
+
+  /* place pictures */
+  if (OpenPlacedPictures (theOutDev,&task)) return (PARAMERRORCODE);
 
   return (OKCODE);
 }
@@ -12505,6 +12692,7 @@ INT InitCommands ()
   /* commands for window and picture management */
   if (CreateCommand("screensize",         ScreenSizeCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("openwindow",         OpenWindowCommand                               )==NULL) return (__LINE__);
+  if (CreateCommand("openppic",       OpenPlacedPicturesCommand           )==NULL) return (__LINE__);
   if (CreateCommand("closewindow",        CloseWindowCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("setcurrwindow",      SetCurrentWindowCommand                 )==NULL) return (__LINE__);
   if (CreateCommand("drawtext",           DrawTextCommand                                 )==NULL) return (__LINE__);
