@@ -44,6 +44,8 @@
 #include "cw.h"
 #include "graph.h"
 #include "gm.h"
+#include "ugm.h"
+#include "num.h"
 
 #ifdef __TWODIM__
 #include "shapes2d.h"
@@ -66,6 +68,17 @@
 #define ARR_ALPHA                                               0.7
 #define ARR_SIN                                                 0.5
 #define ARR_COS                                            -0.866
+
+/* definition of the dependency */
+#define DEP_LEN                                                 8
+#define DEP_POS                                                 0.9
+#define DEP_SIN                                                 0.342
+#define DEP_COS                                            -0.94
+
+/* definitions for pulling frames by mouse */
+#define MOUSE_NOT_MOVED                                 0
+#define MOUSE_MOVED                                             1
+#define REJECTED                                                2
 
 /* ctrl entries of element ctrl */
 INT ce_VSIDES;
@@ -111,6 +124,8 @@ typedef void (*ProjectionProcPtr)(COORD *, COORD_POINT *);
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
+
+#define WINDOW_TEXT_SIZE                10
 
 /************************************************************************/
 /************ ordinary static variables   *******************************/
@@ -193,6 +208,8 @@ static long EE2D_NoColor[10];   /* 1 if no color (background color) used	*/
 static long EE2D_Color[10];             /* colors used								*/
 static INT EE2D_MaxLevel;               /* level considered to be the top level         */
 static INT EE2D_ElemID;                 /* 1 if element ID has to be plotted		*/
+static INT EE2D_RefMark;                /* 1 if plot refinement marks				*/
+static long EE2D_ColorRefMark;  /* color of refinement marks				*/
 
 
 /* 3D */
@@ -217,6 +234,17 @@ static short NE_InnerMarkerSize; /* markersize for inner nodes				*/
 static short NE_BndMarkerSize;  /* markersize for bnd nodes                             */
 static short NE_CornerMarkerSize; /* markersize for corner nodes                        */
 static NODE *NE_Node;                   /* node for insert node work				*/
+
+/*---------- working variables of 'EW_MarkElement2D' -----------------------*/
+static INT ME2D_found;                  /* TRUE if an element found					*/
+static ELEMENT *ME2D_elem;              /* pointer to element found					*/
+static INT ME2D_pointIn;                /* TRUE if point specified, rectangle else	*/
+static COORD_VECTOR ME2D_point; /* point if ME2D_pointIn TRUE				*/
+static COORD ME2D_xmin;                 /* search rectangle							*/
+static COORD ME2D_xmax;                 /* search rectangle							*/
+static COORD ME2D_ymin;                 /* search rectangle							*/
+static COORD ME2D_ymax;                 /* search rectangle							*/
+static INT ME2D_rule;                   /* rule to be used							*/
 
 /*---------- working variables of 'EXT_MoveNodeEval2d' ---------------------*/
 static MULTIGRID *MN_MG;                /* multigrid pointer						*/
@@ -245,6 +273,31 @@ static INT BE_CurrLine;                 /* current line of the segment to be plo
 static INT BE_nLines;                   /* number of plotted lines					*/
 static INT BE_MaxLines;                 /* max line number per call of EXT_BndEval2d*/
 
+/*---------- working variables of 'VW_VecMatEval' --------------------------*/
+#define VM_MARKERSIZE           6
+#define VM_TEXTSIZE                     8
+#define VM_VECMAT_TEXTSIZE      8
+#define VM_LINEFAC                      1.2
+
+static INT VM_Marker;                   /* plot markers for Vectors					*/
+static long VN_MarkerColor[4];  /* colors of Markers (VCLASS dependent)		*/
+static INT VM_Type[MAXVECTORS]; /* plot only vectors of TRUE Types			*/
+static long VM_MColor;                  /* color of connections						*/
+static INT VM_Connections;              /* also plot connections					*/
+static INT VM_MExtra;                   /* also plot extra connections				*/
+static long VM_MExtraColor;             /* color of extra connections				*/
+static INT VM_Idx;                              /* also plot vector indices					*/
+static long VM_IdxColor;                /* color of indices							*/
+static INT VM_Order;                    /* plot order								*/
+static long VM_OrderStart;              /* spectrum start for order					*/
+static float VM_OrderDelta;             /* spectrum increment for order				*/
+static INT VM_Dependency;               /* plot dependencies						*/
+static INT VM_VecData;                  /* plot vector data							*/
+static INT VM_MatData;                  /* plot matrix data							*/
+static TYPE_VEC_DESC *VM_tvd;   /* vector descriptor						*/
+static TYPE_MAT_DESC *VM_tmd;   /* matrix descriptor						*/
+static long VM_VecMatColor;             /* color of vector matrix data				*/
+
 /*---------- working variables of 'EW_ElementBdryEval2D' -------------------*/
 static long EB_ColorGrid;               /* color of the grid plotted with the EScala*/
 
@@ -256,8 +309,23 @@ static COORD_POINT FE2D_MousePos;
 #define FN2D_INVSIZE                    3
 #define FN2D_ACC                                3
 
-static COORD_POINT FN2D_MousePos;
+static COORD            *FN2D_pos;
+static COORD FN2D_xmin;
+static COORD FN2D_xmax;
+static COORD FN2D_ymin;
+static COORD FN2D_ymax;
 static INT FN2D_found;
+
+/*---------- working variables of 'EW_FindVector2D' ------------------------*/
+#define FV2D_INVSIZE                    3
+#define FV2D_ACC                                3
+
+static COORD            *FV2D_pos;
+static COORD FV2D_xmin;
+static COORD FV2D_xmax;
+static COORD FV2D_ymin;
+static COORD FV2D_ymax;
+static INT FV2D_found;
 
 /*---------- working variables of 'EW_FindElement2D' -----------------------*/
 static INT FE2D_found;
@@ -645,6 +713,91 @@ static INT BuildCutTrafo (CUT *theCut, COORD *theViewDir)
   V3_COPY(ZD,CUT_CutNormal)
 
   return (0);
+}
+
+static INT MousePullFrame (PICTURE *thePicture, INT OldMousePos[2], COORD *frame_xmin, COORD *frame_xmax, COORD *frame_ymin, COORD *frame_ymax)
+{
+  COORD_POINT FrameLL,FrameLR,FrameUR,FrameUL;
+  COORD xmin,xmax,ymin,ymax;
+  INT MousePos[2],LastMousePos[2];
+  INT status;
+
+  xmin    = MIN(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
+  xmax    = MAX(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
+  ymin    = MIN(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
+  ymax    = MAX(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
+
+  status = MOUSE_NOT_MOVED;
+  V2_COPY(OldMousePos,LastMousePos);
+  while (MouseStillDown())
+  {
+    MousePosition(MousePos);
+
+    if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
+
+    /* inside picture? */
+    if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+    {
+      status = REJECTED;
+      break;
+    }
+
+    if (status==MOUSE_MOVED)
+    {
+      /* invert last frame */
+      UgInverseLine(FrameLL,FrameLR);
+      UgInverseLine(FrameLR,FrameUR);
+      UgInverseLine(FrameUR,FrameUL);
+      UgInverseLine(FrameUL,FrameLL);
+    }
+
+    V2_COPY(MousePos,LastMousePos);
+
+    status = MOUSE_MOVED;
+
+    /* new frame */
+    FrameUL.x = FrameLL.x = MousePos[_X_];
+    FrameLR.x = FrameUR.x = OldMousePos[_X_];
+    FrameLR.y = FrameLL.y = MousePos[_Y_];
+    FrameUL.y = FrameUR.y = OldMousePos[_Y_];
+
+    /* invert new frame */
+    UgInverseLine(FrameLL,FrameLR);
+    UgInverseLine(FrameLR,FrameUR);
+    UgInverseLine(FrameUR,FrameUL);
+    UgInverseLine(FrameUL,FrameLL);
+    UgFlush();
+  }
+
+  if (status!=MOUSE_NOT_MOVED)
+  {
+    /* invert old frame */
+    UgInverseLine(FrameLL,FrameLR);
+    UgInverseLine(FrameLR,FrameUR);
+    UgInverseLine(FrameUR,FrameUL);
+    UgInverseLine(FrameUL,FrameLL);
+    UgFlush();
+  }
+
+  if (status==REJECTED)
+    return (REJECTED);
+
+  if (status==MOUSE_NOT_MOVED)
+  {
+    /* copy old position to all corners */
+    FrameUL.x = FrameLL.x = OldMousePos[_X_];
+    FrameLR.x = FrameUR.x = OldMousePos[_X_];
+    FrameLR.y = FrameLL.y = OldMousePos[_Y_];
+    FrameUL.y = FrameUR.y = OldMousePos[_Y_];
+  }
+
+  /* window search rectangle */
+  *frame_xmin = MIN(FrameLL.x,FrameUR.x);
+  *frame_xmax = MAX(FrameLL.x,FrameUR.x);
+  *frame_ymin = MIN(FrameLL.y,FrameUR.y);
+  *frame_ymax = MAX(FrameLL.y,FrameUR.y);
+
+  return (status);
 }
 
 /****************************************************************************/
@@ -2618,6 +2771,74 @@ static NW_GetNextNodeProcPtr NW_GetNextNode_hor_bw_down_Proc (VIEWEDOBJ *theView
 }
 
 /****************************************************************************/
+/*																			*/
+/* Function:  VW_GetFirstVector												*/
+/*																			*/
+/* Purpose:   return first Vector of toLevel								*/
+/*																			*/
+/* Input:	  the corresponding multigrid, from level, to level                     */
+/*																			*/
+/* Output:	  first Vector, NULL if there is none to return					*/
+/*																			*/
+/****************************************************************************/
+
+static VECTOR *VW_GetFirstVector (MULTIGRID *theMG, INT fromLevel, INT toLevel)
+{
+  return (FIRSTVECTOR(GRID_ON_LEVEL(theMG,toLevel)));
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  VW_GetNextVector												*/
+/*																			*/
+/* Purpose:   return SUCCVC of the argument									*/
+/*																			*/
+/* Input:	  Vector for which the successor is to be determined			*/
+/*																			*/
+/* Output:	  next Vector, NULL if the argument is the last Vector			*/
+/*																			*/
+/****************************************************************************/
+
+static VECTOR *VW_GetNextVector (VECTOR *theVec)
+{
+  return (SUCCVC(theVec));
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  GetFirstVector-Proc                                                                                       */
+/*																			*/
+/* Purpose:   get the GetFirstVectorProc									*/
+/*																			*/
+/* Input:	  VIEWEDOBJ *theViewedObj										*/
+/*																			*/
+/* Output:	  NULL: error													*/
+/*																			*/
+/****************************************************************************/
+
+static VW_GetFirstVectorProcPtr VW_GetFirstVector_Proc (VIEWEDOBJ *theViewedObj)
+{
+  return (VW_GetFirstVector);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  GetNextVector-Proc											*/
+/*																			*/
+/* Purpose:   get the GetNextVectorProc										*/
+/*																			*/
+/* Input:	  VIEWEDOBJ *theViewedObj				                                                */
+/*																			*/
+/* Output:	  NULL: error													*/
+/*																			*/
+/****************************************************************************/
+
+static VW_GetNextVectorProcPtr VW_GetNextVector_Proc (VIEWEDOBJ *theViewedObj)
+{
+  return (VW_GetNextVector);
+}
+
+/****************************************************************************/
 /*
    EW_DoNothing0D - Do nothing
 
@@ -2660,8 +2881,14 @@ static INT EW_DoNothing0D (DRAWINGOBJ *q)
     case DO_ARROW :
       DO_inc_ARROW(q,0);
       break;
+    case DO_DEPEND :
+      DO_inc_DEPEND(q,0);
+      break;
     case DO_INVERSE_LINE :
       DO_inc_INVERSE_LINE(q,0);
+      break;
+    case DO_INVERSE_POLYLINE :
+      DO_inc_INVERSE_POLYLINE(q,0);
       break;
     case DO_POLYLINE :
       DO_inc_POLYLINE(q,0);
@@ -2721,7 +2948,7 @@ static INT EW_DoNothing0D (DRAWINGOBJ *q)
 static INT Draw2D (DRAWINGOBJ *q)
 {
   INT j, n, centered, end, mode;
-  COORD help[2];
+  COORD help[2],norm;
   COORD_POINT a, b, point[MAX_POINTS_OF_POLY];
   long color;
 
@@ -2732,6 +2959,11 @@ static INT Draw2D (DRAWINGOBJ *q)
     {
     case DO_NO_INST :
       end = 1;
+      break;
+    case DO_WAIT :
+      DO_inc(q);
+      UgFlush();
+      UgWait(WAIT_001);
       break;
     case DO_RANGE :
       DO_inc_RANGE(q);
@@ -2763,6 +2995,25 @@ static INT Draw2D (DRAWINGOBJ *q)
       point[5].x = point[1].x; point[5].y = point[1].y;
       UgPolyLine(point,6);
       break;
+    case DO_DEPEND :
+      DO_inc(q)
+      UgSetColor(DO_2l(q)); DO_inc(q);
+      V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,2);
+      (*OBS_ProjectProc)(help,point);
+      V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,2);
+      (*OBS_ProjectProc)(help,point+1);
+      UgPolyLine(point,2);
+      point[1].x = DEP_POS*point[1].x + (1.0-DEP_POS)*point[0].x;
+      point[1].y = DEP_POS*point[1].y + (1.0-DEP_POS)*point[0].y;
+      a.x = point[1].x-point[0].x; a.y = point[1].y-point[0].y;
+      norm = sqrt(a.x*a.x+a.y*a.y);
+      a.x *= DEP_LEN/norm; a.y *= DEP_LEN/norm;
+      point[0].x = point[1].x + DEP_COS*a.x - DEP_SIN*a.y;
+      point[0].y = point[1].y + DEP_SIN*a.x + DEP_COS*a.y;
+      point[2].x = point[1].x + DEP_COS*a.x + DEP_SIN*a.y;
+      point[2].y = point[1].y - DEP_SIN*a.x + DEP_COS*a.y;
+      UgPolyLine(point,3);
+      break;
     case DO_INVERSE_LINE :
       DO_inc(q)
       V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,2);
@@ -2770,6 +3021,19 @@ static INT Draw2D (DRAWINGOBJ *q)
       V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,2);
       (*OBS_ProjectProc)(help,&b);
       UgInverseLine(a,b);
+      break;
+    case DO_INVERSE_POLYLINE :
+      DO_inc(q)
+      n = DO_2c(q); DO_inc(q)
+      V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,2);
+      (*OBS_ProjectProc)(help,&a);
+      for (j=1; j<n; j++)
+      {
+        V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,2);
+        (*OBS_ProjectProc)(help,&b);
+        UgInverseLine(a,b);
+        a = b;
+      }
       break;
     case DO_POLYLINE :
       DO_inc(q)
@@ -2897,87 +3161,36 @@ static INT Draw2D (DRAWINGOBJ *q)
 
 static INT NW_SelectNode2D (DRAWINGOBJ *q)
 {
-  INT end, found;
   COORD help[2];
   COORD_POINT a, point[4];
 
-  found = 0;
-  end = 0;
-  while (!end)
-  {
-    switch (DO_2c(q))
+  V2_TRAFOM3_V2(FN2D_pos,ObsTrafo,help);
+  (*OBS_ProjectProc)(help,&a);
+
+  /* in rectangle? */
+  if ((FN2D_xmin<=a.x) && (a.x<=FN2D_xmax))
+    if ((FN2D_ymin<=a.y) && (a.y<=FN2D_ymax))
     {
-    case DO_NO_INST :
-      end = 1;
-      break;
-    case DO_RANGE :
-      DO_inc_RANGE(q);
-      break;
-    case DO_LINE :
-      DO_inc_LINE(q,2);
-      break;
-    case DO_ARROW :
-      DO_inc_ARROW(q,2);
-      break;
-    case DO_INVERSE_LINE :
-      DO_inc_INVERSE_LINE(q,2);
-      break;
-    case DO_POLYLINE :
-      DO_inc_POLYLINE(q,2);
-      break;
-    case DO_TEXT :
-      DO_inc_TEXT(q,2);
-      break;
-    case DO_POLYMARK :
-      DO_inc(q)
-      if (DO_2c(q)!=1) return (1);DO_inc_n(q,4);
-      V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,2);
-      (*OBS_ProjectProc)(help,&a);
-      if (ABS(FN2D_MousePos.x - a.x) < FN2D_ACC)
-        if (ABS(FN2D_MousePos.y - a.y) < FN2D_ACC)
-          found = 1;
-      break;
-    case DO_POLYGON :
-      DO_inc_POLYGON(q,2);
-      break;
-    case DO_ERASE_SURRPOLYGON :
-      DO_inc_ERASE_SURRPOLYGON(q,2);
-      break;
-    case DO_INVERSE_POLYGON :
-      DO_inc_INVERSE_POLYGON(q,2);
-      break;
-    case DO_ERASE_POLYGON :
-      DO_inc_ERASE_POLYGON(q,2);
-      break;
-    case DO_SURRPOLYGON :
-      DO_inc_SURRPOLYGON(q,2);
-      break;
-    default :
-      return (1);
-    }
-
-  }
-
-  /* if found, put in selection list and invert */
-  if (found)
-  {
-    /* put in/delete from selection list */
-    if (SELECTIONMODE(WOP_MG)!=nodeSelection)
-      ClearSelection(WOP_MG);
-    if (AddNodeToSelection(WOP_MG,WOP_Node) == GM_ERROR)
-      if (RemoveNodeFromSelection(WOP_MG,WOP_Node) == GM_ERROR)
+      if (FN2D_found>=MAXSELECTION)
         return (1);
 
-    /* invert surrounding of node */
-    point[0].x = point[3].x = a.x-FN2D_INVSIZE;
-    point[0].y = point[1].y = a.y-FN2D_INVSIZE;
-    point[2].x = point[1].x = a.x+FN2D_INVSIZE;
-    point[2].y = point[3].y = a.y+FN2D_INVSIZE;
-    UgInversePolygon(point,4);
+      /* if found, put in/delete from selection list and invert */
+      if (SELECTIONMODE(WOP_MG)!=nodeSelection)
+        ClearSelection(WOP_MG);
+      if (AddNodeToSelection(WOP_MG,WOP_Node) == GM_ERROR)
+        if (RemoveNodeFromSelection(WOP_MG,WOP_Node) == GM_ERROR)
+          return (1);
 
-    /* we have found a node */
-    FN2D_found = 1;
-  }
+      /* invert surrounding of node */
+      point[0].x = point[3].x = a.x-FN2D_INVSIZE;
+      point[0].y = point[1].y = a.y-FN2D_INVSIZE;
+      point[2].x = point[1].x = a.x+FN2D_INVSIZE;
+      point[2].y = point[3].y = a.y+FN2D_INVSIZE;
+      UgInversePolygon(point,4);
+
+      /* we have found a node */
+      FN2D_found++;
+    }
 
   return (0);
 }
@@ -3017,6 +3230,11 @@ static INT Draw3D (DRAWINGOBJ *q)
     case DO_NO_INST :
       end = 1;
       break;
+    case DO_WAIT :
+      DO_inc(q);
+      UgFlush();
+      UgWait(WAIT_001);
+      break;
     case DO_RANGE :
       DO_inc_RANGE(q);
       break;
@@ -3047,6 +3265,9 @@ static INT Draw3D (DRAWINGOBJ *q)
       point[5].x = point[1].x; point[5].y = point[1].y;
       UgPolyLine(point,6);
       break;
+    case DO_DEPEND :
+      DO_inc_DEPEND(q,3);
+      break;
     case DO_INVERSE_LINE :
       DO_inc(q)
       UgSetColor(DO_2l(q)); DO_inc(q);
@@ -3055,6 +3276,19 @@ static INT Draw3D (DRAWINGOBJ *q)
       V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,3);
       (*OBS_ProjectProc)(help,&b);
       UgInverseLine(a,b);
+      break;
+    case DO_INVERSE_POLYLINE :
+      DO_inc(q)
+      n = DO_2c(q); DO_inc(q)
+      V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,3);
+      (*OBS_ProjectProc)(help,&a);
+      for (j=1; j<n; j++)
+      {
+        V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,3);
+        (*OBS_ProjectProc)(help,&b);
+        UgInverseLine(a,b);
+        b = a;
+      }
       break;
     case DO_POLYLINE :
       DO_inc(q)
@@ -3204,8 +3438,14 @@ static INT EW_SelectElement2D (DRAWINGOBJ *q)
     case DO_ARROW :
       DO_inc_ARROW(q,2);
       break;
+    case DO_DEPEND :
+      DO_inc_DEPEND(q,2);
+      break;
     case DO_INVERSE_LINE :
       DO_inc_INVERSE_LINE(q,2);
+      break;
+    case DO_INVERSE_POLYLINE :
+      DO_inc_INVERSE_POLYLINE(q,2);
       break;
     case DO_POLYLINE :
       DO_inc_POLYLINE(q,2);
@@ -3319,8 +3559,14 @@ static INT FindRange2D (DRAWINGOBJ *q)
     case DO_ARROW :
       DO_inc_ARROW(q,2);
       break;
+    case DO_DEPEND :
+      DO_inc_DEPEND(q,2);
+      break;
     case DO_INVERSE_LINE :
       DO_inc_INVERSE_LINE(q,2);
+      break;
+    case DO_INVERSE_POLYLINE :
+      DO_inc_INVERSE_POLYLINE(q,2);
       break;
     case DO_POLYLINE :
       DO_inc_POLYLINE(q,2);
@@ -3398,8 +3644,14 @@ static INT FindRange3D (DRAWINGOBJ *q)
     case DO_ARROW :
       DO_inc_ARROW(q,3);
       break;
+    case DO_DEPEND :
+      DO_inc_DEPEND(q,3);
+      break;
     case DO_INVERSE_LINE :
       DO_inc_INVERSE_LINE(q,3);
+      break;
+    case DO_INVERSE_POLYLINE :
+      DO_inc_INVERSE_POLYLINE(q,3);
       break;
     case DO_POLYLINE :
       DO_inc_POLYLINE(q,3);
@@ -3729,6 +3981,8 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
   case PO_REG :
     EE2D_Elem2Plot[PLOT_REG] = 1;
   }
+  EE2D_RefMark                                    = theGpo->PlotRefMarks;
+  EE2D_ColorRefMark                               = theOD->magenta;
   EE2D_ElemID                                     = 0;
   if (theGpo->PlotElemID == YES)
     EE2D_ElemID                             = 1;
@@ -3778,6 +4032,269 @@ static INT EW_PreProcess_PlotGridAfter2D (PICTURE *thePicture, WORK *theWork)
 
   /* mark surface elements */
   if (MarkElements2D(theMG,0,CURRENTLEVEL(theMG))) return (1);
+
+  return (0);
+}
+
+static DRAWINGOBJ * InvertRefinementMark2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
+{
+  COORD *x[MAX_CORNERS_OF_ELEM];
+  COORD_VECTOR MidPoint,sidemid[MAX_SIDES_OF_ELEM];
+  INT i,coe,mark,side;
+
+  GetRefinementMark (theElement,&mark,&side);
+
+  if (mark==NO_REFINEMENT)
+    return (theDO);
+
+  /* get coordinates of corners of the element */
+  coe = CORNERS_OF_ELEM(theElement);
+  for (i=0; i<coe; i++)
+    x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
+
+  V2_CLEAR(MidPoint)
+  for (i=0; i<coe; i++)
+    V2_ADD(MidPoint,x[i],MidPoint)
+    V2_SCALE(1.0/(COORD)coe,MidPoint)
+
+    for (i=0; i<coe; i++)
+      V2_LINCOMB(0.5,x[i],0.5,x[(i+1)%coe],sidemid[i]);
+
+  switch (mark)
+  {
+  case COPY :
+    DO_2c(theDO) = DO_TEXT; DO_inc(theDO)
+    DO_2l(theDO) = 0; DO_inc(theDO);
+    DO_2c(theDO) = TEXT_INVERSE; DO_inc(theDO)
+    DO_2c(theDO) = TEXT_CENTERED; DO_inc(theDO)
+    DO_2s(theDO) = EE2D_TEXTSIZE; DO_inc(theDO);
+    V2_COPY(MidPoint,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    strcpy(DO_2cp(theDO),"COPY"); DO_inc_str(theDO);
+    break;
+
+  case UNREFINE :
+    DO_2c(theDO) = DO_TEXT; DO_inc(theDO)
+    DO_2l(theDO) = 0; DO_inc(theDO);
+    DO_2c(theDO) = TEXT_INVERSE; DO_inc(theDO)
+    DO_2c(theDO) = TEXT_CENTERED; DO_inc(theDO)
+    DO_2s(theDO) = EE2D_TEXTSIZE; DO_inc(theDO);
+    V2_COPY(MidPoint,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    strcpy(DO_2cp(theDO),"COARSEN"); DO_inc_str(theDO);
+    break;
+
+  case RED :
+    if (coe==TRIANGLE)
+    {
+      DO_2c(theDO) = DO_INVERSE_POLYLINE; DO_inc(theDO)
+      DO_2c(theDO) = 4; DO_inc(theDO)
+      V2_COPY(sidemid[0],DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      V2_COPY(sidemid[1],DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      V2_COPY(sidemid[2],DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      V2_COPY(sidemid[0],DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    }
+    else
+    {
+      DO_2c(theDO) = DO_INVERSE_LINE; DO_inc(theDO)
+      V2_COPY(sidemid[0],DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      V2_COPY(sidemid[2],DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      DO_2c(theDO) = DO_INVERSE_LINE; DO_inc(theDO)
+      V2_COPY(sidemid[1],DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      V2_COPY(sidemid[3],DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    }
+    break;
+
+  case BLUE :
+    if (coe==QUADRILATERAL)
+    {
+      DO_2c(theDO) = DO_INVERSE_LINE; DO_inc(theDO)
+      V2_COPY(sidemid[side],DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      V2_COPY(sidemid[(side+2)%coe],DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    }
+    else
+    {
+      DO_2c(theDO) = DO_INVERSE_LINE; DO_inc(theDO)
+      V2_COPY(sidemid[side],DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      V2_COPY(x[(side+2)%coe],DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    }
+    break;
+
+  default :
+    DO_2c(theDO) = DO_TEXT; DO_inc(theDO)
+    DO_2l(theDO) = 0; DO_inc(theDO);
+    DO_2c(theDO) = TEXT_INVERSE; DO_inc(theDO)
+    DO_2c(theDO) = TEXT_CENTERED; DO_inc(theDO)
+    DO_2s(theDO) = EE2D_TEXTSIZE; DO_inc(theDO);
+    V2_COPY(MidPoint,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    strcpy(DO_2cp(theDO),"?"); DO_inc_str(theDO);
+    break;
+  }
+  return (theDO);
+}
+
+/****************************************************************************/
+/*
+   EW_PreProcess_MarkElement2D - Initialize input variables marking elements 2D
+
+   SYNOPSIS:
+   static INT EW_PreProcess_MarkElement2D (PICTURE *thePicture, WORK *theWork);
+
+   PARAMETERS:
+   .  thePicture -
+   .  theWork -
+
+   DESCRIPTION:
+   This function initializes input variables marking elements 2D.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT EW_PreProcess_MarkElement2D (PICTURE *thePicture, WORK *theWork)
+{
+  struct GridPlotObj2D *theGpo;
+  OUTPUTDEVICE *theOD;
+  MULTIGRID *theMG;
+  COORD_VECTOR point;
+  INT OldMousePos[2],status;
+
+  theGpo = &(PIC_PO(thePicture)->theGpo);
+  theOD  = PIC_OUTPUTDEV(thePicture);
+  theMG  = PO_MG(PIC_PO(thePicture));
+
+  if (!theGpo->PlotRefMarks)
+  {
+    PrintErrorMessage('E',"mark","first switch r option on in grid object");
+    return (1);
+  }
+
+  /* store mouse position */
+  OldMousePos[_X_] = W_MARKELEMENT_WORK(theWork)->PixelX;
+  OldMousePos[_Y_] = W_MARKELEMENT_WORK(theWork)->PixelY;
+
+  /* set globals */
+  ME2D_rule                                               = W_MARKELEMENT_WORK(theWork)->rule;
+
+  EE2D_Elem2Plot[PLOT_ALL]                = 0;
+  EE2D_Elem2Plot[PLOT_COPY]               = 0;
+  EE2D_Elem2Plot[PLOT_IRR]                = 0;
+  EE2D_Elem2Plot[PLOT_REG]                = 0;
+  switch (theGpo->WhichElem)
+  {
+  case PO_NO :
+    break;
+  case PO_ALL :
+    EE2D_Elem2Plot[PLOT_ALL] = 1;
+  case PO_COPY :
+    EE2D_Elem2Plot[PLOT_COPY] = 1;
+  case PO_IRR :
+    EE2D_Elem2Plot[PLOT_IRR] = 1;
+  case PO_REG :
+    EE2D_Elem2Plot[PLOT_REG] = 1;
+  }
+
+  /* CAUTION: using EE2D_MaxLevel (i.e. the last setting used) can be wrong
+     actually one should use the level chosen for the last plot of THIS picture */
+  if (MarkElements2D(theMG,0,EE2D_MaxLevel)) return (1);
+
+  /* get search rectangle */
+  status = MousePullFrame(thePicture,OldMousePos,&ME2D_xmin,&ME2D_xmax,&ME2D_ymin,&ME2D_ymax);
+
+  if (status==REJECTED)
+    return (1);
+
+  if (status==MOUSE_NOT_MOVED)
+  {
+    /* mark element containing the mouse point */
+    ME2D_pointIn = TRUE;
+    point[_X_] = ME2D_xmin;
+    point[_Y_] = ME2D_ymin;
+
+    /* transform into physical coordinates */
+    V2_TRAFOM3_V2(point,InvObsTrafo,ME2D_point);
+  }
+  else
+    /* mark elements with center of mass contained in rectangle */
+    ME2D_pointIn = FALSE;
+
+  return (0);
+}
+
+static INT EW_MarkElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
+{
+  COORD help[2],*corner;
+  COORD_VECTOR cm;
+  COORD_POINT a;
+  INT i,coe;
+
+  ME2D_found = FALSE;
+  ME2D_elem  = theElement;
+
+  /* check element */
+  if (ME2D_pointIn)
+  {
+    if (PointInElement(ME2D_point,theElement))
+      ME2D_found = TRUE;
+  }
+  else
+  {
+    /* calculate center of mass */
+    coe = CORNERS_OF_ELEM(theElement);
+    V2_CLEAR(cm);
+    for (i=0; i<coe; i++)
+    {
+      corner = CVECT(MYVERTEX(CORNER(theElement,i)));
+      V2_ADD(cm,corner,cm);
+    }
+    V2_SCALE(1.0/coe,cm);
+
+    V2_TRAFOM3_V2(cm,ObsTrafo,help);
+    (*OBS_ProjectProc)(help,&a);
+
+    /* in rectangle? */
+    if ((ME2D_xmin<=a.x) && (a.x<=ME2D_xmax))
+      if ((ME2D_ymin<=a.y) && (a.y<=ME2D_ymax))
+        ME2D_found = TRUE;
+  }
+
+  return (0);
+}
+
+static INT EW_MarkElement2D (DRAWINGOBJ *q)
+{
+  DRAWINGOBJ *qstart;
+  INT rule,side;
+
+  if (!ME2D_found) return (0);
+
+  if (!EstimateHere(ME2D_elem))
+    return (0);
+
+  qstart = q;
+
+  /* invert old mark */
+  q = InvertRefinementMark2D(ME2D_elem,q);
+
+  GetRefinementMark (ME2D_elem,&rule,&side);
+
+  /* mark */
+  if ((ME2D_rule==BLUE)&&(rule==ME2D_rule))
+    side = (side+1)%CORNERS_OF_ELEM(ME2D_elem);
+  else
+    side = 0;
+  MarkForRefinement(ME2D_elem,ME2D_rule,side);
+
+  /* invert new mark */
+  q = InvertRefinementMark2D(ME2D_elem,q);
+
+  /* terminate plot commands and plot */
+  DO_2c(q) = DO_NO_INST;
+  Draw2D(qstart);
+
+  if (ME2D_pointIn)
+    return (1);                         /* mark ONE element, we are done */
 
   return (0);
 }
@@ -3915,6 +4432,32 @@ static INT EXT_PreProcess_Bnd2d (PICTURE *thePicture, WORK *theWork)
   BE_BndColor                                     = theOD->blue;
   BE_InnerBndColor                        = theOD->cyan;
   BE_PlotSegmentIDs                       = theGpo->PlotSegmentIDs;
+  BE_SegIdColor                           = theOD->red;
+
+  BE_MG                                           = theMG;
+  BE_CurrSeg                                      = 0;
+  BE_CurrLine                                     = 1;
+  BE_nLines                                       = 0;
+  BE_MaxLines                                     = 100;
+  UgSetLineWidth (2);
+
+  return (0);
+}
+
+static INT EXT_PreProcess_VecMatBnd2d (PICTURE *thePicture, WORK *theWork)
+{
+  struct VecMatPlotObj2D *theVmo;
+  OUTPUTDEVICE *theOD;
+  MULTIGRID *theMG;
+
+  theVmo = &(PIC_PO(thePicture)->theVmo);
+  theOD  = PIC_OUTPUTDEV(thePicture);
+  theMG  = PO_MG(PIC_PO(thePicture));
+
+  BE_PlotBoundary                         = theVmo->Boundary;
+  BE_BndColor                                     = theOD->blue;
+  BE_InnerBndColor                        = theOD->cyan;
+  BE_PlotSegmentIDs                       = NO;
   BE_SegIdColor                           = theOD->red;
 
   BE_MG                                           = theMG;
@@ -4073,6 +4616,213 @@ static INT NW_PreProcess_PlotNodes2D (PICTURE *thePicture, WORK *theWork)
     return (1);
   }
   if (MarkNodes_OfMarkedElem(theMG,0,CURRENTLEVEL(theMG),mode)) return (1);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  VW_VecMatPreProcess		                                                                        */
+/*																			*/
+/* Purpose:   initialize input variables of NW_PlotNodes2D					*/
+/*																			*/
+/* Input:	  PICTURE *thePicture, WORK *theWork							*/
+/*																			*/
+/* Return:	  INT 0: ok                                                                                                     */
+/*			  INT 1: an error occurred										*/
+/*																			*/
+/****************************************************************************/
+
+static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
+{
+  struct VecMatPlotObj2D *theVmo;
+  OUTPUTDEVICE *theOD;
+  MULTIGRID *theMG;
+  VECTOR *vec;
+  INT cycle,cycles;
+
+  theVmo = &(PIC_PO(thePicture)->theVmo);
+  theOD  = PIC_OUTPUTDEV(thePicture);
+  theMG  = PO_MG(PIC_PO(thePicture));
+
+  /* set globals for eval function */
+  VM_Marker                                       = theVmo->Marker;
+  VN_MarkerColor[1]                       = theOD->black;
+  VN_MarkerColor[2]                       = theOD->yellow;
+  VN_MarkerColor[3]                       = theOD->red;
+  VM_Type[NODEVECTOR]                     = theVmo->Type[NODEVECTOR];
+  VM_Type[EDGEVECTOR]                     = theVmo->Type[EDGEVECTOR];
+  VM_Type[ELEMVECTOR]                     = theVmo->Type[ELEMVECTOR];
+  VM_Connections                          = theVmo->Connections;
+  VM_MColor                                       = theOD->black;
+  VM_MExtra                                       = theVmo->Extra;
+  VM_MExtraColor                          = theOD->cyan;
+  VM_Idx                                          = theVmo->Idx;
+  VM_IdxColor                                     = theOD->blue;
+  VM_Order                                        = theVmo->Order;
+  VM_Dependency                           = theVmo->Dependency;
+  VM_VecData                                      = theVmo->VecData;
+  VM_MatData                                      = theVmo->MatData;
+  VM_tvd                                          = &(theVmo->vec);
+  VM_tmd                                          = &(theVmo->mat);
+  VM_VecMatColor                          = theOD->red;
+
+  if (VM_Order)
+  {
+    cycles = 0;
+    for (vec=FIRSTVECTOR(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG))); vec!=NULL; vec=SUCCVC(vec))
+      if ((cycle=VINDEX(vec)/3)>cycles)                         /* integer division! */
+        cycles = cycle;
+
+    if (cycles<=0)
+      return (1);
+
+    VM_OrderStart                   = theOD->spectrumStart;
+    VM_OrderDelta                   = (theOD->spectrumEnd - theOD->spectrumStart) / (float) cycles;
+  }
+
+  return (0);
+}
+
+static INT VW_MatEval (VECTOR *vec, DRAWINGOBJ *theDO)
+{
+  MATRIX *mat;
+  COORD_VECTOR mypos,nbpos;
+
+  if (!VM_Type[VTYPE(vec)])
+  {
+    DO_2c(theDO) = DO_NO_INST;
+    return (0);
+  }
+
+  VectorPosition(vec,mypos);
+
+  if (VM_Dependency)
+  {
+    /* plot dependencies */
+    for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+      if (!CEXTRA(MMYCON(mat)))
+      {
+        if (!VM_Type[VTYPE(MDEST(mat))]) continue;
+
+        VectorPosition(MDEST(mat),nbpos);
+
+        if (MDOWN(mat))
+        {
+          DO_2c(theDO) = DO_DEPEND; DO_inc(theDO)
+          DO_2l(theDO) = VM_MColor; DO_inc(theDO);
+          V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+          V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+        }
+        if (MUP(mat))
+        {
+          DO_2c(theDO) = DO_DEPEND; DO_inc(theDO)
+          DO_2l(theDO) = VM_MColor; DO_inc(theDO);
+          V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+          V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+        }
+      }
+  }
+  else if (VM_Connections)
+  {
+    /* plot connections */
+    for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+      if (VM_Type[VTYPE(MDEST(mat))])
+      {
+        if (CEXTRA(MMYCON(mat)) && !VM_MExtra) continue;
+
+        VectorPosition(MDEST(mat),nbpos);
+
+        DO_2c(theDO) = DO_LINE; DO_inc(theDO)
+        DO_2l(theDO) = CEXTRA(MMYCON(mat)) ? VM_MExtraColor : VM_MColor; DO_inc(theDO);
+        V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+        V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      }
+  }
+
+  DO_2c(theDO) = DO_NO_INST;
+
+  return (0);
+}
+
+static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
+{
+  COORD_VECTOR mypos;
+  INT markertype,cycle,set;
+  long color;
+  char setchar;
+
+  if (!VM_Type[VTYPE(vec)])
+  {
+    DO_2c(theDO) = DO_NO_INST;
+    return (0);
+  }
+
+  VectorPosition(vec,mypos);
+
+  if (VM_Order)
+  {
+    cycle = VINDEX(vec) / 3;                            /* integer division! */
+    set   = VINDEX(vec) % 3;
+    if              (set==0) setchar = 'F';
+    else if (set==1) setchar = 'L';
+    else if (set==2) setchar = 'C';
+  }
+
+  /* plot markers */
+  if (VM_Marker)
+  {
+    if (VM_Order)
+    {
+      color = VM_OrderStart+cycle*VM_OrderDelta;
+      markertype = set;
+    }
+    else
+    {
+      color = VN_MarkerColor[VCLASS(vec)];
+      markertype = VTYPE(vec);
+    }
+
+    DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO)
+    DO_2c(theDO) = 1; DO_inc(theDO)
+    DO_2l(theDO) = color; DO_inc(theDO);
+    switch (markertype)
+    {
+    case 0 :
+      DO_2s(theDO) = FILLED_CIRCLE_MARKER;
+      break;
+    case 1 :
+      DO_2s(theDO) = FILLED_RHOMBUS_MARKER;
+      break;
+    case 2 :
+      if (VM_Order)
+        DO_2s(theDO) = EMPTY_SQUARE_MARKER;
+      else
+        DO_2s(theDO) = FILLED_SQUARE_MARKER;
+      break;
+    }
+    DO_inc(theDO);
+    DO_2s(theDO) = VM_MARKERSIZE; DO_inc(theDO);
+    V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+  }
+
+  /* plot index */
+  if (VM_Idx)
+  {
+    DO_2c(theDO) = DO_TEXT; DO_inc(theDO)
+    DO_2l(theDO) = VM_IdxColor; DO_inc(theDO)
+    DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO)
+    DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO)
+    DO_2s(theDO) = VM_TEXTSIZE; DO_inc(theDO);
+    V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    if (VM_Order)
+      sprintf(DO_2cp(theDO),"%c%d",(int)setchar,(int)cycle);
+    else
+      sprintf(DO_2cp(theDO),"%d",(int)VINDEX(vec));
+    DO_inc_str(theDO);
+  }
+
+  DO_2c(theDO) = DO_NO_INST;
 
   return (0);
 }
@@ -4372,6 +5122,8 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
         V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
       }
 
+    DO_2c(theDO) = DO_WAIT; DO_inc(theDO)
+
     /* plot links inverse a second time */
     for (theLink=START(MN_Node); theLink!=NULL; theLink=NEXT(theLink))
       if (!EXTRA(MYEDGE(theLink)))
@@ -4442,31 +5194,18 @@ static INT NW_PreProcess_SelectNode2D (PICTURE *thePicture, WORK *theWork)
   struct GridPlotObj2D *theGpo;
   OUTPUTDEVICE *theOD;
   MULTIGRID *theMG;
-  INT mode;
+  COORD x,y;
+  INT mode,status,OldMousePos[2];
 
   theGpo = &(PIC_PO(thePicture)->theGpo);
   theOD  = PIC_OUTPUTDEV(thePicture);
   theMG  = PO_MG(PIC_PO(thePicture));
 
-  NE_InnerMarkerColor             = theOD->red;
-  NE_BndMarkerColor                       = theOD->red;
-  NE_CornerMarkerColor            = theOD->red;
-  NE_InnerMarker                          = FILLED_CIRCLE_MARKER;
-  NE_BndMarker                            = FILLED_SQUARE_MARKER;
-  NE_CornerMarker                         = FILLED_RHOMBUS_MARKER;
-  NE_InnerMarkerSize                      = 4;
-  NE_BndMarkerSize                        = 4;
-  NE_CornerMarkerSize                     = 4;
-
-  NE_EvalNodeID                           = 0;
-  NE_EvalInnerNode                        = 1;
-  NE_EvalBndNode                          = 1;
-
-  FN2D_found                                      = 0;
+  FN2D_found = 0;
 
   /* store mouse position */
-  FN2D_MousePos.x = W_SELECTNODE_WORK(theWork)->PixelX;
-  FN2D_MousePos.y = W_SELECTNODE_WORK(theWork)->PixelY;
+  OldMousePos[_X_] = W_SELECTNODE_WORK(theWork)->PixelX;
+  OldMousePos[_Y_] = W_SELECTNODE_WORK(theWork)->PixelY;
 
   /* mark nodes */
   switch (theGpo->WhichElem)
@@ -4487,6 +5226,142 @@ static INT NW_PreProcess_SelectNode2D (PICTURE *thePicture, WORK *theWork)
     return (1);
   }
   if (MarkNodes_OfMarkedElem(theMG,0,CURRENTLEVEL(theMG),mode)) return (1);
+
+  /* get search rectangle */
+  status = MousePullFrame(thePicture,OldMousePos,&FN2D_xmin,&FN2D_xmax,&FN2D_ymin,&FN2D_ymax);
+
+  if (status==REJECTED)
+    return (1);
+
+  /* if rectangle < FN2D_ACC enlarge it */
+  if (FN2D_xmax-FN2D_xmin < 2*FN2D_ACC)
+  {
+    x = 0.5*(FN2D_xmax+FN2D_xmin);
+    FN2D_xmin = x-FN2D_ACC;
+    FN2D_xmax = x+FN2D_ACC;
+  }
+  if (FN2D_ymax-FN2D_ymin < 2*FN2D_ACC)
+  {
+    y = 0.5*(FN2D_ymax+FN2D_ymin);
+    FN2D_ymin = y-FN2D_ACC;
+    FN2D_ymax = y+FN2D_ACC;
+  }
+
+  return (0);
+}
+
+static INT NW_SelectNodeEval2D (NODE *theNode, DRAWINGOBJ *theDO)
+{
+  /* get node position */
+  FN2D_pos = CVECT(MYVERTEX(theNode));
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
+   VW_PreProcess_SelectVector2D - Initialize input variables of VW_SelectVectorEval2D
+
+   SYNOPSIS:
+   static INT VW_PreProcess_SelectVector2D (PICTURE *thePicture, WORK *theWork);
+
+   PARAMETERS:
+   .  thePicture -
+   .  theWork -
+
+   DESCRIPTION:
+   This function initializes input variables of VW_SelectVectorEval2D.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT VW_PreProcess_SelectVector2D (PICTURE *thePicture, WORK *theWork)
+{
+  struct VecMatPlotObj2D *theVmo;
+  OUTPUTDEVICE *theOD;
+  MULTIGRID *theMG;
+  COORD x,y;
+  INT status,OldMousePos[2];
+
+  theVmo = &(PIC_PO(thePicture)->theVmo);
+  theOD  = PIC_OUTPUTDEV(thePicture);
+  theMG  = PO_MG(PIC_PO(thePicture));
+
+  FV2D_found = 0;
+
+  /* store mouse position */
+  OldMousePos[_X_] = W_SELECTNODE_WORK(theWork)->PixelX;
+  OldMousePos[_Y_] = W_SELECTNODE_WORK(theWork)->PixelY;
+
+  /* get search rectangle */
+  status = MousePullFrame(thePicture,OldMousePos,&FV2D_xmin,&FV2D_xmax,&FV2D_ymin,&FV2D_ymax);
+
+  if (status==REJECTED)
+    return (1);
+
+  /* if rectangle < FV2D_ACC enlarge it */
+  if (FV2D_xmax-FV2D_xmin < 2*FV2D_ACC)
+  {
+    x = 0.5*(FV2D_xmax+FV2D_xmin);
+    FV2D_xmin = x-FV2D_ACC;
+    FV2D_xmax = x+FV2D_ACC;
+  }
+  if (FV2D_ymax-FV2D_ymin < 2*FV2D_ACC)
+  {
+    y = 0.5*(FV2D_ymax+FV2D_ymin);
+    FV2D_ymin = y-FV2D_ACC;
+    FV2D_ymax = y+FV2D_ACC;
+  }
+
+  return (0);
+}
+
+static INT VW_SelectVectorEval2D (VECTOR *theVector, DRAWINGOBJ *theDO)
+{
+  /* get vector position */
+  VectorPosition(theVector,FV2D_pos);
+
+  return (0);
+}
+
+static INT VW_SelectVector2D (DRAWINGOBJ *q)
+{
+  COORD help[2];
+  COORD_POINT a, point[4];
+
+  if (!VM_Type[VTYPE(WOP_Vector)]) return (0);
+
+  V2_TRAFOM3_V2(FV2D_pos,ObsTrafo,help);
+  (*OBS_ProjectProc)(help,&a);
+
+  /* in rectangle? */
+  if ((FV2D_xmin<=a.x) && (a.x<=FV2D_xmax))
+    if ((FV2D_ymin<=a.y) && (a.y<=FV2D_ymax))
+    {
+      if (FV2D_found>=MAXSELECTION)
+        return (1);
+
+      /* if found, put in/delete from selection list and invert */
+      if (SELECTIONMODE(WOP_MG)!=vectorSelection)
+        ClearSelection(WOP_MG);
+      if (AddVectorToSelection(WOP_MG,WOP_Vector) == GM_ERROR)
+        if (RemoveVectorFromSelection(WOP_MG,WOP_Vector) == GM_ERROR)
+          return (1);
+
+      /* invert surrounding of node */
+      point[0].x = point[3].x = a.x-FV2D_INVSIZE;
+      point[0].y = point[1].y = a.y-FV2D_INVSIZE;
+      point[2].x = point[1].x = a.x+FV2D_INVSIZE;
+      point[2].y = point[3].y = a.y+FV2D_INVSIZE;
+      UgInversePolygon(point,4);
+
+      /* we have found a node */
+      FV2D_found++;
+    }
 
   return (0);
 }
@@ -4577,6 +5452,147 @@ static INT InvertNodeSelection2D (PICTURE *thePicture, WORK *theWork)
 }
 
 /****************************************************************************/
+/*																			*/
+/* Function:  PlotVecMatData2D				                                                                */
+/*																			*/
+/* Purpose:   plot user data of a vector and his matrices                                       */
+/*																			*/
+/* Input:	  VECTOR *theVector												*/
+/*																			*/
+/* Output:	  INT 0: ok                                                                                                     */
+/*				  1: error													*/
+/*																			*/
+/****************************************************************************/
+
+static INT PlotVecMatData2D (PICTURE *thePicture, VECTOR *vec)
+{
+  COORD_VECTOR pos, nbpos, help;
+  COORD_POINT a,b;
+  VECTOR *nbvec;
+  MATRIX *mat;
+  INT rt,ct,i,n,nlines,line,nc;
+  char buffer[256];
+
+  VectorPosition(vec,pos);
+  V2_TRAFOM3_V2(pos,ObsTrafo,help);
+  (*OBS_ProjectProc)(help,&a);
+
+  rt = VTYPE(vec);
+  if (VM_MatData)
+    nlines = MDT_NROWCOMP(VM_tmd,rt,rt);
+  else
+    nlines = VDT_DESCNCOMP(VM_tvd,rt);
+  a.y += PIC_SIGN_Y(thePicture) * 0.5*nlines * VM_VECMAT_TEXTSIZE*VM_LINEFAC;
+
+  for (line=0; line<nlines; line++)
+  {
+    n = 0;
+    if (VM_MatData)
+    {
+      mat = VSTART(vec);
+      nc = MDT_NCOLCOMP(VM_tmd,rt,rt);
+      for (i=0; i<nc; i++)
+        n += sprintf(buffer+n,"%9.2e ",MVALUE(mat,MDT_DESCCOMP(VM_tmd,rt,rt,line*nc+i)));
+      buffer[--n] = '\0';                               /* cut off last blank */
+    }
+    if (VM_VecData && VM_MatData)
+      n += sprintf(buffer+n,"   ");
+    if (VM_VecData)
+      n += sprintf(buffer+n,"%9.2e",VVALUE(vec,VDT_DESCCOMP(VM_tvd,rt,line)));
+
+    UgCenteredText(a,buffer,TEXT_REGULAR);
+
+    /* increment line position */
+    a.y -= PIC_SIGN_Y(thePicture) * VM_VECMAT_TEXTSIZE*VM_LINEFAC;
+  }
+
+  if (VM_MatData)
+    for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+    {
+      nbvec = MDEST(mat);
+      ct = VTYPE(nbvec);
+      if (!VM_Type[ct]) continue;
+
+      VectorPosition(nbvec,nbpos);
+      V2_TRAFOM3_V2(nbpos,ObsTrafo,help);
+      (*OBS_ProjectProc)(help,&b);
+
+      b.y += PIC_SIGN_Y(thePicture) * 0.5*nlines * VM_VECMAT_TEXTSIZE*VM_LINEFAC;
+
+      /* print data */
+      for (line=0; line<nlines; line++)
+      {
+        n = 0;
+        nc = MDT_NCOLCOMP(VM_tmd,rt,ct);
+        for (i=0; i<nc; i++)
+          n += sprintf(buffer+n,"%9.2e ",MVALUE(mat,MDT_DESCCOMP(VM_tmd,rt,ct,line*nc+i)));
+        buffer[--n] = '\0';                                     /* cut off last blank */
+        if (VM_VecData)
+          n += sprintf(buffer+n,"   %9.2e",VVALUE(nbvec,VDT_DESCCOMP(VM_tvd,ct,line)));
+
+        UgCenteredText(b,buffer,TEXT_REGULAR);
+
+        /* increment line position */
+        b.y -= PIC_SIGN_Y(thePicture) * VM_VECMAT_TEXTSIZE*VM_LINEFAC;
+      }
+    }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  InvertVectorSelectionOrPlotVMData2D                                                       */
+/*																			*/
+/* Purpose:   invert vector selection                                                                           */
+/*																			*/
+/* Input:	  PICTURE *thePicture, WORK *theWork							*/
+/*																			*/
+/* Output:	  INT 0: ok                                                                                                     */
+/*				  1: error													*/
+/*																			*/
+/****************************************************************************/
+
+static INT InvertVectorSelectionOrPlotVMData2D (PICTURE *thePicture, WORK *theWork)
+{
+  VECTOR *theVector;
+  COORD_VECTOR pos,help;
+  COORD_POINT a, point[4];
+  INT i;
+
+  UgSetTextSize(VM_VECMAT_TEXTSIZE);
+  UgSetColor(VM_VecMatColor);
+
+  /* evaluate and execute */
+  if (SELECTIONMODE(WOP_MG)==vectorSelection)
+    for (i=0; i<SELECTIONSIZE(WOP_MG); i++)
+    {
+      theVector = (VECTOR *)SELECTIONOBJECT(WOP_MG,i);
+
+      if (VM_VecData || VM_MatData)
+      {
+        if (PlotVecMatData2D(thePicture,theVector)!=0)
+          return (1);
+      }
+      else
+      {
+        VectorPosition(theVector,pos);
+        V2_TRAFOM3_V2(pos,ObsTrafo,help);
+        (*OBS_ProjectProc)(help,&a);
+
+        /* invert surrounding of vector */
+        point[0].x = point[3].x = a.x-FV2D_INVSIZE;
+        point[0].y = point[1].y = a.y-FV2D_INVSIZE;
+        point[2].x = point[1].x = a.x+FV2D_INVSIZE;
+        point[2].y = point[3].y = a.y+FV2D_INVSIZE;
+        UgInversePolygon(point,4);
+      }
+    }
+
+  return (0);
+}
+
+/****************************************************************************/
 /*
    EW_ElementEval2D -
 
@@ -4602,9 +5618,12 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   INT i, j;
   COORD *x[MAX_CORNERS_OF_ELEM];
   COORD_VECTOR MidPoint;
+  INT coe;
+
+  coe = CORNERS_OF_ELEM(theElement);
 
   /* get coordinates of corners of the element */
-  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+  for (i=0; i<coe; i++)
     x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
   /* store viewable sides on drawing obj */
@@ -4613,16 +5632,16 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     if (EE2D_NoColor[COLOR_LOWER_LEVEL])
     {
       DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO)
-      DO_2c(theDO) = CORNERS_OF_ELEM(theElement); DO_inc(theDO)
+      DO_2c(theDO) = coe; DO_inc(theDO)
     }
     else
     {
       DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO)
-      DO_2c(theDO) = CORNERS_OF_ELEM(theElement); DO_inc(theDO)
+      DO_2c(theDO) = coe; DO_inc(theDO)
       DO_2l(theDO) = EE2D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO);
     }
     DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
-    for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+    for (j=0; j<coe; j++)
     {
       V2_COPY(x[j],DO_2Cp(theDO));
       DO_inc_n(theDO,2);
@@ -4633,27 +5652,31 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     if (EE2D_NoColor[ECLASS(theElement)])
     {
       DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO)
-      DO_2c(theDO) = CORNERS_OF_ELEM(theElement); DO_inc(theDO)
+      DO_2c(theDO) = coe; DO_inc(theDO)
     }
     else
     {
       DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO)
-      DO_2c(theDO) = CORNERS_OF_ELEM(theElement); DO_inc(theDO)
+      DO_2c(theDO) = coe; DO_inc(theDO)
       DO_2l(theDO) = EE2D_Color[ECLASS(theElement)]; DO_inc(theDO);
     }
     DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
-    for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+    for (j=0; j<coe; j++)
     {
       V2_COPY(x[j],DO_2Cp(theDO));
       DO_inc_n(theDO,2);
     }
   }
 
+  /* plot refinement mark */
+  if (EE2D_RefMark)
+    theDO = InvertRefinementMark2D(theElement,theDO);
+
   /* plot element ID */
   if (EE2D_ElemID)
   {
     V2_CLEAR(MidPoint)
-    for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+    for (i=0; i<coe; i++)
       V2_ADD(MidPoint,x[i],MidPoint)
       V2_SCALE(1.0/(COORD)i,MidPoint)
 
@@ -4875,7 +5898,7 @@ static INT EW_PreProcess_EScalar2D (PICTURE *thePicture, WORK *theWork)
 
   /* prepare evaluation routine */
   if (theEspo->EvalFct->PreprocessProc!=NULL)
-    if ((*theEspo->EvalFct->PreprocessProc)(theMG))
+    if ((*theEspo->EvalFct->PreprocessProc)(ENVITEM_NAME(theEspo->EvalFct),theMG))
       return (1);;
 
   return (0);
@@ -5523,7 +6546,7 @@ static INT EW_PreProcess_EVector2D (PICTURE *thePicture, WORK *theWork)
 
   /* prepare evaluation routine */
   if (theEvpo->EvalFct->PreprocessProc!=NULL)
-    if ((*theEvpo->EvalFct->PreprocessProc)(theMG))
+    if ((*theEvpo->EvalFct->PreprocessProc)(ENVITEM_NAME(theEvpo->EvalFct),theMG))
       return (1);
 
   return (0);
@@ -5743,7 +6766,7 @@ static INT EW_PreProcess_EVector2D_FR (PICTURE *thePicture, WORK *theWork)
   return (0);
 }
 
-#endif
+#endif /* __TWODIM__ */
 
 /**********************************************************************************************************/
 /************************************ Part only for 3D Version ********************************************/
@@ -6447,6 +7470,9 @@ static INT EW_SelectElement3D (DRAWINGOBJ *q)
       break;
     case DO_ARROW :
       DO_inc_ARROW(q,3);
+      break;
+    case DO_DEPEND :
+      DO_inc_DEPEND(q,3);
       break;
     case DO_INVERSE_LINE :
       DO_inc_INVERSE_LINE(q,3);
@@ -8563,7 +9589,70 @@ static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   return (0);
 }
 
-#endif
+#endif /* __THREEDIM__ */
+
+/****************************************************************************/
+/*D
+   DrawWindowText - Draw text in a window
+
+   SYNOPSIS:
+   INT DrawWindowText (UGWINDOW *theWin, COORD_POINT pos,
+                                        const char *text, INT size, INT center, INT inverse)
+
+   PARAMETERS:
+   .  theWin  - draw a frame of the picture
+   .  pos     - draw text here (the lower left corner is the origin)
+   .  text    - text to draw
+   .  size    - texz size (if 0 take default)
+   .  center  - center text at position if TRUE
+   .  inverse - draw text inverse (rather than black)
+
+   DESCRIPTION:
+   This function draws text into a ug window at a certain position given in
+   pixel coordinates. The text can be centered and inverse.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if en arror occured.
+   D*/
+/****************************************************************************/
+
+INT DrawWindowText (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT size, INT center, INT inverse)
+{
+  INT mode;
+
+  if (PrepareGraphWindow(theWin)) return (1);
+
+  /* transform from standard system to device coordinates */
+  if (UGW_LLL(theWin)[_X_]<UGW_LUR(theWin)[_X_])
+    pos.x = UGW_LLL(theWin)[_X_] + pos.x;
+  else
+    pos.x = UGW_LLL(theWin)[_X_] - pos.x;
+
+  if (UGW_LLL(theWin)[_Y_]<UGW_LUR(theWin)[_Y_])
+    pos.y = UGW_LLL(theWin)[_Y_] + pos.y;
+  else
+    pos.y = UGW_LLL(theWin)[_Y_] - pos.y;
+
+  mode = (inverse) ? TEXT_INVERSE : TEXT_REGULAR;
+
+  UgSetColor(UGW_OUTPUTDEV(theWin)->black);
+  if (size!=0)
+    UgSetTextSize(size);
+  else
+    UgSetTextSize(WINDOW_TEXT_SIZE);
+
+  if (center)
+    UgCenteredText(pos,text,mode);
+  else
+  {
+    UgMove(pos);
+    UgText(text,mode);
+  }
+
+  return (0);
+}
 
 /****************************************************************************/
 /*D
@@ -8923,8 +10012,8 @@ INT DragPicture (PICTURE *thePicture, INT *OldMousePos)
   COORD_POINT FrameLL,FrameLR,FrameUR,FrameUL;
   COORD oldpos[2],pos[2],shift[2];
   COORD xmin,xmax,ymin,ymax;
-  INT MousePos[2];
-  INT theViewDim,MouseMoved;
+  INT LastMousePos[2],MousePos[2];
+  INT theViewDim,MouseMoved,rejected;
 
   if (thePicture==NULL) return (1);
   theViewedObj = PIC_VO(thePicture);
@@ -8947,7 +10036,7 @@ INT DragPicture (PICTURE *thePicture, INT *OldMousePos)
   /* activate low level grahic */
   if (PrepareGraph(thePicture))
   {
-    PrintErrorMessage('E',"DragPicture","cannot activate low level graphic");
+    PrintErrorMessage('E',"DragPicture","cannot activate low level graphics");
     return (1);
   }
 
@@ -8959,45 +10048,60 @@ INT DragPicture (PICTURE *thePicture, INT *OldMousePos)
   /* old mouse position in the physical system */
   V2_TRAFOM3_V2(OldMousePos,InvObsTrafo,oldpos);
 
-  MouseMoved = FALSE;
+  rejected = MouseMoved = FALSE;
+  V2_COPY(OldMousePos,LastMousePos);
   while (MouseStillDown())
   {
     MousePosition(MousePos);
 
+    if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
+
     /* inside picture? */
-    if ((MousePos[0]<xmin) || (MousePos[0]>xmax))
-      return (0);
-    if ((MousePos[1]<ymin) || (MousePos[1]>ymax))
-      return (0);
+    if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+    {
+      rejected = TRUE;
+      break;
+    }
+
+    V2_COPY(MousePos,LastMousePos);
+
+    if (MouseMoved)
+    {
+      /* invert last frame */
+      UgInverseLine(FrameLL,FrameLR);
+      UgInverseLine(FrameLR,FrameUR);
+      UgInverseLine(FrameUR,FrameUL);
+      UgInverseLine(FrameUL,FrameLL);
+    }
 
     MouseMoved = TRUE;
 
     /* calculate shifted picture frame in screen coords */
     V2_SUBTRACT(MousePos,OldMousePos,shift);
-    FrameLL.x = PIC_GLL(thePicture)[_X_]+shift[_X_];
-    FrameLL.y = PIC_GLL(thePicture)[_Y_]+shift[_Y_];
-    FrameUR.x = PIC_GUR(thePicture)[_X_]+shift[_X_];
-    FrameUR.y = PIC_GUR(thePicture)[_Y_]+shift[_Y_];
-    FrameLR.x = FrameUR.x;
-    FrameLR.y = FrameLL.y;
-    FrameUL.x = FrameLL.x;
-    FrameUL.y = FrameUR.y;
+    FrameUL.x = FrameLL.x = PIC_GLL(thePicture)[_X_]+shift[_X_];
+    FrameLR.y = FrameLL.y = PIC_GLL(thePicture)[_Y_]+shift[_Y_];
+    FrameLR.x = FrameUR.x = PIC_GUR(thePicture)[_X_]+shift[_X_];
+    FrameUL.y = FrameUR.y = PIC_GUR(thePicture)[_Y_]+shift[_Y_];
 
-    /* inverse frame new picture */
+    /* invert new frame */
     UgInverseLine(FrameLL,FrameLR);
     UgInverseLine(FrameLR,FrameUR);
     UgInverseLine(FrameUR,FrameUL);
     UgInverseLine(FrameUL,FrameLL);
-
-    /* once agian inverse frame new picture */
-    UgInverseLine(FrameLL,FrameLR);
-    UgInverseLine(FrameLR,FrameUR);
-    UgInverseLine(FrameUR,FrameUL);
-    UgInverseLine(FrameUL,FrameLL);
+    UgFlush();
   }
 
-  if (!MouseMoved)
-    return (0);
+  if (MouseMoved)
+  {
+    /* invert last frame */
+    UgInverseLine(FrameLL,FrameLR);
+    UgInverseLine(FrameLR,FrameUR);
+    UgInverseLine(FrameUR,FrameUL);
+    UgInverseLine(FrameUL,FrameLL);
+    UgFlush();
+  }
+
+  if (rejected) return (0);
 
   /* mouse position in the physical system */
   V2_TRAFOM3_V2(MousePos,InvObsTrafo,pos);
@@ -9042,18 +10146,17 @@ INT DragPicture (PICTURE *thePicture, INT *OldMousePos)
 INT ZoomPicture (PICTURE *thePicture, INT *OldMousePos)
 {
   VIEWEDOBJ *theViewedObj;
-  COORD_POINT FrameLL,FrameLR,FrameUR,FrameUL;
-  COORD oldpos[2],pos[2],MidPoint[2];
-  COORD xmin,xmax,ymin,ymax,CanvasRatio,FrameRatio,factor;
-  INT MousePos[2];
-  INT theViewDim,MouseMoved;
+  COORD MidPoint[2],pos[2];
+  COORD xmin,xmax,ymin,ymax;
+  COORD CanvasRatio,FrameRatio,factor;
+  INT status,theViewDim;
 
   if (thePicture==NULL) return (1);
   theViewedObj = PIC_VO(thePicture);
 
   if (VO_STATUS(theViewedObj) != ACTIVE)
   {
-    PrintErrorMessage('E',"DragPicture","PlotObject and View have to be initialized");
+    PrintErrorMessage('E',"ZoomPicture","PlotObject and View have to be initialized");
     return (0);
   }
   theViewDim                              = PO_DIM(PIC_PO(thePicture));
@@ -9062,103 +10165,43 @@ INT ZoomPicture (PICTURE *thePicture, INT *OldMousePos)
   /* build transformation */
   if (BuildObsTrafo(thePicture))
   {
-    PrintErrorMessage('E',"DragPicture","cannot build transformation");
+    PrintErrorMessage('E',"ZoomPicture","cannot build transformation");
     return (1);
   }
 
   /* activate low level grahic */
   if (PrepareGraph(thePicture))
   {
-    PrintErrorMessage('E',"DragPicture","cannot activate low level graphic");
+    PrintErrorMessage('E',"ZoomPicture","cannot activate low level graphics");
     return (1);
   }
 
-  xmin    = MIN(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
-  xmax    = MAX(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
-  ymin    = MIN(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
-  ymax    = MAX(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
+  status = MousePullFrame(thePicture,OldMousePos,&xmin,&xmax,&ymin,&ymax);
 
-  /* old mouse position in the physical system */
-  V2_TRAFOM3_V2(OldMousePos,InvObsTrafo,oldpos);
-
-  MouseMoved = FALSE;
-  while (MouseStillDown())
-  {
-    MousePosition(MousePos);
-
-    /* inside picture? */
-    if ((MousePos[0]<xmin) || (MousePos[0]>xmax))
-      return (0);
-    if ((MousePos[1]<ymin) || (MousePos[1]>ymax))
-      return (0);
-
-    MouseMoved = TRUE;
-
-    /* pull frame */
-    if (PIC_SIGN_X(thePicture)>0.0)
-    {
-      FrameLL.x = MIN(MousePos[_X_],OldMousePos[_X_]);
-      FrameUR.x = MAX(MousePos[_X_],OldMousePos[_X_]);
-    }
-    else
-    {
-      FrameLL.x = MAX(MousePos[_X_],OldMousePos[_X_]);
-      FrameUR.x = MIN(MousePos[_X_],OldMousePos[_X_]);
-    }
-    if (PIC_SIGN_Y(thePicture)>0.0)
-    {
-      FrameLL.y = MIN(MousePos[_Y_],OldMousePos[_Y_]);
-      FrameUR.y = MAX(MousePos[_Y_],OldMousePos[_Y_]);
-    }
-    else
-    {
-      FrameLL.y = MAX(MousePos[_Y_],OldMousePos[_Y_]);
-      FrameUR.y = MIN(MousePos[_Y_],OldMousePos[_Y_]);
-    }
-    FrameLR.x = FrameUR.x;
-    FrameLR.y = FrameLL.y;
-    FrameUL.x = FrameLL.x;
-    FrameUL.y = FrameUR.y;
-
-    /* inverse frame new picture */
-    UgInverseLine(FrameLL,FrameLR);
-    UgInverseLine(FrameLR,FrameUR);
-    UgInverseLine(FrameUR,FrameUL);
-    UgInverseLine(FrameUL,FrameLL);
-
-    /* once agian inverse frame new picture */
-    UgInverseLine(FrameLL,FrameLR);
-    UgInverseLine(FrameLR,FrameUR);
-    UgInverseLine(FrameUR,FrameUL);
-    UgInverseLine(FrameUL,FrameLL);
-  }
-
-  if (!MouseMoved)
-    return (0);
-
-  if (V2_ISEQUAL(OldMousePos,MousePos))
+  if (status!=MOUSE_MOVED)
     return (0);
 
   /* adjust view */
   if (theViewDim==TYPE_2D)
   {
     /* new midpoint */
-    V2_LINCOMB(0.5,MousePos,0.5,OldMousePos,MidPoint);
+    MidPoint[_X_] = 0.5*(xmin+xmax);
+    MidPoint[_Y_] = 0.5*(ymin+ymax);
     V2_TRAFOM3_V2(MidPoint,InvObsTrafo,pos);
     V2_COPY(pos,VO_VT(theViewedObj));
     V2_COPY(pos,VO_PMP(theViewedObj));
 
     /* zoom factor */
     CanvasRatio = fabs(((COORD)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1]))/((COORD)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
-    FrameRatio  = fabs(((COORD)(FrameLL.y-FrameUR.y))/((COORD)(FrameLL.x-FrameUR.x)));
+    FrameRatio  = (ymax-ymin) / (xmax-xmin);
     if (FrameRatio>CanvasRatio)
-      factor = fabs(((COORD)(FrameLL.y-FrameUR.y))/((COORD)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1])));
+      factor = fabs((ymax-ymin)/((COORD)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1])));
     else
-      factor = fabs(((COORD)(FrameLL.x-FrameUR.x))/((COORD)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
+      factor = fabs((xmax-xmin)/((COORD)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
     V2_SCALE(factor,VO_PXD(theViewedObj))
     V2_SCALE(factor,VO_PYD(theViewedObj))
   }
-  /* else if (theViewDim==TYPE_2D) <-- maybe extended later */
+  /* else if (theViewDim==TYPE_3D) <-- maybe extended later */
 
   PIC_VALID(thePicture) = NO;
 
@@ -9229,6 +10272,7 @@ INT InitWOP (void)
 
         #ifdef __TWODIM__
   NODEWISEWORK *theNWW;
+  VECTORWISEWORK *theVWW;
 
   /* create WorkHandling for 'Grid' */
   if ((thePOH=CreatePlotObjHandling ("Grid"))     == NULL) return (__LINE__);
@@ -9286,7 +10330,7 @@ INT InitWOP (void)
   theNWW->NW_PreProcessProc                               = NW_PreProcess_SelectNode2D;
   theNWW->NW_GetFirstNodeProcProc                 = NW_GetFirstNode_hor_fw_up_Proc;
   theNWW->NW_GetNextNodeProcProc                  = NW_GetNextNode_hor_fw_up_Proc;
-  theNWW->NW_EvaluateProc                                 = NW_NodesEval2D;
+  theNWW->NW_EvaluateProc                                 = NW_SelectNodeEval2D;
   theNWW->NW_ExecuteProc                                  = NW_SelectNode2D;
   theNWW->NW_PostProcessProc                              = NULL;
 
@@ -9303,8 +10347,21 @@ INT InitWOP (void)
   theEWW->EW_ExecuteProc                                  = EW_SelectElement2D;
   theEWW->EW_PostProcessProc                              = NULL;
 
+  /* selectvector work */
+  POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 0;
+
   /* markelement work */
-  POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
+  POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 1;
+
+  theWP = POH_WORKPROGS(thePOH,MARKELEMENT_WORK,0);
+  WP_WORKMODE(theWP) = ELEMENTWISE;
+  theEWW = WP_ELEMWISE(theWP);
+  theEWW->EW_PreProcessProc                               = EW_PreProcess_MarkElement2D;
+  theEWW->EW_GetFirstElementProcProc              = EW_GetFirstElement_vert_fw_up_Proc;
+  theEWW->EW_GetNextElementProcProc               = EW_GetNextElement_vert_fw_up_Proc;
+  theEWW->EW_EvaluateProc                                 = EW_MarkElementEval2D;
+  theEWW->EW_ExecuteProc                                  = EW_MarkElement2D;
+  theEWW->EW_PostProcessProc                              = NULL;
 
   /* insertnode work */
   POH_NBCYCLES(thePOH,INSERTNODE_WORK) = 1;
@@ -9406,6 +10463,9 @@ INT InitWOP (void)
   /* selectelement work */
   POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 0;
 
+  /* selectvector work */
+  POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 0;
+
   /* markelement work */
   POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
 
@@ -9464,6 +10524,79 @@ INT InitWOP (void)
 
   /* selectelement work */
   POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 0;
+
+  /* selectvector work */
+  POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 0;
+
+  /* markelement work */
+  POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
+
+  /* insertnode work */
+  POH_NBCYCLES(thePOH,INSERTNODE_WORK) = 0;
+
+  /* movenode work */
+  POH_NBCYCLES(thePOH,MOVENODE_WORK) = 0;
+
+  /* insertbndnode work */
+  POH_NBCYCLES(thePOH,INSERTBNDNODE_WORK) = 0;
+
+
+
+  /* create WorkHandling for 'VecMat' */
+  if ((thePOH=CreatePlotObjHandling ("VecMat"))      == NULL) return (__LINE__);
+
+  /* draw work */
+  POH_NBCYCLES(thePOH,DRAW_WORK) = 3;
+
+  theWP = POH_WORKPROGS(thePOH,DRAW_WORK,0);
+  WP_WORKMODE(theWP) = EXTERN;
+  theEXW = WP_EXTERNWISE(theWP);
+  theEXW->EXT_PreProcessProc                              = EXT_PreProcess_VecMatBnd2d;
+  theEXW->EXT_EvaluateProc                                = EXT_BndEval2d;
+  theEXW->EXT_ExecuteProc                                 = Draw2D;
+  theEXW->EXT_PostProcessProc                             = EXT_PostProcess_Bnd2d;
+
+  theWP = POH_WORKPROGS(thePOH,DRAW_WORK,1);
+  WP_WORKMODE(theWP) = ELEMENTWISE;
+  theVWW = WP_VECTORWISE(theWP);
+  theVWW->VW_PreProcessProc                               = VW_VecMatPreProcess;
+  theVWW->VW_GetFirstVectorProcProc               = VW_GetFirstVector_Proc;
+  theVWW->VW_GetNextVectorProcProc                = VW_GetNextVector_Proc;
+  theVWW->VW_EvaluateProc                                 = VW_MatEval;
+  theVWW->VW_ExecuteProc                                  = Draw2D;
+  theVWW->VW_PostProcessProc                              = NULL;
+
+  theWP = POH_WORKPROGS(thePOH,DRAW_WORK,2);
+  WP_WORKMODE(theWP) = ELEMENTWISE;
+  theVWW = WP_VECTORWISE(theWP);
+  theVWW->VW_PreProcessProc                               = NULL;
+  theVWW->VW_GetFirstVectorProcProc               = VW_GetFirstVector_Proc;
+  theVWW->VW_GetNextVectorProcProc                = VW_GetNextVector_Proc;
+  theVWW->VW_EvaluateProc                                 = VW_VecEval;
+  theVWW->VW_ExecuteProc                                  = Draw2D;
+  theVWW->VW_PostProcessProc                              = InvertVectorSelectionOrPlotVMData2D;
+
+  /* findrange work */
+  POH_NBCYCLES(thePOH,FINDRANGE_WORK) = 0;
+
+  /* selectnode work */
+  POH_NBCYCLES(thePOH,SELECTNODE_WORK) = 0;
+
+  /* selectelement work */
+  POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 0;
+
+  /* selectvector work */
+  POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 1;
+
+  theWP = POH_WORKPROGS(thePOH,SELECTVECTOR_WORK,0);
+  WP_WORKMODE(theWP) = VECTORWISE;
+  theVWW = WP_VECTORWISE(theWP);
+  theVWW->VW_PreProcessProc                               = VW_PreProcess_SelectVector2D;
+  theVWW->VW_GetFirstVectorProcProc               = VW_GetFirstVector_Proc;
+  theVWW->VW_GetNextVectorProcProc                = VW_GetNextVector_Proc;
+  theVWW->VW_EvaluateProc                                 = VW_SelectVectorEval2D;
+  theVWW->VW_ExecuteProc                                  = VW_SelectVector2D;
+  theVWW->VW_PostProcessProc                              = NULL;
 
   /* markelement work */
   POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
@@ -9531,6 +10664,9 @@ INT InitWOP (void)
   theEWW->EW_EvaluateProc                                 = EW_ElementEval3D;
   theEWW->EW_ExecuteProc                                  = EW_SelectElement3D;
   theEWW->EW_PostProcessProc                              = NULL;
+
+  /* selectvector work */
+  POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 0;
 
   /* markelement work */
   POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
@@ -9602,6 +10738,9 @@ INT InitWOP (void)
   /* selectelement work */
   POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 0;
 
+  /* selectvector work */
+  POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 0;
+
   /* markelement work */
   POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
 
@@ -9671,6 +10810,9 @@ INT InitWOP (void)
 
   /* selectelement work */
   POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 0;
+
+  /* selectvector work */
+  POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 0;
 
   /* markelement work */
   POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;

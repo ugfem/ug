@@ -38,6 +38,10 @@
 #include "wpm.h"
 #endif
 
+#ifndef __EVM__
+#include "evm.h"
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -81,6 +85,9 @@
 #define DO_ERASE_SURRPOLYGON                    10
 #define DO_TEXT                                                 11
 #define DO_POLYMARK                                     12
+#define DO_WAIT                                                 13
+#define DO_DEPEND                                               14
+#define DO_INVERSE_POLYLINE                     15
 
 /* text position */
 #define TEXT_NOT_CENTERED                               0
@@ -99,7 +106,9 @@
 #define DO_inc_RANGE(p)                                 (p)+=3;
 #define DO_inc_LINE(p,d)                                (p)+=2+2*d;
 #define DO_inc_ARROW(p,d)                               (p)+=2+2*d;
+#define DO_inc_DEPEND(p,d)                              (p)+=2+2*d;
 #define DO_inc_INVERSE_LINE(p,d)                (p)+=1+2*d;
+#define DO_inc_INVERSE_POLYLINE(p,d)    (p)+=2+((char*)(p+1))[0]*d;
 #define DO_inc_POLYLINE(p,d)                    (p)+=3+((char*)(p+1))[0]*d;
 #define DO_inc_POLYGON(p,d)                     (p)+=3+((char*)(p+1))[0]*d;
 #define DO_inc_INVERSE_POLYGON(p,d)     (p)+=2+((char*)(p+1))[0]*d;
@@ -154,15 +163,16 @@
 /****************************************************************************/
 
 /* WorkID's */
-#define NB_WORK                                 8
 #define DRAW_WORK                               0
 #define FINDRANGE_WORK                  1
 #define SELECTNODE_WORK                 2
 #define SELECTELEMENT_WORK              3
-#define MARKELEMENT_WORK                4
-#define INSERTNODE_WORK                 5
-#define MOVENODE_WORK                   6
-#define INSERTBNDNODE_WORK              7
+#define SELECTVECTOR_WORK               4
+#define MARKELEMENT_WORK                5
+#define INSERTNODE_WORK                 6
+#define MOVENODE_WORK                   7
+#define INSERTBNDNODE_WORK              8
+#define NB_WORK                                 9
 
 
 #define W_ID(p)                                 ((p)->WorkID)
@@ -170,12 +180,13 @@
 #define W_FINDRANGE_WORK(p)     (&((p)->theFindRangeWork))
 #define W_SELECTNODE_WORK(p)    (&((p)->theSelectNodeWork))
 #define W_SELECTELEMENT_WORK(p) (&((p)->theSelectElementWork))
+#define W_SELECTVECTOR_WORK(p)  (&((p)->theSelectVectorWork))
 #define W_MARKELEMENT_WORK(p)   (&((p)->theMarkElementWork))
 #define W_INSERTNODE_WORK(p)    (&((p)->theInsertNodeWork))
 #define W_MOVENODE_WORK(p)              (&((p)->theMoveNodeWork))
 #define W_INSERTBNDNODE_WORK(p) (&((p)->theInsertBndNodeWork))
 
-#define W_ISSELECTWORK(p)               ((p)->WorkID==SELECTNODE_WORK || (p)->WorkID==SELECTELEMENT_WORK)
+#define W_ISSELECTWORK(p)               ((p)->WorkID==SELECTNODE_WORK || (p)->WorkID==SELECTELEMENT_WORK || (p)->WorkID==SELECTVECTOR_WORK)
 
 /****************************************************************************/
 /*																			*/
@@ -229,6 +240,15 @@ struct SelectElement_Work {
   short PixelY;                                 /* y pixel coordinate						*/
 };
 
+struct SelectVector_Work {
+
+  INT WorkID;                                   /* unique ID of the work					*/
+
+  /* specification of the work */
+  short PixelX;                                 /* x pixel coordinate						*/
+  short PixelY;                                 /* y pixel coordinate						*/
+};
+
 struct MarkElement_Work {
 
   INT WorkID;                                   /* unique ID of the work					*/
@@ -236,6 +256,7 @@ struct MarkElement_Work {
   /* specification of the work */
   short PixelX;                                 /* x pixel coordinate						*/
   short PixelY;                                 /* y pixel coordinate						*/
+  INT rule;                                             /* mark rule								*/
 };
 
 struct InsertNode_Work {
@@ -272,10 +293,11 @@ union Work {
   struct FindRange_Work theFindRangeWork;                       /* desc. for finding the range of an object */
   struct SelectNode_Work theSelectNodeWork;                     /* desc. for selecting a node of an object	*/
   struct SelectElement_Work theSelectElementWork;       /* desc. for selecting an element of an obj.*/
+  struct SelectVector_Work theSelectVectorWork;        /* desc. for selecting a vector of an obj.  */
   struct MarkElement_Work theMarkElementWork;           /* desc. for marking an element of an obj.	*/
   struct InsertNode_Work theInsertNodeWork;                     /* desc. for inserting an inner node in obj.*/
-  struct InsertBndNode_Work theInsertBndNodeWork;       /* desc. for inserting an bnd node in obj.	*/
-  struct MoveNode_Work theMoveNodeWork;                         /* desc. for moving an node of an obj.		*/
+  struct InsertBndNode_Work theInsertBndNodeWork;       /* desc. for inserting a bnd node in obj.	*/
+  struct MoveNode_Work theMoveNodeWork;                         /* desc. for moving a node of an obj.		*/
 };
 
 typedef COORD DRAWINGOBJ;
@@ -395,6 +417,7 @@ typedef struct PlotObjHandling PLOTOBJHANDLING;
 INT             InitWOP                                 (void);
 
 INT             WorkOnPicture                   (PICTURE *thePicture, WORK *theWork);
+INT                     DrawWindowText                  (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT size, INT center, INT inverse);
 INT                     DragPicture                             (PICTURE *thePicture, INT *MousePos);
 INT                     ZoomPicture                             (PICTURE *thePicture, INT *MousePos);
 INT             DrawUgPicture                   (PICTURE *thePicture);
