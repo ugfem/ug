@@ -632,9 +632,8 @@ INT BVP_Check (BVP *aBVP)
         if(LGM_SURFACE_NLINE(theSF) <2)
         {
           if (!ret) UserWrite("\n");
-          UserWriteF("Surface %d has less than 2 Lines\n\n",(int)j);
+          UserWriteF("Warning: Surface %d has less than 2 Lines\n\n",(int)j);
           ret = 1;
-          return(1);
         }
         for (l=0; l<LGM_SURFACE_NLINE(theSF); l++)
         {
@@ -842,7 +841,7 @@ INT BVP_Check (BVP *aBVP)
           if (LGM_LINE_BEGIN(theL)==LGM_LINE_END(theL))
           {
             if (!ret) UserWrite("\n");
-            UserWriteF("Line %d of Surface %d of Subdomain %d is cyclic\n",(int)LGM_LINE_ID(theL),j,i);
+            UserWriteF("Warning : Line %d of Surface %d of Subdomain %d is cyclic\n",(int)LGM_LINE_ID(theL),j,i);
             ret = 1;
             continue;
           }
@@ -1116,6 +1115,13 @@ INT BVP_Check (BVP *aBVP)
                     }
                     else
                     {
+                      if(tr_index == p)
+                      {
+                        if (!ret) UserWrite("\n");
+                        UserWriteF("The third corner of the %d. Triangle is also found in its negibour the %d . Triangle \n of Surface %d of Subdomain %d \n \n",m,LGM_TRIANGLE_NEIGHBOR(TheTria, p),j,i);
+                        ret = 1;
+                        continue;
+                      }
                       /*die beiden Indizes des gemeinsamen COrners merken:*/
                       indexesTheTria[commmonIDs_Counter] = tr_index;
                       indexesTheNgbTria[commmonIDs_Counter] = ntr_index;
