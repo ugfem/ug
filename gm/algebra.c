@@ -3886,7 +3886,7 @@ INT CheckAlgebra (GRID *theGrid)
   }
 
   /* set flags in connections */
-#ifdef __OVERLAP2__
+#if defined __OVERLAP2__ || defined USE_FAMG
   for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
 #else
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
@@ -3929,7 +3929,7 @@ INT CheckAlgebra (GRID *theGrid)
                    me, MDEST(Adj),VINDEX_PRTX(theVector));
       }
 
-                        #if defined ModelP && !defined  __OVERLAP2__
+                        #if defined ModelP && !(defined  __OVERLAP2__ || defined USE_FAMG)
       if (prio != PrioHGhost)
                         #endif
       if (MUSED(theMatrix)!=1 &&  !CEXTRA(MMYCON(theMatrix)))
@@ -3942,7 +3942,7 @@ INT CheckAlgebra (GRID *theGrid)
                    GLEVEL(theGrid),CEXTRA(MMYCON(theMatrix)));
       }
 
-                        #if defined ModelP && !defined  __OVERLAP2__
+                        #if defined ModelP && !(defined  __OVERLAP2__ || defined USE_FAMG)
       if (GHOSTPRIO(prio) && !CEXTRA(MMYCON(theMatrix)))
       {
         errors++;

@@ -3820,6 +3820,7 @@ INT Collapse (MULTIGRID *theMG)
   NODE *theNode;
   EDGE *theEdge;
   VERTEX *theVertex;
+  VECTOR *vec;
   INT tl = TOPLEVEL(theMG);
   INT l,i;
 
@@ -3829,6 +3830,9 @@ INT Collapse (MULTIGRID *theMG)
       REP_ERR_RETURN(1);
         #endif
 
+#ifdef ModelP
+  DDD_XferBegin();
+#endif
   for (l=tl-1; l>=0; l--) {
     theGrid = GRID_ON_LEVEL(theMG,l);
     for (theNode=PFIRSTNODE(theGrid); theNode != NULL;
@@ -3855,8 +3859,10 @@ INT Collapse (MULTIGRID *theMG)
       if (DisposeElement(theGrid,PFIRSTELEMENT(theGrid),1))
         return(1);
     while (PFIRSTNODE(theGrid)!=NULL)
+    {
       if (DisposeNode(theGrid,PFIRSTNODE(theGrid)))
         return(1);
+    }
     while (PFIRSTVERTEX(theGrid)!=NULL) {
       theVertex = PFIRSTVERTEX(theGrid);
       GRID_UNLINK_VERTEX(theGrid,theVertex);
@@ -3865,33 +3871,13 @@ INT Collapse (MULTIGRID *theMG)
     }
     GRID_ON_LEVEL(theMG,l) = NULL;
   }
+
+#ifdef ModelP
+  DDD_XferEnd();
+#endif
+
+  /* move top level grid to bottom (level 0) */
   theGrid = GRID_ON_LEVEL(theMG,tl);
-  for (theNode=PFIRSTNODE(theGrid); theNode != NULL;
-       theNode = SUCCN(theNode)) {
-    SETNFATHER(theNode,NULL);
-    SETNTYPE(theNode,LEVEL_0_NODE);
-    SETNCLASS(theNode,3);
-    SETNNCLASS(theNode,0);
-    SETLEVEL(theNode,0);
-    VFATHER(MYVERTEX(theNode)) = NULL;
-  }
-  for (theElement=PFIRSTELEMENT(theGrid); theElement != NULL;
-       theElement = SUCCE(theElement)) {
-    SETECLASS(theElement,RED_CLASS);
-    SET_EFATHER(theElement,NULL);
-    SETLEVEL(theElement,0);
-    for (i=0; i<EDGES_OF_ELEM(theElement); i++) {
-      theEdge = GetEdge(CORNER(theElement,
-                               CORNER_OF_EDGE(theElement,i,0)),
-                        CORNER(theElement,
-                               CORNER_OF_EDGE(theElement,i,1)));
-      SETLEVEL(theEdge,0);
-    }
-  }
-  for (theVertex=PFIRSTVERTEX(theGrid); theVertex != NULL;
-       theVertex = SUCCV(theVertex)) {
-    SETLEVEL(theVertex,0);
-  }
   theGrid->finer = NULL;
   theGrid->coarser = NULL;
   theGrid->level = 0;
@@ -3901,6 +3887,54 @@ INT Collapse (MULTIGRID *theMG)
   theMG->topLevel = 0;
   theMG->fullrefineLevel = 0;
   theMG->currentLevel = 0;
+
+  for (theNode=PFIRSTNODE(theGrid); theNode != NULL;
+       theNode = SUCCN(theNode)) {
+    SETNFATHER(theNode,NULL);
+    SETNTYPE(theNode,LEVEL_0_NODE);
+    SETNCLASS(theNode,3);
+    SETNNCLASS(theNode,0);
+    SETLEVEL(theNode,0);
+    VFATHER(MYVERTEX(theNode)) = NULL;
+                        #ifdef ModelP
+    DDD_AttrSet(PARHDR(theNode),GRID_ATTR(theGrid));
+                        #endif
+  }
+  for (theElement=PFIRSTELEMENT(theGrid); theElement != NULL;
+       theElement = SUCCE(theElement)) {
+    SETECLASS(theElement,RED_CLASS);
+    SET_EFATHER(theElement,NULL);
+    SETLEVEL(theElement,0);
+                #ifdef ModelP
+    DDD_AttrSet(PARHDRE(theElement),GRID_ATTR(theGrid));
+                #endif
+    for (i=0; i<EDGES_OF_ELEM(theElement); i++) {
+      theEdge = GetEdge(CORNER(theElement,
+                               CORNER_OF_EDGE(theElement,i,0)),
+                        CORNER(theElement,
+                               CORNER_OF_EDGE(theElement,i,1)));
+      SETLEVEL(theEdge,0);
+                        #if (defined ModelP) && (defined __THREEDIM__)
+      DDD_AttrSet(PARHDR(theEdge),GRID_ATTR(theGrid));
+                        #endif
+    }
+  }
+  for (theVertex=PFIRSTVERTEX(theGrid); theVertex != NULL;
+       theVertex = SUCCV(theVertex)) {
+    SETLEVEL(theVertex,0);
+                #ifdef ModelP
+    DDD_AttrSet(PARHDRV(theVertex),GRID_ATTR(theGrid));
+                #endif
+    ASSERT(NOOFNODE(theVertex)==1);
+  }
+
+        #ifdef ModelP
+  for (vec=PFIRSTVECTOR(theGrid); vec != NULL; vec = SUCCVC(vec))
+    DDD_AttrSet(PARHDR(vec),GRID_ATTR(theGrid));
+
+  /* rebiuld all DDD interfaces due to removed objects and changed attributes */
+  DDD_IFRefreshAll();
+        #endif
 
         #ifdef DYNAMIC_MEMORY_ALLOCMODEL
   if (MG_COARSE_FIXED(theMG))
@@ -8853,7 +8887,7 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
     case NODEVEC :
     {
       theNode = (NODE*)VOBJECT(theVector);
-                                #ifdef __OVERLAP2__
+                                #if defined __OVERLAP2__ || defined USE_FAMG
       if ( theNode == NULL )
         UserWriteF("NODE-V NULL                ");
       else
