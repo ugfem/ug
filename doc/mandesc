@@ -10,6 +10,6 @@ no default sections
 9(9) Functions of module ui
 a(a) problem class & appl overview
 b(b) problem class diff2d 
-c(c) problem class cd
-d(d) problem class fem
-e(e) problem class ns2d
+c(c) problem class sc
+d(d) problem class fe
+e(e) problem class ns
