@@ -583,7 +583,7 @@ int AMG_PrintMatrix (AMG_MATRIX *A, char *text)
       sprintf(line,"[%4d:",i); AMG_Print(line);
       aa = a+(b*b*ra[i]);
       for (c=0; c<b*b; c++) {
-        sprintf(line," %12.4e",i,aa[c]); AMG_Print(line);
+        sprintf(line,"%d: %12.4e",i,aa[c]); AMG_Print(line);
       }
       AMG_Print("]\n");
       for (k=ra[i]; k<ra[i]+ja[ra[i]]; k++)
@@ -592,7 +592,7 @@ int AMG_PrintMatrix (AMG_MATRIX *A, char *text)
         sprintf(line,"[%4d:",ja[k]); AMG_Print(line);
         aa = a+(b*b*k);
         for (c=0; c<b*b; c++) {
-          sprintf(line," %12.4e",i,aa[c]); AMG_Print(line);
+          sprintf(line,"%d: %12.4e",i,aa[c]); AMG_Print(line);
         }
         AMG_Print("]\n");
       }
