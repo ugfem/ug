@@ -221,28 +221,28 @@ static void MetaInversePolygon (SHORT_POINT *points, INT nb)
   short n;
   return;
 
-  n = (short)nb;
-  if (n<2) return;
-  size1 = 3+n*4;
-  if (currMW->blockUsed+size1>METABUFFERSIZE) flush_block();
+  /* n = (short)nb;
+     if (n<2) return;
+     size1 = 3+n*4;
+     if (currMW->blockUsed+size1>METABUFFERSIZE) flush_block();
 
-  *currMW->data = opInvPolygon;
-  currMW->data++;
-  memcpy(currMW->data,&n,2);
-  currMW->data += 2;
-  for (i=0; i<n; i++)
-  {
-    memcpy(currMW->data,&(points[i].x),2);
-    currMW->data += 2;
-  }
-  for (i=0; i<n; i++)
-  {
-    memcpy(currMW->data,&(points[i].y),2);
-    currMW->data += 2;
-  }
-  currMW->itemCounter++;
-  currMW->blockUsed += size1;
-  return;
+     *currMW->data = opInvPolygon;
+     currMW->data++;
+     memcpy(currMW->data,&n,2);
+     currMW->data += 2;
+     for (i=0; i<n; i++)
+     {
+          memcpy(currMW->data,&(points[i].x),2);
+          currMW->data += 2;
+     }
+     for (i=0; i<n; i++)
+     {
+          memcpy(currMW->data,&(points[i].y),2);
+          currMW->data += 2;
+     }
+     currMW->itemCounter++;
+     currMW->blockUsed += size1;
+     return;*/
 }
 
 static void MetaErasePolygon (SHORT_POINT *points, INT nb)
@@ -251,28 +251,28 @@ static void MetaErasePolygon (SHORT_POINT *points, INT nb)
   short n;
   return;
 
-  n = (short)nb;
-  if (n<2) return;
-  size1 = 3+n*4;
-  if (currMW->blockUsed+size1>METABUFFERSIZE) flush_block();
+  /* n = (short)nb;
+     if (n<2) return;
+     size1 = 3+n*4;
+     if (currMW->blockUsed+size1>METABUFFERSIZE) flush_block();
 
-  *currMW->data = opErasePolygon;
-  currMW->data++;
-  memcpy(currMW->data,&n,2);
-  currMW->data += 2;
-  for (i=0; i<n; i++)
-  {
-    memcpy(currMW->data,&(points[i].x),2);
-    currMW->data += 2;
-  }
-  for (i=0; i<n; i++)
-  {
-    memcpy(currMW->data,&(points[i].y),2);
-    currMW->data += 2;
-  }
-  currMW->itemCounter++;
-  currMW->blockUsed += size1;
-  return;
+     *currMW->data = opErasePolygon;
+     currMW->data++;
+     memcpy(currMW->data,&n,2);
+     currMW->data += 2;
+     for (i=0; i<n; i++)
+     {
+          memcpy(currMW->data,&(points[i].x),2);
+          currMW->data += 2;
+     }
+     for (i=0; i<n; i++)
+     {
+          memcpy(currMW->data,&(points[i].y),2);
+          currMW->data += 2;
+     }
+     currMW->itemCounter++;
+     currMW->blockUsed += size1;
+     return; */
 }
 
 static void MetaPolymark (short n, SHORT_POINT *points)
