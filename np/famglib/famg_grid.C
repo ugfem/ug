@@ -349,7 +349,7 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 #ifdef PROTOCOLNUMERIC
 	DOUBLE d1, d2, d3;
 #endif
-	
+
     #ifdef ModelP
 	// distribute master values to V(H)Ghosts
 	// Note: ghosts exist only on the baselevel and then only in case of coarsegrid agglomeration,
@@ -426,7 +426,7 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
   		cout<<"FAMGGrid::Prolongation: defect*sol after prolongation "<<d3<<endl;
 	}
 #endif
-	
+
 	// prepare defect for jacobi smoothing
 	Defect(fgdefect, fgdefect, fgsol);
 	
@@ -927,8 +927,16 @@ void FAMGGrid::Stencil()
 {
 	int nn, nl;
 
+#ifdef ModelP
+	GRID *grid = GetugGrid();
+	nn = NVEC(grid);
+	nl = 2*NC(grid)-nn;	// in GetNLinks connections created in ConstructOverlap are missing
+						// correction -nn subtracts the twice counted main diagonal entries
+#else
 	nn = matrix->GetN();
 	nl = matrix->GetNLinks();
+#endif
+
 	ostrstream ostr; 
 	
 	ostr << "unknowns: " << nn << "\t";
@@ -939,7 +947,7 @@ void FAMGGrid::Stencil()
 #ifdef ModelP
 	ostr << " master= "<<GetNrMasterVectors()<<" border= "<<GetNrBorderVectors()<<" ghosts= "<<GetNrGhostVectors();
 #endif
-	ostr << endl;
+	ostr << " nmat= "<<nl<<endl;
 	FAMGWrite(ostr);
 
 	return;
@@ -1375,7 +1383,61 @@ int FAMGGrid::ConstructTransfer()
 	MULTIGRID *mg = MYMG(mygrid);
 	INT level = GLEVEL(mygrid);
 	MATDATA_DESC *A, *ACons;
-	
+
+if( 0 )
+{	// only for testing
+	FAMGVectorIter fiter(GetGridVector());
+	FAMGVectorEntry fvec;
+	FAMGMatrixEntry matij;
+	int nrmat = 0, nrvec = 0, maxmat = 0, minmat = 1000000, mymat, bigmats = 0, maxmats=0;
+
+	while( fiter(fvec) )
+	{
+		nrvec++;
+		FAMGMatrixIter miter(*GetMatrix(),fvec);
+		mymat=0;
+		while(miter(matij))
+		{
+			mymat++;
+		}
+		nrmat += mymat;
+		if( maxmat < mymat )
+			maxmat = mymat;
+		if( minmat>mymat)
+			minmat = mymat;
+	}
+
+	fiter.reset();
+	while( fiter(fvec) )
+	{
+		FAMGMatrixIter miter(*GetMatrix(),fvec);
+		mymat=0;
+		while(miter(matij))
+		{
+			mymat++;
+		}
+		if( maxmat == mymat )
+		{
+			maxmats++;
+			if( level < 0 )
+			{	// avoid printing given finest grid matrix
+				FAMGMatrixIter miter(*GetMatrix(),fvec);
+				cout << me<<": l "<<level;
+				if( IS_FAMG_GHOST(fvec.myvector()) )
+					cout <<" B ";
+				else
+					cout << " M ";
+				while(miter(matij))
+					cout << (*GetMatrix())[matij]<<" ";
+				cout << endl;
+			}
+		}
+		if( mymat > 0.9*maxmat )
+			bigmats++;
+	}
+	cout << me <<": l "<<level<<" vec "<<nrvec<<" maxmat "<<maxmat<<" minmat "<<minmat<<" avg.mat "<< (double)nrmat/nrvec << " bigmats "<<bigmats << " maxmats "<<maxmats<<endl;
+}
+
 	A = ((FAMGugMatrix*)GetMatrix())->GetMatDesc();
 	ACons = ((FAMGugMatrix*)GetConsMatrix())->GetMatDesc();
 	
@@ -2701,7 +2763,7 @@ int FAMGGrid::CommunicateNodeStatus()
 
 static VECDATA_DESC *ConsVector = NULL;
 
-static int Gather_VectorComp (DDD_OBJ obj, void *data)
+static int Gather_ForceVectorComp (DDD_OBJ obj, void *data)
 // exactly copy of Gather_VectorComp
 {
 	VECTOR *pv = (VECTOR *)obj;
@@ -2723,8 +2785,8 @@ static int Gather_VectorComp (DDD_OBJ obj, void *data)
 	return (NUM_OK);
 }
 
-static int Scatter_VectorComp (DDD_OBJ obj, void *data)
-// exactly copy of Scatter_VectorComp
+static int Scatter_ForceVectorComp (DDD_OBJ obj, void *data)
+// sets received value (instead to add) 
 {
 	VECTOR *pv = (VECTOR *)obj;
 	INT i,type,vecskip;
@@ -2733,7 +2795,7 @@ static int Scatter_VectorComp (DDD_OBJ obj, void *data)
 	if (VD_IS_SCALAR(ConsVector)) {
   	    if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
 		    if (!VECSKIP(pv))
-			    VVALUE(pv,VD_SCALCMP(ConsVector)) += *((DOUBLE *)data);
+			    VVALUE(pv,VD_SCALCMP(ConsVector)) = *((DOUBLE *)data);
 
 		return (NUM_OK);
 	}
@@ -2743,11 +2805,11 @@ static int Scatter_VectorComp (DDD_OBJ obj, void *data)
 	vecskip = VECSKIP(pv);
 	if (vecskip == 0)
 		for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
-			VVALUE(pv,Comp[i]) += ((DOUBLE *)data)[i]; 
+			VVALUE(pv,Comp[i]) = ((DOUBLE *)data)[i]; 
 	else
 		for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
 			if (!(vecskip & (1<<i)))				
-				VVALUE(pv,Comp[i]) += ((DOUBLE *)data)[i]; 
+				VVALUE(pv,Comp[i]) = ((DOUBLE *)data)[i]; 
 
 	return (NUM_OK);
 }
@@ -2765,13 +2827,13 @@ INT l_force_consistence (GRID *g, const VECDATA_DESC *x)
  	    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
 	DDD_IFAOneway(BorderVectorIF, GRID_ATTR(g), IF_BACKWARD, m * sizeof(DOUBLE),
-				  Gather_VectorComp, Scatter_VectorComp);
+				  Gather_ForceVectorComp, Scatter_ForceVectorComp);
 	// TODO: perhaps this communication to the ghosts can be omitted
 	// YES: I expect no ghostvectors on famglevels except 
 	//      on baselevel for coarsegrid agglomeration; but this function is called only
 	//      for fine grids (i.e. not for baselevel grid).
 	//DDD_IFAOneway(VectorIF, GRID_ATTR(g), IF_FORWARD, m * sizeof(DOUBLE),
-	//			  Gather_VectorComp, Scatter_VectorComp);
+	//			  Gather_ForceVectorComp, Scatter_ForceVectorComp);
 
 	return (NUM_OK);
 }
@@ -2801,6 +2863,35 @@ static int Gather_VectorCompCollect (DDD_OBJ obj, void *data)
 		((DOUBLE *)data)[i] = VVALUE(pv,Comp[i]);
 		VVALUE(pv,Comp[i]) = 0.0;
 	}
+
+	return (NUM_OK);
+}
+
+static int Scatter_VectorComp (DDD_OBJ obj, void *data)
+// unmodified copy from ugblas.c
+{
+	VECTOR *pv = (VECTOR *)obj;
+	INT i,type,vecskip;
+	const SHORT *Comp;	
+
+	if (VD_IS_SCALAR(ConsVector)) {
+  	    if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
+		    if (!VECSKIP(pv))
+			    VVALUE(pv,VD_SCALCMP(ConsVector)) += *((DOUBLE *)data);
+
+		return (NUM_OK);
+	}
+
+	type = VTYPE(pv);
+	Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
+	vecskip = VECSKIP(pv);
+	if (vecskip == 0)
+		for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+			VVALUE(pv,Comp[i]) += ((DOUBLE *)data)[i]; 
+	else
+		for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+			if (!(vecskip & (1<<i)))				
+				VVALUE(pv,Comp[i]) += ((DOUBLE *)data)[i]; 
 
 	return (NUM_OK);
 }

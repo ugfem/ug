@@ -77,7 +77,7 @@ int FAMGMultiGrid::Init(const FAMGSystem &system)
 static void GlobalLeave (FAMGLeaveInfo *x)
 // input: x filled with my data
 // output: x filled with global values according to
-// calculate GlobalMax(x->coarsefrac)
+// calculate GlobalAvg(x->coarsefrac)
 //           GlobalSum(x->cgnodes)
 //           GlobalMin(x->cgminnodespe)
 {
@@ -87,12 +87,13 @@ static void GlobalLeave (FAMGLeaveInfo *x)
 	for (l=degree-1; l>=0; l--)
 	{
 		GetConcentrate(l,&n,sizeof(FAMGLeaveInfo));
-		x->coarsefrac = MAX(x->coarsefrac,n.coarsefrac);
+		x->coarsefrac += n.coarsefrac;
 		x->cgnodes += n.cgnodes;
 		x->cgminnodespe = MIN(x->cgminnodespe,n.cgminnodespe);
 	}
 	Concentrate(x,sizeof(FAMGLeaveInfo));
 	Broadcast(x,sizeof(FAMGLeaveInfo));
+	x->coarsefrac /= (DOUBLE)procs;
 
 	return;
 }
