@@ -4127,7 +4127,7 @@ static INT RefineCommand (INT argc, char **argv)
 
         #ifdef ModelP
   /* currently only this is supported in parallel */
-  if (procs > 1)
+  if (0 && procs > 1)
   {
     mark = MARK_ALL;
     mode = mode | GM_REFINE_NOT_CLOSED;
@@ -4142,7 +4142,7 @@ static INT RefineCommand (INT argc, char **argv)
     nmarked = 0;
 
     for (l=TOPLEVEL(theMG); l<=TOPLEVEL(theMG); l++)
-      for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
            theElement!=NULL; theElement=SUCCE(theElement))
       {
         if (EstimateHere(theElement))
@@ -4297,7 +4297,7 @@ static INT MarkCommand (INT argc, char **argv)
   if (ReadArgvOption("c",argc, argv))
   {
     for (i=0; i<=TOPLEVEL(theMG); i++)
-      for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i));
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i));
            theElement!=NULL; theElement=SUCCE(theElement))
         if (EstimateHere(theElement))
           MarkForRefinement(theElement,NO_REFINEMENT,NULL);
@@ -4310,7 +4310,7 @@ static INT MarkCommand (INT argc, char **argv)
   if (ReadArgvDOUBLE("x",&x,argc, argv)==0)
   {
     for (l=0; l<=TOPLEVEL(theMG); l++)
-      for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
            theElement!=NULL; theElement=SUCCE(theElement))
         if (EstimateHere(theElement))
           for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
@@ -4326,7 +4326,7 @@ static INT MarkCommand (INT argc, char **argv)
   if (ReadArgvDOUBLE("y",&y,argc, argv)==0)
   {
     for (l=0; l<=TOPLEVEL(theMG); l++)
-      for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
            theElement!=NULL; theElement=SUCCE(theElement))
         if (EstimateHere(theElement))
           for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
@@ -4343,7 +4343,7 @@ static INT MarkCommand (INT argc, char **argv)
   if (ReadArgvDOUBLE("z",&z,argc, argv)==0)
   {
     for (l=0; l<=TOPLEVEL(theMG); l++)
-      for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
            theElement!=NULL; theElement=SUCCE(theElement))
         if (EstimateHere(theElement))
           for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
@@ -4355,7 +4355,7 @@ static INT MarkCommand (INT argc, char **argv)
 
     return(OKCODE);
   }
-    #endif
+#endif
 
   if (ReadArgvPosition("pos",argc,argv,global)==0)
   {
