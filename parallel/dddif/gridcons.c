@@ -371,7 +371,6 @@ void ConstructConsistentGrid (GRID *theGrid)
       }
         #endif
 
-        #ifdef __THREEDIM__
   /* reconstruct VFATHER pointers */
   for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
@@ -383,7 +382,7 @@ void ConstructConsistentGrid (GRID *theGrid)
       theVertex = MYVERTEX(theNode);
       theFather = EFATHER(theElement);
 
-      if (VFATHER(theVertex)==NULL)
+      if (VFATHER(theVertex)==NULL || EHGHOST(VFATHER(theVertex)))
       {
         switch (NTYPE(theNode))
         {
@@ -411,6 +410,7 @@ void ConstructConsistentGrid (GRID *theGrid)
           break;
         }
 
+                                        #ifdef __THREEDIM__
         case (SIDE_NODE) :
           /* always compute new coords for this case! */
           k =  GetSideIDFromScratch(theElement,theNode);
@@ -444,6 +444,7 @@ void ConstructConsistentGrid (GRID *theGrid)
           break;
 
         case (CENTER_NODE) :
+                                        #endif
         case (LEVEL_0_NODE) :
           /* nothing to do */
           break;
@@ -467,8 +468,6 @@ void ConstructConsistentGrid (GRID *theGrid)
       }
     }
   }
-        #endif
-
 }
 
 INT CheckProcListCons (int *proclist, int uniqueTag)
