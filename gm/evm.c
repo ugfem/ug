@@ -77,7 +77,7 @@ static char rcsid[] = "$Header$";
 /*																			*/
 /****************************************************************************/
 
-#define MIN_DETERMINANT                                 SMALL_C
+#define MIN_DETERMINANT                                 0.0001*SMALL_C
 
 /****************************************************************************/
 /****************************************************************************/
@@ -498,7 +498,7 @@ INT M3_Invert (COORD *Inverse, const COORD *Matrix)
   determinant = Inverse[0+3*0]*Matrix[0+3*0] + Inverse[0+3*1]*Matrix[1+3*0] + Inverse[0+3*2]*Matrix[2+3*0];
 
   /* check the determinant */
-  if (ABS(determinant) > MIN_DETERMINANT)
+  if (fabs(determinant) > MIN_DETERMINANT)
   {
     invdet = 1.0/determinant;
     for (i=0; i<3; i++)
@@ -648,7 +648,7 @@ DOUBLE tarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2)
    .  x3,y3 - coordinates of fourth point
 
    DESCRIPTION:
-   This function computes the area of a convex quadrilaterl.
+   This function computes the area of a convex quadrilateral.
 
    RETURN VALUE:
    DOUBLE area
